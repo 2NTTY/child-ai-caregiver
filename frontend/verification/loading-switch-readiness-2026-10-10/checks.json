@@ -1715,5 +1715,1382 @@
       "browserObservationPreserved": "Original browser report remains unchanged: cause was undiagnosed at observation time. This later bounded diagnosis does not convert the reminder into a successful ready surface.",
       "diagnosticLimit": "Characterization of the existing explicit-unavailable projection, not a repaired readiness failure or a real-backend reminder test."
     }
+  },
+  "recordBoundary": "Original fields above describe the preserved pre-PR187 34-file delivery snapshot; PR187 merged at fddd32deaa04fea8db39553ea6b3e050769b6a5d. The current bounded recovery follow-up is recoveryIncrement below. Historical states and failures are not rewritten.",
+  "recoveryIncrement": {
+    "baseCommit": "fddd32deaa04fea8db39553ea6b3e050769b6a5d",
+    "state": "R01_source_and_current_clear_artifact_independently_reviewed_post_fix_browser_and_publication_not_run",
+    "finding": {
+      "id": "R01",
+      "status": "reproduced in unmodified v68 browser and real owner/fixture; local minimal source fix reviewed",
+      "symptom": "Dirty draft + failed initial profile history read marks history open, disabling its only entry. Current-profile reread clears notice but retains dirty draft and disabled history.",
+      "fix": "Move historyOpen=true from request start to accepted success; unchanged generation/current/accessError and cleanup guards."
+    },
+    "productAndTestFiles": [
+      {
+        "path": "frontend/src/production/CareProfileDomains.tsx",
+        "baseSha256": "af15e78f4ddad8e731a14ef5afccb2e9e9b20ee8bf038d60d62dab816fd52d60",
+        "sha256": "54c44974a69702b9287d2df150f71636d660e52f06db281658cd7ef3f0efd44c",
+        "bytes": 42852
+      },
+      {
+        "path": "frontend/scripts/profile-history-recovery.test.cjs",
+        "baseSha256": null,
+        "sha256": "f24bc27ca67aa72160cab9b1c56679d1c167b78dff883c14f700dbfb9e743c5c",
+        "bytes": 14819
+      }
+    ],
+    "incrementPatchSha256": "7a1bf33809fc3e3667ff35a003d1ef6b50d90239d44e4bf82deaacdabfedb329",
+    "original34FreezeUnchanged": true,
+    "other33PathsMatchPR187": true,
+    "sourceVerification": {
+      "authorOriginalSameAssertion": {
+        "beforePass": 0,
+        "beforeFail": 1,
+        "afterPass": 1,
+        "afterFail": 0
+      },
+      "authorTargeted": {
+        "pass": 7,
+        "fail": 0
+      },
+      "typecheckExit": 0,
+      "independent": {
+        "initialNewCases": {
+          "pass": 3,
+          "fail": 0
+        },
+        "paginationAddendum": {
+          "pass": 1,
+          "fail": 0,
+          "previousThreeRerun": false
+        },
+        "authorSevenRerun": false
+      },
+      "scope": "Real React bridge/keyed owner/QueryClient/API parser/ProfileView conditional logic; native layout, motion and form presentation are bounded doubles; external existing jsdom dependency.",
+      "counting": "Original assertion overlaps targeted coverage; independent cases overlap behavior. Do not sum these as independent features or browser passes.",
+      "prior31FileSuitesRerun": false
+    },
+    "browserBeforeFix": {
+      "version": 68,
+      "sitesSource": "c5063f5ef7827d6856646da0888a311328973912",
+      "observedAt": "2026-10-10T18:02:13Z/2026-10-10T18:09:12Z",
+      "viewport": {
+        "width": 1180,
+        "height": 757
+      },
+      "status": "bounded recovery checks completed with one new product failure; account gate and in-place denied recovery not established",
+      "flows": [
+        {
+          "id": "R68-01",
+          "name": "Notification preference transient failure",
+          "status": "bounded fail-closed and recovery sample observed",
+          "actions": [
+            "Home: visible 刷新失敗",
+            "Navigate Settings and select 應用偏好",
+            "Press product 重新讀取通知偏好 once while failure remains",
+            "Visible 正常更新",
+            "Observe automatic settings refresh recovery; manually re-read once in normal mode",
+            "Browser Back returns Home"
+          ],
+          "observed": [
+            "Failure message and disabled time-zone/time/reminder/check controls; displayed version1 and 22:00–08:00 retained",
+            "Manual retry during failure did not falsely report success",
+            "Normal mode triggers refresh, returning 目前通知偏好已讀取。 and edit/check controls",
+            "No preferences edited or saved"
+          ],
+          "qualification": "This did not isolate manual recovery after transport became normal: the normal harness control itself triggered automatic settings refresh first. No request trace.",
+          "evidence": [
+            "evidence/09-preferences-error-after-retry.png",
+            "evidence/12-preferences-normal-settled.png",
+            "evidence/13-preferences-normal-manual-reread.ax.txt",
+            "evidence/14-preferences-back-home.ax.txt"
+          ]
+        },
+        {
+          "id": "R68-02",
+          "name": "Failed child switch, retry while failed, return to previous child",
+          "status": "bounded sample observed",
+          "actions": [
+            "Ready Care with 待辦／提醒 rail open on Ming",
+            "Visible 刷新失敗",
+            "Select Sunny",
+            "Press 重新載入 while failure remains",
+            "Press 返回上一位孩子 while failure remains",
+            "Visible 正常更新; error remains",
+            "Press product 重新載入"
+          ],
+          "observed": [
+            "Switch cover and settled error AX contain no child header, Care records, pending content or rail child data",
+            "Error and both recovery actions visible; retry while failure remains does not falsely succeed",
+            "Return branch stays fail-closed while all reads fail",
+            "Normal harness control alone does not clear error; product reload recovers Ming header, Care record and selected rail consistently"
+          ],
+          "evidence": [
+            "evidence/20-child-error-cover.ax.txt",
+            "evidence/21-child-error-actions.png",
+            "evidence/22-child-retry-in-error.png",
+            "evidence/23-child-return-under-error.png",
+            "evidence/26-child-normal-still-error.png",
+            "evidence/28-child-retry-recovered.png"
+          ]
+        },
+        {
+          "id": "R68-03",
+          "name": "Failed target child then direct product reload recovery",
+          "status": "bounded sample observed",
+          "actions": [
+            "Visible 刷新失敗 on recovered Ming",
+            "Select Sunny",
+            "Visible 正常更新",
+            "Press product 重新載入 without returning to previous child"
+          ],
+          "observed": [
+            "Failure view hides prior child data",
+            "Product reload recovers Sunny consistently across header, Care record/pending and retained 待辦／提醒 rail; no Ming content in recovered AX"
+          ],
+          "evidence": [
+            "evidence/31-second-switch-error.png",
+            "evidence/32-second-switch-normal-before-retry.ax.txt",
+            "evidence/33-second-switch-retry.ax.txt",
+            "evidence/34-target-child-recovered.png"
+          ]
+        },
+        {
+          "id": "R68-04",
+          "name": "Account error/denied gate revalidation",
+          "status": "not reached; not passed",
+          "actions": [
+            "Visible 刷新失敗",
+            "One actual native Chromium Ctrl+Shift+Tab away to existing viewport tab19 and Ctrl+Tab back to tab20"
+          ],
+          "observed": [
+            "Actual tab-away verified by native screenshot",
+            "Return shows Care/rail stale-error views, not account gate",
+            "No account recovery controls appeared, no hidden event/state/URL injection attempted"
+          ],
+          "qualification": "No browser evidence that account revalidation occurred. Did not keep switching apps or invent a cold-error query. Account503/403 recovery remains untested.",
+          "evidence": [
+            "evidence/35-native-browser-tabs.png",
+            "evidence/38-native-other-tab.png",
+            "evidence/39-focus-return-no-account-gate.ax.txt"
+          ]
+        },
+        {
+          "id": "R68-05",
+          "name": "Synthetic child access-denied isolation",
+          "status": "bounded isolation observed; in-place recovery not established",
+          "actions": [
+            "Visible lower-panel 模擬失權 on Sunny",
+            "Open child chooser and select Sunny once while denied",
+            "Visible 正常更新, reselect Sunny once",
+            "Read existing profile entry and expand child-management control to look for a read-only recovery action",
+            "Full browser reload for fixture cleanup"
+          ],
+          "observed": [
+            "Header becomes 尚未有孩子 / 暫時讀不到孩子資料; Care and rail child content removed",
+            "Cached child names remain in selection dialog but selecting denied Sunny does not reveal its records",
+            "Normal mode plus reselect does not restore child; no shared-recheck control found in inspected entry",
+            "Full reload resets ephemeral fixture, after which Sunny profile is ready"
+          ],
+          "qualification": "This is baseline synthetic denied mode, not account403, real role change, upper-panel permanent 合成撤權, or proof of complete authorization. The reset is cleanup, not proof of in-place recovery. No permanent-lock bug inferred.",
+          "evidence": [
+            "evidence/41-denied-isolation-visible.png",
+            "evidence/42-denied-child-options.ax.txt",
+            "evidence/43-denied-child-reselect.png",
+            "evidence/47-denied-normal-reselection.ax.txt",
+            "evidence/49-profile-child-management-controls.ax.txt",
+            "evidence/52-reset-normal-profile.png"
+          ]
+        },
+        {
+          "id": "R68-06",
+          "name": "Profile history retry while local draft is dirty",
+          "status": "new product failure reproduced",
+          "findingId": "profile-history-retry",
+          "priority": "P2",
+          "actions": [
+            "Normal reset; Sunny profile ready",
+            "Change only local region draft from 香港 to 香港（合成歷史重試草稿）",
+            "Visible recovery control 下一次基本資料歷史讀取失敗, queue1 observed",
+            "Press original product 查看較早版本",
+            "Press product 重新讀取檔案 once",
+            "Capture stable result, then restore region draft to 香港 without saving"
+          ],
+          "observed": [
+            "Failed history read shows 未能讀取檔案歷史，請稍後重試。",
+            "History action becomes disabled 已顯示歷史 and empty 尚未取得較早版本。",
+            "After re-reading current profile, error notice disappears but history remains disabled and empty",
+            "Dirty region draft survives re-read and is visible in AX and screenshot",
+            "No local history retry action is available in this state"
+          ],
+          "qualification": "Browser verifies visible failure and preserved draft. Exact503 and unchanged history-GET count are independent fixture/owner test evidence, not a browser network trace. No save, share, delete or retry of disabled control.",
+          "evidence": [
+            "evidence/53-profile-dirty-local-draft.ax.txt",
+            "evidence/55-profile-history-fault-armed.ax.txt",
+            "evidence/56-profile-history-failed.ax.txt",
+            "evidence/57-profile-history-error-top.png",
+            "evidence/58-profile-history-disabled.png",
+            "evidence/60-profile-dirty-history-still-disabled.ax.txt",
+            "evidence/60-profile-dirty-history-still-disabled.png",
+            "evidence/61-profile-draft-preserved.png",
+            "evidence/62-profile-draft-cleaned.ax.txt"
+          ]
+        }
+      ],
+      "counts": {
+        "AXRecords": 60,
+        "PNGFiles": 26,
+        "totalEvidenceFiles": 86,
+        "note": "Includes intermediate states, native browser chrome, control inventory and cleanup. These are evidence records, not 86 tests or passes."
+      },
+      "allEvidenceHashesAndSizesChecked": 86,
+      "limitations": [
+        "Full17-route/state/write/viewport matrix not completed",
+        "Account error/denied gate recovery not reached",
+        "In-place restoration after scope-denied mode not established",
+        "Settings success occurred via automatic refresh from normal control, not isolated manual recovery after restored transport",
+        "All observations are bounded snapshots, not every-frame no-flash proof, FPS or exact timing",
+        "No per-domain release, rapid A-B-A race, timeout or late-response race",
+        "No network/API trace, live bytes hash, production backend validation, real family/model/message data",
+        "No comprehensive focus-containment/return, screen reader, zoom, touch or native-mobile testing",
+        "Existing v68 slow-refresh happy child switching not rerun; only new failed-recovery branches covered"
+      ],
+      "cleanup": {
+        "normalMode": true,
+        "scopeDeniedReset": "Full reload reset ephemeral baseline; not counted as in-place recovery",
+        "localDraft": "Region restored to 香港; dirty notice removed in final AX",
+        "closedTab": "20",
+        "otherTabs": "Existing tabs18/19 left open and unchanged by this worker apart from one focus-only switch to19"
+      },
+      "scope": "Visible synthetic controls/read/navigation and one reverted unsaved local draft only; no source/fixture changes or real credentials, messages, uploads or permissions."
+    },
+    "build": {
+      "status": "single current-fix official clear export exit0; independent artifact verification passed",
+      "command": "CI=1 EXPO_DEBUG=1 EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npm run build:web --workspace frontend -- --clear --output-dir ../../dist-profile-history-recovery",
+      "buildsRun": 1,
+      "exit": 0,
+      "staticRoutes": 35,
+      "artifactFiles": 61,
+      "bundle": {
+        "path": "dist-profile-history-recovery/_expo/static/js/web/index-3211a862defcda912280a4081336b162.js",
+        "sha256": "f0a71d6591cec7690c737d6b9bd53a306e5dee6646ee8e43b7b2dcb377263e34",
+        "bytes": 5158347
+      },
+      "sourceChecks": {
+        "fullManifestFiles": 471,
+        "frozenExpectedFiles": 35,
+        "allMatch": true,
+        "countBoundary": "35 is the previous34 reviewed paths plus new test; only2 product/test files change in this increment, with3 document updates prepared separately."
+      },
+      "independentVerification": {
+        "checkedAtUtc": "2026-10-10T18:18:22.816292+00:00",
+        "buildsRunByReviewer": 0,
+        "testsRunForArtifactReview": 0,
+        "sourceFilesCheckedAgainstBuildManifest": 471,
+        "frozenPR187PlusIncrementExpectedFiles": 35,
+        "sourceChecksMatch": true,
+        "artifactFiles": 61,
+        "artifactBytes": 10084410,
+        "bundle": {
+          "sha256": "f0a71d6591cec7690c737d6b9bd53a306e5dee6646ee8e43b7b2dcb377263e34",
+          "bytes": 5158347,
+          "lines": 2603,
+          "changedLinesOneBased": [
+            2137
+          ],
+          "unchangedOtherLinesIncludingLineEndingBytes": 2602,
+          "onlyExpectedStartAndSuccessReplacements": true,
+          "ownerModuleSha256WithoutLineEnding": "5e11b33c7e3841a2a9ddfb1b2b5acbde6f9aa395f80032de62cc9cbdec4ec89a"
+        },
+        "retainedPriorSnippets": {
+          "clear-bundle-module-snippets.json": {
+            "ownerContext": true,
+            "ownerGuardUse": true,
+            "detailProjection": true,
+            "settingsRegistration": true,
+            "settingsActualTab": true,
+            "photoFirstValue": true,
+            "photoNormalizedPredicate": true,
+            "photoPendingGuard": true,
+            "detailExactTarget": true
+          },
+          "admission-clear-bundle-module-snippets.json": {
+            "initialUnadmittedGeneration": true,
+            "freshProjectionPairsGeneration": true,
+            "synchronousReadInvalidation": true,
+            "generationBeforeAdmission": true,
+            "retainedScopeAuthority": true,
+            "retainedToken": true,
+            "retainedPendingValid": true,
+            "validBeforeUrl": true,
+            "revocationBeforeValidity": true,
+            "originalTokenOnlyLockRelease": true,
+            "accessErrorHelper": true,
+            "exportFlow": true,
+            "actualApiExport": true,
+            "apiTransport": true
+          },
+          "family-labels-clear-bundle-module-snippets.json": {
+            "alreadyReadableRecordsSnapshot": true,
+            "exactWorkspaceDisplayNameProjection": true,
+            "selectedChildProjectionRetained": true,
+            "duplicateBaseLabelsOnly": true,
+            "loadedNameTrimFilterDeduplicate": true,
+            "stableOptionValueId": true,
+            "childHintOrOriginalLabel": true,
+            "selectValueAndDisabled": true,
+            "sameSelectionAction": true,
+            "ownerStableSelectionGuard": true
+          }
+        },
+        "htmlOnlyChangedBundleReference": 35,
+        "unchangedOtherArtifactBytes": 25,
+        "v68PublishedProductBundleEqualsOldBuild": true,
+        "newBareExportHasNoQaFixture": true,
+        "authorBuildExitVerified": 0,
+        "qualification": "Full source preservation capture was taken after build launch, not before it; fixed pre-build 2-file manifest and PR187 34-file manifest supply the independent expected source hashes. No build/test rerun, live-site byte fetch, fixture injection or publication by reviewer."
+      },
+      "testsOrTscRerun": false,
+      "fixtureInjection": false,
+      "publication": false,
+      "qualification": [
+        "Bare production export; existing synthetic preview fixture is not injected and no public site was changed.",
+        "Bundle byte correspondence is not browser or real-service validation.",
+        "The full preservation reference was captured after build launch; product hashes were already frozen before build, and the original 61 artifacts also match the earlier build manifest."
+      ]
+    },
+    "postFixBrowser": {
+      "status": "not run",
+      "publication": "not performed for R01"
+    },
+    "preservedFailureBoundary": [
+      "Initial selector false green matched delete control as retry; retained and not counted as product pass.",
+      "Actual original red and v68 visible disabled history remain unchanged.",
+      "Earlier loading/query/PDF/family and stale export failures remain in original fields."
+    ],
+    "evidence": [
+      {
+        "file": "frontend_recovery_v68_20261010/RESULTS.json",
+        "sha256": "d0ef074f51cb5195bb2f1b5ad7b37f368d995bd6b0d7ca6a3b8cc6073435f3a3",
+        "bytes": 10921
+      },
+      {
+        "file": "frontend_recovery_v68_20261010/RESULTS.md",
+        "sha256": "60bc5ef6a9c60a9f8282486e7fd0c5b28af527ed18ac525869ce2b11b9220eb9",
+        "bytes": 4138
+      },
+      {
+        "file": "frontend_recovery_v68_20261010/evidence-manifest.json",
+        "sha256": "1b76449a76ef7c53cf311970fad69abf17c27d5c6940e4a22b200c64c46d5de7",
+        "bytes": 14272
+      },
+      {
+        "file": "frontend_recovery_contracts_20261010/REPORT.md",
+        "sha256": "e849333c250b51949a4b5112fe08500af36c6b02c853054c2f20398a3a2b7940",
+        "bytes": 8554
+      },
+      {
+        "file": "frontend_recovery_contracts_20261010/profile-history-harness-false-green.log",
+        "sha256": "d15121dfbc78b605aef10aed00e5f7e290c201bc3bcde591498a90b279f7b526",
+        "bytes": 233
+      },
+      {
+        "file": "frontend_recovery_contracts_20261010/profile-history-original-red.log",
+        "sha256": "1820cdf2e940349b8de85666cfad11d7f4b971c368d3cf74af1360adf4e4cd8a",
+        "bytes": 1079
+      },
+      {
+        "file": "frontend_recovery_contracts_20261010/REVIEW.md",
+        "sha256": "0a286223652ebfe641c7c5d37e133d2011370dbaeecaca5c4da758b3b26d99a9",
+        "bytes": 3880
+      },
+      {
+        "file": "frontend_recovery_contracts_20261010/review-manifest.json",
+        "sha256": "be07be75ce8b769ea2a71d292ddc3bd39f95e6474b28fc98e46705771c755686",
+        "bytes": 2220
+      },
+      {
+        "file": "frontend_recovery_contracts_20261010/profile-history-independent.log",
+        "sha256": "7fffcb8e39b369f8e845bfa92044205f20de061850455b844436fe3544bae289",
+        "bytes": 456
+      },
+      {
+        "file": "frontend_recovery_contracts_20261010/profile-history-independent-pagination.log",
+        "sha256": "d464073f2a93fdee334c2238c79595e1f1f58d1360e120eaab1343a56c353fdb",
+        "bytes": 236
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/baseline.json",
+        "sha256": "fce087cf09a4651bd78faabbfbae737b557455c0ab856257ec0770b641778b27",
+        "bytes": 423
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/manifest.json",
+        "sha256": "647d462c89d16611d44d56446b9634c5bb64a4b21e71434ab571dbb27cffc95f",
+        "bytes": 1780
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/checks.json",
+        "sha256": "395012789ebda547fd785810317d97cec81ad02b5d1ad3c2f9184662b39000c6",
+        "bytes": 2488
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/original-red.log",
+        "sha256": "7256ed2f6a6acbfcf9e1ab9560397291e0b98f238b44c73e6d4105becbad60f4",
+        "bytes": 1120
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/original-assertion-green.log",
+        "sha256": "254421aec3eacac1d14a754bca9ebf6d409ee671295c9cca5bd1587d7c80c275",
+        "bytes": 233
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/targeted-tests.log",
+        "sha256": "e78d76d2414e9aefd1e4dbee8a5fae66429c8424e48b747a7dedce8db2aa0c87",
+        "bytes": 784
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/typecheck.log",
+        "sha256": "4967fbc6570e53aed66096401abb034cda410c6c247362138ceb65c059914f19",
+        "bytes": 368
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/clear-build-summary.json",
+        "sha256": "28d733509348759934ea5708752adedf294987689a9383cddd74258da1d81b70",
+        "bytes": 2244
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/build-source-manifest.json",
+        "sha256": "036852ddf6a2af15193aa6a7eb652d7df564f8bd4d06c81f86b9ccb83d6d4583",
+        "bytes": 84171
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/build-artifact-manifest.json",
+        "sha256": "1e5cad21647aa038aa9b5f8bde83674635ce783d82de6743c3ddc965e985b86c",
+        "bytes": 12205
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/clear-bundle-verification.json",
+        "sha256": "bc7d5943d9a41b6e030032c4993f061931c433a08d3403ed78ce4ef51ae858e2",
+        "bytes": 5695
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/clear-build-web.log",
+        "sha256": "54858070b86ffa2ba85c981c3b925714e3f8cbee179dac53f0ad517e93f72ef5",
+        "bytes": 1900874
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/clear-build-web.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "bytes": 2
+      },
+      {
+        "file": "profile_history_recovery_fix_20261010/evidence/build-preparation-note.txt",
+        "sha256": "b795ad4d5f9aece14051140dda0974e5e3595ebbbbae1b4240a5cc63fe1c4280",
+        "bytes": 493
+      },
+      {
+        "file": "frontend_recovery_contracts_20261010/independent-build-review.json",
+        "sha256": "e5e56b4213b196e597ddb019b08f1db5eadad6a94564ca331881902bc0e01b79",
+        "bytes": 2625
+      },
+      {
+        "file": "frontend_recovery_contracts_20261010/independent-build-review.log",
+        "sha256": "1360ed1e65bc3df79ca5a3a2743ab7305295517710d279460615aa3198b2ec67",
+        "bytes": 1199
+      },
+      {
+        "file": "frontend_recovery_contracts_20261010/independent-build-review.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "bytes": 2
+      }
+    ],
+    "scopeBoundary": "Only frontend owner/test and existing frontend PLAN/STATUS/checks; no backend/root/fixture/product contract changes.",
+    "delivery": {
+      "changedFiles": 5,
+      "productAndTestFiles": 2,
+      "existingDocumentUpdates": 3,
+      "newPullRequest": false,
+      "merged": false,
+      "postFixPublication": false,
+      "postFixBrowser": false,
+      "rootDeliveryDecision": "pending"
+    }
+  },
+  "currentCombinedDelivery": {
+    "baseCommit": "fddd32deaa04fea8db39553ea6b3e050769b6a5d",
+    "state": "seven_file_source_and_current_clear_build_reviewed_final_docs_and_root_delivery_pending",
+    "filesAreProvisionalUntilFinalManifest": false,
+    "priorFiveFileManifest": {
+      "file": "frontend_recovery_doc_candidate_20261010/evidence/combined-five-manifest.json",
+      "sha256": "e9be56e897e02abb71ba2ef7971b50a4643dfdd8ea646b990977f91ebc8211e5",
+      "bytes": 2893
+    },
+    "priorFiveFilePatch": {
+      "file": "frontend_recovery_doc_candidate_20261010/evidence/profile-recovery-combined-five.patch",
+      "sha256": "467c8c342d184058e52f5445d5846dfc12ffa560d2a38787c57575ac41151b94",
+      "bytes": 50740
+    },
+    "boundary": "recoveryIncrement is the preserved R01 five-file stage. Current combined state/build are here; summaryTaskIncrement records title-only source tests and the separate unmodified-v68 browser increment. No post-fix publication/browser/PR/merge claimed.",
+    "changedFiles": 7,
+    "codeTestFiles": 4,
+    "existingDocumentUpdates": 3,
+    "productAndTestFiles": [
+      {
+        "path": "frontend/src/production/CareProfileDomains.tsx",
+        "baseSha256": "af15e78f4ddad8e731a14ef5afccb2e9e9b20ee8bf038d60d62dab816fd52d60",
+        "sha256": "54c44974a69702b9287d2df150f71636d660e52f06db281658cd7ef3f0efd44c",
+        "bytes": 42852
+      },
+      {
+        "path": "frontend/scripts/profile-history-recovery.test.cjs",
+        "baseSha256": null,
+        "sha256": "f24bc27ca67aa72160cab9b1c56679d1c167b78dff883c14f700dbfb9e743c5c",
+        "bytes": 14819
+      },
+      {
+        "path": "frontend/src/components/preparations/DocumentCreateForm.tsx",
+        "bytes": 7323,
+        "sha256": "cea27ded540c1df71096a4ade734d76d28e727dfb2fed7fae34972895173774f",
+        "baseSha256": "cba7050e8f52a1406822ea7aca2abafb78e81e64d8ac93091b5dce935156d089",
+        "gitBlob": "98cd283409815d064071cbb59379078fab740962"
+      },
+      {
+        "path": "frontend/scripts/document-title-accessibility-dom.test.cjs",
+        "bytes": 9182,
+        "sha256": "ae4f14963cef74c64dbdc624e8eb10ec3c96db788142e2c27576ad52379b863f",
+        "baseSha256": null,
+        "gitBlob": "d2880c3e612d6116e51cf3abb1c3df2df0e00913"
+      }
+    ],
+    "sourceManifest": {
+      "file": "recovery_label_combined_20261010/evidence/combined-source-manifest.json",
+      "sha256": "3e8bf06f1ad2e9393f1385c5ed0dc0adca9e204af6fd8fab2988cb7d8298933b",
+      "bytes": 85139
+    },
+    "currentBuild": {
+      "typecheckExit": 0,
+      "buildExit": 0,
+      "buildsRun": 1,
+      "buildCommand": "CI=1 EXPO_DEBUG=1 EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 npm run build:web --workspace frontend -- --clear --output-dir ../../dist-recovery-label-combined",
+      "staticRoutes": 35,
+      "artifactFiles": 61,
+      "bundle": {
+        "path": "dist-recovery-label-combined/_expo/static/js/web/index-15ea99b9d58dbaff55bb7273d070946a.js",
+        "sha256": "737cdd1a8ebb01b73ecc45ba4663cd59367f997ef44e4d5c1211376264fafb8d",
+        "bytes": 5158374
+      },
+      "testsRerun": false,
+      "fixtureInjection": false,
+      "publication": false,
+      "independentArtifact": {
+        "checkedAtUtc": "2026-10-10T18:45:32.573655+00:00",
+        "decision": "allow_combined_source_and_bare_build_artifacts",
+        "buildsRunByReviewer": 0,
+        "productTestsRunForArtifactReview": 0,
+        "sourceFiles": 472,
+        "sourcePrePostExact": true,
+        "changedVsFrozenR01": [
+          "frontend/scripts/document-title-accessibility-dom.test.cjs",
+          "frontend/src/components/preparations/DocumentCreateForm.tsx"
+        ],
+        "reviewedCodeTestFiles": 4,
+        "codeTestHashesMatchIndependentFrozenInputs": true,
+        "originalR01SourceAndArtifactsUnchanged": true,
+        "officialV68ArtifactsUnchanged": true,
+        "artifactFiles": 61,
+        "artifactBytes": 10084437,
+        "bundlePath": "recovery_label_combined_20261010/dist-recovery-label-combined/_expo/static/js/web/index-15ea99b9d58dbaff55bb7273d070946a.js",
+        "bundleSha256": "737cdd1a8ebb01b73ecc45ba4663cd59367f997ef44e4d5c1211376264fafb8d",
+        "bundleBytes": 5158374,
+        "bundleLines": 2603,
+        "changedLines": [
+          2193
+        ],
+        "unchangedOtherLinesIncludingEndings": 2602,
+        "titleByteDiffOperations": [
+          {
+            "kind": "replace",
+            "old": "R",
+            "new": "L"
+          },
+          {
+            "kind": "replace",
+            "old": "L",
+            "new": "R"
+          },
+          {
+            "kind": "insert",
+            "old": "",
+            "new": "accessibilityLabel:q.title,"
+          },
+          {
+            "kind": "replace",
+            "old": "R",
+            "new": "L"
+          },
+          {
+            "kind": "replace",
+            "old": "L",
+            "new": "R"
+          }
+        ],
+        "r01OwnerByteIdentical": true,
+        "htmlOnlyChangedBundleReference": 35,
+        "otherArtifactsByteIdentical": 25,
+        "newExportHasNoFixture": true,
+        "authorTypecheckAndClearBuildLogsExit0": true,
+        "limits": [
+          "This is source/build byte verification, not live browser, network, screen reader, fixture injection or publication.",
+          "Four behavior-preserving local identifier renames are independently checked via scope-bound AST normalization separately.",
+          "Final documentation and synthetic preview packaging are separate pending reviews."
+        ]
+      },
+      "independentMinifierBindingReview": {
+        "sameAstAfterExactLabelRemovalAndBindingScopedAlphaRename": true,
+        "oldBindings": [
+          {
+            "original": "R",
+            "normalized": "__reviewPurposeOptions",
+            "referenceCount": 1,
+            "referenceParent": "ObjectProperty",
+            "referenceKey": "options"
+          },
+          {
+            "original": "L",
+            "normalized": "__reviewSubmitDraft",
+            "referenceCount": 1,
+            "referenceParent": "ObjectProperty",
+            "referenceKey": "onPress"
+          }
+        ],
+        "newBindings": [
+          {
+            "original": "L",
+            "normalized": "__reviewPurposeOptions",
+            "referenceCount": 1,
+            "referenceParent": "ObjectProperty",
+            "referenceKey": "options"
+          },
+          {
+            "original": "R",
+            "normalized": "__reviewSubmitDraft",
+            "referenceCount": 1,
+            "referenceParent": "ObjectProperty",
+            "referenceKey": "onPress"
+          }
+        ],
+        "removedNewTitleLabelProperties": 1,
+        "oldTitleLabelProperties": 0,
+        "interpretation": "The two minifier locals each have one bound use; declaration/use renames preserve binding identity. Only the title accessibilityLabel property differs semantically. No bundle execution or product test was performed."
+      }
+    },
+    "evidence": [
+      {
+        "file": "recovery_label_combined_20261010/evidence/combined-build-summary.json",
+        "sha256": "5d0dbf9ea95bd9c30531e2d717aadc47f41468b303c925bf95b845cf62bc722e",
+        "bytes": 2595
+      },
+      {
+        "file": "recovery_label_combined_20261010/evidence/combined-artifact-manifest.json",
+        "sha256": "9711465da828168a649357976e363bdfe7133fe6e52ab3bead8f1d8883a433ba",
+        "bytes": 12205
+      },
+      {
+        "file": "recovery_label_combined_20261010/evidence/combined-bundle-verification.json",
+        "sha256": "9a1500e9d8eeb1c9cfa318defa889a729a5688323efa9251130b877eeb22cffb",
+        "bytes": 5725
+      },
+      {
+        "file": "recovery_label_combined_20261010/evidence/combined-typecheck.log",
+        "sha256": "4967fbc6570e53aed66096401abb034cda410c6c247362138ceb65c059914f19",
+        "bytes": 368
+      },
+      {
+        "file": "recovery_label_combined_20261010/evidence/combined-typecheck.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "bytes": 2
+      },
+      {
+        "file": "recovery_label_combined_20261010/evidence/combined-clear-build-web.log",
+        "sha256": "1fa2b6c6146195caa8f3d472f1c2d2fbbe46e91d9a8d808a09c737aa33e8f64e",
+        "bytes": 1891898
+      },
+      {
+        "file": "recovery_label_combined_20261010/evidence/combined-clear-build-web.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "bytes": 2
+      },
+      {
+        "file": "recovery_label_combined_20261010/evidence/compiled-title-symbol-expectation-failure.log",
+        "sha256": "038fdd5732c831d0181fc9e595082cd318305fed26f66362e994e735b65d452c",
+        "bytes": 342
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/combined-independent-artifact-review.json",
+        "sha256": "07d88118ecbd92586701e97cc1a3d4bf829acb83f021576436601a3eef8dd4ae",
+        "bytes": 1966
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/combined-title-ast-review.json",
+        "sha256": "dfd4d90070a8256d041066a41a5d07d050bb4bb20ab9d41fad35d7d2d81e142f",
+        "bytes": 1157
+      }
+    ],
+    "localPreviewPackage": {
+      "decision": "allow_exact_local_synthetic_preview_package",
+      "checkedAtUtc": "2026-10-10T18:46:44.402600+00:00",
+      "candidateManifestSha256": "07ce67e401932c7a4659959f54abde1a05476e6b9aad001e9a9d7b7f39df799b",
+      "files": 68,
+      "staticFiles": 67,
+      "hostingFiles": 1,
+      "exactExpectedFileSet": true,
+      "productArtifacts": 61,
+      "productHtmlWithExactOriginalV68Prefix": 35,
+      "byteIdenticalNonHtmlProductArtifacts": 26,
+      "sameCspFixturePrefixHashes": [
+        "101ee762204b897d8310d322cbbfe049023e041a420e9f4783dd7e1b3bd856eb"
+      ],
+      "allRetainedQAAndHostingBytesIdentical": [
+        ".openai/hosting.json",
+        "dist/qa-viewport.html",
+        "dist/qa/qa-fixture.js",
+        "dist/qa/qa-recovery-fixture.js",
+        "dist/qa/qa-viewport.css",
+        "dist/qa/qa-viewport.js",
+        "dist/qa/synthetic-qa.png"
+      ],
+      "htmlResourceReferencesVerifiedLocal": 353,
+      "bundleSha256": "737cdd1a8ebb01b73ecc45ba4663cd59367f997ef44e4d5c1211376264fafb8d",
+      "bundleEqualsIndependentlyReviewedBareBuild": true,
+      "originalR01PreviewCandidateUnchanged": true,
+      "officialV68CheckoutCleanAndUnchanged": true,
+      "testsBuildsAndFixtureSuitesRerun": false,
+      "noPublicationOrCredentials": true,
+      "limits": [
+        "Local package only, not deployed or post-fix browser acceptance.",
+        "Preserves existing recovery synthetic writes separately from five GET compatibility branches; no new write permission.",
+        "Model/network/real-family data and full accessibility/error semantics remain unverified."
+      ],
+      "reviewFile": "frontend_summary_task_contracts_20261010/combined-independent-preview-review.json",
+      "reviewSha256": "de2734e39cbc772bdb6b95c3ec1367f629a1dfa5939f872e00db477660683637"
+    }
+  },
+  "summaryTaskIncrement": {
+    "findingId": "summary-document-title-accessible-name",
+    "state": "title code/test independent review passed; current combined build separately verified",
+    "browserBeforeFix": {
+      "version": 68,
+      "sitesSource": "c5063f5ef7827d6856646da0888a311328973912",
+      "githubMasterFromParent": "fddd32deaa04fea8db39553ea6b3e050769b6a5d",
+      "versionProvenance": "Parent reported official master/Sites check at 18:30 UTC. This worker independently observed the deployed script name, not its live byte hash. No publish or code change.",
+      "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+      "observedAt": "2026-10-10T18:31:04Z/2026-10-10T18:35:25Z",
+      "browser": "dot cloud Chrome/CDP, worker-created tab21",
+      "viewport": {
+        "width": 1180,
+        "height": 757
+      },
+      "scriptNameObserved": "/_expo/static/js/web/index-c98fec8b5d1c583f91a50a25e4bbe36f.js",
+      "status": "Four bounded interaction flows completed; one concrete accessible-name omission; two inline post-unmount focus observations retained without claiming a proven defect.",
+      "flows": [
+        {
+          "id": "ST68-01",
+          "name": "Summary overview/preparation and inline document reading",
+          "status": "bounded sample passed",
+          "actions": [
+            "Open /summary; select 準備單",
+            "Enter on 合成準備 A：閱讀外出",
+            "Escape once on inline detail; use 返回準備單清單",
+            "Reopen and inspect 來源與版本; return"
+          ],
+          "observed": [
+            "Tabs and URL match overview/preparation selection",
+            "Existing synthetic A/B are visible; A document ID 10000000-0000-4000-8000-000000001000, body ID 10000000-0000-4000-8000-000000001010, version1",
+            "Enter focuses inline detail container; returning focuses original A row",
+            "Escape leaves inline detail intact; source worker confirmed this is not a Modal/Escape-close contract",
+            "No direct edit action for existing A was visible. Manual fallback creates a new local document draft, so existing-document editing is NOT counted as tested."
+          ],
+          "evidence": [
+            "evidence/02-preparation-selected.ax.txt",
+            "evidence/03-preparation-detail-open.ax.txt",
+            "evidence/03-preparation-detail-open.png",
+            "evidence/04-preparation-inline-escape.ax.txt",
+            "evidence/05-preparation-return-focus.ax.txt",
+            "evidence/08-preparation-source-version.ax.txt"
+          ]
+        },
+        {
+          "id": "ST68-02",
+          "name": "Tasks edit empty-field feedback, local review and discard",
+          "status": "bounded validation/discard passed; inline review return focus observation remains",
+          "actions": [
+            "Reveal 較早未處理 existing synthetic task",
+            "Enter row; open 改期／轉派",
+            "Empty reason -> 預覽家庭共享內容",
+            "Type synthetic reason only -> preview; continue editing",
+            "After date-modal sample, 放棄草稿"
+          ],
+          "observed": [
+            "Detail and editing are inline panels, not modal dialogs",
+            "Empty reason displays one-item error summary and places focus on 原因（必填）",
+            "Synthetic reason clears error and local preview says 尚未保存; confirmation unchecked and final save disabled",
+            "Continue editing removes preview while keeping reason; AX focus becomes WebArea, retained as an observation rather than established defect",
+            "放棄草稿 returns to original row; due time/status remain 10月8日14:00/待回報"
+          ],
+          "evidence": [
+            "evidence/11-earlier-task-visible.ax.txt",
+            "evidence/13-task-edit-open.ax.txt",
+            "evidence/14-task-empty-reason-feedback.ax.txt",
+            "evidence/14-task-empty-reason-feedback.png",
+            "evidence/16-task-review-preview.ax.txt",
+            "evidence/17-task-continue-edit.ax.txt",
+            "evidence/24-task-draft-discarded.ax.txt"
+          ]
+        },
+        {
+          "id": "ST68-03",
+          "name": "Tasks date modal keyboard boundary and cancel",
+          "status": "bounded sample passed",
+          "actions": [
+            "Enter 選擇新安排時間",
+            "Shift+Tab from initial Close; Tab again",
+            "Escape; reopen; Cancel"
+          ],
+          "observed": [
+            "Initial focus is Close modal",
+            "Shift+Tab wraps to last 選用新安排時間; Tab wraps to Close",
+            "Escape and Cancel both close modal and return focus to original 選擇新安排時間",
+            "No date/time changed, applied or saved; synthetic reason survives both dismissals"
+          ],
+          "evidence": [
+            "evidence/18-task-date-dialog-open.ax.txt",
+            "evidence/18-task-date-dialog-open.png",
+            "evidence/19-date-dialog-backward-wrap.ax.txt",
+            "evidence/20-date-dialog-forward-wrap.ax.txt",
+            "evidence/21-date-dialog-escape-return.ax.txt",
+            "evidence/23-date-dialog-cancel-return.ax.txt"
+          ]
+        },
+        {
+          "id": "ST68-04",
+          "name": "Summary local creation draft guard and explicit discard",
+          "status": "bounded guard/discard passed; title accessible-name failure found",
+          "actions": [
+            "Expand 手動備援：直接整理準備單",
+            "Enter synthetic title only, without confirmation",
+            "Attempt overview tab -> dirty-navigation modal -> Escape",
+            "Repeat -> 繼續編輯",
+            "放棄未提交草稿; collapse; select overview"
+          ],
+          "observed": [
+            "Guard preserves preparation URL/selected tab and title",
+            "Escape and keep-editing both close modal and return focus to overview trigger; draft remains",
+            "Explicit discard clears title, dates stay empty, confirmation stays unchecked, create remains disabled",
+            "Discard removes its own button and AX focus becomes WebArea, retained as an observation",
+            "Clean tab switch succeeds after discard; no document created"
+          ],
+          "evidence": [
+            "evidence/28-summary-unsaved-draft.ax.txt",
+            "evidence/29-summary-dirty-tab-guard.ax.txt",
+            "evidence/29-summary-dirty-tab-guard.png",
+            "evidence/30-summary-dirty-escape-return.ax.txt",
+            "evidence/32-summary-keep-editing-return.ax.txt",
+            "evidence/33-summary-draft-discarded.ax.txt",
+            "evidence/37-summary-clean-tab-return.ax.txt"
+          ]
+        }
+      ],
+      "findings": [
+        {
+          "id": "summary-document-title-accessible-name",
+          "priority": "P2",
+          "status": "browser-confirmed accessible-name omission; independently confirmed by true-component offline DOM red case",
+          "url": "/summary?tab=preparation",
+          "steps": [
+            "Expand 手動備援：直接整理準備單",
+            "Focus empty 文件名稱 field"
+          ],
+          "observed": "Visible 文件名稱 label has no programmatic association. AX focused field has no accessible name; read-only DOM finds aria-label=null, aria-labelledby=null, placeholder=null, no label elements. Three adjacent date inputs have explicit aria-labels.",
+          "impact": "Assistive technology cannot identify the empty title field by its visible 文件名稱 label. No full screen-reader run is claimed.",
+          "evidence": [
+            "evidence/33-summary-draft-discarded.ax.txt",
+            "evidence/34-summary-field-semantics.json",
+            "evidence/35-title-accessible-name.ax.txt",
+            "evidence/35-title-accessible-name.png"
+          ],
+          "sourceConfirmation": {
+            "sourceCommit": "fddd32deaa04fea8db39553ea6b3e050769b6a5d",
+            "provenance": "../frontend_summary_task_contracts_20261010/source-provenance.json",
+            "offlineRed": "../frontend_summary_task_contracts_20261010/document-title-accessibility.red.cjs",
+            "offlineResult": "../frontend_summary_task_contracts_20261010/document-title-accessibility-dom.json",
+            "offlineLog": "../frontend_summary_task_contracts_20261010/document-title-accessibility-red.log",
+            "workerFinding": "Real DocumentCreateForm/AppTextField/Paper TextInput/RNWeb reproduces unnamed visible title field; minimal caller fix would add accessibilityLabel={labels.title} in DocumentCreateForm.tsx:50. No product file changed in this browser task."
+          }
+        }
+      ],
+      "incidentalObservations": [
+        "Tasks Continue Editing and Summary explicit discard each unmount focused inline button and leave AX focus at WebArea. No explicit corresponding focus contract was found by source worker; do not count these as confirmed regressions or clean focus passes."
+      ],
+      "toolObservations": [
+        "All interactions used freshly observed AX controls; no no_matches tool error occurred in this batch. No policy denial or inaccessible locator was labelled a product defect.",
+        "Filename 12-task-detail-dialog is historical capture naming only: its content is an inline task detail, not a dialog."
+      ],
+      "counts": {
+        "flows": 4,
+        "AXRecords": 39,
+        "PNGFiles": 11,
+        "DOMJSONRecords": 1,
+        "totalEvidenceFiles": 51,
+        "note": "Evidence includes intermediate states and cleanup; 51 evidence files do not mean 51 tests."
+      },
+      "safety": "Only synthetic visible UI, local draft text and read-only DOM-backed labels/scripts/dimensions. No save, delete, archive, checklist write, external message, Agent/model call, permission/security, real personal data, hidden state injection, loopback, shell Chromium, code change or publication. R01 profile history was not rerun or changed.",
+      "cleanup": {
+        "taskDraft": "Explicit 放棄草稿; return to original row observed",
+        "summaryDraft": "Explicit 放棄未提交草稿; title empty and create disabled; clean tab switch observed",
+        "normalMode": "Visible 正常更新 selected and settled Summary observed",
+        "closedTab": "21",
+        "otherTabs": "Untouched"
+      },
+      "limitations": [
+        "No existing-prepared-document editing because no such action exists in observed UI; manual fallback is creation, not editing",
+        "No successful writes, version changes, pending/conflict/late-response races, real backend or model/message validation",
+        "Only 1180x757; no responsive/touch/native/zoom/full screen reader matrix",
+        "No full keyboard traversal for every control; only date-modal first/last boundary and listed returns",
+        "No DOM dialog-role audit or proof of entire background inertness",
+        "No live served byte hash or network trace; version metadata attributed to parent"
+      ]
+    },
+    "browserEvidenceHashesChecked": 51,
+    "evidence": [
+      {
+        "file": "frontend_summary_tasks_v68_20261010/RESULTS.json",
+        "sha256": "c47da1aec4c69e4f0affc582fcc98040ee41b26b2f3ca7e9403bc747e4bf1cec",
+        "bytes": 10085
+      },
+      {
+        "file": "frontend_summary_tasks_v68_20261010/RESULTS.md",
+        "sha256": "79978762eacb67f373a04dbdbfa1b8ff07fddead6142c8f20ae83b15d967ab86",
+        "bytes": 3540
+      },
+      {
+        "file": "frontend_summary_tasks_v68_20261010/evidence-manifest.json",
+        "sha256": "860a8f5f0dfb2733c34922adb6740637a1a90258b534a5021c2bdc557a962e5b",
+        "bytes": 8404
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/RESULTS.md",
+        "sha256": "fb4b85138435ac964736d86fb11837dea99d205b9447290e7b6ce3d22a491962",
+        "bytes": 8988
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/source-provenance.json",
+        "sha256": "c8ed1be77cb0eb3385a9458e487185cef5ed45e0241466d9f184465bacccf693",
+        "bytes": 24181
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/document-title-accessibility-dom.json",
+        "sha256": "a2442b12a9ae320eb78d27221d8ba4206b8b98e1bf6e3648e18bea91ab2242af",
+        "bytes": 355
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/document-title-accessibility-red.log",
+        "sha256": "ea5b9eb2094549f995d0e1672f6fd24b5e7b2da57a96a5e83c231d2ba8851214",
+        "bytes": 971
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/document-title-accessibility.red.cjs",
+        "sha256": "44644b6776c62ba3c2985aaef7990061a1bfa3372d54692f4b59ee764a0a4d12",
+        "bytes": 5725
+      },
+      {
+        "file": "document_title_label_fix_20261010/evidence/manifest.json",
+        "sha256": "90212b282c1c13aa88894df7ce87eef1c122b07cdb8f368a7a9172aef2693e4d",
+        "bytes": 902
+      },
+      {
+        "file": "document_title_label_fix_20261010/evidence/checks.json",
+        "sha256": "ea1bacd0ef4a2acacdf342a4fb3796d7bce60d689e8340bf21d17f648c0163cb",
+        "bytes": 4362
+      },
+      {
+        "file": "document_title_label_fix_20261010/evidence/original-red.log",
+        "sha256": "604d0cca86b34dba811a24d7ed2a18c467bb28034d5ea6515bc84ed068f84eae",
+        "bytes": 959
+      },
+      {
+        "file": "document_title_label_fix_20261010/evidence/original-green.log",
+        "sha256": "099eb32b300a275298e702baff0b9cb08efa92bb59c66d226a6351d3aceeab4d",
+        "bytes": 589
+      },
+      {
+        "file": "document_title_label_fix_20261010/evidence/targeted-tests.log",
+        "sha256": "3eb158688c3768c2e105770612e68d11de62b5deb7312770594eef6b91781b17",
+        "bytes": 878
+      },
+      {
+        "file": "document_title_label_fix_20261010/evidence/error-attribute-expectation-failure.log",
+        "sha256": "21724120254fdebbb4156002fdf6980c048432d27e838d2c67b20faf18901686",
+        "bytes": 2431
+      },
+      {
+        "file": "document_title_label_fix_20261010/evidence/harness-dependency-setup-failure.log",
+        "sha256": "2ce5f8eac2a7c33e78964268ac25292751ebdc8c19327e5bc73225c4315416ca",
+        "bytes": 1113
+      },
+      {
+        "file": "document_title_label_fix_20261010/evidence/harness-selector-failure.log",
+        "sha256": "21979488bef9cbb09a321256d6abdc49fdb0d1057c02a98ec5a34c7fb5cdbcdf",
+        "bytes": 2399
+      },
+      {
+        "file": "document_title_label_fix_20261010/evidence/readonly-attribute-expectation-failure.log",
+        "sha256": "195d8b042edee630e645160bd344cf652cccedcec3afbf2078279324c96790ba",
+        "bytes": 2429
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/TITLE_LABEL_REVIEW.md",
+        "sha256": "e748c960cad4e3111b1b4a97e85aa67bd350d7b5d8ecad1a8f7cb730a5e2c74e",
+        "bytes": 3538
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/title-independent-original-green.log",
+        "sha256": "099eb32b300a275298e702baff0b9cb08efa92bb59c66d226a6351d3aceeab4d",
+        "bytes": 589
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/title-independent-original-green.exit",
+        "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+        "bytes": 2
+      },
+      {
+        "file": "frontend_summary_task_contracts_20261010/title-independent-original-green-dom.json",
+        "sha256": "0044b90e1b756e0685c4375b178c18c25968c5bb33e2e11fb1c0444d61cdeffa",
+        "bytes": 377
+      }
+    ],
+    "fixScope": "DocumentCreateForm caller accessibilityLabel=labels.title only; no shared TextField, save, draft, focus or API contract redesign.",
+    "postFixBrowser": false,
+    "publication": false,
+    "newCombinedBuild": "see currentCombinedDelivery.currentBuild; title author tests unchanged and not rerun during combined build",
+    "countingBoundary": "Four bounded flows;39AX+11PNG+1DOM JSON are51 evidence files, not51 tests. Inline post-unmount focus retained as unclassified observation, not confirmed regression or passed focus.",
+    "productAndTestFiles": [
+      {
+        "path": "frontend/src/components/preparations/DocumentCreateForm.tsx",
+        "bytes": 7323,
+        "sha256": "cea27ded540c1df71096a4ade734d76d28e727dfb2fed7fae34972895173774f",
+        "baseSha256": "cba7050e8f52a1406822ea7aca2abafb78e81e64d8ac93091b5dce935156d089",
+        "gitBlob": "98cd283409815d064071cbb59379078fab740962"
+      },
+      {
+        "path": "frontend/scripts/document-title-accessibility-dom.test.cjs",
+        "bytes": 9182,
+        "sha256": "ae4f14963cef74c64dbdc624e8eb10ec3c96db788142e2c27576ad52379b863f",
+        "baseSha256": null,
+        "gitBlob": "d2880c3e612d6116e51cf3abb1c3df2df0e00913"
+      }
+    ],
+    "incrementPatchSha256": "12f0a3862c3d3d53bbef335b7fcb4951adfcf729fa99fefefc2eac8c1d193c33",
+    "authorVerification": {
+      "baseCommit": "fddd32deaa04fea8db39553ea6b3e050769b6a5d",
+      "remoteRecheckedAt": "2026-10-10T18:40:49Z",
+      "openPulls": [],
+      "scope": "DocumentCreateForm title input only. One accessibilityLabel prop and two focused DOM regression cases.",
+      "originalReproduction": {
+        "file": "original-assertion.cjs",
+        "red": {
+          "exit": 1,
+          "log": "original-red.log",
+          "dom": "original-red-dom.json",
+          "name": ""
+        },
+        "green": {
+          "exit": 0,
+          "log": "original-green.log",
+          "dom": "original-green-dom.json",
+          "name": "文件名稱"
+        },
+        "unchangedAssertion": "assert.equal(name, '文件名稱', 'Document title text input must expose its visible field name');",
+        "changesFromOriginalHarness": "Only source, existing jsdom and evidence-output paths were parameterized; assertions and components are unchanged."
+      },
+      "targetedTests": {
+        "log": "targeted-tests.log",
+        "dom": "targeted-dom.json",
+        "exit": 0,
+        "pass": 2,
+        "fail": 0,
+        "kinds": [
+          "preparation",
+          "growth_report"
+        ],
+        "checks": [
+          "Visible title and host aria-label/name source",
+          "Original required and maximum-length HelperText",
+          "Existing error-summary button focuses the title via RHF ref",
+          "Raw whitespace and overlength draft retained across validation and locked/failed owner rerender",
+          "Locked Paper input remains RN Web readOnly",
+          "Zero createDocument calls and zero fetch calls"
+        ],
+        "realComponents": [
+          "DocumentCreateForm",
+          "react-hook-form",
+          "AppTextField",
+          "Paper TextInput",
+          "FormErrorSummary",
+          "FormFieldMessage",
+          "Paper HelperText",
+          "RN Web"
+        ],
+        "doubles": [
+          "Non-title select/date/checkbox controls",
+          "AppButton rendering only",
+          "Appearance-only dependencies",
+          "StatusAnnouncement",
+          "Synthetic owner"
+        ],
+        "dependencyVersions": {
+          "react": "19.2.3",
+          "reactNativePaper": "5.15.3",
+          "reactNativeWeb": "0.21.2",
+          "reactHookForm": "7.88.0"
+        }
+      },
+      "retainedFailures": [
+        {
+          "log": "harness-dependency-setup-failure.log",
+          "classification": "Harness setup",
+          "detail": "Initial dependency symlink incorrectly targeted a nonexistent frontend/node_modules; corrected to existing root node_modules. No product assertion ran."
+        },
+        {
+          "log": "harness-selector-failure.log",
+          "classification": "Harness selector",
+          "detail": "RN Web omits the default type=text attribute. Changed selector to input:not([type=checkbox]); title-name assertion itself unchanged."
+        },
+        {
+          "log": "error-attribute-expectation-failure.log",
+          "classification": "Separate unresolved accessibility observation",
+          "detail": "Required HelperText appears but input aria-invalid is null. Removed the newly added unestablished aria-invalid expectation from this title-name fix's passing tests. This is not a full error-semantics pass and the original failing expectation remains in this log."
+        },
+        {
+          "log": "readonly-attribute-expectation-failure.log",
+          "classification": "Harness host-property expectation",
+          "detail": "Paper disabled maps to editable=false, then RN Web readOnly, not HTML disabled. Corrected assertion to readOnly=true after inspecting installed TextInputOutlined.js:295 and RN Web TextInput/index.js:373; no product change."
+        }
+      ],
+      "unresolved": [
+        "Observed aria-invalid absent under validation; not fixed in this one-line name patch.",
+        "Error association via aria-describedby/aria-errormessage and actual screen-reader output are not validated."
+      ],
+      "notRun": [
+        "R01 suite",
+        "Previous 34-file suite",
+        "Full typecheck/lint",
+        "Build/export",
+        "Post-fix browser/responsive/visual/screen-reader testing",
+        "Real HTTP, model, family data or full-form submission"
+      ],
+      "unchanged": [
+        "Shared ui.tsx",
+        "FormErrorSummary.tsx",
+        "Data/owner behavior and permissions",
+        "R01 frozen source and evidence",
+        "Preview fixtures"
+      ],
+      "noExternalWrites": true,
+      "application": {
+        "patch": "../document-title-label.patch",
+        "manifest": "manifest.json",
+        "patchCheck": "patch-apply-check.json",
+        "note": "Apply as the two-file increment to the pending R01 batch; no separate PR, build, publication or mint performed."
+      }
+    },
+    "independentSourceReview": {
+      "decision": "Allow",
+      "originalAssertionGreenRerun": {
+        "pass": 1,
+        "fail": 0
+      },
+      "authorTwoKindsRerun": false,
+      "counting": "Reviewer one green repeats original assertion; author two kinds reviewed by source/log, not rerun. No summed unique count."
+    }
+  },
+  "recoveryLabelCurrentState": {
+    "state": "v69_published_two_original_failures_passed_bounded_browser_single_pr_preparation_pending_root_review",
+    "repositoryBase": "fddd32deaa04fea8db39553ea6b3e050769b6a5d",
+    "scope": "Same7 frontend files;4 code/test unchanged and3 existing docs updated only. No backend or root changes.",
+    "historicalBoundary": "All fields through summaryTaskIncrement/currentCombinedDelivery preserve the pre-publication7-file stage and earlier snapshots. Latest publication/browser evidence is publishedRecoveryLabelPreview. Earlier pending-publication states are historical.",
+    "originalSevenManifest": {
+      "file": "frontend_recovery_document_label_docs_20261010/evidence/combined-seven-manifest.json",
+      "sha256": "58fe20717a430dace25807e82666011b1d9ef2d02353405831d8fcb41dea79ac",
+      "bytes": 3529
+    },
+    "originalSevenReview": {
+      "file": "frontend_summary_task_contracts_20261010/FINAL_SEVEN_FILE_REVIEW.json",
+      "sha256": "899eb1e8fa8bccfedf164204f0813aeca71a2e6de1df06388354282124a55691",
+      "bytes": 3368
+    },
+    "newPR": false,
+    "merge": false,
+    "rootDeliveryDecision": "pending"
+  },
+  "publishedRecoveryLabelPreview": {
+    "version": 69,
+    "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+    "sitesSource": "b47344b0a4b3f94a2322c1218f41c90255b3216c",
+    "publication": {
+      "status": "succeeded",
+      "updatedAt": "2026-10-10T18:50:59.476516+00:00",
+      "receipt": {
+        "file": "preview_recovery_label_20261010/evidence/publication-receipt.json",
+        "sha256": "2d9d82a1292fdd75081d356732b06ffaf1de88143d8627dac2bf69bf8d4633b2",
+        "bytes": 1324
+      },
+      "archiveHash": "sha256:6360da854b9b97068f26e9b5c1725f3689aeefa7ffd8246717ee954d1d96eb54",
+      "archiveFileCount": 68
+    },
+    "bundle": {
+      "name": "index-15ea99b9d58dbaff55bb7273d070946a.js",
+      "sha256": "737cdd1a8ebb01b73ecc45ba4663cd59367f997ef44e4d5c1211376264fafb8d",
+      "hashProvenance": "Independently reviewed build and publication package; browser observed script name only, not live served bytes."
+    },
+    "browser": {
+      "version": 69,
+      "sitesSource": "b47344b0a4b3f94a2322c1218f41c90255b3216c",
+      "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+      "publishedAtFromParent": "2026-10-10T18:50:59Z",
+      "observedAt": "2026-10-10T18:52:09Z/2026-10-10T18:54:39Z",
+      "browser": "dot cloud Chrome/CDP; worker-created tab23",
+      "viewport": {
+        "width": 1180,
+        "height": 757
+      },
+      "scriptNameObserved": "/_expo/static/js/web/index-15ea99b9d58dbaff55bb7273d070946a.js",
+      "candidateBundleSha256FromParent": "737cdd1a8ebb01b73ecc45ba4663cd59367f997ef44e4d5c1211376264fafb8d",
+      "provenanceBoundary": "Parent supplied official Sites version/source/publication and candidate bundle hash. This worker independently read the loaded DOM script name and viewport, not live JavaScript bytes or a network trace.",
+      "status": "Both original red flows passed this bounded v69 browser recheck.",
+      "flows": [
+        {
+          "id": "R69-01",
+          "findingId": "profile-history-retry",
+          "name": "Dirty profile history failure, current-profile refresh and manual retry",
+          "status": "bounded red-to-green passed",
+          "baseline": "../frontend_recovery_v68_20261010/RESULTS.json: R68-06; original evidence56-61",
+          "actions": [
+            "Select synthetic Sunny through the original Profile child control",
+            "Change only region to 香港（合成歷史重試草稿）",
+            "Visible recovery panel: 下一次基本資料歷史讀取失敗; queue1 observed; collapse panel",
+            "Press original 查看較早版本 once",
+            "Press original 重新讀取檔案 once and wait for ready state",
+            "Press original 查看較早版本 once more",
+            "Restore region to 香港, then use original 捨棄草稿並離開 confirmation to leave for Summary"
+          ],
+          "observed": [
+            "One-shot failure shows 未能讀取檔案歷史，請稍後重試。; 查看較早版本 remains enabled and history stays closed",
+            "While current-profile re-read is pending controls are temporarily disabled; once ready, 查看較早版本 is enabled, history is not falsely marked shown, and local synthetic region plus dirty notice survive",
+            "One manual retry succeeds: one visible revision1 block appears; button becomes disabled 已顯示歷史 only after this success",
+            "The original region draft and dirty notice remain after history success; no duplicate visible history revision appears",
+            "Restoring region removes the form dirty notice; navigation still opens the owner discard confirmation, which is explicitly accepted for this synthetic draft"
+          ],
+          "qualification": "Exact HTTP503 and history GET counts are supported by the separate fixture/owner tests, not measured by this browser. The existing read-only fixture evidence panel does not expose Profile history GETs, so it was not used to imply count evidence. One visible revision does not establish all pagination or concurrent retry behavior.",
+          "evidence": [
+            "evidence/05-profile-dirty.ax.txt",
+            "evidence/07-history-failure-armed.ax.txt",
+            "evidence/09-history-failed-retry-visible.ax.txt",
+            "evidence/09-history-failed-retry-visible.png",
+            "evidence/10-profile-reload-retains-retry-dirty.ax.txt",
+            "evidence/11-profile-reload-settled.ax.txt",
+            "evidence/13-history-recovered-once.ax.txt",
+            "evidence/13-history-recovered-once.png",
+            "evidence/14-recovered-dirty-region.png",
+            "evidence/15-profile-draft-cleaned.ax.txt",
+            "evidence/16-summary-entry.ax.txt",
+            "evidence/17-profile-discard-summary.ax.txt"
+          ]
+        },
+        {
+          "id": "L69-01",
+          "findingId": "summary-document-title-accessible-name",
+          "name": "Preparation manual-create title field accessible name",
+          "status": "bounded red-to-green passed",
+          "baseline": "../frontend_summary_tasks_v68_20261010/RESULTS.json; original evidence34-35",
+          "actions": [
+            "Navigate Summary using original link and choose 準備單",
+            "Expand 手動備援：直接整理準備單",
+            "Focus the empty 文件名稱 field",
+            "Read the focused field AX name and read-only DOM naming attributes",
+            "Collapse the untouched form"
+          ],
+          "observed": [
+            "AX exposes text field 文件名稱 both before and during focus",
+            "Read-only DOM confirms INPUT aria-label=文件名稱 and focused=true, value empty",
+            "Consent remains unchecked; 整理這份準備單 remains disabled; no title text, validation submit, document creation or model action"
+          ],
+          "qualification": "This is the manual creation fallback, not editing an existing document. Only the empty preparation title-field accessible name was rechecked in the browser. It does not claim aria-invalid/error association, full form accessibility, screen-reader behavior, or growth-report browser coverage.",
+          "evidence": [
+            "evidence/19-manual-form-named-field.ax.txt",
+            "evidence/20-title-focused-named.ax.txt",
+            "evidence/20-title-focused-named.png",
+            "evidence/21-title-dom-semantics.json",
+            "evidence/22-manual-form-closed.ax.txt"
+          ]
+        }
+      ],
+      "toolObservations": [
+        "Initial createBrowserTab to the original /profile reported browser security check unavailable because the permission request was dismissed before a decision, explicitly no denial. Parent supplied user authorization evidence; the identical call was retried once and succeeded as tab23.",
+        "A later combined local-draft cleanup and Summary-navigation call returned JavaScript execution did not receive approval. Work paused. Parent supplied the user authorization evidence; a read-only AX verified unchanged dirty state, and the identical original call was retried once successfully. Neither tool event is classified as a product defect.",
+        "Evidence10 and12 capture transient reading states; evidence11 and13 are the ready states. Evidence09 PNG shows the retry entry, while its AX records the offscreen error notice. AX outputs include both full trees and diffs."
+      ],
+      "incidentalObservations": [
+        "After the region value was restored and form dirty text cleared, the owner navigation guard still requested explicit discard. This bounded observation was used for cleanup, not classified as a new regression or as proof of all dirty-tracking behavior."
+      ],
+      "cleanup": {
+        "profileDraft": "Region restored to 香港; form notice cleared; original 捨棄草稿並離開 used; Summary navigation confirmed",
+        "summaryDraft": "No text entered; consent untouched and create disabled; form collapsed",
+        "normalMode": "Original visible 正常更新 clicked and ready Summary rechecked; both fixture disclosures collapsed",
+        "closedTab": "23",
+        "otherTabs": "Existing18/19 untouched. Final inventory additionally shows22 about:blank of unverified ownership; it was left untouched. No before-open inventory was captured, so no origin is inferred."
+      },
+      "limitations": [
+        "No live served-byte hash or network/API trace; official version/source and candidate bundle SHA attributed to parent",
+        "No exact browser history request counts or HTTP status observation",
+        "No full17-route/state/write/viewport matrix or normal-navigation rerun",
+        "No new writes, save, create, delete, archive, photo, real family data, model, message, permission or production backend validation",
+        "No browser history pagination, rapid repeated retry, scope/identity race, timeout or late-response coverage",
+        "No aria-invalid/error-message association validation; no full accessibility, screen reader, background inertness or keyboard traversal matrix",
+        "Only1180x757 desktop; no touch, native mobile, zoom or responsive matrix",
+        "No frame-by-frame flash guarantee, FPS, animation timing or PDF verification",
+        "Existing v68 unresolved account/denied/settings recovery limits remain unchanged"
+      ],
+      "safety": "Only original navigation/read controls, existing visible synthetic one-shot fixture control, a local synthetic region draft restored/discarded, and read-only DOM metadata. No hidden state access/injection, shell Chromium, loopback or alternative browser route. No code or site edits in this verification.",
+      "evidenceManifest": "evidence-manifest.json",
+      "counts": {
+        "flows": 2,
+        "AXRecords": 25,
+        "PNGFiles": 4,
+        "JSONRecords": 3,
+        "totalEvidenceFiles": 32,
+        "note": "Intermediate observations, tool-boundary recovery and cleanup included; evidence counts are not test-pass counts."
+      }
+    },
+    "allBrowserEvidenceHashesAndSizesChecked": 32,
+    "evidence": [
+      {
+        "file": "frontend_recovery_label_v69_20261010/RESULTS.json",
+        "sha256": "32c7027425628629e778d37553c8bf5d83e5a84391dd4e3cb98b961a2a26b1b2",
+        "bytes": 8565
+      },
+      {
+        "file": "frontend_recovery_label_v69_20261010/RESULTS.md",
+        "sha256": "a583cc15ffdf4dd30ebaafe4296d95defaf31de077b4ff0d0244f403692365a6",
+        "bytes": 3658
+      },
+      {
+        "file": "frontend_recovery_label_v69_20261010/evidence-manifest.json",
+        "sha256": "0fbb91356a5fdcccaa6756a3375c53a1aa48dec7c8b63b4c9799c703c60c6008",
+        "bytes": 5596
+      }
+    ],
+    "boundary": "Only the two original failures in the synthetic public preview were rechecked; no production service, complete a11y, responsive or concurrency/race acceptance."
   }
 }

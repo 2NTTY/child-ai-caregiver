@@ -3,7 +3,26 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## QA：載入、切換、路由、PDF 與家庭選項（v68 已發布、定向瀏覽器局部通過，單一 PR 待交付）
+## QA：恢復流程、檔案歷史重試與文件名稱（v69兩項原紅定向通過，同批7檔待單一PR交付）
+
+2026-10-10 UTC，固定 master `fddd32deaa04fea8db39553ea6b3e050769b6a5d`；前批34檔已隨 [#187](https://github.com/2NTTY/child-ai-caregiver/pull/187) 合併。18:02–18:09 UTC在原v68作有界恢復驗收，首次具體產品失敗R01後停批；其後獲准的18:31–18:35 Summary／Tasks有界驗收再確認文件名稱缺accessible name，納入既有未交付R01批。本次把必要修復、測試及原文件更新收束為同一交付，不另開純狀態PR。只改 `frontend/**`，不動後端、fixture、權限或真實資料。
+
+- **R01 實際缺口：**已有未保存的基本資料草稿時，首次「查看較早版本」失敗，唯一歷史入口卻成為停用的「已顯示歷史」，歷史仍空。按「重新讀取檔案」保留草稿，但清掉錯誤提示而未恢復歷史重試。v68真瀏覽器用可見的一次歷史失敗控制及本地合成地區草稿重現；精確503／history GET計數另屬真owner與原fixture合成證據，並非瀏覽器network trace。未保存、分享或刪除，草稿已恢復原值。
+- **最小修正：**`CareProfileDomains` 不在開始讀取時標記historyOpen，只在成功結果通過current／generation檢查後標記。首次失敗可沿原入口手動重試；成功空歷史仍是已讀，分頁保留已有列／cursor／hasMore。dirty草稿及formKey、single-flight、身份／孩子與讀取世代、當前scope的403撤權及finally清理保持，不改View、VM或API。
+- **程式證據：**同一原斷言及v68 fixture，修前0/1、修後1/1；作者7/7及frontend typecheck exit0。獨立審查另加先3/3、其後只跑新增分頁1/1，包含連續失敗、成功空頁、dirty下分頁失敗後重讀目前檔案再同cursor重試、較新世代與舊身份／孩子晚結果；沒有重跑作者7項，也不把重疊功能加總。真React bridge／keyed owner／QueryClient／API parser／ProfileView條件搭配native、motion及form呈現替身，並非修後真瀏覽器。最初selector誤把刪除按鈕當retry的false green、真正原紅及修後結果均保留，見[固定證據增量](verification/loading-switch-readiness-2026-10-10/checks.json)。
+- **其餘恢復觀察：**v68的Care開啟待辦側欄，失敗切孩子後仍遮住舊孩子內容；持續失敗時重試／返回不假成功，transport恢復後按原產品重讀，分別恢復上一位或目標孩子及原側欄。偏好錯誤時表單鎖住，失敗中重讀不假成功；「正常更新」先觸發自動refresh才恢復，不能稱隔離的手動恢復路徑已驗。一次真tab離開／回來未觸發account gate，帳戶錯誤／重試未驗成。合成失權只正向驗到孩子內容隔離，normal加重選未成立原地恢復；整頁reload只作fixture清理，既非恢復通過也未據此判永久鎖死。
+- **版本與界線：**上述browser是未修R01的v68，Sites source `c5063f5ef7827d6856646da0888a311328973912`、1180×757；60份AX及26張PNG包含中途、原生瀏覽器框與cleanup，是86份證據，不是86項測試。R01階段只改owner兩行並新增1個定向測試檔；原34 freeze未改，該階段其餘33路徑同#187。既有載入／PDF／照片／家庭證據仍按各版本保存，本輪沒有重跑原31檔suite，也未宣稱帳戶timeout、逐域race、四尺寸／完整a11y、FPS、真PDF或正式服務通過。
+- **R01階段建置（保留）：**唯一一次官方 `--clear` export exit0，35靜態路由／61產物；新bundle `index-3211a862defcda912280a4081336b162.js`，SHA256 `f0a71d6591cec7690c737d6b9bd53a306e5dee6646ee8e43b7b2dcb377263e34`。獨立覆核471份完整source manifest及35份既有／增量預期hash、61產物hash／大小均符；此35是原34路徑加新test的來源核對集合，不是本次35檔修改。新舊bundle的2603行只有1個owner module不同，全文只有上述開始／成功兩處預期替換，其餘2602行含換行bytes相同；35HTML只換bundle檔名，其他25產物及先前33份片段保留。最初保存參考的cwd錯誤及其後在build啟動後才採集完整參考的界線保留；產品兩檔另有build前freeze，舊61產物也符原manifest。沒有重跑測試／typecheck，沒有注入fixture或發布；產物相符不等於browser通過。
+- **文件名稱無障礙缺口：**原v68的Summary「手動備援：直接整理準備單」是新文件草稿，不是修改既有準備單。可見「文件名稱」輸入欄沒有程式名稱；真browser AX及唯讀DOM確認缺aria-label／aria-labelledby／placeholder及label關聯，真DocumentCreateForm／AppTextField／Paper／RNWeb DOM亦重現原紅。修補限該caller傳入既有 `labels.title` 作accessibilityLabel，不全域改TextField，不改保存、確認、草稿或焦點契約；作者caller一行修正及1個測試檔已freeze；同一原DOM斷言1紅→1綠，兩種文件kind的2/2定向通過，涵蓋可見名稱、既有required／長度HelperText、原error-summary ref聚焦、原樣草稿及readOnly；合成network／create皆0。獨立code/test review Allow，reviewer只另重跑原斷言修後1項通過，作者兩kind的2項依原碼及log核對未重跑，不相加為新3項。名稱來源檢查不是完整AccName engine或讀屏驗收。原aria-invalid缺失的新增斷言失敗已單列未收束；沒有把移除該超出名稱範圍的期望算作錯誤語意通過，error關聯亦未驗。另保留dependency、input selector及Paper disabled映射RNWeb readOnly的harness修正證據，無全局元件改動。
+- **Summary／Tasks有界樣本：**1180×757原v68共4流程：Summary準備單行→inline詳情→返回原行；Tasks空原因回饋／原因焦點、只在本地預覽及明確丟棄草稿；日期modal首尾Tab／Escape／Cancel與返回trigger；Summary dirty tab guard的Escape／繼續編輯保留草稿及返回trigger，明確丟棄後可乾淨換tab。準備單詳情是inline，Escape不關閉符合已讀契約；沒有既有文件編輯入口，不把手動建立備援當已驗編輯。Tasks繼續修改及Summary丟棄按鈕卸載後焦點到WebArea僅記觀察，未找到明確契約，既不升格已確認缺陷也不算焦點通過。39AX／11PNG／1DOM JSON是51份證據，不是51項測試；沒有保存、建立文件、改期、套用日期、模型或真資料操作。
+- **7檔組合建置：**4檔程式／測試精確合成後，frontend typecheck及唯一一次官方 `--clear` build exit0，35靜態路由／61產物；新bundle `index-15ea99b9d58dbaff55bb7273d070946a.js`，SHA256 `737cdd1a8ebb01b73ecc45ba4663cd59367f997ef44e4d5c1211376264fafb8d`。獨立核472份source前後hash及4檔freeze、61產物hash／大小；相對R01的2603行bundle只有DocumentCreateForm一行module改動，其餘2602行含換行bytes相同，R01 owner全文保留。新增label之外，minifier交換兩個local的宣告及各自唯一bound use；以scope-bound AST正規化核對僅label有語意差異，沒有把首次「應純插入、無rename」matcher失敗抹去或放寬產品行為。35HTML只換bundle引用，另25產物不變。沒有重跑R01／前34／title兩項suite，也未注入fixture或發布；先前R01 build及所有原紅封存。
+- **發布前本地預覽包（保留）：**另以既有v68的CSP／fixture原前綴包裝，新bundle bytes不變；獨立核68檔（67靜態＋1hosting）、35HTML精確前綴、原QA／hosting bytes及353個本地靜態引用。這是發布前的本地包覆核，該階段沒有發布、修後browser、模型或fixture suite重跑；既有recovery合成寫入與5條GET相容分支仍分開，未增加寫入權限。
+- **v69發布與兩項原紅重驗：**既有公開 [Sites預覽](https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site) 於2026-10-10 18:50:59 UTC正常發布成功，Sites source `b47344b0a4b3f94a2322c1218f41c90255b3216c`，沿用上述737cdd組合bundle；這不是GitHub合併或正式後端部署。18:52–18:54 UTC在dot雲端Chrome/CDP、1180×757，只重驗兩項原紅：R01首次history失敗仍可重試，重讀目前檔案後dirty地區及入口保留，一次手動重試只見一份版本1，成功後才成為停用的「已顯示歷史」；準備單手動建立的空「文件名稱」在AX有名稱，DOM的aria-label亦為「文件名稱」。沒有填title或建立／保存文件。HTTP503及精確history GET次數仍只屬owner／fixture測試；一份可見版本不是分頁／並發證明，DOM只核載入script名，不當live bytes hash。25AX／4PNG／3JSON是32份證據，不是32項測試。地區還原後form dirty文字雖消失，原owner仍要求明確捨棄才離頁，已沿原控制清理；這只保留為cleanup觀察，不另判新缺陷。normal模式恢復、未輸入的title表單收起、所建tab23關閉。
+- **下一步：**同一完整7檔（R01 owner／test、文件名稱caller／test及原3文件）的程式、組合產物及兩項定向真browser結果已齊，正準備單一英文PR，待文件／內文末核及主對話交付裁決。4檔程式／測試不再改動，原7檔發布前freeze、R01階段及v68反例保留；不另拆狀態PR，不預填PR號。v69只驗準備單空title，growth-report browser、aria-invalid／error關聯、完整讀屏／四尺寸／a11y、R01分頁與race、account／denied恢復、待定inline焦點、PDF／照片等先前未驗仍保留；後端由Codex承接，未將全FE／P2標完。
+
+## QA：載入、切換、路由、PDF 與家庭選項（#187 已合併，保留交付快照）
+
+以下是前34檔在PR前的原驗收快照；其中「待交付／未PR」只適用當時。該批已於2026-10-10 17:58:28 UTC隨#187合併，當前R01修復以上述入口為準。
 
 2026-10-10 UTC，基線 master `ae5d3e01b11632a62a54db68b77c7ed20e323471`。按使用者本輪前端 QA 範圍，把帳戶載入、孩子切換幕布、Care query、導航 owner 重新渲染、PDF 准入／pending 失效及家庭選項同名修補放在同一前端批次；後端收尾另由 Codex 承接。本包只改 `frontend/**`，保留現有設計、共用 owner、API 契約、身份／孩子隔離及原操作／unknown 邊界，不修改根文件、Server 或正式資料。
 
