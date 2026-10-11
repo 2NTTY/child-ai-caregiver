@@ -499,3 +499,19 @@ test('Firebase personal library remains optional and preserves pagination, expec
   await errorCode(await untouched(new Request(PUBLIC_ORIGIN + path, { headers: { 'x-expected-user-id': USER_ID } })), 409, 'identity_changed');
   assert.equal(reads.length, 2);
 });
+
+
+test('personal preference reads use the current session and direct writes require an original operation receipt', async () => {
+  const f = fixture(); const calls: string[] = [];
+  const online = { notificationPreferences: async (userId: string) => { calls.push(userId); return { version: 0 }; } } as unknown as FirestoreOnlineStore;
+  const handler = createFirebaseRequestHandler({ ...f.options, online });
+  const get = () => handler(new Request(PUBLIC_ORIGIN + '/api/notification-preferences'));
+  const response = await get(); assert.equal(response.status, 200); privateResponse(response); assert.deepEqual(calls, [USER_ID]);
+  await errorCode(await handler(new Request(PUBLIC_ORIGIN + '/api/notification-preferences', { method: 'POST', headers: { Origin: PUBLIC_ORIGIN } })), 428, 'account_precondition_required');
+  await errorCode(await handler(new Request(PUBLIC_ORIGIN + '/api/notification-preferences?userId=another')), 400, 'invalid_input');
+  f.setUser(null); await errorCode(await get(), 401, 'unauthorized');
+  // Use a fresh handler fixture to make the identity change deterministic between read and response.
+  const swapped = fixture(); swapped.beforeSession(number => { if (number === 2) swapped.setUser('another-user'); });
+  const swapping = createFirebaseRequestHandler({ ...swapped.options, online });
+  await errorCode(await swapping(new Request(PUBLIC_ORIGIN + '/api/notification-preferences')), 409, 'identity_changed');
+});

@@ -138,7 +138,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (!await isCurrentUser(userId)) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }
-      if (online && (path === "/api/children" || path.startsWith("/api/online/") || /^\/api\/children\/[^/]+\/tasks(?:\/|$)/u.test(path))) {
+      if (online && (path === "/api/children" || path === "/api/notification-preferences" || path.startsWith("/api/online/") || /^\/api\/children\/[^/]+\/tasks(?:\/|$)/u.test(path))) {
         if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
@@ -150,7 +150,12 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
             if ((await auth.getSession({ headers: request.headers }))?.user.id !== expectedUserId) throw new RequestError("identity_changed", 409);
             return online.submit(expectedUserId, submission);
           } });
-        else if (path === "/api/children") {
+        else if (path === "/api/notification-preferences") {
+          if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
+          if (new URL(request.url).search) throw new RequestError("invalid_input", 400);
+          if (!online.notificationPreferences) throw new RequestError("firebase_domain_not_ready", 503);
+          response = json({ preferences: await online.notificationPreferences(userId) });
+        } else if (path === "/api/children") {
           if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
           const url = new URL(request.url);
           if ([...url.searchParams.keys()].some(key => key !== "cursor") || url.searchParams.getAll("cursor").length > 1) throw new RequestError("invalid_input", 400);

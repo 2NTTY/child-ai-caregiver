@@ -90,7 +90,7 @@ test('caller-wide operation identity conflicts before any changed target read; s
   assert.notEqual(another.child.id, child.child.id); assert.notEqual(another.input.operation.workspaceId, child.input.operation.workspaceId);
   assert.deepEqual(await f.online.lookup('another-owner', child.input.operation.opId), another.receipt);
   await assert.rejects(f.online.tasks.get('another-owner', child.child.id, randomUUID()));
-  const unsupported = await f.command('/api/notification-preferences', { confirm: true });
+  const unsupported = await f.command('/api/web-push/subscriptions', { confirm: true });
   const before = [...f.fake.records]; await assert.rejects(f.online.submit('synthetic-owner', unsupported), rejection('domain_not_ready', 503));
   assert.deepEqual([...f.fake.records], before);
 });
@@ -176,4 +176,64 @@ test('children native-shaped pagination carries scope/epoch/changeSeq and never 
   assert.equal(new Set([...first.children, ...last.children].map(child => child.id)).size, 51);
   await f.authority.createChild({ userId: 'synthetic-owner', operationId: randomUUID(), displayName: 'New child invalidates cursor' });
   await assert.rejects(f.online.children.list('synthetic-owner', first.nextCursor), rejection('cursor_changed', 409));
+});
+
+
+test('personal reminder preferences commit atomically with private original receipts and version checks', async () => {
+  const f = fixture(); await f.initialize(); await f.identity();
+  const defaults = await f.online.notificationPreferences!('synthetic-owner');
+  assert.deepEqual(defaults, { timeZone: 'Asia/Hong_Kong', quietStart: '22:00', quietEnd: '08:00', allowAppointmentDuringQuiet: false, version: 0 });
+  const payload = { timeZone: 'Asia/Hong_Kong', quietStart: '22:00', quietEnd: '08:00', allowAppointmentDuringQuiet: true, expectedVersion: 0 };
+  const command = await f.command('/api/notification-preferences', payload);
+  const before = [...f.fake.records]; f.fake.failCommit();
+  await assert.rejects(f.online.submit('synthetic-owner', command), /Synthetic transaction commit failed/u);
+  assert.deepEqual([...f.fake.records], before);
+  f.fake.loseReply(); await assert.rejects(f.online.submit('synthetic-owner', command), /Synthetic lost commit acknowledgement/u);
+  const receipt = await f.online.submit('synthetic-owner', command), committed = [...f.fake.records];
+  assert.equal(receipt.changeSeq, '1'); assert.equal(receipt.statusCode, 200);
+  assert.deepEqual(receipt.result, { preferences: { ...defaults, allowAppointmentDuringQuiet: true, version: 1 } });
+  assert.deepEqual(await f.online.lookup('synthetic-owner', command.operation.opId), receipt);
+  assert.deepEqual(await f.online.notificationPreferences!('synthetic-owner'), (receipt.result as any).preferences);
+  assert.deepEqual([...f.fake.records], committed);
+  await assert.rejects(f.online.submit('synthetic-owner', { ...command, payload: { ...payload, allowAppointmentDuringQuiet: false } }), rejection('operation_conflict', 409));
+  await assert.rejects(f.online.submit('synthetic-owner', await f.command(command.path, payload)), rejection('version_conflict', 409));
+  for (const invalid of [{ ...payload, expectedVersion: 1, quietEnd: '22:00' }, { ...payload, expectedVersion: 1, timeZone: 'Invalid/TimeZone' }])
+    await assert.rejects(f.online.submit('synthetic-owner', await f.command(command.path, invalid)), rejection('invalid_input', 400));
+  assert.deepEqual([...f.fake.records], committed);
+  await f.identity('another-owner', 'another@example.test');
+  assert.deepEqual(await f.online.notificationPreferences!('another-owner'), defaults);
+  assert.deepEqual(await f.online.lookup('another-owner', command.operation.opId), { state: 'unconfirmed' });
+  await assert.rejects(f.online.submit('another-owner', command), rejection('storage_epoch_changed', 409));
+  const other = await f.command(command.path, { ...payload, allowAppointmentDuringQuiet: false }, 'another-owner', command.operation.opId);
+  await f.online.submit('another-owner', other);
+  assert.equal((await f.online.notificationPreferences!('synthetic-owner')).allowAppointmentDuringQuiet, true);
+  assert.equal((await f.online.notificationPreferences!('another-owner')).allowAppointmentDuringQuiet, false);
+  const changes = await f.online.changes('synthetic-owner', command.operation.workspaceId, command.operation.storageEpoch, '0');
+  assert.equal(changes.changes.length, 1); assert.equal(changes.changes[0].kind, 'preferences');
+  assert.deepEqual(changes.changes[0], { changeSeq: '1', kind: 'preferences', childId: null, deleted: false });
+  await assert.rejects(f.online.changes('another-owner', command.operation.workspaceId, command.operation.storageEpoch, '0'), rejection('not_found', 404));
+  await assert.rejects(f.online.notificationPreferences!('unadmitted-user'));
+  await f.authority.revokeInvitation({ email: 'owner@example.test', operationId: randomUUID() });
+  await assert.rejects(f.online.notificationPreferences!('synthetic-owner'), rejection('account_inactive', 403));
+  await assert.rejects(f.online.submit('synthetic-owner', command), rejection('account_inactive', 403));
+});
+
+test('appointment quiet hours remain enforced until an owner preference and legitimate reschedule permit one reminder', async () => {
+  const { createFirestoreTaskWorker } = await import('../server/firestore-task-worker.ts');
+  const f = fixture(); await f.initialize(); await f.identity(); const child = await f.child();
+  const command = await f.command('/api/children/' + child.child.id + '/tasks', { confirm: true, values: { ...f.taskValues(), kind: 'appointment' } });
+  const receipt = await f.online.submit('synthetic-owner', command), task = (receipt.result as any).task;
+  const worker = createFirestoreTaskWorker({ ...f.options, enabled: true, serverClock: () => Date.parse('2026-10-12T16:00:00Z'),
+    currentAuth: async userId => ({ userId, email: 'owner@example.test', disabled: false, emailVerified: true }) });
+  const [first] = await worker.due('synthetic-owner', child.child.id);
+  assert.ok(first); const quiet = await worker.process(first); assert.equal(quiet.state, 'deferred'); assert.equal(quiet.receipt, null);
+  await f.online.submit('synthetic-owner', await f.command('/api/notification-preferences', {
+    timeZone: 'Asia/Hong_Kong', quietStart: '22:00', quietEnd: '08:00', allowAppointmentDuringQuiet: true, expectedVersion: 0 }));
+  await f.change(child.child.id, task, { action: 'reschedule', expectedVersion: 1, confirm: true, note: 'Authorized synthetic appointment during quiet hours',
+    assigneeUserId: 'synthetic-owner', dueAt: '2026-10-12T15:59:00Z', timeZone: 'Asia/Hong_Kong' });
+  const [second] = await worker.due('synthetic-owner', child.child.id); assert.ok(second); assert.equal(second.taskVersion, 2);
+  const processed = await worker.process(second); assert.equal(processed.state, 'processed'); assert.equal(processed.receipt?.phase, 'initial');
+  const committed = [...f.fake.records]; assert.deepEqual(await worker.process(second), processed); assert.deepEqual([...f.fake.records], committed);
+  assert.equal([...f.fake.records.keys()].filter(path => path.startsWith(f.options.namespace + '_task_reminders/')).length, 1);
+  assert.deepEqual(await f.online.submit('synthetic-owner', command), receipt);
 });
