@@ -2,8 +2,8 @@
   "schema": 1,
   "package": "P2-F02",
   "baseline": "d5dbf61ec709467fd7659fd3599c65dbf167c915",
-  "observedAt": "2026-10-11T11:00:50.361Z",
-  "state": "cloud-provisioning-local-slice-in-progress",
+  "observedAt": "2026-10-11T19:26:11.997Z",
+  "state": "F02 partially verified; temporarily wrapped at user request; not delivered",
   "cloudResourcesCreated": true,
   "catalog": [
     {
@@ -1088,7 +1088,7 @@
     "currency": "USD",
     "newAuthorization": 30,
     "oldModelBudgetReused": false,
-    "paidApplicationOperationsStarted": false,
+    "paidApplicationOperationsStarted": true,
     "retainedForLaterPackagesAndCleanup": 24,
     "freeTiersAssumed": false,
     "limits": {
@@ -2989,6 +2989,2370 @@
         "appId": null
       },
       "released": false
+    },
+    {
+      "at": "2026-10-11T15:00:45.260Z",
+      "action": "runtime-image-build-start",
+      "sourceRevision": "3c9b1a9614db9a78cf64a5ddc23f3869c4c51dc7",
+      "archiveSha256": "d40b73303a04641e17de72a2f9225b0ffe12d6b1d815663b0b610069d89ec342",
+      "archiveBytes": 9508772,
+      "source": {
+        "bucket": "ai-caregivers-for-children-firebase-private",
+        "object": "firebase-builds/run-3c9b1a9614db9a78cf64a5ddc23f3869c4c51dc7/source.tar.gz",
+        "generation": "1791730840111299",
+        "created": true
+      },
+      "operation": "operations/build/ai-caregivers-for-children/MWE4ZWRjOGMtZmM2My00ZWY3LTg4NmUtNTYyZTg4NTNhMGU0",
+      "buildId": "1a8edc8c-fc63-4ef7-886e-562e8853a0e4",
+      "status": "QUEUED",
+      "image": "asia-east2-docker.pkg.dev/ai-caregivers-for-children/yuban-firebase/runtime:3c9b1a9614db",
+      "timeoutSeconds": 600,
+      "machineType": "E2_HIGHCPU_8",
+      "buildBudgetRemainingBeforeSeconds": 1406.712
+    },
+    {
+      "at": "2026-10-11T15:05:45.307Z",
+      "action": "runtime-image-build-readback",
+      "buildId": "1a8edc8c-fc63-4ef7-886e-562e8853a0e4",
+      "status": "SUCCESS",
+      "startTime": "2026-10-11T15:01:33.147982528Z",
+      "finishTime": "2026-10-11T15:03:37.554918Z",
+      "stepStatuses": [
+        "SUCCESS"
+      ],
+      "images": [
+        {
+          "name": "asia-east2-docker.pkg.dev/ai-caregivers-for-children/yuban-firebase/runtime:3c9b1a9614db",
+          "digest": "sha256:d431297e684571052f7b28a2e61bc4460b66f8a6bd92f937580cd9a4f04cd45f"
+        }
+      ],
+      "failureType": null
+    },
+    {
+      "at": "2026-10-11T15:06:41.311Z",
+      "action": "private-runtime-service-create",
+      "kind": "api",
+      "sourceRevision": "3c9b1a9614db9a78cf64a5ddc23f3869c4c51dc7",
+      "imageDigest": "sha256:d431297e684571052f7b28a2e61bc4460b66f8a6bd92f937580cd9a4f04cd45f",
+      "status": 400,
+      "operation": null,
+      "done": false,
+      "errorCode": "INVALID_ARGUMENT"
+    },
+    {
+      "at": "2026-10-11T15:07:30.427Z",
+      "action": "private-runtime-creation-validation",
+      "resourceAbsent": true,
+      "status": 400,
+      "code": "INVALID_ARGUMENT",
+      "message": "Violation in CreateServiceRequest.service: service.name must be empty on CreateServiceRequest.",
+      "fieldViolations": [
+        {
+          "field": "Violation in CreateServiceRequest.service",
+          "description": "service.name must be empty on CreateServiceRequest."
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T15:13:45.367Z",
+      "action": "runtime-service-configuration-validation",
+      "kind": "api",
+      "sourceRevision": "3c9b1a9614db9a78cf64a5ddc23f3869c4c51dc7",
+      "mutation": false,
+      "status": 200,
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/98382d63-912f-40de-8dcc-092a0ca61184",
+      "error": null
+    },
+    {
+      "at": "2026-10-11T15:13:47.551Z",
+      "action": "runtime-service-configuration-validation",
+      "kind": "worker",
+      "sourceRevision": "3c9b1a9614db9a78cf64a5ddc23f3869c4c51dc7",
+      "mutation": false,
+      "status": 200,
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/ddcf1cb0-430f-4f5b-8f85-dfdb35e54760",
+      "error": null
+    },
+    {
+      "at": "2026-10-11T15:17:36.098Z",
+      "action": "blocking-function-invoker-enabled",
+      "resource": "before-yuban-user-created",
+      "bindings": [
+        {
+          "role": "roles/run.invoker",
+          "members": [
+            "allUsers"
+          ]
+        }
+      ],
+      "authorization": "User explicitly approved the three named service invoker bindings in this chat",
+      "applicationAuthentication": "Firebase Functions native blocking SDK signed JWT verification; invitation read-only guard",
+      "identityEmailSignInEnabled": false
+    },
+    {
+      "at": "2026-10-11T15:19:10.160Z",
+      "action": "identity-blocking-and-test-domain-staged",
+      "authorizedDomains": [
+        "ai-caregivers-for-children.firebaseapp.com",
+        "ai-caregivers-for-children.web.app",
+        "yuban-firebase-check.web.app"
+      ],
+      "blockingFunctions": {
+        "triggers": {
+          "beforeCreate": {
+            "functionUri": "https://before-yuban-user-created-rcnc7wlinq-df.a.run.app",
+            "updateTime": "2026-10-11T15:19:08.919Z"
+          }
+        }
+      },
+      "emailSignInEnabled": false,
+      "anonymousEnabled": false
+    },
+    {
+      "at": "2026-10-11T15:25:20.085Z",
+      "action": "public-knowledge-embedding-preparation",
+      "sourceId": "fhs-solid-food",
+      "sourceVersionHash": "0a48bc97b55de72d7589e1021dbaa825ccfc9838d11ea93ea191aa25e3d61816",
+      "provider": "Vertex",
+      "model": "gemini-embedding-001",
+      "region": "us-central1",
+      "dimensions": 1024,
+      "pipeline": "section-v1",
+      "automaticRetry": false,
+      "records": [
+        {
+          "name": "document",
+          "task": "RETRIEVAL_DOCUMENT",
+          "inputHash": "553569523ed926943457e9810200d34c6de7d3626ee0071e1baf57c7c98cfed5",
+          "inputBytes": 342,
+          "state": "confirmed",
+          "at": "2026-10-11T15:25:20.086Z",
+          "inputTokens": 107,
+          "billableCharacters": 142,
+          "vectorValues": 1024,
+          "vectorSha256": "3b6b9aba8395a77c6b2dbff4852cee122234779eb7affc07750ef1b694b78fc7"
+        },
+        {
+          "name": "query",
+          "task": "RETRIEVAL_QUERY",
+          "inputHash": "21ec3daccfdb1b00a07d248d6c491fb9edceba9ed2074d94fc37572f79549e47",
+          "inputBytes": 51,
+          "state": "confirmed",
+          "at": "2026-10-11T15:25:25.508Z",
+          "inputTokens": 15,
+          "billableCharacters": 18,
+          "vectorValues": 1024,
+          "vectorSha256": "78cf0afe0a1c947e777c1f60a2370cc5355a1f27be4b431e74a14fed259fa71e"
+        }
+      ],
+      "state": "prepared"
+    },
+    {
+      "at": "2026-10-11T15:27:41.098Z",
+      "action": "isolated-public-knowledge-publication-and-query",
+      "sourceRevision": "3c9b1a9614db9a78cf64a5ddc23f3869c4c51dc7",
+      "sourceId": "fhs-solid-food",
+      "sourceVersionHash": "0a48bc97b55de72d7589e1021dbaa825ccfc9838d11ea93ea191aa25e3d61816",
+      "phase": "true-vector-query",
+      "state": "passed",
+      "runtime": "Formal Firestore store via operator ADC; not product browser or chat",
+      "versionId": "c9265331-6ec2-5436-b4c2-07d354e53101",
+      "catalogCount": 1,
+      "queryCount": 1,
+      "chunkId": "c4acccf4-9428-5e06-9eb0-f8f5e9918c69",
+      "completedAt": "2026-10-11T15:28:43.488Z"
+    },
+    {
+      "at": "2026-10-11T15:30:55.314Z",
+      "action": "runtime-image-corrected-build-start",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "archiveSha256": "931ce677b1f4fde4c5a92989487d3550de01e4f3497509420df8bc1b8eb9505f",
+      "archiveBytes": 9509147,
+      "source": {
+        "bucket": "ai-caregivers-for-children-firebase-private",
+        "object": "firebase-builds/run-17c67253590a27f5110ff5a8234f461a20aec207/source.tar.gz",
+        "generation": "1791732651699349",
+        "created": true
+      },
+      "httpStatus": 200,
+      "operation": "operations/build/ai-caregivers-for-children/ZDBhMjFlMjctOTI2NC00YThkLWE4ZmItZGFiNTUyNDA2YWE2",
+      "buildId": "d0a21e27-9264-4a8d-a8fb-dab552406aa6",
+      "status": "QUEUED",
+      "image": "asia-east2-docker.pkg.dev/ai-caregivers-for-children/yuban-firebase/runtime:17c67253590a",
+      "timeoutSeconds": 600,
+      "buildBudgetRemainingBeforeSeconds": 1282.305
+    },
+    {
+      "at": "2026-10-11T15:31:58.231Z",
+      "action": "public-knowledge-vector-evidence-readback",
+      "reason": "Initial query asserted exact edition but omitted distance; verify successful retrieval is not keyword-only",
+      "state": "passed",
+      "versionId": "c9265331-6ec2-5436-b4c2-07d354e53101",
+      "chunkId": "c4acccf4-9428-5e06-9eb0-f8f5e9918c69",
+      "distance": 0.29202541883086874,
+      "rankScore": 0.03278688524590164,
+      "originalCoverage": "chunk_original",
+      "privateData": false
+    },
+    {
+      "at": "2026-10-11T15:34:01.590Z",
+      "action": "corrected-runtime-image-build-readback",
+      "buildId": "d0a21e27-9264-4a8d-a8fb-dab552406aa6",
+      "status": "WORKING",
+      "startTime": "2026-10-11T15:31:47.257712119Z",
+      "finishTime": null,
+      "images": [],
+      "failureType": null
+    },
+    {
+      "at": "2026-10-11T15:37:10.288Z",
+      "action": "formal-isolated-authority-bootstrap",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "databaseId": "yuban-firebase-20261011",
+      "namespace": "yuban_authority",
+      "generation": "1c63c046-384b-489b-b16d-b9c0d836faf4",
+      "records": [
+        {
+          "command": "initialize",
+          "exitCode": 0,
+          "confirmed": true
+        },
+        {
+          "command": "invite",
+          "exitCode": 0,
+          "confirmed": true
+        }
+      ],
+      "state": "prepared",
+      "authUsersCreated": 0,
+      "emailsSent": 0
+    },
+    {
+      "at": "2026-10-11T15:37:35.487Z",
+      "action": "corrected-runtime-image-build-readback",
+      "buildId": "d0a21e27-9264-4a8d-a8fb-dab552406aa6",
+      "status": "SUCCESS",
+      "startTime": "2026-10-11T15:31:47.257712119Z",
+      "finishTime": "2026-10-11T15:34:08.652104Z",
+      "images": [
+        {
+          "name": "asia-east2-docker.pkg.dev/ai-caregivers-for-children/yuban-firebase/runtime:17c67253590a",
+          "digest": "sha256:ac942282c8c25cbf2bd4db23797d36db56001d26bfd06d4d2d6e245039892792",
+          "pushTiming": {
+            "startTime": "2026-10-11T15:33:05.544952090Z",
+            "endTime": "2026-10-11T15:34:08.400564118Z"
+          },
+          "artifactRegistryPackage": "projects/ai-caregivers-for-children/locations/asia-east2/repositories/yuban-firebase/packages/runtime/versions/sha256:ac942282c8c25cbf2bd4db23797d36db56001d26bfd06d4d2d6e245039892792"
+        }
+      ],
+      "failureType": null
+    },
+    {
+      "at": "2026-10-11T15:38:17.787Z",
+      "action": "corrected-private-runtime-service-create",
+      "kind": "api",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "imageDigest": "sha256:ac942282c8c25cbf2bd4db23797d36db56001d26bfd06d4d2d6e245039892792",
+      "status": 200,
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/07140452-f686-4aea-af18-33dd03c402a0",
+      "done": false,
+      "errorCode": null
+    },
+    {
+      "at": "2026-10-11T15:38:21.904Z",
+      "action": "corrected-private-runtime-service-create",
+      "kind": "worker",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "imageDigest": "sha256:ac942282c8c25cbf2bd4db23797d36db56001d26bfd06d4d2d6e245039892792",
+      "status": 200,
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/acfb05b8-9567-4eda-9db6-eca579cab1e7",
+      "done": false,
+      "errorCode": null
+    },
+    {
+      "at": "2026-10-11T15:39:16.612Z",
+      "action": "isolated-hosting-version-prepare",
+      "site": "yuban-firebase-check",
+      "backendSourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "frontendBuiltFromRevision": "3c9b1a9614db9a78cf64a5ddc23f3869c4c51dc7",
+      "files": 120,
+      "rawBytes": 10654465,
+      "gzipBytes": 4687851,
+      "uploaded": 69,
+      "state": "stopped",
+      "released": false,
+      "version": "sites/yuban-firebase-check/versions/eeb2e4712c077758",
+      "code": "Hosting finalization mismatch"
+    },
+    {
+      "at": "2026-10-11T15:43:30.568Z",
+      "action": "hosting-finalization-readback-after-mismatch",
+      "version": "sites/yuban-firebase-check/versions/eeb2e4712c077758",
+      "status": "FINALIZED",
+      "fileCount": "122",
+      "versionBytes": "4688481",
+      "config": {
+        "headers": [
+          {
+            "headers": {
+              "X-Content-Type-Options": "nosniff",
+              "Referrer-Policy": "same-origin"
+            },
+            "glob": "**"
+          },
+          {
+            "headers": {
+              "Cache-Control": "private, no-store"
+            },
+            "glob": "/api{,/**}"
+          },
+          {
+            "headers": {
+              "Cache-Control": "no-cache"
+            },
+            "glob": "/sw.js"
+          }
+        ],
+        "rewrites": [
+          {
+            "glob": "/api{,/**}",
+            "run": {
+              "serviceId": "yuban-firebase-api",
+              "region": "asia-east2"
+            }
+          }
+        ],
+        "cleanUrls": true
+      },
+      "listedCount": 122,
+      "nextPagePresent": false,
+      "firstFile": {
+        "path": "/(dashboard)/care.html",
+        "hash": "c469ebd6a92019e1b1b384790729816d72004234400919f7ac9e5603839391a7",
+        "status": "ACTIVE"
+      },
+      "expectedPaths": 120
+    },
+    {
+      "at": "2026-10-11T15:47:40.730Z",
+      "action": "hosting-finalization-exact-file-reconciliation",
+      "version": "sites/yuban-firebase-check/versions/eeb2e4712c077758",
+      "expectedFiles": 120,
+      "exactPathHashActiveMatches": 120,
+      "reservedMetadataFiles": [
+        {
+          "path": "/__/firebase/init.js",
+          "hash": "b1d5c708b68e8087c0dc3e7663233b2bd76c8892226b0533e0b8326f955513ce",
+          "status": "ACTIVE"
+        },
+        {
+          "path": "/__/firebase/init.json",
+          "hash": "875715774494d7149f8f2813ae37d4a6f59616c34cf66bde7dcc8531eb5b4379",
+          "status": "ACTIVE"
+        }
+      ],
+      "configMatches": true,
+      "originalFailurePreserved": true,
+      "reason": "Firebase Hosting adds reserved metadata files to release counts; original count-only verifier omitted these. Config JSON field order differed, structural equality passes.",
+      "sources": [
+        "https://firebase.google.com/docs/hosting/faq-and-troubleshooting",
+        "https://firebase.google.com/docs/hosting/reserved-urls"
+      ],
+      "uploadedAgain": false
+    },
+    {
+      "at": "2026-10-11T15:47:45.577Z",
+      "action": "isolated-hosting-release-readback",
+      "release": "sites/yuban-firebase-check/releases/1791733663750000",
+      "version": "sites/yuban-firebase-check/versions/eeb2e4712c077758",
+      "status": "FINALIZED",
+      "releaseTime": "2026-10-11T15:47:43.750Z",
+      "origin": "https://yuban-firebase-check.web.app",
+      "officialDomainChanged": false
+    },
+    {
+      "action": "runtime-ready-readback",
+      "at": "2026-10-11T15:39:55.975Z",
+      "kind": "api",
+      "name": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-api",
+      "uid": "82d94c47-d7d9-424c-a22c-5164205dd126",
+      "condition": {
+        "type": "Ready",
+        "state": "CONDITION_SUCCEEDED",
+        "lastTransitionTime": "2026-10-11T15:38:52.748780Z"
+      },
+      "latestReadyRevision": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-api/revisions/yuban-firebase-api-00001-4n4",
+      "latestCreatedRevision": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-api/revisions/yuban-firebase-api-00001-4n4",
+      "uri": "https://yuban-firebase-api-rcnc7wlinq-df.a.run.app",
+      "urls": [
+        "https://yuban-firebase-api-1064034424208.asia-east2.run.app",
+        "https://yuban-firebase-api-rcnc7wlinq-df.a.run.app"
+      ],
+      "labels": {
+        "yuban-package": "f02",
+        "source-commit": "17c67253590a27f5110ff5a8234f461a20aec207"
+      },
+      "serviceAccount": "yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+      "scaling": {
+        "maxInstanceCount": 1
+      },
+      "concurrency": 8,
+      "timeout": "300s",
+      "resources": {
+        "limits": {
+          "cpu": "1",
+          "memory": "1Gi"
+        },
+        "cpuIdle": true
+      },
+      "image": "asia-east2-docker.pkg.dev/ai-caregivers-for-children/yuban-firebase/runtime@sha256:ac942282c8c25cbf2bd4db23797d36db56001d26bfd06d4d2d6e245039892792",
+      "customAudiences": [],
+      "secretRef": {
+        "secretKeyRef": {
+          "secret": "YUBAN_FIREBASE_STORAGE_KEY",
+          "version": "1"
+        }
+      },
+      "flags": [
+        {
+          "name": "FIREBASE_AUTH_EMAIL_ENABLED",
+          "value": "false"
+        },
+        {
+          "name": "FIREBASE_TASK_WORKER_ENABLED",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "action": "runtime-ready-readback",
+      "at": "2026-10-11T15:39:57.782Z",
+      "kind": "worker",
+      "name": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-worker",
+      "uid": "b0b741b0-0e26-4c5e-acbb-98bfc6ef5748",
+      "condition": {
+        "type": "Ready",
+        "state": "CONDITION_SUCCEEDED",
+        "lastTransitionTime": "2026-10-11T15:38:51.149206Z"
+      },
+      "latestReadyRevision": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-worker/revisions/yuban-firebase-worker-00001-rjz",
+      "latestCreatedRevision": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-worker/revisions/yuban-firebase-worker-00001-rjz",
+      "uri": "https://yuban-firebase-worker-rcnc7wlinq-df.a.run.app",
+      "urls": [
+        "https://yuban-firebase-worker-1064034424208.asia-east2.run.app",
+        "https://yuban-firebase-worker-rcnc7wlinq-df.a.run.app"
+      ],
+      "labels": {
+        "yuban-package": "f02",
+        "source-commit": "17c67253590a27f5110ff5a8234f461a20aec207"
+      },
+      "serviceAccount": "yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com",
+      "scaling": {
+        "maxInstanceCount": 1
+      },
+      "concurrency": 1,
+      "timeout": "300s",
+      "resources": {
+        "limits": {
+          "cpu": "1",
+          "memory": "512Mi"
+        },
+        "cpuIdle": true
+      },
+      "image": "asia-east2-docker.pkg.dev/ai-caregivers-for-children/yuban-firebase/runtime@sha256:ac942282c8c25cbf2bd4db23797d36db56001d26bfd06d4d2d6e245039892792",
+      "customAudiences": [
+        "https://yuban-firebase-worker-1064034424208.asia-east2.run.app"
+      ],
+      "secretRef": {
+        "secretKeyRef": {
+          "secret": "YUBAN_FIREBASE_STORAGE_KEY",
+          "version": "1"
+        }
+      },
+      "flags": [
+        {
+          "name": "FIREBASE_AUTH_EMAIL_ENABLED",
+          "value": "false"
+        },
+        {
+          "name": "FIREBASE_TASK_WORKER_ENABLED",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T15:40:43.188Z",
+      "action": "approved-runtime-invoker-readback",
+      "kind": "api",
+      "resource": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-api",
+      "bindings": [
+        {
+          "role": "roles/run.invoker",
+          "members": [
+            "allUsers"
+          ]
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T15:40:49.290Z",
+      "action": "approved-runtime-invoker-readback",
+      "kind": "worker",
+      "resource": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-worker",
+      "bindings": [
+        {
+          "role": "roles/run.invoker",
+          "members": [
+            "serviceAccount:yuban-firebase-dispatch@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ]
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T15:48:33.583Z",
+      "action": "isolated-deployment-anonymous-smoke",
+      "limit": 4,
+      "checks": [
+        {
+          "name": "login",
+          "status": 200,
+          "bytes": 34165,
+          "sha256": "b16168cd7fdb171bceadd52776c044052ec3a7acc5a7794731c2fccad9af2dba",
+          "cache": "max-age=3600",
+          "contentType": "text/html; charset=utf-8",
+          "deployedArtifactMatches": true
+        },
+        {
+          "name": "session",
+          "status": 200,
+          "bytes": 4,
+          "sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+          "cache": "private, no-store",
+          "contentType": "application/json"
+        },
+        {
+          "name": "private-account",
+          "status": 200,
+          "bytes": 482,
+          "sha256": "3fd2ebf48462a9e759fa96617d1ca7c98743384b2b06d5f0554c8b235ebe1ae0",
+          "cache": "private, no-store",
+          "contentType": "application/json"
+        }
+      ],
+      "state": "stopped",
+      "failure": {
+        "step": "private-account",
+        "name": "AssertionError",
+        "message": "Assertion failed"
+      }
+    },
+    {
+      "at": "2026-10-11T15:49:12.639Z",
+      "action": "anonymous-smoke-target-correction",
+      "reason": "GET /api/account is intentionally public service policy metadata with user:null (server/firebase-app.ts:101 and docs/API.md Firebase status contract). Private boundary is /api/children. Original failed expectation retained.",
+      "checks": [
+        {
+          "name": "public-account-policy",
+          "status": 200,
+          "bytes": 482,
+          "cache": "private, no-store"
+        },
+        {
+          "name": "private-children",
+          "status": 401,
+          "bytes": 61,
+          "cache": "private, no-store"
+        },
+        {
+          "name": "private-worker",
+          "status": 403,
+          "bytes": 295,
+          "cache": null
+        }
+      ],
+      "state": "passed"
+    },
+    {
+      "at": "2026-10-11T15:50:23.527Z",
+      "action": "identity-config-output-sanitization",
+      "tool": "d429c3",
+      "incident": "Identity config readback included provider password hash configuration in tool output. Local ignored snapshot sanitized immediately; no values copied to evidence or Git. Future readbacks explicitly select email and anonymous settings.",
+      "authAccountsCreatedByBatch": 0,
+      "passwordsOrUserPasswordHashesRead": false,
+      "chatOutputCannotBeRetracted": true
+    },
+    {
+      "at": "2026-10-11T15:50:57.314Z",
+      "action": "identity-enable-observation-failure",
+      "tool": "723cc8",
+      "emailProviderApplied": true,
+      "apiFlagNotYetChanged": true,
+      "reason": "Deep equality included provider output-only beforeCreate.updateTime, which changed on config PATCH; URI remained identical. Stop retained; reconcile exact security fields without repeating provider mutation."
+    },
+    {
+      "at": "2026-10-11T15:50:59.550Z",
+      "action": "invited-email-provider-enabled-readback",
+      "email": {
+        "enabled": true,
+        "passwordRequired": true
+      },
+      "anonymousEnabled": false,
+      "blockingFunctions": {
+        "triggers": {
+          "beforeCreate": {
+            "functionUri": "https://before-yuban-user-created-rcnc7wlinq-df.a.run.app"
+          }
+        }
+      },
+      "authorizedDomains": [
+        "ai-caregivers-for-children.firebaseapp.com",
+        "ai-caregivers-for-children.web.app",
+        "yuban-firebase-check.web.app"
+      ],
+      "providerMutationRepeated": false,
+      "readOnlyUpdateTimeExcluded": true
+    },
+    {
+      "at": "2026-10-11T15:51:02.166Z",
+      "action": "api-mail-flag-enable",
+      "name": "projects/ai-caregivers-for-children/locations/asia-east2/operations/86d792dc-b4ac-48ff-a453-d03763e51cd4",
+      "done": false,
+      "errorCode": null
+    },
+    {
+      "at": "2026-10-11T15:51:44.673Z",
+      "action": "api-email-enabled-ready",
+      "name": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-api",
+      "revision": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-api/revisions/yuban-firebase-api-00002-svh",
+      "image": "asia-east2-docker.pkg.dev/ai-caregivers-for-children/yuban-firebase/runtime@sha256:ac942282c8c25cbf2bd4db23797d36db56001d26bfd06d4d2d6e245039892792",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "emailEnabled": true,
+      "workerEnabled": false,
+      "templateExactMatch": true,
+      "hostingMailFlag": true
+    },
+    {
+      "at": "2026-10-11T15:54:45.931Z",
+      "action": "manual-registration-first-failure-diagnosis",
+      "reported": "登入或註冊結果未能確認",
+      "noSignupOrEmailRetry": true,
+      "auth": {
+        "exists": false,
+        "code": "auth/user-not-found"
+      },
+      "loggingStatus": 200,
+      "logs": [
+        {
+          "at": "2026-10-11T15:53:48.015745Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "ERROR",
+          "status": 503,
+          "method": "POST",
+          "path": "/api/auth/sign-up/email",
+          "latency": "0.003333461s"
+        },
+        {
+          "at": "2026-10-11T15:53:47.011987Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.003367117s"
+        },
+        {
+          "at": "2026-10-11T15:53:29.442677Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "ERROR",
+          "status": 503,
+          "method": "POST",
+          "path": "/api/auth/sign-up/email",
+          "latency": "0.011598577s"
+        },
+        {
+          "at": "2026-10-11T15:53:21.475166Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.003245361s"
+        },
+        {
+          "at": "2026-10-11T15:53:16.137012Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "ERROR",
+          "status": 503,
+          "method": "POST",
+          "path": "/api/auth/sign-up/email",
+          "latency": "0.008612335s"
+        },
+        {
+          "at": "2026-10-11T15:51:56.064704Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.002989817s"
+        },
+        {
+          "at": "2026-10-11T15:51:56.045662Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/account",
+          "latency": "0.075513620s"
+        },
+        {
+          "at": "2026-10-11T15:51:45.015023Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/account",
+          "latency": "0.576416825s"
+        },
+        {
+          "at": "2026-10-11T15:51:11.222256Z",
+          "service": "yuban-firebase-api",
+          "revision": "",
+          "severity": "INFO"
+        },
+        {
+          "at": "2026-10-11T15:51:08.803789Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO"
+        },
+        {
+          "at": "2026-10-11T15:51:08.728150Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "message": "firebase_server_started"
+        },
+        {
+          "at": "2026-10-11T15:51:08.727380Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "message": "Default STARTUP TCP probe succeeded after 1 attempt for container \"runtime-1\" on port 8080."
+        },
+        {
+          "at": "2026-10-11T15:51:05.095762Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "message": "Starting new instance. Reason: DEPLOYMENT_ROLLOUT - Instance started due to traffic shifting between revisions due to deployment, traffic split adjustment, or deployment health check."
+        },
+        {
+          "at": "2026-10-11T15:51:01.235097Z",
+          "service": "yuban-firebase-api",
+          "revision": "",
+          "severity": "NOTICE"
+        }
+      ],
+      "moreLogs": false
+    },
+    {
+      "at": "2026-10-11T15:57:02.754Z",
+      "action": "firebase-frontend-auth-build-repair-1",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "originalBundle": "index-af938d4eee884e2d9a69d79a1aa32db3.js",
+      "originalFailure": "Actual bundle contained provider=undefined and empty Firebase config; manual signup hit legacy /api/auth/sign-up/email and returned503. User does not exist. Original artifacts preserved.",
+      "clearMetroCache": true
+    },
+    {
+      "at": "2026-10-11T16:00:25.392Z",
+      "action": "firebase-auth-repair-hosting-prepare",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "files": 120,
+      "uniqueHashes": 69,
+      "state": "stopped",
+      "released": false,
+      "version": "sites/yuban-firebase-check/versions/1a225c70e25d6564",
+      "uploaded": 3,
+      "error": "assertion_failed"
+    },
+    {
+      "at": "2026-10-11T16:03:28.372Z",
+      "action": "repair-hosting-finalization-reconciled",
+      "version": "sites/yuban-firebase-check/versions/1a225c70e25d6564",
+      "exactProductFiles": 120,
+      "metadataFiles": 2,
+      "paginatedListingComplete": true,
+      "aggregateFileCount": null,
+      "reason": "Version output omitted aggregate fileCount immediately after finalize. Exhaustive file listing proves all exact path/hash/ACTIVE matches; original observation failure preserved.",
+      "review": {
+        "agent": "f01_foundation_review",
+        "evidencedP1P2": 0,
+        "all35HtmlReferenceNewBundle": true,
+        "providerAndFourConfigValuesMatch": true,
+        "browserUntested": true
+      }
+    },
+    {
+      "at": "2026-10-11T16:03:33.130Z",
+      "action": "firebase-auth-repair-hosting-released",
+      "release": "sites/yuban-firebase-check/releases/1791734611261000",
+      "version": "sites/yuban-firebase-check/versions/1a225c70e25d6564",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "origin": "https://yuban-firebase-check.web.app",
+      "officialDomainChanged": false,
+      "smoke": [
+        {
+          "path": "/login",
+          "status": 200,
+          "sha256": "fd1dd5d84faf212970fbb51478a2a7e9a4a769751f0da9822a13e9bb37e0efd9",
+          "exactArtifact": true
+        },
+        {
+          "path": "/_expo/static/js/web/index-4b9b377f3d711578f2a64e9566209520.js",
+          "status": 200,
+          "sha256": "4bd05c47a46c7a69272998ba315987773e20020c377df6460086831cca2b910a",
+          "exactArtifact": true
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T16:02:43.846Z",
+      "action": "isolated-restore-index-configuration",
+      "database": "yuban-firebase-restore-20261011",
+      "state": "configuration-submitted",
+      "records": [
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_children",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/S0U0aFhqT2dBQ0lDDCoDIGJhYThkN2Y3NTY1MC1iNTY5LTU4YjQtZDlmNy01OTYwYjA0YSQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_tasks",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/S01vcFVpSmdBQ0lDDCoDIGE5NzMwNGEyZTQ0ZS1hMWY4LTQ2NzQtNDdkMi00NmNiMGU2YSQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_task_revisions",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/S0E0MW1pSmdBQ0lDDCoDIGJmOTUyYTVhZTdhNi04NmZiLWVhYjQtMmY5Mi0yOWViYzQ4MyQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_changes",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/S0lvOUZqSmdBQ0lDDCoDIGM0MDM4Y2Y3MGE0OC0yMjZhLWVhZjQtMzYwOC02NThlZGUyMSQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/SklvOUZqSmdBQ0lDDCoDIDIwZDhlYWJkMDA0Ni03MjA5LTUyZjQtYzU0Ny1jYTg2ZDUwYyQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_documents",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/SkE0MW1pSmdBQ0lDDCoDIGEyZTA4NDdhN2U2MC02Y2Q5LWRmZTQtMDRkMC05MTBkZGNkNiQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_documents",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/TElvOUZqSmdBQ0lDDCoDIDcxNTBhZWYwYjY5Yi0wMjdhLWY2ZTQtNWFiNy0xODlmZGM1ZSQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_documents",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/SkU0aFhqT2dBQ0lDDCoDIDdjNzA3ODkzYTNkNi03NTM5LTcwNzQtYTk0Yy0xMWM3YzMwYiQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_document_snapshots",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/Sk1vcFVpSmdBQ0lDDCoDIDc5MDc0OTdiODJhYi05MzZhLTQwZDQtNTdhMS1hNWU3NTQ2YyQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_photos",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/TEU0aFhqT2dBQ0lDDCoDIDQ1ZmE0N2QwNDhhMi0yZWI4LTMzYTQtZjAzMi02M2JiYzQ2NiQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/SUU4aFhqT2dBQ0lDDCoDIDE0ZTVmOTY2MDEzOC1jOTA4LTQyMzQtNjY4MS1lY2U0MTM2MiQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/S0U4aFhqT2dBQ0lDDCoDIDMxMTc3ZWY3ZDM5Ny0yNGNiLWU3ZDQtYWMxYy1lNjBmYmE3ZCQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/TE1vcFVpSmdBQ0lDDCoDIDQ3ZmJhOWZjMTcxMS0yZmViLWQwNTQtMzQ0NS1mMDI4MWI4MiQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/SU1zcFVpSmdBQ0lDDCoDIDJmMmNjZDQxYzc1OS0wMTZiLTdjODQtYjUyMi0wMWFjYTBjNiQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/TEE0MW1pSmdBQ0lDDCoDIDA5OGMwMmRmYTczNC04NmM4LTMwNTQtZmNhNi00OTZjMDYwNCQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/SUE4MW1pSmdBQ0lDDCoDIDY3NWVlMjk1ZmMwOS0zYzQ4LWExNTQtMGYzNC0wYWE4YWUxMiQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "composite",
+          "collectionGroup": "yuban_authority_knowledge_chunks",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/SUlzOUZqSmdBQ0lDDCoDIGQxZjQ5MTAzNGRjNi01NWQ4LWVlODQtMTliYS01MWZkY2E5NyQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyAyM2IyMjZhZTFjNDItMzM1YS1jYmQ0LTQ0ZmQtOTdlOGEyMzYkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_sessions",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyBmOGZiZDIzM2ZjYTEtNDY0YS1lNGM0LWRmNGUtZWUwZjU2ZmQkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_children",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA3NjQ4ZWM5ZWFkNzYtZGY2YS0xYzM0LTVjZGQtMmNkNjM4YTAkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_tasks",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyBiODI5MmUwNTg4ZDItZmViOS05NjA0LWYwNTgtOTQwODE5NDAkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_task_revisions",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyBhYjdjMzFlNWI1MzAtODY0OC00NzE0LTNkNzctNzUyZWFiMjMkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_changes",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyBmZWE5OWZlZWU5MmEtMDBjOC01MDA0LTk2YWQtMTg3N2IzZTgkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyAxMjEyNjQ1NmFmMWUtODQ1OC1kMzA0LWE1NmQtNDdkMWM4N2EkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_online_operations",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyAyODczMzNkODlmMTUtMGRhYS03Y2Q0LWQ4NjUtNzg5YzQyZWEkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_documents",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA2YmU2OTRkNDEyMzQtOTA4YS03ZmI0LTYwYzQtMWI0Y2EwMmEkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_document_snapshots",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyBlZjQwMzRmOTgzNTMtMjNjOC1iNDc0LWMxNDgtZGY0NTdiNDkkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_document_chunks",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA1MTUyNjFhYWRhZDktOGJlYi03NDQ0LTlkMzgtNTYwNDk4OTQkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_document_operations",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyBlOWQ4ZjQ4NDkzZTktMzVhOC04MjY0LTAzMjEtYzk4ZjE2MjMkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_photos",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA2ODY0ODM2MTFjNzgtZTNjOS0yMjA0LWQ0YWYtNjQ4N2U5MTYkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_photo_ops",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA0OWIxNjM4N2VjMjEtY2NkYS0zNDg0LTYzMzUtYmZmNDhkMzIkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_photo_quota",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA2ZWVmMmIwZmJlNjYtZjg4Yi1hNDQ0LTc0NTYtZjM5ZDdhZTUkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_photo_cleanup",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA2NThmM2M5Mzg2ZDAtYmI1YS0yNWU0LTk5ODgtMDEwNDI1ZjUkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_task_reminders",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA3ZDE0MTY0ODczOTAtZGQzYS00YTA0LTk3OGEtYjE1MTYyNDUkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_task_reminder_batches",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA1YjE1YmE0MGNiMmItNTFhOC00MWY0LWViZGEtYmYxNmYyYzAkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_notification_preferences",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA5YWMyZDZiNTFkNTYtMmVhYi0yMTk0LWI1NDMtN2VkZTg3NmEkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_notification_outbox",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyA2ODU1OWE5ZmY0YmEtYjJmYi0xMzA0LTgwOWYtMjE2YmIyN2MkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_photos",
+          "fieldPath": "scopeTag",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyAzZjBhOGI2YTFmNDktMWE1Yi0yM2E0LThhNjUtMzA4YWU4MTUkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_task_dispatches",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyBkZTk4OWMwYWY5NzEtOTY2Yi03ZmQ0LWUwYWUtOTE1MWVhY2YkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_knowledge_sources",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyBiN2I2MWNiZDdjNmEtNDg4YS1hYjY0LWFmNWQtZmU3ODE2YTMkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_knowledge_versions",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyBiNTdlOTNiYmE1MzItYmVlYi03NGE0LTE0MGYtNDlmYjg5MzQkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_knowledge_chunks",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/AyAyZTE2OGRhYWQ3OTYtMjg4OC1hZTc0LWFiYjUtN2U5ZTIzMzUkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        }
+      ],
+      "readyNotYetVerified": true
+    },
+    {
+      "at": "2026-10-11T16:06:24.175Z",
+      "action": "isolated-restore-index-ready-readback",
+      "database": "yuban-firebase-restore-20261011",
+      "indexes": [
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJim18AI",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgOjXh8EI",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_knowledge_chunks/indexes/CICAgJjF9sII",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJiUpsMI",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_documents/indexes/CICAgJim14AJ",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_documents/indexes/CICAgOjXh4EJ",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJjF9oIJ",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_document_snapshots/indexes/CICAgJiUpoMJ",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_revisions/indexes/CICAgJim14AK",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_children/indexes/CICAgOjXh4EK",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_changes/indexes/CICAgJjF9oIK",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_tasks/indexes/CICAgJiUpoMK",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgOjXh8EK",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJim14AL",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_photos/indexes/CICAgOjXh4EL",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_documents/indexes/CICAgJjF9oIL",
+          "state": "CREATING"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJiUpoML",
+          "state": "CREATING"
+        }
+      ],
+      "indexCount": 17,
+      "allReady": false,
+      "nextPagePresent": false,
+      "photoScope": {
+        "indexes": [
+          {
+            "queryScope": "COLLECTION",
+            "fields": [
+              {
+                "fieldPath": "scopeTag",
+                "order": "ASCENDING"
+              }
+            ],
+            "state": "CREATING"
+          }
+        ],
+        "ancestorField": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_photos/fields/*"
+      }
+    },
+    {
+      "at": "2026-10-11T16:07:09.275Z",
+      "action": "manual-registration-after-build-repair-failure",
+      "reported": "Still cannot create account; user reports several repeated submissions",
+      "currentUi": "請先登出並重新登入，再明確要求電郵驗證指引",
+      "agentSignupRetries": 0,
+      "auth": {
+        "exists": false,
+        "code": "auth/user-not-found"
+      },
+      "loggingStatus": 200,
+      "logs": [
+        {
+          "at": "2026-10-11T16:05:51.547147Z",
+          "service": "before-yuban-user-created",
+          "revision": "before-yuban-user-created-00002-kav",
+          "severity": "ERROR",
+          "status": 503,
+          "method": "POST",
+          "path": "/",
+          "latency": "0.097475179s"
+        },
+        {
+          "at": "2026-10-11T16:05:50.773676Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.002671434s"
+        },
+        {
+          "at": "2026-10-11T16:05:50.095486Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.003174867s"
+        },
+        {
+          "at": "2026-10-11T16:05:11.902118Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.002373144s"
+        },
+        {
+          "at": "2026-10-11T16:05:09.295283Z",
+          "service": "before-yuban-user-created",
+          "revision": "before-yuban-user-created-00002-kav",
+          "severity": "ERROR",
+          "status": 503,
+          "method": "POST",
+          "path": "/",
+          "latency": "0.105150797s"
+        },
+        {
+          "at": "2026-10-11T16:05:08.741407Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.002101803s"
+        },
+        {
+          "at": "2026-10-11T16:04:58.793622Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.002674891s"
+        },
+        {
+          "at": "2026-10-11T16:04:58.788236Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/account",
+          "latency": "0.064206689s"
+        },
+        {
+          "at": "2026-10-11T16:04:53.966430Z",
+          "service": "before-yuban-user-created",
+          "revision": "before-yuban-user-created-00002-kav",
+          "severity": "INFO",
+          "message": "Default STARTUP TCP probe succeeded after 1 attempt for container \"worker\" on port 8080."
+        },
+        {
+          "at": "2026-10-11T16:04:51.492132Z",
+          "service": "before-yuban-user-created",
+          "revision": "before-yuban-user-created-00002-kav",
+          "severity": "INFO",
+          "message": "Starting new instance. Reason: AUTOSCALING - Instance started due to configured scaling factors (e.g. CPU utilization, request throughput, etc.) or no existing capacity for current traffic."
+        },
+        {
+          "at": "2026-10-11T16:04:51.467615Z",
+          "service": "before-yuban-user-created",
+          "revision": "before-yuban-user-created-00002-kav",
+          "severity": "ERROR",
+          "status": 503,
+          "method": "POST",
+          "path": "/",
+          "latency": "3.051057971s"
+        },
+        {
+          "at": "2026-10-11T16:04:49.773783Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.002678498s"
+        },
+        {
+          "at": "2026-10-11T16:04:43.216042Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.003384948s"
+        },
+        {
+          "at": "2026-10-11T16:04:36.918783Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.004182928s"
+        },
+        {
+          "at": "2026-10-11T16:03:44.484272Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/account",
+          "latency": "0.149706866s"
+        },
+        {
+          "at": "2026-10-11T16:03:44.482800Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "status": 200,
+          "method": "GET",
+          "path": "/api/auth/get-session",
+          "latency": "0.002949788s"
+        }
+      ],
+      "moreLogs": false
+    },
+    {
+      "at": "2026-10-11T16:10:16.097Z",
+      "action": "blocking-version-envelope-incompatibility-confirmed",
+      "sourceDatabase": "yuban-firebase-20261011",
+      "recordKind": "control",
+      "oldDeployedSource": "088bf70f45bf14d77237adc9079e9e77fff02cb0",
+      "apiSource": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "oldEnvelopeAccepted": false,
+      "newEnvelopeAccepted": true,
+      "rejectedExtraField": "recovery",
+      "ciphertextOrPlaintextLogged": false,
+      "function": {
+        "name": "projects/ai-caregivers-for-children/locations/asia-east2/functions/before-yuban-user-created",
+        "state": "ACTIVE",
+        "build": "projects/1064034424208/locations/asia-east2/builds/fa88a615-2629-46b0-a9b5-522971d71424",
+        "runtime": "nodejs24",
+        "revision": "before-yuban-user-created-00002-kav",
+        "serviceAccount": "yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "timeout": 7,
+        "memory": "256Mi",
+        "cpu": "1",
+        "max": 1,
+        "concurrency": 1
+      }
+    },
+    {
+      "at": "2026-10-11T16:15:51Z",
+      "action": "blocking-function-recovery-envelope-repair-started",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "cause": "Old deployed 088bf70 authority envelope strict parser rejects recovery on current encrypted invitation/control records; current 17c6725 parser accepts it. No authentication guard removed.",
+      "causeEvidence": "ba7175",
+      "archive": {
+        "sha256": "74fcf6cadb55871ff1f519212027a78211c666e4aa0d94d30c8a32a8fd0061ed",
+        "bytes": 9724111,
+        "entries": 396,
+        "files": 337,
+        "verification": "4a8ecf: ZIP CRC, complete inventory and staged/committed file bytes; bee53d: repeat rejected without overwrite"
+      },
+      "deploymentEvidence": "d683ee",
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/operation-1791735351959-65d92e52f5ed9-d0b0dae0-4af7ec3d",
+      "configuration": "Preserve dedicated build/auth identities, database, secret v1, 1 CPU/256Mi, 7s, concurrency 1, min 0/max 1, ingress and approved IAM.",
+      "newBuildCapSeconds": 600,
+      "state": "deploying; not yet accepted",
+      "userInstruction": "Agent may register the named test mailbox; user handles email verification. No further user retries requested."
+    },
+    {
+      "at": "2026-10-11T16:23:22.286Z",
+      "action": "primary-registration-after-function-repair-failed",
+      "userReport": "still error; UI unknown result, do not resubmit",
+      "account": {
+        "exists": true,
+        "emailVerified": false,
+        "disabled": false,
+        "createdAt": "Sun, 11 Oct 2026 16:22:25 GMT"
+      },
+      "entries": [
+        {
+          "at": "2026-10-11T16:22:25.892894Z",
+          "service": "before-yuban-user-created",
+          "revision": "before-yuban-user-created-00003-viq",
+          "severity": "INFO",
+          "http": {
+            "status": 200,
+            "path": "/",
+            "method": "POST",
+            "latency": "1.319270849s"
+          }
+        },
+        {
+          "at": "2026-10-11T16:22:24.670089Z",
+          "service": "yuban-firebase-api",
+          "revision": "yuban-firebase-api-00002-svh",
+          "severity": "INFO",
+          "http": {
+            "status": 200,
+            "path": "/api/auth/get-session",
+            "method": "GET",
+            "latency": "0.004601825s"
+          }
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T16:26:08.469Z",
+      "action": "blocking-function-repair-readback-and-cost-meter",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "revision": "before-yuban-user-created-00003-viq",
+      "deploymentEvidence": "e77909",
+      "configurationAndInvokerReadback": "passed",
+      "archiveSha256": "74fcf6cadb55871ff1f519212027a78211c666e4aa0d94d30c8a32a8fd0061ed",
+      "build": {
+        "id": "ae4db88c-c569-4054-b9c7-e90f25e29379",
+        "seconds": 191.815
+      },
+      "totalMeasuredBuildSeconds": 850.905,
+      "buildCapSeconds": 1800,
+      "actualBilledCost": "not observed",
+      "originalReadbackFailure": "5932b3: independent restore index wildcard-list request HTTP400; no mutation or verification assertion changed. Deployment readback e77909 remains valid.",
+      "priorUsageCorrection": "Source-update preflight measured asia-east2 only; this combines asia-east2 and global."
+    },
+    {
+      "at": "2026-10-11T16:27:34.388Z",
+      "action": "isolated-restore-exact-index-readback",
+      "indexes": [
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJim18AI",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgOjXh8EI",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_knowledge_chunks/indexes/CICAgJjF9sII",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJiUpsMI",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_documents/indexes/CICAgJim14AJ",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_documents/indexes/CICAgOjXh4EJ",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJjF9oIJ",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_document_snapshots/indexes/CICAgJiUpoMJ",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_revisions/indexes/CICAgJim14AK",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_children/indexes/CICAgOjXh4EK",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_changes/indexes/CICAgJjF9oIK",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_tasks/indexes/CICAgJiUpoMK",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgOjXh8EK",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJim14AL",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_photos/indexes/CICAgOjXh4EL",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_documents/indexes/CICAgJjF9oIL",
+          "state": "READY"
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJiUpoML",
+          "state": "READY"
+        }
+      ],
+      "count": 17,
+      "allReady": true,
+      "limits": "Index readback only; no import or recovery acceptance. Prior wildcard-list400 retained."
+    },
+    {
+      "at": "2026-10-11T16:41:10.741995+00:00",
+      "action": "bounded-authentication-diagnostic-prepared",
+      "sourceRevision": "67209bb5082883f8ad946e9c368eb0b1c8c877a2",
+      "changes": [
+        "src/client/firebase-auth-api.ts",
+        "tests/firebase-client-auth.test.ts"
+      ],
+      "purpose": "Disambiguate native token failure from timeout/caller cancellation after real signup/profile succeeded; no fix claim.",
+      "privacy": "Only fixed phase/cause and allowlisted SDK code; no success logging, email, UID, password, token, provider body or raw error.",
+      "originalFailure": "4105a0: baseline emits no expected safe diagnostic; retained baseline behavior and original cloud failure.",
+      "targetedTest": {
+        "evidence": "8e2e5a",
+        "passed": 9,
+        "runtime": "Node24.19",
+        "environment": "synthetic SDK/fetch fixture, not browser or native Firebase"
+      },
+      "clientTypecheck": {
+        "evidence": "c56581",
+        "result": "exit0"
+      },
+      "independentReview": "f01_foundation_review: no evidencedP1/P2; readonly; timeout,forcedrefresh,reference/generation checks,queue and cleanup unchanged",
+      "rootDiffReview": "57b9bf",
+      "build": {
+        "evidence": "8f1ee1",
+        "result": "exit0",
+        "output": "tmp/f02-web-auth-diagnostic-1/dist"
+      },
+      "next": "Read back released Hosting bytes then one existing-account login. Do not repeat account creation."
+    },
+    {
+      "at": "2026-10-11T16:42:35.574Z",
+      "action": "auth-diagnostic-hosting-release-readback",
+      "sourceRevision": "67209bb5082883f8ad946e9c368eb0b1c8c877a2",
+      "release": "sites/yuban-firebase-check/releases/1791736875592000",
+      "version": "sites/yuban-firebase-check/versions/77c204b7d61f70df",
+      "files": 120,
+      "html": 35,
+      "firstFailure": {
+        "evidence": "0d1608",
+        "phase": "post-release smoke",
+        "result": "assertion failed; exact first response/hash was not retained, cause not established"
+      },
+      "reconciliation": "bbc4ea confirms same release already active; 2adf31 single later read confirms both exact hashes. No mutation replay or assertion relaxation.",
+      "smoke": [
+        {
+          "path": "/login",
+          "status": 200,
+          "sha256": "57341f83a91ec2bd3b1164f60a7a6181e2d3cdadb6541ef5ff42a54980be1f9b",
+          "expected": "57341f83a91ec2bd3b1164f60a7a6181e2d3cdadb6541ef5ff42a54980be1f9b",
+          "contentType": "text/html; charset=utf-8",
+          "location": null,
+          "actualHtmlBundle": "/_expo/static/js/web/index-305dff4e029da7e3566f2b4f68123467.js"
+        },
+        {
+          "path": "/_expo/static/js/web/index-305dff4e029da7e3566f2b4f68123467.js",
+          "status": 200,
+          "sha256": "3a83b01413099f486888cd8c7109f9ba9c0527742cf4b4cad7f82d28e4651417",
+          "expected": "3a83b01413099f486888cd8c7109f9ba9c0527742cf4b4cad7f82d28e4651417",
+          "contentType": "text/javascript; charset=utf-8",
+          "location": null
+        }
+      ],
+      "limits": "Diagnostic version, not repaired-login proof. Existing account preserved; no duplicate signup or email."
+    },
+    {
+      "at": "2026-10-11T16:49:37.740Z",
+      "action": "synthetic-operator-preflight-only-failure-reconciled",
+      "originalFailure": "031b62: public_config_read403, no invitation or signup begun",
+      "reason": "ADC x-goog-user-project omitted; provider rejected default client quota project. Native GoogleAuth headers succeed200 with exact publicconfig; no IAM or API enablement changes.",
+      "reasonEvidence": "f93bed",
+      "accounts": [
+        {
+          "actor": "a",
+          "exists": false
+        },
+        {
+          "actor": "b",
+          "exists": false
+        }
+      ],
+      "checkpointFiles": [
+        "prepare_started.json",
+        "start_confirmed.json"
+      ],
+      "permissionForRecovery": "Root may preserve the exact failed checkpoint directory under a bounded tmp archive, then restart same run after the header-only correction. No unknown mutation may be retried."
+    },
+    {
+      "at": "2026-10-11T16:58:12.539Z",
+      "action": "auth-diagnostic-2-hosting-release-readback",
+      "sourceRevision": "2471e4da9d7fb04e1028a6c9a0ee160e5befaf0a",
+      "version": "sites/yuban-firebase-check/versions/f0bd20c01b744ba1",
+      "release": "sites/yuban-firebase-check/releases/1791737831795000",
+      "smoke": [
+        {
+          "path": "/login",
+          "status": 200,
+          "sha256": "d25d643bc9029d73c2fc1cd3c6853f5d6695e185511db96f3ee3c9af50fb595c",
+          "expectedSha256": "d25d643bc9029d73c2fc1cd3c6853f5d6695e185511db96f3ee3c9af50fb595c"
+        },
+        {
+          "path": "/_expo/static/js/web/index-778979053658794cb47f13d78873b095.js",
+          "status": 200,
+          "sha256": "eb7401047009cd92e62be14856c0bdef895f4b3eb7903f53fa0ffde29feda619",
+          "expectedSha256": "eb7401047009cd92e62be14856c0bdef895f4b3eb7903f53fa0ffde29feda619"
+        }
+      ],
+      "firstFailure": "b9efc8 / eeaed5: first /login response was exact prior-version HTML. No release retry; later readback only.",
+      "limits": "Diagnostic only; synthetic browser login pending, no primary login request or email."
+    },
+    {
+      "at": "2026-10-11T17:15:23.695Z",
+      "action": "synthetic-A-real-browser-login",
+      "testedClient": "2471e4da9d7fb04e1028a6c9a0ee160e5befaf0a",
+      "testedApi": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "operator": "dc76233",
+      "actor": "synthetic_A",
+      "nativeSignup": "passed; invitation blocking function and Admin UID/email readback",
+      "emailVerification": "Admin synthetic fixture only; no mail lifecycle proof",
+      "apiSession": "HTTP200 and exact identity matched; operator stopped on strict cookie order assertion d9e8f7",
+      "browser": "Actual isolated Hosting form sign-in reached data-use acknowledgment; no new authentication warning",
+      "passwordHandling": "One-time current-user-only local file consumed and deleted (9bd654); not logged or committed",
+      "cookieDiagnosis": {
+        "at": "2026-10-11T17:14:21.598Z",
+        "method": "POST without cookies",
+        "path": "/api/auth/sign-out",
+        "status": 200,
+        "cookies": [
+          {
+            "name": "__session",
+            "valueEmpty": true,
+            "attributes": [
+              "Path=/",
+              "Max-Age=0",
+              "HttpOnly",
+              "Secure",
+              "SameSite=Lax"
+            ]
+          }
+        ]
+      },
+      "primaryObservation": {
+        "at": "2026-10-11T17:13:42.352Z",
+        "emailVerified": false,
+        "disabled": false,
+        "createdAt": "Sun, 11 Oct 2026 16:22:25 GMT",
+        "lastSignIn": "Sun, 11 Oct 2026 16:44:15 GMT"
+      },
+      "primaryApiObservation": {
+        "at": "2026-10-11T17:13:16.057Z",
+        "window": "16:43:30–16:45:30 UTC",
+        "entries": [
+          {
+            "at": "2026-10-11T16:44:14.394259Z",
+            "revision": "yuban-firebase-api-00002-svh",
+            "http": {
+              "method": "GET",
+              "path": "/api/auth/get-session",
+              "status": 200,
+              "latency": "0.004847926s"
+            },
+            "severity": "INFO"
+          }
+        ],
+        "hasMore": false
+      },
+      "limits": "Primary account failure not resolved; verified synthetic browser sign-in only. B not created; core, Tasks and restore not started. Original failure retained."
+    },
+    {
+      "at": "2026-10-11T17:22:56.601Z",
+      "action": "synthetic-B-unverified-browser-login",
+      "operator": "2880c3b",
+      "client": "2471e4d",
+      "api": "17c6725",
+      "preparation": "89dd88: one native B signup through invitation guard, exact UID/email/enabled/unverified readback; no Admin email verification",
+      "browserResult": "Actual isolated Hosting login reached 請先完成電郵驗證; no new firebase_authenticate_unconfirmed warning",
+      "cleanup": "76512e: private one-time password file removed; browser signed out and memory credential cleared",
+      "limits": "No verification email sent. Primary last-sign-in accepted at16:44:15 but browser failure phase remains unknown. Neither synthetic result proves the primary failure repaired."
+    },
+    {
+      "at": "2026-10-11T17:24:42.142Z",
+      "action": "before-core-api-source-readback",
+      "service": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-api",
+      "revision": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-api/revisions/yuban-firebase-api-00002-svh",
+      "image": "asia-east2-docker.pkg.dev/ai-caregivers-for-children/yuban-firebase/runtime@sha256:ac942282c8c25cbf2bd4db23797d36db56001d26bfd06d4d2d6e245039892792",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "terminal": "CONDITION_SUCCEEDED",
+      "traffic": [
+        {
+          "type": "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST",
+          "revision": "yuban-firebase-api-00002-svh",
+          "percent": 100
+        }
+      ],
+      "limits": "Control-plane image matches previously source-verified17c6725 build; core script binds manifest only, does not discover server revision."
+    },
+    {
+      "at": "2026-10-11T17:55:59.261Z",
+      "action": "core-batch-photo-download-stopped",
+      "testedSource": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "runId": "f02-20261011-01",
+      "fixedActors": [
+        "RLG08u9PVifLmoW0MvU1xx6LK0n2",
+        "RgNYZpZdIdghEG9kUBDt3sxiKtr2"
+      ],
+      "checkpoint": "tmp/f02-cloud-f02-20261011-01",
+      "completedRequests": 30,
+      "failedRequest": 31,
+      "failedStep": "photo_authorized_content",
+      "clientError": "network_failure",
+      "apiRevision": "yuban-firebase-api-00002-svh",
+      "apiObservedStatuses": [
+        503,
+        503
+      ],
+      "apiObservedLatenciesSeconds": [
+        21.1905,
+        21.2105
+      ],
+      "secondRequestCause": "unconfirmed; do not infer a second operator upload",
+      "logs": "tmp/f02-photo-download-failure-api-logs.json",
+      "partial": "account acknowledgement, distinct child creation, original task receipt/replay, document bounded content/patch/replay/stale conflict, immutable photo reserve/upload/metadata",
+      "notYetVerified": [
+        "photo content",
+        "remaining isolation",
+        "knowledge catalog through HTTP",
+        "deletion",
+        "Tasks",
+        "paired restore"
+      ],
+      "retryUpload": false
+    },
+    {
+      "at": "2026-10-11T17:54:40.463Z",
+      "builds": [
+        {
+          "id": "ae4db88c-c569-4054-b9c7-e90f25e29379",
+          "region": "asia-east2",
+          "status": "SUCCESS",
+          "createTime": "2026-10-11T16:15:54.165009485Z",
+          "startTime": "2026-10-11T16:15:56.995555434Z",
+          "finishTime": "2026-10-11T16:19:08.810641Z",
+          "machine": "default"
+        },
+        {
+          "id": "1a8edc8c-fc63-4ef7-886e-562e8853a0e4",
+          "region": "asia-east2",
+          "status": "SUCCESS",
+          "createTime": "2026-10-11T15:00:43.641064728Z",
+          "startTime": "2026-10-11T15:01:33.147982528Z",
+          "finishTime": "2026-10-11T15:03:37.554918Z",
+          "machine": "E2_HIGHCPU_8"
+        },
+        {
+          "id": "fa88a615-2629-46b0-a9b5-522971d71424",
+          "region": "asia-east2",
+          "status": "SUCCESS",
+          "createTime": "2026-10-11T13:08:19.752850611Z",
+          "startTime": "2026-10-11T13:08:21.446882089Z",
+          "finishTime": "2026-10-11T13:11:05.551448Z",
+          "machine": "default"
+        },
+        {
+          "id": "0788ca68-3f1a-437f-beed-f2b3b9b31585",
+          "region": "asia-east2",
+          "status": "SUCCESS",
+          "createTime": "2026-10-11T13:01:12.288385766Z",
+          "startTime": "2026-10-11T13:01:13.967963643Z",
+          "finishTime": "2026-10-11T13:04:30.954049Z",
+          "machine": "default"
+        },
+        {
+          "id": "afde1a5e-0121-4797-a382-63cbb4ce7006",
+          "region": "asia-east2",
+          "status": "FAILURE",
+          "createTime": "2026-10-11T12:58:13.964688412Z",
+          "startTime": "2026-10-11T12:58:15.662545919Z",
+          "finishTime": "2026-10-11T12:58:31.713941Z",
+          "machine": "default"
+        },
+        {
+          "id": "72457b1a-81ec-4017-a526-fdf68ed56f91",
+          "region": "asia-east2",
+          "status": "FAILURE",
+          "createTime": "2026-10-11T12:56:34.313407222Z",
+          "startTime": "2026-10-11T12:56:36.432413286Z",
+          "finishTime": "2026-10-11T12:56:52.577113Z",
+          "machine": "default"
+        },
+        {
+          "id": "d0a21e27-9264-4a8d-a8fb-dab552406aa6",
+          "region": "global",
+          "status": "SUCCESS",
+          "createTime": "2026-10-11T15:30:52.676414125Z",
+          "startTime": "2026-10-11T15:31:47.257712119Z",
+          "finishTime": "2026-10-11T15:34:08.652104Z",
+          "machine": "E2_HIGHCPU_8"
+        }
+      ],
+      "seconds": 850.905,
+      "limit": 1800,
+      "additionalBuildTimeout": 600,
+      "canBuild": true,
+      "estimatedEnvelopeUSD": 3.0752,
+      "cleanupReserveUSD": 2,
+      "limitUSD": 6,
+      "actualInvoice": "unknown"
+    },
+    {
+      "at": "2026-10-11T18:07:02.102Z",
+      "action": "bounded-media-repair-deployed",
+      "source": "9ee3814b4c4766a99a16a1025ca76185ec3daea6",
+      "operatorSource": "341edf1",
+      "buildId": "b94c0d1d-a61d-40ad-8758-abce79350500",
+      "buildStatus": "SUCCESS",
+      "buildDurationSeconds": 129.31,
+      "totalBuildSeconds": 980.2149999999999,
+      "buildLimitSeconds": 1800,
+      "image": "sha256:61793ab702248243441e803a20473522307bc3b7529c7bdfb47ee811db49ba10",
+      "apiRevision": "yuban-firebase-api-00003-tdj",
+      "workerRevision": "yuban-firebase-worker-00002-9bt",
+      "configurationChange": "image only; exact template readback preserved all other fields",
+      "independentReview": "original P2 Gaxios error-body buffering fixed with validateStatus true; latest read-only review no remaining P1/P2",
+      "verification": "36 existing adapter checks plus 4 native HTTP transport checks; no widened limits or discarded assertions",
+      "originalCloudObject": {
+        "at": "2026-10-11T17:58:12.854Z",
+        "source": "9ee3814b4c4766a99a16a1025ca76185ec3daea6",
+        "mode": "read_only_original_cloud_storage_object",
+        "photoId": "50660a72-deb0-40a0-b3d3-2bee1c303805",
+        "elapsedMs": 4635,
+        "descriptor": {
+          "objectName": "photos/v1/08d9d3d1307c7d56e149e97f14f3ea7f3112a5b21e9480f644cef4843954d3ce/50660a72-deb0-40a0-b3d3-2bee1c303805",
+          "generation": "1791740362823281",
+          "cipherSha256": "2c1d0879aee379d0788cf9afe621201876aebf800b54372cd42fd10e592811b1",
+          "sha256": "a4d4c009619311d9b83904acfd62fe3b7f918c312522bbcc6ad51cdec4fd1edf",
+          "bytes": 67,
+          "mimeType": "image/png"
+        },
+        "originalSha256": "a4d4c009619311d9b83904acfd62fe3b7f918c312522bbcc6ad51cdec4fd1edf",
+        "apiAuthorizationVerified": false
+      },
+      "continuation": {
+        "fence": "tmp/f02-cloud-resume-photo-read-20261012",
+        "runId": "f02-20261011-01",
+        "preflight": "9f6df5",
+        "identityFixture": "1d9cc6",
+        "prepared": "59ec29",
+        "coreStarted": "74968b",
+        "state": "running",
+        "newUploads": 0,
+        "newAccounts": 0,
+        "primaryAccountTouched": false
+      },
+      "undelivered": [
+        "full F02",
+        "Tasks",
+        "paired restore",
+        "real email lifecycle"
+      ]
+    },
+    {
+      "at": "2026-10-11T18:15:35.503Z",
+      "action": "original-core-api-continuation-passed",
+      "testedSource": "9ee3814b4c4766a99a16a1025ca76185ec3daea6",
+      "operatorSource": "341edf1",
+      "runId": "f02-20261011-01",
+      "result": "passed",
+      "evidence": "0d71d9",
+      "checkpoint": "tmp/f02-cloud-f02-20261011-01/core-complete.json",
+      "requests": 58,
+      "originalFailureRequest": 31,
+      "continuationRequests": [
+        32,
+        58
+      ],
+      "noNewCoreCreatesOrUploads": true,
+      "passed": [
+        "original photo content sha256",
+        "original operation receipts",
+        "document revision and bounded content",
+        "cross-account denial",
+        "public knowledge catalog version"
+      ],
+      "notProven": [
+        "Tasks delivery/redelivery",
+        "scale-to-zero",
+        "deletion",
+        "paired recovery",
+        "real email",
+        "full product browser acceptance"
+      ],
+      "deploymentReadback": "bb8e56",
+      "nativeOriginalObjectReadback": "16b99c",
+      "localMediaChecks": {
+        "adapterTests": 36,
+        "nativeTransportTests": 4,
+        "evidence": "c54588",
+        "includes": "error response does not buffer body or retry"
+      },
+      "buildSecondsUsed": 980.215,
+      "buildSecondsLimit": 1800
+    },
+    {
+      "at": "2026-10-11T18:29:28.271Z",
+      "action": "tasks-first-delivery-stopped-on-missing-receipt",
+      "workerRevision": "yuban-firebase-worker-00003-7rk",
+      "queue": "PAUSED",
+      "scope": "one dispatcher and one original reminder run; no redelivery",
+      "preflight": "d3dd16",
+      "canonicalPendingBefore": "b97f60",
+      "dispatcher": "41886f",
+      "originalDelivery": "98676b",
+      "failedAssertion": "901022",
+      "failurePreserved": "tmp/f02-reminder-first-failure.json",
+      "diagnosis": "0e1846",
+      "actual": {
+        "reminders": 0,
+        "notificationIntents": 0,
+        "work": "pending",
+        "nextAt": "2026-10-12T00:00:00.000Z",
+        "failures": 0
+      },
+      "reason": "Hong Kong quiet period 22:00-08:00, appointment exception defaults false; both OIDC requests returned HTTP 200 and original tasks deleted normally.",
+      "decision": "Preserve quiet policy and original failure. Connect existing personal preference contract using production owner receipt transaction, then explicitly opt in synthetic appointment and legitimately reschedule same task. Do not seed authority or insert receipt fixtures.",
+      "repairCommit": "97de268a4b1edc8f17f80634093ee210ffac5a66",
+      "localChecks": {
+        "initial": "d78e75: 31 passed, 1 new test used a non-wire privateUserId field",
+        "targeted": "e7026b: 3 passed with exact wire, foreign changes denial, revocation and quiet policy",
+        "typecheck": "e462ea: same 5 pre-existing test errors; no new errors",
+        "independentReadonlyReview": "f01_foundation_review: no evidenced P1/P2"
+      }
+    },
+    {
+      "at": "2026-10-11T18:51:57.229Z",
+      "action": "reminder_preferences_real_tasks_and_primary_email_verified",
+      "sourceRevision": "97de268a4b1edc8f17f80634093ee210ffac5a66",
+      "operatorRevision": "bf681c7cd57f456db61f77d35f534207fcad03df",
+      "deploy": {
+        "apiRevision": "yuban-firebase-api-00004-vn6",
+        "workerRevision": "yuban-firebase-worker-00004-nls",
+        "image": "sha256:6c136c07ab941e61a6bdba5620dd64e96dbf4858578cc4bc1fd2106982f93767",
+        "readbackEvidence": "60f66c",
+        "buildId": "7e8c07b5-7a7b-45b5-a25f-d17d30c9db88",
+        "buildSeconds": 149.906,
+        "totalBuildSeconds": 1130.121,
+        "buildLimitSeconds": 1800
+      },
+      "reminder": {
+        "sameRun": "f02-20261011-01",
+        "sameTaskVersion": 2,
+        "originalCoreSha256": "46506a21aa5b1cec4bae5c28cc7c97ffcc9db991671223effa40666b03b7abc4",
+        "apiRequestsIncludingOriginalFailure": 76,
+        "setupCheckpointSha256": "28a61bf57ae1eb99435ead5cbd5ae53dab9971a05714e407d489533e67738ef2",
+        "firstQuietHoursFailureRetained": true,
+        "queueState": "PAUSED",
+        "actualWorkerRequests": [
+          {
+            "at": "2026-10-11T18:45:45.317190Z",
+            "path": "/internal/task-dispatch",
+            "status": 200,
+            "latency": "2.359637441s"
+          },
+          {
+            "at": "2026-10-11T18:46:04.947034Z",
+            "path": "/internal/task-reminders",
+            "status": 200,
+            "latency": "1.014554924s"
+          },
+          {
+            "at": "2026-10-11T18:46:56.755028Z",
+            "path": "/internal/task-reminders",
+            "status": 200,
+            "latency": "0.529130285s"
+          }
+        ],
+        "counts": {
+          "task_outbox": 2,
+          "task_reminders": 1,
+          "task_reminder_batches": 1,
+          "notification_outbox": 1
+        },
+        "reminderId": "bbf9e8e4-2f56-5ac6-8e6c-540cc9c4a392",
+        "beforeDuplicateSha256": "4b3c37d3a331fa7525d935fc3d9906262212c7d7e252dc10675a68054d30ab6b",
+        "afterDuplicateSha256": "4b3c37d3a331fa7525d935fc3d9906262212c7d7e252dc10675a68054d30ab6b",
+        "externalNotifications": 0,
+        "modelCalls": 0,
+        "evidence": [
+          "528123",
+          "edf073",
+          "24912d",
+          "95146c"
+        ]
+      },
+      "designatedMailbox": {
+        "authorizedFirebaseOnlyPasswordReset": true,
+        "secretsPersisted": false,
+        "authentication": "Actual createFirebaseAuthApi with native Firebase SDK in Node and deployed same-origin Hosting API",
+        "unverifiedSessionAndAccountReadbackPassed": true,
+        "verificationMessagesRequested": 1,
+        "providerSendAccepted": true,
+        "userReportedLinkSuccess": true,
+        "currentAdminEmailVerified": true,
+        "adminEmailVerifiedWrite": false,
+        "browserVerificationAfterReset": false,
+        "originalUserLoginFailure": "Preserved; new client/API login succeeds but original browser failure was not reproduced or causally resolved",
+        "evidence": [
+          "61b43a",
+          "5d0afa",
+          "528123"
+        ]
+      },
+      "limitations": [
+        "Primary browser flow after reset not reverified",
+        "Password-reset email lifecycle not yet exercised",
+        "Scale-to-zero, paired backup, original deletion and isolated restore remain pending",
+        "Actual incremental billed cost is unknown; original bounded estimate/reserve remains in force"
+      ]
+    },
+    {
+      "at": "2026-10-11T19:26:11.997Z",
+      "action": "paired_backup_original_delete_isolated_restore_and_temporary_wrap",
+      "sourceCommit": "97de268a4b1edc8f17f80634093ee210ffac5a66",
+      "operatorCommit": "1584f6ebfb8d292960b687cc369f07c501862e7d",
+      "originalFailuresPreserved": [
+        {
+          "evidence": "0109b0 / 5e383c",
+          "reason": "Cloud Run rejected manualInstanceCount without MANUAL; readback proved no change; explicit MANUAL/0 corrected without changing revision limits."
+        },
+        {
+          "evidence": "1c4a23",
+          "reason": "Native timestamp export rejected without PITR; find returned null and audit confirmed rejection. PITR enabled within existing budget, then exactly one same-backup/snapshot repair."
+        },
+        {
+          "evidence": "344e8f",
+          "reason": "Real native progressDocuments.completedWork fixture failed original workCompleted reader; fixed field name without weakening count/prefix/snapshot checks."
+        }
+      ],
+      "targetedChecks": {
+        "passed": 13,
+        "evidence": "a44fc9",
+        "serverTypecheck": "1eb637: exactly five pre-existing test errors, no new error",
+        "independentReview": "f01_foundation_review: no evidenced P1/P2 for field fix, manifest/original delete and restore gates; no cloud execution by reviewer"
+      },
+      "backup": {
+        "backupId": "ce2dbefd-5b7f-4353-bd77-54c9aa7e8069",
+        "restoreId": "e2744503-5e3e-4d3b-9a42-618ba599dbde",
+        "snapshotTime": "2026-10-11T19:02:00.000Z",
+        "generation": "ed85112e-724e-4fa5-80ff-f0b332a32299",
+        "sourceCommit": "97de268a4b1edc8f17f80634093ee210ffac5a66",
+        "retainedUntil": "2026-10-26T19:02:44.521Z",
+        "descriptor": {
+          "format": "yuban-firebase-backup-manifest/v1",
+          "objectName": "firebase-backups/v1/ce2dbefd-5b7f-4353-bd77-54c9aa7e8069/manifest",
+          "generation": "1791746071839641",
+          "cipherSha256": "d19a6fd9c889cc9857f0b2f17251e6569be9af6ef99531961c9a11d6416fb684",
+          "bytes": 26036,
+          "retainedUntil": "2026-10-26T19:02:44.521Z"
+        },
+        "documentCount": 96,
+        "photoCount": 1,
+        "inventorySha256": "f77b7785f49f85773e84fa394378e181560381fcc8496fa5514d9b9e8c28fd89",
+        "nativeCompletedWork": "96",
+        "nativeBytes": "282719",
+        "heldNativeObjects": 3,
+        "heldPhotoObjects": 1,
+        "heldManifestObjects": 1,
+        "physicalRetentionElapsedTested": false
+      },
+      "originalDeletion": {
+        "format": 1,
+        "state": "delete_complete",
+        "testedSource": "97de268a4b1edc8f17f80634093ee210ffac5a66",
+        "runId": "f02-20261011-01",
+        "requests": 89,
+        "photoId": "50660a72-deb0-40a0-b3d3-2bee1c303805",
+        "originalPhotoSha256": "a4d4c009619311d9b83904acfd62fe3b7f918c312522bbcc6ad51cdec4fd1edf",
+        "deletionOperation": {
+          "workspaceId": "ba48c7a9-651a-4352-98c8-84448ad135c6",
+          "storageEpoch": "3f570270-e2d9-4420-9acd-2d85e5b423c1",
+          "opId": "1981a459-c539-4b90-aabc-7c1c5b49efc0",
+          "deviceId": "170bae23-5ee7-4eb8-93c6-883b6a9a183b"
+        },
+        "reservationOperation": {
+          "workspaceId": "ba48c7a9-651a-4352-98c8-84448ad135c6",
+          "storageEpoch": "3f570270-e2d9-4420-9acd-2d85e5b423c1",
+          "opId": "3c8540aa-ec54-44d0-b5dd-679f5ba4a891",
+          "deviceId": "3713c975-5c3e-4ac4-89d6-fddab73c790c"
+        },
+        "receipt": {
+          "state": "confirmed",
+          "path": "/api/children/26dc86ae-7c6c-49c5-95dc-86f211e19683/photos/50660a72-deb0-40a0-b3d3-2bee1c303805/delete",
+          "operation": {
+            "workspaceId": "ba48c7a9-651a-4352-98c8-84448ad135c6",
+            "storageEpoch": "3f570270-e2d9-4420-9acd-2d85e5b423c1",
+            "opId": "1981a459-c539-4b90-aabc-7c1c5b49efc0",
+            "deviceId": "170bae23-5ee7-4eb8-93c6-883b6a9a183b"
+          },
+          "changeSeq": "11",
+          "statusCode": 200,
+          "result": {
+            "deleted": true,
+            "cleanupPending": true
+          }
+        },
+        "cleanupPending": true,
+        "checks": [
+          "Original delete opId replay and receipt equality",
+          "Metadata/content 410 photo_deleted",
+          "Photo absent from complete list",
+          "Original reservation receipt result null"
+        ],
+        "evidence": "6ae409"
+      },
+      "restore": {
+        "state": "applied-paused",
+        "replayed": false,
+        "documentCount": 84,
+        "generation": "7c267f0b-7443-5e07-bb69-931924ec0d6a",
+        "inventorySha256": "3bb6d5f269ddddc321dca43e409fefc14b6dee92e5d02d5a83af030750cb1b41",
+        "readback": {
+          "confirmed": true,
+          "at": "2026-10-11T19:26:11.997Z",
+          "documentCount": 84,
+          "checkpoints": 1,
+          "sessions": 0,
+          "counts": {
+            "change": 11,
+            "authority-operation": 7,
+            "control": 1,
+            "authority-invitation": 3,
+            "authority-identity": 3,
+            "authority-child-detail": 2,
+            "authority-owner": 3,
+            "account": 3,
+            "child": 2,
+            "workspace": 3,
+            "change-projection": 11,
+            "child-projection": 2,
+            "document-snapshot-chunk": 2,
+            "document-operation": 2,
+            "document-snapshot": 2,
+            "family-document": 1,
+            "knowledge-chunk": 1,
+            "knowledge-source": 1,
+            "knowledge-version": 1,
+            "task-notification-outbox": 1,
+            "notification-preferences": 1,
+            "online-receipt": 7,
+            "photo-cleanup": 1,
+            "photo-operation": 1,
+            "photo-global-quota": 1,
+            "photo-child-quota": 1,
+            "task-dispatch-scan": 1,
+            "task-dispatch-observation": 2,
+            "task-reminder-outbox": 2,
+            "task-reminder-batch": 1,
+            "task-reminder": 1,
+            "task-revision": 2,
+            "task": 1
+          },
+          "control": {
+            "enabled": false,
+            "generation": "7c267f0b-7443-5e07-bb69-931924ec0d6a"
+          },
+          "workspaces": [
+            {
+              "id": "ba48c7a9-651a-4352-98c8-84448ad135c6",
+              "storageEpoch": "fd30aaa1-ca1e-5e81-afab-22762a246b3b"
+            },
+            {
+              "id": "93930dbb-9cab-4eb4-bb00-50624db87439",
+              "storageEpoch": "b9a69dfc-3aa6-5c5c-970a-eb94fc3911a7"
+            },
+            {
+              "id": "771f4df2-6104-4fce-9e99-06fc814e033d",
+              "storageEpoch": "42be2d39-252c-5d19-927e-0dc82dda343d"
+            }
+          ],
+          "primaryCurrentAuthEmailVerified": true,
+          "taskVersion": 2,
+          "documentVersion": 2,
+          "deletedPhotoAbsent": true,
+          "reservationReceiptRedacted": true,
+          "deletionBarrierPresent": true,
+          "cleanupPending": true,
+          "physicalSourcePhotoDeletion": "not claimed; original cleanup remains pending",
+          "sourceCommit": "97de268a4b1edc8f17f80634093ee210ffac5a66",
+          "operatorCommit": "1584f6e",
+          "manifestSha256": "d19a6fd9c889cc9857f0b2f17251e6569be9af6ef99531961c9a11d6416fb684"
+        },
+        "nativeImportedDocuments": 96,
+        "evidence": "6c3184 / 7a4873",
+        "inventoryComparedBeforeTransform": true,
+        "latestAuthAndIndependentJournalCheckedTwice": true,
+        "latestJournalEntries": 1,
+        "sourceAndTargetPaused": true,
+        "sourcePhysicalObjectCleanupStillPending": true
+      },
+      "temporaryWrap": {
+        "requestedByUser": true,
+        "nextPackageStarted": false,
+        "apiRevision": "yuban-firebase-api-00004-vn6",
+        "workerRevision": "yuban-firebase-worker-00004-nls",
+        "serviceScaling": "MANUAL / 0",
+        "zeroInstanceSeries": 16,
+        "queue": "PAUSED and empty",
+        "sourceControlGeneration": "37c48e9c-d2c0-4080-bc41-eeb91bc68495",
+        "targetControlGeneration": "7c267f0b-7443-5e07-bb69-931924ec0d6a",
+        "pitr": "POINT_IN_TIME_RECOVERY_DISABLED",
+        "testActorProcess": "94622 closed; in-memory passwords/cookies discarded",
+        "hosting": "f0bd20c01b744ba1 remains published; API intentionally disabled",
+        "officialUrlChanged": false,
+        "oldVmChanged": false,
+        "backupObjectsPreserved": true
+      },
+      "cost": {
+        "at": "2026-10-11T19:06:07.827Z",
+        "existingBatchEnvelopeUSD": 6,
+        "cleanupReserveUSD": 2,
+        "previousBoundUSD": 3.0752,
+        "maximumDataGiB": 0.1,
+        "unitUSDPerGiBMonth": 0.18,
+        "additionalFullMonthBoundUSD": 0.018,
+        "revisedConservativeBoundUSD": 3.0932,
+        "freeTierAssumed": false,
+        "disableAtTemporaryWrapUp": true,
+        "pitrDisabledAt": "2026-10-11T19:19:43.819934Z",
+        "totalBuildSeconds": 1130.121,
+        "buildCapSeconds": 1800,
+        "actualBilledUSD": null,
+        "modelCallsThisRound": 0,
+        "externalNotificationsThisRound": 0,
+        "storageAndExistingResourcesStillRetained": true
+      },
+      "remaining": [
+        "Automatic scale-to-zero and wake-up: manual disable is not this acceptance",
+        "Real-cloud revocation path and required product browser flow",
+        "Primary browser failure not reproduced; post-reset primary browser not verified",
+        "Password-reset email lifecycle",
+        "Source physical photo cleanup remains pending",
+        "F02 full review/delivery; F03-F08/A09 and complete P2 not done"
+      ],
+      "localEvidence": [
+        {
+          "path": "tmp/f02-recovery-20261012/plan.json",
+          "sha256": "9c44d225b492327f11d6cbdaa78dcc98cba63b8d311528d8f2fe966b96d78bd9"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/finish-backup-result.json",
+          "sha256": "489943828c239496a0909ef8bb93ee3e7cb447faf9ac7cff1226d70a988befc1"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/export-operation-readback.json",
+          "sha256": "2a3731875e6a03c5ecd5b998344254132e1bc673a86d450602d632a2b28e748f"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/import-operation-readback.json",
+          "sha256": "0826300f74fe88c992ef20740e47b3d1700161ec3b68d1a93de5c8b89731183a"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/apply-restore-result.json",
+          "sha256": "4e206a983effbb763330fc9775f7132fd4cc9291fbe176821d30bba61fbeb745"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/restore-final-readback.json",
+          "sha256": "f4d2b782ff60429ccc6b90593622ad440ec737b5ee1833f9f9e6bc6a648044ae"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/freeze1-drained.json",
+          "sha256": "987b207d17c7e8f3a062dc020eed96d170dc243a1efd5c3755c4a9b5e98498db"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/freeze2-drained.json",
+          "sha256": "985f09857ebdfb30a9b428616b2efb19581961702e96285a82bc830aeebd8384"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/pitr-budget.json",
+          "sha256": "26f9ea936636a38f00ab605655e93928d1543d74d7c2f6f25480c56d8bad7e4c"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/pitr-disabled-readback.json",
+          "sha256": "2f21ba0bc0949aa33348af6e5c165f0178b3bd7de6b5fa4f0c1b2142e8939a93"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/start-export-failure.json",
+          "sha256": "ac32941ec6de46acb9d2c5d054621f273ef98019b5806184e48f6150118465ce"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/find-export-result.json",
+          "sha256": "067f992b3eb949dbaa59eb940cb7ef848787e73534f0eff224f264513d5d203d"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/export-first-audit.json",
+          "sha256": "24fa29c19d7604f5b60746077df0d28d2ad35bf16a0cfa898f3cce3468772483"
+        },
+        {
+          "path": "tmp/f02-recovery-20261012/usage-before-backup.json",
+          "sha256": "3a5bd069e3a212a7f99df72168ab91541297275896b2e49c292f32e50827c12c"
+        }
+      ],
+      "finalReadonlyReview": {
+        "agent": "f01_foundation_review",
+        "result": "No evidenced P1/P2; final restore readback and new PLAN/STATUS/WORKLOG/evidence agree; no tests or cloud actions by reviewer",
+        "scope": "84 records plus checkpoint, no sessions, new epochs, erasure barriers and pending cleanup, pause/unverified gates and budget boundaries"
+      }
     }
   ],
   "firebaseTermsResolution": {
@@ -3189,6 +5553,35 @@
       "evidence": "tool chunk ad5380",
       "result": "New null-narrowing/VectorValue schema types in document/knowledge stores; photo-client parameter-property syntax reached from new tests; worker transport test this typing. Five original master test diagnostics also remain.",
       "correction": "Original authors repairing local declarations/types without relaxing assertions or compiler settings; repeat compilation only after all fixes. Root client typecheck passed in parallel (9d6478)."
+    },
+    {
+      "at": "2026-10-11T15:34:33.540Z",
+      "area": "canonical child cross-owner denial",
+      "evidence": "a9ece1",
+      "result": "Before correction, foreign child caller-scope AEAD threw invalid_document500 before binding denial.",
+      "correction": "17c6725: same-transaction projection tags deny only; current canonical AEAD remains required. Original cross-work behavior was not altered."
+    },
+    {
+      "at": "2026-10-11T15:34:33.540Z",
+      "area": "Firestore document API authority denial",
+      "evidence": "2a946b",
+      "result": "Original precise 404 assertion failed with document_unavailable503 because the generic document API swallowed the provider authority exception.",
+      "correction": "17c6725: provider-local wrapper maps only five exact known canonical denial code/status combinations to existing FamilyError404."
+    },
+    {
+      "at": "2026-10-11T17:55:59.261Z",
+      "scope": "Firebase media GET transport",
+      "originalCloudFailure": "4dca06",
+      "reproduction": "392efc: native Storage GET emitted body/end but async iterator waited for unused writable completion",
+      "failedRepairs": [
+        "f4307c: mechanical syntax error and legacy wrap close behavior; no assertions relaxed",
+        "c0490c/e34470: EOF adapter passed but native HTTP cancellation remained open"
+      ],
+      "decision": "Astra stopped the legacy transport repair and used the existing Storage GoogleAuth/gaxios media GET with fixed Google URL, exact generation, retry false, redirect 0 and absolute AbortController deadline.",
+      "fixtureFailure": "2c68e5/8b5426: synthetic test token expiry entered OAuth eager-refresh window; fixed only fixture expiry, no product gate changed",
+      "verification": "36 adapter integrity/recovery checks passed in 2c68e5; 3 real native-auth-client loopback EOF and cancellation checks passed in d70922; full Server tsc retains exactly 5 previously known test errors, no new errors in b67f2b",
+      "cloudFixStatus": "not yet deployed or verified",
+      "executor": "Astra"
     }
   ],
   "knowledgePreparation": {
@@ -3236,6 +5629,370 @@
       "growthRuleImpact": "none",
       "growthRuleReason": "本次只匯入已核對公共來源作隔離驗收，不更改成長規則或觸發個人提醒。",
       "decision": "approve"
+    },
+    "embeddingPlan": {
+      "at": "2026-10-11T15:20:12.427Z",
+      "sourceId": "fhs-solid-food",
+      "sourceVersionHash": "0a48bc97b55de72d7589e1021dbaa825ccfc9838d11ea93ea191aa25e3d61816",
+      "model": "gemini-embedding-001",
+      "dimensions": 1024,
+      "pipeline": "section-v1",
+      "requestsPlanned": 2,
+      "maxRequestsIncludingTargetedRepair": 4,
+      "maxInputBytesPerRequest": 8192,
+      "maxModelInputTokensPerRequest": 2048,
+      "initialInputBytes": [
+        342,
+        51
+      ],
+      "automaticRetry": false,
+      "unknownReplay": false,
+      "priceUSDPerThousandInputCount": 0.00015,
+      "conservativeTokenOrCharacterCountCeiling": 32768,
+      "conservativeCostUSD": 0.0049152,
+      "source": "https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing",
+      "readiness": "Two initial Vertex calls confirmed; publication and true Firestore vector+keyword readback passed. No further model call authorized by this result beyond the original bounded plan.",
+      "cleanupReserveUSD": 2,
+      "packageEnvelopeUSD": 6,
+      "actualBilledCost": "unknown",
+      "endpoint": "us-central1",
+      "priceBasis": "Official price per 1000 input count; conservative bound exceeds either maximum token or input UTF-8 byte count. Actual billing remains pending."
+    },
+    "embeddingCatalog": {
+      "observedAt": "2026-10-11T15:23:56.075Z",
+      "source": "https://cloudbilling.googleapis.com/v1/services/C7E2-9256-1C43/skus?currencyCode=USD&pageSize=5000",
+      "pages": 2,
+      "skus": [
+        {
+          "skuId": "0685-26A3-998E",
+          "description": "Gemini MM Embedding - Audio Input",
+          "regions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 6500
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "2D07-D52C-A93B",
+          "description": "Gemini Embedding - Memory Bank",
+          "regions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 150
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "330D-7FB0-87C5",
+          "description": "Gemini MM Embedding - Image Input",
+          "regions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 450
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "75E8-20FA-DDCA",
+          "description": "Gemini MM Embedding - Batch Video Input",
+          "regions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 6000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "A062-9480-5486",
+          "description": "Gemini MM Embedding - Batch Text Input",
+          "regions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 100
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "C15D-A68F-5C1E",
+          "description": "Gemini Embedding 2 - Memory Bank",
+          "regions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 200
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "D927-265D-B560",
+          "description": " Gemini MM Embedding - Batch Image Input",
+          "regions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 225
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "E907-277C-2B4E",
+          "description": "Gemini MM Embedding - Video Input",
+          "regions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 12000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "EBBD-6991-B1BB",
+          "description": "Gemini MM Embedding - Text Input",
+          "regions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 200
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "F41D-3108-EF87",
+          "description": "Gemini MM Embedding - Batch Audio Input",
+          "regions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 3250
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        }
+      ]
+    },
+    "embeddingUsage": {
+      "calls": 2,
+      "inputTokens": 122,
+      "billableCharacters": 160,
+      "conservativeMeasuredCountCostUSD": 0.000023999999999999997,
+      "actualBilledCost": "pending; conservative count estimate is not invoice",
+      "model": "gemini-embedding-001",
+      "region": "us-central1"
     }
   },
   "localCheckpoints": [
@@ -3457,6 +6214,68 @@
         "independentReview": "f01_foundation_review confirmed port projections and no further evidenced P1/P2"
       },
       "drainGate": "A six-minute pause and Cloud Run request timeout are not proof of terminated source/journal IO. Verify source API/worker stopped separately; restore remains applied-paused."
+    },
+    {
+      "at": "2026-10-11T15:34:33.540Z",
+      "area": "firebase-denial-correction-and-cloud-script",
+      "sourceRevision": "17c67253590a27f5110ff5a8234f461a20aec207",
+      "authorityTests": {
+        "passed": 20,
+        "evidence": "b2d722"
+      },
+      "documentDenialTests": {
+        "passed": 4,
+        "evidence": "0dc015",
+        "scope": "Real synthetic two-owner read/list/content/write, original operation separation and own ciphertext corruption"
+      },
+      "narrowTypes": {
+        "result": "zero diagnostics",
+        "evidence": "40b542",
+        "scope": "two changed production files and two corresponding test entrypoints"
+      },
+      "script": {
+        "path": "scripts/firebase-cloud-acceptance.mjs",
+        "syntax": "aa5ab3",
+        "execution": "not started",
+        "maxHttpRequestsAcrossPhases": 100,
+        "timeoutMs": 20000,
+        "versionBinding": "Expected source revision must be independently read back from deployed image before execution"
+      },
+      "independentReview": {
+        "agent": "f01_foundation_review",
+        "result": "No evidenced P1/P2 in the new authority/document changes and bounded cloud script; readonly review, no cloud run"
+      },
+      "rootReview": [
+        "374739",
+        "bb3ddf",
+        "24d280"
+      ],
+      "originalFailureAssertionsPreserved": true
+    },
+    {
+      "at": "2026-10-11T15:57:05.171Z",
+      "action": "firebase-frontend-auth-build-repair-1-result",
+      "exitCode": 1,
+      "envKeys": [
+        "EXPO_PUBLIC_AUTH_PROVIDER",
+        "EXPO_PUBLIC_API_BASE_URL",
+        "EXPO_PUBLIC_FIREBASE_API_KEY",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID",
+        "EXPO_PUBLIC_FIREBASE_APP_ID"
+      ],
+      "output": "tmp/f02-web-auth-repair-1/dist"
+    },
+    {
+      "at": "2026-10-11T15:58:52.742Z",
+      "action": "firebase-frontend-auth-build-repair-1-launched",
+      "priorLaunchFailure": "hoisted Expo CLI path corrected; no compilation ran in prior attempt",
+      "exitCode": 0,
+      "output": "tmp/f02-web-auth-repair-1/dist",
+      "bundle": "index-4b9b377f3d711578f2a64e9566209520.js",
+      "sha256": "4bd05c47a46c7a69272998ba315987773e20020c377df6460086831cca2b910a",
+      "authConstructorSnippet": ",I,A){let v;if(this.apiBaseUrl=(0,n.resolveApiBaseUrl)(s),!b){const t=\"firebase\"?.trim(),s={apiKey:\"[public-api-key]\"?.trim()??\"\",authDomain:\"ai-caregivers-for-children.firebaseapp.com\"?.trim()??\"\",projectId:\"ai-caregivers-for-children\"?.trim()??\"\",appId:\"1:1064034424208:web:b0873383eee9d93256cf15\"?.trim()??\"\"};if(t||Object.values(s).some(Boolean))try{if(\"firebase\"!==t||\"undefined\"==typeof window)throw new Error(\"Authentication provider unavailable\");v=(0,c.createFirebaseAuthApi)({baseUrl:this.apiBaseUrl,publicOrigin:window.location.origin,config:s})}catch{v=(0,c.createUnavailableFirebaseAu",
+      "configurationValuesPresent": true
     }
   ],
   "recoverySources": [

@@ -2214,3 +2214,113 @@
 
 - 固定本機來源版本，完成 API／worker／Hosting 部署及已批准 F02 合成完整批次；真照片備份、原生匯出匯入、隔離還原、真人電郵與正式操作尚未完成。
 - 無 F02 PR／合併，沒有正式網址切換或 SQL 退役；F03～F08／A09及完整 P2 仍未完成。
+
+
+<a id="log-20261011-f02-cloud-preparation"></a>
+## LOG-20261011-F02-CLOUD-PREPARATION
+
+- Recorded At／Work Date：2026-10-11（Asia/Hong_Kong）；F02 進行中，完整雲端產品批次尚未開始。
+- Executor／AI Assistance：Astra 裁定拒絕邊界、親寫契約及整合；沿用原 Sol 實作及獨立唯讀 review，未新增代理。
+- Human Verification：使用者批准指定 blocking function／API 的 allUsers invoker 及 worker 僅 dispatch 身份 invoker；未代填電郵或真人驗收。
+
+### Actual Work／Verification
+
+- `17c6725`：孩子 projection tags 只作交易內提前拒絕，canonical AEAD／scope／狀態仍是權威；文件 adapter 只將已知不可存取權威映射為既有 404，保留本人資料損壞及未知服務錯誤。原失敗 `a9ece1`／`2a946b` 保留；修後 authority 20／20、文件拒絕 4／4，窄型別 `40b542` 零診斷；獨立覆核未見有證據 P1／P2。
+- 準備有界 HTTP 驗收腳本：兩身份、原操作／收據、同文件分頁及局部修改、合成照片、精確來源版、刪除；跨階段最多 100 請求、每次 20 秒，憑據僅 stdin、不可覆寫 checkpoint，首失敗停止。只做語法檢查，尚未執行該腳本；部署版本由操作者先讀回。
+- 原 `3c9b1a9` runtime image 建置成功但未部署；Cloud Run 建立請求因 name 欄位回 400，查回服務不存在後修正並通過 validateOnly。修正來源另建一次最長 600 秒映像，原映像不當已驗收。
+- 邀請 blocking function 與 Auth trigger／隔離測試網域已接線，登入仍關閉。API／worker 服務與 Hosting 發布仍待完成，不等於已接受產品流量。
+- 兩次 Vertex `gemini-embedding-001`／1024／section-v1 真呼叫，只含核對公共來源與合成查詢；回報 122 input tokens、160 billable characters，帳單未出，沒有私人資料或聊天生成。連補驗保守上限約 US$0.005，仍在 F02 US$6 及 US$2 收尾保留內。
+- 15:28 UTC 以正式 Firestore writer 匯入／審核／原子發布 `fhs-solid-food`，混合查詢讀回版本 `c9265331-6ec2-5436-b4c2-07d354e53101`，同原文 URL／來源 hash；真 Firestore 索引查詢成功。這是 operator 直接接點驗證，不是前端／聊天引用、真人流程或完整公共知識驗收。來源模組為 `3c9b1a9`，`17c6725` 未修改該模組。
+
+### Limitations／Next
+
+- 實際成本、瀏覽器／電郵、Tasks／OIDC／縮零、照片配對備份及隔離還原仍待完整批次核對；價格、原失敗及工具證據見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。
+- 完成部署後按原有界批准驗收，再交付同一 F02 PR；沒有 F02 PR／合併、正式網址切換或 SQL 退役，F03～F08／A09及完整 P2 仍未完成。
+
+
+<a id="log-20261012-f02-auth-deployment-boundary"></a>
+## LOG-20261012-F02-AUTH-DEPLOYMENT-BOUNDARY
+
+- Recorded At：2026-10-12T00:34:41+08:00
+- Work Date：2026-10-11 15:47～16:27 UTC（香港時間 2026-10-11～12）；F02 仍進行中。
+- Step / Package：P2-F02。
+- Executor／AI Assistance：Astra 整合、雲端操作、親寫部署指引；原 Sol 修正 ZIP 打包並核對產物，原獨立 reviewer 核對前端設定／合成身份工具；沒有新增代理。
+- Human Verification：使用者回報三次註冊流程失敗；第三次實際已建立 Firebase 帳號，但前端仍顯示結果未確認。未代填電郵驗證成功。
+
+### Actual Work／Verification
+
+- API `yuban-firebase-api-00002-svh`、worker `yuban-firebase-worker-00001-rjz` 使用 `17c6725` 映像；實際組裝、專用身份及 secret v1 讀回。隔離 Hosting 已發布，正式網址未切換。匿名私人 API 401／私有 worker 403 與公開 account policy 的 user=null 分開核對，不把公開政策接點改成假設的 401。
+- 第一個註冊故障是發布 bundle 缺少 Firebase 建置設定；原失敗保留。清快取、明確環境重建後，Hosting 版本 `1a225c70e25d6564` 的實際 HTML／JS hash 與產物一致，35 HTML／provider／四项公開設定經獨立覆核。Hosting 自帶兩個 `/__/firebase/init.*` 項目與 omitted aggregate fileCount 的原斷言失敗保留；以完整產品 path／hash／ACTIVE 讀回核對，沒有放寬產品檔案斷言。
+- 第二個故障是舊 `088bf70` blocking function 的 strict envelope parser 拒絕目前 recovery 欄位（`ba7175`）。更新同源 `17c6725`，真 ZIP 396 entries／337 files 的 CRC、內容及來源 inventory 已驗，SHA-256 `74fcf6cadb55871ff1f519212027a78211c666e4aa0d94d30c8a32a8fd0061ed`。函式 revision `before-yuban-user-created-00003-viq` ACTIVE，資源／專用身份／secret／invoker 與已批准值一致（`e77909`）。
+- 16:22 UTC 本人再次提交：函式 200、Firebase 帳號及 displayName 保存成功，但沒有 `/api/auth/session` POST，前端顯示 unknown。保留這個帳號及原失敗，停止重複註冊；後续定位現有帳號登入的前端 token／取消邊界。Token 服務與 Web key 對應 API 均可用，現有 audit 無可用事件；不以配置讀回當功能通過。
+- 此次 function build 191.815 秒；regional＋global 的已量測 Cloud Build 累計 850.905／1800 秒。時長不是實際帳單。隔離還原庫 17 個指定索引 READY；前一次 wildcard list 400 原失敗保留，只改查回方法，尚未匯入或完成還原。
+
+### Limitations／Next
+
+- 尚未取得應用程式 session、真人驗證信送達／點擊、核心完整批次、Tasks 重投／縮零或配對還原證據。合成 actor 工具僅語法／獨立唯讀核查，未執行；Admin verified fixture 不能替代真人驗證。
+- 後續修正及證據仍集中本 F02 分支／PR，沒有 F02 PR／合併、SQL 退役或完整 P2 完成。詳見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)；歷史失敗及先前 LOG 不回寫。
+
+
+<a id="log-20261012-f02-synthetic-browser-login"></a>
+## LOG-20261012-F02-SYNTHETIC-BROWSER-LOGIN
+
+- Recorded At：2026-10-11T17:25:17.543Z；P2-F02 仍進行中。
+- Executor／AI Assistance：Astra 親自操作真雲端／瀏覽器並整合；沿用原 Sol 實作及獨立唯讀 reviewer，未新增代理。
+- Human Verification：使用者要求後續登入測試由代理自行處理；沒有再次要求本人輸入密碼，未代填收信或電郵驗證結論。
+
+### Actual Work／Verification
+
+- 前端安全診斷改成可讀的單一字串，只含階段／失敗類別／固定 provider code；定向原檔 9 項及新增格式檢查分開保留。Hosting client `2471e4d`、版本 `f0bd20c01b744ba1` 的實際 HTML／JS hash 與本機產物一致。第一次發布讀回仍是上一版 HTML，保留原失敗，沒有重複發布。
+- 代理在隔離 GCP 網址實際輸入兩個合成帳號的憑據：A（Admin 已驗證 fixture）登入後到資料使用說明；B（原生未驗證身份）登入後到電郵驗證指引。兩者沒有新增 authenticate warning，登入後已登出；一次性私人憑據檔已刪除，測試密碼不入日誌／提交。這是兩種狀態的真瀏覽器登入證據，不是真收信證據。
+- A 的 HTTP 會話回 200、身份相符，但 operator 原 cookie 字串次序斷言失敗。匿名空 cookie 讀回證明 Hosting 重排屬性；修正只忽略順序，仍精確要求單一 token 及五項安全屬性，拒絕額外／重複／Domain。原失敗保留；固定 `2880c3b` 的獨立唯讀 review 未見有證據 P1／P2。
+- 17:24 UTC Cloud Run 讀回仍為 `yuban-firebase-api-00002-svh`、100% 流量及已核來源 `17c6725` 的固定映像。完整核心批次尚未開始；沒有正式網址切換或模型生成。
+
+### Limitations／Next
+
+- 指定測試帳號原失敗未重現，不能標修復：16:44:15 UTC Firebase 接受登入，但 API 只收到 session GET，未收到交換 POST；舊診斷只顯示 Object，不能據此斷定失敗階段。原帳號保持未驗證，不重建或重設密碼。
+- 繼續原 F02 的核心資料／收據／隔離、Tasks、縮零及配對還原；真人電郵、F02 整包、F03～F08／A09 與完整 P2 均未完成。實際帳單未知，仍沿原批次上限及收尾保留；分層證據見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。
+
+<a id="log-20261012-f02-storage-stream"></a>
+## 2026-10-12 — F02 原核心批次照片下載停批與原生傳輸修正
+
+- Recorded At：2026-10-11T17:55:59.266Z；Executor：Astra。依最新使用者指示，反覆未解問題由主模型直接修改及驗證，Sol 只做獨立唯讀 review。
+- 真雲端來源 `17c6725` 的固定合成 A／B 已取得會話。原核心批次前 30 個請求完成；第 31 個照片下載在 20 秒 client 界線失敗，API revision `00002-svh` 記錄兩次 503／約 21 秒，第二請求成因未確定。已停止，未再次上傳，未執行刪除／Tasks／還原。原 fence、opId 及雲端失敗保留。
+- 主模型以實際 Storage 7.22 SDK 的 loopback 重現已收齊 bytes／end 仍不完成；單純包裝 readable 的取消補驗亦失敗。確認實際 nested teeny-request／node-fetch 2 不完整傳遞取消後，改用同一 Storage 的 GoogleAuth／gaxios streaming GET，保留固定 Google URL、generation、Range、禁止 retry／redirect、20 秒及原 hash／AAD 限制。照片、journal、照片備份及 manifest 四個 media 接點一起修正，metadata／upload 不變。
+- 定向原 36 項完整性／隔離／恢復檢查通過；3 項真原生身份 HTTP client 的本機 loopback 檢查通過 EOF、headers 前／後取消及實際 socket 關閉。本機 fixture 的過短 token expiry 失敗已另記，沒有放寬產品斷言。全 Server 型別仍只有已知 5 項舊測試錯誤，沒有新增錯誤。
+- 這是本機接點修正證據，雲端補驗未完成；仍須固定修正版映像及原資料補驗。Build 已用 850.905／1800 秒，可在原 US$6／保留 US$2 範圍內容納一個最多 600 秒的已定价 build；實際帳單未知。F02／完整 P2 均未完成。分層證據見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。
+
+<a id="log-20261012-f02-core-continuation"></a>
+## 2026-10-12 — F02 原核心批次續驗通過
+
+- Executor：Astra 親自修正、部署及驗證，原 Sol reviewer 只作獨立唯讀核查，未新增代理。`9ee3814` 的 4 項原生 GoogleAuth HTTP transport 檢查通過，補驗涵蓋非 2xx 不緩存錯誤正文／不重試；先前 LOG 的 3 項是當時結果，不回寫。
+- 固定映像 `sha256:61793ab702248243441e803a20473522307bc3b7529c7bdfb47ee811db49ba10` 已在隔離 API `00003-tdj`／worker `00002-9bt` ready 並讀回，部署未改身份、資源或正式網址。新增 build 129.310 秒，累計 980.215／1800 秒，實際帳單未知。
+- 原 Storage 物件低層讀回後，再以 operator `341edf1` 沿原帳號、原 opId、文件、照片及資料續驗；原批次累計 58 個請求含第 31 個原失敗，續驗是第 32～58 個。API 照片 bytes／hash、文件最新修訂及原收據、跨帳號拒絕、公共知識版本均通過；沒有再次建立或上傳資料，照片刪除操作只預配置而未提交。
+- 固定原失敗、resume checkpoint 及 core-complete 證據均保留。這只完成核心 API 子範圍；Tasks、縮零、刪除、配對恢復、真收信與整包 F02 尚未完成。證據入口：[F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。
+
+<a id="log-20261012-f02-reminder-preferences"></a>
+## 2026-10-12 — F02 真 Tasks 靜默時段發現及本人設定接線
+
+- Astra 以真 Cloud Tasks OIDC 單次啟動 dispatcher，再單次啟動原合成提醒；queue 全程 PAUSED，沒有通知外發或模型呼叫。兩次 worker HTTP 均 200，但提醒收據斷言失敗，立即停批，沒有重投或刪除。
+- 唯讀查明預設香港 22:00～08:00 靜默且未允許預約例外，原工作正確延至 `2026-10-12T00:00:00.000Z`，零提醒／通知意圖，failures=0；這是驗收前置遺漏，不能改寫成成功派送收據。
+- 補回既有本人提醒設定契約到 Firestore 正式組裝，`97de268` 以同庫交易核對 owner／epoch／版本，保存設定、私人 changes 與原操作收據。靜默預設和 worker 決策不變；直接 POST 仍要求原操作入口。三個新定向測試通過交易回覆丟失、原 opId、本人隔離／撤權及明確允許後一份效果。初跑的新增測試誤讀非 wire 欄位之失敗保留，改以精確 wire、跨帳號 changes 拒絕檢查；沒有放寬产品斷言。
+- 獨立唯讀 review 無有證據 P1／P2；全 Server 型別仍為原有五項測試錯誤。新設定接點尚未完成雲端補驗，F02 整包仍未完成；修正版 build 使用原資源及原費用上限。
+
+<a id="log-20261012-f02-tasks-mail"></a>
+## 2026-10-12 — F02 真 Tasks 防重及指定信箱驗證
+
+- Astra 部署並讀回來源 `97de268`：隔離 API `00004-vn6`／worker `00004-nls` 為同一映像且各 100% 流量；原身份及資源範圍不變。新 build 149.906 秒，累計 1130.121／1800 秒，實際帳單未知。
+- 沿原合成資料保存本人預約靜默例外及原事項版本 2，原操作重試／另一帳號設定隔離／原建立收據均通過；核心及續驗共 76 個 HTTP 請求，包含保留的原照片失敗。真 Tasks 分別執行 dispatcher、原提醒與完全相同業務 body 的一次重投，三個 worker 請求均 HTTP 200。重投前後只有一份提醒／batch／通知意圖，四個相關集合內容 hash 完全相同；queue 一直 PAUSED，沒有外發通知或模型呼叫。原靜默時段失敗保留，不覆寫。
+- 使用者另行授權只重設指定 Firebase 測試帳號密碼；代理以記憶體隨機憑據透過實際產品 client、原生 Firebase SDK 及部署 API 成功登入，未驗證 session／帳號 gate 讀回通過，寄出一封驗證信。使用者回覆「已點擊，顯示驗證成功」，Admin 唯讀確認 emailVerified=true；沒有 Admin 代寫已驗證旗標。密碼／token 沒有寫入聊天、檔案或 Git。這取代之前「原帳號保持未驗證，不重設」的現場安排，但不回寫歷史。
+- 此次 client 在 Node 執行，不代表指定帳號重設後的瀏覽器畫面已驗；原本人瀏覽器失敗仍未重現或確定成因。重設電郵生命週期、縮零、原照片刪除及配對隔離還原尚未完成，F02／完整 P2 仍未完成。分層證據見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。
+
+
+<a id="log-20261012-f02-recovery-pause"></a>
+## 2026-10-12 — F02 配對備份、原刪除與隔離還原；暫時收尾
+
+- Astra 完成本輪真 Firebase／Storage 的有界恢復驗收；沿已部署來源 `97de268`、同一原合成資料與刪除 opId，未新增模型／通知批次，未操作正式網址或舊 VM。使用者要求完成目前任務後暫時收尾；本輪後不開始 F03～F08。
+- 先停來源 authority／queue，再將 API／worker 設 MANUAL 0；實際監測全部已用 revisions 的 active／idle 均零、最後請求已完成、journal IO 穩定，並符合最少六分鐘門檻。單傳 manualInstanceCount 的原 400 保留，改為明確 MANUAL，沒有改 revision max=1 或假設設定即停機。
+- 精確時間 native export 首次被拒，audit 確認 PITR 未啟用且查回無 operation。核官方香港費率 US$0.18/GiB-month，以 0.1 GiB 全月另保留 US$0.018，本批保守界線 US$3.0932，仍留 US$2 收尾；這不是實際帳單。臨時啟用後只重送同一 backupId／snapshot，一次成功匯出 96 份文件；配對一張原照片及 manifest，5 個物件均 held，保留至 2026-10-26T19:02:44Z。驗後已讀回 PITR 關閉。
+- 真原生 operation 使用 `progressDocuments.completedWork`，原 reader／fixture 誤用 `workCompleted`。先以真形狀保留原失敗，再由 Astra 修正為 `1584f6e`；13 項定向檢查通過，精確文件數／前綴／快照及 inventory 斷言不變。全 Server 型別仍只有五項既有測試錯誤。Sol 獨立唯讀覆核未見有證據 P1／P2；此為本機 operator 修正，不另建映像。
+- 備份成功後恢復來源作原照片刪除：同一 opId 重送及查回收據相等、metadata／content 410、列表移除、原 reservation 收據 result=null；累計 89／100 個 HTTP 請求。`cleanupPending=true` 保留，不宣稱原 Storage 物件已物理刪除。
+- 再停寫及排空後，原生匯入同一份 96 文件至既有隔離庫，完整 inventory 通過。原子恢復核最新獨立刪除日誌及當前 Auth，生成新 epoch、移除舊會話並保持 `applied-paused`。19:26 UTC 獨立讀回 84 筆恢復資料＋1 checkpoint，零舊會話、三個新 workspace epochs；指定帳號 emailVerified=true、文件及事項均版本 2、提醒／通知意圖各一份、已刪照片不存在、原 reservation 已遮蔽且原 delete 有 erasure barrier，清理責任仍保留。
+- API／worker MANUAL 0、來源及還原 control 暫停、queue PAUSED 且空；原 actor 程序關閉並清除記憶體憑據。Hosting／blocking function 版本不變、備份及來源／還原庫保留。手動停機不是自動縮零喚醒證據；真雲端撤權、重設電郵生命週期、必要產品畫面及原本人瀏覽器故障仍待驗。F02 尚未整包驗收／PR／合併，完整 P2 未完成；本次只保存可恢復本機 checkpoint。完整原失敗、版本、hash 及限制見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。
