@@ -4,6 +4,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { openRecoveryEnvelope } from '../server/firestore-recovery-envelope.ts';
 import type { Firestore } from '@google-cloud/firestore';
 import { createFirestoreAuthority, FirestoreAuthorityError, type FirestoreAuthorityScope } from '../server/firestore-authority.ts';
+import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
 import { FirestoreWorkContinuationStore } from '../server/firestore-work-continuation-store.ts';
 import { workRecoveryAad, workRecoveryDocumentId, type WorkRecoveryKind, type WorkRecoveryScope } from '../server/firestore-work-continuation-recovery.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
@@ -139,7 +140,7 @@ test('owner and child scoped operation identities isolate identical operation ID
   const c = await f.service.saveWork({ scope: { ...another.scope, authorizationVersion: another.authorizationVersion }, operationId, expectedVersion: 0, values: f.values() });
   assert.notEqual(a.id, c.id);
   const before = [...f.fake.records.entries()];
-  await assert.rejects(f.service.readScope('second-owner', first.child.id), rejected('invalid_document', 500));
+  await assert.rejects(f.service.readScope('second-owner', first.child.id), rejected('binding', 403));
   await assert.rejects(f.service.saveWork({ scope: { ...firstScope, ownerUserId: 'second-owner' }, operationId: randomUUID(), expectedVersion: 0, values: f.values() }), rejected('scope_changed', 409));
   await assert.rejects(f.service.saveWork({ scope: secondScope, operationId: randomUUID(), workId: a.id, expectedVersion: 1, values: f.values() }), rejected('invalid_document', 500));
   assert.deepEqual([...f.fake.records.entries()], before);
@@ -331,7 +332,7 @@ test('native callback retries get new bindings while revoked authority and cross
   assert.equal(callbacks, 2); assert.equal(f.open('workspace', child.scope.workspaceId, child.scope).changeSeq, '2');
   await f.identity('another-owner', 'another@example.test'); await f.service.acknowledge({ userId: 'another-owner', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
   const beforeCross = [...f.fake.records.entries()];
-  await assert.rejects(f.service.runTransaction('another-owner', child.child.id, async () => { throw new Error('Cross-owner callback must not execute'); }), rejected('invalid_document', 500));
+  await assert.rejects(f.service.runTransaction('another-owner', child.child.id, async () => { throw new Error('Cross-owner callback must not execute'); }), rejected('binding', 403));
   assert.deepEqual([...f.fake.records.entries()], beforeCross);
   let attempts = 0;
   f.retry(async () => { await f.service.setAccountState({ userId: 'synthetic-owner', operationId: randomUUID(), state: 'revoked' }); });
@@ -409,7 +410,7 @@ test('readChild uses current canonical workspace/epoch, creation projections and
     await assert.rejects(binding.prepareChange(randomUUID(), 'tasks', false, randomUUID()), rejected('transaction_child_scope', 409));
   });
   await f.identity('another-owner', 'another@example.test'); await f.service.acknowledge({ userId: 'another-owner', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
-  await assert.rejects(f.service.runTransaction('another-owner', null, binding => binding.readChild(created.child.id)));
+  await assert.rejects(f.service.runTransaction('another-owner', null, binding => binding.readChild(created.child.id)), rejected('binding', 403));
 });
 
 
@@ -427,4 +428,85 @@ test('canonical writers preserve ordinary reads and record authenticated recover
   assert.ok(recovered >= 8);
   assert.deepEqual((await f.service.readScope('synthetic-owner', child.child.id)).scope, child.scope);
   assert.equal((await f.service.accountStatus('synthetic-owner')).user?.acknowledged, true);
+});
+
+test('canonical child authority rejects cross-owner scopes and deferred reads with binding 403 before domain effects', async () => {
+  const f = fixture(); await f.initialize(); await f.identity(); await f.identity('second-owner', 'second@example.test');
+  const first = await f.child(), second = await f.child('second-owner');
+  const before = [...f.fake.records], domain = f.database.collection('synthetic_domain').doc('denied-child');
+  let boundCallbacks = 0, passedRead = 0, passedChange = 0;
+  await assert.rejects(f.service.readScope('second-owner', first.child.id), rejected('binding', 403));
+  await assert.rejects(f.service.saveWork({ scope: { ...second.scope, childId: first.child.id, authorizationVersion: second.authorizationVersion },
+    operationId: randomUUID(), expectedVersion: 0, values: f.values() }), rejected('binding', 403));
+  await assert.rejects(f.service.runTransaction('second-owner', first.child.id, async binding => {
+    boundCallbacks++; binding.transaction.create(domain, { granted: true });
+  }), rejected('binding', 403));
+  await assert.rejects(f.service.runTransaction('second-owner', null, async binding => {
+    await binding.readChild(first.child.id); passedRead++; binding.transaction.create(domain, { granted: true });
+  }), rejected('binding', 403));
+  await assert.rejects(f.service.runTransaction('second-owner', null, async binding => {
+    const prepared = await binding.prepareChange(randomUUID(), 'care', false, first.child.id);
+    passedChange++; prepared.commit(); binding.transaction.create(domain, { granted: true });
+  }), rejected('binding', 403));
+  assert.equal(boundCallbacks, 0); assert.equal(passedRead, 0); assert.equal(passedChange, 0);
+  assert.equal(f.fake.records.has(domain.path), false); assert.deepEqual([...f.fake.records], before);
+});
+
+test('child projection hints cannot grant access and preserve canonical ciphertext and metadata integrity failures', async () => {
+  const f = fixture(); await f.initialize(); await f.identity(); await f.identity('second-owner', 'second@example.test');
+  const first = await f.child(), second = await f.child('second-owner'), data = new FirestoreDomainData(f.options);
+  const projectionPath = data.ref('children', 'child-projection', first.child.id).path;
+  const canonicalPath = f.database.collection(f.options.namespace).doc(workRecoveryDocumentId('child', first.child.id)).path;
+  const projection = f.fake.records.get(projectionPath), canonical = f.fake.records.get(canonicalPath);
+  assert.ok(projection); assert.ok(canonical);
+  const forgedScope = { ...second.scope, childId: first.child.id };
+  f.fake.records.set(projectionPath, { ...projection, ...data.tags(forgedScope) });
+  let callbacks = 0; const forged = [...f.fake.records];
+  await assert.rejects(f.service.readScope('second-owner', first.child.id), rejected('invalid_document', 500));
+  await assert.rejects(f.service.runTransaction('second-owner', first.child.id, async () => { callbacks++; }), rejected('invalid_document', 500));
+  assert.equal(callbacks, 0); assert.deepEqual([...f.fake.records], forged);
+  f.fake.records.set(projectionPath, projection);
+  f.fake.records.set(canonicalPath, { ...canonical, ciphertext: 'synthetic-corrupted-owner-ciphertext' });
+  const corrupted = [...f.fake.records];
+  await assert.rejects(f.service.readScope('synthetic-owner', first.child.id), rejected('invalid_document', 500));
+  await assert.rejects(f.service.runTransaction('synthetic-owner', first.child.id, async () => { callbacks++; }), rejected('invalid_document', 500));
+  assert.equal(callbacks, 0); assert.deepEqual([...f.fake.records], corrupted);
+  f.fake.records.set(canonicalPath, canonical);
+  for (const patch of [{ workspaceTag: 'malformed-tag' }, { userTag: undefined }, { childId: randomUUID() }]) {
+    f.fake.records.set(projectionPath, { ...projection, ...patch }); const malformed = [...f.fake.records];
+    await assert.rejects(f.service.readScope('synthetic-owner', first.child.id), rejected('invalid_document', 500));
+    await assert.rejects(f.service.runTransaction('synthetic-owner', null, binding => binding.readChild(first.child.id)), rejected('invalid_document', 500));
+    assert.deepEqual([...f.fake.records], malformed);
+  }
+});
+
+test('missing child projections preserve legacy owner reads and original creation replay without regenerating metadata', async () => {
+  const f = fixture(); await f.initialize(); await f.identity();
+  await f.service.acknowledge({ userId: 'synthetic-owner', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const input = { userId: 'synthetic-owner', operationId: randomUUID(), displayName: '舊加密孩子' };
+  const created = await f.service.createChild(input), data = new FirestoreDomainData(f.options);
+  const projectionPath = data.ref('children', 'child-projection', created.child.id).path;
+  const canonicalPath = f.database.collection(f.options.namespace).doc(workRecoveryDocumentId('child', created.child.id)).path;
+  const envelope = f.fake.records.get(canonicalPath); assert.ok(envelope);
+  const { recovery, ...legacy } = envelope; assert.ok(recovery);
+  f.fake.records.delete(projectionPath); f.fake.records.set(canonicalPath, legacy);
+  const before = [...f.fake.records];
+  assert.deepEqual(await f.service.readScope('synthetic-owner', created.child.id),
+    { scope: created.scope, authorizationVersion: created.authorizationVersion });
+  await f.service.runTransaction('synthetic-owner', created.child.id, async binding => {
+    assert.deepEqual(await binding.readChild(created.child.id), created.child);
+  });
+  await f.service.runTransaction('synthetic-owner', null, async binding => {
+    assert.deepEqual(await binding.readChild(created.child.id), created.child);
+    assert.equal(await binding.readChild(randomUUID()), null);
+    const prepared = await binding.prepareChange(randomUUID(), 'care', false, created.child.id);
+    assert.equal(prepared.changeSeq, '2');
+  });
+  assert.deepEqual(await f.service.createChild(input), created);
+  const missing = randomUUID(); let callbacks = 0;
+  await assert.rejects(f.service.readScope('synthetic-owner', missing), rejected('not_found', 404));
+  await assert.rejects(f.service.runTransaction('synthetic-owner', missing, async () => { callbacks++; }), rejected('not_found', 404));
+  await assert.rejects(f.service.runTransaction('synthetic-owner', null, binding => binding.prepareChange(randomUUID(), 'care', false, missing)),
+    rejected('not_found', 404));
+  assert.equal(callbacks, 0); assert.equal(f.fake.records.has(projectionPath), false); assert.deepEqual([...f.fake.records], before);
 });

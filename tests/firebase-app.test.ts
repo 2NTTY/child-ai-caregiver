@@ -7,6 +7,7 @@ import { createFirestoreAuthority, FirestoreAuthorityError, type FirestoreAuthor
 import { SERVICE_DATA_NOTICE, SERVICE_POLICY_VERSION, type AccountServiceStatus } from "../src/shared/account-service.ts";
 import type { ServerAuthSession, ServerAuthSessionWithHeaders } from "../server/auth-port.ts";
 import { createFirestoreFamilyDocumentStore } from "../server/firestore-family-documents.ts";
+import { FamilyError } from "../server/family-access.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { firestoreDomainFixture } from "./helpers/firestore-domain-memory.ts";
 import type { DocumentRequest, FamilyDocument } from "../src/shared/family-documents.ts";
@@ -240,7 +241,7 @@ async function documentFixture() {
     return handler(new Request(PUBLIC_ORIGIN + path, { method: "POST", headers, body: JSON.stringify({ opId, request: preparationRequest }) }));
   };
   const get = (suffix = "", headers: HeadersInit = { "x-expected-user-id": USER_ID }) => handler(new Request(PUBLIC_ORIGIN + path + suffix, { headers }));
-  return { ...f, handler, fake, documents, child, post, get };
+  return { ...f, handler, fake, authority, documents, child, post, get };
 }
 
 test("Firebase document dispatch uses the real Firestore port and preserves the direct original operation contract", async () => {
@@ -280,6 +281,90 @@ test("Firebase document dispatch fences a switched identity before store access 
   const committed = [...afterWrite.fake.records]; afterWrite.setUser(USER_ID);
   const recovered = await afterWrite.post(); assert.equal(recovered.status, 200);
   assert.equal((await recovered.json()).item.id, receipt.documentId); assert.deepEqual([...afterWrite.fake.records], committed);
+});
+
+function documentAuthorityStubFixture(initialFailure: unknown) {
+  const f = fixture(), fake = firestoreDomainFixture(), options = {
+    database: fake.database, cipher: createStorageCipher(Buffer.alloc(32, 87)),
+    projectId: "synthetic-document-denial-app", namespace: "synthetic_document_denial_app",
+  };
+  let failure = initialFailure, transactions = 0;
+  fake.database.runTransaction = async () => { transactions++; throw failure; };
+  const documents = createFirestoreFamilyDocumentStore(options);
+  const handler = createFirebaseRequestHandler({ ...f.options, documents });
+  const childId = randomUUID(), documentId = randomUUID(), snapshotId = randomUUID(), path = "/api/children/" + childId + "/documents";
+  const get = (suffix = "") => handler(new Request(PUBLIC_ORIGIN + path + suffix, { headers: { "x-expected-user-id": USER_ID } }));
+  const post = () => handler(new Request(PUBLIC_ORIGIN + path, {
+    method: "POST", headers: { Origin: PUBLIC_ORIGIN, "Content-Type": "application/json", "x-expected-user-id": USER_ID },
+    body: JSON.stringify({ opId: OPERATION_ID, request: preparationRequest }),
+  }));
+  return { ...f, fake, documents, childId, documentId, snapshotId, get, post,
+    fail: (value: unknown) => { failure = value; }, transactions: () => transactions };
+}
+
+test("Firebase document authority rejection is a private 404", async () => {
+  const f = documentAuthorityStubFixture(new FirestoreAuthorityError("binding", 403));
+  await errorCode(await f.get("/" + f.documentId), 404, "not_found");
+  assert.equal(f.transactions(), 1); assert.equal(f.fake.records.size, 0);
+});
+
+test("Firebase document authority mapping hides only known canonical denials and preserves corruption or SDK failures", async () => {
+  const f = documentAuthorityStubFixture(new FirestoreAuthorityError("binding", 403));
+  for (const [code, status] of [["binding", 403], ["account_inactive", 403], ["account_not_ready", 403],
+    ["service_disabled", 403], ["not_found", 404]] as const) {
+    f.fail(new FirestoreAuthorityError(code, status));
+    await errorCode(await f.get(), 404, "not_found");
+  }
+  f.fail(new FirestoreAuthorityError("binding", 403));
+  await assert.rejects(f.documents.operationReceipt(USER_ID, f.childId, OPERATION_ID),
+    (error: unknown) => error instanceof FamilyError && error.status === 404 && error.code === "not_found");
+  for (const failure of [new FirestoreAuthorityError("invalid_document", 500), new FirestoreAuthorityError("binding", 500),
+    new FirestoreAuthorityError("unknown_denial", 403), Object.assign(new Error("private credential details"), { code: "binding", status: 403 }),
+    new Error("private SDK outage")]) {
+    f.fail(failure);
+    const rejected = await errorCode(await f.get("/" + f.documentId), 503, "document_unavailable");
+    assert.equal(JSON.stringify(rejected).includes("private"), false);
+  }
+  assert.equal(f.fake.records.size, 0);
+});
+
+test("Firebase document canonical owner isolation hides read/list/content/write while keeping original operation IDs separate", async () => {
+  const f = await documentFixture(), first = (await (await f.post()).json()).item as FamilyDocument;
+  const otherUser = "synthetic-second-document-owner", email = "other-document-owner@example.test";
+  await f.authority.issueInvitation({ email, expiresAt: new Date(Date.now() + 60_000).toISOString(), operationId: randomUUID() });
+  await f.authority.admitIdentity({ userId: otherUser, email, emailVerified: true });
+  await f.authority.acknowledge({ userId: otherUser, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const otherChild = (await f.authority.createChild({ userId: otherUser, operationId: randomUUID(), displayName: "另一個合成文件孩子" })).child;
+  f.setUser(otherUser);
+  const path = "/api/children/" + f.child.id + "/documents", before = [...f.fake.records];
+  for (const suffix of ["/" + first.id, "", "/" + first.id + "/content?snapshotId=" + first.current!.id + "&snapshotVersion=1&offset=0"]) {
+    const response = await f.handler(new Request(PUBLIC_ORIGIN + path + suffix, { headers: { "x-expected-user-id": otherUser } }));
+    const denied = await errorCode(response, 404, "not_found");
+    assert.equal("item" in denied || "page" in denied, false);
+    assert.equal(JSON.stringify(denied).includes(preparationRequest.title), false);
+  }
+  const write = await f.handler(new Request(PUBLIC_ORIGIN + path, { method: "POST",
+    headers: { Origin: PUBLIC_ORIGIN, "Content-Type": "application/json", "x-expected-user-id": otherUser },
+    body: JSON.stringify({ opId: OPERATION_ID, request: preparationRequest }) }));
+  await errorCode(write, 404, "not_found"); assert.deepEqual([...f.fake.records], before);
+  assert.equal(await f.documents.operationReceipt(otherUser, f.child.id, OPERATION_ID), null);
+  const independent = (await f.documents.create(otherUser, otherChild.id, preparationRequest, OPERATION_ID))!;
+  assert.notEqual(independent.id, first.id);
+  assert.deepEqual(await f.documents.operationReceipt(USER_ID, f.child.id, OPERATION_ID),
+    { operationId: OPERATION_ID, documentId: first.id, savedVersion: 1 });
+  assert.deepEqual(await f.documents.operationReceipt(otherUser, otherChild.id, OPERATION_ID),
+    { operationId: OPERATION_ID, documentId: independent.id, savedVersion: 1 });
+  assert.equal(await f.documents.operationReceipt(otherUser, f.child.id, OPERATION_ID), null);
+});
+
+test("Firebase document canonical owner corruption remains unavailable rather than becoming missing access", async () => {
+  const f = await documentFixture(), item = (await (await f.post()).json()).item as FamilyDocument;
+  const entry = [...f.fake.records].find(([path, row]) => path.startsWith("synthetic_firebase_document_app_documents/") && row.documentId === item.id);
+  assert.ok(entry); const [path, row] = entry, ciphertext = row.ciphertext as string, offset = Math.floor(ciphertext.length / 2);
+  f.fake.records.set(path, { ...row, ciphertext: ciphertext.slice(0, offset) + (ciphertext[offset] === "A" ? "B" : "A") + ciphertext.slice(offset + 1) });
+  const before = [...f.fake.records], denied = await errorCode(await f.get("/" + item.id), 503, "document_unavailable");
+  assert.equal(JSON.stringify(denied).includes(preparationRequest.title), false);
+  assert.deepEqual([...f.fake.records], before);
 });
 
 function photoFixture() {

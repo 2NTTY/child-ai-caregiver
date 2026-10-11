@@ -5,7 +5,7 @@ import { documentRequestSchema, documentChangeSchema, documentPatchSchema, docum
 import type { FamilyDocumentStore } from './family-document-store.ts';
 import { FamilyError } from './family-access.ts';
 import { canonicalJson } from './online-routing.ts';
-import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
+import { createFirestoreAuthority, FirestoreAuthorityError, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { FirestoreFamilyDocumentSnapshots } from './firestore-family-document-snapshots.ts';
@@ -28,6 +28,16 @@ const fingerprint = (value: unknown) => createHash('sha256').update(canonicalJso
 /** F02 preparation documents use canonical task authority only; growth reports remain unavailable. */
 export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptions): FamilyDocumentStore {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), snapshots = new FirestoreFamilyDocumentSnapshots(options);
+  async function runDocumentTransaction<T>(userId: string, childId: string | null,
+    operation: (binding: FirestoreAuthorityTransaction) => Promise<T>): Promise<T> {
+    try { return await authority.runTransaction(userId, childId, operation); }
+    catch (error) {
+      if (error instanceof FirestoreAuthorityError
+        && (error.status === 403 && ['binding', 'account_inactive', 'account_not_ready', 'service_disabled'].includes(error.code)
+          || error.status === 404 && error.code === 'not_found')) reject('not_found', 404);
+      throw error;
+    }
+  }
   const scoped = (binding: FirestoreAuthorityTransaction, childId: string): WorkRecoveryScope => ({ ...binding.scope, childId });
   const authorityVersion = (binding: FirestoreAuthorityTransaction) => `${binding.scope.storageEpoch}:${binding.authorizationVersion}`;
   const operationId = (ownerUserId: string, opId: string) => JSON.stringify([ownerUserId, opId]);
@@ -117,7 +127,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     prepare: (binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, loaded: FamilyDocumentSources) => Promise<{ row: Metadata; snapshot?: DocumentSnapshot }>) {
     uuid.parse(childId); uuid.parse(opId);
     const requestHash = fingerprint({ childId, payload });
-    return authority.runTransaction(userId, null, async binding => {
+    return runDocumentTransaction(userId, null, async binding => {
       const old = await prior(binding, opId);
       if (old && (old.childId !== childId || old.fingerprint !== requestHash)) reject('operation_mismatch');
       const scope = await child(binding, childId), loaded = await sources(binding, scope);
@@ -149,12 +159,12 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     return { current: next, history };
   }
   async function read<T>(userId: string, childId: string, operation: (binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope) => Promise<T>) {
-    uuid.parse(childId); return authority.runTransaction(userId, childId, binding => operation(binding, { ...binding.scope }));
+    uuid.parse(childId); return runDocumentTransaction(userId, childId, binding => operation(binding, { ...binding.scope }));
   }
   return {
     async operationReceipt(userId, childId, opId) {
       uuid.parse(childId); uuid.parse(opId);
-      return authority.runTransaction(userId, null, async binding => {
+      return runDocumentTransaction(userId, null, async binding => {
         const receipt = await prior(binding, opId); if (!receipt || receipt.childId !== childId) return null;
         const scope = await child(binding, childId), row = await find(binding, scope, receipt.document.id); if (!row) return null;
         const loaded = await sources(binding, scope), original = await result(binding, scope, receipt.document, loaded), current = await result(binding, scope, row, loaded);

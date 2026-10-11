@@ -624,6 +624,8 @@ Storage 先 reserved，確定 object generation／hash／大小／加密版本�
 - 裝置 session ledger 與業務 authority 分 collection；只存 cookie SHA-256、uid、到期、auth_time、generation／撤銷，原 cookie／ID token 不落庫或日誌。每次 session 讀回核 Admin revoke/current user、ledger、現行 admission。revoke-other-sessions 同交易提升 generation 並只保留目前 cookie；舊 auth_time 不能重新換回有效會話。保留 cookie 的例外須由 HTTP 現有 cookie 已驗證所得，不接受請求自報 hash。
 - control 與 session 均確定 ID 點讀；無需查詢密文。私人 client Rules 必須拒絕全部直讀寫，Server IAM 不能代替上述業務交易。還原須對照目前 Auth、重放刪除並改 epoch，亦須失效舊 ledger；F01 不以當前 session 格式宣稱 restore 已驗。
 
+孩子點讀可在同一交易用既有 children projection 的四個 opaque scope tags 作提前拒絕：格式正確但不屬目前 scope 時拒絕；格式損壞保留資料錯誤。tags 不能授權，匹配後仍須按目前授權 scope 解密 canonical child 並核對狀態；不得使用 recovery locator 取得外部 scope。舊資料缺 projection 時保留原 canonical 讀取，不補造授權或隱藏本人密文損壞。文件 adapter 將已知不可存取權威映射為原文件 port 的 404，未知／資料損壞仍屬服務錯誤。
+
 ### F02 原生交易接合
 
 canonical authority 的 runTransaction 擁有真 Firestore 回調，每次 SDK 重跑均建立新的短生命週期 binding；先核 control、本人 account／invitation、workspace 與可選 child，再把同一 Transaction 及本次讀集綁定的 scope、accessVersion、epoch、changeSeq 交給領域 store。不能以交易外 readScope 的結果代替；回調退出後準備／commit closure 不可再用。領域資料、原操作收據、change feed 及 outbox 全讀後寫，重跑回調不呼叫 Auth／Storage／Tasks／模型或寄信。
