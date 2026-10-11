@@ -22,7 +22,8 @@ pkg.scripts = { 'gcp-build': '' };
 writeFileSync(packageFile, JSON.stringify(pkg, null, 2) + '\n');
 writeFileSync(join(source, 'firebase-function.mjs'), "export { beforeYubanUserCreated } from './server/firebase-blocking.ts';\n");
 const output = join(base, 'source.zip');
-execFileSync('tar', ['-a', '-cf', output, '-C', source, ...files, 'firebase-function.mjs'], { cwd: root, stdio: 'pipe' });
+// Select ZIP explicitly; archive filename inference can emit TAR on Windows.
+execFileSync('tar', ['-cf', output, '--format=zip', '-C', source, ...files, 'firebase-function.mjs'], { cwd: root, stdio: 'pipe' });
 const sha256 = createHash('sha256').update(readFileSync(output)).digest('hex');
 const manifest = { sourceRevision: revision, archiveFormat: 'zip', archiveSha256: sha256, archiveBytes: readFileSync(output).length,
   entryPoint: 'beforeYubanUserCreated', packageOverride: { main: pkg.main, scripts: pkg.scripts }, includes: files };

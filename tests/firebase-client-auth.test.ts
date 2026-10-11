@@ -142,6 +142,46 @@ test("the 20 second deadline rejects promptly and fences a late SDK success", as
   late.resolve(f.alice); await turn(); assert.deepEqual(f.state.exchanges, []); assert.equal(f.state.current, null);
 });
 
+test("authentication failure diagnostics report bounded stages and causes without credentials", async context => {
+  context.mock.timers.enable({ apis: ["setTimeout"] });
+  const logs: unknown[][] = [];
+  for (const method of ["log", "info", "warn", "error", "debug"] as const) context.mock.method(console, method, (...values: unknown[]) => { logs.push(values); });
+  const failed = fixture(false);
+  failed.sdk.idToken = async () => { throw { code: "auth/network-request-failed", message: credentials.password + " synthetic-private-token", email: credentials.email, uid: "private-provider-uid" }; };
+  await assert.rejects(failed.records.authenticate("signUp", credentials, signal()), ClientApiError);
+  assert.deepEqual(logs, [["firebase_authenticate_unconfirmed", { stage: "token", cause: "provider", providerCode: "auth/network-request-failed" }]]);
+  assert.deepEqual(failed.state.exchanges, []); assert.equal(failed.state.current, null);
+
+  const timed = fixture(false), tokenStarted = deferred<void>(), lateToken = deferred<string>();
+  timed.sdk.idToken = async () => { tokenStarted.resolve(); return lateToken.promise; };
+  const pending = timed.records.authenticate("signIn", credentials, signal()); await tokenStarted.promise;
+  context.mock.timers.tick(20_000); await assert.rejects(pending, ClientApiError);
+  assert.deepEqual(logs.at(-1), ["firebase_authenticate_unconfirmed", { stage: "token", cause: "timeout", providerCode: null }]);
+  lateToken.resolve("synthetic-private-late-token"); await turn(); assert.deepEqual(timed.state.exchanges, []); assert.equal(timed.state.current, null);
+
+  const cancelled = fixture(false), signInStarted = deferred<void>(), lateUser = deferred<FirebaseIdentityUser>();
+  cancelled.sdk.signIn = async () => { signInStarted.resolve(); const user = await lateUser.promise; cancelled.state.current = user; return user; };
+  const controller = new AbortController(), aborted = cancelled.records.authenticate("signIn", credentials, controller.signal);
+  await signInStarted.promise; controller.abort(); await assert.rejects(aborted, ClientApiError);
+  assert.deepEqual(logs.at(-1), ["firebase_authenticate_unconfirmed", { stage: "sign_in", cause: "caller_abort", providerCode: null }]);
+  lateUser.resolve(cancelled.alice); await turn(); assert.deepEqual(cancelled.state.exchanges, []);
+
+  const replaced = fixture(false);
+  replaced.sdk.updateName = async () => { replaced.state.current = { ...replaced.alice, uid: "other-provider-uid" }; };
+  await assert.rejects(replaced.records.authenticate("signUp", credentials, signal()), ClientApiError);
+  assert.deepEqual(logs.at(-1), ["firebase_authenticate_unconfirmed", { stage: "identity_check", cause: "replaced", providerCode: null }]);
+  assert.deepEqual(replaced.state.exchanges, []); assert.equal(replaced.state.current, null);
+
+  const unmapped = fixture(false);
+  unmapped.sdk.idToken = async () => { throw { code: "auth/" + credentials.password, message: "synthetic-private-token" }; };
+  await assert.rejects(unmapped.records.authenticate("signIn", credentials, signal()), ClientApiError);
+  assert.deepEqual(logs.at(-1), ["firebase_authenticate_unconfirmed", { stage: "token", cause: "provider", providerCode: null }]);
+  const successful = fixture(false); await successful.records.authenticate("signIn", credentials, signal());
+  assert.equal(logs.length, 5);
+  const encoded = JSON.stringify(logs);
+  for (const privateValue of [credentials.password, credentials.email, "synthetic-private-token", "synthetic-private-late-token", "private-provider-uid", "other-provider-uid"]) assert.equal(encoded.includes(privateValue), false);
+});
+
 test("profile failure is not signup success and provider errors never expose or log secrets", async context => {
   const f = fixture(false), logs: unknown[][] = [];
   for (const method of ["log", "info", "warn", "error", "debug"] as const) context.mock.method(console, method, (...values: unknown[]) => { logs.push(values); });
@@ -152,5 +192,5 @@ test("profile failure is not signup success and provider errors never expose or 
   f.sdk.confirmReset = async () => { throw { code: "auth/internal-error", message: "synthetic-verification-token " + credentials.password }; };
   await assert.rejects(f.account.resetPassword("synthetic-verification-token", credentials.password, signal()), error => error instanceof ClientApiError
     && !JSON.stringify(error).includes(credentials.password) && !error.message.includes("synthetic-verification-token"));
-  assert.deepEqual(logs, []);
+  assert.deepEqual(logs, [["firebase_authenticate_unconfirmed", { stage: "update_name", cause: "provider", providerCode: null }]]);
 });

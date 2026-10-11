@@ -21,7 +21,12 @@ export interface FirebaseIdentitySdk {
 }
 export interface FirebaseClientAuthApi extends RecordsIdentityAdapter, AccountIdentityAdapter {}
 interface Options { baseUrl: string; publicOrigin: string; config: FirebasePublicConfig; fetcher?: typeof fetch; sdk?: FirebaseIdentitySdk }
-interface Ticket { generation: number; signal: AbortSignal }
+type AuthenticationStage = "provider_clear" | "session_read" | "sign_in" | "sign_up" | "update_name" | "identity_check" | "token" | "exchange";
+interface Ticket { generation: number; signal: AbortSignal; authenticationStage?: AuthenticationStage }
+const diagnosticProviderCodes = new Set(["auth/network-request-failed", "auth/timeout", "auth/internal-error", "auth/user-token-expired",
+  "auth/invalid-user-token", "auth/user-disabled", "auth/too-many-requests", "auth/requires-recent-login", "auth/invalid-credential",
+  "auth/invalid-email", "auth/wrong-password", "auth/user-not-found", "auth/email-already-in-use", "auth/weak-password",
+  "auth/operation-not-allowed", "auth/invalid-api-key", "auth/app-not-authorized", "auth/tenant-id-mismatch"]);
 let appSequence = 0;
 const emailKey = (email: string) => email.trim().toLowerCase();
 const unavailable = () => new ClientApiError(503, "auth_provider_unavailable");
@@ -70,6 +75,12 @@ function sanitized(error: unknown): ClientApiError {
   if (code === "auth/requires-recent-login") return reauthenticationRequired();
   return new ClientApiError();
 }
+function diagnoseAuthentication(stage: AuthenticationStage, cause: "timeout" | "caller_abort" | "replaced" | "provider", error: unknown) {
+  const code = error !== null && typeof error === "object" && "code" in error ? error.code : null;
+  const providerCode = typeof code === "string" && diagnosticProviderCodes.has(code) ? code : null;
+  // Only fixed phase names and approved SDK codes leave this diagnostic; never log the error object or inputs.
+  try { console.warn("firebase_authenticate_unconfirmed", { stage, cause, providerCode }); } catch { /* Diagnostics must not change authentication. */ }
+}
 
 /** Only a same-origin Server exchange can establish the HttpOnly business session. */
 export function createFirebaseAuthApi(options: Options): FirebaseClientAuthApi {
@@ -83,17 +94,29 @@ export function createFirebaseAuthApi(options: Options): FirebaseClientAuthApi {
   const clear = async () => { retainedUser = null; await sdk.clear(); };
 
   function run(signal: AbortSignal, action: (ticket: Ticket) => Promise<void>, replaceIdentity = false): Promise<void> {
-    if (signal.aborted) return Promise.reject(new ClientApiError());
+    if (signal.aborted) {
+      if (replaceIdentity) diagnoseAuthentication("provider_clear", "caller_abort", null);
+      return Promise.reject(new ClientApiError());
+    }
     const controller = new AbortController(), timed = setTimeout(() => controller.abort(), 20_000);
     const combined = AbortSignal.any([signal, controller.signal]);
-    const ticket = { generation: replaceIdentity ? ++generation : generation, signal: combined };
+    const ticket: Ticket = { generation: replaceIdentity ? ++generation : generation, signal: combined };
+    if (replaceIdentity) ticket.authenticationStage = "provider_clear";
     let rejectAbort!: () => void;
     const aborted = new Promise<never>((_, reject) => { rejectAbort = () => reject(new ClientApiError()); });
     combined.addEventListener("abort", rejectAbort, { once: true });
     const task = queue.then(async () => { guard(ticket); await action(ticket); guard(ticket); });
     // An uncancellable SDK completion stays serialized until its own provider state has been cleared.
     queue = task.then(() => {}, () => {});
-    return Promise.race([task, aborted]).catch(error => { throw sanitized(error); }).finally(() => {
+    return Promise.race([task, aborted]).catch(error => {
+      if (ticket.authenticationStage) {
+        const cause = controller.signal.aborted ? "timeout" : signal.aborted ? "caller_abort"
+          : ticket.generation !== generation || ticket.authenticationStage === "identity_check" && error instanceof ClientApiError
+            && error.onlineCode === "firebase_reauthentication_required" ? "replaced" : "provider";
+        diagnoseAuthentication(ticket.authenticationStage, cause, error);
+      }
+      throw sanitized(error);
+    }).finally(() => {
       clearTimeout(timed); combined.removeEventListener("abort", rejectAbort);
     });
   }
@@ -116,12 +139,17 @@ export function createFirebaseAuthApi(options: Options): FirebaseClientAuthApi {
       let retain = false;
       try {
         await clear(); guard(ticket);
+        ticket.authenticationStage = "session_read";
         const original = await server.getSession(ticket.signal); guard(ticket);
+        ticket.authenticationStage = mode === "signUp" ? "sign_up" : "sign_in";
         const user = await (mode === "signUp" ? sdk.signUp(input.email, input.password) : sdk.signIn(input.email, input.password));
         guard(ticket);
-        if (mode === "signUp") { await sdk.updateName(user, input.name); guard(ticket); }
+        if (mode === "signUp") { ticket.authenticationStage = "update_name"; await sdk.updateName(user, input.name); guard(ticket); }
+        ticket.authenticationStage = "identity_check";
         if (sdk.currentUser() !== user || !user.uid || !user.email || emailKey(user.email) !== emailKey(input.email)) throw reauthenticationRequired();
+        ticket.authenticationStage = "token";
         const idToken = await sdk.idToken(user); guard(ticket);
+        ticket.authenticationStage = "exchange";
         await exchange(idToken, original?.id ?? user.uid, ticket); guard(ticket);
         // Retain only this page's unverified provider identity for an explicit resend.
         if (!user.emailVerified) { retainedUser = user; retain = true; }
