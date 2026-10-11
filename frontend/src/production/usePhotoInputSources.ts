@@ -17,6 +17,7 @@ type PendingSource = ({ kind: "create"; input: SharedInputCreate } | { kind: "co
   & { checked: boolean; confirmed: boolean };
 type DirectSource = { kind: "fetch" | "extract"; basis: SharedInput; excerpt: string; checked: boolean };
 const noOperation = (): SourceOperation => ({ state: "none", phase: null, reference: null, message: "", checked: false });
+const readFailureNotice = "讀取未能確認，私人原文及草稿保留。請手動重新讀取。";
 const projectSource = (input: SharedInput): SourceInput => ({ ...input, extraction: { ...input.extraction, draft: input.extraction.draft ? {
   ...input.extraction.draft, rawValue: input.extraction.draft.rawValue ?? "", unit: input.extraction.draft.unit ?? "",
 } : null } });
@@ -116,7 +117,7 @@ export function usePhotoInputSources() {
       } else {
         update({ pending: null, direct: null, ...(phase ? {} : { load: "error" as const }), ...(failure.onlineCode === "inputs_capacity" ? { canCreate: false } : {}) });
         if (phase) op(phase, "failed", failure.onlineCode === "inputs_capacity" || failure.status === 413 ? "輸入或儲存容量不足，原文及草稿保留。" : "操作未被確認，原文及草稿保留。先重新讀取並核對。");
-        else update({ notice: "讀取未能確認，私人原文及草稿保留。請手動重新讀取。" });
+        else update({ notice: readFailureNotice });
       }
     } finally {
       if (request.current === controller) request.current = null;
@@ -185,6 +186,8 @@ export function usePhotoInputSources() {
     if (ref.current.pending?.confirmed) {
       update({ pending: { ...ref.current.pending, checked: true } }); op(ref.current.pending!.kind, "confirmed_unavailable", "原收據已確認，但結果無法識別。清單已重讀；不能按原文或 hash 猜測，也不會再次建立。", true);
     }
+    // List success alone does not recover a failed selected-detail read.
+    if (ref.current.notice === readFailureNotice) update({ notice: "" });
   }
   const refresh = () => {
     if (ref.current.busy) { refreshRequested.current = true; return; }

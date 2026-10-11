@@ -52,7 +52,8 @@ export interface FamilyActions {
   confirmScope(checked: boolean): void;
   reviewCurrent(): void;
   submit(): void;
-  cancel(): void;
+  // Runs synchronously only after the local cancellation guard accepts cleanup.
+  cancel(onCancelled?: () => void): void;
   useLatest(): void;
   dismissCode(): void;
   openProfile(): void;

@@ -95,6 +95,6 @@ export function useProductionContact(env: SettingsEnvironment) {
   useSettingsRefresh(env, actions.refresh, !requests.busy && !state.pending && !state.dirty);
   useDomainWriteGuard(state.dirty, !!state.pending || requests.busy);
   return { model: { ...state, scopeKey: env.scopeKey, childName: env.childName, userId: env.userId ?? "", online: env.online, busy: requests.busy,
-    locked: requests.busy || !env.online || !!state.pending || state.load !== "ready", page: env.current() ? state.page : null,
+    locked: requests.busy || !env.online || !!state.pending || state.load !== "ready" || state.access !== "editable" || !state.page?.canManage, page: env.current() ? state.page : null,
     access: env.current() ? state.access : "lost" as const }, actions };
 }

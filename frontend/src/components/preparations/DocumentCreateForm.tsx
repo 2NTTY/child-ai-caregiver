@@ -51,7 +51,7 @@ export function DocumentCreateForm({ owner, kind, purpose = "appointment", allow
     <FormErrorSummary entries={(Object.keys(errors) as (keyof Fields)[]).map(field => ({ field, label: labels[field], message: errors[field]?.message ?? "請核對此項。" }))} onFocus={field => setFocus(field as keyof Fields)} />
     <Controller name="title" control={control} rules={{ required: "請填寫文件名稱。", maxLength: { value: 160, message: "最多 160 字。" } }}
       render={({ field }) => <View><AppTextField ref={field.ref} nativeID={`${id}-title`} label={labels.title} accessibilityLabel={labels.title} value={field.value} disabled={disabled}
-        error={!!errors.title} onBlur={field.onBlur} onChangeText={value => { edited(); field.onChange(value); }} />
+        error={!!errors.title} aria-invalid={!!errors.title} aria-describedby={errors.title ? `${id}-title-error` : undefined} onBlur={field.onBlur} onChangeText={value => { edited(); field.onChange(value); }} />
         <FormFieldMessage id={`${id}-title-error`} error={errors.title?.message} /></View>} />
     <Controller name="purpose" control={control} render={({ field }) => <AppSelect label={labels.purpose} value={field.value} options={options} disabled={disabled}
       onChange={value => { edited(); field.onChange(value); }} />} />

@@ -1,7 +1,7 @@
 # 育伴港前端現況
 
-R01檔案歷史重試及Summary文件名稱修補已隨既有公開合成預覽v69於2026-10-10 18:50:59 UTC發布，Sites source `b47344b0a4b3f94a2322c1218f41c90255b3216c`。雲端Chrome 1180×757的兩項原紅定向重驗通過；不是GitHub合併或正式後端部署。固定master仍為 [#187](https://github.com/2NTTY/child-ai-caregiver/pull/187) 的 `fddd32deaa04fea8db39553ea6b3e050769b6a5d`。
+既有公開合成預覽 v71 已於 2026-10-11 07:06:38 UTC 發布，Sites source `cf9353c4a38cbf5bc560b65e920771c078576231`。原七修補在 v70 的六組指定目標已有真 browser 證據；Family 新可見回焦與 Archive retry 後提示清理已在 v71 定向通過，v70 的視野缺口／逾時 UNKNOWN 保留為歷史。Settings／Profile 各1440×900及390×900代表responsive通過。
 
-4檔程式／測試、組合typecheck／clear產物及原3文件同批共7檔，正準備單一英文PR，待主對話裁決。原7檔發布前freeze、R01階段與v68反例保留；實際結果及限制見 [PLAN#active](PLAN.md#active)。
+本包維持10產品＋7測試＋原3文件20檔；新組合typecheck／唯一build及root源碼／產物覆核通過，原碼測及失敗歷史保留。新版文件／patch及GitHub交付仍待收尾；這是分版本有界驗收，不是全站重跑。固定master `d96e34bef19d34911ce3bcc285e0b1c3d21935d6`及open PR 0只對應07:18 UTC提供的觀察。
 
-v69的32份證據不是32項測試；只核history失敗→重讀→手動retry及準備單空title名稱。account gate／失權原地恢復、aria-invalid／錯誤關聯、growth-report browser、完整四尺寸／讀屏／FPS、分頁race及正式服務未因此通過；inline焦點與捨棄前dirty觀察保留。後端由Codex承接，FE／P2未全數完成；正式服務最後觀察見[根STATUS](../STATUS.md#deployment)。
+按使用者最新安排，本批收尾後由 Codex 接手，dot 不另開新修補；History返回heading焦點因果、Profile非零scroll補償、正式API／PDF、FPS及其餘未驗留待交接。唯一當前門檻及下一步見[PLAN#active](PLAN.md#active)。Sites／合成browser不等於正式服務、真API／PDF或完整FE／P2驗收；正式服務最後觀察見[根STATUS](../STATUS.md#deployment)。

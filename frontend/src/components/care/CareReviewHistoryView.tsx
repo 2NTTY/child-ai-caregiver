@@ -38,6 +38,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
   const [recordOpen, setRecordOpen] = useState(false);
   const tabsId = useId(), layout = useContainerWidth(), wide = layout.width >= 760;
   const panelRef = useRef<View>(null), listRef = useRef<View>(null), focusRequested = useRef(false);
+  const closeFocusRequest = useRef<{ scopeKey: string | undefined; model: CareRecordsViewModel } | null>(null);
   const query = (searchText ?? localQuery).trim().toLocaleLowerCase("zh-HK");
   const sourceItems = history ? olderOnly ? window.older : review.items : window.recent;
   const sourceGroups = careReviewSourceGroups(careReviewChronological(sourceItems));
@@ -62,7 +63,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
   const canEdit = model.access === "editable" && model.list.state !== "loading";
   const ready = selected ? selected.reviewRequirement === "required" && selected.savedRecord ? careImportantReviewReadiness(selected, { childId: model.child.id, scopeKey: model.scopeKey ?? "", access: model.access, capabilities: review.capabilities, expectedVersion: selected.version, expectedSourceVersion: selected.sourceVersion, recordId: selected.savedRecord.id, recordVersion: selected.savedRecord.current.version, expectedScopeKey: model.scopeKey ?? "" }) : careCaptureReadiness(selected, { childId: model.child.id, access: model.access, capabilities: review.capabilities }) : null;
   const previousDraft = useRef(model.draft);
-  useEffect(() => { setPage(0); setSelectedId(null); setRecordOpen(false); setLocalQuery(""); setStatus(initialStatus); setTab("pending"); setSourceKey("all"); setFiltersOpen(false); }, [model.scopeKey, initialStatus, olderOnly]);
+  useEffect(() => { closeFocusRequest.current = null; setPage(0); setSelectedId(null); setRecordOpen(false); setLocalQuery(""); setStatus(initialStatus); setTab("pending"); setSourceKey("all"); setFiltersOpen(false); }, [model.scopeKey, initialStatus, olderOnly]);
   useEffect(() => { setPage(0); setSelectedId(null); setRecordOpen(false); }, [query, status, sourceKey, tab]);
   useEffect(() => { if (initialRecordId && model.detail?.record.id === initialRecordId) setRecordOpen(true); }, [initialRecordId, model.detail?.record.id]);
   useEffect(() => {
@@ -70,13 +71,18 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
     previousDraft.current = model.draft;
   }, [model.draft, model.operation.state, model.detail]);
   useEffect(() => {
+    const closeRequest = closeFocusRequest.current;
+    if (closeRequest && closeRequest.model !== model) {
+      closeFocusRequest.current = null;
+      if (closeRequest.scopeKey === model.scopeKey && !model.detail && !model.draft && !model.deletion && model.operation.state === "none") focusRequested.current = true;
+    }
     if (!focusRequested.current) return;
     focusRequested.current = false;
     const target = showPanel ? panelRef.current : listRef.current;
     (target as unknown as { focus?: (options: { preventScroll: boolean }) => void } | null)?.focus?.({ preventScroll: true });
-  }, [selectedId, recordOpen, showPanel]);
+  }, [selectedId, recordOpen, showPanel, model]);
   const closeSelection = () => { if (occupied) return; actions.closePanel(); setSelectedId(null); setRecordOpen(false); focusRequested.current = true; };
-  const panelActions = { ...actions, closePanel: () => { if (!locked) { actions.closePanel(); setRecordOpen(false); } } };
+  const panelActions = { ...actions, closePanel: () => { if (!locked) { actions.closePanel(); setRecordOpen(false); closeFocusRequest.current = { scopeKey: model.scopeKey, model }; } } };
   const openRecord = (id: string) => { if (occupied) return; setRecordOpen(true); focusRequested.current = true; actions.openRecord(id); };
   const changeTab = (next: CareReviewTab) => { if (occupied) return; actions.closePanel(); setTab(next); setRecordOpen(false); setSelectedId(null); };
   return <View ref={layout.ref} onLayout={layout.onLayout} style={s.workspace} testID={history ? "care-review-history" : "care-review-gate"}>

@@ -140,7 +140,7 @@ export function useProductionFamily(env: SettingsEnvironment) {
     stageAccept() { if (incoming?.status === "pending" && incomingToken.current) stage({ kind: "accept", invitation: incoming, scopeConfirmed: false }); },
     confirmScope(value) { if (!pending.current) setDraft(current => current ? { ...current, scopeConfirmed: value } : null); },
     reviewCurrent() { void refresh(); }, submit: () => { void submit(); },
-    cancel() { if (!pending.current && !requests.busy) { clearDraft(); setOperation({ state: "none", message: "", reference: null }); } },
+    cancel(onCancelled) { if (!pending.current && !requests.busy) { clearDraft(); setOperation({ state: "none", message: "", reference: null }); onCancelled?.(); } },
     useLatest() { if (!pending.current && latestFamily?.role === "owner" && draft && draft.kind !== "accept") {
       setDraft({ ...draft, basis: latestFamily, scopeConfirmed: false }); setLatestFamily(null); setOperation({ state: "needs_confirmation", message: "已明確採用最新基準，請再次核對範圍。", reference: null }); } },
     dismissCode() { setOneTimeCode(null); }, openProfile() {} };
