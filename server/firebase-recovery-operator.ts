@@ -21,7 +21,7 @@ import type { createFirebaseNativeRecovery } from './firebase-native-recovery.ts
 
 const hash=z.string().regex(/^[a-f0-9]{64}$/u),uuid=z.uuid();
 const operationSchema=z.object({done:z.literal(true),error:z.never().optional(),metadata:z.object({operationState:z.literal('SUCCESSFUL'),
-  inputUriPrefix:z.string(),progressDocuments:z.object({workCompleted:z.string().regex(/^[0-9]+$/u)}).passthrough()}).passthrough()}).passthrough();
+  inputUriPrefix:z.string(),progressDocuments:z.object({completedWork:z.string().regex(/^[0-9]+$/u)}).passthrough()}).passthrough()}).passthrough();
 const checkpointSchema=z.object({format:z.literal('yuban-firebase-restore/v1'),state:z.literal('applied-paused'),
   restoreId:uuid,backupId:uuid,manifestSha256:hash,sourceDatabaseId:z.string(),targetDatabaseId:z.string(),
   sourceGeneration:uuid,generation:uuid,journalHash:hash,authHash:hash,authorityHash:hash,inventory:firebaseBackupInventorySchema}).strict();
@@ -163,7 +163,7 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       }
       const operation=operationSchema.parse(await options.native.getImport(input.operationName));
       requireValue(operation.metadata.inputUriPrefix===manifest.nativeExport.outputUriPrefix
-        &&BigInt(operation.metadata.progressDocuments.workCompleted)===BigInt(manifest.inventory.documentCount),'recovery_import_mismatch');
+        &&BigInt(operation.metadata.progressDocuments.completedWork)===BigInt(manifest.inventory.documentCount),'recovery_import_mismatch');
       const documents=await readAll(target);assertFirebaseBackupInventory(manifest.inventory,documents);
       const records=decode(documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);
       const liveDocuments=await readAll(source),authUsers=await currentAuth(records),entries=await journalSnapshot();

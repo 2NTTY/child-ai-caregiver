@@ -25,7 +25,7 @@ function fixture(){
     }
     const operation:FirebaseNativeRecoveryOperation={name:resource(direction)+"/operations/opaque-"+randomUUID(),done:false,
       metadata:{"@type":type(direction),...(direction==="export"?options.data:{inputUriPrefix:"inputUriPrefix" in options.data?options.data.inputUriPrefix:undefined}),
-        progressDocuments:{workCompleted:"0"},operationState:"PROCESSING"}};
+        progressDocuments:{completedWork:"0"},operationState:"PROCESSING"}};
     (direction==="export"?exports:imports).push(operation);
     if(lose){lose=false;throw new Error("synthetic private POST reply lost");}
     return {status:200,data:operation};

@@ -123,13 +123,13 @@ export function assertFirebaseBackupInventory(expected: FirebaseBackupInventory,
 
 /** A completed native export must account for every document, including otherwise invisible subcollections. */
 export function assertFirebaseNativeExport(inventory: FirebaseBackupInventory, value: unknown, expectedPrefix: string) {
-  const progress = z.object({ workCompleted: z.string().regex(/^(0|[1-9][0-9]*)$/u) }).passthrough();
+  const progress = z.object({ completedWork: z.string().regex(/^(0|[1-9][0-9]*)$/u) }).passthrough();
   const parsed = z.object({ done: z.literal(true), error: z.never().optional(),
     metadata: z.object({ operationState: z.literal('SUCCESSFUL'), snapshotTime: z.string(), progressDocuments: progress }).passthrough(),
     response: z.object({ outputUriPrefix: z.string() }).passthrough() }).passthrough().safeParse(value);
   if (!parsed.success || !expectedPrefix.startsWith('gs://') || expectedPrefix.endsWith('/') || expectedPrefix.includes('..')) reject('native_export_invalid');
   const result = parsed.data, prefix = result.response.outputUriPrefix;
   if ((prefix !== expectedPrefix && !prefix.startsWith(expectedPrefix + '/')) || Date.parse(result.metadata.snapshotTime) !== Date.parse(inventory.snapshotTime)
-    || BigInt(result.metadata.progressDocuments.workCompleted) !== BigInt(inventory.documentCount)) reject('native_export_mismatch');
+    || BigInt(result.metadata.progressDocuments.completedWork) !== BigInt(inventory.documentCount)) reject('native_export_mismatch');
   return { outputUriPrefix: prefix, documentCount: inventory.documentCount, snapshotTime: inventory.snapshotTime };
 }

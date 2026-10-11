@@ -150,7 +150,7 @@ async function fixture() {
   const calls = { findImport: 0, startImport: 0, getImport: 0, readManifest: 0, assertExport: 0, restorePhoto: 0, backupPhoto: 0, auth: 0, journal: 0 };
   const operation: FirebaseNativeRecoveryOperation = { name: 'projects/' + PROJECT + '/databases/' + TARGET + '/operations/synthetic-import',
     done: true, metadata: { operationState: 'SUCCESSFUL', inputUriPrefix: outputUriPrefix,
-      progressDocuments: { workCompleted: String(snapshot.length) } } };
+      progressDocuments: { completedWork: String(snapshot.length) } } };
   let existingImport: FirebaseNativeRecoveryOperation | null = null, disabled = false;
   const unexpected = async (): Promise<never> => { throw new Error('Unexpected synthetic recovery port call'); };
   const native: FirebaseNativeRecovery = {

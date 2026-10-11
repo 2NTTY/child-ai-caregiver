@@ -18,9 +18,9 @@ test('native backup inventory preserves vectors and rejects changed, missing or 
   assert.throws(()=>assertFirebaseBackupInventory(manifest, [...documents,{path:'synthetic/extra',data:{x:true}}]), {code:'inventory_invalid'});
   assert.throws(()=>assertFirebaseBackupInventory(manifest, [{...documents[0]!,data:{...documents[0]!.data,vector:FieldValue.vector([1,2,4])}},documents[1]!]), {code:'inventory_mismatch'});
   assert.throws(()=>assertFirebaseBackupInventory(manifest, [{...documents[0]!,data:{...documents[0]!.data,vector:{type:'firestore-vector',value:[1,2,3]}}},documents[1]!]), {code:'inventory_mismatch'});
-  const native={done:true,metadata:{operationState:'SUCCESSFUL',snapshotTime:manifest.snapshotTime,progressDocuments:{workCompleted:'2'}},
+  const native={done:true,metadata:{operationState:'SUCCESSFUL',snapshotTime:manifest.snapshotTime,progressDocuments:{completedWork:'2'}},
     response:{outputUriPrefix:'gs://synthetic-backup/run/firestore'}};
   assert.deepEqual(assertFirebaseNativeExport(manifest,native,'gs://synthetic-backup/run/firestore'),{outputUriPrefix:native.response.outputUriPrefix,documentCount:2,snapshotTime:manifest.snapshotTime});
-  assert.throws(()=>assertFirebaseNativeExport(manifest,{...native,metadata:{...native.metadata,progressDocuments:{workCompleted:'3'}}},'gs://synthetic-backup/run/firestore'),{code:'native_export_mismatch'});
+  assert.throws(()=>assertFirebaseNativeExport(manifest,{...native,metadata:{...native.metadata,progressDocuments:{completedWork:'3'}}},'gs://synthetic-backup/run/firestore'),{code:'native_export_mismatch'});
   assert.throws(()=>assertFirebaseNativeExport(manifest,{...native,done:false},'gs://synthetic-backup/run/firestore'),{code:'native_export_invalid'});
 });
