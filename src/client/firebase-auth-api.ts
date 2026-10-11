@@ -79,7 +79,7 @@ function diagnoseAuthentication(stage: AuthenticationStage, cause: "timeout" | "
   const code = error !== null && typeof error === "object" && "code" in error ? error.code : null;
   const providerCode = typeof code === "string" && diagnosticProviderCodes.has(code) ? code : null;
   // Only fixed phase names and approved SDK codes leave this diagnostic; never log the error object or inputs.
-  try { console.warn("firebase_authenticate_unconfirmed", { stage, cause, providerCode }); } catch { /* Diagnostics must not change authentication. */ }
+  try { console.warn("firebase_authenticate_unconfirmed " + JSON.stringify({ stage, cause, providerCode })); } catch { /* Diagnostics must not change authentication. */ }
 }
 
 /** Only a same-origin Server exchange can establish the HttpOnly business session. */
