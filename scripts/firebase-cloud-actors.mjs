@@ -17,7 +17,7 @@ const ORIGIN = 'https://yuban-firebase-check.web.app';
 const PROJECT = 'ai-caregivers-for-children', PROJECT_NUMBER = '1064034424208';
 const DATABASE = 'yuban-firebase-20261011', NAMESPACE = 'yuban_authority';
 const APP_ID = '1:1064034424208:web:b0873383eee9d93256cf15';
-const SOURCE = '9ee3814b4c4766a99a16a1025ca76185ec3daea6';
+const SOURCE = '97de268a4b1edc8f17f80634093ee210ffac5a66';
 const RESUME_RUN_ID = 'f02-20261011-01';
 const RESUME_ACTORS = Object.freeze({
   A: Object.freeze({ userId: 'RLG08u9PVifLmoW0MvU1xx6LK0n2', email: 'f02-20261011-a@synthetic.invalid' }),
@@ -37,8 +37,8 @@ const publicConfigSchema = z.object({ apiKey: z.string().regex(/^[A-Za-z0-9_-]{2
   authDomain: z.literal(PROJECT + '.firebaseapp.com'), projectId: z.literal(PROJECT), appId: z.literal(APP_ID) }).strict();
 const startSchema = z.object({ command: z.literal('start'), runId: z.string().regex(/^[A-Za-z0-9_-]{1,48}$/u),
   publicConfig: publicConfigSchema, browserFixture: z.boolean().default(false),
-  mode: z.enum(['verified_pair', 'unverified_B', 'resume_verified_pair', 'resume_photo_read']).default('verified_pair') }).strict();
-const commandSchema = z.union([startSchema, z.object({ command: z.enum(['prepare', 'core', 'delete', 'status', 'close']) }).strict()]);
+  mode: z.enum(['verified_pair', 'unverified_B', 'resume_verified_pair', 'resume_photo_read', 'resume_reminder']).default('verified_pair') }).strict();
+const commandSchema = z.union([startSchema, z.object({ command: z.enum(['prepare', 'core', 'reminder', 'delete', 'status', 'close']) }).strict()]);
 const checkpointSchema = z.object({ step: z.string().regex(/^[a-zA-Z0-9_]+$/u), runId: startSchema.shape.runId,
   uid: uidSchema.optional(), operationId: uuid.optional() }).strict();
 const identitySchema = z.object({ user: z.object({ id: uidSchema, name: z.string().max(1000), email: z.email().max(320) }).strict() }).strict();
@@ -53,7 +53,7 @@ function sessionCookie(cookies) {
 }
 const childOperationSchema = z.object({ runId: startSchema.shape.runId.optional(), opId: uuid.optional(), deviceId: uuid.optional(),
   workspaceId: uuid.optional(), storageEpoch: uuid.optional() }).strict();
-const CHILD_STEPS = new Set(['resume_checkpoint', 'resume_child_A', 'resume_child_B', 'resume_task_receipt', 'resume_task_read', 'resume_document_read', 'resume_original_content', 'resume_latest_content', 'resume_photo_receipt', 'resume_photo_metadata', 'input', 'core_checkpoint', 'delete_checkpoint', 'core_complete', 'delete_complete',
+const CHILD_STEPS = new Set(['reminder_checkpoint', 'reminder_complete', 'reminder_settings_A', 'reminder_settings_B', 'reminderPreference_context', 'reminder_preference_save', 'reminder_preference_replay', 'reminder_preference_receipt', 'reminder_settings_saved', 'reminder_settings_B_unchanged', 'reminder_original_task_read', 'reminderReschedule_context', 'reminder_task_reschedule', 'reminder_reschedule_replay', 'reminder_task_read', 'reminder_original_create_receipt', 'resume_checkpoint', 'resume_child_A', 'resume_child_B', 'resume_task_receipt', 'resume_task_read', 'resume_document_read', 'resume_original_content', 'resume_latest_content', 'resume_photo_receipt', 'resume_photo_metadata', 'input', 'core_checkpoint', 'delete_checkpoint', 'core_complete', 'delete_complete',
   'task_context', 'task_create', 'task_original_replay', 'task_read', 'document_create', 'document_original_content',
   'document_typed_patch', 'document_patch_original_replay', 'document_read_latest', 'document_latest_content',
   'document_stale_version', 'document_after_conflict', 'photoReserve_context', 'photo_reserve', 'photo_reserve_original_replay',
@@ -110,8 +110,9 @@ async function waiting(action) {
     guard(); return result;
   } finally { clearTimeout(timer); }
 }
-function isResumeMode() { return ['resume_verified_pair', 'resume_photo_read'].includes(input?.mode); }
+function isResumeMode() { return ['resume_verified_pair', 'resume_photo_read', 'resume_reminder'].includes(input?.mode); }
 function browserFixtureTarget() {
+  if (input?.mode === 'resume_reminder') return { enabled: false, actor: null, fence: 'f02-cloud-resume-reminder-20261012', file: null };
   if (input?.mode === 'resume_photo_read') return { enabled: false, actor: null, fence: 'f02-cloud-resume-photo-read-20261012', file: null };
   if (input?.mode === 'resume_verified_pair') return { enabled: false, actor: null, fence: 'f02-cloud-resume-verified-pair-20261012', file: null };
   return input?.mode === 'unverified_B'
@@ -416,7 +417,8 @@ async function prepare() {
 }
 async function acceptance(phase) {
   if (input.mode === 'unverified_B') stop('phase_not_available');
-  if (state !== (phase === 'core' ? 'prepared' : 'core_passed')) stop('phase_not_available');
+  if (phase === 'reminder' && input.mode !== 'resume_reminder' || phase === 'core' && input.mode === 'resume_reminder') stop('phase_not_available');
+  if (!((phase === 'core' || phase === 'reminder') ? state === 'prepared' : ['core_passed', 'reminder_passed'].includes(state))) stop('phase_not_available');
   state = phase + '_running'; await checkpoint(phase + '_started');
   const accounts = Object.fromEntries(['A', 'B'].map(name => [name, { userId: uidSchema.parse(actors[name].userId), cookie: cookieSchema.parse(actors[name].cookie) }]));
   const childInput = Buffer.from(JSON.stringify({ phase: phase === 'core' && input.mode === 'resume_photo_read' ? 'resume_core' : phase, origin: ORIGIN, runId: input.runId,

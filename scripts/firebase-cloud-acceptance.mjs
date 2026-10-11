@@ -20,7 +20,7 @@ const runIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,48}$/u);
 const sourceRevisionSchema = z.string().regex(/^[a-f0-9]{40}$/u);
 const actorSchema = z.object({ userId: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/u),
   cookie: z.string().max(16 * 1024 + 10).regex(/^__session=[A-Za-z0-9._~-]+$/u) }).strict();
-const inputSchema = z.object({ phase: z.enum(['core', 'resume_core', 'delete']), origin: z.literal(ORIGIN), runId: runIdSchema,
+const inputSchema = z.object({ phase: z.enum(['core', 'resume_core', 'reminder', 'delete']), origin: z.literal(ORIGIN), runId: runIdSchema,
   expectedSourceRevision: sourceRevisionSchema, expectedKnowledgeVersionId: uuid, accounts: z.object({ A: actorSchema, B: actorSchema }).strict() }).strict()
   .refine(value => value.accounts.A.userId !== value.accounts.B.userId && value.accounts.A.cookie !== value.accounts.B.cookie);
 const contextSchema = z.object({ workspaceId: uuid, storageEpoch: uuid }).strict();
@@ -359,6 +359,34 @@ async function resumeCore() {
   for (const [key, value] of Object.entries(operations.photoReserve.payload)) assert.equal(evidence.photo[key], value);
   await finishCore(operations, evidence);
 }
+async function reminder(saved) {
+  const { evidence, operations } = saved;
+  await sessions();
+  const defaults = { timeZone: 'Asia/Hong_Kong', quietStart: '22:00', quietEnd: '08:00', allowAppointmentDuringQuiet: false, version: 0 };
+  assert.deepEqual((await request('reminder_settings_A', 'A', '/api/notification-preferences')).preferences, defaults);
+  assert.deepEqual((await request('reminder_settings_B', 'B', '/api/notification-preferences')).preferences, defaults);
+  const preference = await online('reminderPreference', 'A', '/api/notification-preferences', {
+    timeZone: defaults.timeZone, quietStart: defaults.quietStart, quietEnd: defaults.quietEnd, allowAppointmentDuringQuiet: true, expectedVersion: 0 });
+  const preferenceReceipt = await submit('reminder_preference_save', 'A', preference, 200);
+  assert.deepEqual(preferenceReceipt.result, { preferences: { ...defaults, allowAppointmentDuringQuiet: true, version: 1 } });
+  assert.deepEqual(await submit('reminder_preference_replay', 'A', preference, 200), preferenceReceipt);
+  assert.deepEqual(await lookup('reminder_preference_receipt', 'A', preference), preferenceReceipt);
+  assert.deepEqual((await request('reminder_settings_saved', 'A', '/api/notification-preferences')).preferences, preferenceReceipt.result.preferences);
+  assert.deepEqual((await request('reminder_settings_B_unchanged', 'B', '/api/notification-preferences')).preferences, defaults);
+  const path = '/api/children/' + evidence.childA.id + '/tasks/' + evidence.task.id;
+  assert.deepEqual(taskSchema.parse((await request('reminder_original_task_read', 'A', path)).task), evidence.task);
+  const change = await online('reminderReschedule', 'A', path + '/change', { action: 'reschedule', expectedVersion: evidence.task.version,
+    confirm: true, note: 'F02 synthetic appointment explicitly permitted during quiet hours', assigneeUserId: input.accounts.A.userId,
+    dueAt: new Date(Date.now() - 60_000).toISOString(), timeZone: 'Asia/Hong_Kong' });
+  const changed = await submit('reminder_task_reschedule', 'A', change, 200), task = taskSchema.parse(changed.result.task);
+  assert.equal(task.id, evidence.task.id); assert.equal(task.occurrence.id, evidence.task.occurrence.id); assert.equal(task.version, evidence.task.version + 1);
+  assert.deepEqual(await submit('reminder_reschedule_replay', 'A', change, 200), changed);
+  const detail = await request('reminder_task_read', 'A', path); assert.deepEqual(taskSchema.parse(detail.task), task); assert.equal(detail.workerEnabled, true);
+  assert.deepEqual(receiptSchema.parse(await lookup('reminder_original_create_receipt', 'A', operations.task)).result, { task: evidence.task });
+  await immutable('reminder-complete.json', { format: 1, state: 'reminder_complete', testedSource: input.expectedSourceRevision,
+    runId: input.runId, origin: ORIGIN, actors: saved.actors, requests, originalCoreSha256: sha256(await readFile(join(directory, 'core-complete.json'))),
+    preference, preferenceReceipt, reschedule: change, rescheduleReceipt: changed, task });
+}
 async function deletion(saved) {
   await sessions(); const { evidence, operations } = saved, prefix = '/api/children/' + evidence.childA.id;
   assert.deepEqual(photoSchema.parse((await request('delete_original_photo_read', 'A', prefix + '/photos/' + evidence.photo.id)).photo), evidence.photo);
@@ -394,10 +422,20 @@ try {
   } else if (input.phase === 'resume_core') {
     await resumeCore();
   } else {
-    step = 'delete_checkpoint'; assert.equal((await lstat(directory)).isSymbolicLink(), false);
+    step = input.phase === 'reminder' ? 'reminder_checkpoint' : 'delete_checkpoint'; assert.equal((await lstat(directory)).isSymbolicLink(), false);
     const info = await lstat(join(directory, 'core-complete.json')); assert.ok(info.size <= 64 * 1024 && info.isFile() && !info.isSymbolicLink());
     const saved = coreSchema.parse(JSON.parse(await readFile(join(directory, 'core-complete.json'), 'utf8')));
-    assert.equal(saved.testedSource, input.expectedSourceRevision);
+    let continuation;
+    if (input.phase === 'reminder') {
+      assert.equal(saved.testedSource, '9ee3814b4c4766a99a16a1025ca76185ec3daea6'); assert.equal(saved.runId, 'f02-20261011-01');
+    } else if (saved.testedSource !== input.expectedSourceRevision) {
+      const nextInfo = await lstat(join(directory, 'reminder-complete.json')); assert.ok(nextInfo.size <= 64 * 1024 && nextInfo.isFile() && !nextInfo.isSymbolicLink());
+      continuation = JSON.parse(await readFile(join(directory, 'reminder-complete.json'), 'utf8'));
+      assert.equal(continuation.state, 'reminder_complete'); assert.equal(continuation.testedSource, input.expectedSourceRevision);
+      assert.equal(continuation.runId, input.runId); assert.equal(continuation.origin, ORIGIN); assert.deepEqual(continuation.actors, saved.actors);
+      assert.equal(continuation.originalCoreSha256, sha256(await readFile(join(directory, 'core-complete.json'))));
+      assert.ok(Number.isSafeInteger(continuation.requests) && continuation.requests > saved.requests && continuation.requests <= MAX_REQUESTS);
+    }
     assert.equal(saved.runId, input.runId); assert.equal(saved.expectedKnowledgeVersionId, input.expectedKnowledgeVersionId);
     assert.equal(saved.actors.A, input.accounts.A.userId); assert.equal(saved.actors.B, input.accounts.B.userId);
     assert.equal(saved.evidence.photo.childId, saved.evidence.childA.id); assert.equal(saved.evidence.photo.ownerUserId, input.accounts.A.userId);
@@ -407,10 +445,11 @@ try {
     assert.equal(saved.operations.photoDelete.operation.workspaceId, saved.evidence.childA.workspaceId);
     assert.equal(saved.operations.photoDelete.operation.storageEpoch, saved.operations.photoReserve.operation.storageEpoch);
     const ledger = (await readdir(directory)).filter(name => /^\d{3}-request\.json$/u.test(name)).sort();
-    assert.equal(ledger.length, saved.requests); ledger.forEach((name, index) => assert.equal(name, String(index + 1).padStart(3, '0') + '-request.json'));
-    requests = saved.requests; await immutable('delete-start.json', { format: 1, testedSource: input.expectedSourceRevision,
-      runId: input.runId, deletionOperation: saved.operations.photoDelete.operation });
-    await deletion(saved);
+    const priorRequests = continuation?.requests ?? saved.requests;
+    assert.equal(ledger.length, priorRequests); ledger.forEach((name, index) => assert.equal(name, String(index + 1).padStart(3, '0') + '-request.json'));
+    requests = priorRequests; await immutable(input.phase + '-start.json', { format: 1, testedSource: input.expectedSourceRevision,
+      runId: input.runId, originalCoreSha256: sha256(await readFile(join(directory, 'core-complete.json'))), deletionOperation: saved.operations.photoDelete.operation });
+    if (input.phase === 'reminder') await reminder(saved); else await deletion(saved);
   }
   process.stdout.write(JSON.stringify({ step: (input.phase === 'resume_core' ? 'core' : input.phase) + '_complete', error: null, status: 'passed', operation: { runId: input.runId, ...currentOperation } }) + '\n');
 } catch (error) {
