@@ -22,12 +22,15 @@ const KNOWLEDGE_VERSION = 'c9265331-6ec2-5436-b4c2-07d354e53101';
 const SECRET = `projects/${PROJECT_NUMBER}/secrets/YUBAN_FIREBASE_STORAGE_KEY/versions/1`;
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const NODE = 'C:/Users/2NTTY/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe';
+// Opt-in actor A handoff only: tmp/f02-cloud-actors-20261011/browser-fixture-A.json.
+// Root consumes and removes it promptly; failures and close retain it for reconciliation.
+const BROWSER_FIXTURE_NAME = 'browser-fixture-A.json';
 const TIMEOUT_MS = 20_000, MAX_LINE = 4096, MAX_COMMANDS = 100, MAX_RESPONSE = 32 * 1024, MAX_HTTP = 20;
 const uidSchema = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/u), uuid = z.uuid();
 const publicConfigSchema = z.object({ apiKey: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/u),
   authDomain: z.literal(PROJECT + '.firebaseapp.com'), projectId: z.literal(PROJECT), appId: z.literal(APP_ID) }).strict();
 const startSchema = z.object({ command: z.literal('start'), runId: z.string().regex(/^[A-Za-z0-9_-]{1,48}$/u),
-  publicConfig: publicConfigSchema }).strict();
+  publicConfig: publicConfigSchema, browserFixture: z.boolean().default(false) }).strict();
 const commandSchema = z.union([startSchema, z.object({ command: z.enum(['prepare', 'core', 'delete', 'status', 'close']) }).strict()]);
 const checkpointSchema = z.object({ step: z.string().regex(/^[a-zA-Z0-9_]+$/u), runId: startSchema.shape.runId,
   uid: uidSchema.optional(), operationId: uuid.optional() }).strict();
@@ -90,6 +93,85 @@ async function waiting(action) {
     guard(); return result;
   } finally { clearTimeout(timer); }
 }
+const BROWSER_FIXTURE_ACL = [
+  "$ErrorActionPreference = 'Stop'",
+  "$ProgressPreference = 'SilentlyContinue'",
+  'try {',
+  '  $request = [Console]::In.ReadToEnd() | ConvertFrom-Json',
+  '  $item = Get-Item -LiteralPath ([string]$request.path) -Force',
+  '  if ($item.PSIsContainer -eq [bool]$request.file) { throw }',
+  '  $cursor = $item',
+  '  while ($null -ne $cursor) {',
+  '    if (($cursor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw }',
+  '    $cursor = if ($cursor -is [IO.DirectoryInfo]) { $cursor.Parent } else { $cursor.Directory }',
+  '  }',
+  '  $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User',
+  '  $flags = if ($request.file) { [Security.AccessControl.InheritanceFlags]::None } else {',
+  '    [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [Security.AccessControl.InheritanceFlags]::ObjectInherit }',
+  '  if ($request.initialize) {',
+  '    $acl = if ($request.file) { New-Object Security.AccessControl.FileSecurity } else { New-Object Security.AccessControl.DirectorySecurity }',
+  '    $acl.SetAccessRuleProtection($true, $false)',
+  '    $acl.SetOwner($sid)',
+  '    $rule = [Security.AccessControl.FileSystemAccessRule]::new($sid, [Security.AccessControl.FileSystemRights]::FullControl,',
+  '      $flags, [Security.AccessControl.PropagationFlags]::None, [Security.AccessControl.AccessControlType]::Allow)',
+  '    $acl.AddAccessRule($rule)',
+  '    if ($request.file) { [IO.File]::SetAccessControl($item.FullName, $acl) } else { [IO.Directory]::SetAccessControl($item.FullName, $acl) }',
+  '  }',
+  '  $acl = if ($request.file) { [IO.File]::GetAccessControl($item.FullName) } else { [IO.Directory]::GetAccessControl($item.FullName) }',
+  '  $rules = @($acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))',
+  '  if (-not $acl.AreAccessRulesProtected -or $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $sid.Value -or $rules.Count -ne 1) { throw }',
+  '  $rule = $rules[0]',
+  '  if ($rule.IdentityReference.Value -ne $sid.Value -or $rule.IsInherited -or',
+  '    $rule.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow -or',
+  '    $rule.FileSystemRights -ne [Security.AccessControl.FileSystemRights]::FullControl -or',
+  '    $rule.InheritanceFlags -ne $flags -or $rule.PropagationFlags -ne [Security.AccessControl.PropagationFlags]::None) { throw }',
+  "  [Console]::Out.Write('ok')",
+  "} catch { [Console]::Out.Write('invalid'); exit 1 }",
+].join('\n');
+async function browserFixtureAccess({ initialize = false, file = false } = {}) {
+  guard();
+  if (process.platform !== 'win32' || directory !== join(ROOT, 'tmp', 'f02-cloud-actors-20261011')) stop('browser_fixture_unavailable');
+  const path = file ? join(directory, BROWSER_FIXTURE_NAME) : directory;
+  const item = await lstat(path);
+  if (item.isSymbolicLink() || (file ? !item.isFile() || item.nlink !== 1 : !item.isDirectory())) stop('browser_fixture_unavailable');
+  const env = Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP'].filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
+  await new Promise((resolveAccess, reject) => {
+    let settled = false, output = '', stderrBytes = 0, timer, worker;
+    const finish = ok => {
+      if (settled) return; settled = true; clearTimeout(timer);
+      if (ok) resolveAccess();
+      else { worker?.kill(); reject(new OperatorError('browser_fixture_unavailable')); }
+    };
+    worker = spawn('C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
+      ['-NoLogo', '-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(BROWSER_FIXTURE_ACL, 'utf16le').toString('base64')],
+      { env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+    timer = setTimeout(() => finish(false), TIMEOUT_MS);
+    worker.on('error', () => finish(false));
+    worker.stdout.on('data', part => { output += part.toString('utf8'); if (output.length > 64) finish(false); });
+    worker.stderr.on('data', part => { stderrBytes += part.length; if (stderrBytes > 64) finish(false); });
+    worker.stdin.on('error', () => finish(false));
+    worker.once('close', code => finish(code === 0 && output === 'ok' && stderrBytes === 0));
+    worker.stdin.end(JSON.stringify({ path, initialize, file }));
+  });
+  guard();
+}
+async function writeBrowserFixture(name) {
+  if (!input.browserFixture || name !== 'A') return;
+  const actor = actors.A;
+  if (actor.email !== 'f02-20261011-a@synthetic.invalid' || !uidSchema.safeParse(actor.userId).success
+    || typeof actor.password !== 'string' || !/^[A-Za-z0-9_-]{48}aA1!$/u.test(actor.password)) stop('browser_fixture_unavailable');
+  await browserFixtureAccess();
+  let file;
+  try {
+    file = await open(join(directory, BROWSER_FIXTURE_NAME), 'wx', 0o600);
+    await browserFixtureAccess({ initialize: true, file: true });
+    const handle = await file.stat(), item = await lstat(join(directory, BROWSER_FIXTURE_NAME));
+    if (!handle.isFile() || handle.nlink !== 1 || handle.dev !== item.dev || handle.ino !== item.ino) stop('browser_fixture_unavailable');
+    await file.writeFile(JSON.stringify({ email: actor.email, password: actor.password }) + '\n', 'utf8');
+    await file.sync();
+  } catch { stop('browser_fixture_unavailable'); }
+  finally { await file?.close(); }
+}
 async function immutable(name, recordStep, extra = {}) {
   const value = checkpointSchema.parse({ step: recordStep, runId: input.runId, ...extra });
   const file = await open(join(directory, name + '.json'), 'wx', 0o600);
@@ -141,17 +223,18 @@ async function openOperator() {
     if (process.env[name] !== undefined) stop('emulator_configuration_rejected');
   }
   const google = new GoogleAuth({ projectId: PROJECT, scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
-  const token = await waiting(() => google.getAccessToken());
-  if (typeof token !== 'string' || !token || /[\s\u0000-\u001f\u007f]/u.test(token)) stop('adc_unavailable');
+  const read = async url => {
+    const headers = await waiting(() => google.getRequestHeaders(url));
+    if (!/^Bearer [^\s\u0000-\u001f\u007f]+$/u.test(headers.get('authorization') ?? '')) stop('adc_unavailable');
+    return (await http(url, { headers: Object.fromEntries(headers) })).value;
+  };
   step = 'public_config_read'; status = null;
-  const config = (await http(`https://firebase.googleapis.com/v1beta1/projects/${PROJECT}/webApps/${APP_ID}/config`,
-    { headers: { authorization: 'Bearer ' + token } })).value;
+  const config = await read(`https://firebase.googleapis.com/v1beta1/projects/${PROJECT}/webApps/${APP_ID}/config`);
   for (const key of ['apiKey', 'authDomain', 'projectId', 'appId']) {
     if (config?.[key] !== input.publicConfig[key]) stop('public_config_mismatch');
   }
   step = 'storage_key_read'; status = null;
-  const secret = (await http('https://secretmanager.googleapis.com/v1/' + SECRET + ':access',
-    { headers: { authorization: 'Bearer ' + token } })).value;
+  const secret = await read('https://secretmanager.googleapis.com/v1/' + SECRET + ':access');
   if (secret?.name !== SECRET || typeof secret?.payload?.data !== 'string'
     || !/^\d{1,10}$/u.test(String(secret?.payload?.dataCrc32c))) stop('secret_invalid');
   const decoded = Buffer.from(secret.payload.data, 'base64');
@@ -206,6 +289,7 @@ async function prepareActor(name) {
   step = 'new_identity_' + name; currentUid = actor.userId; status = null;
   const before = await waiting(() => nativeAuth.getUser(actor.userId));
   if (before.uid !== actor.userId || before.email !== actor.email || before.disabled || before.emailVerified) stop('actor_binding_invalid');
+  await writeBrowserFixture(name);
   await checkpoint('synthetic_verified_fixture_' + name + '_started', { uid: actor.userId });
   const fixture = await waiting(() => nativeAuth.updateUser(actor.userId, { emailVerified: true }));
   if (fixture.uid !== actor.userId || fixture.email !== actor.email || fixture.disabled || fixture.emailVerified !== true) stop('fixture_binding_invalid');
@@ -238,7 +322,9 @@ async function prepareActor(name) {
 }
 async function prepare() {
   if (state !== 'ready_to_prepare') stop('phase_not_available');
-  state = 'preparing'; await checkpoint('prepare_started'); await openOperator();
+  state = 'preparing'; await checkpoint('prepare_started');
+  if (input.browserFixture) await browserFixtureAccess();
+  await openOperator();
   await assertAbsent('A'); await assertAbsent('B');
   await immutable('actors_absent_confirmed', 'actors_absent_confirmed');
   await prepareActor('A'); await prepareActor('B');
@@ -294,6 +380,7 @@ async function start(value) {
   // The fixed actor batch fence also rejects a new process with a different runId after an unknown attempt.
   directory = join(parent, 'f02-cloud-actors-20261011');
   try { await mkdir(directory, { mode: 0o700 }); } catch { stop('checkpoint_exists_or_unavailable'); }
+  if (input.browserFixture) await browserFixtureAccess({ initialize: true });
   await immutable('start_confirmed', 'start_confirmed'); state = 'ready_to_prepare';
   emit({ step: 'start_complete', state, operation: { runId: input.runId }, testedSource: SOURCE, expectedKnowledgeVersionId: KNOWLEDGE_VERSION });
 }
