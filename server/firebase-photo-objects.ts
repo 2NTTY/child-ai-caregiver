@@ -190,6 +190,19 @@ export function createFirebasePhotoObjects(options: {
     fail("photo_object_unavailable", 503);
   }
   return {
+    async recover(scope: WorkRecoveryScope, photoId: string, input: { base64: string; mimeType: "image/jpeg" | "image/png" }): Promise<FirebasePhotoObjectDescriptor> {
+      const expected = binding(scope, photoId), payload = parse(inputSchema, input, true);
+      let plaintext: Buffer;
+      try { plaintext = decodePhoto(payload.base64, payload.mimeType); } catch { fail("photo_object_invalid_input", 400); }
+      try {
+        const latest = checkedMetadata(await bucket.metadata(expected.objectName), expected);
+        const existing = await stored(expected, latest.generation);
+        if (existing.descriptor.sha256 !== photoHash(plaintext) || existing.descriptor.bytes !== plaintext.length
+          || existing.descriptor.mimeType !== payload.mimeType || !existing.content.buffer.equals(plaintext))
+          fail("photo_object_conflict", 409);
+        return existing.descriptor;
+      } catch (error) { return safe(error); }
+    },
     async write(scope: WorkRecoveryScope, photoId: string, input: { base64: string; mimeType: "image/jpeg" | "image/png" }): Promise<FirebasePhotoObjectDescriptor> {
       const expected = binding(scope, photoId), payload = parse(inputSchema, input, true);
       let plaintext: Buffer;

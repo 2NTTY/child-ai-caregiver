@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import type { Firestore, DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { StorageCipher } from './storage-crypto.ts';
+import { sealRecoveryLocator, FirestoreRecoveryEnvelopeError, type FirestoreRecoveryLocator } from './firestore-recovery-envelope.ts';
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { canonicalJson } from './online-routing.ts';
 import { taskValuesSchema, taskDueAtSchema, taskTimeZoneSchema, type CareTask, type TaskRevision } from '../src/shared/tasks.ts';
@@ -27,10 +28,11 @@ export const firestoreTaskRevisionSchema: z.ZodType<TaskRevision> = z.object({ t
 export const firestoreReminderOutboxSchema = z.object({ taskId: z.uuid(), occurrenceId: z.uuid(), taskVersion: version,
   dueAt: taskDueAtSchema, ownerUserId: bounded(256), workspaceId: z.uuid(), childId: z.uuid(), storageEpoch: z.uuid(),
   authorizationVersion: decimal, generation: z.uuid(), state: z.enum(['pending', 'leased', 'processed', 'cancelled', 'failed', 'unknown']),
-  attempts: z.number().int().nonnegative().max(2147483647), lease: z.object({ token: z.uuid(), generation: z.uuid(), until: datetime }).strict().nullable() }).strict();
+  attempts: z.number().int().nonnegative().max(2147483647), failures: z.number().int().min(0).max(3).default(0),
+  lease: z.object({ token: z.uuid(), generation: z.uuid(), until: datetime }).strict().nullable() }).strict();
 export type FirestoreReminderOutbox = z.infer<typeof firestoreReminderOutboxSchema>;
 export interface FirestoreDomainOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
-export interface FirestoreDomainEnvelope { format: 'yuban-firestore-domain'; version: 1; recordVersion: number; ciphertext: string }
+export interface FirestoreDomainEnvelope { format: 'yuban-firestore-domain'; version: 1; recordVersion: number; ciphertext: string; recovery?: FirestoreRecoveryLocator }
 export class FirestoreDomainError extends Error {
   readonly status: number;
   readonly code: string;
@@ -42,6 +44,23 @@ export function domainParse<T>(schema: z.ZodType<T>, value: unknown, code = 'inv
 }
 export function firestoreDomainHash(value: unknown): string { return createHash('sha256').update(canonicalJson(value)).digest('hex'); }
 export function firestoreReminderOutboxId(taskId: string, taskVersion: number): string { return JSON.stringify([taskId, taskVersion]); }
+export const FIRESTORE_TASK_DISPATCH_SCOPE: WorkRecoveryScope = Object.freeze({ ownerUserId: 'system:task-dispatch',
+  workspaceId: '00000000-0000-0000-0000-000000000000', childId: '00000000-0000-0000-0000-000000000000', storageEpoch: '00000000-0000-0000-0000-000000000000' });
+export const firestoreReminderDispatchRoutingSchema = z.object({ scope: workRecoveryScopeSchema, taskId: z.uuid(), taskVersion: version,
+  occurrenceId: z.uuid(), authorizationVersion: decimal, generation: z.uuid() }).strict();
+
+/** Routing contains work identity only; family data keeps its original scope-bound envelope. */
+export function sealFirestoreReminderOutbox(data: FirestoreDomainData, scope: WorkRecoveryScope, raw: FirestoreReminderOutbox) {
+  const work = domainParse(firestoreReminderOutboxSchema, raw, 'invalid_document', 500), checked = domainParse(workRecoveryScopeSchema, scope);
+  if (work.ownerUserId !== checked.ownerUserId || work.workspaceId !== checked.workspaceId || work.childId !== checked.childId
+    || work.storageEpoch !== checked.storageEpoch) domainReject('outbox_binding', 500);
+  const id = firestoreReminderOutboxId(work.taskId, work.taskVersion), route = { scope: checked, taskId: work.taskId, taskVersion: work.taskVersion,
+    occurrenceId: work.occurrenceId, authorizationVersion: work.authorizationVersion, generation: work.generation };
+  return { ...data.tags(checked), taskId: work.taskId, occurrenceId: work.occurrenceId, taskVersion: work.taskVersion,
+    state: work.state, dueAt: work.dueAt, leaseUntil: work.lease?.until ?? null, dispatchId: firestoreDomainHash(['task-reminder-outbox', id]),
+    dispatchRouting: data.seal('task-dispatch-routing', id, FIRESTORE_TASK_DISPATCH_SCOPE, firestoreReminderDispatchRoutingSchema, route, work.taskVersion),
+    ...data.seal('task-reminder-outbox', id, checked, firestoreReminderOutboxSchema, work, work.taskVersion) };
+}
 
 /** Project envelopes and query tags only. Point bindings and business permission stay in canonical authority. */
 export class FirestoreDomainData {
@@ -75,7 +94,17 @@ export class FirestoreDomainData {
     if (Buffer.byteLength(body) > MAX_BYTES) domainReject('document_too_large', 413);
     const ciphertext = this.options.cipher.encrypt(body, this.aad(kind, id, scope, recordVersion));
     if (Buffer.byteLength(ciphertext) > MAX_BYTES * 2) domainReject('document_too_large', 413);
-    return { format: FORMAT, version: 1, recordVersion, ciphertext };
+    let recovery: FirestoreRecoveryLocator;
+    try {
+      recovery = sealRecoveryLocator({ cipher: this.options.cipher, projectId: this.options.projectId, namespace: this.options.namespace, ciphertext,
+        context: { family: 'domain', kind, id, scope, envelopeVersion: 1, recordVersion, aad: this.aad(kind, id, scope, recordVersion) } });
+    } catch (error) {
+      if (error instanceof FirestoreRecoveryEnvelopeError && error.code === 'recovery_document_too_large') domainReject('document_too_large', 413);
+      throw error;
+    }
+    const envelope: FirestoreDomainEnvelope = { format: FORMAT, version: 1, recordVersion, ciphertext, recovery };
+    if (Buffer.byteLength(JSON.stringify(envelope)) > MAX_BYTES * 2) domainReject('document_too_large', 413);
+    return envelope;
   }
   open<T>(kind: string, id: string, scope: WorkRecoveryScope, schema: z.ZodType<T>, snapshot: DocumentSnapshot): T {
     const raw = snapshot.data();

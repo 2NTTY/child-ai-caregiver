@@ -1,0 +1,33 @@
+{
+  "cleanUrls": true,
+  "headers": [
+    {
+      "glob": "**",
+      "headers": {
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "same-origin"
+      }
+    },
+    {
+      "glob": "/api{,/**}",
+      "headers": {
+        "Cache-Control": "private, no-store"
+      }
+    },
+    {
+      "glob": "/sw.js",
+      "headers": {
+        "Cache-Control": "no-cache"
+      }
+    }
+  ],
+  "rewrites": [
+    {
+      "glob": "/api{,/**}",
+      "run": {
+        "serviceId": "yuban-firebase-api",
+        "region": "asia-east2"
+      }
+    }
+  ]
+}

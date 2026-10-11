@@ -10,6 +10,7 @@ import { validateCreateChild } from '../src/shared/inputs.ts';
 import type { StorageCipher } from './storage-crypto.ts';
 import { FirestoreDomainData, firestoreChildSchema, firestoreChangeSchema } from './firestore-domain-data.ts';
 import { canonical } from './firestore-session-codec.ts';
+import { sealRecoveryLocator } from './firestore-recovery-envelope.ts';
 import { workRecoveryAad, workRecoveryDocumentId, workRecoverySchemas as schemas,
   workRecoveryScopeSchema, type WorkRecoveryKind, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
@@ -49,6 +50,7 @@ export interface FirestoreAuthorityTransaction {
   readonly authorizationVersion: string;
   readonly changeSeq: string;
   readonly generation: string;
+  readonly identityEmail: string;
   readonly workspaceCreatedAt: string | null;
   readChild(childId: string): Promise<Child | null>;
   prepareChange(operationId: string, kind: OnlineChange['kind'], deleted: boolean, childId?: string): Promise<FirestoreAuthorityPreparedChange>;
@@ -111,15 +113,18 @@ export class FirestoreAuthority {
   }
   private seal(kind: Kind, id: string, scope: WorkRecoveryScope, value: unknown) {
     size(value);
-    const result = { format: FORMAT, version: kind.startsWith('authority-') ? 2 : 1,
-      ciphertext: this.options.cipher.encrypt(canonical(value), this.aad(kind, id, scope)) };
+    const version: 1 | 2 = kind.startsWith('authority-') ? 2 : 1, aad = this.aad(kind, id, scope);
+    const ciphertext = this.options.cipher.encrypt(canonical(value), aad);
+    const recovery = sealRecoveryLocator({ cipher: this.options.cipher, projectId: this.options.projectId, namespace: this.options.namespace,
+      ciphertext, context: { family: 'authority', kind, id, scope, envelopeVersion: version, aad } });
+    const result = { format: FORMAT, version, ciphertext, recovery };
     size(result); return result;
   }
   private open<T>(kind: Kind, id: string, scope: WorkRecoveryScope, snapshot: DocumentSnapshot, schema: z.ZodType<T>): T {
     if (!snapshot.exists) fail('not_found', 404);
     size(snapshot.data());
     const version = kind.startsWith('authority-') ? 2 : 1;
-    const envelope = parse(z.object({ format: z.literal(FORMAT), version: z.literal(version), ciphertext: bounded(MAX_BYTES) }).strict(), snapshot.data(), 'invalid_document', 500);
+    const envelope = parse(z.object({ format: z.literal(FORMAT), version: z.literal(version), ciphertext: bounded(MAX_BYTES), recovery: z.unknown().optional() }).strict(), snapshot.data(), 'invalid_document', 500);
     let value: unknown;
     try { const text = this.options.cipher.decrypt(envelope.ciphertext, this.aad(kind, id, scope)); size(text); value = JSON.parse(text); }
     catch { fail('invalid_document', 500); }
@@ -210,14 +215,14 @@ export class FirestoreAuthority {
         assertActive(); if (committed) fail('transaction_change_conflict'); committed = true; commit();
       };
       try {
-        const { workspace, control, owner } = await this.account(tx, userId);
+        const { workspace, control, owner, identity } = await this.account(tx, userId);
         const scope = Object.freeze(ownerScope(userId, workspace.id, workspace.storageEpoch, childId ?? NIL));
         if (childId !== null) {
           const child = await this.read(tx, 'child', childId, scope, schemas.child);
           if (child.id !== childId || child.workspaceId !== workspace.id || child.status !== 'active') fail('binding', 403);
         }
         const binding: FirestoreAuthorityTransaction = Object.freeze({ transaction: tx, scope,
-          authorizationVersion: workspace.accessVersion, changeSeq: workspace.changeSeq, generation: control.generation, workspaceCreatedAt: owner.workspaceCreatedAt ?? null,
+          authorizationVersion: workspace.accessVersion, changeSeq: workspace.changeSeq, generation: control.generation, identityEmail: identity.email, workspaceCreatedAt: owner.workspaceCreatedAt ?? null,
           readChild: async (requestedChildId: string) => {
             assertActive(); parse(uuid, requestedChildId);
             const childScope = ownerScope(userId, workspace.id, workspace.storageEpoch, requestedChildId);
@@ -526,3 +531,7 @@ export class FirestoreAuthority {
 }
 
 export function createFirestoreAuthority(options: FirestoreAuthorityOptions): FirestoreAuthority { return new FirestoreAuthority(options); }
+
+export const firestoreAuthoritySchemas = { control: schemas.control, account: schemas.account, workspace: schemas.workspace, child: schemas.child,
+  invitation: invitationSchema, identity: identitySchema, owner: ownerSchema, operation: receiptSchema, childDetail: childDetailSchema,
+  childCreationChange: childCreationChangeSchema, changeKind: changeKindSchema } as const;

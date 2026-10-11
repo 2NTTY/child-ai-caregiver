@@ -94,7 +94,7 @@ test("immutable create uses the required precondition and opaque metadata, then 
   assert.deepEqual(content.buffer, PNG); assert.equal(content.base64, INPUT.base64); assert.equal(content.mimeType, INPUT.mimeType);
   assert.deepEqual(f.metadataReads, [{ name: descriptor.objectName, generation: GENERATION }]);
   assert.deepEqual(f.mediaReads, [{ name: descriptor.objectName, generation: GENERATION }]); assert.equal(f.streams[0].destroyed, true);
-  assert.deepEqual(Object.keys(f.port).sort(), ["read", "write"]);
+  assert.deepEqual(Object.keys(f.port).sort(), ["read", "recover", "write"]);
 });
 
 test("a lost create reply and an identical precondition conflict recover the original immutable generation", async () => {
@@ -226,7 +226,7 @@ test("the runtime factory constructs the installed SDK with automatic retries di
     return { file() { throw new Error("unexpected provider call"); } } as unknown as Bucket;
   });
   const options = { config: CONFIG, cipher: createStorageCipher(Buffer.alloc(32, 31)) };
-  assert.deepEqual(Object.keys(createCloudStoragePhotoObjects(options)).sort(), ["read", "write"]);
+  assert.deepEqual(Object.keys(createCloudStoragePhotoObjects(options)).sort(), ["read", "recover", "write"]);
   assert.deepEqual(calls, [{ project: CONFIG.projectId, autoRetry: false, timeout: FIREBASE_PHOTO_TIMEOUT_MS, name: CONFIG.bucketName }]);
   assert.throws(() => createCloudStoragePhotoObjects({ ...options, config: { ...CONFIG, apiEndpoint: "http://localhost:9199" } } as typeof options), errorCode("photo_object_invalid_input", 400));
   assert.throws(() => createCloudStoragePhotoObjects({ ...options, apiEndpoint: "https://other.example.test" } as typeof options), errorCode("photo_object_unavailable", 503));
@@ -252,4 +252,12 @@ test("an absolute media deadline destroys a stalled stream and returns unavailab
   assert.equal(f.streams[0].destroyed, true);
   assert.equal(f.writes.length, 1); assert.equal(f.mediaReads.length, 1);
   t.mock.timers.tick(FIREBASE_PHOTO_TIMEOUT_MS);
+});
+test("unknown upload recovery only reads the original immutable object and never attempts another create", async () => {
+  const f = fixture(), original = await f.port.write(SCOPE, PHOTO_ID, INPUT);
+  assert.deepEqual(await f.port.recover(SCOPE, PHOTO_ID, INPUT), original);
+  const changed = Buffer.from(PNG); changed[23] = 2;
+  await assert.rejects(f.port.recover(SCOPE, PHOTO_ID, { ...INPUT, base64: changed.toString("base64") }), errorCode("photo_object_conflict", 409));
+  await assert.rejects(f.port.recover(SCOPE, "40000000-0000-4000-8000-000000000009", INPUT), errorCode("photo_object_unavailable", 503));
+  assert.equal(f.writes.length, 1);
 });

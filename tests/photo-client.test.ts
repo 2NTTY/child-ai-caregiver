@@ -1,0 +1,105 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { randomUUID } from "node:crypto";
+import { createPhotoApi, PhotoApiError } from "../src/client/photo-api.ts";
+import type { PhotoAttachment } from "../src/shared/photos.ts";
+
+const CHILD = randomUUID(), OWNER = "synthetic-photo-owner", OTHER_CHILD = randomUUID();
+const photo = (): PhotoAttachment => ({
+  id: randomUUID(), childId: CHILD, ownerUserId: OWNER, fileName: "synthetic.png", source: "Synthetic parent",
+  mimeType: "image/png", bytes: 24, sha256: "1".repeat(64), createdAt: "2026-10-11T12:00:00.000Z",
+  version: 1, state: "reserved", visibility: "private", canManage: true, recordId: null,
+  extraction: { state: "not_requested", runId: null, draft: null, stopReason: null, processedAt: null, model: null },
+});
+const ALL = Array.from({length:100},photo), signal = () => new AbortController().signal;
+const rejected = (error: unknown) => error instanceof PhotoApiError && !error.confirmed;
+
+test("photo client collects two bounded pages into the existing complete list result", async () => {
+  const calls: string[] = [];
+  const api = createPhotoApi("https://example.test/api/",async (input,init) => {
+    const url=new URL(String(input));calls.push(url.pathname+url.search);
+    assert.equal(init?.method,"GET");assert.equal(init?.credentials,"include");assert.equal(init?.cache,"no-store");
+    assert.equal(new Headers(init?.headers).get("x-expected-user-id"),OWNER);
+    assert.ok(init?.signal instanceof AbortSignal);
+    if(calls.length===1)return Response.json({photos:ALL.slice(0,50),canCreate:true,complete:false,nextCursor:"opaque_cursor_1"});
+    assert.equal(url.searchParams.get("cursor"),"opaque_cursor_1");
+    return Response.json({photos:ALL.slice(50),canCreate:false,complete:true,nextCursor:null});
+  });
+  assert.deepEqual(await api.photos(CHILD,signal(),OWNER),{photos:ALL,canCreate:false});
+  assert.equal(calls.length,2);assert.equal(calls[0],"/api/children/"+CHILD+"/photos");
+});
+test("legacy full photo lists remain compatible and partial pagination shapes are rejected", async () => {
+  const legacy=createPhotoApi("",async()=>Response.json({photos:ALL,canCreate:true}));
+  assert.deepEqual(await legacy.photos(CHILD,signal(),OWNER),{photos:ALL,canCreate:true});
+  for(const body of [
+    {photos:[ALL[0]],canCreate:true,complete:true},
+    {photos:[ALL[0]],canCreate:true,nextCursor:null},
+    {photos:[ALL[0]],canCreate:true,complete:false,nextCursor:null},
+    {photos:[ALL[0]],canCreate:true,complete:true,nextCursor:"opaque_cursor_1"},
+  ]) await assert.rejects(createPhotoApi("",async()=>Response.json(body)).photos(CHILD,signal(),OWNER),rejected);
+});
+
+test("repeated cursors, duplicate IDs, excessive totals and empty nonterminal pages cannot produce a partial success", async () => {
+  const cases=[
+    [{photos:[ALL[0]],canCreate:true,complete:false,nextCursor:"same_cursor"},
+      {photos:[ALL[1]],canCreate:true,complete:false,nextCursor:"same_cursor"}],
+    [{photos:[ALL[0]],canCreate:true,complete:false,nextCursor:"next_cursor"},
+      {photos:[{...ALL[0],id:ALL[0].id.toUpperCase()}],canCreate:true,complete:true,nextCursor:null}],
+    [{photos:ALL.slice(0,50),canCreate:true,complete:false,nextCursor:"next_cursor"},
+      {photos:[...ALL.slice(50),photo()],canCreate:true,complete:true,nextCursor:null}],
+    [{photos:[],canCreate:true,complete:false,nextCursor:"empty_cursor"}],
+  ];
+  for(const pages of cases) {
+    let calls=0;
+    const api=createPhotoApi("",async()=>{assert.ok(calls<pages.length);return Response.json(pages[calls++]);});
+    await assert.rejects(api.photos(CHILD,signal(),OWNER),rejected);assert.equal(calls,pages.length);
+  }
+});
+
+test("every subsequent page validates child, private owner and photo integrity and cannot change to the legacy format", async () => {
+  for(const next of [
+    {photos:[{...ALL[1],childId:OTHER_CHILD}],canCreate:true,complete:true,nextCursor:null},
+    {photos:[{...ALL[1],ownerUserId:"other-synthetic-owner"}],canCreate:true,complete:true,nextCursor:null},
+    {photos:[{...ALL[1],sha256:"invalid-hash"}],canCreate:true,complete:true,nextCursor:null},
+    {photos:[ALL[1]],canCreate:true},
+  ]) {
+    let calls=0;
+    const api=createPhotoApi("",async()=>Response.json(++calls===1
+      ?{photos:[ALL[0]],canCreate:true,complete:false,nextCursor:"next_cursor"}:next));
+    await assert.rejects(api.photos(CHILD,signal(),OWNER),rejected);assert.equal(calls,2);
+  }
+});
+
+test("a failed later page rejects the whole list without returning previously collected photos", async () => {
+  let calls=0;
+  const api=createPhotoApi("",async()=>++calls===1
+    ?Response.json({photos:ALL.slice(0,50),canCreate:true,complete:false,nextCursor:"next_cursor"})
+    :Response.json({error:{code:"temporary_unavailable"}},{status:503}));
+  await assert.rejects(api.photos(CHILD,signal(),OWNER),(error:unknown)=>rejected(error)&&error instanceof PhotoApiError&&error.status===503);
+  assert.equal(calls,2);
+});
+
+test("abort or reset during a later page rejects a late matching response even when fetch ignores its signal", async () => {
+  for(const mode of ["abort","reset"] as const) {
+    const controller=new AbortController();let calls=0,entered!:()=>void,release!:()=>void;
+    const waiting=new Promise<void>(resolve=>entered=resolve),gate=new Promise<void>(resolve=>release=resolve);
+    const api=createPhotoApi("",async()=>{
+      if(++calls===1)return Response.json({photos:ALL.slice(0,50),canCreate:true,complete:false,nextCursor:"next_cursor"});
+      entered();await gate;return Response.json({photos:ALL.slice(50),canCreate:true,complete:true,nextCursor:null});
+    });
+    const pending=api.photos(CHILD,controller.signal,OWNER),denied=assert.rejects(pending,rejected);await waiting;
+    if(mode==="abort")controller.abort();else api.resetOnline();
+    release();await denied;assert.equal(calls,2);
+  }
+});
+
+test("a reset during first-page JSON parsing prevents any subsequent page request", async () => {
+  let calls=0;
+  const api=createPhotoApi("",async()=>{
+    calls++;
+    const response=Response.json({photos:[ALL[0]],canCreate:true,complete:false,nextCursor:"next_cursor"}),json=response.json.bind(response);
+    response.json=async()=>{const value=await json();api.resetOnline();return value;};
+    return response;
+  });
+  await assert.rejects(api.photos(CHILD,signal(),OWNER),rejected);assert.equal(calls,1);
+});

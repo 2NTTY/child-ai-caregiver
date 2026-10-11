@@ -3,8 +3,8 @@
   "package": "P2-F02",
   "baseline": "d5dbf61ec709467fd7659fd3599c65dbf167c915",
   "observedAt": "2026-10-11T11:00:50.361Z",
-  "state": "local-implementation-cloud-terms-blocked",
-  "cloudResourcesCreated": false,
+  "state": "cloud-provisioning-local-slice-in-progress",
+  "cloudResourcesCreated": true,
   "catalog": [
     {
       "service": "Cloud Run",
@@ -1106,13 +1106,15 @@
       "firestoreDeletes": 10000,
       "firestoreGiB": 0.1,
       "attachmentAndSourceGiB": 1,
-      "buildMinutes": 90,
+      "buildMinutes": 30,
       "artifactRegistryGiB": 3,
       "taskOperations": 1000,
       "schedulerJobs": 1,
       "secretVersions": 2,
       "secretAccesses": 1000,
-      "publicNetworkGiB": 2
+      "publicNetworkGiB": 2,
+      "buildMaxVcpu": 8,
+      "buildMaxRamGiB": 8
     },
     "pending": [
       "Verify resource/IAM changes are minimal and existing services untouched",
@@ -1121,7 +1123,7 @@
       "Pause dispatch/traffic at batch end; keep 14-day synthetic paired recovery assets within reserve"
     ],
     "batchEnvelope": 6,
-    "conservativeEstimateUSD": 2.96,
+    "conservativeEstimateUSD": 3.0752,
     "estimateComponentsUSD": {
       "cloudRunCpu": 0.6047999999999999,
       "cloudRunMemory": 0.063,
@@ -1133,7 +1135,7 @@
       "firestoreBackupAndRestore": 0.026500000000000003,
       "privateStorage": 0.023,
       "storageOperations": 0.07,
-      "cloudBuild": 0.54,
+      "cloudBuild": 0.6552,
       "artifactRegistry": 0.30000000000000004,
       "tasks": 0.00039999999999999996,
       "scheduler": 0.1,
@@ -1319,5 +1321,2148 @@
       "https://docs.cloud.google.com/storage/docs/json_api/v1/objects/get",
       "https://docs.cloud.google.com/run/docs/configuring/services/secrets"
     ]
-  }
+  },
+  "cloudProvisioning": [
+    {
+      "at": "2026-10-11T12:32:47.819Z",
+      "label": "identity-platform-initialize",
+      "status": 200,
+      "data": {}
+    },
+    {
+      "at": "2026-10-11T12:32:48.617Z",
+      "label": "identity-config-readback",
+      "status": 200,
+      "data": {
+        "name": "projects/1064034424208/config",
+        "subtype": "IDENTITY_PLATFORM",
+        "emailSignInEnabled": false,
+        "anonymousSignInEnabled": false,
+        "authorizedDomains": [
+          "ai-caregivers-for-children.firebaseapp.com",
+          "ai-caregivers-for-children.web.app"
+        ],
+        "blockingFunctionsConfigured": false,
+        "emailPrivacyEnabled": true
+      }
+    },
+    {
+      "at": "2026-10-11T12:32:57.754Z",
+      "label": "firestore-create",
+      "status": 200,
+      "data": {
+        "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/EeCEcUVgRpp6RMwAAB3U4RAqMnRzYWUtYWlzYQoiBRA90ICIEAbWroP7CAsKLRo",
+        "metadata": {
+          "@type": "type.googleapis.com/google.firestore.admin.v1.CreateDatabaseMetadata"
+        },
+        "done": true,
+        "response": {
+          "@type": "type.googleapis.com/google.firestore.admin.v1.Database",
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011",
+          "uid": "e1d41d00-00cc-447a-9a46-60457184e011",
+          "createTime": "2026-10-11T12:32:59.129237Z",
+          "updateTime": "2026-10-11T12:32:59.129237Z",
+          "locationId": "asia-east2",
+          "type": "FIRESTORE_NATIVE",
+          "concurrencyMode": "PESSIMISTIC",
+          "versionRetentionPeriod": "3600s",
+          "earliestVersionTime": "2026-10-11T12:32:59.129237Z",
+          "appEngineIntegrationMode": "DISABLED",
+          "pointInTimeRecoveryEnablement": "POINT_IN_TIME_RECOVERY_DISABLED",
+          "deleteProtectionState": "DELETE_PROTECTION_ENABLED",
+          "databaseEdition": "STANDARD",
+          "freeTier": true,
+          "realtimeUpdatesMode": "REALTIME_UPDATES_MODE_ENABLED",
+          "etag": "IMWT6cD8sZcDMJXb6MD8sZcD"
+        }
+      }
+    },
+    {
+      "at": "2026-10-11T12:36:54.553Z",
+      "label": "bucket-create",
+      "status": 200,
+      "data": {
+        "name": "ai-caregivers-for-children-firebase-private",
+        "location": "ASIA-EAST2",
+        "storageClass": "STANDARD",
+        "versioning": {
+          "enabled": true
+        },
+        "softDeletePolicy": {
+          "retentionDurationSeconds": "1209600",
+          "effectiveTime": "2026-10-11T12:36:55.845Z"
+        },
+        "iamConfiguration": {
+          "bucketPolicyOnly": {
+            "enabled": true,
+            "lockedTime": "2027-01-09T12:36:55.845Z"
+          },
+          "uniformBucketLevelAccess": {
+            "enabled": true,
+            "lockedTime": "2027-01-09T12:36:55.845Z"
+          },
+          "publicAccessPrevention": "enforced"
+        }
+      }
+    },
+    {
+      "at": "2026-10-11T12:36:56.901Z",
+      "label": "bucket-create",
+      "status": 200,
+      "data": {
+        "name": "ai-caregivers-for-children-firebase-journal",
+        "location": "ASIA-EAST2",
+        "storageClass": "STANDARD",
+        "versioning": {
+          "enabled": true
+        },
+        "softDeletePolicy": {
+          "retentionDurationSeconds": "1209600",
+          "effectiveTime": "2026-10-11T12:36:58.178Z"
+        },
+        "iamConfiguration": {
+          "bucketPolicyOnly": {
+            "enabled": true,
+            "lockedTime": "2027-01-09T12:36:58.178Z"
+          },
+          "uniformBucketLevelAccess": {
+            "enabled": true,
+            "lockedTime": "2027-01-09T12:36:58.178Z"
+          },
+          "publicAccessPrevention": "enforced"
+        }
+      }
+    },
+    {
+      "at": "2026-10-11T12:36:59.690Z",
+      "label": "service-account-create",
+      "status": 200,
+      "data": {
+        "name": "projects/ai-caregivers-for-children/serviceAccounts/yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "email": "yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "uniqueId": "110479197352116628941",
+        "disabled": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:37:01.965Z",
+      "label": "service-account-create",
+      "status": 200,
+      "data": {
+        "name": "projects/ai-caregivers-for-children/serviceAccounts/yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "email": "yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "uniqueId": "110351389807608925799",
+        "disabled": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:37:04.838Z",
+      "label": "service-account-create",
+      "status": 200,
+      "data": {
+        "name": "projects/ai-caregivers-for-children/serviceAccounts/yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "email": "yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "uniqueId": "116351851450745249200",
+        "disabled": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:37:07.598Z",
+      "label": "service-account-create",
+      "status": 200,
+      "data": {
+        "name": "projects/ai-caregivers-for-children/serviceAccounts/yuban-firebase-dispatch@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "email": "yuban-firebase-dispatch@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "uniqueId": "111258460046165609627",
+        "disabled": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:37:09.658Z",
+      "label": "service-account-create",
+      "status": 200,
+      "data": {
+        "name": "projects/ai-caregivers-for-children/serviceAccounts/yuban-firebase-build@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "email": "yuban-firebase-build@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "uniqueId": "113281433556878208629",
+        "disabled": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:40:29.563Z",
+      "label": "firestore-readback",
+      "data": {
+        "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011",
+        "locationId": "asia-east2",
+        "type": "FIRESTORE_NATIVE",
+        "databaseEdition": "STANDARD",
+        "deleteProtectionState": "DELETE_PROTECTION_ENABLED"
+      }
+    },
+    {
+      "at": "2026-10-11T12:40:30.872Z",
+      "label": "secret-create",
+      "data": {
+        "name": "projects/1064034424208/secrets/YUBAN_FIREBASE_STORAGE_KEY",
+        "replication": {
+          "userManaged": {
+            "replicas": [
+              {
+                "location": "asia-east2"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "at": "2026-10-11T12:40:32.348Z",
+      "label": "secret-version-create",
+      "data": {
+        "name": "projects/1064034424208/secrets/YUBAN_FIREBASE_STORAGE_KEY/versions/1",
+        "state": "ENABLED"
+      }
+    },
+    {
+      "at": "2026-10-11T12:42:04.557Z",
+      "label": "firestore-rules-first-failure",
+      "status": 400,
+      "error": "Unknown source.attachment_point; no ruleset created. Resource reference places attachment_point at Ruleset root, unlike guide example.",
+      "resolved": false
+    },
+    {
+      "at": "2026-10-11T12:42:05.904Z",
+      "label": "firestore-ruleset-create",
+      "data": {
+        "name": "projects/ai-caregivers-for-children/rulesets/b542f8a0-c592-4e81-af88-c3c1122d0546",
+        "createTime": "2026-10-11T12:42:07.197370Z"
+      }
+    },
+    {
+      "at": "2026-10-11T12:42:07.102Z",
+      "label": "firestore-deny-client-release",
+      "data": {
+        "name": "projects/ai-caregivers-for-children/releases/cloud.firestore/yuban-firebase-20261011",
+        "rulesetName": "projects/ai-caregivers-for-children/rulesets/b542f8a0-c592-4e81-af88-c3c1122d0546",
+        "updateTime": "2026-10-11T12:42:08.397517Z"
+      }
+    },
+    {
+      "at": "2026-10-11T12:42:10.083Z",
+      "label": "runtime-role-create",
+      "data": {
+        "name": "projects/ai-caregivers-for-children/roles/yubanFirebaseSession",
+        "includedPermissions": [
+          "firebaseauth.users.createSession",
+          "firebaseauth.users.get"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-11T12:42:12.955Z",
+      "label": "runtime-role-create",
+      "data": {
+        "name": "projects/ai-caregivers-for-children/roles/yubanFirebaseAuthRead",
+        "includedPermissions": [
+          "firebaseauth.users.get"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-11T12:42:16.243Z",
+      "label": "project-runtime-bindings",
+      "data": [
+        {
+          "role": "roles/datastore.user",
+          "members": [
+            "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+            "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ],
+          "condition": {
+            "title": "yuban_firebase_database_only",
+            "expression": "resource.name == \"projects/ai-caregivers-for-children/databases/yuban-firebase-20261011\""
+          }
+        },
+        {
+          "role": "roles/datastore.viewer",
+          "members": [
+            "serviceAccount:yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ],
+          "condition": {
+            "title": "yuban_firebase_database_only",
+            "expression": "resource.name == \"projects/ai-caregivers-for-children/databases/yuban-firebase-20261011\""
+          }
+        },
+        {
+          "role": "projects/ai-caregivers-for-children/roles/yubanFirebaseSession",
+          "members": [
+            "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ]
+        },
+        {
+          "role": "projects/ai-caregivers-for-children/roles/yubanFirebaseAuthRead",
+          "members": [
+            "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ]
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T12:42:17.481Z",
+      "label": "secret-runtime-access",
+      "data": {
+        "secret": "YUBAN_FIREBASE_STORAGE_KEY",
+        "role": "roles/secretmanager.secretAccessor",
+        "members": [
+          "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+          "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com",
+          "serviceAccount:yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-11T12:42:18.371Z",
+      "label": "bucket-runtime-access",
+      "data": {
+        "bucket": "ai-caregivers-for-children-firebase-private",
+        "bindings": [
+          {
+            "role": "roles/storage.objectCreator",
+            "members": [
+              "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com"
+            ]
+          },
+          {
+            "role": "roles/storage.objectViewer",
+            "members": [
+              "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com"
+            ]
+          },
+          {
+            "role": "roles/storage.objectUser",
+            "members": [
+              "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-11T12:42:19.269Z",
+      "label": "bucket-runtime-access",
+      "data": {
+        "bucket": "ai-caregivers-for-children-firebase-journal",
+        "bindings": [
+          {
+            "role": "roles/storage.objectCreator",
+            "members": [
+              "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+              "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+            ]
+          },
+          {
+            "role": "roles/storage.objectViewer",
+            "members": [
+              "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+              "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-11T12:45:36.847Z",
+      "label": "runtime-iam-readback",
+      "data": [
+        {
+          "role": "projects/ai-caregivers-for-children/roles/yubanFirebaseAuthRead",
+          "members": [
+            "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ]
+        },
+        {
+          "role": "projects/ai-caregivers-for-children/roles/yubanFirebaseSession",
+          "members": [
+            "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ]
+        },
+        {
+          "role": "roles/datastore.user",
+          "members": [
+            "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+            "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ],
+          "condition": {
+            "expression": "resource.name == \"projects/ai-caregivers-for-children/databases/yuban-firebase-20261011\"",
+            "title": "yuban_firebase_database_only"
+          }
+        },
+        {
+          "role": "roles/datastore.viewer",
+          "members": [
+            "serviceAccount:yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ],
+          "condition": {
+            "expression": "resource.name == \"projects/ai-caregivers-for-children/databases/yuban-firebase-20261011\"",
+            "title": "yuban_firebase_database_only"
+          }
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T12:45:37.412Z",
+      "label": "secret-iam-readback",
+      "data": [
+        {
+          "role": "roles/secretmanager.secretAccessor",
+          "members": [
+            "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+            "serviceAccount:yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com",
+            "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ]
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T12:45:37.720Z",
+      "label": "bucket-iam-readback",
+      "data": {
+        "bucket": "ai-caregivers-for-children-firebase-private",
+        "bindings": [
+          {
+            "role": "roles/storage.objectCreator",
+            "members": [
+              "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com"
+            ]
+          },
+          {
+            "role": "roles/storage.objectUser",
+            "members": [
+              "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+            ]
+          },
+          {
+            "role": "roles/storage.objectViewer",
+            "members": [
+              "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-11T12:45:37.920Z",
+      "label": "bucket-iam-readback",
+      "data": {
+        "bucket": "ai-caregivers-for-children-firebase-journal",
+        "bindings": [
+          {
+            "role": "roles/storage.objectCreator",
+            "members": [
+              "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+              "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+            ]
+          },
+          {
+            "role": "roles/storage.objectViewer",
+            "members": [
+              "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+              "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "at": "2026-10-11T12:45:39.103Z",
+      "label": "firestore-rules-release-readback",
+      "data": {
+        "name": "projects/ai-caregivers-for-children/releases/cloud.firestore/yuban-firebase-20261011",
+        "rulesetName": "projects/ai-caregivers-for-children/rulesets/b542f8a0-c592-4e81-af88-c3c1122d0546"
+      }
+    },
+    {
+      "at": "2026-10-11T12:45:39.806Z",
+      "label": "firestore-index-create",
+      "data": {
+        "collectionGroup": "yuban_authority_children",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/S0U0aFhqT2dBQ0lDDCoDIDgxYTc3Y2Q3N2UxMi04NDhhLTUyZDQtY2E3MC05ZDdiYjkwZSQac2VuaWxlcGlwCQpBEg",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:22.842Z",
+      "label": "firestore-index-existing",
+      "data": {
+        "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_children/indexes/CICAgOjXh4EK",
+        "state": "CREATING"
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:23.093Z",
+      "label": "firestore-index-create",
+      "data": {
+        "collectionGroup": "yuban_authority_tasks",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/S01vcFVpSmdBQ0lDDCoDIDI4ZGY4OTE3NjY3MC00MjVhLTMwYjQtMjQ5Zi1kZTljZmNkYSQac2VuaWxlcGlwCQpBEg",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:23.296Z",
+      "label": "firestore-index-create",
+      "data": {
+        "collectionGroup": "yuban_authority_task_revisions",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/S0E0MW1pSmdBQ0lDDCoDIDRmZjY0MDAzZDkwMS1lNGFhLTE3MjQtNTc4Zi03Zjk1NTY0ZSQac2VuaWxlcGlwCQpBEg",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:23.420Z",
+      "label": "firestore-index-create",
+      "data": {
+        "collectionGroup": "yuban_authority_changes",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/S0lvOUZqSmdBQ0lDDCoDIDE2ODRjNWY5MDk3OC1lNTg5LWU1MDQtNTEzZi0zN2UxNzQ1ZCQac2VuaWxlcGlwCQpBEg",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:23.617Z",
+      "label": "firestore-index-create",
+      "data": {
+        "collectionGroup": "yuban_authority_task_outbox",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/S0U0ejdqSmdBQ0lDDCoDIDU4MTg2NTMzMDcwNy1hNzhhLWUyNzQtZDY0NS1iOWNiOTFjZiQac2VuaWxlcGlwCQpBEg",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:23.817Z",
+      "label": "firestore-index-exemption",
+      "data": {
+        "collectionGroup": "yuban_authority",
+        "fieldPath": "*",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyAxZjJhODU2NWM5MTgtNzcyOC01Njg0LWVmNTMtZTQ3MGRmOTkkGnNlbmlsZXBpcAkKMxI",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:24.027Z",
+      "label": "firestore-index-exemption",
+      "data": {
+        "collectionGroup": "yuban_authority_sessions",
+        "fieldPath": "*",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyA4ZTYzNDdiMmJmZGMtNTRhOS00Njc0LWYyYTYtZjM4NTY5YWUkGnNlbmlsZXBpcAkKMxI",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:24.179Z",
+      "label": "firestore-index-exemption",
+      "data": {
+        "collectionGroup": "yuban_authority_children",
+        "fieldPath": "*",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyA3OGNiNzhhNTE0NDUtYjVkOS1jNWI0LTFlNTEtNGYxYWNjNmEkGnNlbmlsZXBpcAkKMxI",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:24.338Z",
+      "label": "firestore-index-exemption",
+      "data": {
+        "collectionGroup": "yuban_authority_tasks",
+        "fieldPath": "*",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyBlNjllNDU1OWYxZmItMzEwYi04ZDU0LWRmMzUtNDhiZWM1OTckGnNlbmlsZXBpcAkKMxI",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:24.512Z",
+      "label": "firestore-index-exemption",
+      "data": {
+        "collectionGroup": "yuban_authority_task_revisions",
+        "fieldPath": "*",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyA1NWVhYTM0NjMzZjgtM2UwYS0wNWM0LTRiMTktZGNmNDhlMTQkGnNlbmlsZXBpcAkKMxI",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:24.651Z",
+      "label": "firestore-index-exemption",
+      "data": {
+        "collectionGroup": "yuban_authority_changes",
+        "fieldPath": "*",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyA1ZDI1MTY4ZGEwMDQtMzc4YS02NGY0LTZkODEtNjZkNzdiNGMkGnNlbmlsZXBpcAkKMxI",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:24.774Z",
+      "label": "firestore-index-exemption",
+      "data": {
+        "collectionGroup": "yuban_authority_task_outbox",
+        "fieldPath": "*",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyBlZTQyMGE4NDdmMDUtNmQ5OS1kMDc0LTJmOWQtMWFjZTBiNWUkGnNlbmlsZXBpcAkKMxI",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:46:24.895Z",
+      "label": "firestore-index-exemption",
+      "data": {
+        "collectionGroup": "yuban_authority_online_operations",
+        "fieldPath": "*",
+        "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyA5N2FmMGQ3ZDNlNTUtYmYxYi1lNzU0LWNhNTgtZTZmOGI3NjIkGnNlbmlsZXBpcAkKMxI",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:49:24.281Z",
+      "label": "artifact-repository-create",
+      "data": {
+        "name": "projects/ai-caregivers-for-children/locations/asia-east2/operations/75bad3a4-13ee-4007-b2b2-60b28ff7980f",
+        "done": false
+      }
+    },
+    {
+      "at": "2026-10-11T12:49:27.522Z",
+      "label": "build-log-access",
+      "data": {
+        "role": "roles/logging.logWriter",
+        "members": [
+          "serviceAccount:yuban-firebase-build@ai-caregivers-for-children.iam.gserviceaccount.com"
+        ]
+      }
+    },
+    {
+      "at": "2026-10-11T12:49:28.575Z",
+      "label": "build-source-access",
+      "data": {
+        "role": "roles/storage.objectViewer",
+        "members": [
+          "serviceAccount:yuban-firebase-build@ai-caregivers-for-children.iam.gserviceaccount.com"
+        ],
+        "condition": {
+          "title": "firebase_build_source_only",
+          "expression": "resource.name.startsWith(\"projects/_/buckets/ai-caregivers-for-children-firebase-private/objects/firebase-builds/\")"
+        }
+      }
+    },
+    {
+      "at": "2026-10-11T12:55:13.222Z",
+      "action": "artifact-repository-build-writer",
+      "resource": "projects/ai-caregivers-for-children/locations/asia-east2/repositories/yuban-firebase",
+      "readbackVerified": true,
+      "role": "roles/artifactregistry.writer",
+      "member": "serviceAccount:yuban-firebase-build@ai-caregivers-for-children.iam.gserviceaccount.com",
+      "priorFailure": {
+        "status": 403,
+        "context": "Immediate policy read while repository creation operation was pending; operation completion and testIamPermissions subsequently verified. No human IAM expansion."
+      }
+    },
+    {
+      "at": "2026-10-11T12:55:56.363Z",
+      "action": "blocking-source-upload",
+      "sourceRevision": "088bf70f45bf14d77237adc9079e9e77fff02cb0",
+      "bucket": "ai-caregivers-for-children-firebase-private",
+      "object": "firebase-builds/096d5ef72f465521d78b6a95a69421b9248e68e7b75cd92c1897b5364a2a3cdb.tar.gz",
+      "generation": "1791723357602396",
+      "sha256": "096d5ef72f465521d78b6a95a69421b9248e68e7b75cd92c1897b5364a2a3cdb",
+      "bytes": 9411574,
+      "readbackVerified": true
+    },
+    {
+      "at": "2026-10-11T12:56:27.492Z",
+      "action": "create-native-before-create-function",
+      "resource": "projects/ai-caregivers-for-children/locations/asia-east2/functions/before-yuban-user-created",
+      "sourceRevision": "088bf70f45bf14d77237adc9079e9e77fff02cb0",
+      "buildLimit": {
+        "totalMinutes": 30,
+        "maxVcpu": 8,
+        "maxRamGiB": 8
+      },
+      "runtime": {
+        "minInstances": 0,
+        "maxInstances": 1,
+        "cpu": 1,
+        "memoryMiB": 256,
+        "concurrency": 1,
+        "timeoutSeconds": 7
+      },
+      "signInEnabled": false,
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/operation-1791723389237-65d901c26b89e-77d18be1-3574c613",
+      "done": false
+    },
+    {
+      "at": "2026-10-11T12:57:13.167Z",
+      "action": "blocking-function-build-observation",
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/operation-1791723389237-65d901c26b89e-77d18be1-3574c613",
+      "done": true,
+      "error": {
+        "code": 3,
+        "message": "Build failed with status: FAILURE and message: Access to bucket gcf-v2-sources-1064034424208-asia-east2 denied. You must grant Storage Object Viewer permission to yuban-firebase-build@ai-caregivers-for-children.iam.gserviceaccount.com. If you are using VPC Service Controls, you must also grant it access to your service perimeter.\n. For more details see the logs at https://console.cloud.google.com/cloud-build/builds;region=asia-east2/72457b1a-81ec-4017-a526-fdf68ed56f91?project=1064034424208."
+      },
+      "stages": [
+        {
+          "name": "ARTIFACT_REGISTRY",
+          "state": "COMPLETE",
+          "message": "Deleting function artifacts in Artifact Registry"
+        },
+        {
+          "name": "SERVICE",
+          "state": "COMPLETE",
+          "message": "Deleting Cloud Run service",
+          "resource": "projects/ai-caregivers-for-children/locations/asia-east2/services/before-yuban-user-created"
+        }
+      ],
+      "builds": [
+        {
+          "id": "72457b1a-81ec-4017-a526-fdf68ed56f91",
+          "name": "projects/1064034424208/locations/asia-east2/builds/72457b1a-81ec-4017-a526-fdf68ed56f91",
+          "status": "FAILURE",
+          "createTime": "2026-10-11T12:56:34.313407222Z",
+          "startTime": "2026-10-11T12:56:36.432413286Z",
+          "finishTime": "2026-10-11T12:56:52.577113Z",
+          "timeout": "1800s",
+          "machineType": "UNSPECIFIED",
+          "serviceAccount": "projects/ai-caregivers-for-children/serviceAccounts/yuban-firebase-build@ai-caregivers-for-children.iam.gserviceaccount.com",
+          "steps": [
+            {
+              "id": "fetch",
+              "name": "asia-east2-docker.pkg.dev/serverless-runtimes/utilities/gcs-fetcher:base_20260522_18_04_RC00",
+              "status": "FAILURE"
+            },
+            {
+              "id": "pre-buildpack",
+              "name": "asia-east2-docker.pkg.dev/serverless-runtimes/google-24-full/builder/nodejs:nodejs_20260924a_RC00",
+              "status": "QUEUED"
+            },
+            {
+              "id": "build",
+              "name": "asia-east2-docker.pkg.dev/serverless-runtimes/google-24-full/builder/nodejs:nodejs_20260924a_RC00",
+              "status": "QUEUED"
+            }
+          ],
+          "logUrl": "https://console.cloud.google.com/cloud-build/builds;region=asia-east2/72457b1a-81ec-4017-a526-fdf68ed56f91?project=1064034424208"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T12:58:12.136Z",
+      "action": "blocking-build-targeted-retry",
+      "repairRound": 1,
+      "priorBuild": "72457b1a-81ec-4017-a526-fdf68ed56f91",
+      "sourceObjectReadGrant": {
+        "bucket": "gcf-v2-sources-1064034424208-asia-east2",
+        "role": "roles/storage.objectViewer",
+        "member": "serviceAccount:yuban-firebase-build@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "condition": "resource.name == \"projects/_/buckets/gcf-v2-sources-1064034424208-asia-east2/objects/before-yuban-user-created/function-source.zip\"",
+        "readbackVerified": true
+      },
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/operation-1791723492065-65d902247c25c-c23bdd2d-2976587b",
+      "done": false,
+      "sourceRevision": "088bf70f45bf14d77237adc9079e9e77fff02cb0",
+      "buildSecondsPreviouslyObserved": 16.145,
+      "remainingBuildSeconds": 1783
+    },
+    {
+      "at": "2026-10-11T12:59:35.251Z",
+      "action": "blocking-function-build-observation",
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/operation-1791723492065-65d902247c25c-c23bdd2d-2976587b",
+      "done": true,
+      "error": {
+        "code": 3,
+        "message": "Build failed with status: FAILURE and message: failed to Fetch: opening archive /workspace/.download/before-yuban-user-created/function-source.zip: zip: not a valid zip file\n. For more details see the logs at https://console.cloud.google.com/cloud-build/builds;region=asia-east2/afde1a5e-0121-4797-a382-63cbb4ce7006?project=1064034424208."
+      },
+      "stages": [
+        {
+          "name": "SERVICE",
+          "state": "NOT_STARTED"
+        }
+      ],
+      "builds": [
+        {
+          "id": "afde1a5e-0121-4797-a382-63cbb4ce7006",
+          "status": "FAILURE",
+          "startTime": "2026-10-11T12:58:15.662545919Z",
+          "finishTime": "2026-10-11T12:58:31.713941Z",
+          "machineType": "UNSPECIFIED",
+          "steps": [
+            {
+              "id": "fetch",
+              "status": "FAILURE"
+            },
+            {
+              "id": "pre-buildpack",
+              "status": "QUEUED"
+            },
+            {
+              "id": "build",
+              "status": "QUEUED"
+            }
+          ],
+          "logUrl": "https://console.cloud.google.com/cloud-build/builds;region=asia-east2/afde1a5e-0121-4797-a382-63cbb4ce7006?project=1064034424208"
+        },
+        {
+          "id": "72457b1a-81ec-4017-a526-fdf68ed56f91",
+          "status": "FAILURE",
+          "startTime": "2026-10-11T12:56:36.432413286Z",
+          "finishTime": "2026-10-11T12:56:52.577113Z",
+          "machineType": "UNSPECIFIED",
+          "steps": [
+            {
+              "id": "fetch",
+              "status": "FAILURE"
+            },
+            {
+              "id": "pre-buildpack",
+              "status": "QUEUED"
+            },
+            {
+              "id": "build",
+              "status": "QUEUED"
+            }
+          ],
+          "logUrl": "https://console.cloud.google.com/cloud-build/builds;region=asia-east2/72457b1a-81ec-4017-a526-fdf68ed56f91?project=1064034424208"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T13:01:10.511Z",
+      "action": "blocking-build-targeted-retry",
+      "repairRound": 2,
+      "priorBuild": "afde1a5e-0121-4797-a382-63cbb4ce7006",
+      "rootCause": "Function fetcher requires ZIP; generic StorageSource tar.gz description does not match function upload contract.",
+      "officialSource": "https://docs.cloud.google.com/functions/docs/reference/rest/v2/projects.locations.functions/generateUploadUrl",
+      "priorFunctionState": "UNKNOWN",
+      "priorOperationConfirmedFailed": true,
+      "sourceRevision": "088bf70f45bf14d77237adc9079e9e77fff02cb0",
+      "archiveFormat": "zip",
+      "sha256": "ffbd498800781c9b98b6681053a24ac48940e74892c185b549e1e28e9964f3c8",
+      "bucket": "ai-caregivers-for-children-firebase-private",
+      "object": "firebase-builds/ffbd498800781c9b98b6681053a24ac48940e74892c185b549e1e28e9964f3c8.zip",
+      "generation": "1791723633232790",
+      "bytes": 9622442,
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/operation-1791723670426-65d902ce95463-4f06a50a-7e6020fc",
+      "done": false,
+      "remainingBuildSeconds": 1767
+    },
+    {
+      "at": "2026-10-11T13:04:52.161Z",
+      "action": "blocking-function-build-observation",
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/operation-1791723670426-65d902ce95463-4f06a50a-7e6020fc",
+      "done": false,
+      "error": null,
+      "stages": [
+        {
+          "name": "BUILD",
+          "state": "COMPLETE",
+          "message": "Build finished",
+          "resource": "projects/1064034424208/locations/asia-east2/builds/0788ca68-3f1a-437f-beed-f2b3b9b31585"
+        },
+        {
+          "name": "SERVICE",
+          "state": "IN_PROGRESS",
+          "message": "Updating Cloud Run service",
+          "resource": "projects/ai-caregivers-for-children/locations/asia-east2/services/before-yuban-user-created"
+        }
+      ],
+      "builds": [
+        {
+          "id": "0788ca68-3f1a-437f-beed-f2b3b9b31585",
+          "status": "SUCCESS",
+          "startTime": "2026-10-11T13:01:13.967963643Z",
+          "finishTime": "2026-10-11T13:04:30.954049Z",
+          "machineType": "UNSPECIFIED",
+          "steps": [
+            {
+              "id": "fetch",
+              "status": "SUCCESS"
+            },
+            {
+              "id": "pre-buildpack",
+              "status": "SUCCESS"
+            },
+            {
+              "id": "build",
+              "status": "SUCCESS"
+            }
+          ],
+          "logUrl": "https://console.cloud.google.com/cloud-build/builds;region=asia-east2/0788ca68-3f1a-437f-beed-f2b3b9b31585?project=1064034424208"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T13:07:42.401Z",
+      "action": "blocking-function-deployment-readback",
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/operation-1791723670426-65d902ce95463-4f06a50a-7e6020fc",
+      "done": true,
+      "error": null,
+      "function": {
+        "name": "projects/ai-caregivers-for-children/locations/asia-east2/functions/before-yuban-user-created",
+        "state": "ACTIVE",
+        "updateTime": "2026-10-11T13:05:12.546349410Z",
+        "build": "projects/1064034424208/locations/asia-east2/builds/0788ca68-3f1a-437f-beed-f2b3b9b31585",
+        "runtime": "nodejs24",
+        "service": "projects/ai-caregivers-for-children/locations/asia-east2/services/before-yuban-user-created",
+        "uri": "https://before-yuban-user-created-rcnc7wlinq-df.a.run.app",
+        "minInstanceCount": 0,
+        "availableCpu": "0.1666",
+        "availableMemory": "256M",
+        "timeoutSeconds": 60,
+        "maxInstanceRequestConcurrency": 1,
+        "serviceAccountEmail": "1064034424208-compute@developer.gserviceaccount.com",
+        "revision": "before-yuban-user-created-00001-kuv"
+      }
+    },
+    {
+      "at": "2026-10-11T13:08:18.024Z",
+      "action": "blocking-runtime-configuration-correction",
+      "reason": "Post-build readback showed provider defaults after source-only redeploy; stop before public invoker/Auth configuration. Reapply complete serviceConfig without source change.",
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/operation-1791724097771-65d904662178f-1005a763-6e514f9f",
+      "done": false,
+      "expected": {
+        "serviceAccountEmail": "yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "availableMemory": "256Mi",
+        "availableCpu": "1",
+        "timeoutSeconds": 7,
+        "minInstanceCount": 0,
+        "maxInstanceCount": 1,
+        "maxInstanceRequestConcurrency": 1,
+        "ingressSettings": "ALLOW_ALL",
+        "environmentVariables": {
+          "GCP_PROJECT_ID": "ai-caregivers-for-children",
+          "GCLOUD_PROJECT": "ai-caregivers-for-children",
+          "FIREBASE_CONFIG": "{\"projectId\":\"ai-caregivers-for-children\"}",
+          "FIREBASE_DATABASE_ID": "yuban-firebase-20261011",
+          "FIREBASE_NAMESPACE": "yuban_authority",
+          "FIREBASE_BLOCKING_SERVICE_ACCOUNT": "yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com"
+        },
+        "secretEnvironmentVariables": [
+          {
+            "key": "YUBAN_FIREBASE_STORAGE_KEY",
+            "projectId": "1064034424208",
+            "secret": "YUBAN_FIREBASE_STORAGE_KEY",
+            "version": "1"
+          }
+        ]
+      },
+      "publicInvokerEnabled": false,
+      "signInEnabled": false
+    },
+    {
+      "at": "2026-10-11T13:11:35.714Z",
+      "action": "blocking-runtime-readback",
+      "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/operation-1791724097771-65d904662178f-1005a763-6e514f9f",
+      "done": true,
+      "error": null,
+      "verified": true,
+      "state": "ACTIVE",
+      "service": "projects/ai-caregivers-for-children/locations/asia-east2/services/before-yuban-user-created",
+      "uri": "https://before-yuban-user-created-rcnc7wlinq-df.a.run.app",
+      "revision": "before-yuban-user-created-00002-kav",
+      "serviceAccount": "yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com",
+      "cpu": "1",
+      "memory": "256Mi",
+      "timeoutSeconds": 7,
+      "minInstances": 0,
+      "maxInstances": 1,
+      "concurrency": 1,
+      "secretVersion": "1"
+    },
+    {
+      "at": "2026-10-11T13:13:25.190Z",
+      "action": "document-photo-task-indexes",
+      "priorReadFailure": {
+        "status": 400,
+        "message": "ListIndexes only supports pageSize=0; omitted on retry; no mutation occurred before failure."
+      },
+      "records": [
+        {
+          "kind": "index",
+          "resource": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_children/indexes/CICAgOjXh4EK",
+          "state": "READY",
+          "existing": true
+        },
+        {
+          "kind": "index",
+          "resource": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_tasks/indexes/CICAgJiUpoMK",
+          "state": "READY",
+          "existing": true
+        },
+        {
+          "kind": "index",
+          "resource": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_task_revisions/indexes/CICAgJim14AK",
+          "state": "READY",
+          "existing": true
+        },
+        {
+          "kind": "index",
+          "resource": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_changes/indexes/CICAgJjF9oIK",
+          "state": "READY",
+          "existing": true
+        },
+        {
+          "kind": "index",
+          "resource": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJj7z4EK",
+          "state": "READY",
+          "existing": true
+        },
+        {
+          "kind": "index",
+          "collectionGroup": "yuban_authority_documents",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/SU1zcFVpSmdBQ0lDDCoDIDBkZDUzOWYzOGY3Mi0xMTQ4LTUyNDQtN2Q5Yy0yNmE2YmQyMiQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "index",
+          "collectionGroup": "yuban_authority_documents",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/SUlzOUZqSmdBQ0lDDCoDIDZmMTFhZWNiNTNhMy04MTlhLTAzMzQtZjgzYy0xZjI4NzhhOSQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "index",
+          "collectionGroup": "yuban_authority_documents",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/TE1vNzRpTmdBQ0lDDCoDIDFhNjYwNzE3NTRjZi1hNDA5LWM5YTQtNGVmMy00ZDY4Zjk0MSQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "index",
+          "collectionGroup": "yuban_authority_document_snapshots",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/TEE0MW1pSmdBQ0lDDCoDIDc2ZTc1NTMxY2Y4Yy1hMWY4LWMzYjQtYzViMy0wNTdlMjc0ZCQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "index",
+          "collectionGroup": "yuban_authority_photos",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/S01zcFVpSmdBQ0lDDCoDIDQ1NDJjODVjZDY4Yi1iYzM4LWFhNzQtYjczOS01ODdkZDQzYyQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "index",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/S0lzOUZqSmdBQ0lDDCoDIDcwYTcyNTRmMTkyMi1iNDNiLTM1ODQtY2ZlZi0xOGJkYjY1OCQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "index",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/SklzOUZqSmdBQ0lDDCoDIGY1YzZjZDM2ZjJmNS0wNmI4LTgxNzQtNjc3MS1hMDRiYzkwMSQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "index",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/SU1zNzRpTmdBQ0lDDCoDIGEyZDg5M2M5ZjhiNC04MDJhLTQyYzQtZjYwZC01MTFiNzMxMiQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "index",
+          "collectionGroup": "yuban_authority_task_outbox",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/TElzOUZqSmdBQ0lDDCoDIDJmNmQyZmZiNDk0NC03M2I5LTA4MjQtNmFjOC1hOTA3NGE1NiQac2VuaWxlcGlwCQpBEg",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_documents",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyA2MmE1OTA4MGE2ZmMtYTViYS05OWU0LTBlNzUtYjQ2YTdjYjYkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_document_snapshots",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyA2NWJkN2UwZDdmMTktY2Y2OC0xYWY0LTZlNzMtOTZlYTAzZWYkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_document_chunks",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyAzYWM5ODYyMTRhZTItOGFkOC04M2U0LWI5YWUtODczZmY0OTQkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_document_operations",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyBjNDQ1NzJhYjIwNmYtMGY3YS1lMjA0LTAzODgtZTNmZWM0OTIkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_photos",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyAyOWYyMDA1NmMyNjgtODdjYi0xNDY0LWZmOWYtMmQ4ZWQxZmMkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_photo_ops",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyBkMWIyMjA3ZTZkNDktNTA3OS1jNGQ0LTFiZTEtYjlmZGQ5MTkkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_photo_quota",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyAxMDUzMzBjNzJmMDQtZWI1OC1mZTQ0LTZhMjEtZDMzODEzY2YkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_photo_cleanup",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyA2NmIyMGU4ODFhMTktYjZjYi1mMjA0LTM2OGMtOWZlYjVhYmEkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_task_reminders",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyA4MWI1ZGUxMTdmN2UtOTA0OC1lNWQ0LWMzYTQtOTNiZTVjYWQkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_task_reminder_batches",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyBkZmZjM2UwYmQ4ODAtYTlhYi0wOTA0LWIwY2QtOTU0MzE2NTQkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_notification_preferences",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyA1MmExZmRiYzcyNTUtZmI1OS00YjU0LTkxMTQtYzFhZGNlYTYkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "kind": "field",
+          "collectionGroup": "yuban_authority_notification_outbox",
+          "fieldPath": "*",
+          "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyBiYWM2Zjk0OTkzYTEtNTZjOS1lZTM0LWU2N2UtZDhkMTUxZGEkGnNlbmlsZXBpcAkKMxI",
+          "done": false
+        },
+        {
+          "failure": "{\"status\":400,\"message\":\"Invalid JSON payload received. Unknown name \\\"order\\\" at 'field.index_config.indexes[0]': Cannot find field.\"}"
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T13:14:06.261Z",
+      "action": "photo-scope-single-field-index",
+      "resource": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_photos/fields/scopeTag",
+      "operation": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/operations/AyBlZjIyMDZhZTgxZTUtYTA4OS0zMjQ0LTJiODQtNDVmYjViN2YkGnNlbmlsZXBpcAkKMxI",
+      "done": false,
+      "correction": "REST IndexConfig uses Index.fields; Firebase manifest fieldOverrides use flat order. Other 9 composite creates and 12 exemptions already saved; not replayed."
+    },
+    {
+      "at": "2026-10-11T13:26:08.507Z",
+      "action": "read-back-existing-index-builds",
+      "indexes": [
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_documents/indexes/CICAgJjF9sII",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "childTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "status",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "createdAt",
+              "order": "DESCENDING"
+            },
+            {
+              "fieldPath": "documentId",
+              "order": "DESCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "DESCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_documents/indexes/CICAgJiUpsMI",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "childTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "createdAt",
+              "order": "DESCENDING"
+            },
+            {
+              "fieldPath": "documentId",
+              "order": "DESCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "DESCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgNi47sMI",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "state",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "dueAt",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "ASCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJjF9sIJ",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "childTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "state",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "leaseUntil",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "ASCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_task_revisions/indexes/CICAgJim14AK",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "childTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "taskId",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "taskVersion",
+              "order": "DESCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "DESCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_children/indexes/CICAgOjXh4EK",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "createdAt",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "childId",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "ASCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJj7z4EK",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "childTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "taskId",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "occurrenceId",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "state",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "ASCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_changes/indexes/CICAgJjF9oIK",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "sortKey",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "ASCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_tasks/indexes/CICAgJiUpoMK",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "childTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "taskId",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "ASCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJjF9sIK",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "childTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "state",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "dueAt",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "ASCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_photos/indexes/CICAgJiUpsMK",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "scopeTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "live",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "sortKey",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "ASCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_document_snapshots/indexes/CICAgJim14AL",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "childTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "documentId",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "snapshotVersion",
+              "order": "DESCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "DESCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_documents/indexes/CICAgNi47oML",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "workspaceTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "epochTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "userTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "childTag",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "status",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "ASCENDING"
+            }
+          ]
+        },
+        {
+          "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_task_outbox/indexes/CICAgJjF9sIL",
+          "state": "READY",
+          "fields": [
+            {
+              "fieldPath": "state",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "leaseUntil",
+              "order": "ASCENDING"
+            },
+            {
+              "fieldPath": "__name__",
+              "order": "ASCENDING"
+            }
+          ]
+        }
+      ],
+      "photoScopeField": {
+        "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_photos/fields/scopeTag",
+        "indexConfig": {
+          "indexes": [
+            {
+              "queryScope": "COLLECTION",
+              "fields": [
+                {
+                  "fieldPath": "scopeTag",
+                  "order": "ASCENDING"
+                }
+              ],
+              "state": "READY"
+            }
+          ],
+          "ancestorField": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_photos/fields/*"
+        }
+      }
+    },
+    {
+      "at": "2026-10-11T14:48:52.091Z",
+      "action": "task-dispatch-iam-approved-readback",
+      "permissions": [
+        "cloudtasks.tasks.create",
+        "cloudtasks.tasks.fullView",
+        "cloudtasks.tasks.get"
+      ],
+      "queueBindings": [
+        {
+          "role": "projects/ai-caregivers-for-children/roles/yubanFirebaseTaskDispatch",
+          "members": [
+            "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ]
+        }
+      ],
+      "dispatchBindings": [
+        {
+          "role": "roles/iam.serviceAccountUser",
+          "members": [
+            "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ]
+        }
+      ],
+      "queueState": "PAUSED"
+    },
+    {
+      "at": "2026-10-11T14:49:32.135Z",
+      "action": "isolated-restore-database-create",
+      "status": 200,
+      "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011/operations/BuIhyLdC06WMTJ5VJATlfhAqMnRzYWUtYWlzYQoiBRAD1ve9uBAG1q7D-wgMCi4a",
+      "done": true,
+      "errorCode": null,
+      "locationId": "asia-east2"
+    },
+    {
+      "at": "2026-10-11T14:50:20.795Z",
+      "action": "isolated-restore-boundary-readback",
+      "database": {
+        "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-restore-20261011",
+        "locationId": "asia-east2",
+        "type": "FIRESTORE_NATIVE",
+        "databaseEdition": "STANDARD",
+        "deleteProtectionState": "DELETE_PROTECTION_ENABLED"
+      },
+      "rules": {
+        "name": "projects/ai-caregivers-for-children/releases/cloud.firestore/yuban-firebase-restore-20261011",
+        "rulesetName": "projects/ai-caregivers-for-children/rulesets/b542f8a0-c592-4e81-af88-c3c1122d0546",
+        "clientDenied": true
+      },
+      "runtimeDatastoreBindings": [
+        {
+          "role": "roles/datastore.user",
+          "members": [
+            "serviceAccount:yuban-firebase-api@ai-caregivers-for-children.iam.gserviceaccount.com",
+            "serviceAccount:yuban-firebase-worker@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ],
+          "condition": {
+            "expression": "resource.name == \"projects/ai-caregivers-for-children/databases/yuban-firebase-20261011\"",
+            "title": "yuban_firebase_database_only"
+          }
+        },
+        {
+          "role": "roles/datastore.viewer",
+          "members": [
+            "serviceAccount:yuban-firebase-auth@ai-caregivers-for-children.iam.gserviceaccount.com"
+          ],
+          "condition": {
+            "expression": "resource.name == \"projects/ai-caregivers-for-children/databases/yuban-firebase-20261011\"",
+            "title": "yuban_firebase_database_only"
+          }
+        }
+      ]
+    },
+    {
+      "at": "2026-10-11T14:53:28.759Z",
+      "action": "isolated-hosting-and-web-app-preparation",
+      "hosting": {
+        "name": "projects/ai-caregivers-for-children/sites/yuban-firebase-check",
+        "defaultUrl": "https://yuban-firebase-check.web.app",
+        "type": "USER_SITE"
+      },
+      "webApp": {
+        "operation": "operations/workflows/OTVmNGE1ODctODdhZS00NjgwLTlmODEtNDQxYjA1MzAzNGM1",
+        "done": false,
+        "appId": null
+      },
+      "released": false
+    }
+  ],
+  "firebaseTermsResolution": {
+    "userConfirmed": true,
+    "readbackAt": "2026-10-11T12:32:46.894Z",
+    "projectState": "ACTIVE",
+    "originalFailurePreserved": true
+  },
+  "evidenceSanitization": {
+    "at": "2026-10-11T12:33:15.196Z",
+    "event": "Admin config returned hash parameters unexpectedly; removed from local evidence before any commit or upload; subsequent reads use metadata allowlist.",
+    "authUsersCreatedByThisTask": 0
+  },
+  "buildMachineCatalog": {
+    "at": "2026-10-11T12:44:36.731Z",
+    "nextPageTokenPresent": false,
+    "skus": [
+      {
+        "skuId": "A464-9020-6404",
+        "description": "Build time e2-standard-2",
+        "serviceRegions": [
+          "global"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "min",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 0
+                  }
+                },
+                {
+                  "startUsageAmount": 2500,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 6000000
+                  }
+                }
+              ],
+              "usageUnitDescription": "minute",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 60
+            },
+            "aggregationInfo": {
+              "aggregationLevel": "ACCOUNT",
+              "aggregationInterval": "MONTHLY",
+              "aggregationCount": 1
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-10-11T07:00:00Z"
+          }
+        ]
+      }
+    ],
+    "regionalComponents": [
+      {
+        "name": "services/8B5D-EF7D-EB12/skus/0C00-E6D0-3BD7",
+        "skuId": "0C00-E6D0-3BD7",
+        "description": "E2 cpu utilization per minute in asia-east2",
+        "category": {
+          "serviceDisplayName": "Cloud Build",
+          "resourceFamily": "ApplicationServices",
+          "resourceGroup": "Worker",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "asia-east2"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "min",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 2240000
+                  }
+                }
+              ],
+              "usageUnitDescription": "minute",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 60
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-10-11T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "asia-east2"
+          ]
+        }
+      },
+      {
+        "name": "services/8B5D-EF7D-EB12/skus/2AAB-08A9-B131",
+        "skuId": "2AAB-08A9-B131",
+        "description": "E2 ram utilization per minute in asia-east2",
+        "category": {
+          "serviceDisplayName": "Cloud Build",
+          "resourceFamily": "ApplicationServices",
+          "resourceGroup": "Worker",
+          "usageType": "OnDemand"
+        },
+        "serviceRegions": [
+          "asia-east2"
+        ],
+        "pricingInfo": [
+          {
+            "summary": "",
+            "pricingExpression": {
+              "usageUnit": "min",
+              "displayQuantity": 1,
+              "tieredRates": [
+                {
+                  "startUsageAmount": 0,
+                  "unitPrice": {
+                    "currencyCode": "USD",
+                    "units": "0",
+                    "nanos": 490000
+                  }
+                }
+              ],
+              "usageUnitDescription": "minute",
+              "baseUnit": "s",
+              "baseUnitDescription": "second",
+              "baseUnitConversionFactor": 60
+            },
+            "currencyConversionRate": 1,
+            "effectiveTime": "2026-10-11T07:00:00Z"
+          }
+        ],
+        "serviceProviderName": "Google",
+        "geoTaxonomy": {
+          "type": "REGIONAL",
+          "regions": [
+            "asia-east2"
+          ]
+        }
+      }
+    ],
+    "revisedBuildLimit": {
+      "totalMinutes": 30,
+      "maxVcpu": 8,
+      "maxRamGiB": 8,
+      "stopOnUnpricedMachine": true,
+      "reason": "Cover Cloud Functions managed build selection within existing US$6 envelope; retain US$2 cleanup reserve."
+    }
+  },
+  "localFailures": [
+    {
+      "at": "2026-10-11T13:11:01.019Z",
+      "scope": "firebase-http targeted unit loading",
+      "code": "ERR_INVALID_TYPESCRIPT_SYNTAX",
+      "reason": "Mechanical String.replace replacement interpreted dollar-apostrophe in RegExp source; repaired with literal replacement callback. No business assertion changed.",
+      "status": "original failure retained; targeted rerun follows"
+    },
+    {
+      "at": "2026-10-11T13:21:12.560Z",
+      "area": "firebase-http disconnected large body preflight",
+      "evidence": "tool chunk 408a0e",
+      "result": "1/1 failed before correction: aborted requests must settle and release capacity",
+      "correction": "Check prior cancellation/destruction after identity preflight and at body reader entry; subscribe abort signal/early stream close; preserve regression assertion"
+    },
+    {
+      "at": "2026-10-11T13:34:40.772Z",
+      "area": "firebase-http cancellation during still-pending identity lookup",
+      "evidence": "tool chunk 97eb64",
+      "result": "1/1 failed: cancellation was only observed after identity lookup resolved",
+      "correction": "Race identity preflight with disconnect and clean abort listener; late identity resolution cannot run handler; strengthen same regression to resolve identity after observing released capacity"
+    },
+    {
+      "at": "2026-10-11T13:40:55.935Z",
+      "area": "authority recovery locator envelope extension",
+      "evidence": "tool chunk 4bb8e2",
+      "result": "16/17 passed; old exact envelope-key privacy assertion rejected the new encrypted recovery field",
+      "correction": "Keep exact legacy/new key sets and plaintext privacy assertions; authenticate the entire new locator. Separate canonical-writer test requires locator on every new canonical row. No caller-scope checks changed."
+    },
+    {
+      "at": "2026-10-11T13:42:29.888Z",
+      "area": "combined server typecheck after slice integration",
+      "evidence": "tool chunk ad5380",
+      "result": "New null-narrowing/VectorValue schema types in document/knowledge stores; photo-client parameter-property syntax reached from new tests; worker transport test this typing. Five original master test diagnostics also remain.",
+      "correction": "Original authors repairing local declarations/types without relaxing assertions or compiler settings; repeat compilation only after all fixes. Root client typecheck passed in parallel (9d6478)."
+    }
+  ],
+  "knowledgePreparation": {
+    "observedAt": "2026-10-11T13:37:24.612Z",
+    "sourceFile": "knowledge/hk-official-seed.json",
+    "sourceFileSha256": "627cb0b1a4babdaf71ee1825be4db519cdd6964a27cf775ab1ff528efd3131fe",
+    "sourceRevision": "088bf70f45bf14d77237adc9079e9e77fff02cb0",
+    "sourceId": "fhs-solid-food",
+    "versionHash": "0a48bc97b55de72d7589e1021dbaa825ccfc9838d11ea93ea191aa25e3d61816",
+    "url": "https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html",
+    "termsUrl": "https://www.fhs.gov.hk/english/notice/notice.html",
+    "scope": "One existing curated official source for isolated non-commercial synthetic acceptance; attribution retained. No import, publication, embedding or model call performed.",
+    "termsEvidence": "Official English notice direct fetch timed out; official indexed notice states non-commercial reproduction with Department of Health attribution, commercial use requires prior written permission. Existing scope remains non-commercial acceptance.",
+    "assessment": {
+      "comparedVersionId": null,
+      "comparedHash": null,
+      "observationHash": null,
+      "changes": [
+        {
+          "key": "starting-solids",
+          "oldQuote": null,
+          "newQuote": "未足四個月大的寶寶不應吃奶以外的食物",
+          "meaning": "new",
+          "explanation": "Firebase 乾淨起點的首版來源。已對照官方現行 02/2026 版，保留四個月禁限與六個月引入的不同含義；不是舊私人資料搬遷。"
+        }
+      ],
+      "checks": {
+        "age": "官方正文区分未足四個月與六個月；檢索範圍 0–12 個月只供查找，不是所有月份都應開始加固。",
+        "numbersAndUnits": "只保存月齡門檻，沒有自行加入份量、頻率或個人化營養數值。",
+        "timing": "約六個月時開始固體食物，按適應由稀滑漸進至較稠；不能把未記錄等同尚未加固。",
+        "conditions": "一般嬰幼兒餵養資訊；原片段及香港地區／feeding 主題條件保留。",
+        "exceptions": "未提供個別過敏、早產或疾病處方；有疑問沿原文詢問醫護人員。",
+        "prohibitions": "保留未滿四個月不加入奶以外食物的限制，不能只抽出開始加固的建議。",
+        "withdrawal": "2026-10-11 官方頁仍可讀且顯示 02/2026 修訂內容；未見該頁撤回標示，後續仍以發佈/停用閘為準。"
+      },
+      "questions": [
+        {
+          "query": "BB 幾時開始加固？未足四個月可以嗎？",
+          "expectedKeys": [
+            "starting-solids"
+          ],
+          "reason": "同次檢索需同時取回一般引入時點及較小月齡的禁限。"
+        }
+      ],
+      "growthRuleImpact": "none",
+      "growthRuleReason": "本次只匯入已核對公共來源作隔離驗收，不更改成長規則或觸發個人提醒。",
+      "decision": "approve"
+    }
+  },
+  "localCheckpoints": [
+    {
+      "observedAt": "2026-10-11T14:09:07.631Z",
+      "baseline": "088bf70f45bf14d77237adc9079e9e77fff02cb0 plus uncommitted F02 changes",
+      "node": "24.19.0",
+      "scope": "Formal Firebase HTTP/domain composition and recovery preparation; synthetic/local only",
+      "results": [
+        {
+          "area": "HTTP cancellation including pending identity lookup",
+          "passed": 5,
+          "evidence": "61cc61",
+          "originalFailures": [
+            "408a0e",
+            "97eb64"
+          ]
+        },
+        {
+          "area": "Formal app/config/online/worker composition",
+          "passed": 39,
+          "source": "f02_client_identity final; component totals may overlap earlier cases"
+        },
+        {
+          "area": "Photo client full pagination with native Node syntax",
+          "passed": 7,
+          "source": "f01_firebase_session final"
+        },
+        {
+          "area": "Combined server typecheck after integration",
+          "newDiagnostics": 0,
+          "baselineDiagnostics": 5,
+          "evidence": "8eae7a",
+          "status": "not globally green; original master test diagnostics retained"
+        },
+        {
+          "area": "Independent composition review",
+          "remainingEvidencedP1P2": 0,
+          "source": "f01_foundation_review final; actual cloud/socket/image/recovery untested"
+        },
+        {
+          "area": "Original receipt across epoch, erasure operation barrier and stable reminder identifiers",
+          "passed": 4,
+          "source": "f02_client_identity final",
+          "originalFailures": [
+            "ed9aba",
+            "ff28e3"
+          ]
+        },
+        {
+          "area": "Immutable photo backup and scope rebinding",
+          "passed": 7,
+          "source": "f01_firebase_session final",
+          "originalFailure": "6/7; Buffer versus Uint8Array snapshot representation corrected without weakening content checks"
+        },
+        {
+          "area": "Native export inventory integrity including vectors",
+          "passed": 1,
+          "evidence": "a7b792"
+        }
+      ],
+      "remaining": "Typed restore codec/aggregate, latest journal replay and current Auth overlay, actual native export/import, paired holds, Cloud Run API/worker/Hosting and cloud product acceptance remain incomplete."
+    },
+    {
+      "at": "2026-10-11T14:23:33.279Z",
+      "area": "restore-integrity-review",
+      "findings": [
+        {
+          "code": "typed-digest-collision",
+          "originalFailure": "bd7772",
+          "fix": "Tag all native and ordinary values, including maps and arrays.",
+          "verification": "2190b9: 1/1",
+          "independentReview": "f01_foundation_review confirmed closed"
+        },
+        {
+          "code": "ready-upload-fence",
+          "originalFailure": "be0882",
+          "fix": "Accept matched completed upload; preserve fence identity, rotate authorization and generation."
+        },
+        {
+          "code": "deletion-fingerprint-binding",
+          "originalFailure": "1f7606",
+          "fix": "Verify operation fingerprint separately from journal intent hash."
+        },
+        {
+          "code": "owner-change-null-child",
+          "originalFailure": "80bcfc",
+          "fix": "Nullable child only when scope child is NIL."
+        }
+      ],
+      "codecVerification": "7/7 Node 24.19; formal writer generated ready/deleted photo and owner change",
+      "limits": "No cloud restore or product acceptance; aggregate/operator pending."
+    },
+    {
+      "at": "2026-10-11T14:51:40.785Z",
+      "area": "paired-recovery-local-integration",
+      "baseline": "088bf70 plus uncommitted F02 changes",
+      "node": "24.19.0",
+      "results": [
+        {
+          "area": "Held native objects and encrypted manifest",
+          "passed": 9,
+          "source": "f01_firebase_session final"
+        },
+        {
+          "area": "Native export/import stable operation lookup",
+          "passed": 9,
+          "source": "f01_firebase_session final",
+          "originalFailure": "4/9; synthetic protobuf @type slash corrected"
+        },
+        {
+          "area": "Cross-record task/document/knowledge integrity",
+          "passed": 5,
+          "evidence": "e75dd9",
+          "originalFailures": [
+            "9d4f4a",
+            "5fe14d"
+          ]
+        },
+        {
+          "area": "Aggregate current Auth, deletion replay, new epoch and partial delete",
+          "passed": 4,
+          "evidence": [
+            "2bd348",
+            "14050c",
+            "a7d778",
+            "e82e47"
+          ],
+          "originalFailures": [
+            "b21598",
+            "b9a4cd"
+          ],
+          "reviewFix": "Preserve current independent cleanup even for post-snapshot child/photo; derive missing cleanup from authenticated live or backup evidence."
+        },
+        {
+          "area": "Combined server typecheck",
+          "newDiagnostics": 0,
+          "baselineDiagnostics": 5,
+          "evidence": "9ad210",
+          "originalFailure": "0b3000; never function narrowing, SDK public type and fixture closure fixes",
+          "status": "Not globally green; original master diagnostics retained"
+        }
+      ],
+      "remaining": "Operator IO orchestration test and final independent review pending. No native cloud backup/import or product acceptance."
+    },
+    {
+      "at": "2026-10-11T14:55:05.821Z",
+      "startedAt": "2026-10-11T14:54:38.790Z",
+      "area": "firebase-configured-web-build",
+      "node": "24.19.0",
+      "appId": "1:1064034424208:web:b0873383eee9d93256cf15",
+      "authDomain": "ai-caregivers-for-children.firebaseapp.com",
+      "frontendTypes": "passed",
+      "build": "passed",
+      "productAcceptance": false,
+      "logs": [
+        "tmp/f02-web-build/typecheck.log",
+        "tmp/f02-web-build/build.log"
+      ]
+    },
+    {
+      "at": "2026-10-11T14:57:50.011Z",
+      "area": "F02-build-meter",
+      "builds": [
+        {
+          "id": "fa88a615-2629-46b0-a9b5-522971d71424",
+          "status": "SUCCESS",
+          "createTime": "2026-10-11T13:08:19.752850611Z",
+          "startTime": "2026-10-11T13:08:21.446882089Z",
+          "finishTime": "2026-10-11T13:11:05.551448Z",
+          "machineType": null,
+          "seconds": 164.105
+        },
+        {
+          "id": "0788ca68-3f1a-437f-beed-f2b3b9b31585",
+          "status": "SUCCESS",
+          "createTime": "2026-10-11T13:01:12.288385766Z",
+          "startTime": "2026-10-11T13:01:13.967963643Z",
+          "finishTime": "2026-10-11T13:04:30.954049Z",
+          "machineType": null,
+          "seconds": 196.987
+        },
+        {
+          "id": "afde1a5e-0121-4797-a382-63cbb4ce7006",
+          "status": "FAILURE",
+          "createTime": "2026-10-11T12:58:13.964688412Z",
+          "startTime": "2026-10-11T12:58:15.662545919Z",
+          "finishTime": "2026-10-11T12:58:31.713941Z",
+          "machineType": null,
+          "seconds": 16.051
+        },
+        {
+          "id": "72457b1a-81ec-4017-a526-fdf68ed56f91",
+          "status": "FAILURE",
+          "createTime": "2026-10-11T12:56:34.313407222Z",
+          "startTime": "2026-10-11T12:56:36.432413286Z",
+          "finishTime": "2026-10-11T12:56:52.577113Z",
+          "machineType": null,
+          "seconds": 16.145
+        }
+      ],
+      "measuredBuildSeconds": 393.28799999999995,
+      "buildCapSeconds": 1800,
+      "remainingBuildSeconds": 1406.712,
+      "billedAmount": "not observed; durations are service usage evidence, not invoice"
+    },
+    {
+      "at": "2026-10-11T14:58:48.853Z",
+      "area": "recovery-operator-review-gate",
+      "operatorTests": {
+        "passed": 3,
+        "evidence": "de1c7a",
+        "narrowTypecheck": "5b6572: zero diagnostics",
+        "limits": "Serial synthetic no-photo graph; no native cloud export/import/concurrency."
+      },
+      "staticFinding": {
+        "code": "strict-manifest-port-extra-fields",
+        "fix": "39ba8c: explicitly project backupId and descriptor at both callsites",
+        "independentReview": "f01_foundation_review confirmed port projections and no further evidenced P1/P2"
+      },
+      "drainGate": "A six-minute pause and Cloud Run request timeout are not proof of terminated source/journal IO. Verify source API/worker stopped separately; restore remains applied-paused."
+    }
+  ],
+  "recoverySources": [
+    "https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases/exportDocuments",
+    "https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/runQuery",
+    "https://docs.cloud.google.com/storage/docs/object-holds",
+    "https://firebase.google.com/docs/firestore/manage-data/export-import"
+  ]
 }

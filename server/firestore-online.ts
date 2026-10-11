@@ -5,19 +5,19 @@ import type { OnlineContext, OnlineCommand, OnlineSubmission, OnlineReceipt, Onl
 import type { Workspace } from './workspaces.ts';
 import { taskCreateSchema, taskChangeSchema, type CareTask, type TaskPage, type TaskHistory, type TaskRevision } from '../src/shared/tasks.ts';
 import { validateCreateChild } from '../src/shared/inputs.ts';
-import { onlineCommandSchema, onlineSubmissionSchema, onlineIdentitySchema, onlineRoute } from './online-routing.ts';
+import { onlineCommandSchema, onlineSubmissionSchema, onlineRoute } from './online-routing.ts';
 import { changeTask } from './task-policy.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreChildSchema, firestoreChangeSchema,
   firestoreTaskSchema, firestoreTaskRevisionSchema, firestoreReminderOutboxSchema, firestoreReminderOutboxId,
-  type FirestoreDomainOptions, type FirestoreReminderOutbox } from './firestore-domain-data.ts';
+  sealFirestoreReminderOutbox, type FirestoreDomainOptions, type FirestoreReminderOutbox } from './firestore-domain-data.ts';
+
+import { createFirestoreOnlineReceipts, isFirestoreOnlinePending } from './firestore-online-receipts.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const decimal = firestoreChangeSchema.shape.changeSeq, uuid = z.uuid();
-const receiptSchema = z.object({ ownerUserId: z.string().min(1).max(256), fingerprint: z.string().regex(/^[a-f0-9]{64}$/u),
-  childId: uuid.nullable(), path: z.string().max(256), operation: onlineIdentitySchema, changeSeq: decimal,
-  statusCode: z.union([z.literal(200), z.literal(201)]), result: z.unknown() }).strict();
+
 const cursorSchema = z.object({ scope: workRecoveryScopeSchema, changeSeq: decimal, filter: z.literal('children'),
   createdAt: z.iso.datetime({ offset: true }), childId: uuid }).strict();
 const taskPath = /^\/api\/children\/([0-9a-f-]{36})\/tasks(?:\/([0-9a-f-]{36})\/change)?$/iu;
@@ -26,6 +26,7 @@ export interface FirestoreChildrenQuery { list(userId: string, cursor?: string |
 export interface FirestoreTasksQuery {
   list(userId: string, childId: string, afterId?: string | null): Promise<TaskPage>;
   get(userId: string, childId: string, taskId: string): Promise<CareTask | null>;
+  detail?(userId: string, childId: string, taskId: string): Promise<({ task: CareTask } & Pick<TaskPage, 'reminders' | 'work' | 'workerEnabled'>) | null>;
   history(userId: string, childId: string, taskId: string, beforeVersion?: number | null): Promise<TaskHistory | null>;
 }
 export interface FirestoreOnlineStore {
@@ -39,10 +40,14 @@ export interface FirestoreOnlineStore {
 }
 
 /** F02 owner-only child/task domain, original operation receipts and durable reminder intents. */
-export function createFirestoreOnlineStore(options: FirestoreDomainOptions): FirestoreOnlineStore {
-  const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
+export interface FirestoreOnlinePhotosPort { submitOnline(userId: string, submission: OnlineSubmission): Promise<OnlineReceipt> }
+export interface FirestoreOnlineReminderViewPort {
+  view(binding: FirestoreAuthorityTransaction, taskIds: string[]): Promise<Required<Pick<TaskPage, 'reminders' | 'work' | 'workerEnabled'>>>;
+}
+export interface FirestoreOnlineOptions extends FirestoreDomainOptions { photos?: FirestoreOnlinePhotosPort; reminders?: FirestoreOnlineReminderViewPort }
+export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): FirestoreOnlineStore {
+  const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), receipts = createFirestoreOnlineReceipts(options);
   const scopeFor = (binding: FirestoreAuthorityTransaction, childId: string): WorkRecoveryScope => ({ ...binding.scope, childId });
-  const receiptId = (userId: string, opId: string) => JSON.stringify([userId, opId]);
   const taskId = (id: string, taskVersion: number) => JSON.stringify([id, taskVersion]);
   function matchesTags(raw: any, scope: WorkRecoveryScope) {
     const tags = data.tags(scope);
@@ -51,23 +56,6 @@ export function createFirestoreOnlineStore(options: FirestoreDomainOptions): Fir
   }
   function currentContext(binding: FirestoreAuthorityTransaction): OnlineContext {
     return { workspaceId: binding.scope.workspaceId, storageEpoch: binding.scope.storageEpoch };
-  }
-  async function original(binding: FirestoreAuthorityTransaction, opId: string) {
-    const id = receiptId(binding.scope.ownerUserId, opId), snapshot = await binding.transaction.get(data.ref('online_operations', 'online-receipt', id));
-    if (!snapshot.exists) return null;
-    const raw = snapshot.data(), tags = data.tags(binding.scope);
-    if (raw?.workspaceTag !== tags.workspaceTag || raw?.epochTag !== tags.epochTag) domainReject('storage_epoch_changed');
-    matchesTags(raw, binding.scope);
-    const receipt = data.open('online-receipt', id, binding.scope, receiptSchema, snapshot);
-    if (receipt.ownerUserId !== binding.scope.ownerUserId || receipt.operation.opId !== opId
-      || receipt.operation.workspaceId !== binding.scope.workspaceId || receipt.operation.storageEpoch !== binding.scope.storageEpoch
-      || BigInt(receipt.changeSeq) > BigInt(binding.changeSeq)) domainReject('receipt_binding', 500);
-    return receipt;
-  }
-  async function disclose(binding: FirestoreAuthorityTransaction, receipt: z.infer<typeof receiptSchema>): Promise<OnlineReceipt> {
-    const visible = receipt.childId === null || await binding.readChild(receipt.childId) !== null;
-    return { state: 'confirmed', path: receipt.path, operation: receipt.operation, changeSeq: receipt.changeSeq,
-      statusCode: receipt.statusCode, result: visible ? receipt.result : null };
   }
   async function requireChild(binding: FirestoreAuthorityTransaction, childId: string): Promise<Child> {
     const child = await binding.readChild(childId); if (!child) domainReject('not_found', 404); return child;
@@ -92,9 +80,9 @@ export function createFirestoreOnlineStore(options: FirestoreDomainOptions): Fir
       || job.storageEpoch !== scope.storageEpoch || job.taskVersion !== snapshot.get('recordVersion')) domainReject('outbox_binding', 500);
     return { id, ref, job };
   }
-  const sealOutbox = (id: string, scope: WorkRecoveryScope, job: FirestoreReminderOutbox) => ({ ...data.tags(scope), taskId: job.taskId, occurrenceId: job.occurrenceId,
-    taskVersion: job.taskVersion, state: job.state, dueAt: job.dueAt, leaseUntil: job.lease?.until ?? null,
-    ...data.seal('task-reminder-outbox', id, scope, firestoreReminderOutboxSchema, job, job.taskVersion) });
+  const sealOutbox = (_id: string, scope: WorkRecoveryScope, job: FirestoreReminderOutbox) => sealFirestoreReminderOutbox(data, scope, job);
+  const reminderView = (binding: FirestoreAuthorityTransaction, taskIds: string[]): Promise<Pick<TaskPage, 'reminders' | 'work' | 'workerEnabled'>> =>
+    options.reminders ? options.reminders.view(binding, taskIds) : Promise.resolve({ workerEnabled: false });
   const children: FirestoreChildrenQuery = { async list(userId, cursor = null) {
     return authority.runTransaction(userId, null, async binding => {
       let after: z.infer<typeof cursorSchema> | null = null;
@@ -141,12 +129,20 @@ export function createFirestoreOnlineStore(options: FirestoreDomainOptions): Fir
           const task = await readTask(binding, binding.scope, id);
           if (!task) domainReject('projection_binding', 500); items.push(task);
         }
-        return { items, eligibleAssignees: [{ userId, name: '本人' }], nextAfterId: rows.docs.length > 50 ? items.at(-1)!.id : null, workerEnabled: false };
+        return { items, eligibleAssignees: [{ userId, name: '本人' }], nextAfterId: rows.docs.length > 50 ? items.at(-1)!.id : null,
+          ...await reminderView(binding, items.map(item => item.id)) };
       });
     },
     async get(userId, childId, id) {
       domainParse(uuid, id);
       return authority.runTransaction(userId, childId, binding => readTask(binding, binding.scope, id));
+    },
+    async detail(userId, childId, id) {
+      domainParse(uuid, id);
+      return authority.runTransaction(userId, childId, async binding => {
+        const task = await readTask(binding, binding.scope, id);
+        return task ? { task, ...await reminderView(binding, [id]) } : null;
+      });
     },
     async history(userId, childId, id, beforeVersion = null) {
       domainParse(uuid, id); if (beforeVersion !== null) domainParse(z.number().int().positive().max(2147483647), beforeVersion);
@@ -188,19 +184,21 @@ export function createFirestoreOnlineStore(options: FirestoreDomainOptions): Fir
     async lookup(userId, rawOpId) {
       const opId = domainParse(uuid, rawOpId);
       return authority.runTransaction(userId, null, async binding => {
-        const receipt = await original(binding, opId); return receipt ? disclose(binding, receipt) : { state: 'unconfirmed' as const };
+        const receipt = await receipts.read(binding, opId); return receipt ? receipts.disclose(binding, receipt) : { state: 'unconfirmed' as const };
       });
     },
     async submit(userId, raw) {
       const submission = domainParse(onlineSubmissionSchema, raw);
-      const fingerprint = firestoreDomainHash({ path: submission.path, payload: submission.payload, operation: submission.operation });
+      if (options.photos && /^\/api\/children\/[0-9a-f-]{36}\/photos(?:\/[0-9a-f-]{36}\/delete)?$/iu.test(submission.path))
+        return options.photos.submitOnline(userId, submission);
       const candidateId = randomUUID(), occurrenceId = randomUUID(), at = new Date().toISOString();
       return authority.runTransaction(userId, null, async binding => {
         // Caller-wide identity is checked before looking at a changed command's target resource.
-        const prior = await original(binding, submission.operation.opId);
+        const prior = await receipts.read(binding, submission.operation.opId);
         if (prior) {
-          if (prior.fingerprint !== fingerprint) domainReject('operation_conflict');
-          return disclose(binding, prior);
+          receipts.assertSame(binding, prior, submission);
+          if (isFirestoreOnlinePending(prior)) domainReject('operation_conflict');
+          return receipts.disclose(binding, prior) as Promise<OnlineReceipt>;
         }
         if (submission.operation.workspaceId !== binding.scope.workspaceId || submission.operation.storageEpoch !== binding.scope.storageEpoch) domainReject('storage_epoch_changed');
         let changeSeq: string, result: unknown, statusCode: 200 | 201, receiptChildId: string;
@@ -258,7 +256,7 @@ export function createFirestoreOnlineStore(options: FirestoreDomainOptions): Fir
           const unknown = unknownRows.docs.length > 0;
           const outbox: FirestoreReminderOutbox | null = task.occurrence.state === 'scheduled' && !unknown ? {
             taskId: task.id, occurrenceId: task.occurrence.id, taskVersion: task.version, dueAt: task.occurrence.dueAt, ...scope,
-            authorizationVersion: binding.authorizationVersion, generation: binding.generation, state: 'pending', attempts: 0, lease: null } : null;
+            authorizationVersion: binding.authorizationVersion, generation: binding.generation, state: 'pending', attempts: 0, failures: 0, lease: null } : null;
           const prepared = await binding.prepareChange(submission.operation.opId, 'tasks', false, childId);
           const taskEnvelope = { ...data.tags(scope), taskId: task.id, ...data.seal('task', task.id, scope, firestoreTaskSchema, task, task.version) };
           const revisionEnvelope = { ...data.tags(scope), taskId: task.id, taskVersion: task.version,
@@ -274,12 +272,9 @@ export function createFirestoreOnlineStore(options: FirestoreDomainOptions): Fir
             if (outboxEnvelope) binding.transaction.create(outboxRef, outboxEnvelope);
           };
         }
-        const id = receiptId(userId, submission.operation.opId);
-        const receipt = { ownerUserId: userId, fingerprint, childId: receiptChildId, path: submission.path,
-          operation: submission.operation, changeSeq, statusCode, result };
-        const sealed = { ...data.tags(binding.scope), ...data.seal('online-receipt', id, binding.scope, receiptSchema, receipt) };
-        commitDomain(); binding.transaction.create(data.ref('online_operations', 'online-receipt', id), sealed);
-        return { state: 'confirmed' as const, path: receipt.path, operation: receipt.operation, changeSeq, statusCode, result };
+        const receipt = receipts.prepareConfirmed(binding, submission, { childId: receiptChildId, changeSeq, statusCode, result });
+        commitDomain(); receipt.commit();
+        return receipt.receipt;
       });
     },
     async changes(userId, workspaceId, epoch, rawCursor) {

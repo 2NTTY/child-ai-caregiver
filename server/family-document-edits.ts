@@ -20,7 +20,7 @@ function move<T extends { id: string }>(items: T[], id: string, beforeId: string
   items.splice(beforeId === null ? items.length : items.findIndex(item => item.id === beforeId), 0, item);
 }
 /** Typed sequential edits; caller validates authority/version and persists once in its transaction. */
-export function applyFamilyDocumentPatch(previous: DocumentSnapshot, patch: DocumentPatch, loaded: FamilyDocumentSources, version: number): DocumentSnapshot {
+export function applyFamilyDocumentPatch(previous: DocumentSnapshot, patch: DocumentPatch, loaded: FamilyDocumentSources, version: number, seed?: { id: string; generatedAt: string }): DocumentSnapshot {
   const snapshot = structuredClone(previous), available = currentSources(loaded), original = new Map(previous.sources.map(source => [source.id, source]));
   const replacedSources = new Set<string>();
   const invalidSources = previous.sources.filter(source => {
@@ -101,7 +101,7 @@ export function applyFamilyDocumentPatch(previous: DocumentSnapshot, patch: Docu
     if (snapshot.sections.some(section => section.items.some(item => item.sourceIds.includes(source.id) && oldItems.some(old => old.text === item.text)))) throw new FamilyError(409, "source_changed");
   }
   snapshot.editProtection = { sectionIds: [...protectedSections], removedSectionIds: [...removedSections], metadataFields: [...metadataFields] };
-  snapshot.id = randomUUID(); snapshot.version = version; snapshot.generatedAt = new Date().toISOString();
+  snapshot.id = seed?.id ?? randomUUID(); snapshot.version = version; snapshot.generatedAt = seed?.generatedAt ?? new Date().toISOString();
   snapshot.changes = ["家長核對並更新文件指定內容；其他內容保持原版本。"];
   assertDocumentCapacity(snapshot); return snapshot;
 }

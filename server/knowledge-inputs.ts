@@ -85,3 +85,5 @@ export function embeddingDocument(title: string, section: string, body: string):
   const documentTitle = `${title} — ${section}`;
   return { title: documentTitle, text: body, hash: knowledgeHash([documentTitle, body]) };
 }
+
+export const knowledgeChunkInputSchema = sourceSchema.shape.chunks.element;

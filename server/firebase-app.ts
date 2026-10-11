@@ -6,6 +6,10 @@ import type { FirestoreOnlineStore } from "./firestore-online.ts";
 import { FirestoreDomainError } from "./firestore-domain-data.ts";
 import { handleOnlineRequest } from "./online-api.ts";
 import { handleTaskRequest } from "./task-api.ts";
+import { handleFamilyDocumentRequest } from "./family-document-api.ts";
+import type { FamilyDocumentStore } from "./family-document-store.ts";
+import { handleFirebasePhotoRequest, type FirebasePhotoApiPort } from "./firebase-photo-api.ts";
+import { handlePersonalLibraryRequest, type PersonalLibrary } from "./personal-library-api.ts";
 
 const MAX_BODY_BYTES = 16 * 1024;
 const authorityErrors = new Map<string, number>([
@@ -27,6 +31,9 @@ export interface FirebaseRequestHandlerOptions {
   /** Supplied by deployment composition; this handler never infers mail readiness. */
   mailConfigured: boolean;
   online?: FirestoreOnlineStore;
+  documents?: FamilyDocumentStore;
+  photos?: FirebasePhotoApiPort;
+  library?: Pick<PersonalLibrary, "page">;
 }
 export type FirebaseRequestHandler = (request: Request) => Promise<Response>;
 
@@ -75,7 +82,7 @@ async function readJson(request: Request): Promise<unknown> {
 
 /** Explicitly assembled Firebase routes; unconnected domains remain unavailable. */
 export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOptions): FirebaseRequestHandler {
-  const { authority, auth, publicOrigin, mailConfigured, online } = options;
+  const { authority, auth, publicOrigin, mailConfigured, online, documents, photos, library } = options;
   let origin: URL;
   try { origin = new URL(publicOrigin); } catch { throw new Error("invalid_firebase_app_configuration"); }
   if (origin.origin !== publicOrigin || !["https:", "http:"].includes(origin.protocol) || origin.username || origin.password
@@ -106,6 +113,31 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         // Return the existing complete status shape. A failed read is an unknown outcome, never false success.
         return json(await accountStatus(userId));
       }
+      if (documents && /^\/api\/children\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/documents(?:\/|$)/iu.test(path)) {
+        if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
+        if (!userId) throw new RequestError("unauthorized", 401);
+        const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
+        const response = await handleFamilyDocumentRequest(request, userId, documents, isCurrentUser);
+        if (!await isCurrentUser(userId)) throw new RequestError("identity_changed", 409);
+        return uncached(response);
+      }
+      if (photos && /^\/api\/children\/[^/]+\/photos(?:\/|$)/u.test(path)) {
+        if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
+        if (!userId) throw new RequestError("unauthorized", 401);
+        const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
+        return uncached(await handleFirebasePhotoRequest(request, userId, photos, isCurrentUser));
+      }
+      if (library && /^\/api\/children\/[^/]+\/library$/u.test(path)) {
+        if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
+        if (!userId) throw new RequestError("unauthorized", 401);
+        const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
+        const response = await handlePersonalLibraryRequest(request, userId, { library, isCurrentUser });
+        if (!await isCurrentUser(userId)) throw new RequestError("identity_changed", 409);
+        return uncached(response);
+      }
       if (online && (path === "/api/children" || path.startsWith("/api/online/") || /^\/api\/children\/[^/]+\/tasks(?:\/|$)/u.test(path))) {
         if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
@@ -113,13 +145,24 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const expected = request.headers.get("x-expected-user-id");
         if (expected !== null && expected !== userId) throw new RequestError("identity_changed", 409);
         let response: Response;
-        if (path.startsWith("/api/online/")) response = await handleOnlineRequest(request, userId, online);
+        if (path.startsWith("/api/online/")) response = await handleOnlineRequest(request, userId, { ...online,
+          async submit(expectedUserId, submission) {
+            if ((await auth.getSession({ headers: request.headers }))?.user.id !== expectedUserId) throw new RequestError("identity_changed", 409);
+            return online.submit(expectedUserId, submission);
+          } });
         else if (path === "/api/children") {
           if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
           const url = new URL(request.url);
           if ([...url.searchParams.keys()].some(key => key !== "cursor") || url.searchParams.getAll("cursor").length > 1) throw new RequestError("invalid_input", 400);
           response = json(await online.children.list(userId, url.searchParams.get("cursor")));
-        } else response = await handleTaskRequest(request, userId, online.tasks);
+        } else {
+          const detail = /^\/api\/children\/([^/]+)\/tasks\/([^/]+)$/u.exec(path);
+          if (request.method === "GET" && detail && online.tasks.detail) {
+            if (new URL(request.url).search) throw new RequestError("invalid_input", 400);
+            const result = await online.tasks.detail(userId, detail[1].toLowerCase(), detail[2].toLowerCase());
+            response = result ? json(result) : errorResponse("not_found", 404);
+          } else response = await handleTaskRequest(request, userId, online.tasks);
+        }
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }

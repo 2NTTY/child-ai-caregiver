@@ -633,3 +633,22 @@ canonical authority 的 runTransaction 擁有真 Firestore 回調，每次 SDK �
 - 領域查詢投影只含必要 opaque scope tags、實體 ID、狀態、版本及排序值；私人正文保持加密。投影與原資料同交易更新，讀回必須重核 canonical 權威及 envelope 綁定。具體 query／索引與界限隨實際接通的領域在既有 schema、索引 manifest 及驗收證據列明；不存在的領域回未就緒，不回空清單假成功。
 
 - 新 admission 的 owner mapping 同交易保存 workspaceCreatedAt，查詢投影使用真建立時間；既有缺值不能猜寫時間。孩子及 change 查詢投影由 canonical writer 同交易更新，避免不同正式 writer 形成不可查的資料。
+
+- F02 準備文件保留原 opId、版本／來源失效與 typed patch 契約；快照依原 240000 JSON 字元上限分為最多 20 個、各 48 KiB UTF-8 的不可變加密片段，以 manifest 的順序、總字元／bytes、SHA-256 及版本核對完整內容。分頁仍沿既有 4000 字元接點；不得把片段或首頁當全文。最小切片只核對按 taskId 排列的首 50 項事項，coverageNote 必須同時明示有限前綴及未接資料域；完整資料域由 F04 承接。
+- 附件 reserve、quota、原操作及 changes 同交易；global quota 計 active＋cleanup，只有已核對實際物件清除才可釋放 cleanup。刪除先保存阻擋讀取／上載的 fence，再寫獨立私人 bucket 的不可變 journal，核對後才提交 tombstone、原收據及 cleanup outbox。unknown 上載只讀回原物件，不重寫；遲到上載只能補清理 descriptor，不能復活正文。
+- 刪除 journal 必須能在沒有最新 Firestore intent 的情況下獨立重放：AAD 綁 project／namespace／bucket／objectName，完整 scope、asset、opId、時間與類型在加密正文內；解密後重算物件名稱並核 hash／generation。還原作業讀最新 journal，不能依賴被還原的舊庫先提供晚於備份的 intent。此為恢復接口要求，尚未等同隔離還原驗收。
+- 提醒 outbox 的 attempts 計總領取、failures 只計真正失敗，兩者不可互代。正常 quiet 延後、initial／follow-up 不能耗用三次失敗門檻；過期 lease 同交易只累計一次，第三次停止。已生成 reminder 只是待投遞意圖，未有渠道收據不能顯示已送達。
+
+#### 隔離還原的加密閉包
+
+Firestore 的文件名稱及部分操作 ID 使用不可逆 hash；備份不能假定操作者仍有原請求或最新資料庫。因此新 domain／authority envelope 附加加密 recovery locator，記錄原 family、kind、ID、scope、格式／記錄版本及 AAD；locator 自身綁 project、namespace 及主密文 SHA-256。還原時須重建並核對原 AAD、驗證兩層密文及 collection／kind／ID 對照，才可解讀；缺 locator、未知格式或未覆蓋的 collection 明確阻止還原完成。普通業務讀取仍只使用目前授權 scope 的原 AAD，不能用 locator 繞過授權；合法舊 envelope 的普通讀取保持相容。
+
+還原只寫隔離空庫。先驗資料備份及附件精確 generation／hash，再讀最新獨立刪除 journal，核當前 Firebase Auth 帳戶及電郵，撤銷舊裝置會話並保持背景外發暫停。切換 storage epoch 必須按各種已知資料格式重綁加密 scope、查詢 tags、必要 path 及附件物件；不可對自由正文作字串取代，也不可只更換 workspace 欄位而留下無法解密的資料。操作 ID、原請求 fingerprint、原成果 ID／版本、已完成及 unknown 證據不可變成新操作；舊 epoch 的新寫入仍須拒絕。已刪附件的原收據正文一併遮蔽，不以備份中的舊 journal 代替最新刪除。
+
+配對備份須列資料版本、格式及索引版本、金鑰版本、附件 generation／hash、保留至時間和完整性結果；14 天是資料與附件共同門檻，Storage versioning／soft delete 或單次匯出成功均不能獨立證明完成。F02 先驗本切片的閉包，F04 擴至附件／退出全域，F07 驗所有已遷移資料域與相容版本回退；任何未接資料域不可在清單中默認略過。
+
+F02 沿 Firestore 原生 export／import 保存資料，不自建資料庫匯出格式。operator 先以 generation 比對並交換暫停來源，排清附件上傳／刪除的未結狀態；原生匯出及完整性盤點使用同一個已過去的整分鐘 snapshotTime。匯出文件數、路徑及內容 digest 必須與盤點一致，未知 collection、巢狀或超出本切片上限的資料不能靜默略過。匯出物件與獨立附件備份共同設保留 hold，記錄至少 14 天的保留期限；runtime 沒有解除 hold 的入口。還原只在沒有正式服務綁定的隔離庫執行，先核原生匯入完整性，才逐型別重綁；保留原備份不回寫。
+
+還原 operator 的最低暫停時間不是停機證據；Cloud Run 請求逾時不保證 handler 已終止。隔離演練須另行確認來源 API／worker 及排程已停止、附件／journal IO 已排清，再讀最新刪除及 Auth 狀態。F02 轉換後資料、刪除路徑與加密 checkpoint 同一交易提交；失回覆只核原 checkpoint 及完整 inventory，不另開還原。checkpoint 仍為 `applied-paused`，不是啟用或切換收據；任何最新刪除、Auth 或權威變化均須重新裁決，不能直接開放。
+
+換 epoch 後的原 online receipt 只增加內部恢復來源欄位；原 operation、fingerprint、成果及 wire 內容保持原樣。經目前權威核對的相同原請求只能查回既有結果，新 epoch 使用同一 opId 不會建立新操作。最新刪除 journal 若晚於備份，而原 delete receipt／deviceId 已不在備份，僅建立有來源 hash 的 operation erasure barrier，回傳明確衝突並禁止重用；不能自行補造 confirmed receipt。已刪照片不重建，備份中的照片收據正文亦遮蔽。提醒與批次的成果 ID 綁 owner／workspace／child 及業務識別，不把 storage epoch 當成果身份；授權、密文及背景派送仍須核對目前 epoch。

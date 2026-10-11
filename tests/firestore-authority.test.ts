@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { openRecoveryEnvelope } from '../server/firestore-recovery-envelope.ts';
 import type { Firestore } from '@google-cloud/firestore';
 import { createFirestoreAuthority, FirestoreAuthorityError, type FirestoreAuthorityScope } from '../server/firestore-authority.ts';
 import { FirestoreWorkContinuationStore } from '../server/firestore-work-continuation-store.ts';
@@ -93,7 +94,14 @@ test('empty canonical authority admits identity and consent, creates child/work,
   assert.equal((await continuation.readWork(job, admission.claim, work.id))?.items[0]?.goal, work.goal);
   assert.deepEqual(await continuation.beginBackground(job), { decision: 'lookup', runId: admission.claim.runId });
   for (const [path, envelope] of f.fake.records) {
-    if (path.startsWith(f.options.namespace + '/')) assert.deepEqual(Object.keys(envelope).sort(), ['ciphertext', 'format', 'version']);
+    if (path.startsWith(f.options.namespace + '/')) {
+      assert.deepEqual(Object.keys(envelope).sort(), envelope.recovery
+        ? ['ciphertext', 'format', 'recovery', 'version'] : ['ciphertext', 'format', 'version']);
+      if (envelope.recovery) {
+        assert.deepEqual(Object.keys(envelope.recovery).sort(), ['ciphertext', 'format', 'version']);
+        openRecoveryEnvelope({ ...f.options, envelope: { family: 'authority', version: envelope.version, ciphertext: envelope.ciphertext }, locator: envelope.recovery });
+      }
+    }
     assert.equal(JSON.stringify(envelope).includes('合成孩子'), false); assert.equal(JSON.stringify(envelope).includes('owner@example'), false);
   }
 });
@@ -402,4 +410,21 @@ test('readChild uses current canonical workspace/epoch, creation projections and
   });
   await f.identity('another-owner', 'another@example.test'); await f.service.acknowledge({ userId: 'another-owner', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
   await assert.rejects(f.service.runTransaction('another-owner', null, binding => binding.readChild(created.child.id)));
+});
+
+
+test('canonical writers preserve ordinary reads and record authenticated recovery bindings without original request input', async () => {
+  const f = fixture(); await f.initialize(); await f.identity(); const child = await f.child();
+  let recovered = 0;
+  for (const [path, envelope] of f.fake.records) {
+    if (!path.startsWith(f.options.namespace + '/')) continue;
+    assert.ok(envelope.recovery, 'every canonical writer records its encrypted recovery locator');
+    const opened = openRecoveryEnvelope({ ...f.options, envelope: { family: 'authority', version: envelope.version, ciphertext: envelope.ciphertext }, locator: envelope.recovery });
+    const id = createHash('sha256').update(JSON.stringify([opened.context.kind, opened.context.id])).digest('hex');
+    assert.equal(path, f.options.namespace + '/' + id);
+    assert.equal(typeof opened.value, 'object'); recovered++;
+  }
+  assert.ok(recovered >= 8);
+  assert.deepEqual((await f.service.readScope('synthetic-owner', child.child.id)).scope, child.scope);
+  assert.equal((await f.service.accountStatus('synthetic-owner')).user?.acknowledged, true);
 });

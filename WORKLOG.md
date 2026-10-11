@@ -2161,3 +2161,56 @@
 
 - 本地成果仍不足以完成 F02：文件／公共知識、提醒consumer／Tasks、獨立刪除journal、配對備份與隔離還原仍待接線；真Auth／索引／並行／Tasks重投／縮零／Storage IAM及本人信箱均未驗。
 - 先待本人確認 Firebase 條款，再讀回服務狀態；完成剩餘流程及有界雲端驗收後，集中同一F02 PR交付。未開放持續正式服務，未切換正式網址，F03～F08／A09及完整P2未完成。
+
+
+<a id="log-20261011-f02-cloud-slice-preparation"></a>
+## LOG-20261011-F02-CLOUD-SLICE-PREPARATION
+
+- Recorded At／Work Date：2026-10-11（Asia/Hong_Kong）
+- Step / Package：P2-F02，進行中；不是整包交付。
+- Executor／AI Assistance：Astra 親寫契約、備份方法及整合；沿用四位 Sol 實作／獨立審核及一位 Luna 唯讀定位，沒有再派生。
+- Human Verification：本人已確認 Firebase 服務條款；尚未寄信、未取得真人產品操作結論。
+
+### Actual Work
+
+- 條款阻塞解除後讀回 Firebase ACTIVE，建立隔離香港區 Firestore、私人附件／獨立 journal bucket、專用服務身份、加密 secret、client deny rules；私人 blocking function 已 ACTIVE 並核對指定身份／secret／資源上限。17 個複合／向量索引 READY，Cloud Tasks queue 固定有限派送與重試並保持 PAUSED。登入仍關閉，API／worker／Hosting 尚未部署；沒有模型呼叫、家庭資料或實際通知。
+- 文件及有界完整正文、照片授權／不可變物件／刪除日誌、既有公共知識來源／混合排名、提醒 consumer／持久 cursor／租約已接正式 Firebase API／runtime；公共知識只完成來源核對，尚未匯入或生成 embedding。完整能力仍須各後續包 gate，不能把 F02 的待接 domain 503 當需求取消。
+- Review 的 pending 身份預檢斷線容量、排程續頁飢餓及當前電郵身份檢查問題已修。照片 client 讀齊分頁才展示，跨身份失效回覆不進目前畫面。
+- 還原新增加密 locator、原 receipt 的 epoch 來源／缺失刪除操作 barrier、穩定提醒成果 ID、14 天照片加密備份 port，以及原生 Firestore snapshotTime 盤點與匯入完整性檢查。逐資料格式的轉換、跨資料核對及完整 operator 流程仍在實作；沒有宣稱已備份或成功還原。
+
+### Verification
+
+- Environment / Revision：088bf70＋本包未提交修改，Node24.19.0；定向合成 ports／直接 Request／型別及唯讀 review。最新全 Server 編譯已無本包新增錯誤，仍有原 master 五項測試型別紅由 F03 承接；不是全倉型別通過。
+- Evidence：逐項結果、原失敗、資源識別及當期成本界線見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。HTTP 5、接線 39、client 照片 7、原收據／穩定 ID 4、照片備份 7、匯出完整性 1 項必要本機案例分組保存，不相加冒充獨立覆蓋。
+- Failures：保留 Rules 請求格式、build 權限／壓縮格式、文件／知識 fixture、HTTP 斷線、locater envelope 及型別原診斷。修正回原範圍；沒有放寬業務斷言，單元／建置／真資源接線均不等於真雲端產品驗收。
+
+### Limitations / Next
+
+- 完成隔離還原與配對備份 operator、正式 API／worker／Hosting 部署，再跑已批准的 F02 有界完整批次；首次驗收失敗停批，最多兩輪定向修正。US$6 包含 US$2 收尾餘額，實際帳單仍未量測，餘下 US$24 不作持續營運預算。
+- 沒有 PR／合併、正式網址切換或 SQL 退役；原容量工作區未混入本包，F03～F08／A09及完整 P2 未完成。
+
+
+<a id="log-20261011-f02-paired-recovery"></a>
+## LOG-20261011-F02-PAIRED-RECOVERY
+
+- Recorded At／Work Date：2026-10-11（Asia/Hong_Kong）；P2-F02 進行中，尚未交付。
+- Executor／AI Assistance：Astra 親寫恢復編排、契約、部署接點及整合覆核；沿用四位 Sol 作界定實作／測試／獨立審核，沒有新增或再派生。
+- Human Verification：本人批准精確 Tasks queue／dispatch 最小 IAM 範圍；尚未寄信或真人產品驗收。
+
+### Actual Work
+
+- 完成原生 export／import 的原操作查回、hold／加密配對 manifest、逐格式重綁、跨資料完整性及單交易還原 checkpoint。最新 Auth／刪除 journal／撤權疊加保留；快照後新增照片的中斷刪除亦保留 cleanup 及實際配額，不復活業務資料。
+- 還原成功只為 applied-paused；六分鐘暫停及 Cloud Run request timeout 不能證明舊 handler 已停止，演練另須核源 API／worker／journal IO 真正停止。没有新增自動開放入口。
+- 隔離香港區還原庫、client deny rules、Hosting site／Web app 已建立；runtime Firestore 權限仍限來源庫，Tasks queue 仍 PAUSED。前端使用實際 Firebase Web 設定完成一次型別及建置，未發布。
+
+### Verification
+
+- Environment／Revision：088bf70 加本包未提交修改，Node 24.19；本機合成單元／型別、唯讀審核及實際雲端資源設定分層保存於 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。
+- 配對 artifacts 9、原生 operation port 9、內容閉包 5、還原 aggregate 4、operator 3 項定向案例通過；operator 型別窄檢零診斷，合併 Server 型別只有原 master 五項測試診斷。不是全倉或雲端產品驗收。
+- 原失敗與修正保留：typed digest collision、ready upload fence、刪除 fingerprint、nullable child、partial cleanup、strict manifest 傳參、型別與合成 fixture。獨立 reviewer 未見剩餘有證據 P1／P2，源 writer 停止、真 SDK IO／並行與正式流程仍待驗。
+- 新量測包含 blocking function 設定修正所觸發的第四次 build：四次合計約 393.288 秒，而非先前三次估計；仍在 1800 秒批次上限內。服務時長不是帳單，US$6 內的 US$2 收尾保留。
+
+### Limitations／Next
+
+- 固定本機來源版本，完成 API／worker／Hosting 部署及已批准 F02 合成完整批次；真照片備份、原生匯出匯入、隔離還原、真人電郵與正式操作尚未完成。
+- 無 F02 PR／合併，沒有正式網址切換或 SQL 退役；F03～F08／A09及完整 P2 仍未完成。

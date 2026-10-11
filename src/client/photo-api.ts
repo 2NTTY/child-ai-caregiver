@@ -4,9 +4,15 @@ import { PHOTO_LIMITS, photoDraftSchema, photoMetadataSchema } from "../shared/p
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export class PhotoApiError extends Error {
-  constructor(readonly status = 0, readonly onlineCode: string | null = null, readonly confirmed = false) {
+  readonly status: number;
+  readonly onlineCode: string | null;
+  readonly confirmed: boolean;
+  constructor(status = 0, onlineCode: string | null = null, confirmed = false) {
     super("Photo request could not be confirmed");
     this.name = "PhotoApiError";
+    this.status = status;
+    this.onlineCode = onlineCode;
+    this.confirmed = confirmed;
   }
 }
 
@@ -38,6 +44,11 @@ const photoSchema = photoMetadataSchema.extend({
     processedAt: z.iso.datetime({ offset: true }).nullable(), model: z.string().max(200).nullable(),
   }).strict(),
 }).strict();
+const photoListSchema = z.object({ photos: z.array(photoSchema).max(PHOTO_LIMITS.count), canCreate: z.boolean() }).strict();
+const photoPageSchema = photoListSchema.extend({
+  complete: z.boolean(), nextCursor: z.string().min(1).max(2048).regex(/^[A-Za-z0-9_-]+$/u).nullable(),
+}).strict().refine(page => page.complete === (page.nextCursor === null));
+const photoListingSchema = z.union([photoListSchema, photoPageSchema]);
 const resultSchema = z.object({ photo: photoSchema }).strict();
 const confirmationSchema = z.object({ photo: photoSchema, recordId: z.uuid() }).strict();
 const deletionSchema = z.object({ deleted: z.literal(true), cleanupPending: z.literal(true) }).strict();
@@ -179,13 +190,35 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch): Pho
     },
     async photos(childId, signal, userId) {
       identity(childId, userId);
-      const parsed = z.object({ photos: z.array(photoSchema).max(PHOTO_LIMITS.count), canCreate: z.boolean() }).strict()
-        .safeParse(await request(collection(childId), signal, userId));
-      if (!parsed.success || new Set(parsed.data.photos.map(photo => photo.id)).size !== parsed.data.photos.length
-        || parsed.data.photos.some(photo => photo.childId !== childId || (photo.visibility === "private" && photo.ownerUserId !== userId))) {
+      const started = generation;
+      return call(signal, async innerSignal => {
+        const current = () => {
+          if (started !== generation || signal.aborted || innerSignal.aborted) throw new PhotoApiError();
+        };
+        const photos: PhotoAttachment[] = [], ids = new Set<string>(), cursors = new Set<string>();
+        let cursor: string | null = null;
+        for (let pageNumber = 0; pageNumber < PHOTO_LIMITS.count; pageNumber++) {
+          current();
+          const path = collection(childId) + (cursor === null ? "" : "?cursor=" + encodeURIComponent(cursor));
+          const result = await response(path, innerSignal, userId); current();
+          const value: unknown = await result.json(); current();
+          const parsed = photoListingSchema.safeParse(value);
+          if (!parsed.success) throw new PhotoApiError();
+          const page = parsed.data, paginated = "complete" in page;
+          if (cursor !== null && !paginated || paginated && !page.complete && page.photos.length === 0) throw new PhotoApiError();
+          for (const photo of page.photos) {
+            const id = photo.id.toLowerCase();
+            if (photo.childId !== childId || photo.visibility === "private" && photo.ownerUserId !== userId || ids.has(id)) throw new PhotoApiError();
+            ids.add(id); photos.push(photo);
+          }
+          if (photos.length > PHOTO_LIMITS.count) throw new PhotoApiError();
+          if (!paginated || page.complete) return { photos, canCreate: page.canCreate };
+          cursor = page.nextCursor!;
+          if (cursors.has(cursor)) throw new PhotoApiError();
+          cursors.add(cursor);
+        }
         throw new PhotoApiError();
-      }
-      return parsed.data;
+      });
     },
     async photo(childId, photoId, signal, userId) {
       identity(childId, userId, photoId);
