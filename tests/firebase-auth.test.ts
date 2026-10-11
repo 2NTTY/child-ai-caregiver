@@ -307,4 +307,3 @@ test("current Admin verification overrides old verified claims on reads and sess
   f.lifecycleFailures.clear();
   assert.equal((await (await f.get(cookie)).json()).user.id, f.userId);
 });
-

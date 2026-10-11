@@ -245,6 +245,3 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
     },
   };
 }
-
-
-

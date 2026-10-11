@@ -194,4 +194,3 @@ export class FirestoreDeviceSessions implements DeviceSessionsPort {
     }));
   }
 }
-

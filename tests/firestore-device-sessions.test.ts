@@ -147,4 +147,3 @@ test("missing credentials and malformed lifetimes fail closed without creating o
   f.records.delete("device_test/auth-control-" + hash(one.userId));
   await assert.rejects(f.service.issue(one), code("device_sessions_unavailable", 503)); assert.equal(f.records.size, 1);
 });
-

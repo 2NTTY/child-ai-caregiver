@@ -1619,11 +1619,11 @@
     },
     {
       "path": "server/firebase-app.ts",
-      "sha256": "e8a1c90bac4a27dc1d9bb0916c56e349cd61754fdfece236dd6d9072bb654a90"
+      "sha256": "6279f8f6d9887ee9b838dfa08cb3b33d92c72149c35521872e20eb68772273f4"
     },
     {
       "path": "server/firebase-auth.ts",
-      "sha256": "2a629333f0da5d49d14e9e398524941434ace41a17032012c0f0322a7dbadc8b"
+      "sha256": "034278ec15b85fc40f57f0c71e249ec86f618a35b13b14c8bc5d749f742428f6"
     },
     {
       "path": "server/firebase-config.ts",
@@ -1651,15 +1651,15 @@
     },
     {
       "path": "server/firestore-device-sessions.ts",
-      "sha256": "4e52bc793f3a1d627db6c5f312a452bc1837abef07f99997342f3da419b181cc"
+      "sha256": "2f836e96bf879d31892ea731efba3f80433d20bd03747cdaeb3de1698dac96e6"
     },
     {
       "path": "tests/firebase-app.test.ts",
-      "sha256": "b7386942523ea4ce0c901b55e5d929ec8096cb6ca3034cfcd493ab1172a20629"
+      "sha256": "ba1f22aea0410762353f5dab3b739b5d9d2773a5492d1df2cbc14df516fa33c2"
     },
     {
       "path": "tests/firebase-auth.test.ts",
-      "sha256": "fdb6b9a96bd59b114df0e333460d26e4d0c58a285653cd5970b4b6a8f655473a"
+      "sha256": "140595f7f5771bf648b195720a0343268fb79a5c50060de2023e9ca7ed6089c4"
     },
     {
       "path": "tests/firebase-config.test.ts",
@@ -1679,7 +1679,7 @@
     },
     {
       "path": "tests/firestore-device-sessions.test.ts",
-      "sha256": "f4eb6b35a35c6653c51b5a4e22c6c9ea45c51176443a185e069b92cc6e7b9de7"
+      "sha256": "1f0a713993c9d68b928277ead994509a54017dec1102e3e7fe72ddb75875ff5c"
     },
     {
       "path": "deploy/firebase/firestore.rules",
@@ -1693,5 +1693,6 @@
       "path": "deploy/firebase/firestore.indexes.json",
       "sha256": "807d77526cdedd5ca0a6514042dd0400e10a71f763d4721dc50448fafd34a017"
     }
-  ]
+  ],
+  "manifestHashBasis": "Local working-copy bytes; Git may normalize text line endings. Remote delivery verification compares Git blob IDs separately."
 }

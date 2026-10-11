@@ -181,4 +181,3 @@ test("unmigrated business domains return explicit 503 without fake data, auth lo
   await errorCode(await f.handler(new Request(PUBLIC_ORIGIN + "/healthz", { method: "POST" })), 404, "not_found");
   assert.equal(f.sessionHeaders.length, 0); assert.equal(f.statusUserIds.length, 0); assert.equal(f.writes.length, 0);
 });
-

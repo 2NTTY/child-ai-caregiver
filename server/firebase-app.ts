@@ -111,4 +111,3 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
     }
   };
 }
-
