@@ -2099,3 +2099,36 @@
 - Limitations／Next：原容量恢復包未提交內容保持原工作區，未混入文件分支；完整流程仍未完成。使用者要求容量包後先停，再用 Plan 規劃遷移；本包只集中交付一個文件 PR，不啟動下一產品包。
 
 - 使用者於本次文件交付前再次明確指定：PLAN 等指導文件由主模型 Astra 親寫。已同步 AGENTS 的模型分工，Sol 對此類正文僅作獨立唯讀核查，保留原 dot 的 Astra 執筆例外；本次重排正文及規則修改均由主模型完成，未委派 Sol 代寫。
+
+
+<a id="log-20261011-f01-foundation"></a>
+## LOG-20261011-F01-FOUNDATION
+
+- Recorded At：2026-10-11（Asia/Hong_Kong）
+- Work Date：2026-10-11
+- Step / Package：P2-F01
+- Executor／AI Assistance：Astra 主模型親寫契約與計劃、組裝及整合；Luna 唯讀 SQL 盤點；兩位 Sol 承接界定的 authority／session 實作，一位獨立 Sol 唯讀審核並覆核修正。
+- Human Verification：使用者已批准實施計劃、增量遷移預算及提供專用測試收件地址；本包未作真人產品／信箱驗收。
+
+### Actual Work
+
+- 依 ADR-022 改為乾淨 Firebase 起點及新正式系統零 SQL 目標；不搬舊帳戶／私人資料、不刪舊版本／備份。原容量候選由 F03／F08 承接，16 檔 SHA-256 讀回不變。
+- 固定 fd5d4f0／#190，隔離分支集中交付。補齊54個含 query 的 Server 檔及 migration／worker／CLI／備份／清理覆蓋，保留36份 migration、98個建表口徑與歷史差異；全域替代及驗收歸屬見 TECH_REUSE。
+- 新增真 Admin Auth／Firestore 正式組裝與受信 operator 接點、加密 canonical 邀請／帳戶／本人空間／孩子／pure-due work 交易、原操作收據及 changes；沿用既有 continuation consumer。逐裝置 ledger 保留撤銷、原 cookie 防重與近期重新驗證；尚未移植 API 明確503。
+- 現場唯讀核專案、IAM存在權限、計費與舊VM；僅啟用 Cloud Billing 管理 API 並讀回成功，未建應用資源或改 IAM，未讀家庭資料或呼叫模型。部署及成本觀察只見 STATUS／EV，舊 VM RUNNING 不代表已核产品revision。
+
+### Changes
+
+- server/main、firebase-*、firestore-authority／device-sessions 及對應定向測試；私有 client Rules／首批密文索引 exemption；固定 firebase-admin14.5.0 與既有license清單。PLAN／SPEC／既有契約／ADR 原位更新，不另造任務文件。
+
+### Verification
+
+- Requirement / Acceptance：REQ-P2F-01～05／AC-P2F-01～04 的 F01 前置，不能代替 F02／F07／F08 真服務門檻。
+- Environment / Revision：fd5d4f0＋本包改動；Node24.11.0，變更依賴用 npm11.8.0。只有合成Firestore／Admin ports、直接Request／合成串流及真SDK構造。各命令／次數見 [EV](artifacts/verification/F01_FIREBASE_FOUNDATION_20261011.json)，重複補驗不累加冒充獨立覆蓋。
+- Result：authority9＋既有recovery14、初次auth／ledger19、app／auth22、組裝／transport4、license2等必要定向檢查通過；後續窄修的14／1／3結果另列EV。正式Server／shared型別0錯；完整tsconfig.server仍有5項已用固定Git原文重現的舊測試診斷，原紅保留，F03承接，沒有宣稱全倉型別通過。
+- Failures：保留AAD順序1過8失敗、原cookie撤銷18過1失敗、本包fixture型別錯，以及獨立review重現verified降級仍為true。均按原斷言定向修正；review發現已收束。未verified可進帳戶設定，業務交易拒絕，已撤權／刪除不能重准入。
+- Review：獨立唯讀審核後定點覆核，無剩餘finding。148個現行PLAN顯式錨點全保留、無重複；原容量16檔未變。
+
+### Limitations / Next
+
+- 本包完成以正常PR合併為準，沒有部署或真Firebase交易、blocking／電郵、Tasks／OIDC、向量索引、縮零或還原實證。其餘功能503只表示待接，並非縮減原REQ／AC。合併讀回後推進F02最小完整雲端流程；持續營運預算仍待F08實測後使用者決定，完整P2未完成。

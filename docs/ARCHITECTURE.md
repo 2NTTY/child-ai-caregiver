@@ -647,7 +647,7 @@ Firestore 交易先讀權限／刪除狀態、版本、唯一性及原操作，�
 
 採 Firebase Authentication，保留 Auth 介面與登入畫面；其內部 Better Auth wire protocol 由 adapter 映射，不假設 Firebase 可直接接受舊 API。邀請、家庭角色、私人分享範圍、當前政策同意和資料退出仍屬產品。Identity Platform blocking function 在建立帳戶前檢查有效邀請，Server 准入交易再核對／消耗資格、建立本人空間；中途失敗保留可恢復狀態、禁止業務存取，不能在 Auth 建帳成功後自動加入別人 workspace。所有登入方式都經准入，不能靠隱藏前端或僅 beforeCreate 保護已存在但未准入的身份。[blocking functions](https://firebase.google.com/docs/auth/extend-with-blocking-functions)
 
-舊 UID、電郵及驗證狀態保留。先用合成資料核對 STANDARD_SCRYPT 參數、Better Auth 實際 salt 編碼與密碼 NFKC 正規化；字串形式相同不代表雜湊相容。相容才匯入，否則用可到達的重設流程接回同 UID，不保留不安全的雙密碼驗證。舊 session 全部失效。Firebase 全帳戶 revoke 之外，Server session ledger 保留每裝置狀態／到期／撤銷，不能把全帳戶撤銷冒充逐裝置能力。[匯入](https://firebase.google.com/docs/auth/admin/import-users)／[session cookies](https://firebase.google.com/docs/auth/admin/manage-cookies)
+依 [ADR-022](DECISIONS.md#adr-022) 從乾淨 Firebase 身份開始，不匯入舊 UID、電郵、密碼雜湊或私人資料。新 uid 綁定唯一穩定業務身份及本人 workspace；舊 session 不獲新系統接受。舊身份匯入／STANDARD_SCRYPT 相容是被取代方案，不能標成已驗；新身份驗證、找回及密碼重設後撤銷仍須完成。Firebase 全帳戶 revoke 之外，Server session ledger 保留每裝置狀態／到期／撤銷，不能把全帳戶撤銷冒充逐裝置能力。[匯入](https://firebase.google.com/docs/auth/admin/import-users)／[session cookies](https://firebase.google.com/docs/auth/admin/manage-cookies)
 
 瀏覽器不直接存取 Firestore／Storage 業務資料。Admin／Server SDK 用 IAM 且繞過 Rules；每個 HTTP、Agent tool、worker 和附件下載均自行校驗目前權限／准入／epoch。規則拒絕未授權 client 不能代替 Server 檢查。限流、session 撤銷與模型預留跨 instance 保存，不能只用記憶體；key／密碼／找回 token 不入 prompt 或一般日誌。[IAM 邊界](https://docs.cloud.google.com/firestore/native/docs/security/iam)
 
@@ -675,7 +675,7 @@ Cloud Run 按請求計費、min instances 0，不靠常駐 pg-boss、容器 cron
 
 每日 Firestore 備份保留 14 天，保存與恢復點相配的不可變附件副本／manifest。live bucket 的 7 天 soft-delete 只是復原窗；獨立配對副本保留滿資料庫備份期限，再按明確 lifecycle 清理。manifest 綁資料 checkpoint／實際物件 generation、hash、密鑰版本及 completeness；不能只因兩邊同日備份便宣稱配對。原生備份保留密文，索引／部署配置另版控，Auth 也不是 Firestore 備份的一部分。[備份](https://docs.cloud.google.com/firestore/native/docs/backups)／[soft-delete](https://docs.cloud.google.com/storage/docs/soft-delete)
 
-只還原至隔離資料庫及命名空間，worker／Tasks dispatcher／通知保持暫停。先取得最新完整 journal 並重放，對照當前 Auth 存活／撤銷與附件，更新 storage epoch／失效舊 session，核對索引與配對完整度才開放。journal 缺失、無法證明完整、物件不齊或 Auth 已刪除時保持關閉，不能從舊備份復活用戶或投遞。正式切換／新寫入後反向同步的門檻見 PLAN；回退 PostgreSQL 的映像也須支援新 Auth，不回退密碼／撤銷狀態。
+只還原至隔離資料庫及命名空間，worker／Tasks dispatcher／通知保持暫停。先取得最新完整 journal 並重放，對照當前 Auth 存活／撤銷與附件，更新 storage epoch／失效舊 session，核對索引與配對完整度才開放。journal 缺失、無法證明完整、物件不齊或 Auth 已刪除時保持關閉，不能從舊備份復活用戶或投遞。新寫入後只回退 Firebase 相容應用版本或隔離還原，不切回 SQL；新資料、原收據及最新撤銷／刪除權威必須保留。切換前舊版與備份仍可封存；乾淨起點不授權刪除舊資料，見 ADR-022。
 
 <a id="firestore-cost"></a>
 ### 費率、計量及低用量控制

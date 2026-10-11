@@ -549,7 +549,7 @@ A02 使用 `agent_work`（目前版本及加密工作內容）、`agent_work_ope
 
 | 分組 | 沿用權威與必要調整 |
 |---|---|
-| 帳戶／workspace／members | 原 userId、workspaceId、角色及 accessVersion；Firebase uid 對應原 userId。邀請單次消耗、准入、政策同意、逐裝置 session／撤銷與 Auth 分開，email 更改不轉移資料 |
+| 帳戶／workspace／members | 新 Firebase uid 作穩定 userId，唯一本人 workspace、角色及 accessVersion；依 ADR-022 不搬舊帳號／私人資料，建立後既有識別不隨重登／版本回退改變。邀請單次消耗、准入、政策同意、逐裝置 session／撤銷與 Auth 分開，email 更改不轉移資料 |
 | 孩子／記錄／檔案／記憶 | 保留 childId、原文、精度、來源、版本、可見範圍及歷史；列表以 workspace／child／scope、排序與 cursor 取有界頁，不複製孩子正文到每頁 |
 | 私人訊息／工作／確認 | 綁本人＋孩子；原訊息、coverage、工作焦點、候選、提問／回覆、原 opId 及授權版本保持，長正文／歷史分段，取消／撤權失效 |
 | 文件／修訂／報告 | 同一 documentId／version，固定 snapshot／章節／項目；分段與分頁不改變權威，來源刷新不覆蓋指定修改，PDF 指向同版 |
@@ -585,7 +585,7 @@ A02 使用 `agent_work`（目前版本及加密工作內容）、`agent_work_ope
 
 ### Auth、附件與恢復關聯
 
-Auth 用戶並非 Firestore 子文件，匯入／刪除無法跨兩服務交易；保存穩定 mapping、pending／active／deleting 狀態及原操作，外部步驟按原 ID 查核恢復。STANDARD_SCRYPT 的 salt bytes／雜湊參數／NFKC 相容證據先取得；不把舊 session 搬成有效 Firebase session。
+Auth 用戶並非 Firestore 子文件，註冊／刪除無法跨兩服務交易；保存新 Firebase uid 的穩定 mapping、pending／active／deleting 狀態及原操作，外部步驟按原 ID 查核恢復。依 ADR-022 乾淨起點不匯入舊 UID、密碼雜湊或 session；原 STANDARD_SCRYPT 相容要求已被取代，不能當成已驗。
 
 Storage 先 reserved，確定 object generation／hash／大小／加密版本後才 ready。下載及覆寫／刪除綁實際 generation；metadata 存在不代表物件已成功保存，物件存在也不能自行擴大 scope。孤立物件及部分刪除有持久清理記錄。
 
@@ -610,3 +610,16 @@ Storage 先 reserved，確定 object generation／hash／大小／加密版本�
 公共原生文字、模型抽取與綜合整理分開保存，模型抽取不能冒充逐字官方原文；引用可定位實際來源版本及原頁。發布仍沿不可變批次／有效指標及即時停用閘，不另開一套 RAG。來源更正／撤權／刪除須令依賴成果待更新、遮蔽或失效，PDF 指向同版正式成果。
 
 未完成草稿、審核、維護進度及累計配額跨重啟保留，沿對應本人／孩子／來源清理和備份範圍處理；還原仍先重放獨立刪除記錄，不能恢復被刪私人草稿或重投舊發布／通知。
+
+<a id="firestore-foundation-authority"></a>
+## F01 canonical 權威與身份 ledger
+
+實際 schema 入口為 server/firestore-authority.ts、firestore-work-continuation-recovery.ts 及 firestore-device-sessions.ts；F01 只交付邀請／admission／consent、本人 workspace、孩子與 pure-due work 的可執行生命週期。其餘領域仍按 [全路徑對照](TECH_REUSE.md#firestore-full-runtime-audit) 逐包承接，不能以 unsupported_work 或 503 削減原需求。
+
+- canonical control／account／workspace／child／work／followup／run／claim／event／change 共用既有 WorkRecovery codec。account 不按 child 複製，workspace 的 storageEpoch／accessVersion／changeSeq 是唯一權威；收據命中之前亦核目前狀態及 scope。run／claim 的現有 pure-due writer 沿 FirestoreWorkContinuationStore；完整互動 run、outbox 與來源接點仍待 F03／F06。
+- authority 輔助文件與 canonical 同 collection、同 database／transaction；invitation、identity、owner mapping、operation、child/work detail 各用確定 kind/ID hash 及加密 AAD。auxiliary envelope version 2；既有 recovery kind version 1 不改。JSON 屬性順序依既有 codec 正規化，不能僅以語義等價物件重建不同 AAD。
+- 新 uid、invitation 消耗、本人 workspace／epoch 一次提交；重跑交易或提交後失回覆不產生第二個 workspace。Auth getUser 的現行 verified/disabled/email 由受信 Admin SDK 注入，HTTP／模型不能自報。未驗證／未同意可走帳戶設定，不能走業務。邀請撤銷同步關 account；deleting／deleted 不會重新准入。
+- authority-operation 以本人、可選孩子、原 operationId 綁 action／完整 payload fingerprint／原結果；帳戶及建立孩子為本人 scope，work 為本人＋孩子。其他域沿各自原契約（文件 opId 仍 caller-wide），不得任意縮窄 scope。孩子／work、版本、followup、changeSeq、change、原 receipt 全有或全無。TTL 不刪 accepted／unknown 收據。
+- pure-due work 不接受 source messages、resources、pending proposals、watchResources 或 knowledge watch；回明確 unsupported_work 且零寫入。取消以 expectedVersion 提交 cancelled、關閉 followup、原收據與 change；完整語義由 F03 保留及擴展，不對外宣告現已完整。
+- 裝置 session ledger 與業務 authority 分 collection；只存 cookie SHA-256、uid、到期、auth_time、generation／撤銷，原 cookie／ID token 不落庫或日誌。每次 session 讀回核 Admin revoke/current user、ledger、現行 admission。revoke-other-sessions 同交易提升 generation 並只保留目前 cookie；舊 auth_time 不能重新換回有效會話。保留 cookie 的例外須由 HTTP 現有 cookie 已驗證所得，不接受請求自報 hash。
+- control 與 session 均確定 ID 點讀；無需查詢密文。私人 client Rules 必須拒絕全部直讀寫，Server IAM 不能代替上述業務交易。還原須對照目前 Auth、重放刪除並改 epoch，亦須失效舊 ledger；F01 不以當前 session 格式宣稱 restore 已驗。

@@ -63,18 +63,18 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ### 當前任務入口
 
-唯一當前工作包：[聊天容量恢復](#chat-capacity-recovery)。遷移的後續規劃／暫停安排及候選所在環境見 [STATUS](STATUS.md)；本次文件整理不啟動遷移或產品驗收。
+唯一當前工作包：[P2-F01 遷移契約與可執行接點](#p2-f01)。依 2026-10-11 已批准計劃完成 F01～F08，A09 剩餘門檻由 F07／F08 承接；身份及資料採乾淨 Firebase 起點、正式系統全面捨棄 SQL，見 [ADR-022](docs/DECISIONS.md#adr-022)。實際環境、驗收／費用授權及尚需人工輸入見 [STATUS](STATUS.md)，不在本文件複製操作流水帳。
 
 <a id="chat-capacity-recovery"></a>
 ### 聊天容量恢復
 
-- **狀態／基線：**進行中；接手基線 master `a38e03f3`（2026-10-11 已核）。候選在原 `codex/p2-chat-capacity-recovery` 工作區，未提交、未 PR／合併／部署，沒有列入本文件分支。
+- **狀態／承接：**未完成，2026-10-11 起由 [F03](#p2-f03) 移植、[F08](#p2-f08) 完成正式操作驗收，不再先交付舊 SQL 版本。原候選基線 `a38e03f3`、分支 `codex/p2-chat-capacity-recovery` 及未提交修改／失敗證據原位保留；不能將承接標成完成。
 - **目標：**服務忙碌時給家長可理解的提示，保留原輸入，由本人手動重送；容量釋放後可取得回覆，取消或授權失效的請求不佔住名額。
 - **影響範圍／接點：**Server 的同時運行准入、取消與終態；chat API／controller 的忙碌錯誤及草稿保留。沿用 [Agent API](docs/API.md) 及現有 HTTP／client 接點，不以提高預算或另建佇列解決。
 - **前置／不變條件：**保留現有身份、家庭／孩子隔離、原 opId、未知結果查回、防重、根預算與收據；不自動重送有副作用的請求。
 - **已有局部證據：**核心定向檢查與獨立程式審核已進行；不等於完整 HTTP／瀏覽器流程通過。
 - **未完成：**原文不變的手動重送、跨家庭／孩子操作隔離及取消等完整操作證據尚未齊；本機整合 fixture 的失敗／未驗保留在原候選。不能把局部綠燈標成整包完成。
-- **完成門檻：**忙碌提示 → 原文保留 → 本人重送 → 回覆的完整流程及必要取消／隔離邊界均有可核對證據，獨立 review 收束後集中同一 PR 交付；未驗不得填通過。驗證環境和批准範圍按 [AGENTS](AGENTS.md#finish) 及本聊天有效指示另核。
+- **完成門檻：**忙碌提示 → 原文保留 → 本人重送 → 回覆的完整流程及必要取消／隔離邊界均有可核對證據，獨立 review 收束後隨 F03／F08 所屬完整包交付，不另拆容量修補 PR；未驗不得填通過。驗證環境和批准範圍按 [AGENTS](AGENTS.md#finish) 及本聊天有效指示另核。
 
 ### 聊天 Agent 可靠辦事；F01 接點與既有能力整合
 
@@ -92,7 +92,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="p2-firestore-migration"></a>
 ### P2 Firestore 與集中雲端服務遷移
 
-2026-10-08 使用者定案。本節取代 [P2-A 計劃](#p2-agent-service) 的 PostgreSQL／Better Auth／單 VM **後續交付路線**，不取消 Agent、資料治理及穩定服務門檻。決策見 [ADR-019](docs/DECISIONS.md#adr-019)，機制見 [架構](docs/ARCHITECTURE.md#firestore-target)，產品要求見 [SPEC](SPEC.md#p2-firestore-service)。
+2026-10-08 路線依 2026-10-11 [ADR-022](docs/DECISIONS.md#adr-022) 更新為乾淨起點及正式零 SQL。本節取代 [P2-A 計劃](#p2-agent-service) 的 PostgreSQL／Better Auth／單 VM **後續交付路線**，不取消 Agent、資料治理及穩定服務門檻。決策見 [ADR-019](docs/DECISIONS.md#adr-019)，機制見 [架構](docs/ARCHITECTURE.md#firestore-target)，產品要求見 [SPEC](SPEC.md#p2-firestore-service)。
 
 #### 基線與保留範圍
 
@@ -108,7 +108,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 | 背景 | Cloud Tasks＋Cloud Scheduler＋Firestore 持久工作台帳／outbox |
 | 地區 | 業務資料及運算預設香港 asia-east2；已接受 Firebase Auth 在美國處理認證資料，不宣稱全部資料只在香港 |
 | 規模／保留 | 初期 10 帳號、約 3 日活；每日備份 14 天；附件 7 天復原期另加配對備份覆蓋 14 天；獨立持久刪除紀錄 |
-| 切換 | 可短暫維護停寫；不建長期雙寫 |
+| 切換 | Firebase 乾淨起點，不搬舊帳號／私人資料；必要維護停寫，不建長期雙寫；新寫入後只回退 Firebase 相容版本／隔離還原 |
 | 排除 | Firebase SQL Connect／Cloud SQL、額外常駐搜尋叢集、重寫 ADK／前端 |
 
 #### 全包共同完成邊界
@@ -116,7 +116,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 以下仍是 F01–F08 的共同 gate；詳細定義由所連契約維護：
 
 - **保存／查詢／清理：**逐 store 核固定 ID、密文／AAD、版本、原 opId、授權／索引／游標、有界投影及交易原子性；唯一性、回調重跑、FK／cascade／trigger 的承接依 [資料契約](docs/DATA_MODEL.md#firestore-target)及[架構](docs/ARCHITECTURE.md#firestore-target)。
-- **身份與隔離：**合成密碼匯入相容、邀請／本人准入、逐裝置撤銷、跨 instance 限流／配額，以及背景／附件即時授權，依同節[身份契約](docs/ARCHITECTURE.md#身份准入及會話)驗證，不能只靠 Rules 或單 instance。
+- **身份與隔離：**新合成身份註冊／驗證／找回與穩定資料關聯、邀請／本人准入、逐裝置撤銷、跨 instance 限流／配額，以及背景／附件即時授權，依同節[身份契約](docs/ARCHITECTURE.md#身份准入及會話)驗證，不能只靠 Rules 或單 instance。
 - **背景與前端：**持久受理／outbox、Scheduler／Tasks、私有 worker、lease／generation／unknown 及 202／runId、Hosting／session 接點，依[非同步機制](docs/ARCHITECTURE.md#縮零outbox-與非同步-agent)及[API](docs/API.md#firestore-target)；保留既有 UI。
 - **知識：**1024 維向量與有界公共混合檢索、適用性先行、權重／RRF、不可變發布及即時停用，依[知識契約](docs/ARCHITECTURE.md#官方知識與發布)；兼容向量不重算，私人內容不進公共索引，重要含義仍須核對。
 - **附件／刪除／恢復：**私有 immutable 物件、授權下載、獨立不可覆寫加密刪除 journal、隔離還原及 epoch，依[檔案契約](docs/ARCHITECTURE.md#檔案刪除及恢復)；7 天復原窗不能代替 14 天配對備份。
@@ -127,19 +127,21 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 
 #### 工作包與依賴
 
-以下是既有工作包及其前置，不在本次重新設計遷移。按 ADR-021，只有聊天與其他三角色接口屬本輪 gate；另外三角色內部實作暫緩。研究、隔離候選及 draft PR 不當已合併；前置交付及驗收規則見 [AGENTS](AGENTS.md#git-workflow)。
+以下沿用既有工作包 ID 及前置，依 2026-10-11 已批准實施計劃更新內容；帳號匯入、私人搬遷及 SQL 反向同步由 ADR-022 明確取代，不減少其他功能／REQ／AC。按 ADR-021，只有聊天與其他三角色接口屬本輪 gate；另外三角色內部實作暫緩。研究、隔離候選及 draft PR 不當已合併；前置交付及驗收規則見 [AGENTS](AGENTS.md#git-workflow)。
 
 <a id="p2-f01"></a>
 #### P2-F01 遷移契約與接點
 
-- 狀態／前置：進行中；文件定案、#140 已合併，完整接點／對照仍待完成。
+- **狀態／前置：**實作、必要定向驗證及獨立審核已通過，完成隨本包正常 PR 合併生效；基線 master `fd5d4f0`（#190），分支 `codex/p2-f01-firebase-foundation`。交付[權威／身份／正式組裝](docs/API.md#firebase-foundation-auth)及[全 SQL 路徑對照](docs/TECH_REUSE.md#firestore-full-runtime-audit)，結果及原失敗見 [F01 證據](artifacts/verification/F01_FIREBASE_FOUNDATION_20261011.json)。真雲端與其餘資料域未驗，不能把本包完成當 Firebase 全部遷移完成。
 
-**交付與完成門檻：**逐 store 資料／查詢／交易／清理對照、Auth／session port、固定 SDK／索引、最小儲存接口；補聊天與其他角色接口、草稿／確認／發布邊界及現有互動／維護預算；保留 PostgreSQL 回退實作，不自建 SQL 引擎
+**目標／範圍：**逐項覆蓋正式 SQL 呼叫、store、內嵌查詢、交易、worker、備份及清理，沿既有資料／API／架構契約固定 Firebase 實作與驗收歸屬。固定 SDK、索引、Auth／逐裝置 session、儲存／排程接口，補 canonical account／workspace／child／run／work 生命週期；保留聊天／其他角色接口、草稿／確認／發布及現行預算。
+
+**下一步／完成門檻：**正式選擇入口已能組裝真 Firebase adapter，F02 從空的隔離環境透過真服務 writer 建立權威，無須 fixture 注入；合併後推進 F02。原 SQL 只維持切換前既有版本，不新增後續依賴、不自建 SQL 引擎；F08 移除新正式系統 SQL 執行依賴。定向交易／身份檢查及獨立 review 通過，逐 store 對照無未歸屬項才可交付；F02 真雲端門檻不能以本包局部測試替代。
 
 <a id="p2-f02"></a>
 #### P2-F02 合成雲端切片
 
-- 狀態／前置：未開始；P2-F01、資源／費用上限另批。
+- 狀態／前置：未開始；P2-F01，按 [STATUS](STATUS.md) 所記本聊天資源／費用／驗收授權及專用測試信箱接入。
 
 **交付與完成門檻：**登入、引用、保存／修改、防重、排程、附件、刪除／隔離還原；真雲端通過才搬全部功能
 
@@ -148,7 +150,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 
 - 狀態／前置：未開始；P2-F02。
 
-**交付與完成門檻：**完整帳號／家庭權限、孩子、記錄、記憶、聊天、持久工作、確認、changes 與收據；聊天 runtime、其他角色接口、持久確認狀態及根運行共同預算
+**交付與完成門檻：**完整帳號／家庭權限、孩子、記錄、記憶、聊天、持久工作、確認、changes、收據及本人模型設定；聊天 runtime、其他角色接口、持久確認狀態及根運行共同預算。接通正式 Firestore session／usage／跨實例准入；逐項移植容量候選，驗忙碌提示、原文保留／手動重送、取消釋放及身份切換清理，重核同文和跨租戶 opId，不沿用失真的 fixture 綠燈。F01 已固定記錄的五項 master 測試型別錯誤，隨本包 runtime／ports 接線收束；不可把全量型別紅誤報為通過。
 
 <a id="p2-f04"></a>
 #### P2-F04 文件、檔案與退出
@@ -176,14 +178,14 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 
 - 狀態／前置：未開始；P2-F04、P2-F06。
 
-**交付與完成門檻：**資料對帳、隔離還原、反向同步／回退及 Auth 相容映像；新寫入、刪除、審核／草稿／維護進度與 unknown 不丟失；納入聊天成果、其他角色接口及現行預算必要驗收
+**交付與完成門檻：**在 GCP 以真 Firebase／Tasks／Storage、scripted provider 及完整合成資料核對全部領域、附件和收據；驗並行、失回覆、重啟、取消、刪除重放、隔離還原及 Firebase 相容版本回退。新寫入、刪除、審核／草稿／維護進度與 unknown 不丟失；納入聊天成果、其他角色接口及現行預算必要驗收。原 SQL 反向同步／Auth 相容映像要求由 ADR-022 取代，不以乾淨起點省略新資料恢復。
 
 <a id="p2-f08"></a>
 #### P2-F08 正式入口及交付
 
-- 狀態／前置：未開始；P2-F07、維護窗口／實測預算另批。
+- 狀態／前置：未開始；P2-F07、實際切換窗口，以及實測成本／月費估算後由使用者決定持續營運預算。驗收及資源授權見 STATUS。
 
-**交付與完成門檻：**Hosting／Cloud Run 正式入口、完整聊天 Agent 成果／實測成本及其他角色接口、切換及舊 VM 收束；承接 A09 未完成 gate
+**交付與完成門檻：**Hosting／Cloud Run 正式入口、完整聊天 Agent 引用→保存同一文件→局部修改→新對話讀回及必要確認／跟進／停止、容量恢復操作、實測成本與其他角色接口。移除新正式系統的 PostgreSQL／pg-boss／Better Auth SQL 組裝、套件、部署／遷移／備份入口，驗無 SQL 仍完整運作；正式切換及舊 VM 收束不刪舊備份。承接 A09 未完成 gate；未取得持續營運預算或未完成正式切換前，不能把 F08／完整 P2 標完成。
 
 F02 以少量合成帳號、孩子、一份文件、一項提醒、一張附件及少量已核對知識走通「登入 → 查證 → 保存／修改 → 原操作重試 → 縮零後喚醒 → 刪除 → 隔離還原」。同流程順帶驗越權、撤權、版本衝突、引用及 Tasks 重投遞，不拆大量 E2E。Emulator 只證明基本邏輯，不能代替真向量索引、交易競爭、OIDC、Tasks 及 scale-to-zero；失敗保留現場、修正方案後才決定是否繼續。
 

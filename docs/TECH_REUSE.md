@@ -221,3 +221,33 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 - **現有 runtime 與審核缺口：**[agent-runtime](../server/agent-runtime.ts) 有有界 Runner／FunctionTool／取消／收尾；[product-agent-tools](../server/product-agent-tools.ts) 的 present_answer 驗引用 ID、分類與範圍，不是獨立模型判斷每項說法是否獲原文支持。[knowledge-version-review](../server/knowledge-version-review.ts) 已有變更含義、原文片段、growthRuleImpact 與發布 gate，可接審核角色；資料編製復用 [文件工具](../server/agent-document-tools.ts)及其他領域服務，不另存可寫副本。
 - **多模態缺口：**[knowledge-pdf](../server/knowledge-pdf.ts)／worker 沿 pdfjs 文字分批抽取，完整度不代表圖表含義已核對；[agent-model-gateway](../server/agent-model-gateway.ts) 目前拒 fileData 且最多一張受控照片。官方 [Vertex 文件理解](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/document-understanding) 提醒長文件分拆、機讀文字優先，以及掃描／手寫／定位誤差；採來源維護專用有界視覺輸入，保留原頁供審核，不以模型抽取當逐字原文。沿現有 Vertex／GenAI 路線；實作時核固定模型與 SDK 的實際媒體相容，不因通用文件宣稱本產品已支援。
 - **證據／成本限制：**原單 Runner scripted／真 Gemini、文字 PDF 及來源版本 gate 的證據只適用原情景。六次是互動共同上限，不是平均成本或成功保證；四角色、視覺來源與自動語義審核的實際費用／品質要隨 F 包最低連貫流程量測。不得用靜態 prompt、引用格式合法或另一角色說通過作實證。
+
+<a id="firestore-full-runtime-audit"></a>
+### F01 全執行路徑對照（2026-10-11）
+
+固定來源 [fd5d4f0／#190](https://github.com/2NTTY/child-ai-caregiver/tree/fd5d4f074c9a9d0926de8fbd3b6568975d2743f8)。仍為 36 份 SQL migration、98 個建表定義；Better Auth 自身 migration、app_migrations 及 pg-boss schema 另計，不能用 98 推算全部資料。逐檔 query 呼叫位置及搜尋口徑保存在 [F01 證據](../artifacts/verification/F01_FIREBASE_FOUNDATION_20261011.json)；動態 SQL、交易借用、外部 CLI 及 FK 清理按下表另核。上文 2026-10-08／09 的盤點原位保留；聊天細節沿既有表，不另建立第二份進度。
+
+| 原入口／store／嵌入查詢 | Firebase 替代接點與不可遺漏的交易／清理 | 實作及驗收歸屬 |
+|---|---|---|
+| index、database、auth、migrate；Better Auth schema、app_migrations | main 依 STORAGE_BACKEND 選正式組裝；Firebase 不建 Pool／不讀 DATABASE_URL 或 BETTER_AUTH_SECRET。Admin Auth＋同庫 canonical authority；部署管理索引／schema 版本，禁止模擬 SQL migration。 | F01 接點；F02 真身份；F08 移除舊組裝與依賴 |
+| account-admission、account-runtime、auth-mail、auth-mail-worker | 邀請／consent／穩定 uid-workspace 由 authority 交易核對；Identity Platform blocking 阻擋未邀請註冊，Auth 原生驗證／找回電郵，不能把舊 SMTP outbox 當 Firebase 已配置。 | F01 canonical／裝置 ledger；F02 真寄信；F03 完整帳戶；F06 清走 SQL mail consumer |
+| workspaces、families、family-access、records、care | workspace／member／child／資源狀態與 accessVersion 同交易；不搬 advisory lock。撤權／刪除先設即時拒絕閘，後有界清衍生資料。保留 invitations、notification preferences、revisions、tombstones。 | F02 最小孩子與越權；F03 全部家庭／記錄／照護 |
+| online、online-change、transaction-pool | 原 opId、payload fingerprint、caller scope、expectedVersion、command receipt、changeSeq／outbox 一次提交；無 SQL savepoint 替身。changes 分頁與失回覆原操作查回。 | F02 最小重試／衝突；F03 全 command 與 changes |
+| chat、product-agent-store、agent-work-store、agent-confirmation-store、agent-actions-store、agent-original-receipts-postgres | 按上文聊天表保留 run／原訊息與唯一回覆 claim、跨 run 確認、原 receipt reader、作用與終態；取消／版本／授權於同庫交易再次核對。 | F01 authority／原接點；F03 完整 command、非同步 reply；F07／08 成果 |
+| agent-work-continuation、product-agent-background、worker-main | 原 event／候選快照／run claim 同庫；既有 Firestore continuation store 消費 canonical authority，未有有效事件不呼叫模型；終態／unknown 只查回。 | F01 pure-due 可執行接點；F03 完整 run；F06 排程／恢復 |
+| tasks、task-work-view、task-worker、worker-control、worker-queue | care task／occurrence／revision／提醒批次／generation 與 Firestore outbox 同交易；Tasks 可重投，worker 按持久 lease／generation／epoch／取消屏障領取，不以 task-name 時窗代替原收據。 | F02 一項提醒、重投、縮零；F03 全 task；F06 全 consumer |
+| memory、memory-summary、care-summary-store、shared-input-store | fact/topic/revision、summary coverage、visit preparation、shared input 管理版本；同交易核來源版本／private scope／撤權，來源刪除令衍生摘要失效。 | F03 記憶／摘要基礎；F04 完整匯入／報告 |
+| ai-usage、embedding-gateway、model-settings、product-agent-services | 正式注入 Firestore session／root budget／daily usage；本人設定與 key 清理按原權限；model、embedding、background 共用限制與收據，不能靠預設 SQL usage。 | F03 動態設定／跨 instance 准入；F07 restore／用量 |
+| knowledge-store、knowledge-refresh-store、knowledge-version-review、personal-library-api；knowledge／knowledge-refresh CLI | immutable source/version/chunk/vector、publication pointer、立即停用及來源正文；保留原 body 候選、filter、RRF／1024 維，不搬私人資料入公共索引。 | F02 少量已核知識及真索引；F05 完整來源／發布／查詢；F06 更新 |
+| growth-store／worker、concern-store／worker、contact-store | revisions／followup／本人 consent／grant／attempt／slot，排程 outbox 與 domain receipt 同交易；撤權、停止、unknown 先拒絕再清理。 | F03 業務；F06 全背景；F07 跨帳號演練 |
+| web-push-store、web-push-queue、telegram-store；各投遞 gateway | 訂閱／綁定／單次投遞收據／重試／停止；外發前核目前授權與 worker fencing，外部結果不明不得自動重發。 | F06；F02 不擅自向真接收端通知 |
+| family-document-store／worker、agent_document_operations | document＋snapshot＋source revision＋caller-wide operation＋原 run link＋changes 原子；長文有界分頁，PDF／報告讀同成果版本。 | F02 一份文件局部修改；F04 全版本／匯出；F08 A09 |
+| photo-store、photo-files、photo-backup；storage-upgrade | Storage 私有不可變 object＋generation/hash；先持久刪除意圖，再清 metadata／物件。既有明文升級只屬舊 SQL，不對乾淨庫假跑；新資料一開始用加密格式。 | F02 一張附件及還原；F04 完整附件／配對恢復 |
+| account-data、erasure-journal、account-erasure-journal／account-invitation CLI | 匯出／帳戶及孩子刪除閉包、獨立不可變 journal／receipt；Auth 與 Firestore 非跨服務交易，依原 op 狀態恢復，先關准入再清理。 | F02 最小刪除不復活；F04 全域退出；F07 全資料對照 |
+| backup、storage-backup CLI、photo-backup、worker-control CLI；deploy/p1、deploy/p2 | 14 天 Firestore／附件配對 manifest、隔離 restore／最新 journal／現行 Auth／新 epoch；還原背景保持暫停。Hosting／Cloud Run／Tasks／Scheduler 取代 Compose。 | F02 最小還原；F07 完整 restore／相容版本回退；F08 SQL 退役 |
+
+**固定依賴與最小實作。** Node 24、Firestore 9.3.1 沿用；本包加入 firebase-admin 14.5.0（Apache-2.0，Node >=22），SDK 原生 session-cookie／revocation API 已按安裝版本核對，license 納現有 manifest。Firebase client 13.0.0、Tasks 7.2.1、Storage 8.4.0 是 2026-10-11 registry 核對的候選固定版本，尚未直接安裝／驗證；各首次實作切片才引入及保存 license，不宣稱 registry 相容等於產品已驗。ADK 2.1.0／GenAI 2.24.0 不重寫。
+
+**查詢與索引落地界線。** F01 authority／device ledger 只有確定 ID 點讀及原生交易，密文不建索引；deploy/firebase/firestore.indexes.json 固定 yuban_authority／yuban_authority_sessions 的全欄位 exemption，部署改 namespace 時必須同步清單，不推定其他 collection 已覆蓋。collection 命名空間綁受信配置及 AAD。F02 首次 query 同時交付具體 collection-group、filter／sort／cursor／limit 及雲端 index manifest；其餘域按上表逐切片追加，不從全密文集合掃描解密代替 query，也不把 query hint 當權威。F03 的 query 仍須沿聊天表上限；F04 清理先有即時 tombstone／epoch 拒絕，再依 source／scope 反向接點有界清理；F05 正文／向量索引不得索引私人內容。
+
+**取代關係。** [ADR-022](DECISIONS.md#adr-022) 已取消本次舊帳戶 scrypt／UID 匯入、私人資料搬遷及 SQL 反向同步；上文 2026-10-08 匯入研究只屬歷史，未執行亦不列為通過。舊 SQL／備份保存不刪，Firebase 新寫入後只回退相容應用版本或隔離還原。

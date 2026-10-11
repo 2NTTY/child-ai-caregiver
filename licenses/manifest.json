@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "workPackage": "P2-F01",
-  "recordedOn": "2026-10-09",
+  "recordedOn": "2026-10-11",
   "scope": "Original licenses for selected direct dependencies and explicitly inventoried transitive packages; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "f7645171b9902358f12e34a36744332f70f008492aceac0bf2bad45e03facf1b"
+    "sha256": "90a6a62955e5e13e34cecc3f16fb43ba7737594aef9d79e531d20be5459866bc"
   },
   "packages": [
     {
@@ -873,13 +873,32 @@
           "source": "node_modules/pdfjs-dist/LICENSE"
         }
       ]
+    },
+    {
+      "name": "firebase-admin",
+      "version": "14.5.0",
+      "dependencyType": "dependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/firebase/firebase-admin-node"
+      },
+      "tarball": "https://registry.npmjs.org/firebase-admin/-/firebase-admin-14.5.0.tgz",
+      "integrity": "sha512-DElmgmaH9aPXu2dWXGQiDoan33UfTnbfAAKaue4fwEZxmpdaNrTk5DmuFn+vVDki2KZ6TiaC0IHRWcEzcDxB3Q==",
+      "files": [
+        {
+          "path": "licenses/firebase-admin/LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "source": "node_modules/firebase-admin/LICENSE"
+        }
+      ]
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 966,
+    "packageEntries": 1019,
     "declarations": {
-      "Apache-2.0": 74,
-      "MIT": 765,
+      "Apache-2.0": 95,
+      "MIT": 794,
       "ISC": 49,
       "MIT AND Apache-2.0": 1,
       "BSD-3-Clause": 23,
@@ -889,7 +908,7 @@
       "CC-BY-4.0": 1,
       "BSD-2-Clause": 14,
       "(MIT OR Apache-2.0)": 1,
-      "BlueOak-1.0.0": 9,
+      "BlueOak-1.0.0": 11,
       "0BSD": 2,
       "MPL-2.0": 13,
       "CC0-1.0": 1,
@@ -899,6 +918,7 @@
     "missingDeclarations": [
       "node_modules/buildcheck",
       "node_modules/cpu-features",
+      "node_modules/limiter",
       "node_modules/png-js",
       "node_modules/ssh2"
     ]

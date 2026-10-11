@@ -19,7 +19,7 @@
     "test": "node --experimental-test-module-mocks --test tests/*.test.ts",
     "build:web": "npm run build:web --workspace frontend && node scripts/prepare-web-output.mjs",
     "legacy:build:web": "node scripts/legacy-web-retired.mjs",
-    "server": "node --env-file-if-exists=.env server/index.ts",
+    "server": "node --env-file-if-exists=.env server/main.ts",
     "worker": "node --env-file-if-exists=.env server/worker-main.ts",
     "worker:control": "node --env-file-if-exists=.env scripts/worker-control.mjs",
     "db:migrate": "node --env-file-if-exists=.env server/migrate.ts",
@@ -31,7 +31,8 @@
     "storage:backup": "node --env-file-if-exists=.env scripts/storage-backup.mjs backup",
     "storage:restore": "node --env-file-if-exists=.env scripts/storage-backup.mjs restore",
     "account:invitation": "node --env-file-if-exists=.env scripts/account-invitation.mjs",
-    "account:journal": "node --env-file-if-exists=.env scripts/account-erasure-journal.mjs"
+    "account:journal": "node --env-file-if-exists=.env scripts/account-erasure-journal.mjs",
+    "firebase:control": "node --env-file-if-exists=.env scripts/firebase-control.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "57.0.16",
@@ -46,6 +47,7 @@
     "expo-constants": "57.0.19",
     "expo-linking": "57.0.10",
     "expo-router": "57.0.22",
+    "firebase-admin": "14.5.0",
     "grammy": "1.46.0",
     "nodemailer": "10.0.16",
     "pdfjs-dist": "6.4.299",
