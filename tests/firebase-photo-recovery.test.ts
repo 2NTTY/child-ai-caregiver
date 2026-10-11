@@ -1,3 +1,4 @@
+import { storageMediaFixture } from "./firebase-storage-media-fixture.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { randomUUID, createHash } from "node:crypto";
@@ -151,7 +152,7 @@ test("backup streams have an absolute twenty-second deadline and are destroyed o
 
 test("the public backup SDK adapter preserves exact generations and its own larger bounded Range",async()=>{
   const f=await fixture(),saved=await f.recovery.backupPhoto(f.input),requests:any[]=[];
-  const sdk:FirebasePhotoSdkBucket={file(name){return {
+  const sdk:FirebasePhotoSdkBucket={...storageMediaFixture(f.options.config.backupBucketName,f.backup.port.readPinned,input=>requests.push(input)),file(name){return {
     get metadata(){return f.backup.records.get(name)?.metadata;},
     async save(){throw new Error("Unexpected create");},
     async request(input){requests.push(input);return [await f.backup.port.metadata(name,input.qs?.generation),{statusCode:200}];},
@@ -159,8 +160,8 @@ test("the public backup SDK adapter preserves exact generations and its own larg
   };}};
   const recovery=createFirebasePhotoRecovery({...f.options,backupBucket:createFirebasePhotoBackupBucketPort(sdk)});
   await recovery.restorePhoto({backupId:f.backupId,backup:saved,targetScope:f.targetScope});
-  assert.equal(requests[0].qs.generation,saved.generation);assert.equal(requests[1].qs.generation,saved.generation);
+  assert.equal(requests[0].qs.generation,saved.generation);assert.equal(requests[1].params.generation,saved.generation);
   assert.equal(requests[1].headers.Range,"bytes=0-"+FIREBASE_PHOTO_BACKUP_MAX_CIPHER_BYTES);
-  assert.equal(requests[1].headers["Accept-Encoding"],"identity");assert.equal(requests[1].gzip,false);
+  assert.equal(requests[1].headers["Accept-Encoding"],"identity");assert.equal(requests[1].retry,false);assert.equal(requests[1].maxRedirects,0);
   assert.equal(requests.every(input=>input.timeout===FIREBASE_PHOTO_TIMEOUT_MS),true);
 });

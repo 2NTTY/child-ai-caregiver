@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { workRecoveryScopeSchema } from "./firestore-work-continuation-recovery.ts";
 import { canonical } from "./firestore-session-codec.ts";
-import { FIREBASE_PHOTO_TIMEOUT_MS, type FirebasePhotoBucketPort, type FirebasePhotoSdkBucket } from "./firebase-photo-objects.ts";
+import { readFirebaseStorageResponse, FIREBASE_PHOTO_TIMEOUT_MS, type FirebasePhotoBucketPort, type FirebasePhotoSdkBucket } from "./firebase-photo-objects.ts";
 
 const FORMAT = "yuban-erasure-journal", MAX_BYTES = 8192;
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
@@ -54,9 +54,7 @@ export function createFirebaseErasureBucketPort(bucket: FirebasePhotoSdkBucket):
       if (!response || typeof response !== "object" || !("statusCode" in response) || response.statusCode !== 200) reject("erasure_unavailable", 503);
       return body;
     },
-    readPinned(name, revision) { return bucket.file(name).requestStream({ method: "GET", uri: "", qs: { alt: "media", generation: revision },
-      timeout: FIREBASE_PHOTO_TIMEOUT_MS, gzip: false,
-      headers: { Range: "bytes=0-" + MAX_BYTES, "Accept-Encoding": "identity", "Cache-Control": "no-store" } }); },
+    readPinned(name, revision) { return readFirebaseStorageResponse(bucket, name, revision, MAX_BYTES); },
   };
 }
 export function createCloudStorageErasureJournal(options: { config: FirebaseErasureConfig; cipher: StorageCipher }) {

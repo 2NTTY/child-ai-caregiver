@@ -229,7 +229,7 @@ test("the real SDK adapter uses public exact-string preconditions and bounded ma
   const file={metadata:{name:"synthetic"},async save(bytes:Buffer,options:SaveOptions){calls.push({save:{bytes,options}});},
     async request(options:any){calls.push(options);return [{name:"synthetic"},{statusCode:200}];},
     requestStream(options:any){calls.push(options);return new Readable({read(){this.push(null);}});}};
-  const sdk={file(name:string){calls.push({file:name});return file;},
+  const sdk={name:"synthetic-bucket",storage:{authClient:{async request(options:any){calls.push(options);return {status:206,headers:{},data:Readable.from([])};}}},file(name:string){calls.push({file:name});return file;},
     async request(options:any){calls.push(options);return [{items:[],nextPageToken:"next"},{statusCode:200}];}};
   const port=createFirebaseBackupArtifactBucketPort(sdk as unknown as Bucket);
   assert.deepEqual(await port.list("fixed-prefix/","opaque-token"),{objects:[],nextPageToken:"next"});
@@ -238,8 +238,8 @@ test("the real SDK adapter uses public exact-string preconditions and bounded ma
   assert.equal(list.qs.maxResults,64);assert.equal(list.timeout,FIREBASE_PHOTO_TIMEOUT_MS);assert.equal("autoPaginate" in list.qs,false);
   const patch=calls.find(row=>row.method==="PATCH");assert.deepEqual(patch.qs,{ifGenerationMatch:revision,ifMetagenerationMatch:metaRevision});
   assert.deepEqual(patch.json,{temporaryHold:true});assert.equal(patch.timeout,FIREBASE_PHOTO_TIMEOUT_MS);
-  const media=calls.find(row=>row.qs?.alt==="media");assert.equal(media.qs.generation,revision);
+  const media=calls.find(row=>row.params?.alt==="media");assert.equal(media.params.generation,revision);
   assert.equal(media.headers.Range,"bytes=0-"+FIREBASE_BACKUP_MANIFEST_MAX_CIPHER_BYTES);
-  assert.equal(media.gzip,false);assert.equal(media.timeout,FIREBASE_PHOTO_TIMEOUT_MS);
+  assert.equal(media.retry,false);assert.equal(media.maxRedirects,0);assert.ok(media.signal instanceof AbortSignal);assert.equal(media.timeout,FIREBASE_PHOTO_TIMEOUT_MS);
   assert.ok(calls.some(row=>row.method==="GET"&&row.qs?.generation===revision));
 });

@@ -7,7 +7,7 @@ import type { StorageCipher } from "./storage-crypto.ts";
 import { canonical } from "./firestore-session-codec.ts";
 import type { FirebaseBackupInventory } from "./firestore-backup.ts";
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
-import { FIREBASE_PHOTO_TIMEOUT_MS, firebasePhotoObjectDescriptorSchema, type FirebasePhotoObjectDescriptor } from "./firebase-photo-objects.ts";
+import { readFirebaseStorageResponse, FIREBASE_PHOTO_TIMEOUT_MS, firebasePhotoObjectDescriptorSchema, type FirebasePhotoObjectDescriptor } from "./firebase-photo-objects.ts";
 import { backupPhotoDescriptorSchema, FIREBASE_PHOTO_BACKUP_MIN_RETENTION_MS, FIREBASE_PHOTO_BACKUP_MAX_RETENTION_MS,
   type BackupPhotoDescriptor } from "./firebase-photo-recovery.ts";
 
@@ -141,9 +141,7 @@ export function createFirebaseBackupArtifactBucketPort(bucket: Bucket): Firebase
       const file = bucket.file(name); await file.save(ciphertext,options); return file.metadata;
     },
     readPinned(name,revision) {
-      return bucket.file(name).requestStream({method:"GET",uri:"",qs:{alt:"media",generation:revision},gzip:false,
-        timeout:FIREBASE_PHOTO_TIMEOUT_MS,headers:{Range:"bytes=0-"+FIREBASE_BACKUP_MANIFEST_MAX_CIPHER_BYTES,
-          "Accept-Encoding":"identity","Cache-Control":"no-store"}});
+      return readFirebaseStorageResponse(bucket, name, revision, FIREBASE_BACKUP_MANIFEST_MAX_CIPHER_BYTES);
     },
   };
 }

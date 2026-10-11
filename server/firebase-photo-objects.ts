@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { Readable } from "node:stream";
+import { PassThrough, pipeline, Readable } from "node:stream";
 import { Storage, type SaveOptions } from "@google-cloud/storage";
 import { z } from "zod";
 import { PHOTO_LIMITS } from "../src/shared/photos.ts";
@@ -71,7 +71,49 @@ export interface FirebasePhotoSdkFile {
   request(options: SdkRequest): Promise<[unknown, unknown]>;
   requestStream(options: SdkRequest): Readable;
 }
-export interface FirebasePhotoSdkBucket { file(objectName: string): FirebasePhotoSdkFile }
+export interface FirebaseStorageMediaClient {
+  request(options: { url: string; method: "GET"; params: { alt: "media"; generation: string };
+    headers: Record<string, string>; timeout: number; retry: false; maxRedirects: 0;
+    responseType: "stream"; signal: AbortSignal; validateStatus: (status: number) => boolean }): Promise<{ status: number; headers: unknown; data: Readable }>;
+}
+export interface FirebasePhotoSdkBucket {
+  readonly name: string;
+  readonly storage: { authClient: FirebaseStorageMediaClient };
+  file(objectName: string): FirebasePhotoSdkFile;
+}
+
+/** Storage 7.22's legacy download transport cannot reliably finish or cancel. Use its native auth client. */
+export function readFirebaseStorageResponse(bucket: Pick<FirebasePhotoSdkBucket, "name" | "storage">,
+  objectName: string, generation: string, maximum: number): Readable {
+  const response = new PassThrough(), controller = new AbortController();
+  let media: Readable | undefined;
+  const unavailable = () => new Error("storage_media_unavailable");
+  const deadline = setTimeout(() => response.destroy(unavailable()), FIREBASE_PHOTO_TIMEOUT_MS);
+  response.once("close", () => { clearTimeout(deadline); controller.abort(); media?.destroy(); });
+  void (async () => {
+    const result = await bucket.storage.authClient.request({
+      url: "https://storage.googleapis.com/storage/v1/b/" + encodeURIComponent(bucket.name) + "/o/" + encodeURIComponent(objectName),
+      method: "GET", params: { alt: "media", generation },
+      headers: { Range: "bytes=0-" + maximum, "Accept-Encoding": "identity", "Cache-Control": "no-store" },
+      timeout: FIREBASE_PHOTO_TIMEOUT_MS, retry: false, maxRedirects: 0, responseType: "stream", signal: controller.signal,
+      // Return error headers without Gaxios buffering their body or OAuth refreshing/replaying the GET.
+      validateStatus: () => true,
+    });
+    media = result.data;
+    if (response.destroyed) { media.destroy(); return; }
+    // Gaxios versions expose either a plain header record or native Headers.
+    const headers: Record<string, unknown> = {};
+    if (result.headers && typeof result.headers === "object") {
+      if ("forEach" in result.headers && typeof result.headers.forEach === "function")
+        result.headers.forEach((value: unknown, key: string) => { headers[key.toLowerCase()] = value; });
+      else for (const [key, value] of Object.entries(result.headers)) headers[key.toLowerCase()] = value;
+    }
+    response.emit("response", { statusCode: result.status, headers });
+    if (response.destroyed) { media.destroy(); return; }
+    pipeline(media, response, error => { if (error) response.destroy(unavailable()); });
+  })().catch(() => response.destroy(unavailable()));
+  return response;
+}
 
 /** Use public requests: Storage 7.22 FileOptions.generation otherwise converts strings to Number. */
 export function createFirebasePhotoBucketPort(bucket: FirebasePhotoSdkBucket): FirebasePhotoBucketPort {
@@ -91,10 +133,7 @@ export function createFirebasePhotoBucketPort(bucket: FirebasePhotoSdkBucket): F
       return body;
     },
     readPinned(objectName, generation) {
-      return bucket.file(objectName).requestStream({
-        method: "GET", uri: "", qs: { alt: "media", generation }, gzip: false, timeout: FIREBASE_PHOTO_TIMEOUT_MS,
-        headers: { Range: "bytes=0-" + FIREBASE_PHOTO_MAX_CIPHER_BYTES, "Accept-Encoding": "identity", "Cache-Control": "no-store" },
-      });
+      return readFirebaseStorageResponse(bucket, objectName, generation, FIREBASE_PHOTO_MAX_CIPHER_BYTES);
     },
   };
 }

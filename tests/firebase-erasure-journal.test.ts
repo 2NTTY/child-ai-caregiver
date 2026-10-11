@@ -1,3 +1,4 @@
+import { storageMediaFixture } from "./firebase-storage-media-fixture.ts";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Readable } from "node:stream";
@@ -76,13 +77,13 @@ test("journal media has an absolute deadline that destroys a stalled stream", as
 });
 test("journal public SDK requests use exact decimal revisions and the journal-specific bounded Range", async () => {
   const f = fixture(), descriptor = await f.journal.writeOnce(INTENT), options: any[] = [];
-  const sdk: FirebasePhotoSdkBucket = { file(name) { return { metadata: {},
+  const sdk: FirebasePhotoSdkBucket = { ...storageMediaFixture(CONFIG.bucketName, f.bucket.readPinned, input => options.push(input)), file(name) { return { metadata: {},
     async save() { throw new Error("unexpected upload"); },
     async request(input) { options.push(input); return [f.stored.get(name)!.metadata, { statusCode: 200 }]; },
     requestStream(input) { options.push(input); return f.bucket.readPinned(name, input.qs!.generation!); } }; } };
   const journal = createFirebaseErasureJournal({ config: CONFIG, cipher: createStorageCipher(Buffer.alloc(32, 72)), bucket: createFirebaseErasureBucketPort(sdk) });
   assert.deepEqual(await journal.read(INTENT, descriptor), INTENT);
-  assert.equal(options[0].qs.generation, GENERATION); assert.equal(options[1].qs.generation, GENERATION);
+  assert.equal(options[0].qs.generation, GENERATION); assert.equal(options[1].params.generation, GENERATION);
   assert.equal(options[1].headers.Range, "bytes=0-8192"); assert.equal(options[1].headers["Accept-Encoding"], "identity");
   assert.equal(options.every(value => value.timeout === FIREBASE_PHOTO_TIMEOUT_MS), true);
 });

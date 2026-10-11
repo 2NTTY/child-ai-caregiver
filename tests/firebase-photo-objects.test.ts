@@ -1,3 +1,4 @@
+import { storageMediaFixture } from "./firebase-storage-media-fixture.ts";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Readable } from "node:stream";
@@ -198,24 +199,24 @@ test("invalid or oversized photo input fails before any upload", async () => {
 
 test("public SDK requests preserve an above-safe-integer generation string and bound the media request", async () => {
   const f = fixture(), descriptor = await f.port.write(SCOPE, PHOTO_ID, INPUT);
-  const requests: Parameters<FirebasePhotoSdkFile["request"]>[0][] = [], streamRequests: Parameters<FirebasePhotoSdkFile["requestStream"]>[0][] = [];
+  const requests: Parameters<FirebasePhotoSdkFile["request"]>[0][] = [], streamRequests: Parameters<import("../server/firebase-photo-objects.ts").FirebaseStorageMediaClient["request"]>[0][] = [];
   const names: string[] = [], fileArgumentCounts: number[] = [];
-  const sdk: FirebasePhotoSdkBucket = { file(name) {
+  const sdk: FirebasePhotoSdkBucket = { ...storageMediaFixture(CONFIG.bucketName, f.bucket.readPinned, options => streamRequests.push(options as never)), file(name) {
     names.push(name); fileArgumentCounts.push(arguments.length);
     return { metadata: f.objects.get(name)!.metadata, async save() { throw new Error("unexpected upload"); },
       async request(options) { requests.push(structuredClone(options)); return [f.objects.get(name)!.metadata, { statusCode: 200 }]; },
-      requestStream(options) { streamRequests.push(structuredClone(options)); return f.bucket.readPinned(name, options.qs!.generation!); } };
+      requestStream() { throw new Error("legacy transport must not be used"); } };
   } };
   const port = createFirebasePhotoObjects({ config: CONFIG, cipher: f.cipher, bucket: createFirebasePhotoBucketPort(sdk) });
   assert.deepEqual((await port.read(SCOPE, PHOTO_ID, descriptor)).buffer, PNG);
   assert.deepEqual(requests[0].qs, { generation: GENERATION });
   assert.equal(requests[0].timeout, FIREBASE_PHOTO_TIMEOUT_MS); assert.equal(streamRequests[0].timeout, FIREBASE_PHOTO_TIMEOUT_MS);
-  assert.deepEqual(streamRequests[0].qs, { alt: "media", generation: GENERATION });
-  assert.equal(typeof streamRequests[0].qs!.generation, "string");
+  assert.deepEqual(streamRequests[0].params, { alt: "media", generation: GENERATION });
+  assert.equal(typeof streamRequests[0].params!.generation, "string");
   assert.equal(streamRequests[0].headers!.Range, "bytes=0-" + FIREBASE_PHOTO_MAX_CIPHER_BYTES);
   assert.equal(streamRequests[0].headers!["Accept-Encoding"], "identity");
-  assert.equal(streamRequests[0].headers!["Cache-Control"], "no-store"); assert.equal(streamRequests[0].gzip, false);
-  assert.deepEqual(fileArgumentCounts, [1, 1]); assert.deepEqual(names, [descriptor.objectName, descriptor.objectName]);
+  assert.equal(streamRequests[0].headers!["Cache-Control"], "no-store"); assert.equal(streamRequests[0].retry, false); assert.equal(streamRequests[0].maxRedirects, 0); assert.ok(streamRequests[0].signal instanceof AbortSignal);
+  assert.deepEqual(fileArgumentCounts, [1]); assert.deepEqual(names, [descriptor.objectName]);
 });
 
 test("the runtime factory constructs the installed SDK with automatic retries disabled and rejects endpoint or emulator configuration", t => {

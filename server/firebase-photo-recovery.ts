@@ -6,7 +6,7 @@ import { decodePhoto, photoHash } from "./photo-files.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { canonical } from "./firestore-session-codec.ts";
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
-import { FIREBASE_PHOTO_TIMEOUT_MS, firebasePhotoObjectDescriptorSchema,
+import { readFirebaseStorageResponse, FIREBASE_PHOTO_TIMEOUT_MS, firebasePhotoObjectDescriptorSchema,
   type FirebasePhotoObjects, type FirebasePhotoObjectDescriptor, type FirebasePhotoBucketPort, type FirebasePhotoSdkBucket } from "./firebase-photo-objects.ts";
 
 const FORMAT = "yuban-photo-backup", VERSION = 1;
@@ -88,9 +88,7 @@ export function createFirebasePhotoBackupBucketPort(bucket: FirebasePhotoSdkBuck
       return body;
     },
     readPinned(objectName,revision) {
-      return bucket.file(objectName).requestStream({method:"GET",uri:"",qs:{alt:"media",generation:revision},gzip:false,
-        timeout:FIREBASE_PHOTO_TIMEOUT_MS,headers:{Range:"bytes=0-"+FIREBASE_PHOTO_BACKUP_MAX_CIPHER_BYTES,
-          "Accept-Encoding":"identity","Cache-Control":"no-store"}});
+      return readFirebaseStorageResponse(bucket, objectName, revision, FIREBASE_PHOTO_BACKUP_MAX_CIPHER_BYTES);
     },
   };
 }
