@@ -1,0 +1,911 @@
+{
+  "scope": "Root PLAN structure and content routing only; no product, browser, cloud or paid-model tests.",
+  "base": "a38e03f3c48bbb9e879254248313c11f5bab5e63",
+  "source_plan_git_sha256": "1b10d09281956e3ee4669096b887d548652ce834a898db6194eb33c842e97b24",
+  "checks": {
+    "original_explicit_anchors": 140,
+    "original_explicit_retained": 140,
+    "duplicate_explicit_anchors": [],
+    "original_heading_text_count": 47,
+    "missing_original_heading_text": [],
+    "package_cards": 75,
+    "package_content": [
+      {
+        "id": "P2-F01",
+        "anchor": "p2-f01",
+        "source_fields_sha256": "fffc28d14d4e2cd4533c4b7468230771b6780b05c80097d4e1d6eea11ce5371f",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-F02",
+        "anchor": "p2-f02",
+        "source_fields_sha256": "c20adf8ee0de03d79675d1d32418844403b1a4a24fdcbb8b93c100498f52a7e3",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-F03",
+        "anchor": "p2-f03",
+        "source_fields_sha256": "db0c0174fb63aa0ed58af1895c6e4f314c5259acd30a91b103a7902554eca847",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-F04",
+        "anchor": "p2-f04",
+        "source_fields_sha256": "95ab97adbaf5d9345a73a84f0061b930b065cd3da7a99add94ff1e05ba4b46fd",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-F05",
+        "anchor": "p2-f05",
+        "source_fields_sha256": "ea0cee56835cab078e42b6363483454c25021f0ab40f360341c164a73c0cb303",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-F06",
+        "anchor": "p2-f06",
+        "source_fields_sha256": "fb474303264f09cdcc87768f0c51e3b63ed8b3aac7666a428fce1033686d4435",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-F07",
+        "anchor": "p2-f07",
+        "source_fields_sha256": "832dec07a2ddeee968c8bdd47225ccde929d88201e9e59220f4d229880db88f9",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-F08",
+        "anchor": "p2-f08",
+        "source_fields_sha256": "b0ac1e7a0ce78a58ec84b686bbf5033996fbba35a0d2c472f69c0b91d3218d71",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S11-W03",
+        "anchor": "s11-w03",
+        "source_fields_sha256": "42ca2008669f5e300b6c41bc38ee7c96929f4aa752bd198cc31130c5651710fe",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S06-W02",
+        "anchor": "s06-w02",
+        "source_fields_sha256": "197d344ac2f33cfaa9ab3b1989642d2a26e33c9f8fa62dc5c55798ec39518b6b",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S05-W02",
+        "anchor": "s05-w02",
+        "source_fields_sha256": "2ab82182010e00893b300799f27840d489a0ed9baec42410efa91e231d950a33",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S09-W02",
+        "anchor": "s09-w02",
+        "source_fields_sha256": "10da5fc06bb081ba68bebd5e853bd298031a84713038a91670c5250236073d50",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S07-W03",
+        "anchor": "s07-w03",
+        "source_fields_sha256": "62924a38e49472a7f4679e5d33c3976f1f3b975a711e89092dbebef25e3d5452",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S13-W01",
+        "anchor": "s13-w01",
+        "source_fields_sha256": "64215bc0e044b459dc34ab89ab56ac43b7f5ae10e8c554403a6d33518249bd92",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S13-W04",
+        "anchor": "s13-w04",
+        "source_fields_sha256": "d58a29b96afaff11fd59b53792ca08f7f214f344a5dde9d648e287d928cfd96c",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S10-W01",
+        "anchor": "s10-w01",
+        "source_fields_sha256": "df4c255386200032548c70c7204674419ef050a7ac95966b5f9b8dc92ee3bc52",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S10-W02",
+        "anchor": "s10-w02",
+        "source_fields_sha256": "139b80e57e73f60a79662d90c21547ca8b94301d3754cdb6310bdd7a1d233f44",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S11-W02",
+        "anchor": "s11-w02",
+        "source_fields_sha256": "1ce36138ad780e1753e43b96f088c362e85ec25f9e409e9028eda78362b4be32",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S12-W03",
+        "anchor": "s12-w03",
+        "source_fields_sha256": "9d997e1e3690791ac93fc30280abe12abad337dfd216d3c86e83bea34b53857c",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S12-W04",
+        "anchor": "s12-w04",
+        "source_fields_sha256": "c7b8494081f4aaa2ca9cd2292bbf193534ec96ec0fa3c1c65f49f76fc2a645a9",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S13-W05",
+        "anchor": "s13-w05",
+        "source_fields_sha256": "04b1f2645a88ccec662036144c2ebe939c0811ce47af533dede9e4b92fde2569",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S13-W06",
+        "anchor": "s13-w06",
+        "source_fields_sha256": "a0c509277f2e6d5e725fed35791d057e215b1b8e2ba4f4cafba8575189d277ed",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S13-W08",
+        "anchor": "s13-w08",
+        "source_fields_sha256": "b4fb86a7602b907a98c119af9fd83ab3cfc03cd1008f168c9062136105cbeaba",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S13-W07",
+        "anchor": "s13-w07",
+        "source_fields_sha256": "d520156f18a0799d8641a4d9c7f770cf74493c1d0f1b7fce5592702096e1c3ec",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S14-W01",
+        "anchor": "s14-w01",
+        "source_fields_sha256": "be281acf4b310a09c2d13d52d39fbd442dc30ff274518fda71c1fb8469fff90f",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S16-W05",
+        "anchor": "s16-w05",
+        "source_fields_sha256": "d23fc3fe97bd1b73bae3241a9d1fc3945dbed954302b118625127a48b0860248",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S16-W02",
+        "anchor": "s16-w02",
+        "source_fields_sha256": "3436511d99d38053ec42ea72af12071ea48c7c7c6351931dc21581ea6ff4b042",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S17-W02",
+        "anchor": "s17-w02",
+        "source_fields_sha256": "44755474d3ea70751ca64d497200a867ad43ef0ab709fe1591644a63970bcc63",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S06-W05",
+        "anchor": "s06-w05",
+        "source_fields_sha256": "9cb1357e7aa4bac3cbdd9f40e22bf5910a552e3b691d4d49922ed69f89e54601",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "INT-W01",
+        "anchor": "int-w01",
+        "source_fields_sha256": "d5eee6113ce650119e5e238eb161d9c0089bcb815b11c00c72ba6d57ca95820a",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "INT-W02",
+        "anchor": "int-w02",
+        "source_fields_sha256": "bfa4ea1a95aef9c29c0e359d1109a9961d1d44f3816ab0f4356369b2c4734935",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "INT-W03",
+        "anchor": "int-w03",
+        "source_fields_sha256": "9f764ac7479918a205f6c2961b6c493e79c6b301bb07a819cd93cdf8acc79b8d",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "INT-W04",
+        "anchor": "int-w04",
+        "source_fields_sha256": "48c0818120c2be01f6bea57c197f45e8b053e02b94b84c27c183c8dd516bdc00",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "INT-W05",
+        "anchor": "int-w05",
+        "source_fields_sha256": "0f5a888f128683c38323d0c830aa0537a3d3887b6fe42b7cd006eb135b04d28d",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "INT-W06",
+        "anchor": "int-w06",
+        "source_fields_sha256": "81c726b84a758c978875c1e9c5c06cef27131df9e2441ce7c3ccadc58af5eb25",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "INT-W07",
+        "anchor": "int-w07",
+        "source_fields_sha256": "973fb0a5377720fb40ed55c4e5b7d6c64e136c7f729b694ea94c84d348d386e8",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-A01",
+        "anchor": "p2-a01",
+        "source_fields_sha256": "98d3de29fc5fa0db945468d0e6f21542070edd1a9ab95a6119f3b50326a1d8f8",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-A02",
+        "anchor": "p2-a02",
+        "source_fields_sha256": "5ba6751ce3c71d1fc3a4d7e7451b73f3687167254f6db4bcd2df13cc88edc1c5",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-A03",
+        "anchor": "p2-a03",
+        "source_fields_sha256": "c051038676b9eb159fae5d73fd1d3f78b3fcb11d9f3d425300f50a31f99d0ba6",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-A04",
+        "anchor": "p2-a04",
+        "source_fields_sha256": "2a87e88b577c8f7b5969cc41fc91d55195dd8d41eb5f212a450d76f01a7cb524",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-A05",
+        "anchor": "p2-a05",
+        "source_fields_sha256": "97495dc1c0968a38f52dd793ff630b410bb49499da250882b668ac166303d843",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-A06",
+        "anchor": "p2-a06",
+        "source_fields_sha256": "12393ca1ad09954f6b24343bd5c8ddc53625ef52bc39420fb4e7a7b903bcb7dd",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-A07",
+        "anchor": "p2-a07",
+        "source_fields_sha256": "7a8262ef9a85c33a5fc355698cd4120ef5754e34984490d48ca7659534bb2383",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-A08",
+        "anchor": "p2-a08",
+        "source_fields_sha256": "05c7dbcb8363d28f6704179e3ebfdd11bc1d53da21405e9f67e183db5ed2bf61",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "P2-A09",
+        "anchor": "p2-a09",
+        "source_fields_sha256": "ac47edc4181a864f96c11b949e486025ca643717ce4e2e53e8c3e1bfc9638cc0",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S04-W01",
+        "anchor": "s04-w01",
+        "source_fields_sha256": "46ee08871b6dc8a5be5a748d31d9b214a3b05fe880ba8da1ac3b40e0e3394bae",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S05-W03",
+        "anchor": "s05-w03",
+        "source_fields_sha256": "75d763a22dafe300cae5b3e601bce557a534f8dfeb3a1deb8b69027a9ed918c1",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S07-W01",
+        "anchor": "s07-w01",
+        "source_fields_sha256": "a7efde24d38ad814996376228c75b9919cc2b31d77e972539d793bf0e7bf6f0d",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S09-W03",
+        "anchor": "s09-w03",
+        "source_fields_sha256": "3c2cb6b028134871eadf3662fdec74eb40a39dabc199def518bd35d46e52f699",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S12-W01",
+        "anchor": "s12-w01",
+        "source_fields_sha256": "0f1daf44f670fa1861c51e2dbbe098b2f2145485ead06b8e97f823a6547bbd3e",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S13-W02",
+        "anchor": "s13-w02",
+        "source_fields_sha256": "8ea947612d32e0b012ecefc3a2d42279c51abd333484cd56a072d5035ff88f5d",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S16-W03",
+        "anchor": "s16-w03",
+        "source_fields_sha256": "0f963a5c957b1617227fcefa2b7f91b7d8fdf374f13e9a51897a6c5d7c9dc1e2",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S17-W03",
+        "anchor": "s17-w03",
+        "source_fields_sha256": "b922a06d4c979068717e682decc52c98bf5a4d7b7e636e2c301068be33a9f560",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S06-W04",
+        "anchor": "s06-w04",
+        "source_fields_sha256": "c88b757edf22d7df995095c9c901ba5243c4d42e160b9ba991a161686bbdd416",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S17-W05",
+        "anchor": "s17-w05",
+        "source_fields_sha256": "db61a7ed1eb6c178c6aeff819d9739305948c34599fbc705dcca772110844391",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S08-W01",
+        "anchor": "s08-w01",
+        "source_fields_sha256": "9cf3f2c20c8c145462313ed91f2239f517f782d2b6332a3cc50186e0b1e44edc",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S10-W03",
+        "anchor": "s10-w03",
+        "source_fields_sha256": "0438681168e3d8748a79b46d045a93cd19ebd8a2ced40a55aecd60adb3756eae",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S12-W02",
+        "anchor": "s12-w02",
+        "source_fields_sha256": "c6439d11ea932eec79ffb57bfb4c1d32ecd19bdac726e36be6bdb6f96229cefd",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S07-W02",
+        "anchor": "s07-w02",
+        "source_fields_sha256": "26718f8e865785db872d08bbcc42462095ed378a6bfdce6c2264187230c912c0",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S13-W03",
+        "anchor": "s13-w03",
+        "source_fields_sha256": "3b2dc7030ea1d233a7ac08900b4e61c4926dedb520ec7445725b55719fcca29a",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S14-W02",
+        "anchor": "s14-w02",
+        "source_fields_sha256": "d48886c647a0778c6c238dfb172bd0c85da98a41283a8f32d534abd7e20ad74b",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S15-W01",
+        "anchor": "s15-w01",
+        "source_fields_sha256": "7998966951988e5689abf351c3af983f34f525cecdb52bc066b04be424df8e95",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S15-W02",
+        "anchor": "s15-w02",
+        "source_fields_sha256": "49c389c2b798ce124e0fd4fde0ce2c32e163fdb1fa3a752d740eb7ebda3eead2",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S16-W04",
+        "anchor": "s16-w04",
+        "source_fields_sha256": "f7995238752eae0bb751ed7a8d4f88bb447843d124a6eab88384a419b38a3edd",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S17-W04",
+        "anchor": "s17-w04",
+        "source_fields_sha256": "94c91070ffdb3fc3d442bd9ace6f953fa6a3725c0b9333e52a6e0b20ee5fb3ce",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S01-W01",
+        "anchor": "s01-w01",
+        "source_fields_sha256": "3b4f4d1615ab77ba32bc5348d4ec4c026d45bc3bfbb4951bce54425cbac446fd",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S02-W01",
+        "anchor": "s02-w01",
+        "source_fields_sha256": "3431a4049508806fdd58d0cb2b5b0be7eda5080386b8ed18198259635cd0517c",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S06-W03",
+        "anchor": "s06-w03",
+        "source_fields_sha256": "344959964703b6ce75d847a5e7eea6618739570db287bcbc098206a30584ee8f",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S03-W01",
+        "anchor": "s03-w01",
+        "source_fields_sha256": "54436c0c27da73e368e43c8cd950d7b2d6deb7f5881dfa4b38000a9b75b9fa60",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S06-W01",
+        "anchor": "s06-w01",
+        "source_fields_sha256": "a09dd069ad022b57140558ca84cee358a6acca323d94edd4169034fec928033f",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S09-W01",
+        "anchor": "s09-w01",
+        "source_fields_sha256": "5584b4c9f97b4af22b8f59f55a4ac76325df4dd33a419957e525801418ca2e55",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S11-W01",
+        "anchor": "s11-w01",
+        "source_fields_sha256": "5e651a4c7764716834cc11c18324b12d7433181205aa584a1ddc589248d23a73",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S05-W01",
+        "anchor": "s05-w01",
+        "source_fields_sha256": "82f7909519d88e0a03337bce5a7b30fad1c34ef40c3a16c30bba975e0ef62960",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S16-W01",
+        "anchor": "s16-w01",
+        "source_fields_sha256": "3601e990e125af2a47260f7bdebdaad878b716b14d65fe9cd0b4dbbbf1d281f8",
+        "retained_after_declared_routing": true
+      },
+      {
+        "id": "S17-W01",
+        "anchor": "s17-w01",
+        "source_fields_sha256": "f769f9296e4890978ec0a7c739f49fd25802bdbe1b498ad9de7c1a58becff0ec",
+        "retained_after_declared_routing": true
+      }
+    ],
+    "step_scopes": [
+      {
+        "id": "s00",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s01",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s02",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s03",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s04",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s05",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s06",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s07",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s08",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s09",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s10",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s11",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s12",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s13",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s14",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s15",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s16",
+        "scope_and_gate_retained": true
+      },
+      {
+        "id": "s17",
+        "scope_and_gate_retained": true
+      }
+    ],
+    "missing_req_ac_identifiers": [],
+    "original_dependency_edges": {
+      "P2-F01": [],
+      "P2-F02": [
+        "P2-F01"
+      ],
+      "P2-F03": [
+        "P2-F02"
+      ],
+      "P2-F04": [
+        "P2-F03"
+      ],
+      "P2-F05": [
+        "P2-F02",
+        "P2-F03"
+      ],
+      "P2-F06": [
+        "P2-F03",
+        "P2-F05"
+      ],
+      "P2-F07": [
+        "P2-F04",
+        "P2-F06"
+      ],
+      "P2-F08": [
+        "P2-F07"
+      ],
+      "S11-W03": [
+        "S17-W01"
+      ],
+      "S06-W02": [
+        "S17-W01"
+      ],
+      "S05-W02": [
+        "S06-W02"
+      ],
+      "S09-W02": [
+        "S05-W02",
+        "S07-W03"
+      ],
+      "S07-W03": [
+        "S06-W02",
+        "S05-W02"
+      ],
+      "S13-W01": [
+        "S09-W02",
+        "S07-W03"
+      ],
+      "S13-W04": [
+        "S13-W01"
+      ],
+      "S10-W01": [
+        "S17-W01"
+      ],
+      "S10-W02": [
+        "S10-W01",
+        "S13-W04"
+      ],
+      "S11-W02": [
+        "S11-W03",
+        "S09-W02",
+        "S13-W04",
+        "S10-W02"
+      ],
+      "S12-W03": [
+        "S06-W02",
+        "S11-W02"
+      ],
+      "S12-W04": [
+        "S12-W03"
+      ],
+      "S13-W05": [
+        "S06-W02",
+        "S13-W04"
+      ],
+      "S13-W06": [
+        "S06-W02",
+        "S13-W04"
+      ],
+      "S13-W08": [
+        "S11-W02"
+      ],
+      "S13-W07": [
+        "S11-W02",
+        "S13-W08",
+        "S13-W05",
+        "S13-W06"
+      ],
+      "S14-W01": [
+        "S11-W02"
+      ],
+      "S16-W05": [
+        "S06-W02",
+        "S07-W03"
+      ],
+      "S16-W02": [
+        "S11-W03",
+        "S06-W02",
+        "S05-W02",
+        "S09-W02",
+        "S07-W03",
+        "S13-W01",
+        "S13-W04",
+        "S10-W01",
+        "S10-W02",
+        "S11-W02",
+        "S12-W03",
+        "S12-W04",
+        "S13-W05",
+        "S13-W06",
+        "S13-W08",
+        "S13-W07",
+        "S14-W01",
+        "S16-W05"
+      ],
+      "S17-W02": [
+        "S16-W02"
+      ],
+      "S06-W05": [
+        "S17-W02"
+      ],
+      "INT-W01": [],
+      "INT-W02": [
+        "INT-W01"
+      ],
+      "INT-W03": [
+        "INT-W02"
+      ],
+      "INT-W04": [
+        "INT-W03"
+      ],
+      "INT-W05": [
+        "INT-W03"
+      ],
+      "INT-W06": [
+        "INT-W04",
+        "INT-W05"
+      ],
+      "INT-W07": [
+        "INT-W01",
+        "INT-W02",
+        "INT-W03",
+        "INT-W04",
+        "INT-W05",
+        "INT-W06"
+      ],
+      "P2-A01": [],
+      "P2-A02": [],
+      "P2-A03": [],
+      "P2-A04": [],
+      "P2-A05": [],
+      "P2-A06": [
+        "P2-A02",
+        "P2-A03",
+        "P2-A04"
+      ],
+      "P2-A07": [],
+      "P2-A08": [],
+      "P2-A09": [
+        "P2-A01",
+        "P2-A02",
+        "P2-A03",
+        "P2-A04",
+        "P2-A05",
+        "P2-A06",
+        "P2-A07",
+        "P2-A08"
+      ],
+      "S04-W01": [
+        "P2-A09",
+        "S06-W05"
+      ],
+      "S05-W03": [
+        "S04-W01"
+      ],
+      "S07-W01": [
+        "S05-W03",
+        "S07-W03",
+        "P2-A09"
+      ],
+      "S09-W03": [
+        "S07-W01"
+      ],
+      "S12-W01": [
+        "S05-W03",
+        "S12-W03"
+      ],
+      "S13-W02": [
+        "S07-W01",
+        "S13-W07"
+      ],
+      "S16-W03": [
+        "S04-W01",
+        "S05-W03",
+        "S07-W01",
+        "S09-W03",
+        "S12-W01",
+        "S13-W02"
+      ],
+      "S17-W03": [
+        "S16-W03"
+      ],
+      "S06-W04": [
+        "S17-W03"
+      ],
+      "S17-W05": [
+        "S06-W04"
+      ],
+      "S08-W01": [
+        "S06-W04"
+      ],
+      "S10-W03": [
+        "S17-W03",
+        "S10-W02",
+        "P2-A04"
+      ],
+      "S12-W02": [
+        "S17-W03",
+        "S12-W01",
+        "S12-W04"
+      ],
+      "S07-W02": [
+        "S08-W01",
+        "S07-W01",
+        "S12-W02"
+      ],
+      "S13-W03": [
+        "S07-W02",
+        "S13-W02"
+      ],
+      "S14-W02": [
+        "S10-W03",
+        "S12-W02",
+        "P2-A05"
+      ],
+      "S15-W01": [
+        "S13-W03",
+        "S17-W05"
+      ],
+      "S15-W02": [
+        "S15-W01",
+        "S14-W02",
+        "P2-A09"
+      ],
+      "S16-W04": [
+        "S06-W04",
+        "S17-W05",
+        "S08-W01",
+        "S10-W03",
+        "S12-W02",
+        "S07-W02",
+        "S13-W03",
+        "S14-W02",
+        "S15-W01",
+        "S15-W02"
+      ],
+      "S17-W04": [
+        "S16-W04"
+      ],
+      "S01-W01": [],
+      "S02-W01": [
+        "S01-W01"
+      ],
+      "S06-W03": [
+        "S02-W01"
+      ],
+      "S03-W01": [
+        "S06-W03"
+      ],
+      "S06-W01": [
+        "S03-W01"
+      ],
+      "S09-W01": [
+        "S03-W01"
+      ],
+      "S11-W01": [
+        "S06-W01",
+        "S09-W01"
+      ],
+      "S05-W01": [
+        "S11-W01"
+      ],
+      "S16-W01": [
+        "S01-W01",
+        "S02-W01",
+        "S06-W03",
+        "S03-W01",
+        "S06-W01",
+        "S09-W01",
+        "S11-W01",
+        "S05-W01"
+      ],
+      "S17-W01": [
+        "S16-W01"
+      ]
+    },
+    "dependency_cycles": [],
+    "original_cost_body_preserved": true,
+    "worklog_original_byte_prefix_preserved": true,
+    "original_candidate_files_unchanged": 16,
+    "original_candidate_files_changed": [],
+    "team_file_ignored": true,
+    "local_markdown_links_checked": 457,
+    "incoming_root_plan_references": 74,
+    "incoming_unique_anchors": 27,
+    "new_broken_links": [],
+    "preexisting_broken_links": [],
+    "table_shape_errors": []
+  },
+  "routing": {
+    "task_requirements": "PLAN.md: current P2, delivered P2, later phases, step navigation and DOC/S00 bodies",
+    "detailed_runs": "Existing WORKLOG anchors and artifacts linked by each package and chat-reliability-delivered",
+    "unique_historical_attribution": "WORKLOG.md#log-20261011-plan-restructure: PR #173/#177/#184 facts, source identified",
+    "deployment_pause": "STATUS.md",
+    "cost": "docs/ARCHITECTURE.md#firestore-low-usage-assumptions",
+    "rules": "AGENTS.md",
+    "historical_original": "_archive/README.md#plan-20261011: fixed Git blob; no duplicate archive copy",
+    "allocation": "Existing ignored local collaboration file; no private content copied to this evidence"
+  },
+  "independent_review": {
+    "status": "passed",
+    "reviewer_role": "worker, requested gpt-6.1-sol/high, read-only",
+    "scope": "Semantic comparison of 75 table packages, DOC-R01–R04 and S00-W01; F01–F08, A09 handoff, P3/P4 promotion and remaining gates, original cost transfer. Follow-up verified three evidence links.",
+    "initial_findings": [
+      {
+        "priority": "P2",
+        "finding": "Verification artifact had not yet been written at the time of review.",
+        "resolution": "Artifact generated; all three references and its document-only scope independently rechecked. Closed."
+      }
+    ],
+    "remaining_P1_P2": [],
+    "not_reviewed": "No product, cloud, paid-model or original capacity-candidate tests; private local allocation and mechanical checks handled by primary."
+  },
+  "check_history": [
+    {
+      "stage": "First document check before this evidence file was written",
+      "result": "failed",
+      "errors": [
+        {
+          "new_broken_links": [
+            {
+              "file": "PLAN.md",
+              "target": "artifacts/verification/PLAN_RESTRUCTURE_20261011.json",
+              "reason": "missing_file"
+            },
+            {
+              "file": "_archive/README.md",
+              "target": "../artifacts/verification/PLAN_RESTRUCTURE_20261011.json",
+              "reason": "missing_file"
+            },
+            {
+              "file": "WORKLOG.md",
+              "target": "artifacts/verification/PLAN_RESTRUCTURE_20261011.json",
+              "reason": "missing_file"
+            }
+          ]
+        }
+      ],
+      "resolution": "Evidence file generated; affected self-references checked again. No requirement or assertion changed."
+    }
+  ],
+  "errors": [],
+  "authorship": {
+    "guidance_and_plan": "Primary authored PLAN, content routing and AGENTS update; reviewers did not modify guidance.",
+    "latest_user_instruction": "AGENTS now explicitly requires the Astra primary for PLAN and other guidance. Sol may only perform read-only review of these documents."
+  },
+  "verified_document_sha256": {
+    "AGENTS.md": "8d3d1bd22a6864424b4237254c70b4c8f8919fbe835ce5881ef5095b2a6d6e59",
+    "PLAN.md": "29c4539fe78b6927021f91ab69075c79f5d8a3d3cdf915dbd089aa11f85a34e0",
+    "STATUS.md": "42bf41b220d7d487b53dd554a997426ee2742557ab886377bdfb0ecc5d1b9d30",
+    "_archive/README.md": "15f98025a0ea865fa0f7e3186cc8bdce5491f020001af92cd62627848c670f19",
+    "docs/ARCHITECTURE.md": "b66a9c5416e3c9c7461f3b9b3eff15a61af04682d7440c2ad350769dd43ca2f4"
+  }
+}

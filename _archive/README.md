@@ -38,6 +38,27 @@
 | `frontend/PLAN.md` | FE-W01–36 範圍、歷史關口及商業方案卡；查具體舊包範圍；現行包及未驗看 frontend/PLAN | [固定原文](https://github.com/2NTTY/child-ai-caregiver/blob/c51dd52e0cdea03b1d412a10d08ac6761e010d9b/frontend/PLAN.md) | `a91611856828d14244afa5eb11f1b9c243eab30e7b486d2e40fd238c9addb4d7` |
 | `frontend/HANDOFF.md` | FE-W06–36 詳細交接／演變／失敗及證據連結；由現行 HANDOFF 舊錨點直達指定章節；不預設全文讀 | [固定原文](https://github.com/2NTTY/child-ai-caregiver/blob/c51dd52e0cdea03b1d412a10d08ac6761e010d9b/frontend/HANDOFF.md) | `05959c0d157a10023ed37719ad8093418776994578c18cd177f7227845b93db5` |
 
+
+<a id="plan-20261011"></a>
+### 2026-10-11 根 PLAN 重排前快照（Git 保存，不另複製文件）
+
+- 來源：`a38e03f3c48bbb9e879254248313c11f5bab5e63`（接手時遠端 master）。[完整 PLAN 原文](https://github.com/2NTTY/child-ai-caregiver/blob/a38e03f3c48bbb9e879254248313c11f5bab5e63/PLAN.md)；SHA-256（Git blob 原始 bytes）：`1b10d09281956e3ee4669096b887d548652ce834a898db6194eb33c842e97b24`。本機可用 `git show a38e03f3c48bbb9e879254248313c11f5bab5e63:PLAN.md` 取得。
+- 用途：核對原任務細節、原標題、當時下一步／失敗／批准；不是現行工作指令。140 個顯式錨點及舊標題入口保留於根 PLAN，未搬移或覆寫凍結證據。
+- 原容量恢復分支的未提交 PLAN 及程式／證據留在原工作區；它不是此 Git 快照，也沒有混入本文件提交。其內容校驗另於本機保存，沒有把未提交候選當已交付。
+
+| 原內容 | 現行目的地／查閱條件 |
+|---|---|
+| 全階段／工作包／REQ、AC／前置／未驗與完成門檻 | [根 PLAN](../PLAN.md)：當前 P2、已交付 P2、P3～P5、S 導覽各有唯一正文 |
+| #171～186 的詳細 run、失敗、修正及 hash | [交付索引](../PLAN.md#chat-reliability-delivered) → 原 LOG／EV；對照整理前完整段落時讀上述固定原文；獨有補充只追加既有 WORKLOG |
+| 部署／Sites 觀察、接手及暫停安排 | [STATUS](../STATUS.md)，歷史觀察有日期／版本，未重探測不當今日狀態 |
+| 月量、成本表與假設 | [架構原成本章節](../docs/ARCHITECTURE.md#firestore-low-usage-assumptions)，2026-10-08 歷史未實測數值，不代表新授權 |
+| 資料／API／架構細節 | 既有 [資料](../docs/DATA_MODEL.md#firestore-target)／[API](../docs/API.md#firestore-target)／[架構](../docs/ARCHITECTURE.md#firestore-target)；PLAN 保留包的必要條件與引用 |
+| 舊能力差距、四角色研究及復用過程 | 上述固定 PLAN 的 `#current-capability-gaps`／`#section-7-reuse`；現行採用看 [TECH_REUSE](../docs/TECH_REUSE.md#decisions)，仍有效缺口看承接包 |
+| 模型、Git、批准、文件維護 | [AGENTS](../AGENTS.md)；舊聊天限定批准由固定原文保留，不轉成通用授權 |
+| 人員權重／份額／署名操作 | 既有本機協作文件（不納入 Git）；原位保存歷史分配、不重算。只在實際分配／交付時依 [AGENTS](../AGENTS.md#team-contributions) 查閱 |
+
+本次文件核查與內容去向見 [EV](../artifacts/verification/PLAN_RESTRUCTURE_20261011.json)／[LOG](../WORKLOG.md#log-20261011-plan-restructure)。
+
 ## S00／早期基線
 
 維護時，任何文件移入 `_archive/` 或改為 archived-in-place，必須在同一工作包更新本索引；日常 AI 不直接掃描歸檔，追溯時先讀本索引，再讀指定資料。凍結原文使用 `.gitattributes` 的 `-text` 保護位元組，避免 Git 換行轉換改變下列 SHA。
