@@ -1,0 +1,1323 @@
+{
+  "schema": 1,
+  "package": "P2-F02",
+  "baseline": "d5dbf61ec709467fd7659fd3599c65dbf167c915",
+  "observedAt": "2026-10-11T11:00:50.361Z",
+  "state": "local-implementation-cloud-terms-blocked",
+  "cloudResourcesCreated": false,
+  "catalog": [
+    {
+      "service": "Cloud Run",
+      "serviceId": "152E-C115-5142",
+      "nextPageTokenPresent": false,
+      "skus": [
+        {
+          "skuId": "085C-A237-027A",
+          "description": "Services CPU Tier 2  (Request-based billing)",
+          "serviceRegions": [
+            "asia-east2",
+            "asia-northeast3",
+            "asia-south2",
+            "asia-southeast1",
+            "asia-southeast2",
+            "australia-southeast1",
+            "australia-southeast2",
+            "europe-central2",
+            "europe-west10",
+            "europe-west12",
+            "europe-west2",
+            "europe-west3",
+            "europe-west6",
+            "me-central1",
+            "me-central2",
+            "northamerica-northeast1",
+            "northamerica-northeast2",
+            "southamerica-east1",
+            "southamerica-west1",
+            "us-west2",
+            "us-west3",
+            "us-west4"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "s",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 33600
+                    }
+                  }
+                ],
+                "usageUnitDescription": "second",
+                "baseUnit": "s",
+                "baseUnitDescription": "second",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "2DA5-55D3-E679",
+          "description": "Requests",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 0
+                    }
+                  },
+                  {
+                    "startUsageAmount": 2000000,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 400
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "ACCOUNT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "600C-3782-6708",
+          "description": "Services Memory Tier 2 (Request-based billing)",
+          "serviceRegions": [
+            "asia-east2",
+            "asia-northeast3",
+            "asia-south2",
+            "asia-southeast1",
+            "asia-southeast2",
+            "australia-southeast1",
+            "australia-southeast2",
+            "europe-central2",
+            "europe-west10",
+            "europe-west12",
+            "europe-west2",
+            "europe-west3",
+            "europe-west6",
+            "me-central1",
+            "me-central2",
+            "northamerica-northeast1",
+            "northamerica-northeast2",
+            "southamerica-east1",
+            "southamerica-west1",
+            "us-west2",
+            "us-west3",
+            "us-west4"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "GiBy.s",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 3500
+                    }
+                  }
+                ],
+                "usageUnitDescription": "gibibyte second",
+                "baseUnit": "By.s",
+                "baseUnitDescription": "byte second",
+                "baseUnitConversionFactor": 1073741824
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        }
+      ],
+      "source": "https://cloudbilling.googleapis.com/v1/services/152E-C115-5142/skus?currencyCode=USD&pageSize=5000"
+    },
+    {
+      "service": "Cloud Firestore",
+      "serviceId": "EE2C-7FAC-5E08",
+      "nextPageTokenPresent": false,
+      "skus": [
+        {
+          "skuId": "007C-1C42-2D75",
+          "description": "Cloud Firestore Backup Restore Operation Hong Kong",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "GiBy",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 230000000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "gibibyte",
+                "baseUnit": "By",
+                "baseUnitDescription": "byte",
+                "baseUnitConversionFactor": 1073741824
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "2A11-1B7C-ABA2",
+          "description": "Cloud Firestore Zonal Backup Storage Hong Kong",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "GiBy.mo",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 35000000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "gibibyte month",
+                "baseUnit": "By.s",
+                "baseUnitDescription": "byte second",
+                "baseUnitConversionFactor": 2875910101401600
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "6081-3A27-48C0",
+          "description": "Cloud Firestore Read Ops Hong Kong",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 100000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 600
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "B33D-61E8-3341",
+          "description": "Cloud Firestore Storage Hong Kong",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "GiBy.mo",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 180000000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "gibibyte month",
+                "baseUnit": "By.s",
+                "baseUnitDescription": "byte second",
+                "baseUnitConversionFactor": 2875910101401600
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "DC5B-C389-C79D",
+          "description": "Cloud Firestore Entity Deletes Hong Kong",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 100000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 200
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "F2DE-94E6-799A",
+          "description": "Cloud Firestore Entity Writes Hong Kong",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 100000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 1800
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        }
+      ],
+      "source": "https://cloudbilling.googleapis.com/v1/services/EE2C-7FAC-5E08/skus?currencyCode=USD&pageSize=5000"
+    },
+    {
+      "service": "Cloud Storage",
+      "serviceId": "95FF-2EF5-5EA1",
+      "nextPageTokenPresent": false,
+      "skus": [
+        {
+          "skuId": "01C0-1EAA-23AD",
+          "description": "Standard Storage Hong Kong",
+          "serviceRegions": [
+            "asia-east2"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "GiBy.mo",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 23000000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "gibibyte month",
+                "baseUnit": "By.s",
+                "baseUnitDescription": "byte second",
+                "baseUnitConversionFactor": 2875910101401600
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "4DBF-185F-A415",
+          "description": "Regional Standard Class A Operations",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 0
+                    }
+                  },
+                  {
+                    "startUsageAmount": 5000,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 5000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "ACCOUNT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "7870-010B-2763",
+          "description": "Regional Standard Class B Operations",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 0
+                    }
+                  },
+                  {
+                    "startUsageAmount": 50000,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 400
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "ACCOUNT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "A115-9CB2-F553",
+          "description": "Network Data Transfer GCP Inter Region within Asia",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "GiBy",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 80000000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "gibibyte",
+                "baseUnit": "By",
+                "baseUnitDescription": "byte",
+                "baseUnitConversionFactor": 1073741824
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        }
+      ],
+      "source": "https://cloudbilling.googleapis.com/v1/services/95FF-2EF5-5EA1/skus?currencyCode=USD&pageSize=5000"
+    },
+    {
+      "service": "Cloud Build",
+      "serviceId": "8B5D-EF7D-EB12",
+      "nextPageTokenPresent": false,
+      "skus": [
+        {
+          "skuId": "5EA7-897F-E2DA",
+          "description": "Cloud Build: Network Data Transfer Out Internet Premium within Asia",
+          "serviceRegions": [
+            "asia-east1",
+            "asia-east2",
+            "asia-northeast1",
+            "asia-northeast2",
+            "asia-northeast3",
+            "asia-south1",
+            "asia-south2",
+            "asia-southeast1",
+            "asia-southeast3"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "GiBy",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 120000000
+                    }
+                  },
+                  {
+                    "startUsageAmount": 1024,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 110000000
+                    }
+                  },
+                  {
+                    "startUsageAmount": 10240,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 80000000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "gibibyte",
+                "baseUnit": "By",
+                "baseUnitDescription": "byte",
+                "baseUnitConversionFactor": 1073741824
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "ACCOUNT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "A464-9020-6404",
+          "description": "Build time e2-standard-2",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "min",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 0
+                    }
+                  },
+                  {
+                    "startUsageAmount": 2500,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 6000000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "minute",
+                "baseUnit": "s",
+                "baseUnitDescription": "second",
+                "baseUnitConversionFactor": 60
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "ACCOUNT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        }
+      ],
+      "source": "https://cloudbilling.googleapis.com/v1/services/8B5D-EF7D-EB12/skus?currencyCode=USD&pageSize=5000"
+    },
+    {
+      "service": "Cloud Tasks",
+      "serviceId": "F3A6-D7B7-9BDA",
+      "nextPageTokenPresent": false,
+      "skus": [
+        {
+          "skuId": "378A-D762-1F74",
+          "description": "Operations",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1000000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 0
+                    }
+                  },
+                  {
+                    "startUsageAmount": 1000000,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 400
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "ACCOUNT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-10T07:00:00Z"
+            }
+          ]
+        }
+      ],
+      "source": "https://cloudbilling.googleapis.com/v1/services/F3A6-D7B7-9BDA/skus?currencyCode=USD&pageSize=5000"
+    },
+    {
+      "service": "Cloud Scheduler",
+      "serviceId": "1F14-4801-0E16",
+      "nextPageTokenPresent": false,
+      "skus": [
+        {
+          "skuId": "A5D6-43A2-28A7",
+          "description": "Jobs",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 31,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 0
+                    }
+                  },
+                  {
+                    "startUsageAmount": 93,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 3225806
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "ACCOUNT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        }
+      ],
+      "source": "https://cloudbilling.googleapis.com/v1/services/1F14-4801-0E16/skus?currencyCode=USD&pageSize=5000"
+    },
+    {
+      "service": "Secret Manager",
+      "serviceId": "EE82-7A5E-871C",
+      "nextPageTokenPresent": false,
+      "skus": [
+        {
+          "skuId": "7756-ADEF-84F4",
+          "description": "Secret version replica storage",
+          "serviceRegions": [
+            "africa-south1",
+            "asia-east1",
+            "asia-east2",
+            "asia-northeast1",
+            "asia-northeast2",
+            "asia-northeast3",
+            "asia-south1",
+            "asia-south2",
+            "asia-southeast1",
+            "australia-southeast1",
+            "australia-southeast2",
+            "europe-central2",
+            "europe-north1",
+            "europe-southwest1",
+            "europe-west1",
+            "europe-west10",
+            "europe-west12",
+            "europe-west2",
+            "europe-west3",
+            "europe-west4",
+            "europe-west6",
+            "europe-west8",
+            "europe-west9",
+            "global",
+            "me-central1",
+            "me-central2",
+            "me-west1",
+            "northamerica-northeast1",
+            "northamerica-northeast2",
+            "southamerica-east1",
+            "southamerica-west1",
+            "us-central1",
+            "us-central2",
+            "us-east1",
+            "us-east4",
+            "us-east5",
+            "us-east7",
+            "us-south1",
+            "us-west1",
+            "us-west2",
+            "us-west3",
+            "us-west4",
+            "us-west8",
+            "northamerica-south1",
+            "europe-north2",
+            "europe-north3",
+            "asia-southeast2",
+            "asia-southeast3",
+            "eu",
+            "us",
+            "us-central6",
+            "in",
+            "ca"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "mo",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 0
+                    }
+                  },
+                  {
+                    "startUsageAmount": 6,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 60000000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "month",
+                "baseUnit": "s",
+                "baseUnitDescription": "second",
+                "baseUnitConversionFactor": 2678400
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "ACCOUNT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-10T07:00:00Z"
+            }
+          ]
+        },
+        {
+          "skuId": "EBA7-264F-2D2C",
+          "description": "Secret access operations",
+          "serviceRegions": [
+            "africa-south1",
+            "asia-east1",
+            "asia-east2",
+            "asia-northeast1",
+            "asia-northeast2",
+            "asia-northeast3",
+            "asia-south1",
+            "asia-south2",
+            "asia-southeast1",
+            "australia-southeast1",
+            "australia-southeast2",
+            "europe-central2",
+            "europe-north1",
+            "europe-southwest1",
+            "europe-west1",
+            "europe-west10",
+            "europe-west12",
+            "europe-west2",
+            "europe-west3",
+            "europe-west4",
+            "europe-west6",
+            "europe-west8",
+            "europe-west9",
+            "me-central1",
+            "me-central2",
+            "me-west1",
+            "northamerica-northeast1",
+            "northamerica-northeast2",
+            "southamerica-east1",
+            "southamerica-west1",
+            "us-central1",
+            "us-central2",
+            "us-east1",
+            "us-east4",
+            "us-east5",
+            "us-east7",
+            "us-south1",
+            "us-west1",
+            "us-west2",
+            "us-west3",
+            "us-west4",
+            "us-west8",
+            "northamerica-south1",
+            "europe-north2",
+            "europe-north3",
+            "asia-southeast2",
+            "asia-southeast3",
+            "eu",
+            "us",
+            "us-central6",
+            "in",
+            "ca"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 10000,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 0
+                    }
+                  },
+                  {
+                    "startUsageAmount": 10000,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 3000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "ACCOUNT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-10T07:00:00Z"
+            }
+          ]
+        }
+      ],
+      "source": "https://cloudbilling.googleapis.com/v1/services/EE82-7A5E-871C/skus?currencyCode=USD&pageSize=5000"
+    },
+    {
+      "service": "Artifact Registry",
+      "serviceId": "149C-F9EC-3994",
+      "nextPageTokenPresent": false,
+      "skus": [
+        {
+          "skuId": "8502-299A-ABAF",
+          "description": "Artifact Registry Storage",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "GiBy.mo",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 0
+                    }
+                  },
+                  {
+                    "startUsageAmount": 0.5,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 100000000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "gibibyte month",
+                "baseUnit": "By.s",
+                "baseUnitDescription": "byte second",
+                "baseUnitConversionFactor": 2875910101401600
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "ACCOUNT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        }
+      ],
+      "source": "https://cloudbilling.googleapis.com/v1/services/149C-F9EC-3994/skus?currencyCode=USD&pageSize=5000"
+    },
+    {
+      "service": "Identity Platform",
+      "serviceId": "DC5D-D207-FD2F",
+      "nextPageTokenPresent": false,
+      "skus": [
+        {
+          "skuId": "25AA-EC24-EA10",
+          "description": "Tier 1 Monthly Active Users",
+          "serviceRegions": [
+            "global"
+          ],
+          "pricingInfo": [
+            {
+              "summary": "",
+              "pricingExpression": {
+                "usageUnit": "count",
+                "displayQuantity": 1,
+                "tieredRates": [
+                  {
+                    "startUsageAmount": 0,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 0
+                    }
+                  },
+                  {
+                    "startUsageAmount": 50000,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 5500000
+                    }
+                  },
+                  {
+                    "startUsageAmount": 100000,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 4600000
+                    }
+                  },
+                  {
+                    "startUsageAmount": 1000000,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 3200000
+                    }
+                  },
+                  {
+                    "startUsageAmount": 10000000,
+                    "unitPrice": {
+                      "currencyCode": "USD",
+                      "units": "0",
+                      "nanos": 2500000
+                    }
+                  }
+                ],
+                "usageUnitDescription": "count",
+                "baseUnit": "count",
+                "baseUnitDescription": "count",
+                "baseUnitConversionFactor": 1
+              },
+              "aggregationInfo": {
+                "aggregationLevel": "PROJECT",
+                "aggregationInterval": "MONTHLY",
+                "aggregationCount": 1
+              },
+              "currencyConversionRate": 1,
+              "effectiveTime": "2026-10-11T07:00:00Z"
+            }
+          ]
+        }
+      ],
+      "source": "https://cloudbilling.googleapis.com/v1/services/DC5D-D207-FD2F/skus?currencyCode=USD&pageSize=5000"
+    }
+  ],
+  "limitations": [
+    "catalog list may be paginated; no cost authorization inferred from free tiers",
+    "actual incremental billed cost not yet measured",
+    "no cloud acceptance executed"
+  ],
+  "costPlanning": {
+    "currency": "USD",
+    "newAuthorization": 30,
+    "oldModelBudgetReused": false,
+    "paidApplicationOperationsStarted": false,
+    "retainedForLaterPackagesAndCleanup": 24,
+    "freeTiersAssumed": false,
+    "limits": {
+      "accounts": 3,
+      "cloudRunServices": 3,
+      "maxInstancesEach": 1,
+      "minInstances": 0,
+      "cpu": 1,
+      "memoryGiB": 1,
+      "totalActiveVcpuSeconds": 18000,
+      "totalActiveGiBSeconds": 18000,
+      "requests": 5000,
+      "firestoreReads": 50000,
+      "firestoreWrites": 10000,
+      "firestoreDeletes": 10000,
+      "firestoreGiB": 0.1,
+      "attachmentAndSourceGiB": 1,
+      "buildMinutes": 90,
+      "artifactRegistryGiB": 3,
+      "taskOperations": 1000,
+      "schedulerJobs": 1,
+      "secretVersions": 2,
+      "secretAccesses": 1000,
+      "publicNetworkGiB": 2
+    },
+    "pending": [
+      "Verify resource/IAM changes are minimal and existing services untouched",
+      "Fix exact build/runtime and blocking-function deployment source before provisioning",
+      "Measure executions and pending billed units; estimate is not a hard billing cap",
+      "Pause dispatch/traffic at batch end; keep 14-day synthetic paired recovery assets within reserve"
+    ],
+    "batchEnvelope": 6,
+    "conservativeEstimateUSD": 2.96,
+    "estimateComponentsUSD": {
+      "cloudRunCpu": 0.6047999999999999,
+      "cloudRunMemory": 0.063,
+      "cloudRunRequests": 0.002,
+      "firestoreReads": 0.03,
+      "firestoreWrites": 0.018,
+      "firestoreDeletes": 0.002,
+      "firestoreLiveAndRestoreStorage": 0.036,
+      "firestoreBackupAndRestore": 0.026500000000000003,
+      "privateStorage": 0.023,
+      "storageOperations": 0.07,
+      "cloudBuild": 0.54,
+      "artifactRegistry": 0.30000000000000004,
+      "tasks": 0.00039999999999999996,
+      "scheduler": 0.1,
+      "secrets": 0.123,
+      "identityPlatform": 0.0165,
+      "networkContingency": 1
+    },
+    "estimateBasis": "Catalog maximum selected unit rates; one full month of listed storage/job costs, two database copies, no free tier assumed. Network contingency is a reserve, not a measured unit rate. Actual invoice still pending.",
+    "automaticHardCap": false,
+    "cleanupReserveWithinEnvelopeUSD": 2
+  },
+  "resourcePlan": {
+    "projectId": "ai-caregivers-for-children",
+    "region": "asia-east2",
+    "databaseId": "yuban-firebase-20261011",
+    "restoreDatabaseId": "yuban-firebase-restore-20261011",
+    "namespace": "yuban_authority",
+    "cloudRunServices": [
+      "yuban-firebase-api",
+      "yuban-firebase-worker"
+    ],
+    "blockingFunction": "beforeYubanUserCreated",
+    "serviceAccounts": [
+      "yuban-firebase-api",
+      "yuban-firebase-worker",
+      "yuban-firebase-auth",
+      "yuban-firebase-dispatch",
+      "yuban-firebase-build"
+    ],
+    "buckets": [
+      "ai-caregivers-for-children-firebase-private",
+      "ai-caregivers-for-children-firebase-journal"
+    ],
+    "artifactRepository": "yuban-firebase",
+    "taskQueue": "yuban-firebase",
+    "scheduler": "yuban-firebase-dispatch",
+    "secretNames": [
+      "YUBAN_FIREBASE_STORAGE_KEY"
+    ],
+    "hostingSite": "yuban-firebase-check",
+    "identityPolicy": "Email/password only, invitation blocking, private business session ledger; no imported users or SMS.",
+    "iamBoundary": "No human role expansion. Runtime Firestore grant conditional to the named database; journal append-only for writers; bucket/secret/queue/service invoker grants scoped to the new resources. Detailed exact bindings are verified before application.",
+    "activation": "Resources can be prepared under the approved migration budget. Dispatch stays paused until executable handlers and batch caps pass review. Public test traffic ends after acceptance; no production domain cutover."
+  },
+  "sources": [
+    "https://firebase.google.com/docs/auth/admin/manage-cookies",
+    "https://firebase.google.com/docs/auth/custom-email-handler",
+    "https://firebase.google.com/docs/firestore/security/iam",
+    "https://docs.cloud.google.com/functions/docs/runtime-support"
+  ],
+  "serviceEnablement": {
+    "observedAt": "2026-10-11T11:14:31.476Z",
+    "alreadyEnabled": [],
+    "requested": [
+      "firebase.googleapis.com",
+      "firestore.googleapis.com",
+      "identitytoolkit.googleapis.com",
+      "run.googleapis.com",
+      "cloudtasks.googleapis.com",
+      "cloudscheduler.googleapis.com",
+      "secretmanager.googleapis.com",
+      "artifactregistry.googleapis.com",
+      "cloudbuild.googleapis.com",
+      "cloudfunctions.googleapis.com",
+      "firebaserules.googleapis.com",
+      "firebasehosting.googleapis.com"
+    ],
+    "state": "enabled",
+    "operation": "operations/acf.p2-1064034424208-9507610e-2474-4585-b562-e1310653e880"
+  },
+  "cloudInventory": {
+    "observedAt": "2026-10-11T11:15:31.178Z",
+    "firebaseProject": {
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    "databases": {
+      "status": 200,
+      "databases": []
+    },
+    "runServices": {
+      "status": 200,
+      "services": []
+    },
+    "identityConfig": {
+      "status": 404,
+      "code": "NOT_FOUND"
+    }
+  },
+  "firebaseAttachment": {
+    "state": "rejected",
+    "status": 403,
+    "code": "PERMISSION_DENIED",
+    "observedAt": "2026-10-11T11:16:20.976Z",
+    "readback": {
+      "status": 404,
+      "code": "NOT_FOUND"
+    },
+    "missingPermissions": [],
+    "audit": [
+      {
+        "timestamp": "2026-10-11T11:15:48.694677Z",
+        "method": "google.firebase.service.v1beta1.FirebaseProjectService.AddFirebase",
+        "status": {
+          "code": 7,
+          "message": "Firebase Tos Not Accepted"
+        }
+      }
+    ]
+  },
+  "localImplementation": {
+    "nodeVersion": "24.19.0",
+    "newDependencies": {
+      "firebase": "13.0.0",
+      "firebase-functions": "7.4.0",
+      "@google-cloud/storage": "7.22.0",
+      "@google-cloud/tasks": "7.2.1"
+    },
+    "dependencyFailure": {
+      "candidate": "@google-cloud/storage@8.4.0",
+      "result": "ERESOLVE: ADK 2.1.0 optional peer requires ^7.17.1",
+      "resolution": "Selected compatible 7.22.0, no force or legacy-peer-deps"
+    },
+    "engineCorrection": "Firebase Web SDK modules require >=24.12.0; root/frontend Node 24 minimum aligned. Earlier 24.11 installation warnings retained as incompatible runtime evidence.",
+    "registration": {
+      "result": "8/8 targeted unit cases passed",
+      "originalFailure": "Initial 7/8: synthetic control generation used decimal 1 instead of required UUID; fixture corrected without weakening assertions. No cloud registration or email tested."
+    },
+    "clientIdentity": {
+      "result": "16/16 new and existing client/account-owner targeted cases passed",
+      "environment": "Native SDK port mocked; no browser, emulator, Firebase, email or deployment acceptance"
+    },
+    "cloudAcceptance": "not started; pending Firebase Terms confirmation and complete local slice",
+    "compositionOriginalFailure": {
+      "test": "tests/firebase-runtime.test.ts:23",
+      "result": "401 !== 503",
+      "meaning": "F01 assertion expected children to be unconnected. F02 now dispatches the real store and rejects an anonymous request with 401.",
+      "correction": "Retain explicit 401/auth assertion for connected children and explicit 503 assertion for unconnected documents; no acceptance requirement reduced."
+    },
+    "targetedTypecheckOriginalFailure": {
+      "scope": "production plus 9 changed test files",
+      "diagnostics": [
+        "tests/firestore-online.test.ts:28 TS2345",
+        "tests/firestore-online.test.ts:34 TS2345"
+      ],
+      "cause": "randomUUID default inferred a UUID template literal; fixture wrapper forwarded optional string.",
+      "correction": "Explicit string parameter annotation; runtime schema and assertions unchanged."
+    },
+    "checkedAt": "2026-10-11T11:47:35.643Z",
+    "results": {
+      "registrationAndStorageKey": "9/9",
+      "clientIdentityAndAccountOwner": "16/16",
+      "clientPagination": "9/9",
+      "online": "7/7",
+      "affectedAuthority": "5/5",
+      "photoObjects": "12/12",
+      "appAndComposition": "11/11",
+      "emailConfigAndComposition": "5/5",
+      "licenseInventory": "2/2",
+      "frontendTypecheck": "exit 0",
+      "productionTypecheck": "212 files, 0 diagnostics",
+      "targetedTypecheck": "222 files, 0 diagnostics after two fixture annotation errors corrected",
+      "webBuild": "npm@11.8.0 run build:web exit 0; Metro 1993 modules, 35 static routes; compile only, no preview or browser"
+    },
+    "limitations": [
+      "Unit in-memory Firestore query fixture does not prove native transactions/concurrency/indexes",
+      "Real SDK construction does not prove remote IAM/Auth/Storage behavior",
+      "No cloud acceptance, email, model calls or deployment",
+      "Documents, public knowledge, reminder consumer/Tasks, erasure journal and isolated restore still require implementation and acceptance",
+      "Five prior master-wide test type errors remain F03 scope; targeted green is not full-repository typecheck"
+    ],
+    "review": {
+      "state": "independent read-only review complete for implemented local slice",
+      "findings": [],
+      "resolvedFinding": {
+        "code": "email-capability-fixed-false",
+        "resolution": "Explicit FIREBASE_AUTH_EMAIL_ENABLED gate reviewed; strict parse/default closed/configured readiness distinct from delivery."
+      },
+      "reviewerScope": "Implemented identity/secret/client pagination, native authority/online/task/outbox, immutable photo objects, formal routing and index manifest; no external execution.",
+      "limitation": "Does not complete F02 or replace live indexes/concurrency/mail/deployment/restore acceptance."
+    },
+    "sources": [
+      "https://docs.cloud.google.com/storage/docs/json_api/v1/objects/get",
+      "https://docs.cloud.google.com/run/docs/configuring/services/secrets"
+    ]
+  }
+}

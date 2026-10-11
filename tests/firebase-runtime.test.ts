@@ -19,7 +19,11 @@ test('production Firebase composition constructs real SDK clients without SQL co
     assert.deepEqual(await response.json(), { status: 'ok', storage: 'firestore', stage: 'foundation' });
     assert.equal(runtime.database.databaseId, 'synthetic-care');
     assert.equal('databaseUrl' in runtime.config, false);
-    const unsupported = await runtime.handler(new Request('https://synthetic.example.test/api/children'));
+    const anonymous = await runtime.handler(new Request('https://synthetic.example.test/api/children'));
+    assert.equal(anonymous.status, 401);
+    assert.equal((await anonymous.json()).error.code, 'unauthorized');
+    assert.equal(typeof runtime.online.submit, 'function');
+    const unsupported = await runtime.handler(new Request('https://synthetic.example.test/api/children/00000000-0000-4000-8000-000000000001/documents'));
     assert.equal(unsupported.status, 503);
     assert.equal((await unsupported.json()).error.code, 'firebase_domain_not_ready');
     const first = runtime.close(); assert.equal(runtime.close(), first); await first;

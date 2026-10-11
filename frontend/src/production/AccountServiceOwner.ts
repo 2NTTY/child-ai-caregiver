@@ -43,6 +43,8 @@ function gateFor(status: AccountServiceStatus, userId: string | null): AccountGa
 }
 function errorMessage(error: unknown): string {
   const code = error instanceof AccountApiError ? error.code : null;
+  if (error instanceof ClientApiError && error.onlineCode === "firebase_reauthentication_required") return "請先登出並重新登入，再明確要求電郵驗證指引。重新載入頁面後，原登入資料不會保留。";
+  if (error instanceof ClientApiError && error.onlineCode === "auth_provider_unavailable") return "身份服務設定未完整，暫時不能處理登入或電郵指引。";
   if (code === "shared_workspace_requires_resolution") return "這個帳戶仍與其他成員共享資料。請先處理共享家庭的責任及成員，再重新核對退出範圍。";
   if (code === "password_verification_failed") return "未能確認密碼。請重新輸入；尚未刪除帳戶。";
   if (code === "erasure_receipt_expired" || code === "account_scope_changed") return "退出範圍或確認期限已改變。請查核原操作，再重新核對範圍。";

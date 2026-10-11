@@ -4,7 +4,7 @@ import { FamilyError } from "./family-access.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
 import type { TaskStore } from "./tasks.ts";
 
-export async function handleTaskRequest(request: Request, userId: string | null, store: TaskStore, receiptTransaction = false): Promise<Response> {
+export async function handleTaskRequest(request: Request, userId: string | null, store: Pick<TaskStore, 'list' | 'get' | 'history'> & Partial<Pick<TaskStore, 'create' | 'change'>>, receiptTransaction = false): Promise<Response> {
   if (!userId) return apiError("unauthorized", "請先登入。", 401);
   if (request.method === "POST") {
     const expected = request.headers.get("x-expected-user-id");
@@ -24,6 +24,7 @@ export async function handleTaskRequest(request: Request, userId: string | null,
         url.searchParams.has("beforeVersion") ? z.coerce.number().int().positive().max(2147483647).parse(url.searchParams.get("beforeVersion")) : undefined);
       else if (!action) { const task = await store.get(userId, childId, id); if (task) result = { task }; }
     } else if (request.method === "POST") {
+      if (!store.create || !store.change) return apiError("firebase_domain_not_ready", "此資料流程仍未接通。", 503);
       if (request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() !== "application/json") return apiError("unsupported_media_type", "請以 JSON 提交。", 415);
       let body: unknown; try { body = await request.json(); } catch { return apiError("invalid_json", "請核對輸入。", 400); }
       if (!id) { const task = await store.create(userId, childId, taskCreateSchema.parse(body)); if (task) { result = { task }; status = 201; } }

@@ -92,8 +92,8 @@ test('empty canonical authority admits identity and consent, creates child/work,
   assert.equal(await continuation.authorizeBackground(job, admission.claim), true);
   assert.equal((await continuation.readWork(job, admission.claim, work.id))?.items[0]?.goal, work.goal);
   assert.deepEqual(await continuation.beginBackground(job), { decision: 'lookup', runId: admission.claim.runId });
-  for (const envelope of f.fake.records.values()) {
-    assert.deepEqual(Object.keys(envelope).sort(), ['ciphertext', 'format', 'version']);
+  for (const [path, envelope] of f.fake.records) {
+    if (path.startsWith(f.options.namespace + '/')) assert.deepEqual(Object.keys(envelope).sort(), ['ciphertext', 'format', 'version']);
     assert.equal(JSON.stringify(envelope).includes('合成孩子'), false); assert.equal(JSON.stringify(envelope).includes('owner@example'), false);
   }
 });
@@ -263,4 +263,143 @@ test('trusted current verification synchronizes the canonical account and fences
   const empty = fixture(); await empty.initialize(); const unadmitted = [...empty.fake.records.entries()];
   await assert.rejects(empty.service.assertSessionAdmission('unknown-owner', { email: 'unknown@example.test', emailVerified: true }), rejected('not_found', 404));
   assert.deepEqual([...empty.fake.records.entries()], unadmitted);
+});
+
+test('native authority binding prepares without writes and atomically commits or rolls back the domain, receipt, and change', async () => {
+  const f = fixture(); await f.initialize(); await f.identity(); const child = await f.child();
+  const before = [...f.fake.records.entries()], failure = new Error('Synthetic domain commit failure');
+  const domain = f.database.collection('synthetic_domain').doc('record'), receipt = f.database.collection('synthetic_domain').doc('receipt');
+  const operationId = randomUUID();
+  await assert.rejects(f.service.runTransaction('synthetic-owner', child.child.id, async binding => {
+    assert.equal(binding.scope.childId, child.child.id); assert.equal(binding.authorizationVersion, '1'); assert.equal(binding.generation, f.generation);
+    const prepared = await binding.prepareChange(operationId, 'care', false);
+    assert.equal(prepared.changeSeq, '2'); assert.deepEqual([...f.fake.records.entries()], before);
+    assert.equal((await binding.transaction.get(domain)).exists, false); assert.equal((await binding.transaction.get(receipt)).exists, false);
+    prepared.commit(); binding.transaction.create(domain, { version: 1 }); binding.transaction.create(receipt, { changeSeq: prepared.changeSeq }); throw failure;
+  }), error => error === failure);
+  assert.deepEqual([...f.fake.records.entries()], before);
+  await f.service.runTransaction('synthetic-owner', child.child.id, async binding => {
+    const prepared = await binding.prepareChange(operationId, 'care', false);
+    await binding.transaction.get(domain); await binding.transaction.get(receipt);
+    prepared.commit(); binding.transaction.create(domain, { version: 1 }); binding.transaction.create(receipt, { changeSeq: prepared.changeSeq });
+  });
+  assert.deepEqual(f.fake.records.get(domain.path), { version: 1 }); assert.deepEqual(f.fake.records.get(receipt.path), { changeSeq: '2' });
+  assert.equal(f.open('workspace', child.scope.workspaceId, child.scope).changeSeq, '2');
+});
+
+test('native binding rejects duplicate preparation and commits, closes escaped closures, and does not write for reads', async () => {
+  const f = fixture(); await f.initialize(); await f.identity(); const child = await f.child(), before = [...f.fake.records.entries()];
+  await f.service.runTransaction('synthetic-owner', child.child.id, async binding => { assert.equal(Object.isFrozen(binding.scope), true); });
+  assert.deepEqual([...f.fake.records.entries()], before);
+  let escapedCommit!: () => void;
+  await f.service.runTransaction('synthetic-owner', child.child.id, async binding => {
+    const prepared = await binding.prepareChange(randomUUID(), 'chat', false); escapedCommit = prepared.commit;
+    await assert.rejects(binding.prepareChange(randomUUID(), 'chat', false), rejected('transaction_change_conflict', 409));
+    prepared.commit(); assert.throws(prepared.commit, rejected('transaction_change_conflict', 409));
+  });
+  const committed = [...f.fake.records.entries()]; assert.throws(escapedCommit, rejected('transaction_closed', 409));
+  assert.deepEqual([...f.fake.records.entries()], committed);
+  await f.service.runTransaction('synthetic-owner', null, async binding => {
+    assert.equal(binding.scope.childId, '00000000-0000-0000-0000-000000000000');
+    const prepared = await binding.prepareChildCreation({ operationId: randomUUID(), displayName: '準備孩子' });
+    await assert.rejects(binding.prepareChange(randomUUID(), 'preferences', false), rejected('transaction_change_conflict', 409));
+    assert.deepEqual([...f.fake.records.entries()], committed);
+    prepared.commit(); assert.throws(prepared.commit, rejected('transaction_change_conflict', 409));
+  });
+  await f.service.runTransaction('synthetic-owner', child.child.id, async binding => {
+    await assert.rejects(binding.prepareChildCreation({ operationId: randomUUID(), displayName: '錯誤孩子範圍' }), rejected('transaction_child_scope', 409));
+  });
+});
+
+test('native callback retries get new bindings while revoked authority and cross-owner child scope reject all effects', async () => {
+  const f = fixture(); await f.initialize(); await f.identity(); const child = await f.child();
+  const operationId = randomUUID(); let staleCommit: (() => void) | undefined, callbacks = 0;
+  f.retry();
+  await f.service.runTransaction('synthetic-owner', child.child.id, async binding => {
+    callbacks++;
+    if (staleCommit) assert.throws(staleCommit, rejected('transaction_closed', 409));
+    const prepared = await binding.prepareChange(operationId, 'memory', false); staleCommit = prepared.commit; prepared.commit();
+  });
+  assert.equal(callbacks, 2); assert.equal(f.open('workspace', child.scope.workspaceId, child.scope).changeSeq, '2');
+  await f.identity('another-owner', 'another@example.test'); await f.service.acknowledge({ userId: 'another-owner', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const beforeCross = [...f.fake.records.entries()];
+  await assert.rejects(f.service.runTransaction('another-owner', child.child.id, async () => { throw new Error('Cross-owner callback must not execute'); }), rejected('invalid_document', 500));
+  assert.deepEqual([...f.fake.records.entries()], beforeCross);
+  let attempts = 0;
+  f.retry(async () => { await f.service.setAccountState({ userId: 'synthetic-owner', operationId: randomUUID(), state: 'revoked' }); });
+  const domain = f.database.collection('synthetic_domain').doc('revoked');
+  await assert.rejects(f.service.runTransaction('synthetic-owner', child.child.id, async binding => {
+    attempts++; const prepared = await binding.prepareChange(randomUUID(), 'care', false); await binding.transaction.get(domain);
+    prepared.commit(); binding.transaction.create(domain, { version: 1 });
+  }), rejected('account_inactive', 403));
+  assert.equal(attempts, 1); assert.equal(f.fake.records.has(domain.path), false);
+  assert.equal(f.open('workspace', child.scope.workspaceId, child.scope).changeSeq, '2');
+});
+
+test('native child preparation composes with an outer domain receipt and preserves the original sequence on replay', async () => {
+  const f = fixture(); await f.initialize(); await f.identity();
+  await f.service.acknowledge({ userId: 'synthetic-owner', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const operationId = randomUUID(), outer = f.database.collection('synthetic_domain').doc('child_receipt'), before = [...f.fake.records.entries()];
+  const raw = { operationId, displayName: '同交易孩子' }, failure = new Error('Synthetic outer receipt failure');
+  await assert.rejects(f.service.runTransaction('synthetic-owner', null, async binding => {
+    const child = await binding.prepareChildCreation(raw); assert.deepEqual([...f.fake.records.entries()], before);
+    await binding.transaction.get(outer); child.commit(); binding.transaction.create(outer, { childId: child.result.child.id, changeSeq: child.changeSeq }); throw failure;
+  }), error => error === failure);
+  assert.deepEqual([...f.fake.records.entries()], before);
+  const created = await f.service.runTransaction('synthetic-owner', null, async binding => {
+    const child = await binding.prepareChildCreation(raw); await binding.transaction.get(outer);
+    child.commit(); binding.transaction.create(outer, { childId: child.result.child.id, changeSeq: child.changeSeq }); return child;
+  });
+  assert.equal(created.changeSeq, '1'); assert.equal(f.fake.records.get(outer.path).childId, created.result.child.id);
+  await f.service.runTransaction('synthetic-owner', created.result.child.id, async binding => { const change = await binding.prepareChange(randomUUID(), 'care', false); change.commit(); });
+  const afterLaterChange = [...f.fake.records.entries()];
+  const replay = await f.service.runTransaction('synthetic-owner', null, async binding => { const child = await binding.prepareChildCreation(raw); child.commit(); return child; });
+  assert.deepEqual(replay.result, created.result); assert.equal(replay.changeSeq, '1');
+  assert.deepEqual([...f.fake.records.entries()], afterLaterChange);
+  assert.deepEqual(await f.service.createChild({ userId: 'synthetic-owner', ...raw }), created.result);
+});
+
+test('legacy child receipt sequences come only from the original authenticated marker and fail closed when missing', async () => {
+  const f = fixture(); await f.initialize(); await f.identity();
+  await f.service.acknowledge({ userId: 'synthetic-owner', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const raw = { userId: 'synthetic-owner', operationId: randomUUID(), displayName: '舊格式孩子' }, child = await f.service.createChild(raw);
+  await f.service.runTransaction(raw.userId, child.child.id, async binding => { const change = await binding.prepareChange(randomUUID(), 'chat', false); change.commit(); });
+  const key = JSON.stringify([raw.userId, null, raw.operationId]);
+  const path = f.database.collection(f.options.namespace).doc(workRecoveryDocumentId('authority-operation' as WorkRecoveryKind, key)).path;
+  const envelope = f.fake.records.get(path), aad = JSON.stringify(['yuban-work-recovery', 2, f.options.projectId, f.options.namespace, 'authority-operation', key, { ownerUserId: raw.userId }]);
+  const legacy = JSON.parse(f.options.cipher.decrypt(envelope.ciphertext, aad)); delete legacy.changeSeq;
+  f.fake.records.set(path, { ...envelope, ciphertext: f.options.cipher.encrypt(JSON.stringify(legacy), aad) });
+  const before = [...f.fake.records.entries()];
+  const replay = await f.service.runTransaction(raw.userId, null, async binding => { const prepared = await binding.prepareChildCreation({ operationId: raw.operationId, displayName: raw.displayName }); prepared.commit(); return prepared; });
+  assert.equal(replay.changeSeq, '1'); assert.deepEqual(replay.result, child); assert.deepEqual([...f.fake.records.entries()], before);
+  const wrongOwner = structuredClone(legacy); wrongOwner.result.scope.ownerUserId = 'another-owner';
+  f.fake.records.set(path, { ...envelope, ciphertext: f.options.cipher.encrypt(JSON.stringify(wrongOwner), aad) });
+  const corrupt = [...f.fake.records.entries()];
+  await assert.rejects(f.service.createChild(raw), rejected('receipt_binding', 403));
+  assert.deepEqual([...f.fake.records.entries()], corrupt);
+  f.fake.records.set(path, { ...envelope, ciphertext: f.options.cipher.encrypt(JSON.stringify(legacy), aad) });
+  const markerId = JSON.stringify([child.scope.workspaceId, child.scope.storageEpoch, child.scope.ownerUserId, child.scope.childId, raw.operationId, 'authority']);
+  const markerPath = f.database.collection(f.options.namespace).doc(workRecoveryDocumentId('change', markerId)).path;
+  f.fake.records.delete(markerPath); const missing = [...f.fake.records.entries()];
+  await assert.rejects(f.service.createChild(raw), rejected('receipt_sequence_missing', 409));
+  assert.deepEqual([...f.fake.records.entries()], missing);
+});
+
+
+
+test('readChild uses current canonical workspace/epoch, creation projections and deferred child-scoped change', async () => {
+  const f = fixture(); await f.initialize(); await f.identity(); const created = await f.child();
+  await f.service.runTransaction('synthetic-owner', null, async binding => {
+    assert.deepEqual(await binding.readChild(created.child.id), created.child);
+    assert.equal(await binding.readChild(randomUUID()), null);
+    const before = [...f.fake.records];
+    const prepared = await binding.prepareChange(randomUUID(), 'tasks', false, created.child.id);
+    assert.deepEqual([...f.fake.records], before); prepared.commit();
+  });
+  assert.equal([...f.fake.records.keys()].filter(path => path.startsWith(f.options.namespace + '_children/')).length, 1);
+  await f.service.runTransaction('synthetic-owner', created.child.id, async binding => {
+    await assert.rejects(binding.prepareChange(randomUUID(), 'tasks', false, randomUUID()), rejected('transaction_child_scope', 409));
+  });
+  await f.identity('another-owner', 'another@example.test'); await f.service.acknowledge({ userId: 'another-owner', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  await assert.rejects(f.service.runTransaction('another-owner', null, binding => binding.readChild(created.child.id)));
 });

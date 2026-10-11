@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "P2-F01",
+  "workPackage": "P2-F02",
   "recordedOn": "2026-10-11",
   "scope": "Original licenses for selected direct dependencies and explicitly inventoried transitive packages; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "90a6a62955e5e13e34cecc3f16fb43ba7737594aef9d79e531d20be5459866bc"
+    "sha256": "8bce7d7052c42f8cf5c5b420ad297301ba2f91101382373108b86985bb981094"
   },
   "packages": [
     {
@@ -892,16 +892,94 @@
           "source": "node_modules/firebase-admin/LICENSE"
         }
       ]
+    },
+    {
+      "name": "firebase",
+      "version": "13.0.0",
+      "dependencyType": "dependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/firebase/firebase-js-sdk.git"
+      },
+      "tarball": "https://registry.npmjs.org/firebase/-/firebase-13.0.0.tgz",
+      "integrity": "sha512-4cChZajVtuOijT/t7Vw1GZRTuohCxw+aoc8DAwhF+CSbS+zhqHE+i5PzEVttIySw7oKerBDRZRyDt4FynrWecg==",
+      "files": [
+        {
+          "path": "licenses/firebase/LICENSE",
+          "sha256": "065e45b5674f9bf76670496e5472611b3fbd87fbeaf99336725430a9909cb687",
+          "source": "https://raw.githubusercontent.com/firebase/firebase-js-sdk/0c331cc7fd9c4671a33baca9bd20c02a08899820/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "firebase-functions",
+      "version": "7.4.0",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/firebase/firebase-functions.git"
+      },
+      "tarball": "https://registry.npmjs.org/firebase-functions/-/firebase-functions-7.4.0.tgz",
+      "integrity": "sha512-jR+c16q1E07dPVqU/sdbIEVEQJYSxjY6BFI+QR5/AvrnII8C6UkJv6fR8LJ+GKmcGUBe7SjO/MnEWLAeOiHWMw==",
+      "files": [
+        {
+          "path": "licenses/firebase-functions/LICENSE",
+          "sha256": "7a9160d591849a3b8e7c7ef7f564a1a51f4c10781b74624dd487a8885395019d",
+          "source": "node_modules/firebase-functions/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@google-cloud/storage",
+      "version": "7.22.0",
+      "dependencyType": "dependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "directory": "handwritten/storage",
+        "url": "https://github.com/googleapis/google-cloud-node.git"
+      },
+      "tarball": "https://registry.npmjs.org/@google-cloud/storage/-/storage-7.22.0.tgz",
+      "integrity": "sha512-W98gTQOAntEeEQ7/pZxSQXxfUO5CiQcXJRsxBpUa6UU25n8YN/VtogPBi0H+MAmUrn/6bY/sBhFansoWEsr2/g==",
+      "files": [
+        {
+          "path": "licenses/google-cloud-storage/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "source": "node_modules/@google-cloud/storage/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "@google-cloud/tasks",
+      "version": "7.2.1",
+      "dependencyType": "dependency",
+      "license": "Apache-2.0",
+      "repository": {
+        "type": "git",
+        "directory": "packages/google-cloud-tasks",
+        "url": "https://github.com/googleapis/google-cloud-node.git"
+      },
+      "tarball": "https://registry.npmjs.org/@google-cloud/tasks/-/tasks-7.2.1.tgz",
+      "integrity": "sha512-Izjk4BY7XzqARntecPaHqWq+gVGjstugVaVzqBe3fWAmM6NHBnaiRy8hpggRkO9SVc2/ZCofl/K/28ttnUXkSg==",
+      "files": [
+        {
+          "path": "licenses/google-cloud-tasks/LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "source": "https://raw.githubusercontent.com/googleapis/google-cloud-node/27c2f6564caeb554a02dedb9f62e850cdfbb4fd5/LICENSE"
+        }
+      ]
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 1019,
+    "packageEntries": 1141,
     "declarations": {
-      "Apache-2.0": 95,
-      "MIT": 794,
-      "ISC": 49,
+      "Apache-2.0": 143,
+      "MIT": 866,
+      "ISC": 50,
       "MIT AND Apache-2.0": 1,
-      "BSD-3-Clause": 23,
+      "BSD-3-Clause": 24,
       "(MIT OR CC0-1.0)": 3,
       "Python-2.0": 1,
       "Unlicense": 3,

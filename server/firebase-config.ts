@@ -5,11 +5,13 @@ export interface FirebaseServerConfig extends ServerHttpConfig {
   databaseId: string;
   namespace: string;
   sessionNamespace: string;
+  authEmailEnabled: boolean;
 }
 
 /** Explicit deployment identities prevent accidental use of a default or unrelated database. */
 export function readFirebaseServerConfig(env: Record<string, string | undefined>): FirebaseServerConfig {
   const http = readServerHttpConfig(env);
+  if (env.FIREBASE_AUTH_EMAIL_ENABLED !== undefined && !['true', 'false'].includes(env.FIREBASE_AUTH_EMAIL_ENABLED)) throw new Error('Invalid FIREBASE_AUTH_EMAIL_ENABLED configuration');
   const projectId = env.GCP_PROJECT_ID;
   const databaseId = env.FIREBASE_DATABASE_ID;
   const namespace = env.FIREBASE_NAMESPACE;
@@ -20,7 +22,7 @@ export function readFirebaseServerConfig(env: Record<string, string | undefined>
     throw new Error('Emulator configuration is forbidden in production');
   }
   if (http.publicOrigin !== http.webOrigin) throw new Error('Firebase deployment requires a same-origin frontend');
-  return { ...http, projectId, databaseId, namespace, sessionNamespace: namespace + '_sessions' };
+  return { ...http, projectId, databaseId, namespace, sessionNamespace: namespace + '_sessions', authEmailEnabled: env.FIREBASE_AUTH_EMAIL_ENABLED === 'true' };
 }
 
 export function serverStorageBackend(env: Record<string, string | undefined>): 'postgres' | 'firestore' {

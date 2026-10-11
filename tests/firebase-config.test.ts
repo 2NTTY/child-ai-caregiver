@@ -24,3 +24,10 @@ test('backend selection is explicit and never silently falls back after an inval
   assert.equal(serverStorageBackend({ STORAGE_BACKEND: 'firestore' }), 'firestore');
   assert.throws(() => serverStorageBackend({ STORAGE_BACKEND: 'firebase' }), /Invalid/);
 });
+
+test('Firebase email actions are explicitly configured and never claim delivery', () => {
+  assert.equal(readFirebaseServerConfig(env).authEmailEnabled, false);
+  assert.equal(readFirebaseServerConfig({ ...env, FIREBASE_AUTH_EMAIL_ENABLED: 'false' }).authEmailEnabled, false);
+  assert.equal(readFirebaseServerConfig({ ...env, FIREBASE_AUTH_EMAIL_ENABLED: 'true' }).authEmailEnabled, true);
+  for (const value of ['', 'yes', 'TRUE']) assert.throws(() => readFirebaseServerConfig({ ...env, FIREBASE_AUTH_EMAIL_ENABLED: value }), /Invalid/);
+});

@@ -2,12 +2,17 @@ import { accountAcknowledgementSchema } from "../src/shared/account-service.ts";
 import { FirestoreAuthorityError, type FirestoreAuthority } from "./firestore-authority.ts";
 import { FirebaseAuthError, type FirebaseAuthPort } from "./firebase-auth.ts";
 import { DeviceSessionError } from "./firestore-device-sessions.ts";
+import type { FirestoreOnlineStore } from "./firestore-online.ts";
+import { FirestoreDomainError } from "./firestore-domain-data.ts";
+import { handleOnlineRequest } from "./online-api.ts";
+import { handleTaskRequest } from "./task-api.ts";
 
 const MAX_BODY_BYTES = 16 * 1024;
 const authorityErrors = new Map<string, number>([
   ["invalid_input", 400], ["not_found", 404], ["service_disabled", 403], ["binding", 403],
   ["account_inactive", 403], ["account_not_ready", 403], ["email_not_verified", 403],
   ["identity_email_changed", 403], ["invitation_unavailable", 403], ["operation_conflict", 409],
+  ["scope_changed", 409], ["transaction_change_conflict", 409], ["document_too_large", 413],
 ]);
 const authenticationErrors = new Map<string, number>([
   ["unauthorized", 401], ["recent_reauthentication_required", 401], ["identity_changed", 409],
@@ -21,6 +26,7 @@ export interface FirebaseRequestHandlerOptions {
   publicOrigin: string;
   /** Supplied by deployment composition; this handler never infers mail readiness. */
   mailConfigured: boolean;
+  online?: FirestoreOnlineStore;
 }
 export type FirebaseRequestHandler = (request: Request) => Promise<Response>;
 
@@ -67,9 +73,9 @@ async function readJson(request: Request): Promise<unknown> {
   } finally { reader.releaseLock(); }
 }
 
-/** Foundation routes only. Readiness and the native transport remain deployment responsibilities. */
+/** Explicitly assembled Firebase routes; unconnected domains remain unavailable. */
 export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOptions): FirebaseRequestHandler {
-  const { authority, auth, publicOrigin, mailConfigured } = options;
+  const { authority, auth, publicOrigin, mailConfigured, online } = options;
   let origin: URL;
   try { origin = new URL(publicOrigin); } catch { throw new Error("invalid_firebase_app_configuration"); }
   if (origin.origin !== publicOrigin || !["https:", "http:"].includes(origin.protocol) || origin.username || origin.password
@@ -100,10 +106,28 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         // Return the existing complete status shape. A failed read is an unknown outcome, never false success.
         return json(await accountStatus(userId));
       }
+      if (online && (path === "/api/children" || path.startsWith("/api/online/") || /^\/api\/children\/[^/]+\/tasks(?:\/|$)/u.test(path))) {
+        if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
+        if (!userId) throw new RequestError("unauthorized", 401);
+        const expected = request.headers.get("x-expected-user-id");
+        if (expected !== null && expected !== userId) throw new RequestError("identity_changed", 409);
+        let response: Response;
+        if (path.startsWith("/api/online/")) response = await handleOnlineRequest(request, userId, online);
+        else if (path === "/api/children") {
+          if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
+          const url = new URL(request.url);
+          if ([...url.searchParams.keys()].some(key => key !== "cursor") || url.searchParams.getAll("cursor").length > 1) throw new RequestError("invalid_input", 400);
+          response = json(await online.children.list(userId, url.searchParams.get("cursor")));
+        } else response = await handleTaskRequest(request, userId, online.tasks);
+        if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
+        return uncached(response);
+      }
       return path === "/api" || path.startsWith("/api/")
         ? errorResponse("firebase_domain_not_ready", 503) : errorResponse("not_found", 404);
     } catch (error) {
       if (error instanceof RequestError) return errorResponse(error.code, error.status);
+      if (error instanceof FirestoreDomainError) return errorResponse(error.code, error.status);
       if (error instanceof FirestoreAuthorityError && authorityErrors.get(error.code) === error.status) return errorResponse(error.code, error.status);
       if (error instanceof FirebaseAuthError && authenticationErrors.get(error.code) === error.status) return errorResponse(error.code, error.status);
       if (error instanceof DeviceSessionError && error.code === "session_invalid" && error.status === 401) return errorResponse("unauthorized", 401);

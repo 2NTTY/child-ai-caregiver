@@ -84,3 +84,8 @@ COPY licenses /srv/licenses
 COPY THIRD_PARTY_NOTICES.md /srv/THIRD_PARTY_NOTICES.md
 
 FROM server-runtime AS server
+
+# Isolated Firebase API; the legacy target remains until the F08 retirement gate.
+FROM server-runtime AS firebase-server
+ENV STORAGE_BACKEND=firestore
+CMD ["node", "server/main.ts"]

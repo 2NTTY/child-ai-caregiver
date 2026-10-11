@@ -16,6 +16,13 @@ export interface Credentials {
 
 export type AuthMode = "signIn" | "signUp";
 
+export interface RecordsIdentityAdapter {
+  assertAvailable?(): void;
+  authenticate(mode: AuthMode, input: Credentials, signal: AbortSignal): Promise<void>;
+  observeSession(user: SessionUser | null): void;
+  clearSession(): Promise<void>;
+}
+
 export class ClientApiError extends Error {
   readonly status: number;
   readonly onlineCode: string | null;
@@ -67,7 +74,7 @@ function record(value: unknown): value is TextRecord {
     && identifier(value.authorUserId) && typeof value.text === "string" && timestamp(value.createdAt);
 }
 
-export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch): RecordsApi {
+export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch, identity?: RecordsIdentityAdapter): RecordsApi {
   const base = baseUrl.replace(/\/$/, "");
   const apiUrl = base.endsWith("/api") ? base : `${base}/api`;
   const online = createOnlineTransport(apiUrl, fetcher);
@@ -92,7 +99,10 @@ export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch)
     observedUserId = userId;
     return onlineCall(signal, outerSignal => online.submit({ path: `/api${path}`, payload: body }, outerSignal, userId));
   }
-  function resetOnline(): void { online.reset(); observedUserId = null; }
+  function resetOnline(): void {
+    online.reset(); observedUserId = null;
+    if (identity) void identity.clearSession().catch(() => {});
+  }
 
   async function request(path: string, signal: AbortSignal, body?: unknown, expectedUserId?: string): Promise<unknown> {
     const controller = new AbortController();
@@ -136,35 +146,59 @@ export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch)
     }
   }
 
+  async function getSession(signal: AbortSignal): Promise<SessionUser | null> {
+    identity?.assertAvailable?.();
+    const value = await request("/auth/get-session", signal);
+    if (signal.aborted) throw new ClientApiError();
+    if (value === null) { identity?.observeSession(null); return null; }
+    if (!object(value) || !object(value.user) || !identifier(value.user.id)
+      || typeof value.user.name !== "string" || typeof value.user.email !== "string") {
+      throw new ClientApiError();
+    }
+    if (observedUserId !== null && observedUserId !== value.user.id) online.reset();
+    observedUserId = value.user.id;
+    const user = { id: value.user.id, name: value.user.name, email: value.user.email };
+    identity?.observeSession(user);
+    return user;
+  }
+
   return {
     reconcilePending: (signal, userId) => onlineCall(signal, outerSignal => online.checkPending(outerSignal, userId)),
     resetOnline,
     hasPendingOnline: () => online.hasPending(),
-    async getSession(signal) {
-      const value = await request("/auth/get-session", signal);
-      if (value === null) return null;
-      if (!object(value) || !object(value.user) || !identifier(value.user.id)
-        || typeof value.user.name !== "string" || typeof value.user.email !== "string") {
-        throw new ClientApiError();
-      }
-      if (observedUserId !== null && observedUserId !== value.user.id) online.reset();
-      observedUserId = value.user.id;
-      return { id: value.user.id, name: value.user.name, email: value.user.email };
-    },
+    getSession,
     async authenticate(mode, input, signal) {
+      if (identity) { await identity.authenticate(mode, input, signal); return; }
       await request(mode === "signUp" ? "/auth/sign-up/email" : "/auth/sign-in/email", signal,
         mode === "signUp" ? input : { email: input.email, password: input.password });
     },
     async signOut(signal) {
-      await request("/auth/sign-out", signal, {});
-      resetOnline();
+      const user = identity ? await getSession(signal) : null;
+      await request("/auth/sign-out", signal, {}, user?.id);
+      if (signal.aborted) throw new ClientApiError();
+      if (identity) await identity.clearSession();
+      online.reset(); observedUserId = null;
     },
     async listChildren(signal) {
-      const value = await request("/children", signal);
-      if (!object(value) || !Array.isArray(value.children) || !value.children.every(child)) {
-        throw new ClientApiError();
+      const userId = observedUserId, children: Child[] = [], childIds = new Set<string>(), cursors = new Set<string>();
+      let path = "/children";
+      while (true) {
+        if (signal.aborted || observedUserId !== userId) throw new ClientApiError();
+        const value = await request(path, signal, undefined, userId ?? undefined);
+        if (signal.aborted || observedUserId !== userId || !object(value) || !Array.isArray(value.children)
+          || !value.children.every(child)) throw new ClientApiError();
+        for (const item of value.children) {
+          if (childIds.has(item.id)) throw new ClientApiError();
+          childIds.add(item.id); children.push(item);
+        }
+        // A missing cursor is the old SQL response shape; explicit null is the paged terminal response.
+        if (!Object.hasOwn(value, "nextCursor") || value.nextCursor === null) return children;
+        if (typeof value.nextCursor !== "string" || !value.nextCursor || /[\s\u0000-\u001f\u007f]/u.test(value.nextCursor)
+          || cursors.has(value.nextCursor)) throw new ClientApiError();
+        cursors.add(value.nextCursor);
+        try { path = "/children?cursor=" + encodeURIComponent(value.nextCursor); }
+        catch { throw new ClientApiError(); }
       }
-      return value.children;
     },
     async createChild(displayName, signal, expectedUserId) {
       const value = await mutate("/children", { displayName }, signal, expectedUserId);

@@ -181,3 +181,33 @@ test("unmigrated business domains return explicit 503 without fake data, auth lo
   await errorCode(await f.handler(new Request(PUBLIC_ORIGIN + "/healthz", { method: "POST" })), 404, "not_found");
   assert.equal(f.sessionHeaders.length, 0); assert.equal(f.statusUserIds.length, 0); assert.equal(f.writes.length, 0);
 });
+
+test("Firebase domain dispatch preserves session fencing, original routes and explicit unavailable domains", async () => {
+  const f = fixture(), reads: { userId: string; cursor: string | null }[] = [];
+  const childId = "00000000-0000-4000-8000-000000000001";
+  let changeIdentity = false;
+  const unavailable = async () => { throw new Error("Unexpected store call"); };
+  const online = {
+    spaces: unavailable, context: unavailable, submit: unavailable, lookup: unavailable, changes: unavailable,
+    children: { async list(userId: string, cursor: string | null = null) {
+      reads.push({ userId, cursor }); if (changeIdentity) f.setUser("other-user");
+      return { children: [{ id: childId, workspaceId: childId, displayName: "Synthetic child", createdAt: "2026-10-11T00:00:00Z", accessRole: "owner" as const }], nextCursor: null };
+    } },
+    tasks: { list: unavailable, get: unavailable, history: unavailable },
+  };
+  const handler = createFirebaseRequestHandler({ ...f.options, online });
+  const get = (path: string, expected = USER_ID) => handler(new Request(PUBLIC_ORIGIN + path, { headers: { "x-expected-user-id": expected } }));
+  const page = await get("/api/children?cursor=synthetic-cursor");
+  assert.equal(page.status, 200); privateResponse(page);
+  assert.equal((await page.json()).children[0].id, childId);
+  assert.deepEqual(reads, [{ userId: USER_ID, cursor: "synthetic-cursor" }]);
+  await errorCode(await get("/api/children", "other-user"), 409, "identity_changed");
+  assert.equal(reads.length, 1);
+  await errorCode(await handler(new Request(PUBLIC_ORIGIN + "/api/online/context", { method: "POST", headers: { Origin: "https://other.example.test" }, body: "{}" })), 403, "origin_rejected");
+  changeIdentity = true;
+  const changed = await get("/api/children");
+  await errorCode(changed, 409, "identity_changed");
+  f.setUser(null);
+  await errorCode(await get("/api/children"), 401, "unauthorized");
+  await errorCode(await get("/api/children/" + childId + "/documents"), 503, "firebase_domain_not_ready");
+});

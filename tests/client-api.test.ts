@@ -126,3 +126,62 @@ test("a null session keeps the unknown operation for the same account to reconci
   assert.equal(opIds[0], opIds[1]);
   assert.equal(api.hasPendingOnline?.(), false);
 });
+
+test("children pagination returns every page under the original UID and accepts the old terminal shape", async () => {
+  const pages = Array.from({ length: 3 }, (_, page) => Array.from({ length: 50 }, (_, item) => ({
+    id: `child-${page}-${item}`, workspaceId: context.workspaceId, displayName: `Child ${page}-${item}`, createdAt: "2026-10-11T00:00:00.000Z",
+  })));
+  const paths: string[] = [], cursor = "opaque+cursor/with?encoding=1";
+  const api = createRecordsApi("/api", async (input, init) => {
+    if (String(input).endsWith("/auth/get-session")) return Response.json({ user: { id: "alice", name: "Parent", email: "alice@example.invalid" } });
+    assert.equal(new Headers(init?.headers).get("x-expected-user-id"), "alice");
+    assert.equal(init?.credentials, "include"); assert.equal(init?.cache, "no-store");
+    paths.push(String(input));
+    return Response.json({ children: pages[paths.length - 1], nextCursor: paths.length === 1 ? cursor : paths.length === 2 ? "last-page" : null });
+  });
+  await api.getSession(signal());
+  assert.deepEqual(await api.listChildren(signal()), pages.flat());
+  assert.deepEqual(paths, ["/api/children", "/api/children?cursor=" + encodeURIComponent(cursor), "/api/children?cursor=last-page"]);
+  assert.deepEqual(await createRecordsApi("/api", async () => Response.json({ children: pages[0] })).listChildren(signal()), pages[0]);
+});
+
+test("children pagination rejects malformed or repeated cursors, child IDs and later page failures", async () => {
+  const child = { id: "child-one", workspaceId: context.workspaceId, displayName: "Child", createdAt: "2026-10-11T00:00:00.000Z" };
+  for (const nextCursor of [false, 1, {}, "", "bad cursor", "bad\u0000cursor", "\ud800"]) {
+    let calls = 0;
+    const api = createRecordsApi("/api", async () => { calls++; return Response.json({ children: [child], nextCursor }); });
+    await assert.rejects(api.listChildren(signal()), ClientApiError); assert.equal(calls, 1);
+  }
+  for (const secondPage of [{ children: [], nextCursor: "page-two" }, { children: [child], nextCursor: null },
+    { children: [{ ...child, id: "child-two", createdAt: "invalid" }], nextCursor: null }]) {
+    let calls = 0;
+    const api = createRecordsApi("/api", async () => Response.json(++calls === 1 ? { children: [child], nextCursor: "page-two" } : secondPage));
+    await assert.rejects(api.listChildren(signal()), ClientApiError); assert.equal(calls, 2);
+  }
+  const duplicate = createRecordsApi("/api", async () => Response.json({ children: [child, child], nextCursor: null }));
+  await assert.rejects(duplicate.listChildren(signal()), ClientApiError);
+  let calls = 0;
+  const conflict = createRecordsApi("/api", async () => ++calls === 1 ? Response.json({ children: [child], nextCursor: "page-two" })
+    : new Response("PRIVATE CURSOR DETAIL", { status: 409 }));
+  await assert.rejects(conflict.listChildren(signal()), error => error instanceof ClientApiError && error.status === 409 && !error.message.includes("PRIVATE"));
+  assert.equal(calls, 2);
+});
+
+test("children pagination discards the whole result on cancellation or a positively observed identity change", async () => {
+  const child = { id: "child-one", workspaceId: context.workspaceId, displayName: "Child", createdAt: "2026-10-11T00:00:00.000Z" };
+  const controller = new AbortController(); let calls = 0;
+  const aborted = createRecordsApi("/api", async () => { calls++; controller.abort(); return Response.json({ children: [child], nextCursor: "page-two" }); });
+  await assert.rejects(aborted.listChildren(controller.signal), ClientApiError); assert.equal(calls, 1);
+  let uid = "alice", resolve!: (response: Response) => void, start!: () => void;
+  const started = new Promise<void>(done => { start = done; });
+  const api = createRecordsApi("/api", async (input, init) => {
+    if (String(input).endsWith("/auth/get-session")) return Response.json({ user: { id: uid, name: "Parent", email: uid + "@example.invalid" } });
+    assert.equal(new Headers(init?.headers).get("x-expected-user-id"), "alice");
+    start(); return new Promise<Response>(done => { resolve = done; });
+  });
+  await api.getSession(signal());
+  const pending = api.listChildren(signal()); await started;
+  uid = "bob"; await api.getSession(signal());
+  resolve(Response.json({ children: [child], nextCursor: null }));
+  await assert.rejects(pending, ClientApiError);
+});

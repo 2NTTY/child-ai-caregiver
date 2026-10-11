@@ -2132,3 +2132,32 @@
 ### Limitations / Next
 
 - 本包完成以正常PR合併為準，沒有部署或真Firebase交易、blocking／電郵、Tasks／OIDC、向量索引、縮零或還原實證。其餘功能503只表示待接，並非縮減原REQ／AC。合併讀回後推進F02最小完整雲端流程；持續營運預算仍待F08實測後使用者決定，完整P2未完成。
+
+
+<a id="log-20261011-f02-local-core"></a>
+## LOG-20261011-F02-LOCAL-CORE
+
+- Recorded At／Work Date：2026-10-11（Asia/Hong_Kong）
+- Step / Package：P2-F02，進行中，非整包交付。
+- Executor／AI Assistance：Astra 主模型親寫契約／計劃及整合；Luna 唯讀正式入口定位；三位 Sol 分別承接身份、canonical 業務及 client 接線，第四位 Sol 獨立唯讀審核。
+- Human Verification：專用測試地址已有授權；未寄信、未作真人產品驗收。Firebase 條款需本人確認，未代填。
+
+### Actual Work
+
+- 從已合併 F01 的 d5dbf61，在同一 F02 分支接通記憶內 Firebase Web 身份、原生 beforeUserCreated 邀請檢查、逐裝置 cookie、明確手動驗證／重設能力。Secret Manager 固定版本輸入與本機嚴格權限檔案互斥，沿既有 AES-GCM，不把密鑰或 ID token 保存到證據。
+- 同一原生 Firestore 交易核 canonical account／workspace／child，提交孩子／事項、版本／revision、caller-wide 原操作、changes 及提醒 outbox；重試原 op、失回覆讀回、取消與 unknown occurrence 不重排。正式 Firebase runtime 已接原 HTTP 路由；client 取完整孩子分頁才展示。
+- 私人附件 port 使用不可變寫入、精確字串 generation、AAD／hash 核對及有界串流；Storage SDK 的 Number generation 陷阱改用公開 request／requestStream，20 秒到期銷毀串流。附件完整業務授權／刪除／恢復尚未接完。
+- Firebase／Firestore／Run 等必要 API 已啟用並讀回；addFirebase 被服務明確拒絕，Audit 原因 Firebase Tos Not Accepted，讀回仍未加入專案。所需 IAM 已有，沒有擴權；沒有建立應用資源或部署。US$30 中 F02 預留 US$6，估算與額度不是實際帳單或硬限額。
+
+### Verification
+
+- Environment / Revision：d5dbf61＋本包修改，Node24.19.0、npm11.8.0；本機合成 ports／原生 SDK 構造、直接 Request、型別及 Metro 編譯，均不代表 GCP 產品流程。
+- Result：registration／key 9、client身份／account owner 16、client分頁9、online7、受影響authority5、photo12、app／composition11、email配置／composition5、license2 個定向案例通過；各組可能重疊，不相加冒充覆蓋。正式Server／shared 212 檔及含10份受影響測試222檔型別0診斷；frontend型別及Web建置通過。既有五項全Server測試型別紅仍保留由F03承接，未宣稱全倉通過。
+- Failures / Repairs：保留 registration control generation fixture 原7過1失敗、Storage8.4與ADK peer衝突、Node24.11不符新SDK engine警告、runtime原401不等於503及兩個fixture型別錯誤。採相容Storage7.22、Node24.19，connected children嚴格401／unconnected documents嚴格503；型別只補正確string註解，未放寬業務斷言。
+- Review：獨立唯讀發現 mailConfigured 固定false令正式UI無法首次寄信；改明確配置gate，修正覆核已通過，未見剩餘P1／P2。沒有把能提出寄信當成收件成功。
+- Evidence：[F02 實際結果與原失敗](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。本包尚未PR／合併／部署；原容量dirty工作區保持原樣。
+
+### Limitations / Next
+
+- 本地成果仍不足以完成 F02：文件／公共知識、提醒consumer／Tasks、獨立刪除journal、配對備份與隔離還原仍待接線；真Auth／索引／並行／Tasks重投／縮零／Storage IAM及本人信箱均未驗。
+- 先待本人確認 Firebase 條款，再讀回服務狀態；完成剩餘流程及有界雲端驗收後，集中同一F02 PR交付。未開放持續正式服務，未切換正式網址，F03～F08／A09及完整P2未完成。

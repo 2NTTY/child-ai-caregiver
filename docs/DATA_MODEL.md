@@ -623,3 +623,13 @@ Storage 先 reserved，確定 object generation／hash／大小／加密版本�
 - pure-due work 不接受 source messages、resources、pending proposals、watchResources 或 knowledge watch；回明確 unsupported_work 且零寫入。取消以 expectedVersion 提交 cancelled、關閉 followup、原收據與 change；完整語義由 F03 保留及擴展，不對外宣告現已完整。
 - 裝置 session ledger 與業務 authority 分 collection；只存 cookie SHA-256、uid、到期、auth_time、generation／撤銷，原 cookie／ID token 不落庫或日誌。每次 session 讀回核 Admin revoke/current user、ledger、現行 admission。revoke-other-sessions 同交易提升 generation 並只保留目前 cookie；舊 auth_time 不能重新換回有效會話。保留 cookie 的例外須由 HTTP 現有 cookie 已驗證所得，不接受請求自報 hash。
 - control 與 session 均確定 ID 點讀；無需查詢密文。私人 client Rules 必須拒絕全部直讀寫，Server IAM 不能代替上述業務交易。還原須對照目前 Auth、重放刪除並改 epoch，亦須失效舊 ledger；F01 不以當前 session 格式宣稱 restore 已驗。
+
+### F02 原生交易接合
+
+canonical authority 的 runTransaction 擁有真 Firestore 回調，每次 SDK 重跑均建立新的短生命週期 binding；先核 control、本人 account／invitation、workspace 與可選 child，再把同一 Transaction 及本次讀集綁定的 scope、accessVersion、epoch、changeSeq 交給領域 store。不能以交易外 readScope 的結果代替；回調退出後準備／commit closure 不可再用。領域資料、原操作收據、change feed 及 outbox 全讀後寫，重跑回調不呼叫 Auth／Storage／Tasks／模型或寄信。
+
+- authority 提供原生交易綁定及延後 commit 的 change／建立孩子準備方法；延後方法只把寫入排入原 Transaction，不自行 commit 或開第二筆交易。每筆產品提交只遞增一次 workspace changeSeq；同一綁定不能重複提交 change。授權綁定不可由 HTTP／模型自報。
+- 原操作重放先核目前 account／workspace，再查本人原收據 fingerprint；相同 opId 改 endpoint／payload／device 即衝突，不以改指向另一孩子避開防重。取原結果前再核孩子及 epoch；caller-wide opId 沿既有 online／文件契約，不能只按 opId 全域索引，也不能因 endpoint 改變建立第二筆收據。原結果遭刪除或撤權後按原契約隱去，不重執行。
+- 領域查詢投影只含必要 opaque scope tags、實體 ID、狀態、版本及排序值；私人正文保持加密。投影與原資料同交易更新，讀回必須重核 canonical 權威及 envelope 綁定。具體 query／索引與界限隨實際接通的領域在既有 schema、索引 manifest 及驗收證據列明；不存在的領域回未就緒，不回空清單假成功。
+
+- 新 admission 的 owner mapping 同交易保存 workspaceCreatedAt，查詢投影使用真建立時間；既有缺值不能猜寫時間。孩子及 change 查詢投影由 canonical writer 同交易更新，避免不同正式 writer 形成不可查的資料。
