@@ -22,7 +22,8 @@ const KNOWLEDGE_VERSION = 'c9265331-6ec2-5436-b4c2-07d354e53101';
 const SECRET = `projects/${PROJECT_NUMBER}/secrets/YUBAN_FIREBASE_STORAGE_KEY/versions/1`;
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const NODE = 'C:/Users/2NTTY/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe';
-// Opt-in actor A handoff only: tmp/f02-cloud-actors-20261011/browser-fixture-A.json.
+// Opt-in actor A: tmp/f02-cloud-actors-20261011/browser-fixture-A.json.
+// Explicit unverified_B mode: tmp/f02-cloud-unverified-b-20261012/browser-fixture-B.json.
 // Root consumes and removes it promptly; failures and close retain it for reconciliation.
 const BROWSER_FIXTURE_NAME = 'browser-fixture-A.json';
 const TIMEOUT_MS = 20_000, MAX_LINE = 4096, MAX_COMMANDS = 100, MAX_RESPONSE = 32 * 1024, MAX_HTTP = 20;
@@ -30,12 +31,21 @@ const uidSchema = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/u), uuid = z.uuid();
 const publicConfigSchema = z.object({ apiKey: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/u),
   authDomain: z.literal(PROJECT + '.firebaseapp.com'), projectId: z.literal(PROJECT), appId: z.literal(APP_ID) }).strict();
 const startSchema = z.object({ command: z.literal('start'), runId: z.string().regex(/^[A-Za-z0-9_-]{1,48}$/u),
-  publicConfig: publicConfigSchema, browserFixture: z.boolean().default(false) }).strict();
+  publicConfig: publicConfigSchema, browserFixture: z.boolean().default(false),
+  mode: z.enum(['verified_pair', 'unverified_B']).default('verified_pair') }).strict();
 const commandSchema = z.union([startSchema, z.object({ command: z.enum(['prepare', 'core', 'delete', 'status', 'close']) }).strict()]);
 const checkpointSchema = z.object({ step: z.string().regex(/^[a-zA-Z0-9_]+$/u), runId: startSchema.shape.runId,
   uid: uidSchema.optional(), operationId: uuid.optional() }).strict();
 const identitySchema = z.object({ user: z.object({ id: uidSchema, name: z.string().max(1000), email: z.email().max(320) }).strict() }).strict();
 const cookieSchema = z.string().max(16 * 1024 + 10).regex(/^__session=[A-Za-z0-9._~-]+$/u);
+function sessionCookie(cookies) {
+  if (!Array.isArray(cookies) || cookies.length !== 1 || typeof cookies[0] !== 'string') stop('session_cookie_invalid');
+  const [token, ...attributes] = cookies[0].split('; ');
+  const expected = ['Path=/', 'HttpOnly', 'SameSite=Lax', 'Max-Age=432000', 'Secure'];
+  if (!/^__session=[A-Za-z0-9._~-]+$/u.test(token) || attributes.length !== expected.length
+    || JSON.stringify(attributes.sort()) !== JSON.stringify(expected.sort())) stop('session_cookie_invalid');
+  return cookieSchema.parse(token);
+}
 const childOperationSchema = z.object({ runId: startSchema.shape.runId.optional(), opId: uuid.optional(), deviceId: uuid.optional(),
   workspaceId: uuid.optional(), storageEpoch: uuid.optional() }).strict();
 const CHILD_STEPS = new Set(['input', 'core_checkpoint', 'delete_checkpoint', 'core_complete', 'delete_complete',
@@ -82,7 +92,8 @@ function failure(error) {
 }
 function redactedStatus() {
   emit({ step: 'status', state, runId: input?.runId ?? null, creations, requests, transport: 'auth_rest',
-    emailVerification: 'synthetic_admin_fixture_only', users: { A: actors.A.userId ?? null, B: actors.B.userId ?? null } });
+    mode: input?.mode ?? null, emailVerification: input?.mode === 'unverified_B' ? 'unverified_native_identity' : 'synthetic_admin_fixture_only',
+    users: { A: actors.A.userId ?? null, B: actors.B.userId ?? null } });
 }
 async function waiting(action) {
   guard(); let timer;
@@ -92,6 +103,11 @@ async function waiting(action) {
     })]);
     guard(); return result;
   } finally { clearTimeout(timer); }
+}
+function browserFixtureTarget() {
+  return input?.mode === 'unverified_B'
+    ? { enabled: true, actor: 'B', fence: 'f02-cloud-unverified-b-20261012', file: 'browser-fixture-B.json' }
+    : { enabled: input?.browserFixture === true, actor: 'A', fence: 'f02-cloud-actors-20261011', file: BROWSER_FIXTURE_NAME };
 }
 const BROWSER_FIXTURE_ACL = [
   '[Console]::InputEncoding = [Text.UTF8Encoding]::new($false)',
@@ -131,8 +147,9 @@ const BROWSER_FIXTURE_ACL = [
 ].join('\n');
 async function browserFixtureAccess({ initialize = false, file = false } = {}) {
   guard();
-  if (process.platform !== 'win32' || directory !== join(ROOT, 'tmp', 'f02-cloud-actors-20261011')) stop('browser_fixture_unavailable');
-  const path = file ? join(directory, BROWSER_FIXTURE_NAME) : directory;
+  const target = browserFixtureTarget();
+  if (process.platform !== 'win32' || directory !== join(ROOT, 'tmp', target.fence)) stop('browser_fixture_unavailable');
+  const path = file ? join(directory, target.file) : directory;
   const item = await lstat(path);
   if (item.isSymbolicLink() || (file ? !item.isFile() || item.nlink !== 1 : !item.isDirectory())) stop('browser_fixture_unavailable');
   const env = Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP'].filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
@@ -157,16 +174,17 @@ async function browserFixtureAccess({ initialize = false, file = false } = {}) {
   guard();
 }
 async function writeBrowserFixture(name) {
-  if (!input.browserFixture || name !== 'A') return;
-  const actor = actors.A;
-  if (actor.email !== 'f02-20261011-a@synthetic.invalid' || !uidSchema.safeParse(actor.userId).success
+  const target = browserFixtureTarget();
+  if (!target.enabled || name !== target.actor) return;
+  const actor = actors[target.actor], email = target.actor === 'A' ? 'f02-20261011-a@synthetic.invalid' : 'f02-20261011-b@synthetic.invalid';
+  if (actor.email !== email || !uidSchema.safeParse(actor.userId).success
     || typeof actor.password !== 'string' || !/^[A-Za-z0-9_-]{48}aA1!$/u.test(actor.password)) stop('browser_fixture_unavailable');
   await browserFixtureAccess();
   let file;
   try {
-    file = await open(join(directory, BROWSER_FIXTURE_NAME), 'wx', 0o600);
+    file = await open(join(directory, target.file), 'wx', 0o600);
     await browserFixtureAccess({ initialize: true, file: true });
-    const handle = await file.stat(), item = await lstat(join(directory, BROWSER_FIXTURE_NAME));
+    const handle = await file.stat(), item = await lstat(join(directory, target.file));
     if (!handle.isFile() || handle.nlink !== 1 || handle.dev !== item.dev || handle.ino !== item.ino) stop('browser_fixture_unavailable');
     await file.writeFile(JSON.stringify({ email: actor.email, password: actor.password }) + '\n', 'utf8');
     await file.sync();
@@ -271,6 +289,8 @@ async function authRest(action, body) {
   return (await http(url, { method: 'POST', body })).value;
 }
 async function prepareActor(name) {
+  const unverified = input.mode === 'unverified_B';
+  if (unverified && name !== 'B') stop('phase_not_available');
   const actor = actors[name], operationId = randomUUID();
   await checkpoint('invitation_' + name + '_started', { operationId });
   const expiresAt = new Date(Date.now() + 24 * 60 * 60_000).toISOString();
@@ -279,7 +299,7 @@ async function prepareActor(name) {
     || invitation.consumedBy !== null) stop('invitation_mismatch');
   await immutable('invitation_' + name + '_confirmed', 'invitation_' + name + '_confirmed', { operationId });
   await checkpoint('create_' + name + '_started');
-  if (creations >= 2) stop('creation_limit'); creations++;
+  if (creations >= (unverified ? 1 : 2)) stop('creation_limit'); creations++;
   actor.password = randomBytes(36).toString('base64url') + 'aA1!';
   const created = await authRest('signUp', { email: actor.email, password: actor.password, returnSecureToken: true });
   actor.userId = uidSchema.parse(created?.localId);
@@ -289,8 +309,14 @@ async function prepareActor(name) {
   await immutable('create_' + name + '_confirmed', 'create_' + name + '_confirmed', { uid: actor.userId });
   step = 'new_identity_' + name; currentUid = actor.userId; status = null;
   const before = await waiting(() => nativeAuth.getUser(actor.userId));
-  if (before.uid !== actor.userId || before.email !== actor.email || before.disabled || before.emailVerified) stop('actor_binding_invalid');
+  if (before.uid !== actor.userId || before.email !== actor.email || before.disabled
+    || (unverified ? before.emailVerified !== false : before.emailVerified)) stop('actor_binding_invalid');
   await writeBrowserFixture(name);
+  if (unverified) {
+    actor.password = undefined;
+    await immutable('unverified_B_confirmed', 'unverified_B_confirmed', { uid: actor.userId });
+    return;
+  }
   await checkpoint('synthetic_verified_fixture_' + name + '_started', { uid: actor.userId });
   const fixture = await waiting(() => nativeAuth.updateUser(actor.userId, { emailVerified: true }));
   if (fixture.uid !== actor.userId || fixture.email !== actor.email || fixture.disabled || fixture.emailVerified !== true) stop('fixture_binding_invalid');
@@ -312,9 +338,7 @@ async function prepareActor(name) {
   finally { signed.idToken = ''; }
   const exchangeIdentity = identitySchema.parse(exchanged.value);
   if (exchangeIdentity.user.id !== actor.userId || exchangeIdentity.user.email !== actor.email) stop('session_binding_invalid');
-  const cookies = exchanged.headers.getSetCookie();
-  if (cookies.length !== 1 || !/^__session=[A-Za-z0-9._~-]+; Path=\/; HttpOnly; SameSite=Lax; Max-Age=432000; Secure$/u.test(cookies[0])) stop('session_cookie_invalid');
-  actor.cookie = cookieSchema.parse(cookies[0].split(';', 1)[0]);
+  actor.cookie = sessionCookie(exchanged.headers.getSetCookie());
   step = 'session_' + name + '_read'; status = null;
   const session = identitySchema.parse((await http(ORIGIN + '/api/auth/get-session', { privateResponse: true,
     headers: { origin: ORIGIN, 'x-expected-user-id': actor.userId, cookie: actor.cookie } })).value);
@@ -324,8 +348,16 @@ async function prepareActor(name) {
 async function prepare() {
   if (state !== 'ready_to_prepare') stop('phase_not_available');
   state = 'preparing'; await checkpoint('prepare_started');
-  if (input.browserFixture) await browserFixtureAccess();
+  if (browserFixtureTarget().enabled) await browserFixtureAccess();
   await openOperator();
+  if (input.mode === 'unverified_B') {
+    await assertAbsent('B'); await immutable('actor_B_absent_confirmed', 'actor_B_absent_confirmed');
+    await prepareActor('B');
+    guard(); state = 'unverified_B_prepared'; await immutable('prepare_confirmed', 'prepare_confirmed');
+    emit({ step: 'prepare_complete', status: 'passed', mode: input.mode, transport: 'auth_rest',
+      emailVerification: 'unverified_native_identity', operation: { runId: input.runId }, users: { B: actors.B.userId } });
+    return;
+  }
   await assertAbsent('A'); await assertAbsent('B');
   await immutable('actors_absent_confirmed', 'actors_absent_confirmed');
   await prepareActor('A'); await prepareActor('B');
@@ -334,6 +366,7 @@ async function prepare() {
     operation: { runId: input.runId }, users: { A: actors.A.userId, B: actors.B.userId } });
 }
 async function acceptance(phase) {
+  if (input.mode === 'unverified_B') stop('phase_not_available');
   if (state !== (phase === 'core' ? 'prepared' : 'core_passed')) stop('phase_not_available');
   state = phase + '_running'; await checkpoint(phase + '_started');
   const accounts = Object.fromEntries(['A', 'B'].map(name => [name, { userId: uidSchema.parse(actors[name].userId), cookie: cookieSchema.parse(actors[name].cookie) }]));
@@ -379,11 +412,11 @@ async function start(value) {
   try { await mkdir(parent, { mode: 0o700 }); } catch (error) { if (error?.code !== 'EEXIST') throw error; }
   const parentStat = await lstat(parent); if (!parentStat.isDirectory() || parentStat.isSymbolicLink()) stop('checkpoint_unavailable');
   // The fixed actor batch fence also rejects a new process with a different runId after an unknown attempt.
-  directory = join(parent, 'f02-cloud-actors-20261011');
+  directory = join(parent, browserFixtureTarget().fence);
   try { await mkdir(directory, { mode: 0o700 }); } catch { stop('checkpoint_exists_or_unavailable'); }
-  if (input.browserFixture) await browserFixtureAccess({ initialize: true });
+  if (browserFixtureTarget().enabled) await browserFixtureAccess({ initialize: true });
   await immutable('start_confirmed', 'start_confirmed'); state = 'ready_to_prepare';
-  emit({ step: 'start_complete', state, operation: { runId: input.runId }, testedSource: SOURCE, expectedKnowledgeVersionId: KNOWLEDGE_VERSION });
+  emit({ step: 'start_complete', state, mode: input.mode, operation: { runId: input.runId }, testedSource: SOURCE, expectedKnowledgeVersionId: KNOWLEDGE_VERSION });
 }
 async function close() {
   state = 'closed'; child?.kill();
