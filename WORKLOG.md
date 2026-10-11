@@ -2085,3 +2085,17 @@
 - Verification：Node24.19／ADK2.1／GenAI2.24，真ProductAgent／ADK及SDK serialization搭合成stores／auth／counter／fetch；最終4／5／3三root通過，只改所選原ID一次、另一文件不變、同work完成、新conversation讀work／同文件第4版。原receipt由受信inspect確認保留，不是第三root經工具重讀receipt正文。125檔閉包中120份非候選blob吻合185，唯一gateway scoped TypeScript通過；不是全server／前端回歸。五碼freeze `5be20d5841abcfd13124db31dfcdbf5e0cc8f44e4f8c5a02df636a9318f2ba21`獨立Allow，reviewer最終四項定向＋合法kind重複引用反例＋真SDK/Product三root均綠，七份review audit含原紅全0；作者18份本切片audit全0。完整分期結果、程式hash、原缺口／反例輸出與限制嵌入[固定artifact](artifacts/verification/CONTROLLED_DOCUMENT_BATCH_20261010.json)，不以本機路徑代替證據。
 - Preserved Failures：SDK改frozen schema原紅改為私有clone後wire准入；過早capture maxOutput破壞既有下調512的原斷言，還原原讀取時點後轉綠。review揭示SDK先讀API-key環境值，改constructor前presence-only拒絕，不讀值／改env；亦以重複同一文件引用實證錯誤通過root1，收緊兩個不同kind／ID／version恰各一次，原紅保留，reviewer原類反例轉綠。只重跑受影響項及同一情境，未把早期套件稱為最終全量回歸。
 - Limitations／Plan Update／Next Action：這是局部離線機械驗證；可靠完整payload token上界、counter授權／費用、Vertex reasoning-output硬限、累計US$30／原20 successor及新批次批准尚缺，US$0.116736仍是條件估算、US$0.25只是合成預留。新root原receipt工具讀取及同回覆多工具即時中止hook未完成；新增收據步須另核場景／次數，不偷改本freeze。沒有真模型／CountTokens／HTTP／Firestore／workflow／部署。dot已親審最後九檔及根文案，准精確12檔正常PR交付；記錄時尚未PR／合併，不啟用live或重置歷史gate。
+
+
+<a id="log-20261011-plan-restructure"></a>
+## 2026-10-11｜根 PLAN 結構重排與內容歸位
+
+- Work Date／Recorded At：2026-10-11（香港）；根文件維護包。基線為遠端 master `a38e03f3c48bbb9e879254248313c11f5bab5e63`；整理前 Git blob 及 SHA-256 見 [歷史索引](_archive/README.md#plan-20261011)。主模型親寫／覆核，Luna 按限定範圍唯讀定位引用及既有證據；另作獨立只讀 review，結果記於 [EV](artifacts/verification/PLAN_RESTRUCTURE_20261011.json)。沒有真人產品驗收，不代填個人手寫或工時。
+- Actual Work：按批准的六組結構重排；原工作包 ID／前置／REQ、AC／未驗項保留，長目標與門檻改為包下段落，S00～S17 只導覽。原 P2 結案與增補 P2 未完成分開；A09 的缺口由 F07／F08 承接；四角色中另外三角色內部實作暫緩。沒有重新設計 Firebase 或自部署。
+- Content Routing：詳細 run／失敗／修正輪次與 hash 連回原 LOG／EV；成本原表移到既有架構成本章節，2026-10-08／未實測／不授權標示保留，沒有重估價格。部署／預覽／暫停安排歸 STATUS，舊分工與署名內容歸既有本機協作文件，不上傳、不重算歷史。規則只引用 AGENTS，舊聊天批准不轉作新授權；完整原文在固定 Git 版本。
+- Historical Facts Preserved：#173 的搜尋／準備單修正、#177 的匯出彈窗／結果提示、#184 的 recovery-only Firestore 原收據 adapter 及互斥 processor 分支，原記錄只在整理前 PLAN 有最直接歸屬；本條補存該來源事實，不宣稱新做驗收。#184 不建立新 claim、不重做 provider／side effect，其後 #185 的 V1 lookup-only 證據仍按原 run 解讀。
+- Status Correction：#186 已於 2026-10-10T11:42:07Z 合併（merge `ae5d3e01b11632a62a54db68b77c7ed20e323471`），本輪讀回 PR 確認；修正舊 PLAN／STATUS 的「尚未 PR／合併」，原 LOG 不回寫。#186 仍是離線機械驗證，未開 live／部署，也不解鎖 token／thinking／successor／成本 gate。
+- Verification：只做文件內容對照、包及依賴、顯式／標題錨點、現行跨檔引用、表格、WORKLOG 原 bytes 前綴及原容量工作區校驗；精確結果與限制見 EV。未啟動產品測試、建置、瀏覽器驗收、Firebase／GCP 操作或付費模型；文件通過不改產品驗收結論。
+- Limitations／Next：原容量恢復包未提交內容保持原工作區，未混入文件分支；完整流程仍未完成。使用者要求容量包後先停，再用 Plan 規劃遷移；本包只集中交付一個文件 PR，不啟動下一產品包。
+
+- 使用者於本次文件交付前再次明確指定：PLAN 等指導文件由主模型 Astra 親寫。已同步 AGENTS 的模型分工，Sol 對此類正文僅作獨立唯讀核查，保留原 dot 的 Astra 執筆例外；本次重排正文及規則修改均由主模型完成，未委派 Sol 代寫。
