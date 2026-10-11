@@ -20,7 +20,7 @@ const runIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,48}$/u);
 const sourceRevisionSchema = z.string().regex(/^[a-f0-9]{40}$/u);
 const actorSchema = z.object({ userId: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/u),
   cookie: z.string().max(16 * 1024 + 10).regex(/^__session=[A-Za-z0-9._~-]+$/u) }).strict();
-const inputSchema = z.object({ phase: z.enum(['core', 'delete']), origin: z.literal(ORIGIN), runId: runIdSchema,
+const inputSchema = z.object({ phase: z.enum(['core', 'resume_core', 'delete']), origin: z.literal(ORIGIN), runId: runIdSchema,
   expectedSourceRevision: sourceRevisionSchema, expectedKnowledgeVersionId: uuid, accounts: z.object({ A: actorSchema, B: actorSchema }).strict() }).strict()
   .refine(value => value.accounts.A.userId !== value.accounts.B.userId && value.accounts.A.cookie !== value.accounts.B.cookie);
 const contextSchema = z.object({ workspaceId: uuid, storageEpoch: uuid }).strict();
@@ -244,6 +244,11 @@ async function core() {
   assert.equal(evidence.photo.childId, evidence.childA.id); assert.equal(evidence.photo.ownerUserId, input.accounts.A.userId);
   for (const key of Object.keys(metadata)) assert.equal(evidence.photo[key], metadata[key]);
   assert.deepEqual(photoSchema.parse((await request('photo_metadata_read', 'A', prefix + '/photos/' + reserved.id)).photo), evidence.photo);
+  await finishCore(operations, evidence);
+}
+async function finishCore(operations, evidence) {
+  const prefix = '/api/children/' + evidence.childA.id, reserved = evidence.photo, created = evidence.document;
+  const metadata = evidence.photo, bytes = png();
   const binary = await request('photo_authorized_content', 'A', prefix + '/photos/' + reserved.id + '/content', undefined, 200, operations.photoReserve, true);
   assert.equal(binary.headers.get('content-type'), 'image/png'); assert.equal(binary.headers.get('content-disposition'), 'inline; filename=photo');
   assert.equal(binary.headers.get('content-security-policy'), "default-src 'none'; sandbox"); assert.equal(binary.bytes.length, metadata.bytes);
@@ -272,6 +277,87 @@ async function core() {
   operations.photoDelete = await online('photoDelete', 'A', prefix + '/photos/' + evidence.photo.id + '/delete', { expectedVersion: evidence.photo.version, confirmDelete: true });
   await immutable('core-complete.json', coreSchema.parse({ format: 1, state: 'core_complete', testedSource: input.expectedSourceRevision, origin: ORIGIN, runId: input.runId,
     expectedKnowledgeVersionId: input.expectedKnowledgeVersionId, actors: { A: input.accounts.A.userId, B: input.accounts.B.userId }, requests, operations, evidence }));
+}
+// Continue only the preserved first photo-read failure; never replay a create, patch or upload.
+async function resumeCore() {
+  step = 'resume_checkpoint';
+  assert.equal(input.runId, 'f02-20261011-01');
+  assert.equal(input.expectedSourceRevision, '9ee3814b4c4766a99a16a1025ca76185ec3daea6');
+  assert.equal((await lstat(directory)).isSymbolicLink(), false);
+  async function saved(name) {
+    const info = await lstat(join(directory, name));
+    assert.ok(info.isFile() && !info.isSymbolicLink() && info.size < 64 * 1024);
+    return JSON.parse(await readFile(join(directory, name), 'utf8'));
+  }
+  const manifest = await saved('manifest.json');
+  assert.equal(manifest.testedSource, '17c67253590a27f5110ff5a8234f461a20aec207');
+  assert.equal(manifest.origin, ORIGIN); assert.equal(manifest.runId, input.runId);
+  assert.equal(manifest.expectedKnowledgeVersionId, input.expectedKnowledgeVersionId);
+  assert.deepEqual(manifest.actors, { A: input.accounts.A.userId, B: input.accounts.B.userId });
+  assert.deepEqual(manifest.actors, { A: 'RLG08u9PVifLmoW0MvU1xx6LK0n2', B: 'RgNYZpZdIdghEG9kUBDt3sxiKtr2' });
+  const files = await readdir(directory), records = [];
+  const ledger = files.filter(name => /^\d{3}-request\.json$/u.test(name)).sort();
+  assert.equal(ledger.length, 31); assert.equal(files.includes('031-response.json'), false);
+  for (let n = 1; n <= 31; n++) {
+    const id = String(n).padStart(3, '0'); assert.equal(ledger[n - 1], id + '-request.json');
+    const record = await saved(id + '-request.json'); assert.equal(record.request, n); records.push(record);
+    if (n <= 30) { const response = await saved(id + '-response.json'); assert.equal(response.step, record.step);
+      assert.equal(response.status, record.step === 'document_stale_version' ? 409 : 200); }
+  }
+  assert.equal(records[30].step, 'photo_authorized_content'); assert.equal(records[30].method, 'GET');
+  const operations = {}, evidence = {};
+  for (const name of Object.keys(operationsSchema.shape).filter(name => name !== 'photoDelete')) {
+    const file = await saved('operation-' + name + '.json');
+    assert.equal(file.actor, name === 'childB' || name === 'acknowledgeB' ? 'B' : 'A');
+    operations[name] = operationsSchema.shape[name].parse(file.command);
+  }
+  const record = name => { const rows = records.filter(value => value.step === name); assert.ok(rows.length >= 1); return rows[0]; };
+  assert.deepEqual(record('photo_upload').operation, operations.photoReserve.operation);
+  assert.equal(record('photo_upload').body.base64, png().toString('base64'));
+  await immutable('resume-start.json', { at: new Date().toISOString(), testedSource: input.expectedSourceRevision,
+    originalSource: manifest.testedSource, runId: input.runId, priorRequests: 31,
+    priorLedgerSha256: sha256(JSON.stringify(records)), operationIds: Object.values(operations).map(operationIdentity) });
+  requests = 31; await sessions();
+  for (const actor of ['A', 'B']) {
+    const command = operations['child' + actor];
+    const receipt = receiptSchema.parse(await lookup('resume_child_' + actor, actor, command));
+    assert.deepEqual(receipt.operation, command.operation); assert.equal(receipt.path, command.path); assert.equal(receipt.statusCode, 201);
+    const child = childSchema.parse(receipt.result.child);
+    assert.equal(child.workspaceId, command.operation.workspaceId); assert.equal(child.displayName, command.payload.displayName);
+    evidence['child' + actor] = child;
+    contextByActor.set(actor, { workspaceId: command.operation.workspaceId, storageEpoch: command.operation.storageEpoch });
+  }
+  assert.notEqual(evidence.childA.id, evidence.childB.id); assert.notEqual(evidence.childA.workspaceId, evidence.childB.workspaceId);
+  const prefix = '/api/children/' + evidence.childA.id;
+  const taskReceipt = receiptSchema.parse(await lookup('resume_task_receipt', 'A', operations.task));
+  assert.deepEqual(taskReceipt.operation, operations.task.operation); assert.equal(taskReceipt.statusCode, 201);
+  evidence.task = taskSchema.parse(taskReceipt.result.task); assert.equal(evidence.task.childId, evidence.childA.id);
+  assert.deepEqual((await request('resume_task_read', 'A', prefix + '/tasks/' + evidence.task.id)).task, evidence.task);
+  const documentPath = record('document_read_latest').path; assert.ok(documentPath.startsWith(prefix + '/documents/'));
+  const latest = documentSchema.parse((await request('resume_document_read', 'A', documentPath)).item);
+  assert.equal(latest.childId, evidence.childA.id); assert.equal(latest.version, operations.documentPatch.change.expectedVersion + 1);
+  const originalId = new URL(record('document_original_content').path, ORIGIN).searchParams.get('snapshotId');
+  const old = latest.history.find(value => value.id === originalId); assert.ok(old);
+  const original = await documentContent('resume_original_content', evidence.childA.id, { ...latest, current: old });
+  const content = await documentContent('resume_latest_content', evidence.childA.id, latest); assert.ok(original.pages >= 2);
+  const edit = operations.documentPatch.change.edits[0]; assert.equal(operations.documentPatch.change.edits.length, 1);
+  assert.equal(edit.op, 'upsert_item');
+  const expectedSections = original.value.sections.map(section => ({ ...section, items: section.items.map(item =>
+    section.id === edit.sectionId && item.id === edit.itemId ? { ...item, text: edit.text } : item) }));
+  assert.deepEqual(content.value.sections, expectedSections); assert.deepEqual(content.value.sources, original.value.sources);
+  assert.equal(content.value.title, original.value.title); assert.equal(content.value.summary, original.value.summary);
+  evidence.document = { id: latest.id, version: latest.version, originalSnapshotId: old.id, latestSnapshotId: latest.current.id,
+    originalSha256: original.sha256, latestSha256: content.sha256, authorityVersion: content.authorityVersion,
+    originalPages: original.pages, latestPages: content.pages };
+  const reserved = receiptSchema.parse(await lookup('resume_photo_receipt', 'A', operations.photoReserve));
+  assert.deepEqual(reserved.operation, operations.photoReserve.operation); assert.equal(reserved.statusCode, 201);
+  const photoPath = prefix + '/photos/' + uuid.parse(reserved.result.photo.id);
+  assert.equal(records[30].path, photoPath + '/content');
+  evidence.photo = photoSchema.parse((await request('resume_photo_metadata', 'A', photoPath)).photo);
+  assert.equal(evidence.photo.childId, evidence.childA.id); assert.equal(evidence.photo.ownerUserId, input.accounts.A.userId);
+  assert.equal(evidence.photo.state, 'ready'); assert.equal(evidence.photo.version, reserved.result.photo.version + 1);
+  for (const [key, value] of Object.entries(operations.photoReserve.payload)) assert.equal(evidence.photo[key], value);
+  await finishCore(operations, evidence);
 }
 async function deletion(saved) {
   await sessions(); const { evidence, operations } = saved, prefix = '/api/children/' + evidence.childA.id;
@@ -305,6 +391,8 @@ try {
     await immutable('manifest.json', { format: 1, testedSource: input.expectedSourceRevision, origin: ORIGIN, runId: input.runId,
       expectedKnowledgeVersionId: input.expectedKnowledgeVersionId, actors: { A: input.accounts.A.userId, B: input.accounts.B.userId } });
     await core();
+  } else if (input.phase === 'resume_core') {
+    await resumeCore();
   } else {
     step = 'delete_checkpoint'; assert.equal((await lstat(directory)).isSymbolicLink(), false);
     const info = await lstat(join(directory, 'core-complete.json')); assert.ok(info.size <= 64 * 1024 && info.isFile() && !info.isSymbolicLink());
@@ -324,7 +412,7 @@ try {
       runId: input.runId, deletionOperation: saved.operations.photoDelete.operation });
     await deletion(saved);
   }
-  process.stdout.write(JSON.stringify({ step: input.phase + '_complete', error: null, status: 'passed', operation: { runId: input.runId, ...currentOperation } }) + '\n');
+  process.stdout.write(JSON.stringify({ step: (input.phase === 'resume_core' ? 'core' : input.phase) + '_complete', error: null, status: 'passed', operation: { runId: input.runId, ...currentOperation } }) + '\n');
 } catch (error) {
   process.exitCode = 1;
   process.stdout.write(JSON.stringify({ step, error: error instanceof BatchError ? error.code : error instanceof assert.AssertionError || error instanceof z.ZodError
