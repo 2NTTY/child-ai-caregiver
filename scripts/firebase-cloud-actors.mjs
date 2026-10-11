@@ -94,6 +94,7 @@ async function waiting(action) {
   } finally { clearTimeout(timer); }
 }
 const BROWSER_FIXTURE_ACL = [
+  '[Console]::InputEncoding = [Text.UTF8Encoding]::new($false)',
   "$ErrorActionPreference = 'Stop'",
   "$ProgressPreference = 'SilentlyContinue'",
   'try {',
