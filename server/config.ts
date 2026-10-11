@@ -1,14 +1,17 @@
 import { isIP } from "node:net";
 
-export interface ServerConfig {
-  databaseUrl: string;
-  authSecret: string;
+export interface ServerHttpConfig {
   publicOrigin: string;
   webOrigin: string;
   host: string;
   port: number;
   production: boolean;
   trustedProxyIp?: string;
+}
+
+export interface ServerConfig extends ServerHttpConfig {
+  databaseUrl: string;
+  authSecret: string;
 }
 
 function invalidConfig(name: string): never {
@@ -61,10 +64,8 @@ function readOrigin(value: string | undefined, name: "SERVER_ORIGIN" | "WEB_ORIG
   return url.origin;
 }
 
-export function readServerConfig(env: Record<string, string | undefined>): ServerConfig {
+export function readServerHttpConfig(env: Record<string, string | undefined>): ServerHttpConfig {
   const production = env.NODE_ENV === "production";
-  const databaseUrl = readDatabaseUrl(env.DATABASE_URL);
-  const authSecret = readAuthSecret(env.BETTER_AUTH_SECRET);
   const publicOrigin = readOrigin(env.SERVER_ORIGIN ?? (production ? undefined : "http://localhost:3001"), "SERVER_ORIGIN", production);
   const webOrigin = readOrigin(env.WEB_ORIGIN ?? (production ? publicOrigin : "http://localhost:8081"), "WEB_ORIGIN", production);
   const host = env.HOST ?? "127.0.0.1";
@@ -80,6 +81,13 @@ export function readServerConfig(env: Record<string, string | undefined>): Serve
   const trustedProxyIp = env.TRUSTED_PROXY_IP || undefined;
   // P1 has one explicitly addressed IPv4 ingress proxy; never trust a whole private range.
   if (trustedProxyIp && isIP(trustedProxyIp) !== 4) invalidConfig("TRUSTED_PROXY_IP");
-  return { databaseUrl, authSecret, publicOrigin, webOrigin, host, port, production,
+  return { publicOrigin, webOrigin, host, port, production,
     ...(trustedProxyIp ? { trustedProxyIp } : {}) };
+}
+
+/** The legacy deployment keeps its original required secrets until the final cutover. */
+export function readServerConfig(env: Record<string, string | undefined>): ServerConfig {
+  const databaseUrl = readDatabaseUrl(env.DATABASE_URL);
+  const authSecret = readAuthSecret(env.BETTER_AUTH_SECRET);
+  return { databaseUrl, authSecret, ...readServerHttpConfig(env) };
 }

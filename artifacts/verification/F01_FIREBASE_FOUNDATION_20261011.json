@@ -1,0 +1,1698 @@
+{
+  "schema": 1,
+  "package": "P2-F01",
+  "state": "verified_for_delivery",
+  "baseline": "fd5d4f074c9a9d0926de8fbd3b6568975d2743f8",
+  "observedAt": "2026-10-11T10:26:44.779Z",
+  "originalCapacity": {
+    "branch": "codex/p2-chat-capacity-recovery",
+    "head": "a38e03f3c48bbb9e879254248313c11f5bab5e63",
+    "modifiedFiles": [
+      {
+        "path": "PLAN.md",
+        "sha256": "c13a37006baf9a811181bc67225d329f4e663a57903861a3f5cfb4b63298d534"
+      },
+      {
+        "path": "STATUS.md",
+        "sha256": "5baaa0cd77b9471ca7a75f5e9c1e1043b0e4cb00671815dcecddf980d161fa46"
+      },
+      {
+        "path": "WORKLOG.md",
+        "sha256": "6758bb39efbd0cf52138b0cddb0e3810696f9d112a5fc3ec88162d5b39b19f0e"
+      },
+      {
+        "path": "artifacts/verification/CHAT_CAPACITY_RECOVERY_20261011.json",
+        "sha256": "6ed77b0a84b4b9dcf1d955ba48490a086e56f33a4b891e321b9cf817b3f3c7a2"
+      },
+      {
+        "path": "docs/API.md",
+        "sha256": "a5b59e6add5fc6f54b236cb8db4ccebfbcfff88a1fb196b88e10f1a77482d4a1"
+      },
+      {
+        "path": "server/agent-budget.ts",
+        "sha256": "7f0b64f85b3de44d8fab554bc7726e6b81bf0bef0222495d01311d3b11c6b881"
+      },
+      {
+        "path": "server/agent-runtime.ts",
+        "sha256": "e084a8fe204a72fe1ae11043acfe9bcb39ceabfd10e7f3d77d7c69da77c4c7b7"
+      },
+      {
+        "path": "server/product-agent-api.ts",
+        "sha256": "df57ed721f90ea69ec1e6e9dc034068f4ac2b15b890b2e9d349fbd01265480c8"
+      },
+      {
+        "path": "src/client/chat-api.ts",
+        "sha256": "307f1bea172ef0e03b5e53f775427b90c420d8e7d05403cde0e0979411dac35c"
+      },
+      {
+        "path": "src/client/chat-controller.ts",
+        "sha256": "7a60ff6990f511d1e5e5e218dff829c9fd58bc4d875852603989fc6b5ce7821d"
+      },
+      {
+        "path": "tests/chat-capacity-busy.test.ts",
+        "sha256": "1e990dfd2119dfd7b48116a02f1519b2587cb0d73cb7cf0c01d157399ce9cfd1"
+      },
+      {
+        "path": "tests/helpers/multiuser-fixture.ts",
+        "sha256": "3eb16c5ded3253da1f1ff15fb82078a97f837f345b1e0bc481c17bf1fabb31d3"
+      },
+      {
+        "path": "tests/multiuser-loopback-fixture.ts",
+        "sha256": "562a8a3393e723a179d67baa98bb1e9a73993ca911729779da57a93559573cad"
+      },
+      {
+        "path": "tests/product-agent-http-capacity.test.ts",
+        "sha256": "7d1e41cfb7d645733f005f529450cc5ba30b0130a9f9bc2f225db9acf3e3ffe4"
+      },
+      {
+        "path": "tests/product-agent-multiuser.test.ts",
+        "sha256": "81d363404bc00dbc903c4aae99024a93e882dbc57d7bdc22e8097cea3d7c8280"
+      },
+      {
+        "path": "tests/serve-multiuser-preview.ts",
+        "sha256": "b54284680fd2ecc115f00a17c4415e7949224292463af85da232f1c180db5553"
+      }
+    ],
+    "preserved": true,
+    "transferredTo": [
+      "P2-F03",
+      "P2-F08"
+    ],
+    "acceptanceComplete": false
+  },
+  "cloudPreflight": {
+    "projectId": "ai-caregivers-for-children",
+    "projectNumber": "1064034424208",
+    "projectState": "ACTIVE",
+    "billingEnabled": true,
+    "vm": {
+      "name": "yuban-p1",
+      "zone": "asia-east2-a",
+      "state": "RUNNING",
+      "deployedRevision": "not_rechecked"
+    },
+    "buckets": [],
+    "initiallyDisabledApis": [
+      "cloudbilling.googleapis.com",
+      "firebase.googleapis.com",
+      "firestore.googleapis.com",
+      "run.googleapis.com"
+    ],
+    "enabledManagementApi": {
+      "name": "cloudbilling.googleapis.com",
+      "operation": "operations/acat.p2-1064034424208-62b7dfb1-a424-4ae1-b11b-7dd700dfadd4",
+      "done": true
+    },
+    "permissionsPresent": [
+      "serviceusage.services.enable",
+      "firebase.projects.update",
+      "datastore.databases.create",
+      "run.services.create",
+      "iam.serviceAccounts.create",
+      "resourcemanager.projects.setIamPolicy",
+      "storage.buckets.create",
+      "cloudtasks.queues.create",
+      "cloudscheduler.jobs.create"
+    ],
+    "iamChanged": false,
+    "applicationResourcesCreated": false,
+    "productDataRead": false,
+    "modelCalls": 0,
+    "billedIncrementalCost": "not_measured"
+  },
+  "dependencySetup": {
+    "node": "24.11.0",
+    "initialNpm": "11.6.1",
+    "initialNpmWarning": "below project >=11.8.0 requirement; existing-lock installation only",
+    "pinnedNpmUsedForChange": "11.8.0",
+    "firebaseAdmin": "14.5.0",
+    "firebaseAdminLicense": "Apache-2.0",
+    "firestore": "9.3.1"
+  },
+  "verification": [
+    {
+      "scope": "Firebase and preserved legacy configuration",
+      "command": "node --test tests/firebase-config.test.ts tests/server-config.test.ts",
+      "passed": 15,
+      "failed": 0,
+      "evidenceLevel": "local unit only"
+    },
+    {
+      "scope": "Canonical authority and existing recovery consumer",
+      "commands": [
+        "node --experimental-test-module-mocks --test tests/firestore-authority.test.ts",
+        "node --experimental-test-module-mocks --test tests/firestore-work-authority.test.ts tests/firestore-work-continuation-recovery.test.ts"
+      ],
+      "passed": [
+        9,
+        14
+      ],
+      "failed": 0,
+      "evidenceLevel": "serial synthetic Firestore fixture, no cloud transaction contention"
+    },
+    {
+      "scope": "Firebase Auth and encrypted device ledger initial final pass",
+      "command": "node --experimental-test-module-mocks --test tests/firebase-auth.test.ts tests/firestore-device-sessions.test.ts",
+      "passed": 19,
+      "failed": 0,
+      "evidenceLevel": "injected Admin SDK and synthetic Firestore ports"
+    },
+    {
+      "scope": "Foundation HTTP routing and real authority business error mapping",
+      "command": "node --experimental-test-module-mocks --test tests/firebase-app.test.ts tests/firebase-auth.test.ts",
+      "passed": 22,
+      "failed": 0,
+      "evidenceLevel": "direct Web Request calls, no HTTP listener"
+    },
+    {
+      "scope": "Valid Node cookie fixture after typecheck finding",
+      "command": "node --experimental-test-module-mocks --test tests/firebase-auth.test.ts",
+      "passed": 13,
+      "failed": 0,
+      "evidenceLevel": "local unit"
+    },
+    {
+      "scope": "Production SDK composition and bounded Node transport",
+      "command": "node --test tests/firebase-runtime.test.ts tests/firebase-http.test.ts",
+      "passed": 4,
+      "failed": 0,
+      "evidenceLevel": "SDK construction only and synthetic streams; no DB requests or network acceptance"
+    },
+    {
+      "scope": "Transport Buffer fixture type correction",
+      "command": "node --test tests/firebase-http.test.ts",
+      "passed": 3,
+      "failed": 0,
+      "evidenceLevel": "targeted recheck"
+    },
+    {
+      "scope": "License inventory",
+      "command": "node --test tests/license-inventory.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "evidenceLevel": "repository files"
+    },
+    {
+      "scope": "Review verification downgrade regression",
+      "commands": [
+        "node --experimental-test-module-mocks --test --test-name-pattern='trusted current verification' tests/firestore-authority.test.ts",
+        "node --experimental-test-module-mocks --test tests/firebase-auth.test.ts"
+      ],
+      "passed": [
+        1,
+        14
+      ],
+      "failed": 0,
+      "evidenceLevel": "synthetic authority and Admin SDK ports; first failure retained"
+    }
+  ],
+  "unverified": [
+    "real Firebase Auth or Firestore transaction contention",
+    "Identity Platform blocking functions and real email lifecycle",
+    "Cloud Tasks/OIDC/vector indices/scale-to-zero",
+    "GCP browser and real model outcomes",
+    "F02-F08 acceptance and paired restore",
+    "production cutover and ongoing operating budget"
+  ],
+  "sqlInventory": {
+    "baseline": "fd5d4f074c9a9d0926de8fbd3b6568975d2743f8",
+    "method": "Static .query(?:<[^\\r\\n]+>)?\\s*\\( per-line call locations; allows TypeScript generic object field semicolons. Runtime entry, migrations, CLI and cleanup closures separately mapped in TECH_REUSE.",
+    "queryFiles": [
+      {
+        "path": "server/account-admission.ts",
+        "lines": [
+          26,
+          27,
+          31,
+          39,
+          46,
+          48,
+          51,
+          53,
+          56,
+          59,
+          81,
+          86
+        ]
+      },
+      {
+        "path": "server/account-data.ts",
+        "lines": [
+          35,
+          36,
+          37,
+          42,
+          46,
+          47,
+          50,
+          53,
+          60,
+          62,
+          65,
+          70,
+          75,
+          80,
+          83,
+          105,
+          107,
+          112,
+          116,
+          118,
+          119,
+          120,
+          122,
+          123,
+          124,
+          126,
+          129,
+          131,
+          133,
+          134,
+          135,
+          137,
+          142,
+          146,
+          148,
+          149,
+          157,
+          168,
+          172,
+          175,
+          185,
+          194,
+          216,
+          225,
+          228,
+          229,
+          268,
+          278,
+          287,
+          293,
+          299,
+          309,
+          345,
+          347,
+          353,
+          358,
+          370,
+          382,
+          408,
+          427,
+          438,
+          442,
+          443
+        ]
+      },
+      {
+        "path": "server/account-runtime.ts",
+        "lines": [
+          14
+        ]
+      },
+      {
+        "path": "server/agent-actions-store.ts",
+        "lines": [
+          52,
+          56,
+          63,
+          72,
+          89,
+          96,
+          107,
+          118,
+          126,
+          130,
+          132,
+          133,
+          137,
+          143,
+          160,
+          176,
+          191,
+          193,
+          203,
+          217,
+          223,
+          235,
+          244,
+          248,
+          257,
+          265,
+          272,
+          354,
+          362,
+          366,
+          367
+        ]
+      },
+      {
+        "path": "server/agent-confirmation-store.ts",
+        "lines": [
+          30,
+          38,
+          39,
+          44,
+          83,
+          94,
+          106,
+          110,
+          113,
+          120,
+          128,
+          132,
+          135,
+          137,
+          146,
+          148,
+          149,
+          150,
+          155,
+          161,
+          165,
+          178
+        ]
+      },
+      {
+        "path": "server/agent-original-receipts-postgres.ts",
+        "lines": [
+          18,
+          24,
+          47,
+          55,
+          66
+        ]
+      },
+      {
+        "path": "server/agent-work-continuation-worker.ts",
+        "lines": [
+          69
+        ]
+      },
+      {
+        "path": "server/agent-work-continuation.ts",
+        "lines": [
+          87,
+          97,
+          139,
+          147,
+          158,
+          169,
+          170,
+          186,
+          187,
+          189,
+          190,
+          194,
+          198,
+          202,
+          203,
+          209,
+          213,
+          218,
+          222,
+          226,
+          235,
+          236,
+          241,
+          245,
+          254,
+          274,
+          286,
+          287,
+          292,
+          328,
+          329,
+          334,
+          339,
+          361,
+          368,
+          371
+        ]
+      },
+      {
+        "path": "server/agent-work-store.ts",
+        "lines": [
+          47,
+          56,
+          60,
+          63,
+          83,
+          85,
+          92,
+          95,
+          100,
+          104,
+          109,
+          110,
+          114,
+          116,
+          118,
+          127,
+          132,
+          159
+        ]
+      },
+      {
+        "path": "server/ai-usage.ts",
+        "lines": [
+          33,
+          53,
+          55,
+          58,
+          63,
+          68,
+          71,
+          74,
+          79,
+          89
+        ]
+      },
+      {
+        "path": "server/auth-mail-worker.ts",
+        "lines": [
+          54,
+          55,
+          63,
+          67,
+          69,
+          70,
+          76,
+          82,
+          83,
+          91,
+          103,
+          108
+        ]
+      },
+      {
+        "path": "server/auth-mail.ts",
+        "lines": [
+          56,
+          57,
+          58,
+          62,
+          63,
+          67,
+          72,
+          73
+        ]
+      },
+      {
+        "path": "server/care-summary-store.ts",
+        "lines": [
+          14,
+          16,
+          22,
+          23,
+          50,
+          51
+        ]
+      },
+      {
+        "path": "server/care.ts",
+        "lines": [
+          25,
+          31,
+          35,
+          43,
+          51,
+          53,
+          79,
+          89,
+          97,
+          102,
+          113,
+          115,
+          126,
+          129,
+          130,
+          142,
+          144,
+          152,
+          160,
+          161
+        ]
+      },
+      {
+        "path": "server/chat.ts",
+        "lines": [
+          32,
+          40,
+          48,
+          64,
+          77
+        ]
+      },
+      {
+        "path": "server/concern-store.ts",
+        "lines": [
+          34,
+          39,
+          46,
+          54,
+          58,
+          66,
+          68,
+          71,
+          75,
+          80,
+          81,
+          82,
+          95,
+          98,
+          106,
+          113,
+          119,
+          138,
+          145,
+          149,
+          159,
+          165,
+          183,
+          191,
+          208,
+          210,
+          218,
+          230,
+          263,
+          286,
+          304,
+          313
+        ]
+      },
+      {
+        "path": "server/concern-worker.ts",
+        "lines": [
+          23
+        ]
+      },
+      {
+        "path": "server/contact-store.ts",
+        "lines": [
+          37,
+          40,
+          41,
+          42,
+          44,
+          48,
+          53,
+          57,
+          79,
+          94,
+          101,
+          102,
+          103,
+          104,
+          105,
+          106,
+          107,
+          110,
+          115,
+          123,
+          129,
+          130,
+          132,
+          133,
+          137,
+          142,
+          143,
+          160,
+          161,
+          163,
+          169,
+          174,
+          180,
+          181,
+          185,
+          188,
+          190,
+          198,
+          200,
+          206,
+          214,
+          215,
+          227,
+          229,
+          232,
+          236,
+          237,
+          244,
+          247,
+          249,
+          259,
+          266,
+          275,
+          277,
+          280,
+          281,
+          284,
+          285,
+          294,
+          297,
+          298,
+          304,
+          306,
+          308,
+          309,
+          312,
+          313,
+          318,
+          320
+        ]
+      },
+      {
+        "path": "server/embedding-gateway.ts",
+        "lines": [
+          55
+        ]
+      },
+      {
+        "path": "server/families.ts",
+        "lines": [
+          24,
+          30,
+          31,
+          32,
+          33,
+          34,
+          38,
+          43,
+          44,
+          45,
+          48,
+          49,
+          51,
+          56,
+          62,
+          64,
+          75,
+          77,
+          80,
+          82,
+          92,
+          93,
+          102,
+          103,
+          105,
+          110,
+          117,
+          118,
+          119,
+          120,
+          121,
+          124,
+          128,
+          130
+        ]
+      },
+      {
+        "path": "server/family-access.ts",
+        "lines": [
+          19,
+          20,
+          21,
+          25,
+          28,
+          30,
+          36,
+          40
+        ]
+      },
+      {
+        "path": "server/family-document-store.ts",
+        "lines": [
+          30,
+          35,
+          39,
+          45,
+          53,
+          82,
+          105,
+          106,
+          110,
+          115,
+          123,
+          140,
+          142,
+          160,
+          171,
+          197,
+          239,
+          274,
+          328,
+          339,
+          361,
+          366,
+          369,
+          377,
+          379,
+          386,
+          395
+        ]
+      },
+      {
+        "path": "server/family-document-worker.ts",
+        "lines": [
+          15
+        ]
+      },
+      {
+        "path": "server/growth-store.ts",
+        "lines": [
+          34,
+          40,
+          42,
+          44,
+          52,
+          53,
+          54,
+          85,
+          89,
+          91,
+          98,
+          102,
+          110,
+          118,
+          124,
+          145,
+          155,
+          190,
+          191,
+          196,
+          204,
+          208,
+          246,
+          256,
+          266
+        ]
+      },
+      {
+        "path": "server/growth-worker.ts",
+        "lines": [
+          20,
+          37
+        ]
+      },
+      {
+        "path": "server/index.ts",
+        "lines": [
+          64,
+          69,
+          70,
+          75,
+          77,
+          86,
+          88,
+          89,
+          90,
+          92,
+          93,
+          94,
+          96,
+          98,
+          101,
+          106,
+          134
+        ]
+      },
+      {
+        "path": "server/knowledge-refresh-store.ts",
+        "lines": [
+          29,
+          30,
+          31,
+          48,
+          53,
+          59,
+          61,
+          65,
+          66,
+          69,
+          73,
+          77,
+          79,
+          85,
+          86,
+          87,
+          89,
+          99,
+          101,
+          103,
+          104,
+          111,
+          112,
+          121,
+          123,
+          131,
+          133,
+          136,
+          140,
+          141,
+          143
+        ]
+      },
+      {
+        "path": "server/knowledge-store.ts",
+        "lines": [
+          20,
+          21,
+          25,
+          49,
+          50,
+          52,
+          55,
+          58,
+          79,
+          82,
+          86,
+          99,
+          112,
+          115,
+          118,
+          123,
+          130
+        ]
+      },
+      {
+        "path": "server/knowledge-version-review.ts",
+        "lines": [
+          63,
+          65,
+          66,
+          68,
+          70,
+          107,
+          115,
+          126,
+          129,
+          132,
+          133,
+          147,
+          153,
+          167,
+          174,
+          175,
+          176,
+          178
+        ]
+      },
+      {
+        "path": "server/memory-summary.ts",
+        "lines": [
+          21,
+          26,
+          28,
+          29,
+          31,
+          56,
+          60,
+          82,
+          97,
+          98,
+          102,
+          104
+        ]
+      },
+      {
+        "path": "server/memory.ts",
+        "lines": [
+          27,
+          34,
+          44,
+          48,
+          58,
+          62,
+          71,
+          73,
+          75,
+          76,
+          81,
+          83,
+          84,
+          88,
+          94,
+          165,
+          188,
+          198,
+          209,
+          210,
+          212,
+          223
+        ]
+      },
+      {
+        "path": "server/migrate.ts",
+        "lines": [
+          19,
+          22,
+          24,
+          34,
+          38,
+          39,
+          42,
+          48,
+          53
+        ]
+      },
+      {
+        "path": "server/model-settings.ts",
+        "lines": [
+          76,
+          86,
+          88,
+          90,
+          98,
+          99,
+          102,
+          107,
+          117,
+          123
+        ]
+      },
+      {
+        "path": "server/online-change.ts",
+        "lines": [
+          8,
+          10,
+          13,
+          15,
+          16,
+          18,
+          22,
+          24,
+          29,
+          31
+        ]
+      },
+      {
+        "path": "server/online.ts",
+        "lines": [
+          51,
+          52,
+          54,
+          55,
+          59,
+          63,
+          69,
+          70,
+          79,
+          80,
+          81,
+          82,
+          83,
+          84,
+          85,
+          86,
+          97,
+          104,
+          112,
+          159,
+          160,
+          172,
+          175,
+          176,
+          178,
+          181,
+          183,
+          192,
+          201
+        ]
+      },
+      {
+        "path": "server/personal-library-api.ts",
+        "lines": [
+          31
+        ]
+      },
+      {
+        "path": "server/photo-backup.ts",
+        "lines": [
+          93,
+          137
+        ]
+      },
+      {
+        "path": "server/photo-store.ts",
+        "lines": [
+          35,
+          43,
+          54,
+          55,
+          56,
+          59,
+          73,
+          94,
+          95,
+          105,
+          114,
+          120,
+          137,
+          147,
+          150,
+          151,
+          157,
+          158
+        ]
+      },
+      {
+        "path": "server/product-agent-background.ts",
+        "lines": [
+          16,
+          26,
+          30,
+          39
+        ]
+      },
+      {
+        "path": "server/product-agent-store.ts",
+        "lines": [
+          74,
+          112,
+          120,
+          125,
+          154,
+          158,
+          206,
+          217,
+          221,
+          223,
+          230,
+          238,
+          240,
+          243,
+          254,
+          264,
+          271,
+          276,
+          288,
+          325,
+          345,
+          375,
+          425,
+          431,
+          434,
+          443,
+          452,
+          507,
+          516,
+          534
+        ]
+      },
+      {
+        "path": "server/records.ts",
+        "lines": [
+          53,
+          65,
+          79,
+          87,
+          95,
+          96,
+          107,
+          118
+        ]
+      },
+      {
+        "path": "server/shared-input-store.ts",
+        "lines": [
+          48,
+          53,
+          58,
+          68,
+          100,
+          111,
+          119,
+          129,
+          154,
+          185,
+          203,
+          222,
+          230,
+          233,
+          234
+        ]
+      },
+      {
+        "path": "server/storage-upgrade.ts",
+        "lines": [
+          7,
+          19,
+          20,
+          21,
+          22,
+          25,
+          40,
+          43,
+          49,
+          52,
+          53,
+          55,
+          56,
+          59
+        ]
+      },
+      {
+        "path": "server/task-work-view.ts",
+        "lines": [
+          6,
+          7,
+          15
+        ]
+      },
+      {
+        "path": "server/task-worker.ts",
+        "lines": [
+          26,
+          28,
+          29,
+          31,
+          45,
+          46,
+          47,
+          49,
+          50,
+          51,
+          53,
+          54,
+          61,
+          66,
+          68,
+          69,
+          72,
+          80,
+          84,
+          85,
+          89,
+          91,
+          92,
+          102,
+          108,
+          109,
+          121,
+          124,
+          125,
+          132,
+          135,
+          136
+        ]
+      },
+      {
+        "path": "server/tasks.ts",
+        "lines": [
+          31,
+          41,
+          49,
+          50,
+          52,
+          53,
+          55,
+          62,
+          73
+        ]
+      },
+      {
+        "path": "server/telegram-store.ts",
+        "lines": [
+          22,
+          23,
+          32,
+          33,
+          39,
+          44,
+          45,
+          48,
+          50,
+          51,
+          58,
+          59,
+          60,
+          65,
+          66,
+          67,
+          68,
+          70,
+          75,
+          78,
+          80,
+          82,
+          84,
+          92,
+          93,
+          94,
+          97,
+          103,
+          106,
+          109,
+          111,
+          114,
+          118,
+          119,
+          124,
+          127,
+          131,
+          134,
+          138,
+          143,
+          146,
+          148,
+          154,
+          156,
+          157,
+          159,
+          160,
+          162,
+          168,
+          176,
+          178
+        ]
+      },
+      {
+        "path": "server/transaction-pool.ts",
+        "lines": [
+          22,
+          26,
+          27,
+          29
+        ]
+      },
+      {
+        "path": "server/web-push-queue.ts",
+        "lines": [
+          35
+        ]
+      },
+      {
+        "path": "server/web-push-store.ts",
+        "lines": [
+          31,
+          32,
+          33,
+          34,
+          47,
+          48,
+          55,
+          62,
+          63,
+          64,
+          67,
+          79,
+          80,
+          87,
+          93,
+          104,
+          106,
+          115,
+          120,
+          125,
+          139,
+          141,
+          142,
+          143,
+          146,
+          148,
+          156,
+          158,
+          159,
+          160,
+          161,
+          164,
+          173,
+          177,
+          182,
+          195
+        ]
+      },
+      {
+        "path": "server/worker-control.ts",
+        "lines": [
+          12,
+          13,
+          15,
+          16,
+          18,
+          23,
+          25,
+          28,
+          35,
+          39,
+          42,
+          43,
+          44
+        ]
+      },
+      {
+        "path": "server/worker-main.ts",
+        "lines": [
+          74,
+          76,
+          84,
+          88,
+          89,
+          90,
+          95,
+          98,
+          108,
+          113
+        ]
+      },
+      {
+        "path": "server/worker-queue.ts",
+        "lines": [
+          24,
+          103
+        ]
+      },
+      {
+        "path": "server/workspaces.ts",
+        "lines": [
+          29,
+          36,
+          43
+        ]
+      }
+    ],
+    "correctedInventory": "Initial narrower regex counted 50; four generic-query worker files were verified and restored to the 54-file inventory."
+  },
+  "testMailbox": {
+    "providedByUser": true,
+    "addressRecordedInRepository": false,
+    "verificationLinksHandledByUser": true
+  },
+  "typecheck": {
+    "initial": {
+      "exitCode": 1,
+      "errorCount": 6,
+      "ownFailure": "tests/firebase-auth.test.ts:243 string[] cookie fixture not assignable to IncomingHttpHeaders cookie string; fixed to valid cookie string without relaxing assertions"
+    },
+    "baseline": "fd5d4f074c9a9d0926de8fbd3b6568975d2743f8",
+    "baselineMethod": "TypeScript compiler with baseline tracked roots; changed tracked TS source overlaid from git show; same pinned dependencies. No working tree reset.",
+    "baselineErrors": [
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 4,
+        "code": 7016,
+        "message": "Could not find a declaration file for module '../scripts/lib/chat-intent-probe-guards.mjs'. 'C:/Users/2NTTY/.codex/worktrees/plan-structure-cleanup/孩子ai护工/scripts/lib/chat-intent-probe-guards.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 5,
+        "code": 7016,
+        "message": "Could not find a declaration file for module '../scripts/lib/chat-document-batch-guards.mjs'. 'C:/Users/2NTTY/.codex/worktrees/plan-structure-cleanup/孩子ai护工/scripts/lib/chat-document-batch-guards.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 26,
+        "code": 7016,
+        "message": "Could not find a declaration file for module '../scripts/lib/chat-document-batch-consumer.mjs'. 'C:/Users/2NTTY/.codex/worktrees/plan-structure-cleanup/孩子ai护工/scripts/lib/chat-document-batch-consumer.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 246,
+        "code": 2345,
+        "message": "Argument of type '{ model: string; contents: any; config: any; toolsDict: any; }' is not assignable to parameter of type 'LlmRequest'.   Property 'liveConnectConfig' is missing in type '{ model: string; contents: any; config: any; toolsDict: any; }' but required in type 'LlmRequest'."
+      },
+      {
+        "file": "tests/product-agent-services.test.ts",
+        "line": 114,
+        "code": 2741,
+        "message": "Property 'workContinuationAuthority' is missing in type '{ publishedKnowledgeReader: true; claimedRunPersistence: true; }' but required in type 'Record<keyof ProductAgentServicePorts, true>'."
+      }
+    ],
+    "currentErrors": [
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 4,
+        "code": 7016,
+        "message": "Could not find a declaration file for module '../scripts/lib/chat-intent-probe-guards.mjs'. 'C:/Users/2NTTY/.codex/worktrees/plan-structure-cleanup/孩子ai护工/scripts/lib/chat-intent-probe-guards.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 5,
+        "code": 7016,
+        "message": "Could not find a declaration file for module '../scripts/lib/chat-document-batch-guards.mjs'. 'C:/Users/2NTTY/.codex/worktrees/plan-structure-cleanup/孩子ai护工/scripts/lib/chat-document-batch-guards.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 26,
+        "code": 7016,
+        "message": "Could not find a declaration file for module '../scripts/lib/chat-document-batch-consumer.mjs'. 'C:/Users/2NTTY/.codex/worktrees/plan-structure-cleanup/孩子ai护工/scripts/lib/chat-document-batch-consumer.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 246,
+        "code": 2345,
+        "message": "Argument of type '{ model: string; contents: any; config: any; toolsDict: any; }' is not assignable to parameter of type 'LlmRequest'.   Property 'liveConnectConfig' is missing in type '{ model: string; contents: any; config: any; toolsDict: any; }' but required in type 'LlmRequest'."
+      },
+      {
+        "file": "tests/product-agent-services.test.ts",
+        "line": 114,
+        "code": 2741,
+        "message": "Property 'workContinuationAuthority' is missing in type '{ publishedKnowledgeReader: true; claimedRunPersistence: true; }' but required in type 'Record<keyof ProductAgentServicePorts, true>'."
+      }
+    ],
+    "productionErrors": [],
+    "intermediateCurrentErrors": [
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 4,
+        "code": 7016,
+        "message": "Could not find a declaration file for module '../scripts/lib/chat-intent-probe-guards.mjs'. 'C:/Users/2NTTY/.codex/worktrees/plan-structure-cleanup/孩子ai护工/scripts/lib/chat-intent-probe-guards.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 5,
+        "code": 7016,
+        "message": "Could not find a declaration file for module '../scripts/lib/chat-document-batch-guards.mjs'. 'C:/Users/2NTTY/.codex/worktrees/plan-structure-cleanup/孩子ai护工/scripts/lib/chat-document-batch-guards.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 26,
+        "code": 7016,
+        "message": "Could not find a declaration file for module '../scripts/lib/chat-document-batch-consumer.mjs'. 'C:/Users/2NTTY/.codex/worktrees/plan-structure-cleanup/孩子ai护工/scripts/lib/chat-document-batch-consumer.mjs' implicitly has an 'any' type."
+      },
+      {
+        "file": "tests/chat-document-batch-product.test.ts",
+        "line": 246,
+        "code": 2345,
+        "message": "Argument of type '{ model: string; contents: any; config: any; toolsDict: any; }' is not assignable to parameter of type 'LlmRequest'.   Property 'liveConnectConfig' is missing in type '{ model: string; contents: any; config: any; toolsDict: any; }' but required in type 'LlmRequest'."
+      },
+      {
+        "file": "tests/firebase-http.test.ts",
+        "line": 16,
+        "code": 2322,
+        "message": "Type 'Buffer<ArrayBufferLike>' is not assignable to type 'Buffer<ArrayBuffer>'.   Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.     Type 'SharedArrayBuffer' is not assignable to type 'ArrayBuffer'.       Types of property '[Symbol.toStringTag]' are incompatible.         Type '\"SharedArrayBuffer\"' is not assignable to type '\"ArrayBuffer\"'."
+      },
+      {
+        "file": "tests/product-agent-services.test.ts",
+        "line": 114,
+        "code": 2741,
+        "message": "Property 'workContinuationAuthority' is missing in type '{ publishedKnowledgeReader: true; claimedRunPersistence: true; }' but required in type 'Record<keyof ProductAgentServicePorts, true>'."
+      }
+    ],
+    "latestCommand": "node node_modules/typescript/bin/tsc --project tsconfig.server.json --pretty false",
+    "latestExitCode": 1,
+    "finalMatchesBaseline": true,
+    "checkedAfter": "review emailVerified synchronization fix"
+  },
+  "preservedFailures": [
+    {
+      "scope": "Canonical authority",
+      "result": "1 passed, 8 failed",
+      "cause": "AAD binding property order differed from existing recovery codec",
+      "fix": "normalize scope through existing schema; preserve assertions; 9 passed after fix"
+    },
+    {
+      "scope": "Device session security",
+      "result": "18 passed, 1 failed",
+      "cause": "same old ID token could obtain identical retained session cookie after revoke-other-sessions without presenting current cookie",
+      "fix": "require proof derived from already verified current cookie for retained-session exception; no user-supplied hash; 19 passed"
+    },
+    {
+      "scope": "Test command before execution",
+      "result": "Node rejected unsupported --test-fail-fast flag",
+      "productTestsExecuted": false
+    },
+    {
+      "scope": "Full server typecheck",
+      "result": "first 6 diagnostics",
+      "cause": "five baseline diagnostics plus new cookie fixture type",
+      "fix": "valid Node cookie string; later Buffer fixture copied into owning Buffer; final five unchanged baseline diagnostics"
+    },
+    {
+      "scope": "Independent review: canonical verification downgrade",
+      "result": "authority true !== false; auth omitted trusted current identity",
+      "fix": "Admin current email/verified passed on every session read and exchange; existing canonical account synchronized transactionally, unverified business rejected without account recreation"
+    }
+  ],
+  "documentChecks": {
+    "baselineExplicitPlanAnchors": 148,
+    "currentExplicitPlanAnchors": 148,
+    "missingPlanAnchors": [],
+    "duplicatePlanAnchors": [],
+    "workingLogPrefixSha256": "3878b9dab5c353db1adf0a08a2fa1eef580e7c17d2a1c4cabbc778670a5b2a85"
+  },
+  "capacitySourceReadback": {
+    "checkedAt": "2026-10-11T10:50:28.806Z",
+    "compared": 16,
+    "mismatches": []
+  },
+  "independentReview": {
+    "reviewer": "Sol GPT-6.1 xhigh",
+    "mode": "read-only",
+    "findings": 1,
+    "resolved": 1,
+    "remaining": 0,
+    "scope": "new production composition, authority/session/HTTP code, tests, config, rules/indexes, dependencies/licenses and contracts",
+    "verificationDowngradeFollowup": "resolved by code and assertion review; no reviewer test/cloud execution"
+  },
+  "deliveryManifest": [
+    {
+      "path": ".env.example",
+      "sha256": "21e210434a225a8dfb0fd9036abc026b1ad2227e9168c97ee0c6e26481f94b0c"
+    },
+    {
+      "path": "PLAN.md",
+      "sha256": "7a31d9ea55d0889fea72b4d15d33efe256572e2dd48e58275fbb81ac19bdef30"
+    },
+    {
+      "path": "SPEC.md",
+      "sha256": "2cc9c5e2e434af1cd36965f6da1fc8760ca34868f0e67831d8acf8d95a17e712"
+    },
+    {
+      "path": "STATUS.md",
+      "sha256": "e57b3abcdad2410f45b3cdf26fa11057bacc64a887aa7119b51b46cbd403d92b"
+    },
+    {
+      "path": "WORKLOG.md",
+      "sha256": "873dc9b04f1a5e0def421d32d656265c2e57ae2491baa934c39f6351466f6891"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "sha256": "a1735a2743d56fd46a079aea1b56b170b53df937c375392dbe362179f6c065f3"
+    },
+    {
+      "path": "docs/API.md",
+      "sha256": "4f3a9e4963b94508111b3ab12390d1f5984a5de69e0479a812a99662b31296c8"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "sha256": "c5a76740d846353f9b39f59f5caf9af5a8d6ad776b1c678a2f61771234b3f35a"
+    },
+    {
+      "path": "docs/DATA_MODEL.md",
+      "sha256": "db54d89aff88333ea2a4ab2975c2ca7c4d73a91873e2fb00163983fddfca09dc"
+    },
+    {
+      "path": "docs/DECISIONS.md",
+      "sha256": "048d3fc062d0311e5ec552e71715b8c3dfdd8c49c3853bdae03c93b45c6d85a9"
+    },
+    {
+      "path": "docs/TECH_REUSE.md",
+      "sha256": "497b9fd7fc0e456533b00779b7184011243164651e349fc9bde8461a96486e4c"
+    },
+    {
+      "path": "licenses/manifest.json",
+      "sha256": "ed870ee534a22c783c43824157b32fd473a4cba9ea21372a0e48173253c44591"
+    },
+    {
+      "path": "licenses/firebase-admin/LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "path": "package.json",
+      "sha256": "739829c11b8f391bf556dd7a0b842f1377fef9cfa14fe45bff4b886daf69ca7e"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "90a6a62955e5e13e34cecc3f16fb43ba7737594aef9d79e531d20be5459866bc"
+    },
+    {
+      "path": "scripts/firebase-control.mjs",
+      "sha256": "69b1d7771b2de786a219fa925e6f570626d5284b009686fbcf03977924d77d5c"
+    },
+    {
+      "path": "server/config.ts",
+      "sha256": "22ef8aaab9d614e4ee036eb50b8a5b1310727f166d35ba2349878fc332112e22"
+    },
+    {
+      "path": "server/main.ts",
+      "sha256": "e0f65f9f108765ebeb2b1b06414910484f2a487203d02da2034a87ff7de75548"
+    },
+    {
+      "path": "server/firebase-app.ts",
+      "sha256": "6279f8f6d9887ee9b838dfa08cb3b33d92c72149c35521872e20eb68772273f4"
+    },
+    {
+      "path": "server/firebase-auth.ts",
+      "sha256": "034278ec15b85fc40f57f0c71e249ec86f618a35b13b14c8bc5d749f742428f6"
+    },
+    {
+      "path": "server/firebase-config.ts",
+      "sha256": "3924c842bb5caf8e64d8c5c32116c535bdbe6b365c26b97f8d5e8cf41bd7f2b6"
+    },
+    {
+      "path": "server/firebase-http.ts",
+      "sha256": "2951323d6da662dc0c8e2aa6ac3fcfd6fb1eb4a0ffa3d20d5272fc27fbac4a6d"
+    },
+    {
+      "path": "server/firebase-main.ts",
+      "sha256": "f00c2629d5bf15c3b274f6338526caf0396333170516829949ff7808a9e05ec4"
+    },
+    {
+      "path": "server/firebase-persistence.ts",
+      "sha256": "6594756f0c38d80b1d123a93f72b5a994770fd85d5cc5cb58942aeccc2845c6d"
+    },
+    {
+      "path": "server/firebase-runtime.ts",
+      "sha256": "0e856da1b66d8277da7abf71f12e8c8dee454fd44bebfc6ce537967dfce10360"
+    },
+    {
+      "path": "server/firestore-authority.ts",
+      "sha256": "bfddd958097f0367fb78327bfb73638d23f7779a8b66746c453bcd04bde0cc66"
+    },
+    {
+      "path": "server/firestore-device-sessions.ts",
+      "sha256": "2f836e96bf879d31892ea731efba3f80433d20bd03747cdaeb3de1698dac96e6"
+    },
+    {
+      "path": "tests/firebase-app.test.ts",
+      "sha256": "ba1f22aea0410762353f5dab3b739b5d9d2773a5492d1df2cbc14df516fa33c2"
+    },
+    {
+      "path": "tests/firebase-auth.test.ts",
+      "sha256": "140595f7f5771bf648b195720a0343268fb79a5c50060de2023e9ca7ed6089c4"
+    },
+    {
+      "path": "tests/firebase-config.test.ts",
+      "sha256": "e64a5380e8e7a96afe88b026960d915eebc0d6e27533a917ef51c62d6da730ed"
+    },
+    {
+      "path": "tests/firebase-http.test.ts",
+      "sha256": "af7457e8bd66047a6cf65c68aab528142b352ba9ac1abd2913e8f8a3f75358a2"
+    },
+    {
+      "path": "tests/firebase-runtime.test.ts",
+      "sha256": "52e134e056410836e70325b70ad87774bd7ae4a77ab60b1de32510746bf43863"
+    },
+    {
+      "path": "tests/firestore-authority.test.ts",
+      "sha256": "25b5eae3b9161890ce98f0cf4606cac3d077a2ed153fc270912fbba7aeb7da5d"
+    },
+    {
+      "path": "tests/firestore-device-sessions.test.ts",
+      "sha256": "1f0a713993c9d68b928277ead994509a54017dec1102e3e7fe72ddb75875ff5c"
+    },
+    {
+      "path": "deploy/firebase/firestore.rules",
+      "sha256": "ed1e7c11f025d9464e80e4c4584711c474a0c9b0e07802618de8d02dddadec87"
+    },
+    {
+      "path": "deploy/firebase/storage.rules",
+      "sha256": "b364a3aa596ad2d77d892669715134dac744f628d860bd721cb7d46b3ddab3b3"
+    },
+    {
+      "path": "deploy/firebase/firestore.indexes.json",
+      "sha256": "807d77526cdedd5ca0a6514042dd0400e10a71f763d4721dc50448fafd34a017"
+    }
+  ],
+  "manifestHashBasis": "Local working-copy bytes; Git may normalize text line endings. Remote delivery verification compares Git blob IDs separately."
+}

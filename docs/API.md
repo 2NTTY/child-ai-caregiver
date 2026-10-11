@@ -743,7 +743,7 @@ GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POS
 
 - 登入、驗證、找回及最近重新認證改 Firebase provider；正式 Server 驗 token 的 issuer／audience／期限／撤銷後才交換受保護 session。Hosting 同源只依 __session cookie，HttpOnly／Secure／適當 SameSite、origin／CSRF 與 x-expected-user-id 防護保持；不把 client 傳來的 uid 當授權。
 - Server session 同時核對每裝置 ledger、帳戶准入／政策、epoch 及 Auth 有效性。登出撤銷本裝置、撤銷其他或全部裝置沿原產品語義；Firebase 全用戶 revoke 不能代替逐裝置操作。私有 API 與錯誤／認證回應禁止 CDN 共用快取（private, no-store）。
-- 邀請檢查在 Identity Platform blocking function 及業務准入交易各有責任；Auth 已建但業務未完成時不開放資料，沿同一身份恢復。舊用戶保留 ID，舊 cookie 作廢，必要重設密碼先清楚告知。
+- 邀請檢查在 Identity Platform blocking function 及業務准入交易各有責任；Auth 已建但業務未完成時不開放資料，沿同一身份恢復。依 ADR-022 重新建立受邀 Firebase 帳號，不匯入舊身份／私人資料；舊 cookie 不被新系統接受。新帳號建立後身份與資料關聯保持。
 - 帳戶刪除由最近 Firebase 重新認證的 Server 可驗證證明替代 Better Auth 密碼核對；保留具名確認、原 operationId、範圍版本、短時效 receiptToken 及 unknown 查詢。模型不能觸發裸 Auth delete 繞過業務 journal。下載／退出、viewer／caregiver／owner 及私人資料邊界不變。
 
 ### 非同步 Agent 受理
@@ -773,3 +773,21 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 - **提交與恢復：**帶原 opId／fingerprint、目標 ID／expectedVersion、草稿 hash、來源與授權版本及 Server 審核參照；交易重核後回真資源版本／收據。衝突返回現行版本及重新核對需要；回應丟失先查原收據，不換 opId。逾時、取消、審核失敗或待確認分開回報，草稿不冒稱正式保存；已成功操作的真收據可獨立回報。
 - **獨立知識維護：**受信管理／排程入口傳已核准來源 ID／scope 版本及持久工作關聯，沒有家長聊天或私人 key。站內查閱／取得工具逐次校驗 URL、redirect、路徑、附件及批次上限，返回原檔／章節頁碼、抽取方式、完整度和續讀位置；未核內容不經一般聊天搜尋返回。發布工具重核內容／來源版本、語義審核及規則影響資格後原子更新；疑義保持候選，不讓 Agent 自行批准擴大來源或醫療規則。
 - **客戶端投影：**沿既有持久受理／run 結果接口，提供必要的編製中、核對中、待確認／修正、未完成及已保存結果，附可授權讀取的草稿／資源／版本參照。具體 wire 狀態隨包相容擴充，不直接改歷史狀態 enum。只顯示核准正文與真實進度，不回傳內部推理、子模型協定、未核串流或私人證據全文；身份切換／撤權清理保持。
+
+<a id="firebase-foundation-auth"></a>
+## F01 Firebase 身份與正式組裝接點
+
+STORAGE_BACKEND=firestore 經 server/main.ts → firebase-main.ts／firebase-runtime.ts 組裝真 Admin Auth、指定 database 的 Firestore、加密 authority 及裝置 ledger；不注入 fixture／SQL 權威。DATABASE_URL／BETTER_AUTH_SECRET 只屬切換前舊分支。Firebase 路徑要求明確 GCP_PROJECT_ID、FIREBASE_DATABASE_ID、FIREBASE_NAMESPACE、STORAGE_KEY_FILE 與同源 SERVER_ORIGIN／WEB_ORIGIN；production 禁 Emulator。
+
+| 接點 | 行為 |
+|---|---|
+| POST /api/auth/session | JSON 只有 idToken；原生 Admin 驗 token、revocation、近期 auth_time（5 分鐘）、目前 user 與邀請，再建立 5 天 __session HttpOnly／Secure／SameSite=Lax cookie 與持久裝置 ledger。已有另一身份必須先登出；有 session 的交換必須帶相同 x-expected-user-id。 |
+| GET /api/auth/get-session | 保留既有 user.id/name/email 或 null；暫時 Auth／資料庫錯誤回 503，不能冒充已登出清走使用者草稿。 |
+| POST /api/auth/sign-out、/api/auth/revoke-other-sessions | 同源、JSON 空物件及目前 x-expected-user-id；登出撤銷本 cookie，另一接點只保留當前裝置，不能以 Firebase 全帳戶 revoke 假裝完成。 |
+| GET /api/account、POST /api/account/acknowledgement | 沿現有狀態／policyVersion／operationId schema；同意必須已登入、同源與 expected identity，authority 同交易核 verified、邀請及原 receipt。mailConfigured 只有真原生電郵配置及驗收後才開。 |
+| GET /healthz | 只表示程序在運作與 foundation 階段，不表示已查 DB、F02 通過或完整服務可用。 |
+| 其餘尚未移植 /api/* | 明確 503 firebase_domain_not_ready，舊密碼端點回 auth_provider_transition_required；F02／F03 接原生身份 UI 與產品路由，不能當永久縮減功能。 |
+
+所有私人回應 private, no-store；變更請求核確切 Origin。身份 body 上限 16 KiB，Node 入口整體上限 64 KiB；後續附件依原規格另作有界傳輸，不能沿此限制截斷產品照片。Server 部署以 attached identity/ADC 存取服務，不下載長期 key。
+
+operator CLI firebase:control 只接受 initialize／invite／revoke-invitation 與 stdin JSON，復用正式 authority；不在公開 HTTP 提供管理後門、不輸出電郵或 token，重試沿原 operationId。Identity Platform blocking function 在 F02 部署，必須調同一 invitation authority；SDK 已有接點不能當 blocking function 已啟用。
