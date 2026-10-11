@@ -18,6 +18,11 @@ const PROJECT = 'ai-caregivers-for-children', PROJECT_NUMBER = '1064034424208';
 const DATABASE = 'yuban-firebase-20261011', NAMESPACE = 'yuban_authority';
 const APP_ID = '1:1064034424208:web:b0873383eee9d93256cf15';
 const SOURCE = '17c67253590a27f5110ff5a8234f461a20aec207';
+const RESUME_RUN_ID = 'f02-20261011-01';
+const RESUME_ACTORS = Object.freeze({
+  A: Object.freeze({ userId: 'RLG08u9PVifLmoW0MvU1xx6LK0n2', email: 'f02-20261011-a@synthetic.invalid' }),
+  B: Object.freeze({ userId: 'RgNYZpZdIdghEG9kUBDt3sxiKtr2', email: 'f02-20261011-b@synthetic.invalid' }),
+});
 const KNOWLEDGE_VERSION = 'c9265331-6ec2-5436-b4c2-07d354e53101';
 const SECRET = `projects/${PROJECT_NUMBER}/secrets/YUBAN_FIREBASE_STORAGE_KEY/versions/1`;
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -32,7 +37,7 @@ const publicConfigSchema = z.object({ apiKey: z.string().regex(/^[A-Za-z0-9_-]{2
   authDomain: z.literal(PROJECT + '.firebaseapp.com'), projectId: z.literal(PROJECT), appId: z.literal(APP_ID) }).strict();
 const startSchema = z.object({ command: z.literal('start'), runId: z.string().regex(/^[A-Za-z0-9_-]{1,48}$/u),
   publicConfig: publicConfigSchema, browserFixture: z.boolean().default(false),
-  mode: z.enum(['verified_pair', 'unverified_B']).default('verified_pair') }).strict();
+  mode: z.enum(['verified_pair', 'unverified_B', 'resume_verified_pair']).default('verified_pair') }).strict();
 const commandSchema = z.union([startSchema, z.object({ command: z.enum(['prepare', 'core', 'delete', 'status', 'close']) }).strict()]);
 const checkpointSchema = z.object({ step: z.string().regex(/^[a-zA-Z0-9_]+$/u), runId: startSchema.shape.runId,
   uid: uidSchema.optional(), operationId: uuid.optional() }).strict();
@@ -73,6 +78,7 @@ const PROVIDER_CODES = new Set(['auth/user-not-found', 'auth/invalid-email', 'au
 // Dependencies may log their own error objects. Only explicit sanitized JSON is allowed on this operator channel.
 for (const method of ['log', 'info', 'warn', 'error', 'debug']) console[method] = () => {};
 let state = 'awaiting_start', step = 'input', input, directory, persistence, adminApp, nativeAuth, child;
+let rotations = 0;
 let creations = 0, requests = 0, commands = 0, status = null, currentUid = null, currentOperationId = null;
 let hadFailure = false;
 const actors = { A: { email: 'f02-20261011-a@synthetic.invalid' }, B: { email: 'f02-20261011-b@synthetic.invalid' } };
@@ -91,7 +97,7 @@ function failure(error) {
       ...(currentOperationId ? { operationId: currentOperationId } : {}) } });
 }
 function redactedStatus() {
-  emit({ step: 'status', state, runId: input?.runId ?? null, creations, requests, transport: 'auth_rest',
+  emit({ step: 'status', state, runId: input?.runId ?? null, creations, rotations, requests, transport: 'auth_rest',
     mode: input?.mode ?? null, emailVerification: input?.mode === 'unverified_B' ? 'unverified_native_identity' : 'synthetic_admin_fixture_only',
     users: { A: actors.A.userId ?? null, B: actors.B.userId ?? null } });
 }
@@ -105,6 +111,7 @@ async function waiting(action) {
   } finally { clearTimeout(timer); }
 }
 function browserFixtureTarget() {
+  if (input?.mode === 'resume_verified_pair') return { enabled: false, actor: null, fence: 'f02-cloud-resume-verified-pair-20261012', file: null };
   return input?.mode === 'unverified_B'
     ? { enabled: true, actor: 'B', fence: 'f02-cloud-unverified-b-20261012', file: 'browser-fixture-B.json' }
     : { enabled: input?.browserFixture === true, actor: 'A', fence: 'f02-cloud-actors-20261011', file: BROWSER_FIXTURE_NAME };
@@ -148,7 +155,7 @@ const BROWSER_FIXTURE_ACL = [
 async function browserFixtureAccess({ initialize = false, file = false } = {}) {
   guard();
   const target = browserFixtureTarget();
-  if (process.platform !== 'win32' || directory !== join(ROOT, 'tmp', target.fence)) stop('browser_fixture_unavailable');
+  if (!target.enabled || process.platform !== 'win32' || directory !== join(ROOT, 'tmp', target.fence)) stop('browser_fixture_unavailable');
   const path = file ? join(directory, target.file) : directory;
   const item = await lstat(path);
   if (item.isSymbolicLink() || (file ? !item.isFile() || item.nlink !== 1 : !item.isDirectory())) stop('browser_fixture_unavailable');
@@ -289,6 +296,7 @@ async function authRest(action, body) {
   return (await http(url, { method: 'POST', body })).value;
 }
 async function prepareActor(name) {
+  if (input.mode === 'resume_verified_pair') stop('phase_not_available');
   const unverified = input.mode === 'unverified_B';
   if (unverified && name !== 'B') stop('phase_not_available');
   const actor = actors[name], operationId = randomUUID();
@@ -321,6 +329,10 @@ async function prepareActor(name) {
   const fixture = await waiting(() => nativeAuth.updateUser(actor.userId, { emailVerified: true }));
   if (fixture.uid !== actor.userId || fixture.email !== actor.email || fixture.disabled || fixture.emailVerified !== true) stop('fixture_binding_invalid');
   await immutable('synthetic_verified_fixture_' + name + '_confirmed', 'synthetic_verified_fixture_' + name + '_confirmed', { uid: actor.userId });
+  await signInActor(name);
+}
+async function signInActor(name) {
+  const actor = actors[name];
   await checkpoint('sign_in_' + name + '_started', { uid: actor.userId });
   const signed = await authRest('signInWithPassword', { email: actor.email, password: actor.password, returnSecureToken: true });
   if (signed.localId !== actor.userId || signed.email !== actor.email || typeof signed.idToken !== 'string'
@@ -345,6 +357,38 @@ async function prepareActor(name) {
   if (session.user.id !== actor.userId || session.user.email !== actor.email) stop('session_binding_invalid');
   await immutable('session_' + name + '_confirmed', 'session_' + name + '_confirmed', { uid: actor.userId });
 }
+function assertResumeIdentity(name, user, verified = false) {
+  const expected = RESUME_ACTORS[name];
+  if (!expected || user?.uid !== expected.userId || user.email !== expected.email || user.disabled !== false
+    || typeof user.emailVerified !== 'boolean' || verified && user.emailVerified !== true) stop('actor_binding_invalid');
+}
+async function resumeVerifiedPair() {
+  if (input.mode !== 'resume_verified_pair' || input.runId !== RESUME_RUN_ID || rotations !== 0) stop('phase_not_available');
+  step = 'resume_source_control'; status = null;
+  if (persistence.config?.projectId !== PROJECT || persistence.config.databaseId !== DATABASE
+    || persistence.config.namespace !== NAMESPACE) stop('source_configuration_mismatch');
+  const control = await waiting(() => persistence.authority.accountStatus(null));
+  if (control?.enabled !== true) stop('source_control_disabled');
+  for (const name of ['A', 'B']) {
+    const expected = RESUME_ACTORS[name];
+    step = 'existing_identity_' + name; status = null; currentUid = expected.userId;
+    const before = await waiting(() => nativeAuth.getUser(expected.userId));
+    assertResumeIdentity(name, before); actors[name].userId = expected.userId;
+    await immutable('existing_' + name + '_bound_confirmed', 'existing_' + name + '_bound_confirmed', { uid: expected.userId });
+  }
+  for (const name of ['A', 'B']) {
+    const expected = RESUME_ACTORS[name], actor = actors[name];
+    if (actor.userId !== expected.userId || actor.email !== expected.email || rotations >= 2) stop('actor_binding_invalid');
+    await checkpoint('fixture_rotation_' + name + '_started', { uid: expected.userId });
+    rotations++; actor.password = randomBytes(36).toString('base64url') + 'aA1!';
+    const updated = await waiting(() => nativeAuth.updateUser(expected.userId, { password: actor.password, emailVerified: true }));
+    assertResumeIdentity(name, updated, true);
+    const after = await waiting(() => nativeAuth.getUser(expected.userId));
+    assertResumeIdentity(name, after, true);
+    await immutable('fixture_rotation_' + name + '_confirmed', 'fixture_rotation_' + name + '_confirmed', { uid: expected.userId });
+    await signInActor(name);
+  }
+}
 async function prepare() {
   if (state !== 'ready_to_prepare') stop('phase_not_available');
   state = 'preparing'; await checkpoint('prepare_started');
@@ -358,11 +402,14 @@ async function prepare() {
       emailVerification: 'unverified_native_identity', operation: { runId: input.runId }, users: { B: actors.B.userId } });
     return;
   }
-  await assertAbsent('A'); await assertAbsent('B');
-  await immutable('actors_absent_confirmed', 'actors_absent_confirmed');
-  await prepareActor('A'); await prepareActor('B');
+  if (input.mode === 'resume_verified_pair') await resumeVerifiedPair();
+  else {
+    await assertAbsent('A'); await assertAbsent('B');
+    await immutable('actors_absent_confirmed', 'actors_absent_confirmed');
+    await prepareActor('A'); await prepareActor('B');
+  }
   guard(); state = 'prepared'; await immutable('prepare_confirmed', 'prepare_confirmed');
-  emit({ step: 'prepare_complete', status: 'passed', transport: 'auth_rest', emailVerification: 'synthetic_admin_fixture_only',
+  emit({ step: 'prepare_complete', status: 'passed', mode: input.mode, transport: 'auth_rest', emailVerification: 'synthetic_admin_fixture_only',
     operation: { runId: input.runId }, users: { A: actors.A.userId, B: actors.B.userId } });
 }
 async function acceptance(phase) {
@@ -408,6 +455,7 @@ async function start(value) {
   if (state !== 'awaiting_start') stop('start_already_consumed');
   if (process.argv.length !== 2 || !/^24\.(?:1[2-9]|[2-9][0-9])\./u.test(process.versions.node)) stop('runtime_invalid');
   input = startSchema.parse(value); step = 'operator_checkpoint';
+  if (input.mode === 'resume_verified_pair' && (input.runId !== RESUME_RUN_ID || input.browserFixture)) stop('input_invalid');
   const parent = join(ROOT, 'tmp');
   try { await mkdir(parent, { mode: 0o700 }); } catch (error) { if (error?.code !== 'EEXIST') throw error; }
   const parentStat = await lstat(parent); if (!parentStat.isDirectory() || parentStat.isSymbolicLink()) stop('checkpoint_unavailable');
