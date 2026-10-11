@@ -4,7 +4,7 @@ import { useContainerWidth } from "../useContainerWidth";
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
@@ -109,7 +109,7 @@ function DraftDescription({ draft, production }: { draft: FamilyDraft; productio
   </>;
 }
 
-function DraftReview({ model, actions, production }: { model: FamilyViewModel; actions: FamilyActions; production: boolean }) {
+function DraftReview({ model, actions, production, onCancel }: { model: FamilyViewModel; actions: FamilyActions; production: boolean; onCancel: () => void }) {
   const draft = model.draft;
   if (!draft) return null;
   const needsReview = model.operation.state === "failed" || model.operation.state === "none";
@@ -131,7 +131,7 @@ function DraftReview({ model, actions, production }: { model: FamilyViewModel; a
     <View style={styles.actions}>
       <AppButton label={draft.kind === "accept" ? "再次確認加入" : "再次確認操作"} onPress={actions.submit}
         disabled={!model.online || model.locked || !draft.scopeConfirmed || model.operation.state !== "needs_confirmation"} />
-      <AppButton label="取消草稿" variant="quiet" onPress={actions.cancel} disabled={model.operation.state === "saving" || model.operation.state === "unknown"} />
+      <AppButton label="取消草稿" variant="quiet" onPress={onCancel} disabled={model.operation.state === "saving" || model.operation.state === "unknown"} />
     </View>
   </SectionCard>;
 }
@@ -152,6 +152,22 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
   const [inviteOpen, setInviteOpen] = useState(false);
   const [incomingOpen, setIncomingOpen] = useState(false);
   const scopeKey = `${model.selfUserId}:${model.family?.id ?? "none"}:${model.family?.role ?? "none"}`;
+  const inviteTrigger = useRef<View>(null);
+  const cancelFocus = useRef<{ scopeKey: string; model: FamilyViewModel } | null>(null);
+  useEffect(() => { cancelFocus.current = null; }, [scopeKey]);
+  useEffect(() => {
+    const request = cancelFocus.current;
+    if (!request || request.model === model) return;
+    cancelFocus.current = null;
+    if (request.scopeKey === scopeKey && !model.draft && !model.locked && model.loadState === "ready" && model.operation.state === "none" && model.family?.role === "owner") {
+      (inviteTrigger.current as unknown as { focus?: () => void } | null)?.focus?.();
+    }
+  }, [model, scopeKey]);
+  const cancelDraft = () => {
+    cancelFocus.current = null;
+    if (model.draft?.kind !== "invite") { actions.cancel(); return; }
+    actions.cancel(() => { cancelFocus.current = { scopeKey, model }; });
+  };
   const emptyReady = model.online && model.loadState === "ready" && (!production || model.canStartAction);
   const eligible = model.loadState === "ready" && model.operation.state === "saved";
   return <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.workspace}>
@@ -163,7 +179,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
         {!model.online ? <Text style={styles.warningText}>{production ? "目前離線；只展示最後讀取資料，不能提交或查核。" : "目前離線；只展示已載入的合成資料，不能提交或查核。"}</Text> : null}
         {model.notice ? <Text style={styles.body}>{model.notice}</Text> : null}
         {writeNotice}
-        <DraftReview model={model} actions={actions} production={production} />
+        <DraftReview model={model} actions={actions} production={production} onCancel={cancelDraft} />
         <View style={styles.familyHeading}>
           <View style={styles.flexCopy}><Text accessibilityRole="header" style={styles.familyTitle}>{model.family ? `${model.family.ownerName}的家庭` : "我的家庭"}</Text>
             {model.family ? <Text style={styles.meta}>本人是{familyRoleLabels[model.family.role]} · {model.family.members.length} 位已載入成員 · 權限版本 {model.family.version}</Text> : null}</View>
@@ -209,7 +225,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
           </View>
         </View>
         <View style={styles.manageSection}>
-          {model.family?.role === "owner" ? <SectionCard surface="plain"><SectionHeader density="compact" title="邀請成員" subtitle="先核對收件人、角色與全家庭範圍。" action={<AppButton expanded={inviteOpen} label={inviteOpen ? "收起邀請表單" : "邀請一位成員"} density="compact" variant="secondary" onPress={() => setInviteOpen(value => !value)} disabled={model.locked} />} />
+          {model.family?.role === "owner" ? <SectionCard surface="plain"><SectionHeader density="compact" title="邀請成員" subtitle="先核對收件人、角色與全家庭範圍。" action={<AppButton ref={inviteTrigger} expanded={inviteOpen} label={inviteOpen ? "收起邀請表單" : "邀請一位成員"} density="compact" variant="secondary" onPress={() => setInviteOpen(value => !value)} disabled={model.locked} />} />
             <MotionDisclosure expanded={inviteOpen || model.draft?.kind === "invite"} scopeKey={scopeKey}><InviteComposer key={model.inviteFormKey} model={model} actions={actions} production={production} /></MotionDisclosure>
             {model.oneTimeCode ? <View style={styles.review}>
               <Text style={styles.reviewTitle}>{production ? "家庭邀請碼 · 只展示這一次" : "無效示例碼 · 只展示這一次"}</Text><Text selectable style={styles.code}>{model.oneTimeCode}</Text>

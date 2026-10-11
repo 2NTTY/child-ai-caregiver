@@ -16,6 +16,14 @@ export function useContainerWidth() {
     const node = ref.current as unknown as HTMLElement | null;
     if (node) update(node.getBoundingClientRect().width);
   });
-  const onLayout = useCallback((event: LayoutChangeEvent) => update(event.nativeEvent.layout.width), [update]);
+  const onLayout = useCallback((event: LayoutChangeEvent) => {
+    if (Platform.OS === "web") {
+      // RN Web reports offsetWidth; keep the same visual width as the prepaint read.
+      const node = ref.current as unknown as HTMLElement | null;
+      if (node) update(node.getBoundingClientRect().width);
+      return;
+    }
+    update(event.nativeEvent.layout.width);
+  }, [update]);
   return { ref, onLayout, width: measured ?? viewportWidth };
 }

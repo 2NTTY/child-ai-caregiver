@@ -15,6 +15,7 @@ type Pending = { attempt: Attempt; checked: boolean; reconfirm: boolean; selecti
 type VersionRead = { page: DocumentVersionPage | null; busy: boolean; error: boolean };
 type ContentBuffer = { documentId: string; snapshotId: string; snapshotVersion: number; documentVersion: number; authorityVersion: string;
   text: string; totalCharacters: number; nextOffset: number | null; complete: boolean; busy: boolean; error: boolean; invalidated: boolean; snapshot: DocumentSnapshot | null };
+const pageReadFailureNotice = "未能載入更多文件，已取得的內容保留。";
 const savedAwaitingSelectionRead = "先前文件的保存已確認；目前選取的文件仍待重新讀取。";
 const snapshotKey = (snapshot: DocumentSnapshot) => snapshot.id + ":" + snapshot.version;
 const preparationView = (item: FamilyDocument): PreparationDocumentView => {
@@ -220,7 +221,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         setPage(previous => previous && previous.authorityVersion === before.authorityVersion ? { ...previous,
           items: [...previous.items.filter(item => !next.items.some(value => value.id === item.id)), ...next.items] } : previous);
         setListPages(previous => ({ ...previous, [status]: { ...previous[status], cursor: next.nextCursor ?? null, more: next.hasMore, ...(status === "archived" ? { ready: true } : {}) } }));
-      } catch (error) { if (current() && !clearAccess(error)) { setPageError(true); setNotice("未能載入更多文件，已取得的內容保留。"); } }
+        setNotice(previous => previous === pageReadFailureNotice ? "" : previous);
+      } catch (error) { if (current() && !clearAccess(error)) { setPageError(true); setNotice(pageReadFailureNotice); } }
       finally { if (current()) { inFlight.current = false; setBusy(false); } }
     });
   };

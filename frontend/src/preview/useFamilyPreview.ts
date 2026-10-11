@@ -130,9 +130,9 @@ export function useFamilyPreview({ perspective, incomingCondition, ownerName, ch
         setLatest(changed); setDraft({ ...attempt, scopeConfirmed: false }); setOneTimeCode(null);
       });
     },
-    cancel() {
+    cancel(onCancelled) {
       if (controller.locked) return;
-      controller.reset(); setDraft(null); setLatest(null); setNotice(null);
+      controller.reset(); setDraft(null); setLatest(null); setNotice(null); onCancelled?.();
     },
     useLatest() {
       if (controller.operation.state !== "conflict" || !latest || !draft || draft.kind === "accept") return;
