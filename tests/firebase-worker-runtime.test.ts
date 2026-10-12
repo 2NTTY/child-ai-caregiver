@@ -30,6 +30,9 @@ test('the Node adapter caps a request at 4 KiB and allows only fixed OIDC POST p
     const response = { statusCode: 200, headersSent: false, destroyed: false, setHeader() {}, end(this: Pick<ServerResponse, 'statusCode'>, value: Buffer) { result.status = this.statusCode; result.body = value.toString('utf8'); }, destroy() {} } as unknown as ServerResponse;
     await handler(request, response); return result;
   }
+  const health = await invoke("", "GET", "/healthz");
+  assert.equal(health.status, 200); assert.equal(calls, 0);
+  assert.deepEqual(JSON.parse(health.body), { status: "ok", service: "firebase-worker" });
   assert.equal((await invoke()).status, 200); assert.equal(calls, 1);
   assert.equal((await invoke('x'.repeat(4097))).status, 413); assert.equal((await invoke('{}', 'GET')).status, 405);
   assert.equal((await invoke('{}', 'POST', '/internal/task-dispatch?caller=1')).status, 404); assert.equal(calls, 1);

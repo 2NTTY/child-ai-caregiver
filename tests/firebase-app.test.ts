@@ -86,9 +86,11 @@ test("foundation handler is inert and health reports only the process stage with
   const f = fixture();
   assert.equal(f.authRequests.length + f.sessionHeaders.length + f.statusUserIds.length + f.writes.length, 0);
   f.failAuth(new Error("private credential configuration")); f.failStatus(new Error("private database configuration"));
-  const response = await f.get("/healthz");
-  assert.equal(response.status, 200); assert.deepEqual(await response.json(), { status: "ok", storage: "firestore", stage: "foundation" });
-  privateResponse(response);
+  for (const path of ["/healthz", "/api/health"]) {
+    const response = await f.get(path);
+    assert.equal(response.status, 200); assert.deepEqual(await response.json(), { status: "ok", storage: "firestore", stage: "foundation" });
+    privateResponse(response);
+  }
   assert.equal(f.sessionHeaders.length, 0); assert.equal(f.statusUserIds.length, 0);
   assert.throws(() => createFirebaseRequestHandler({ ...f.options, mailConfigured: undefined } as unknown as typeof f.options), /invalid_firebase_app_configuration/);
   assert.throws(() => createFirebaseRequestHandler({ ...f.options, publicOrigin: PUBLIC_ORIGIN + "/" }), /invalid_firebase_app_configuration/);
@@ -185,7 +187,7 @@ test("known authority and authentication errors preserve only fixed safe codes a
 
 test("unmigrated business domains return explicit 503 without fake data, auth lookups or writer execution", async () => {
   const f = fixture();
-  for (const path of ["/api", "/api/children", "/api/children/child/messages", "/api/account/export", "/api/health"]) {
+  for (const path of ["/api", "/api/children", "/api/children/child/messages", "/api/account/export"]) {
     await errorCode(await f.get(path), 503, "firebase_domain_not_ready");
   }
   await errorCode(await f.handler(new Request(PUBLIC_ORIGIN + "/api/children", { method: "POST", body: "{}" })), 503, "firebase_domain_not_ready");

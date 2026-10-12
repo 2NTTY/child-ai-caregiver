@@ -4,20 +4,23 @@
 
 ## 目前與接手
 
-- **完整 P2 尚未完成。** 原二十包及 INT 已交付；A01～A08 已合併，A09 的剩餘聊天成果／穩定服務由 F07／F08 承接。本輪只做聊天 Agent，其他三角色內部實作暫緩，見 [ADR-021](docs/DECISIONS.md#adr-021)。
-- **當前產品包：[P2-F02](PLAN.md#p2-f02)，2026-10-12 依使用者要求收尾，轉由主開發聊天接手。** F01 已由 [#191](https://github.com/2NTTY/child-ai-caregiver/pull/191) 合併為 `d5dbf61`；F02 分支 `codex/p2-f02-firebase-cloud-slice` 尚未整包驗收或交付。已通過核心 API／文件／照片／原操作收據／跨帳號拒絕／公共知識、真 Tasks 防重、指定信箱驗證，以及配對備份→原照片刪除→隔離還原。還原已核對當前 Auth、新 epoch、舊會話移除及照片不復活，維持暫停；原物件實體清理仍待辦。自動縮零喚醒、真雲端撤權、重設電郵生命週期及必要產品畫面仍待驗；原本人瀏覽器失敗未重現，不聲稱已修復。原失敗及分層結果見 [F02 證據](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。本聊天停止開發並暫停目標；接手前重新核對 master、原分支及雲端，沿現有證據收束 F02，不能從新空分支重做或把局部通過當整包完成。
-- **本輪執行：**只使用 Astra 主模型，不啟動或續派子代理；由主模型分開實作、差異覆核及驗收判斷，不宣稱有另一代理獨立審核。唯一開發網址沿用 https://ex-machina.eu.org，不再維護另一套公開合成預覽；最新要求是零 SQL，其他服務按成本效益選擇，見 [ADR-023](docs/DECISIONS.md#adr-023)。尚未完成 VM／Hosting 取捨；只建立了 Firebase custom-domain 待驗證記錄，DNS 未改，原站仍指向舊 VM，不需使用者先登入 Cloudflare。
-- **最新決定：**乾淨 Firebase 起點、正式零 SQL；不搬舊帳號／私人資料，不刪舊版本或備份，見 [ADR-022](docs/DECISIONS.md#adr-022)。容量候選併 F03／F08，原 dirty 工作區與失敗保留；不再先交舊 SQL 容量包或停在規劃階段。本機前端預覽仍不作產品驗收，正式流程到 GCP 驗證。
-- **本聊天有效範圍：**新增 US$30 只供本次遷移與驗收，不重用舊 20／20 模型批次；F02／F07／F08 依已批准有界範圍、首次失敗停批及最多兩輪定向修正執行。專用測試收件地址已由使用者提供，僅供本次驗收；驗證連結由本人處理；持續正式服務另待 F08 實測成本／月費估算後決定營運預算，不能據此提前標完整 P2 完成。
-- **接手與證據：**本包前已核 open PR 為空；#186～#190 已合併，Firestore 既有切片仍不是正式流量。正式程式型別通過；全 Server 型別仍有五項已重現於原 master 的舊測試錯誤，F03 承接。原容量 16 檔 SHA-256、依賴版本與本包實際驗證分層見 [F01 證據](artifacts/verification/F01_FIREBASE_FOUNDATION_20261011.json)。
-- 新前端已是正式入口，後續保留設計／互動；前端工作沿 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)。本人 key／限額已接線，Developer API 地區限制及真服務未驗見 [S06-W05](PLAN.md#s06-w05)；平台 AI 不要求家長自備 key。
+- **完整 P2 尚未完成。** 原 P2／INT 及 A01～A08 的已合併成果保留；A09 剩餘成果由 F07／F08 承接。P2 啟用聊天及現有工具，另外三角色明確移至 [P3-M01～M03](PLAN.md#p3-agent-roles)，只留最小接口。
+- **當前產品包：[P2-F02](PLAN.md#p2-f02)，進行中／未合併。** F01 已隨 PR #191 合併；執行計劃 PR #194 已合併至 master 823cf31。原 F02 分支已整合最新文件、補原 VM Compose／Caddy／健康接點，保留有效資料層與原失敗；移除三個額外平台專用部署檔。三個相關斷言、Compose／Caddy 配置解析及實際 API／worker 映像建置通過；本輪 VM 身份最小 IAM 已批准、套用並讀回，實際容器／產品接線仍待驗。
+- **本輪文件定案：[ADR-024](docs/DECISIONS.md#adr-024)。** 保留原網址／VM／Compose／Caddy；正式 SQL 改 Firestore，復用 Firebase Auth／Storage／Tasks。取消 Hosting／Cloud Run／縮零及最後才接前端的必達門檻；F03 首次可用聊天即更新原站。乾淨起點不搬舊測試帳號／私人資料，也不刪舊備份。
+- **證據與未完成：**[候選取捨已核對](PLAN.md#f02-candidate-disposition)：保留 F02 有效資料／服務接點及容量五檔小修正；Hosting／Cloud Run 專用部署和失敗的容量模擬預覽退出後續工作，只留歷史參考。F03 接容量行為並處理 F01 原 master 五項測試型別錯誤，見 [F01 證據](artifacts/verification/F01_FIREBASE_FOUNDATION_20261011.json)。F02 及容量候選未合併／待驗狀態不變，額外雲端部署僅列[清理範圍](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。
+- **操作範圍：**2026-10-12 已授權持續完成 [P2 完整路線](PLAN.md#p2-completion-execution)，完整目標已建立；PLAN／最小契約已交付，正在收束 F02。本輪僅主模型、不派子代理；只補必要驗收，新增多副本權威與最小接點核對，不建 Kubernetes 或另一網站。本輪只執行上述必要本機檢查；雲端只完成唯讀核查及明確批准的最小 IAM 接線，尚未部署、呼叫模型或通知。原 US$30 批次及舊模型次數不是可推定的剩餘預算，雲端操作先核有效範圍、實際使用及資源期限；持續服務預算另按實測核定。
+- 新前端保持正式入口的設計及互動；前端按 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)。本人 key／限額及其限制見 [S06-W05](PLAN.md#s06-w05)；平台 AI 不要求家長自備 key。
+
 
 <a id="deployment"></a>
 ## 最後部署觀察（非即時狀態）
 
+**2026-10-12 本輪唯讀核對：**原 VM `yuban-p1`／ID `2846984358678394356` 為 RUNNING／e2-small，停止期限 `2026-10-17T12:50:44Z`（香港 20:50:44）；原附加身份初查只有 Vertex 專案權限；使用者明確批准後，已加入僅限命名來源庫的 Firestore user、既有最小 Session 自訂角色、私人附件 objectUser、journal 只新增／讀取、指定 queue 自訂派送角色及指定 dispatcher actAs，逐項讀回一致。沒有新增資源、Owner／Editor 或 service-account key。來源及還原 Firestore 庫均在 asia-east2、PITR 關閉；`yuban-firebase` queue PAUSED。兩個私人 bucket 的 soft-delete 實際為 14 天，不能把單項保留設定當完整配對備份證據。IAP 唯讀核 VM 仍運行 `85e3a846` 的 API／worker／Web 與 PostgreSQL；根磁碟餘 2.1 GB（89% 已用），沒有改服務或清理 volume。實際帳單仍未知；以下歷史部署／驗收仍保留。
+
 2026-10-08 約 01:41 UTC，A09 既有唯讀觀察：正式網址 https://ex-machina.eu.org 的 Web／API／worker 均為 `85e3a846`，API／PostgreSQL healthy；A01～A08 尚未部署，SMTP／正式帳號設定未配置，根磁碟餘約 2.2 GB（89% 已用）。[固定版本證據](https://github.com/2NTTY/child-ai-caregiver/blob/93c64e41de076d9429cbe6f938fbc6042d2de857/artifacts/verification/P2_A09_REMOTE_PREFLIGHT.log)不是本輪重新探測；新 master 不等於部署版本。
 
 **2026-10-11 19:26 UTC 最後核對：**隔離 API `00004-vn6`／worker `00004-nls` 來源 `97de268`，均設為 MANUAL 0，監測讀回全部已用 revisions 的實例為零；來源 control 停用、Tasks queue PAUSED 且空。隔離還原庫為 `applied-paused`，operator `1584f6e`；96 份快照文件及一張照片已配對備份，還原後 84 筆資料／零舊會話／一份 checkpoint，刪除屏障及清理責任保留。備份保留至 2026-10-26T19:02:44Z；臨時 PITR 已關閉，資料／附件／journal 及舊資源未刪除。Hosting `f0bd20c01b744ba1`（client `2471e4d`）及 blocking function `00003-viq` 維持原版本；測試 API 因暫停不可用，正式網址未切換。來源／還原庫及私人 buckets、17 指定索引沿先前讀回；舊 VM 最後於 10:23 UTC 觀察 RUNNING，本次未操作。F02 額度 US$6（內含 US$2 收尾），另保留 US$24；本批保守成本界線 US$3.0932，不是帳單。Build 累計 1130.121／1800 秒；本輪零模型生成／零通知外發，保留儲存及既有資源仍可能計費，實際帳單未知。詳見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)及[正式 Web 方法](docs/PRODUCTION_FRONTEND.md)。
+
 
 <a id="preview-history"></a>
 ## 已記錄的預覽觀察

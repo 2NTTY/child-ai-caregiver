@@ -26,6 +26,22 @@ RUN npm install --global npm@11.8.0 --no-audit --no-fund \
 
 FROM deps AS web-build
 
+# Firebase Web SDK identifiers are public; never pass Admin credentials as build args.
+ARG EXPO_PUBLIC_AUTH_PROVIDER
+ARG EXPO_PUBLIC_FIREBASE_API_KEY
+ARG EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
+ARG EXPO_PUBLIC_FIREBASE_PROJECT_ID
+ARG EXPO_PUBLIC_FIREBASE_APP_ID
+ENV EXPO_PUBLIC_AUTH_PROVIDER=${EXPO_PUBLIC_AUTH_PROVIDER} \
+    EXPO_PUBLIC_FIREBASE_API_KEY=${EXPO_PUBLIC_FIREBASE_API_KEY} \
+    EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=${EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN} \
+    EXPO_PUBLIC_FIREBASE_PROJECT_ID=${EXPO_PUBLIC_FIREBASE_PROJECT_ID} \
+    EXPO_PUBLIC_FIREBASE_APP_ID=${EXPO_PUBLIC_FIREBASE_APP_ID}
+RUN if [ "$EXPO_PUBLIC_AUTH_PROVIDER" = firebase ]; then \
+      test -n "$EXPO_PUBLIC_FIREBASE_API_KEY" && test -n "$EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN" \
+      && test -n "$EXPO_PUBLIC_FIREBASE_PROJECT_ID" && test -n "$EXPO_PUBLIC_FIREBASE_APP_ID"; \
+    fi
+
 ENV CI=1 \
     EXPO_NO_TELEMETRY=1 \
     EXPO_PUBLIC_API_BASE_URL=/api
@@ -78,14 +94,15 @@ CMD ["scripts/storage-backup.mjs"]
 
 FROM caddy:2.11.4-alpine AS web
 COPY --from=web-build /app/frontend/dist /srv
-COPY deploy/p1/Caddyfile /etc/caddy/Caddyfile
+ARG CADDY_CONFIG=deploy/p1/Caddyfile
+COPY ${CADDY_CONFIG} /etc/caddy/Caddyfile
 COPY licenses/caddy/LICENSE /usr/share/licenses/caddy/LICENSE
 COPY licenses /srv/licenses
 COPY THIRD_PARTY_NOTICES.md /srv/THIRD_PARTY_NOTICES.md
 
 FROM server-runtime AS server
 
-# Isolated Firebase API; the legacy target remains until the F08 retirement gate.
+# Firestore API for the original VM; legacy SQL targets retire at the F08 gate.
 FROM server-runtime AS firebase-server
 ENV STORAGE_BACKEND=firestore
 CMD ["node", "server/main.ts"]

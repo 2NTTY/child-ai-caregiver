@@ -1,6 +1,6 @@
 # 接口与鉴权契约
 
-**實作與目標分界：**下文 PostgreSQL／Better Auth／pg-boss／Compose 專項記錄現有機制，不能視為 Firestore 已接線。集中服務目標按 [ADR-019](DECISIONS.md#adr-019) 及 [Firestore 契約](#firestore-target) 取代其後續技術路線；業務、安全及既有證據保留，進度只見 [PLAN](../PLAN.md#active)。
+**實作與目標分界：**下文 PostgreSQL／Better Auth／pg-boss 專項保留原機制及證據；依 [ADR-024](DECISIONS.md#adr-024)，正式 SQL 接點改用 Firestore，原 VM／Node／Compose／Caddy 及網站繼續沿用。Firebase Auth、Storage、Tasks 的既有接線按實際範圍復用，不表示全部功能已遷移。現行契約見 [Firestore 接點](#firestore-target)，已合併／未合併／待驗只見 [PLAN](../PLAN.md#active)。
 
 本文件管穩定契約／設計，不維護包進度或即時部署。實作與未驗項見 [PLAN](../PLAN.md#roadmap-packages)，運行觀察見 [STATUS](../STATUS.md#deployment)，測試結論只按所連 EV 的版本／範圍解讀。
 
@@ -735,24 +735,25 @@ GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POS
 
 
 <a id="firestore-target"></a>
-## Firebase／Cloud Run 目標接口差異
+## 原 VM 上的 Firestore／Firebase 接口差異
 
-以下為 F01～F08 待接契約，不宣稱現有路由已返回 202 或已改 Firebase。保留 Auth／AccountServiceOwner、各領域 owner、原操作／版本、history／run／proposal 結果語義；供應商 adapter 內部改造不重做前端頁面，也不允許瀏覽器直接讀寫 Firestore／Storage。
+以下為 F01～F08 的遷移契約；已接線範圍見下方 F01 及 PLAN，不宣稱所有路由已完成。保留 Auth／AccountServiceOwner、原操作／版本、history／run／proposal 語義；原 VM／Caddy 供應同一前端，不允許瀏覽器直接讀寫 Firestore／Storage。
 
 ### 登入及安全 session
 
-- 登入、驗證、找回及最近重新認證改 Firebase provider；正式 Server 驗 token 的 issuer／audience／期限／撤銷後才交換受保護 session。Hosting 同源只依 __session cookie，HttpOnly／Secure／適當 SameSite、origin／CSRF 與 x-expected-user-id 防護保持；不把 client 傳來的 uid 當授權。
+- 登入、驗證、找回及最近重新認證改 Firebase provider；正式 Server 驗 token 的 issuer／audience／期限／撤銷後才交換受保護 session。沿已有受保護的同源 __session cookie，HttpOnly／Secure／適當 SameSite、origin／CSRF 與 x-expected-user-id 防護保持；不把 client 傳來的 uid 當授權。
 - Server session 同時核對每裝置 ledger、帳戶准入／政策、epoch 及 Auth 有效性。登出撤銷本裝置、撤銷其他或全部裝置沿原產品語義；Firebase 全用戶 revoke 不能代替逐裝置操作。私有 API 與錯誤／認證回應禁止 CDN 共用快取（private, no-store）。
 - 邀請檢查在 Identity Platform blocking function 及業務准入交易各有責任；Auth 已建但業務未完成時不開放資料，沿同一身份恢復。依 ADR-022 重新建立受邀 Firebase 帳號，不匯入舊身份／私人資料；舊 cookie 不被新系統接受。新帳號建立後身份與資料關聯保持。
 - 帳戶刪除由最近 Firebase 重新認證的 Server 可驗證證明替代 Better Auth 密碼核對；保留具名確認、原 operationId、範圍版本、短時效 receiptToken 及 unknown 查詢。模型不能觸發裸 Auth delete 繞過業務 journal。下載／退出、viewer／caregiver／owner 及私人資料邊界不變。
 
-### 非同步 Agent 受理
+### 現有互動與持久工作接點
 
-- 現有 message／trigger 與 operation 關聯先保存；有效准入、權限及成本檢查通過後，在交易中建立唯一 run 和 outbox，才回 **202，含 runId、原 operationId／message 或 trigger 關聯及 queued 狀態**。202 只表示已受理，不表示模型／工具成功。
+- 保留現有 message／trigger、operation 及 run 關聯和可用請求協議，不因 Hosting 限制強制改聊天為 202。須排程的工作先通過准入／權限／成本檢查，交易建立唯一 run／outbox 後才可回 202＋runId＋原操作關聯；202 只代表已受理。
 - 相同原操作重試返回同一 run；不同 fingerprint 拒絕。逾時先查原受理／收據，不自動換 opId／runId。模型呼叫時仍作持久配額預留，排隊不能繞每日限制。
 - 沿既有本人／孩子 run 結果接口有界取得進度、工具收據、引用、候選及 terminal／unknown；等待／重連沿同一 owner，不複製為另一份聊天或任務。實際 route／typed DTO 相容對照在 F01 固定，不能把新路由當已存在。
 - 取消保存於同一 run，worker 每階段檢查；已提交的工具效果不因取消或收尾失敗回滾。頁面關閉不代表取消；長期未完成工作與待確認仍保留，重新登入可查回。無權、過期版本及 unknown 不偽裝空結果。
-- Hosting 的 60 秒限制不縮短產品 90 秒 run 為一個長 HTTP 請求，也不提高模型預算；前端只等短受理與必要結果讀取。私有 Tasks 入口用 OIDC 和固定 audience，payload 只帶穩定參照／generation，不帶 prompt、附件正文或憑據。
+- API 副本可互換：准入、限流、session 撤銷、每日及根預算、原收據與取消使用共用持久權威，前端毋須指定 instance 或黏性會話。另一副本接受取消後，執行者在模型／工具與提交邊界核同一終態；已提交效果仍按原操作查回。busy 與已受理／unknown 分開，不能引導重做已存在效果，細節見 [多副本契約](ARCHITECTURE.md#firestore-multi-instance)。
+- Tasks／Scheduler 送至原 VM 的受驗證入口；應用校驗 OIDC 簽章、issuer／audience／期限及固定服務身份。payload 只帶穩定參照／generation，不帶 prompt、附件正文或憑據。Caddy／API 期限依現有有界 run 協調，不提高模型預算；取消及 unknown 恢復沿同一操作。
 
 ### 業務、附件及恢復
 
@@ -765,7 +766,7 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 <a id="p2-agent-roles"></a>
 ## 四角色、編製及知識維護接口（待實作）
 
-沿既有 AgentRuntime、ModelGateway、領域 store、KnowledgeRetriever 及知識發布服務擴充；不是新增四套公開 API，也不宣稱現有 HTTP 已具備以下欄位。資料不變量見 [DATA_MODEL](DATA_MODEL.md#p2-agent-roles)，預算與流程見 [架構](ARCHITECTURE.md#p2-agent-roles)。
+依 [ADR-024](DECISIONS.md#adr-024)，P2 只留角色識別、啟用狀態、模型／prompt 模組、工具權限與輸入輸出契約，沿既有 AgentRuntime／ModelGateway 的身份、根操作、取消及預算。下列角色內部流程由 [P3-M01～M03](../PLAN.md#p3-agent-roles) 實作；未啟用角色不得實例化、暴露工具或回假成功。不是新增四套公開 API，不取消已有產品工具及程式校驗。資料不變量見 [DATA_MODEL](DATA_MODEL.md#p2-agent-roles)，編排見 [架構](ARCHITECTURE.md#p2-agent-roles)。
 
 - **委派：**Server 將根 run／原操作、允許角色、身份／範圍、用途 schema、來源參照、版本及剩餘預算傳給子執行；模型只能提交受限任務參數，不能傳任意工具、prompt 路徑、服務身份或權限。輸出沿父子關聯回原流程，子角色不可再委派；子模型、委派／子工具及失敗均計根上限。
 - **編製：**接收授權資料參照及新增／局部修改意圖，返回符合目標領域 schema 的 draft／patch、缺項、來源／coverage 及所需確認；正文／段落／項目按穩定 ID 修改。直接普通操作沿原 API，不必呼叫編製；任務、記憶及文件的保存仍呼叫其既有服務，不由聊天文字或 actionRequests 二次執行。

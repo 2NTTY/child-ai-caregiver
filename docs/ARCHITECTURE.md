@@ -1,6 +1,6 @@
 # 技术架构与运行机制
 
-**實作與目標分界：**下文 PostgreSQL／Better Auth／pg-boss／Compose 專項記錄現有機制，不能視為 Firestore 已接線。集中服務目標按 [ADR-019](DECISIONS.md#adr-019) 及 [Firestore 契約](#firestore-target) 取代其後續技術路線；業務、安全及既有證據保留，進度只見 [PLAN](../PLAN.md#active)。
+**實作與目標分界：**下文 PostgreSQL／Better Auth／pg-boss 專項保留原機制及證據；依 [ADR-024](DECISIONS.md#adr-024)，正式 SQL 接點改用 Firestore，原 VM／Node／Compose／Caddy 及網站繼續沿用。Firebase Auth、Storage、Tasks 的既有接線按實際範圍復用，不表示全部功能已遷移。現行契約見 [Firestore 接點](#firestore-target)，已合併／未合併／待驗只見 [PLAN](../PLAN.md#active)。
 
 本文件管穩定契約／設計，不維護包進度或即時部署。實作與未驗項見 [PLAN](../PLAN.md#roadmap-packages)，運行觀察見 [STATUS](../STATUS.md#deployment)，測試結論只按所連 EV 的版本／範圍解讀。
 
@@ -122,7 +122,7 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 - <a id="rule-3-6-04"></a>P2 經渠道無關的 NotificationGateway 送出 Web Push 及 Telegram，P3 增加 FCM；Android adapter 不承擔選人、排程或 fallback 決策。
 - <a id="rule-3-6-05"></a>通知权限关闭或平台不支持时，界面显示具体状态。
 - <a id="rule-3-6-06"></a>PDF 由统一报告模块生成，两端负责预览、下载和分享。
-- <a id="rule-3-6-07"></a>目前使用 Docker Compose／PostgreSQL；P2 集中服務改採 [Firestore／Cloud Run](#firestore-target)。Windows／自部署為後續範圍，不要求用戶先架 Server。
+- <a id="rule-3-6-07"></a>保留原 GCP VM／Node／Docker Compose／Caddy；P2 將正式 PostgreSQL／pg-boss 接點換成 [Firestore／Tasks](#firestore-target)，不要求搬走網站或改 Cloud Run。Windows／自部署為後續範圍，不要求用戶先架 Server。
 - <a id="rule-3-6-08"></a>自有 Windows 與雲端沿用相容服務定義；初期可用既有 GCP 資源。自有部署不代表 Gemini 零第三方傳輸，仍遵守授權與最小上下文。
 - <a id="rule-3-6-09"></a>不把数据库直接暴露到公网；远程连接使用 HTTPS／WSS。
 
@@ -591,7 +591,7 @@ Agent 工具、準備單、成長頁及歷史共用 FamilyDocumentStore；前端
 <a id="p2-agent-service"></a>
 ## P2 增補架構：語義工具、持久工作與單人服務
 
-本節保留 [ADR-018](DECISIONS.md#adr-018) 的 Agent／業務契約；資料庫、Auth 及交付路線由 [ADR-019](DECISIONS.md#adr-019)／[Firestore 目標](#firestore-target) 替代。不把文件寫成已實作。沿用上文 ADK／ModelGateway、業務 Store／加密／操作收據與同一前端 owner，具體進度只在 [PLAN](../PLAN.md#p2-agent-service)。
+本節保留 [ADR-018](DECISIONS.md#adr-018) 的 Agent／業務契約；依 [ADR-024](DECISIONS.md#adr-024) 保留原 VM 交付，替換 SQL 並復用已做的 Firebase Auth／Storage／Tasks。沿用 ADK／ModelGateway、領域服務／加密／操作收據與同一前端 owner；進度只見 [PLAN](../PLAN.md#active)，文件不代表已部署。
 
 - **模型與程式分工：**一個產品 LlmAgent／Runner 處理語義理解及下一步；常用上下文／檢索／結果工具可見，其餘以短能力目錄配合 ADK 原生 BaseToolset 按需載入受限工具及既有配方。來源仍是 Server 核准集合，不依最後一句 regex 取捨能力，也不解析思考文字或加一層固定意圖路由。資料正文不得升為指令。工具 schema／結果回到同一循環；授權、版本、配額及已提交效果由程式保證。首版不加多 Agent、新框架或路由模型。
 - **持久接續：**原訊息／事件／收據、通用工作狀態、有 coverage 的摘要三層分開。工作保存目標／焦點／相關資源／待答問題／確認／結果，不預定照護步驟。ADK session 只承擔 run 協定；新 run 由授權業務狀態重建，原操作先查收據，不靠恢復思考。歷史與文件按需分頁，取消／更正／撤權使受影響工作失效。跨輪來源使用實際訊息及版本，不能把摘要當本人同意。
@@ -601,7 +601,7 @@ Agent 工具、準備單、成長頁及歷史共用 FamilyDocumentStore；前端
 - **資料範圍：**檢索、摘要、文件及背景入口都由 Server 注入本人／孩子／授權版本／用途。保存或外發前再核對來源與目的地；讀取不等於披露授權。私人／公共／孩子資源分開；失權或來源更正觸發相關摘要／候選／文件失效。不得透過歷史、快取或遲到回應繞過。
 - **文件與報告：**同一 FamilyDocument 作權威，穩定章節／項目 ID 及固定版本分段讀取；局部 patch 與 expectedVersion／opId 交易保存，衝突先重新讀取。不以新增聊天或另份文件替代修改。自動來源區與指定內容分開；歷史恢復是同一文件的新版本。季度／年度以有界批次覆蓋完整期間，先可重現統計再必要敘述，同版 Web／PDF；日常成長頁是同源投影，不在讀頁生成。
 - **主動性：**保留事件／到期／階段／有效知識版本觸發；目前 pg-boss，目標由 Tasks／Scheduler 與原業務台帳承接，先核相關性和終態、授權、渠道、安靜時段與抑制。沒有新條件不調模型；站內與外發分開。原邏輯工作／通知證據支援重啟去重，不重設跟進上限。
-- **服務：**本人獨立空間、邀請資格、驗證／找回／會話管理及退出維持原行為；目標採 Firebase Auth／Hosting／Cloud Run／Firestore，詳見 [下節](#firestore-target)。現有 Better Auth／Compose 的驗收不當新環境證據；必要健康、恢復、告警及成本控制門檻保留。
+- **服務：**本人獨立空間、邀請資格、驗證／找回／裝置會話及退出維持原行為；Firebase Auth／Firestore 與原 VM／Compose／Caddy 配合，詳見 [下節](#firestore-target)。復用已實作接點，只補受影響的健康、恢復、告警及成本控制；舊驗收不冒充新環境證據。
 
 有界讀取統一交代所讀版本／範圍、complete／未讀理由及續讀位置；查詢錯誤不偽裝空結果。完整期間工作保存可恢復進度，不能截前綴交作完整報告。沿當前有效單次及每日上限（互動文字上限依 [API 容量契約](API.md#agent-input-capacity)，背景 32,000），修正／載入／收尾均計入 run；維護向量另有有限批次。超限不靜默丟必要權限／來源／工具配對，不自動新 run 繞過。
 
@@ -629,13 +629,13 @@ Agent 工具、準備單、成長頁及歷史共用 FamilyDocumentStore；前端
 
 
 <a id="firestore-target"></a>
-## 集中雲端目標：Firestore、Cloud Run 與 Firebase Auth
+## 原網站的 Firestore、Firebase Auth 與工作接點
 
-本節定義待遷移設計，沒有新資源或 SDK 已接入的含義。沿用 Node、ADK／ModelGateway、領域服務、加密及前端 owner；只換具體儲存、身份 adapter 和執行接點。工作包／成本情景／切換順序唯一維護於 [PLAN](../PLAN.md#p2-firestore-migration)，資料與 HTTP 語義分別見 [DATA_MODEL](DATA_MODEL.md#firestore-target)／[API](API.md#firestore-target)。
+本節保留待完成的遷移契約；F01 已合併、F02 原成果未合併，不能把目標當全量接通。沿用 Node、ADK／ModelGateway、領域服務、加密及前端 owner，只改必要資料／身份／工作接點。工作包及切換順序見 [PLAN](../PLAN.md#p2-firestore-migration)，資料與 HTTP 語義見 [DATA_MODEL](DATA_MODEL.md#firestore-target)／[API](API.md#firestore-target)。
 
 ### 元件、交易與查詢
 
-Firebase Hosting 供應既有 frontend/dist，將同源 API 轉到 Cloud Run；API、私有 worker 使用最小 IAM 服務身份。Firestore Standard Native 保存業務／操作權威，Storage 保存私有加密檔案，Tasks 承擔投遞，Scheduler 喚醒補償工作。業務資料／運算預設 asia-east2；Firebase Authentication 的美國處理取捨已接受，不表示所有服務資料都在香港。不採 SQL Connect／Cloud SQL 或常駐搜尋叢集。
+原 ex-machina.eu.org 由既有 VM／Compose／Caddy 供應 frontend/dist、同源 API 及受驗證的工作入口；保留設計與互動。Firestore Standard Native 保存業務／操作權威，私有 Storage 保存加密檔案，Tasks 投遞工作，Scheduler 作補償喚醒。VM 以附加服務身份／ADC 及最小 IAM 存取服務，不下載長期服務 key。業務資料／運算預設 asia-east2；Firebase Auth 的美國處理取捨保留，不能宣稱所有資料均在香港。不採 SQL Connect／Cloud SQL，不要求 Hosting／Cloud Run API／worker 或新增搜尋叢集。
 
 領域 store 保留接口與驗證，按實際查詢拆 collections／索引；不實作通用 SQL 相容器。Server 在查詢前加入本人、孩子、visibility／membership 與用途條件，按索引排序／cursor 分頁。SQL join 改必要 metadata 投影及有限點讀；投影可以重建，不能獨立修改正文。長文件、修訂及累積歷史分段，保留固定版本、coverage 與續讀。不能為避索引限制先讀全庫或只在任意 top-k 後篩選。
 
@@ -651,13 +651,27 @@ Firestore 交易先讀權限／刪除狀態、版本、唯一性及原操作，�
 
 瀏覽器不直接存取 Firestore／Storage 業務資料。Admin／Server SDK 用 IAM 且繞過 Rules；每個 HTTP、Agent tool、worker 和附件下載均自行校驗目前權限／准入／epoch。規則拒絕未授權 client 不能代替 Server 檢查。限流、session 撤銷與模型預留跨 instance 保存，不能只用記憶體；key／密碼／找回 token 不入 prompt 或一般日誌。[IAM 邊界](https://docs.cloud.google.com/firestore/native/docs/security/iam)
 
-### 縮零、outbox 與非同步 Agent
+<a id="縮零outbox-與非同步-agent"></a>
+### 原 VM、outbox 與 Agent 執行
 
-交易只寫 Firestore outbox；commit 後 dispatcher 才用確定工作 ID 建立 Cloud Task，成功回寫派送狀態。崩潰在任一側以原 ID／lease／generation 查核接續，台帳是權威，Tasks 的短期名稱去重不等於 exactly-once。每分鐘一個 Scheduler OIDC 補償入口分頁領取待派／到期項，不全表掃描；長期預約留台帳，只提前 24 小時送入 Tasks（官方最遠排程 30 天）。worker 用專屬 OIDC／audience／invoker IAM，私有 endpoint 不能讓外部自行製造工作。[Tasks](https://docs.cloud.google.com/tasks/docs/creating-http-target-tasks)／[限制](https://docs.cloud.google.com/tasks/docs/quotas)
+交易只寫 Firestore outbox；commit 後 dispatcher 才用確定工作 ID 建立 Cloud Task，成功回寫派送狀態。崩潰在任一側以原 ID／lease／generation 查核接續，台帳是權威，Tasks 的短期名稱去重不等於 exactly-once。每分鐘一個 Scheduler OIDC 補償入口分頁領取待派／到期項，不全表掃描；長期預約留台帳，只提前 24 小時送入 Tasks（官方最遠排程 30 天）。worker 在原 VM 入口核專屬 OIDC／audience／服務身份；派送身份及 enqueue 權限另由 IAM 限定，不能依賴 Cloud Run invoker IAM 代替 VM 的應用驗證。[Tasks](https://docs.cloud.google.com/tasks/docs/creating-http-target-tasks)／[限制](https://docs.cloud.google.com/tasks/docs/quotas)
 
-Cloud Run 按請求計費、min instances 0，不靠常駐 pg-boss、容器 cron 或 HTTP 回覆後的計算。worker 請求覆蓋完整有界工作，期限大於業務 run 上限並與 Task dispatch deadline 協調；逾時／中斷保存原工作結果為 unknown，不能由框架重試自動再生成或再通知。每次領取／外發前重查授權、任務終態、版本、渠道、安靜時段及跟進上限。可安全重試的階段才有限重試；結果未知先查收據，不以換 task ID／run ID 繞限。
+Tasks／Scheduler 呼叫原 VM 的 HTTP 工作入口，無須 Cloud Run。由應用核 OIDC 簽章、issuer、audience、期限及固定服務身份，不能把公開 HTTPS 路徑當成已授權；沿既有 lease／generation、收據及防重。worker 請求覆蓋完整有界工作，期限與 Task dispatch deadline 協調；中斷先查原效果，unknown 不盲目再生成或通知。每次領取／外發重查授權、任務終態、版本、渠道及安靜時段；不用 pg-boss 或 HTTP 回覆後的無台帳計算。
 
-互動 Agent 先持久建立 run／原操作及 outbox，再回 202；前端沿原運行結果接口有界查進度／取消／重連，不在 Hosting 連線等待完整 90 秒。Hosting 轉送期限 60 秒且一般 cookie 會剝除，改用受保護 __session；身份／私人結果採 Cache-Control: private, no-store，不允許 CDN 共用。詳見 [API](API.md#firestore-target) 及 [官方期限](https://firebase.google.com/docs/hosting/serverless-overview)／[cache](https://firebase.google.com/docs/hosting/manage-cache)。使用既有 UI 狀態與 owner，不重做互動。
+互動沿既有可用請求、message／run／原操作關聯、進度、取消及收據接口；不因已取消的 Hosting 60 秒限制強制改成 202 協議。需要排程的工作仍須先持久保存 run／outbox，才可回已受理；頁面關閉不等於取消。Firebase Auth 已有 __session 可繼續使用，同源、CSRF、身份切換清理及 private, no-store 保持。原 Caddy／API 逾時須與有界運行協調；未遷移接口明確報未就緒，不回空資料或假成功。
+
+<a id="firestore-multi-instance"></a>
+### 多容器與橫向擴展接點
+
+P2 正常部署維持原單 VM 的 Web／API／worker 分工，不新增 Kubernetes、VM、Redis 或負載平衡服務。可安全增加 API／worker 副本是資料與執行契約，不代表已驗高負載／高可用；同一 VM 增加容器不增加主機總資源。
+
+- **准入與用量：**本人／全站並發名額、原 trigger／run claim、逐日配額及每次呼叫預留使用 Firestore 共用權威。現有 activeUsers 只能作本程序保護，不因副本增加而倍增名額。本輪先沿嚴格且有界的交易／租約，不提前建立分片計數平台。
+- **取消與提交：**原 run 的持久取消／終態由任何副本可讀；本機 AbortController 只加速停止。模型／工具前後與提交時重核權限、期限及終態，另一副本接受取消後不得再提交新副作用；已成功保存的收據不回滾。未知外部結果不因 lease 到期自動重發，原效果與成本先核對。
+- **工作競爭：**worker 沿同一 lease／generation／epoch 領取與提交；Tasks 重投不是新業務操作，Scheduler 補償入口只配置一份。不靠容器內 timer、程序 Map 或固定主機作唯一執行權威。
+- **部署與檔案：**正式附件／成果及刪除紀錄存外部持久服務，本機只留可丟棄暫存。API／worker 用外部配置、服務名稱與可配置代理上游，不依賴固定 API 容器 IP、黏性會話或共享本機檔案。保留便宜的健康接點及有界停止，停止領新工作後核原收據／unknown，再按期限結束，不承諾中斷的模型必然可重播。
+- **驗證範圍：**只在必要合成情景暫啟兩個程序／容器核准入、防重及跨副本取消，重用重啟證據；不作壓力測試或常駐第二副本。之後才按實際需要選 Compose 多副本或 Kubernetes Deployment，所用權威資料不隨 orchestrator 更換。
+
+已核對官方 [Compose 服務名稱](https://docs.docker.com/compose/how-tos/networking/)、[Kubernetes Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)與 [Firestore 競爭／游標建議](https://firebase.google.com/docs/firestore/best-practices)；文件相容不代替本工程多副本已驗。實作與證據由 [F03／F06／F07](../PLAN.md#p2-completion-execution) 承接。
 
 ### 官方知識與發布
 
@@ -680,7 +694,9 @@ Cloud Run 按請求計費、min instances 0，不靠常駐 pg-boss、容器 cron
 <a id="firestore-cost"></a>
 ### 費率、計量及低用量控制
 
-2026-10-08 公開美元費率；月量假設與 $2–6／$8–20 情景見下方[原假設表](#firestore-low-usage-assumptions)。未扣信用、未量測，切片後重算，不能承諾免費。本次只搬移原記錄，沒有重查或更新單價。
+**2026-10-12 現行取捨：**保留原 VM，優先減少重新搬網站與重做驗收的工程成本；Firestore 減少自行維護資料庫，不代表 VM 固定費消失或總費用必然降低。依已保存的 2026-10-11 香港 SKU，25 萬計費讀取及 5 萬寫入、不扣免費額約 US$0.24／月；另計向量索引讀取、容量、備份／還原、附件、模型、網絡及 VM。小規模電郵身份通常在首 50,000 MAU 免費範圍，但函式等服務另計。來源：[Firestore](https://firebase.google.com/docs/firestore/pricing)、[Identity Platform](https://cloud.google.com/identity-platform/pricing)。這是估算，非帳單或新增費用授權。
+
+下列 2026-10-08 費率及 $2–6／$8–20 表保留為**舊 Cloud Run 路線的歷史估算，不是保留 VM 後的總月費**；原假設與未量測限制見[原假設表](#firestore-low-usage-assumptions)。
 
 | 計量 | 核對值／計算注意 |
 |---|---|
@@ -694,14 +710,14 @@ Cloud Run 按請求計費、min instances 0，不靠常駐 pg-boss、容器 cron
 
 免費額的每日／database／project／billing account 範圍各異，不能假設其他測試沒使用；Cloud Run 免費抵扣依指定費率，不直接套同數香港免費秒數。請求／向量／關鍵詞索引與 changes 輪詢要分開量測，Scheduler 只掃有索引的 due/outbox，空隊列也有最低查詢及冷啟動成本。
 
-低流量仍可能有 backup、soft-delete、舊物件、Artifact Registry 映像、Secret Manager 活躍版本、日誌儲存與附件外傳費。按真實路徑估算 Hosting 或 Cloud Run／Storage 出站，不重複或漏算。過渡 VM、磁碟／固定 IP、min instances、VPC connector、NAT、負載平衡器或付費搜尋服務會增加固定費，本方案不預設新增它們。
+低流量仍可能有 backup、soft-delete、舊物件、映像、Secret Manager、日誌及附件外傳費；保留原 VM／磁碟／IP 的固定費須另計。額外 Hosting／Cloud Run API／worker 只列待清理，先辨識用途與依賴，保護 Auth blocking function、有效資料及備份。本輪不刪資源；不預設新增 min instances、VPC connector、NAT、負載平衡器或搜尋服務。
 
 配置 max instances、queue dispatch／concurrency、共享預留／停用閘、匯入／索引重建批次與 retention；模型上下文、重試、輪詢、附件下載和濫用註冊是突增來源。預算告警不是硬性停費保證。上線前以實測及資源清單核准上限；50 帳號容量欄不提高既有產品配額。
 
 <a id="firestore-low-usage-assumptions"></a>
 #### 低用量預算假設（2026-10-08；未實測）
 
-2026-10-08 公開單價推算，美元／月，**不是帳單、免費保證或資源授權**；未扣促銷信用，未含過渡舊 VM、一次性遷移／建置突增。費率與免費額範圍見 [成本依據](#firestore-cost)。
+**歷史：已取消 Cloud Run 路線的 2026-10-08 估算。**美元／月，不是帳單、免費保證或資源授權；未扣促銷信用、未含舊 VM 及一次性建置費，不能當作現行原 VM 路線總費用。費率見 [成本依據](#firestore-cost)。
 
 | 每月估算 | 10 帳號／3 日活 | 50 帳號／15 日活 |
 |---|---:|---:|
@@ -721,15 +737,15 @@ Cloud Run 按請求計費、min instances 0，不靠常駐 pg-boss、容器 cron
 模型按現有 Gemini 3.1 Flash-Lite／gemini-embedding-001；新增語料 embedding 另算，兼容向量遷移不重算。CPU 假設包含補償喚醒／冷啟動及 Agent 等待，F02 量測後修正，不當已測效能。區間容納配對備份、索引、少量傳輸／日誌；免費額被共用帳單其他服務佔用、大量下載或重建須另算。50 帳號只是容量情景，**不批准提高每日額度**；現有上限可限制實際服務量。
 
 <a id="p2-agent-roles"></a>
-## 四角色 Agent 目標編排（ADR-020）
+## 四角色接口與 P3 內部編排
 
-此為待實作設計；產品要求見 [SPEC](../SPEC.md#p2-agent-roles)，進度見 [PLAN](../PLAN.md#p2-agent-roles)。復用 ADK 2.1.0、ModelGateway、Prompt Pack、既有資料／任務／文件及發布服務；角色不是四個常駐微服務，不引入另一個 framework。
+依 [ADR-024](DECISIONS.md#adr-024)，P2 只啟用聊天 Agent；以下委派、模型審核及自主維護內部流程移至 [P3-M01～M03](../PLAN.md#p3-agent-roles)。P2 只留角色識別／enabled、模型與提示詞模組、工具權限、輸入輸出契約，以及共同根操作／身份／取消／期限／用量接點。三個未啟用角色不實例化、不暴露工具、不回假成功；現有文件、記錄、提醒與程式引用／schema／版本／授權檢查照常保留。復用 ADK、ModelGateway 和 Prompt Pack，不預建四套服務或提示詞。
 
 ### 互動與知識維護分開
 
 聊天 Agent 保持對話控制，使用現有工具或按需委派資料編製 Agent；子任務結果返回聊天。Server 在交付實質內容前調用唯讀審核 Agent。獨立的知識維護入口由排程／管理操作喚醒，讀指定網站、自主整理後走審核及發布；不作聊天的搜尋子模型，也不讀家庭私人資料。
 
-沿 Agent-as-Tool 模式以原生 FunctionTool／LlmAgent／Runner 建立薄委派接點。固定 2.1.0 AgentTool 的子 Runner 不能假定繼承專案 RunConfig、validator、observer 或全局用量；需明確注入共用 ModelGateway／根預算／取消／scope，子角色不再委派其他角色。模型協定 parts 保持完整，review 由 Server 調度，不能由模型選擇略過。技術依據見 [固定版本核查](TECH_REUSE.md#multi-agent-reuse)。
+P3 資料編製以原生 AgentTool／LlmAgent／Runner 建立薄委派接點；審核由 Server 控制，背景維護由獨立 Runner 入口啟動。固定 2.1.0 AgentTool 的子 Runner 不能假定繼承專案 RunConfig、validator、observer 或全局用量；需明確注入共用 ModelGateway／根預算／取消／scope，子角色不再委派其他角色。模型協定 parts 保持完整，review 由 Server 調度，不能由模型選擇略過。技術依據見 [固定版本核查](TECH_REUSE.md#multi-agent-reuse)。
 
 同一互動 root runId 下，各次子執行保存角色與父關聯，沿原工作／收據恢復，不將 ADK session 當業務權威；重啟不重設預算。工具委派及子工具呼叫都計入根工具上限，失敗／被拒亦計；審核模型呼叫同樣計生成。保留 schema／權限、metadata-only 診斷及內容捕捉關閉，不輸出思考過程。
 
@@ -753,6 +769,6 @@ HTML／文字 PDF 先沿原解析器；掃描頁、圖表和有資訊的圖片�
 
 ### 預算及成本
 
-互動所有角色共享 [運行配置](#p2-agent-budgets)，最多 6 次生成；有效本人上限更低時取較低值，不靜默提高已保存設定。預留至少必要審核額度，餘額及期限足夠才最多一次修正／重核；不足時保存進度／草稿並明示未完成，不新開 run 繞過。資料編製不保證每輪完成任意大型成果。
+P3 四角色提案沿共同 [運行配置](#p2-agent-budgets)，所有角色合計最多 6 次生成；這不是本次提高 P2 執行限額的授權，P2 沿實際配置及本人更低上限。P3 啟用時預留必要審核額度，餘額／期限足夠才最多一次修正及重核；不足保存進度，不新開 run 繞限。子 Runner 必須經共用 ModelGateway 計量，不假定 ADK 自動繼承專案預算。
 
 背景公共維護用平台獨立有界工作預算，不占某家長互動 run 或私人 key，仍受全局生成／embedding／費用控制；分批／重啟不清零邏輯工作累計用量。每批源量與多模態成本須在啟用前核定，現有維護授權不能推定新增爬取／模型成本已批准。原 [成本表](#firestore-cost) 的平均 3 次生成只是情景，新增審核／資料編製及多模態需量測後更新；不因此提高每日額度或預設更多付費服務。

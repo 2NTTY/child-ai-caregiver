@@ -1,0 +1,24 @@
+{$PUBLIC_HOST} {
+    encode zstd gzip
+    header X-Content-Type-Options nosniff
+    header Referrer-Policy same-origin
+    @worker path /internal/task-reminders /internal/task-dispatch
+    handle @worker {
+        # The worker verifies OIDC issuer, audience, expiry and the fixed service identity.
+        reverse_proxy {$FIREBASE_WORKER_UPSTREAM:worker:3002}
+    }
+    handle /internal/* {
+        respond 404
+    }
+    @api path /api /api/*
+    handle @api {
+        reverse_proxy {$API_UPSTREAM:api:3001} {
+            header_up X-Forwarded-For {remote_host}
+        }
+    }
+    handle {
+        root * /srv
+        try_files {path} {path}.html {path}/index.html
+        file_server
+    }
+}

@@ -2334,3 +2334,58 @@
 - 唯讀確認舊 yuban-p1 是香港 e2-small、20 GiB pd-balanced、RUNNING；Firebase API／worker 維持 MANUAL 0，Tasks PAUSED，Scheduler 無 job，兩庫 PITR disabled。兩套真後端部署之外有五個歷史 Sites 示例；Firebase 預設站沒有 release。沒有重複部署或刪除舊站。
 - 曾依原網址指示在既有 Hosting 建立 custom-domain 記錄，目前待 DNS 所有權及憑證；沒有改 Cloudflare DNS、切流、改 IAM 或恢復 API。使用者其後澄清服務選擇，暫不需登入 Cloudflare。官方 VM 費率與資源盤點已保存，成本效益比較未完成，不填預估為實際費用。
 - 使用者要求本聊天收尾並由主開發聊天接手，目標暫停，不開 F03、不合併未完成 F02。後續正常完成包已獲自行合併並回報授權；提交／推送／合併盡可能單一主責。F02 尚缺自動縮零、真撤權、重設電郵、必要產品畫面與原附件實體清理；保留原失敗與恢復證據。詳見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。
+<a id="log-20261012-firestore-vm-plan"></a>
+## LOG-20261012-FIRESTORE-VM-PLAN
+
+- Recorded At / Work Date：2026-10-12（Asia/Hong_Kong）。
+- Step / Package：Firestore 遷移範圍文件定案，非 F02 實作。
+- Executor / AI Assistance：主模型核對 Git、既有證據、方案及全文修改，完成文件 review；沒有啟動子代理。
+- Human Verification：使用者批准保留原網站的計劃，並要求文件合併後停下；未進行產品人工驗收。
+
+### Actual Work / Changes
+- 先修改根 PLAN，保留原網站／VM／Compose／Caddy，以 Firestore 替換正式 SQL，復用已做 Auth／Storage／Tasks。F01 #191 已合併；F02 接續本機 6a87632，不重做；F03 起逐條接前端及更新原站，移除 Hosting／Cloud Run／縮零門檻。
+- 三角色內部改由 P3-M01～M03 承接，P2 聊天及現有能力／安全檢查保留。局部同步 SPEC、ARCHITECTURE、DATA_MODEL、API、STATUS、TECH_REUSE 及正式部署交接。
+- 從 F02 原提交原樣接回 ADR-023，另追加 [ADR-024](docs/DECISIONS.md#adr-024)，避免佔用既有編號；不代表 F02 程式已合併。舊 ADR／LOG／失敗、F02 工作樹及容量 dirty 成果均未改動。
+
+### Verification
+- Environment / Revision：master d5dbf61；獨立 codex/firestore-vm-scope-plan 文件分支。交付前再核遠端 master 仍為 d5dbf61、open PR 為空。
+- Method / Result：git diff --check；文件範圍、新增相對連結、既有明確錨點及 F01～F08／P3-M01～M03 依賴核對通過，11 個包無循環。主模型 review 修正原 VM OIDC 應用驗證與旧 Cloud Run invoker IAM 的區別，並移除無關純翻譯變更。
+- Historical Evidence：既有 DECISIONS／WORKLOG 正文保持；ADR-023 與 F02 原文相同。成本沿已保存價格估算，未重新量測帳單。
+
+### Limitations / Next Action
+- 只改文件，未跑產品測試、模型、資料遷移、部署或雲端清理；各包部分完成／未驗不變。額外資源僅列清理範圍，不能誤刪 Auth 函式、原 VM 或有效資料／備份。
+- 本次 PR 合併後按使用者要求停下；下一個產品工作為 [F02 原站接線收束](PLAN.md#p2-f02)，不於本輪啟動。
+
+<a id="log-20261012-candidate-disposition"></a>
+## LOG-20261012-CANDIDATE-DISPOSITION
+
+- Recorded At / Work Date：2026-10-12（Asia/Hong_Kong）。
+- Step / Package：未交付候選的復用成本核查，非 F02／F03 產品實作。
+- Executor / AI Assistance：主模型讀容量五檔 diff、既有失敗及關鍵接線；Luna Max 只讀核對 F02 固定原碼／證據，主模型覆核並決定取捨、親寫 PLAN／STATUS。
+- Human Verification：使用者授權按成本決定納入或歸檔捨棄，未作產品人工驗收。
+- Actual Work：核 master 8d1011f、F02 6a87632（本機 16 提交、乾淨、未推送／合併）、容量 a38e03f 的 16 項未提交成果。F02 資料／服務接點及容量五檔小修正值得接回；Hosting／Cloud Run 專用交付、縮零及容量模擬預覽／HTTP fixture 不再作遷移前置，只留原現場／Git 歷史參考。
+- Evidence：F02 固定提交中的 firebase-runtime／firebase-app／firebase-task-delivery／firebase-storage-key 及 preflight；容量 CHAT_CAPACITY_RECOVERY_20261011.json 記同文重送 500、跨租戶 fixture opId map 混用、瀏覽器 bootstrap 失敗。這些不證明正式服務有同樣漏洞，也不是完成驗收。容量五個產品檔案在 a38e03f 與本次 master 間無差異；其修正可小範圍接回，程序內 activeUsers 不當分散式容量控制。
+- Verification：只讀 Git／程式及既有證據、文件 review、git diff --check、新增錨點及連結檢查；沒有重跑產品測試、模型、雲端或部署。前一份 WORKLOG 正文保持。
+- Limitations：沒有量測 token／工時節省；F02 未接聊天／ADK，VM IAM、原站代理與 worker audience 尚待接線，不能原樣切換完整 API。未更動其他工作樹、提交容量候選或刪除雲端資源。
+- Next Action：按 [候選清單](PLAN.md#f02-candidate-disposition) 在 F02／F03 選擇性接回；本輪只交付取捨記錄，不啟動實作。
+
+<a id="log-20261012-p2-completion-execution"></a>
+## LOG-20261012-P2-COMPLETION-EXECUTION
+
+- Recorded At / Work Date：2026-10-12（Asia/Hong_Kong）。
+- Step / Package：P2 完整執行計劃及必要契約，前置 master 063539e／PR #193；非 F02 程式完成。
+- Executor / AI Assistance：主模型獨立核對、親寫文件及 review，按本輪指示不派子代理。
+- Human Verification：使用者採納完整 F02～F08 計劃，重申只做必要測試；未提供本輪產品驗收結果。
+- Actual Work：建立完整 P2 目標，先更新根 PLAN，納入原站 Firestore 存取、資料分域／可靠交易、F03 早期可用聊天、跨副本准入／取消／配額及 F06 worker 競爭。局部同步 ARCHITECTURE／API，STATUS 移除前輪合併後停止的失效操作範圍。保留 F02 原候選、容量 dirty 成果、既有證據與 P3 三角色承接。
+- Verification：唯讀核 master 063539e、open PR 空；文件 diff／新增相對連結與錨點／原依賴核對。不執行產品、模型、雲端或全量測試，亦未部署。官方交易／Compose／Kubernetes 文件僅核相關設計約束，不當工程驗收。
+- Limitations / Next Action：本次只定案，F02 原 VM 接點、完整聊天及多副本均未因此完成。交付文件後接續 F02；雲端範圍／費用和服務選擇變更仍按有效授權，不推定舊批次餘額。
+
+<a id="log-20261012-f02-vm-wiring"></a>
+## LOG-20261012-F02-VM-WIRING
+
+- Recorded At / Work Date：2026-10-12（Asia/Hong_Kong）。
+- Step / Package：P2-F02，接續 6a87632，整合 master 823cf31；本包未完成／未合併。
+- Actual Work：在原工作樹逐塊解決文件衝突，保留雙方 WORKLOG 與原失敗；新增原 VM 的 Firestore Compose／Caddy、公開 Firebase Web 建置參數、API／worker 無副作用健康入口。移除活動 Hosting config、Cloud Run 專用 Dockerfile 及 source packer，歷史提交保留。
+- Verification：只跑 firebase-app 與 firebase-worker-runtime 中三個相關斷言（健康／未接領域／Node adapter），3／3 通過；Compose 一次 config --no-env-resolution --quiet 通過。未跑全量、E2E、模型或通知；本輪雲端只有資源／IAM 唯讀核查。Caddy 首次因現有 binary file capability 與 cap-drop ALL 不相容，未能啟動；只補 NET_BIND_SERVICE 再離線解析成功。一次實際 firebase-server 映像建置成功（約 338 MB），不建 PostgreSQL；現有依賴 deprecated 警告保留，不做無關升級。
+- Deployment Observation：VM RUNNING／e2-small，期限 2026-10-17 香港 20:50:44；初查 VM 專案身份只有 Vertex role；自動批准審查因未列具體持久角色拒絕首次 IAM 執行（零修改）。使用者其後明確批准六項精確授權，已在五份政策依 etag 最小追加原 VM 身份並讀回一致，原政策留本機；journal 沒有刪除權。Tasks queue PAUSED，兩個香港 Firestore 庫 PITR 關閉；私人／journal buckets soft-delete 14 天。只改已批准 IAM；IAP 唯讀顯示原站仍為 85e3a846、餘 2.1 GB，未部署、上傳 key 或清理雲端資料。
+- Limits / Next：健康只代表程序存活；ADK 聊天仍待 F03。原 VM IAM 已完成；容器實際啟動及 F02 剩餘身份／照片清理仍須完成才可交付。既有驗收不能當未花的預算。

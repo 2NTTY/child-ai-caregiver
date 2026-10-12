@@ -94,7 +94,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
   return async request => {
     try {
       const path = new URL(request.url).pathname;
-      if (path === "/healthz" && request.method === "GET") {
+      if ((path === "/healthz" || path === "/api/health") && request.method === "GET") {
         return json({ status: "ok", storage: "firestore", stage: "foundation" });
       }
       if (path.startsWith("/api/auth/")) return uncached(await auth.handler(request));

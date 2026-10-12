@@ -29,6 +29,10 @@ export function createFirebaseWorkerNodeHandler(options: { workerOrigin: string;
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     try {
       const method = request.method ?? '', path = request.url ?? '';
+      // Process liveness only: no database reads or task dispatch from health probes.
+      if (method === 'GET' && path === '/healthz') {
+        await write(Response.json({ status: 'ok', service: 'firebase-worker' }), response); return;
+      }
       if (method !== 'POST') { await write(rejected(405), response); return; }
       if (!['/internal/task-reminders', '/internal/task-dispatch'].includes(path)) { await write(rejected(404), response); return; }
       const headers = new Headers();

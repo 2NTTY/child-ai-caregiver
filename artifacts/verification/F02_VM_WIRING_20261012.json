@@ -1,0 +1,54 @@
+{
+  "recordedAt": "2026-10-12",
+  "package": "P2-F02",
+  "state": "in_progress_not_delivered",
+  "candidate": "6a876324d34c89c15993d4b33d7fd993618d2ed9",
+  "mergedBaseline": "823cf31fbd4649d2f21ea85856b1ffc5def637f1",
+  "checks": [
+    {
+      "name": "selected Firebase HTTP/worker assertions",
+      "passed": 3,
+      "total": 3,
+      "scope": "health inertness, unmigrated domain rejection, Node adapter"
+    },
+    {
+      "name": "Compose static config",
+      "result": "pass",
+      "runs": 1
+    },
+    {
+      "name": "Caddy offline config",
+      "result": "pass after file capability startup correction",
+      "runs": 2,
+      "first": "binary could not execute; no config check ran"
+    },
+    {
+      "name": "firebase-server image build",
+      "result": "pass",
+      "runs": 1,
+      "image": "yuban-firestore-api:f02-vm",
+      "digest": "sha256:d00f47c88f86a23c83e57b15257c4122091b07e756fd8c82d7cbd52bbfdf06fc",
+      "sizeBytes": 338458225
+    }
+  ],
+  "cloud": {
+    "project": "ai-caregivers-for-children",
+    "vm": "yuban-p1",
+    "vmId": "2846984358678394356",
+    "terminationTime": "2026-10-17T12:50:44Z",
+    "runningProduct": "85e3a846",
+    "rootDiskAvailable": "2.1G",
+    "queue": "PAUSED",
+    "iam": "six specifically approved grants across five policies; readback verified",
+    "resourcesCreated": 0,
+    "modelCalls": 0,
+    "notifications": 0,
+    "productDataMutations": 0
+  },
+  "pending": [
+    "original VM Firestore container startup",
+    "remaining F02 Auth lifecycle and physical photo cleanup",
+    "F03 complete chat and core-domain assembly"
+  ],
+  "limits": "Health probes and image build are not product or Firestore acceptance. Prior full F02 evidence remains unchanged."
+}
