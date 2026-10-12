@@ -257,3 +257,9 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 - 正式 browser 身份使用 Firebase Web SDK 13.0.0 的記憶內 persistence；ID token 只作同源 HttpOnly cookie 交換，不由 client 直讀私人資料。Firebase Functions 7.4.0 接 beforeUserCreated；Cloud Tasks 7.2.1 接持久 outbox dispatcher。既有 Firestore 9.3.1／Admin 14.5.0 不變。Web SDK 的 @firebase/app／auth 要求 Node >=24.12.0，本包把 Node 24 線最低版本同步提高，實際本機使用 24.19.0；不把先前 24.11 的安裝警告當相容證據。
 - Storage 原候選 8.4.0 與現行 ADK 2.1.0 的 optional peer ^7.17.1 衝突；不強裝，採已核對的 7.22.0。該版 FileOptions 雖容許 string，File constructor 仍把 generation 轉 Number；不可用它 pin 超過安全整數的版本。使用公開 File.request／requestStream 的 qs.generation 十進制字串及官方 [Objects:get](https://docs.cloud.google.com/storage/docs/json_api/v1/objects/get)，保留完整版本識別。metadata 先核 generation／size，再有界串流讀取，完整性由 ciphertext SHA-256、既有 AES-GCM 與原內容 hash 核對；寫入仍使用 CRC32C 及 ifGenerationMatch:0。這是已核 SDK／官方接點，真 Storage 實測仍待 F02。
 - 四項新增直接依賴的固定版本、integrity、原始 license／上游 commit 及 lockfile 聲明清單見 [授權 manifest](../licenses/manifest.json)；非全量轉遞依賴審計。Firebase Auth、Functions、Storage、Tasks 不改寫家庭授權、原 opId、取消／unknown 或恢復權威。
+
+### F05 有界檢索與來源保存（2026-10-13）
+
+沿已固定 Firestore 9.3.1、既有 parser／私人來源服務，沒有新增搜尋框架。原生 [向量](https://firebase.google.com/docs/firestore/vector-search) 先套用版本／chunk 適用篩選；Standard 沒有正文搜尋，故在既有資料模型增公共詞彙桶，沿原權重／RRF 查必要桶及選中正文。不是先讀完整語料到 Node 排名；不索引私人正文。變更與權限仍由本工程 authority 交易核對，原前端 client／HTTP 接點復用。
+
+欄位索引的 Firebase CLI manifest 是簡寫；[REST IndexConfig](https://docs.cloud.google.com/firestore/docs/reference/rest/v1/projects.databases.collectionGroups.fields#IndexConfig) 使用 `Index.fields`。部署腳本須轉換 `order/arrayConfig` 為該欄位的 fields 項，PATCH 只更新 indexConfig、不改 TTL。文件核對不是原生通過證據；本包實測見 WORKLOG 的 F05 專項。

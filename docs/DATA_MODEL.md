@@ -663,6 +663,17 @@ canonical authority 的 runTransaction 擁有真 Firestore 回調，每次 SDK �
 - 帳戶 secret receipt 經獨立加密 pointer 查回，後續登入失效不妨礙本人核對原操作。原批次的期滿／權限變更不能靜默生成新刪除操作；需要重新核對或續辦同一已確認 intent。
 - F07 必須擴充各已遷移格式及三種 journal 的隔離還原。當前舊還原器遇範圍刪除 journal 明確拒絕，不能當照片刪除忽略；不以 F04 清理通過宣稱還原防復活已完成。
 
+<a id="firestore-knowledge-sources"></a>
+#### 知識及私人來源
+
+公共版本保存不可變 chunk metadata、適用條件及正文；`knowledge_lexical` 是公共正文／標題／主題的可重建分桶投影，`knowledge_vectors` 是依輸入 hash 及處理版本復用的向量／claim。公共索引不包含私人資料。發布前完整建立投影與向量，原子更新來源指向；查詢只讀受信來源清單、有界候選及選中正文，回傳前再核目前發布與 observation。
+
+`knowledge_watches`、`knowledge_observations`、`knowledge_observation_parts` 與 `knowledge_checks` 分開來源設定、目前觀察、原文分段及領取／重試。語義核准綁定來源設定版本、觀察 hash 和成果版本；改設定、正式失效或原文含義變更不能沿用舊批准。暫時取得失敗保持最後成功觀察及其日期，不假造已核對新版。
+
+`shared_inputs` 是本人／孩子範圍內加密的私人來源；`shared_input_parts` 依同一來源版本分段保存正文；`shared_input_management_revisions` 保存有界讀取的管理歷史。正文及 URL 不建公共索引；query projection 只含 opaque scope tags、ID、live／版本及排序欄位。個別來源刪除後原收據正文、選段及修訂讀取一併關閉；範圍清理涵蓋三個 collections，歷史不成為可獨立修改的來源。
+
+原 online 收據對私人來源使用 ID／版本 pointer，解參考須重核目前授權、live 及版本；不能用舊 create 收據繞過刪除或讀到不同版本。領域寫入、修訂、changes 與收據仍在原 authority 交易，取得外部資料／模型呼叫在交易外。備份登記包含上述 collections；F07 還原須逐格式重綁，未接 codec 仍拒絕完成。
+
 #### 隔離還原的加密閉包
 
 Firestore 的文件名稱及部分操作 ID 使用不可逆 hash；備份不能假定操作者仍有原請求或最新資料庫。因此新 domain／authority envelope 附加加密 recovery locator，記錄原 family、kind、ID、scope、格式／記錄版本及 AAD；locator 自身綁 project、namespace 及主密文 SHA-256。還原時須重建並核對原 AAD、驗證兩層密文及 collection／kind／ID 對照，才可解讀；缺 locator、未知格式或未覆蓋的 collection 明確阻止還原完成。普通業務讀取仍只使用目前授權 scope 的原 AAD，不能用 locator 繞過授權；合法舊 envelope 的普通讀取保持相容。

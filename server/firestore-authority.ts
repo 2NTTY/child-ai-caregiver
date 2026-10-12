@@ -338,7 +338,8 @@ export class FirestoreAuthority {
     });
   }
   /** Operator-only lifecycle control. Never exposed through a public handler or Agent tool. */
-  async readControl(): Promise<{ generation: string; enabled: boolean }> {
+  async readControl(transaction?: Transaction): Promise<{ generation: string; enabled: boolean }> {
+    if (transaction) return this.control(transaction, false);
     return this.options.database.runTransaction(tx => this.control(tx, false), { readOnly: true });
   }
   async issueInvitation(raw: { email: string; expiresAt: string; operationId: string }): Promise<Invitation> {

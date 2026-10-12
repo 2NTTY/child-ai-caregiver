@@ -1944,6 +1944,192 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_observations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "watchId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sourcePublishedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "sourceId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_inputs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "live",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "entityId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_inputs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "live",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_input_management_revisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entityId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entityVersion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_inputs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_input_parts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_input_management_revisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -2279,6 +2465,93 @@
     },
     {
       "collectionGroup": "yuban_authority_erasure_receipts",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_lexical",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_vectors",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_watches",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_observation_parts",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_observations",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_checks",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_versions",
+      "fieldPath": "versionId",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_observations",
+      "fieldPath": "lastSuccessfulCheckAt",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_knowledge_checks",
+      "fieldPath": "checkedAt",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_inputs",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_input_parts",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_shared_input_management_revisions",
       "fieldPath": "*",
       "indexes": []
     }

@@ -10,7 +10,7 @@ function compareId(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 
-export function knowledgeTokens(text: string, question = false): Set<string> {
+export function knowledgeIndexTokens(text: string, question = false): Set<string> {
   let normalized = text.normalize("NFKC").toLowerCase();
   if (question) normalized = normalized.replace(QUESTION_PHRASES, " ").replace(QUESTION_PARTICLES, "");
   const result = new Set<string>();
@@ -22,7 +22,11 @@ export function knowledgeTokens(text: string, question = false): Set<string> {
     }
     for (let index = 0; index + 1 < word.length; index++) result.add(word.slice(index, index + 2));
   }
-  return new Set([...result].slice(0, 64));
+  return result;
+}
+
+export function knowledgeTokens(text: string, question = false): Set<string> {
+  return new Set([...knowledgeIndexTokens(text, question)].slice(0, 64));
 }
 
 function matches(query: ReadonlySet<string>, text: string): number {

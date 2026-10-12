@@ -3,6 +3,7 @@ import type { OnlineReceipt, OnlineSubmission } from "../src/shared/online.ts";
 import type { FirestoreAuthorityTransaction } from "./firestore-authority.ts";
 import type { WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
 import { onlineIdentitySchema } from "./online-routing.ts";
+import { createFirestoreSharedInputStore } from './firestore-shared-inputs.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreChangeSchema,
   type FirestoreDomainOptions } from "./firestore-domain-data.ts";
 
@@ -17,6 +18,8 @@ export const firestoreOnlineRecordSchema = z.union([firestoreOnlineConfirmedSche
 export const firestoreOnlineErasureBarrierSchema = z.object({ state: z.literal("erasure_barrier"), ownerUserId: z.string().min(1).max(256),
   operationId: z.uuid(), childId: z.uuid(), assetId: z.uuid(), intentSha256: z.string().regex(/^[a-f0-9]{64}$/u) }).strict();
 const storedRecordSchema = z.union([firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema]);
+const privateInputPointerSchema = z.object({ format: z.literal('private-input-receipt:1'), id: z.uuid(), version: z.number().int().positive(),
+  recordId: z.uuid().optional() }).strict();
 export type FirestoreOnlineConfirmed = z.infer<typeof firestoreOnlineConfirmedSchema>;
 export type FirestoreOnlinePending = z.infer<typeof firestoreOnlinePendingSchema>;
 export type FirestoreOnlineRecord = z.infer<typeof firestoreOnlineRecordSchema>;
@@ -65,10 +68,29 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
     return record;
   }
   async function disclose(binding: FirestoreAuthorityTransaction, record: FirestoreOnlineRecord): Promise<OnlineReceipt | { state: "unconfirmed" }> {
-    const visible = record.childId === null || await binding.readChild(record.childId) !== null;
+    let visible = record.childId === null || await binding.readChild(record.childId) !== null;
     if (isFirestoreOnlinePending(record)) return { state: "unconfirmed" };
+    let result = record.result;
+    // A deleted private source cannot reappear through a saved create/manage receipt.
+    if (visible && /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(record.path) && record.result !== null) {
+      const pointer = privateInputPointerSchema.safeParse(result), legacy = result as { input?: { id?: unknown } };
+      if (pointer.success || legacy.input) {
+        const id = pointer.success ? pointer.data.id : domainParse(z.uuid(), legacy.input!.id, 'receipt_binding', 500);
+        const current = await binding.transaction.get(data.ref('shared_inputs', 'shared-input', id));
+        const tags = data.tags({ ...binding.scope, childId: record.childId! });
+        visible = current.exists && current.get('live') === true && Object.entries(tags).every(([key, value]) => current.get(key) === value);
+        if (pointer.success && visible) {
+          // Later edits require a current-resource read; never return a newer body as the old operation result.
+          visible = current.get('recordVersion') === pointer.data.version;
+          if (visible) {
+            const input = await createFirestoreSharedInputStore(options).read({ ...binding, scope: { ...binding.scope, childId: record.childId! } }, id);
+            result = { input, ...(pointer.data.recordId ? { recordId: pointer.data.recordId } : {}) };
+          }
+        }
+      }
+    }
     return { state: "confirmed", path: record.path, operation: record.operation, changeSeq: record.changeSeq,
-      statusCode: record.statusCode, result: visible ? record.result : null };
+      statusCode: record.statusCode, result: visible ? result : null };
   }
   function prepare(binding: FirestoreAuthorityTransaction, value: FirestoreOnlineRecord, replace: boolean, restoredRedaction = false) {
     const record = domainParse(firestoreOnlineRecordSchema, value, "receipt_binding", 500);
@@ -101,7 +123,13 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
       changeSeq: value.changeSeq, statusCode: value.statusCode, result: value.result };
     const receipt: OnlineReceipt = { state: "confirmed", path: record.path, operation: record.operation,
       changeSeq: record.changeSeq, statusCode: record.statusCode, result: record.result };
-    return { record, receipt, commit: prepare(binding, record, replace) };
+    let saved = record;
+    if (/^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(record.path) && value.result && typeof value.result === 'object' && 'input' in value.result) {
+      const result = value.result as { input: { id: string; version: number }; recordId?: string };
+      saved = { ...record, result: privateInputPointerSchema.parse({ format: 'private-input-receipt:1', id: result.input.id,
+        version: result.input.version, ...(result.recordId ? { recordId: result.recordId } : {}) }) };
+    }
+    return { record: saved, receipt, commit: prepare(binding, saved, replace) };
   }
   function prepareRedaction(binding: FirestoreAuthorityTransaction, record: FirestoreOnlineConfirmed) {
     return prepare(binding, { ...record, result: null }, true, true);

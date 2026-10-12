@@ -6,6 +6,7 @@ import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash } f
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 import { FirestoreFamilyDocumentSnapshots, firestoreSnapshotManifestSchema } from './firestore-family-document-snapshots.ts';
 import { firestorePhotoSchemas, type createFirestorePhotoStore } from './firestore-photos.ts';
+import { createFirestoreSharedInputStore } from './firestore-shared-inputs.ts';
 
 /** Product sections only. Auth credentials, model keys, protocol state and cost/admission ledgers are never exported. */
 const sections = {
@@ -24,6 +25,8 @@ const sections = {
   documents: ['documents', ['family-document']], document_versions: ['document_snapshots', ['document-snapshot']],
   document_content: ['document_snapshots', ['document-snapshot']],
   photos: ['photos', ['photo']], photo_content: ['photos', ['photo']],
+  private_sources: ['shared_inputs', ['shared-input', 'shared-input-tombstone']],
+  private_source_history: ['shared_input_management_revisions', ['shared-input-management']],
 } as const;
 const global = new Set(['manifest', 'account', 'children']);
 const querySchema = z.object({ section: z.string().max(80), childId: z.uuid().optional(),
@@ -77,7 +80,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
           const body = row.data(), opened = openRecoveryEnvelope({ ...options, locator: body.recovery,
             envelope: { family: 'domain', version: body.version, recordVersion: body.recordVersion, ciphertext: body.ciphertext } });
           const { context, value } = opened;
-          const storageKind = context.kind === 'care-tombstone' ? 'care-record' : context.kind === 'memory-tombstone'
+          const storageKind = context.kind === 'shared-input-tombstone' ? 'shared-input' : context.kind === 'care-tombstone' ? 'care-record' : context.kind === 'memory-tombstone'
             ? suffix === 'memory_facts' ? 'memory-fact' : 'memory-topic' : context.kind;
           if (!(kinds as readonly string[]).includes(context.kind) || data.ref(suffix, storageKind, context.id).path !== row.ref.path
             || context.scope.ownerUserId !== owner || context.scope.workspaceId !== binding.scope.workspaceId
@@ -99,6 +102,14 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             } else items.push({ id: photo.id, childId: photo.scope.childId, metadata: photo.metadata, version: photo.version,
               state: photo.state, visibility: photo.visibility ?? 'private', recordId: photo.recordId ?? null,
               extraction: photo.extraction ? { state: photo.extraction.state, draft: photo.extraction.draft, processedAt: photo.extraction.processedAt } : null });
+          } else if (section === 'private_sources' && context.kind === 'shared-input') {
+            items.push(await createFirestoreSharedInputStore(options).read(binding, context.id));
+          } else if (section === 'private_source_history') {
+            const id = z.object({ inputId: z.uuid() }).parse(value).inputId;
+            const parent = await binding.transaction.get(data.ref('shared_inputs', 'shared-input', id));
+            if (parent.exists && parent.get('live') === true) {
+              await createFirestoreSharedInputStore(options).read(binding, id); items.push(value);
+            }
           } else if (!context.kind.endsWith('tombstone')) items.push(value);
         }
         if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,

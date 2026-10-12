@@ -34,13 +34,21 @@ try {
       if (!/^yuban_authority(?:_[a-z_]+)?$/u.test(entry.collectionGroup)
         || !(entry.fieldPath === '*' || /^[a-zA-Z][a-zA-Z0-9_]*$/u.test(entry.fieldPath))
         || !Array.isArray(entry.indexes)) throw Error('field_exemption_scope');
-      // Existing explicitly indexed routing fields are not part of the new exclusion operation.
-      if (entry.indexes.length) continue;
+      // F05 metadata cursors require explicit indexes under collection-wide exclusions.
+      const f05Field = ['yuban_authority_knowledge_versions:versionId', 'yuban_authority_knowledge_observations:lastSuccessfulCheckAt',
+        'yuban_authority_knowledge_checks:checkedAt'].includes(entry.collectionGroup + ':' + entry.fieldPath);
+      if (entry.indexes.length && !f05Field) continue;
       const url = base + '/collectionGroups/' + entry.collectionGroup + '/fields/' + entry.fieldPath;
       const field = (await client.request({ url, retry: false })).data;
-      if (field.indexConfig && field.indexConfig.usesAncestorConfig !== true && (field.indexConfig.indexes?.length ?? 0) === 0) continue;
-      const operation = (await client.request({ method: 'PATCH', url, params: { updateMask: 'indexConfig' }, data: { indexConfig: { indexes: [] } }, retry: false })).data;
-      console.info(JSON.stringify({ excludedCollection: entry.collectionGroup, field: entry.fieldPath, accepted: Boolean(operation.name) }));
+      const actual = (field.indexConfig?.indexes ?? []).map(({ queryScope, fields }) => {
+        const indexed = fields?.find(value => value.fieldPath === entry.fieldPath);
+        return { queryScope, ...(indexed?.order ? { order: indexed.order } : {}), ...(indexed?.arrayConfig ? { arrayConfig: indexed.arrayConfig } : {}) };
+      });
+      if (field.indexConfig && field.indexConfig.usesAncestorConfig !== true && canonical(actual) === canonical(entry.indexes)) continue;
+      // Firebase CLI field overrides are shorthand; the REST API requires Index.fields.
+      const indexes = entry.indexes.map(({ queryScope, ...configuration }) => ({ queryScope, fields: [{ fieldPath: entry.fieldPath, ...configuration }] }));
+      const operation = (await client.request({ method: 'PATCH', url, params: { updateMask: 'indexConfig' }, data: { indexConfig: { indexes } }, retry: false })).data;
+      console.info(JSON.stringify({ configuredCollection: entry.collectionGroup, field: entry.fieldPath, accepted: Boolean(operation.name) }));
     }
   }
 } catch (error) {

@@ -1,0 +1,71 @@
+{
+  "package": "P2-F05",
+  "recordedDate": "2026-10-13",
+  "timezone": "Asia/Hong_Kong",
+  "baseCommit": "d0d8c630539e0a336899b2d068db22e000dff1e1",
+  "status": "data-paths-verified-not-deployed",
+  "scope": "Firestore public knowledge, full-body lexical postings, version/observation gates and private sources through the existing frontend/client/Agent contracts.",
+  "checks": [
+    {
+      "kind": "focused-local",
+      "state": "passed",
+      "scenarios": [
+        "Two selected existing knowledge checks: full-body keyword scoring and publication recheck.",
+        "One source-observation scenario: version gating, unavailable source and unchanged vector reuse.",
+        "One existing-client to in-process HTTP scenario: shared private-source authority, Agent edits, management history, original receipt, isolation and deletion."
+      ],
+      "limits": "Firestore/Auth fixtures, not cloud, browser or model evidence. No full suite, build or lint. Only affected-file type diagnostics and script syntax were checked; fixture Auth typing errors were corrected."
+    },
+    {
+      "kind": "native-indexes",
+      "state": "ready",
+      "database": "yuban-firebase-20261011",
+      "addedCompositeIndexes": 7,
+      "totalCompositeIndexes": 80,
+      "missingOrBuilding": 0,
+      "fieldIndexConfiguration": "Required cursor fields and collection exclusions applied; no TTL changes or index deletions.",
+      "failurePreserved": "Initial REST field update returned 400 because Firebase CLI shorthand order was not converted to Index.fields. Composite additions were retained; only unfinished field configuration resumed after correction."
+    },
+    {
+      "kind": "native-data-scene",
+      "run": "c984f42b-c281-410e-b23d-2824913fefe6",
+      "state": "stopped-at-generic-cleanup-bound",
+      "businessCalls": 96,
+      "maximumBusinessCalls": 110,
+      "passed": [
+        "Native vector and keyword retrieval with exact source/version references.",
+        "Changed observation fences old evidence; new version reuses the unchanged vector.",
+        "Transient source failure preserves valid publication; unavailable source is withheld.",
+        "Private source original-operation deduplication, authorized excerpt, reconnect readback, peer isolation and export.",
+        "Private source deletion hides original receipts and the active list."
+      ],
+      "failure": "cleanup_incomplete: verifier allowed 40 cleanup pages, fewer than the complete registered generic collection sequence. Data checks had already passed; no product assertion was changed or rerun.",
+      "controlRestoredPaused": true,
+      "models": 0,
+      "embeddings": 0,
+      "externalSourceFetches": 0,
+      "notifications": 0,
+      "deployments": 0,
+      "limits": "Fixed synthetic 1024-dimensional vectors and scripted observations; not real embedding quality, semantic review, external source availability or UI evidence. Two product authority identities, no Firebase Auth accounts. Public synthetic source and watch were disabled."
+    },
+    {
+      "kind": "remaining-budget-closeout",
+      "state": "passed",
+      "businessCalls": 7,
+      "combinedBusinessCalls": 103,
+      "newPrivateSourceDataErased": true,
+      "syntheticIdentitiesRevoked": true,
+      "controlRestoredPaused": true,
+      "scope": "Only known newly created private-source records and the same synthetic identities. Combined business-call cap remains 110; no repeated data checks.",
+      "genericCleanup": "Remaining generic erasure stages must resume in F06. Do not report the full erasure job as completed."
+    }
+  ],
+  "review": "Astra primary reviewed read-before-write transactions, source/version applicability, public-only lexical indexing, private-source scope and receipt disclosure, export/erasure registration, CLI budget and original frontend/Agent integration. No subagents or Computer Use.",
+  "deferred": [
+    "F06 connects scheduled source observations and remaining durable background consumers, including the existing generic erasure continuation.",
+    "F07 adds every new restore codec and independent journal replay; current restoration fails closed on unsupported formats.",
+    "F08 performs actual user/Agent and original-site acceptance; no deployment occurred here.",
+    "P3 autonomous knowledge maintenance and model review roles remain unimplemented."
+  ],
+  "cost": "Original data-only estimate below USD 0.05, not a measured invoice. No model or embedding calls; additional index/storage costs are usage dependent. A proposed increase to 140 business calls was rejected before editing or execution; the closeout instead stays within the original combined 110-call limit."
+}

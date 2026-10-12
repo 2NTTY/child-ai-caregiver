@@ -2418,3 +2418,13 @@
 - Local Verification：三個必要資料情景通過：文件與 Agent 保存／確認、照片提取／確認、帳戶 client → HTTP → fixture 的匯出／刪除／原操作屏障。照片 fixture 的孩子 ID、HTTP fixture 漏 Auth handler 曾失敗，局部修正；清理漏 owner-wide 建立孩子收據的實作問題已修正。只作所改檔案型別、腳本語法及 diff 檢查，沒有全量、模型、瀏覽器或部署。
 - Native Verification：27 個 composite indexes 及私密欄位排除完成，總計 73 READY。首批 17 呼叫因腳本漏 confirmShared 被原 schema 拒絕，立即停批並恢復暫停，文件未修改。使用者明確批准剩餘項後，沿同兩個身份／孩子／文件，87 呼叫通過修改、防重、隔離、重連、附件匯出及獨立 journal 清理。一次唯讀進度查詢遇未索引 userTag，未建索引或重試，沒有影響主批次。共 105 業務／診斷呼叫；原失敗保留，見 [EV](artifacts/verification/F04_FIRESTORE_FILES_20261013.json)。
 - Cleanup / Limits：只清本次合成孩子及圖片，測試身份撤銷、control 恢復暫停，原資料／備份保留；零 Auth 帳號建立、模型、embedding、通知或部署。估算不是帳單。完整前端／原站及真再驗證由 F08 收束；F06 接排程清理／報告刷新和其餘領域匯出，F07 接完整恢復及新 journal 重放。當前未接還原類型明確拒絕，不能把 F04 清理通過當成還原成功；原本恢復不得復活刪除資料的門檻保留。
+
+<a id="log-20261013-f05-knowledge"></a>
+## LOG-20261013-F05-KNOWLEDGE
+
+- Recorded At / Package：2026-10-13（Asia/Hong_Kong）；P2-F05，基線 d0d8c63，分支 codex/p2-f05-firestore-knowledge。Astra 主模型独立實作、review 及驗收，無子代理／Computer Use。
+- Actual Work：Firestore 公共正文詞彙桶及原生向量混合檢索，版本／觀察／使用範圍發布閘、來源原文分段與有限重試、相容向量復用、維護用量及 CLI；私人來源接原 client／HTTP／owner、Agent 候選、選段授權、管理修訂、匯出及刪除。原 Prompt Pack、前端設計與來源 parser 復用，無 SQL fallback。
+- Local Verification：只跑兩個既有檢索檢查、一條來源觀察情景、一條原 client→HTTP→fixture 私人來源流程；選定檔案型別、腳本語法及 diff 檢查。Auth fixture 型別診斷修正後通過，沒有全量 lint／build／typecheck／測試。
+- Native Verification：新增 7 個 composite indexes，80 個全部 READY；欄位索引初次 400 是 CLI manifest 與 REST Index.fields 的編碼差異，修正後只續未完設定。資料情景使用固定合成向量／觀察，真向量與關鍵詞、換版停用、向量復用、私人來源保存／原收據／重連／隔離／匯出／刪除均通過；96 呼叫後因腳本清理只容許 40 頁而停止，control 恢復暫停。舊失敗不改写。
+- Closeout：提高上限至 140 的提案被自動批准審查拒絕，沒有修改或執行。改用原批准內剩餘 7 呼叫，核對本次來源正文／全部分段／管理修訂已不存在、撤銷两個合成權限身份及恢復暫停。合計 103／110；原通用 erasure 台帳尚未 completed，由 F06 沿同一 operation／cursor 完成。沒有重跑通過項或新建樣例。詳見 [F05 EV](artifacts/verification/F05_FIRESTORE_KNOWLEDGE_20261013.json)。
+- Limits / Next：零模型／embedding／真來源 GET／通知／瀏覽器／部署，固定向量不代替語義品質驗收，估算低於 US$0.05、帳單未知。F06 接來源排程及剩餘背景／清理；F07 接全部恢復 codec，未知格式仍拒絕；F08 接原站及完整 Agent。使用者已對本主聊天後續同類最低必要驗收給予免逐次詢問授權，次數／成本及外發邊界仍保留。
