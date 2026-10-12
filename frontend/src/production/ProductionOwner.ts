@@ -73,6 +73,7 @@ export class ProductionOwner {
     }
     const recordsApi = api ?? createRecordsApi(this.apiBaseUrl, fetch, firebaseIdentity);
     const account = firebaseIdentity ? { ...accountDependencies, legacyTrial: false,
+      reauthentication: firebaseIdentity,
       authApi: createAccountAuthApi(this.apiBaseUrl, fetch, firebaseIdentity) } : accountDependencies;
     this.accountOwner = new AccountServiceOwner(this.apiBaseUrl, online, () => { void this.controller.restoreSession(); }, () => { void this.controller.restoreSession(); }, account);
     this.chatController = new ChatController(chatApi ?? createChatApi(this.apiBaseUrl, async signal => {

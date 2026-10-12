@@ -13,7 +13,8 @@ export interface AccountServiceSnapshot {
   download: { phase: "idle" | "partial" | "complete" | "error"; parts: number; message: string | null };
   deletion: { phase: "idle" | "prepared" | "unknown" | "completed"; childCount: number | null; attachmentsPending: boolean; message: string | null };
 }
-export interface AccountServiceDependencies { api?: ReturnType<typeof createAccountApi>; authApi?: ReturnType<typeof createAccountAuthApi>; legacyTrial?: boolean }
+export interface AccountServiceDependencies { api?: ReturnType<typeof createAccountApi>; authApi?: ReturnType<typeof createAccountAuthApi>; legacyTrial?: boolean;
+  reauthentication?: { reauthenticate(userId: string, password: string, signal: AbortSignal): Promise<void> } }
 export interface ParsedAccountCallback { kind: "verified" | "reset" | "invalid"; token: string | null; cleanUrl: string }
 /** Only the callback marker and opaque token are consumed; remote error text is never displayed. */
 export function parseAccountCallback(value: string): ParsedAccountCallback | null {
@@ -65,7 +66,7 @@ export class AccountServiceOwner {
   private readonly listeners = new Set<() => void>();
   constructor(baseUrl: string, online: boolean, onDeleted: () => void, onAccessLost: () => void, dependencies: AccountServiceDependencies = {}) {
     this.onDeleted = onDeleted; this.onAccessLost = onAccessLost;
-    this.api = dependencies.api ?? createAccountApi(baseUrl); this.authApi = dependencies.authApi ?? createAccountAuthApi(baseUrl);
+    this.api = dependencies.api ?? createAccountApi(baseUrl, fetch, dependencies.reauthentication); this.authApi = dependencies.authApi ?? createAccountAuthApi(baseUrl);
     this.legacyTrial = dependencies.legacyTrial === true; this.snapshot = initial(online);
   }
   getSnapshot = () => this.snapshot;
@@ -177,7 +178,8 @@ export class AccountServiceOwner {
     const ticket = this.begin("delete"); if (!ticket?.userId) return;
     this.update({ deletion: { ...this.snapshot.deletion, phase: "unknown", message: "正在確認原退出操作；確認完成前請保留此頁。" } });
     try { const result = await this.api.executeDeletion(ticket.userId, { password, confirmation }, ticket.controller.signal);
-      if (this.current(ticket)) result.state === "completed" ? this.confirmCompleted(result) : this.update({ deletion: { ...this.snapshot.deletion, phase: "unknown", message: "Server 尚未確認刪除完成，請查核原結果。" } }); }
+      if (this.current(ticket)) result.state === "completed" ? this.confirmCompleted(result) : this.update({ deletion: { ...this.snapshot.deletion, phase: "unknown",
+        message: result.state === 'processing' ? '帳戶存取已停止，Server 正在分批清理；請查核原結果，不要重新提交。' : "Server 尚未確認刪除完成，請查核原結果。" } }); }
     catch (error) { if (this.current(ticket)) { const definite = error instanceof AccountApiError && ["password_verification_failed", "erasure_receipt_expired", "account_scope_changed", "invalid_input"].includes(error.code ?? "") && error.status >= 400 && error.status < 500;
       this.update({ deletion: { ...this.snapshot.deletion, phase: definite ? "prepared" : "unknown", message: errorMessage(error) } }); } }
     finally { this.finish(ticket); }
@@ -194,6 +196,8 @@ export class AccountServiceOwner {
       const result = await this.api.deletionStatus(this.receipt, ticket.controller.signal);
       if (!this.current(ticket)) return;
       if (result.state === "completed") this.confirmCompleted(result);
+      else if (result.state === 'processing') this.update({ deletion: { ...this.snapshot.deletion, phase: 'unknown', attachmentsPending: true,
+        message: '帳戶存取已停止，Server 正在分批清理；請查核原結果，不要重新提交。' } });
       else if (ticket.userId) {
         const prepared = await this.api.prepareDeletion(ticket.userId, ticket.controller.signal, this.receipt.operationId);
         if (!this.current(ticket)) return;

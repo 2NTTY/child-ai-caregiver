@@ -28,6 +28,7 @@ export interface FirestoreCareStore extends CareStore {
   listRecords(userId: string, childId: string): Promise<{ records: CareRecord[]; limit: number }>;
   readRecord(binding: Binding, id: string): Promise<CareRecord | null>;
   readProfile(binding: Binding): Promise<ChildProfile>;
+  prepareDeletion(binding: Binding, id: string, expectedVersion: number, operationId: string): Promise<Prepared<boolean>>;
   prepareRecord(binding: Binding, operationId: string, values: CareValues, options?: {
     id?: string; expectedVersion?: number; reason?: string; basis?: 'explicit' | 'preauthorized_user_statement';
   }): Promise<Prepared<CareRecord>>;
@@ -175,6 +176,7 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
     },
   };
   const store: FirestoreCareStore = {
+    prepareDeletion: prepareDelete,
     async listRecords(userId, childId) {
       return authority.runTransaction(userId, childId, async binding => {
         const rows = await binding.transaction.get(scoped(binding, 'care_records').where('live', '==', true)

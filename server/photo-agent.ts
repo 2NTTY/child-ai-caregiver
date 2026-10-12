@@ -2,7 +2,7 @@ import { photoDraftSchema, type PhotoDraft } from "../src/shared/photos.ts";
 import type { createAgentRuntime } from "./agent-runtime.ts";
 import type { PhotoStore } from "./photo-store.ts";
 
-export function createPhotoAgent(store:PhotoStore,runtime:ReturnType<typeof createAgentRuntime>) {
+export function createPhotoAgent(store:Pick<PhotoStore, 'claimExtraction' | 'extractionAuthorized' | 'finishExtraction' | 'content'>,runtime:ReturnType<typeof createAgentRuntime>) {
   return {async extract(userId:string,childId:string,id:string,expectedVersion:number,signal:AbortSignal,isCurrentUser:()=>Promise<boolean>) {
     const claim=await store.claimExtraction(userId,childId,id,expectedVersion);
     if(!claim||!claim.created||!claim.scope)return claim?.photo??null;

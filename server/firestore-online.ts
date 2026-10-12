@@ -16,6 +16,7 @@ import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, fi
   sealFirestoreReminderOutbox, type FirestoreDomainOptions, type FirestoreReminderOutbox } from './firestore-domain-data.ts';
 
 import { createFirestoreOnlineReceipts, isFirestoreOnlinePending } from './firestore-online-receipts.ts';
+import { prepareContextChange } from './firestore-context-basis.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const decimal = firestoreChangeSchema.shape.changeSeq, uuid = z.uuid();
@@ -61,7 +62,8 @@ export interface FirestoreOnlineMutation {
   }>;
 }
 export interface FirestoreOnlineOptions extends FirestoreDomainOptions {
-  photos?: FirestoreOnlinePhotosPort; reminders?: FirestoreOnlineReminderViewPort; mutations?: readonly FirestoreOnlineMutation[];
+  photos?: FirestoreOnlinePhotosPort; erasures?: FirestoreOnlinePhotosPort;
+  reminders?: FirestoreOnlineReminderViewPort; mutations?: readonly FirestoreOnlineMutation[];
 }
 export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): FirestoreOnlineStore {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), receipts = createFirestoreOnlineReceipts(options);
@@ -189,6 +191,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
       taskId: task.id, occurrenceId: task.occurrence.id, taskVersion: task.version, dueAt: task.occurrence.dueAt, ...scope,
       authorizationVersion: binding.authorizationVersion, generation: binding.generation, state: 'pending', attempts: 0, failures: 0, lease: null } : null;
     const prepared = await binding.prepareChange(operationId, 'tasks', false, childId);
+    const invalidateDocuments = await prepareContextChange(data, binding);
     const taskEnvelope = { ...data.tags(scope), taskId: task.id, ...data.seal('task', task.id, scope, firestoreTaskSchema, task, task.version) };
     const revisionEnvelope = { ...data.tags(scope), taskId: task.id, taskVersion: task.version,
       ...data.seal('task-revision', revisionId, scope, firestoreTaskRevisionSchema, revision, task.version) };
@@ -196,7 +199,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
       ? sealOutbox(oldOutbox.id, scope, { ...oldOutbox.job, state: 'cancelled', lease: null }) : null;
     const outboxEnvelope = outbox ? sealOutbox(outboxId, scope, outbox) : null;
     return { task, changeSeq: prepared.changeSeq, commit() {
-      prepared.commit(); binding.transaction.set(data.ref('tasks', 'task', task.id), taskEnvelope);
+      prepared.commit(); invalidateDocuments(); binding.transaction.set(data.ref('tasks', 'task', task.id), taskEnvelope);
       binding.transaction.create(revisionRef, revisionEnvelope);
       if (cancelled && oldOutbox) binding.transaction.set(oldOutbox.ref, cancelled);
       if (outboxEnvelope) binding.transaction.create(outboxRef, outboxEnvelope);
@@ -277,7 +280,9 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     },
     async submit(userId, raw) {
       const submission = domainParse(onlineSubmissionSchema, raw);
-      if (options.photos && /^\/api\/children\/[0-9a-f-]{36}\/photos(?:\/[0-9a-f-]{36}\/delete)?$/iu.test(submission.path))
+      if (options.erasures && /^\/api\/children\/[0-9a-f-]{36}\/delete$/iu.test(submission.path))
+        return options.erasures.submitOnline(userId, submission);
+      if (options.photos && /^\/api\/children\/[0-9a-f-]{36}\/photos(?:\/[0-9a-f-]{36}\/(delete|confirm))?$/iu.test(submission.path))
         return options.photos.submitOnline(userId, submission);
       return authority.runTransaction(userId, null, async binding => {
         // Caller-wide identity is checked before looking at a changed command's target resource.

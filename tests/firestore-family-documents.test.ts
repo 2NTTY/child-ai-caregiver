@@ -46,8 +46,8 @@ test('canonical task-backed preparation document supports reads, typed patches, 
   const f = fixture(); await f.initialize(); const child = await f.identity(), task = await f.task(child.id), opId = randomUUID();
   let item = (await f.store.create('synthetic-owner', child.id, request, opId))!;
   assert.equal(item.readState, 'ready'); assert.equal(item.autoRefresh, false); assert.equal(item.current!.ageLabel, '年齡未確認');
-  assert.equal(item.current!.coverageNote, '目前最多核對按識別排列的首 50 項照護事項，並非完整來源；超出此範圍的事項，以及孩子資料、照護記錄、記憶及關注尚未納入，請自行核對。');
-  assert.deepEqual(item.current!.sources.map(source => source.resourceId), [task.id]); assert.equal(item.current!.reportCoverage, undefined);
+  assert.equal(item.current!.coverageNote.includes('尚未納入'), false);
+  assert.deepEqual(item.current!.sources.map(source => source.resourceId), [child.id, task.id]); assert.equal(item.current!.reportCoverage, undefined);
   const first = item, before = [...f.fake.records]; assert.deepEqual(await f.store.create('synthetic-owner', child.id, request, opId), item);
   assert.deepEqual([...f.fake.records], before);
   assert.deepEqual(await f.store.operationReceipt('synthetic-owner', child.id, opId), { operationId: opId, documentId: item.id, savedVersion: 1 });
@@ -80,7 +80,7 @@ test('document operation identity binds the complete action/payload/child per ow
   const other = await f.identity('another-owner', 'another@example.test'); const otherItem = (await f.store.create('another-owner', other.id, request, opId))!;
   assert.notEqual(otherItem.id, item.id); assert.equal(await f.store.operationReceipt('another-owner', child.id, opId), null);
   await assert.rejects(f.store.get('another-owner', child.id, item.id));
-  await assert.rejects(f.store.create('synthetic-owner', child.id, { ...request, kind: 'growth_report', purpose: 'family' }, randomUUID()), rejects('domain_not_ready', 503));
+  assert.equal((await f.store.create('synthetic-owner', child.id, { ...request, kind: 'growth_report', purpose: 'family' }, randomUUID()))?.report?.phase, 'building');
 });
 
 test('source changes invalidate old bodies and receipts; provenance gates stale patches, version/authority guards remain zero-write', async () => {

@@ -19,7 +19,9 @@ export interface FirebaseIdentitySdk {
   confirmReset(token: string, password: string): Promise<void>;
   clear(): Promise<void>;
 }
-export interface FirebaseClientAuthApi extends RecordsIdentityAdapter, AccountIdentityAdapter {}
+export interface FirebaseClientAuthApi extends RecordsIdentityAdapter, AccountIdentityAdapter {
+  reauthenticate(userId: string, password: string, signal: AbortSignal): Promise<void>;
+}
 interface Options { baseUrl: string; publicOrigin: string; config: FirebasePublicConfig; fetcher?: typeof fetch; sdk?: FirebaseIdentitySdk }
 type AuthenticationStage = "provider_clear" | "session_read" | "sign_in" | "sign_up" | "update_name" | "identity_check" | "token" | "exchange";
 interface Ticket { generation: number; signal: AbortSignal; authenticationStage?: AuthenticationStage }
@@ -135,6 +137,17 @@ export function createFirebaseAuthApi(options: Options): FirebaseClientAuthApi {
     await response.body?.cancel();
   }
   const api: FirebaseClientAuthApi = {
+    reauthenticate: (userId, password, signal) => run(signal, async ticket => {
+      try {
+        const original = await server.getSession(ticket.signal); guard(ticket);
+        if (!original || original.id !== userId || !password || password.length > 128) throw reauthenticationRequired();
+        await clear(); guard(ticket);
+        const user = await sdk.signIn(original.email, password); guard(ticket);
+        if (user.uid !== userId || sdk.currentUser() !== user || !user.email || emailKey(user.email) !== emailKey(original.email)) throw reauthenticationRequired();
+        const proof = await sdk.idToken(user); guard(ticket);
+        await exchange(proof, userId, ticket);
+      } finally { await clear(); }
+    }, true),
     authenticate: (mode, input, signal) => run(signal, async ticket => {
       let retain = false;
       try {
@@ -197,6 +210,6 @@ export function createFirebaseAuthApi(options: Options): FirebaseClientAuthApi {
 /** Invalid or incomplete Firebase selection closes authentication instead of using the old provider. */
 export function createUnavailableFirebaseAuthApi(): FirebaseClientAuthApi {
   const reject = async () => { throw unavailable(); };
-  return { assertAvailable: () => { throw unavailable(); }, authenticate: reject, requestVerification: reject,
+  return { assertAvailable: () => { throw unavailable(); }, authenticate: reject, reauthenticate: reject, requestVerification: reject,
     requestPasswordReset: reject, resetPassword: reject, observeSession: () => {}, clearSession: async () => {} };
 }

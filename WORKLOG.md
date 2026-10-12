@@ -2409,3 +2409,12 @@
 - Verification：三個最少本機情景通過，包含真 Runner／scripted provider；原 ledger fixture 缺 FinishReason.STOP 曾失敗，修 fixture 後同一情景通過。僅檢查所改 runtime／契約的選定型別和腳本語法。原生雲端 29 個新索引及私密欄位排除已套用，46 個 composite indexes 全部 READY。索引 API pageSize 與 wildcard 排除檢查的初次失敗已保留及局部修正，未刪索引。
 - Native Results：第一次互動驗收在第 3 次 API 因腳本漏 accepted:true 回 400，零模型／embedding，立即停批並恢復 paused；原客戶端本已帶此欄位。新批准的資料庫專項 29 次業務呼叫通過：原操作去重、原文、版本衝突、帳號隔離、重新連線後工作／記錄／取消讀回；零模型／通知／部署。測試權限撤銷，control 暫停；合成孩子及密文歷史保留供 F04 清理，不冒稱實體刪除。詳見 [F03 EV](artifacts/verification/F03_FIRESTORE_CORE_20261012.json)。
 - Limits / Next：本次只完成 F03 資料包，沒有真模型回覆、原站切換、瀏覽器或全量測試；帳單未知，資料核對批准估算低於 US$0.01。F04 接文件／附件／退出及完整恢復 codec；F05 知識、F06 背景、F07 正式 SQL 退出、F08 完整產品成果仍須完成。依所屬包復用證據，不重跑已通過項目。
+
+<a id="log-20261013-f04-files"></a>
+## LOG-20261013-F04-FILES
+
+- Recorded At / Package：2026-10-13（Asia/Hong_Kong），P2-F04；基線 161aed9，分支 codex/p2-f04-firestore-files。Astra 主模型獨立實作、review 及必要核對；沒有子代理。
+- Actual Work：文件使用同一照護／事實／任務來源，接 Agent 原操作收據、局部修改、固定版本續讀、報告分批整理及失效；保留先前關注 header 延後到觀察掃完的修正。照片提取及確認接現有 ModelGateway／記錄服務；匯出、孩子／帳戶退出接獨立 journal、權威屏障、原收據及分批清理。原前端 owner／版面保留，Firebase 再驗證不把密碼送業務 API，processing 不能顯示已完成。
+- Local Verification：三個必要資料情景通過：文件與 Agent 保存／確認、照片提取／確認、帳戶 client → HTTP → fixture 的匯出／刪除／原操作屏障。照片 fixture 的孩子 ID、HTTP fixture 漏 Auth handler 曾失敗，局部修正；清理漏 owner-wide 建立孩子收據的實作問題已修正。只作所改檔案型別、腳本語法及 diff 檢查，沒有全量、模型、瀏覽器或部署。
+- Native Verification：27 個 composite indexes 及私密欄位排除完成，總計 73 READY。首批 17 呼叫因腳本漏 confirmShared 被原 schema 拒絕，立即停批並恢復暫停，文件未修改。使用者明確批准剩餘項後，沿同兩個身份／孩子／文件，87 呼叫通過修改、防重、隔離、重連、附件匯出及獨立 journal 清理。一次唯讀進度查詢遇未索引 userTag，未建索引或重試，沒有影響主批次。共 105 業務／診斷呼叫；原失敗保留，見 [EV](artifacts/verification/F04_FIRESTORE_FILES_20261013.json)。
+- Cleanup / Limits：只清本次合成孩子及圖片，測試身份撤銷、control 恢復暫停，原資料／備份保留；零 Auth 帳號建立、模型、embedding、通知或部署。估算不是帳單。完整前端／原站及真再驗證由 F08 收束；F06 接排程清理／報告刷新和其餘領域匯出，F07 接完整恢復及新 journal 重放。當前未接還原類型明確拒絕，不能把 F04 清理通過當成還原成功；原本恢復不得復活刪除資料的門檻保留。

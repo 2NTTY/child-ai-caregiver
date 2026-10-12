@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { PHOTO_LIMITS } from '../src/shared/photos.ts';
 import type { FirestorePhotoCursor, FirestorePhotoStore } from './firestore-photos.ts';
 import { FirestoreDomainError, domainParse, domainReject } from './firestore-domain-data.ts';
+import type { PhotoAgent } from './photo-agent.ts';
 
 export type FirebasePhotoApiPort = Pick<FirestorePhotoStore, 'list' | 'get' | 'content' | 'upload'>;
 const cursorSchema = z.object({ scopeTag: z.string().regex(/^[a-f0-9]{64}$/u), sortKey: z.string().min(1).max(80) }).strict();
@@ -34,7 +35,7 @@ async function uploadJson(request: Request): Promise<unknown> {
 
 /** Reads and immutable upload keep their existing wire. Reservation/deletion use only original online receipts. */
 export async function handleFirebasePhotoRequest(request: Request, userId: string, photos: FirebasePhotoApiPort,
-  isCurrentUser: (userId: string) => Promise<boolean>): Promise<Response> {
+  isCurrentUser: (userId: string) => Promise<boolean>, agent?: PhotoAgent): Promise<Response> {
   const expected = request.headers.get('x-expected-user-id');
   if (!expected) domainReject('account_precondition_required', 428);
   if (expected !== userId) domainReject('session_changed', 409);
@@ -58,7 +59,11 @@ export async function handleFirebasePhotoRequest(request: Request, userId: strin
     const content = await photos.content(userId, childId, id);
     response = new Response(new Uint8Array(content.bytes), { headers: { 'Content-Type': content.mimeType, 'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff', 'Content-Disposition': 'inline; filename=photo', 'Content-Security-Policy': "default-src 'none'; sandbox" } });
-  } else if (request.method === 'POST' && (action === 'extract' || action === 'confirm')) domainReject('firebase_domain_not_ready', 503);
+  } else if (request.method === 'POST' && id && action === 'extract') {
+    if (!agent) domainReject('firebase_domain_not_ready', 503);
+    const input = domainParse(z.object({ expectedVersion: z.number().int().positive(), confirmModel: z.literal(true) }).strict(), await uploadJson(request));
+    response = Response.json({ photo: await agent.extract(userId, childId, id, input.expectedVersion, request.signal, () => isCurrentUser(userId)) });
+  } else if (request.method === 'POST' && action === 'confirm') domainReject('operation_required', 428);
   else if (request.method === 'POST' && (!id || action === 'delete')) domainReject('operation_required', 428);
   else if (request.method === 'POST' && id && action === 'content') {
     const input = domainParse(uploadSchema, await uploadJson(request));

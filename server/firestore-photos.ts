@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { Firestore, DocumentSnapshot } from "@google-cloud/firestore";
 import { z } from "zod";
-import { PHOTO_LIMITS, photoMetadataSchema, type PhotoAttachment, type PhotoMetadata } from "../src/shared/photos.ts";
+import { PHOTO_LIMITS, photoMetadataSchema, photoDraftSchema, type PhotoDraft, type PhotoAttachment, type PhotoMetadata } from "../src/shared/photos.ts";
+import type { AgentScope } from './agent-runtime.ts';
+import { createFirestoreCareStore } from './firestore-care.ts';
+import { careValuesSchema } from './care-validation.ts';
 import { createFirestoreAuthority, FirestoreAuthorityError, type FirestoreAuthorityTransaction, type FirestoreAuthorityOptions } from "./firestore-authority.ts";
 import { FirestoreDomainData, FirestoreDomainError, firestoreDomainHash } from "./firestore-domain-data.ts";
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
@@ -22,9 +25,14 @@ const uploadSchema = z.object({ id: uuid, reservationOperationId: uuid, sha256: 
   mimeType: z.enum(["image/png", "image/jpeg"]), authorizationVersion: z.string(), generation: uuid, startedAt: at }).strict();
 const deletionSchema = z.object({ intent: firebaseErasureIntentSchema, fingerprint: hash, expectedVersion: version,
   journal: firebaseErasureDescriptorSchema.nullable() }).strict();
+const extractionSchema = z.object({ state: z.enum(['not_requested', 'running', 'available', 'failed', 'unknown']),
+  runId: uuid.nullable(), draft: photoDraftSchema.nullable(), stopReason: z.string().max(128).nullable(),
+  processedAt: at.nullable(), model: z.string().max(256).nullable(), expiresAt: at.nullable(),
+  authorizationVersion: z.string().max(100).nullable(), generation: uuid.nullable() }).strict();
 const rowSchema = z.object({ id: uuid, scope: workRecoveryScopeSchema, reservationOperationId: uuid, createdAt: at, version,
   state: z.enum(["reserved", "ready", "deleting", "deleted"]), metadata: photoMetadataSchema.nullable(),
-  descriptor: firebasePhotoObjectDescriptorSchema.nullable(), upload: uploadSchema.nullable(), deletion: deletionSchema.nullable() }).strict()
+  descriptor: firebasePhotoObjectDescriptorSchema.nullable(), upload: uploadSchema.nullable(), deletion: deletionSchema.nullable(),
+  visibility: z.enum(['private', 'shared']).optional(), recordId: uuid.nullable().optional(), extraction: extractionSchema.optional() }).strict()
   .refine(row => (row.state === "deleted") === (row.metadata === null)
     && (row.state !== "ready" || row.descriptor !== null)
     && ((row.state === "deleting" || row.state === "deleted") === (row.deletion !== null)));
@@ -59,6 +67,7 @@ export interface FirestorePhotosOptions extends FirestoreAuthorityOptions {
 /** Domain transactions own permission, quotas and receipts. Storage calls never run inside SDK callbacks. */
 export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), receipts = createFirestoreOnlineReceipts(options), { objects, journal } = options;
+  const care = createFirestoreCareStore(options);
   const tag = (scope: WorkRecoveryScope) => firestoreDomainHash([options.projectId, options.namespace, "photo-scope", scope]);
   const rowRef = (id: string) => data.ref("photos", "photo", id);
   const opRef = (id: string) => data.ref("photo_ops", "photo-operation", id);
@@ -91,8 +100,11 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
   function view(row: Row): PhotoAttachment {
     active(row);
     return { ...row.metadata, id: row.id, childId: row.scope.childId, ownerUserId: row.scope.ownerUserId, createdAt: row.createdAt,
-      version: row.version, state: row.state as "reserved" | "ready", visibility: "private", canManage: true, recordId: null,
-      extraction: { state: "not_requested", runId: null, draft: null, stopReason: null, processedAt: null, model: null } };
+      version: row.version, state: row.state as "reserved" | "ready", visibility: row.visibility ?? 'private', canManage: true, recordId: row.recordId ?? null,
+      extraction: row.extraction ? { state: row.extraction.state === 'running' && Date.parse(row.extraction.expiresAt!) <= Date.parse(now()) ? 'unknown' : row.extraction.state,
+        runId: row.extraction.runId, draft: row.extraction.draft, stopReason: row.extraction.stopReason,
+        processedAt: row.extraction.processedAt, model: row.extraction.model }
+        : { state: "not_requested", runId: null, draft: null, stopReason: null, processedAt: null, model: null } };
   }
   async function operation(binding: FirestoreAuthorityTransaction, operationId: string, action: "reserve" | "delete", fingerprint: string) {
     const snapshot = await binding.transaction.get(opRef(operationId)); if (!snapshot.exists) return null;
@@ -242,7 +254,9 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
           || reservationReceipt.path.toLowerCase() !== "/api/children/" + childId + "/photos")) fail("photo_integrity", 503);
         const redact = reservationReceipt && !isFirestoreOnlinePending(reservationReceipt)
           ? receipts.prepareRedaction(binding, reservationReceipt) : null;
-        const change = await binding.prepareChange(operationId, "care", true), metadata = row.metadata!;
+        const record = row.recordId ? await care.readRecord(binding, row.recordId) : null;
+        const change = record ? await care.prepareDeletion(binding, record.id, record.version, operationId)
+          : await binding.prepareChange(operationId, "care", true), metadata = row.metadata!;
         const result = { deleted: true as const, cleanupPending: true as const };
         const sharedWrite = submission ? receipts.prepareConfirmed(binding, submission,
           { childId, changeSeq: change.changeSeq, statusCode: 200, result }, true) : null;
@@ -252,6 +266,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         binding.transaction.create(cleanupRef(id), { scopeTag: tag(binding.scope), state: cleanup.state,
           ...seal("photo-cleanup", id, binding.scope, firestorePhotoCleanupSchema, cleanup) });
         row.state = "deleted"; row.version++; row.metadata = null; row.descriptor = null; row.deletion.journal = journalDescriptor;
+        delete row.extraction;
         writeRow(binding, row); writeOperation(binding, { ...prior, state: "confirmed", result });
         quota.child.bytes -= metadata.bytes; quota.child.count--; quota.global.activeBytes -= metadata.bytes; quota.global.activeCount--;
         quota.global.cleanupBytes += metadata.bytes; quota.global.cleanupCount++;
@@ -259,14 +274,48 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
       });
     });
   }
-  return {
+  async function confirmOperation(userId: string, childId: string, id: string, submission: OnlineSubmission): Promise<OnlineReceipt> {
+    const input = parse(z.object({ expectedVersion: version, confirmShared: z.literal(true), values: careValuesSchema }).strict(), submission.payload, true);
+    const first = await authority.runTransaction(userId, childId, async b => {
+      const old = await onlinePrior(b, submission, submission.operation.opId);
+      if (old) {
+        if (isFirestoreOnlinePending(old)) fail('operation_conflict');
+        const receipt = await receipts.disclose(b, old); if (receipt.state !== 'confirmed') fail('operation_conflict');
+        return { receipt, row: null, scope: null, auth: null, generation: null };
+      }
+      const row = await readRow(b, id); active(row);
+      if (row.state !== 'ready' || row.recordId || row.version !== input.expectedVersion) fail('version_conflict');
+      if (row.extraction?.state === 'running' && Date.parse(row.extraction.expiresAt!) > Date.parse(now())) fail('photo_processing');
+      return { receipt: null, row, scope: b.scope, auth: b.authorizationVersion, generation: b.generation };
+    });
+    if (first.receipt) return first.receipt;
+    // The existing download path authenticates, checks generation/hash and reauthorizes after Storage I/O.
+    await service.content(userId, childId, id);
+    return authority.runTransaction(userId, childId, async b => {
+      const old = await onlinePrior(b, submission, submission.operation.opId);
+      if (old) {
+        if (isFirestoreOnlinePending(old)) fail('operation_conflict');
+        const receipt = await receipts.disclose(b, old); if (receipt.state !== 'confirmed') fail('operation_conflict'); return receipt;
+      }
+      const row = await readRow(b, id); active(row);
+      if (!same(row, first.row) || !same(b.scope, first.scope) || b.authorizationVersion !== first.auth || b.generation !== first.generation) fail('version_conflict');
+      const prepared = await care.prepareRecord(b, submission.operation.opId, { ...input.values,
+        source: '照片 ' + id + ' · SHA-256 ' + row.metadata.sha256 + ' · 上傳 ' + row.createdAt + ' · ' + row.metadata.source });
+      row.visibility = 'shared'; row.recordId = prepared.value.id; row.version++;
+      const result = { photo: view(row), recordId: prepared.value.id };
+      const receipt = receipts.prepareConfirmed(b, submission, { childId, changeSeq: prepared.changeSeq, statusCode: 200, result });
+      prepared.commit(); writeRow(b, row); receipt.commit(); return receipt.receipt;
+    });
+  }
+  const service = {
     async submitOnline(userId: string, value: OnlineSubmission): Promise<OnlineReceipt> {
       const submission = parse(onlineSubmissionSchema, value, true);
-      const match = /^\/api\/children\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/photos(?:\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/delete)?$/iu.exec(submission.path);
+      const match = /^\/api\/children\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/photos(?:\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(delete|confirm))?$/iu.exec(submission.path);
       if (!match) fail("firebase_domain_not_ready", 503);
       const childId = match[1].toLowerCase(), photoId = match[2]?.toLowerCase();
       if (!photoId) return reserveOperation(userId, childId, submission.operation.opId,
         parse(photoMetadataSchema, submission.payload, true), submission) as Promise<OnlineReceipt>;
+      if (match[3] === 'confirm') return confirmOperation(userId, childId, photoId, submission);
       const payload = parse(z.object({ expectedVersion: version, confirmDelete: z.literal(true) }).strict(), submission.payload, true);
       return deleteOperation(userId, childId, photoId, payload.expectedVersion, submission.operation.opId, submission) as Promise<OnlineReceipt>;
     },
@@ -403,9 +452,78 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         });
       });
     },
-    async extract(): Promise<never> { fail("firebase_domain_not_ready", 503); },
-    async confirm(): Promise<never> { fail("firebase_domain_not_ready", 503); },
+    /** Trusted erasure consumer only, after canonical admission is blocked. Never a public photo endpoint. */
+    async eraseForScope(scope: WorkRecoveryScope, id: string, intent: FirebaseErasureIntent, proof: FirebaseErasureDescriptor) {
+      if (!objects.remove || !journal.read) fail('photo_cleanup_unavailable', 503);
+      if (intent.type === 'photo-delete' || scope.ownerUserId !== intent.scope.ownerUserId || scope.workspaceId !== intent.scope.workspaceId
+        || scope.storageEpoch !== intent.scope.storageEpoch || intent.type === 'child-delete' && scope.childId !== intent.scope.childId) fail('photo_cleanup_binding');
+      if (!same(await journal.read(intent, proof), intent)) fail('photo_integrity', 503);
+      const first = await options.database.runTransaction(async tx => {
+        const snap = await tx.get(rowRef(id)); return snap.exists ? checkedRow(snap, scope, id) : null;
+      });
+      if (!first) return true;
+      if (first.state === 'deleted') {
+        const result = await service.cleanupDeleted(scope, id, first.deletion!.intent.operationId);
+        return result.state === 'complete';
+      }
+      // Unknown uploads retain a cleanup obligation instead of assuming that no object exists.
+      if (first.upload && !first.descriptor) return false;
+      if (first.descriptor) await objects.remove(scope, id, first.descriptor);
+      return options.database.runTransaction(async tx => {
+        const [snap, globalSnap, childSnap] = await tx.getAll(rowRef(id), globalRef, quotaRef(scope));
+        if (!snap.exists) return true;
+        const row = checkedRow(snap, scope, id);
+        if (!same(row, first)) fail('version_conflict');
+        const global = data.open('photo-global-quota', 'global', SYSTEM, globalQuotaSchema, globalSnap);
+        const child = data.open('photo-child-quota', tag(scope), scope, childQuotaSchema, childSnap);
+        const bytes = row.metadata!.bytes;
+        if (global.activeCount < 1 || global.activeBytes < bytes || child.count < 1 || child.bytes < bytes) fail('photo_quota_unavailable', 503);
+        global.activeCount--; global.activeBytes -= bytes; child.count--; child.bytes -= bytes;
+        tx.set(globalRef, seal('photo-global-quota', 'global', SYSTEM, globalQuotaSchema, global));
+        tx.set(quotaRef(scope), seal('photo-child-quota', tag(scope), scope, childQuotaSchema, child));
+        tx.delete(rowRef(id)); return true;
+      });
+    },
+    async claimExtraction(userId: string, childId: string, id: string, expectedVersion: number) {
+      ids(userId, childId, id); parse(version, expectedVersion, true); const runId = randomUUID(), started = now();
+      return authority.runTransaction(userId, childId, async b => {
+        const row = await readRow(b, id); active(row);
+        if (row.state !== 'ready' || row.visibility === 'shared' || row.recordId) fail('not_found', 404);
+        if (row.extraction && row.extraction.state !== 'not_requested' && (row.extraction.state !== 'failed' || row.version !== expectedVersion))
+          return { created: false, photo: view(row), scope: null };
+        if (row.version !== expectedVersion) fail('version_conflict');
+        const change = await b.prepareChange(runId, 'care', false);
+        row.version++; row.extraction = { state: 'running', runId, draft: null, stopReason: null, processedAt: null, model: null,
+          expiresAt: new Date(Date.parse(started) + 95000).toISOString(), authorizationVersion: b.authorizationVersion, generation: b.generation };
+        const scope: AgentScope = { userId, childId, workspaceId: b.scope.workspaceId, authorizationVersion: b.authorizationVersion,
+          dataVersion: b.scope.storageEpoch + ':' + change.changeSeq };
+        writeRow(b, row); change.commit(); return { created: true, photo: view(row), scope };
+      });
+    },
+    async extractionAuthorized(userId: string, childId: string, id: string, runId: string) {
+      ids(userId, childId, id); parse(uuid, runId, true);
+      return authority.runTransaction(userId, childId, async b => {
+        const row = await readRow(b, id), e = row.extraction;
+        return row.state === 'ready' && row.visibility !== 'shared' && !row.recordId && e?.state === 'running' && e.runId === runId
+          && e.authorizationVersion === b.authorizationVersion && e.generation === b.generation && Date.parse(e.expiresAt!) > Date.parse(now());
+      });
+    },
+    async finishExtraction(userId: string, childId: string, id: string, runId: string, draft: PhotoDraft | null, stopReason: string | null, model: string | null) {
+      ids(userId, childId, id); parse(uuid, runId, true);
+      return authority.runTransaction(userId, childId, async b => {
+        const row = await readRow(b, id); active(row); const e = row.extraction;
+        if (row.state !== 'ready' || row.visibility === 'shared' || !e || e.runId !== runId) fail('not_found', 404);
+        if (e.state !== 'running') return view(row);
+        const allowed = e.authorizationVersion === b.authorizationVersion && e.generation === b.generation && Date.parse(e.expiresAt!) > Date.parse(now());
+        const accepted = allowed && draft ? parse(photoDraftSchema, draft) : null;
+        row.extraction = { ...e, state: accepted ? 'available' : !allowed || stopReason === 'cancelled' || stopReason === 'deadline' ? 'unknown' : 'failed',
+          draft: accepted, stopReason: allowed ? stopReason : 'unauthorized_or_expired', processedAt: now(), model };
+        row.version++; const change = await b.prepareChange(randomUUID(), 'care', false);
+        writeRow(b, row); change.commit(); return view(row);
+      });
+    },
   };
+  return service;
 }
 export type FirestorePhotoStore = ReturnType<typeof createFirestorePhotoStore>;
 

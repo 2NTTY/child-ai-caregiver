@@ -29,7 +29,8 @@ const childDetailSchema = z.object({ id: uuid, workspaceId: uuid, displayName: b
   createdAt: datetime, accessRole: z.literal('owner') }).strict();
 const workDetailSchema = z.object({ id: uuid, version: schemas.work.shape.version, createdAt: datetime, updatedAt: datetime }).strict();
 const receiptSchema = z.object({ ownerUserId: userIdSchema, childId: uuid.nullable(), operationId: uuid,
-  action: bounded(64), fingerprint: z.string().regex(/^[a-f0-9]{64}$/u), result: z.unknown(), changeSeq: decimal.optional() }).strict();
+  action: bounded(64), fingerprint: z.string().regex(/^[a-f0-9]{64}$/u), result: z.unknown(), changeSeq: decimal.optional(),
+  erased: z.literal(true).optional() }).strict();
 const childCreationChangeSchema = z.object({ workspaceId: uuid, storageEpoch: uuid, changeSeq: decimal,
   kind: z.literal('children'), childId: uuid, privateUserId: userIdSchema, ownerOnly: z.literal(true), deleted: z.literal(false),
   suppressWorkWake: z.literal(true), operationId: uuid }).strict();
@@ -59,6 +60,8 @@ export interface FirestoreAuthorityTransaction {
   readChild(childId: string): Promise<Child | null>;
   prepareChange(operationId: string, kind: OnlineChange['kind'], deleted: boolean, childId?: string): Promise<FirestoreAuthorityPreparedChange>;
   prepareChildCreation(raw: { operationId: string; displayName: string }): Promise<FirestoreAuthorityPreparedChild>;
+  /** Admission barrier only. Independent journal and bounded physical cleanup belong to erasure service. */
+  prepareErasure(operationId: string, type: 'child' | 'account', childId?: string): Promise<FirestoreAuthorityPreparedChange>;
   readWork(id: string): Promise<AgentWork | null>;
   /** Domain caller validates source/resource references before preparing this canonical write. */
   prepareWork(raw: z.infer<typeof saveAgentWorkSchema>): Promise<FirestoreAuthorityPreparedChange & { value: AgentWork }>;
@@ -201,6 +204,7 @@ export class FirestoreAuthority {
     const receipt = this.open('authority-operation', key, scope, snapshot, receiptSchema);
     if (receipt.ownerUserId !== scope.ownerUserId || receipt.childId !== (child ? scope.childId : null)
       || receipt.operationId !== operationId || receipt.action !== action || receipt.fingerprint !== fingerprint) fail('operation_conflict');
+    if (receipt.erased) fail('operation_erased');
     return { key, fingerprint, prior: parse(resultSchema, receipt.result, 'invalid_document', 500), changeSeq: receipt.changeSeq };
   }
   private receipt<T>(tx: Transaction, scope: WorkRecoveryScope, operationId: string, action: string,
@@ -272,6 +276,28 @@ export class FirestoreAuthority {
             assertActive(); if (childId !== null || childCandidateId === null) fail('transaction_child_scope'); reserve();
             const child = await this.prepareChild(tx, workspace, userId, childCandidateId, raw); assertActive();
             return Object.freeze({ result: child.result, changeSeq: child.changeSeq, commit: guardCommit(child.commit) });
+          },
+          prepareErasure: async (operationId: string, type: 'child' | 'account', requestedChildId?: string) => {
+            parse(uuid, operationId); parse(z.enum(['child', 'account']), type); reserve();
+            if (childId !== null) fail('transaction_child_scope');
+            const targetScope = type === 'child' ? ownerScope(userId, workspace.id, workspace.storageEpoch, parse(uuid, requestedChildId)) : scope;
+            if (type === 'child') await this.canonicalChild(tx, targetScope);
+            const account = type === 'account' ? await this.read(tx, 'account', userId, ownerScope(userId), schemas.account) : null;
+            const change = await this.change(tx, targetScope, workspace, operationId, 'children', true);
+            const barrier = type === 'child'
+              ? this.seal('child', targetScope.childId, targetScope, { id: targetScope.childId, workspaceId: workspace.id, status: 'deleting' })
+              : this.seal('account', userId, ownerScope(userId), { ...account!, status: 'deleting', admitted: false, invitationLive: false });
+            const identityBarrier = type === 'account' ? this.seal('authority-identity', userId, ownerScope(userId), { ...identity, state: 'deleting' }) : null;
+            return Object.freeze({ changeSeq: change.changeSeq, commit: guardCommit(() => {
+              change.commit();
+              if (type === 'child') {
+                tx.set(this.ref('child', targetScope.childId), barrier);
+                tx.delete(this.domain.ref('children', 'child-projection', targetScope.childId));
+              } else {
+                tx.set(this.ref('account', userId), barrier);
+                tx.set(this.ref('authority-identity', userId), identityBarrier!);
+              }
+            }) });
           },
           readWork: async (id: string) => {
             assertActive(); parse(uuid, id); if (childId === null) fail('transaction_child_scope');
@@ -497,6 +523,14 @@ export class FirestoreAuthority {
       prepared.commit(); return prepared.result;
     });
   }
+  /** Internal erasure preserves operation identity without retaining the erased result. */
+  async redactOperation(transaction: Transaction, id: string, scope: WorkRecoveryScope): Promise<void> {
+    const snapshot = await transaction.get(this.ref('authority-operation', id));
+    if (!snapshot.exists) fail('receipt_binding', 500);
+    const receipt = this.open('authority-operation', id, scope, snapshot, receiptSchema);
+    if (receipt.ownerUserId !== scope.ownerUserId) fail('receipt_binding', 500);
+    this.write(transaction, 'authority-operation', id, scope, { ...receipt, result: null, erased: true });
+  }
   async readScope(userId: string, childId: string): Promise<FirestoreAuthorityBinding> {
     parse(userIdSchema, userId); parse(uuid, childId);
     return this.options.database.runTransaction(async tx => {
@@ -504,6 +538,25 @@ export class FirestoreAuthority {
       await this.canonicalChild(tx, scope);
       return { scope, authorizationVersion: workspace.accessVersion };
     }, { readOnly: true });
+  }
+  /** Internal erasure finalizer, after journal-backed cleanup. It cannot reactivate or delete active resources. */
+  async finishErasure(scope: WorkRecoveryScope, type: 'child' | 'account'): Promise<void> {
+    parse(workRecoveryScopeSchema, scope); parse(z.enum(['child', 'account']), type);
+    await this.options.database.runTransaction(async tx => {
+      await this.control(tx, false);
+      if (type === 'child') {
+        const child = await this.read(tx, 'child', scope.childId, scope, schemas.child);
+        if (child.id !== scope.childId || child.workspaceId !== scope.workspaceId || child.status === 'active') fail('erasure_not_blocked');
+        this.write(tx, 'child', scope.childId, scope, { ...child, status: 'deleted' });
+      } else {
+        const accountScope = ownerScope(scope.ownerUserId), account = await this.read(tx, 'account', scope.ownerUserId, accountScope, schemas.account);
+        const workspace = await this.read(tx, 'workspace', scope.workspaceId, scope, schemas.workspace);
+        if (account.userId !== scope.ownerUserId || account.status === 'active' || workspace.ownerUserId !== scope.ownerUserId
+          || workspace.storageEpoch !== scope.storageEpoch) fail('erasure_not_blocked');
+        this.write(tx, 'account', scope.ownerUserId, accountScope, { ...account, status: 'deleted', admitted: false, invitationLive: false });
+        this.write(tx, 'workspace', scope.workspaceId, scope, { ...workspace, status: 'deleted' });
+      }
+    });
   }
   private supported(values: AgentWorkValues) {
     if (values.sourceMessageIds.length || values.resources.length || values.pending.length || values.followUp?.watchResources || values.followUp?.knowledgeSourceIds.length)

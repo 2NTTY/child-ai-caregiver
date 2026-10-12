@@ -21,13 +21,15 @@ import type { createFirestoreProductAgent } from './firestore-product-agent.ts';
 import { handleProductAgentRequest } from './product-agent-api.ts';
 import { handleAgentActionsRequest } from './agent-actions-api.ts';
 import { handleModelSettingsRequest } from './model-settings-api.ts';
+import type { PhotoAgent } from './photo-agent.ts';
+import { handleFirebaseAccountData, type FirebaseAccountDataPort } from './firebase-account-data-api.ts';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const authorityErrors = new Map<string, number>([
   ["invalid_input", 400], ["not_found", 404], ["service_disabled", 403], ["binding", 403],
   ["account_inactive", 403], ["account_not_ready", 403], ["email_not_verified", 403],
   ["identity_email_changed", 403], ["invitation_unavailable", 403], ["operation_conflict", 409],
-  ["scope_changed", 409], ["transaction_change_conflict", 409], ["document_too_large", 413],
+  ["scope_changed", 409], ["operation_erased", 409], ["transaction_change_conflict", 409], ["document_too_large", 413],
 ]);
 const authenticationErrors = new Map<string, number>([
   ["unauthorized", 401], ["recent_reauthentication_required", 401], ["identity_changed", 409],
@@ -44,6 +46,8 @@ export interface FirebaseRequestHandlerOptions {
   online?: FirestoreOnlineStore;
   documents?: FamilyDocumentStore;
   photos?: FirebasePhotoApiPort;
+  photoAgent?: PhotoAgent;
+  accountData?: FirebaseAccountDataPort;
   library?: Pick<PersonalLibrary, "page">;
   chat?: ChatStore;
   care?: FirestoreCareStore;
@@ -113,6 +117,10 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         return json({ status: "ok", storage: "firestore", stage: "foundation" });
       }
       if (path.startsWith("/api/auth/")) return uncached(await auth.handler(request));
+      if (options.accountData && (path === '/api/account/export' || path === '/api/account/delete' || path.startsWith('/api/account/deletion/'))) {
+        if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);
+        return uncached(await handleFirebaseAccountData(request, auth, options.accountData, readJson));
+      }
       if (path === "/api/account" && request.method === "GET") {
         const session = await auth.getSession({ headers: request.headers });
         return json(await accountStatus(session?.user.id ?? null));
@@ -142,7 +150,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
-        return uncached(await handleFirebasePhotoRequest(request, userId, photos, isCurrentUser));
+        return uncached(await handleFirebasePhotoRequest(request, userId, photos, isCurrentUser, options.photoAgent));
       }
       if (library && /^\/api\/children\/[^/]+\/library$/u.test(path)) {
         if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);

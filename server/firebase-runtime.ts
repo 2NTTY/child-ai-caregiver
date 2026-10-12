@@ -18,6 +18,11 @@ import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
 import { createFirestoreProductAgent } from './firestore-product-agent.ts';
 import { readAiConfig } from './ai-config.ts';
+import { createPhotoAgent } from './photo-agent.ts';
+import { createFirestoreErasureStore } from './firestore-erasure.ts';
+import { createFirestoreErasureCleanup } from './firestore-erasure-cleanup.ts';
+import { FirestoreSessionService } from './firestore-session-service.ts';
+import { createFirestoreAccountExport } from './firestore-account-export.ts';
 
 /** Real production clients; no seeded authority, SQL fallback or implicit database initialization. */
 export async function openFirebaseRuntime(env: Record<string, string | undefined>) {
@@ -34,6 +39,19 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const objects = createCloudStoragePhotoObjects({ config: { projectId: config.projectId, namespace: config.namespace, bucketName: config.photoBucket }, cipher });
     const journal = createCloudStorageErasureJournal({ config: { projectId: config.projectId, namespace: config.namespace, bucketName: config.erasureBucket }, cipher });
     const photos = createFirestorePhotoStore({ ...domain, objects, journal });
+    const erasures = createFirestoreErasureStore({ ...domain, journal });
+    const exporter = createFirestoreAccountExport({ ...domain, photos });
+    const nativeSessions = new FirestoreSessionService({ ...domain, namespace: config.namespace + '_adk' });
+    const erasureCleanup = createFirestoreErasureCleanup({ ...domain, journal, erasures, photos,
+      deleteAgentSession: (userId, sessionId) => nativeSessions.deleteSession({ appName: 'yuban_hk', userId, sessionId }),
+      eraseAgentUserPage: userId => nativeSessions.eraseUserPage('yuban_hk', userId),
+      eraseDeviceSessions: (userId, cursor) => sessions.eraseUserPage(userId, cursor),
+      async eraseAuthUser(userId) {
+        try { await nativeAuth.deleteUser(userId); } catch (error) {
+          if (!error || typeof error !== 'object' || !('code' in error) || error.code !== 'auth/user-not-found') throw error;
+        }
+      },
+    });
     const reminders = createFirestoreTaskWorker({ ...domain, enabled: config.taskWorkerEnabled, async currentAuth(userId) {
       try {
         const user = await nativeAuth.getUser(userId);
@@ -46,17 +64,18 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     } });
     const chat = createFirestoreChatStore(domain), care = createFirestoreCareStore(domain);
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
-    const online = createFirestoreOnlineStore({ ...domain, photos, reminders, mutations: [chat.mutation, care.mutation, memory.mutation] });
+    const online = createFirestoreOnlineStore({ ...domain, photos, erasures, reminders, mutations: [chat.mutation, care.mutation, memory.mutation] });
     const documents = createFirestoreFamilyDocumentStore({ database, cipher, projectId: config.projectId, namespace: config.namespace });
     const knowledge = config.knowledgeSourceIds === null ? undefined : createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds });
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
-    const product = await createFirestoreProductAgent({ ...domain, config: readAiConfig(env), chat, care, memory, online, knowledge });
+    const product = await createFirestoreProductAgent({ ...domain, config: readAiConfig(env), chat, care, memory, online, documents, knowledge });
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
-    const handler = createFirebaseRequestHandler({ authority, auth, online, documents, photos, library, chat, care, memory, product,
+    const photoAgent = createPhotoAgent(photos, product.runtime);
+    const handler = createFirebaseRequestHandler({ authority, auth, online, documents, photos, photoAgent, library, chat, care, memory, product, accountData: { erasures, exporter },
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { ...persistence, sessions, auth, online, documents, photos, objects, journal, knowledge, library, chat, care, memory, product, handler,
+    return { ...persistence, sessions, auth, online, documents, photos, objects, journal, erasures, erasureCleanup, exporter, knowledge, library, chat, care, memory, product, handler,
       close() { return closing ??= (async () => { try { await deleteApp(ownedApp); } finally { await persistence.close(); } })(); } };
   } catch (error) {
     try { if (app) await deleteApp(app); } finally { await persistence.close(); }

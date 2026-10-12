@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
 import { accountAcknowledgementSchema, accountEraseExecuteSchema, SERVICE_POLICY_VERSION, type AccountExportPage, type AccountEraseReceipt, type AccountServiceStatus } from "../shared/account-service.ts";
-const receiptSchema = z.object({ operationId: z.uuid(), state: z.enum(["prepared", "completed"]), attachmentsPending: z.boolean() }).strict();
+const receiptSchema = z.object({ operationId: z.uuid(), state: z.enum(["prepared", "processing", "completed"]), attachmentsPending: z.boolean() }).strict();
 const preparedSchema = receiptSchema.extend({ receiptToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/), summary: z.object({ childCount: z.number().int().nonnegative() }).strict(), expiresAt: z.iso.datetime() }).strict();
 const exportPageSchema = z.object({ section: z.string().min(1).max(80), items: z.array(z.unknown()).max(200), nextCursor: z.string().max(16000).nullable(), complete: z.boolean(), scopeVersion: z.string().regex(/^[a-f0-9]{64}$/), notices: z.array(z.string()).max(20) }).strict();
 const statusSchema = z.object({ enabled: z.boolean(), registration: z.enum(["invite", "trial"]), mailConfigured: z.boolean(), policyVersion: z.string(), notice: z.string(),
@@ -12,7 +12,8 @@ export class AccountApiError extends Error {
   readonly status: number; readonly code: string | null;
   constructor(status = 0, code: string | null = null) { super("Account request could not be confirmed"); this.name = "AccountApiError"; this.status = status; this.code = code; }
 }
-export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch) {
+export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch,
+  credentials?: { reauthenticate(userId: string, password: string, signal: AbortSignal): Promise<void> }) {
   const base = resolveApiBaseUrl(baseUrl), apiUrl = base.endsWith("/api") ? base : base + "/api";
   let identity: string | null = null, generation = 0, pending: { userId: string; operationId: string; receipt: PreparedAccountDeletion | null; executionUnknown: boolean } | null = null;
   const active = new Set<AbortController>();
@@ -105,9 +106,15 @@ export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch) {
       requireIdentity(userId);
       const attempt = pending; if (!attempt?.receipt || attempt.userId !== userId) throw new AccountApiError(409, "erasure_prepare_required");
       const body = accountEraseExecuteSchema.parse({ ...input, operationId: attempt.operationId, receiptToken: attempt.receipt.receiptToken });
+      if (credentials) {
+        try { await credentials.reauthenticate(userId, body.password, signal); }
+        catch { throw new AccountApiError(401, "password_verification_failed"); }
+        if (pending !== attempt || identity !== userId || signal.aborted) throw new AccountApiError(409, "session_changed");
+      }
       attempt.executionUnknown = true;
       try {
-        const result = receiptSchema.parse(await request("/account/delete", signal, userId, body));
+        const { password: _password, ...firebaseBody } = body;
+        const result = receiptSchema.parse(await request("/account/delete", signal, userId, credentials ? firebaseBody : body));
         if (result.operationId !== attempt.operationId) throw new AccountApiError();
         if (result.state === "completed") attempt.executionUnknown = false;
         attempt.receipt = { ...attempt.receipt, state: result.state, attachmentsPending: result.attachmentsPending };
