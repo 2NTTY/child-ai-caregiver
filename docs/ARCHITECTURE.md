@@ -660,6 +660,19 @@ Tasks／Scheduler 呼叫原 VM 的 HTTP 工作入口，無須 Cloud Run。由應
 
 互動沿既有可用請求、message／run／原操作關聯、進度、取消及收據接口；不因已取消的 Hosting 60 秒限制強制改成 202 協議。需要排程的工作仍須先持久保存 run／outbox，才可回已受理；頁面關閉不等於取消。Firebase Auth 已有 __session 可繼續使用，同源、CSRF、身份切換清理及 private, no-store 保持。原 Caddy／API 逾時須與有界運行協調；未遷移接口明確報未就緒，不回空資料或假成功。
 
+<a id="firestore-multi-instance"></a>
+### 多容器與橫向擴展接點
+
+P2 正常部署維持原單 VM 的 Web／API／worker 分工，不新增 Kubernetes、VM、Redis 或負載平衡服務。可安全增加 API／worker 副本是資料與執行契約，不代表已驗高負載／高可用；同一 VM 增加容器不增加主機總資源。
+
+- **准入與用量：**本人／全站並發名額、原 trigger／run claim、逐日配額及每次呼叫預留使用 Firestore 共用權威。現有 activeUsers 只能作本程序保護，不因副本增加而倍增名額。本輪先沿嚴格且有界的交易／租約，不提前建立分片計數平台。
+- **取消與提交：**原 run 的持久取消／終態由任何副本可讀；本機 AbortController 只加速停止。模型／工具前後與提交時重核權限、期限及終態，另一副本接受取消後不得再提交新副作用；已成功保存的收據不回滾。未知外部結果不因 lease 到期自動重發，原效果與成本先核對。
+- **工作競爭：**worker 沿同一 lease／generation／epoch 領取與提交；Tasks 重投不是新業務操作，Scheduler 補償入口只配置一份。不靠容器內 timer、程序 Map 或固定主機作唯一執行權威。
+- **部署與檔案：**正式附件／成果及刪除紀錄存外部持久服務，本機只留可丟棄暫存。API／worker 用外部配置、服務名稱與可配置代理上游，不依賴固定 API 容器 IP、黏性會話或共享本機檔案。保留便宜的健康接點及有界停止，停止領新工作後核原收據／unknown，再按期限結束，不承諾中斷的模型必然可重播。
+- **驗證範圍：**只在必要合成情景暫啟兩個程序／容器核准入、防重及跨副本取消，重用重啟證據；不作壓力測試或常駐第二副本。之後才按實際需要選 Compose 多副本或 Kubernetes Deployment，所用權威資料不隨 orchestrator 更換。
+
+已核對官方 [Compose 服務名稱](https://docs.docker.com/compose/how-tos/networking/)、[Kubernetes Deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)與 [Firestore 競爭／游標建議](https://firebase.google.com/docs/firestore/best-practices)；文件相容不代替本工程多副本已驗。實作與證據由 [F03／F06／F07](../PLAN.md#p2-completion-execution) 承接。
+
 ### 官方知識與發布
 
 採 Firestore 原生向量（目前 1024 維低於上限 2048），沿 embedding 模型／處理版及向量相容性校驗，兼容資料直接遷移。保留標題、章節、主題、正文的候選能力、原權重及 RRF。Standard 沒有全文搜尋：公共分詞／n-gram 以分段 posting／有界候選索引承接，避免巨型 token 陣列及索引爆增；中文口語／改寫、正文獨有命中與無相關資料是必要品質對照。不是關掉關鍵詞或另起常駐搜尋服務。[向量](https://docs.cloud.google.com/firestore/native/docs/vector-search)／[全文搜尋限制](https://docs.cloud.google.com/firestore/native/docs/text-search)
