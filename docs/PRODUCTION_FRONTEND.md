@@ -83,7 +83,13 @@ docker compose --project-name yuban-p1 \
 
 F07 只補尚欠跨域／恢復證據，F08 確认已交付功能不連 SQL、不靜默回退。待清理清單：F02 額外 Hosting 站點、Cloud Run API／worker 及其專用殘留；先核實實際名稱、流量、依賴、保留需求和費用，再批准範圍內清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**。F02 已準備原 VM 組裝但未部署；未改 DNS 或刪資源。A09 未通過成果及 F02 失敗沿 PLAN 追溯，不以基建切片代替產品完成。
 
-### 原 VM Firestore 組裝（F02 接點已驗，正式網站待切換）
+### 原 VM Firestore 組裝（F08 已切站，完整成果仍待驗）
+
+2026-10-13，`ex-machina.eu.org` 已使用原 VM 上的 `f08-cce4667` Web／API／worker，來源提交 `cce4667`；API 健康回報 `storage: firestore`，原 PostgreSQL 容器停止但資料 volume／備份保留。原前端已通過合成註冊、登入及資料刷新；完整 Agent／排程與配對備份仍按 [F08](../PLAN.md#p2-f08) 收束，不能把這次健康核對當全部驗收。
+
+現場部署目錄 `/opt/yuban-firestore-cce4667/deploy/p1`；受保護設定在 `/etc/yuban-p1/firestore`，原渠道檔案在 `/etc/yuban-p1`。部署疊加 `compose.firestore.channels.yaml`，掛載設定不代表已准外發。原 Caddy 固定 IP 為 `172.30.51.3`，動態 API／worker 池為 `172.30.51.8/29`、共同子網 `172.30.51.0/28`；調整子網時須同步核對 `P1_DYNAMIC_RANGE` 與 `P1_PROXY_IP` 不重疊，避免重建時動態容器先佔用 proxy 地址。
+
+ADK 原生 session 的 `events` 子集合需 `timestamp + id` 同向升／降排序索引，已加入 `deploy/firebase/firestore.indexes.json`；部署前須等相關索引 READY。業務列表索引全齊不代表 Agent 協定 session 已可讀，缺索引會在生成前安全停止。此修正不變更 session／業務權威或配額。
 
 `deploy/p1/compose.firestore.yaml` 是同一 `yuban-p1` 專案的替代組裝，不能與 SQL Compose 疊加。沿用 80／443、Caddy 資料 volume 和前端；API／worker 只在內部網絡提供服務。`/internal/task-reminders`、`/internal/task-dispatch` 與 `/internal/product-work` 只轉送固定 worker 入口，由 worker 驗 OIDC issuer／audience／期限／service account；其他 internal 路徑拒絕。健康檢查只查程序存活，不查資料庫或觸發工作，也不表示全部產品功能可用。
 

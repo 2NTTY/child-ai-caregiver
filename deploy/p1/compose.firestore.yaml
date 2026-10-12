@@ -82,3 +82,5 @@ networks:
     ipam:
       config:
         - subnet: ${P1_PROXY_SUBNET:-172.30.51.0/28}
+          # Keep dynamic API/worker addresses outside the fixed trusted Caddy address.
+          ip_range: ${P1_DYNAMIC_RANGE:-172.30.51.8/29}

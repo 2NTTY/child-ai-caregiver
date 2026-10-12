@@ -5,9 +5,9 @@
 ## 目前與接手
 
 - **完整 P2 尚未完成。** 原 P2／INT 及 A01～A08 的已合併成果保留；A09 剩餘成果由 F07／F08 承接。P2 啟用聊天及現有工具，另外三角色明確移至 [P3-M01～M03](PLAN.md#p3-agent-roles)，只留最小接口。
-- **當前產品包：[P2-F08](PLAN.md#p2-f08)，原站交付。** F07 已由 #200 合併為 `353cf70`，本地 master 已同步，F08 從此開獨立分支；後端與原前端 owner／API 同源，不改 UI。正式網站尚未切換。
+- **當前產品包：[P2-F08](PLAN.md#p2-f08)，原站交付。** F07 已由 #200 合併為 `353cf70`，F08 分支 `codex/p2-f08-original-site`。2026-10-13 原站已切至 `f08-cce4667` 的 Firestore API／worker／新前端，PostgreSQL 已停止；登入及保存已通過，完整 Agent 成果與營運收尾仍未完成，不改 UI。
 - **最新次序：[ADR-025](docs/DECISIONS.md#adr-025)。** 先完成所有資料域及正式執行的 SQL 退出，使用 GCP 香港 Firestore；受邀用戶、真 Agent 完整使用及原站交付排在其後。保留原網址／VM／Compose／Caddy、前端及可用服務；舊 SQL 測試資料不必搬遷／對帳，舊備份暫留。F03 不再要求首次聊天即上線。
-- **證據與未完成：**[F07 EV](artifacts/verification/F07_FIRESTORE_SQL_EXIT_20261013.json) 記錄完整格式接線、302 筆合成快照轉換及真分批還原交易／重連／清理，正式啟動不再回退 SQL。四筆舊文件收據已清理，control 保持暫停；缺日誌／清理證據仍拒絕還原，容量限制明列。F08 核對原站部署、登入／找回及完整 Agent 成果；不能以 master 合併當已上線。
+- **證據與未完成：**[F07 EV](artifacts/verification/F07_FIRESTORE_SQL_EXIT_20261013.json) 保留資料接線、還原及 SQL 退出證據。F08 已在原站完成合成獲邀註冊、驗證關卡、登入／同意、孩子與原文保存及刷新讀回；電郵驗證用 fixture，不重寄或冒稱收信。真聊天在 Gemini 前因缺 ADK 事件排序索引停止（零模型呼叫），已補索引，尚待補完。背景 queue 仍暫停，未發通知；部署、完整聊天及恢復能力分開判斷。
 - **操作範圍：**持續完成 [P2 路線](PLAN.md#p2-completion-execution)，本輪只用主模型，不派子代理、不用 Computer Use 或全量測試。2026-10-13 已授權同類最低必要驗收直接執行，具體邊界見 PLAN；失敗仍停批查根因、不重跑已通過項。費用／傳送及期限不任意擴大，不建新站或 Kubernetes。
 - 新前端保持正式入口的設計及互動；前端按 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)。本人 key／限額及其限制見 [S06-W05](PLAN.md#s06-w05)；平台 AI 不要求家長自備 key。
 
