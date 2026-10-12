@@ -2167,3 +2167,14 @@
 - Verification：只讀 Git／程式及既有證據、文件 review、git diff --check、新增錨點及連結檢查；沒有重跑產品測試、模型、雲端或部署。前一份 WORKLOG 正文保持。
 - Limitations：沒有量測 token／工時節省；F02 未接聊天／ADK，VM IAM、原站代理與 worker audience 尚待接線，不能原樣切換完整 API。未更動其他工作樹、提交容量候選或刪除雲端資源。
 - Next Action：按 [候選清單](PLAN.md#f02-candidate-disposition) 在 F02／F03 選擇性接回；本輪只交付取捨記錄，不啟動實作。
+
+<a id="log-20261012-p2-completion-execution"></a>
+## LOG-20261012-P2-COMPLETION-EXECUTION
+
+- Recorded At / Work Date：2026-10-12（Asia/Hong_Kong）。
+- Step / Package：P2 完整執行計劃及必要契約，前置 master 063539e／PR #193；非 F02 程式完成。
+- Executor / AI Assistance：主模型獨立核對、親寫文件及 review，按本輪指示不派子代理。
+- Human Verification：使用者採納完整 F02～F08 計劃，重申只做必要測試；未提供本輪產品驗收結果。
+- Actual Work：建立完整 P2 目標，先更新根 PLAN，納入原站 Firestore 存取、資料分域／可靠交易、F03 早期可用聊天、跨副本准入／取消／配額及 F06 worker 競爭。局部同步 ARCHITECTURE／API，STATUS 移除前輪合併後停止的失效操作範圍。保留 F02 原候選、容量 dirty 成果、既有證據與 P3 三角色承接。
+- Verification：唯讀核 master 063539e、open PR 空；文件 diff／新增相對連結與錨點／原依賴核對。不執行產品、模型、雲端或全量測試，亦未部署。官方交易／Compose／Kubernetes 文件僅核相關設計約束，不當工程驗收。
+- Limitations / Next Action：本次只定案，F02 原 VM 接點、完整聊天及多副本均未因此完成。交付文件後接續 F02；雲端範圍／費用和服務選擇變更仍按有效授權，不推定舊批次餘額。

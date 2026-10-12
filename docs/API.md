@@ -752,6 +752,7 @@ GET /api/account 回傳模式、資料政策、本人驗證及確認狀態；POS
 - 相同原操作重試返回同一 run；不同 fingerprint 拒絕。逾時先查原受理／收據，不自動換 opId／runId。模型呼叫時仍作持久配額預留，排隊不能繞每日限制。
 - 沿既有本人／孩子 run 結果接口有界取得進度、工具收據、引用、候選及 terminal／unknown；等待／重連沿同一 owner，不複製為另一份聊天或任務。實際 route／typed DTO 相容對照在 F01 固定，不能把新路由當已存在。
 - 取消保存於同一 run，worker 每階段檢查；已提交的工具效果不因取消或收尾失敗回滾。頁面關閉不代表取消；長期未完成工作與待確認仍保留，重新登入可查回。無權、過期版本及 unknown 不偽裝空結果。
+- API 副本可互換：准入、限流、session 撤銷、每日及根預算、原收據與取消使用共用持久權威，前端毋須指定 instance 或黏性會話。另一副本接受取消後，執行者在模型／工具與提交邊界核同一終態；已提交效果仍按原操作查回。busy 與已受理／unknown 分開，不能引導重做已存在效果，細節見 [多副本契約](ARCHITECTURE.md#firestore-multi-instance)。
 - Tasks／Scheduler 送至原 VM 的受驗證入口；應用校驗 OIDC 簽章、issuer／audience／期限及固定服務身份。payload 只帶穩定參照／generation，不帶 prompt、附件正文或憑據。Caddy／API 期限依現有有界 run 協調，不提高模型預算；取消及 unknown 恢復沿同一操作。
 
 ### 業務、附件及恢復

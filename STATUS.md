@@ -8,7 +8,7 @@
 - **當前產品包：[P2-F02](PLAN.md#p2-f02)。** F01 已隨 PR #191 合併，文件基線 master 為 d5dbf61。F02 原分支 codex/p2-f02-firebase-cloud-slice 的 6a87632 未合併，資料／身份／附件／排程／恢復成果及原失敗照用，先 review 原 VM 接線缺口，不另起空分支重做。
 - **本輪文件定案：[ADR-024](docs/DECISIONS.md#adr-024)。** 保留原網址／VM／Compose／Caddy；正式 SQL 改 Firestore，復用 Firebase Auth／Storage／Tasks。取消 Hosting／Cloud Run／縮零及最後才接前端的必達門檻；F03 首次可用聊天即更新原站。乾淨起點不搬舊測試帳號／私人資料，也不刪舊備份。
 - **證據與未完成：**[候選取捨已核對](PLAN.md#f02-candidate-disposition)：保留 F02 有效資料／服務接點及容量五檔小修正；Hosting／Cloud Run 專用部署和失敗的容量模擬預覽退出後續工作，只留歷史參考。F03 接容量行為並處理 F01 原 master 五項測試型別錯誤，見 [F01 證據](artifacts/verification/F01_FIREBASE_FOUNDATION_20261011.json)。F02 及容量候選未合併／待驗狀態不變，額外雲端部署僅列[清理範圍](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。
-- **操作範圍：**本輪只修文件並交付，未跑產品測試、遷移或部署；合併後停下，不啟動 F02。原 US$30 驗收批次及舊模型次數不是可推定的剩餘預算，後續操作先核有效範圍、實際使用及資源期限；持續服務預算另按實測核定。
+- **操作範圍：**2026-10-12 已授權持續完成 [P2 完整路線](PLAN.md#p2-completion-execution)，完整目標已建立；先交付 PLAN／最小契約，再接 F02。本輪僅主模型、不派子代理；只補必要驗收，新增多副本權威與最小接點核對，不建 Kubernetes 或另一網站。尚未開始本輪產品測試、雲端修改或部署。原 US$30 批次及舊模型次數不是可推定的剩餘預算，雲端操作先核有效範圍、實際使用及資源期限；持續服務預算另按實測核定。
 - 新前端保持正式入口的設計及互動；前端按 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)。本人 key／限額及其限制見 [S06-W05](PLAN.md#s06-w05)；平台 AI 不要求家長自備 key。
 
 <a id="deployment"></a>
