@@ -1,6 +1,6 @@
 # 数据模型、版本与不变量
 
-**實作與目標分界：**下文 PostgreSQL／Better Auth／pg-boss／Compose 專項記錄現有機制，不能視為 Firestore 已接線。集中服務目標按 [ADR-019](DECISIONS.md#adr-019) 及 [Firestore 契約](#firestore-target) 取代其後續技術路線；業務、安全及既有證據保留，進度只見 [PLAN](../PLAN.md#active)。
+**實作與目標分界：**下文 PostgreSQL／Better Auth／pg-boss 專項保留原機制及證據；依 [ADR-024](DECISIONS.md#adr-024)，正式 SQL 接點改用 Firestore，原 VM／Node／Compose／Caddy 及網站繼續沿用。Firebase Auth、Storage、Tasks 的既有接線按實際範圍復用，不表示全部功能已遷移。現行契約見 [Firestore 接點](#firestore-target)，已合併／未合併／待驗只見 [PLAN](../PLAN.md#active)。
 
 本文件管穩定契約／設計，不維護包進度或即時部署。實作與未驗項見 [PLAN](../PLAN.md#roadmap-packages)，運行觀察見 [STATUS](../STATUS.md#deployment)，測試結論只按所連 EV 的版本／範圍解讀。
 
@@ -545,7 +545,7 @@ A02 使用 `agent_work`（目前版本及加密工作內容）、`agent_work_ope
 <a id="firestore-target"></a>
 ## Firestore 目標資料與可靠寫入契約
 
-此為待遷移契約；下列 collection 分組不是已存在 schema，固定 path／SDK／index definition 隨 F01 核對逐項 store 後落實。身份供應商改 Firebase Auth，業務權威仍由 Server 注入，不開放客戶端任意 collection 操作。
+下列是遷移資料契約及分組，不表示每個 store 已完成；F01 的權威／交易／身份基礎已合併，F02 及後續逐項沿既有 path／SDK／索引接通，狀態見 [PLAN](../PLAN.md#active)。Firebase Auth 身份仍由 Server 核實，不開放瀏覽器任意 collection 操作；VM 或 Cloud Run 不改變這些權威。
 
 | 分組 | 沿用權威與必要調整 |
 |---|---|
@@ -569,7 +569,7 @@ A02 使用 `agent_work`（目前版本及加密工作內容）、`agent_work_ope
 <a id="firestore-chat-transaction-boundary"></a>
 ### 聊天 work／confirmation／原收據的交易邊界
 
-此為 F01 待實作的最小約束；逐 store／query／index 對照在 [TECH_REUSE](TECH_REUSE.md#firestore-chat-store-audit)，不另建收據或工作主庫。
+此為各聊天 store 移植必須保留的交易約束；F01 基礎已合併不代表全部領域已接通。逐 store／query／index 對照見 [TECH_REUSE](TECH_REUSE.md#firestore-chat-store-audit)，不另建收據或工作主庫。
 
 1. **識別與歷史授權分開。** 原 trigger claim、runId、callId、work operationId、proposalId／version、asking run、ask／response message 及 domain opId 各沿原 scope。work operation 的唯一鍵為本人＋孩子＋operationId，document operation 為本人＋opId；不得統一縮成較窄鍵。索引／claim 只保存必要非正文 metadata；原正文／request fingerprint／結果沿既有 cipher、AAD、ID 及版本，不能以新路徑或新 owner 靜默解密再重綁。
 2. **讀集必須覆蓋授權和完整條件。** 新效果的 transaction 讀 account／device session 准入證據、workspace／membership／child 可用性、accessVersion／storageEpoch／刪除閘、原 trigger／run 狀態／期限、policy、來源訊息、目標版本、必要 work／proposal／confirmation 及原 claim／receipt；非適用項不虛構讀集。Auth provider 的外部狀態不能納入 Firestore 原子性，逐裝置 ledger／即時檢查是另需接線的前置，HTTP 薄 port 不代表已具備。查詢投影帶原來源版本並在本交易核權；無效／缺失索引資料 fail closed，不回退無 scope 全掃。
@@ -596,7 +596,7 @@ Storage 先 reserved，確定 object generation／hash／大小／加密版本�
 <a id="p2-agent-roles"></a>
 ## 四角色 Agent 的資料不變量（目標）
 
-依 [ADR-020](DECISIONS.md#adr-020) 補既有工作／操作／資料版本，非已存在 collection／migration；具體 schema 隨 F01～F05 落實，不另建通用成果資料庫。編排見 [架構](ARCHITECTURE.md#p2-agent-roles)。
+依 [ADR-024](DECISIONS.md#adr-024)，P2 只保留角色設定及輸入輸出／共同執行契約，不新增三個未啟用角色的內部資料流或專用 collection。下列草稿、審核及自主維護資料語義由 [P3-M01～M03](../PLAN.md#p3-agent-roles) 按需落實；沿既有領域服務，不另建通用成果資料庫。編排見 [架構](ARCHITECTURE.md#p2-agent-roles)。
 
 | 資料 | 必須保留的語義 |
 |---|---|

@@ -70,14 +70,15 @@ docker compose --project-name yuban-p1 \
 
 
 <a id="firestore-deployment"></a>
-## 集中服務的目標部署接點（尚未實作）
+## 原網站的 Firestore 交付接點（遷移中）
 
-採 [ADR-019](DECISIONS.md#adr-019)／[P2-F01～F08](../PLAN.md#p2-firestore-migration)。目前 npm／Compose 命令仍指 PostgreSQL，不將文件改名冒稱已有 Firebase 啟動腳本；固定 SDK、環境配置與正式命令由各包實作後更新本頁。
+採 [ADR-024](DECISIONS.md#adr-024)／[F01～F08](../PLAN.md#p2-firestore-migration)。保留 ex-machina.eu.org、原 VM、Node／Compose／Caddy、frontend/dist 及 Push service worker，不把 Hosting 或 Cloud Run 當交付前置。F01 已合併、F02 成果未合併；本頁規劃不代表正式站已用 Firestore。現有啟動／部署命令須按實作更新，不能只改文件便宣稱已退出 SQL。
 
-- Firebase Hosting 發布同一 frontend/dist 及 Push service worker；同源 /api 轉 Cloud Run，保留域名、設計與前端 owner。保留直接原 API 的本機開發 adapter，不能換成合成成功。
-- Cloud Run API／私有 OIDC worker、Firestore Standard、私有 Storage、Tasks／Scheduler；request-based、min instances 0、明確 max／佇列速率。沿平台 ADC／受保護 secrets，不在前端 bundle 放服務帳戶、key 或 private bucket token。實際 hostname／DNS 切換與資源建立另按批准進行。
-- AuthServiceOwner 接 Firebase provider 的登入／驗證／找回及 Server __session，邀請、政策、家庭／私人 scope 仍 Server 權威；不要求用戶配置 Firebase。既有帳戶 ID 保留，重新登入／可能重設密碼，不讓舊 cookie 自動續命。
-- Agent 由 202／runId／原操作受理後讀同一結果，避免 Hosting 60 秒；頁面沿現有 queued／running／terminal／unknown／cancel 狀態。私有回應 no-store，切換帳戶／孩子清理快取與遲到回應，不重新設計頁面。
-- 保留各領域功能／權限、opId／版本／changes 游標、照片、來源、文件／PDF、本人通知與可選 key。Tasks 取代 pg-boss 不改收到／完成和未知不重發；檔案由授權 API 提供，不讓永久公開連結繞過撤權。
+- Firebase Auth 復用既有登入畫面／owner、__session、邀請、政策及逐裝置會話；乾淨起點不搬舊帳號／私人資料，舊備份保留。身份與孩子範圍由 Server 核驗，登入者不需配置 Firebase。
+- Firestore／私有 Storage 沿同一權威、應用加密、版本／opId／changes 及授權下載。VM 附加身份／ADC 與受保護設定繼續使用，密鑰不進前端或模型。
+- Tasks／Scheduler 呼叫 VM 的受驗證工作入口，應用核 OIDC、固定 audience 及服務身份；保留 lease／generation、收據及 unknown 不重發。不能僅暴露一條公開 worker URL 便視為安全。
+- 互動沿現有請求、進度、取消及結果接口；不為 Hosting 60 秒限制強制改協議。需要排程的工作先持久受理；私有回應 no-store，身份切換清除快取及遲到回應。
+- F02 接 VM 組裝；F03 首次可用登入／聊天／引用／保存接通即更新原站，F04～F06 逐條承接現有頁面及功能。未遷移功能明示，不用假成功或空資料掩蓋；不等待 F08 才接完整前端，也不維持兩套產品網站。
+- 每次部署核對 VM 實況／期限、相容配置、資料與備份及 in-flight 工作，允許短暫維護；只有一套主寫與排程。已有新寫入只能回退相容 Firebase 應用版本或隔離還原，不能切回 SQL 舊快照；新刪除／撤銷／收據不可倒退。
 
-F02 先合成真雲端切片；F07 驗全功能對照、14 天配對恢復及含新寫入的反向回退，F08 再核准窗口切換。DB／worker／入口只允許一套主寫；回退映像仍懂 Firebase Auth／journal。最後才收束舊 VM／磁碟／IP。#140 的有效修正與未通過 Agent 流程另由 PLAN 追溯，不把新部署規劃當作已上線或以切片代替正式成果。
+F07 只補尚欠跨域／恢復證據，F08 確认已交付功能不連 SQL、不靜默回退。待清理清單：F02 額外 Hosting 站點、Cloud Run API／worker 及其專用殘留；先核實實際名稱、流量、依賴、保留需求和費用，再批准範圍內清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**。本次只改文件，不部署、改 DNS 或刪資源。A09 未通過成果及 F02 失敗沿 PLAN 追溯，不以基建切片代替產品完成。

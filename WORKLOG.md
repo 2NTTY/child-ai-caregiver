@@ -2132,3 +2132,25 @@
 ### Limitations / Next
 
 - 本包完成以正常PR合併為準，沒有部署或真Firebase交易、blocking／電郵、Tasks／OIDC、向量索引、縮零或還原實證。其餘功能503只表示待接，並非縮減原REQ／AC。合併讀回後推進F02最小完整雲端流程；持續營運預算仍待F08實測後使用者決定，完整P2未完成。
+
+<a id="log-20261012-firestore-vm-plan"></a>
+## LOG-20261012-FIRESTORE-VM-PLAN
+
+- Recorded At / Work Date：2026-10-12（Asia/Hong_Kong）。
+- Step / Package：Firestore 遷移範圍文件定案，非 F02 實作。
+- Executor / AI Assistance：主模型核對 Git、既有證據、方案及全文修改，完成文件 review；沒有啟動子代理。
+- Human Verification：使用者批准保留原網站的計劃，並要求文件合併後停下；未進行產品人工驗收。
+
+### Actual Work / Changes
+- 先修改根 PLAN，保留原網站／VM／Compose／Caddy，以 Firestore 替換正式 SQL，復用已做 Auth／Storage／Tasks。F01 #191 已合併；F02 接續本機 6a87632，不重做；F03 起逐條接前端及更新原站，移除 Hosting／Cloud Run／縮零門檻。
+- 三角色內部改由 P3-M01～M03 承接，P2 聊天及現有能力／安全檢查保留。局部同步 SPEC、ARCHITECTURE、DATA_MODEL、API、STATUS、TECH_REUSE 及正式部署交接。
+- 從 F02 原提交原樣接回 ADR-023，另追加 [ADR-024](docs/DECISIONS.md#adr-024)，避免佔用既有編號；不代表 F02 程式已合併。舊 ADR／LOG／失敗、F02 工作樹及容量 dirty 成果均未改動。
+
+### Verification
+- Environment / Revision：master d5dbf61；獨立 codex/firestore-vm-scope-plan 文件分支。交付前再核遠端 master 仍為 d5dbf61、open PR 為空。
+- Method / Result：git diff --check；文件範圍、新增相對連結、既有明確錨點及 F01～F08／P3-M01～M03 依賴核對通過，11 個包無循環。主模型 review 修正原 VM OIDC 應用驗證與旧 Cloud Run invoker IAM 的區別，並移除無關純翻譯變更。
+- Historical Evidence：既有 DECISIONS／WORKLOG 正文保持；ADR-023 與 F02 原文相同。成本沿已保存價格估算，未重新量測帳單。
+
+### Limitations / Next Action
+- 只改文件，未跑產品測試、模型、資料遷移、部署或雲端清理；各包部分完成／未驗不變。額外資源僅列清理範圍，不能誤刪 Auth 函式、原 VM 或有效資料／備份。
+- 本次 PR 合併後按使用者要求停下；下一個產品工作為 [F02 原站接線收束](PLAN.md#p2-f02)，不於本輪啟動。
