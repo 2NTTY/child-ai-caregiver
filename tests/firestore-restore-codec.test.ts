@@ -4,9 +4,10 @@ import { createHash, randomUUID } from 'node:crypto';
 import { FieldValue, VectorValue, type DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { createFirestoreRestoreCodec, type FirestoreRestoreTransform } from '../server/firestore-restore-codec.ts';
+import { originalRestoreScopeKinds } from '../server/firestore-restore-operation-records.ts';
 import { createFirestoreAuthority, firestoreAuthoritySchemas } from '../server/firestore-authority.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
-import { createFirestoreFamilyDocumentStore } from '../server/firestore-family-documents.ts';
+import { createFirestoreFamilyDocumentStore, firestoreFamilyDocumentSchemas } from '../server/firestore-family-documents.ts';
 import { FirestoreDomainData, firestoreDomainHash, firestoreTaskSchema, firestoreReminderOutboxSchema,
   sealFirestoreReminderOutbox, FIRESTORE_TASK_DISPATCH_SCOPE } from '../server/firestore-domain-data.ts';
 import { firestoreOnlineConfirmedSchema, firestoreOnlineErasureBarrierSchema } from '../server/firestore-online-receipts.ts';
@@ -68,7 +69,9 @@ test('restore authenticates actual canonical/domain writers, rebinds epochs and 
     const reopened = f.codec.decode({ path: transformed.path, data: transformed.data });
     assert.equal(transformed.oldPath, originalPath); checked++;
     if (decoded.context.family !== 'knowledge' && reopened.context.family !== 'knowledge') {
-      assert.equal(reopened.context.scope.storageEpoch, decoded.context.scope.storageEpoch === NIL ? NIL : newEpoch);
+      assert.equal(reopened.context.scope.storageEpoch,
+        originalRestoreScopeKinds.has(decoded.context.kind) ? decoded.context.scope.storageEpoch : decoded.context.scope.storageEpoch === NIL ? NIL : newEpoch,
+        decoded.context.kind);
       if (decoded.context.kind === 'control') assert.deepEqual(reopened.value, { enabled: false, generation });
       if (decoded.context.kind === 'workspace') {
         const before = firestoreAuthoritySchemas.workspace.parse(decoded.value), after = firestoreAuthoritySchemas.workspace.parse(reopened.value);
@@ -76,6 +79,13 @@ test('restore authenticates actual canonical/domain writers, rebinds epochs and 
       }
       if (decoded.context.kind === 'change' || decoded.context.kind === 'change-projection') assert.notEqual(transformed.path, originalPath);
       if (decoded.context.kind === 'authority-operation') assert.deepEqual(reopened.value, decoded.value);
+      if (decoded.context.kind === 'family-document') {
+        const document = firestoreFamilyDocumentSchemas.metadata.parse(decoded.value);
+        assert.equal(transformed.data.autoRefresh, document.autoRefresh);
+        assert.throws(() => f.codec.decode({ path: originalPath, data: { ...raw, autoRefresh: !document.autoRefresh } }), errors('restore_binding'));
+        const { autoRefresh: _oldProjection, ...legacy } = raw;
+        assert.deepEqual(f.codec.decode({ path: originalPath, data: legacy }).value, decoded.value);
+      }
       if (decoded.context.kind === 'online-receipt') {
         const before = firestoreOnlineConfirmedSchema.parse(decoded.value), after = firestoreOnlineConfirmedSchema.parse(reopened.value);
         assert.equal(after.fingerprint, before.fingerprint); assert.deepEqual(after.operation, before.operation);
