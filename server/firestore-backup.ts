@@ -12,7 +12,13 @@ const MAX_DOCUMENTS = 2000, MAX_BYTES = 32 * 1024 * 1024;
 export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions', '_children', '_tasks', '_task_revisions', '_changes',
   '_task_outbox', '_online_operations', '_documents', '_document_snapshots', '_document_chunks', '_document_operations',
   '_photos', '_photo_ops', '_photo_quota', '_photo_cleanup', '_task_reminders', '_task_reminder_batches', '_notification_preferences',
-  '_notification_outbox', '_task_dispatches', '_knowledge_sources', '_knowledge_versions', '_knowledge_chunks']);
+  '_notification_outbox', '_task_dispatches', '_knowledge_sources', '_knowledge_versions', '_knowledge_chunks',
+  '_chat_messages', '_chat_replies', '_chat_reply_leases', '_care_records', '_care_revisions', '_child_profiles', '_profile_revisions',
+  '_context_versions', '_memory_facts', '_memory_topics', '_memory_keys', '_memory_reopened', '_memory_fact_revisions', '_memory_topic_revisions',
+  '_conversation_summary_heads', '_conversation_summaries', '_agent_runs', '_agent_claims', '_agent_proposals',
+  '_agent_confirmations', '_agent_confirmation_slots', '_agent_confirmation_responses', '_agent_work_index', '_agent_work_operations',
+  '_agent_work_calls', '_agent_policies', '_agent_policy_revisions', '_private_instructions', '_agent_action_receipts', '_agent_action_calls',
+  '_agent_manual_operations', '_model_settings', '_model_key_checks', '_agent_admission', '_adk', '_root_budget', '_ai_usage']);
 export interface FirebaseBackupOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
 export interface FirebaseBackupDocument { path: string; data: DocumentData }
 export interface FirebaseBackupInventory {
@@ -85,7 +91,7 @@ export async function inspectFirebaseBackupSnapshot(options: FirebaseBackupOptio
   if (collections.some(collection => !allowed.has(collection.id))) reject('unsupported_collection');
   const docs = await options.database.runTransaction(async transaction => {
     const values: FirebaseBackupDocument[] = []; let bytes = 0;
-    for (const collection of collections.sort((a, b) => a.id.localeCompare(b.id))) {
+    async function collect(collection: ReturnType<Firestore['collection']>, nativeDepth?: number): Promise<void> {
       let cursor: string | undefined;
       while (true) {
         let query = collection.orderBy(FieldPath.documentId()).limit(100);
@@ -94,10 +100,15 @@ export async function inspectFirebaseBackupSnapshot(options: FirebaseBackupOptio
         for (const row of page.docs) {
           const document = { path: row.ref.path, data: row.data() }; bytes += firebaseBackupDocumentDigest(document).bytes; values.push(document);
           if (values.length > MAX_DOCUMENTS || bytes > MAX_BYTES) reject('snapshot_limit');
+          // Native ADK protocol state has a fixed hierarchy. Count every encrypted event, not just the app header.
+          const childCollection = nativeDepth === undefined ? undefined : ['users', 'sessions', 'events'][nativeDepth];
+          if (childCollection) await collect(row.ref.collection(childCollection), nativeDepth! + 1);
         }
         if (page.size < 100) break; cursor = page.docs.at(-1)!.id;
       }
     }
+    for (const collection of collections.sort((a, b) => a.id.localeCompare(b.id)))
+      await collect(collection, collection.id === options.namespace + '_adk' ? 0 : undefined);
     return values;
   }, { readOnly: true, readTime: Timestamp.fromMillis(at) });
   const point = options.namespace + '/' + workRecoveryDocumentId('control', 'current');

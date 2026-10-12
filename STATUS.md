@@ -5,10 +5,10 @@
 ## 目前與接手
 
 - **完整 P2 尚未完成。** 原 P2／INT 及 A01～A08 的已合併成果保留；A09 剩餘成果由 F07／F08 承接。P2 啟用聊天及現有工具，另外三角色明確移至 [P3-M01～M03](PLAN.md#p3-agent-roles)，只留最小接口。
-- **當前產品包：[P2-F02](PLAN.md#p2-f02)，必要驗收／review 完成、待 PR 合併。** 原 VM Firestore、照片實體清理及真 Auth 登入／撤權／重設已核對，失敗保留；合併後 F03 接完整聊天／核心資料。正式網站未切換，見 [本輪證據](artifacts/verification/F02_VM_WIRING_20261012.json)。
-- **本輪文件定案：[ADR-024](docs/DECISIONS.md#adr-024)。** 保留原網址／VM／Compose／Caddy；正式 SQL 改 Firestore，復用 Firebase Auth／Storage／Tasks。取消 Hosting／Cloud Run／縮零及最後才接前端的必達門檻；F03 首次可用聊天即更新原站。乾淨起點不搬舊測試帳號／私人資料，也不刪舊備份。
-- **證據與未完成：**[候選取捨已核對](PLAN.md#f02-candidate-disposition)：保留 F02 有效資料／服務接點及容量五檔小修正；Hosting／Cloud Run 專用部署和失敗的容量模擬預覽退出後續工作，只留歷史參考。F03 接容量行為並處理 F01 原 master 五項測試型別錯誤，見 [F01 證據](artifacts/verification/F01_FIREBASE_FOUNDATION_20261011.json)。F02 待合併，容量候選仍待 F03 接回，額外雲端部署僅列[清理範圍](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。
-- **操作範圍：**2026-10-12 已授權持續完成 [P2 完整路線](PLAN.md#p2-completion-execution)，完整目標已建立；PLAN／最小契約已交付，正在收束 F02。本輪僅主模型、不派子代理；只補必要驗收，新增多副本權威與最小接點核對，不建 Kubernetes 或另一網站。本輪只做必要斷言及有界雲端接點；已批准映像／key 傳至原 VM 並核對，原站未切換。清理一張既有合成照片、驗並清理一個臨時 Auth 帳號；原網址加入 Auth 回跳域。零模型／電郵／通知，不跑瀏覽器或全量。原 US$30 批次及舊模型次數不是可推定的剩餘預算，雲端操作先核有效範圍、實際使用及資源期限；持續服務預算另按實測核定。
+- **當前產品包：[P2-F03](PLAN.md#p2-f03)，資料驗收及主模型 review 通過，待合併。** F02 已由 PR #195 合併為 `0eae95e`；最新遠端重核未變且無 open PR。F03 未部署，正式網站仍未切換；依新次序先接完其餘資料域。
+- **最新次序：[ADR-025](docs/DECISIONS.md#adr-025)。** 先完成所有資料域及正式執行的 SQL 退出，使用 GCP 香港 Firestore；受邀用戶、真 Agent 完整使用及原站交付排在其後。保留原網址／VM／Compose／Caddy、前端及可用服務；舊 SQL 測試資料不必搬遷／對帳，舊備份暫留。F03 不再要求首次聊天即上線。
+- **證據與未完成：**[F03 EV](artifacts/verification/F03_FIRESTORE_CORE_20261012.json) 記錄核心 adapter、共享准入／取消及容量修正；必要本機情景與一次真 Firestore 資料專項通過（29 業務呼叫，零模型），索引已就緒。原同意 API 400 為驗收腳本漏必填欄位，失敗保留、未重跑互動批次。來源 control 已恢復暫停、測試權限已撤銷；合成資料實體刪除與完整恢復、其餘資料域及整站成果仍待所屬 F 包。
+- **操作範圍：**持續完成 [P2 路線](PLAN.md#p2-completion-execution)，本輪只用主模型、不派子代理，不用 Computer Use 或全量測試。只驗改動資料路徑，受邀用戶驗收延後；舊批次不當可用餘額，已停止驗收不自動重跑。真服務／費用／傳送及資源期限仍沿有效授權核對；不建新站或 Kubernetes。
 - 新前端保持正式入口的設計及互動；前端按 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)。本人 key／限額及其限制見 [S06-W05](PLAN.md#s06-w05)；平台 AI 不要求家長自備 key。
 
 

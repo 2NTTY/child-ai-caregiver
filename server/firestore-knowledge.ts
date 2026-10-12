@@ -13,6 +13,7 @@ export interface FirestoreKnowledgeEmbedding {
   chunkKey: string; inputHash: string; model: string; dimensions: number; pipeline: string; values: readonly number[];
 }
 export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidates" | "catalog"> {
+  validatePublishedSource(transaction: Transaction, id: string): Promise<void>;
   importSource(input: unknown): Promise<{ versionId: string; hash: string; unchanged: boolean; state: "draft" | "reviewed" | "withdrawn" }>;
   review(versionId: string, expectedHash: string, reviewer: string, assessment: KnowledgeReviewAssessment): Promise<{ status: "reviewed" | "held"; reason?: string }>;
   publish(versionId: string, expectedHash: string, embeddings?: readonly FirestoreKnowledgeEmbedding[]): Promise<{ status: "published" }>;
@@ -180,6 +181,13 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
   }
   function bump(source: Source): Source { return { ...source, revision: (BigInt(source.revision) + 1n).toString() }; }
   return {
+    async validatePublishedSource(tx, id) {
+      if (!allowed.has(id)) reject('knowledge_source_unknown', 404);
+      const source = await readSource(tx, id);
+      if (!source?.enabled || !source.activeVersionId) reject('knowledge_source_unavailable', 409);
+      const edition = await load(tx, source.activeVersionId, source);
+      if (!publication(edition)) reject('knowledge_source_unavailable', 409);
+    },
     async importSource(input) {
       if (input && typeof input === "object" && ["watch", "watchId", "observation", "audience"].some(key => key in input)) reject("domain_not_ready", 503);
       const document = JSON.parse(JSON.stringify(parseKnowledgeSource(input))) as KnowledgeSourceInput;

@@ -13,6 +13,11 @@ import { createFirestorePhotoStore } from './firestore-photos.ts';
 import { createFirestoreTaskWorker } from './firestore-task-worker.ts';
 import { createFirestoreKnowledgeStore } from './firestore-knowledge.ts';
 import { createFirestorePersonalLibrary } from './firestore-personal-library.ts';
+import { createFirestoreChatStore } from './firestore-chat.ts';
+import { createFirestoreCareStore } from './firestore-care.ts';
+import { createFirestoreMemoryStore } from './firestore-memory.ts';
+import { createFirestoreProductAgent } from './firestore-product-agent.ts';
+import { readAiConfig } from './ai-config.ts';
 
 /** Real production clients; no seeded authority, SQL fallback or implicit database initialization. */
 export async function openFirebaseRuntime(env: Record<string, string | undefined>) {
@@ -39,15 +44,19 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
         throw new Error('Firebase worker identity unavailable');
       }
     } });
-    const online = createFirestoreOnlineStore({ ...domain, photos, reminders });
+    const chat = createFirestoreChatStore(domain), care = createFirestoreCareStore(domain);
+    const memory = createFirestoreMemoryStore({ ...domain, chat, care });
+    const online = createFirestoreOnlineStore({ ...domain, photos, reminders, mutations: [chat.mutation, care.mutation, memory.mutation] });
     const documents = createFirestoreFamilyDocumentStore({ database, cipher, projectId: config.projectId, namespace: config.namespace });
     const knowledge = config.knowledgeSourceIds === null ? undefined : createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds });
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
+    const product = await createFirestoreProductAgent({ ...domain, config: readAiConfig(env), chat, care, memory, online, knowledge });
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
-    const handler = createFirebaseRequestHandler({ authority, auth, online, documents, photos, library, publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
+    const handler = createFirebaseRequestHandler({ authority, auth, online, documents, photos, library, chat, care, memory, product,
+      publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { ...persistence, sessions, auth, online, documents, photos, objects, journal, knowledge, library, handler,
+    return { ...persistence, sessions, auth, online, documents, photos, objects, journal, knowledge, library, chat, care, memory, product, handler,
       close() { return closing ??= (async () => { try { await deleteApp(ownedApp); } finally { await persistence.close(); } })(); } };
   } catch (error) {
     try { if (app) await deleteApp(app); } finally { await persistence.close(); }

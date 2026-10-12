@@ -3,7 +3,7 @@ import { ModelSettingsError } from "./model-settings-contract.ts";
 import { parseModelSettingsCommand } from "./model-settings.ts";
 import type { ModelRouting } from "./model-routing.ts";
 
-export async function handleModelSettingsRequest(request: Request, userId: string | null, routing: ModelRouting): Promise<Response> {
+export async function handleModelSettingsRequest(request: Request, userId: string | null, routing: Pick<ModelRouting, 'view' | 'settings' | 'check'>): Promise<Response> {
   if (!userId) return apiError("unauthorized", "請先登入。", 401);
   if (request.headers.get("x-expected-user-id") !== userId) return apiError("session_changed", "登入身份已改變，請重新讀取。", 403);
   const path = new URL(request.url).pathname;

@@ -3,6 +3,7 @@ import { agentDirectActionSchema, agentActionToolNames } from "../src/shared/age
 import type { AgentTool, AgentRunContext } from "./agent-runtime.ts";
 import type { AgentActionsStore } from "./agent-actions-store.ts";
 import { FamilyError } from "./family-access.ts";
+import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { AgentStopped } from "./agent-budget.ts";
 import { groundedRecordTime } from "./agent-record-time.ts";
 
@@ -57,7 +58,7 @@ export function createAgentActionTools(actions: AgentActionsStore, run: AgentRun
             ...(action.kind === "save_record" ? { savedEventTime: groundedRecordTime(action.details, [action.sourceQuote, ...(action.sourceMessages ?? []).map(item => item.quote)].join("\n")).eventTime } : {}) } };
         } catch (error) {
           if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
-          if (error instanceof FamilyError) return { status: error.status === 409 ? "conflict" : "rejected",
+          if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected",
             data: { code: error.code, nextAction: "重新核對目前授權及原操作；不要換 ID 重複執行，不把拒絕寫成成功。" } };
           throw error;
         }

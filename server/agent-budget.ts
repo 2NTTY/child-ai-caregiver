@@ -20,7 +20,7 @@ export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
 }
 
 export type AgentStopReason = "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
-  | "input_limit" | "unauthorized" | "quota_exceeded" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown";
+  | "input_limit" | "unauthorized" | "quota_exceeded" | "busy" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown";
 export class AgentStopped extends Error {
   readonly reason: AgentStopReason;
   constructor(reason: AgentStopReason) { super(reason); this.reason = reason; }
@@ -46,6 +46,7 @@ export class AgentBudget {
   private responseCharacters: number | null = null;
   private selectedLimits: { [K in keyof typeof AGENT_LIMITS]: number } = { ...AGENT_LIMITS };
   private readonly expiresAt: number;
+  get deadlineAtMs(): number { return this.expiresAt; }
   private durableBudget?: AgentDurableBudget;
   private readonly controller = new AbortController();
   private readonly timer: ReturnType<typeof setTimeout>;

@@ -18,6 +18,7 @@ import type { MemoryStore } from "./memory.ts";
 import type { TaskStore } from "./tasks.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import { FamilyError } from "./family-access.ts";
+import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { createAgentActionTools } from "./agent-action-tools.ts";
 import { createAgentSourceTools } from "./agent-source-tools.ts";
 import { createAgentDocumentTools } from "./agent-document-tools.ts";
@@ -91,7 +92,7 @@ export function createProductAgentTools(options: {
   summary?:import("./care-summary-store.ts").CareSummaryStore;
   contact?:import("./contact-store.ts").ContactStore;
   growth?: import("./growth-store.ts").GrowthStore;
-  run: AgentRunContext; memory: MemoryStore; tasks: TaskStore; store: ProductAgentStore;
+  run: AgentRunContext; memory: MemoryStore; tasks: Pick<TaskStore, 'list'>; store: ProductAgentStore;
   knowledge: Retriever; authorize: () => Promise<boolean>; visibility?: "private" | "family";
   reviewedGrowthPresentation?: boolean;
 }) {
@@ -112,7 +113,7 @@ export function createProductAgentTools(options: {
     catch (error) {
       if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code, nextAction: "search_knowledge", citationField: "chunks[].chunkId", message: "引用只能取本次 search_knowledge 結果的原始 chunkId；背景來源 metadata 不是已登記引用。不要猜測、拼接或重送同一無效 ID。" } };
-      if (error instanceof FamilyError) return { status: error.status === 409 ? "conflict" : "rejected", data: { code: error.code } };
+      if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
       throw error;
     }
   }

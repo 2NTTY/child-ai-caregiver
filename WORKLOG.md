@@ -2398,3 +2398,14 @@
 - Verification：本輪五個必要斷言通過（原三個 HTTP／worker，加清理與 session 時鐘各一）。真 Auth 初次第二裝置交換失敗，診斷續跑仍拒絕；固定欄位診斷不含 token。時鐘修正後登入／裝置撤銷通過，reset 遇 unauthorized-continue-uri 停止；補回原網址後只驗剩餘 reset、舊 session 拒絕、新密碼登入／登出及清理，全部通過。同一個新合成帳號，零模型／電郵／通知／瀏覽器，沒有全量測試。見 [EV](artifacts/verification/F02_VM_WIRING_20261012.json)。
 - Limits：重設使用官方 action link，不寄信；既有驗證電郵真人結果保留，不宣稱重設收件匣或原站 UI 已驗。原站仍是 85e3a846，上傳映像早於最後 Auth／清理修正，不能當已部署。F02 不代表全部聊天、排程或 P2 完成，備份及還原庫保持。
 - Next：單作者／主責帳號交付；合併後 F03 接原站完整聊天，F06 接自動清理。原失敗不回寫，已通過項目不重跑。
+
+<a id="log-20261012-f03-core"></a>
+## LOG-20261012-F03-CORE
+
+- Recorded At / Work Date：2026-10-12（Asia/Hong_Kong）；P2-F03，基線 0eae95e，分支 codex/p2-f03-core-chat。
+- Executor / AI Assistance：Astra 主模型獨立實作、必要核對及 review，未派子代理。Human Verification：使用者批准兩次不同範圍的最小核對；本輪沒有真人產品使用驗收。
+- Actual Work：接通 Firestore 聊天／原文、照護記錄／修訂、profile、事實／話題／摘要、Agent run／工作／確認／候選與操作收據、私人交代、歷史及本人模型設定。原 API／工具共用 authority、交易、版本／scope、changes；共享租約、取消與持久用量代替程序內權威。保留原 ADK Runner／Prompt Pack，未接文件／背景能力明示缺口。接回容量五檔修正及 F01 舊型別缺口。
+- Decision：使用者要求先完成全部資料庫替換，再讓受邀用戶使用。先更新 PLAN，追加 ADR-025，局部同步 SPEC／架構／部署交接／STATUS；F03～F07 先完成零 SQL，F08 再集中原站使用驗收。舊 SQL 測試資料搬遷不作門檻，舊備份未刪，不新增網站或改 UI。
+- Verification：三個最少本機情景通過，包含真 Runner／scripted provider；原 ledger fixture 缺 FinishReason.STOP 曾失敗，修 fixture 後同一情景通過。僅檢查所改 runtime／契約的選定型別和腳本語法。原生雲端 29 個新索引及私密欄位排除已套用，46 個 composite indexes 全部 READY。索引 API pageSize 與 wildcard 排除檢查的初次失敗已保留及局部修正，未刪索引。
+- Native Results：第一次互動驗收在第 3 次 API 因腳本漏 accepted:true 回 400，零模型／embedding，立即停批並恢復 paused；原客戶端本已帶此欄位。新批准的資料庫專項 29 次業務呼叫通過：原操作去重、原文、版本衝突、帳號隔離、重新連線後工作／記錄／取消讀回；零模型／通知／部署。測試權限撤銷，control 暫停；合成孩子及密文歷史保留供 F04 清理，不冒稱實體刪除。詳見 [F03 EV](artifacts/verification/F03_FIRESTORE_CORE_20261012.json)。
+- Limits / Next：本次只完成 F03 資料包，沒有真模型回覆、原站切換、瀏覽器或全量測試；帳單未知，資料核對批准估算低於 US$0.01。F04 接文件／附件／退出及完整恢復 codec；F05 知識、F06 背景、F07 正式 SQL 退出、F08 完整產品成果仍須完成。依所屬包復用證據，不重跑已通過項目。

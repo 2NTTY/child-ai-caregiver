@@ -164,11 +164,19 @@ function freezeDurable(durable: AgentDurableBudget): AgentDurableBudget {
     ...(durable.runLimits ? { runLimits: Object.freeze({ ...durable.runLimits }) } : {}) });
 }
 
+export interface AgentRunAdmission {
+  acquire(input: { runId: string; userId: string; deadlineAtMs: number }): Promise<{
+    authorize(): Promise<boolean>; release(): Promise<void>;
+  } | null>;
+}
+
 /** Internal server entry only. HTTP bodies cannot supply scope, recipes, handlers or authorization. */
 export function createAgentRuntime(options: {
   config: AiConfig;
   usage: Pick<AiUsageStore, "reserve" | "record">;
   provider: AgentModelProvider;
+  /** Server-selected gateway for a fixed durable run; carries no client-selected authority. */
+  embeddings?: import('./embedding-gateway.ts').EmbeddingGateway;
   resolve?: import("./model-routing.ts").ModelRouting["resolve"];
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
   /** Trusted, preconfigured native storage. Single-run create-only; the caller owns its client. */
@@ -179,6 +187,8 @@ export function createAgentRuntime(options: {
   bindDurableRun?: AgentDurableRunBinder;
   /** Fixed trusted constructor snapshot selected before binding; no per-request override. */
   boundRunLimits?: AgentRunLimits;
+  /** Shared durable gate in Firestore composition; local state is only a legacy SQL fallback. */
+  admission?: AgentRunAdmission;
 }) {
   if (options.boundRunLimits !== undefined && !options.bindDurableRun) throw new Error("Invalid bound run limits assembly");
   if ((options.durableBudget || options.bindDurableRun) && (options.resolve || !options.nativeSessionService
@@ -203,6 +213,7 @@ export function createAgentRuntime(options: {
       const result: AgentRunResult = { runId, status: "stopped", text: null, tools: [], counts: budget.counts };
       const scope = bindingInput.scope;
       let acquired = false;
+      const lease: { current: Awaited<ReturnType<AgentRunAdmission["acquire"]>> } = { current: null };
       let toolFailure: AgentStopped | undefined;
       let cleanupOwnedSession: (() => Promise<void>) | undefined;
       let authorize = input.authorize;
@@ -217,9 +228,22 @@ export function createAgentRuntime(options: {
           if (durable?.runLimits) budget.configurePersonal(durable.runLimits);
           if ("authorize" in selected) authorize = async () => await input.authorize() && await selected.authorize();
           budget.check();
-          if (!selected.config.enabled || !await authorize() || activeUsers.has(scope.userId) || activeUsers.size >= 4) throw new AgentStopped("unavailable");
-          activeUsers.add(scope.userId);
-          acquired = true;
+          if (!selected.config.enabled || !await authorize()) throw new AgentStopped("unavailable");
+          budget.check();
+          if (fixedOptions.admission) {
+            const admitted = await fixedOptions.admission.acquire({ runId, userId: scope.userId, deadlineAtMs: budget.deadlineAtMs });
+            // Admission may finish after the outer bounded wait has already unwound.
+            if (budget.signal.aborted) { await admitted?.release(); budget.check(); }
+            if (!admitted) throw new AgentStopped("busy");
+            lease.current = admitted;
+            const businessAuthorize = authorize;
+            authorize = async () => await admitted.authorize() && await businessAuthorize();
+          } else {
+            if (activeUsers.has(scope.userId) || activeUsers.size >= 4) throw new AgentStopped("busy");
+            activeUsers.add(scope.userId);
+            acquired = true;
+          }
+          budget.check();
           if (!input.messages.length || input.messages.at(-1)?.role !== "user"
             || input.messages.some(message => !message.text.trim() || /[\u0000\uD800-\uDFFF]/u.test(message.text))) throw new AgentStopped("invalid_response");
           const runContext: AgentRunContext = { scope, runId, budget, authorize,
@@ -502,6 +526,7 @@ export function createAgentRuntime(options: {
           }
         }
         if (acquired) activeUsers.delete(scope.userId);
+        if (lease.current) { try { await lease.current.release(); } catch { /* The fixed expiry still bounds capacity after unknown cleanup. */ } }
         result.counts = budget.counts;
       }
       // Only verified tool progress survives a failed final generation; never execute result text.

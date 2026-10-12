@@ -39,7 +39,7 @@ export interface ProductAgentDurableProfile {
   promptPackVersion: string;
   settingsVersion: string;
   billingVersion: string;
-  billingSource: "platform";
+  billingSource: "platform" | "personal";
   /** Optional fixed Server-selected counts; omitted profiles retain the production defaults. */
   runLimits?: AgentRunLimits;
 }
@@ -59,13 +59,14 @@ export interface ProductAgentServicePorts {
   };
 }
 
-function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAgentServicePorts["claimedRunPersistence"]>, routing: unknown, allowWorkContinuation = false) {
+export function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAgentServicePorts["claimedRunPersistence"]>, routing: unknown, allowWorkContinuation = false, allowPersonal = false) {
   const { nativeSessionService, rootBudget, dailyUsage, provider, embeddingProvider } = persistence;
   const profile = persistence.profile ? Object.freeze({ ...persistence.profile, config: Object.freeze({ ...persistence.profile.config }),
     ...(persistence.profile.runLimits === undefined ? {} : { runLimits: freezeAgentRunLimits(persistence.profile.runLimits) }) }) : undefined;
   const version = (value: unknown): value is string => typeof value === "string" && value.length > 0
     && value.length <= 128 && value === value.trim() && value.isWellFormed();
-  if (routing || !profile || !profile.config.enabled || profile.billingSource !== "platform" || dailyUsage?.billingSource !== "platform"
+  if (routing || !profile || !profile.config.enabled || (!allowPersonal && profile.billingSource !== "platform")
+    || !["platform", "personal"].includes(profile.billingSource) || dailyUsage?.billingSource !== profile.billingSource
     || ![profile.workflowVersion, profile.promptPackVersion, profile.settingsVersion, profile.billingVersion].every(version)
     || agentBudgetFingerprint(config) !== agentBudgetFingerprint(profile.config)
     || !nativeSessionService || !rootBudget || !dailyUsage) throw new Error("Invalid claimed run persistence assembly");
@@ -82,7 +83,7 @@ function claimedRunAssembly(config: AiConfig, persistence: NonNullable<ProductAg
       || !version(claim.storageEpoch) || !claim.scope.dataVersion.startsWith(claim.storageEpoch + ":")
       || !/^\d+$/u.test(claim.scope.dataVersion.slice(claim.storageEpoch.length + 1))
       || !Number.isSafeInteger(expiry) || expiry <= Date.now() || expiry !== input.deadlineAtMs
-      || packVersion !== profile.promptPackVersion || dailyUsage.billingSource !== "platform") throw new AgentStopped("unavailable");
+      || packVersion !== profile.promptPackVersion || dailyUsage.billingSource !== profile.billingSource) throw new AgentStopped("unavailable");
     return { adapter: rootBudget, dailyUsage, context: { generation: 1, binding: {
       rootRunId: claim.runId, ownerId: claim.scope.userId, workspaceId: claim.scope.workspaceId, childId: claim.scope.childId,
       authorizationVersion: claim.scope.authorizationVersion, storageEpoch: claim.storageEpoch,

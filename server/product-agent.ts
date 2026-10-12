@@ -23,7 +23,7 @@ export function createProductAgent(options: {
   contact?:import("./contact-store.ts").ContactStore;
   growth?: import("./growth-store.ts").GrowthStore;
   runtime: ReturnType<typeof createAgentRuntime>; store: ProductAgentStore;
-  memory: MemoryStore; tasks: TaskStore; chat: ChatStore; knowledge: ReturnType<typeof createKnowledgeRetriever>;
+  memory: MemoryStore; tasks: Pick<TaskStore, 'list'>; chat: ChatStore; knowledge: ReturnType<typeof createKnowledgeRetriever>;
 }) {
   const activeReplies = new Map<string, AbortController>();
   const replyKey = (userId: string, childId: string, messageId: string) => JSON.stringify([userId, childId, messageId]);
@@ -200,8 +200,9 @@ export function createProductAgent(options: {
         countsKnown: true, counts: result.counts, proposals: [] };
       if (!await isCurrentUser()) return null;
       if (!await options.store.finish(claim.scope, value, value.status === "completed" && !confirmationPendingFallbackUsed ? tools?.summaryDraft() : undefined)) {
-        const cancelled = await options.store.readCancelled(claim.scope, claim.runId);
-        return await isCurrentUser() ? cancelled : null;
+        const persisted = await options.store.readCancelled(claim.scope, claim.runId)
+          ?? await options.store.get(userId, childId, claim.runId);
+        return await isCurrentUser() ? persisted : null;
       }
       const stored = await options.store.get(userId, childId, claim.runId);
       return await isCurrentUser() ? stored : null;

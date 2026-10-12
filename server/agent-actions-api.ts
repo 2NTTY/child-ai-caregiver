@@ -2,6 +2,7 @@ import { z } from "zod";
 import { agentPolicyUpdateSchema } from "../src/shared/agent-actions.ts";
 import type { AgentActionsStore } from "./agent-actions-store.ts";
 import { FamilyError } from "./family-access.ts";
+import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { apiError, jsonResponse } from "./workspace-api.ts";
 
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
@@ -43,7 +44,7 @@ export async function handleAgentActionsRequest(request: Request, userId: string
     return apiError("not_found", "找不到資料。", 404);
   } catch (error) {
     if (error instanceof z.ZodError) return apiError("invalid_input", "請核對輸入及原操作。", 400);
-    if (error instanceof FamilyError) return apiError(error.code,
+    if (error instanceof FamilyError || error instanceof FirestoreDomainError) return apiError(error.code,
       error.status === 409 ? "資料、授權或版本已改變，請重新讀取。" : "無法處理此操作，請核對權限。", error.status);
     return apiError("operation_unknown", "未能確認操作結果，請查核原操作；不要另建重複提交。", 503);
   }

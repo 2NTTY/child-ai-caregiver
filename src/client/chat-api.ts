@@ -3,11 +3,11 @@ import type { OnlineReceipt } from "../shared/online.ts";
 import type { SessionUser } from "./records-api.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
-export type ChatErrorCode = "ai_disabled" | "ai_busy" | "ai_quota_exceeded" | "ai_timeout" | "ai_unavailable"
+export type ChatErrorCode = "ai_disabled" | "ai_busy" | "ai_capacity_busy" | "ai_quota_exceeded" | "ai_timeout" | "ai_unavailable"
   | "invalid_input" | "unauthorized" | "session_changed" | "not_found";
 
 const knownCodes = new Set<ChatErrorCode>([
-  "ai_disabled", "ai_busy", "ai_quota_exceeded", "ai_timeout", "ai_unavailable",
+  "ai_disabled", "ai_busy", "ai_capacity_busy", "ai_quota_exceeded", "ai_timeout", "ai_unavailable",
   "invalid_input", "unauthorized", "session_changed", "not_found",
 ]);
 

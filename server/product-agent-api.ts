@@ -5,6 +5,7 @@ import type { ChatStore } from "./chat.ts";
 import { readAgentWorkSchema, historySearchSchema, historyReadSchema } from "../src/shared/agent-work.ts";
 import { agentDecisionSchema } from "../src/shared/product-agent.ts";
 import { FamilyError } from "./family-access.ts";
+import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { apiError, jsonResponse } from "./workspace-api.ts";
 
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
@@ -64,6 +65,11 @@ export async function handleProductAgentRequest(request: Request, userId: string
       if (!result) return apiError("not_found", "存取權或資料已改變，請重新讀取。", 404);
       if (result.status === "running") return apiError("ai_busy", "Agent 正在處理這則訊息；請稍後查核原結果。", 429);
       if (!await options.isCurrentUser(userId)) return apiError("unauthorized", "登入已失效。", 401);
+      // Only a known zero-effect refusal may invite a new message. Confirmation consumption can precede admission.
+      if (result.status === "stopped" && result.stopReason === "busy" && result.countsKnown === true
+        && result.counts.modelCalls === 0 && result.counts.toolCalls === 0 && result.counts.queryEmbeddings === 0
+        && result.tools.length === 0 && result.proposals.length === 0)
+        return apiError("ai_capacity_busy", "AI 正忙碌；原訊息已保存，但未開始處理，也沒有排隊。稍後請以新訊息重新提出要求。", 429);
       const questions = await options.store.confirmationQuestions?.(userId, childId, result.runId) ?? [];
       const text = questions.length ? [result.text, ...questions].filter(Boolean).join("\n\n") : result.text || (result.proposals.length
         ? "Agent 未完成文字回覆，但已保存待你核對的候選；尚未確認的事項不代表已執行。請查看來源與待確認事項。"
@@ -87,7 +93,7 @@ export async function handleProductAgentRequest(request: Request, userId: string
     const result = await options.store.get(userId, childId, run![2].toLowerCase());
     return result && await options.isCurrentUser(userId) ? jsonResponse({ result }) : apiError("not_found", "找不到運行結果。", 404);
   } catch (error) {
-    if (error instanceof FamilyError) return apiError(error.code, error.status === 409 ? "事項、權限或版本已改變，請重新讀取並核對。" : "無法處理此事項，請核對資料與權限。", error.status);
+    if (error instanceof FamilyError || error instanceof FirestoreDomainError) return apiError(error.code, error.status === 409 ? "事項、權限或版本已改變，請重新讀取並核對。" : "無法處理此事項，請核對資料與權限。", error.status);
     if (error instanceof z.ZodError) return apiError("invalid_input", "請檢查輸入。", 400);
     return apiError("ai_unavailable", "未能確認操作結果，請先查核原運行；不要另建重複操作。", 503);
   }
