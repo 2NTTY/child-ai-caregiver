@@ -1,0 +1,517 @@
+import { randomBytes, randomUUID } from 'node:crypto';
+import { spawn } from 'node:child_process';
+import { mkdir, lstat, open } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { GoogleAuth } from 'google-auth-library';
+import { applicationDefault, deleteApp, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { z } from 'zod';
+import { openFirebasePersistence } from '../server/firebase-persistence.ts';
+import { decodeFirebaseStorageKey } from '../server/firebase-storage-key.ts';
+
+// Operator-only synthetic HTTP identity fixtures. This is not Web SDK or email lifecycle evidence.
+// Auth REST fetches never retry. Admin same-value updates and original invitation transactions retain SDK retries.
+// A 20-second SDK waiting limit cannot cancel an already submitted Admin/Firestore mutation; unknown stops the run.
+const ORIGIN = 'https://yuban-firebase-check.web.app';
+const PROJECT = 'ai-caregivers-for-children', PROJECT_NUMBER = '1064034424208';
+const DATABASE = 'yuban-firebase-20261011', NAMESPACE = 'yuban_authority';
+const APP_ID = '1:1064034424208:web:b0873383eee9d93256cf15';
+const SOURCE = '97de268a4b1edc8f17f80634093ee210ffac5a66';
+const RESUME_RUN_ID = 'f02-20261011-01';
+const RESUME_ACTORS = Object.freeze({
+  A: Object.freeze({ userId: 'RLG08u9PVifLmoW0MvU1xx6LK0n2', email: 'f02-20261011-a@synthetic.invalid' }),
+  B: Object.freeze({ userId: 'RgNYZpZdIdghEG9kUBDt3sxiKtr2', email: 'f02-20261011-b@synthetic.invalid' }),
+});
+const KNOWLEDGE_VERSION = 'c9265331-6ec2-5436-b4c2-07d354e53101';
+const SECRET = `projects/${PROJECT_NUMBER}/secrets/YUBAN_FIREBASE_STORAGE_KEY/versions/1`;
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const NODE = 'C:/Users/2NTTY/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node.exe';
+// Opt-in actor A: tmp/f02-cloud-actors-20261011/browser-fixture-A.json.
+// Explicit unverified_B mode: tmp/f02-cloud-unverified-b-20261012/browser-fixture-B.json.
+// Root consumes and removes it promptly; failures and close retain it for reconciliation.
+const BROWSER_FIXTURE_NAME = 'browser-fixture-A.json';
+const TIMEOUT_MS = 20_000, MAX_LINE = 4096, MAX_COMMANDS = 100, MAX_RESPONSE = 32 * 1024, MAX_HTTP = 20;
+const uidSchema = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/u), uuid = z.uuid();
+const publicConfigSchema = z.object({ apiKey: z.string().regex(/^[A-Za-z0-9_-]{20,200}$/u),
+  authDomain: z.literal(PROJECT + '.firebaseapp.com'), projectId: z.literal(PROJECT), appId: z.literal(APP_ID) }).strict();
+const startSchema = z.object({ command: z.literal('start'), runId: z.string().regex(/^[A-Za-z0-9_-]{1,48}$/u),
+  publicConfig: publicConfigSchema, browserFixture: z.boolean().default(false),
+  mode: z.enum(['verified_pair', 'unverified_B', 'resume_verified_pair', 'resume_photo_read', 'resume_reminder']).default('verified_pair') }).strict();
+const commandSchema = z.union([startSchema, z.object({ command: z.enum(['prepare', 'core', 'reminder', 'delete', 'status', 'close']) }).strict()]);
+const checkpointSchema = z.object({ step: z.string().regex(/^[a-zA-Z0-9_]+$/u), runId: startSchema.shape.runId,
+  uid: uidSchema.optional(), operationId: uuid.optional() }).strict();
+const identitySchema = z.object({ user: z.object({ id: uidSchema, name: z.string().max(1000), email: z.email().max(320) }).strict() }).strict();
+const cookieSchema = z.string().max(16 * 1024 + 10).regex(/^__session=[A-Za-z0-9._~-]+$/u);
+function sessionCookie(cookies) {
+  if (!Array.isArray(cookies) || cookies.length !== 1 || typeof cookies[0] !== 'string') stop('session_cookie_invalid');
+  const [token, ...attributes] = cookies[0].split('; ');
+  const expected = ['Path=/', 'HttpOnly', 'SameSite=Lax', 'Max-Age=432000', 'Secure'];
+  if (!/^__session=[A-Za-z0-9._~-]+$/u.test(token) || attributes.length !== expected.length
+    || JSON.stringify(attributes.sort()) !== JSON.stringify(expected.sort())) stop('session_cookie_invalid');
+  return cookieSchema.parse(token);
+}
+const childOperationSchema = z.object({ runId: startSchema.shape.runId.optional(), opId: uuid.optional(), deviceId: uuid.optional(),
+  workspaceId: uuid.optional(), storageEpoch: uuid.optional() }).strict();
+const CHILD_STEPS = new Set(['reminder_checkpoint', 'reminder_complete', 'reminder_settings_A', 'reminder_settings_B', 'reminderPreference_context', 'reminder_preference_save', 'reminder_preference_replay', 'reminder_preference_receipt', 'reminder_settings_saved', 'reminder_settings_B_unchanged', 'reminder_original_task_read', 'reminderReschedule_context', 'reminder_task_reschedule', 'reminder_reschedule_replay', 'reminder_task_read', 'reminder_original_create_receipt', 'resume_checkpoint', 'resume_child_A', 'resume_child_B', 'resume_task_receipt', 'resume_task_read', 'resume_document_read', 'resume_original_content', 'resume_latest_content', 'resume_photo_receipt', 'resume_photo_metadata', 'input', 'core_checkpoint', 'delete_checkpoint', 'core_complete', 'delete_complete',
+  'task_context', 'task_create', 'task_original_replay', 'task_read', 'document_create', 'document_original_content',
+  'document_typed_patch', 'document_patch_original_replay', 'document_read_latest', 'document_latest_content',
+  'document_stale_version', 'document_after_conflict', 'photoReserve_context', 'photo_reserve', 'photo_reserve_original_replay',
+  'photo_upload', 'photo_metadata_read', 'photo_authorized_content', 'photo_complete_list', 'foreign_child_tasks', 'foreign_task',
+  'foreign_photo', 'foreign_photo_content', 'foreign_document', 'foreign_original_operation', 'library_catalog_version',
+  'photoDelete_context', 'delete_original_photo_read', 'delete_original_context', 'photo_delete_original_operation',
+  'photo_delete_original_replay', 'photo_delete_original_receipt', 'deleted_photo_metadata', 'deleted_photo_content',
+  'deleted_photo_complete_list', 'deleted_reservation_receipt_redacted', 'child_A_original_replay',
+  ...['A', 'B'].flatMap(actor => ['session_', 'account_', 'acknowledge_', 'child_', 'children_complete_'].map(prefix => prefix + actor)),
+  'childA_context', 'childB_context']);
+const CHILD_ERRORS = new Set(['request_limit', 'response_limit', 'network_failure', 'unexpected_status', 'invalid_response_json',
+  'input_limit', 'input_invalid', 'checkpoint_exists_or_unavailable', 'assertion_failed', 'local_failure']);
+const childResultSchema = z.object({ step: z.string().refine(value => CHILD_STEPS.has(value)),
+  error: z.string().refine(value => CHILD_ERRORS.has(value)).nullable(),
+  status: z.union([z.literal('passed'), z.number().int().min(100).max(599), z.null()]), operation: childOperationSchema.nullable() }).strict();
+const PROVIDER_CODES = new Set(['auth/user-not-found', 'auth/invalid-email', 'auth/email-already-exists', 'auth/user-disabled',
+  'auth/insufficient-permission', 'auth/internal-error', 'auth/too-many-requests', 'EMAIL_EXISTS', 'INVALID_EMAIL',
+  'OPERATION_NOT_ALLOWED', 'WEAK_PASSWORD', 'TOO_MANY_ATTEMPTS_TRY_LATER', 'INVALID_LOGIN_CREDENTIALS',
+  'USER_DISABLED', 'MISSING_RECAPTCHA_TOKEN', 'INVALID_RECAPTCHA_TOKEN', 'CAPTCHA_CHECK_FAILED',
+  'RECAPTCHA_NOT_ENABLED', 'INVALID_RECAPTCHA_ACTION']);
+
+// Dependencies may log their own error objects. Only explicit sanitized JSON is allowed on this operator channel.
+for (const method of ['log', 'info', 'warn', 'error', 'debug']) console[method] = () => {};
+let state = 'awaiting_start', step = 'input', input, directory, persistence, adminApp, nativeAuth, child;
+let rotations = 0;
+let creations = 0, requests = 0, commands = 0, status = null, currentUid = null, currentOperationId = null;
+let hadFailure = false;
+const actors = { A: { email: 'f02-20261011-a@synthetic.invalid' }, B: { email: 'f02-20261011-b@synthetic.invalid' } };
+class OperatorError extends Error {
+  constructor(code, providerCode = null) { super('Operator run stopped'); this.code = code; this.providerCode = providerCode; }
+}
+function stop(code, providerCode = null) { throw new OperatorError(code, providerCode); }
+function emit(value) { process.stdout.write(JSON.stringify(value) + '\n'); }
+function providerCode(error) { return PROVIDER_CODES.has(error?.code) ? error.code : null; }
+function guard() { if (state === 'failed' || state === 'closed') stop('run_stopped'); }
+function failure(error) {
+  state = 'failed'; hadFailure = true;
+  emit({ step, error: error instanceof OperatorError ? error.code : 'operation_failed', status,
+    providerCode: error instanceof OperatorError ? error.providerCode : providerCode(error),
+    operation: { ...(input ? { runId: input.runId } : {}), ...(currentUid ? { uid: currentUid } : {}),
+      ...(currentOperationId ? { operationId: currentOperationId } : {}) } });
+}
+function redactedStatus() {
+  emit({ step: 'status', state, runId: input?.runId ?? null, creations, rotations, requests, transport: 'auth_rest',
+    mode: input?.mode ?? null, emailVerification: input?.mode === 'unverified_B' ? 'unverified_native_identity' : 'synthetic_admin_fixture_only',
+    users: { A: actors.A.userId ?? null, B: actors.B.userId ?? null } });
+}
+async function waiting(action) {
+  guard(); let timer;
+  try {
+    const result = await Promise.race([Promise.resolve().then(action), new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new OperatorError('sdk_outcome_unknown')), TIMEOUT_MS);
+    })]);
+    guard(); return result;
+  } finally { clearTimeout(timer); }
+}
+function isResumeMode() { return ['resume_verified_pair', 'resume_photo_read', 'resume_reminder'].includes(input?.mode); }
+function browserFixtureTarget() {
+  if (input?.mode === 'resume_reminder') return { enabled: false, actor: null, fence: 'f02-cloud-resume-reminder-20261012', file: null };
+  if (input?.mode === 'resume_photo_read') return { enabled: false, actor: null, fence: 'f02-cloud-resume-photo-read-20261012', file: null };
+  if (input?.mode === 'resume_verified_pair') return { enabled: false, actor: null, fence: 'f02-cloud-resume-verified-pair-20261012', file: null };
+  return input?.mode === 'unverified_B'
+    ? { enabled: true, actor: 'B', fence: 'f02-cloud-unverified-b-20261012', file: 'browser-fixture-B.json' }
+    : { enabled: input?.browserFixture === true, actor: 'A', fence: 'f02-cloud-actors-20261011', file: BROWSER_FIXTURE_NAME };
+}
+const BROWSER_FIXTURE_ACL = [
+  '[Console]::InputEncoding = [Text.UTF8Encoding]::new($false)',
+  "$ErrorActionPreference = 'Stop'",
+  "$ProgressPreference = 'SilentlyContinue'",
+  'try {',
+  '  $request = [Console]::In.ReadToEnd() | ConvertFrom-Json',
+  '  $item = Get-Item -LiteralPath ([string]$request.path) -Force',
+  '  if ($item.PSIsContainer -eq [bool]$request.file) { throw }',
+  '  $cursor = $item',
+  '  while ($null -ne $cursor) {',
+  '    if (($cursor.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw }',
+  '    $cursor = if ($cursor -is [IO.DirectoryInfo]) { $cursor.Parent } else { $cursor.Directory }',
+  '  }',
+  '  $sid = [Security.Principal.WindowsIdentity]::GetCurrent().User',
+  '  $flags = if ($request.file) { [Security.AccessControl.InheritanceFlags]::None } else {',
+  '    [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [Security.AccessControl.InheritanceFlags]::ObjectInherit }',
+  '  if ($request.initialize) {',
+  '    $acl = if ($request.file) { New-Object Security.AccessControl.FileSecurity } else { New-Object Security.AccessControl.DirectorySecurity }',
+  '    $acl.SetAccessRuleProtection($true, $false)',
+  '    $acl.SetOwner($sid)',
+  '    $rule = [Security.AccessControl.FileSystemAccessRule]::new($sid, [Security.AccessControl.FileSystemRights]::FullControl,',
+  '      $flags, [Security.AccessControl.PropagationFlags]::None, [Security.AccessControl.AccessControlType]::Allow)',
+  '    $acl.AddAccessRule($rule)',
+  '    if ($request.file) { [IO.File]::SetAccessControl($item.FullName, $acl) } else { [IO.Directory]::SetAccessControl($item.FullName, $acl) }',
+  '  }',
+  '  $acl = if ($request.file) { [IO.File]::GetAccessControl($item.FullName) } else { [IO.Directory]::GetAccessControl($item.FullName) }',
+  '  $rules = @($acl.GetAccessRules($true, $true, [Security.Principal.SecurityIdentifier]))',
+  '  if (-not $acl.AreAccessRulesProtected -or $acl.GetOwner([Security.Principal.SecurityIdentifier]).Value -ne $sid.Value -or $rules.Count -ne 1) { throw }',
+  '  $rule = $rules[0]',
+  '  if ($rule.IdentityReference.Value -ne $sid.Value -or $rule.IsInherited -or',
+  '    $rule.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow -or',
+  '    $rule.FileSystemRights -ne [Security.AccessControl.FileSystemRights]::FullControl -or',
+  '    $rule.InheritanceFlags -ne $flags -or $rule.PropagationFlags -ne [Security.AccessControl.PropagationFlags]::None) { throw }',
+  "  [Console]::Out.Write('ok')",
+  "} catch { [Console]::Out.Write('invalid'); exit 1 }",
+].join('\n');
+async function browserFixtureAccess({ initialize = false, file = false } = {}) {
+  guard();
+  const target = browserFixtureTarget();
+  if (!target.enabled || process.platform !== 'win32' || directory !== join(ROOT, 'tmp', target.fence)) stop('browser_fixture_unavailable');
+  const path = file ? join(directory, target.file) : directory;
+  const item = await lstat(path);
+  if (item.isSymbolicLink() || (file ? !item.isFile() || item.nlink !== 1 : !item.isDirectory())) stop('browser_fixture_unavailable');
+  const env = Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP'].filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
+  await new Promise((resolveAccess, reject) => {
+    let settled = false, output = '', stderrBytes = 0, timer, worker;
+    const finish = ok => {
+      if (settled) return; settled = true; clearTimeout(timer);
+      if (ok) resolveAccess();
+      else { worker?.kill(); reject(new OperatorError('browser_fixture_unavailable')); }
+    };
+    worker = spawn('C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
+      ['-NoLogo', '-NoProfile', '-NonInteractive', '-EncodedCommand', Buffer.from(BROWSER_FIXTURE_ACL, 'utf16le').toString('base64')],
+      { env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+    timer = setTimeout(() => finish(false), TIMEOUT_MS);
+    worker.on('error', () => finish(false));
+    worker.stdout.on('data', part => { output += part.toString('utf8'); if (output.length > 64) finish(false); });
+    worker.stderr.on('data', part => { stderrBytes += part.length; if (stderrBytes > 64) finish(false); });
+    worker.stdin.on('error', () => finish(false));
+    worker.once('close', code => finish(code === 0 && output === 'ok' && stderrBytes === 0));
+    worker.stdin.end(JSON.stringify({ path, initialize, file }));
+  });
+  guard();
+}
+async function writeBrowserFixture(name) {
+  const target = browserFixtureTarget();
+  if (!target.enabled || name !== target.actor) return;
+  const actor = actors[target.actor], email = target.actor === 'A' ? 'f02-20261011-a@synthetic.invalid' : 'f02-20261011-b@synthetic.invalid';
+  if (actor.email !== email || !uidSchema.safeParse(actor.userId).success
+    || typeof actor.password !== 'string' || !/^[A-Za-z0-9_-]{48}aA1!$/u.test(actor.password)) stop('browser_fixture_unavailable');
+  await browserFixtureAccess();
+  let file;
+  try {
+    file = await open(join(directory, target.file), 'wx', 0o600);
+    await browserFixtureAccess({ initialize: true, file: true });
+    const handle = await file.stat(), item = await lstat(join(directory, target.file));
+    if (!handle.isFile() || handle.nlink !== 1 || handle.dev !== item.dev || handle.ino !== item.ino) stop('browser_fixture_unavailable');
+    await file.writeFile(JSON.stringify({ email: actor.email, password: actor.password }) + '\n', 'utf8');
+    await file.sync();
+  } catch { stop('browser_fixture_unavailable'); }
+  finally { await file?.close(); }
+}
+async function immutable(name, recordStep, extra = {}) {
+  const value = checkpointSchema.parse({ step: recordStep, runId: input.runId, ...extra });
+  const file = await open(join(directory, name + '.json'), 'wx', 0o600);
+  try { await file.writeFile(JSON.stringify(value) + '\n', 'utf8'); await file.sync(); } finally { await file.close(); }
+}
+async function checkpoint(name, extra = {}) {
+  step = name; status = null; currentOperationId = extra.operationId ?? null; currentUid = extra.uid ?? null;
+  guard(); await immutable(name, name, extra); guard();
+}
+async function responseBytes(response) {
+  const pieces = []; let count = 0;
+  for await (const part of response.body ?? []) {
+    const bytes = Buffer.from(part); count += bytes.length;
+    if (count > MAX_RESPONSE) { await response.body?.cancel().catch(() => {}); stop('response_limit'); }
+    pieces.push(bytes);
+  }
+  return Buffer.concat(pieces);
+}
+function restError(value) {
+  const message = value?.error?.message;
+  if (typeof message !== 'string') return null;
+  const code = message.split(/[ :]/u, 1)[0]; return PROVIDER_CODES.has(code) ? code : null;
+}
+async function http(url, { method = 'GET', headers = {}, body, privateResponse = false } = {}) {
+  guard(); if (requests >= MAX_HTTP) stop('request_limit'); requests++;
+  let response, bytes;
+  try {
+    response = await fetch(url, { method, redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(TIMEOUT_MS),
+      headers: { accept: 'application/json', 'cache-control': 'no-store', pragma: 'no-cache', ...headers,
+        ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+    status = response.status; bytes = await responseBytes(response);
+  } catch (error) { if (error instanceof OperatorError) throw error; stop('http_outcome_unknown'); }
+  guard(); let value;
+  try { value = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)); }
+  catch { stop('invalid_response_json'); } finally { bytes.fill(0); }
+  if (response.status !== 200) stop('unexpected_status', restError(value));
+  if (privateResponse && (response.headers.get('cache-control') !== 'private, no-store'
+    || response.headers.get('pragma') !== 'no-cache')) stop('private_headers_invalid');
+  return { value, headers: response.headers };
+}
+function crc32c(bytes) {
+  let crc = 0xffffffff;
+  for (const byte of bytes) { crc ^= byte; for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ ((crc & 1) ? 0x82f63b78 : 0); }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+async function openOperator() {
+  for (const name of ['FIRESTORE_EMULATOR_HOST', 'FIREBASE_AUTH_EMULATOR_HOST', 'FIREBASE_DATABASE_EMULATOR_HOST', 'STORAGE_EMULATOR_HOST']) {
+    if (process.env[name] !== undefined) stop('emulator_configuration_rejected');
+  }
+  const google = new GoogleAuth({ projectId: PROJECT, scopes: ['https://www.googleapis.com/auth/cloud-platform'] });
+  const read = async url => {
+    const headers = await waiting(() => google.getRequestHeaders(url));
+    if (!/^Bearer [^\s\u0000-\u001f\u007f]+$/u.test(headers.get('authorization') ?? '')) stop('adc_unavailable');
+    return (await http(url, { headers: Object.fromEntries(headers) })).value;
+  };
+  step = 'public_config_read'; status = null;
+  const config = await read(`https://firebase.googleapis.com/v1beta1/projects/${PROJECT}/webApps/${APP_ID}/config`);
+  for (const key of ['apiKey', 'authDomain', 'projectId', 'appId']) {
+    if (config?.[key] !== input.publicConfig[key]) stop('public_config_mismatch');
+  }
+  step = 'storage_key_read'; status = null;
+  const secret = await read('https://secretmanager.googleapis.com/v1/' + SECRET + ':access');
+  if (secret?.name !== SECRET || typeof secret?.payload?.data !== 'string'
+    || !/^\d{1,10}$/u.test(String(secret?.payload?.dataCrc32c))) stop('secret_invalid');
+  const decoded = Buffer.from(secret.payload.data, 'base64');
+  let encoded;
+  try {
+    if (decoded.length !== 44 || decoded.toString('base64') !== secret.payload.data
+      || crc32c(decoded) !== Number(secret.payload.dataCrc32c)) stop('secret_invalid');
+    encoded = new TextDecoder('utf-8', { fatal: true }).decode(decoded);
+    const checked = decodeFirebaseStorageKey(encoded); checked.fill(0);
+  } finally { decoded.fill(0); secret.payload.data = ''; }
+  const env = { NODE_ENV: 'production', SERVER_ORIGIN: ORIGIN, WEB_ORIGIN: ORIGIN, GCP_PROJECT_ID: PROJECT,
+    FIREBASE_DATABASE_ID: DATABASE, FIREBASE_NAMESPACE: NAMESPACE, FIREBASE_AUTH_EMAIL_ENABLED: 'true',
+    FIREBASE_TASK_WORKER_ENABLED: 'false', FIREBASE_PHOTO_BUCKET: PROJECT + '-firebase-private',
+    FIREBASE_ERASURE_BUCKET: PROJECT + '-firebase-journal', YUBAN_FIREBASE_STORAGE_KEY: encoded };
+  try {
+    persistence = await waiting(async () => {
+      const opened = await openFirebasePersistence(env);
+      if (state === 'failed' || state === 'closed') { await opened.close().catch(() => {}); stop('run_stopped'); }
+      return opened;
+    });
+  } finally { delete env.YUBAN_FIREBASE_STORAGE_KEY; encoded = undefined; }
+  adminApp = initializeApp({ projectId: PROJECT, credential: applicationDefault() }, 'f02-actors-' + randomUUID());
+  nativeAuth = getAuth(adminApp);
+}
+async function assertAbsent(actorName) {
+  step = 'absence_' + actorName; status = null;
+  try { await waiting(() => nativeAuth.getUserByEmail(actors[actorName].email)); }
+  catch (error) { if (error?.code === 'auth/user-not-found') return; throw error; }
+  stop('actor_already_exists');
+}
+async function authRest(action, body) {
+  const url = 'https://identitytoolkit.googleapis.com/v1/accounts:' + action + '?key=' + input.publicConfig.apiKey;
+  return (await http(url, { method: 'POST', body })).value;
+}
+async function prepareActor(name) {
+  if (isResumeMode()) stop('phase_not_available');
+  const unverified = input.mode === 'unverified_B';
+  if (unverified && name !== 'B') stop('phase_not_available');
+  const actor = actors[name], operationId = randomUUID();
+  await checkpoint('invitation_' + name + '_started', { operationId });
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60_000).toISOString();
+  const invitation = await waiting(() => persistence.authority.issueInvitation({ email: actor.email, expiresAt, operationId }));
+  if (invitation.email !== actor.email || invitation.expiresAt !== expiresAt || invitation.state !== 'issued'
+    || invitation.consumedBy !== null) stop('invitation_mismatch');
+  await immutable('invitation_' + name + '_confirmed', 'invitation_' + name + '_confirmed', { operationId });
+  await checkpoint('create_' + name + '_started');
+  if (creations >= (unverified ? 1 : 2)) stop('creation_limit'); creations++;
+  actor.password = randomBytes(36).toString('base64url') + 'aA1!';
+  const created = await authRest('signUp', { email: actor.email, password: actor.password, returnSecureToken: true });
+  actor.userId = uidSchema.parse(created?.localId);
+  if (created.email !== actor.email || Object.entries(actors).some(([key, value]) => key !== name && value.userId === actor.userId)) stop('actor_binding_invalid');
+  // Unverified sign-up credentials are not used to establish a business session.
+  for (const key of ['idToken', 'refreshToken']) if (Object.hasOwn(created, key)) created[key] = '';
+  await immutable('create_' + name + '_confirmed', 'create_' + name + '_confirmed', { uid: actor.userId });
+  step = 'new_identity_' + name; currentUid = actor.userId; status = null;
+  const before = await waiting(() => nativeAuth.getUser(actor.userId));
+  if (before.uid !== actor.userId || before.email !== actor.email || before.disabled
+    || (unverified ? before.emailVerified !== false : before.emailVerified)) stop('actor_binding_invalid');
+  await writeBrowserFixture(name);
+  if (unverified) {
+    actor.password = undefined;
+    await immutable('unverified_B_confirmed', 'unverified_B_confirmed', { uid: actor.userId });
+    return;
+  }
+  await checkpoint('synthetic_verified_fixture_' + name + '_started', { uid: actor.userId });
+  const fixture = await waiting(() => nativeAuth.updateUser(actor.userId, { emailVerified: true }));
+  if (fixture.uid !== actor.userId || fixture.email !== actor.email || fixture.disabled || fixture.emailVerified !== true) stop('fixture_binding_invalid');
+  await immutable('synthetic_verified_fixture_' + name + '_confirmed', 'synthetic_verified_fixture_' + name + '_confirmed', { uid: actor.userId });
+  await signInActor(name);
+}
+async function signInActor(name) {
+  const actor = actors[name];
+  await checkpoint('sign_in_' + name + '_started', { uid: actor.userId });
+  const signed = await authRest('signInWithPassword', { email: actor.email, password: actor.password, returnSecureToken: true });
+  if (signed.localId !== actor.userId || signed.email !== actor.email || typeof signed.idToken !== 'string'
+    || signed.idToken.length > 15_000 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/u.test(signed.idToken)) stop('actor_binding_invalid');
+  actor.password = undefined; if (Object.hasOwn(signed, 'refreshToken')) signed.refreshToken = '';
+  step = 'verified_token_' + name; status = null;
+  const claims = await waiting(() => nativeAuth.verifyIdToken(signed.idToken, true));
+  if (claims.uid !== actor.userId || claims.email !== actor.email || claims.email_verified !== true
+    || !Number.isSafeInteger(claims.auth_time) || claims.auth_time > Math.floor(Date.now() / 1000)
+    || Math.floor(Date.now() / 1000) - claims.auth_time > 300) stop('verified_token_invalid');
+  await checkpoint('session_' + name + '_started', { uid: actor.userId });
+  let exchanged;
+  try { exchanged = await http(ORIGIN + '/api/auth/session', { method: 'POST', privateResponse: true,
+    headers: { origin: ORIGIN, 'x-expected-user-id': actor.userId }, body: { idToken: signed.idToken } }); }
+  finally { signed.idToken = ''; }
+  const exchangeIdentity = identitySchema.parse(exchanged.value);
+  if (exchangeIdentity.user.id !== actor.userId || exchangeIdentity.user.email !== actor.email) stop('session_binding_invalid');
+  actor.cookie = sessionCookie(exchanged.headers.getSetCookie());
+  step = 'session_' + name + '_read'; status = null;
+  const session = identitySchema.parse((await http(ORIGIN + '/api/auth/get-session', { privateResponse: true,
+    headers: { origin: ORIGIN, 'x-expected-user-id': actor.userId, cookie: actor.cookie } })).value);
+  if (session.user.id !== actor.userId || session.user.email !== actor.email) stop('session_binding_invalid');
+  await immutable('session_' + name + '_confirmed', 'session_' + name + '_confirmed', { uid: actor.userId });
+}
+function assertResumeIdentity(name, user, verified = false) {
+  const expected = RESUME_ACTORS[name];
+  if (!expected || user?.uid !== expected.userId || user.email !== expected.email || user.disabled !== false
+    || typeof user.emailVerified !== 'boolean' || verified && user.emailVerified !== true) stop('actor_binding_invalid');
+}
+async function resumeVerifiedPair() {
+  if (!isResumeMode() || input.runId !== RESUME_RUN_ID || rotations !== 0) stop('phase_not_available');
+  step = 'resume_source_control'; status = null;
+  if (persistence.config?.projectId !== PROJECT || persistence.config.databaseId !== DATABASE
+    || persistence.config.namespace !== NAMESPACE) stop('source_configuration_mismatch');
+  const control = await waiting(() => persistence.authority.accountStatus(null));
+  if (control?.enabled !== true) stop('source_control_disabled');
+  for (const name of ['A', 'B']) {
+    const expected = RESUME_ACTORS[name];
+    step = 'existing_identity_' + name; status = null; currentUid = expected.userId;
+    const before = await waiting(() => nativeAuth.getUser(expected.userId));
+    assertResumeIdentity(name, before); actors[name].userId = expected.userId;
+    await immutable('existing_' + name + '_bound_confirmed', 'existing_' + name + '_bound_confirmed', { uid: expected.userId });
+  }
+  for (const name of ['A', 'B']) {
+    const expected = RESUME_ACTORS[name], actor = actors[name];
+    if (actor.userId !== expected.userId || actor.email !== expected.email || rotations >= 2) stop('actor_binding_invalid');
+    await checkpoint('fixture_rotation_' + name + '_started', { uid: expected.userId });
+    rotations++; actor.password = randomBytes(36).toString('base64url') + 'aA1!';
+    const updated = await waiting(() => nativeAuth.updateUser(expected.userId, { password: actor.password, emailVerified: true }));
+    assertResumeIdentity(name, updated, true);
+    const after = await waiting(() => nativeAuth.getUser(expected.userId));
+    assertResumeIdentity(name, after, true);
+    await immutable('fixture_rotation_' + name + '_confirmed', 'fixture_rotation_' + name + '_confirmed', { uid: expected.userId });
+    await signInActor(name);
+  }
+}
+async function prepare() {
+  if (state !== 'ready_to_prepare') stop('phase_not_available');
+  state = 'preparing'; await checkpoint('prepare_started');
+  if (browserFixtureTarget().enabled) await browserFixtureAccess();
+  await openOperator();
+  if (input.mode === 'unverified_B') {
+    await assertAbsent('B'); await immutable('actor_B_absent_confirmed', 'actor_B_absent_confirmed');
+    await prepareActor('B');
+    guard(); state = 'unverified_B_prepared'; await immutable('prepare_confirmed', 'prepare_confirmed');
+    emit({ step: 'prepare_complete', status: 'passed', mode: input.mode, transport: 'auth_rest',
+      emailVerification: 'unverified_native_identity', operation: { runId: input.runId }, users: { B: actors.B.userId } });
+    return;
+  }
+  if (isResumeMode()) await resumeVerifiedPair();
+  else {
+    await assertAbsent('A'); await assertAbsent('B');
+    await immutable('actors_absent_confirmed', 'actors_absent_confirmed');
+    await prepareActor('A'); await prepareActor('B');
+  }
+  guard(); state = 'prepared'; await immutable('prepare_confirmed', 'prepare_confirmed');
+  emit({ step: 'prepare_complete', status: 'passed', mode: input.mode, transport: 'auth_rest', emailVerification: 'synthetic_admin_fixture_only',
+    operation: { runId: input.runId }, users: { A: actors.A.userId, B: actors.B.userId } });
+}
+async function acceptance(phase) {
+  if (input.mode === 'unverified_B') stop('phase_not_available');
+  if (phase === 'reminder' && input.mode !== 'resume_reminder' || phase === 'core' && input.mode === 'resume_reminder') stop('phase_not_available');
+  if (!((phase === 'core' || phase === 'reminder') ? state === 'prepared' : ['core_passed', 'reminder_passed'].includes(state))) stop('phase_not_available');
+  state = phase + '_running'; await checkpoint(phase + '_started');
+  const accounts = Object.fromEntries(['A', 'B'].map(name => [name, { userId: uidSchema.parse(actors[name].userId), cookie: cookieSchema.parse(actors[name].cookie) }]));
+  const childInput = Buffer.from(JSON.stringify({ phase: phase === 'core' && input.mode === 'resume_photo_read' ? 'resume_core' : phase, origin: ORIGIN, runId: input.runId,
+    expectedSourceRevision: SOURCE, expectedKnowledgeVersionId: KNOWLEDGE_VERSION, accounts }));
+  // Only basic OS variables are inherited. Credentials travel through stdin, never argv/environment/files.
+  const env = Object.fromEntries(['SystemRoot', 'WINDIR', 'TEMP', 'TMP'].filter(key => process.env[key] !== undefined).map(key => [key, process.env[key]]));
+  let result;
+  try {
+    result = await new Promise((resolveChild, reject) => {
+      let bytes = 0, stderrBytes = 0, output = '', inputFailed = false, settled = false, timer;
+      const fail = code => { if (settled) return; settled = true; clearTimeout(timer); child?.kill(); reject(new OperatorError(code)); };
+      child = spawn(NODE, [join(ROOT, 'scripts', 'firebase-cloud-acceptance.mjs')], { cwd: ROOT, env, windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] });
+      timer = setTimeout(() => fail('acceptance_outcome_unknown'), 100 * TIMEOUT_MS + 30_000);
+      child.on('error', () => fail('acceptance_process_unavailable'));
+      child.stdout.on('data', part => { bytes += part.length; if (bytes > 4096) return fail('acceptance_output_invalid'); output += part.toString('utf8'); });
+      child.stderr.on('data', part => { stderrBytes += part.length; if (stderrBytes > 4096) fail('acceptance_output_invalid'); });
+      child.stdin.on('error', () => { inputFailed = true; });
+      child.once('close', code => {
+        child = undefined; if (settled) return; settled = true; clearTimeout(timer);
+        if (inputFailed || stderrBytes > 0) return reject(new OperatorError('acceptance_process_unconfirmed'));
+        try {
+          const parsed = childResultSchema.parse(JSON.parse(output.trim()));
+          const passed = code === 0 && parsed.step === phase + '_complete' && parsed.error === null && parsed.status === 'passed';
+          if (code === 0 && !passed || code !== 0 && (parsed.error === null || parsed.status === 'passed')) stop('acceptance_output_invalid');
+          if (parsed.operation?.runId !== undefined && parsed.operation.runId !== input.runId) stop('acceptance_output_invalid');
+          resolveChild({ parsed, passed });
+        } catch { reject(new OperatorError('acceptance_output_invalid')); }
+      });
+      child.stdin.end(childInput);
+    });
+  } finally { childInput.fill(0); }
+  guard();
+  if (result.passed) { await immutable(phase + '_confirmed', phase + '_confirmed'); state = phase + '_passed'; }
+  else { state = 'failed'; hadFailure = true; }
+  emit(result.parsed);
+}
+async function start(value) {
+  if (state !== 'awaiting_start') stop('start_already_consumed');
+  if (process.argv.length !== 2 || !/^24\.(?:1[2-9]|[2-9][0-9])\./u.test(process.versions.node)) stop('runtime_invalid');
+  input = startSchema.parse(value); step = 'operator_checkpoint';
+  if (isResumeMode() && (input.runId !== RESUME_RUN_ID || input.browserFixture)) stop('input_invalid');
+  const parent = join(ROOT, 'tmp');
+  try { await mkdir(parent, { mode: 0o700 }); } catch (error) { if (error?.code !== 'EEXIST') throw error; }
+  const parentStat = await lstat(parent); if (!parentStat.isDirectory() || parentStat.isSymbolicLink()) stop('checkpoint_unavailable');
+  // The fixed actor batch fence also rejects a new process with a different runId after an unknown attempt.
+  directory = join(parent, browserFixtureTarget().fence);
+  try { await mkdir(directory, { mode: 0o700 }); } catch { stop('checkpoint_exists_or_unavailable'); }
+  if (browserFixtureTarget().enabled) await browserFixtureAccess({ initialize: true });
+  await immutable('start_confirmed', 'start_confirmed'); state = 'ready_to_prepare';
+  emit({ step: 'start_complete', state, mode: input.mode, operation: { runId: input.runId }, testedSource: SOURCE, expectedKnowledgeVersionId: KNOWLEDGE_VERSION });
+}
+async function close() {
+  state = 'closed'; child?.kill();
+  for (const actor of Object.values(actors)) { actor.password = undefined; actor.cookie = undefined; }
+  const closing = Promise.allSettled([adminApp ? deleteApp(adminApp) : Promise.resolve(), persistence ? persistence.close() : Promise.resolve()]);
+  let timer; const confirmed = await Promise.race([closing.then(results => results.every(value => value.status === 'fulfilled')),
+    new Promise(resolveClosed => { timer = setTimeout(() => resolveClosed(false), TIMEOUT_MS); })]); clearTimeout(timer);
+  emit({ step: 'close', status: confirmed ? 'closed' : 'local_close_unconfirmed', operation: input ? { runId: input.runId } : null });
+  process.exitCode = confirmed && !hadFailure ? 0 : 1;
+}
+async function command(line) {
+  try {
+    if (++commands > MAX_COMMANDS) stop('command_limit');
+    const value = commandSchema.parse(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(line)));
+    if (value.command === 'status') { redactedStatus(); return; }
+    if (value.command === 'close') { await close(); return; }
+    if (state === 'failed') { emit({ step: 'command', error: 'run_stopped', status: null, operation: input ? { runId: input.runId } : null }); return; }
+    step = 'command'; status = null;
+    if (value.command === 'start') await start(value);
+    else if (value.command === 'prepare') await prepare();
+    else await acceptance(value.command);
+  } catch (error) { failure(error); }
+}
+process.on('uncaughtException', () => { failure(new OperatorError('process_failure')); child?.kill(); });
+process.on('unhandledRejection', () => { failure(new OperatorError('process_failure')); child?.kill(); });
+try {
+  let pending = [], oversized = false;
+  for await (const chunk of process.stdin) {
+    for (const byte of chunk) {
+      if (byte === 10) {
+        if (oversized) failure(new OperatorError('input_limit'));
+        else { if (pending.at(-1) === 13) pending.pop(); await command(Buffer.from(pending)); }
+        pending = []; oversized = false;
+        if (state === 'closed') break;
+      } else if (!oversized) {
+        if (pending.length >= MAX_LINE) { pending = []; oversized = true; } else pending.push(byte);
+      }
+    }
+    if (state === 'closed') break;
+  }
+  if (state !== 'closed') {
+    if (oversized) failure(new OperatorError('input_limit'));
+    else if (pending.length) await command(Buffer.from(pending));
+    if (state !== 'closed') await close();
+  }
+} catch (error) { failure(error); if (state !== 'closed') await close(); }

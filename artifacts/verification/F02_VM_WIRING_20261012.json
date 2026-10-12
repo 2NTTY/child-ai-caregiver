@@ -1,0 +1,129 @@
+{
+  "recordedAt": "2026-10-12",
+  "package": "P2-F02",
+  "state": "necessary_acceptance_passed_pending_delivery",
+  "candidate": "6a876324d34c89c15993d4b33d7fd993618d2ed9",
+  "mergedBaseline": "823cf31fbd4649d2f21ea85856b1ffc5def637f1",
+  "checks": [
+    {
+      "name": "selected Firebase HTTP/worker assertions",
+      "passed": 3,
+      "total": 3,
+      "scope": "health inertness, unmigrated domain rejection, Node adapter"
+    },
+    {
+      "name": "Compose static config",
+      "result": "pass",
+      "runs": 1
+    },
+    {
+      "name": "Caddy offline config",
+      "result": "pass after file capability startup correction",
+      "runs": 2,
+      "first": "binary could not execute; no config check ran"
+    },
+    {
+      "name": "firebase-server image build",
+      "result": "pass",
+      "runs": 1,
+      "image": "yuban-firestore-api:f02-vm",
+      "digest": "sha256:d00f47c88f86a23c83e57b15257c4122091b07e756fd8c82d7cbd52bbfdf06fc",
+      "sizeBytes": 338458225
+    },
+    {
+      "name": "Original VM attached-identity connectivity",
+      "result": "pass",
+      "runs": 1,
+      "commit": "dc1eb28",
+      "checks": [
+        "encrypted-control-read",
+        "published-knowledge-read",
+        "synthetic-auth-read",
+        "bounded-private-bucket-metadata",
+        "firebase-handler-health"
+      ],
+      "sql": false,
+      "writes": 0,
+      "modelCalls": 0,
+      "notifications": 0
+    },
+    {
+      "name": "durable photo cleanup",
+      "unitAssertions": 1,
+      "unitPassed": 1,
+      "cloudResult": "complete",
+      "existingSyntheticPhotos": 1,
+      "backupsAndJournalPreserved": true,
+      "scope": "exact original generation; transactional cleanup quota release; unresolved uploads retained for F06"
+    },
+    {
+      "name": "session clock regression",
+      "unitAssertions": 1,
+      "unitPassed": 1,
+      "change": "Issuer iat/exp bound the five-day duration; reject issuer iat more than five seconds ahead; no change to recent-auth, identity or revocation."
+    },
+    {
+      "name": "real Auth lifecycle",
+      "accountCount": 1,
+      "namespace": "f02_auth_f78daca7ffcf",
+      "transport": "native Firebase SDK and production handler in-process; no browser",
+      "steps": [
+        "native login and real invitation admission",
+        "second device login",
+        "revoke other device, current retained",
+        "real_reset_action_invalidates_previous_session",
+        "new_password_login_and_signout",
+        "only_new_synthetic_state_cleaned"
+      ],
+      "attempts": [
+        {
+          "name": "initial",
+          "result": "stopped at second exchange"
+        },
+        {
+          "name": "diagnostic continuation",
+          "result": "stopped at exchange; authentication_unavailable"
+        },
+        {
+          "name": "issuer-clock fix",
+          "result": "login and revocation passed; stopped on auth/unauthorized-continue-uri"
+        },
+        {
+          "name": "original-domain fix",
+          "result": "only remaining reset/login/sign-out/cleanup passed"
+        }
+      ],
+      "cleanup": {
+        "documents": 6,
+        "authAccountDeleted": true
+      },
+      "emailsSent": 0,
+      "emailInbox": "not re-tested; previous verified mail delivery retained; real reset action without sending mail",
+      "browser": "not run; original-site UI acceptance follows F03 product flow"
+    }
+  ],
+  "cloud": {
+    "project": "ai-caregivers-for-children",
+    "vm": "yuban-p1",
+    "vmId": "2846984358678394356",
+    "terminationTime": "2026-10-17T12:50:44Z",
+    "runningProduct": "85e3a846",
+    "rootDiskAvailable": "2.1G",
+    "queue": "PAUSED",
+    "iam": "six specifically approved grants across five policies; readback verified",
+    "resourcesCreated": 0,
+    "modelCalls": 0,
+    "notifications": 0,
+    "productDataMutations": 0,
+    "imageTransferred": true,
+    "siteSwitched": false,
+    "authorizedDomainAdded": "ex-machina.eu.org",
+    "syntheticMutations": "one existing deleted photo cleaned; one temporary Auth/account namespace created and cleaned"
+  },
+  "pending": [
+    "F03 original-site login/chat UI and core domains",
+    "F06 scheduled cleanup and unresolved uploads",
+    "F07/F08 integration and final SQL exit"
+  ],
+  "limits": "Foundation slice only. Original failures retained; original product remains 85e3a846. Uploaded image predates final cleanup/auth fixes. Zero model/email/notification; no browser or full suite."
+}

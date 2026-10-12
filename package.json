@@ -9,7 +9,7 @@
     "frontend"
   ],
   "engines": {
-    "node": ">=24.3.0 <25",
+    "node": ">=24.12.0 <25",
     "npm": ">=11.8.0 <12"
   },
   "scripts": {
@@ -37,6 +37,8 @@
   "dependencies": {
     "@expo/metro-runtime": "57.0.16",
     "@google-cloud/firestore": "9.3.1",
+    "@google-cloud/storage": "7.22.0",
+    "@google-cloud/tasks": "7.2.1",
     "@google/adk": "2.1.0",
     "@google/genai": "2.24.0",
     "@hookform/resolvers": "5.9.1",
@@ -47,7 +49,9 @@
     "expo-constants": "57.0.19",
     "expo-linking": "57.0.10",
     "expo-router": "57.0.22",
+    "firebase": "13.0.0",
     "firebase-admin": "14.5.0",
+    "firebase-functions": "7.4.0",
     "grammy": "1.46.0",
     "nodemailer": "10.0.16",
     "pdfjs-dist": "6.4.299",

@@ -307,3 +307,16 @@ test("current Admin verification overrides old verified claims on reads and sess
   f.lifecycleFailures.clear();
   assert.equal((await (await f.get(cookie)).json()).user.id, f.userId);
 });
+
+test("session duration uses verified issuer time with bounded clock skew", async () => {
+ const f=fixture(), native=f.options.auth.createSessionCookie;
+ let extra=0;
+ const port=createFirebaseAuthPort({...f.options,auth:{...f.options.auth,async createSessionCookie(value,options){
+  const cookie=await native(value,options), claims=f.cookies.get(cookie)!;
+  claims.iat+=1;claims.exp+=1+extra;return cookie;
+ }}});
+ const exchange=(token:string)=>port.handler(new Request(PUBLIC_ORIGIN+"/api/auth/session",{method:"POST",
+  headers:{Origin:PUBLIC_ORIGIN,"Content-Type":"application/json"},body:JSON.stringify({idToken:token})}));
+ assert.equal((await exchange(f.firstToken)).status,200);
+ extra=1;await responseCode(await exchange(f.token()),503,"authentication_unavailable");
+});

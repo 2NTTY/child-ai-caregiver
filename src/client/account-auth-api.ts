@@ -1,7 +1,13 @@
 import { ClientApiError } from "./records-api.ts";
 
-/** Native Better Auth operations. Secrets are sent only to the configured Server, never to Agent context. */
-export function createAccountAuthApi(baseUrl: string, fetcher: typeof fetch = fetch) {
+export interface AccountIdentityAdapter {
+  requestVerification(email: string, signal: AbortSignal): Promise<void>;
+  requestPasswordReset(email: string, signal: AbortSignal): Promise<void>;
+  resetPassword(token: string, newPassword: string, signal: AbortSignal): Promise<void>;
+}
+
+/** Provider identity operations and Server-authoritative device session revocation. */
+export function createAccountAuthApi(baseUrl: string, fetcher: typeof fetch = fetch, identity?: AccountIdentityAdapter) {
   const base = baseUrl.replace(/\/$/u, "");
   const api = base.endsWith("/api") ? base : base + "/api";
   async function post(path: string, body: unknown, signal: AbortSignal, userId?: string): Promise<void> {
@@ -15,9 +21,9 @@ export function createAccountAuthApi(baseUrl: string, fetcher: typeof fetch = fe
   }
   return {
     // Success means the request was handled. It does not prove an account exists or email arrived.
-    requestVerification: (email: string, signal: AbortSignal) => post("send-verification-email", { email }, signal),
-    requestPasswordReset: (email: string, signal: AbortSignal) => post("request-password-reset", { email }, signal),
-    resetPassword: (token: string, newPassword: string, signal: AbortSignal) => post("reset-password", { token, newPassword }, signal),
+    requestVerification: (email: string, signal: AbortSignal) => identity ? identity.requestVerification(email, signal) : post("send-verification-email", { email }, signal),
+    requestPasswordReset: (email: string, signal: AbortSignal) => identity ? identity.requestPasswordReset(email, signal) : post("request-password-reset", { email }, signal),
+    resetPassword: (token: string, newPassword: string, signal: AbortSignal) => identity ? identity.resetPassword(token, newPassword, signal) : post("reset-password", { token, newPassword }, signal),
     revokeOtherSessions: (userId: string, signal: AbortSignal) => post("revoke-other-sessions", {}, signal, userId),
   };
 }

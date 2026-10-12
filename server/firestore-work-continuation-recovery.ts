@@ -107,7 +107,7 @@ export class FirestoreWorkContinuationRecovery implements WorkContinuationRecove
   }
   protected open<T>(kind: WorkRecoveryKind | 'daily', originalId: string, snapshot: DocumentSnapshot, schema: z.ZodType<T>, version: 1 | 2 = 1): T {
     if (!snapshot.exists) reject('missing_document');
-    const envelope = parse(z.object({ format: z.literal(FORMAT), version: z.literal(version), ciphertext: bounded(MAX_BYTES) }).strict(), snapshot.data());
+    const envelope = parse(z.object({ format: z.literal(FORMAT), version: z.literal(version), ciphertext: bounded(MAX_BYTES), recovery: z.unknown().optional() }).strict(), snapshot.data());
     size(envelope);
     return this.decrypt(envelope.ciphertext, this.aad(kind, originalId, version), schema);
   }

@@ -5,9 +5,12 @@ import { z } from 'zod';
 import { SERVICE_POLICY_VERSION, SERVICE_DATA_NOTICE, type AccountServiceStatus } from '../src/shared/account-service.ts';
 import { agentWorkValuesSchema, agentWorkSchema, saveAgentWorkSchema, type AgentWork, type AgentWorkValues } from '../src/shared/agent-work.ts';
 import type { Child } from '../src/shared/records.ts';
+import type { OnlineChange } from '../src/shared/online.ts';
 import { validateCreateChild } from '../src/shared/inputs.ts';
 import type { StorageCipher } from './storage-crypto.ts';
+import { FirestoreDomainData, firestoreChildSchema, firestoreChangeSchema } from './firestore-domain-data.ts';
 import { canonical } from './firestore-session-codec.ts';
+import { sealRecoveryLocator } from './firestore-recovery-envelope.ts';
 import { workRecoveryAad, workRecoveryDocumentId, workRecoverySchemas as schemas,
   workRecoveryScopeSchema, type WorkRecoveryKind, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
@@ -19,22 +22,44 @@ const decimal = schemas.workspace.shape.accessVersion;
 const authorityScopeSchema = workRecoveryScopeSchema.extend({ authorizationVersion: decimal }).strict();
 const identitySchema = z.object({ userId: userIdSchema, email: z.email().max(320),
   state: z.enum(['active', 'revoked', 'deleting', 'deleted']) }).strict();
-const ownerSchema = z.object({ userId: userIdSchema, workspaceId: uuid }).strict();
+const ownerSchema = z.object({ userId: userIdSchema, workspaceId: uuid, workspaceCreatedAt: datetime.optional() }).strict();
 const invitationSchema = z.object({ email: z.email().max(320), expiresAt: datetime,
   state: z.enum(['issued', 'consumed', 'revoked']), consumedBy: userIdSchema.nullable() }).strict();
 const childDetailSchema = z.object({ id: uuid, workspaceId: uuid, displayName: bounded(160),
   createdAt: datetime, accessRole: z.literal('owner') }).strict();
 const workDetailSchema = z.object({ id: uuid, version: schemas.work.shape.version, createdAt: datetime, updatedAt: datetime }).strict();
 const receiptSchema = z.object({ ownerUserId: userIdSchema, childId: uuid.nullable(), operationId: uuid,
-  action: bounded(64), fingerprint: z.string().regex(/^[a-f0-9]{64}$/u), result: z.unknown() }).strict();
+  action: bounded(64), fingerprint: z.string().regex(/^[a-f0-9]{64}$/u), result: z.unknown(), changeSeq: decimal.optional() }).strict();
+const childCreationChangeSchema = z.object({ workspaceId: uuid, storageEpoch: uuid, changeSeq: decimal,
+  kind: z.literal('children'), childId: uuid, privateUserId: userIdSchema, ownerOnly: z.literal(true), deleted: z.literal(false),
+  suppressWorkWake: z.literal(true), operationId: uuid }).strict();
+const changeKindSchema = z.enum(['children', 'care', 'profile', 'chat', 'family', 'preferences', 'memory', 'tasks', 'growth', 'documents']);
+const childProjectionTagSchema = z.string().regex(/^[a-f0-9]{64}$/u);
+const childProjectionBindingSchema = z.object({ workspaceTag: childProjectionTagSchema, epochTag: childProjectionTagSchema,
+  userTag: childProjectionTagSchema, childTag: childProjectionTagSchema, childId: uuid }).strict();
 type AuxiliaryKind = 'authority-invitation' | 'authority-identity' | 'authority-owner' | 'authority-operation' | 'authority-child-detail' | 'authority-work-detail';
 type Kind = WorkRecoveryKind | AuxiliaryKind;
 type Workspace = z.infer<typeof schemas.workspace>;
+type AuthorityChild = z.infer<typeof schemas.child>;
 type Invitation = z.infer<typeof invitationSchema>;
 export type FirestoreAuthorityScope = z.infer<typeof authorityScopeSchema>;
 export interface FirestoreAuthorityBinding { scope: WorkRecoveryScope; authorizationVersion: string }
 export interface FirestoreIdentityAdmission { userId: string; workspaceId: string; storageEpoch: string; emailVerified: boolean }
 export interface FirestoreChildCreation extends FirestoreAuthorityBinding { child: Child }
+export interface FirestoreAuthorityPreparedChange { readonly changeSeq: string; commit(): void }
+export interface FirestoreAuthorityPreparedChild extends FirestoreAuthorityPreparedChange { readonly result: FirestoreChildCreation }
+export interface FirestoreAuthorityTransaction {
+  readonly transaction: Transaction;
+  readonly scope: Readonly<WorkRecoveryScope>;
+  readonly authorizationVersion: string;
+  readonly changeSeq: string;
+  readonly generation: string;
+  readonly identityEmail: string;
+  readonly workspaceCreatedAt: string | null;
+  readChild(childId: string): Promise<Child | null>;
+  prepareChange(operationId: string, kind: OnlineChange['kind'], deleted: boolean, childId?: string): Promise<FirestoreAuthorityPreparedChange>;
+  prepareChildCreation(raw: { operationId: string; displayName: string }): Promise<FirestoreAuthorityPreparedChild>;
+}
 export type FirestoreAuthorityAccountStatus = Omit<AccountServiceStatus, 'mailConfigured'>;
 export interface FirestoreAuthorityOptions {
   database: Firestore; cipher: StorageCipher; projectId: string; namespace: string; serverClock?: () => number;
@@ -64,6 +89,7 @@ function increment(value: string): string {
 /** Trusted server port. Identity claims must come from Firebase Admin verification, never caller/model assertions. */
 export class FirestoreAuthority {
   private readonly options: Readonly<FirestoreAuthorityOptions>;
+  private readonly domain: FirestoreDomainData;
   constructor(options: FirestoreAuthorityOptions) {
     if (!options || typeof options.database?.runTransaction !== 'function' || typeof options.database?.collection !== 'function'
       || typeof options.cipher?.encrypt !== 'function' || typeof options.cipher?.decrypt !== 'function'
@@ -71,6 +97,7 @@ export class FirestoreAuthority {
       || !/^[a-z][a-z0-9_]{0,60}$/u.test(options.namespace)
       || options.serverClock !== undefined && typeof options.serverClock !== 'function') fail('configuration', 500);
     this.options = Object.freeze({ ...options });
+    this.domain = new FirestoreDomainData(options);
   }
   private now() {
     const now = (this.options.serverClock ?? Date.now)();
@@ -90,15 +117,18 @@ export class FirestoreAuthority {
   }
   private seal(kind: Kind, id: string, scope: WorkRecoveryScope, value: unknown) {
     size(value);
-    const result = { format: FORMAT, version: kind.startsWith('authority-') ? 2 : 1,
-      ciphertext: this.options.cipher.encrypt(canonical(value), this.aad(kind, id, scope)) };
+    const version: 1 | 2 = kind.startsWith('authority-') ? 2 : 1, aad = this.aad(kind, id, scope);
+    const ciphertext = this.options.cipher.encrypt(canonical(value), aad);
+    const recovery = sealRecoveryLocator({ cipher: this.options.cipher, projectId: this.options.projectId, namespace: this.options.namespace,
+      ciphertext, context: { family: 'authority', kind, id, scope, envelopeVersion: version, aad } });
+    const result = { format: FORMAT, version, ciphertext, recovery };
     size(result); return result;
   }
   private open<T>(kind: Kind, id: string, scope: WorkRecoveryScope, snapshot: DocumentSnapshot, schema: z.ZodType<T>): T {
     if (!snapshot.exists) fail('not_found', 404);
     size(snapshot.data());
     const version = kind.startsWith('authority-') ? 2 : 1;
-    const envelope = parse(z.object({ format: z.literal(FORMAT), version: z.literal(version), ciphertext: bounded(MAX_BYTES) }).strict(), snapshot.data(), 'invalid_document', 500);
+    const envelope = parse(z.object({ format: z.literal(FORMAT), version: z.literal(version), ciphertext: bounded(MAX_BYTES), recovery: z.unknown().optional() }).strict(), snapshot.data(), 'invalid_document', 500);
     let value: unknown;
     try { const text = this.options.cipher.decrypt(envelope.ciphertext, this.aad(kind, id, scope)); size(text); value = JSON.parse(text); }
     catch { fail('invalid_document', 500); }
@@ -106,6 +136,26 @@ export class FirestoreAuthority {
   }
   private async read<T>(tx: Transaction, kind: Kind, id: string, scope: WorkRecoveryScope, schema: z.ZodType<T>) {
     return this.open(kind, id, scope, await tx.get(this.ref(kind, id)), schema);
+  }
+  private canonicalChild(tx: Transaction, scope: WorkRecoveryScope): Promise<AuthorityChild>;
+  private canonicalChild(tx: Transaction, scope: WorkRecoveryScope, optional: true): Promise<AuthorityChild | null>;
+  private async canonicalChild(tx: Transaction, scope: WorkRecoveryScope, optional = false): Promise<AuthorityChild | null> {
+    const id = scope.childId, snapshot = await tx.get(this.ref('child', id));
+    if (!snapshot.exists) { if (optional) return null; fail('not_found', 404); }
+    const projection = await tx.get(this.domain.ref('children', 'child-projection', id));
+    if (projection.exists) {
+      const raw = projection.data(), binding = parse(childProjectionBindingSchema, { workspaceTag: raw?.workspaceTag,
+        epochTag: raw?.epochTag, userTag: raw?.userTag, childTag: raw?.childTag, childId: raw?.childId }, 'invalid_document', 500);
+      if (binding.childId !== id) fail('invalid_document', 500);
+      const expected = this.domain.tags(scope);
+      // Projection metadata may deny early; only the canonical envelope grants access.
+      if (binding.workspaceTag !== expected.workspaceTag || binding.epochTag !== expected.epochTag
+        || binding.userTag !== expected.userTag || binding.childTag !== expected.childTag) fail('binding', 403);
+    }
+    const child = this.open('child', id, scope, snapshot, schemas.child);
+    if (child.id !== id || child.workspaceId !== scope.workspaceId) fail('binding', 403);
+    if (child.status !== 'active') { if (optional) return null; fail('binding', 403); }
+    return child;
   }
   private write(tx: Transaction, kind: Kind, id: string, scope: WorkRecoveryScope, value: unknown, create = false) {
     const ref = this.ref(kind, id), sealed = this.seal(kind, id, scope, value);
@@ -116,7 +166,7 @@ export class FirestoreAuthority {
     if (enabled && !control.enabled) fail('service_disabled', 403); return control;
   }
   private async account(tx: Transaction, userId: string, business = true) {
-    await this.control(tx); const scope = ownerScope(userId);
+    const control = await this.control(tx); const scope = ownerScope(userId);
     const account = await this.read(tx, 'account', userId, scope, schemas.account);
     const identity = await this.read(tx, 'authority-identity', userId, scope, identitySchema);
     const owner = await this.read(tx, 'authority-owner', userId, scope, ownerSchema);
@@ -128,14 +178,13 @@ export class FirestoreAuthority {
     if (account.status !== 'active' || !account.admitted || !account.invitationLive || identity.state !== 'active'
       || invitation.state !== 'consumed' || workspace.status !== 'active') fail('account_inactive', 403);
     if (business && (!account.emailVerified || account.acknowledgementVersion !== SERVICE_POLICY_VERSION)) fail('account_not_ready', 403);
-    return { account, identity, owner, invitation, workspace };
+    return { control, account, identity, owner, invitation, workspace };
   }
   private async scope(tx: Transaction, input: FirestoreAuthorityScope) {
     const current = await this.account(tx, input.ownerUserId), scope = plainScope(input);
     if (current.workspace.id !== scope.workspaceId || current.workspace.storageEpoch !== scope.storageEpoch
       || current.workspace.accessVersion !== input.authorizationVersion) fail('scope_changed');
-    const child = await this.read(tx, 'child', scope.childId, scope, schemas.child);
-    if (child.id !== scope.childId || child.workspaceId !== scope.workspaceId || child.status !== 'active') fail('binding', 403);
+    const child = await this.canonicalChild(tx, scope);
     return { ...current, scope, child };
   }
   private operationKey(scope: WorkRecoveryScope, operationId: string, child = true) {
@@ -145,27 +194,86 @@ export class FirestoreAuthority {
     payload: unknown, resultSchema: z.ZodType<T>, child = true) {
     const key = this.operationKey(scope, operationId, child), fingerprint = digest({ action, payload });
     const snapshot = await tx.get(this.ref('authority-operation', key));
-    if (!snapshot.exists) return { key, fingerprint, prior: null };
+    if (!snapshot.exists) return { key, fingerprint, prior: null, changeSeq: undefined };
     const receipt = this.open('authority-operation', key, scope, snapshot, receiptSchema);
     if (receipt.ownerUserId !== scope.ownerUserId || receipt.childId !== (child ? scope.childId : null)
       || receipt.operationId !== operationId || receipt.action !== action || receipt.fingerprint !== fingerprint) fail('operation_conflict');
-    return { key, fingerprint, prior: parse(resultSchema, receipt.result, 'invalid_document', 500) };
+    return { key, fingerprint, prior: parse(resultSchema, receipt.result, 'invalid_document', 500), changeSeq: receipt.changeSeq };
   }
   private receipt<T>(tx: Transaction, scope: WorkRecoveryScope, operationId: string, action: string,
     op: { key: string; fingerprint: string }, result: T, child = true) {
     this.write(tx, 'authority-operation', op.key, scope, { ownerUserId: scope.ownerUserId,
       childId: child ? scope.childId : null, operationId, action, fingerprint: op.fingerprint, result }, true);
   }
-  private async change(tx: Transaction, scope: WorkRecoveryScope, workspace: Workspace, operationId: string, kind: 'children' | 'memory', deleted: boolean) {
-    const id = JSON.stringify([scope.workspaceId, scope.storageEpoch, scope.ownerUserId, scope.childId, operationId, 'authority']);
-    if ((await tx.get(this.ref('change', id))).exists) fail('change_conflict');
+  private changeId(scope: WorkRecoveryScope, operationId: string) {
+    return JSON.stringify([scope.workspaceId, scope.storageEpoch, scope.ownerUserId, scope.childId, operationId, 'authority']);
+  }
+  private async change(tx: Transaction, scope: WorkRecoveryScope, workspace: Workspace, operationId: string, kind: OnlineChange['kind'], deleted: boolean): Promise<FirestoreAuthorityPreparedChange> {
+    const id = this.changeId(scope, operationId), ref = this.ref('change', id);
+    if ((await tx.get(ref)).exists) fail('change_conflict');
     const changeSeq = increment(workspace.changeSeq);
-    return () => {
-      this.write(tx, 'workspace', workspace.id, scope, { ...workspace, changeSeq });
-      this.write(tx, 'change', id, scope, { workspaceId: scope.workspaceId, storageEpoch: scope.storageEpoch, changeSeq,
-        kind, childId: scope.childId, privateUserId: scope.ownerUserId, ownerOnly: true, deleted,
-        suppressWorkWake: true, operationId }, true);
-    };
+    const workspaceEnvelope = this.seal('workspace', workspace.id, scope, { ...workspace, changeSeq });
+    const changeEnvelope = this.seal('change', id, scope, { workspaceId: scope.workspaceId, storageEpoch: scope.storageEpoch, changeSeq,
+      kind, childId: scope.childId === NIL ? null : scope.childId, privateUserId: scope.ownerUserId, ownerOnly: true, deleted,
+      suppressWorkWake: true, operationId });
+    const projectionId = JSON.stringify([scope.workspaceId, scope.storageEpoch, changeSeq]);
+    const projection = { ...this.domain.tags(scope), sortKey: this.domain.sortKey(changeSeq), childId: scope.childId === NIL ? null : scope.childId,
+      ...this.domain.seal('change-projection', projectionId, scope, firestoreChangeSchema,
+        { changeSeq, kind, childId: scope.childId === NIL ? null : scope.childId, deleted }) };
+    return { changeSeq, commit: () => {
+      tx.set(this.ref('workspace', workspace.id), workspaceEnvelope); tx.create(ref, changeEnvelope);
+      tx.create(this.domain.ref('changes', 'change-projection', projectionId), projection);
+    } };
+  }
+  /** Each SDK callback owns a fresh binding. Domain writes use this native transaction after all reads. */
+  async runTransaction<T>(userId: string, childId: string | null, operation: (binding: FirestoreAuthorityTransaction) => Promise<T>): Promise<T> {
+    parse(userIdSchema, userId); if (childId !== null) parse(uuid, childId);
+    if (typeof operation !== 'function') fail('invalid_input', 400);
+    const childCandidateId = childId === null ? randomUUID() : null;
+    return this.options.database.runTransaction(async tx => {
+      let active = true, prepared = false, committed = false;
+      const assertActive = () => { if (!active) fail('transaction_closed'); };
+      const reserve = () => { assertActive(); if (prepared) fail('transaction_change_conflict'); prepared = true; };
+      const guardCommit = (commit: () => void) => () => {
+        assertActive(); if (committed) fail('transaction_change_conflict'); committed = true; commit();
+      };
+      try {
+        const { workspace, control, owner, identity } = await this.account(tx, userId);
+        const scope = Object.freeze(ownerScope(userId, workspace.id, workspace.storageEpoch, childId ?? NIL));
+        if (childId !== null) await this.canonicalChild(tx, scope);
+        const binding: FirestoreAuthorityTransaction = Object.freeze({ transaction: tx, scope,
+          authorizationVersion: workspace.accessVersion, changeSeq: workspace.changeSeq, generation: control.generation, identityEmail: identity.email, workspaceCreatedAt: owner.workspaceCreatedAt ?? null,
+          readChild: async (requestedChildId: string) => {
+            assertActive(); parse(uuid, requestedChildId);
+            const childScope = ownerScope(userId, workspace.id, workspace.storageEpoch, requestedChildId);
+            const child = await this.canonicalChild(tx, childScope, true); assertActive();
+            if (child === null) return null;
+            const detail = await this.read(tx, 'authority-child-detail', requestedChildId, childScope, childDetailSchema);
+            assertActive();
+            if (detail.id !== requestedChildId || detail.workspaceId !== workspace.id) fail('binding', 403);
+            return detail;
+          },
+          prepareChange: async (operationId: string, kind: OnlineChange['kind'], deleted: boolean, requestedChildId?: string) => {
+            parse(uuid, operationId); parse(changeKindSchema, kind); parse(z.boolean(), deleted); reserve();
+            let changeScope = scope;
+            if (requestedChildId !== undefined) {
+              parse(uuid, requestedChildId);
+              if (childId !== null && requestedChildId !== childId) fail('transaction_child_scope');
+              changeScope = ownerScope(userId, workspace.id, workspace.storageEpoch, requestedChildId);
+              await this.canonicalChild(tx, changeScope); assertActive();
+            }
+            const change = await this.change(tx, changeScope, workspace, operationId, kind, deleted); assertActive();
+            return Object.freeze({ changeSeq: change.changeSeq, commit: guardCommit(change.commit) });
+          },
+          prepareChildCreation: async (raw: { operationId: string; displayName: string }) => {
+            assertActive(); if (childId !== null || childCandidateId === null) fail('transaction_child_scope'); reserve();
+            const child = await this.prepareChild(tx, workspace, userId, childCandidateId, raw); assertActive();
+            return Object.freeze({ result: child.result, changeSeq: child.changeSeq, commit: guardCommit(child.commit) });
+          },
+        });
+        return await operation(binding);
+      } finally { active = false; }
+    });
   }
   async initializeControl(raw: { generation: string; enabled: boolean }): Promise<{ generation: string; enabled: boolean }> {
     const input = parse(schemas.control, raw), scope = ownerScope('control');
@@ -245,7 +353,7 @@ export class FirestoreAuthority {
       this.write(tx, 'account', input.userId, scope, { userId: input.userId, status: 'active', admitted: true,
         invitationLive: true, emailVerified: input.emailVerified, acknowledgementVersion: null }, true);
       this.write(tx, 'authority-identity', input.userId, scope, { userId: input.userId, email: input.email, state: 'active' }, true);
-      this.write(tx, 'authority-owner', input.userId, scope, { userId: input.userId, workspaceId }, true);
+      this.write(tx, 'authority-owner', input.userId, scope, { userId: input.userId, workspaceId, workspaceCreatedAt: new Date(this.now()).toISOString() }, true);
       this.write(tx, 'workspace', workspaceId, ownerScope(input.userId, workspaceId, storageEpoch),
         { id: workspaceId, ownerUserId: input.userId, storageEpoch, accessVersion: '1', changeSeq: '0', status: 'active' }, true);
       this.write(tx, 'authority-invitation', input.email, scope, { ...invitation, state: 'consumed', consumedBy: input.userId });
@@ -308,34 +416,63 @@ export class FirestoreAuthority {
       this.receipt(tx, scope, input.operationId, 'set_account_state', op, result, false); return result;
     });
   }
-  async createChild(raw: { userId: string; operationId: string; displayName: string }): Promise<FirestoreChildCreation> {
-    const input = parse(z.object({ userId: userIdSchema, operationId: uuid, displayName: z.string() }).strict(), raw);
+  private async prepareChild(tx: Transaction, workspace: Workspace, userId: string, childId: string,
+    raw: { operationId: string; displayName: string }): Promise<FirestoreAuthorityPreparedChild> {
+    const values = parse(z.object({ operationId: uuid, displayName: z.string() }).strict(), raw);
+    const input = { userId, ...values };
     const validated = validateCreateChild({ displayName: input.displayName });
     if (!validated.ok || !validated.value.displayName.isWellFormed()) fail('invalid_input', 400);
     input.displayName = validated.value.displayName;
-    const childId = randomUUID(), resultSchema = z.object({ child: childDetailSchema, scope: workRecoveryScopeSchema, authorizationVersion: decimal }).strict();
-    return this.options.database.runTransaction(async tx => {
-      const { workspace } = await this.account(tx, input.userId);
-      const accountScope = ownerScope(input.userId), scope = ownerScope(input.userId, workspace.id, workspace.storageEpoch, childId);
-      const op = await this.operation(tx, accountScope, input.operationId, 'create_child', input, resultSchema, false);
-      if (op.prior !== null) {
-        await this.scope(tx, { ...op.prior.scope, authorizationVersion: op.prior.authorizationVersion }); return op.prior;
+    const resultSchema = z.object({ child: childDetailSchema, scope: workRecoveryScopeSchema, authorizationVersion: decimal }).strict();
+    const accountScope = ownerScope(userId), scope = ownerScope(userId, workspace.id, workspace.storageEpoch, childId);
+    const op = await this.operation(tx, accountScope, input.operationId, 'create_child', input, resultSchema, false);
+    if (op.prior !== null) {
+      const originalScope = op.prior.scope;
+      if (originalScope.ownerUserId !== userId || originalScope.workspaceId !== workspace.id || originalScope.storageEpoch !== workspace.storageEpoch
+        || op.prior.authorizationVersion !== workspace.accessVersion || op.prior.child.id !== originalScope.childId
+        || op.prior.child.workspaceId !== workspace.id) fail('receipt_binding', 403);
+      await this.canonicalChild(tx, originalScope);
+      let changeSeq = op.changeSeq;
+      if (changeSeq === undefined) {
+        // F01 receipts predate sequence metadata. Only their exact authenticated original marker can supply it.
+        const id = this.changeId(op.prior.scope, input.operationId), snapshot = await tx.get(this.ref('change', id));
+        if (!snapshot.exists) fail('receipt_sequence_missing');
+        const original = this.open('change', id, op.prior.scope, snapshot, childCreationChangeSchema);
+        if (original.workspaceId !== op.prior.scope.workspaceId || original.storageEpoch !== op.prior.scope.storageEpoch
+          || original.childId !== op.prior.scope.childId || original.privateUserId !== userId || original.operationId !== input.operationId) fail('receipt_sequence_binding');
+        changeSeq = original.changeSeq;
       }
-      if ((await tx.get(this.ref('child', childId))).exists || (await tx.get(this.ref('authority-child-detail', childId))).exists) fail('child_conflict');
-      const commitChange = await this.change(tx, scope, workspace, input.operationId, 'children', false);
-      const child: Child = { id: childId, workspaceId: workspace.id, displayName: input.displayName, accessRole: 'owner', createdAt: new Date(this.now()).toISOString() };
-      const result: FirestoreChildCreation = { child, scope, authorizationVersion: workspace.accessVersion };
-      this.write(tx, 'child', childId, scope, { id: childId, workspaceId: workspace.id, status: 'active' }, true);
-      this.write(tx, 'authority-child-detail', childId, scope, child, true); commitChange();
-      this.receipt(tx, accountScope, input.operationId, 'create_child', op, result, false); return result;
+      if (BigInt(changeSeq) > BigInt(workspace.changeSeq)) fail('receipt_sequence_binding');
+      return { result: op.prior, changeSeq, commit: () => {} };
+    }
+    if ((await tx.get(this.ref('child', childId))).exists || (await tx.get(this.ref('authority-child-detail', childId))).exists) fail('child_conflict');
+    const change = await this.change(tx, scope, workspace, input.operationId, 'children', false);
+    const child: Child = { id: childId, workspaceId: workspace.id, displayName: input.displayName, accessRole: 'owner', createdAt: new Date(this.now()).toISOString() };
+    const result: FirestoreChildCreation = { child, scope, authorizationVersion: workspace.accessVersion };
+    const childEnvelope = this.seal('child', childId, scope, { id: childId, workspaceId: workspace.id, status: 'active' });
+    const detailEnvelope = this.seal('authority-child-detail', childId, scope, child);
+    const projection = { ...this.domain.tags(scope), childId, createdAt: child.createdAt,
+      ...this.domain.seal('child-projection', childId, scope, firestoreChildSchema, child) };
+    const receiptEnvelope = this.seal('authority-operation', op.key, accountScope, { ownerUserId: userId, childId: null,
+      operationId: input.operationId, action: 'create_child', fingerprint: op.fingerprint, result, changeSeq: change.changeSeq });
+    return { result, changeSeq: change.changeSeq, commit: () => {
+      tx.create(this.ref('child', childId), childEnvelope); tx.create(this.ref('authority-child-detail', childId), detailEnvelope);
+      tx.create(this.domain.ref('children', 'child-projection', childId), projection);
+      change.commit(); tx.create(this.ref('authority-operation', op.key), receiptEnvelope);
+    } };
+  }
+  async createChild(raw: { userId: string; operationId: string; displayName: string }): Promise<FirestoreChildCreation> {
+    const input = parse(z.object({ userId: userIdSchema, operationId: uuid, displayName: z.string() }).strict(), raw);
+    return this.runTransaction(input.userId, null, async binding => {
+      const prepared = await binding.prepareChildCreation({ operationId: input.operationId, displayName: input.displayName });
+      prepared.commit(); return prepared.result;
     });
   }
   async readScope(userId: string, childId: string): Promise<FirestoreAuthorityBinding> {
     parse(userIdSchema, userId); parse(uuid, childId);
     return this.options.database.runTransaction(async tx => {
       const { workspace } = await this.account(tx, userId), scope = ownerScope(userId, workspace.id, workspace.storageEpoch, childId);
-      const child = await this.read(tx, 'child', childId, scope, schemas.child);
-      if (child.id !== childId || child.workspaceId !== workspace.id || child.status !== 'active') fail('binding', 403);
+      await this.canonicalChild(tx, scope);
       return { scope, authorizationVersion: workspace.accessVersion };
     }, { readOnly: true });
   }
@@ -385,7 +522,7 @@ export class FirestoreAuthority {
       const commitChange = await this.change(tx, scope, workspace, input.operationId, 'memory', input.values.status === 'cancelled');
       const updatedAt = new Date(this.now()).toISOString(), result: AgentWork = { ...input.values, id: workId, childId: scope.childId,
         version, createdAt: old?.detail.createdAt ?? updatedAt, updatedAt };
-      this.writeWork(tx, scope, workspace, result, old?.followup.dueAt); commitChange();
+      this.writeWork(tx, scope, workspace, result, old?.followup.dueAt); commitChange.commit();
       this.receipt(tx, scope, input.operationId, 'save_work', op, result); return result;
     });
   }
@@ -401,10 +538,14 @@ export class FirestoreAuthority {
       const commitChange = await this.change(tx, scope, workspace, input.operationId, 'memory', true);
       const result: AgentWork = { ...old.values, status: 'cancelled', followUp: null, id: old.work.id, childId: scope.childId,
         version, createdAt: old.detail.createdAt, updatedAt: new Date(this.now()).toISOString() };
-      this.writeWork(tx, scope, workspace, result, old.followup.dueAt); commitChange();
+      this.writeWork(tx, scope, workspace, result, old.followup.dueAt); commitChange.commit();
       this.receipt(tx, scope, input.operationId, 'cancel_work', op, result); return result;
     });
   }
 }
 
 export function createFirestoreAuthority(options: FirestoreAuthorityOptions): FirestoreAuthority { return new FirestoreAuthority(options); }
+
+export const firestoreAuthoritySchemas = { control: schemas.control, account: schemas.account, workspace: schemas.workspace, child: schemas.child,
+  invitation: invitationSchema, identity: identitySchema, owner: ownerSchema, operation: receiptSchema, childDetail: childDetailSchema,
+  childCreationChange: childCreationChangeSchema, changeKind: changeKindSchema } as const;

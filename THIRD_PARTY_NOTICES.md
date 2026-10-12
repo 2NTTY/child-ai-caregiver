@@ -6,6 +6,10 @@ The exact dependency tree and registry integrity values are recorded in [package
 
 | Package | Installed version | Declared license | Preserved text |
 |---|---|---|---|
+| firebase | 13.0.0 | Apache-2.0 | [LICENSE](licenses/firebase/LICENSE) |
+| firebase-functions | 7.4.0 | MIT | [LICENSE](licenses/firebase-functions/LICENSE) |
+| @google-cloud/storage | 7.22.0 | Apache-2.0 | [LICENSE](licenses/google-cloud-storage/LICENSE) |
+| @google-cloud/tasks | 7.2.1 | Apache-2.0 | [LICENSE](licenses/google-cloud-tasks/LICENSE) |
 | firebase-admin | 14.5.0 | Apache-2.0 | [LICENSE](licenses/firebase-admin/LICENSE) |
 | @expo/metro-runtime | 57.0.16 | MIT | [LICENSE](licenses/expo-metro-runtime/LICENSE) |
 | expo | 57.0.24 | MIT | [LICENSE](licenses/expo/LICENSE) |
@@ -64,7 +68,7 @@ After that repair, `npm ls --all --json` reported zero problems, `npx expo insta
 
 ## Transitive dependencies and distribution
 
-S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. S10-W02 adds unmodified Cheerio 1.2.0 for bounded Server-side HTML/RSS parsing. S13-W05 adds unmodified web-push 3.6.7 (MPL-2.0) and its development types 3.6.4 (MIT). S13-W06 adds unmodified grammY 1.46.0 and @grammyjs/types 5.0.0 (MIT), without an auto-retry plugin. The current selected-package manifest contains 43 direct packages, 2 explicitly inventoried transitive packages, and 48 original license/notice file entries. This is not complete coverage of every direct or transitive dependency; earlier verification artifacts retain their historical lockfile hashes.
+S06-W03 adopts Better Auth's email/password/session handling and the PostgreSQL driver as unmodified server dependencies. Their installed package licenses and the Node/PostgreSQL development type licenses are preserved above. S11-W01 adds the unmodified Google Gen AI SDK 2.24.0 as a Server-only dependency. S11-W03 adds unmodified ADK 2.1.0 and Zod 4.5.4 for the Server agent runtime. S13-W01 adds unmodified React Hook Form 7.88.0, resolvers 5.9.1 and React Native Paper 5.15.3 for the new task form. S13-W04 adds unmodified pg-boss 12.34.0 for PostgreSQL-backed work queues. S10-W02 adds unmodified Cheerio 1.2.0 for bounded Server-side HTML/RSS parsing. S13-W05 adds unmodified web-push 3.6.7 (MPL-2.0) and its development types 3.6.4 (MIT). S13-W06 adds unmodified grammY 1.46.0 and @grammyjs/types 5.0.0 (MIT), without an auto-retry plugin. The current selected-package manifest contains 47 direct packages, 2 explicitly inventoried transitive packages, and 52 original license/notice file entries. This is not complete coverage of every direct or transitive dependency; earlier verification artifacts retain their historical lockfile hashes.
 
 Transitive packages and their individual license files remain in the installed `node_modules` tree. They are not all reproduced in this document, and `node_modules` is not committed. The inventory records every lockfile license declaration, including build tools and optional platform packages; declared metadata is not proof that every file or distribution obligation has been reviewed.
 
@@ -76,6 +80,8 @@ Before distributing an application build, review the actual shipped dependencies
 S10-W01 pins the source-build recipe to unmodified pgvector 0.8.6 at commit `8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c` on PostgreSQL 18.6. Its [PostgreSQL License](licenses/pgvector/LICENSE) is preserved with SHA-256 `6bba9ebeb73e27477463b05e5ef1bf303bccbddb3db9bbc95905d351604d6a87`, and is copied into the database image. Portable compiler flags and a multi-stage image change packaging, not upstream source. This is an additional deployment component, not a new npm dependency. The source-build attempt stopped on Debian download timeouts; local acceptance instead used the official PGDG Debian 12 amd64 package `postgresql-18-pgvector_0.8.6-1.pgdg12+2_amd64.deb` (SHA-256 `c014676900ce4af14f85e4c438ba2d488a4dcb8f684bc03ff908bac184910081`). The offline image preserves its PostgreSQL license/copyright at `/usr/share/doc/postgresql-18-pgvector/copyright` and the upstream license above; package files are extracted unchanged. [Package and checksum provenance](docs/P2_KNOWLEDGE.md#必要驗收與映像切換).
 
 The initial public knowledge summaries acknowledge the Hong Kong Department of Health Family Health Service and retain source URLs. Its [copyright notice](https://www.fhs.gov.hk/english/notice/notice.html) permits attributed non-commercial reproduction/dissemination and requires prior written permission for commercial use. This content is scoped to the non-commercial project demonstration and is not relicensed under the application's code license. Source selection, applicability and limitations are recorded in [the knowledge guide](docs/P2_KNOWLEDGE.md).
+
+P2-F02 adds unmodified Firebase Web SDK 13.0.0, Firebase Functions 7.4.0, Cloud Storage 7.22.0 and Cloud Tasks 7.2.1. The preserved Firebase Web SDK license also includes the upstream protobuf BSD-3-Clause notice. Firebase Web SDK modules require Node.js 24.12.0 or later; this project uses the Node.js 24 line.
 
 ## P1 deployment images
 

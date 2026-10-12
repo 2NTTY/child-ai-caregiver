@@ -3,6 +3,8 @@ import { createWebChildSelectionPreferences } from "./child-selection.ts";
 import { QueryClient } from "@tanstack/react-query";
 import { resolveApiBaseUrl } from "../../../src/config/api-base-url.ts";
 import { createRecordsApi, type AuthMode, type Credentials, type RecordsApi } from "../../../src/client/records-api.ts";
+import { createAccountAuthApi } from "../../../src/client/account-auth-api.ts";
+import { createFirebaseAuthApi, createUnavailableFirebaseAuthApi, type FirebaseClientAuthApi } from "../../../src/client/firebase-auth-api.ts";
 import { RecordsController, type RecordsState } from "../../../src/client/records-controller.ts";
 import { createChatApi, type ChatApi } from "../../../src/client/chat-api.ts";
 import { ChatController, type ChatState } from "../../../src/client/chat-controller.ts";
@@ -56,8 +58,23 @@ export class ProductionOwner {
 
   constructor(apiBaseUrl: string, online: boolean, api?: RecordsApi, chatApi?: ChatApi, selectionPreferences?: ChildSelectionPreferences, accountDependencies?: AccountServiceDependencies) {
     this.apiBaseUrl = resolveApiBaseUrl(apiBaseUrl);
-    const recordsApi = api ?? createRecordsApi(this.apiBaseUrl);
-    this.accountOwner = new AccountServiceOwner(this.apiBaseUrl, online, () => { void this.controller.restoreSession(); }, () => { void this.controller.restoreSession(); }, accountDependencies);
+    let firebaseIdentity: FirebaseClientAuthApi | undefined;
+    if (!api) {
+      const provider = process.env.EXPO_PUBLIC_AUTH_PROVIDER?.trim();
+      const config = { apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY?.trim() ?? "",
+        authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim() ?? "",
+        projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID?.trim() ?? "", appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID?.trim() ?? "" };
+      if (provider || Object.values(config).some(Boolean)) {
+        try {
+          if (provider !== "firebase" || typeof window === "undefined") throw new Error("Authentication provider unavailable");
+          firebaseIdentity = createFirebaseAuthApi({ baseUrl: this.apiBaseUrl, publicOrigin: window.location.origin, config });
+        } catch { firebaseIdentity = createUnavailableFirebaseAuthApi(); }
+      }
+    }
+    const recordsApi = api ?? createRecordsApi(this.apiBaseUrl, fetch, firebaseIdentity);
+    const account = firebaseIdentity ? { ...accountDependencies, legacyTrial: false,
+      authApi: createAccountAuthApi(this.apiBaseUrl, fetch, firebaseIdentity) } : accountDependencies;
+    this.accountOwner = new AccountServiceOwner(this.apiBaseUrl, online, () => { void this.controller.restoreSession(); }, () => { void this.controller.restoreSession(); }, account);
     this.chatController = new ChatController(chatApi ?? createChatApi(this.apiBaseUrl, async signal => {
       try { return await recordsApi.getSession(signal); }
       catch (error) { if (!signal.aborted) void this.controller.restoreSession(); throw error; }

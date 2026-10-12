@@ -251,3 +251,9 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 **查詢與索引落地界線。** F01 authority／device ledger 只有確定 ID 點讀及原生交易，密文不建索引；deploy/firebase/firestore.indexes.json 固定 yuban_authority／yuban_authority_sessions 的全欄位 exemption，部署改 namespace 時必須同步清單，不推定其他 collection 已覆蓋。collection 命名空間綁受信配置及 AAD。F02 首次 query 同時交付具體 collection-group、filter／sort／cursor／limit 及雲端 index manifest；其餘域按上表逐切片追加，不從全密文集合掃描解密代替 query，也不把 query hint 當權威。F03 的 query 仍須沿聊天表上限；F04 清理先有即時 tombstone／epoch 拒絕，再依 source／scope 反向接點有界清理；F05 正文／向量索引不得索引私人內容。
 
 **取代關係。** [ADR-022](DECISIONS.md#adr-022) 已取消本次舊帳戶 scrypt／UID 匯入、私人資料搬遷及 SQL 反向同步；上文 2026-10-08 匯入研究只屬歷史，未執行亦不列為通過。舊 SQL／備份保存不刪，Firebase 新寫入後只回退相容應用版本或隔離還原。
+
+### F02 已選 SDK 與原生接點（2026-10-11）
+
+- 正式 browser 身份使用 Firebase Web SDK 13.0.0 的記憶內 persistence；ID token 只作同源 HttpOnly cookie 交換，不由 client 直讀私人資料。Firebase Functions 7.4.0 接 beforeUserCreated；Cloud Tasks 7.2.1 接持久 outbox dispatcher。既有 Firestore 9.3.1／Admin 14.5.0 不變。Web SDK 的 @firebase/app／auth 要求 Node >=24.12.0，本包把 Node 24 線最低版本同步提高，實際本機使用 24.19.0；不把先前 24.11 的安裝警告當相容證據。
+- Storage 原候選 8.4.0 與現行 ADK 2.1.0 的 optional peer ^7.17.1 衝突；不強裝，採已核對的 7.22.0。該版 FileOptions 雖容許 string，File constructor 仍把 generation 轉 Number；不可用它 pin 超過安全整數的版本。使用公開 File.request／requestStream 的 qs.generation 十進制字串及官方 [Objects:get](https://docs.cloud.google.com/storage/docs/json_api/v1/objects/get)，保留完整版本識別。metadata 先核 generation／size，再有界串流讀取，完整性由 ciphertext SHA-256、既有 AES-GCM 與原內容 hash 核對；寫入仍使用 CRC32C 及 ifGenerationMatch:0。這是已核 SDK／官方接點，真 Storage 實測仍待 F02。
+- 四項新增直接依賴的固定版本、integrity、原始 license／上游 commit 及 lockfile 聲明清單見 [授權 manifest](../licenses/manifest.json)；非全量轉遞依賴審計。Firebase Auth、Functions、Storage、Tasks 不改寫家庭授權、原 opId、取消／unknown 或恢復權威。
