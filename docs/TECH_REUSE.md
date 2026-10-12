@@ -2,7 +2,7 @@
 
 核對日期：2026-09-25 至 2026-09-26；基線：`80cf50c08ee044e734d2463fe9a22ae30eeb786d`（當時本地及遠端 master）。本文件保存選型證據、代價及待驗證項；現行技術邊界由 [ARCHITECTURE](ARCHITECTURE.md#reuse-boundaries) 維護，工作包由 [PLAN](../PLAN.md#roadmap-packages) 維護，執行規則由 [AGENTS](../AGENTS.md#technical-skills) 維護。進入工作包時只補查版本變動或證據缺口，不重做整份調查。
 
-2026-10-08 集中服務變更的新增核查見 [Firestore 盤點](#firestore-dependency-audit)。以下原 PostgreSQL／Better Auth／Compose 選型及驗收仍是現有實作證據；其後續依賴方向由 ADR-019 替代，不要求重新跑歷史驗收。
+2026-10-08 研究見 [Firestore 盤點](#firestore-dependency-audit)；2026-10-12 採用方向依 [ADR-024](DECISIONS.md#adr-024) 收窄：保留原 VM／Compose／Caddy，復用已做 Firebase Auth／Storage／Tasks，僅替換正式 SQL 接點。原實作及有效驗收仍保留，不因調整部署路線全量重跑。
 
 <a id="baseline"></a>
 ## 已有成果與證據層級
@@ -215,12 +215,12 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 <a id="multi-agent-reuse"></a>
 ## 四角色編排及多模態知識維護核查
 
-2026-10-08，基線 e6842fc；以下為固定版本原碼／官方文件與本機程式唯讀核對，不是四角色或多模態流程已實測。現行採用見 [ADR-020](DECISIONS.md#adr-020)／[架構](ARCHITECTURE.md#p2-agent-roles)，不新增 framework、依賴或預建 Skill。
+2026-10-08，基線 e6842fc；以下為固定版本原碼／官方文件與本機程式唯讀核對，不是四角色或多模態流程已實測。角色接口／P3 承接見 [ADR-024](DECISIONS.md#adr-024)／[架構](ARCHITECTURE.md#p2-agent-roles)，不新增 framework、依賴或預建 Skill。
 
 - **可復用原生能力：**ADK 的 [Agent-as-Tool](https://adk.dev/tools-custom/function-tools/) 讓子任務回傳主 Agent，主 Agent 保留對話控制；適合聊天按需調資料編製，背景維護另由受信工作入口啟動。[2.1.0 AgentTool](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/tools/agent_tool.ts) 為 Apache-2.0，已有子 Runner／取消傳遞，但 runAsync 不帶專案 RunConfig／maxLlmCalls，schema 驗證亦有 TODO；不能推定共享 scope、預算及 observer 自動完整繼承。採原生 FunctionTool／Runner 薄接點明確注入現有 gateway／validator／根預算，不複製整個框架；首次實作才核最少相容情景。
 - **現有 runtime 與審核缺口：**[agent-runtime](../server/agent-runtime.ts) 有有界 Runner／FunctionTool／取消／收尾；[product-agent-tools](../server/product-agent-tools.ts) 的 present_answer 驗引用 ID、分類與範圍，不是獨立模型判斷每項說法是否獲原文支持。[knowledge-version-review](../server/knowledge-version-review.ts) 已有變更含義、原文片段、growthRuleImpact 與發布 gate，可接審核角色；資料編製復用 [文件工具](../server/agent-document-tools.ts)及其他領域服務，不另存可寫副本。
 - **多模態缺口：**[knowledge-pdf](../server/knowledge-pdf.ts)／worker 沿 pdfjs 文字分批抽取，完整度不代表圖表含義已核對；[agent-model-gateway](../server/agent-model-gateway.ts) 目前拒 fileData 且最多一張受控照片。官方 [Vertex 文件理解](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/capabilities/document-understanding) 提醒長文件分拆、機讀文字優先，以及掃描／手寫／定位誤差；採來源維護專用有界視覺輸入，保留原頁供審核，不以模型抽取當逐字原文。沿現有 Vertex／GenAI 路線；實作時核固定模型與 SDK 的實際媒體相容，不因通用文件宣稱本產品已支援。
-- **證據／成本限制：**原單 Runner scripted／真 Gemini、文字 PDF 及來源版本 gate 的證據只適用原情景。六次是互動共同上限，不是平均成本或成功保證；四角色、視覺來源與自動語義審核的實際費用／品質要隨 F 包最低連貫流程量測。不得用靜態 prompt、引用格式合法或另一角色說通過作實證。
+- **證據／成本限制：**原單 Runner scripted／真 Gemini、文字 PDF 及來源版本 gate 的證據只適用原情景。六次是 P3 四角色提案共同上限，不調高現有 P2 配置，亦非平均成本或成功保證；四角色、視覺來源與自動語義審核按 P3-M01～M03 的最低連貫流程量測。不得用靜態 prompt、引用格式合法或另一角色說通過作實證。
 
 <a id="firestore-full-runtime-audit"></a>
 ### F01 全執行路徑對照（2026-10-11）
@@ -235,7 +235,7 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 | online、online-change、transaction-pool | 原 opId、payload fingerprint、caller scope、expectedVersion、command receipt、changeSeq／outbox 一次提交；無 SQL savepoint 替身。changes 分頁與失回覆原操作查回。 | F02 最小重試／衝突；F03 全 command 與 changes |
 | chat、product-agent-store、agent-work-store、agent-confirmation-store、agent-actions-store、agent-original-receipts-postgres | 按上文聊天表保留 run／原訊息與唯一回覆 claim、跨 run 確認、原 receipt reader、作用與終態；取消／版本／授權於同庫交易再次核對。 | F01 authority／原接點；F03 完整 command、非同步 reply；F07／08 成果 |
 | agent-work-continuation、product-agent-background、worker-main | 原 event／候選快照／run claim 同庫；既有 Firestore continuation store 消費 canonical authority，未有有效事件不呼叫模型；終態／unknown 只查回。 | F01 pure-due 可執行接點；F03 完整 run；F06 排程／恢復 |
-| tasks、task-work-view、task-worker、worker-control、worker-queue | care task／occurrence／revision／提醒批次／generation 與 Firestore outbox 同交易；Tasks 可重投，worker 按持久 lease／generation／epoch／取消屏障領取，不以 task-name 時窗代替原收據。 | F02 一項提醒、重投、縮零；F03 全 task；F06 全 consumer |
+| tasks、task-work-view、task-worker、worker-control、worker-queue | care task／occurrence／revision／提醒批次／generation 與 Firestore outbox 同交易；Tasks 可重投，worker 按持久 lease／generation／epoch／取消屏障領取，不以 task-name 時窗代替原收據。 | F02 一項提醒、重投及 VM OIDC；F03 全 task；F06 全 consumer |
 | memory、memory-summary、care-summary-store、shared-input-store | fact/topic/revision、summary coverage、visit preparation、shared input 管理版本；同交易核來源版本／private scope／撤權，來源刪除令衍生摘要失效。 | F03 記憶／摘要基礎；F04 完整匯入／報告 |
 | ai-usage、embedding-gateway、model-settings、product-agent-services | 正式注入 Firestore session／root budget／daily usage；本人設定與 key 清理按原權限；model、embedding、background 共用限制與收據，不能靠預設 SQL usage。 | F03 動態設定／跨 instance 准入；F07 restore／用量 |
 | knowledge-store、knowledge-refresh-store、knowledge-version-review、personal-library-api；knowledge／knowledge-refresh CLI | immutable source/version/chunk/vector、publication pointer、立即停用及來源正文；保留原 body 候選、filter、RRF／1024 維，不搬私人資料入公共索引。 | F02 少量已核知識及真索引；F05 完整來源／發布／查詢；F06 更新 |
@@ -244,7 +244,7 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 | family-document-store／worker、agent_document_operations | document＋snapshot＋source revision＋caller-wide operation＋原 run link＋changes 原子；長文有界分頁，PDF／報告讀同成果版本。 | F02 一份文件局部修改；F04 全版本／匯出；F08 A09 |
 | photo-store、photo-files、photo-backup；storage-upgrade | Storage 私有不可變 object＋generation/hash；先持久刪除意圖，再清 metadata／物件。既有明文升級只屬舊 SQL，不對乾淨庫假跑；新資料一開始用加密格式。 | F02 一張附件及還原；F04 完整附件／配對恢復 |
 | account-data、erasure-journal、account-erasure-journal／account-invitation CLI | 匯出／帳戶及孩子刪除閉包、獨立不可變 journal／receipt；Auth 與 Firestore 非跨服務交易，依原 op 狀態恢復，先關准入再清理。 | F02 最小刪除不復活；F04 全域退出；F07 全資料對照 |
-| backup、storage-backup CLI、photo-backup、worker-control CLI；deploy/p1、deploy/p2 | 14 天 Firestore／附件配對 manifest、隔離 restore／最新 journal／現行 Auth／新 epoch；還原背景保持暫停。Hosting／Cloud Run／Tasks／Scheduler 取代 Compose。 | F02 最小還原；F07 完整 restore／相容版本回退；F08 SQL 退役 |
+| backup、storage-backup CLI、photo-backup、worker-control CLI；deploy/p1、deploy/p2 | 14 天 Firestore／附件配對 manifest、隔離 restore／最新 journal／現行 Auth／新 epoch；還原背景保持暫停。保留 VM／Compose／Caddy；Tasks／Scheduler 取代 pg-boss，配對備份使用 Firestore／Storage。 | F02 最小還原；F07 完整 restore／相容版本回退；F08 SQL 退役 |
 
 **固定依賴與最小實作。** Node 24、Firestore 9.3.1 沿用；本包加入 firebase-admin 14.5.0（Apache-2.0，Node >=22），SDK 原生 session-cookie／revocation API 已按安裝版本核對，license 納現有 manifest。Firebase client 13.0.0、Tasks 7.2.1、Storage 8.4.0 是 2026-10-11 registry 核對的候選固定版本，尚未直接安裝／驗證；各首次實作切片才引入及保存 license，不宣稱 registry 相容等於產品已驗。ADK 2.1.0／GenAI 2.24.0 不重寫。
 
