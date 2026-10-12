@@ -7,6 +7,9 @@ import { knowledgeReviewHash, type KnowledgeReviewAssessment } from "../server/k
 import { rankKnowledge } from "../server/knowledge-ranking.ts";
 import { KNOWLEDGE_EMBEDDING, type KnowledgeChunkInput, type KnowledgeFilter, type KnowledgeSourceInput } from "../src/shared/knowledge.ts";
 import { firestoreDomainFixture } from "./helpers/firestore-domain-memory.ts";
+import { createFirestoreKnowledgeRefresh } from "../server/firestore-knowledge-refresh.ts";
+import { observationHash } from "../server/knowledge-observation.ts";
+import type { SourceFetchResult } from "../server/knowledge-refresh-types.ts";
 
 // Synthetic vectors only verify mechanical ranking and fencing, never semantic relevance or native index behavior.
 const vector = [1, ...Array(1023).fill(0)];
@@ -66,7 +69,12 @@ function fixture(sourceIds = ["synthetic-guidance"]) {
       get: async (target: any) => snapshot(await tx.get(target)), getAll: async (...targets: any[]) => (await tx.getAll(...targets)).map(snapshot),
       create: (ref: any, value: unknown) => tx.create(ref, encode(value)), set: (ref: any, value: unknown) => tx.set(ref, encode(value)),
     })) } as unknown as Firestore;
-  const options = { database, projectId: "synthetic-knowledge-project", namespace: "synthetic_knowledge", sourceIds }, store = createFirestoreKnowledgeStore(options);
+  const options = { database, projectId: "synthetic-knowledge-project", namespace: "synthetic_knowledge", sourceIds }, nativeStore = createFirestoreKnowledgeStore(options);
+  const store = { ...nativeStore, async importSource(input: unknown) {
+    const result = await nativeStore.importSource(input);
+    for (let page = 0; page < 16; page++) if ((await nativeStore.prepareSearch(result.versionId, result.hash)).complete) break;
+    return result;
+  } };
   async function publish(document = source(), compared: Parameters<typeof assessment>[1] = null) {
     const imported = await store.importSource(document); await store.review(imported.versionId, imported.hash, "synthetic-operator", assessment(document, compared));
     await store.publish(imported.versionId, imported.hash, embeddings(document)); return { ...imported, document };
@@ -116,7 +124,8 @@ test("Firestore knowledge import IDs and hashes replay without fetched-date chur
   const all = await f.store.candidates(filter, null, { versionId: first.versionId, limit: 60 }); assert.equal(all.length, 32);
   assert.equal(all[31]!.originalText!.length, 4000); assert.equal(all[31]!.text.length, 4000);
   await assert.rejects(f.store.importSource({ ...source(), url: "https://www.dh.gov.hk/changed" }), rejects("knowledge_source_url_changed"));
-  await assert.rejects(f.store.importSource({ ...source(), classification: "recent_information" }), rejects("domain_not_ready"));
+  const recent = await f.store.importSource({ ...source(), classification: "recent_information", sourcePublishedAt: "2026-01-01T00:00:00Z" });
+  assert.equal(recent.state, "draft", "recent content still needs observation-bound review before publication");
   await assert.rejects(f.store.importSource({ ...source(), watchId: "synthetic-watch" }), rejects("domain_not_ready"));
   assert.throws(() => createFirestoreKnowledgeStore({ ...f.options, sourceIds: [] }), rejects("knowledge_configuration_invalid"));
 });
@@ -166,4 +175,42 @@ test("Firestore knowledge atomic publication and bounded reread return the curre
   assert.equal(result.length, 2); assert.ok(result.every(item => item.versionId === next.versionId));
   assert.equal(f.nearestCalls.length, 2); assert.equal(f.nearestCalls[0]!.filters[0]![2], first.versionId); assert.equal(f.nearestCalls[1]!.filters[0]![2], next.versionId);
   assert.deepEqual(await f.store.candidates(filter, null, { chunkIds: [oldCitation.chunkId], versionId: first.versionId }), []);
+});
+
+test("F05 source observation fences changed or unavailable evidence and reuses unchanged vectors", async () => {
+  const f = fixture(), document = source(), generation = "f3457654-6524-4c99-bf56-d26dfb9f4dbd";
+  const definition = { id: document.sourceId, url: document.url, kind: "page" as const, selector: "main",
+    classification: document.classification, publisher: document.publisher, termsUrl: document.termsUrl, audience: "public_noncommercial" as const };
+  const refresh = createFirestoreKnowledgeRefresh({ ...f.options, definitions: [definition], async readControl() { return { enabled: true, generation }; } });
+  const store = createFirestoreKnowledgeStore({ ...f.options, observations: refresh.gate });
+  const observed = { url: document.url, title: document.title, text: document.chunks[0]!.originalText!, sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null };
+  const check = async (result: SourceFetchResult) => {
+    const job = (await refresh.jobs())[0]!.data;
+    return refresh.process(job, crypto.randomUUID(), async () => result, new AbortController().signal);
+  };
+  const prepare = async (id: string, hash: string) => { for (let page = 0; page < 4; page++) if ((await store.prepareSearch(id, hash)).complete) return; assert.fail("Index must finish in four bounded pages"); };
+  await refresh.register(definition.id, "synthetic-operator");
+  assert.equal((await check({ status: "ok", items: [observed] })).status, "changed");
+  const first = await store.importSource(document); await prepare(first.versionId, first.hash);
+  await store.review(first.versionId, first.hash, "synthetic-operator", { ...assessment(document), observationHash: observationHash(observed) });
+  await store.publish(first.versionId, first.hash, embeddings(document));
+  assert.equal((await store.candidates(filter, null, { query: "needle" })).length, 1);
+  await check({ status: "failed", reason: "network" });
+  assert.equal((await store.catalog()).items.length, 1, "A temporary fetch failure is not withdrawal");
+  const changed = { ...observed, text: observed.text + " A new unrelated section." };
+  await check({ status: "ok", items: [changed] });
+  assert.equal((await store.catalog()).items.length, 0, "Old approval cannot bless changed source content");
+  const nextDocument = { ...document, chunks: [...document.chunks, chunk("additional", { sourceExcerpt: "A new unrelated section.", text: "New public content", originalText: "A new unrelated section." })] };
+  const next = await store.importSource(nextDocument); await prepare(next.versionId, next.hash);
+  await store.review(next.versionId, next.hash, "synthetic-operator", { ...assessment(nextDocument, { document, versionId: first.versionId, hash: first.hash }), observationHash: observationHash(changed) });
+  assert.equal((await store.missingDocuments(next.versionId)).length, 1, "The unchanged chunk retains its original vector");
+  let generated = 0;
+  const missing = (await store.missingDocuments(next.versionId))[0]!;
+  await store.embedDocument(missing, async () => { generated++; return vector; });
+  await store.embedDocument(missing, async () => { assert.fail("Cached embedding must not dispatch again"); });
+  assert.equal(generated, 1); await store.publish(next.versionId, next.hash);
+  assert.equal((await store.catalog()).items[0]!.versionId, next.versionId);
+  await check({ status: "unavailable", httpStatus: 410 });
+  assert.equal((await store.catalog()).items.length, 0);
+  await assert.rejects(store.review(next.versionId, next.hash, "synthetic-operator", { ...assessment(nextDocument), observationHash: observationHash(changed) }), rejects("knowledge_observation_review_mismatch"));
 });

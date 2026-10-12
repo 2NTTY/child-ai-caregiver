@@ -16,7 +16,7 @@ const readOperations = new Set(["catalog", "list", "inspect"]);
 const idPattern = /^[a-z0-9][a-z0-9-]{0,79}$/;
 const hashPattern = /^[a-f0-9]{64}$/;
 const uuidPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
-let pool, queue, failed = false;
+let pool, queue, persistence, failed = false;
 const fail = () => {
   if (!failed) console.error("knowledge_refresh_operation_failed_check_scope_parameters_and_source_review");
   failed = true;
@@ -57,11 +57,25 @@ try {
     if ((operation === "register" || operation === "check") && !SOURCE_WATCHES.some(watch => watch.id === target)) {
       throw new Error("Watch not in catalog");
     }
-    const [{ readServerConfig }, { createPool }, { createKnowledgeRefreshStore }] = await Promise.all([
-      import("../server/config.ts"), import("../server/database.ts"), import("../server/knowledge-refresh-store.ts"),
-    ]);
-    pool = createPool(readServerConfig(process.env));
-    const store = createKnowledgeRefreshStore(pool, SOURCE_WATCHES);
+    const { serverStorageBackend } = await import("../server/firebase-config.ts");
+    let store;
+    if (serverStorageBackend(process.env) === "firestore") {
+      const [{ openFirebasePersistence }, { createFirestoreKnowledgeRefresh }, { createFirestoreKnowledgeStore }] = await Promise.all([
+        import("../server/firebase-persistence.ts"), import("../server/firestore-knowledge-refresh.ts"), import("../server/firestore-knowledge.ts")]);
+      persistence = await openFirebasePersistence(process.env);
+      const { database, cipher, config, authority } = persistence;
+      const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
+      const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
+      store = { ...refresh, async approve(sourceId, contentHash, versionId, versionHash, by, assessment) {
+        if (!config.knowledgeSourceIds) throw new Error("knowledge_source_not_configured");
+        const knowledge = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: refresh.gate, audience: "internal" });
+        return knowledge.review(versionId, versionHash, by, assessment, { sourceId, contentHash });
+      } };
+    } else {
+      const [{ readServerConfig }, { createPool }, { createKnowledgeRefreshStore }] = await Promise.all([
+        import("../server/config.ts"), import("../server/database.ts"), import("../server/knowledge-refresh-store.ts")]);
+      pool = createPool(readServerConfig(process.env)); store = createKnowledgeRefreshStore(pool, SOURCE_WATCHES);
+    }
     if (operation === "list") console.log(JSON.stringify(await store.list()));
     if (operation === "inspect") console.log(JSON.stringify(await store.inspect(target)));
     if (operation === "register") {
@@ -80,6 +94,13 @@ try {
       console.log(JSON.stringify({ event: "knowledge_observation_review", sourceId: target, versionId: options.get("--version"), publication }));
     }
     if (operation === "check") {
+      if (persistence) {
+        const pending = (await store.jobs()).find(job => job.data.watchId === target);
+        if (!pending) throw new Error("Watch paused, disabled or catalog changed");
+        const { fetchKnowledgeSource } = await import("../server/knowledge-source-fetch.ts");
+        const jobId = randomUUID(), result = await store.process(pending.data, jobId, fetchKnowledgeSource, AbortSignal.timeout(60000));
+        console.log(JSON.stringify({ event: "knowledge_source_check", watchId: target, jobId, ...result }));
+      } else {
       const [{ createWorkerQueue }, { KNOWLEDGE_REFRESH_QUEUE, REFRESH_JOB_OPTIONS }] = await Promise.all([
         import("../server/worker-queue.ts"), import("../server/knowledge-refresh-types.ts"),
       ]);
@@ -93,10 +114,12 @@ try {
       if (jobId !== null && jobId !== requestedId) throw new Error("Queue result unconfirmed");
       console.log(JSON.stringify({ event: "knowledge_source_check", watchId: target, jobId,
         status: jobId === null ? "already_pending" : "queued" }));
+      }
     }
   }
 } catch { fail(); }
 finally {
   try { await queue?.stop(); } catch { fail(); }
   try { await pool?.end(); } catch { fail(); }
+  try { await persistence?.close(); } catch { fail(); }
 }

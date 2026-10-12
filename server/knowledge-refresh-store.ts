@@ -2,7 +2,6 @@ import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { reviewKnowledgeVersion } from "./knowledge-version-review.ts";
 import type { KnowledgeReviewAssessment } from "./knowledge-version-review.ts";
-import { knowledgeHash } from "./knowledge-inputs.ts";
 import { refreshJobSchema } from "./knowledge-refresh-types.ts";
 import type { ObservedContent, RefreshJob, SourceFetcher, SourceWatchDefinition } from "./knowledge-refresh-types.ts";
 
@@ -10,18 +9,8 @@ interface WatchRow { id: string; definition: SourceWatchDefinition; revision: st
 interface ObservationRow { source_id: string; watch_id: string; url: string; content_hash: string; document: ObservedContent;
   fetched_at: Date; last_successful_check_at: Date; unavailable: boolean }
 const operatorAlias = (value: string) => { if (!/^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$/.test(value)) throw new Error("knowledge_operator_invalid"); };
-export function observationId(definition: SourceWatchDefinition, item: ObservedContent): string {
-  return definition.kind !== "rss" ? definition.id : `${definition.id}-${knowledgeHash(item.url).slice(0,32)}`;
-}
-export function observationHash(item: ObservedContent): string {
-  return knowledgeHash([item.url,item.title,item.text,item.sourcePublishedAt,item.sourceUpdatedAt,item.sourceDateText,
-    ...(item.extraction || item.pages ? [item.extraction ?? null,item.pages ?? null] : [])]);
-}
-export function definitionHash(definition: SourceWatchDefinition): string {
-  // JSONB changes object key order; compare explicit fields rather than JSON.stringify(row).
-  return knowledgeHash([definition.id,definition.url,definition.kind,definition.classification,definition.publisher,
-    definition.termsUrl,definition.audience,definition.selector ?? null,definition.itemHosts ?? [],definition.pdfPages ?? null,definition.title ?? null]);
-}
+import { observationId, observationHash, definitionHash } from "./knowledge-observation.ts";
+export { observationId, observationHash, definitionHash } from "./knowledge-observation.ts";
 
 async function tx<T>(pool: Pool, action: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await pool.connect(); let failed = false;

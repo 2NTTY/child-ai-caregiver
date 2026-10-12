@@ -817,3 +817,11 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 - 帳戶退出保留 prepare → 具名確認 → 原 receipt 查回。Firebase 客戶端先在原登入 adapter 再驗證本人密碼，交換新 session；`POST /api/account/delete` 只傳 operationId／receiptToken／confirmation，密碼不送業務 API。Server 核 `auth_time`、原身份、準備時版本及有效 token。舊 SQL adapter 只在切換前保留其原 wire，不能在 Firestore 模式回退。
 - 退出 receipt 的 `prepared / processing / completed` 分別代表待確認、已受理／清理中、實際清理完成。`GET /api/account/deletion/:operationId` 憑 `x-erasure-receipt` 查原狀態，帳戶被關閉後仍可恢復；只返回最小狀態，不透露正文或身份。前端 processing 顯示「清理中」，不重交新操作。
 - 孩子刪除沿原 `confirmChildId`，原 online receipt 返回已關閉存取及 `cleanupPending`。獨立 journal、權威屏障及可恢復清理詳見 [資料契約](DATA_MODEL.md#firestore-files)。F06 接排程清理，F07 補完整還原 codec；尚未接妥前不對受邀用戶宣稱全套退出／恢复可用。
+
+<a id="firestore-knowledge-sources"></a>
+### 知識與私人來源的 Firestore 接點
+
+- 原 `KnowledgeRetriever`、`search_knowledge`／`read_knowledge_context` 及引用 schema 不變；正文、PDF 原頁碼、版本及未讀範圍由同一已發布來源提供。索引及操作者方法見 [維護入口](P2_KNOWLEDGE.md#firestore-maintenance)。原前端來源面板讀同一 Agent 運行／引用資料，不另接公共瀏覽器資料庫。
+- `/api/children/:childId/inputs` 的 list／get／fetch／extract／confirm／manage／management-history／delete 沿既有 wire；原 source owner／`createSharedInputApi`、Agent 候選及私人來源工具共用 `SharedInputStore`。變更仍經 online context／原 opId／expectedVersion，原 changes／owner 刷新維持，各頁不另存副本。
+- 私人來源正文分段加密；來源取得及模型提取仍須本人授權、受限 URL 取得與既有 lease。管理時更改正文、停用或撤回選段會使舊選段／提取失效；提取不自動建立已確認事實。
+- online 收據內部只保存私人來源的 ID／版本；查回原結果前核本人範圍及目前版本。來源已更改或刪除時，原操作仍 confirmed，但 `result:null`，不得重做或回傳舊正文；client 沿原 unknown 查回及共同 owner 重新讀取。匯出與孩子／帳戶清理同時涵蓋私人來源及管理修訂。

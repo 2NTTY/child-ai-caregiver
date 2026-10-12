@@ -21,6 +21,9 @@ import type { createFirestoreProductAgent } from './firestore-product-agent.ts';
 import { handleProductAgentRequest } from './product-agent-api.ts';
 import { handleAgentActionsRequest } from './agent-actions-api.ts';
 import { handleModelSettingsRequest } from './model-settings-api.ts';
+import { handleSharedInputRequest } from './shared-input-api.ts';
+import type { SharedInputStore } from './shared-input-store.ts';
+import type { SharedInputService } from './shared-input-service.ts';
 import type { PhotoAgent } from './photo-agent.ts';
 import { handleFirebaseAccountData, type FirebaseAccountDataPort } from './firebase-account-data-api.ts';
 
@@ -52,6 +55,8 @@ export interface FirebaseRequestHandlerOptions {
   chat?: ChatStore;
   care?: FirestoreCareStore;
   memory?: MemoryStore;
+  sources?: SharedInputStore;
+  sourceService?: SharedInputService;
   product?: Awaited<ReturnType<typeof createFirestoreProductAgent>>;
 }
 export type FirebaseRequestHandler = (request: Request) => Promise<Response>;
@@ -143,6 +148,15 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
         const response = await handleFamilyDocumentRequest(request, userId, documents, isCurrentUser);
         if (!await isCurrentUser(userId)) throw new RequestError("identity_changed", 409);
+        return uncached(response);
+      }
+      if (options.sources && /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(path)) {
+        if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        const isCurrentUser = async () => (await auth.getSession({ headers: request.headers }))?.user.id === userId;
+        const response = await handleSharedInputRequest(request, userId, options.sources, { service: options.sourceService, isCurrentUser });
+        if (!await isCurrentUser()) throw new RequestError('identity_changed', 409);
         return uncached(response);
       }
       if (photos && /^\/api\/children\/[^/]+\/photos(?:\/|$)/u.test(path)) {

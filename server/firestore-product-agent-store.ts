@@ -17,14 +17,18 @@ import { domainReject, firestoreTaskSchema } from './firestore-domain-data.ts';
 import { agentActionToolNames } from '../src/shared/agent-actions.ts';
 import { createFirestoreAgentDocuments } from './firestore-agent-documents.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
+import { createFirestoreAgentSources } from './firestore-agent-sources.ts';
+import type { FirestoreSharedInputStore } from './firestore-shared-inputs.ts';
 
 export function createFirestoreProductAgentStore(options: FirestoreDomainOptions & {
   chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore; online: FirestoreOnlineStore;
+  sources?: FirestoreSharedInputStore;
   validateKnowledge(binding: Binding, sourceId: string): Promise<void>;
 }) {
   const runs = createFirestoreAgentRuns(options), { data, authority } = runs;
   const documents = createFirestoreAgentDocuments({ ...options, runs });
-  const proposals = createFirestoreAgentProposals({ ...options, runs, extensions: [documents.extension] });
+  const proposals = createFirestoreAgentProposals({ ...options, runs,
+    extensions: [documents.extension, ...(options.sources ? [createFirestoreAgentSources(options.sources)] : [])] });
   const actions = createFirestoreAgentActions({ ...options, runs, proposals });
   const confirmations = createFirestoreAgentConfirmations({ runs, proposals, chat: options.chat,
     policyVersion: async b => (await actions.readPolicy(b)).version });

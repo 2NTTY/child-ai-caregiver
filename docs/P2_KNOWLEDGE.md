@@ -33,6 +33,17 @@ S10-W01 實作公共知識的匯入、核對、向量化、發布、停用與檢
 
 ## 檢索契約與限制
 
+<a id="firestore-maintenance"></a>
+### Firestore 維護接點
+
+`STORAGE_BACKEND=firestore` 使用同一 CLI 及原檢索工具，沿原 source／version／chunk 身份；上文 SQL 的驗收及自動發布行為不作 Firestore 證據。Firestore `list --after-version VERSION` 按版本 ID 每頁 20 項。匯入、核對、向量及發布分開：先對指定版本執行 `prepare-search VERSION --hash HASH`，每次最多建立 64 個公共詞彙桶，最多四次完成該版本；沒有完整索引不得發布。舊 F02 版本同樣須補此步驟，不能回退整庫讀取或 SQL。
+
+Firestore `embed` 只處理本次獲准上限內的缺失片段，回報剩餘數量；完成後另行 `publish`，不自行加開批次。未變片段沿處理版本及 input hash 復用向量；維護呼叫使用共用用量台帳。逾時／失回覆的 embedding 保持 unknown，不直接重做或當作成功；處理前須核原工作結果。
+
+公共正文沿原權重產生有界詞彙索引，不因前 64 個詞而漏掉正文後段。檢索先核發布、使用範圍、地域及年齡，再查真向量與必要詞彙桶；RRF 後只讀選中片段，輸出前再核版本與停用。來源觀察改變會撤回舊內容資格；暫時取得失敗不等於來源失效，410／正式停用則停止使用。新版核對綁定觀察 hash 及目前來源設定，不能只有格式或 hash 核對便發布。
+
+`knowledge-refresh` 沿既有指定來源、解析器及核對指令；Firestore 保存 watch、原文分段、觀察與執行 lease。排程由 F06 接線，自主爬取／多模態維護 Agent 仍屬 P3。私人来源沿原 `/inputs` 服務保存密文及獲准選段，不加入公共詞彙或向量索引；前端和 Agent 共用相同資源、版本與原操作收據。
+
 - [KnowledgeFilter／KnowledgeResult](../src/shared/knowledge.ts) 由 Server 核定地域、分類及範圍。精確年齡用包含篩選；有來源的約數／查詢假設可找相交範圍，未知年齡亦可發現相關資料，但必須回傳 conditional／requires_clarification 語義。數字約數須連同原 asOf 推移為仍屬約數的當前檢索提示，不造生日；日期無效或未來便保留未知。原話及數值解讀不是已確認事實；檢索假設不改孩子檔案或精確任務資格。
 - [KnowledgeRetriever](../server/knowledge-retriever.ts) 每個 Agent run 建立一次，重用現有 `AgentBudget`；兩次查詢 embedding／90 秒與生成及工具共用同一運行期限。同 query 只重用向量，來源狀態每次重新查 DB；引用在交付前再以 chunk／版本／hash 核對。這項 metadata 檢查不證明語義支持。
 - PostgreSQL 先過濾發布、有效期、年齡、地區、主題及分類，再計算精確 cosine distance；標題／關鍵詞的繁中 bigram 與 Latin token 排序一起做 RRF，最多六片段。`0.4` 距離門檻為初始產品參數，須由少量召回案例核對，並非官方置信度。P2-A04 在 SQL 內分別排名及限量取回，不因全庫候選超过 1,000 便失敗；引用重驗按確切 ID，與排名前綴分開。

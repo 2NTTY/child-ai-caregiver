@@ -1,3 +1,4 @@
+import { checkKnowledgeObservation } from "./knowledge-observation.ts";
 import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
@@ -28,27 +29,7 @@ async function lockedVersion(client: PoolClient, versionId: string, expectedHash
   return { row, source, watch, observation };
 }
 function checkObservation(row: VersionRow, watch: WatchRow | undefined, observed: ObservationRow | undefined, observationHash: string | null) {
-  if (!watch) {
-    if (observationHash !== null || row.document.classification === "recent_information") throw new Error("knowledge_observation_review_required");
-    return;
-  }
-  if (!watch.enabled || !observed || observed.unavailable || observed.content_hash !== observationHash
-    || row.document.url !== observed.url || row.document.classification !== watch.definition.classification
-    || row.document.publisher !== watch.definition.publisher || row.document.termsUrl !== watch.definition.termsUrl
-    || row.document.sourcePublishedAt !== observed.document.sourcePublishedAt || row.document.sourceUpdatedAt !== observed.document.sourceUpdatedAt
-    || (row.document.sourceDateText ?? null) !== observed.document.sourceDateText)
-    throw new Error("knowledge_observation_review_mismatch");
-  if (watch.definition.kind === "pdf") {
-    const expected = row.document.extraction, actual = observed.document.extraction;
-    if (!expected || !actual || knowledgeReviewHash({ extractionQuality: "requires_review", ...expected })
-      !== knowledgeReviewHash({ extractionQuality: "requires_review", ...actual })) throw new Error("knowledge_pdf_coverage_mismatch");
-    for (const chunk of row.document.chunks) {
-      const pages = observed.document.pages?.filter(page => page.page >= (chunk.pageStart ?? Infinity) && page.page <= (chunk.pageEnd ?? -Infinity));
-      const original = pages?.map(page => page.text).join("\n\n");
-      if (!chunk.originalText || !original?.includes(chunk.originalText) || !original.includes(chunk.sourceExcerpt))
-        throw new Error("knowledge_pdf_original_page_mismatch");
-    }
-  }
+  checkKnowledgeObservation(row.document, watch, observed, observationHash);
 }
 
 export async function reviewKnowledgeVersion(client: PoolClient, versionId: string, expectedHash: string, operator: string,

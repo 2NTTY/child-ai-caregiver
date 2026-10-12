@@ -35,6 +35,7 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
     const { context } = opened;
     const suffix = path.split('/')[0].slice(options.namespace.length);
     const storageKind = context.kind === 'care-tombstone' && suffix === '_care_records' ? 'care-record'
+      : context.kind === 'shared-input-tombstone' && suffix === '_shared_inputs' ? 'shared-input'
       : context.kind === 'memory-tombstone' && suffix === '_memory_facts' ? 'memory-fact'
       : context.kind === 'memory-tombstone' && suffix === '_memory_topics' ? 'memory-topic' : context.kind;
     const id = family === 'domain' ? firestoreDomainHash([storageKind, context.id]) : context.kind.startsWith('authority-')
