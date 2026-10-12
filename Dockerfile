@@ -28,7 +28,7 @@ ENV CI=1 \
     EXPO_NO_TELEMETRY=1 \
     EXPO_PUBLIC_API_BASE_URL=/api
 
-COPY frontend/app.json frontend/tsconfig.json ./frontend/
+COPY frontend/app.json frontend/tsconfig.json frontend/index.js ./frontend/
 COPY frontend/app ./frontend/app
 COPY frontend/assets ./frontend/assets
 COPY frontend/src ./frontend/src
@@ -59,6 +59,7 @@ COPY src/shared ./src/shared
 COPY prompts ./prompts
 COPY knowledge ./knowledge
 COPY scripts/firebase-control.mjs scripts/firebase-recovery.mjs scripts/firebase-photo-cleanup.mjs ./scripts/
+COPY scripts/knowledge.mjs scripts/knowledge-refresh.mjs ./scripts/
 
 USER node
 EXPOSE 3001
