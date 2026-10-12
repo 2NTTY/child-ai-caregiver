@@ -119,6 +119,23 @@ Firebase Auth／Cloud Storage／Tasks 已有實作及部分證據，回撤後再
 - Hosting／Cloud Run API／worker 與其自動縮零、60 秒轉送、晚期前端切換不再是交付前置。額外網站及部署列入 F08 依賴核對後清理；不誤刪 Auth blocking function、有效資料／journal／備份或原 VM。
 - 原容量候選與未提交工作原位保留，隨 F03／F08 接回。局部 API 成功不等於正常聊天已接通。
 
+<a id="f02-candidate-disposition"></a>
+#### 2026-10-12 候選復用與退出清單
+
+以 `8d1011f`、F02 `6a87632` 及容量工作樹 `a38e03f` 的未提交差異核對；這是接回取捨，不是完成驗收或批准整包合併。原分支／工作樹保留作可恢復來源，不因退出正式路線刪除有效程式、證據或雲端資源。
+
+| 候選範圍 | 決定及接回方式 |
+|---|---|
+| F02 的 Firestore 權威／交易／online 收據、文件、知識、照片、刪除日誌及配對恢復 | 納入對應 F02～F07，接續原程式及相容證據；不是重寫或只取文件。具體組裝仍須完成原 VM 接點，不能把切片當全部產品已接通 |
+| Firebase 身份、前端 auth adapter、Storage 讀取修正、Tasks dispatcher／worker／OIDC | 保留；核心是 Node／服務接點，可接原 VM，但原 VM 組裝尚未驗證。Auth blocking function 仍有用途，不隨 Cloud Run API／worker 一起淘汰 |
+| `deploy/firebase/hosting.config.json`、Cloud Run 專用映像／`scripts/firebase-run-source.mjs`、縮零及網域切換流程 | 退出後續實作，留在 F02 固定提交作歸檔參考，不重接、不補縮零驗收。抽取有用的依賴／建置內容至原 Compose；不得因此丟棄 Firestore indexes、worker 程式或 Auth 函式打包 |
+| 容量候選的五個產品檔案 | 保留 busy 區分、原文／草稿保護及零效果拒絕回報，隨 F03 小範圍接回；這五檔的候選基線與本次 master 無差異，沒有理由整包重做。它仍用程序內 activeUsers，不能當成跨程序容量控制已完成；unknown／已提交確認要查原收據，不能引導重複執行 |
+| 容量候選的模擬預覽、HTTP fixture 及舊交接文件 | 不合併為正式產品或遷移前置，不再修這套測試替身。既有證據已記 fixture 同文重送 500、跨租戶 opId map 混用及瀏覽器 bootstrap 失敗；原失敗留存，不能當成正式服務漏洞或已驗通過。只按 F03 實際接點選取最小斷言，`chat-capacity-busy.test.ts` 等直接元件檢查可擇用，不重跑整套預覽 |
+
+退出項以原提交／未提交現場作歸檔來源，**不另維護可運行的舊測試站或平行分支交付**。F02 不直接整包 merge：接回時保留最新 PLAN／ADR-024，逐檔排除被取代的部署／指導內容；容量五檔與必要斷言併 F03，不為候選另開產品工作包。沒有實測 token／工時節省比例，不用程式行數代替品質或驗收證據。
+
+已核對的接回成本集中在三處：F02 的 `openFirebaseRuntime`／handler 尚未掛接 ADK／聊天，未接 API 回 `firebase_domain_not_ready`，不能原樣替換完整後端；VM 附加身份須具備所需最小 IAM／密鑰檔案掛載；Tasks 的 worker origin／audience 與 Caddy 必須一致，保留原 OIDC handler。F02 雲端證據不代替這些新接點驗收，但也不因換回 VM 重跑未變的資料層流程。
+
 #### 共同資料、安全及角色接口
 
 只改直接 SQL 依賴，保留現有 API／工具／服務／前端 owner，不實作 SQL 模擬器。交易內核權限、版本、刪除狀態、唯一性與原操作，再提交業務、收據、changes 和 outbox；外部模型、郵件、通知、Storage／Tasks 呼叫不在交易回調內。有界索引／游標、固定版本續讀、coverage、正文檢索與向量引用均保留。

@@ -2154,3 +2154,16 @@
 ### Limitations / Next Action
 - 只改文件，未跑產品測試、模型、資料遷移、部署或雲端清理；各包部分完成／未驗不變。額外資源僅列清理範圍，不能誤刪 Auth 函式、原 VM 或有效資料／備份。
 - 本次 PR 合併後按使用者要求停下；下一個產品工作為 [F02 原站接線收束](PLAN.md#p2-f02)，不於本輪啟動。
+
+<a id="log-20261012-candidate-disposition"></a>
+## LOG-20261012-CANDIDATE-DISPOSITION
+
+- Recorded At / Work Date：2026-10-12（Asia/Hong_Kong）。
+- Step / Package：未交付候選的復用成本核查，非 F02／F03 產品實作。
+- Executor / AI Assistance：主模型讀容量五檔 diff、既有失敗及關鍵接線；Luna Max 只讀核對 F02 固定原碼／證據，主模型覆核並決定取捨、親寫 PLAN／STATUS。
+- Human Verification：使用者授權按成本決定納入或歸檔捨棄，未作產品人工驗收。
+- Actual Work：核 master 8d1011f、F02 6a87632（本機 16 提交、乾淨、未推送／合併）、容量 a38e03f 的 16 項未提交成果。F02 資料／服務接點及容量五檔小修正值得接回；Hosting／Cloud Run 專用交付、縮零及容量模擬預覽／HTTP fixture 不再作遷移前置，只留原現場／Git 歷史參考。
+- Evidence：F02 固定提交中的 firebase-runtime／firebase-app／firebase-task-delivery／firebase-storage-key 及 preflight；容量 CHAT_CAPACITY_RECOVERY_20261011.json 記同文重送 500、跨租戶 fixture opId map 混用、瀏覽器 bootstrap 失敗。這些不證明正式服務有同樣漏洞，也不是完成驗收。容量五個產品檔案在 a38e03f 與本次 master 間無差異；其修正可小範圍接回，程序內 activeUsers 不當分散式容量控制。
+- Verification：只讀 Git／程式及既有證據、文件 review、git diff --check、新增錨點及連結檢查；沒有重跑產品測試、模型、雲端或部署。前一份 WORKLOG 正文保持。
+- Limitations：沒有量測 token／工時節省；F02 未接聊天／ADK，VM IAM、原站代理與 worker audience 尚待接線，不能原樣切換完整 API。未更動其他工作樹、提交容量候選或刪除雲端資源。
+- Next Action：按 [候選清單](PLAN.md#f02-candidate-disposition) 在 F02／F03 選擇性接回；本輪只交付取捨記錄，不啟動實作。
