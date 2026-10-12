@@ -47,7 +47,11 @@ function fixture() {
     const full = { ownerUserId: scope.ownerUserId, workspaceId: scope.workspaceId, childId: scope.childId, storageEpoch: scope.storageEpoch };
     return "photos/v1/" + photoHash(Buffer.from(JSON.stringify(["yuban-photo-object",1,options.projectId,options.namespace,full]))) + "/" + id;
   }
-  const objects: Pick<FirebasePhotoObjects, "write" | "recover" | "read"> = {
+  const objects: Pick<FirebasePhotoObjects, "write" | "recover" | "read" | "remove"> = {
+    async remove(scope, id, descriptor) {
+      const name=objectName(scope,id), value=stored.get(name);
+      if (value) { assert.deepEqual(value.descriptor,descriptor); stored.delete(name); }
+    },
     async write(scope, id, input) {
       calls.write++; const name = objectName(scope,id), bytes = Buffer.from(input.base64,"base64");
       const descriptor = { objectName: name, generation: "9007199254740993999", cipherSha256: "1".repeat(64),
@@ -67,7 +71,10 @@ function fixture() {
     },
   };
   const durableIntents = new Map<string,FirebaseErasureIntent>();
-  const journal: Pick<FirebaseErasureJournal,"writeOnce"> = { async writeOnce(intent) {
+  const journal: Pick<FirebaseErasureJournal,"writeOnce" | "read"> = {
+    async read(intent, descriptor) { assert.equal(descriptor.intentSha256,firebaseErasureIntentHash(intent));
+      assert.deepEqual(durableIntents.get(intent.operationId),intent);return intent; },
+    async writeOnce(intent) {
     intents.push(structuredClone(intent)); const existing=durableIntents.get(intent.operationId);
     if(existing) assert.deepEqual(existing,intent); else durableIntents.set(intent.operationId,structuredClone(intent));
     // Unknown occurs after the immutable external intent has durably committed.
@@ -298,4 +305,19 @@ test("a direct historical photo mutation cannot invent an online receipt and uns
   const input=await f.command(child.child.id);
   await assert.rejects(f.store.submitOnline(OWNER,{...input,path:input.path+"/"+photo.id+"/confirm"}),rejects("firebase_domain_not_ready",503));
   await assert.rejects(f.online.submit(OWNER,{...input,path:input.path+"/"+photo.id+"/confirm"}),rejects("domain_not_ready",503));
+});
+test("durable physical cleanup frees quota once and cannot target another deletion", async () => {
+  const f=fixture(), child=await f.prepare(), reserved=await f.store.reserve(OWNER,child.child.id,randomUUID(),META);
+  const ready=await f.store.upload(OWNER,child.child.id,reserved.id,BASE64), op=randomUUID();
+  await f.store.delete(OWNER,child.child.id,ready.id,ready.version,op);
+  await assert.rejects(f.store.cleanupDeleted(child.scope,ready.id,randomUUID()),rejects("photo_cleanup_binding",409));
+  assert.equal(f.stored.size,1);
+  f.loseNextReply();
+  // A lost Firestore result must not release quota or remove an unrelated object.
+  await assert.rejects(f.store.cleanupDeleted(child.scope,ready.id,op));
+  assert.deepEqual(await f.store.cleanupDeleted(child.scope,ready.id,op),{state:"complete"});
+  assert.deepEqual(await f.store.cleanupDeleted(child.scope,ready.id,op),{state:"complete"});
+  assert.equal(f.stored.size,0);
+  assert.deepEqual(f.quotas(child.scope),{activeBytes:0,activeCount:0,cleanupBytes:0,cleanupCount:0});
+  await assert.rejects(f.store.content(OWNER,child.child.id,ready.id),rejects("photo_deleted",410));
 });

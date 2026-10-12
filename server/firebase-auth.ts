@@ -187,8 +187,10 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
         }
         const issuedClaims = validatedClaims(await sdk(() => auth.verifySessionCookie(cookie, true)));
         if (issuedClaims.uid !== user.uid || issuedClaims.email !== user.email || issuedClaims.auth_time !== decoded.auth_time
-          || !Number.isSafeInteger(issuedClaims.exp) || issuedClaims.exp * 1000 <= now()
-          || issuedClaims.exp * 1000 > now() + FIREBASE_SESSION_LIFETIME_MS) {
+          || !Number.isSafeInteger(issuedClaims.exp) || !Number.isSafeInteger(issuedClaims.iat)
+          || issuedClaims.exp * 1000 <= now() || issuedClaims.iat * 1000 > now() + 5_000
+          // Bound duration using the issuer clock; sub-second host skew must not reject a valid five-day cookie.
+          || issuedClaims.exp <= issuedClaims.iat || (issuedClaims.exp - issuedClaims.iat) * 1000 > FIREBASE_SESSION_LIFETIME_MS) {
           throw new FirebaseAuthError(503, "authentication_unavailable");
         }
         await sessions.issue({ userId: user.uid, sessionHash: hashCookie(cookie), expiresAtMs: issuedClaims.exp * 1000,

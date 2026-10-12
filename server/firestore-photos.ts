@@ -53,7 +53,8 @@ function parse<T>(schema: z.ZodType<T>, input: unknown, invalid = false): T {
 }
 const same = (left: unknown, right: unknown) => canonical(left) === canonical(right);
 export interface FirestorePhotosOptions extends FirestoreAuthorityOptions {
-  objects: Pick<FirebasePhotoObjects, "write" | "recover" | "read">; journal: Pick<FirebaseErasureJournal, "writeOnce">;
+  objects: Pick<FirebasePhotoObjects, "write" | "recover" | "read"> & Partial<Pick<FirebasePhotoObjects, "remove">>;
+  journal: Pick<FirebaseErasureJournal, "writeOnce"> & Partial<Pick<FirebaseErasureJournal, "read">>;
 }
 /** Domain transactions own permission, quotas and receipts. Storage calls never run inside SDK callbacks. */
 export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
@@ -362,6 +363,45 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
     },
     async delete(userId: string, childId: string, id: string, expectedVersion: number, operationId: string): Promise<{ deleted: true; cleanupPending: true }> {
       return deleteOperation(userId, childId, id, expectedVersion, operationId) as Promise<{ deleted: true; cleanupPending: true }>;
+    },
+    /** Operator/worker only. The immutable erasure intent is authority even after account revocation. */
+    async cleanupDeleted(scopeInput: WorkRecoveryScope, idInput: string, operationInput: string): Promise<{ state: "complete" | "pending" }> {
+      const scope = parse(workRecoveryScopeSchema, scopeInput, true), id = parse(uuid, idInput, true), operationId = parse(uuid, operationInput, true);
+      if (!objects.remove || !journal.read) fail("photo_cleanup_unavailable", 503);
+      const inspect = async (tx: import("@google-cloud/firestore").Transaction) => {
+        const [photoSnapshot, cleanupSnapshot, quotaSnapshot] = await tx.getAll(rowRef(id), cleanupRef(id), globalRef);
+        const row = checkedRow(photoSnapshot, scope, id);
+        if (row.state !== "deleted" || !row.deletion?.journal || row.deletion.intent.operationId !== operationId
+          || row.deletion.intent.assetId !== id || row.deletion.intent.type !== "photo-delete"
+          || !same(row.deletion.intent.scope, scope)) fail("photo_cleanup_binding", 409);
+        if (!cleanupSnapshot.exists) return null;
+        const cleanup = data.open("photo-cleanup", id, scope, firestorePhotoCleanupSchema, cleanupSnapshot);
+        if (cleanup.photoId !== id || cleanup.operationId !== operationId || !same(cleanup.scope, scope)
+          || !same(cleanup.journal, row.deletion.journal)
+          || cleanup.journal.intentSha256 !== firebaseErasureIntentHash(row.deletion.intent)) fail("photo_integrity", 503);
+        const global = data.open("photo-global-quota", "global", SYSTEM, globalQuotaSchema, quotaSnapshot);
+        if (global.cleanupCount < 1 || global.cleanupBytes < cleanup.bytes) fail("photo_quota_unavailable", 503);
+        if (cleanup.descriptor) descriptor(scope, id, cleanup.descriptor, cleanup);
+        return { cleanup, global, intent: row.deletion.intent };
+      };
+      return guard(async () => {
+        const first = await options.database.runTransaction(inspect);
+        if (!first) return { state: "complete" };
+        // An upload with no confirmed object identity cannot be guessed or treated as absent.
+        if (first.cleanup.state !== "known" || !first.cleanup.descriptor) return { state: "pending" };
+        const intent = await journal.read!(first.intent, first.cleanup.journal);
+        if (!same(intent, first.intent)) fail("photo_integrity", 503);
+        await objects.remove!(scope, id, first.cleanup.descriptor);
+        return options.database.runTransaction(async tx => {
+          const current = await inspect(tx);
+          if (!current) return { state: "complete" as const };
+          if (!same(current.cleanup, first.cleanup) || !same(current.intent, first.intent)) fail("version_conflict");
+          current.global.cleanupBytes -= current.cleanup.bytes; current.global.cleanupCount--;
+          tx.set(globalRef, seal("photo-global-quota", "global", SYSTEM, globalQuotaSchema, current.global));
+          tx.delete(cleanupRef(id));
+          return { state: "complete" as const };
+        });
+      });
     },
     async extract(): Promise<never> { fail("firebase_domain_not_ready", 503); },
     async confirm(): Promise<never> { fail("firebase_domain_not_ready", 503); },

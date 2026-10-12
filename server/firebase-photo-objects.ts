@@ -60,9 +60,10 @@ export interface FirebasePhotoBucketPort {
   writeNew(objectName: string, ciphertext: Buffer, options: SaveOptions): Promise<unknown>;
   metadata(objectName: string, generation?: string): Promise<unknown>;
   readPinned(objectName: string, generation: string): Readable;
+  removePinned?(objectName: string, generation: string): Promise<void>;
 }
 interface SdkRequest {
-  method: "GET"; uri: ""; qs?: { generation?: string; alt?: "media" };
+  method: "GET" | "DELETE"; uri: ""; qs?: { generation?: string; ifGenerationMatch?: string; alt?: "media" };
   headers?: Record<string, string>; gzip?: false; timeout: number;
 }
 export interface FirebasePhotoSdkFile {
@@ -131,6 +132,17 @@ export function createFirebasePhotoBucketPort(bucket: FirebasePhotoSdkBucket): F
       if (!response || typeof response !== "object" || !("statusCode" in response) || response.statusCode !== 200)
         fail("photo_object_unavailable", 503);
       return body;
+    },
+    async removePinned(objectName, generation) {
+      try {
+        const [, response] = await bucket.file(objectName).request({
+          method: "DELETE", uri: "", qs: { generation, ifGenerationMatch: generation }, timeout: FIREBASE_PHOTO_TIMEOUT_MS,
+        });
+        if (!response || typeof response !== "object" || !("statusCode" in response) || response.statusCode !== 204)
+          fail("photo_object_unavailable", 503);
+      } catch (error) {
+        if (!(error && typeof error === "object" && "code" in error && error.code === 404)) throw error;
+      }
     },
     readPinned(objectName, generation) {
       return readFirebaseStorageResponse(bucket, objectName, generation, FIREBASE_PHOTO_MAX_CIPHER_BYTES);
@@ -229,6 +241,24 @@ export function createFirebasePhotoObjects(options: {
     fail("photo_object_unavailable", 503);
   }
   return {
+    /** Only a durable domain deletion may call this; absence confirms the same pinned generation. */
+    async remove(scope: WorkRecoveryScope, photoId: string, value: FirebasePhotoObjectDescriptor): Promise<void> {
+      const expected = binding(scope, photoId), descriptor = parse(firebasePhotoObjectDescriptorSchema, value, true);
+      if (descriptor.objectName !== expected.objectName) fail("photo_object_invalid_input", 400);
+      if (!bucket.removePinned) fail("photo_object_unavailable", 503);
+      try {
+        let raw: unknown;
+        try { raw = await bucket.metadata(expected.objectName, descriptor.generation); }
+        catch (error) {
+          if (error && typeof error === "object" && "code" in error && error.code === 404) return;
+          throw error;
+        }
+        const metadata = checkedMetadata(raw, expected, descriptor.generation);
+        if (metadata.metadata.sha256 !== descriptor.sha256 || metadata.metadata.cipherSha256 !== descriptor.cipherSha256)
+          fail("photo_object_integrity_failed", 503);
+        await bucket.removePinned(expected.objectName, descriptor.generation);
+      } catch (error) { return safe(error); }
+    },
     async recover(scope: WorkRecoveryScope, photoId: string, input: { base64: string; mimeType: "image/jpeg" | "image/png" }): Promise<FirebasePhotoObjectDescriptor> {
       const expected = binding(scope, photoId), payload = parse(inputSchema, input, true);
       let plaintext: Buffer;

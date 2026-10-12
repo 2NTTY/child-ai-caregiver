@@ -83,7 +83,7 @@ docker compose --project-name yuban-p1 \
 
 F07 只補尚欠跨域／恢復證據，F08 確认已交付功能不連 SQL、不靜默回退。待清理清單：F02 額外 Hosting 站點、Cloud Run API／worker 及其專用殘留；先核實實際名稱、流量、依賴、保留需求和費用，再批准範圍內清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**。F02 已準備原 VM 組裝但未部署；未改 DNS 或刪資源。A09 未通過成果及 F02 失敗沿 PLAN 追溯，不以基建切片代替產品完成。
 
-### 原 VM Firestore 組裝（F02 已實作，部署待驗）
+### 原 VM Firestore 組裝（F02 接點已驗，正式網站待切換）
 
 `deploy/p1/compose.firestore.yaml` 是同一 `yuban-p1` 專案的替代組裝，不能與 SQL Compose 疊加。沿用 80／443、Caddy 資料 volume 和前端；API／worker 只在內部網絡提供服務。`/internal/task-reminders` 與 `/internal/task-dispatch` 只轉送固定 worker 入口，由 worker 驗 OIDC issuer／audience／期限／service account；其他 internal 路徑拒絕。健康檢查只查程序存活，不查資料庫或觸發工作，也不表示全部產品功能可用。
 
@@ -99,6 +99,12 @@ docker compose -f deploy/p1/compose.firestore.yaml up -d --no-build
 不要輸出完整展開設定到日誌，不上傳 ADC、密碼或密鑰到映像／Git。VM 使用附加身份的 ADC；讀取現有 Firestore 資料必須掛原相容密鑰，不能拿舊 PostgreSQL 的另一把 key 代替。首次 F02 接點驗收不把尚缺聊天的 handler 當完整後端；F03 聊天路徑通過後才切原站。切換前停止舊 worker、保留配對備份及舊映像，逐一停止已退出的 SQL 服務；不要 `down -v` 或刪原資料 volume。worker、電郵及 authority 預設保持關閉，按實際驗收／交付範圍個別啟用。
 
 `API_UPSTREAM`／`FIREBASE_WORKER_UPSTREAM` 可配置服務地址；目前保持單副本，不設黏性會話或新負載平衡器。跨副本准入／取消與完整 worker 恢復仍由 F03／F06 驗證。VM IAM 至少按命名資料庫、私人物件 bucket、只新增／讀取的刪除日誌、指定 queue／OIDC 身份及現有 Session 自訂角色核對；不給 Owner／Editor，也不因啟動此 Compose 自動授權。
+
+### Auth 回跳與附件清理
+
+Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證信回跳原站會被拒絕。session 期限按已驗簽 iat／exp 限五天，發行時間與 Server 容許最多五秒差距；原近期登入、撤銷及本人資格核對不變。
+
+受信 operator 可執行 scripts/firebase-photo-cleanup.mjs，傳入工程外 JSON 路徑；只含原 scope、photoId、operationId。先核 tombstone／journal，再刪 descriptor 的精確 generation；unknown 保留待處理，成功才交易釋放容量。未确认上載不猜測清空，排程與恢復由 F06 承接。此入口不向模型／公共 API 暴露，備份和 soft-delete 保留期不變，不宣稱所有備份密文立即消失。
 
 ### 復用 F02 的建置及恢復接點
 

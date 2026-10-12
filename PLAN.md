@@ -174,12 +174,10 @@ P2 僅啟用聊天 LlmAgent／Runner；角色識別、啟用狀態、模型／pr
 <a id="p2-f02"></a>
 #### P2-F02 原站 Firestore 接線收束
 
-- 狀態／前置：進行中、未交付；P2-F01。已在原 F02 分支整合 master 823cf31 的現行規則，新增原 VM 的替代 Compose／Caddy 組裝及 API／worker 健康接點；三個相關輕量斷言與 Compose 靜態解析通過。Hosting／Cloud Run 專用部署檔已退出活動程式，原提交及證據保留。VM IAM／實際啟動及下述必要缺口未驗，不把靜態檢查當正式接通。
-- 交付：保留有效 Firestore／Auth／Storage／Tasks 組裝，在原 VM／Compose 接上 ADC、受保護設定、Caddy／OIDC worker 入口；補健康接點。只改資料與必要執行接點，未接路由如實標示。
-- 必要驗收：復用已驗項，只補原 VM 接線、身份／撤權、必要登入／找回畫面及尚未完成的照片實體清理；把產品畫面隨實際所屬流程接通。自動縮零、Hosting／另一個網站驗收不再阻塞。原失敗保留，不把取消門檻標成已通過。
-
-- 原有核心 API／引用／Tasks／配對恢復證據見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)；原物件實體清理、真撤權、重設電郵及必要產品畫面仍待完成。原瀏覽器失敗保留，不把已取消的縮零門檻改稱通過。
-
+- 狀態／前置：必要驗收及主模型 review 完成，待本包 PR 合併；P2-F01。原 VM 組裝與附加身份已驗，不是完整聊天或整站切換。
+- 交付：復用 Firestore／Auth／Storage／Tasks 切片，補原 VM Compose／Caddy／健康、精確 generation 照片清理／容量交易、按發行時鐘核 session 期限及原網站 Auth 回跳；退出三個額外平台部署檔，保留原失敗。
+- 必要驗收：沿用原核心 API／引用／OIDC／配對恢復；本輪補 VM 讀取、原合成照片清理、真登入／第二裝置撤銷、密碼重設 action／舊會話失效及新密碼登入。五個必要本機斷言通過；未跑瀏覽器／全量／模型或外發。既有真人驗證電郵成功保留，本輪未重寄重設信或宣稱收件匣已驗；原站登入／找回畫面隨 F03 首次完整產品流程核對。
+- 證據：[原 F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)、[本輪補驗](artifacts/verification/F02_VM_WIRING_20261012.json)、[LOG](WORKLOG.md#log-20261012-f02-closure)。未知上載清理／排程由 F06 承接，全部 SQL 退出留 F08；未接領域明確不可用，取消的縮零門檻不改稱通過。
 
 <a id="p2-f03"></a>
 #### P2-F03 核心資料與可用聊天

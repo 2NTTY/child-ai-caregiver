@@ -2389,3 +2389,12 @@
 - Verification：只跑 firebase-app 與 firebase-worker-runtime 中三個相關斷言（健康／未接領域／Node adapter），3／3 通過；Compose 一次 config --no-env-resolution --quiet 通過。未跑全量、E2E、模型或通知；本輪雲端只有資源／IAM 唯讀核查。Caddy 首次因現有 binary file capability 與 cap-drop ALL 不相容，未能啟動；只補 NET_BIND_SERVICE 再離線解析成功。一次實際 firebase-server 映像建置成功（約 338 MB），不建 PostgreSQL；現有依賴 deprecated 警告保留，不做無關升級。
 - Deployment Observation：VM RUNNING／e2-small，期限 2026-10-17 香港 20:50:44；初查 VM 專案身份只有 Vertex role；自動批准審查因未列具體持久角色拒絕首次 IAM 執行（零修改）。使用者其後明確批准六項精確授權，已在五份政策依 etag 最小追加原 VM 身份並讀回一致，原政策留本機；journal 沒有刪除權。Tasks queue PAUSED，兩個香港 Firestore 庫 PITR 關閉；私人／journal buckets soft-delete 14 天。只改已批准 IAM；IAP 唯讀顯示原站仍為 85e3a846、餘 2.1 GB，未部署、上傳 key 或清理雲端資料。
 - Limits / Next：健康只代表程序存活；ADK 聊天仍待 F03。原 VM IAM 已完成；容器實際啟動及 F02 剩餘身份／照片清理仍須完成才可交付。既有驗收不能當未花的預算。
+
+<a id="log-20261012-f02-closure"></a>
+## LOG-20261012-F02-CLOSURE
+
+- Recorded At / Package：2026-10-12（Asia/Hong_Kong），P2-F02；主模型依本輪要求獨立實作、review 及必要驗收，未派子代理。接續 6a87632／dc1eb28，待 PR 合併。
+- Actual Work：精確批准後，338 MB 映像／key 傳原 VM，附加身份讀加密 control、官方來源、合成 Auth 及 bucket metadata 通過；未切站。補精確 generation 的物件清理，原合成照片已清，備份／journal 保留。修 session 五天期限對本機時鐘的過嚴比較；原網址未在 Auth 回跳清單，最小追加並讀回。
+- Verification：本輪五個必要斷言通過（原三個 HTTP／worker，加清理與 session 時鐘各一）。真 Auth 初次第二裝置交換失敗，診斷續跑仍拒絕；固定欄位診斷不含 token。時鐘修正後登入／裝置撤銷通過，reset 遇 unauthorized-continue-uri 停止；補回原網址後只驗剩餘 reset、舊 session 拒絕、新密碼登入／登出及清理，全部通過。同一個新合成帳號，零模型／電郵／通知／瀏覽器，沒有全量測試。見 [EV](artifacts/verification/F02_VM_WIRING_20261012.json)。
+- Limits：重設使用官方 action link，不寄信；既有驗證電郵真人結果保留，不宣稱重設收件匣或原站 UI 已驗。原站仍是 85e3a846，上傳映像早於最後 Auth／清理修正，不能當已部署。F02 不代表全部聊天、排程或 P2 完成，備份及還原庫保持。
+- Next：單作者／主責帳號交付；合併後 F03 接原站完整聊天，F06 接自動清理。原失敗不回寫，已通過項目不重跑。
