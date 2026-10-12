@@ -19,11 +19,15 @@ test("document views inline authorized short snapshots and preserve bounded writ
   const run = { scope: { userId: "synthetic-user", workspaceId: "synthetic-workspace", childId: document.childId, authorizationVersion: "1", dataVersion: "1" },
     runId: "33333333-3333-4333-8333-333333333333", budget } as unknown as AgentRunContext;
   let described: FamilyDocument | null = document, failure: Error | null = null, writes = 0;
-  const store = { describe: async () => { if (failure) throw failure; return described ? { item: described, authorityVersion: "synthetic-authority:7" } : null; } };
+  const store = { list: async () => ({ items: [described!], authorityVersion: "synthetic-authority:7", hasMore: false }), describe: async () => { if (failure) throw failure; return described ? { item: described, authorityVersion: "synthetic-authority:7" } : null; } };
   const agent = { writeDocument: async () => { writes++; return document; } };
   const tools = createAgentDocumentTools(store as never, agent as never, run, async () => true);
   const invoke = (name: string, args: Record<string, unknown>) => tools.find(tool => tool.name === name)!.execute(args,
     { scope: run.scope, runId: run.runId, callId: name, signal: new AbortController().signal });
+  const listed = await invoke("read_family_documents", { documentId: null });
+  assert.deepEqual(listed.data?.snapshot, document.current);
+  assert.equal(listed.data?.contentPartial, false);
+  assert.equal(listed.data?.authorityVersion, "synthetic-authority:7");
   const generate = () => invoke("generate_family_document", { sourceQuote: "Create school preparation", kind: "preparation", purpose: "school", eventDate: null,
     period: { from: "2026-10-08", to: "2026-10-08" } });
   const change = () => invoke("change_family_document", { sourceQuote: "Refresh school preparation", documentId: document.id,

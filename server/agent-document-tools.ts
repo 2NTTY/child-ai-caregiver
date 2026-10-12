@@ -77,7 +77,16 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
       parameters: z.object({ documentId: z.uuid().nullable(), cursor: z.string().max(2048).nullable().optional(), status: z.enum(["all", "active", "archived"]).optional() }).strict(), execute: args => guard(async () => {
         if (!args.documentId) {
           const page = await store.list(scope.userId, scope.childId, { cursor: args.cursor as string | null ?? null, status: args.status as "all" | "active" | "archived" ?? "all", limit: 10 });
-          return page ? { status: "succeeded", data: { authorityVersion: page.authorityVersion, hasMore: page.hasMore, nextCursor: page.nextCursor ?? null, items: page.items.map(metadata) } } : { status: "rejected" };
+          if (!page) return { status: "rejected" };
+          const listed: AgentToolResult = { status: "succeeded", data: { authorityVersion: page.authorityVersion,
+            hasMore: page.hasMore, nextCursor: page.nextCursor ?? null, items: page.items.map(metadata) } };
+          // The authorized list already has the same snapshot. A unique short result needs no second model/read turn.
+          if (!page.hasMore && page.items.length === 1) {
+            const detail = view({ item: page.items[0], authorityVersion: page.authorityVersion });
+            const inline: AgentToolResult = { ...listed, data: { ...listed.data, ...detail.data } };
+            if (detail.data?.contentPartial === false && fits(inline)) return inline;
+          }
+          return listed;
         }
         if (args.cursor) return { status: "rejected", data: { code: "invalid_input" } };
         const description = await store.describe(scope.userId, scope.childId, args.documentId as string);
