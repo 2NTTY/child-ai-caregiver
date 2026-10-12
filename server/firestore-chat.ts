@@ -152,3 +152,6 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions): Fires
     },
   };
 }
+
+/** Persisted schemas reused by isolated recovery; not a second domain model. */
+export const firestoreChatRecoverySchemas = { reply: z.object({ messageId: uuid }).strict(), leases: lockSchema };

@@ -9,6 +9,7 @@ import { firestoreFamilyDocumentSchemas } from './firestore-family-documents.ts'
 import { firestoreFamilyDocumentSnapshotSchemas, firestoreDocumentSnapshotSchema } from './firestore-family-document-snapshots.ts';
 import { assertDocumentCapacity } from './family-document-edits.ts';
 import { firestoreKnowledgeSchemas } from './firestore-knowledge.ts';
+import { knowledgeLexicalIndex, emptyLexicalHash } from './knowledge-lexical-index.ts';
 import { embeddingDocument, internalKnowledgeSource, knowledgeHash, parseKnowledgeSource, sourceVersionHash } from './knowledge-inputs.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
@@ -88,7 +89,8 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
     const group = snapshotChunks.get(parts[0]) ?? []; group.push(record); snapshotChunks.set(parts[0], group);
   }
   function documentPointers(metadata: z.infer<typeof firestoreFamilyDocumentSchemas.metadata>, expected: WorkRecoveryScope) {
-    const ids = [metadata.currentId, ...metadata.historyIds]; if (new Set(ids).size !== ids.length) fail();
+    const ids = [metadata.currentId, ...metadata.historyIds].filter((id): id is string => id !== null);
+    if (new Set(ids).size !== ids.length) fail();
     for (const id of ids) {
       const manifest = parsed(firestoreFamilyDocumentSnapshotSchemas.manifest, domain('document-snapshot', id, expected));
       if (manifest.documentId !== metadata.id || manifest.childId !== metadata.childId || manifest.snapshotVersion > metadata.version) fail();
@@ -120,8 +122,10 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
     const snapshot = parsedSnapshot.data; try { assertDocumentCapacity(snapshot); } catch { fail('restore_content_invalid'); }
     if (snapshot.id !== manifest.snapshotId || snapshot.version !== manifest.snapshotVersion || snapshot.generatedAt !== manifest.generatedAt) fail();
     for (const source of snapshot.sources) {
-      if (source.kind !== 'task') fail('unsupported_restore_domain');
-      revision(source.resourceId, source.version, expected);
+      if (source.kind === 'task') revision(source.resourceId, source.version, expected);
+      // Other source kinds are authenticated historical excerpts. Deleting or correcting
+      // the original may intentionally leave only its snapshot; currentness is checked by
+      // the document service before presentation, never inferred from a restored excerpt.
     }
   }
 
@@ -146,12 +150,30 @@ export function assertFirestoreRestoreContent(records: readonly FirestoreRestore
     });
     let document: ReturnType<typeof parseKnowledgeSource>;
     try { document = parseKnowledgeSource({ ...version.header, chunks: chunks.map(chunk => chunk.document) }); } catch { fail('restore_content_invalid'); }
-    if (document.classification !== 'official_guidance' || internalKnowledgeSource(document.url) || sourceVersionHash(document) !== version.versionHash) fail();
+    if (internalKnowledgeSource(document.url) || sourceVersionHash(document) !== version.versionHash) fail();
     if (version.review?.assessment.comparedVersionId) {
       const baseline = parsed(firestoreKnowledgeSchemas.version, required('knowledge', 'knowledge-version', version.review.assessment.comparedVersionId));
       if (!sameKnowledgeScope(source, baseline) || baseline.versionHash !== version.review.assessment.comparedHash || baseline.header.url !== source.url) fail();
     }
     editions.set(version.versionId, { version, chunks });
+  }
+  const lexical = new Map<string, Map<number, z.infer<typeof firestoreKnowledgeSchemas.lexical>>>();
+  for (const record of rows('knowledge-lexical', 'knowledge')) {
+    const posting = parsed(firestoreKnowledgeSchemas.lexical, record), edition = editions.get(posting.versionId);
+    if (!edition || posting.sourceId !== edition.version.sourceId || posting.versionHash !== edition.version.versionHash) fail();
+    const buckets = lexical.get(posting.versionId) ?? new Map();
+    if (buckets.has(posting.bucket)) fail('restore_content_duplicate');
+    buckets.set(posting.bucket, posting); lexical.set(posting.versionId, buckets);
+  }
+  for (const { version, chunks } of editions.values()) {
+    if (!version.search) continue; // Earlier supported exports predate the reusable lexical index.
+    const expected = knowledgeLexicalIndex(version.header.title, chunks), buckets = lexical.get(version.versionId);
+    if (JSON.stringify(expected.hashes) !== JSON.stringify(version.search.hashes) || expected.termCount !== version.search.termCount) fail();
+    for (let index = 0; index < version.search.completed; index++) {
+      const saved = buckets?.get(index);
+      if (!saved && expected.hashes[index] === emptyLexicalHash) continue;
+      if (!saved || saved.termsHash !== expected.hashes[index] || knowledgeHash(saved.terms) !== expected.hashes[index]) fail('restore_content_missing');
+    }
   }
   for (const record of rows('knowledge-chunk', 'knowledge')) {
     const chunk = parsed(firestoreKnowledgeSchemas.chunk, record); if (!claimedChunks.has(chunk.chunkId)) fail('restore_content_missing');

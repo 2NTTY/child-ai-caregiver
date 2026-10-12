@@ -5,7 +5,7 @@
 ## 入口與日常開發
 
 - 正式網址：**https://ex-machina.eu.org**。`frontend/` 是正式 Expo Web 應用，使用已確認的版面、互動及美術；根 `app/` 不再是正式 Web 產物。
-- Node 24.19.0／npm 11.8.0；根目錄 `npm ci` 使用唯一 lockfile。先按 `.env.example` 配好既有 PostgreSQL／Server，`npm run server` 啟動 API；另執行 `npm run web`。本機 API 座標用 `EXPO_PUBLIC_API_BASE_URL=http://localhost:3001/api`；公開部署用同源 `/api`。密鑰不可放在 `EXPO_PUBLIC_*`。
+- Node 24.19.0／npm 11.8.0；根目錄 `npm ci` 使用唯一 lockfile。按 `.env.example` 配好 Firestore、Firebase Auth 公開應用配置、私有 Storage 及工程外密鑰，`npm run server` 啟動 API；`npm run web` 只啟動 Web 開發程序。正式身份接線要求同源，完整本機驗收亦須用反向代理把 Web 及 `/api` 放在同一 origin；直接使用兩個開發端口不算已接通登入。公開部署使用同源 `/api`。密鑰不可放在 `EXPO_PUBLIC_*`。API／worker 只接受 Firestore，缺配置即拒絕啟動，不回退 SQL。
 - `npm run build:web` 匯出 `frontend/dist`，並複製 Push service worker 及許可。Docker `web` target 經 Caddy 供應這份產物，`/api/*` 轉到同一 API。
 - 舊根入口及專用Panel／runner已退出現行開發路徑，原碼見[可恢復歸檔](../_archive/legacy-web-2026-10-07/README.md)；legacy Web/build/test命令明確停止。有效 controller、API client、收據及權限處理繼續共用，沒有為新頁另建業務資料庫。
 
@@ -30,7 +30,7 @@
 
 ## 部署及回復（以下保留 INT-W07 歷史版本）
 
-目前部署版本以 [STATUS](../STATUS.md#deployment) 的具日期觀察為準，不把下列053658b當最新版本。
+目前部署版本以 [STATUS](../STATUS.md#deployment) 的具日期觀察為準，不把下列053658b當最新版本。以下命令只適用該歷史 checkout；現行 `deploy/p1/compose.yaml` 已改為純 Firestore 入口，不可疊加舊 SQL／P2 overlay。
 
 沿用專案 `ai-caregivers-for-children`、`asia-east2-a`、VM `yuban-p1`（ID `2846984358678394356`、IP `35.241.127.20`），Compose project `yuban-p1`。不新增服務、公網資料庫或另一個資料卷。
 
@@ -72,7 +72,7 @@ docker compose --project-name yuban-p1 \
 <a id="firestore-deployment"></a>
 ## 原網站的 Firestore 交付接點（遷移中）
 
-採 [ADR-024](DECISIONS.md#adr-024)／[F01～F08](../PLAN.md#p2-firestore-migration)。保留 ex-machina.eu.org、原 VM、Node／Compose／Caddy、frontend/dist 及 Push service worker，不把 Hosting 或 Cloud Run 當交付前置。F01／F02 已合併、F03 核心聊天接線中；本頁規劃不代表正式站已用 Firestore。現有啟動／部署命令須按實作更新，不能只改文件便宣稱已退出 SQL。
+採 [ADR-024](DECISIONS.md#adr-024)／[F01～F08](../PLAN.md#p2-firestore-migration)。保留 ex-machina.eu.org、原 VM、Node／Compose／Caddy、frontend/dist 及 Push service worker，不把 Hosting 或 Cloud Run 當交付前置。資料接線及原站切換狀態只看根 PLAN／STATUS；原網站不因 master 更新而自動升級。
 
 - Firebase Auth 復用既有登入畫面／owner、__session、邀請、政策及逐裝置會話；乾淨起點不搬舊帳號／私人資料，舊備份保留。身份與孩子範圍由 Server 核驗，登入者不需配置 Firebase。
 - Firestore／私有 Storage 沿同一權威、應用加密、版本／opId／changes 及授權下載。VM 附加身份／ADC 與受保護設定繼續使用，密鑰不進前端或模型。
@@ -114,4 +114,8 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 精確時間的 Firestore native export 必須先讀回來源庫已啟用 PITR、`earliestVersionTime` 及當期費用，再選有效的整分鐘 `snapshotTime`。一般讀取可取過去一小時並不代表未啟用 PITR 也可作時間點匯出；不能移除快照／inventory 斷言來繞過此門檻。PITR 儲存獨立計費，即使當日關閉仍可能按一天收費；隔離驗收的啟用及關閉須遵守本批範圍／預算，不能轉成持續營運授權。[時間點匯出](https://firebase.google.com/docs/firestore/manage-data/export-import#export_from_a_pitr_timestamp)、[PITR 計費](https://firebase.google.com/docs/firestore/pricing#pitr-data)。
 
-`node scripts/firebase-recovery.mjs <command>` 是明確 operator 入口，只從 stdin 接收有界 JSON；可暫停、啟動／查回原生匯出匯入、保存配對 manifest 及在隔離庫套用還原。另需明確 `FIREBASE_RESTORE_DATABASE_ID` 和 `FIREBASE_STORAGE_KEY_VERSION_REF`；不掛 API／worker，不具恢復流量命令。演練先停排程／queue、來源 authority，再確認來源 API／worker 及 journal IO 已實際停止；請求逾時或六分鐘等待不代替停機證據。原子套用成功仍保持 `applied-paused`，開放前另核最新刪除、Auth、附件／索引及部署 gate。
+`node scripts/firebase-recovery.mjs <command>` 是明確 operator 入口，只從 stdin 接收有界 JSON；可暫停、啟動／查回原生匯出匯入、保存配對 manifest 及在隔離庫套用還原。另需明確 `FIREBASE_RESTORE_DATABASE_ID` 和 `FIREBASE_STORAGE_KEY_VERSION_REF`；不掛 API／worker，不具恢復流量命令。演練先停排程／queue、來源 authority，再確認來源 API／worker 及 journal IO 已實際停止；請求逾時或六分鐘等待不代替停機證據。套用以加密計劃及游標分批交易提交；原命令可續接，不能換 restore ID 或覆蓋另一個計劃。全部內容與最新 Auth／journal 核對後才標 `applied-paused`；開放流量仍是獨立步驟。
+
+還原保留聊天、文件、私人來源、引用、收據及配額，不恢復裝置會話／ADK 協定執行；模型與通知的未知結果不重發。待確認重新核對，Push／Telegram 重新綁定及聯絡授權後才可外發。孩子／帳戶刪除日誌先排除內容，來源仍有未完成的永久附件清理則暫停還原，先以原日誌完成清理；不丟掉該責任來宣稱成功。快照與還原盤點目前均有明示 2,000 筆／32 MiB 操作上限，超限停留原進度，不截斷資料；大規模串流盤點另按容量需求處理。
+
+現行標準啟動使用 `npm run server`／`npm run worker`，或 `docker compose --env-file <protected-compose-env> -f deploy/p1/compose.yaml <command>`；根 Compose 引用 `compose.firestore.yaml`，映像不安裝 SQL 生產依賴。`storage:backup`／`storage:restore` 導向上述 Firebase operator；`db:migrate`／`storage:encrypt`／舊 `setup:local` 明確拒絕，不會操作舊 SQL。歷史 SQL 程式及驗收仍可按固定 Git 版本追溯，舊資料 volume／備份不由這些命令刪除。

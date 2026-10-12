@@ -9,12 +9,14 @@ import { FIREBASE_BACKUP_COLLECTION_SUFFIXES, inspectFirebaseBackupSnapshot, ass
 import { createFirestoreRestoreCodec } from './firestore-restore-codec.ts';
 import { prepareFirebaseRestore, assertFirebaseRestoreAuthority, firebaseRestoreEpoch, type FirebaseRestoreAuthUser } from './firestore-restore.ts';
 import { assertFirestoreRestoreContent } from './firestore-restore-content.ts';
+import { isRestoreProtocolOrUsage } from './firestore-restore-usage.ts';
+import { createFirebaseRestoreApply } from './firebase-restore-apply.ts';
 import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts';
 import { firestorePhotoSchemas as photoSchemas } from './firestore-photos.ts';
 import { workRecoveryDocumentId } from './firestore-work-continuation-recovery.ts';
 import { firebaseErasureIntentHash, type FirebaseErasureJournal, type FirebaseErasureIntent, type FirebaseErasureDescriptor } from './firebase-erasure-journal.ts';
 import type { FirebasePhotoRecovery } from './firebase-photo-recovery.ts';
-import type { FirebasePhotoObjectDescriptor } from './firebase-photo-objects.ts';
+import type { FirebasePhotoObjectDescriptor, FirebasePhotoObjects } from './firebase-photo-objects.ts';
 import { firebaseBackupManifestDescriptorSchema, type FirebaseBackupArtifacts, type FirebaseBackupManifestDescriptor,
   type FirebaseBackupManifestPayload, type FirebaseBackupPhotoManifestEntry, firebaseBackupInventorySchema } from './firebase-backup-artifacts.ts';
 import type { createFirebaseNativeRecovery } from './firebase-native-recovery.ts';
@@ -35,6 +37,7 @@ function requireValue(condition:boolean,code:string):asserts condition{if(!condi
 export interface FirebaseRecoveryOperatorOptions extends FirebaseBackupOptions {
   targetDatabase:Firestore;backupBucketName:string;journalBucket:Bucket;keyVersionRef:string;
   journal:Pick<FirebaseErasureJournal,'readObject'>;photos:FirebasePhotoRecovery;artifacts:FirebaseBackupArtifacts;
+  sourceObjects?:Pick<FirebasePhotoObjects,'inspect'>;
   native:ReturnType<typeof createFirebaseNativeRecovery>;auth:Pick<Auth,'getUser'>;
 }
 /** The operator is never attached to the API or worker. Target IAM/rules and external queue pause are deployment gates. */
@@ -45,24 +48,30 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
   requireValue(new RegExp('^projects/'+projectId+'/secrets/[A-Za-z0-9_-]{1,255}/versions/[1-9][0-9]{0,19}$','u').test(options.keyVersionRef),'recovery_key_version');
   const codec=createFirestoreRestoreCodec(options),checkpointCollection=namespace+'_restore_operations';
   const checkpointRef=target.collection(checkpointCollection).doc('current');
+  const staged=createFirebaseRestoreApply({database:target,cipher,projectId,namespace});
   const sessionPath=namespace+'_sessions/';
   const prefix=(backupId:string)=>{uuid.parse(backupId);return 'gs://'+options.backupBucketName+'/firebase-backups/v1/'+backupId+'/firestore';};
-  const decode=(docs:FirebaseBackupDocument[])=>docs.filter(row=>!row.path.startsWith(sessionPath)).map(row=>codec.decode(row));
+  const decode=(docs:FirebaseBackupDocument[])=>docs.filter(row=>!isRestoreProtocolOrUsage(namespace,row.path)).map(row=>codec.decode(row));
   async function readAll(database:Firestore,allowCheckpoint=false):Promise<FirebaseBackupDocument[]>{
     const allowed=new Set(FIREBASE_BACKUP_COLLECTION_SUFFIXES.map(suffix=>namespace+suffix));
     const collections=await database.listCollections();
     requireValue(collections.every(row=>allowed.has(row.id)||allowCheckpoint&&row.id===checkpointCollection),'recovery_collection');
     return database.runTransaction(async tx=>{
       const docs:FirebaseBackupDocument[]=[];let bytes=0;
-      for(const collection of collections.filter(row=>row.id!==checkpointCollection).sort((a,b)=>a.id.localeCompare(b.id))){
+      async function collect(collection:ReturnType<Firestore['collection']>,depth?:number):Promise<void>{
         let cursor:string|undefined;
         while(true){let query=collection.orderBy(FieldPath.documentId()).limit(100);if(cursor)query=query.startAfter(cursor);
           const page=await tx.get(query);
           for(const row of page.docs){const doc={path:row.ref.path,data:row.data()};docs.push(doc);bytes+=firebaseBackupDocumentDigest(doc).bytes;
-            requireValue(docs.length<=2000&&bytes<=32*1024*1024,'recovery_limit');}
+            requireValue(docs.length<=2000&&bytes<=32*1024*1024,'recovery_limit');
+            const child=depth===undefined?undefined:['users','sessions','events'][depth];
+            if(child)await collect(row.ref.collection(child),depth!+1);}
           if(page.size<100)break;cursor=page.docs.at(-1)!.id;
         }
-      }return docs;
+      }
+      for(const collection of collections.filter(row=>row.id!==checkpointCollection).sort((a,b)=>a.id.localeCompare(b.id)))
+        await collect(collection,collection.id===namespace+'_adk'?0:undefined);
+      return docs;
     },{readOnly:true});
   }
   async function assertPaused(generation:string){
@@ -103,6 +112,20 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       authorityHash:digest(live.filter(row=>row.path.startsWith(namespace+'/')).map(row=>({path:row.path,...firebaseBackupDocumentDigest(row)})).sort((a,b)=>a.path.localeCompare(b.path)))};
   }
   function checkpointAad(){return canonical(['yuban-firebase-restore',1,projectId,target.databaseId,namespace,'current']);}
+  const applyIdentity=(input:{backupId:string;restoreId:string;descriptor:FirebaseBackupManifestDescriptor})=>digest([input.backupId,input.restoreId,input.descriptor.cipherSha256]);
+  async function resumeStaged(input:{backupId:string;restoreId:string;descriptor:FirebaseBackupManifestDescriptor;sourceGeneration:string}){
+    const state=await staged.read(applyIdentity(input));if(!state)return false;
+    const final=z.object({format:z.literal('yuban-firebase-restore'),version:z.literal(1),ciphertext:z.string()}).strict().parse(state.final);
+    const plan=checkpointSchema.parse(JSON.parse(cipher.decrypt(final.ciphertext,checkpointAad())));
+    requireValue(plan.sourceGeneration===input.sourceGeneration&&plan.restoreId===input.restoreId&&plan.backupId===input.backupId
+      &&plan.manifestSha256===input.descriptor.cipherSha256,'recovery_checkpoint_conflict');
+    await staged.resume(applyIdentity(input),()=>assertPaused(input.sourceGeneration),async()=>{
+      const restored=await readAll(target,true);assertFirebaseBackupInventory(plan.inventory,restored);
+      const records=decode(restored);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);
+      const latest=evidence(await readAll(source),await currentAuth(records),(await journalSnapshot()).map(row=>row.intent));
+      requireValue(latest.journalHash===plan.journalHash&&latest.authHash===plan.authHash&&latest.authorityHash===plan.authorityHash,'recovery_latest_state_changed');
+    });return true;
+  }
   async function applied(input:{backupId:string;restoreId:string;descriptor:FirebaseBackupManifestDescriptor}){
     const snapshot=await checkpointRef.get();if(!snapshot.exists)return null;
     const raw=z.object({format:z.literal('yuban-firebase-restore'),version:z.literal(1),ciphertext:z.string()}).strict().parse(snapshot.data());
@@ -161,14 +184,37 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
           &&observed.authHash===prior.authHash&&observed.authorityHash===prior.authorityHash,'recovery_latest_state_changed');
         return {state:prior.state,replayed:true,documentCount:prior.inventory.documentCount,generation:prior.generation,inventorySha256:prior.inventory.sha256};
       }
+      if(await resumeStaged(input)){
+        const restored=await applied(input);requireValue(restored!==null,'recovery_apply_unknown');
+        return {state:restored.state,replayed:true,documentCount:restored.inventory.documentCount,generation:restored.generation,inventorySha256:restored.inventory.sha256};
+      }
       const operation=operationSchema.parse(await options.native.getImport(input.operationName));
       requireValue(operation.metadata.inputUriPrefix===manifest.nativeExport.outputUriPrefix
         &&BigInt(operation.metadata.progressDocuments.completedWork)===BigInt(manifest.inventory.documentCount),'recovery_import_mismatch');
       const documents=await readAll(target);assertFirebaseBackupInventory(manifest.inventory,documents);
-      const records=decode(documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);
+      const records=decode(documents);assertFirebaseRestoreAuthority(records);
+      // The restore planner applies independently verified erasures before checking
+      // surviving cross-document references. Never resurrect a deleted parent just
+      // to satisfy an obsolete operation receipt in the imported snapshot.
       const liveDocuments=await readAll(source),authUsers=await currentAuth(records),entries=await journalSnapshot();
       const erasures=entries.map(row=>row.intent),erasureDescriptors=new Map(entries.map(row=>[firebaseErasureIntentHash(row.intent),row.descriptor]));
-      const deleted=new Set(erasures.map(row=>row.assetId));
+      // Journal replay does not trust a Firestore cleanup flag alone: check that all original objects are gone.
+      for(const intent of erasures.filter(v=>v.type!=='photo-delete')){
+        const affected=new Map<string,{scope:typeof intent.scope;photoId:string}>();
+        for(const row of [...records,...decode(liveDocuments)]){
+          if(row.context.kind!=='photo'&&row.context.kind!=='photo-cleanup')continue;
+          const value=row.context.kind==='photo'?photoSchemas.photo.parse(row.value):photoSchemas.cleanup.parse(row.value);
+          if(value.scope.ownerUserId!==intent.scope.ownerUserId||intent.type==='child-delete'
+            &&(value.scope.workspaceId!==intent.scope.workspaceId||value.scope.childId!==intent.scope.childId))continue;
+          const photoId='id'in value?value.id:value.photoId;
+          affected.set(digest([value.scope,photoId]),{scope:value.scope,photoId});
+        }
+        requireValue(affected.size===0||typeof options.sourceObjects?.inspect==='function','recovery_cleanup_verifier_missing');
+        for(const item of affected.values())requireValue(await options.sourceObjects!.inspect!(item.scope,item.photoId)===null,'recovery_pending_scope_cleanup');
+      }
+      const deleted=(entry:FirebaseBackupPhotoManifestEntry)=>erasures.some(row=>row.scope.ownerUserId===entry.scope.ownerUserId
+        &&(row.type==='account-delete'||row.scope.workspaceId===entry.scope.workspaceId
+          &&(row.type==='photo-delete'?row.assetId===entry.photoId:row.scope.childId===entry.scope.childId)));
       const photoRows=records.filter(row=>row.context.kind==='photo').map(row=>({record:row,photo:photoSchemas.photo.parse(row.value)}));
       const ready=photoRows.filter(row=>row.photo.state==='ready');
       requireValue(ready.length===manifest.photos.length,'recovery_photo_manifest');
@@ -177,7 +223,7 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       for(const entry of manifest.photos){
         const row=ready.find(row=>row.record.path===entry.path&&row.photo.id===entry.photoId);
         requireValue(Boolean(row&&canonical(row.photo.scope)===canonical(entry.scope)&&canonical(row.photo.descriptor)===canonical(entry.descriptor)),'recovery_photo_manifest');
-        if(deleted.has(entry.photoId))continue;
+        if(deleted(entry))continue;
         const scope={...entry.scope,storageEpoch:firebaseRestoreEpoch(projectId,target.databaseId,input.restoreId,entry.scope.workspaceId)};
         const scopeHash=createHash('sha256').update(JSON.stringify(['yuban-photo-object',1,projectId,namespace,scope])).digest('hex');
         // Validate the complete transform before IO. These planned names are never persisted as actual object evidence.
@@ -203,17 +249,8 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         manifestSha256:input.descriptor.cipherSha256,sourceDatabaseId:source.databaseId,targetDatabaseId:target.databaseId,
         sourceGeneration:input.sourceGeneration,generation:plan.generation,journalHash:plan.journalHash,authHash:plan.authHash,authorityHash:plan.authorityHash,inventory});
       const ciphertext=cipher.encrypt(canonical(checkpoint),checkpointAad());
-      try{
-        await target.runTransaction(async tx=>{
-          const existing=await tx.get(checkpointRef);requireValue(!existing.exists,'recovery_checkpoint_exists');
-          const originals=await tx.getAll(...documents.map(row=>target.doc(row.path)));
-          requireValue(originals.every(row=>row.exists),'recovery_target_changed');
-          assertFirebaseBackupInventory(manifest.inventory,originals.map(row=>({path:row.ref.path,data:row.data()!})));
-          for(const path of plan.removePaths)tx.delete(target.doc(path));
-          for(const row of plan.records)tx.set(target.doc(row.path),row.data);
-          tx.create(checkpointRef,{format:'yuban-firebase-restore',version:1,ciphertext});
-        },{maxAttempts:1});
-      }catch{const recovered=await applied(input);if(!recovered)reject('recovery_apply_unknown');}
+      await staged.stage(applyIdentity(input),documents,plan.records,plan.removePaths,{format:'yuban-firebase-restore',version:1,ciphertext});
+      await resumeStaged(input);
       const result=await applied(input);requireValue(result!==null,'recovery_apply_unknown');
       await assertPaused(input.sourceGeneration);
       const after=evidence(await readAll(source),await currentAuth(records),(await journalSnapshot()).map(row=>row.intent));

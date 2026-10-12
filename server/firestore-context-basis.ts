@@ -20,3 +20,6 @@ export async function prepareContextChange(data: FirestoreDomainData, binding: F
   const envelope = { ...data.tags(binding.scope), ...data.seal('context-version', current.id, binding.scope, schema, value) };
   return () => binding.transaction.set(current.ref, envelope);
 }
+
+/** Persisted schemas reused by isolated recovery; not a second domain model. */
+export const firestoreContextRecoverySchema = schema;

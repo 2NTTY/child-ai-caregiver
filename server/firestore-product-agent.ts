@@ -12,7 +12,7 @@ import { FirestoreSessionService } from './firestore-session-service.ts';
 import { FirestoreRootBudget } from './firestore-root-budget.ts';
 import { createFirestoreAgentAdmission } from './firestore-agent-admission.ts';
 import { createAgentRuntime, type AgentRunResult } from './agent-runtime.ts';
-import { claimedRunAssembly } from './product-agent-services.ts';
+import { claimedRunAssembly } from './agent-run-assembly.ts';
 import { createProductAgent } from './product-agent.ts';
 import { createKnowledgeRetriever } from './knowledge-retriever.ts';
 import { AgentStopped } from './agent-budget.ts';

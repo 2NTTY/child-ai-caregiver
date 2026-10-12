@@ -148,6 +148,77 @@ function assertNoMutation(f: ReturnType<typeof fixture>, source: readonly [strin
   assert.deepEqual([...f.fake.records], source); assert.deepEqual(input, original);
 }
 
+test('F07 restores a private conversation and receipt while invalidating interrupted execution and confirmation', async () => {
+  const { createFirestoreChatStore } = await import('../server/firestore-chat.ts');
+  const { createFirestoreCareStore } = await import('../server/firestore-care.ts');
+  const { createFirestoreMemoryStore } = await import('../server/firestore-memory.ts');
+  const { createFirestoreAgentRuns } = await import('../server/firestore-agent-runs.ts');
+  const { createFirestoreAgentProposals } = await import('../server/firestore-agent-proposals.ts');
+  const { createFirestoreAgentActions } = await import('../server/firestore-agent-actions.ts');
+  const f = fixture(), binding = await f.initialize(), childId = binding.scope.childId;
+  const chat = createFirestoreChatStore(f.options), care = createFirestoreCareStore(f.options);
+  const memory = createFirestoreMemoryStore({ ...f.options, chat, care });
+  const online = createFirestoreOnlineStore({ ...f.options, mutations: [chat.mutation, care.mutation, memory.mutation] });
+  const runs = createFirestoreAgentRuns({ ...f.options, chat, memory });
+  const proposals = createFirestoreAgentProposals({ runs, chat, memory, online });
+  const actions = createFirestoreAgentActions({ runs, proposals, care, online });
+  const policy = await actions.savePolicy(OWNER, childId, { operationId: randomUUID(), expectedVersion: 0,
+    recordKinds: [], allowPrivateNotes: true, allowRecordCorrections: false, allowSelfTasks: false,
+    reminderConsentVersion: null, reminderBindings: [], confirm: true, confirmShared: false });
+  const message = await chat.createUserMessageForUser(OWNER, childId, '記住明天整理健康手冊。');
+  assert.ok(message && policy);
+  const run = await runs.claim(OWNER, childId, { kind: 'interactive', reference: message.id }, 'product-interactive');
+  const receipt = await actions.execute(run.scope, run.runId, 'save-note', { kind: 'save_private_note',
+    sourceQuote: message.text, expectedPolicyVersion: policy.version, title: '整理手冊', text: message.text });
+  assert.ok(receipt);
+  const pending = await proposals.propose(run.scope, run.runId, 'task-candidate', { kind: 'task_create', values: {
+    title: '整理手冊', details: '', kind: 'ordinary', assigneeUserId: OWNER,
+    dueAt: new Date(Date.now() + 3600000).toISOString(), timeZone: 'Asia/Hong_Kong' } });
+  await f.switchControl(false);
+  for (const row of f.documents().filter(row => !row.path.startsWith(f.options.namespace + '_sessions/'))) {
+    try { f.codec.decode(row); } catch (cause) { throw new Error('Restore fixture collection: ' + row.path.split('/')[0], { cause }); }
+  }
+  const output = prepareFirebaseRestore(f.options, f.input(f.documents(), randomUUID(), new Map()));
+  assert.equal(output.records.some(row => row.path.startsWith(f.options.namespace + '_sessions/')), false);
+  f.fake.records.clear(); for (const row of output.records) f.fake.records.set(row.path, row.data);
+  // Operator-only reopening is separate from preparation. This does not execute a model or a worker.
+  await setFirebaseBackupControl(f.options, { expectedGeneration: output.generation, generation: randomUUID(), enabled: true });
+  const latest = await f.authority.readScope(OWNER, childId);
+  await f.authority.runTransaction(OWNER, childId, async b => {
+    assert.equal((await chat.readMessage(b, childId, message.id))?.text, message.text);
+    assert.equal((await actions.readNote(b, receipt.resource.id))?.text, message.text);
+    assert.equal((await actions.readReceipts(b, run.runId))[0]?.receipt.id, receipt.id);
+    assert.equal((await runs.read(b, run.runId)).state, 'unknown');
+    assert.equal((await actions.readPolicy(b)).effective, false);
+  });
+  assert.notEqual(latest.scope.storageEpoch, binding.scope.storageEpoch);
+  assert.equal(await runs.authorize(run.scope, run.runId), false);
+  const restored = f.decoded(f.documents());
+  const candidate = find(restored, 'agent-proposal', pending.id).value as { proposal: { status: string } };
+  assert.equal(candidate.proposal.status, 'expired');
+});
+
+test('F07 excludes an erased child and original receipt payloads from an older backup', async () => {
+  const { firestoreScopeErasureSchema } = await import('../server/firestore-erasure.ts');
+  const f=fixture(), binding=await f.initialize(), childId=binding.scope.childId;
+  await f.switchControl(false);const snapshot=f.documents();await f.switchControl(true);
+  const operationId=randomUUID(), intent:FirebaseErasureIntent={type:'child-delete',scope:binding.scope,assetId:childId,operationId,at:AT};
+  f.intents.set(firebaseErasureIntentHash(intent),intent);
+  await f.authority.runTransaction(OWNER,null,async b=>{const barrier=await b.prepareErasure(operationId,'child',childId);barrier.commit();});
+  await f.authority.finishErasure(binding.scope,'child');
+  // F04 covers real erasure. This fixture supplies its completed evidence to the pure restoration function.
+  const nil='00000000-0000-0000-0000-000000000000',scope={ownerUserId:OWNER,workspaceId:nil,childId:nil,storageEpoch:nil};
+  const id=JSON.stringify([OWNER,operationId]),saved=firestoreScopeErasureSchema.parse({intent,authorizationVersion:binding.authorizationVersion,
+    generation:randomUUID(),state:'completed',journal:null,receiptToken:null,expiresAt:null,blockedAt:AT,scopeVersion:'1',childCount:1,cleanup:{stage:'done',cursor:null}});
+  f.fake.records.set(f.data.ref('erasures','scope-erasure',id).path,{...f.data.tags(scope),operationId,state:'completed',
+    ...f.data.seal('scope-erasure',id,scope,firestoreScopeErasureSchema,saved)});
+  await f.switchControl(false);
+  const restored=f.decoded(prepareFirebaseRestore(f.options,f.input(snapshot,randomUUID(),new Map())).records);
+  assert.equal(firestoreAuthoritySchemas.child.parse(find(restored,'child',childId).value).status,'deleted');
+  assert.equal(restored.some(row=>['child-projection','authority-child-detail','task','task-revision'].includes(row.context.kind)),false);
+  assert.equal(JSON.stringify(restored.map(row=>row.value)).includes('合成還原孩子'),false);
+});
+
 test('restore applies current revocation and journal erasure without restoring sessions or post-backup child authority', async () => {
   const f = fixture(), binding = await f.initialize(), erased = await f.ready(binding.scope.childId), survivor = await f.ready(binding.scope.childId);
   await f.switchControl(false); const snapshot = f.documents(); await f.switchControl(true);

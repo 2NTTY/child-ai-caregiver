@@ -60,7 +60,7 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
     if (candidate.childId === scope.childId) return true;
     // Original owner-wide receipts must not retain copies of erased child content.
     const value = row.value as Record<string, any>;
-    return ['online-receipt', 'authority-operation'].includes(row.context.kind)
+    return ['online-receipt', 'authority-operation', 'document-operation'].includes(row.context.kind)
       && (value.childId === scope.childId || value.result?.child?.id === scope.childId || value.result?.childId === scope.childId);
   }
   function retainBarrier(row: OpenedRecoveryEnvelope, job: FirestoreScopeErasure) {

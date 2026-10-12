@@ -5,6 +5,7 @@ import { serialFirestoreFixture } from './helpers/firestore-session-memory.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreCareStore } from '../server/firestore-care.ts';
+import { createFirestoreFamilyDocumentStore } from '../server/firestore-family-documents.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { createFirestoreErasureStore } from '../server/firestore-erasure.ts';
 import { createFirestoreErasureCleanup } from '../server/firestore-erasure-cleanup.ts';
@@ -71,6 +72,9 @@ test('F04 scoped export and journal-backed erasure preserve original operations 
     return online.submit(owner, { path, payload, operation: { ...await online.context(owner, { path, payload }), opId: randomUUID(), deviceId: randomUUID() } });
   }
   await submitRecord('owner', child, '只屬本人'); await submitRecord('peer', peerChild, '另一帳戶');
+  const documents = createFirestoreFamilyDocumentStore(options);
+  await documents.create('owner', child, { kind: 'preparation', purpose: 'appointment', title: 'Private erasure document',
+    eventDate: '2026-10-15', period: { from: '2026-10-01', to: '2026-10-31' } }, randomUUID());
   const exported = await client.exportPage('owner', { section: 'care', childId: child }, signal);
   assert.equal((exported.items[0] as any).text, '只屬本人'); assert.equal(exported.complete, true);
   await assert.rejects(exporter.page('peer', { section: 'care', childId: child }));
@@ -86,6 +90,7 @@ test('F04 scoped export and journal-backed erasure preserve original operations 
   let state = await cleaner.advance('owner', submission.operation.opId);
   for (let i = 0; state.state !== 'completed' && i < 100; i++) state = await cleaner.advance('owner', submission.operation.opId);
   assert.equal(state.state, 'completed');
+  assert.equal([...fixture.records.keys()].filter(key => key.startsWith(options.namespace + '_document_operations/')).length, 0);
   await assert.rejects(authority.createChild({ userId: 'owner', operationId: creationIds.get('owner')!, displayName: '合成孩子' }),
     (error: any) => error.code === 'operation_erased');
   assert.deepEqual(await online.lookup('owner', submission.operation.opId), receipt);

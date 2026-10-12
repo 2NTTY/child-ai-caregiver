@@ -7,6 +7,7 @@ import type { AgentRunAdmission } from './agent-runtime.ts';
 const uuid = z.uuid(), userId = z.string().min(1).max(256), millis = z.number().int().nonnegative();
 const leaseSchema = z.object({ runId: uuid, userId, token: uuid, deadlineAtMs: millis, expiresAtMs: millis }).strict();
 const schema = z.object({ leases: z.array(leaseSchema).max(4) }).strict();
+export const firestoreAgentAdmissionRecoverySchema = schema;
 const scope: WorkRecoveryScope = { ownerUserId: 'system:agent-admission', workspaceId: '00000000-0000-0000-0000-000000000000',
   childId: '00000000-0000-0000-0000-000000000000', storageEpoch: '00000000-0000-0000-0000-000000000000' };
 

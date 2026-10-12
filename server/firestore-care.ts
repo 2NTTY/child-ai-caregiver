@@ -235,3 +235,6 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
   };
   return store;
 }
+
+/** Persisted schemas reused by isolated recovery; not a second domain model. */
+export const firestoreCareRecoverySchemas = { tombstone: tombstoneSchema };

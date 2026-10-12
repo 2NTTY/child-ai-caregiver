@@ -14,6 +14,7 @@ import { createEmbeddingGateway } from './embedding-gateway.ts';
 import { ModelSettingsError } from './model-settings-contract.ts';
 
 const checksSchema = z.object({ attempts: z.array(z.object({ userId: z.string(), at: z.number().int().nonnegative() }).strict()).max(4) }).strict();
+export const firestoreModelChecksRecoverySchema = checksSchema;
 const checkScope = { ownerUserId: 'system:model-key-check', workspaceId: '00000000-0000-0000-0000-000000000000',
   childId: '00000000-0000-0000-0000-000000000000', storageEpoch: '00000000-0000-0000-0000-000000000000' };
 /** Firestore production must never fall back to process-local or SQL quota accounting. */

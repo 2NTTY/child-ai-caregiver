@@ -27,6 +27,7 @@ const attemptSchema = z.object({ request: requestSchema, billingSource: sourceSc
   reservedAtMs: integer, record: recordSchema.nullable() }).strict().refine(value => value.record === null
     || (value.request.kind ?? 'model') === (value.record.kind ?? 'model'));
 const counterSchema = z.object({ attempts: integer, inputTokens: integer, outputTokens: integer, cachedTokens: integer, known: integer }).strict();
+export const firestoreUsageRecoverySchemas = { attempt: attemptSchema, counter: counterSchema };
 type Counter = z.infer<typeof counterSchema>;
 type SavedAttempt = z.infer<typeof attemptSchema>;
 const emptyCounter = (): Counter => ({ attempts: 0, inputTokens: 0, outputTokens: 0, cachedTokens: 0, known: 0 });

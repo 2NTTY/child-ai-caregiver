@@ -16,6 +16,7 @@ const savedSchema = z.object({
   updatedAt: z.iso.datetime({ offset: true }),
 }).strict();
 type Saved = z.infer<typeof savedSchema>;
+export const firestoreModelSettingsRecoverySchema = savedSchema;
 function publicSettings(value: Saved | null): ModelSettings {
   return { version: value?.version ?? 0, mode: value?.mode ?? 'platform', provider: 'gemini', model: PERSONAL_MODEL,
     keyConfigured: value?.apiKey != null, backgroundEnabled: value?.backgroundEnabled ?? false,

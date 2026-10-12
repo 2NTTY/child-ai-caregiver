@@ -266,3 +266,6 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
   };
 }
 export type FirestoreConcernStore = ReturnType<typeof createFirestoreConcernStore>;
+
+/** Existing persisted formats, shared with isolated recovery. */
+export const firestoreConcernRecoverySchemas = { receipt: receiptSchema, followup: followupClaimSchema };

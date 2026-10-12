@@ -1,0 +1,101 @@
+{
+  "package": "P2-F07",
+  "recordedAt": "2026-10-13",
+  "baseCommit": "5dc743f5c41e5b79eff4d225596ebd24e240f43b",
+  "branch": "codex/p2-f07-sql-exit",
+  "scope": "Firestore recovery and production SQL exit; no website deployment",
+  "implementation": [
+    "All registered business codecs and authenticated metadata",
+    "Interrupted run/proposal invalidation, preserved receipts and usage, new epoch",
+    "Bounded encrypted restore plan and compare-before-write transactions; final validation atomically removes temporary private copies",
+    "Standard API/worker/Compose require Firestore; SQL and legacy auth dependencies development-only"
+  ],
+  "checks": {
+    "productionImportGraph": {
+      "files": 181,
+      "sqlDependencies": 0
+    },
+    "composeServices": [
+      "api",
+      "worker",
+      "web"
+    ],
+    "selectedTypeChecks": "passed",
+    "diffCheck": "passed",
+    "fullBuildOrSuite": false
+  },
+  "localScenarios": [
+    "Private conversation/receipt restoration and interrupted execution invalidation",
+    "Erased child and cached operation payload exclusion",
+    "Two-page original-plan resume after lost acknowledgement and interruption; temporary-plan removal",
+    "Existing export/erasure check extended with document-operation receipt"
+  ],
+  "nativeInventory": {
+    "database": "yuban-firebase-20261011",
+    "uniqueDocuments": 302,
+    "documentReadsAcrossScans": 502,
+    "additionalDiagnosticRead": 1,
+    "queries": 108,
+    "controlReads": "additional",
+    "result": "passed",
+    "note": "Encrypted pages reused; repeated failing reads are counted, not misreported as only 302 reads"
+  },
+  "cachedPlan": {
+    "cloudReads": 0,
+    "cloudWrites": 0,
+    "inputDocuments": 302,
+    "outputDocuments": 279,
+    "removedOrRekeyedOriginalPaths": 83,
+    "result": "passed",
+    "scope": "Offline complete surviving content/authority graph. Identity facts disabled; not a new Auth or backup-export test"
+  },
+  "nativeApply": {
+    "startedAt": "2026-10-12T20:07:41.861Z",
+    "finishedAt": "2026-10-12T20:08:00.487Z",
+    "database": "yuban-firebase-restore-20261011",
+    "namespace": "f07_apply_bee3299390ac",
+    "documents": 81,
+    "pages": 2,
+    "maxDocumentWrites": 350,
+    "sourcePauseReads": 4,
+    "result": "passed",
+    "cleanup": "Both synthetic collections empty; original restored data untouched"
+  },
+  "legacyCleanup": {
+    "startedAt": "2026-10-12T20:09:20.946Z",
+    "finishedAt": "2026-10-12T20:09:38.030Z",
+    "removedDocumentReceipts": 4,
+    "result": "Existing immutable journals, completed jobs, deleted child barriers and original receipt versions checked before exact deletion; source paused"
+  },
+  "failures": [
+    "Local fixture exposed missing background registry/context-version NIL scope; bindings fixed",
+    "Initial inspection lacked storage key path; zero cloud calls, then used existing protected key",
+    "Native inventory rejected legitimate redacted authority result:null; identity/fingerprint validation retained",
+    "Two bounded scan page caps stopped and saved encrypted progress; only remaining pages resumed",
+    "Cached restore found legacy document receipts after child erasure; fixed cleanup, removed four existing synthetic receipts",
+    "Offline harness omitted saved photo erasure evidence; added only saved proof",
+    "Completed photo tombstone had no remaining cleanup metadata; authenticated completion retained, photo remains removed",
+    "Automatic approval review rejected removing completed scope-cleanup prerequisite and a caller-supplied alternative; neither applied, missing cleanup still blocks restore"
+  ],
+  "reusedEvidence": [
+    "F02 native export/import, paired encrypted photos, OIDC and paused restore",
+    "F03 admission/cancellation and identity isolation",
+    "F04/F05 persistence, attachments and knowledge",
+    "F06 competing consumers, unknown delivery and continuation"
+  ],
+  "limits": [
+    "No new full native export/import or photo copy; changed apply boundary checked in GCP",
+    "Paused source authority/current Auth/independent journal required; missing cleanup needs operator reconciliation",
+    "Inventory bound 2000 documents/32 MiB; larger streaming recovery not claimed",
+    "No new model, embedding, real notification, browser, deployed replicas or Docker build",
+    "F08 must build/deploy original site and verify invited-user Agent results; P2 incomplete"
+  ],
+  "cost": {
+    "models": 0,
+    "embeddings": 0,
+    "notifications": 0,
+    "newResources": 0,
+    "estimatedIncrementalUsdBelow": 0.01,
+    "actualBilling": "not measured"
+  }
+}

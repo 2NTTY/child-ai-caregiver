@@ -15,6 +15,7 @@ export const firestorePushBindingSchema = z.object({ binding: pushBindingSchema,
 export const firestorePushDeliverySchema = z.object({ delivery: pushDeliverySchema, bindingVersion: z.number().int().positive(),
   generation: uuid, authorizationVersion: z.string(), attempt: uuid.nullable() }).strict();
 const endpointSchema = z.object({ ownerUserId: z.string().min(1).max(256), bindingId: uuid, endpointHash: z.string().length(64) }).strict();
+export const firestorePushEndpointRecoverySchema = endpointSchema;
 type SavedBinding = z.infer<typeof firestorePushBindingSchema>;
 type SavedDelivery = z.infer<typeof firestorePushDeliverySchema>;
 const pathPattern = /^\/api\/web-push\/subscriptions(?:\/([0-9a-f-]{36})\/(revoke|test))?$/iu;

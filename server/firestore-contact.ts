@@ -37,6 +37,7 @@ export const firestoreContactRequestSchema = z.object({ request: requestSchema, 
 const pointerSchema = z.object({ scope: workRecoveryScopeSchema, requestId: uuid, attemptId: uuid, binding: contactBindingSchema, botId: z.string() }).strict();
 const dailySchema = z.object({ requestId: uuid, day: z.string(), at: time }).strict();
 const updateSchema = z.object({ updateId: z.number().int().nonnegative(), attemptId: uuid }).strict();
+export const firestoreContactRecoverySchemas = { pointer: pointerSchema, daily: dailySchema, update: updateSchema };
 type Consent = z.infer<typeof firestoreContactConsentSchema>;
 type Grant = z.infer<typeof firestoreContactGrantSchema>;
 type Saved = z.infer<typeof firestoreContactRequestSchema>;
