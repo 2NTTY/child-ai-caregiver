@@ -72,13 +72,13 @@ docker compose --project-name yuban-p1 \
 <a id="firestore-deployment"></a>
 ## 原網站的 Firestore 交付接點（遷移中）
 
-採 [ADR-024](DECISIONS.md#adr-024)／[F01～F08](../PLAN.md#p2-firestore-migration)。保留 ex-machina.eu.org、原 VM、Node／Compose／Caddy、frontend/dist 及 Push service worker，不把 Hosting 或 Cloud Run 當交付前置。F01 已合併、F02 成果未合併；本頁規劃不代表正式站已用 Firestore。現有啟動／部署命令須按實作更新，不能只改文件便宣稱已退出 SQL。
+採 [ADR-024](DECISIONS.md#adr-024)／[F01～F08](../PLAN.md#p2-firestore-migration)。保留 ex-machina.eu.org、原 VM、Node／Compose／Caddy、frontend/dist 及 Push service worker，不把 Hosting 或 Cloud Run 當交付前置。F01／F02 已合併、F03 核心聊天接線中；本頁規劃不代表正式站已用 Firestore。現有啟動／部署命令須按實作更新，不能只改文件便宣稱已退出 SQL。
 
 - Firebase Auth 復用既有登入畫面／owner、__session、邀請、政策及逐裝置會話；乾淨起點不搬舊帳號／私人資料，舊備份保留。身份與孩子範圍由 Server 核驗，登入者不需配置 Firebase。
 - Firestore／私有 Storage 沿同一權威、應用加密、版本／opId／changes 及授權下載。VM 附加身份／ADC 與受保護設定繼續使用，密鑰不進前端或模型。
 - Tasks／Scheduler 呼叫 VM 的受驗證工作入口，應用核 OIDC、固定 audience 及服務身份；保留 lease／generation、收據及 unknown 不重發。不能僅暴露一條公開 worker URL 便視為安全。
 - 互動沿現有請求、進度、取消及結果接口；不為 Hosting 60 秒限制強制改協議。需要排程的工作先持久受理；私有回應 no-store，身份切換清除快取及遲到回應。
-- F02 接 VM 組裝；F03 首次可用登入／聊天／引用／保存接通即更新原站，F04～F06 逐條承接現有頁面及功能。未遷移功能明示，不用假成功或空資料掩蓋；不等待 F08 才接完整前端，也不維持兩套產品網站。
+- 依 [ADR-025](DECISIONS.md#adr-025)，F02～F07 先完成原 VM 資料接點及全部正式 SQL 退出，保留既有 API／頁面相容性；F08 再驗收受邀用戶並更新原站。不逐資料包切站或重跑完整用戶流程。未遷移功能明示，不用假成功或空資料掩蓋；不維持兩套產品網站。
 - 每次部署核對 VM 實況／期限、相容配置、資料與備份及 in-flight 工作，允許短暫維護；只有一套主寫與排程。已有新寫入只能回退相容 Firebase 應用版本或隔離還原，不能切回 SQL 舊快照；新刪除／撤銷／收據不可倒退。
 
 F07 只補尚欠跨域／恢復證據，F08 確认已交付功能不連 SQL、不靜默回退。待清理清單：F02 額外 Hosting 站點、Cloud Run API／worker 及其專用殘留；先核實實際名稱、流量、依賴、保留需求和費用，再批准範圍內清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**。F02 已準備原 VM 組裝但未部署；未改 DNS 或刪資源。A09 未通過成果及 F02 失敗沿 PLAN 追溯，不以基建切片代替產品完成。
@@ -96,7 +96,7 @@ docker compose -f deploy/p1/compose.firestore.yaml build api web
 docker compose -f deploy/p1/compose.firestore.yaml up -d --no-build
 ```
 
-不要輸出完整展開設定到日誌，不上傳 ADC、密碼或密鑰到映像／Git。VM 使用附加身份的 ADC；讀取現有 Firestore 資料必須掛原相容密鑰，不能拿舊 PostgreSQL 的另一把 key 代替。首次 F02 接點驗收不把尚缺聊天的 handler 當完整後端；F03 聊天路徑通過後才切原站。切換前停止舊 worker、保留配對備份及舊映像，逐一停止已退出的 SQL 服務；不要 `down -v` 或刪原資料 volume。worker、電郵及 authority 預設保持關閉，按實際驗收／交付範圍個別啟用。
+不要輸出完整展開設定到日誌，不上傳 ADC、密碼或密鑰到映像／Git。VM 使用附加身份的 ADC；讀取現有 Firestore 資料必須掛原相容密鑰，不能拿舊 PostgreSQL 的另一把 key 代替。F03 局部接線不代表可切站；先完成 F07 零 SQL 資料門檻，再於 F08 核對受邀用戶及更新原站。切換前停止舊 worker、保留原備份及舊映像，停止已退出的 SQL 服務；不要 `down -v` 或刪原資料 volume。舊資料搬遷不是門檻；worker、電郵及 authority 預設保持關閉，按實際驗收／交付範圍個別啟用。
 
 `API_UPSTREAM`／`FIREBASE_WORKER_UPSTREAM` 可配置服務地址；目前保持單副本，不設黏性會話或新負載平衡器。跨副本准入／取消與完整 worker 恢復仍由 F03／F06 驗證。VM IAM 至少按命名資料庫、私人物件 bucket、只新增／讀取的刪除日誌、指定 queue／OIDC 身份及現有 Session 自訂角色核對；不給 Owner／Editor，也不因啟動此 Compose 自動授權。
 

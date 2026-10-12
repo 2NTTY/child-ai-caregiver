@@ -83,6 +83,7 @@ function replyErrorMessage(error: unknown): string {
     switch (error.code) {
       case "ai_disabled": return "AI 暫時未開放；聊天已保存，可稍後要求回覆。";
       case "ai_busy": return "AI 正忙碌；聊天已保存，可稍後再試。";
+      case "ai_capacity_busy": return "AI 正忙碌；原訊息已保存，但未開始處理，也沒有排隊。稍後請以新訊息重新提出要求。";
       case "ai_quota_exceeded": return "今日 AI 調用次數已達上限；聊天已保存。";
       case "ai_timeout": return "AI 回覆逾時；聊天已保存，可重試取得回覆。";
       case "ai_unavailable": return "AI 暫時無法回覆；聊天已保存，可稍後再試。";
@@ -415,7 +416,10 @@ export class ChatController {
       const notice = replyErrorMessage(error);
       this.update({ replyError: notice });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
-        this.updateDraft(childId, { phase: "reply_failed", notice });
+        // Preserve the current text; a late history response must never replace a newer draft.
+        this.updateDraft(childId, error instanceof ChatApiError && error.code === "ai_capacity_busy"
+          ? { phase: "draft", savedUserMessageId: null, candidateMessageId: null, knownIds: [], notice }
+          : { phase: "reply_failed", notice });
       }
     } finally {
       if (this.current(scope)) {

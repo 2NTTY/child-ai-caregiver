@@ -42,6 +42,9 @@ export interface FirestoreOnlineStore {
   changes(userId: string, workspaceId: string, epoch: string, cursor: string): Promise<OnlineChanges>;
   readonly children: FirestoreChildrenQuery;
   readonly tasks: FirestoreTasksQuery;
+  /** Shared transaction primitive for online commands and authorized Agent operations. */
+  prepareTask(binding: FirestoreAuthorityTransaction, childId: string, taskId: string | undefined, raw: unknown, operationId: string):
+    Promise<{ task: CareTask; changeSeq: string; commit(): void }>;
   notificationPreferences?(userId: string): Promise<NotificationPreferences>;
 }
 
@@ -50,7 +53,16 @@ export interface FirestoreOnlinePhotosPort { submitOnline(userId: string, submis
 export interface FirestoreOnlineReminderViewPort {
   view(binding: FirestoreAuthorityTransaction, taskIds: string[]): Promise<Required<Pick<TaskPage, 'reminders' | 'work' | 'workerEnabled'>>>;
 }
-export interface FirestoreOnlineOptions extends FirestoreDomainOptions { photos?: FirestoreOnlinePhotosPort; reminders?: FirestoreOnlineReminderViewPort }
+export interface FirestoreOnlineMutation {
+  supports(path: string): boolean;
+  /** Read and validate first; commit is called with the receipt in the same transaction. */
+  prepare(binding: FirestoreAuthorityTransaction, submission: OnlineSubmission): Promise<{
+    childId: string | null; changeSeq: string; statusCode: 200 | 201; result: unknown; commit(): void;
+  }>;
+}
+export interface FirestoreOnlineOptions extends FirestoreDomainOptions {
+  photos?: FirestoreOnlinePhotosPort; reminders?: FirestoreOnlineReminderViewPort; mutations?: readonly FirestoreOnlineMutation[];
+}
 export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): FirestoreOnlineStore {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), receipts = createFirestoreOnlineReceipts(options);
   const scopeFor = (binding: FirestoreAuthorityTransaction, childId: string): WorkRecoveryScope => ({ ...binding.scope, childId });
@@ -129,6 +141,67 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
       return { children: result, nextCursor };
     });
   } };
+
+  async function prepareTask(binding: FirestoreAuthorityTransaction, childId: string, oldId: string | undefined, raw: unknown, operationId: string) {
+    domainParse(uuid, operationId); if (oldId) domainParse(uuid, oldId);
+    const userId = binding.scope.ownerUserId, candidateId = randomUUID(), occurrenceId = randomUUID(), at = new Date().toISOString();
+    domainParse(uuid, childId); await requireChild(binding, childId);
+    const scope = scopeFor(binding, childId);
+    const input = oldId ? domainParse(taskChangeSchema, raw) : domainParse(taskCreateSchema, raw);
+    const old = oldId ? await readTask(binding, scope, oldId) : null;
+    if (oldId && !old) domainReject('not_found', 404);
+    let task: CareTask, revision: TaskRevision;
+    if (old) {
+      const change = domainParse(taskChangeSchema, input);
+      if (change.action === 'reschedule' && change.assigneeUserId !== userId) domainReject('assignee_not_eligible', 400);
+      task = changeTask(old, change, at);
+      revision = { task, action: change.action, actorUserId: userId, basisVersion: change.expectedVersion, note: change.note, at };
+    } else {
+      const create = domainParse(taskCreateSchema, input);
+      if (create.values.assigneeUserId !== userId) domainReject('assignee_not_eligible', 400);
+      const { dueAt, timeZone, ...values } = create.values;
+      task = { ...values, id: candidateId, childId, version: 1, createdBy: userId, createdAt: at, updatedAt: at,
+        occurrence: { id: occurrenceId, dueAt, timeZone, state: 'scheduled', terminalBasisVersion: null } };
+      if ((await binding.transaction.get(data.ref('tasks', 'task', candidateId))).exists) domainReject('task_conflict');
+      revision = { task, action: 'create', actorUserId: userId, basisVersion: 0, note: '', at };
+    }
+    const revisionId = taskId(task.id, task.version), revisionRef = data.ref('task_revisions', 'task-revision', revisionId);
+    if ((await binding.transaction.get(revisionRef)).exists) domainReject('revision_conflict');
+    const oldOutbox = old ? await readOutbox(binding, scope, old) : null;
+    const outboxId = firestoreReminderOutboxId(task.id, task.version), outboxRef = data.ref('task_outbox', 'task-reminder-outbox', outboxId);
+    if ((await binding.transaction.get(outboxRef)).exists) domainReject('outbox_conflict');
+    const tags = data.tags(scope);
+    const unknownRows = await binding.transaction.get(data.collection('task_outbox')
+      .where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag)
+      .where('childTag', '==', tags.childTag).where('userTag', '==', tags.userTag)
+      .where('taskId', '==', task.id).where('occurrenceId', '==', task.occurrence.id).where('state', '==', 'unknown').limit(1));
+    for (const row of unknownRows.docs) {
+      matchesTags(row.data(), scope);
+      const taskVersion = domainParse(z.number().int().positive(), row.get('taskVersion'), 'invalid_document', 500);
+      const evidence = data.open('task-reminder-outbox', firestoreReminderOutboxId(task.id, taskVersion), scope, firestoreReminderOutboxSchema, row);
+      if (evidence.state !== 'unknown' || evidence.taskId !== task.id || evidence.occurrenceId !== task.occurrence.id
+        || evidence.ownerUserId !== scope.ownerUserId || evidence.workspaceId !== scope.workspaceId || evidence.childId !== scope.childId
+        || evidence.storageEpoch !== scope.storageEpoch || evidence.taskVersion !== taskVersion
+        || taskVersion !== row.get('recordVersion') || taskVersion >= task.version) domainReject('outbox_binding', 500);
+    }
+    const unknown = unknownRows.docs.length > 0;
+    const outbox: FirestoreReminderOutbox | null = task.occurrence.state === 'scheduled' && !unknown ? {
+      taskId: task.id, occurrenceId: task.occurrence.id, taskVersion: task.version, dueAt: task.occurrence.dueAt, ...scope,
+      authorizationVersion: binding.authorizationVersion, generation: binding.generation, state: 'pending', attempts: 0, failures: 0, lease: null } : null;
+    const prepared = await binding.prepareChange(operationId, 'tasks', false, childId);
+    const taskEnvelope = { ...data.tags(scope), taskId: task.id, ...data.seal('task', task.id, scope, firestoreTaskSchema, task, task.version) };
+    const revisionEnvelope = { ...data.tags(scope), taskId: task.id, taskVersion: task.version,
+      ...data.seal('task-revision', revisionId, scope, firestoreTaskRevisionSchema, revision, task.version) };
+    const cancelled = oldOutbox && ['pending', 'leased'].includes(oldOutbox.job.state)
+      ? sealOutbox(oldOutbox.id, scope, { ...oldOutbox.job, state: 'cancelled', lease: null }) : null;
+    const outboxEnvelope = outbox ? sealOutbox(outboxId, scope, outbox) : null;
+    return { task, changeSeq: prepared.changeSeq, commit() {
+      prepared.commit(); binding.transaction.set(data.ref('tasks', 'task', task.id), taskEnvelope);
+      binding.transaction.create(revisionRef, revisionEnvelope);
+      if (cancelled && oldOutbox) binding.transaction.set(oldOutbox.ref, cancelled);
+      if (outboxEnvelope) binding.transaction.create(outboxRef, outboxEnvelope);
+    } };
+  }
   const tasks: FirestoreTasksQuery = {
     async list(userId, childId, afterId = null) {
       domainParse(uuid, childId); if (afterId !== null) domainParse(uuid, afterId);
@@ -180,7 +253,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     },
   };
   return {
-    children, tasks,
+    children, tasks, prepareTask,
     notificationPreferences(userId) { return authority.runTransaction(userId, null, readPreferences); },
     async spaces(userId) {
       return authority.runTransaction(userId, null, async binding => {
@@ -206,7 +279,6 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
       const submission = domainParse(onlineSubmissionSchema, raw);
       if (options.photos && /^\/api\/children\/[0-9a-f-]{36}\/photos(?:\/[0-9a-f-]{36}\/delete)?$/iu.test(submission.path))
         return options.photos.submitOnline(userId, submission);
-      const candidateId = randomUUID(), occurrenceId = randomUUID(), at = new Date().toISOString();
       return authority.runTransaction(userId, null, async binding => {
         // Caller-wide identity is checked before looking at a changed command's target resource.
         const prior = await receipts.read(binding, submission.operation.opId);
@@ -218,7 +290,12 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
         if (submission.operation.workspaceId !== binding.scope.workspaceId || submission.operation.storageEpoch !== binding.scope.storageEpoch) domainReject('storage_epoch_changed');
         let changeSeq: string, result: unknown, statusCode: 200 | 201, receiptChildId: string | null;
         let commitDomain: () => void;
-        if (submission.path === '/api/children') {
+        const mutation = options.mutations?.find(domain => domain.supports(submission.path));
+        if (mutation) {
+          const prepared = await mutation.prepare(binding, submission);
+          changeSeq = prepared.changeSeq; result = prepared.result; statusCode = prepared.statusCode;
+          receiptChildId = prepared.childId; commitDomain = prepared.commit;
+        } else if (submission.path === '/api/children') {
           const validated = validateCreateChild(submission.payload);
           if (!validated.ok) domainReject('invalid_input', 400);
           const prepared = await binding.prepareChildCreation({ operationId: submission.operation.opId, displayName: validated.value.displayName });
@@ -241,63 +318,10 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
           onlineRoute(submission);
           const match = taskPath.exec(submission.path);
           if (!match) domainReject('domain_not_ready', 503);
-          const childId = domainParse(uuid, match[1].toLowerCase()); await requireChild(binding, childId);
-          const scope = scopeFor(binding, childId), oldId = match[2]?.toLowerCase();
-          const input = oldId ? domainParse(taskChangeSchema, submission.payload) : domainParse(taskCreateSchema, submission.payload);
-          const old = oldId ? await readTask(binding, scope, oldId) : null;
-          if (oldId && !old) domainReject('not_found', 404);
-          let task: CareTask, revision: TaskRevision;
-          if (old) {
-            const change = domainParse(taskChangeSchema, input);
-            if (change.action === 'reschedule' && change.assigneeUserId !== userId) domainReject('assignee_not_eligible', 400);
-            task = changeTask(old, change, at);
-            revision = { task, action: change.action, actorUserId: userId, basisVersion: change.expectedVersion, note: change.note, at };
-          } else {
-            const create = domainParse(taskCreateSchema, input);
-            if (create.values.assigneeUserId !== userId) domainReject('assignee_not_eligible', 400);
-            const { dueAt, timeZone, ...values } = create.values;
-            task = { ...values, id: candidateId, childId, version: 1, createdBy: userId, createdAt: at, updatedAt: at,
-              occurrence: { id: occurrenceId, dueAt, timeZone, state: 'scheduled', terminalBasisVersion: null } };
-            if ((await binding.transaction.get(data.ref('tasks', 'task', candidateId))).exists) domainReject('task_conflict');
-            revision = { task, action: 'create', actorUserId: userId, basisVersion: 0, note: '', at };
-          }
-          const revisionId = taskId(task.id, task.version), revisionRef = data.ref('task_revisions', 'task-revision', revisionId);
-          if ((await binding.transaction.get(revisionRef)).exists) domainReject('revision_conflict');
-          const oldOutbox = old ? await readOutbox(binding, scope, old) : null;
-          const outboxId = firestoreReminderOutboxId(task.id, task.version), outboxRef = data.ref('task_outbox', 'task-reminder-outbox', outboxId);
-          if ((await binding.transaction.get(outboxRef)).exists) domainReject('outbox_conflict');
-          const tags = data.tags(scope);
-          const unknownRows = await binding.transaction.get(data.collection('task_outbox')
-            .where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag)
-            .where('childTag', '==', tags.childTag).where('userTag', '==', tags.userTag)
-            .where('taskId', '==', task.id).where('occurrenceId', '==', task.occurrence.id).where('state', '==', 'unknown').limit(1));
-          for (const row of unknownRows.docs) {
-            matchesTags(row.data(), scope);
-            const taskVersion = domainParse(z.number().int().positive(), row.get('taskVersion'), 'invalid_document', 500);
-            const evidence = data.open('task-reminder-outbox', firestoreReminderOutboxId(task.id, taskVersion), scope, firestoreReminderOutboxSchema, row);
-            if (evidence.state !== 'unknown' || evidence.taskId !== task.id || evidence.occurrenceId !== task.occurrence.id
-              || evidence.ownerUserId !== scope.ownerUserId || evidence.workspaceId !== scope.workspaceId || evidence.childId !== scope.childId
-              || evidence.storageEpoch !== scope.storageEpoch || evidence.taskVersion !== taskVersion
-              || taskVersion !== row.get('recordVersion') || taskVersion >= task.version) domainReject('outbox_binding', 500);
-          }
-          const unknown = unknownRows.docs.length > 0;
-          const outbox: FirestoreReminderOutbox | null = task.occurrence.state === 'scheduled' && !unknown ? {
-            taskId: task.id, occurrenceId: task.occurrence.id, taskVersion: task.version, dueAt: task.occurrence.dueAt, ...scope,
-            authorizationVersion: binding.authorizationVersion, generation: binding.generation, state: 'pending', attempts: 0, failures: 0, lease: null } : null;
-          const prepared = await binding.prepareChange(submission.operation.opId, 'tasks', false, childId);
-          const taskEnvelope = { ...data.tags(scope), taskId: task.id, ...data.seal('task', task.id, scope, firestoreTaskSchema, task, task.version) };
-          const revisionEnvelope = { ...data.tags(scope), taskId: task.id, taskVersion: task.version,
-            ...data.seal('task-revision', revisionId, scope, firestoreTaskRevisionSchema, revision, task.version) };
-          const cancelled = oldOutbox && ['pending', 'leased'].includes(oldOutbox.job.state)
-            ? sealOutbox(oldOutbox.id, scope, { ...oldOutbox.job, state: 'cancelled', lease: null }) : null;
-          const outboxEnvelope = outbox ? sealOutbox(outboxId, scope, outbox) : null;
-          changeSeq = prepared.changeSeq; result = { task }; statusCode = old ? 200 : 201; receiptChildId = childId;
-          commitDomain = () => {
-            prepared.commit(); binding.transaction.set(data.ref('tasks', 'task', task.id), taskEnvelope);
-            binding.transaction.create(revisionRef, revisionEnvelope);
-            if (cancelled && oldOutbox) binding.transaction.set(oldOutbox.ref, cancelled);
-            if (outboxEnvelope) binding.transaction.create(outboxRef, outboxEnvelope);
-          };
+          const childId = domainParse(uuid, match[1].toLowerCase()), oldId = match[2]?.toLowerCase();
+          const prepared = await prepareTask(binding, childId, oldId, submission.payload, submission.operation.opId);
+          changeSeq = prepared.changeSeq; result = { task: prepared.task }; statusCode = oldId ? 200 : 201;
+          receiptChildId = childId; commitDomain = prepared.commit;
         }
         const receipt = receipts.prepareConfirmed(binding, submission, { childId: receiptChildId, changeSeq, statusCode, result });
         commitDomain(); receipt.commit();

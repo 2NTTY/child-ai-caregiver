@@ -791,6 +791,19 @@ STORAGE_BACKEND=firestore 經 server/main.ts → firebase-main.ts／firebase-run
 
 所有私人回應 private, no-store；變更請求核確切 Origin。身份 body 上限 16 KiB，Node 入口整體上限 64 KiB；後續附件依原規格另作有界傳輸，不能沿此限制截斷產品照片。Server 部署以 attached identity/ADC 存取服務，不下載長期 key。
 
-operator CLI firebase:control 只接受 initialize／invite／revoke-invitation 與 stdin JSON，復用正式 authority；不在公開 HTTP 提供管理後門、不輸出電郵或 token，重試沿原 operationId。Identity Platform blocking function 在 F02 部署，必須調同一 invitation authority；SDK 已有接點不能當 blocking function 已啟用。
+operator CLI firebase:control 接受 initialize／invite／revoke-invitation 及 stdin JSON，復用正式 authority；set-enabled 復用既有恢復控制的 expectedGeneration／新 generation／enabled 比較交換，不能沿舊 generation 啟用工作。不在公開 HTTP 提供管理後門、不輸出電郵或 token。Identity Platform blocking function 在 F02 部署，必須調同一 invitation authority；SDK 已有接點不能當 blocking function 已啟用。
 
 F02 的孩子／事項沿既有 GET /api/children、GET /api/children/:childId/tasks（含單項／history）及 /api/online/* 協議。建立／更改仍經 context／原 opId submit，不開無收據的直接寫入旁路；children 回 children 與 nextCursor，client 讀完整分頁才展示，不以首 50 項當全集。cursor 綁本人／workspace／epoch／changeSeq，中途改變回衝突，身份改變不回傳前一身份頁面。尚未組裝的領域維持明確未就緒回應，不返回合成空結果。
+
+<a id="firestore-core-chat"></a>
+### F03 核心資料與聊天接點（本包接線，部署／驗收另記）
+
+`firebase-runtime` 組裝 Firestore 的照護／孩子 profile、記憶、聊天、產品 run／工作／候選／確認、直接操作、模型設定及共用用量。保留原 API 和前端 owner，並非另一套 Firebase UI。`/records` 的人工備援與 `/care` 使用同一照護記錄；`/messages` 是本人私人訊息，不自動寫成照護事實。
+
+- 原 `/api/online/*` 維持 context、原 opId、收據查回及 changes；一般寫入的資料、版本、收據和 change 在同一交易提交。讀頁、搜尋和固定版本續讀沿既有 schema；超出本頁保持 cursor／coverage。
+- `/api/ai/status`、`/api/ai/usage` 沿原 session-only GET 契約；若附 expected identity 仍須相同。模型設定及所有 Agent 操作維持 `x-expected-user-id`，變更另核確切 Origin。個人 key 留 Server 加密設定，不進 prompt／日誌；切換設定令舊 run 的授權失效。
+- `POST .../messages/:messageId/reply` 綁同一使用者原話與持久 run；重送不新開一次模型。`reply/cancel` 更新持久取消；逾時或收尾失敗依原 run、操作收據及候選回報，不能把成功工具再做一次。聊天保存 `agentRunId`，重新登入後仍可讀同一運行結果。
+- `/agent/work`、`/agent/history`、`/agent/pending`、`/agent/runs/:id` 延續原接口。待確認綁提問訊息、操作／參數、資源／授權／政策／工作版本；多個有效候選、資料變更或不明確回覆不自動確認。一次確認和實際業務效果同交易保存。
+- 共同准入為每人一個、全站最多四個運行；lease 到原 90 秒期限再加五秒釋放緩衝。持久日額度、原生 ADK session 及 root budget 跨程序共用；平台／本人付費來源不混用，個人較低限制保留。這不增加每日或單 run 配額。
+
+F04 的文件操作／照片提取／退出及 F06 的背景執行／對外提醒仍按包接入。F03 不向模型宣告尚未接通的文件或聯絡工具，未遷移的直接 API 回未就緒；不能把沒有資料或靜態按鈕當成已遷移。

@@ -611,6 +611,17 @@ Storage 先 reserved，確定 object generation／hash／大小／加密版本�
 
 未完成草稿、審核、維護進度及累計配額跨重啟保留，沿對應本人／孩子／來源清理和備份範圍處理；還原仍先重放獨立刪除記錄，不能恢復被刪私人草稿或重投舊發布／通知。
 
+<a id="firestore-core-chat-data"></a>
+### F03 已接線的核心保存結構
+
+照護原文、結構化內容及修訂共用 `care_records`／`care_revisions`；profile、記憶事實／主題／更正及有 coverage 的摘要分開保存。私人聊天以持久 change 序號排序；原話、模型回覆和 run 關聯均保存，不以記憶體回應代替訊息權威。私人搜尋先按使用者／孩子／epoch 限定，再有界讀取密文並解密比對，不建立公共私人全文索引。
+
+`agent_runs`／原訊息 claim、候選、確認、直接操作收據及工作 operation marker 綁原操作與授權；ADK 的 session／event 只保存單次協定。工作仍寫既有 authority 的 canonical work；`agent_work_index` 只作可重建的分頁投影。模型設定、短期准入 lease、root budget 和實际用量分開保存，恢復／清理不能把每日用量清零或把已消耗呼叫變成可重做。
+
+查詢 metadata 保存不可逆 scope tag、ID、版本、排序及必要狀態，正文以既有 scope AAD 加密；對應索引及私密欄位排除見 `deploy/firebase/firestore.indexes.json`。資料／修訂／收據／change 採先讀完後一次提交的交易；模型與外發永不放入交易回調。
+
+F03 備份盤點已包含新增集合及原生 ADK 的 users／sessions／events 巢狀路徑；不代表全域轉換恢復已通過。各新增資料域的 epoch 轉換、實體抹除及用量恢復由 F04／F07 完成，未知格式必須拒絕還原，不能靜默丟棄。此期間僅以合成資料驗收，不能據此宣稱已可保存真實家庭資料。
+
 <a id="firestore-foundation-authority"></a>
 ## F01 canonical 權威與身份 ledger
 

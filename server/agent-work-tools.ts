@@ -7,6 +7,7 @@ import type { MemoryStore } from "./memory.ts";
 import type { AgentRunContext, AgentTool, AgentToolResult } from "./agent-runtime.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { FamilyError } from "./family-access.ts";
+import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { normalizedFactKey } from "./memory-policy.ts";
 export function createAgentWorkTools(store: ProductAgentStore, memory: MemoryStore, run: AgentRunContext, authorize: () => Promise<boolean>): AgentTool[] {
   const { userId, childId } = run.scope;
@@ -14,7 +15,7 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
     try { const value = await fn(); if (value === null) throw new AgentStopped("unauthorized"); return { status: "succeeded", data: { result: value } }; }
     catch (error) {
       if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
-      if (error instanceof FamilyError) return { status: error.status === 409 ? "conflict" : "rejected", data: { code: error.code } };
+      if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
       throw error;
     }
   };

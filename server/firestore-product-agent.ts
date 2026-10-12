@@ -1,0 +1,67 @@
+import { readFile } from 'node:fs/promises';
+import type { AiConfig } from './ai-config.ts';
+import type { FirestoreDomainOptions } from './firestore-domain-data.ts';
+import type { FirestoreChatStore } from './firestore-chat.ts';
+import type { FirestoreCareStore } from './firestore-care.ts';
+import type { FirestoreMemoryStore } from './firestore-memory.ts';
+import type { FirestoreOnlineStore } from './firestore-online.ts';
+import type { FirestoreKnowledgeStore } from './firestore-knowledge.ts';
+import { createFirestoreProductAgentStore } from './firestore-product-agent-store.ts';
+import { createFirestoreModelRouting, requireDurableUsage } from './firestore-model-routing.ts';
+import { FirestoreSessionService } from './firestore-session-service.ts';
+import { FirestoreRootBudget } from './firestore-root-budget.ts';
+import { createFirestoreAgentAdmission } from './firestore-agent-admission.ts';
+import { createAgentRuntime, type AgentRunResult } from './agent-runtime.ts';
+import { claimedRunAssembly } from './product-agent-services.ts';
+import { createProductAgent } from './product-agent.ts';
+import { createKnowledgeRetriever } from './knowledge-retriever.ts';
+import { AgentStopped } from './agent-budget.ts';
+import { domainReject } from './firestore-domain-data.ts';
+import type { AgentModelProvider } from './agent-model-gateway.ts';
+
+/** Original product Agent, with only its persistence, routing and admission assembly replaced. */
+export async function createFirestoreProductAgent(options: FirestoreDomainOptions & {
+  config: AiConfig; chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore;
+  online: FirestoreOnlineStore; knowledge?: FirestoreKnowledgeStore;
+  /** Trusted constructor seam for a bounded scripted Runner check; never HTTP-selected. */
+  platformProvider?: AgentModelProvider;
+}) {
+  const manifest = JSON.parse(await readFile(new URL('../prompts/manifest.json', import.meta.url), 'utf8')) as { version?: unknown };
+  if (typeof manifest.version !== 'string' || !/^\d+\.\d+\.\d+$/u.test(manifest.version)) throw new Error('Invalid prompt manifest');
+  const promptPackVersion = manifest.version;
+  const routing = createFirestoreModelRouting(options, options.config);
+  const services = createFirestoreProductAgentStore({ ...options, async validateKnowledge(binding, sourceId) {
+    if (!options.knowledge) domainReject('knowledge_not_ready', 503);
+    await options.knowledge.validatePublishedSource(binding.transaction, sourceId);
+  } });
+  const nativeSessionService = new FirestoreSessionService({ ...options, namespace: options.namespace + '_adk' });
+  const rootBudget = new FirestoreRootBudget({ ...options, namespace: options.namespace + '_root_budget' });
+  const admission = createFirestoreAgentAdmission(options);
+  const runtime: ReturnType<typeof createAgentRuntime> = {
+    async run(input): Promise<AgentRunResult> {
+      let instance: ReturnType<typeof createAgentRuntime>, authorize: () => Promise<boolean>;
+      try {
+        const selected = await routing.resolve(input.scope.userId, input.trigger.kind);
+        const provider = selected.billingSource === 'platform' ? options.platformProvider ?? selected.provider : selected.provider;
+        // Selection is immutable within this root. Changing settings invalidates its authorization.
+        const durable = claimedRunAssembly(selected.config, { nativeSessionService, rootBudget, dailyUsage: selected.dailyUsage,
+          provider, profile: { config: selected.config, workflowVersion: 'firestore-product-v1', promptPackVersion,
+            settingsVersion: 'firestore:' + selected.settingsVersion, billingVersion: selected.billingSource + ':v1',
+            billingSource: selected.billingSource, runLimits: selected.runLimits } }, undefined, false, true);
+        instance = createAgentRuntime({ config: selected.config, usage: requireDurableUsage, provider,
+          nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: selected.runLimits,
+          admission, embeddings: selected.embeddings });
+        authorize = async () => await input.authorize() && await selected.authorize();
+      } catch (error) {
+        return { runId: input.runId!, status: 'stopped', stopReason: error instanceof AgentStopped ? error.reason : 'unavailable',
+          text: null, tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } };
+      }
+      return instance.run({ ...input, authorize });
+    },
+  };
+  const knowledge = createKnowledgeRetriever(options.knowledge ?? { async candidates() { domainReject('knowledge_not_ready', 503); } },
+    { async embed() { throw new AgentStopped('unavailable'); } });
+  const agent = createProductAgent({ runtime, store: services.store, actions: services.actions,
+    chat: options.chat, memory: options.memory, tasks: options.online.tasks, knowledge });
+  return { ...services, routing, runtime, agent };
+}

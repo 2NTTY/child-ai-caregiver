@@ -243,7 +243,7 @@ test('fixed offline consumer owns three real ProductAgent roots and adjudicates 
         assert.equal(body.generationConfig.candidateCount, 1); assert.equal(body.generationConfig.maxOutputTokens, 1024);
         assert.ok(body.systemInstruction.parts[0].text); assert.ok(body.tools[0].functionDeclarations.length > 0);
         const { contents, generationConfig, ...remaining } = body;
-        return domain.provider.generate({ model: config.model, contents, config: { ...generationConfig, ...remaining }, toolsDict: context.toolsDict }, context.signal);
+        return domain.provider.generate({ model: config.model, contents, config: { ...generationConfig, ...remaining }, toolsDict: context.toolsDict, liveConnectConfig: {} }, context.signal);
       } },
     execution: {
       inspect: () => ({ documents: domain.actualDocuments, works: [...domain.works.values()], documentWrites: domain.stats().documentWrites,

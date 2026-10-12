@@ -59,6 +59,9 @@ export interface FirestoreAuthorityTransaction {
   readChild(childId: string): Promise<Child | null>;
   prepareChange(operationId: string, kind: OnlineChange['kind'], deleted: boolean, childId?: string): Promise<FirestoreAuthorityPreparedChange>;
   prepareChildCreation(raw: { operationId: string; displayName: string }): Promise<FirestoreAuthorityPreparedChild>;
+  readWork(id: string): Promise<AgentWork | null>;
+  /** Domain caller validates source/resource references before preparing this canonical write. */
+  prepareWork(raw: z.infer<typeof saveAgentWorkSchema>): Promise<FirestoreAuthorityPreparedChange & { value: AgentWork }>;
 }
 export type FirestoreAuthorityAccountStatus = Omit<AccountServiceStatus, 'mailConfigured'>;
 export interface FirestoreAuthorityOptions {
@@ -270,6 +273,28 @@ export class FirestoreAuthority {
             const child = await this.prepareChild(tx, workspace, userId, childCandidateId, raw); assertActive();
             return Object.freeze({ result: child.result, changeSeq: child.changeSeq, commit: guardCommit(child.commit) });
           },
+          readWork: async (id: string) => {
+            assertActive(); parse(uuid, id); if (childId === null) fail('transaction_child_scope');
+            if (!(await tx.get(this.ref('work', id))).exists) return null;
+            const old = await this.work(tx, scope, id, workspace.accessVersion); assertActive();
+            return { ...old.values, id, childId, version: old.work.version,
+              createdAt: old.detail.createdAt, updatedAt: old.detail.updatedAt };
+          },
+          prepareWork: async (raw: z.infer<typeof saveAgentWorkSchema>) => {
+            assertActive(); if (childId === null) fail('transaction_child_scope');
+            const input = parse(saveAgentWorkSchema, raw), id = input.workId ?? randomUUID();
+            const old = await binding.readWork(id);
+            if (input.workId && !old) fail('not_found', 404);
+            if ((old?.version ?? 0) !== input.expectedVersion) fail('version_conflict');
+            if (old?.status === 'cancelled' && input.values.status !== 'cancelled') fail('work_cancelled');
+            const at = new Date(this.now()).toISOString(), value = parse(agentWorkSchema, { ...input.values, id, childId,
+              version: (old?.version ?? 0) + 1, createdAt: old?.createdAt ?? at, updatedAt: at });
+            if (!schemas.work.shape.version.safeParse(value.version).success) fail('version_exhausted');
+            const change = await binding.prepareChange(input.operationId, 'memory', value.status === 'cancelled');
+            return { value, changeSeq: change.changeSeq, commit: () => {
+              this.writeWork(tx, scope, workspace, value); change.commit();
+            } };
+          },
         });
         return await operation(binding);
       } finally { active = false; }
@@ -285,6 +310,10 @@ export class FirestoreAuthority {
       }
       this.write(tx, 'control', 'current', scope, input, true); return input;
     });
+  }
+  /** Operator-only lifecycle control. Never exposed through a public handler or Agent tool. */
+  async readControl(): Promise<{ generation: string; enabled: boolean }> {
+    return this.options.database.runTransaction(tx => this.control(tx, false), { readOnly: true });
   }
   async issueInvitation(raw: { email: string; expiresAt: string; operationId: string }): Promise<Invitation> {
     const input = parse(z.object({ email: z.email().max(320), expiresAt: datetime, operationId: uuid }).strict(), { ...raw, email: email(raw.email) });
@@ -502,8 +531,9 @@ export class FirestoreAuthority {
     this.write(tx, 'work', id, scope, { ...scope, id, version, status: values.status, payloadEncrypted });
     this.write(tx, 'authority-work-detail', id, scope, { id, version, createdAt, updatedAt });
     this.write(tx, 'followup', id, scope, { ...scope, authorizationVersion: workspace.accessVersion, workId: id, workVersion: version,
-      enabled: ['active', 'waiting'].includes(values.status) && Boolean(values.followUp?.dueAt),
-      dueAt: values.followUp?.dueAt ?? oldDueAt ?? updatedAt, dueConsumed: false, watchResources: false, knowledgeSourceIds: [] });
+      enabled: ['active', 'waiting'].includes(values.status) && Boolean(values.followUp),
+      dueAt: values.followUp?.dueAt ?? oldDueAt ?? updatedAt, dueConsumed: !values.followUp?.dueAt,
+      watchResources: values.followUp?.watchResources ?? false, knowledgeSourceIds: values.followUp?.knowledgeSourceIds ?? [] });
   }
   async saveWork(raw: { scope: FirestoreAuthorityScope; operationId: string; workId?: string | null; expectedVersion: number; values: AgentWorkValues }): Promise<AgentWork> {
     const scopeInput = parse(authorityScopeSchema, raw.scope);

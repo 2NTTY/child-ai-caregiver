@@ -631,7 +631,9 @@ Agent 工具、準備單、成長頁及歷史共用 FamilyDocumentStore；前端
 <a id="firestore-target"></a>
 ## 原網站的 Firestore、Firebase Auth 與工作接點
 
-本節保留待完成的遷移契約；F01 已合併、F02 原成果未合併，不能把目標當全量接通。沿用 Node、ADK／ModelGateway、領域服務、加密及前端 owner，只改必要資料／身份／工作接點。工作包及切換順序見 [PLAN](../PLAN.md#p2-firestore-migration)，資料與 HTTP 語義見 [DATA_MODEL](DATA_MODEL.md#firestore-target)／[API](API.md#firestore-target)。
+本節保留待完成的遷移契約；F01／F02 已合併，F03 核心資料與聊天接線中，不能把目標當全量接通。沿用 Node、ADK／ModelGateway、領域服務、加密及前端 owner，只改必要資料／身份／工作接點。工作包及切換順序見 [PLAN](../PLAN.md#p2-firestore-migration)，資料與 HTTP 語義見 [DATA_MODEL](DATA_MODEL.md#firestore-target)／[API](API.md#firestore-target)。
+
+依 [ADR-025](DECISIONS.md#adr-025)，先完成全部正式 SQL 依賴替換與 GCP Firestore 資料接點，再驗收受邀用戶及切換原站。可從乾淨資料開始，無須保存或搬遷舊 SQL 測試資料；不以此取消新資料的隔離、收據、刪除及恢復。API／前端契約持續兼容，不要求每個資料域獨立部署或增加一套產品網站。
 
 ### 元件、交易與查詢
 

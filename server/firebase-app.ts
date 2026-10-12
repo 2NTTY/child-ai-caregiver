@@ -10,6 +10,17 @@ import { handleFamilyDocumentRequest } from "./family-document-api.ts";
 import type { FamilyDocumentStore } from "./family-document-store.ts";
 import { handleFirebasePhotoRequest, type FirebasePhotoApiPort } from "./firebase-photo-api.ts";
 import { handlePersonalLibraryRequest, type PersonalLibrary } from "./personal-library-api.ts";
+import { handleChatRequest } from "./chat-api.ts";
+import type { ChatStore } from "./chat.ts";
+import type { FirestoreCareStore } from './firestore-care.ts';
+import { handleCareRequest } from "./care-api.ts";
+import { FamilyError } from "./family-access.ts";
+import { handleMemoryRequest } from "./memory-api.ts";
+import type { MemoryStore } from "./memory.ts";
+import type { createFirestoreProductAgent } from './firestore-product-agent.ts';
+import { handleProductAgentRequest } from './product-agent-api.ts';
+import { handleAgentActionsRequest } from './agent-actions-api.ts';
+import { handleModelSettingsRequest } from './model-settings-api.ts';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const authorityErrors = new Map<string, number>([
@@ -34,6 +45,10 @@ export interface FirebaseRequestHandlerOptions {
   documents?: FamilyDocumentStore;
   photos?: FirebasePhotoApiPort;
   library?: Pick<PersonalLibrary, "page">;
+  chat?: ChatStore;
+  care?: FirestoreCareStore;
+  memory?: MemoryStore;
+  product?: Awaited<ReturnType<typeof createFirestoreProductAgent>>;
 }
 export type FirebaseRequestHandler = (request: Request) => Promise<Response>;
 
@@ -171,11 +186,64 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }
+      if (options.product && (path.startsWith('/api/ai/') || /^\/api\/children\/[^/]+\/(?:agent(?:\/|$)|messages\/[^/]+\/reply(?:\/|$))/u.test(path))) {
+        if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        const expectedUserId = request.headers.get('x-expected-user-id');
+        const sessionRead = request.method === 'GET' && (path === '/api/ai/status' || path === '/api/ai/usage');
+        if (expectedUserId !== userId && !(sessionRead && expectedUserId === null)) throw new RequestError('identity_changed', 409);
+        const isCurrentUser = async (id: string) => (await auth.getSession({ headers: request.headers }))?.user.id === id;
+        let checkedRequest = request;
+        if (request.method === 'POST') checkedRequest = new Request(request.url, { method: 'POST', headers: request.headers,
+          body: JSON.stringify(await readJson(request)), signal: request.signal });
+        let response: Response;
+        if (path === '/api/ai/status' && request.method === 'GET') response = json({ available: await options.product.routing.available(userId) });
+        else if (path === '/api/ai/usage' && request.method === 'GET') response = json(await options.product.routing.currentUsage(userId));
+        else if (path.startsWith('/api/ai/settings')) response = await handleModelSettingsRequest(checkedRequest, userId, options.product.routing);
+        else if (/\/agent\/(?:policy|notes|actions)(?:\/|$)/u.test(path))
+          response = await handleAgentActionsRequest(checkedRequest, userId, options.product.actions, isCurrentUser);
+        else {
+          if (!options.chat) throw new RequestError('firebase_domain_not_ready', 503);
+          response = await handleProductAgentRequest(checkedRequest, userId, { ...options.product, chat: options.chat, isCurrentUser });
+        }
+        if (!await isCurrentUser(userId)) throw new RequestError('identity_changed', 409);
+        return uncached(response);
+      }
+      if (options.memory && /^\/api\/children\/[^/]+\/memory\//u.test(path)) {
+        if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError("unauthorized", 401);
+        const response = await handleMemoryRequest(request, userId, options.memory);
+        if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
+        return uncached(response);
+      }
+      if (options.care && /^\/api\/children\/[^/]+\/(?:records|profile|care)(?:\/|$)/u.test(path)) {
+        const readOnly = request.method === "GET" || request.method === "POST" && path.endsWith("/care/search");
+        if (!readOnly) throw new RequestError("account_precondition_required", 428);
+        if (request.method === "POST" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError("unauthorized", 401);
+        const records = /^\/api\/children\/([0-9a-f-]{36})\/records$/iu.exec(path);
+        const response = records ? json(await options.care.listRecords(userId, records[1].toLowerCase()))
+          : await handleCareRequest(request, userId, options.care);
+        if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
+        return uncached(response);
+      }
+      if (options.chat && /^\/api\/children\/[^/]+\/messages$/u.test(path)) {
+        if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError("unauthorized", 401);
+        const response = await handleChatRequest(request, userId, options.chat);
+        if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
+        return uncached(response);
+      }
       return path === "/api" || path.startsWith("/api/")
         ? errorResponse("firebase_domain_not_ready", 503) : errorResponse("not_found", 404);
     } catch (error) {
       if (error instanceof RequestError) return errorResponse(error.code, error.status);
       if (error instanceof FirestoreDomainError) return errorResponse(error.code, error.status);
+      if (error instanceof FamilyError) return errorResponse(error.code, error.status);
       if (error instanceof FirestoreAuthorityError && authorityErrors.get(error.code) === error.status) return errorResponse(error.code, error.status);
       if (error instanceof FirebaseAuthError && authenticationErrors.get(error.code) === error.status) return errorResponse(error.code, error.status);
       if (error instanceof DeviceSessionError && error.code === "session_invalid" && error.status === 401) return errorResponse("unauthorized", 401);

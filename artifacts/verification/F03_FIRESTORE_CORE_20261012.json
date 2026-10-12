@@ -1,0 +1,69 @@
+{
+  "format": 1,
+  "package": "P2-F03",
+  "date": "2026-10-12",
+  "baseCommit": "0eae95e5fa7d61800953310cbcdb813ce095eb5a",
+  "state": "data-adapter-acceptance-passed-not-deployed",
+  "executor": "primary-model-only",
+  "scope": "Firestore core persistence and original API/tool contracts; user-facing acceptance deferred by ADR-025",
+  "checks": [
+    {
+      "kind": "local-scripted",
+      "state": "passed",
+      "files": ["tests/firestore-core.test.ts", "tests/firestore-agent-admission.test.ts", "tests/firestore-agent-ledger.test.ts"],
+      "distinctCases": 3,
+      "covers": ["encrypted core data, source revisions and summaries", "shared admission", "bound confirmation and one task effect after lost acknowledgement", "private instructions and persistent work", "native ADK Runner with scripted provider and shared usage"],
+      "limitation": "In-memory Firestore fixture and scripted model are not native service or real model acceptance. The ledger case initially stopped because the test provider omitted FinishReason.STOP; fixture corrected and the same case passed."
+    },
+    {
+      "kind": "targeted-types-and-syntax",
+      "state": "passed",
+      "scope": "Selected runtime, routing, API and source files plus the five inherited F01 type gaps; script syntax and git diff --check",
+      "limitation": "No whole-repository typecheck, lint, build or full suite."
+    },
+    {
+      "kind": "native-indexes",
+      "state": "ready",
+      "database": "yuban-firebase-20261011",
+      "region": "asia-east2",
+      "addedCompositeIndexes": 29,
+      "totalCompositeIndexes": 46,
+      "missingOrBuilding": 0,
+      "privateFieldExemptions": "applied",
+      "failuresPreserved": "Initial read used an unsupported pageSize, corrected without data/model calls. First apply created indexes then stopped on the local wildcard-exemption guard; guard corrected, remaining field exclusions applied. No indexes deleted."
+    },
+    {
+      "kind": "stopped-native-interactive-check",
+      "run": "93048dd0-2df1-40a9-bc54-2ee51c88912a",
+      "state": "failed",
+      "script": "scripts/verify-firestore-chat.mjs",
+      "apiRequests": 3,
+      "modelCalls": 0,
+      "queryEmbeddings": 0,
+      "cause": "Test request omitted required accepted:true from the unchanged account acknowledgement schema; production client already supplies it.",
+      "resolution": "Script corrected, original interactive batch not retried; model and invited-user acceptance deferred.",
+      "controlRestoredPaused": true
+    },
+    {
+      "kind": "native-data-only",
+      "run": "f50c9e13-0328-427a-b938-33a4a4af1c6d",
+      "state": "passed",
+      "script": "scripts/verify-firestore-core.mjs",
+      "businessCalls": 29,
+      "maximumBusinessCalls": 40,
+      "steps": ["native_original_receipt_care_revision_conflict_and_account_isolation", "reconnected_original_text_versions_work_and_cancelled_run"],
+      "newSyntheticAuthorityIdentities": 1,
+      "newSyntheticChildren": 1,
+      "modelCalls": 0,
+      "embeddings": 0,
+      "notifications": 0,
+      "deployments": 0,
+      "controlRestoredPaused": true,
+      "cleanup": "Both product authorities revoked. Synthetic child, original Auth fixture and encrypted history retained for F04 erasure; not a physical deletion claim.",
+      "limitation": "Direct production adapters with synthetic authority identities; no browser, Auth screen, real Agent answer or whole-project acceptance."
+    }
+  ],
+  "review": "Primary model reviewed transaction read-before-write, scope binding, original receipts, confirmation/version linkage, shared quota/cancellation, encryption and explicit unavailable domains. No subagents used.",
+  "deferred": ["F04 document/attachment/data-exit and full restore codecs", "F05 complete knowledge pipeline", "F06 all background/notification consumers", "F07 runtime SQL removal and remaining restoration coverage", "F08 invited-user and real Agent outcomes on original website"],
+  "cost": "Data-only check approved below USD 0.01; estimate, not a measured bill. No paid model calls. Existing storage/index resources may incur charges."
+}

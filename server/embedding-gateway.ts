@@ -59,7 +59,7 @@ export function createEmbeddingUsage(pool: Pool, source: ModelBillingSource = "p
     },
   };
 }
-export function createEmbeddingGateway(options: { config: AiConfig; provider?: EmbeddingProvider; usage: EmbeddingUsage }) {
+export function createEmbeddingGateway(options: { config: AiConfig; provider?: EmbeddingProvider; usage: EmbeddingUsage; billingSource?: ModelBillingSource }) {
   return {
     async embed(input: EmbeddingInput, actor: EmbeddingActor, signal: AbortSignal, authorize: () => Promise<boolean>, durable?: DurableQueryEmbeddingUsage): Promise<number[]> {
       const { provider, usage } = options;
@@ -75,7 +75,7 @@ export function createEmbeddingGateway(options: { config: AiConfig; provider?: E
       };
       if (daily) {
         input = Object.freeze({ ...input }); actor = Object.freeze({ ...actor });
-        if (daily.adapter.billingSource !== 'platform' || actor.kind !== 'query_embedding' || input.task !== 'RETRIEVAL_QUERY'
+        if (daily.adapter.billingSource !== (options.billingSource ?? 'platform') || actor.kind !== 'query_embedding' || input.task !== 'RETRIEVAL_QUERY'
           || actor.actorId !== daily.context.binding.ownerId || actor.operationId !== daily.context.binding.rootRunId
           || !daily.attemptKey.startsWith('embedding:')) throw new AgentStopped('unavailable');
       }
