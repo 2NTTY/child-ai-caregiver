@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { Firestore, DocumentSnapshot } from "@google-cloud/firestore";
+import { FieldPath, type Firestore, type DocumentSnapshot } from "@google-cloud/firestore";
 import type { StorageCipher } from "./storage-crypto.ts";
 
 const FORMAT = "yuban-firebase-device-session";
@@ -192,5 +192,29 @@ export class FirestoreDeviceSessions implements DeviceSessionsPort {
       transaction.set(paths.control, this.#seal("sessionControl", key, next));
       transaction.set(paths.session, this.#seal("deviceSession", key, { ...session, generation: next.generation }));
     }));
+  }
+  /** Trusted account cleanup after canonical admission is blocked; no session content leaves this port. */
+  async eraseUserPage(userId: string, cursor: string | null): Promise<{ cursor: string | null; complete: boolean }> {
+    if (!validUserId(userId) || cursor !== null && !/^auth-(?:control|session)-[a-f0-9]{64}$/u.test(cursor))
+      throw new DeviceSessionError(400, 'invalid_session_identity');
+    let query = this.#database.collection(this.#namespace).orderBy(FieldPath.documentId()).limit(25);
+    if (cursor) query = query.startAfter(cursor);
+    const page = await query.get();
+    for (const row of page.docs) {
+      const kind = row.id.startsWith('auth-control-') ? 'sessionControl' : row.id.startsWith('auth-session-') ? 'deviceSession' : null;
+      if (!kind) throw new DeviceSessionError(503, 'device_sessions_unavailable');
+      if (kind === 'sessionControl' && row.id !== 'auth-control-' + digest(userId)) continue;
+      const key = { userId, sessionHash: kind === 'deviceSession' ? row.id.slice('auth-session-'.length) : '0'.repeat(64) };
+      // Legacy records have no queryable user ID. An authenticated owner-bound envelope is required for deletion.
+      try { this.#open(row, kind, key); } catch {
+        if (kind === 'sessionControl') throw new DeviceSessionError(503, 'device_sessions_unavailable');
+        continue;
+      }
+      await this.#database.runTransaction(async tx => {
+        const current = await tx.get(row.ref); if (!current.exists) return;
+        this.#open(current, kind, key); tx.delete(current.ref);
+      });
+    }
+    return { cursor: page.size < 25 ? null : page.docs.at(-1)!.id, complete: page.size < 25 };
   }
 }

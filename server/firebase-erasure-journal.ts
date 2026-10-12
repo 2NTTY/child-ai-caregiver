@@ -12,7 +12,7 @@ const hash = z.string().regex(/^[a-f0-9]{64}$/u);
 const generation = z.string().regex(/^[1-9][0-9]{0,19}$/u).refine(value => BigInt(value) <= 18446744073709551615n);
 export const firebaseErasureIntentSchema = z.object({
   scope: workRecoveryScopeSchema, assetId: z.uuid(), operationId: z.uuid(),
-  at: z.iso.datetime({ offset: true }), type: z.literal("photo-delete"),
+  at: z.iso.datetime({ offset: true }), type: z.enum(["photo-delete", "child-delete", "account-delete"]),
 }).strict();
 export type FirebaseErasureIntent = z.infer<typeof firebaseErasureIntentSchema>;
 export const firebaseErasureDescriptorSchema = z.object({

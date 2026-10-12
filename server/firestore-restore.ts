@@ -136,6 +136,8 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   }
   requireValue(input.erasures.length<=2000,'restore_limit');
   const journal=input.erasures.map(value=>firebaseErasureIntentSchema.parse(value));
+  // F07 must apply the new account/child barriers before reopening any restored data.
+  requireValue(journal.every(intent=>intent.type==='photo-delete'),'restore_scope_erasure_adapter_required');
   unique(journal,value=>canonical([value.scope.ownerUserId,value.operationId]));
   const intentByAsset=new Map<string,FirebaseErasureIntent>();
   for(const intent of journal){const prior=intentByAsset.get(intent.assetId);if(prior&&canonical(prior.scope)!==canonical(intent.scope))reject('restore_erasure_binding');intentByAsset.set(intent.assetId,intent);}

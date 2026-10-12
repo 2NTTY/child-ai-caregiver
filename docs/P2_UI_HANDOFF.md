@@ -17,6 +17,8 @@ INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴
 
 P2 增補沿用下列正式 owner／服務；A02 持久工作／確認已接 Server，A03 文件 patch／續讀依[局部修改契約](API.md#document-editing) 接線，A07 的單人帳號／歷史接點沿 [帳戶服務](API.md#p2-a08-service) 與 [參考目錄](API.md#p2-a07-library) 契約，不以現有相似 API 冒充完成。版面保持，家長從聊天操作，其他頁面投影同一資源；前端各自不得保存可獨立修改的副本。
 
+Firestore 文件／照片／匯出使用相同正式 controller、共用 owner 及原 API，差異集中於[資料接點](API.md#firestore-files)。`ProductionOwner` 在 Firebase 模式把身份 adapter 的本人再驗證接到 `AccountServiceOwner`；帳戶 processing 顯示清理中、查原 receipt，不能當完成。文件的來源失效／報告 building／版本衝突、照片提取候選和原操作未知沿現有呈現；不為後端遷移重做頁面。背景自動清理及完整還原未完成時，不把這些接點當成受邀用戶上線證據。
+
 <a id="production-owners"></a>
 ## 新前端正式資料接點
 
@@ -27,7 +29,7 @@ P2 增補沿用下列正式 owner／服務；A02 持久工作／確認已接 Ser
 | 使用者功能／頁面 | 同一權威來源及前端 owner |
 |---|---|
 | 登入、本人資料同意、孩子切換與刪除 | `ProductionOwner`／RecordsController＋`AccountServiceOwner`；Server session、account admission、children。未驗證／未同意時保留身份但不開放業務 scope；不要求建立家庭 |
-| 驗證／找回、撤銷其他會話、資料下載及帳戶退出 | 同一 AccountServiceOwner → Better Auth 原生入口與 Account API；callback token、password、刪除 receipt 不進 Agent／日誌／網址持久副本。下載按 manifest／scope 分批，不以一頁冒充完整資料 |
+| 驗證／找回、撤銷其他會話、資料下載及帳戶退出 | 同一 AccountServiceOwner → 目前配置的身份 adapter 與 Account API；Firestore 使用 Firebase Auth。callback token、password、刪除 receipt 不進 Agent／日誌／網址持久副本。下載按 manifest／scope 分批，不以一頁冒充完整資料 |
 | 對話、歷史、來源、工具結果、持久待確認及取消 | ChatController／AgentConversationOwner／AgentAuthorizationOwner；messages、agent runs／pending／operation receipts |
 | 記錄、搜尋、更正、歷史及孩子檔案；首頁照護資料 | `CareProfileDomains`；同一 Care API／profile 版本。首頁只組合已載入資料，不另外保存 |
 | 任務、預約、改期、完成、取消、成員指派及歷史 | `TaskKnowledgeDomains`；Task API 的 task／occurrence／版本，側欄讀相同 owner |

@@ -18,7 +18,7 @@ export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions
   '_conversation_summary_heads', '_conversation_summaries', '_agent_runs', '_agent_claims', '_agent_proposals',
   '_agent_confirmations', '_agent_confirmation_slots', '_agent_confirmation_responses', '_agent_work_index', '_agent_work_operations',
   '_agent_work_calls', '_agent_policies', '_agent_policy_revisions', '_private_instructions', '_agent_action_receipts', '_agent_action_calls',
-  '_agent_manual_operations', '_model_settings', '_model_key_checks', '_agent_admission', '_adk', '_root_budget', '_ai_usage']);
+  '_agent_manual_operations', '_agent_document_links', '_concerns', '_concern_events', '_erasures', '_erasure_receipts', '_model_settings', '_model_key_checks', '_agent_admission', '_adk', '_root_budget', '_ai_usage']);
 export interface FirebaseBackupOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
 export interface FirebaseBackupDocument { path: string; data: DocumentData }
 export interface FirebaseBackupInventory {

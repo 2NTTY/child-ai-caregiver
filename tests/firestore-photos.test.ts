@@ -8,6 +8,8 @@ import { FirestoreDomainData, FirestoreDomainError } from "../server/firestore-d
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { photoHash } from "../server/photo-files.ts";
 import { PHOTO_LIMITS, type PhotoMetadata } from "../src/shared/photos.ts";
+import { emptyCareDetails } from '../src/shared/care.ts';
+import { createFirestoreCareStore } from '../server/firestore-care.ts';
 import { SERVICE_POLICY_VERSION } from "../src/shared/account-service.ts";
 import { serialFirestoreFixture } from "./helpers/firestore-session-memory.ts";
 import { firebaseErasureIntentHash, type FirebaseErasureIntent, type FirebaseErasureJournal } from "../server/firebase-erasure-journal.ts";
@@ -118,6 +120,31 @@ function fixture() {
     afterWrite:(hook?:()=>Promise<void>)=>{afterWrite=hook;},afterRead:(hook?:()=>Promise<void>)=>{afterRead=hook;},
     loseNextReply:()=>{loseReply=true;},discardNext:()=>{discard=true;} };
 }
+
+test('F04 photo candidate confirmation writes one canonical record and deletion invalidates that record', async () => {
+  const f = fixture(), created = await f.prepare(), childId = created.child.id, path = '/api/children/' + childId + '/photos';
+  const reserved = await f.online.submit(OWNER, await f.command(childId, META));
+  let photo = (reserved.result as any).photo;
+  photo = await f.store.upload(OWNER, childId, photo.id, BASE64);
+  const claim = await f.store.claimExtraction(OWNER, childId, photo.id, photo.version);
+  assert.equal(claim.created, true); assert.ok(claim.scope);
+  assert.equal(await f.store.extractionAuthorized(OWNER, childId, photo.id, claim.photo.extraction.runId!), true);
+  photo = await f.store.finishExtraction(OWNER, childId, photo.id, claim.photo.extraction.runId!,
+    { text: '合成觀察', kind: 'note', rawValue: null, unit: null, approximate: false, timeRaw: '', uncertainties: [] }, null, 'scripted-no-model');
+  assert.equal(photo.extraction.state, 'available'); assert.equal(photo.recordId, null);
+  const confirmPath = path + '/' + photo.id + '/confirm';
+  const payload = { expectedVersion: photo.version, confirmShared: true,
+    values: { text: '家長已核對的合成觀察', details: emptyCareDetails(), source: '照片' } };
+  const original: OnlineSubmission = { path: confirmPath, payload, operation: {
+    ...await f.online.context(OWNER, { path: confirmPath, payload }), opId: randomUUID(), deviceId: randomUUID() } };
+  const result = (await f.online.submit(OWNER, original)).result as any;
+  assert.deepEqual((await f.online.submit(OWNER, original)).result, result);
+  assert.equal(result.photo.visibility, 'shared'); assert.equal(result.photo.recordId, result.recordId);
+  const care = createFirestoreCareStore(f.options), record = await care.get(OWNER, childId, result.recordId);
+  assert.equal(record?.text, '家長已核對的合成觀察'); assert.ok(record?.source.includes(META.sha256));
+  await f.online.submit(OWNER, await f.command(childId, { expectedVersion: result.photo.version, confirmDelete: true }, randomUUID(), photo.id));
+  assert.equal(await care.get(OWNER, childId, result.recordId), null); assert.equal(f.intents.length, 1);
+});
 
 test("reserve is owner-scoped, idempotent through a discarded callback, and does not disclose a reused operation in another child", async () => {
   const f = fixture(), child = await f.prepare(), op = randomUUID(); f.discardNext();
@@ -295,7 +322,7 @@ test("receipt encryption failure cannot commit reservation, deletion fence or fi
   f.failReceiptSeal(false);assert.equal((await f.online.submit(OWNER,deletion)).statusCode,200);
 });
 
-test("a direct historical photo mutation cannot invent an online receipt and unsupported photo commands stay unconnected", async () => {
+test("a direct historical photo mutation cannot invent an online receipt and confirmation requires its full schema", async () => {
   const f=fixture(),child=await f.prepare(),opId=randomUUID(),photo=await f.store.reserve(OWNER,child.child.id,opId,META);
   await assert.rejects(f.store.submitOnline(OWNER,await f.command(child.child.id,META,opId)),rejects("operation_conflict",409));
   assert.deepEqual(await f.online.lookup(OWNER,opId),{state:"unconfirmed"});
@@ -303,8 +330,8 @@ test("a direct historical photo mutation cannot invent an online receipt and uns
   await assert.rejects(f.store.submitOnline(OWNER,await f.command(child.child.id,{expectedVersion:photo.version,confirmDelete:true},deleteOp,photo.id)),rejects("operation_conflict",409));
   assert.deepEqual(await f.online.lookup(OWNER,deleteOp),{state:"unconfirmed"});
   const input=await f.command(child.child.id);
-  await assert.rejects(f.store.submitOnline(OWNER,{...input,path:input.path+"/"+photo.id+"/confirm"}),rejects("firebase_domain_not_ready",503));
-  await assert.rejects(f.online.submit(OWNER,{...input,path:input.path+"/"+photo.id+"/confirm"}),rejects("domain_not_ready",503));
+  await assert.rejects(f.store.submitOnline(OWNER,{...input,path:input.path+"/"+photo.id+"/confirm"}),rejects("invalid_input",400));
+  await assert.rejects(f.online.submit(OWNER,{...input,path:input.path+"/"+photo.id+"/confirm"}),rejects("invalid_input",400));
 });
 test("durable physical cleanup frees quota once and cannot target another deletion", async () => {
   const f=fixture(), child=await f.prepare(), reserved=await f.store.reserve(OWNER,child.child.id,randomUUID(),META);

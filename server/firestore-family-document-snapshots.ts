@@ -8,14 +8,16 @@ import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.t
 
 const version = z.number().int().positive().max(2147483647), uuid = z.uuid(), text = z.string().max(240000);
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u);
+export const firestoreDocumentSourceSchema = z.object({ id: z.string().min(1).max(160), resourceId: uuid,
+  kind: z.enum(['profile', 'record', 'fact', 'task', 'concern']), version: z.number().int().nonnegative().max(2147483647),
+  label: text, text, at: z.iso.datetime({ offset: true }).nullable() }).strict();
 export const firestoreDocumentSnapshotSchema: z.ZodType<DocumentSnapshot> = z.object({ id: uuid, version, generatedAt: z.iso.datetime({ offset: true }),
   sourceBasis: z.string().regex(/^[a-f0-9]{64}$/u), title: text, summary: text, ageLabel: text, period: documentPeriodSchema,
   eventDate: day.nullable(), coverageNote: text,
   sections: z.array(z.object({ id: z.string().min(1).max(80), title: text, kind: z.enum(['notes', 'questions', 'checklist']),
     domain: z.enum(['profile', 'body_life', 'abilities_interests', 'concerns', 'changes_support']).nullable(),
     items: z.array(z.object({ id: z.string().min(1).max(100), text, sourceIds: z.array(z.string().min(1).max(160)).max(140), checked: z.boolean().optional() }).strict()).max(500) }).strict()).max(50),
-  sources: z.array(z.object({ id: z.string().min(1).max(160), resourceId: uuid, kind: z.enum(['profile', 'record', 'fact', 'task', 'concern']),
-    version: z.number().int().nonnegative().max(2147483647), label: text, text, at: z.iso.datetime({ offset: true }).nullable() }).strict()),
+  sources: z.array(firestoreDocumentSourceSchema),
   changes: z.array(text).max(30), reportCoverage: reportCoverageSchema.optional(), editProtection: z.object({
     sectionIds: z.array(z.string()).max(50), removedSectionIds: z.array(z.string()),
     metadataFields: z.array(z.enum(['title', 'summary', 'eventDate'])).max(3) }).strict().optional() }).strict();

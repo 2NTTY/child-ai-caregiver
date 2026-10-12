@@ -1,0 +1,87 @@
+{
+  "package": "P2-F04",
+  "recordedDate": "2026-10-13",
+  "timezone": "Asia/Hong_Kong",
+  "baseCommit": "161aed90540fce53cb6f970477960e5476988fff",
+  "status": "data-adapters-verified-not-deployed",
+  "scope": "Firestore documents, photo extraction/confirmation ports, personal export and journal-backed erasure; existing frontend/Agent contracts retained. No deployment.",
+  "checks": [
+    {
+      "kind": "focused-local",
+      "state": "passed",
+      "scenarios": [
+        "tests/firestore-documents-core.test.ts: original Agent document operation, explicit patch confirmation, shared sources and report invalidation",
+        "tests/firestore-photos.test.ts: only the F04 extraction/confirmation/deletion scenario",
+        "tests/firestore-erasure-export.test.ts: existing account client -> Firebase HTTP handler -> fixture store, original journal recovery, scoped export, processing receipt and erasure barrier"
+      ],
+      "limits": "In-memory Firestore and injected Auth/object ports; no real browser, provider reauthentication, model or live account deletion. No full suite.",
+      "failuresPreserved": [
+        "Photo fixture initially passed the other synthetic child's ID; fixed fixture.",
+        "Erasure scenario exposed a missing owner-wide child-creation receipt barrier; implementation fixed before passing.",
+        "Account client/HTTP scenario initially omitted the injected Auth handler; fixture fixed."
+      ]
+    },
+    {
+      "kind": "selected-types-syntax-diff",
+      "state": "passed",
+      "limits": "Only affected source files and script syntax; no repository-wide lint, typecheck or build. Concern report continuation also reviewed against the prior deferred-header SQL fix; F06 concern writer acceptance remains outstanding."
+    },
+    {
+      "kind": "native-indexes",
+      "state": "ready",
+      "database": "yuban-firebase-20261011",
+      "region": "asia-east2",
+      "addedCompositeIndexes": 27,
+      "totalCompositeIndexes": 73,
+      "missingOrBuilding": 0,
+      "privateFieldExemptions": "applied; no index deletions"
+    },
+    {
+      "kind": "stopped-native-data-check",
+      "run": "9f3b3992-51ae-49ae-aabf-d28b1b5793e9",
+      "state": "failed",
+      "businessCalls": 17,
+      "cause": "Verification script omitted confirmShared:true required by the unchanged document change schema. The patch was rejected before any write; document remains version 1. Existing Agent confirmation/tool paths supply the field.",
+      "controlRestoredPaused": true,
+      "models": 0,
+      "embeddings": 0,
+      "notifications": 0,
+      "deployments": 0
+    },
+    {
+      "kind": "native-remaining-data-check",
+      "state": "passed",
+      "script": "scripts/verify-firestore-files.mjs --approved-resume",
+      "maximumBusinessCalls": 110,
+      "fixtures": "Same two synthetic product identities (no Auth users), same child and document from stopped run, one tiny synthetic PNG.",
+      "models": 0,
+      "embeddings": 0,
+      "notifications": 0,
+      "deployments": 0,
+      "run": "7c65731c-e8c8-4ee6-9dc5-4f064b9f2b68",
+      "businessCalls": 87,
+      "controlRestoredPaused": true,
+      "steps": [
+        "document_canonical_source_patch_original_operation_conflict_isolation_and_export_snapshot",
+        "reconnected_document_and_private_storage_export",
+        "independent_journal_physical_attachment_cleanup_and_erased_operation_barrier"
+      ],
+      "cleanup": "Only this synthetic child and photo physically cleaned; identities revoked; independent journal and minimal barriers retained. Previous data unchanged.",
+      "limits": "Direct native adapters, not deployed UI. The resumed scene did not replay the lost original child-create command; that erasure-barrier assertion is supplied by the focused local scene, despite the retained native step label."
+    },
+    {
+      "kind": "one-readonly-progress-diagnostic",
+      "state": "failed-no-mutation",
+      "requests": 1,
+      "cause": "Optional progress query used unindexed erasures.userTag. No index was added and diagnostic was not retried. It did not change or restart the running approved acceptance."
+    }
+  ],
+  "review": "Primary model reviewed shared authority, read-before-write transactions, original operations, source/version invalidation, scope checks and private object generation cleanup. No subagents. Frontend account deletion now reauthenticates via Firebase and treats processing as incomplete; document/photo controllers and API contracts are reused.",
+  "deferred": [
+    "F05 private-source and F06 concern/notification export sections must be registered as their stores are migrated.",
+    "F06 dispatches durable erasure cleanup and report refresh; current runtime exposes the trusted ports only.",
+    "F07 extends all restore codecs and child/account journal replay; current restorer explicitly rejects those new journal types rather than reviving erased data. A successful full restore is not claimed.",
+    "F08 provider reauthentication, invited-user/real Agent outcomes, browser workflow and original-site deployment."
+  ],
+  "cost": "Two approved data-only scopes: 17 stopped + 87 remaining business calls, plus one failed read-only progress query (105 total). Zero paid model calls. Estimate below USD 0.02 for the remaining scope; actual bill unknown."
+}

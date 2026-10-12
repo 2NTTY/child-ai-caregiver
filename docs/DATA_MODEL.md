@@ -652,6 +652,17 @@ canonical authority 的 runTransaction 擁有真 Firestore 回調，每次 SDK �
 - 刪除 journal 必須能在沒有最新 Firestore intent 的情況下獨立重放：AAD 綁 project／namespace／bucket／objectName，完整 scope、asset、opId、時間與類型在加密正文內；解密後重算物件名稱並核 hash／generation。還原作業讀最新 journal，不能依賴被還原的舊庫先提供晚於備份的 intent。此為恢復接口要求，尚未等同隔離還原驗收。
 - 提醒 outbox 的 attempts 計總領取、failures 只計真正失敗，兩者不可互代。正常 quiet 延後、initial／follow-up 不能耗用三次失敗門檻；過期 lease 同交易只累計一次，第三次停止。已生成 reminder 只是待投遞意圖，未有渠道收據不能顯示已送達。
 
+<a id="firestore-files"></a>
+#### 文件、匯出與範圍刪除
+
+- 文件延續同一 ID／版本及不可變分段快照；來源連到現有 care／profile、適用共享事實、task 及 concern。一般準備內容有明示的有界來源前綴，季度／年度報告以持久 coverage 分批讀完整期間，不用該前綴冒充完整報告。來源 basis 改變令舊成果失效；人工指定修改保留。歸檔不佔 active 文件限額，修訂及正文沿固定版本續讀。
+- `agent_document_links` 只保存 run／opId／文件及版本關聯，原文件操作仍作權威；不能另寫一份可修改成果。匯出按 Server 固定 section 清單、scope tags 及游標讀取，敏感正文保持加密，不建立公共文字索引。
+- 範圍刪除以 `scope-erasure` 保存 prepared／requested／blocked／cleaning／completed、原 opId、授權／資料版本及清理游標。獨立 Storage journal 支援 photo-delete／child-delete／account-delete；其 intent 在业务備份外持久保存。外部 journal IO 不放在 Firestore 交易；成功核對後，權威屏障、原收據及狀態同交易落庫。
+- 邏輯屏障立即停止資料權限；實體清理等待有界在途操作退出，再以每頁最多 25 筆清理附件及已登記資料域。Storage 核精確 generation 後才釋放配額；無法確定的上載保持 pending。帳戶另外清理裝置／原生 ADK 私人 session／user state，最後經 Firebase Auth 刪除身份；未完成不寫 completed。排程及故障接續由 F06 接通。
+- 刪除的孩子正文、姓名和修訂不保留在舊操作回應；原 create／online 操作鍵改存最小刪除屏障，阻止重送復活。最小帳戶／孩子 ID 屏障、刪除證據及原配額／用量台帳仍需保留其既有防重、防繞額及恢復責任，不可將清理視為重置用量。這些不含正文；備份依既定期限清除。
+- 帳戶 secret receipt 經獨立加密 pointer 查回，後續登入失效不妨礙本人核對原操作。原批次的期滿／權限變更不能靜默生成新刪除操作；需要重新核對或續辦同一已確認 intent。
+- F07 必須擴充各已遷移格式及三種 journal 的隔離還原。當前舊還原器遇範圍刪除 journal 明確拒絕，不能當照片刪除忽略；不以 F04 清理通過宣稱還原防復活已完成。
+
 #### 隔離還原的加密閉包
 
 Firestore 的文件名稱及部分操作 ID 使用不可逆 hash；備份不能假定操作者仍有原請求或最新資料庫。因此新 domain／authority envelope 附加加密 recovery locator，記錄原 family、kind、ID、scope、格式／記錄版本及 AAD；locator 自身綁 project、namespace 及主密文 SHA-256。還原時須重建並核對原 AAD、驗證兩層密文及 collection／kind／ID 對照，才可解讀；缺 locator、未知格式或未覆蓋的 collection 明確阻止還原完成。普通業務讀取仍只使用目前授權 scope 的原 AAD，不能用 locator 繞過授權；合法舊 envelope 的普通讀取保持相容。

@@ -15,13 +15,16 @@ import { createFirestoreAgentActions, firestoreAgentActionSavedSchema } from './
 import { createFirestoreAgentHistory } from './firestore-agent-history.ts';
 import { domainReject, firestoreTaskSchema } from './firestore-domain-data.ts';
 import { agentActionToolNames } from '../src/shared/agent-actions.ts';
+import { createFirestoreAgentDocuments } from './firestore-agent-documents.ts';
+import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
 
 export function createFirestoreProductAgentStore(options: FirestoreDomainOptions & {
   chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore; online: FirestoreOnlineStore;
   validateKnowledge(binding: Binding, sourceId: string): Promise<void>;
 }) {
   const runs = createFirestoreAgentRuns(options), { data, authority } = runs;
-  const proposals = createFirestoreAgentProposals({ ...options, runs });
+  const documents = createFirestoreAgentDocuments({ ...options, runs });
+  const proposals = createFirestoreAgentProposals({ ...options, runs, extensions: [documents.extension] });
   const actions = createFirestoreAgentActions({ ...options, runs, proposals });
   const confirmations = createFirestoreAgentConfirmations({ runs, proposals, chat: options.chat,
     policyVersion: async b => (await actions.readPolicy(b)).version });
@@ -30,6 +33,8 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
     if (resource.kind === 'memory_fact') version = (await options.memory.readFact(b, resource.id))?.version;
     else if (resource.kind === 'care_record') version = (await options.care.readRecord(b, resource.id))?.version;
     else if (resource.kind === 'private_note') version = (await actions.readNote(b, resource.id))?.version;
+    else if (resource.kind === 'family_document') version = (await createFirestoreFamilyDocumentStore({ ...options, transaction: b })
+      .get(b.scope.ownerUserId, b.scope.childId, resource.id))?.version;
     else if (resource.kind === 'task' || resource.kind === 'receipt') {
       const task = resource.kind === 'task', kind = task ? 'task' : 'agent-action-receipt';
       const row = await b.transaction.get(data.ref(task ? 'tasks' : 'agent_action_receipts', kind, resource.id));
@@ -58,8 +63,10 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
       tool.name !== 'confirmed_proposal' && !Object.values(agentActionToolNames).includes(tool.name)) };
     for (const { receipt } of receipts) value.tools.push({ name: agentActionToolNames[receipt.kind], status: 'succeeded', reference: receipt.id });
     if (confirmation) value.tools.push({ name: 'confirmed_proposal', status: 'succeeded', reference: confirmation.id });
-    // Document/contact tools are not exposed until their authoritative adapters are connected.
-    if (value.tools.some(tool => ['generate_family_document', 'change_family_document', 'contact_caregiver'].includes(tool.name)))
+    const documentReceipts = await documents.read(b, run.id);
+    value.tools = value.tools.filter(tool => !['generate_family_document', 'change_family_document'].includes(tool.name));
+    for (const receipt of documentReceipts.receipts) value.tools.push({ name: receipt.toolName, status: 'succeeded', reference: receipt.documentId });
+    if (value.tools.some(tool => tool.name === 'contact_caregiver'))
       domainReject('receipt_adapter_missing', 503);
     if (!value.text && (receipts.length || confirmation)) value.text = '已有操作保存了 Server 收據；請查看原操作及目前結果，勿重複提交。已安排不代表已通知或照護已完成。';
     return value;
@@ -76,16 +83,7 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
       if (!runs.matches(b, scope, run, false)) domainReject('agent_scope_changed');
       return project(b, run, result);
     } }, true),
-    async writeDocument() { domainReject('domain_not_ready', 503); },
-    async documentReceipts(scope, runId) {
-      return authority.runTransaction(scope.userId, scope.childId, async b => {
-        const run = await runs.read(b, runId);
-        if (!runs.matches(b, scope, run, false)) return null;
-        if (run.result?.tools.some(tool => ['generate_family_document', 'change_family_document'].includes(tool.name)))
-          domainReject('receipt_adapter_missing', 503);
-        return { receipts: [], unavailable: false, linked: false };
-      });
-    },
+    writeDocument: documents.writeDocument, documentReceipts: documents.documentReceipts,
   };
   return { store, actions, runs };
 }

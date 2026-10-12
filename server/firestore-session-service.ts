@@ -241,6 +241,25 @@ export class FirestoreSessionService extends BaseSessionService {
     return this.#delete(identity(request));
   }
 
+  /** Trusted account erasure, after durable access revocation and the in-flight grace period. */
+  async eraseUserPage(appName: string, userId: string): Promise<boolean> {
+    const key = identity({ appName, userId, sessionId: 'account-erasure' }), paths = this.#paths(key);
+    const page = await paths.user.collection('sessions').limit(10).get();
+    for (const snapshot of page.docs) {
+      const sessionId = Buffer.from(snapshot.id.slice(2), 'base64url').toString('utf8');
+      if (encodeId(sessionId) !== snapshot.id) reject('invalid_identity');
+      await this.#delete(identity({ appName, userId, sessionId }));
+    }
+    if (page.size) return false;
+    return this.#database.runTransaction(async transaction => {
+      const remaining = await transaction.get(paths.user.collection('sessions').limit(1));
+      const state = await transaction.get(paths.user);
+      if (remaining.size) return false;
+      this.#state(state, 'user', key);
+      transaction.delete(paths.user); return true;
+    });
+  }
+
   /**
    * Teardown only for the exact object returned by this instance's confirmed
    * create. Read/list/forged objects grant no ownership. A stale cleanup cannot

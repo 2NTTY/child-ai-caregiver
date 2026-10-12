@@ -15,5 +15,5 @@ export interface AccountServiceStatus {
 
 export const accountErasePrepareSchema = z.object({ operationId: z.uuid() }).strict();
 export const accountEraseExecuteSchema = accountDeletionSchema.extend({ receiptToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/) }).strict();
-export interface AccountEraseReceipt { operationId: string; state: "prepared" | "completed"; attachmentsPending: boolean; }
+export interface AccountEraseReceipt { operationId: string; state: "prepared" | "processing" | "completed"; attachmentsPending: boolean; }
 export interface AccountExportPage { section: string; items: unknown[]; nextCursor: string | null; complete: boolean; scopeVersion: string; notices: string[]; }

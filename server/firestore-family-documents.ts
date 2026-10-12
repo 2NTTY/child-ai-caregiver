@@ -13,24 +13,42 @@ import { emptyFamilyDocumentSources, taskDocumentSource, buildFamilyDocumentSnap
   type FamilyDocumentSources } from './family-document-snapshot.ts';
 import { applyFamilyDocumentPatch } from './family-document-edits.ts';
 import { documentManifest, sliceDocumentContent, decodeDocumentCursor, encodeDocumentCursor } from './family-document-reading.ts';
+import { createFirestoreDocumentSources } from './firestore-document-sources.ts';
+import { firestoreDocumentReportSchema } from './firestore-document-report-schema.ts';
+import { newReportAccumulator, completeReportSnapshot, effectiveReportRequest, reportPeriodKind, currentConcernScan } from './family-document-report-core.ts';
+import { createFirestoreCareStore } from './firestore-care.ts';
+import { createFirestoreMemoryStore } from './firestore-memory.ts';
+import { createFirestoreChatStore } from './firestore-chat.ts';
 
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483647), datetime = z.iso.datetime({ offset: true });
 const metadataSchema = z.object({ id: uuid, childId: uuid, ownerUserId: z.string().min(1).max(256), version, request: documentRequestSchema,
-  currentId: uuid, historyIds: z.array(uuid).max(10), status: z.enum(['active', 'archived']), archivedAt: datetime.nullable(),
-  autoRefresh: z.literal(false), createdAt: z.iso.datetime({ precision: 6 }) }).strict();
+  currentId: uuid.nullable(), historyIds: z.array(uuid).max(10), status: z.enum(['active', 'archived']), archivedAt: datetime.nullable(),
+  autoRefresh: z.boolean(), createdAt: z.iso.datetime({ precision: 6 }), progress: firestoreDocumentReportSchema.nullable().optional() }).strict();
 type Metadata = z.infer<typeof metadataSchema>;
 const operationSchema = z.object({ ownerUserId: z.string().min(1).max(256), childId: uuid, storageEpoch: uuid, operationId: uuid,
   fingerprint: z.string().regex(/^[a-f0-9]{64}$/u), document: metadataSchema }).strict();
-const COVERAGE = '目前最多核對按識別排列的首 50 項照護事項，並非完整來源；超出此範圍的事項，以及孩子資料、照護記錄、記憶及關注尚未納入，請自行核對。';
 function reject(code: string, status: 400 | 404 | 409 = 409): never { throw new FamilyError(status, code); }
 const fingerprint = (value: unknown) => createHash('sha256').update(canonicalJson(value)).digest('hex');
 
-/** F02 preparation documents use canonical task authority only; growth reports remain unavailable. */
-export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptions): FamilyDocumentStore {
+/** Versioned documents reuse the same care, fact, task and concern authority as product tools. */
+export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptions & {
+  /** Internal Agent transaction only. Never supplied by an HTTP request. */
+  transaction?: FirestoreAuthorityTransaction;
+  deferCommit?: (commit: () => void) => void;
+}): FamilyDocumentStore {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), snapshots = new FirestoreFamilyDocumentSnapshots(options);
+  const care = createFirestoreCareStore(options), chat = createFirestoreChatStore(options);
+  const reader = createFirestoreDocumentSources({ ...options, care, memory: createFirestoreMemoryStore({ ...options, care, chat }) });
   async function runDocumentTransaction<T>(userId: string, childId: string | null,
     operation: (binding: FirestoreAuthorityTransaction) => Promise<T>): Promise<T> {
-    try { return await authority.runTransaction(userId, childId, operation); }
+    try {
+      if (options.transaction) {
+        const binding = options.transaction;
+        if (binding.scope.ownerUserId !== userId || childId !== null && childId !== binding.scope.childId) reject('not_found', 404);
+        return await operation({ ...binding, scope: { ...binding.scope, childId: childId ?? '00000000-0000-0000-0000-000000000000' } });
+      }
+      return await authority.runTransaction(userId, childId, operation);
+    }
     catch (error) {
       if (error instanceof FirestoreAuthorityError
         && (error.status === 403 && ['binding', 'account_inactive', 'account_not_ready', 'service_disabled'].includes(error.code)
@@ -57,54 +75,56 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     checkTags(row.data(), scope);
     const result = data.open('family-document', id, scope, metadataSchema, row);
     if (result.id !== id || result.childId !== scope.childId || result.ownerUserId !== scope.ownerUserId || result.version !== row.get('recordVersion')
-      || result.request.kind !== 'preparation' || result.status !== row.get('status') || result.createdAt !== row.get('createdAt')) domainReject('document_binding', 500);
+      || result.status !== row.get('status') || result.createdAt !== row.get('createdAt')) domainReject('document_binding', 500);
     return result;
   }
-  async function taskSource(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, id: string) {
-    const row = await binding.transaction.get(data.ref('tasks', 'task', id)); if (!row.exists) return null;
-    checkTags(row.data(), scope);
-    const task = data.open('task', id, scope, firestoreTaskSchema, row);
-    if (task.id !== id || task.childId !== scope.childId || task.createdBy !== scope.ownerUserId || task.assigneeUserId !== scope.ownerUserId
-      || task.version !== row.get('recordVersion')) domainReject('task_binding', 500);
-    return taskDocumentSource(task);
-  }
-  async function sources(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope): Promise<FamilyDocumentSources> {
-    const loaded = emptyFamilyDocumentSources(scope.childId);
-    const rows = await binding.transaction.get(query('tasks', scope).orderBy('taskId', 'asc').limit(51));
-    for (const row of rows.docs.slice(0, 50)) {
-      const id = domainParse(uuid, row.get('taskId'), 'invalid_document', 500), source = await taskSource(binding, scope, id);
-      if (!source) domainReject('task_binding', 500); loaded.entries.push(source); loaded.domains.set(source.id, 'changes_support');
-    }
-    loaded.limited = true; return loaded;
+  async function sources(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope) {
+    return reader.load({ ...binding, scope });
   }
   async function supplement(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, loaded: FamilyDocumentSources, values: DocumentSnapshot[]) {
-    loaded.referencedSources ??= new Map(); loaded.checkedReferences ??= new Set();
-    const known = new Set(loaded.entries.map(value => value.id));
-    for (const source of new Map(values.flatMap(value => value.sources).map(source => [source.id, source])).values()) {
-      if (known.has(source.id) || loaded.checkedReferences.has(source.id)) continue;
-      loaded.checkedReferences.add(source.id);
-      if (source.kind !== 'task' || source.id !== 'task:' + source.resourceId) continue;
-      const current = await taskSource(binding, scope, source.resourceId); if (current) loaded.referencedSources.set(source.id, current);
-    }
+    await reader.supplement({ ...binding, scope }, loaded, values);
+  }
+  async function reportBatch(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, row: Metadata,
+    loaded: FamilyDocumentSources, previous: DocumentSnapshot | null): Promise<DocumentSnapshot | undefined> {
+    const effective = effectiveReportRequest(row.request);
+    let state = row.progress;
+    if (!state || !currentConcernScan(state) || state.blocked || state.stage === 'done' || state.sourceRevision !== loaded.sourceRevision
+      || state.request.period.to !== effective.period.to || state.validUntil !== null && Date.parse(state.validUntil) <= Date.now())
+      state = newReportAccumulator(row.request, loaded.sourceRevision!);
+    await reader.advance({ ...binding, scope }, state);
+    row.progress = state;
+    if (state.stage !== 'done') return undefined;
+    if (previous) await supplement(binding, scope, loaded, [previous]);
+    return completeReportSnapshot(state, row.version, previous, loaded);
   }
   async function bodies(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, row: Metadata) {
-    const current = await snapshots.read(binding.transaction, scope, row.id, row.currentId);
-    if (!current) domainReject('snapshot_binding', 500);
+    const current = row.currentId ? await snapshots.read(binding.transaction, scope, row.id, row.currentId) : null;
+    if (row.currentId && !current) domainReject('snapshot_binding', 500);
     const history: DocumentSnapshot[] = [];
     for (const id of row.historyIds) {
       const item = await snapshots.read(binding.transaction, scope, row.id, id); if (!item) domainReject('snapshot_binding', 500); history.push(item);
     }
     return { current, history };
   }
-  function safe(row: Metadata, loaded: FamilyDocumentSources, values: { current: DocumentSnapshot; history: DocumentSnapshot[] }): FamilyDocument {
-    const valid = documentSnapshotValid(values.current, loaded);
-    return { id: row.id, childId: row.childId, kind: row.request.kind, purpose: row.request.purpose, version: row.version,
-      status: row.status, archivedAt: row.archivedAt, autoRefresh: false, current: valid ? values.current : null,
-      manifest: documentManifest(values.current, !valid), history: values.history.filter(value => documentSnapshotValid(value, loaded)),
-      readState: !valid ? 'invalidated' : values.current.sourceBasis !== documentSourceBasis(loaded, row.request) ? 'stale' : 'ready' };
+  function safe(row: Metadata, loaded: FamilyDocumentSources, values: { current: DocumentSnapshot | null; history: DocumentSnapshot[] }): FamilyDocument {
+    const valid = values.current !== null && documentSnapshotValid(values.current, loaded);
+    const item: FamilyDocument = { id: row.id, childId: row.childId, kind: row.request.kind, purpose: row.request.purpose, version: row.version,
+      status: row.status, archivedAt: row.archivedAt, autoRefresh: row.autoRefresh, current: valid ? values.current : null,
+      ...(values.current ? { manifest: documentManifest(values.current, !valid) } : {}), history: values.history.filter(value => documentSnapshotValid(value, loaded)),
+      readState: !valid ? 'invalidated' : !values.current!.reportCoverage && values.current!.sourceBasis !== documentSourceBasis(loaded, row.request) ? 'stale' : 'ready' };
+    if (row.request.kind === 'growth_report') {
+      const effective = effectiveReportRequest(row.request), state = row.progress;
+      const current = state && currentConcernScan(state) && !state.blocked && state.sourceRevision === loaded.sourceRevision && state.request.period.to === effective.period.to
+        && (state.validUntil === null || Date.parse(state.validUntil) > Date.now());
+      item.report = { mode: row.request.reportMode ?? 'fixed', phase: current && state.stage !== 'done' ? 'building'
+        : current && valid ? 'complete' : 'needs_update', processedSources: state?.processedSources ?? 0,
+        sourceRevision: loaded.sourceRevision!, periodKind: reportPeriodKind(effective.period), period: effective.period, title: row.request.title };
+      if (item.report.phase !== 'complete') item.readState = 'stale';
+    }
+    return item;
   }
   async function result(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, row: Metadata, loaded: FamilyDocumentSources) {
-    const values = await bodies(binding, scope, row); await supplement(binding, scope, loaded, [values.current, ...values.history]);
+    const values = await bodies(binding, scope, row); await supplement(binding, scope, loaded, [...(values.current ? [values.current] : []), ...values.history]);
     return safe(row, loaded, values);
   }
   async function prior(binding: FirestoreAuthorityTransaction, opId: string) {
@@ -118,9 +138,15 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       || receipt.document.ownerUserId !== binding.scope.ownerUserId || receipt.document.childId !== receipt.childId) domainReject('document_binding', 500);
     return receipt;
   }
-  async function activeCount(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope) {
+  async function activeCount(binding: FirestoreAuthorityTransaction, scope: WorkRecoveryScope, request?: Metadata['request'], except?: string) {
     const rows = await binding.transaction.get(query('documents', scope).where('status', '==', 'active').limit(50));
-    for (const row of rows.docs) if (!await find(binding, scope, domainParse(uuid, row.get('documentId'), 'invalid_document', 500))) domainReject('document_binding', 500);
+    for (const row of rows.docs) {
+      const item = await find(binding, scope, domainParse(uuid, row.get('documentId'), 'invalid_document', 500));
+      if (!item) domainReject('document_binding', 500);
+      if (request?.kind === 'growth_report' && item.id !== except && item.request.kind === 'growth_report'
+        && (item.request.reportMode ?? 'fixed') === (request.reportMode ?? 'fixed')
+        && (request.reportMode === 'living' || canonicalJson(item.request.period) === canonicalJson(request.period))) reject('report_exists');
+    }
     if (rows.docs.length >= 50) reject('document_limit', 400);
   }
   async function mutate(userId: string, childId: string, opId: string, payload: unknown,
@@ -136,7 +162,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         return result(binding, scope, old.document, loaded);
       }
       const prepared = await prepare(binding, scope, loaded), oldBodies = await bodiesIfExisting(binding, scope, prepared.row, prepared.snapshot);
-      await supplement(binding, scope, loaded, [oldBodies.current, ...oldBodies.history]);
+      await supplement(binding, scope, loaded, [...(oldBodies.current ? [oldBodies.current] : []), ...oldBodies.history]);
       const item = safe(prepared.row, loaded, oldBodies);
       const preparedSnapshot = prepared.snapshot ? snapshots.prepare(scope, prepared.row.id, prepared.snapshot) : null;
       const change = await binding.prepareChange(opId, 'documents', false, childId);
@@ -145,8 +171,11 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       const id = operationId(userId, opId), receipt = { ownerUserId: userId, childId, storageEpoch: scope.storageEpoch,
         operationId: opId, fingerprint: requestHash, document: prepared.row };
       const sealed = { ...data.tags(binding.scope), ...data.seal('document-operation', id, binding.scope, operationSchema, receipt) };
-      change.commit(); binding.transaction.set(data.ref('documents', 'family-document', prepared.row.id), envelope);
-      preparedSnapshot?.commit(binding.transaction); binding.transaction.create(data.ref('document_operations', 'document-operation', id), sealed);
+      const commit = () => {
+        change.commit(); binding.transaction.set(data.ref('documents', 'family-document', prepared.row.id), envelope);
+        preparedSnapshot?.commit(binding.transaction); binding.transaction.create(data.ref('document_operations', 'document-operation', id), sealed);
+      };
+      if (options.deferCommit) options.deferCommit(commit); else commit();
       return item;
     });
   }
@@ -234,7 +263,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         if (authorityVersion(binding) !== patch.authorityVersion) reject('document_changed');
         const row = await find(binding, scope, id); if (!row) reject('not_found', 404);
         if (row.version !== (appliedVersion ?? patch.expectedVersion) || row.status !== 'active') reject('document_changed');
-        const previous = await snapshots.read(binding.transaction, scope, id, row.currentId); if (!previous) reject('document_changed');
+        const previous = row.currentId ? await snapshots.read(binding.transaction, scope, id, row.currentId) : null; if (!previous) reject('document_changed');
         const loaded = await sources(binding, scope); await supplement(binding, scope, loaded, [previous]);
         const preview = appliedVersion === undefined ? applyFamilyDocumentPatch(previous, patch, loaded, row.version + 1, seed) : previous;
         if (appliedVersion !== undefined && !documentSnapshotValid(preview, loaded)) reject('source_changed');
@@ -245,12 +274,13 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     async create(userId, childId, raw, opId) {
       const request = documentRequestSchema.parse(raw), id = randomUUID(), seed = { id: randomUUID(), generatedAt: new Date().toISOString() };
       return mutate(userId, childId, opId, { action: 'create', request: raw }, async (binding, scope, loaded) => {
-        if (request.kind !== 'preparation') domainReject('domain_not_ready', 503);
-        await activeCount(binding, scope);
+        await activeCount(binding, scope, request);
         if ((await binding.transaction.get(data.ref('documents', 'family-document', id))).exists) reject('document_changed');
-        const snapshot = buildFamilyDocumentSnapshot(loaded, request, 1, null, seed); snapshot.coverageNote = COVERAGE;
-        const row: Metadata = { id, childId, ownerUserId: userId, request, version: 1, currentId: snapshot.id, historyIds: [], status: 'active',
-          archivedAt: null, autoRefresh: false, createdAt: seed.generatedAt.replace(/(\.\d{3})Z$/u, '$1000Z') };
+        const row: Metadata = { id, childId, ownerUserId: userId, request, version: 1, currentId: null, historyIds: [], status: 'active',
+          archivedAt: null, autoRefresh: request.kind === 'growth_report', progress: null, createdAt: seed.generatedAt.replace(/(\.\d{3})Z$/u, '$1000Z') };
+        const snapshot = request.kind === 'growth_report' ? await reportBatch(binding, scope, row, loaded, null)
+          : buildFamilyDocumentSnapshot(loaded, request, 1, null, seed);
+        if (snapshot) row.currentId = snapshot.id;
         return { row, snapshot };
       });
     },
@@ -260,26 +290,29 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         if (authorityVersion(binding) !== input.authorityVersion) reject('document_changed');
         const original = await find(binding, scope, id); if (!original) reject('not_found', 404);
         if (original.version !== input.expectedVersion || original.version >= 2147483647) reject('document_changed');
-        const values = await bodies(binding, scope, original); await supplement(binding, scope, loaded, [values.current, ...values.history]);
+        const values = await bodies(binding, scope, original); await supplement(binding, scope, loaded, [...(values.current ? [values.current] : []), ...values.history]);
         const row = { ...original, version: original.version + 1 }; let snapshot: DocumentSnapshot | undefined;
         if (input.action === 'refresh') {
           if (row.status !== 'active') reject('document_changed');
-          snapshot = buildFamilyDocumentSnapshot(loaded, row.request, row.version, values.current, seed); snapshot.coverageNote = COVERAGE;
+          snapshot = row.request.kind === 'growth_report' ? await reportBatch(binding, scope, row, loaded, values.current)
+            : buildFamilyDocumentSnapshot(loaded, row.request, row.version, values.current, seed);
         } else if (input.action === 'patch') {
-          if (row.status !== 'active') reject('document_changed'); snapshot = applyFamilyDocumentPatch(values.current, input, loaded, row.version, seed);
+          if (row.status !== 'active' || !values.current) reject('document_changed'); snapshot = applyFamilyDocumentPatch(values.current, input, loaded, row.version, seed);
+          if (row.progress?.blocked) row.progress.blocked = false;
         } else if (input.action === 'check_item') {
-          if (row.status !== 'active' || !documentSnapshotValid(values.current, loaded) || values.current.sourceBasis !== documentSourceBasis(loaded, row.request)) reject('source_changed');
+          if (row.status !== 'active' || !values.current || !documentSnapshotValid(values.current, loaded)
+            || !values.current.reportCoverage && values.current.sourceBasis !== documentSourceBasis(loaded, row.request)) reject('source_changed');
           snapshot = structuredClone(values.current); const section = snapshot.sections.find(value => value.id === input.sectionId && value.kind === 'checklist');
           const item = section?.items.find(value => value.id === input.itemId); if (!item) reject('invalid_input', 400);
           item.checked = input.checked; snapshot.id = seed.id; snapshot.version = row.version; snapshot.generatedAt = seed.generatedAt;
           snapshot.changes = ['家長更新準備清單的完成標記。'];
         } else {
           if (input.action === 'archive' && row.status !== 'active' || input.action === 'restore' && row.status !== 'archived') reject('document_changed');
-          if (input.action === 'archive' && !documentSnapshotValid(values.current, loaded)) reject('source_changed');
-          if (input.action === 'restore') await activeCount(binding, scope);
+          if (input.action === 'archive' && row.request.kind !== 'growth_report' && (!values.current || !documentSnapshotValid(values.current, loaded))) reject('source_changed');
+          if (input.action === 'restore') await activeCount(binding, scope, row.request, row.id);
           row.status = input.action === 'archive' ? 'archived' : 'active'; row.archivedAt = input.action === 'archive' ? seed.generatedAt : null;
         }
-        if (snapshot) { row.historyIds = [row.currentId, ...row.historyIds].slice(0, 10); row.currentId = snapshot.id; }
+        if (snapshot) { row.historyIds = [...(row.currentId ? [row.currentId] : []), ...row.historyIds].slice(0, 10); row.currentId = snapshot.id; }
         return { row, snapshot };
       });
     },

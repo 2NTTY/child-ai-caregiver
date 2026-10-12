@@ -806,4 +806,14 @@ F02 的孩子／事項沿既有 GET /api/children、GET /api/children/:childId/t
 - `/agent/work`、`/agent/history`、`/agent/pending`、`/agent/runs/:id` 延續原接口。待確認綁提問訊息、操作／參數、資源／授權／政策／工作版本；多個有效候選、資料變更或不明確回覆不自動確認。一次確認和實際業務效果同交易保存。
 - 共同准入為每人一個、全站最多四個運行；lease 到原 90 秒期限再加五秒釋放緩衝。持久日額度、原生 ADK session 及 root budget 跨程序共用；平台／本人付費來源不混用，個人較低限制保留。這不增加每日或單 run 配額。
 
-F04 的文件操作／照片提取／退出及 F06 的背景執行／對外提醒仍按包接入。F03 不向模型宣告尚未接通的文件或聯絡工具，未遷移的直接 API 回未就緒；不能把沒有資料或靜態按鈕當成已遷移。
+F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒。未遷移的工具不向模型宣告，直接 API 回未就緒；不能把沒有資料或靜態按鈕當成已遷移。
+
+<a id="firestore-files"></a>
+### 文件、照片及資料退出的 Firestore 接點
+
+- 原文件 list／detail／content／versions／actions／PDF 路徑與 schema 不變。Agent 使用同一 document store；文件修改、原操作收據、Agent 工具關聯與 run 版本同交易提交，重送不另建版本。需要明確確認的正文修改仍走原持久候選。PDF 由既有 renderer 使用指定版本快照，不另保存可修改副本。
+- 照片 reserve／confirm／delete 經原 online context／opId；upload／content 沿既有路徑。extract 需要本人模型授權，使用同一 ModelGateway，提取只產生候選；confirm 才把核對內容保存到同一照護記錄。刪照片一併關閉其照護正文，未知上載保持清理責任。
+- 本人下載沿 `GET /api/account/export` 的 manifest／section／childId／scopeVersion／cursor；Server 明列可匯出的領域，有界讀取固定來源版本，來源變動回 `export_scope_changed`。私人 key、Auth 憑據及內部模型協定不匯出。後續新增資料域須同時加入下載／刪除接點，不以空清單冒充接通。
+- 帳戶退出保留 prepare → 具名確認 → 原 receipt 查回。Firebase 客戶端先在原登入 adapter 再驗證本人密碼，交換新 session；`POST /api/account/delete` 只傳 operationId／receiptToken／confirmation，密碼不送業務 API。Server 核 `auth_time`、原身份、準備時版本及有效 token。舊 SQL adapter 只在切換前保留其原 wire，不能在 Firestore 模式回退。
+- 退出 receipt 的 `prepared / processing / completed` 分別代表待確認、已受理／清理中、實際清理完成。`GET /api/account/deletion/:operationId` 憑 `x-erasure-receipt` 查原狀態，帳戶被關閉後仍可恢復；只返回最小狀態，不透露正文或身份。前端 processing 顯示「清理中」，不重交新操作。
+- 孩子刪除沿原 `confirmChildId`，原 online receipt 返回已關閉存取及 `cleanupPending`。獨立 journal、權威屏障及可恢復清理詳見 [資料契約](DATA_MODEL.md#firestore-files)。F06 接排程清理，F07 補完整還原 codec；尚未接妥前不對受邀用戶宣稱全套退出／恢复可用。

@@ -18,11 +18,13 @@ import { createKnowledgeRetriever } from './knowledge-retriever.ts';
 import { AgentStopped } from './agent-budget.ts';
 import { domainReject } from './firestore-domain-data.ts';
 import type { AgentModelProvider } from './agent-model-gateway.ts';
+import type { FamilyDocumentStore } from './family-document-store.ts';
 
 /** Original product Agent, with only its persistence, routing and admission assembly replaced. */
 export async function createFirestoreProductAgent(options: FirestoreDomainOptions & {
   config: AiConfig; chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore;
   online: FirestoreOnlineStore; knowledge?: FirestoreKnowledgeStore;
+  documents?: FamilyDocumentStore;
   /** Trusted constructor seam for a bounded scripted Runner check; never HTTP-selected. */
   platformProvider?: AgentModelProvider;
 }) {
@@ -62,6 +64,6 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const knowledge = createKnowledgeRetriever(options.knowledge ?? { async candidates() { domainReject('knowledge_not_ready', 503); } },
     { async embed() { throw new AgentStopped('unavailable'); } });
   const agent = createProductAgent({ runtime, store: services.store, actions: services.actions,
-    chat: options.chat, memory: options.memory, tasks: options.online.tasks, knowledge });
+    chat: options.chat, memory: options.memory, tasks: options.online.tasks, documents: options.documents, knowledge });
   return { ...services, routing, runtime, agent };
 }
