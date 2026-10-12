@@ -72,7 +72,7 @@ docker compose --project-name yuban-p1 \
 <a id="firestore-deployment"></a>
 ## Firebase 正式接點及切換門檻
 
-採 [ADR-022](DECISIONS.md#adr-022)／[P2-F01～F08](../PLAN.md#p2-firestore-migration)。Firebase API 由 `server/firebase-main.ts` 啟動，worker 由 `server/firebase-worker-main.ts` 啟動；共用 [Dockerfile](../deploy/firebase/Dockerfile)。舊 npm／Compose 的 SQL 路徑只保留至 F08 退役，不能用它部署新 Firebase 服務；已實作接點不等於真服務驗收通過。
+採 [ADR-022](DECISIONS.md#adr-022)／[ADR-023](DECISIONS.md#adr-023)／[P2-F01～F08](../PLAN.md#p2-firestore-migration)。尚未上線期間只維護一個開發站，網址沿用 https://ex-machina.eu.org；最新要求為零 SQL，VM／Hosting 等選擇按成本效益另行裁決，以下 Firebase 入口記錄已實作接點，不代表所有原基建必須替換；所屬前後端接線隨每條功能流程部署，同源入口及一份 build／runtime 版本讀回作必要驗收，不另發布合成預覽副本。Firebase API 由 `server/firebase-main.ts` 啟動，worker 由 `server/firebase-worker-main.ts` 啟動；共用 [Dockerfile](../deploy/firebase/Dockerfile)。舊 npm／Compose 的 SQL 路徑只保留至 F08 退役，不能用它部署新 Firebase 服務；已實作接點不等於真服務驗收通過。
 
 - Firebase Hosting 發布同一 frontend/dist 及 Push service worker；同源 /api 轉 Cloud Run，保留域名、設計與前端 owner。保留直接原 API 的本機開發 adapter，不能換成合成成功。
 - Cloud Run API／私有 OIDC worker、Firestore Standard、私有 Storage、Tasks／Scheduler；request-based、min instances 0、明確 max／佇列速率。沿平台 ADC／受保護 secrets，不在前端 bundle 放服務帳戶、key 或 private bucket token。實際 hostname／DNS 切換與資源建立另按批准進行。
@@ -80,7 +80,7 @@ docker compose --project-name yuban-p1 \
 - Agent 由 202／runId／原操作受理後讀同一結果，避免 Hosting 60 秒；頁面沿現有 queued／running／terminal／unknown／cancel 狀態。私有回應 no-store，切換帳戶／孩子清理快取與遲到回應，不重新設計頁面。
 - 保留各領域功能／權限、opId／版本／changes 游標、照片、來源、文件／PDF、本人通知與可選 key。Tasks 取代 pg-boss 不改收到／完成和未知不重發；檔案由授權 API 提供，不讓永久公開連結繞過撤權。
 
-F02 先合成真雲端切片；F07 驗全功能對照、14 天配對恢復及 Firebase 相容應用版本回退，F08 再核准窗口切換。DB／worker／入口只允許一套主寫；回退映像仍懂 Firebase Auth／journal。最後才收束舊 VM／磁碟／IP。#140 的有效修正與未通過 Agent 流程另由 PLAN 追溯，不把新部署規劃當作已上線或以切片代替正式成果。
+F02 先完成合成真雲端切片，原網域的開發站接線沿 ADR-023 的服務取捨；F07 驗全功能對照、14 天配對恢復及 Firebase 相容應用版本回退，F08 再核完整交付及持續營運預算。DB／worker／入口只允許一套主寫；回退映像仍懂 Firebase Auth／journal。最後才收束舊 VM／磁碟／IP。#140 的有效修正與未通過 Agent 流程另由 PLAN 追溯，不把新部署規劃當作已上線或以切片代替正式成果。
 
 
 F02 的同源路由採 [Hosting REST config](../deploy/firebase/hosting.config.json)，只代理 `/api` 到 API，不公開 worker。前端建置設定 `EXPO_PUBLIC_AUTH_PROVIDER=firebase`、`EXPO_PUBLIC_API_BASE_URL=/api` 及 `EXPO_PUBLIC_FIREBASE_API_KEY／AUTH_DOMAIN／PROJECT_ID／APP_ID`；這些 Web SDK 公開識別不含 Admin 憑據。 使用明確傳入的建置環境，切換身份供應商時執行 `expo export --platform web --clear`；建置 exit 0 不足以允許發布，須核對輸出 bundle 的 provider 與四項公開 Firebase 設定、HTML 實際引用及同源 `/api`。設定缺失須停止發布；不能把舊身份接點的回應當作 Firebase 已接通。API／worker 使用同一明確的 `GCP_PROJECT_ID`、`FIREBASE_DATABASE_ID`、`FIREBASE_NAMESPACE`、私人 photo／erasure buckets、同源 `SERVER_ORIGIN／WEB_ORIGIN` 及固定 secret version。共用權威資料的 API／worker／Auth blocking function 各須固定部署來源，並核對目前資料包絡的 reader 相容；更新 API 映像不代表 blocking function 已同步。啟用電郵與 worker 各有獨立 gate，不以已部署自動啟用。實際資源／revision 及費用觀察留 STATUS／驗收證據。

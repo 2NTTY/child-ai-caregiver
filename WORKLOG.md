@@ -2324,3 +2324,13 @@
 - 備份成功後恢復來源作原照片刪除：同一 opId 重送及查回收據相等、metadata／content 410、列表移除、原 reservation 收據 result=null；累計 89／100 個 HTTP 請求。`cleanupPending=true` 保留，不宣稱原 Storage 物件已物理刪除。
 - 再停寫及排空後，原生匯入同一份 96 文件至既有隔離庫，完整 inventory 通過。原子恢復核最新獨立刪除日誌及當前 Auth，生成新 epoch、移除舊會話並保持 `applied-paused`。19:26 UTC 獨立讀回 84 筆恢復資料＋1 checkpoint，零舊會話、三個新 workspace epochs；指定帳號 emailVerified=true、文件及事項均版本 2、提醒／通知意圖各一份、已刪照片不存在、原 reservation 已遮蔽且原 delete 有 erasure barrier，清理責任仍保留。
 - API／worker MANUAL 0、來源及還原 control 暫停、queue PAUSED 且空；原 actor 程序關閉並清除記憶體憑據。Hosting／blocking function 版本不變、備份及來源／還原庫保留。手動停機不是自動縮零喚醒證據；真雲端撤權、重設電郵生命週期、必要產品畫面及原本人瀏覽器故障仍待驗。F02 尚未整包驗收／PR／合併，完整 P2 未完成；本次只保存可恢復本機 checkpoint。完整原失敗、版本、hash 及限制見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。
+
+
+<a id="log-20261012-development-site-handoff"></a>
+## 2026-10-12 — 單一開發站決定及主開發聊天交接
+
+- 依使用者最新指示，原網址 ex-machina.eu.org 為唯一開發入口；硬要求是零 SQL，其他服務按運行費、改動量與維護收益判斷，不為全面轉 Firebase 而替換可用能力。ADR-023 記錄取代範圍；VM／Hosting 取捨尚未完成。
+- 最新已核遠端 master 為 d5dbf61／#191；F02 仍在 codex/p2-f02-firebase-cloud-slice，原檢查點 585f89c。本輪只由 Astra 處理，沒有派發／續派代理；沒有產品程式變更或新驗收。
+- 唯讀確認舊 yuban-p1 是香港 e2-small、20 GiB pd-balanced、RUNNING；Firebase API／worker 維持 MANUAL 0，Tasks PAUSED，Scheduler 無 job，兩庫 PITR disabled。兩套真後端部署之外有五個歷史 Sites 示例；Firebase 預設站沒有 release。沒有重複部署或刪除舊站。
+- 曾依原網址指示在既有 Hosting 建立 custom-domain 記錄，目前待 DNS 所有權及憑證；沒有改 Cloudflare DNS、切流、改 IAM 或恢復 API。使用者其後澄清服務選擇，暫不需登入 Cloudflare。官方 VM 費率與資源盤點已保存，成本效益比較未完成，不填預估為實際費用。
+- 使用者要求本聊天收尾並由主開發聊天接手，目標暫停，不開 F03、不合併未完成 F02。後續正常完成包已獲自行合併並回報授權；提交／推送／合併盡可能單一主責。F02 尚缺自動縮零、真撤權、重設電郵、必要產品畫面與原附件實體清理；保留原失敗與恢復證據。詳見 [F02 EV](artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json)。

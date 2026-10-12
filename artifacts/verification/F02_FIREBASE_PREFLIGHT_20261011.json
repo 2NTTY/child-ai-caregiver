@@ -6283,5 +6283,67 @@
     "https://firebase.google.com/docs/firestore/reference/rest/v1/projects.databases.documents/runQuery",
     "https://docs.cloud.google.com/storage/docs/object-holds",
     "https://firebase.google.com/docs/firestore/manage-data/export-import"
-  ]
+  ],
+  "developmentDirectionHandoff20261012": {
+    "at": "2026-10-12T09:56:38.514Z",
+    "state": "paused-for-main-development-chat-handoff",
+    "sourceHead": "585f89cd473250edd86371436ee3ebe53bc02bfd",
+    "remoteMaster": "d5dbf61ec709467fd7659fd3599c65dbf167c915",
+    "decisions": {
+      "singleDevelopmentOrigin": "https://ex-machina.eu.org",
+      "hardRequirement": "No SQL; choose hosting and other services by operating cost, implementation change and maintenance benefit",
+      "currentChat": "Astra only, no subagents; stopped at user request",
+      "mergeAuthorization": "Self-merge independently verifiable completed packages through normal protection, then report; F02 is incomplete"
+    },
+    "sites": {
+      "backendDeployments": 2,
+      "historicalDesignSites": 5,
+      "emptyFirebaseDefaultSiteReleases": 0
+    },
+    "cloud": {
+      "vm": "yuban-p1",
+      "machineType": "e2-small",
+      "vmState": "RUNNING",
+      "bootDisk": "20 GiB pd-balanced",
+      "oldAddress": "35.241.127.20",
+      "apiRevision": "yuban-firebase-api-00004-vn6",
+      "workerRevision": "yuban-firebase-worker-00004-nls",
+      "apiWorkerScaling": "MANUAL 0",
+      "queue": "PAUSED",
+      "schedulerJobs": 0,
+      "pitr": "disabled for source and restore",
+      "domainRegistration": "created on existing Hosting site; ownership missing; certificate preparing; no DNS change",
+      "domainMutationOperation": "projects/ai-caregivers-for-children/sites/yuban-firebase-check/customDomains/ex-machina.eu.org/operations/9d2b384e-39e7-451a-bbd5-9a67e6aab413"
+    },
+    "cost": {
+      "actualInvoiceUSD": null,
+      "completedComparison": false,
+      "note": "Official Compute Engine catalog and current resources read; no final comparative monthly estimate or new operating authorization"
+    },
+    "actionsNotPerformed": [
+      "No DNS change",
+      "No Cloud Run resume",
+      "No private data migration",
+      "No new model call, email, notification or product acceptance",
+      "No F02 push, PR or merge"
+    ],
+    "localSources": [
+      {
+        "path": "tmp/f02-resume-20261012/cloud-readback.json",
+        "sha256": "2432ceb37eaff68857d3a259bdef973eb1311620a8d3f3acd1f5530ccb44afaa"
+      },
+      {
+        "path": "tmp/f02-resume-20261012/service-economics-readback.json",
+        "sha256": "5549f68d2074260cc3ec1c6def74e1a100fbeda703153eade6c1195af8683da0"
+      },
+      {
+        "path": "tmp/f02-resume-20261012/compute-economics-catalog.json",
+        "sha256": "a511a62038e5f86a3b273845355700f49087351cb55ee38d2597d7e2e00fa9b3"
+      },
+      {
+        "path": "tmp/f02-domain-20261012/create-readback.json",
+        "sha256": "0964c5b690b818eab6339097f781a494c3823f478562ef09a0613ce446e5e32e"
+      }
+    ]
+  }
 }
