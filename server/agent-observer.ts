@@ -4,6 +4,7 @@ import { taskParameterDiagnosticHints, type TaskParameterDiagnosticHint } from "
 type ToolRejectionStage = "schema" | "authorization" | "execution";
 type ToolRejectionCode = "invalid_parameters" | "not_authorized" | "unknown"
   | "invalid_input" | "invalid_assignee" | "agent_run_expired" | "confirmation_requires_interactive_scope"
+  | "invalid_citation" | "citation_required" | "citation_limit" | "use_citation_ids" | "not_found"
   | "version_conflict" | "operation_conflict" | "agent_proposal_limit" | "agent_scope_changed" | "agent_source_mismatch";
 
 export type AgentDiagnostic = Readonly<{
@@ -44,6 +45,8 @@ function rejectionCode(tool: string, stage: ToolRejectionStage, code: unknown): 
       "version_conflict", "operation_conflict", "agent_proposal_limit", "agent_scope_changed", "agent_source_mismatch"] as const;
     return allowed.find(value => value === code) ?? "unknown";
   }
+  if (tool === "present_answer") return ["invalid_input", "invalid_citation", "citation_required", "citation_limit", "use_citation_ids"].find(value => value === code) as ToolRejectionCode ?? "unknown";
+  if (tool === "read_family_documents") return ["invalid_input", "not_found", "version_conflict"].find(value => value === code) as ToolRejectionCode ?? "unknown";
   return "unknown";
 }
 
@@ -96,7 +99,7 @@ class MetadataAgentObserver extends BasePlugin {
       if (!outcome || outcome === "succeeded") return;
       // The sink boundary rebuilds every field from its fixed allowlists.
       this.emit("tool_rejection", toolName, outcome, { stage,
-        code: stage === "execution" && toolName === "propose_task" ? result.data?.code : undefined,
+        code: stage === "execution" && ["propose_task", "present_answer", "read_family_documents"].includes(toolName) ? result.data?.code : undefined,
         hints: stage === "schema" && toolName === "propose_task" ? result.data?.hints : undefined });
     } catch {
       // Malformed diagnostic metadata must not affect a tool's business result.

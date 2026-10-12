@@ -144,3 +144,14 @@ test("tool rejection projection is bounded and ignores extra fields without affe
   assert.equal(events.length, 2);
   await setImmediate();
 });
+
+
+test("presentation and document diagnostics reveal fixed rejection codes without private payloads", () => {
+  const events: AgentDiagnostic[] = [];
+  const observer = createAgentObserver({ runId: "synthetic", toolNames: ["present_answer", "read_family_documents"], sink: event => { events.push(event); } });
+  observer.recordToolRejection("present_answer", "execution", { status: "rejected", data: { code: "citation_required" } });
+  observer.recordToolRejection("read_family_documents", "schema", { status: "rejected", data: { code: "PRIVATE", hints: [{ input: "PRIVATE" }] } });
+  observer.recordToolRejection("read_family_documents", "execution", { status: "rejected", data: { code: "PRIVATE" } });
+  assert.deepEqual(events.map(event => event.code), ["citation_required", "invalid_parameters", "unknown"]);
+  assert.doesNotMatch(JSON.stringify(events), /PRIVATE/);
+});

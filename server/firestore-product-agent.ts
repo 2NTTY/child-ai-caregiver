@@ -66,7 +66,11 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
             billingSource: selected.billingSource, runLimits: selected.runLimits } }, undefined, false, true);
         instance = createAgentRuntime({ config: selected.config, usage: requireDurableUsage, provider,
           nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: selected.runLimits,
-          admission, embeddings: selected.embeddings });
+          admission, embeddings: selected.embeddings, diagnostics: event => {
+            // The observer builds a fixed metadata allowlist; no arguments, content or errors are logged.
+            if (event.phase === 'tool_rejection' || event.phase === 'model_error' || event.phase === 'tool_error')
+              console.warn(JSON.stringify({ event: 'agent_diagnostic', ...event }));
+          } });
         authorize = async () => await input.authorize() && await selected.authorize();
       } catch (error) {
         return { runId: input.runId!, status: 'stopped', stopReason: error instanceof AgentStopped ? error.reason : 'unavailable',

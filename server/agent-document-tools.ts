@@ -73,6 +73,7 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
   };
   return [
     { name: "read_family_documents", description: AGENT_DOCUMENT_TOOL_DESCRIPTIONS.read_family_documents, authorize,
+      parameterErrorHints: () => [{ path: "documentId", reason: "invalid_parameters", expected: 'To list documents use {"documentId":null}; to read one use the exact UUID returned by that list. Optional cursor must be null or a returned nextCursor; optional status is all, active or archived. Omit other keys.' }],
       parameters: z.object({ documentId: z.uuid().nullable(), cursor: z.string().max(2048).nullable().optional(), status: z.enum(["all", "active", "archived"]).optional() }).strict(), execute: args => guard(async () => {
         if (!args.documentId) {
           const page = await store.list(scope.userId, scope.childId, { cursor: args.cursor as string | null ?? null, status: args.status as "all" | "active" | "archived" ?? "all", limit: 10 });
