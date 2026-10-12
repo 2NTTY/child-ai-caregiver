@@ -1,0 +1,64 @@
+{
+  "package": "P2-F06",
+  "recordedDate": "2026-10-13",
+  "timezone": "Asia/Hong_Kong",
+  "baseCommit": "422f4dd52dc70d7abfc9ffd5b796e53edb68f630",
+  "implementationCommit": "987d239",
+  "status": "native-background-data-verified-not-deployed",
+  "scope": "Existing product and frontend contracts connected to Firestore background jobs, work continuation, concern/growth/document maintenance, notification ledgers and erasure cleanup.",
+  "checks": [
+    {
+      "kind": "targeted-local",
+      "state": "passed",
+      "scope": "Only selected changed-file TypeScript diagnostics, script syntax and git diff --check. Primary reviewed authority transactions, original receipts, leases, worker OIDC, caller identity, channel results, and existing frontend/API contracts.",
+      "limits": "No full suite, lint, build, browser or Computer Use. The final Telegram messageId preservation adjustment was reviewed and type-checked after the native process had loaded its code; no second native scene was run."
+    },
+    {
+      "kind": "native-indexes",
+      "state": "ready",
+      "database": "yuban-firebase-20261011",
+      "addedCompositeIndexes": 33,
+      "manifestCompositeEntries": 114,
+      "missingOrBuilding": 0,
+      "fieldIndexes": "Private-field exclusions and required work-watch/erasure cursor fields applied; no index deletion or TTL change."
+    },
+    {
+      "kind": "native-data-scene",
+      "run": "e0ff2022-5098-465f-8eb5-183dafee676b",
+      "state": "passed",
+      "businessCalls": 119,
+      "diagnosticReadOnlyCalls": 2,
+      "combinedCalls": 121,
+      "maximumBusinessCalls": 180,
+      "passed": [
+        "Original Push operation receipt, scripted unknown result, service reconstruction, no resend and peer isolation.",
+        "Confirmed Telegram binding, two queue consumers, one scripted provider call and separate received receipt.",
+        "Due task, recipient consent, exact task authorization, original contact receipt, completion and no repeat.",
+        "Private work due event and bounded persisted context; no model run correctly reports stopped, not success.",
+        "Concern archive cancels eligibility; child changes refresh the same growth document; another identity cannot read it.",
+        "Current synthetic child and the original F05 erasure operation completed through persisted cursors; test bindings and product authorities revoked."
+      ],
+      "scriptedPushCalls": 1,
+      "scriptedTelegramCalls": 2,
+      "models": 0,
+      "embeddings": 0,
+      "notifications": 0,
+      "externalSourceFetches": 0,
+      "authAccountsCreated": 0,
+      "deployments": 0,
+      "cloudTasksCreated": 0,
+      "controlRestoredPaused": true,
+      "limits": "Two synthetic product authority identities, not Firebase Auth accounts. Native persistence with scripted gateways and direct consumer invocation; this does not prove actual Telegram/Push delivery, OIDC transport, a killed process, model quality or deployment. Existing F02 transport and historical channel evidence remain separate. Erasure cleanup was slow but stayed within its bounded pages and call ceiling; no passed scene was repeated."
+    }
+  ],
+  "failuresPreserved": [
+    "Initial launcher used unavailable tsx and stopped before entering the script or making cloud calls. Native Node 24 execution required no loader. No native data-scene failure occurred."
+  ],
+  "review": "Astra primary only. Existing frontend owners and opId contracts retained; new Caddy product-work route and optional channel-secret mounts reviewed. No subagents.",
+  "deferred": [
+    "F07 completes recovery codecs, journal replay, production SQL exit and remaining cross-process checks.",
+    "F08 validates actual user/Agent outcomes and deploys to the original site.",
+    "P3 reviewer, data-composition and autonomous knowledge-maintenance Agents remain disabled."
+  ],
+  "cost": "Bounded data-only estimate below USD 0.10, not a measured invoice; model and actual notification usage were zero. Source queue remains paused. Index/storage operations remain billable."
+}

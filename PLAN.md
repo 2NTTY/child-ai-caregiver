@@ -63,7 +63,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ### 當前任務入口
 
-當前產品工作包：[P2-F05 官方知識](#p2-f05)。2026-10-12 最新指示依 [ADR-025](docs/DECISIONS.md#adr-025)：**先完成全部資料庫及 SQL 執行依賴替換，再交付受邀用戶使用原站。** 保留 ex-machina.eu.org、原 GCP VM／Compose／Caddy／Node／ADK，不全面遷移平台。F01～F04 已合併；F04 由 #197 合併為 `d0d8c63`，F05 從此 master 開始。原 A09 剩餘成果由 F08 承接。
+當前產品工作包：[P2-F06 背景與通知接線](#p2-f06)。2026-10-12 最新指示依 [ADR-025](docs/DECISIONS.md#adr-025)：**先完成全部資料庫及 SQL 執行依賴替換，再交付受邀用戶使用原站。** 保留 ex-machina.eu.org、原 GCP VM／Compose／Caddy／Node／ADK，不全面遷移平台。F01～F05 已合併；F05 由 #198 合併為 `422f4dd`，F06 從此 master 開始。原 A09 剩餘成果由 F08 承接。
 
 2026-10-12 使用者已授權依下列完整計劃持續完成 F02～F08；實作起點重新核對 master 為 `063539e`，沒有 open PR。先更新本 PLAN，再接續 F02；文件定案不代表程式、部署或雲端清理已完成。每包開始及交付前核對最新 master、相關工作樹及其後合併；部署、用量及待驗觀察見 [STATUS](STATUS.md)。
 
@@ -199,16 +199,16 @@ P2 僅啟用聊天 LlmAgent／Runner；角色識別、啟用狀態、模型／pr
 <a id="p2-f05"></a>
 #### P2-F05 官方知識
 
-- 狀態／前置：資料接線、必要核對及主模型 review 完成，待本分支 PR 合併；前置 P2-F03／F04 已合併。分支 `codex/p2-f05-firestore-knowledge`，基線 `d0d8c63`。結果見 [F05 EV](artifacts/verification/F05_FIRESTORE_KNOWLEDGE_20261013.json)／[LOG](WORKLOG.md#log-20261013-f05-knowledge)。
+- 狀態／前置：已交付／合併 #198（`422f4dd`）；前置 P2-F03／F04 已合併。結果見 [F05 EV](artifacts/verification/F05_FIRESTORE_KNOWLEDGE_20261013.json)／[LOG](WORKLOG.md#log-20261013-f05-knowledge)。
 - 交付：真 Firestore 向量＋公共正文詞彙／RRF、原文／PDF 引用契約、版本發布／停用、來源觀察與語義核准綁定、未變向量復用。私人來源接原前端 owner／API、Agent 候選、選段授權、匯出及刪除／備份登記；沒有改 UI 或 Prompt Pack。自主維護／審核 Agent 留 P3。
 - 證據／承接：80 個索引 READY。原生資料情景在通用清理 40 頁上限停止（96 呼叫），已通過檢索／換版／私源保存隔離；只用剩餘 7 呼叫核新增正文／修訂已清及撤銷身份，合計 103／110、恢復暫停。零模型／真來源抓取／通知／瀏覽器／部署；固定向量不是 embedding 品質證據。F06 接來源排程與未終結的通用清理，F07 接全部新 codec 還原，F08 接原站完整使用，不重跑已通過資料項。
 
 <a id="p2-f06"></a>
 #### P2-F06 背景與通知接線
 
-- 狀態／前置：未開始；P2-F03、P2-F05。
+- 狀態／前置：資料接線與必要验收通過，PR #199 待合併；P2-F03、P2-F05 已合併。分支 `codex/p2-f06-firestore-workers`，基線 `422f4dd`；原任務、關注、接續、通知及前端 API／操作契約已接 Firestore／Tasks，原站尚未部署。
 - 交付：逐一替換有效 pg-boss 消費者，接通任務、關注、聊天接續、來源更新、附件清理及通知重試／停止。Tasks／Scheduler 呼叫原 VM；Firestore 台帳、原收據、lease／generation、撤權、安靜時段及 unknown 不重發保持。
-- 接續 F05 原 erasure 操作的剩餘 collection stages；其私人正文已清及權限已撤銷，台帳尚未 completed。復用原 operation／cursor，不另建立刪除或重跑 F05；原現場及證據見 F05 EV。
+- 證據：[F06 EV](artifacts/verification/F06_FIRESTORE_BACKGROUND_20261013.json)／[LOG](WORKLOG.md#log-20261013-f06-background)。本輪孩子及 F05 原 erasure 游標均完成，綁定／身份撤銷、control 暫停；原 F05 失敗保留。原操作、防重、兩個 consumer、關注關閉、私人接續及同文件刷新通過；只用 scripted gateway，沒有真通知／模型／部署，不重跑 F05 功能。
 - 完成門檻：按現有授權驗一條到期／接續流程，重啟可恢復、完成停止；不以容器計時器或空轉模型代替持久工作。
 
 <a id="p2-f07"></a>
