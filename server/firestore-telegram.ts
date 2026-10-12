@@ -22,6 +22,7 @@ const pointerSchema = z.object({ id: uuid, scope: workRecoveryScopeSchema }).str
 const stateSchema = z.object({ bindingId: uuid.nullable(), challengeId: uuid.nullable() }).strict();
 const metaSchema = z.object({ key: z.string().length(44) }).strict();
 const updateSchema = z.object({ botId: z.string(), updateId: z.number().int().nonnegative(), outcome: z.enum(['ignored', 'seen', 'revoked', 'acknowledged']) }).strict();
+export const firestoreTelegramRecoverySchemas = { pointer: pointerSchema, state: stateSchema, meta: metaSchema, update: updateSchema };
 type SavedBinding = z.infer<typeof firestoreTelegramBindingSchema>;
 type SavedChallenge = z.infer<typeof firestoreTelegramChallengeSchema>;
 type SavedDelivery = z.infer<typeof firestoreTelegramDeliverySchema>;

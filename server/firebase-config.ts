@@ -47,8 +47,8 @@ export function readFirebaseServerConfig(env: Record<string, string | undefined>
     photoBucket, erasureBucket, taskWorkerEnabled: env.FIREBASE_TASK_WORKER_ENABLED === 'true', knowledgeSourceIds };
 }
 
-export function serverStorageBackend(env: Record<string, string | undefined>): 'postgres' | 'firestore' {
-  const backend = env.STORAGE_BACKEND ?? 'postgres';
-  if (backend !== 'postgres' && backend !== 'firestore') throw new Error('Invalid STORAGE_BACKEND configuration');
-  return backend;
+/** Production no longer accepts SQL or an implicit fallback. */
+export function serverStorageBackend(env: Record<string, string | undefined>): 'firestore' {
+  if (env.STORAGE_BACKEND !== undefined && env.STORAGE_BACKEND !== 'firestore') throw new Error('Invalid STORAGE_BACKEND configuration');
+  return 'firestore';
 }

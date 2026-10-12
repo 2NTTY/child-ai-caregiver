@@ -1,12 +1,19 @@
+import { operationRestoreSchemas, isOperationRestoreKind, restoreOperationRecord } from './firestore-restore-operation-records.ts';
+import { firestoreKnowledgeRefreshSchemas as knowledgeRefresh } from './firestore-knowledge-refresh.ts';
+import { definitionHash } from './knowledge-observation.ts';
+import { KNOWLEDGE_LEXICAL_PIPELINE, lexicalBucket } from './knowledge-lexical-index.ts';
+import { agentRestoreSchemas, isAgentRestoreKind, restoreAgentRecord } from './firestore-restore-agent-records.ts';
+import { coreRestoreSchemas, isCoreRestoreKind, coreRestoreAddress, coreRestoreMetadata } from './firestore-restore-core-records.ts';
 import { createHash } from 'node:crypto';
 import { VectorValue } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
+import { agentWorkValuesSchema } from '../src/shared/agent-work.ts';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
 import { canonicalJson } from './online-routing.ts';
 import { canonical } from './firestore-session-codec.ts';
 import { openRecoveryEnvelope, sealRecoveryLocator, type FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
-import { workRecoveryAad, workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
+import { workRecoveryAad, workRecoverySchemas, workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts';
 import { firestoreFamilyDocumentSchemas as documents } from './firestore-family-documents.ts';
 import { firestoreFamilyDocumentSnapshotSchemas as snapshots } from './firestore-family-document-snapshots.ts';
@@ -31,8 +38,12 @@ const changeSchema = authority.childCreationChange.extend({ kind: authority.chan
 const onlineReceiptSchema = z.union([firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema]);
 const authoritySchemas = { control: authority.control, account: authority.account, workspace: authority.workspace, child: authority.child,
   change: changeSchema, 'authority-invitation': authority.invitation, 'authority-identity': authority.identity,
-  'authority-owner': authority.owner, 'authority-operation': authority.operation, 'authority-child-detail': authority.childDetail } as const;
+  'authority-owner': authority.owner, 'authority-operation': authority.operation, 'authority-child-detail': authority.childDetail,
+  work: workRecoverySchemas.work, followup: workRecoverySchemas.followup, 'authority-work-detail': authority.workDetail } as const;
 const domainSchemas = {
+  ...operationRestoreSchemas,
+  ...coreRestoreSchemas,
+  ...agentRestoreSchemas,
   'child-projection': { suffix: 'children', schema: firestoreChildSchema },
   'change-projection': { suffix: 'changes', schema: firestoreChangeSchema },
   task: { suffix: 'tasks', schema: firestoreTaskSchema },
@@ -55,7 +66,12 @@ const domainSchemas = {
   'task-dispatch-scan': { suffix: 'task_dispatches', schema: firestoreTaskDispatchScanSchema },
   'task-dispatch-observation': { suffix: 'task_dispatches', schema: firestoreTaskDispatchObservationSchema },
 } as const;
-const knowledgeSchemas = { 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk } as const;
+const knowledgeSchemas = { 'knowledge-source': knowledge.source, 'knowledge-version': knowledge.version, 'knowledge-chunk': knowledge.chunk,
+  'knowledge-lexical': knowledge.lexical, 'knowledge-vector': knowledge.vector, 'knowledge-watch': knowledgeRefresh.watch,
+  'knowledge-observation': knowledgeRefresh.observation, 'knowledge-observation-part': knowledgeRefresh.part, 'knowledge-check': knowledgeRefresh.check } as const;
+const knowledgeSuffixes = { 'knowledge-source': 'knowledge_sources', 'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks',
+  'knowledge-lexical': 'knowledge_lexical', 'knowledge-vector': 'knowledge_vectors', 'knowledge-watch': 'knowledge_watches',
+  'knowledge-observation': 'knowledge_observations', 'knowledge-observation-part': 'knowledge_observation_parts', 'knowledge-check': 'knowledge_checks' } as const;
 export type FirestoreRestoreAuthorityKind = keyof typeof authoritySchemas;
 export type FirestoreRestoreDomainKind = keyof typeof domainSchemas;
 export type FirestoreRestoreKnowledgeKind = keyof typeof knowledgeSchemas;
@@ -66,6 +82,7 @@ export type FirestoreRestoreValue = z.infer<(typeof authoritySchemas)[FirestoreR
 export interface FirestoreRestoreDecoded { path: string; context: FirestoreRestoreContext; value: FirestoreRestoreValue }
 export interface FirestoreRestoreTransform {
   newEpochByWorkspace: ReadonlyMap<string, string>; generation: string;
+  newAuthorizationVersionByWorkspace?: ReadonlyMap<string, string>;
   photoDescriptors: ReadonlyMap<string, FirebasePhotoObjectDescriptor>;
 }
 export interface FirestoreRestoreRecord { oldPath: string; path: string; data: Record<string, unknown> }
@@ -117,21 +134,26 @@ const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domai
   ciphertext: z.string().min(1), recovery: z.unknown() }).strict();
 const privateMetadata = new Set(['workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey',
   'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
-  'live', 'state', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting']);
+  'live', 'state', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
 /** Pure authenticated record conversion. No reads, writes, permissions, journal replay or object transfer occur here. */
 export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): FirestoreRestoreCodec {
   const data = new FirestoreDomainData(options), { cipher, projectId, namespace } = options;
   const originalEnvelopes = new WeakMap<FirestoreRestoreDecoded, Record<string, unknown>>();
+  const coreMetadata = new WeakMap<FirestoreRestoreDecoded, Record<string, unknown>>();
   const photoTag = (scope: WorkRecoveryScope) => firestoreDomainHash([projectId, namespace, 'photo-scope', scope]);
-  function pathFor(context: FirestoreRestoreContext): string {
-    if (context.family === 'knowledge') return namespace + '_' + ({ 'knowledge-source': 'knowledge_sources',
-      'knowledge-version': 'knowledge_versions', 'knowledge-chunk': 'knowledge_chunks' }[context.kind]) + '/' + context.id;
+  function pathFor(context: FirestoreRestoreContext, originalPath?: string): string {
+    if (context.family === 'knowledge') return namespace + '_' + knowledgeSuffixes[context.kind] + '/' + context.id;
     if (context.family === 'authority') {
       if (!key(authoritySchemas, context.kind)) reject('unsupported_restore_domain');
       return namespace + '/' + createHash('sha256').update(JSON.stringify([context.kind, context.id])).digest('hex');
     }
     if (!key(domainSchemas, context.kind)) reject('unsupported_restore_domain');
+    if (isCoreRestoreKind(context.kind)) {
+      const collection = originalPath?.split('/')[0] ?? namespace + '_' + coreRestoreSchemas[context.kind].suffix;
+      const address = coreRestoreAddress(context.kind, context.id, collection, namespace);
+      return namespace + '_' + address.suffix + '/' + firestoreDomainHash([address.pathKind, context.id]);
+    }
     return namespace + '_' + domainSchemas[context.kind].suffix + '/' + firestoreDomainHash([context.kind, context.id]);
   }
   function scopeAfter(scope: WorkRecoveryScope, input: FirestoreRestoreTransform): WorkRecoveryScope {
@@ -146,7 +168,20 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
   function authorityBinding(context: FirestoreRecoveryContext & { kind: FirestoreRestoreAuthorityKind }, raw: FirestoreRestoreValue): void {
     const { kind, id, scope } = context;
     requireBinding(context.envelopeVersion === (kind.startsWith('authority-') ? 2 : 1) && context.recordVersion === undefined);
-    if (kind === 'control') { parse(authority.control, raw); requireBinding(id === 'current' && scope.ownerUserId === 'control' && scope.workspaceId === NIL && scope.childId === NIL && scope.storageEpoch === NIL); }
+    if (kind === 'work' || kind === 'followup') {
+      const row = kind === 'work' ? parse(workRecoverySchemas.work, raw) : parse(workRecoverySchemas.followup, raw);
+      requireBinding(sameScope(scope, { ownerUserId: row.ownerUserId, workspaceId: row.workspaceId, childId: row.childId, storageEpoch: row.storageEpoch })
+        && scope.workspaceId !== NIL && scope.childId !== NIL && id === ('id' in row ? row.id : row.workId));
+      if (kind === 'work') {
+        const work = parse(workRecoverySchemas.work, row);
+        let payload: unknown;
+        try { payload = JSON.parse(cipher.decrypt(work.payloadEncrypted, `agent-work:${scope.childId}:${scope.ownerUserId}:${id}:${work.version}`)); }
+        catch { reject('restore_work_payload'); }
+        requireBinding(parse(agentWorkValuesSchema, payload).status === work.status);
+      }
+    } else if (kind === 'authority-work-detail') {
+      const row = parse(authority.workDetail, raw); requireBinding(id === row.id && scope.workspaceId !== NIL && scope.childId !== NIL);
+    } else if (kind === 'control') { parse(authority.control, raw); requireBinding(id === 'current' && scope.ownerUserId === 'control' && scope.workspaceId === NIL && scope.childId === NIL && scope.storageEpoch === NIL); }
     else if (kind === 'account') { const row = parse(authority.account, raw); requireBinding(row.userId === id && id === scope.ownerUserId && scope.workspaceId === NIL && scope.childId === NIL && scope.storageEpoch === NIL); }
     else if (kind === 'workspace') { const row = parse(authority.workspace, raw); requireBinding(row.id === id && id === scope.workspaceId && row.ownerUserId === scope.ownerUserId && row.storageEpoch === scope.storageEpoch && id !== NIL && scope.storageEpoch !== NIL); }
     else if (kind === 'child' || kind === 'authority-child-detail') {
@@ -170,6 +205,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       const row = parse(authority.operation, raw);
       requireBinding(row.ownerUserId === scope.ownerUserId && row.childId === null && scope.workspaceId === NIL && scope.childId === NIL && scope.storageEpoch === NIL);
       idEquals(id, [row.ownerUserId, row.childId, row.operationId]);
+      // A journal-backed erasure removes receipt payloads while retaining the original operation identity.
+      if (row.result === null) return;
       if (row.action === 'create_child') {
         const result = parse(z.object({ child: authority.childDetail, scope: workRecoveryScopeSchema, authorizationVersion: decimal }).strict(), row.result);
         requireBinding(result.scope.ownerUserId === row.ownerUserId && result.child.id === result.scope.childId && result.child.workspaceId === result.scope.workspaceId
@@ -181,6 +218,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     }
   }
   function domainBinding(context: FirestoreRecoveryContext & { kind: FirestoreRestoreDomainKind }, raw: FirestoreRestoreValue): void {
+    if (isCoreRestoreKind(context.kind) || isAgentRestoreKind(context.kind) || isOperationRestoreKind(context.kind)) return; // Checked with the authenticated ordering projection below.
     const { kind, id, scope, recordVersion } = context;
     requireBinding(context.envelopeVersion === 1 && recordVersion !== undefined);
     parse(workRecoveryScopeSchema, scope);
@@ -247,7 +285,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       row.chunks.forEach((chunk, index) => requireBinding(chunk.order === index + 1 && chunk.chunkId === deterministicUuid([projectId, namespace, 'chunk', id, chunk.key])));
       if (row.review) requireBinding(row.review.assessmentHash === knowledgeReviewHash(row.review.assessment));
       requireBinding(!internalKnowledgeSource(row.header.url));
-    } else {
+    } else if (kind === 'knowledge-chunk') {
       const row = parse(knowledge.chunk, raw);
       requireBinding(row.projectId === projectId && row.namespace === namespace && row.chunkId === id
         && id === deterministicUuid([projectId, namespace, 'chunk', row.versionId, row.document.key]) && row.contentHash === knowledgeHash(row.document));
@@ -263,19 +301,41 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           && values.some(value => value !== 0) && row.vectorHash === knowledgeHash(values)
           && row.model === KNOWLEDGE_EMBEDDING.model && row.dimensions === KNOWLEDGE_EMBEDDING.dimensions && row.pipeline === KNOWLEDGE_EMBEDDING.pipeline);
       }
+    } else {
+      const row = parse(knowledgeSchemas[kind] as z.ZodType<Record<string, unknown>>, raw);
+      requireBinding(row.projectId === projectId && row.namespace === namespace);
+      if (kind === 'knowledge-lexical') {
+        const value = parse(knowledge.lexical, row);
+        requireBinding(id === deterministicUuid([projectId, namespace, 'lexical', KNOWLEDGE_LEXICAL_PIPELINE, value.versionId, value.bucket])
+          && value.termsHash === knowledgeHash(value.terms) && Object.keys(value.terms).every(term => lexicalBucket(term) === value.bucket));
+      } else if (kind === 'knowledge-vector') {
+        const value = parse(knowledge.vector, row);
+        requireBinding(id === knowledgeHash([KNOWLEDGE_EMBEDDING, value.inputHash]));
+        if (value.state === 'ready') {
+          requireBinding(value.embedding instanceof VectorValue);
+          const values = value.embedding!.toArray();
+          requireBinding(values.length === KNOWLEDGE_EMBEDDING.dimensions && values.every(n => Number.isFinite(n) && Math.abs(n) <= 1e10)
+            && values.some(n => n !== 0) && value.vectorHash === knowledgeHash(values));
+        } else requireBinding(value.embedding === null && value.vectorHash === null);
+      } else if (kind === 'knowledge-watch') {
+        const value = parse(knowledgeRefresh.watch, row); requireBinding(value.id === id && value.definition.id === id && value.definitionHash === definitionHash(value.definition));
+      } else if (kind === 'knowledge-observation') requireBinding(parse(knowledgeRefresh.observation, row).sourceId === id);
+      else if (kind === 'knowledge-observation-part') {
+        const value = parse(knowledgeRefresh.part, row); requireBinding(id === knowledgeHash([value.sourceId, value.contentHash, value.part]));
+      } else requireBinding(parse(knowledgeRefresh.check, row).jobId === id);
     }
   }
   function decode(record: { path: string; data: unknown }): FirestoreRestoreDecoded {
     if (typeof record.path !== 'string' || record.path.length > 300 || !/^[A-Za-z][A-Za-z0-9_]*\/[A-Za-z0-9-]+$/u.test(record.path)) reject('restore_path_invalid');
     const raw = object(record.data); size(raw, 900 * 1024);
-    const [collection, documentId] = record.path.split('/'), publicKinds = { [namespace + '_knowledge_sources']: 'knowledge-source',
-      [namespace + '_knowledge_versions']: 'knowledge-version', [namespace + '_knowledge_chunks']: 'knowledge-chunk' } as const;
+    const [collection, documentId] = record.path.split('/');
+    const publicKinds = Object.fromEntries(Object.entries(knowledgeSuffixes).map(([kind, suffix]) => [namespace + '_' + suffix, kind])) as Record<string, FirestoreRestoreKnowledgeKind>;
     if (collection && key(publicKinds, collection)) {
       if (!documentId) reject('restore_path_invalid');
-      const kind = publicKinds[collection], value = parse<FirestoreRestoreValue>(knowledgeSchemas[kind], raw);
+      const kind = publicKinds[collection]!, value = parse<FirestoreRestoreValue>(knowledgeSchemas[kind], raw);
       knowledgeBinding(kind, documentId, value); return { path: record.path, context: { family: 'knowledge', kind, id: documentId }, value };
     }
-    if (collection !== namespace && !Object.values(domainSchemas).some(entry => collection === namespace + '_' + entry.suffix)) reject('unsupported_restore_domain');
+    if (collection !== namespace && !Object.values(domainSchemas).some(entry => collection === namespace + '_' + entry.suffix) && collection !== namespace + '_memory_topics') reject('unsupported_restore_domain');
     const core: Record<string, unknown> = {};
     for (const [name, value] of Object.entries(raw)) {
       if (['format', 'version', 'recordVersion', 'ciphertext', 'recovery'].includes(name)) core[name] = value;
@@ -297,13 +357,27 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       if (!key(domainSchemas, kind)) reject('unsupported_restore_domain');
       const context = { ...opened.context, kind }, value = parse<FirestoreRestoreValue>(domainSchemas[kind].schema, opened.value);
       domainBinding(context, value); result = { path: record.path, context, value };
+      if (isCoreRestoreKind(kind)) coreMetadata.set(result, coreRestoreMetadata({ ...context, kind },
+        coreRestoreSchemas[kind].schema.parse(value), raw));
+      if (isAgentRestoreKind(kind)) restoreAgentRecord({ ...context, kind }, agentRestoreSchemas[kind].schema.parse(value));
+      if (isOperationRestoreKind(kind)) restoreOperationRecord(data, { ...context, kind }, operationRestoreSchemas[kind].schema.parse(value));
     }
-    requireBinding(pathFor(result.context) === record.path); originalEnvelopes.set(result, object(JSON.parse(JSON.stringify(core)))); return result;
+    requireBinding(pathFor(result.context, record.path) === record.path); originalEnvelopes.set(result, object(JSON.parse(JSON.stringify(core)))); return result;
   }
   function transform(decoded: FirestoreRestoreDecoded, input: FirestoreRestoreTransform): FirestoreRestoreRecord {
-    const context = decoded.context; parse(uuid, input.generation); requireBinding(pathFor(context) === decoded.path);
+    const context = decoded.context; parse(uuid, input.generation); requireBinding(pathFor(context, decoded.path) === decoded.path);
     if (context.family === 'knowledge') {
       const value = parse<FirestoreRestoreValue>(knowledgeSchemas[context.kind], decoded.value); knowledgeBinding(context.kind, context.id, value);
+            // In-flight acquisition is not proof of completion and must not be replayed after restore.
+      if (context.kind === 'knowledge-watch') return { oldPath: decoded.path, path: decoded.path, data: { ...object(value), lease: null } };
+      if (context.kind === 'knowledge-check') {
+        const row = parse(knowledgeRefresh.check, value);
+        return { oldPath: decoded.path, path: decoded.path, data: { ...row, state: row.state === 'running' ? 'unknown' : row.state } };
+      }
+      if (context.kind === 'knowledge-vector') {
+        const row = parse(knowledge.vector, value);
+        return { oldPath: decoded.path, path: decoded.path, data: { ...row, state: row.state === 'running' ? 'unknown' : row.state } };
+      }
       return { oldPath: decoded.path, path: decoded.path, data: object(value) };
     }
     if (context.family === 'domain' && context.kind === 'photo-cleanup') {
@@ -319,6 +393,11 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       let id = context.id, value: FirestoreRestoreValue = decoded.value;
       if (context.kind === 'control') value = { ...parse(authority.control, value), enabled: false, generation: input.generation };
       else if (context.kind === 'workspace') { const row = parse(authority.workspace, value); value = { ...row, storageEpoch: scope.storageEpoch, accessVersion: nextDecimal(row.accessVersion) }; }
+      else if (context.kind === 'work') value = { ...parse(workRecoverySchemas.work, value), ...scope };
+      else if (context.kind === 'followup') {
+        const row = parse(workRecoverySchemas.followup, value);
+        value = { ...row, ...scope, enabled: false, authorizationVersion: input.newAuthorizationVersionByWorkspace?.get(scope.workspaceId) ?? nextDecimal(row.authorizationVersion) };
+      }
       else if (context.kind === 'change') {
         const row = parse(changeSchema, value); value = { ...row, storageEpoch: scope.storageEpoch };
         id = JSON.stringify([scope.workspaceId, scope.storageEpoch, scope.ownerUserId, scope.childId, row.operationId, 'authority']);
@@ -326,7 +405,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       const binding = context.kind === 'authority-invitation' ? null
         : context.kind === 'authority-identity' || context.kind === 'authority-owner' || context.kind === 'authority-operation' && scope.childId === NIL
           ? { ownerUserId: scope.ownerUserId } : scope;
-      const aad = context.kind === 'control' || context.kind === 'account' || context.kind === 'workspace' || context.kind === 'child' || context.kind === 'change'
+      const aad = context.kind === 'control' || context.kind === 'account' || context.kind === 'workspace' || context.kind === 'child' || context.kind === 'change' || context.kind === 'work' || context.kind === 'followup'
         ? workRecoveryAad(projectId, namespace, context.kind, id, scope)
         : JSON.stringify(['yuban-work-recovery', 2, projectId, namespace, context.kind, id, binding]);
       const body = canonical(value); size(value, 192 * 1024); const ciphertext = cipher.encrypt(body, aad);
@@ -336,6 +415,25 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       return { oldPath: decoded.path, path: pathFor({ ...context, id, scope, aad }), data: envelope };
     }
     if (!key(domainSchemas, context.kind)) reject('unsupported_restore_domain');
+    if (isOperationRestoreKind(context.kind)) {
+      const result = restoreOperationRecord(data, { ...context, kind: context.kind }, operationRestoreSchemas[context.kind].schema.parse(decoded.value), scope);
+      return { oldPath: decoded.path, path: pathFor({ ...context, id: result.id, scope: result.scope }),
+        data: { ...result.metadata, ...data.seal<FirestoreRestoreValue>(context.kind, result.id, result.scope,
+          operationRestoreSchemas[context.kind].schema, result.value, result.version) } };
+    }
+    if (isAgentRestoreKind(context.kind)) {
+      const result = restoreAgentRecord({ ...context, kind: context.kind }, agentRestoreSchemas[context.kind].schema.parse(decoded.value), scope);
+      const envelope = data.seal<FirestoreRestoreValue>(context.kind, context.id, scope, agentRestoreSchemas[context.kind].schema, result.value, context.recordVersion);
+      return { oldPath: decoded.path, path: pathFor({ ...context, scope }), data: { ...data.tags(scope), ...result.metadata, ...envelope } };
+    }
+    if (isCoreRestoreKind(context.kind)) {
+      const schema = coreRestoreSchemas[context.kind].schema;
+      const saved = coreMetadata.get(decoded); if (!saved) reject('restore_core_origin_missing');
+      const value = context.kind === 'chat-reply-leases' ? { leases: [] } : schema.parse(decoded.value);
+      const metadata = context.kind === 'chat-reply-leases' ? {} : { ...data.tags(scope), ...saved };
+      const envelope = data.seal<FirestoreRestoreValue>(context.kind, context.id, scope, schema, value, context.recordVersion);
+      return { oldPath: decoded.path, path: pathFor({ ...context, scope }, decoded.path), data: { ...metadata, ...envelope } };
+    }
     domainBinding({ ...context, kind: context.kind }, decoded.value);
     let id = context.id, value: FirestoreRestoreValue = decoded.value, recordVersion = parse(positive, context.recordVersion);
     const metadata: Record<string, unknown> = { ...data.tags(scope) };
@@ -346,7 +444,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       case 'task-revision': { const row = parse(firestoreTaskRevisionSchema, value); Object.assign(metadata, { taskId: row.task.id, taskVersion: row.task.version }); break; }
       case 'task-reminder-outbox': {
         const row = parse(firestoreReminderOutboxSchema, value), rebound = parse(firestoreReminderOutboxSchema, { ...row, ...scope,
-          authorizationVersion: nextDecimal(row.authorizationVersion), generation: input.generation, lease: null,
+          authorizationVersion: input.newAuthorizationVersionByWorkspace?.get(scope.workspaceId) ?? nextDecimal(row.authorizationVersion), generation: input.generation, lease: null,
           state: row.state === 'leased' ? 'unknown' : row.state });
         return { oldPath: decoded.path, path: pathFor({ ...context, scope }), data: sealFirestoreReminderOutbox(data, scope, rebound) };
       }

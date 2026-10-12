@@ -651,5 +651,5 @@ export class FirestoreAuthority {
 export function createFirestoreAuthority(options: FirestoreAuthorityOptions): FirestoreAuthority { return new FirestoreAuthority(options); }
 
 export const firestoreAuthoritySchemas = { control: schemas.control, account: schemas.account, workspace: schemas.workspace, child: schemas.child,
-  invitation: invitationSchema, identity: identitySchema, owner: ownerSchema, operation: receiptSchema, childDetail: childDetailSchema,
+  invitation: invitationSchema, identity: identitySchema, owner: ownerSchema, operation: receiptSchema, childDetail: childDetailSchema, workDetail: workDetailSchema,
   childCreationChange: childCreationChangeSchema, changeKind: changeKindSchema } as const;

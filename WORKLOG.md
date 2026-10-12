@@ -2437,3 +2437,12 @@
 - Verification：33 個新 composite indexes 與私密欄位設定完成，manifest 無 missing／building。一次原生 Firestore 連貫資料情景 119 呼叫，加兩次只讀同一清理游標，共 121／180；核對 scripted Push unknown／重建不重發、Telegram 兩 consumer 一次效果與收到回執、任务授權／完成停止、私人接續、關注關閉、同文件刷新及隔離。本輪合成孩子與 F05 原 erasure 游標均完成，綁定及權限身份撤銷、control 暫停。見 [EV](artifacts/verification/F06_FIRESTORE_BACKGROUND_20261013.json)。
 - Limits / Corrections：最初啟動誤用未安裝的 tsx，零雲端呼叫，改用 Node 原生 TS；原生情景沒有失敗。清理耗時較長，沿游標完成，沒有重跑已通過項。最後 review 補保留較早抵達的 Telegram messageId 回執，只核對該 diff／型別，不另跑原生情景。僅選定檔案型別、腳本語法及 diff 檢查，沒有全量測試。scripted gateway 與 consumer 重建不是實際通知／hard-kill／OIDC 部署證據；零模型、embedding、外網抓取、通知、Auth 帳號建立或部署。估算低於 US$0.10，非帳單。
 - Next：F07 完整還原／journal、剩餘跨程序證據與正式 SQL 退出；F08 原站及完整 Agent 使用。F06 不代表整個 P2 完成，歷史通知／F02 transport 證據保持分開。
+
+<a id="log-20261013-f07-sql-exit"></a>
+## LOG-20261013-F07-SQL-EXIT
+
+- Recorded At / Package：2026-10-13（Asia/Hong_Kong），P2-F07，基線 `5dc743f`，分支 `codex/p2-f07-sql-exit`。主模型獨立實作、review 及必要核對，無子代理／Computer Use。
+- Actual Work：補齊 F03～F06 的還原格式及權威／query metadata，保留聊天、私人內容、文件、來源、收據及已用配額；中斷執行／待確認重新核對，通知重新綁定。分頁計劃以密文保存，每頁交易核對原內容，失去回應可續原操作；完整驗證後原子清理暫存並留下暫停 checkpoint。正式 API／worker 入口、根 Compose、Docker 及生產依賴退出 SQL，旧程式及備份只留追溯；前端／API 契約不改。
+- Verification：四個必要本機情景涵蓋私人對話／收據、孩子刪除、分頁中斷與未知回覆、既有匯出／刪除加文件收據。只查選定修改檔案型別、runtime import graph（181 檔，零 SQL import）、production lockfile、Compose 三服務及 diff。真 GCP 唯讀盤點 302 筆唯一合成資料，初次失敗與分頁上限保留；後續用加密快取補核完整轉換為 279 筆，沒有再讀雲端。既有還原庫的獨立命名空間以 81 筆／兩頁交易核對重連及暫存清除，資料及 checkpoint 全部清理；原還原庫資料未動。見 [EV](artifacts/verification/F07_FIRESTORE_SQL_EXIT_20261013.json)。
+- Corrections：真資料揭示合法的 `result:null` 建立收據與已清完照片墓碑未被舊還原器接受，保留身份／指紋／日誌驗證後修正。孩子清理漏掉 owner-wide 文件操作收據，補原清理方法，並核對獨立日誌、已刪孩子與原版本後刪除四筆既有合成殘留。自動批准審查拒絕取消 scope 清理完成門檻及 caller proof 替代，均未套用；現行恢復仍拒絕缺失／未完成清理，不宣稱無來源權威的災難恢复已完成。
+- Limits / Next：零模型／embedding／真通知／瀏覽器／部署，增量估算低於 US$0.01，帳單未知。沿用 F02 的 native export/import／配對照片及 F03～F06 的隔離／兩 consumer／准入取消證據，不重跑全量；本輪新雲端驗證只是變更後的分頁 apply。盤點目前限 2,000 筆／32 MiB，且須來源暫停、最新 Auth／journal 及清理證據；缺失時保留現場待 operator 處理。合併後進 F08，建立 SQL-free 映像、更新原站及完成受邀用戶／完整 Agent 成果；整個 P2 仍未完成。

@@ -368,3 +368,6 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
   };
   return store;
 }
+
+/** Persisted schemas reused by isolated recovery; not a second domain model. */
+export const firestoreMemoryRecoverySchemas = { summary: savedSummarySchema, key: keySchema, tombstone: tombstoneSchema };

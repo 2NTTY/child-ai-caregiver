@@ -21,18 +21,19 @@
     "legacy:build:web": "node scripts/legacy-web-retired.mjs",
     "server": "node --env-file-if-exists=.env server/main.ts",
     "worker": "node --env-file-if-exists=.env server/worker-main.ts",
-    "worker:control": "node --env-file-if-exists=.env scripts/worker-control.mjs",
-    "db:migrate": "node --env-file-if-exists=.env server/migrate.ts",
+    "worker:control": "node --env-file-if-exists=.env scripts/firebase-control.mjs set-enabled",
+    "db:migrate": "node scripts/sql-retired.mjs",
     "test:integration": "node --env-file-if-exists=.env scripts/verify-server.mjs",
     "test:records": "node --env-file-if-exists=.env scripts/verify-server.mjs --records",
     "test:web": "node --env-file-if-exists=.env scripts/verify-web.mjs",
-    "setup:local": "node scripts/setup-local-env.mjs",
-    "storage:encrypt": "node --env-file-if-exists=.env scripts/encrypt-storage.mjs",
-    "storage:backup": "node --env-file-if-exists=.env scripts/storage-backup.mjs backup",
-    "storage:restore": "node --env-file-if-exists=.env scripts/storage-backup.mjs restore",
-    "account:invitation": "node --env-file-if-exists=.env scripts/account-invitation.mjs",
-    "account:journal": "node --env-file-if-exists=.env scripts/account-erasure-journal.mjs",
-    "firebase:control": "node --env-file-if-exists=.env scripts/firebase-control.mjs"
+    "setup:local": "node scripts/sql-retired.mjs",
+    "storage:encrypt": "node scripts/sql-retired.mjs",
+    "storage:backup": "node --env-file-if-exists=.env scripts/firebase-recovery.mjs",
+    "storage:restore": "node --env-file-if-exists=.env scripts/firebase-recovery.mjs",
+    "account:invitation": "node --env-file-if-exists=.env scripts/firebase-control.mjs invite",
+    "account:journal": "node scripts/sql-retired.mjs",
+    "firebase:control": "node --env-file-if-exists=.env scripts/firebase-control.mjs",
+    "firebase:recovery": "node --env-file-if-exists=.env scripts/firebase-recovery.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "57.0.16",
@@ -43,7 +44,6 @@
     "@google/genai": "2.24.0",
     "@hookform/resolvers": "5.9.1",
     "@react-pdf/renderer": "4.9.0",
-    "better-auth": "1.7.5",
     "cheerio": "1.2.0",
     "expo": "57.0.24",
     "expo-constants": "57.0.19",
@@ -53,10 +53,7 @@
     "firebase-admin": "14.5.0",
     "firebase-functions": "7.4.0",
     "grammy": "1.46.0",
-    "nodemailer": "10.0.16",
     "pdfjs-dist": "6.4.299",
-    "pg": "8.23.0",
-    "pg-boss": "12.34.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-hook-form": "7.88.0",
@@ -69,7 +66,8 @@
     "react-native-web": "0.21.2",
     "react-native-worklets": "0.10.1",
     "web-push": "3.6.7",
-    "zod": "4.5.4"
+    "zod": "4.5.4",
+    "google-auth-library": "10.9.1"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
@@ -78,6 +76,10 @@
     "@types/pg": "8.23.1",
     "@types/react": "19.2.4",
     "@types/web-push": "3.6.4",
-    "typescript": "6.0.3"
+    "typescript": "6.0.3",
+    "better-auth": "1.7.5",
+    "nodemailer": "10.0.16",
+    "pg": "8.23.0",
+    "pg-boss": "12.34.0"
   }
 }

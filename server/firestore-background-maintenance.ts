@@ -18,6 +18,7 @@ const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures'] as con
 const cursorSchema = z.object({ after: z.record(z.string(), z.string().nullable()), complete: z.array(z.string()),
   minute: z.number().int(), token: z.uuid().nullable(), until: z.number().int().nonnegative() }).strict();
 const empty = () => ({ after: {} as Record<string, string | null>, complete: [] as string[], minute: -1, token: null as string | null, until: 0 });
+export const firestoreMaintenanceRecoverySchema = cursorSchema;
 const knowledgePeriod = (weekly: boolean, now = Date.now()) => {
   const local = new Date(now + 8 * 3600_000), at = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), local.getUTCDate(), 1);
   let start = at <= now ? at : at - 86400_000;

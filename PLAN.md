@@ -63,7 +63,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ### 當前任務入口
 
-當前產品工作包：[P2-F06 背景與通知接線](#p2-f06)。2026-10-12 最新指示依 [ADR-025](docs/DECISIONS.md#adr-025)：**先完成全部資料庫及 SQL 執行依賴替換，再交付受邀用戶使用原站。** 保留 ex-machina.eu.org、原 GCP VM／Compose／Caddy／Node／ADK，不全面遷移平台。F01～F05 已合併；F05 由 #198 合併為 `422f4dd`，F06 從此 master 開始。原 A09 剩餘成果由 F08 承接。
+當前產品工作包：[P2-F07 全面退出 SQL 與必要資料核對](#p2-f07)。2026-10-12 最新指示依 [ADR-025](docs/DECISIONS.md#adr-025)：**先完成全部資料庫及 SQL 執行依賴替換，再交付受邀用戶使用原站。** 保留 ex-machina.eu.org、原 GCP VM／Compose／Caddy／Node／ADK，不全面遷移平台。F01～F06 已合併；F06 由 #199 合併為 `5dc743f`，本地 master 已同步，F07 從此基線開始。原 A09 剩餘成果由 F08 承接。
 
 2026-10-12 使用者已授權依下列完整計劃持續完成 F02～F08；實作起點重新核對 master 為 `063539e`，沒有 open PR。先更新本 PLAN，再接續 F02；文件定案不代表程式、部署或雲端清理已完成。每包開始及交付前核對最新 master、相關工作樹及其後合併；部署、用量及待驗觀察見 [STATUS](STATUS.md)。
 
@@ -206,7 +206,7 @@ P2 僅啟用聊天 LlmAgent／Runner；角色識別、啟用狀態、模型／pr
 <a id="p2-f06"></a>
 #### P2-F06 背景與通知接線
 
-- 狀態／前置：資料接線與必要验收通過，PR #199 待合併；P2-F03、P2-F05 已合併。分支 `codex/p2-f06-firestore-workers`，基線 `422f4dd`；原任務、關注、接續、通知及前端 API／操作契約已接 Firestore／Tasks，原站尚未部署。
+- 狀態／前置：已由 PR #199 合併為 `5dc743f`；P2-F03、P2-F05 已合併。原任務、關注、接續、通知及前端 API／操作契約已接 Firestore／Tasks，原站尚未部署。
 - 交付：逐一替換有效 pg-boss 消費者，接通任務、關注、聊天接續、來源更新、附件清理及通知重試／停止。Tasks／Scheduler 呼叫原 VM；Firestore 台帳、原收據、lease／generation、撤權、安靜時段及 unknown 不重發保持。
 - 證據：[F06 EV](artifacts/verification/F06_FIRESTORE_BACKGROUND_20261013.json)／[LOG](WORKLOG.md#log-20261013-f06-background)。本輪孩子及 F05 原 erasure 游標均完成，綁定／身份撤銷、control 暫停；原 F05 失敗保留。原操作、防重、兩個 consumer、關注關閉、私人接續及同文件刷新通過；只用 scripted gateway，沒有真通知／模型／部署，不重跑 F05 功能。
 - 完成門檻：按現有授權驗一條到期／接續流程，重啟可恢復、完成停止；不以容器計時器或空轉模型代替持久工作。
@@ -214,9 +214,10 @@ P2 僅啟用聊天 LlmAgent／Runner；角色識別、啟用狀態、模型／pr
 <a id="p2-f07"></a>
 #### P2-F07 全面退出 SQL 與必要資料核對
 
-- 狀態／前置：未開始；P2-F04、P2-F06。
+- 狀態／前置：實作及最低必要資料核對完成，待 review／PR 合併；P2-F04、P2-F06 已合併。分支 `codex/p2-f07-sql-exit`，基線 `5dc743f`。正式 API／worker／Compose 及生產依賴已退出 SQL，原站尚未部署；復用 F02～F06，不重跑完整情景。
 - 交付：先核對全部業務服務、向量、排程、正式啟動／映像／依賴及備份均已退出 PostgreSQL／pg-boss／Better Auth SQL，停止 SQL 後不靜默回退。實際資料庫使用既有 GCP 香港 Firestore；原 VM 的新組裝保持受控，先不開放受邀用戶。不刪歷史證據或舊備份，不要求 SQL 舊測試資料搬遷／對帳。
 - 必要核對：僅補各包剩餘跨域、版本衝突、原操作恢復、隔離及新資料配對還原缺口。保留收據、Auth／epoch 與刪除屏障；一次兩執行者核對准入、防重及取消，合併到已有情景，不重跑全量矩陣。完成資料庫替換後才進 F08 的受邀用戶與真 Agent 使用驗收。
+- 證據／限制：[F07 EV](artifacts/verification/F07_FIRESTORE_SQL_EXIT_20261013.json)／[LOG](WORKLOG.md#log-20261013-f07-sql-exit)。302 筆既有合成資料解碼及離線完整轉換、81 筆新合成資料的真分頁交易／重連／暫存清理通過；修正並清理四筆舊文件收據。還原保持暫停、重新綁定通知，不恢復模型／投遞未知操作。來源權威／Auth／獨立日誌及清理證據缺失仍停止，盤點有 2,000 筆／32 MiB 上限；沒有重跑 native export/import、照片拷貝或模型。F08 接實際 SQL-free 映像、原站及完整使用結果。
 
 <a id="p2-f08"></a>
 #### P2-F08 原站零 SQL 交付與清理

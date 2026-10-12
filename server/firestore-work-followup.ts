@@ -21,6 +21,7 @@ const eventItemSchema = z.object({ workId: uuid, workVersion: z.number().int().p
 export const firestoreWorkEventSchema = eventItemSchema.extend({ id: uuid, generation: uuid,
   authorizationVersion: z.string(), jobId: z.string(), additional: z.array(eventItemSchema).max(4).default([]), result: workContinuationSchema }).strict();
 const dailySchema = z.object({ eventId: uuid, day: z.string() }).strict();
+export const firestoreWorkDailyRecoverySchema = dailySchema;
 type Watch = z.infer<typeof firestoreWorkWatchSchema>;
 type Event = z.infer<typeof firestoreWorkEventSchema>;
 const active = (work: AgentWork) => ['active', 'waiting'].includes(work.status) && !!work.followUp;

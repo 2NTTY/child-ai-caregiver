@@ -39,7 +39,7 @@ try {
     const journal=createCloudStorageErasureJournal({config:artifactConfig,cipher});
     const native=createFirebaseNativeRecovery({projectId:config.projectId,sourceDatabaseId:config.databaseId,targetDatabaseId,backupBucketName:config.erasureBucket});
     app=initializeApp({projectId:config.projectId,credential:applicationDefault()},'recovery-'+randomUUID());
-    const operator=createFirebaseRecoveryOperator({...domain,targetDatabase:target,backupBucketName:config.erasureBucket,journalBucket,journal,photos,artifacts,native,auth:getAuth(app),keyVersionRef:process.env.FIREBASE_STORAGE_KEY_VERSION_REF});
+    const operator=createFirebaseRecoveryOperator({...domain,targetDatabase:target,backupBucketName:config.erasureBucket,journalBucket,journal,photos,sourceObjects:objects,artifacts,native,auth:getAuth(app),keyVersionRef:process.env.FIREBASE_STORAGE_KEY_VERSION_REF});
     if(command==='start-export')result=await operator.startBackup(input);
     else if(command==='find-export')result=await native.findExport(input);
     else if(command==='finish-backup')result=await operator.finishBackup(input);

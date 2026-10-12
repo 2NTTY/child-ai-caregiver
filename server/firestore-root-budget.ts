@@ -35,6 +35,7 @@ const stateSchema = z.object({ bindingFingerprint: fingerprint, generation: inte
   limits: limitsSchema, used: countsSchema, status: z.enum(['active', 'stopped']),
   attempts: z.array(savedAttemptSchema).max(MAX_ROOT_BUDGET_ATTEMPTS) }).strict();
 type Stored = z.infer<typeof stateSchema>;
+export const firestoreRootBudgetRecoverySchema = stateSchema;
 function reject(code: string): never { throw new RootBudgetError(code); }
 function parse<T>(schema: z.ZodType<T>, value: unknown, code: string): T {
   const parsed = schema.safeParse(value); if (!parsed.success) reject(code); return parsed.data;

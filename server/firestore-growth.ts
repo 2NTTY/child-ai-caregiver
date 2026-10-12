@@ -263,3 +263,6 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   return store;
 }
 export type FirestoreGrowthStore = ReturnType<typeof createFirestoreGrowthStore>;
+
+/** Existing persisted formats, shared with isolated recovery. */
+export const firestoreGrowthRecoverySchema = checkSchema;

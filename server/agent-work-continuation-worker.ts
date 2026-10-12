@@ -6,7 +6,8 @@ import { databaseAdapter } from "./worker-queue.ts";
 import { WORK_CONTINUATION_CHECK_QUEUE, WORK_CONTINUATION_QUEUE, WORK_CONTINUATION_OPTIONS,
   type AgentWorkContinuationStore, type WorkContinuationEnqueue, type WorkContinuationJob } from "./agent-work-continuation.ts";
 const checkSchema = z.object({ generation: z.uuid() }).strict();
-export const workContinuationJobSchema = z.object({ eventId: z.uuid(), jobId: z.uuid(), workerGeneration: z.uuid(), storageEpoch: z.uuid() }).strict();
+import { workContinuationJobSchema } from "./agent-work-continuation-core.ts";
+export { workContinuationJobSchema } from "./agent-work-continuation-core.ts";
 
 export interface WorkContinuationRecovery {
   recoverBackground(job: WorkContinuationJob): Promise<{ state: "pending" | "settled" | "already_terminal"; runId: string | null }>;

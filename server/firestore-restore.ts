@@ -10,6 +10,9 @@ import { firebaseErasureIntentHash, firebaseErasureIntentSchema, firebaseErasure
 import type { FirebasePhotoObjectDescriptor } from './firebase-photo-objects.ts';
 import { firebaseBackupDocumentDigest, type FirebaseBackupDocument } from './firestore-backup.ts';
 import { assertFirestoreRestoreContent } from './firestore-restore-content.ts';
+import { originalRestoreScopeKinds, discardedRestoreKinds } from './firestore-restore-operation-records.ts';
+import { isRestoreProtocolOrUsage, restoreFirestoreUsage } from './firestore-restore-usage.ts';
+import { firestoreScopeErasureSchema } from './firestore-erasure.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 export interface FirebaseRestoreAuthUser { userId: string; disabled: boolean; emailVerified: boolean; email: string | null }
@@ -59,12 +62,14 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
   const children=unique(rows(records,'child',authority.child),row=>row.value.id);
   const invitations=unique(rows(records,'authority-invitation',authority.invitation),row=>row.value.email);
   requireValue(rows(records,'control',authority.control).length===1);
-  requireValue(accounts.size===identities.size && accounts.size===owners.size && accounts.size===workspaces.size);
+  requireValue(accounts.size===owners.size && accounts.size===workspaces.size);
   for (const [id,account] of accounts) {
     const identity=identities.get(id)?.value,owner=owners.get(id)?.value,workspace=owner&&workspaces.get(owner.workspaceId)?.value;
-    requireValue(Boolean(identity && owner && workspace && workspace.ownerUserId===id));
-    const invitation=invitations.get(identity!.email)?.value;
-    requireValue(Boolean(invitation && invitation.consumedBy===id));
+    requireValue(Boolean(owner && workspace && workspace.ownerUserId===id));
+    if (account.value.status !== 'deleted') {
+      requireValue(Boolean(identity)); const invitation=invitations.get(identity!.email)?.value;
+      requireValue(Boolean(invitation && invitation.consumedBy===id));
+    }
     requireValue(account.value.userId===id);
   }
   for (const record of records) {
@@ -73,14 +78,14 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
     if(scope.workspaceId===NIL)continue;
     const workspace=workspaces.get(scope.workspaceId)?.value;
     requireValue(Boolean(workspace && workspace.ownerUserId===scope.ownerUserId));
-    requireValue(scope.storageEpoch===workspace!.storageEpoch);
+    requireValue(scope.storageEpoch===workspace!.storageEpoch || originalRestoreScopeKinds.has(record.context.kind));
     if(scope.childId!==NIL) {
       const child=children.get(scope.childId)?.value;
       requireValue(Boolean(child && child.workspaceId===scope.workspaceId));
     }
   }
   const details=unique(rows(records,'authority-child-detail',authority.childDetail),row=>row.value.id);
-  for(const [id,child]of children)requireValue(details.has(id)&&details.get(id)!.value.workspaceId===child.value.workspaceId);
+  for(const [id,child]of children)if(child.value.status!=='deleted')requireValue(details.has(id)&&details.get(id)!.value.workspaceId===child.value.workspaceId);
 }
 
 /** Pure preparation; source records are decoded afresh. The caller still owns pinned backup IO and atomic isolated commit. */
@@ -90,11 +95,11 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     && input.targetDatabaseId!==options.database.databaseId,'restore_target');
   requireValue(input.documents.length<=2000&&input.liveDocuments.length<=2000,'restore_limit');
   const codec=createFirestoreRestoreCodec(options), data=new FirestoreDomainData(options);
-  const isSession=(row:FirebaseBackupDocument)=>row.path.startsWith(options.namespace+'_sessions/');
+  const isSession=(row:FirebaseBackupDocument)=>isRestoreProtocolOrUsage(options.namespace,row.path);
   const decoded=input.documents.filter(row=>!isSession(row)).map(row=>codec.decode(row));
   const live=input.liveDocuments.filter(row=>!isSession(row)).map(row=>codec.decode(row));
   unique(decoded,row=>row.path); unique(live,row=>row.path);
-  assertFirebaseRestoreAuthority(decoded); assertFirebaseRestoreAuthority(live); assertFirestoreRestoreContent(decoded);
+  assertFirebaseRestoreAuthority(decoded); assertFirebaseRestoreAuthority(live);
   const oldControl=rows(decoded,'control',authority.control)[0]!.value,liveControl=rows(live,'control',authority.control)[0]!.value;
   requireValue(!oldControl.enabled&&!liveControl.enabled&&liveControl.generation===input.sourceGeneration,'restore_source_not_paused');
   const authUsers=unique(input.authUsers.map(value=>authSchema.parse(value)),value=>value.userId);
@@ -105,7 +110,8 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   const accounts=rows(decoded,'account',authority.account), identities=rows(decoded,'authority-identity',authority.identity);
   const oldIdentities=unique(identities,row=>row.value.userId);
   for (const {record,value}of accounts) {
-    const latest=current(record,authority.account), identity=oldIdentities.get(value.userId)!;
+    const latest=current(record,authority.account), identity=oldIdentities.get(value.userId);
+    if (!identity) { requireValue(value.status==='deleted'); continue; }
     const liveIdentity=current(identity.record,authority.identity), user=authUsers.get(value.userId);
     requireValue(user!==undefined,'restore_auth_missing');
     const identityLive=liveIdentity?.state==='active'&&user.email!==null&&user.email.trim().toLowerCase()===identity.value.email
@@ -123,11 +129,12 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     // A changed identity/consumer is never silently reattached to a restored account.
     if(value.consumedBy!==null&&latest?.consumedBy!==value.consumedBy)reject('restore_invitation_changed');
   }
-  const newEpochByWorkspace=new Map<string,string>();
+  const newEpochByWorkspace=new Map<string,string>(),newAuthorizationVersionByWorkspace=new Map<string,string>();
   for(const {record,value}of rows(decoded,'workspace',authority.workspace)) {
     const latest=current(record,authority.workspace);requireValue(Boolean(latest&&latest.ownerUserId===value.ownerUserId),'restore_live_workspace_missing');
     record.value={...value,status:restricted(value.status,latest!.status,accountRank),
       accessVersion:BigInt(value.accessVersion)>BigInt(latest!.accessVersion)?value.accessVersion:latest!.accessVersion};
+    newAuthorizationVersionByWorkspace.set(value.id,(BigInt(authority.workspace.parse(record.value).accessVersion)+1n).toString());
     newEpochByWorkspace.set(value.id,firebaseRestoreEpoch(options.projectId,input.targetDatabaseId,input.restoreId,value.id));
   }
   for(const {record,value}of rows(decoded,'child',authority.child)) {
@@ -136,13 +143,38 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   }
   requireValue(input.erasures.length<=2000,'restore_limit');
   const journal=input.erasures.map(value=>firebaseErasureIntentSchema.parse(value));
-  // F07 must apply the new account/child barriers before reopening any restored data.
-  requireValue(journal.every(intent=>intent.type==='photo-delete'),'restore_scope_erasure_adapter_required');
   unique(journal,value=>canonical([value.scope.ownerUserId,value.operationId]));
+  const scopeJournal=journal.filter(intent=>intent.type!=='photo-delete');
+  // Complete original-object erasure first; recovery must not discard an unresolved cleanup obligation.
+  for(const intent of scopeJournal) {
+    const job=rows(live,'scope-erasure',firestoreScopeErasureSchema).find(row=>row.value.intent.operationId===intent.operationId
+      &&canonical(row.value.intent)===canonical(intent));
+    requireValue(job?.value.state==='completed','restore_pending_scope_cleanup');
+  }
+  const erasedByScope=(owner:string,workspace:string,child:string)=>scopeJournal.some(intent=>intent.scope.ownerUserId===owner
+    && (intent.type==='account-delete'||intent.scope.workspaceId===workspace&&intent.scope.childId===child));
+  const scopeRemoved=new Set<string>();
+  for(const record of decoded) {
+    if(record.context.family==='knowledge')continue;
+    const {scope,kind}=record.context;
+    const accountErased=scopeJournal.some(v=>v.type==='account-delete'&&v.scope.ownerUserId===scope.ownerUserId);
+    const body=record.value as Record<string,any>;
+    const matches=accountErased||erasedByScope(scope.ownerUserId,scope.workspaceId,scope.childId)
+      || ['online-receipt','authority-operation','document-operation','change-projection','change'].includes(kind)
+        && erasedByScope(scope.ownerUserId,body.result?.scope?.workspaceId??body.result?.child?.workspaceId??scope.workspaceId,
+          body.childId??body.result?.child?.id??body.result?.childId??body.result?.scope?.childId??NIL)
+      || kind==='authority-invitation'&&scopeJournal.some(v=>v.type==='account-delete'&&v.scope.ownerUserId===body.consumedBy);
+    if(!matches)continue;
+    if(kind==='account')record.value={...authority.account.parse(record.value),status:'deleted',admitted:false,invitationLive:false,emailVerified:false,acknowledgementVersion:null};
+    else if(kind==='workspace')record.value={...authority.workspace.parse(record.value),status:'deleted'};
+    else if(kind==='child')record.value={...authority.child.parse(record.value),status:'deleted'};
+    else if(kind!=='authority-owner'&&kind!=='scope-erasure')scopeRemoved.add(record.path);
+  }
   const intentByAsset=new Map<string,FirebaseErasureIntent>();
-  for(const intent of journal){const prior=intentByAsset.get(intent.assetId);if(prior&&canonical(prior.scope)!==canonical(intent.scope))reject('restore_erasure_binding');intentByAsset.set(intent.assetId,intent);}
-  const erasedReservations=new Map<string,string>(), removed=new Set<string>();
+  for(const intent of journal.filter(v=>v.type==='photo-delete')){const prior=intentByAsset.get(intent.assetId);if(prior&&canonical(prior.scope)!==canonical(intent.scope))reject('restore_erasure_binding');intentByAsset.set(intent.assetId,intent);}
+  const erasedReservations=new Map<string,string>(), removed=new Set(scopeRemoved);
   for(const {record,value}of rows(decoded,'photo',photos.photo)) {
+    if(scopeRemoved.has(record.path))continue;
     const intent=intentByAsset.get(value.id);
     if(value.deletion)requireValue(Boolean(intent&&canonical(intent)===canonical(value.deletion.intent)),'restore_erasure_missing');
     if(intent) {
@@ -151,8 +183,9 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     }
   }
   // Keep original cleanup envelopes, including newer delete completions, so old immutable objects remain charged and fenced.
-  const cleanup=unique(rows(decoded,'photo-cleanup',photos.cleanup),row=>row.value.photoId);
+  const cleanup=unique(rows(decoded,'photo-cleanup',photos.cleanup).filter(row=>!scopeRemoved.has(row.record.path)),row=>row.value.photoId);
   for(const row of rows(live,'photo-cleanup',photos.cleanup)) {
+    if(erasedByScope(row.value.scope.ownerUserId,row.value.scope.workspaceId,row.value.scope.childId))continue;
     const intent=intentByAsset.get(row.value.photoId);
     requireValue(Boolean(intent&&row.value.journal.intentSha256===firebaseErasureIntentHash(intent)
       &&canonical(intent.scope)===canonical(row.value.scope)&&intent.operationId===row.value.operationId),'restore_erasure_missing');
@@ -161,7 +194,14 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   }
   const backupPhotos=unique(rows(decoded,'photo',photos.photo),row=>row.value.id);
   const currentPhotos=unique(rows(live,'photo',photos.photo),row=>row.value.id);
-  for(const intent of journal)if(!cleanup.has(intent.assetId)) {
+  for(const intent of journal.filter(v=>v.type==='photo-delete'))if(!cleanup.has(intent.assetId) && !erasedByScope(intent.scope.ownerUserId,intent.scope.workspaceId,intent.scope.childId)) {
+    const settled=currentPhotos.get(intent.assetId)?.value;
+    // The live photo writer retains the authenticated tombstone after its cleanup
+    // transaction removes the obligation and releases quota. There is nothing to
+    // reconstruct once that exact deletion has completed; the photo stays removed.
+    if(settled?.state==='deleted' && canonical(settled.scope)===canonical(intent.scope)
+      && canonical(settled.deletion!.intent)===canonical(intent)
+      && settled.deletion!.journal?.intentSha256===firebaseErasureIntentHash(intent))continue;
     const sourcePhoto=currentPhotos.get(intent.assetId)??backupPhotos.get(intent.assetId);
     requireValue(sourcePhoto!==undefined,'restore_cleanup_evidence_missing');
     const photo=sourcePhoto!.value,intentHash=firebaseErasureIntentHash(intent);
@@ -179,13 +219,15 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
       ...data.seal('photo-cleanup',id,photo.scope,photos.cleanup,value)}});
     decoded.push(record);cleanup.set(id,{record,value});
   }
-  const outputExtras:FirebaseBackupDocument[]=[];
+  const outputExtras:FirebaseBackupDocument[]=restoreFirestoreUsage(options,input.documents,input.liveDocuments,
+    [...decoded,...live].filter(v=>v.context.kind==='agent-run').map(v=>v.context.id));
   for(const {record,value}of rows(decoded,'online-receipt',z.union([firestoreOnlineRecordSchema,firestoreOnlineErasureBarrierSchema]))) {
     if('operation'in value && erasedReservations.has(canonical([value.ownerUserId,value.operation.opId]))) {
       requireValue(!('state'in value),'restore_erasure_receipt');record.value={...value,result:null};
     }
   }
-  for(const intent of journal) {
+  for(const intent of journal.filter(v=>v.type==='photo-delete')) {
+    if(erasedByScope(intent.scope.ownerUserId,intent.scope.workspaceId,intent.scope.childId))continue;
     const epoch=newEpochByWorkspace.get(intent.scope.workspaceId);if(!epoch)continue;
     const owner=accounts.find(row=>row.value.userId===intent.scope.ownerUserId);requireValue(Boolean(owner),'restore_erasure_binding');
     const id=JSON.stringify([intent.scope.ownerUserId,intent.operationId]);
@@ -197,7 +239,11 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     outputExtras.push({path:data.ref('online_operations','online-receipt',id).path,
       data:{...data.tags(scope),...data.seal('online-receipt',id,scope,firestoreOnlineErasureBarrierSchema,barrier)}});
   }
-  const keep=decoded.filter(record=>!removed.has(record.path)||cleanup.get(record.context.id)?.record===record);
+  const keep=decoded.filter(record=>(!removed.has(record.path)||cleanup.get(record.context.id)?.record===record) && !discardedRestoreKinds.has(record.context.kind));
+  // A completed erasure may leave historical owner-wide receipt metadata in an old
+  // backup. Remove its authenticated child scope first, then require the entire
+  // surviving content graph; missing live content is still an error.
+  assertFirestoreRestoreContent(keep);
   const livePhotos=rows(keep,'photo',photos.photo).filter(row=>row.value.state==='ready'||row.value.state==='reserved');
   const quotas=new Map<string,{bytes:number;count:number}>();
   for(const row of livePhotos) {
@@ -218,15 +264,15 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   if(global.length)global[0]!.record.value=photos.globalQuota.parse({activeBytes,activeCount,
     cleanupBytes:allCleanup.reduce((sum,row)=>sum+row.value.bytes,0),cleanupCount:allCleanup.length});
   const generation=firebaseRestoreGeneration(options.projectId,input.targetDatabaseId,input.restoreId);
-  const records=keep.map(record=>{const transformed=codec.transform(record,{generation,newEpochByWorkspace,photoDescriptors:input.photoDescriptors});
+  const records=keep.map(record=>{const transformed=codec.transform(record,{generation,newEpochByWorkspace,newAuthorizationVersionByWorkspace,photoDescriptors:input.photoDescriptors});
     return {path:transformed.path,data:transformed.data};}).concat(outputExtras);
   unique(records,row=>row.path);
   const outputPaths=new Set(records.map(row=>row.path));
   const removePaths=input.documents.filter(row=>!outputPaths.has(row.path)).map(row=>row.path);
-  // One isolated atomic commit is intentional for the bounded F02 graph, never silent truncation.
+  // The operator persists a bounded encrypted plan, applies pages, then validates the complete paused result.
   const encodedBytes=records.reduce((sum,row)=>sum+firebaseBackupDocumentDigest(row).bytes,0);
-  requireValue(records.length+removePaths.length+1<=450&&encodedBytes<=8*1024*1024,'restore_atomic_limit');
-  const restored=records.map(row=>codec.decode(row));
+  requireValue(records.length<=4000&&encodedBytes<=32*1024*1024,'restore_limit');
+  const restored=records.filter(row=>!isSession(row)).map(row=>codec.decode(row));
   assertFirebaseRestoreAuthority(restored);assertFirestoreRestoreContent(restored);
   return {records,removePaths,generation,newEpochByWorkspace,journalHash:digest(journal.map(firebaseErasureIntentHash).sort()),
     authHash:digest([...authUsers.values()].sort((a,b)=>a.userId.localeCompare(b.userId))),

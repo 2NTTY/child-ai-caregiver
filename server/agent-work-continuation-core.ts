@@ -1,3 +1,5 @@
+import { z } from "zod";
+export const workContinuationJobSchema = z.object({ eventId: z.uuid(), jobId: z.uuid(), workerGeneration: z.uuid(), storageEpoch: z.uuid() }).strict();
 import type { AgentWork, WorkResource } from "../src/shared/agent-work.ts";
 import type { KnowledgeReviewAssessment } from "./knowledge-review-assessment.ts";
 export interface KnowledgeCurrent extends KnowledgeBasis { assessment: KnowledgeReviewAssessment | null }

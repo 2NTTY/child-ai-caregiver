@@ -29,6 +29,7 @@ const routeSchema = z.object({ id: z.string().regex(/^[a-f0-9]{64}$/u), scope: w
 const ref = (data: FirestoreDomainData, id: string) => data.ref('background_work', 'background-work', id);
 const jobId = (identity: BackgroundIdentity) => firestoreDomainHash(['product-work', identity]);
 const referenceSchema = z.object({ id: z.string().regex(/^[a-f0-9]{64}$/u), reference: uuid }).strict();
+export const firestoreBackgroundRecoverySchemas = { route: routeSchema, reference: referenceSchema, identity: identitySchema };
 export function firestoreBackgroundReference(job: Pick<FirestoreBackgroundWork, 'id'>) {
   const hex = job.id;
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
