@@ -2,7 +2,7 @@
     encode zstd gzip
     header X-Content-Type-Options nosniff
     header Referrer-Policy same-origin
-    @worker path /internal/task-reminders /internal/task-dispatch
+    @worker path /internal/task-reminders /internal/task-dispatch /internal/product-work
     handle @worker {
         # The worker verifies OIDC issuer, audience, expiry and the fixed service identity.
         reverse_proxy {$FIREBASE_WORKER_UPSTREAM:worker:3002}

@@ -36,6 +36,8 @@ export interface FirestoreMemoryStore extends MemoryStore {
   mutation: FirestoreOnlineMutation;
   prepareSummaryWrite(binding: Binding, raw: unknown, operationId: string): Promise<Prepared<ConversationSummary>>;
   readFact(binding: Binding, id: string): Promise<MemoryFact | null>;
+  /** Current confirmed family facts by their existing uniqueness keys; no private corpus scan. */
+  readFamilyFacts(binding: Binding, keys: readonly string[]): Promise<MemoryFact[]>;
   prepareFactChange(binding: Binding, action: 'revise' | 'deactivate', id: string, raw: unknown, operationId: string): Promise<Prepared<MemoryFact>>;
   /** Server-confirmed proposal only; never exposed as a model-supplied confirmation flag. */
   prepareConfirmedFact(binding: Binding, raw: unknown, confirmShared: boolean, operationId: string): Promise<Prepared<MemoryFact>>;
@@ -281,6 +283,18 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
   };
   const store: FirestoreMemoryStore = {
     mutation, prepareSummaryWrite,
+    async readFamilyFacts(binding, keys) {
+      domainParse(z.array(z.string().min(1).max(80)).max(8), keys);
+      const facts: MemoryFact[] = [];
+      for (const raw of new Set(keys.map(normalizedFactKey))) {
+        const key = JSON.stringify([binding.scope.ownerUserId, binding.scope.childId, 'facts', 'family', raw]);
+        const row = await binding.transaction.get(data.ref('memory_keys', 'memory-key', key)); if (!row.exists) continue;
+        const id = open(binding, 'memory-key', key, keySchema, row).id, fact = await read(binding, 'facts', id) as MemoryFact | null;
+        if (!fact || fact.visibility !== 'family' || normalizedFactKey(fact.key) !== raw || fact.status !== 'confirmed') domainReject('memory_key_binding', 500);
+        facts.push(await factResult(binding, fact));
+      }
+      return facts;
+    },
     readFact: async (binding, id) => {
       const fact = await read(binding, 'facts', id); return fact ? factResult(binding, fact as MemoryFact) : null;
     },

@@ -24,7 +24,7 @@ async function write(response: Response, target: ServerResponse) {
   target.end(Buffer.from(await response.arrayBuffer()));
 }
 const rejected = (status: number) => Response.json({ state: 'rejected' }, { status });
-/** OIDC transport has no browser Origin requirement and accepts only the two fixed POST paths. */
+/** OIDC transport has no browser Origin requirement and accepts only the fixed POST paths. */
 export function createFirebaseWorkerNodeHandler(options: { workerOrigin: string; handler(request: Request): Promise<Response> }) {
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     try {
@@ -34,7 +34,7 @@ export function createFirebaseWorkerNodeHandler(options: { workerOrigin: string;
         await write(Response.json({ status: 'ok', service: 'firebase-worker' }), response); return;
       }
       if (method !== 'POST') { await write(rejected(405), response); return; }
-      if (!['/internal/task-reminders', '/internal/task-dispatch'].includes(path)) { await write(rejected(404), response); return; }
+      if (!['/internal/task-reminders', '/internal/task-dispatch', '/internal/product-work'].includes(path)) { await write(rejected(404), response); return; }
       const headers = new Headers();
       for (const [name, value] of Object.entries(request.headers)) {
         if (Array.isArray(value)) for (const part of value) headers.append(name, part); else if (value !== undefined) headers.set(name, value);
@@ -58,6 +58,7 @@ async function main() {
   server.requestTimeout = 15000; server.headersTimeout = 10000; server.maxHeadersCount = 100;
   let stopping: Promise<void> | undefined;
   const stop = () => stopping ??= (async () => {
+    runtime.abort();
     const deadline = setTimeout(() => server.closeAllConnections(), 20_000).unref();
     try { await new Promise<void>(resolve => server.close(() => resolve())); } finally { clearTimeout(deadline); await runtime.close(); }
   })();

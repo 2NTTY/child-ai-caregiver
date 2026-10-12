@@ -660,6 +660,12 @@ Firestore 交易先讀權限／刪除狀態、版本、唯一性及原操作，�
 
 Tasks／Scheduler 呼叫原 VM 的 HTTP 工作入口，無須 Cloud Run。由應用核 OIDC 簽章、issuer、audience、期限及固定服務身份，不能把公開 HTTPS 路徑當成已授權；沿既有 lease／generation、收據及防重。worker 請求覆蓋完整有界工作，期限與 Task dispatch deadline 協調；中斷先查原效果，unknown 不盲目再生成或通知。每次領取／外發重查授權、任務終態、版本、渠道及安靜時段；不用 pg-boss 或 HTTP 回覆後的無台帳計算。
 
+F06 的原提醒 consumer 與 `product-work` 共用上述入口；後者按 Server 台帳種類呼叫同一關注、成長、接續、文件、來源更新、附件清理、退出及通知服務。業務變更同交易建立 child-change，dispatcher 每次只派有限到期工作；恢復工作用持久游標逐頁掃描，無程序內 interval。維護只取有限 metadata；知識仍走既有來源排程與核對／发布，沒有啟動 P3 自主維護 Agent。
+
+私人接續仍按本人／孩子／香港日合併最多五項成一個 run；每批至多讀十項，無新依據不呼叫模型。事件保存原工作、資源及來源版本，執行前重核；工作更改或取消後不沿舊事件繼續。程序重建查同一 run／工具／投遞收據，已成功不重做，未知外部結果不自動重發。渠道失效會撤銷該版本綁定；渠道接受、使用者收到和任務完成各自保存。
+
+文件刷新只推進一個有界資料批次，沿原文件 ID／版本和來源 revision；手動修改衝突停止整理並保留內容。清理工作可在使用者已撤權後依原刪除 intent 繼續，但不得藉 SYSTEM 路由存取其他業務內容。所有新增資料域同時登記匯出／配對備份／刪除；完整還原 codec 是 F07 門檻，不能以登記完成代替還原證據。
+
 互動沿既有可用請求、message／run／原操作關聯、進度、取消及收據接口；不因已取消的 Hosting 60 秒限制強制改成 202 協議。需要排程的工作仍須先持久保存 run／outbox，才可回已受理；頁面關閉不等於取消。Firebase Auth 已有 __session 可繼續使用，同源、CSRF、身份切換清理及 private, no-store 保持。原 Caddy／API 逾時須與有界運行協調；未遷移接口明確報未就緒，不回空資料或假成功。
 
 <a id="firestore-multi-instance"></a>

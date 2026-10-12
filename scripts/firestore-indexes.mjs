@@ -36,7 +36,7 @@ try {
         || !Array.isArray(entry.indexes)) throw Error('field_exemption_scope');
       // F05 metadata cursors require explicit indexes under collection-wide exclusions.
       const f05Field = ['yuban_authority_knowledge_versions:versionId', 'yuban_authority_knowledge_observations:lastSuccessfulCheckAt',
-        'yuban_authority_knowledge_checks:checkedAt'].includes(entry.collectionGroup + ':' + entry.fieldPath);
+        'yuban_authority_knowledge_checks:checkedAt', 'yuban_authority_work_watches:enabled', 'yuban_authority_erasures:state'].includes(entry.collectionGroup + ':' + entry.fieldPath);
       if (entry.indexes.length && !f05Field) continue;
       const url = base + '/collectionGroups/' + entry.collectionGroup + '/fields/' + entry.fieldPath;
       const field = (await client.request({ url, retry: false })).data;

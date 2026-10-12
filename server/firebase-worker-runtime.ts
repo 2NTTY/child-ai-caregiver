@@ -1,10 +1,10 @@
-import { applicationDefault, deleteApp, initializeApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { randomUUID } from 'node:crypto';
-import { openFirebasePersistence } from './firebase-persistence.ts';
-import { createFirestoreTaskWorker } from './firestore-task-worker.ts';
+import { openFirebaseRuntime } from './firebase-runtime.ts';
 import { createFirestoreTaskDispatcher } from './firestore-task-dispatcher.ts';
-import { createFirebaseTaskDelivery, createFirebaseTaskDispatchHandler, createFirebaseTaskHandler } from './firebase-task-delivery.ts';
+import { createFirebaseTaskDelivery, createFirebaseTaskDispatchHandler, createFirebaseTaskHandler,
+  createFirebaseBackgroundDelivery, createFirebaseBackgroundHandler } from './firebase-task-delivery.ts';
+import { createFirestoreBackgroundQueue, firestoreBackgroundReference } from './firestore-background-work.ts';
+import { concernAgentContext } from './concern-context.ts';
+import { createFirestoreBackgroundMaintenance } from './firestore-background-maintenance.ts';
 
 export interface FirebaseWorkerConfig {
   enabled: boolean; projectId: string; region: string; queue: string; workerOrigin: string; audience: string; serviceAccountEmail: string;
@@ -28,43 +28,90 @@ export function readFirebaseWorkerConfig(env: Record<string, string | undefined>
 
 /** Separate production worker assembly; opening it never starts a daemon or initializes authority. */
 export async function openFirebaseWorkerRuntime(env: Record<string, string | undefined>) {
-  const workerConfig = readFirebaseWorkerConfig(env), persistence = await openFirebasePersistence(env);
-  let app: ReturnType<typeof initializeApp> | undefined, delivery: ReturnType<typeof createFirebaseTaskDelivery> | undefined;
+  const workerConfig = readFirebaseWorkerConfig(env), runtime = await openFirebaseRuntime(env, { worker: true });
+  let delivery: ReturnType<typeof createFirebaseTaskDelivery> | undefined, backgroundDelivery: ReturnType<typeof createFirebaseBackgroundDelivery> | undefined;
+  const controller = new AbortController();
   try {
-    const { config, database, cipher } = persistence;
+    const { config, database, cipher, authority } = runtime;
     if (config.projectId !== workerConfig.projectId) throw new Error('Invalid Firebase worker configuration');
-    app = initializeApp({ projectId: config.projectId, credential: applicationDefault() }, 'yuban-worker-' + randomUUID());
-    const auth = getAuth(app), options = { database, cipher, projectId: config.projectId, namespace: config.namespace, enabled: workerConfig.enabled,
-      async currentAuth(userId: string) {
-        try {
-          const user = await auth.getUser(userId);
-          return { userId: user.uid, disabled: user.disabled, emailVerified: user.emailVerified, email: user.email ?? null };
-        } catch (error) {
-          const code = error !== null && typeof error === 'object' && 'code' in error ? error.code : null;
-          if (code === 'auth/user-not-found' || code === 'auth/user-disabled') return { userId, disabled: true, emailVerified: false, email: null };
-          throw new Error('Firebase worker identity unavailable');
-        }
-      } };
-    const worker = createFirestoreTaskWorker(options);
+    const options = { database, cipher, projectId: config.projectId, namespace: config.namespace,
+      enabled: workerConfig.enabled, currentAuth: runtime.currentAuth };
+    const worker = runtime.reminders;
     delivery = createFirebaseTaskDelivery({ ...workerConfig, workerUrl: workerConfig.processUrl });
+    backgroundDelivery = createFirebaseBackgroundDelivery({ ...workerConfig, workerUrl: workerConfig.workerOrigin + '/internal/product-work' });
     const dispatcher = createFirestoreTaskDispatcher({ ...options, delivery });
+    const maintenance = createFirestoreBackgroundMaintenance({ ...options, knowledge: runtime.knowledgeRefresh,
+      photos: runtime.photos, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
+    const background = createFirestoreBackgroundQueue({ ...options, readControl: tx => authority.readControl(tx),
+      transport: backgroundDelivery, signal: controller.signal,
+      async execute(job, signal) {
+        if (['knowledge-check', 'photo-cleanup', 'scope-erasure'].includes(job.kind)) return maintenance.process(job, signal);
+        const validIdentity = async () => {
+          if (signal.aborted) return false;
+          const current = await runtime.currentAuth(job.scope.ownerUserId);
+          return !current.disabled && current.emailVerified && !!current.email;
+        };
+        if (!await validIdentity()) return { state: 'stopped' };
+        if (job.kind === 'push') return runtime.push.process(job, signal);
+        if (job.kind === 'telegram') return runtime.telegram.process(job, signal);
+        if (job.kind === 'contact') return runtime.contact.process(job, signal);
+        if (job.kind === 'child-change') { await runtime.growth.evaluate(job); return maintenance.childChange(job); }
+        if (job.kind === 'document-refresh') return runtime.documents.processRefresh(job);
+        if (job.kind === 'work-check') return runtime.product.continuation.check(job);
+        const continuation = job.kind === 'work-continuation' ? await authority.runTransaction(job.scope.ownerUserId, job.scope.childId,
+          b => runtime.product.continuation.input(b, job)) : null;
+        const concern = job.kind === 'concern' ? await runtime.concerns.beginBackground(job) : null;
+        const attention = job.kind === 'growth' ? await runtime.growth.backgroundInput(job) : null;
+        const task = job.kind === 'task-agent' ? await authority.runTransaction(job.scope.ownerUserId, job.scope.childId,
+          b => runtime.taskEvents.input(b, job)) : null;
+        if (!['concern', 'growth', 'task-agent', 'work-continuation'].includes(job.kind)) throw new Error('Product background consumer not connected');
+        if (!concern && !attention && !task && !continuation) {
+          if (job.kind === 'work-continuation') return runtime.product.continuation.finish(job);
+          return { state: 'stopped' };
+        }
+        const reference = firestoreBackgroundReference(job);
+        const authorize = async () => await validIdentity() && await authority.runTransaction(job.scope.ownerUserId, job.scope.childId,
+          async b => continuation ? !!await runtime.product.continuation.input(b, job) : concern ? runtime.concerns.authorizeBackground(b, job) : task
+            ? !!await runtime.taskEvents.input(b, job) && await runtime.growth.taskAllowedIn(b, job.resourceId) : runtime.growth.authorizeBackground(b, job));
+        try {
+          const result = await runtime.product.agent.background({ userId: job.scope.ownerUserId, childId: job.scope.childId, reference,
+            context: continuation ?? (concern ? { eventType: 'concern_followup', concern: concernAgentContext(concern) }
+              : task ?? { eventType: 'growth_attention', attention, policy: 'Server-reviewed applicability; no medical rule generation, task execution or external notification' }),
+            authorize, signal });
+          if (concern) return runtime.concerns.finishBackground(job);
+          if (continuation) return runtime.product.continuation.finish(job);
+          return { state: result?.status === 'completed' ? 'completed' : result?.status === 'stopped' ? 'stopped' : 'unknown' };
+        } catch {
+          // Canonical run receipts determine recovery. Never create another run after a lost final response.
+          if (concern) return runtime.concerns.finishBackground(job);
+          if (continuation) return runtime.product.continuation.finish(job);
+          return { state: 'unknown' };
+        }
+      } });
     const identity = { audience: workerConfig.audience, serviceAccountEmail: workerConfig.serviceAccountEmail };
     const process = createFirebaseTaskHandler({ ...identity, workerUrl: workerConfig.processUrl, process: job => worker.process(job) });
-    const dispatch = createFirebaseTaskDispatchHandler({ ...identity, workerUrl: workerConfig.dispatchUrl, dispatch: () => dispatcher.dispatchScheduled() });
+    const productProcess = createFirebaseBackgroundHandler({ ...identity, workerUrl: workerConfig.workerOrigin + '/internal/product-work', process: job => background.process(job) });
+    const dispatch = createFirebaseTaskDispatchHandler({ ...identity, workerUrl: workerConfig.dispatchUrl, async dispatch() {
+      await maintenance.tick();
+      const page = await dispatcher.dispatchScheduled(), products = await background.dispatch();
+      return { ...page, scanned: page.scanned + products.scanned, confirmed: page.confirmed + products.confirmed,
+        unknown: page.unknown + products.unresolved };
+    } });
     const handler = (request: Request) => {
       const path = new URL(request.url).pathname;
       return path === '/internal/task-reminders' ? process(request) : path === '/internal/task-dispatch' ? dispatch(request)
+        : path === '/internal/product-work' ? productProcess(request)
         : Promise.resolve(Response.json({ state: 'rejected' }, { status: 404, headers: { 'Cache-Control': 'no-store' } }));
     };
-    const ownedApp = app, ownedDelivery = delivery;
+    const ownedDelivery = delivery, ownedBackground = backgroundDelivery;
     let closing: Promise<void> | undefined;
-    return { ...persistence, workerConfig, worker, dispatcher, handler, read: { view: worker.view },
-      close() { return closing ??= (async () => {
-        const closed = await Promise.allSettled([ownedDelivery.close(), deleteApp(ownedApp), persistence.close()]);
+    return { ...runtime, workerConfig, worker, dispatcher, background, maintenance, handler, read: { view: worker.view },
+      abort: () => controller.abort(),
+      close() { controller.abort(); return closing ??= (async () => {
+        const closed = await Promise.allSettled([ownedDelivery.close(), ownedBackground.close(), runtime.close()]);
         if (closed.some(result => result.status === 'rejected')) throw new Error('Firebase worker shutdown unavailable');
       })(); } };
   } catch (error) {
-    await Promise.allSettled([delivery?.close(), app ? deleteApp(app) : undefined, persistence.close()]);
-    throw error;
+    controller.abort(); await Promise.allSettled([delivery?.close(), backgroundDelivery?.close(), runtime.close()]); throw error;
   }
 }

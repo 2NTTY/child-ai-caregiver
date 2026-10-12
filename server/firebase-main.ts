@@ -3,7 +3,7 @@ import { openFirebaseRuntime } from './firebase-runtime.ts';
 import { createFirebaseNodeHandler } from './firebase-http.ts';
 
 const runtime = await openFirebaseRuntime(process.env);
-const handler = createFirebaseNodeHandler({ publicOrigin: runtime.config.publicOrigin, auth: runtime.auth, handler: runtime.handler });
+const handler = createFirebaseNodeHandler({ publicOrigin: runtime.config.publicOrigin, auth: runtime.auth, handler: runtime.handler, telegramConfig: runtime.telegramConfig });
 const server = createServer((request, response) => {
   request.on('error', () => {});
   void handler(request, response).catch(() => { response.destroy(); });

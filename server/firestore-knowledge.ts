@@ -17,7 +17,9 @@ export interface FirestoreKnowledgeEmbedding {
   chunkKey: string; inputHash: string; model: string; dimensions: number; pipeline: string; values: readonly number[];
 }
 export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidates" | "catalog"> {
+  continuationSources(transaction: Transaction, ids: readonly string[]): Promise<import('./agent-work-continuation-core.ts').KnowledgeCurrent[]>;
   validatePublishedSource(transaction: Transaction, id: string): Promise<void>;
+  ruleCandidates(transaction: Transaction, rules: readonly { sourceId: string; key: string }[], filter: KnowledgeFilter): Promise<KnowledgeCandidate[]>;
   importSource(input: unknown): Promise<{ versionId: string; hash: string; unchanged: boolean; state: "draft" | "reviewed" | "withdrawn" }>;
   prepareSearch(versionId: string, expectedHash: string): Promise<{ complete: boolean; bucketsCompleted: number; bucketsTotal: number; termCount: number }>;
   listVersions(afterVersionId?: string): Promise<{ items: { id: string; sourceId: string; hash: string; state: string; publishedAt: string | null; searchReady: boolean }[]; nextVersionId: string | null }>;
@@ -319,12 +321,39 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         throw error;
       }
     },
+    async continuationSources(tx, ids) {
+      if (ids.length > 4 || new Set(ids).size !== ids.length) reject('knowledge_selection_invalid', 400);
+      const result: import('./agent-work-continuation-core.ts').KnowledgeCurrent[] = [];
+      for (const sourceId of ids) {
+        const source = allowedId(sourceId) ? await readSource(tx, sourceId) : null;
+        const edition = source?.enabled && source.activeVersionId ? await metadata(tx, source.activeVersionId, source) : null;
+        const active = edition && publication(edition) && edition.document.classification === 'official_guidance' && !internalKnowledgeSource(edition.document.url);
+        result.push(active ? { sourceId, versionId: edition.version.versionId, hash: edition.version.versionHash, available: true, assessment: edition.version.review!.assessment }
+          : { sourceId, versionId: null, hash: null, available: false, assessment: null });
+      }
+      return result;
+    },
     async validatePublishedSource(tx, id) {
       if (!allowedId(id)) reject('knowledge_source_unknown', 404);
       const source = await readSource(tx, id);
       if (!source?.enabled || !source.activeVersionId) reject('knowledge_source_unavailable', 409);
       const edition = await metadata(tx, source.activeVersionId, source);
       if (!publication(edition)) reject('knowledge_source_unavailable', 409);
+    },
+    async ruleCandidates(tx, rules, input) {
+      const filter = parseKnowledgeFilter(input);
+      if (rules.length > 8) reject('knowledge_selection_invalid', 400);
+      const result: KnowledgeCandidate[] = [];
+      for (const rule of rules) {
+        if (!allowedId(rule.sourceId)) continue;
+        const source = await readSource(tx, rule.sourceId); if (!source?.enabled || !source.activeVersionId) continue;
+        const edition = await metadata(tx, source.activeVersionId, source); if (!publication(edition)) continue;
+        const manifest = edition.version.chunks.find(chunk => chunk.key === rule.key); if (!manifest) continue;
+        const snapshot = await tx.get(chunkRef(manifest.chunkId)); if (!snapshot.exists) reject('knowledge_chunk_missing', 503);
+        const chunk = checkedChunk(edition, snapshot.data());
+        if (applies(chunk.document.applicability, filter)) result.push(candidate(edition, chunk, filter));
+      }
+      return result;
     },
     async importSource(input) {
       if (input && typeof input === "object" && ["watch", "watchId", "observation", "audience"].some(key => key in input)) reject("domain_not_ready", 503);

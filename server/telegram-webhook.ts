@@ -38,7 +38,7 @@ export function parseTelegramUpdate(input:unknown,botId:string):TelegramEvent{
  return {kind:"ignore",updateId};
 }
 /** Ingress already checked the constant-time webhook secret before reading a bounded body. */
-export async function handleTelegramWebhook(request:Request,store:TelegramStore,gateway:TelegramGateway,botId:string,contact?:import("./contact-store.ts").ContactStore):Promise<Response>{
+export async function handleTelegramWebhook(request:Request,store:Pick<TelegramStore,'webhook'>,gateway:TelegramGateway,botId:string,contact?:Pick<import("./contact-store.ts").ContactStore,'telegramAcknowledgement'>):Promise<Response>{
  if(request.headers.get("content-type")?.split(";",1)[0]?.trim().toLowerCase()!=="application/json")return apiError("invalid_webhook","無效渠道請求。",400);
  let event:TelegramEvent;try{event=parseTelegramUpdate(await request.json(),botId);}catch{return apiError("invalid_webhook","無效渠道請求。",400);}
  const ack=event.kind==="contact_ack" ? await contact?.telegramAcknowledgement(event) : await store.webhook(event);

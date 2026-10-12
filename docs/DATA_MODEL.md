@@ -663,6 +663,17 @@ canonical authority 的 runTransaction 擁有真 Firestore 回調，每次 SDK �
 - 帳戶 secret receipt 經獨立加密 pointer 查回，後續登入失效不妨礙本人核對原操作。原批次的期滿／權限變更不能靜默生成新刪除操作；需要重新核對或續辦同一已確認 intent。
 - F07 必須擴充各已遷移格式及三種 journal 的隔離還原。當前舊還原器遇範圍刪除 journal 明確拒絕，不能當照片刪除忽略；不以 F04 清理通過宣稱還原防復活已完成。
 
+<a id="firestore-background"></a>
+#### 背景、接續及渠道台帳
+
+`background_work` 保存種類、本人／孩子範圍、原資源／依據、generation、授權版本、dueAt、派送狀態及工作 lease；opaque reference 只指向同一工作。建立與業務變更同交易，呼叫 Tasks／模型／渠道均在交易外。派送不明先核原 Task，投遞不明不自動重發；正常延後保存同一工作及新的 dispatchRevision，不計為失敗。
+
+`concerns`／不可變 revisions／events、`growth_attention`／topics／修訂沿原關注與成長語義。`work_watches` 是原私人工作可重建的觀察基線；`work_events` 保存最多五项合併依據與真 run 結果，`work_daily_slots` 僅限制同本人／孩子／香港日的一次站內接續，不能當成另一份任務。所有正文加密，查詢投影只有範圍、ID、狀態與時間。
+
+Push／Telegram 的本人綁定、秘密端點、挑戰、callback 及投遞台帳分開；秘密不放入 Agent 或匯出。Telegram 查找指標使用受保護的 HMAC／隨機 token hash，不以公開 chat ID 作跨帳戶索引。聯絡 consent、grant、request 及 provider attempts 各自版本化，任務終態、撤權或綁定版本改變會阻止尚未執行的效果。
+
+SYSTEM 維護游標只用於有限來源排程／清理；原加密 recovery scope 綁定實際對象，不能由外部請求選擇任意路徑。新增備份 collection 只在既有清理 stage 清單尾部加入，避免正在進行的刪除游標跳過或重解釋舊 stage。資料及渠道匯出只取本人可讀內容，不匯出 secret 或整份工具協定。
+
 <a id="firestore-knowledge-sources"></a>
 #### 知識及私人來源
 

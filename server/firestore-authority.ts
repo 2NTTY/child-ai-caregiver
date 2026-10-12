@@ -13,6 +13,7 @@ import { canonical } from './firestore-session-codec.ts';
 import { sealRecoveryLocator } from './firestore-recovery-envelope.ts';
 import { workRecoveryAad, workRecoveryDocumentId, workRecoverySchemas as schemas,
   workRecoveryScopeSchema, type WorkRecoveryKind, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
+import { prepareFirestoreBackgroundWork } from './firestore-background-work.ts';
 
 const FORMAT = 'yuban-work-recovery', MAX_BYTES = 192 * 1024;
 const NIL = '00000000-0000-0000-0000-000000000000';
@@ -218,6 +219,11 @@ export class FirestoreAuthority {
   private async change(tx: Transaction, scope: WorkRecoveryScope, workspace: Workspace, operationId: string, kind: OnlineChange['kind'], deleted: boolean): Promise<FirestoreAuthorityPreparedChange> {
     const id = this.changeId(scope, operationId), ref = this.ref('change', id);
     if ((await tx.get(ref)).exists) fail('change_conflict');
+    // Domain writes enqueue their event atomically; projections/background explanation changes do not wake themselves.
+    const control = scope.childId !== NIL && ['care', 'profile', 'memory', 'tasks', 'children', 'growth', 'documents'].includes(kind) && !(kind === 'children' && deleted)
+      ? await this.readControl(tx) : null;
+    const wake = control ? await prepareFirestoreBackgroundWork(this.domain, tx, { kind: 'child-change', scope, resourceId: scope.childId,
+      basis: kind + ':' + operationId, generation: control.generation, authorizationVersion: workspace.accessVersion }, new Date(this.now()).toISOString()) : null;
     const changeSeq = increment(workspace.changeSeq);
     const workspaceEnvelope = this.seal('workspace', workspace.id, scope, { ...workspace, changeSeq });
     const changeEnvelope = this.seal('change', id, scope, { workspaceId: scope.workspaceId, storageEpoch: scope.storageEpoch, changeSeq,
@@ -228,9 +234,23 @@ export class FirestoreAuthority {
       ...this.domain.seal('change-projection', projectionId, scope, firestoreChangeSchema,
         { changeSeq, kind, childId: scope.childId === NIL ? null : scope.childId, deleted }) };
     return { changeSeq, commit: () => {
+      wake?.commit();
       tx.set(this.ref('workspace', workspace.id), workspaceEnvelope); tx.create(ref, changeEnvelope);
       tx.create(this.domain.ref('changes', 'change-projection', projectionId), projection);
     } };
+  }
+  /** Provider evidence may finish after revocation; publish a change only into the still-live original scope. */
+  async prepareReceiptChange(tx: Transaction, scope: WorkRecoveryScope, operationId: string, kind: OnlineChange['kind']) {
+    parse(uuid, operationId); parse(changeKindSchema, kind);
+    try {
+      const { workspace } = await this.account(tx, scope.ownerUserId);
+      if (workspace.id !== scope.workspaceId || workspace.storageEpoch !== scope.storageEpoch) return null;
+      if (scope.childId !== NIL) await this.canonicalChild(tx, scope);
+      return await this.change(tx, scope, workspace, operationId, kind, false);
+    } catch (error) {
+      if (error && typeof error === 'object' && 'status' in error && [403, 404, 409].includes(Number(error.status))) return null;
+      throw error;
+    }
   }
   /** Each SDK callback owns a fresh binding. Domain writes use this native transaction after all reads. */
   async runTransaction<T>(userId: string, childId: string | null, operation: (binding: FirestoreAuthorityTransaction) => Promise<T>): Promise<T> {

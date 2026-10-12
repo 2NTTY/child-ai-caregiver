@@ -3,6 +3,8 @@ import { concernValuesSchema, concernChangeSchema } from "../src/shared/concerns
 import type { ConcernStore } from "./concern-store.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentRunContext, AgentTool, AgentToolResult } from "./agent-runtime.ts";
+import { FirestoreDomainError } from "./firestore-domain-data.ts";
+import { FirestoreAuthorityError } from "./firestore-authority.ts";
 import { FamilyError } from "./family-access.ts";
 import { concernAgentContext } from "./concern-context.ts";
 
@@ -15,12 +17,12 @@ const concernChangeParameters = z.union([
   concernChangeSchema.options[3],
 ]);
 
-export function createAgentConcernTools(concerns:ConcernStore, store:ProductAgentStore, run:AgentRunContext, authorize:()=>Promise<boolean>, background=false):AgentTool[] {
+export function createAgentConcernTools(concerns:Pick<ConcernStore, "list" | "get">, store:ProductAgentStore, run:AgentRunContext, authorize:()=>Promise<boolean>, background=false):AgentTool[] {
   const {scope,runId}=run;
   const guarded=async(action:()=>Promise<unknown>):Promise<AgentToolResult>=>{
     try { if(!await authorize())return {status:"rejected"}; return {status:"succeeded",data:{result:await action()}}; }
     catch(error) { if(error instanceof z.ZodError)return {status:"rejected",data:{code:"invalid_input"}};
-      if(error instanceof FamilyError)return {status:error.status===409?"conflict":"rejected",data:{code:error.code}}; throw error; }
+      if(error instanceof FamilyError || error instanceof FirestoreDomainError || error instanceof FirestoreAuthorityError)return {status:error.status===409?"conflict":"rejected",data:{code:error.code}}; throw error; }
   };
   const tools:AgentTool[]=[{
     name:"read_concerns",description:"讀取這名孩子的共享持續關注。concernId=null 按 searchText（或 null）列最多 20 項，hasMore 表示未讀齊；指定 ID 讀有界完整事件及 historyComplete。關注不是診斷，與成長候選、任務及私人記憶分開。",

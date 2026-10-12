@@ -2428,3 +2428,12 @@
 - Native Verification：新增 7 個 composite indexes，80 個全部 READY；欄位索引初次 400 是 CLI manifest 與 REST Index.fields 的編碼差異，修正後只續未完設定。資料情景使用固定合成向量／觀察，真向量與關鍵詞、換版停用、向量復用、私人來源保存／原收據／重連／隔離／匯出／刪除均通過；96 呼叫後因腳本清理只容許 40 頁而停止，control 恢復暫停。舊失敗不改写。
 - Closeout：提高上限至 140 的提案被自動批准審查拒絕，沒有修改或執行。改用原批准內剩餘 7 呼叫，核對本次來源正文／全部分段／管理修訂已不存在、撤銷两個合成權限身份及恢復暫停。合計 103／110；原通用 erasure 台帳尚未 completed，由 F06 沿同一 operation／cursor 完成。沒有重跑通過項或新建樣例。詳見 [F05 EV](artifacts/verification/F05_FIRESTORE_KNOWLEDGE_20261013.json)。
 - Limits / Next：零模型／embedding／真來源 GET／通知／瀏覽器／部署，固定向量不代替語義品質驗收，估算低於 US$0.05、帳單未知。F06 接來源排程及剩餘背景／清理；F07 接全部恢復 codec，未知格式仍拒絕；F08 接原站及完整 Agent。使用者已對本主聊天後續同類最低必要驗收給予免逐次詢問授權，次數／成本及外發邊界仍保留。
+
+<a id="log-20261013-f06-background"></a>
+## LOG-20261013-F06-BACKGROUND
+
+- Recorded At / Package：2026-10-13（Asia/Hong_Kong）；P2-F06，基線 422f4dd，分支 codex/p2-f06-firestore-workers，實作提交 987d239／PR #199。Astra 主模型獨立實作、review 及最低必要驗收，無子代理／Computer Use。
+- Actual Work：持久 Firestore outbox／lease／generation 接原 VM Tasks 入口；接任務、成長、關注、私人工作接續、同文件背景刷新、來源觀察及附件／資料清理。Push／Telegram／聯絡沿原前端 API、opId、授權、安靜時段、終態及真實回執，unknown 不盲重發。補 Caddy product-work 路由、可選既有渠道 secret 掛載及匯出／備份登記，不改 UI 或重寫 Agent。
+- Verification：33 個新 composite indexes 與私密欄位設定完成，manifest 無 missing／building。一次原生 Firestore 連貫資料情景 119 呼叫，加兩次只讀同一清理游標，共 121／180；核對 scripted Push unknown／重建不重發、Telegram 兩 consumer 一次效果與收到回執、任务授權／完成停止、私人接續、關注關閉、同文件刷新及隔離。本輪合成孩子與 F05 原 erasure 游標均完成，綁定及權限身份撤銷、control 暫停。見 [EV](artifacts/verification/F06_FIRESTORE_BACKGROUND_20261013.json)。
+- Limits / Corrections：最初啟動誤用未安裝的 tsx，零雲端呼叫，改用 Node 原生 TS；原生情景沒有失敗。清理耗時較長，沿游標完成，沒有重跑已通過項。最後 review 補保留較早抵達的 Telegram messageId 回執，只核對該 diff／型別，不另跑原生情景。僅選定檔案型別、腳本語法及 diff 檢查，沒有全量測試。scripted gateway 與 consumer 重建不是實際通知／hard-kill／OIDC 部署證據；零模型、embedding、外網抓取、通知、Auth 帳號建立或部署。估算低於 US$0.10，非帳單。
+- Next：F07 完整還原／journal、剩餘跨程序證據與正式 SQL 退出；F08 原站及完整 Agent 使用。F06 不代表整個 P2 完成，歷史通知／F02 transport 證據保持分開。

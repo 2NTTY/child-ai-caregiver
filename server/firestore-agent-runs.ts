@@ -28,6 +28,8 @@ export interface FirestoreAgentRunOptions extends FirestoreDomainOptions {
   chat: FirestoreChatStore;
   memory: FirestoreMemoryStore;
   serverClock?: () => number;
+  /** Only the authenticated worker composition supplies this canonical lease/resource gate. */
+  authorizeWorker?: (binding: Binding, reference: string, recipeId: string) => Promise<boolean>;
 }
 export interface FirestoreAgentResultProjection {
   /** Read original proposal/action/document ledgers, even when final generation was interrupted. */
@@ -77,7 +79,8 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
   }
   async function requireLive(b: Binding, scope: AgentScope, id: string) {
     const run = expired(await read(b, id));
-    if (!matches(b, scope, run) || run.state !== 'running') domainReject('agent_scope_changed');
+    if (!matches(b, scope, run) || run.state !== 'running'
+      || run.trigger.kind === 'worker' && !await options.authorizeWorker?.(b, run.trigger.reference, run.recipeId)) domainReject('agent_scope_changed');
     return run;
   }
   function advance(b: Binding, run: FirestoreAgentRun, changeSeq: string) {
@@ -89,29 +92,31 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
   const empty = (run: FirestoreAgentRun): ProductAgentResult => ({ runId: run.id, status: run.state,
     stopReason: run.stopReason, provenance: null, countsKnown: false, text: '', citations: [], privateSourceCitations: [],
     retrievalMode: 'not_used', tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 }, proposals: [] });
-  async function originalReplyRun(b: Binding, messageId: string) {
-    const id = claimId(b, 'interactive', messageId), snapshot = await b.transaction.get(data.ref('agent_claims', 'agent-claim', id));
+  async function originalRun(b: Binding, kind: 'interactive' | 'worker', reference: string) {
+    const id = claimId(b, kind, reference), snapshot = await b.transaction.get(data.ref('agent_claims', 'agent-claim', id));
     if (!snapshot.exists) return null;
     const claim = data.open('agent-claim', id, b.scope, firestoreAgentClaimSchema, snapshot);
     const run = await read(b, claim.runId);
-    if (run.trigger.kind !== 'interactive' || run.trigger.reference !== messageId) domainReject('agent_claim_binding', 500);
+    if (run.trigger.kind !== kind || run.trigger.reference !== reference) domainReject('agent_claim_binding', 500);
     return run;
   }
+  const originalReplyRun = (b: Binding, id: string) => originalRun(b, 'interactive', id);
   return {
-    authority, data, current, matches, read, requireLive, advance, write, originalReplyRun,
+    authority, data, current, matches, read, requireLive, advance, write, originalReplyRun, originalRun,
     async claim(userId: string, childId: string, trigger: AgentRunClaim['trigger'] & {}, recipeId: string): Promise<AgentRunClaim> {
       domainParse(firestoreAgentRunSchema.shape.trigger, trigger); domainParse(firestoreAgentRunSchema.shape.recipeId, recipeId);
-      // Background execution must enter through its event/lease authority, wired in F06.
-      if (trigger.kind !== 'interactive' || recipeId !== 'product-interactive') domainReject('domain_not_ready', 503);
+      if (trigger.kind === 'interactive' ? recipeId !== 'product-interactive' : !options.authorizeWorker) domainReject('domain_not_ready', 503);
       const candidate = randomUUID();
       return authority.runTransaction(userId, childId, async b => {
-        const source = await options.chat.readMessage(b, childId, trigger.reference);
-        if (!source || source.role !== 'user' || source.authorUserId !== userId) domainReject('not_found', 404);
-        const old = await originalReplyRun(b, trigger.reference), at = now();
+        if (trigger.kind === 'interactive') {
+          const source = await options.chat.readMessage(b, childId, trigger.reference);
+          if (!source || source.role !== 'user' || source.authorUserId !== userId) domainReject('not_found', 404);
+        } else if (!await options.authorizeWorker?.(b, trigger.reference, recipeId)) domainReject('background_not_authorized', 403);
+        const old = await originalRun(b, trigger.kind, trigger.reference), at = now();
         const run: FirestoreAgentRun = old ? expired(old) : {
           id: candidate, childId, ownerUserId: userId, workspaceId: b.scope.workspaceId, storageEpoch: b.scope.storageEpoch,
           authorizationVersion: b.authorizationVersion, dataVersion: current(b).dataVersion, trigger,
-          sourceMessageId: trigger.reference, recipeId, state: 'running', stopReason: null,
+          sourceMessageId: trigger.kind === 'interactive' ? trigger.reference : null, recipeId, state: 'running', stopReason: null,
           createdAt: new Date(at).toISOString(), expiresAt: new Date(at + 90_000).toISOString(), result: null,
         };
         if (!old) {
@@ -128,7 +133,8 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       try {
         return await authority.runTransaction(scope.userId, scope.childId, async b => {
           const run = runId ? expired(await read(b, runId)) : undefined;
-          return matches(b, scope, run) && (!runId || run?.state === 'running');
+          return matches(b, scope, run) && (!runId || run?.state === 'running')
+            && (!run || run.trigger.kind !== 'worker' || await options.authorizeWorker?.(b, run.trigger.reference, run.recipeId) === true);
         });
       } catch (error) {
         if (error instanceof FirestoreAuthorityError && [403, 404, 428].includes(error.status)) return false;
@@ -162,7 +168,8 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       return authority.runTransaction(scope.userId, scope.childId, async b => {
         const run = expired(await read(b, value.runId));
         if (run.state !== 'running' || !matches(b, scope, run, false)) return false;
-        const unchanged = matches(b, scope, run);
+        const unchanged = matches(b, scope, run) && (run.trigger.kind !== 'worker'
+          || await options.authorizeWorker?.(b, run.trigger.reference, run.recipeId) === true);
         const result: ProductAgentResult = unchanged ? value : { ...value, status: 'stopped', stopReason: 'unauthorized',
           text: '資料在處理期間有變，請核對目前資料及原操作收據；不要重複提交已保存的操作。',
           citations: [], privateSourceCitations: [], retrievalMode: 'not_used', tools: [], proposals: [] };

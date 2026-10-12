@@ -7,6 +7,9 @@ import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 import { FirestoreFamilyDocumentSnapshots, firestoreSnapshotManifestSchema } from './firestore-family-document-snapshots.ts';
 import { firestorePhotoSchemas, type createFirestorePhotoStore } from './firestore-photos.ts';
 import { createFirestoreSharedInputStore } from './firestore-shared-inputs.ts';
+import { firestorePushBindingSchema, firestorePushDeliverySchema } from './firestore-web-push.ts';
+import { firestoreTelegramBindingSchema, firestoreTelegramDeliverySchema } from './firestore-telegram.ts';
+import { firestoreContactRequestSchema, firestoreContactConsentSchema, firestoreContactGrantSchema } from './firestore-contact.ts';
 
 /** Product sections only. Auth credentials, model keys, protocol state and cost/admission ledgers are never exported. */
 const sections = {
@@ -27,8 +30,15 @@ const sections = {
   photos: ['photos', ['photo']], photo_content: ['photos', ['photo']],
   private_sources: ['shared_inputs', ['shared-input', 'shared-input-tombstone']],
   private_source_history: ['shared_input_management_revisions', ['shared-input-management']],
+  concerns: ['concerns', ['concern']], concern_events: ['concern_events', ['concern-event']], concern_history: ['concern_revisions', ['concern-revision']],
+  growth_attention: ['growth_attention', ['growth-attention']], growth_topics: ['growth_topics', ['growth-topic']],
+  work_followups: ['work_events', ['work-event']],
+  notification_preferences: ['notification_preferences', ['notification-preferences']],
+  push_bindings: ['push_bindings', ['push-binding']], push_deliveries: ['push_deliveries', ['push-delivery']],
+  telegram_bindings: ['telegram_bindings', ['telegram-binding']], telegram_deliveries: ['telegram_deliveries', ['telegram-delivery']],
+  contact_consents: ['contact_consents', ['contact-consent']], contact_grants: ['contact_grants', ['contact-grant']], contact_requests: ['contact_requests', ['contact-request']],
 } as const;
-const global = new Set(['manifest', 'account', 'children']);
+const global = new Set(['manifest', 'account', 'children', 'notification_preferences', 'push_bindings', 'push_deliveries', 'telegram_bindings', 'telegram_deliveries']);
 const querySchema = z.object({ section: z.string().max(80), childId: z.uuid().optional(),
   scopeVersion: z.string().regex(/^[a-f0-9]{64}$/u).optional(), cursor: z.string().max(16000).optional() }).strict();
 const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId: z.uuid().nullable(), scopeVersion: z.string(), after: z.string().max(2000) }).strict();
@@ -110,7 +120,14 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             if (parent.exists && parent.get('live') === true) {
               await createFirestoreSharedInputStore(options).read(binding, id); items.push(value);
             }
-          } else if (!context.kind.endsWith('tombstone')) items.push(value);
+          } else if (section === 'push_bindings') items.push(firestorePushBindingSchema.parse(value).binding);
+          else if (section === 'push_deliveries') items.push(firestorePushDeliverySchema.parse(value).delivery);
+          else if (section === 'telegram_bindings') items.push(firestoreTelegramBindingSchema.parse(value).binding);
+          else if (section === 'telegram_deliveries') items.push(firestoreTelegramDeliverySchema.parse(value).delivery);
+          else if (section === 'contact_requests') items.push(firestoreContactRequestSchema.parse(value).request);
+          else if (section === 'contact_consents') items.push(firestoreContactConsentSchema.parse(value).value);
+          else if (section === 'contact_grants') items.push(firestoreContactGrantSchema.parse(value).value);
+          else if (!context.kind.endsWith('tombstone')) items.push(value);
         }
         if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,
           after: suffix === 'photos' ? found.docs[limit - 1].get('sortKey') : found.docs[limit - 1].id });

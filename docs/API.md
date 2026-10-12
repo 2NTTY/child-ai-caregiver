@@ -825,3 +825,12 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 - `/api/children/:childId/inputs` 的 list／get／fetch／extract／confirm／manage／management-history／delete 沿既有 wire；原 source owner／`createSharedInputApi`、Agent 候選及私人來源工具共用 `SharedInputStore`。變更仍經 online context／原 opId／expectedVersion，原 changes／owner 刷新維持，各頁不另存副本。
 - 私人來源正文分段加密；來源取得及模型提取仍須本人授權、受限 URL 取得與既有 lease。管理時更改正文、停用或撤回選段會使舊選段／提取失效；提取不自動建立已確認事實。
 - online 收據內部只保存私人來源的 ID／版本；查回原結果前核本人範圍及目前版本。來源已更改或刪除時，原操作仍 confirmed，但 `result:null`，不得重做或回傳舊正文；client 沿原 unknown 查回及共同 owner 重新讀取。匯出與孩子／帳戶清理同時涵蓋私人來源及管理修訂。
+
+<a id="firestore-background"></a>
+### 背景、關注與通知的 Firestore 接點
+
+- 原 `/concerns`、`/growth`、`/contact`、`/api/web-push`、`/api/telegram` 和通知偏好繼續供正式前端共用 owner 使用，沒有第二套介面／資料副本。關注及成長事項沿原版本／權限／確認契約；訂閱、綁定、測試、撤銷及聯絡授權變更沿 online 原操作收據。寫入／投遞結果更新同一 changes。
+- Telegram webhook 只豁免一般瀏覽器 Origin 門檻，仍核配置的 webhook secret、有界 body、bot／update 去重及本人已確認綁定。按鈕回覆綁正確訊息及事項；「收到」不完成照護任務。瀏覽器身份不可充當 webhook 身份。
+- 私有 `/internal/product-work` 與原提醒／dispatcher 共用固定 OIDC 驗證；payload 只有持久 job ID、generation、dispatchRevision 和 scheduledAt，不接受模型上下文、渠道地址或使用者指定執行權限。Server 從原台帳取得範圍並重新核對。
+- 接續結果沿 `/agent/work` 的 `latestFollowUp` 及原 background runs 顯示；過期、取消及原 run 未成功保持真實狀態。成長整理的分批進度仍沿同一文件／reportCoverage，不另增可修改報告副本。
+- 本次為 Firestore 路由／資料接線，實際驗收和正式部署分別見 PLAN／證據；未發送真通知的 scripted 結果不代表渠道已送達。

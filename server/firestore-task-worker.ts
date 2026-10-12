@@ -8,6 +8,7 @@ import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreReminderOutboxId, firestoreReminderOutboxSchema,
   firestoreTaskSchema, sealFirestoreReminderOutbox, type FirestoreDomainOptions, type FirestoreReminderOutbox } from './firestore-domain-data.ts';
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
+import { prepareFirestoreBackgroundWork } from './firestore-background-work.ts';
 
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483647), datetime = z.iso.datetime({ offset: true });
 const decimal = firestoreReminderOutboxSchema.shape.authorizationVersion, NIL = '00000000-0000-0000-0000-000000000000';
@@ -224,6 +225,8 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
         const state = decision === 'unknown' ? 'unknown' : nextAt ? 'pending' : 'processed';
         const changed = { ...work, state: state as FirestoreReminderOutbox['state'], lease: null, ...(nextAt ? { dueAt: nextAt } : {}) };
         const prepared = await binding.prepareChange(changeId, 'tasks', false);
+        const background = phase ? await prepareFirestoreBackgroundWork(data, binding.transaction, { kind: 'task-agent', scope: binding.scope,
+          resourceId: work.taskId, basis: receipt!.id, generation: binding.generation, authorizationVersion: binding.authorizationVersion }, instant) : null;
         const workEnvelope = sealOutbox(binding.scope, changed);
         const batchValue = phase && !batch ? { id: batchId, recipientUserId: binding.scope.ownerUserId, category, key, state: 'open' as const, createdAt: instant } : null;
         const batchEnvelope = batchValue ? { ...data.tags(recipientScope), ...data.seal('task-reminder-batch', batchId, recipientScope, firestoreTaskReminderBatchSchema, batchValue) } : null;
@@ -234,7 +237,7 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
         const notificationEnvelope = notification ? { ...data.tags(binding.scope), state: notification.state,
           ...data.seal('task-notification-outbox', notification.id, binding.scope, firestoreTaskNotificationOutboxSchema, notification, work.taskVersion) } : null;
         if (Date.parse(lease.until) <= now()) return result('stale');
-        prepared.commit(); binding.transaction.set(row.ref, workEnvelope);
+        prepared.commit(); background?.commit(); binding.transaction.set(row.ref, workEnvelope);
         if (batchEnvelope) binding.transaction.create(batchRef, batchEnvelope);
         if (reminderEnvelope) binding.transaction.create(data.ref('task_reminders', 'task-reminder', receipt!.id), reminderEnvelope);
         if (notificationEnvelope) binding.transaction.create(data.ref('notification_outbox', 'task-notification-outbox', notification!.id), notificationEnvelope);
