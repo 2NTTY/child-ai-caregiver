@@ -20,7 +20,12 @@ export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions
   '_conversation_summary_heads', '_conversation_summaries', '_agent_runs', '_agent_claims', '_agent_proposals',
   '_agent_confirmations', '_agent_confirmation_slots', '_agent_confirmation_responses', '_agent_work_index', '_agent_work_operations',
   '_agent_work_calls', '_agent_policies', '_agent_policy_revisions', '_private_instructions', '_agent_action_receipts', '_agent_action_calls',
-  '_agent_manual_operations', '_agent_document_links', '_concerns', '_concern_events', '_erasures', '_erasure_receipts', '_model_settings', '_model_key_checks', '_agent_admission', '_adk', '_root_budget', '_ai_usage']);
+  '_agent_manual_operations', '_agent_document_links', '_concerns', '_concern_events', '_erasures', '_erasure_receipts', '_model_settings', '_model_key_checks', '_agent_admission', '_adk', '_root_budget', '_ai_usage',
+  // Append only: existing erasure cursors use stable stage ordinals.
+  '_concern_revisions', '_concern_operations', '_concern_followups', '_growth_attention', '_growth_revisions', '_growth_topics', '_growth_topic_revisions', '_growth_checks',
+  '_background_work', '_background_references', '_maintenance_state', '_work_watches', '_work_events', '_work_daily_slots',
+  '_push_bindings', '_push_deliveries', '_push_endpoints', '_telegram_state', '_telegram_bindings', '_telegram_challenges', '_telegram_deliveries', '_telegram_pointers', '_telegram_meta', '_telegram_updates',
+  '_contact_consents', '_contact_consent_revisions', '_contact_grants', '_contact_grant_revisions', '_contact_requests', '_contact_callbacks', '_contact_updates', '_contact_daily_slots']);
 export interface FirebaseBackupOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
 export interface FirebaseBackupDocument { path: string; data: DocumentData }
 export interface FirebaseBackupInventory {

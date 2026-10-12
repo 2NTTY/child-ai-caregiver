@@ -3,6 +3,7 @@ import { OAuth2Client, type TokenPayload } from 'google-auth-library';
 import { canonicalJson } from './online-routing.ts';
 import { firestoreDomainHash, domainParse } from './firestore-domain-data.ts';
 import { firestoreTaskDeliverySchema, type FirestoreTaskDelivery, type FirestoreTaskResult } from './firestore-task-worker.ts';
+import { firestoreBackgroundDeliverySchema, type FirestoreBackgroundDelivery } from './firestore-background-work.ts';
 
 type Task = protos.google.cloud.tasks.v2.ITask;
 export interface FirebaseTasksTransport {
@@ -49,6 +50,13 @@ function taskBody(body: unknown): Buffer | null {
 
 /** Native Cloud Tasks transport only wakes the database consumer; deduplication remains in its Firestore transaction. */
 export function createFirebaseTaskDelivery(options: FirebaseTaskDeliveryOptions) {
+  return createTypedDelivery(options, { parse: value => domainParse(firestoreTaskDeliverySchema, value) }, 'reminder');
+}
+export function createFirebaseBackgroundDelivery(options: FirebaseTaskDeliveryOptions) {
+  return createTypedDelivery(options, { parse: value => domainParse(firestoreBackgroundDeliverySchema, value) }, 'product');
+}
+function createTypedDelivery<T extends { scheduledAt: string }>(options: FirebaseTaskDeliveryOptions,
+  schema: { parse(value: unknown): T }, prefix: 'reminder' | 'product') {
   const target = secureUrl(options.workerUrl); secureUrl(options.audience); accountEmail(options.serviceAccountEmail);
   if (!/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/u.test(options.projectId) || !/^[a-z]+-[a-z0-9]+[0-9]$/u.test(options.region)
     || !/^[A-Za-z0-9_-]{1,100}$/u.test(options.queue) || !options.serviceAccountEmail.endsWith('@' + options.projectId + '.iam.gserviceaccount.com')) throw new FirebaseTaskDeliveryError();
@@ -58,14 +66,15 @@ export function createFirebaseTaskDelivery(options: FirebaseTaskDeliveryOptions)
     create: async request => (await client!.createTask(request, { timeout: 10_000, retry: null }))[0],
     get: async request => (await client!.getTask(request, { timeout: 10_000, retry: null }))[0],
   };
-  function definition(raw: FirestoreTaskDelivery) {
-    const job = domainParse(firestoreTaskDeliverySchema, raw), body = Buffer.from(canonicalJson(job));
+  const dispatchSeconds = prefix === 'product' ? 120 : DISPATCH_SECONDS;
+  function definition(raw: T) {
+    const job = schema.parse(raw), body = Buffer.from(canonicalJson(job));
     if (body.length > BODY_LIMIT) throw new FirebaseTaskDeliveryError();
     const fingerprint = firestoreDomainHash({ job, target: target.href, audience: options.audience, serviceAccountEmail: options.serviceAccountEmail });
-    const taskName = parent + '/tasks/reminder-' + fingerprint;
+    const taskName = parent + '/tasks/' + prefix + '-' + fingerprint;
     const milliseconds = Date.parse(job.scheduledAt);
     const task: Task = { name: taskName, scheduleTime: { seconds: Math.floor(milliseconds / 1000), nanos: milliseconds % 1000 * 1_000_000 },
-      dispatchDeadline: { seconds: DISPATCH_SECONDS }, httpRequest: { httpMethod: 'POST', url: target.href,
+      dispatchDeadline: { seconds: dispatchSeconds }, httpRequest: { httpMethod: 'POST', url: target.href,
         headers: { 'Content-Type': 'application/json', 'X-Yuban-Work-Fingerprint': fingerprint }, body,
         oidcToken: { serviceAccountEmail: options.serviceAccountEmail, audience: options.audience } } };
     return { task, taskName, body, fingerprint };
@@ -75,13 +84,13 @@ export function createFirebaseTaskDelivery(options: FirebaseTaskDeliveryOptions)
     return actual?.name === expected.taskName && request?.url === target.href
       && (request.httpMethod === 'POST' || request.httpMethod === protos.google.cloud.tasks.v2.HttpMethod.POST)
       && request.oidcToken?.serviceAccountEmail === options.serviceAccountEmail && request.oidcToken.audience === options.audience
-      && !request.oauthToken && !actual.appEngineHttpRequest && Number(actual.dispatchDeadline?.seconds) === DISPATCH_SECONDS
+      && !request.oauthToken && !actual.appEngineHttpRequest && Number(actual.dispatchDeadline?.seconds) === dispatchSeconds
       && new Headers(request.headers as Record<string, string>).get('x-yuban-work-fingerprint') === expected.fingerprint
       && body !== null && body.length <= BODY_LIMIT && body.equals(expected.body);
   }
   return {
-    taskName: (job: FirestoreTaskDelivery) => definition(job).taskName,
-    async enqueue(job: FirestoreTaskDelivery): Promise<FirebaseTaskDeliveryResult> {
+    taskName: (job: T) => definition(job).taskName,
+    async enqueue(job: T): Promise<FirebaseTaskDeliveryResult> {
       const expected = definition(job);
       try {
         const created = await transport.create({ parent, task: expected.task, responseView: 'FULL' });
@@ -94,7 +103,7 @@ export function createFirebaseTaskDelivery(options: FirebaseTaskDeliveryOptions)
         } catch { return { state: 'unknown', taskName: expected.taskName }; }
       }
     },
-    async probe(job: FirestoreTaskDelivery): Promise<FirebaseTaskDeliveryResult> {
+    async probe(job: T): Promise<FirebaseTaskDeliveryResult> {
       const expected = definition(job);
       try {
         const original = await transport.get({ name: expected.taskName, responseView: 'FULL' });
@@ -154,6 +163,24 @@ export function createFirebaseTaskHandler(options: FirebaseTaskHandlerOptions): 
       const status = error !== null && typeof error === 'object' && 'status' in error ? error.status : null;
       return status === 403 || status === 409 || status === 404 ? response(200, 'stopped') : response(503, 'unavailable');
     }
+  };
+}
+
+/** Original OIDC gate, with a separate fixed product-work payload and bounded consumer. */
+export function createFirebaseBackgroundHandler(options: Omit<FirebaseTaskHandlerOptions, 'process'> & {
+  process(job: FirestoreBackgroundDelivery): Promise<{ state: string }>;
+}): (request: Request) => Promise<Response> {
+  const target = secureUrl(options.workerUrl); secureUrl(options.audience); accountEmail(options.serviceAccountEmail);
+  const issuer = options.issuer ?? 'https://accounts.google.com';
+  if (!['https://accounts.google.com', 'accounts.google.com'].includes(issuer)) throw new FirebaseTaskDeliveryError();
+  const verifier = options.verifier ?? new OAuth2Client();
+  return async request => {
+    const denied = await authenticateTaskRequest(request, target, options, issuer, verifier); if (denied) return denied;
+    let job: FirestoreBackgroundDelivery;
+    try { job = domainParse(firestoreBackgroundDeliverySchema, await boundedJson(request)); }
+    catch { return response(400, 'rejected'); }
+    try { const result = await options.process(job); return response(result.state === 'busy' ? 503 : 200, result.state); }
+    catch { return response(503, 'unavailable'); }
   };
 }
 

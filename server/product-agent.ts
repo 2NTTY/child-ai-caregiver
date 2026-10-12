@@ -16,12 +16,12 @@ import type { FirestoreWorkContinuationStore, ClaimedWorkContinuation } from "./
 export function createProductAgent(options: {
   workContinuationAuthority?: FirestoreWorkContinuationStore;
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
-  concerns?: import("./concern-store.ts").ConcernStore;
+  concerns?: Pick<import("./concern-store.ts").ConcernStore, "list" | "get">;
   sources?: import("./shared-input-store.ts").SharedInputStore;
   actions?: import("./agent-actions-store.ts").AgentActionsStore;
   summary?:import("./care-summary-store.ts").CareSummaryStore;
-  contact?:import("./contact-store.ts").ContactStore;
-  growth?: import("./growth-store.ts").GrowthStore;
+  contact?:Pick<import("./contact-store.ts").ContactStore, 'options' | 'request' | 'recordedForRun'>;
+  growth?: Pick<import("./growth-store.ts").GrowthStore, "list">;
   runtime: ReturnType<typeof createAgentRuntime>; store: ProductAgentStore;
   memory: MemoryStore; tasks: Pick<TaskStore, 'list'>; chat: ChatStore; knowledge: ReturnType<typeof createKnowledgeRetriever>;
 }) {

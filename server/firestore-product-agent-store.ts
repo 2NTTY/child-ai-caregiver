@@ -20,43 +20,71 @@ import { createFirestoreFamilyDocumentStore } from './firestore-family-documents
 import { createFirestoreAgentSources } from './firestore-agent-sources.ts';
 import type { FirestoreSharedInputStore } from './firestore-shared-inputs.ts';
 
+import type { FirestoreConcernStore } from "./firestore-concerns.ts";
+
+import type { FirestoreAgentRunOptions } from "./firestore-agent-runs.ts";
+import type { FirestoreContact } from './firestore-contact.ts';
+import { createFirestoreWorkFollowUp } from './firestore-work-followup.ts';
+import type { ResourceBasis, KnowledgeCurrent } from './agent-work-continuation-core.ts';
+import { firestoreFamilyDocumentSchemas } from './firestore-family-documents.ts';
+import { firestoreSharedInputSchema } from './firestore-shared-inputs.ts';
+
 export function createFirestoreProductAgentStore(options: FirestoreDomainOptions & {
   chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore; online: FirestoreOnlineStore;
-  sources?: FirestoreSharedInputStore;
+  authorizeWorker?: FirestoreAgentRunOptions['authorizeWorker'];
+  sources?: FirestoreSharedInputStore; concerns?: FirestoreConcernStore;
+  contact?: FirestoreContact;
   validateKnowledge(binding: Binding, sourceId: string): Promise<void>;
+  continuationKnowledge(binding: Binding, ids: readonly string[]): Promise<KnowledgeCurrent[]>;
 }) {
   const runs = createFirestoreAgentRuns(options), { data, authority } = runs;
   const documents = createFirestoreAgentDocuments({ ...options, runs });
   const proposals = createFirestoreAgentProposals({ ...options, runs,
-    extensions: [documents.extension, ...(options.sources ? [createFirestoreAgentSources(options.sources)] : [])] });
+    extensions: [documents.extension, ...(options.concerns ? [options.concerns.extension] : []), ...(options.sources ? [createFirestoreAgentSources(options.sources)] : [])] });
   const actions = createFirestoreAgentActions({ ...options, runs, proposals });
   const confirmations = createFirestoreAgentConfirmations({ runs, proposals, chat: options.chat,
     policyVersion: async b => (await actions.readPolicy(b)).version });
-  async function validateResource(b: Binding, resource: WorkResource) {
-    let version: number | undefined;
-    if (resource.kind === 'memory_fact') version = (await options.memory.readFact(b, resource.id))?.version;
-    else if (resource.kind === 'care_record') version = (await options.care.readRecord(b, resource.id))?.version;
-    else if (resource.kind === 'private_note') version = (await actions.readNote(b, resource.id))?.version;
-    else if (resource.kind === 'family_document') version = (await createFirestoreFamilyDocumentStore({ ...options, transaction: b })
-      .get(b.scope.ownerUserId, b.scope.childId, resource.id))?.version;
-    else if (resource.kind === 'task' || resource.kind === 'receipt') {
-      const task = resource.kind === 'task', kind = task ? 'task' : 'agent-action-receipt';
-      const row = await b.transaction.get(data.ref(task ? 'tasks' : 'agent_action_receipts', kind, resource.id));
-      if (!row.exists || Object.entries(data.tags(b.scope)).some(([key, value]) => row.get(key) !== value)) domainReject('not_found', 404);
-      if (task) {
-        const value = data.open(kind, resource.id, b.scope, firestoreTaskSchema, row);
-        if (value.id !== resource.id || value.childId !== b.scope.childId) domainReject('work_binding', 500);
-        version = value.version;
-      } else {
-        const value = data.open(kind, resource.id, b.scope, firestoreAgentActionSavedSchema, row);
-        if (value.receipt.id !== resource.id) domainReject('work_binding', 500);
-        version = 1;
+  async function resourceBasis(b: Binding, resource: WorkResource): Promise<ResourceBasis> {
+    let version: number | undefined, status = 'current', available = true, terminal = false;
+    try {
+      if (resource.kind === 'memory_fact') {
+        const fact = await options.memory.readFact(b, resource.id); version = fact?.version; status = fact?.status ?? 'unavailable'; available = !!fact?.applicable;
+      } else if (resource.kind === 'care_record') version = (await options.care.readRecord(b, resource.id))?.version;
+      else if (resource.kind === 'concern') {
+        const concern = await options.concerns?.head(b, resource.id); version = concern?.version; status = concern?.status ?? 'unavailable'; terminal = status === 'closed';
+      } else if (resource.kind === 'private_note') version = (await actions.readNote(b, resource.id))?.version;
+      else {
+        const spec = resource.kind === 'family_document' ? ['documents', 'family-document'] : resource.kind === 'private_source' ? ['shared_inputs', 'shared-input']
+          : resource.kind === 'task' ? ['tasks', 'task'] : ['agent_action_receipts', 'agent-action-receipt'];
+        const row = await b.transaction.get(data.ref(spec[0], spec[1], resource.id));
+        if (!row.exists || Object.entries(data.tags(b.scope)).some(([key, value]) => row.get(key) !== value)) domainReject('not_found', 404);
+        if (resource.kind === 'family_document') {
+          const value = data.open(spec[1], resource.id, b.scope, firestoreFamilyDocumentSchemas.metadata, row);
+          version = value.version; status = value.status; terminal = status === 'archived';
+        } else if (resource.kind === 'private_source') {
+          if (row.get('live') !== true) domainReject('not_found', 404);
+          const value = data.open(spec[1], resource.id, b.scope, firestoreSharedInputSchema, row);
+          version = value.version; available = value.management?.enabled !== false; status = available ? 'current' : 'disabled';
+        } else if (resource.kind === 'task') {
+          const value = data.open(spec[1], resource.id, b.scope, firestoreTaskSchema, row);
+          if (value.id !== resource.id || value.childId !== b.scope.childId) domainReject('work_binding', 500);
+          version = value.version; status = value.occurrence.state; terminal = ['completed', 'cancelled'].includes(status);
+        } else {
+          const value = data.open(spec[1], resource.id, b.scope, firestoreAgentActionSavedSchema, row);
+          if (value.receipt.id !== resource.id) domainReject('work_binding', 500); version = 1;
+        }
       }
-    } else domainReject('domain_not_ready', 503);
-    if (version === undefined) domainReject('not_found', 404);
-    if (version !== resource.version) domainReject('work_resource_changed');
+    } catch (error) { if (!error || typeof error !== 'object' || !('status' in error) || Number(error.status) !== 404) throw error; }
+    return { ...resource, version: version ?? resource.version, status: version === undefined ? 'unavailable' : status,
+      available: version !== undefined && available, terminal };
   }
-  const work = createFirestoreAgentWork({ runs, proposals, validateResource, validateKnowledge: options.validateKnowledge });
+  async function validateResource(b: Binding, resource: WorkResource) {
+    const value = await resourceBasis(b, resource);
+    if (!value.available) domainReject('not_found', 404);
+    if (value.version !== resource.version) domainReject('work_resource_changed');
+  }
+  const continuation = createFirestoreWorkFollowUp({ ...options, resource: resourceBasis, knowledge: options.continuationKnowledge, runs: () => runs });
+  const work = createFirestoreAgentWork({ runs, proposals, validateResource, validateKnowledge: options.validateKnowledge, continuation });
   const history = createFirestoreAgentHistory({ runs, actions, chat: options.chat, memory: options.memory });
   async function project(b: Binding, run: FirestoreAgentRun, original: ProductAgentResult): Promise<ProductAgentResult> {
     if (!runs.matches(b, runs.current(b), run, false)) domainReject('agent_scope_changed');
@@ -70,8 +98,8 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
     const documentReceipts = await documents.read(b, run.id);
     value.tools = value.tools.filter(tool => !['generate_family_document', 'change_family_document'].includes(tool.name));
     for (const receipt of documentReceipts.receipts) value.tools.push({ name: receipt.toolName, status: 'succeeded', reference: receipt.documentId });
-    if (value.tools.some(tool => tool.name === 'contact_caregiver'))
-      domainReject('receipt_adapter_missing', 503);
+    value.tools = value.tools.filter(tool => tool.name !== 'contact_caregiver');
+    for (const reference of await options.contact?.recorded(b, run.id) ?? []) value.tools.push({ name: 'contact_caregiver', status: 'succeeded', reference });
     if (!value.text && (receipts.length || confirmation)) value.text = '已有操作保存了 Server 收據；請查看原操作及目前結果，勿重複提交。已安排不代表已通知或照護已完成。';
     return value;
   }
@@ -89,5 +117,5 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
     } }, true),
     writeDocument: documents.writeDocument, documentReceipts: documents.documentReceipts,
   };
-  return { store, actions, runs };
+  return { store, actions, runs, continuation };
 }

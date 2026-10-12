@@ -1,0 +1,16 @@
+# Optional channel mounts for the original VM. Combine only with compose.firestore.yaml.
+# Reuse protected existing files; enabling channels still requires firebase.env and product consent.
+services:
+  api:
+    environment: &channel-files
+      WEB_PUSH_VAPID_FILE: /run/secrets/web_push_vapid
+      TELEGRAM_CONFIG_FILE: /run/secrets/telegram_config
+    secrets: [web_push_vapid, telegram_config]
+  worker:
+    environment: *channel-files
+    secrets: [web_push_vapid, telegram_config]
+secrets:
+  web_push_vapid:
+    file: ${P1_CHANNEL_PRIVATE_DIR:?Set existing protected channel directory}/vapid.json
+  telegram_config:
+    file: ${P1_CHANNEL_PRIVATE_DIR:?Set existing protected channel directory}/telegram.json

@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { growthActionSchema, growthTopicActionSchema, growthTopicSchema } from "../src/shared/growth.ts";
 import type { GrowthStore } from "./growth-store.ts";
+import { FirestoreDomainError } from "./firestore-domain-data.ts";
+import { FirestoreAuthorityError } from "./firestore-authority.ts";
 import { FamilyError } from "./family-access.ts";
 import { apiError,jsonResponse } from "./workspace-api.ts";
 const uuid="[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const route=new RegExp("^/api/children/("+uuid+")/growth(?:/(?:("+uuid+")/decide|topics/([a-z_]+)))?$","i");
-export async function handleGrowthRequest(request:Request,userId:string|null,store:GrowthStore,isCurrentUser:(userId:string)=>Promise<boolean>):Promise<Response>{
+export async function handleGrowthRequest(request:Request,userId:string|null,store:Pick<GrowthStore, "list" | "decide" | "topic">,isCurrentUser:(userId:string)=>Promise<boolean>):Promise<Response>{
   if(!userId) return apiError("unauthorized","請先登入。",401);
   const expected=request.headers.get("x-expected-user-id");
   if(!expected) return apiError("account_precondition_required","請重新確認登入帳號。",428);
@@ -29,7 +31,7 @@ export async function handleGrowthRequest(request:Request,userId:string|null,sto
     const page=await store.topic(userId,childId,growthTopicSchema.parse(match[3]),growthTopicActionSchema.parse(raw));
     return page && await isCurrentUser(userId)?jsonResponse({page}):apiError("not_found","資料或權限已改變。",404);
   }catch(error){
-    if(error instanceof FamilyError) return apiError(error.code,error.status===409?"關注或確認事實的版本已改變，請重新核對。":"無法處理此事項，請核對資料與權限。",error.status);
+    if(error instanceof FamilyError || error instanceof FirestoreDomainError || error instanceof FirestoreAuthorityError) return apiError(error.code,error.status===409?"關注或確認事實的版本已改變，請重新核對。":"無法處理此事項，請核對資料與權限。",error.status);
     if(error instanceof z.ZodError) return apiError("invalid_input","請核對輸入及共享確認。",400);
     return apiError("growth_unavailable","未能確認結果，請先重新讀取原事項，不要另建操作。",503);
   }

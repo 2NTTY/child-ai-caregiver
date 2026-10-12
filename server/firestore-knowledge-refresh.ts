@@ -157,11 +157,11 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
         return { watches, observations: observations.docs.map(row => parse(observationSchema, row.data())), checks: checks.docs.map(row => parse(checkSchema, row.data())) };
       }, { readOnly: true });
     },
-    async jobs(): Promise<{ definition: SourceWatchDefinition; data: RefreshJob }[]> {
+    async jobs(): Promise<{ definition: SourceWatchDefinition; data: RefreshJob; registeredAt: string }[]> {
       return database.runTransaction(async tx => {
         const control = await options.readControl(tx); if (!control.enabled) return [];
         const watches = await Promise.all([...catalog.keys()].map(id => watch(tx, id)));
-        return watches.filter((row): row is Watch => Boolean(row?.enabled && matches(row))).map(row => ({ definition: row.definition,
+        return watches.filter((row): row is Watch => Boolean(row?.enabled && matches(row))).map(row => ({ definition: row.definition, registeredAt: row.registeredAt,
           data: { watchId: row.id, revision: row.revision, workerGeneration: control.generation } }));
       }, { readOnly: true });
     },

@@ -13,6 +13,8 @@
 
 前端的 view model／回調不是 wire contract；正式接線保留原 controller、身份／孩子／Server 清理、草稿、原 opId／unknown 及授權。實際移除 fixture、開發工具及替換掛載位置見 [PRODUCTION_UI_HANDOFF](../frontend/PRODUCTION_UI_HANDOFF.md)。前端包的已驗／未驗與下一步只在其 PLAN；本表不複製。
 
+Firestore 切換沿原 controller／owner／wire，包含關注、成長、本人 Push／Telegram、聯絡授權及接續狀態；[背景接點](API.md#firestore-background) 不另增前端儲存或預覽頁。`queued / accepted / acknowledged / completed` 不互相替代；尚未正式部署的接線不能當成原網站已可用。
+
 INT-W01 已將 frontend 納入根 npm workspace，使用統一 lockfile；依賴變更仍須核對版本／許可／相容性。Web 合成結果、真 API 流程、Android bundle／真機各自分開；單頁或預覽完成不能代替正式驗收。
 
 P2 增補沿用下列正式 owner／服務；A02 持久工作／確認已接 Server，A03 文件 patch／續讀依[局部修改契約](API.md#document-editing) 接線，A07 的單人帳號／歷史接點沿 [帳戶服務](API.md#p2-a08-service) 與 [參考目錄](API.md#p2-a07-library) 契約，不以現有相似 API 冒充完成。版面保持，家長從聊天操作，其他頁面投影同一資源；前端各自不得保存可獨立修改的副本。

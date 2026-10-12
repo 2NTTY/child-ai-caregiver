@@ -28,8 +28,20 @@ import { createFirestoreAccountExport } from './firestore-account-export.ts';
 import { createFirestoreSharedInputStore } from './firestore-shared-inputs.ts';
 import { createSharedInputService } from './shared-input-service.ts';
 
+import { createFirestoreGrowthStore } from "./firestore-growth.ts";
+import { createFirestoreConcernStore } from "./firestore-concerns.ts";
+import { FirestoreDomainData } from './firestore-domain-data.ts';
+import { readFirestoreBackgroundClaim } from './firestore-background-work.ts';
+import { createFirestoreWebPush } from './firestore-web-push.ts';
+import { createWebPushGateway, readWebPushConfig } from './web-push-gateway.ts';
+import { createFirestoreTelegram } from './firestore-telegram.ts';
+import { readTelegramConfig } from './telegram-config.ts';
+import { createTelegramGateway } from './telegram-gateway.ts';
+import { createFirestoreContact } from './firestore-contact.ts';
+import { createFirestoreTaskAgentEvents } from './firestore-task-agent.ts';
+
 /** Real production clients; no seeded authority, SQL fallback or implicit database initialization. */
-export async function openFirebaseRuntime(env: Record<string, string | undefined>) {
+export async function openFirebaseRuntime(env: Record<string, string | undefined>, composition: { worker?: boolean } = {}) {
   const persistence = await openFirebasePersistence(env);
   let app: ReturnType<typeof initializeApp> | undefined;
   try {
@@ -56,7 +68,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
         }
       },
     });
-    const reminders = createFirestoreTaskWorker({ ...domain, enabled: config.taskWorkerEnabled, async currentAuth(userId) {
+    const currentAuth = async (userId: string) => {
       try {
         const user = await nativeAuth.getUser(userId);
         return { userId: user.uid, disabled: user.disabled, emailVerified: user.emailVerified, email: user.email ?? null };
@@ -65,24 +77,44 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
         if (code === 'auth/user-not-found' || code === 'auth/user-disabled') return { userId, disabled: true, emailVerified: false, email: null };
         throw new Error('Firebase worker identity unavailable');
       }
-    } });
+    };
+    const reminders = createFirestoreTaskWorker({ ...domain, enabled: config.taskWorkerEnabled, currentAuth });
+    const pushConfig = await readWebPushConfig(env), pushGateway = createWebPushGateway(pushConfig);
+    const telegramConfig = await readTelegramConfig(env), telegramGateway = createTelegramGateway(telegramConfig);
+    const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!pushConfig, currentAuth });
+    const telegram = createFirestoreTelegram({ ...domain, config: telegramConfig, gateway: telegramGateway, currentAuth });
     const chat = createFirestoreChatStore(domain), care = createFirestoreCareStore(domain);
-    const sources = createFirestoreSharedInputStore(domain);
+    const sources = createFirestoreSharedInputStore(domain), concerns = createFirestoreConcernStore(domain);
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
-    const online = createFirestoreOnlineStore({ ...domain, photos, erasures, reminders, mutations: [chat.mutation, care.mutation, memory.mutation, sources.mutation] });
+    const mutations = [chat.mutation, care.mutation, memory.mutation, sources.mutation, push.mutation, telegram.mutation];
+    const online = createFirestoreOnlineStore({ ...domain, photos, erasures, reminders, mutations });
     const documents = createFirestoreFamilyDocumentStore({ database, cipher, projectId: config.projectId, namespace: config.namespace });
     const knowledgeRefresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
     const knowledge = config.knowledgeSourceIds === null ? undefined : createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: knowledgeRefresh.gate });
+    const growth = createFirestoreGrowthStore({ ...domain, memory, care, online, knowledge });
+    const taskEvents = createFirestoreTaskAgentEvents(domain);
+    let product: Awaited<ReturnType<typeof createFirestoreProductAgent>>;
+    const contact = createFirestoreContact({ ...domain, push, telegram, pushGateway, telegramGateway, telegramBotId: telegramConfig?.botId ?? null, growth,
+      runs: () => product.runs, currentAuth });
+    mutations.push(contact.mutation);
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
-    const product = await createFirestoreProductAgent({ ...domain, config: readAiConfig(env), chat, care, memory, online, documents, knowledge, sources });
+    product = await createFirestoreProductAgent({ ...domain, config: readAiConfig(env), chat, care, memory, online, documents, knowledge, sources, concerns, growth, contact,
+      authorizeWorker: composition.worker ? async (b, reference, recipeId) => {
+        if (!config.taskWorkerEnabled || !(await authority.readControl(b.transaction)).enabled) return false;
+        const job = await readFirestoreBackgroundClaim(new FirestoreDomainData(domain), b, reference); if (!job) return false;
+        if (job.kind === 'work-continuation') return recipeId === 'product-work-followup' && !!await product.continuation.input(b, job);
+        if (recipeId !== 'product-background') return false;
+        return job.kind === 'concern' ? concerns.authorizeBackground(b, job) : job.kind === 'growth' ? growth.authorizeBackground(b, job)
+          : job.kind === 'task-agent' ? !!await taskEvents.input(b, job) && await growth.taskAllowedIn(b, job.resourceId) : false;
+      } : undefined });
     const sourceService = createSharedInputService(sources, product.runtime);
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
     const photoAgent = createPhotoAgent(photos, product.runtime);
-    const handler = createFirebaseRequestHandler({ authority, auth, online, documents, photos, photoAgent, library, chat, care, memory, product, sources, sourceService, accountData: { erasures, exporter },
+    const handler = createFirebaseRequestHandler({ authority, auth, online, documents, photos, photoAgent, library, chat, care, memory, product, sources, sourceService, concerns, growth, push, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { ...persistence, sessions, auth, online, documents, photos, objects, journal, erasures, erasureCleanup, exporter, knowledge, knowledgeRefresh, library, chat, care, memory, sources, sourceService, product, handler,
+    return { ...persistence, sessions, auth, currentAuth, reminders, online, documents, photos, objects, journal, erasures, erasureCleanup, exporter, knowledge, knowledgeRefresh, library, chat, care, memory, sources, sourceService, concerns, growth, push, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
       close() { return closing ??= (async () => { try { await deleteApp(ownedApp); } finally { await persistence.close(); } })(); } };
   } catch (error) {
     try { if (app) await deleteApp(app); } finally { await persistence.close(); }

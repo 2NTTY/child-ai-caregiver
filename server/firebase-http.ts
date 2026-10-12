@@ -1,5 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ServerAuthPort } from './auth-port.ts';
+import type { TelegramConfig } from './telegram-types.ts';
+import { telegramWebhookAuthorized } from './telegram-config.ts';
 
 const MAX_BODY_BYTES = 64 * 1024, MAX_PHOTO_BODY_BYTES = 6 * 1024 * 1024, MAX_DOCUMENT_BODY_BYTES = 2 * 1024 * 1024;
 const UUID_PATH = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
@@ -50,7 +52,7 @@ const failure = (code: string, status: number) => Response.json({ code }, { stat
 export function createFirebaseNodeHandler(options: {
   publicOrigin: string; auth: Pick<ServerAuthPort, 'fromNodeHeaders'> & {
     getSession?(options: { headers: Headers }): Promise<{ user: { id: string } } | null>;
-  }; handler(request: Request): Promise<Response>;
+  }; handler(request: Request): Promise<Response>; telegramConfig?: TelegramConfig | null;
 }) {
   let activeLargeBodies = 0;
   return async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
@@ -62,11 +64,15 @@ export function createFirebaseNodeHandler(options: {
       if (method !== 'GET' && method !== 'POST') { await write(failure('method_not_allowed', 405), response); return; }
       const headers = options.auth.fromNodeHeaders(request.headers);
       const pathname = new URL(path, options.publicOrigin).pathname;
+      const webhook = pathname === '/api/telegram/webhook';
+      if (webhook && (method !== 'POST' || !telegramWebhookAuthorized(headers.get('x-telegram-bot-api-secret-token'), options.telegramConfig ?? null))) {
+        await write(failure('forbidden', 403), response); return;
+      }
       const maximum = method === 'POST' && photoContent.test(pathname) ? MAX_PHOTO_BODY_BYTES
         : method === 'POST' && documentWrite.test(pathname) ? MAX_DOCUMENT_BODY_BYTES : MAX_BODY_BYTES;
       const length = headers.get('content-length');
       if (length !== null && (!/^\d+$/u.test(length) || Number(length) > maximum)) throw new BodyTooLarge();
-      if (method === 'POST' && headers.get('origin') !== options.publicOrigin) {
+      if (method === 'POST' && !webhook && headers.get('origin') !== options.publicOrigin) {
         await write(failure('origin_rejected', 403), response); return;
       }
       if (maximum > MAX_BODY_BYTES) {

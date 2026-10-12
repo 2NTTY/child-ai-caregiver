@@ -19,6 +19,7 @@ export function createFirestoreAgentWork(options: {
   runs: FirestoreAgentRuns; proposals: FirestoreAgentProposals;
   validateResource(binding: Binding, resource: WorkResource): Promise<void>;
   validateKnowledge(binding: Binding, sourceId: string): Promise<void>;
+  continuation: import('./firestore-work-followup.ts').FirestoreWorkFollowUp;
 }) {
   const { runs, proposals } = options, { data, authority } = runs;
   function scoped(b: Binding, suffix: string): Query {
@@ -42,7 +43,7 @@ export function createFirestoreAgentWork(options: {
         } catch { domainReject('invalid_cursor', 400); }
       }
       return authority.runTransaction(userId, childId, async b => {
-        if (input.workId) { const work = await b.readWork(input.workId); return { items: work ? [work] : [], nextCursor: null, complete: true }; }
+        if (input.workId) { const work = await b.readWork(input.workId); return { items: work ? [await options.continuation.project(b, work)] : [], nextCursor: null, complete: true }; }
         if (cursor && (cursor.epoch !== b.scope.storageEpoch || cursor.changeSeq !== b.changeSeq)) domainReject('version_conflict');
         let query = scoped(b, 'agent_work_index').orderBy('createdAt', 'desc').orderBy('workId', 'desc').limit(11);
         if (cursor) query = query.startAfter(cursor.createdAt, cursor.id);
@@ -55,7 +56,7 @@ export function createFirestoreAgentWork(options: {
             || projection.createdAt !== row.get('createdAt')) domainReject('work_binding', 500);
           const size = JSON.stringify(work).length;
           if (items.length && length + size > 7000) break;
-          items.push(work); length += size;
+          items.push(await options.continuation.project(b, work)); length += size;
         }
         const last = items.at(-1), more = rows.size > items.length;
         return { items, complete: !more, nextCursor: more && last ? Buffer.from(JSON.stringify({
@@ -88,13 +89,14 @@ export function createFirestoreAgentWork(options: {
         }
         for (const sourceId of input.values.followUp?.knowledgeSourceIds ?? []) await options.validateKnowledge(b, sourceId);
         const prepared = await b.prepareWork(input), work = prepared.value;
+        const followUp = await options.continuation.prepare(b, work);
         const result = { operationId: input.operationId, runId, callId, hash, result: work };
         const index = { ...data.tags(b.scope), workId: work.id, createdAt: work.createdAt,
           ...data.seal('agent-work-index', work.id, b.scope, firestoreAgentWorkProjectionSchema,
             { workId: work.id, version: work.version, createdAt: work.createdAt }, work.version) };
         const operation = { ...data.tags(b.scope), ...data.seal('agent-work-operation', opKey, b.scope, firestoreAgentWorkOperationSchema, result) };
         const call = { ...data.tags(b.scope), ...data.seal('agent-work-call', callKey, b.scope, firestoreAgentWorkOperationSchema, result) };
-        prepared.commit(); b.transaction.set(data.ref('agent_work_index', 'agent-work-index', work.id), index);
+        prepared.commit(); followUp.commit(); b.transaction.set(data.ref('agent_work_index', 'agent-work-index', work.id), index);
         b.transaction.create(opRef, operation); b.transaction.create(callRef, call); runs.advance(b, run, prepared.changeSeq);
         return work;
       });

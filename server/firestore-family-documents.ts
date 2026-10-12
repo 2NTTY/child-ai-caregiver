@@ -19,6 +19,7 @@ import { newReportAccumulator, completeReportSnapshot, effectiveReportRequest, r
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
+import { prepareFirestoreBackgroundWork, firestoreBackgroundReference, type FirestoreBackgroundWork } from './firestore-background-work.ts';
 
 const uuid = z.uuid(), version = z.number().int().positive().max(2147483647), datetime = z.iso.datetime({ offset: true });
 const metadataSchema = z.object({ id: uuid, childId: uuid, ownerUserId: z.string().min(1).max(256), version, request: documentRequestSchema,
@@ -35,7 +36,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
   /** Internal Agent transaction only. Never supplied by an HTTP request. */
   transaction?: FirestoreAuthorityTransaction;
   deferCommit?: (commit: () => void) => void;
-}): FamilyDocumentStore {
+}): FamilyDocumentStore & { processRefresh(job: FirestoreBackgroundWork): Promise<{ state: 'completed' | 'stopped' }> } {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), snapshots = new FirestoreFamilyDocumentSnapshots(options);
   const care = createFirestoreCareStore(options), chat = createFirestoreChatStore(options);
   const reader = createFirestoreDocumentSources({ ...options, care, memory: createFirestoreMemoryStore({ ...options, care, chat }) });
@@ -167,6 +168,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
       const preparedSnapshot = prepared.snapshot ? snapshots.prepare(scope, prepared.row.id, prepared.snapshot) : null;
       const change = await binding.prepareChange(opId, 'documents', false, childId);
       const envelope = { ...data.tags(scope), documentId: prepared.row.id, status: prepared.row.status, createdAt: prepared.row.createdAt,
+        autoRefresh: prepared.row.autoRefresh,
         ...data.seal('family-document', prepared.row.id, scope, metadataSchema, prepared.row, prepared.row.version) };
       const id = operationId(userId, opId), receipt = { ownerUserId: userId, childId, storageEpoch: scope.storageEpoch,
         operationId: opId, fingerprint: requestHash, document: prepared.row };
@@ -326,7 +328,44 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         if (!documentSnapshotValid(snapshot, loaded)) reject('source_changed'); return snapshot;
       });
     },
-    async refreshPending(generation) { uuid.parse(generation); domainReject('domain_not_ready', 503); },
+    // Global compensation is paged by the authenticated worker's maintenance cursor.
+    async refreshPending(generation) { uuid.parse(generation); domainReject('background_dispatch_required', 409); },
+    async processRefresh(job) {
+      if (job.kind !== 'document-refresh') domainReject('invalid_scope', 400);
+      const { ownerUserId, childId } = job.scope, opId = firestoreBackgroundReference(job);
+      return runDocumentTransaction(ownerUserId, null, async binding => {
+        const scope = await child(binding, childId), control = await authority.readControl(binding.transaction);
+        if (!control.enabled || job.generation !== binding.generation || job.authorizationVersion !== binding.authorizationVersion
+          || fingerprint(scope) !== fingerprint(job.scope)) return { state: 'stopped' as const };
+        if (await prior(binding, opId)) return { state: 'completed' as const };
+        const old = await find(binding, scope, job.resourceId);
+        if (!old || old.status !== 'active' || !old.autoRefresh || old.progress?.blocked || old.version >= 2147483647) return { state: 'stopped' as const };
+        const loaded = await sources(binding, scope), values = await bodies(binding, scope, old);
+        await supplement(binding, scope, loaded, [...(values.current ? [values.current] : []), ...values.history]);
+        if (safe(old, loaded, values).report?.phase === 'complete') return { state: 'completed' as const };
+        const row = { ...old, version: old.version + 1 };
+        let snapshot: DocumentSnapshot | undefined;
+        try { snapshot = await reportBatch(binding, scope, row, loaded, values.current); }
+        catch (error) {
+          if (!(error instanceof FamilyError) || !['document_edits_need_review', 'document_capacity_exceeded'].includes(error.code)) throw error;
+          row.version = old.version; if (row.progress) row.progress.blocked = true;
+        }
+        if (snapshot) { row.historyIds = [...(row.currentId ? [row.currentId] : []), ...row.historyIds].slice(0, 10); row.currentId = snapshot.id; }
+        const prepared = snapshot ? snapshots.prepare(scope, row.id, snapshot) : null;
+        const next = row.progress && row.progress.stage !== 'done' && !row.progress.blocked
+          ? await prepareFirestoreBackgroundWork(data, binding.transaction, { kind: 'document-refresh', scope, resourceId: row.id,
+            basis: 'version:' + row.version, generation: binding.generation, authorizationVersion: binding.authorizationVersion }, new Date(Date.now() + 1000).toISOString()) : null;
+        const change = await binding.prepareChange(opId, 'documents', false, childId), receiptId = operationId(ownerUserId, opId);
+        const receipt = { ownerUserId, childId, storageEpoch: scope.storageEpoch, operationId: opId,
+          fingerprint: fingerprint({ backgroundJob: job.id }), document: row };
+        const envelope = { ...data.tags(scope), documentId: row.id, status: row.status, createdAt: row.createdAt, autoRefresh: row.autoRefresh,
+          ...data.seal('family-document', row.id, scope, metadataSchema, row, row.version) };
+        change.commit(); prepared?.commit(binding.transaction); next?.commit(); binding.transaction.set(data.ref('documents', 'family-document', row.id), envelope);
+        binding.transaction.create(data.ref('document_operations', 'document-operation', receiptId),
+          { ...data.tags(binding.scope), ...data.seal('document-operation', receiptId, binding.scope, operationSchema, receipt) });
+        return { state: 'completed' as const };
+      });
+    },
   };
 }
 

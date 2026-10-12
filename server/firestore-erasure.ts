@@ -181,7 +181,19 @@ export function createFirestoreErasureStore(options: FirestoreErasureOptions) {
       checkToken(row, receiptToken); return result(row);
     });
   }
-  return { submitOnline, prepareAccount, executeAccount, status, receiptStatus,
+  async function resumeRequested(row: FirestoreScopeErasure) {
+    if (row.state !== 'requested') return result(row);
+    const owner = row.intent.scope.ownerUserId, opId = row.intent.operationId;
+    if (row.intent.type === 'account-delete') {
+      if (!row.receiptToken) domainReject('erasure_binding', 500);
+      return executeAccount(owner, { operationId: opId, receiptToken: row.receiptToken, confirmation: '永久刪除我的帳戶' });
+    }
+    const pending = await authority.runTransaction(owner, null, b => receipts.read(b, opId));
+    if (!pending || !isFirestoreOnlinePending(pending) || pending.childId !== row.intent.scope.childId) domainReject('erasure_binding', 500);
+    await submitOnline(owner, { path: pending.path, operation: pending.operation, payload: { confirmChildId: row.intent.scope.childId } });
+    return result((await options.database.runTransaction(tx => read(tx, owner, opId)))!);
+  }
+  return { submitOnline, prepareAccount, executeAccount, status, receiptStatus, resumeRequested,
     /** Trusted cleanup port: never exposed as a generic HTTP collection API. */
     read, seal, ref, result, journal, data };
 }

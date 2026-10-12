@@ -61,7 +61,7 @@ function parse<T>(schema: z.ZodType<T>, input: unknown, invalid = false): T {
 }
 const same = (left: unknown, right: unknown) => canonical(left) === canonical(right);
 export interface FirestorePhotosOptions extends FirestoreAuthorityOptions {
-  objects: Pick<FirebasePhotoObjects, "write" | "recover" | "read"> & Partial<Pick<FirebasePhotoObjects, "remove">>;
+  objects: Pick<FirebasePhotoObjects, "write" | "recover" | "read"> & Partial<Pick<FirebasePhotoObjects, "remove" | "inspect">>;
   journal: Pick<FirebaseErasureJournal, "writeOnce"> & Partial<Pick<FirebaseErasureJournal, "read">>;
 }
 /** Domain transactions own permission, quotas and receipts. Storage calls never run inside SDK callbacks. */
@@ -436,11 +436,24 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
       return guard(async () => {
         const first = await options.database.runTransaction(inspect);
         if (!first) return { state: "complete" };
-        // An upload with no confirmed object identity cannot be guessed or treated as absent.
-        if (first.cleanup.state !== "known" || !first.cleanup.descriptor) return { state: "pending" };
+        if (first.cleanup.state !== "known" || !first.cleanup.descriptor) {
+          // Resolve a lost upload receipt with a pinned, authenticated read; a 404 cannot prove an in-flight upload absent.
+          if (first.cleanup.uploadStarted && options.objects.inspect) {
+            const found = await options.objects.inspect(scope, id);
+            if (found) {
+              descriptor(scope, id, found, first.cleanup);
+              await options.database.runTransaction(async tx => {
+                const current = await inspect(tx); if (!current || !same(current.cleanup, first.cleanup)) return;
+                tx.set(cleanupRef(id), { scopeTag: tag(scope), state: 'known',
+                  ...seal('photo-cleanup', id, scope, firestorePhotoCleanupSchema, { ...current.cleanup, state: 'known', descriptor: found }) });
+              });
+            }
+          }
+          if (first.cleanup.uploadStarted) return { state: 'pending' };
+        }
         const intent = await journal.read!(first.intent, first.cleanup.journal);
         if (!same(intent, first.intent)) fail("photo_integrity", 503);
-        await objects.remove!(scope, id, first.cleanup.descriptor);
+        if (first.cleanup.descriptor) await objects.remove!(scope, id, first.cleanup.descriptor);
         return options.database.runTransaction(async tx => {
           const current = await inspect(tx);
           if (!current) return { state: "complete" as const };
@@ -467,7 +480,16 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         return result.state === 'complete';
       }
       // Unknown uploads retain a cleanup obligation instead of assuming that no object exists.
-      if (first.upload && !first.descriptor) return false;
+      if (first.upload && !first.descriptor) {
+        const found = await options.objects.inspect?.(scope, id);
+        if (!found) return false;
+        descriptor(scope, id, found, first.upload);
+        await options.database.runTransaction(async tx => {
+          const row = checkedRow(await tx.get(rowRef(id)), scope, id); if (!same(row, first)) fail('version_conflict');
+          row.descriptor = found; writeRow({ scope, transaction: tx } as FirestoreAuthorityTransaction, row);
+        });
+        return false;
+      }
       if (first.descriptor) await objects.remove(scope, id, first.descriptor);
       return options.database.runTransaction(async tx => {
         const [snap, globalSnap, childSnap] = await tx.getAll(rowRef(id), globalRef, quotaRef(scope));

@@ -85,7 +85,9 @@ F07 只補尚欠跨域／恢復證據，F08 確认已交付功能不連 SQL、�
 
 ### 原 VM Firestore 組裝（F02 接點已驗，正式網站待切換）
 
-`deploy/p1/compose.firestore.yaml` 是同一 `yuban-p1` 專案的替代組裝，不能與 SQL Compose 疊加。沿用 80／443、Caddy 資料 volume 和前端；API／worker 只在內部網絡提供服務。`/internal/task-reminders` 與 `/internal/task-dispatch` 只轉送固定 worker 入口，由 worker 驗 OIDC issuer／audience／期限／service account；其他 internal 路徑拒絕。健康檢查只查程序存活，不查資料庫或觸發工作，也不表示全部產品功能可用。
+`deploy/p1/compose.firestore.yaml` 是同一 `yuban-p1` 專案的替代組裝，不能與 SQL Compose 疊加。沿用 80／443、Caddy 資料 volume 和前端；API／worker 只在內部網絡提供服務。`/internal/task-reminders`、`/internal/task-dispatch` 與 `/internal/product-work` 只轉送固定 worker 入口，由 worker 驗 OIDC issuer／audience／期限／service account；其他 internal 路徑拒絕。健康檢查只查程序存活，不查資料庫或觸發工作，也不表示全部產品功能可用。
+
+沿用既有 Push／Telegram 時，另外疊加 `deploy/p1/compose.firestore.channels.yaml`，`P1_CHANNEL_PRIVATE_DIR` 指向既有受保護的 `vapid.json`／`telegram.json` 目錄；只掛 API／worker，不能加入 build context。此 override 不含 SQL 或本機附件 volume，也不自動開啟外發；`firebase.env` 的渠道旗標及產品本人授權仍須符合正式交付範圍。主 Compose 單獨運作時不要求有渠道秘密。
 
 營運者在工程外建立受保護的 `firebase.env`（按同目錄 `firebase.env.example`）及原 Firestore 加密 `storage.key`，設定 `P1_PRIVATE_DIR`、`PUBLIC_HOST`、`RELEASE_TAG` 與四項 Firebase 公開 Web SDK 建置參數，再從根目錄使用：
 

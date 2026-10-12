@@ -27,6 +27,17 @@ import type { SharedInputService } from './shared-input-service.ts';
 import type { PhotoAgent } from './photo-agent.ts';
 import { handleFirebaseAccountData, type FirebaseAccountDataPort } from './firebase-account-data-api.ts';
 
+import { handleGrowthRequest } from "./growth-api.ts";
+import type { FirestoreGrowthStore } from "./firestore-growth.ts";
+import type { FirestoreConcernStore } from "./firestore-concerns.ts";
+import { handleConcernRequest } from "./concern-api.ts";
+import type { FirestoreWebPush } from './firestore-web-push.ts';
+import type { FirestoreTelegram } from './firestore-telegram.ts';
+import type { TelegramConfig, TelegramGateway } from './telegram-types.ts';
+import { telegramWebhookAuthorized } from './telegram-config.ts';
+import { handleTelegramWebhook } from './telegram-webhook.ts';
+import type { FirestoreContact } from './firestore-contact.ts';
+
 const MAX_BODY_BYTES = 16 * 1024;
 const authorityErrors = new Map<string, number>([
   ["invalid_input", 400], ["not_found", 404], ["service_disabled", 403], ["binding", 403],
@@ -56,6 +67,11 @@ export interface FirebaseRequestHandlerOptions {
   care?: FirestoreCareStore;
   memory?: MemoryStore;
   sources?: SharedInputStore;
+  concerns?: FirestoreConcernStore;
+  growth?: FirestoreGrowthStore;
+  push?: FirestoreWebPush;
+  contact?: FirestoreContact;
+  telegram?: { store: FirestoreTelegram; config: TelegramConfig | null; gateway: TelegramGateway };
   sourceService?: SharedInputService;
   product?: Awaited<ReturnType<typeof createFirestoreProductAgent>>;
 }
@@ -118,6 +134,20 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
   return async request => {
     try {
       const path = new URL(request.url).pathname;
+      if (path === '/api/telegram/webhook') {
+        const channel = options.telegram;
+        if (request.method !== 'POST' || !channel?.config || !telegramWebhookAuthorized(request.headers.get('x-telegram-bot-api-secret-token'), channel.config)) return errorResponse('forbidden', 403);
+        return uncached(await handleTelegramWebhook(request, channel.store, channel.gateway, channel.config.botId, options.contact));
+      }
+      if (request.method === 'GET' && (path === '/api/web-push' && options.push || path === '/api/telegram' && options.telegram)) {
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        const expected = request.headers.get('x-expected-user-id');
+        if (!expected || expected !== userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required', expected ? 409 : 428);
+        const result = path === '/api/web-push' ? await options.push!.status(userId) : await options.telegram!.store.status(userId);
+        if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);
+        return json(result);
+      }
       if ((path === "/healthz" || path === "/api/health") && request.method === "GET") {
         return json({ status: "ok", storage: "firestore", stage: "foundation" });
       }
@@ -148,6 +178,32 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
         const response = await handleFamilyDocumentRequest(request, userId, documents, isCurrentUser);
         if (!await isCurrentUser(userId)) throw new RequestError("identity_changed", 409);
+        return uncached(response);
+      }
+      if (options.growth && /^\/api\/children\/[^/]+\/growth(?:\/|$)/u.test(path)) {
+        if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
+        const response = await handleGrowthRequest(request, userId, options.growth, isCurrentUser);
+        if (!await isCurrentUser(userId)) throw new RequestError('identity_changed', 409);
+        return uncached(response);
+      }
+      const contactPath = /^\/api\/children\/([0-9a-f-]{36})\/contact$/iu.exec(path);
+      if (request.method === 'GET' && contactPath && options.contact) {
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id; if (!userId) throw new RequestError('unauthorized', 401);
+        const expected = request.headers.get('x-expected-user-id'); if (expected && expected !== userId) throw new RequestError('session_changed', 409);
+        const value = await options.contact.page(userId, contactPath[1]);
+        if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);
+        return json(value);
+      }
+      if (options.concerns && /^\/api\/children\/[^/]+\/concerns(?:\/|$)/u.test(path)) {
+        if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
+        const response = await handleConcernRequest(request, userId, options.concerns, isCurrentUser);
+        if (!await isCurrentUser(userId)) throw new RequestError('identity_changed', 409);
         return uncached(response);
       }
       if (options.sources && /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(path)) {

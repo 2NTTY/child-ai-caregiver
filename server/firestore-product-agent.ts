@@ -22,11 +22,19 @@ import type { FamilyDocumentStore } from './family-document-store.ts';
 import type { FirestoreSharedInputStore } from './firestore-shared-inputs.ts';
 
 /** Original product Agent, with only its persistence, routing and admission assembly replaced. */
+import type { FirestoreGrowthStore } from "./firestore-growth.ts";
+import type { FirestoreConcernStore } from "./firestore-concerns.ts";
+
+import type { FirestoreAgentRunOptions } from "./firestore-agent-runs.ts";
+import type { FirestoreContact } from './firestore-contact.ts';
+
 export async function createFirestoreProductAgent(options: FirestoreDomainOptions & {
   config: AiConfig; chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore;
   online: FirestoreOnlineStore; knowledge?: FirestoreKnowledgeStore;
   documents?: FamilyDocumentStore;
-  sources?: FirestoreSharedInputStore;
+  authorizeWorker?: FirestoreAgentRunOptions['authorizeWorker'];
+  contact?: FirestoreContact;
+  sources?: FirestoreSharedInputStore; concerns?: FirestoreConcernStore; growth?: FirestoreGrowthStore;
   /** Trusted constructor seam for a bounded scripted Runner check; never HTTP-selected. */
   platformProvider?: AgentModelProvider;
 }) {
@@ -37,6 +45,10 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const services = createFirestoreProductAgentStore({ ...options, async validateKnowledge(binding, sourceId) {
     if (!options.knowledge) domainReject('knowledge_not_ready', 503);
     await options.knowledge.validatePublishedSource(binding.transaction, sourceId);
+  }, async continuationKnowledge(b, ids) {
+    if (!ids.length) return [];
+    if (!options.knowledge) domainReject('knowledge_not_ready', 503);
+    return options.knowledge.continuationSources(b.transaction, ids);
   } });
   const nativeSessionService = new FirestoreSessionService({ ...options, namespace: options.namespace + '_adk' });
   const rootBudget = new FirestoreRootBudget({ ...options, namespace: options.namespace + '_root_budget' });
@@ -66,6 +78,6 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const knowledge = createKnowledgeRetriever(options.knowledge ?? { async candidates() { domainReject('knowledge_not_ready', 503); } },
     { async embed() { throw new AgentStopped('unavailable'); } });
   const agent = createProductAgent({ runtime, store: services.store, actions: services.actions,
-    chat: options.chat, memory: options.memory, tasks: options.online.tasks, documents: options.documents, sources: options.sources, knowledge });
+    chat: options.chat, memory: options.memory, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge });
   return { ...services, routing, runtime, agent };
 }

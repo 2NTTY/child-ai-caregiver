@@ -259,6 +259,14 @@ export function createFirebasePhotoObjects(options: {
         await bucket.removePinned(expected.objectName, descriptor.generation);
       } catch (error) { return safe(error); }
     },
+    async inspect(scope: WorkRecoveryScope, photoId: string): Promise<FirebasePhotoObjectDescriptor | null> {
+      const expected = binding(scope, photoId);
+      let metadata: unknown;
+      try { metadata = await bucket.metadata(expected.objectName); }
+      catch (error) { if (error && typeof error === 'object' && 'code' in error && error.code === 404) return null; return safe(error); }
+      try { const latest = checkedMetadata(metadata, expected); return (await stored(expected, latest.generation)).descriptor; }
+      catch (error) { return safe(error); }
+    },
     async recover(scope: WorkRecoveryScope, photoId: string, input: { base64: string; mimeType: "image/jpeg" | "image/png" }): Promise<FirebasePhotoObjectDescriptor> {
       const expected = binding(scope, photoId), payload = parse(inputSchema, input, true);
       let plaintext: Buffer;
