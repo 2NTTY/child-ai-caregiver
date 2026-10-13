@@ -50,7 +50,7 @@ test('canonical task-backed preparation document supports reads, typed patches, 
   assert.deepEqual(item.current!.sources.map(source => source.resourceId), [child.id, task.id]); assert.equal(item.current!.reportCoverage, undefined);
   const first = item, before = [...f.fake.records]; assert.deepEqual(await f.store.create('synthetic-owner', child.id, request, opId), item);
   assert.deepEqual([...f.fake.records], before);
-  assert.deepEqual(await f.store.operationReceipt('synthetic-owner', child.id, opId), { operationId: opId, documentId: item.id, savedVersion: 1 });
+  assert.deepEqual(await f.store.operationReceipt('synthetic-owner', child.id, opId), { operationId: opId, documentId: item.id, savedVersion: 1, contentState: "ready", currentVersion: 1 });
   const basis = await f.version(item), patch = { action: 'patch' as const, expectedVersion: item.version, authorityVersion: basis,
     edits: [{ op: 'set_metadata' as const, title: 'Family edited title' }] };
   assert.equal((await f.store.validatePatch('synthetic-owner', child.id, item.id, patch))?.version, 1);
@@ -94,7 +94,7 @@ test('source changes invalidate old bodies and receipts; provenance gates stale 
   const before = [...f.fake.records], read = (await f.store.get('synthetic-owner', child.id, item.id))!;
   assert.equal(read.current, null); assert.equal(read.readState, 'invalidated'); assert.equal(read.history.length, 0);
   assert.equal((await f.store.create('synthetic-owner', child.id, request, opId))!.current, null);
-  assert.equal(await f.store.operationReceipt('synthetic-owner', child.id, opId), null);
+  assert.equal((await f.store.operationReceipt('synthetic-owner', child.id, opId))?.contentState, 'invalidated');
   const content = await f.store.readContent('synthetic-owner', child.id, item.id, { snapshotId: item.current!.id, snapshotVersion: 1, offset: 0 });
   assert.equal(content!.contentKind, 'redacted_manifest_json'); assert.equal(content!.text.includes('Private source body'), false);
   await assert.rejects(f.store.change('synthetic-owner', child.id, item.id, { action: 'patch', expectedVersion: 1, authorityVersion: basis, confirmShared: true,

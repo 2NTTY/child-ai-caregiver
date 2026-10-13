@@ -20,6 +20,9 @@ export interface AgentOriginalDocumentReceipt {
   operationId: string;
   documentId: string;
   savedVersion: number;
+  contentState?: "building" | "ready" | "invalidated";
+  currentVersion?: number;
+  processedSources?: number;
   toolName: "generate_family_document" | "change_family_document";
 }
 

@@ -63,7 +63,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ### 當前任務入口
 
-當前為 [P2-R03 Agent 正式組裝](#p2-r03)，基線 `4851ffa`（#204）。使用者已批准依序完成 R01→R02→R03→R04，僅 Astra 主模型、不派子代理、只做必要定向檢查。P3 手機及三角色實作等本次修正合併；[真原生備份還原](#p2-backup-followup)仍延後。家庭多人完整功能移至 P4，保留本人空間及資料隔離。
+當前為 [P2-R04 成果狀態與通知歷史](#p2-r04)，基線 `5ceb9b7`（#205）。使用者已批准依序完成 R01→R02→R03→R04，僅 Astra 主模型、不派子代理、只做必要定向檢查。P3 手機及三角色實作等本次修正合併；[真原生備份還原](#p2-backup-followup)仍延後。家庭多人完整功能移至 P4，保留本人空間及資料隔離。
 
 F02～F08 原執行授權及基線保留在下節作里程碑追溯，不是目前入口。每包開始及交付前核對最新 master、相關工作樹及其後合併；部署、用量及待驗觀察見 [STATUS](STATUS.md)。
 
@@ -95,7 +95,7 @@ F02～F08 原執行授權及基線保留在下節作里程碑追溯，不是目�
 <a id="p2-r03"></a>
 #### P2-R03 Agent 正式組裝
 
-- 狀態：實作及必要合成驗證完成，待本包 PR 合併；分支 `codex/p2-r03-agent-assembly`；前置 P2-R02 已合併；涵蓋 R2／R8。
+- 狀態：已於 #205 合併（`5ceb9b7`）；分支 `codex/p2-r03-agent-assembly`；前置 P2-R02 已合併；涵蓋 R2／R8。
 - 按真持久操作區分聊天、背景／接續、照片及分享文字；Server 綁原 run、來源資源／版本、絕對期限、授權及 worker generation，不偽造聊天 claim 或拆 binder。預算、取消、終態及防重維持。
 - 注入已有同一 summary service；測試從正式 constructor 到 runtime／工具，不人工塞工具冒充接線。
 - 已驗：scripted provider 經正式 constructor／真 Runner，核背景、接續、照片及分享文字、真 summary service、取消及重複工作不再調用；Server 生產來源型別通過。見 [R03 EV](artifacts/verification/P2_R03_ASSEMBLY_20261013.json)；零真模型，部署另核。
@@ -103,10 +103,10 @@ F02～F08 原執行授權及基線保留在下節作里程碑追溯，不是目�
 <a id="p2-r04"></a>
 #### P2-R04 成果狀態與通知歷史
 
-- 狀態：未開始；前置 P2-R03；涵蓋 R9／R10。
+- 狀態：實作及最低必要驗證完成，待 PR 合併／原站部署；分支 `codex/p2-r04-results-history`；前置 P2-R03 已合併；涵蓋 R9／R10。
 - Server 以原 notification_deliveries 契約投影本人 Push／Telegram／聯絡投遞 metadata，各來源有界 cursor／去重；不把請求當已送達，不虛構沒有證據的電郵。
 - 文件收據證明整理工作已提交，正文 building／ready／invalidated 獨立；building 保留同 ID／版本／進度，不誤報來源失效。真正失效遮蔽，收據不可查保持 unknown；聊天與頁面同源。
-- 最少驗證：building→Agent 收尾→同文件讀回；真 API／owner 通知 metadata 分頁與隔離。部署按原 VM／API／worker／Web 相容更新，優先 R01；只補新索引／SDK 相關雲端接點，不新增模型或通知批次。
+- 已驗：building→正式 Agent 收尾→同文件讀回；既有 API／前端 owner 投影的通知分頁與隔離，及來源失效的原定遮蔽；見 [R04 EV](artifacts/verification/P2_R04_RESULTS_HISTORY_20261013.json)。部署按原 VM／API／worker／Web 相容更新；只補新索引／SDK 相關雲端接點，不新增模型或通知批次。
 
 文件更新依根 AGENTS：PLAN／STATUS 投影現況，契約只改對應語義，WORKLOG append-only；型別及 build 按跨域修改集中，不逐小改重跑、不做全量／壓測／Computer Use。只有上述缺口已有必要證據且合併，才解鎖手機實作；不把 scripted 當真服務或有限案例當全面安全通過。
 

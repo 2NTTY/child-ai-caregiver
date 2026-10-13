@@ -2513,3 +2513,11 @@
 - Baseline / Implementation：接續 #204 `4851ffa`；Astra 主模型獨立完成。正式 binder 接原背景 generation／claim，以及照片、分享文字的來源版本／抽取 claim；所有入口保留原 run、期限、授權、取消及共同預算。Firestore 正式 constructor 注入同一 summary service。
 - Verification：一條合成連貫情景經真 ADK Runner 通過四個入口、摘要、取消與不重播；Server 生產來源型別通過。脚本誤選附帶工作、未先載入能力及漏填來源欄位曾失敗，停批後定位修正，未改正式斷言或擴測；見 [R03 EV](artifacts/verification/P2_R03_ASSEMBLY_20261013.json)。零真模型／通知／雲端；沒有全量測試。
 - Next：完成本包 review／PR 後接 R04 成果狀態與通知歷史；網站版本及真原生還原仍分開記錄。
+
+
+<a id="log-20261013-p2-r04-results-history"></a>
+### 2026-10-13 — P2-R04 成果狀態與通知歷史
+
+- Baseline / Implementation：接續 #205 `5ceb9b7`。文件提交收據與正文 building／ready／invalidated 分開；Agent 對 building 回報已提交整理及原文件進度，來源失效仍遮蔽。本人 notification_deliveries 沿原 API／owner，按三種台帳有界合併真投遞 metadata；沒有 attempt 不假稱已投遞。
+- Verification：真 Runner／scripted provider 的 building 收尾及同文件讀回通過；通知 API／前端 mapper 的分頁與隔離、原來源失效檢查通過。第一輪通知 fixture 缺 auth.handler，停批後只補該項及必要來源遮蔽，不重跑已通過的模型替身情景。生產型別通過，見 [R04 EV](artifacts/verification/P2_R04_RESULTS_HISTORY_20261013.json)。零真模型／通知／瀏覽器；原生備份還原仍延後。
+- Next：合併後核對原 VM／索引並相容部署 R01～R04，保留原資料及回退映像；master 與部署證據分開。

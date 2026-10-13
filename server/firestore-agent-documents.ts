@@ -66,6 +66,7 @@ export function createFirestoreAgentDocuments(options: FirestoreDomainOptions & 
       if (link.runId !== runId || link.operationId !== opId) domainReject('receipt_binding', 500);
       const receipt = await documents.operationReceipt(b.scope.ownerUserId, b.scope.childId, opId);
       if (!receipt) { result.unavailable = true; continue; }
+      if (receipt.contentState === 'invalidated') result.unavailable = true;
       if (receipt.documentId !== link.documentId || receipt.savedVersion !== link.savedVersion) domainReject('receipt_binding', 500);
       result.receipts.push({ ...receipt, toolName: link.toolName });
     }

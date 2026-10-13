@@ -169,7 +169,7 @@ export function createProductAgent(options: {
         ? await options.actions.receipts(userId, childId, claim.runId) ?? [] : [];
       for (const receipt of receipts) if (!result.tools.some(tool => tool.reference === receipt.id))
         result.tools.push({ name: agentActionToolNames[receipt.kind], callId: "persisted-ledger", status: "succeeded", reference: receipt.id });
-      let documentReceiptUnavailable = false, documentSourceUnavailable = false;
+      let documentReceiptUnavailable = false, documentSourceUnavailable = false, documentBuilding = false;
       if (options.documents && options.store.documentReceipts) {
         if (!await isCurrentUser()) return null;
         // Rebuild only fresh, authorized committed references; cancelled runtime progress stays discarded.
@@ -179,6 +179,7 @@ export function createProductAgent(options: {
           if (recorded.linked) {
             result.tools = result.tools.filter(tool => !["generate_family_document", "change_family_document"].includes(tool.name));
             documentSourceUnavailable = recorded.unavailable;
+            documentBuilding = recorded.receipts.some(receipt => receipt.contentState === "building");
             if (!recorded.unavailable) for (const receipt of recorded.receipts)
               result.tools.push({ name: receipt.toolName, callId: "persisted-ledger", status: "succeeded", reference: receipt.documentId });
           }
@@ -195,6 +196,7 @@ export function createProductAgent(options: {
         stopReason: documentReceiptUnavailable ? "document_receipt_unavailable" : documentSourceUnavailable && result.status === "completed" ? "document_source_changed" : result.stopReason ?? null,
         text: documentReceiptUnavailable ? "未能核對文件操作收據；請查核原運行結果，勿重新提交同一操作。"
           : documentSourceUnavailable ? "文件操作的目前資料或來源已變，未能顯示原收據；請重新讀取目前資料，勿重複提交操作。"
+          : documentBuilding ? "報告整理工作已提交，正文仍在整理中。請在成長檔案查看同一文件的進度，毋須再次建立。"
           : presentation?.text ?? (confirmationResult?.result ? AGENT_CONFIRMATION_SAVED_TEXT : receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>["generate_family_document","change_family_document"].includes(tool.name)&&tool.status==="succeeded") ? "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件及版本，勿重複建立；文件清單不代表照護任務完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         countsKnown: true, counts: result.counts, proposals: [] };
