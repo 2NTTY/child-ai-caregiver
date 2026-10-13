@@ -10,13 +10,16 @@ import { createCloudStorageErasureJournal } from '../server/firebase-erasure-jou
 import { createFirebasePhotoRecovery, createFirebasePhotoBackupBucketPort } from '../server/firebase-photo-recovery.ts';
 import { createFirebaseBackupArtifacts, createFirebaseBackupArtifactBucketPort } from '../server/firebase-backup-artifacts.ts';
 import { createFirebaseNativeRecovery } from '../server/firebase-native-recovery.ts';
+import { createFirebaseManagedBackup } from '../server/firebase-managed-backup.ts';
+import { createFirebaseManagedPhotoReader } from '../server/firebase-managed-photo-recovery.ts';
 import { createFirebaseRecoveryOperator } from '../server/firebase-recovery-operator.ts';
 
 // Explicit operator command only; never loaded by the API, scheduler or worker.
 let persistence,target,app;
 try {
   const command=process.argv[2];
-  if(!['pause','start-export','find-export','finish-backup','start-import','find-import','apply-restore'].includes(command))throw new Error('command');
+  if(!['pause','start-export','find-export','finish-backup','start-import','find-import','apply-restore',
+    'start-managed-restore','get-managed-restore','apply-managed-restore'].includes(command))throw new Error('command');
   const chunks=[];let bytes=0;
   for await(const chunk of process.stdin){bytes+=chunk.length;if(bytes>16384)throw new Error('input');chunks.push(chunk);}
   const input=JSON.parse(Buffer.concat(chunks).toString('utf8'));
@@ -38,9 +41,19 @@ try {
       backupBucket:createFirebasePhotoBackupBucketPort(journalBucket),sourceObjects:objects,targetObjects:objects});
     const journal=createCloudStorageErasureJournal({config:artifactConfig,cipher});
     const native=createFirebaseNativeRecovery({projectId:config.projectId,sourceDatabaseId:config.databaseId,targetDatabaseId,backupBucketName:config.erasureBucket});
+    const managed=command.includes('managed')?createFirebaseManagedBackup({projectId:config.projectId,
+      sourceDatabaseId:config.databaseId,targetDatabaseId,location:process.env.FIREBASE_LOCATION??'asia-east2'}):undefined;
     app=initializeApp({projectId:config.projectId,credential:applicationDefault()},'recovery-'+randomUUID());
-    const operator=createFirebaseRecoveryOperator({...domain,targetDatabase:target,backupBucketName:config.erasureBucket,journalBucket,journal,photos,sourceObjects:objects,artifacts,native,auth:getAuth(app),keyVersionRef:process.env.FIREBASE_STORAGE_KEY_VERSION_REF});
-    if(command==='start-export')result=await operator.startBackup(input);
+    const sourceObjects=command==='apply-managed-restore'?{...objects,read:createFirebaseManagedPhotoReader({
+      bucket:storage.bucket(config.photoBucket),journalBucket,journal,objects,authority:persistence.authority,sourceGeneration:input.sourceGeneration})}:objects;
+    const operator=createFirebaseRecoveryOperator({...domain,targetDatabase:target,backupBucketName:config.erasureBucket,journalBucket,journal,photos,sourceObjects,artifacts,native,managed,auth:getAuth(app),keyVersionRef:process.env.FIREBASE_STORAGE_KEY_VERSION_REF});
+    if(command==='start-managed-restore')result=await managed.start(input.backupName);
+    else if(command==='get-managed-restore')result=await managed.inspect(input.backupName,input.operationName);
+    else if(command==='apply-managed-restore'){
+      if(!input.backupName||input.descriptor||input.backupId)throw new Error('managed_input');
+      result=await operator.applyRestore(input);
+    }
+    else if(command==='start-export')result=await operator.startBackup(input);
     else if(command==='find-export')result=await native.findExport(input);
     else if(command==='finish-backup')result=await operator.finishBackup(input);
     else if(command==='start-import')result=await operator.startRestoreImport(input);

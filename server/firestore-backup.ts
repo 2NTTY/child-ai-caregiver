@@ -25,7 +25,7 @@ export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions
   '_concern_revisions', '_concern_operations', '_concern_followups', '_growth_attention', '_growth_revisions', '_growth_topics', '_growth_topic_revisions', '_growth_checks',
   '_background_work', '_background_references', '_maintenance_state', '_work_watches', '_work_events', '_work_daily_slots',
   '_push_bindings', '_push_deliveries', '_push_endpoints', '_telegram_state', '_telegram_bindings', '_telegram_challenges', '_telegram_deliveries', '_telegram_pointers', '_telegram_meta', '_telegram_updates',
-  '_contact_consents', '_contact_consent_revisions', '_contact_grants', '_contact_grant_revisions', '_contact_requests', '_contact_callbacks', '_contact_updates', '_contact_daily_slots']);
+  '_contact_consents', '_contact_consent_revisions', '_contact_grants', '_contact_grant_revisions', '_contact_requests', '_contact_callbacks', '_contact_updates', '_contact_daily_slots', '_visit_preparations', '_visit_preparation_revisions']);
 export interface FirebaseBackupOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
 export interface FirebaseBackupDocument { path: string; data: DocumentData }
 export interface FirebaseBackupInventory {
@@ -92,7 +92,9 @@ export function firebaseBackupDocumentDigest(document: FirebaseBackupDocument): 
 export async function inspectFirebaseBackupSnapshot(options: FirebaseBackupOptions, input: { snapshotTime: string; generation: string }) {
   optionsChecked(options); z.object({ snapshotTime: z.iso.datetime({ precision: 3 }), generation: z.uuid() }).strict().parse(input);
   const at = Date.parse(input.snapshotTime);
-  if (at % 60_000 !== 0 || at > Date.now() || Date.now() - at > 55 * 60_000) reject('snapshot_time');
+  // A completed export may be finalized after an operator interruption. Firestore validates the actual
+  // PITR retention window for this exact minute; starting a new export still has its separate 55-minute gate.
+  if (at % 60_000 !== 0 || at > Date.now() || Date.now() - at > 7 * 24 * 60 * 60_000) reject('snapshot_time');
   const allowed = new Set(FIREBASE_BACKUP_COLLECTION_SUFFIXES.map(suffix => options.namespace + suffix));
   const collections = await options.database.listCollections();
   if (collections.some(collection => !allowed.has(collection.id))) reject('unsupported_collection');

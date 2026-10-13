@@ -23,6 +23,7 @@ const sections = {
   agent_proposals: ['agent_proposals', ['agent-proposal']], agent_confirmations: ['agent_confirmations', ['agent-confirmation']],
   memory_facts: ['memory_facts', ['memory-fact', 'memory-tombstone']], memory_fact_history: ['memory_fact_revisions', ['memory-fact-revision']],
   memory_topics: ['memory_topics', ['memory-topic', 'memory-tombstone']], memory_topic_history: ['memory_topic_revisions', ['memory-topic-revision']],
+  visit_preparation: ['visit_preparations', ['visit-preparation']], visit_preparation_history: ['visit_preparation_revisions', ['visit-preparation-revision']],
   summary_history: ['conversation_summaries', ['conversation-summary']],
   tasks: ['tasks', ['task']], task_history: ['task_revisions', ['task-revision']],
   documents: ['documents', ['family-document']], document_versions: ['document_snapshots', ['document-snapshot']],

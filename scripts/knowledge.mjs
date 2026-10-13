@@ -1,10 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
-import { readServerConfig } from "../server/config.ts";
 import { readAiConfig } from "../server/ai-config.ts";
-import { createPool } from "../server/database.ts";
-import { createKnowledgeStore } from "../server/knowledge-store.ts";
-import { createEmbeddingGateway, createEmbeddingUsage } from "../server/embedding-gateway.ts";
+import { createEmbeddingGateway } from "../server/embedding-gateway.ts";
 import { createVertexEmbeddingProvider } from "../server/vertex-embedding.ts";
 import { createKnowledgeRetriever } from "../server/knowledge-retriever.ts";
 import { AgentBudget } from "../server/agent-budget.ts";
@@ -13,7 +10,7 @@ import { serverStorageBackend } from "../server/firebase-config.ts";
 const args = process.argv.slice(2);
 const operation = args[0];
 const option = name => { const index = args.indexOf(name); return index < 0 ? undefined : args[index + 1]; };
-let pool, budget, persistence;
+let budget, persistence;
 try {
   if (!["list", "import", "review", "prepare-search", "embed", "publish", "disable", "search"].includes(operation)) throw new Error("Invalid operation");
   // These are authenticated host-operator commands, never model-callable tools or a browser admin endpoint.
@@ -32,7 +29,7 @@ try {
     const refresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
     store = createFirestoreKnowledgeStore({ ...domain, sourceIds: config.knowledgeSourceIds, observations: refresh.gate, audience });
   } else {
-    pool = createPool(readServerConfig(process.env)); store = createKnowledgeStore(pool, { audience });
+    throw new Error("knowledge_firestore_required");
   }
   const readJson = async file => {
     if (!file || (await stat(file)).size > 2 * 1024 * 1024) throw new Error("Invalid knowledge input file");
@@ -62,8 +59,8 @@ try {
     const config = readAiConfig(process.env);
     if (!config.enabled) throw new Error("Embedding disabled");
     const deadline = Date.now() + 900000;
-    const usage = persistence ? (await import("../server/firestore-embedding-usage.ts")).createFirestoreOperatorEmbeddingUsage({
-      database: persistence.database, cipher: persistence.cipher, projectId: persistence.config.projectId, namespace: persistence.config.namespace }, deadline) : createEmbeddingUsage(pool);
+    const usage = (await import("../server/firestore-embedding-usage.ts")).createFirestoreOperatorEmbeddingUsage({
+      database: persistence.database, cipher: persistence.cipher, projectId: persistence.config.projectId, namespace: persistence.config.namespace }, deadline);
     const gateway = createEmbeddingGateway({ config, provider: createVertexEmbeddingProvider(config), usage });
     if (operation === "embed") {
       const max = Number(option("--max-calls"));
@@ -92,4 +89,4 @@ try {
     }
   }
 } catch (error) { console.error(JSON.stringify({ event: "knowledge_operation_failed_check_scope_version_quota_and_source_review", reason: error instanceof Error && /^knowledge_[a-z_]+$/.test(error.message) ? error.message : "operation_failed" })); process.exitCode = 1; }
-finally { budget?.close(); await pool?.end(); await persistence?.close(); }
+finally { budget?.close(); await persistence?.close(); }

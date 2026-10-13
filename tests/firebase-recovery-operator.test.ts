@@ -6,6 +6,7 @@ import type { Bucket } from '@google-cloud/storage';
 import type { UserRecord } from 'firebase-admin/auth';
 import { z } from 'zod';
 import { createFirebaseRecoveryOperator, type FirebaseRecoveryOperatorOptions } from '../server/firebase-recovery-operator.ts';
+import { createFirebaseManagedBackup } from '../server/firebase-managed-backup.ts';
 import { createFirestoreAuthority, firestoreAuthoritySchemas } from '../server/firestore-authority.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { FirestoreDeviceSessions } from '../server/firestore-device-sessions.ts';
@@ -24,7 +25,7 @@ import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 
 const OWNER = 'synthetic-operator-owner', EMAIL = 'synthetic-operator@example.test';
 const PROJECT = 'synthetic-operator-project', NAMESPACE = 'unit_recovery_operator';
-const SOURCE = 'synthetic-source-db', TARGET = 'synthetic-target-db', BUCKET = 'synthetic-backup-bucket';
+const SOURCE = 'synthetic-source-db', TARGET = 'yuban-restore-synthetic', BUCKET = 'synthetic-backup-bucket';
 const KEY = 'projects/' + PROJECT + '/secrets/synthetic-storage-key/versions/1';
 const digest = (value: unknown) => createHash('sha256').update(canonical(value)).digest('hex');
 const code = (expected: string) => (error: unknown) => error instanceof Error && 'code' in error && error.code === expected;
@@ -43,7 +44,10 @@ function memoryDatabase(databaseId: string) {
   const fake = firestoreDomainFixture(), attempts: Attempt[] = [];
   let updateTimeMs = Date.now() - 420_000, loseWriteReply = false, lostWriteReplies = 0;
   function reference(path: string) {
-    return { path, id: path.slice(path.lastIndexOf('/') + 1), async get() {
+    return { path, id: path.slice(path.lastIndexOf('/') + 1), async set(value:DocumentData){
+      const split=path.lastIndexOf('/'),ref=fake.database.collection(path.slice(0,split)).doc(path.slice(split+1));
+      await fake.database.runTransaction(async tx=>{tx.set(ref,value);});
+    }, async get() {
       return { exists: fake.records.has(path), ref: { path }, data: () => structuredClone(fake.records.get(path)),
         updateTime: Timestamp.fromMillis(updateTimeMs) };
     } };
@@ -76,7 +80,7 @@ function memoryDatabase(databaseId: string) {
             const page = await native.get(fake.database.collection(target.path));
             const docs = page.docs.sort((left, right) => left.id < right.id ? -1 : left.id > right.id ? 1 : 0)
               .filter(row => target.cursor === null || row.id > target.cursor).slice(0, target.count);
-            return { docs, size: docs.length };
+            return { docs:docs.map(row=>({...row,updateTime:Timestamp.fromMillis(updateTimeMs)})), size: docs.length };
           },
           getAll: (...refs: DocumentReference[]) => native.getAll(...refs),
           set(ref: DocumentReference, value: DocumentData) { attempt.writes.push({ action: 'set', path: ref.path }); native.set(ref, value); },
@@ -85,7 +89,7 @@ function memoryDatabase(databaseId: string) {
           delete(ref: DocumentReference) { attempt.writes.push({ action: 'delete', path: ref.path }); native.delete(ref); },
         } as unknown as Transaction;
         const value = await callback(transaction);
-        if (loseWriteReply && attempt.writes.length > 0) {
+        if (loseWriteReply && attempt.writes.some(row=>!row.path.startsWith(NAMESPACE+'_restore_operations/'))) {
           loseWriteReply = false; lostWriteReplies++; fake.loseReply();
         }
         return value;
@@ -183,10 +187,48 @@ async function fixture() {
   const operator = createFirebaseRecoveryOperator(ports);
   const importInput = { backupId, descriptor };
   function applyInput() { return { ...importInput, restoreId, operationName: operation.name, sourceGeneration: generation }; }
-  return { source, target, options, authority, codec, binding, snapshot, manifest, descriptor, calls, operator, operation, importInput, applyInput,
+  return { source, target, options, ports, authority, codec, binding, snapshot, manifest, descriptor, calls, operator, operation, importInput, applyInput,
     switchControl, clearImport: () => { existingImport = null; }, disableAuth: (value: boolean) => { disabled = value; } };
 }
 let stopped = false;
+void test('managed hot snapshot uses native provenance and the existing paused restore pipeline', async()=>{
+  const f=await fixture();
+  await f.switchControl(true);const hot=f.source.documents();f.target.seed(hot);
+  const backupName=`projects/${PROJECT}/locations/asia-east2/backups/${randomUUID()}`,
+    operationName=`projects/${PROJECT}/databases/${TARGET}/operations/synthetic-native`,
+    sourceName=`projects/${PROJECT}/databases/${SOURCE}`,targetName=`projects/${PROJECT}/databases/${TARGET}`,
+    sourceUid=randomUUID(),targetUid=randomUUID(),at=new Date().toISOString();
+  let wrongSource=false;
+  const managed=createFirebaseManagedBackup({projectId:PROJECT,sourceDatabaseId:SOURCE,targetDatabaseId:TARGET,location:'asia-east2',
+    request:async request=>{
+      assert.equal(request.method,'GET');assert.equal(request.retry,false);
+      const resource=request.url.slice('https://firestore.googleapis.com/v1/'.length);
+      const data=resource===backupName?{name:backupName,database:wrongSource?'wrong':sourceName,databaseUid:sourceUid,
+        snapshotTime:at,expireTime:new Date(Date.now()+86400000).toISOString(),state:'READY',stats:{documentCount:String(hot.length),sizeBytes:'4096'}}:
+        resource===sourceName?{name:sourceName,uid:sourceUid,locationId:'asia-east2'}:
+        resource===targetName?{name:targetName,uid:targetUid,locationId:'asia-east2',type:'FIRESTORE_NATIVE',sourceInfo:{operation:operationName,backup:{backup:backupName}}}:
+        resource===operationName?{name:operationName,done:true,metadata:{'@type':'type.googleapis.com/google.firestore.admin.v1.RestoreDatabaseMetadata',
+          backup:backupName,database:targetName,operationState:'SUCCESSFUL',endTime:at},response:{name:targetName,uid:targetUid}}:null;
+      assert.ok(data);return{status:200,data};
+    }});
+  const operator=createFirebaseRecoveryOperator({...f.ports,managed});
+  const input=()=>({backupName,operationName,restoreId:f.applyInput().restoreId,sourceGeneration:f.applyInput().sourceGeneration});
+  const originalTarget=structuredClone([...f.target.records]);
+  await assert.rejects(operator.applyRestore(input()),code('recovery_source_not_paused'));
+  await f.switchControl(false);wrongSource=true;
+  await assert.rejects(operator.applyRestore(input()),code('managed_backup_binding'));
+  assert.deepEqual([...f.target.records],originalTarget);
+  wrongSource=false;const sourceBefore=structuredClone([...f.source.records]);
+  const result=await operator.applyRestore(input());assert.equal(result.state,'applied-paused');
+  const restored=f.target.documents().filter(row=>!row.path.startsWith(NAMESPACE+'_restore_operations/')).map(row=>f.codec.decode(row));
+  const control=restored.find(row=>row.context.kind==='control');assert.ok(control);
+  assert.equal(firestoreAuthoritySchemas.control.parse(control.value).enabled,false);
+  assert.equal(restored.some(row=>row.context.kind==='task'),true);
+  assert.equal(f.target.documents().some(row=>row.path.startsWith(NAMESPACE+'_sessions/')),false);
+  assert.deepEqual([...f.source.records],sourceBefore);
+  assert.equal((await operator.applyRestore(input())).replayed,true);
+  assert.equal(f.calls.getImport,0);assert.equal(f.calls.readManifest,0);
+});
 function check(name: string, body: () => Promise<void>) {
   void test(name, async context => {
     if (stopped) { context.skip('Stopped after the first local acceptance failure'); return; }
@@ -227,7 +269,7 @@ check('restore rejects unpaused, undrained and mismatched inventories before any
   assert.deepEqual([...f.target.records], remaining);
 });
 
-check('restore commits data and checkpoint together, recovers a lost acknowledgement and rejects changed replay evidence', async () => {
+check('restore commits staged data, recovers a lost acknowledgement and rejects changed replay evidence', async () => {
   const f = await fixture(); await f.operator.startRestoreImport(f.importInput);
   const input = f.applyInput(), sourceBefore = structuredClone([...f.source.records]);
   f.target.loseNextWriteReply();
@@ -253,16 +295,16 @@ check('restore commits data and checkpoint together, recovers a lost acknowledge
   const sessions = f.snapshot.filter(row => row.path.startsWith(NAMESPACE + '_sessions/')); assert.equal(sessions.length, 2);
   for (const session of sessions) assert.equal(f.target.records.has(session.path), false);
   const writing = f.target.attempts.filter(attempt => attempt.writes.length > 0);
-  assert.equal(writing.length, 1); assert.equal(writing[0]?.acknowledged, false);
-  const writes = writing[0]?.writes; assert.ok(writes);
-  assert.deepEqual(writes.filter(row => row.action === 'create').map(row => row.path), [checkpointPath]);
-  assert.deepEqual(new Set(writes.filter(row => row.action === 'set').map(row => row.path)), new Set(restored.map(row => row.path)));
+  assert.ok(writing.length>=3);assert.equal(writing.filter(row=>!row.acknowledged).length,1);
+  const writes=writing.flatMap(row=>row.writes);
+  assert.equal(writes.filter(row=>row.action==='create'&&row.path===checkpointPath).length,1);
+  assert.deepEqual(new Set(writes.filter(row => row.action === 'set'&&!row.path.startsWith(NAMESPACE+'_restore_operations/')).map(row => row.path)), new Set(restored.map(row => row.path)));
   for (const session of sessions) assert.equal(writes.some(row => row.action === 'delete' && row.path === session.path), true);
   assert.deepEqual([...f.source.records], sourceBefore);
   const committed = structuredClone([...f.target.records]), writeCount = writes.length;
   assert.deepEqual(await f.operator.applyRestore(input), { ...result, replayed: true });
   assert.equal(f.calls.getImport, 1); assert.equal(f.calls.restorePhoto, 0);
-  assert.equal(f.target.attempts.filter(attempt => attempt.writes.length > 0).length, 1);
+  assert.equal(f.target.attempts.filter(attempt => attempt.writes.length > 0).length, writing.length);
   assert.equal(writes.length, writeCount); assert.deepEqual([...f.target.records], committed); assert.deepEqual([...f.source.records], sourceBefore);
   f.disableAuth(true);
   await assert.rejects(f.operator.applyRestore(input), code('recovery_latest_state_changed'));
@@ -271,6 +313,6 @@ check('restore commits data and checkpoint together, recovers a lost acknowledge
   const revoked = structuredClone([...f.source.records]);
   await assert.rejects(f.operator.applyRestore(input), code('recovery_latest_state_changed'));
   assert.deepEqual([...f.target.records], committed); assert.deepEqual([...f.source.records], revoked);
-  assert.equal(f.target.attempts.filter(attempt => attempt.writes.length > 0).length, 1);
+  assert.equal(f.target.attempts.filter(attempt => attempt.writes.length > 0).length, writing.length);
   assert.equal(f.calls.restorePhoto, 0);
 });

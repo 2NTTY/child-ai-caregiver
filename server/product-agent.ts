@@ -148,7 +148,7 @@ export function createProductAgent(options: {
           rendered.value = await tools!.presentation();
           if (!rendered.value && reason === "model_limit" && result.tools.length > 0
             && result.tools.every(tool => tool.status === "succeeded")
-            && result.tools.at(-1)?.name === "request_confirmation") {
+            && ["request_confirmation", "propose_family_document_change"].includes(result.tools.at(-1)?.name ?? "")) {
             if (!await authorize()) throw new AgentStopped("unauthorized");
             const questions = await options.store.confirmationQuestions?.(userId, childId, claim.runId) ?? [];
             if (!await authorize()) throw new AgentStopped("unauthorized");

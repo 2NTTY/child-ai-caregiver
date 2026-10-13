@@ -81,9 +81,15 @@ docker compose --project-name yuban-p1 \
 - 依 [ADR-025](DECISIONS.md#adr-025)，F02～F07 先完成原 VM 資料接點及全部正式 SQL 退出，保留既有 API／頁面相容性；F08 再驗收受邀用戶並更新原站。不逐資料包切站或重跑完整用戶流程。未遷移功能明示，不用假成功或空資料掩蓋；不維持兩套產品網站。
 - 每次部署核對 VM 實況／期限、相容配置、資料與備份及 in-flight 工作，允許短暫維護；只有一套主寫與排程。已有新寫入只能回退相容 Firebase 應用版本或隔離還原，不能切回 SQL 舊快照；新刪除／撤銷／收據不可倒退。
 
-F07 只補尚欠跨域／恢復證據，F08 確认已交付功能不連 SQL、不靜默回退。待清理清單：F02 額外 Hosting 站點、Cloud Run API／worker 及其專用殘留；先核實實際名稱、流量、依賴、保留需求和費用，再批准範圍內清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**。F02 已準備原 VM 組裝但未部署；未改 DNS 或刪資源。A09 未通過成果及 F02 失敗沿 PLAN 追溯，不以基建切片代替產品完成。
+F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外 Hosting 站點與 Cloud Run API／worker 已按用途核對後清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**；不以名稱相似整批刪除。實際版本與尚未完成項見根 PLAN／STATUS，A09／F02 舊失敗保留，不以基建切片代替產品成果。
 
-### 原 VM Firestore 組裝（F02 接點已驗，正式網站待切換）
+### 原 VM Firestore 組裝
+
+2026-10-13，`ex-machina.eu.org` 使用 `566dd2c` Web／API／worker，映像標籤 `f08-566dd2c`。摘要與既有單份準備內容亦沿同一 Firestore 服務、版本及原操作收據，不再回未接通占位。API 健康回報 `storage: firestore`，PostgreSQL 停止、舊 volume／備份保留。原前端合成登入、同文件修改／確認／刷新及官方引用已通過；原生排程及兩個渠道入口恢復，沒有追加外發測試訊息。每日備份與原生還原分開收束，完整 gate 看 [F08](../PLAN.md#p2-f08)。
+
+現場部署目錄 `/opt/yuban-firestore-cce4667/deploy/p1`；受保護設定在 `/etc/yuban-p1/firestore`，原渠道檔案在 `/etc/yuban-p1`。部署疊加 `compose.firestore.channels.yaml`，掛載設定不代表已准外發。原 Caddy 固定 IP 為 `172.30.51.3`，動態 API／worker 池為 `172.30.51.8/29`、共同子網 `172.30.51.0/28`；調整子網時須同步核對 `P1_DYNAMIC_RANGE` 與 `P1_PROXY_IP` 不重疊，避免重建時動態容器先佔用 proxy 地址。
+
+ADK 原生 session 的 `events` 子集合需 `timestamp + id` 同向升／降排序索引，已加入 `deploy/firebase/firestore.indexes.json`；部署前須等相關索引 READY。業務列表索引全齊不代表 Agent 協定 session 已可讀，缺索引會在生成前安全停止。此修正不變更 session／業務權威或配額。
 
 `deploy/p1/compose.firestore.yaml` 是同一 `yuban-p1` 專案的替代組裝，不能與 SQL Compose 疊加。沿用 80／443、Caddy 資料 volume 和前端；API／worker 只在內部網絡提供服務。`/internal/task-reminders`、`/internal/task-dispatch` 與 `/internal/product-work` 只轉送固定 worker 入口，由 worker 驗 OIDC issuer／audience／期限／service account；其他 internal 路徑拒絕。健康檢查只查程序存活，不查資料庫或觸發工作，也不表示全部產品功能可用。
 
@@ -112,10 +118,24 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 前端建置設定 `EXPO_PUBLIC_AUTH_PROVIDER=firebase`、`EXPO_PUBLIC_API_BASE_URL=/api` 及 `EXPO_PUBLIC_FIREBASE_API_KEY／AUTH_DOMAIN／PROJECT_ID／APP_ID`；這些 Web SDK 公開識別不含 Admin 憑據。 使用明確傳入的建置環境，切換身份供應商時執行 `expo export --platform web --clear`；建置 exit 0 不足以允許發布，須核對輸出 bundle 的 provider 與四項公開 Firebase 設定、HTML 實際引用及同源 `/api`。設定缺失須停止發布；不能把舊身份接點的回應當作 Firebase 已接通。API／worker 使用同一明確的 `GCP_PROJECT_ID`、`FIREBASE_DATABASE_ID`、`FIREBASE_NAMESPACE`、私人 photo／erasure buckets、同源 `SERVER_ORIGIN／WEB_ORIGIN` 及固定 secret version。共用權威資料的 API／worker／Auth blocking function 各須固定部署來源，並核對目前資料包絡的 reader 相容；更新 API 映像不代表 blocking function 已同步。啟用電郵與 worker 各有獨立 gate，不以已部署自動啟用。實際資源／revision 及費用觀察留 STATUS／驗收證據。
 
-精確時間的 Firestore native export 必須先讀回來源庫已啟用 PITR、`earliestVersionTime` 及當期費用，再選有效的整分鐘 `snapshotTime`。一般讀取可取過去一小時並不代表未啟用 PITR 也可作時間點匯出；不能移除快照／inventory 斷言來繞過此門檻。PITR 儲存獨立計費，即使當日關閉仍可能按一天收費；隔離驗收的啟用及關閉須遵守本批範圍／預算，不能轉成持續營運授權。[時間點匯出](https://firebase.google.com/docs/firestore/manage-data/export-import#export_from_a_pitr_timestamp)、[PITR 計費](https://firebase.google.com/docs/firestore/pricing#pitr-data)。
+精確時間的 Firestore native export 必須先讀回來源庫已啟用 PITR、`earliestVersionTime` 及當期費用，再選有效的整分鐘 `snapshotTime`。一般讀取可取過去一小時並不代表未啟用 PITR 也可作時間點匯出；不能移除快照／inventory 斷言來繞過此門檻。新匯出仍限最近 55 分鐘；已完成匯出如遇 operator 中斷，可在同一快照仍受 PITR 保留時繼續封存，上限七天，由 Firestore 核實實際可讀時間；不能換成目前資料或另開匯出來冒充原結果。PITR 關閉前須完成封存，關閉後重新啟用不會取回舊歷史。PITR 儲存獨立計費，即使當日關閉仍可能按一天收費；隔離驗收的啟用及關閉須遵守本批範圍／預算，不能轉成持續營運授權。[時間點匯出](https://firebase.google.com/docs/firestore/manage-data/export-import#export_from_a_pitr_timestamp)、[快照續讀](https://docs.cloud.google.com/firestore/native/docs/use-pitr#read_pitr_data)、[PITR 計費](https://firebase.google.com/docs/firestore/pricing#pitr-data)。
 
 `node scripts/firebase-recovery.mjs <command>` 是明確 operator 入口，只從 stdin 接收有界 JSON；可暫停、啟動／查回原生匯出匯入、保存配對 manifest 及在隔離庫套用還原。另需明確 `FIREBASE_RESTORE_DATABASE_ID` 和 `FIREBASE_STORAGE_KEY_VERSION_REF`；不掛 API／worker，不具恢復流量命令。演練先停排程／queue、來源 authority，再確認來源 API／worker 及 journal IO 已實際停止；請求逾時或六分鐘等待不代替停機證據。套用以加密計劃及游標分批交易提交；原命令可續接，不能換 restore ID 或覆蓋另一個計劃。全部內容與最新 Auth／journal 核對後才標 `applied-paused`；開放流量仍是獨立步驟。
 
 還原保留聊天、文件、私人來源、引用、收據及配額，不恢復裝置會話／ADK 協定執行；模型與通知的未知結果不重發。待確認重新核對，Push／Telegram 重新綁定及聯絡授權後才可外發。孩子／帳戶刪除日誌先排除內容，來源仍有未完成的永久附件清理則暫停還原，先以原日誌完成清理；不丟掉該責任來宣稱成功。快照與還原盤點目前均有明示 2,000 筆／32 MiB 操作上限，超限停留原進度，不截斷資料；大規模串流盤點另按容量需求處理。
 
 現行標準啟動使用 `npm run server`／`npm run worker`，或 `docker compose --env-file <protected-compose-env> -f deploy/p1/compose.yaml <command>`；根 Compose 引用 `compose.firestore.yaml`，映像不安裝 SQL 生產依賴。`storage:backup`／`storage:restore` 導向上述 Firebase operator；`db:migrate`／`storage:encrypt`／舊 `setup:local` 明確拒絕，不會操作舊 SQL。歷史 SQL 程式及驗收仍可按固定 Git 版本追溯，舊資料 volume／備份不由這些命令刪除。
+
+### 原生每日備份與隔離還原
+
+日常依 [ADR-026](DECISIONS.md#adr-026) 使用原生每日排程，retention 為 `1209600s`（14 天）；不執行上面的 pause/export，也不開啟 PITR。營運者以 Firestore Admin 的 `backupSchedules` list/create/get 管理，先讀既有 daily 排程，沒有才建立 `{"retention":"1209600s","dailyRecurrence":{}}`；不可重複建立另一份排程。現場 schedule resource 及首份備份狀態見 F08 EV。平台決定時間，設定完成不代表首份備份已產生。[排程 API](https://docs.cloud.google.com/firestore/docs/reference/rest/v1/projects.databases.backupSchedules/create)
+
+只用 operator 身份還原，另指定全新、未掛產品服務的 `FIREBASE_RESTORE_DATABASE_ID=yuban-restore-<unique-name>`，地區同來源；保留現有 key version。`scripts/firebase-recovery.mjs` 增加三個命令，仍從 stdin 讀 JSON、不輸出正文：
+
+1. `start-managed-restore` 接 `{ "backupName": "projects/<project>/locations/asia-east2/backups/<id>" }`，校驗來源庫 UID、READY／有效期及新目標不存在後，只建立一次 native restore。未知結果沿原目標／operation 查回，不能改名重試。
+2. `get-managed-restore` 接 `backupName`／`operationName`。原生完成仍不是可開放狀態：需要先停來源寫入、queue、Scheduler／worker 和 journal IO，authority 暫停及排空；不得把六分鐘 guard 當作停機證據。
+3. `apply-managed-restore` 接 `backupName`、`operationName`、固定 `restoreId`、已暫停的 `sourceGeneration`。核對原生 operation、來源／目標 UID、snapshot 與盤點，再沿現有分頁 restore；checkpoint 綁原生來歷 digest，最終仍為 `applied-paused`。不自動更新網站配置、Auth、Rules、TTL 或 IAM。
+
+原生 DB 備份不包含 Storage。讀取同版 metadata 的不可變照片；如只有 soft-deleted 密文，還原入口本身先完整讀取並驗證獨立 journal，拒絕帳戶／孩子／照片永久刪除，再重查來源暫停。只能對原 generation 使用 `ifGenerationMatch=0`，不能蓋過現有物件；回覆未知只讀回同一位置，核對原 hash，再由既有 decoder 驗密文／內容並重加密至新 epoch。journal 無法完整讀取、過期、hash 不符或來源變更均停止。私人 bucket 的 soft-delete 至少 14 天；不可把較短的預設值當已覆蓋備份。既有 paired manifest 仍適用，hold 到期不等於自動刪除；只能按指定 backupId 核對期限後清理，不能碰 `erasures/v1/`。
+
+使用者已將原生首份備份／真還原驗收延後，按 [PLAN 待驗入口](../PLAN.md#p2-backup-followup)續做，不阻塞本次功能交付。原生備份、真還原及附件復原的實際證據按 F08 EV 分列；本機檢查不代替這些證據。還原目前仍要求可核對的來源權威及清理狀態，不宣稱來源整庫消失後可無條件自動恢復。

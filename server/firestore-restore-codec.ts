@@ -133,7 +133,7 @@ const authorityEnvelopeSchema = z.object({ format: z.literal('yuban-work-recover
 const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domain'), version: z.literal(1), recordVersion: positive,
   ciphertext: z.string().min(1), recovery: z.unknown() }).strict();
 const privateMetadata = new Set(['workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey',
-  'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
+  'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
   'live', 'state', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
 /** Pure authenticated record conversion. No reads, writes, permissions, journal replay or object transfer occur here. */
@@ -357,6 +357,9 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       if (!key(domainSchemas, kind)) reject('unsupported_restore_domain');
       const context = { ...opened.context, kind }, value = parse<FirestoreRestoreValue>(domainSchemas[kind].schema, opened.value);
       domainBinding(context, value); result = { path: record.path, context, value };
+      // Earlier snapshots lack this query projection; the authenticated document remains authoritative.
+      if (kind === 'family-document' && raw.autoRefresh !== undefined)
+        requireBinding(raw.autoRefresh === parse(documents.metadata, value).autoRefresh);
       if (isCoreRestoreKind(kind)) coreMetadata.set(result, coreRestoreMetadata({ ...context, kind },
         coreRestoreSchemas[kind].schema.parse(value), raw));
       if (isAgentRestoreKind(kind)) restoreAgentRecord({ ...context, kind }, agentRestoreSchemas[kind].schema.parse(value));
@@ -448,7 +451,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           state: row.state === 'leased' ? 'unknown' : row.state });
         return { oldPath: decoded.path, path: pathFor({ ...context, scope }), data: sealFirestoreReminderOutbox(data, scope, rebound) };
       }
-      case 'family-document': { const row = parse(documents.metadata, value); Object.assign(metadata, { documentId: row.id, status: row.status, createdAt: row.createdAt }); break; }
+      case 'family-document': { const row = parse(documents.metadata, value); Object.assign(metadata, { documentId: row.id, status: row.status, createdAt: row.createdAt, autoRefresh: row.autoRefresh }); break; }
       case 'document-operation': value = { ...parse(documents.operation, value), storageEpoch: scope.storageEpoch }; break;
       case 'document-snapshot': { const row = parse(snapshots.manifest, value); Object.assign(metadata, { documentId: row.documentId, snapshotId: row.snapshotId, snapshotVersion: row.snapshotVersion }); break; }
       case 'document-snapshot-chunk': for (const name of Object.keys(metadata)) delete metadata[name]; break;

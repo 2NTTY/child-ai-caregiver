@@ -135,12 +135,12 @@ function ChatContents({ compact }: { compact: boolean }) {
       suggestionLabel="建議問題" inputHint={agentAttachments.length ? "請在上方保存及核對照片；照片不會隨文字自動交模型或共享。" : undefined}
       filesUnavailableReason="暫未支援文件，請使用文字" voiceUnavailableReason="暫未支援語音，請使用文字"
       onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
-    <View style={styles.privacyFooter}><ChatAction label="Google AI 處理 · 僅供合成資料試用" accessibilityLabel="查看 Google AI 資料處理說明"
+    <View style={styles.privacyFooter}><ChatAction label="AI 處理 · 僅使用獲授權資料" accessibilityLabel="查看 AI 資料處理說明"
       onPress={() => setPrivacyOpen(true)} subtle /></View>
     <AgentConversation visible={detailsOpen} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
       onReloadChat={() => { void chatController.reloadMessages(); }} reloadDisabled={busy || chat.loading || !chat.online} />
     <AppDialog visible={privacyOpen} onDismiss={() => setPrivacyOpen(false)} accessibilityLabel="AI 資料處理說明">
-      <AppDialog.Title>AI 資料處理</AppDialog.Title><AppDialog.Content><Text style={styles.body}>送出後會保存聊天並要求 AI 回覆。孩子稱呼及獲授權資料可能交由 Google 處理；試用時請只使用合成資料。</Text></AppDialog.Content>
+      <AppDialog.Title>AI 資料處理</AppDialog.Title><AppDialog.Content><Text style={styles.body}>送出後會保存聊天並要求 AI 回覆。獲授權的文字或照片會交由 Google 或你選用的模型供應商處理；私人來源不加入公共知識庫，通知及分享仍需另外授權。</Text></AppDialog.Content>
       <AppDialog.Actions><AppButton label="知道了" variant="quiet" onPress={() => setPrivacyOpen(false)} /></AppDialog.Actions>
     </AppDialog>
   </>;

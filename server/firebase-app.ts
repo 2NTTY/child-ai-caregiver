@@ -13,6 +13,9 @@ import { handlePersonalLibraryRequest, type PersonalLibrary } from "./personal-l
 import { handleChatRequest } from "./chat-api.ts";
 import type { ChatStore } from "./chat.ts";
 import type { FirestoreCareStore } from './firestore-care.ts';
+import type { FirestoreCareSummary } from './firestore-care-summary.ts';
+import { summaryQuery } from '../src/shared/care-summary.ts';
+import { domainParse } from './firestore-domain-data.ts';
 import { handleCareRequest } from "./care-api.ts";
 import { FamilyError } from "./family-access.ts";
 import { handleMemoryRequest } from "./memory-api.ts";
@@ -65,6 +68,7 @@ export interface FirebaseRequestHandlerOptions {
   library?: Pick<PersonalLibrary, "page">;
   chat?: ChatStore;
   care?: FirestoreCareStore;
+  summary?: FirestoreCareSummary;
   memory?: MemoryStore;
   sources?: SharedInputStore;
   concerns?: FirestoreConcernStore;
@@ -295,6 +299,17 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const response = await handleMemoryRequest(request, userId, options.memory);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
+      }
+      const summaryPath = /^\/api\/children\/([0-9a-f-]{36})\/summary$/iu.exec(path);
+      if (summaryPath && options.summary) {
+        if (request.method !== 'GET') throw new RequestError('method_not_allowed', 405);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        if (request.headers.get('x-expected-user-id') !== userId) throw new RequestError('session_changed', 409);
+        const query = domainParse(summaryQuery, Object.fromEntries(new URL(request.url).searchParams));
+        const result = await options.summary.get(userId, summaryPath[1].toLowerCase(), query);
+        if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);
+        return json(result);
       }
       if (options.care && /^\/api\/children\/[^/]+\/(?:records|profile|care)(?:\/|$)/u.test(path)) {
         const readOnly = request.method === "GET" || request.method === "POST" && path.endsWith("/care/search");
