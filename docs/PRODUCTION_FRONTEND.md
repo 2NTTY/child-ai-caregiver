@@ -138,4 +138,4 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 原生 DB 備份不包含 Storage。讀取同版 metadata 的不可變照片；如只有 soft-deleted 密文，還原入口本身先完整讀取並驗證獨立 journal，拒絕帳戶／孩子／照片永久刪除，再重查來源暫停。只能對原 generation 使用 `ifGenerationMatch=0`，不能蓋過現有物件；回覆未知只讀回同一位置，核對原 hash，再由既有 decoder 驗密文／內容並重加密至新 epoch。journal 無法完整讀取、過期、hash 不符或來源變更均停止。私人 bucket 的 soft-delete 至少 14 天；不可把較短的預設值當已覆蓋備份。既有 paired manifest 仍適用，hold 到期不等於自動刪除；只能按指定 backupId 核對期限後清理，不能碰 `erasures/v1/`。
 
-原生首份備份／真還原及附件復原的實際證據按 F08 EV 分列；本機檢查不代替這些證據。還原目前仍要求可核對的來源權威及清理狀態，不宣稱來源整庫消失後可無條件自動恢復。
+使用者已將原生首份備份／真還原驗收延後，按 [PLAN 待驗入口](../PLAN.md#p2-backup-followup)續做，不阻塞本次功能交付。原生備份、真還原及附件復原的實際證據按 F08 EV 分列；本機檢查不代替這些證據。還原目前仍要求可核對的來源權威及清理狀態，不宣稱來源整庫消失後可無條件自動恢復。

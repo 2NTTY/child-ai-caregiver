@@ -4,9 +4,9 @@
 
 ## 目前與接手
 
-- **完整 P2 尚未完成；當前為 [P2-F08 原站交付收尾](PLAN.md#p2-f08)。** F01～F07 已合併，最新核對 master 為 `353cf70`（#200）；F08 分支 `codex/p2-f08-original-site`／draft PR #201 尚未合併。原 P2／INT／A01～A08 成果保留，A09 剩餘成果由本包承接。
+- **本輪 P2 成果已驗收，結案隨 [PR #201](https://github.com/2NTTY/child-ai-caregiver/pull/201) 合併生效。** F01～F07 已合併，F08 從 `353cf70`（#200）完成原站交付；原 P2／INT／A01～A08 及 A09 承接成果保留。當前入口見 [PLAN](PLAN.md#active)，不自動開始 P3。
 - **原前後端已共同使用 Firestore。** 原網站保留新前端設計，真 Agent 的官方引用、同一準備單修改／確認／保存及刷新讀回已通過。摘要 Firestore 接線缺口已補回並部署；容量操作及保存讀回已補必要證據，回覆替身與真 Agent 結果分開記錄。正式 API／worker 已退出 SQL，PostgreSQL 停止；不是分開的預覽站。排程、queue 及既有通知入口已恢復，本包未追加外發訊息。
-- **主要未完成：原生每日備份首份產生及一次隔離還原。** 每日 14 天排程已建立，還原接點已實作及作必要本機檢查，尚無真原生還原證據。配對備份及 F02～F07 還原證據保持分開，不能把排程存在當作恢復完成。剩餘 gate 及下一步只見 PLAN；結果、失敗與限制見 [F08 EV](artifacts/verification/F08_ORIGINAL_SITE_20261013.json)。
+- **使用者明確延後：原生每日備份首份核對及一次隔離還原。** 每日 14 天排程、還原入口及測試保留，尚無真原生還原證據；不阻塞本次合併與功能使用。後續只見 [PLAN 待驗入口](PLAN.md#p2-backup-followup)，不持續輪詢或重跑既有驗收。配對備份與 F02～F07 證據保持分開；結果、失敗與限制見 [F08 EV](artifacts/verification/F08_ORIGINAL_SITE_20261013.json)。
 - **操作範圍：**本輪只用主模型、最低必要驗收，不派子代理、不用 Computer Use 或全量測試。原用量不清零、不加額；本次原生備份／必要還原增量上限 US$1，實際帳單未知。P2 只啟用聊天及現有工具，其他三角色留 [P3](PLAN.md#p3-agent-roles)。
 - 前端依 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；本人模型 key／限額仍為可選，平台基本 AI 不要求家長提供 key。未改 UI 設計。
 

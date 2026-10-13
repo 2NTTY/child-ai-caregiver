@@ -4,7 +4,7 @@
   "recordedAt": "2026-10-13T09:10:31.893692+00:00",
   "baseCommit": "353cf70494e553b00523c714928fd649de8ec9b6",
   "branch": "codex/p2-f08-original-site",
-  "state": "original-site-live-final-backup-and-release-gates-pending",
+  "state": "accepted_for_merge_with_deferred_native_restore",
   "executor": "primary-model-only",
   "deployment": {
     "origin": "https://ex-machina.eu.org",
@@ -747,8 +747,7 @@
     "limitation": "Do not sum incomplete token reports into an asserted actual bill or reuse earlier paid acceptance ceilings as remaining budget."
   },
   "remaining": [
-    "First native daily backup and one authorized isolated restore within USD 1 incremental ceiling.",
-    "Final review and merge of draft PR #201; P2 remains incomplete until required backup recovery is evidenced."
+    "Merge PR #201; native backup restoration is explicitly deferred and not claimed as verified."
   ],
   "summaryWiring": {
     "discovered": {
@@ -938,5 +937,22 @@
       "destination": "original verified VM /home/2NTTY/f08-original-upload",
       "adcUploaded": false
     }
+  },
+  "deferredAcceptance": {
+    "date": "2026-10-13",
+    "authorizedBy": "user",
+    "instruction": "Retain the native-backup test, defer it until later, and merge first.",
+    "scope": [
+      "First native scheduled backup confirmation",
+      "One isolated native backup restore"
+    ],
+    "status": "not_verified",
+    "blocksThisDelivery": false,
+    "retained": [
+      "Daily 14-day backup schedule",
+      "scripts/firebase-recovery.mjs managed commands",
+      "Existing recovery tests, operator runbook and prior failure evidence"
+    ],
+    "resume": "On a later user request; no continuous polling or duplicate acceptance."
   }
 }
