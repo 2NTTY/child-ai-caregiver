@@ -16,7 +16,7 @@ import { useContainerWidth } from "../components/useContainerWidth";
 import { chineseFont, colors, readingType, spacing } from "../theme";
 import { useProduction } from "./ProductionProvider";
 import { useDomainEnvironment, useDomainWriteGuard } from "./useDomainEnvironment";
-import { useProductionFamily } from "./useProductionFamily";
+import type { useProductionFamily } from "./useProductionFamily";
 import { useProductionModelSettings } from "./useProductionModelSettings";
 import { useProductionPushSettings } from "./useProductionPushSettings";
 import { useProductionTelegramSettings } from "./useProductionTelegramSettings";
@@ -46,7 +46,7 @@ export function ProductionSettingsDomains({ children }: { children: ReactNode })
 const SettingsIdentityBridge = memo(function SettingsIdentityBridge({ env, ownerKey, childrenVersion: _childrenVersion, publish }: {
   env: SettingsEnvironment; ownerKey: string; childrenVersion: unknown; publish: (value: PublishedPersonal) => void;
 }) {
-  const family = useProductionFamily(env), modelSettings = useProductionModelSettings(env);
+  const family = emptyPersonalDomains(env).family, modelSettings = useProductionModelSettings(env);
   const push = useProductionPushSettings(env), telegram = useProductionTelegramSettings(env), preferences = useProductionNotificationPreferences(env);
   useLayoutEffect(() => { publish({ key: ownerKey, domains: { family, modelSettings, push, telegram, preferences } }); });
   return null;
@@ -60,9 +60,9 @@ function emptyPersonalDomains(env: SettingsEnvironment): PersonalDomains {
   const modelSettings: PersonalDomains["modelSettings"] = { model: { scopeKey: env.identityKey, accountName: "", serverLabel: env.apiBaseUrl, snapshot: null,
     online: env.online, authorized: false, busy: "read", operation: "none", notice: "正在核對目前本人設定。", needsRead: false,
     formRevision: 0, secretRevision: 0, keyCheck: null }, actions: { refresh: noop, save: noop, check: noop } };
-  const family: PersonalDomains["family"] = { readState: "loading", model: { families: [], family: null, selfUserId: env.userId ?? "", children: [], online: env.online,
-    loadState: "loading", canManage: false, canStartAction: false, locked: true, draft: null, latest: null, incoming: null, incomingError: null,
-    oneTimeCode: null, inviteFormKey: 0, operation: { state: "none", message: "", reference: null }, notice: "正在核對目前家庭。" },
+  const family: PersonalDomains["family"] = { readState: "error", model: { families: [], family: null, selfUserId: env.userId ?? "", children: [], online: env.online,
+    loadState: "lost", canManage: false, canStartAction: false, locked: true, draft: null, latest: null, incoming: null, incomingError: null,
+    oneTimeCode: null, inviteFormKey: 0, operation: { state: "none", message: "", reference: null }, notice: "家庭多人協作安排於 P4，目前尚未開放。" },
     actions: { selectFamily: noop, refresh: noop, editInvite: noop, reviewInvite: noop, stageMember: noop, stageRevokeInvitation: noop,
       editIncoming: noop, previewIncoming: noop, stageAccept: noop, confirmScope: noop, reviewCurrent: noop, submit: noop, cancel: noop, useLatest: noop, dismissCode: noop, openProfile: noop },
     original: null, busy: true, confirmOriginal: noop, retryOriginal: noop };

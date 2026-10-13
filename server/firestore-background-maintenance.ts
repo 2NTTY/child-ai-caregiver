@@ -1,3 +1,5 @@
+import { createFirestoreContentErasure } from './firestore-content-erasure.ts';
+import type { FirebaseErasureJournal } from './firebase-erasure-journal.ts';
 import { randomUUID } from 'node:crypto';
 import { FieldPath, type DocumentSnapshot, type Query } from '@google-cloud/firestore';
 import { z } from 'zod';
@@ -14,7 +16,7 @@ import type { FirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts
 import { createKnowledgeSourceFetcher } from './knowledge-source-fetch.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
-const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures'] as const;
+const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures'] as const;
 const cursorSchema = z.object({ after: z.record(z.string(), z.string().nullable()), complete: z.array(z.string()),
   minute: z.number().int(), token: z.uuid().nullable(), until: z.number().int().nonnegative() }).strict();
 const empty = () => ({ after: {} as Record<string, string | null>, complete: [] as string[], minute: -1, token: null as string | null, until: 0 });
@@ -28,6 +30,7 @@ const knowledgePeriod = (weekly: boolean, now = Date.now()) => {
 
 /** One Scheduler wake reconciles bounded pages. No interval, source model, private context, or provider send lives here. */
 export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOptions & {
+  journal?: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>;
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'>;
   erasures: FirestoreErasureStore; cleanup: ReturnType<typeof createFirestoreErasureCleanup>;
@@ -81,13 +84,27 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
     });
     if (!state) return 0;
     let scanned = 0;
+    // One bounded pass upgrades pre-R01 tombstones; normal writers enqueue their own barriers.
+    if (options.journal) for (const suffix of ['care_records', 'child_profiles', 'memory_facts', 'memory_topics']) {
+      const key = 'content-backfill:' + suffix; if (state.complete.includes(key)) continue;
+      let q: Query = data.collection(suffix).orderBy(FieldPath.documentId()).limit(5);
+      if (state.after[key]) q = q.startAfter(state.after[key]);
+      const rows = await q.get();
+      for (const row of rows.docs) await createFirestoreContentErasure({ ...options, journal: options.journal }).backfill(row);
+      state.after[key] = rows.docs.at(-1)?.id ?? null; if (rows.size < 5) state.complete.push(key); scanned += rows.size;
+    }
     for (const stage of stages) {
       let q: Query = data.collection(stage).orderBy(FieldPath.documentId()).limit(5);
+      if (stage === 'content_erasures') q = q.where('stage', 'in', ['revisions', 'receipts']);
       if (stage === 'work_watches') q = q.where('enabled', '==', true);
       if (stage === 'erasures') q = q.where('state', 'in', ['requested', 'blocked', 'cleaning']);
       if (state.after[stage]) q = q.startAfter(state.after[stage]);
       const rows = await q.get();
       for (const row of rows.docs) {
+        if (stage === 'content_erasures') {
+          if (!options.journal) domainReject('content_journal_unavailable', 503);
+          await createFirestoreContentErasure({ ...options, journal: options.journal }).advance(row); scanned++; continue;
+        }
         const basis = stage === 'documents' ? 'hour:' + Math.floor(Date.now() / 3600000)
           : stage === 'work_watches' ? (() => { const watch = open(row, 'work-watch', firestoreWorkWatchSchema).value;
             return Date.parse(watch.nextCheckAt) <= Date.now() ? 'check:' + watch.workVersion + ':' + watch.nextCheckAt : null; })() : '';

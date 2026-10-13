@@ -1,3 +1,4 @@
+import { erasureCoversPhoto } from './firebase-erasure-journal.ts';
 import { createHash } from 'node:crypto';
 import { FieldPath, type Firestore } from '@google-cloud/firestore';
 import type { Bucket } from '@google-cloud/storage';
@@ -229,7 +230,7 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       const liveDocuments=await readAll(source),authUsers=await currentAuth(records),entries=await journalSnapshot();
       const erasures=entries.map(row=>row.intent),erasureDescriptors=new Map(entries.map(row=>[firebaseErasureIntentHash(row.intent),row.descriptor]));
       // Journal replay does not trust a Firestore cleanup flag alone: check that all original objects are gone.
-      for(const intent of erasures.filter(v=>v.type!=='photo-delete')){
+      for(const intent of erasures.filter(v=>['child-delete','account-delete'].includes(v.type))){
         const affected=new Map<string,{scope:typeof intent.scope;photoId:string}>();
         for(const row of [...records,...decode(liveDocuments)]){
           if(row.context.kind!=='photo'&&row.context.kind!=='photo-cleanup')continue;
@@ -243,9 +244,7 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         for(const item of affected.values())requireValue(await options.sourceObjects!.inspect!(item.scope,item.photoId)===null,'recovery_pending_scope_cleanup');
       }
       type PhotoEntry=Omit<FirebaseBackupPhotoManifestEntry,'backup'> & Partial<Pick<FirebaseBackupPhotoManifestEntry,'backup'>>;
-      const deleted=(entry:PhotoEntry)=>erasures.some(row=>row.scope.ownerUserId===entry.scope.ownerUserId
-        &&(row.type==='account-delete'||row.scope.workspaceId===entry.scope.workspaceId
-          &&(row.type==='photo-delete'?row.assetId===entry.photoId:row.scope.childId===entry.scope.childId)));
+      const deleted=(entry:PhotoEntry)=>erasures.some(row=>erasureCoversPhoto(row,entry.scope,entry.photoId));
       const photoRows=records.filter(row=>row.context.kind==='photo').map(row=>({record:row,photo:photoSchemas.photo.parse(row.value)}));
       const ready=photoRows.filter(row=>row.photo.state==='ready');
       const photoEntries:PhotoEntry[]=manifest?manifest.photos:ready.map(({record,photo})=>{

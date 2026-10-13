@@ -21,7 +21,7 @@ export const firestoreScopeErasureSchema = z.object({ intent: firebaseErasureInt
   blockedAt: z.iso.datetime({ offset: true }).nullable(),
   scopeVersion: z.string(), childCount: z.number().int().nonnegative(),
   cleanup: z.object({ stage: z.string().max(100), cursor: z.string().max(2000).nullable() }).strict(),
-}).strict().refine(value => value.intent.type !== 'photo-delete'
+}).strict().refine(value => ['child-delete', 'account-delete'].includes(value.intent.type)
   && (value.intent.type === 'account-delete' ? value.intent.scope.childId === NIL && value.intent.assetId === NIL
     : value.intent.assetId === value.intent.scope.childId && value.intent.assetId !== NIL));
 export type FirestoreScopeErasure = z.infer<typeof firestoreScopeErasureSchema>;

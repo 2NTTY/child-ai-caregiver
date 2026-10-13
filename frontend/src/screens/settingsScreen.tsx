@@ -97,7 +97,7 @@ export default function SettingsPage() {
       {model.children.length === 0 ? recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && online ? <EmptyListCard title="目前沒有孩子檔案" /> : <Text style={styles.body}>{recordsState.childrenLoading ? "正在讀取孩子列表…" : recordsState.childrenError ? "孩子列表未能讀取，請重新核對。" : "孩子列表尚未核對。"}</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => leave(() => { actions.selectChild(child.id); actions.open("profile"); })} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
 
     </SectionCard></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><SectionHeader density="compact" title="家庭成員" subtitle="共享記錄與私人聊天的權限分開處理。" />
+    <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><SectionHeader density="compact" title="家庭成員" subtitle="家庭多人協作安排於 P4，目前尚未開放；本人通知及授權仍可管理。" />
       <View style={styles.timeRow}><AppButton label="查看家庭協調" onPress={() => actions.open("family")} /><AppButton label="聯絡與授權" variant="secondary" onPress={() => actions.open("contact")} /></View>
     </SectionCard></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={styles.sections}>

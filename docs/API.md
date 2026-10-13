@@ -1,5 +1,10 @@
 # 接口与鉴权契约
 
+**現行 Firestore 範圍：**家庭多人管理延至 [P4-FAMILY](../PLAN.md#p4-family)，未實作的 API 不回假家庭或成功空集合。本人設定、通知及孩子隔離保持。以下歷史家庭／SQL 契約仍供後續接線，不是已交付聲明。
+
+**披露契約：**原操作已成功但所指正文已永久刪除／遮蔽時，仍回原 confirmed 身份、版本及狀態，result 為 null；不得以原 opId 再次執行。account export 的歷史區段套用目前刪除／歷史下限；文件正文及修訂來源失效時返回無正文的 invalidated 投影，不直接披露 recovery envelope。空的單頁不代表所有歷史不存在，沿原 cursor／complete 使用。
+
+
 **實作與目標分界：**下文 PostgreSQL／Better Auth／pg-boss 專項保留原機制及證據；依 [ADR-024](DECISIONS.md#adr-024)，正式 SQL 接點改用 Firestore，原 VM／Node／Compose／Caddy 及網站繼續沿用。Firebase Auth、Storage、Tasks 的既有接線按實際範圍復用，不表示全部功能已遷移。現行契約見 [Firestore 接點](#firestore-target)，已合併／未合併／待驗只見 [PLAN](../PLAN.md#active)。
 
 本文件管穩定契約／設計，不維護包進度或即時部署。實作與未驗項見 [PLAN](../PLAN.md#roadmap-packages)，運行觀察見 [STATUS](../STATUS.md#deployment)，測試結論只按所連 EV 的版本／範圍解讀。

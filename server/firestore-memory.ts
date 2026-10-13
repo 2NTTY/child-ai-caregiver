@@ -1,3 +1,4 @@
+import { prepareContentErasure } from './firestore-content-erasure.ts';
 import { randomUUID } from 'node:crypto';
 import type { DocumentSnapshot, Query } from '@google-cloud/firestore';
 import { z } from 'zod';
@@ -137,7 +138,9 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
           id, childId: binding.scope.childId, version: nextVersion, operationId, deletedAt: new Date().toISOString(),
         }, nextVersion) };
     }
+    const erase = deleted ? prepareContentErasure(data, binding, kind === 'facts' ? 'fact' : 'topic', id, current!.version, operationId) : null;
     return { value: next ?? true, changeSeq: change.changeSeq, commit() {
+      erase?.();
       change.commit(); contextChange(); commitKeys(); binding.transaction.set(refFor(kind, id), envelope);
       if (revision) binding.transaction.create(revisionRef, revision);
     } };

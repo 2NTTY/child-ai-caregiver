@@ -1,0 +1,66 @@
+{
+  "package": "P2-R01",
+  "baseline": "30d16d50aee8debe9472d16938b0ab17a188aac0",
+  "scope": "Synthetic current disclosure, deletion journal cleanup and isolated restore; no cloud restore",
+  "checks": [
+    {
+      "name": "one connected deletion/export/receipt/restore scenario",
+      "command": "node --test tests/firestore-disclosure.test.ts",
+      "result": "passed",
+      "tests": 1
+    },
+    {
+      "name": "production Server and shared source type check",
+      "result": "passed",
+      "configuration": "extends tsconfig.server.json; includes server and src/shared; excludes baseline test stubs"
+    },
+    {
+      "name": "frontend type check",
+      "command": "tsc --project frontend/tsconfig.json --noEmit",
+      "result": "passed"
+    }
+  ],
+  "retained_failures": [
+    {
+      "kind": "initial targeted test",
+      "reason": "Synthetic database lacked DocumentReference.get used by backup control; stopped, supplied a scoped public readback facade, then reran same scenario"
+    },
+    {
+      "kind": "initial frontend type check",
+      "reason": "Unavailable family readState must use existing error enum, not lost; corrected"
+    },
+    {
+      "kind": "full server tsconfig includes pre-existing test-stub type errors",
+      "files": [
+        "tests/firebase-app.test.ts",
+        "tests/firestore-agent-ledger.test.ts",
+        "tests/firestore-documents-core.test.ts",
+        "tests/firestore-photos.test.ts",
+        "tests/helpers/firestore-domain-memory.ts"
+      ],
+      "result": "not passed; unrelated stubs were not changed"
+    }
+  ],
+  "coverage": [
+    "current child/account authority",
+    "valid undeleted history",
+    "care/profile/fact/topic deletion",
+    "legacy and pointer receipts do not replay or disclose erased bodies",
+    "document source invalidation also masks export",
+    "bounded cleanup keeps independent journal and original operation identity",
+    "actual isolated restore plan replay followed by ordinary read/export/receipt reads"
+  ],
+  "not_verified": [
+    "native Firestore indexes and cloud transaction behavior for this change",
+    "native managed backup restore remains deferred",
+    "deployed site version unchanged",
+    "UI interaction not rerun"
+  ],
+  "service_calls": {
+    "models": 0,
+    "embedding": 0,
+    "notifications": 0,
+    "cloud": 0
+  },
+  "subagents": 0
+}

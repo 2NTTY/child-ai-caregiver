@@ -1,3 +1,4 @@
+import { contentErasureSchema } from './firestore-content-erasure.ts';
 import { materialRestoreSchemas, isMaterialRestoreKind, materialRestoreMetadata } from './firestore-restore-material-records.ts';
 import { firestorePreparationSchema } from './firestore-care-summary.ts';
 import { z } from 'zod';
@@ -11,6 +12,7 @@ const NIL = '00000000-0000-0000-0000-000000000000';
 const FAR_FUTURE = '9999-12-31T23:59:59.999Z';
 export const coreRestoreSchemas = {
   ...materialRestoreSchemas,
+  'content-erasure': { suffix: 'content_erasures', schema: contentErasureSchema },
   'visit-preparation': { suffix: 'visit_preparations', schema: firestorePreparationSchema },
   'visit-preparation-revision': { suffix: 'visit_preparation_revisions', schema: firestorePreparationSchema },
   'care-record': { suffix: 'care_records', schema: firestoreCareSchema },
@@ -67,6 +69,11 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   requireValue(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
   if (kind === 'context-version') { equalId(id, [scope.ownerUserId, scope.childId]); requireValue(recordVersion === 1); return {}; }
   requireValue(scope.childId !== NIL);
+  if (kind === 'content-erasure') {
+    const v = contentErasureSchema.parse(raw);
+    requireValue(id === v.intent.operationId && v.intent.scope.ownerUserId === scope.ownerUserId && v.intent.scope.childId === scope.childId);
+    return { stage: v.stage };
+  }
   const entity = (value: { id: string; childId: string; version: number }, revision = false) => {
     requireValue(value.childId === scope.childId && value.version === recordVersion);
     if (revision) equalId(id, [value.id, value.version]); else requireValue(id === value.id);

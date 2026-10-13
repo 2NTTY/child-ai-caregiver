@@ -3130,6 +3130,24 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "yuban_authority_online_operations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -3744,6 +3762,21 @@
       "collectionGroup": "yuban_authority_visit_preparation_revisions",
       "fieldPath": "*",
       "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_content_erasures",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_content_erasures",
+      "fieldPath": "stage",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
     }
   ]
 }

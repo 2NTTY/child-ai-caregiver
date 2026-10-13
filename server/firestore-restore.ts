@@ -1,3 +1,4 @@
+import { replayContentErasures } from './firestore-restore-content-erasure.ts';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { canonical } from './firestore-session-codec.ts';
@@ -144,7 +145,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   requireValue(input.erasures.length<=2000,'restore_limit');
   const journal=input.erasures.map(value=>firebaseErasureIntentSchema.parse(value));
   unique(journal,value=>canonical([value.scope.ownerUserId,value.operationId]));
-  const scopeJournal=journal.filter(intent=>intent.type!=='photo-delete');
+  const scopeJournal=journal.filter(intent=>['child-delete','account-delete'].includes(intent.type));
   // Complete original-object erasure first; recovery must not discard an unresolved cleanup obligation.
   for(const intent of scopeJournal) {
     const job=rows(live,'scope-erasure',firestoreScopeErasureSchema).find(row=>row.value.intent.operationId===intent.operationId
@@ -239,6 +240,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     outputExtras.push({path:data.ref('online_operations','online-receipt',id).path,
       data:{...data.tags(scope),...data.seal('online-receipt',id,scope,firestoreOnlineErasureBarrierSchema,barrier)}});
   }
+  for (const path of replayContentErasures(data,codec,decoded,live,journal,new Map(input.liveDocuments.map(row=>[row.path,row.data])))) removed.add(path);
   const keep=decoded.filter(record=>(!removed.has(record.path)||cleanup.get(record.context.id)?.record===record) && !discardedRestoreKinds.has(record.context.kind));
   // A completed erasure may leave historical owner-wide receipt metadata in an old
   // backup. Remove its authenticated child scope first, then require the entire
