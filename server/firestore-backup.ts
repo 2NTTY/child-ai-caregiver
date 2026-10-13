@@ -92,7 +92,9 @@ export function firebaseBackupDocumentDigest(document: FirebaseBackupDocument): 
 export async function inspectFirebaseBackupSnapshot(options: FirebaseBackupOptions, input: { snapshotTime: string; generation: string }) {
   optionsChecked(options); z.object({ snapshotTime: z.iso.datetime({ precision: 3 }), generation: z.uuid() }).strict().parse(input);
   const at = Date.parse(input.snapshotTime);
-  if (at % 60_000 !== 0 || at > Date.now() || Date.now() - at > 55 * 60_000) reject('snapshot_time');
+  // A completed export may be finalized after an operator interruption. Firestore validates the actual
+  // PITR retention window for this exact minute; starting a new export still has its separate 55-minute gate.
+  if (at % 60_000 !== 0 || at > Date.now() || Date.now() - at > 7 * 24 * 60 * 60_000) reject('snapshot_time');
   const allowed = new Set(FIREBASE_BACKUP_COLLECTION_SUFFIXES.map(suffix => options.namespace + suffix));
   const collections = await options.database.listCollections();
   if (collections.some(collection => !allowed.has(collection.id))) reject('unsupported_collection');
