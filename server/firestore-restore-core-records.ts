@@ -1,4 +1,5 @@
 import { materialRestoreSchemas, isMaterialRestoreKind, materialRestoreMetadata } from './firestore-restore-material-records.ts';
+import { firestorePreparationSchema } from './firestore-care-summary.ts';
 import { z } from 'zod';
 import { firestoreCareSchema, firestoreProfileSchema, firestoreCareRecoverySchemas } from './firestore-care.ts';
 import { firestoreFactSchema, firestoreTopicSchema, firestoreMemoryRecoverySchemas } from './firestore-memory.ts';
@@ -10,6 +11,8 @@ const NIL = '00000000-0000-0000-0000-000000000000';
 const FAR_FUTURE = '9999-12-31T23:59:59.999Z';
 export const coreRestoreSchemas = {
   ...materialRestoreSchemas,
+  'visit-preparation': { suffix: 'visit_preparations', schema: firestorePreparationSchema },
+  'visit-preparation-revision': { suffix: 'visit_preparation_revisions', schema: firestorePreparationSchema },
   'care-record': { suffix: 'care_records', schema: firestoreCareSchema },
   'care-revision': { suffix: 'care_revisions', schema: firestoreCareSchema },
   'care-tombstone': { suffix: 'care_records', schema: firestoreCareRecoverySchemas.tombstone },
@@ -69,6 +72,12 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
     if (revision) equalId(id, [value.id, value.version]); else requireValue(id === value.id);
     return { entityId: value.id, entityVersion: value.version };
   };
+  if (kind === 'visit-preparation' || kind === 'visit-preparation-revision') {
+    const value = firestorePreparationSchema.parse(raw);
+    requireValue(value.childId === scope.childId && value.version === recordVersion && value.updatedBy === scope.ownerUserId);
+    if (kind === 'visit-preparation-revision') equalId(id, [value.childId, value.version]); else requireValue(id === value.childId);
+    return { entityId: value.childId, entityVersion: value.version };
+  }
   if (kind === 'care-record' || kind === 'care-revision') {
     const value = firestoreCareSchema.parse(raw), metadata = entity(value, kind === 'care-revision');
     requireValue(value.authorUserId === scope.ownerUserId && value.confirmedBy === scope.ownerUserId);

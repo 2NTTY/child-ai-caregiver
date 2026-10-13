@@ -16,6 +16,7 @@ import { createFirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.t
 import { SOURCE_WATCHES } from './knowledge-source-catalog.ts';
 import { createFirestorePersonalLibrary } from './firestore-personal-library.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
+import { createFirestoreCareSummary } from './firestore-care-summary.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
 import { createFirestoreProductAgent } from './firestore-product-agent.ts';
@@ -86,7 +87,8 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const chat = createFirestoreChatStore(domain), care = createFirestoreCareStore(domain);
     const sources = createFirestoreSharedInputStore(domain), concerns = createFirestoreConcernStore(domain);
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
-    const mutations = [chat.mutation, care.mutation, memory.mutation, sources.mutation, push.mutation, telegram.mutation];
+    const summary = createFirestoreCareSummary(domain, care);
+    const mutations = [summary.mutation, chat.mutation, care.mutation, memory.mutation, sources.mutation, push.mutation, telegram.mutation];
     const online = createFirestoreOnlineStore({ ...domain, photos, erasures, reminders, mutations });
     const documents = createFirestoreFamilyDocumentStore({ database, cipher, projectId: config.projectId, namespace: config.namespace });
     const knowledgeRefresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
@@ -110,11 +112,11 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const sourceService = createSharedInputService(sources, product.runtime);
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
     const photoAgent = createPhotoAgent(photos, product.runtime);
-    const handler = createFirebaseRequestHandler({ authority, auth, online, documents, photos, photoAgent, library, chat, care, memory, product, sources, sourceService, concerns, growth, push, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
+    const handler = createFirebaseRequestHandler({ authority, auth, online, documents, photos, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { ...persistence, sessions, auth, currentAuth, reminders, online, documents, photos, objects, journal, erasures, erasureCleanup, exporter, knowledge, knowledgeRefresh, library, chat, care, memory, sources, sourceService, concerns, growth, push, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
+    return { ...persistence, sessions, auth, currentAuth, reminders, online, documents, photos, objects, journal, erasures, erasureCleanup, exporter, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
       close() { return closing ??= (async () => { try { await deleteApp(ownedApp); } finally { await persistence.close(); } })(); } };
   } catch (error) {
     try { if (app) await deleteApp(app); } finally { await persistence.close(); }

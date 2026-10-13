@@ -28,6 +28,7 @@ export interface FirestoreCareStore extends CareStore {
   listRecords(userId: string, childId: string): Promise<{ records: CareRecord[]; limit: number }>;
   readRecord(binding: Binding, id: string): Promise<CareRecord | null>;
   readProfile(binding: Binding): Promise<ChildProfile>;
+  readReportSource(binding: Binding): Promise<{ profile: ChildProfile; records: CareRecord[] }>;
   prepareDeletion(binding: Binding, id: string, expectedVersion: number, operationId: string): Promise<Prepared<boolean>>;
   prepareRecord(binding: Binding, operationId: string, values: CareValues, options?: {
     id?: string; expectedVersion?: number; reason?: string; basis?: 'explicit' | 'preauthorized_user_statement';
@@ -175,6 +176,13 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
       return { childId, changeSeq: prepared.changeSeq, result: { [key]: prepared.value }, statusCode, commit: prepared.commit };
     },
   };
+  async function readReportSource(binding: Binding) {
+    const profile = await readProfile(binding);
+    const rows = await binding.transaction.get(scoped(binding, 'care_records').where('live', '==', true)
+      .orderBy('createdAt', 'asc').orderBy('entityId', 'asc').limit(2001));
+    if (rows.size > 2000) domainReject('summary_scope_too_large');
+    return { profile, records: rows.docs.map(row => open(binding, 'care-record', row.get('entityId'), firestoreCareSchema, row)) };
+  }
   const store: FirestoreCareStore = {
     prepareDeletion: prepareDelete,
     async listRecords(userId, childId) {
@@ -223,15 +231,8 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
       const row = await binding.transaction.get(data.ref('child_profiles', 'child-profile', c));
       return revisions(binding, 'profile_revisions', 'profile-revision', c, firestoreProfileSchema, before, row.get('historyFloor') ?? 1);
     }),
-    async reportSource(u, c) {
-      return authority.runTransaction(u, c, async binding => {
-        const profile = await readProfile(binding);
-        const rows = await binding.transaction.get(scoped(binding, 'care_records').where('live', '==', true)
-          .orderBy('createdAt', 'asc').orderBy('entityId', 'asc').limit(2001));
-        if (rows.size > 2000) domainReject('summary_scope_too_large');
-        return { profile, records: rows.docs.map(row => open(binding, 'care-record', row.get('entityId'), firestoreCareSchema, row)) };
-      });
-    },
+    readReportSource,
+    reportSource: (u, c) => authority.runTransaction(u, c, readReportSource),
   };
   return store;
 }
