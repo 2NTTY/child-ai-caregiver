@@ -6,21 +6,30 @@
     "route": "/admin",
     "singleMainModel": true,
     "provider": "existing Firebase/Firestore",
-    "scope": "invitation authority; shared platform policy; separate usage; immutable audit"
+    "scope": "invitation authority; shared platform policy; separate usage; immutable audit",
+    "commits": [
+      "a06e0764714f626cabe287c409a1e0fe48d1aed3",
+      "334fb4e5640379eb86e6673c6c29634c99d6e34c"
+    ],
+    "pullRequests": [
+      208,
+      209
+    ]
   },
   "verification": {
     "command": "node --experimental-strip-types --test tests/admin-web.test.ts",
     "scenarios": 1,
-    "directHttpRequests": 22,
+    "directHttpRequests": 24,
     "owner": "production /api prefix, lost reply, original receipt, identity clear",
     "serverTypes": "passed, production sources only",
     "frontendTypes": "passed",
-    "webBuild": "passed; /admin static route",
+    "webBuild": "Passed initially and rebuilt only after the final unsaved-policy UI change; no unchanged build repetition.",
     "realModelCalls": 0,
     "notifications": 0,
     "computerUse": false,
     "fullRegression": false,
-    "nativeRestore": "deferred by user"
+    "nativeRestore": "deferred by user",
+    "lateSession": "Committed write followed by lost session returns unknown; original receipt is recoverable."
   },
   "priorFailures": [
     {
@@ -34,14 +43,98 @@
   ],
   "reviewCorrections": [
     "production API prefix normalization",
-    "load latest state once after successful receipt and clear identity state"
+    "load latest state once after successful receipt and clear identity state",
+    "Post-commit session failure returns unknown, not a rejection that could encourage a new operation"
   ],
   "deployment": {
-    "status": "pending",
-    "adminIdentity": "specified account exists, verified email, not disabled; no grant yet",
+    "status": "deployed",
+    "at": "2026-10-13T13:13:05Z",
+    "implementation": "334fb4e5640379eb86e6673c6c29634c99d6e34c",
+    "mergedMaster": "067d91fcddd72a6b8d24d403ecd39560e7d1c362",
+    "tag": "admin-334fb4e",
+    "url": "https://ex-machina.eu.org/admin",
+    "adminIdentity": "Specified verified, enabled Firebase UID bound in protected Server configuration; no other administrator",
     "vm": "yuban-p1",
     "termination": "2026-10-17T12:50:44Z",
-    "rollback": "review-2c17aa7"
+    "apiImage": "sha256:f8f3e751758e8c2a2c40716769e12512271e4d7baf39293af4fe4a98d5f3c24b",
+    "webImage": "sha256:e189f2aded311f6a7b312b34ab7c0e2ae6f6cedd1fbabc34e9ccb370f2490e29",
+    "health": "API/worker/Web healthy; public health reports firestore",
+    "firstLiveReadAt": "2026-10-13T13:06:43.806Z",
+    "readback": {
+      "adminAccount": "exists and email verified",
+      "policyVersion": 0,
+      "enabled": true,
+      "model": "gemini-3.1-flash-lite",
+      "dailyUserAttempts": 12,
+      "dailyGlobalAttempts": 20,
+      "personalDailyGlobalAttempts": 1000,
+      "maxModelCalls": 4,
+      "maxQueryEmbeddings": 2,
+      "tools": 8,
+      "deadlineMs": 90000,
+      "queries": "Bounded invitations/audit and separate usage counters readable",
+      "anonymous": {
+        "/admin": 200,
+        "/api/admin/policy": 401,
+        "/api/admin/session": 401
+      },
+      "writes": 0
+    },
+    "indexes": [
+      {
+        "group": "yuban_authority_admin_policy",
+        "field": "ciphertext",
+        "status": "configured"
+      },
+      {
+        "group": "yuban_authority_admin_policy",
+        "field": "recovery",
+        "status": "configured"
+      },
+      {
+        "group": "yuban_authority_admin_invitations",
+        "field": "ciphertext",
+        "status": "configured"
+      },
+      {
+        "group": "yuban_authority_admin_invitations",
+        "field": "recovery",
+        "status": "configured"
+      },
+      {
+        "group": "yuban_authority_admin_operations",
+        "field": "ciphertext",
+        "status": "configured"
+      },
+      {
+        "group": "yuban_authority_admin_operations",
+        "field": "recovery",
+        "status": "configured"
+      }
+    ],
+    "backup": {
+      "at": "2026-10-13T13:02:59.194Z",
+      "backupId": "3a169a7b-c2e0-42b8-9511-e472af01841f",
+      "snapshotTime": "2026-10-12T21:43:00.000Z",
+      "generation": "1791874519983700",
+      "bytes": 315688,
+      "temporaryHold": true,
+      "retainedUntil": "2026-10-27T07:53:29.841Z",
+      "scope": "Existing encrypted paired manifest metadata only; no restore, no private body download, not a new backup"
+    },
+    "rollback": [
+      "admin-a06e076",
+      "review-2c17aa7"
+    ],
+    "configurationBackups": "Protected firebase.env and compose.env before-admin-* on same VM; not committed",
+    "businessMigration": false,
+    "dailyUsageReset": false,
+    "realModelCalls": 0,
+    "notifications": 0,
+    "limitations": [
+      "No new human browser acceptance",
+      "Native daily-backup first artifact and real restore remain deferred"
+    ]
   },
   "limitations": [
     "Synthetic session is not a human browser login",
