@@ -3803,6 +3803,36 @@
           "queryScope": "COLLECTION"
         }
       ]
+    },
+    {
+      "collectionGroup": "yuban_authority_admin_policy",
+      "fieldPath": "ciphertext",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_admin_policy",
+      "fieldPath": "recovery",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_admin_invitations",
+      "fieldPath": "ciphertext",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_admin_invitations",
+      "fieldPath": "recovery",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_admin_operations",
+      "fieldPath": "ciphertext",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_admin_operations",
+      "fieldPath": "recovery",
+      "indexes": []
     }
   ]
 }

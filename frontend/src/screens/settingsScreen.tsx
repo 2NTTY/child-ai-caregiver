@@ -1,3 +1,4 @@
+import { AdminEntry } from '../production/AdminEntry';
 import { EmptyListCard } from "../components/EmptyListCard";
 import { useContainerWidth } from "../components/useContainerWidth";
 import { brand } from "../branding";
@@ -77,6 +78,7 @@ export default function SettingsPage() {
 
           <AppButton label="登出本人帳戶" variant="secondary" onPress={() => leave(() => { void signOut(); })} />
           <AccountSecurityControls />
+          <AdminEntry />
           <Text style={styles.draftNote}>社交登入暫不可用。</Text>
           <View style={styles.settingGroup}><SectionHeader density="compact" title="模型服務" subtitle="管理平台服務、個人密鑰及呼叫上限。" />
             <AppButton label="管理模型設定" variant="secondary" onPress={() => setTab("model")} />

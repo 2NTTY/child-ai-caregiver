@@ -1,3 +1,5 @@
+import { adminDirectorySchema } from './firestore-admin.ts';
+import { adminReceiptSchema, platformPolicySchema } from '../src/shared/admin.ts';
 import { operationRestoreSchemas, isOperationRestoreKind, restoreOperationRecord } from './firestore-restore-operation-records.ts';
 import { firestoreKnowledgeRefreshSchemas as knowledgeRefresh } from './firestore-knowledge-refresh.ts';
 import { definitionHash } from './knowledge-observation.ts';
@@ -41,6 +43,9 @@ const authoritySchemas = { control: authority.control, account: authority.accoun
   'authority-owner': authority.owner, 'authority-operation': authority.operation, 'authority-child-detail': authority.childDetail,
   work: workRecoverySchemas.work, followup: workRecoverySchemas.followup, 'authority-work-detail': authority.workDetail } as const;
 const domainSchemas = {
+  'platform-policy': { suffix: 'admin_policy', schema: platformPolicySchema },
+  'admin-invitation': { suffix: 'admin_invitations', schema: adminDirectorySchema },
+  'admin-receipt': { suffix: 'admin_operations', schema: adminReceiptSchema },
   ...operationRestoreSchemas,
   ...coreRestoreSchemas,
   ...agentRestoreSchemas,
@@ -222,7 +227,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     const { kind, id, scope, recordVersion } = context;
     requireBinding(context.envelopeVersion === 1 && recordVersion !== undefined);
     parse(workRecoveryScopeSchema, scope);
-    if (kind !== 'photo-global-quota' && kind !== 'task-dispatch-scan') requireBinding(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
+    if (!['photo-global-quota', 'task-dispatch-scan', 'platform-policy', 'admin-invitation', 'admin-receipt'].includes(kind)) requireBinding(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
     const versionMatches = (value: number) => requireBinding(recordVersion === value);
     const taskBinding = (row: z.infer<typeof firestoreTaskSchema>) => requireBinding(row.childId === scope.childId
       && row.createdBy === scope.ownerUserId && row.assigneeUserId === scope.ownerUserId && scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
@@ -245,6 +250,11 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           : normal.restoredFromEpoch === normal.operation.storageEpoch && normal.restoredFromEpoch !== scope.storageEpoch));
         idEquals(id, [normal.ownerUserId, normal.operation.opId]);
       }
+    } else if (kind === 'platform-policy' || kind === 'admin-invitation' || kind === 'admin-receipt') {
+      requireBinding(sameScope(scope, { ownerUserId: 'system:admin', workspaceId: NIL, childId: NIL, storageEpoch: NIL })); versionMatches(1);
+      if (kind === 'platform-policy') requireBinding(id === 'current');
+      else if (kind === 'admin-invitation') requireBinding(id === firestoreDomainHash(parse(adminDirectorySchema, raw).email));
+      else { const receipt = parse(adminReceiptSchema, raw); requireBinding(id === receipt.opId && receipt.command.opId === id && receipt.fingerprint === firestoreDomainHash(receipt.command)); }
     } else if (kind === 'family-document') {
       const row = parse(documents.metadata, raw); requireBinding(row.id === id && row.ownerUserId === scope.ownerUserId && row.childId === scope.childId); versionMatches(row.version);
     } else if (kind === 'document-operation') {
@@ -382,6 +392,18 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         return { oldPath: decoded.path, path: decoded.path, data: { ...row, state: row.state === 'running' ? 'unknown' : row.state } };
       }
       return { oldPath: decoded.path, path: decoded.path, data: object(value) };
+    }
+    if (context.family === 'domain' && ['platform-policy', 'admin-invitation', 'admin-receipt'].includes(context.kind)) {
+      domainBinding(context as Extract<FirestoreRestoreDecoded['context'], { family: 'domain' }>, decoded.value);
+      const original = originalEnvelopes.get(decoded); if (!original) reject('restore_admin_origin_missing');
+      if (context.kind === 'platform-policy') {
+        const row = parse(platformPolicySchema, decoded.value), disabled = { ...row, enabled: false, version: nextVersion(row.version) };
+        return { oldPath: decoded.path, path: decoded.path, data: { ...data.seal('platform-policy', 'current', context.scope, platformPolicySchema, disabled) } };
+      }
+      if (context.kind === 'admin-invitation') return { oldPath: decoded.path, path: decoded.path,
+        data: { sortKey: firestoreDomainHash(context.id), entityId: context.id, ...original } };
+      const row = parse(adminReceiptSchema, decoded.value);
+      return { oldPath: decoded.path, path: decoded.path, data: { sortKey: row.at + ':' + row.opId, operationId: row.opId, ...original } };
     }
     if (context.family === 'domain' && context.kind === 'photo-cleanup') {
       domainBinding({ ...context, kind: 'photo-cleanup' }, decoded.value);

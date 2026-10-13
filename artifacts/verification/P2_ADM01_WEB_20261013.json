@@ -1,0 +1,51 @@
+{
+  "package": "P2-ADM01",
+  "date": "2026-10-13",
+  "base": "ede4e72cafc7e75089377ca7f1dcce68c48a11a3",
+  "implementation": {
+    "route": "/admin",
+    "singleMainModel": true,
+    "provider": "existing Firebase/Firestore",
+    "scope": "invitation authority; shared platform policy; separate usage; immutable audit"
+  },
+  "verification": {
+    "command": "node --experimental-strip-types --test tests/admin-web.test.ts",
+    "scenarios": 1,
+    "directHttpRequests": 22,
+    "owner": "production /api prefix, lost reply, original receipt, identity clear",
+    "serverTypes": "passed, production sources only",
+    "frontendTypes": "passed",
+    "webBuild": "passed; /admin static route",
+    "realModelCalls": 0,
+    "notifications": 0,
+    "computerUse": false,
+    "fullRegression": false,
+    "nativeRestore": "deferred by user"
+  },
+  "priorFailures": [
+    {
+      "cause": "fixture misread accountStatus.user",
+      "resolution": "corrected existing contract assertion"
+    },
+    {
+      "cause": "restore generic scope gate excluded new control-plane kinds",
+      "resolution": "added exact system:admin binding, roundtrip passed"
+    }
+  ],
+  "reviewCorrections": [
+    "production API prefix normalization",
+    "load latest state once after successful receipt and clear identity state"
+  ],
+  "deployment": {
+    "status": "pending",
+    "adminIdentity": "specified account exists, verified email, not disabled; no grant yet",
+    "vm": "yuban-p1",
+    "termination": "2026-10-17T12:50:44Z",
+    "rollback": "review-2c17aa7"
+  },
+  "limitations": [
+    "Synthetic session is not a human browser login",
+    "Native backup/restore remains deferred",
+    "No additional-admin, per-user override, arbitrary model or private-data browsing"
+  ]
+}

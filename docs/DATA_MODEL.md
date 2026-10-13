@@ -713,3 +713,13 @@ F02 沿 Firestore 原生 export／import 保存資料，不自建資料庫匯出
 - 原背景 Task 的 unknown 只以同名 probe 查核；保存 probe 次數／退避，最多三次後標 needs_attention，不換業務 ID 重發。照片清理最多三次有界查核；遲到的已核實 descriptor 可喚醒同一工作，記住 evidence hash，不能無新證據重啟。通知／模型 unknown 不沿用此清理例外。
 - 照片清理保留與 journal 綁定、無正文的原 scope tombstone；還原不只保留 cleanup row，quota 只在真刪除確認後釋放。
 - 熱備份未結清上載保留 reservation、upload ID／hash、配額與原不可變 objectScope；業務 scope 換 epoch，正文仍 reserved 不可讀。以相同原圖核對原上載後才變 ready，不能另建附件或假設 404 表示從未上載。objectScope 只可改 epoch，owner／workspace／child 必須一致；下載／刪除先按目前業務 scope 授權，再核對原物件。未核清前可以沿既有刪除入口保留並履行原物件清理义務。
+
+
+<a id="web-admin"></a>
+### 管理控制資料與設定快照
+
+新增命名空間下 `admin_policy`、`admin_operations`、`admin_invitations`；沿既有加密 domain envelope，使用獨立 `system:admin` scope，不屬任何孩子／家庭。管理 UID 僅在受保護部署配置，資料庫內容本身不能授予管理身份。
+
+policy 為唯一目前版本；不存在時沿已確認部署預設，讀取失敗不放寬。收據以原 opId、actor、請求指紋保存前後值。政策／邀請修改、收據及目錄在同一交易；資格消耗與管理撤回核對同一 authority document。邀請目錄只保存加密電郵定位及可重建排序，狀態由原邀請權威讀回。審計按時間／opId、列表按固定游標分頁，不掃描帳戶或聊天。密文及 recovery 欄位排除索引。
+
+API／worker 從同一政策建立新 run 快照，舊 run 保留模型／預算；下一次平台模型／embedding 呼叫前仍核平台暫停。本人 key 用量及共用保護上限與平台分流，不清零現有 counters。備份含上述三類資料；隔離還原保留管理收據／邀請目錄，policy 版本前進並強制暫停；部署 UID 不隨業務還原取得。真正重新啟用須管理操作及原部署／恢復 gate。

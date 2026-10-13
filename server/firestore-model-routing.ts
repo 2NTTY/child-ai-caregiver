@@ -1,3 +1,4 @@
+import { createFirestoreAdmin } from './firestore-admin.ts';
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
 import { AGENT_INTERACTIVE_INPUT, AgentStopped } from './agent-budget.ts';
@@ -25,25 +26,22 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
   const settings = createFirestoreModelSettings(options), authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
   const usage = { platform: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'platform' }),
     personal: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'personal' }) };
-  const personalGlobalLimit = config.personalDailyGlobalAttempts ?? 1000;
-  const disabled = async (): Promise<never> => { throw new AgentStopped('unavailable'); };
-  const platform = config.enabled && config.project ? { agent: createVertexAgentProvider(config), model: createVertexProvider(config),
-    embedding: createVertexEmbeddingProvider(config) } : { agent: { generate: disabled }, model: { generate: disabled }, embedding: { embed: disabled } };
+  const policy = createFirestoreAdmin(options, config);
   const allowed = (userId: string) => authority.runTransaction(userId, null, async () => true);
   return {
     settings,
     async view(userId: string): Promise<ModelSettingsView> {
-      const state = await settings.get(userId);
-      return { settings: state, enabled: config.enabled, platformAvailable: config.enabled && Boolean(config.project),
-        personalAvailable: config.enabled, personalGlobalLimit, agentInputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default,
+      const state = await settings.get(userId), current = await policy.readPolicy();
+      return { settings: state, enabled: config.enabled, platformAvailable: config.enabled && current.enabled && Boolean(config.project),
+        personalAvailable: config.enabled, personalGlobalLimit: current.personalDailyGlobalAttempts, agentInputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default,
         usage: { platform: await usage.platform.getForUser(userId), personal: await usage.personal.getForUser(userId) } };
     },
     async currentUsage(userId: string) {
       const state = await settings.get(userId); return usage[state.mode === 'personal' ? 'personal' : 'platform'].getForUser(userId);
     },
     async available(userId: string) {
-      const state = await settings.get(userId);
-      return config.enabled && (state.mode === 'platform' ? Boolean(config.project) : state.mode === 'personal' && state.keyConfigured);
+      const state = await settings.get(userId), current = await policy.readPolicy();
+      return config.enabled && (state.mode === 'platform' ? current.enabled && Boolean(config.project) : state.mode === 'personal' && state.keyConfigured);
     },
     async check(userId: string, version: number, signal: AbortSignal): Promise<ModelKeyCheck> {
       const snapshot = await settings.resolve(userId);
@@ -62,19 +60,21 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       return { version, status: accessible ? 'accessible' : 'unavailable', scope: 'model_metadata_only' };
     },
     async resolve(userId: string, trigger: 'interactive' | 'worker') {
-      const snapshot = await settings.resolve(userId), state = snapshot.settings, personal = state.mode === 'personal';
+      const snapshot = await settings.resolve(userId), state = snapshot.settings, personal = state.mode === 'personal', current = await policy.readPolicy();
       const enabled = config.enabled && state.mode !== 'disabled' && (personal
-        ? Boolean(snapshot.apiKey) && (trigger !== 'worker' || state.backgroundEnabled) : Boolean(config.project));
-      const selectedConfig: AiConfig = { ...config, enabled, ...(personal ? { maxAttempts: 1, model: PERSONAL_MODEL,
-        dailyUserAttempts: state.dailyLimit, dailyGlobalAttempts: personalGlobalLimit } : {}) };
-      const providers = personal && snapshot.apiKey ? createGeminiKeyProviders(selectedConfig, snapshot.apiKey) : platform;
+        ? Boolean(snapshot.apiKey) && (trigger !== 'worker' || state.backgroundEnabled) : current.enabled && Boolean(config.project));
+      const selectedConfig: AiConfig = { ...config, enabled, model: current.model,
+        dailyUserAttempts: current.dailyUserAttempts, dailyGlobalAttempts: current.dailyGlobalAttempts,
+        ...(personal ? { maxAttempts: 1, model: PERSONAL_MODEL, dailyUserAttempts: state.dailyLimit, dailyGlobalAttempts: current.personalDailyGlobalAttempts } : {}) };
+      const disabled = async (): Promise<never> => { throw new AgentStopped('unavailable'); };
+      const providers = !enabled ? { agent: { generate: disabled }, model: { generate: disabled }, embedding: { embed: disabled } } : personal && snapshot.apiKey ? createGeminiKeyProviders(selectedConfig, snapshot.apiKey) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
       const source = personal ? 'personal' as const : 'platform' as const;
-      const authorize = async () => enabled && await allowed(userId) && await settings.isCurrent(userId, state.version);
+      const authorize = async () => enabled && (personal || (await policy.readPolicy()).enabled) && await allowed(userId) && await settings.isCurrent(userId, state.version);
       const gateway = createEmbeddingGateway({ config: selectedConfig, provider: enabled ? providers.embedding : undefined,
         usage: requireDurableUsage, billingSource: source });
-      return { config: selectedConfig, provider: providers.agent, settingsVersion: String(state.version), billingSource: source,
+      return { config: selectedConfig, provider: providers.agent, settingsVersion: String(state.version) + ":policy:" + current.version, billingSource: source,
         dailyUsage: usage[source], authorize,
-        runLimits: personal ? { modelCalls: state.maxModelCalls, queryEmbeddings: state.maxQueryEmbeddings } : undefined,
+        runLimits: personal ? { modelCalls: state.maxModelCalls, queryEmbeddings: state.maxQueryEmbeddings } : { modelCalls: current.maxModelCalls, queryEmbeddings: current.maxQueryEmbeddings },
         embeddings: { embed: (...args: Parameters<typeof gateway.embed>) => {
           const [input, actor, signal, resourceAccess, durable] = args;
           if (!durable) throw new AgentStopped('unavailable');

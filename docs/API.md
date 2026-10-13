@@ -849,3 +849,21 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 文件原操作收據保留 operationId／documentId／savedVersion；內部 contentState 區分 building／ready／invalidated，並提供目前版本及已有處理數量。building 表示整理工作已提交，正文未完成；不等於來源失效或需要建立另一文件。真正來源失效仍遮蔽正文，收據暫時查不到仍是 unknown，不換 opId 重做。頁面沿同一文件的 report.phase／readState 顯示進度。
 
 `GET /api/account/export?section=notification_deliveries` 保留既有前端 owner 契約，回傳本人的 Push／Telegram 投遞及聯絡 attempts metadata；含 id、channel、status、created_at、attempted_at、finished_at、acknowledged_at，聯絡項另有 request_id。沒有真 attempt 的聯絡請求不投影成送達；不新增假電郵、私密正文、渠道地址或 binding。按原請求建立時間倒序有界合併三來源，每頁最多掃十筆來源列，游標各自保存進度，空頁仍須沿 nextCursor 續讀。此分頁不是穩定歷史快照；新投遞／回執由重新讀取更新，身份或資料範圍變更使旧游標失效。
+
+
+<a id="web-admin"></a>
+## Web 管理 API
+
+管理接口共用 Firebase session、`x-expected-user-id`，回應 `no-store`。`GET /api/admin/session` 只回本人是否為管理員；其他接口只容許部署綁定 UID。管理權不來自電郵字串、家庭 owner 或模型參數。POST 另核 Origin 與近期重新驗證，結果返回前重查身份。
+
+| 方法／路徑 | 契約 |
+|---|---|
+| GET `/api/admin/policy` | 生效 policy／version、部署 AI 開關及固定工具／期限／輸入輸出限制 |
+| GET `/api/admin/invitations?cursor=` | 最多 20 筆後台管理邀請及 nextCursor；狀態重新讀權威資格 |
+| GET `/api/admin/invitation?email=` | 完整電郵定位既有資格；不以未列入列表推定不存在 |
+| GET `/api/admin/usage?day=YYYY-MM-DD` | UTC 日的平台／本人 key 全站 counters，無聊天掃描 |
+| GET `/api/admin/audit?cursor=` | 最多 20 筆不可變管理收據／前後值 |
+| POST `/api/admin/operations` | `src/shared/admin.ts` 的 policy／invite／revoke 聯合契約，必帶原 opId；policy 帶 expectedVersion |
+| GET `/api/admin/operations/:opId` | 本管理員原收據或 null；null 不表示原請求必定未生效，重送只能用同一參數／opId |
+
+`version_conflict`／`operation_conflict` 回 409，不覆蓋或另建操作；已使用資格回 `invitation_consumed`，不呼叫原 operator 的帳戶撤權流程。網絡／5xx 保持 unknown，Web owner 暫停其他寫入並提供查回／明確同 ID 重送。登出／身份切換取消讀取並清除管理快取；原生頁不載入管理資料。管理寫入不呼叫模型。

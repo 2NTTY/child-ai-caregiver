@@ -399,6 +399,29 @@ export class FirestoreAuthority {
       this.receipt(tx, scope, input.operationId, 'revoke_invitation', op, result, false); return result;
     });
   }
+  /** Trusted admin service only; caller provides its transaction so audit and effect commit together. */
+  async readAdminInvitation(tx: Transaction, rawEmail: string) {
+    const address = email(rawEmail), row = await tx.get(this.ref('authority-invitation', address));
+    if (!row.exists) return null;
+    const value = this.open('authority-invitation', address, ownerScope('invitation:' + digest(address)), row, invitationSchema);
+    return { email: value.email, expiresAt: value.expiresAt, state: value.state };
+  }
+  async adminInvitationIn(tx: Transaction, input: { kind: 'invite' | 'revoke'; email: string; expiresAt?: string }) {
+    await this.control(tx, false);
+    const address = email(input.email), scope = ownerScope('invitation:' + digest(address));
+    const row = await tx.get(this.ref('authority-invitation', address));
+    const prior = row.exists ? this.open('authority-invitation', address, scope, row, invitationSchema) : null;
+    // Consumption and revocation race on the same authority document, not an admin projection.
+    if (prior?.consumedBy || prior?.state === 'consumed') fail('invitation_consumed', 409);
+    if (input.kind === 'invite' && prior?.state === 'revoked') fail('invitation_closed', 409);
+    if (input.kind === 'revoke' && !prior) fail('not_found', 404);
+    const expiresAt = input.kind === 'invite' ? parse(datetime, input.expiresAt) : prior!.expiresAt;
+    if (input.kind === 'invite' && (Date.parse(expiresAt) <= this.now() || Date.parse(expiresAt) > this.now() + 90 * 86400000)) fail('invitation_expiry_invalid', 400);
+    const result: Invitation = { email: address, expiresAt, state: input.kind === 'invite' ? 'issued' : 'revoked', consumedBy: null };
+    this.write(tx, 'authority-invitation', address, scope, result);
+    const view = (value: Invitation) => ({ email: value.email, expiresAt: value.expiresAt, state: value.state });
+    return { before: prior ? view(prior) : null, result: view(result) };
+  }
   async assertCanRegister(rawEmail: string): Promise<void> {
     const address = email(rawEmail);
     await this.options.database.runTransaction(async tx => {

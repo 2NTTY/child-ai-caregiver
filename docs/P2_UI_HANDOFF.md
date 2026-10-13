@@ -197,3 +197,9 @@ A07沿既有登入／設定版型接createAccountApi（status、acknowledge、ex
 ### Review 修正接點（R04）
 
 正式 `usePersonalHistory` 繼續使用 account export 的 `notification_deliveries`，同一 mapper 接本人三台帳的真 metadata，空頁有 cursor 時仍可續讀；原 request 不是投遞。成長報告提交後沿原文件 ID／report.phase 顯示 building，完成與來源失效分開；無須建立替代文件或改前端設計。詳細 wire／收據語義見 [API](API.md#result-history-consistency)。
+
+
+<a id="web-admin"></a>
+## Web 管理接點
+
+`/admin` 由身份範圍的 `AdminOwner` 管理，不依賴 child owner；`AdminEntry.web` 只在本人管理核對通過後於設定顯示。原生入口不載入管理資料。API／版本／unknown 定義見 [管理契約](API.md#web-admin)，操作方法見 [部署交接](PRODUCTION_FRONTEND.md#invited-account-service)。沿現有 Paper／表單／主題，不重做產品設計。

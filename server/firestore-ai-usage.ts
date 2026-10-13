@@ -191,6 +191,14 @@ export class FirestoreAiUsage implements DurableAiUsage {
       return receipt(state);
     });
   }
+  async getGlobal(input: string) {
+    const day = parse(daySchema, input, 'invalid_day');
+    return this.#database.runTransaction(async transaction => {
+      const id = this.#counterId(day, null), state = this.#counter(id, await transaction.get(this.#ref(id)));
+      return { day, attempts: state.attempts, inputTokens: state.inputTokens, outputTokens: state.outputTokens,
+        cachedTokens: state.cachedTokens, unknownUsageAttempts: state.attempts - state.known, billingSource: this.#source };
+    }, { readOnly: true });
+  }
   async getForUser(input: string) {
     const userId = parse(id, input, 'invalid_user');
     return this.#database.runTransaction(async transaction => {
