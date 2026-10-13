@@ -2540,3 +2540,12 @@
 - Verification：一條合成正式 HTTP／routing／owner 接線通過（直接 HTTP 22 次，另 owner 查回），涵蓋原請求回應遺失、權限、消耗邀請、防重、版本、平台暫停及分流用量；還原 codec 保留管理資料且暫停政策。生產 Server／shared 與前端型別、一次正式 Web build 通過。沒有真模型、通知、瀏覽器、全量或原生還原；[ADM01 EV](artifacts/verification/P2_ADM01_WEB_20261013.json)。
 - Corrections：首輪 fixture 把 accountStatus.user 誤讀成 state，停批後修正；下輪發現還原 system scope 缺接點，修正精確 kind／scope 綁定。最後 review 修正正式 /api 前綴並沿同一情景核對，另補保存後刷新；失敗不改為通過。
 - Delivery：首位指定 Firebase 帳號已驗證／未停用；VM running、原回退映像及 2026-10-17 停止期限已核對。合併及部署尚待執行，不把本機成果當已上線；原生每日首份／隔離還原仍按使用者要求延後。
+
+
+<a id="log-20261013-p2-adm01-delivery"></a>
+### 2026-10-13 — P2-ADM01 原站部署與收尾
+
+- Delivery：#208 a06e076 及 #209 334fb4e 已合併，原站於 13:13 UTC 使用 admin-334fb4e。指定 Firebase 帳號已核 verified／enabled／UID，受保護配置綁定且原產品資格可用；沒有賦權其他帳號、傳送 ADC／key 或讀取家長正文。
+- Correction：收尾 review 發現管理提交成功後的會話失效不應回確定拒絕，改 unknown 保留原收據；同一合成情景擴至 24 次直接 HTTP，通過後只為修改的 UI 生效／未保存值展示補一次 Web build，沒有重跑產品矩陣。
+- Deployment / Evidence：Server 小差異以原映像離線 overlay、Web 28.5 MB 經 IAP 傳至原 VM，沿 Compose 相容部署並保留原映像／受保護配置。六項密文索引排除已完成，LRO 初次仍 pending 並非產品測試失敗，未重建。健康、未登入 401、管理政策／列表／用量唯讀核對通過；原 12／20、4／2 及本人 key 共用 1000 不改、零新模型／通知。結果見 [ADM01 EV](artifacts/verification/P2_ADM01_WEB_20261013.json)。
+- Limits：配對備份 manifest／hold／期限唯讀核對有效；真原生每日首份／還原繼續延後，沒有新真人瀏覽器驗收。VM 停止期限仍 2026-10-17 20:50:44 香港時間。完成本包，P3 不自動開始。
