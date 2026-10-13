@@ -3148,6 +3148,32 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "yuban_authority_contact_requests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "requestId",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

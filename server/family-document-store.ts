@@ -167,6 +167,7 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
       z.uuid().parse(opId);
       return access(userId, childId, false, async (client, workspaceId): Promise<{
         operationId: string; documentId: string; savedVersion: number;
+        contentState?: "building" | "ready" | "invalidated"; currentVersion?: number; processedSources?: number;
       } | null> => {
         const prior = (await client.query<{ child_id: string; storage_epoch: string; result_encrypted: string }>(
           "SELECT * FROM family_document_operations WHERE user_id=$1 AND op_id=$2", [userId, opId])).rows[0];

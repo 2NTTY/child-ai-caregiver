@@ -1,3 +1,4 @@
+import { readNotificationHistory } from './firestore-notification-history.ts';
 import { contentVisible } from './firestore-disclosure.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
 import { FieldPath, type Query } from '@google-cloud/firestore';
@@ -15,6 +16,7 @@ import { firestoreContactRequestSchema, firestoreContactConsentSchema, firestore
 
 /** Product sections only. Auth credentials, model keys, protocol state and cost/admission ledgers are never exported. */
 const sections = {
+  notification_deliveries: ['notification_deliveries', []],
   children: ['children', ['child-projection']],
   profile: ['child_profiles', ['child-profile']], profile_history: ['profile_revisions', ['profile-revision']],
   care: ['care_records', ['care-record', 'care-tombstone']], care_history: ['care_revisions', ['care-revision']],
@@ -41,7 +43,7 @@ const sections = {
   telegram_bindings: ['telegram_bindings', ['telegram-binding']], telegram_deliveries: ['telegram_deliveries', ['telegram-delivery']],
   contact_consents: ['contact_consents', ['contact-consent']], contact_grants: ['contact_grants', ['contact-grant']], contact_requests: ['contact_requests', ['contact-request']],
 } as const;
-const global = new Set(['manifest', 'account', 'children', 'notification_preferences', 'push_bindings', 'push_deliveries', 'telegram_bindings', 'telegram_deliveries']);
+const global = new Set(['notification_deliveries', 'manifest', 'account', 'children', 'notification_preferences', 'push_bindings', 'push_deliveries', 'telegram_bindings', 'telegram_deliveries']);
 const querySchema = z.object({ section: z.string().max(80), childId: z.uuid().optional(),
   scopeVersion: z.string().regex(/^[a-f0-9]{64}$/u).optional(), cursor: z.string().max(16000).optional() }).strict();
 const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId: z.uuid().nullable(), scopeVersion: z.string(), after: z.string().max(2000) }).strict();
@@ -73,6 +75,10 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       if (section === 'manifest') {
         items = [{ format: 'yuban-personal-data:1', sections: ['account', ...Object.keys(sections)].map(key => ({ section: key,
           childScoped: !global.has(key), required: true })), scope: '本人可讀的業務資料；不包含憑據、模型 key 或內部協定狀態。' }];
+      } else if (section === 'notification_deliveries') {
+        const history = await readNotificationHistory(options, binding, previous?.after);
+        items = history.items;
+        if (history.next) nextCursor = encode({ userId: owner, section, childId: null, scopeVersion, after: history.next });
       } else if (section === 'account') {
         items = [{ id: owner, email: binding.identityEmail, workspaceId: binding.scope.workspaceId, createdAt: binding.workspaceCreatedAt }];
       } else {

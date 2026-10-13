@@ -192,3 +192,8 @@ A07沿既有登入／設定版型接createAccountApi（status、acknowledge、ex
 業務API會回email_verification_required／service_consent_required／invitation_required，對照GET /api/account，先完成安全入口再掛載業務owner。once acknowledgement不是照片／外發的全域授權；本人不必建立家庭或填key。密鑰、密碼、郵件token及刪除receipt不交Agent。
 
 找回頁取同源callback的token後從網址移除；本人刪除先顯示prepare範圍，再具名確認及核密碼。未知結果沿原receipt核對，setIdentity會取消遲到回應／清舊敏感暫存，不把失敗自動换新op；完整退出成功才清理其餘owner。下載按manifest讀完並核scopeVersion；歷史不可用需原樣提示。API權威見[契約](API.md#p2-a08-service)，部署步驟見[正式服務](PRODUCTION_FRONTEND.md#invited-account-service)。
+
+
+### Review 修正接點（R04）
+
+正式 `usePersonalHistory` 繼續使用 account export 的 `notification_deliveries`，同一 mapper 接本人三台帳的真 metadata，空頁有 cursor 時仍可續讀；原 request 不是投遞。成長報告提交後沿原文件 ID／report.phase 顯示 building，完成與來源失效分開；無須建立替代文件或改前端設計。詳細 wire／收據語義見 [API](API.md#result-history-consistency)。

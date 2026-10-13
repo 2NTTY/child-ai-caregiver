@@ -1,0 +1,32 @@
+{
+  "package": "P2-R04",
+  "date": "2026-10-13",
+  "base": "5ceb9b73a153775920439469d0e92e0e583296c4",
+  "environment": "Node 24; encrypted synthetic Firestore; production Runner with scripted provider; real HTTP handler/account client/owner mapper",
+  "checks": [
+    {
+      "command": "node --experimental-strip-types --test --test-concurrency=1 tests/firestore-results-history.test.ts",
+      "result": "report scenario passed; notification fixture lacked auth.handler and stopped"
+    },
+    {
+      "command": "node --experimental-strip-types --test --test-name-pattern=\"notification metadata|source changes invalidate\" tests/firestore-results-history.test.ts tests/firestore-family-documents.test.ts",
+      "result": "2 passed after completing auth fixture; report not repeated"
+    },
+    {
+      "command": "tsc --noEmit -p .cache/r04-server-types.json",
+      "result": "passed",
+      "scope": "production server/shared sources"
+    }
+  ],
+  "coverage": [
+    "building report through actual product Agent; same original document readback",
+    "bounded push/Telegram/contact attempt merge through existing API and owner projection",
+    "two-page cursor, no duplicate metadata, account isolation, pending request excluded",
+    "invalid sources still redact original document bodies"
+  ],
+  "limits": [
+    "No full regression, real model, notification, browser or cloud service calls",
+    "New contact history index not deployed in this evidence",
+    "Native managed backup restore remains deferred"
+  ]
+}

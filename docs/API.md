@@ -841,3 +841,11 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 - 本次為 Firestore 路由／資料接線，實際驗收和正式部署分別見 PLAN／證據；未發送真通知的 scripted 結果不代表渠道已送達。
 
 照片 DTO 的可選 `recoveryPending` 表示隔離還原時原上載尚未結清；仍為 reserved，不能讀正文或提取。正式照片 owner 顯示核對原圖的提示；沿同一附件／hash 查回，沒有額外建立或上載副本。
+
+
+<a id="result-history-consistency"></a>
+### 成果收據與本人通知歷史
+
+文件原操作收據保留 operationId／documentId／savedVersion；內部 contentState 區分 building／ready／invalidated，並提供目前版本及已有處理數量。building 表示整理工作已提交，正文未完成；不等於來源失效或需要建立另一文件。真正來源失效仍遮蔽正文，收據暫時查不到仍是 unknown，不換 opId 重做。頁面沿同一文件的 report.phase／readState 顯示進度。
+
+`GET /api/account/export?section=notification_deliveries` 保留既有前端 owner 契約，回傳本人的 Push／Telegram 投遞及聯絡 attempts metadata；含 id、channel、status、created_at、attempted_at、finished_at、acknowledged_at，聯絡項另有 request_id。沒有真 attempt 的聯絡請求不投影成送達；不新增假電郵、私密正文、渠道地址或 binding。按原請求建立時間倒序有界合併三來源，每頁最多掃十筆來源列，游標各自保存進度，空頁仍須沿 nextCursor 續讀。此分頁不是穩定歷史快照；新投遞／回執由重新讀取更新，身份或資料範圍變更使旧游標失效。

@@ -209,8 +209,12 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         const receipt = await prior(binding, opId); if (!receipt || receipt.childId !== childId) return null;
         const scope = await child(binding, childId), row = await find(binding, scope, receipt.document.id); if (!row) return null;
         const loaded = await sources(binding, scope), original = await result(binding, scope, receipt.document, loaded), current = await result(binding, scope, row, loaded);
-        return original.current && original.readState === 'ready' && current.current && current.readState === 'ready'
-          ? { operationId: opId, documentId: receipt.document.id, savedVersion: receipt.document.version } : null;
+        const readable = (item: FamilyDocument) => item.current !== null && item.readState === 'ready' || item.report?.phase === 'building';
+        const contentState = !readable(original) || !readable(current) ? 'invalidated' as const
+          : current.report?.phase === 'building' ? 'building' as const : 'ready' as const;
+        // The committed operation survives a pending body; invalidated bodies remain hidden.
+        return { operationId: opId, documentId: receipt.document.id, savedVersion: receipt.document.version,
+          contentState, currentVersion: current.version, ...(current.report ? { processedSources: current.report.processedSources } : {}) };
       });
     },
     async list(userId, childId, raw = {}) {
