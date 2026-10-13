@@ -6,6 +6,7 @@ import type { FamilyDocumentStore } from "./family-document-store.ts";
 import type { AgentRunContext, AgentTool, AgentToolResult } from "./agent-runtime.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import { FamilyError } from "./family-access.ts";
+import { FirestoreDomainError } from "./firestore-domain-data.ts";
 import { AGENT_DOCUMENT_TOOL_DESCRIPTIONS } from "./agent-document-tool-descriptions.ts";
 
 const structuralEdit = z.discriminatedUnion("op", [
@@ -67,7 +68,7 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
     if (!await authorize()) return { status: "rejected" };
     try { return await action(); } catch(error) {
       if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
-      if (error instanceof FamilyError) return { status: error.status === 409 ? "conflict" : "rejected", data: { code: error.code } };
+      if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
       throw error;
     }
   };
@@ -132,7 +133,15 @@ export function createAgentDocumentTools(store: FamilyDocumentStore, agent: Prod
         const value = agentProposalSchema.parse({ kind: "family_document_change", ...args });
         if (JSON.stringify(value).length + 1500 > Math.min(8000, run.budget.toolResponseCharacters)) return { status: "rejected", data: { code: "confirmation_too_large" } };
         const proposal = await agent.propose(scope, runId, context.callId, value);
-        return proposal ? { status: "succeeded", reference: proposal.id, data: { ...proposal } } : { status: "rejected" };
+        if (!proposal) return { status: "rejected" };
+        // Bind the question to the saved proposal, never model-supplied IDs or consent.
+        // This only prepares a question; the existing user-confirmation path performs the edit.
+        if (proposal.status === "pending" && agent.requestConfirmation) {
+          await agent.requestConfirmation(scope, runId, { runId: proposal.runId, proposalId: proposal.id,
+            expectedVersion: proposal.version, workId: null });
+          return { status: "succeeded", reference: proposal.id, data: { ...proposal, confirmationPrepared: true } };
+        }
+        return { status: "succeeded", reference: proposal.id, data: { ...proposal } };
       }) },
   ];
 }
