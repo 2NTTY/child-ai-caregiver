@@ -1,7 +1,7 @@
 {
   "format": 1,
   "package": "P2-F08",
-  "recordedAt": "2026-10-13T08:15:01.655Z",
+  "recordedAt": "2026-10-13T09:10:31.893692+00:00",
   "baseCommit": "353cf70494e553b00523c714928fd649de8ec9b6",
   "branch": "codex/p2-f08-original-site",
   "state": "original-site-live-final-backup-and-release-gates-pending",
@@ -14,14 +14,14 @@
     "vmId": "2846984358678394356",
     "machineType": "e2-small",
     "terminationTime": "2026-10-17T12:50:44Z",
-    "apiWorkerCommit": "2c58e67931675a896f974638d01cd48ccebeeca9",
-    "webContentCommit": "cce4667",
-    "imageTag": "f08-2c58e67",
+    "apiWorkerCommit": "566dd2c6bea94b12d0eb143a0ecac4798bd4cdc4",
+    "webContentCommit": "566dd2c6bea94b12d0eb143a0ecac4798bd4cdc4",
+    "imageTag": "f08-566dd2c",
     "storage": "firestore",
     "database": "yuban-firebase-20261011",
     "sqlContainer": "stopped",
     "oldVolumesAndBackups": "retained",
-    "apiWorkerHealth": "healthy when restarted at 2026-10-13T07:46Z",
+    "apiWorkerHealth": "API, worker and Web healthy after 2026-10-13T08:59Z deployment",
     "invitationOnly": true,
     "emailVerification": "Synthetic acceptance fixture; no new inbox-delivery claim. Earlier F02 true-mail evidence is separate."
   },
@@ -747,8 +747,196 @@
     "limitation": "Do not sum incomplete token reports into an asserted actual bill or reuse earlier paid acceptance ceilings as remaining budget."
   },
   "remaining": [
-    "First native daily backup and one authorized isolated restore within the USD 1 incremental ceiling.",
-    "Reconcile the remaining capacity/manual-retry evidence without replaying the complete product suite.",
-    "Final main-model review, PR and merge; do not mark P2 complete merely because the original site is live."
-  ]
+    "First native daily backup and one authorized isolated restore within USD 1 incremental ceiling.",
+    "Final review and merge of draft PR #201; P2 remains incomplete until required backup recovery is evidenced."
+  ],
+  "summaryWiring": {
+    "discovered": {
+      "code": "firebase_domain_not_ready",
+      "path": "/api/children/:id/summary",
+      "at": "2026-10-13T08:38:26.491Z"
+    },
+    "code": "566dd2c6bea94b12d0eb143a0ecac4798bd4cdc4",
+    "scope": [
+      "Same authorized care/profile/tasks snapshot",
+      "Existing preparation, original receipt and expected basis/version",
+      "Append-only backup registry, authenticated restore and erasure scope, personal export",
+      "Existing frontend/client API preserved"
+    ],
+    "acceptance": {
+      "at": "2026-10-13T08:52:23.153Z",
+      "steps": [
+        "same_authorized_records_and_empty_preparation",
+        "transaction_save_original_operation_retry_and_reconnect",
+        "stale_basis_and_unrelated_identity_rejected",
+        "authenticated_restore_codec_retains_content_new_epoch_invalidates_review_basis"
+      ],
+      "model": 0,
+      "notifications": 0,
+      "state": "passed",
+      "preparationVersion": 1
+    },
+    "httpClientReadback": "Passed in capacity attempt 752642a4; strict client schema and saved preparation version 1.",
+    "indexes": [
+      {
+        "group": "yuban_authority_visit_preparations",
+        "index": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_visit_preparations/indexes/CICAgJiH2NgK",
+        "state": "READY"
+      },
+      {
+        "group": "yuban_authority_visit_preparation_revisions",
+        "index": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_visit_preparation_revisions/indexes/CICAgNjaxJEK",
+        "state": "READY"
+      }
+    ],
+    "localTypeCheck": {
+      "files": 7,
+      "errors": 0
+    },
+    "limit": "Synthetic data only; restore codec is not a real native backup restore."
+  },
+  "capacityAcceptance": {
+    "state": "representative-flow-covered-by-stopped-batches-and-final-readback",
+    "transport": "Only model reply endpoint scripted; original HTTPS frontend, Firebase login, message persistence and manual controls.",
+    "stoppedBatches": [
+      {
+        "at": "2026-10-13T08:26:26.148Z",
+        "id": "5433b26c-1768-4b8c-b769-d173a58c758d",
+        "state": "failed",
+        "apiRequests": 50,
+        "replyRequests": 0,
+        "steps": [],
+        "transport": "scripted busy and reply only; real production frontend/login/message persistence",
+        "modelCalls": 0,
+        "notifications": 0,
+        "usageBefore": {
+          "day": "2026-10-13",
+          "attempts": 11,
+          "inputTokens": 129468,
+          "outputTokens": 905,
+          "cachedTokens": 0,
+          "unknownUsageAttempts": 10
+        },
+        "error": {
+          "name": "Error",
+          "code": null
+        }
+      },
+      {
+        "at": "2026-10-13T08:33:38.323Z",
+        "id": "96d42707-2cf8-4424-b8db-990e130dbfed",
+        "state": "failed",
+        "apiRequests": 102,
+        "replyRequests": 0,
+        "steps": [],
+        "transport": "scripted busy and reply only; real production frontend/login/message persistence",
+        "modelCalls": 0,
+        "notifications": 0,
+        "messageIds": [],
+        "usageBefore": {
+          "day": "2026-10-13",
+          "attempts": 11,
+          "inputTokens": 129468,
+          "outputTokens": 905,
+          "cachedTokens": 0,
+          "unknownUsageAttempts": 10
+        },
+        "error": {
+          "name": "Error",
+          "code": null
+        }
+      },
+      {
+        "at": "2026-10-13T09:00:17.653Z",
+        "id": "752642a4-60b7-408d-ac6d-a3ed25cca5a7",
+        "state": "failed",
+        "apiRequests": 184,
+        "replyRequests": 1,
+        "steps": [
+          "real_summary_route_existing_client_schema_and_saved_preparation",
+          "busy_notice_exact_original_text_and_enabled_manual_send"
+        ],
+        "transport": "scripted busy and reply only; real production frontend/login/message persistence",
+        "modelCalls": 0,
+        "notifications": 0,
+        "messageIds": [
+          "99a4d65c-acab-43bb-8431-3547ba84d56c"
+        ],
+        "usageBefore": {
+          "day": "2026-10-13",
+          "attempts": 11,
+          "inputTokens": 129468,
+          "outputTokens": 905,
+          "cachedTokens": 0,
+          "unknownUsageAttempts": 10
+        },
+        "error": {
+          "name": "Error",
+          "code": null
+        }
+      },
+      {
+        "at": "2026-10-13T09:04:10.175Z",
+        "state": "failed",
+        "sentApi": 150,
+        "blockedApi": 1,
+        "replyRequests": 1,
+        "modelCalls": 0,
+        "notifications": 0,
+        "steps": [
+          "manual_original_text_resend_saved_new_id_and_reply_displayed"
+        ],
+        "previous": "752642a4-60b7-408d-ac6d-a3ed25cca5a7",
+        "error": {
+          "name": "AssertionError",
+          "code": "ERR_ASSERTION"
+        }
+      }
+    ],
+    "boundedReads": {
+      "at": "2026-10-13T09:06:25.120Z",
+      "modelCalls": 0,
+      "notifications": 0,
+      "businessCalls": 2,
+      "state": "passed",
+      "savedMessageId": "329da02c-a0c5-4929-98af-047b525e64b5",
+      "usageAttempts": 11,
+      "steps": [
+        "manual_resend_original_text_durably_saved",
+        "scripted_model_response_not_persisted",
+        "model_usage_unchanged"
+      ]
+    },
+    "diagnosis": "Initial automation could navigate before login redirect completed. Await real home URL; SPA navigation reuses owner. Later batches reached HTTP ceilings and stopped; passed steps were not repeated.",
+    "requestAccounting": "Earlier apiRequests counts observed attempts including intercepted/aborted calls. 96d42707 forwarded at most 100; 752642a4 at most 180. Final UI forwarded 150 and blocked one; one reply scripted. Not all observations are successful API calls.",
+    "evidenceBoundary": "Busy notice, unchanged text and enabled manual send: 752642a4. Manual resend/reply display: f08-capacity-resend. Persisted text, no fake model reply and attempts=11: final read. True Agent and admission/cancel/isolation use separate original-site/F03/F07 evidence. Zero additional true model/email/notification."
+  },
+  "nativeBackupLatest": {
+    "at": "2026-10-13T08:54:25.960Z",
+    "database": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011",
+    "schedules": [
+      {
+        "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/backupSchedules/d60f181d-76e5-4534-8462-9a65860e7856",
+        "createTime": "2026-10-13T07:30:19.066350Z",
+        "retention": "1209600s",
+        "dailyRecurrence": {},
+        "updateTime": "2026-10-13T07:30:19.066350Z"
+      }
+    ],
+    "backups": [],
+    "unreachable": []
+  },
+  "releaseFollowup": {
+    "draftPr": "https://github.com/2NTTY/child-ai-caregiver/pull/201",
+    "code": "566dd2c6bea94b12d0eb143a0ecac4798bd4cdc4",
+    "mainModelReview": "Summary transaction ordering, authority, original receipt, revision, export and restore integration reviewed.",
+    "nativePrChecks": "Unavailable: native tool reported workspace GitHub access denied. No CLI CI check.",
+    "build": "One affected Web Docker build; API overlay on f08-2c58e67 without network. API/worker/Web health passed.",
+    "transfer": {
+      "privateSourceBytes": 32548,
+      "webImageBytes": 28525947,
+      "destination": "original verified VM /home/2NTTY/f08-original-upload",
+      "adcUploaded": false
+    }
+  }
 }

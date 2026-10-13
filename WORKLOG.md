@@ -2458,3 +2458,14 @@
 - Restore Implementation：新增原生 backup／來源 UID／目標 UID／operation 綁定；復用獨立 journal、最新 Auth、分頁 checkpoint／世代輪換，最終仍為 applied-paused。照片還原入口本身完整核對獨立刪除日誌、來源暫停及原 generation／hash，再以 ifGenerationMatch=0 恢復未永久刪除的保留物件；unknown 只查同位置，不重發、不覆蓋。只完成三個必要本機恢復情景及選定型別檢查，真原生還原仍待首份備份。
 - Review / Limits：自動批准審查拒絕完整快照下載、內部 maintenance bypass 及缺少獨立 journal 自查的照片 helper，均未執行該被拒版本；改用有界記憶體診斷、正式 OIDC 及 helper 自查，安全替代已核准。修改候選的確認 fixture 與 staged restore fixture 曾局部失敗，檢查實際接口後原情景通過；沒有重跑全套。原失敗回覆未保存完整參數，不能聲稱已證實某個具體原參數錯誤。
 - Cost / Next：實際帳單未知，模型 unknown usage 保留；VM 固定費仍在。這輪原生備份／必要還原增量上限 US$1 是操作界線，非雲端硬停費。等待首份原生備份後只補一次隔離還原及必要缺口，再收束 review／PR；不把部署成功或本機三個恢復檢查當作 P2 完成。人手電郵收信、真渠道投遞與舊證據分開，沒有代填人工結論。
+
+
+<a id="log-20261013-f08-summary-capacity"></a>
+### 2026-10-13 — F08 摘要接線與容量操作收束
+
+- Package / Version：F08，基線 master `353cf70` 未變；C 單作者開發提交 `566dd2c`，draft PR #201。原站 Web／API／worker 同標籤 `f08-566dd2c`，SQL 仍停止，回退及舊資料保留。主模型親自實作／review，沒有子代理。
+- Finding / Fix：真前端讀摘要回 `firebase_domain_not_ready`；補原 CareSummary 政策及準備内容的 Firestore 原子保存、版本／basis、online 原收據、修訂、匯出、刪除與還原 registry。原前端嚴格 client schema 讀回通過，不改 UI 設計；只修兩處仍寫合成試用的過時資料處理文案。
+- Evidence：七個修改檔定向型別檢查無錯；同一合成孩子的摘要保存／重連、防重、過期 basis 拒絕、未授權身份拒絕與恢復 codec 通過。兩個必要索引 READY；初次盤點錯把其他 collection 的同形索引當目標，已補完整名稱核對再建立，原結果保留。只建受影響 Web 一次，原 VM hash、API／worker／Web health 通過。
+- Capacity：首次兩個 UI 批次在送出前停止；查得腳本可能搶在登入跳轉前換頁，後續等真 home URL、沿站內導航復用 owner。752642a4 批次通過摘要讀回、busy 提示、原文保留及可手動重送；達 180 HTTP 上限停批。剩餘步驟已通過本人重送／回覆顯示，尾部達 150 HTTP 上限（另阻擋 1 次）停批；不重跑 UI，只補兩次唯讀：原文已真保存、假回覆未入庫、當日 attempts 仍為 11。所有停止／未完成步驟保留，不寫成各批完整通過；早期計數包含攔截／阻擋嘗試。
+- Cost / Limits：本增量零真模型、embedding、通知或新帳戶；沒有調高配額。容量回覆使用傳輸替身，真 Agent／隔離／取消與多副本證據復用 F03／F07 及原站既有 run。實際帳單未知。原生每日備份截至 08:54 UTC 尚無首份，真原生還原仍待；不把本次 codec 核對當原生還原。
+- Next：只等首份原生備份並完成已批准的一次隔離還原，再收束 review／#201 合併。原生 PR checks 工具回 workspace access denied，未改用 CLI 讀 CI；不宣稱 CI 通過。詳見 [F08 EV](artifacts/verification/F08_ORIGINAL_SITE_20261013.json)。

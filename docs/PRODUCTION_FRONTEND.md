@@ -85,7 +85,7 @@ F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外
 
 ### 原 VM Firestore 組裝
 
-2026-10-13，`ex-machina.eu.org` 使用 `cce4667` Web 內容及 `2c58e67` API／worker，映像標籤 `f08-2c58e67`。API 健康回報 `storage: firestore`，PostgreSQL 停止、舊 volume／備份保留。原前端合成登入、同文件修改／確認／刷新及官方引用已通過；原生排程及兩個渠道入口恢復，沒有追加外發測試訊息。每日備份與原生還原分開收束，完整 gate 看 [F08](../PLAN.md#p2-f08)。
+2026-10-13，`ex-machina.eu.org` 使用 `566dd2c` Web／API／worker，映像標籤 `f08-566dd2c`。摘要與既有單份準備內容亦沿同一 Firestore 服務、版本及原操作收據，不再回未接通占位。API 健康回報 `storage: firestore`，PostgreSQL 停止、舊 volume／備份保留。原前端合成登入、同文件修改／確認／刷新及官方引用已通過；原生排程及兩個渠道入口恢復，沒有追加外發測試訊息。每日備份與原生還原分開收束，完整 gate 看 [F08](../PLAN.md#p2-f08)。
 
 現場部署目錄 `/opt/yuban-firestore-cce4667/deploy/p1`；受保護設定在 `/etc/yuban-p1/firestore`，原渠道檔案在 `/etc/yuban-p1`。部署疊加 `compose.firestore.channels.yaml`，掛載設定不代表已准外發。原 Caddy 固定 IP 為 `172.30.51.3`，動態 API／worker 池為 `172.30.51.8/29`、共同子網 `172.30.51.0/28`；調整子網時須同步核對 `P1_DYNAMIC_RANGE` 與 `P1_PROXY_IP` 不重疊，避免重建時動態容器先佔用 proxy 地址。
 
