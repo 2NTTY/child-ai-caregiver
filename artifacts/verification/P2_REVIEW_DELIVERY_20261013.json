@@ -1,0 +1,97 @@
+{
+  "package": "P2-R01–R04 deployment",
+  "observedAt": "2026-10-13T11:44:17Z",
+  "code": "2c17aa79e4d71145f385bd52949f973e0f028d8c",
+  "mergedPullRequests": [
+    203,
+    204,
+    205,
+    206
+  ],
+  "operator": "Astra main model only; no subagents",
+  "target": {
+    "site": "https://ex-machina.eu.org",
+    "project": "ai-caregivers-for-children",
+    "zone": "asia-east2-a",
+    "vm": "yuban-p1",
+    "vmId": "2846984358678394356",
+    "ip": "35.241.127.20",
+    "terminationTime": "2026-10-17T12:50:44Z"
+  },
+  "release": {
+    "tag": "review-2c17aa7",
+    "apiImage": "sha256:a9ecd1e0e17a286ef38f23b02949116aedb16ff374f598ab02d8526d7db3581d",
+    "webImage": "sha256:2a0d196765ecadce1bca3a397a50874085552e8ea9bf6cf98456486a245a4fbe",
+    "previousTag": "f08-566dd2c",
+    "method": "One Web Docker build; 35 changed server/shared files over verified existing API image, no dependency install or network build on VM",
+    "transferredCodeBytes": 138342,
+    "transferredWebBytes": 28531639,
+    "codeArchiveSha256": "539c57cec4a1d3f27e3b3622eba2eec67afe5be636fdf4a14a8fdae034c9f84d",
+    "webArchiveSha256": "7ab00aee80eccc1ed57e266e75b82e71bd3cad1b5547a38aee75373ff65e2bad",
+    "previousImagesAndConfigRetained": true,
+    "adcOrSecretsTransferred": false,
+    "databaseMigration": false
+  },
+  "backupPreflight": {
+    "at": "2026-10-13T11:39:58.464Z",
+    "backupId": "3a169a7b-c2e0-42b8-9511-e472af01841f",
+    "snapshotTime": "2026-10-12T21:43:00.000Z",
+    "generation": "1791874519983700",
+    "bytes": 315688,
+    "temporaryHold": true,
+    "retainedUntil": "2026-10-27T07:53:29.841Z",
+    "scope": "Existing encrypted paired manifest metadata only; no restore, no private body download, not a new backup"
+  },
+  "indexes": [
+    {
+      "group": "yuban_authority_online_operations",
+      "state": "READY",
+      "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_online_operations/indexes/CICAgNjaxJEJ"
+    },
+    {
+      "group": "yuban_authority_contact_requests",
+      "state": "READY",
+      "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_contact_requests/indexes/CICAgJjFqbsJ"
+    },
+    {
+      "field": "*",
+      "state": "configured"
+    },
+    {
+      "field": "stage",
+      "state": "configured"
+    }
+  ],
+  "checks": {
+    "apiWorkerWebHealthy": true,
+    "publicHealth": {
+      "status": "ok",
+      "storage": "firestore",
+      "stage": "foundation"
+    },
+    "sdkIndexReads": 3,
+    "probeBusinessWrites": 0,
+    "additionalRealModelCalls": 0,
+    "additionalNotifications": 0,
+    "browserOrComputerUse": false,
+    "productEvidence": [
+      "P2_R01_DISCLOSURE_20261013.json",
+      "P2_R02_RECOVERY_20261013.json",
+      "P2_R03_ASSEMBLY_20261013.json",
+      "P2_R04_RESULTS_HISTORY_20261013.json"
+    ]
+  },
+  "deploymentCorrections": [
+    "Field override REST request initially used CLI JSON shape; HTTP 400 stopped the request. Corrected to Index.fields per official REST schema, with redacted error reporting.",
+    "Scoped index lookup initially matched an equivalent shape from another collection. Corrected to require the collection resource name before deployment; both required indexes subsequently READY.",
+    "Packaging guard rejected unchanged font/SQL assets before transfer. Archive narrowed to 35 changed TypeScript files; no private data included."
+  ],
+  "limits": [
+    "Scripted provider and synthetic restore evidence remain distinct from true models/native restore.",
+    "Native daily first-backup confirmation and isolated native restore remain explicitly deferred.",
+    "Existing paired backup metadata checked; this deployment did not create a new backup or restore one.",
+    "No full regression or new human UI acceptance.",
+    "VM termination not extended; no new actual billing report.",
+    "Retained old images are recovery material, not permission to roll back deletion barriers or expose older receipts. Use a compatible fixed release; do not roll back data or the independent journal."
+  ]
+}

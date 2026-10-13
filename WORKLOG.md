@@ -2521,3 +2521,13 @@
 - Baseline / Implementation：接續 #205 `5ceb9b7`。文件提交收據與正文 building／ready／invalidated 分開；Agent 對 building 回報已提交整理及原文件進度，來源失效仍遮蔽。本人 notification_deliveries 沿原 API／owner，按三種台帳有界合併真投遞 metadata；沒有 attempt 不假稱已投遞。
 - Verification：真 Runner／scripted provider 的 building 收尾及同文件讀回通過；通知 API／前端 mapper 的分頁與隔離、原來源失效檢查通過。第一輪通知 fixture 缺 auth.handler，停批後只補該項及必要來源遮蔽，不重跑已通過的模型替身情景。生產型別通過，見 [R04 EV](artifacts/verification/P2_R04_RESULTS_HISTORY_20261013.json)。零真模型／通知／瀏覽器；原生備份還原仍延後。
 - Next：合併後核對原 VM／索引並相容部署 R01～R04，保留原資料及回退映像；master 與部署證據分開。
+
+
+<a id="log-20261013-p2-review-delivery"></a>
+### 2026-10-13 — P2 review 修正原站交付
+
+- Baseline / Delivery：R01～R04 已分別於 #203～#206 合併，遠端及部署程式 `2c17aa7`。Astra 主模型獨立 review／交付，無子代理；原 VM／Caddy／Firestore、前端設計及原資料保留。
+- Deployment：只封裝 35 個已變更 Server／shared 檔案及一次必要 Web build；原 API 映像無網絡 overlay，沿原 Compose 短暫停止並恢復 API／worker／Web。保留先前映像與受保護設定；沒有遷移、清庫、ADC／密鑰傳送、延期或新資源。
+- Verification：兩個 composite indexes READY、content-erasure 欄位設定完成；三服務 healthy、公開 health 回報 Firestore，三次真 SDK 唯讀索引查詢通過。既有配對備份 manifest generation／大小／hold 及期限核對一致；不是新備份或真還原。詳見 [交付 EV](artifacts/verification/P2_REVIEW_DELIVERY_20261013.json)。
+- Corrections / Limits：部署助手初次 Field REST 格式被拒絕，修正後只補該設定；索引匹配補 collection 名稱約束，程式包白名單改只含變更 TS。未追加產品矩陣、真模型、外發通知或瀏覽器；原生每日首份備份／隔離還原依使用者要求繼續延後。舊映像不能用來倒退刪除屏障／收據或業務資料。
+- Next：本輪修正收束；P3 手機／三角色按現有計劃另行開始，完整家庭多人在 P4。VM 原停止期限仍為 2026-10-17 20:50:44 香港時間。
