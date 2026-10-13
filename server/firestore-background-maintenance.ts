@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import { FirestoreDomainData, domainReject, firestoreDomainHash, FIRESTORE_TASK_DISPATCH_SCOPE as SYSTEM, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
-import { prepareFirestoreBackgroundWork, firestoreBackgroundReference, type FirestoreBackgroundWork } from './firestore-background-work.ts';
+import { prepareFirestoreBackgroundWork, preparePhotoCleanupWake, firestoreBackgroundReference, type FirestoreBackgroundWork } from './firestore-background-work.ts';
 import { firestoreFamilyDocumentSchemas } from './firestore-family-documents.ts';
 import { firestoreWorkWatchSchema } from './firestore-work-followup.ts';
 import { firestorePhotoSchemas, type createFirestorePhotoStore } from './firestore-photos.ts';
@@ -54,8 +54,11 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       await options.database.runTransaction(async tx => {
         const control = await authority.readControl(tx); if (!options.enabled || !control.enabled) return;
         const fresh = await tx.get(row.ref); if (!fresh.exists || firestoreDomainHash(fresh.data()) !== firestoreDomainHash(row.data())) return;
-        const work = await prepareFirestoreBackgroundWork(data, tx, { kind: stage === 'erasures' ? 'scope-erasure' : 'photo-cleanup', scope: SYSTEM,
-          resourceId: row.id, basis: firestoreDomainHash(info.id), generation: control.generation, authorizationVersion: '0' }, new Date().toISOString()); work.commit();
+        const identity = { kind: stage === 'erasures' ? 'scope-erasure' as const : 'photo-cleanup' as const, scope: SYSTEM,
+          resourceId: row.id, basis: firestoreDomainHash(info.id), generation: control.generation, authorizationVersion: '0' };
+        const wake = stage === 'photo_cleanup' && firestorePhotoSchemas.cleanup.parse(info.value).state === 'known'
+          ? await preparePhotoCleanupWake(data, tx, identity, firestoreDomainHash(firestorePhotoSchemas.cleanup.parse(info.value).descriptor)) : () => {};
+        const work = await prepareFirestoreBackgroundWork(data, tx, identity, new Date().toISOString()); work.commit(); wake();
       });
       return;
     }
@@ -164,8 +167,11 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       // Unresolved object absence stays visible for reconciliation, never a successful deletion.
       if (result.state === 'complete') return { state: 'completed' as const };
       const latest = await row.ref.get();
-      return latest.exists && open(latest, 'photo-cleanup', firestorePhotoSchemas.cleanup).value.state === 'known'
-        ? { state: 'deferred' as const, nextAt: new Date(Date.now() + 1000).toISOString() } : { state: 'unknown' as const };
+      if (!latest.exists) return { state: 'completed' as const };
+      const pending = open(latest, 'photo-cleanup', firestorePhotoSchemas.cleanup).value;
+      return pending.state === 'known' || job.attempts < 3
+        ? { state: 'deferred' as const, nextAt: new Date(Date.now() + 60_000 * Math.max(1, job.attempts)).toISOString() }
+        : { state: 'unknown' as const };
     }
     if (job.kind !== 'scope-erasure') domainReject('invalid_scope', 400);
     const row = await data.collection('erasures').doc(job.resourceId).get(); if (!row.exists) domainReject('erasure_binding', 500);

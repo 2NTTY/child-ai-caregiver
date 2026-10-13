@@ -17,7 +17,7 @@ import { workRecoveryAad, workRecoverySchemas, workRecoveryScopeSchema, type Wor
 import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts';
 import { firestoreFamilyDocumentSchemas as documents } from './firestore-family-documents.ts';
 import { firestoreFamilyDocumentSnapshotSchemas as snapshots } from './firestore-family-document-snapshots.ts';
-import { firestorePhotoSchemas as photos } from './firestore-photos.ts';
+import { firestorePhotoSchemas as photos, photoObjectScope } from './firestore-photos.ts';
 import { firestoreKnowledgeSchemas as knowledge } from './firestore-knowledge.ts';
 import { firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema } from './firestore-online-receipts.ts';
 import { FirestoreDomainData, firestoreDomainHash, firestoreChildSchema, firestoreChangeSchema, firestoreTaskSchema,
@@ -254,7 +254,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       const row = parse(snapshots.manifest, raw); requireBinding(row.snapshotId === id && row.childId === scope.childId); versionMatches(row.snapshotVersion);
     } else if (kind === 'document-snapshot-chunk') { const row = parse(snapshots.chunk, raw), parts = arrayId(id); requireBinding(parts.length === 2 && uuid.safeParse(parts[0]).success && parts[1] === row.index && Buffer.byteLength(row.text) <= 48 * 1024); }
     else if (kind === 'photo') {
-      const row = parse(photos.photo, raw); requireBinding(row.id === id && sameScope(row.scope, scope)); versionMatches(row.version);
+      const row = parse(photos.photo, raw); photoObjectScope(row); requireBinding(row.id === id && sameScope(row.scope, scope)); versionMatches(row.version);
       if (row.descriptor && row.metadata) requireBinding(row.descriptor.sha256 === row.metadata.sha256 && row.descriptor.bytes === row.metadata.bytes && row.descriptor.mimeType === row.metadata.mimeType);
       if (row.deletion) {
         requireBinding(row.deletion.intent.assetId === row.id && row.deletion.fingerprint === firestoreDomainHash(['delete', row.id, row.deletion.expectedVersion])
@@ -265,7 +265,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     else if (kind === 'photo-child-quota') { parse(photos.childQuota, raw); requireBinding(id === photoTag(scope) && scope.workspaceId !== NIL && scope.childId !== NIL); versionMatches(1); }
     else if (kind === 'photo-global-quota') { parse(photos.globalQuota, raw); requireBinding(id === 'global' && sameScope(scope, { ownerUserId: 'system:photos', workspaceId: NIL, childId: NIL, storageEpoch: NIL })); versionMatches(1); }
     else if (kind === 'photo-cleanup') {
-      const row = parse(photos.cleanup, raw); requireBinding(id === row.photoId && sameScope(scope, row.scope)); versionMatches(1);
+      const row = parse(photos.cleanup, raw); photoObjectScope(row); requireBinding(id === row.photoId && sameScope(scope, row.scope)); versionMatches(1);
       if (row.descriptor) requireBinding(row.descriptor.sha256 === row.sha256 && row.descriptor.bytes === row.bytes && row.descriptor.mimeType === row.mimeType);
     } else if (kind === 'task-reminder') { const row = parse(firestoreTaskReminderSchema, raw); requireBinding(row.id === id && scope.childId !== NIL && row.id === firestoreTaskReminderId(scope, row.occurrenceId, row.phase)); versionMatches(row.taskVersion); }
     else if (kind === 'task-reminder-batch') { const row = parse(firestoreTaskReminderBatchSchema, raw); requireBinding(row.id === id && row.recipientUserId === scope.ownerUserId && scope.childId === NIL && row.id === firestoreTaskReminderBatchId(scope, row.category, row.key)); versionMatches(1); }
@@ -389,6 +389,12 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       const row = parse(photos.cleanup, decoded.value);
       return { oldPath: decoded.path, path: decoded.path, data: { scopeTag: photoTag(context.scope), state: row.state, ...original } };
     }
+    if (context.family === 'domain' && context.kind === 'photo' && parse(photos.photo, decoded.value).state === 'deleted') {
+      const row = parse(photos.photo, decoded.value), original = originalEnvelopes.get(decoded);
+      if (!original) reject('restore_cleanup_origin_missing');
+      return {oldPath:decoded.path,path:decoded.path,data:{assetId:row.id,scopeTag:photoTag(context.scope),
+        sortKey:row.createdAt+'/'+row.id,live:false,...original}};
+    }
     const scope = scopeAfter(context.scope, input);
     if (context.family === 'authority') {
       if (!key(authoritySchemas, context.kind)) reject('unsupported_restore_domain');
@@ -458,10 +464,10 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       case 'photo': {
         const row = parse(photos.photo, value); let upload = row.upload;
         if (upload !== null) {
-          if (row.state !== 'ready' || row.metadata === null || row.descriptor === null) reject('restore_unsettled_upload');
+          if (row.metadata === null || !['reserved','ready'].includes(row.state)) reject('restore_unsettled_upload');
           requireBinding(upload.reservationOperationId === row.reservationOperationId
             && upload.sha256 === row.metadata.sha256 && upload.bytes === row.metadata.bytes && upload.mimeType === row.metadata.mimeType
-            && upload.sha256 === row.descriptor.sha256 && upload.bytes === row.descriptor.bytes && upload.mimeType === row.descriptor.mimeType);
+            && (row.descriptor === null || upload.sha256 === row.descriptor.sha256 && upload.bytes === row.descriptor.bytes && upload.mimeType === row.descriptor.mimeType));
           upload = { ...upload, authorizationVersion: nextDecimal(upload.authorizationVersion), generation: input.generation };
         }
         let descriptor = row.descriptor;
@@ -473,7 +479,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
           requireBinding(checked.objectName === 'photos/v1/' + scopeHash + '/' + row.id);
           descriptor = checked;
         }
-        value = { ...row, scope, descriptor, upload };
+        value = { ...row, scope, descriptor, upload, ...(row.state === 'reserved' && upload ? {objectScope: row.objectScope ?? row.scope} : {}) };
+        if (descriptor) delete (value as {objectScope?:unknown}).objectScope;
         for (const name of Object.keys(metadata)) delete metadata[name];
         Object.assign(metadata, { assetId: row.id, scopeTag: photoTag(scope), sortKey: row.createdAt + '/' + row.id, live: row.state === 'reserved' || row.state === 'ready' }); break;
       }

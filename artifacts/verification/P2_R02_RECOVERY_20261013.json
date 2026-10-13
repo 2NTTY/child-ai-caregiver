@@ -1,0 +1,43 @@
+{
+  "package": "P2-R02",
+  "baseline": "58b62f01ed8f791d07f8e30f765861787d89ae65",
+  "checks": [
+    {
+      "scenario": "same-name unknown Task probe and evidence-bound cleanup wake",
+      "tests": 1,
+      "result": "passed"
+    },
+    {
+      "scenario": "late upload supplies original cleanup descriptor then real cleanup releases quota",
+      "tests": 1,
+      "result": "passed"
+    },
+    {
+      "scenario": "synthetic restore tombstone passed to real cleanup consumer",
+      "tests": 1,
+      "result": "passed"
+    },
+    {
+      "scenario": "unsettled upload quarantined then original hash/address verified",
+      "tests": 1,
+      "result": "passed"
+    },
+    {
+      "scenario": "production Server/shared source types",
+      "result": "passed"
+    }
+  ],
+  "retained_failures": [
+    "Initial restore resume used same generation; helper rejected generation_not_rotated. Stopped; corrected resume and rebound only original quarantined upload to current authorization before targeted retry.",
+    "Initial queue fixture lacked DocumentReference.id. Stopped, corrected the scoped public facade and reran only that scenario."
+  ],
+  "not_verified": [
+    "native managed backup restore remains deferred",
+    "new version not yet deployed",
+    "real cloud transport and frontend interaction not rerun"
+  ],
+  "cloud_calls": 0,
+  "model_calls": 0,
+  "notification_calls": 0,
+  "subagents": 0
+}

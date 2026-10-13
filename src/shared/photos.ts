@@ -17,7 +17,7 @@ export type PhotoMetadata = z.infer<typeof photoMetadataSchema>;
 export type PhotoDraft = z.infer<typeof photoDraftSchema>;
 export interface PhotoAttachment extends PhotoMetadata {
   id: string; childId: string; ownerUserId: string; createdAt: string; version: number;
-  state: "reserved" | "ready"; visibility: "private" | "shared"; canManage: boolean; recordId: string | null;
+  state: "reserved" | "ready"; recoveryPending?: boolean; visibility: "private" | "shared"; canManage: boolean; recordId: string | null;
   extraction: { state: "not_requested" | "running" | "available" | "failed" | "unknown"; runId: string | null;
     draft: PhotoDraft | null; stopReason: string | null; processedAt: string | null; model: string | null };
 }

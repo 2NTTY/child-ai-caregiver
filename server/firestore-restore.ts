@@ -74,7 +74,8 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
     requireValue(account.value.userId===id);
   }
   for (const record of records) {
-    if(record.context.family==='knowledge'||record.context.kind==='photo-cleanup')continue;
+    if(record.context.family==='knowledge'||record.context.kind==='photo-cleanup'
+      || record.context.kind==='photo' && photos.photo.parse(record.value).state==='deleted')continue;
     const scope=record.context.scope;
     if(scope.workspaceId===NIL)continue;
     const workspace=workspaces.get(scope.workspaceId)?.value;
@@ -213,12 +214,30 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     requireValue(metadata!==null&&metadata!==undefined,'restore_cleanup_evidence_missing');
     const descriptor=photo.descriptor??previous?.descriptor??null,upload=photo.upload??previous?.upload??null;
     const value=photos.cleanup.parse({scope:photo.scope,photoId:photo.id,operationId:intent.operationId,
-      state:descriptor?'known':'unresolved',uploadStarted:upload!==null,upload,sha256:metadata!.sha256,
+      state:descriptor?'known':'unresolved',uploadStarted:upload!==null,upload,...(photo.objectScope?{objectScope:photo.objectScope}:{}),sha256:metadata!.sha256,
       bytes:metadata!.bytes,mimeType:metadata!.mimeType,descriptor,journal:journalDescriptor});
     const id=photo.id,path=data.ref('photo_cleanup','photo-cleanup',id).path;
     const record=codec.decode({path,data:{scopeTag:firestoreDomainHash([options.projectId,options.namespace,'photo-scope',photo.scope]),state:value.state,
       ...data.seal('photo-cleanup',id,photo.scope,photos.cleanup,value)}});
     decoded.push(record);cleanup.set(id,{record,value});
+  }
+  // A real cleanup consumer needs an authenticated, body-free original-scope tombstone.
+  const cleanupTombstones = new Map<string, FirestoreRestoreDecoded>();
+  for (const {value: job} of cleanup.values()) {
+    const intent = intentByAsset.get(job.photoId)!;
+    requireValue(Boolean(intent && job.journal.intentSha256 === firebaseErasureIntentHash(intent)), 'restore_erasure_missing');
+    const prior = currentPhotos.get(job.photoId)?.value ?? backupPhotos.get(job.photoId)?.value;
+    requireValue(Boolean(prior), 'restore_cleanup_evidence_missing');
+    const tombstone = photos.photo.parse({ id: job.photoId, scope: job.scope, reservationOperationId: prior!.reservationOperationId,
+      createdAt: prior!.createdAt, version: prior!.version, state: 'deleted', metadata: null, descriptor: null, upload: job.upload,
+      ...(job.objectScope ? {objectScope: job.objectScope} : {}),
+      deletion: {intent, expectedVersion: prior!.deletion?.expectedVersion ?? prior!.version,
+        fingerprint: prior!.deletion?.fingerprint ?? firestoreDomainHash(['delete', job.photoId, prior!.version]), journal: job.journal} });
+    const record = codec.decode({path: data.ref('photos','photo',job.photoId).path, data: {
+      assetId:job.photoId,scopeTag:firestoreDomainHash([options.projectId,options.namespace,'photo-scope',job.scope]),
+      live:false,sortKey:tombstone.createdAt+'/'+job.photoId,
+      ...data.seal('photo',job.photoId,job.scope,photos.photo,tombstone,tombstone.version)}});
+    removed.add(record.path); decoded.push(record); cleanupTombstones.set(record.path,record);
   }
   const outputExtras:FirebaseBackupDocument[]=restoreFirestoreUsage(options,input.documents,input.liveDocuments,
     [...decoded,...live].filter(v=>v.context.kind==='agent-run').map(v=>v.context.id));
@@ -241,7 +260,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
       data:{...data.tags(scope),...data.seal('online-receipt',id,scope,firestoreOnlineErasureBarrierSchema,barrier)}});
   }
   for (const path of replayContentErasures(data,codec,decoded,live,journal,new Map(input.liveDocuments.map(row=>[row.path,row.data])))) removed.add(path);
-  const keep=decoded.filter(record=>(!removed.has(record.path)||cleanup.get(record.context.id)?.record===record) && !discardedRestoreKinds.has(record.context.kind));
+  const keep=decoded.filter(record=>(!removed.has(record.path)||cleanup.get(record.context.id)?.record===record||cleanupTombstones.get(record.path)===record) && !discardedRestoreKinds.has(record.context.kind));
   // A completed erasure may leave historical owner-wide receipt metadata in an old
   // backup. Remove its authenticated child scope first, then require the entire
   // surviving content graph; missing live content is still an error.
