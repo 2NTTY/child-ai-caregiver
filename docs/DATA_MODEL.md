@@ -591,7 +591,7 @@ Storage 先 reserved，確定 object generation／hash／大小／加密版本�
 
 獨立刪除 journal 用不可覆寫的加密 intent 物件，保存最小本人／孩子／asset ID、原 op、類型、時點及完整性證據；不保存家庭正文或密碼。它不受資料庫 restore 回退，正常備份到期不順帶刪 journal；其保留須覆蓋全部可用備份及回退副本，未能證明不再可能復活時不清除。
 
-配對 manifest 綁資料恢復點、附件 generation／hash、cipher 版本及完整度；每日 14 天資料庫備份有同期間附件副本，7 天 soft-delete 不充當唯一副本。還原對照最新 journal、現行 Auth／撤銷與 scope，重放刪除、驗附件／索引、換 epoch 後才可開放。工作和 unknown 收據保留，不將舊 pending 全數重發。
+配對 manifest 綁資料恢復點、附件 generation／hash、cipher 版本及完整度。每日原生備份與受控配對匯出依 [ADR-026](DECISIONS.md#adr-026) 分開：前者以 Google 的來源資料庫 UID、backup resource、snapshotTime、還原 operation／target UID 及資料盤點綁定；後者維持已加密 manifest。原生快照內附件 metadata 引用不可變原物件，Storage 至少保留 14 天復原期，7 天不足。還原重查獨立 journal、現行 Auth／撤銷與 scope；只有未被永久刪除的附件才可讀取／恢復，新的物件 generation 必須核對原 hash，最後換 epoch。原生快照的 enabled control 只在核實來歷後轉成隔離計劃輸入，不能當成來源已停機；實際來源仍須暫停。工作和 unknown 收據保留，不將舊 pending 全數重發。
 
 <a id="p2-agent-roles"></a>
 ## 四角色 Agent 的資料不變量（目標）

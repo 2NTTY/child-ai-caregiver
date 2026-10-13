@@ -81,11 +81,11 @@ docker compose --project-name yuban-p1 \
 - 依 [ADR-025](DECISIONS.md#adr-025)，F02～F07 先完成原 VM 資料接點及全部正式 SQL 退出，保留既有 API／頁面相容性；F08 再驗收受邀用戶並更新原站。不逐資料包切站或重跑完整用戶流程。未遷移功能明示，不用假成功或空資料掩蓋；不維持兩套產品網站。
 - 每次部署核對 VM 實況／期限、相容配置、資料與備份及 in-flight 工作，允許短暫維護；只有一套主寫與排程。已有新寫入只能回退相容 Firebase 應用版本或隔離還原，不能切回 SQL 舊快照；新刪除／撤銷／收據不可倒退。
 
-F07 只補尚欠跨域／恢復證據，F08 確认已交付功能不連 SQL、不靜默回退。待清理清單：F02 額外 Hosting 站點、Cloud Run API／worker 及其專用殘留；先核實實際名稱、流量、依賴、保留需求和費用，再批准範圍內清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**。F02 已準備原 VM 組裝但未部署；未改 DNS 或刪資源。A09 未通過成果及 F02 失敗沿 PLAN 追溯，不以基建切片代替產品完成。
+F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外 Hosting 站點與 Cloud Run API／worker 已按用途核對後清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**；不以名稱相似整批刪除。實際版本與尚未完成項見根 PLAN／STATUS，A09／F02 舊失敗保留，不以基建切片代替產品成果。
 
-### 原 VM Firestore 組裝（F08 已切站，完整成果仍待驗）
+### 原 VM Firestore 組裝
 
-2026-10-13，`ex-machina.eu.org` 已使用原 VM 上的 `f08-cce4667` Web／API／worker，來源提交 `cce4667`；API 健康回報 `storage: firestore`，原 PostgreSQL 容器停止但資料 volume／備份保留。原前端已通過合成註冊、登入及資料刷新；完整 Agent／排程與配對備份仍按 [F08](../PLAN.md#p2-f08) 收束，不能把這次健康核對當全部驗收。
+2026-10-13，`ex-machina.eu.org` 使用 `cce4667` Web 內容及 `2c58e67` API／worker，映像標籤 `f08-2c58e67`。API 健康回報 `storage: firestore`，PostgreSQL 停止、舊 volume／備份保留。原前端合成登入、同文件修改／確認／刷新及官方引用已通過；原生排程及兩個渠道入口恢復，沒有追加外發測試訊息。每日備份與原生還原分開收束，完整 gate 看 [F08](../PLAN.md#p2-f08)。
 
 現場部署目錄 `/opt/yuban-firestore-cce4667/deploy/p1`；受保護設定在 `/etc/yuban-p1/firestore`，原渠道檔案在 `/etc/yuban-p1`。部署疊加 `compose.firestore.channels.yaml`，掛載設定不代表已准外發。原 Caddy 固定 IP 為 `172.30.51.3`，動態 API／worker 池為 `172.30.51.8/29`、共同子網 `172.30.51.0/28`；調整子網時須同步核對 `P1_DYNAMIC_RANGE` 與 `P1_PROXY_IP` 不重疊，避免重建時動態容器先佔用 proxy 地址。
 
@@ -125,3 +125,17 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 還原保留聊天、文件、私人來源、引用、收據及配額，不恢復裝置會話／ADK 協定執行；模型與通知的未知結果不重發。待確認重新核對，Push／Telegram 重新綁定及聯絡授權後才可外發。孩子／帳戶刪除日誌先排除內容，來源仍有未完成的永久附件清理則暫停還原，先以原日誌完成清理；不丟掉該責任來宣稱成功。快照與還原盤點目前均有明示 2,000 筆／32 MiB 操作上限，超限停留原進度，不截斷資料；大規模串流盤點另按容量需求處理。
 
 現行標準啟動使用 `npm run server`／`npm run worker`，或 `docker compose --env-file <protected-compose-env> -f deploy/p1/compose.yaml <command>`；根 Compose 引用 `compose.firestore.yaml`，映像不安裝 SQL 生產依賴。`storage:backup`／`storage:restore` 導向上述 Firebase operator；`db:migrate`／`storage:encrypt`／舊 `setup:local` 明確拒絕，不會操作舊 SQL。歷史 SQL 程式及驗收仍可按固定 Git 版本追溯，舊資料 volume／備份不由這些命令刪除。
+
+### 原生每日備份與隔離還原
+
+日常依 [ADR-026](DECISIONS.md#adr-026) 使用原生每日排程，retention 為 `1209600s`（14 天）；不執行上面的 pause/export，也不開啟 PITR。營運者以 Firestore Admin 的 `backupSchedules` list/create/get 管理，先讀既有 daily 排程，沒有才建立 `{"retention":"1209600s","dailyRecurrence":{}}`；不可重複建立另一份排程。現場 schedule resource 及首份備份狀態見 F08 EV。平台決定時間，設定完成不代表首份備份已產生。[排程 API](https://docs.cloud.google.com/firestore/docs/reference/rest/v1/projects.databases.backupSchedules/create)
+
+只用 operator 身份還原，另指定全新、未掛產品服務的 `FIREBASE_RESTORE_DATABASE_ID=yuban-restore-<unique-name>`，地區同來源；保留現有 key version。`scripts/firebase-recovery.mjs` 增加三個命令，仍從 stdin 讀 JSON、不輸出正文：
+
+1. `start-managed-restore` 接 `{ "backupName": "projects/<project>/locations/asia-east2/backups/<id>" }`，校驗來源庫 UID、READY／有效期及新目標不存在後，只建立一次 native restore。未知結果沿原目標／operation 查回，不能改名重試。
+2. `get-managed-restore` 接 `backupName`／`operationName`。原生完成仍不是可開放狀態：需要先停來源寫入、queue、Scheduler／worker 和 journal IO，authority 暫停及排空；不得把六分鐘 guard 當作停機證據。
+3. `apply-managed-restore` 接 `backupName`、`operationName`、固定 `restoreId`、已暫停的 `sourceGeneration`。核對原生 operation、來源／目標 UID、snapshot 與盤點，再沿現有分頁 restore；checkpoint 綁原生來歷 digest，最終仍為 `applied-paused`。不自動更新網站配置、Auth、Rules、TTL 或 IAM。
+
+原生 DB 備份不包含 Storage。讀取同版 metadata 的不可變照片；如只有 soft-deleted 密文，還原入口本身先完整讀取並驗證獨立 journal，拒絕帳戶／孩子／照片永久刪除，再重查來源暫停。只能對原 generation 使用 `ifGenerationMatch=0`，不能蓋過現有物件；回覆未知只讀回同一位置，核對原 hash，再由既有 decoder 驗密文／內容並重加密至新 epoch。journal 無法完整讀取、過期、hash 不符或來源變更均停止。私人 bucket 的 soft-delete 至少 14 天；不可把較短的預設值當已覆蓋備份。既有 paired manifest 仍適用，hold 到期不等於自動刪除；只能按指定 backupId 核對期限後清理，不能碰 `erasures/v1/`。
+
+原生首份備份／真還原及附件復原的實際證據按 F08 EV 分列；本機檢查不代替這些證據。還原目前仍要求可核對的來源權威及清理狀態，不宣稱來源整庫消失後可無條件自動恢復。

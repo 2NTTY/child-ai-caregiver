@@ -1,0 +1,754 @@
+{
+  "format": 1,
+  "package": "P2-F08",
+  "recordedAt": "2026-10-13T08:15:01.655Z",
+  "baseCommit": "353cf70494e553b00523c714928fd649de8ec9b6",
+  "branch": "codex/p2-f08-original-site",
+  "state": "original-site-live-final-backup-and-release-gates-pending",
+  "executor": "primary-model-only",
+  "deployment": {
+    "origin": "https://ex-machina.eu.org",
+    "project": "ai-caregivers-for-children",
+    "region": "asia-east2",
+    "vm": "yuban-p1",
+    "vmId": "2846984358678394356",
+    "machineType": "e2-small",
+    "terminationTime": "2026-10-17T12:50:44Z",
+    "apiWorkerCommit": "2c58e67931675a896f974638d01cd48ccebeeca9",
+    "webContentCommit": "cce4667",
+    "imageTag": "f08-2c58e67",
+    "storage": "firestore",
+    "database": "yuban-firebase-20261011",
+    "sqlContainer": "stopped",
+    "oldVolumesAndBackups": "retained",
+    "apiWorkerHealth": "healthy when restarted at 2026-10-13T07:46Z",
+    "invitationOnly": true,
+    "emailVerification": "Synthetic acceptance fixture; no new inbox-delivery claim. Earlier F02 true-mail evidence is separate."
+  },
+  "originalSiteAcceptance": [
+    {
+      "evidenceId": "f08-site-prepare-720c20b8-7ea1-4b3c-97e7-ee88bd797093",
+      "mode": "prepare",
+      "startedAt": "2026-10-12T20:49:42.997Z",
+      "state": "passed",
+      "phase": "authority_enabled_and_one_synthetic_invitation_issued",
+      "steps": [
+        "authority_enabled_and_one_synthetic_invitation_issued"
+      ],
+      "apiRequests": 0
+    },
+    {
+      "evidenceId": "f08-site-register-0cfd90c2-be0e-4d27-b5b2-20446d460e33",
+      "mode": "register",
+      "startedAt": "2026-10-12T20:50:00.372Z",
+      "state": "failed",
+      "steps": [],
+      "apiRequests": 0,
+      "error": {
+        "name": "Error",
+        "code": null
+      }
+    },
+    {
+      "evidenceId": "f08-site-admit-7e337315-cc27-40bf-b876-200f3bc8306c",
+      "mode": "admit",
+      "startedAt": "2026-10-12T20:50:41.438Z",
+      "state": "passed",
+      "phase": "same_origin_child_and_record_saved_and_frontend_reloaded",
+      "steps": [
+        "existing_registered_synthetic_user_verified_without_email",
+        "original_frontend_login_and_admission",
+        "same_origin_child_and_record_saved_and_frontend_reloaded"
+      ],
+      "apiRequests": 6,
+      "usage": {
+        "day": "2026-10-12",
+        "attempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 0
+      }
+    },
+    {
+      "evidenceId": "f08-site-create-96f6aa8b-74a2-4f88-afb6-a93c104f7f75",
+      "mode": "create",
+      "startedAt": "2026-10-12T20:51:34.511Z",
+      "state": "failed",
+      "phase": "original_frontend_login_and_admission",
+      "steps": [
+        "original_frontend_login_and_admission"
+      ],
+      "apiRequests": 6,
+      "result": {
+        "status": "stopped",
+        "stopReason": "unavailable",
+        "counts": {
+          "modelCalls": 0,
+          "toolCalls": 0,
+          "queryEmbeddings": 0
+        },
+        "citations": 0,
+        "tools": [],
+        "proposals": 0
+      },
+      "usageBefore": {
+        "day": "2026-10-12",
+        "attempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 0
+      },
+      "usageAfter": {
+        "day": "2026-10-12",
+        "attempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 0
+      },
+      "error": {
+        "name": "AssertionError",
+        "code": "ERR_ASSERTION"
+      }
+    },
+    {
+      "evidenceId": "f08-site-create-217d4dcb-37e6-4309-b832-5203cbbf2972",
+      "mode": "create",
+      "startedAt": "2026-10-12T21:04:36.627Z",
+      "state": "failed",
+      "phase": "original_frontend_login_and_admission",
+      "steps": [
+        "original_frontend_login_and_admission"
+      ],
+      "apiRequests": 6,
+      "result": {
+        "status": "stopped",
+        "stopReason": "model_limit",
+        "counts": {
+          "modelCalls": 4,
+          "toolCalls": 5,
+          "queryEmbeddings": 1
+        },
+        "citations": 0,
+        "tools": [
+          {
+            "name": "load_capabilities",
+            "status": "succeeded"
+          },
+          {
+            "name": "search_knowledge",
+            "status": "succeeded"
+          },
+          {
+            "name": "present_answer",
+            "status": "rejected"
+          },
+          {
+            "name": "present_answer",
+            "status": "rejected"
+          },
+          {
+            "name": "generate_family_document",
+            "status": "succeeded"
+          }
+        ],
+        "proposals": 0
+      },
+      "usageBefore": {
+        "day": "2026-10-12",
+        "attempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 0
+      },
+      "usageAfter": {
+        "day": "2026-10-12",
+        "attempts": 5,
+        "inputTokens": 54575,
+        "outputTokens": 710,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 4
+      },
+      "error": {
+        "name": "AssertionError",
+        "code": "ERR_ASSERTION"
+      }
+    },
+    {
+      "evidenceId": "f08-site-edit-724de6c1-aa93-4528-a01a-fd601f977582",
+      "mode": "edit",
+      "startedAt": "2026-10-12T21:08:27.461Z",
+      "state": "failed",
+      "phase": "original_frontend_login_and_admission",
+      "steps": [
+        "original_frontend_login_and_admission"
+      ],
+      "apiRequests": 6,
+      "result": {
+        "status": "stopped",
+        "stopReason": "model_limit",
+        "counts": {
+          "modelCalls": 4,
+          "toolCalls": 4,
+          "queryEmbeddings": 0
+        },
+        "citations": 0,
+        "tools": [
+          {
+            "name": "load_capabilities",
+            "status": "succeeded"
+          },
+          {
+            "name": "read_family_documents",
+            "status": "rejected"
+          },
+          {
+            "name": "read_family_documents",
+            "status": "rejected"
+          },
+          {
+            "name": "read_family_documents",
+            "status": "rejected"
+          }
+        ],
+        "proposals": 0
+      },
+      "usageBefore": {
+        "day": "2026-10-12",
+        "attempts": 5,
+        "inputTokens": 54575,
+        "outputTokens": 710,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 4
+      },
+      "usageAfter": {
+        "day": "2026-10-12",
+        "attempts": 9,
+        "inputTokens": 104803,
+        "outputTokens": 891,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 8
+      },
+      "error": {
+        "name": "AssertionError",
+        "code": "ERR_ASSERTION"
+      }
+    },
+    {
+      "evidenceId": "f08-site-inspect-cbe10ce4-e820-4b94-bfc6-c952899d71e2",
+      "mode": "inspect",
+      "startedAt": "2026-10-12T21:13:58.613Z",
+      "state": "passed",
+      "phase": "existing_document_list_and_read",
+      "steps": [
+        "original_frontend_login_and_admission",
+        "existing_document_list_and_read"
+      ],
+      "apiRequests": 3,
+      "usage": {
+        "day": "2026-10-12",
+        "attempts": 9,
+        "inputTokens": 104803,
+        "outputTokens": 891,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 8
+      }
+    },
+    {
+      "evidenceId": "f08-site-edit-44221184-f2f4-4105-a619-d6607da3be6a",
+      "mode": "edit",
+      "startedAt": "2026-10-12T21:18:30.131Z",
+      "state": "failed",
+      "phase": "original_frontend_login_and_admission",
+      "steps": [
+        "original_frontend_login_and_admission"
+      ],
+      "apiRequests": 6,
+      "result": {
+        "status": "stopped",
+        "stopReason": "quota_exceeded",
+        "counts": {
+          "modelCalls": 4,
+          "toolCalls": 3,
+          "queryEmbeddings": 0
+        },
+        "citations": 0,
+        "tools": [
+          {
+            "name": "load_capabilities",
+            "status": "succeeded"
+          },
+          {
+            "name": "read_family_documents",
+            "status": "succeeded"
+          },
+          {
+            "name": "read_family_document_content",
+            "status": "succeeded"
+          }
+        ],
+        "proposals": 0
+      },
+      "usageBefore": {
+        "day": "2026-10-12",
+        "attempts": 9,
+        "inputTokens": 104803,
+        "outputTokens": 891,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 8
+      },
+      "usageAfter": {
+        "day": "2026-10-12",
+        "attempts": 12,
+        "inputTokens": 141972,
+        "outputTokens": 1026,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 11
+      },
+      "error": {
+        "name": "AssertionError",
+        "code": "ERR_ASSERTION"
+      }
+    },
+    {
+      "evidenceId": "f08-site-edit-670e6ae9-9373-4511-bb43-2d5e5c86fe53",
+      "mode": "edit",
+      "startedAt": "2026-10-13T06:57:09.349Z",
+      "state": "failed",
+      "phase": "original_frontend_login_and_admission",
+      "steps": [
+        "original_frontend_login_and_admission"
+      ],
+      "apiRequests": 6,
+      "result": {
+        "status": "stopped",
+        "stopReason": "model_limit",
+        "counts": {
+          "modelCalls": 4,
+          "toolCalls": 4,
+          "queryEmbeddings": 0
+        },
+        "citations": 0,
+        "tools": [
+          {
+            "name": "load_capabilities",
+            "status": "succeeded"
+          },
+          {
+            "name": "read_family_documents",
+            "status": "succeeded"
+          },
+          {
+            "name": "propose_family_document_change",
+            "status": "succeeded"
+          },
+          {
+            "name": "request_confirmation",
+            "status": "conflict"
+          }
+        ],
+        "proposals": 1
+      },
+      "usageBefore": {
+        "day": "2026-10-13",
+        "attempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 0
+      },
+      "usageAfter": {
+        "day": "2026-10-13",
+        "attempts": 4,
+        "inputTokens": 53224,
+        "outputTokens": 320,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 4
+      },
+      "error": {
+        "name": "AssertionError",
+        "code": "ERR_ASSERTION"
+      }
+    },
+    {
+      "evidenceId": "f08-site-edit-2949c822-63e9-48d0-8ad2-a3c2aa7ed1ce",
+      "mode": "edit",
+      "startedAt": "2026-10-13T07:13:44.835Z",
+      "state": "passed",
+      "phase": "same_document_confirmed_modified_and_reloaded_with_original_items",
+      "steps": [
+        "original_frontend_login_and_admission",
+        "prior_failed_synthetic_candidate_preserved_and_dismissed",
+        "edit_real_agent_result",
+        "same_document_confirmed_modified_and_reloaded_with_original_items"
+      ],
+      "apiRequests": 11,
+      "result": {
+        "status": "completed",
+        "stopReason": null,
+        "counts": {
+          "modelCalls": 4,
+          "toolCalls": 4,
+          "queryEmbeddings": 0
+        },
+        "citations": 0,
+        "tools": [
+          {
+            "name": "load_capabilities",
+            "status": "succeeded"
+          },
+          {
+            "name": "read_family_documents",
+            "status": "succeeded"
+          },
+          {
+            "name": "propose_family_document_change",
+            "status": "succeeded"
+          },
+          {
+            "name": "present_answer",
+            "status": "succeeded"
+          }
+        ],
+        "proposals": 1
+      },
+      "usageBefore": {
+        "day": "2026-10-13",
+        "attempts": 4,
+        "inputTokens": 53224,
+        "outputTokens": 320,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 4
+      },
+      "usageAfter": {
+        "day": "2026-10-13",
+        "attempts": 8,
+        "inputTokens": 106565,
+        "outputTokens": 596,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 8
+      },
+      "document": {
+        "id": "87beacea-18f9-4b15-b687-b37c6e4334a9",
+        "version": 2,
+        "originalItemsPreserved": true,
+        "confirmed": true
+      }
+    },
+    {
+      "evidenceId": "f08-site-cite-adff72ee-6126-4c09-8aa1-740512e8655a",
+      "mode": "cite",
+      "startedAt": "2026-10-13T07:15:54.981Z",
+      "state": "passed",
+      "phase": "cite_real_agent_result",
+      "steps": [
+        "original_frontend_login_and_admission",
+        "cite_real_agent_result"
+      ],
+      "apiRequests": 6,
+      "result": {
+        "status": "completed",
+        "stopReason": null,
+        "counts": {
+          "modelCalls": 2,
+          "toolCalls": 2,
+          "queryEmbeddings": 1
+        },
+        "citations": 2,
+        "tools": [
+          {
+            "name": "search_knowledge",
+            "status": "succeeded"
+          },
+          {
+            "name": "present_answer",
+            "status": "succeeded"
+          }
+        ],
+        "proposals": 0
+      },
+      "usageBefore": {
+        "day": "2026-10-13",
+        "attempts": 8,
+        "inputTokens": 106565,
+        "outputTokens": 596,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 8
+      },
+      "usageAfter": {
+        "day": "2026-10-13",
+        "attempts": 11,
+        "inputTokens": 129468,
+        "outputTokens": 905,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 10
+      }
+    }
+  ],
+  "fixes": [
+    {
+      "commit": "cce4667",
+      "scope": "Original frontend Docker export entry; Firebase build configuration and public knowledge operator."
+    },
+    {
+      "commit": "35e9ad6",
+      "scope": "Caddy fixed address outside dynamic container range; native ADK timestamp/id session indexes."
+    },
+    {
+      "commit": "3ecea18",
+      "scope": "Document/citation tool guidance, safe diagnostics and original PDF quotation whitespace."
+    },
+    {
+      "commit": "5ca55c7",
+      "scope": "Only a unique short current document is included in compact results; bounded continuation remains."
+    },
+    {
+      "commit": "f99b753",
+      "scope": "Restore codec preserves the already-valid document autoRefresh projection."
+    },
+    {
+      "commit": "1589236",
+      "scope": "Resume an already-completed export within retained PITR history; new export remains bounded to 55 minutes."
+    },
+    {
+      "commit": "2c58e67",
+      "scope": "The saved proposal prepares its own operation/version/source-bound question. No content write or user consent is fabricated."
+    }
+  ],
+  "acceptanceLimits": [
+    "The failed original request_confirmation arguments/error detail were not retained; no exact original argument defect is asserted.",
+    "A separate same-origin client request confirms the saved proposal. The successful edit and citation are two real runs, not one fabricated combined run.",
+    "Native model-call counters and unknownUsageAttempts are retained. Token totals are incomplete usage reports, not a measured bill.",
+    "No full suite, stress matrix, Computer Use, additional real channel messages or P3 role tests were run."
+  ],
+  "knowledge": {
+    "officialSources": 5,
+    "chunks": 6,
+    "embeddingDimensions": 1024,
+    "compatibleVectorsReused": true,
+    "partialPdf": {
+      "url": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+      "page": 3,
+      "totalPages": 20,
+      "coverage": "Only the checked page/section is published; no whole-PDF completion claim."
+    },
+    "exampleHtml": "https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html",
+    "restrictedRecentSources": "CHP/RTHK remain unpublished to public users."
+  },
+  "background": {
+    "nativeAcceptance": {
+      "at": "2026-10-12T21:29:49.758Z",
+      "steps": [
+        "exact_three_known_synthetic_child_jobs_verified",
+        "three_native_oidc_tasks_completed_without_model_or_notification"
+      ],
+      "states": [
+        "completed",
+        "completed",
+        "completed"
+      ],
+      "state": "passed"
+    },
+    "queue": {
+      "at": "2026-10-13T07:47:44.823Z",
+      "name": "projects/ai-caregivers-for-children/locations/asia-east2/queues/yuban-firebase",
+      "state": "RUNNING",
+      "rateLimits": {
+        "maxDispatchesPerSecond": 1,
+        "maxBurstSize": 10,
+        "maxConcurrentDispatches": 1
+      },
+      "existingTasks": 0
+    },
+    "scheduler": {
+      "at": "2026-10-13T08:07:11.448Z",
+      "name": "projects/ai-caregivers-for-children/locations/asia-east2/jobs/yuban-original-dispatch",
+      "state": "ENABLED",
+      "schedule": "* * * * *",
+      "target": "https://ex-machina.eu.org/internal/task-dispatch",
+      "oidc": {
+        "serviceAccountEmail": "yuban-firebase-dispatch@ai-caregivers-for-children.iam.gserviceaccount.com",
+        "audience": "https://ex-machina.eu.org"
+      },
+      "lastAttemptTime": "2026-10-13T08:07:04.963510Z",
+      "status": {}
+    },
+    "channels": {
+      "enabledAt": "2026-10-13T07:46Z",
+      "webPush": true,
+      "telegram": true,
+      "telegramWebhook": "https://ex-machina.eu.org/api/telegram/webhook",
+      "pendingUpdatesBeforeEnable": 0,
+      "newTestMessages": 0,
+      "limitation": "Configuration and webhook evidence reuse earlier true-delivery evidence; no new delivery/read/completion claim."
+    }
+  },
+  "pairedBackup": {
+    "finishedAt": "2026-10-13T06:55:21.109Z",
+    "backupId": "3a169a7b-c2e0-42b8-9511-e472af01841f",
+    "snapshotTime": "2026-10-12T21:43:00.000Z",
+    "nativeExportState": "SUCCESSFUL",
+    "nativeExportBytes": 2636647,
+    "descriptor": {
+      "format": "yuban-firebase-backup-manifest/v1",
+      "objectName": "firebase-backups/v1/3a169a7b-c2e0-42b8-9511-e472af01841f/manifest",
+      "generation": "1791874519983700",
+      "cipherSha256": "d7ab3650ff03494e83e0820d383e62e7063e0024fb6fa811978b186abd86cf95",
+      "bytes": 315688,
+      "retainedUntil": "2026-10-27T07:53:29.841Z"
+    },
+    "documentCount": 1428,
+    "photoCount": 0,
+    "inventorySha256": "8289ce87633e720ef1dc6591d2c6712734446f42b0b5fcac1cefffd6ad59ddbc",
+    "sourcePitrAfterFinish": "disabled",
+    "sourceTrafficAfterFinish": "resumed",
+    "limitations": [
+      "photoCount is zero for this backup; F02 paired-photo restore evidence remains separate.",
+      "Temporary holds require explicit expiry cleanup; they do not auto-delete at retainedUntil. Never clear the independent erasure journal."
+    ]
+  },
+  "nativeDailyBackup": {
+    "at": "2026-10-13T08:14:10.955Z",
+    "database": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011",
+    "schedules": [
+      {
+        "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/backupSchedules/d60f181d-76e5-4534-8462-9a65860e7856",
+        "createTime": "2026-10-13T07:30:19.066350Z",
+        "retention": "1209600s",
+        "dailyRecurrence": {},
+        "updateTime": "2026-10-13T07:30:19.066350Z"
+      }
+    ],
+    "backups": [],
+    "unreachable": [],
+    "userApprovedRetentionDays": 14,
+    "incrementalBackupAndRestoreBudgetUsd": 1,
+    "firstNativeRestore": "not-started-no-backup-available",
+    "newRestoreDatabaseCreated": false,
+    "operator": {
+      "implemented": true,
+      "realNativeRestoreVerified": false,
+      "sourceWritersMustBePaused": true,
+      "finalState": "applied-paused",
+      "documentLimit": 2000,
+      "byteLimit": 33554432,
+      "safeguards": [
+        "Verified native backup/source/target UID and operation provenance.",
+        "Replay independently authenticated permanent-erasure intents and current Auth; no sessions or old notifications are revived.",
+        "Retained-photo entry independently checks the entire bounded deletion journal and paused authority before a conditional exact-generation restore.",
+        "Unknown Storage response reads the same object; no second restore, overwrite or new target name."
+      ]
+    },
+    "limitations": [
+      "Daily schedule time is managed by Google. Schedule creation is not evidence of a successful backup or restore.",
+      "Database backup excludes Auth, Storage objects, Rules and TTL policies. Private bucket retention is separately checked at 14 days.",
+      "The operator currently requires the live source authority and completed cleanup evidence; complete loss of that authority is not validated.",
+      "Cloud billing can be delayed. USD 1 is an operational ceiling for this increment, not an enforced cloud spending stop."
+    ]
+  },
+  "localChecks": {
+    "targetedRuntimeTypes": "passed",
+    "diffAndLinks": "passed: git diff --check; 468 local document links; historical WORKLOG preserved as a prefix",
+    "cases": [
+      {
+        "name": "Document change proposal prepares the bound confirmation",
+        "state": "passed",
+        "count": 1
+      },
+      {
+        "name": "Managed hot snapshot provenance and paused staged restore",
+        "state": "passed",
+        "count": 1
+      },
+      {
+        "name": "Existing staged restore lost acknowledgement and replay guards",
+        "state": "passed",
+        "count": 1
+      },
+      {
+        "name": "Retained photo journal rejection and same-address unknown-result recovery",
+        "state": "passed",
+        "count": 1
+      }
+    ],
+    "failuresPreserved": [
+      "The confirmation test first used an incorrect fixture constructor; corrected before the same case passed.",
+      "The restore fixture lacked the staged collection document writer, then used the wrong fixture reference; after inspecting the fixture interface, both targeted restore cases passed. No native restore was run."
+    ]
+  },
+  "stoppedBackupAttempts": [
+    "Drain guard rejected premature starts without export.",
+    "Eight old synthetic Auth namespace rows had obsolete ciphertext; exact synthetic status was verified and a protected encrypted copy retained before conditional cleanup.",
+    "Unknown document autoRefresh format stopped export preparation; codec corrected without relaxing unknown-format rejection.",
+    "Quota interruption after successful export delayed manifest completion; same snapshot resumed without another export.",
+    "Retention and ISO timestamp preconditions stopped completion until corrected; successful same-backup result is separate."
+  ],
+  "approvalReview": {
+    "rejectedNotExecuted": [
+      "Full snapshot download to local workspace",
+      "Bypassing normal maintenance tick with an internal command",
+      "Soft-deleted photo recovery helper without its own independent erasure checks"
+    ],
+    "safeResolution": [
+      "Use bounded in-memory schema diagnostics and retain ciphertext outside the project.",
+      "Use the normal authenticated OIDC worker path.",
+      "Require the helper itself to authenticate the complete journal and recheck pause/deletion before conditional restore."
+    ],
+    "remainingApprovalBlock": false
+  },
+  "retiredResources": {
+    "checkedAt": "2026-10-12T21:33:17.581Z",
+    "removed": [
+      {
+        "resource": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-api",
+        "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/f2a72465-7454-4244-bb73-c7b1c903dcad",
+        "done": true,
+        "error": null
+      },
+      {
+        "resource": "projects/ai-caregivers-for-children/locations/asia-east2/services/yuban-firebase-worker",
+        "operation": "projects/ai-caregivers-for-children/locations/asia-east2/operations/f7514227-edd4-4d20-94cd-30db59825efa",
+        "done": true,
+        "error": null
+      },
+      {
+        "resource": "projects/ai-caregivers-for-children/sites/yuban-firebase-check",
+        "done": true
+      }
+    ],
+    "preserved": [
+      "Original VM, disk, fixed IP and SQL rollback volume",
+      "Firebase Auth blocking function and default hosting resources",
+      "Source and existing restore databases",
+      "Private bucket, independent erasure journal and valid backups"
+    ]
+  },
+  "reusedEvidence": [
+    "F02_FIREBASE_PREFLIGHT_20261011.json",
+    "F03_FIRESTORE_CORE_20261012.json",
+    "F04_FIRESTORE_FILES_20261013.json",
+    "F05_FIRESTORE_KNOWLEDGE_20261013.json",
+    "F06_FIRESTORE_BACKGROUND_20261013.json",
+    "F07_FIRESTORE_SQL_EXIT_20261013.json"
+  ],
+  "cost": {
+    "measuredBill": "unknown",
+    "vmFixedCost": "continues until the existing VM stop time; not extended",
+    "productDailyLimits": {
+      "user": 12,
+      "global": 20
+    },
+    "limitsRaised": false,
+    "countersReset": false,
+    "nativeBackupSizing": "Prior actual export was 2.64 MB; native backup billable size and cost are not yet reported.",
+    "limitation": "Do not sum incomplete token reports into an asserted actual bill or reuse earlier paid acceptance ceilings as remaining budget."
+  },
+  "remaining": [
+    "First native daily backup and one authorized isolated restore within the USD 1 incremental ceiling.",
+    "Reconcile the remaining capacity/manual-retry evidence without replaying the complete product suite.",
+    "Final main-model review, PR and merge; do not mark P2 complete merely because the original site is live."
+  ]
+}

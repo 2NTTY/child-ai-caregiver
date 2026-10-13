@@ -20,6 +20,7 @@ import type { FirebasePhotoObjectDescriptor, FirebasePhotoObjects } from './fire
 import { firebaseBackupManifestDescriptorSchema, type FirebaseBackupArtifacts, type FirebaseBackupManifestDescriptor,
   type FirebaseBackupManifestPayload, type FirebaseBackupPhotoManifestEntry, firebaseBackupInventorySchema } from './firebase-backup-artifacts.ts';
 import type { createFirebaseNativeRecovery } from './firebase-native-recovery.ts';
+import type { createFirebaseManagedBackup } from './firebase-managed-backup.ts';
 
 const hash=z.string().regex(/^[a-f0-9]{64}$/u),uuid=z.uuid();
 const operationSchema=z.object({done:z.literal(true),error:z.never().optional(),metadata:z.object({operationState:z.literal('SUCCESSFUL'),
@@ -37,7 +38,8 @@ function requireValue(condition:boolean,code:string):asserts condition{if(!condi
 export interface FirebaseRecoveryOperatorOptions extends FirebaseBackupOptions {
   targetDatabase:Firestore;backupBucketName:string;journalBucket:Bucket;keyVersionRef:string;
   journal:Pick<FirebaseErasureJournal,'readObject'>;photos:FirebasePhotoRecovery;artifacts:FirebaseBackupArtifacts;
-  sourceObjects?:Pick<FirebasePhotoObjects,'inspect'>;
+  sourceObjects?:Pick<FirebasePhotoObjects,'inspect'> & Partial<Pick<FirebasePhotoObjects,'read'|'write'|'recover'>>;
+  managed?:ReturnType<typeof createFirebaseManagedBackup>;
   native:ReturnType<typeof createFirebaseNativeRecovery>;auth:Pick<Auth,'getUser'>;
 }
 /** The operator is never attached to the API or worker. Target IAM/rules and external queue pause are deployment gates. */
@@ -52,7 +54,7 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
   const sessionPath=namespace+'_sessions/';
   const prefix=(backupId:string)=>{uuid.parse(backupId);return 'gs://'+options.backupBucketName+'/firebase-backups/v1/'+backupId+'/firestore';};
   const decode=(docs:FirebaseBackupDocument[])=>docs.filter(row=>!isRestoreProtocolOrUsage(namespace,row.path)).map(row=>codec.decode(row));
-  async function readAll(database:Firestore,allowCheckpoint=false):Promise<FirebaseBackupDocument[]>{
+  async function readAll(database:Firestore,allowCheckpoint=false,unchangedSince?:string):Promise<FirebaseBackupDocument[]>{
     const allowed=new Set(FIREBASE_BACKUP_COLLECTION_SUFFIXES.map(suffix=>namespace+suffix));
     const collections=await database.listCollections();
     requireValue(collections.every(row=>allowed.has(row.id)||allowCheckpoint&&row.id===checkpointCollection),'recovery_collection');
@@ -62,7 +64,9 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         let cursor:string|undefined;
         while(true){let query=collection.orderBy(FieldPath.documentId()).limit(100);if(cursor)query=query.startAfter(cursor);
           const page=await tx.get(query);
-          for(const row of page.docs){const doc={path:row.ref.path,data:row.data()};docs.push(doc);bytes+=firebaseBackupDocumentDigest(doc).bytes;
+          for(const row of page.docs){
+            if(unchangedSince)requireValue(row.updateTime!==undefined&&row.updateTime.toMillis()<=Date.parse(unchangedSince),'recovery_restored_snapshot_changed');
+            const doc={path:row.ref.path,data:row.data()};docs.push(doc);bytes+=firebaseBackupDocumentDigest(doc).bytes;
             requireValue(docs.length<=2000&&bytes<=32*1024*1024,'recovery_limit');
             const child=depth===undefined?undefined:['users','sessions','events'][depth];
             if(child)await collect(row.ref.collection(child),depth!+1);}
@@ -112,8 +116,8 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       authorityHash:digest(live.filter(row=>row.path.startsWith(namespace+'/')).map(row=>({path:row.path,...firebaseBackupDocumentDigest(row)})).sort((a,b)=>a.path.localeCompare(b.path)))};
   }
   function checkpointAad(){return canonical(['yuban-firebase-restore',1,projectId,target.databaseId,namespace,'current']);}
-  const applyIdentity=(input:{backupId:string;restoreId:string;descriptor:FirebaseBackupManifestDescriptor})=>digest([input.backupId,input.restoreId,input.descriptor.cipherSha256]);
-  async function resumeStaged(input:{backupId:string;restoreId:string;descriptor:FirebaseBackupManifestDescriptor;sourceGeneration:string}){
+  const applyIdentity=(input:{backupId:string;restoreId:string;descriptor:Pick<FirebaseBackupManifestDescriptor,'cipherSha256'>})=>digest([input.backupId,input.restoreId,input.descriptor.cipherSha256]);
+  async function resumeStaged(input:{backupId:string;restoreId:string;descriptor:Pick<FirebaseBackupManifestDescriptor,'cipherSha256'>;sourceGeneration:string}){
     const state=await staged.read(applyIdentity(input));if(!state)return false;
     const final=z.object({format:z.literal('yuban-firebase-restore'),version:z.literal(1),ciphertext:z.string()}).strict().parse(state.final);
     const plan=checkpointSchema.parse(JSON.parse(cipher.decrypt(final.ciphertext,checkpointAad())));
@@ -126,7 +130,7 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       requireValue(latest.journalHash===plan.journalHash&&latest.authHash===plan.authHash&&latest.authorityHash===plan.authorityHash,'recovery_latest_state_changed');
     });return true;
   }
-  async function applied(input:{backupId:string;restoreId:string;descriptor:FirebaseBackupManifestDescriptor}){
+  async function applied(input:{backupId:string;restoreId:string;descriptor:Pick<FirebaseBackupManifestDescriptor,'cipherSha256'>}){
     const snapshot=await checkpointRef.get();if(!snapshot.exists)return null;
     const raw=z.object({format:z.literal('yuban-firebase-restore'),version:z.literal(1),ciphertext:z.string()}).strict().parse(snapshot.data());
     const result=checkpointSchema.parse(JSON.parse(cipher.decrypt(raw.ciphertext,checkpointAad())));
@@ -170,12 +174,27 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       requireValue((await target.listCollections()).length===0,'recovery_target_not_empty');
       return options.native.startImport({backupId:input.backupId,outputUriPrefix:manifest.nativeExport.outputUriPrefix});
     },
-    async applyRestore(input:{backupId:string;restoreId:string;descriptor:FirebaseBackupManifestDescriptor;operationName:string;sourceGeneration:string}){
-      uuid.parse(input.restoreId);firebaseBackupManifestDescriptorSchema.parse(input.descriptor);
+    async applyRestore(request:{backupId:string;restoreId:string;descriptor:FirebaseBackupManifestDescriptor;operationName:string;sourceGeneration:string}
+      |{backupName:string;restoreId:string;operationName:string;sourceGeneration:string}){
+      uuid.parse(request.restoreId);
+      const managedRequest='backupName'in request?request:null;
+      requireValue(!managedRequest||options.managed!==undefined,'recovery_managed_port_missing');
+      const proof=managedRequest?await options.managed!.verify(managedRequest.backupName,managedRequest.operationName):null;
+      if(proof)requireValue(proof.sourceDatabase===`projects/${projectId}/databases/${source.databaseId}`
+        &&proof.targetDatabase===`projects/${projectId}/databases/${target.databaseId}`,'recovery_source_binding');
+      // The checkpoint fingerprint binds native provenance, or the existing encrypted paired manifest.
+      const input=proof?{...request,backupId:request.restoreId,descriptor:{cipherSha256:digest(proof)}}:
+        request as {backupId:string;restoreId:string;descriptor:FirebaseBackupManifestDescriptor;operationName:string;sourceGeneration:string};
       await assertPaused(input.sourceGeneration);
-      const manifest=await options.artifacts.readManifest({backupId:input.backupId,descriptor:input.descriptor});
-      requireValue(manifest.databaseId===source.databaseId&&manifest.keyVersionRef===options.keyVersionRef,'recovery_source_binding');
-      await options.artifacts.assertNativeExportObjects({backupId:input.backupId,objects:manifest.nativeExport.objects});
+      const manifest='descriptor'in request?await options.artifacts.readManifest({backupId:request.backupId,
+        descriptor:firebaseBackupManifestDescriptorSchema.parse(request.descriptor)}):null;
+      if(manifest)requireValue(manifest.databaseId===source.databaseId&&manifest.keyVersionRef===options.keyVersionRef,'recovery_source_binding');
+      async function verifySnapshot(){
+        if(proof&&managedRequest)requireValue(digest(await options.managed!.verify(managedRequest.backupName,managedRequest.operationName))===digest(proof),'recovery_native_provenance_changed');
+        else if(manifest)await options.artifacts.assertNativeExportObjects({backupId:input.backupId,objects:manifest.nativeExport.objects});
+        else reject('recovery_snapshot_missing');
+      }
+      await verifySnapshot();
       const prior=await applied(input);
       if(prior){
         const live=await readAll(source),users=await currentAuth(decode(await readAll(target,true))),entries=await journalSnapshot();
@@ -188,11 +207,22 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         const restored=await applied(input);requireValue(restored!==null,'recovery_apply_unknown');
         return {state:restored.state,replayed:true,documentCount:restored.inventory.documentCount,generation:restored.generation,inventorySha256:restored.inventory.sha256};
       }
-      const operation=operationSchema.parse(await options.native.getImport(input.operationName));
-      requireValue(operation.metadata.inputUriPrefix===manifest.nativeExport.outputUriPrefix
-        &&BigInt(operation.metadata.progressDocuments.completedWork)===BigInt(manifest.inventory.documentCount),'recovery_import_mismatch');
-      const documents=await readAll(target);assertFirebaseBackupInventory(manifest.inventory,documents);
+      if(manifest){
+        const operation=operationSchema.parse(await options.native.getImport(input.operationName));
+        requireValue(operation.metadata.inputUriPrefix===manifest.nativeExport.outputUriPrefix
+          &&BigInt(operation.metadata.progressDocuments.completedWork)===BigInt(manifest.inventory.documentCount),'recovery_import_mismatch');
+      }
+      const documents=await readAll(target,false,proof?.endTime);
+      if(manifest)assertFirebaseBackupInventory(manifest.inventory,documents);
+      else requireValue(proof!==null&&documents.length===proof.documentCount,'recovery_native_inventory_mismatch');
       const records=decode(documents);assertFirebaseRestoreAuthority(records);
+      // A hot native snapshot can contain enabled control. Quarantine only this verified snapshot's
+      // planner input; original ciphertext still anchors staged write preconditions. Live control must be paused.
+      const plannerDocuments=proof?documents.map(row=>{
+        const record=records.find(item=>item.path===row.path);if(record?.context.kind!=='control')return row;
+        return codec.transform(record,{generation:authority.control.parse(record.value).generation,
+          newEpochByWorkspace:new Map(),photoDescriptors:new Map()});
+      }):documents;
       // The restore planner applies independently verified erasures before checking
       // surviving cross-document references. Never resurrect a deleted parent just
       // to satisfy an obsolete operation receipt in the imported snapshot.
@@ -212,15 +242,20 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         requireValue(affected.size===0||typeof options.sourceObjects?.inspect==='function','recovery_cleanup_verifier_missing');
         for(const item of affected.values())requireValue(await options.sourceObjects!.inspect!(item.scope,item.photoId)===null,'recovery_pending_scope_cleanup');
       }
-      const deleted=(entry:FirebaseBackupPhotoManifestEntry)=>erasures.some(row=>row.scope.ownerUserId===entry.scope.ownerUserId
+      type PhotoEntry=Omit<FirebaseBackupPhotoManifestEntry,'backup'> & Partial<Pick<FirebaseBackupPhotoManifestEntry,'backup'>>;
+      const deleted=(entry:PhotoEntry)=>erasures.some(row=>row.scope.ownerUserId===entry.scope.ownerUserId
         &&(row.type==='account-delete'||row.scope.workspaceId===entry.scope.workspaceId
           &&(row.type==='photo-delete'?row.assetId===entry.photoId:row.scope.childId===entry.scope.childId)));
       const photoRows=records.filter(row=>row.context.kind==='photo').map(row=>({record:row,photo:photoSchemas.photo.parse(row.value)}));
       const ready=photoRows.filter(row=>row.photo.state==='ready');
-      requireValue(ready.length===manifest.photos.length,'recovery_photo_manifest');
-      const pending:typeof manifest.photos=[];
+      const photoEntries:PhotoEntry[]=manifest?manifest.photos:ready.map(({record,photo})=>{
+        requireValue(photo.descriptor!==null,'recovery_photo_binding');
+        return {path:record.path,photoId:photo.id,scope:photo.scope,descriptor:photo.descriptor!};
+      });
+      requireValue(ready.length===photoEntries.length,'recovery_photo_manifest');
+      const pending:PhotoEntry[]=[];
       const expectedDescriptors=new Map<string,FirebasePhotoObjectDescriptor>();
-      for(const entry of manifest.photos){
+      for(const entry of photoEntries){
         const row=ready.find(row=>row.record.path===entry.path&&row.photo.id===entry.photoId);
         requireValue(Boolean(row&&canonical(row.photo.scope)===canonical(entry.scope)&&canonical(row.photo.descriptor)===canonical(entry.descriptor)),'recovery_photo_manifest');
         if(deleted(entry))continue;
@@ -230,21 +265,30 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         expectedDescriptors.set(entry.photoId,{...entry.descriptor,objectName:'photos/v1/'+scopeHash+'/'+entry.photoId});pending.push(entry);
       }
       const base={restoreId:input.restoreId,targetDatabaseId:target.databaseId,sourceGeneration:input.sourceGeneration,
-        documents,liveDocuments,authUsers,erasures,erasureDescriptors};
+        documents:plannerDocuments,liveDocuments,authUsers,erasures,erasureDescriptors};
       prepareFirebaseRestore(options,{...base,photoDescriptors:expectedDescriptors});
       const photoDescriptors=new Map<string,FirebasePhotoObjectDescriptor>();
       for(const entry of pending){const targetScope={...entry.scope,storageEpoch:firebaseRestoreEpoch(projectId,target.databaseId,input.restoreId,entry.scope.workspaceId)};
-        photoDescriptors.set(entry.photoId,await options.photos.restorePhoto({backupId:input.backupId,backup:entry.backup,targetScope}));}
+        if(entry.backup)photoDescriptors.set(entry.photoId,await options.photos.restorePhoto({backupId:input.backupId,backup:entry.backup,targetScope}));
+        else{
+          const objects=options.sourceObjects;
+          requireValue(Boolean(objects?.read&&objects.write),'recovery_photo_port_missing');
+          // Immutable retained objects are pinned by generation/hash; a missing object stops recovery.
+          // Independent erasures are applied above, before any original object is read or copied.
+          const content=await objects!.read!(entry.scope,entry.photoId,entry.descriptor);
+          photoDescriptors.set(entry.photoId,await objects!.write!(targetScope,entry.photoId,{base64:content.base64,mimeType:content.mimeType}));
+        }
+      }
       const plan=prepareFirebaseRestore(options,{...base,photoDescriptors});
       await assertPaused(input.sourceGeneration);
       const latestLive=await readAll(source),latestUsers=await currentAuth(records),latestEntries=await journalSnapshot();
       const observed=evidence(latestLive,latestUsers,latestEntries.map(row=>row.intent));
       requireValue(observed.journalHash===plan.journalHash&&observed.authHash===plan.authHash&&observed.authorityHash===plan.authorityHash,'recovery_latest_state_changed');
-      await options.artifacts.assertNativeExportObjects({backupId:input.backupId,objects:manifest.nativeExport.objects});
+      await verifySnapshot();
       const rows=plan.records.map(row=>({path:row.path,...firebaseBackupDocumentDigest(row)})).sort((a,b)=>a.path.localeCompare(b.path));
       const hashes=rows.map(({path,sha256})=>({path,sha256}));
       const inventory:FirebaseBackupInventory={schema:'yuban-firestore-backup-inventory/v1',projectId,databaseId:target.databaseId,namespace,
-        snapshotTime:manifest.snapshotTime,documents:hashes,documentCount:hashes.length,bytes:rows.reduce((sum,row)=>sum+row.bytes,0),sha256:digest(hashes)};
+        snapshotTime:manifest?.snapshotTime??proof!.snapshotTime,documents:hashes,documentCount:hashes.length,bytes:rows.reduce((sum,row)=>sum+row.bytes,0),sha256:digest(hashes)};
       const checkpoint=checkpointSchema.parse({format:'yuban-firebase-restore/v1',state:'applied-paused',restoreId:input.restoreId,backupId:input.backupId,
         manifestSha256:input.descriptor.cipherSha256,sourceDatabaseId:source.databaseId,targetDatabaseId:target.databaseId,
         sourceGeneration:input.sourceGeneration,generation:plan.generation,journalHash:plan.journalHash,authHash:plan.authHash,authorityHash:plan.authorityHash,inventory});

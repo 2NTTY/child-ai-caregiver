@@ -695,7 +695,7 @@ P2 正常部署維持原單 VM 的 Web／API／worker 分工，不新增 Kuberne
 
 永久刪除先以 ifGenerationMatch=0 在**獨立 bucket** 保存加密 intent，然後交易標記關閉／撤權及建立清理工作。跨 Storage／Firestore 無交易，因此以穩定 intent ID、持久階段及原收據恢復；intent 成立後即使業務步驟失敗仍向前完成，未知不重新開放資料。常規執行身份不能覆寫／刪除 journal 物件；不放在會一起回退的資料備份內，也不只依賴有限期 soft-delete。帳戶、孩子和需永久刪除的附件都受 journal 覆蓋，清理子集合可分批，不宣稱立刻抹掉所有備份。
 
-每日 Firestore 備份保留 14 天，保存與恢復點相配的不可變附件副本／manifest。live bucket 的 7 天 soft-delete 只是復原窗；獨立配對副本保留滿資料庫備份期限，再按明確 lifecycle 清理。manifest 綁資料 checkpoint／實際物件 generation、hash、密鑰版本及 completeness；不能只因兩邊同日備份便宣稱配對。原生備份保留密文，索引／部署配置另版控，Auth 也不是 Firestore 備份的一部分。[備份](https://docs.cloud.google.com/firestore/native/docs/backups)／[soft-delete](https://docs.cloud.google.com/storage/docs/soft-delete)
+依 [ADR-026](DECISIONS.md#adr-026)，日常使用 Firestore 原生每日備份、保留 14 天，不停站或輪換工作世代；受控部署／演練仍可使用既有配對匯出。原生備份保存密文及索引設定，不包含 Auth、Rules、TTL 或附件。附件以同一資料快照內的 generation／hash 連到不可變 Storage 物件；私人 bucket 的 soft-delete 必須至少 14 天，不能沿用早期 7 天假設。尚存原物件可精確讀取；只有獨立日誌證明未永久刪除、來源已暫停及精確 generation 仍在復原期內，operator 才能有條件恢復其密文，再核對及轉入新 storage epoch。缺物件／日誌／密鑰時停止，不將資料庫備份單獨稱為完整配對成功。既有獨立附件備份／manifest 仍按原期限保留及核對，不回寫原證據。[備份](https://docs.cloud.google.com/firestore/native/docs/backups)／[soft-delete](https://docs.cloud.google.com/storage/docs/soft-delete)
 
 只還原至隔離資料庫及命名空間，worker／Tasks dispatcher／通知保持暫停。先取得最新完整 journal 並重放，對照當前 Auth 存活／撤銷與附件，更新 storage epoch／失效舊 session，核對索引與配對完整度才開放。journal 缺失、無法證明完整、物件不齊或 Auth 已刪除時保持關閉，不能從舊備份復活用戶或投遞。新寫入後只回退 Firebase 相容應用版本或隔離還原，不切回 SQL；新資料、原收據及最新撤銷／刪除權威必須保留。切換前舊版與備份仍可封存；乾淨起點不授權刪除舊資料，見 ADR-022。
 
@@ -718,7 +718,7 @@ P2 正常部署維持原單 VM 的 Web／API／worker 分工，不新增 Kuberne
 
 免費額的每日／database／project／billing account 範圍各異，不能假設其他測試沒使用；Cloud Run 免費抵扣依指定費率，不直接套同數香港免費秒數。請求／向量／關鍵詞索引與 changes 輪詢要分開量測，Scheduler 只掃有索引的 due/outbox，空隊列也有最低查詢及冷啟動成本。
 
-低流量仍可能有 backup、soft-delete、舊物件、映像、Secret Manager、日誌及附件外傳費；保留原 VM／磁碟／IP 的固定費須另計。額外 Hosting／Cloud Run API／worker 只列待清理，先辨識用途與依賴，保護 Auth blocking function、有效資料及備份。本輪不刪資源；不預設新增 min instances、VPC connector、NAT、負載平衡器或搜尋服務。
+低流量仍可能有 backup、soft-delete、舊物件、映像、Secret Manager、日誌及附件外傳費；保留原 VM／磁碟／IP 的固定費須另計。額外 Hosting／Cloud Run API／worker 依用途及依賴核對後清理，保護 Auth blocking function、有效資料及備份；實際清理證據留所屬工作包。不預設新增 min instances、VPC connector、NAT、負載平衡器或搜尋服務。
 
 配置 max instances、queue dispatch／concurrency、共享預留／停用閘、匯入／索引重建批次與 retention；模型上下文、重試、輪詢、附件下載和濫用註冊是突增來源。預算告警不是硬性停費保證。上線前以實測及資源清單核准上限；50 帳號容量欄不提高既有產品配額。
 

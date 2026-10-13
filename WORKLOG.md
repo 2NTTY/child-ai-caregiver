@@ -2446,3 +2446,15 @@
 - Verification：四個必要本機情景涵蓋私人對話／收據、孩子刪除、分頁中斷與未知回覆、既有匯出／刪除加文件收據。只查選定修改檔案型別、runtime import graph（181 檔，零 SQL import）、production lockfile、Compose 三服務及 diff。真 GCP 唯讀盤點 302 筆唯一合成資料，初次失敗與分頁上限保留；後續用加密快取補核完整轉換為 279 筆，沒有再讀雲端。既有還原庫的獨立命名空間以 81 筆／兩頁交易核對重連及暫存清除，資料及 checkpoint 全部清理；原還原庫資料未動。見 [EV](artifacts/verification/F07_FIRESTORE_SQL_EXIT_20261013.json)。
 - Corrections：真資料揭示合法的 `result:null` 建立收據與已清完照片墓碑未被舊還原器接受，保留身份／指紋／日誌驗證後修正。孩子清理漏掉 owner-wide 文件操作收據，補原清理方法，並核對獨立日誌、已刪孩子與原版本後刪除四筆既有合成殘留。自動批准審查拒絕取消 scope 清理完成門檻及 caller proof 替代，均未套用；現行恢復仍拒絕缺失／未完成清理，不宣稱無來源權威的災難恢复已完成。
 - Limits / Next：零模型／embedding／真通知／瀏覽器／部署，增量估算低於 US$0.01，帳單未知。沿用 F02 的 native export/import／配對照片及 F03～F06 的隔離／兩 consumer／准入取消證據，不重跑全量；本輪新雲端驗證只是變更後的分頁 apply。盤點目前限 2,000 筆／32 MiB，且須來源暫停、最新 Auth／journal 及清理證據；缺失時保留現場待 operator 處理。合併後進 F08，建立 SQL-free 映像、更新原站及完成受邀用戶／完整 Agent 成果；整個 P2 仍未完成。
+
+<a id="log-20261013-f08-original-site"></a>
+## LOG-20261013-F08-ORIGINAL-SITE
+
+- Recorded At / Package：2026-10-13（Asia/Hong_Kong），P2-F08；基線 `353cf70`，分支 `codex/p2-f08-original-site`。工作實際發生於 2026-10-12～13 UTC；主模型独立實作、review 及必要核對，沒有子代理或 Computer Use。
+- Actual Work：原 ex-machina.eu.org 使用新前端及 Firestore API／worker，退出正式 SQL。修正 Docker 前端 export 接點、Caddy 位址重疊、ADK 原生 session 索引、文件有界讀取及引用指引。準備單變更候選以真正保存的 run／候選／版本建立待確認問題，不自行製造同意；確認後修改同一份文件。原 UI 設計、四次生成及每日 12／20 限額不變。
+- Product Evidence：原前端合成註冊建立 Auth 帳號，但驗證畫面等待失敗；沿同帳號以 fixture 驗證電郵後，正式登入／資料同意、孩子及原文保存／刷新通過。早期真 Agent 因缺索引、工具參數／引用與配額停止，已保存成果及失败保留。`2c58e67` 真修改運行 4 次生成／4 工具，經明確確認後同 ID 文件為 v2、原項目保留及刷新讀回；另一真引用運行 2 次生成／2 工具／1 embedding，兩個支持片段來自官方 HTML／PDF 頁。每次以原配額執行，不清零、提額或換帳號。詳見 [F08 EV](artifacts/verification/F08_ORIGINAL_SITE_20261013.json)，不把兩個運行當成一次完整工具序列。
+- Deployment / Background：API／worker `2c58e67`、Web `cce4667` 內容，原 SQL container 已停止，回退映像／volume／舊備份保留。三項原生 OIDC／Tasks 合成工作完成；queue／Scheduler 和既有 Push／Telegram 入口恢復，最近自然 Scheduler 執行成功，沒有追加外發訊息。額外 Hosting 檢查站及 Cloud Run API／worker 清理完成，Auth blocking function／有效資料保留；VM 期限仍為 2026-10-17 20:50:44 香港時間。
+- Backup / Recovery：同時間點 1,428 筆配對備份及 manifest 完成，照片數為零，不能代替 F02 的配對照片證據。排空、旧合成 Auth 格式、autoRefresh codec、保留期限／timestamp 及額度中斷曾阻止前進；修正後續同一份成功 export，未重開匯出。PITR 關閉、原站恢復。使用者另批准原生每日備份保留 14 天，2026-10-13 07:30 UTC 已建立；截至 07:54 UTC 沒有首份備份，未建立新還原庫。
+- Restore Implementation：新增原生 backup／來源 UID／目標 UID／operation 綁定；復用獨立 journal、最新 Auth、分頁 checkpoint／世代輪換，最終仍為 applied-paused。照片還原入口本身完整核對獨立刪除日誌、來源暫停及原 generation／hash，再以 ifGenerationMatch=0 恢復未永久刪除的保留物件；unknown 只查同位置，不重發、不覆蓋。只完成三個必要本機恢復情景及選定型別檢查，真原生還原仍待首份備份。
+- Review / Limits：自動批准審查拒絕完整快照下載、內部 maintenance bypass 及缺少獨立 journal 自查的照片 helper，均未執行該被拒版本；改用有界記憶體診斷、正式 OIDC 及 helper 自查，安全替代已核准。修改候選的確認 fixture 與 staged restore fixture 曾局部失敗，檢查實際接口後原情景通過；沒有重跑全套。原失敗回覆未保存完整參數，不能聲稱已證實某個具體原參數錯誤。
+- Cost / Next：實際帳單未知，模型 unknown usage 保留；VM 固定費仍在。這輪原生備份／必要還原增量上限 US$1 是操作界線，非雲端硬停費。等待首份原生備份後只補一次隔離還原及必要缺口，再收束 review／PR；不把部署成功或本機三個恢復檢查當作 P2 完成。人手電郵收信、真渠道投遞與舊證據分開，沒有代填人工結論。
