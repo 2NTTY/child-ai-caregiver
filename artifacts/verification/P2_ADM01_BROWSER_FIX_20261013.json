@@ -1,0 +1,34 @@
+{
+  "package": "P2-ADM01 browser follow-up",
+  "base": "c08f1638c0e104de48b79863f538227bebb42cb3",
+  "cause": "AdminOwner invoked native Window.fetch as an instance method; browser rejected before sending the request. Node fetch and arrow transport fixture did not enforce the receiver.",
+  "change": "Call the captured fetch function without binding the owner; preserve URL, credentials, identity, abort and receipt handling.",
+  "checks": {
+    "existingAdminScenario": "passed; 24 direct synthetic HTTP plus owner requests",
+    "receiverAssertion": "added to the same scenario",
+    "webBuild": "passed once for the changed production Web",
+    "browser": {
+      "at": "2026-10-13T13:49:36.706Z",
+      "browser": "155.0.4283.45",
+      "source": "Built production Web with native browser fetch and synthetic GET responses",
+      "adminRequests": [
+        "/api/admin/session",
+        "/api/admin/policy",
+        "/api/admin/invitations",
+        "/api/admin/usage",
+        "/api/admin/audit"
+      ],
+      "pageErrors": [],
+      "rendered": true,
+      "realAuth": false,
+      "modelCalls": 0,
+      "notifications": 0
+    }
+  },
+  "priorFailure": {
+    "scope": "local synthetic browser fixture",
+    "cause": "fixture omitted existing /api/online/spaces metadata request",
+    "resolution": "added the existing empty-workspace contract; same bounded scenario passed"
+  },
+  "limits": "No real signed-in user browser verification, cloud business writes, models, notifications or broad regression. Deployment pending."
+}

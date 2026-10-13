@@ -2549,3 +2549,12 @@
 - Correction：收尾 review 發現管理提交成功後的會話失效不應回確定拒絕，改 unknown 保留原收據；同一合成情景擴至 24 次直接 HTTP，通過後只為修改的 UI 生效／未保存值展示補一次 Web build，沒有重跑產品矩陣。
 - Deployment / Evidence：Server 小差異以原映像離線 overlay、Web 28.5 MB 經 IAP 傳至原 VM，沿 Compose 相容部署並保留原映像／受保護配置。六項密文索引排除已完成，LRO 初次仍 pending 並非產品測試失敗，未重建。健康、未登入 401、管理政策／列表／用量唯讀核對通過；原 12／20、4／2 及本人 key 共用 1000 不改、零新模型／通知。結果見 [ADM01 EV](artifacts/verification/P2_ADM01_WEB_20261013.json)。
 - Limits：配對備份 manifest／hold／期限唯讀核對有效；真原生每日首份／還原繼續延後，沒有新真人瀏覽器驗收。VM 停止期限仍 2026-10-17 20:50:44 香港時間。完成本包，P3 不自動開始。
+
+
+<a id="log-20261013-admin-browser-fetch"></a>
+### 2026-10-13 — 管理後台瀏覽器 fetch 修正
+
+- 原因：使用者回報管理身份一直核對失敗。基線 c08f163；原生瀏覽器重現 fetch 綁到 AdminOwner 而拋 Illegal invocation，請求尚未送出。既有 Node／arrow fixture 不檢查 Window 接收者，先前健康及匿名 API 核對未覆蓋此差異。
+- 修正／review：只將 fetch 取為局部函式再呼叫；保留身份、cookie、取消、原 opId 及 unknown。原情景加入接收者斷言，24 次直接合成 HTTP／owner 通過；只重建改動後 Web。
+- 驗證：一條已建置頁面的原生 Edge 定向檢查通過，使用合成 GET 身份及資料回應，五個 admin 請求及表單正常，零頁面錯誤。首次 fixture 漏既有 workspace metadata 請求，停批修正後只補同一路徑。不是本人登入驗收，零模型／通知／雲端業務寫入。見 [瀏覽器修正 EV](artifacts/verification/P2_ADM01_BROWSER_FIX_20261013.json)。
+- 下一步：合併及只更新原站 Web，API／worker／資料與管理員綁定不改。
