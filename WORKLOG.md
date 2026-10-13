@@ -2558,3 +2558,11 @@
 - 修正／review：只將 fetch 取為局部函式再呼叫；保留身份、cookie、取消、原 opId 及 unknown。原情景加入接收者斷言，24 次直接合成 HTTP／owner 通過；只重建改動後 Web。
 - 驗證：一條已建置頁面的原生 Edge 定向檢查通過，使用合成 GET 身份及資料回應，五個 admin 請求及表單正常，零頁面錯誤。首次 fixture 漏既有 workspace metadata 請求，停批修正後只補同一路徑。不是本人登入驗收，零模型／通知／雲端業務寫入。見 [瀏覽器修正 EV](artifacts/verification/P2_ADM01_BROWSER_FIX_20261013.json)。
 - 下一步：合併及只更新原站 Web，API／worker／資料與管理員綁定不改。
+
+
+<a id="log-20261013-admin-browser-delivery"></a>
+### 2026-10-13 — 管理後台瀏覽器修正部署
+
+- #211／8f916d0 已合併，13:53 UTC 原 VM 只更換 Web 為 admin-8f916d0；API／worker 同映像、同啟動時間，帳戶、管理權限、資料及限額不改。保留 Web 回退映像與受保護 compose 配置。
+- 以兩次公開 GET 核對 /admin 及 JavaScript hash，確實是已驗證產物；健康通過。部署助手初次因 Windows 換行在 set -eu 前停止，零站點修改；只轉 LF、重傳腳本後完成。零模型／通知／額外產品驗收，未代填本人登入結果。詳見 [瀏覽器修正 EV](artifacts/verification/P2_ADM01_BROWSER_FIX_20261013.json)。
+- 開發提交為 C 單作者、unsigned；PR 及合併由同一帳號操作，merge 323e4a7 的 GitHub 簽署驗證有效。P3 及真原生備份還原仍未啟動。

@@ -30,5 +30,24 @@
     "cause": "fixture omitted existing /api/online/spaces metadata request",
     "resolution": "added the existing empty-workspace contract; same bounded scenario passed"
   },
-  "limits": "No real signed-in user browser verification, cloud business writes, models, notifications or broad regression. Deployment pending."
+  "limits": "No real signed-in user browser verification, cloud business writes, models, notifications or broad regression.",
+  "implementation": "8f916d0f02fbf921528a49290f52d8b1999ab305",
+  "pullRequest": 211,
+  "deployment": {
+    "at": "2026-10-13T13:53:50Z",
+    "mergedMaster": "323e4a7598c917856ad71d672000f6f4e49e1866",
+    "webImage": "sha256:d9eb52a5140784730f86102a59e11a0ed858e2f51599016620b2e88d872d74b4",
+    "tag": "admin-8f916d0",
+    "apiWorker": "unchanged image and running containers admin-334fb4e",
+    "publicVerification": {
+      "at": "2026-10-13T13:54:07.861Z",
+      "adminStatus": 200,
+      "entryScript": "/_expo/static/js/web/index-6c66631d4c79c00049fc23d88eb13215.js",
+      "sha256": "e5deb7722034834328424b390c9eabd50dcf8a7136883b9fcf4043ada11a49ff",
+      "exactBuiltAsset": true,
+      "requests": 2
+    },
+    "rollback": "Retained admin-334fb4e Web and protected compose.env.before-admin-8f916d0",
+    "priorHelperFailure": "Shell CRLF rejected set -eu before any VM changes; normalized LF and resumed only the Web deployment."
+  }
 }
