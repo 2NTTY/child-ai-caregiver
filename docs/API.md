@@ -839,3 +839,5 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 - 私有 `/internal/product-work` 與原提醒／dispatcher 共用固定 OIDC 驗證；payload 只有持久 job ID、generation、dispatchRevision 和 scheduledAt，不接受模型上下文、渠道地址或使用者指定執行權限。Server 從原台帳取得範圍並重新核對。
 - 接續結果沿 `/agent/work` 的 `latestFollowUp` 及原 background runs 顯示；過期、取消及原 run 未成功保持真實狀態。成長整理的分批進度仍沿同一文件／reportCoverage，不另增可修改報告副本。
 - 本次為 Firestore 路由／資料接線，實際驗收和正式部署分別見 PLAN／證據；未發送真通知的 scripted 結果不代表渠道已送達。
+
+照片 DTO 的可選 `recoveryPending` 表示隔離還原時原上載尚未結清；仍為 reserved，不能讀正文或提取。正式照片 owner 顯示核對原圖的提示；沿同一附件／hash 查回，沒有額外建立或上載副本。

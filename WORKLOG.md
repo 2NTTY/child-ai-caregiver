@@ -2497,3 +2497,11 @@
 - Frontend / Docs：家庭多人延至 P4，停止掛載家庭 API hook，頁面保留既有外殼並明示未開放；本人功能不變。README 指向 Firestore 啟動，SPEC／契約／ADR-027 與手機前置同步，沒有重做設計。
 - Verification：一條連貫合成情景通過保存、更正、刪除、修訂／匯出／新舊收據、文件來源失效、有界清理及實際 restore plan 重放後讀回；生產 Server／shared 來源及前端型別通過。初次 fixture 缺 ref.get、前端 readState enum 不符已停批定位並局部修正。原 tsconfig.server 包含既有測試替身缺項而未通過，另限定生產來源核對，未宣稱整套型別通過。詳見 [R01 EV](artifacts/verification/P2_R01_DISCLOSURE_20261013.json)。
 - Limits / Next：零真模型、通知、瀏覽器、雲端操作；原生每日備份真還原仍延後。新索引、實際部署及真人 UI 未驗；不把合成 restore 當真原生還原。按單作者及主責身份交付，R01 合併後才接 R02。
+
+<a id="log-20261013-p2-r02-recovery"></a>
+### 2026-10-13 — P2-R02 清理、派送與恢復接續
+
+- Baseline / Implementation：接續已合併 #203 `58b62f0`；Astra 主模型獨立處理。原背景 Task unknown 加有界 probe-only 查核及待處理終態；照片原清理工作有退避，遲到 descriptor 以 evidence hash 喚醒一次，沒有新建業務操作或重發通知。
+- Restore / Frontend：還原保留 journal 核实的最小照片 tombstone，真正 cleanup consumer 可清物件及釋放 quota。熱備份 reserved upload 保留原 objectScope／hash／reservation、不可讀狀態及清理義務；核對原上載後才 ready。正式 owner 顯示待核對提示，維持現有設計。
+- Verification：四條必要合成路径通過，生產 Server／shared 型別通過；第一次恢復 resume 的 generation_not_rotated 及 queue fixture 缺 ref.id 均已停批定位，只補原失敗範圍。證據見 [R02 EV](artifacts/verification/P2_R02_RECOVERY_20261013.json)。未做全量、雲端、模型、通知或瀏覽器；真原生備份還原按使用者要求延後。
+- Next：review／PR 後接 R03 正式 Agent 組裝；R01／R02 網站部署另核實，不把 master 當上線。

@@ -234,6 +234,8 @@ test("a late upload only supplies the unresolved cleanup generation and never re
   assert.equal(known.state,"known");assert.equal(known.descriptor?.generation,"9007199254740993999");
   await assert.rejects(f.store.get(OWNER,child.child.id,reserved.id),rejects("photo_deleted",410));
   assert.equal(f.quotas(child.scope).cleanupBytes,PNG.length);
+  assert.equal((await f.store.cleanupDeleted(child.scope,reserved.id,known.operationId)).state,"complete");
+  assert.equal(f.quotas(child.scope).cleanupBytes,0);
 });
 
 test("unwritten reservations retain cleanup quota and a missing established global counter fails closed", async () => {

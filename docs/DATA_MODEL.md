@@ -706,3 +706,10 @@ F02 沿 Firestore 原生 export／import 保存資料，不自建資料庫匯出
 還原 operator 的最低暫停時間不是停機證據；Cloud Run 請求逾時不保證 handler 已終止。隔離演練須另行確認來源 API／worker 及排程已停止、附件／journal IO 已排清，再讀最新刪除及 Auth 狀態。F02 轉換後資料、刪除路徑與加密 checkpoint 同一交易提交；失回覆只核原 checkpoint 及完整 inventory，不另開還原。checkpoint 仍為 `applied-paused`，不是啟用或切換收據；任何最新刪除、Auth 或權威變化均須重新裁決，不能直接開放。
 
 換 epoch 後的原 online receipt 只增加內部恢復來源欄位；原 operation、fingerprint、成果及 wire 內容保持原樣。經目前權威核對的相同原請求只能查回既有結果，新 epoch 使用同一 opId 不會建立新操作。最新刪除 journal 若晚於備份，而原 delete receipt／deviceId 已不在備份，僅建立有來源 hash 的 operation erasure barrier，回傳明確衝突並禁止重用；不能自行補造 confirmed receipt。已刪照片不重建，備份中的照片收據正文亦遮蔽。提醒與批次的成果 ID 綁 owner／workspace／child 及業務識別，不把 storage epoch 當成果身份；授權、密文及背景派送仍須核對目前 epoch。
+
+<a id="firestore-recovery-continuity"></a>
+### Firestore 清理及熱備份接續
+
+- 原背景 Task 的 unknown 只以同名 probe 查核；保存 probe 次數／退避，最多三次後標 needs_attention，不換業務 ID 重發。照片清理最多三次有界查核；遲到的已核實 descriptor 可喚醒同一工作，記住 evidence hash，不能無新證據重啟。通知／模型 unknown 不沿用此清理例外。
+- 照片清理保留與 journal 綁定、無正文的原 scope tombstone；還原不只保留 cleanup row，quota 只在真刪除確認後釋放。
+- 熱備份未結清上載保留 reservation、upload ID／hash、配額與原不可變 objectScope；業務 scope 換 epoch，正文仍 reserved 不可讀。以相同原圖核對原上載後才變 ready，不能另建附件或假設 404 表示從未上載。objectScope 只可改 epoch，owner／workspace／child 必須一致；下載／刪除先按目前業務 scope 授權，再核對原物件。未核清前可以沿既有刪除入口保留並履行原物件清理义務。

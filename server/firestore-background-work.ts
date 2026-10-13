@@ -16,7 +16,10 @@ export const firestoreBackgroundWorkSchema = identitySchema.extend({ id: z.strin
   version, createdAt: time, dueAt: time, dispatchRevision: version,
   state: z.enum(['pending', 'leased', 'completed', 'stopped', 'failed', 'unknown']),
   failures: z.number().int().min(0).max(3), attempts: z.number().int().nonnegative(),
-  dispatch: z.enum(['pending', 'sending', 'confirmed', 'unknown', 'conflict']),
+  dispatch: z.enum(['pending', 'sending', 'confirmed', 'unknown', 'conflict', 'needs_attention']),
+  dispatchProbes: z.number().int().min(0).max(3).optional(),
+  probeAfter: time.nullable().optional(),
+  cleanupEvidence: z.string().optional(),
   dispatchLease: z.object({ token: uuid, until: time }).strict().nullable(),
   lease: z.object({ token: uuid, until: time }).strict().nullable(),
 }).strict();
@@ -82,6 +85,16 @@ export async function prepareFirestoreBackgroundWork(data: FirestoreDomainData, 
   return { id, commit() { tx.create(ref(data, id), envelope); tx.create(referenceRef, pointer); } };
 }
 
+/** Only a proven cleanup descriptor may wake an exhausted read/delete reconciliation. */
+export async function preparePhotoCleanupWake(data: FirestoreDomainData, tx: Transaction, identity: BackgroundIdentity, evidence: string) {
+  if (identity.kind !== 'photo-cleanup') domainReject('background_binding', 500);
+  const id = jobId(identity), prior = open(data, await tx.get(ref(data, id)));
+  if (!prior || prior.cleanupEvidence === evidence || !['unknown', 'failed'].includes(prior.state)) return () => {};
+  return () => tx.set(ref(data, id), seal(data, { ...prior, cleanupEvidence: evidence, version: prior.version + 1, state: 'pending', failures: 0,
+    dueAt: new Date().toISOString(), dispatchRevision: prior.dispatchRevision + 1, dispatch: 'pending', dispatchLease: null,
+    dispatchProbes: 0, probeAfter: null, lease: null }));
+}
+
 /** A native worker lease is the only route to a background model claim. Knowledge maintenance never uses a family run. */
 export async function readFirestoreBackgroundClaim(data: FirestoreDomainData, b: Binding, reference: string) {
   domainParse(uuid, reference);
@@ -118,11 +131,13 @@ export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) 
     return database.runTransaction(async tx => {
       const control = await options.readControl(tx), job = open(data, await tx.get(ref(data, id)));
       if (!options.enabled || !control.enabled || !job || job.state !== 'pending'
-        || job.dispatch === 'confirmed' || job.dispatch === 'conflict') return null;
+        || job.dispatch === 'confirmed' || job.dispatch === 'conflict' || job.dispatch === 'needs_attention') return null;
       if (control.generation !== job.generation) { save(tx, { ...job, state: 'stopped', dispatchLease: null }); return null; }
       if (job.dispatchLease && Date.parse(job.dispatchLease.until) > Date.now()) return null;
       const probeOnly = job.dispatch !== 'pending';
-      save(tx, { ...job, dispatch: 'sending', dispatchLease: { token, until: new Date(Date.now() + 30_000).toISOString() } });
+      if (probeOnly && job.probeAfter && Date.parse(job.probeAfter) > Date.now()) return null;
+      if (probeOnly && (job.dispatchProbes ?? 0) >= 3) { save(tx, { ...job, dispatch: 'needs_attention', dispatchLease: null }); return null; }
+      save(tx, { ...job, dispatchProbes: (job.dispatchProbes ?? 0) + (probeOnly ? 1 : 0), dispatch: 'sending', dispatchLease: { token, until: new Date(Date.now() + 30_000).toISOString() } });
       return { job, token, probeOnly };
     });
   }
@@ -132,7 +147,8 @@ export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) 
     await database.runTransaction(async tx => {
       const job = open(data, await tx.get(ref(data, id)));
       if (!job || job.dispatchRevision !== claim.job.dispatchRevision || job.dispatchLease?.token !== claim.token) return;
-      save(tx, { ...job, dispatch: response.state, dispatchLease: null });
+      save(tx, { ...job, dispatch: response.state === 'unknown' && (job.dispatchProbes ?? 0) >= 3 ? 'needs_attention' : response.state,
+        probeAfter: response.state === 'unknown' ? new Date(Date.now() + 60_000).toISOString() : null, dispatchLease: null });
     });
     return response.state;
   }
@@ -142,9 +158,12 @@ export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) 
     const rows = await data.collection('background_work').where('state', '==', 'pending')
       .where('dispatch', 'in', ['pending', 'sending']).where('dueAt', '<=', new Date(Date.now() + 86400_000).toISOString())
       .orderBy('dueAt').orderBy('id').limit(12).get();
+    const uncertain = await data.collection('background_work').where('state', '==', 'pending')
+      .where('dispatch', '==', 'unknown').where('dueAt', '<=', new Date(Date.now() + 86400_000).toISOString())
+      .orderBy('dueAt').orderBy('id').limit(4).get();
     let confirmed = 0, unresolved = 0;
-    for (const row of rows.docs) { const job = open(data, row)!; const result = await dispatchOne(job.id); if (result === 'confirmed') confirmed++; else if (result !== 'skipped') unresolved++; }
-    return { scanned: rows.size, confirmed, unresolved };
+    for (const row of [...rows.docs, ...uncertain.docs]) { const job = open(data, row)!; const result = await dispatchOne(job.id); if (result === 'confirmed') confirmed++; else if (result !== 'skipped') unresolved++; }
+    return { scanned: rows.size + uncertain.size, confirmed, unresolved };
   }
   async function process(raw: FirestoreBackgroundDelivery) {
     const request = domainParse(firestoreBackgroundDeliverySchema, raw), token = randomUUID();
@@ -176,7 +195,7 @@ export function createFirestoreBackgroundQueue(options: BackgroundQueueOptions) 
       if (nextAt && Date.parse(nextAt) <= Date.now()) domainReject('background_next_time', 500);
       const state = !current ? 'unknown' as const : outcome.state === 'deferred' ? 'pending' as const : outcome.state;
       save(tx, { ...job, state, lease: null, ...(state === 'pending' ? { dueAt: nextAt!, dispatchRevision: job.dispatchRevision + 1,
-        dispatch: 'pending' as const, dispatchLease: null } : {}) });
+        dispatch: 'pending' as const, dispatchProbes: 0, probeAfter: null, dispatchLease: null } : {}) });
       return { state };
     });
   }

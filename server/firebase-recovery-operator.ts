@@ -13,7 +13,7 @@ import { assertFirestoreRestoreContent } from './firestore-restore-content.ts';
 import { isRestoreProtocolOrUsage } from './firestore-restore-usage.ts';
 import { createFirebaseRestoreApply } from './firebase-restore-apply.ts';
 import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts';
-import { firestorePhotoSchemas as photoSchemas } from './firestore-photos.ts';
+import { firestorePhotoSchemas as photoSchemas, photoObjectScope } from './firestore-photos.ts';
 import { workRecoveryDocumentId } from './firestore-work-continuation-recovery.ts';
 import { firebaseErasureIntentHash, type FirebaseErasureJournal, type FirebaseErasureIntent, type FirebaseErasureDescriptor } from './firebase-erasure-journal.ts';
 import type { FirebasePhotoRecovery } from './firebase-photo-recovery.ts';
@@ -156,8 +156,8 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         requireValue(photo.state!=='deleting'&&!(photo.state==='reserved'&&photo.upload),'recovery_unsettled_photo');
         if(photo.state!=='ready')continue;
         requireValue(photo.descriptor!==null,'recovery_photo_binding');
-        const backup=await options.photos.backupPhoto({backupId:input.backupId,scope:photo.scope,photoId:photo.id,descriptor:photo.descriptor!,retainedUntil:input.retainedUntil});
-        photos.push({path:record.path,photoId:photo.id,scope:photo.scope,descriptor:photo.descriptor!,backup});
+        const backup=await options.photos.backupPhoto({backupId:input.backupId,scope:photoObjectScope(photo),photoId:photo.id,descriptor:photo.descriptor!,retainedUntil:input.retainedUntil});
+        photos.push({path:record.path,photoId:photo.id,scope:photoObjectScope(photo),descriptor:photo.descriptor!,backup});
       }
       await assertPaused(input.generation);await options.artifacts.assertNativeExportObjects({backupId:input.backupId,objects});
       const payload:FirebaseBackupManifestPayload={format:'yuban-firebase-backup-manifest/v1',backupId:input.backupId,databaseId:source.databaseId,
@@ -249,14 +249,14 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       const ready=photoRows.filter(row=>row.photo.state==='ready');
       const photoEntries:PhotoEntry[]=manifest?manifest.photos:ready.map(({record,photo})=>{
         requireValue(photo.descriptor!==null,'recovery_photo_binding');
-        return {path:record.path,photoId:photo.id,scope:photo.scope,descriptor:photo.descriptor!};
+        return {path:record.path,photoId:photo.id,scope:photoObjectScope(photo),descriptor:photo.descriptor!};
       });
       requireValue(ready.length===photoEntries.length,'recovery_photo_manifest');
       const pending:PhotoEntry[]=[];
       const expectedDescriptors=new Map<string,FirebasePhotoObjectDescriptor>();
       for(const entry of photoEntries){
         const row=ready.find(row=>row.record.path===entry.path&&row.photo.id===entry.photoId);
-        requireValue(Boolean(row&&canonical(row.photo.scope)===canonical(entry.scope)&&canonical(row.photo.descriptor)===canonical(entry.descriptor)),'recovery_photo_manifest');
+        requireValue(Boolean(row&&canonical(photoObjectScope(row.photo))===canonical(entry.scope)&&canonical(row.photo.descriptor)===canonical(entry.descriptor)),'recovery_photo_manifest');
         if(deleted(entry))continue;
         const scope={...entry.scope,storageEpoch:firebaseRestoreEpoch(projectId,target.databaseId,input.restoreId,entry.scope.workspaceId)};
         const scopeHash=createHash('sha256').update(JSON.stringify(['yuban-photo-object',1,projectId,namespace,scope])).digest('hex');

@@ -31,6 +31,7 @@ const extractionSchema = z.object({ state: z.enum(['not_requested', 'running', '
   authorizationVersion: z.string().max(100).nullable(), generation: uuid.nullable() }).strict();
 const rowSchema = z.object({ id: uuid, scope: workRecoveryScopeSchema, reservationOperationId: uuid, createdAt: at, version,
   state: z.enum(["reserved", "ready", "deleting", "deleted"]), metadata: photoMetadataSchema.nullable(),
+  objectScope: workRecoveryScopeSchema.optional(),
   descriptor: firebasePhotoObjectDescriptorSchema.nullable(), upload: uploadSchema.nullable(), deletion: deletionSchema.nullable(),
   visibility: z.enum(['private', 'shared']).optional(), recordId: uuid.nullable().optional(), extraction: extractionSchema.optional() }).strict()
   .refine(row => (row.state === "deleted") === (row.metadata === null)
@@ -44,6 +45,7 @@ const globalQuotaSchema = z.object({ activeBytes: integer, activeCount: integer,
   .refine(value => value.activeBytes + value.cleanupBytes <= PHOTO_LIMITS.totalBytes
     && value.activeCount + value.cleanupCount <= PHOTO_LIMITS.totalCount);
 export const firestorePhotoCleanupSchema = z.object({ scope: workRecoveryScopeSchema, photoId: uuid, operationId: uuid,
+  objectScope: workRecoveryScopeSchema.optional(),
   state: z.enum(["known", "unresolved"]), uploadStarted: z.boolean(), upload: uploadSchema.nullable(),
   sha256: hash, bytes: integer.min(1).max(PHOTO_LIMITS.bytes), mimeType: z.enum(["image/png", "image/jpeg"]),
   descriptor: firebasePhotoObjectDescriptorSchema.nullable(), journal: firebaseErasureDescriptorSchema }).strict()
@@ -58,6 +60,13 @@ function fail(code: string, status = 409): never { throw new FirestorePhotoError
 function parse<T>(schema: z.ZodType<T>, input: unknown, invalid = false): T {
   const parsed = schema.safeParse(input); if (!parsed.success) fail(invalid ? "invalid_input" : "photo_integrity", invalid ? 400 : 503);
   return parsed.data;
+}
+/** A quarantined hot-backup upload keeps its immutable original object address. */
+export function photoObjectScope(row: { scope: WorkRecoveryScope; objectScope?: WorkRecoveryScope }): WorkRecoveryScope {
+  const target = row.objectScope ?? row.scope;
+  if (target.ownerUserId !== row.scope.ownerUserId || target.workspaceId !== row.scope.workspaceId || target.childId !== row.scope.childId)
+    fail('photo_integrity', 503);
+  return target;
 }
 const same = (left: unknown, right: unknown) => canonical(left) === canonical(right);
 export interface FirestorePhotosOptions extends FirestoreAuthorityOptions {
@@ -86,6 +95,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
   function checkedRow(snapshot: DocumentSnapshot, scope: WorkRecoveryScope, id: string): Row {
     if (!snapshot.exists || snapshot.data()?.scopeTag !== tag(scope)) fail("not_found", 404);
     const row = data.open("photo", id, scope, rowSchema, snapshot);
+    photoObjectScope(row);
     if (row.id !== id || !same(row.scope, scope) || snapshot.ref.path !== rowRef(id).path) fail("photo_integrity", 503);
     return row;
   }
@@ -100,7 +110,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
   function view(row: Row): PhotoAttachment {
     active(row);
     return { ...row.metadata, id: row.id, childId: row.scope.childId, ownerUserId: row.scope.ownerUserId, createdAt: row.createdAt,
-      version: row.version, state: row.state as "reserved" | "ready", visibility: row.visibility ?? 'private', canManage: true, recordId: row.recordId ?? null,
+      version: row.version, state: row.state as "reserved" | "ready", recoveryPending: row.state === "reserved" && !!row.objectScope, visibility: row.visibility ?? 'private', canManage: true, recordId: row.recordId ?? null,
       extraction: row.extraction ? { state: row.extraction.state === 'running' && Date.parse(row.extraction.expiresAt!) <= Date.parse(now()) ? 'unknown' : row.extraction.state,
         runId: row.extraction.runId, draft: row.extraction.draft, stopReason: row.extraction.stopReason,
         processedAt: row.extraction.processedAt, model: row.extraction.model }
@@ -260,7 +270,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         const result = { deleted: true as const, cleanupPending: true as const };
         const sharedWrite = submission ? receipts.prepareConfirmed(binding, submission,
           { childId, changeSeq: change.changeSeq, statusCode: 200, result }, true) : null;
-        const cleanup: FirestorePhotoCleanup = { scope: row.scope, photoId: id, operationId, state: row.descriptor ? "known" : "unresolved",
+        const cleanup: FirestorePhotoCleanup = { scope: row.scope, ...(row.objectScope ? { objectScope: row.objectScope } : {}), photoId: id, operationId, state: row.descriptor ? "known" : "unresolved",
           uploadStarted: row.upload !== null, upload: row.upload, sha256: metadata.sha256, bytes: metadata.bytes, mimeType: metadata.mimeType,
           descriptor: row.descriptor, journal: journalDescriptor };
         binding.transaction.create(cleanupRef(id), { scopeTag: tag(binding.scope), state: cleanup.state,
@@ -350,7 +360,12 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
           const row = await readRow(binding, id); active(row); const quota = await quotas(binding); occupied(row, quota);
           let bytes: Buffer; try { bytes = decodePhoto(base64, row.metadata.mimeType); } catch { fail("invalid_photo", 400); }
           if (bytes.length !== row.metadata.bytes || photoHash(bytes) !== row.metadata.sha256) fail("photo_hash_mismatch", 400);
-          if (row.upload && (row.upload.authorizationVersion !== binding.authorizationVersion || row.upload.generation !== binding.generation)) fail("upload_scope_changed", 403);
+          if (row.upload && (row.upload.authorizationVersion !== binding.authorizationVersion || row.upload.generation !== binding.generation)) {
+            if (!row.objectScope || row.state !== 'reserved') fail("upload_scope_changed", 403);
+            // Restore quarantine authorizes only recovery of the original hash/address, never a new upload.
+            row.upload = { ...row.upload, authorizationVersion: binding.authorizationVersion, generation: binding.generation };
+            writeRow(binding, row);
+          }
           const mode = row.state === "ready" ? "read" : row.upload ? "recover" : "write";
           if (!row.upload) { row.upload = { id: candidate, reservationOperationId: row.reservationOperationId, sha256: row.metadata.sha256,
             bytes: row.metadata.bytes, mimeType: row.metadata.mimeType, authorizationVersion: binding.authorizationVersion,
@@ -359,9 +374,9 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         });
         const metadata = first.row.metadata!;
         let uploaded: FirebasePhotoObjectDescriptor;
-        if (first.mode === "read") { await objects.read(first.scope, id, first.row.descriptor!); uploaded = first.row.descriptor!; }
-        else uploaded = await objects[first.mode as "write" | "recover"](first.scope, id, { base64, mimeType: metadata.mimeType });
-        const actual = descriptor(first.scope, id, uploaded, metadata);
+        if (first.mode === "read") { await objects.read(photoObjectScope(first.row), id, first.row.descriptor!); uploaded = first.row.descriptor!; }
+        else uploaded = await objects[first.mode as "write" | "recover"](photoObjectScope(first.row), id, { base64, mimeType: metadata.mimeType });
+        const actual = descriptor(photoObjectScope(first.row), id, uploaded, metadata);
         const final = await authority.runTransaction(userId, childId, async binding => {
           const row = await readRow(binding, id);
           if (!same(binding.scope, first.scope) || binding.authorizationVersion !== first.authorizationVersion || binding.generation !== first.generation
@@ -372,7 +387,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
             const cleanup = data.open("photo-cleanup", id, binding.scope, firestorePhotoCleanupSchema, snapshot);
             if (cleanup.photoId !== id || !same(cleanup.scope, binding.scope) || cleanup.upload?.id !== row.upload.id
               || cleanup.operationId !== row.deletion?.intent.operationId) fail("photo_integrity", 503);
-            descriptor(binding.scope, id, actual, cleanup);
+            descriptor(photoObjectScope(cleanup), id, actual, cleanup);
             if (cleanup.descriptor && !same(cleanup.descriptor, actual)) fail("photo_integrity", 503);
             if (!cleanup.descriptor) binding.transaction.set(cleanupRef(id), { scopeTag: tag(binding.scope), state: "known",
               ...seal("photo-cleanup", id, binding.scope, firestorePhotoCleanupSchema, { ...cleanup, state: "known", descriptor: actual }) });
@@ -398,7 +413,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
           const row = await readRow(binding, id); active(row); if (row.state !== "ready" || !row.descriptor) fail("not_found", 404);
           return { row, scope: { ...binding.scope }, authorizationVersion: binding.authorizationVersion, generation: binding.generation };
         });
-        const content = await objects.read(first.scope, id, first.row.descriptor!);
+        const content = await objects.read(photoObjectScope(first.row), id, first.row.descriptor!);
         await authority.runTransaction(userId, childId, async binding => {
           const row = await readRow(binding, id); active(row);
           if (!same(binding.scope, first.scope) || binding.authorizationVersion !== first.authorizationVersion || binding.generation !== first.generation
@@ -430,7 +445,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
           || cleanup.journal.intentSha256 !== firebaseErasureIntentHash(row.deletion.intent)) fail("photo_integrity", 503);
         const global = data.open("photo-global-quota", "global", SYSTEM, globalQuotaSchema, quotaSnapshot);
         if (global.cleanupCount < 1 || global.cleanupBytes < cleanup.bytes) fail("photo_quota_unavailable", 503);
-        if (cleanup.descriptor) descriptor(scope, id, cleanup.descriptor, cleanup);
+        if (cleanup.descriptor) descriptor(photoObjectScope(cleanup), id, cleanup.descriptor, cleanup);
         return { cleanup, global, intent: row.deletion.intent };
       };
       return guard(async () => {
@@ -439,9 +454,9 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         if (first.cleanup.state !== "known" || !first.cleanup.descriptor) {
           // Resolve a lost upload receipt with a pinned, authenticated read; a 404 cannot prove an in-flight upload absent.
           if (first.cleanup.uploadStarted && options.objects.inspect) {
-            const found = await options.objects.inspect(scope, id);
+            const found = await options.objects.inspect(photoObjectScope(first.cleanup), id);
             if (found) {
-              descriptor(scope, id, found, first.cleanup);
+              descriptor(photoObjectScope(first.cleanup), id, found, first.cleanup);
               await options.database.runTransaction(async tx => {
                 const current = await inspect(tx); if (!current || !same(current.cleanup, first.cleanup)) return;
                 tx.set(cleanupRef(id), { scopeTag: tag(scope), state: 'known',
@@ -453,7 +468,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         }
         const intent = await journal.read!(first.intent, first.cleanup.journal);
         if (!same(intent, first.intent)) fail("photo_integrity", 503);
-        if (first.cleanup.descriptor) await objects.remove!(scope, id, first.cleanup.descriptor);
+        if (first.cleanup.descriptor) await objects.remove!(photoObjectScope(first.cleanup), id, first.cleanup.descriptor);
         return options.database.runTransaction(async tx => {
           const current = await inspect(tx);
           if (!current) return { state: "complete" as const };
@@ -481,16 +496,16 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
       }
       // Unknown uploads retain a cleanup obligation instead of assuming that no object exists.
       if (first.upload && !first.descriptor) {
-        const found = await options.objects.inspect?.(scope, id);
+        const found = await options.objects.inspect?.(photoObjectScope(first), id);
         if (!found) return false;
-        descriptor(scope, id, found, first.upload);
+        descriptor(photoObjectScope(first), id, found, first.upload);
         await options.database.runTransaction(async tx => {
           const row = checkedRow(await tx.get(rowRef(id)), scope, id); if (!same(row, first)) fail('version_conflict');
           row.descriptor = found; writeRow({ scope, transaction: tx } as FirestoreAuthorityTransaction, row);
         });
         return false;
       }
-      if (first.descriptor) await objects.remove(scope, id, first.descriptor);
+      if (first.descriptor) await objects.remove(photoObjectScope(first), id, first.descriptor);
       return options.database.runTransaction(async tx => {
         const [snap, globalSnap, childSnap] = await tx.getAll(rowRef(id), globalRef, quotaRef(scope));
         if (!snap.exists) return true;

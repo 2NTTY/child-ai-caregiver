@@ -53,7 +53,9 @@ function fixture() {
     const full = { ownerUserId: scope.ownerUserId, workspaceId: scope.workspaceId, childId: scope.childId, storageEpoch: scope.storageEpoch };
     return 'photos/v1/' + hash(JSON.stringify(['yuban-photo-object', 1, projectId, namespace, full])) + '/' + id;
   }
-  const objects: Pick<FirebasePhotoObjects, 'write' | 'recover' | 'read'> = {
+  const objects: Pick<FirebasePhotoObjects, 'write' | 'recover' | 'read' | 'inspect' | 'remove'> = {
+    async inspect(scope,id) { return stored.get(objectName(scope,id)) ?? null; },
+    async remove(scope,id,descriptor) { assert.deepEqual(stored.get(objectName(scope,id)),descriptor); stored.delete(objectName(scope,id)); },
     async write(scope, id, input) {
       const objectNameValue = objectName(scope, id), bytes = Buffer.from(input.base64, 'base64');
       const descriptor: FirebasePhotoObjectDescriptor = { objectName: objectNameValue, generation: '1', cipherSha256: hash(objectNameValue),
@@ -71,7 +73,7 @@ function fixture() {
     await setFirebaseBackupControl(options, { expectedGeneration: generation, generation: next, enabled });
     generation = next;
   }
-  const photos = createFirestorePhotoStore({ ...options, objects, journal: { async writeOnce(intent) {
+  const photos = createFirestorePhotoStore({ ...options, objects, journal: { async read(intent,descriptor) { assert.equal(descriptor.intentSha256,firebaseErasureIntentHash(intent)); return intents.get(descriptor.intentSha256)!; }, async writeOnce(intent) {
     const intentSha256 = firebaseErasureIntentHash(intent), prior = intents.get(intentSha256);
     if (prior) assert.deepEqual(prior, intent); else intents.set(intentSha256, structuredClone(intent));
     const descriptor: FirebaseErasureDescriptor = { objectName: 'erasures/v1/' + hash(JSON.stringify([projectId, namespace, intent.scope.ownerUserId, intent.operationId])),
@@ -289,7 +291,7 @@ test('restore charges known cleanup after journal success and pause before the p
   assert.equal(f.documents().some(row => row.path === f.data.ref('photo_cleanup', 'photo-cleanup', photo.id).path), false);
   const input = f.input(snapshot, randomUUID(), new Map()), original = structuredClone(input), source = structuredClone([...f.fake.records]);
   const output = prepareFirebaseRestore(f.options, input), restored = f.decoded(output.records);
-  assert.equal(restored.some(row => row.context.kind === 'photo'), false);
+  assert.equal(firestorePhotoSchemas.photo.parse(find(restored,'photo',photo.id).value).state,'deleted');
   const cleanup = firestorePhotoSchemas.cleanup.parse(find(restored, 'photo-cleanup', photo.id).value);
   assert.equal(cleanup.state, 'known'); assert.deepEqual(cleanup.scope, photo.row.scope);
   assert.deepEqual(cleanup.descriptor, photo.row.descriptor); assert.deepEqual(cleanup.upload, photo.row.upload);
@@ -301,9 +303,13 @@ test('restore charges known cleanup after journal success and pause before the p
   const barrier = firestoreOnlineErasureBarrierSchema.parse(find(restored, 'online-receipt', JSON.stringify([OWNER, submission.operation.opId])).value);
   assert.equal(barrier.assetId, photo.id); assert.equal(confirmed(restored, photo.submission.operation.opId).result, null);
   assertNoMutation(f, source, input, original);
+  f.fake.records.clear(); for (const item of output.records) f.fake.records.set(item.path, item.data);
+  assert.equal((await f.photos.cleanupDeleted(cleanup.scope,photo.id,cleanup.operationId)).state,'complete');
+  assert.equal((await f.photos.cleanupDeleted(cleanup.scope,photo.id,cleanup.operationId)).state,'complete');
+  assert.equal(firestorePhotoSchemas.globalQuota.parse(f.row('photo-global-quota','global').value).cleanupCount,0);
 });
 
-test('restore requires current Auth, copied ready descriptors and settled uploads from production writers', async () => {
+test('restore requires current Auth and quarantines an unsettled upload without losing its original object', async () => {
   const f = fixture(), binding = await f.initialize(), photo = await f.ready(binding.scope.childId);
   await f.switchControl(false); const snapshot = f.documents(), restoreId = randomUUID();
   const input = f.input(snapshot, restoreId, f.descriptors(restoreId, [photo.row]));
@@ -324,8 +330,17 @@ test('restore requires current Auth, copied ready descriptors and settled upload
   await f.switchControl(false); const pendingSnapshot = f.documents();
   const pendingInput = f.input(pendingSnapshot, restoreId, f.descriptors(restoreId, [photo.row]));
   const pendingOriginal = structuredClone(pendingInput), pendingSource = structuredClone([...f.fake.records]);
-  assert.throws(() => prepareFirebaseRestore(f.options, pendingInput), rejected('restore_unsettled_upload'));
+  const recovered=prepareFirebaseRestore(f.options,pendingInput), pendingResult=firestorePhotoSchemas.photo.parse(find(f.decoded(recovered.records),'photo',pending.id).value);
+  assert.equal(pendingResult.state,'reserved'); assert.deepEqual(pendingResult.objectScope,pendingRow.scope);
+  assert.equal(pendingResult.upload?.id,pendingRow.upload?.id); assert.equal(pendingResult.descriptor,null);
   assertNoMutation(f, pendingSource, pendingInput, pendingOriginal);
+  f.fake.records.clear(); for(const item of recovered.records) f.fake.records.set(item.path,item.data);
+  await setFirebaseBackupControl(f.options,{expectedGeneration:recovered.generation,generation:randomUUID(),enabled:true});
+  const before=await f.photos.get(OWNER,binding.scope.childId,pending.id); assert.equal(before.recoveryPending,true);
+  await assert.rejects(f.photos.content(OWNER,binding.scope.childId,pending.id),rejected('not_found'));
+  const settled=await f.photos.upload(OWNER,binding.scope.childId,pending.id,PNG.toString('base64'));
+  assert.equal(settled.state,'ready'); assert.equal(settled.recoveryPending,false);
+  assert.equal((await f.photos.content(OWNER,binding.scope.childId,pending.id)).base64,PNG.toString('base64'));
 });
 
 test('restore retains cleanup for a post-backup child after journal success without restoring its authority or photos', async () => {
@@ -350,7 +365,7 @@ test('restore retains cleanup for a post-backup child after journal success with
   assert.deepEqual(children.map(row => firestoreAuthoritySchemas.child.parse(row.value).id), [originalChild.scope.childId]);
   assert.equal(restored.some(row => row.context.kind === 'authority-child-detail' && row.context.id === laterChild.scope.childId), false);
   assert.equal(restored.some(row => row.context.kind === 'child-projection' && row.context.id === laterChild.scope.childId), false);
-  assert.equal(restored.some(row => row.context.kind === 'photo'), false);
+  assert.equal(restored.filter(row => row.context.kind === 'photo').every(row=>firestorePhotoSchemas.photo.parse(row.value).state==='deleted'), true);
   assert.equal(restored.some(row => row.context.kind === 'photo-child-quota'), false);
   const cleanup = firestorePhotoSchemas.cleanup.parse(find(restored, 'photo-cleanup', photo.id).value);
   assert.equal(cleanup.state, 'known'); assert.deepEqual(cleanup.scope, laterChild.scope);
