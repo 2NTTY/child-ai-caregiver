@@ -109,6 +109,10 @@ export default function AdminScreen() {
       <View style={styles.card}><SectionHeader title="平台 AI 與限額" />
         {state.overview ? <>
           <Text>生效版本 {state.overview.policy.version} · 模型 {state.overview.policy.model}</Text>
+          {policyForm.formState.isDirty ? <View style={styles.row}>
+            <Text>以下表單有尚未保存的修改。目前生效：平台 AI {state.overview.policy.enabled ? '啟用' : '暫停'}。</Text>
+            {fields.map(([key, label]) => <Text key={key} style={styles.note}>{label}：{state.overview!.policy[key]}</Text>)}
+          </View> : null}
           {!state.overview.serverEnabled || !state.overview.platformConfigured ? <Text>部署層 AI 或憑據尚未就緒；後台開關不能越過部署限制。</Text> : null}
           <Controller control={policyForm.control} name="enabled" render={({ field }) => <View style={styles.actions}><Text>平台 AI：{field.value ? '啟用' : '暫停'}</Text><Switch accessibilityLabel="平台 AI" value={field.value ?? false} onValueChange={field.onChange} disabled={locked} /></View>} />
           {fields.map(([key, label, max]) => <Controller key={key} control={policyForm.control} name={key} render={({ field, fieldState }) => <View>

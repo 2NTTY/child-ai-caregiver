@@ -32,6 +32,12 @@ export async function handleAdminRequest(request: Request, options: { auth: Fire
     else if (/^\/api\/admin\/operations\/[a-f0-9-]+$/.test(url.pathname)) result = { receipt: await admin.receipt(userId, url.pathname.split('/').at(-1)!) };
     else domainReject('not_found', 404);
   } else domainReject('method_not_allowed', 405);
-  if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) domainReject('identity_changed', 409);
+  try {
+    if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) domainReject('identity_changed', 409);
+  } catch (error) {
+    // A committed command must not become an apparently rejected operation when final session validation fails.
+    if (request.method === 'POST') domainReject('operation_result_unknown', 503);
+    throw error;
+  }
   return Response.json(result);
 }

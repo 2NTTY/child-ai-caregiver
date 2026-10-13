@@ -27,9 +27,9 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   }
   const config = readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: 'synthetic-admin', VERTEX_LOCATION: 'global', GEMINI_MODEL: 'gemini-3.1-flash-lite', AI_DAILY_USER_ATTEMPTS: '12', AI_DAILY_GLOBAL_ATTEMPTS: '20' });
   const admin = createFirestoreAdmin(options, config);
-  let actor: string | null = 'admin', recent = true;
+  let actor: string | null = 'admin', recent = true, expireAfterCommit = false, sessionReads = 0;
   const session = () => actor ? { user: { id: actor } } : null;
-  const auth = { getSession: async () => session(), handler: async () => new Response(null, { status: 404 }),
+  const auth = { getSession: async () => expireAfterCommit && ++sessionReads === 2 ? null : session(), handler: async () => new Response(null, { status: 404 }),
     assertRecentReauthentication: async () => { if (!recent) { const { FirebaseAuthError } = await import('../server/firebase-auth.ts'); throw new FirebaseAuthError(401, 'recent_reauthentication_required'); } return session()!; } } as FirebaseAuthPort;
   const handler = createFirebaseRequestHandler({ authority, auth, publicOrigin: origin, mailConfigured: true, admin, adminUid: 'admin' });
   let requests = 0;
@@ -84,6 +84,11 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
     const roundtrip = codec.decode(restored); assert.equal(roundtrip.context.kind, decoded.context.kind);
     if (roundtrip.context.kind === 'platform-policy') assert.equal((roundtrip.value as any).enabled, false);
   }
+  expireAfterCommit = true;
+  const late = { ...second, email: 'late-session@example.test', opId: randomUUID() };
+  assert.equal((await http('operations', late)).status, 503);
+  expireAfterCommit = false;
+  assert.equal((await (await http('operations/' + late.opId)).json()).receipt.opId, late.opId);
   let drop = true;
   const owner = new AdminOwner(origin + "/api", (async (url, init) => {
     const response = await handler(new Request(String(url), { ...init, headers: { ...(init?.headers as object), origin } }));
