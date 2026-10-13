@@ -19,7 +19,7 @@ export function createProductAgent(options: {
   concerns?: Pick<import("./concern-store.ts").ConcernStore, "list" | "get">;
   sources?: import("./shared-input-store.ts").SharedInputStore;
   actions?: import("./agent-actions-store.ts").AgentActionsStore;
-  summary?:import("./care-summary-store.ts").CareSummaryStore;
+  summary?:Pick<import("./care-summary-store.ts").CareSummaryStore, "get">;
   contact?:Pick<import("./contact-store.ts").ContactStore, 'options' | 'request' | 'recordedForRun'>;
   growth?: Pick<import("./growth-store.ts").GrowthStore, "list">;
   runtime: ReturnType<typeof createAgentRuntime>; store: ProductAgentStore;
@@ -67,7 +67,7 @@ export function createProductAgent(options: {
       const authorize = async () => await input.authorize() && await options.store.authorize(claim.scope,claim.runId);
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
-      const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId,
+      const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt),
         deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())),
         trigger: { kind: "worker", reference: input.reference }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context: input.context,

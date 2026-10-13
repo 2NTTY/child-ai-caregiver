@@ -28,6 +28,7 @@ const deletionSchema = z.object({ intent: firebaseErasureIntentSchema, fingerpri
 const extractionSchema = z.object({ state: z.enum(['not_requested', 'running', 'available', 'failed', 'unknown']),
   runId: uuid.nullable(), draft: photoDraftSchema.nullable(), stopReason: z.string().max(128).nullable(),
   processedAt: at.nullable(), model: z.string().max(256).nullable(), expiresAt: at.nullable(),
+  resourceVersion: version.optional(),
   authorizationVersion: z.string().max(100).nullable(), generation: uuid.nullable() }).strict();
 const rowSchema = z.object({ id: uuid, scope: workRecoveryScopeSchema, reservationOperationId: uuid, createdAt: at, version,
   state: z.enum(["reserved", "ready", "deleting", "deleted"]), metadata: photoMetadataSchema.nullable(),
@@ -531,10 +532,13 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         if (row.version !== expectedVersion) fail('version_conflict');
         const change = await b.prepareChange(runId, 'care', false);
         row.version++; row.extraction = { state: 'running', runId, draft: null, stopReason: null, processedAt: null, model: null,
-          expiresAt: new Date(Date.parse(started) + 95000).toISOString(), authorizationVersion: b.authorizationVersion, generation: b.generation };
+          resourceVersion: row.version, expiresAt: new Date(Date.parse(started) + 95000).toISOString(), authorizationVersion: b.authorizationVersion, generation: b.generation };
         const scope: AgentScope = { userId, childId, workspaceId: b.scope.workspaceId, authorizationVersion: b.authorizationVersion,
           dataVersion: b.scope.storageEpoch + ':' + change.changeSeq };
-        writeRow(b, row); change.commit(); return { created: true, photo: view(row), scope };
+        const claimedRun: import('./product-agent-store.ts').AgentRunClaim = {runId,scope,created:true,sourceMessageId:null,state:'running',
+          expiresAt:row.extraction.expiresAt!,storageEpoch:b.scope.storageEpoch,trigger:{kind:'interactive',reference:id},recipeId:'photo-capture',
+          purpose:'photo-extraction',sourceResource:{kind:'photo',id,version:row.version}};
+        writeRow(b, row); change.commit(); return { created: true, photo: view(row), scope, claimedRun };
       });
     },
     async extractionAuthorized(userId: string, childId: string, id: string, runId: string) {
@@ -542,7 +546,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
       return authority.runTransaction(userId, childId, async b => {
         const row = await readRow(b, id), e = row.extraction;
         return row.state === 'ready' && row.visibility !== 'shared' && !row.recordId && e?.state === 'running' && e.runId === runId
-          && e.authorizationVersion === b.authorizationVersion && e.generation === b.generation && Date.parse(e.expiresAt!) > Date.parse(now());
+          && (e.resourceVersion === undefined || e.resourceVersion === row.version) && e.authorizationVersion === b.authorizationVersion && e.generation === b.generation && Date.parse(e.expiresAt!) > Date.parse(now());
       });
     },
     async finishExtraction(userId: string, childId: string, id: string, runId: string, draft: PhotoDraft | null, stopReason: string | null, model: string | null) {
@@ -551,7 +555,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         const row = await readRow(b, id); active(row); const e = row.extraction;
         if (row.state !== 'ready' || row.visibility === 'shared' || !e || e.runId !== runId) fail('not_found', 404);
         if (e.state !== 'running') return view(row);
-        const allowed = e.authorizationVersion === b.authorizationVersion && e.generation === b.generation && Date.parse(e.expiresAt!) > Date.parse(now());
+        const allowed = (e.resourceVersion === undefined || e.resourceVersion === row.version) && e.authorizationVersion === b.authorizationVersion && e.generation === b.generation && Date.parse(e.expiresAt!) > Date.parse(now());
         const accepted = allowed && draft ? parse(photoDraftSchema, draft) : null;
         row.extraction = { ...e, state: accepted ? 'available' : !allowed || stopReason === 'cancelled' || stopReason === 'deadline' ? 'unknown' : 'failed',
           draft: accepted, stopReason: allowed ? stopReason : 'unauthorized_or_expired', processedAt: now(), model };

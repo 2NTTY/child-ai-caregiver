@@ -2505,3 +2505,11 @@
 - Restore / Frontend：還原保留 journal 核实的最小照片 tombstone，真正 cleanup consumer 可清物件及釋放 quota。熱備份 reserved upload 保留原 objectScope／hash／reservation、不可讀狀態及清理義務；核對原上載後才 ready。正式 owner 顯示待核對提示，維持現有設計。
 - Verification：四條必要合成路径通過，生產 Server／shared 型別通過；第一次恢復 resume 的 generation_not_rotated 及 queue fixture 缺 ref.id 均已停批定位，只補原失敗範圍。證據見 [R02 EV](artifacts/verification/P2_R02_RECOVERY_20261013.json)。未做全量、雲端、模型、通知或瀏覽器；真原生備份還原按使用者要求延後。
 - Next：review／PR 後接 R03 正式 Agent 組裝；R01／R02 網站部署另核實，不把 master 當上線。
+
+
+<a id="log-20261013-p2-r03-assembly"></a>
+### 2026-10-13 — P2-R03 Agent 正式組裝
+
+- Baseline / Implementation：接續 #204 `4851ffa`；Astra 主模型獨立完成。正式 binder 接原背景 generation／claim，以及照片、分享文字的來源版本／抽取 claim；所有入口保留原 run、期限、授權、取消及共同預算。Firestore 正式 constructor 注入同一 summary service。
+- Verification：一條合成連貫情景經真 ADK Runner 通過四個入口、摘要、取消與不重播；Server 生產來源型別通過。脚本誤選附帶工作、未先載入能力及漏填來源欄位曾失敗，停批後定位修正，未改正式斷言或擴測；見 [R03 EV](artifacts/verification/P2_R03_ASSEMBLY_20261013.json)。零真模型／通知／雲端；沒有全量測試。
+- Next：完成本包 review／PR 後接 R04 成果狀態與通知歷史；網站版本及真原生還原仍分開記錄。

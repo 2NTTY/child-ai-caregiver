@@ -63,7 +63,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ### 當前任務入口
 
-當前為 [P2-R02 清理、派送與恢復接續](#p2-r02)，基線 `58b62f0`（#203）。使用者已批准依序完成 R01→R02→R03→R04，僅 Astra 主模型、不派子代理、只做必要定向檢查。P3 手機及三角色實作等本次修正合併；[真原生備份還原](#p2-backup-followup)仍延後。家庭多人完整功能移至 P4，保留本人空間及資料隔離。
+當前為 [P2-R03 Agent 正式組裝](#p2-r03)，基線 `4851ffa`（#204）。使用者已批准依序完成 R01→R02→R03→R04，僅 Astra 主模型、不派子代理、只做必要定向檢查。P3 手機及三角色實作等本次修正合併；[真原生備份還原](#p2-backup-followup)仍延後。家庭多人完整功能移至 P4，保留本人空間及資料隔離。
 
 F02～F08 原執行授權及基線保留在下節作里程碑追溯，不是目前入口。每包開始及交付前核對最新 master、相關工作樹及其後合併；部署、用量及待驗觀察見 [STATUS](STATUS.md)。
 
@@ -85,7 +85,7 @@ F02～F08 原執行授權及基線保留在下節作里程碑追溯，不是目�
 <a id="p2-r02"></a>
 #### P2-R02 清理、派送與恢復接續
 
-- 狀態：已實作及必要合成驗證，待 review／PR；分支 `codex/p2-r02-cleanup-recovery`；前置 P2-R01 已合併；涵蓋 R4～R7。
+- 狀態：已於 #204 合併（`4851ffa`）；分支 `codex/p2-r02-cleanup-recovery`；前置 P2-R01 已合併；涵蓋 R4～R7。
 - 照片沿原清理 ID 有界待查／退避，遲到 descriptor 喚醒原工作，確認物件刪除才釋放配額。Tasks unknown 補原 Task 的 probe-only 查核，達限保留待處理，不換 ID 外發。
 - 恢復保留無正文且綁 journal 的最小照片 tombstone；熱備份未結清上載先隔離並保留 reservation、hash、清理及配額，只在核實物件後 ready，不以單張附件阻止整庫恢復、不直接忽略。
 - 最少驗證：上載／刪除交錯、遲到清理；合成 restore output 交真 cleanup consumer；一份未結清快照及一次 unknown 後續查回。真原生備份還原仍待後續批准／安排。
@@ -95,10 +95,10 @@ F02～F08 原執行授權及基線保留在下節作里程碑追溯，不是目�
 <a id="p2-r03"></a>
 #### P2-R03 Agent 正式組裝
 
-- 狀態：未開始；前置 P2-R02；涵蓋 R2／R8。
+- 狀態：實作及必要合成驗證完成，待本包 PR 合併；分支 `codex/p2-r03-agent-assembly`；前置 P2-R02 已合併；涵蓋 R2／R8。
 - 按真持久操作區分聊天、背景／接續、照片及分享文字；Server 綁原 run、來源資源／版本、絕對期限、授權及 worker generation，不偽造聊天 claim 或拆 binder。預算、取消、終態及防重維持。
 - 注入已有同一 summary service；測試從正式 constructor 到 runtime／工具，不人工塞工具冒充接線。
-- 最少驗證：scripted provider 一批資料核四個受影響入口及摘要，串取消與原操作不重播；零真模型。
+- 已驗：scripted provider 經正式 constructor／真 Runner，核背景、接續、照片及分享文字、真 summary service、取消及重複工作不再調用；Server 生產來源型別通過。見 [R03 EV](artifacts/verification/P2_R03_ASSEMBLY_20261013.json)；零真模型，部署另核。
 
 <a id="p2-r04"></a>
 #### P2-R04 成果狀態與通知歷史

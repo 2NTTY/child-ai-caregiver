@@ -1,0 +1,36 @@
+{
+  "package": "P2-R03",
+  "date": "2026-10-13",
+  "base": "4851ffa162f4e120c444bcd1fbfdf477416d0d99",
+  "environment": "Node 24; synthetic encrypted Firestore fixture; real ADK Runner; scripted provider",
+  "checks": [
+    {
+      "command": "node --experimental-strip-types --test tests/firestore-agent-assembly.test.ts",
+      "result": "passed",
+      "cases": 1,
+      "coverage": [
+        "persisted background and continuation leases through production constructor",
+        "shared real care summary",
+        "persisted photo and shared-text extraction claims",
+        "same background job and capture replay without generation",
+        "cancellation"
+      ]
+    },
+    {
+      "command": "tsc --noEmit -p .cache/r03-server-types.json",
+      "result": "passed",
+      "scope": "production server/shared sources; excludes historical test stubs"
+    }
+  ],
+  "failures_retained": [
+    "fixture selected unrelated child-change job instead of its target; fixed delivery ID selection",
+    "scripted continuation used a reader before loading its existing capability; corrected native tool sequence",
+    "synthetic paste omitted required source label and nullable fields; completed fixture"
+  ],
+  "limits": [
+    "No real model, embedding, network, notification or browser calls",
+    "No full regression",
+    "Deployment not performed in this evidence",
+    "Native managed backup restore remains deferred"
+  ]
+}
