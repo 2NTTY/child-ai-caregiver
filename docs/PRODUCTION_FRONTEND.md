@@ -89,7 +89,7 @@ F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外
 
 ### 原 VM Firestore 組裝
 
-2026-10-13 13:13 UTC，`ex-machina.eu.org` 使用 `334fb4e` Web／API／worker，映像 `admin-334fb4e`（#208／#209），包含先前 R01～R04 修正及 Web 管理後台。管理 UID 在受保護配置，回退映像 `admin-a06e076`／`review-2c17aa7` 及對應 `*.env.before-admin-*` 保留；不回退業務資料或清零配額。健康、管理政策讀回及索引設定通過，未新增真模型／通知／真人瀏覽器批次；見 [ADM01 EV](../artifacts/verification/P2_ADM01_WEB_20261013.json)。先前 [review 交付證據](../artifacts/verification/P2_REVIEW_DELIVERY_20261013.json) 及 [F08](../PLAN.md#p2-f08) 保留，不把這次唯讀核對代替全部產品或真備份還原验收。
+2026-10-13 13:54 UTC，`ex-machina.eu.org` Web 使用 `8f916d0`／`admin-8f916d0`（#211），修正管理身份查詢的原生 fetch 接收者；API／worker 保持 `334fb4e` 且未重啟。Compose 的 RELEASE_TAG 為 admin-8f916d0；該 API tag 指向原 334fb4e 相同映像，便於之後正常重建。管理 UID／資料／用量不變；保留 admin-334fb4e Web 與 compose.env.before-admin-8f916d0 作相容回退。已建置 Web 的原生 Edge／合成 API 檢查通過，正式 HTML／JS hash 與該產物一致；本人登入結果未代填。見 [瀏覽器修正 EV](../artifacts/verification/P2_ADM01_BROWSER_FIX_20261013.json)。原 [ADM01 EV](../artifacts/verification/P2_ADM01_WEB_20261013.json)、[review 交付證據](../artifacts/verification/P2_REVIEW_DELIVERY_20261013.json) 及 [F08](../PLAN.md#p2-f08) 保留，不把此次定向核對代替全部產品或真备份還原驗收。
 
 現場部署目錄 `/opt/yuban-firestore-cce4667/deploy/p1`；受保護設定在 `/etc/yuban-p1/firestore`，原渠道檔案在 `/etc/yuban-p1`。部署疊加 `compose.firestore.channels.yaml`，掛載設定不代表已准外發。原 Caddy 固定 IP 為 `172.30.51.3`，動態 API／worker 池為 `172.30.51.8/29`、共同子網 `172.30.51.0/28`；調整子網時須同步核對 `P1_DYNAMIC_RANGE` 與 `P1_PROXY_IP` 不重疊，避免重建時動態容器先佔用 proxy 地址。
 

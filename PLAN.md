@@ -63,16 +63,16 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ### 當前任務入口
 
-目前修正 [P2-ADM01](#p2-adm01) 的正式瀏覽器管理身份讀取失敗；基線 c08f163，分支 codex/admin-browser-fetch-fix。已修正原生 fetch 的錯誤接收者；原合成情景及已建置 Web 的原生瀏覽器讀取通過，待合併及只更新 Web 映像。P3 不自動開始；原生備份真還原維持延後。
+目前無進行中工作包。[P2-ADM01](#p2-adm01) 的瀏覽器身份讀取修正已於 #211 合併及原站部署；P3 依使用者下一步指示開始。原生備份真還原維持延後。
 
 F02～F08 原執行授權及基線保留在下節作里程碑追溯，不是目前入口。每包開始及交付前核對最新 master、相關工作樹及其後合併；部署、用量及待驗觀察見 [STATUS](STATUS.md)。
 
 <a id="p2-adm01"></a>
 ### P2-ADM01 簡易 Web 管理員後台
 
-- **結果：**#208／#209 已合併，原站 `/admin` 已部署 `334fb4e`／`admin-334fb4e`。首位指定的已驗證 Firebase UID 已綁定；邀請、平台政策、獨立用量及管理審計使用原 Firestore，無孩子前置。沒有管理員自授權、私人資料瀏覽或原生入口。
+- **結果：**#208／#209 已合併；#211 修正原生 fetch 接收者，原站 Web 已部署 `8f916d0`／`admin-8f916d0`，API／worker 保持 `334fb4e`。首位指定的已驗證 Firebase UID 已綁定；邀請、平台政策、獨立用量及管理審計使用原 Firestore，無孩子前置。沒有管理員自授權、私人資料瀏覽或原生入口。
 - **驗證：**一組定向合成 HTTP／routing／owner 流程、必要型別及 Web build 通過；原操作回應丟失與提交後會話失效仍可查回。實際原站健康、管理政策／有界查詢、匿名拒絕與六項密文索引排除核對完成。零真模型／通知／Computer Use，沒有全量矩陣。
-- **交付／限制：**[操作方法](docs/PRODUCTION_FRONTEND.md#invited-account-service)、[REQ／AC](SPEC.md#web-admin)、[ADM01 EV](artifacts/verification/P2_ADM01_WEB_20261013.json)。初始 12／20、4 生成／2 embedding 未改，用量未清零；本人 key 保護限額獨立。未做真人瀏覽器新驗收，真原生備份還原仍明列延後；原 VM 期限不續期。
+- **交付／限制：**[操作方法](docs/PRODUCTION_FRONTEND.md#invited-account-service)、[REQ／AC](SPEC.md#web-admin)、[ADM01 EV](artifacts/verification/P2_ADM01_WEB_20261013.json)。初始 12／20、4 生成／2 embedding 未改，用量未清零；本人 key 保護限額獨立。已建置 Web 以原生 Edge／合成 API 驗證管理頁載入，正式 HTML／JS hash 相符，见 [瀏覽器修正 EV](artifacts/verification/P2_ADM01_BROWSER_FIX_20261013.json)；未代填本人登入結果，真原生備份還原仍明列延後；原 VM 期限不續期。
 
 
 <a id="p2-review-repair"></a>
