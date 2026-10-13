@@ -1,10 +1,12 @@
+import { contentVisible } from './firestore-disclosure.ts';
+import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
 import { FieldPath, type Query } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { AccountExportPage } from '../src/shared/account-service.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityOptions, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
-import { FirestoreFamilyDocumentSnapshots, firestoreSnapshotManifestSchema } from './firestore-family-document-snapshots.ts';
+import { firestoreSnapshotManifestSchema } from './firestore-family-document-snapshots.ts';
 import { firestorePhotoSchemas, type createFirestorePhotoStore } from './firestore-photos.ts';
 import { createFirestoreSharedInputStore } from './firestore-shared-inputs.ts';
 import { firestorePushBindingSchema, firestorePushDeliverySchema } from './firestore-web-push.ts';
@@ -46,7 +48,7 @@ const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId
 export function createFirestoreAccountExport(options: FirestoreAuthorityOptions & {
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'content'>;
 }) {
-  const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), snapshots = new FirestoreFamilyDocumentSnapshots(options);
+  const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
   function version(binding: FirestoreAuthorityTransaction) {
     return firestoreDomainHash([binding.scope.ownerUserId, binding.scope.workspaceId, binding.scope.storageEpoch, binding.authorizationVersion, binding.changeSeq]);
   }
@@ -101,10 +103,20 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const child = await binding.readChild(context.scope.childId); if (child) items.push(child);
           } else if (section === 'agent_work') {
             const work = await binding.readWork(context.id); if (!work) domainReject('export_scope_changed'); items.push(work);
-          } else if (section === 'document_content') {
+          } else if (section === 'document_content' || section === 'document_versions') {
             const manifest = firestoreSnapshotManifestSchema.parse(value);
-            const snapshot = await snapshots.read(binding.transaction, binding.scope, manifest.documentId, manifest.snapshotId, manifest.snapshotVersion);
-            if (!snapshot) domainReject('export_scope_changed'); items.push({ documentId: manifest.documentId, snapshot });
+            const snapshot = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding })
+              .readExportSnapshot(owner, binding.scope.childId, manifest.documentId, manifest.snapshotId, manifest.snapshotVersion);
+            items.push(section === 'document_content' ? { documentId: manifest.documentId, snapshot, invalidated: snapshot === null }
+              : { documentId: manifest.documentId, snapshotId: manifest.snapshotId, snapshotVersion: manifest.snapshotVersion, invalidated: snapshot === null });
+          } else if (section === 'documents') {
+            const item = await createFirestoreFamilyDocumentStore({ ...options, transaction: binding }).get(owner, binding.scope.childId, context.id);
+            if (item) items.push({ id: item.id, childId: item.childId, kind: item.kind, purpose: item.purpose, version: item.version,
+              status: item.status, readState: item.readState, invalidated: item.readState === 'invalidated' });
+          } else if (['care_history', 'profile_history', 'memory_fact_history', 'memory_topic_history'].includes(section)) {
+            const item = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(value);
+            const kind = section === 'care_history' ? 'care' : section === 'profile_history' ? 'profile' : section === 'memory_fact_history' ? 'fact' : 'topic';
+            if (await contentVisible(data, binding, kind, kind === 'profile' ? item.childId : z.uuid().parse(item.id), item.version)) items.push(value);
           } else if (suffix === 'photos') {
             const photo = firestorePhotoSchemas.photo.parse(value);
             if (!['ready', 'reserved'].includes(photo.state)) continue;

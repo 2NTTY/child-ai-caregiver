@@ -1,3 +1,4 @@
+import { erasureCoversPhoto } from './firebase-erasure-journal.ts';
 import { z } from 'zod';
 import type { Bucket } from '@google-cloud/storage';
 import type { FirebasePhotoObjects, FirebasePhotoObjectDescriptor } from './firebase-photo-objects.ts';
@@ -33,9 +34,7 @@ export function createFirebaseManagedPhotoReader(options:{bucket:Bucket;journalB
       for(const row of value.items??[]){
         if(names.has(row.name)||names.size>=2000)reject('recovery_journal_incomplete');names.add(row.name);
         const intent=firebaseErasureIntentSchema.parse((await journal.readObject(row.name,row.generation)).intent);
-        if(intent.scope.ownerUserId===scope.ownerUserId&&(intent.type==='account-delete'
-          ||intent.scope.workspaceId===scope.workspaceId&&(intent.type==='child-delete'
-            ?intent.scope.childId===scope.childId:intent.assetId===photoId)))reject('recovery_photo_permanently_erased');
+        if(erasureCoversPhoto(intent,scope,photoId))reject('recovery_photo_permanently_erased');
       }
       if(!value.nextPageToken)return;
       if(tokens.has(value.nextPageToken))reject('recovery_journal_incomplete');tokens.add(value.nextPageToken);cursor=value.nextPageToken;

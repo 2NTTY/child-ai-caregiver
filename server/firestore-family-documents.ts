@@ -36,7 +36,8 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
   /** Internal Agent transaction only. Never supplied by an HTTP request. */
   transaction?: FirestoreAuthorityTransaction;
   deferCommit?: (commit: () => void) => void;
-}): FamilyDocumentStore & { processRefresh(job: FirestoreBackgroundWork): Promise<{ state: 'completed' | 'stopped' }> } {
+}): FamilyDocumentStore & { processRefresh(job: FirestoreBackgroundWork): Promise<{ state: 'completed' | 'stopped' }>;
+  readExportSnapshot(userId: string, childId: string, id: string, snapshotId: string, version: number): Promise<DocumentSnapshot | null> } {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), snapshots = new FirestoreFamilyDocumentSnapshots(options);
   const care = createFirestoreCareStore(options), chat = createFirestoreChatStore(options);
   const reader = createFirestoreDocumentSources({ ...options, care, memory: createFirestoreMemoryStore({ ...options, care, chat }) });
@@ -193,6 +194,15 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     uuid.parse(childId); return runDocumentTransaction(userId, childId, binding => operation(binding, { ...binding.scope }));
   }
   return {
+    async readExportSnapshot(userId, childId, id, snapshotId, version) {
+      return read(userId, childId, async (binding, scope) => {
+        if (!await find(binding, scope, id)) return null;
+        const snapshot = await snapshots.read(binding.transaction, scope, id, snapshotId, version);
+        if (!snapshot) return null;
+        const loaded = await sources(binding, scope); await supplement(binding, scope, loaded, [snapshot]);
+        return documentSnapshotValid(snapshot, loaded) ? snapshot : null;
+      });
+    },
     async operationReceipt(userId, childId, opId) {
       uuid.parse(childId); uuid.parse(opId);
       return runDocumentTransaction(userId, null, async binding => {

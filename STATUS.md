@@ -4,10 +4,10 @@
 
 ## 目前與接手
 
-- **本輪 P2 已由 [PR #201](https://github.com/2NTTY/child-ai-caregiver/pull/201)／`1aca4a0` 合併結案。** 原 P2／INT／A 系列及 F01～F08 成果與證據保留；當前只整理 [P3 Android／iOS 接線與更新計劃](PLAN.md#p3-mobile)。手機實作入口為 S04-W01，尚未開始原生接線、build 或部署，不把可復用畫面當作 App 已完成。
+- **Firestore／正式零 SQL 里程碑已交付；P2 review 修正進行中。** 已批准按 [P2-R01→R04](PLAN.md#p2-review-repair) 修正刪除披露、清理恢復、Agent 正式組裝及成果狀態。當前 P2-R01，基線 `30d16d5`（#202）；舊有效證據保留，不再概括為所有 P2 功能已完整接通。手機實作等 R04 合併；完整家庭多人功能移至 P4。
 - **原前後端已共同使用 Firestore。** 原網站保留新前端設計，真 Agent 的官方引用、同一準備單修改／確認／保存及刷新讀回已通過。摘要 Firestore 接線缺口已補回並部署；容量操作及保存讀回已補必要證據，回覆替身與真 Agent 結果分開記錄。正式 API／worker 已退出 SQL，PostgreSQL 停止；不是分開的預覽站。排程、queue 及既有通知入口已恢復，本包未追加外發訊息。
 - **使用者明確延後：原生每日備份首份核對及一次隔離還原。** 每日 14 天排程、還原入口及測試保留，尚無真原生還原證據；不阻塞本次合併與功能使用。後續只見 [PLAN 待驗入口](PLAN.md#p2-backup-followup)，不持續輪詢或重跑既有驗收。配對備份與 F02～F07 證據保持分開；結果、失敗與限制見 [F08 EV](artifacts/verification/F08_ORIGINAL_SITE_20261013.json)。
-- **操作範圍：**本次只改文件，由主模型核對現有程式及官方原生方法，不跑產品測試、派子代理或使用 Computer Use。手機按共用基礎→Android／iOS→固定更新入口→其餘原生功能推進；不改設計或另建後端。P2 仍只啟用聊天及現有工具，其他三角色留 [P3](PLAN.md#p3-agent-roles)，不作手機核心流程的前置。
+- **操作範圍：**本輪由 Astra 主模型獨立實作、review 及最低必要定向驗證，不派子代理、不做全量或 Computer Use。保留新前端設計；三個新增 Agent 角色仍在 P3。
 - 前端依 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；本人模型 key／限額仍為可選，平台基本 AI 不要求家長提供 key。未改 UI 設計。
 
 <a id="deployment"></a>

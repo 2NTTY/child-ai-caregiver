@@ -12,9 +12,16 @@ const hash = z.string().regex(/^[a-f0-9]{64}$/u);
 const generation = z.string().regex(/^[1-9][0-9]{0,19}$/u).refine(value => BigInt(value) <= 18446744073709551615n);
 export const firebaseErasureIntentSchema = z.object({
   scope: workRecoveryScopeSchema, assetId: z.uuid(), operationId: z.uuid(),
-  at: z.iso.datetime({ offset: true }), type: z.enum(["photo-delete", "child-delete", "account-delete"]),
-}).strict();
+  at: z.iso.datetime({ offset: true }), type: z.enum(["photo-delete", "child-delete", "account-delete", "content-delete"]),
+  content: z.object({ kind: z.enum(['care', 'profile', 'fact', 'topic']), throughVersion: z.number().int().positive() }).strict().optional(),
+}).strict().refine(value => (value.type === 'content-delete') === (value.content !== undefined));
 export type FirebaseErasureIntent = z.infer<typeof firebaseErasureIntentSchema>;
+/** Content-only erasure never authorizes attachment removal or suppresses its recovery. */
+export function erasureCoversPhoto(intent: FirebaseErasureIntent, scope: FirebaseErasureIntent['scope'], id: string): boolean {
+  return intent.scope.ownerUserId === scope.ownerUserId && (intent.type === 'account-delete'
+    || intent.scope.workspaceId === scope.workspaceId && (intent.type === 'child-delete' && intent.scope.childId === scope.childId
+      || intent.type === 'photo-delete' && intent.scope.childId === scope.childId && intent.assetId === id));
+}
 export const firebaseErasureDescriptorSchema = z.object({
   objectName: z.string().min(1).max(256), generation, cipherSha256: hash,
   intentSha256: hash, bytes: z.number().int().positive().max(MAX_BYTES), format: z.literal("yuban-erasure-journal/v1"),

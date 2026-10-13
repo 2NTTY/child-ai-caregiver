@@ -1,3 +1,7 @@
+import { createFirestoreCareStore } from './firestore-care.ts';
+import { createFirestoreChatStore } from './firestore-chat.ts';
+import { createFirestoreMemoryStore } from './firestore-memory.ts';
+import { contentPointerSchema, contentResult, contentVisible, readContentPointer } from './firestore-disclosure.ts';
 import { z } from "zod";
 import type { OnlineReceipt, OnlineSubmission } from "../src/shared/online.ts";
 import type { FirestoreAuthorityTransaction } from "./firestore-authority.ts";
@@ -71,6 +75,18 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
     let visible = record.childId === null || await binding.readChild(record.childId) !== null;
     if (isFirestoreOnlinePending(record)) return { state: "unconfirmed" };
     let result = record.result;
+    if (visible && record.childId) {
+      const scoped = { ...binding, scope: { ...binding.scope, childId: record.childId } };
+      const pointer = contentPointerSchema.safeParse(result), legacy = pointer.success ? null : contentResult(record.path, result);
+      if (pointer.success) {
+        result = await readContentPointer(data, scoped, pointer.data);
+        if (result !== null && pointer.data.kind === 'fact') {
+          const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore(options) });
+          result = { fact: await memory.readFact(scoped, pointer.data.id) };
+        }
+      }
+      else if (legacy && !await contentVisible(data, scoped, legacy.kind, legacy.id, legacy.version)) result = null;
+    }
     // A deleted private source cannot reappear through a saved create/manage receipt.
     if (visible && /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(record.path) && record.result !== null) {
       const pointer = privateInputPointerSchema.safeParse(result), legacy = result as { input?: { id?: unknown } };
@@ -123,7 +139,8 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
       changeSeq: value.changeSeq, statusCode: value.statusCode, result: value.result };
     const receipt: OnlineReceipt = { state: "confirmed", path: record.path, operation: record.operation,
       changeSeq: record.changeSeq, statusCode: record.statusCode, result: record.result };
-    let saved = record;
+    const pointer = contentResult(record.path, value.result);
+    let saved = pointer ? { ...record, result: pointer } : record;
     if (/^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(record.path) && value.result && typeof value.result === 'object' && 'input' in value.result) {
       const result = value.result as { input: { id: string; version: number }; recordId?: string };
       saved = { ...record, result: privateInputPointerSchema.parse({ format: 'private-input-receipt:1', id: result.input.id,

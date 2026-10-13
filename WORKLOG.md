@@ -2487,3 +2487,13 @@
 - Verification：僅核文件 diff、相對連結／錨點及工作包依賴；沒有 build、產品測試、模型、通知、雲端資源或部署操作。主模型親寫及 review，無子代理或新人工驗收。
 - Limits / Next：Android 現僅 UI 匯出，iOS／原生 session／媒體／通知／OTA 仍待實作及必要真機驗收。開工入口 S04-W01；帳號、簽署、裝置及費用在相應包核對，不能把計劃當已授權購買或上架。
 - User Follow-up：同日追加「較弱 AI 改前端後也能輕鬆更新 App」；S04-W03 補固定更新入口、Expo 原生指紋判斷、版本 manifest 與短交接，預設先規劃／preview，保留授權及失敗停止。只規劃，未建立 scripts 或執行 build。
+
+
+<a id="log-20261013-p2-r01-disclosure"></a>
+### 2026-10-13 — P2-R01 刪除披露與階段邊界
+
+- Goal / Baseline：按使用者批准的 review 修正計劃先修 R1，兼處理 R3／R11；master `30d16d5`、開工及交付前沒有其他 open PR。Astra 主模型獨立實作與 review，無子代理。先更新 PLAN，保留零 SQL 及舊驗收，四個修正包依次交付。
+- Implementation：care／profile／memory 修訂匯出與原收據核對目前 tombstone／historyFloor；新收據用指標，舊正文收據立即遮蔽且保留原 opId 防重。文件匯出復用正式來源有效性。刪除交易加入持久工作，背景分頁清理修訂／舊收據並寫獨立加密日誌；舊 tombstone 有界補登，還原重放屏障，未記入日誌的刪除不放行。沒有清正式資料。
+- Frontend / Docs：家庭多人延至 P4，停止掛載家庭 API hook，頁面保留既有外殼並明示未開放；本人功能不變。README 指向 Firestore 啟動，SPEC／契約／ADR-027 與手機前置同步，沒有重做設計。
+- Verification：一條連貫合成情景通過保存、更正、刪除、修訂／匯出／新舊收據、文件來源失效、有界清理及實際 restore plan 重放後讀回；生產 Server／shared 來源及前端型別通過。初次 fixture 缺 ref.get、前端 readState enum 不符已停批定位並局部修正。原 tsconfig.server 包含既有測試替身缺項而未通過，另限定生產來源核對，未宣稱整套型別通過。詳見 [R01 EV](artifacts/verification/P2_R01_DISCLOSURE_20261013.json)。
+- Limits / Next：零真模型、通知、瀏覽器、雲端操作；原生每日備份真還原仍延後。新索引、實際部署及真人 UI 未驗；不把合成 restore 當真原生還原。按單作者及主責身份交付，R01 合併後才接 R02。

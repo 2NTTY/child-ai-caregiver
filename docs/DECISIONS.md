@@ -375,3 +375,11 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 - 邊界：保留私有 Storage、應用加密及獨立永久刪除日誌。原生備份不含附件、Auth、Rules 或 TTL。快照中的 generation／hash 與至少 14 天的附件復原期配對；不把仍在 soft-delete 的內容視為可以恢復，先查獨立日誌排除永久刪除。舊獨立配對副本、hold、期限及失敗證據保留。
 - 還原：以原生來歷及 operation 核對全新隔離資料庫，再復用現有身份／刪除重放、epoch、原操作及分批套用流程。來源實際停機／暫停仍是還原門檻；新庫不掛 API／worker、不自動切流量。遇不完整附件、未知操作、失效身份或缺失清理證據保持關閉。
 - 替代範圍：僅取代每日必須使用停站配對匯出的方法；不降低 14 天資料／附件保護、刪除不可復活及恢復驗收。現行進度見 [F08](../PLAN.md#p2-f08)。[原生備份](https://docs.cloud.google.com/firestore/native/docs/backups)、[原生還原](https://docs.cloud.google.com/firestore/docs/reference/rest/v1/projects.databases/restore)、[附件精確恢復](https://docs.cloud.google.com/storage/docs/json_api/v1/objects/restore)。
+
+
+<a id="adr-027"></a>
+## ADR-027 — Review 修正先行，完整家庭多人延至 P4
+
+- 日期／決定：2026-10-13，使用者批准 P2-R01～R04 先修刪除披露、清理恢復、Agent 正式組裝、成果狀態與通知歷史；有效 Firestore／零 SQL 里程碑及原證據保留，不等於所有 P2 功能接線完整。
+- 家庭多人：現行 Firestore 只接本人空間，完整家庭邀請／成員／共享管理安排 P4-FAMILY。正式入口明示未開放，不發必敗請求、不回假成功；本人通知、帳戶與孩子隔離仍為目前要求。這取代將完整家庭功能作 P2／P3 必達的現行階段要求，保留原歷史契約與驗收。
+- 次序／限制：P3 手機等 R04 合併；三個 Agent 角色仍依既定 P3 包。新修正只作必要定向驗證，不以此重跑已延後的真原生備份還原。唯一進度見 [PLAN](../PLAN.md#p2-review-repair)。

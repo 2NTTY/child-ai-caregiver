@@ -1,5 +1,13 @@
 # 数据模型、版本与不变量
 
+<a id="content-disclosure"></a>
+## 正文披露與永久刪除屏障
+
+普通讀取、修訂、匯出及原操作收據均核對目前資源。照護／記憶 tombstone 關閉所有舊版本正文；孩子檔案刪除後的 historyFloor 以下修訂不可披露，新確認資料可沿同一身份建立新版本。新收據只保留資源指標；原操作成功身份與防重保留，已刪或不同版本時不把新正文冒充舊結果。
+
+刪除交易一併建立 content erasure 工作，立即封閉存取。背景以固定原操作寫入獨立加密日誌，再分頁清理修訂及舊含正文收據；清理完成與存取已封閉分開。舊 tombstone 按固定身份有界補登，不重建內容。還原重放日誌與版本屏障；尚有未記入獨立日誌的刪除工作則拒絕開放還原，不能復活舊正文。合法未刪修訂保留。文件匯出沿同一來源有效性檢查，失效正文及引用原文一起遮蔽。
+
+
 **實作與目標分界：**下文 PostgreSQL／Better Auth／pg-boss 專項保留原機制及證據；依 [ADR-024](DECISIONS.md#adr-024)，正式 SQL 接點改用 Firestore，原 VM／Node／Compose／Caddy 及網站繼續沿用。Firebase Auth、Storage、Tasks 的既有接線按實際範圍復用，不表示全部功能已遷移。現行契約見 [Firestore 接點](#firestore-target)，已合併／未合併／待驗只見 [PLAN](../PLAN.md#active)。
 
 本文件管穩定契約／設計，不維護包進度或即時部署。實作與未驗項見 [PLAN](../PLAN.md#roadmap-packages)，運行觀察見 [STATUS](../STATUS.md#deployment)，測試結論只按所連 EV 的版本／範圍解讀。
