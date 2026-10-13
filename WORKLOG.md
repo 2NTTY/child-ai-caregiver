@@ -2477,3 +2477,13 @@
 - User Decision：使用者明確要求「保留測試，先合併」及「這個測試等以後做」，將首份原生備份／真原生隔離還原從本次合併門檻改為後續待驗；不是驗收通過，也不撤銷日常備份或恢復責任。
 - Delivery：F08 的原站前後端、Firestore／零 SQL、真引用及文件修改、摘要及容量成果沿既有證據交付；基線 master `353cf70`，PR #201。只更新 PLAN／STATUS／部署交接與 EV，保留 operator、測試、原失敗、回退映像及獨立刪除日誌。
 - Verification / Limits：本次只作文件 diff／連結及合併身份核對，不新增模型、通知、瀏覽器或雲端驗收。原生排程已建立，真還原仍未驗；後續按 PLAN 專項入口一次補驗，不再因等待備份持續輪詢。完整 P2 本輪結案以這次明確修訂後的門檻及 PR 合併為準。
+
+<a id="log-20261013-p3-mobile-plan"></a>
+### 2026-10-13 — P3 Android／iOS 共用接線及更新計劃
+
+- Goal / Scope：依使用者要求先核現有能力與缺口，再寫入 P3；不開始手機實作，不大改設計，只安排最低必要驗收。
+- Actual Work：核遠端 master `1aca4a0`（PR #201）、open PR 0 及乾淨基線；局部讀正式 Expo／RN 外殼、Firebase client／Server session、owner、Web changes cursor 及照片原生預留接口。核官方 Firebase／Expo、SecureStore、FCM／APNs、EAS／OTA 及 TanStack RN 方法；文檔相容不當本工程真機證據。
+- Changes：PLAN 保留原 Sxx 錨點，擴為 Android／iOS，新增 S04-W02（iOS）及 S04-W03（更新交付）；記錄共用程式／薄 adapter、原生會話、同源資料、檔案／推送、API 相容及 OTA／新 build 邊界。SPEC 只同步手機範圍／更新需求，STATUS 修正已合併快照及當前文件入口；P3 三角色與 P2 備份待驗保留。
+- Verification：僅核文件 diff、相對連結／錨點及工作包依賴；沒有 build、產品測試、模型、通知、雲端資源或部署操作。主模型親寫及 review，無子代理或新人工驗收。
+- Limits / Next：Android 現僅 UI 匯出，iOS／原生 session／媒體／通知／OTA 仍待實作及必要真機驗收。開工入口 S04-W01；帳號、簽署、裝置及費用在相應包核對，不能把計劃當已授權購買或上架。
+- User Follow-up：同日追加「較弱 AI 改前端後也能輕鬆更新 App」；S04-W03 補固定更新入口、Expo 原生指紋判斷、版本 manifest 與短交接，預設先規劃／preview，保留授權及失敗停止。只規劃，未建立 scripts 或執行 build。
