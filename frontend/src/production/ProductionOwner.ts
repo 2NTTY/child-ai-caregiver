@@ -1,3 +1,4 @@
+import { AdminOwner } from './AdminOwner.ts';
 import type { ChildSelectionPreferences } from "../../../src/client/child-selection.ts";
 import { createWebChildSelectionPreferences } from "./child-selection.ts";
 import { QueryClient } from "@tanstack/react-query";
@@ -22,6 +23,8 @@ export interface ProductionSnapshot {
 }
 export class ProductionOwner {
   readonly apiBaseUrl: string;
+  readonly adminOwner: AdminOwner;
+  readonly reauthenticateAdmin: (password: string, signal: AbortSignal) => Promise<void>;
   readonly queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } } });
   readonly draftOwner = createAssistantDraftOwner();
   readonly controller: RecordsController;
@@ -71,6 +74,13 @@ export class ProductionOwner {
         } catch { firebaseIdentity = createUnavailableFirebaseAuthApi(); }
       }
     }
+    this.adminOwner = new AdminOwner(this.apiBaseUrl);
+    this.reauthenticateAdmin = async (password, signal) => {
+      const userId = this.controller.getSnapshot().user?.id;
+      if (!userId || !firebaseIdentity) throw new Error('Reauthentication unavailable');
+      await firebaseIdentity.reauthenticate(userId, password, signal);
+      if (this.controller.getSnapshot().user?.id !== userId) throw new Error('Identity changed');
+    };
     const recordsApi = api ?? createRecordsApi(this.apiBaseUrl, fetch, firebaseIdentity);
     const account = firebaseIdentity ? { ...accountDependencies, legacyTrial: false,
       reauthentication: firebaseIdentity,
@@ -103,7 +113,7 @@ export class ProductionOwner {
   }
   getSnapshot = () => this.snapshot;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
-  private emit() { this.listeners.forEach(listener => listener()); }
+  private emit() { this.adminOwner?.setUser(this.snapshot.records.auth === "signedIn" ? this.snapshot.records.user?.id ?? null : null); this.listeners.forEach(listener => listener()); }
   private scopeKey() {
     if (!this.accountOwner?.isReady()) return null;
     const raw = this.controller.getSnapshot();
@@ -245,7 +255,7 @@ export class ProductionOwner {
     this.unsubscribe?.(); this.unsubscribe = null; this.unsubscribeChat?.(); this.unsubscribeChat = null;
     this.unsubscribeAgent?.(); this.unsubscribeAgent = null; this.unsubscribeAuthorization?.(); this.unsubscribeAuthorization = null;
     this.unsubscribeAccount?.(); this.unsubscribeAccount = null;
-    this.accountOwner.dispose(); this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();
+    this.adminOwner.dispose(); this.accountOwner.dispose(); this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();
     void this.queryClient.cancelQueries(); this.queryClient.clear(); this.listeners.clear();
   }
 }

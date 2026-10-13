@@ -1,3 +1,5 @@
+import { createFirestoreAdmin } from './firestore-admin.ts';
+import { readAdminUid } from './admin-api.ts';
 import { applicationDefault, deleteApp, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { randomUUID } from 'node:crypto';
@@ -112,11 +114,12 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const sourceService = createSharedInputService(sources, product.runtime);
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
     const photoAgent = createPhotoAgent(photos, product.runtime);
-    const handler = createFirebaseRequestHandler({ authority, auth, online, documents, photos, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
+    const admin = createFirestoreAdmin(domain, readAiConfig(env));
+    const handler = createFirebaseRequestHandler({ admin, adminUid: composition.worker ? null : readAdminUid(env), authority, auth, online, documents, photos, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { ...persistence, sessions, auth, currentAuth, reminders, online, documents, photos, objects, journal, erasures, erasureCleanup, exporter, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
+    return { ...persistence, admin, sessions, auth, currentAuth, reminders, online, documents, photos, objects, journal, erasures, erasureCleanup, exporter, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
       close() { return closing ??= (async () => { try { await deleteApp(ownedApp); } finally { await persistence.close(); } })(); } };
   } catch (error) {
     try { if (app) await deleteApp(app); } finally { await persistence.close(); }

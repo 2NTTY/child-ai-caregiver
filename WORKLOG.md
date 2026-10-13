@@ -2531,3 +2531,12 @@
 - Verification：兩個 composite indexes READY、content-erasure 欄位設定完成；三服務 healthy、公開 health 回報 Firestore，三次真 SDK 唯讀索引查詢通過。既有配對備份 manifest generation／大小／hold 及期限核對一致；不是新備份或真還原。詳見 [交付 EV](artifacts/verification/P2_REVIEW_DELIVERY_20261013.json)。
 - Corrections / Limits：部署助手初次 Field REST 格式被拒絕，修正後只補該設定；索引匹配補 collection 名稱約束，程式包白名單改只含變更 TS。未追加產品矩陣、真模型、外發通知或瀏覽器；原生每日首份備份／隔離還原依使用者要求繼續延後。舊映像不能用來倒退刪除屏障／收據或業務資料。
 - Next：本輪修正收束；P3 手機／三角色按現有計劃另行開始，完整家庭多人在 P4。VM 原停止期限仍為 2026-10-17 20:50:44 香港時間。
+
+
+<a id="log-20261013-p2-adm01"></a>
+### 2026-10-13 — P2-ADM01 Web 管理員後台
+
+- Implementation / Review：以 #207／ede4e72 為基線，由 Astra 主模型獨立完成。原站 Web `/admin`、部署 UID、近期重新驗證、未使用邀請交易閘、版本政策及 immutable 收據／審計；API／worker 共用設定、原用量不清零，前端共用身份 owner，無孩子前置／私人資料入口。
+- Verification：一條合成正式 HTTP／routing／owner 接線通過（直接 HTTP 22 次，另 owner 查回），涵蓋原請求回應遺失、權限、消耗邀請、防重、版本、平台暫停及分流用量；還原 codec 保留管理資料且暫停政策。生產 Server／shared 與前端型別、一次正式 Web build 通過。沒有真模型、通知、瀏覽器、全量或原生還原；[ADM01 EV](artifacts/verification/P2_ADM01_WEB_20261013.json)。
+- Corrections：首輪 fixture 把 accountStatus.user 誤讀成 state，停批後修正；下輪發現還原 system scope 缺接點，修正精確 kind／scope 綁定。最後 review 修正正式 /api 前綴並沿同一情景核對，另補保存後刷新；失敗不改為通過。
+- Delivery：首位指定 Firebase 帳號已驗證／未停用；VM running、原回退映像及 2026-10-17 停止期限已核對。合併及部署尚待執行，不把本機成果當已上線；原生每日首份／隔離還原仍按使用者要求延後。

@@ -56,17 +56,21 @@ docker compose --project-name yuban-p1 \
 
 
 <a id="invited-account-service"></a>
-## 邀請制服務設定（現有 P2-A08 PostgreSQL 接點）
+## 邀請制服務與 Web 管理
 
-正式真實資料模式用SERVICE_MODE=invited；A08提供Server／client，A07沿AccountServiceOwner接登入／同意及設定入口，是否上線仍以STATUS最後觀察為準。trial保留合成相容，不代表已開放真實資料。
+現行身份為 Firebase Auth，沿原登入畫面、邀請資格、電郵驗證／找回及逐裝置撤銷；舊 Better Auth／SMTP／SQL 邀請命令僅屬歷史，不用來管理目前站點。
 
-- ACCOUNT_SMTP_CONFIG_FILE指向工程外受保護JSON，欄位host、port、secure、from及成對user/password；不要放入EXPO_PUBLIC、prompt或聊天。Nodemailer使用TLS／STARTTLS及正常憑證核對。僅非production的loopback驗收容许ACCOUNT_SMTP_ALLOW_INSECURE_LOOPBACK=true，正式模式拒絕此例外。
-- 完成[刪除journal初始化／綁定](P1_STORAGE.md#account-erasure-journal)，並配置原ATTACHMENTS_DIR、儲存key及worker。正式模式缺SMTP不啟動；消費端遵守worker_control／generation，未知郵件不重發。
-- 營運者執行npm run account:invitation -- issue parent@example.invalid 7授予指定電郵七日註冊資格；回覆invitationId，可用revoke加該ID撤回。消耗資格不因刪帳復原；新邀請須明確再issue。這不加入其他家庭。示例是假電郵，不會自動寄邀請。
-- 註冊後驗證本人電郵、登入及確認當前資料說明；找回沿原生流程並撤銷舊會話。驗證／找回回到同源的/?account=verified或/?account=reset，畫面只說已受理，不保證郵件送達。
-- 本人下載使用固定manifest及有界資料頁；失效歷史會明示不可用，並非所有歷史正文均可匯出。模型key、密碼hash、session及渠道secret不回傳。大量資料的頁面呈現沿exportPage分批，不能把已讀前綴說成完整下載。
+`/admin` 是獨立 Web 管理頁，不需建立或選擇孩子。已授權管理員亦可從 Web 設定進入；原生 App 沒有管理入口。首位管理員由營運者核對 Firebase 帳號的 emailVerified／disabled，將實際 UID 寫入工程外 `firebase.env` 的 `YUBAN_ADMIN_UID`；預設空值拒絕，修改配置後重建 API。不要用電郵、家庭角色或前端表單替代 UID 授權。
 
-上述 SMTP／Compose 是現有實作，未配置時仍須拒絕啟用，不因新方案而放寬。後續已選 Firebase Auth／集中服務，不再把購置 SMTP 當新目標前置；邀請初期 10 帳號及備份 14 天政策已定，實測預算／切換仍待核准。A08 本機 SMTP 不代表 Firebase 驗證／找回或公開送達已驗證。
+1. 以本人網站帳號登入，開 `/admin`；寫入前用本人密碼重新驗證（五分鐘有效）。
+2. 邀請輸入完整電郵和 1–90 天有效期，確認發出；複製 `/login` 網址自行傳給對方。未使用可續期／撤銷，已註冊只能讀。舊資格用完整電郵查找；列表不是全部帳號目錄。
+3. 平台設定顯示目前版本並可保存修改。初次沿部署的 `gemini-3.1-flash-lite`、12／20 每日嘗試、4 生成／2 embedding；可調上限依 `src/shared/admin.ts`，工具／期限唯讀。本人 key 共用每日保護上限獨立，原個人 key／限額及背景同意保持原服務管理。
+4. 新運行採新設定；暫停在下一次平台模型／embedding 前核對，不撤回結果或一般通知。資料讀取失敗不放寬。每日按 UTC 換日（香港 08:00），計生成及查詢 embedding 嘗試，不是聊天句數；不等於帳單或硬性停費保證。
+5. 結果未知先按「查回原操作」，必要時明確重送同一 ID；不要另建等價操作。後台只提供有界用量／管理紀錄，無清零、刪紀錄、個人配額覆寫、任意模型或私人資料瀏覽。
+
+緊急 bootstrap 保留 `node scripts/firebase-control.mjs invite`（或 `npm run account:invitation`），**從 stdin 接 JSON**：`{"email":"parent@example.invalid","expiresAt":"<future ISO time>","operationId":"<UUID>"}`，不是舊的 `issue <email> 7` 位置參數；需原受保護 Firestore runtime 配置。operator 的 `revoke-invitation` 可能連帶撤銷已註冊帳號，不當作後台邀請撤回用法。後台使用交易內「未使用」檢查的另一受限入口。
+
+本人下載仍沿固定 manifest／有界資料頁，失效歷史明示不可用；不輸出 key、session、密碼或渠道秘密。實際部署、管理綁定與未驗項見根 STATUS／PLAN，介面存在不等於已授權所有帳號。
 
 
 <a id="firestore-deployment"></a>

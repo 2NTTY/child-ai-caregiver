@@ -1,3 +1,5 @@
+import { handleAdminRequest } from './admin-api.ts';
+import type { FirestoreAdmin } from './firestore-admin.ts';
 import { accountAcknowledgementSchema } from "../src/shared/account-service.ts";
 import { FirestoreAuthorityError, type FirestoreAuthority } from "./firestore-authority.ts";
 import { FirebaseAuthError, type FirebaseAuthPort } from "./firebase-auth.ts";
@@ -43,7 +45,7 @@ import type { FirestoreContact } from './firestore-contact.ts';
 
 const MAX_BODY_BYTES = 16 * 1024;
 const authorityErrors = new Map<string, number>([
-  ["invalid_input", 400], ["not_found", 404], ["service_disabled", 403], ["binding", 403],
+  ["invalid_input", 400], ["not_found", 404], ["invitation_consumed", 409], ["invitation_closed", 409], ["invitation_expiry_invalid", 400], ["service_disabled", 403], ["binding", 403],
   ["account_inactive", 403], ["account_not_ready", 403], ["email_not_verified", 403],
   ["identity_email_changed", 403], ["invitation_unavailable", 403], ["operation_conflict", 409],
   ["scope_changed", 409], ["operation_erased", 409], ["transaction_change_conflict", 409], ["document_too_large", 413],
@@ -60,6 +62,8 @@ export interface FirebaseRequestHandlerOptions {
   publicOrigin: string;
   /** Supplied by deployment composition; this handler never infers mail readiness. */
   mailConfigured: boolean;
+  admin?: FirestoreAdmin;
+  adminUid?: string | null;
   online?: FirestoreOnlineStore;
   documents?: FamilyDocumentStore;
   photos?: FirebasePhotoApiPort;
@@ -155,6 +159,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
       if ((path === "/healthz" || path === "/api/health") && request.method === "GET") {
         return json({ status: "ok", storage: "firestore", stage: "foundation" });
       }
+      if (path.startsWith('/api/admin/') && options.admin) return uncached(await handleAdminRequest(request, { auth, admin: options.admin, adminUid: options.adminUid ?? null, publicOrigin, readJson }));
       if (path.startsWith("/api/auth/")) return uncached(await auth.handler(request));
       if (options.accountData && (path === '/api/account/export' || path === '/api/account/delete' || path.startsWith('/api/account/deletion/'))) {
         if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);

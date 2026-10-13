@@ -1,7 +1,7 @@
 import { openFirebasePersistence } from '../server/firebase-persistence.ts';
 import { setFirebaseBackupControl } from '../server/firestore-backup.ts';
 
-// Operator-only entry: no public endpoint can issue invitations or initialise authority.
+// Operator bootstrap only. Web invitation administration uses a separate, UID-restricted service.
 let runtime;
 try {
   const command = process.argv[2];
