@@ -4,7 +4,10 @@ import { publicInputSources,type SharedInputStore } from "./shared-input-store.t
 import { fetchPersonalPage } from "./personal-source-fetch.ts";
 import { fetchKnowledgeSource } from "./knowledge-source-fetch.ts";
 
-export function createSharedInputService(store:SharedInputStore,runtime:ReturnType<typeof createAgentRuntime>) {
+export type SharedInputAgentStore = Omit<SharedInputStore,'claim'> & {
+  claim(...args:Parameters<SharedInputStore['claim']>):Promise<Awaited<ReturnType<SharedInputStore['claim']>> & {claimedRun?: import('./product-agent-store.ts').AgentRunClaim} | null>;
+};
+export function createSharedInputService(store:SharedInputAgentStore,runtime:ReturnType<typeof createAgentRuntime>) {
   return {
     async fetch(userId:string,childId:string,id:string,expectedVersion:number,signal:AbortSignal,isCurrentUser:()=>Promise<boolean>) {
       const claim=await store.claim(userId,childId,id,"fetch",expectedVersion);
@@ -31,7 +34,8 @@ export function createSharedInputService(store:SharedInputStore,runtime:ReturnTy
       let draft:PhotoDraft|null=null;
       try{
         if(!await authorize())return null;
-        const result=await runtime.run({runId,scope:claim.scope,trigger:{kind:"interactive",reference:id},
+        const result=await runtime.run({runId,scope:claim.scope,claimedRun:claim.claimedRun,
+          deadlineAtMs:claim.claimedRun ? Date.parse(claim.claimedRun.expiresAt) : undefined,trigger:{kind:"interactive",reference:id},
           recipeId:"shared-capture",availableInputs:["run","scope","conversation","context","evidence","capabilities"],
           context:{input:{id,kind:claim.input.kind,sourceLabel:claim.input.sourceLabel,sourceUrl:claim.input.kind==="personal_source"?null:claim.input.sourceUrl,
             sourceDateText:claim.input.sourceDateText,sha256:claim.input.sha256,retrievedAt:claim.input.retrievedAt,

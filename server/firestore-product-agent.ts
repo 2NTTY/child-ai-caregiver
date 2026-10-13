@@ -32,6 +32,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   config: AiConfig; chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore;
   online: FirestoreOnlineStore; knowledge?: FirestoreKnowledgeStore;
   documents?: FamilyDocumentStore;
+  summary?: Pick<import("./care-summary-store.ts").CareSummaryStore, "get">;
   authorizeWorker?: FirestoreAgentRunOptions['authorizeWorker'];
   contact?: FirestoreContact;
   sources?: FirestoreSharedInputStore; concerns?: FirestoreConcernStore; growth?: FirestoreGrowthStore;
@@ -63,7 +64,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
         const durable = claimedRunAssembly(selected.config, { nativeSessionService, rootBudget, dailyUsage: selected.dailyUsage,
           provider, profile: { config: selected.config, workflowVersion: 'firestore-product-v1', promptPackVersion,
             settingsVersion: 'firestore:' + selected.settingsVersion, billingVersion: selected.billingSource + ':v1',
-            billingSource: selected.billingSource, runLimits: selected.runLimits } }, undefined, false, true);
+            billingSource: selected.billingSource, runLimits: selected.runLimits } }, undefined, true, true, true);
         instance = createAgentRuntime({ config: selected.config, usage: requireDurableUsage, provider,
           nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: selected.runLimits,
           admission, embeddings: selected.embeddings, diagnostics: event => {
@@ -82,6 +83,6 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const knowledge = createKnowledgeRetriever(options.knowledge ?? { async candidates() { domainReject('knowledge_not_ready', 503); } },
     { async embed() { throw new AgentStopped('unavailable'); } });
   const agent = createProductAgent({ runtime, store: services.store, actions: services.actions,
-    chat: options.chat, memory: options.memory, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge });
+    chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge });
   return { ...services, routing, runtime, agent };
 }

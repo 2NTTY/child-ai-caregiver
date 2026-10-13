@@ -28,7 +28,7 @@ export interface ClaimedRunPersistence {
   embeddingProvider?: EmbeddingProvider;
 }
 
-export function claimedRunAssembly(config: AiConfig, persistence: ClaimedRunPersistence, routing: unknown, allowWorkContinuation = false, allowPersonal = false) {
+export function claimedRunAssembly(config: AiConfig, persistence: ClaimedRunPersistence, routing: unknown, allowWorkContinuation = false, allowPersonal = false, allowProductEntrypoints = false) {
   const { nativeSessionService, rootBudget, dailyUsage, provider, embeddingProvider } = persistence;
   const profile = persistence.profile ? Object.freeze({ ...persistence.profile, config: Object.freeze({ ...persistence.profile.config }),
     ...(persistence.profile.runLimits === undefined ? {} : { runLimits: freezeAgentRunLimits(persistence.profile.runLimits) }) }) : undefined;
@@ -43,9 +43,16 @@ export function claimedRunAssembly(config: AiConfig, persistence: ClaimedRunPers
   const bindDurableRun: AgentDurableRunBinder = (input, packVersion, limits) => {
     const claim = input.claimedRun, expiry = Date.parse(claim?.expiresAt ?? "");
     const interactive = input.recipeId === "product-interactive" && input.trigger.kind === "interactive" && claim?.sourceMessageId === input.trigger.reference;
-    const continuation = allowWorkContinuation && input.recipeId === "product-work-followup" && input.trigger.kind === "worker"
+    const continuation = (allowWorkContinuation || allowProductEntrypoints) && input.recipeId === "product-work-followup" && input.trigger.kind === "worker"
       && claim?.sourceMessageId === null && workContinuationJobSchema.shape.workerGeneration.safeParse(claim.workerGeneration).success;
-    if (!claim || claim.created !== true || claim.state !== "running" || !(interactive || continuation)
+    const background = allowProductEntrypoints && input.recipeId === "product-background" && input.trigger.kind === "worker"
+      && claim?.purpose === "background" && claim.sourceMessageId === null
+      && workContinuationJobSchema.shape.workerGeneration.safeParse(claim.workerGeneration).success;
+    const capture = allowProductEntrypoints && input.trigger.kind === "interactive" && claim?.sourceMessageId === null
+      && ((input.recipeId === "photo-capture" && claim.purpose === "photo-extraction" && claim.sourceResource?.kind === "photo")
+        || (input.recipeId === "shared-capture" && claim.purpose === "shared-extraction" && claim.sourceResource?.kind === "shared-input"))
+      && claim.sourceResource?.id === input.trigger.reference && Number.isSafeInteger(claim.sourceResource.version) && claim.sourceResource.version > 0;
+    if (!claim || claim.created !== true || claim.state !== "running" || !(interactive || continuation || background || capture)
       || claim.recipeId !== input.recipeId || claim.trigger?.kind !== input.trigger.kind
       || claim.trigger.reference !== input.trigger.reference
       || claim.runId !== input.runId || agentBudgetFingerprint(claim.scope) !== agentBudgetFingerprint(input.scope)
@@ -56,7 +63,7 @@ export function claimedRunAssembly(config: AiConfig, persistence: ClaimedRunPers
     return { adapter: rootBudget, dailyUsage, context: { generation: 1, binding: {
       rootRunId: claim.runId, ownerId: claim.scope.userId, workspaceId: claim.scope.workspaceId, childId: claim.scope.childId,
       authorizationVersion: claim.scope.authorizationVersion, storageEpoch: claim.storageEpoch,
-      trigger: { ...claim.trigger }, workflowVersion: profile.workflowVersion + (continuation ? ":worker:" + claim.workerGeneration : ""), promptPackVersion: packVersion,
+      trigger: { ...claim.trigger }, workflowVersion: profile.workflowVersion + ((continuation || background) ? ":worker:" + claim.workerGeneration : capture ? ":capture:" + claim.sourceResource!.kind + ":" + claim.sourceResource!.id + ":" + claim.sourceResource!.version : ""), promptPackVersion: packVersion,
       settingsVersion: profile.settingsVersion + ":" + fingerprint, billingVersion: profile.billingVersion,
       limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings }, deadlineAtMs: expiry,
     } } };

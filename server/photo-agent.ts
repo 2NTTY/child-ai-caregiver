@@ -2,7 +2,10 @@ import { photoDraftSchema, type PhotoDraft } from "../src/shared/photos.ts";
 import type { createAgentRuntime } from "./agent-runtime.ts";
 import type { PhotoStore } from "./photo-store.ts";
 
-export function createPhotoAgent(store:Pick<PhotoStore, 'claimExtraction' | 'extractionAuthorized' | 'finishExtraction' | 'content'>,runtime:ReturnType<typeof createAgentRuntime>) {
+export type PhotoAgentStore = Pick<PhotoStore, 'extractionAuthorized' | 'finishExtraction' | 'content'> & {
+  claimExtraction(...args:Parameters<PhotoStore['claimExtraction']>):Promise<Awaited<ReturnType<PhotoStore['claimExtraction']>> & {claimedRun?: import('./product-agent-store.ts').AgentRunClaim} | null>;
+};
+export function createPhotoAgent(store:PhotoAgentStore,runtime:ReturnType<typeof createAgentRuntime>) {
   return {async extract(userId:string,childId:string,id:string,expectedVersion:number,signal:AbortSignal,isCurrentUser:()=>Promise<boolean>) {
     const claim=await store.claimExtraction(userId,childId,id,expectedVersion);
     if(!claim||!claim.created||!claim.scope)return claim?.photo??null;
@@ -12,7 +15,8 @@ export function createPhotoAgent(store:Pick<PhotoStore, 'claimExtraction' | 'ext
     try {
       if(!await authorize())return null;
       const image=await store.content(userId,childId,id);if(!image)return null;
-      const result=await runtime.run({runId,scope:claim.scope,trigger:{kind:"interactive",reference:id},
+      const result=await runtime.run({runId,scope:claim.scope,claimedRun:claim.claimedRun,
+        deadlineAtMs:claim.claimedRun ? Date.parse(claim.claimedRun.expiresAt) : undefined,trigger:{kind:"interactive",reference:id},
         recipeId:"photo-capture",availableInputs:["run","scope","conversation","context","evidence","capabilities"],
         context:{attachment:{id,sha256:claim.photo.sha256,source:claim.photo.source,visibility:"private",state:"ready"},
           purpose:"Extract visible care notes as an unconfirmed candidate; never diagnose or identify a person."},

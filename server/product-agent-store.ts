@@ -53,9 +53,11 @@ interface ProposalPayload { value: AgentProposalValue; result: AgentProposal["re
 export interface AgentRunClaim {
   runId: string; scope: AgentScope; created: boolean; sourceMessageId: string | null;
   state: ProductAgentResult["status"]; expiresAt: string;
-  /** Original SQL authority, explicitly projected for fixed-profile server assembly. */
+  /** Original business authority, explicitly projected for fixed-profile server assembly. */
   storageEpoch?: string;
-  /** Original Server worker generation, only for the opt-in Firestore continuation claim. */
+  purpose?: "chat" | "background" | "work-continuation" | "photo-extraction" | "shared-extraction";
+  sourceResource?: { kind: "photo" | "shared-input"; id: string; version: number };
+  /** Original Server worker generation, only for trusted background claims. */
   workerGeneration?: string;
   trigger?: { kind: "interactive" | "worker"; reference: string };
   recipeId?: string;

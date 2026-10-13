@@ -17,7 +17,7 @@ const uuid = z.uuid(), version = z.number().int().positive().max(2147483646), ti
 const text = (max: number) => z.string().max(max).refine(value => !/[\u0000\uD800-\uDFFF]/u.test(value));
 const digest = (value: string) => createHash('sha256').update(value, 'utf8').digest('hex');
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
-const leaseSchema = z.object({ runId: uuid, until: time, authorizationVersion: z.string().min(1), generation: uuid }).strict();
+const leaseSchema = z.object({ runId: uuid, until: time, resourceVersion: version.optional(), authorizationVersion: z.string().min(1), generation: uuid }).strict();
 const extractionSchema = z.object({ state: z.enum(['not_requested', 'running', 'available', 'failed', 'unknown']),
   runId: uuid.nullable(), excerpt: text(10000).nullable(), draft: photoDraftSchema.nullable(), stopReason: text(256).nullable(),
   processedAt: time.nullable(), model: text(256).nullable() }).strict();
@@ -44,6 +44,7 @@ const confirmationSchema = z.object({ expectedVersion: version, confirmShared: z
   confirmChildFact: z.boolean(), values: careValuesSchema }).strict();
 const publicSources = SOURCE_WATCHES.filter(source => source.kind === 'page' && source.audience === 'public_noncommercial');
 export interface FirestoreSharedInputStore extends SharedInputStore {
+  claim(...args:Parameters<SharedInputStore['claim']>):Promise<Awaited<ReturnType<SharedInputStore['claim']>> & {claimedRun?: import('./product-agent-store.ts').AgentRunClaim}>;
   mutation: FirestoreOnlineMutation;
   read(binding: Binding, id: string): Promise<SharedInput>;
   prepareCreate(binding: Binding, opId: string, input: SharedInputCreate, management?: SourceManagement): Promise<Prepared<SharedInput>>;
@@ -189,7 +190,7 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
   const authorized = (b: Binding, row: Row, phase: Phase, runId: string) => {
     const lease = phase === 'fetch' ? row.fetchLease : row.extractionLease, state = phase === 'fetch' ? row.fetchState : row.extraction.state;
     return !row.recordId && row.management?.enabled !== false && state === 'running' && lease?.runId === runId
-      && lease.authorizationVersion === b.authorizationVersion && lease.generation === b.generation && Date.parse(lease.until) > Date.now();
+      && (lease.resourceVersion === undefined || lease.resourceVersion === row.version) && lease.authorizationVersion === b.authorizationVersion && lease.generation === b.generation && Date.parse(lease.until) > Date.now();
   };
   const store: FirestoreSharedInputStore = {
     prepareCreate, prepareManage, read: async (b, id) => view(await load(b, id)),
@@ -225,7 +226,7 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
         const state = phase === 'fetch' ? row.fetchState : row.extraction.state;
         if (state !== 'not_requested' && (state !== 'failed' || row.version !== expected)) return { created: false, input: view(item), scope: null, runId: null };
         versionMatches(row, expected);
-        const lease = { runId, until: new Date(Date.now() + (phase === 'fetch' ? 25000 : 95000)).toISOString(), authorizationVersion: b.authorizationVersion, generation: b.generation };
+        const lease = { runId, resourceVersion: row.version + 1, until: new Date(Date.now() + (phase === 'fetch' ? 25000 : 95000)).toISOString(), authorizationVersion: b.authorizationVersion, generation: b.generation };
         if (phase === 'extraction') {
           if (!excerpt?.trim() || excerpt.length > 10000 || !item.text.includes(excerpt)) domainReject('invalid_input', 400);
           row.extraction = { ...emptyExtraction(), state: 'running', runId, excerpt }; row.extractionLease = lease;
@@ -236,8 +237,12 @@ export function createFirestoreSharedInputStore(options: FirestoreDomainOptions)
         }
         row.version++; const save = write(b, item, row.parts), change = await b.prepareChange(runId, 'care', false);
         save(); change.commit();
-        return { created: true, input: view(item), runId, scope: { userId: owner, childId: child, workspaceId: b.scope.workspaceId,
-          authorizationVersion: b.authorizationVersion, dataVersion: b.scope.storageEpoch + ':' + change.changeSeq } };
+        const scope = { userId: owner, childId: child, workspaceId: b.scope.workspaceId,
+          authorizationVersion: b.authorizationVersion, dataVersion: b.scope.storageEpoch + ':' + change.changeSeq };
+        const claimedRun: import('./product-agent-store.ts').AgentRunClaim | undefined = phase === 'extraction' ? {
+          runId,scope,created:true,sourceMessageId:null,state:'running',expiresAt:lease.until,storageEpoch:b.scope.storageEpoch,
+          trigger:{kind:'interactive',reference:id},recipeId:'shared-capture',purpose:'shared-extraction',sourceResource:{kind:'shared-input',id,version:row.version}} : undefined;
+        return { created: true, input: view(item), runId, scope, claimedRun };
       });
     },
     authorized: (owner, child, id, phase, runId) => authority.runTransaction(owner, child, async b => authorized(b, (await load(b, id)).row, phase, runId)),

@@ -100,7 +100,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       runs: () => product.runs, currentAuth });
     mutations.push(contact.mutation);
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
-    product = await createFirestoreProductAgent({ ...domain, config: readAiConfig(env), chat, care, memory, online, documents, knowledge, sources, concerns, growth, contact,
+    product = await createFirestoreProductAgent({ ...domain, config: readAiConfig(env), chat, care, summary, memory, online, documents, knowledge, sources, concerns, growth, contact,
       authorizeWorker: composition.worker ? async (b, reference, recipeId) => {
         if (!config.taskWorkerEnabled || !(await authority.readControl(b.transaction)).enabled) return false;
         const job = await readFirestoreBackgroundClaim(new FirestoreDomainData(domain), b, reference); if (!job) return false;

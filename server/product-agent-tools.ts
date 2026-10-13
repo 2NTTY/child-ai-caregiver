@@ -89,7 +89,7 @@ export function createProductAgentTools(options: {
   concerns?: Pick<import("./concern-store.ts").ConcernStore, "list" | "get">;
   sources?: import("./shared-input-store.ts").SharedInputStore;
   actions?: import("./agent-actions-store.ts").AgentActionsStore;
-  summary?:import("./care-summary-store.ts").CareSummaryStore;
+  summary?:Pick<import("./care-summary-store.ts").CareSummaryStore, "get">;
   contact?:Pick<import("./contact-store.ts").ContactStore, 'options' | 'request'>;
   growth?: Pick<import("./growth-store.ts").GrowthStore, "list">;
   run: AgentRunContext; memory: MemoryStore; tasks: Pick<TaskStore, 'list'>; store: ProductAgentStore;

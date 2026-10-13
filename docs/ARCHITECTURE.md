@@ -656,6 +656,9 @@ Firestore 交易先讀權限／刪除狀態、版本、唯一性及原操作，�
 <a id="縮零outbox-與非同步-agent"></a>
 ### 原 VM、outbox 與 Agent 執行
 
+正式 Agent 組裝按 Server 持久操作綁定用途：聊天使用原訊息；背景／接續使用原工作 lease、generation 及 run；照片／分享文字使用原抽取 run、來源 ID／版本。共同 binder 核對身份、孩子、授權／儲存版本、絕對期限及預算，不把抽取偽裝成聊天或由 HTTP 指定用途。抽取／背景執行中與完成前重新核對原授權及終態。照護摘要工具注入與頁面相同的 summary service，只需要讀取接口。
+
+
 交易只寫 Firestore outbox；commit 後 dispatcher 才用確定工作 ID 建立 Cloud Task，成功回寫派送狀態。崩潰在任一側以原 ID／lease／generation 查核接續，台帳是權威，Tasks 的短期名稱去重不等於 exactly-once。每分鐘一個 Scheduler OIDC 補償入口分頁領取待派／到期項，不全表掃描；長期預約留台帳，只提前 24 小時送入 Tasks（官方最遠排程 30 天）。worker 在原 VM 入口核專屬 OIDC／audience／服務身份；派送身份及 enqueue 權限另由 IAM 限定，不能依賴 Cloud Run invoker IAM 代替 VM 的應用驗證。[Tasks](https://docs.cloud.google.com/tasks/docs/creating-http-target-tasks)／[限制](https://docs.cloud.google.com/tasks/docs/quotas)
 
 Tasks／Scheduler 呼叫原 VM 的 HTTP 工作入口，無須 Cloud Run。由應用核 OIDC 簽章、issuer、audience、期限及固定服務身份，不能把公開 HTTPS 路徑當成已授權；沿既有 lease／generation、收據及防重。worker 請求覆蓋完整有界工作，期限與 Task dispatch deadline 協調；中斷先查原效果，unknown 不盲目再生成或通知。每次領取／外發重查授權、任務終態、版本、渠道及安靜時段；不用 pg-boss 或 HTTP 回覆後的無台帳計算。
