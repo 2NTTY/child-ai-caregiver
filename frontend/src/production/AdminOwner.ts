@@ -37,7 +37,9 @@ export class AdminOwner {
     if (!userId) throw new AdminApiError(401, 'unauthorized');
     this.controllers.add(controller);
     try {
-      const response = await this.fetcher(this.baseUrl.replace(/\/$/, '') + path, { method: body === undefined ? 'GET' : 'POST',
+      // Native browser fetch must not receive AdminOwner as its Window receiver.
+      const fetcher = this.fetcher;
+      const response = await fetcher(this.baseUrl.replace(/\/$/, '') + path, { method: body === undefined ? 'GET' : 'POST',
         credentials: 'include', cache: 'no-store', signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]),
         headers: { 'x-expected-user-id': userId, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }) });

@@ -90,7 +90,8 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   expireAfterCommit = false;
   assert.equal((await (await http('operations/' + late.opId)).json()).receipt.opId, late.opId);
   let drop = true;
-  const owner = new AdminOwner(origin + "/api", (async (url, init) => {
+  const owner = new AdminOwner(origin + "/api", (async function(this: unknown, url, init) {
+    assert.equal(this, undefined, "Browser fetch cannot use AdminOwner as its receiver");
     const response = await handler(new Request(String(url), { ...init, headers: { ...(init?.headers as object), origin } }));
     if (drop && init?.method === 'POST') { drop = false; throw new Error('Synthetic lost response'); } return response;
   }) as typeof fetch);
