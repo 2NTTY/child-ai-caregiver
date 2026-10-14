@@ -157,7 +157,8 @@ for (const growth of [false, true]) test(growth
         assert.equal(response?.status, "rejected");
         const data = response?.data as Record<string, unknown> | undefined;
         assert.deepEqual(data && { code: data.code, nextAction: data.nextAction, citationField: data.citationField },
-          { code: "citation_required", nextAction: undefined, citationField: undefined });
+          { code: "citation_required", citationField: undefined,
+            nextAction: "Each caregiving or safety paragraph needs supporting official citationIds. Omit unsupported advice; report operation receipts separately from advice. Do not attach irrelevant citations." });
       }
       const functionCall = index === 0 ? { id: "invalid-source", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: "未有有效引用的合成建議", citationIds: ["source-metadata-id"] }] } }
         : index === 1 ? (growth ? { id: "search-call", name: "search_knowledge", args: {
