@@ -129,9 +129,9 @@ for (const validCitation of [true, false]) test(`terminal product presentation r
   if (validCitation) assert.equal(JSON.stringify(result.deliveryReview).includes(chunk.text), false);
   assert.equal(result.proposals[0].status, "pending");
   assert.equal(result.proposals[0].result, null);
-  assert.equal(calls, validCitation ? 4 : 3); assert.equal(writes, 1); assert.equal(revalidations, 1);
+  assert.equal(calls, validCitation ? 4 : 3); assert.equal(writes, 1); assert.equal(revalidations, validCitation ? 2 : 1);
   assert.deepEqual(await service.reply(userId, childId, messageId, async () => true), result);
-  assert.equal(calls, validCitation ? 4 : 3); assert.equal(writes, 1); assert.equal(revalidations, 1);
+  assert.equal(calls, validCitation ? 4 : 3); assert.equal(writes, 1); assert.equal(revalidations, validCitation ? 2 : 1);
 });
 
 for (const growth of [false, true]) test(growth
