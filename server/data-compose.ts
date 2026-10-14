@@ -380,11 +380,7 @@ export function createDataComposeTools(options: {
     authorize,
     parameters: dataComposeIntentSchema,
     execute: (args, context) => guard(async () => {
-      // Reject any attempt to smuggle skip/approve flags alongside constrained intent.
-      // Check before schema parse: .strict() would otherwise surface as invalid_input.
-      if ("approved" in args || "skipReview" in args || "review" in args) {
-        return { status: "rejected", data: { code: "compose_self_approval_rejected" } };
-      }
+      // Self-approval flags are rejected by the strict intent schema before execute.
       const intent = dataComposeIntentSchema.parse(args);
       const description = await documents.describe(run.scope.userId, run.scope.childId, intent.documentId);
       if (!description?.item.current) return { status: "rejected", data: { code: "not_found" } };
