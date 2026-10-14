@@ -13,6 +13,7 @@ import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descri
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
+import { chatDeliveryContentHash, chatDeliveryExcerpt, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -59,6 +60,17 @@ export function createDueWorkContinuationTools(run: AgentRunContext, authorize: 
     if (!answer) return null; if (!await authorize()) throw new AgentStopped("unauthorized");
     if (answer.kind === "no_action") return { outcome: "no_action", text: "", citations: [], retrievalMode: "not_used" };
     return { text: answer.paragraphs.map(item => item.text).join("\n\n"), citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+  }, deliveryDraft(): ChatDeliveryDraft | null {
+    if (!answer) return null;
+    return { kind: answer.kind, visibility: "private", serverSubstitutedSourceText: false,
+      paragraphs: answer.paragraphs.map(item => ({ text: item.text, citationIds: [...item.citationIds] })), sources: [], scope: run.scope };
+  }, replaceDeliveryAnswer(next) {
+    const parsed = agentAnswerSchema.parse(next);
+    if (!["clarification", "record_restatement"].includes(parsed.kind) || parsed.paragraphs.some(item => item.citationIds.length)) {
+      throw new FamilyError(400, "work_continuation_presentation_scope");
+    }
+    validateAnswerText(parsed);
+    answer = parsed;
   } };
 }
 
@@ -124,6 +136,38 @@ export function createProductAgentTools(options: {
     }
   }
   const permitted = async () => authorize();
+  function acceptPresentedAnswer(parsed: AgentAnswer) {
+    validateAnswerText(parsed);
+    for (const paragraph of parsed.paragraphs) {
+      const kind = paragraph.kind ?? parsed.kind;
+      const official = options.reviewedGrowthPresentation || kind === "caregiving" || kind === "safety_help";
+      if ((kind === "caregiving" || kind === "safety_help") && !paragraph.citationIds.some(id => evidence.get(id)?.chunk.classification === "official_guidance")) throw new FamilyError(400, "citation_required");
+      if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id))) throw new FamilyError(400, "citation_required");
+      for (const id of paragraph.citationIds) {
+        if (privateSources?.evidence.has(id) && !options.reviewedGrowthPresentation) continue;
+        const item = evidence.get(id);
+        if (!item || official && item.chunk.classification !== "official_guidance") throw new FamilyError(400, "invalid_citation");
+      }
+    }
+    if (new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
+  }
+  function deliverySource(id: string): ChatDeliverySource | null {
+    const privateCitation = privateSources?.evidence.get(id);
+    if (privateCitation) {
+      const excerpt = chatDeliveryExcerpt(privateCitation.excerpt);
+      return { citationId: id, version: String(privateCitation.version), contentHash: privateCitation.sha256,
+        classification: "private", excerpt: excerpt.excerpt, excerptComplete: excerpt.excerptComplete };
+    }
+    const item = evidence.get(id);
+    if (!item) return null;
+    const body = item.chunk.text ?? "";
+    const excerpt = chatDeliveryExcerpt(body);
+    const supplied = item.chunk.contentHash ?? "";
+    return { citationId: id, version: item.chunk.versionId?.trim() || "unversioned",
+      contentHash: /^[a-f0-9]{64}$/u.test(supplied) ? supplied : chatDeliveryContentHash(body),
+      classification: item.chunk.classification === "recent_information" ? "recent_information" : "official_guidance",
+      excerpt: excerpt.excerpt, excerptComplete: item.chunk.readCoverage ? item.chunk.readCoverage.complete && excerpt.excerptComplete : excerpt.excerptComplete };
+  }
   const tools: AgentTool[] = [
     { name: 'show_official_help', effect: 'read',
       description: '按本次語義顯示固定官方提示：即時危險用 emergency-hk-v1；診斷或用藥判斷用 medical-consult-hk-v1。一般飲食／睡眠／發展不顯示。不是分診或外發；不用等候完整回答，也不要求家長確認。',
@@ -255,25 +299,16 @@ export function createProductAgentTools(options: {
         summaryText = args.text as string;
         return { staged: true, saved: false };
       }) },
-    { name: "present_answer", description: "提交顯示文字；每段可用 kind 指明用途，整體 kind=mixed 時每段必填 kind；未填沿舊整體 kind。citationIds 用本 run search_knowledge／read_knowledge_context 的 chunkId，或 read_private_source.citationId。私人材料回述用 private_reference，不能冒充官方；每項育兒／安全建議仍須支持的官方片段。純澄清、操作或記錄回述可無公共引用。不執行其他操作，不稱未完成事項成功。" + (options.background ? " 沒有新的有用回饋且未執行聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
+{ name: "present_answer", description: "提交顯示文字；每段可用 kind 指明用途，整體 kind=mixed 時每段必填 kind；未填沿舊整體 kind。citationIds 用本 run search_knowledge／read_knowledge_context 的 chunkId，或 read_private_source.citationId。私人材料回述用 private_reference，不能冒充官方；每項育兒／安全建議仍須支持的官方片段。純澄清、操作或記錄回述可無公共引用。不執行其他操作，不稱未完成事項成功。acceptedForValidation 只代表程式接受待核對；不能自報 approved、skipReview 或免審。實質育兒／安全內容由 Server 另排獨立模型審核。" + (options.background ? " 沒有新的有用回饋且未執行聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
         ? " 本次是成長關注：選取支持此關注的官方 chunkId；Server 只呈現片段的已核對正文，不使用你改寫的 text。沒有可用片段時呈現固定限制說明。" : ""),
       parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs. No extra fields.' }],
       parameters: options.background ? agentBackgroundAnswerSchema : agentAnswerSchema, authorize: permitted, terminal: true,
       execute: args => guard(async () => {
-        const parsed = options.background ? agentBackgroundAnswerSchema.parse(args) : agentAnswerSchema.parse(args); validateAnswerText(parsed);
+        // acceptedForValidation is programmatic acceptance only. It is not a semantic pass,
+        // and generator fields such as approved or skipReview are not in this schema.
+        const parsed = options.background ? agentBackgroundAnswerSchema.parse(args) : agentAnswerSchema.parse(args);
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
-        for (const paragraph of parsed.paragraphs) {
-          const kind = paragraph.kind ?? parsed.kind;
-          const official = options.reviewedGrowthPresentation || kind === "caregiving" || kind === "safety_help";
-          if ((kind === "caregiving" || kind === "safety_help") && !paragraph.citationIds.some(id=>evidence.get(id)?.chunk.classification==="official_guidance")) throw new FamilyError(400, "citation_required");
-          if(kind === "private_reference"&&!paragraph.citationIds.some(id=>privateSources?.evidence.has(id)))throw new FamilyError(400,"citation_required");
-          for (const id of paragraph.citationIds) {
-            if(privateSources?.evidence.has(id)&&!options.reviewedGrowthPresentation)continue;
-            const item = evidence.get(id);
-            if (!item || official && item.chunk.classification !== "official_guidance") throw new FamilyError(400, "invalid_citation");
-          }
-        }
-        if (new Set(parsed.paragraphs.flatMap(p => p.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
+        acceptPresentedAnswer(parsed);
         answer = parsed;
         return { acceptedForValidation: true, ...(options.reviewedGrowthPresentation
           ? { presentationPolicy: "reviewed_evidence", modelTextUsed: false } : {}) };
@@ -342,6 +377,23 @@ export function createProductAgentTools(options: {
       const rendered = paragraphs.map(paragraph => paragraph.text + (paragraph.citationIds.length
         ? " " + paragraph.citationIds.map(id => privateSources?.evidence.has(id)?"[私人來源 "+(privateSourceCitations.findIndex(item=>item.citationId===id)+1)+"]":"[" + (citations.findIndex(item=>item.chunk.chunkId===id)+1) + "]").join("") : "")).join("\n\n");
       return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations, retrievalMode: mode };
+    },
+    deliveryDraft(): ChatDeliveryDraft | null {
+      if (!answer) return null;
+      const sources: ChatDeliverySource[] = [];
+      for (const id of new Set(answer.paragraphs.flatMap(paragraph => paragraph.citationIds))) {
+        const source = deliverySource(id);
+        if (source) sources.push(source);
+      }
+      return { kind: answer.kind, visibility: options.visibility === "family" ? "family" : "private",
+        serverSubstitutedSourceText: Boolean(options.reviewedGrowthPresentation),
+        paragraphs: answer.paragraphs.map(paragraph => ({ text: paragraph.text, citationIds: [...paragraph.citationIds] })),
+        sources, scope };
+    },
+    replaceDeliveryAnswer(next) {
+      const parsed = agentAnswerSchema.parse(next);
+      acceptPresentedAnswer(parsed);
+      answer = parsed;
     },
   };
 }

@@ -80,6 +80,9 @@ export function createVertexAgentProvider(config: AiConfig): AgentModelProvider 
 export class AgentGatewayModel extends BaseLlm {
   failure?: AgentStopped;
   private providerCalled = false;
+  /** One server-scheduled call, such as semantic review. Not a session-derived generator key. */
+  private pinnedAttemptKey?: string;
+  attemptKeyOverride(): string | undefined { return this.pinnedAttemptKey; }
   private readonly options: {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
@@ -92,6 +95,25 @@ export class AgentGatewayModel extends BaseLlm {
   };
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
+  /** Shared gateway path for a tool-free Server call. Counts one root model call and grants no tools. */
+  async completeText(input: { system: string; user: string; attemptKey: string }): Promise<string> {
+    const request: LlmRequest = {
+      contents: [{ role: "user", parts: [{ text: input.user }] }],
+      config: { systemInstruction: input.system },
+      toolsDict: {},
+    };
+    this.pinnedAttemptKey = input.attemptKey;
+    try {
+      let text = "";
+      for await (const response of this.generateContentAsync(request)) {
+        const parts = response.content?.parts ?? [];
+        if (parts.some(part => part.functionCall)) throw new AgentStopped("invalid_tool");
+        text += parts.filter(part => !part.thought && typeof part.text === "string").map(part => part.text).join("");
+      }
+      if (!text.trim()) throw new AgentStopped("invalid_response");
+      return text;
+    } finally { this.pinnedAttemptKey = undefined; }
+  }
   async *generateContentAsync(request: LlmRequest): AsyncGenerator<LlmResponse, void> {
     try { yield* this.generateBounded(request); }
     catch (error) {
