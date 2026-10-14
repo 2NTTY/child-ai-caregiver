@@ -100,9 +100,10 @@ export interface AgentTool {
   execute: (args: Record<string, unknown>, context: { scope: Readonly<AgentScope>; runId: string; callId: string; signal: AbortSignal; queryEmbeddingAttemptKey?: string }) => Promise<AgentToolResult>;
 }
 export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; budget: AgentBudget;
-  authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway }
-export interface AgentRuntimePort { run(input: AgentRunInput): Promise<AgentRunResult> }
-export interface AgentRunInput {
+  authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway;
+  /** Tool-free call on this root budget. Chat delivery review uses it; the generator cannot invoke it. */
+  completeText?: (input: { system: string; user: string; attemptKey: string }) => Promise<string>; }
+export interface AgentRuntimePort { run(input: AgentRunInput): Promise<AgentRunResult> }export interface AgentRunInput {
   /** Trusted observation only; no control authority and no raw model/tool payloads. */
   onDiagnostic?: (event: AgentDiagnostic) => void | Promise<void>;
   /** Trusted persisted identity; never accepted directly from an HTTP body. */
@@ -198,6 +199,11 @@ export function createAgentRuntime(options: {
   boundRunLimits?: AgentRunLimits;
   /** Shared durable gate in Firestore composition; local state is only a legacy SQL fallback. */
   admission?: AgentRunAdmission;
+  /**
+   * Unbound runs may adopt the P3 proposal of 6 model calls. Bound personal or
+   * platform limits stay as selected. Daily quotas are not read from this field.
+   */
+  chatDeliveryReviewModelCalls?: 4 | 6;
 }) {
   if (options.boundRunLimits !== undefined && !options.bindDurableRun) throw new Error("Invalid bound run limits assembly");
   if ((options.durableBudget || options.bindDurableRun) && (options.resolve || !options.nativeSessionService
@@ -235,6 +241,10 @@ export function createAgentRuntime(options: {
           if ("runLimits" in selected && selected.runLimits) budget.configurePersonal(selected.runLimits);
           if (boundRunLimits) budget.configurePersonal(boundRunLimits);
           if (durable?.runLimits) budget.configurePersonal(durable.runLimits);
+          // Do not override a settings snapshot. Six calls are only for an unbound run.
+          if (fixedOptions.chatDeliveryReviewModelCalls === 6 && !budget.hasPersonalLimits()) {
+            budget.configurePersonal({ modelCalls: 6, queryEmbeddings: budget.limits.queryEmbeddings });
+          }
           if ("authorize" in selected) authorize = async () => await input.authorize() && await selected.authorize();
           budget.check();
           if (!selected.config.enabled || !await authorize()) throw new AgentStopped("unavailable");
@@ -339,8 +349,9 @@ export function createAgentRuntime(options: {
           };
           let currentInstruction = "";
           const modelAnchors = new WeakMap<LlmRequest, string>();
-          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames,
-            ...(durable ? { modelAttemptKey: (request: LlmRequest) => modelAnchors.get(request) } : {}),
+          let model!: AgentGatewayModel;
+          model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames,
+            ...(durable ? { modelAttemptKey: (request: LlmRequest) => model.attemptKeyOverride() ?? modelAnchors.get(request) } : {}),
             ...(durable?.dailyUsage ? { durableDailyUsage: { adapter: durable.dailyUsage, context: durable.context } } : {}),
             ...(input.trigger.kind === "interactive" && input.recipeId === "product-interactive" ? { initialConversationSummary: input.initialConversationSummary, readConversationSummary: input.readConversationSummary } : {}),
             projectCapabilityConfig: capabilitySelection && loader ? async (request, calls) => {
@@ -368,6 +379,7 @@ export function createAgentRuntime(options: {
               return { ...request.config, tools: projectedTools,
                 systemInstruction: projectSystemInstruction(request.config?.systemInstruction, currentInstruction, await renderInstruction(ids)) };
             } : undefined });
+          runContext.completeText = request => model.completeText(request);
           const runtimeTools = capabilitySelection ? [new AgentCapabilityToolset(tools, () => {
             budget.check(); return capabilitySelection.visibleToolNames();
           })] : tools;

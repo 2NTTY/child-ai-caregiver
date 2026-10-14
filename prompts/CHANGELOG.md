@@ -111,6 +111,12 @@
 - core.conversation 0.1.2 改為可追溯 OpenClaw 助理底稿及 Gemini CLI 局部意圖／澄清／收尾衍生文本，保留產品授權、資料及 terminal 契約。來源與授權不注入模型。
 - 其他工具、runtime、限額及三角色接口範圍不變。候選尚待靜態／協定驗證，沒有新真模型呼叫或部署。
 
+## 0.1.38 — 2026-10-14
+
+- 新增 `chat-delivery-review` 與 `module.chat-delivery-review` 0.1.0：Server 在程式校驗後調度唯讀聊天交付審核，決定只限 pass／revise／insufficient_evidence。不是知識發布的 approve／hold，亦不表示臨床有效。
+- `module.product-tools` 升為 0.1.19：說明 acceptedForValidation 不是含義通過，生成角色不能自報免審。
+- 每輪模型呼叫上限維持 4；6 次只是未綁定 run 的顯式設定，不提高每日配額。
+
 ## 0.1.37 — 2026-10-09
 
 - 主模型在保留 0.1.36 上游衍生底稿、能力拆分和終態契約下，接回待整合澄清工作的產品約束：先消歧再形成操作候選，部分頁面不代表唯一，澄清與批准分開。
