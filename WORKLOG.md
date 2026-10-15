@@ -2853,3 +2853,10 @@
 - #233 經對應帳號合併，Android 分支保留原接線後整合為 `8ba66e7`。沿原 VM 傳送 23,314 bytes Server 差異及 4,634,558 bytes Web 產物；固定 base image／容器 ID 和檔案 hash 先核對，保留原映像與受保護 compose 配置。
 - 2026-10-15 17:32:03 UTC，API／worker／Web `admin-8ba66e7` 健康；其後唯讀 policy v2、公開 admin HTML／JS hash 相符。實際每日 200／400、單輪 8／16／4／90 秒未變；沒有遷移、模型、通知、清零或重發聊天。
 - Android APK／OTA 不變；使用者離開期間，首條聊天及鍵盤真機核對仍待驗，先接續不依賴人工結果的裝置會話工作。主機期限保持 2026-10-17 20:50:44 香港時間，不自動續期。[證據](artifacts/verification/ADMIN_AGENT_RUN_LIMITS_20261016.json)。
+
+
+## LOG-20261016-S05-NATIVE-LIFECYCLE
+
+- 沿使用者允許的待人工期間先做獨立工作，基於 S04 `9e1a9e7` 準備 S05；不提前合併依賴。無效／到期 SecureStore 憑據清理後恢復登入，新會話交換拒絕舊請求遲到回應；真正儲存 I/O 故障仍報錯，不誤刪有效憑據。
+- 復用既有 Server 身份／撤銷與逐裝置台帳、Android 備份排除及來源隔離；沒有把 SDK 暫時 sign-out 改成網站會話清理。
+- 只跑原生正式 Node／API 情景與本包憑據生命週期情景，共兩項通過；兩個受影響型別入口零診斷。沒有操作手機、真模型、雲端或全量測試；客戶端發布與真機結論待後續同批交付。[證據](artifacts/verification/S05_NATIVE_LIFECYCLE_20261016.json)。

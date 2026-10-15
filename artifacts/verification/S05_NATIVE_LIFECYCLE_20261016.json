@@ -1,0 +1,25 @@
+{
+  "baseline": "9e1a9e7",
+  "changes": [
+    "Recover malformed or expired local credentials through the existing login flow",
+    "Fence old requests when a replacement session exchange begins"
+  ],
+  "verification": {
+    "targetedTests": 2,
+    "passed": 2,
+    "typecheckRoots": 2,
+    "typeDiagnostics": 0,
+    "realModelCalls": 0,
+    "cloudWrites": 0,
+    "deviceActions": 0
+  },
+  "reuse": [
+    "Existing Firebase admission/revocation and browser/native transport separation",
+    "SecureStore per-origin credential storage and Android backup exclusion from S04"
+  ],
+  "status": "Implemented and locally checked; pending S04 merge, compatible client delivery and device acceptance",
+  "pending": [
+    "Physical-device reopen and identity switch",
+    "Keyboard transition issue remains separate; no speculative rollback of the verified input visibility fix"
+  ]
+}

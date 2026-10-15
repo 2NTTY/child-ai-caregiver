@@ -380,3 +380,49 @@ test("Android session transport reuses admission and revocation without acceptin
   assert.equal(await f.port.getSession({ headers }), null);
   assert.equal((await (await f.get(browserCookie)).json()).user.id, f.userId);
 });
+
+
+test("Android credential lifecycle recovers unusable storage and rejects old-session responses", async () => {
+  let saved: string | null = "invalid local JSON", now = 100, sequence = 0, removals = 0;
+  let release: (() => void) | undefined, entered: (() => void) | undefined;
+  const signal = new AbortController().signal;
+  const store = { read: async () => saved, write: async (value: string) => { saved = value; },
+    remove: async () => { removals++; saved = null; } };
+  const calls: Array<{ path: string; credential: string | null }> = [];
+  const fetcher: typeof fetch = async (input, init) => {
+    const request = new Request(input, init), path = new URL(request.url).pathname;
+    calls.push({ path, credential: request.headers.get("authorization") });
+    if (path === "/api/auth/native-session") return Response.json({ credential: "yuban-native-v1.session" + ++sequence,
+      expiresAtMs: now + 1000, user: { id: "parent" } });
+    if (path === "/api/synthetic-held-read") {
+      entered?.(); await new Promise<void>(resolve => { release = resolve; });
+    }
+    return Response.json(null);
+  };
+  const options = { apiBaseUrl: PUBLIC_ORIGIN + "/api", store, fetcher, clock: () => now };
+  const mobile = createNativeSessionTransport(options);
+  assert.equal(await (await mobile.fetcher(PUBLIC_ORIGIN + "/api/auth/get-session")).json(), null);
+  assert.equal(saved, null); assert.equal(removals, 1); assert.equal(calls.at(-1)?.credential, null);
+  await mobile.exchange("provider-proof", "parent", signal);
+  const first = saved;
+  const started = new Promise<void>(resolve => { entered = resolve; });
+  const pending = mobile.fetcher(PUBLIC_ORIGIN + "/api/synthetic-held-read");
+  await started;
+  await mobile.exchange("new-provider-proof", "parent", signal);
+  assert.notEqual(saved, first);
+  release!(); await assert.rejects(pending, /Native session unavailable/);
+  const reopened = createNativeSessionTransport(options);
+  await reopened.fetcher(PUBLIC_ORIGIN + "/api/auth/get-session");
+  assert.equal(calls.at(-1)?.credential, "Bearer yuban-native-v1.session2");
+  now += 1001;
+  await reopened.fetcher(PUBLIC_ORIGIN + "/api/auth/get-session");
+  assert.equal(saved, null); assert.equal(calls.at(-1)?.credential, null);
+  await reopened.exchange("fresh-provider-proof", "parent", signal);
+  await reopened.clear();
+  assert.equal(saved, null);
+  // A storage outage is not an invalid credential and must not silently delete it.
+  const broken = createNativeSessionTransport({ ...options, store: { ...store, read: async () => { throw new Error("synthetic storage outage"); } } });
+  const before = removals;
+  await assert.rejects(broken.fetcher(PUBLIC_ORIGIN + "/api/auth/get-session"), /synthetic storage outage/);
+  assert.equal(removals, before);
+});
