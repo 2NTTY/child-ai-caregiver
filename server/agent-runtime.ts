@@ -90,6 +90,8 @@ export interface AgentTool {
   description: string;
   /** Server-owned presentation boundary; successful execution still requires finalize. */
   terminal?: true;
+  /** Explicit server assertion: this handler cannot commit business or external effects. */
+  effect?: "read";
   parameters: z.ZodObject;
   /** Explicit tool-owned, bounded public-schema hints; never raw validation details. */
   parameterErrorHints?: (issues: readonly z.core.$ZodIssue[]) => readonly { path: string; reason: string; expected: string }[];
@@ -110,7 +112,9 @@ export interface AgentRunInput {
   context?: Record<string, unknown>;
   /** Trusted private summary for the first provider request only; never persisted in the session. */
   initialConversationSummary?: import("./memory-summary.ts").InitialConversationSummary;
-  finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext, reason: "normal" | "model_limit") => Promise<string | null>;
+  /** Revalidate provider-only summary before every step; null explicitly removes it. */
+  readConversationSummary?: () => Promise<import("./memory-summary.ts").InitialConversationSummary | null>;
+  finalize?: (result: Readonly<AgentRunResult>, context: AgentRunContext, reason: "normal" | "model_limit") => Promise<string | null | { outcome: "no_action" }>;
   /** Opt-in Server presentation after a confirmed model limit; never retries tools. */
   finalizeOnModelLimit?: boolean;
   /** Internal product opt-in; never accepted from HTTP input or inferred from model text. */
@@ -133,6 +137,7 @@ export interface AgentRunResult {
   stopReason?: AgentStopReason;
   provenance?: { packVersion: string; recipeId: string; model: string };
   text: string | null;
+  outcome?: "no_action";
   tools: { name: string; callId: string; status: AgentToolResult["status"]; reference?: string }[];
   counts: { modelCalls: number; toolCalls: number; queryEmbeddings: number };
 }
@@ -302,11 +307,18 @@ export function createAgentRuntime(options: {
                 if (response.reference) progress.reference = response.reference;
                 observer.recordToolRejection(tool.name, "execution", response);
                 return response;
-              } catch {
-                // A thrown/aborted handler may already have acted. Do not invite an automatic retry.
-                progress.status = "unknown";
-                observer.recordToolRejection(tool.name, "execution", { status: "unknown" });
-                return { status: "unknown" };
+              } catch (error) {
+                budget.check();
+                if (error instanceof AgentStopped) { toolFailure = error; throw error; }
+                // Authorization failures must never look like missing data or invite a retry.
+                try { if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized"); }
+                catch (error) { toolFailure = error instanceof AgentStopped ? error : new AgentStopped("unavailable"); throw toolFailure; }
+                progress.status = tool.effect === "read" ? "failed" : "unknown";
+                const response: AgentToolResult = { status: progress.status, data: tool.effect === "read"
+                  ? { code: "read_unavailable", recovery: "bounded_read", nextAction: "This read failed, not an empty result. Use a relevant read within the remaining budget or state the limitation." }
+                  : { code: "effect_unknown", recovery: "original_receipt_only" } };
+                observer.recordToolRejection(tool.name, "execution", response);
+                return response;
               }
             } }));
           const renderInstruction = async (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
@@ -322,7 +334,7 @@ export function createAgentRuntime(options: {
           const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames,
             ...(durable ? { modelAttemptKey: (request: LlmRequest) => modelAnchors.get(request) } : {}),
             ...(durable?.dailyUsage ? { durableDailyUsage: { adapter: durable.dailyUsage, context: durable.context } } : {}),
-            ...(input.trigger.kind === "interactive" && input.recipeId === "product-interactive" ? { initialConversationSummary: input.initialConversationSummary } : {}),
+            ...(input.trigger.kind === "interactive" && input.recipeId === "product-interactive" ? { initialConversationSummary: input.initialConversationSummary, readConversationSummary: input.readConversationSummary } : {}),
             projectCapabilityConfig: capabilitySelection && loader ? async (request, calls) => {
               const requested: string[] = [];
               for (const call of calls) if (call.name === loader.name) {
@@ -478,9 +490,16 @@ export function createAgentRuntime(options: {
             }
             if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
             // Keep finalize outside the Runner catch so its errors can never invoke it twice.
-            if (input.finalize) result.text = await budget.wait(() => input.finalize!(result, runContext, finalizeAfterModelLimit ? "model_limit" : "normal"));
+            if (input.finalize) {
+              const finalized = await budget.wait(() => input.finalize!(result, runContext, finalizeAfterModelLimit ? "model_limit" : "normal"));
+              if (typeof finalized === "object" && finalized?.outcome === "no_action") {
+                if (input.trigger.kind !== "worker" || !result.tools.some(tool => terminalToolNames.has(tool.name) && tool.status === "succeeded")) throw new AgentStopped("invalid_response");
+                result.outcome = "no_action"; result.text = null;
+              } else if (typeof finalized === "string" || finalized === null) result.text = finalized;
+              else throw new AgentStopped("invalid_response");
+            }
             if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
-            if (!result.text || finalizeAfterModelLimit && !result.text.trim()) throw new AgentStopped("invalid_response");
+            if (result.outcome !== "no_action" && (!result.text || finalizeAfterModelLimit && !result.text.trim())) throw new AgentStopped("invalid_response");
             if (finalizeAfterModelLimit) {
               if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
               budget.check();
@@ -504,6 +523,7 @@ export function createAgentRuntime(options: {
         });
       } catch (error) {
         result.status = "stopped";
+        delete result.outcome;
         result.stopReason = toolFailure?.reason ?? (error instanceof AgentStopped ? error.reason
           : error instanceof Error && /LlmCallsLimit/u.test(error.name) ? "model_limit" : "unavailable");
         result.text = null;

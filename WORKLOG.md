@@ -2614,3 +2614,13 @@
 - Result：pack 0.1.40 更新九個既有模組，集中共通對話／權限／引用／原操作規則；普通已授權交代不一律生成候選，準備單按事情用途整理，confirmationPrepared=true 復用原確認，原文續讀有效片段可引用。保留安全核心，未更改 product-tools、新角色、runtime、API 或 UI；不把背景 no_action、分段引用或記憶重整等程式缺口寫成已完成。0.1.40 不重用協作者未合併的 0.1.38／39 版本標識。
 - Verification：Node 24.19.0，既有 tests/agent-prompt-wiring.test.ts 四項全部通過（272 ms）；核對 manifest／模組版本、依賴閉包及現有工具契約。git diff --check 通過；主模型核對確認工具、原文引用登記與 staged summary 的實際語義，沒有修改測試斷言、產品執行、型別／build、模型、雲端、通知或瀏覽器驗收。
 - Limits / Next：純提示詞及靜態證據不證明真模型理解品質，尚未部署。合併後 OPT02 沿當前聊天／背景契約接續；新角色適配及灰稿語義審核等協作者接口穩定後接入。舊失敗、原備份真還原待驗維持。
+
+
+<a id="log-20261015-p2-opt02"></a>
+### 2026-10-15 — OPT02 相容回答、背景終態與跨步摘要
+
+- Scope / Baseline：0ddee9b／OPT01 已合併。主模型沿現有聊天、純到期及背景入口接線，未修改或合併 #214～#216，無子代理。引用 ADK 2.1.0 Skill 及既有 adapter，未更換模型、提高限額或新增框架。
+- Result：每段 kind／mixed 支援建議與收據分開引用；舊整體 kind 保持可讀。背景專用 no_action 經相同 terminal／finalize／授權保存為空正文終態，互動不能空答；工作恢復 schema 及正式 owner 投影接通，沒有假聊天／通知。只有明列純讀取 handler 的暫時失敗可在原 run 補查；副作用 unknown 仍停止。正式私人摘要逐模型步重新核對，失效 null 不退回舊快照，provider-only 且不累加協定；未新增摘要生成。
+- Verification：Node 24.19.0／ADK 2.1.0／GenAI 2.24.0，七個定向情景全部通過（10.9 秒）：背景空結果及重讀、唯讀恢復／最新摘要、混合引用兩種有效性、未知操作停下、確認 fallback 與摘要接點。兩項新情景共用現有 runtime／正式組裝及最少替身，其餘復用原情景；只調整受新契約影響的斷言。沒有全套、真模型、Firestore、通知、瀏覽器或部署。
+- Type / Review：14 個變更 TS 入口及必要依賴的 strict 型別最終零診斷；首次抓到 finalize union 收窄，修正後補原缺少的固定 Firestore 9.3.1／Storage 7.22.0 型別。NodeNext 臨時目錄映射無效，核對套件後改用正式 d.ts 入口，再修正條件 schema 方法的推斷；後續未重跑已過情景。所有依賴／檢查工具只在忽略暫存，正式 lockfile 不變。git diff --check 通過。
+- Limits / Next：不宣稱語義審核、記憶局部重整或真服務品質完成；這些仍按 OPT03／04 與協作者角色接口推進。既有確認、原操作、引用重核、工作終態及容量不變；原生備份真還原維持待驗。合併後開始 OPT03，部署留 OPT05／正式交付。

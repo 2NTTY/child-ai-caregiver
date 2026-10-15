@@ -45,10 +45,18 @@ export const agentPendingPageSchema = z.object({
   })).max(20),
   nextCursor: z.string().regex(/^[A-Za-z0-9_-]{1,1024}$/).nullable(),
 }).strict();
+const answerKind = z.enum(["caregiving", "safety_help", "clarification", "operation", "record_restatement", "private_reference"]);
+const answerParagraph = z.object({ kind: answerKind.optional(), text: text(1800), citationIds: z.array(z.string().min(1).max(80)).max(6) }).strict();
 export const agentAnswerSchema = z.object({
-  kind: z.enum(["caregiving", "safety_help", "clarification", "operation", "record_restatement", "private_reference"]),
-  paragraphs: z.array(z.object({ text: text(1800), citationIds: z.array(z.string().min(1).max(80)).max(6) }).strict()).min(1).max(6),
-}).strict();
+  kind: z.enum([...answerKind.options, "mixed"]),
+  paragraphs: z.array(answerParagraph).min(1).max(6),
+}).strict().refine(value => value.kind !== "mixed" || value.paragraphs.every(p => p.kind !== undefined), "Mixed paragraphs require individual kinds");
+/** Only worker entry points expose this schema; empty interactive answers remain invalid. */
+export const agentBackgroundAnswerSchema = z.object({
+  kind: z.enum([...answerKind.options, "mixed", "no_action"]),
+  paragraphs: z.array(answerParagraph).max(6),
+}).strict().refine(value => value.kind === "no_action" ? value.paragraphs.length === 0
+  : agentAnswerSchema.safeParse(value).success, "No-action is empty; other answers require valid paragraphs");
 export type AgentAnswer = z.infer<typeof agentAnswerSchema>;
 export const privateSourceCitationSchema=z.object({citationId:z.string().max(80),inputId:z.uuid(),version:z.number().int().min(1),
   label:z.string().max(200),excerpt:z.string().max(6000),sha256:z.string().regex(/^[a-f0-9]{64}$/u),
@@ -56,6 +64,8 @@ export const privateSourceCitationSchema=z.object({citationId:z.string().max(80)
 export type PrivateSourceCitation=z.infer<typeof privateSourceCitationSchema>;
 export interface AgentPresentation {
   text: string;
+  /** Persisted worker outcome, not a chat message or a completed care task. */
+  outcome?: "no_action";
   citations: KnowledgeEvidence[];
   privateSourceCitations?:PrivateSourceCitation[];
   retrievalMode: "vector_keyword" | "keyword_degraded" | "not_used";

@@ -131,7 +131,7 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
       { label: "有效至", value: value.validUntil ?? "未設定" }] };
 }
 export function projectAgentRun(result: ProductAgentResult, childId: string, createdAt: string | null): AgentRunView {
-  return { id: result.runId, childId, status: result.status, createdAt, text: result.text,
+  return { id: result.runId, childId, status: result.status, createdAt, text: result.outcome === "no_action" ? "已核對，這次沒有需要新增的回饋或行動。" : result.text,
     stopReasonLabel: result.stopReason ? stopReasons[result.stopReason] ?? "未能確認停止原因" : null,
     counts: result.countsKnown === false ? null : result.counts, retrievalMode: result.retrievalMode,
     tools: result.tools.map((tool, index) => ({ id: `${result.runId}:${index}`, nameLabel: toolNames[tool.name] ?? "其他工具",

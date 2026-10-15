@@ -87,6 +87,7 @@ export class AgentGatewayModel extends BaseLlm {
     modelAttemptKey?: (request: LlmRequest) => string | undefined;
     durableDailyUsage?: { adapter: DurableAiUsage; context: RootBudgetContext };
     initialConversationSummary?: InitialConversationSummary;
+    readConversationSummary?: () => Promise<InitialConversationSummary | null>;
     projectCapabilityConfig?: (request: LlmRequest, calls: readonly FunctionCall[]) => Promise<LlmRequest["config"] | undefined>;
   };
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
@@ -112,20 +113,23 @@ export class AgentGatewayModel extends BaseLlm {
       throw new AgentStopped("input_limit");
     }
     let outgoing = request;
-    const initial = !this.providerCalled ? this.options.initialConversationSummary : undefined;
+    const initial = this.options.readConversationSummary
+      ? await budget.wait(this.options.readConversationSummary)
+      : !this.providerCalled ? this.options.initialConversationSummary : undefined;
+    if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
     const validUntil = initial?.validUntil === null ? Infinity : Date.parse(initial?.validUntil ?? "");
     if (initial && (validUntil === Infinity || Number.isFinite(validUntil) && Date.now() < validUntil)) {
       const context = { role: "user", parts: [{ text: INITIAL_CONVERSATION_SUMMARY_LABEL + JSON.stringify(initial.summary) }] };
       if (JSON.stringify(context).length <= 4000) {
         const candidate = { ...request, contents: [...request.contents, context] };
         if (agentRequestCharacters(candidate) <= budget.limits.inputCharacters) {
-          // Provider-only data never enters ADK events or the next tool-response budget.
+          // Fresh provider-only data never enters ADK events; count it in each request, without cumulative copies.
           outgoing = candidate;
         }
       }
     }
     const includesSummary = outgoing !== request;
-    // Keep the exact provider payload fixed after durable admission, including a first-call summary.
+    // Keep the exact provider payload fixed after durable admission, including the revalidated summary.
     const modelKey = budget.durable ? this.options.modelAttemptKey?.(request) : undefined;
     let dailyRequest: DurableAiUsageRequest | undefined;
     if (budget.durable) {

@@ -71,7 +71,8 @@ for (const validCitation of [true, false]) test(`terminal product presentation r
       { id: "load-tasks", name: "load_capabilities", args: { capabilities: ["tasks"] } }],
     { id: "search-call", name: "search_knowledge", args: { query: "合成照護主題", classification: "official_guidance" } },
     { id: "candidate-call", name: "propose_task", args: { values } },
-    { id: "answer-call", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: chunk.text, citationIds: [chunk.chunkId] }] } },
+    { id: "answer-call", name: "present_answer", args: { kind: "mixed", paragraphs: [{ kind: "caregiving", text: chunk.text, citationIds: [chunk.chunkId] },
+      { kind: "operation", text: "候選已保存，仍待確認。", citationIds: [] }] } },
   ];
   let calls = 0, writes = 0, revalidations = 0, claimed = false, saved: ProductAgentResult | null = null;
   const proposals: AgentProposal[] = [];
@@ -106,7 +107,7 @@ for (const validCitation of [true, false]) test(`terminal product presentation r
   const result = await service.reply(userId, childId, messageId, async () => true);
   assert.equal(result?.status, validCitation ? "completed" : "stopped", JSON.stringify(result));
   assert.equal(result.stopReason, validCitation ? null : "invalid_response");
-  assert.equal(result.text, validCitation ? chunk.text + " [1]" : "");
+  assert.equal(result.text, validCitation ? chunk.text + " [1]\n\n候選已保存，仍待確認。" : "");
   assert.deepEqual(result.citations, validCitation ? [chunk] : []);
   assert.deepEqual(result.tools.map(tool => ({ name: tool.name, status: tool.status })),
     steps.flat().map(step => ({ name: step.name, status: "succeeded" })));

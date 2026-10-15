@@ -101,6 +101,7 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
     value.tools = value.tools.filter(tool => tool.name !== 'contact_caregiver');
     for (const reference of await options.contact?.recorded(b, run.id) ?? []) value.tools.push({ name: 'contact_caregiver', status: 'succeeded', reference });
     if (!value.text && (receipts.length || confirmation)) value.text = '已有操作保存了 Server 收據；請查看原操作及目前結果，勿重複提交。已安排不代表已通知或照護已完成。';
+    if (value.outcome && (value.text || value.proposals.length || value.tools.some(tool => tool.reference))) delete value.outcome;
     return value;
   }
   const store: ProductAgentStore = {

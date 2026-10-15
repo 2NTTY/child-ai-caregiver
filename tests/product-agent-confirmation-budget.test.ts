@@ -207,15 +207,15 @@ for (const condition of ["revokeAfterRead", "cancelAfterRead", "deadlineDuringRe
 });
 
 
-test("initial private summary survives first-call loading while pending fallback discards the newly staged summary", async () => {
+test("revalidated private summary survives capability loading while pending fallback discards the newly staged summary", async () => {
   const s = fixture({ stageSummary: true, initialSummary: true }), result = assertPending(s, await s.reply());
   assert.equal(result.status, "completed"); assert.equal(result.text, AGENT_CONFIRMATION_PENDING_TEXT);
   assert.ok(s.requests[0].contents.at(-1)?.parts?.[0]?.text?.includes("Synthetic initial private history"));
-  for (const request of s.requests.slice(1)) assert.equal(JSON.stringify(request.contents).includes("Synthetic initial private history"), false);
+  for (const request of s.requests.slice(1)) assert.equal(JSON.stringify(request.contents).split("Synthetic initial private history").length - 1, 1);
   assert.ok(result.tools.some(tool => tool.name === "read_context" && tool.status === "succeeded"));
   assert.ok(result.tools.some(tool => tool.name === "load_capabilities" && tool.status === "succeeded"));
   assert.ok(result.tools.some(tool => tool.name === "stage_private_summary" && tool.status === "succeeded"));
-  assert.deepEqual(s.summaryInputs, [undefined]); assert.equal(s.calls.length, 4); assert.equal(s.initialSummaryReads(), 1);
-  assert.deepEqual(await s.reply(), result); assert.equal(s.calls.length, 4); assert.equal(s.initialSummaryReads(), 1);
+  assert.deepEqual(s.summaryInputs, [undefined]); assert.equal(s.calls.length, 4); assert.equal(s.initialSummaryReads(), 4);
+  assert.deepEqual(await s.reply(), result); assert.equal(s.calls.length, 4); assert.equal(s.initialSummaryReads(), 4);
   assert.deepEqual(s.finalizations, [{ reason: "model_limit" }]);
 });
