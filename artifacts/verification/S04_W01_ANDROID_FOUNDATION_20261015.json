@@ -248,6 +248,17 @@
       "modelCalls": 0,
       "notifications": 0,
       "logSha256": "7ba54d6129cd3066a3233ebdfae9631d2177ae8c70ce2848706b887460a05cef"
+    },
+    {
+      "name": "Device feedback after route diagnostic delivery",
+      "result": "assistant-still-blank-no-error-reference",
+      "userEvidence": "User replied entire screen blank to the diagnostic-update instructions; no UI error reference supplied.",
+      "activeUpdateId": "unknown; publication does not prove activation on the device",
+      "diagnosis": "Not established. No speculative navigation/Modal/SDK change applied. Next evidence is a bounded app-scoped Android log after user enables debugging.",
+      "additionalTests": 0,
+      "additionalModelCalls": 0,
+      "additionalCloudBuilds": 0,
+      "additionalOtaPublishes": 0
     }
   ],
   "sourceSha256": {
