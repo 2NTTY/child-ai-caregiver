@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.40",
+  "version": "0.1.41",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -86,7 +86,7 @@
     {
       "id": "module.memory-maintenance",
       "path": "modules/memory-maintenance.md",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",

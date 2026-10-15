@@ -7,7 +7,7 @@ import type { FirestoreMemoryStore } from './firestore-memory.ts';
 import { domainParse, domainReject } from './firestore-domain-data.ts';
 
 const cursorSchema = z.object({ userId: z.string(), childId: z.uuid(), epoch: z.uuid(), changeSeq: z.string(),
-  kind: historySearchSchema.shape.kind, query: z.string(), createdAt: z.iso.datetime({ offset: true }), id: z.uuid() }).strict();
+  kind: historySearchSchema.shape.kind, query: z.string(), createdFrom: z.string().optional(), createdBefore: z.string().optional(), createdAt: z.iso.datetime({ offset: true }), id: z.uuid() }).strict();
 
 /** Bounded private search; never indexes decrypted family content in the public corpus. */
 export function createFirestoreAgentHistory(options: {
@@ -22,7 +22,8 @@ export function createFirestoreAgentHistory(options: {
         try {
           if (!/^[A-Za-z0-9_-]{1,2048}$/u.test(input.cursor)) throw Error();
           cursor = cursorSchema.parse(JSON.parse(Buffer.from(input.cursor, 'base64url').toString('utf8')));
-          if (cursor.userId !== userId || cursor.childId !== childId || cursor.kind !== input.kind || cursor.query !== input.query) throw Error();
+          if (cursor.userId !== userId || cursor.childId !== childId || cursor.kind !== input.kind || cursor.query !== input.query
+            || cursor.createdFrom !== input.createdFrom || cursor.createdBefore !== input.createdBefore) throw Error();
         } catch { domainReject('invalid_cursor', 400); }
       }
       return authority.runTransaction(userId, childId, async b => {
@@ -32,6 +33,8 @@ export function createFirestoreAgentHistory(options: {
         let query = data.collection(collection).where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag)
           .where('userTag', '==', tags.userTag).where('childTag', '==', tags.childTag);
         if (input.kind === 'memory_fact') query = query.where('live', '==', true);
+        if (input.createdFrom) query = query.where('createdAt', '>=', new Date(input.createdFrom).toISOString());
+        if (input.createdBefore) query = query.where('createdAt', '<', new Date(input.createdBefore).toISOString());
         query = query.orderBy('createdAt', 'desc').orderBy(idField, 'desc').limit(101);
         if (cursor) query = query.startAfter(cursor.createdAt, cursor.id);
         const rows = await b.transaction.get(query), matches: AgentHistoryPage['matches'] = [];
@@ -62,7 +65,8 @@ export function createFirestoreAgentHistory(options: {
         }
         const complete = rows.size === scanned;
         return { matches, scanned, scanLimit: 100, complete, nextCursor: !complete && last ? Buffer.from(JSON.stringify({
-          userId, childId, epoch: b.scope.storageEpoch, changeSeq: b.changeSeq, kind: input.kind, query: input.query, ...last })).toString('base64url') : null };
+          userId, childId, epoch: b.scope.storageEpoch, changeSeq: b.changeSeq, kind: input.kind, query: input.query, ...(input.createdFrom ? { createdFrom: input.createdFrom } : {}),
+          ...(input.createdBefore ? { createdBefore: input.createdBefore } : {}), ...last })).toString('base64url') : null };
       });
     },
     async readHistory(userId: string, childId: string, raw: z.infer<typeof historyReadSchema>): Promise<AgentHistoryMessage | null> {

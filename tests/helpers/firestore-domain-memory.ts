@@ -76,7 +76,7 @@ export function firestoreDomainFixture() {
       async commit() {
         await database.runTransaction(async tx => {
           for (const item of deletes) if (item.lastUpdateTime !== undefined) {
-            const current = await tx.get(item.target as any);
+            const current = await tx.get(item.target as any) as unknown as { updateTime?: number };
             assert.equal(current.updateTime, item.lastUpdateTime, 'Synthetic batch precondition conflict');
           }
           for (const { target } of deletes) tx.delete(target as any);

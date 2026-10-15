@@ -53,6 +53,13 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
     make("read_memory_facts", memoryFactReadSchema, args => guard(async () => {
       const input = memoryFactReadSchema.parse(args);
       if (input.factId) return memory.getFact(userId, childId, input.factId);
+      if (input.keys) {
+        if (!memory.recall) throw new FirestoreDomainError(503, "memory_lookup_unavailable");
+        const result = await memory.recall(userId, childId, input.keys);
+        // Never truncate a keyed response into a false complete result. The caller can narrow the keys.
+        if (JSON.stringify(result).length > run.budget.toolResponseCharacters - 900) throw new FirestoreDomainError(413, "response_limit");
+        return { ...result, lookup: "exact_current_keys", historicalSearchAvailable: true };
+      }
       const page = await memory.facts(userId, childId, input.afterId ?? undefined, 10);
       if (!page) return null;
       const items: typeof page.items = [];

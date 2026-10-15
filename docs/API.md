@@ -893,3 +893,13 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 工具只有經 Server 明列 `effect:read` 的純讀取 handler，普通服務失敗才回 `failed/read_unavailable` 供同一預算內補查；不是空資料。執行權不確定或取消／期限仍停止，未標純讀取的錯誤維持 unknown，只核原收據、不換 ID 重做。模型無權更改 effect。首批僅上下文、官方原文續讀、照護摘要及純工作讀取，搜尋 embedding 的用量及未知規則不放寬。
 
 正式私人聊天在每次模型請求前，透過共同 gateway 回調重新讀取已核對摘要；null 明確移除失效摘要，不退回舊快照。摘要只加入本次 provider payload，最多原有 4,000 字元並計完整請求容量，不累加至 ADK session；原工具 parts／配對保持。此接點不新增模型整理、壓縮或配額，局部摘要維護由 OPT03／04 承接。舊無回調入口保持原首次摘要相容行為。
+
+
+<a id="memory-keyed-recall"></a>
+### 記憶原項與有界召回
+
+正式 Firestore 聊天工具沿同一業務服務：`read_memory_facts.keys` 可直接讀最多四個已知事實鍵／話題標題，返回目前有效性、原來源及話題終態；與 factId／afterId 互斥。未命中只表示這些正規化鍵未有目前指標，歷史與候選仍可按原 ID／搜尋核對。回覆超出工具容量時要求縮窄鍵，不靜默截斷成完整結果。
+
+`read_private_instructions.memoryKeys` 在 query 為空、afterId=null 時直接定位最多四項私人交代，返回 missingKeys 及 `legacyUnkeyedNotSearched:true`；舊無鍵或同義內容沿原有界搜尋。`save_private_instruction.memoryKey`／`revise_private_instruction.memoryKey` 是可選的穩定主題／事情鍵，非任意權限或事實確認。新保存遇同鍵、同標題及正文，返回原資源 ID／版本及新操作收據 `memoryOutcome:duplicate`，不新增內容版本、變更序號或提醒；同鍵不同內容回 `instruction_key_conflict`，須讀原項再帶 expectedVersion 更正。舊無鍵交代可在同一更新補鍵；已綁定鍵不能藉此更名覆蓋另一項。收據 outcome 的 created／updated／duplicate 與照護完成或外發無關。
+
+`search_history` 增加可選 `createdFrom`（包含）／`createdBefore`（不包含），指保存時間，不能冒充事情發生時間。先沿既有排序索引限制範圍，再做原有最多 100 筆授權正文掃描與十項命中；cursor 同時綁定此範圍、本人／孩子／世代／變更版本及查詢。舊無範圍 cursor 相容。已知事情資源仍用原工作 resource ID／version 直接讀，不建立第二份權威資料。
