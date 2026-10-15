@@ -18,6 +18,12 @@ export interface AiConfig {
   agentMaxInputCharacters?: number;
   agentThinkingLevel?: AgentThinkingLevel;
   maxOutputTokens: number;
+  /**
+   * Unbound runs may use 6 model calls so chat-delivery review fits beside generation.
+   * Daily quotas are separate fields and stay unchanged. A bound settings snapshot
+   * is not overridden; production keeps its selected maxModelCalls, default 4.
+   */
+  chatDeliveryReviewModelCalls: 4 | 6;
 }
 
 function invalidConfig(key: string): never {
@@ -35,6 +41,13 @@ function readIdentifier(value: string | undefined, key: string, fallback: string
   const result = value === undefined ? fallback : value;
   if (typeof result !== "string" || result.length > maxLength || !pattern.test(result)) invalidConfig(key);
   return result;
+}
+
+/** Empty or omitted stays at the current ceiling. Only the explicit proposal value 6 is accepted. */
+function readChatDeliveryReviewModelCalls(value: string | undefined): 4 | 6 {
+  if (value === undefined || value === "") return 4;
+  if (value === "6") return 6;
+  return invalidConfig("AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS");
 }
 
 function readInteger(value: string | undefined, key: string, fallback: number, min: number, max: number): number {
@@ -69,5 +82,6 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
       AGENT_INTERACTIVE_INPUT.default, AGENT_INTERACTIVE_INPUT.min, AGENT_INTERACTIVE_INPUT.max),
     agentThinkingLevel: resolveModelThinkingLevel(model, env.AI_AGENT_THINKING_LEVEL),
     maxOutputTokens: readInteger(env.AI_MAX_OUTPUT_TOKENS, "AI_MAX_OUTPUT_TOKENS", 1024, 1, 4096),
+    chatDeliveryReviewModelCalls: readChatDeliveryReviewModelCalls(env.AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS),
   };
 }

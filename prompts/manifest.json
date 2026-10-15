@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.44",
+  "version": "0.1.45",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -203,11 +203,21 @@
     {
       "id": "module.product-tools",
       "path": "modules/product-tools.md",
-      "version": "0.1.18",
+      "version": "0.1.19",
       "requires": [
         "core.tool-use",
         "core.output",
         "module.knowledge-answering"
+      ]
+    },
+    {
+      "id": "module.chat-delivery-review",
+      "path": "modules/chat-delivery-review.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust",
+        "core.output",
+        "domain.childcare-hk.safety"
       ]
     },
     {
@@ -614,6 +624,27 @@
         "S12-W02"
       ],
       "missingCapability": "只整理已提供文字為私人候選；不能抓取任意網址、背景讀私人動態或把帖子當家庭事實。"
+    },
+    {
+      "id": "chat-delivery-review",
+      "additionalModules": [
+        "module.chat-delivery-review"
+      ],
+      "outputModes": [
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "context",
+        "evidence",
+        "capabilities",
+        "outputContract"
+      ],
+      "plannedPackages": [
+        "P3-M01"
+      ],
+      "missingCapability": "只判斷本次草稿是否得到所附摘錄支持；不能寫資料、發布知識或自報免審。"
     }
   ],
   "outputModeRequirements": {

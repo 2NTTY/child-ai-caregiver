@@ -8,12 +8,54 @@ import type { AgentRuntimePort } from "./agent-runtime.ts";
 import { createProductAgentTools, createDueWorkContinuationTools } from "./product-agent-tools.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentPresentation, ProductAgentResult } from "../src/shared/product-agent.ts";
+import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT, type ChatDeliveryReviewBinding } from "../src/shared/chat-delivery-review.ts";
 import { AgentStopped } from "./agent-budget.ts";
+import { enforceChatDeliveryReview, type ChatDeliverySurface } from "./chat-delivery-review.ts";
+import type { AgentRunContext, AgentRunResult } from "./agent-runtime.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT, AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
 import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./product-agent-capabilities.ts";
 
 import type { FirestoreWorkContinuationStore, ClaimedWorkContinuation } from "./firestore-work-continuation-store.ts";
+
+function unfinishedDeliveryText(stopReason: string | null | undefined): string {
+  return stopReason === "delivery_review_incomplete" ? CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT : "";
+}
+
+/** Programmatic presentation is already done. Review shares this root run and cannot be skipped by the generator. */
+async function acceptReviewedDelivery(
+  tools: ChatDeliverySurface,
+  rendered: { value: AgentPresentation | null },
+  held: { value: ChatDeliveryReviewBinding | null; text: string | null },
+  result: Pick<AgentRunResult, "provenance">,
+  context: AgentRunContext,
+): Promise<string | { outcome: "no_action" }> {
+  if (!rendered.value) throw new AgentStopped("invalid_response");
+  if (rendered.value.outcome === "no_action") return { outcome: "no_action" };
+  try {
+    const reviewed = await enforceChatDeliveryReview({
+      presentation: rendered.value, tools, context, provenance: result.provenance ?? null,
+    });
+    rendered.value = reviewed.presentation;
+    held.value = reviewed.review;
+    held.text = reviewed.review ? reviewed.presentation.text : null;
+    return rendered.value.text;
+  } catch (error) {
+    rendered.value = null;
+    held.value = null;
+    held.text = null;
+    throw error;
+  }
+}
+
+/** Attach a pass only when status and final text still match what was reviewed. */
+function withDeliveryReview(
+  value: ProductAgentResult,
+  held: { value: ChatDeliveryReviewBinding | null; text: string | null },
+): ProductAgentResult {
+  if (!held.value || held.text === null || value.status !== "completed" || value.text !== held.text) return value;
+  return { ...value, deliveryReview: held.value };
+}
 
 export function createProductAgent(options: {
   workContinuationAuthority?: FirestoreWorkContinuationStore;
@@ -37,22 +79,25 @@ export function createProductAgent(options: {
       const authorize = async () => currentWorker() && !signal?.aborted && await authority.authorizeBackground(job, claim);
       if (!await authorize()) return null;
       let tools: ReturnType<typeof createDueWorkContinuationTools> | undefined;
-      let presentation: AgentPresentation | null = null;
+      const rendered: { value: AgentPresentation | null } = { value: null };
+      const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim,
         deadlineAtMs: Date.parse(claim.expiresAt), trigger: { kind: "worker", reference: job.eventId }, recipeId: "product-work-followup",
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context,
         messages: [{ role: "user", text: "這是 Server 已提交的純到期工作。只按原 context 及 read_work 作必要補問或記錄回述；不能給照護建議、讀其他資料、修改、外發或聲稱工作完成。" }],
         tools: run => { tools = createDueWorkContinuationTools(run, authorize, id => authority.readWork(job, claim, id)); return tools.tools; },
         authorize, signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
-        finalize: async () => { presentation = await tools!.presentation(); if (!presentation) throw new AgentStopped("invalid_response"); return presentation.outcome === "no_action" ? { outcome: "no_action" } : presentation.text; },
+        finalize: async (runResult, runContext) => {
+          rendered.value = await tools!.presentation();
+          return acceptReviewedDelivery(tools!, rendered, review, runResult, runContext);
+        },
       });
       if (!await authorize()) return null;
-      const rendered = presentation as AgentPresentation | null;
-      return { runId: claim.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
-        ...(result.status === "completed" && rendered?.outcome ? { outcome: rendered.outcome } : {}),
-        text: result.status === "completed" ? rendered?.text ?? "" : "", citations: [], privateSourceCitations: [], retrievalMode: "not_used",
+      return withDeliveryReview({ runId: claim.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
+        ...(result.status === "completed" && rendered.value?.outcome ? { outcome: rendered.value.outcome } : {}),
+        text: result.status === "completed" ? rendered.value?.text ?? "" : unfinishedDeliveryText(result.stopReason), citations: [], privateSourceCitations: [], retrievalMode: "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
-        countsKnown: true, counts: result.counts, proposals: [] };
+        countsKnown: true, counts: result.counts, proposals: [] }, review);
     },
     async cancelReply(userId: string, childId: string, messageId: string, isCurrentUser: () => Promise<boolean>) {
       if (!await isCurrentUser()) return false;
@@ -70,6 +115,7 @@ export function createProductAgent(options: {
       const authorize = async () => await input.authorize() && await options.store.authorize(claim.scope,claim.runId);
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
+      const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt),
         deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())),
         trigger: { kind: "worker", reference: input.reference }, recipeId,
@@ -89,18 +135,21 @@ export function createProductAgent(options: {
             "read_concerns", "list_private_sources", "read_private_source"]);
           return privateContinuation ? tools.tools.filter(tool => readable.has(tool.name)) : tools.tools;
         },
-        authorize, signal: input.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer", finalize: async () => { rendered.value = await tools!.presentation();
-          if (!rendered.value) throw new AgentStopped("invalid_response"); return rendered.value.outcome === "no_action" ? { outcome: "no_action" } : rendered.value.text; },
+        authorize, signal: input.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
+        finalize: async (runResult, runContext) => {
+          rendered.value = await tools!.presentation();
+          return acceptReviewedDelivery(tools!, rendered, review, runResult, runContext);
+        },
       });
       if(result.status==="stopped" && !privateContinuation && options.contact && await input.authorize()){
         const recorded=await options.contact.recordedForRun?.(claim.scope.userId,claim.scope.childId,claim.runId);
         for(const reference of recorded??[])if(!result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.reference===reference))result.tools.push({name:"contact_caregiver",callId:"persisted-ledger",status:"succeeded",reference});
       }
       const presentation = result.status === "completed" ? rendered.value : null;
-      const value: ProductAgentResult = { runId: result.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
+      const value = withDeliveryReview({ runId: result.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
         ...(presentation?.outcome ? { outcome: presentation.outcome } : {}),
-        text: presentation?.text ?? (result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
-        tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })), countsKnown: true, counts: result.counts, proposals: [] };
+        text: presentation?.text ?? (result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : unfinishedDeliveryText(result.stopReason)), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
+        tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })), countsKnown: true, counts: result.counts, proposals: [] }, review);
       if (!await input.authorize() || !await options.store.finish(claim.scope, value)) return null;
       return options.store.get(input.userId, input.childId, claim.runId);
     },
@@ -131,6 +180,7 @@ export function createProductAgent(options: {
       const authorize = async () => await isCurrentUser() && await options.store.authorize(claim.scope,claim.runId);
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
+      const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       let confirmationPendingFallbackUsed = false;
       const result = await options.runtime.run({
         onDiagnostic: event => {
@@ -172,8 +222,7 @@ export function createProductAgent(options: {
               confirmationPendingFallbackUsed = true;
             }
           }
-          if (!rendered.value) throw new AgentStopped("invalid_response");
-          return rendered.value.outcome === "no_action" ? { outcome: "no_action" } : rendered.value.text;
+          return acceptReviewedDelivery(tools!, rendered, review, result, _context);
         },
       });
       if(result.status==="stopped" && options.contact && await isCurrentUser()){
@@ -206,15 +255,15 @@ export function createProductAgent(options: {
       if (confirmationResult?.result && !result.tools.some(tool => tool.name === "confirmed_proposal" && tool.reference === confirmationResult.id))
         result.tools.push({ name: "confirmed_proposal", callId: "persisted-confirmation", status: "succeeded", reference: confirmationResult.id });
       const presentation = result.status === "completed" && !documentReceiptUnavailable && !documentSourceUnavailable ? rendered.value : null;
-      const value: ProductAgentResult = { runId: result.runId, provenance: result.provenance ?? null,
+      const value = withDeliveryReview({ runId: result.runId, provenance: result.provenance ?? null,
         status: documentReceiptUnavailable ? "unknown" : documentSourceUnavailable && result.status === "completed" ? "stopped" : result.status,
         stopReason: documentReceiptUnavailable ? "document_receipt_unavailable" : documentSourceUnavailable && result.status === "completed" ? "document_source_changed" : result.stopReason ?? null,
         text: documentReceiptUnavailable ? "未能核對文件操作收據；請查核原運行結果，勿重新提交同一操作。"
           : documentSourceUnavailable ? "文件操作的目前資料或來源已變，未能顯示原收據；請重新讀取目前資料，勿重複提交操作。"
           : documentBuilding ? "報告整理工作已提交，正文仍在整理中。請在成長檔案查看同一文件的進度，毋須再次建立。"
-          : presentation?.text ?? (confirmationResult?.result ? AGENT_CONFIRMATION_SAVED_TEXT : receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>["generate_family_document","change_family_document"].includes(tool.name)&&tool.status==="succeeded") ? "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件及版本，勿重複建立；文件清單不代表照護任務完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
+          : presentation?.text ?? (confirmationResult?.result ? AGENT_CONFIRMATION_SAVED_TEXT : receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>["generate_family_document","change_family_document"].includes(tool.name)&&tool.status==="succeeded") ? "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件及版本，勿重複建立；文件清單不代表照護任務完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : unfinishedDeliveryText(result.stopReason)), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
-        countsKnown: true, counts: result.counts, proposals: [] };
+        countsKnown: true, counts: result.counts, proposals: [] }, review);
       if (!await isCurrentUser()) return null;
       if (!await options.store.finish(claim.scope, value, value.status === "completed" && !confirmationPendingFallbackUsed ? tools?.summaryDraft() : undefined)) {
         const persisted = await options.store.readCancelled(claim.scope, claim.runId)
