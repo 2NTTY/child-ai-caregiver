@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-16",
+  "baseline": "7d1ccd6",
+  "scope": "Detached chat transport and original executor terminal settlement",
+  "observed": {
+    "productionRun": "metadata only; no text stored",
+    "rootLimits": {
+      "modelCalls": 8,
+      "toolCalls": 16,
+      "queryEmbeddings": 4
+    },
+    "rootUsed": {
+      "modelCalls": 5,
+      "toolCalls": 5,
+      "queryEmbeddings": 1
+    },
+    "result": "unknown/interrupted, no final payload",
+    "diagnostics": "two present_answer citation_required rejections and a model_error; the evidence does not prove app close caused model termination"
+  },
+  "checks": [
+    {
+      "command": "node --import ./.cache/agent-budget-local-deps.mjs --experimental-strip-types --test tests/agent-feedback.test.ts",
+      "passed": 2,
+      "durationMs": 2259.7,
+      "environment": "local Node 24.19, actual HTTP/Runner, scripted provider and Firestore transaction fixture",
+      "covers": [
+        "SSE disconnect followed by saved original result",
+        "JSON disconnect followed by saved original result",
+        "expired original run settles real stop/counters after observer reads interrupted",
+        "new executor reads same outcome",
+        "no new work after expiry; no overwrite after settlement or explicit cancellation"
+      ]
+    },
+    {
+      "kind": "targeted TypeScript",
+      "roots": 3,
+      "diagnostics": 0
+    },
+    {
+      "kind": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "notRun": [
+    "real model replay",
+    "device chat acceptance",
+    "full suite",
+    "cloud database mutation"
+  ],
+  "deployment": "pending"
+}

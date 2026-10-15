@@ -2700,3 +2700,11 @@
 - 原因／範圍：使用者 Android 聊天兩次在模型前停止。#230 runtime 已調 16 工具，但 Firestore 仍只接受 8；共用驗證上限，嘗試收據容量改為最大可配置計數之和，保留舊資料及同操作防重。
 - 驗證：Node 24.19.0 的單一情景先重現 invalid_context，修正後通過；候選測試 teardown 的 dispose 誤名改為 close，原失敗保留本機。4 個受影響型別入口零診斷；沒有模型、通知或全量測試。
 - 限制／接續：部署與真 Firestore 接點待核；真人首條聊天仍由使用者驗收。舊 #230 證據保留，不能當成台帳相容性已驗。見[本次證據](artifacts/verification/FIRESTORE_AGENT_BUDGET_20261016.json)。
+
+
+## LOG-20261016-AGENT-DISCONNECTED-RESULT
+
+- 原 master `7d1ccd6`；使用者回報關閉 App 後回覆丟失。原 run metadata 顯示五次生成／五次工具／一次查詢向量，最後無結果；兩次引用拒絕及模型錯誤仍保留，不宣稱是斷線直接造成。
+- 修正 Firestore 把執行期限套用到結果保存的缺陷；到期禁止新工作，原執行者仍可結清原結果。已取消、已有結果、撤權與世代檢查保持。JSON 與 SSE 同樣脫離連線取消；只有明確取消改原 run。
+- 正式 HTTP／真 Runner scripted 與 Firestore fixture 兩項定向檢查通過；受影響三個根檔型別零錯誤，diff check 通過。零真模型、通知、瀏覽器／裝置操作，未重發使用者訊息。
+- C 單作者主責；main model 實作及 review。部署待交付，首條聊天仍由使用者驗收；管理員總控後續接續。證據：[EV](artifacts/verification/AGENT_DISCONNECTED_RESULT_20261016.json)。
