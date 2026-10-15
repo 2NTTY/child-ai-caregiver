@@ -434,3 +434,189 @@ test("216D: tampered review binding is rejected before publish", async () => {
   assert.equal(result.published, false);
   assert.equal(published, 0);
 });
+test("F1: expired lease after stall cannot overwrite budget/result of later runner", async () => {
+  const key = fingerprint("fhs-solid-food", "f1-lease");
+  const budgets = new Map();
+  const results = new Map();
+  const claims = new Map();
+  let releaseFetchA;
+  const fetchAGate = new Promise((resolve) => { releaseFetchA = resolve; });
+  let aFetchStarted;
+  const aFetchStartedGate = new Promise((resolve) => { aFetchStarted = resolve; });
+  const itemA = pageItem("??? A ???");
+  const itemB = pageItem("??? B ????");
+
+  const ports = {
+    fetch: async (definition, signal) => {
+      // First caller (A) stalls; later callers (B) return immediately.
+      if (!ports._aEntered) {
+        ports._aEntered = true;
+        aFetchStarted();
+        await fetchAGate;
+        if (signal?.aborted) throw new Error("aborted");
+        return { status: "ok", items: [itemA] };
+      }
+      return { status: "ok", items: [itemB] };
+    },
+    loadBudget: async (fp) => budgets.get(fp) ?? null,
+    saveBudget: async (fp, budget) => { budgets.set(fp, budget); },
+    loadResult: async (fp) => results.get(fp) ?? null,
+    saveResult: async (fp, result) => { results.set(fp, result); },
+    claimOperation: async (fp, leaseToken, leaseUntilMs) => {
+      const prior = results.get(fp);
+      if (prior) return { status: "completed", result: prior };
+      const current = claims.get(fp);
+      const now = Date.now();
+      if (current && current.untilMs > now && current.leaseToken !== leaseToken) {
+        return { status: "busy" };
+      }
+      claims.set(fp, { leaseToken, untilMs: leaseUntilMs });
+      return { status: "claimed", leaseToken };
+    },
+    releaseOperation: async (fp, leaseToken) => {
+      const current = claims.get(fp);
+      if (current?.leaseToken === leaseToken) claims.delete(fp);
+    },
+    _aEntered: false,
+  };
+
+  const runnerA = createBackgroundKnowledgeMaintenanceRunner(
+    { enabled: true, liveFetch: false, livePublish: false },
+    ports,
+  );
+  const request = {
+    watchId: "fhs-solid-food",
+    operationFingerprint: key,
+    workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "dry_run",
+  };
+  const pendingA = runnerA.start(request);
+  await aFetchStartedGate;
+  // Expire A's lease (>120s) while stalled on fetch.
+  const held = claims.get(key);
+  assert.ok(held);
+  claims.set(key, { leaseToken: held.leaseToken, untilMs: Date.now() - 1 });
+
+  const runnerB = createBackgroundKnowledgeMaintenanceRunner(
+    { enabled: true, liveFetch: false, livePublish: false },
+    ports,
+  );
+  const resultB = await runnerB.start(request);
+  assert.equal(resultB.status, "dry_run_ready");
+  assert.equal(resultB.observationHash, observationHash(itemB));
+  assert.equal(results.get(key)?.status, "dry_run_ready");
+  const budgetAfterB = budgets.get(key)?.usedUnits;
+  // A already reserved 2 before stalling; B reserves another 2 on the shared ledger.
+  assert.equal(budgetAfterB, 4);
+
+  releaseFetchA();
+  const resultA = await pendingA;
+  // Stale A must not publish/overwrite: either lease_lost or already_recorded from B.
+  assert.equal(resultA.published, false);
+  assert.ok(
+    resultA.status === "already_recorded"
+      || (resultA.status === "rejected" && resultA.code === "operation_lease_lost"),
+    `unexpected stale-A status ${resultA.status}/${resultA.code}`,
+  );
+  // B's durable result and budget must not be overwritten / regressed by stale A.
+  assert.equal(results.get(key)?.status, "dry_run_ready");
+  assert.equal(results.get(key)?.observationHash, observationHash(itemB));
+  assert.ok((budgets.get(key)?.usedUnits ?? 0) >= budgetAfterB);
+});
+
+test("F2: publish+receipt then saveResult failure restores receipt hash instead of publishing newer source", async () => {
+  const key = fingerprint("fhs-solid-food", "f2-receipt");
+  const budgets = new Map();
+  const results = new Map();
+  const receipts = new Map();
+  let saveResultFails = true;
+  let published = 0;
+  let fetchRound = 0;
+  const hashA = observationHash(pageItem("?? A ???"));
+  const itemB = pageItem("?? B ???");
+
+  const runner = createBackgroundKnowledgeMaintenanceRunner(
+    { enabled: true, liveFetch: true, livePublish: true },
+    {
+      fetch: async () => {
+        fetchRound++;
+        if (fetchRound === 1) return { status: "ok", items: [pageItem("?? A ???")] };
+        return { status: "ok", items: [itemB] };
+      },
+      review: modelReviewPort(),
+      publish: async (candidate) => {
+        published++;
+        assert.equal(candidate.observationHash, hashA);
+        return { published: true };
+      },
+      loadBudget: async (fp) => budgets.get(fp) ?? null,
+      saveBudget: async (fp, budget) => { budgets.set(fp, budget); },
+      loadResult: async (fp) => results.get(fp) ?? null,
+      saveResult: async (fp, result) => {
+        if (saveResultFails) {
+          saveResultFails = false;
+          throw new Error("injected saveResult failure after receipt");
+        }
+        results.set(fp, result);
+      },
+      loadPublishReceipt: async (fp) => receipts.get(fp) ?? null,
+      savePublishReceipt: async (fp, receipt) => { receipts.set(fp, receipt); },
+    },
+  );
+
+  await assert.rejects(() => runner.start({
+    watchId: "fhs-solid-food",
+    operationFingerprint: key,
+    workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "live",
+  }), /injected saveResult failure/);
+  assert.equal(published, 1);
+  assert.equal(receipts.get(key)?.observationHash, hashA);
+  assert.equal(results.has(key), false);
+
+  const restored = await runner.start({
+    watchId: "fhs-solid-food",
+    operationFingerprint: key,
+    workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "live",
+  });
+  assert.equal(restored.status, "published");
+  assert.equal(restored.code, "publish_receipt_restored");
+  assert.equal(restored.observationHash, hashA);
+  assert.equal(restored.published, true);
+  assert.equal(published, 1);
+  assert.notEqual(restored.observationHash, observationHash(itemB));
+});
+
+test("F3: abort during deferred loadPublishReceipt does not call publisher", async () => {
+  let published = 0;
+  let releaseReceipt;
+  const receiptGate = new Promise((resolve) => { releaseReceipt = resolve; });
+  const controller = new AbortController();
+  const runner = createBackgroundKnowledgeMaintenanceRunner(
+    { enabled: true, liveFetch: true, livePublish: true },
+    {
+      fetch: mockFetcher({ "fhs-solid-food": pageItem("????????") }),
+      review: modelReviewPort(),
+      loadPublishReceipt: async () => {
+        await receiptGate;
+        return null;
+      },
+      publish: async () => { published++; return { published: true }; },
+    },
+  );
+  const pending = runner.start({
+    watchId: "fhs-solid-food",
+    operationFingerprint: fingerprint("fhs-solid-food", "f3-abort-receipt"),
+    workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "live",
+  }, controller.signal);
+  // Abort while receipt load is deferred; publisher must stay at 0.
+  controller.abort();
+  releaseReceipt();
+  const result = await pending;
+  assert.equal(result.status, "rejected");
+  assert.equal(result.code, "cancelled");
+  assert.equal(result.published, false);
+  assert.equal(published, 0);
+});
