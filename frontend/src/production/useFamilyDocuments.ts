@@ -2,13 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFamilyDocumentsApi, parseFamilyDocumentSnapshot, FamilyDocumentApiError, requiresFreshDocumentConfirmation } from "../../../src/client/family-documents-api";
 import { documentChangeSchema, documentRequestSchema, type DocumentChange, type DocumentPage, type DocumentRequest,
   type DocumentSnapshot, type DocumentVersionPage, type FamilyDocument } from "../../../src/shared/family-documents";
-import type { GrowthArchiveProjection, GrowthArchiveSnapshot } from "../growth-view-model";
+import type { GrowthArchiveProjection } from "../growth-view-model";
 import type { GrowthReportExportRequest, GrowthReportExportResult } from "../components/growth/growth-archive-view";
 import type { FamilyDocumentReadingPort, PreparationDocumentView, PreparationPurpose } from "../preparation-view-model";
 import type { PreparationWorkspaceValue } from "../workspaces/PreparationWorkspace";
 import type { WriteOperationView, WriteRecoveryActions } from "../view-model";
 import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { useTaskKnowledgeRefresh, useTaskKnowledgeRuntime, type TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
+import { projectFamilyDocumentArchive } from "./family-document-archive";
 
 type Attempt = { kind: "create"; input: DocumentRequest } | { kind: "change"; id: string; input: DocumentChange };
 type Pending = { attempt: Attempt; checked: boolean; reconfirm: boolean; selectionGeneration: number };
@@ -17,7 +18,6 @@ type ContentBuffer = { documentId: string; snapshotId: string; snapshotVersion: 
   text: string; totalCharacters: number; nextOffset: number | null; complete: boolean; busy: boolean; error: boolean; invalidated: boolean; snapshot: DocumentSnapshot | null };
 const pageReadFailureNotice = "未能載入更多文件，已取得的內容保留。";
 const savedAwaitingSelectionRead = "先前文件的保存已確認；目前選取的文件仍待重新讀取。";
-const snapshotKey = (snapshot: DocumentSnapshot) => snapshot.id + ":" + snapshot.version;
 const preparationView = (item: FamilyDocument): PreparationDocumentView => {
   const snapshot = item.readState === "invalidated" ? null : item.current;
   return { id: item.id, childId: item.childId, purpose: item.purpose as PreparationPurpose, version: item.version, status: item.status,
@@ -28,18 +28,6 @@ const preparationView = (item: FamilyDocument): PreparationDocumentView => {
     sources: snapshot?.sources.map(source => ({ id: source.id, childId: item.childId, label: source.label, version: source.version,
       updatedAt: source.at, state: "available", visibility: "family" })) ?? [] };
 };
-const reportSnapshot = (snapshot: DocumentSnapshot): GrowthArchiveSnapshot => ({
-  id: snapshot.id, version: snapshot.version, title: snapshot.title, ageLabel: snapshot.ageLabel,
-  periodLabel: snapshot.period.from + " 至 " + snapshot.period.to, generatedAt: snapshot.generatedAt,
-  sourceBasisVersion: snapshot.sourceBasis, coverageNote: snapshot.coverageNote,
-  revisionChanges: snapshot.changes.map((text, index) => ({ id: snapshot.id + ":change:" + index, text, sourceIds: snapshot.sources.map(source => source.id) })),
-  sections: [{ id: "overview", title: "共享來源整理", entries: snapshot.sections.flatMap(section => section.items.map(item => ({
-    id: section.id + ":" + item.id, title: section.title, text: item.text, status: "source_summary" as const,
-    sourceIds: item.sourceIds, ...(section.domain ? { reportDomain: section.domain } : {}) }))) }],
-  sources: snapshot.sources.map(source => ({ id: source.id, label: source.label, version: source.version, state: "available",
-    kind: source.kind, ...(source.kind === "record" ? { recordId: source.resourceId } : {}), excerpt: source.text,
-    timeLabel: source.at ?? "事件時間未提供" })),
-});
 
 /** One shared Server document projection for preparation, history and report consumers. */
 export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
@@ -353,22 +341,10 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     createDocument, refresh() { refresh(); }, markDraft() { if (!locked && runtime.live()) setDirty(true); },
     discardDraft() { if (!original.current && runtime.live()) { setDirty(false); setEpoch(value => value + 1); if (refreshQueued) refresh(); } },
   }, recovery };
-  const reports = visible?.items.filter(item => item.kind === "growth_report") ?? [];
-  const standard = reports.find(item => item.purpose === "family" && item.status === "active" && item.report?.mode === "living")
-    ?? reports.find(item => item.purpose === "family" && item.status === "active") ?? null;
-  const readableReports = reports.filter(item => item.readState !== "invalidated");
-  const snapshots = Array.from(new Map(readableReports.flatMap(item => [...(item.current ? [item.current] : []), ...item.history]).map(snapshot => [snapshotKey(snapshot), snapshot])).values());
-  const projectedSnapshots = snapshots.map(reportSnapshot), currentSnapshot = standard?.readState !== "invalidated" && standard?.current ? reportSnapshot(standard.current) : null;
-  const archive: GrowthArchiveProjection = { reading: { ...reading, content: reading.content && reports.some(item => item.id === reading.content!.documentId) ? reading.content : null, indexes: reading.indexes.filter(index => reports.some(item => item.id === index.documentId)) }, scopeKey: env.scopeKey, childId: env.childId!, authorityVersion: visible?.authorityVersion ?? "",
-    state: runtime.lost ? "invalidated" : !visible ? load === "error" ? "error" : "loading" : standard?.report?.phase === "building" ? "generating" : standard?.readState === "invalidated" && !projectedSnapshots.length ? "invalidated"
-      : standard?.readState === "stale" ? "needs_update" : currentSnapshot || projectedSnapshots.length ? "ready" : "not_generated",
-    label: "Server 依家庭共享來源整理，並非模型生成或發展評估。", snapshot: currentSnapshot,
-    history: projectedSnapshots.filter(snapshot => snapshot.id !== currentSnapshot?.id || snapshot.version !== currentSnapshot.version),
-    periods: snapshots.map(snapshot => ({ id: snapshotKey(snapshot), kind: snapshot.reportCoverage?.periodKind === "annual" ? "year" : snapshot.reportCoverage?.periodKind === "quarter" ? "quarter" : "range",
-      year: Number(snapshot.period.from.slice(0, 4)), ...(snapshot.reportCoverage?.periodKind === "quarter" ? { quarter: (Math.floor((Number(snapshot.period.from.slice(5, 7)) - 1) / 3) + 1) as 1 | 2 | 3 | 4 } : {}),
-      from: snapshot.period.from, to: snapshot.period.to, label: snapshot.title + " · " + snapshot.period.from + " 至 " + snapshot.period.to,
-      snapshotId: snapshot.id, snapshotVersion: snapshot.version, currentAnnual: snapshot.reportCoverage?.mode === "living" && standard?.current?.id === snapshot.id,
-      coverage: snapshot.reportCoverage?.status === "complete" ? "complete" : "partial", coverageLabel: snapshot.coverageNote })) };
+  const { standard, reportDocumentIds, archive: projectedArchive } = projectFamilyDocumentArchive({ page, load, lost: runtime.lost, scopeKey: env.scopeKey, childId: env.childId! });
+  const archive: GrowthArchiveProjection = { ...projectedArchive, reading: { ...reading,
+    content: reading.content && reportDocumentIds.includes(reading.content.documentId) ? reading.content : null,
+    indexes: reading.indexes.filter(index => reportDocumentIds.includes(index.documentId)) } };
   const exportReport = async (request: GrowthReportExportRequest, isCurrent: () => boolean = () => true): Promise<GrowthReportExportResult | undefined> => {
     const actualPage = latest.current.page;
     const findSnapshot = (item: FamilyDocument) => item.readState !== "invalidated" && [item.current, ...item.history].some(snapshot => snapshot?.id === request.snapshotId && snapshot.version === request.snapshotVersion);

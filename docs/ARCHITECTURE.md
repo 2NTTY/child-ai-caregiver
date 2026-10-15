@@ -65,6 +65,8 @@
 
 待辦 HTTP 透過 [TaskService](../server/task-api.ts) 的明確讀取／可選交易寫入介面接業務服務，不引用 legacy SQL factory 的返回型別；正式 Firestore 讀取以結構相容接入，寫入仍走 online 收據交易。純 changeTask／reminderDecision 與 client 原操作恢復沿用，不新增權威或協調副本。
 
+成長檔案由同一 useFamilyDocuments 提供準備單及報告資料；[projectFamilyDocumentArchive](../frontend/src/production/family-document-archive.ts) 僅將已授權 DocumentPage 投影為目前／歷史／期間與顯示狀態，不讀庫或生成報告。失去存取時先遮蔽資料，失效文件不提供正文／歷史；building 與來源失效、coverage 保持不同語義。hook 只接原 reading port 與操作，DomainBridge 繼續核對成長及文件的 authorityVersion；Server 仍決定來源是否有效，局部純投影不能替代這些權限與版本檢查。
+
 **交易不變條件：**目前權限／資源版本的讀取與業務寫入、修訂、操作收據、變更序號及 outbox 仍在同一 Firestore 交易。純規則只回傳決定或差異，不在交易外依舊權限決定提交；交易 callback 不呼叫模型／通知。重試沿原 opId／fingerprint，副作用 unknown 只查原結果。完成／取消競態及 needs_review 保持原語義，終態仍由 worker 執行前重查。
 
 **診斷：**復用既有錯誤碼與 Agent observer，只補必要功能域、階段、request/run/op 關聯、耗時與結果；未知層次明示未知。UI、API 身份、業務拒絕、版本衝突、外部／模型失敗、傳輸中斷分開，不暴露 stack、私人正文、key 或未經授權資料，不建立另一套監控服務。

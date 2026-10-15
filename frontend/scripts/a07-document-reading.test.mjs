@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import test from 'node:test';
 import ts from 'typescript';
+import * as archiveProjection from '../src/production/family-document-archive.ts';
 import { archiveReadingView } from '../src/components/growth/growth-archive-view.ts';
 const require = createRequire(import.meta.url), root = new URL('../../', import.meta.url);
 const compile = (file, resolve = require, suffix = '', globals = {}) => {
@@ -90,6 +91,7 @@ function owner(items = [item(a), item(b)], more = false, refreshOptions = null) 
     if (name.endsWith('/family-documents')) return schemas;
     if (name === './useDomainEnvironment') return { useDomainWriteGuard() {} };
     if (name === './task-knowledge-runtime') return { useTaskKnowledgeRuntime: () => runtime, useTaskKnowledgeRefresh: refreshHook };
+    if (name === './family-document-archive') return archiveProjection;
     throw Error('Unexpected dependency ' + name);
   });
   return { env, calls, reads, versionPages, contentSnapshots, extraItems, get invalidations() { return invalidations; }, changePage(update) { page = update(page); }, render: () => h.render(() => useFamilyDocuments(env)),

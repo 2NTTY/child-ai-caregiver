@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 import test from 'node:test';
 import ts from 'typescript';
+import * as archiveProjection from '../src/production/family-document-archive.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..'), require = createRequire(import.meta.url);
 const compile = (file, resolve, suffix = '') => {
@@ -50,6 +51,7 @@ function ownerHarness() {
     if (name.endsWith('/family-documents')) return schemas;
     if (name === './useDomainEnvironment') return { useDomainWriteGuard() {} };
     if (name === './task-knowledge-runtime') return { useTaskKnowledgeRuntime: () => runtime, useTaskKnowledgeRefresh() {} };
+    if (name === './family-document-archive') return archiveProjection;
     throw new Error('Unexpected import ' + name);
   });
   return { env, runtime, actions, setItem(value) { page.items = [value]; }, render() { h.reset(); return useFamilyDocuments(env); }, async settle() { while (jobs.length) await jobs.shift(); } };

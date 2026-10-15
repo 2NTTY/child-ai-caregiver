@@ -2596,3 +2596,12 @@
 - Result：明確 TaskService 定義讀取、歷史、建立及變更服務，解除 HTTP adapter 對 legacy SQL factory 返回型別的依賴。現有 task-policy 純規則、online 收據及 client unknown 協調直接復用，不重造業務層；此處是型別耦合，不能宣稱本包才停止 SQL 執行。
 - Verification：Node 24.19.0，`node --test --test-name-pattern='opposing terminal writes|task write routing|unknown task writes keep' tests/task-policy.test.ts tests/tasks-client.test.ts`：3/3 通過。分別核對終態競態停止提醒、正式寫入閘及未知操作使用原 opId 查回／明確重試。主模型核對 FirestoreTasksQuery 與共享 DTO 相容，diff check 通過。
 - Limits / Next：未跑全量型別／build、真資料庫／模型／通知／瀏覽器，不重複原交易證據。LAY02 已合併，LAY04 可核不重疊投影；OPT／STR 重疊部分仍等待協作者，真備份還原延後不變。
+
+
+<a id="log-20261015-p2-lay04"></a>
+### 2026-10-15 — LAY04 同源成長檔案純投影
+
+- Scope / Baseline：90a5571，LAY02／03 已合併；主模型限定共享文件至成長檔案的投影，Astra xhigh 實作，主模型核對原文及 diff。未修改協作者三角色、Prompt Pack、Server 或已確認的前端設計。
+- Result：projectFamilyDocumentArchive 接 page／load／lost／scope／child，返回 standard／report IDs／archive；無 React、IO 或另一份資料儲存。保留失效遮蔽、其他有效報告、版本去重、living 優先、building 狀態及 Server coverage；正式 owner 接回原 reading／PDF／原操作。DomainBridge 的雙來源權威版本核對及 Server 來源有效性／生成邊界沿用。
+- Verification：Node 24.19.0，既有 family-document-lifecycle 的三個定向情景（invalid current report、building reports、living selection and annual or quarterly coverage）各 1/1 通過，直接使用真純函式並比較正式 hook 投影。首輪 fixture 載入因缺 luxon 停批，尚未到斷言；補既有、與 lock 相符的 3.7.2 junction 後續原三項。另兩個封閉 fixture 只補真模組 import／resolver，未擴跑或更改斷言；diff check 通過。
+- Limits / Next：沒有全量、typecheck／build、瀏覽器、真服務、模型或部署；有限純投影／接線證據不代替新 Firestore 或 UI 驗收。交付後 OPT01／後續及 LAY05／STR01 仍等協作者 #214／#215 穩定接口；記憶與背景整理留原 OPT03／04，原備份真還原待驗不變。
