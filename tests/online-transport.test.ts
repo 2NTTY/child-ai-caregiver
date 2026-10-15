@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createOnlineChangeObserver } from "../src/client/online-change-observer.ts";
+import { subscribeOnlineRefresh } from "../src/client/online-refresh-events.ts";
 import { createOnlineTransport, OnlineTransportError } from "../src/client/online-transport.ts";
 import type { OnlineCommand, OnlineIdentity } from "../src/shared/online.ts";
 
@@ -174,4 +176,48 @@ test("overlapping calls are blocked and reset invalidates an in-flight response"
   await rejected(started, 0, null);
   assert.equal(f.transport.hasPending(), false);
   assert.equal(f.calls.length, 1);
+});
+
+
+test("shared online observer keeps scoped cursors and discards late reads after suspension", async () => {
+  const reasons: string[] = [], cursors: string[] = [];
+  let phase = "initial", calls = 0, events = 0;
+  let complete!: (response: Response) => void;
+  let heldSignal: AbortSignal | undefined;
+  const unsubscribe = subscribeOnlineRefresh(() => { events++; });
+  const observer = createOnlineChangeObserver("https://service.invalid/api", "parent", async reason => { reasons.push(reason); },
+    (async (input: RequestInfo | URL, init: RequestInit = {}) => {
+      calls++;
+      assert.equal(init.method ?? "GET", "GET");
+      assert.equal(init.body, undefined);
+      assert.equal(new Headers(init.headers).get("x-expected-user-id"), "parent");
+      const url = new URL(String(input));
+      if (phase === "held") { heldSignal = init.signal!; return new Promise<Response>(resolve => { complete = resolve; }); }
+      if (phase === "unavailable") return Response.json({}, { status: 503 });
+      if (url.pathname.endsWith("/spaces")) return Response.json({ workspaces: [{ id: workspaceId, storageEpoch }] });
+      assert.equal(url.searchParams.get("workspaceId"), workspaceId);
+      assert.equal(url.searchParams.get("storageEpoch"), storageEpoch);
+      cursors.push(url.searchParams.get("cursor")!);
+      return Response.json({ workspaceId, storageEpoch, cursor: phase === "changed" ? "2" : "1", accessVersion: 1,
+        changes: phase === "changed" ? [{ sequence: "2" }] : [], hasMore: false });
+    }) as typeof fetch);
+  try {
+    await observer.check(true);
+    await observer.check();
+    phase = "changed"; await observer.check();
+    phase = "unavailable"; await observer.check();
+    assert.deepEqual(reasons, ["changed", "changed", "unavailable"]);
+    assert.deepEqual(cursors, ["0", "1", "1"]);
+    phase = "held";
+    const pending = observer.check();
+    await observer.check(); // Busy reads do not start a second request.
+    assert.equal(calls, 8);
+    observer.dispose();
+    assert.equal(heldSignal?.aborted, true);
+    complete(Response.json({ workspaces: [{ id: workspaceId, storageEpoch }] }));
+    await pending; await observer.check(true);
+    assert.equal(calls, 8);
+    assert.equal(events, 3);
+    assert.deepEqual(reasons, ["changed", "changed", "unavailable"]);
+  } finally { observer.dispose(); unsubscribe(); }
 });

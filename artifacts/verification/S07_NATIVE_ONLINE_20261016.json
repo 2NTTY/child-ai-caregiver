@@ -1,0 +1,41 @@
+{
+  "workPackage": "S07-W01",
+  "recordedOn": "2026-10-16",
+  "base": "95f1f6f43aa2cb4b61bb71fc11dd7f30b9cfba28",
+  "branch": "codex/s07-w01-native-online",
+  "environment": "Windows / Node 24.19.0 / Expo 57.0.24 / React Native 0.86.3",
+  "checks": [
+    {
+      "kind": "targeted synthetic",
+      "command": "node --experimental-strip-types --test --test-name-pattern=\"^shared online observer\" tests/online-transport.test.ts",
+      "tests": 1,
+      "pass": 1,
+      "syntheticMetadataReads": 8,
+      "scope": [
+        "original cursor and expected identity",
+        "changed metadata only invalidates reads",
+        "unavailable does not become successful write",
+        "busy suppression",
+        "dispose abort and late-response fencing"
+      ]
+    },
+    {
+      "kind": "targeted types",
+      "roots": [
+        "ProductionProvider.tsx",
+        "useProductionActivity.native.ts"
+      ],
+      "diagnostics": 0,
+      "dependency": "expo-network 57.0.2 fixed package"
+    }
+  ],
+  "realModelCalls": 0,
+  "cloudCalls": 0,
+  "phoneActions": 0,
+  "limitations": [
+    "No new native APK or OTA published; expo-network requires a new native runtime",
+    "Native foreground/offline and cross-device behavior pending device acceptance",
+    "S04 and S05 dependency gates remain; no out-of-order merge",
+    "No full regression or browser run"
+  ]
+}

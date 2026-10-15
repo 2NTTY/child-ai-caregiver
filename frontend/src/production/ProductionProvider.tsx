@@ -1,3 +1,4 @@
+import { useProductionActivity } from "./useProductionActivity";
 import { createProductionTransport } from "./production-transport";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -178,10 +179,11 @@ const ProductionOwnerContext = createContext<ProductionOwner | null>(null);
 export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || (Platform.OS === "web" ? "/api" : "https://ex-machina.eu.org/api") }: { children: ReactNode; apiBaseUrl?: string }) {
   const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline(), undefined, undefined, undefined, { legacyTrial: process.env.EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL === "true" }, createProductionTransport(apiBaseUrl)));
   const value = useProductionValue(owner);
-  useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" && value.account.gate === "ready" ? value.userId : null, value.online, async reason => {
+  const activity = useProductionActivity();
+  useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" && value.account.gate === "ready" ? value.userId : null, activity.online ?? value.online, async reason => {
     await owner.refresh();
     owner.invalidatePrivateReads(false, reason !== "unavailable");
-  }, owner.fetcher);
+  }, owner.fetcher, activity.active);
   useEffect(() => {
     owner.connect();
     void owner.controller.restoreSession();
@@ -201,6 +203,14 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
     window.addEventListener("beforeunload", beforeUnload); window.addEventListener("online", connection); window.addEventListener("offline", connection); window.addEventListener("focus", focus);
     return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("online", connection); window.removeEventListener("offline", connection); window.removeEventListener("focus", focus); owner.dispose(); };
   }, [owner]);
+  useEffect(() => {
+    if (activity.active === undefined) return;
+    if (activity.online !== undefined) owner.controller.setOnline(activity.online);
+    const state = owner.controller.getSnapshot();
+    if (!activity.active || activity.online === false || state.busy || state.auth === "checking") return;
+    // Signed-in ready scopes refresh through the same changes-cursor observer, avoiding duplicate reads.
+    if (state.auth !== "signedIn" || !owner.accountOwner.isReady()) void owner.refresh();
+  }, [owner, activity.active, activity.online]);
   return <QueryClientProvider client={owner.queryClient}><ProductionOwnerContext.Provider value={owner}><ProductionContext.Provider value={value}><AccountCallbackGate>{children}</AccountCallbackGate>
     <AppDialog visible={value.recordsState.deletion !== null} onDismiss={() => owner.controller.cancelDeleteChild()}>
       <AppDialog.Title>永久刪除這位孩子及附屬資料？</AppDialog.Title>
