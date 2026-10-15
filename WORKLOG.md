@@ -2692,3 +2692,11 @@
 - Result：平台新政策預設 8 次生成／4 次查詢向量、工具 16；個人已選設定與每日額度不變。最後可用步只保留 terminal，完整 parts、引用／授權／收據及失敗停止仍有效；沒有額外模型整理或重開 run。
 - Verification：首次定向批次六項通過，一項因缺本機 SDK 路徑未載入；補用既有隔離依賴後管理 HTTP 與單輪招呼通過。review 使能力 metadata 與終結宣告一致後只補同一預算流程；四個受影響型別入口零診斷，diff check 通過。零真模型／embedding／通知、不跑全量。證據：[EV](artifacts/verification/AGENT_VISIBLE_BUDGET_20261016.json)。
 - Limits：scripted 通過不證明真模型一定採最佳步數；時間、每日額度、錯誤引用或非法終結仍可誠實停止。此時尚待部署及現網版本化政策更新，不清零或自動重發使用者訊息。
+
+
+<a id="log-20261016-firestore-budget-compatibility"></a>
+## 2026-10-16 — Firestore Agent 預算相容修正
+
+- 原因／範圍：使用者 Android 聊天兩次在模型前停止。#230 runtime 已調 16 工具，但 Firestore 仍只接受 8；共用驗證上限，嘗試收據容量改為最大可配置計數之和，保留舊資料及同操作防重。
+- 驗證：Node 24.19.0 的單一情景先重現 invalid_context，修正後通過；候選測試 teardown 的 dispose 誤名改為 close，原失敗保留本機。4 個受影響型別入口零診斷；沒有模型、通知或全量測試。
+- 限制／接續：部署與真 Firestore 接點待核；真人首條聊天仍由使用者驗收。舊 #230 證據保留，不能當成台帳相容性已驗。見[本次證據](artifacts/verification/FIRESTORE_AGENT_BUDGET_20261016.json)。
