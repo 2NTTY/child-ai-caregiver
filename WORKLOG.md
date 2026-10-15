@@ -2801,7 +2801,6 @@
 - Limits：scripted 通過不證明真模型一定採最佳步數；時間、每日額度、錯誤引用或非法終結仍可誠實停止。此時尚待部署及現網版本化政策更新，不清零或自動重發使用者訊息。
 
 
-<<<<<<< HEAD
 <a id="log-20261016-agent-budget-delivery"></a>
 ### 2026-10-16 — 可見預算部署及 Android 接續
 
@@ -2809,11 +2808,19 @@
 - Deployment：原 VM ID／IP／期限及基礎映像唯讀核對後，只經 IAP 上傳五個程式／prompt 檔的 21,044 bytes 更新包及 hash。16:26 UTC API／worker budget-1150193 健康，Web 保留 s04-8992ce9；無資料遷移、模型、通知或主機續期。映像／配置保留可回退；SQL 仍停止。
 - Policy：沿已驗證管理員及原管理服務交易，政策 v1→v2，只將生成 4→8、查詢向量 2→4；工具 runtime 16。每日 200／400、本人 key 設定及計數不變，前後全站均 21 次；未重發使用者訊息。詳見[同一 EV](artifacts/verification/AGENT_VISIBLE_BUDGET_20261016.json)。
 - Android：切回 B，把穩定 master 合入 #229；WORKLOG 的雙方追加段完整保留，無改寫舊失敗。首條真聊天 gate 仍待實際結果，不能以本輪 scripted 招呼證據當品質通過。語音／拍照沿原後續包保留。
-=======
+
+
 <a id="log-20261016-firestore-budget-compatibility"></a>
 ## 2026-10-16 — Firestore Agent 預算相容修正
 
 - 原因／範圍：使用者 Android 聊天兩次在模型前停止。#230 runtime 已調 16 工具，但 Firestore 仍只接受 8；共用驗證上限，嘗試收據容量改為最大可配置計數之和，保留舊資料及同操作防重。
 - 驗證：Node 24.19.0 的單一情景先重現 invalid_context，修正後通過；候選測試 teardown 的 dispose 誤名改為 close，原失敗保留本機。4 個受影響型別入口零診斷；沒有模型、通知或全量測試。
 - 限制／接續：部署與真 Firestore 接點待核；真人首條聊天仍由使用者驗收。舊 #230 證據保留，不能當成台帳相容性已驗。見[本次證據](artifacts/verification/FIRESTORE_AGENT_BUDGET_20261016.json)。
->>>>>>> origin/master
+
+
+<a id="log-20261016-firestore-budget-deployment"></a>
+## 2026-10-16 — 預算修正部署與 S04 人工驗收交接
+
+- #231 合併 `7d1ccd6`；原 VM API／worker 部署 `ad021bf`，2026-10-15 16:55 UTC 服務健康、三檔 hash 相符。只有 7.6 KB 程式包及核對資料，無密鑰、家庭資料或遷移；Web／Android 產物不變。
+- 真 Firestore 一個專用合成預算根核對 8／16／4 限制及一次 16 工具計數讀回後刪除；零模型、通知或真工具副作用，政策與每日計數未修改。真人聊天仍由使用者驗收。
+- S04 合併記錄中的 WORKLOG 因兩分支追加次序不同而衝突；更正為完整保留原 S04 bytes，再接 #231 的新增後綴，沒有重寫原證據。鍵盤位移尚未修。見[部署證據](artifacts/verification/FIRESTORE_AGENT_BUDGET_20261016.json)。
