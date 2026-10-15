@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
-import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT } from './agent-budget.ts';
+import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, PLATFORM_AGENT_RUN_LIMITS } from './agent-budget.ts';
 import { adminCommandSchema, adminInvitationSchema, adminReceiptSchema, platformPolicySchema,
   type AdminInvitation, type AdminReceipt, type PlatformPolicy } from '../src/shared/admin.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -17,7 +17,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
   const defaults = domainParse(platformPolicySchema, { enabled: config.enabled, model: config.model,
     dailyUserAttempts: config.dailyUserAttempts, dailyGlobalAttempts: config.dailyGlobalAttempts,
     personalDailyGlobalAttempts: config.personalDailyGlobalAttempts ?? 1000,
-    maxModelCalls: AGENT_LIMITS.modelCalls, maxQueryEmbeddings: AGENT_LIMITS.queryEmbeddings, version: 0, updatedAt: null }, 'admin_configuration', 500);
+    maxModelCalls: PLATFORM_AGENT_RUN_LIMITS.modelCalls, maxQueryEmbeddings: PLATFORM_AGENT_RUN_LIMITS.queryEmbeddings, version: 0, updatedAt: null }, 'admin_configuration', 500);
   const readPolicyIn = async (tx: import('@google-cloud/firestore').Transaction) => {
     const row = await tx.get(policyRef);
     return row.exists ? data.open('platform-policy', 'current', scope, platformPolicySchema, row) : { ...defaults };

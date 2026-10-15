@@ -2683,3 +2683,12 @@
 - Scope / Baseline：遠端 master 21e848b（#227），接續本機 STR01 備忘 db56ad0；#214／#215／#216 未合併且仍由協作者處理。先更新 PLAN，再進 S04-W01；不改原 Prompt Pack 或三角色。
 - Result：Android 成品優先，iOS 後接；語音改為 Web／Android 完整共用，跨端接續已提交工作而不搬未發送草稿。保留同一 Server／owner、原生會話安全及固定 EAS／OTA／APK 更新入口；共同包分平台里程碑，避免 iOS 依賴循環。STR01 的未實作、前置及證據獨立保留。
 - Verification / Limits：本包只核文件 diff、連結、錨點與依賴；沒有產品測試、模型、通知、雲端資源或部署。原生 build、簽署、實機與完整語音尚未完成；EAS 帳號及首次程式上傳／費用需於實際範圍就緒後處理。
+
+
+<a id="log-20261016-agent-visible-budget"></a>
+### 2026-10-16 — Agent 可見預算及自主收尾
+
+- Scope：依使用者指出的單次限額問題，從 master 4f88948 開獨立修正，保留 Android #229 及協作者 #214～#216。既有 metadata 只有靜態上限；新增每輪已用／餘額／剩餘時間，生成餘額包含本輪，Prompt Pack 0.1.44 引導按語義工作並預留收尾，普通招呼不展開無關工具。
+- Result：平台新政策預設 8 次生成／4 次查詢向量、工具 16；個人已選設定與每日額度不變。最後可用步只保留 terminal，完整 parts、引用／授權／收據及失敗停止仍有效；沒有額外模型整理或重開 run。
+- Verification：首次定向批次六項通過，一項因缺本機 SDK 路徑未載入；補用既有隔離依賴後管理 HTTP 與單輪招呼通過。review 使能力 metadata 與終結宣告一致後只補同一預算流程；四個受影響型別入口零診斷，diff check 通過。零真模型／embedding／通知、不跑全量。證據：[EV](artifacts/verification/AGENT_VISIBLE_BUDGET_20261016.json)。
+- Limits：scripted 通過不證明真模型一定採最佳步數；時間、每日額度、錯誤引用或非法終結仍可誠實停止。此時尚待部署及現網版本化政策更新，不清零或自動重發使用者訊息。
