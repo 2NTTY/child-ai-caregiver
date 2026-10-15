@@ -130,6 +130,37 @@
       "cloudLogSha256": "dc659e46ac0ccfbd2c45ed165c583e378ebd4c811142e50aa1c70aae17f4107f",
       "apkProduced": false,
       "nextBuild": "Not started: automatic approval review requires explicit authorization for a third private-source upload and cloud build; no workaround attempted"
+    },
+    {
+      "name": "Explicitly approved third EAS build and compatible API deployment",
+      "result": "apk-and-deployment-passed-device-pending",
+      "sourceCommit": "7586788",
+      "buildId": "b2fb7fe9-5f00-4d4c-9d62-b425c9b318ac",
+      "status": "FINISHED",
+      "completedAt": "2026-10-15T12:49:03.642Z",
+      "appVersion": "0.1.0",
+      "versionCode": "1",
+      "distribution": "INTERNAL",
+      "artifact": "https://expo.dev/artifacts/eas/NWfkkbkaXNQQ2VBp5x41t2JisSDVxvMiFj6VktKHbtA.apk",
+      "buildsTotal": 3,
+      "paidPlanPurchased": false,
+      "deployment": {
+        "commit": "c6cf75d2846cb382b52cea4f039f19d74ba147e1",
+        "observedAt": "2026-10-15T12:51:26Z",
+        "vmId": "2846984358678394356",
+        "apiAndWorker": "yuban-firestore-api:s04-c6cf75d",
+        "imageId": "sha256:f971c55d1b29078e69b29140f7eabf1d33433b7d642cdc086dc2340e9ffde5f2",
+        "health": "passed",
+        "webUnchanged": "sha256:1d2685846dcbaa4903ce18c1facf03c25858d67431588c353a807f386815057e",
+        "migrations": 0,
+        "quotaChange": false,
+        "vmRenewed": false,
+        "rollbackRetained": true,
+        "logSha256": "38bc165faf630293dca53bd6564c335a0c35d41d275b8a18481c72a3a0e396a4"
+      },
+      "realDevice": "Installation/login requested from user; no result asserted",
+      "realModelCalls": 0,
+      "notifications": 0
     }
   ],
   "sourceSha256": {
@@ -154,14 +185,13 @@
     "model": 0,
     "embedding": 0,
     "notification": 0,
-    "cloudBuild": 2,
-    "deployment": 0
+    "cloudBuild": 3,
+    "deployment": 1
   },
   "remaining": [
-    "Third corrected free EAS build requires explicit source-upload approval after automatic review rejection; no APK yet",
-    "Approved c6cf75d compatible Server deployment after APK success",
-    "One approved real Android login/child/chat/save/readback; no model calls yet",
-    "Dependent S05/S07 and later packages not started; no iOS or full Android acceptance"
+    "Actual Android installation/login and one approved source-backed Agent run/readback (1 run /4 generations /2 embeddings, <$0.10)",
+    "No real-device result is inferred from bundle, EAS or API health",
+    "S04-W01 PR remains draft until acceptance; dependent S05/S07 and later packages not started"
   ],
   "collaboratorHeads": {
     "214": "ba3b32bb41944957c8a445db161b9134befa6e15",
