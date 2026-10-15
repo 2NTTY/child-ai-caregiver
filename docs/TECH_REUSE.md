@@ -275,3 +275,10 @@ Android 的 React Native／Expo runtime 未提供共用程式需要的 `crypto.r
 Firebase JS 13.0.0 的 React Native `_getAdditionalHeaders` 沒有 Android package／cert header；既有 Web key 的 referrer restriction 不適用原生請求。依 [Firebase API key 指引](https://firebase.google.com/docs/projects/api-keys)，不同平台可用同一專案的獨立公開 key，只開 Authentication 所需 API，不加入 Gemini／業務資料權限。保留既有 Web key 限制，不覆寫 SDK 私有方法、不偽造瀏覽器來源；原生設定是否生效仍須實際接線驗收。
 
 S04-W01 固定 `@expo/fingerprint` 0.20.13 的 Windows config loader 以反斜線作 glob 比對，與 Linux 的預設排除結果不同；按[官方 loader 路徑正規化](https://github.com/expo/expo/blob/main/packages/@expo/fingerprint/src/ExpoConfigLoader.ts)局部回補 `toPosixPath`，不升整套 SDK、不放寬 runtime 核對。`mobile:prepare` 有版本／原文／實體依賴路徑 guard；僅本機指紋一致已驗，修後 APK 另驗。
+
+
+### S07-W01：共用變更游標及原生生命週期
+
+2026-10-16：復用現有 changes cursor、owner／Query 失效及身份 transport，沒有另一份同步資料庫。採 Expo SDK 57 配套 `expo-network` 57.0.2（MIT；固定 npm 原碼／license 已保存），只用 [getNetworkStateAsync／addNetworkStateListener](https://docs.expo.dev/versions/latest/sdk/network/) 配合 React Native AppState。網絡未知不冒稱離線；訂閱優先於遲到的初讀，初讀失敗不產生未處理 promise。沒有讀取 IP 或使用 Web 的外部 IP 服務。正式依賴變更需新 native runtime／APK，原生事件仍待真機；共用游標邏輯及型別已核。
+
+固定 React Native 0.86.3 的 `Libraries/Core/setUpXHR.js` 使用 abort-controller，其 AbortSignal 不提供 Web `any`／`timeout`。共用 observer 以一個 request controller、父取消 listener 及可清理計時器保留原十秒讀取上限；只取消 metadata 讀取，不取消 Server Agent 或重送寫入。
