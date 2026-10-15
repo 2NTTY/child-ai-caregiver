@@ -1,3 +1,5 @@
+import { voiceMessageReferenceSchema, voiceLinkInputSchema } from '../src/shared/voice.ts';
+import type { FirestoreVoiceStore } from './firestore-voice.ts';
 import { officialHelpIdSchema, officialHelpFromTools } from '../src/shared/agent-feedback.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
 import { randomUUID } from 'node:crypto';
@@ -12,14 +14,17 @@ import type { FirestoreOnlineMutation } from './firestore-online.ts';
 import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
 
 const uuid = z.uuid(), datetime = z.iso.datetime({ offset: true });
-const text = z.string().refine(value => value.trim().length > 0 && value.isWellFormed()
+const messageText = z.string().refine(value => value.isWellFormed()
   && !value.includes('\0') && [...value].length <= 10_000);
+const text = messageText.refine(value => value.trim().length > 0);
 export const firestoreChatMessageSchema = z.object({
   id: uuid, childId: uuid, authorUserId: z.string().min(1).max(256).nullable(),
-  role: z.enum(['user', 'model']), text, inReplyTo: uuid.nullable(), createdAt: datetime,
+  role: z.enum(['user', 'model']), text: messageText, inReplyTo: uuid.nullable(), createdAt: datetime,
   agentRunId: uuid.optional(), officialHelp: z.array(officialHelpIdSchema).max(2).optional(),
-}).strict();
-const inputSchema = z.object({ text }).strict();
+  voice: voiceMessageReferenceSchema.optional(),
+}).strict().refine(v => (!v.voice || v.role === 'user') && (v.text.trim().length > 0 || v.voice !== undefined));
+const inputSchema = z.object({ text: messageText, voice: voiceLinkInputSchema.optional() }).strict()
+  .refine(v => v.text.trim().length > 0 || v.voice !== undefined);
 const messagePath = /^\/api\/children\/([0-9a-f-]{36})\/messages$/iu;
 const lockScope: WorkRecoveryScope = { ownerUserId: 'system:chat-reply',
   workspaceId: '00000000-0000-0000-0000-000000000000',
@@ -33,7 +38,7 @@ export interface FirestoreChatStore extends ChatStore {
 }
 
 /** The original chat contract, with private encrypted rows and caller-wide online receipts. */
-export function createFirestoreChatStore(options: FirestoreDomainOptions): FirestoreChatStore {
+export function createFirestoreChatStore(options: FirestoreDomainOptions & { voice?: Pick<FirestoreVoiceStore, 'prepareLink'> }): FirestoreChatStore {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const scopeFor = (binding: FirestoreAuthorityTransaction, childId: string) => ({ ...binding.scope, childId });
   const messageRef = (id: string) => data.ref('chat_messages', 'chat-message', id);
@@ -71,8 +76,11 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions): Fires
       const childId = domainParse(uuid, match[1].toLowerCase()), input = domainParse(inputSchema, submission.payload);
       const message: ChatMessage = { id: randomUUID(), childId, authorUserId: binding.scope.ownerUserId,
         role: 'user', text: input.text, inReplyTo: null, createdAt: new Date().toISOString() };
+      if (input.voice && !options.voice) domainReject('voice_unavailable', 503);
+      const linked = input.voice ? await options.voice!.prepareLink({ ...binding, scope: scopeFor(binding, childId) }, input.voice.id, input.voice.expectedVersion, message.id) : null;
+      if (linked) message.voice = linked.voice;
       const write = await prepare(binding, message, submission.operation.opId);
-      return { ...write, childId, statusCode: 201, result: { message } };
+      return { ...write, childId, statusCode: 201, result: { message }, commit() { linked?.commit(); write.commit(); } };
     },
   };
   return {

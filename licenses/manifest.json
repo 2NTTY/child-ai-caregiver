@@ -5,9 +5,48 @@
   "scope": "Original licenses for selected direct dependencies and explicitly inventoried transitive packages; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "755bab190e726c75f6bfcab02afd565b1dbb9018cd7b6ddf3b1e495a9a89f375"
+    "sha256": "a0119e00d10ab7ef2d0c8dd2b907195b03cbbad57dea7f1e747839efbcc3843a"
   },
   "packages": [
+    {
+      "name": "expo-audio",
+      "version": "57.0.5",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-audio"
+      },
+      "tarball": "https://registry.npmjs.org/expo-audio/-/expo-audio-57.0.5.tgz",
+      "integrity": "sha512-39fX5JC5zDvELB4/eDJPj2XAYRN0W9+K2DfDWm5N3aC5WZ7HRrhupWtT6hbH09NlfYpsRSqYOwEZnocFM42ynQ==",
+      "files": [
+        {
+          "path": "licenses/expo-audio/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "mediabunny",
+      "version": "1.61.5",
+      "dependencyType": "dependency",
+      "license": "MPL-2.0",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Vanilagy/mediabunny.git"
+      },
+      "tarball": "https://registry.npmjs.org/mediabunny/-/mediabunny-1.61.5.tgz",
+      "integrity": "sha512-IYrDTozxGVRTWQ1YdIcF+P7S7qHvvkiQYsX3WUbAHkxgAcCfEn7a/RbM9i/WiJHJ1MSYZqSxZkna1UUn4FGGBQ==",
+      "files": [
+        {
+          "path": "licenses/mediabunny/LICENSE",
+          "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+          "source": "LICENSE"
+        }
+      ]
+    },
     {
       "name": "expo-sharing",
       "version": "57.0.21",
@@ -1132,25 +1171,25 @@
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 1141,
+    "packageEntries": 1158,
     "declarations": {
-      "Apache-2.0": 143,
-      "MIT": 866,
-      "ISC": 50,
-      "MIT AND Apache-2.0": 1,
-      "BSD-3-Clause": 24,
-      "(MIT OR CC0-1.0)": 3,
-      "Python-2.0": 1,
-      "Unlicense": 3,
-      "CC-BY-4.0": 1,
-      "BSD-2-Clause": 14,
-      "(MIT OR Apache-2.0)": 1,
-      "BlueOak-1.0.0": 11,
-      "0BSD": 2,
-      "MPL-2.0": 13,
-      "CC0-1.0": 1,
       "(BSD-3-Clause OR GPL-2.0)": 1,
-      "MIT-0": 1
+      "(MIT OR Apache-2.0)": 1,
+      "(MIT OR CC0-1.0)": 3,
+      "0BSD": 2,
+      "Apache-2.0": 143,
+      "BSD-2-Clause": 14,
+      "BSD-3-Clause": 24,
+      "BlueOak-1.0.0": 11,
+      "CC-BY-4.0": 1,
+      "CC0-1.0": 1,
+      "ISC": 50,
+      "MIT": 882,
+      "MIT AND Apache-2.0": 1,
+      "MIT-0": 1,
+      "MPL-2.0": 14,
+      "Python-2.0": 1,
+      "Unlicense": 3
     },
     "missingDeclarations": [
       "node_modules/buildcheck",

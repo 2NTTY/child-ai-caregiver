@@ -942,3 +942,17 @@ Prompt 組裝輸出模組字元統計，沿原 manifest 檢查依賴／版本／
 `AgentRuntimePort.run(AgentRunInput): Promise<AgentRunResult>` 是產品編排／記憶整理使用的 Server 接口。`AgentRunInput.onDiagnostic` 只由受信任組裝注入，HTTP body 與模型不能指定 callback 或觀察別人的 run。返回結果及保存仍沿原權威服務；觀察事件不代替收據。
 
 `AgentDiagnostic` 新增穩定 `layer=agent|model|tool|authorization|business`，其餘沿原 runId、phase、tool、elapsedMs、outcome、stage、code 白名單。已登記工具以外的名稱及原始錯誤內容不傳出。正常模型／工具事件不自動持久保存；斷線、HTTP 錯誤及 run 終態由各自層處理，不從最後一個進度事件猜測成功或重做。
+
+
+<a id="p3-voice-input"></a>
+## P3 共用語音接點
+
+S12 的目標契約：Web／Android 每次聊天最多一段錄音、兩分鐘／5 MiB。錄音與選檔先留裝置，按送出才保存；未送出草稿不跨端同步。M4A／MP4、WebM Opus、OGG、WAV、MP3 使用同一格式表；Server 依實際音訊包校驗，不信檔名、客戶端時長或容器宣告。無法完整核對便拒絕，不截斷後聲稱成功。
+
+正式接線必須經原身份／孩子權限：原 `opId` 預留附件、原地址上載與未知查回，再於聊天保存交易綁定唯一訊息。附件處理期間不能因重試建立第二份訊息；內容下載前後重核目前權限、版本及刪除狀態。Storage 的 generation／hash／加密正文與 Firestore metadata 分開，不能把未完成上載當已保存聊天。
+
+聊天 Agent 直接讀當前已授權音訊；背景轉錄只保存可搜尋文字及可信時間標記，沒有辦事工具，不再執行錄音指令。轉錄未完成不阻塞原聊天；後續以保存的轉錄／摘要按需召回，原錄音可追溯。刪除及還原必須處理音訊、轉錄、搜尋和衍生內容；完整生命週期接好前，正式畫面的語音入口保持未開放。實作／驗收狀態只見 [S12-W01](../PLAN.md#s12-w01)。
+
+語音 port 使用 `/api/children/:childId/voices`：POST 帶原 `opId`、檔名、MIME、bytes、hash 預留；GET `/:id` 查回；POST `/:id/content` 帶 expectedVersion／base64；POST `/:id/resolve` 只核原物件；GET `/:id/content` 返回經授權的原位元組；POST `/:id/delete` 帶原 opId／expectedVersion。與照片相同的身份、同源及 x-expected-user-id 保護；本機已準備端口，不代表正式組裝已啟用。
+
+聊天建立可帶 `voice: {id, expectedVersion}`。Server 交易確認 ready、目前本人／孩子及未綁定後，將附件與唯一訊息一併保存；回傳只帶不可變音訊身份／hash／格式／時長，不複製正文。無文字的語音訊息允許空 text，舊文字訊息不變。格式或時長拒絕是上載前已知失敗，可沿原附件修復；已進 Storage 的未知結果只查原地址。刪除先遮蔽，獨立日誌確認後清理固定 generation；unknown 上載沒有找到物件不代表已完成清理。未結清義務保持有界退避及可見停留狀態。

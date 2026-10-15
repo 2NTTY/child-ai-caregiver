@@ -291,3 +291,12 @@ S04-W01 固定 `@expo/fingerprint` 0.20.13 的 Windows config loader 以反斜�
 Expo fetch 57.0.24 在未裝 expo-blob 時返回 React Native Blob；RN 0.86.3 Blob 沒有 arrayBuffer，但 FileReader.readAsArrayBuffer 有原生實作。共用讀取保留此後備，SHA-256 由原生 expo-crypto 薄 port 提供；不偽造整套 Web Crypto。相簿／相機只在明確點按開啟，按實際 bytes／JPEG／PNG／4 MiB 核對，使用同一照片 API、收據及授權。私人來源原 owner 可共用，不另造手機版。
 
 PDF 與資料下載只替換出口：Web 原下載；Android 私有 cache＋系統 shareAsync，開啟前重核當前 scope。固定 Android Sharing 在 chooser 的 activity result 返回，不能證明接收應用已保存；不即刻刪檔令接收方讀不到。暫存最多 16 份、每份最多 16 MiB，下次匯出清理超過 24 小時項目，不宣稱嚴格定時清理；取消亦不當保存成功。檔案是本人明確要求的匯出副本，不是可寫業務主庫。SDK 原生套件須新 APK/runtime；型別及原生 Blob 合成接點已驗，裝置權限／選圖／PDF 分享仍待真機。
+
+
+### S12 語音校驗與錄音接點（2026-10-16）
+
+沿既有 Expo 57 採固定 `expo-audio 57.0.5`（MIT），只要求前景錄音，明確關閉背景錄音／播放。Web 使用 MediaRecorder 的 Opus WebM／OGG 或 MP4；Android 用 Expo Audio 的單聲道 AAC/M4A。原始片段的兩分鐘／5 MiB 是共用格式限制，不用副檔名推定安全。
+
+Server 使用 `mediabunny 1.61.5`（MPL-2.0）原碼及 LICENSE 不作修改；只在受記憶體／時間／並發上限約束的 Node worker 解析記憶體內檔案，沒有模型、解碼、URL 或網絡來源。曾比較 MIT 的 `music-metadata 12.2.1`，其 Matroska 時長仍依容器 Duration／tag，不能處理常見 MediaRecorder 缺值，故未採用。Mediabunny 的 `computeDuration` 亦不能直接當所有 WebM 的精確時長：固定版本對最後一個沒有 BlockDuration／DefaultDuration 的包可回傳 0；用 [RFC 6716 §3](https://www.rfc-editor.org/rfc/rfc6716.html#section-3) 的 Opus TOC 計算補齊，有界逐包核查並拒絕不可靠的時間序列。這是局部接駁，不另寫容器解析器。
+
+[Expo Audio](https://docs.expo.dev/versions/latest/sdk/audio/)／[Mediabunny 讀取 API](https://mediabunny.dev/guide/reading-media-files)／[Gemini 音訊格式](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/audio-understanding) 已核對；本機以缺少總時長的 WebM 及 WAV 核對格式／上限，並核加密原物件查回。未證明手機錄音、真音訊模型品質或正式保存／轉錄全鏈；沿 S12 gate 交付。

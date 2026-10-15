@@ -116,3 +116,8 @@ P2-A04 uses unmodified Mozilla PDF.js (`pdfjs-dist` 6.4.299, Apache-2.0) for bou
 P2-F01 records the already installed, unmodified Server dependency `@google-cloud/firestore` 9.3.1 (Apache-2.0). The original [LICENSE](licenses/google-cloud-firestore/LICENSE) was preserved from the installed package and byte-verified against the existing npm cache tarball whose SHA-512 matches [package-lock.json](package-lock.json). That exact tarball contains no separate NOTICE file. Its transitive dependencies remain within the inventory and distribution boundaries above; this entry does not assess managed-service terms or establish cloud acceptance.
 
 P2-F01 adds the unmodified Firebase Admin SDK 14.5.0 (Apache-2.0, Node >=22) for server-side identity and session verification. No upstream application code was copied. Managed-service billing and identity configuration are separate from this SDK license.
+
+
+## Shared voice input
+
+Expo Audio 57.0.5 is used unmodified under MIT; its [original license](licenses/expo-audio/LICENSE) is retained. Server-side media probing uses unmodified Mediabunny 1.61.5 under [MPL-2.0](licenses/mediabunny/LICENSE). Its complete corresponding source is included in the [original npm package](https://registry.npmjs.org/mediabunny/-/mediabunny-1.61.5.tgz) and maintained at [Vanilagy/mediabunny](https://github.com/Vanilagy/mediabunny). No Mediabunny source files are modified or bundled into the mobile client. The local WebM final-packet timing calculation implements RFC 6716 section 3; it does not copy a third-party decoder.

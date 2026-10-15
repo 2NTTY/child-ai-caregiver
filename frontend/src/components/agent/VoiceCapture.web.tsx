@@ -13,7 +13,11 @@ export function VoiceCapture({ onPick }: { onPick(attachment: AssistantAttachmen
   const current = useRef<AssistantAttachment | null>(null), active = useRef(true);
   const controller = useRef(createLocalVoiceCapture({
     requestStream: () => navigator.mediaDevices.getUserMedia({ audio: true, video: false }),
-    createRecorder: stream => new MediaRecorder(stream),
+    createRecorder: stream => {
+      const mimeType = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/mp4"].find(type => MediaRecorder.isTypeSupported(type));
+      if (!mimeType) throw new Error("unsupported_recording_format");
+      return new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 64_000 });
+    },
     createUrl: blob => URL.createObjectURL(blob), revokeUrl: uri => URL.revokeObjectURL(uri),
   }, (nextState, message) => { if (active.current) { setState(nextState); setError(message); } }, attachment => {
     if (!active.current) { attachment.dispose?.(); return; }
@@ -39,7 +43,7 @@ export function VoiceCapture({ onPick }: { onPick(attachment: AssistantAttachmen
       !recording ? <AppButton label="開始錄音" disabled={!available || busy} onPress={() => { setError(undefined); void controller.start(); }} /> :
       <AppButton label="加入未送出草稿" onPress={() => { const attachment = current.current; if (!attachment) return; current.current = null; setRecording(null); onPick(attachment); }} />}
       {busy || recording ? <AppButton label={recording ? "捨棄錄音" : "取消錄音"} variant="quiet" onPress={discard} /> : null}
-    </View><Text style={styles.note}>只在本機處理，不會轉文字、呼叫模型或上傳。前端暫存限制：20 MiB／5 分鐘；正式音訊契約待接線。</Text>
+    </View><Text style={styles.note}>每段最多兩分鐘／5 MiB。錄音及試聽只在本機；按聊天的送出才會上傳。</Text>
   </View>;
 }
 const styles = StyleSheet.create({ stack: { gap: spacing.sm }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },

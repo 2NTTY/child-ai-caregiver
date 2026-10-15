@@ -145,6 +145,8 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   }
   requireValue(input.erasures.length<=2000,'restore_limit');
   const journal=input.erasures.map(value=>firebaseErasureIntentSchema.parse(value));
+  // Voice is not yet mounted in production. Never silently omit a new deletion kind during recovery.
+  requireValue(!journal.some(intent=>intent.type==='voice-delete'),'restore_voice_not_connected');
   unique(journal,value=>canonical([value.scope.ownerUserId,value.operationId]));
   const scopeJournal=journal.filter(intent=>['child-delete','account-delete'].includes(intent.type));
   // Complete original-object erasure first; recovery must not discard an unresolved cleanup obligation.

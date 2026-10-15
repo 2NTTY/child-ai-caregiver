@@ -1,0 +1,78 @@
+{
+  "workPackage": "S12-W01",
+  "date": "2026-10-16",
+  "baseline": "665ac9a",
+  "scope": "Prepared shared recording, validated encrypted audio, private Firestore authority, atomic chat binding and HTTP/client ports; runtime voice remains disabled",
+  "checks": [
+    {
+      "kind": "frontend-targeted-types",
+      "roots": 4,
+      "initialDiagnostics": 1,
+      "cause": "Expo Audio uses allowsBackgroundRecording, not shouldRecordInBackground",
+      "finalDiagnostics": 0
+    },
+    {
+      "kind": "synthetic-media",
+      "passed": 1,
+      "initialFailure": "WebM with no DefaultDuration has a zero-duration final packet in Mediabunny 1.61.5",
+      "correction": "Bounded Opus packet TOC durations under RFC 6716; same scenario passed",
+      "coverage": [
+        "WebM without container duration",
+        "WAV duration",
+        "over duration and mismatched MIME",
+        "size bound"
+      ]
+    },
+    {
+      "kind": "server-targeted-types",
+      "roots": 2,
+      "diagnostics": 0
+    },
+    {
+      "kind": "synthetic-storage",
+      "passed": 1,
+      "coverage": [
+        "same immutable address after lost write response",
+        "full precision generation",
+        "encrypted byte integrity",
+        "wrong owner rejected",
+        "pinned removal"
+      ]
+    },
+    {
+      "kind": "synthetic-voice-authority-and-http",
+      "passed": 1,
+      "initialFailure": "Online mutation carries owner-wide scope; attachment binding initially read NIL child",
+      "correction": "Bind the transaction to the child parsed from the original authenticated chat route",
+      "coverage": [
+        "original reserve fingerprint",
+        "known pre-upload rejection",
+        "unknown upload reconciliation without resend",
+        "same-transaction unique message link",
+        "lost chat reply resolved by original operation",
+        "new store instance reads same audio/message",
+        "authenticated HTTP and shared client",
+        "account precondition and unauthenticated rejection",
+        "delete journal, immediate masking and pinned cleanup"
+      ]
+    },
+    {
+      "kind": "server-client-targeted-types",
+      "roots": 7,
+      "diagnostics": 0
+    }
+  ],
+  "realModelCalls": 0,
+  "cloudCalls": 0,
+  "notifications": 0,
+  "deviceActions": 0,
+  "limitations": [
+    "No native recording/permission/playback evidence",
+    "No new APK/OTA/build",
+    "Runtime voice and UI send owner remain unmounted",
+    "Direct audio Agent/provenance, background transcript/search not connected",
+    "Cleanup scheduler, whole-account export/erasure and paired backup/restore integration pending; recovery explicitly rejects voice-delete until connected",
+    "Late-upload/delete race implementation awaits focused evidence",
+    "Real model voice quality remains pending"
+  ]
+}

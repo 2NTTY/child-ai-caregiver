@@ -2884,3 +2884,18 @@
 - PDF 與本人資料匯出沿同一 Server 版本／授權，Web 保留下載，Android 使用有界 cache 與系統保存／分享；遲到匯出在開啟系統前重核身份。開啟不代表使用者已保存。
 - 必要檢查：六個受影響型別入口零診斷；一條原生 Blob／hash／scope 情景通過（3 次合成 GET），沒有全量測試、真模型、手機、通知或雲端。固定 SDK 及 licenses 保存。[EV](artifacts/verification/S12_NATIVE_MEDIA_20261016.json)。
 - S12 尚未完成：共用語音繼續實作；本批需新 native runtime／APK，真機待使用者。B 單作者，主模型實作與 review，未派子代理，未合併或部署。
+
+
+<a id="log-20261016-s12-voice-preparation"></a>
+## LOG-20261016-S12-VOICE-PREPARATION
+
+- S12／B 單作者，接續 `665ac9a`；錄音共用兩分鐘／5 MiB、Android Expo Audio／試聽／選檔、Web 原草稿保留；Server 補有界實際時長校驗與私有 Storage 加密物件。Firestore 語音服務仍在接線、未掛載，正式語音入口未開放，沒有宣稱完整交付。
+- 最低驗證：4 個前端 roots 首次一個 SDK 欄位錯誤，修正後 0 diagnostics；WebM 缺時長情景首先發現最後封包 0 duration，按固定版本原碼及 RFC 6716 補局部計算後，同一情景通過。2 個 Server roots 0 diagnostics；另一次合成儲存流程核對未知上載原地址查回、加密、generation、隔離與清理通過。不以這兩條檢查代替真手機／真模型及資料生命週期。[證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)。
+- 零真模型、外發、雲端、手機及部署。下一步在同一 S12 分支完成訊息綁定、背景轉錄、刪除恢復及正式 owner，再按原 gate 交付。
+
+
+## LOG-20261016-S12-VOICE-AUTHORITY
+
+- 接續同一 S12 分支：語音上載前校驗失敗可沿原附件修復，已進 Storage 的未知結果僅查原地址；FireStore 私人範圍、版本、原操作指紋與聊天同交易綁定已準備。刪除先遮蔽、持久日誌後清理固定物件；API／共用 client 使用原身份與同源保護。正式 runtime／畫面尚未啟用，不當成完整語音交付。
+- 最低情景首次發現 online mutation 的 owner-wide binding 未換為目標孩子；按原路由綁定後，同一情景通過。隨新增刪除及 HTTP／client 接線，在同一情景補相應斷言，沒有另建一套 E2E；7 個受影響型別入口零診斷。零雲端、真模型、通知、手機或部署。[同包證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)。
+- 待接：語音 Agent／來源語義、背景轉錄搜尋、原操作台帳整合、排程清理、帳戶匯出／刪除及配對備份恢復；恢復先明確拒絕新增 voice-delete，不能靜默漏掉。原生套件需新 APK；本人不在時保留真機待驗。B 單作者、本機主模型實作與 review，未派子代理。

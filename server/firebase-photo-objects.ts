@@ -30,6 +30,7 @@ export const firebasePhotoObjectDescriptorSchema = z.object({
   mimeType: z.enum(["image/jpeg", "image/png"]),
 }).strict();
 export type FirebasePhotoObjectDescriptor = z.infer<typeof firebasePhotoObjectDescriptorSchema>;
+export const firebaseObjectStorageConfigSchema = configSchema;
 export type FirebasePhotoObjectsConfig = z.infer<typeof configSchema>;
 export interface FirebasePhotoObjectContent { buffer: Buffer; base64: string; mimeType: "image/jpeg" | "image/png" }
 type ErrorCode = "photo_object_invalid_input" | "photo_object_conflict" | "photo_object_integrity_failed" | "photo_object_unavailable";
@@ -117,7 +118,8 @@ export function readFirebaseStorageResponse(bucket: Pick<FirebasePhotoSdkBucket,
 }
 
 /** Use public requests: Storage 7.22 FileOptions.generation otherwise converts strings to Number. */
-export function createFirebasePhotoBucketPort(bucket: FirebasePhotoSdkBucket): FirebasePhotoBucketPort {
+export function createFirebasePhotoBucketPort(bucket: FirebasePhotoSdkBucket, maximum = FIREBASE_PHOTO_MAX_CIPHER_BYTES): FirebasePhotoBucketPort {
+  if (!Number.isSafeInteger(maximum) || maximum < 1 || maximum > 16 * 1024 * 1024) throw new Error("Invalid media bound");
   return {
     async writeNew(objectName, ciphertext, options) {
       const file = bucket.file(objectName);
@@ -145,7 +147,7 @@ export function createFirebasePhotoBucketPort(bucket: FirebasePhotoSdkBucket): F
       }
     },
     readPinned(objectName, generation) {
-      return readFirebaseStorageResponse(bucket, objectName, generation, FIREBASE_PHOTO_MAX_CIPHER_BYTES);
+      return readFirebaseStorageResponse(bucket, objectName, generation, maximum);
     },
   };
 }
