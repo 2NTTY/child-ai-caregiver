@@ -2675,3 +2675,11 @@
 - Usage / Cleanup：本次已知 input 16,406／output 259 tokens，兩次用量仍按既有欄位完整度規則列 unknown，不補造缺失 metadata。開始前全站 12／20，沒有清零或提高設定。合成孩子經原刪除入口取得 confirmed 及 cleanupPending；測試身份已停用／撤銷 refresh token。後續物理清理由既有 consumer 處理，本次不輪詢所有清理階段、不重跑還原。
 - Failures / Choices：Docker Desktop 自身初始化失敗，不重設系統，改用 Node build 及 VM 小型映像層。自動批准審查拒絕刪四份舊映像壓縮包，沒有執行；小更新層不需刪除。最初唯讀 SSH stdin 收到 plink 輸入而非腳本，隨後 docker cp 被 read-only rootfs 拒絕，均未執行產品或模型；核清後改用既有部署已使用的遠端檔案重導，唯一真品質流程一次通過。
 - Review / Limits：新摘要／卡片格式需相容 reader，回退不能盲切舊 API；舊 Web 可獨立恢復，舊映像及配置保留。原生備份只核 READY metadata，不改寫使用者延期的真還原。實測完整回答仍約 43 秒，且模型多回述了近期無關活動，不宣稱固定提速、完美精簡或多年記憶全面品質。OPT／LAY 可獨立部分完成，STR01 灰色正文仍等 #214 穩定審核接口；不以引用校驗取代語義審核。[完整 EV](artifacts/verification/P2_OPT_DELIVERY_20261015.json)。
+
+
+<a id="log-20261015-android-plan"></a>
+### 2026-10-15 — Web／Android 共用產品計劃定案
+
+- Scope / Baseline：遠端 master 21e848b（#227），接續本機 STR01 備忘 db56ad0；#214／#215／#216 未合併且仍由協作者處理。先更新 PLAN，再進 S04-W01；不改原 Prompt Pack 或三角色。
+- Result：Android 成品優先，iOS 後接；語音改為 Web／Android 完整共用，跨端接續已提交工作而不搬未發送草稿。保留同一 Server／owner、原生會話安全及固定 EAS／OTA／APK 更新入口；共同包分平台里程碑，避免 iOS 依賴循環。STR01 的未實作、前置及證據獨立保留。
+- Verification / Limits：本包只核文件 diff、連結、錨點與依賴；沒有產品測試、模型、通知、雲端資源或部署。原生 build、簽署、實機與完整語音尚未完成；EAS 帳號及首次程式上傳／費用需於實際範圍就緒後處理。
