@@ -1,3 +1,4 @@
+import { prepareContextChange } from './firestore-context-basis.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { DocumentSnapshot } from '@google-cloud/firestore';
@@ -55,10 +56,11 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions): Fires
     if (!await binding.readChild(message.childId)) domainReject('not_found', 404);
     const ref = messageRef(message.id);
     if ((await binding.transaction.get(ref)).exists) domainReject('message_conflict');
+    const summaryChange = await prepareContextChange(data, { ...binding, scope }, true);
     const change = await binding.prepareChange(opId, 'chat', false, message.childId);
     const envelope = { ...data.tags(scope), messageId: message.id, createdAt: message.createdAt, sortKey: data.sortKey(change.changeSeq),
       ...data.seal('chat-message', message.id, scope, firestoreChatMessageSchema, message) };
-    return { changeSeq: change.changeSeq, commit() { change.commit(); binding.transaction.create(ref, envelope); } };
+    return { changeSeq: change.changeSeq, commit() { change.commit(); summaryChange(); binding.transaction.create(ref, envelope); } };
   }
   const mutation: FirestoreOnlineMutation = {
     supports: path => messagePath.test(path),

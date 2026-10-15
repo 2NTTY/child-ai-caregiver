@@ -1,3 +1,4 @@
+import { createPrivateSummaryMaintenance } from './private-summary-maintenance.ts';
 import { readFile } from 'node:fs/promises';
 import type { AiConfig } from './ai-config.ts';
 import type { FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -59,14 +60,15 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
       let instance: ReturnType<typeof createAgentRuntime>, authorize: () => Promise<boolean>;
       try {
         const selected = await routing.resolve(input.scope.userId, input.trigger.kind);
+        const limits = input.recipeId === 'memory-refresh' ? { modelCalls: Math.min(1, selected.runLimits.modelCalls), queryEmbeddings: selected.runLimits.queryEmbeddings } : selected.runLimits;
         const provider = selected.billingSource === 'platform' ? options.platformProvider ?? selected.provider : selected.provider;
         // Selection is immutable within this root. Changing settings invalidates its authorization.
         const durable = claimedRunAssembly(selected.config, { nativeSessionService, rootBudget, dailyUsage: selected.dailyUsage,
           provider, profile: { config: selected.config, workflowVersion: 'firestore-product-v1', promptPackVersion,
             settingsVersion: 'firestore:' + selected.settingsVersion, billingVersion: selected.billingSource + ':v1',
-            billingSource: selected.billingSource, runLimits: selected.runLimits } }, undefined, true, true, true);
+            billingSource: selected.billingSource, runLimits: limits } }, undefined, true, true, true);
         instance = createAgentRuntime({ config: selected.config, usage: requireDurableUsage, provider,
-          nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: selected.runLimits,
+          nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: limits,
           admission, embeddings: selected.embeddings, diagnostics: event => {
             // The observer builds a fixed metadata allowlist; no arguments, content or errors are logged.
             if (event.phase === 'tool_rejection' || event.phase === 'model_error' || event.phase === 'tool_error')
@@ -84,5 +86,5 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
     { async embed() { throw new AgentStopped('unavailable'); } });
   const agent = createProductAgent({ runtime, store: services.store, actions: services.actions,
     chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge });
-  return { ...services, routing, runtime, agent };
+  return { ...services, routing, runtime, agent, maintainSummary: createPrivateSummaryMaintenance({ memory: options.memory, store: services.store, runtime }) };
 }

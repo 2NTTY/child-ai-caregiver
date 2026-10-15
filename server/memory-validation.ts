@@ -21,4 +21,4 @@ export const topicChangeSchema = z.object({ expectedVersion: version, status: z.
   note: rawText(2000), resumeAfter: z.iso.datetime({ offset: true }).nullable() }).strict().refine(value => (value.status === "snoozed") === (value.resumeAfter !== null));
 export const topicReopenSchema = z.object({ expectedVersion: version, reason: text(500) }).strict();
 export const summarySaveSchema = z.object({ previousVersion: z.number().int().nonnegative(), text: text(6000),
-  basis: z.string().regex(/^[a-f0-9]{64}$/u), coveredMessageIds: z.array(z.uuid()).min(1).max(50) }).strict();
+  basis: z.string().regex(/^[a-f0-9]{64}$/u), coveredMessageIds: z.array(z.uuid()).min(1).max(50), repairOf: z.uuid().optional() }).strict();

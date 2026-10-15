@@ -1,3 +1,5 @@
+import { readContextBasis, settleSummaryRequest } from './firestore-context-basis.ts';
+import { FirestoreDomainData, firestoreDomainHash } from './firestore-domain-data.ts';
 import { openFirebaseRuntime } from './firebase-runtime.ts';
 import { createFirestoreTaskDispatcher } from './firestore-task-dispatcher.ts';
 import { createFirebaseTaskDelivery, createFirebaseTaskDispatchHandler, createFirebaseTaskHandler,
@@ -52,6 +54,23 @@ export async function openFirebaseWorkerRuntime(env: Record<string, string | und
           return !current.disabled && current.emailVerified && !!current.email;
         };
         if (!await validIdentity()) return { state: 'stopped' };
+        if (job.kind === 'memory-refresh') {
+          const data = new FirestoreDomainData(options);
+          const authorize = async () => await validIdentity() && await authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
+            const current = await readContextBasis(data, b);
+            return b.generation === job.generation && b.authorizationVersion === job.authorizationVersion
+              && firestoreDomainHash(b.scope) === firestoreDomainHash(job.scope) && current.value.summaryPending === true
+              && !current.value.summaryBlocked && String(current.value.summaryRequest) === job.basis;
+          });
+          const result = await runtime.product.maintainSummary({ userId: job.scope.ownerUserId, childId: job.scope.childId,
+            reference: firestoreBackgroundReference(job), authorize, signal }).catch(() => ({ state: 'unknown' as const, more: false }));
+          await authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async b => {
+            if (b.generation !== job.generation || b.authorizationVersion !== job.authorizationVersion || firestoreDomainHash(b.scope) !== firestoreDomainHash(job.scope)) return;
+            await settleSummaryRequest(data, b, Number(job.basis),
+              result.state === 'unknown' ? 'unknown' : result.state === 'completed' ? result.more ? 'more' : 'complete' : 'deferred', firestoreBackgroundReference(job));
+          });
+          return { state: result.state };
+        }
         if (job.kind === 'push') return runtime.push.process(job, signal);
         if (job.kind === 'telegram') return runtime.telegram.process(job, signal);
         if (job.kind === 'contact') return runtime.contact.process(job, signal);
