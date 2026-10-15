@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **S04 聊天阻塞修正：**[單次預算可見與收尾](PLAN.md#agent-budget-followup) 已完成必要 scripted／管理接線及型別核對，待合併／原站部署。模型每輪知道剩餘次數，普通招呼直接短答；平台新上限 8 次生成／16 工具／4 查詢向量，正式政策尚待更新。每日 200／400 不變。Android #229 仍未合併，不因此宣稱真聊天已通過。
+- **S04 聊天阻塞修正：**[單次預算可見與收尾](PLAN.md#agent-budget-followup) 已於 #230 合併並部署 `1150193`，必要 scripted／管理接線及型別核對通過。模型每輪知道剩餘次數，普通招呼直接短答；平台新上限 8 次生成／16 工具／4 查詢向量，正式政策 v2 已保存，前後使用量不變。每日 200／400 不變。Android #229 仍未合併，不因此宣稱真聊天已通過。
 
 - **Firestore／正式零 SQL 及本輪 P2 review 修正已交付。** [R01～R04](PLAN.md#p2-review-repair) 分別於 #203～#206 合併，並已部署 `2c17aa7`。修正刪除披露、清理恢復、Agent 正式組裝、成果狀態及通知歷史；不把有限檢查當全面驗收。[P2-ADM01 Web 管理後台](PLAN.md#p2-adm01) 已於 #208／#209 合併並部署，指定的已驗證 UID 已綁定；正式瀏覽器管理身份讀取的 fetch 接收者缺陷已於 #211 修正及部署；上述是既有交付；本輪新增 OPT／LAY／STR 目標尚未完成，家庭多人仍在 P4。
 - **原前後端已共同使用 Firestore。** 原網站保留新前端設計，真 Agent 的官方引用、同一準備單修改／確認／保存及刷新讀回已通過。摘要 Firestore 接線缺口已補回並部署；容量操作及保存讀回已補必要證據，回覆替身與真 Agent 結果分開記錄。正式 API／worker 已退出 SQL，PostgreSQL 停止；不是分開的預覽站。排程、queue 及既有通知入口已恢復，本包未追加外發訊息。
@@ -17,7 +17,7 @@
 <a id="deployment"></a>
 ## 最後部署觀察（非即時狀態）
 
-**2026-10-15 15:49 UTC 核對：**正式網址 https://ex-machina.eu.org 的原 VM API／worker／Web 均為 `s04-8992ce9`，健康檢查及 `/chat` 靜態產物 hash 通過；零資料遷移、模型及通知。Android 相容 preview group `b44fb753` 已發布，真機鍵盤與輸入框核對通過；首條有來源聊天仍未驗。使用者指定每日每人 200／全站 400 已於 15:37 UTC 保存政策 v1，保留使用量及每運行限制。[本包證據](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。先前公開 SSE 證據沿[原記錄](artifacts/verification/P2_OPT_DELIVERY_20261015.json)，本次不重跑。
+**2026-10-15 16:26 UTC 核對：**正式網址 https://ex-machina.eu.org 的原 VM API／worker 為 `budget-1150193`，Web 沿 `s04-8992ce9`；新服務及公開 API 健康，Web `/chat` 靜態 hash 沿 15:49 有效證據；零資料遷移、模型及通知。Android 相容 preview group `b44fb753` 已發布，真機鍵盤與輸入框核對通過；首條有來源聊天仍未驗。使用者指定每日每人 200／全站 400 已於 15:37 UTC 保存政策 v1；16:26 UTC 的 v2 只調單次生成 8／查詢向量 4，工具 16，使用量保留。[本包證據](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。先前公開 SSE 證據沿[原記錄](artifacts/verification/P2_OPT_DELIVERY_20261015.json)，本次不重跑。
 
 保留舊映像、受保護配置及資料；新摘要／卡片寫入後須維持相容 API reader，不能盲退舊 API，詳見[部署方法](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。主機只剩約 1.2 GB 時採小型更新層；未刪除舊上載壓縮包。備份部署前唯讀 metadata 顯示 10 月 13／14 日兩份原生備份 READY、各保留 14 天；未檢查還原內容、未執行真還原，原延期仍有效。既有配對備份與獨立刪除日誌保留，不回寫舊證據。
 
