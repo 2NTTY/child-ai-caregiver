@@ -63,7 +63,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ### 當前任務入口
 
-當前入口：[S04-W01 共用原生基礎與 Android 首條流程](#s04-w01)。使用者於 2026-10-15 批准 [Web／Android 共用產品及 Android 成品計劃](#p3-mobile)；先定案文件，再接正式 Android 身份、transport 與首條聊天。Web／Android 共用功能及同一權威資料，新增語音兩端同時接通；Android 完成後才開始 iOS。開工基線 master `21e848b`（#227），原站程式 `b1d1565`／Prompt Pack 0.1.43；不把 master 當成已部署。
+當前入口：[S04-W01 共用原生基礎與 Android 首條流程](#s04-w01)。使用者於 2026-10-15 批准 [Web／Android 共用產品及 Android 成品計劃](#p3-mobile)；文件已於 #228 合併，S04-W01 正在接正式 Android 身份、transport 與首條聊天。Web／Android 共用功能及同一權威資料，新增語音兩端同時接通；Android 完成後才開始 iOS。開工基線 master `21e848b`（#227），原站程式 `b1d1565`／Prompt Pack 0.1.43；不把 master 當成已部署。
 
 OPT01～05、LAY01～05 已合併及部署；灰色正文 STR01 尚未實作，接點及證據保留於 [接續備忘](#p2-str01-handoff)。#214／#215／#216 繼續由協作者處理，不接管、合併或重做；不阻塞 Android 既有聊天接線，也不將現有引用校驗當成語義審核。兩份 OPT／LAY／STR 計劃整體仍未完成，原生備份真還原仍延後。
 
@@ -1023,10 +1023,11 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s04-w01"></a>
 #### S04-W01 共用原生基礎與 Android 首條流程
 
-- 階段／狀態：P3；已獲准開工，先完成本節文件定案，程式／APK 尚未交付。
-- 前置：P2-R04、S06-W05；開工基線 `21e848b`，不依賴 STR01／三角色／iOS。
+- 階段／狀態：P3；實作中，分支 `codex/s04-w01-android-foundation`。本機已接原生會話、SecureStore、共同 transport 及 EAS 基礎；尚未部署或產生 APK。
+- 前置：P2-R04、S06-W05；文件 #228 合併後開工基線 `4f88948`，不依賴 STR01／三角色／iOS。
 - 交付：正式 App ID／API base、EAS Build／Update 基礎；共同 transport、Firebase 原生會話交換／SecureStore，正式 owner 的身份／資料接線。APK 登入、孩子、首條聊天及保存讀回；保留 Web Cookie，不能以假 Origin 取得原生權限。
-- 下一步／gate：固定受控會話及 transport 契約 → 局部實作 → 必要接線檢查 → EAS 帳號／雲端傳送授權 → 一部手機首條流程。未取得 EAS／簽署／真機證據不標完成；不補跑大量預覽測試。
+- 已驗：同一合成原生交換／重開／撤銷情景經正式 Node／API；受影響型別及 Android Hermes bundle 通過。未呼叫真模型、通知或雲端 build，[證據](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
+- 下一步／gate：Expo 本機登入（使用者帳號已準備）→ 連結 project、核實上載 archive／配置 → 具體雲端傳送與建置範圍 → 相容 Server 部署與一部手機登入／孩子／首條聊天。CLI 尚未登入，archive 檢查已停止；不以 bundle 當 APK，不開依賴包或重跑大量預覽測試。
 
 <a id="s05-w03"></a>
 #### S05-W03 原生憑據、生命週期與清理

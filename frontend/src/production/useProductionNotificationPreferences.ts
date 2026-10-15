@@ -6,7 +6,7 @@ import { settingsAccessError, settingsFailure, settingsRead, useSettingsRefresh,
 export type ProductionPreferenceValues = Omit<NotificationPreferences, "version">;
 type OriginalPreference = { input: ProductionPreferenceValues & { expectedVersion: number }; confirmed: boolean; reviewed: boolean; consent: boolean };
 export function useProductionNotificationPreferences(env: SettingsEnvironment) {
-  const api = useMemo(() => createFamilyApi(env.apiBaseUrl), [env.apiBaseUrl]), requests = useSettingsRequests(env, true);
+  const api = useMemo(() => createFamilyApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]), requests = useSettingsRequests(env, true);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null), [notice, setNotice] = useState("");
   const [original, setOriginal] = useState<OriginalPreference | null>(null), [fresh, setFresh] = useState(false), [denied, setDenied] = useState(false);
   const pending = useRef<OriginalPreference | null>(null), values = useRef(preferences); values.current = preferences;

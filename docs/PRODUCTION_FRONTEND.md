@@ -149,3 +149,17 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 原生 DB 備份不包含 Storage。讀取同版 metadata 的不可變照片；如只有 soft-deleted 密文，還原入口本身先完整讀取並驗證獨立 journal，拒絕帳戶／孩子／照片永久刪除，再重查來源暫停。只能對原 generation 使用 `ifGenerationMatch=0`，不能蓋過現有物件；回覆未知只讀回同一位置，核對原 hash，再由既有 decoder 驗密文／內容並重加密至新 epoch。journal 無法完整讀取、過期、hash 不符或來源變更均停止。私人 bucket 的 soft-delete 至少 14 天；不可把較短的預設值當已覆蓋備份。既有 paired manifest 仍適用，hold 到期不等於自動刪除；只能按指定 backupId 核對期限後清理，不能碰 `erasures/v1/`。
 
 使用者已將原生首份備份／真還原驗收延後，按 [PLAN 待驗入口](../PLAN.md#p2-backup-followup)續做，不阻塞本次功能交付。原生備份、真還原及附件復原的實際證據按 F08 EV 分列；本機檢查不代替這些證據。還原目前仍要求可核對的來源權威及清理狀態，不宣稱來源整庫消失後可無條件自動恢復。
+
+<a id="android-foundation"></a>
+## Android 共用入口與建置基礎
+
+產品範圍／進度只見 [根 PLAN Android 計劃](../PLAN.md#p3-mobile)。原 Web／API 網址及設計不變；Android 使用同一 `frontend/`、正式 owner 與 Server，平台 adapter 位於 `production-transport.native.ts`，Web 沿同名共用入口。身份協議見 [API](API.md#native-session)。原生管理後台維持不開放。
+
+- 在 `frontend/` 使用固定 `eas-cli@24.14.0`；`app.json` 固定 Android `org.yuyoufang.app`、scheme `yuyoufang` 及 runtime fingerprint，`eas.json` 保留 development／preview／production channel。固定 Node 24.19.0、npm 11.8.0。
+- Expo 帳號由本人登入，不把密碼／token 放入專案；公開 project ID 連結後以 `EAS_PROJECT_ID` 提供。沒有 project ID 不允許雲端 build；本機無連結時 Updates 關閉，不假稱 OTA 已配置。
+- `EXPO_PUBLIC_AUTH_PROVIDER=firebase`、API base 使用原站 `/api`；四項 Firebase 公開 config 使用現有專案值，不傳 ADC、私鑰或服務端 secret。這些公開 config 會進入 bundle，不應標為秘密來誤以為客戶端不可讀。
+- `.easignore` 限定上載共用前端、client／shared、資產及依賴／授權。首次雲端建置前必須核對實際 archive，排除 Server、prompt、測試資料、私人協作文件及憑據。`eas build:inspect --platform android --stage archive --profile preview --output <new-local-directory>` 只準備本機 archive，但 CLI 仍需要 Expo 登入。
+- `npm run build:android-ui --workspace frontend` 只驗 JS／Hermes bundle，不會產生可安裝 APK。EAS preview／production 使用 APK；簽署、真機登入、OTA 與更新證據另列，不因 bundle 成功當成品。
+- 先部署相容的 `/api/auth/native-session` Server，再分發 Android；既有 Web Cookie 及 API body 保留。未支援原生交換的 Server 無法供新 APK 登入，不能用假 Origin 補救。
+
+固定 `mobile:release`、語音／FCM、完整跨端前景同步及更新交付仍按各自工作包實作，本節不宣稱已接通。

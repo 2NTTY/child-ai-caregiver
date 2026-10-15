@@ -1,3 +1,6 @@
+import type { ProductionTransport } from "./production-transport";
+import { createAccountApi } from "../../../src/client/account-api";
+import { createProductAgentApi } from "../../../src/client/product-agent-api";
 import { AdminOwner } from './AdminOwner.ts';
 import type { ChildSelectionPreferences } from "../../../src/client/child-selection.ts";
 import { createWebChildSelectionPreferences } from "./child-selection.ts";
@@ -23,6 +26,8 @@ export interface ProductionSnapshot {
 }
 export class ProductionOwner {
   readonly apiBaseUrl: string;
+  readonly fetcher: typeof fetch;
+  private readonly native: boolean;
   readonly adminOwner: AdminOwner;
   readonly reauthenticateAdmin: (password: string, signal: AbortSignal) => Promise<void>;
   readonly queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } } });
@@ -59,37 +64,41 @@ export class ProductionOwner {
   private unsubscribe: (() => void) | null;
   private unsubscribeChat: (() => void) | null;
 
-  constructor(apiBaseUrl: string, online: boolean, api?: RecordsApi, chatApi?: ChatApi, selectionPreferences?: ChildSelectionPreferences, accountDependencies?: AccountServiceDependencies) {
+  constructor(apiBaseUrl: string, online: boolean, api?: RecordsApi, chatApi?: ChatApi, selectionPreferences?: ChildSelectionPreferences, accountDependencies?: AccountServiceDependencies, transport?: ProductionTransport) {
     this.apiBaseUrl = resolveApiBaseUrl(apiBaseUrl);
+    this.fetcher = transport?.fetcher ?? ((...args) => fetch(...args));
+    this.native = transport?.platform === "native";
     let firebaseIdentity: FirebaseClientAuthApi | undefined;
     if (!api) {
       const provider = process.env.EXPO_PUBLIC_AUTH_PROVIDER?.trim();
       const config = { apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY?.trim() ?? "",
         authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim() ?? "",
         projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID?.trim() ?? "", appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID?.trim() ?? "" };
-      if (provider || Object.values(config).some(Boolean)) {
+      if (this.native || provider || Object.values(config).some(Boolean)) {
         try {
-          if (provider !== "firebase" || typeof window === "undefined") throw new Error("Authentication provider unavailable");
-          firebaseIdentity = createFirebaseAuthApi({ baseUrl: this.apiBaseUrl, publicOrigin: window.location.origin, config });
+          const publicOrigin = transport?.publicOrigin ?? (typeof window === "undefined" ? "" : window.location.origin);
+          if (provider !== "firebase" || !publicOrigin) throw new Error("Authentication provider unavailable");
+          firebaseIdentity = createFirebaseAuthApi({ baseUrl: this.apiBaseUrl, publicOrigin, config, fetcher: this.fetcher, nativeSession: transport?.nativeSession });
         } catch { firebaseIdentity = createUnavailableFirebaseAuthApi(); }
       }
     }
-    this.adminOwner = new AdminOwner(this.apiBaseUrl);
+    this.adminOwner = new AdminOwner(this.apiBaseUrl, this.fetcher);
     this.reauthenticateAdmin = async (password, signal) => {
       const userId = this.controller.getSnapshot().user?.id;
       if (!userId || !firebaseIdentity) throw new Error('Reauthentication unavailable');
       await firebaseIdentity.reauthenticate(userId, password, signal);
       if (this.controller.getSnapshot().user?.id !== userId) throw new Error('Identity changed');
     };
-    const recordsApi = api ?? createRecordsApi(this.apiBaseUrl, fetch, firebaseIdentity);
+    const recordsApi = api ?? createRecordsApi(this.apiBaseUrl, this.fetcher, firebaseIdentity);
     const account = firebaseIdentity ? { ...accountDependencies, legacyTrial: false,
       reauthentication: firebaseIdentity,
-      authApi: createAccountAuthApi(this.apiBaseUrl, fetch, firebaseIdentity) } : accountDependencies;
+      api: accountDependencies?.api ?? createAccountApi(this.apiBaseUrl, this.fetcher, firebaseIdentity),
+      authApi: createAccountAuthApi(this.apiBaseUrl, this.fetcher, firebaseIdentity) } : accountDependencies;
     this.accountOwner = new AccountServiceOwner(this.apiBaseUrl, online, () => { void this.controller.restoreSession(); }, () => { void this.controller.restoreSession(); }, account);
     this.chatController = new ChatController(chatApi ?? createChatApi(this.apiBaseUrl, async signal => {
       try { return await recordsApi.getSession(signal); }
       catch (error) { if (!signal.aborted) void this.controller.restoreSession(); throw error; }
-    }), online);
+    }, this.fetcher), online);
     const queries = withRecordsQueries(recordsApi, this.queryClient, () => ({ identityKey: this.identity,
       scopeKey: this.scopeKey(), childId: this.controller.getSnapshot().selectedChildId }));
     const childEvent = (action: () => void) => { this.syncingChat = true; try { action(); } finally { this.syncingChat = false; } };
@@ -102,8 +111,8 @@ export class ProductionOwner {
     this.agentOwner = new ProductAgentOwner(this.apiBaseUrl, online, error => {
       if (error.status === 401 || error.code === "session_changed" || error.code === "unauthorized") void this.controller.restoreSession();
       else this.denySelectedChild();
-    }, this.invalidatePrivateReads);
-    this.authorizationOwner = new AgentAuthorizationOwner(this.apiBaseUrl, online, identity => { if (identity) void this.controller.restoreSession(); else this.denySelectedChild(); }, this.invalidatePrivateReads);
+    }, this.invalidatePrivateReads, () => createProductAgentApi(this.apiBaseUrl, this.fetcher), this.fetcher);
+    this.authorizationOwner = new AgentAuthorizationOwner(this.apiBaseUrl, online, identity => { if (identity) void this.controller.restoreSession(); else this.denySelectedChild(); }, this.invalidatePrivateReads, this.fetcher);
     this.snapshot = this.project();
     this.unsubscribeAccount = this.accountOwner.subscribe(this.accountChanged);
     this.unsubscribeAgent = this.agentOwner.subscribe(() => this.syncMutationLocks());
@@ -113,7 +122,7 @@ export class ProductionOwner {
   }
   getSnapshot = () => this.snapshot;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
-  private emit() { this.adminOwner?.setUser(this.snapshot.records.auth === "signedIn" ? this.snapshot.records.user?.id ?? null : null); this.listeners.forEach(listener => listener()); }
+  private emit() { this.adminOwner?.setUser(!this.native && this.snapshot.records.auth === "signedIn" ? this.snapshot.records.user?.id ?? null : null); this.listeners.forEach(listener => listener()); }
   private scopeKey() {
     if (!this.accountOwner?.isReady()) return null;
     const raw = this.controller.getSnapshot();
@@ -217,7 +226,7 @@ export class ProductionOwner {
     // New chat proposals must be discoverable even before the list has ever been opened.
     if (scope && refreshPending) void this.agentOwner?.readPending();
     if (authorization?.notesState === "ready" && !authorization.busy && !authorization.pending) void this.authorizationOwner.readNotes(false, true);
-    if (emitEvent && typeof window !== "undefined") window.dispatchEvent(new Event("yuban-online-refresh"));
+    if (emitEvent && !this.native && typeof window !== "undefined") window.dispatchEvent(new Event("yuban-online-refresh"));
   };
   async refresh() {
     const state = this.controller.getSnapshot();

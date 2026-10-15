@@ -1,3 +1,4 @@
+import type { NativeSessionExchange } from "./native-session-transport.ts";
 import { initializeApp } from "firebase/app";
 import { confirmPasswordReset, createUserWithEmailAndPassword, getIdToken, inMemoryPersistence, initializeAuth,
   reload, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, updateProfile, type User } from "firebase/auth";
@@ -22,7 +23,7 @@ export interface FirebaseIdentitySdk {
 export interface FirebaseClientAuthApi extends RecordsIdentityAdapter, AccountIdentityAdapter {
   reauthenticate(userId: string, password: string, signal: AbortSignal): Promise<void>;
 }
-interface Options { baseUrl: string; publicOrigin: string; config: FirebasePublicConfig; fetcher?: typeof fetch; sdk?: FirebaseIdentitySdk }
+interface Options { baseUrl: string; publicOrigin: string; config: FirebasePublicConfig; fetcher?: typeof fetch; sdk?: FirebaseIdentitySdk; nativeSession?: NativeSessionExchange }
 type AuthenticationStage = "provider_clear" | "session_read" | "sign_in" | "sign_up" | "update_name" | "identity_check" | "token" | "exchange";
 interface Ticket { generation: number; signal: AbortSignal; authenticationStage?: AuthenticationStage }
 const diagnosticProviderCodes = new Set(["auth/network-request-failed", "auth/timeout", "auth/internal-error", "auth/user-token-expired",
@@ -84,7 +85,7 @@ function diagnoseAuthentication(stage: AuthenticationStage, cause: "timeout" | "
   try { console.warn("firebase_authenticate_unconfirmed " + JSON.stringify({ stage, cause, providerCode })); } catch { /* Diagnostics must not change authentication. */ }
 }
 
-/** Only a same-origin Server exchange can establish the HttpOnly business session. */
+/** Both platforms exchange provider proof with the same Server authority. */
 export function createFirebaseAuthApi(options: Options): FirebaseClientAuthApi {
   let urls: ReturnType<typeof validate>;
   try { urls = validate(options); } catch { throw unavailable(); }
@@ -124,6 +125,14 @@ export function createFirebaseAuthApi(options: Options): FirebaseClientAuthApi {
   }
   async function exchange(idToken: string, expectedUserId: string, ticket: Ticket) {
     guard(ticket);
+    if (options.nativeSession) {
+      try { await options.nativeSession.exchange(idToken, expectedUserId, ticket.signal); guard(ticket); }
+      catch (error) {
+        const value = error as { status?: number; code?: string | null };
+        throw new ClientApiError(value.status, value.code === "invitation_required" || value.code === "EMAIL_NOT_VERIFIED" ? value.code : null);
+      }
+      return;
+    }
     const response = await fetcher(urls.apiUrl + "/auth/session", { method: "POST", credentials: "include", cache: "no-store",
       signal: ticket.signal, headers: { "content-type": "application/json", "x-expected-user-id": expectedUserId }, body: JSON.stringify({ idToken }) });
     guard(ticket);

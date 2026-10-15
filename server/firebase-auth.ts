@@ -1,3 +1,4 @@
+import { NATIVE_SESSION_PREFIX, nativeRequestContext, nativeSessionCredential, requestOriginAllowed } from "./request-auth-transport.ts";
 import { createHash } from "node:crypto";
 import type { IncomingHttpHeaders } from "node:http";
 import type { Auth, DecodedIdToken, UserRecord } from "firebase-admin/auth";
@@ -8,7 +9,7 @@ export const FIREBASE_SESSION_LIFETIME_MS = 5 * 24 * 60 * 60 * 1000;
 export const FIREBASE_RECENT_AUTH_SECONDS = 5 * 60;
 const MAX_BODY_BYTES = 16 * 1024;
 const COOKIE_NAME = "__session";
-const hashCookie = (cookie: string) => createHash("sha256").update(cookie, "utf8").digest("hex");
+const hashCookie = (cookie: string, native = false) => createHash("sha256").update((native ? "native-session\0" : "") + cookie, "utf8").digest("hex");
 const invalidCredentials = new Set(["auth/id-token-expired", "auth/id-token-revoked", "auth/invalid-id-token",
   "auth/session-cookie-expired", "auth/session-cookie-revoked", "auth/invalid-session-cookie", "auth/argument-error",
   "auth/user-disabled", "auth/user-not-found"]);
@@ -64,7 +65,7 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
   };
   const cookieHeader = (value: string, maxAge: number) =>
     COOKIE_NAME + "=" + value + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=" + maxAge + (secure ? "; Secure" : "");
-  const privateHeaders = () => new Headers({ "Cache-Control": "private, no-store", "Pragma": "no-cache", "Vary": "Cookie" });
+  const privateHeaders = () => new Headers({ "Cache-Control": "private, no-store", "Pragma": "no-cache", "Vary": "Cookie, Authorization" });
   function json(value: unknown, status = 200, cookie?: string) {
     const headers = privateHeaders(); headers.set("Content-Type", "application/json");
     if (cookie !== undefined) headers.set("Set-Cookie", cookie);
@@ -117,10 +118,11 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
   }
   async function readSession(headers: Headers): Promise<AuthenticatedSession | null> {
     try {
-      const cookie = extractCookie(headers);
+      const native = headers.has("authorization");
+      const cookie = native ? nativeSessionCredential(headers) : extractCookie(headers);
       if (cookie === null) return null;
       const decoded = validatedClaims(await sdk(() => auth.verifySessionCookie(cookie, true)));
-      const user = await currentIdentity(decoded), sessionHash = hashCookie(cookie);
+      const user = await currentIdentity(decoded), sessionHash = hashCookie(cookie, native);
       await sessions.assertActive({ userId: user.uid, sessionHash });
       await admission(() => lifecycle.assertSessionAdmission(user.uid, { email: user.email!, emailVerified: user.emailVerified }));
       return { session: { user: { id: user.uid, name: typeof user.displayName === "string" ? user.displayName : "", email: user.email! } },
@@ -131,7 +133,7 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
     }
   }
   function sameOrigin(headers: Headers) {
-    if (headers.get("origin") !== publicOrigin) throw new FirebaseAuthError(403, "origin_rejected");
+    if (!requestOriginAllowed(headers, publicOrigin)) throw new FirebaseAuthError(403, "origin_rejected");
   }
   function expectedIdentity(headers: Headers, userId: string) {
     if (headers.get("x-expected-user-id") !== userId) throw new FirebaseAuthError(409, "identity_changed");
@@ -164,10 +166,18 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
     try {
       const path = new URL(request.url).pathname;
       if (request.method === "GET" && path === "/api/auth/get-session") return json((await readSession(request.headers))?.session ?? null);
-      if (request.method !== "GET") sameOrigin(request.headers);
+      const nativeExchange = path === "/api/auth/native-session";
+      if (request.method !== "GET") {
+        if (nativeExchange) {
+          if (!nativeRequestContext(request.headers) || request.headers.has("authorization") && !nativeSessionCredential(request.headers)) {
+            throw new FirebaseAuthError(403, "origin_rejected");
+          }
+        } else sameOrigin(request.headers);
+      }
       if (request.method !== "POST") return json({ code: "auth_provider_transition_required" }, 503);
       const input = await body(request);
-      if (path === "/api/auth/session") {
+      if (path === "/api/auth/session" || nativeExchange) {
+        if (!nativeExchange && request.headers.has("authorization")) throw new FirebaseAuthError(403, "origin_rejected");
         if (Object.keys(input).length !== 1 || typeof input.idToken !== "string" || !input.idToken || input.idToken.length > MAX_BODY_BYTES) {
           throw new FirebaseAuthError(400, "auth_body_invalid");
         }
@@ -193,23 +203,24 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
           || issuedClaims.exp <= issuedClaims.iat || (issuedClaims.exp - issuedClaims.iat) * 1000 > FIREBASE_SESSION_LIFETIME_MS) {
           throw new FirebaseAuthError(503, "authentication_unavailable");
         }
-        await sessions.issue({ userId: user.uid, sessionHash: hashCookie(cookie), expiresAtMs: issuedClaims.exp * 1000,
+        await sessions.issue({ userId: user.uid, sessionHash: hashCookie(cookie, nativeExchange), expiresAtMs: issuedClaims.exp * 1000,
           authTimeSeconds: decoded.auth_time, ...(existing ? { existingSessionHash: existing.sessionHash } : {}) });
-        return json({ user: { id: user.uid, name: typeof user.displayName === "string" ? user.displayName : "", email: user.email } },
-          200, cookieHeader(cookie, FIREBASE_SESSION_LIFETIME_MS / 1000));
+        const result = { user: { id: user.uid, name: typeof user.displayName === "string" ? user.displayName : "", email: user.email } };
+        if (nativeExchange) return json({ ...result, credential: NATIVE_SESSION_PREFIX + cookie, expiresAtMs: issuedClaims.exp * 1000 });
+        return json(result, 200, cookieHeader(cookie, FIREBASE_SESSION_LIFETIME_MS / 1000));
       }
       if (path === "/api/auth/sign-out" || path === "/api/auth/revoke-other-sessions") {
         if (Object.keys(input).length) throw new FirebaseAuthError(400, "auth_body_invalid");
         const current = await readSession(request.headers);
         if (!current) {
-          if (path === "/api/auth/sign-out") return json({ success: true }, 200, cookieHeader("", 0));
+          if (path === "/api/auth/sign-out") return json({ success: true }, 200, request.headers.has("authorization") ? undefined : cookieHeader("", 0));
           throw new FirebaseAuthError(401, "unauthorized");
         }
         expectedIdentity(request.headers, current.session.user.id);
         const key = { userId: current.session.user.id, sessionHash: current.sessionHash };
         if (path === "/api/auth/sign-out") {
           await sessions.revokeThis(key);
-          return json({ success: true }, 200, cookieHeader("", 0));
+          return json({ success: true }, 200, request.headers.has("authorization") ? undefined : cookieHeader("", 0));
         }
         await sessions.revokeOthers(key);
         return json({ success: true });

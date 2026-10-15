@@ -8,7 +8,7 @@ import { useTaskKnowledgeMemoryManagement, type MemoryManagementEntity } from ".
 import { mergeById, useTaskKnowledgeRefresh, useTaskKnowledgeRuntime, type TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
 
 export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHistory?: PersonalHistoryOwner | null) {
-  const api = useMemo(() => createMemoryApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createMemoryApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const runtime = useTaskKnowledgeRuntime(env, "memory");
   const [facts, setFacts] = useState<MemoryFactView[]>([]), [summary, setSummary] = useState<MemorySummaryView | null>(null);
   const [topics, setTopics] = useState<MemoryTopicView[]>([]), [topicCursor, setTopicCursor] = useState<string | null>(null);

@@ -48,8 +48,8 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     // This mounted owner retains its cache across routes; the host's default gcTime is zero.
     env.queryClient.setQueryDefaults(["production", env.scopeKey, "care"], { gcTime: Infinity });
     env.queryClient.setQueryDefaults(["production", env.scopeKey, "profile"], { gcTime: Infinity });
-    return createCareApi(env.apiBaseUrl);
-  }, [env.apiBaseUrl, env.queryClient, env.scopeKey]);
+    return createCareApi(env.apiBaseUrl, env.owner.fetcher);
+  }, [env.apiBaseUrl, env.owner.fetcher, env.queryClient, env.scopeKey]);
   const editable = env.role === "owner" || env.role === "caregiver";
   const careKey = ["production", env.scopeKey, "care"] as const;
   const profileKey = ["production", env.scopeKey, "profile"] as const;

@@ -15,8 +15,8 @@ const loadedRead = <T,>(scopeKey: string, data: T): MemoryReadProjection<T> => (
 
 /** One read owner for current personal work, history, delivery metadata and the public source catalog. */
 export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
-  const api = useMemo(() => createProductAgentApi(env.apiBaseUrl), [env.apiBaseUrl]);
-  const account = useMemo(() => createAccountApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createProductAgentApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
+  const account = useMemo(() => createAccountApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const runtime = useTaskKnowledgeRuntime(env, "personal-history");
   const [work, setWork] = useState<MemoryReadProjection<WorkPage>>(() => emptyRead(env.scopeKey));
   const [history, setHistory] = useState<MemoryReadProjection<PersonalHistorySearch>>(() => emptyRead(env.scopeKey));

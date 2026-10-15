@@ -1,3 +1,4 @@
+import { nativeRequestContext, requestOriginAllowed } from "./request-auth-transport.ts";
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -78,7 +79,8 @@ export function createFirebaseNodeHandler(options: {
         : method === 'POST' && documentWrite.test(pathname) ? MAX_DOCUMENT_BODY_BYTES : MAX_BODY_BYTES;
       const length = headers.get('content-length');
       if (length !== null && (!/^\d+$/u.test(length) || Number(length) > maximum)) throw new BodyTooLarge();
-      if (method === 'POST' && !webhook && headers.get('origin') !== options.publicOrigin) {
+      if (method === 'POST' && !webhook && !requestOriginAllowed(headers, options.publicOrigin)
+        && !(pathname === '/api/auth/native-session' && nativeRequestContext(headers))) {
         await write(failure('origin_rejected', 403), response); return;
       }
       if (maximum > MAX_BODY_BYTES) {

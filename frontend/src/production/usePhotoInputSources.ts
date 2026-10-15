@@ -34,7 +34,7 @@ export function usePhotoInputSources() {
   const navigate = usePreviewNavigation();
   const env = useDomainEnvironment(), envRef = useRef(env); envRef.current = env;
   const production = useProduction(), productionRef = useRef(production); productionRef.current = production;
-  const api = useMemo(() => createSharedInputApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createSharedInputApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const [state, setState] = useState(() => ({
     inputs: [] as SharedInput[], sources: [] as PublicInputSource[], canCreate: false, load: "loading" as SourcesViewModel["load"], lost: false, resourceUnavailable: false,
     selected: null as SharedInput | null, latest: null as SharedInput | null, busy: false, operation: noOperation(), notice: "",

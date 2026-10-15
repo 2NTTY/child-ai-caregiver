@@ -1,3 +1,4 @@
+import { requestOriginAllowed } from "./request-auth-transport.ts";
 import { handleAdminRequest } from './admin-api.ts';
 import type { FirestoreAdmin } from './firestore-admin.ts';
 import { accountAcknowledgementSchema } from "../src/shared/account-service.ts";
@@ -91,7 +92,7 @@ function uncached(response: Response): Response {
   headers.set("Cache-Control", "private, no-store");
   headers.set("Pragma", "no-cache");
   headers.set("X-Content-Type-Options", "nosniff");
-  headers.set("Vary", headers.has("vary") ? headers.get("vary") + ", Cookie" : "Cookie");
+  headers.set("Vary", headers.has("vary") ? headers.get("vary") + ", Cookie, Authorization" : "Cookie, Authorization");
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 const json = (value: unknown, status = 200) => uncached(Response.json(value, { status }));
@@ -159,10 +160,11 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
       if ((path === "/healthz" || path === "/api/health") && request.method === "GET") {
         return json({ status: "ok", storage: "firestore", stage: "foundation" });
       }
+      if (path.startsWith('/api/admin/') && request.headers.has('authorization')) return errorResponse('forbidden', 403);
       if (path.startsWith('/api/admin/') && options.admin) return uncached(await handleAdminRequest(request, { auth, admin: options.admin, adminUid: options.adminUid ?? null, publicOrigin, readJson }));
       if (path.startsWith("/api/auth/")) return uncached(await auth.handler(request));
       if (options.accountData && (path === '/api/account/export' || path === '/api/account/delete' || path.startsWith('/api/account/deletion/'))) {
-        if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
         return uncached(await handleFirebaseAccountData(request, auth, options.accountData, readJson));
       }
       if (path === "/api/account" && request.method === "GET") {
@@ -170,7 +172,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         return json(await accountStatus(session?.user.id ?? null));
       }
       if (path === "/api/account/acknowledgement" && request.method === "POST") {
-        if (request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        if (!requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError("origin_rejected", 403);
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         if (request.headers.get("x-expected-user-id") !== userId) throw new RequestError("identity_changed", 409);
@@ -181,7 +183,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         return json(await accountStatus(userId));
       }
       if (documents && /^\/api\/children\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/documents(?:\/|$)/iu.test(path)) {
-        if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        if (request.method !== "GET" && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError("origin_rejected", 403);
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
@@ -190,7 +192,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         return uncached(response);
       }
       if (options.growth && /^\/api\/children\/[^/]+\/growth(?:\/|$)/u.test(path)) {
-        if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
@@ -207,7 +209,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         return json(value);
       }
       if (options.concerns && /^\/api\/children\/[^/]+\/concerns(?:\/|$)/u.test(path)) {
-        if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
@@ -216,7 +218,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         return uncached(response);
       }
       if (options.sources && /^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(path)) {
-        if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async () => (await auth.getSession({ headers: request.headers }))?.user.id === userId;
@@ -225,14 +227,14 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         return uncached(response);
       }
       if (photos && /^\/api\/children\/[^/]+\/photos(?:\/|$)/u.test(path)) {
-        if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        if (request.method !== "GET" && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError("origin_rejected", 403);
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
         return uncached(await handleFirebasePhotoRequest(request, userId, photos, isCurrentUser, options.photoAgent));
       }
       if (library && /^\/api\/children\/[^/]+\/library$/u.test(path)) {
-        if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        if (request.method !== "GET" && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError("origin_rejected", 403);
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
@@ -241,7 +243,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         return uncached(response);
       }
       if (online && (path === "/api/children" || path === "/api/notification-preferences" || path.startsWith("/api/online/") || /^\/api\/children\/[^/]+\/tasks(?:\/|$)/u.test(path))) {
-        if (request.method !== "GET" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        if (request.method !== "GET" && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError("origin_rejected", 403);
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         const expected = request.headers.get("x-expected-user-id");
@@ -274,7 +276,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         return uncached(response);
       }
       if (options.product && (path.startsWith('/api/ai/') || /^\/api\/children\/[^/]+\/(?:agent(?:\/|$)|messages\/[^/]+\/reply(?:\/|$))/u.test(path))) {
-        if (request.method !== 'GET' && request.headers.get('origin') !== publicOrigin) throw new RequestError('origin_rejected', 403);
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const expectedUserId = request.headers.get('x-expected-user-id');
@@ -319,7 +321,7 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
       if (options.care && /^\/api\/children\/[^/]+\/(?:records|profile|care)(?:\/|$)/u.test(path)) {
         const readOnly = request.method === "GET" || request.method === "POST" && path.endsWith("/care/search");
         if (!readOnly) throw new RequestError("account_precondition_required", 428);
-        if (request.method === "POST" && request.headers.get("origin") !== publicOrigin) throw new RequestError("origin_rejected", 403);
+        if (request.method === "POST" && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError("origin_rejected", 403);
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         const records = /^\/api\/children\/([0-9a-f-]{36})\/records$/iu.exec(path);

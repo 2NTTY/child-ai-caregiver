@@ -2683,3 +2683,12 @@
 - Scope / Baseline：遠端 master 21e848b（#227），接續本機 STR01 備忘 db56ad0；#214／#215／#216 未合併且仍由協作者處理。先更新 PLAN，再進 S04-W01；不改原 Prompt Pack 或三角色。
 - Result：Android 成品優先，iOS 後接；語音改為 Web／Android 完整共用，跨端接續已提交工作而不搬未發送草稿。保留同一 Server／owner、原生會話安全及固定 EAS／OTA／APK 更新入口；共同包分平台里程碑，避免 iOS 依賴循環。STR01 的未實作、前置及證據獨立保留。
 - Verification / Limits：本包只核文件 diff、連結、錨點與依賴；沒有產品測試、模型、通知、雲端資源或部署。原生 build、簽署、實機與完整語音尚未完成；EAS 帳號及首次程式上傳／費用需於實際範圍就緒後處理。
+
+
+<a id="log-20261015-android-foundation-local"></a>
+### 2026-10-15 — S04-W01 原生身份及共用 transport 本機實作
+
+- Scope / Baseline：master 4f88948（#228），分支 codex/s04-w01-android-foundation；協作者 #214～#216 更新後仍未合併，本次差異與其修改路徑無重疊，不接管。沿既有 Expo／Firebase／Server／owner，不改 UI 設計。
+- Result：原生 token 交換、獨立 ledger hash domain、SecureStore、指定 origin／拒重導 transport；Web Cookie／Origin 及原身分／撤銷規則保留。共同 owner、聊天與各域 client 注入相同 transport，管理 API 不向原生開放。EAS／App ID／runtime 基礎及 archive allowlist 已備妥，原生安全隨機由 Expo Crypto 提供；沒有手機業務主庫。
+- Verification：同一登入／讀回／撤銷情景先驗 auth port，再擴至正式 Node／API 入口通過；最後受影響 31 個型別 roots 為 0 diagnostics。Android bundle 首次通過後，source review 發現原生缺 crypto.randomUUID 及 Web-only event guard，補官方 native 接點後更新 bundle 通過。不做全量或畫面矩陣；無真模型／embedding／通知／部署。[版本與結果](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
+- Limits / Next：Expo 帳號已準備，但 CLI 未登入，EAS archive 檢查在登入要求停止，零上載／雲端建置；不能當 APK 或真機完成。等待本人登入後核 archive、project 及具體建置授權，再部署相容 Server 並做手機首條流程。S04-W01 保持未完成，後續包未開始；既有備份待驗及 STR01 交接不變。

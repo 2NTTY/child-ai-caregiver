@@ -263,3 +263,11 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 沿已固定 Firestore 9.3.1、既有 parser／私人來源服務，沒有新增搜尋框架。原生 [向量](https://firebase.google.com/docs/firestore/vector-search) 先套用版本／chunk 適用篩選；Standard 沒有正文搜尋，故在既有資料模型增公共詞彙桶，沿原權重／RRF 查必要桶及選中正文。不是先讀完整語料到 Node 排名；不索引私人正文。變更與權限仍由本工程 authority 交易核對，原前端 client／HTTP 接點復用。
 
 欄位索引的 Firebase CLI manifest 是簡寫；[REST IndexConfig](https://docs.cloud.google.com/firestore/docs/reference/rest/v1/projects.databases.collectionGroups.fields#IndexConfig) 使用 `Index.fields`。部署腳本須轉換 `order/arrayConfig` 為該欄位的 fields 項，PATCH 只更新 indexConfig、不改 TTL。文件核對不是原生通過證據；本包實測見 WORKLOG 的 F05 專項。
+
+### S04-W01：沿用 Expo／Firebase 的原生身份與更新基礎
+
+2026-10-15 核對：沿 Expo 57.0.24／Firebase JS 13.0.0，不引入另一套 React Native Firebase。新增官方 SDK 57 配套 `expo-crypto` 57.0.3、`expo-secure-store` 57.0.4、`expo-updates` 57.0.23（MIT），EAS CLI 固定 24.14.0；原 LICENSE 及固定來源保存在 THIRD_PARTY_NOTICES／licenses。Expo 的 [Firebase JS 接線](https://docs.expo.dev/guides/using-firebase/)、[SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/) 及 [runtime fingerprint](https://docs.expo.dev/eas-update/runtime-versions/) 滿足現有電郵身份、原生憑據及後續 OTA 接口；無需新身份供應商、WebView 或手機業務主庫。
+
+沿 `expo/fetch` 的原生 ReadableStream，固定版本 Android 實作已核對 `credentials: omit` 關閉 CookieJar、`redirect: error` 不跟隨重導向；自訂薄 transport 只補本產品 origin／身份與遲到回應規則。Firebase [Server session](https://firebase.google.com/docs/auth/admin/manage-cookies) 仍驗 issuer／撤銷／到期，產品另保持逐裝置 ledger；不能只持有 SDK ID token 便略過邀請。必要合成檢查及 Android bundle 與 APK／真機結果分開，後者依 PLAN 門檻交付。
+
+Android 的 React Native／Expo runtime 未提供共用程式需要的 `crypto.randomUUID`；只在原生啟動時以 [Expo Crypto](https://docs.expo.dev/versions/latest/sdk/crypto/) 補安全隨機方法，不改 Web、不使用 Math.random，也不宣稱提供完整 WebCrypto。瀏覽器 changes event 不在原生執行，AppState 接續依 S07-W01。

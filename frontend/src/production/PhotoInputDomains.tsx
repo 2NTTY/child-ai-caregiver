@@ -29,7 +29,7 @@ const photoDraft = (photo: PhotoAttachment): PhotoDraftFields => photo.extractio
 function useProductionPhotos() {
   const env = useDomainEnvironment();
   const envRef = useRef(env); envRef.current = env;
-  const api = useMemo(() => createPhotoApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createPhotoApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const [state, setState] = useState(() => ({
     photos: [] as PhotoAttachment[], canCreate: false, load: "loading" as PhotosViewModel["load"], lost: false, resourceUnavailable: false,
     selected: null as PhotoAttachment | null, latest: null as PhotoAttachment | null,

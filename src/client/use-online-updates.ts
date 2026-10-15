@@ -7,16 +7,16 @@ const seq = /^(0|[1-9][0-9]{0,18})$/u;
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 
 /** Visible-page invalidations only. No writes, local storage, model calls or outbox. */
-export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, online: boolean, refresh: (reason: OnlineRefreshReason) => Promise<void>) {
+export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, online: boolean, refresh: (reason: OnlineRefreshReason) => Promise<void>, fetcher: typeof fetch = fetch) {
   const latestRefresh = useRef(refresh); latestRefresh.current = refresh;
   useEffect(() => {
-    if (!userId || !online || typeof window === "undefined") return;
+    if (!userId || !online || typeof window === "undefined" || typeof document === "undefined") return;
     const base = apiBaseUrl.replace(/\/$/u, ""), api = base.endsWith("/api") ? base : `${base}/api`;
     const cursors = new Map<string, { epoch: string; cursor: string; accessVersion: number | null }>();
     let busy = false, stopped = false;
     const abort = new AbortController();
     async function read(path: string) {
-      const response = await fetch(`${api}${path}`, { credentials: "include", cache: "no-store", signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]),
+      const response = await fetcher(`${api}${path}`, { credentials: "include", cache: "no-store", signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]),
         headers: { Accept: "application/json", "x-expected-user-id": userId! } });
       if (!response.ok) throw new Error("Online status unavailable");
       return response.json() as Promise<unknown>;
@@ -62,5 +62,5 @@ export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, onli
     document.addEventListener("visibilitychange", event);
     event();
     return () => { stopped = true; clearInterval(timer); abort.abort(); window.removeEventListener("focus", event); document.removeEventListener("visibilitychange", event); };
-  }, [apiBaseUrl, userId, online]);
+  }, [apiBaseUrl, userId, online, fetcher]);
 }

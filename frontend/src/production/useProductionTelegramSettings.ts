@@ -11,8 +11,8 @@ type TelegramReview = Omit<ChannelReview, "kind"> & { kind: "begin" | "confirm" 
 type OriginalTelegram = { review: TelegramReview; confirmed: boolean; reviewed: boolean; consent: boolean };
 const candidateKey = (value: TelegramStatus["challenge"]) => value ? JSON.stringify([value.id, value.version, value.candidate]) : null;
 export function useProductionTelegramSettings(env: SettingsEnvironment) {
-  const api = useMemo(() => createTelegramApi(env.apiBaseUrl), [env.apiBaseUrl]);
-  const sessions = useMemo(() => createFamilyApi(env.apiBaseUrl), [env.apiBaseUrl]), requests = useSettingsRequests(env, true);
+  const api = useMemo(() => createTelegramApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
+  const sessions = useMemo(() => createFamilyApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]), requests = useSettingsRequests(env, true);
   const [status, setStatus] = useState<TelegramStatus | null>(null), [readState, setReadState] = useState<TelegramSettingsModel["readState"]>("loading");
   const [review, setReview] = useState<TelegramReview | null>(null), [original, setOriginal] = useState<OriginalTelegram | null>(null), [notice, setNotice] = useState("");
   const [conflict, setConflict] = useState(false), [savedReference, setSavedReference] = useState<string | null>(null);

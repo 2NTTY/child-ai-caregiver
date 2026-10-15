@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "P2-F02",
-  "recordedOn": "2026-10-11",
+  "workPackage": "S04-W01",
+  "recordedOn": "2026-10-15",
   "scope": "Original licenses for selected direct dependencies and explicitly inventoried transitive packages; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "8bce7d7052c42f8cf5c5b420ad297301ba2f91101382373108b86985bb981094"
+    "sha256": "46d3725e8c611104b17731e16560c258f18b83ad6027d1d7ddb67aecfa4d225d"
   },
   "packages": [
     {
@@ -968,6 +968,66 @@
           "path": "licenses/google-cloud-tasks/LICENSE",
           "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
           "source": "https://raw.githubusercontent.com/googleapis/google-cloud-node/27c2f6564caeb554a02dedb9f62e850cdfbb4fd5/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-secure-store",
+      "version": "57.0.4",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-secure-store"
+      },
+      "tarball": "https://registry.npmjs.org/expo-secure-store/-/expo-secure-store-57.0.4.tgz",
+      "integrity": "sha512-7zBA1RThURTXdP4w65kBzZNbcSsfArqVd+p+ETAnPRWXO8J296Qd0YaCVyRpJ0HSwlCnGdvOnqO+NgSreHsOhA==",
+      "files": [
+        {
+          "path": "licenses/expo-secure-store/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-updates",
+      "version": "57.0.23",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-updates"
+      },
+      "tarball": "https://registry.npmjs.org/expo-updates/-/expo-updates-57.0.23.tgz",
+      "integrity": "sha512-try1ndXkEH1qpMqs2Nf1fXxN/0GShZad9dWp8pbQpXAngyRk8k/MxJ5gJuVabkPJ2vEW3IgNvTkq54aOELkpZA==",
+      "files": [
+        {
+          "path": "licenses/expo-updates/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "https://github.com/expo/expo/blob/7687b07947a5c866adeb11abbceae72403ccb188/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-crypto",
+      "version": "57.0.3",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-crypto"
+      },
+      "tarball": "https://registry.npmjs.org/expo-crypto/-/expo-crypto-57.0.3.tgz",
+      "integrity": "sha512-SAWqEfF37nc8ot7bXsVmu9AFYwQdC2kGvH/eNAHiR3bmlcf1Vv8wu9AnGKT+a90r3T8YfwMpZP4QAYlo4vCn9w==",
+      "files": [
+        {
+          "path": "licenses/expo-crypto/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "LICENSE"
         }
       ]
     }

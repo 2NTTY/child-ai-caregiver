@@ -1,0 +1,82 @@
+{
+  "workPackage": "S04-W01",
+  "status": "implemented-awaiting-cloud-build-and-device",
+  "baseline": "4f88948cf943585954efbe32ef93e0df0c53f3c8",
+  "recordedAt": "2026-10-15T11:20:23.441524+00:00",
+  "environment": {
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "expo": "57.0.24",
+    "easCli": "24.14.0",
+    "dependencyIsolation": "separate local install; shared node_modules untouched"
+  },
+  "checks": [
+    {
+      "name": "Native session exchange, restore and revoke through formal API and Node transport",
+      "result": "passed",
+      "test": "tests/firebase-auth.test.ts: Android session transport reuses admission and revocation without accepting browser cookies or weakening Web origin",
+      "testsRun": 1,
+      "fixture": "synthetic Auth and Firestore session ledger; no cloud",
+      "logSha256": "62e3d83a9ea714bffd7114ecdf57d2750b5bf62be75796c0604d3961c1961cb1",
+      "note": "Same representative scenario first checked the auth port, then formal HTTP composition; not two independent feature acceptances."
+    },
+    {
+      "name": "Affected TypeScript roots",
+      "result": "passed",
+      "roots": 31,
+      "diagnostics": 0,
+      "logSha256": "c70b8ec86db6bdbea9a8868b609c0d4d74ab974a28501fffeaa8789dc4089f42",
+      "note": "Initial 29-root check preceded native bootstrap and formal composition changes; final check is the current source set."
+    },
+    {
+      "name": "Android Hermes export",
+      "result": "passed",
+      "file": "index-84a6295311ff2076c6348bbb510d34cb.hbc",
+      "bytes": 8342395,
+      "sha256": "de13b67b03c7a33297c063c22cb7ba84cbfb97dc9945373b715602c10a43aa0c",
+      "logSha256": "3d42957675ed6ff9e0a04a6dbc0a4f019302076424ab0e68e25c4cf699cf4bdd",
+      "note": "Initial successful bundle was superseded after source review added native secure random and browser event guards. No APK or device claim."
+    },
+    {
+      "name": "EAS archive inspection",
+      "result": "blocked",
+      "reason": "Expo CLI not logged in; stopped before archive/upload/build",
+      "logSha256": "3d9e3eae949a8ae9069ef253308109605035d88bfab7ec052e3a9b9200ec4bdb"
+    }
+  ],
+  "sourceSha256": {
+    "server/firebase-auth.ts": "908f51d890857d60efbba2a606d5f4ea33a99d871d87ac1e8af0a16f9058a48a",
+    "server/firebase-http.ts": "da9284cb409ababcb8b9f30719bc3679aee4bfaee4b3172404493880450e82dd",
+    "server/firebase-app.ts": "15bb38c817b5600ea55d6573310d77c1d2b9f47fbb3d16c9a42a28a808061c5f",
+    "server/request-auth-transport.ts": "00c8ef68c68debc7f835fc1866c7b341f3b616cbd944e969c4d687a734189fef",
+    "src/client/native-session-transport.ts": "59e31d39f24c426340812159f474d41b53796155e66cb87301b769cf8da29e08",
+    "src/client/firebase-auth-api.ts": "147919cbddc15ff90e0ae0d34bc299baa293f1055e0aad3c9bcad2a250abf5df",
+    "frontend/index.js": "5fcc4cc9b7bd1fc863fcb3b3e44175612683b8d2a03012de65a163812af08a3c",
+    "frontend/src/platform/runtime.native.ts": "0174fab081d5132d5c2fa3a7496007476386c3fcda3e845a0d343cc5c522b058",
+    "frontend/src/production/production-transport.native.ts": "fbe535bb37abaec366aa7bb9e7aa555a2a62bf4d0c240790cabeab125f2e31bf",
+    "frontend/src/production/ProductionOwner.ts": "8beb131e2812cc4e3dabcc3885ee853a5c70c8989cc5665bc9f0b671c0924d4d",
+    "tests/firebase-auth.test.ts": "141cc3e03eb8cceacbc25acba7ab8346e7ea6cf717e4ef553d80a5d0186c124b",
+    "frontend/app.json": "a81f272b8699ebeb46b2d0e342be78b06df65508e0fdec282d4f201acfe7cf4e",
+    "frontend/app.config.js": "01a9783f761223f9fe682e71f8762d10e3f2616e9b1b3e284855a41f9b2e3cae",
+    "frontend/eas.json": "bb25d4d31ab04a0c9c9bea4d6edfa0683b66d322d4faa617bdeca26f7722e649",
+    "package-lock.json": "46d3725e8c611104b17731e16560c258f18b83ad6027d1d7ddb67aecfa4d225d"
+  },
+  "externalCalls": {
+    "model": 0,
+    "embedding": 0,
+    "notification": 0,
+    "cloudBuild": 0,
+    "deployment": 0
+  },
+  "remaining": [
+    "Expo login and linked project; inspect actual archive before approving private source upload",
+    "Cloud preview APK and signing",
+    "Compatible Server deployment and one real Android login/child/chat/save/readback",
+    "S05/S07 and later packages remain separate; no iOS or full Android acceptance"
+  ],
+  "collaboratorHeads": {
+    "214": "ba3b32bb41944957c8a445db161b9134befa6e15",
+    "215": "cb021c4b218dd57579869ff5a3598d8b38cff1ac",
+    "216": "ca3314616178b72875cfd7013295a7f9ace3437d"
+  }
+}
