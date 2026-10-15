@@ -112,6 +112,8 @@ export function createProductAgentTools(options: {
   knowledge: Retriever; authorize: () => Promise<boolean>; visibility?: "private" | "family";
   reviewedGrowthPresentation?: boolean;
   background?: boolean;
+  /** Authenticated current user message; required for compose review binding. */
+  trustedUserMessage?: string;
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
   const authorize = run.authorize ?? options.authorize;
@@ -323,7 +325,10 @@ export function createProductAgentTools(options: {
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
   if(options.documents && options.includeDocuments && options.visibility!=="family") {
     tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,store,run,permitted));
-    tools.splice(tools.length-1,0,...createDataComposeTools({ documents: options.documents, agent: store, run, authorize: permitted }));
+    tools.splice(tools.length-1,0,...createDataComposeTools({
+      documents: options.documents, agent: store, run, authorize: permitted,
+      trustedUserMessage: options.trustedUserMessage ?? "",
+    }));
   }
   if(options.concerns&&options.includeConcerns!==false)tools.splice(tools.length-1,0,...createAgentConcernTools(options.concerns,store,run,permitted,options.visibility==="family"));
   if(options.summary)tools.splice(tools.length-1,0,{

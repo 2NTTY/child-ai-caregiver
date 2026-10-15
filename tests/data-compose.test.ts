@@ -145,7 +145,7 @@ test("compose tool rejects self-approval and blocks formal save without review p
   };
   const tools = createDataComposeTools({
     documents: documents as never, agent: agent as never, run: run as never,
-    authorize: async () => true, scriptedDraft: current, reviewModel: "gemini-3.1-flash-lite",
+    authorize: async () => true, trustedUserMessage: "請只改水壺那一項", scriptedDraft: current, reviewModel: "gemini-3.1-flash-lite",
   });
   const tool = tools.find(item => item.name === "compose_family_data")!;
   const smuggled = await tool.execute({
@@ -197,7 +197,7 @@ test("compose tool prepares confirmation after scripted draft and passing review
   };
   const tools = createDataComposeTools({
     documents: documents as never, agent: agent as never, run: run as never,
-    authorize: async () => true, scriptedDraft: current, reviewModel: "gemini-3.1-flash-lite",
+    authorize: async () => true, trustedUserMessage: "請幫我把水壺改成溫水壺", scriptedDraft: current, reviewModel: "gemini-3.1-flash-lite",
   });
   const result = await tools[0]!.execute({
     documentId, expectedVersion: 3, authorityVersion: "epoch:7", intent: "只改水壺那一項",
@@ -307,12 +307,13 @@ test("kettle-to-food rewrite fails review and cannot formalize", async () => {
   assert.equal(rejected.status, "rejected");
 });
 
-test("shared budget of 4 is enough for compose review path and is not raised", async () => {
+test("shared budget of 4 covers real compose+review after two outer model turns", async () => {
   assert.equal(AGENT_LIMITS.modelCalls, 4);
   const current = draft();
   const previous = snapshot();
-  let remaining = 4;
-  let reviewCalls = 0;
+  // Simulate load_capabilities + compose_family_data decision already spent.
+  let remaining = 2;
+  let modelCalls = 0;
   const documents = {
     describe: async () => ({
       authorityVersion: "epoch:7",
@@ -335,10 +336,15 @@ test("shared budget of 4 is enough for compose review path and is not raised", a
       toolResponseCharacters: 8000,
     },
     authorize: async () => true,
-    completeText: async () => {
-      assert.ok(remaining >= 1);
+    completeText: async (input: { attemptKey?: string; user?: string }) => {
+      assert.ok(remaining >= 1, "must stay within shared budget of 4");
       remaining -= 1;
-      reviewCalls += 1;
+      modelCalls += 1;
+      // Real path: first spend is compose draft, second is independent review — not scriptedDraft.
+      if (modelCalls === 1) {
+        assert.match(String(input.attemptKey ?? input.user ?? ""), /data-compose/);
+        return JSON.stringify(current);
+      }
       return JSON.stringify({
         draftHash: dataComposeDraftHash(current), decision: "pass", issues: [],
       });
@@ -346,15 +352,17 @@ test("shared budget of 4 is enough for compose review path and is not raised", a
   };
   const tools = createDataComposeTools({
     documents: documents as never, agent: agent as never, run: run as never,
-    authorize: async () => true, scriptedDraft: current, reviewModel: "gemini-3.1-flash-lite",
+    authorize: async () => true, trustedUserMessage: "請只改水壺",
+    // Intentionally omit scriptedDraft — classmate F1 rejects scriptedDraft as budget proof.
+    reviewModel: "gemini-3.1-flash-lite",
   });
   const result = await tools[0]!.execute({
     documentId, expectedVersion: 3, authorityVersion: "epoch:7", intent: "只改水壺",
     sourceQuote: "請只改水壺",
   }, { scope, runId: run.runId, callId: "budget-call", signal: new AbortController().signal });
-  assert.equal(result.status, "succeeded");
-  assert.equal(reviewCalls, 1);
-  assert.equal(remaining, 3);
+  assert.equal(result.status, "succeeded", JSON.stringify(result));
+  assert.equal(modelCalls, 2);
+  assert.equal(remaining, 0);
   assert.equal(AGENT_LIMITS.modelCalls, 4);
 });
 
@@ -392,7 +400,7 @@ test("nullable document snapshot is rejected without narrowing crash", async () 
       propose: async () => null,
       requestConfirmation: async () => {},
     } as never, run: run as never,
-    authorize: async () => true, scriptedDraft: current,
+    authorize: async () => true, trustedUserMessage: "請只改水壺", scriptedDraft: current,
   });
   const result = await tools[0]!.execute({
     documentId, expectedVersion: 3, authorityVersion: "epoch:7", intent: "只改水壺",
@@ -400,4 +408,102 @@ test("nullable document snapshot is rejected without narrowing crash", async () 
   }, { scope, runId: run.runId, callId: "null-snap", signal: new AbortController().signal });
   assert.equal(result.status, "rejected");
   assert.equal(result.data?.code, "not_found");
+});
+
+test("classmate F2: reviewer binds authenticated user message, not model intent args", async () => {
+  const previous = snapshot();
+  const wrongRemove = draft({
+    edits: [{ op: "remove_item", sectionId: "checklist", itemId: "snack" }],
+    gaps: [], requiredConfirmations: [],
+  });
+  let reviewPayload = "";
+  let wrote = 0;
+  const run = {
+    scope, runId: "11111111-1111-4111-8111-111111111111",
+    budget: { remainingModelCalls: 2, toolResponseCharacters: 8000 },
+    authorize: async () => true,
+    completeText: async (input: { user: string }) => {
+      reviewPayload = input.user;
+      // Reviewer sees trusted user wording「只刪水壺」and must not pass a snack delete.
+      assert.match(reviewPayload, /只刪水壺/);
+      assert.match(reviewPayload, /generatorIntentSummary/);
+      return JSON.stringify({
+        draftHash: dataComposeDraftHash(wrongRemove),
+        decision: "revise",
+        issues: [{ editIndex: 0, reason: "user asked to delete kettle only", support: "snack remove" }],
+      });
+    },
+  };
+  const documents = {
+    describe: async () => ({
+      authorityVersion: "epoch:7",
+      item: { id: documentId, version: 3, current: previous },
+    }),
+  };
+  const tools = createDataComposeTools({
+    documents: documents as never,
+    agent: {
+      writeDocument: async () => { wrote++; return { id: documentId }; },
+      propose: async () => { throw new Error("must not propose wrong structural delete"); },
+      requestConfirmation: async () => {},
+    } as never,
+    run: run as never,
+    authorize: async () => true,
+    trustedUserMessage: "只刪水壺",
+    scriptedDraft: wrongRemove,
+    reviewModel: "gemini-3.1-flash-lite",
+  });
+  const result = await tools[0]!.execute({
+    documentId, expectedVersion: 3, authorityVersion: "epoch:7",
+    // Parent model fills the wrong intent summary.
+    intent: "只刪小食",
+    sourceQuote: "只刪水壺",
+  }, { scope, runId: run.runId, callId: "kettle-vs-snack", signal: new AbortController().signal });
+  assert.equal(result.status, "rejected");
+  assert.equal(result.data?.code, "compose_review_required");
+  assert.equal(wrote, 0);
+  assert.match(reviewPayload, /"trustedIntent":"只刪水壺"/);
+  assert.match(reviewPayload, /"generatorIntentSummary":"只刪小食"/);
+});
+
+test("classmate F3: accept freshness uses epoch dataVersion, not mechanical exact string", () => {
+  const current = draft();
+  const review = passRecord(current);
+  // Unrelated write bumped changeSeq; epoch prefix still matches.
+  assert.equal(composeReviewStillAllowsProposal({
+    review, documentId: current.documentId, expectedVersion: current.expectedVersion,
+    authorityVersion: current.authorityVersion, edits: current.edits,
+    scope: { ...scope, dataVersion: "epoch:99" },
+  }), true);
+  // Different storage epoch is not fresh.
+  assert.equal(composeReviewStillAllowsProposal({
+    review, documentId: current.documentId, expectedVersion: current.expectedVersion,
+    authorityVersion: current.authorityVersion, edits: current.edits,
+    scope: { ...scope, dataVersion: "other:1" },
+  }), false);
+  // Authorization change is not fresh.
+  assert.equal(composeReviewStillAllowsProposal({
+    review, documentId: current.documentId, expectedVersion: current.expectedVersion,
+    authorityVersion: current.authorityVersion, edits: current.edits,
+    scope: { ...scope, authorizationVersion: "2" },
+  }), false);
+});
+
+test("classmate F4: fourteen neighbour items in one section set truncated from omitted count", () => {
+  const items = Array.from({ length: 14 }, (_, index) => ({
+    id: `item-${index}`, text: `項目${index}`, sourceIds: [] as string[], checked: false,
+  }));
+  const previous = snapshot({
+    sections: [{ id: "checklist", title: "清單", kind: "checklist", domain: null, items }],
+  });
+  // Edit none of the neighbour candidates — remove a fictional path via upsert on first item.
+  const current = draft({
+    edits: [{ op: "upsert_item", sectionId: "checklist", itemId: "item-0", text: "已改" }],
+  });
+  const evidence = buildDataComposeReviewEvidence({
+    draft: current, snapshot: previous, trustedIntent: "只改第一項",
+  });
+  assert.equal(evidence.neighbours.length, 12);
+  assert.equal(evidence.truncated, true);
+  assert.equal(evidence.neighbours.some(item => item.itemId === "item-13"), false);
 });
