@@ -2838,3 +2838,11 @@
 
 - #232 由 C 單作者提交、推送及合併；開發提交 unsigned。S04 由 B 整合至 `8d3fc29`，保留原生登入及直接錯誤文案。2026-10-15 17:13:54 UTC 部署原 VM API／worker `reply-8d3fc29`，兩容器及公開 health 通過；Web／Android、資料、配額、期限不變。
 - 7,382 bytes、兩個 source 檔 hash／既有映像身份核對後建小型層；保留舊映像及受保護設定回退。沒有真模型或裝置重試，不修改先前失敗結果。證據：[EV](artifacts/verification/AGENT_DISCONNECTED_RESULT_20261016.json)。
+
+
+## LOG-20261016-ADMIN-AGENT-RUN-LIMITS
+
+- 按使用者要求把單輪限額總控交回管理員：同一 policy 提供生成、工具、查詢 embedding 及秒數，API／worker 固定同一運行快照；合法範圍共用，保留舊 policy／命令指紋及原收據，沒有提高實際限額或清零用量。
+- 管理頁新增工具／期限表單及生效說明；縮短期限不延長原 claim。每步剩餘預算提示沿既有 runtime，不新增模型輪次。
+- 原有管理接線一條情景通過（24 次合成 HTTP），正式 HTTP／ADK scripted 回饋一項通過；8 個 Server/shared 型別入口與管理頁型別零診斷，一次 Web 建置成功。驗證準備中發現舊 auth 替身缺少完整介面及 checker 引用不存在的生成檔，已局部修正；無真模型、通知或全量測試。
+- 待合併及原站相容部署。Android 首條聊天及鍵盤仍待真人／真機；使用者離開期間不阻塞其他獨立工作。完成 Android 後再接本人 key／自選模型／限額，再提供同一正式 Agent 的本地隔離測試入口。證據：[EV](artifacts/verification/ADMIN_AGENT_RUN_LIMITS_20261016.json)。

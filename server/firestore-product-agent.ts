@@ -62,7 +62,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
       let instance: ReturnType<typeof createAgentRuntime>, authorize: () => Promise<boolean>;
       try {
         const selected = await routing.resolve(input.scope.userId, input.trigger.kind);
-        const limits = input.recipeId === 'memory-refresh' ? { modelCalls: Math.min(1, selected.runLimits.modelCalls), queryEmbeddings: selected.runLimits.queryEmbeddings } : selected.runLimits;
+        const limits = input.recipeId === 'memory-refresh' ? { ...selected.runLimits, modelCalls: Math.min(1, selected.runLimits.modelCalls) } : selected.runLimits;
         const provider = selected.billingSource === 'platform' ? options.platformProvider ?? selected.provider : selected.provider;
         // Selection is immutable within this root. Changing settings invalidates its authorization.
         const durable = claimedRunAssembly(selected.config, { nativeSessionService, rootBudget, dailyUsage: selected.dailyUsage,

@@ -145,7 +145,7 @@ test('invalid attempt/limits/reference is rejected without writes, including mal
     { ...model(), key: '界'.repeat(86) }, { ...model(), key: '\ud800' }, { ...model(), now: 1 }]) {
     await assert.rejects(f.service.reserve(c, attempt as BudgetAttempt), code('invalid_attempt'));
   }
-  for (const limits of [{ modelCalls: 13, toolCalls: 8, queryEmbeddings: 6 }, { modelCalls: 4, toolCalls: 9, queryEmbeddings: 2 },
+  for (const limits of [{ modelCalls: 13, toolCalls: 8, queryEmbeddings: 6 }, { modelCalls: 4, toolCalls: 17, queryEmbeddings: 2 },
     { modelCalls: 4, toolCalls: 8, queryEmbeddings: 7 }, { modelCalls: 0, toolCalls: 8, queryEmbeddings: 2 }]) {
     await assert.rejects(f.service.open(context({ limits })), code('invalid_context'));
   }
@@ -171,7 +171,7 @@ test('encrypted records bind project/namespace/root, expose no account metadata 
   await assert.rejects(new FirestoreRootBudget({ ...f.options, namespace: 'other_namespace' }).read(c), code('ciphertext_rejected'));
 });
 
-test('maximum 26 admitted entries and encrypted UTF-8 document bound fail closed without partial writes', async () => {
+test('legacy 26 admitted entries and encrypted UTF-8 document bound fail closed without partial writes', async () => {
   const f = fixture(), c = context({ limits: { modelCalls: 12, toolCalls: 8, queryEmbeddings: 6 } }); await f.service.open(c);
   for (const [kind, total] of [['model', 12], ['tool_batch', 8], ['embedding', 6]] as const) {
     for (let i = 0; i < total; i++) await f.service.reserve(c, { key: `${kind}-${i}`, fingerprint: digest(`${kind}-${i}`), kind, units: 1 });

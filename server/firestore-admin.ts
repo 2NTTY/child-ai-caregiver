@@ -33,8 +33,8 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
     }, { readOnly: true });
   }
   return { readPolicy,
-    async overview() { return { policy: await readPolicy(), serverEnabled: config.enabled, platformConfigured: !!config.project,
-      toolCalls: AGENT_LIMITS.toolCalls, deadlineMs: AGENT_LIMITS.deadlineMs,
+    async overview() { const policy = await readPolicy(); return { policy, serverEnabled: config.enabled, platformConfigured: !!config.project,
+      toolCalls: policy.maxToolCalls, deadlineMs: policy.maxRunSeconds * 1000,
       outputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens), inputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default }; },
     receipt,
     async submit(actorId: string, raw: unknown): Promise<AdminReceipt> {
@@ -49,7 +49,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
         if (command.kind === 'policy') {
           const current = await readPolicyIn(tx);
           if (current.version !== command.expectedVersion) domainReject('version_conflict');
-          before = current; result = domainParse(platformPolicySchema, { ...command.values, version: current.version + 1, updatedAt: at });
+          before = current; result = domainParse(platformPolicySchema, { ...current, ...command.values, version: current.version + 1, updatedAt: at });
           tx.set(policyRef, data.seal('platform-policy', 'current', scope, platformPolicySchema, result));
         } else {
           ({ before, result } = await authority.adminInvitationIn(tx, command));

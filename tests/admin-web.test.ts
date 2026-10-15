@@ -7,6 +7,10 @@ import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreAdmin } from '../server/firestore-admin.ts';
 import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
 import { createFirestoreModelRouting } from '../server/firestore-model-routing.ts';
+import { AgentBudget, AgentStopped } from '../server/agent-budget.ts';
+import { FirestoreRootBudget } from '../server/firestore-root-budget.ts';
+import { claimedRunAssembly } from '../server/agent-run-assembly.ts';
+import { adminCommandSchema, platformPolicySchema } from '../src/shared/admin.ts';
 import { readAiConfig } from '../server/ai-config.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { FirestoreAiUsage } from '../server/firestore-ai-usage.ts';
@@ -14,6 +18,7 @@ import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.t
 import { AdminOwner } from '../frontend/src/production/AdminOwner.ts';
 import { readAdminUid } from '../server/admin-api.ts';
 import type { FirebaseAuthPort } from '../server/firebase-auth.ts';
+import type { ServerAuthSession, ServerAuthSessionWithHeaders } from '../server/auth-port.ts';
 import type { AdminCommand } from '../src/shared/admin.ts';
 
 test('web admin uses production HTTP, invitation authority, shared policy and immutable usage with original-operation recovery', async () => {
@@ -29,8 +34,14 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   const admin = createFirestoreAdmin(options, config);
   let actor: string | null = 'admin', recent = true, expireAfterCommit = false, sessionReads = 0;
   const session = () => actor ? { user: { id: actor } } : null;
-  const auth = { getSession: async () => expireAfterCommit && ++sessionReads === 2 ? null : session(), handler: async () => new Response(null, { status: 404 }),
-    assertRecentReauthentication: async () => { if (!recent) { const { FirebaseAuthError } = await import('../server/firebase-auth.ts'); throw new FirebaseAuthError(401, 'recent_reauthentication_required'); } return session()!; } } as FirebaseAuthPort;
+  async function getSession(options: { headers: Headers; returnHeaders?: false }): Promise<ServerAuthSession | null>;
+  async function getSession(options: { headers: Headers; returnHeaders: true }): Promise<ServerAuthSessionWithHeaders>;
+  async function getSession(options: { headers: Headers; returnHeaders?: boolean }) {
+    const response = expireAfterCommit && ++sessionReads === 2 ? null : session();
+    return options.returnHeaders ? { response, headers: new Headers() } : response;
+  }
+  const auth: FirebaseAuthPort = { fromNodeHeaders: () => new Headers(), getSession, handler: async () => new Response(null, { status: 404 }),
+    assertRecentReauthentication: async () => { if (!recent) { const { FirebaseAuthError } = await import('../server/firebase-auth.ts'); throw new FirebaseAuthError(401, 'recent_reauthentication_required'); } return session()!; } };
   const handler = createFirebaseRequestHandler({ authority, auth, publicOrigin: origin, mailConfigured: true, admin, adminUid: 'admin' });
   let requests = 0;
   async function http(path: string, body?: unknown, who = 'admin', suppliedOrigin = origin) {
@@ -61,20 +72,49 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   const apiRouting = createFirestoreModelRouting(options, config), workerRouting = createFirestoreModelRouting(options, config);
   const original = await apiRouting.resolve('parent', 'interactive'); assert.equal(original.config.dailyUserAttempts, 12); assert.equal(original.runLimits.modelCalls, 8); assert.equal(original.runLimits.queryEmbeddings, 4);
   const baseline = (await admin.overview()).policy, { version, updatedAt, ...values } = baseline;
-  const change: AdminCommand = { kind: 'policy', opId: randomUUID(), expectedVersion: 0, values: { ...values, maxModelCalls: 5, dailyUserAttempts: 13 } };
+  const change: AdminCommand = { kind: 'policy', opId: randomUUID(), expectedVersion: 0, values: { ...values, maxModelCalls: 5, maxToolCalls: 9, maxRunSeconds: 45, dailyUserAttempts: 13 } };
   f.loseReply(); r = await http('operations', change); assert.equal(r.status, 503);
   const saved = await (await http('operations/' + change.opId)).json(); assert.equal(saved.receipt.result.version, 1);
   assert.equal((await (await http('operations', change)).json()).result.version, 1);
   assert.equal((await http('operations', { ...change, opId: randomUUID() })).status, 409);
   const newer = await apiRouting.resolve('parent', 'interactive'), worker = await workerRouting.resolve('parent', 'worker');
   assert.equal(newer.config.dailyUserAttempts, 13); assert.deepEqual(worker.runLimits, newer.runLimits); assert.equal(original.config.dailyUserAttempts, 12);
+  assert.equal(original.runLimits.toolCalls,16);assert.equal(original.runLimits.deadlineMs,90000);
+  assert.equal(newer.runLimits.toolCalls,9);assert.equal(newer.runLimits.deadlineMs,45000);
+  assert.equal((await admin.overview()).toolCalls,9);assert.equal((await admin.overview()).deadlineMs,45000);
+  const budget = new AgentBudget();
+  try {
+    budget.configurePersonal(newer.runLimits);
+    assert.ok(budget.deadlineAtMs <= Date.now()+45000);
+    const scope={userId:'parent',childId:randomUUID(),workspaceId:randomUUID(),authorizationVersion:'1',dataVersion:'synthetic-epoch:1'};
+    const runId=randomUUID(),reference=randomUUID(),expiry=Date.now()+90000;
+    const bindingInput={runId,scope,trigger:{kind:'interactive' as const,reference},recipeId:'product-interactive',deadlineAtMs:expiry,
+      claimedRun:{runId,scope,created:true,sourceMessageId:reference,state:'running' as const,expiresAt:new Date(expiry).toISOString(),
+        storageEpoch:'synthetic-epoch',trigger:{kind:'interactive' as const,reference},recipeId:'product-interactive',purpose:'chat' as const}};
+    const root=new FirestoreRootBudget({...options,namespace:options.namespace+'_root_budget'});
+    const assembly=claimedRunAssembly(newer.config,{nativeSessionService:{} as any,rootBudget:root,dailyUsage:newer.dailyUsage,
+      profile:{config:newer.config,billingSource:'platform',billingVersion:'v1',workflowVersion:'v1',promptPackVersion:'0.1.1',
+        settingsVersion:newer.settingsVersion,runLimits:newer.runLimits}},undefined);
+    const bound=assembly.bindDurableRun(bindingInput,'0.1.1',budget.limits,budget.deadlineAtMs);
+    assert.equal(bound.context.binding.deadlineAtMs,budget.deadlineAtMs);
+    assert.throws(()=>assembly.bindDurableRun(bindingInput,'0.1.1',budget.limits,expiry+1));
+    await budget.initializeDurable(bound);
+    await budget.admit({key:'tool_batch:one',fingerprint:'c'.repeat(64),kind:'tool_batch',units:9});
+    await assert.rejects(budget.admit({key:'tool_batch:overflow',fingerprint:'d'.repeat(64),kind:'tool_batch',units:1}),
+      (error:unknown)=>error instanceof AgentStopped && error.reason==='tool_limit');
+    assert.equal((await root.read(bound.context)).used.toolCalls,9);
+  } finally { budget.close(); }
   const usage = new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'platform' });
   const attempt = { rootRunId: 'admin-synthetic-run', attemptKey: 'model:1', bindingFingerprint: 'a'.repeat(64), requestFingerprint: 'b'.repeat(64),
     userId: 'parent', childId: 'synthetic-child', model: config.model, deadlineAtMs: Date.now() + 90000, userLimit: 13, globalLimit: 20 };
   assert.equal((await usage.reserve(attempt)).decision, 'execute');
   await usage.record(attempt, { outcome: 'succeeded', inputTokens: 10, outputTokens: 2, cachedTokens: 0, durationMs: 5 });
-  const pause: AdminCommand = { ...change, opId: randomUUID(), expectedVersion: 1, values: { ...change.values, enabled: false } };
+  const {maxToolCalls: omittedTools,maxRunSeconds: omittedSeconds,...legacyValues}=change.values;
+  const pause: AdminCommand = { ...change, opId: randomUUID(), expectedVersion: 1, values: { ...legacyValues, enabled: false } };
+  assert.ok(!('maxToolCalls' in (adminCommandSchema.parse(pause) as typeof pause).values),'old command fingerprint shape stays unchanged');
+  assert.equal(platformPolicySchema.parse({...legacyValues,version:0,updatedAt:null}).maxToolCalls,16);
   assert.equal((await http('operations', pause)).status, 200); assert.equal(await newer.authorize(), false);
+  assert.equal((await admin.readPolicy()).maxToolCalls,9);assert.equal((await admin.readPolicy()).maxRunSeconds,45);
   const totals = await (await http('usage')).json(); assert.equal(totals.platform.attempts, 1); assert.equal(totals.platform.inputTokens, 10); assert.equal(totals.personal.attempts, 0);
   assert.equal((await http('usage?day=2026-02-30')).status, 400);
   const codec = createFirestoreRestoreCodec(options);
