@@ -1027,7 +1027,7 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 - 前置：P2-R04、S06-W05；文件 #228 合併後開工基線 `4f88948`，不依賴 STR01／三角色／iOS。
 - 交付：正式 App ID／API base、EAS Build／Update 基礎；共同 transport、Firebase 原生會話交換／SecureStore，正式 owner 的身份／資料接線。APK 登入、孩子、首條聊天及保存讀回；保留 Web Cookie，不能以假 Origin 取得原生權限。
 - 已驗：同一合成原生交換／重開／撤銷情景經正式 Node／API；受影響型別及 Android Hermes bundle 通過。未呼叫真模型、通知或雲端 build，[證據](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
-- 下一步／gate：Expo `2ntty/yuyoufang` 已連結，Android Auth 專用公開設定已保存於 preview；Web key 限制保持。實際 archive 的目錄排除缺陷已修正並核對 609 檔／約 25.1 MB，首次免費 build 因本機 junction／Windows 指紋路徑差異失敗，無 APK；已改實體依賴目錄及固定版本路徑正規化，本機指紋與該次雲端一致。使用者已准同類必要補驗直接執行；接下來只補一次免費 APK，再按已批准範圍部署 c6cf75d Server 及一部手機首條流程。不以 bundle 當 APK，不開依賴包或重跑大量預覽測試。
+- 下一步／gate：Expo `2ntty/yuyoufang` 已連結，Android Auth 專用公開設定已保存於 preview；Web key 限制保持。實際 archive 的目錄排除缺陷已修正並核對 609 檔／約 25.1 MB，首次免費 build 因本機 junction／Windows 指紋路徑差異失敗，無 APK；已改實體依賴目錄及固定版本路徑正規化，本機指紋與該次雲端一致。使用者已准同類必要補驗直接執行；補建置已過指紋，於 JavaScript 打包發現 archive 漏掉既有 src/config；補入後實際封包的本機 Android bundle 一次通過。自動批准審查要求第三次私有程式上傳／雲端 build 的明確批准，目前零新增上傳／建置；APK 成功後才執行已批准 c6cf75d Server 部署及一部手機首條流程。不以 bundle 當 APK，不開依賴包或重跑大量預覽測試。
 
 <a id="s05-w03"></a>
 #### S05-W03 原生憑據、生命週期與清理

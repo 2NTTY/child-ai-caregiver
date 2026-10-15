@@ -108,6 +108,28 @@
       "cloudLogSha256": "aecf79f2e427c784b9a80ffe543cc6b5bdeda70e64c072ce1c5d2619e81d11ea",
       "localRepairSha256": "721a9d3ef71dc8248b6927045d05864b9e07a2883bd7c49e5e56166d0c6800bb",
       "correctiveBuild": "User authorized similar minimal corrective acceptance without further questions; one free retry remains to be executed"
+    },
+    {
+      "name": "Corrected fingerprint cloud build and exact archive bundle",
+      "result": "second-build-failed-archive-fix-verified",
+      "buildId": "89b5bfd2-2da4-4b5d-af46-fc284eb302df",
+      "commit": "24080e3974c456fdc6dfc769872fd9a5f01fb1ba",
+      "fingerprintPhase": "passed",
+      "failedPhase": "EAGER_BUNDLE",
+      "cause": "EAS allowlist omitted src/config/api-base-url.ts used by production owner and API clients",
+      "repair": "Include existing public src/config directory; no product code change",
+      "archive": {
+        "files": 612,
+        "bytes": 25132148,
+        "manifestSha256": "2d4dc8ef3f4b54399a717edbd106f661184fb215ac085f5cf5a8d5d905798320",
+        "sourceMismatches": 0,
+        "forbiddenFiles": 0
+      },
+      "localExactArchiveAndroidBundle": "passed once after correction",
+      "bundleLogSha256": "ff0cb15f11d3e169d27c789cc5ce2cf94023dd4994053a5cc5caa340dab9a5e4",
+      "cloudLogSha256": "dc659e46ac0ccfbd2c45ed165c583e378ebd4c811142e50aa1c70aae17f4107f",
+      "apkProduced": false,
+      "nextBuild": "Not started: automatic approval review requires explicit authorization for a third private-source upload and cloud build; no workaround attempted"
     }
   ],
   "sourceSha256": {
@@ -126,17 +148,17 @@
     "frontend/app.config.js": "137dec8347bfbdbf3197cc18a1e5b08c85bfae7d7f9f0a5d61403cb1108672ff",
     "frontend/eas.json": "bb25d4d31ab04a0c9c9bea4d6edfa0683b66d322d4faa617bdeca26f7722e649",
     "package-lock.json": "46d3725e8c611104b17731e16560c258f18b83ad6027d1d7ddb67aecfa4d225d",
-    ".easignore": "d64947c671a54f55b704a9516b3c328aca1d1d2a145e513bbf5a2850f5a2e648"
+    ".easignore": "17bf45661f81d5d7e0e3ef5191cf1119646fbf912b45e1c434da9f6076afa4f6"
   },
   "externalCalls": {
     "model": 0,
     "embedding": 0,
     "notification": 0,
-    "cloudBuild": 1,
+    "cloudBuild": 2,
     "deployment": 0
   },
   "remaining": [
-    "One corrected free EAS build; no APK yet",
+    "Third corrected free EAS build requires explicit source-upload approval after automatic review rejection; no APK yet",
     "Approved c6cf75d compatible Server deployment after APK success",
     "One approved real Android login/child/chat/save/readback; no model calls yet",
     "Dependent S05/S07 and later packages not started; no iOS or full Android acceptance"

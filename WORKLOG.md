@@ -2716,3 +2716,12 @@
 - Expo 免費 preview build `25ecaca2-8ef1-4dbb-ad7f-0627d41ea6b9` 已上載並建立受管簽署，在 CONFIGURE_EXPO_UPDATES 因本機／雲端 runtime fingerprint 不同停止；沒有 APK，沒有部署、模型或通知。
 - 定位為 junction 令 autolinking 路徑不同，加上固定 fingerprint 0.20.13 Windows loader 未正規化 glob 路徑。改用實體隔離依賴，按官方方法補一行 POSIX 正規化；保留版本／路徑 guard 及全部 fingerprint 檢查，不整套升 SDK。
 - 一次本機修後核對與既有雲端 hash 同為 `c312bc718cf9e42fde6ff62b768217f6aaf7cfd6`。使用者准同類最小補驗直接執行，接下來只補一次免費 build；Server 仍只部署已批准 c6cf75d 四檔，真機限一個 run／4 生成／2 embedding、<$0.10。當前未執行這些後續操作，不以指紋相同當成 APK 成功。
+
+
+<a id="log-20261015-android-archive-completeness"></a>
+### 2026-10-15 — S04-W01 上傳封包依賴補齊
+
+- 第二次免費 build `89b5bfd2-2da4-4b5d-af46-fc284eb302df` 通過指紋檢查，在 EAGER_BUNDLE 因上傳白名單漏掉既有 `src/config/api-base-url.ts` 停止；保留原失敗，不部署。
+- 只補白名單的 `src/config`，不改功能或提高相容範圍。新的實際 EAS archive 共 612 檔／25,132,148 bytes，與正式來源一致；用此封包做一次本機 Android Hermes bundle 通過，無需重跑型別／產品測試。
+- 使用者准同類必要補驗免再問，但自動批准審查認為第三次私有程式上傳及 EAS build 未獲明確涵蓋，拒絕啟動。該批命令未執行；沒有第三次上傳／build、部署、模型、embedding 或通知。保留修正並取得具體上傳／建置批准後才恢復，不嘗試繞過。
+- 尚無 APK 或真機成果，S04-W01 不標完成；Server 仍沿既已批准的 c6cf75d 四檔相容部署，不因本次前端 archive 修正擴大部署範圍。
