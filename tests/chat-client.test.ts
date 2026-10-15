@@ -219,3 +219,23 @@ test("a session-check outage after a confirmed save keeps its message identity w
   assert.equal(values.replies, 1);
   assert.equal(controller.getSnapshot().drafts[firstChild].text, "");
 });
+
+
+test('live progress recovers the same saved reply and drops late events after a child switch', async () => {
+  const {values,api,controller}=fixture();let reads=0;
+  api.getReplyState=async()=>{reads++;return 'completed';};
+  api.requestReply=async(childId,messageId,_signal,_userId,progress)=>{
+    values.replies++;progress?.({runId:firstChild,messageId,phase:'reading'});
+    assert.equal(controller.getSnapshot().feedback?.phase,'reading');
+    values.messages.push(modelMessage(childId,messageId));throw new ChatApiError();
+  };
+  controller.syncContext(alice.id,true,firstChild);await settle();controller.setText(original);await controller.send();
+  assert.equal(values.replies,1);assert.equal(reads,1);assert.ok(controller.getSnapshot().messages.some(m=>m.role==='model'));
+  assert.equal(controller.getSnapshot().feedback,null);
+  const gate=deferred<ChatMessage>();let late:Parameters<ChatApi['requestReply']>[4];
+  api.requestReply=async(_childId,_messageId,_signal,_userId,progress)=>{late=progress;return gate.promise;};
+  controller.syncContext(alice.id,true,secondChild);await settle();controller.setText('另一個孩子');const pending=controller.send();await settle();
+  controller.syncContext(alice.id,true,firstChild);late?.({runId:secondChild,messageId:'message-1',phase:'help',card:'medical-consult-hk-v1'});
+  gate.resolve(modelMessage(secondChild));await pending;
+  assert.equal(controller.getSnapshot().feedback,null);assert.equal(controller.getSnapshot().selectedChildId,firstChild);controller.dispose();
+});

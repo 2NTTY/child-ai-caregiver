@@ -16,8 +16,8 @@ const phaseLabels: Record<ChatReplyPhase, string> = {
 };
 const activityLabels = { running: "處理中", succeeded: "已回報", failed: "失敗", unknown: "未知", pending: "待確認" } as const;
 
-export function ChatMessage({ message, children, footer, testID, embedded = false, onStop, onCheck, onLocateSource, onOpenSource, degraded, phaseLabel }: {
-  message: ChatMessageView; children?: ReactNode; footer?: ReactNode; testID?: string; embedded?: boolean;
+export function ChatMessage({ message, children, header, footer, testID, embedded = false, onStop, onCheck, onLocateSource, onOpenSource, degraded, phaseLabel }: {
+  message: ChatMessageView; children?: ReactNode; header?: ReactNode; footer?: ReactNode; testID?: string; embedded?: boolean;
   onStop?: () => void; onCheck?: () => void; onLocateSource?: LocateAnswerSource; onOpenSource?: (id: string) => void; degraded?: boolean; phaseLabel?: string;
 }) {
   const [processOpen, setProcessOpen] = useState(false);
@@ -49,6 +49,7 @@ export function ChatMessage({ message, children, footer, testID, embedded = fals
           {activity.summary ? <Text style={styles.meta}>{activity.summary}</Text> : null}
         </View>)}</View></MotionDisclosure>
       </View> : null}
+      {header}
       {assistant && message.sources !== undefined ? <AnswerSources sources={message.sources} onLocateSource={onLocateSource} onOpenSource={onOpenSource} degraded={degraded}>{body}</AnswerSources> : body}
       {message.note ? <Text style={[styles.meta, !assistant && styles.userNote]}>{message.note}</Text> : null}
       {footer}

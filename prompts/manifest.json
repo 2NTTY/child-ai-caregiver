@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.42",
+  "version": "0.1.43",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -176,7 +176,7 @@
     {
       "id": "domain.childcare-hk.safety",
       "path": "domains/childcare-hk/safety.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.identity-and-trust",
         "domain.childcare-hk.profile"

@@ -1,3 +1,4 @@
+import type { AgentProgress, OfficialHelpId } from '../shared/agent-feedback.ts';
 import type { ChatMessage } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
 
@@ -31,6 +32,7 @@ export interface ChatState {
   busy: "save" | "reply" | null;
   replyingMessageId: string | null;
   replyError: string | null;
+  feedback?: (AgentProgress & { cards: OfficialHelpId[] }) | null;
 }
 
 interface RequestScope {
@@ -54,7 +56,7 @@ function initialState(online: boolean): ChatState {
     userId: null, online, selectedChildId: null, messages: [], limit: 100, loading: false,
     nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null,
     loadedAt: null, error: null, available: null, usage: null, drafts: {},
-    busy: null, replyingMessageId: null, replyError: null,
+    busy: null, replyingMessageId: null, replyError: null, feedback: null,
   };
 }
 
@@ -149,7 +151,7 @@ export class ChatController {
     if (this.state.selectedChildId === childId) {
       this.abortRequests();
       this.update({ selectedChildId: null, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null, error: null,
-        replyingMessageId: null, replyError: null });
+        replyingMessageId: null, replyError: null, feedback: null });
     }
     return true;
   }
@@ -167,7 +169,7 @@ export class ChatController {
     if (this.state.selectedChildId === childId) {
       this.abortRequests();
       this.update({ drafts, selectedChildId: null, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null,
-        error: null, busy: null, replyingMessageId: null, replyError: null });
+        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null });
     } else this.update({ drafts });
   }
 
@@ -245,7 +247,7 @@ export class ChatController {
       }
       this.abortRequests();
       this.update({ selectedChildId: childId, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null,
-        error: null, busy: null, replyingMessageId: null, replyError: null });
+        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null });
       if (childId && online) {
         void this.reloadMessages();
         void this.refreshMetadata();
@@ -397,7 +399,11 @@ export class ChatController {
     const childId = scope.childId!;
     try {
       if (!await this.verifyIdentity(scope)) return;
-      const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId);
+      const reply = await this.api.requestReply(childId, messageId, scope.controller.signal, scope.userId, event => {
+        if (!this.current(scope) || event.messageId !== messageId || this.state.replyingMessageId !== messageId) return;
+        const previous = this.state.feedback?.messageId === messageId ? this.state.feedback.cards : [];
+        this.update({ feedback: { ...event, cards: [...new Set([...previous, ...(event.card ? [event.card] : [])])] } });
+      });
       if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
       const messages = this.state.messages.some(item => item.id === reply.id)
         ? this.state.messages : [...this.state.messages, reply];
@@ -413,7 +419,27 @@ export class ChatController {
         return;
       }
       if (childAccessDenied(error)) { this.forgetChild(childId); return; }
-      const notice = replyErrorMessage(error);
+      let notice = replyErrorMessage(error);
+      const runId = this.state.feedback?.messageId === messageId ? this.state.feedback.runId : null;
+      if (runId && this.api.getReplyState && error instanceof ChatApiError && (error.status === 0 || error.status >= 500)) {
+        try {
+          const original = await this.api.getReplyState(childId, runId, scope.controller.signal, scope.userId);
+          if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+          const page = await this.api.listMessages(childId, scope.controller.signal);
+          if (!this.current(scope) || !await this.verifyIdentity(scope)) return;
+          const saved = page.messages.find(item => item.role === 'model' && item.inReplyTo === messageId);
+          if (saved) {
+            this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved], replyError: null });
+            if (this.state.drafts[childId]?.savedUserMessageId === messageId) this.updateDraft(childId, { text: '', phase: 'draft', savedUserMessageId: null, notice: '已查回原回覆，沒有重新執行。', knownIds: [] });
+            return;
+          }
+          notice = original === 'running' ? '連線中斷；原運行仍在處理。請稍後重新讀取，沒有重新執行。' : '已核對原運行，聊天回覆尚未讀到。請重新讀取原結果，沒有重新執行。';
+        } catch (recoveryError) {
+          if (!this.current(scope)) return;
+          if (sessionError(recoveryError)) { this.invalidateIdentity(); return; }
+          if (childAccessDenied(recoveryError)) { this.forgetChild(childId); return; }
+        }
+      }
       this.update({ replyError: notice });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
         // Preserve the current text; a late history response must never replace a newer draft.
@@ -426,7 +452,7 @@ export class ChatController {
         if (this.state.drafts[childId]?.phase === "replying") {
           this.updateDraft(childId, { phase: "reply_failed", notice: "暫未能確認回覆，原文已保存。請重新讀取聊天後再試。" });
         }
-        this.update({ busy: null, replyingMessageId: null });
+        this.update({ busy: null, replyingMessageId: null, feedback: null });
         void this.refreshMetadata();
       }
     }
@@ -457,7 +483,7 @@ export class ChatController {
         notice: "聊天已獲 Server 保存確認；尚未要求 AI 回覆。" });
       if (!await this.verifyIdentity(scope)) return;
       this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved],
-        busy: "reply", replyingMessageId: saved.id, cancelNotice: null });
+        feedback: null, busy: "reply", replyingMessageId: saved.id, cancelNotice: null });
       this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, notice: "聊天已保存，正在等候 AI 回覆。" });
       await this.performReply(scope, saved.id);
     } catch (error) {
@@ -493,7 +519,7 @@ export class ChatController {
     const savedDraft = this.state.drafts[childId]?.savedUserMessageId === messageId;
     if ((!original && !savedDraft) || this.state.messages.some(item => item.role === "model" && item.inReplyTo === messageId)) return;
     const scope = this.scope();
-    this.update({ busy: "reply", replyingMessageId: messageId, replyError: null, cancelNotice: null });
+    this.update({ feedback: null, busy: "reply", replyingMessageId: messageId, replyError: null, cancelNotice: null });
     if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
       this.updateDraft(childId, { phase: "replying", notice: "聊天已保存，正在等候 AI 回覆。" });
     }

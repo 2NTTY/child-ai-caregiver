@@ -203,3 +203,6 @@ A07沿既有登入／設定版型接createAccountApi（status、acknowledge、ex
 ## Web 管理接點
 
 `/admin` 由身份範圍的 `AdminOwner` 管理，不依賴 child owner；`AdminEntry.web` 只在本人管理核對通過後於設定顯示。原生入口不載入管理資料。API／版本／unknown 定義見 [管理契約](API.md#web-admin)，操作方法見 [部署交接](PRODUCTION_FRONTEND.md#invited-account-service)。沿現有 Paper／表單／主題，不重做產品設計。
+
+
+正式聊天的即時回饋沿同一 ChatController／owner：`feedback` 只包含本次 run／message、固定階段及官方卡 ID；畫面不自行推斷工具成功或另一份任務狀態。卡片在當次回覆正文上方呈現，原 message 的 `officialHelp` 支援刷新讀回；一般聊天沒有卡。斷線查原運行及聊天，登出／切孩子清除當次投影。此接點是進度 SSE，正文仍在核引用、權限及保存後完整交付；灰色 token 草稿與語義審核另依 STR01，不宣稱已接。

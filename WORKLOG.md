@@ -2655,3 +2655,13 @@
 - Result：產品／私人摘要編排使用 AgentRuntimePort；每 run 可接 metadata observer，與營運診斷互相隔離。固定 layer 區分模型、工具、權限及已知業務拒絕，原 runId 接回台帳；未知不猜資料庫原因。維持既有 HTTP 錯誤及保存權威，不以 run_end 當保存結果，不輸出私人正文／原始參數。
 - Verification：Node 24.19.0；三個既有定向檢查全部通過（正式 Firestore Product Agent／Runner、背景及捕捉約 622 ms；診斷 3.1／0.7 ms），沒有為每工具新增測試。7 個受影響 TS 入口及依賴零診斷，diff check 通過。零真模型／雲端／瀏覽器／通知，未部署。
 - Review / Limits：observer 使用獨立副本，throw／reject 不改業務流程；SDK callback 只是觀察點，不保證根因。沿既有 provider 可替換接點，不重造。HTTP 傳輸與產品事件投影由 OPT05 接入；三角色審核接點未驗，保留 #214～#216 責任。
+
+
+<a id="log-20261015-p2-opt05"></a>
+### 2026-10-15 — OPT05 真進度與固定官方提示
+
+- Scope / Baseline：742a973（#225）。主模型獨立實作／review，不改協作者 PR。沿正式 Firestore Product Agent、ADK diagnostic、原 reply API、ChatController、Paper 與 Caddy，無新架構／分類模型。
+- Result：同次 run 的有界進度以 fetch SSE 送出，Node 不再整份緩衝；最終正文仍核引用、權限及保存。斷線只關傳輸，owner 一次查原 run／聊天，不重 POST；切換身份／孩子清除遲到投影。受限 show_official_help 選固定卡，成功工具引用與原回覆交易保存，重讀沿原 ID；普通聊天不強迫卡片。藥物辦公室安全用藥及既有消防處求助資料核對，產品邊界不是臨床分診。Prompt Pack 0.1.43／safety 0.1.2。
+- Verification：Node 24.19.0；正式 Node HTTP → Product API → Firestore service／ADK Runner → client SSE 的合成情景通過（384 ms），兩則訊息共三次 scripted 生成：保存前見真進度、卡片重讀、中斷原操作仍完成，零重複 POST。owner 的原結果恢復／切孩子遲到事件檢查通過（5.6 ms）；四項既有 prompt 靜態檢查通過。14 個受影響 Server／client／測試入口及三個前端入口與依賴型別零診斷。沒有真模型／雲端／通知、全量／壓測或 Computer Use。
+- Failures / Review：首次新情景因測試字面量漏括號於解析階段停止，未進模型；修正後只補該情景，已通過 owner 不重跑。前端型別首次缺共享安裝的圖示／Firebase／Query／SVG／Luxon 型別；在忽略暫存復用正式固定版本後通過，未改 lockfile 或產品依賴。Caddy 2.11.4 固定版 SSE flush／no-transform 已核，不為此改 Caddyfile；保存收據與工具返回、連線中斷與取消均分開。
+- Limits / Next：本機使用合成 Firestore／身份及 scripted provider，不當真 SDK、語義理解或公開代理鏈證據；未做瀏覽器呈現驗收。原站部署、OPT04 索引及真整理品質待交付；不提高配額或發通知。灰色正文與語義審核交接等 #214，既有備份真還原繼續延後。#225 合併提交已補核 GitHub API 簽署 valid；開發提交 unsigned 保持分列。

@@ -118,6 +118,10 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 受信 operator 可執行 scripts/firebase-photo-cleanup.mjs，傳入工程外 JSON 路徑；只含原 scope、photoId、operationId。先核 tombstone／journal，再刪 descriptor 的精確 generation；unknown 保留待處理，成功才交易釋放容量。未确认上載不猜測清空，排程與恢復由 F06 承接。此入口不向模型／公共 API 暴露，備份和 soft-delete 保留期不變，不宣稱所有備份密文立即消失。
 
+### 即時聊天傳輸
+
+原 reply 同時保留 JSON 與 `Accept: text/event-stream`。Node transport 直接以有背壓的 stream pipeline 寫入，不先 arrayBuffer；SSE 設 `private, no-store, no-transform`。Caddy 2.11.4 原生對 `text/event-stream` 即時 flush，encode 遵守 no-transform，故沿原 Caddyfile、不額外服務或全站關閉壓縮。部署核對原代理鏈仍保留這些 header；程式與官方原生能力核對不等於正式 HTTPS 已實測。中斷不自動取消原運行或重新發問，原取消 API 另行處理。
+
 ### 復用 F02 的建置及恢復接點
 
 前端建置設定 `EXPO_PUBLIC_AUTH_PROVIDER=firebase`、`EXPO_PUBLIC_API_BASE_URL=/api` 及 `EXPO_PUBLIC_FIREBASE_API_KEY／AUTH_DOMAIN／PROJECT_ID／APP_ID`；這些 Web SDK 公開識別不含 Admin 憑據。 使用明確傳入的建置環境，切換身份供應商時執行 `expo export --platform web --clear`；建置 exit 0 不足以允許發布，須核對輸出 bundle 的 provider 與四項公開 Firebase 設定、HTML 實際引用及同源 `/api`。設定缺失須停止發布；不能把舊身份接點的回應當作 Firebase 已接通。API／worker 使用同一明確的 `GCP_PROJECT_ID`、`FIREBASE_DATABASE_ID`、`FIREBASE_NAMESPACE`、私人 photo／erasure buckets、同源 `SERVER_ORIGIN／WEB_ORIGIN` 及固定 secret version。共用權威資料的 API／worker／Auth blocking function 各須固定部署來源，並核對目前資料包絡的 reader 相容；更新 API 映像不代表 blocking function 已同步。啟用電郵與 worker 各有獨立 gate，不以已部署自動啟用。實際資源／revision 及費用觀察留 STATUS／驗收證據。

@@ -743,3 +743,9 @@ policy 為唯一目前版本；不存在時沿已確認部署預設，讀取失�
 API／worker 從同一政策建立新 run 快照，舊 run 保留模型／預算；下一次平台模型／embedding 呼叫前仍核平台暫停。本人 key 用量及共用保護上限與平台分流，不清零現有 counters。備份含上述三類資料；隔離還原保留管理收據／邀請目錄，policy 版本前進並強制暫停；部署 UID 不隨業務還原取得。真正重新啟用須管理操作及原部署／恢復 gate。
 
 來源依賴只有分頁結果時，批次標示 `sourceCoverageComplete=false`；任何來源基準變更即遮蔽，不以局部依賴表宣稱完整。修復不截斷依賴證據，重複 kind／ID 合併；超出既有上限仍保留失效狀態。
+
+
+<a id="chat-official-feedback"></a>
+### 聊天固定官方提示
+
+聊天的 optional `officialHelp` 最多兩個固定版本 ID，由同一 run 已成功選取的工具引用導出，與 model message 交易保存。沿原 message／runId／inReplyTo，不新增可獨立寫入的提示資料庫；舊訊息沒有此欄位仍可讀。卡片的正文、官方 URL、核對日期由版本化共用登記提供，含義變更建立新 ID。進度事件只供當次連線顯示，不持久化、不是保存收據，也不作記憶來源。

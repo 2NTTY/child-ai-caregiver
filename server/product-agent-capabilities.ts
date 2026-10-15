@@ -1,6 +1,6 @@
 /** Server-authored capability descriptions; user text never selects this catalog. */
 export const PRODUCT_AGENT_TOOL_CATALOG = {
-  coreToolNames: ["read_context", "search_knowledge", "read_knowledge_context", "present_answer", "read_work", "request_confirmation"],
+  coreToolNames: ["show_official_help", "read_context", "search_knowledge", "read_knowledge_context", "present_answer", "read_work", "request_confirmation"],
   loader: {
     name: "load_capabilities",
     description: "依目前對話、前文指向及工具結果，載入所需的產品能力。可一次選多個能力；載入只提供工具及指引，不執行業務操作或取得授權。需要讀上下文／知識時可在同一輪分別調用讀取與載入；載入成功後才使用新增工具。只載入相關能力，不必按固定順序或把每種能力都載入。",
