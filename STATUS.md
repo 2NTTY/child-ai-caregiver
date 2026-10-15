@@ -7,7 +7,7 @@
 - **Firestore／正式零 SQL 及本輪 P2 review 修正已交付。** [R01～R04](PLAN.md#p2-review-repair) 分別於 #203～#206 合併，並已部署 `2c17aa7`。修正刪除披露、清理恢復、Agent 正式組裝、成果狀態及通知歷史；不把有限檢查當全面驗收。[P2-ADM01 Web 管理後台](PLAN.md#p2-adm01) 已於 #208／#209 合併並部署，指定的已驗證 UID 已綁定；正式瀏覽器管理身份讀取的 fetch 接收者缺陷已於 #211 修正及部署；上述是既有交付；本輪新增 OPT／LAY／STR 目標尚未完成，家庭多人仍在 P4。
 - **原前後端已共同使用 Firestore。** 原網站保留新前端設計，真 Agent 的官方引用、同一準備單修改／確認／保存及刷新讀回已通過。摘要 Firestore 接線缺口已補回並部署；容量操作及保存讀回已補必要證據，回覆替身與真 Agent 結果分開記錄。正式 API／worker 已退出 SQL，PostgreSQL 停止；不是分開的預覽站。排程、queue 及既有通知入口已恢復，本包未追加外發訊息。
 - **使用者明確延後：原生每日備份首份核對及一次隔離還原。** 每日 14 天排程、還原入口及測試保留，尚無真原生還原證據；不阻塞本次合併與功能使用。後續只見 [PLAN 待驗入口](PLAN.md#p2-backup-followup)，不持續輪詢或重跑既有驗收。配對備份與 F02～F07 證據保持分開；結果、失敗與限制見 [F08 EV](artifacts/verification/F08_ORIGINAL_SITE_20261013.json)。
-- **當前工作：**OPT01～04、LAY01～05 已合併，2026-10-15 master 742a973。現行 [OPT05](PLAN.md#p2-opt05) 的正式 HTTP 真進度 SSE、固定官方提示卡及前端 owner 已接並通過最低本機檢查，待 review／合併及原站部署；未新增分類模型或改設計。#214～#216 仍由協作者處理，STR01 的語義審核接線等待 #214。#213 及本輪程式尚未部署；備份真還原仍延後。
+- **當前工作：**OPT01～05、LAY01～05 已合併及部署；2026-10-15 master 99f53df，原站程式 b1d1565／Prompt Pack 0.1.43。真進度 SSE、固定官方卡、持久摘要及前端 owner 已接；一次合成正式流程以兩次真生成完成摘要及聊天讀回，沒有 embedding／通知。餘下 [STR01](PLAN.md#p2-str01) 灰色正文等待協作者 #214；#214～#216 維持其責任，不接管。兩份計劃整體仍未完成。
 
 - **操作範圍：**最新指示為後續只用主模型、不開子代理；此前有效成果保留。只做最低必要檢查，不全量、Computer Use 或重做前端設計；協作者角色實作不納入本聊天。
 - 前端依 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；本人模型 key／限額仍為可選，平台基本 AI 不要求家長提供 key。未改 UI 設計。
@@ -15,9 +15,9 @@
 <a id="deployment"></a>
 ## 最後部署觀察（非即時狀態）
 
-**2026-10-13 13:54 UTC 核對範圍：**正式網址 https://ex-machina.eu.org 沿原 VM `yuban-p1`／ID `2846984358678394356`；Web `8f916d0`（#211／master `323e4a7`）、映像 `admin-8f916d0`，API／worker 保持 `334fb4e` 且未重啟。修正管理身份請求在原生瀏覽器送出前失敗；已建置 Web／原生 Edge 配合合成 API 正常載入，正式 HTML 與 JS hash 相符。健康通過，未改帳戶、管理 UID、資料或限額，零模型／通知，未代填本人登入結果。回退映像及受保護配置保留；詳細見 [瀏覽器修正 EV](artifacts/verification/P2_ADM01_BROWSER_FIX_20261013.json)。初始政策及先前管理查詢／索引證據仍見 [ADM01 EV](artifacts/verification/P2_ADM01_WEB_20261013.json)。
+**2026-10-15 09:04～09:15 UTC 核對：**正式網址 https://ex-machina.eu.org 沿原 VM `yuban-p1`／ID `2846984358678394356`；API／worker／Web 均為 `opt-b1d1565`，包含 #213 及 OPT／LAY 成果。三服務健康、PostgreSQL 保持停止；兩項新增索引查詢及公開 HTML／JS hash 相符。實際公開 SSE 約 4.1 秒先送開始進度，42.6 秒保存完整回覆；不是逐字正文串流或固定加速保證。合成孩子已提交持久刪除／後續清理，驗收帳號已停用並撤銷 token，沒有發通知或調整限額。[交付證據](artifacts/verification/P2_OPT_DELIVERY_20261015.json)。
 
-來源庫位於香港 `asia-east2`，PITR 關閉；原生每日備份 retention 為 14 天，截至 08:54 UTC 尚無首份備份。已完成的 1,428 筆配對備份保留至 `2026-10-27T07:53:29.841Z`；hold 到期不是自動清理。附件 bucket 的 soft-delete 實際為 14 天，獨立刪除日誌保留。配對 manifest 的 generation、大小及 hold 已於 13:02 UTC 再核；沒有新建備份或執行還原。詳細版本／收據及限制見 [review 交付 EV](artifacts/verification/P2_REVIEW_DELIVERY_20261013.json)、F08 EV 與[部署方法](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。
+保留舊映像、受保護配置及資料；新摘要／卡片寫入後須維持相容 API reader，不能盲退舊 API，詳見[部署方法](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。主機只剩約 1.2 GB 時採小型更新層；未刪除舊上載壓縮包。備份部署前唯讀 metadata 顯示 10 月 13／14 日兩份原生備份 READY、各保留 14 天；未檢查還原內容、未執行真還原，原延期仍有效。既有配對備份與獨立刪除日誌保留，不回寫舊證據。
 
 VM 最後核對仍為 e2-small，既有停止期限 **2026-10-17 20:50:44 香港時間**，本次沒有續期。保留 VM 固定費與雲端保存費；未取得新的實際帳單，不宣稱免費或已降低固定費。
 

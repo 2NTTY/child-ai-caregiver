@@ -1,0 +1,152 @@
+{
+  "package": "P2-OPT05 delivery with OPT04 quality acceptance",
+  "sourceCommit": "b1d156594c05f2e5d24897891a5bd76b94d66e74",
+  "masterAtDelivery": "99f53dfa90c1e60641205d7e24b6fac39de45a6e",
+  "observedAt": "2026-10-15T09:15:01.997Z",
+  "site": "https://ex-machina.eu.org",
+  "deployment": {
+    "at": "2026-10-15T09:04:08Z",
+    "vm": "yuban-p1",
+    "vmId": "2846984358678394356",
+    "project": "ai-caregivers-for-children",
+    "zone": "asia-east2-a",
+    "terminationTime": "2026-10-17T12:50:44Z",
+    "tag": "opt-b1d1565",
+    "apiImage": "sha256:fde54e2ffed58736b8167086b32efdedaf6b550f499979f9149c1745b7a9dedc",
+    "webImage": "sha256:1d2685846dcbaa4903ce18c1facf03c25858d67431588c353a807f386815057e",
+    "apiWorkerWebHealthy": true,
+    "sqlStarted": false,
+    "dependencyChanges": false,
+    "codeArchiveBytes": 152061,
+    "webArchiveBytes": 4624290,
+    "codeSha256": "0344c4da70a365c52968d39e8fbe5b9b820717f43e481fbd475b09a05b6d8428",
+    "webSha256": "d93c0a025d67cc1bc33398704ef64d7505f6648975b2407260d030a9049b6af1",
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "promptPack": "0.1.43",
+    "publicArtifactHashMatches": 2,
+    "indexSdkReads": 2,
+    "indexStatus": [
+      {
+        "group": "yuban_authority_conversation_summaries",
+        "state": "READY",
+        "name": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_conversation_summaries/indexes/CICAgJjFx5sK"
+      },
+      {
+        "field": "summaryPending",
+        "state": "configured"
+      }
+    ]
+  },
+  "acceptance": {
+    "kind": "one coherent synthetic production flow; no browser",
+    "authAccounts": 1,
+    "children": 1,
+    "seedMessages": 8,
+    "summary": {
+      "actualWorkerAssembly": true,
+      "generations": 1,
+      "sourceBatchSize": 8,
+      "currentCorrectionRetained": true,
+      "unchangedOnReadback": true,
+      "text": "本批次資訊摘要（2026年10月15日）：\n\n1. 親子閱讀方式更新：現行偏好改為「先聽故事，後看圖畫」（取代2024年的「先看圖畫」做法）。\n2. 合成經歷記錄：\n   - 星期一：到公園散步。\n   - 星期二：收拾玩具。\n   - 星期三：去圖書館。\n   - 星期四：在家畫畫。\n   - 星期五：在家玩積木。\n   - 星期六：整理書架。\n（以上經歷僅供記錄，無相關提醒安排。）"
+    },
+    "chat": {
+      "publicSessionLogin": true,
+      "httpsRequests": 2,
+      "generationCalls": 1,
+      "queryEmbeddings": 0,
+      "runId": "96ebd535-6212-4d42-97d5-eb3d6d2fe4fb",
+      "events": [
+        {
+          "phase": "started",
+          "ms": 4060,
+          "runId": "96ebd535-6212-4d42-97d5-eb3d6d2fe4fb"
+        },
+        {
+          "phase": "model",
+          "ms": 22334,
+          "runId": "96ebd535-6212-4d42-97d5-eb3d6d2fe4fb"
+        },
+        {
+          "phase": "working",
+          "ms": 31548,
+          "runId": "96ebd535-6212-4d42-97d5-eb3d6d2fe4fb"
+        },
+        {
+          "phase": "tool_finished",
+          "ms": 33257,
+          "runId": "96ebd535-6212-4d42-97d5-eb3d6d2fe4fb"
+        }
+      ],
+      "finalAtMs": 42639,
+      "finalStatus": 200,
+      "cacheControl": "private, no-store, no-transform",
+      "savedReadback": "收到，你剛才交代了星期二至星期六的合成經歷，分別是收拾玩具、去圖書館、在家畫畫、在家玩積木及整理書架；至於親子閱讀，你目前的偏好是「先聽故事，後看圖畫」。",
+      "ordinaryHelpCards": []
+    },
+    "totalUsage": {
+      "day": "2026-10-15",
+      "attempts": 2,
+      "inputTokens": 16406,
+      "outputTokens": 259,
+      "cachedTokens": 0,
+      "unknownUsageAttempts": 2,
+      "billingSource": "platform"
+    },
+    "globalAttemptsBefore": 12,
+    "dailyPolicyUnchanged": {
+      "enabled": true,
+      "model": "gemini-3.1-flash-lite",
+      "dailyUserAttempts": 12,
+      "dailyGlobalAttempts": 20,
+      "personalDailyGlobalAttempts": 1000,
+      "maxModelCalls": 4,
+      "maxQueryEmbeddings": 2,
+      "version": 0,
+      "updatedAt": null
+    },
+    "cleanup": {
+      "childDeleteReceiptConfirmed": true,
+      "physicalCleanup": "queued through existing erasure consumer; not independently polled",
+      "authDisabled": true,
+      "refreshTokensRevoked": true
+    },
+    "notifications": 0,
+    "fullSuite": false,
+    "computerUse": false,
+    "providerRetries": 0
+  },
+  "backupObservation": {
+    "metadataOnly": true,
+    "backups": [
+      {
+        "name": "projects/ai-caregivers-for-children/locations/asia-east2/backups/9825fb27-f9a8-4f9c-b616-0d0af0911808",
+        "snapshotTime": "2026-10-13T21:32:16.927531Z",
+        "expireTime": "2026-10-27T21:32:16.927531Z",
+        "state": "READY"
+      },
+      {
+        "name": "projects/ai-caregivers-for-children/locations/asia-east2/backups/bba2e5aa-9bf6-403b-8315-22c69392e31d",
+        "snapshotTime": "2026-10-14T21:41:09.984961Z",
+        "expireTime": "2026-10-28T21:41:09.984961Z",
+        "state": "READY"
+      }
+    ],
+    "restoreExecuted": false
+  },
+  "failuresAndChoices": [
+    "Local Docker Desktop engine initialization failed; no reset or system modification. Built fixed-commit Web with pinned Node/npm instead.",
+    "Automatic approval rejected deletion of four old upload archives; no deletion performed. Small overlay artifacts avoided that operation.",
+    "Initial read-only SSH stdin probe received plink input instead of source; no product code ran. Docker copy into read-only rootfs also failed. Switched to previously proven remote file stdin redirection; cloud acceptance then passed once."
+  ],
+  "limits": [
+    "Actual response completed in 42.639 seconds; streaming progress is not proof of a fixed latency improvement.",
+    "Model repeated unrelated recent synthetic activities alongside the correct latest preference; this sample does not prove optimal concision or universal semantic recall.",
+    "Unknown usage remains 2 under the existing completeness rule; reported input/output tokens retained, missing usage fields not invented.",
+    "Gray draft text and semantic review remain pending collaborator PR #214. #215/#216 unchanged.",
+    "True browser rendering and true medical-card selection were not repeated; existing scripted owner/card evidence reused.",
+    "Native backup restore remains explicitly deferred.",
+    "After new summary/card writes, keep a compatible API/worker reader for rollback; old Web can be restored separately, old API image alone is not a safe rollback."
+  ]
+}

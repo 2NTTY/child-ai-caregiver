@@ -89,7 +89,9 @@ F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外
 
 ### 原 VM Firestore 組裝
 
-2026-10-13 13:54 UTC，`ex-machina.eu.org` Web 使用 `8f916d0`／`admin-8f916d0`（#211），修正管理身份查詢的原生 fetch 接收者；API／worker 保持 `334fb4e` 且未重啟。Compose 的 RELEASE_TAG 為 admin-8f916d0；該 API tag 指向原 334fb4e 相同映像，便於之後正常重建。管理 UID／資料／用量不變；保留 admin-334fb4e Web 與 compose.env.before-admin-8f916d0 作相容回退。已建置 Web 的原生 Edge／合成 API 檢查通過，正式 HTML／JS hash 與該產物一致；本人登入結果未代填。見 [瀏覽器修正 EV](../artifacts/verification/P2_ADM01_BROWSER_FIX_20261013.json)。原 [ADM01 EV](../artifacts/verification/P2_ADM01_WEB_20261013.json)、[review 交付證據](../artifacts/verification/P2_REVIEW_DELIVERY_20261013.json) 及 [F08](../PLAN.md#p2-f08) 保留，不把此次定向核對代替全部產品或真备份還原驗收。
+2026-10-15，原站 API／worker／Web 已更新為 `opt-b1d1565`，程式源為 b1d1565（#226，master 99f53df），Prompt Pack 0.1.43；包含 #213 登入及 OPT／LAY 修改。沿固定版本 Node／npm 建置 Web，依賴未變，Server 及 Web 以已核 hash 的小型層疊加既有映像，沒有傳送密鑰或 ADC。三服務健康、原生新索引及公開產物／SSE 已核；一次合成摘要／聊天共兩次生成，沒有通知、embedding 或調高配額。[交付 EV](../artifacts/verification/P2_OPT_DELIVERY_20261015.json)；舊 ADM01／review 證據保留，不能當全面回歸。
+
+回退配置保存在 `/etc/yuban-p1/firestore/compose.env.before-opt-b1d1565`，舊映像未刪。**OPT04 摘要批次與 OPT05 卡片寫入後，舊 API 的 strict schema 不能保證讀取新格式。** UI 故障可單獨恢復舊 Web 並保留新 API／worker；後端故障先暫停受影響入口／worker，使用保留新格式 reader 的相容修正。不能直接還原舊 compose.env 便宣稱資料相容，也不能用舊資料快照覆蓋新收據／刪除。
 
 現場部署目錄 `/opt/yuban-firestore-cce4667/deploy/p1`；受保護設定在 `/etc/yuban-p1/firestore`，原渠道檔案在 `/etc/yuban-p1`。部署疊加 `compose.firestore.channels.yaml`，掛載設定不代表已准外發。原 Caddy 固定 IP 為 `172.30.51.3`，動態 API／worker 池為 `172.30.51.8/29`、共同子網 `172.30.51.0/28`；調整子網時須同步核對 `P1_DYNAMIC_RANGE` 與 `P1_PROXY_IP` 不重疊，避免重建時動態容器先佔用 proxy 地址。
 
@@ -120,7 +122,7 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 ### 即時聊天傳輸
 
-原 reply 同時保留 JSON 與 `Accept: text/event-stream`。Node transport 直接以有背壓的 stream pipeline 寫入，不先 arrayBuffer；SSE 設 `private, no-store, no-transform`。Caddy 2.11.4 原生對 `text/event-stream` 即時 flush，encode 遵守 no-transform，故沿原 Caddyfile、不額外服務或全站關閉壓縮。部署核對原代理鏈仍保留這些 header；程式與官方原生能力核對不等於正式 HTTPS 已實測。中斷不自動取消原運行或重新發問，原取消 API 另行處理。
+原 reply 同時保留 JSON 與 `Accept: text/event-stream`。Node transport 直接以有背壓的 stream pipeline 寫入，不先 arrayBuffer；SSE 設 `private, no-store, no-transform`。Caddy 2.11.4 原生對 `text/event-stream` 即時 flush，encode 遵守 no-transform，故沿原 Caddyfile、不額外服務或全站關閉壓縮。部署核對原代理鏈仍保留這些 header；固定版原生能力與 2026-10-15 一條正式 HTTPS SSE 已核；不代替瀏覽器全面相容性驗收。中斷不自動取消原運行或重新發問，原取消 API 另行處理。
 
 ### 復用 F02 的建置及恢復接點
 

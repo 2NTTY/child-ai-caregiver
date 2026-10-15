@@ -2665,3 +2665,13 @@
 - Verification：Node 24.19.0；正式 Node HTTP → Product API → Firestore service／ADK Runner → client SSE 的合成情景通過（384 ms），兩則訊息共三次 scripted 生成：保存前見真進度、卡片重讀、中斷原操作仍完成，零重複 POST。owner 的原結果恢復／切孩子遲到事件檢查通過（5.6 ms）；四項既有 prompt 靜態檢查通過。14 個受影響 Server／client／測試入口及三個前端入口與依賴型別零診斷。沒有真模型／雲端／通知、全量／壓測或 Computer Use。
 - Failures / Review：首次新情景因測試字面量漏括號於解析階段停止，未進模型；修正後只補該情景，已通過 owner 不重跑。前端型別首次缺共享安裝的圖示／Firebase／Query／SVG／Luxon 型別；在忽略暫存復用正式固定版本後通過，未改 lockfile 或產品依賴。Caddy 2.11.4 固定版 SSE flush／no-transform 已核，不為此改 Caddyfile；保存收據與工具返回、連線中斷與取消均分開。
 - Limits / Next：本機使用合成 Firestore／身份及 scripted provider，不當真 SDK、語義理解或公開代理鏈證據；未做瀏覽器呈現驗收。原站部署、OPT04 索引及真整理品質待交付；不提高配額或發通知。灰色正文與語義審核交接等 #214，既有備份真還原繼續延後。#225 合併提交已補核 GitHub API 簽署 valid；開發提交 unsigned 保持分列。
+
+
+<a id="log-20261015-p2-opt-delivery"></a>
+### 2026-10-15 — OPT／LAY 原站交付及最小真品質核對
+
+- Scope / Version：OPT05 #226 已以單作者合併，源 b1d1565／master 99f53df；主模型獨立部署及 review，不接管 #214～#216。原 VM 身份／IP／期限核對，兩個 OPT04 索引就緒。依賴不變，Node 24.19.0／npm 11.8.0 固定源 Web build 通過；程式 152,061 bytes、Web 4,624,290 bytes 小型更新包與 hash 經既有 IAP 上載，API／worker／Web 更新為 opt-b1d1565。
+- Verification：2026-10-15 09:04 UTC 三服務健康、SQL 未啟動；兩項真 Firestore SDK 索引讀取、公開 HTML／JS hash 相符。09:13～09:15 一條合成正式流程：一個已驗證測試帳號／孩子、八則跨年原文，一次正式 worker／Runner 整理，真登入後一次公開 HTTPS 聊天；合計兩次生成、零 embedding／通知。摘要保留先前與更正後偏好，近期六則不含原交代仍能讀到持久摘要；重新連接讀回同版摘要及已保存答案。首進度 4,060 ms，模型開始 22,334 ms，完整保存結果 42,639 ms，保留 private/no-store/no-transform。普通聊天沒有醫療卡；固定卡及斷線復用既有 scripted 證據，不另付費測。
+- Usage / Cleanup：本次已知 input 16,406／output 259 tokens，兩次用量仍按既有欄位完整度規則列 unknown，不補造缺失 metadata。開始前全站 12／20，沒有清零或提高設定。合成孩子經原刪除入口取得 confirmed 及 cleanupPending；測試身份已停用／撤銷 refresh token。後續物理清理由既有 consumer 處理，本次不輪詢所有清理階段、不重跑還原。
+- Failures / Choices：Docker Desktop 自身初始化失敗，不重設系統，改用 Node build 及 VM 小型映像層。自動批准審查拒絕刪四份舊映像壓縮包，沒有執行；小更新層不需刪除。最初唯讀 SSH stdin 收到 plink 輸入而非腳本，隨後 docker cp 被 read-only rootfs 拒絕，均未執行產品或模型；核清後改用既有部署已使用的遠端檔案重導，唯一真品質流程一次通過。
+- Review / Limits：新摘要／卡片格式需相容 reader，回退不能盲切舊 API；舊 Web 可獨立恢復，舊映像及配置保留。原生備份只核 READY metadata，不改寫使用者延期的真還原。實測完整回答仍約 43 秒，且模型多回述了近期無關活動，不宣稱固定提速、完美精簡或多年記憶全面品質。OPT／LAY 可獨立部分完成，STR01 灰色正文仍等 #214 穩定審核接口；不以引用校驗取代語義審核。[完整 EV](artifacts/verification/P2_OPT_DELIVERY_20261015.json)。
