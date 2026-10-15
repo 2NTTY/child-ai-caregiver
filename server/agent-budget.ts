@@ -1,16 +1,17 @@
 import { createHash } from "node:crypto";
 import { canonical } from "./firestore-session-codec.ts";
-import { MAX_ROOT_BUDGET_LIMITS, RootBudgetError, type BudgetAttempt, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "./durable-root-budget.ts";
+import { RootBudgetError, type BudgetAttempt, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "./durable-root-budget.ts";
+import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { PERSONAL_RUN_LIMITS } from "../src/shared/model-settings.ts";
 
-export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: MAX_ROOT_BUDGET_LIMITS.toolCalls, queryEmbeddings: 2,
-  deadlineMs: 90000, outputTokens: 1024, inputCharacters: 32000 });
+export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: AGENT_RUN_LIMITS.toolCalls.default, queryEmbeddings: 2,
+  deadlineMs: AGENT_RUN_LIMITS.deadlineSeconds.default * 1000, outputTokens: 1024, inputCharacters: 32000 });
 // Platform policy is separate from legacy/fixed and personal run profiles.
-export const PLATFORM_AGENT_RUN_LIMITS = Object.freeze({ modelCalls: 8, queryEmbeddings: 4 });
+export const PLATFORM_AGENT_RUN_LIMITS = Object.freeze({ modelCalls: AGENT_RUN_LIMITS.modelCalls.default, queryEmbeddings: AGENT_RUN_LIMITS.queryEmbeddings.default });
 export const AGENT_INTERACTIVE_INPUT = Object.freeze({ default: 64000, min: 32000, max: 64000 });
 export const AGENT_TOOL_RESPONSE_RESERVE = 4096;
 
-export type AgentRunLimits = Readonly<{ modelCalls: number; queryEmbeddings: number }>;
+export type AgentRunLimits = Readonly<{ modelCalls: number; queryEmbeddings: number; toolCalls?: number; deadlineMs?: number }>;
 /** Copy only the existing bounded counts from trusted Server configuration. */
 export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
   const selected = { modelCalls: limits?.modelCalls, queryEmbeddings: limits?.queryEmbeddings };
@@ -18,7 +19,16 @@ export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
     const value = selected[key], range = PERSONAL_RUN_LIMITS[key];
     if (!Number.isSafeInteger(value) || value < range.min || value > range.max) throw new Error("Invalid agent run limits");
   }
-  return Object.freeze(selected);
+  const extended: { modelCalls: number; queryEmbeddings: number; toolCalls?: number; deadlineMs?: number } = selected;
+  if (limits.toolCalls !== undefined) {
+    if (!Number.isSafeInteger(limits.toolCalls) || limits.toolCalls < AGENT_RUN_LIMITS.toolCalls.min || limits.toolCalls > AGENT_RUN_LIMITS.toolCalls.max) throw new Error("Invalid agent tool limit");
+    extended.toolCalls = limits.toolCalls;
+  }
+  if (limits.deadlineMs !== undefined) {
+    if (!Number.isSafeInteger(limits.deadlineMs) || limits.deadlineMs < AGENT_RUN_LIMITS.deadlineSeconds.min * 1000 || limits.deadlineMs > AGENT_RUN_LIMITS.deadlineSeconds.max * 1000) throw new Error("Invalid agent deadline limit");
+    extended.deadlineMs = limits.deadlineMs;
+  }
+  return Object.freeze(extended);
 }
 
 export type AgentStopReason = "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
@@ -37,7 +47,7 @@ export interface AgentDurableBudget {
   /** Optional shared non-SQL model/query daily quota. Never refunds root reservations. */
   dailyUsage?: import("./durable-ai-usage.ts").DurableAiUsage;
   /** Fixed, trusted settings only. Dynamic personal routing is not wired in this slice. */
-  runLimits?: { modelCalls: number; queryEmbeddings: number };
+  runLimits?: AgentRunLimits;
 }
 
 export class AgentBudget {
@@ -47,11 +57,12 @@ export class AgentBudget {
   private inputConfigured = false;
   private responseCharacters: number | null = null;
   private selectedLimits: { [K in keyof typeof AGENT_LIMITS]: number } = { ...AGENT_LIMITS };
-  private readonly expiresAt: number;
+  private expiresAt: number;
+  private readonly startedAt = Date.now();
   get deadlineAtMs(): number { return this.expiresAt; }
   private durableBudget?: AgentDurableBudget;
   private readonly controller = new AbortController();
-  private readonly timer: ReturnType<typeof setTimeout>;
+  private timer: ReturnType<typeof setTimeout>;
   private readonly parent?: AbortSignal;
   private readonly onAbort = () => this.controller.abort(new AgentStopped("cancelled"));
 
@@ -59,7 +70,7 @@ export class AgentBudget {
     if (!Number.isSafeInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > AGENT_LIMITS.deadlineMs) throw new Error("Invalid agent deadline");
     this.parent = parent;
     if (deadlineAtMs !== undefined && (!Number.isSafeInteger(deadlineAtMs) || deadlineAtMs < 1)) throw new Error("Invalid absolute agent deadline");
-    this.expiresAt = Math.min(Date.now() + deadlineMs, deadlineAtMs ?? Infinity);
+    this.expiresAt = Math.min(this.startedAt + deadlineMs, deadlineAtMs ?? Infinity);
     this.signal = this.controller.signal;
     if (parent?.aborted) this.onAbort();
     else parent?.addEventListener("abort", this.onAbort, { once: true });
@@ -164,6 +175,11 @@ export class AgentBudget {
   configurePersonal(limits: AgentRunLimits) {
     if (this.configured || Object.values(this.used).some(count => count !== 0)) throw new Error("Agent limits already selected");
     this.selectedLimits = { ...this.selectedLimits, ...freezeAgentRunLimits(limits) };
+    if (limits.deadlineMs !== undefined) {
+      this.expiresAt = Math.min(this.expiresAt, this.startedAt + limits.deadlineMs);
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.controller.abort(new AgentStopped("deadline")), Math.max(0, this.expiresAt - Date.now()));
+    }
     this.configured = true;
   }
   take(kind: keyof AgentBudget["counts"], amount = 1) {

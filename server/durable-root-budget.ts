@@ -1,7 +1,9 @@
+import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
+
 /** Server-owned execution attempts, not token billing or business-effect receipts. */
 export interface RootBudgetLimits { modelCalls: number; toolCalls: number; queryEmbeddings: number; }
 /** Validation ceilings shared by runtime and persistent budget envelopes. */
-export const MAX_ROOT_BUDGET_LIMITS: Readonly<RootBudgetLimits> = Object.freeze({ modelCalls: 12, toolCalls: 16, queryEmbeddings: 6 });
+export const MAX_ROOT_BUDGET_LIMITS: Readonly<RootBudgetLimits> = Object.freeze({ modelCalls: AGENT_RUN_LIMITS.modelCalls.max, toolCalls: AGENT_RUN_LIMITS.toolCalls.max, queryEmbeddings: AGENT_RUN_LIMITS.queryEmbeddings.max });
 export const DEFAULT_ROOT_BUDGET_LIMITS: Readonly<RootBudgetLimits> = Object.freeze({ modelCalls: 4, toolCalls: 8, queryEmbeddings: 2 });
 export interface RootBudgetBinding {
   rootRunId: string;

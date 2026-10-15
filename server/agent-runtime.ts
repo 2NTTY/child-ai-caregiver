@@ -147,7 +147,7 @@ export interface AgentRunResult {
 }
 
 export type AgentDurableRunInput = Readonly<Pick<AgentRunInput, "runId" | "scope" | "trigger" | "recipeId" | "deadlineAtMs" | "claimedRun">>;
-export type AgentDurableRunBinder = (input: AgentDurableRunInput, promptPackVersion: string, limits: Readonly<RootBudgetLimits>) => AgentDurableBudget;
+export type AgentDurableRunBinder = (input: AgentDurableRunInput, promptPackVersion: string, limits: Readonly<RootBudgetLimits>, effectiveDeadlineAtMs?: number) => AgentDurableBudget;
 
 /** Optional trusted capability; it must fence teardown to the exact acknowledged create incarnation. */
 export type NativeAgentSessionService = BaseSessionService & { cleanupCreatedSession?: (session: Session) => Promise<void> };
@@ -282,8 +282,8 @@ export function createAgentRuntime(options: {
           result.provenance = { packVersion: prompt.packVersion, recipeId: prompt.recipeId, model: selected.config.model };
           budget.check();
           if (fixedOptions.bindDurableRun) {
-            durable = freezeDurable(fixedOptions.bindDurableRun(bindingInput, prompt.packVersion, budget.limits));
-            if (durable.runLimits || durable.context.binding.deadlineAtMs !== input.deadlineAtMs)
+            durable = freezeDurable(fixedOptions.bindDurableRun(bindingInput, prompt.packVersion, budget.limits, budget.deadlineAtMs));
+            if (durable.runLimits || durable.context.binding.deadlineAtMs !== budget.deadlineAtMs)
               throw new AgentStopped("unavailable");
           }
           if (durable) {

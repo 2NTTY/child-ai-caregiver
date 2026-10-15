@@ -74,7 +74,9 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
         usage: requireDurableUsage, billingSource: source });
       return { config: selectedConfig, provider: providers.agent, settingsVersion: String(state.version) + ":policy:" + current.version, billingSource: source,
         dailyUsage: usage[source], authorize,
-        runLimits: personal ? { modelCalls: state.maxModelCalls, queryEmbeddings: state.maxQueryEmbeddings } : { modelCalls: current.maxModelCalls, queryEmbeddings: current.maxQueryEmbeddings },
+        runLimits: { modelCalls: personal ? state.maxModelCalls : current.maxModelCalls,
+          queryEmbeddings: personal ? state.maxQueryEmbeddings : current.maxQueryEmbeddings,
+          toolCalls: current.maxToolCalls, deadlineMs: current.maxRunSeconds * 1000 },
         embeddings: { embed: (...args: Parameters<typeof gateway.embed>) => {
           const [input, actor, signal, resourceAccess, durable] = args;
           if (!durable) throw new AgentStopped('unavailable');

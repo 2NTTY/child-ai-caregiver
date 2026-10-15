@@ -1,5 +1,9 @@
 import { z } from 'zod';
 import { PERSONAL_MODEL, PERSONAL_RUN_LIMITS } from './model-settings.ts';
+import { AGENT_RUN_LIMITS } from './agent-run-limits.ts';
+
+const tools = z.number().int().min(AGENT_RUN_LIMITS.toolCalls.min).max(AGENT_RUN_LIMITS.toolCalls.max);
+const seconds = z.number().int().min(AGENT_RUN_LIMITS.deadlineSeconds.min).max(AGENT_RUN_LIMITS.deadlineSeconds.max);
 
 export const platformPolicyValuesSchema = z.object({
   enabled: z.boolean(), model: z.literal(PERSONAL_MODEL),
@@ -7,8 +11,12 @@ export const platformPolicyValuesSchema = z.object({
   personalDailyGlobalAttempts: z.number().int().min(1).max(10000),
   maxModelCalls: z.number().int().min(1).max(PERSONAL_RUN_LIMITS.modelCalls.max),
   maxQueryEmbeddings: z.number().int().min(1).max(PERSONAL_RUN_LIMITS.queryEmbeddings.max),
+  // Optional on commands so legacy operation fingerprints and clients remain compatible.
+  maxToolCalls: tools.optional(), maxRunSeconds: seconds.optional(),
 }).strict();
-export const platformPolicySchema = platformPolicyValuesSchema.extend({ version: z.number().int().nonnegative(), updatedAt: z.iso.datetime().nullable() });
+export const platformPolicySchema = platformPolicyValuesSchema.extend({
+  maxToolCalls: tools.default(AGENT_RUN_LIMITS.toolCalls.default),
+  maxRunSeconds: seconds.default(AGENT_RUN_LIMITS.deadlineSeconds.default), version: z.number().int().nonnegative(), updatedAt: z.iso.datetime().nullable() });
 export type PlatformPolicy = z.infer<typeof platformPolicySchema>;
 const operation = { opId: z.uuid() }, address = z.email().max(320).transform(value => value.toLowerCase());
 export const adminCommandSchema = z.discriminatedUnion('kind', [
