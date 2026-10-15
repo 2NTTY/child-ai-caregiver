@@ -1,3 +1,4 @@
+import { createProductionTransport } from "./production-transport";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { usePathname, useRouter, type Href } from "expo-router";
@@ -174,13 +175,13 @@ const ProductionContext = createContext<ProductionContextValue | null>(null);
 // Identity and child consumers must continue using the reactive production value.
 const ProductionOwnerContext = createContext<ProductionOwner | null>(null);
 
-export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || "/api" }: { children: ReactNode; apiBaseUrl?: string }) {
-  const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline(), undefined, undefined, undefined, { legacyTrial: process.env.EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL === "true" }));
+export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim() || (Platform.OS === "web" ? "/api" : "https://ex-machina.eu.org/api") }: { children: ReactNode; apiBaseUrl?: string }) {
+  const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline(), undefined, undefined, undefined, { legacyTrial: process.env.EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL === "true" }, createProductionTransport(apiBaseUrl)));
   const value = useProductionValue(owner);
   useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" && value.account.gate === "ready" ? value.userId : null, value.online, async reason => {
     await owner.refresh();
     owner.invalidatePrivateReads(false, reason !== "unavailable");
-  });
+  }, owner.fetcher);
   useEffect(() => {
     owner.connect();
     void owner.controller.restoreSession();

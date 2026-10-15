@@ -2685,6 +2685,113 @@
 - Verification / Limits：本包只核文件 diff、連結、錨點與依賴；沒有產品測試、模型、通知、雲端資源或部署。原生 build、簽署、實機與完整語音尚未完成；EAS 帳號及首次程式上傳／費用需於實際範圍就緒後處理。
 
 
+<a id="log-20261015-android-foundation-local"></a>
+### 2026-10-15 — S04-W01 原生身份及共用 transport 本機實作
+
+- Scope / Baseline：master 4f88948（#228），分支 codex/s04-w01-android-foundation；協作者 #214～#216 更新後仍未合併，本次差異與其修改路徑無重疊，不接管。沿既有 Expo／Firebase／Server／owner，不改 UI 設計。
+- Result：原生 token 交換、獨立 ledger hash domain、SecureStore、指定 origin／拒重導 transport；Web Cookie／Origin 及原身分／撤銷規則保留。共同 owner、聊天與各域 client 注入相同 transport，管理 API 不向原生開放。EAS／App ID／runtime 基礎及 archive allowlist 已備妥，原生安全隨機由 Expo Crypto 提供；沒有手機業務主庫。
+- Verification：同一登入／讀回／撤銷情景先驗 auth port，再擴至正式 Node／API 入口通過；最後受影響 31 個型別 roots 為 0 diagnostics。Android bundle 首次通過後，source review 發現原生缺 crypto.randomUUID 及 Web-only event guard，補官方 native 接點後更新 bundle 通過。不做全量或畫面矩陣；無真模型／embedding／通知／部署。[版本與結果](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
+- Limits / Next：Expo 帳號已準備，但 CLI 未登入，EAS archive 檢查在登入要求停止，零上載／雲端建置；不能當 APK 或真機完成。等待本人登入後核 archive、project 及具體建置授權，再部署相容 Server 並做手機首條流程。S04-W01 保持未完成，後續包未開始；既有備份待驗及 STR01 交接不變。
+
+
+<a id="log-20261015-android-config-preflight"></a>
+### 2026-10-15 — S04-W01 原生 Firebase 配置缺口核實
+
+- 唯讀取得目前 Firebase 公開 key 的限制：現有 Web key 帶 browser referrer restriction，不能直接給原生 JS SDK 使用；SDK 13.0.0 的 React Native 額外 headers 亦沒有 Android package／cert 欄位。沒有修改 key、IAM、配額或建立資源。
+- 雲端 build 配置補完整 Firebase 環境與 HTTPS API 檢查，避免產出已知無法登入的 APK；部署交接列同專案 Auth-only 專用 key 的最小範圍，保留 Web 限制。這是已核實配置缺口，不是 Android 登入通過。Expo CLI 仍未登入；原生 key／archive／APK／部署／真機保持待驗，不重跑既有 bundle 或產品測試。
+
+
+<a id="log-20261015-android-expo-setup"></a>
+## 2026-10-15 — S04-W01 Expo 接線及首次 APK 準備
+
+- 使用者完成 Expo 登入並批准 `2ntty/yuyoufang` 專案、已核對私有前端封包、EAS 簽署及最多一次免費 preview APK；另批准既有 GCP 專案的 Auth-only 原生公開 key。沒有批准付費升級，本次不含部署／模型／通知。
+- 真 archive 首次只含四個根檔案，定位為 EAS 遍歷目錄前的 ignore 匹配；修正後同一入口包含 609 檔／25,129,109 bytes，無未追蹤或禁止檔案，與來源一致。保留先前未登入與不完整 archive 證據，不當雲端 build 失敗。
+- 已連結公開 project ID，原生 Auth key 只允許 Identity Toolkit／Secure Token，設定於 preview；Web key 不變。實查 Expo Free、Android 0／15。沒有生成 APK，Server 原生端點尚未部署，真機未驗。
+- 本機原有合成／型別／Hermes 證據復用，不重跑產品測試。主模型處理，B 單作者交付；下一步只執行已批准的一次 build，再準備部署及真機範圍。
+
+
+<a id="log-20261015-android-build-fingerprint"></a>
+### 2026-10-15 — S04-W01 首次雲端建置失敗與有界修正
+
+- Expo 免費 preview build `25ecaca2-8ef1-4dbb-ad7f-0627d41ea6b9` 已上載並建立受管簽署，在 CONFIGURE_EXPO_UPDATES 因本機／雲端 runtime fingerprint 不同停止；沒有 APK，沒有部署、模型或通知。
+- 定位為 junction 令 autolinking 路徑不同，加上固定 fingerprint 0.20.13 Windows loader 未正規化 glob 路徑。改用實體隔離依賴，按官方方法補一行 POSIX 正規化；保留版本／路徑 guard 及全部 fingerprint 檢查，不整套升 SDK。
+- 一次本機修後核對與既有雲端 hash 同為 `c312bc718cf9e42fde6ff62b768217f6aaf7cfd6`。使用者准同類最小補驗直接執行，接下來只補一次免費 build；Server 仍只部署已批准 c6cf75d 四檔，真機限一個 run／4 生成／2 embedding、<$0.10。當前未執行這些後續操作，不以指紋相同當成 APK 成功。
+
+
+<a id="log-20261015-android-archive-completeness"></a>
+### 2026-10-15 — S04-W01 上傳封包依賴補齊
+
+- 第二次免費 build `89b5bfd2-2da4-4b5d-af46-fc284eb302df` 通過指紋檢查，在 EAGER_BUNDLE 因上傳白名單漏掉既有 `src/config/api-base-url.ts` 停止；保留原失敗，不部署。
+- 只補白名單的 `src/config`，不改功能或提高相容範圍。新的實際 EAS archive 共 612 檔／25,132,148 bytes，與正式來源一致；用此封包做一次本機 Android Hermes bundle 通過，無需重跑型別／產品測試。
+- 使用者准同類必要補驗免再問，但自動批准審查認為第三次私有程式上傳及 EAS build 未獲明確涵蓋，拒絕啟動。該批命令未執行；沒有第三次上傳／build、部署、模型、embedding 或通知。保留修正並取得具體上傳／建置批准後才恢復，不嘗試繞過。
+- 尚無 APK 或真機成果，S04-W01 不標完成；Server 仍沿既已批准的 c6cf75d 四檔相容部署，不因本次前端 archive 修正擴大部署範圍。
+
+
+<a id="log-20261015-android-apk-api-delivery"></a>
+### 2026-10-15 — S04-W01 首份 APK 與相容 API 部署
+
+- 使用者明確補准第三次私有前端上傳及一次免費 build 後，`7586788` 的 612 檔來源在同一 Expo 專案／簽署完成；build `b2fb7fe9-5f00-4d4c-9d62-b425c9b318ac` 於 12:49 UTC 成功，APK 0.1.0／versionCode 1。沒有購買方案，前兩次失敗保留。
+- 隨已批准範圍經 IAP 傳送原 `c6cf75d` 四個 Server 檔案及核對腳本，API／worker 於 12:51 UTC 更新為 `s04-c6cf75d` 並健康；Web 映像、資料、配額及停止期限保持，無 migration，保留回滾映像與配置。
+- 本包真模型、embedding、通知仍為 0；已請本人手機安裝及登入，尚未取得人工結果。S04-W01 仍待一次已批准聊天／引用及重開讀回，draft PR #229 不合併、不開依賴包，不以雲端 build 或健康檢查代替真機。
+
+
+<a id="log-20261015-android-startup-repair"></a>
+### 2026-10-15 — S04-W01 真機登入後啟動失敗與共用刷新修正
+
+- 本人回覆已安裝並登入，主頁整個白屏，重開閃退；提供 JavaScriptException 報告，頂層為 SettingsIdentityBridge。停止原真模型驗收，沒有發送 AI 訊息或通知，不將 APK 成功改稱真機完成。
+- 核對固定 RN 0.86.3 的 window=global 別名，實際設定刷新 hook 在此環境重現 `window.addEventListener is not a function`。局部抽出原有失效事件接點，Web 保留原事件，Android 使用無正文的程序內信號；各領域保留原身份／孩子／忙碌及延後刷新核對，沒有改 UI、Server、權限或資料。
+- 只跑原生失敗定向檢查一次、修後原生／Web 兩項一次、8 roots 型別與一次 Android export；全部修後檢查通過，runtime 與已安裝 APK 相同。未安裝 Android 模擬器，亦未為此下載大型工具。這些不代替真機畫面證據。
+- 修正待透過同一 Expo preview 相容更新交付；本次沒有新 cloud build、模型、embedding、通知或 VM 部署。使用者要求需本人步驟時保留現場並先做獨立工作；S04-W01 仍待主頁恢復及原首條聊天，不合併 draft PR #229。證據沿用同一 S04 EV，保留所有舊失敗。
+
+
+<a id="log-20261015-android-startup-ota"></a>
+### 2026-10-15 — S04-W01 相容啟動修正發布
+
+- 已 review 的 `d9e249e` 於 13:52 UTC 發布到本人 Expo 專案的 Android preview；update group `17c74c48-436a-4b4e-975c-1defa26b9d22`，runtime `c312bc718cf9e42fde6ff62b768217f6aaf7cfd6` 與原 APK 相同。只上載一個編譯 bundle 及一個 asset，復用 29 個 assets；沒有第四次 APK build、後端部署或付費升級。
+- 已請本人保持網絡重開以接收修正；首次啟動仍可能使用快取，官方恢復機制可以下載後在下一次啟動使用，但不保證所有閃退均自動恢復。原安裝／登入成功及主頁失敗證據保留，未代填修正後真機結果。
+- 本次零模型、embedding、通知；draft PR #229 仍等主頁恢復及原首條聊天讀回。等待期間可準備獨立後續工作，不把前置缺證據改成已完成。
+
+
+<a id="log-20261015-android-assistant-blank"></a>
+### 2026-10-15 — S04-W01 主頁恢復與助手空白定位
+
+- 本人確認 OTA 後主頁正常，點「助手」則整頁空白，頂部／底部導航亦消失；其後明確澄清沒有閃退及沒有新錯誤報告。這是另一個未定位問題，原 SettingsIdentityBridge 失敗及修正證據保留，不將原錯誤套到新現象。
+- 定向核對助手、頁面容器及原生接點；上游 Expo #49681 涉及分頁 animation／detach 的條件與現配置不同，未套用其 workaround、未升級 SDK。僅補 Expo Router 原生錯誤／載入出口，使可捕捉的渲染錯誤具有安全參考及手動恢復入口；不顯示錯誤正文／URL／私人資料，不重送原操作。
+- 四個受影響入口型別零診斷，安全參考檢查及一次 Android export 通過；runtime 與原 APK 相同。本機 source map 只供定位，不上傳；尚未證明助手根因或修復。零模型、通知、後端部署、新 APK build。
+- PR #229 保持 draft，原一次真模型流程未開始；按使用者要求保留待本人步驟並繼續可獨立工作，不改寫前置包完成狀態。
+
+- 14:10 UTC 診斷／恢復更新 `2d6120b` 已發布至同一 preview，group `513bf7d9-0ca1-481d-af00-94d23e9da8ef`，只傳一個 bundle、30 assets 全部復用；沒有 source-map 上傳。等待本人一次助手讀回，未宣稱已修好。
+
+
+<a id="log-20261015-android-blank-no-reference"></a>
+### 2026-10-15 — S04-W01 診斷更新後仍全白
+
+- 本人按診斷更新問題回覆「全白」，沒有頁面錯誤參考碼。發布成功不證明手機實際啟用該 update ID，現階段仍未知；助手根因未確認，不把沒有錯誤卡當成沒有 JavaScript 錯誤。
+- 局部核對原生導航及彈層後未得到足夠修正依據，沒有套用不相符的上游 workaround、再次發布或重跑測試。改以一次受限真機日誌定位；已詢問本人能否 USB 接線及親自允許偵錯。沒有取得設備授權便不讀取設備。
+- 零新模型、通知、建置、部署或 OTA；原首次聊天仍未開始。PR #229 保持 draft，不將尚未可用的助手頁視為已驗收。
+
+
+<a id="log-20261015-android-input-native-repair"></a>
+### 2026-10-15 — S04-W01 原生輸入框根因與相容修正
+
+- 本人接線並授權 USB 偵錯後，只啟動育有方及讀取該程序診斷；22:39 HKT 實際取得 AndroidTextInput outlineStyle 原生型別錯誤。Paper 5.15.3 flat 分支未消費此 prop，把共用 wrapper 的樣式陣列傳至 RN 0.86.3 字串 setter；原生掛載失敗不經 JS ErrorBoundary。原用戶全白但未見閃退的回覆仍保留。
+- `49c33e3` 一行修正只對 outlined 傳入該樣式，保留 flat 的 underlineStyle 及原設計。一項真 wrapper 定向檢查先失敗、修後通過；一次 Android export 通過，runtime 與已安裝 APK 相同。沒有擴展測試或改框架。
+- 14:47 UTC 發布至既有 Android preview，group `63b5ab20-4b5a-44b1-a228-b944efbbf98d`；只上載一個編譯 bundle、復用全部 30 assets，沒有 source map／新 APK build／後端部署／模型／通知。原生日誌留本機私有 cache，工程只保存 hash 及去私隱結論。
+- 啟動下載後程序仍運行，但手機鎖屏，已請本人只解鎖一次；不代填畫面成功或 OTA 啟用身份。原首條聊天尚未開始，#229 保持 draft；結果沿同一 S04 EV。
+
+
+<a id="log-20261015-android-input-usability"></a>
+### 2026-10-15 — S04-W01 真機輸入、停止原因及共用修正
+
+- 解鎖後沿既有 USB 授權核對，助手及冷重開已正常；首次直接重啟仍出現舊 outlineStyle 錯誤，下載後再開才恢復，原失敗保留，不虛構 active update ID。孩子表單展開的原生量度缺陷 `3df01ed` 已發布並核對欄位可見，未代建孩子。
+- 本人反映鍵盤遮擋、空輸入框保留多行高度及停止原因藏於詳情。`8992ce9` 沿 RN KeyboardAvoidingView 修 Android 避讓，空值重設高度；真機輸入框從鍵盤下方移到上方，僅輸入並清除自己的未發送多行文字，高度由 132→363→132 px，零訊息發送。
+- 共用 controller 在送出時清頭尾空行、連續換行最多兩個，保留段落內容；unknown 查回沿提交的同一文字。Server 保存安全停止原因，保留已保存結果、候選與原操作防重；前端仍核正文與引用匹配。兩個定向情景及 5 roots 型別通過；API fixture 首次漏既有身份 header 返回 428，只修 fixture 並補該情景，沒有整套重跑。
+- Android export 與 runtime 核對通過；15:39 UTC 發布 preview group `b44fb753`，僅一 bundle、30 assets 復用，無新 APK。Web 首個本機產物誤用原生公開 Auth 配置，發布前已棄用，改用既有 Web 配置再 export；未將錯配置送上站。
+- 15:49 UTC 經原 IAP 路徑把 2 個 Server 檔與靜態 Web 產物部署為 `s04-8992ce9`；API／worker／Web 健康，正式 `/chat` hash 一致。保留舊映像及受保護配置，零遷移、模型／通知或續期。
+- 本人明確指定每日每人 200、全站 400；沿管理服務交易保存政策 v1並讀回，已用計數不變，每次運行／本人 key 限制不變，不重發之前停止訊息。本人手動訊息曾遇額度上限，與本代理真模型驗收為零分開記錄。
+- 搜尋標籤延遲及切頁不順仍未定位，未擴做昂貴測試或推測修補。#229 保持 draft，首條有來源 Android 聊天／重開尚待驗；語音、拍照及相簿仍依 Android 計劃接續，不把灰色入口當功能完成。原生日誌、畫面及私人聊天只留忽略 cache，工程保存去私隱結論及 hash；詳見同一 S04 EV。
+
+
 <a id="log-20261016-agent-visible-budget"></a>
 ### 2026-10-16 — Agent 可見預算及自主收尾
 
@@ -2692,6 +2799,15 @@
 - Result：平台新政策預設 8 次生成／4 次查詢向量、工具 16；個人已選設定與每日額度不變。最後可用步只保留 terminal，完整 parts、引用／授權／收據及失敗停止仍有效；沒有額外模型整理或重開 run。
 - Verification：首次定向批次六項通過，一項因缺本機 SDK 路徑未載入；補用既有隔離依賴後管理 HTTP 與單輪招呼通過。review 使能力 metadata 與終結宣告一致後只補同一預算流程；四個受影響型別入口零診斷，diff check 通過。零真模型／embedding／通知、不跑全量。證據：[EV](artifacts/verification/AGENT_VISIBLE_BUDGET_20261016.json)。
 - Limits：scripted 通過不證明真模型一定採最佳步數；時間、每日額度、錯誤引用或非法終結仍可誠實停止。此時尚待部署及現網版本化政策更新，不清零或自動重發使用者訊息。
+
+
+<a id="log-20261016-agent-budget-delivery"></a>
+### 2026-10-16 — 可見預算部署及 Android 接續
+
+- Delivery：#230 由 A 提交／推送／建立及合併，開發 1150193 unsigned，合併 3b02ce5；沿既有明確授權以 admin merge 處理分支更新限制，未修改規則。Codex CI 診斷因 workspace access denied 未取得，不冒稱 CI 通過；本機必要檢查與主模型 review 保留。
+- Deployment：原 VM ID／IP／期限及基礎映像唯讀核對後，只經 IAP 上傳五個程式／prompt 檔的 21,044 bytes 更新包及 hash。16:26 UTC API／worker budget-1150193 健康，Web 保留 s04-8992ce9；無資料遷移、模型、通知或主機續期。映像／配置保留可回退；SQL 仍停止。
+- Policy：沿已驗證管理員及原管理服務交易，政策 v1→v2，只將生成 4→8、查詢向量 2→4；工具 runtime 16。每日 200／400、本人 key 設定及計數不變，前後全站均 21 次；未重發使用者訊息。詳見[同一 EV](artifacts/verification/AGENT_VISIBLE_BUDGET_20261016.json)。
+- Android：切回 B，把穩定 master 合入 #229；WORKLOG 的雙方追加段完整保留，無改寫舊失敗。首條真聊天 gate 仍待實際結果，不能以本輪 scripted 招呼證據當品質通過。語音／拍照沿原後續包保留。
 
 
 <a id="log-20261016-firestore-budget-compatibility"></a>
@@ -2702,6 +2818,14 @@
 - 限制／接續：部署與真 Firestore 接點待核；真人首條聊天仍由使用者驗收。舊 #230 證據保留，不能當成台帳相容性已驗。見[本次證據](artifacts/verification/FIRESTORE_AGENT_BUDGET_20261016.json)。
 
 
+<a id="log-20261016-firestore-budget-deployment"></a>
+## 2026-10-16 — 預算修正部署與 S04 人工驗收交接
+
+- #231 合併 `7d1ccd6`；原 VM API／worker 部署 `ad021bf`，2026-10-15 16:55 UTC 服務健康、三檔 hash 相符。只有 7.6 KB 程式包及核對資料，無密鑰、家庭資料或遷移；Web／Android 產物不變。
+- 真 Firestore 一個專用合成預算根核對 8／16／4 限制及一次 16 工具計數讀回後刪除；零模型、通知或真工具副作用，政策與每日計數未修改。真人聊天仍由使用者驗收。
+- S04 合併記錄中的 WORKLOG 因兩分支追加次序不同而衝突；更正為完整保留原 S04 bytes，再接 #231 的新增後綴，沒有重寫原證據。鍵盤位移尚未修。見[部署證據](artifacts/verification/FIRESTORE_AGENT_BUDGET_20261016.json)。
+
+
 ## LOG-20261016-AGENT-DISCONNECTED-RESULT
 
 - 原 master `7d1ccd6`；使用者回報關閉 App 後回覆丟失。原 run metadata 顯示五次生成／五次工具／一次查詢向量，最後無結果；兩次引用拒絕及模型錯誤仍保留，不宣稱是斷線直接造成。
@@ -2710,9 +2834,22 @@
 - C 單作者主責；main model 實作及 review。部署待交付，首條聊天仍由使用者驗收；管理員總控後續接續。證據：[EV](artifacts/verification/AGENT_DISCONNECTED_RESULT_20261016.json)。
 
 
+## LOG-20261016-AGENT-DISCONNECTED-DEPLOY
+
+- #232 由 C 單作者提交、推送及合併；開發提交 unsigned。S04 由 B 整合至 `8d3fc29`，保留原生登入及直接錯誤文案。2026-10-15 17:13:54 UTC 部署原 VM API／worker `reply-8d3fc29`，兩容器及公開 health 通過；Web／Android、資料、配額、期限不變。
+- 7,382 bytes、兩個 source 檔 hash／既有映像身份核對後建小型層；保留舊映像及受保護設定回退。沒有真模型或裝置重試，不修改先前失敗結果。證據：[EV](artifacts/verification/AGENT_DISCONNECTED_RESULT_20261016.json)。
+
+
 ## LOG-20261016-ADMIN-AGENT-RUN-LIMITS
 
 - 按使用者要求把單輪限額總控交回管理員：同一 policy 提供生成、工具、查詢 embedding 及秒數，API／worker 固定同一運行快照；合法範圍共用，保留舊 policy／命令指紋及原收據，沒有提高實際限額或清零用量。
 - 管理頁新增工具／期限表單及生效說明；縮短期限不延長原 claim。每步剩餘預算提示沿既有 runtime，不新增模型輪次。
 - 原有管理接線一條情景通過（24 次合成 HTTP），正式 HTTP／ADK scripted 回饋一項通過；8 個 Server/shared 型別入口與管理頁型別零診斷，一次 Web 建置成功。驗證準備中發現舊 auth 替身缺少完整介面及 checker 引用不存在的生成檔，已局部修正；無真模型、通知或全量測試。
 - 待合併及原站相容部署。Android 首條聊天及鍵盤仍待真人／真機；使用者離開期間不阻塞其他獨立工作。完成 Android 後再接本人 key／自選模型／限額，再提供同一正式 Agent 的本地隔離測試入口。證據：[EV](artifacts/verification/ADMIN_AGENT_RUN_LIMITS_20261016.json)。
+
+
+## LOG-20261016-ADMIN-RUN-LIMITS-DEPLOYMENT
+
+- #233 經對應帳號合併，Android 分支保留原接線後整合為 `8ba66e7`。沿原 VM 傳送 23,314 bytes Server 差異及 4,634,558 bytes Web 產物；固定 base image／容器 ID 和檔案 hash 先核對，保留原映像與受保護 compose 配置。
+- 2026-10-15 17:32:03 UTC，API／worker／Web `admin-8ba66e7` 健康；其後唯讀 policy v2、公開 admin HTML／JS hash 相符。實際每日 200／400、單輪 8／16／4／90 秒未變；沒有遷移、模型、通知、清零或重發聊天。
+- Android APK／OTA 不變；使用者離開期間，首條聊天及鍵盤真機核對仍待驗，先接續不依賴人工結果的裝置會話工作。主機期限保持 2026-10-17 20:50:44 香港時間，不自動續期。[證據](artifacts/verification/ADMIN_AGENT_RUN_LIMITS_20261016.json)。

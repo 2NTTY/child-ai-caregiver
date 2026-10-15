@@ -26,6 +26,36 @@
     "notifications": 0,
     "cloudChanges": 0
   },
-  "deployment": "pending",
+  "deployment": {
+    "commit": "ad021bf91727f4bdeba1a2658176116bedc39ed9",
+    "pullRequest": 231,
+    "merge": "7d1ccd6fad3b8d8ff8c753d8701ffea75a99a48f",
+    "image": "yuban-firestore-api:ledger-ad021bf",
+    "imageId": "sha256:1a160e519c49a1ba8a8d768d9f279ea2577344376491c54d755099c1e3d4d602",
+    "cloudCheck": {
+      "at": "2026-10-15T16:55:15.275Z",
+      "limits": {
+        "modelCalls": 8,
+        "toolCalls": 16,
+        "queryEmbeddings": 4
+      },
+      "used": {
+        "modelCalls": 0,
+        "toolCalls": 16,
+        "queryEmbeddings": 0
+      },
+      "policyVersion": 2,
+      "files": {
+        "server/agent-budget.ts": "3a00751662555cc3717225c592d9ca292e2aeb52e3a3629d3f590ce6d776389d",
+        "server/durable-root-budget.ts": "8d35f10b72b276cced3858380cb15ea0e35c77144d93d8c0a924d7de1fe46fa9",
+        "server/firestore-root-budget.ts": "4e113768af3c8ddfe05edeedbdcbc398b1da2ccb85076b0d7c2b58984c175420"
+      },
+      "syntheticRootDeleted": true,
+      "modelCalls": 0,
+      "notifications": 0
+    },
+    "quotaChanged": false,
+    "migration": false
+  },
   "limits": "No true model quality or user chat acceptance claimed; no daily quota change; older budget reader cannot read roots with the increased tool limit."
 }

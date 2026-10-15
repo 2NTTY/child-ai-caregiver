@@ -6,7 +6,7 @@ import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { settingsAccessError, settingsFailure, settingsRead, useSettingsRefresh, useSettingsRequests, type SettingsEnvironment } from "./SettingsDomainSupport";
 let contactPresentationEpoch = 0;
 export function useProductionContact(env: SettingsEnvironment) {
-  const api = useMemo(() => createContactApi(env.apiBaseUrl), [env.apiBaseUrl]), requests = useSettingsRequests(env);
+  const api = useMemo(() => createContactApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]), requests = useSettingsRequests(env);
   const [state, setState] = useState<ContactViewModel>(() => ({ scopeKey: env.scopeKey, childName: env.childName, userId: env.userId ?? "", dataLabel: "尚未讀取", page: null,
     online: env.online, access: env.role === "viewer" ? "read_only" : "editable", load: "loading", busy: false, locked: true, notice: "", operation: "none", pending: null,
     originalConsent: false, dirty: false, epoch: ++contactPresentationEpoch, confirmationEpoch: 0, missingTasks: [] }));

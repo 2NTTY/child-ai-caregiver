@@ -10,8 +10,8 @@ import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { useTaskKnowledgeRefresh, useTaskKnowledgeRuntime, type TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
 
 export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWorkspaceValue {
-  const api = useMemo(() => createGrowthApi(env.apiBaseUrl), [env.apiBaseUrl]);
-  const concernsApi = useMemo(() => createConcernsApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createGrowthApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
+  const concernsApi = useMemo(() => createConcernsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const runtime = useTaskKnowledgeRuntime(env, "growth");
   const [page, setPage] = useState<GrowthPage | null>(null), [load, setLoad] = useState<GrowthViewModel["load"]>("loading");
   const [busy, setBusy] = useState(false), [pending, setPending] = useState<GrowthPending | null>(null), [originalConsent, setOriginalConsent] = useState(false);

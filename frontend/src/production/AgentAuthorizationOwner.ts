@@ -51,9 +51,9 @@ export class AgentAuthorizationOwner {
   private readonly onAccessLost: (identity: boolean) => void;
   private readonly onSaved: () => void;
   constructor(baseUrl: string, online: boolean, onAccessLost: (identity: boolean) => void,
-    onSaved: () => void) {
+    onSaved: () => void, fetcher: typeof fetch = fetch) {
     this.onAccessLost = onAccessLost; this.onSaved = onSaved;
-    this.api = createAgentActionsApi(baseUrl); this.contactApi = createContactApi(baseUrl); this.snapshot = initial(online);
+    this.api = createAgentActionsApi(baseUrl, fetcher); this.contactApi = createContactApi(baseUrl, fetcher); this.snapshot = initial(online);
   }
   getSnapshot = () => this.snapshot;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };

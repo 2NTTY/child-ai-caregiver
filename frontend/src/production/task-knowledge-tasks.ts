@@ -13,7 +13,7 @@ import { domainFailure, mergeById, useTaskKnowledgeRefresh, useTaskKnowledgeRunt
 type Attempt = { kind: "create"; input: TaskCreate } | { kind: "change"; input: TaskChange; basis: TaskView };
 const none: WriteOperationView = { state: "none", message: "", reference: null };
 export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorkspaceValue {
-  const api = useMemo(() => createTaskApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createTaskApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const runtime = useTaskKnowledgeRuntime(env, "tasks");
   const [page, setPage] = useState<TaskPage | null>(null), [reading, setReading] = useState(false);
   const [readState, setReadState] = useState<NonNullable<TasksViewModel["readState"]>>("loading");

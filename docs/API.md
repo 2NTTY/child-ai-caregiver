@@ -796,7 +796,18 @@ STORAGE_BACKEND=firestore 經 server/main.ts → firebase-main.ts／firebase-run
 | GET /healthz | 只表示程序在運作與 foundation 階段，不表示已查 DB、F02 通過或完整服務可用。 |
 | 其餘尚未移植 /api/* | 明確 503 firebase_domain_not_ready，舊密碼端點回 auth_provider_transition_required；F02／F03 接原生身份 UI 與產品路由，不能當永久縮減功能。 |
 
-所有私人回應 private, no-store；變更請求核確切 Origin。身份 body 上限 16 KiB，Node 入口整體上限 64 KiB；後續附件依原規格另作有界傳輸，不能沿此限制截斷產品照片。Server 部署以 attached identity/ADC 存取服務，不下載長期 key。
+所有私人回應 private, no-store；Web 變更請求核確切 Origin；原生請求只走下列[明確憑據協議](#native-session)。身份 body 上限 16 KiB，Node 入口整體上限 64 KiB；後續附件依原規格另作有界傳輸，不能沿此限制截斷產品照片。Server 部署以 attached identity/ADC 存取服務，不下載長期 key。
+
+<a id="native-session"></a>
+### Android 共用會話 transport
+
+S04-W01 擴充身份接線，不建立手機專用業務 API。Web 保持 HttpOnly `__session`；Android 以同一 Firebase JS Auth 的 ID token 向 `POST /api/auth/native-session` 交換 `{user,credential,expiresAtMs}`，JSON 仍只含 `idToken`，帶 `x-expected-user-id`。Server 沿目前身份、邀請／准入、近期 `auth_time`、有效期及逐裝置 ledger 核對；回應不設 Cookie。既有其他身份必須先登出，不能以交換更換其身份。
+
+Android 之後用 `Authorization: Bearer yuban-native-v1.<credential>` 呼叫同一 API。憑據只進 SecureStore，不進聊天、業務資料、一般日誌或雲端備份。原生 ledger 使用獨立 hash 前綴；不能將 Web cookie 改裝成 bearer。Server 每次重核 Firebase 有效性／撤銷、產品准入及裝置台帳；`get-session`、`sign-out`、撤銷其他裝置、近期重認證沿原接口及語義。
+
+原生路徑拒絕同時帶 Cookie、Origin 或瀏覽器 Fetch Metadata；Web 不因此放寬 Origin／CSRF。Node 的 request-shape 檢查只決定是否進入身份層，不能代替 credential／孩子權限檢查。管理 API 不接受原生憑據。所有私人回應 `private, no-store` 並以 `Cookie, Authorization` 分隔。
+
+共用 owner 向各領域 client 注入同一 transport；原生只允許指定 HTTPS origin 的 `/api/`，不傳 credentials 至重導向或另一站。上傳、下載、JSON 及 SSE 同一身份路徑；業務 body、版本、`opId`、unknown 查回及取消不改。暫時錯誤不當登出，斷線不重發操作；登入交換只在目前 generation／signal 仍有效時保存憑據。未設定有效 Firebase provider 時原生入口失敗關閉，不回退舊密碼接口。
 
 operator CLI firebase:control 接受 initialize／invite／revoke-invitation 及 stdin JSON，復用正式 authority；set-enabled 復用既有恢復控制的 expectedGeneration／新 generation／enabled 比較交換，不能沿舊 generation 啟用工作。不在公開 HTTP 提供管理後門、不輸出電郵或 token。Identity Platform blocking function 在 F02 部署，必須調同一 invitation authority；SDK 已有接點不能當 blocking function 已啟用。
 

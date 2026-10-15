@@ -1,3 +1,4 @@
+import { agentStopMessage } from "../src/shared/agent-stop-message.ts";
 import { agentFeedbackStream } from './agent-feedback-stream.ts';
 import type { AgentProgress } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
@@ -75,10 +76,12 @@ export async function handleProductAgentRequest(request: Request, userId: string
           && result.tools.length === 0 && result.proposals.length === 0)
           return apiError("ai_capacity_busy", "AI 正忙碌；原訊息已保存，但未開始處理，也沒有排隊。稍後請以新訊息重新提出要求。", 429);
         const questions = await options.store.confirmationQuestions?.(userId, childId, result.runId) ?? [];
-        const text = questions.length ? [result.text, ...questions].filter(Boolean).join("\n\n") : result.text || (result.proposals.length
+        const content = questions.length ? [result.text, ...questions].filter(Boolean).join("\n\n") : result.text || (result.proposals.length
           ? "Agent 未完成文字回覆，但已保存待你核對的候選；尚未確認的事項不代表已執行。請查看來源與待確認事項。"
           : result.status === "unknown" ? "這次 Agent 運行中斷，結果未知；沒有自動重新執行。請查核原運行結果。"
           : "Agent 暫未能完成回覆；原訊息仍已保存。請查看運行狀態及未完成事項。");
+        const reason = result.status === "stopped" || result.status === "unknown" ? agentStopMessage(result.stopReason) : null;
+        const text = reason ? `這次回覆未完成：${reason}。\n\n${content}` : content;
         const saved = await options.chat.createModelMessageForUser(userId, childId, messageId, text);
         const message = saved ?? (await options.chat.listForUser(userId, childId))?.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
         if (!message || !await options.isCurrentUser(userId)) return apiError("ai_unavailable", "未能確認回覆保存，請重新讀取。", 503);

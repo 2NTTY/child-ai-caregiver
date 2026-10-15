@@ -1,22 +1,23 @@
 import { useEffect, useRef } from "react";
+import { publishOnlineRefresh } from "./online-refresh-events.ts";
 
 export type OnlineRefreshReason = "changed" | "forced" | "unavailable";
-export const ONLINE_REFRESH_EVENT = "yuban-online-refresh";
+export { ONLINE_REFRESH_EVENT } from "./online-refresh-events.ts";
 const uuid = /^[0-9a-f-]{36}$/iu;
 const seq = /^(0|[1-9][0-9]{0,18})$/u;
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 
 /** Visible-page invalidations only. No writes, local storage, model calls or outbox. */
-export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, online: boolean, refresh: (reason: OnlineRefreshReason) => Promise<void>) {
+export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, online: boolean, refresh: (reason: OnlineRefreshReason) => Promise<void>, fetcher: typeof fetch = fetch) {
   const latestRefresh = useRef(refresh); latestRefresh.current = refresh;
   useEffect(() => {
-    if (!userId || !online || typeof window === "undefined") return;
+    if (!userId || !online || typeof window === "undefined" || typeof document === "undefined") return;
     const base = apiBaseUrl.replace(/\/$/u, ""), api = base.endsWith("/api") ? base : `${base}/api`;
     const cursors = new Map<string, { epoch: string; cursor: string; accessVersion: number | null }>();
     let busy = false, stopped = false;
     const abort = new AbortController();
     async function read(path: string) {
-      const response = await fetch(`${api}${path}`, { credentials: "include", cache: "no-store", signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]),
+      const response = await fetcher(`${api}${path}`, { credentials: "include", cache: "no-store", signal: AbortSignal.any([abort.signal, AbortSignal.timeout(10_000)]),
         headers: { Accept: "application/json", "x-expected-user-id": userId! } });
       if (!response.ok) throw new Error("Online status unavailable");
       return response.json() as Promise<unknown>;
@@ -24,7 +25,7 @@ export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, onli
     const notify = async (reason: OnlineRefreshReason) => {
       if (stopped) return;
       await latestRefresh.current(reason);
-      if (!stopped) window.dispatchEvent(new Event(ONLINE_REFRESH_EVENT));
+      if (!stopped) publishOnlineRefresh();
     };
     const check = async (force = false) => {
       if (busy || stopped || document.visibilityState !== "visible") return;
@@ -62,5 +63,5 @@ export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, onli
     document.addEventListener("visibilitychange", event);
     event();
     return () => { stopped = true; clearInterval(timer); abort.abort(); window.removeEventListener("focus", event); document.removeEventListener("visibilitychange", event); };
-  }, [apiBaseUrl, userId, online]);
+  }, [apiBaseUrl, userId, online, fetcher]);
 }

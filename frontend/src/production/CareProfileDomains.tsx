@@ -1,7 +1,7 @@
 import { createContext, memo, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "expo-router";
 import { CareApiError, createCareApi } from "../../../src/client/care-api";
-import { ONLINE_REFRESH_EVENT } from "../../../src/client/use-online-updates";
+import { subscribeOnlineRefresh } from "../../../src/client/online-refresh-events";
 import type { CareCursor, CareRecord, CareValues, ChildProfile, ChildProfileData } from "../../../src/shared/care";
 import type { OnlineReceipt } from "../../../src/shared/online";
 import { emptyCareForm, type CareRecordsActions, type CareRecordsViewModel } from "../care-view-model";
@@ -48,8 +48,8 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     // This mounted owner retains its cache across routes; the host's default gcTime is zero.
     env.queryClient.setQueryDefaults(["production", env.scopeKey, "care"], { gcTime: Infinity });
     env.queryClient.setQueryDefaults(["production", env.scopeKey, "profile"], { gcTime: Infinity });
-    return createCareApi(env.apiBaseUrl);
-  }, [env.apiBaseUrl, env.queryClient, env.scopeKey]);
+    return createCareApi(env.apiBaseUrl, env.owner.fetcher);
+  }, [env.apiBaseUrl, env.owner.fetcher, env.queryClient, env.scopeKey]);
   const editable = env.role === "owner" || env.role === "caregiver";
   const careKey = ["production", env.scopeKey, "care"] as const;
   const profileKey = ["production", env.scopeKey, "profile"] as const;
@@ -127,9 +127,9 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       refreshDeferred.current = false;
       void reloadRef.current.loadCare(); void reloadRef.current.loadProfile();
     };
-    if (typeof window !== "undefined") window.addEventListener(ONLINE_REFRESH_EVENT, refresh);
+    const unsubscribe = subscribeOnlineRefresh(refresh);
     return () => {
-      if (typeof window !== "undefined") window.removeEventListener(ONLINE_REFRESH_EVENT, refresh);
+      unsubscribe();
       controllers.current.forEach(control => control.abort()); api.resetOnline?.();
       void env.queryClient.cancelQueries({ queryKey: careKey }); void env.queryClient.cancelQueries({ queryKey: profileKey });
       env.queryClient.removeQueries({ queryKey: careKey }); env.queryClient.removeQueries({ queryKey: profileKey });

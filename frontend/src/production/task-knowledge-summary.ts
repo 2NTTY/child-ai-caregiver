@@ -17,7 +17,7 @@ const projectSummary = (page: CareSummary): SummaryPage => {
     records: page.records.map(record => ({ ...record, ...record.details })) };
 };
 export function useTaskKnowledgeSummary(env: TaskKnowledgeEnvironment): TaskKnowledgeSummaryValue {
-  const api = useMemo(() => createCareSummaryApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createCareSummaryApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const runtime = useTaskKnowledgeRuntime(env, "summary");
   const [query, setQuery] = useState(summaryQueryDefaults), [page, setPage] = useState<SummaryPage | null>(null);
   const [busy, setBusy] = useState(false), [readFailed, setReadFailed] = useState(false), [dirty, setDirty] = useState(false);

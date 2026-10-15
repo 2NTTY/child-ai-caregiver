@@ -13,6 +13,9 @@ The exact dependency tree and registry integrity values are recorded in [package
 | firebase-admin | 14.5.0 | Apache-2.0 | [LICENSE](licenses/firebase-admin/LICENSE) |
 | @expo/metro-runtime | 57.0.16 | MIT | [LICENSE](licenses/expo-metro-runtime/LICENSE) |
 | expo | 57.0.24 | MIT | [LICENSE](licenses/expo/LICENSE) |
+| expo-crypto | 57.0.3 | MIT | [LICENSE](licenses/expo-crypto/LICENSE) |
+| expo-secure-store | 57.0.4 | MIT | [LICENSE](licenses/expo-secure-store/LICENSE) |
+| expo-updates | 57.0.23 | MIT | [LICENSE](licenses/expo-updates/LICENSE) |
 | expo-constants | 57.0.19 | MIT | [LICENSE](licenses/expo-constants/LICENSE) |
 | expo-linking | 57.0.10 | MIT | [LICENSE](licenses/expo-linking/LICENSE) |
 | expo-router | 57.0.22 | MIT | [LICENSE](licenses/expo-router/LICENSE) |

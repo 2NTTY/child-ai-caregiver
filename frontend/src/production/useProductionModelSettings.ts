@@ -4,7 +4,7 @@ import type { ModelSettingsActions, ModelSettingsViewModel } from "../model-sett
 import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { settingsAccessError, settingsFailure, settingsRead, useSettingsRefresh, useSettingsRequests, type SettingsEnvironment } from "./SettingsDomainSupport";
 export function useProductionModelSettings(env: SettingsEnvironment) {
-  const api = useMemo(() => createModelSettingsApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createModelSettingsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const requests = useSettingsRequests(env, true);
   const [state, setState] = useState<ModelSettingsViewModel>({ scopeKey: env.identityKey, accountName: "", serverLabel: env.apiBaseUrl,
     snapshot: null, online: env.online, authorized: true, busy: null, operation: "none", notice: "", needsRead: false,

@@ -31,7 +31,7 @@ const preparationView = (item: FamilyDocument): PreparationDocumentView => {
 
 /** One shared Server document projection for preparation, history and report consumers. */
 export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
-  const api = useMemo(() => createFamilyDocumentsApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createFamilyDocumentsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const runtime = useTaskKnowledgeRuntime(env, "documents");
   const [page, setPage] = useState<DocumentPage | null>(null), [load, setLoad] = useState<"loading" | "ready" | "error">("loading");
   const [pageReadGeneration, setPageReadGeneration] = useState(-1);

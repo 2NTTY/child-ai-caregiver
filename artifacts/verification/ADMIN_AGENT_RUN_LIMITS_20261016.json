@@ -51,8 +51,35 @@
     "cloudWrites": 0
   },
   "deployment": {
-    "status": "pending",
-    "actualLimitsUnchanged": true
+    "status": "deployed",
+    "at": "2026-10-15T17:32:03Z",
+    "commit": "8ba66e78b961f47f7dbcc93fb7e83614c9960926",
+    "tag": "admin-8ba66e7",
+    "apiWorkerImage": "sha256:066d2d2861510d36ac16ff0403db64ec0560eb97f817dd4a8a37a49ff12fd69a",
+    "webImage": "sha256:cefea97a00d5e266bdd2e8042edeadbb97c996b9fb6396ba37f451353e037999",
+    "health": "api, worker, web and public health passed",
+    "policy": {
+      "enabled": true,
+      "model": "gemini-3.1-flash-lite",
+      "dailyUserAttempts": 200,
+      "dailyGlobalAttempts": 400,
+      "personalDailyGlobalAttempts": 1000,
+      "maxModelCalls": 8,
+      "maxQueryEmbeddings": 4,
+      "maxToolCalls": 16,
+      "maxRunSeconds": 90,
+      "version": 2,
+      "updatedAt": "2026-10-15T16:26:31.260Z"
+    },
+    "publicArtifactsMatched": [
+      "admin.html",
+      "_expo/static/js/web/index-a17940d73a6314326ccda108789a633e.js"
+    ],
+    "actualLimitsUnchanged": true,
+    "rollback": "Previous release images and protected compose environment retained",
+    "cloudBusinessWrites": 0,
+    "models": 0,
+    "notifications": 0
   },
   "limits": [
     "Scripted provider is not real model quality evidence.",

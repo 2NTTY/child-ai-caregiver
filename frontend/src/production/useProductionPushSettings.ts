@@ -9,7 +9,7 @@ import { settingsAccessError, settingsFailure, settingsRead, useSettingsRefresh,
 type PushReview = Omit<ChannelReview, "kind"> & { kind: "enable" | "revoke" | "test" } & { id: string | null };
 type OriginalPush = { review: PushReview; input: PushRegistrationInput | null; confirmed: boolean; reviewed: boolean; consent: boolean };
 export function useProductionPushSettings(env: SettingsEnvironment) {
-  const api = useMemo(() => createWebPushApi(env.apiBaseUrl), [env.apiBaseUrl]), requests = useSettingsRequests(env, true);
+  const api = useMemo(() => createWebPushApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]), requests = useSettingsRequests(env, true);
   const [status, setStatus] = useState<WebPushStatus | null>(null), [bindingId, setBindingId] = useState<string | null>(null);
   const [permission, setPermission] = useState(pushPermission), [readState, setReadState] = useState<PushSettingsModel["readState"]>("loading");
   const [review, setReview] = useState<PushReview | null>(null), [original, setOriginal] = useState<OriginalPush | null>(null), [notice, setNotice] = useState("");

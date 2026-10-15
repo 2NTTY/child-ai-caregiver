@@ -1,0 +1,489 @@
+{
+  "workPackage": "S04-W01",
+  "status": "native-rendering-input-repaired-source-backed-chat-gate-pending",
+  "baseline": "4f88948cf943585954efbe32ef93e0df0c53f3c8",
+  "recordedAt": "2026-10-15T11:20:23.441524+00:00",
+  "environment": {
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "expo": "57.0.24",
+    "easCli": "24.14.0",
+    "dependencyIsolation": "separate local install; shared node_modules untouched"
+  },
+  "checks": [
+    {
+      "name": "Native session exchange, restore and revoke through formal API and Node transport",
+      "result": "passed",
+      "test": "tests/firebase-auth.test.ts: Android session transport reuses admission and revocation without accepting browser cookies or weakening Web origin",
+      "testsRun": 1,
+      "fixture": "synthetic Auth and Firestore session ledger; no cloud",
+      "logSha256": "62e3d83a9ea714bffd7114ecdf57d2750b5bf62be75796c0604d3961c1961cb1",
+      "note": "Same representative scenario first checked the auth port, then formal HTTP composition; not two independent feature acceptances."
+    },
+    {
+      "name": "Affected TypeScript roots",
+      "result": "passed",
+      "roots": 31,
+      "diagnostics": 0,
+      "logSha256": "c70b8ec86db6bdbea9a8868b609c0d4d74ab974a28501fffeaa8789dc4089f42",
+      "note": "Initial 29-root check preceded native bootstrap and formal composition changes; final check is the current source set."
+    },
+    {
+      "name": "Android Hermes export",
+      "result": "passed",
+      "file": "index-84a6295311ff2076c6348bbb510d34cb.hbc",
+      "bytes": 8342395,
+      "sha256": "de13b67b03c7a33297c063c22cb7ba84cbfb97dc9945373b715602c10a43aa0c",
+      "logSha256": "3d42957675ed6ff9e0a04a6dbc0a4f019302076424ab0e68e25c4cf699cf4bdd",
+      "note": "Initial successful bundle was superseded after source review added native secure random and browser event guards. No APK or device claim."
+    },
+    {
+      "name": "EAS archive inspection",
+      "result": "blocked",
+      "reason": "Expo CLI not logged in; stopped before archive/upload/build",
+      "logSha256": "3d9e3eae949a8ae9069ef253308109605035d88bfab7ec052e3a9b9200ec4bdb"
+    },
+    {
+      "name": "Existing Firebase client configuration",
+      "result": "native-configuration-gap",
+      "readOnly": true,
+      "projectId": "ai-caregivers-for-children",
+      "publicConfigComplete": true,
+      "browserRestricted": true,
+      "note": "Current Web key cannot be reused by the native JS transport; its restrictions remain unchanged. A separate Auth-only client key is pending the concrete cloud setup scope. No key material retained in this evidence."
+    },
+    {
+      "name": "Logged-in EAS archive and approved cloud configuration",
+      "result": "passed-local-archive-cloud-configuration-only",
+      "initialArchive": {
+        "files": 4,
+        "bytes": 602351,
+        "issue": "Trailing-slash directory allowlist skipped app directories; no source upload or build"
+      },
+      "fixedArchive": {
+        "files": 609,
+        "bytes": 25129109,
+        "forbiddenFiles": 0,
+        "untrackedFiles": 0,
+        "sourceMismatches": 0,
+        "manifestSha256": "59d980013e055f11dece5a3b8f1c67e9a47896ca065499d50dfb8a915dd16e19"
+      },
+      "note": "Archive manifest preceded public project-link changes; final upload source is recorded with build evidence.",
+      "expo": {
+        "owner": "2ntty",
+        "slug": "yuyoufang",
+        "projectId": "8c63b9fc-b823-4b40-ba36-375ce43fa578",
+        "plan": "Free",
+        "androidBuildsUsedBefore": 0,
+        "androidBuildLimit": 15
+      },
+      "nativeAuth": {
+        "keyResourceId": "yuyoufang-android-auth",
+        "services": [
+          "identitytoolkit.googleapis.com",
+          "securetoken.googleapis.com"
+        ],
+        "webKeyUnchanged": true,
+        "previewConfigured": true,
+        "loginUntested": true
+      },
+      "approvedBuildCount": 1
+    },
+    {
+      "name": "First EAS preview build and fingerprint repair",
+      "result": "first-build-failed-local-repair-verified",
+      "buildId": "25ecaca2-8ef1-4dbb-ad7f-0627d41ea6b9",
+      "commit": "c6cf75d2846cb382b52cea4f039f19d74ba147e1",
+      "phase": "CONFIGURE_EXPO_UPDATES",
+      "originalLocalRuntime": "46d12425ebc11332a42b9010ad2709b26d086f6d",
+      "cloudRuntime": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "repairedLocalRuntime": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "causes": [
+        "Junction changed autolinking paths",
+        "Windows config loader glob matching used backslashes"
+      ],
+      "repair": "Physical dependency install plus guarded one-line POSIX normalization in fingerprint 0.20.13. No runtime guard bypass or SDK upgrade.",
+      "signing": "EAS-managed Android keystore generated; no private material exported",
+      "apkProduced": false,
+      "cloudLogSha256": "aecf79f2e427c784b9a80ffe543cc6b5bdeda70e64c072ce1c5d2619e81d11ea",
+      "localRepairSha256": "721a9d3ef71dc8248b6927045d05864b9e07a2883bd7c49e5e56166d0c6800bb",
+      "correctiveBuild": "User authorized similar minimal corrective acceptance without further questions; one free retry remains to be executed"
+    },
+    {
+      "name": "Corrected fingerprint cloud build and exact archive bundle",
+      "result": "second-build-failed-archive-fix-verified",
+      "buildId": "89b5bfd2-2da4-4b5d-af46-fc284eb302df",
+      "commit": "24080e3974c456fdc6dfc769872fd9a5f01fb1ba",
+      "fingerprintPhase": "passed",
+      "failedPhase": "EAGER_BUNDLE",
+      "cause": "EAS allowlist omitted src/config/api-base-url.ts used by production owner and API clients",
+      "repair": "Include existing public src/config directory; no product code change",
+      "archive": {
+        "files": 612,
+        "bytes": 25132148,
+        "manifestSha256": "2d4dc8ef3f4b54399a717edbd106f661184fb215ac085f5cf5a8d5d905798320",
+        "sourceMismatches": 0,
+        "forbiddenFiles": 0
+      },
+      "localExactArchiveAndroidBundle": "passed once after correction",
+      "bundleLogSha256": "ff0cb15f11d3e169d27c789cc5ce2cf94023dd4994053a5cc5caa340dab9a5e4",
+      "cloudLogSha256": "dc659e46ac0ccfbd2c45ed165c583e378ebd4c811142e50aa1c70aae17f4107f",
+      "apkProduced": false,
+      "nextBuild": "Not started: automatic approval review requires explicit authorization for a third private-source upload and cloud build; no workaround attempted"
+    },
+    {
+      "name": "Explicitly approved third EAS build and compatible API deployment",
+      "result": "apk-and-deployment-passed-device-pending",
+      "sourceCommit": "7586788",
+      "buildId": "b2fb7fe9-5f00-4d4c-9d62-b425c9b318ac",
+      "status": "FINISHED",
+      "completedAt": "2026-10-15T12:49:03.642Z",
+      "appVersion": "0.1.0",
+      "versionCode": "1",
+      "distribution": "INTERNAL",
+      "artifact": "https://expo.dev/artifacts/eas/NWfkkbkaXNQQ2VBp5x41t2JisSDVxvMiFj6VktKHbtA.apk",
+      "buildsTotal": 3,
+      "paidPlanPurchased": false,
+      "deployment": {
+        "commit": "c6cf75d2846cb382b52cea4f039f19d74ba147e1",
+        "observedAt": "2026-10-15T12:51:26Z",
+        "vmId": "2846984358678394356",
+        "apiAndWorker": "yuban-firestore-api:s04-c6cf75d",
+        "imageId": "sha256:f971c55d1b29078e69b29140f7eabf1d33433b7d642cdc086dc2340e9ffde5f2",
+        "health": "passed",
+        "webUnchanged": "sha256:1d2685846dcbaa4903ce18c1facf03c25858d67431588c353a807f386815057e",
+        "migrations": 0,
+        "quotaChange": false,
+        "vmRenewed": false,
+        "rollbackRetained": true,
+        "logSha256": "38bc165faf630293dca53bd6564c335a0c35d41d275b8a18481c72a3a0e396a4"
+      },
+      "realDevice": "Installation/login requested from user; no result asserted",
+      "realModelCalls": 0,
+      "notifications": 0
+    },
+    {
+      "name": "First physical Android launch and targeted startup repair",
+      "result": "user-device-failed-local-repair-passed",
+      "userEvidence": [
+        "APK installed and original account login succeeded",
+        "Entire dashboard blank",
+        "Reopening crashes"
+      ],
+      "crashReportSha256": "b113160fe1f368a491a65a6a5297d6e836e4ba28dc4ae048a54fc405fd0ed7f9",
+      "crashComponent": "SettingsIdentityBridge",
+      "diagnosis": "Actual settings refresh effect reproduces TypeError: window.addEventListener is not a function under React Native window=globalThis. RN 0.86.3 sets the alias without browser event methods.",
+      "repair": "Shared invalidation subscription preserves the browser event contract and uses in-process native listeners. Existing scope checks and deferred refresh guards remain. ProductionOwner emits after native writes.",
+      "checks": {
+        "baseline": "one failing targeted hook check",
+        "after": "two targeted native/Web checks passed",
+        "affectedTypes": "8 roots; zero diagnostics",
+        "androidExport": "passed; runtime matches installed APK"
+      },
+      "export": {
+        "files": 31,
+        "bytes": 13020208,
+        "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6"
+      },
+      "exportLogSha256": "a01aba544410ca09eeee7f025813c71e5ad54733fb32c0f39b6cc4776dc5272e",
+      "deviceRetest": "not performed; local checks are not native rendering evidence",
+      "emulator": "No installed Android SDK/AVD found; no large download or paid test started",
+      "modelCalls": 0,
+      "notifications": 0,
+      "cloudBuilds": 0,
+      "publishedUpdate": false
+    },
+    {
+      "name": "Compatible Android preview startup hotfix",
+      "result": "published-device-confirmation-pending",
+      "sourceCommit": "d9e249e",
+      "project": "2ntty/yuyoufang",
+      "updateId": "01a13fd5-df51-79e8-a70a-345b1d08ec4f",
+      "groupId": "17c74c48-436a-4b4e-975c-1defa26b9d22",
+      "createdAt": "2026-10-15T13:52:23.377Z",
+      "platform": "android",
+      "branch": "preview",
+      "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "uploaded": "one compiled app bundle and one asset; 29 assets reused",
+      "cloudBuilds": 0,
+      "apiChanges": 0,
+      "modelCalls": 0,
+      "notifications": 0,
+      "paidPlanPurchased": false,
+      "logSha256": "8ea5651c639dd29847ec1b84a92c509802b36ae5e4bb89c945a36e3f0826aa05",
+      "device": "User asked to reopen existing APK; no success assumed"
+    },
+    {
+      "name": "Post-update device feedback and route fallback",
+      "sourceCommit": "2d6120b",
+      "result": "dashboard-user-confirmed-assistant-unresolved",
+      "userEvidence": [
+        "Home normal after OTA 17c74c48",
+        "Selecting assistant makes entire screen blank, including header and bottom navigation",
+        "User clarified no crash and no new error report"
+      ],
+      "diagnosis": "No confirmed cause for navigation blankness. Existing initial-load gate and native component paths inspected; upstream animation/detach issue has different preconditions and was not applied.",
+      "change": "Expo Router error/loading exports, native-safe plain components, allowlisted error type and numeric stack positions only. No auto-retry or operation resubmission.",
+      "checks": {
+        "targetedPrivacy": "passed; error message, URL and arbitrary type not displayed",
+        "affectedTypes": "4 roots; zero diagnostics",
+        "androidExport": "passed; installed runtime unchanged"
+      },
+      "deviceResult": "pending; not claimed repaired",
+      "modelCalls": 0,
+      "notifications": 0,
+      "cloudBuilds": 0
+    },
+    {
+      "name": "Compatible preview route feedback delivery",
+      "result": "published-device-observation-pending",
+      "sourceCommit": "2d6120b",
+      "project": "2ntty/yuyoufang",
+      "updateId": "01a13fe6-6e17-7599-98c4-c9cd5f74e13c",
+      "groupId": "513bf7d9-0ca1-481d-af00-94d23e9da8ef",
+      "createdAt": "2026-10-15T14:10:28.503Z",
+      "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "uploaded": "one compiled app bundle; all 30 assets reused; no source-map upload",
+      "cloudBuilds": 0,
+      "modelCalls": 0,
+      "notifications": 0,
+      "logSha256": "7ba54d6129cd3066a3233ebdfae9631d2177ae8c70ce2848706b887460a05cef"
+    },
+    {
+      "name": "Device feedback after route diagnostic delivery",
+      "result": "assistant-still-blank-no-error-reference",
+      "userEvidence": "User replied entire screen blank to the diagnostic-update instructions; no UI error reference supplied.",
+      "activeUpdateId": "unknown; publication does not prove activation on the device",
+      "diagnosis": "Not established. No speculative navigation/Modal/SDK change applied. Next evidence is a bounded app-scoped Android log after user enables debugging.",
+      "additionalTests": 0,
+      "additionalModelCalls": 0,
+      "additionalCloudBuilds": 0,
+      "additionalOtaPublishes": 0
+    },
+    {
+      "name": "App-scoped Android native input diagnosis and minimal fix",
+      "result": "fixed-local-check-passed-device-verification-pending",
+      "sourceCommit": "49c33e3bce602f55165645e9d3e8e2e1fefcbef4",
+      "environment": {
+        "androidApi": 35,
+        "androidVersion": "15",
+        "appVersion": "0.1.0",
+        "versionCode": 1
+      },
+      "diagnosis": "Native AndroidTextInput outlineStyle setter received a Paper style array through flat TextInput rest props. ClassCastException during native mount bypassed the JavaScript route boundary.",
+      "crashObservedAt": "2026-10-15T22:39:18.664+08:00",
+      "crashSha256": "50435eacc5578f908f53e10d76025e45fefb91d8da65a2e948e8f9fe2aadc36c",
+      "change": "Shared wrapper sends outlineStyle only to outlined mode; flat mode retains underlineStyle. No navigation or SDK change.",
+      "targetedCheck": {
+        "path": "frontend/scripts/text-field-mode.test.mjs",
+        "before": "1 failed, reproduced style-array leakage",
+        "after": "1 passed"
+      },
+      "androidExport": "passed; installed runtime unchanged",
+      "sourceSha256": "177b757fc247282c9f098a641675f905b197eeb861ecc77f6d0115ade0b08f34",
+      "privateDiagnostics": "Raw app log remains outside tracked artifacts; no chat content copied into evidence."
+    },
+    {
+      "name": "Compatible preview assistant input repair",
+      "result": "published-awaiting-unlocked-device-check",
+      "sourceCommit": "49c33e3bce602f55165645e9d3e8e2e1fefcbef4",
+      "updateId": "01a14008-256c-70f6-b18e-6764a05b9c27",
+      "groupId": "63b5ab20-4b5a-44b1-a228-b944efbbf98d",
+      "createdAt": "2026-10-15T14:47:18.124Z",
+      "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "uploaded": "one compiled app bundle; all 30 assets reused; no source-map upload",
+      "logSha256": "7ba54d6129cd3066a3233ebdfae9631d2177ae8c70ce2848706b887460a05cef",
+      "cloudBuilds": 0,
+      "modelCalls": 0,
+      "notifications": 0
+    },
+    {
+      "name": "Assistant physical-device verification after OTA download",
+      "result": "passed-navigation-and-cold-reopen",
+      "initialAttempt": "22:55 HKT first direct restart still raised outlineStyle crash; active update ID was not available, so this failure is preserved. No second code fix was made.",
+      "recovery": "Kept the working home page alive for download, restarted, then selected Assistant.",
+      "evidence": {
+        "assistantAppNodes": 191,
+        "nativeInputCount": 1,
+        "composerPresent": true,
+        "navigationPresent": true,
+        "screenshotSha256": "427bf9c5a0a627a69c6b8ac9576704db69c3cae80f5207e755fb191b52419129",
+        "reopenComposerPresent": true,
+        "reopenNavigationPresent": true,
+        "reopenUiSha256": "6aedfee4762723d3f827e92f2288ea0f1c2b7c59669d0b81f317cf51641ee020"
+      },
+      "activeUpdateId": "not exposed by current release; published update identity is recorded separately",
+      "privacy": "Screen evidence remains in local private cache; no existing chat text copied into tracked artifacts",
+      "modelCalls": 0,
+      "notificationCalls": 0
+    },
+    {
+      "name": "Native child management disclosure",
+      "result": "failure-repaired-awaiting-device-verification",
+      "observed": "The management control changed to expanded but no form content appeared; no test child was created.",
+      "change": "Native inner content measures outside collapsed height; after animation it returns to normal flow. Web display behavior unchanged.",
+      "sourceCommit": "3df01eda52b57921bac9875abcf5f06e7ff20d9f",
+      "checks": {
+        "affectedTypeRoots": 1,
+        "typeDiagnostics": 0,
+        "androidExport": "passed; installed runtime matches"
+      }
+    },
+    {
+      "name": "Compatible native disclosure repair publication",
+      "result": "published",
+      "sourceCommit": "3df01eda52b57921bac9875abcf5f06e7ff20d9f",
+      "updateId": "01a1401f-65ed-72f7-ab2a-12ac5f336c85",
+      "groupId": "cd446ede-0c01-45d0-8afe-52e75e8d4219",
+      "createdAt": "2026-10-15T15:12:41.965Z",
+      "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "logSha256": "7ba54d6129cd3066a3233ebdfae9631d2177ae8c70ce2848706b887460a05cef",
+      "cloudBuilds": 0,
+      "modelCalls": 0,
+      "notifications": 0
+    },
+    {
+      "name": "User-reported initial saved-record search label",
+      "result": "not-reproduced-in-one-cold-launch-observation",
+      "reported": "User reports label initially absent until focused.",
+      "observed": "Unfocused empty field showed label after cold launch without tapping the field. Initial-frame behavior not established.",
+      "change": "none; do not infer resolved",
+      "modelCalls": 0
+    },
+    {
+      "name": "Native child disclosure physical check",
+      "result": "passed",
+      "sourceCommit": "3df01eda52b57921bac9875abcf5f06e7ff20d9f",
+      "evidence": "Expanded child form exposed name field and review action; no child created by the agent.",
+      "privateScreenshotSha256": "38b7d930f77f6621d33dde8c6b1b948cb58aaf0a62c52eadf4029b20ff20a3e1"
+    },
+    {
+      "name": "Shared chat normalization and inline stopping reason",
+      "result": "passed-targeted-checks",
+      "sourceCommit": "8992ce90ba4a119219e599427125a7af2dc5d31d",
+      "checks": [
+        "One controller scenario: blank-line normalization, one save, unknown recovery with the same normalized text.",
+        "One formal product-agent API scenario: safe quota reason plus saved result, repeated operation does not rerun or resave."
+      ],
+      "initialHarnessFailure": "API fixture initially omitted existing x-expected-user-id; stopped at 428, fixed fixture only, then reran this scenario once.",
+      "affectedTypeRoots": 5,
+      "typeDiagnostics": 0,
+      "typeLogSha256": "695fafd2a271ad6dd8950c39add68ad94973eb36f0c5478640167f879b82ceb7",
+      "androidExport": "passed; unchanged installed runtime",
+      "webExport": "passed with existing Web Firebase configuration; initial local export used native public configuration and was discarded before upload",
+      "modelCalls": 0
+    },
+    {
+      "name": "Keyboard and composer height on the authorized physical Android device",
+      "result": "passed",
+      "environment": "Android 15 / API 35, installed signed APK 0.1.0 / 1, compatible preview update",
+      "before": "IME top 1569px, composer input [69,2024][1013,2156] was obscured.",
+      "after": "Focused input [69,1193][1013,1325] and send control visibly above keyboard.",
+      "composerReset": {
+        "beforeBounds": "[69,1193][1013,1325]",
+        "multilineBounds": "[69,962][1013,1325]",
+        "clearedBounds": "[69,1193][1013,1325]",
+        "unsentDraftCleared": true,
+        "messagesSent": 0
+      },
+      "beforeScreenshotSha256": "4b7eeb375bfbb76f90fe0750fc38889decec31089e23165c0c8e1e04a679458b",
+      "afterScreenshotSha256": "037702670aeef65da4e15c579da6575c8f697d1b5d7b02f4061c3c514693b5b6",
+      "privacy": "Screens and UI trees stay in ignored private cache. Only own unsent ASCII draft was inserted and cleared; no message was sent.",
+      "activeUpdateId": "not directly exposed by the release; publication and observed rendering are separate evidence"
+    },
+    {
+      "name": "Compatible input repair OTA",
+      "result": "published",
+      "sourceCommit": "8992ce90ba4a119219e599427125a7af2dc5d31d",
+      "updateId": "01a14038-074c-72ba-b240-9119d07ef1f2",
+      "groupId": "b44fb753-2a06-42c7-b43b-19648b20c70b",
+      "createdAt": "2026-10-15T15:39:36.140Z",
+      "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "upload": "one compiled bundle; all 30 assets reused, no source maps or new APK",
+      "logSha256": "7ba54d6129cd3066a3233ebdfae9631d2177ae8c70ce2848706b887460a05cef"
+    },
+    {
+      "name": "Explicitly authorized daily platform quota change",
+      "result": "saved-and-read-back",
+      "at": "2026-10-15T15:37:21.790Z",
+      "policyVersion": 1,
+      "perUser": 200,
+      "global": 400,
+      "previousPerUser": 12,
+      "previousGlobal": 20,
+      "modelCallsPerRun": 4,
+      "queryEmbeddingsPerRun": 2,
+      "personalKeyGlobal": 1000,
+      "usageCountersPreserved": true,
+      "note": "No stopped message was rerun. User manually encountered quota exhaustion; agent-triggered model acceptance remains unperformed."
+    },
+    {
+      "name": "Original VM compatible input and error-feedback deployment",
+      "result": "passed-health-and-static-entry",
+      "at": "2026-10-15T15:49:41Z",
+      "sourceCommit": "8992ce90ba4a119219e599427125a7af2dc5d31d",
+      "tag": "s04-8992ce9",
+      "apiWorkerImageId": "sha256:30571c101755d36271452627ada64e6b8dba0440ef2684e5a6f7772e42f812d3",
+      "webImageId": "sha256:6e527bd4bb0177beb80789cd7a47f14db1d111646be0c54081d948aa90d63ab3",
+      "staticEntry": {
+        "status": 200,
+        "path": "/chat",
+        "matchesPublishedStaticPage": true,
+        "sha256": "6051284ed180de65d82db7df0ebf4637ab4ac516a0378014cb61b83a2bfbe51b",
+        "modelCalls": 0
+      },
+      "deploymentLogSha256": "7a914533a294c13c840c000245e1f2e42f3aaf9945d2f7a5e1ca0e9a6a0b77ef",
+      "rollback": "Previous images and compose.env.before-s04-8992ce9 retained.",
+      "databaseMigrations": 0,
+      "modelCalls": 0,
+      "notifications": 0,
+      "vmDeadlineChanged": false
+    },
+    {
+      "name": "Remaining user-reported visual latency",
+      "result": "unresolved-no-speculative-change",
+      "reported": "Saved-record search label may appear several seconds late; repeated route changes feel less smooth.",
+      "finding": "Search label is local UI copy, not fetched text. One cold observation showed it; no reliable timing or page-lifecycle cause established.",
+      "scope": "No large profiling run or navigation rewrite."
+    }
+  ],
+  "sourceSha256": {
+    "server/firebase-auth.ts": "908f51d890857d60efbba2a606d5f4ea33a99d871d87ac1e8af0a16f9058a48a",
+    "server/firebase-http.ts": "da9284cb409ababcb8b9f30719bc3679aee4bfaee4b3172404493880450e82dd",
+    "server/firebase-app.ts": "15bb38c817b5600ea55d6573310d77c1d2b9f47fbb3d16c9a42a28a808061c5f",
+    "server/request-auth-transport.ts": "00c8ef68c68debc7f835fc1866c7b341f3b616cbd944e969c4d687a734189fef",
+    "src/client/native-session-transport.ts": "59e31d39f24c426340812159f474d41b53796155e66cb87301b769cf8da29e08",
+    "src/client/firebase-auth-api.ts": "147919cbddc15ff90e0ae0d34bc299baa293f1055e0aad3c9bcad2a250abf5df",
+    "frontend/index.js": "5fcc4cc9b7bd1fc863fcb3b3e44175612683b8d2a03012de65a163812af08a3c",
+    "frontend/src/platform/runtime.native.ts": "0174fab081d5132d5c2fa3a7496007476386c3fcda3e845a0d343cc5c522b058",
+    "frontend/src/production/production-transport.native.ts": "fbe535bb37abaec366aa7bb9e7aa555a2a62bf4d0c240790cabeab125f2e31bf",
+    "frontend/src/production/ProductionOwner.ts": "8beb131e2812cc4e3dabcc3885ee853a5c70c8989cc5665bc9f0b671c0924d4d",
+    "tests/firebase-auth.test.ts": "141cc3e03eb8cceacbc25acba7ab8346e7ea6cf717e4ef553d80a5d0186c124b",
+    "frontend/app.json": "7296e029b711bf171bc2d27cd75ddf2c612debaaf1df2cf2e7f19fb4c30f4de5",
+    "frontend/app.config.js": "137dec8347bfbdbf3197cc18a1e5b08c85bfae7d7f9f0a5d61403cb1108672ff",
+    "frontend/eas.json": "bb25d4d31ab04a0c9c9bea4d6edfa0683b66d322d4faa617bdeca26f7722e649",
+    "package-lock.json": "46d3725e8c611104b17731e16560c258f18b83ad6027d1d7ddb67aecfa4d225d",
+    ".easignore": "17bf45661f81d5d7e0e3ef5191cf1119646fbf912b45e1c434da9f6076afa4f6"
+  },
+  "externalCalls": {
+    "model": 0,
+    "embedding": 0,
+    "notification": 0,
+    "cloudBuild": 3,
+    "deployment": 2,
+    "otaPublish": 5,
+    "note": "Counts refer to agent-triggered acceptance/publication; user manual chat attempts are not claimed to be zero."
+  },
+  "remaining": [
+    "One source-backed Android chat and reopen/readback remains unverified. Previous manual quota-stopped requests are not replayed.",
+    "S04-W01 stays draft pending that gate; native rendering, disclosure and keyboard checks have separate passing evidence.",
+    "Search label delay and navigation smoothness remain reported, without a proven cause; no costly profiling.",
+    "Voice, native camera/gallery, PDF sharing, FCM and subsequent cross-device packages remain later work in the approved Android goal."
+  ],
+  "collaboratorHeads": {
+    "214": "ba3b32bb41944957c8a445db161b9134befa6e15",
+    "215": "cb021c4b218dd57579869ff5a3598d8b38cff1ac",
+    "216": "ca3314616178b72875cfd7013295a7f9ace3437d"
+  },
+  "updatedAt": "2026-10-15T15:52:57.967553+00:00"
+}

@@ -1,3 +1,4 @@
+import { normalizeChatInput } from "./chat-input.ts";
 import type { AgentProgress, OfficialHelpId } from '../shared/agent-feedback.ts';
 import type { ChatMessage } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
@@ -467,7 +468,8 @@ export class ChatController {
       this.updateDraft(childId, { notice: OFFLINE });
       return;
     }
-    if (!draft.text.trim() || draft.text.length > 10_000) {
+    const text = normalizeChatInput(draft.text);
+    if (!text.trim() || draft.text.length > 10_000) {
       this.updateDraft(childId, { notice: "請輸入 1 至 10,000 個字元的訊息。" });
       return;
     }
@@ -475,9 +477,9 @@ export class ChatController {
     this.update({ busy: "save", replyError: null });
     try {
       if (!await this.verifyIdentity(scope)) return;
-      this.updateDraft(childId, { phase: "saving", notice: null, candidateMessageId: null,
+      this.updateDraft(childId, { text, phase: "saving", notice: null, candidateMessageId: null,
         knownIds: this.state.messages.map(item => item.id) });
-      const saved = await this.api.saveMessage(childId, draft.text, scope.controller.signal, scope.userId);
+      const saved = await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId);
       if (!this.current(scope)) return;
       this.updateDraft(childId, { phase: "reply_failed", savedUserMessageId: saved.id, candidateMessageId: null,
         notice: "聊天已獲 Server 保存確認；尚未要求 AI 回覆。" });

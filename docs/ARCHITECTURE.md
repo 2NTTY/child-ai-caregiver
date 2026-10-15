@@ -689,6 +689,8 @@ Firestore 交易先讀權限／刪除狀態、版本、唯一性及原操作，�
 
 依 [ADR-022](DECISIONS.md#adr-022) 從乾淨 Firebase 身份開始，不匯入舊 UID、電郵、密碼雜湊或私人資料。新 uid 綁定唯一穩定業務身份及本人 workspace；舊 session 不獲新系統接受。舊身份匯入／STANDARD_SCRYPT 相容是被取代方案，不能標成已驗；新身份驗證、找回及密碼重設後撤銷仍須完成。Firebase 全帳戶 revoke 之外，Server session ledger 保留每裝置狀態／到期／撤銷，不能把全帳戶撤銷冒充逐裝置能力。[匯入](https://firebase.google.com/docs/auth/admin/import-users)／[session cookies](https://firebase.google.com/docs/auth/admin/manage-cookies)
 
+Web 與 Android 共用 Firebase JS 身份 adapter、正式 owner 及業務 API；只分開平台 transport。Web 沿 HttpOnly Cookie，Android 沿受控交換取得 SecureStore 中的明確 bearer，兩者由相同 Server 身份／准入／逐裝置 ledger 核對，使用不同 ledger hash domain，不能互換。原生無 Cookie／Origin，Server 不接受瀏覽器混合憑據，也不開跨站 CORS 或管理員入口。各領域 API、附件與聊天串流注入同一 transport，不能另行保存身份或直讀 Firestore。精確協議見 [API 原生會話](API.md#native-session)。
+
 瀏覽器不直接存取 Firestore／Storage 業務資料。Admin／Server SDK 用 IAM 且繞過 Rules；每個 HTTP、Agent tool、worker 和附件下載均自行校驗目前權限／准入／epoch。規則拒絕未授權 client 不能代替 Server 檢查。限流、session 撤銷與模型預留跨 instance 保存，不能只用記憶體；key／密碼／找回 token 不入 prompt 或一般日誌。[IAM 邊界](https://docs.cloud.google.com/firestore/native/docs/security/iam)
 
 <a id="縮零outbox-與非同步-agent"></a>
