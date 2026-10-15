@@ -100,7 +100,10 @@ export interface AgentTool {
 }
 export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; budget: AgentBudget;
   authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway }
+export interface AgentRuntimePort { run(input: AgentRunInput): Promise<AgentRunResult> }
 export interface AgentRunInput {
+  /** Trusted observation only; no control authority and no raw model/tool payloads. */
+  onDiagnostic?: (event: AgentDiagnostic) => void | Promise<void>;
   /** Trusted persisted identity; never accepted directly from an HTTP body. */
   runId?: string;
   deadlineMs?: number;
@@ -270,7 +273,7 @@ export function createAgentRuntime(options: {
           if (loader) configuredTools.push(loader);
           const definitions = new Map(configuredTools.map(tool => [tool.name, tool]));
           if (definitions.size !== configuredTools.length || configuredTools.some(tool => !/^[a-z][a-z0-9_]{0,63}$/u.test(tool.name))) throw new AgentStopped("invalid_tool");
-          const observer = createAgentObserver({ runId, toolNames: [...definitions.keys()], sink: fixedOptions.diagnostics });
+          const observer = createAgentObserver({ runId, toolNames: [...definitions.keys()], sink: fixedOptions.diagnostics, observe: input.onDiagnostic });
           const terminalToolNames = new Set(configuredTools.filter(tool => tool.terminal).map(tool => tool.name));
           if (terminalToolNames.size && !input.finalize) throw new AgentStopped("invalid_tool");
           if (input.presentationRepair && (!input.finalize || !terminalToolNames.has(input.presentationRepair))) throw new AgentStopped("invalid_tool");

@@ -6,10 +6,11 @@ import type { AgentDiagnostic } from "../server/agent-observer.ts";
 
 test("observer emits metadata only and diagnostic sinks cannot change or block callbacks", async () => {
   const secret = "PRIVATE_SENTINEL_DO_NOT_EXPORT";
-  const events: AgentDiagnostic[] = [];
+  const events: AgentDiagnostic[] = [], observed: AgentDiagnostic[] = [];
   const observer = createAgentObserver({
     runId: "388c4fbb-b230-4496-b9b1-dfb2a3e07c5c",
     toolNames: ["read_context"],
+    observe: event => { observed.push(event); },
     sink: event => {
       events.push(event);
       return Promise.reject(new Error(secret));
@@ -55,8 +56,12 @@ test("observer emits metadata only and diagnostic sinks cannot change or block c
   for (const event of events) {
     assert.equal(event.runId, "388c4fbb-b230-4496-b9b1-dfb2a3e07c5c");
     assert.ok(Number.isFinite(event.elapsedMs) && event.elapsedMs >= 0);
-    assert.ok(Object.keys(event).every(key => ["runId", "phase", "tool", "elapsedMs", "outcome"].includes(key)));
+    assert.ok(Object.keys(event).every(key => ["runId", "layer", "phase", "tool", "elapsedMs", "outcome"].includes(key)));
   }
+  assert.deepEqual(observed, events);
+  assert.notEqual(observed[0], events[0]);
+  assert.equal(events[3]?.layer, "model");
+  assert.equal(events[7]?.layer, "tool");
   assert.equal(events[5]?.outcome, "succeeded");
   assert.equal(Object.hasOwn(events[6]!, "tool"), false);
   assert.equal(Object.hasOwn(events[6]!, "outcome"), false);
@@ -111,7 +116,7 @@ test("tool rejection diagnostics allow only configured tools and canonical metad
   ]);
   for (const event of events) {
     assert.equal(event.phase, "tool_rejection");
-    assert.ok(Object.keys(event).every(key => ["runId", "phase", "tool", "elapsedMs", "outcome", "stage", "code", "hints"].includes(key)));
+    assert.ok(Object.keys(event).every(key => ["runId", "layer", "phase", "tool", "elapsedMs", "outcome", "stage", "code", "hints"].includes(key)));
   }
   assert.doesNotMatch(JSON.stringify(events), new RegExp(secret, "u"));
 });

@@ -1,3 +1,4 @@
+import type { AgentDiagnostic } from '../server/agent-observer.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -23,6 +24,7 @@ import {photoHash} from '../server/photo-files.ts';
 import {SERVICE_POLICY_VERSION} from '../src/shared/account-service.ts';
 
 test('production Runner assembly accepts persisted worker and capture claims, reads the real summary and retains cancellation and dedupe',async()=>{
+  const diagnostics: AgentDiagnostic[] = [];
   const fake=firestoreDomainFixture();
   function query(raw:any):any {return new Proxy(raw,{get(target,key){if(key==='get')return ()=>fake.database.runTransaction(tx=>tx.get(target));
     const value=target[key];return typeof value==='function'? (...args:any[])=>{const result=value(...args);return result?.query?query(result):result?.path?{...result,id:result.path.split('/').at(-1)}:result;}:value;}});}
@@ -39,7 +41,7 @@ test('production Runner assembly accepts persisted worker and capture claims, re
   const online=createFirestoreOnlineStore({...options,mutations:[chat.mutation,care.mutation,memory.mutation,sources.mutation,summary.mutation]});
   let mode='background',step=0,calls=0;let failure:unknown;const cancel=new AbortController();
   const draft={text:'今天帶了手冊',kind:'note',rawValue:null,unit:null,approximate:false,timeRaw:'今天',uncertainties:[]};
-  const product=await createFirestoreProductAgent({...options,chat,care,memory,online,summary,sources,
+  const product=await createFirestoreProductAgent({...options,diagnostics: event => { diagnostics.push(event); },chat,care,memory,online,summary,sources,
     config:readAiConfig({AI_ENABLED:'true',GCP_PROJECT_ID:options.projectId}),
     authorizeWorker:async(b,reference,recipe)=>{const job=await readFirestoreBackgroundClaim(data,b,reference);return !!job && recipe===(job.kind==='work-continuation'?'product-work-followup':'product-background');},
     platformProvider:{async generate(request){try {calls++;step++;assert.ok(step<=(mode==='work-continuation'?3:2),'No extra generation');
@@ -85,4 +87,7 @@ test('production Runner assembly accepts persisted worker and capture claims, re
   const cancelled=await product.agent.reply('owner',child.id,message!.id,async()=>true,cancel.signal);
   assert.equal(cancelled?.stopReason,'cancelled');
   assert.equal(results.length,2);assert.ok(calls<=10);
+  assert.ok(diagnostics.some(event => event.layer === 'model' && event.phase === 'model_end'));
+  assert.ok(diagnostics.some(event => event.layer === 'tool' && event.phase === 'tool_end'));
+  assert.ok(diagnostics.every(event => !('args' in event) && !('content' in event) && !('error' in event)));
 });

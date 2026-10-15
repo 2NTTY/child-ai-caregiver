@@ -1,3 +1,4 @@
+import type { AgentDiagnostic } from './agent-observer.ts';
 import { createPrivateSummaryMaintenance } from './private-summary-maintenance.ts';
 import { readFile } from 'node:fs/promises';
 import type { AiConfig } from './ai-config.ts';
@@ -39,6 +40,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   sources?: FirestoreSharedInputStore; concerns?: FirestoreConcernStore; growth?: FirestoreGrowthStore;
   /** Trusted constructor seam for a bounded scripted Runner check; never HTTP-selected. */
   platformProvider?: AgentModelProvider;
+  diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
 }) {
   const manifest = JSON.parse(await readFile(new URL('../prompts/manifest.json', import.meta.url), 'utf8')) as { version?: unknown };
   if (typeof manifest.version !== 'string' || !/^\d+\.\d+\.\d+$/u.test(manifest.version)) throw new Error('Invalid prompt manifest');
@@ -73,6 +75,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
             // The observer builds a fixed metadata allowlist; no arguments, content or errors are logged.
             if (event.phase === 'tool_rejection' || event.phase === 'model_error' || event.phase === 'tool_error')
               console.warn(JSON.stringify({ event: 'agent_diagnostic', ...event }));
+            return options.diagnostics?.(event);
           } });
         authorize = async () => await input.authorize() && await selected.authorize();
       } catch (error) {

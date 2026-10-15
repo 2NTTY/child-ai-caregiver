@@ -2646,3 +2646,12 @@
 - Limits / Next：合成情景不是模型語義整理品質或真索引證據；新 batch 索引與 pending 單欄索引留部署時核對，零雲端修改。工作集最多四批，保守來源快照不等於完美語義相關判定；更舊原文仍可搜尋／續讀，超大單訊息保留待處理而不冒稱完成。真整理品質併 OPT05 必要代表情景；原生備份真還原繼續延後。合併後接 OPT05／LAY05，STR01 等協作者審核接口。
 
 - 補充 review：來源依賴分頁未完整時改用完整 basis 失效保護，修復依賴按 kind／ID 去重且不截斷；同一情景只補一個局部覆蓋斷言，221 ms 通過。20 入口型別仍零診斷；新增連結及 JSON／diff 核對通過。
+
+
+<a id="log-20261015-p2-lay05"></a>
+### 2026-10-15 — LAY05 Agent 端口及故障分層
+
+- Scope / Baseline：f1f8687（#224）。主模型獨立實作／review；不修改協作者分支。復用既有 ModelGateway、ADK plugin、業務 service 及 Firestore 正式組裝，沒有新增通用框架或搬移全倉。
+- Result：產品／私人摘要編排使用 AgentRuntimePort；每 run 可接 metadata observer，與營運診斷互相隔離。固定 layer 區分模型、工具、權限及已知業務拒絕，原 runId 接回台帳；未知不猜資料庫原因。維持既有 HTTP 錯誤及保存權威，不以 run_end 當保存結果，不輸出私人正文／原始參數。
+- Verification：Node 24.19.0；三個既有定向檢查全部通過（正式 Firestore Product Agent／Runner、背景及捕捉約 622 ms；診斷 3.1／0.7 ms），沒有為每工具新增測試。7 個受影響 TS 入口及依賴零診斷，diff check 通過。零真模型／雲端／瀏覽器／通知，未部署。
+- Review / Limits：observer 使用獨立副本，throw／reject 不改業務流程；SDK callback 只是觀察點，不保證根因。沿既有 provider 可替換接點，不重造。HTTP 傳輸與產品事件投影由 OPT05 接入；三角色審核接點未驗，保留 #214～#216 責任。
