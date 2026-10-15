@@ -867,3 +867,17 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | GET `/api/admin/operations/:opId` | 本管理員原收據或 null；null 不表示原請求必定未生效，重送只能用同一參數／opId |
 
 `version_conflict`／`operation_conflict` 回 409，不覆蓋或另建操作；已使用資格回 `invitation_consumed`，不呼叫原 operator 的帳戶撤權流程。網絡／5xx 保持 unknown，Web owner 暫停其他寫入並提供查回／明確同 ID 重送。登出／身份切換取消讀取並清除管理快取；原生頁不載入管理資料。管理寫入不呼叫模型。
+
+<a id="feature-operation-contracts"></a>
+## 功能分層的既有操作契約
+
+此節約束正式 owner／API／服務的相同成果，不新增路由或輸出格式。欄位仍以各域 schema／既有專項為準；程式與未驗範圍見 [LAY](../PLAN.md#p2-layering-streaming)。care/profile 普通 HTTP 在正式 firebase-app 僅掛載讀取／搜尋，寫入沿現有 online transport／收據，不能將舊 handler POST 分支當正式入口。
+
+| 功能 | 輸入與權威前置 | 結果與恢復／同步 |
+|---|---|---|
+| 保存孩子概況 | 目前身份／孩子 scope、原 opId／fingerprint、預期版本、精度與日期基準、必要共享確認；不把約數換成生日 | 同一 profile 新版本／修訂／變更／收據；衝突讀回，不覆蓋草稿；概況與相關記憶／成長投影失效重讀 |
+| 新增／更正／刪除記錄 | 目前 scope、原文及事件時間精度、指定原記錄／預期版本、原 opId；刪除沿既有明確確認 | 真提交後回原結果；正文及修訂依刪除屏障遮蔽，原收據不重建；列表／詳情／歷史同步，不因 off-page 缺席推定刪除 |
+| 完成／取消／改期待辦 | 目前 scope／角色／對象、允許狀態、預期版本、原 opId；明確完成與收到區分 | 同交易任務／修訂／收據／outbox；同操作回原收據；完成與取消相同基準競態仍 needs_review；worker 重查終態，不能只隱藏按鈕 |
+| 讀取成長／關注 | 本人／孩子、有效來源／版本／時間範圍及有界游標；配對來源 authorityVersion／canManage 一致 | 同源投影與 coverage；資料更正使衍生成果待更新／失效，不讀頁生成；讀失敗與空集合／無關注不同 |
+
+跨域共通：拒絕、版本衝突、讀取暫時不可用與副作用未知分開。未知提交先按原 opId 查回，不能生成新 ID 重做；identity generation／取消及重讀前後校驗沿原 owner。畫面即時提示不取代交易內校驗，測試替身不取消真身份／交易邊界。

@@ -2566,3 +2566,15 @@
 - #211／8f916d0 已合併，13:53 UTC 原 VM 只更換 Web 為 admin-8f916d0；API／worker 同映像、同啟動時間，帳戶、管理權限、資料及限額不改。保留 Web 回退映像與受保護 compose 配置。
 - 以兩次公開 GET 核對 /admin 及 JavaScript hash，確實是已驗證產物；健康通過。部署助手初次因 Windows 換行在 set -eu 前停止，零站點修改；只轉 LF、重傳腳本後完成。零模型／通知／額外產品驗收，未代填本人登入結果。詳見 [瀏覽器修正 EV](artifacts/verification/P2_ADM01_BROWSER_FIX_20261013.json)。
 - 開發提交為 C 單作者、unsigned；PR 及合併由同一帳號操作，merge 323e4a7 的 GitHub 簽署驗證有效。P3 及真原生備份還原仍未啟動。
+
+
+<a id="log-20261015-p2-lay01"></a>
+### 2026-10-15 — OPT／LAY／STR 定案與 LAY01 邊界盤點
+
+- Goal / Scope：使用者批准兩條工作線並行；OPT 原範圍保留，灰色正文另由 STR01 追加。本包只定案／盤點，不修改程式、三角色 PR 或部署。
+- Baseline / Work：遠端 master bb728f2，#213～#216 未合併；#214／#215 的 Prompt Pack／runtime／結果接點使 OPT01 等待。主模型親寫 PLAN、SPEC、架構／API 的最小責任與操作契約；一位 Astra xhigh 僅唯讀定位，關鍵原文由主模型核對。
+- Findings：待辦 changeTask／reminderDecision 與成長 rules／readGrowthPages 已獨立；照護記錄讀取仍內嵌 hook，cache／history 檢查依賴 source.slice。下一步局部抽離正式讀取協調，不重造整套資料／業務層。care/profile 正式寫入仍走 online 收據，不把 legacy HTTP 或 SQL 測試當現行證據。
+- Verification：待本次 diff／新增連結與依賴靜態核對；未跑產品、真服務、模型、通知、瀏覽器、全量或 Computer Use，無人工驗收。
+- Limits / Next：OPT02～05、LAY02～05、STR01 未實作；三角色依協作者合併才接穩定接口。原備份真還原待驗與既有失敗均保留。LAY01 review／合併後才開依賴包。
+
+- 本包核對結果：git diff --check 通過；六份變更文件的 37 個新增本機連結／錨點有效，11 個新包依賴無循環，WORKLOG 舊正文完整保留。主模型核對 Care 正式讀寫路徑、待辦原子 prepareTask／changeTask 及 growth-read 原文；沒有執行產品測試。
