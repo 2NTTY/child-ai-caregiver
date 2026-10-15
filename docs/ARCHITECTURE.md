@@ -33,6 +33,40 @@
 <a id="rule-3-1-11"></a>
 共享核心保持平台、資料庫及渠道解耦；育有方是唯一實作領域，將領域模型、prompt、來源及受限 skills／任務流程集中管理。只在相關功能使用邊界，不建通用實體模型、動態插件平台、registry 或第二主題。日後可從來源碼層替換領域或 adapter，不預建平台。
 
+<a id="feature-layer-boundaries"></a>
+### 功能責任與可獨立驗證邊界
+
+沿用上述六層及既有 Server 權威；以下將實作接點細分，並非新增服務或第二套架構。對應功能規格見 [SPEC](../SPEC.md#p2-optimization-layering)，實作／待驗狀態只見 [PLAN](../PLAN.md#p2-layering-streaming)。
+
+| 接點 | 權威與責任 | 可替換／可直接驗證邊界 |
+|---|---|---|
+| UI component／screen | 呈現、收集輸入、互動、載入及錯誤 | view model／action；不決定授權、任務終態或是否已保存 |
+| 正式 owner／controller | 草稿、API 協調、原 opId 恢復、身份世代、快取失效及同源投影 | 與 React 無關的必要操作協調接受明確 ports；React hook 保留生命週期，不另造資料庫 |
+| HTTP API | 目前會話、預期身份、解析與 schema、路由及回應 | 呼叫同一業務服務；測試不自行補一套正式未提供的能力 |
+| 業務服務／純規則 | 功能前置、狀態、確認、版本、防重及結果 | 純規則接受明確資料與時間；服務只取得其操作所需 ports，不依賴 React／HTTP／供應商 SDK |
+| 權威資料／外部 adapter | Firestore 原子讀寫、查詢／游標、Storage、Tasks、通知 | 交易範圍顯式；替身可驗協調但不能證明真 SDK 競爭／外發 |
+| ModelGateway | provider 請求、協定、用量、取消、期限及錯誤 | 可注入 scripted provider；不決定使用者同意或業務已保存 |
+| Agent orchestration | 語義理解、工具選擇、接續與回答 | 工具透過上述業務服務；不能直接寫庫或外發，模型品質與機械規則分開驗 |
+
+功能域以孩子、記錄、待辦、成長等權威資源劃分，不以頁面另建主庫；同一孩子資料可投影多頁。記憶、文件及三角色使用同一原則，接口穩定才調整，不為分類全倉搬檔、引入 DI 容器或通用 registry。
+
+#### 主要功能入口與既有獨立邏輯
+
+此表定位正式接線與規則，不另定資料格式；程式改動時隨所屬包更新。舊 SQL factory 或未正式掛載的 controller 不能代替現行 Firestore 證據。
+
+| 功能 | 正式 owner／API／權威組裝 | 已可獨立使用的規則／檢查接點 |
+|---|---|---|
+| 孩子概況 | [CareProfileDomains](../frontend/src/production/CareProfileDomains.tsx) → [care-api](../src/client/care-api.ts) → online profile write → [prepareProfile](../server/firestore-care.ts) | 共享 profile schema、CareProfileProjections；版本／年齡精度／原文及確認沿原契約 |
+| 結構化記錄 | 同一 CareProfile owner → care-api search／read、online write → Firestore prepareRecord／prepareDelete | [CareProfileProjections](../frontend/src/production/CareProfileProjections.ts)、[care-client 檢查](../tests/care-client.test.ts)；不能把 readRecords=false 的 ProductionOwner 身份／孩子 controller 當照護記錄 owner |
+| 待辦 | [task owner](../frontend/src/production/task-knowledge-tasks.ts) → [task-api](../src/client/task-api.ts) → [prepareTask](../server/firestore-online.ts) | [task-policy](../server/task-policy.ts) 的 changeTask／reminderDecision、[task-projection](../frontend/src/production/task-projection.ts)、[既有 client 恢復檢查](../tests/tasks-client.test.ts) |
+| 成長關注 | [growth owner](../frontend/src/production/task-knowledge-growth.ts) → [growth-api](../src/client/growth-api.ts) → [Firestore growth](../server/firestore-growth.ts) | [growth-rules](../server/growth-rules.ts)、[readGrowthPages](../frontend/src/production/growth-read.ts) 的雙來源一致性；報告／記憶部分沿自身權威，不把 SQL 測試當 Firestore 證據 |
+
+既有 [care cache 檢查](../frontend/scripts/care-record-cache.test.mjs) 與 [history 檢查](../frontend/scripts/qa-care-history.test.mjs) 目前擷取 hook 原始碼片段後編譯，說明讀取協調仍需正式非 React 接點；這是局部抽離依據，不表示缺少所有測試。scope、generation、原版本及遲到回應／404／游標恢復必須保持；寫入協調及 Firestore 交易不順帶重寫。其他已分層功能先復用，無具體缺口不再抽象一層。
+
+**交易不變條件：**目前權限／資源版本的讀取與業務寫入、修訂、操作收據、變更序號及 outbox 仍在同一 Firestore 交易。純規則只回傳決定或差異，不在交易外依舊權限決定提交；交易 callback 不呼叫模型／通知。重試沿原 opId／fingerprint，副作用 unknown 只查原結果。完成／取消競態及 needs_review 保持原語義，終態仍由 worker 執行前重查。
+
+**診斷：**復用既有錯誤碼與 Agent observer，只補必要功能域、階段、request/run/op 關聯、耗時與結果；未知層次明示未知。UI、API 身份、業務拒絕、版本衝突、外部／模型失敗、傳輸中斷分開，不暴露 stack、私人正文、key 或未經授權資料，不建立另一套監控服務。
+
 <a id="reuse-boundaries"></a>
 ### 通用能力復用邊界
 
@@ -45,7 +79,7 @@
 <a id="production-ui-data"></a>
 ### 正式 UI 的共用資料邊界
 
-每個領域只有一個正式 owner，向首頁、聊天及領域頁提供同源投影；PostgreSQL 資源／操作台帳保持權威。讀取 query key 包含 Server、本人、身份世代及孩子／角色 scope；登出、身份不明、撤權或切換 scope 時取消舊讀取並清理私有快取、草稿及附件，遲到回應不得寫進新 scope。頁面草稿不是第二份業務資料庫。
+每個領域只有一個正式 owner，向首頁、聊天及領域頁提供同源投影；正式 Firestore 資源／操作台帳保持權威（原 PostgreSQL 機制只供歷史對照）。讀取 query key 包含 Server、本人、身份世代及孩子／角色 scope；登出、身份不明、撤權或切換 scope 時取消舊讀取並清理私有快取、草稿及附件，遲到回應不得寫進新 scope。頁面草稿不是第二份業務資料庫。
 
 Agent／頁面修改成功後以實際資源 ID／版本使相關讀取失效並同步 owner；跨可見分頁／裝置沿用 changes cursor，每 5 秒只核對 metadata，回前景立即核對。一般讀頁不呼叫模型；來源變更令衍生報告標記待整理／失效，不繼續冒稱最新。寫入保留各領域的版本、原 opId、unknown 核對及授權邊界，不用 Query 的自動重試代替業務恢復。
 
