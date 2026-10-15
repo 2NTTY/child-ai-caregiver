@@ -59,7 +59,7 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   assert.equal((await (await http('invitation?email=unused%40example.test')).json()).invitation.state, 'revoked');
   assert.equal((await (await http('invitation?email=parent%40example.test')).json()).invitation.state, 'consumed');
   const apiRouting = createFirestoreModelRouting(options, config), workerRouting = createFirestoreModelRouting(options, config);
-  const original = await apiRouting.resolve('parent', 'interactive'); assert.equal(original.config.dailyUserAttempts, 12); assert.equal(original.runLimits.modelCalls, 4);
+  const original = await apiRouting.resolve('parent', 'interactive'); assert.equal(original.config.dailyUserAttempts, 12); assert.equal(original.runLimits.modelCalls, 8); assert.equal(original.runLimits.queryEmbeddings, 4);
   const baseline = (await admin.overview()).policy, { version, updatedAt, ...values } = baseline;
   const change: AdminCommand = { kind: 'policy', opId: randomUUID(), expectedVersion: 0, values: { ...values, maxModelCalls: 5, dailyUserAttempts: 13 } };
   f.loseReply(); r = await http('operations', change); assert.equal(r.status, 503);

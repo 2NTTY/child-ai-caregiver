@@ -5,6 +5,7 @@ import type { LlmRequest, LlmResponse } from "@google/adk";
 import { z } from "zod";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import type { AgentRunInput, AgentTool } from "../server/agent-runtime.ts";
+import { AGENT_LIMITS } from "../server/agent-budget.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import type { AttemptRecord } from "../server/ai-usage.ts";
 
@@ -89,7 +90,7 @@ test("model and tool budgets bound scripted loops without extra provider calls",
   const result = await s.runtime.run(s.input);
   assert.equal(result.stopReason, "model_limit", JSON.stringify(result));
   assert.equal(s.requests.length, 4);
-  const many = setup(async () => ({ ...call(), content: { role: "model", parts: Array.from({ length: 9 }, () => call().content!.parts![0]!) } }));
+  const many = setup(async () => ({ ...call(), content: { role: "model", parts: Array.from({ length: AGENT_LIMITS.toolCalls + 1 }, () => call().content!.parts![0]!) } }));
   assert.equal((await many.runtime.run(many.input)).stopReason, "tool_limit");
   assert.equal(many.executions(), 0);
 });

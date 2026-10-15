@@ -70,7 +70,8 @@ test("untrusted context cannot declare a tool or expand the server tool allowlis
 });
 
 test("accepted terminal presentation ends the native loop and still finalizes once", async () => {
-  const s = setup(() => call("present_answer"));
+  const s = setup(() => call("present_answer", { text: "你好，有咩可以幫你？" }));
+  s.input.messages = [{ role: "user", text: "hi" }];
   const result = await s.runtime.run(s.input);
   assert.equal(result.status, "completed", JSON.stringify(result));
   assert.equal(result.text, "Server validated presentation");
@@ -163,4 +164,55 @@ test("plain final without a terminal call stays invalid without adding repair mo
   assert.equal(s.requests.length, 1);
   assert.equal(s.written(), 0);
   assert.equal(result.text, null);
+});
+
+function planningMetadata(value: unknown): any {
+  if (typeof value === "string" && value.includes("Server runtime metadata:\n"))
+    return JSON.parse(value.split("Server runtime metadata:\n")[1]!.split("\n")[0]!);
+  if (value && typeof value === "object") for (const item of Object.values(value)) {
+    const found = planningMetadata(item); if (found) return found;
+  }
+  return undefined;
+}
+
+test("live run budget guides the native loop into one validated final turn", async () => {
+  const s = setup((request, index) => {
+    const { budget, capabilities } = planningMetadata(request.config?.systemInstruction);
+    assert.equal(budget.usedBeforeThisCall.modelCalls, index);
+    assert.equal(budget.usedBeforeThisCall.toolCalls, index);
+    assert.equal(budget.remaining.modelCallsIncludingThisCall, 4 - index);
+    assert.equal(budget.remaining.toolCalls, 16 - index);
+    assert.equal(budget.remaining.queryEmbeddings, 2);
+    assert.ok(budget.remaining.timeMs > 0 && budget.remaining.timeMs <= 90000);
+    assert.deepEqual(budget.reserveForFinish, { modelCalls: 1, toolCalls: 1 });
+    if (budget.phase === "finish") {
+      assert.equal(index, 3);
+      assert.deepEqual(capabilities, ["present_answer"]);
+      assert.deepEqual(Object.keys(request.toolsDict), ["present_answer"]);
+      assert.deepEqual(request.config?.toolConfig?.functionCallingConfig?.allowedFunctionNames, ["present_answer"]);
+      const parts = request.contents.flatMap(content => content.parts ?? []);
+      assert.ok(parts.some(part => part.thoughtSignature === "opaque-native-signature"));
+      assert.ok(parts.some(part => part.functionResponse?.name === "save_item"));
+      return call("present_answer");
+    }
+    assert.ok(Object.hasOwn(request.toolsDict, "save_item"));
+    return call(index === 0 ? "save_item" : "read_context", {});
+  });
+  s.input.tools = [s.write, { name: "read_context", description: "Read synthetic current state.",
+    parameters: z.object({}), authorize: async () => true,
+    execute: async () => ({ status: "succeeded", data: { current: true } }) }, s.terminal];
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, "completed", JSON.stringify(result));
+  assert.equal(result.text, "Server validated presentation");
+  assert.equal(s.written(), 1); assert.equal(s.finalized(), 1);
+  assert.equal(s.requests.length, 4);
+  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 4, queryEmbeddings: 0 });
+});
+
+test("final budget phase refuses another effect even if the provider ignores allowed tools", async () => {
+  const s = setup(() => call("save_item", {}));
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.stopReason, "invalid_tool");
+  assert.equal(s.written(), 3);
+  assert.equal(s.requests.length, 4); assert.equal(s.finalized(), 0);
 });

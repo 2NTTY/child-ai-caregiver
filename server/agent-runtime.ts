@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { BaseSessionService, FunctionTool, InMemorySessionService, LlmAgent, Runner, StreamingMode, createEvent, setLogger } from "@google/adk";
 import type { AppendEventRequest, CreateSessionRequest, DeleteSessionRequest, GetSessionRequest, ListSessionsRequest, LlmRequest, Context, Event, Session } from "@google/adk";
 import { z } from "zod";
+import { FunctionCallingConfigMode } from "@google/genai";
 import type { AiConfig } from "./ai-config.ts";
 import type { AiUsageStore } from "./ai-usage.ts";
 import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped, agentBudgetFingerprint, freezeAgentRunLimits } from "./agent-budget.ts";
@@ -327,10 +328,14 @@ export function createAgentRuntime(options: {
           const renderInstruction = async (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
             const currentPrompt = await budget.wait(() => getPrompt(ids));
             budget.check();
+            const planning = budget.planningSnapshot(terminalToolNames.size > 0);
+            const finishing = terminalToolNames.size > 0 && planning.phase === "finish";
+            const visible = capabilitySelection ? [...capabilitySelection.visibleToolNames(ids)] : tools.map(tool => tool.name);
             return `${currentPrompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope, trigger: input.trigger,
               now: new Date().toISOString(), timeZone: "Asia/Hong_Kong", locale: "zh-HK", packVersion: currentPrompt.packVersion,
-              recipeId: currentPrompt.recipeId, capabilities: capabilitySelection ? [...capabilitySelection.visibleToolNames(ids)] : tools.map(tool => tool.name),
-              ...(capabilitySelection ? { capabilityCatalog: capabilitySelection.metadata(ids) } : {}), limits: budget.limits })}`;
+              recipeId: currentPrompt.recipeId, capabilities: finishing ? visible.filter(name => terminalToolNames.has(name)) : visible,
+              ...(capabilitySelection && !finishing ? { capabilityCatalog: capabilitySelection.metadata(ids) } : {}), limits: budget.limits,
+              budget: planning })}`;
           };
           let currentInstruction = "";
           const modelAnchors = new WeakMap<LlmRequest, string>();
@@ -373,9 +378,23 @@ export function createAgentRuntime(options: {
               return currentInstruction;
             },
             tools: runtimeTools,
-            ...(durable ? { beforeModelCallback: ({ context, request }) => {
-              modelAnchors.set(request, modelAttemptKey(context, scope, runId, durable!.context.binding.trigger));
-            } } : {}),
+            beforeModelCallback: ({ context, request }) => {
+              if (durable) modelAnchors.set(request, modelAttemptKey(context, scope, runId, durable.context.binding.trigger));
+              // Leave the model free to plan ordinary steps. The final available
+              // generation must deliver a validated result, not start another effect.
+              if (terminalToolNames.size && budget.planningSnapshot(true).phase === "finish") {
+                const declarations = (request.config?.tools ?? []).flatMap(tool =>
+                  "functionDeclarations" in tool ? tool.functionDeclarations ?? [] : [])
+                  .filter(declaration => declaration.name && terminalToolNames.has(declaration.name));
+                const names = declarations.map(declaration => declaration.name!);
+                if (!names.length || names.some(name => !Object.hasOwn(request.toolsDict, name))) throw new AgentStopped("invalid_tool");
+                request.config ??= {};
+                request.config.tools = [{ functionDeclarations: declarations }];
+                request.toolsDict = Object.fromEntries(names.map(name => [name, request.toolsDict[name]!]));
+                request.allowedTools = names;
+                request.config.toolConfig = { functionCallingConfig: { mode: FunctionCallingConfigMode.ANY, allowedFunctionNames: names } };
+              }
+            },
             beforeToolCallback: async ({ tool, args, context }) => {
               budget.check();
               if (durable) await budget.checkDurable();
