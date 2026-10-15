@@ -2778,3 +2778,15 @@
 - `49c33e3` 一行修正只對 outlined 傳入該樣式，保留 flat 的 underlineStyle 及原設計。一項真 wrapper 定向檢查先失敗、修後通過；一次 Android export 通過，runtime 與已安裝 APK 相同。沒有擴展測試或改框架。
 - 14:47 UTC 發布至既有 Android preview，group `63b5ab20-4b5a-44b1-a228-b944efbbf98d`；只上載一個編譯 bundle、復用全部 30 assets，沒有 source map／新 APK build／後端部署／模型／通知。原生日誌留本機私有 cache，工程只保存 hash 及去私隱結論。
 - 啟動下載後程序仍運行，但手機鎖屏，已請本人只解鎖一次；不代填畫面成功或 OTA 啟用身份。原首條聊天尚未開始，#229 保持 draft；結果沿同一 S04 EV。
+
+
+<a id="log-20261015-android-input-usability"></a>
+### 2026-10-15 — S04-W01 真機輸入、停止原因及共用修正
+
+- 解鎖後沿既有 USB 授權核對，助手及冷重開已正常；首次直接重啟仍出現舊 outlineStyle 錯誤，下載後再開才恢復，原失敗保留，不虛構 active update ID。孩子表單展開的原生量度缺陷 `3df01ed` 已發布並核對欄位可見，未代建孩子。
+- 本人反映鍵盤遮擋、空輸入框保留多行高度及停止原因藏於詳情。`8992ce9` 沿 RN KeyboardAvoidingView 修 Android 避讓，空值重設高度；真機輸入框從鍵盤下方移到上方，僅輸入並清除自己的未發送多行文字，高度由 132→363→132 px，零訊息發送。
+- 共用 controller 在送出時清頭尾空行、連續換行最多兩個，保留段落內容；unknown 查回沿提交的同一文字。Server 保存安全停止原因，保留已保存結果、候選與原操作防重；前端仍核正文與引用匹配。兩個定向情景及 5 roots 型別通過；API fixture 首次漏既有身份 header 返回 428，只修 fixture 並補該情景，沒有整套重跑。
+- Android export 與 runtime 核對通過；15:39 UTC 發布 preview group `b44fb753`，僅一 bundle、30 assets 復用，無新 APK。Web 首個本機產物誤用原生公開 Auth 配置，發布前已棄用，改用既有 Web 配置再 export；未將錯配置送上站。
+- 15:49 UTC 經原 IAP 路徑把 2 個 Server 檔與靜態 Web 產物部署為 `s04-8992ce9`；API／worker／Web 健康，正式 `/chat` hash 一致。保留舊映像及受保護配置，零遷移、模型／通知或續期。
+- 本人明確指定每日每人 200、全站 400；沿管理服務交易保存政策 v1並讀回，已用計數不變，每次運行／本人 key 限制不變，不重發之前停止訊息。本人手動訊息曾遇額度上限，與本代理真模型驗收為零分開記錄。
+- 搜尋標籤延遲及切頁不順仍未定位，未擴做昂貴測試或推測修補。#229 保持 draft，首條有來源 Android 聊天／重開尚待驗；語音、拍照及相簿仍依 Android 計劃接續，不把灰色入口當功能完成。原生日誌、畫面及私人聊天只留忽略 cache，工程保存去私隱結論及 hash；詳見同一 S04 EV。

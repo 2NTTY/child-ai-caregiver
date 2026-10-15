@@ -1023,12 +1023,13 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s04-w01"></a>
 #### S04-W01 共用原生基礎與 Android 首條流程
 
-- 階段／狀態：P3；APK／API 已交付測試，主頁已由本人確認恢復。助手白屏已從 USB 原生日誌定位為 Paper flat 輸入框樣式型別錯誤，修正已發布，待解鎖手機核對畫面及首條聊天；分支 `codex/s04-w01-android-foundation`、draft PR #229。
-- 前置：P2-R04、S06-W05；文件 #228 合併後開工基線 `4f88948`，不依賴 STR01／三角色／iOS。
-- 交付：正式 App ID／API base、EAS Build／Update 基礎；共同 transport、Firebase 原生會話交換／SecureStore，正式 owner 的身份／資料接線。保留 Web Cookie，不以假 Origin 取得原生權限。
-- 已驗：同一合成交換／重開／撤銷經正式 Node／API，必要型別及 Android bundle 通過。首次兩個 EAS 失敗及局部修正保留；第三次明確批准的免費 build `b2fb7fe9-5f00-4d4c-9d62-b425c9b318ac` 成功，App 0.1.0／versionCode 1／受管簽署。來源 `7586788`；原 API／worker 已部署相容 `c6cf75d`，Web／資料／配額不改。見[同一證據](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
-- 真機修正：共用刷新 hook 的原生事件錯誤已於 `d9e249e` 修正，本人確認主頁正常。助手仍全白後，以本人授權的 USB 診斷取得 AndroidTextInput 原生掛載錯誤：Paper 5.15.3 flat 模式將 outlineStyle 陣列傳至 RN 0.86.3 的字串 setter，JS ErrorBoundary 無法攔截；原先沒有人工 crash 報告的回覆及診斷 OTA 證據保留。`49c33e3` 只讓 outlined 模式接收該樣式，一項定向檢查由失敗轉通過，相容 Android export 通過；已發布 preview group `63b5ab20`，沒有新 APK build／模型／通知。
-- 下一步／gate：手機已接線並授權 USB 偵錯，修正發布後 App 程序運行，但目前鎖屏，尚未證明修正後助手畫面或實際啟用 update ID。解鎖後直接核對助手及重開，再續原已批准的一次聊天讀回（最多 1 run／4 生成／2 embedding，<$0.10，無通知）。尚無本包真模型結果，不標包完成、不合併。需本人步驟時保留現場並先做獨立工作；同類最小驗收免逐次問，私有發布仍符合具體授權及工具審查。
+- 階段／狀態：P3；APK 已安裝登入，主頁、助手及重開、孩子表單展開、鍵盤避讓與清空後輸入框縮回已有真機證據；首條有來源聊天／重開讀回仍待驗。分支 `codex/s04-w01-android-foundation`、draft PR #229。
+- 前置：P2-R04、S06-W05；開工基線 `4f88948`，不依賴 STR01／三角色／iOS。
+- 交付：正式 App ID／API base、EAS Build／Update、共用 transport、Firebase 原生會話／SecureStore；Web 保留 Cookie／Origin。普通操作與資料沿同一正式 owner，不另建手機業務副本。
+- 已驗與修正：合成會話交換／重開／撤銷經正式 Node／API；第三次免費 build `b2fb7fe9` 產生 0.1.0／1，前兩次失敗保留。原生刷新、Paper flat outlineStyle 及折疊量度缺陷已局部修正；真機助手、表單、鍵盤及輸入框核對通過。`8992ce9` 共用送出時清除頭尾空行、連續換行最多兩個，未知保存沿同一文字查回；停止原因直接進保存回覆，來源及收據仍核對。只補兩個定向情景、受影響型別與必要產物，詳見[同一證據](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
+- 發布：相容 Android preview `b44fb753`；原 VM API／worker／Web 已於 2026-10-15 15:49 UTC 更新 `s04-8992ce9`，健康及正式靜態入口通過，保留回退，零遷移。本人明確要求的每日每人 200／全站 400 已保存為政策 v1，不清零用量、不重發停止訊息；每運行限制未改。
+- 下一步／gate：完成一次正常家長語句的有來源聊天與重開讀回；測試資料身份與問題措辭分開，不在問題硬塞「合成／假設」。使用者手動訊息曾因額度停止，不能算通過，也不自動重送。尚未完成該 gate，不合併、不開依賴包；保留已批准最多 1 run／4 生成／2 embedding、<$0.10、無通知的代表核對界線。
+- 其餘：搜尋標籤延遲與切頁不順仍待定位，不因此擴大測試或重寫導航。語音、拍照／相簿、PDF、FCM 依下列 Android 工作包接續，未交付圖示不算已接功能；iOS 仍延後。需本人步驟時先做可獨立工作，私有發布依有效授權與工具審查。
 
 
 <a id="s05-w03"></a>

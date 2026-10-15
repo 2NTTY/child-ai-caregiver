@@ -1,6 +1,6 @@
 {
   "workPackage": "S04-W01",
-  "status": "assistant-native-input-fixed-awaiting-device-verification",
+  "status": "native-rendering-input-repaired-source-backed-chat-gate-pending",
   "baseline": "4f88948cf943585954efbe32ef93e0df0c53f3c8",
   "recordedAt": "2026-10-15T11:20:23.441524+00:00",
   "environment": {
@@ -296,6 +296,155 @@
       "cloudBuilds": 0,
       "modelCalls": 0,
       "notifications": 0
+    },
+    {
+      "name": "Assistant physical-device verification after OTA download",
+      "result": "passed-navigation-and-cold-reopen",
+      "initialAttempt": "22:55 HKT first direct restart still raised outlineStyle crash; active update ID was not available, so this failure is preserved. No second code fix was made.",
+      "recovery": "Kept the working home page alive for download, restarted, then selected Assistant.",
+      "evidence": {
+        "assistantAppNodes": 191,
+        "nativeInputCount": 1,
+        "composerPresent": true,
+        "navigationPresent": true,
+        "screenshotSha256": "427bf9c5a0a627a69c6b8ac9576704db69c3cae80f5207e755fb191b52419129",
+        "reopenComposerPresent": true,
+        "reopenNavigationPresent": true,
+        "reopenUiSha256": "6aedfee4762723d3f827e92f2288ea0f1c2b7c59669d0b81f317cf51641ee020"
+      },
+      "activeUpdateId": "not exposed by current release; published update identity is recorded separately",
+      "privacy": "Screen evidence remains in local private cache; no existing chat text copied into tracked artifacts",
+      "modelCalls": 0,
+      "notificationCalls": 0
+    },
+    {
+      "name": "Native child management disclosure",
+      "result": "failure-repaired-awaiting-device-verification",
+      "observed": "The management control changed to expanded but no form content appeared; no test child was created.",
+      "change": "Native inner content measures outside collapsed height; after animation it returns to normal flow. Web display behavior unchanged.",
+      "sourceCommit": "3df01eda52b57921bac9875abcf5f06e7ff20d9f",
+      "checks": {
+        "affectedTypeRoots": 1,
+        "typeDiagnostics": 0,
+        "androidExport": "passed; installed runtime matches"
+      }
+    },
+    {
+      "name": "Compatible native disclosure repair publication",
+      "result": "published",
+      "sourceCommit": "3df01eda52b57921bac9875abcf5f06e7ff20d9f",
+      "updateId": "01a1401f-65ed-72f7-ab2a-12ac5f336c85",
+      "groupId": "cd446ede-0c01-45d0-8afe-52e75e8d4219",
+      "createdAt": "2026-10-15T15:12:41.965Z",
+      "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "logSha256": "7ba54d6129cd3066a3233ebdfae9631d2177ae8c70ce2848706b887460a05cef",
+      "cloudBuilds": 0,
+      "modelCalls": 0,
+      "notifications": 0
+    },
+    {
+      "name": "User-reported initial saved-record search label",
+      "result": "not-reproduced-in-one-cold-launch-observation",
+      "reported": "User reports label initially absent until focused.",
+      "observed": "Unfocused empty field showed label after cold launch without tapping the field. Initial-frame behavior not established.",
+      "change": "none; do not infer resolved",
+      "modelCalls": 0
+    },
+    {
+      "name": "Native child disclosure physical check",
+      "result": "passed",
+      "sourceCommit": "3df01eda52b57921bac9875abcf5f06e7ff20d9f",
+      "evidence": "Expanded child form exposed name field and review action; no child created by the agent.",
+      "privateScreenshotSha256": "38b7d930f77f6621d33dde8c6b1b948cb58aaf0a62c52eadf4029b20ff20a3e1"
+    },
+    {
+      "name": "Shared chat normalization and inline stopping reason",
+      "result": "passed-targeted-checks",
+      "sourceCommit": "8992ce90ba4a119219e599427125a7af2dc5d31d",
+      "checks": [
+        "One controller scenario: blank-line normalization, one save, unknown recovery with the same normalized text.",
+        "One formal product-agent API scenario: safe quota reason plus saved result, repeated operation does not rerun or resave."
+      ],
+      "initialHarnessFailure": "API fixture initially omitted existing x-expected-user-id; stopped at 428, fixed fixture only, then reran this scenario once.",
+      "affectedTypeRoots": 5,
+      "typeDiagnostics": 0,
+      "typeLogSha256": "695fafd2a271ad6dd8950c39add68ad94973eb36f0c5478640167f879b82ceb7",
+      "androidExport": "passed; unchanged installed runtime",
+      "webExport": "passed with existing Web Firebase configuration; initial local export used native public configuration and was discarded before upload",
+      "modelCalls": 0
+    },
+    {
+      "name": "Keyboard and composer height on the authorized physical Android device",
+      "result": "passed",
+      "environment": "Android 15 / API 35, installed signed APK 0.1.0 / 1, compatible preview update",
+      "before": "IME top 1569px, composer input [69,2024][1013,2156] was obscured.",
+      "after": "Focused input [69,1193][1013,1325] and send control visibly above keyboard.",
+      "composerReset": {
+        "beforeBounds": "[69,1193][1013,1325]",
+        "multilineBounds": "[69,962][1013,1325]",
+        "clearedBounds": "[69,1193][1013,1325]",
+        "unsentDraftCleared": true,
+        "messagesSent": 0
+      },
+      "beforeScreenshotSha256": "4b7eeb375bfbb76f90fe0750fc38889decec31089e23165c0c8e1e04a679458b",
+      "afterScreenshotSha256": "037702670aeef65da4e15c579da6575c8f697d1b5d7b02f4061c3c514693b5b6",
+      "privacy": "Screens and UI trees stay in ignored private cache. Only own unsent ASCII draft was inserted and cleared; no message was sent.",
+      "activeUpdateId": "not directly exposed by the release; publication and observed rendering are separate evidence"
+    },
+    {
+      "name": "Compatible input repair OTA",
+      "result": "published",
+      "sourceCommit": "8992ce90ba4a119219e599427125a7af2dc5d31d",
+      "updateId": "01a14038-074c-72ba-b240-9119d07ef1f2",
+      "groupId": "b44fb753-2a06-42c7-b43b-19648b20c70b",
+      "createdAt": "2026-10-15T15:39:36.140Z",
+      "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "upload": "one compiled bundle; all 30 assets reused, no source maps or new APK",
+      "logSha256": "7ba54d6129cd3066a3233ebdfae9631d2177ae8c70ce2848706b887460a05cef"
+    },
+    {
+      "name": "Explicitly authorized daily platform quota change",
+      "result": "saved-and-read-back",
+      "at": "2026-10-15T15:37:21.790Z",
+      "policyVersion": 1,
+      "perUser": 200,
+      "global": 400,
+      "previousPerUser": 12,
+      "previousGlobal": 20,
+      "modelCallsPerRun": 4,
+      "queryEmbeddingsPerRun": 2,
+      "personalKeyGlobal": 1000,
+      "usageCountersPreserved": true,
+      "note": "No stopped message was rerun. User manually encountered quota exhaustion; agent-triggered model acceptance remains unperformed."
+    },
+    {
+      "name": "Original VM compatible input and error-feedback deployment",
+      "result": "passed-health-and-static-entry",
+      "at": "2026-10-15T15:49:41Z",
+      "sourceCommit": "8992ce90ba4a119219e599427125a7af2dc5d31d",
+      "tag": "s04-8992ce9",
+      "apiWorkerImageId": "sha256:30571c101755d36271452627ada64e6b8dba0440ef2684e5a6f7772e42f812d3",
+      "webImageId": "sha256:6e527bd4bb0177beb80789cd7a47f14db1d111646be0c54081d948aa90d63ab3",
+      "staticEntry": {
+        "status": 200,
+        "path": "/chat",
+        "matchesPublishedStaticPage": true,
+        "sha256": "6051284ed180de65d82db7df0ebf4637ab4ac516a0378014cb61b83a2bfbe51b",
+        "modelCalls": 0
+      },
+      "deploymentLogSha256": "7a914533a294c13c840c000245e1f2e42f3aaf9945d2f7a5e1ca0e9a6a0b77ef",
+      "rollback": "Previous images and compose.env.before-s04-8992ce9 retained.",
+      "databaseMigrations": 0,
+      "modelCalls": 0,
+      "notifications": 0,
+      "vmDeadlineChanged": false
+    },
+    {
+      "name": "Remaining user-reported visual latency",
+      "result": "unresolved-no-speculative-change",
+      "reported": "Saved-record search label may appear several seconds late; repeated route changes feel less smooth.",
+      "finding": "Search label is local UI copy, not fetched text. One cold observation showed it; no reliable timing or page-lifecycle cause established.",
+      "scope": "No large profiling run or navigation rewrite."
     }
   ],
   "sourceSha256": {
@@ -321,17 +470,20 @@
     "embedding": 0,
     "notification": 0,
     "cloudBuild": 3,
-    "deployment": 1,
-    "otaPublish": 3
+    "deployment": 2,
+    "otaPublish": 5,
+    "note": "Counts refer to agent-triggered acceptance/publication; user manual chat attempts are not claimed to be zero."
   },
   "remaining": [
-    "Unlock connected phone and verify Assistant rendering/reopen after compatible input repair 49c33e3; publication is not activation evidence.",
-    "One approved source-backed Agent run/readback (1 run /4 generations /2 embeddings, <$0.10); not started after startup failure",
-    "S04-W01 remains draft; local checks do not prove physical rendering"
+    "One source-backed Android chat and reopen/readback remains unverified. Previous manual quota-stopped requests are not replayed.",
+    "S04-W01 stays draft pending that gate; native rendering, disclosure and keyboard checks have separate passing evidence.",
+    "Search label delay and navigation smoothness remain reported, without a proven cause; no costly profiling.",
+    "Voice, native camera/gallery, PDF sharing, FCM and subsequent cross-device packages remain later work in the approved Android goal."
   ],
   "collaboratorHeads": {
     "214": "ba3b32bb41944957c8a445db161b9134befa6e15",
     "215": "cb021c4b218dd57579869ff5a3598d8b38cff1ac",
     "216": "ca3314616178b72875cfd7013295a7f9ace3437d"
-  }
+  },
+  "updatedAt": "2026-10-15T15:52:57.967553+00:00"
 }
