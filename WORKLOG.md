@@ -2578,3 +2578,12 @@
 - Limits / Next：OPT02～05、LAY02～05、STR01 未實作；三角色依協作者合併才接穩定接口。原備份真還原待驗與既有失敗均保留。LAY01 review／合併後才開依賴包。
 
 - 本包核對結果：git diff --check 通過；六份變更文件的 37 個新增本機連結／錨點有效，11 個新包依賴無循環，WORKLOG 舊正文完整保留。主模型核對 Care 正式讀寫路徑、待辦原子 prepareTask／changeTask 及 growth-read 原文；沒有執行產品測試。
+
+
+<a id="log-20261015-p2-lay02"></a>
+### 2026-10-15 — LAY02 照護讀取與畫面解耦
+
+- Scope / Baseline：515e4f8，交付前遠端 aba56b1；#213 登入縮放無重疊。主模型界定接口並核對關鍵 diff，Astra xhigh 在獨立工作樹實作四檔；沒有修改協作者三角色或產品提示詞。
+- Result：正式 CareReadCoordinator 抽離身份／快取／分頁／歷史／版本與刪除屏障；現有 owner 沿同一讀取器，保留寫入、草稿、unknown 及原操作。既有 tests 不再切片 hook 原碼，快取測試仍經整份 owner 的真關閉／草稿／刪除回調。
+- Verification：Node 24.19.0、TanStack Query 5.103.2；原 care-record-cache 17/17、qa-care-history 8/8，新模組 strict 局部型別與 diff check 通過。型別初命令遇 TypeScript 6 TS5112（命令需 --ignoreConfig），修正命令後通過，非產品失敗。沒有重跑全站型別／build／E2E、真 API、模型或雲端。
+- Limits / Next：未部署、不代表真瀏覽器或 Firestore 新驗收；交易／畫面設計未變。LAY03 獨立收束，LAY04 等兩包合併；OPT 仍等待 #214／#215 穩定接口，原備份真還原待驗維持。

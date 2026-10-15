@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
+import { QueryClient } from '@tanstack/react-query';
+import { createCareReadCoordinator } from '../src/production/CareReadCoordinator.ts';
 const jsx = (type, props) => ({ type, props });
 const theme = new Proxy({}, { get: () => new Proxy({}, { get: () => 1 }) });
 const mocks = {
@@ -47,50 +49,51 @@ test('failed initial or older-page history stays unknown and retries the same pa
   }
 });
 
-// Execute the actual request owner function with synthetic API ports; no browser or family data.
-const ownerSource = readFileSync(new URL('../src/production/CareProfileDomains.tsx', import.meta.url), 'utf8');
-const historyFunction = ownerSource.slice(ownerSource.indexOf('  async function careHistory('), ownerSource.indexOf('  async function profileHistory('));
-function historyOwner(detail, history) {
-  const careRef = { current: { detail, list: { message: null } } }, historyGeneration = { current: 0 }, careHistoryCursor = { current: 1 };
-  const deps = { careRef, historyGeneration, careHistoryCursor, current: () => true, envRef: { current: { online: true } }, controller: () => new AbortController(),
-    setCare: update => { careRef.current = update(careRef.current); }, read: (_key, control, action) => action(control.signal),
-    careKey: ['synthetic'], childId: 'child', userId: 'user', api: { history }, careRevisionView: value => value, accessError: () => false, released() {} };
-  const compiled = ts.transpileModule('const { '+Object.keys(deps).join(',')+' } = deps;\n'+historyFunction+'\nexports.load = careHistory;', { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
-  const module = {}; new Function('deps', 'exports', compiled)(deps, module); return { load: module.load, state: () => careRef.current, deps };
+// Run the imported production coordinator with synthetic API and view-model ports.
+function historyOwner(t, detail, history) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
+  t.after(() => queryClient.clear());
+  const careRef = { current: { detail, list: { message: null } } }, online = { current: true };
+  const state = { careRef, writing: { current: false }, attempt: { current: null }, careRead: { current: null },
+    careGeneration: { current: 0 }, recordReadGeneration: { current: 0 }, recordRemovals: { current: new Map() },
+    historyGeneration: { current: 0 }, openGeneration: { current: 0 }, pageCursors: { current: [null] },
+    pageIndex: { current: 0 }, nextCursor: { current: null }, careHistoryCursor: { current: 1 } };
+  const reads = createCareReadCoordinator({ queryClient, state, careKey: ['synthetic'], childId: 'child', userId: 'user', scopeKey: 'scope',
+    current: () => true, online: () => online.current, controller: () => new AbortController(), released() {}, onAccessError() {},
+    setCare: update => { careRef.current = update(careRef.current); },
+    api: { getSession: async () => 'user', history }, careRevisionView: value => value,
+    careRecordView: item => ({ id: item.id, childId: 'child', title: 'Synthetic', current: { values: {}, version: item.version } }) });
+  return { load: reads.careHistory, state: () => careRef.current, reads, online };
 }
-for (const failure of ['HTTP', 'parse']) test(`${failure} history failure sets the actual owner error state and a successful retry clears it`, async () => {
-  let fail = true; const owner = historyOwner({ record: { id: 'record', current: { version: 2 } }, historyLoading: false, history: [], hasMoreHistory: false }, async () => {
+for (const failure of ['HTTP', 'parse']) test(`${failure} history failure sets the actual owner error state and a successful retry clears it`, async t => {
+  let fail = true; const owner = historyOwner(t, { record: { id: 'record', current: { version: 2 } }, historyLoading: false, history: [], hasMoreHistory: false }, async () => {
     if (fail) throw new Error(failure); return { revisions: [], nextBeforeVersion: null };
   });
   await owner.load(false); assert.equal(owner.state().detail.historyState, 'error'); assert.equal(owner.state().detail.historyLoading, false);
   assert.equal(owner.state().detail.historyRetryMore, false); assert.equal(owner.state().detail.history.length, 0); assert.equal(owner.state().list.message, null);
   fail = false; await owner.load(false); assert.equal(owner.state().detail.historyState, 'ready'); assert.equal(owner.state().detail.historyRetryMore, false);
 });
-test('older-page failure preserves loaded revisions and the original retry cursor', async () => {
-  const revision = { version: 1 }; const owner = historyOwner({ record: { id: 'record', current: { version: 3 } }, historyState: 'ready', historyLoading: false, history: [revision], hasMoreHistory: true }, async (_child, _record, before) => {
+test('older-page failure preserves loaded revisions and the original retry cursor', async t => {
+  const revision = { version: 1 }; const owner = historyOwner(t, { record: { id: 'record', current: { version: 3 } }, historyState: 'ready', historyLoading: false, history: [revision], hasMoreHistory: true }, async (_child, _record, before) => {
     assert.equal(before, 1); throw new Error('HTTP');
   });
   await owner.load(true); assert.equal(owner.state().detail.historyState, 'error'); assert.equal(owner.state().detail.historyRetryMore, true);
   assert.deepEqual(owner.state().detail.history, [revision]);
 });
 
-test('offline then reconnect keeps the same selection retryable and rejects the invalidated history result', async () => {
+test('offline then reconnect keeps the same selection retryable and rejects the invalidated history result', async t => {
   let resolveOld, attempts = 0; const beforeVersions = [];
-  const owner = historyOwner({ record: { id: 'record', childId: 'child', title: 'Synthetic', current: { values: {}, version: 2 } }, historyOpen: true, historyLoading: false, history: [], hasMoreHistory: false }, async (_child, _record, before) => {
+  const owner = historyOwner(t, { record: { id: 'record', childId: 'child', title: 'Synthetic', current: { values: {}, version: 2 } }, historyOpen: true, historyLoading: false, history: [], hasMoreHistory: false }, async (_child, _record, before) => {
     beforeVersions.push(before); if (++attempts === 1) return new Promise(resolve => { resolveOld = resolve; });
     return { revisions: [{ version: 1 }], nextBeforeVersion: null };
   });
   const first = owner.load(false); assert.equal(owner.state().detail.historyLoading, true);
-  const start = ownerSource.indexOf('  useEffect(() => {\n    if (env.online)');
-  const effect = ownerSource.slice(start, ownerSource.indexOf('  useEffect(() => {\n    const refresh', start));
-  const pageStart = ownerSource.indexOf('  const rawRecord =');
-  const pageFunction = ownerSource.slice(pageStart, ownerSource.indexOf('  async function loadCare(', pageStart));
-  const pageDeps = { ...owner.deps, recordRemovals: { current: new Map() }, recordReadGeneration: { current: 0 }, env: { queryClient: { getQueryData() {}, setQueryData() {} } }, nextCursor: { current: null }, pageIndex: { current: 0 }, careRecordView: item => ({ id: item.id, childId: 'child', title: 'Synthetic', current: { values: {}, version: item.version } }) };
-  const pageModule = {}; new Function('deps', 'exports', ts.transpileModule('const { '+Object.keys(pageDeps).join(',')+' } = deps;\n'+pageFunction+'\nexports.publish=publishPage;', { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(pageDeps, pageModule);
-  const effectDeps = { ...owner.deps, env: { online: false }, careGeneration: { current: 0 }, profileGeneration: { current: 0 }, careRead: { current: null }, profileRead: { current: null },
-    refreshDeferred: { current: false }, writing: { current: false }, attempt: { current: null }, setProfile() {}, useEffect: action => action(),
-    reloadRef: { current: { loadCare: () => pageModule.publish({ records: [{ id: 'record', childId: 'child', version: 2 }], nextCursor: null, scanned: 1 }, '', 'all', 0, 0), loadProfile() {} } } };
-  function online(value) { owner.deps.envRef.current.online = value; effectDeps.env.online = value; new Function('deps', ts.transpileModule('const { '+Object.keys(effectDeps).join(',')+' } = deps;\n'+effect, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText)(effectDeps); }
+  await new Promise(resolve => setImmediate(resolve));
+  function online(value) {
+    owner.online.current = value;
+    if (!value) owner.reads.pauseReads();
+    else owner.reads.publishPage({ records: [{ id: 'record', childId: 'child', version: 2 }], nextCursor: null, scanned: 1 }, '', 'all', 0, 0);
+  }
   online(false); assert.equal(owner.state().detail.historyLoading, false); assert.equal(owner.state().detail.historyState, 'unread');
   online(true); assert.equal(owner.state().detail.record.id, 'record'); assert.equal(owner.state().detail.historyLoading, false);
   assert.ok(render(owner.state().detail).buttons.some(button => button.label === '讀取更正歷史' && !button.disabled));

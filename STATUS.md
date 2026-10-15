@@ -7,7 +7,7 @@
 - **Firestore／正式零 SQL 及本輪 P2 review 修正已交付。** [R01～R04](PLAN.md#p2-review-repair) 分別於 #203～#206 合併，並已部署 `2c17aa7`。修正刪除披露、清理恢復、Agent 正式組裝、成果狀態及通知歷史；不把有限檢查當全面驗收。[P2-ADM01 Web 管理後台](PLAN.md#p2-adm01) 已於 #208／#209 合併並部署，指定的已驗證 UID 已綁定；正式瀏覽器管理身份讀取的 fetch 接收者缺陷已於 #211 修正及部署；上述是既有交付；本輪新增 OPT／LAY／STR 目標尚未完成，家庭多人仍在 P4。
 - **原前後端已共同使用 Firestore。** 原網站保留新前端設計，真 Agent 的官方引用、同一準備單修改／確認／保存及刷新讀回已通過。摘要 Firestore 接線缺口已補回並部署；容量操作及保存讀回已補必要證據，回覆替身與真 Agent 結果分開記錄。正式 API／worker 已退出 SQL，PostgreSQL 停止；不是分開的預覽站。排程、queue 及既有通知入口已恢復，本包未追加外發訊息。
 - **使用者明確延後：原生每日備份首份核對及一次隔離還原。** 每日 14 天排程、還原入口及測試保留，尚無真原生還原證據；不阻塞本次合併與功能使用。後續只見 [PLAN 待驗入口](PLAN.md#p2-backup-followup)，不持續輪詢或重跑既有驗收。配對備份與 F02～F07 證據保持分開；結果、失敗與限制見 [F08 EV](artifacts/verification/F08_ORIGINAL_SITE_20261013.json)。
-- **當前工作：**[LAY01](PLAN.md#p2-lay01) 正在定案兩條已批准計劃及必要功能邊界；OPT01 等協作者 #214／#215 重疊接口合併。2026-10-15 遠端 master bb728f2，#214～#216 與 #213 尚未合併；不修改或合併其工作，不把 open PR 當部署。詳細依賴／下一步只見 [PLAN](PLAN.md#active)。
+- **當前工作：**[LAY01](PLAN.md#p2-lay01) 已由 #217 合併；[LAY02](PLAN.md#p2-lay02) 已完成照護讀取協調抽離及必要檢查，待交付，LAY03 的待辦接口獨立收束中。2026-10-15 遠端 master aba56b1；使用者另授權的 #213 登入縮放已合併、未部署。#214～#216 仍未合併，OPT01 及其後重疊工作等待協作者；不修改或合併三角色成果。詳細依賴只見 [PLAN](PLAN.md#active)。
 - **操作範圍：**主模型親寫規格、計劃、提示詞及 review，使用者本輪另准有收益時用 Astra xhigh 子代理；僅獨立範圍並行。保留新前端設計，只做最低必要定向檢查，不全量或 Computer Use。協作者三角色不在本聊天實作範圍。
 - 前端依 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；本人模型 key／限額仍為可選，平台基本 AI 不要求家長提供 key。未改 UI 設計。
 
