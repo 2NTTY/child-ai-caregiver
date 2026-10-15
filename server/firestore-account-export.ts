@@ -1,3 +1,5 @@
+import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
+import { firestoreVoiceTranscriptSchema, type FirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
@@ -35,6 +37,7 @@ const sections = {
   tasks: ['tasks', ['task']], task_history: ['task_revisions', ['task-revision']],
   documents: ['documents', ['family-document']], document_versions: ['document_snapshots', ['document-snapshot']],
   document_content: ['document_snapshots', ['document-snapshot']],
+  voices: ['voice_assets', ['voice-asset']], voice_content: ['voice_assets', ['voice-asset']], voice_transcripts: ['voice_transcripts', ['voice-transcript']],
   photos: ['photos', ['photo']], photo_content: ['photos', ['photo']],
   private_sources: ['shared_inputs', ['shared-input', 'shared-input-tombstone']],
   private_source_history: ['shared_input_management_revisions', ['shared-input-management']],
@@ -52,6 +55,8 @@ const querySchema = z.object({ section: z.string().max(80), childId: z.uuid().op
 const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId: z.uuid().nullable(), scopeVersion: z.string(), after: z.string().max(2000) }).strict();
 export function createFirestoreAccountExport(options: FirestoreAuthorityOptions & {
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'content'>;
+  voices?: Pick<FirestoreVoiceStore,'content'|'readMetadata'>;
+  transcripts?: Pick<FirestoreVoiceTranscripts,'readIn'>;
 }) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
   function version(binding: FirestoreAuthorityTransaction) {
@@ -74,7 +79,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       if (previous && (previous.userId !== owner || previous.section !== section || previous.childId !== (input.childId ?? null)
         || previous.scopeVersion !== scopeVersion)) domainReject('invalid_export_cursor', 400);
       let items: unknown[] = [], nextCursor: string | null = null;
-      const photos: { id: string; version: number }[] = [];
+      const photos: { id: string; version: number }[] = [], voices: {id:string;version:number}[]=[];
       if (section === 'manifest') {
         items = [{ format: 'yuban-personal-data:1', sections: ['account', ...Object.keys(sections)].map(key => ({ section: key,
           childScoped: !global.has(key), required: true })), scope: '本人可讀的業務資料；不包含憑據、模型 key 或內部協定狀態。' }];
@@ -94,7 +99,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
           query = query.where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag).where('userTag', '==', tags.userTag);
           if (section !== 'children') query = query.where('childTag', '==', tags.childTag);
         }
-        const limit = section === 'document_content' || section === 'photo_content' ? 1 : 10;
+        const limit = section === 'document_content' || section === 'photo_content' || section === 'voice_content' ? 1 : 10;
         query = query.orderBy(suffix === 'photos' ? 'sortKey' : FieldPath.documentId()).limit(limit + 1);
         if (previous) query = query.startAfter(previous.after);
         const found = await binding.transaction.get(query);
@@ -126,6 +131,18 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const item = z.object({ id: z.uuid().optional(), childId: z.uuid(), version: z.number().int().positive() }).passthrough().parse(value);
             const kind = section === 'care_history' ? 'care' : section === 'profile_history' ? 'profile' : section === 'memory_fact_history' ? 'fact' : 'topic';
             if (await contentVisible(data, binding, kind, kind === 'profile' ? item.childId : z.uuid().parse(item.id), item.version)) items.push(value);
+          } else if (suffix === 'voice_assets') {
+            const voice=firestoreVoiceRowSchema.parse(value);
+            if (['deleting','deleted'].includes(voice.state)) continue;
+            if (!options.voices) domainReject('voice_export_unavailable',503);
+            const current=await options.voices.readMetadata(binding,voice.id);
+            if (section==='voice_content') { if(current.state==='ready')voices.push({id:voice.id,version:current.version}); }
+            else items.push(current);
+          } else if (suffix === 'voice_transcripts') {
+            const stored=firestoreVoiceTranscriptSchema.parse(value), source=await binding.transaction.get(data.ref('voice_assets','voice-asset',stored.value.voice.id));
+            if (!source.exists||['deleting','deleted'].includes(source.get('state'))) continue;
+            if (!options.transcripts) domainReject('voice_export_unavailable',503);
+            items.push(await options.transcripts.readIn(binding,stored.value.voice.id));
           } else if (suffix === 'photos') {
             const photo = firestorePhotoSchemas.photo.parse(value);
             if (!['ready', 'reserved'].includes(photo.state)) continue;
@@ -158,17 +175,23 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,
           after: suffix === 'photos' ? found.docs[limit - 1].get('sortKey') : found.docs[limit - 1].id });
       }
-      return { section, items, nextCursor, complete: nextCursor === null, scopeVersion, notices: ['歷史版本供追溯；不代表仍適用的最新建議。'], photos };
+      return { section, items, nextCursor, complete: nextCursor === null, scopeVersion, notices: ['歷史版本供追溯；不代表仍適用的最新建議。'], photos, voices };
     });
     for (const photo of result.photos) {
       const content = await options.photos.content(owner, input.childId!, photo.id);
       result.items.push({ photoId: photo.id, version: photo.version, base64: content.base64, mimeType: content.mimeType });
     }
+    for (const voice of result.voices) {
+      if (!options.voices) domainReject('voice_export_unavailable',503);
+      const content=await options.voices.content(owner,input.childId!,voice.id);
+      if(content.attachment.version!==voice.version)domainReject('export_scope_changed');
+      result.items.push({voiceId:voice.id,version:voice.version,base64:content.base64,mimeType:content.descriptor.mimeType});
+    }
     // Storage IO or a long snapshot page cannot disclose under an identity/version that changed mid-request.
     await authority.runTransaction(owner, input.childId ?? null, binding => {
       if (version(binding) !== result.scopeVersion) domainReject('export_scope_changed'); return Promise.resolve();
     });
-    const { photos: _photos, ...response } = result; return response;
+    const { photos: _photos, voices: _voices, ...response } = result; return response;
   }
   return { page };
 }

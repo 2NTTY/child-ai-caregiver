@@ -960,3 +960,5 @@ S12 的目標契約：Web／Android 每次聊天最多一段錄音、兩分鐘�
 語音交代的普通操作可帶 `sourceBasis=voice_interpretation`，`sourceQuote` 是模型本輪從原錄音聽取的片語。Server 只接受當前訊息綁定、仍 ready 的同一附件 ID／版本／hash，連同原 run、預授權版本及操作收據保存來源證據；不改寫原訊息 text 為自動轉錄，不把語音辨識當已確認事實。文字及較早文字來源仍須逐字核對，重要事項仍使用原確認服務。刪除／改版後不能引用舊錄音執行新操作。
 
 ADK 事件只保存本次音訊身份 metadata；模型 adapter 在每次已授權呼叫前將同一原位元組加入原訊息位置，維持完整 function calling 協定。音訊另計格式、5 MiB／兩分鐘及一段上限，文字／工具 schema 仍計原上下文容量；完整 provider payload 參與原呼叫指紋及用量。不能把 base64 寫進 Firestore 聊天／ADK 事件，亦不能接受模型或 HTTP 提供的任意音訊 URL。
+
+語音轉錄 GET `/:id/transcript` 使用同一身份及原音訊存取核對，返回 pending／running／available／unknown／stopped、自動辨識標記、完整度及段落時間；不將轉錄複製到原聊天 text。首次訊息綁定同交易入列，預留互動運行時間後處理；單次生成、同一付款來源及背景授權，已知配額未准入可有限次延後，未知模型結果不重做。清理及匯出沿目前音訊刪除屏障；預留／刪除的原操作占用共用收據位置，跨資源重用同 opId 拒絕。

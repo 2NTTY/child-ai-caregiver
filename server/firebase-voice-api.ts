@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import { VOICE_LIMITS, voiceReservationSchema } from '../src/shared/voice.ts';
+import type { FirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
 import type { FirestoreVoiceStore } from './firestore-voice.ts';
 import { FirestoreDomainError, domainParse, domainReject } from './firestore-domain-data.ts';
 
-export type FirebaseVoiceApiPort = Pick<FirestoreVoiceStore, 'reserve' | 'get' | 'upload' | 'reconcile' | 'content' | 'delete'>;
+export type FirebaseVoiceApiPort = Pick<FirestoreVoiceStore, 'reserve' | 'get' | 'upload' | 'reconcile' | 'content' | 'delete'> & { transcripts?: Pick<FirestoreVoiceTranscripts, 'get'> };
 export const VOICE_UPLOAD_BODY_BYTES = Math.ceil(VOICE_LIMITS.bytes / 3) * 4 + 1024;
 const version = z.number().int().positive();
 const uploadSchema = z.object({ expectedVersion: version, base64: z.string().min(1).max(VOICE_UPLOAD_BODY_BYTES - 1024) }).strict();
@@ -28,7 +29,7 @@ export async function handleFirebaseVoiceRequest(request: Request, userId: strin
   const expected = request.headers.get('x-expected-user-id');
   if (!expected) domainReject('account_precondition_required', 428);
   if (expected !== userId) domainReject('session_changed', 409);
-  const url = new URL(request.url), match = /^\/api\/children\/([^/]+)\/voices(?:\/([^/]+)(?:\/(content|resolve|delete))?)?$/u.exec(url.pathname);
+  const url = new URL(request.url), match = /^\/api\/children\/([^/]+)\/voices(?:\/([^/]+)(?:\/(content|resolve|delete|transcript))?)?$/u.exec(url.pathname);
   if (!match || !z.uuid().safeParse(match[1]).success || match[2] && !z.uuid().safeParse(match[2]).success) domainReject('not_found', 404);
   if (url.search) domainReject('invalid_input', 400);
   const childId = match[1].toLowerCase(), id = match[2]?.toLowerCase(), action = match[3];
@@ -38,7 +39,10 @@ export async function handleFirebaseVoiceRequest(request: Request, userId: strin
     const input = domainParse(voiceReservationSchema, await json(request)); await active();
     response = Response.json({ voice: await voice.reserve(userId, childId, input) }, { status: 201 });
   } else if (request.method === 'GET' && id && !action) response = Response.json({ voice: await voice.get(userId, childId, id) });
-  else if (request.method === 'POST' && id && action === 'content') {
+  else if (request.method === 'GET' && id && action === 'transcript') {
+    if (!voice.transcripts) domainReject('voice_transcript_unavailable', 503);
+    response = Response.json({ transcript: await voice.transcripts.get(userId, childId, id) });
+  } else if (request.method === 'POST' && id && action === 'content') {
     const input = domainParse(uploadSchema, await json(request, VOICE_UPLOAD_BODY_BYTES)); await active();
     response = Response.json({ voice: await voice.upload(userId, childId, id, input.expectedVersion, input.base64, request.signal) });
   } else if (request.method === 'POST' && id && action === 'resolve') {

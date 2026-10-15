@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { voiceTranscriptSchema } from '../shared/voice-transcript.ts';
 import { VOICE_LIMITS, voiceAttachmentSchema, voiceReservationSchema, type VoiceAttachment, type VoiceReservation } from '../shared/voice.ts';
 import { readBlobBytes, sha256Bytes } from './blob-bytes.ts';
 
@@ -50,6 +51,13 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
       const result = z.object({ operationId: z.uuid(), deleted: z.literal(true), cleanupPending: z.boolean() }).strict().safeParse(await response.json());
       if (signal.aborted || !result.success || result.data.operationId !== opId) throw new VoiceApiError(0, 'voice_operation_unknown');
       return result.data;
+    },
+    async transcript(childId: string, id: string, signal: AbortSignal, userId: string) {
+      const response = await request(base(childId, id) + '/transcript', userId, signal);
+      const parsed = z.object({ transcript: voiceTranscriptSchema }).strict().safeParse(await response.json());
+      if (signal.aborted) throw new VoiceApiError(0, 'identity_changed');
+      if (!parsed.success || parsed.data.transcript.voice.id !== id) throw new VoiceApiError(0, 'voice_response_invalid');
+      return parsed.data.transcript;
     },
     async content(voice: VoiceAttachment, signal: AbortSignal, userId: string) {
       if (voice.state !== 'ready' || !voice.bytes || !voice.sha256 || !voice.mimeType) throw new VoiceApiError(409, 'voice_not_available');

@@ -167,7 +167,7 @@ export class AgentGatewayModel extends BaseLlm {
         thinkingConfig: { thinkingLevel: nativeModelThinkingLevel(config.model, config.agentThinkingLevel) },
       } };
       if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
-      requestCharacters = requestSize({ contents: request.contents, config: outgoing.config });
+      requestCharacters = requestSize({ contents: base.contents, config: outgoing.config });
       if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
       const requestFingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
       await budget.admit({ key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 });

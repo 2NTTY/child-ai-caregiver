@@ -1,3 +1,6 @@
+import { createFirestoreOnlineReceipts } from './firestore-online-receipts.ts';
+import { firestoreVoiceTranscriptSchema } from './firestore-voice-transcripts.ts';
+import { prepareVoiceTranscription } from './firestore-voice-transcripts.ts';
 import { firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, erasureCoversVoice, firebaseErasureIntentHash, type FirebaseErasureJournal, type FirebaseErasureIntent, type FirebaseErasureDescriptor } from './firebase-erasure-journal.ts';
 import { randomUUID, createHash } from "node:crypto";
 import { z } from "zod";
@@ -27,10 +30,11 @@ export const firestoreVoiceRowSchema = z.object({
   && (v.state !== "ready" || v.descriptor !== null)
   && (!v.deletion || erasureCoversVoice(v.deletion.intent, v.objectScope, v.id)));
 export type FirestoreVoiceRow = z.infer<typeof firestoreVoiceRowSchema>;
-export interface FirestoreVoiceOptions extends FirestoreDomainOptions { objects: VoiceObjects; journal: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>; serverClock?: () => number }
+export interface FirestoreVoiceOptions extends FirestoreDomainOptions { objects: VoiceObjects; journal: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>; serverClock?: () => number; eraseTranscriptionRun?: (userId: string, runId: string) => Promise<void> }
 /** Private voice authority. Upload and object reads occur outside retried Firestore callbacks. */
 export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), clock = options.serverClock ?? Date.now;
+  const receipts = createFirestoreOnlineReceipts(options);
   const ref = (id: string) => data.ref("voice_assets", "voice-asset", id);
   const now = () => new Date(clock()).toISOString();
   const scopeTag = (scope: WorkRecoveryScope) => firestoreDomainHash(["voice-scope", scope]);
@@ -65,16 +69,25 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
       fileName: row.metadata?.fileName ?? null, mimeType: row.metadata?.mimeType ?? null, bytes: row.metadata?.bytes ?? null, sha256: row.metadata?.sha256 ?? null,
       durationMs: row.state === "ready" ? row.descriptor?.durationMs ?? null : null, messageId: row.messageId };
   }
+  async function operation(b: FirestoreAuthorityTransaction, opId: string, path: string, payload: unknown) {
+    const prior = await receipts.read(b, opId);
+    const submission = { path, payload, operation: prior?.operation ?? { opId, deviceId: '00000000-0000-0000-0000-000000000000',
+      workspaceId: b.scope.workspaceId, storageEpoch: b.scope.storageEpoch } };
+    if (prior) receipts.assertSame(b, prior, submission);
+    return { prior, submission };
+  }
   async function reserve(userId: string, childId: string, raw: VoiceReservation) {
     const input = domainParse(voiceReservationSchema, raw), { opId: id, ...metadata } = input;
     const fingerprint = firestoreDomainHash(["voice-reserve", input]), createdAt = now();
     return authority.runTransaction(userId, childId, async b => {
       if (!await b.readChild(childId)) domainReject("not_found", 404);
+      const op = await operation(b, id, '/api/children/' + childId + '/voices', input);
       const existing = await b.transaction.get(ref(id));
       if (existing.exists) {
         const prior = open(existing, b.scope, id); if (prior.fingerprint !== fingerprint) domainReject("operation_conflict");
         return view(prior);
       }
+      if (op.prior) domainReject('operation_erased');
       // Only a few unfinished uploads may occupy a user's child scope at once.
       const pending = await b.transaction.get(data.collection("voice_assets").where("scopeTag", "==", scopeTag(b.scope))
         .where("state", "==", "reserved").limit(3));
@@ -82,7 +95,9 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
       const change = await b.prepareChange(id, "chat", false);
       const row: FirestoreVoiceRow = { id, scope: { ...b.scope }, objectScope: { ...b.scope }, version: 1, createdAt,
         updatedAt: createdAt, fingerprint, metadata, state: "reserved", upload: null, descriptor: null, messageId: null, deletion: null };
-      change.commit(); b.transaction.create(ref(id), envelope(row)); return view(row);
+      const saved = receipts.prepareConfirmed(b, op.submission, { childId, changeSeq: change.changeSeq, statusCode: 201,
+        result: { voiceId: id, action: 'voice_reserve', accepted: true } });
+      change.commit(); b.transaction.create(ref(id), envelope(row)); saved.commit(); return view(row);
     });
   }
   async function finish(userId: string, childId: string, original: FirestoreVoiceRow, descriptor: VoiceObjectDescriptor) {
@@ -167,18 +182,22 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
   async function deleteVoice(userId: string, childId: string, id: string, expectedVersion: number, operationId: string) {
     domainParse(uuid, operationId); domainParse(z.number().int().positive(), expectedVersion);
     const prepared = await authority.runTransaction(userId, childId, async b => {
+      const op = await operation(b, operationId, '/api/children/' + childId + '/voices/' + id + '/delete', { expectedVersion });
       const row = await read(b, id);
       if (row.deletion) {
         if (row.deletion.intent.operationId !== operationId || row.deletion.expectedVersion !== expectedVersion) domainReject('operation_conflict');
         return row;
       }
+      if (op.prior) domainReject('operation_erased');
       if (row.version !== expectedVersion) domainReject('version_conflict');
       const intent: FirebaseErasureIntent = { type: 'voice-delete', scope: row.objectScope, assetId: id, operationId, at: now() };
       const change = await b.prepareChange(operationId, 'chat', true);
       const { bytes, sha256, mimeType } = row.metadata!;
       const updated: FirestoreVoiceRow = { ...row, version: row.version + 1, state: 'deleting', metadata: null, updatedAt: now(),
         deletion: { intent, proof: null, expectedVersion, integrity: { bytes, sha256, mimeType }, cleanup: 'pending', attempts: 0, nextCheckAt: now() } };
-      change.commit(); b.transaction.set(ref(id), envelope(updated)); return updated;
+      const saved = receipts.prepareConfirmed(b, op.submission, { childId, changeSeq: change.changeSeq, statusCode: 200,
+        result: { voiceId: id, action: 'voice_delete', accepted: true } });
+      change.commit(); b.transaction.set(ref(id), envelope(updated)); saved.commit(); return updated;
     });
     const deleted = await finishDeletion(prepared);
     return { operationId, deleted: true as const, cleanupPending: deleted.deletion!.cleanup !== 'complete' };
@@ -201,6 +220,21 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
       }
       if (descriptor) { checkedDescriptor(row, descriptor); await options.objects.remove(row.objectScope, id, descriptor); complete = true; }
       else complete = row.upload === null; // An unknown admitted write is not proof of absence.
+      const transcriptRef = data.ref('voice_transcripts','voice-transcript',id), snapshot = await transcriptRef.get();
+      if (snapshot.exists) {
+        const transcript = data.open('voice-transcript',id,row.scope,firestoreVoiceTranscriptSchema,snapshot);
+        if (firestoreDomainHash(transcript.scope)!==firestoreDomainHash(row.scope)||transcript.value.voice.id!==id) domainReject('voice_delete_binding',503);
+        if (transcript.attempt) {
+          if (!options.eraseTranscriptionRun) domainReject('voice_transcript_cleanup_unavailable',503);
+          await options.eraseTranscriptionRun(row.scope.ownerUserId,transcript.attempt.runId);
+        }
+        await options.database.runTransaction(async tx => {
+          const fresh = open(await tx.get(ref(id)),scope,id), current = await tx.get(transcriptRef);
+          if (!fresh.deletion || !current.exists) return;
+          // No authorized transcript writer can publish after the source deletion barrier.
+          tx.delete(transcriptRef);
+        });
+      }
     } catch { complete = false; }
     return options.database.runTransaction(async tx => {
       const fresh = open(await tx.get(ref(id)), scope, id);
@@ -240,8 +274,9 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     if (row.version !== expectedVersion) domainReject("version_conflict");
     domainParse(uuid, messageId);
     const updated: FirestoreVoiceRow = { ...row, messageId, version: row.version + 1, updatedAt: now() };
-    return { voice: { id, version: updated.version, sha256: row.descriptor.sha256, mimeType: row.descriptor.mimeType, durationMs: row.descriptor.durationMs, bytes: row.descriptor.bytes },
-      commit() { b.transaction.set(ref(id), envelope(updated)); } };
+    const voice = { id, version: updated.version, sha256: row.descriptor.sha256, mimeType: row.descriptor.mimeType, durationMs: row.descriptor.durationMs, bytes: row.descriptor.bytes };
+    const transcription = await prepareVoiceTranscription(data, b, voice, messageId);
+    return { voice, commit() { b.transaction.set(ref(id), envelope(updated)); transcription(); } };
   }
   async function readEvidence(b: FirestoreAuthorityTransaction, messageId: string, reference: VoiceMessageReference) {
     reference = domainParse(voiceMessageReferenceSchema, reference);
@@ -269,6 +304,7 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     return { ...value, attachment: view(row) };
   }
   return { reserve, upload, reconcile, content, prepareLink, agentAudio, readEvidence, delete: deleteVoice, cleanupDeleted, eraseForScope,
+    readMetadata: async (b: FirestoreAuthorityTransaction, id: string) => view(await read(b,id)),
     get(userId: string, childId: string, id: string) { return authority.runTransaction(userId, childId, async b => view(await read(b, id))); } };
 }
 export type FirestoreVoiceStore = ReturnType<typeof createFirestoreVoiceStore>;

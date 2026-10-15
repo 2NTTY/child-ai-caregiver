@@ -81,6 +81,42 @@
         "Original run readback repeats neither model nor action",
         "Deleted voice cannot be loaded into a new run"
       ]
+    },
+    {
+      "kind": "same-voice-lifecycle-background-transcription",
+      "basedOn": "bd0ce52",
+      "passed": 1,
+      "durationMs": 498.3707,
+      "initialFailure": "Synthetic Date clock started at epoch zero, so queued work was not due",
+      "correction": "Initialize mock clock from the actual test start; no product repair",
+      "coverage": [
+        "Canonical background lease",
+        "Same production ADK runtime and billing route",
+        "Only one transcription tool and model attempt",
+        "Persisted transcript without replaying audio command",
+        "Same delivery retry without another generation",
+        "Current source authorization before disclosure"
+      ]
+    },
+    {
+      "kind": "same-voice-lifecycle-erasure-and-export",
+      "passed": 1,
+      "durationMs": 527.3498,
+      "initialFailure": "Synthetic document reference omitted SDK get(); cleanup correctly remained pending",
+      "correction": "Complete the local SDK-shaped read seam; same scenario passed",
+      "coverage": [
+        "Voice reserve/delete share owner-wide operation receipts",
+        "Original-operation conflict",
+        "Fresh authorized export of audio and transcript",
+        "Deletion immediately masks both exports",
+        "Pinned object and transcription session cleanup",
+        "Physical transcript removal"
+      ]
+    },
+    {
+      "kind": "affected-server-client-types",
+      "roots": 6,
+      "diagnostics": 0
     }
   ],
   "realModelCalls": 0,
@@ -91,10 +127,9 @@
     "No native recording/permission/playback evidence",
     "No new APK/OTA/build",
     "Runtime voice and UI send owner remain unmounted",
-    "Cleanup scheduler, whole-account export/erasure and paired backup/restore integration pending; recovery explicitly rejects voice-delete until connected",
     "Late-upload/delete race implementation awaits focused evidence",
     "Real model voice quality remains pending",
     "Agent audio has synthetic assembly evidence only; real speech understanding remains unverified",
-    "Background transcription, original receipt integration, scheduled cleanup, account export/deletion and paired recovery remain pending; production voice is not mounted"
+    "Scheduler and account-erasure ports prepared but not mounted; paired backup/restore, transcript search and formal owner remain pending; production voice stays disabled"
   ]
 }

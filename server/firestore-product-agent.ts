@@ -1,3 +1,5 @@
+import { createFirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
+import { createVoiceTranscription } from './voice-transcription.ts';
 import type { AgentDiagnostic } from './agent-observer.ts';
 import { createPrivateSummaryMaintenance } from './private-summary-maintenance.ts';
 import { readFile } from 'node:fs/promises';
@@ -63,7 +65,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
       let instance: ReturnType<typeof createAgentRuntime>, authorize: () => Promise<boolean>;
       try {
         const selected = await routing.resolve(input.scope.userId, input.trigger.kind);
-        const limits = input.recipeId === 'memory-refresh' ? { ...selected.runLimits, modelCalls: Math.min(1, selected.runLimits.modelCalls) } : selected.runLimits;
+        const limits = ['memory-refresh', 'voice-transcription'].includes(input.recipeId) ? { ...selected.runLimits, modelCalls: Math.min(1, selected.runLimits.modelCalls) } : selected.runLimits;
         const provider = selected.billingSource === 'platform' ? options.platformProvider ?? selected.provider : selected.provider;
         // Selection is immutable within this root. Changing settings invalidates its authorization.
         const durable = claimedRunAssembly(selected.config, { nativeSessionService, rootBudget, dailyUsage: selected.dailyUsage,
@@ -90,5 +92,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
     { async embed() { throw new AgentStopped('unavailable'); } });
   const agent = createProductAgent({ runtime, store: services.store, actions: services.actions, voices: options.voices,
     chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge });
-  return { ...services, routing, runtime, agent, maintainSummary: createPrivateSummaryMaintenance({ memory: options.memory, store: services.store, runtime }) };
+  const voiceTranscripts = options.voices ? createFirestoreVoiceTranscripts({ ...options, voices: options.voices }) : undefined;
+  const transcribeVoice = voiceTranscripts && options.voices ? createVoiceTranscription({ store: voiceTranscripts, voices: options.voices, runtime }) : undefined;
+  return { ...services, routing, runtime, agent, voiceTranscripts, transcribeVoice, maintainSummary: createPrivateSummaryMaintenance({ memory: options.memory, store: services.store, runtime }) };
 }
