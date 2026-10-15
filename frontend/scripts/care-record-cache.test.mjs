@@ -3,57 +3,89 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { QueryClient } from '@tanstack/react-query';
 import ts from 'typescript';
+import { CareApiError } from '../../src/client/care-api.ts';
+import { createCareReadCoordinator } from '../src/production/CareReadCoordinator.ts';
 
-// Run the shipped owner functions with the real Query cache and synthetic authenticated ports.
-const source = readFileSync(new URL('../src/production/CareProfileDomains.tsx', import.meta.url), 'utf8');
-const readers = source.slice(source.indexOf('  async function verify('), source.indexOf('  function publishProfile('));
-const latest = source.slice(source.indexOf('  async function latestCare('), source.indexOf('  async function submit('));
-const actions = source.slice(source.indexOf('  const careActions:'), source.indexOf('  const profileActions:'));
-const projection = source.slice(source.indexOf('  const careModel:'), source.indexOf('  const profileModel ='));
+// Import the read coordinator directly. Compile the complete bridge only to retain its real
+// draft, close and confirmed-write callbacks; no hook body is extracted or copied into this test.
+const bridgeSource = readFileSync(new URL('../src/production/CareProfileDomains.tsx', import.meta.url), 'utf8');
+const compiledBridge = ts.transpileModule(bridgeSource, { compilerOptions: {
+  module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX,
+} }).outputText;
 const deferred = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no; }); return { promise, resolve, reject }; };
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const rec = (version = 1, id = 'record') => ({ id, childId: 'child', version, text: `revision ${version}`, createdAt: '2026-10-07T12:00:00Z' });
 const page = (records = [], nextCursor = null) => ({ records, scanned: records.length, nextCursor });
 const revisions = (...records) => ({ revisions: records, nextBeforeVersion: null });
-class CareApiError extends Error { constructor(status, onlineCode) { super('Synthetic record read failure'); Object.assign(this, { status, onlineCode }); } }
 
 function owner(t) {
   let active = true, searchResult = async () => page(), historyResult = async () => revisions(rec()), historyCalls = 0;
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: Infinity } } });
-  t.after(() => queryClient.clear());
   const careKey = ['production', 'scope', 'care'];
-  const careRef = { current: { scopeKey: 'scope', child: { id: 'child' }, access: 'editable', detail: null, draft: null, deletion: null,
-    operation: { state: 'none' }, list: { state: 'loading', records: [], activeQuery: '', activeKind: 'all', scanned: 0,
-      hasMore: false, page: 1, hasPrevious: false, message: null } } };
-  const controllers = new Set();
-  const env = { childName: 'Synthetic child', scopeKey: 'scope', online: true, queryClient, role: 'owner', invalidate() {},
-    accessError() { active = false; queryClient.clear(); careRef.current = { ...careRef.current, access: 'lost', detail: null,
-      draft: null, deletion: null, list: { ...careRef.current.list, records: [] } }; } };
-  const deps = { env, envRef: { current: env }, careRef, careKey, userId: 'user', childId: 'child', editable: true, CareApiError,
-    current: () => active, writing: { current: false }, attempt: { current: null }, careRead: { current: null }, careGeneration: { current: 0 },
-    recordReadGeneration: { current: 0 }, recordRemovals: { current: new Map() }, historyGeneration: { current: 0 }, openGeneration: { current: 0 },
-    pageCursors: { current: [null] }, pageIndex: { current: 0 }, nextCursor: { current: null }, draftBasis: { current: null },
-    controller() { const control = new AbortController(); controllers.add(control); return control; }, released(control) { controllers.delete(control); },
-    api: { getSession: async () => 'user', search: (...args) => searchResult(...args), history: (...args) => { historyCalls++; return historyResult(...args); } },
-    setCare(change) { careRef.current = change(careRef.current); }, setPending() {},
-    careRecordView: record => ({ id: record.id, childId: record.childId, current: { version: record.version, values: { text: record.text } } }),
-    careOperation: () => ({ state: 'none', message: '' }), savedRecordReview: record => ({ id: record.id, version: record.version, text: record.text }),
-    canWrite: () => active && env.online && !deps.attempt.current && !deps.writing.current,
-    emptyCareForm: () => ({ text: '', reason: '' }), careFormSchema: () => ({ safeParse: () => ({ success: true }) }),
+  const states = [], refs = [];
+  let stateIndex, refIndex, layoutEffects, Owner, projection, reads, ports;
+  const env = { childName: 'Synthetic child', scopeKey: 'scope', childId: 'child', userId: 'user', online: true,
+    queryClient, role: 'owner', apiBaseUrl: '', invalidate() {}, current: () => active, currentIdentity: () => active, canStartWrite: () => true,
+    accessError() { active = false; queryClient.clear(); ports.setCare(previous => ({ ...previous, access: 'lost', detail: null,
+      draft: null, deletion: null, list: { ...previous.list, records: [] } })); } };
+  const api = { getSession: async () => 'user', search: (...args) => searchResult(...args),
+    history: (...args) => { historyCalls++; return historyResult(...args); }, delete: async () => {},
+    getProfile: async () => ({ childId: 'child', version: 0, data: null }) };
+  function render() {
+    stateIndex = 0; refIndex = 0; layoutEffects = [];
+    Owner({ env, publish: value => { projection = value; } });
+    for (const effect of layoutEffects) effect();
+  }
+  const mocks = {
+    react: {
+      createContext: () => ({}), useContext() {}, memo: component => { Owner = component; return component; },
+      useMemo: calculate => calculate(), useEffect() {}, useLayoutEffect: effect => { layoutEffects.push(effect); },
+      useState(initial) {
+        const index = stateIndex++;
+        if (!states[index]) states[index] = { value: typeof initial === 'function' ? initial() : initial };
+        return [states[index].value, update => { states[index].value = typeof update === 'function' ? update(states[index].value) : update; render(); }];
+      },
+      useRef(initial) { const index = refIndex++; return refs[index] ??= { current: initial }; },
+    },
+    'react/jsx-runtime': { jsx() {}, jsxs() {} }, 'expo-router': { usePathname: () => '/care' },
+    '../../../src/client/care-api': { CareApiError, createCareApi: () => api },
+    '../../../src/client/use-online-updates': { ONLINE_REFRESH_EVENT: 'synthetic-refresh' },
+    '../care-view-model': { emptyCareForm: () => ({ text: '', reason: '' }) },
+    '../profile-view-model': { emptyProfileForm: () => ({}), profileFormFromData: () => ({}) },
+    '../components/care/care-form': { careFormSchema: () => ({ safeParse: () => ({ success: true }) }) },
+    '../components/profile/profile-form': {}, '../workspaces/CareWorkspace': {}, '../workspaces/ProfileWorkspace': {},
+    './CareProfileProjections': {
+      careRecordView: record => ({ id: record.id, childId: record.childId, current: { version: record.version, values: { text: record.text } } }),
+      careRevisionView: value => value, savedRecordReview: record => ({ id: record.id, version: record.version, text: record.text }),
+      profileRevisionView: value => value,
+    },
+    './CareReadCoordinator': { createCareReadCoordinator(value) { ports = value; return reads = createCareReadCoordinator(value); } },
+    './useDomainEnvironment': { useDomainWriteGuard() {} },
   };
-  const module = {};
-  const code = 'const {' + Object.keys(deps).join(',') + '} = deps;\n' + readers + '\n' + latest + '\n' + actions
-    + '\nexports.load = loadCare; exports.latest = latestCare; exports.finish = finish; exports.actions = careActions;'
-    + '\nexports.project = () => { const care = careRef.current; ' + projection + '; return careModel; };';
-  new Function('deps', 'exports', ts.transpileModule(code, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(deps, module);
-  return { ...module, env, deps, queryClient, careKey, state: () => careRef.current,
+  new Function('require', 'exports', compiledBridge)(name => { assert.ok(mocks[name], name); return mocks[name]; }, {});
+  render();
+  const controllers = refs.find(ref => ref.current instanceof Set).current;
+  t.after(() => { controllers.forEach(control => control.abort()); queryClient.clear(); });
+  // The bridge alone owns draftBasis; locate its real cell when its callback selects the cached snapshot.
+  let draftBasis;
+  const actions = new Proxy({}, { get(_target, name) {
+    if (name === 'startCorrection') return id => {
+      const snapshot = reads.rawRecord(id); projection.care.actions.startCorrection(id);
+      draftBasis = refs.find(ref => ref.current === snapshot);
+    };
+    return projection.care.actions[name];
+  } });
+  const deps = { get attempt() { return ports.state.attempt; }, get draftBasis() { return draftBasis; } };
+  return { load: (...args) => reads.loadCare(...args), latest: (...args) => reads.latestCare(...args), actions,
+    project: () => projection.care.model,
+    env, deps, queryClient, careKey, state: () => ports.state.careRef.current,
     raw: (id = 'record') => queryClient.getQueryData([...careKey, 'record', id]),
     cached: (id = 'record') => queryClient.getQueryState([...careKey, 'record', id]), historyCalls: () => historyCalls,
     search: value => { searchResult = typeof value === 'function' ? value : async () => value; },
     history: value => { historyResult = typeof value === 'function' ? value : async () => value; },
     invalidate: () => queryClient.invalidateQueries({ queryKey: careKey, refetchType: 'none' }),
     loseScope() { active = false; controllers.forEach(control => control.abort()); queryClient.clear(); },
-    set: change => { careRef.current = { ...careRef.current, ...change }; },
+    set: change => { ports.setCare(previous => ({ ...previous, ...change })); },
   };
 }
 
@@ -205,7 +237,7 @@ test('pending writes block opens and a confirmed deletion cannot be undone by an
   h.deps.attempt.current = { domain: 'care' }; h.actions.openRecord('record');
   assert.equal(h.state().detail, null); assert.equal(h.historyCalls(), 0); h.deps.attempt.current = null;
   const pending = deferred(); h.history(() => pending.promise); const reading = h.latest('record'); await tick();
-  h.finish({ domain: 'care', kind: 'delete', recordId: 'record', receipt: null });
+  h.search(page([])); h.actions.startDeletion('record'); h.actions.confirmDeletionScope(true); h.actions.submitDeletion(); await tick();
   pending.resolve(revisions(rec())); await reading;
   assert.equal(h.raw(), undefined); assert.equal(h.state().detail, null); assert.deepEqual(h.state().list.records, []);
 });

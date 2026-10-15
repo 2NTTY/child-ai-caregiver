@@ -61,7 +61,7 @@
 | 待辦 | [task owner](../frontend/src/production/task-knowledge-tasks.ts) → [task-api](../src/client/task-api.ts) → [prepareTask](../server/firestore-online.ts) | [task-policy](../server/task-policy.ts) 的 changeTask／reminderDecision、[task-projection](../frontend/src/production/task-projection.ts)、[既有 client 恢復檢查](../tests/tasks-client.test.ts) |
 | 成長關注 | [growth owner](../frontend/src/production/task-knowledge-growth.ts) → [growth-api](../src/client/growth-api.ts) → [Firestore growth](../server/firestore-growth.ts) | [growth-rules](../server/growth-rules.ts)、[readGrowthPages](../frontend/src/production/growth-read.ts) 的雙來源一致性；報告／記憶部分沿自身權威，不把 SQL 測試當 Firestore 證據 |
 
-既有 [care cache 檢查](../frontend/scripts/care-record-cache.test.mjs) 與 [history 檢查](../frontend/scripts/qa-care-history.test.mjs) 目前擷取 hook 原始碼片段後編譯，說明讀取協調仍需正式非 React 接點；這是局部抽離依據，不表示缺少所有測試。scope、generation、原版本及遲到回應／404／游標恢復必須保持；寫入協調及 Firestore 交易不順帶重寫。其他已分層功能先復用，無具體缺口不再抽象一層。
+照護讀取由 [CareReadCoordinator](../frontend/src/production/CareReadCoordinator.ts) 接同一 QueryClient／API，直接管理身份、版本、歷史游標及刪除屏障；React owner 注入生命週期與投影，保留寫入／草稿／原收據。既有 [care cache 檢查](../frontend/scripts/care-record-cache.test.mjs) 與 [history 檢查](../frontend/scripts/qa-care-history.test.mjs) 直接 import 正式讀取模組，必要 owner 回調以整份模組接線核對，不再擷取函式片段。其他已分層功能先復用，無具體缺口不再抽象一層。
 
 **交易不變條件：**目前權限／資源版本的讀取與業務寫入、修訂、操作收據、變更序號及 outbox 仍在同一 Firestore 交易。純規則只回傳決定或差異，不在交易外依舊權限決定提交；交易 callback 不呼叫模型／通知。重試沿原 opId／fingerprint，副作用 unknown 只查原結果。完成／取消競態及 needs_review 保持原語義，終態仍由 worker 執行前重查。
 
