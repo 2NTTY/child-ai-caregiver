@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-16",
+  "baseline": "4f88948cf943585954efbe32ef93e0df0c53f3c8",
+  "status": "implemented_targeted_checks_passed_deployment_pending",
+  "scope": "Shared Agent budget guidance, terminal reserve, platform defaults; Android and Web use the same runtime.",
+  "limits": {
+    "platformModelCalls": 8,
+    "toolCalls": 16,
+    "platformQueryEmbeddings": 4,
+    "deadlineMs": 90000,
+    "dailyUserAttempts": 200,
+    "dailyGlobalAttempts": 400,
+    "personalSettings": "unchanged"
+  },
+  "verification": {
+    "runtime": "Node 24.19.0; ADK 2.1.0; GenAI 2.24.0",
+    "checks": [
+      "Live per-turn metadata and native protocol preservation; final terminal validates once after one write",
+      "Nonterminal effect refused during final phase",
+      "Existing hard model/tool bounds",
+      "Existing presentation repair at the tool boundary",
+      "Existing admin HTTP fixture: shared policy, original operation recovery and unchanged counters",
+      "Existing one-turn terminal scenario uses hi and ends immediately"
+    ],
+    "initialBatch": {
+      "pass": 6,
+      "loadFailure": 1,
+      "cause": "Local root dependencies lacked @google-cloud/firestore; no admin assertions executed"
+    },
+    "followup": {
+      "adminAndGreetingPass": 2,
+      "dependencyResolution": "Reused existing isolated pinned SDK installation; no mocks replaced SDKs"
+    },
+    "reviewFollowup": {
+      "liveBudgetPass": 1,
+      "reason": "Align advertised capabilities with final-turn declarations"
+    },
+    "typecheck": {
+      "affectedRoots": 4,
+      "diagnostics": 0
+    },
+    "diffCheck": "passed",
+    "realModelCalls": 0,
+    "notifications": 0
+  },
+  "limitations": [
+    "Scripted models prove control and wiring, not real model planning quality",
+    "Hard daily quota, deadline, malformed terminal or unsupported content can still stop a run honestly",
+    "No collaborator PR 214/215/216 modifications",
+    "Android source-backed conversation gate remains pending"
+  ]
+}

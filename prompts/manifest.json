@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.43",
+  "version": "0.1.44",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -49,7 +49,7 @@
     {
       "id": "core.tool-use",
       "path": "core/tool-use.md",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "requires": [
         "core.identity-and-trust"
       ]

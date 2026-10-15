@@ -1,17 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { AgentBudget } from "../server/agent-budget.ts";
+import { AgentBudget, AGENT_LIMITS } from "../server/agent-budget.ts";
 
 test("each kind of attempt has an independent finite budget", () => {
   const budget = new AgentBudget();
   try {
     budget.take("modelCalls", 4);
-    budget.take("toolCalls", 8);
+    budget.take("toolCalls", AGENT_LIMITS.toolCalls);
     budget.take("queryEmbeddings", 2);
     assert.throws(() => budget.take("modelCalls"), { reason: "model_limit" });
     assert.throws(() => budget.take("toolCalls"), { reason: "tool_limit" });
     assert.throws(() => budget.take("queryEmbeddings"), { reason: "embedding_limit" });
-    assert.deepEqual(budget.counts, { modelCalls: 4, toolCalls: 8, queryEmbeddings: 2 });
+    assert.deepEqual(budget.counts, { modelCalls: 4, toolCalls: AGENT_LIMITS.toolCalls, queryEmbeddings: 2 });
   } finally { budget.close(); }
 });
 

@@ -73,11 +73,13 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 
 ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 InstructionProvider 提供，input.context 獨立放入有標籤的 user Content 資料 part；原使用者訊息仍第一個 part，原生附件、歷史及工具關聯保留。正文中的 `{name}`／`{name?}` 不作 state 展開或刪除，資料內容不能授權，也不能聲稱封裝本身保證抵禦所有 prompt injection。
 
+每輪 Server runtime metadata 的 `budget` 包含 `usedBeforeThisCall`、`remaining.modelCallsIncludingThisCall`、剩餘工具／查詢向量／時間、`reserveForFinish`、`nonTerminalToolCallsAvailable` 及 `phase`；是運行即時快照，不是新操作授權或聊天歷史。生成餘額包含本輪尚待預留的呼叫。模型自行選擇必要步驟，`finish` 階段只保留當前已有 terminal 的 schema／toolsDict／ANY allowedFunctionNames；沒有 terminal 的抽取流程沿原輸出契約。原生成／工具／配額／取消計數不重設，Server 仍拒絕未提供工具及混批；未完成或證據不足不能假造成功。
+
 `present_answer` 為 terminal 工具。一般階段成功接受後，ADK skipSummarization 結束循環，既有 finalize 仍重驗引用及目前授權；unknown 停止並保留原台帳。gateway 在執行任何 handler 前拒絕 terminal 與其他工具的同一 response，不能先展示再截掉未完成副作用。
 
 產品互動／家庭背景入口可由 Server 內部明確 opt-in `presentationRepair: "present_answer"`；不是客戶端欄位，照片／分享提取不自動啟用。僅在主流程以可確認的自然文字 final 結束、尚無已接受展示且沒有錯誤／unknown／取消／撤權／額度阻擋時，才可在同一 invocation 用一次剩餘模型呼叫補展示。主流程 MAX_TOKENS、SAFETY、partial、空回應或不能明確辨識者不因此重試。既有model/tool/input/deadline共用，不重設、不增總上限。
 
-修正階段 request 的工具宣告／toolsDict 只留 present_answer，function-calling ANY 及 allowedFunctionNames 僅限此階段；Server 亦拒其他工具及混批，不能只依賴模型遵從。固定Server控制訊息只加到該請求，不寫聊天／session事件、不提供新操作授權；原原生parts、signatures與既有工具結果完整保留，不偽造模型工具呼叫。收到修正的首個functionResponse後，僅用ADK控制位結束此階段並完整收束generator清理，即使展示被拒也不第三次生成；控制位不代表業務接受。finalize仍判斷是否有有效展示，修正失敗為invalid_response；真正預算／權限停止保持原分類，不以總額度錯誤冒充階段耗盡。
+修正階段 request 的工具宣告／toolsDict 只留 present_answer，function-calling ANY 及 allowedFunctionNames 限此修正階段及預算收尾階段；Server 亦拒其他工具及混批，不能只依賴模型遵從。固定Server控制訊息只加到該請求，不寫聊天／session事件、不提供新操作授權；原原生parts、signatures與既有工具結果完整保留，不偽造模型工具呼叫。收到修正的首個functionResponse後，僅用ADK控制位結束此階段並完整收束generator清理，即使展示被拒也不第三次生成；控制位不代表業務接受。finalize仍判斷是否有有效展示，修正失敗為invalid_response；真正預算／權限停止保持原分類，不以總額度錯誤冒充階段耗盡。
 
 修正只能回報已知結果或必要補問，不能重新執行被拒／未知／已成功操作，也不能把pending候選當正式任務。自然 final 本身仍不可直接展示成成功。這不保證所有F4／T9情境成功，也未建立背景安靜no_action契約；定向scripted驗證不代表真模型或正式使用已通過。
 
@@ -595,7 +597,7 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 
 版本衝突回 409；保存回應失聯先重讀版本，由使用者核對，不自動重送 key。輸入框在送出／失敗／斷線／身份或 Server 變更時清除。存取檢查每帳號每分鐘一次，Server 最多保留四個當分鐘槽位；逾限回 429。
 
-個人每日上限 1–1000（預設 100）、每次 Agent 生成 1–12（預設 4）、查詢 embedding 1–6（預設 2），UI 可編輯並經 Server 驗證。只有 personal 模式採用這些限額；平台維持原配額及每次 4／2。工具 8 次、90 秒及輸出 1024 tokens／次不變。互動上下文由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 決定（預設 64,000、允許 32,000–64,000 UTF-16 邏輯字元）；個人設定不可提高此界限，背景仍為 32,000。GET /api/ai/settings 回應頂層的可選 agentInputCharacters 回傳實際互動上限，嚴格驗證範圍及整數；舊 Server 缺欄位時 UI 顯示「互動上下文上限未提供」，不可猜測新預設。每個運行固定選定版本，後續模型／向量／工具及回報重查；撤回不能取消供應商已接受的呼叫。
+個人每日上限 1–1000（預設 100）、每次 Agent 生成 1–12（預設 4）、查詢 embedding 1–6（預設 2），UI 可編輯並經 Server 驗證。只有 personal 模式採用這些限額；平台每日配額及每次限額由管理政策控制，現行政策預設 8／4；這不覆寫個人已保存設定。工具 16 次、90 秒及輸出 1024 tokens／次共用。互動上下文由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 決定（預設 64,000、允許 32,000–64,000 UTF-16 邏輯字元）；個人設定不可提高此界限，背景仍為 32,000。GET /api/ai/settings 回應頂層的可選 agentInputCharacters 回傳實際互動上限，嚴格驗證範圍及整數；舊 Server 缺欄位時 UI 顯示「互動上下文上限未提供」，不可猜測新預設。每個運行固定選定版本，後續模型／向量／工具及回報重查；撤回不能取消供應商已接受的呼叫。
 
 `/api/ai/status`、`/api/ai/usage` 依本人目前模式回報；設定頁同時列兩種來源。UTC 每日 00:00（香港 08:00）重置計數；生成與查詢 embedding 的嘗試均計次，用量 metadata 不代表完整供應商帳單。
 

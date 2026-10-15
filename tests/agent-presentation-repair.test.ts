@@ -11,7 +11,7 @@ import { z } from "zod";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import type { AgentRunInput, AgentTool } from "../server/agent-runtime.ts";
 import type { AgentDiagnostic } from "../server/agent-observer.ts";
-import { AgentStopped } from "../server/agent-budget.ts";
+import { AgentStopped, AGENT_LIMITS } from "../server/agent-budget.ts";
 import { PRESENTATION_REPAIR_MESSAGE } from "../server/agent-presentation-repair.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 
@@ -243,14 +243,14 @@ test("exhausted model budget stops without a repair or a quota classification", 
   assert.equal(result.stopReason, "model_limit"); assert.equal(s.requests.length, 4); assert.equal(s.reservations(), 4);
 });
 
-for (const count of [7, 8]) test(`repair respects the original eight-tool budget after ${count} tools`, async () => {
+for (const count of [AGENT_LIMITS.toolCalls - 1, AGENT_LIMITS.toolCalls]) test(`repair respects the fixed tool budget after ${count} tools`, async () => {
   const s = setup((_, index) => !index ? { finishReason: FinishReason.STOP, content: { role: "model",
     parts: Array.from({ length: count }, (_, i) => ({ functionCall: { id: `read-${i}`, name: "read_context", args: {} } })) } }
     : index === 1 ? natural() : present());
   const result = await s.runtime.run(s.input);
-  assert.equal(result.status, count === 7 ? "completed" : "stopped", JSON.stringify(result));
-  assert.equal(result.stopReason, count === 7 ? undefined : "tool_limit");
-  assert.equal(result.counts.toolCalls, 8); assert.equal(s.requests.length, count === 7 ? 3 : 2);
+  assert.equal(result.status, count === AGENT_LIMITS.toolCalls - 1 ? "completed" : "stopped", JSON.stringify(result));
+  assert.equal(result.stopReason, count === AGENT_LIMITS.toolCalls - 1 ? undefined : "tool_limit");
+  assert.equal(result.counts.toolCalls, AGENT_LIMITS.toolCalls); assert.equal(s.requests.length, count === AGENT_LIMITS.toolCalls - 1 ? 3 : 2);
 });
 
 test("full repair input is budgeted without dropping history or reserving another attempt", async () => {
