@@ -71,6 +71,8 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ### 當前任務入口
 
+目前先修正 S04 回覆斷線／收尾阻塞：分支 `codex/fix-agent-disconnected-results`，基線 master `7d1ccd6`。關閉 App 只中止回饋連線；期限停止執行但不丟棄原執行者的結果／停止原因。已保存終態、明確取消、撤權及原操作防重維持。正式 HTTP／真 Runner scripted 斷線及同一 Firestore 結果收尾兩項檢查通過，受影響三個根檔型別零錯誤；不重發使用者聊天，部署待本包交付；管理員總控增補保留於 `codex/admin-agent-run-limits`，本修正後接續。#231 預算修正已部署，證據見 #229 的 `90719cb`。
+
 當前入口：[S04-W01 共用原生基礎與 Android 首條流程](#s04-w01)。使用者於 2026-10-15 批准 [Web／Android 共用產品及 Android 成品計劃](#p3-mobile)；先定案文件，再接正式 Android 身份、transport 與首條聊天。Web／Android 共用功能及同一權威資料，新增語音兩端同時接通；Android 完成後才開始 iOS。開工基線 master `21e848b`（#227），原站程式 `b1d1565`／Prompt Pack 0.1.43；不把 master 當成已部署。
 
 OPT01～05、LAY01～05 已合併及部署；灰色正文 STR01 尚未實作，接點及證據保留於 [接續備忘](#p2-str01-handoff)。#214／#215／#216 繼續由協作者處理，不接管、合併或重做；不阻塞 Android 既有聊天接線，也不將現有引用校驗當成語義審核。兩份 OPT／LAY／STR 計劃整體仍未完成，原生備份真還原仍延後。

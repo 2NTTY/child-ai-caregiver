@@ -64,8 +64,8 @@ export async function handleProductAgentRequest(request: Request, userId: string
         await options.store.bindConfirmationQuestion?.(userId, childId, old.id);
         return await options.isCurrentUser(userId) ? jsonResponse({ message: old }) : apiError("unauthorized", "存取權已改變。", 401);
       }
-      const execute = async (signal?: AbortSignal, publish?: (event: AgentProgress) => void): Promise<Response> => {
-        const result = await options.agent.reply(userId, childId, messageId, () => options.isCurrentUser(userId), signal, publish);
+      const execute = async (publish?: (event: AgentProgress) => void): Promise<Response> => {
+        const result = await options.agent.reply(userId, childId, messageId, () => options.isCurrentUser(userId), undefined, publish);
         if (!result) return apiError("not_found", "存取權或資料已改變，請重新讀取。", 404);
         if (result.status === "running") return apiError("ai_busy", "Agent 正在處理這則訊息；請稍後查核原結果。", 429);
         if (!await options.isCurrentUser(userId)) return apiError("unauthorized", "登入已失效。", 401);
@@ -86,8 +86,9 @@ export async function handleProductAgentRequest(request: Request, userId: string
         return jsonResponse({ message: { ...message, agentRunId: result.runId } });
       };
       if (request.headers.get('accept')?.split(',').some(value => value.trim().split(';')[0] === 'text/event-stream'))
-        return agentFeedbackStream(publish => execute(undefined, publish), () => options.isCurrentUser(userId));
-      return await execute(request.signal);
+        return agentFeedbackStream(publish => execute(publish), () => options.isCurrentUser(userId));
+      // A completed submission owns its run; transport loss is not an explicit cancel.
+      return await execute();
 
     }
     if (run![3]) {

@@ -11,6 +11,7 @@ import {createFirestoreChatStore} from '../server/firestore-chat.ts';
 import {createFirestoreCareStore} from '../server/firestore-care.ts';
 import {createFirestoreMemoryStore} from '../server/firestore-memory.ts';
 import {createFirestoreOnlineStore} from '../server/firestore-online.ts';
+import {createFirestoreAgentRuns} from '../server/firestore-agent-runs.ts';
 import {createFirestoreProductAgent} from '../server/firestore-product-agent.ts';
 import {createFirebaseNodeHandler} from '../server/firebase-http.ts';
 import {handleProductAgentRequest} from '../server/product-agent-api.ts';
@@ -32,14 +33,14 @@ test('formal HTTP streams real Runner progress before saving and disconnect read
   await authority.admitIdentity({userId:'owner',email:'owner@example.test',emailVerified:true});
   await authority.acknowledge({userId:'owner',operationId:randomUUID(),policyVersion:SERVICE_POLICY_VERSION});
   const {child}=await authority.createChild({userId:'owner',displayName:'合成孩子',operationId:randomUUID()});
-  let saved=deferred<void>(),gate=deferred<void>(),calls=0,step=0,medical=true;
+  let saved=deferred<void>(),gate=deferred<void>(),entered=deferred<void>(),calls=0,step=0,medical=true;
   const realChat=createFirestoreChatStore(options),chat={...realChat,async createModelMessageForUser(...args:Parameters<typeof realChat.createModelMessageForUser>){
     const result=await realChat.createModelMessageForUser(...args);saved.resolve();return result;
   }};
   const care=createFirestoreCareStore(options),memory=createFirestoreMemoryStore({...options,chat,care});
   const online=createFirestoreOnlineStore({...options,mutations:[chat.mutation,care.mutation,memory.mutation]});
   const product=await createFirestoreProductAgent({...options,chat,care,memory,online,config:readAiConfig({AI_ENABLED:'true',GCP_PROJECT_ID:options.projectId}),
-    platformProvider:{async generate(){calls++;step++;
+    platformProvider:{async generate(){calls++;step++;entered.resolve();
       const card=medical&&step===1;
       if(!card) await gate.promise;
       return {content:{role:'model',parts:[{functionCall:{id:'step-'+step,name:card?'show_official_help':'present_answer',
@@ -72,5 +73,51 @@ test('formal HTTP streams real Runner progress before saving and disconnect read
     assert.equal(await api.getReplyState!(child.id,initial.progress.runId,new AbortController().signal,'owner'),'completed');
     const second=(await chat.listForUser('owner',child.id))!.messages.find(m=>m.inReplyTo===ordinary!.id)!;
     assert.deepEqual(second.officialHelp,[]);assert.equal(posts,2);assert.equal(calls,3);
+    // The legacy JSON channel has the same detach semantics as SSE.
+    step=0;gate=deferred<void>();saved=deferred<void>();entered=deferred<void>();
+    const jsonMessage=await chat.createUserMessageForUser('owner',child.id,'幫我整理準備事項。');
+    const abort=new AbortController();
+    const pending=fetch(origin+`/api/children/${child.id}/messages/${jsonMessage!.id}/reply`,{method:'POST',signal:abort.signal,
+      headers:{origin,accept:'application/json','content-type':'application/json','x-expected-user-id':'owner'},body:'{}'}).catch(()=>null);
+    await entered.promise;abort.abort();await pending;gate.resolve();await saved.promise;
+    const third=(await chat.listForUser('owner',child.id))!.messages.find(m=>m.inReplyTo===jsonMessage!.id)!;
+    assert.equal((await product.store.get('owner',child.id,third.agentRunId!))!.status,'completed');
+    assert.equal(calls,4);assert.equal(posts,3);
+
   } finally {gate.resolve();server.closeAllConnections();await new Promise<void>(r=>server.close(()=>r()));}
+});
+
+// One transaction scenario covers late settlement, observer expiry and terminal fencing.
+test('expired execution saves its real result without reviving work or overwriting cancellation',async()=>{
+  const fake=firestoreDomainFixture();let clock=Date.now();
+  const options={database:fake.database,projectId:'synthetic-settlement',namespace:'unit_settlement',
+    cipher:createStorageCipher(Buffer.alloc(32,65)),serverClock:()=>clock};
+  const authority=createFirestoreAuthority(options);
+  await authority.initializeControl({generation:randomUUID(),enabled:true});
+  await authority.issueInvitation({email:'owner@example.test',operationId:randomUUID(),expiresAt:new Date(clock+60000).toISOString()});
+  await authority.admitIdentity({userId:'owner',email:'owner@example.test',emailVerified:true});
+  await authority.acknowledge({userId:'owner',operationId:randomUUID(),policyVersion:SERVICE_POLICY_VERSION});
+  const {child}=await authority.createChild({userId:'owner',displayName:'合成孩子',operationId:randomUUID()});
+  const chat=createFirestoreChatStore(options),care=createFirestoreCareStore(options),memory=createFirestoreMemoryStore({...options,chat,care});
+  const runs=createFirestoreAgentRuns({...options,chat,memory});
+  const message=await chat.createUserMessageForUser('owner',child.id,'需要整理');
+  const claim=await runs.claim('owner',child.id,{kind:'interactive',reference:message!.id},'product-interactive');
+  clock=Date.parse(claim.expiresAt)+1;
+  assert.equal(await runs.authorize(claim.scope,claim.runId),false,'expiry still prevents model/tools');
+  const projection={async read(_b:any,_run:any,result:any){return result;}};
+  assert.equal((await runs.result('owner',child.id,claim.runId,projection))!.stopReason,'interrupted');
+  const result={runId:claim.runId,status:'stopped' as const,stopReason:'deadline',provenance:null,countsKnown:true,text:'',
+    citations:[],privateSourceCitations:[],retrievalMode:'not_used' as const,tools:[],counts:{modelCalls:5,toolCalls:5,queryEmbeddings:1},proposals:[]};
+  assert.equal(await runs.finish(claim.scope,result),true);
+  const reopened=createFirestoreAgentRuns({...options,chat,memory});
+  assert.equal((await reopened.result('owner',child.id,claim.runId,projection))!.stopReason,'deadline');
+  assert.deepEqual((await reopened.result('owner',child.id,claim.runId,projection))!.counts,result.counts);
+  assert.equal(await reopened.finish(claim.scope,{...result,stopReason:'unavailable'}),false,'settled results are immutable');
+  assert.equal(await reopened.authorize(claim.scope,claim.runId),false);
+  const next=await chat.createUserMessageForUser('owner',child.id,'另一個問題');
+  const cancelled=await runs.claim('owner',child.id,{kind:'interactive',reference:next!.id},'product-interactive');
+  assert.equal(await runs.cancelReply('owner',child.id,next!.id),true);
+  clock=Date.parse(cancelled.expiresAt)+1;
+  assert.equal(await runs.finish(cancelled.scope,{...result,runId:cancelled.runId}),false);
+  assert.equal((await runs.result('owner',child.id,cancelled.runId,projection))!.stopReason,'cancelled');
 });
