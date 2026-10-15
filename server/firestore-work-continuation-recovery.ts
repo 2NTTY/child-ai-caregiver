@@ -44,11 +44,13 @@ const eventPayloadSchema = z.object({ works: z.array(z.object({ workId: uuid, wo
 const receiptSchema = z.object({ runId: uuid, status: z.enum(['completed', 'stopped', 'unknown']), stopReason: bounded(128).nullable(),
   provenance: z.object({ packVersion: id, recipeId: z.literal('product-work-followup'), model: id }).strict().nullable(),
   countsKnown: z.boolean().optional(), counts: z.object({ modelCalls: integer.max(12), toolCalls: integer.max(8), queryEmbeddings: integer.max(6) }).strict(),
+  outcome: z.literal('no_action').optional(),
   text: z.string().max(64000), citations: z.array(z.unknown()).max(6), privateSourceCitations: z.array(z.unknown()).max(8).optional(),
   retrievalMode: z.enum(['vector_keyword', 'keyword_degraded', 'not_used']),
   tools: z.array(z.object({ name: id, status: z.enum(['succeeded', 'rejected', 'conflict', 'failed', 'unknown']), reference: id.optional() }).strict()).max(8),
   proposals: z.array(z.never()).max(0),
-}).strict();
+}).strict().refine(value => value.outcome !== 'no_action' || value.status === 'completed' && value.text === ''
+  && value.citations.length === 0 && !value.privateSourceCitations?.length && value.retrievalMode === 'not_used');
 const jobSchema = z.object({ eventId: uuid, jobId: uuid, workerGeneration: uuid, storageEpoch: uuid }).strict();
 const MAX_BYTES = 192 * 1024;
 function reject(code: string): never { throw new Error(`work_recovery_${code}`); }

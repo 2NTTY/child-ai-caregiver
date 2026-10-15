@@ -38,9 +38,11 @@ export const agentCitationSchema = z.object({
 export const productAgentResultSchema = z.object({
   provenance: z.object({ packVersion: z.string(), recipeId: z.string(), model: z.string() }).nullable(),
   runId: uuid, status: z.enum(['running', 'completed', 'stopped', 'unknown']), stopReason: z.string().nullable(),
+  outcome: z.literal('no_action').optional(),
   text: z.string(), citations: z.array(agentCitationSchema), retrievalMode: z.enum(['vector_keyword', 'keyword_degraded', 'not_used']),
   privateSourceCitations: z.array(privateSourceCitationSchema).max(6).optional(),
   tools: z.array(z.object({ name: z.string().min(1), status: z.enum(['succeeded', 'rejected', 'conflict', 'failed', 'unknown']), reference: z.string().optional() })),
   countsKnown: z.boolean().optional(), counts: z.object({ modelCalls: count, toolCalls: count, queryEmbeddings: count }),
   proposals: z.array(agentSavedProposalSchema),
-});
+}).refine(value => value.outcome !== 'no_action' || value.status === 'completed' && value.text === ''
+  && value.citations.length === 0 && !value.privateSourceCitations?.length && value.proposals.length === 0, 'No-action cannot carry user content');

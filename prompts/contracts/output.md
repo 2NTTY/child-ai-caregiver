@@ -20,7 +20,7 @@ present_answer 是本產品唯一標記為 terminal 的工具。成功接受後�
 
 產品run由Server內部明確啟用時，可在正常自然final但缺少已接受展示後，以原剩餘預算作至多一次僅限present_answer的修正。仍共用同一invocation、deadline及總配額，保留原生工具結果／signatures；修正專用ANY allowlist加Server allowlist，不全局強制工具。控制訊息不成為聊天来源或操作授權，不能重做副作用、假稱pending已執行，或將未校驗final直接轉成功。取消、unknown、權限／預算停止、非正常／不確定模型終態不觸發修正。
 
-修正的functionResponse即結束該階段並完成原生generator清理；無論accepted或rejected，都沒有第三次修正。最後仍由Server校驗展示，失敗保持invalid_response或實際停止原因。這不保證模型遵循／任務成功，亦不提高原模型上限。背景no_action的安靜成功契約仍待獨立實作；以下AgentResult只是合成語義，不代表該路徑已接通。
+修正的functionResponse即結束該階段並完成原生generator清理；無論accepted或rejected，都沒有第三次修正。最後仍由Server校驗展示，失敗保持invalid_response或實際停止原因。這不保證模型遵循／任務成功，亦不提高原模型上限。背景 no_action 已按下文 OPT02 專用 schema 接入；以下通用 AgentResult 仍只是合成語義，不能當作正式 HTTP schema。
 
 ## AgentResult 語義
 
@@ -62,3 +62,8 @@ Structured output 可以約束格式，不能證明事實、引用、權限或�
 [examples.json](examples.json) 提供純聊天輸入、確認成功／失敗／未知、背景無動作及聯絡能力變更等合成 fixture。預期輸出是人工指定的例子，**不是模型跑過的結果**。出現的 `example-only.*` 只為對照契約，不是啟用中的工具名稱。
 
 傳給 Gemini 的正式 schema 留在請求設定，prompt 正文不重複整份 schema。範例若被挑選作 few-shot，須和本次 schema、欄位順序及能力相符，並明確隔離合成示例與真實對話。[Gemini 接入說明](../integration/gemini.md)。
+
+
+## OPT02 相容輸出接點
+
+現有產品工具按 [API 執行契約](../../docs/API.md#agent-execution-outcomes) 支援段落 kind 與背景 no_action。只適用 Server 實際提供背景 schema 的入口；普通互動仍須呈現回答。新角色審核不因程式閘已接通而視為完成。

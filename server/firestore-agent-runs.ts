@@ -171,10 +171,11 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       return authority.runTransaction(scope.userId, scope.childId, async b => {
         const run = expired(await read(b, value.runId));
         if (run.state !== 'running' || !matches(b, scope, run, false)) return false;
+        if (value.outcome === 'no_action' && run.trigger.kind !== 'worker') domainReject('invalid_result', 500);
         const unchanged = matches(b, scope, run) && (run.trigger.kind !== 'worker'
           || run.workerGeneration === b.generation && await options.authorizeWorker?.(b, run.trigger.reference, run.recipeId) === true);
         const result: ProductAgentResult = unchanged ? value : { ...value, status: 'stopped', stopReason: 'unauthorized',
-          text: '資料在處理期間有變，請核對目前資料及原操作收據；不要重複提交已保存的操作。',
+          outcome: undefined, text: '資料在處理期間有變，請核對目前資料及原操作收據；不要重複提交已保存的操作。',
           citations: [], privateSourceCitations: [], retrievalMode: 'not_used', tools: [], proposals: [] };
         // A stale summary is optional; an invalid authority/read is not a silent empty summary.
         let prepared: Awaited<ReturnType<FirestoreMemoryStore['prepareSummaryWrite']>> | undefined;

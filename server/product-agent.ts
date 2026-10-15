@@ -42,11 +42,12 @@ export function createProductAgent(options: {
         messages: [{ role: "user", text: "這是 Server 已提交的純到期工作。只按原 context 及 read_work 作必要補問或記錄回述；不能給照護建議、讀其他資料、修改、外發或聲稱工作完成。" }],
         tools: run => { tools = createDueWorkContinuationTools(run, authorize, id => authority.readWork(job, claim, id)); return tools.tools; },
         authorize, signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
-        finalize: async () => { presentation = await tools!.presentation(); if (!presentation) throw new AgentStopped("invalid_response"); return presentation.text; },
+        finalize: async () => { presentation = await tools!.presentation(); if (!presentation) throw new AgentStopped("invalid_response"); return presentation.outcome === "no_action" ? { outcome: "no_action" } : presentation.text; },
       });
       if (!await authorize()) return null;
       const rendered = presentation as AgentPresentation | null;
       return { runId: claim.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
+        ...(result.status === "completed" && rendered?.outcome ? { outcome: rendered.outcome } : {}),
         text: result.status === "completed" ? rendered?.text ?? "" : "", citations: [], privateSourceCitations: [], retrievalMode: "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
         countsKnown: true, counts: result.counts, proposals: [] };
@@ -77,7 +78,7 @@ export function createProductAgent(options: {
           tools = createProductAgentTools({ ...options,
             contact: privateContinuation || input.context.eventType === "concern_followup" ? undefined : options.contact,
             actions: privateContinuation ? undefined : options.actions,
-            includeDocuments: privateContinuation, run, authorize, visibility: privateContinuation ? "private" : "family",
+            includeDocuments: privateContinuation, background: true, run, authorize, visibility: privateContinuation ? "private" : "family",
             reviewedGrowthPresentation: input.context.eventType === "growth_attention" });
           // Trusted event purpose selects a read-only scope; user wording never selects capabilities.
           const readable = new Set(["read_context", "search_knowledge", "read_knowledge_context", "present_answer", "read_care_records",
@@ -87,7 +88,7 @@ export function createProductAgent(options: {
           return privateContinuation ? tools.tools.filter(tool => readable.has(tool.name)) : tools.tools;
         },
         authorize, signal: input.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer", finalize: async () => { rendered.value = await tools!.presentation();
-          if (!rendered.value) throw new AgentStopped("invalid_response"); return rendered.value.text; },
+          if (!rendered.value) throw new AgentStopped("invalid_response"); return rendered.value.outcome === "no_action" ? { outcome: "no_action" } : rendered.value.text; },
       });
       if(result.status==="stopped" && !privateContinuation && options.contact && await input.authorize()){
         const recorded=await options.contact.recordedForRun?.(claim.scope.userId,claim.scope.childId,claim.runId);
@@ -95,6 +96,7 @@ export function createProductAgent(options: {
       }
       const presentation = result.status === "completed" ? rendered.value : null;
       const value: ProductAgentResult = { runId: result.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
+        ...(presentation?.outcome ? { outcome: presentation.outcome } : {}),
         text: presentation?.text ?? (result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : ""), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })), countsKnown: true, counts: result.counts, proposals: [] };
       if (!await input.authorize() || !await options.store.finish(claim.scope, value)) return null;
@@ -119,18 +121,18 @@ export function createProductAgent(options: {
       activeReplies.set(key, cancellation);
       try {
       const authorize = async () => await isCurrentUser() && await options.store.authorize(claim.scope,claim.runId);
-      let initialConversationSummary: import("./memory-summary.ts").InitialConversationSummary | undefined;
-      if (options.memory.initialConversationSummary && await authorize()) {
-        const current = await options.memory.initialConversationSummary(userId, childId);
-        if (await authorize()) initialConversationSummary = current ?? undefined;
-      }
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
       let confirmationPendingFallbackUsed = false;
       const result = await options.runtime.run({
         scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt), deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
-        initialConversationSummary,
+        ...(options.memory.initialConversationSummary ? { readConversationSummary: async () => {
+          if (!await authorize()) throw new AgentStopped("unauthorized");
+          const current = await options.memory.initialConversationSummary!(userId, childId);
+          if (!await authorize()) throw new AgentStopped("unauthorized");
+          return current;
+        } } : {}),
         context: { confirmationResult, currentMessageId: messageId, serverNow: new Date().toISOString(), timeZone: "Asia/Hong_Kong", memoryAvailability: { hasSummary: Boolean(context.summary),
           earlierMessagesNotFullySummarized: context.truncated.messages },
           confirmationPolicy: options.actions ? "ordinary_instructions_with_current_preauthorization_otherwise_explicit_confirmation" : "explicit_selection_only",
@@ -158,7 +160,7 @@ export function createProductAgent(options: {
             }
           }
           if (!rendered.value) throw new AgentStopped("invalid_response");
-          return rendered.value.text;
+          return rendered.value.outcome === "no_action" ? { outcome: "no_action" } : rendered.value.text;
         },
       });
       if(result.status==="stopped" && options.contact && await isCurrentUser()){

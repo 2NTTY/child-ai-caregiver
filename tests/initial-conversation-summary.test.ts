@@ -115,7 +115,7 @@ test("product projection is read after claim between authorization checks, and r
   const events: string[] = []; let claimed = false, reads = 0, runs = 0;
   const fresh = summary("Fresh authorized post-claim summary"), stale = summary("Stale pre-claim summary");
   const options = { runtime: { run: async (input: AgentRunInput) => {
-    runs++; assert.deepEqual(input.initialConversationSummary, fresh);
+    runs++; assert.equal(input.initialConversationSummary, undefined); assert.deepEqual(await input.readConversationSummary!(), fresh);
     assert.ok(!JSON.stringify(input.context).includes(fresh.summary.text));
     return { runId: "synthetic-run", status: "stopped", stopReason: "unavailable", tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } };
   } }, store: {
