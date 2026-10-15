@@ -1,6 +1,6 @@
 {
   "workPackage": "S04-W01",
-  "status": "dashboard-restored-assistant-blank-under-investigation",
+  "status": "assistant-native-input-fixed-awaiting-device-verification",
   "baseline": "4f88948cf943585954efbe32ef93e0df0c53f3c8",
   "recordedAt": "2026-10-15T11:20:23.441524+00:00",
   "environment": {
@@ -259,6 +259,43 @@
       "additionalModelCalls": 0,
       "additionalCloudBuilds": 0,
       "additionalOtaPublishes": 0
+    },
+    {
+      "name": "App-scoped Android native input diagnosis and minimal fix",
+      "result": "fixed-local-check-passed-device-verification-pending",
+      "sourceCommit": "49c33e3bce602f55165645e9d3e8e2e1fefcbef4",
+      "environment": {
+        "androidApi": 35,
+        "androidVersion": "15",
+        "appVersion": "0.1.0",
+        "versionCode": 1
+      },
+      "diagnosis": "Native AndroidTextInput outlineStyle setter received a Paper style array through flat TextInput rest props. ClassCastException during native mount bypassed the JavaScript route boundary.",
+      "crashObservedAt": "2026-10-15T22:39:18.664+08:00",
+      "crashSha256": "50435eacc5578f908f53e10d76025e45fefb91d8da65a2e948e8f9fe2aadc36c",
+      "change": "Shared wrapper sends outlineStyle only to outlined mode; flat mode retains underlineStyle. No navigation or SDK change.",
+      "targetedCheck": {
+        "path": "frontend/scripts/text-field-mode.test.mjs",
+        "before": "1 failed, reproduced style-array leakage",
+        "after": "1 passed"
+      },
+      "androidExport": "passed; installed runtime unchanged",
+      "sourceSha256": "177b757fc247282c9f098a641675f905b197eeb861ecc77f6d0115ade0b08f34",
+      "privateDiagnostics": "Raw app log remains outside tracked artifacts; no chat content copied into evidence."
+    },
+    {
+      "name": "Compatible preview assistant input repair",
+      "result": "published-awaiting-unlocked-device-check",
+      "sourceCommit": "49c33e3bce602f55165645e9d3e8e2e1fefcbef4",
+      "updateId": "01a14008-256c-70f6-b18e-6764a05b9c27",
+      "groupId": "63b5ab20-4b5a-44b1-a228-b944efbbf98d",
+      "createdAt": "2026-10-15T14:47:18.124Z",
+      "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "uploaded": "one compiled app bundle; all 30 assets reused; no source-map upload",
+      "logSha256": "7ba54d6129cd3066a3233ebdfae9631d2177ae8c70ce2848706b887460a05cef",
+      "cloudBuilds": 0,
+      "modelCalls": 0,
+      "notifications": 0
     }
   ],
   "sourceSha256": {
@@ -285,10 +322,10 @@
     "notification": 0,
     "cloudBuild": 3,
     "deployment": 1,
-    "otaPublish": 2
+    "otaPublish": 3
   },
   "remaining": [
-    "Diagnose and restore assistant page after home recovery; user confirms full blank without crash. Route diagnostic update does not prove repair.",
+    "Unlock connected phone and verify Assistant rendering/reopen after compatible input repair 49c33e3; publication is not activation evidence.",
     "One approved source-backed Agent run/readback (1 run /4 generations /2 embeddings, <$0.10); not started after startup failure",
     "S04-W01 remains draft; local checks do not prove physical rendering"
   ],

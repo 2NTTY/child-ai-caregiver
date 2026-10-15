@@ -2769,3 +2769,12 @@
 - 本人按診斷更新問題回覆「全白」，沒有頁面錯誤參考碼。發布成功不證明手機實際啟用該 update ID，現階段仍未知；助手根因未確認，不把沒有錯誤卡當成沒有 JavaScript 錯誤。
 - 局部核對原生導航及彈層後未得到足夠修正依據，沒有套用不相符的上游 workaround、再次發布或重跑測試。改以一次受限真機日誌定位；已詢問本人能否 USB 接線及親自允許偵錯。沒有取得設備授權便不讀取設備。
 - 零新模型、通知、建置、部署或 OTA；原首次聊天仍未開始。PR #229 保持 draft，不將尚未可用的助手頁視為已驗收。
+
+
+<a id="log-20261015-android-input-native-repair"></a>
+### 2026-10-15 — S04-W01 原生輸入框根因與相容修正
+
+- 本人接線並授權 USB 偵錯後，只啟動育有方及讀取該程序診斷；22:39 HKT 實際取得 AndroidTextInput outlineStyle 原生型別錯誤。Paper 5.15.3 flat 分支未消費此 prop，把共用 wrapper 的樣式陣列傳至 RN 0.86.3 字串 setter；原生掛載失敗不經 JS ErrorBoundary。原用戶全白但未見閃退的回覆仍保留。
+- `49c33e3` 一行修正只對 outlined 傳入該樣式，保留 flat 的 underlineStyle 及原設計。一項真 wrapper 定向檢查先失敗、修後通過；一次 Android export 通過，runtime 與已安裝 APK 相同。沒有擴展測試或改框架。
+- 14:47 UTC 發布至既有 Android preview，group `63b5ab20-4b5a-44b1-a228-b944efbbf98d`；只上載一個編譯 bundle、復用全部 30 assets，沒有 source map／新 APK build／後端部署／模型／通知。原生日誌留本機私有 cache，工程只保存 hash 及去私隱結論。
+- 啟動下載後程序仍運行，但手機鎖屏，已請本人只解鎖一次；不代填畫面成功或 OTA 啟用身份。原首條聊天尚未開始，#229 保持 draft；結果沿同一 S04 EV。
