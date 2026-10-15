@@ -169,8 +169,12 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
       const value = domainParse(productAgentResultSchema, raw);
       if (value.status === 'running') domainReject('invalid_result', 500);
       return authority.runTransaction(scope.userId, scope.childId, async b => {
-        const run = expired(await read(b, value.runId));
-        if (run.state !== 'running' || !matches(b, scope, run, false)) return false;
+        // The execution deadline prevents new work, not the original executor's terminal save.
+        // A read may already have projected expiry as interrupted. Only that unresolved state
+        // can settle; cancellation, another final result and changed authority remain fenced.
+        const run = await read(b, value.runId);
+        const unresolved = run.state === 'running' || run.state === 'unknown' && run.stopReason === 'interrupted';
+        if (!unresolved || run.result !== null || !matches(b, scope, run, false)) return false;
         if (value.outcome === 'no_action' && run.trigger.kind !== 'worker') domainReject('invalid_result', 500);
         const unchanged = matches(b, scope, run) && (run.trigger.kind !== 'worker'
           || run.workerGeneration === b.generation && await options.authorizeWorker?.(b, run.trigger.reference, run.recipeId) === true);

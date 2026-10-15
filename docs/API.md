@@ -823,7 +823,7 @@ F02 的孩子／事項沿既有 GET /api/children、GET /api/children/:childId/t
 - `POST .../messages/:messageId/reply` 綁同一使用者原話與持久 run；重送不新開一次模型。`reply/cancel` 更新持久取消；逾時或收尾失敗依原 run、操作收據及候選回報，不能把成功工具再做一次。聊天保存 `agentRunId`，重新登入後仍可讀同一運行結果。
 - 原 reply 可用 `Accept: text/event-stream` 取得同次執行進度；JSON 呼叫及已保存回覆仍相容。SSE `data` JSON 分 `progress`（原 runId／messageId、固定 phase、可選固定 card ID）及 `result`（原 HTTP status／body）。開始、讀取、搜尋、工具返回只是進度，只有最後的已保存 message 才是正式回覆；工具返回不等於業務成功。
 - 串流保留 Origin／expected-user／session／孩子權限。每次最多 48 個進度投影，心跳不代表工作；慢連線可省略中間 metadata，開始／固定卡及終態保留。不傳原始工具參數、私人檢索正文、模型思考或 token 草稿，不逐事件寫入資料庫。
-- 前端 fetch 保持身份 header、原 message 與 run 綁定；中斷讀原 `/agent/runs/:id` 及已保存聊天，不自動重新 POST。斷線只關回饋渠道，原有界運行及保存可以繼續；明確 cancel 仍更新原持久取消狀態，切換身份／孩子清除進度與遲到結果。回覆尚未保存時如實顯示待查，不假造聊天。
+- 前端 fetch 保持身份 header、原 message 與 run 綁定；中斷讀原 `/agent/runs/:id` 及已保存聊天，不自動重新 POST。斷線只關回饋渠道，原有界運行及保存可以繼續；明確 cancel 仍更新原持久取消狀態，切換身份／孩子清除進度與遲到結果。回覆尚未保存時如實顯示待查，不假造聊天。 JSON 與 SSE 同樣不以連線中斷取消已提交的執行。執行期限只停止新增模型／工具工作；原執行者仍可保存經核對的終態、計數與原操作結果。若查回曾把逾期未結清運行標為 interrupted，可由原執行者結清；已取消、撤權、儲存世代變更或已有正式結果不可被覆蓋。
 - `show_official_help` 只選 Server 固定版本卡片，不外發、不確認操作、不新增分類生成。當前為 `emergency-hk-v1`／`medical-consult-hk-v1`；同次去重，保存 message 的 `officialHelp` 由原 run 的成功工具收據導出，不能由用戶提供正文。普通聊天無卡；歷史卡保持原版本，不把舊醫療說明冒稱新核對。
 - `/agent/work`、`/agent/history`、`/agent/pending`、`/agent/runs/:id` 延續原接口。待確認綁提問訊息、操作／參數、資源／授權／政策／工作版本；多個有效候選、資料變更或不明確回覆不自動確認。一次確認和實際業務效果同交易保存。
 - 共同准入為每人一個、全站最多四個運行；lease 到原 90 秒期限再加五秒釋放緩衝。持久日額度、原生 ADK session 及 root budget 跨程序共用；平台／本人付費來源不混用，個人較低限制保留。這不增加每日或單 run 配額。

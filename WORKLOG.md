@@ -2824,3 +2824,11 @@
 - #231 合併 `7d1ccd6`；原 VM API／worker 部署 `ad021bf`，2026-10-15 16:55 UTC 服務健康、三檔 hash 相符。只有 7.6 KB 程式包及核對資料，無密鑰、家庭資料或遷移；Web／Android 產物不變。
 - 真 Firestore 一個專用合成預算根核對 8／16／4 限制及一次 16 工具計數讀回後刪除；零模型、通知或真工具副作用，政策與每日計數未修改。真人聊天仍由使用者驗收。
 - S04 合併記錄中的 WORKLOG 因兩分支追加次序不同而衝突；更正為完整保留原 S04 bytes，再接 #231 的新增後綴，沒有重寫原證據。鍵盤位移尚未修。見[部署證據](artifacts/verification/FIRESTORE_AGENT_BUDGET_20261016.json)。
+
+
+## LOG-20261016-AGENT-DISCONNECTED-RESULT
+
+- 原 master `7d1ccd6`；使用者回報關閉 App 後回覆丟失。原 run metadata 顯示五次生成／五次工具／一次查詢向量，最後無結果；兩次引用拒絕及模型錯誤仍保留，不宣稱是斷線直接造成。
+- 修正 Firestore 把執行期限套用到結果保存的缺陷；到期禁止新工作，原執行者仍可結清原結果。已取消、已有結果、撤權與世代檢查保持。JSON 與 SSE 同樣脫離連線取消；只有明確取消改原 run。
+- 正式 HTTP／真 Runner scripted 與 Firestore fixture 兩項定向檢查通過；受影響三個根檔型別零錯誤，diff check 通過。零真模型、通知、瀏覽器／裝置操作，未重發使用者訊息。
+- C 單作者主責；main model 實作及 review。部署待交付，首條聊天仍由使用者驗收；管理員總控後續接續。證據：[EV](artifacts/verification/AGENT_DISCONNECTED_RESULT_20261016.json)。
