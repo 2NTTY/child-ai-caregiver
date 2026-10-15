@@ -956,3 +956,7 @@ S12 的目標契約：Web／Android 每次聊天最多一段錄音、兩分鐘�
 語音 port 使用 `/api/children/:childId/voices`：POST 帶原 `opId`、檔名、MIME、bytes、hash 預留；GET `/:id` 查回；POST `/:id/content` 帶 expectedVersion／base64；POST `/:id/resolve` 只核原物件；GET `/:id/content` 返回經授權的原位元組；POST `/:id/delete` 帶原 opId／expectedVersion。與照片相同的身份、同源及 x-expected-user-id 保護；本機已準備端口，不代表正式組裝已啟用。
 
 聊天建立可帶 `voice: {id, expectedVersion}`。Server 交易確認 ready、目前本人／孩子及未綁定後，將附件與唯一訊息一併保存；回傳只帶不可變音訊身份／hash／格式／時長，不複製正文。無文字的語音訊息允許空 text，舊文字訊息不變。格式或時長拒絕是上載前已知失敗，可沿原附件修復；已進 Storage 的未知結果只查原地址。刪除先遮蔽，獨立日誌確認後清理固定 generation；unknown 上載沒有找到物件不代表已完成清理。未結清義務保持有界退避及可見停留狀態。
+
+語音交代的普通操作可帶 `sourceBasis=voice_interpretation`，`sourceQuote` 是模型本輪從原錄音聽取的片語。Server 只接受當前訊息綁定、仍 ready 的同一附件 ID／版本／hash，連同原 run、預授權版本及操作收據保存來源證據；不改寫原訊息 text 為自動轉錄，不把語音辨識當已確認事實。文字及較早文字來源仍須逐字核對，重要事項仍使用原確認服務。刪除／改版後不能引用舊錄音執行新操作。
+
+ADK 事件只保存本次音訊身份 metadata；模型 adapter 在每次已授權呼叫前將同一原位元組加入原訊息位置，維持完整 function calling 協定。音訊另計格式、5 MiB／兩分鐘及一段上限，文字／工具 schema 仍計原上下文容量；完整 provider payload 參與原呼叫指紋及用量。不能把 base64 寫進 Firestore 聊天／ADK 事件，亦不能接受模型或 HTTP 提供的任意音訊 URL。

@@ -2,7 +2,7 @@ import { firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, erasureCo
 import { randomUUID, createHash } from "node:crypto";
 import { z } from "zod";
 import type { DocumentSnapshot } from "@google-cloud/firestore";
-import { voiceReservationSchema, type VoiceAttachment, type VoiceReservation } from "../src/shared/voice.ts";
+import { voiceReservationSchema, type VoiceAttachment, type VoiceReservation, voiceMessageReferenceSchema, type VoiceMessageReference } from "../src/shared/voice.ts";
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from "./firestore-authority.ts";
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
@@ -243,6 +243,21 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     return { voice: { id, version: updated.version, sha256: row.descriptor.sha256, mimeType: row.descriptor.mimeType, durationMs: row.descriptor.durationMs, bytes: row.descriptor.bytes },
       commit() { b.transaction.set(ref(id), envelope(updated)); } };
   }
+  async function readEvidence(b: FirestoreAuthorityTransaction, messageId: string, reference: VoiceMessageReference) {
+    reference = domainParse(voiceMessageReferenceSchema, reference);
+    const row = await read(b, reference.id); current(row);
+    if (row.state !== 'ready' || !row.descriptor || row.messageId !== messageId || row.version !== reference.version
+      || ['sha256', 'mimeType', 'bytes', 'durationMs'].some(key => row.descriptor![key as keyof VoiceObjectDescriptor] !== reference[key as keyof VoiceMessageReference]))
+      domainReject('voice_changed');
+    return { kind: 'voice_interpretation' as const, voiceId: reference.id, voiceVersion: reference.version, sha256: reference.sha256, sourceMessageId: messageId };
+  }
+  async function agentAudio(userId: string, childId: string, messageId: string, reference: VoiceMessageReference) {
+    await authority.runTransaction(userId, childId, b => readEvidence(b, messageId, reference));
+    const original = await content(userId, childId, reference.id);
+    await authority.runTransaction(userId, childId, b => readEvidence(b, messageId, reference));
+    return { data: original.base64, mimeType: reference.mimeType,
+      metadata: { mimeType: reference.mimeType, bytes: reference.bytes, sha256: reference.sha256, durationMs: reference.durationMs } };
+  }
   async function content(userId: string, childId: string, id: string) {
     const row = await authority.runTransaction(userId, childId, async b => { const found = await read(b, id); current(found);
       if (found.state !== "ready" || !found.descriptor) domainReject("voice_not_available"); return found; });
@@ -253,7 +268,7 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     });
     return { ...value, attachment: view(row) };
   }
-  return { reserve, upload, reconcile, content, prepareLink, delete: deleteVoice, cleanupDeleted, eraseForScope,
+  return { reserve, upload, reconcile, content, prepareLink, agentAudio, readEvidence, delete: deleteVoice, cleanupDeleted, eraseForScope,
     get(userId: string, childId: string, id: string) { return authority.runTransaction(userId, childId, async b => view(await read(b, id))); } };
 }
 export type FirestoreVoiceStore = ReturnType<typeof createFirestoreVoiceStore>;

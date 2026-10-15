@@ -1,3 +1,9 @@
+import type { Firestore } from '@google-cloud/firestore';
+import { FinishReason } from '@google/genai';
+import { createFirestoreCareStore } from '../server/firestore-care.ts';
+import { createFirestoreMemoryStore } from '../server/firestore-memory.ts';
+import { createFirestoreProductAgent } from '../server/firestore-product-agent.ts';
+import { readAiConfig } from '../server/ai-config.ts';
 import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
 import type { FirebaseAuthPort } from '../server/firebase-auth.ts';
 import { createVoiceApi } from '../src/client/voice-api.ts';
@@ -16,7 +22,15 @@ import type { VoiceObjects, VoiceObjectDescriptor } from '../server/firebase-voi
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 
 test('voice upload and original chat operation keep one authorized attachment across uncertain replies', async () => {
-  const fake = firestoreDomainFixture(), options = { database: fake.database, cipher: createStorageCipher(Buffer.alloc(32, 39)),
+  const fake = firestoreDomainFixture();
+  function query(raw: any): any { return new Proxy(raw, { get(target, key) {
+    if (key === 'get') return () => fake.database.runTransaction(tx => tx.get(target));
+    const value = target[key]; return typeof value === 'function' ? (...args: any[]) => {
+      const result = value(...args); return result?.query ? query(result) : result?.path ? { ...result, id: result.path.split('/').at(-1) } : result;
+    } : value;
+  } }); }
+  const database = { ...fake.database, collection: (path: string) => query(fake.database.collection(path)) } as Firestore;
+  const options = { database, cipher: createStorageCipher(Buffer.alloc(32, 39)),
     projectId: 'synthetic-voice-project', namespace: 'voice_lifecycle' };
   const authority = createFirestoreAuthority(options);
   await authority.initializeControl({ generation: randomUUID(), enabled: true });
@@ -26,7 +40,7 @@ test('voice upload and original chat operation keep one authorized attachment ac
     await authority.admitIdentity({ userId, email, emailVerified: true });
     await authority.acknowledge({ userId, operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
   }
-  const bytes = Buffer.from('synthetic voice bytes; media validity has its separate parser check');
+  const bytes = Buffer.alloc(1024 * 1024, 7) // Larger than an ADK Firestore event; codec validity has its separate media check.
   const sha256 = createHash('sha256').update(bytes).digest('hex');
   const stored = new Map<string, VoiceObjectDescriptor>();
   let failValidation = true, loseObjectReply = true, writes = 0;
@@ -105,10 +119,41 @@ test('voice upload and original chat operation keep one authorized attachment ac
   await assert.rejects(online.submit('parent', await command(path, { text: '不能重複綁定', voice: { id, expectedVersion: ready.version } })),
     (e: any) => e.code === 'voice_not_available');
   assert.equal(writes, 1);
+  const care = createFirestoreCareStore(options), memory = createFirestoreMemoryStore({ ...options, chat, care });
+  let modelCalls = 0, providerFailure: unknown;
+  const product = await createFirestoreProductAgent({ ...options, chat, care, memory, online, voices: voice,
+    config: readAiConfig({ AI_ENABLED: 'true', GCP_PROJECT_ID: options.projectId }),
+    platformProvider: { async generate(request) { try {
+      modelCalls++; assert.ok(modelCalls <= 4);
+      const audio = request.contents.flatMap(content => content.parts ?? []).filter(part => part.inlineData);
+      assert.equal(audio.length, 1); assert.equal(audio[0].inlineData!.data, bytes.toString('base64'));
+      const functionCall = modelCalls === 1 ? { id: 'load-private', name: 'load_capabilities', args: { capabilities: ['private_instructions'] } }
+        : modelCalls === 2 ? { id: 'save-voice-note', name: 'save_private_instruction', args: {
+          sourceBasis: 'voice_interpretation', sourceQuote: '記得我習慣先準備手冊', expectedPolicyVersion: 1,
+          title: '準備手冊', text: '使用前先準備手冊。', memoryKey: 'prepare-handbook' } }
+        : modelCalls === 3 ? { id: 'present-voice-result', name: 'present_answer', args: {
+          kind: 'operation', paragraphs: [{ text: '已記下先準備手冊的交代。', citationIds: [] }] } } : null;
+      return { content: { role: 'model', parts: functionCall ? [{ functionCall }] : [{ text: 'done' }] }, finishReason: FinishReason.STOP };
+    } catch (error) { providerFailure = error; throw error; } } } });
+  await product.actions.savePolicy('parent', childId, { operationId: randomUUID(), expectedVersion: 0, recordKinds: [],
+    allowPrivateNotes: true, allowSelfTasks: false, allowRecordCorrections: false, reminderConsentVersion: null,
+    reminderBindings: [], confirm: true, confirmShared: false });
+  const result = await product.agent.reply('parent', childId, message.id, async () => true);
+  if (providerFailure) throw providerFailure;
+  assert.equal(result?.status, 'completed', JSON.stringify(result));
+  const receipts = await product.actions.receipts('parent', childId, result!.runId);
+  assert.equal(receipts?.length, 1); assert.equal(receipts![0].sourceBasis, 'voice_interpretation');
+  const evidence = await authority.runTransaction('parent', childId, b => product.actions.readReceipts(b, result!.runId));
+  assert.equal(evidence[0].voiceEvidence?.sha256, sha256);
+  assert.equal((await chat.listForUser('parent', childId))!.messages.find(row => row.id === message.id)?.text, '');
+  // A resumed request returns the original run; neither the voice command nor its model repeats.
+  const before = modelCalls; assert.equal((await product.agent.reply('parent', childId, message.id, async () => true))?.runId, result!.runId);
+  assert.equal(modelCalls, before);
   const current = await voice.get('parent', childId, id), deleteOp = randomUUID();
   assert.equal((await client.delete(current, deleteOp, signal, 'parent')).deleted, true);
   await assert.rejects(voice.content('parent', childId, id), (e: any) => e.code === 'voice_deleted');
   assert.equal((await voice.reserve('parent', childId, input)).fileName, null);
+  await assert.rejects(voice.agentAudio('parent', childId, message.id, message.voice), (e: any) => e.code === 'voice_deleted');
   assert.equal((await voice.delete('parent', childId, id, current.version, deleteOp)).deleted, true);
   const scope = await authority.runTransaction('parent', childId, async b => b.scope);
   assert.equal((await voice.cleanupDeleted(scope, id)).state, 'complete'); assert.equal(stored.size, 0);

@@ -2,7 +2,7 @@
   "workPackage": "S12-W01",
   "date": "2026-10-16",
   "baseline": "665ac9a",
-  "scope": "Prepared shared recording, validated encrypted audio, private Firestore authority, atomic chat binding and HTTP/client ports; runtime voice remains disabled",
+  "scope": "Prepared shared capture, private voice authority and same production Agent audio tool cycle; formal runtime/UI remain disabled pending lifecycle completion",
   "checks": [
     {
       "kind": "frontend-targeted-types",
@@ -60,6 +60,27 @@
       "kind": "server-client-targeted-types",
       "roots": 7,
       "diagnostics": 0
+    },
+    {
+      "kind": "agent-audio-targeted-types",
+      "roots": 3,
+      "initialDiagnostics": 4,
+      "cause": "Stale cached AgentBudget and reply-state dependencies; no source repair required",
+      "finalDiagnostics": 0
+    },
+    {
+      "kind": "same-voice-lifecycle-production-agent",
+      "passed": 1,
+      "durationMs": 403.1497,
+      "realModelCalls": 0,
+      "coverage": [
+        "One original 1 MiB audio reaches the real ADK Runner through scripted provider",
+        "Provider-only bytes do not exceed the Firestore ADK event limit",
+        "Preauthorized ordinary instruction saves an audio-bound provenance receipt",
+        "Original empty-text voice message is not rewritten as a transcript",
+        "Original run readback repeats neither model nor action",
+        "Deleted voice cannot be loaded into a new run"
+      ]
     }
   ],
   "realModelCalls": 0,
@@ -70,9 +91,10 @@
     "No native recording/permission/playback evidence",
     "No new APK/OTA/build",
     "Runtime voice and UI send owner remain unmounted",
-    "Direct audio Agent/provenance, background transcript/search not connected",
     "Cleanup scheduler, whole-account export/erasure and paired backup/restore integration pending; recovery explicitly rejects voice-delete until connected",
     "Late-upload/delete race implementation awaits focused evidence",
-    "Real model voice quality remains pending"
+    "Real model voice quality remains pending",
+    "Agent audio has synthetic assembly evidence only; real speech understanding remains unverified",
+    "Background transcription, original receipt integration, scheduled cleanup, account export/deletion and paired recovery remain pending; production voice is not mounted"
   ]
 }

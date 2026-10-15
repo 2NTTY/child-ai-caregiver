@@ -54,7 +54,7 @@ export function createAgentActionTools(actions: AgentActionsStore, run: AgentRun
         revise_private_note: "更正指定本人私人備註，先查原 ID 與版本並保留未更改內容；舊無鍵交代可同次補 memoryKey，已有鍵保持不變，不另建相似副本。",
         create_self_task: "建立本人清楚指定、時間明確的普通提醒；醫療預約及其他人的任務用候選。",
         change_self_task: "完成、取消或改期指定本人普通提醒；先查原 ID 與版本，收到不等於完成。" }[actionKind])
-        + " 僅有效 operationPolicy 涵蓋的本次指令；sourceQuote 逐字引用本次使用者訊息；sourceMessages 可附最多六項已讀本人原訊息的 ID／逐字 quote 補資料，不能充當新的執行授權，遵從最新改口。expectedPolicyVersion 取 Server 政策。參數直接放最外層，不加 action 包裝或 kind。結果只按 receipt 回報，未授權外發不能稱已通知。",
+        + " 僅有效 operationPolicy 涵蓋的本次指令；sourceQuote 逐字引用本次使用者文字訊息；本次附有原錄音時可填 sourceBasis=voice_interpretation，sourceQuote 寫清楚聽到的片語（AI 辨識，非文字原文），聽不清不能猜；sourceMessages 可附最多六項已讀本人原訊息的 ID／逐字 quote 補資料，不能充當新的執行授權，遵從最新改口。expectedPolicyVersion 取 Server 政策。參數直接放最外層，不加 action 包裝或 kind。結果只按 receipt 回報，未授權外發不能稱已通知。",
       // Each native tool has one concrete shape; the shared business union retains all refinements.
       parameters: z.object(shape), authorize,
       execute: async (args, call) => {

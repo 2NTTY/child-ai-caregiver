@@ -31,6 +31,7 @@ import type { FirestoreAgentRunOptions } from "./firestore-agent-runs.ts";
 import type { FirestoreContact } from './firestore-contact.ts';
 
 export async function createFirestoreProductAgent(options: FirestoreDomainOptions & {
+  voices?: import("./firestore-voice.ts").FirestoreVoiceStore;
   config: AiConfig; chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore;
   online: FirestoreOnlineStore; knowledge?: FirestoreKnowledgeStore;
   documents?: FamilyDocumentStore;
@@ -87,7 +88,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   };
   const knowledge = createKnowledgeRetriever(options.knowledge ?? { async candidates() { domainReject('knowledge_not_ready', 503); } },
     { async embed() { throw new AgentStopped('unavailable'); } });
-  const agent = createProductAgent({ runtime, store: services.store, actions: services.actions,
+  const agent = createProductAgent({ runtime, store: services.store, actions: services.actions, voices: options.voices,
     chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge });
   return { ...services, routing, runtime, agent, maintainSummary: createPrivateSummaryMaintenance({ memory: options.memory, store: services.store, runtime }) };
 }

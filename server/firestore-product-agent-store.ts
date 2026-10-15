@@ -30,6 +30,7 @@ import { firestoreFamilyDocumentSchemas } from './firestore-family-documents.ts'
 import { firestoreSharedInputSchema } from './firestore-shared-inputs.ts';
 
 export function createFirestoreProductAgentStore(options: FirestoreDomainOptions & {
+  voices?: import("./firestore-voice.ts").FirestoreVoiceStore;
   chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore; online: FirestoreOnlineStore;
   authorizeWorker?: FirestoreAgentRunOptions['authorizeWorker'];
   sources?: FirestoreSharedInputStore; concerns?: FirestoreConcernStore;
