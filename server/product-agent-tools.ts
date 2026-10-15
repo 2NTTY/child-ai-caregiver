@@ -24,6 +24,7 @@ import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { createAgentActionTools } from "./agent-action-tools.ts";
 import { createAgentSourceTools } from "./agent-source-tools.ts";
 import { createAgentDocumentTools } from "./agent-document-tools.ts";
+import { createDataComposeTools } from "./data-compose.ts";
 import { createAgentConcernTools } from "./agent-concern-tools.ts";
 import { createAgentWorkTools } from "./agent-work-tools.ts";
 
@@ -111,6 +112,8 @@ export function createProductAgentTools(options: {
   knowledge: Retriever; authorize: () => Promise<boolean>; visibility?: "private" | "family";
   reviewedGrowthPresentation?: boolean;
   background?: boolean;
+  /** Authenticated current user message; required for compose review binding. */
+  trustedUserMessage?: string;
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
   const authorize = run.authorize ?? options.authorize;
@@ -320,7 +323,13 @@ export function createProductAgentTools(options: {
   if (options.actions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(options.actions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
-  if(options.documents && options.includeDocuments && options.visibility!=="family") tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,store,run,permitted));
+  if(options.documents && options.includeDocuments && options.visibility!=="family") {
+    tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,store,run,permitted));
+    tools.splice(tools.length-1,0,...createDataComposeTools({
+      documents: options.documents, agent: store, run, authorize: permitted,
+      trustedUserMessage: options.trustedUserMessage ?? "",
+    }));
+  }
   if(options.concerns&&options.includeConcerns!==false)tools.splice(tools.length-1,0,...createAgentConcernTools(options.concerns,store,run,permitted,options.visibility==="family"));
   if(options.summary)tools.splice(tools.length-1,0,{
     name:"read_care_summary",effect:"read",description:"讀取當前孩子指定日／七日的 Server 精確統計、記錄來源版本、缺項及已保存到診問題。日期或時區不清先補問；不自行計數，不把沒有記錄當沒有發生，不輸出 PDF 或聲稱已分享。",

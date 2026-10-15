@@ -329,7 +329,7 @@ test("an unreviewed draft that has used every model call is not formal success",
 
 test("a bound limit of four is not raised by the six-call proposal", async () => {
   const pack = await loadAgentPrompt("product-interactive", "tool_cycle", ["run", "scope", "conversation", "context", "evidence", "capabilities"]);
-  assert.equal(pack.packVersion, "0.1.45");
+  assert.equal(pack.packVersion, "0.1.46");
   let calls = 0;
   const result = await product({ calls, generate: async () => {
     const steps = [

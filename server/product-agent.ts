@@ -9,6 +9,7 @@ import { createProductAgentTools, createDueWorkContinuationTools } from "./produ
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentPresentation, ProductAgentResult } from "../src/shared/product-agent.ts";
 import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT, type ChatDeliveryReviewBinding } from "../src/shared/chat-delivery-review.ts";
+import { DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT } from "../src/shared/data-compose.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { enforceChatDeliveryReview, type ChatDeliverySurface } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentRunResult } from "./agent-runtime.ts";
@@ -19,7 +20,9 @@ import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./pr
 import type { FirestoreWorkContinuationStore, ClaimedWorkContinuation } from "./firestore-work-continuation-store.ts";
 
 function unfinishedDeliveryText(stopReason: string | null | undefined): string {
-  return stopReason === "delivery_review_incomplete" ? CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT : "";
+  if (stopReason === "delivery_review_incomplete") return CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT;
+  if (stopReason === "compose_review_incomplete") return DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT;
+  return "";
 }
 
 /** Programmatic presentation is already done. Review shares this root run and cannot be skipped by the generator. */
@@ -206,14 +209,20 @@ export function createProductAgent(options: {
         messages: recent.messages.map(item => ({ role: item.role, text: item.text })),
         toolCatalog: PRODUCT_AGENT_TOOL_CATALOG,
         tools: run => {
-          tools = createProductAgentTools({ ...options, includeDocuments: true, run, authorize, onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", card); } } });
+          tools = createProductAgentTools({
+            ...options, includeDocuments: true, run, authorize,
+            trustedUserMessage: page.messages[index]!.text,
+            onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", card); } },
+          });
           return tools.tools;
         }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
         finalize: async (result, _context, reason) => {
           rendered.value = await tools!.presentation();
+          // Shared 4-call budget: after load_capabilities → compose_family_data → compose → review,
+          // Server finishes confirmation text on model_limit without a fifth present_answer call.
           if (!rendered.value && reason === "model_limit" && result.tools.length > 0
             && result.tools.every(tool => tool.status === "succeeded")
-            && ["request_confirmation", "propose_family_document_change"].includes(result.tools.at(-1)?.name ?? "")) {
+            && ["request_confirmation", "propose_family_document_change", "compose_family_data"].includes(result.tools.at(-1)?.name ?? "")) {
             if (!await authorize()) throw new AgentStopped("unauthorized");
             const questions = await options.store.confirmationQuestions?.(userId, childId, claim.runId) ?? [];
             if (!await authorize()) throw new AgentStopped("unauthorized");

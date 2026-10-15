@@ -1,5 +1,11 @@
 # Prompt Pack 變更記錄
 
+## 0.1.46 — 2026-10-16
+
+- P3-M02 data-compose／data-compose-review 叠到最新 #214（prompt pack 0.1.45／tip 6184364）。module.data-compose／review 0.1.1；module.product-tools 0.1.21。
+- 審核使用 Server 組裝 intent／逐字原文／來源／截斷標示；proposal／accept 綁定 review；共享模型預算維持 4。
+- 不宣稱真 Vertex／E2E 已跑。
+
 ## 0.1.44 — 2026-10-16
 
 - core.tool-use 0.1.3 接入每輪 Server 預算快照，區分正在生成的本輪、工具及查詢向量；模型自行規劃必要操作，預留終結空間，不以用盡上限為目標。
