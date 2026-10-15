@@ -2,13 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   BACKGROUND_KNOWLEDGE_DEFAULT_BUDGET, BACKGROUND_KNOWLEDGE_POLICY_VERSION,
-  BACKGROUND_KNOWLEDGE_ROLE_ID, M03_INITIAL_WATCH_IDS, backgroundKnowledgeOperationFingerprint,
+  BACKGROUND_KNOWLEDGE_ROLE_ID, M03_INITIAL_WATCH_IDS,
+  allowLiveBackgroundKnowledgePublish, backgroundKnowledgeOperationFingerprint,
+  backgroundKnowledgeReviewMatchesCandidate,
   createBackgroundKnowledgeMaintenanceRunner, createProgrammaticKnowledgeReviewStub,
   m03InitialWatchDefinitions, rejectPrivateMaintenanceScope, resolveM03Watch,
+  type BackgroundKnowledgeCandidate, type KnowledgeSemanticReviewPort,
 } from "../server/background-knowledge-maintenance.ts";
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
 import { observationHash } from "../server/knowledge-observation.ts";
-import type { ObservedContent, SourceFetcher, SourceWatchDefinition } from "../server/knowledge-refresh-types.ts";
+import type { ObservedContent, SourceFetcher } from "../server/knowledge-refresh-types.ts";
 
 const page = resolveM03Watch("fhs-solid-food")!;
 const pdf = resolveM03Watch("fhs-feeding-booklet-en")!;
@@ -37,6 +40,26 @@ function mockFetcher(byId: Record<string, ObservedContent | { status: "failed"; 
     if (!entry) return { status: "failed", reason: "response" };
     if ("status" in entry) return entry;
     return { status: "ok", items: [entry] };
+  };
+}
+
+function modelReviewPort(mutate?: (binding: ReturnType<typeof Object.assign>) => void): KnowledgeSemanticReviewPort {
+  return {
+    async review(candidate) {
+      const binding = {
+        watchId: candidate.watchId,
+        observationHash: candidate.observationHash,
+        previousObservationHash: candidate.previousObservationHash,
+        decision: "approve_candidate" as const,
+        reviewKind: "model_review" as const,
+        policyVersion: BACKGROUND_KNOWLEDGE_POLICY_VERSION,
+        modelReviewCompleted: true,
+        growthRuleImpact: "none" as const,
+        notes: ["scripted model review"],
+      };
+      mutate?.(binding);
+      return binding;
+    },
   };
 }
 
@@ -107,7 +130,7 @@ test("AC-P2M-03 dry path: mock page change -> stub review -> dry_run_ready witho
   assert.equal(result.review?.modelReviewCompleted, false);
   assert.equal(result.review?.policyVersion, BACKGROUND_KNOWLEDGE_POLICY_VERSION);
   assert.equal(result.review?.decision, "approve_candidate");
-  assert.ok((result.budget?.usedUnits ?? 0) >= 2);
+  assert.equal(result.budget?.usedUnits, 2);
 });
 
 test("unchanged hash skips organize and stays unpublished", async () => {
@@ -128,7 +151,8 @@ test("unchanged hash skips organize and stays unpublished", async () => {
   assert.equal(result.status, "unchanged");
   assert.equal(result.published, false);
   assert.equal(result.review?.decision, "unchanged");
-  assert.equal(result.budget?.usedUnits, 1);
+  // Reservation still charges the planned units so a crash window cannot skip budget.
+  assert.equal(result.budget?.usedUnits, 2);
 });
 
 test("PDF fixture follows reviewed page window; unreadable page stays candidate", async () => {
@@ -227,6 +251,186 @@ test("live publish remains gated even when request asks for live", async () => {
     publishMode: "live",
   });
   assert.equal(result.status, "dry_run_ready");
+  assert.equal(result.published, false);
+  assert.equal(published, 0);
+});
+
+test("216B: live publish rejects programmatic stub even when livePublish is on", async () => {
+  let published = 0;
+  const runner = createBackgroundKnowledgeMaintenanceRunner(
+    { enabled: true, liveFetch: true, livePublish: true },
+    {
+      fetch: mockFetcher({ "fhs-solid-food": pageItem("stub 不可 live 發布") }),
+      publish: async () => { published++; return { published: true }; },
+    },
+  );
+  const result = await runner.start({
+    watchId: "fhs-solid-food",
+    operationFingerprint: fingerprint("fhs-solid-food", "stub-live"),
+    workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "live",
+  });
+  assert.equal(result.status, "rejected");
+  assert.equal(result.code, "live_requires_model_review");
+  assert.equal(result.published, false);
+  assert.equal(result.review?.reviewKind, "programmatic_stub");
+  assert.equal(result.review?.modelReviewCompleted, false);
+  assert.equal(published, 0);
+});
+
+test("216A: parallel same fingerprint publishes only once", async () => {
+  let published = 0;
+  let releaseGate!: () => void;
+  const gate = new Promise<void>(resolve => { releaseGate = resolve; });
+  const item = pageItem("並行同指紋");
+  const runner = createBackgroundKnowledgeMaintenanceRunner(
+    { enabled: true, liveFetch: true, livePublish: true },
+    {
+      fetch: async (definition, signal) => {
+        await gate;
+        if (signal.aborted) throw new Error("aborted");
+        return { status: "ok", items: [item] };
+      },
+      review: modelReviewPort(),
+      publish: async () => {
+        published++;
+        return { published: true };
+      },
+    },
+  );
+  const request = {
+    watchId: "fhs-solid-food" as const,
+    operationFingerprint: fingerprint("fhs-solid-food", "parallel"),
+    workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "live" as const,
+  };
+  const pending = Promise.all([runner.start(request), runner.start(request)]);
+  releaseGate();
+  const [first, second] = await pending;
+  const statuses = [first.status, second.status].sort();
+  assert.ok(statuses.includes("published"));
+  assert.ok(statuses.includes("already_recorded") || statuses.includes("rejected"));
+  assert.equal(published, 1);
+  assert.equal(first.published || second.published, true);
+  assert.equal(first.published && second.published, false);
+});
+
+test("216C: cancelled signal before publish does not publish", async () => {
+  let published = 0;
+  const controller = new AbortController();
+  const runner = createBackgroundKnowledgeMaintenanceRunner(
+    { enabled: true, liveFetch: true, livePublish: true },
+    {
+      fetch: async (definition) => {
+        controller.abort();
+        return { status: "ok", items: [pageItem("取消後唔發布")] };
+      },
+      review: modelReviewPort(),
+      publish: async () => { published++; return { published: true }; },
+    },
+  );
+  const result = await runner.start({
+    watchId: "fhs-solid-food",
+    operationFingerprint: fingerprint("fhs-solid-food", "cancel"),
+    workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "live",
+  }, controller.signal);
+  assert.equal(result.status, "rejected");
+  assert.equal(result.code, "cancelled");
+  assert.equal(result.published, false);
+  assert.equal(published, 0);
+});
+
+test("216D: publish requires review binding to match candidate watch/hash/policy", () => {
+  const item = pageItem();
+  const candidate: BackgroundKnowledgeCandidate = {
+    watchId: "fhs-solid-food",
+    definition: page,
+    observed: item,
+    observationHash: observationHash(item),
+    previousObservationHash: "b".repeat(64),
+  };
+  const matched = {
+    watchId: candidate.watchId,
+    observationHash: candidate.observationHash,
+    previousObservationHash: candidate.previousObservationHash,
+    decision: "approve_candidate" as const,
+    reviewKind: "model_review" as const,
+    policyVersion: BACKGROUND_KNOWLEDGE_POLICY_VERSION,
+    modelReviewCompleted: true,
+    growthRuleImpact: "none" as const,
+    notes: ["ok"],
+  };
+  assert.equal(backgroundKnowledgeReviewMatchesCandidate(matched, candidate), true);
+  assert.equal(allowLiveBackgroundKnowledgePublish(matched, candidate), true);
+  assert.equal(backgroundKnowledgeReviewMatchesCandidate({
+    ...matched, observationHash: "c".repeat(64),
+  }, candidate), false);
+  assert.equal(allowLiveBackgroundKnowledgePublish({
+    ...matched, reviewKind: "programmatic_stub", modelReviewCompleted: false,
+  }, candidate), false);
+  assert.equal(allowLiveBackgroundKnowledgePublish({
+    ...matched, policyVersion: "p3-m03-background-knowledge/1",
+  }, candidate), false);
+});
+
+test("216B/D: model review binding can authorize scripted live publish once", async () => {
+  let published = 0;
+  const item = pageItem("模型審核後發布");
+  const runner = createBackgroundKnowledgeMaintenanceRunner(
+    { enabled: true, liveFetch: true, livePublish: true },
+    {
+      fetch: mockFetcher({ "fhs-solid-food": item }),
+      review: modelReviewPort(),
+      publish: async (candidate, review) => {
+        assert.equal(allowLiveBackgroundKnowledgePublish(review, candidate), true);
+        published++;
+        return { published: true };
+      },
+    },
+  );
+  const key = fingerprint("fhs-solid-food", "model-live");
+  const once = await runner.start({
+    watchId: "fhs-solid-food",
+    operationFingerprint: key,
+    workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "live",
+  });
+  assert.equal(once.status, "published");
+  assert.equal(once.published, true);
+  assert.equal(once.review?.reviewKind, "model_review");
+  assert.equal(once.review?.modelReviewCompleted, true);
+  assert.equal(published, 1);
+  const again = await runner.start({
+    watchId: "fhs-solid-food",
+    operationFingerprint: key,
+    workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "live",
+  });
+  assert.equal(again.status, "already_recorded");
+  assert.equal(published, 1);
+});
+
+test("216D: tampered review binding is rejected before publish", async () => {
+  let published = 0;
+  const runner = createBackgroundKnowledgeMaintenanceRunner(
+    { enabled: true, liveFetch: true, livePublish: true },
+    {
+      fetch: mockFetcher({ "fhs-solid-food": pageItem("綁定被竄改") }),
+      review: modelReviewPort(binding => {
+        binding.observationHash = "d".repeat(64);
+      }),
+      publish: async () => { published++; return { published: true }; },
+    },
+  );
+  const result = await runner.start({
+    watchId: "fhs-solid-food",
+    operationFingerprint: fingerprint("fhs-solid-food", "tamper"),
+    workerGeneration: "00000000-0000-4000-8000-000000000002",
+    publishMode: "live",
+  });
+  assert.equal(result.status, "rejected");
+  assert.equal(result.code, "review_binding_mismatch");
   assert.equal(result.published, false);
   assert.equal(published, 0);
 });
