@@ -78,15 +78,44 @@ export const SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS = new Set<string>([
 ]);
 
 /** Care-domain and advisory markers. Used only to force review, never to grant a skip. */
-const CARE_DOMAIN_PATTERN = /新生兒|嬰兒|寶寶|幼兒|月齡|個月大|加鹽|餵食|餵奶|服藥|劑量|體溫|發燒|疫苗|母乳|配方奶|照護建議|治療|就醫|症狀|危及生命|蜂蜜|止咳|退燒|腹瀉|固體食物|加固|營養|藥物|抗生素/u;
-const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要給|不可給|可以每天/u;
+const CARE_DOMAIN_PATTERN = /新生兒|嬰兒|寶寶|幼兒|BB\b|月齡|個月大|個月以下|月以下|加鹽|餵食|餵奶|服藥|劑量|體溫|發燒|疫苗|母乳|配方奶|照護建議|治療|就醫|症狀|危及生命|蜂蜜|蜜糖|止咳|退燒|腹瀉|固體食物|加固|營養|藥物|抗生素|newborns?|infants?|babies|baby\b|toddlers?|fever|vaccine|dosage|medication|breast\s*milk|formula\s*milk|honey|cough|diarrh(?:oa|ea)|solid foods?|nutrition|antibiotics?/iu;
+const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要給|不可給|可以每天|唔好畀|唔可以畀|唔好食|唔可以食|每日(?:都)?(?:要|可以)|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t\s+give|do\s+not\s+give|avoid\s+giving|give\s+(?:the\s+)?(?:baby|infant|newborn)|you\s+can\s+give|every\s+day/iu;
+
+/** Low-risk operation receipts. Positive skip signal; never inferred from model kind alone. */
+const OPERATION_RECEIPT_PATTERN = /^(?:已(?:儲存|保存|建立|更新|設定|記錄|完成|送出|寫入)|任務已|提醒已|操作已|已將|已為)|saved\s+(?:the\s+)?(?:task|reminder|record)|created\s+(?:a\s+)?(?:task|reminder)|updated\s+(?:the\s+)?(?:task|reminder|record)|reminder\s+set/iu;
 
 function joinedDraftText(draft: ChatDeliveryDraft): string {
   return draft.paragraphs.map(paragraph => paragraph.text).join("\n").trim();
 }
 
+/** Clarifying question with no advisory / directive care content. Domain words alone do not count. */
+export function isPureClarifyingQuestion(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 120) return false;
+  if (!/[？?]/u.test(trimmed)) return false;
+  // Every non-empty segment should be question-shaped (allow brief multi-question clarifies).
+  const segments = trimmed.split(/(?<=[？?])\s+/u).map(part => part.trim()).filter(Boolean);
+  if (segments.length < 1 || segments.some(part => !/[？?]$/u.test(part))) return false;
+  if (CARE_ADVISORY_PATTERN.test(trimmed)) return false;
+  // Statements mixed into a "question" (advice before/after) are not pure clarifies.
+  const withoutFinalMark = trimmed.replace(/[？?]+$/u, "").trim();
+  if (/[。．.!！；;？?]/u.test(withoutFinalMark)) return false;
+  return true;
+}
+
+/** Server-recognised low-risk receipt wording, not generator self-labels. */
+export function looksLikeLowRiskOperationReceipt(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 160) return false;
+  if (CARE_ADVISORY_PATTERN.test(trimmed)) return false;
+  return OPERATION_RECEIPT_PATTERN.test(trimmed);
+}
+
 export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): boolean {
   const text = joinedDraftText(draft);
+  if (!text) return false;
+  // Pure clarifies may mention 寶寶／個月大 without being advice.
+  if (isPureClarifyingQuestion(text)) return false;
   return CARE_DOMAIN_PATTERN.test(text) || CARE_ADVISORY_PATTERN.test(text);
 }
 
@@ -101,8 +130,8 @@ export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft): boolean 
  * Substantive claims need an independent model.
  * The generating model's kind alone never grants a skip: caregiving labels force review,
  * and citation-free wording that still looks like care advice also forces review.
- * Exact server allowlisted UI text and short pure questions may skip; plain operation /
- * receipt restatements without care markers keep the existing non-review path.
+ * Exact server allowlisted UI text, pure clarifying questions, and low-risk operation
+ * receipts may skip. Kind labels and a thin keyword miss are not enough to exempt care advice.
  */
 export function requiresChatDeliveryReview(draft: ChatDeliveryDraft): boolean {
   if (draft.serverSubstitutedSourceText) return false;
@@ -111,6 +140,8 @@ export function requiresChatDeliveryReview(draft: ChatDeliveryDraft): boolean {
   const text = joinedDraftText(draft);
   if (SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS.has(text)) return false;
   if (draftLooksLikeSubstantiveCareAdvice(draft)) return true;
+  if (isPureClarifyingQuestion(text)) return false;
+  if (looksLikeLowRiskOperationReceipt(text)) return false;
   if (text.length <= 48 && /[？?]$/u.test(text)) return false;
   return false;
 }
