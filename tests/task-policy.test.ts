@@ -8,7 +8,7 @@ import type { CareTask } from "../src/shared/tasks.ts";
 import { DEFAULT_NOTIFICATION_PREFERENCES as preferences } from "../src/shared/family.ts";
 import { onlineRoute } from "../server/online-routing.ts";
 import { handleTaskRequest } from "../server/task-api.ts";
-import type { TaskStore } from "../server/tasks.ts";
+import type { TaskService } from "../server/task-api.ts";
 
 const now = "2026-09-28T04:00:00Z";
 function task(): CareTask { return { id: randomUUID(), childId: randomUUID(), version: 1, title: "  合成事項\n", details: "", kind: "ordinary", assigneeUserId: "parent", createdBy: "parent", createdAt: now, updatedAt: now,
@@ -83,7 +83,7 @@ test("task write routing excludes viewers, history and direct unreceipted HTTP m
   assert.equal(onlineRoute({ path: `${path}/${item.id}/change`, payload: {} }).kind, "tasks");
   assert.throws(() => onlineRoute({ path: `${path}/${item.id}/history`, payload: {} }));
   let called = false;
-  const store = { create() { called = true; throw new Error(); } } as unknown as TaskStore;
+  const store = { create() { called = true; throw new Error(); } } as unknown as TaskService;
   const request = new Request(`http://local${path}`, { method: "POST", headers: { "content-type": "application/json", "x-expected-user-id": "parent" }, body: "{}" });
   assert.equal((await handleTaskRequest(request, "parent", store)).status, 428);
   assert.equal((await handleTaskRequest(request, null, store)).status, 401);
@@ -92,7 +92,7 @@ test("task write routing excludes viewers, history and direct unreceipted HTTP m
 
 test("task HTTP normalizes UUID scope before encrypted store operations", async () => {
   const item = task(); let scope = "";
-  const store = { async get(_user: string, childId: string, id: string) { scope = `${childId}:${id}`; return item; } } as unknown as TaskStore;
+  const store = { async get(_user: string, childId: string, id: string) { scope = `${childId}:${id}`; return item; } } as unknown as TaskService;
   const response = await handleTaskRequest(new Request(`http://local/api/children/${item.childId.toUpperCase()}/tasks/${item.id.toUpperCase()}`), "parent", store);
   assert.equal(response.status, 200); assert.equal(scope, `${item.childId}:${item.id}`);
 });

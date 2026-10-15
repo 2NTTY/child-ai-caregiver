@@ -2587,3 +2587,12 @@
 - Result：正式 CareReadCoordinator 抽離身份／快取／分頁／歷史／版本與刪除屏障；現有 owner 沿同一讀取器，保留寫入、草稿、unknown 及原操作。既有 tests 不再切片 hook 原碼，快取測試仍經整份 owner 的真關閉／草稿／刪除回調。
 - Verification：Node 24.19.0、TanStack Query 5.103.2；原 care-record-cache 17/17、qa-care-history 8/8，新模組 strict 局部型別與 diff check 通過。型別初命令遇 TypeScript 6 TS5112（命令需 --ignoreConfig），修正命令後通過，非產品失敗。沒有重跑全站型別／build／E2E、真 API、模型或雲端。
 - Limits / Next：未部署、不代表真瀏覽器或 Firestore 新驗收；交易／畫面設計未變。LAY03 獨立收束，LAY04 等兩包合併；OPT 仍等待 #214／#215 穩定接口，原備份真還原待驗維持。
+
+
+<a id="log-20261015-p2-lay03"></a>
+### 2026-10-15 — LAY03 待辦服務接口收束
+
+- Scope / Baseline：aba56b1 開包，交付前快進至 4fe5d3f；只改 Task API 的型別接點及既有 fixture 型別，沒有產品行為、Firestore 交易或前端畫面變更。
+- Result：明確 TaskService 定義讀取、歷史、建立及變更服務，解除 HTTP adapter 對 legacy SQL factory 返回型別的依賴。現有 task-policy 純規則、online 收據及 client unknown 協調直接復用，不重造業務層；此處是型別耦合，不能宣稱本包才停止 SQL 執行。
+- Verification：Node 24.19.0，`node --test --test-name-pattern='opposing terminal writes|task write routing|unknown task writes keep' tests/task-policy.test.ts tests/tasks-client.test.ts`：3/3 通過。分別核對終態競態停止提醒、正式寫入閘及未知操作使用原 opId 查回／明確重試。主模型核對 FirestoreTasksQuery 與共享 DTO 相容，diff check 通過。
+- Limits / Next：未跑全量型別／build、真資料庫／模型／通知／瀏覽器，不重複原交易證據。LAY02 已合併，LAY04 可核不重疊投影；OPT／STR 重疊部分仍等待協作者，真備份還原延後不變。
