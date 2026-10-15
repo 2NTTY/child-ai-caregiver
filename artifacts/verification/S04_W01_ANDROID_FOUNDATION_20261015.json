@@ -1,6 +1,6 @@
 {
   "workPackage": "S04-W01",
-  "status": "startup-fix-published-device-confirmation-pending",
+  "status": "dashboard-restored-assistant-blank-under-investigation",
   "baseline": "4f88948cf943585954efbe32ef93e0df0c53f3c8",
   "recordedAt": "2026-10-15T11:20:23.441524+00:00",
   "environment": {
@@ -212,6 +212,42 @@
       "paidPlanPurchased": false,
       "logSha256": "8ea5651c639dd29847ec1b84a92c509802b36ae5e4bb89c945a36e3f0826aa05",
       "device": "User asked to reopen existing APK; no success assumed"
+    },
+    {
+      "name": "Post-update device feedback and route fallback",
+      "sourceCommit": "2d6120b",
+      "result": "dashboard-user-confirmed-assistant-unresolved",
+      "userEvidence": [
+        "Home normal after OTA 17c74c48",
+        "Selecting assistant makes entire screen blank, including header and bottom navigation",
+        "User clarified no crash and no new error report"
+      ],
+      "diagnosis": "No confirmed cause for navigation blankness. Existing initial-load gate and native component paths inspected; upstream animation/detach issue has different preconditions and was not applied.",
+      "change": "Expo Router error/loading exports, native-safe plain components, allowlisted error type and numeric stack positions only. No auto-retry or operation resubmission.",
+      "checks": {
+        "targetedPrivacy": "passed; error message, URL and arbitrary type not displayed",
+        "affectedTypes": "4 roots; zero diagnostics",
+        "androidExport": "passed; installed runtime unchanged"
+      },
+      "deviceResult": "pending; not claimed repaired",
+      "modelCalls": 0,
+      "notifications": 0,
+      "cloudBuilds": 0
+    },
+    {
+      "name": "Compatible preview route feedback delivery",
+      "result": "published-device-observation-pending",
+      "sourceCommit": "2d6120b",
+      "project": "2ntty/yuyoufang",
+      "updateId": "01a13fe6-6e17-7599-98c4-c9cd5f74e13c",
+      "groupId": "513bf7d9-0ca1-481d-af00-94d23e9da8ef",
+      "createdAt": "2026-10-15T14:10:28.503Z",
+      "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "uploaded": "one compiled app bundle; all 30 assets reused; no source-map upload",
+      "cloudBuilds": 0,
+      "modelCalls": 0,
+      "notifications": 0,
+      "logSha256": "7ba54d6129cd3066a3233ebdfae9631d2177ae8c70ce2848706b887460a05cef"
     }
   ],
   "sourceSha256": {
@@ -238,10 +274,10 @@
     "notification": 0,
     "cloudBuild": 3,
     "deployment": 1,
-    "otaPublish": 1
+    "otaPublish": 2
   },
   "remaining": [
-    "Actual dashboard/reopen result after compatible preview OTA 17c74c48; installation/login already user-confirmed",
+    "Diagnose and restore assistant page after home recovery; user confirms full blank without crash. Route diagnostic update does not prove repair.",
     "One approved source-backed Agent run/readback (1 run /4 generations /2 embeddings, <$0.10); not started after startup failure",
     "S04-W01 remains draft; local checks do not prove physical rendering"
   ],

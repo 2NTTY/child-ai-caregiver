@@ -2750,3 +2750,14 @@
 - 已 review 的 `d9e249e` 於 13:52 UTC 發布到本人 Expo 專案的 Android preview；update group `17c74c48-436a-4b4e-975c-1defa26b9d22`，runtime `c312bc718cf9e42fde6ff62b768217f6aaf7cfd6` 與原 APK 相同。只上載一個編譯 bundle 及一個 asset，復用 29 個 assets；沒有第四次 APK build、後端部署或付費升級。
 - 已請本人保持網絡重開以接收修正；首次啟動仍可能使用快取，官方恢復機制可以下載後在下一次啟動使用，但不保證所有閃退均自動恢復。原安裝／登入成功及主頁失敗證據保留，未代填修正後真機結果。
 - 本次零模型、embedding、通知；draft PR #229 仍等主頁恢復及原首條聊天讀回。等待期間可準備獨立後續工作，不把前置缺證據改成已完成。
+
+
+<a id="log-20261015-android-assistant-blank"></a>
+### 2026-10-15 — S04-W01 主頁恢復與助手空白定位
+
+- 本人確認 OTA 後主頁正常，點「助手」則整頁空白，頂部／底部導航亦消失；其後明確澄清沒有閃退及沒有新錯誤報告。這是另一個未定位問題，原 SettingsIdentityBridge 失敗及修正證據保留，不將原錯誤套到新現象。
+- 定向核對助手、頁面容器及原生接點；上游 Expo #49681 涉及分頁 animation／detach 的條件與現配置不同，未套用其 workaround、未升級 SDK。僅補 Expo Router 原生錯誤／載入出口，使可捕捉的渲染錯誤具有安全參考及手動恢復入口；不顯示錯誤正文／URL／私人資料，不重送原操作。
+- 四個受影響入口型別零診斷，安全參考檢查及一次 Android export 通過；runtime 與原 APK 相同。本機 source map 只供定位，不上傳；尚未證明助手根因或修復。零模型、通知、後端部署、新 APK build。
+- PR #229 保持 draft，原一次真模型流程未開始；按使用者要求保留待本人步驟並繼續可獨立工作，不改寫前置包完成狀態。
+
+- 14:10 UTC 診斷／恢復更新 `2d6120b` 已發布至同一 preview，group `513bf7d9-0ca1-481d-af00-94d23e9da8ef`，只傳一個 bundle、30 assets 全部復用；沒有 source-map 上傳。等待本人一次助手讀回，未宣稱已修好。

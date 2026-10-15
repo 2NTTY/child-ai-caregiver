@@ -1023,12 +1023,12 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s04-w01"></a>
 #### S04-W01 共用原生基礎與 Android 首條流程
 
-- 階段／狀態：P3；APK／API 已交付測試，真機登入後白屏／重開閃退，局部修正已通過本機檢查，相容更新已發布，待真機讀回；分支 `codex/s04-w01-android-foundation`、draft PR #229。
+- 階段／狀態：P3；APK／API 已交付測試，第一個相容修正後本人確認主頁正常；進入助手仍整頁空白（沒有閃退），正定位頁面呈現問題；分支 `codex/s04-w01-android-foundation`、draft PR #229。
 - 前置：P2-R04、S06-W05；文件 #228 合併後開工基線 `4f88948`，不依賴 STR01／三角色／iOS。
 - 交付：正式 App ID／API base、EAS Build／Update 基礎；共同 transport、Firebase 原生會話交換／SecureStore，正式 owner 的身份／資料接線。保留 Web Cookie，不以假 Origin 取得原生權限。
 - 已驗：同一合成交換／重開／撤銷經正式 Node／API，必要型別及 Android bundle 通過。首次兩個 EAS 失敗及局部修正保留；第三次明確批准的免費 build `b2fb7fe9-5f00-4d4c-9d62-b425c9b318ac` 成功，App 0.1.0／versionCode 1／受管簽署。來源 `7586788`；原 API／worker 已部署相容 `c6cf75d`，Web／資料／配額不改。見[同一證據](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
-- 真機修正：本人已安裝並成功登入，但主頁全白，重開閃退；錯誤報告指向 `SettingsIdentityBridge`。已用實際刷新 hook 重現原生 `window` 存在但無瀏覽器事件方法的錯誤，改用共用失效通知接點，保留 Web 事件及原生更新後刷新。兩個定向檢查、8 roots 型別及一次相容 Android export 通過；修正 `d9e249e` 已發布至 Android preview（OTA group `17c74c48`），runtime 與原 APK 一致；尚未確認真機恢復，不以本機檢查冒充真機。
-- 下一步／gate：已送相容 preview OTA，沒有再建 APK；待本人核對主頁／重開，再續原已批准的一次聊天讀回（最多 1 run／4 生成／2 embedding，<$0.10，無通知）。尚無本包真模型結果，不標包完成、不合併。需要本人步驟時保留現場，先處理不依賴該結果的工作；同類最小驗收免逐次問，私有發布仍須符合具體授權及工具審查。
+- 真機修正：本人已安裝並成功登入，但主頁全白，重開閃退；錯誤報告指向 `SettingsIdentityBridge`。已用實際刷新 hook 重現原生 `window` 存在但無瀏覽器事件方法的錯誤，改用共用失效通知接點，保留 Web 事件及原生更新後刷新。兩個定向檢查、8 roots 型別及一次相容 Android export 通過；修正 `d9e249e` 已發布至 Android preview（OTA group `17c74c48`），runtime 與原 APK 一致；本人其後確認主頁正常，但進入助手時連導航一同空白，並明確澄清沒有閃退／新錯誤報告；這是另一項待定位問題，不以原主頁修正當助手已恢復。
+- 下一步／gate：已加入 Expo Router 原生頁面錯誤／載入出口，僅顯示安全類別與數字位置，保留返回及讀回；診斷更新 `2d6120b` 已發布至同一 preview（group `513bf7d9`），不是已證實的白屏根因修正。定位並修正助手後，再續原已批准的一次聊天讀回（最多 1 run／4 生成／2 embedding，<$0.10，無通知）。尚無本包真模型結果，不標包完成、不合併。需要本人步驟時保留現場，先處理不依賴該結果的工作；同類最小驗收免逐次問，私有發布仍須符合具體授權及工具審查。
 
 <a id="s05-w03"></a>
 #### S05-W03 原生憑據、生命週期與清理
