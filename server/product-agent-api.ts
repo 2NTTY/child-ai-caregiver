@@ -1,3 +1,5 @@
+import { agentFeedbackStream } from './agent-feedback-stream.ts';
+import type { AgentProgress } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
 import type { ProductAgent } from "./product-agent.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
@@ -56,30 +58,37 @@ export async function handleProductAgentRequest(request: Request, userId: string
       const messageId = reply[2].toLowerCase();
       if (reply[3]) return jsonResponse({ accepted: await options.agent.cancelReply(userId, childId, messageId, () => options.isCurrentUser(userId)) });
       const page = await options.chat.listForUser(userId, childId);
-      const old = page?.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
+      if (!page) return apiError("not_found", "找不到可讀取的孩子。", 404);
+      const old = page.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
       if (old) {
         await options.store.bindConfirmationQuestion?.(userId, childId, old.id);
         return await options.isCurrentUser(userId) ? jsonResponse({ message: old }) : apiError("unauthorized", "存取權已改變。", 401);
       }
-      const result = await options.agent.reply(userId, childId, messageId, () => options.isCurrentUser(userId), request.signal);
-      if (!result) return apiError("not_found", "存取權或資料已改變，請重新讀取。", 404);
-      if (result.status === "running") return apiError("ai_busy", "Agent 正在處理這則訊息；請稍後查核原結果。", 429);
-      if (!await options.isCurrentUser(userId)) return apiError("unauthorized", "登入已失效。", 401);
-      // Only a known zero-effect refusal may invite a new message. Confirmation consumption can precede admission.
-      if (result.status === "stopped" && result.stopReason === "busy" && result.countsKnown === true
-        && result.counts.modelCalls === 0 && result.counts.toolCalls === 0 && result.counts.queryEmbeddings === 0
-        && result.tools.length === 0 && result.proposals.length === 0)
-        return apiError("ai_capacity_busy", "AI 正忙碌；原訊息已保存，但未開始處理，也沒有排隊。稍後請以新訊息重新提出要求。", 429);
-      const questions = await options.store.confirmationQuestions?.(userId, childId, result.runId) ?? [];
-      const text = questions.length ? [result.text, ...questions].filter(Boolean).join("\n\n") : result.text || (result.proposals.length
-        ? "Agent 未完成文字回覆，但已保存待你核對的候選；尚未確認的事項不代表已執行。請查看來源與待確認事項。"
-        : result.status === "unknown" ? "這次 Agent 運行中斷，結果未知；沒有自動重新執行。請查核原運行結果。"
-        : "Agent 暫未能完成回覆；原訊息仍已保存。請查看運行狀態及未完成事項。");
-      const saved = await options.chat.createModelMessageForUser(userId, childId, messageId, text);
-      const message = saved ?? (await options.chat.listForUser(userId, childId))?.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
-      if (!message || !await options.isCurrentUser(userId)) return apiError("ai_unavailable", "未能確認回覆保存，請重新讀取。", 503);
-      await options.store.bindConfirmationQuestion(userId, childId, message.id);
-      return jsonResponse({ message: { ...message, agentRunId: result.runId } });
+      const execute = async (signal?: AbortSignal, publish?: (event: AgentProgress) => void): Promise<Response> => {
+        const result = await options.agent.reply(userId, childId, messageId, () => options.isCurrentUser(userId), signal, publish);
+        if (!result) return apiError("not_found", "存取權或資料已改變，請重新讀取。", 404);
+        if (result.status === "running") return apiError("ai_busy", "Agent 正在處理這則訊息；請稍後查核原結果。", 429);
+        if (!await options.isCurrentUser(userId)) return apiError("unauthorized", "登入已失效。", 401);
+        // Only a known zero-effect refusal may invite a new message. Confirmation consumption can precede admission.
+        if (result.status === "stopped" && result.stopReason === "busy" && result.countsKnown === true
+          && result.counts.modelCalls === 0 && result.counts.toolCalls === 0 && result.counts.queryEmbeddings === 0
+          && result.tools.length === 0 && result.proposals.length === 0)
+          return apiError("ai_capacity_busy", "AI 正忙碌；原訊息已保存，但未開始處理，也沒有排隊。稍後請以新訊息重新提出要求。", 429);
+        const questions = await options.store.confirmationQuestions?.(userId, childId, result.runId) ?? [];
+        const text = questions.length ? [result.text, ...questions].filter(Boolean).join("\n\n") : result.text || (result.proposals.length
+          ? "Agent 未完成文字回覆，但已保存待你核對的候選；尚未確認的事項不代表已執行。請查看來源與待確認事項。"
+          : result.status === "unknown" ? "這次 Agent 運行中斷，結果未知；沒有自動重新執行。請查核原運行結果。"
+          : "Agent 暫未能完成回覆；原訊息仍已保存。請查看運行狀態及未完成事項。");
+        const saved = await options.chat.createModelMessageForUser(userId, childId, messageId, text);
+        const message = saved ?? (await options.chat.listForUser(userId, childId))?.messages.find(item => item.role === "model" && item.inReplyTo === messageId);
+        if (!message || !await options.isCurrentUser(userId)) return apiError("ai_unavailable", "未能確認回覆保存，請重新讀取。", 503);
+        await options.store.bindConfirmationQuestion(userId, childId, message.id);
+        return jsonResponse({ message: { ...message, agentRunId: result.runId } });
+      };
+      if (request.headers.get('accept')?.split(',').some(value => value.trim().split(';')[0] === 'text/event-stream'))
+        return agentFeedbackStream(publish => execute(undefined, publish), () => options.isCurrentUser(userId));
+      return await execute(request.signal);
+
     }
     if (run![3]) {
       if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);

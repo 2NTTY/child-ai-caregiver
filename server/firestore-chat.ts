@@ -1,3 +1,4 @@
+import { officialHelpIdSchema, officialHelpFromTools } from '../src/shared/agent-feedback.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -16,7 +17,7 @@ const text = z.string().refine(value => value.trim().length > 0 && value.isWellF
 export const firestoreChatMessageSchema = z.object({
   id: uuid, childId: uuid, authorUserId: z.string().min(1).max(256).nullable(),
   role: z.enum(['user', 'model']), text, inReplyTo: uuid.nullable(), createdAt: datetime,
-  agentRunId: uuid.optional(),
+  agentRunId: uuid.optional(), officialHelp: z.array(officialHelpIdSchema).max(2).optional(),
 }).strict();
 const inputSchema = z.object({ text }).strict();
 const messagePath = /^\/api\/children\/([0-9a-f-]{36})\/messages$/iu;
@@ -121,7 +122,7 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions): Fires
           if (run.id !== runId || run.sourceMessageId !== inReplyTo || run.childId !== childId
             || run.ownerUserId !== userId || run.authorizationVersion !== binding.authorizationVersion
             || run.storageEpoch !== binding.scope.storageEpoch || run.state === 'running') domainReject('agent_reply_binding');
-          saved = { ...message, agentRunId: runId };
+          saved = { ...message, agentRunId: runId, officialHelp: officialHelpFromTools(run.result?.tools ?? []) };
         }
         const write = await prepare(binding, saved, saved.id);
         const marker = data.seal('chat-reply', replyId, binding.scope, z.object({ messageId: uuid }).strict(), { messageId: message.id });

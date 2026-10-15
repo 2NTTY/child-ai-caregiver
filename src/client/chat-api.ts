@@ -1,3 +1,5 @@
+import { officialHelpIdSchema, type AgentProgress } from '../shared/agent-feedback.ts';
+import { readAgentFeedback } from './agent-feedback-reader.ts';
 import type { ChatMessage, ChatPage } from "../shared/chat.ts";
 import type { OnlineReceipt } from "../shared/online.ts";
 import type { SessionUser } from "./records-api.ts";
@@ -41,7 +43,8 @@ export interface ChatApi {
   listMessages(childId: string, signal: AbortSignal, before?: string | null): Promise<ChatPage>;
   cancelReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<boolean>;
   saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string): Promise<ChatMessage>;
-  requestReply(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<ChatMessage>;
+  requestReply(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string, onProgress?: (event: AgentProgress) => void): Promise<ChatMessage>;
+  getReplyState?(childId: string, runId: string, signal: AbortSignal, expectedUserId: string): Promise<"running" | "completed" | "stopped" | "unknown">;
   getStatus(signal: AbortSignal): Promise<boolean>;
   getUsage(signal: AbortSignal): Promise<ChatUsage>;
   reconcilePending?(signal: AbortSignal, userId: string): Promise<OnlineReceipt | { state: "unconfirmed" } | null>;
@@ -62,6 +65,7 @@ function message(value: unknown): value is ChatMessage {
     && (value.authorUserId === null || id(value.authorUserId))
     && (value.role === "user" || value.role === "model")
     && (value.agentRunId === undefined || id(value.agentRunId))
+    && (value.officialHelp === undefined || Array.isArray(value.officialHelp) && value.officialHelp.length <= 2 && value.officialHelp.every(card => officialHelpIdSchema.safeParse(card).success))
     && typeof value.text === "string"
     && (value.inReplyTo === null || id(value.inReplyTo))
     && typeof value.createdAt === "string" && Number.isFinite(Date.parse(value.createdAt))
@@ -94,7 +98,7 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
     }
   }
 
-  async function request(path: string, signal: AbortSignal, body?: unknown, expectedUserId?: string, timeoutMs = 20_000): Promise<unknown> {
+  async function request(path: string, signal: AbortSignal, body?: unknown, expectedUserId?: string, timeoutMs = 20_000, onProgress?: (event: AgentProgress) => void): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();
     signal.addEventListener("abort", abort, { once: true });
@@ -106,7 +110,7 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
         credentials: "include",
         cache: "no-store",
         headers: {
-          Accept: "application/json",
+          Accept: onProgress ? "text/event-stream" : "application/json",
           ...(body === undefined ? {} : { "Content-Type": "application/json" }),
           ...(expectedUserId === undefined ? {} : { "x-expected-user-id": expectedUserId }),
         },
@@ -121,6 +125,14 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
             && knownCodes.has(value.error.code as ChatErrorCode)) code = value.error.code as ChatErrorCode;
         } catch { /* The status is still available when the body is malformed. */ }
         throw new ChatApiError(response.status, code);
+      }
+      if (onProgress && response.headers.get('content-type')?.startsWith('text/event-stream')) {
+        const result = await readAgentFeedback(response, onProgress);
+        if (result.status < 200 || result.status >= 300) {
+          const body = result.body, code = object(body) && object(body.error) && knownCodes.has(body.error.code as ChatErrorCode) ? body.error.code as ChatErrorCode : null;
+          throw new ChatApiError(result.status, code);
+        }
+        return result.body;
       }
       return await response.json();
     } catch (error) {
@@ -159,12 +171,22 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
       }
       return value.message;
     },
-    async requestReply(childId, messageId, signal, expectedUserId) {
+    async requestReply(childId, messageId, signal, expectedUserId, onProgress) {
+      let runId: string | undefined;
       const value = await request(`/children/${encodeURIComponent(childId)}/messages/${encodeURIComponent(messageId)}/reply`,
-        signal, {}, expectedUserId, 90_000);
+        signal, {}, expectedUserId, 90_000, onProgress ? event => {
+          if (event.messageId !== messageId || runId && event.runId !== runId) throw new ChatApiError();
+          runId = event.runId; onProgress(event);
+        } : undefined);
       if (!object(value) || !message(value.message) || value.message.childId !== childId
         || value.message.role !== "model" || value.message.inReplyTo !== messageId) throw new ChatApiError();
       return value.message;
+    },
+    async getReplyState(childId, runId, signal, expectedUserId) {
+      const value = await request(`/children/${encodeURIComponent(childId)}/agent/runs/${encodeURIComponent(runId)}`, signal, undefined, expectedUserId);
+      if (!object(value) || !object(value.result) || value.result.runId !== runId
+        || !['running', 'completed', 'stopped', 'unknown'].includes(String(value.result.status))) throw new ChatApiError();
+      return value.result.status as 'running' | 'completed' | 'stopped' | 'unknown';
     },
     async getStatus(signal) {
       const value = await request("/ai/status", signal);

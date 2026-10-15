@@ -1,3 +1,5 @@
+import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
+import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type PressableStateCallbackType, type ScrollView as NativeScrollView } from "react-native";
@@ -75,7 +77,8 @@ function ChatContents({ compact }: { compact: boolean }) {
     {chat.available === false ? <Text style={styles.meta}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
     {!chat.online ? <Text accessibilityRole="alert" style={styles.warning}>{chat.messages.length ? "目前離線，所示聊天是上次讀取的快照；草稿仍保留。" : "目前離線，草稿仍保留。"}</Text> : null}
     {chat.loading && chat.messages.length || busy ? <View style={styles.statusRow}><ActivityIndicator size={14} color={chatColors.secondary} />
-      <Text accessibilityLiveRegion="polite" style={styles.meta}>{chat.busy === "save" ? "正在保存…" : chat.busy === "reply" ? "已保存，正在等候回覆…" : "正在讀取聊天…"}</Text></View> : null}
+      <Text accessibilityLiveRegion="polite" style={styles.meta}>{chat.busy === "save" ? "正在保存…" : chat.busy === "reply" ? (chat.feedback ? AGENT_PROGRESS_LABELS[chat.feedback.phase] : "已保存，正在等候回覆…") : "正在讀取聊天…"}</Text></View> : null}
+    {chat.busy === "reply" && chat.feedback?.cards.length ? <OfficialHelpCards ids={chat.feedback.cards} /> : null}
     {chat.error ? <Text accessibilityRole="alert" style={styles.warning}>{chat.error}</Text> : null}
     {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
     {chat.replyError && chat.replyError !== draft?.notice ? <Text accessibilityRole="alert" style={styles.warning}>{chat.replyError}</Text> : null}
@@ -121,6 +124,7 @@ function ChatContents({ compact }: { compact: boolean }) {
           phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? run.citations : undefined }}
           phaseLabel={run?.status === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
+          header={message.role === "model" && message.officialHelp?.length ? <OfficialHelpCards ids={message.officialHelp} /> : undefined}
           degraded={run?.retrievalMode === "keyword_degraded"} footer={<>
             {message.agentRunId ? <ChatAction label="詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
               disabled={!chat.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"}

@@ -18,3 +18,5 @@ description: 準備或修改 GCP 單 VM 的 Docker Compose Web／Node／PostgreS
 - Compose CLI v5 與 v2 使用相同 Compose Specification 及 `docker compose` 操作；v5 主要加入 Go SDK，不要與舊 YAML 2.x／3.x 格式混淆。重大版本仍按受影響功能核對；本次 v5.5.1 實際 config／啟動通過。[官方版本說明](https://docs.docker.com/compose/intro/history/)
 
 - 經反向代理部署身份驗證時，入口先覆寫用戶端 IP header，Server 只信任明確配置的代理 socket peer；直接存取預設不信任轉送 header，且不能把所有訪客合併成代理 IP 的限流桶。Better Auth 1.7.5 可用 `customRules` 排除唯讀 `/get-session`，保留登入／註冊限流；暫時 429／連線錯誤不代表會話已失效。官方機制與單元行為已核對，實際代理接線另以部署驗收為準。[Better Auth rate limits／proxy trust](https://better-auth.com/docs/concepts/rate-limit)
+
+- Node／Caddy 的 SSE 要沿 Web Response body → Node stream pipeline 轉送，不先收齊 arrayBuffer。Caddy 2.11.4 原生辨識 text/event-stream 即時 flush，encode 遵守 no-transform；一般無須另建 SSE proxy 或 WebSocket。2026-10-15 核對固定版 [streaming.go](https://github.com/caddyserver/caddy/blob/v2.11.4/modules/caddyhttp/reverseproxy/streaming.go)／[encode.go](https://github.com/caddyserver/caddy/blob/v2.11.4/modules/caddyhttp/encode/encode.go)，本機 Node 正式 transport 已驗；實際公開代理鏈須按部署核對，不能以文件代替。渠道中斷與業務取消分開，終態以原 run／收據為準。

@@ -1,3 +1,4 @@
+import type { AgentProgress } from '../src/shared/agent-feedback.ts';
 import { selectRecentConversation } from './agent-context-window.ts';
 import type { MemoryStore } from "./memory.ts";
 import type { TaskStore } from "./tasks.ts";
@@ -103,7 +104,7 @@ export function createProductAgent(options: {
       if (!await input.authorize() || !await options.store.finish(claim.scope, value)) return null;
       return options.store.get(input.userId, input.childId, claim.runId);
     },
-    async reply(userId: string, childId: string, messageId: string, isCurrentUser: () => Promise<boolean>, signal?: AbortSignal): Promise<ProductAgentResult | null> {
+    async reply(userId: string, childId: string, messageId: string, isCurrentUser: () => Promise<boolean>, signal?: AbortSignal, onProgress?: (event: AgentProgress) => void): Promise<ProductAgentResult | null> {
       const page = await options.chat.listForUser(userId, childId);
       const index = page?.messages.findIndex(item => item.id === messageId && item.role === "user") ?? -1;
       if (!page || index < 0 || !await isCurrentUser()) return null;
@@ -118,6 +119,11 @@ export function createProductAgent(options: {
         const original = await options.store.get(userId, childId, claim.runId);
         return await isCurrentUser() ? original : null;
       }
+      const shown = new Set<string>();
+      const publish = (phase: AgentProgress['phase'], card?: AgentProgress['card']) => {
+        try { onProgress?.({ runId: claim.runId, messageId, phase, ...(card ? { card } : {}) }); } catch { /* Observation cannot change execution. */ }
+      };
+      publish('started');
       const recent = selectRecentConversation(page.messages, index);
       const cancellation = new AbortController(), key = replyKey(userId, childId, messageId);
       activeReplies.set(key, cancellation);
@@ -127,6 +133,11 @@ export function createProductAgent(options: {
       const rendered: { value: AgentPresentation | null } = { value: null };
       let confirmationPendingFallbackUsed = false;
       const result = await options.runtime.run({
+        onDiagnostic: event => {
+          if (event.phase === "model_start") publish("model");
+          else if (event.phase === "tool_start") publish(event.tool?.includes("knowledge") ? "searching" : event.tool?.startsWith("read_") || event.tool?.startsWith("search_") ? "reading" : "working");
+          else if (event.phase === "tool_end") publish("tool_finished");
+        },
         scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt), deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
         ...(options.memory.initialConversationSummary ? { readConversationSummary: async () => {
@@ -145,7 +156,7 @@ export function createProductAgent(options: {
         messages: recent.messages.map(item => ({ role: item.role, text: item.text })),
         toolCatalog: PRODUCT_AGENT_TOOL_CATALOG,
         tools: run => {
-          tools = createProductAgentTools({ ...options, includeDocuments: true, run, authorize });
+          tools = createProductAgentTools({ ...options, includeDocuments: true, run, authorize, onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", card); } } });
           return tools.tools;
         }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
         finalize: async (result, _context, reason) => {

@@ -1,3 +1,5 @@
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { ServerAuthPort } from './auth-port.ts';
 import type { TelegramConfig } from './telegram-types.ts';
@@ -44,7 +46,11 @@ async function write(response: Response, target: ServerResponse) {
   response.headers.forEach((value, key) => { if (key !== 'set-cookie') target.setHeader(key, value); });
   const cookies = response.headers.getSetCookie(); if (cookies.length) target.setHeader('set-cookie', cookies);
   target.setHeader('cache-control', 'private, no-store'); target.setHeader('x-content-type-options', 'nosniff');
-  target.end(Buffer.from(await response.arrayBuffer()));
+  if (response.headers.get('content-type')?.startsWith('text/event-stream') && response.body) {
+    target.setHeader('cache-control', 'private, no-store, no-transform');
+    target.flushHeaders();
+    await pipeline(Readable.fromWeb(response.body as import('node:stream/web').ReadableStream), target);
+  } else target.end(Buffer.from(await response.arrayBuffer()));
 }
 const failure = (code: string, status: number) => Response.json({ code }, { status });
 
