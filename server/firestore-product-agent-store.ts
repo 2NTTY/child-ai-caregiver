@@ -109,7 +109,7 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
     requestConfirmation: confirmations.requestConfirmation, confirmationQuestions: confirmations.confirmationQuestions,
     bindConfirmationQuestion: confirmations.bindConfirmationQuestion, consumeConfirmation: confirmations.consumeConfirmation,
     recordedConfirmation: confirmations.recordedConfirmation,
-    claim: runs.claim, authorize: runs.authorize, cancelReply: runs.cancelReply, finish: runs.finish,
+    replyState: runs.replyState, claim: runs.claim, authorize: runs.authorize, cancelReply: runs.cancelReply, finish: runs.finish,
     propose: proposals.propose, decide: proposals.decide, pendingProposals: proposals.pendingProposals, backgroundRuns: runs.backgroundRuns,
     get: (userId, childId, runId) => runs.result(userId, childId, runId, { read: project }),
     readCancelled: (scope, runId) => runs.result(scope.userId, scope.childId, runId, { read: async (b, run, result) => {

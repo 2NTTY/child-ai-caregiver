@@ -2868,3 +2868,11 @@
 - 版本／方法：S05 `95f1f6f` 上獨立分支；Expo 57.0.24、expo-network 57.0.2（MIT）。React Native AbortSignal 缺 Web 靜態方法，改可清理 request controller，保留十秒期限及身份清理。
 - 實際結果：一條合成游標／失聯／遲到回應情景通過（8 次唯讀替身），兩個型別入口零診斷；沒有真機、雲端、模型或全量測試。[EV](artifacts/verification/S07_NATIVE_ONLINE_20261016.json)。
 - 未驗／交付：新套件需新 APK，不向舊 runtime 發 OTA；真機與 S04／S05 合併門檻保留。使用者離開時先準備後續獨立能力，不把本機結果當成手機通過。B 單作者交付，主模型 review，沒有子代理。
+
+
+## LOG-20261016-S09 — 跨設備原運行查回準備
+
+- 沿 S07 `887edaf` 準備 S09：新增原訊息唯讀狀態接口，Firestore 交易核身份／孩子／原訊息／授權／epoch，點讀原 claim。Web／Android 同一 controller 可重開發現原 run、前景核對及讀回正式結果；已存在的運行不重新 POST，原取消／候選接口保留。
+- 共用薄畫面顯示處理中／真停止原因及原結果入口，不用另一份任務或聊天副本；最後一則未回覆訊息有界自動查核，舊訊息按需。未發送草稿只在本機，身份／孩子切換清私人投影。
+- 首次正式 HTTP 情景在錯孩子斷言停止：Firestore authority 403 未映射，回 generic 503。局部將新讀取方法的無權／缺失範圍轉不披露的 404；保留失敗後只補同一情景，通過。原有 3 次 scripted run／4 次生成，沒有增加 execution POST；另 4 個 Server／client 及 2 個 UI 型別入口零診斷。[EV](artifacts/verification/S09_CROSS_DEVICE_RECOVERY_20261016.json)。
+- 零真模型、手機、雲端或部署。S04／S05／S07 前置及 API／新 APK／真機仍待交付；不把本機替身當實際手機通過。B 單作者，主模型實作／review，無子代理。

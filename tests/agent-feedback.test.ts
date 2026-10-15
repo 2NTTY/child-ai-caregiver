@@ -15,6 +15,8 @@ import {createFirestoreAgentRuns} from '../server/firestore-agent-runs.ts';
 import {createFirestoreProductAgent} from '../server/firestore-product-agent.ts';
 import {createFirebaseNodeHandler} from '../server/firebase-http.ts';
 import {handleProductAgentRequest} from '../server/product-agent-api.ts';
+import {ChatController} from '../src/client/chat-controller.ts';
+import {handleChatRequest} from '../server/chat-api.ts';
 import {createChatApi} from '../src/client/chat-api.ts';
 import {readAiConfig} from '../server/ai-config.ts';
 import {SERVICE_POLICY_VERSION} from '../src/shared/account-service.ts';
@@ -50,11 +52,12 @@ test('formal HTTP streams real Runner progress before saving and disconnect read
   let origin='',posts=0;
   const server=createServer((req,res)=>{void createFirebaseNodeHandler({publicOrigin:origin,auth:{fromNodeHeaders(headers){
     const value=new Headers();for(const [key,item]of Object.entries(headers))if(typeof item==='string')value.set(key,item);return value;
-  }},handler:request=>{if(request.method==='POST')posts++;return handleProductAgentRequest(request,'owner',{agent:product.agent,store:product.store,chat,isCurrentUser:async()=>true});}})(req,res);});
+  }},handler:request=>{if(request.method==='POST')posts++;if(new URL(request.url).pathname.endsWith('/messages'))return handleChatRequest(request,'owner',chat);return handleProductAgentRequest(request,'owner',{agent:product.agent,store:product.store,chat,isCurrentUser:async()=>true});}})(req,res);});
   await new Promise<void>(r=>server.listen(0,'127.0.0.1',r));origin='http://127.0.0.1:'+(server.address() as {port:number}).port;
   const api=createChatApi(origin,async()=>({id:'owner',name:'Owner',email:'owner@example.test'}),(input,init)=>fetch(input,{...init,headers:{...init?.headers,origin}}));
   try {
     const original=await chat.createUserMessageForUser('owner',child.id,'我想整理用藥方面要問醫生的問題。');
+    assert.equal(await api.getOriginalReply!(child.id,original!.id,new AbortController().signal,'owner'),null);
     const progress:string[]=[],seen=deferred<void>();
     const response=api.requestReply(child.id,original!.id,new AbortController().signal,'owner',event=>{progress.push(event.phase);if(event.card)seen.resolve();});
     await seen.promise;
@@ -69,7 +72,25 @@ test('formal HTTP streams real Runner progress before saving and disconnect read
     const interrupted=await fetch(origin+`/api/children/${child.id}/messages/${ordinary!.id}/reply`,{method:'POST',headers:{origin,accept:'text/event-stream','content-type':'application/json','x-expected-user-id':'owner'},body:'{}'});
     const reader=interrupted.body!.getReader(),first=new TextDecoder().decode((await reader.read()).value);
     const initial=JSON.parse(first.split('data: ')[1].split('\n\n')[0]);assert.equal(initial.type,'progress');
-    await reader.cancel();gate.resolve();await saved.promise;
+    await reader.cancel();
+    // A fresh device has no run ID or local draft. It discovers the original operation by saved message identity.
+    const reopened = new ChatController({...api,getStatus:async()=>true,getUsage:async()=>({day:'2026-10-16',attempts:0,inputTokens:0,outputTokens:0,cachedTokens:0,unknownUsageAttempts:0})});
+    const recovered=deferred<void>();const stop=reopened.subscribe(()=>{if(reopened.getSnapshot().remoteReply?.status==='running'&&!reopened.getSnapshot().loading)recovered.resolve();});
+    reopened.syncContext('owner',true,child.id);await recovered.promise;stop();
+    assert.equal(reopened.getSnapshot().remoteReply?.runId,initial.progress.runId);
+    reopened.setText('這是另一設備未發送的草稿');
+    await reopened.requestReply(ordinary!.id);
+    assert.equal(posts,2,'checking an existing run cannot POST another execution');
+    assert.equal(reopened.getSnapshot().drafts[child.id]?.text,'這是另一設備未發送的草稿');
+    await assert.rejects(api.getOriginalReply!(child.id,ordinary!.id,new AbortController().signal,'different-user'),error=>(error as {status:number}).status===409);
+    await assert.rejects(api.getOriginalReply!(randomUUID(),ordinary!.id,new AbortController().signal,'owner'),error=>(error as {status:number}).status===404);
+    gate.resolve();await saved.promise;
+    await reopened.refreshOriginalReply();
+    assert.ok(reopened.getSnapshot().messages.some(item=>item.inReplyTo===ordinary!.id));
+    assert.equal(reopened.getSnapshot().remoteReply,null);
+    assert.equal(reopened.getSnapshot().drafts[child.id]?.text,'這是另一設備未發送的草稿');
+    reopened.syncContext('different-user',false,null);
+    assert.deepEqual(reopened.getSnapshot().messages,[]);assert.deepEqual(reopened.getSnapshot().drafts,{});reopened.dispose();
     assert.equal(await api.getReplyState!(child.id,initial.progress.runId,new AbortController().signal,'owner'),'completed');
     const second=(await chat.listForUser('owner',child.id))!.messages.find(m=>m.inReplyTo===ordinary!.id)!;
     assert.deepEqual(second.officialHelp,[]);assert.equal(posts,2);assert.equal(calls,3);

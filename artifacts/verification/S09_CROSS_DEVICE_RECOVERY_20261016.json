@@ -1,0 +1,47 @@
+{
+  "workPackage": "S09-W03",
+  "recordedOn": "2026-10-16",
+  "base": "887edaf",
+  "failures": [
+    {
+      "test": "formal HTTP",
+      "result": "stopped at wrong-child refusal assertion",
+      "cause": "New read endpoint did not translate FirestoreAuthorityError, returning generic 503 instead of a scope refusal",
+      "resolution": "Map authority 403/404 to non-disclosing 404 in the new read-only store method; never treat denied scope as no existing run"
+    }
+  ],
+  "status": "implemented-and-locally-verified; delivery-and-device-pending",
+  "realModelCalls": 0,
+  "cloudCalls": 0,
+  "phoneActions": 0,
+  "checks": [
+    {
+      "kind": "formal HTTP / real ADK Runner / scripted provider / memory Firestore adapter",
+      "test": "formal HTTP streams real Runner progress before saving and disconnect reads the original result without another run",
+      "pass": 1,
+      "existingRuns": 3,
+      "scriptedGenerations": 4,
+      "executionPosts": 3,
+      "scope": [
+        "fresh controller discovers original run without local run ID",
+        "manual check never posts an existing run",
+        "original result recovered after channel disconnect",
+        "unsent local draft preserved",
+        "wrong identity/child refused",
+        "identity change clears private projection"
+      ]
+    },
+    {
+      "kind": "targeted types",
+      "serverClientRoots": 4,
+      "uiRoots": 2,
+      "diagnostics": 0
+    }
+  ],
+  "limits": [
+    "No actual phone lifecycle/FCM/voice acceptance",
+    "No new API or client deployment",
+    "No true model quality or Firestore contention claim",
+    "Existing unrelated domain behavior reused, not a page-by-page retest"
+  ]
+}
