@@ -42,6 +42,15 @@
       "result": "blocked",
       "reason": "Expo CLI not logged in; stopped before archive/upload/build",
       "logSha256": "3d9e3eae949a8ae9069ef253308109605035d88bfab7ec052e3a9b9200ec4bdb"
+    },
+    {
+      "name": "Existing Firebase client configuration",
+      "result": "native-configuration-gap",
+      "readOnly": true,
+      "projectId": "ai-caregivers-for-children",
+      "publicConfigComplete": true,
+      "browserRestricted": true,
+      "note": "Current Web key cannot be reused by the native JS transport; its restrictions remain unchanged. A separate Auth-only client key is pending the concrete cloud setup scope. No key material retained in this evidence."
     }
   ],
   "sourceSha256": {
@@ -57,7 +66,7 @@
     "frontend/src/production/ProductionOwner.ts": "8beb131e2812cc4e3dabcc3885ee853a5c70c8989cc5665bc9f0b671c0924d4d",
     "tests/firebase-auth.test.ts": "141cc3e03eb8cceacbc25acba7ab8346e7ea6cf717e4ef553d80a5d0186c124b",
     "frontend/app.json": "a81f272b8699ebeb46b2d0e342be78b06df65508e0fdec282d4f201acfe7cf4e",
-    "frontend/app.config.js": "01a9783f761223f9fe682e71f8762d10e3f2616e9b1b3e284855a41f9b2e3cae",
+    "frontend/app.config.js": "c89bd45cfcf3fd60495d85cac64a6a9acf91231b6ef325881da4ac5c8f99f91d",
     "frontend/eas.json": "bb25d4d31ab04a0c9c9bea4d6edfa0683b66d322d4faa617bdeca26f7722e649",
     "package-lock.json": "46d3725e8c611104b17731e16560c258f18b83ad6027d1d7ddb67aecfa4d225d"
   },
@@ -70,6 +79,7 @@
   },
   "remaining": [
     "Expo login and linked project; inspect actual archive before approving private source upload",
+    "Configure and verify a separate native-compatible Auth-only public key; do not weaken the Web key restrictions",
     "Cloud preview APK and signing",
     "Compatible Server deployment and one real Android login/child/chat/save/readback",
     "S05/S07 and later packages remain separate; no iOS or full Android acceptance"

@@ -271,3 +271,5 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 沿 `expo/fetch` 的原生 ReadableStream，固定版本 Android 實作已核對 `credentials: omit` 關閉 CookieJar、`redirect: error` 不跟隨重導向；自訂薄 transport 只補本產品 origin／身份與遲到回應規則。Firebase [Server session](https://firebase.google.com/docs/auth/admin/manage-cookies) 仍驗 issuer／撤銷／到期，產品另保持逐裝置 ledger；不能只持有 SDK ID token 便略過邀請。必要合成檢查及 Android bundle 與 APK／真機結果分開，後者依 PLAN 門檻交付。
 
 Android 的 React Native／Expo runtime 未提供共用程式需要的 `crypto.randomUUID`；只在原生啟動時以 [Expo Crypto](https://docs.expo.dev/versions/latest/sdk/crypto/) 補安全隨機方法，不改 Web、不使用 Math.random，也不宣稱提供完整 WebCrypto。瀏覽器 changes event 不在原生執行，AppState 接續依 S07-W01。
+
+Firebase JS 13.0.0 的 React Native `_getAdditionalHeaders` 沒有 Android package／cert header；既有 Web key 的 referrer restriction 不適用原生請求。依 [Firebase API key 指引](https://firebase.google.com/docs/projects/api-keys)，不同平台可用同一專案的獨立公開 key，只開 Authentication 所需 API，不加入 Gemini／業務資料權限。保留既有 Web key 限制，不覆寫 SDK 私有方法、不偽造瀏覽器來源；原生設定是否生效仍須實際接線驗收。

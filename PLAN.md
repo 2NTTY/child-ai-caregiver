@@ -1027,7 +1027,7 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 - 前置：P2-R04、S06-W05；文件 #228 合併後開工基線 `4f88948`，不依賴 STR01／三角色／iOS。
 - 交付：正式 App ID／API base、EAS Build／Update 基礎；共同 transport、Firebase 原生會話交換／SecureStore，正式 owner 的身份／資料接線。APK 登入、孩子、首條聊天及保存讀回；保留 Web Cookie，不能以假 Origin 取得原生權限。
 - 已驗：同一合成原生交換／重開／撤銷情景經正式 Node／API；受影響型別及 Android Hermes bundle 通過。未呼叫真模型、通知或雲端 build，[證據](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
-- 下一步／gate：Expo 本機登入（使用者帳號已準備）→ 連結 project、核實上載 archive／配置 → 具體雲端傳送與建置範圍 → 相容 Server 部署與一部手機登入／孩子／首條聊天。CLI 尚未登入，archive 檢查已停止；不以 bundle 當 APK，不開依賴包或重跑大量預覽測試。
+- 下一步／gate：Expo 本機登入（使用者帳號已準備）→ 連結 project、核實上載 archive／原生 Auth 專用設定（現有 Web key 有 referrer 限制）→ 具體雲端傳送與建置範圍 → 相容 Server 部署與一部手機登入／孩子／首條聊天。CLI 尚未登入，archive 檢查已停止；不以 bundle 當 APK，不開依賴包或重跑大量預覽測試。
 
 <a id="s05-w03"></a>
 #### S05-W03 原生憑據、生命週期與清理

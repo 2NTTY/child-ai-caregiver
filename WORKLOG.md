@@ -2692,3 +2692,10 @@
 - Result：原生 token 交換、獨立 ledger hash domain、SecureStore、指定 origin／拒重導 transport；Web Cookie／Origin 及原身分／撤銷規則保留。共同 owner、聊天與各域 client 注入相同 transport，管理 API 不向原生開放。EAS／App ID／runtime 基礎及 archive allowlist 已備妥，原生安全隨機由 Expo Crypto 提供；沒有手機業務主庫。
 - Verification：同一登入／讀回／撤銷情景先驗 auth port，再擴至正式 Node／API 入口通過；最後受影響 31 個型別 roots 為 0 diagnostics。Android bundle 首次通過後，source review 發現原生缺 crypto.randomUUID 及 Web-only event guard，補官方 native 接點後更新 bundle 通過。不做全量或畫面矩陣；無真模型／embedding／通知／部署。[版本與結果](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
 - Limits / Next：Expo 帳號已準備，但 CLI 未登入，EAS archive 檢查在登入要求停止，零上載／雲端建置；不能當 APK 或真機完成。等待本人登入後核 archive、project 及具體建置授權，再部署相容 Server 並做手機首條流程。S04-W01 保持未完成，後續包未開始；既有備份待驗及 STR01 交接不變。
+
+
+<a id="log-20261015-android-config-preflight"></a>
+### 2026-10-15 — S04-W01 原生 Firebase 配置缺口核實
+
+- 唯讀取得目前 Firebase 公開 key 的限制：現有 Web key 帶 browser referrer restriction，不能直接給原生 JS SDK 使用；SDK 13.0.0 的 React Native 額外 headers 亦沒有 Android package／cert 欄位。沒有修改 key、IAM、配額或建立資源。
+- 雲端 build 配置補完整 Firebase 環境與 HTTPS API 檢查，避免產出已知無法登入的 APK；部署交接列同專案 Auth-only 專用 key 的最小範圍，保留 Web 限制。這是已核實配置缺口，不是 Android 登入通過。Expo CLI 仍未登入；原生 key／archive／APK／部署／真機保持待驗，不重跑既有 bundle 或產品測試。
