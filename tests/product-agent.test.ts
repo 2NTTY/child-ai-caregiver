@@ -166,7 +166,7 @@ for (const growth of [false, true]) test(growth
         : index === 2 ? { id: "answer-call", name: "present_answer", args: { kind: "record_restatement",
           paragraphs: growth ? [{ text: "配方奶也不足，而且要立即加固。", citationIds: [chunk.chunkId] },
             { text: "另一項未經核對的照護建議。", citationIds: [] }]
-            : [{ text: "原任務已到期，完成狀態仍待你確認。", citationIds: [] }] } } : null;
+            : [{ text: "任務已到期，完成狀態仍待你確認。", citationIds: [] }] } } : null;
       return { content: { role: "model", parts: functionCall ? [{ functionCall }] : [{ text: "完成說明。" }] }, finishReason: FinishReason.STOP };
     } } });
   const options = { runtime,
@@ -190,6 +190,6 @@ for (const growth of [false, true]) test(growth
     context: { eventType: growth ? "growth_attention" : "task_due", purpose: "station_only_due_task_briefing" }, authorize: async () => true });
   assert.equal(result?.status, "completed", JSON.stringify(result));
   assert.equal(result.provenance?.recipeId, "product-background");
-  assert.equal(result.text, growth ? chunk.text + " [1]" : "原任務已到期，完成狀態仍待你確認。");
+  assert.equal(result.text, growth ? chunk.text + " [1]" : "任務已到期，完成狀態仍待你確認。");
   assert.equal(reads, 1); assert.equal(calls, 3); assert.deepEqual(result.proposals, []);
 });

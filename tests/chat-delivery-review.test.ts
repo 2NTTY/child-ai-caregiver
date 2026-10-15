@@ -214,12 +214,13 @@ function product(script: Script, options: { reviewCalls?: 4 | 6; bound?: boolean
       bindDurableRun: (input, pack, limits) => {
         assert.equal(limits.modelCalls, 4);
         assert.equal(AGENT_LIMITS.modelCalls, 4);
+        assert.equal(limits.toolCalls, AGENT_LIMITS.toolCalls);
         const deadlineAtMs = input.deadlineAtMs ?? Date.parse(expiresAt);
         const context: RootBudgetContext = { generation: 1, binding: {
           rootRunId: runId, ownerId: userId, workspaceId: scope.workspaceId, childId, authorizationVersion: "1", storageEpoch: "epoch",
           trigger: { kind: "interactive", reference: messageId }, workflowVersion: "workflow", promptPackVersion: pack,
           settingsVersion: "fixed-settings", billingVersion: "fixed-billing",
-          limits: { modelCalls: 4, toolCalls: 8, queryEmbeddings: 2 }, deadlineAtMs,
+          limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings }, deadlineAtMs,
         } };
         const snapshot: RootBudgetSnapshot = { generation: 1, deadlineAtMs, limits: { ...context.binding.limits },
           used: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 }, status: "active", attempts: [] };
