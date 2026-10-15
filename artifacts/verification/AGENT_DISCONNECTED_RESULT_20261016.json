@@ -47,5 +47,17 @@
     "full suite",
     "cloud database mutation"
   ],
-  "deployment": "pending"
+  "deployment": {
+    "at": "2026-10-15T17:13:54Z",
+    "source": "8d3fc29e30affcdf2d68ef3016d49d407ee8a6c4",
+    "apiWorker": "reply-8d3fc29",
+    "image": "sha256:2a7186cae9a18dbbfe1470665d0279be6f8866d70f25b3dadb9cdf363cc0df42",
+    "web": "s04-8992ce9 unchanged",
+    "checks": "API/worker healthy; public health passed; patch manifest checked before image creation",
+    "bytes": 7382,
+    "modelCalls": 0,
+    "notifications": 0,
+    "migration": false,
+    "deviceAcceptance": "user-owned, pending"
+  }
 }

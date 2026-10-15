@@ -71,7 +71,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ### 當前任務入口
 
-目前先修正 S04 回覆斷線／收尾阻塞：分支 `codex/fix-agent-disconnected-results`，基線 master `7d1ccd6`。關閉 App 只中止回饋連線；期限停止執行但不丟棄原執行者的結果／停止原因。已保存終態、明確取消、撤權及原操作防重維持。正式 HTTP／真 Runner scripted 斷線及同一 Firestore 結果收尾兩項檢查通過，受影響三個根檔型別零錯誤；不重發使用者聊天，部署待本包交付；管理員總控增補保留於 `codex/admin-agent-run-limits`，本修正後接續。#231 預算修正已部署，證據見 #229 的 `90719cb`。
+目前先修正 S04 回覆斷線／收尾阻塞：分支 `codex/fix-agent-disconnected-results`，基線 master `7d1ccd6`。關閉 App 只中止回饋連線；期限停止執行但不丟棄原執行者的結果／停止原因。已保存終態、明確取消、撤權及原操作防重維持。正式 HTTP／真 Runner scripted 斷線及同一 Firestore 結果收尾兩項檢查通過，受影響三個根檔型別零錯誤；不重發使用者聊天；#232 已合併並部署 `reply-8d3fc29`，API／worker／公開 health 通過；管理員總控增補保留於 `codex/admin-agent-run-limits`，本修正後接續。#231 預算修正已部署，證據見 #229 的 `90719cb`。
 
 當前入口：[S04-W01 共用原生基礎與 Android 首條流程](#s04-w01)。使用者於 2026-10-15 批准 [Web／Android 共用產品及 Android 成品計劃](#p3-mobile)；文件已於 #228 合併，S04-W01 正在接正式 Android 身份、transport 與首條聊天。Web／Android 共用功能及同一權威資料，新增語音兩端同時接通；Android 完成後才開始 iOS。開工基線 master `21e848b`（#227），原站程式 `b1d1565`／Prompt Pack 0.1.43；不把 master 當成已部署。
 

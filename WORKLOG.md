@@ -2832,3 +2832,9 @@
 - 修正 Firestore 把執行期限套用到結果保存的缺陷；到期禁止新工作，原執行者仍可結清原結果。已取消、已有結果、撤權與世代檢查保持。JSON 與 SSE 同樣脫離連線取消；只有明確取消改原 run。
 - 正式 HTTP／真 Runner scripted 與 Firestore fixture 兩項定向檢查通過；受影響三個根檔型別零錯誤，diff check 通過。零真模型、通知、瀏覽器／裝置操作，未重發使用者訊息。
 - C 單作者主責；main model 實作及 review。部署待交付，首條聊天仍由使用者驗收；管理員總控後續接續。證據：[EV](artifacts/verification/AGENT_DISCONNECTED_RESULT_20261016.json)。
+
+
+## LOG-20261016-AGENT-DISCONNECTED-DEPLOY
+
+- #232 由 C 單作者提交、推送及合併；開發提交 unsigned。S04 由 B 整合至 `8d3fc29`，保留原生登入及直接錯誤文案。2026-10-15 17:13:54 UTC 部署原 VM API／worker `reply-8d3fc29`，兩容器及公開 health 通過；Web／Android、資料、配額、期限不變。
+- 7,382 bytes、兩個 source 檔 hash／既有映像身份核對後建小型層；保留舊映像及受保護設定回退。沒有真模型或裝置重試，不修改先前失敗結果。證據：[EV](artifacts/verification/AGENT_DISCONNECTED_RESULT_20261016.json)。
