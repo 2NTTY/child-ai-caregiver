@@ -11,6 +11,8 @@
 5. 所選模式為 `structured` 時，除了 recipe 的 `requiredInputs`，必須提供 `outputContract` 及該次可用的 schema；manifest 的 `outputModeRequirements` 記錄此共同條件。缺 schema 時不發起結構化請求，由應用明確降級至支援的文字模式或回報錯誤；不讓模型猜格式。純文字模式無須 schema。
 6. 執行端處理輸出校驗、確認、工具及有限循環。多個模組是同一請求的指令組合，不等於依序作多次模型調用。
 
+共通責任只在核心維護：conversation 管理解與最少補問；context-and-privacy 管資料地位與範圍；tool-use 管授權、確認、原操作及結果；output 管實際展示協定。能力模組只補專屬工具、資料與例外，不複製整套核心。確認已由工具準備時復用原問句；候選與普通直接操作按實際政策分開。
+
 P1 尚不需要組裝時可改用 [獨立文字入口](../p1/README.md)，不用同時載入本表的 `p1-chat` 配方。
 
 ## 配方定義與正式入口
