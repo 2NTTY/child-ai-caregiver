@@ -2846,3 +2846,10 @@
 - 管理頁新增工具／期限表單及生效說明；縮短期限不延長原 claim。每步剩餘預算提示沿既有 runtime，不新增模型輪次。
 - 原有管理接線一條情景通過（24 次合成 HTTP），正式 HTTP／ADK scripted 回饋一項通過；8 個 Server/shared 型別入口與管理頁型別零診斷，一次 Web 建置成功。驗證準備中發現舊 auth 替身缺少完整介面及 checker 引用不存在的生成檔，已局部修正；無真模型、通知或全量測試。
 - 待合併及原站相容部署。Android 首條聊天及鍵盤仍待真人／真機；使用者離開期間不阻塞其他獨立工作。完成 Android 後再接本人 key／自選模型／限額，再提供同一正式 Agent 的本地隔離測試入口。證據：[EV](artifacts/verification/ADMIN_AGENT_RUN_LIMITS_20261016.json)。
+
+
+## LOG-20261016-ADMIN-RUN-LIMITS-DEPLOYMENT
+
+- #233 經對應帳號合併，Android 分支保留原接線後整合為 `8ba66e7`。沿原 VM 傳送 23,314 bytes Server 差異及 4,634,558 bytes Web 產物；固定 base image／容器 ID 和檔案 hash 先核對，保留原映像與受保護 compose 配置。
+- 2026-10-15 17:32:03 UTC，API／worker／Web `admin-8ba66e7` 健康；其後唯讀 policy v2、公開 admin HTML／JS hash 相符。實際每日 200／400、單輪 8／16／4／90 秒未變；沒有遷移、模型、通知、清零或重發聊天。
+- Android APK／OTA 不變；使用者離開期間，首條聊天及鍵盤真機核對仍待驗，先接續不依賴人工結果的裝置會話工作。主機期限保持 2026-10-17 20:50:44 香港時間，不自動續期。[證據](artifacts/verification/ADMIN_AGENT_RUN_LIMITS_20261016.json)。
