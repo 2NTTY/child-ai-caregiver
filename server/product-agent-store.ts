@@ -540,4 +540,6 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
     },
   };
 }
-export type ProductAgentStore = ReturnType<typeof createProductAgentStore>;
+export type ProductAgentStore = ReturnType<typeof createProductAgentStore> & {
+  replyState?(userId: string, childId: string, messageId: string): Promise<import("../src/shared/chat.ts").ChatReplyState | null>;
+};

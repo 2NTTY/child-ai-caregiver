@@ -1,6 +1,6 @@
 import { officialHelpIdSchema, type AgentProgress } from '../shared/agent-feedback.ts';
 import { readAgentFeedback } from './agent-feedback-reader.ts';
-import type { ChatMessage, ChatPage } from "../shared/chat.ts";
+import type { ChatMessage, ChatPage, ChatReplyState } from "../shared/chat.ts";
 import type { OnlineReceipt } from "../shared/online.ts";
 import type { SessionUser } from "./records-api.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
@@ -44,6 +44,7 @@ export interface ChatApi {
   cancelReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<boolean>;
   saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string): Promise<ChatMessage>;
   requestReply(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string, onProgress?: (event: AgentProgress) => void): Promise<ChatMessage>;
+  getOriginalReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<ChatReplyState | null>;
   getReplyState?(childId: string, runId: string, signal: AbortSignal, expectedUserId: string): Promise<"running" | "completed" | "stopped" | "unknown">;
   getStatus(signal: AbortSignal): Promise<boolean>;
   getUsage(signal: AbortSignal): Promise<ChatUsage>;
@@ -181,6 +182,16 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
       if (!object(value) || !message(value.message) || value.message.childId !== childId
         || value.message.role !== "model" || value.message.inReplyTo !== messageId) throw new ChatApiError();
       return value.message;
+    },
+    async getOriginalReply(childId, messageId, signal, expectedUserId) {
+      const value = await request(`/children/${encodeURIComponent(childId)}/messages/${encodeURIComponent(messageId)}/reply`, signal, undefined, expectedUserId);
+      if (!object(value) || !("reply" in value)) throw new ChatApiError();
+      if (value.reply === null) return null;
+      const state = value.reply;
+      if (!object(state) || state.messageId !== messageId || !id(state.runId)
+        || !["running", "completed", "stopped", "unknown"].includes(String(state.status))
+        || state.stopReason !== null && (typeof state.stopReason !== "string" || state.stopReason.length > 128)) throw new ChatApiError();
+      return state as unknown as ChatReplyState;
     },
     async getReplyState(childId, runId, signal, expectedUserId) {
       const value = await request(`/children/${encodeURIComponent(childId)}/agent/runs/${encodeURIComponent(runId)}`, signal, undefined, expectedUserId);

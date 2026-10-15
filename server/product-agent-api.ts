@@ -53,6 +53,11 @@ export async function handleProductAgentRequest(request: Request, userId: string
       if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") return apiError("unsupported_media_type", "請以 JSON 提交。", 415);
       try { body = await request.json(); } catch { return apiError("invalid_json", "請檢查輸入。", 400); }
     }
+    if (reply && request.method === "GET" && !reply[3]) {
+      if (!options.store.replyState) return apiError("ai_unavailable", "原運行讀取尚未接通。", 503);
+      const state = await options.store.replyState(userId, childId, reply[2].toLowerCase());
+      return await options.isCurrentUser(userId) ? jsonResponse({ reply: state }) : apiError("session_changed", "登入帳號已改變。", 409);
+    }
     if (reply) {
       if (request.method !== "POST") return apiError("method_not_allowed", "不支援此操作。", 405);
       if (!z.object({}).strict().safeParse(body).success) return apiError("invalid_input", "請檢查輸入。", 400);

@@ -21,6 +21,8 @@ P2 增補沿用下列正式 owner／服務；A02 持久工作／確認已接 Ser
 
 Firestore 文件／照片／匯出使用相同正式 controller、共用 owner 及原 API，差異集中於[資料接點](API.md#firestore-files)。`ProductionOwner` 在 Firebase 模式把身份 adapter 的本人再驗證接到 `AccountServiceOwner`；帳戶 processing 顯示清理中、查原 receipt，不能當完成。文件的來源失效／報告 building／版本衝突、照片提取候選和原操作未知沿現有呈現；不為後端遷移重做頁面。背景自動清理及完整還原未完成時，不把這些接點當成受邀用戶上線證據。
 
+Web／Android 的 `ChatController` 透過原訊息 GET 查原運行；初次／重新讀歷史只自動查目前最後一則未獲回覆訊息，不掃描所有歷史 claim。其他訊息手動要求回覆時亦先查原操作；存在 run 只讀結果，不重新 POST。處理中 metadata 沿同一前景五秒節奏核對、終態再讀聊天；背景停止輪詢，斷線不取消 Server 工作。`remoteReply` 是目前授權結果的暫時投影，不是另一台帳；切孩子／身份清除，未發送草稿仍本機。新設備可用原取消入口，來源與待確認仍由 `ProductAgentOwner` 讀取。API／APK／真機交付狀態只見根 PLAN。
+
 <a id="production-owners"></a>
 ## 新前端正式資料接點
 

@@ -104,6 +104,22 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
   const originalReplyRun = (b: Binding, id: string) => originalRun(b, 'interactive', id);
   return {
     authority, data, current, matches, read, requireLive, advance, write, originalReplyRun, originalRun,
+    async replyState(userId: string, childId: string, messageId: string) {
+      domainParse(uuid, messageId);
+      try { return await authority.runTransaction(userId, childId, async b => {
+        const source = await options.chat.readMessage(b, childId, messageId);
+        if (!source || source.role !== 'user' || source.authorUserId !== userId) domainReject('not_found', 404);
+        const original = await originalReplyRun(b, messageId);
+        if (!original) return null;
+        if (!matches(b, current(b), original, false)) domainReject('agent_scope_changed');
+        const run = expired(original);
+        return { messageId, runId: run.id, status: run.state, stopReason: run.stopReason };
+      }); } catch (error) {
+        // A missing/foreign child is not an unclaimed message and must not enable a new reply.
+        if (error instanceof FirestoreAuthorityError && [403, 404].includes(error.status)) domainReject('not_found', 404);
+        throw error;
+      }
+    },
     async claim(userId: string, childId: string, trigger: AgentRunClaim['trigger'] & {}, recipeId: string): Promise<AgentRunClaim> {
       domainParse(firestoreAgentRunSchema.shape.trigger, trigger); domainParse(firestoreAgentRunSchema.shape.recipeId, recipeId);
       if (trigger.kind === 'interactive' ? recipeId !== 'product-interactive' : !options.authorizeWorker) domainReject('domain_not_ready', 503);
