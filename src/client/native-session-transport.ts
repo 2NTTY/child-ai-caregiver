@@ -33,9 +33,10 @@ export function createNativeSessionTransport(options: { apiBaseUrl: string; stor
       const text = await options.store.read();
       if (text === null) return null;
       let value: unknown;
-      try { value = JSON.parse(text); } catch { throw unavailable(); }
-      if (!valid(value)) throw unavailable();
-      if (value.expiresAtMs <= now()) { await options.store.remove(); return null; }
+      try { value = JSON.parse(text); } catch { value = null; }
+      // Unusable local credentials must not permanently block the normal login path.
+      // Storage I/O failures still propagate; they are not proof that the user signed out.
+      if (!valid(value) || value.expiresAtMs <= now()) { await options.store.remove(); return null; }
       return value;
     });
   }
@@ -68,7 +69,9 @@ export function createNativeSessionTransport(options: { apiBaseUrl: string; stor
     fetcher: send as typeof fetch,
     clear,
     async exchange(idToken: string, expectedUserId: string, signal: AbortSignal) {
-      const ticket = generation;
+      if (signal.aborted) throw unavailable();
+      // A newly authenticated session invalidates responses started with the previous credential.
+      const ticket = ++generation;
       const response = await send(base.origin + "/api/auth/native-session", { method: "POST", signal,
         headers: { "Content-Type": "application/json", "x-expected-user-id": expectedUserId }, body: JSON.stringify({ idToken }) });
       if (!response.ok) {
