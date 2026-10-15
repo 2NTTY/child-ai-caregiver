@@ -2605,3 +2605,12 @@
 - Result：projectFamilyDocumentArchive 接 page／load／lost／scope／child，返回 standard／report IDs／archive；無 React、IO 或另一份資料儲存。保留失效遮蔽、其他有效報告、版本去重、living 優先、building 狀態及 Server coverage；正式 owner 接回原 reading／PDF／原操作。DomainBridge 的雙來源權威版本核對及 Server 來源有效性／生成邊界沿用。
 - Verification：Node 24.19.0，既有 family-document-lifecycle 的三個定向情景（invalid current report、building reports、living selection and annual or quarterly coverage）各 1/1 通過，直接使用真純函式並比較正式 hook 投影。首輪 fixture 載入因缺 luxon 停批，尚未到斷言；補既有、與 lock 相符的 3.7.2 junction 後續原三項。另兩個封閉 fixture 只補真模組 import／resolver，未擴跑或更改斷言；diff check 通過。
 - Limits / Next：沒有全量、typecheck／build、瀏覽器、真服務、模型或部署；有限純投影／接線證據不代替新 Firestore 或 UI 驗收。交付後 OPT01／後續及 LAY05／STR01 仍等協作者 #214／#215 穩定接口；記憶與背景整理留原 OPT03／04，原備份真還原待驗不變。
+
+
+<a id="log-20261015-p2-opt01"></a>
+### 2026-10-15 — OPT01 現有聊天 Prompt Pack 精簡
+
+- Scope / Baseline：654f28b（LAY04／#220 已合併）。使用者指定協作者繼續 #214～#216，本聊天沿既有聊天能力獨立推進；只用主模型，未派子代理。根 PLAN 先調整實際前置，不接管新角色。
+- Result：pack 0.1.40 更新九個既有模組，集中共通對話／權限／引用／原操作規則；普通已授權交代不一律生成候選，準備單按事情用途整理，confirmationPrepared=true 復用原確認，原文續讀有效片段可引用。保留安全核心，未更改 product-tools、新角色、runtime、API 或 UI；不把背景 no_action、分段引用或記憶重整等程式缺口寫成已完成。0.1.40 不重用協作者未合併的 0.1.38／39 版本標識。
+- Verification：Node 24.19.0，既有 tests/agent-prompt-wiring.test.ts 四項全部通過（272 ms）；核對 manifest／模組版本、依賴閉包及現有工具契約。git diff --check 通過；主模型核對確認工具、原文引用登記與 staged summary 的實際語義，沒有修改測試斷言、產品執行、型別／build、模型、雲端、通知或瀏覽器驗收。
+- Limits / Next：純提示詞及靜態證據不證明真模型理解品質，尚未部署。合併後 OPT02 沿當前聊天／背景契約接續；新角色適配及灰稿語義審核等協作者接口穩定後接入。舊失敗、原備份真還原待驗維持。

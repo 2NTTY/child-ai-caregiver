@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.37",
+  "version": "0.1.40",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -27,13 +27,13 @@
     {
       "id": "core.identity-and-trust",
       "path": "core/identity-and-trust.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": []
     },
     {
       "id": "core.conversation",
       "path": "core/conversation.md",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -41,7 +41,7 @@
     {
       "id": "core.context-and-privacy",
       "path": "core/context-and-privacy.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -49,7 +49,7 @@
     {
       "id": "core.tool-use",
       "path": "core/tool-use.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -57,7 +57,7 @@
     {
       "id": "core.output",
       "path": "core/output.md",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "requires": [
         "core.identity-and-trust"
       ]
@@ -65,7 +65,7 @@
     {
       "id": "module.chat",
       "path": "modules/chat.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -86,7 +86,7 @@
     {
       "id": "module.memory-maintenance",
       "path": "modules/memory-maintenance.md",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -126,7 +126,7 @@
     {
       "id": "module.task-intents",
       "path": "modules/task-intents.md",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -157,7 +157,7 @@
     {
       "id": "module.summary-report",
       "path": "modules/summary-report.md",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
