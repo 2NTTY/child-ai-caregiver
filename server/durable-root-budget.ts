@@ -1,5 +1,7 @@
 /** Server-owned execution attempts, not token billing or business-effect receipts. */
 export interface RootBudgetLimits { modelCalls: number; toolCalls: number; queryEmbeddings: number; }
+/** Validation ceilings shared by runtime and persistent budget envelopes. */
+export const MAX_ROOT_BUDGET_LIMITS: Readonly<RootBudgetLimits> = Object.freeze({ modelCalls: 12, toolCalls: 16, queryEmbeddings: 6 });
 export const DEFAULT_ROOT_BUDGET_LIMITS: Readonly<RootBudgetLimits> = Object.freeze({ modelCalls: 4, toolCalls: 8, queryEmbeddings: 2 });
 export interface RootBudgetBinding {
   rootRunId: string;
