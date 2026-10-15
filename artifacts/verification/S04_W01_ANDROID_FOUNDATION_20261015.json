@@ -88,6 +88,26 @@
         "loginUntested": true
       },
       "approvedBuildCount": 1
+    },
+    {
+      "name": "First EAS preview build and fingerprint repair",
+      "result": "first-build-failed-local-repair-verified",
+      "buildId": "25ecaca2-8ef1-4dbb-ad7f-0627d41ea6b9",
+      "commit": "c6cf75d2846cb382b52cea4f039f19d74ba147e1",
+      "phase": "CONFIGURE_EXPO_UPDATES",
+      "originalLocalRuntime": "46d12425ebc11332a42b9010ad2709b26d086f6d",
+      "cloudRuntime": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "repairedLocalRuntime": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "causes": [
+        "Junction changed autolinking paths",
+        "Windows config loader glob matching used backslashes"
+      ],
+      "repair": "Physical dependency install plus guarded one-line POSIX normalization in fingerprint 0.20.13. No runtime guard bypass or SDK upgrade.",
+      "signing": "EAS-managed Android keystore generated; no private material exported",
+      "apkProduced": false,
+      "cloudLogSha256": "aecf79f2e427c784b9a80ffe543cc6b5bdeda70e64c072ce1c5d2619e81d11ea",
+      "localRepairSha256": "721a9d3ef71dc8248b6927045d05864b9e07a2883bd7c49e5e56166d0c6800bb",
+      "correctiveBuild": "User authorized similar minimal corrective acceptance without further questions; one free retry remains to be executed"
     }
   ],
   "sourceSha256": {
@@ -112,14 +132,14 @@
     "model": 0,
     "embedding": 0,
     "notification": 0,
-    "cloudBuild": 0,
+    "cloudBuild": 1,
     "deployment": 0
   },
   "remaining": [
-    "One approved free cloud preview build, exact upload manifest, signing and real native Auth remain pending",
-    "Cloud preview APK and signing",
-    "Compatible Server deployment and one real Android login/child/chat/save/readback",
-    "S05/S07 and later packages remain separate; no iOS or full Android acceptance"
+    "One corrected free EAS build; no APK yet",
+    "Approved c6cf75d compatible Server deployment after APK success",
+    "One approved real Android login/child/chat/save/readback; no model calls yet",
+    "Dependent S05/S07 and later packages not started; no iOS or full Android acceptance"
   ],
   "collaboratorHeads": {
     "214": "ba3b32bb41944957c8a445db161b9134befa6e15",

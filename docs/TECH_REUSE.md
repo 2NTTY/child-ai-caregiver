@@ -273,3 +273,5 @@ S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01
 Android 的 React Native／Expo runtime 未提供共用程式需要的 `crypto.randomUUID`；只在原生啟動時以 [Expo Crypto](https://docs.expo.dev/versions/latest/sdk/crypto/) 補安全隨機方法，不改 Web、不使用 Math.random，也不宣稱提供完整 WebCrypto。瀏覽器 changes event 不在原生執行，AppState 接續依 S07-W01。
 
 Firebase JS 13.0.0 的 React Native `_getAdditionalHeaders` 沒有 Android package／cert header；既有 Web key 的 referrer restriction 不適用原生請求。依 [Firebase API key 指引](https://firebase.google.com/docs/projects/api-keys)，不同平台可用同一專案的獨立公開 key，只開 Authentication 所需 API，不加入 Gemini／業務資料權限。保留既有 Web key 限制，不覆寫 SDK 私有方法、不偽造瀏覽器來源；原生設定是否生效仍須實際接線驗收。
+
+S04-W01 固定 `@expo/fingerprint` 0.20.13 的 Windows config loader 以反斜線作 glob 比對，與 Linux 的預設排除結果不同；按[官方 loader 路徑正規化](https://github.com/expo/expo/blob/main/packages/@expo/fingerprint/src/ExpoConfigLoader.ts)局部回補 `toPosixPath`，不升整套 SDK、不放寬 runtime 核對。`mobile:prepare` 有版本／原文／實體依賴路徑 guard；僅本機指紋一致已驗，修後 APK 另驗。

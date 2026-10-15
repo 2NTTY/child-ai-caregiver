@@ -164,3 +164,5 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 - 先部署相容的 `/api/auth/native-session` Server，再分發 Android；既有 Web Cookie 及 API body 保留。未支援原生交換的 Server 無法供新 APK 登入，不能用假 Origin 補救。
 
 固定 `mobile:release`、語音／FCM、完整跨端前景同步及更新交付仍按各自工作包實作，本節不宣稱已接通。
+
+Windows 執行 EAS 前，在實體 dependency installation 的完整建置副本執行 `npm run mobile:prepare`；不要用指向另一 worktree 的 `node_modules` junction。此命令只針對固定 `@expo/fingerprint` 0.20.13 loader 補 glob 比對前的 POSIX 路徑正規化，版本或原文改變即停止；Linux 不修改。保留原生內容 fingerprint 與雲端相等檢查，不使用忽略全部 native 檔案或硬填 runtime 的替代。後續 `mobile:release` 應調用同一入口。

@@ -2708,3 +2708,11 @@
 - 真 archive 首次只含四個根檔案，定位為 EAS 遍歷目錄前的 ignore 匹配；修正後同一入口包含 609 檔／25,129,109 bytes，無未追蹤或禁止檔案，與來源一致。保留先前未登入與不完整 archive 證據，不當雲端 build 失敗。
 - 已連結公開 project ID，原生 Auth key 只允許 Identity Toolkit／Secure Token，設定於 preview；Web key 不變。實查 Expo Free、Android 0／15。沒有生成 APK，Server 原生端點尚未部署，真機未驗。
 - 本機原有合成／型別／Hermes 證據復用，不重跑產品測試。主模型處理，B 單作者交付；下一步只執行已批准的一次 build，再準備部署及真機範圍。
+
+
+<a id="log-20261015-android-build-fingerprint"></a>
+### 2026-10-15 — S04-W01 首次雲端建置失敗與有界修正
+
+- Expo 免費 preview build `25ecaca2-8ef1-4dbb-ad7f-0627d41ea6b9` 已上載並建立受管簽署，在 CONFIGURE_EXPO_UPDATES 因本機／雲端 runtime fingerprint 不同停止；沒有 APK，沒有部署、模型或通知。
+- 定位為 junction 令 autolinking 路徑不同，加上固定 fingerprint 0.20.13 Windows loader 未正規化 glob 路徑。改用實體隔離依賴，按官方方法補一行 POSIX 正規化；保留版本／路徑 guard 及全部 fingerprint 檢查，不整套升 SDK。
+- 一次本機修後核對與既有雲端 hash 同為 `c312bc718cf9e42fde6ff62b768217f6aaf7cfd6`。使用者准同類最小補驗直接執行，接下來只補一次免費 build；Server 仍只部署已批准 c6cf75d 四檔，真機限一個 run／4 生成／2 embedding、<$0.10。當前未執行這些後續操作，不以指紋相同當成 APK 成功。
