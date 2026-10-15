@@ -67,7 +67,8 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
     firestoreChatRecoverySchemas.leases.parse(raw); return {};
   }
   requireValue(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
-  if (kind === 'context-version') { equalId(id, [scope.ownerUserId, scope.childId]); requireValue(recordVersion === 1); return {}; }
+  if (kind === 'context-version') { equalId(id, [scope.ownerUserId, scope.childId]); requireValue(recordVersion === 1);
+    return { summaryPending: firestoreContextRecoverySchema.parse(raw).summaryPending === true }; }
   requireValue(scope.childId !== NIL);
   if (kind === 'content-erasure') {
     const v = contentErasureSchema.parse(raw);
@@ -134,5 +135,6 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   requireValue(value.summary.childId === scope.childId && value.summary.version === recordVersion);
   if (kind === 'conversation-summary-head') { equalId(id, [scope.ownerUserId, scope.childId]); return {}; }
   requireValue(id === value.summary.id);
-  return { entityId: value.summary.id, entityVersion: value.summary.version };
+  return { entityId: value.summary.id, entityVersion: value.summary.version, ...(value.batch ? {
+    currentBatch: original.currentBatch === true, lastMessageSortKey: value.batch.lastMessageSortKey } : {}) };
 }

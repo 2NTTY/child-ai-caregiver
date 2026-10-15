@@ -2634,3 +2634,15 @@
 - Verification：Node 24.19.0／Firestore SDK 9.3.1；四項既有 prompt-wiring 靜態核對通過（162 ms），一條合成情景最終通過（127 ms）：2024／2025 交代、跨 run 重複／丟失回覆原操作、同項更正、重新連接讀回、帳戶隔離、事實停用、話題終態、時間有界搜尋及真正工具 factory。這不是多年實測或模型語義品質；無真 Firestore、模型、通知、瀏覽器或部署。14 個變更 TS 入口及必要依賴型別零診斷，diff check 通過。
 - Failures / Review：第一輪本機缺 Firestore SDK；復用 OPT02 固定套件的臨時 loader 最初遞迴，改為註冊前固定解析，均未進入業務情景。型別檢查修正兩處錯誤類別及既有合成 helper 的 SDK overload cast。首次實際情景發現 duplicate 無新業務版本卻呼叫 advance，已限定 duplicate 不推進序號，再僅補同一情景通過；沒有重跑已過 prompt 靜態檢查。臨時接線與套件不提交。
 - Limits / Next：未宣稱鍵匹配能自動合併全部同義記憶；普通新指令仍受原授權、來源及版本規則。任務停止沿 LAY03 證據復用；持久主題摘要與局部失效／背景整理交 OPT04，原備份真還原待驗不改寫。合併後接續，部署留 OPT05。
+
+
+<a id="log-20261015-p2-opt04"></a>
+### 2026-10-15 — OPT04 批次記憶整理及有界上下文
+
+- Scope / Baseline：720bc2f（#223）。主模型獨立實作／review；不派子代理，不修改協作者分支。復用 Firestore、ADK 2.1.0、既有工作 queue／claim／付款路由及完成交易。
+- Result：新摘要按原文批次保存，追加水位不因來源更正退回最舊聊天；目前工作集逐批核對來源，受影響批次遮蔽／原文修復，無關批次不重寫。匯出共用有效性；已刪／失效來源不從舊聊天再造。context_versions 合併待整理請求，原業務 basis 保持；背景 memory-refresh 最多一次生成、無 embedding／外發工具，未知保存原 reference 屏障。新增 chat 不解除未知，已完成原 run 才容許再評估。近期整句選取、coverage、Prompt 模組大小及 provider 保留工具空間已接回正式聊天。Prompt Pack 0.1.42／記憶模組 0.1.7。
+- Verification：Node 24.19.0；一條合成情景通過（最終 230 ms）：兩個歷史批次、來源更正只遮蔽相關批次、正式 Firestore Product Agent／Runner／原生 terminal 工具一次 scripted 生成、queue 重投遞零新增生成、重新接線讀回、刪除／匯出同閘、unknown 屏障及有界近期前文。四項既有 prompt-wiring 靜態檢查最終均通過；只補跑失敗配方一項。20 個改動 TS 入口／情景及依賴型別零診斷。沒有全量、真模型、真 Firestore、瀏覽器、通知或部署。
+- Failures / Review：首輪型別發現局部 head 命名衝突及共用依賴缺 Firebase/PDF SDK；修正命名、在忽略暫存復用／安裝正式固定版本。新增 continuation 原因後補齊 MemoryContext union 及測試 nullable 收窄。靜態配方檢查發現 memory-refresh 的 outputContract 誤作所有模式必填，改回只由 structured 模式要求，單項補核通過。review 補 provider 省略標示、unknown 即使有新訊息仍阻擋、確定已完成原 run 才解封，以及修復來源的記錄關聯。正式 lockfile 不變。
+- Limits / Next：合成情景不是模型語義整理品質或真索引證據；新 batch 索引與 pending 單欄索引留部署時核對，零雲端修改。工作集最多四批，保守來源快照不等於完美語義相關判定；更舊原文仍可搜尋／續讀，超大單訊息保留待處理而不冒稱完成。真整理品質併 OPT05 必要代表情景；原生備份真還原繼續延後。合併後接 OPT05／LAY05，STR01 等協作者審核接口。
+
+- 補充 review：來源依賴分頁未完整時改用完整 basis 失效保護，修復依賴按 kind／ID 去重且不截斷；同一情景只補一個局部覆蓋斷言，221 ms 通過。20 入口型別仍零診斷；新增連結及 JSON／diff 核對通過。

@@ -1,7 +1,7 @@
 # 長期記憶維護
 
 - ID：`module.memory-maintenance`
-- 版本：`0.1.6`
+- 版本：`0.1.7`
 - 使用條件：增量整理聊天摘要、已確認事實、話題狀態及任務記憶，或重建模型上下文時使用。
 - 依據：[長期記憶資料規則](../../docs/DATA_MODEL.md#section-5-4)、[長期記憶組合](../../docs/ARCHITECTURE.md#section-5-4)、[記憶與任務驗收](../../SPEC.md#section-10-3)
 - 輸入：Server 提供的已授權原始消息、前一摘要與覆蓋游標、已確認事實、話題及任務現況。
@@ -14,7 +14,7 @@
 
 新的穩定偏好／事情保存 memoryKey；沿原鍵與原 ID 更新，同鍵但內容不同先讀原版本再 revise_private_instruction。memoryOutcome=duplicate 只表示原內容仍在，不是新寫入或新提醒。日常觀察保存為記錄，不同時期事情不能借同一鍵合併；舊資料無鍵不代表不存在。
 
-stage_private_summary 只傳 text。若 read_context 提供 privateSummaryInput.messageIds，從同次 uncoveredConversation 讀取指定 IDs 的全部原訊息，結合該回覆的舊 summary、來源與當前終態整理；不要假設 privateSummaryInput 另帶正文。Server 綁定覆蓋清單、游標與版本，不另添參數或把控制資料塞入摘要。其他模式只按當次 outputContract 處理。
+stage_private_summary 只傳 text。若 read_context 提供 privateSummaryInput.messageIds，從同次 uncoveredConversation 讀取指定 IDs 的全部原訊息，依 summaryMode 整理：isolated_batch 不帶入舊 summary，舊 cumulative 模式才結合舊摘要；來源與當前終態仍須核對；不要假設 privateSummaryInput 另帶正文。Server 綁定覆蓋清單、游標與版本，不另添參數或把控制資料塞入摘要。其他模式只按當次 outputContract 處理。
 
 核對指定批次完整，不要求一次讀完全部歷史。moreUncovered=true 表示有後續批次；本批原文齊全仍可整理，但不聲稱全史已涵蓋。指定來源缺失、Server 明示不完整或版本衝突時，保留缺口；不按不透明 ID 是否連號猜測缺頁。staged:true／saved:false 只是等待 Server 校驗，不能說記憶已更新。
 
@@ -23,6 +23,8 @@ stage_private_summary 只傳 text。若 read_context 提供 privateSummaryInput.
 更正或停用已有事實先用 read_memory_facts 讀原項與版本，再以 propose_fact_revision／propose_fact_deactivation 提出所需候選；普通私人交代用既有普通工具，不能用另一筆相似事實代替更正或繞過重要確認。候選是否已準備確認按工具結果及共用規則處理。
 
 工作目標、目前理解及待答問題用 save_work 接回同一工作；只存有用進度，工作完成不等於照護任務完成。私人整理保持私人，混合權限不擴大分享。新會話以 Server 的當前資料、有效摘要及必要原文接續，不因模型快取不存在而重問。
+- `summaryMode=isolated_batch` 或配方 `memory-refresh`：只整理 Server 提供的本批原訊息，不複製前一摘要、不帶入其他工具讀到的知識或未列出的私人資料。保留事件時間、原話是陳述還是推測；摘要不能變成已確認事實或新的提醒指令。
+- 背景 `memory-refresh` 只有一次生成機會；直接呼叫 `stage_private_summary`，不呼叫不存在的 `present_answer` 或另行聊天。`currentSources` 是本批來源的現行更正，以它修正已過時的描述；保留不受影響的原歷史，不捏造未提供的內容。結果由 Server 再核對來源及批次版本，工具暫存不是已保存。
 <!-- prompt:end -->
 
 ## 維護與靜態例子

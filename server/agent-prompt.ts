@@ -12,7 +12,7 @@ export interface PromptManifest {
   outputModeRequirements: Record<string, string[]>;
 }
 export type AgentOutputMode = "text" | "tool_cycle" | "structured";
-export interface AssembledPrompt { text: string; packVersion: string; recipeId: string; moduleIds: string[] }
+export interface AssembledPrompt { text: string; packVersion: string; recipeId: string; moduleIds: string[]; moduleCharacters: Record<string, number> }
 
 /** Only server-selected recipes and capabilities may reach this assembler. */
 export async function assembleAgentPrompt(options: {
@@ -36,7 +36,7 @@ export async function assembleAgentPrompt(options: {
   if (modules.size !== manifest.modules.length || new Set(manifest.recipes.map(item => item.id)).size !== manifest.recipes.length) throw invalid();
   const { begin, end } = manifest.promptBoundary;
   if (!begin || !end || begin === end) throw invalid();
-  const parts: string[] = [];
+  const parts: string[] = [], moduleCharacters: Record<string, number> = {};
   for (const id of ids) {
     const entry = modules.get(id);
     if (!entry || !/^[a-z0-9-]+(?:\/[a-z0-9-]+)+\.md$/u.test(entry.path)
@@ -49,9 +49,9 @@ export async function assembleAgentPrompt(options: {
       || document.indexOf(end, finish + end.length) !== -1) throw invalid();
     const body = document.slice(start + begin.length, finish).trim();
     if (!body) throw invalid();
-    parts.push(body);
+    parts.push(body); moduleCharacters[id] = body.length;
   }
-  return { text: parts.join("\n\n"), packVersion: manifest.version, recipeId, moduleIds: ids };
+  return { text: parts.join("\n\n"), packVersion: manifest.version, recipeId, moduleIds: ids, moduleCharacters };
 }
 
 export async function loadAgentPrompt(recipeId: string, mode: AgentOutputMode, availableInputs: readonly string[],

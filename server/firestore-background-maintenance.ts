@@ -1,3 +1,5 @@
+import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
+import { settleSummaryRequest, firestoreContextRecoverySchema } from './firestore-context-basis.ts';
 import { createFirestoreContentErasure } from './firestore-content-erasure.ts';
 import type { FirebaseErasureJournal } from './firebase-erasure-journal.ts';
 import { randomUUID } from 'node:crypto';
@@ -16,7 +18,7 @@ import type { FirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts
 import { createKnowledgeSourceFetcher } from './knowledge-source-fetch.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
-const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures'] as const;
+const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions'] as const;
 const cursorSchema = z.object({ after: z.record(z.string(), z.string().nullable()), complete: z.array(z.string()),
   minute: z.number().int(), token: z.uuid().nullable(), until: z.number().int().nonnegative() }).strict();
 const empty = () => ({ after: {} as Record<string, string | null>, complete: [] as string[], minute: -1, token: null as string | null, until: 0 });
@@ -47,6 +49,29 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
   const stateEnvelope = (id: string, scope: WorkRecoveryScope, value: z.infer<typeof cursorSchema>) =>
     ({ ...data.tags(scope), ...data.seal('maintenance-state', id, scope, cursorSchema, value) });
   async function queueRow(stage: typeof stages[number], row: DocumentSnapshot, basis: string, known?: Binding) {
+    if (stage === 'context_versions') {
+      const info = open(row, 'context-version', firestoreContextRecoverySchema), value = info.value;
+      if (!value.summaryPending || !value.summaryRequest || Date.parse(value.summaryAfter ?? '') > Date.now()) return;
+      try { await authority.runTransaction(info.scope.ownerUserId, info.scope.childId, async b => {
+        if (!options.enabled || !(await authority.readControl(b.transaction)).enabled || firestoreDomainHash(info.scope) !== firestoreDomainHash(b.scope)) return;
+        const fresh = await b.transaction.get(row.ref); if (!fresh.exists || firestoreDomainHash(fresh.data()) !== firestoreDomainHash(row.data())) return;
+        if (value.summaryBlocked) {
+          if (!value.summaryBlockedReference) return;
+          const key = JSON.stringify([b.scope.ownerUserId, b.scope.childId, 'worker', value.summaryBlockedReference]);
+          const pointer = await b.transaction.get(data.ref('agent_claims', 'agent-claim', key)); if (!pointer.exists) return;
+          const claim = data.open('agent-claim', key, b.scope, firestoreAgentClaimSchema, pointer);
+          const runRow = await b.transaction.get(data.ref('agent_runs', 'agent-run', claim.runId)); if (!runRow.exists) return;
+          const run = data.open('agent-run', claim.runId, b.scope, firestoreAgentRunSchema, runRow);
+          if (run.recipeId === 'memory-refresh' && run.trigger.reference === value.summaryBlockedReference && run.state === 'completed' && run.result?.outcome === 'no_action')
+            await settleSummaryRequest(data, b, value.summaryRequest!, 'more');
+          return; // Missing/stopped/unknown is never permission to repeat a model attempt.
+        }
+        const queued = await prepareFirestoreBackgroundWork(data, b.transaction, { kind: 'memory-refresh', scope: b.scope, resourceId: b.scope.childId,
+          basis: String(value.summaryRequest), generation: b.generation, authorizationVersion: b.authorizationVersion }, new Date().toISOString());
+        queued.commit();
+      }); } catch (error) { if (!error || typeof error !== 'object' || !('status' in error) || ![403, 404, 409].includes(Number(error.status))) throw error; }
+      return;
+    }
     if (stage === 'erasures' || stage === 'photo_cleanup') {
       const info = stage === 'erasures' ? open(row, 'scope-erasure', firestoreScopeErasureSchema) : open(row, 'photo-cleanup', firestorePhotoSchemas.cleanup);
       const target = stage === 'erasures' ? firestoreScopeErasureSchema.parse(info.value).state : 'cleanup';
@@ -99,6 +124,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
     for (const stage of stages) {
       let q: Query = data.collection(stage).orderBy(FieldPath.documentId()).limit(5);
       if (stage === 'content_erasures') q = q.where('stage', 'in', ['revisions', 'receipts']);
+      if (stage === 'context_versions') q = q.where('summaryPending', '==', true);
       if (stage === 'work_watches') q = q.where('enabled', '==', true);
       if (stage === 'erasures') q = q.where('state', 'in', ['requested', 'blocked', 'cleaning']);
       if (state.after[stage]) q = q.startAfter(state.after[stage]);

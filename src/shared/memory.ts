@@ -31,7 +31,7 @@ export interface ConversationSummary {
   id: string; childId: string; version: number; text: string; createdAt: string;
   previousId: string | null; coveredMessageIds: string[]; lastCoveredMessageId: string;
 }
-export interface SummaryInput { previous: ConversationSummary | null; previousVersion: number; basis: string; messages: ChatMessage[]; moreUncovered: boolean; unavailableReason?: "fact_metadata_pending" }
+export interface SummaryInput { previous: ConversationSummary | null; previousVersion: number; basis: string; messages: ChatMessage[]; moreUncovered: boolean; summaryMode?: "isolated_batch"; repairOf?: string; currentSources?: unknown[]; unavailableReason?: "fact_metadata_pending" | "message_requires_continuation" }
 export interface MemoryView {
   profile: ChildProfile; facts: MemoryFact[]; topics: MemoryTopic[]; summary: ConversationSummary | null;
 }
@@ -40,5 +40,5 @@ export interface MemoryContext extends MemoryView {
   conflictingKeys: string[];
   profileApplicable: boolean;
   unavailableFactKeys: string[];
-  nextFactsAfterId?: string | null; nextTopicsAfterId?: string | null; summaryUnavailable?: "fact_metadata_pending" | null;
+  nextFactsAfterId?: string | null; nextTopicsAfterId?: string | null; summaryUnavailable?: "fact_metadata_pending" | "message_requires_continuation" | null;
 }

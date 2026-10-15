@@ -1,3 +1,4 @@
+import { readContextBasis } from './firestore-context-basis.ts';
 import { createFirestoreAdmin } from './firestore-admin.ts';
 import { readAdminUid } from './admin-api.ts';
 import { applicationDefault, deleteApp, initializeApp } from 'firebase-admin/app';
@@ -106,6 +107,11 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       authorizeWorker: composition.worker ? async (b, reference, recipeId) => {
         if (!config.taskWorkerEnabled || !(await authority.readControl(b.transaction)).enabled) return false;
         const job = await readFirestoreBackgroundClaim(new FirestoreDomainData(domain), b, reference); if (!job) return false;
+        if (job.kind === 'memory-refresh') {
+          const current = await readContextBasis(new FirestoreDomainData(domain), b);
+          return recipeId === 'memory-refresh' && job.resourceId === b.scope.childId && current.value.summaryPending === true
+            && !current.value.summaryBlocked && String(current.value.summaryRequest) === job.basis;
+        }
         if (job.kind === 'work-continuation') return recipeId === 'product-work-followup' && !!await product.continuation.input(b, job);
         if (recipeId !== 'product-background') return false;
         return job.kind === 'concern' ? concerns.authorizeBackground(b, job) : job.kind === 'growth' ? growth.authorizeBackground(b, job)

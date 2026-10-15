@@ -122,13 +122,18 @@ export class AgentGatewayModel extends BaseLlm {
       const context = { role: "user", parts: [{ text: INITIAL_CONVERSATION_SUMMARY_LABEL + JSON.stringify(initial.summary) }] };
       if (JSON.stringify(context).length <= 4000) {
         const candidate = { ...request, contents: [...request.contents, context] };
-        if (agentRequestCharacters(candidate) <= budget.limits.inputCharacters) {
+        if (agentRequestCharacters(candidate) + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters) {
           // Fresh provider-only data never enters ADK events; count it in each request, without cumulative copies.
           outgoing = candidate;
         }
       }
     }
     const includesSummary = outgoing !== request;
+    if (initial && !includesSummary) {
+      const marker = { role: 'user', parts: [{ text: 'Server context coverage: historical summary omitted for capacity or expiry; read authorized history/current resources when needed. Do not claim complete historical coverage.' }] };
+      const candidate = { ...request, contents: [...request.contents, marker] };
+      if (agentRequestCharacters(candidate) + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters) outgoing = candidate;
+    }
     // Keep the exact provider payload fixed after durable admission, including the revalidated summary.
     const modelKey = budget.durable ? this.options.modelAttemptKey?.(request) : undefined;
     let dailyRequest: DurableAiUsageRequest | undefined;

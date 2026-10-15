@@ -1,3 +1,6 @@
+import { createFirestoreMemoryStore } from './firestore-memory.ts';
+import { createFirestoreCareStore } from './firestore-care.ts';
+import { createFirestoreChatStore } from './firestore-chat.ts';
 import { readNotificationHistory } from './firestore-notification-history.ts';
 import { contentVisible } from './firestore-disclosure.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
@@ -139,6 +142,10 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             if (parent.exists && parent.get('live') === true) {
               await createFirestoreSharedInputStore(options).read(binding, id); items.push(value);
             }
+          } else if (section === 'summary_history') {
+            const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore(options) });
+            const summary = await memory.readSummaryRevision(binding, value);
+            if (summary) items.push(summary);
           } else if (section === 'push_bindings') items.push(firestorePushBindingSchema.parse(value).binding);
           else if (section === 'push_deliveries') items.push(firestorePushDeliverySchema.parse(value).delivery);
           else if (section === 'telegram_bindings') items.push(firestoreTelegramBindingSchema.parse(value).binding);

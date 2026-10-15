@@ -9,7 +9,7 @@ import type { FirestoreAuthorityTransaction as Binding } from './firestore-autho
 const time = z.iso.datetime({ offset: true }), uuid = z.uuid(), text = z.string().min(1).max(256);
 const version = z.number().int().positive().max(2147483647);
 export const backgroundKindSchema = z.enum(['child-change', 'growth', 'concern', 'work-check', 'work-continuation', 'task-agent',
-  'document-refresh', 'knowledge-check', 'photo-cleanup', 'scope-erasure', 'push', 'telegram', 'contact']);
+  'memory-refresh', 'document-refresh', 'knowledge-check', 'photo-cleanup', 'scope-erasure', 'push', 'telegram', 'contact']);
 const identitySchema = z.object({ kind: backgroundKindSchema, scope: workRecoveryScopeSchema, resourceId: text,
   basis: text, generation: uuid, authorizationVersion: text }).strict();
 export const firestoreBackgroundWorkSchema = identitySchema.extend({ id: z.string().regex(/^[a-f0-9]{64}$/u),
@@ -105,7 +105,7 @@ export async function readFirestoreBackgroundClaim(data: FirestoreDomainData, b:
   if (!job || route.reference !== reference || firestoreBackgroundReference(job) !== reference || job.state !== 'leased' || !job.lease
     || Date.parse(job.lease.until) <= Date.now() || job.generation !== b.generation || job.authorizationVersion !== b.authorizationVersion
     || firestoreDomainHash(job.scope) !== firestoreDomainHash(b.scope)
-    || !['growth', 'concern', 'task-agent', 'work-continuation'].includes(job.kind)) return null;
+    || !['growth', 'concern', 'task-agent', 'work-continuation', 'memory-refresh'].includes(job.kind)) return null;
   return job;
 }
 

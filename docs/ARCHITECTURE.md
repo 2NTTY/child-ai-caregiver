@@ -821,3 +821,11 @@ HTML／文字 PDF 先沿原解析器；掃描頁、圖表和有資訊的圖片�
 P3 四角色提案沿共同 [運行配置](#p2-agent-budgets)，所有角色合計最多 6 次生成；這不是本次提高 P2 執行限額的授權，P2 沿實際配置及本人更低上限。P3 啟用時預留必要審核額度，餘額／期限足夠才最多一次修正及重核；不足保存進度，不新開 run 繞限。子 Runner 必須經共用 ModelGateway 計量，不假定 ADK 自動繼承專案預算。
 
 背景公共維護用平台獨立有界工作預算，不占某家長互動 run 或私人 key，仍受全局生成／embedding／費用控制；分批／重啟不清零邏輯工作累計用量。每批源量與多模態成本須在啟用前核定，現有維護授權不能推定新增爬取／模型成本已批准。原 [成本表](#firestore-cost) 的平均 3 次生成只是情景，新增審核／資料編製及多模態需量測後更新；不因此提高每日額度或預設更多付費服務。
+
+
+<a id="private-memory-maintenance"></a>
+### 私人記憶整理接線
+
+私人摘要使用既有 Firestore 業務服務、背景工作及同一 ADK Runner；不另建記憶庫、模型壓縮服務或 P3 Agent。交易內只提交原文／變更、合併整理請求及 outbox；模型在交易外、最多一次生成，之後以原 run、來源版本與 coverage 交易保存。保存的批次在後續請求復用，並於每次 provider 請求前核對，不把摘要累加進 ADK session。
+
+純近期訊息選取在 agent-context-window；Prompt 組裝驗證在 agent-prompt；總請求與原生協定容量閘在 ModelGateway；資料有效性與修復在 Firestore memory；排程、付款、租約、unknown／終態由現有服務掌管。詳細來源及覆蓋見 [批次資料契約](DATA_MODEL.md#memory-summary-batches)，入口及上限見 [API](API.md#memory-batch-maintenance)。

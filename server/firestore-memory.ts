@@ -24,8 +24,11 @@ export const firestoreTopicSchema = z.object({ id: uuid, childId: uuid, visibili
   resumeAfter: time.nullable(), reopenReason: z.string().max(500).nullable(), reopenedFrom: uuid.nullable(), mayAsk: z.boolean() }).strict();
 const summarySchema = z.object({ id: uuid, childId: uuid, version, text: z.string().min(1).max(6000), createdAt: time,
   previousId: uuid.nullable(), coveredMessageIds: z.array(uuid).min(1).max(50), lastCoveredMessageId: uuid }).strict();
+const summaryDependencySchema = z.object({ kind: z.enum(['profile', 'fact', 'topic', 'care']), id: uuid, version: z.number().int().nonnegative(), validUntil: time.nullable() }).strict();
+const summaryBatchSchema = z.object({ dependencies: z.array(summaryDependencySchema).max(64), sourceCoverageComplete: z.boolean().optional(), authorizationVersion: z.string(),
+  lastMessageSortKey: z.string().regex(/^[0-9]{19}$/u), replaces: uuid.nullable() }).strict();
 const savedSummarySchema = z.object({ summary: summarySchema, basis: z.string().regex(/^[a-f0-9]{64}$/u),
-  validUntil: time.nullable(), lastSortKey: z.string().regex(/^[0-9]{19}$/u) }).strict();
+  validUntil: time.nullable(), lastSortKey: z.string().regex(/^[0-9]{19}$/u), batch: summaryBatchSchema.optional() }).strict();
 const keySchema = z.object({ id: uuid }).strict();
 const tombstoneSchema = z.object({ id: uuid, childId: uuid, version, operationId: uuid, deletedAt: time }).strict();
 const pathPattern = /^\/api\/children\/([0-9a-f-]{36})\/memory\/(facts|topics)(?:\/([0-9a-f-]{36})\/(confirm|revise|deactivate|delete|change|reopen))?$/iu;
@@ -35,6 +38,8 @@ type SavedSummary = z.infer<typeof savedSummarySchema>;
 type Prepared<T> = { value: T; changeSeq: string; commit(): void };
 export interface FirestoreMemoryStore extends MemoryStore {
   mutation: FirestoreOnlineMutation;
+  readSummaryRevision(binding: Binding, raw: unknown): Promise<ConversationSummary | null>;
+  prepareMaintenance(userId: string, childId: string): Promise<SummaryInput | null>;
   prepareSummaryWrite(binding: Binding, raw: unknown, operationId: string): Promise<Prepared<ConversationSummary>>;
   readFact(binding: Binding, id: string): Promise<MemoryFact | null>;
   /** Current confirmed family facts by their existing uniqueness keys; no private corpus scan. */
@@ -233,36 +238,136 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     }
     return { basis: firestoreDomainHash([revision.basis, applicable, expired.docs[0]?.get('validUntil') ?? null]), validUntil };
   }
+  async function batchValid(binding: Binding, saved: SavedSummary, cache = new Map<string, DocumentSnapshot>()) {
+    if (!saved.batch || saved.batch.authorizationVersion !== binding.authorizationVersion) return false;
+    // Bounded dependency discovery must not silently treat a partial page as a complete invalidation graph.
+    if (!saved.batch.sourceCoverageComplete && saved.basis !== (await summaryBasis(binding)).basis) return false;
+    if (saved.validUntil && Date.parse(saved.validUntil) <= Date.now()) return false;
+    for (const dependency of saved.batch.dependencies) {
+      if (dependency.validUntil && Date.parse(dependency.validUntil) <= Date.now()) return false;
+      const [collection, kind] = dependency.kind === 'profile' ? ['child_profiles', 'child-profile']
+        : dependency.kind === 'fact' ? ['memory_facts', 'memory-fact'] : dependency.kind === 'topic'
+          ? ['memory_topics', 'memory-topic'] : ['care_records', 'care-record'];
+      const key = kind + ':' + dependency.id;
+      let row = cache.get(key);
+      if (!row) { row = await binding.transaction.get(data.ref(collection, kind, dependency.id)); cache.set(key, row); }
+      if (dependency.kind === 'profile' && dependency.version === 0 && !row.exists) continue;
+      if (!row.exists || row.get('live') === false || row.get('recordVersion') !== dependency.version
+        || Object.entries(data.tags(binding.scope)).some(([key, value]) => row.get(key) !== value)) return false;
+    }
+    // Chat rows are immutable and removed with child/account access; the authority transaction already checked that scope.
+    // No per-message existence scan is needed on every model request.
+    return true;
+  }
+  async function readSummaryRevision(binding: Binding, raw: unknown) {
+    const saved = domainParse(savedSummarySchema, raw);
+    if (saved.batch) return await batchValid(binding, saved) ? saved.summary : null;
+    const current = await summaryBasis(binding);
+    return saved.basis === current.basis && (!saved.validUntil || Date.parse(saved.validUntil) > Date.now()) ? saved.summary : null;
+  }
+  async function recentBatches(binding: Binding) {
+    const rows = await binding.transaction.get(scoped(binding, 'conversation_summaries').where('currentBatch', '==', true)
+      .orderBy('lastMessageSortKey', 'desc').limit(5));
+    const batches: { saved: SavedSummary; valid: boolean; row: DocumentSnapshot }[] = [], cache = new Map<string, DocumentSnapshot>();
+    for (const row of rows.docs.slice(0, 4)) {
+      const saved = open(binding, 'conversation-summary', row.get('entityId'), savedSummarySchema, row);
+      if (!saved.batch || row.get('lastMessageSortKey') !== saved.batch.lastMessageSortKey) domainReject('summary_binding', 500);
+      batches.push({ saved, row, valid: await batchValid(binding, saved, cache) });
+    }
+    return { batches, more: rows.size > 4 };
+  }
   async function summaryInput(binding: Binding) {
     const id = summaryId(binding), row = await binding.transaction.get(data.ref('conversation_summary_heads', 'conversation-summary-head', id));
     const saved = row.exists ? open(binding, 'conversation-summary-head', id, savedSummarySchema, row) : null;
     const current = await summaryBasis(binding);
-    const usable = saved !== null && saved.basis === current.basis && (saved.validUntil === null || Date.parse(saved.validUntil) > Date.now());
+    const usable = saved !== null && (saved.batch ? await batchValid(binding, saved)
+      : saved.basis === current.basis && (saved.validUntil === null || Date.parse(saved.validUntil) > Date.now()));
+    // New batches never rewind their coverage watermark after a source edit. Legacy cumulative summaries remain conservative.
     let query = scoped(binding, 'chat_messages').orderBy('sortKey', 'asc').limit(51);
-    if (usable) query = query.startAfter(saved.lastSortKey);
+    if (saved && (saved.batch || usable)) query = query.startAfter(saved.lastSortKey);
     const rows = await binding.transaction.get(query);
     const messages = rows.docs.slice(0, 50).map(row => open(binding, 'chat-message', row.get('messageId'), firestoreChatMessageSchema, row));
     const input: SummaryInput = { previous: usable ? saved.summary : null, previousVersion: saved?.summary.version ?? 0,
-      basis: current.basis, messages, moreUncovered: rows.size > 50 };
+      basis: current.basis, messages, moreUncovered: rows.size > 50, summaryMode: 'isolated_batch' };
     return { input, current, rows, saved, usable };
   }
+  async function summaryDependencies(binding: Binding) {
+    const profile = await options.care.readProfile(binding), facts = await page(binding, 'facts', undefined, 20, false, true),
+      topics = await page(binding, 'topics', undefined, 20);
+    const dependencies: z.infer<typeof summaryDependencySchema>[] = [{ kind: 'profile', id: binding.scope.childId, version: profile.version, validUntil: profile.data?.validUntil
+        ? new Date(Date.parse(profile.data.validUntil + 'T00:00:00Z') + 16 * 60 * 60 * 1000).toISOString() : null }];
+    for (const fact of facts.items as MemoryFact[]) {
+      dependencies.push({ kind: 'fact', id: fact.id, version: fact.version, validUntil: fact.validUntil });
+      if (fact.source.kind === 'care_record') dependencies.push({ kind: 'care', id: fact.source.recordId, version: fact.source.version, validUntil: null });
+    }
+    for (const topic of topics.items) dependencies.push({ kind: 'topic', id: topic.id, version: topic.version, validUntil: null });
+    return { dependencies: [...new Map(dependencies.map(item => [item.kind + ':' + item.id, item])).values()],
+      sourceCoverageComplete: !facts.nextAfterId && !topics.nextAfterId };
+  }
+  async function repairInput(binding: Binding, id: string) {
+    const row = await binding.transaction.get(data.ref('conversation_summaries', 'conversation-summary', id));
+    if (!row.exists || row.get('currentBatch') !== true) return null;
+    const saved = open(binding, 'conversation-summary', id, savedSummarySchema, row);
+    if (!saved.batch?.sourceCoverageComplete || await batchValid(binding, saved) || saved.batch.authorizationVersion !== binding.authorizationVersion) return null;
+    const sources: unknown[] = [], dependencies: z.infer<typeof summaryDependencySchema>[] = [];
+    for (const old of saved.batch.dependencies) {
+      let value: { version: number; validUntil?: string | null } | null;
+      if (old.kind === 'profile') {
+        const profile = await options.care.readProfile(binding);
+        value = { ...profile, validUntil: profile.data?.validUntil
+          ? new Date(Date.parse(profile.data.validUntil + 'T00:00:00Z') + 16 * 60 * 60 * 1000).toISOString() : null };
+      } else if (old.kind === 'fact') {
+        const fact = await read(binding, 'facts', old.id) as MemoryFact | null;
+        value = fact ? await factResult(binding, fact) : null;
+        // Permanently removed, inactive or expired claims must not be regenerated from their old chat text.
+        if (value && !(value as MemoryFact).applicable) return null;
+        const source = (value as MemoryFact | null)?.source;
+        if (source?.kind === 'care_record') dependencies.push({ kind: 'care', id: source.recordId, version: source.version, validUntil: null });
+      } else if (old.kind === 'topic') value = await read(binding, 'topics', old.id);
+      else value = await options.care.readRecord(binding, old.id);
+      if (!value || value.validUntil && Date.parse(value.validUntil) <= Date.now()) return null;
+      if (value.version !== old.version) sources.push({ kind: old.kind, id: old.id, current: value });
+      dependencies.push({ ...old, version: value.version, validUntil: value.validUntil ?? null });
+    }
+    const messages = [];
+    for (const messageId of saved.summary.coveredMessageIds) {
+      const message = await options.chat.readMessage(binding, binding.scope.childId, messageId);
+      if (!message) return null;
+      messages.push(message);
+    }
+    if (JSON.stringify({ messages, sources }).length > 12000) return null;
+    const head = await summaryInput(binding);
+    const input: SummaryInput = { previous: null, previousVersion: head.input.previousVersion, basis: head.input.basis,
+      messages, moreUncovered: head.input.moreUncovered || head.input.messages.length > 0, summaryMode: 'isolated_batch', repairOf: id, currentSources: sources };
+    const unique = [...new Map(dependencies.map(item => [item.kind + ':' + item.id, item])).values()];
+    if (unique.length > 64) return null; // Keep the invalidated batch hidden instead of dropping dependency evidence.
+    return { input, saved, dependencies: unique, sourceCoverageComplete: true };
+  }
   async function prepareSummaryWrite(binding: Binding, raw: unknown, operationId: string): Promise<Prepared<ConversationSummary>> {
-    const input = domainParse(summarySaveSchema, raw), expected = await summaryInput(binding);
+    const input = domainParse(summarySaveSchema, raw), head = await summaryInput(binding);
+    const repair = input.repairOf ? await repairInput(binding, input.repairOf) : null;
+    if (input.repairOf && !repair) domainReject('summary_coverage_changed');
+    const expected = repair ? { ...head, input: repair.input } : head;
     if (input.previousVersion !== expected.input.previousVersion || input.basis !== expected.input.basis ||
       JSON.stringify(input.coveredMessageIds) !== JSON.stringify(expected.input.messages.slice(0, input.coveredMessageIds.length).map(value => value.id)))
       domainReject('summary_coverage_changed');
     const value: ConversationSummary = { id: randomUUID(), childId: binding.scope.childId, version: expected.input.previousVersion + 1,
-      text: input.text, createdAt: new Date().toISOString(), previousId: expected.input.previous?.id ?? null,
+      text: input.text, createdAt: new Date().toISOString(), previousId: null,
       coveredMessageIds: input.coveredMessageIds, lastCoveredMessageId: input.coveredMessageIds.at(-1)! };
-    const saved: SavedSummary = { summary: value, basis: input.basis, validUntil: expected.current.validUntil,
-      lastSortKey: expected.rows.docs[input.coveredMessageIds.length - 1].get('sortKey') };
+    if (repair && input.coveredMessageIds.length !== repair.input.messages.length) domainReject('summary_coverage_changed');
+    const lastMessageSortKey = repair?.saved.batch!.lastMessageSortKey ?? expected.rows.docs[input.coveredMessageIds.length - 1].get('sortKey');
+    const lastSortKey = repair ? head.saved!.lastSortKey : lastMessageSortKey;
+    const sourceState = repair ?? await summaryDependencies(binding), dependencies = sourceState.dependencies;
+    const saved: SavedSummary = { summary: value, basis: input.basis, validUntil: dependencies.flatMap(item => item.validUntil ? [item.validUntil] : []).sort()[0] ?? null, lastSortKey,
+      batch: { dependencies, sourceCoverageComplete: sourceState.sourceCoverageComplete, authorizationVersion: binding.authorizationVersion, lastMessageSortKey, replaces: input.repairOf ?? null } };
     const change = await binding.prepareChange(operationId, 'memory', false), id = summaryId(binding);
-    const head = { ...data.tags(binding.scope), ...data.seal('conversation-summary-head', id, binding.scope, savedSummarySchema, saved, value.version) };
-    const revision = { ...data.tags(binding.scope), entityId: value.id, entityVersion: value.version,
+    const headEnvelope = { ...data.tags(binding.scope), ...data.seal('conversation-summary-head', id, binding.scope, savedSummarySchema, saved, value.version) };
+    const revision = { ...data.tags(binding.scope), entityId: value.id, entityVersion: value.version, currentBatch: true, lastMessageSortKey,
       ...data.seal('conversation-summary', value.id, binding.scope, savedSummarySchema, saved, value.version) };
     return { value, changeSeq: change.changeSeq, commit() {
-      change.commit(); binding.transaction.set(data.ref('conversation_summary_heads', 'conversation-summary-head', id), head);
+      change.commit(); binding.transaction.set(data.ref('conversation_summary_heads', 'conversation-summary-head', id), headEnvelope);
       binding.transaction.create(data.ref('conversation_summaries', 'conversation-summary', value.id), revision);
+      if (input.repairOf) binding.transaction.update(data.ref('conversation_summaries', 'conversation-summary', input.repairOf), { currentBatch: false });
     } };
   }
   async function direct(userId: string, childId: string, kind: Kind, action: string | undefined, id: string | undefined, raw: unknown) {
@@ -285,7 +390,25 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     },
   };
   const store: FirestoreMemoryStore = {
-    mutation, prepareSummaryWrite,
+    mutation, prepareSummaryWrite, readSummaryRevision,
+    prepareMaintenance: (u, c) => authority.runTransaction(u, c, async binding => {
+      const state = await summaryInput(binding);
+      if (state.saved?.batch) {
+        const recent = await recentBatches(binding);
+        for (const item of recent.batches) if (!item.valid) {
+          const repair = await repairInput(binding, item.saved.summary.id); if (repair) return repair.input;
+        }
+      }
+      // No empty work and no re-summarizing the prior text. A complete message is the smallest unit.
+      const messages: SummaryInput['messages'] = [];
+      for (const message of state.input.messages) {
+        if (JSON.stringify([...messages, message]).length > 12000) break;
+        messages.push(message);
+      }
+      return messages.length ? { ...state.input, previous: null, messages,
+        moreUncovered: state.input.moreUncovered || messages.length < state.input.messages.length }
+        : state.input.messages.length ? { ...state.input, messages: [], unavailableReason: 'message_requires_continuation' } : null;
+    }),
     recall: (u, c, keys) => authority.runTransaction(u, c, async binding => {
       domainParse(z.array(z.string().min(1).max(100)).min(1).max(4), keys);
       const facts: MemoryFact[] = [], topics: MemoryTopic[] = [], missingKeys: string[] = [];
@@ -366,9 +489,26 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
     }),
     summary: (u, c) => authority.runTransaction(u, c, async binding => ({ summary: (await summaryInput(binding)).input.previous })),
     initialConversationSummary: (u, c) => authority.runTransaction(u, c, async binding => {
-      const result = await summaryInput(binding); if (!result.input.previous) return null;
-      const { id, version, text, createdAt, lastCoveredMessageId } = result.input.previous;
-      return { summary: { id, version, text, createdAt, lastCoveredMessageId }, basis: result.current.basis, validUntil: result.current.validUntil };
+      const result = await summaryInput(binding);
+      if (!result.saved?.batch) {
+        if (!result.input.previous) return null;
+        const { id, version, text, createdAt, lastCoveredMessageId } = result.input.previous;
+        return { summary: { id, version, text, createdAt, lastCoveredMessageId }, basis: result.current.basis, validUntil: result.current.validUntil };
+      }
+      const recent = await recentBatches(binding), valid = recent.batches.filter(batch => batch.valid).reverse();
+      const selected: SavedSummary[] = [];
+      // Whole batches only; older history remains available through authorized search, not a growing prompt.
+      for (const item of [...valid].reverse()) {
+        if (JSON.stringify([...selected, item.saved].map(value => ({ id: value.summary.id, sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text }))).length > 3000) continue;
+        selected.unshift(item.saved);
+      }
+      const latest = selected.at(-1); if (!latest) return null;
+      const { id, version, createdAt, lastCoveredMessageId } = latest.summary;
+      const text = JSON.stringify({ mode: 'historical_batches_not_current_facts', batches: selected.map(value => ({ id: value.summary.id,
+        sourceMessageIds: value.summary.coveredMessageIds, text: value.summary.text })), complete: false,
+        omittedOrInvalidatedBatches: recent.batches.length - selected.length, olderHistoryAvailable: true });
+      return { summary: { id, version, text, createdAt, lastCoveredMessageId }, basis: result.current.basis,
+        validUntil: selected.flatMap(value => value.validUntil ? [value.validUntil] : []).sort()[0] ?? null };
     }),
     prepareSummary: (u, c) => authority.runTransaction(u, c, async binding => (await summaryInput(binding)).input),
     saveSummary: (u, c, raw) => authority.runTransaction(u, c, async binding => {

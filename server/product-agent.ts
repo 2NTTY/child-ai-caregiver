@@ -1,3 +1,4 @@
+import { selectRecentConversation } from './agent-context-window.ts';
 import type { MemoryStore } from "./memory.ts";
 import type { TaskStore } from "./tasks.ts";
 import type { ChatStore } from "./chat.ts";
@@ -117,6 +118,7 @@ export function createProductAgent(options: {
         const original = await options.store.get(userId, childId, claim.runId);
         return await isCurrentUser() ? original : null;
       }
+      const recent = selectRecentConversation(page.messages, index);
       const cancellation = new AbortController(), key = replyKey(userId, childId, messageId);
       activeReplies.set(key, cancellation);
       try {
@@ -133,14 +135,14 @@ export function createProductAgent(options: {
           if (!await authorize()) throw new AgentStopped("unauthorized");
           return current;
         } } : {}),
-        context: { confirmationResult, currentMessageId: messageId, serverNow: new Date().toISOString(), timeZone: "Asia/Hong_Kong", memoryAvailability: { hasSummary: Boolean(context.summary),
+        context: { recentConversationCoverage: recent.coverage, confirmationResult, currentMessageId: messageId, serverNow: new Date().toISOString(), timeZone: "Asia/Hong_Kong", memoryAvailability: { hasSummary: Boolean(context.summary),
           earlierMessagesNotFullySummarized: context.truncated.messages },
           confirmationPolicy: options.actions ? "ordinary_instructions_with_current_preauthorization_otherwise_explicit_confirmation" : "explicit_selection_only",
           operationPolicy,
           instructionPolicy: options.actions ? "本次清楚的普通交代可按 operationPolicy 使用對應普通操作工具。政策不足、重要健康資料、AI 主動建議、刪除及擴大共享依原確認流程；含糊指向先補問，未消歧前不得任選目標建立候選或要求批准該猜測。需要孩子資料、原任務或舊版本時先 read_context；每次執行由 Server 重查政策。結果依收據，不把站內安排稱為外發通知。" : null,
           outputPolicy: "present_answer is required; all advice paragraphs require supporting official citation IDs; final text cannot execute actions" },
         // A bounded recent window is distinct from the coverage-tracked summary and confirmed facts.
-        messages: page.messages.slice(Math.max(0, index - 5), index + 1).map(item => ({ role: item.role, text: item.text })),
+        messages: recent.messages.map(item => ({ role: item.role, text: item.text })),
         toolCatalog: PRODUCT_AGENT_TOOL_CATALOG,
         tools: run => {
           tools = createProductAgentTools({ ...options, includeDocuments: true, run, authorize });

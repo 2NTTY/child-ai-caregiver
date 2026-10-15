@@ -45,7 +45,7 @@ export function claimedRunAssembly(config: AiConfig, persistence: ClaimedRunPers
     const interactive = input.recipeId === "product-interactive" && input.trigger.kind === "interactive" && claim?.sourceMessageId === input.trigger.reference;
     const continuation = (allowWorkContinuation || allowProductEntrypoints) && input.recipeId === "product-work-followup" && input.trigger.kind === "worker"
       && claim?.sourceMessageId === null && workContinuationJobSchema.shape.workerGeneration.safeParse(claim.workerGeneration).success;
-    const background = allowProductEntrypoints && input.recipeId === "product-background" && input.trigger.kind === "worker"
+    const background = allowProductEntrypoints && ["product-background", "memory-refresh"].includes(input.recipeId) && input.trigger.kind === "worker"
       && claim?.purpose === "background" && claim.sourceMessageId === null
       && workContinuationJobSchema.shape.workerGeneration.safeParse(claim.workerGeneration).success;
     const capture = allowProductEntrypoints && input.trigger.kind === "interactive" && claim?.sourceMessageId === null

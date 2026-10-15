@@ -3174,6 +3174,36 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "yuban_authority_conversation_summaries",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "currentBatch",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastMessageSortKey",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -3833,6 +3863,16 @@
       "collectionGroup": "yuban_authority_admin_operations",
       "fieldPath": "recovery",
       "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_context_versions",
+      "fieldPath": "summaryPending",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
     }
   ]
 }
