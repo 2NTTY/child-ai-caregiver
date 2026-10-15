@@ -51,6 +51,43 @@
       "publicConfigComplete": true,
       "browserRestricted": true,
       "note": "Current Web key cannot be reused by the native JS transport; its restrictions remain unchanged. A separate Auth-only client key is pending the concrete cloud setup scope. No key material retained in this evidence."
+    },
+    {
+      "name": "Logged-in EAS archive and approved cloud configuration",
+      "result": "passed-local-archive-cloud-configuration-only",
+      "initialArchive": {
+        "files": 4,
+        "bytes": 602351,
+        "issue": "Trailing-slash directory allowlist skipped app directories; no source upload or build"
+      },
+      "fixedArchive": {
+        "files": 609,
+        "bytes": 25129109,
+        "forbiddenFiles": 0,
+        "untrackedFiles": 0,
+        "sourceMismatches": 0,
+        "manifestSha256": "59d980013e055f11dece5a3b8f1c67e9a47896ca065499d50dfb8a915dd16e19"
+      },
+      "note": "Archive manifest preceded public project-link changes; final upload source is recorded with build evidence.",
+      "expo": {
+        "owner": "2ntty",
+        "slug": "yuyoufang",
+        "projectId": "8c63b9fc-b823-4b40-ba36-375ce43fa578",
+        "plan": "Free",
+        "androidBuildsUsedBefore": 0,
+        "androidBuildLimit": 15
+      },
+      "nativeAuth": {
+        "keyResourceId": "yuyoufang-android-auth",
+        "services": [
+          "identitytoolkit.googleapis.com",
+          "securetoken.googleapis.com"
+        ],
+        "webKeyUnchanged": true,
+        "previewConfigured": true,
+        "loginUntested": true
+      },
+      "approvedBuildCount": 1
     }
   ],
   "sourceSha256": {
@@ -65,10 +102,11 @@
     "frontend/src/production/production-transport.native.ts": "fbe535bb37abaec366aa7bb9e7aa555a2a62bf4d0c240790cabeab125f2e31bf",
     "frontend/src/production/ProductionOwner.ts": "8beb131e2812cc4e3dabcc3885ee853a5c70c8989cc5665bc9f0b671c0924d4d",
     "tests/firebase-auth.test.ts": "141cc3e03eb8cceacbc25acba7ab8346e7ea6cf717e4ef553d80a5d0186c124b",
-    "frontend/app.json": "a81f272b8699ebeb46b2d0e342be78b06df65508e0fdec282d4f201acfe7cf4e",
-    "frontend/app.config.js": "c89bd45cfcf3fd60495d85cac64a6a9acf91231b6ef325881da4ac5c8f99f91d",
+    "frontend/app.json": "7296e029b711bf171bc2d27cd75ddf2c612debaaf1df2cf2e7f19fb4c30f4de5",
+    "frontend/app.config.js": "137dec8347bfbdbf3197cc18a1e5b08c85bfae7d7f9f0a5d61403cb1108672ff",
     "frontend/eas.json": "bb25d4d31ab04a0c9c9bea4d6edfa0683b66d322d4faa617bdeca26f7722e649",
-    "package-lock.json": "46d3725e8c611104b17731e16560c258f18b83ad6027d1d7ddb67aecfa4d225d"
+    "package-lock.json": "46d3725e8c611104b17731e16560c258f18b83ad6027d1d7ddb67aecfa4d225d",
+    ".easignore": "d64947c671a54f55b704a9516b3c328aca1d1d2a145e513bbf5a2850f5a2e648"
   },
   "externalCalls": {
     "model": 0,
@@ -78,8 +116,7 @@
     "deployment": 0
   },
   "remaining": [
-    "Expo login and linked project; inspect actual archive before approving private source upload",
-    "Configure and verify a separate native-compatible Auth-only public key; do not weaken the Web key restrictions",
+    "One approved free cloud preview build, exact upload manifest, signing and real native Auth remain pending",
     "Cloud preview APK and signing",
     "Compatible Server deployment and one real Android login/child/chat/save/readback",
     "S05/S07 and later packages remain separate; no iOS or full Android acceptance"

@@ -3,14 +3,14 @@
 !/package.json
 !/package-lock.json
 !/tsconfig.json
-!/frontend/
-!/src/
-!/assets/
-!/licenses/
+!/frontend
+!/src
+!/assets
+!/licenses
 !/THIRD_PARTY_NOTICES.md
 /src/*
-!/src/client/
-!/src/shared/
+!/src/client
+!/src/shared
 **/node_modules/
 **/.cache/
 **/.expo/
@@ -35,3 +35,6 @@
 /frontend/*.md
 /frontend/tsconfig*.json
 !/frontend/tsconfig.json
+
+# EAS checks directory names before descending into them.
+/assets/**/*.md

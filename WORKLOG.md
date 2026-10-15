@@ -2699,3 +2699,12 @@
 
 - 唯讀取得目前 Firebase 公開 key 的限制：現有 Web key 帶 browser referrer restriction，不能直接給原生 JS SDK 使用；SDK 13.0.0 的 React Native 額外 headers 亦沒有 Android package／cert 欄位。沒有修改 key、IAM、配額或建立資源。
 - 雲端 build 配置補完整 Firebase 環境與 HTTPS API 檢查，避免產出已知無法登入的 APK；部署交接列同專案 Auth-only 專用 key 的最小範圍，保留 Web 限制。這是已核實配置缺口，不是 Android 登入通過。Expo CLI 仍未登入；原生 key／archive／APK／部署／真機保持待驗，不重跑既有 bundle 或產品測試。
+
+
+<a id="log-20261015-android-expo-setup"></a>
+## 2026-10-15 — S04-W01 Expo 接線及首次 APK 準備
+
+- 使用者完成 Expo 登入並批准 `2ntty/yuyoufang` 專案、已核對私有前端封包、EAS 簽署及最多一次免費 preview APK；另批准既有 GCP 專案的 Auth-only 原生公開 key。沒有批准付費升級，本次不含部署／模型／通知。
+- 真 archive 首次只含四個根檔案，定位為 EAS 遍歷目錄前的 ignore 匹配；修正後同一入口包含 609 檔／25,129,109 bytes，無未追蹤或禁止檔案，與來源一致。保留先前未登入與不完整 archive 證據，不當雲端 build 失敗。
+- 已連結公開 project ID，原生 Auth key 只允許 Identity Toolkit／Secure Token，設定於 preview；Web key 不變。實查 Expo Free、Android 0／15。沒有生成 APK，Server 原生端點尚未部署，真機未驗。
+- 本機原有合成／型別／Hermes 證據復用，不重跑產品測試。主模型處理，B 單作者交付；下一步只執行已批准的一次 build，再準備部署及真機範圍。

@@ -156,10 +156,10 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 產品範圍／進度只見 [根 PLAN Android 計劃](../PLAN.md#p3-mobile)。原 Web／API 網址及設計不變；Android 使用同一 `frontend/`、正式 owner 與 Server，平台 adapter 位於 `production-transport.native.ts`，Web 沿同名共用入口。身份協議見 [API](API.md#native-session)。原生管理後台維持不開放。
 
 - 在 `frontend/` 使用固定 `eas-cli@24.14.0`；`app.json` 固定 Android `org.yuyoufang.app`、scheme `yuyoufang` 及 runtime fingerprint，`eas.json` 保留 development／preview／production channel。固定 Node 24.19.0、npm 11.8.0。
-- Expo 帳號由本人登入，不把密碼／token 放入專案；公開 project ID 連結後以 `EAS_PROJECT_ID` 提供。沒有 project ID 不允許雲端 build；本機無連結時 Updates 關閉，不假稱 OTA 已配置。
-- `EXPO_PUBLIC_AUTH_PROVIDER=firebase`、API base 使用原站 HTTPS `/api`；Firebase project／authDomain／appId 沿同一專案，缺任何公開設定便停止雲端 build。Android 必須使用相容原生 JS SDK 的專用 Firebase Auth 公開 key，API allowlist 只需 `identitytoolkit.googleapis.com`／`securetoken.googleapis.com`；不可直接沿用限定 HTTP referrer 的 Web key、移除其限制或偽造 Referer。SDK 未提供 Android package／cert headers，不把原生 SDK 的 application restriction 設定當已相容。公開 key 不授予 Firestore、Storage、模型或 Admin 權限；產品准入與 Server 權限仍逐次核對，配額不提高。具體 key 建立與驗證併入首次已批准的雲端接線範圍。
+- Expo 帳號由本人登入，不把密碼／token 放入專案；公開 project ID 固定於 `app.json`，可由 `EAS_PROJECT_ID` 覆蓋；現行專案為 `@2ntty/yuyoufang`。沒有 project ID 不允許雲端 build；本機無連結時 Updates 關閉，不假稱 OTA 已配置。
+- `EXPO_PUBLIC_AUTH_PROVIDER=firebase`、API base 使用原站 HTTPS `/api`；Firebase project／authDomain／appId 沿同一專案，缺任何公開設定便停止雲端 build。Android 必須使用相容原生 JS SDK 的專用 Firebase Auth 公開 key，API allowlist 只需 `identitytoolkit.googleapis.com`／`securetoken.googleapis.com`；不可直接沿用限定 HTTP referrer 的 Web key、移除其限制或偽造 Referer。SDK 未提供 Android package／cert headers，不把原生 SDK 的 application restriction 設定當已相容。公開 key 不授予 Firestore、Storage、模型或 Admin 權限；產品准入與 Server 權限仍逐次核對，配額不提高。原生 key 已建立並配置至 Expo preview，尚待 APK 真登入；production 設定不因 preview 完成而自動就緒。
 - 公開 config 會進入 bundle，不應標為秘密來誤以為客戶端不可讀；ADC、私鑰與服務端 secret 不傳至 Expo。
-- `.easignore` 限定上載共用前端、client／shared、資產及依賴／授權。首次雲端建置前必須核對實際 archive，排除 Server、prompt、測試資料、私人協作文件及憑據。`eas build:inspect --platform android --stage archive --profile preview --output <new-local-directory>` 只準備本機 archive，但 CLI 仍需要 Expo 登入。
+- `.easignore` 限定上載共用前端、client／shared、資產及依賴／授權。首次雲端建置前必須核對實際 archive，排除 Server、prompt、測試資料、私人協作文件及憑據。`eas build:inspect --platform android --stage archive --profile preview --output <new-local-directory>` 只準備本機 archive，但 CLI 仍需要 Expo 登入。EAS 會先以不含尾斜線的目錄名判斷是否遍歷；allowlist 須放行目錄本身，不能只以 `!/frontend/` 等模式假定子檔已納入。
 - `npm run build:android-ui --workspace frontend` 只驗 JS／Hermes bundle，不會產生可安裝 APK。EAS preview／production 使用 APK；簽署、真機登入、OTA 與更新證據另列，不因 bundle 成功當成品。
 - 先部署相容的 `/api/auth/native-session` Server，再分發 Android；既有 Web Cookie 及 API body 保留。未支援原生交換的 Server 無法供新 APK 登入，不能用假 Origin 補救。
 

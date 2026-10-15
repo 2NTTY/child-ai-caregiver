@@ -29,6 +29,11 @@
     "scheme": "yuyoufang",
     "runtimeVersion": {
       "policy": "fingerprint"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8c63b9fc-b823-4b40-ba36-375ce43fa578"
+      }
     }
   }
 }
