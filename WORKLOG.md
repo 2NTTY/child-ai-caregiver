@@ -2876,3 +2876,11 @@
 - 共用薄畫面顯示處理中／真停止原因及原結果入口，不用另一份任務或聊天副本；最後一則未回覆訊息有界自動查核，舊訊息按需。未發送草稿只在本機，身份／孩子切換清私人投影。
 - 首次正式 HTTP 情景在錯孩子斷言停止：Firestore authority 403 未映射，回 generic 503。局部將新讀取方法的無權／缺失範圍轉不披露的 404；保留失敗後只補同一情景，通過。原有 3 次 scripted run／4 次生成，沒有增加 execution POST；另 4 個 Server／client 及 2 個 UI 型別入口零診斷。[EV](artifacts/verification/S09_CROSS_DEVICE_RECOVERY_20261016.json)。
 - 零真模型、手機、雲端或部署。S04／S05／S07 前置及 API／新 APK／真機仍待交付；不把本機替身當實際手機通過。B 單作者，主模型實作／review，無子代理。
+
+
+## LOG-20261016-S12-MEDIA — 原生相片與檔案出口準備
+
+- 在 S09 `4d7f3cd` 上接續 S12；保留正式照片／私人來源 owner、API、收據及權限，補相機／相簿、原生 hash／Blob 與獨立照片草稿所有權；沒有另建資料副本或假成功。
+- PDF 與本人資料匯出沿同一 Server 版本／授權，Web 保留下載，Android 使用有界 cache 與系統保存／分享；遲到匯出在開啟系統前重核身份。開啟不代表使用者已保存。
+- 必要檢查：六個受影響型別入口零診斷；一條原生 Blob／hash／scope 情景通過（3 次合成 GET），沒有全量測試、真模型、手機、通知或雲端。固定 SDK 及 licenses 保存。[EV](artifacts/verification/S12_NATIVE_MEDIA_20261016.json)。
+- S12 尚未完成：共用語音繼續實作；本批需新 native runtime／APK，真機待使用者。B 單作者，主模型實作與 review，未派子代理，未合併或部署。

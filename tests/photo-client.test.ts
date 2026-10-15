@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { createPhotoApi, PhotoApiError } from "../src/client/photo-api.ts";
 import type { PhotoAttachment } from "../src/shared/photos.ts";
 
@@ -102,4 +102,37 @@ test("a reset during first-page JSON parsing prevents any subsequent page reques
     return response;
   });
   await assert.rejects(api.photos(CHILD,signal(),OWNER),rejected);assert.equal(calls,1);
+});
+
+test("native photo bytes use the shared identity and integrity checks without browser crypto", async t => {
+  const bytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+  const digest = createHash("sha256").update(bytes).digest("hex");
+  const original = { ...photo(), state: "ready" as const, bytes: bytes.length, sha256: digest };
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, "FileReader");
+  let reads = 0, calls = 0, invalidate = false;
+  class NativeReader {
+    result: ArrayBuffer | null = null;
+    onload?: () => void;
+    readAsArrayBuffer() { reads++; this.result = bytes.slice().buffer; this.onload?.(); }
+  }
+  Object.defineProperty(globalThis, "FileReader", { configurable: true, value: NativeReader });
+  t.after(() => { if (descriptor) Object.defineProperty(globalThis, "FileReader", descriptor); else Reflect.deleteProperty(globalThis, "FileReader"); });
+  const api = createPhotoApi("https://example.test", async (_, init) => {
+    calls++; assert.equal(init?.method, "GET");
+    assert.equal(new Headers(init?.headers).get("x-expected-user-id"), OWNER);
+    const blob = new Blob([bytes], { type: "image/png" });
+    Object.defineProperty(blob, "arrayBuffer", { value: undefined });
+    const response = new Response(null, { headers: { "content-type": "image/png" } });
+    response.blob = async () => blob;
+    return response;
+  }, async actual => {
+    assert.deepEqual(actual, bytes);
+    if (invalidate) api.resetOnline();
+    return createHash("sha256").update(actual).digest("hex");
+  });
+  assert.equal((await api.content(original, signal(), OWNER)).size, bytes.length);
+  await assert.rejects(api.content({ ...original, sha256: "0".repeat(64) }, signal(), OWNER), rejected);
+  invalidate = true;
+  await assert.rejects(api.content(original, signal(), OWNER), rejected);
+  assert.equal(calls, 3); assert.equal(reads, 3);
 });

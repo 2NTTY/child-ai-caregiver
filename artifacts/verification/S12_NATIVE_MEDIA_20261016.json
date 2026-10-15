@@ -1,0 +1,34 @@
+{
+  "workPackage": "S12-W01",
+  "scope": "Native photos, existing private sources, PDF and account export preparation; voice remains unfinished",
+  "baseline": "4d7f3cda2b24101d3a340d3f218a8b39e3fe731b",
+  "branch": "codex/s12-w01-shared-media",
+  "date": "2026-10-16",
+  "checks": [
+    {
+      "kind": "targeted-types",
+      "roots": 6,
+      "diagnostics": 0,
+      "logSha256": "a30d409ee504bb24db961d5a30393c066462cb866e2b766e601b031d9e6abc52"
+    },
+    {
+      "kind": "scripted-client",
+      "name": "native photo bytes use the shared identity and integrity checks without browser crypto",
+      "passed": 1,
+      "httpCalls": 3,
+      "scope": "FileReader fallback, original hash, late scope invalidation",
+      "logSha256": "232bebe7f3433beddb3d61a8349e5ec7e6ea48174c218203499df33e3ca17122"
+    }
+  ],
+  "realModelCalls": 0,
+  "cloudCalls": 0,
+  "notifications": 0,
+  "deviceActions": 0,
+  "limitations": [
+    "No camera/gallery permission or device result yet",
+    "No native PDF/share result yet",
+    "Native modules require a new APK; no build/upload/OTA executed",
+    "S12 voice not implemented",
+    "Preceding draft stack and first user chat acceptance remain pending"
+  ]
+}

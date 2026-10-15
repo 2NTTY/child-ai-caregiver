@@ -1,3 +1,4 @@
+import { selectNativePhoto, captureNativePhoto } from "./native-photo-picker";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
@@ -11,7 +12,7 @@ export type PhotoFilePickerProps = {
   selectOriginal?: () => Promise<PhotoOriginal | null>; capturePreferred?: boolean; captureOriginal?: () => Promise<PhotoOriginal | null>;
   renderTrigger?: (trigger: PhotoPickerTrigger) => ReactNode;
 };
-export function PhotoFilePicker({ disabled, onPick, onError, selectOriginal, capturePreferred = false, captureOriginal, renderTrigger }: PhotoFilePickerProps) {
+export function PhotoFilePicker({ disabled, onPick, onError, selectOriginal = selectNativePhoto, capturePreferred = false, captureOriginal = captureNativePhoto, renderTrigger }: PhotoFilePickerProps) {
   const [reading, setReading] = useState(false);
   const generation = useRef(0), disabledRef = useRef(disabled); disabledRef.current = disabled;
   useEffect(() => () => { generation.current++; }, []);
@@ -22,7 +23,7 @@ export function PhotoFilePicker({ disabled, onPick, onError, selectOriginal, cap
       const original = await pick();
       if (generation.current !== started || disabledRef.current) { original?.dispose?.(); return; }
       if (original) onPick(original);
-    } catch { if (generation.current === started) onError("未能選擇原照片，原檔及草稿保留。請核對相簿權限後再試。"); }
+    } catch { if (generation.current === started) onError("未能取得照片。請核對相機權限，並選擇 4 MiB 以內的 JPEG／PNG；現有草稿保留。"); }
     finally { if (generation.current === started) setReading(false); }
   }
   if (renderTrigger) {

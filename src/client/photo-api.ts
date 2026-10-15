@@ -1,3 +1,4 @@
+import { readBlobBytes, sha256Bytes } from "./blob-bytes.ts";
 import { z } from "zod";
 import type { PhotoAttachment, PhotoConfirmation, PhotoMetadata } from "../shared/photos.ts";
 import { PHOTO_LIMITS, photoDraftSchema, photoMetadataSchema } from "../shared/photos.ts";
@@ -93,7 +94,7 @@ function checkedWrite(value: unknown, target: Target): PhotoWriteResult {
   return { photo };
 }
 
-export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch): PhotoApi {
+export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hashBytes = sha256Bytes): PhotoApi {
   const base = baseUrl.replace(/\/$/u, "");
   const apiUrl = base.endsWith("/api") ? base : base + "/api";
   const online = createOnlineTransport(apiUrl, fetcher);
@@ -231,8 +232,7 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch): Pho
         if (result.headers.get("content-type")?.split(";")[0].trim() !== photo.mimeType) throw new PhotoApiError();
         const blob = await result.blob();
         if (blob.size !== photo.bytes || blob.size > PHOTO_LIMITS.bytes) throw new PhotoApiError();
-        const digest = await crypto.subtle.digest("SHA-256", await blob.arrayBuffer());
-        const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+        const hash = await hashBytes(await readBlobBytes(blob));
         if (hash !== photo.sha256) throw new PhotoApiError();
         return blob;
       });

@@ -282,3 +282,12 @@ S04-W01 固定 `@expo/fingerprint` 0.20.13 的 Windows config loader 以反斜�
 2026-10-16：復用現有 changes cursor、owner／Query 失效及身份 transport，沒有另一份同步資料庫。採 Expo SDK 57 配套 `expo-network` 57.0.2（MIT；固定 npm 原碼／license 已保存），只用 [getNetworkStateAsync／addNetworkStateListener](https://docs.expo.dev/versions/latest/sdk/network/) 配合 React Native AppState。網絡未知不冒稱離線；訂閱優先於遲到的初讀，初讀失敗不產生未處理 promise。沒有讀取 IP 或使用 Web 的外部 IP 服務。正式依賴變更需新 native runtime／APK，原生事件仍待真機；共用游標邏輯及型別已核。
 
 固定 React Native 0.86.3 的 `Libraries/Core/setUpXHR.js` 使用 abort-controller，其 AbortSignal 不提供 Web `any`／`timeout`。共用 observer 以一個 request controller、父取消 listener 及可清理計時器保留原十秒讀取上限；只取消 metadata 讀取，不取消 Server Agent 或重送寫入。
+
+
+### S12-W01：相機、二進位資料與裝置匯出
+
+2026-10-16：沿 Expo 57 固定 ImagePicker 57.0.19、FileSystem 57.0.7、Sharing 57.0.21，以及已使用的 expo-crypto 57.0.3；base64-js 1.5.1 顯式列為直接依賴，不自寫編碼器。均 MIT，原 license 及 lockfile 保存。沿官方 [ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)、[FileSystem](https://docs.expo.dev/versions/latest/sdk/filesystem/) 與 [Sharing](https://docs.expo.dev/versions/latest/sdk/sharing/)，核固定 npm 原碼／型別；不引入第二套媒體後端。
+
+Expo fetch 57.0.24 在未裝 expo-blob 時返回 React Native Blob；RN 0.86.3 Blob 沒有 arrayBuffer，但 FileReader.readAsArrayBuffer 有原生實作。共用讀取保留此後備，SHA-256 由原生 expo-crypto 薄 port 提供；不偽造整套 Web Crypto。相簿／相機只在明確點按開啟，按實際 bytes／JPEG／PNG／4 MiB 核對，使用同一照片 API、收據及授權。私人來源原 owner 可共用，不另造手機版。
+
+PDF 與資料下載只替換出口：Web 原下載；Android 私有 cache＋系統 shareAsync，開啟前重核當前 scope。固定 Android Sharing 在 chooser 的 activity result 返回，不能證明接收應用已保存；不即刻刪檔令接收方讀不到。暫存最多 16 份、每份最多 16 MiB，下次匯出清理超過 24 小時項目，不宣稱嚴格定時清理；取消亦不當保存成功。檔案是本人明確要求的匯出副本，不是可寫業務主庫。SDK 原生套件須新 APK/runtime；型別及原生 Blob 合成接點已驗，裝置權限／選圖／PDF 分享仍待真機。

@@ -124,7 +124,7 @@ function useProductionValue(owner: ProductionOwner) {
       executeDeletion: (password: string, confirmation: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.executeDeletion(password, confirmation); },
       cancelPreparedDeletion: () => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.cancelPreparedDeletion(); },
       checkDeletion: () => owner.accountOwner.checkDeletion(),
-      downloadNextPart: (save: (text: string, filename: string) => void | Promise<void>) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.downloadNextPart(save); },
+      downloadNextPart: (save: (text: string, filename: string, isCurrent: () => boolean) => void | Promise<void>) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.downloadNextPart(save); },
       clearDownload: () => { if (current.current.identityKey === snapshot.identityKey) owner.accountOwner.clearDownload(); },
     },
     dismissNotice: () => { setLocalNotice(null); setDismissedNotice(snapshot.records.notice); },
