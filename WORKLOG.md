@@ -2708,3 +2708,11 @@
 - 修正 Firestore 把執行期限套用到結果保存的缺陷；到期禁止新工作，原執行者仍可結清原結果。已取消、已有結果、撤權與世代檢查保持。JSON 與 SSE 同樣脫離連線取消；只有明確取消改原 run。
 - 正式 HTTP／真 Runner scripted 與 Firestore fixture 兩項定向檢查通過；受影響三個根檔型別零錯誤，diff check 通過。零真模型、通知、瀏覽器／裝置操作，未重發使用者訊息。
 - C 單作者主責；main model 實作及 review。部署待交付，首條聊天仍由使用者驗收；管理員總控後續接續。證據：[EV](artifacts/verification/AGENT_DISCONNECTED_RESULT_20261016.json)。
+
+
+## LOG-20261016-ADMIN-AGENT-RUN-LIMITS
+
+- 按使用者要求把單輪限額總控交回管理員：同一 policy 提供生成、工具、查詢 embedding 及秒數，API／worker 固定同一運行快照；合法範圍共用，保留舊 policy／命令指紋及原收據，沒有提高實際限額或清零用量。
+- 管理頁新增工具／期限表單及生效說明；縮短期限不延長原 claim。每步剩餘預算提示沿既有 runtime，不新增模型輪次。
+- 原有管理接線一條情景通過（24 次合成 HTTP），正式 HTTP／ADK scripted 回饋一項通過；8 個 Server/shared 型別入口與管理頁型別零診斷，一次 Web 建置成功。驗證準備中發現舊 auth 替身缺少完整介面及 checker 引用不存在的生成檔，已局部修正；無真模型、通知或全量測試。
+- 待合併及原站相容部署。Android 首條聊天及鍵盤仍待真人／真機；使用者離開期間不阻塞其他獨立工作。完成 Android 後再接本人 key／自選模型／限額，再提供同一正式 Agent 的本地隔離測試入口。證據：[EV](artifacts/verification/ADMIN_AGENT_RUN_LIMITS_20261016.json)。

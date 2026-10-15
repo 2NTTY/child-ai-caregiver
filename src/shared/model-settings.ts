@@ -1,10 +1,12 @@
+import { AGENT_RUN_LIMITS } from './agent-run-limits.ts';
+
 export type ModelBillingSource = "platform" | "personal";
 export type ModelMode = ModelBillingSource | "disabled";
 export const PERSONAL_MODEL = "gemini-3.1-flash-lite";
 export const PERSONAL_DAILY_LIMIT = { default: 100, min: 1, max: 1000 } as const;
 export const PERSONAL_RUN_LIMITS = {
-  modelCalls: { default: 4, min: 1, max: 12 },
-  queryEmbeddings: { default: 2, min: 1, max: 6 },
+  modelCalls: { ...AGENT_RUN_LIMITS.modelCalls, default: 4 },
+  queryEmbeddings: { ...AGENT_RUN_LIMITS.queryEmbeddings, default: 2 },
 } as const;
 
 /** Secret-free account settings; never return the key, its hash or a decryptable envelope. */

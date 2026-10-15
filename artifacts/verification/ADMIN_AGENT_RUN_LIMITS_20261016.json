@@ -1,0 +1,62 @@
+{
+  "scope": "Admin-controlled per-run generation, tool, query embedding and execution-time limits",
+  "baseline": "3aab32f6e0b9613bd0904319ad78b063d9d81be7",
+  "environment": "Node 24.19.0; production HTTP/runtime with synthetic Firestore fixture; staged S04 332ce63 Web plus this change",
+  "checks": [
+    {
+      "name": "existing admin HTTP/owner and shared API/worker routing",
+      "result": "passed",
+      "tests": 1,
+      "syntheticHttpRequests": 24,
+      "includes": [
+        "tool and deadline policy",
+        "immutable selected profile",
+        "original-operation recovery",
+        "legacy command fingerprint and omitted-field preservation",
+        "durable root binding and tool limit"
+      ]
+    },
+    {
+      "name": "formal HTTP/ADK scripted feedback and disconnection",
+      "result": "passed",
+      "tests": 1
+    },
+    {
+      "name": "affected Server/shared typecheck",
+      "roots": 8,
+      "diagnostics": 0
+    },
+    {
+      "name": "AdminScreen targeted typecheck",
+      "roots": 1,
+      "diagnostics": 0
+    },
+    {
+      "name": "production Web export",
+      "result": "passed",
+      "builds": 1
+    },
+    {
+      "name": "diff whitespace",
+      "result": "passed"
+    }
+  ],
+  "repairNotes": [
+    "Existing auth test double lacked the required port method and overloaded session return. Corrected fixture typing; only the affected admin scenario rerun.",
+    "Screen checker initially named an absent generated expo-env file; corrected check input before the first build."
+  ],
+  "calls": {
+    "realModel": 0,
+    "notifications": 0,
+    "cloudWrites": 0
+  },
+  "deployment": {
+    "status": "pending",
+    "actualLimitsUnchanged": true
+  },
+  "limits": [
+    "Scripted provider is not real model quality evidence.",
+    "No browser, device, full suite or model comparison.",
+    "Android first chat and keyboard acceptance remain pending user/device; no message was resent."
+  ]
+}

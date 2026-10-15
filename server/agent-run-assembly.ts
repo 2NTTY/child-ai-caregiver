@@ -40,7 +40,7 @@ export function claimedRunAssembly(config: AiConfig, persistence: ClaimedRunPers
     || agentBudgetFingerprint(config) !== agentBudgetFingerprint(profile.config)
     || !nativeSessionService || !rootBudget || !dailyUsage) throw new Error("Invalid claimed run persistence assembly");
   const fingerprint = agentBudgetFingerprint(profile.config);
-  const bindDurableRun: AgentDurableRunBinder = (input, packVersion, limits) => {
+  const bindDurableRun: AgentDurableRunBinder = (input, packVersion, limits, effectiveDeadlineAtMs) => {
     const claim = input.claimedRun, expiry = Date.parse(claim?.expiresAt ?? "");
     const interactive = input.recipeId === "product-interactive" && input.trigger.kind === "interactive" && claim?.sourceMessageId === input.trigger.reference;
     const continuation = (allowWorkContinuation || allowProductEntrypoints) && input.recipeId === "product-work-followup" && input.trigger.kind === "worker"
@@ -60,12 +60,14 @@ export function claimedRunAssembly(config: AiConfig, persistence: ClaimedRunPers
       || !/^\d+$/u.test(claim.scope.dataVersion.slice(claim.storageEpoch.length + 1))
       || !Number.isSafeInteger(expiry) || expiry <= Date.now() || expiry !== input.deadlineAtMs
       || packVersion !== profile.promptPackVersion || dailyUsage.billingSource !== profile.billingSource) throw new AgentStopped("unavailable");
+    const deadline = effectiveDeadlineAtMs ?? expiry;
+    if (!Number.isSafeInteger(deadline) || deadline <= Date.now() || deadline > expiry) throw new AgentStopped("unavailable");
     return { adapter: rootBudget, dailyUsage, context: { generation: 1, binding: {
       rootRunId: claim.runId, ownerId: claim.scope.userId, workspaceId: claim.scope.workspaceId, childId: claim.scope.childId,
       authorizationVersion: claim.scope.authorizationVersion, storageEpoch: claim.storageEpoch,
       trigger: { ...claim.trigger }, workflowVersion: profile.workflowVersion + ((continuation || background) ? ":worker:" + claim.workerGeneration : capture ? ":capture:" + claim.sourceResource!.kind + ":" + claim.sourceResource!.id + ":" + claim.sourceResource!.version : ""), promptPackVersion: packVersion,
       settingsVersion: profile.settingsVersion + ":" + fingerprint, billingVersion: profile.billingVersion,
-      limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings }, deadlineAtMs: expiry,
+      limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings }, deadlineAtMs: deadline,
     } } };
   };
   return { config: profile.config, runLimits: profile.runLimits, nativeSessionService, bindDurableRun, provider, embeddingProvider };
