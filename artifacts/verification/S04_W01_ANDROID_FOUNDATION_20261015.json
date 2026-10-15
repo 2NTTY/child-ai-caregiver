@@ -1,6 +1,6 @@
 {
   "workPackage": "S04-W01",
-  "status": "device-startup-failed-local-fix-verified-awaiting-update",
+  "status": "startup-fix-published-device-confirmation-pending",
   "baseline": "4f88948cf943585954efbe32ef93e0df0c53f3c8",
   "recordedAt": "2026-10-15T11:20:23.441524+00:00",
   "environment": {
@@ -192,6 +192,26 @@
       "notifications": 0,
       "cloudBuilds": 0,
       "publishedUpdate": false
+    },
+    {
+      "name": "Compatible Android preview startup hotfix",
+      "result": "published-device-confirmation-pending",
+      "sourceCommit": "d9e249e",
+      "project": "2ntty/yuyoufang",
+      "updateId": "01a13fd5-df51-79e8-a70a-345b1d08ec4f",
+      "groupId": "17c74c48-436a-4b4e-975c-1defa26b9d22",
+      "createdAt": "2026-10-15T13:52:23.377Z",
+      "platform": "android",
+      "branch": "preview",
+      "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6",
+      "uploaded": "one compiled app bundle and one asset; 29 assets reused",
+      "cloudBuilds": 0,
+      "apiChanges": 0,
+      "modelCalls": 0,
+      "notifications": 0,
+      "paidPlanPurchased": false,
+      "logSha256": "8ea5651c639dd29847ec1b84a92c509802b36ae5e4bb89c945a36e3f0826aa05",
+      "device": "User asked to reopen existing APK; no success assumed"
     }
   ],
   "sourceSha256": {
@@ -217,10 +237,11 @@
     "embedding": 0,
     "notification": 0,
     "cloudBuild": 3,
-    "deployment": 1
+    "deployment": 1,
+    "otaPublish": 1
   },
   "remaining": [
-    "Publish the reviewed compatible Android startup fix and obtain actual dashboard/reopen result",
+    "Actual dashboard/reopen result after compatible preview OTA 17c74c48; installation/login already user-confirmed",
     "One approved source-backed Agent run/readback (1 run /4 generations /2 embeddings, <$0.10); not started after startup failure",
     "S04-W01 remains draft; local checks do not prove physical rendering"
   ],

@@ -2742,3 +2742,11 @@
 - 核對固定 RN 0.86.3 的 window=global 別名，實際設定刷新 hook 在此環境重現 `window.addEventListener is not a function`。局部抽出原有失效事件接點，Web 保留原事件，Android 使用無正文的程序內信號；各領域保留原身份／孩子／忙碌及延後刷新核對，沒有改 UI、Server、權限或資料。
 - 只跑原生失敗定向檢查一次、修後原生／Web 兩項一次、8 roots 型別與一次 Android export；全部修後檢查通過，runtime 與已安裝 APK 相同。未安裝 Android 模擬器，亦未為此下載大型工具。這些不代替真機畫面證據。
 - 修正待透過同一 Expo preview 相容更新交付；本次沒有新 cloud build、模型、embedding、通知或 VM 部署。使用者要求需本人步驟時保留現場並先做獨立工作；S04-W01 仍待主頁恢復及原首條聊天，不合併 draft PR #229。證據沿用同一 S04 EV，保留所有舊失敗。
+
+
+<a id="log-20261015-android-startup-ota"></a>
+### 2026-10-15 — S04-W01 相容啟動修正發布
+
+- 已 review 的 `d9e249e` 於 13:52 UTC 發布到本人 Expo 專案的 Android preview；update group `17c74c48-436a-4b4e-975c-1defa26b9d22`，runtime `c312bc718cf9e42fde6ff62b768217f6aaf7cfd6` 與原 APK 相同。只上載一個編譯 bundle 及一個 asset，復用 29 個 assets；沒有第四次 APK build、後端部署或付費升級。
+- 已請本人保持網絡重開以接收修正；首次啟動仍可能使用快取，官方恢復機制可以下載後在下一次啟動使用，但不保證所有閃退均自動恢復。原安裝／登入成功及主頁失敗證據保留，未代填修正後真機結果。
+- 本次零模型、embedding、通知；draft PR #229 仍等主頁恢復及原首條聊天讀回。等待期間可準備獨立後續工作，不把前置缺證據改成已完成。
