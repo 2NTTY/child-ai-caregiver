@@ -1,10 +1,17 @@
 import { z } from "zod";
-import { taskChangeSchema, taskCreateSchema } from "../src/shared/tasks.ts";
+import { taskChangeSchema, taskCreateSchema, type CareTask, type TaskChange, type TaskCreate, type TaskHistory, type TaskPage } from "../src/shared/tasks.ts";
 import { FamilyError } from "./family-access.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
-import type { TaskStore } from "./tasks.ts";
+/** Domain port shared by the HTTP adapter and its storage implementations. */
+export interface TaskService {
+  list(userId: string, childId: string, afterId?: string): Promise<TaskPage | null>;
+  get(userId: string, childId: string, id: string): Promise<CareTask | null>;
+  history(userId: string, childId: string, id: string, beforeVersion?: number): Promise<TaskHistory | null>;
+  create?(userId: string, childId: string, input: TaskCreate): Promise<CareTask | null>;
+  change?(userId: string, childId: string, id: string, input: TaskChange): Promise<CareTask | null>;
+}
 
-export async function handleTaskRequest(request: Request, userId: string | null, store: Pick<TaskStore, 'list' | 'get' | 'history'> & Partial<Pick<TaskStore, 'create' | 'change'>>, receiptTransaction = false): Promise<Response> {
+export async function handleTaskRequest(request: Request, userId: string | null, store: TaskService, receiptTransaction = false): Promise<Response> {
   if (!userId) return apiError("unauthorized", "請先登入。", 401);
   if (request.method === "POST") {
     const expected = request.headers.get("x-expected-user-id");
