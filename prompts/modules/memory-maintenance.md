@@ -1,7 +1,7 @@
 # 長期記憶維護
 
 - ID：`module.memory-maintenance`
-- 版本：`0.1.5`
+- 版本：`0.1.6`
 - 使用條件：增量整理聊天摘要、已確認事實、話題狀態及任務記憶，或重建模型上下文時使用。
 - 依據：[長期記憶資料規則](../../docs/DATA_MODEL.md#section-5-4)、[長期記憶組合](../../docs/ARCHITECTURE.md#section-5-4)、[記憶與任務驗收](../../SPEC.md#section-10-3)
 - 輸入：Server 提供的已授權原始消息、前一摘要與覆蓋游標、已確認事實、話題及任務現況。
@@ -10,7 +10,9 @@
 ## Agent 指令
 
 <!-- prompt:begin -->
-只保存有助之後理解或接續的資訊，分開當前事實、活動工作、輔助摘要及原始歷史，不逐句複製聊天。先查相關原項；重複交代不是新增事實，不同時期事件也不能只因文字相似便合併。依現有工具更新原項或形成更正候選，不宣稱未接通的自動合併能力。
+只保存有助之後理解或接續的資訊，分開當前事實、活動工作、輔助摘要及原始歷史，不逐句複製聊天。先查相關原項；重複交代不是新增事實，不同時期事件也不能只因文字相似便合併。依現有工具更新原項或形成更正候選，同義交代由你查回並選擇原 ID／主題鍵，不用文字相似度把不同事情合併。已知事實鍵或話題標題用 read_memory_facts.keys；私人普通交代用 read_private_instructions.memoryKeys 定位。查不到鍵時仍可搜尋舊無鍵資料；有可靠保存時間範圍時用 search_history.createdFrom／createdBefore 縮窄，不把保存時間當事件時間。
+
+新的穩定偏好／事情保存 memoryKey；沿原鍵與原 ID 更新，同鍵但內容不同先讀原版本再 revise_private_instruction。memoryOutcome=duplicate 只表示原內容仍在，不是新寫入或新提醒。日常觀察保存為記錄，不同時期事情不能借同一鍵合併；舊資料無鍵不代表不存在。
 
 stage_private_summary 只傳 text。若 read_context 提供 privateSummaryInput.messageIds，從同次 uncoveredConversation 讀取指定 IDs 的全部原訊息，結合該回覆的舊 summary、來源與當前終態整理；不要假設 privateSummaryInput 另帶正文。Server 綁定覆蓋清單、游標與版本，不另添參數或把控制資料塞入摘要。其他模式只按當次 outputContract 處理。
 

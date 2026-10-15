@@ -31,12 +31,14 @@ export const readAgentWorkSchema = z.object({ workId: z.uuid().nullable(), curso
 export const historySearchSchema = z.object({
   kind: z.enum(["message", "private_instruction", "memory_fact"]), query: z.string().max(200),
   cursor: z.string().max(2048).nullable(),
-}).strict();
+  createdFrom: z.iso.datetime({ offset: true }).optional(),
+  createdBefore: z.iso.datetime({ offset: true }).optional(),
+}).strict().refine(value => !value.createdFrom || !value.createdBefore || Date.parse(value.createdFrom) < Date.parse(value.createdBefore));
 export const historyReadSchema = z.object({
   messageId: z.uuid(), offset: z.number().int().min(0).max(1000000), limit: z.number().int().min(1).max(4000),
 }).strict();
-export const memoryFactReadSchema = z.object({ factId: z.uuid().nullable(), afterId: z.uuid().nullable() }).strict()
-  .refine(value => !value.factId || value.afterId === null);
+export const memoryFactReadSchema = z.object({ factId: z.uuid().nullable(), afterId: z.uuid().nullable(), keys: z.array(text(100)).min(1).max(4).optional() }).strict()
+  .refine(value => (!value.factId || value.afterId === null) && (!value.keys || (value.factId === null && value.afterId === null)));
 export const requestAgentConfirmationSchema = z.object({
   runId: z.uuid(), proposalId: z.uuid(), expectedVersion: version, workId: z.uuid().nullable(),
 }).strict();

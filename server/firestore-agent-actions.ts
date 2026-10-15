@@ -12,6 +12,7 @@ import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineStore } from './firestore-online.ts';
 import { firestoreTaskSchema, domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
+import { normalizedFactKey } from './memory-policy.ts';
 import { groundedRecordTime } from './agent-record-time.ts';
 import { groundedRecordQuantity, type QuantityGrounding } from './agent-record-quantity.ts';
 
@@ -22,13 +23,14 @@ const permissions = z.object({ version, recordKinds: agentPolicyUpdateSchema.sha
 export const firestoreAgentPolicySchema = z.object({ value: permissions, authorizationVersion: z.string() }).strict();
 export const firestorePrivateInstructionSchema = z.object({
   id: uuid, childId: uuid, version: version.min(1), title: z.string().min(1).max(100), text: z.string().min(1).max(2000),
-  sourceMessageId: uuid, createdAt: time, updatedAt: time, provenance: z.literal('user_statement'),
+  sourceMessageId: uuid, createdAt: time, updatedAt: time, provenance: z.literal('user_statement'), memoryKey: z.string().min(1).max(100).optional(),
 }).strict();
 export const firestoreAgentActionReceiptSchema = z.object({
   id: uuid, runId: uuid, kind: z.enum(['save_record', 'revise_record', 'save_private_note', 'revise_private_note', 'create_self_task', 'change_self_task']),
   resource: z.object({ kind: z.enum(['care_record', 'private_note', 'task']), id: uuid, version: version.min(1) }).strict(),
   state: z.enum(['saved', 'updated', 'scheduled', 'completed', 'cancelled']),
   notification: z.enum(['not_authorized', 'authorized_for_due_event']), channels: z.array(z.enum(['telegram', 'web_push'])).max(2),
+  memoryOutcome: z.enum(['created', 'updated', 'duplicate']).optional(),
   createdAt: time, quantityGrounding: z.object({ status: z.enum(['source_supported', 'removed', 'absent', 'unchanged']) }).optional(),
 }).strict();
 export const firestoreAgentActionSavedSchema = z.object({
@@ -38,6 +40,7 @@ export const firestoreAgentActionSavedSchema = z.object({
 export const firestoreAgentActionCallSchema = z.object({ receiptId: uuid }).strict();
 export const firestoreAgentManualSchema = z.object({ childId: uuid, kind: z.enum(['policy', 'delete_note']),
   hash: z.string().regex(/^[a-f0-9]{64}$/u), result: z.union([permissions.extend({ effective: z.boolean() }), z.boolean(), z.null()]) }).strict();
+const instructionKeySchema = z.object({ id: uuid }).strict();
 const deletion = z.object({ expectedVersion: version.min(1), confirmDelete: z.literal(true), operationId: uuid }).strict();
 type Saved = z.infer<typeof firestoreAgentActionSavedSchema>;
 export interface FirestoreAgentActions extends AgentActionsStore {
@@ -74,6 +77,16 @@ export function createFirestoreAgentActions(options: {
     const value = open(b, 'private-instruction', id, firestorePrivateInstructionSchema, row);
     if (value.id !== id || value.childId !== b.scope.childId || value.version !== row.get('recordVersion')) domainReject('instruction_binding', 500);
     return value;
+  }
+  const instructionKey = (b: Binding, key: string) => JSON.stringify([b.scope.ownerUserId, b.scope.childId, 'instructions', 'private', normalizedFactKey(key)]);
+  async function noteByKey(b: Binding, key: string) {
+    const id = instructionKey(b, key), row = await b.transaction.get(data.ref('memory_keys', 'memory-key', id));
+    if (!row.exists) return null;
+    const pointer = open(b, 'memory-key', id, instructionKeySchema, row);
+    const note = await readNote(b, pointer.id);
+    // Deleted notes never become readable through a stale pointer after recovery.
+    if (note && note.memoryKey !== normalizedFactKey(key)) domainReject('instruction_key_binding', 500);
+    return note;
   }
   async function readReceipts(b: Binding, runId: string) {
     const rows = await b.transaction.get(scoped(b, 'agent_action_receipts').where('runId', '==', runId).orderBy('receiptId').limit(9));
@@ -126,6 +139,17 @@ export function createFirestoreAgentActions(options: {
         b.transaction.create(data.ref('agent_policy_revisions', 'agent-policy-revision', revisionId), revision); receipt.save(value); return value;
       });
     },
+    async notesByKeys(userId, childId, keys) {
+      domainParse(z.array(z.string().min(1).max(100)).min(1).max(4), keys);
+      return authority.runTransaction(userId, childId, async b => {
+        const items: AgentPrivateNote[] = [], missingKeys: string[] = [];
+        for (const key of new Set(keys.map(normalizedFactKey))) {
+          const note = await noteByKey(b, key);
+          if (note) items.push(note); else missingKeys.push(key);
+        }
+        return { items, missingKeys, legacyUnkeyedNotSearched: true as const };
+      });
+    },
     async notes(userId, childId, rawQuery = '', afterId) {
       const search = domainParse(z.string().max(2000), rawQuery).toLocaleLowerCase('zh-HK'); if (afterId) domainParse(uuid, afterId);
       return authority.runTransaction(userId, childId, async b => {
@@ -150,7 +174,10 @@ export function createFirestoreAgentActions(options: {
         const context = note ? await prepareContextChange(data, b) : null;
         const change = note ? await b.prepareChange(input.operationId, 'memory', true) : null;
         context?.(); change?.commit();
-        if (note) b.transaction.delete(data.ref('private_instructions', 'private-instruction', noteId));
+        if (note) {
+          b.transaction.delete(data.ref('private_instructions', 'private-instruction', noteId));
+          if (note.memoryKey) b.transaction.delete(data.ref('memory_keys', 'memory-key', instructionKey(b, note.memoryKey)));
+        }
         receipt.save(note ? true : null); return note ? true : null;
       });
     },
@@ -188,7 +215,7 @@ export function createFirestoreAgentActions(options: {
         if (!policy.effective || policy.version !== input.expectedPolicyVersion) domainReject('agent_policy_changed');
         const receiptId = randomUUID(), at = new Date().toISOString();
         let prepared: { changeSeq: string; commit(): void }, resource: AgentActionReceipt['resource'], state: AgentActionReceipt['state'];
-        let quantity: QuantityGrounding | undefined;
+        let quantity: QuantityGrounding | undefined, memoryOutcome: AgentActionReceipt['memoryOutcome'];
         if (input.kind === 'save_record' || input.kind === 'revise_record') {
           if (!policy.recordKinds.includes(input.details.kind)) domainReject('agent_policy_denied');
           const grounded = sources.map(item => groundedRecordQuantity(input.details.quantity, input.quantityEvidence, item.quote, item.original));
@@ -212,18 +239,37 @@ export function createFirestoreAgentActions(options: {
           state = input.kind === 'save_record' ? 'saved' : 'updated';
         } else if (input.kind === 'save_private_note' || input.kind === 'revise_private_note') {
           if (!policy.allowPrivateNotes) domainReject('agent_policy_denied');
-          const old = input.kind === 'revise_private_note' ? await readNote(b, input.noteId) : null;
+          const key = input.memoryKey ? domainParse(z.string().min(1).max(100), normalizedFactKey(input.memoryKey)) : undefined;
+          const old = input.kind === 'revise_private_note' ? await readNote(b, input.noteId) : key ? await noteByKey(b, key) : null;
           if (input.kind === 'revise_private_note' && (!old || old.version !== input.expectedVersion)) domainReject('version_conflict');
-          const value: AgentPrivateNote = { id: old?.id ?? randomUUID(), childId: scope.childId, version: (old?.version ?? 0) + 1,
-            title: input.title, text: input.text, sourceMessageId: run.sourceMessageId, provenance: 'user_statement',
-            createdAt: old?.createdAt ?? at, updatedAt: at };
-          const envelope = { ...data.tags(b.scope), noteId: value.id, createdAt: value.createdAt,
-            ...data.seal('private-instruction', value.id, b.scope, firestorePrivateInstructionSchema, value, value.version) };
-          const context = await prepareContextChange(data, b), change = await b.prepareChange(receiptId, 'memory', false);
-          prepared = { changeSeq: change.changeSeq, commit() {
-            context(); change.commit(); b.transaction.set(data.ref('private_instructions', 'private-instruction', value.id), envelope);
-          } };
-          resource = { kind: 'private_note', id: value.id, version: value.version }; state = old ? 'updated' : 'saved';
+          if (key && old?.memoryKey && key !== old.memoryKey) domainReject('instruction_key_conflict');
+          if (key && old && !old.memoryKey) {
+            const existing = await noteByKey(b, key);
+            if (existing && existing.id !== old.id) domainReject('instruction_key_conflict');
+          }
+          const duplicate = old && old.title === input.title && old.text === input.text && (!key || old.memoryKey === key);
+          // A matching subject does not authorize overwriting content or treating two events as the same event.
+          if (input.kind === 'save_private_note' && old && !duplicate) domainReject('instruction_key_conflict');
+          if (duplicate) {
+            prepared = { changeSeq: b.changeSeq, commit() {} };
+            resource = { kind: 'private_note', id: old.id, version: old.version }; state = 'saved'; memoryOutcome = 'duplicate';
+          } else {
+            const memoryKey = old?.memoryKey ?? key;
+            const value: AgentPrivateNote = { id: old?.id ?? randomUUID(), childId: scope.childId, version: (old?.version ?? 0) + 1,
+              title: input.title, text: input.text, sourceMessageId: run.sourceMessageId, provenance: 'user_statement',
+              createdAt: old?.createdAt ?? at, updatedAt: at, ...(memoryKey ? { memoryKey } : {}) };
+            const envelope = { ...data.tags(b.scope), noteId: value.id, createdAt: value.createdAt,
+              ...data.seal('private-instruction', value.id, b.scope, firestorePrivateInstructionSchema, value, value.version) };
+            const keyId = memoryKey ? instructionKey(b, memoryKey) : null;
+            const keyEnvelope = keyId ? { ...data.tags(b.scope), ...data.seal('memory-key', keyId, b.scope, instructionKeySchema, { id: value.id }) } : null;
+            const context = await prepareContextChange(data, b), change = await b.prepareChange(receiptId, 'memory', false);
+            prepared = { changeSeq: change.changeSeq, commit() {
+              context(); change.commit(); b.transaction.set(data.ref('private_instructions', 'private-instruction', value.id), envelope);
+              if (keyId && keyEnvelope) b.transaction.set(data.ref('memory_keys', 'memory-key', keyId), keyEnvelope);
+            } };
+            resource = { kind: 'private_note', id: value.id, version: value.version }; state = old ? 'updated' : 'saved';
+            memoryOutcome = old ? 'updated' : 'created';
+          }
         } else {
           if (!policy.allowSelfTasks) domainReject('agent_policy_denied');
           let command: unknown, taskId: string | undefined;
@@ -247,13 +293,16 @@ export function createFirestoreAgentActions(options: {
           state = change.task.occurrence.state === 'completed' ? 'completed' : change.task.occurrence.state === 'cancelled' ? 'cancelled' : 'scheduled';
         }
         const receipt: AgentActionReceipt = { id: receiptId, runId, kind: input.kind, resource, state, notification: 'not_authorized',
-          channels: [], createdAt: at, ...(quantity ? { quantityGrounding: { status: quantity.status } } : {}) };
+          channels: [], createdAt: at, ...(memoryOutcome ? { memoryOutcome } : {}), ...(quantity ? { quantityGrounding: { status: quantity.status } } : {}) };
         const value: Saved = { receipt, hash, sourceMessageId: run.sourceMessageId,
           sourceMessageIds: (input.sourceMessages ?? []).map(item => item.messageId), policyVersion: policy.version };
         const envelope = { ...data.tags(b.scope), runId, receiptId,
           ...data.seal('agent-action-receipt', receiptId, b.scope, firestoreAgentActionSavedSchema, value) };
         prepared.commit(); b.transaction.create(data.ref('agent_action_receipts', 'agent-action-receipt', receiptId), envelope);
-        saveCall(receiptId); runs.advance(b, run, prepared.changeSeq); return receipt;
+        saveCall(receiptId);
+        // A duplicate has a new operation receipt but no new business version/change sequence.
+        if (memoryOutcome !== 'duplicate') runs.advance(b, run, prepared.changeSeq);
+        return receipt;
       });
     },
   };

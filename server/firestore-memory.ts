@@ -286,6 +286,27 @@ export function createFirestoreMemoryStore(options: FirestoreDomainOptions & { c
   };
   const store: FirestoreMemoryStore = {
     mutation, prepareSummaryWrite,
+    recall: (u, c, keys) => authority.runTransaction(u, c, async binding => {
+      domainParse(z.array(z.string().min(1).max(100)).min(1).max(4), keys);
+      const facts: MemoryFact[] = [], topics: MemoryTopic[] = [], missingKeys: string[] = [];
+      for (const raw of new Set(keys.map(normalizedFactKey))) {
+        let found = false;
+        for (const kind of ['facts', 'topics'] as const) for (const visibility of ['private', 'family'] as const) {
+          const key = JSON.stringify([binding.scope.ownerUserId, binding.scope.childId, kind, visibility, raw]);
+          const row = await binding.transaction.get(data.ref('memory_keys', 'memory-key', key));
+          if (!row.exists) continue;
+          const id = open(binding, 'memory-key', key, keySchema, row).id;
+          const value = await read(binding, kind, id); if (!value) continue;
+          if (value.visibility !== visibility || normalizedFactKey(kind === 'facts' ? (value as MemoryFact).key : (value as MemoryTopic).title) !== raw)
+            domainReject('memory_key_binding', 500);
+          found = true;
+          if (kind === 'facts') facts.push(await factResult(binding, value as MemoryFact));
+          else topics.push(topicResult(value as MemoryTopic));
+        }
+        if (!found) missingKeys.push(raw);
+      }
+      return { facts, topics, missingKeys };
+    }),
     async readFamilyFacts(binding, keys) {
       domainParse(z.array(z.string().min(1).max(80)).max(8), keys);
       const facts: MemoryFact[] = [];

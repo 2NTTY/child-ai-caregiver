@@ -371,4 +371,6 @@ export function createAgentActionsStore(pool: Pool, cipher: StorageCipher, sched
   };
   return api;
 }
-export type AgentActionsStore = ReturnType<typeof createAgentActionsStore>;
+export type AgentActionsStore = ReturnType<typeof createAgentActionsStore> & {
+  notesByKeys?(userId: string, childId: string, keys: string[]): Promise<{ items: AgentPrivateNote[]; missingKeys: string[]; legacyUnkeyedNotSearched: true }>;
+};

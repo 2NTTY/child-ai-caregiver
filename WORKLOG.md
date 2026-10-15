@@ -2624,3 +2624,13 @@
 - Verification：Node 24.19.0／ADK 2.1.0／GenAI 2.24.0，七個定向情景全部通過（10.9 秒）：背景空結果及重讀、唯讀恢復／最新摘要、混合引用兩種有效性、未知操作停下、確認 fallback 與摘要接點。兩項新情景共用現有 runtime／正式組裝及最少替身，其餘復用原情景；只調整受新契約影響的斷言。沒有全套、真模型、Firestore、通知、瀏覽器或部署。
 - Type / Review：14 個變更 TS 入口及必要依賴的 strict 型別最終零診斷；首次抓到 finalize union 收窄，修正後補原缺少的固定 Firestore 9.3.1／Storage 7.22.0 型別。NodeNext 臨時目錄映射無效，核對套件後改用正式 d.ts 入口，再修正條件 schema 方法的推斷；後續未重跑已過情景。所有依賴／檢查工具只在忽略暫存，正式 lockfile 不變。git diff --check 通過。
 - Limits / Next：不宣稱語義審核、記憶局部重整或真服務品質完成；這些仍按 OPT03／04 與協作者角色接口推進。既有確認、原操作、引用重核、工作終態及容量不變；原生備份真還原維持待驗。合併後開始 OPT03，部署留 OPT05／正式交付。
+
+
+<a id="log-20261015-p2-opt03"></a>
+### 2026-10-15 — OPT03 記憶原項及相關召回
+
+- Scope / Baseline：796e412（OPT02／#222 已合併）。主模型獨立實作／review；交付前 #214 head 已變為 f4bc52c，仍由協作者處理，#215／#216 未合併，本包不修改或接管其分支。
+- Result：復用事實更正／停用、工作資源與終態；私人交代可沿穩定 memoryKey 查同一 ID，同內容返回 duplicate 原版本及新操作收據，內容不同必須版本化更新。舊無鍵可正常搜尋並於更新補鍵；資料不全量搬遷。事實／話題及私人交代有界 point lookup、歷史 createdFrom／createdBefore 與 cursor 綁定；正式工具及 client 嚴格 schema 接回同一資料。恢復 codec 支援私人鍵，刪除移除指標，未新增服務、索引或明文正文。Prompt Pack 0.1.41／memory-maintenance 0.1.6 補實際用法。
+- Verification：Node 24.19.0／Firestore SDK 9.3.1；四項既有 prompt-wiring 靜態核對通過（162 ms），一條合成情景最終通過（127 ms）：2024／2025 交代、跨 run 重複／丟失回覆原操作、同項更正、重新連接讀回、帳戶隔離、事實停用、話題終態、時間有界搜尋及真正工具 factory。這不是多年實測或模型語義品質；無真 Firestore、模型、通知、瀏覽器或部署。14 個變更 TS 入口及必要依賴型別零診斷，diff check 通過。
+- Failures / Review：第一輪本機缺 Firestore SDK；復用 OPT02 固定套件的臨時 loader 最初遞迴，改為註冊前固定解析，均未進入業務情景。型別檢查修正兩處錯誤類別及既有合成 helper 的 SDK overload cast。首次實際情景發現 duplicate 無新業務版本卻呼叫 advance，已限定 duplicate 不推進序號，再僅補同一情景通過；沒有重跑已過 prompt 靜態檢查。臨時接線與套件不提交。
+- Limits / Next：未宣稱鍵匹配能自動合併全部同義記憶；普通新指令仍受原授權、來源及版本規則。任務停止沿 LAY03 證據復用；持久主題摘要與局部失效／背景整理交 OPT04，原備份真還原待驗不改寫。合併後接續，部署留 OPT05。

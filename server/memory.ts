@@ -237,4 +237,6 @@ export function createMemoryStore(pool: Pool, cipher: StorageCipher, trackChange
     },
   };
 }
-export type MemoryStore = ReturnType<typeof createMemoryStore>;
+export type MemoryStore = ReturnType<typeof createMemoryStore> & {
+  recall?(userId: string, childId: string, keys: string[]): Promise<{ facts: MemoryFact[]; topics: MemoryTopic[]; missingKeys: string[] }>;
+};

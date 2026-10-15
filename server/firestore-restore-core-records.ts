@@ -125,7 +125,8 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   }
   if (kind === 'memory-key') {
     const ids = parts(id); requireValue(ids.length === 5 && ids[0] === scope.ownerUserId && ids[1] === scope.childId
-      && ['facts', 'topics'].includes(String(ids[2])) && ['private', 'family'].includes(String(ids[3])) && typeof ids[4] === 'string' && recordVersion === 1);
+      && (['facts', 'topics'].includes(String(ids[2])) || (ids[2] === 'instructions' && ids[3] === 'private'))
+      && ['private', 'family'].includes(String(ids[3])) && typeof ids[4] === 'string' && recordVersion === 1);
     return {};
   }
   if (kind === 'memory-reopened') { requireValue(z.uuid().safeParse(id).success && recordVersion === 1); return {}; }

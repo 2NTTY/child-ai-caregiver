@@ -49,7 +49,7 @@ const policySchema = z.object({
 const policyResponse = z.object({ policy: policySchema }).strict();
 const noteSchema = z.object({
   id: uuid, childId: uuid, version: positiveVersion, title: text(100), text: text(2000), sourceMessageId: uuid,
-  createdAt: timestamp, updatedAt: timestamp, provenance: z.literal("user_statement"),
+  createdAt: timestamp, updatedAt: timestamp, provenance: z.literal("user_statement"), memoryKey: text(100).optional(),
 }).strict();
 const notesResponse = z.object({ notes: z.object({ items: z.array(noteSchema).max(20), nextAfterId: uuid.nullable() }).strict() }).strict();
 const deleteInput = z.object({ expectedVersion: z.number().int().positive().max(2147483646), operationId: uuid, confirmDelete: z.literal(true) }).strict();
@@ -60,6 +60,7 @@ const receiptSchema = z.object({
   state: z.enum(["saved", "updated", "scheduled", "completed", "cancelled"]),
   notification: z.enum(["not_authorized", "authorized_for_due_event"]),
   channels: z.array(contactChannelSchema).max(2).refine(values => new Set(values).size === values.length), createdAt: timestamp,
+  memoryOutcome: z.enum(["created", "updated", "duplicate"]).optional(),
   quantityGrounding: z.object({ status: z.enum(["source_supported", "removed", "absent", "unchanged"]) }).strict().optional(),
 }).strict();
 const receiptsResponse = z.object({ receipts: z.array(receiptSchema).max(8) }).strict();
