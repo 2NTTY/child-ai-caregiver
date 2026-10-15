@@ -4,17 +4,17 @@ import type { Firestore, DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { StorageCipher } from './storage-crypto.ts';
 import { canonical, isRecord } from './firestore-session-codec.ts';
-import { RootBudgetError, type BudgetAdmission, type BudgetAttempt, type BudgetAttemptSnapshot, type BudgetSettlement,
+import { MAX_ROOT_BUDGET_LIMITS, RootBudgetError, type BudgetAdmission, type BudgetAttempt, type BudgetAttemptSnapshot, type BudgetSettlement,
   type DurableRootBudget, type RootBudgetContext, type RootBudgetLimits, type RootBudgetSnapshot } from './durable-root-budget.ts';
 
 const FORMAT = 'yuban-root-budget';
 const VERSION = 1;
 export const MAX_ROOT_BUDGET_BYTES = 64 * 1024;
-export const MAX_ROOT_BUDGET_ATTEMPTS = 26;
+export const MAX_ROOT_BUDGET_ATTEMPTS = Object.values(MAX_ROOT_BUDGET_LIMITS).reduce((sum, limit) => sum + limit, 0);
 const bounded = (bytes: number) => z.string().min(1).refine(value => value.isWellFormed() && Buffer.byteLength(value, 'utf8') <= bytes);
 const id = bounded(256);
 const integer = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
-const limitsSchema = z.object({ modelCalls: integer.min(1).max(12), toolCalls: integer.min(1).max(8), queryEmbeddings: integer.min(1).max(6) }).strict();
+const limitsSchema = z.object({ modelCalls: integer.min(1).max(MAX_ROOT_BUDGET_LIMITS.modelCalls), toolCalls: integer.min(1).max(MAX_ROOT_BUDGET_LIMITS.toolCalls), queryEmbeddings: integer.min(1).max(MAX_ROOT_BUDGET_LIMITS.queryEmbeddings) }).strict();
 const countsSchema = z.object({ modelCalls: integer, toolCalls: integer, queryEmbeddings: integer }).strict();
 const bindingSchema = z.object({ rootRunId: id, ownerId: id, workspaceId: id, childId: id, authorizationVersion: id,
   storageEpoch: id, trigger: z.object({ kind: id, reference: id }).strict(), workflowVersion: id, promptPackVersion: id,
@@ -24,7 +24,7 @@ const fingerprint = z.string().regex(/^[a-f0-9]{64}$/);
 const attemptSchema = z.discriminatedUnion('kind', [
   z.object({ key: id, fingerprint, kind: z.literal('model'), units: z.literal(1) }).strict(),
   z.object({ key: id, fingerprint, kind: z.literal('embedding'), units: z.literal(1) }).strict(),
-  z.object({ key: id, fingerprint, kind: z.literal('tool_batch'), units: integer.min(1).max(8) }).strict(),
+  z.object({ key: id, fingerprint, kind: z.literal('tool_batch'), units: integer.min(1).max(MAX_ROOT_BUDGET_LIMITS.toolCalls) }).strict(),
 ]);
 const settlementSchema = z.discriminatedUnion('status', [
   z.object({ status: z.literal('known'), reference: bounded(512) }).strict(), z.object({ status: z.literal('unknown') }).strict(),

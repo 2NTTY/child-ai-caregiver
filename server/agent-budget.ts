@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import { canonical } from "./firestore-session-codec.ts";
-import { RootBudgetError, type BudgetAttempt, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "./durable-root-budget.ts";
+import { MAX_ROOT_BUDGET_LIMITS, RootBudgetError, type BudgetAttempt, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "./durable-root-budget.ts";
 import { PERSONAL_RUN_LIMITS } from "../src/shared/model-settings.ts";
 
-export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: 16, queryEmbeddings: 2,
+export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: MAX_ROOT_BUDGET_LIMITS.toolCalls, queryEmbeddings: 2,
   deadlineMs: 90000, outputTokens: 1024, inputCharacters: 32000 });
 // Platform policy is separate from legacy/fixed and personal run profiles.
 export const PLATFORM_AGENT_RUN_LIMITS = Object.freeze({ modelCalls: 8, queryEmbeddings: 4 });

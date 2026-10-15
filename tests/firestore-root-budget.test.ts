@@ -4,6 +4,8 @@ import { createHash } from 'node:crypto';
 import type { Firestore } from '@google-cloud/firestore';
 import { FirestoreRootBudget, MAX_ROOT_BUDGET_BYTES, type FirestoreRootBudgetOptions } from '../server/firestore-root-budget.ts';
 import { RootBudgetError, type RootBudgetContext, type BudgetAttempt } from '../server/durable-root-budget.ts';
+import { AgentBudget, AGENT_LIMITS, PLATFORM_AGENT_RUN_LIMITS } from '../server/agent-budget.ts';
+import { PERSONAL_RUN_LIMITS } from '../src/shared/model-settings.ts';
 import { createStorageCipher } from '../server/storage-crypto.ts';
 
 const digest = (text: string) => createHash('sha256').update(text).digest('hex');
@@ -181,4 +183,32 @@ test('maximum 26 admitted entries and encrypted UTF-8 document bound fail closed
   await assert.rejects(oversized.stop(c), code('document_too_large')); assert.deepEqual([...f.records], before);
   const [path, record] = [...f.records][0]; f.records.set(path, { ...(record as object), ciphertext: 'a'.repeat(MAX_ROOT_BUDGET_BYTES) });
   await assert.rejects(f.service.read(c), code('document_too_large'));
+});
+
+
+test('Firestore accepts current Agent limits, preserves every reservation and rejects overflow', async () => {
+  const f = fixture();
+  const platform = context({ rootRunId: 'current-platform', limits: { ...PLATFORM_AGENT_RUN_LIMITS, toolCalls: AGENT_LIMITS.toolCalls } });
+  assert.deepEqual((await f.service.open(platform)).limits, platform.binding.limits);
+  const budget = new AgentBudget();
+  try {
+    budget.configurePersonal({ modelCalls: PERSONAL_RUN_LIMITS.modelCalls.max, queryEmbeddings: PERSONAL_RUN_LIMITS.queryEmbeddings.max });
+    const limits = { modelCalls: budget.limits.modelCalls, toolCalls: budget.limits.toolCalls, queryEmbeddings: budget.limits.queryEmbeddings };
+    const c = context({ rootRunId: 'current-maximum', limits, deadlineAtMs: budget.deadlineAtMs });
+    await budget.initializeDurable({ adapter: f.service, context: c });
+    for (const [counter, kind] of [['modelCalls', 'model'], ['toolCalls', 'tool_batch'], ['queryEmbeddings', 'embedding']] as const) {
+      for (let i = 0; i < limits[counter]; i++) await budget.admit({ key: `${kind}:${i}`, fingerprint: digest(`${kind}:${i}`), kind, units: 1 });
+    }
+    const reopened = new FirestoreRootBudget(f.options);
+    assert.deepEqual((await reopened.read(c)).used, limits);
+    assert.deepEqual(budget.counts, limits);
+    const original: BudgetAttempt = { key: 'tool_batch:0', fingerprint: digest('tool_batch:0'), kind: 'tool_batch', units: 1 };
+    assert.notEqual((await reopened.reserve(c, original)).decision, 'execute');
+    await assert.rejects(reopened.reserve(c, { ...original, key: 'overflow' }), code('budget_exhausted'));
+    const batch = context({ rootRunId: 'whole-tool-batch', limits });
+    await reopened.open(batch);
+    assert.equal((await reopened.reserve(batch, { ...original, units: limits.toolCalls })).snapshot.used.toolCalls, limits.toolCalls);
+    const legacy = context();
+    assert.deepEqual((await reopened.open(legacy)).limits, legacy.binding.limits);
+  } finally { budget.close(); }
 });

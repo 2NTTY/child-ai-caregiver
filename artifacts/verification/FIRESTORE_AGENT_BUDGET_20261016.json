@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-16",
+  "baseline": "3b02ce510c5f817b52cc0105083f777cd9cf11df",
+  "cause": "Runtime toolCalls=16 was rejected by Firestore binding and batch schemas capped at 8. Attempt capacity=26 also predated the new ceilings.",
+  "observed": {
+    "at": "2026-10-15T16:47:29.102Z",
+    "failedRuns": 2,
+    "stopReason": "unavailable",
+    "eachCounts": {
+      "modelCalls": 0,
+      "toolCalls": 0,
+      "queryEmbeddings": 0
+    },
+    "routingAuthorized": true,
+    "platformPolicyVersion": 2
+  },
+  "verification": {
+    "baseline": "one focused test failed with invalid_context",
+    "harnessIssue": "First candidate harness used dispose instead of close; stopped its timer and corrected test teardown only.",
+    "final": "same focused test passed; current platform limits, all 34 maximum-profile reservations, reconstructed adapter read, replay refusal, overflow, full tool batch and legacy limit envelope",
+    "typecheck": {
+      "roots": 4,
+      "diagnostics": 0
+    },
+    "providers": 0,
+    "notifications": 0,
+    "cloudChanges": 0
+  },
+  "deployment": "pending",
+  "limits": "No true model quality or user chat acceptance claimed; no daily quota change; older budget reader cannot read roots with the increased tool limit."
+}
