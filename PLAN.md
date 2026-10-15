@@ -63,7 +63,9 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 <a id="active"></a>
 ### 當前任務入口
 
-當前入口：[P2-STR01 接續備忘](#p2-str01-handoff)。使用者於 2026-10-15 要求先保存資訊及列出其他可做計劃，待其選擇，不啟動新工作包；STR01 等待協作者 #214 的穩定語義審核接口。OPT01～05、LAY01～05 已合併；OPT05 程式於 #226／99f53df 合併，原站於 2026-10-15 部署 b1d1565，包含 #213 及本輪提示詞／記憶／分層／真進度。使用者確認 #214／#215／#216 仍由協作者處理；不接管、合併或重做，不能以現有引用校驗冒稱語義審核。可獨立交付部分已完成，灰色正文尚未開始。實際部署、兩次真生成及限制見 [交付 EV](artifacts/verification/P2_OPT_DELIVERY_20261015.json)；原生備份真還原仍延後。
+當前入口：[S04-W01 共用原生基礎與 Android 首條流程](#s04-w01)。使用者於 2026-10-15 批准 [Web／Android 共用產品及 Android 成品計劃](#p3-mobile)；先定案文件，再接正式 Android 身份、transport 與首條聊天。Web／Android 共用功能及同一權威資料，新增語音兩端同時接通；Android 完成後才開始 iOS。開工基線 master `21e848b`（#227），原站程式 `b1d1565`／Prompt Pack 0.1.43；不把 master 當成已部署。
+
+OPT01～05、LAY01～05 已合併及部署；灰色正文 STR01 尚未實作，接點及證據保留於 [接續備忘](#p2-str01-handoff)。#214／#215／#216 繼續由協作者處理，不接管、合併或重做；不阻塞 Android 既有聊天接線，也不將現有引用校驗當成語義審核。兩份 OPT／LAY／STR 計劃整體仍未完成，原生備份真還原仍延後。
 
 F02～F08 原執行授權及基線保留在下節作里程碑追溯，不是目前入口。每包開始及交付前核對最新 master、相關工作樹及其後合併；部署、用量及待驗觀察見 [STATUS](STATUS.md)。
 
@@ -203,14 +205,14 @@ F02～F08 原執行授權及基線保留在下節作里程碑追溯，不是目�
 - gate：同批受控正常／拒絕／一次中斷查回，然後一條必要真模型代表流程證明真增量，沿有效授權／費用上限，不擴模型比較或全量。
 
 <a id="p2-str01-handoff"></a>
-**接續備忘（2026-10-15，保存後等使用者選擇其他工作）：**
+**接續備忘（2026-10-15；Android 開發期間保留，等待協作者審核接口）：**
 
 - **固定基線／未完成：**遠端 master `21e848b`（#227）；正式程式 `b1d1565`、Prompt Pack 0.1.43。OPT01～05、LAY01～05 已合併及部署；STR01 尚未實作。已有真進度與最終完整正文，不是逐字草稿。兩份計劃不能整體標完成。
-- **外部前置與責任：**#214 仍 open、head `f4bc52c`；#215 `d095587`、#216 `5411510` 亦未合併。三包仍由協作者負責，本聊天不接管、不修改／合併其分支、不重做角色。恢復時重核最新 master／PR，不能直接依這份快照整合。
+- **外部前置與責任：**#214 仍 open、head `f4bc52c`；#215 `d095587`、#216 `8975ef8` 亦未合併（本次開工重核）。三包仍由協作者負責，本聊天不接管、不修改／合併其分支、不重做角色。恢復時重核最新 master／PR，不能直接依這份快照整合。
 - **最小閱讀與修改接點：**先讀本節及 #214 合併後的正式審核契約，再讀 [ModelGateway](server/model-gateway.ts)、[ADK adapter](server/agent-model-gateway.ts)、[Runner](server/agent-runtime.ts)；傳輸復用 [SSE](server/agent-feedback-stream.ts)、[事件契約](src/shared/agent-feedback.ts)、[客戶端 reader](src/client/agent-feedback-reader.ts) 與 [ChatController](src/client/chat-controller.ts)，畫面沿 [ChatTimeline](frontend/src/components/chat/ChatTimeline.tsx)。按相依符號局部追讀，不重新盤點全倉。
 - **恢復次序：**審核接口穩定且合併 → 核對成果／來源版本與審核、保存結果的綁定 → 用同一收尾生成輸出真正文字增量 → 接灰稿／核准替換／拒絕移除 → 只補本節必要驗收。不要以現有引用 ID 校驗代替語義審核，也不要提前展示工具參數、內部思考或自行提高預算。
 - **已有證據及限制：**復用 [交付 EV](artifacts/verification/P2_OPT_DELIVERY_20261015.json) 與 [交付 LOG](WORKLOG.md#log-20261015-p2-opt-delivery)。兩次真生成已核持久摘要及公開 SSE／聊天讀回；不重跑已通過項目。灰稿、語義審核交接與真正正文增量仍未驗；原生備份還原仍按原決定延後。回滾與部署限制只見 [正式部署](docs/PRODUCTION_FRONTEND.md#firestore-deployment) 及 STATUS。
-- **可另行選擇：**[P3 手機計劃](#p3-mobile) 不依賴三個專職 Agent，可從 [S04-W01](#s04-w01) 共用原生基礎／Android 首條流程開始，再沿原先次序接身份清理、同步、既有能力、iOS 及固定更新入口；不是現在開工，也不把後續 App 發佈／通知包當成已可跳過前置。備份真還原需使用者另行恢復；協作者三包與 P4 家庭功能不納入本次候選開發。
+- **目前替代工作線：**使用者已批准 [Web／Android 共用產品](#p3-mobile)，從 S04-W01 開始，iOS 等 Android 成品完成後才啟動。STR01 的範圍、前置與證據不取消；備份真還原仍須使用者另行恢復，協作者角色與 P4 家庭功能不納入 Android 開發。
 
 **並行與驗證界線：**使用者最新指示為本輪後續只由主模型完成、不開子代理，以節省額度；此前已完成的 Astra 子代理成果與證據保留，不重做。主模型親寫規格、契約、計劃及提示詞並裁決 review。Firestore 組裝、runtime、manifest、根文件串行，協作者修改不派單；不重複已委派工作。每包獨立分支／worktree，必要驗證及 review／PR／合併後才開依賴包，按本機協作規則單作者交付。
 
@@ -931,145 +933,172 @@ P2 只留最小角色配置／契約；此處明確承接內部實作與原 AC-P
 - 必要驗收：沒有聊天請求時完成一批有界更新→審核→發布→之後聊天引用；疑義保持候選、越界拒絕及重投防重，承接 AC-P2M-03／04。不得另開 run 重置邏輯工作預算。
 
 <a id="p3-mobile"></a>
-### P3 Android／iOS 接線與持續更新
+### P3 Web／Android 共用產品與 Android 成品交付
 
-**目的：**同一 `frontend/` 交付 Web、Android 及 iOS；家長以 Agent 對話交代、查證及辦事，各頁查閱同一成果。沿用原 GCP VM／Compose／Caddy、Firebase Authentication、Firestore／Storage、Tasks、ADK 及 Prompt Pack；不另建手機後端、資料副本、產品站或 WebView 網站殼。
+**目標：**Web 與 Android 是同一產品的兩個入口，共用功能、資料及業務規則；Android 完成後才開始 iOS。交付正式簽署、可直接安裝及更新的 APK，採 Expo EAS Build／Update，暫不包含 Google Play 上架。本節於 2026-10-15 取代原 Android／iOS 同步交付次序及「Web 只讀取／播放語音」的範圍；原包錨點及有效證據保留。
 
-本次基線為 2026-10-13 遠端 `1aca4a0`（#201），當時無 open PR。以下是程式盤點與待做安排，不是原生驗收；開工前再核 master 及前端聊天。沿 [DESIGN_SYSTEM](frontend/DESIGN_SYSTEM.md) 保留頁面用途、導航、手機側欄、快捷入口、tokens、互動及美術，只修原生鍵盤、安全區、返回及系統接點。三角色按原 P3-M01～M03 獨立推進，不是手機登入／聊天的前置；手機內測里程碑不能代替整個 P3 完成。
+開工核對 master `21e848b`（#227），#214／#215／#216 仍由協作者處理。沿用現有 Expo 前端、Server、Firebase、ADK、Prompt Pack、原網站及 [DESIGN_SYSTEM](frontend/DESIGN_SYSTEM.md)，不重做設計、不另建手機後端或資料副本。STR01 灰色正文保留原前置，手機先接已交付的真進度 SSE／正式完整回答。只有本計劃相關接點可改，不接管三角色。
 
 #### 已有能力及實際缺口
 
-| 範圍 | 可復用證據／程式 | P3 尚需接通 |
+| 範圍 | 可復用程式／成果 | 尚需接通 |
 |---|---|---|
-| UI／建置 | [package.json](frontend/package.json)：Expo 57.0.24、RN 0.86.3、Router 57.0.22、Paper 及 TanStack Query；[NativeAppShell](frontend/src/components/NativeAppShell.tsx) 已有手機外殼 | [app.json](frontend/app.json) 只有 web／android、Android ID 仍是 preview，沒有 iOS bundle ID／EAS 設定。`build:android-ui` 只是 JS／資產匯出，不是 APK 或真機證據 |
-| 身份／owner | [ProductionOwner](frontend/src/production/ProductionOwner.ts)、[Firebase client](src/client/firebase-auth-api.ts)、[Server auth](server/firebase-auth.ts) 已接 Firebase 與裝置撤銷 | owner 依賴 `window.location`，client 採同源 Cookie，Server 驗 Origin；須補原生傳輸，不能略過 Web 的 CSRF／Origin 保護 |
-| Agent／資料 | API、controller、領域 owner、收據、待確認及 Firestore 可共用 | 所有領域注入同一原生 transport，保留 opId、版本、unknown 及身份清理；不能只接聊天，其餘頁回到 fixture |
-| 同步／前景 | [ProductionProvider](frontend/src/production/ProductionProvider.tsx)、[useOnlineUpdates](src/client/use-online-updates.ts) 已有 changes cursor | 現時依賴 window／document；補 RN AppState／連線狀態、背景停輪詢與前景核對，不能一律當在線 |
-| 照片／來源／檔案 | [PhotoFilePicker](frontend/src/components/photos/PhotoFilePicker.tsx) 有注入點；Server 上傳／提取及同版 PDF 已有 | 相機／相簿 adapter 未提供；[PhotoInputDomains](frontend/src/production/PhotoInputDomains.tsx) 和來源 owner 限制 Web；PDF／匯出須補原生開啟／保存，不能依賴 DOM 下載 |
-| 通知／更新 | Server 授權、Tasks、去重及 Web Push／Telegram 沿用 | 原生推送／token、APNs 憑據、簽署／分發及 OTA 未接；窄 Web、Expo Go 不當原生能力證據 |
+| UI／配置 | Expo 57.0.24、RN 0.86.3、Router 57.0.22、Paper、TanStack Query；NativeAppShell 及共用畫面 | app.json 仍用 preview ID，無 EAS 設定。Android JS 匯出不是 APK／真機證據 |
+| 身份／資料 | Firebase client、Server 裝置會話、正式 owner、各領域 API／收據 | owner 依賴 window.location、Cookie 及 Web Origin；需要共同原生 transport／安全會話交換 |
+| Agent／同步 | 真進度 SSE、run／操作查回、changes cursor、確認及領域 owner | 原生串流 fetch、AppState／網絡狀態、跨設備接續；背景不能持續輪詢 |
+| 輸入／成果 | 照片服務、私人來源、同版文件／PDF、私有加密 Storage | 相機／相簿、原生保存／分享；完整音訊服務及兩端錄音、轉錄、搜尋／播放尚未實作 |
+| 通知／更新 | Tasks、授權、安靜時段、投遞台帳、Web Push／Telegram | Android FCM token／投遞接點、簽署、APK／OTA、固定更新入口；iOS 後續另補 |
 
-#### 最小技術改動
+#### 共用功能、薄 UI 及跨端接續
 
-1. **單一應用、薄 adapter。** 沿根 workspace／lockfile，在 `frontend/` 用 Expo config plugins／CNG 管原生配置；只裝實際所需且與現有 SDK 相容的模組。保留 `.web` 差異，為身份、網絡、照片／檔案、通知及系統開啟補原生 adapter；路由、schema、owner、產品規則繼續共用，不複製全部頁面。
-2. **同一身份及 API。** 優先復用 Firebase JS 電郵登入，不為統一品牌換整套 React Native Firebase。原生配置正式 HTTPS API base，沿 ID token → Server 裝置會話交換，補受控原生 credential transport，由同一准入／驗證／撤銷服務處理；SecureStore 保存必要裝置會話，Web HttpOnly Cookie 不變。wire 契約於 S04-W01 固定；不能靠偽造 Origin、略過邀請／驗證／重新認證或信任平台標記取得權限。只向核准 origin 附帶身份，跨站 redirect 不洩露憑據。
-3. **安全及恢復。** 不保存密碼、模型 key 或業務主庫到普通裝置儲存；Firebase 臨時身份可沿 in-memory，Server 會話到期提示重新登入。重開先向 Server 核對；退出／撤權／切孩子清快取並拒遲到回應。SecureStore 容量、Android 備份排除及 iOS 重裝殘留按官方約束處理，卸載不當撤權。unknown 只恢復必要操作關聯與查核位置，不形成離線重送佇列；未保存草稿與已保存成果分開。
-4. **共用同步。** 向既有 transport／owner 注入原生會話，不逐頁另造 fetch；Firestore／Storage 業務資料仍經 Server。TanStack Query `focusManager`／`onlineManager` 接 AppState 及一個網絡 adapter；沿 changes cursor／現有前景節奏刷新，背景停輪詢。推送點擊及回前景只重新讀取授權資料，不能依通知 payload 寫資料或自動確認。
-5. **原生輸入與成果。** 優先 Expo ImagePicker（相簿／系統相機）、FileSystem／Sharing，確需自訂取景才用 Camera。重用 Server 圖片校驗、提取、同版 PDF／匯出；按需請權限、處理取消／拒絕、暫存隔離與清理。私人來源連結／正文仍走現有 API。粵語沿原 P3 範圍補音訊／轉寫契約，不能把選到音檔當成 Agent 已理解；系統分享「導入」extension 及非既定文件類型仍留 S12-W02／P4，與既有 PDF 分享「輸出」分開。
-6. **原生通知。** Expo Notifications 接 Android FCM HTTP v1／iOS APNs，Server 補薄 adapter，復用同一投遞服務。APNs token 不能當 FCM registration token，不為共用 token 再引整套 Firebase native SDK。綁定平台、App、推送環境及 token 更新／撤銷；憑據只在 Server，排程／安靜時段／授權／終態／unknown 不重送保持。payload 只放最少提示；系統拒收或停權不能聲稱送達。
+| 層次 | 唯一責任 |
+|---|---|
+| Server／業務服務 | 權限、確認、任務／提醒、記憶、引用、Agent、版本、防重及保存 |
+| 共用 owner／controller | API、快取、本機草稿、同步、原操作恢復及身份清理 |
+| 共用畫面 | 顯示、輸入、互動及載入／錯誤狀態 |
+| 平台 adapter | 身份憑據、生命週期、錄音、相機、檔案、通知及系統開啟 |
 
-#### 更新及發佈
+- 同步已提交訊息、附件、轉錄、執行結果、持久待確認及業務資料。未發送文字、照片、錄音留在原設備，不做雲端草稿同步或離線自動寫入佇列。
+- 已提交工作以 Server run／原 opId 為準。另一設備讀取目前工作及已保存結果，不必回放全部進度事件、不重新發問；斷線不是取消，不重新 POST。明確取消沿原 run 更新狀態。
+- Web 保持 HttpOnly Cookie；Android 以 Firebase ID token 交換受控裝置會話，用 SecureStore 保存必要憑據。同一身份服務核對邀請、驗證、裝置撤銷及重新認證；不偽造 Origin 或放寬 Web 防護。
+- 所有領域共用受控 transport，包括照片、下載、聊天、來源及設定；只向核准 HTTPS API 附帶身份，不讓跨站 redirect 洩露憑據。前端與 Agent 均不直接讀寫 Firestore 業務資料。
+- Web 前景事件及 Android AppState／網絡狀態接同一 changes cursor／Query owner。背景停止輪詢，回前景立即核對；修改、確認及完成在其他可見設備同步同一版本，通知執行前再核終態。
+- 登出、撤權、切換孩子／身份清快取、停止舊讀取及拒遲到回應。新裝置先核 Server 會話；不把卸載當撤權，不將密碼／key 或業務主庫放普通裝置儲存。
+- 聊天、記錄、記憶、待辦、準備單、關注、成長、歷史、私人來源及本人設定兩端承接；管理員後台維持 Web 專用。App 關閉後由 Server 繼續工作，不讓手機常駐 Agent。
+- 後端內部、Prompt Pack 或知識更新只要 API 相容，兩端不必重新發布。契約先向後相容部署，不假設每個 App 即時升級。
 
-- **後端／Agent／知識：**沿原 GCP 部署，先更新向後相容 API，再發 App。新增欄位先可選，不立即刪舊 App 正用的欄位／路由；capability／build 只作相容提示，不當授權。必要升級有原因及入口，保留原操作查核，不能假設所有人即時更新。
-- **Web：**沿原部署獨立更新，EAS 不接管網站；共用元件修改只補受影響 Web 主路徑核對。
-- **App JS／樣式／資產：**優先 `expo-updates`＋EAS Update，啟用前核當期額度／費用，不預設免費或購買訂閱。首包即配置 development／preview／production profiles 及獨立 channels；production 只發已 review 的固定提交。以 runtime fingerprint／相容版本隔離 OTA，回退前一相容更新，不跨 runtime 強推；沒有草稿／待確認操作／unknown 的安全時機才套用，不在聊天途中強制重載。
-- **原生變更：**新套件、權限或 SDK 涉及原生 runtime 時重新 build；固定 Android applicationId／iOS bundleIdentifier／簽署身份，遞增 versionCode／buildNumber。Android 首批 APK 內測、需要 Play 時 AAB；iOS 優先 TestFlight／受控內測。EAS Build 可由 Windows 發起 iOS macOS 雲端建置，不因此搬後端或重建 CI 平台。
-- **可追溯及回退：**交付 Git SHA、API 相容範圍、App／runtime／update ID、安裝包及簡短發佈步驟，先內測再 production。key、簽署憑據及 EAS token 不入 Git／prompt／App 公開配置；發佈帳號及 OTA 管道受控。資料改動沿既有遷移／回退規則，回滾畫面不代表回滾資料。
-- **外部前置：**開工核 Android／iPhone、Apple Developer／App Store Connect、Play／Expo 帳號及簽署權限。帳號申請、付費、私有程式雲端傳送及公開上架另按授權處理，本次不建立／購買資源。缺 iOS 帳號或真機時標待驗，Android 可先內測，不能整包報完成。可安裝受控版本為手機首批交付，公開上架另記審核狀態；復用帳戶刪除／資料授權入口及如實填寫商店私隱資料。
+#### 共用語音及 Android 系統能力
 
-**官方核對（2026-10-13；不是本工程原生實測）：**[Firebase／Expo](https://docs.expo.dev/guides/using-firebase/)、[SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/)、[TanStack RN](https://tanstack.com/query/latest/docs/framework/react/react-native)、[FCM／APNs](https://docs.expo.dev/push-notifications/sending-notifications-custom/)、[EAS Build](https://docs.expo.dev/build/introduction/)、[OTA runtime](https://docs.expo.dev/eas-update/runtime-versions/)及[Apple 帳戶刪除](https://developer.apple.com/help/app-review/guideline-reference/5-1-1-account-deletion)。既有選型見 [TECH_REUSE](docs/TECH_REUSE.md#channels)；新模組確切版本／license 隨實作固定，不因 current docs 自動升級 Expo。
+**兩端完整流程：錄音 → 預聽／發送 → Agent 直接理解及辦事 → 背景補轉錄 → 另一設備查閱、搜尋及定位播放。** 不只讓 Web 播放 Android 音檔；不含即時通話或語音回答。
 
-#### 給後續 AI 的固定更新入口
+- 優先 Expo Audio 共用操作及畫面，薄 Web／Android adapter 處理權限、編碼與原生差異；沿現有 Gemini 音訊輸入，不增加語音供應商。固定相容版本後才接線，不藉此升整套 SDK。
+- 每則首版最多兩分鐘、5 MiB。Server 驗支援格式、大小及實際時長，不能信任副檔名或客戶端宣告，超限不靜默截斷；WebM 等時長 metadata 缺失須正確處理。
+- 原錄音沿既有私人加密附件儲存，連結同一訊息、孩子及版本。聊天／孩子刪除連帶音訊、轉錄及搜尋；下載與播放重核權限，不發永久公開 token。
+- Agent 直接讀音訊，不等轉錄。清楚普通指令沿有效授權執行；含糊、重要資料及高影響操作沿原確認，不增設一律先確認轉錄的關卡。
+- 背景轉錄只產生文字及段落時間標記，沒有業務工具；每份音訊版本最多一次自動生成，不再次執行指令。沿既有 worker、防重、付款路由及每日配額，額度不足保持待轉錄，不提高配額或另開聊天。
+- 轉錄標示自動辨識及不清楚部分，保存後復用。搜尋返回原訊息；可靠時間標記可跳播，否則只定位整則，不虛構逐字對齊。後續取相關轉錄／摘要及按需原音訊，不反覆送多年錄音。
+- 照片用 Expo ImagePicker（相簿／系統相機），PDF／匯出用 FileSystem／Sharing；共用 Server 校驗與同版成果。按需權限、取消及暫存清理；只補鍵盤、安全區、返回，不重畫 UI。系統分享導入 extension／其他文件輸入仍留 S12-W02。
+- Android Expo Notifications 取得 FCM token，Server 加薄投遞 adapter；同一任務／授權台帳保留安靜時段、終態、防重及 unknown。各設備獨立授權訂閱，Web Push 沿用。
+- 通知只載最少提示／資源關聯；點擊重新核權，不依 payload 自動確認或完成。完成後停止後續催辦，不聲稱能撤回已送通知。
+- 原生採 Expo 串流 fetch 讀現有 SSE，維持 JSON／原 run 查回；不另造 WebSocket 或假打字動畫。
 
-**目標：較弱的 AI 改完共用前端，也能按短指引完成 App 更新，不需重新研究原生工程。** S04-W03 交付少量 npm scripts／既有 EAS 命令封裝及一份按步驟操作的交接；不另造發佈平台，不改模型分工。配置及指引由主模型定案，日常 AI 只修改所需畫面並執行固定入口。
+#### 固定更新入口
 
-- **單一入口、先預覽。** 提供例如 `npm run mobile:release -- --plan` 的零發佈檢查，以及同一入口的 preview／production 模式（命令名於實作固定，目前不存在）。輸出需要更新 Web、可 OTA 的 Android／iOS、或必須新 build 的平台；預設不直接發 production、不部署後端，也不因 commit 自動消耗雲端建置費。
-- **由工具判斷相容，不由 AI 猜。** 沿 Expo 官方 fingerprint／runtime，分別比較兩平台最後已發佈 build 的原生指紋與本次配置／依賴。相同才允許該 runtime 的 OTA；不同、沒有基線或無法核實就要求新 build 或停止，不能手填舊 runtime、改鎖檔／App ID 或忽略警告來硬發。兩平台結果可以不同，不因 Android 成功就把 iOS 報成功。
-- **配置集中且固定。** 沿一套 app config、EAS profiles／channels、lockfile 及正式 API 設定，保留可追溯的 release manifest（Git SHA、App／build／runtime／update ID、API 相容範圍）。AI 不逐次手改原生生成目錄、簽署、憑據或 Server 地址；需要變更身份／權限／原生套件／API 契約時，停止該部分交主模型處理。
-- **最少檢查可重複執行。** 入口只跑本次需要的共用型別／受影響平台 bundle 與配置檢查，復用同一固定提交的有效產物；不自動跑全量 lint／unit／E2E、不反覆 build。發佈前列明修改範圍、環境、成本及未驗項；雲端建置／傳送／production 只在有效授權內執行。
-- **簡短且真實的交付。** 成功輸出實際發佈版本、安裝／更新方式及上一相容版本的回退指令；失敗輸出停止步驟、可安全重跑的原命令及是否已產生外部效果，不能把「準備完成」當成已發布。交接只寫一次固定閱讀／執行次序，前端 HANDOFF 引用該入口，不複製另一套流程。前端修改仍共用一份程式，無需另寫 Android、iOS 版本。
+**改共用畫面就是改同一份程式，不是先改 Web，再重畫 Android。** S04-W03 交付 `mobile:release` 及短交接；後續 AI 沿固定入口判定，沒有必要便不重研原生工程。
 
-#### 次序與最低必要驗收
+| 改動 | 交付 |
+|---|---|
+| Server／Agent／知識且 API 相容 | 只部署後端 |
+| 共用 JS／樣式／資產、原生 runtime 不變 | 更新 Web，發布相容 Android OTA |
+| Web 專用接點 | 只更新 Web |
+| 原生套件、權限或 runtime 改變 | 新 APK；共用修改另更新 Web |
 
-**S04-W01 → S05-W03 → S07-W01 → S09-W03 → S04-W02 → S04-W03** 先打通 Android／iOS 同源核心與固定更新入口，再接 **S12-W01、S13-W02**；後續功能沿同一流程發佈，不等語音或全部通知完成才建立更新能力。各包必要驗收、review、合併後才開依賴包；三角色沿 M01→M02／M03，最後 S16-W03／S17-W03 才結整個 P3。
+- `--plan` 零發布，列影響平台、必要檢查、OTA／APK 判斷及未完成前置；再提供 preview、production 及相容 OTA rollback。預設不直接 production，不每次 commit 雲端 build，不購買方案。
+- 用 Expo fingerprint／runtime 比較與已發布 build 的相容性；無基線或無法核實須 build／停止，不能猜測、手填舊 runtime 或忽略差異強發。
+- 集中固定 application ID、簽署、API 地址、profiles／channels，保存 Git SHA、App／runtime／update ID 及回退位置。私鑰／token 不入 Git、prompt 或公開 App 配置。
+- OTA 在安全啟動時套用，不在聊天、待確認或未知提交期間強制 reload；新 APK 同簽署、遞增版本，可覆蓋安裝保留資料。回退畫面不等於回退業務資料。
+- EAS 帳號待設定；首次雲端 build、私有程式上傳及新增費用按具體範圍授權。額度用完才決定，不能假定永久免費。原 VM 期限另核，不自動續期。
 
-只維護一組少量合成資料與以下連貫情景，隨包累積證據，最後不整套重跑：
+**官方核對（2026-10-15；非原生實測）：**[Expo Firebase](https://docs.expo.dev/guides/using-firebase/)、[SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/)、[Expo Audio](https://docs.expo.dev/versions/latest/sdk/audio/)、[Gemini 音訊](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite)、[Expo fetch](https://docs.expo.dev/versions/latest/sdk/expo/)、[FCM](https://docs.expo.dev/push-notifications/sending-notifications-custom/)、[APK](https://docs.expo.dev/build-reference/apk/)、[OTA runtime](https://docs.expo.dev/eas-update/runtime-versions/)、[EAS 費用](https://expo.dev/pricing)。版本及 license 隨實際模組接入固定；文檔能力不當工程已驗。
 
-- Android、iPhone **各一條**安裝→正式登入→孩子→聊天／引用／確認→保存→關閉重開讀回；順帶看鍵盤、安全區、返回及同一資料的頁面呈現。共用 Agent 真生成原則只驗一次，另一平台復用成果核 transport／渲染；僅有平台特定問題才補呼叫。Expo Go、bundle 或窄 Web 不代替安裝包。
-- 共用 Server 邊界**一組**：Web／App 改同一資料後一致，串一次版本衝突／原 opId unknown 查核及帳戶／孩子隔離；各平台只補自己的會話撤銷／清理、回前景及斷線不能誤稱保存，不重驗全套 Firestore。
-- 各平台**一張**合成照片、**一份**既有同版 PDF，核授權取得／取消及必要拒權；各**一則**已批准接收者／內容的原生提醒，點擊返回正確事項並核權，不等同照護完成。既有 Telegram／Web Push 不重發。
-- 同一微小 OTA 在兩平台已安裝版本生效，共用相容／回退邏輯核一次，各看能啟動及資料不變；核 runtime 不相容不下發，不清資料修復。新 API 保留一個舊內測 build 作相容核對，不做多版本／多機型矩陣。
+<a id="p3-android-milestone"></a>
+#### 次序與 Android 成品門檻
 
-本次**只作文件 diff、連結及依賴檢查**，零 build／產品測試／模型／通知／雲端操作。實作期只做缺少便不能判斷該改動的檢查；真機、真服務、外發及費用沿有效批准，只驗大路流程與必要安全邊界，不全量、不壓測、不 Computer Use、不為覆蓋率加測試。
+**S04-W01 → S05-W03 → S07-W01 → S09-W03 → S12-W01 → S13-W02 Android → S04-W03 Android → S16-W03／S17-W03 Android 里程碑。** 每包獨立分支、必要驗收、review、PR／合併後才開依賴包；同一批資料隨包累積證據，不到最後才接後端。
+
+S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已驗與 iOS 待驗，不能將 Android 交付寫成整個 P3 完成；三角色另依原 M01～M03 及協作者前置，與本里程碑分開。
+
+**最少三條連貫情景：**
+
+1. Web 提交工作 → Android 讀同一 run／結果／確認 → Android 修改或確認 → Web 同步；串一次原操作恢復、版本衝突及身份清理。
+2. 兩端錄音／上傳各驗 adapter，只用一段代表錄音跑真 Agent／轉錄；另一端搜尋、定位播放及同一準備單／PDF讀回，不重跑同一模型品質。
+3. 一則已授權 FCM → 點擊核權並完成；一次共用畫面修改發布 Web／Android OTA，核相容回退及正式 APK 覆蓋安裝。
+
+使用同批合成資料、一部 Android 手機及一個受支援瀏覽器；復用 Web Push、隔離、防重證據，只補受影響接點。不逐頁 E2E、不全量、機型矩陣、壓測、Computer Use。scripted／bundle／Expo Go 不能代替真模型／正式 APK／真人結果。帳號、權限及真機操作保留必要本人步驟。
+
+完成門檻是**Web／Android 隨時接續已提交工作、核心功能及完整語音共用、正式簽署 APK 可安裝更新、薄 UI 同一權威服務及固定 Web／OTA／APK 交付入口**。首次登入／聊天只是中間里程碑。
 
 ### P3 工作包
 
 <a id="s04-w01"></a>
 #### S04-W01 共用原生基礎與 Android 首條流程
 
-- 階段／狀態：P3；未開始，本次只定案計劃。
-- 前置：P2-R04、S06-W05；實作前取得使用者開工指示，本次規劃不當整套 Web 的人工驗收。
-- 交付：正式 App ID／API base、Expo config／build profiles 及更新接點；抽出 owner 的 Web 身份／transport 依賴，接最小安全原生登入與正式資料。Android APK 完成登入、孩子、聊天及保存讀回；不開新 App repo，不建本地 Agent／SQL／離線主庫，不重做設計。
-- 必要驗收：沿 Android 主流程一次，首次原生相容問題只定向修補；UI 匯出不當 APK。
+- 階段／狀態：P3；已獲准開工，先完成本節文件定案，程式／APK 尚未交付。
+- 前置：P2-R04、S06-W05；開工基線 `21e848b`，不依賴 STR01／三角色／iOS。
+- 交付：正式 App ID／API base、EAS Build／Update 基礎；共同 transport、Firebase 原生會話交換／SecureStore，正式 owner 的身份／資料接線。APK 登入、孩子、首條聊天及保存讀回；保留 Web Cookie，不能以假 Origin 取得原生權限。
+- 下一步／gate：固定受控會話及 transport 契約 → 局部實作 → 必要接線檢查 → EAS 帳號／雲端傳送授權 → 一部手機首條流程。未取得 EAS／簽署／真機證據不標完成；不補跑大量預覽測試。
 
 <a id="s05-w03"></a>
 #### S05-W03 原生憑據、生命週期與清理
 
 - 階段／狀態：P3；未開始。
 - 前置：S04-W01。
-- 交付：完成 SecureStore／裝置會話的重開、到期、本人撤銷／退出及重新認證，暫存／備份排除與身份清理。基本安全登入已屬 S04-W01，不能到此才加授權；無新業務資料庫。
-- 必要驗收：併入主流程核重開／撤銷及另帳號不可見；iOS 平台結果隨 S04-W02 補齊，無證據不寫已驗。
+- 交付：SecureStore／裝置會話重開、到期、撤銷／退出及近期重認證，暫存與備份排除、身份切換拒遲到回應。基本安全登入已屬 S04-W01；未發送草稿仍本機，不形成業務主庫。
+- gate：併入同一帳號流程核重開／撤銷及另一身份不可見；iOS 結果待 S04-W02，不代填通過。
 
 <a id="s07-w01"></a>
 #### S07-W01 App／Web 在線同步
 
-- 階段／狀態：P3；未開始（Web 子範圍已前移）。
+- 階段／狀態：P3；未開始（Web 子範圍已有證據）。
 - 前置：S05-W03、S07-W03、P2-F08。
-- 交付：RN AppState／網絡 adapter、Query 及 changes cursor、跨頁／Web 同源更新、重連／取消／版本／unknown 恢復；背景停輪詢，不建離線寫入佇列，不重做已有 Web 一致性。
-- 必要驗收：共用一組更新／衝突／原操作查核；原生前景恢復由兩平台主流程觀察。
+- 交付：AppState／網絡 adapter 接 Query、changes cursor；背景停輪詢／前景核對，跨端同版本、原操作恢復及身份清理，不建離線重送。
+- gate：復用三條情景中的共用更新／版本衝突／原 opId 查回，不重驗全部 Firestore。
 
 <a id="s09-w03"></a>
 #### S09-W03 原生歷史、記憶與既有能力承接
 
-- 階段／狀態：P3；未開始（Web 子範圍已前移）。
+- 階段／狀態：P3；未開始（Web 子範圍已有證據）。
 - 前置：S07-W01。
-- 交付：相同 owner 接歷史／記憶／待確認／文件／關注／任務／來源及設定，包括可選本人 key／限額、准入／找回／帳戶退出；保留人工備援。只改平台 gate／transport，不退回 fixture；照片、PDF、通知平台接口交 S12-W01／S13-W02。
-- 必要驗收：同一成果在新對話及相關頁面讀回；靜態核既有 [UI 接點](docs/P2_UI_HANDOFF.md)，不逐頁 E2E；未接原生功能明示，不假成功。
-
-<a id="s04-w02"></a>
-#### S04-W02 iOS 接線與可安裝首版
-
-- 階段／狀態：P3；未開始。
-- 前置：S09-W03（已含 S04-W01／S05-W03／S07-W01）。
-- 交付：同一 Expo 應用啟用 iOS、bundle ID／簽署、Universal Links／回跳及 TestFlight／受控安裝；復用 Android 共用接線，只補 Keychain、鍵盤、安全區、返回及原生差異，不複製各頁。驗證／找回可先沿正式網站完成，回 App 重新核對，不做假深連結。
-- 必要驗收：iPhone 核心流程及平台會話／隔離；復用共用後端證據。帳號、簽署及真機未就緒便標待驗，simulator 或 Web 不能代填。
+- 交付：同一 owner 的聊天、歷史、記憶、任務、文件、關注、來源及本人設定；跨設備接續原 run／待確認／已提交附件，不要求重問。不掛 fixture、不同步未發送草稿；管理後台只留 Web。
+- gate：已保存成果及目前工作讀回，靜態核對 [UI 接點](docs/P2_UI_HANDOFF.md)，不逐頁 E2E。照片／PDF平台出口與語音交 S12-W01。
 
 <a id="s12-w01"></a>
-#### S12-W01 原生照片、語音與檔案出口
+#### S12-W01 Web／Android 共用語音與原生檔案出口
 
-- 階段／狀態：P3；未開始。
-- 前置：S04-W02、S05-W03、S12-W03。
-- 交付：兩平台相簿／相機、私人來源、既有 PDF／匯出到本機及系統分享；後端仍是權威。照片先，粵語錄音／轉寫後接既有確認；缺音訊服務時先核最薄共用接點，不假稱聊天已支援音檔。語音未接不阻塞文字／照片內測，但整包不提前完成；分享導入／非既定檔案類型留 S12-W02。
-- 必要驗收：每平台一張圖、一份 PDF 及拒權／取消；語音只一段合成粵語串核轉寫和數字／單位確認，不跑品質矩陣。
+- 階段／狀態：P3；未開始，iOS 延後。
+- 前置：S09-W03、S12-W03；Android 不依賴 S04-W02。
+- 交付：兩端完整錄音／預聽／發送、Agent 直接理解、持久背景轉錄、搜尋及定位播放；兩分鐘／5 MiB、權限／加密／刪除／付款防重。Android 相片、既有 PDF／匯出與 Sharing；按本節規則不設全體轉錄確認關卡。
+- gate：兩端輸入 adapter 加一段代表真音訊及轉錄、另一端讀回／搜尋／播放與同版 PDF；不重複模型品質測試。iOS 另補平台差異，分享導入仍留 S12-W02。
 
 <a id="s13-w02"></a>
 #### S13-W02 原生本人通知
 
-- 階段／狀態：P3；未開始。
-- 前置：S04-W02、S07-W01、S13-W07。
-- 交付：Expo Notifications＋Android FCM／iOS APNs，token 註冊／輪換／撤銷、深連結及真實結果；復用 Tasks、本人授權及提示限制；家庭成員、共享邀請及多人交接接線留 P4，不要求單人先建家庭。
-- 必要驗收：各平台一則已批准通知、點擊核權、完成停止及撤銷；共用防重／unknown 沿有效證據及改動針對性核查，不重發其他渠道。
+- 階段／狀態：P3；Android 未開始，iOS 待後續。
+- 前置（Android）：S12-W01 Android、S07-W01、S13-W07；iOS 另依 S04-W02。
+- 交付：Expo Notifications／Android FCM token 註冊、輪換／撤銷與薄投遞 adapter，沿既有 Tasks／授權／偏好／安靜時段／終態／unknown；Web與App各設備授權、同一任務。
+- gate：一則明確批准通知、點擊重新核權及完成停止；不重發 Web Push／Telegram。iOS APNs 是另一平台子範圍，不能拿 FCM token 代替 APNs。
 
 <a id="s04-w03"></a>
-#### S04-W03 固定發佈入口、App 更新與核心內測交付
+#### S04-W03 固定發佈入口、App 更新與 Android 交付
 
 - 階段／狀態：P3；未開始。
-- 前置：S04-W02（已含共用核心接線）；不等待 S12-W01／S13-W02，後續原生功能重用本入口。
-- 交付：兩平台核心可安裝版本、OTA runtime／channel、升級／回退及 API 相容；另交固定更新入口、原生指紋比較、release manifest 及供後續 AI 使用的短交接。Server 先兼容、Web／App 再更新，保留簽署身份及版本，不建新 CI 平台。
-- 必要驗收：由固定入口完成既定微小 OTA／兩平台啟動、一次共用回退及舊 App 使用新 API；只以本機規劃輸出補核原生指紋改變會要求新 build，不另做雲端建置來測分支。復用核心流程，不為交付再跑；手機內測不等同整個 P3 完成。
+- 前置（Android）：S12-W01 Android、S13-W02 Android；iOS 待 S04-W02 後補同平台結果。
+- 交付：本節 `mobile:release --plan`／preview／production／OTA rollback，fingerprint、固定身份與 channels、release manifest／短交接。Web及Android共用修改沿同入口交付，新原生 runtime 出 APK、相容 JS 出 OTA。
+- gate：一次共用修改 Web＋OTA、相容回退及正式同簽署 APK 升級；不為每個判斷分支另做雲端 build，不在未完成工作／unknown 中強制 reload。
 
 <a id="s16-w03"></a>
 #### S16-W03 P3 必要整體驗收
 
-- 階段／狀態：P3；未開始。
-- 前置：P3-M01、P3-M02、P3-M03、S04-W01、S04-W02、S04-W03、S05-W03、S07-W01、S09-W03、S12-W01、S13-W02。
-- 交付／驗收：整理手機及三角色證據，只補跨包新缺口；Android／iPhone／Web、權限／同源／通知／更新按最少情景，不加全量矩陣。真人回覆與工具觀察分開，未驗不當通過。
+- 階段／狀態：P3；Android 里程碑未開始；完整 P3 未完成。
+- 前置（Android）：S04-W01、S05-W03、S07-W01、S09-W03、S12-W01 Android、S13-W02 Android、S04-W03 Android。
+- 交付／gate（Android）：合併本節三條情景證據，只補跨包缺口；不重跑各包已通過項目。無 iOS／三角色前置，不把有限檢查當整個 P3 完成。
+- 完整 P3 gate：另完成 S04-W02 及共用包的 iOS 子範圍、P3-M01／M02／M03；保留其依賴及未驗結果。
 
 <a id="s17-w03"></a>
 #### S17-W03 P3 發佈與維護交付
 
-- 階段／狀態：P3；未開始。
-- 前置：S16-W03。
-- 交付：Android APK／需要時 AAB、iOS TestFlight／受控安裝、原正式 Web，以及安裝、帳戶、權限、更新、回退與限制說明；實際渠道／build／Git／runtime／API 版本可追溯。公開 Play／App Store 上架另按授權及審核結果記錄，上傳成功不當已上架。
+- 階段／狀態：P3；Android 里程碑未開始；完整 P3 未完成。
+- 前置（Android）：S16-W03 Android。
+- 交付（Android）：正式簽署可安裝／更新 APK、同版正式 Web、Git／App／runtime／update／API版本、安裝、權限、固定更新、回退及限制。Google Play 上架不在本輪。
+- 完整 P3 gate：另完成 S16-W03 全範圍及 iOS 受控交付，才可宣稱整個 P3 完成；不將 Android 中間結果提前作 P4 全範圍前置。
+
+<a id="s04-w02"></a>
+#### S04-W02 iOS 接線與可安裝首版
+
+- 階段／狀態：P3；未開始，明確排在 Android 成品之後。
+- 前置：S17-W03 的 Android 里程碑（不是完整 P3，避免循環依賴）。
+- 交付：同一 Expo 應用啟用 iOS、bundle ID／簽署、Keychain、回跳及 TestFlight／受控安裝；共用能力沿 Android，補 iOS 錄音／檔案／通知／更新差異，不重畫頁面。
+- gate：iPhone 核心／平台流程及共用包 iOS 子範圍；帳號、簽署、真機未就緒標待驗，Web／simulator 不代填。公開 App Store 另按授權與審核結果處理。
 
 ### P4 工作包
 
