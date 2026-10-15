@@ -829,3 +829,12 @@ P3 四角色提案沿共同 [運行配置](#p2-agent-budgets)，所有角色合�
 私人摘要使用既有 Firestore 業務服務、背景工作及同一 ADK Runner；不另建記憶庫、模型壓縮服務或 P3 Agent。交易內只提交原文／變更、合併整理請求及 outbox；模型在交易外、最多一次生成，之後以原 run、來源版本與 coverage 交易保存。保存的批次在後續請求復用，並於每次 provider 請求前核對，不把摘要累加進 ADK session。
 
 純近期訊息選取在 agent-context-window；Prompt 組裝驗證在 agent-prompt；總請求與原生協定容量閘在 ModelGateway；資料有效性與修復在 Firestore memory；排程、付款、租約、unknown／終態由現有服務掌管。詳細來源及覆蓋見 [批次資料契約](DATA_MODEL.md#memory-summary-batches)，入口及上限見 [API](API.md#memory-batch-maintenance)。
+
+<a id="agent-observation-boundary"></a>
+### Agent 執行端口與故障觀察
+
+產品編排及私人摘要整理依賴 `AgentRuntimePort.run`，模型透過既有 `AgentModelProvider`，業務工具透過各領域 service；正式 factory 注入同一 Runner／Firestore／配額接線。測試可替換 provider，不能以另塞工具代替正式組裝。此邊界不建立額外 DI 或另一個 Agent。
+
+ADK plugin 將事件投影為固定 metadata，按 runId 回查原訊息／操作台帳；只含 phase、layer、已登記工具、耗時及既有允許的狀態／錯誤碼。`model` 是模型接線觀察點、`tool` 是工具邊界、`authorization` 是明確拒絕、`business` 是已知業務結果；未知外部失敗不猜成資料庫根因。API 身份與傳輸仍用現有 API 錯誤碼；不把 SDK run_end 當成業務保存完成。
+
+受信任的每次 `onDiagnostic` 與營運 logger 各收到獨立 metadata 副本，非阻塞且失敗隔離；不接收原始 args、模型正文、思考或 stack，不新增 Firestore 逐事件日誌。此端口供即時回饋取材，並不授權外發或改變取消／期限／提交；對客戶端的事件仍須經正式 HTTP 身份與產品投影。

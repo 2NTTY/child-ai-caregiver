@@ -3,7 +3,7 @@ import type { MemoryStore } from "./memory.ts";
 import type { TaskStore } from "./tasks.ts";
 import type { ChatStore } from "./chat.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
-import type { createAgentRuntime } from "./agent-runtime.ts";
+import type { AgentRuntimePort } from "./agent-runtime.ts";
 import { createProductAgentTools, createDueWorkContinuationTools } from "./product-agent-tools.ts";
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentPresentation, ProductAgentResult } from "../src/shared/product-agent.ts";
@@ -23,7 +23,7 @@ export function createProductAgent(options: {
   summary?:Pick<import("./care-summary-store.ts").CareSummaryStore, "get">;
   contact?:Pick<import("./contact-store.ts").ContactStore, 'options' | 'request' | 'recordedForRun'>;
   growth?: Pick<import("./growth-store.ts").GrowthStore, "list">;
-  runtime: ReturnType<typeof createAgentRuntime>; store: ProductAgentStore;
+  runtime: AgentRuntimePort; store: ProductAgentStore;
   memory: MemoryStore; tasks: Pick<TaskStore, 'list'>; chat: ChatStore; knowledge: ReturnType<typeof createKnowledgeRetriever>;
 }) {
   const activeReplies = new Map<string, AbortController>();

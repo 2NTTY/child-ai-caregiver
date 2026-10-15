@@ -915,3 +915,10 @@ Firestore 的 `prepareSummary`／`read_context.privateSummaryInput.summaryMode=i
 有效摘要每次 provider 呼叫前重核，最多選目前四個批次中能完整容納的內容；保留原訊息 IDs、部分覆蓋／未載入說明。近期對話以最多六則完整訊息及 14,000 字元的可選前文預算選取；當前訊息不截斷，超出可選預算仍交最後總容量閘判定，原始歷史按原工具續讀。未載入不等於不存在；摘要不是目前事實或操作授權。
 
 Prompt 組裝輸出模組字元統計，沿原 manifest 檢查依賴／版本／重複；gateway 每次仍計指令、工具 schema、資料及完整原生 parts，為工具結果留原有空間。可選摘要因容量／有效期省略時盡可能附 coverage 標示，不新增模型壓縮或把字元換算成固定中文 token 上限。工具配對、確認及 opaque metadata 不截斷。
+
+<a id="agent-observation-port"></a>
+### 內部 Agent 觀察端口
+
+`AgentRuntimePort.run(AgentRunInput): Promise<AgentRunResult>` 是產品編排／記憶整理使用的 Server 接口。`AgentRunInput.onDiagnostic` 只由受信任組裝注入，HTTP body 與模型不能指定 callback 或觀察別人的 run。返回結果及保存仍沿原權威服務；觀察事件不代替收據。
+
+`AgentDiagnostic` 新增穩定 `layer=agent|model|tool|authorization|business`，其餘沿原 runId、phase、tool、elapsedMs、outcome、stage、code 白名單。已登記工具以外的名稱及原始錯誤內容不傳出。正常模型／工具事件不自動持久保存；斷線、HTTP 錯誤及 run 終態由各自層處理，不從最後一個進度事件猜測成功或重做。

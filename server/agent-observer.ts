@@ -10,6 +10,8 @@ type ToolRejectionCode = "invalid_parameters" | "not_authorized" | "unknown"
 
 export type AgentDiagnostic = Readonly<{
   runId: string;
+  /** Observation boundary, not a guess about the root cause of an opaque failure. */
+  layer: "agent" | "model" | "tool" | "authorization" | "business";
   phase: "run_start" | "run_end" | "model_start" | "model_end" | "tool_start" | "tool_end" | "tool_error" | "model_error" | "tool_rejection";
   tool?: string;
   elapsedMs: number;
@@ -23,6 +25,8 @@ type AgentObserverOptions = {
   runId: string;
   toolNames: readonly string[];
   sink?: (event: AgentDiagnostic) => void | Promise<void>;
+  /** Trusted per-run consumer. Receives the same metadata allowlist, never SDK objects. */
+  observe?: (event: AgentDiagnostic) => void | Promise<void>;
 };
 
 function knownOutcome(status: unknown): AgentDiagnostic["outcome"] {
@@ -56,20 +60,20 @@ function rejectionCode(tool: string, stage: ToolRejectionStage, code: unknown): 
 class MetadataAgentObserver extends BasePlugin {
   private readonly runId: string;
   private readonly toolNames: ReadonlySet<string>;
-  private readonly sink: AgentObserverOptions["sink"];
+  private readonly sinks: readonly NonNullable<AgentObserverOptions["sink"]>[];
   private runStartedAt = performance.now();
 
   constructor(options: AgentObserverOptions) {
     super("agent_observer");
     this.runId = options.runId;
     this.toolNames = new Set(options.toolNames);
-    this.sink = options.sink;
+    this.sinks = [options.sink, options.observe].filter((sink): sink is NonNullable<typeof sink> => !!sink);
   }
 
   private emit(phase: AgentDiagnostic["phase"], toolName?: string, outcome?: AgentDiagnostic["outcome"], rejection?: {
     stage: ToolRejectionStage; code?: unknown; hints?: unknown;
   }): void {
-    if (!this.sink) return;
+    if (!this.sinks.length) return;
     const tool = toolName !== undefined && this.toolNames.has(toolName) ? toolName : undefined;
     const stage = tool !== undefined && phase === "tool_rejection"
       && (rejection?.stage === "schema" || rejection?.stage === "authorization" || rejection?.stage === "execution") ? rejection.stage : undefined;
@@ -79,6 +83,8 @@ class MetadataAgentObserver extends BasePlugin {
     const elapsed = performance.now() - this.runStartedAt;
     const event: AgentDiagnostic = {
       runId: this.runId,
+      layer: stage === "authorization" ? "authorization" : stage === "execution" && outcome !== "unknown" ? "business"
+        : phase.startsWith("model_") ? "model" : phase.startsWith("tool_") ? "tool" : "agent",
       phase,
       elapsedMs: Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0,
       ...(tool !== undefined ? { tool } : {}),
@@ -86,8 +92,9 @@ class MetadataAgentObserver extends BasePlugin {
       ...(stage !== undefined ? { stage, code: rejectionCode(tool!, stage, rejection?.code) } : {}),
       ...(hints.length ? { hints } : {}),
     };
-    try {
-      void Promise.resolve(this.sink(event)).catch(() => {});
+    for (const sink of this.sinks) try {
+      // A failing or mutating consumer cannot alter another observer or the business operation.
+      void Promise.resolve(sink(structuredClone(event))).catch(() => {});
     } catch {
       // Diagnostic failures must not change the agent's control flow.
     }
@@ -96,7 +103,7 @@ class MetadataAgentObserver extends BasePlugin {
   recordToolRejection(toolName: string, stage: ToolRejectionStage, result: {
     status: unknown; data?: { code?: unknown; hints?: unknown };
   }): void {
-    if (!this.sink || !this.toolNames.has(toolName)) return;
+    if (!this.sinks.length || !this.toolNames.has(toolName)) return;
     try {
       const outcome = knownOutcome(result.status);
       if (!outcome || outcome === "succeeded") return;

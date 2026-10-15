@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import type { FirestoreMemoryStore } from './firestore-memory.ts';
 import type { ProductAgentStore } from './product-agent-store.ts';
-import type { createAgentRuntime } from './agent-runtime.ts';
+import type { AgentRuntimePort } from './agent-runtime.ts';
 import type { ProductAgentResult } from '../src/shared/product-agent.ts';
 import { AgentStopped } from './agent-budget.ts';
 
 /** Private, one-generation maintenance using the same claimed Runner, billing and finish transaction as chat. */
 export function createPrivateSummaryMaintenance(options: { memory: FirestoreMemoryStore; store: ProductAgentStore;
-  runtime: ReturnType<typeof createAgentRuntime> }) {
+  runtime: AgentRuntimePort }) {
   return async (input: { userId: string; childId: string; reference: string; authorize: () => Promise<boolean>; signal?: AbortSignal }) => {
     if (!await input.authorize()) return { state: 'stopped' as const };
     const batch = await options.memory.prepareMaintenance(input.userId, input.childId);
