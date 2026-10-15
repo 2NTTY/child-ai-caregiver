@@ -117,14 +117,20 @@ function ChatContents({ compact }: { compact: boolean }) {
         onPress={() => { timelineRef.current?.holdReadingPosition(); void chatController.loadOlderMessages(); }} /></View> : undefined}
       footer={feedback} scrollRef={scrollRef} controlsRef={timelineRef} followRequest={followRequest} newReplyId={newReplyId} renderItem={message => {
         const run = message.agentRunId ? agentRuns[message.agentRunId] : undefined;
-        const sourcesMatch = run?.text === message.text;
+        const sourcesMatch = run?.text === message.text || !!run?.text && !!run.stopReasonLabel
+          && (run.status === "stopped" || run.status === "unknown")
+          && message.text === `這次回覆未完成：${run.stopReasonLabel}。\n\n${run.text}`;
         const pendingReply = message.role === "user" && message.authorUserId === chat.userId && chat.messages.slice(-chat.limit).some(item => item.id === message.id)
           && !chat.messages.some(item => item.role === "model" && item.inReplyTo === message.id);
         return <ChatMessage message={{ id: message.id, role: message.role === "model" ? "assistant" : "user", text: message.text,
           phase: run ? runPhases[run.status] : undefined, sources: sourcesMatch ? run.citations : undefined }}
           phaseLabel={run?.status === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
-          header={message.role === "model" && message.officialHelp?.length ? <OfficialHelpCards ids={message.officialHelp} /> : undefined}
+          header={<>
+            {message.role === "model" && message.officialHelp?.length ? <OfficialHelpCards ids={message.officialHelp} /> : null}
+            {run && (run.status === "stopped" || run.status === "unknown") && run.stopReasonLabel && !message.text.startsWith("這次回覆未完成：")
+              ? <Text accessibilityRole="alert" style={styles.warning}>這次回覆未完成：{run.stopReasonLabel}。</Text> : null}
+          </>}
           degraded={run?.retrievalMode === "keyword_degraded"} footer={<>
             {message.agentRunId ? <ChatAction label="詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
               disabled={!chat.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"}
