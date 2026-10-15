@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import test from 'node:test';
 import ts from 'typescript';
 import { archiveReadingView, growthReportExportRequest } from '../src/components/growth/growth-archive-view.ts';
+import * as archiveProjection from '../src/production/family-document-archive.ts';
 
 const require = createRequire(import.meta.url);
 const root = new URL('../../', import.meta.url);
@@ -29,6 +30,10 @@ const snapshot = (id, version = 1) => ({ id: '10000000-0000-4000-8000-' + id.sli
     items: [{ id: 'one', text: 'Synthetic checklist', sourceIds: [], checked: false }] }], sources: [], changes: [] });
 const item = id => ({ id, childId: child, kind: 'preparation', purpose: 'appointment', version: 1, status: 'active',
   archivedAt: null, current: snapshot(id), history: [], readState: 'ready', autoRefresh: false });
+const projectArchive = (items, extra = {}) => archiveProjection.projectFamilyDocumentArchive({
+  page: { authorityVersion: 'auth:1', canManage: true, items, hasMore: false },
+  load: 'ready', lost: false, scopeKey: 'synthetic-scope', childId: child, ...extra,
+});
 const request = { kind: 'preparation', title: 'My unsent title', purpose: 'appointment', eventDate: null, period: { from: '2026-10-01', to: '2026-10-07' } };
 const deferred = () => { let resolve; const promise = new Promise(yes => { resolve = yes; }); return { promise, resolve }; };
 
@@ -97,6 +102,7 @@ function owner(items = [item(a), item(b)]) {
     if (name.endsWith('/family-documents')) return schemas;
     if (name === './useDomainEnvironment') return { useDomainWriteGuard() {} };
     if (name === './task-knowledge-runtime') return { useTaskKnowledgeRuntime: () => runtime, useTaskKnowledgeRefresh() {} };
+    if (name === './family-document-archive') return archiveProjection;
     throw new Error('Unmocked owner dependency: ' + name);
   });
   return { env, calls, readCalls, render: () => h.render(() => useFamilyDocuments(env)),
@@ -318,14 +324,21 @@ test('scope/child replacement ignores delayed mutation success and does not clea
 test('one invalid current report cannot hide other authorized reports or resurrect invalid versions', async () => {
   const invalid = { ...item(a), kind: 'growth_report', purpose: 'family', readState: 'invalidated', current: null, history: [snapshot(a)] };
   const valid = { ...item(b), kind: 'growth_report', purpose: 'handoff' };
+  const previous = { ...invalid, readState: 'ready', current: snapshot(a), history: [] };
+  assert.equal(projectArchive([previous, valid]).archive.snapshot.id, previous.current.id);
+  const projected = projectArchive([invalid, valid]);
+  assert.equal(projected.archive.snapshot, null); assert.deepEqual(projected.reportDocumentIds, [a, b]);
+  assert.deepEqual(projected.archive.history.map(value => value.id), [valid.current.id]);
   const h = owner([invalid, valid]); await h.load();
-  const model = { scopeKey: h.env.scopeKey, childId: child, access: 'editable', load: 'ready', page: { authorityVersion: 'auth:1', archive: h.render().archive, items: [] } };
+  const { reading: ownerReading, ...ownerArchive } = h.render().archive;
+  assert.deepEqual(ownerArchive, projected.archive); assert.deepEqual(ownerReading.indexes.map(value => value.documentId), projected.reportDocumentIds);
+  const model = { scopeKey: h.env.scopeKey, childId: child, access: 'editable', load: 'ready', page: { authorityVersion: 'auth:1', archive: projected.archive, items: [] } };
   const reading = archiveReadingView(model); assert.equal(reading.items.length, 1); assert.equal(reading.items[0].snapshot.id, valid.current.id);
   assert.equal(growthReportExportRequest(model, reading.items[0], 'family', true, false).snapshotId, valid.current.id);
   for (const changed of [{ ...model, scopeKey: 'other' }, { ...model, childId: 'other' }, { ...model, access: 'lost' },
     { ...model, page: { ...model.page, authorityVersion: 'changed' } }]) assert.deepEqual(archiveReadingView(changed).items, []);
-  const allInvalid = owner([invalid]); await allInvalid.load();
-  assert.equal(allInvalid.render().archive.state, 'invalidated'); assert.deepEqual(allInvalid.render().archive.history, []);
+  const allInvalid = projectArchive([invalid]);
+  assert.equal(allInvalid.archive.state, 'invalidated'); assert.deepEqual(allInvalid.archive.history, []);
 });
 
 test('report export keeps exact document, scope, authority and version guards plus single-flight and late-scope protection', async () => {
@@ -491,13 +504,19 @@ test('building reports retain generating precedence and other authorized snapsho
       period: { from: '2026-01-01', to: '2026-12-31' }, title: 'Synthetic living report' } };
   const valid = { ...item(b), kind: 'growth_report', purpose: 'handoff' };
   for (const items of [[building], [valid, building]]) {
-    const h = owner(items); await h.load(); const archive = h.render().archive;
-    assert.equal(h.render().standard.id, a); assert.equal(archive.state, 'generating'); assert.equal(archive.snapshot, null);
+    const projected = projectArchive(items), archive = projected.archive;
+    assert.equal(projected.standard.id, a); assert.equal(archive.state, 'generating'); assert.equal(archive.snapshot, null);
     assert.deepEqual(archive.history.map(value => value.id), items.length === 2 ? [valid.current.id] : []);
+    const h = owner(items); await h.load();
+    const { reading, ...ownerArchive } = h.render().archive;
+    assert.deepEqual(ownerArchive, archive); assert.equal(h.render().standard.id, projected.standard.id);
     h.render().refreshReport(); await h.settle(); assert.equal(h.calls.length, 1);
     assert.equal(h.calls[0].body.change.action, 'refresh'); assert.equal(h.calls[0].body.change.expectedVersion, 1);
     h.failRead(403); h.render().refresh(); await h.settle();
-    assert.equal(h.render().archive.state, 'invalidated'); assert.deepEqual(h.render().archive.history, []);
+    const lost = projectArchive(items, { lost: true });
+    assert.equal(lost.archive.state, 'invalidated'); assert.deepEqual(lost.archive.history, []); assert.equal(lost.standard, null);
+    const { reading: lostReading, ...lostOwnerArchive } = h.render().archive;
+    assert.deepEqual(lostOwnerArchive, lost.archive); assert.deepEqual(lostReading.indexes, []);
   }
 });
 
@@ -509,10 +528,13 @@ test('living selection and annual or quarterly completed coverage survive strict
       counts: { recordsInPeriod: 120, recordsUnknownTime: 1, tasksInPeriod: 0, observationsInPeriod: 0, confirmedFacts: 0, recordKinds: { note: 120 } } } } });
   const fixed = completed(a, 'fixed', 'quarter', { from: '2026-07-01', to: '2026-09-30' });
   const living = completed(b, 'living', 'annual', { from: '2026-01-01', to: '2026-12-31' });
-  const h = owner([fixed, living]); await h.load();
-  assert.equal(h.render().standard.id, b); assert.equal(h.render().archive.snapshot.id, living.current.id);
-  assert.deepEqual(h.render().archive.periods.map(value => [value.kind, value.quarter, value.currentAnnual, value.coverage]),
+  const projected = projectArchive([fixed, living]);
+  assert.equal(projected.standard.id, b); assert.equal(projected.archive.snapshot.id, living.current.id);
+  assert.deepEqual(projected.archive.periods.map(value => [value.kind, value.quarter, value.currentAnnual, value.coverage]),
     [['quarter', 3, false, 'complete'], ['year', undefined, true, 'complete']]);
+  const h = owner([fixed, living]); await h.load();
+  const { reading, ...ownerArchive } = h.render().archive;
+  assert.deepEqual(ownerArchive, projected.archive); assert.equal(h.render().standard.id, projected.standard.id);
   const request = { kind: 'growth_report', purpose: 'family', title: 'Synthetic duplicate', eventDate: null };
   h.render().createDocument({ ...request, period: { from: '2025-01-01', to: '2025-12-31' }, reportMode: 'living' });
   h.render().createDocument({ ...request, period: fixed.report.period, reportMode: 'fixed' });
