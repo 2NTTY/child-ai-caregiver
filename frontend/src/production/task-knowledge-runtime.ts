@@ -1,3 +1,4 @@
+import { subscribeOnlineRefresh } from "../../../src/client/online-refresh-events";
 import { useEffect, useRef, useState } from "react";
 import { useDomainEnvironment } from "./useDomainEnvironment";
 
@@ -71,14 +72,12 @@ export function useTaskKnowledgeRefresh(refresh: () => void, enabled: boolean, b
     if (enabled && !busy && queued.current) { queued.current = false; latest.current.refresh(); }
   }, [enabled, busy]);
   useEffect(() => {
-    if (typeof window === "undefined") return;
     const updated = () => {
       const current = latest.current;
       if (!current.enabled) { queued.current = true; return; }
       if (current.busy) queued.current = true;
       else current.refresh();
     };
-    window.addEventListener("yuban-online-refresh", updated);
-    return () => window.removeEventListener("yuban-online-refresh", updated);
+    return subscribeOnlineRefresh(updated);
   }, []);
 }

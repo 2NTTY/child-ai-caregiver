@@ -1,6 +1,6 @@
 {
   "workPackage": "S04-W01",
-  "status": "implemented-awaiting-cloud-build-and-device",
+  "status": "device-startup-failed-local-fix-verified-awaiting-update",
   "baseline": "4f88948cf943585954efbe32ef93e0df0c53f3c8",
   "recordedAt": "2026-10-15T11:20:23.441524+00:00",
   "environment": {
@@ -161,6 +161,37 @@
       "realDevice": "Installation/login requested from user; no result asserted",
       "realModelCalls": 0,
       "notifications": 0
+    },
+    {
+      "name": "First physical Android launch and targeted startup repair",
+      "result": "user-device-failed-local-repair-passed",
+      "userEvidence": [
+        "APK installed and original account login succeeded",
+        "Entire dashboard blank",
+        "Reopening crashes"
+      ],
+      "crashReportSha256": "b113160fe1f368a491a65a6a5297d6e836e4ba28dc4ae048a54fc405fd0ed7f9",
+      "crashComponent": "SettingsIdentityBridge",
+      "diagnosis": "Actual settings refresh effect reproduces TypeError: window.addEventListener is not a function under React Native window=globalThis. RN 0.86.3 sets the alias without browser event methods.",
+      "repair": "Shared invalidation subscription preserves the browser event contract and uses in-process native listeners. Existing scope checks and deferred refresh guards remain. ProductionOwner emits after native writes.",
+      "checks": {
+        "baseline": "one failing targeted hook check",
+        "after": "two targeted native/Web checks passed",
+        "affectedTypes": "8 roots; zero diagnostics",
+        "androidExport": "passed; runtime matches installed APK"
+      },
+      "export": {
+        "files": 31,
+        "bytes": 13020208,
+        "runtimeVersion": "c312bc718cf9e42fde6ff62b768217f6aaf7cfd6"
+      },
+      "exportLogSha256": "a01aba544410ca09eeee7f025813c71e5ad54733fb32c0f39b6cc4776dc5272e",
+      "deviceRetest": "not performed; local checks are not native rendering evidence",
+      "emulator": "No installed Android SDK/AVD found; no large download or paid test started",
+      "modelCalls": 0,
+      "notifications": 0,
+      "cloudBuilds": 0,
+      "publishedUpdate": false
     }
   ],
   "sourceSha256": {
@@ -189,9 +220,9 @@
     "deployment": 1
   },
   "remaining": [
-    "Actual Android installation/login and one approved source-backed Agent run/readback (1 run /4 generations /2 embeddings, <$0.10)",
-    "No real-device result is inferred from bundle, EAS or API health",
-    "S04-W01 PR remains draft until acceptance; dependent S05/S07 and later packages not started"
+    "Publish the reviewed compatible Android startup fix and obtain actual dashboard/reopen result",
+    "One approved source-backed Agent run/readback (1 run /4 generations /2 embeddings, <$0.10); not started after startup failure",
+    "S04-W01 remains draft; local checks do not prove physical rendering"
   ],
   "collaboratorHeads": {
     "214": "ba3b32bb41944957c8a445db161b9134befa6e15",

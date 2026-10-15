@@ -1,3 +1,4 @@
+import { publishOnlineRefresh } from "../../../src/client/online-refresh-events.ts";
 import type { ProductionTransport } from "./production-transport";
 import { createAccountApi } from "../../../src/client/account-api";
 import { createProductAgentApi } from "../../../src/client/product-agent-api";
@@ -226,7 +227,7 @@ export class ProductionOwner {
     // New chat proposals must be discoverable even before the list has ever been opened.
     if (scope && refreshPending) void this.agentOwner?.readPending();
     if (authorization?.notesState === "ready" && !authorization.busy && !authorization.pending) void this.authorizationOwner.readNotes(false, true);
-    if (emitEvent && !this.native && typeof window !== "undefined") window.dispatchEvent(new Event("yuban-online-refresh"));
+    if (emitEvent) publishOnlineRefresh();
   };
   async refresh() {
     const state = this.controller.getSnapshot();

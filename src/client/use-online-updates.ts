@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
+import { publishOnlineRefresh } from "./online-refresh-events.ts";
 
 export type OnlineRefreshReason = "changed" | "forced" | "unavailable";
-export const ONLINE_REFRESH_EVENT = "yuban-online-refresh";
+export { ONLINE_REFRESH_EVENT } from "./online-refresh-events.ts";
 const uuid = /^[0-9a-f-]{36}$/iu;
 const seq = /^(0|[1-9][0-9]{0,18})$/u;
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -24,7 +25,7 @@ export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, onli
     const notify = async (reason: OnlineRefreshReason) => {
       if (stopped) return;
       await latestRefresh.current(reason);
-      if (!stopped) window.dispatchEvent(new Event(ONLINE_REFRESH_EVENT));
+      if (!stopped) publishOnlineRefresh();
     };
     const check = async (force = false) => {
       if (busy || stopped || document.visibilityState !== "visible") return;

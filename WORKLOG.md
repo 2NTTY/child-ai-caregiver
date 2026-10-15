@@ -2733,3 +2733,12 @@
 - 使用者明確補准第三次私有前端上傳及一次免費 build 後，`7586788` 的 612 檔來源在同一 Expo 專案／簽署完成；build `b2fb7fe9-5f00-4d4c-9d62-b425c9b318ac` 於 12:49 UTC 成功，APK 0.1.0／versionCode 1。沒有購買方案，前兩次失敗保留。
 - 隨已批准範圍經 IAP 傳送原 `c6cf75d` 四個 Server 檔案及核對腳本，API／worker 於 12:51 UTC 更新為 `s04-c6cf75d` 並健康；Web 映像、資料、配額及停止期限保持，無 migration，保留回滾映像與配置。
 - 本包真模型、embedding、通知仍為 0；已請本人手機安裝及登入，尚未取得人工結果。S04-W01 仍待一次已批准聊天／引用及重開讀回，draft PR #229 不合併、不開依賴包，不以雲端 build 或健康檢查代替真機。
+
+
+<a id="log-20261015-android-startup-repair"></a>
+### 2026-10-15 — S04-W01 真機登入後啟動失敗與共用刷新修正
+
+- 本人回覆已安裝並登入，主頁整個白屏，重開閃退；提供 JavaScriptException 報告，頂層為 SettingsIdentityBridge。停止原真模型驗收，沒有發送 AI 訊息或通知，不將 APK 成功改稱真機完成。
+- 核對固定 RN 0.86.3 的 window=global 別名，實際設定刷新 hook 在此環境重現 `window.addEventListener is not a function`。局部抽出原有失效事件接點，Web 保留原事件，Android 使用無正文的程序內信號；各領域保留原身份／孩子／忙碌及延後刷新核對，沒有改 UI、Server、權限或資料。
+- 只跑原生失敗定向檢查一次、修後原生／Web 兩項一次、8 roots 型別與一次 Android export；全部修後檢查通過，runtime 與已安裝 APK 相同。未安裝 Android 模擬器，亦未為此下載大型工具。這些不代替真機畫面證據。
+- 修正待透過同一 Expo preview 相容更新交付；本次沒有新 cloud build、模型、embedding、通知或 VM 部署。使用者要求需本人步驟時保留現場並先做獨立工作；S04-W01 仍待主頁恢復及原首條聊天，不合併 draft PR #229。證據沿用同一 S04 EV，保留所有舊失敗。
