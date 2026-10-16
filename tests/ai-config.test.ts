@@ -17,6 +17,9 @@ test("AI configuration defaults to a disabled server-only setup", () => {
     agentMaxInputCharacters: 64000,
     agentThinkingLevel: "minimal",
     maxOutputTokens: 1024,
+    backgroundKnowledgeMaintenanceEnabled: false,
+    backgroundKnowledgeLiveFetch: false,
+    backgroundKnowledgeLivePublish: false,
   });
   assert.equal(readAiConfig({ GCP_PROJECT_ID: "" }).project, "");
 });
@@ -47,6 +50,9 @@ test("AI configuration accepts safe identifiers and numeric boundaries", () => {
     agentMaxInputCharacters: 64000,
     agentThinkingLevel: "minimal",
     maxOutputTokens: 4096,
+    backgroundKnowledgeMaintenanceEnabled: false,
+    backgroundKnowledgeLiveFetch: false,
+    backgroundKnowledgeLivePublish: false,
   });
 });
 
@@ -118,3 +124,27 @@ test("thinking defaults and explicit levels are compatible with the exact config
   // Do not infer compatibility for unverified model aliases or future versions.
   assert.equal(readAiConfig({ GEMINI_MODEL: "gemini-3.8-flash-preview" }).agentThinkingLevel, "minimal");
 });
+
+test("background knowledge maintenance flags default off and reject unsafe combinations", () => {
+  const defaults = readAiConfig({});
+  assert.equal(defaults.backgroundKnowledgeMaintenanceEnabled, false);
+  assert.equal(defaults.backgroundKnowledgeLiveFetch, false);
+  assert.equal(defaults.backgroundKnowledgeLivePublish, false);
+  const enabled = readAiConfig({
+    AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED: "true",
+    AI_BACKGROUND_KNOWLEDGE_LIVE_FETCH: "true",
+    AI_BACKGROUND_KNOWLEDGE_LIVE_PUBLISH: "false",
+  });
+  assert.equal(enabled.backgroundKnowledgeMaintenanceEnabled, true);
+  assert.equal(enabled.backgroundKnowledgeLiveFetch, true);
+  assert.equal(enabled.backgroundKnowledgeLivePublish, false);
+  assert.throws(() => readAiConfig({
+    AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED: "false",
+    AI_BACKGROUND_KNOWLEDGE_LIVE_FETCH: "true",
+  }), { message: "Invalid AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED configuration" });
+  assert.throws(() => readAiConfig({
+    AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED: "true",
+    AI_BACKGROUND_KNOWLEDGE_LIVE_PUBLISH: "true",
+  }), { message: "Invalid AI_BACKGROUND_KNOWLEDGE_LIVE_FETCH configuration" });
+});
+
