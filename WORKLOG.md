@@ -3123,3 +3123,8 @@
 - 最少檢查：隔離設定及 cookie 各一項、受影響型別、diff 通過；正式資料保存／原操作重試／匿名拒絕、物件版本接點、原生向量查詢與重啟讀回通過。一次真 Agent 為4生成／4工具／1查詢 embedding，另1次種子 embedding；Web 正常登入並顯示同一已保存問答，零追加模型。只核局部，沒有全量、壓測、Computer Use、通知或部署。
 - 原失敗保留：命名 emulator DB 不在標準匯出內，改只限本地 default 後核讀回；Windows 第二CLI匯出退出 assertion 改同版本 Hub API；Storage emulator 忽略 precondition，以單 runtime 薄 adapter 補齊。全局 ADC 指向不存在檔案，確認該次未出網後保留原用量／恢復證據，只恢復精確未執行向量佔位，再用本人有效本機 ADC 一次完成。正式憑據／資料未改。全 Server 型別原有測試／NodeNext 錯誤不作本包廣泛修正。
 - 真模型雖正常回覆及引用，準備單只停留文字草稿，沒有實際文件資源，不計編製／審核或四角色聯合通過。非郵件本地收件箱、完整附件業務流程及角色聯合仍待補，Gemini key 真服務亦不能由 Vertex ADC 結果代替。本機服務已正常停止及保存；操作見[指南](docs/AGENT_LOCAL.md)，版本、counts、限制及失敗見[DEV01 EV](artifacts/verification/DEV_AGENT01_LOCAL_20261018.json)。
+
+### LOG-20261018-DEV-AGENT01-ARTIFACTS
+
+- 接續 `19d5373`／draft #241，只補一個零模型本地 client 流程：同一準備單修改及重新讀取，舊版本拒絕；極小文字附件經正式加密服務保存、讀回、刪除後拒絕正文。run `f26b6c03-6f48-4c27-b988-cb826a076494` 共19次API通過，零模型／通知／雲端／瀏覽器。初次命令因 sandbox 無法讀受保護合成設定，未開始業務呼叫；使用本機已授權身份後只執行一次流程。
+- 只證明目前分支的文件與附件接線，未驗照片／錄音／PDF全部路徑、實體清理或真模型編製／審核。協作者 #214／#215 已有真模型入口，#216 仍有 programmatic stub／dry-run 邊界；沒有接管角色。服務已正常停止及保存，原失敗與 Android／PR 前置保持。

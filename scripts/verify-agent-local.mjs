@@ -7,10 +7,12 @@ import { createLocalAgentBuckets } from '../server/local-agent-storage.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { createChatApi } from '../src/client/chat-api.ts';
 import { createProductAgentApi } from '../src/client/product-agent-api.ts';
+import { createFamilyDocumentsApi } from '../src/client/family-documents-api.ts';
+import { createChatFileApi } from '../src/client/chat-file-api.ts';
 
 // Explicit bounded checks only; startup never runs this. --real-agent spends one run.
 const mode = process.argv[2];
-if (!['--data-only', '--persistence-only', '--readback', '--real-agent'].includes(mode)) throw Error('Choose an explicit local verification mode; --real-agent spends at most one run');
+if (!['--data-only', '--persistence-only', '--readback', '--real-agent', '--artifacts'].includes(mode)) throw Error('Choose an explicit local verification mode; --real-agent spends at most one run');
 const root = resolve(import.meta.dirname, '..'), directory = resolve(root, '.cache/agent-local');
 const state = JSON.parse(await readFile(resolve(directory, 'state.json'), 'utf8'));
 const fingerprint = createHash('sha256').update(root).digest('hex').slice(0, 8);
@@ -64,6 +66,36 @@ try {
   const children = await json('/api/children'); assert.ok(JSON.stringify(children).includes('本地入口核對'));
   await writeFile(resolve(directory, 'verification-readback.json'), JSON.stringify({ run, receipt }), { mode: 0o600 });
   steps.push('production-save-original-operation-replay-and-readback');
+  if (mode === '--artifacts') {
+    const childId = receipt.result.child.id;
+    const clientFetch = (url, init = {}) => {
+      assert.ok(++calls <= 24); assert.equal(new URL(url).origin, origin);
+      const headers = new Headers(init.headers); headers.set('Origin', origin); headers.set('Cookie', cookie);
+      return fetch(url, { ...init, headers });
+    };
+    const signal = AbortSignal.timeout(90_000), documents = createFamilyDocumentsApi(origin, clientFetch);
+    const draft = await documents.create(childId, { kind: 'preparation', purpose: 'appointment', title: '本地到診準備',
+      eventDate: null, period: { from: '2026-10-01', to: '2026-10-31' } }, signal, uid);
+    const listed = await documents.getPage(childId, signal, uid);
+    const changed = await documents.change(childId, draft.id, { action: 'patch', expectedVersion: draft.version,
+      authorityVersion: listed.authorityVersion, confirmShared: true, edits: [{ op: 'set_metadata', title: '下次到診準備' }] }, signal, uid);
+    assert.equal(changed.current.title, '下次到診準備'); assert.deepEqual(changed.current.sections, draft.current.sections);
+    assert.equal((await createFamilyDocumentsApi(origin, clientFetch).getItem(childId, draft.id, signal, uid)).version, changed.version);
+    await assert.rejects(documents.change(childId, draft.id, { action: 'archive', expectedVersion: draft.version,
+      authorityVersion: listed.authorityVersion }, signal, uid), error => error.status === 409);
+    steps.push('same-production-document-client-create-patch-readback-and-conflict');
+    const bytes = Buffer.from('Local private attachment: preparation notes.\n'), fileId = randomUUID();
+    const files = createChatFileApi(clientFetch, origin, async input => createHash('sha256').update(input).digest('hex'));
+    const reserved = await files.reserve(childId, { opId: fileId, fileName: 'local-preparation.txt', mimeType: 'text/plain',
+      bytes: bytes.length, sha256: createHash('sha256').update(bytes).digest('hex') }, signal, uid);
+    const uploaded = await files.upload(reserved, bytes.toString('base64'), signal, uid);
+    const reopened = await createChatFileApi(clientFetch, origin).get(childId, fileId, signal, uid);
+    assert.equal(reopened.version, uploaded.version);
+    assert.deepEqual(Buffer.from((await files.content(reopened, signal, uid)).bytes), bytes);
+    const deleted = await files.delete(reopened, randomUUID(), signal, uid); assert.equal(deleted.deleted, true);
+    await assert.rejects(files.content(reopened, signal, uid), error => error.status === 410);
+    steps.push('production-encrypted-attachment-reserve-save-readback-and-delete');
+  }
   if (mode === '--real-agent') {
     const childId = children.children.find(child => child.displayName === '本地入口核對').id;
     const clientFetch = (url, init = {}) => {

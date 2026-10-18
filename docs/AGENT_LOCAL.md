@@ -84,4 +84,6 @@ npm run agent:local -- --reset --confirm-local-reset
 
 最低檢查才執行 `scripts/verify-agent-local.mjs`；啟動工具不自動跑測試。`--real-agent` 會花本人模型額度，最多一個原 run，失敗即停，原始合成結果留受保護 cache。不要例行反覆跑。
 
+`--artifacts` 在 `--no-model` 入口使用正式 client 核對同一份準備單的修改／讀回／版本衝突，以及一份小附件的保存／讀回／刪除；它不驗證模型編製或審核，也不代表清理 worker 已實際刪除物件。
+
 本地成功不代替 GCP IAM、真通知、正式備份恢復或 Android 真機。已驗、失敗及未驗項見 [DEV-AGENT01 證據](../artifacts/verification/DEV_AGENT01_LOCAL_20261018.json)；角色聯合成果和個人設定交付以根 PLAN 為準。

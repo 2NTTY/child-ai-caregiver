@@ -106,6 +106,25 @@
       "apiRequests": 69,
       "modelRequests": 0,
       "note": "One prior login-only check made six API requests. Follow-up read existing saved content only."
+    },
+    {
+      "kind": "production-local-document-and-attachment",
+      "run": "f26b6c03-6f48-4c27-b988-cb826a076494",
+      "status": "passed",
+      "apiCalls": 19,
+      "modelCalls": 0,
+      "notifications": 0,
+      "results": [
+        "same-document-create-patch-readback",
+        "stale-document-version-rejected",
+        "encrypted-attachment-upload-readback-delete",
+        "deleted-content-rejected"
+      ],
+      "limitations": [
+        "No real model composition or review",
+        "No browser/media/PDF coverage implied",
+        "No physical cleanup worker assertion"
+      ]
     }
   ],
   "static": {
@@ -148,7 +167,6 @@
   "remaining": [
     "DEV-AGENT02 collaborator role integration and real review/compile/background flows",
     "Non-email local notification inbox; all external channels stay disabled",
-    "Full encrypted attachment business flow through the local app; raw object transport alone is not that evidence",
     "Gemini API key real-service compatibility not proven by Vertex ADC",
     "Prompt/code hot reload wiring exists; no extra paid before/after model comparison",
     "No GCP IAM, Cloud Tasks OIDC, real notification, production restore or Android acceptance implied",
@@ -157,7 +175,7 @@
   "sourceHashes": {
     "scripts/agent-local.mjs": "2287d8b42e7979295ddfee6d4b1b0008240321ef0a677316fc1821bd6c1ce548",
     "scripts/agent-local-knowledge.mjs": "50bb7a6e948e946f2e89920718bc2078faebcbe618aa7b2ef6971b96bbc373ec",
-    "scripts/verify-agent-local.mjs": "27c0fa70b57ce8042cff354434543f78be37db4b10284beab69f025f0ed8e998",
+    "scripts/verify-agent-local.mjs": "3a377ee0194c75f7a76f58ac3d1e0e8b906eecef7c4b2ba7c4ca1935340e1eb1",
     "server/local-agent-config.ts": "c7854fd7694c5fad71b3c5075226363df6cf61d6d4188fa7fa139aa6321d95ca",
     "server/local-agent-main.ts": "2fa9323bf66f89e650b259b72bd75c306334aff04c3bfff083c609c69eae7958",
     "server/local-agent-worker.ts": "73c55d60ce9486d9caeb2de6db0c9cad6e8086023615c5df95a308f46b2f751d",
