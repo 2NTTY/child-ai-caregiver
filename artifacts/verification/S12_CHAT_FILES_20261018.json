@@ -2,7 +2,7 @@
   "date": "2026-10-18",
   "workPackage": "S12-W05",
   "inputBase": "1dfeb84e2406ab029696a5a5a81bcd67739bc8ca",
-  "status": "server_web_deployed_android_ota_pending_device_acceptance",
+  "status": "server_web_android_ota_delivered_device_acceptance_pending",
   "environment": "Node 24.19.0; in-memory Firestore fixture; synthetic object and journal ports; real Mammoth 1.13.0 / JSZip 3.10.2 workers",
   "checks": [
     {
@@ -184,5 +184,23 @@
     "backup": "2026-10-17T22:05:22.757057Z READY; metadata only; no restore",
     "quotaChanged": false,
     "migrations": 0
+  },
+  "android": {
+    "source": "5bd53b6764a4842f10e313291ed3c719813f0e4f",
+    "preparedSharedClientSource": "c4ac1b995d22f28cfd6b8330bf07e22a7e6b9c36",
+    "previousClientSource": "ee482ad073f90462a7afb8acaae8f47cfae085d9",
+    "update": {
+      "id": "01a14e8b-5383-704a-986b-9926f64c2c5e",
+      "group": "a8c6bf35-1b67-42ea-9c41-cf7c0ec896a6",
+      "runtimeVersion": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "platform": "android",
+      "gitSha": "5bd53b6764a4842f10e313291ed3c719813f0e4f"
+    },
+    "runtimeMatchesInstalledVersionCode": 2,
+    "newApk": false,
+    "webArtifactReused": true,
+    "deviceReceived": false,
+    "rollbackExecuted": false,
+    "releaseOwner": "B"
   }
 }

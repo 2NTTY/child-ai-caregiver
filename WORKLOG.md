@@ -3054,3 +3054,9 @@
 - 只使用一個合成身份、孩子及極小Word：已保存並連回聊天。檢查容器缺通知掛載與Node input-type繼承先後停批；前者未建資料，後者已撤銷合成身份。改成正式檔案入口後讀同一原檔成功，再用獨立journal及真cleanup consumer清理；boolean回傳斷言誤讀後，只唯讀確認tombstone complete及物件已不存在。未重建帳號／附件，原失敗及撤權場景保留。
 - 真SDK與資料接點的有限結果見[附件EV](artifacts/verification/S12_CHAT_FILES_20261018.json)；不等同真Agent理解或兩端選檔驗收。Android相容OTA尚待發布，原人工gate及原生備份真還原仍未通過。
 - 按使用者更新目標：Android成品後先報告並停止；個人key、自選模型／限額及本地Agent入口留待使用者重新計劃，不自動開工。
+
+
+### LOG-20261018-CHAT-FILE-ANDROID-UPDATE
+
+- B交付一次Android preview OTA，來源5bd53b6／共用前端c4ac1b9，update group `a8c6bf35-1b67-42ea-9c41-cf7c0ec896a6`。官方runtime `33699576537bf6f4081bddfb9c8807cd6bdef3ee` 與已安裝APK v2相同，不重建APK。既有Web產物已獨立部署及核hash，發布入口沿c4ac1b9後差異只做OTA，沒有重建Web。
+- 手機接收、兩端系統選檔／下載、真人Agent內容理解、語音／通知及OTA回退仍待驗；沒有藉發布通過改寫人工結論。依賴draft保留，不合併未滿足gate的PR。最新分工按B提需求／前端接線、C後端實作，單作者與既有作者保留。
