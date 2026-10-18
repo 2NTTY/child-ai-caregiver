@@ -191,7 +191,7 @@ Server `ANDROID_PUSH_ENABLED` 預設關閉；準備同一 GCP project 的 FCM HT
 3. 正式執行要求乾淨提交、實體 dependency installation（不能指向另一 worktree 的 junction）、固定 Node／npm／EAS，及工程外 Web Firebase 環境檔。Android 的 `ANDROID_GOOGLE_SERVICES_FILE` 是已核對的同專案描述檔，不能進 Git／上傳原始碼封包。`mobile:prepare` 沿固定 Windows fingerprint 修正，不能手填舊 runtime。
 4. 共用修改用同一入口準備 Web 及 Android；例如 `npm run mobile:release -- --execute --channel preview --build-id <目前APK的EAS-build-ID> --web-env-file <工程外Web環境檔>`。它先產生 Web 產物，再核對官方 runtime：相同才 OTA，不同便 APK；沒有 baseline 不能猜 OTA。用 `--action update` 可要求不相容即停；`--action build` 明確要求新 APK。
 5. Web 使用 `frontend/dist`，沿本文件原 VM／Caddy 部署及回滾接點傳送；工具目前只把 Web 標為 **prepared-deployment-pending**，不會冒稱網站已更新。部署私人產物、API 相容修正、新索引及雲端費用依有效授權處理。
-6. build 使用固定簽署（`--freeze-credentials`）、遠端遞增 versionCode、`--no-wait`；排入 EAS 不等於 APK 成功。完成後執行 `npm run mobile:release -- --record-build <ID> --channel preview`，只讀 EAS 結果並保存供下次 plan 使用的精簡記錄。覆蓋安裝及裝置結果仍須實測。
+6. build 使用固定簽署（`--freeze-credentials`）、遠端遞增 versionCode、`--no-wait`；排入 EAS 不等於 APK 成功。完成後執行 `npm run mobile:release -- --record-build <ID> --channel preview`，只讀 EAS 結果並保存供下次 plan 使用的精簡記錄。首次新 APK 升級交付核對實際產物的 applicationId、遞增 versionCode 及原證書，以 Android 官方 `apksigner verify --verbose --print-certs` 驗證簽署；不只相信 build metadata。覆蓋安裝及裝置結果仍須實測。
 
 Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走 Android 配置，避免兩端公開 Firebase key 混用。Android 執行才讀指定 EAS environment；不輸出其內容。`--plan` 不使用 `eas fingerprint:generate`，因固定 CLI 的該命令會上傳 fingerprint；沿 `expo-updates` 的本機 resolver 取得與 runtime 相同的判斷。
 
@@ -203,4 +203,4 @@ Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走 Android 配
 - 雲端呼叫前保存 submitted。回應丟失／失敗時保留 unknown，**不自動重新發布**；先在原 EAS 專案按 ID／SHA 查原結果。同一提交／channel／action 不自動建立第二次操作。
 - OTA 沿現有 ON_LOAD／下次安全啟動套用；工具不呼叫 App reload，不在聊天、確認或 unknown 期間強制重載。
 
-目前只驗本機分類／相容及回退守門、離線 CLI；真 EAS、Web部署、相容 OTA回退及新 APK覆蓋安裝保留在根 PLAN。
+本文件只定義固定交付方法；實際 EAS／部署／真機／OTA 狀態與證據以[根 PLAN](../PLAN.md#s04-w03)為準。APK 檢查使用[Android 官方工具](https://developer.android.com/tools/apksigner)，不修改或重新簽署已交付的 APK；Windows `aapt` 若不接受中文絕對路徑，從專案目錄傳入相對路徑。

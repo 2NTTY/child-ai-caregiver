@@ -211,5 +211,37 @@
       "Device-to-device presentation, keyboard, FCM and APK/OTA upgrade",
       "Comprehensive medical accuracy or actual billed amount; five attempts have incomplete token usage"
     ]
+  },
+  "apkUpgradeIdentity": {
+    "at": "2026-10-18T08:19:34.669701+00:00",
+    "tools": {
+      "source": "https://dl.google.com/android/repository/build-tools_r33.0.2-windows.zip",
+      "archiveSha1": "1f33813c884a039f242b386e9127d3a96915066f",
+      "apksigner": "0.9",
+      "aapt": "0.2-9420752"
+    },
+    "artifacts": [
+      {
+        "versionCode": 1,
+        "versionName": "0.1.0",
+        "package": "org.yuyoufang.app",
+        "bytes": 113909189,
+        "sha256": "7957979425284fa3dd5a11dabd64c2153461eb6ae22c040fe50e25df118e3f26",
+        "certificateSha256": "6153ebdd00cbadc004506cc468e2aab5f5430320a90c8bd00df336e0853aa8a0",
+        "v2SignatureVerified": true
+      },
+      {
+        "versionCode": 2,
+        "versionName": "0.1.0",
+        "package": "org.yuyoufang.app",
+        "bytes": 119224262,
+        "sha256": "89c46e95a902f19931348700f8ca716ebc122634594b07b5930223801215fe28",
+        "certificateSha256": "6153ebdd00cbadc004506cc468e2aab5f5430320a90c8bd00df336e0853aa8a0",
+        "v2SignatureVerified": true
+      }
+    ],
+    "upgradeIdentityCompatible": true,
+    "deviceInstallTested": false,
+    "failurePreserved": "aapt rejected non-ASCII absolute paths; only metadata reads were repeated with relative paths; signatures were not rerun"
   }
 }
