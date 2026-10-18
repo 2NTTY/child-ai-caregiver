@@ -1011,7 +1011,7 @@ P2 只留最小角色配置／契約；此處明確承接內部實作與原 AC-P
 - 用 Expo fingerprint／runtime 比較與已發布 build 的相容性；無基線或無法核實須 build／停止，不能猜測、手填舊 runtime 或忽略差異強發。
 - 集中固定 application ID、簽署、API 地址、profiles／channels，保存 Git SHA、App／runtime／update ID 及回退位置。私鑰／token 不入 Git、prompt 或公開 App 配置。
 - OTA 在安全啟動時套用，不在聊天、待確認或未知提交期間強制 reload；新 APK 同簽署、遞增版本，可覆蓋安裝保留資料。回退畫面不等於回退業務資料。
-- EAS 帳號待設定；首次雲端 build、私有程式上傳及新增費用按具體範圍授權。額度用完才決定，不能假定永久免費。原 VM 期限另核，不自動續期。
+- EAS 帳號已設定；後續雲端 build、私有程式上傳及新增費用按具體範圍授權。額度用完才決定，不能假定永久免費。原 VM 期限另核，不自動續期。
 
 **官方核對（2026-10-15；非原生實測）：**[Expo Firebase](https://docs.expo.dev/guides/using-firebase/)、[SecureStore](https://docs.expo.dev/versions/latest/sdk/securestore/)、[Expo Audio](https://docs.expo.dev/versions/latest/sdk/audio/)、[Gemini 音訊](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-lite)、[Expo fetch](https://docs.expo.dev/versions/latest/sdk/expo/)、[FCM](https://docs.expo.dev/push-notifications/sending-notifications-custom/)、[APK](https://docs.expo.dev/build-reference/apk/)、[OTA runtime](https://docs.expo.dev/eas-update/runtime-versions/)、[EAS 費用](https://expo.dev/pricing)。版本及 license 隨實際模組接入固定；文檔能力不當工程已驗。
 
@@ -1087,7 +1087,7 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s13-w02"></a>
 #### S13-W02 原生本人通知
 
-- 階段／狀態：P3；Android 正式接線已在本機實作，活動分支 `codex/s13-w02-android-push` 接續 S12 draft #237；尚未部署或發布新 APK。依使用者授權先推進不依賴真機的部分；依賴合併與明確批准的一則真通知仍是 gate，不提前標完成。iOS 待後續。
+- 階段／狀態：P3；Android 正式接線已在本機實作，draft #238（`codex/s13-w02-android-push`）接續 S12 draft #237；尚未部署或發布新 APK。依使用者授權先推進不依賴真機的部分；依賴合併與明確批准的一則真通知仍是 gate，不提前標完成。iOS 待後續。
 - 前置（Android）：S12-W01 Android、S07-W01、S13-W07；iOS 另依 S04-W02。
 - 本機結果：固定 Expo Notifications 57.0.21；FCM 單次 adapter、Firestore 加密綁定／原收據、同裝置 token 輪換／會話撤銷、提醒／通知歷史／匯出及還原、正式 API／worker、共用設定及核權點擊已接線。新增一條本機合成流程通過，受影響型別及配置語法通過；不把替身當真 Firestore 競爭或真 FCM。證據見 [S13 準備](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
 - 下一步／未驗：設定同專案 Android Firebase 描述檔及 FCM 最小發送權限；套用新增索引、相容部署／新 APK後，集中驗原生權限、真提醒到達與點擊／完成停止。沒有新雲端設定、外發、APK或部署；正式開關保持關閉。
@@ -1097,7 +1097,9 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s04-w03"></a>
 #### S04-W03 固定發佈入口、App 更新與 Android 交付
 
-- 階段／狀態：P3；未開始。
+- 階段／狀態：P3；按使用者「人工 gate 待驗、先做獨立工作」指示開始本機發布工具，分支 `codex/s04-w03-mobile-release` 接續 draft #238；只準備固定入口，S12／S13 合併、真機及正式更新 gate 保留。
+- 本包範圍：離線發布判斷、官方 fingerprint 核對、固定 EAS CLI／channels、相容 OTA 回退及有界 manifest；Web 沿原 VM 產物／部署，不改產品設計或自動購買／上傳。
+- 本機結果：固定入口及短交接已實作，一條合成判斷／離線 CLI 檢查通過（零雲端）；Web 只標準備待部署，真 EAS／回退／覆蓋安裝未驗。指引見 [固定發布入口](docs/PRODUCTION_FRONTEND.md#mobile-release)。
 - 前置（Android）：S12-W01 Android、S13-W02 Android；iOS 待 S04-W02 後補同平台結果。
 - 交付：本節 `mobile:release --plan`／preview／production／OTA rollback，fingerprint、固定身份與 channels、release manifest／短交接。Web及Android共用修改沿同入口交付，新原生 runtime 出 APK、相容 JS 出 OTA。
 - gate：一次共用修改 Web＋OTA、相容回退及正式同簽署 APK 升級；不為每個判斷分支另做雲端 build，不在未完成工作／unknown 中強制 reload。

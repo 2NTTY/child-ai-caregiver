@@ -2940,3 +2940,12 @@
 - Android 共用設定卡改接原生 owner；通知點擊只查回當前可讀目標，不自動回覆收到或完成。歷史、匯出、刪除 collections、還原撤銷及 plugin／描述檔檢查已同步；索引只保存定義。
 - 新增一條本機合成流程 1/1 通過（154.9952ms），從正式 API／client 驗原收據、隔離、輪換、撤銷、unknown、歷史及還原。初次型別揭示舊渠道 enum及三個 import 名稱錯配，修正後 Server 3入口／前端5入口零診斷；最後呈現變更只補前端3入口型別及配置語法。沒有全量、真模型／FCM／雲端驗收／手機／新 APK／部署；真提醒完成停止及真機仍待驗。詳細見 [S13 證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
 - 後續仍須原生 Firebase 描述檔／最小權限、雲端索引、相容部署及新 APK，才能完成一則獲授權真通知的門檻；依賴分支保持 draft，不提前標 S13 或 Android 成品完成。
+
+
+<a id="log-20261018-s04-mobile-release"></a>
+### LOG-20261018-S04-MOBILE-RELEASE — 固定發布工具本機準備
+
+- 結果／原因：在原 Android 功能分支上補 `mobile:release`，共用改動同時列 Web／Android，按官方 runtime 區分 APK與OTA；保留原 VM 部署、固定簽署／遞增版本及相容回退，避免後續 AI 猜測或重畫 App。
+- 版本／方法：base `ca02a2c`，EAS 24.14.0；已確認 `fingerprint:generate` 會上傳，零發布 plan 改用本機 resolver。B 單作者；主模型實作及review，無子代理。
+- 驗證：一條合成分類／runtime／回退及正式離線 CLI 通過；[EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。零模型、雲端、手機、完整建置或全量測試。
+- 限制／下一步：Web產物只準備待部署，EAS／OTA回退／新APK覆蓋安裝及依賴合併仍待驗；不將本機工具通過當Android成品。

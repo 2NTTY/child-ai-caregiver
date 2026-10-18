@@ -163,7 +163,7 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 - `npm run build:android-ui --workspace frontend` 只驗 JS／Hermes bundle，不會產生可安裝 APK。EAS preview／production 使用 APK；簽署、真機登入、OTA 與更新證據另列，不因 bundle 成功當成品。
 - 先部署相容的 `/api/auth/native-session` Server，再分發 Android；既有 Web Cookie 及 API body 保留。未支援原生交換的 Server 無法供新 APK 登入，不能用假 Origin 補救。
 
-固定 `mobile:release`、語音／FCM、完整跨端前景同步及更新交付仍按各自工作包實作，本節不宣稱已接通。
+`mobile:release` 的本機工具見下節；語音／FCM、完整跨端前景同步及更新交付按根 PLAN 的實作／部署／真機門檻分開，不以工具存在宣稱已發布。
 
 Windows 執行 EAS 前，在實體 dependency installation 的完整建置副本執行 `npm run mobile:prepare`；不要用指向另一 worktree 的 `node_modules` junction。此命令只針對固定 `@expo/fingerprint` 0.20.13 loader 補 glob 比對前的 POSIX 路徑正規化，版本或原文改變即停止；Linux 不修改。保留原生內容 fingerprint 與雲端相等檢查，不使用忽略全部 native 檔案或硬填 runtime 的替代。後續 `mobile:release` 應調用同一入口。
 
@@ -177,3 +177,30 @@ Windows 執行 EAS 前，在實體 dependency installation 的完整建置副本
 Server `ANDROID_PUSH_ENABLED` 預設關閉；準備同一 GCP project 的 FCM HTTP v1 API及 VM 身份最小發送權限後，才在相容 API／worker 設定中開啟。先套用該版新增 Firestore 索引，再部署同版服務；不放服務帳號 key 到 App。一般測試仍須明確本人操作；不得在保存設定或建置後自動發訊息。
 
 原生配置／權限、新索引、部署、真機及真 FCM 是否已完成只見根 PLAN／驗證證據；bundle 或本機合成通過不能替代這些門檻。
+
+
+<a id="mobile-release"></a>
+## 共用 Web／Android 的固定發布入口
+
+從根目錄執行 `npm run mobile:release -- --plan`。預設 preview，純本機：讀 Git 差異、現有 app／EAS 配置及可用的官方 runtime，不登入、不上傳、不建置、不發布。未知路徑明列待 review；缺本機依賴或 Android Firebase 描述檔時，不能聲稱 OTA 相容。文件改動不觸發建置，Server 改動不要求重發 App；`src/shared` 的相容契約改動須先交付 Server。
+
+### 每次修改後的短流程
+
+1. 在目前分支完成所需修改及 review，保留單一共用畫面／owner；不另外重畫 Android。只跑本次必要檢查。
+2. 執行 `npm run mobile:release -- --plan --since <上一交付的Git-SHA>`。已有正式 build 記錄時可加 `--baseline <build-記錄路徑>`，會核對專案、profile、channel、package、已完成狀態及 fingerprint。
+3. 正式執行要求乾淨提交、實體 dependency installation（不能指向另一 worktree 的 junction）、固定 Node／npm／EAS，及工程外 Web Firebase 環境檔。Android 的 `ANDROID_GOOGLE_SERVICES_FILE` 是已核對的同專案描述檔，不能進 Git／上傳原始碼封包。`mobile:prepare` 沿固定 Windows fingerprint 修正，不能手填舊 runtime。
+4. 共用修改用同一入口準備 Web 及 Android；例如 `npm run mobile:release -- --execute --channel preview --build-id <目前APK的EAS-build-ID> --web-env-file <工程外Web環境檔>`。它先產生 Web 產物，再核對官方 runtime：相同才 OTA，不同便 APK；沒有 baseline 不能猜 OTA。用 `--action update` 可要求不相容即停；`--action build` 明確要求新 APK。
+5. Web 使用 `frontend/dist`，沿本文件原 VM／Caddy 部署及回滾接點傳送；工具目前只把 Web 標為 **prepared-deployment-pending**，不會冒稱網站已更新。部署私人產物、API 相容修正、新索引及雲端費用依有效授權處理。
+6. build 使用固定簽署（`--freeze-credentials`）、遠端遞增 versionCode、`--no-wait`；排入 EAS 不等於 APK 成功。完成後執行 `npm run mobile:release -- --record-build <ID> --channel preview`，只讀 EAS 結果並保存供下次 plan 使用的精簡記錄。覆蓋安裝及裝置結果仍須實測。
+
+Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走 Android 配置，避免兩端公開 Firebase key 混用。Android 執行才讀指定 EAS environment；不輸出其內容。`--plan` 不使用 `eas fingerprint:generate`，因固定 CLI 的該命令會上傳 fingerprint；沿 `expo-updates` 的本機 resolver 取得與 runtime 相同的判斷。
+
+### 正式發布、回退及失回應
+
+- production 必須同時指定 `--channel production --confirm-production`，不沿 preview 默認發布。兩個環境都使用固定 EAS 專案／application ID／channel；EAS 審批、額度及私有封包上傳授權不由這個旗標代替，不購買方案、不每次 commit 建置。
+- 相容回退：`npm run mobile:release -- --execute --action rollback --channel preview --build-id <已安裝build-ID> --rollback-group <原update-group-ID>`。先查同專案 branch 的最近最多 50 組，核對 Android／同 runtime，再沿原生 `update:republish`。找不到便停，不搜尋全部歷史或強制跨 runtime。回退只改客戶端，不還原業務資料。
+- 每次結果在 `.cache/mobile-releases/<Git-SHA-channel-action>/release.json`：保留 SHA、build／update ID、runtime、App版本、Web產物與待部署狀態。日誌只在同一 ignored 目錄，診斷先看末段；manifest 不保存 key、環境正文、signed URL 或完整雲端日誌。
+- 雲端呼叫前保存 submitted。回應丟失／失敗時保留 unknown，**不自動重新發布**；先在原 EAS 專案按 ID／SHA 查原結果。同一提交／channel／action 不自動建立第二次操作。
+- OTA 沿現有 ON_LOAD／下次安全啟動套用；工具不呼叫 App reload，不在聊天、確認或 unknown 期間強制重載。
+
+目前只驗本機分類／相容及回退守門、離線 CLI；真 EAS、Web部署、相容 OTA回退及新 APK覆蓋安裝保留在根 PLAN。

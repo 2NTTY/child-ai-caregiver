@@ -1,0 +1,30 @@
+{
+  "package": "S04-W03 Android",
+  "date": "2026-10-18",
+  "base": "ca02a2c",
+  "status": "local-tooling-prepared-not-released",
+  "checks": [
+    {
+      "command": "node --test tests/mobile-release.test.mjs",
+      "passed": 1,
+      "failed": 0,
+      "durationMs": 381.4187,
+      "scope": "one connected classification/runtime/rollback/real offline CLI scenario",
+      "cloudCalls": 0,
+      "modelCalls": 0,
+      "deviceActions": 0
+    }
+  ],
+  "pending": [
+    "real EAS runtime agreement and release",
+    "same-source Web deployment and OTA",
+    "compatible rollback",
+    "signed APK upgrade",
+    "dependency PR merge and device gates"
+  ],
+  "notes": [
+    "Planning never runs eas fingerprint:generate because the pinned command uploads fingerprints",
+    "Web output is prepared-deployment-pending; existing VM path retained",
+    "No product test suite or build rerun"
+  ]
+}
