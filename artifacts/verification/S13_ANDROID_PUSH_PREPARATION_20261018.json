@@ -83,5 +83,44 @@
     "Dependency review/merges and same-site deployment; no old live acceptance is replaced"
   ],
   "latestMasterObserved": "d4686b7ff864642aaa964ca3adae9d64b52b6fa5",
-  "localBaseline": "6ed5520"
+  "localBaseline": "6ed5520",
+  "cloudConfiguration": {
+    "recordedAt": "2026-10-18",
+    "codeCommit": "9d273bd1f28ae3716768b182fe23d7e10ea500bd",
+    "project": "ai-caregivers-for-children",
+    "androidPackage": "org.yuyoufang.app",
+    "androidAppId": "1:1064034424208:android:2eb6734d2fb288b056cf15",
+    "dedicatedKeyApiTargets": [
+      "firebase.googleapis.com",
+      "logging.googleapis.com",
+      "firebaseinstallations.googleapis.com",
+      "fcmregistrations.googleapis.com"
+    ],
+    "vmServiceAccount": "yuban-p1@ai-caregivers-for-children.iam.gserviceaccount.com",
+    "role": "projects/ai-caregivers-for-children/roles/yuyoufangFcmSend",
+    "permissions": [
+      "cloudmessaging.messages.create"
+    ],
+    "expo": {
+      "projectId": "8c63b9fc-b823-4b40-ba36-375ce43fa578",
+      "environment": "preview",
+      "variable": "ANDROID_GOOGLE_SERVICES_FILE",
+      "type": "file",
+      "visibility": "secret",
+      "configured": true
+    },
+    "initialFailure": "EAS environment command could not load the current Expo config through the old linked dependency tree; no environment mutation occurred.",
+    "resolution": "Read the error tail, verified the variable was absent, then used a local metadata-only EAS context for the same existing project. env:set succeeded; no second app or deployment was created.",
+    "privateSourceUploads": 0,
+    "nativeBuilds": 0,
+    "modelCalls": 0,
+    "notifications": 0,
+    "deployment": false,
+    "stillPending": [
+      "real SDK indexes",
+      "compatible deployment/APK",
+      "device token/permission and authorized FCM reminder/open/completion"
+    ],
+    "evidenceBoundary": "The earlier cloudCalls and pending fields describe the initial local wiring check. This configuration does not establish delivery or device acceptance."
+  }
 }

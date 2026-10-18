@@ -2949,3 +2949,10 @@
 - 版本／方法：base `ca02a2c`，EAS 24.14.0；已確認 `fingerprint:generate` 會上傳，零發布 plan 改用本機 resolver。B 單作者；主模型實作及review，無子代理。
 - 驗證：一條合成分類／runtime／回退及正式離線 CLI 通過；[EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。零模型、雲端、手機、完整建置或全量測試。
 - 限制／下一步：Web產物只準備待部署，EAS／OTA回退／新APK覆蓋安裝及依賴合併仍待驗；不將本機工具通過當Android成品。
+
+
+### LOG-20261018-ANDROID-FCM-CONFIGURATION — 原生發佈前置
+
+- 原專案登記 Android package、建立專用受限公開 key，並以保留 etag 的 policy 更新向原 VM 授予唯一 FCM 發送權限；原 policy 及描述檔保留工程外。既有 Web／原生登入 key 未修改。
+- Expo preview 的 secret file 已保存。首次 CLI 因舊依賴連結無法載入配置而在寫入前失敗；只查末段與原結果，核對不存在後以既有專案的本機 metadata context 完成同一設定，沒有另建網站或服務。[證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
+- 零私有程式上傳、新 APK、部署、模型或通知；索引、裝置 token、真 FCM及依賴合併仍待驗。B 主責單作者，主模型設定／review；使用者最新允許 Luna，僅另作鍵盤問題唯讀定位，沒有代做雲端操作。
