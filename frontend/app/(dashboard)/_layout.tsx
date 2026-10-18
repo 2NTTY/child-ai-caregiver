@@ -5,7 +5,7 @@ import { RecordsNavButton } from "../../src/components/navigation/RecordsNavButt
 import { MobileQuickInputDock } from "../../src/components/agent/MobileQuickInputDock";
 import { AppIcon } from "../../src/components/AppIcon";
 import { AppShell } from "../../src/components/AppShell";
-import { NativeAppShell } from "../../src/components/NativeAppShell";
+import { NativeAppShell, NativeKeyboardPane } from "../../src/components/NativeAppShell";
 import { usePreviewNavigation } from "../../src/preview/PreviewNavigationGuard";
 import { BackgroundProvider } from "../../src/preview/BackgroundContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -36,12 +36,12 @@ function NativeDashboardTabs() {
   const pathname = usePathname();
   const switchReadiness = useProductionSwitchReadiness();
   const scopeKey = childScope ?? identityKey ?? "signed-out";
-  return <Tabs screenLayout={({ children }) => <MotionScopeBoundary scopeKey={scopeKey} resetKey={identityKey ?? "signed-out"} readiness={switchReadiness.state} readinessKey={switchReadiness.key} onRetry={switchReadiness.retry} onReturn={actions.selectChild} canReturn={id => model.children.some(child => child.id === id)} childKey={selectedChildId} eligible={!!childScope} style={{ flex: 1 }}>
+  return <Tabs screenLayout={({ children }) => <NativeKeyboardPane><MotionScopeBoundary scopeKey={scopeKey} resetKey={identityKey ?? "signed-out"} readiness={switchReadiness.state} readinessKey={switchReadiness.key} onRetry={switchReadiness.retry} onReturn={actions.selectChild} canReturn={id => model.children.some(child => child.id === id)} childKey={selectedChildId} eligible={!!childScope} style={{ flex: 1 }}>
     <MotionEntrance preset="route" triggerKey={pathname} scopeKey={scopeKey} style={{ flex: 1 }} testID="motion-route"><ConnectedRoute>{children}</ConnectedRoute></MotionEntrance>
     {pathname === "/" ? <MobileQuickInputDock key={scopeKey} supportedKinds={["text"]} /> : null}
-  </MotionScopeBoundary>} screenListeners={({ navigation, route }) => ({ tabPress: event => {
-    event.preventDefault(); leave(() => navigation.navigate(route.name));
-  } })} screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.teal, tabBarActiveBackgroundColor: colors.selectedNav, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line, minHeight: mobileLayout.tabMinHeight + insets.bottom }, tabBarItemStyle: { minHeight: mobileLayout.touchTarget }, tabBarLabelStyle: mobileType.caption, tabBarHideOnKeyboard: true }}>
+  </MotionScopeBoundary></NativeKeyboardPane>} screenListeners={({ navigation, route }) => ({ tabPress: event => {
+    event.preventDefault(); leave(() => navigation.navigate(route.name), "workspace");
+  } })} screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.teal, tabBarActiveBackgroundColor: colors.selectedNav, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line, minHeight: mobileLayout.tabMinHeight + insets.bottom }, tabBarItemStyle: { minHeight: mobileLayout.touchTarget }, tabBarLabelStyle: mobileType.caption, tabBarHideOnKeyboard: false }}>
     <Tabs.Screen name="index" options={{ title: "今日", tabBarIcon: ({ color }) => <AppIcon name="home-outline" color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="chat" options={{ title: "助手", tabBarIcon: ({ color }) => <AppIcon name="message-text-outline" color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="tasks" options={{ title: "待辦", tabBarIcon: ({ color }) => <AppIcon name="clipboard-check-outline" color={color} size={mobileIcons.navigation} /> }} />

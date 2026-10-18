@@ -19,10 +19,10 @@ export function useDomainEnvironment() {
 }
 
 /** Preserve unknown operations across navigation and block logout while outcome is unresolved. */
-export function useDomainWriteGuard(dirty: boolean, pending: boolean, scope: LeaveScope = "child") {
+export function useDomainWriteGuard(dirty: boolean, pending: boolean, scope: LeaveScope = "child", retainedInWorkspace = true) {
   const owner = useProductionOwner();
   const id = useId();
-  const leaveGuardId = usePreviewLeaveGuard(dirty, pending, scope);
+  const leaveGuardId = usePreviewLeaveGuard(dirty, pending, scope, undefined, retainedInWorkspace);
   useEffect(() => { owner.setDomainPending(id, pending); return () => owner.setDomainPending(id, false); }, [owner, id, pending]);
   return leaveGuardId;
 }

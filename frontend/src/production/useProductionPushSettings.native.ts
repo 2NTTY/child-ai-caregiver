@@ -107,7 +107,7 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
   };
   useEffect(() => listenNativePush({ tokenChanged: token => rotation.current(token), opened() {} }), [api]);
   useSettingsRefresh(env, actions.refresh, !requests.busy && !original && !review, true);
-  useDomainWriteGuard(!!review, !!original || requests.busy, "account");
+  useDomainWriteGuard(!!review, !!original || requests.writing, "account");
   const visible = env.currentIdentity() ? status : null;
   const model: PushSettingsModel = { platform: "android", online: env.online, readState: env.currentIdentity() ? readState : "session_changed", locked: requests.busy || !!original,
     conflict, notice, workerEnabled: visible?.workerEnabled ?? false, review, available: visible?.available ?? false, browserSupported: nativePushSupported(), permission,

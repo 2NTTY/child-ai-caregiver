@@ -84,7 +84,7 @@ function useProductionValue(owner: ProductionOwner) {
   const openAgentDraft = (focusText = false) => {
     if (!currentScope()) return;
     if (focusText) setComposerFocusRequest(value => value + 1);
-    if (pathname !== "/chat") leave(() => router.push("/chat"));
+    if (pathname !== "/chat") leave(() => router.push("/chat"), "workspace");
   };
   const addAgentAttachment = (attachment: AssistantAttachment, replaceId?: string) => {
     if (!currentScope() || current.current.pathname !== pathname || !["/", "/chat"].includes(pathname) || !["photo","voice"].includes(attachment.kind)) {
@@ -102,13 +102,13 @@ function useProductionValue(owner: ProductionOwner) {
       leave(() => { if (current.current.identityKey === snapshot.identityKey) void owner.controller.selectChild(id); }, "child");
     },
     refresh: () => { void refresh(); },
-    reviewOperation: () => { leave(() => router.push("/guide")); },
-    open(destination) { leave(() => router.push(productionDestinations[destination] as Href)); },
+    reviewOperation: () => { leave(() => router.push("/guide"), "workspace"); },
+    open(destination) { leave(() => router.push(productionDestinations[destination] as Href), "workspace"); },
     openAgentPhoto(original) {
       if (!currentScope() || current.current.pathname !== "/") { original.dispose?.(); return; }
       if (owner.draftOwner.add(snapshot.scopeKey, photoAttachment(original))) router.push("/chat");
     },
-    composeCare() { leave(() => router.push("/care")); },
+    composeCare() { leave(() => router.push("/care"), "workspace"); },
     prepareQuestion(question) {
       if (!currentScope()) return;
       if (chatDraft?.text.trim()) setLocalNotice("保留你原本未送出的問題；可在草稿入口核對後修改。");

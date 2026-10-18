@@ -2,7 +2,7 @@
   "package": "S04-W03 Android",
   "date": "2026-10-18",
   "base": "ca02a2c",
-  "status": "same-source-web-api-deployed-apk-building-device-gates-pending",
+  "status": "same-source-web-api-deployed-apk-user-reported-installed-device-gates-pending",
   "checks": [
     {
       "command": "node --test tests/mobile-release.test.mjs",
@@ -16,8 +16,8 @@
     }
   ],
   "pending": [
-    "APK build completion and signed upgrade on the same Android device",
-    "real shared voice capture/audio understanding/transcript and cross-device read-back",
+    "remaining functional Android acceptance; basic upgrade launch and retained data confirmed by user",
+    "real Web/Android recording and playback plus cross-device UI read-back; server audio/transcription acceptance is recorded separately",
     "one explicitly authorized FCM delivery and notification tap",
     "compatible OTA update/rollback",
     "dependency PR merge and first real chat acceptance"
@@ -145,8 +145,9 @@
     "releaseBaselineRecorded": true,
     "recordBuildCommand": "mobile:release --record-build 82cb911e-5e37-43b6-9f30-e2aa9c954de0 --channel preview",
     "additionalBuilds": 0,
-    "deviceInstalled": false,
-    "otaAndUpgradeAccepted": false
+    "deviceInstalled": true,
+    "otaAndUpgradeAccepted": false,
+    "deviceInstalledEvidence": "user-reported; see apkDeviceUpgrade"
   },
   "voiceCloudAcceptance": {
     "observedAt": "2026-10-18T08:13:35.109990+00:00",
@@ -243,5 +244,45 @@
     "upgradeIdentityCompatible": true,
     "deviceInstallTested": false,
     "failurePreserved": "aapt rejected non-ASCII absolute paths; only metadata reads were repeated with relative paths; signatures were not rerun"
+  },
+  "apkDeviceUpgrade": {
+    "recordedAt": "2026-10-18T08:26:35.081516+00:00",
+    "buildId": "82cb911e-5e37-43b6-9f30-e2aa9c954de0",
+    "versionCode": 2,
+    "userFeedback": "已覆蓋安裝",
+    "installation": "user-reported-success",
+    "launch": "pending-user-feedback",
+    "retainedLoginAndData": "pending-user-feedback",
+    "deviceConnection": "ADB reported no devices; no device inspection or interaction occurred",
+    "additionalModelCalls": 0,
+    "notificationsSent": 0,
+    "followup": {
+      "recordedAt": "2026-10-18T08:43:01.033384+00:00",
+      "userFeedback": "能正常開啟，原資料仍在",
+      "launch": "user-confirmed",
+      "retainedLoginAndData": "user-confirmed",
+      "adbPackage": "org.yuyoufang.app",
+      "adbVersionCode": 2
+    }
+  },
+  "navigationKeyboardRepair": {
+    "state": "implemented-local-checks-passed-delivery-device-check-pending",
+    "baseline": "c5be91acbb63a5fd04fd1d8da79a25bb291cfbab",
+    "deviceBefore": "User-authorized ADB screenshot confirmed the keyboard obscured the composer. Private screenshot remains outside Git.",
+    "behavior": "Tab bar stays in place; only the screen content avoids the keyboard. Persistent workspace drafts/operations survive internal navigation; child/identity/exit and page-local form guards remain.",
+    "checks": {
+      "workspaceNavigation": {
+        "passed": 1,
+        "initialHarnessFailure": "Missing theme.colors stub; corrected without changing assertions."
+      },
+      "affectedTypes": {
+        "roots": 18,
+        "diagnostics": 0
+      }
+    },
+    "deviceAfter": "pending-compatible-update",
+    "modelCalls": 0,
+    "notifications": 0,
+    "camera": "Unchanged: native camera result/cancel returns to existing attachment preview; no automatic send."
   }
 }

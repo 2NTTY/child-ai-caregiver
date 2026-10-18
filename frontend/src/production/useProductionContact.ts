@@ -93,7 +93,7 @@ export function useProductionContact(env: SettingsEnvironment) {
   useEffect(() => () => { api.resetOnline(); pending.current = null; }, [api]);
   useEffect(() => { if (!env.online) { if (pending.current) { pending.current.reviewed = false; retain(pending.current); } patch({ originalConsent: false, confirmationEpoch: latest.current.confirmationEpoch + 1 }); } }, [env.online]);
   useSettingsRefresh(env, actions.refresh, !requests.busy && !state.pending && !state.dirty);
-  useDomainWriteGuard(state.dirty, !!state.pending || requests.busy);
+  useDomainWriteGuard(state.dirty, !!state.pending || requests.writing);
   return { model: { ...state, scopeKey: env.scopeKey, childName: env.childName, userId: env.userId ?? "", online: env.online, busy: requests.busy,
     locked: requests.busy || !env.online || !!state.pending || state.load !== "ready" || state.access !== "editable" || !state.page?.canManage, page: env.current() ? state.page : null,
     access: env.current() ? state.access : "lost" as const }, actions };

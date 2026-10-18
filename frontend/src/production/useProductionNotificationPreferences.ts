@@ -57,7 +57,7 @@ export function useProductionNotificationPreferences(env: SettingsEnvironment) {
   useEffect(() => () => { api.resetOnline?.(); pending.current = null; }, [api]);
   useEffect(() => { if (!env.online) { setFresh(false); if (pending.current) { pending.current.consent = false; pending.current.reviewed = false; retain(pending.current); } } }, [env.online]);
   useSettingsRefresh(env, () => { void refresh(); }, !requests.busy && !original, true);
-  useDomainWriteGuard(false, !!original || requests.busy, "account");
+  useDomainWriteGuard(false, !!original || requests.writing, "account");
   return { preferences: env.currentIdentity() ? preferences : null, online: env.online, busy: requests.busy, original, fresh, notice,
     refresh: () => { void refresh(); }, save: (input: ProductionPreferenceValues, expectedVersion: number) => { void save(input, expectedVersion); },
     confirmOriginal(value: boolean) { if (pending.current?.reviewed) { pending.current.consent = value; retain(pending.current); } },

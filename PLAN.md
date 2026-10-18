@@ -57,8 +57,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 **次序：**完成 Web／Android 共用產品及 Android 成品 → 本人 key／自選模型／可調限額 → 同一正式 Agent 的 PR 分支本地隔離入口。iOS 等 Android 完成；不是另造手機後端或測試 Agent。
 
 - 管理員總控已於 #233 合併；每日及每輪設定只有一個權威。部署觀察、期限與未核對項只見 [STATUS](STATUS.md#deployment)。
-- 當前包：[S04-W01](#s04-w01)。#229 的首條真人聊天由使用者驗收；鍵盤重複高度補償已作局部修正，待更新客戶端核對。
-- 後續獨立接線與必要本機檢查已保存於 draft #234～#239：會話、同步、原運行查回、語音／附件、原生通知與固定發布工具。`bf47c47` 的新增索引、相容 API／worker／Web 已交付原站；新版 APK已完成並記錄發布基線，使用者舊 APK未承接新原生模組，真機與依賴合併未完成。
+- 當前包：[S04-W01](#s04-w01)。#229 的首條真人聊天由使用者驗收；鍵盤避讓改為只調整頁面內容，底部導航保持原位；共享 owner 的草稿／原操作不再阻擋站內切頁，待相容 OTA 及真機核對。
+- 後續獨立接線與必要本機檢查已保存於 draft #234～#239：會話、同步、原運行查回、語音／附件、原生通知與固定發布工具。`bf47c47` 的新增索引、相容 API／worker／Web 已交付原站；新版 APK已完成並記錄發布基線，使用者已回覆覆蓋安裝；使用者已確認正常開啟、原登入及資料保留；其餘功能真機及依賴合併未完成。
 - Android Firebase／最小 FCM 權限及 Expo preview 描述檔已配置；已按批准提交一次新版 APK，沒有發通知。具體範圍／gate 只在[各工作包](#s13-w02)，不在此重複工作史。
 - 主模型實作、指導及 review；使用者最新容許 Luna 按規則唯讀定位。最低必要檢查，優先局部原文或日誌尾部；需本人／手機的項目待驗時繼續獨立工作，不能把待驗寫成完成。
 - OPT／LAY 已交付；[STR01](#p2-str01)及[原生備份還原](#p2-backup-followup)仍未完成。#214～#216 由協作者處理，不接管或合併。
@@ -291,11 +291,11 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s13-w02"></a>
 #### S13-W02 原生本人通知
 
-- 階段／狀態：P3；draft #238（`codex/s13-w02-android-push`）接續 #237。FCM adapter、索引與原站 API／worker 已啟用，新 APK建置中；沒有發送通知。依賴合併、真機權限及明確批准的一則真通知仍是 gate，iOS 待後續。
+- 階段／狀態：P3；draft #238（`codex/s13-w02-android-push`）接續 #237。FCM adapter、索引與原站 API／worker 已啟用，新 APK已完成，使用者回覆已覆蓋安裝；沒有發送通知。依賴合併、真機權限及明確批准的一則真通知仍是 gate，iOS 待後續。
 - 前置（Android）：S12-W01 Android、S07-W01、S13-W07；iOS 另依 S04-W02。
 - 本機結果：固定 Expo Notifications 57.0.21；FCM 單次 adapter、Firestore 加密綁定／原收據、同裝置 token 輪換／會話撤銷、提醒／通知歷史／匯出及還原、正式 API／worker、共用設定及核權點擊已接線。新增一條本機合成流程通過，受影響型別及配置語法通過；不把替身當真 Firestore 競爭或真 FCM。證據見 [S13 準備](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
 - 雲端配置（2026-10-18）：同專案 Android package、專用受限 key、原 VM 最小 FCM IAM 及 Expo preview secret file 已配置。10 個共用語音／通知索引、6 項欄位設定均 READY；`mobile-bf47c47` 已部署並啟用原生通知 adapter。只有啟動／資料查詢與公開入口證據，沒有裝置 token 或投遞證據；[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
-- 下一步／未驗：新版 APK成功及覆蓋安裝後，集中驗原生權限、一則真通知與點擊／完成停止；不因配置成功聲稱裝置取得 token 或投遞已驗。
+- 下一步／未驗：新版 APK已成功且使用者回覆已覆蓋安裝，待核正常開啟後集中驗原生權限、一則真通知與點擊／完成停止；不因配置成功聲稱裝置取得 token 或投遞已驗。
 - 交付：Expo Notifications／Android FCM token 註冊、輪換／撤銷與薄投遞 adapter，沿既有 Tasks／授權／偏好／安靜時段／終態／unknown；Web與App各設備授權、同一任務。
 - gate：一則明確批准通知、點擊重新核權及完成停止；不重發 Web Push／Telegram。iOS APNs 是另一平台子範圍，不能拿 FCM token 代替 APNs。
 
@@ -304,7 +304,7 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 
 - 階段／狀態：P3；按使用者「人工 gate 待驗、先做獨立工作」指示開始本機發布工具，draft #239（`codex/s04-w03-mobile-release`）接續 draft #238；只準備固定入口，S12／S13 合併、真機及正式更新 gate 保留。
 - 本包範圍：離線發布判斷、官方 fingerprint 核對、固定 EAS CLI／channels、相容 OTA 回退及有界 manifest；Web 沿原 VM 產物／部署，不改產品設計或自動購買／上傳。
-- 結果：固定入口及短交接、離線判斷與兩端正式 bundle 已通過；`bf47c47` Web／API／worker 已部署。一次 preview APK `82cb911e` 已完成（versionCode 2），固定發布工具已記錄相符的 runtime／fingerprint 基線；兩個實際 APK 的官方簽署驗證、同 applicationId／證書及遞增 versionCode 已核對。回退／覆蓋安裝及鍵盤實際手感未驗，沒有推送不相容 OTA。[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)／[固定入口](docs/PRODUCTION_FRONTEND.md#mobile-release)。
+- 結果：固定入口及短交接、離線判斷與兩端正式 bundle 已通過；`bf47c47` Web／API／worker 已部署。一次 preview APK `82cb911e` 已完成（versionCode 2），固定發布工具已記錄相符的 runtime／fingerprint 基線；兩個實際 APK 的官方簽署驗證、同 applicationId／證書及遞增 versionCode 已核對。使用者於2026-10-18確認覆蓋安裝後能正常開啟、原資料仍在；ADB亦核對versionCode 2。鍵盤遮住輸入框及站內導航誤擋已作局部修正，待相容OTA／真機核對；回退及其餘功能仍待驗。[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)／[固定入口](docs/PRODUCTION_FRONTEND.md#mobile-release)。
 - 前置（Android）：S12-W01 Android、S13-W02 Android；iOS 待 S04-W02 後補同平台結果。
 - 交付：本節 `mobile:release --plan`／preview／production／OTA rollback，fingerprint、固定身份與 channels、release manifest／短交接。Web及Android共用修改沿同入口交付，新原生 runtime 出 APK、相容 JS 出 OTA。
 - gate：一次共用修改 Web＋OTA、相容回退及正式同簽署 APK 升級；不為每個判斷分支另做雲端 build，不在未完成工作／unknown 中強制 reload。

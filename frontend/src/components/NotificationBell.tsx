@@ -32,7 +32,7 @@ export function NotificationBell({ operation, connection, onReview }: {
 
         {operation.state === "none" ? <Text style={styles.body}>目前沒有操作提示</Text> : <OperationNotice state={operation.state} title={operation.title} message={operation.detail} />}
         {connection === "offline" ? <Text style={styles.caution}>{operation.state === "unknown" || operation.state === "saving" ? "目前離線，連線後可查核操作結果" : "目前離線"}</Text> : null}
-        <AppButton label="查看通知歷史" variant="secondary" onPress={() => { setOpen(false); navigate(() => router.push("/history?category=notifications")); }} />
+        <AppButton label="查看通知歷史" variant="secondary" onPress={() => { setOpen(false); navigate(() => router.push("/history?category=notifications"), "workspace"); }} />
       </Dialog.Content>
       <Dialog.Actions>
         <AppButton label="關閉" variant="quiet" onPress={() => setOpen(false)} />

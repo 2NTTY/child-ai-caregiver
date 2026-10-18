@@ -147,7 +147,7 @@ export function useProductionFamily(env: SettingsEnvironment) {
   useEffect(() => () => { api.resetOnline?.(); incomingToken.current = ""; pending.current = null; }, [api]);
   useEffect(() => { if (!env.online) { setOneTimeCode(null); setIncoming(null); if (pending.current) { pending.current.reviewed = false; pending.current.consent = false; retain(pending.current); } setDraft(current => current ? { ...current, scopeConfirmed: false } : null); } }, [env.online]);
   useSettingsRefresh(env, () => { void refresh(false); }, !requests.busy && !original && !draft && !incoming && !oneTimeCode, true);
-  useDomainWriteGuard(!!draft || !!incoming || !!oneTimeCode, !!original || requests.busy, "account");
+  useDomainWriteGuard(!!draft || !!incoming || !!oneTimeCode, !!original || requests.writing, "account");
   const recordChildren = env.owner.getSnapshot().records.children;
   const model: Omit<FamilyViewModel, "families"> & { families: (FamilySpace & { loadedChildNames: string[] })[] } = {
     // Presentation only: reuse children already visible in this identity's records snapshot.

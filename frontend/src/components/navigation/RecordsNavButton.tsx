@@ -12,11 +12,11 @@ import { recordsMoreDirection } from "./quick-input-gesture";
 export function RecordsNavButton({ active, scopeKey, style }: { active: boolean; scopeKey: string; style?: StyleProp<ViewStyle> }) {
   const router = useRouter(), pathname = usePathname(), leave = usePreviewNavigation();
   const [selected, setSelected] = useState(false);
-  const openMore = () => { setSelected(false); if (pathname !== "/more") leave(() => router.push("/more")); };
+  const openMore = () => { setSelected(false); if (pathname !== "/more") leave(() => router.push("/more"), "workspace"); };
   return <DirectionalPressable label="記錄，向上拖曳開啟更多頁面" hint="點按查看記錄；亦可按方向鍵上，或使用記錄頁的更多按鈕"
     selected={active} current={active}
     scopeKey={`${scopeKey}:${pathname}`} testID="records-navigation" style={[styles.button, selected && styles.selected, style]}
-    onPress={() => { if (pathname !== "/care") leave(() => router.push("/care")); }} onExpand={openMore}
+    onPress={() => { if (pathname !== "/care") leave(() => router.push("/care"), "workspace"); }} onExpand={openMore}
     onGestureStart={() => setSelected(false)} onGestureMove={(dx, dy) => setSelected(recordsMoreDirection(dx, dy))}
     onGestureCancel={() => setSelected(false)} onGestureEnd={(dx, dy, dragged) => { setSelected(false); if (dragged && recordsMoreDirection(dx, dy)) openMore(); }}>
     {active ? <MobileNavSelection /> : null}

@@ -139,7 +139,7 @@ export function ProductionNotificationPreferences() {
     } else form.reset(defaults);
   }, [domain.preferences, form.reset]);
   useEffect(() => { if (!domain.online) setReview(null); }, [domain.online]);
-  useDomainWriteGuard(form.formState.isDirty, false, "account");
+  useDomainWriteGuard(form.formState.isDirty, false, "account", false);
   function input(name: "timeZone" | "quietStart" | "quietEnd", label: string) {
     return <Controller name={name} control={form.control} render={({ field, fieldState }) => <View>
       {name === "timeZone" ? <AppTimeZoneSelect ref={field.ref} id={`${formId}-${name}`} value={field.value} disabled={locked} onBlur={field.onBlur}

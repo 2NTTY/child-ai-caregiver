@@ -32,7 +32,7 @@ export default function MoreScreen() {
           <View style={styles.linkCopy}><Text style={styles.linkTitle}>{item.label}</Text><Text style={styles.linkDetail}>{item.detail}</Text></View>
           <AppIcon name="chevron-right" size={16} color={colors.muted} />
         </Pressable>
-      </PreviewLink>)}</View> : <AppMenuList items={group.items.map(item => ({ ...item, icon: navigationItems[item.key].icon, onPress: () => item.key === "photos" ? leave(() => router.push({ pathname: "/care", params: { view: "photos" } })) : item.key === "history" ? leave(() => router.push("/history")) : actions.open(item.key) }))} />}
+      </PreviewLink>)}</View> : <AppMenuList items={group.items.map(item => ({ ...item, icon: navigationItems[item.key].icon, onPress: () => item.key === "photos" ? leave(() => router.push({ pathname: "/care", params: { view: "photos" } }), "workspace") : item.key === "history" ? leave(() => router.push("/history"), "workspace") : actions.open(item.key) }))} />}
     </View>)}</View>
   </PageFrame>;
 }

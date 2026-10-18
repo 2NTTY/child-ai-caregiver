@@ -1,7 +1,7 @@
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
-import { KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Pressable, StyleSheet, View } from "react-native";
 import { brand } from "../branding";
 import { MotionDrawerOverlay } from "../motion";
 import { AppIcon } from "./AppIcon";
@@ -30,7 +30,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View>
       <View style={styles.header}><CompactHeaderIdentity showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
-        brand={<Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"))} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>} />
+        brand={<Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"), "workspace")} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>} />
         <View testID="header-actions" style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
           <ToolbarIconButton icon="page-layout-sidebar-right" label={overlayOpen ? "收起資訊側欄" : "開啟資訊側欄"} expanded={overlayOpen} onPress={() => { railContext.current = { path: pathname, scope: motionScope }; setRailOpen(value => !value); }} />
         </View>
@@ -38,11 +38,21 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
 
     </View>
     {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={[styles.meta, {flex: 1}]}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
-    {/* Android already resizes the window; a second JS height adjustment makes the composer jump. */}
-    <KeyboardAvoidingView style={styles.content} enabled={Platform.OS === "ios"} behavior={Platform.OS === "ios" ? "padding" : undefined}>{children}</KeyboardAvoidingView>
+    <View style={styles.content}>{children}</View>
     <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}`} label="照顧上下文" onRequestClose={() => setRailOpen(false)}>
       <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}><RightRail model={model} actions={actions} home={pathname === "/"} contextPath={pathname} overlay onClose={() => setRailOpen(false)} /></View>
     </MotionDrawerOverlay>
+  </View>;
+}
+// The screen avoids the keyboard; the header and tab bar stay outside this area.
+export function NativeKeyboardPane({ children }: { children: ReactNode }) {
+  const frame = useRef<View>(null);
+  const [screenTop, setScreenTop] = useState(0);
+  return <View ref={frame} collapsable={false} style={styles.content}
+    onLayout={() => frame.current?.measureInWindow((_x, y) => setScreenTop(y))}>
+    <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={screenTop} style={styles.content}>
+      {children}
+    </KeyboardAvoidingView>
   </View>;
 }
 const styles = StyleSheet.create({

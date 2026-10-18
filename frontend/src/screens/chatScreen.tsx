@@ -72,7 +72,7 @@ function ChatContents({ compact }: { compact: boolean }) {
   function openSettings() {
     detailsTrigger.current = null;
     setDetailsOpen(false);
-    navigate(() => router.push("/settings?section=assistant"));
+    navigate(() => router.push("/settings?section=assistant"), "workspace");
   }
   const feedback = child ? <View style={styles.feedback}>
     {voiceUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原錄音；確認保存後才開始處理…</Text>:null}

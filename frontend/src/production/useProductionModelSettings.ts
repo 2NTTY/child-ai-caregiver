@@ -69,7 +69,7 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
     } };
   useEffect(() => { if (!env.online) patch({ busy: null, keyCheck: null, secretRevision: latest.current.secretRevision + 1 }); }, [env.online]);
   useSettingsRefresh(env, actions.refresh, !requests.busy && !state.needsRead, true);
-  useDomainWriteGuard(false, state.needsRead || state.busy === "save", "account");
+  useDomainWriteGuard(false, state.operation === "unknown" || state.busy === "save", "account");
   const user = env.owner.getSnapshot().records.user;
   return { model: { ...state, scopeKey: env.identityKey, accountName: user?.name ?? "", online: env.online,
     snapshot: env.currentIdentity() ? state.snapshot : null, authorized: env.currentIdentity() && state.authorized }, actions };

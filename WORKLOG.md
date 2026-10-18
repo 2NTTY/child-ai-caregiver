@@ -2996,3 +2996,15 @@
 
 - 唯讀核對實際新舊APK。Android官方build-tools33.0.2／apksigner0.9各驗一次v2簽署，均通過；同applicationId `org.yuyoufang.app`、相同證書SHA-256，versionCode由1升至2。檔案hash及工具來源保存於[交付EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。未讀取或下載私鑰。
 - aapt兩次絕對路徑讀取失敗均為中文路徑編碼；保留錯誤，只補相對路徑metadata讀取成功，沒有重跑簽署或建置。這證明更新身份前提，不等於真機覆蓋安裝／資料保留已驗；零模型、通知、手機或上傳。部署交接移除過時驗收快照，統一指向PLAN。
+
+
+### LOG-20261018-APK-USER-INSTALL
+
+- 使用者在收到 versionCode 2／build `82cb911e` 下載連結後回覆「已覆蓋安裝」。只記錄實際回覆，正常開啟、登入／資料保留及其餘手機功能仍待確認；沒有代填完整升級通過。
+- ADB唯讀查核沒有已連接裝置，因此未操作手機；零模型／通知／重新建置。PLAN／STATUS修正過時建置與未安裝快照，[同一EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)分開保存原簽署核對與本次人工結果。
+
+### LOG-20261018-ANDROID-NAVIGATION-KEYBOARD
+
+- 使用者補充確認新版APK「能正常開啟，原資料仍在」。其後按本人授權接入ADB，核對versionCode 2；一次畫面證實鍵盤遮住輸入框，私人截圖只留本機、沒有送出訊息。
+- 鍵盤避讓移入頁面內容，導航欄按最新要求保持原位，不再隱藏／升降。站內切頁保留長駐owner草稿及原操作；只讀重讀不再冒充寫入，頁面局部草稿、切孩子／身份／離站仍保留保護。相機沿既有ImagePicker結果返回，不改成選擇選單或自動發送。
+- 一個定向導航情景及18個受影響前端入口型別通過；第一次測試harness漏theme.colors，已保留失敗並只修stub。未跑全量、模型或通知。程式review已完成；相容Web／OTA交付及修後真機尚待核對，見[同一EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
