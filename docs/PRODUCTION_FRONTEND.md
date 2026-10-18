@@ -166,3 +166,14 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 固定 `mobile:release`、語音／FCM、完整跨端前景同步及更新交付仍按各自工作包實作，本節不宣稱已接通。
 
 Windows 執行 EAS 前，在實體 dependency installation 的完整建置副本執行 `npm run mobile:prepare`；不要用指向另一 worktree 的 `node_modules` junction。此命令只針對固定 `@expo/fingerprint` 0.20.13 loader 補 glob 比對前的 POSIX 路徑正規化，版本或原文改變即停止；Linux 不修改。保留原生內容 fingerprint 與雲端相等檢查，不使用忽略全部 native 檔案或硬填 runtime 的替代。後續 `mobile:release` 應調用同一入口。
+
+
+### Android FCM 建置與部署接點
+
+共用設定卡在 Android 使用原生通知 owner，在 Web 沿原 Web Push。`expo-notifications` 的 `defaultChannel` 固定為 `yuyoufang-reminders`；包含本套件／plugin 的版本需要新 APK，不能只發 OTA。
+
+建置前把同一 Firebase 專案、package `org.yuyoufang.app` 的 Android 描述檔放工程外，經 `ANDROID_GOOGLE_SERVICES_FILE` 指向；EAS 使用同名 file 環境設定。`app.config.js` 核對 project／package，缺檔則停止 Android 雲端建置；JSON 不入 Git／一般上載 archive。此原生 FCM 描述檔與既有 JS Firebase Auth 公開 key 分開，不能移除 Web key 的限制或把缺 FCM 配置當成已支援。正式下載／設定應核對 Firebase Installations／Messaging 所需限制，不盲目沿用只允許 Auth 的 key。
+
+Server `ANDROID_PUSH_ENABLED` 預設關閉；準備同一 GCP project 的 FCM HTTP v1 API及 VM 身份最小發送權限後，才在相容 API／worker 設定中開啟。先套用該版新增 Firestore 索引，再部署同版服務；不放服務帳號 key 到 App。一般測試仍須明確本人操作；不得在保存設定或建置後自動發訊息。
+
+原生配置／權限、新索引、部署、真機及真 FCM 是否已完成只見根 PLAN／驗證證據；bundle 或本機合成通過不能替代這些門檻。

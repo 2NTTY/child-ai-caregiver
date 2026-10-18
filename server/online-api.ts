@@ -2,9 +2,10 @@ import { z } from "zod";
 import { FamilyError } from "./family-access.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
 import { onlineCommandSchema, onlineSubmissionSchema } from "./online-routing.ts";
+import type { NativeRequestContext } from './native-push-context.ts';
 import type { OnlineStore } from "./online.ts";
 
-export async function handleOnlineRequest(request: Request, userId: string | null, store: Pick<OnlineStore, 'spaces' | 'context' | 'submit' | 'lookup' | 'changes'>): Promise<Response> {
+export async function handleOnlineRequest(request: Request, userId: string | null, store: Pick<OnlineStore, 'spaces' | 'context' | 'submit' | 'lookup' | 'changes'>, nativeContext?: () => Promise<NativeRequestContext>): Promise<Response> {
   if (!userId) return apiError("unauthorized", "請先登入。", 401);
   if (!request.headers.get("x-expected-user-id")) return apiError("account_precondition_required", "請重新確認登入帳號。", 428);
   if (request.headers.get("x-expected-user-id") !== userId) return apiError("session_changed", "登入帳號已改變。", 409);
@@ -24,7 +25,9 @@ export async function handleOnlineRequest(request: Request, userId: string | nul
       if (request.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase() !== "application/json") return apiError("unsupported_media_type", "請以 JSON 提交。", 415);
       let body: unknown; try { body = await request.json(); } catch { return apiError("invalid_json", "無效輸入。", 400); }
       if (url.pathname.endsWith("/context")) return jsonResponse(await store.context(userId, onlineCommandSchema.parse(body)));
-      const result = await store.submit(userId, onlineSubmissionSchema.parse(body));
+      const submission = onlineSubmissionSchema.parse(body);
+      const context = submission.path.startsWith("/api/native-push/") ? await nativeContext?.() : undefined;
+      const result = await store.submit(userId, submission, context);
       return result instanceof Response ? result : jsonResponse(result);
     }
     return apiError("not_found", "找不到資料。", 404);

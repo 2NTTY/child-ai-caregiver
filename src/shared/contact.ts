@@ -1,11 +1,11 @@
 import { z } from "zod";
 import type { CareTask,TaskAssignee } from "./tasks.ts";
-export const contactChannelSchema=z.enum(["web_push","telegram"]);
+export const contactChannelSchema=z.enum(["web_push","telegram","native_push"]);
 export const contactBindingSchema=z.object({channel:contactChannelSchema,bindingId:z.uuid(),bindingVersion:z.number().int().positive()}).strict();
 export type ContactBinding=z.infer<typeof contactBindingSchema>;
 export const contactConsentInput=z.object({
  expectedVersion:z.number().int().min(0).max(2147483646),enabled:z.boolean(),allowBackup:z.boolean(),
- bindings:z.array(contactBindingSchema).max(2).refine(values=>new Set(values.map(value=>value.channel)).size===values.length),
+ bindings:z.array(contactBindingSchema).max(3).refine(values=>new Set(values.map(value=>value.channel)).size===values.length),
  confirm:z.literal(true),
 }).strict().refine(value=>!value.enabled||value.bindings.length>0);
 export type ContactConsentInput=z.infer<typeof contactConsentInput>;

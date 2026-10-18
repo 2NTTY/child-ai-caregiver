@@ -1,7 +1,7 @@
 {
   "baseCommit": "5bc44f1a5399620fb03549aae77cac66cc5a69e7",
   "branch": "codex/s13-w02-android-push",
-  "scope": "Independent adapter preparation; dependency PRs and device gates remain open",
+  "scope": "Android notification wiring on the existing formal API and shared UI; dependency PRs and live device gates remain open",
   "versions": {
     "node": "24.19.0",
     "npm": "11.8.0",
@@ -27,6 +27,47 @@
       "diagnostics": 0,
       "initialServerFailure": "GoogleAuth access token may be undefined",
       "correction": "Normalize missing credentials to null and stop before sending; repeat server root only"
+    },
+    {
+      "kind": "formal-native-push-api-and-receipts",
+      "tests": 1,
+      "runs": 1,
+      "passed": true,
+      "durationMs": 154.9952,
+      "coverage": [
+        "lost response/original receipt",
+        "native proof required",
+        "account isolation and live-token ownership",
+        "versioned token rotation",
+        "single delivery and unknown replay suppression",
+        "session revocation stops queued sends",
+        "authorized tap is read-only",
+        "notification history",
+        "safe export",
+        "restored binding revoked/token removed"
+      ],
+      "environment": "in-memory Firestore transaction fixture and scripted FCM gateway; not cloud contention"
+    },
+    {
+      "kind": "formal-wiring-types",
+      "serverRoots": 3,
+      "frontendRoots": 5,
+      "diagnostics": 0,
+      "initialDiagnostics": [
+        "one old Agent receipt channel schema excluded native_push",
+        "three copied client import names were incorrect"
+      ],
+      "correction": "extend the shared channel reader and correct the imports; no behavior test was rerun"
+    },
+    {
+      "kind": "final-native-presentation-types",
+      "frontendRoots": 3,
+      "diagnostics": 0,
+      "reason": "new foreground handler, notification-history channel and guarded navigation"
+    },
+    {
+      "kind": "android-config-syntax",
+      "passed": true
     }
   ],
   "realNotifications": 0,
@@ -35,10 +76,12 @@
   "nativeBuilds": 0,
   "deployment": false,
   "pending": [
-    "Firestore device/session binding, original operation receipts and token rotation",
-    "Existing contact/worker and notification-history integration",
-    "Shared settings owner and reauthorized click destination",
-    "Native plugin/Firebase app configuration and compatible APK",
-    "One explicitly authorized FCM delivery and device acceptance"
-  ]
+    "Firebase Android descriptor, Installations/Messaging key compatibility and minimal VM FCM permission",
+    "Apply new indexes and verify only cloud-SDK-dependent edges",
+    "One compatible APK and existing pending shared-media/device gates",
+    "One explicitly authorized real FCM reminder, native permission/open and task completion stopping",
+    "Dependency review/merges and same-site deployment; no old live acceptance is replaced"
+  ],
+  "latestMasterObserved": "d4686b7ff864642aaa964ca3adae9d64b52b6fa5",
+  "localBaseline": "6ed5520"
 }

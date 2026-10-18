@@ -9,6 +9,7 @@ import { firestoreModelSettingsRecoverySchema } from './firestore-model-settings
 import { firestoreModelChecksRecoverySchema } from './firestore-model-routing.ts';
 import { firestoreAgentAdmissionRecoverySchema } from './firestore-agent-admission.ts';
 import { firestoreScopeErasureSchema, firestoreErasureReceiptPointerSchema } from './firestore-erasure.ts';
+import { firestoreNativeBindingSchema, firestoreNativeDeliverySchema, firestoreNativePointerSchema } from './firestore-native-push.ts';
 import { firestorePushBindingSchema, firestorePushDeliverySchema, firestorePushEndpointRecoverySchema } from './firestore-web-push.ts';
 import { firestoreTelegramBindingSchema, firestoreTelegramDeliverySchema, firestoreTelegramChallengeSchema, firestoreTelegramRecoverySchemas as telegram } from './firestore-telegram.ts';
 import { firestoreContactConsentSchema, firestoreContactGrantSchema, firestoreContactRequestSchema, firestoreContactRecoverySchemas as contact } from './firestore-contact.ts';
@@ -25,6 +26,9 @@ export const operationRestoreSchemas = {
   'agent-admission': { suffix: 'agent_admission', schema: firestoreAgentAdmissionRecoverySchema },
   'scope-erasure': { suffix: 'erasures', schema: firestoreScopeErasureSchema },
   'erasure-receipt-pointer': { suffix: 'erasure_receipts', schema: firestoreErasureReceiptPointerSchema },
+  'native-push-binding': { suffix: 'native_push_bindings', schema: firestoreNativeBindingSchema },
+  'native-push-delivery': { suffix: 'native_push_deliveries', schema: firestoreNativeDeliverySchema },
+  'native-push-token': { suffix: 'native_push_tokens', schema: firestoreNativePointerSchema },
   'push-binding': { suffix: 'push_bindings', schema: firestorePushBindingSchema },
   'push-delivery': { suffix: 'push_deliveries', schema: firestorePushDeliverySchema },
   'push-endpoint': { suffix: 'push_endpoints', schema: firestorePushEndpointRecoverySchema },
@@ -49,7 +53,7 @@ export type OperationRestoreValue = z.infer<(typeof operationRestoreSchemas)[Ope
 export function isOperationRestoreKind(kind: string): kind is OperationRestoreKind { return Object.hasOwn(operationRestoreSchemas, kind); }
 // Historical deliveries and their references retain original identity. They never become new work.
 export const originalRestoreScopeKinds = new Set(['photo-cleanup', 'background-work', 'background-reference']);
-export const discardedRestoreKinds = new Set(['push-endpoint', 'telegram-pointer', 'contact-callback', 'erasure-receipt-pointer']);
+export const discardedRestoreKinds = new Set(['native-push-token', 'push-endpoint', 'telegram-pointer', 'contact-callback', 'erasure-receipt-pointer']);
 function check(ok: boolean) { if (!ok) throw Object.assign(new Error('Restore operation binding rejected'), { code: 'restore_binding', status: 409 }); }
 function same(a: unknown, b: unknown) { return firestoreDomainHash(a) === firestoreDomainHash(b); }
 
@@ -98,6 +102,18 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
       Object.assign(metadata, { operationId: v.intent.operationId, state: v.state }); break;
     }
     case 'erasure-receipt-pointer': { const v = firestoreErasureReceiptPointerSchema.parse(raw); check(scope.ownerUserId === 'system:erasure-receipt' && id === v.operationId); break; }
+    case 'native-push-binding': {
+      const v = firestoreNativeBindingSchema.parse(raw); check(id === v.binding.id && version === v.binding.version);
+      const binding = target && v.binding.status === 'active' ? { ...v.binding, status: 'revoked' as const } : v.binding;
+      value = target ? { ...v, token: null, tokenHash: null, binding } : v;
+      Object.assign(metadata, { bindingId: id, createdAt: binding.createdAt, status: binding.status, sessionTag: v.sessionHash }); break;
+    }
+    case 'native-push-delivery': {
+      const v = firestoreNativeDeliverySchema.parse(raw); check(id === v.delivery.id);
+      const delivery = target ? { ...v.delivery, status: v.delivery.status === 'queued' ? 'stopped' as const : v.delivery.status === 'sending' ? 'unknown' as const : v.delivery.status } : v.delivery;
+      value = { ...v, delivery }; Object.assign(metadata, { deliveryId: id, createdAt: delivery.createdAt, bindingId: delivery.bindingId, status: delivery.status }); break;
+    }
+    case 'native-push-token': { const v = firestoreNativePointerSchema.parse(raw); check(v.tokenHash === id && same(v.scope, scope)); break; }
     case 'push-binding': {
       const v = firestorePushBindingSchema.parse(raw); check(id === v.binding.id && version === v.binding.version);
       const binding = target && v.binding.status === 'active' ? { ...v.binding, status: 'revoked' as const, endpointHash: null } : v.binding;

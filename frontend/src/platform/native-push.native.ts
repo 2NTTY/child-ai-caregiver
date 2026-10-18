@@ -3,6 +3,11 @@ import * as Notifications from "expo-notifications";
 import { ANDROID_PUSH_CHANNEL, nativePushTokenSchema, parseNativePushData } from "../../../src/shared/native-push.ts";
 import type { NativePushEvents, NativePushPermission } from "./native-push.ts";
 
+// Only fixed product references may display a foreground preview; no payload action is executed.
+if (Platform.OS === "android") Notifications.setNotificationHandler({ handleNotification: async notification => {
+  const visible = parseNativePushData(notification.request.content.data) !== null;
+  return { shouldShowBanner: visible, shouldShowList: visible, shouldPlaySound: false, shouldSetBadge: false };
+} });
 export const nativePushSupported = () => Platform.OS === "android";
 export async function nativePushPermission(): Promise<NativePushPermission> {
   if (!nativePushSupported()) return "unavailable";

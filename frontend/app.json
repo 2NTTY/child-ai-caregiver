@@ -35,6 +35,12 @@
           "enableBackgroundPlayback": false,
           "recordAudioAndroid": true
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "yuyoufang-reminders"
+        }
       ]
     ],
     "web": {

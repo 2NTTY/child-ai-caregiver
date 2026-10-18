@@ -35,7 +35,7 @@ const version = z.number().int().positive().max(2147483647);
 const dateTime = z.iso.datetime({ offset: true });
 const consentSchema = z.object({
   userId: user, version: z.number().int().min(0).max(2147483647), enabled: z.boolean(), allowBackup: z.boolean(),
-  bindings: z.array(contactBindingSchema).max(2).refine(values => new Set(values.map(value => value.channel)).size === values.length),
+  bindings: z.array(contactBindingSchema).max(3).refine(values => new Set(values.map(value => value.channel)).size === values.length),
 }).strict();
 const grantSchema = z.object({
   taskId: z.uuid(), version, taskVersion: version, enabled: z.boolean(), primaryUserId: user, backupUserId: user.nullable(),
@@ -59,7 +59,7 @@ const pageSchema = z.object({
   canManage: z.boolean(), workerEnabled: z.boolean(), consent: consentSchema,
   availableBindings: z.array(contactBindingSchema.extend({ label: z.string() })),
   recipients: z.array(z.object({
-    userId: user, name: z.string(), enabled: z.boolean(), allowBackup: z.boolean(), channels: z.array(contactChannelSchema).max(2),
+    userId: user, name: z.string(), enabled: z.boolean(), allowBackup: z.boolean(), channels: z.array(contactChannelSchema).max(3),
   }).strict()),
   tasks: z.array(taskSchema).max(50), tasksHaveMore: z.boolean(), grants: z.array(grantSchema),
   requests: z.array(z.object({

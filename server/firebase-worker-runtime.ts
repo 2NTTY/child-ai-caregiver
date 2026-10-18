@@ -75,6 +75,7 @@ export async function openFirebaseWorkerRuntime(env: Record<string, string | und
           });
           return { state: result.state };
         }
+        if (job.kind === 'native-push') return runtime.nativePush.process(job, signal);
         if (job.kind === 'push') return runtime.push.process(job, signal);
         if (job.kind === 'telegram') return runtime.telegram.process(job, signal);
         if (job.kind === 'contact') return runtime.contact.process(job, signal);

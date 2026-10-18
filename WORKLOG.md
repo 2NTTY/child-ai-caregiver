@@ -2931,3 +2931,12 @@
 - 固定 Expo Notifications 57.0.21，沿官方 Google Auth＋單次 FCM HTTP v1，固定無私人內容的提示及嚴格 reference；Android 權限／token 輪換／點擊薄接點已準備，未接產品 owner 或正式發送。
 - 必要檢查：同一合成流程兩次均 1/1，第二次包含新點擊 parser；Server 型別初次揭示 SDK 可回 undefined，正規化空憑據後只補 Server 入口；兩個原生入口第一次已通過。詳見 [S13 準備證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。零真通知／模型／雲端服務／新 APK／部署。
 - 剩餘：裝置會話及原收據、Firestore／提醒／歷史接線、共用設定 owner、原生配置及一則獲授權真通知。依賴合併與真機 gate 未解除，不將 adapter 通過寫成原生通知完成。
+
+
+## LOG-20261018-S13-ANDROID-PUSH-WIRING
+
+- 從 `6ed5520` 接續原生通知；同包 B 單作者、主模型實作及 review，未派子代理，未接管 #214～#216。交付前遠端 master 仍為 `d4686b7`。
+- 正式 Firebase HTTP／online 原收據傳遞受信任原生會話；綁定、token 輪換／撤銷、outbox及最近台帳已接 Firestore。原生提醒使用同一聯絡授權／偏好／終態服務，發送前重核 token 與裝置會話，unknown 不重發。
+- Android 共用設定卡改接原生 owner；通知點擊只查回當前可讀目標，不自動回覆收到或完成。歷史、匯出、刪除 collections、還原撤銷及 plugin／描述檔檢查已同步；索引只保存定義。
+- 新增一條本機合成流程 1/1 通過（154.9952ms），從正式 API／client 驗原收據、隔離、輪換、撤銷、unknown、歷史及還原。初次型別揭示舊渠道 enum及三個 import 名稱錯配，修正後 Server 3入口／前端5入口零診斷；最後呈現變更只補前端3入口型別及配置語法。沒有全量、真模型／FCM／雲端驗收／手機／新 APK／部署；真提醒完成停止及真機仍待驗。詳細見 [S13 證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
+- 後續仍須原生 Firebase 描述檔／最小權限、雲端索引、相容部署及新 APK，才能完成一則獲授權真通知的門檻；依賴分支保持 draft，不提前標 S13 或 Android 成品完成。

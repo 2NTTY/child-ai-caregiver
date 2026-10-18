@@ -73,7 +73,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 
 **本輪執行目標（2026-10-16）：**先完成管理員限額總控及全部 Web／Android 共用成品工作，再接本人 key、自選模型與可調限額，最後提供 PR 分支的本地 Agent 入口：使用正式同一套 Agent 程式與隔離測試資料，只設定 API key 即可測試本地修改，毋須先部署 GCP。只用主模型、最低必要測試；需本人／手機操作的項目列待驗收，繼續其他獨立工作，不把待驗當完成。
 
-[管理員總控增補](#p2-adm01) 已於 #233 合併，原站部署 `admin-8ba66e7`；S07 同步及 S09 原運行查回已準備，S12 語音／附件成果保存於 draft #237；現在準備 S13-W02 原生通知的獨立接點；S04／S05 依賴合併與人工 gate 保留。#231 預算接點及 #232 斷線／期限收尾修正已合併並部署；後者現場證據在 #229 的 `332ce63`，沒有重發使用者聊天。S04 首條聊天由使用者驗收，鍵盤與後續裝置接線繼續處理。本人 key／本地入口延續既有模型路由及正式服務，不另造行為不同的 Agent；其具體包在 Android 成品後開始。
+[管理員總控增補](#p2-adm01) 已於 #233 合併，原站部署 `admin-8ba66e7`；S07 同步及 S09 原運行查回已準備，S12 語音／附件成果保存於 draft #237；S13-W02 已完成原生通知的本機正式接線，待原生 Firebase 配置、新 APK及真 FCM；S04／S05 依賴合併與人工 gate 保留。#231 預算接點及 #232 斷線／期限收尾修正已合併並部署；後者現場證據在 #229 的 `332ce63`，沒有重發使用者聊天。S04 首條聊天由使用者驗收，鍵盤與後續裝置接線繼續處理。本人 key／本地入口延續既有模型路由及正式服務，不另造行為不同的 Agent；其具體包在 Android 成品後開始。
 
 當前入口：[S04-W01 共用原生基礎與 Android 首條流程](#s04-w01)。使用者於 2026-10-15 批准 [Web／Android 共用產品及 Android 成品計劃](#p3-mobile)；文件已於 #228 合併，S04-W01 正在接正式 Android 身份、transport 與首條聊天。Web／Android 共用功能及同一權威資料，新增語音兩端同時接通；Android 完成後才開始 iOS。開工基線 master `21e848b`（#227），原站程式 `b1d1565`／Prompt Pack 0.1.43；不把 master 當成已部署。
 
@@ -1087,9 +1087,10 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s13-w02"></a>
 #### S13-W02 原生本人通知
 
-- 階段／狀態：P3；Android 獨立接點準備中，活動分支 `codex/s13-w02-android-push` 接續 S12 draft #237；先接單次 FCM 投遞、裝置身份與既有通知台帳，再接原生設定／點擊。依使用者授權先推進不依賴真機的部分；依賴合併與明確批准的一則真通知仍是 gate，不提前標完成。iOS 待後續。
+- 階段／狀態：P3；Android 正式接線已在本機實作，活動分支 `codex/s13-w02-android-push` 接續 S12 draft #237；尚未部署或發布新 APK。依使用者授權先推進不依賴真機的部分；依賴合併與明確批准的一則真通知仍是 gate，不提前標完成。iOS 待後續。
 - 前置（Android）：S12-W01 Android、S07-W01、S13-W07；iOS 另依 S04-W02。
-- 本機準備：固定 57.0.21 原生套件；單次 FCM HTTP v1 adapter、嚴格固定提示／reference、Android 權限及 token／點擊 adapter 已實作。一條合成流程及受影響型別通過；Firestore 綁定／原收據、會話撤銷、提醒／owner／設定頁與 build plugin 尚待接線，未建立 PR、未開通或發通知。證據見 [S13 準備](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
+- 本機結果：固定 Expo Notifications 57.0.21；FCM 單次 adapter、Firestore 加密綁定／原收據、同裝置 token 輪換／會話撤銷、提醒／通知歷史／匯出及還原、正式 API／worker、共用設定及核權點擊已接線。新增一條本機合成流程通過，受影響型別及配置語法通過；不把替身當真 Firestore 競爭或真 FCM。證據見 [S13 準備](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
+- 下一步／未驗：設定同專案 Android Firebase 描述檔及 FCM 最小發送權限；套用新增索引、相容部署／新 APK後，集中驗原生權限、真提醒到達與點擊／完成停止。沒有新雲端設定、外發、APK或部署；正式開關保持關閉。
 - 交付：Expo Notifications／Android FCM token 註冊、輪換／撤銷與薄投遞 adapter，沿既有 Tasks／授權／偏好／安靜時段／終態／unknown；Web與App各設備授權、同一任務。
 - gate：一則明確批准通知、點擊重新核權及完成停止；不重發 Web Push／Telegram。iOS APNs 是另一平台子範圍，不能拿 FCM token 代替 APNs。
 

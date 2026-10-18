@@ -1,3 +1,4 @@
+import type { NativeRequestContext } from "./native-push-context.ts";
 import { createSharedInputStore } from "./shared-input-store.ts";
 import { handleSharedInputRequest } from "./shared-input-api.ts";
 import { createPhotoStore } from "./photo-store.ts";
@@ -153,7 +154,7 @@ export function createOnlineStore(pool: Pool, cipher: StorageCipher, taskSchedul
         return { workspaceId: id, storageEpoch: space.storage_epoch };
       });
     },
-    async submit(userId: string, submission: OnlineSubmission): Promise<OnlineReceipt | Response> {
+    async submit(userId: string, submission: OnlineSubmission, _context?: NativeRequestContext): Promise<OnlineReceipt | Response> {
       const { operation, path, payload } = submission, command = { path, payload }, route = onlineRoute(command);
       return transaction(async client => {
         await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1,178107))", [`${userId}:${operation.opId}`]);

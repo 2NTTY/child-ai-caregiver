@@ -977,3 +977,11 @@ Android 使用原生 FCM token，與 Web Push 訂閱分開。Server 設定掌管
 通知正文由 Server 固定，沒有孩子、私人聊天、任務正文或任意 URL。資料僅帶 `v`、`kind`、`bindingId`、`bindingVersion` 及 `deliveryId`；點擊仍須按當前登入身份向 Server 核對原投遞與資源，不能依 payload 改孩子、確認或完成事項。取得系統通知權限／token 不代表已授予照護聯絡權限。
 
 OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 POST，發送前重查資格。只有 HTTP 200 與正確專案的 message name 才記渠道接受；連線中斷／成功回應不完整為 unknown，不重發。只有 FCM 明確 `UNREGISTERED` 才使 token 失效，普通 400／404 不直接當 token 過期。接受不等於裝置顯示、家長收到或照護完成。
+
+
+- `GET /api/native-push`：本人裝置及最近投遞的有界 metadata；不回傳 token、session hash。原生會話另回 `currentBindingId`，Web 可查看／撤銷本人裝置，不可代登記原生 token。
+- `/api/online/context`／`submit` 沿原協定處理 `/api/native-push/subscriptions` 及 `/{id}/revoke|test`，與變更序號、收據及背景工作原子保存。登記必須由驗證過的原生憑據提供 Server 內部 session proof；payload 的 device ID、user ID 或自行聲稱身份不能代替。
+- 登記 payload 為 `token`、`label`；同裝置輪換另外帶原 `bindingId`、`expectedVersion`、`expectedTokenRevision`。輪換仍屬同一裝置授權，保留 binding version，增加 token revision；舊輪換請求衝突時不能覆蓋新 token。撤銷／失效增加 binding version，舊聯絡授權隨即不合資格。
+- 一個 token 同時只有一個有效身份綁定；不同帳號不得搶佔仍有效的裝置會話。舊會話已撤銷／過期後才可原子轉移，舊綁定同步撤銷。正式投遞及聯絡均重新核對會話，token 更改後不沿舊 token 發送或誤撤銷新 token。
+- `GET /api/native-push/open?reference=<JSON>`：只接受固定 reference，核對目前原生會話、綁定版本、原投遞及孩子權限後，回傳 `test` 或已授權 `care` 的資源關聯。純查回，不確認收到、不完成待辦；前端仍遵守身份切換與未提交草稿守衛。
+- 原生聯絡渠道為 `native_push`，共用本人同意、任務授權、安靜時段及終態服務；通知歷史保留相容游標，原生投遞只有真實 metadata。還原撤銷原生綁定、捨棄 token pointer，未完成投遞停止／保留 unknown，不藉還原重新投遞。

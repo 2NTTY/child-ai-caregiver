@@ -15,6 +15,7 @@ import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 import { firestoreSnapshotManifestSchema } from './firestore-family-document-snapshots.ts';
 import { firestorePhotoSchemas, type createFirestorePhotoStore } from './firestore-photos.ts';
 import { createFirestoreSharedInputStore } from './firestore-shared-inputs.ts';
+import { firestoreNativeBindingSchema, firestoreNativeDeliverySchema } from './firestore-native-push.ts';
 import { firestorePushBindingSchema, firestorePushDeliverySchema } from './firestore-web-push.ts';
 import { firestoreTelegramBindingSchema, firestoreTelegramDeliverySchema } from './firestore-telegram.ts';
 import { firestoreContactRequestSchema, firestoreContactConsentSchema, firestoreContactGrantSchema } from './firestore-contact.ts';
@@ -45,11 +46,12 @@ const sections = {
   growth_attention: ['growth_attention', ['growth-attention']], growth_topics: ['growth_topics', ['growth-topic']],
   work_followups: ['work_events', ['work-event']],
   notification_preferences: ['notification_preferences', ['notification-preferences']],
+  native_push_bindings: ['native_push_bindings', ['native-push-binding']], native_push_deliveries: ['native_push_deliveries', ['native-push-delivery']],
   push_bindings: ['push_bindings', ['push-binding']], push_deliveries: ['push_deliveries', ['push-delivery']],
   telegram_bindings: ['telegram_bindings', ['telegram-binding']], telegram_deliveries: ['telegram_deliveries', ['telegram-delivery']],
   contact_consents: ['contact_consents', ['contact-consent']], contact_grants: ['contact_grants', ['contact-grant']], contact_requests: ['contact_requests', ['contact-request']],
 } as const;
-const global = new Set(['notification_deliveries', 'manifest', 'account', 'children', 'notification_preferences', 'push_bindings', 'push_deliveries', 'telegram_bindings', 'telegram_deliveries']);
+const global = new Set(['native_push_bindings', 'native_push_deliveries', 'notification_deliveries', 'manifest', 'account', 'children', 'notification_preferences', 'push_bindings', 'push_deliveries', 'telegram_bindings', 'telegram_deliveries']);
 const querySchema = z.object({ section: z.string().max(80), childId: z.uuid().optional(),
   scopeVersion: z.string().regex(/^[a-f0-9]{64}$/u).optional(), cursor: z.string().max(16000).optional() }).strict();
 const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId: z.uuid().nullable(), scopeVersion: z.string(), after: z.string().max(2000) }).strict();
@@ -163,7 +165,9 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore(options) });
             const summary = await memory.readSummaryRevision(binding, value);
             if (summary) items.push(summary);
-          } else if (section === 'push_bindings') items.push(firestorePushBindingSchema.parse(value).binding);
+          } else if (section === 'native_push_bindings') items.push(firestoreNativeBindingSchema.parse(value).binding);
+          else if (section === 'native_push_deliveries') items.push(firestoreNativeDeliverySchema.parse(value).delivery);
+          else if (section === 'push_bindings') items.push(firestorePushBindingSchema.parse(value).binding);
           else if (section === 'push_deliveries') items.push(firestorePushDeliverySchema.parse(value).delivery);
           else if (section === 'telegram_bindings') items.push(firestoreTelegramBindingSchema.parse(value).binding);
           else if (section === 'telegram_deliveries') items.push(firestoreTelegramDeliverySchema.parse(value).delivery);

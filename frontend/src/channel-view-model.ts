@@ -22,6 +22,7 @@ export interface PushBindingView {
   providerLabel: string; expiresAt: string | null;
 }
 export interface PushSettingsModel extends ChannelSettingsBase {
+  platform?: "web" | "android";
   available: boolean; browserSupported: boolean; permission: ChannelPermission;
   currentBindingId: string | null; bindings: PushBindingView[];
   deliveries: PushDeliveryView[]; testsRemaining: number; nextTestAt: string | null;

@@ -262,7 +262,7 @@ export function createRequestHandler(options: {
           ? await handleProductAgentRequest(webRequest, userId, { agent: options.productAgent, store: options.productAgentStore, chat: options.chat,
             isCurrentUser: async expected => (await options.auth.getSession({ headers }))?.user.id === expected })
           : url.pathname.startsWith("/api/online/") && options.online
-          ? await handleOnlineRequest(webRequest, userId, options.online)
+          ? await handleOnlineRequest(webRequest, userId, options.online, async () => ({ nativeSession: await options.auth.nativeSessionProof?.(webRequest.headers) ?? null }))
           : (url.pathname === "/api/web-push" || url.pathname.startsWith("/api/web-push/")) && options.webPush
             ? await handleWebPushRequest(webRequest, userId, options.webPush)
           : /^\/api\/children\/[^/]+\/tasks(\/|$)/u.test(url.pathname) && options.tasks

@@ -1,3 +1,4 @@
+import type { NativeRequestContext } from './native-push-context.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationPreferences } from '../src/shared/family.ts';
@@ -38,7 +39,7 @@ export interface FirestoreTasksQuery {
 export interface FirestoreOnlineStore {
   spaces(userId: string): Promise<Workspace[]>;
   context(userId: string, command: OnlineCommand): Promise<OnlineContext>;
-  submit(userId: string, submission: OnlineSubmission): Promise<OnlineReceipt>;
+  submit(userId: string, submission: OnlineSubmission, context?: NativeRequestContext): Promise<OnlineReceipt>;
   lookup(userId: string, opId: string): Promise<OnlineReceipt | { state: 'unconfirmed' }>;
   changes(userId: string, workspaceId: string, epoch: string, cursor: string): Promise<OnlineChanges>;
   readonly children: FirestoreChildrenQuery;
@@ -57,7 +58,7 @@ export interface FirestoreOnlineReminderViewPort {
 export interface FirestoreOnlineMutation {
   supports(path: string): boolean;
   /** Read and validate first; commit is called with the receipt in the same transaction. */
-  prepare(binding: FirestoreAuthorityTransaction, submission: OnlineSubmission): Promise<{
+  prepare(binding: FirestoreAuthorityTransaction, submission: OnlineSubmission, context?: NativeRequestContext): Promise<{
     childId: string | null; changeSeq: string; statusCode: 200 | 201; result: unknown; commit(): void;
   }>;
 }
@@ -278,7 +279,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
         const receipt = await receipts.read(binding, opId); return receipt ? receipts.disclose(binding, receipt) : { state: 'unconfirmed' as const };
       });
     },
-    async submit(userId, raw) {
+    async submit(userId, raw, context) {
       const submission = domainParse(onlineSubmissionSchema, raw);
       if (options.erasures && /^\/api\/children\/[0-9a-f-]{36}\/delete$/iu.test(submission.path))
         return options.erasures.submitOnline(userId, submission);
@@ -297,7 +298,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
         let commitDomain: () => void;
         const mutation = options.mutations?.find(domain => domain.supports(submission.path));
         if (mutation) {
-          const prepared = await mutation.prepare(binding, submission);
+          const prepared = await mutation.prepare(binding, submission, context);
           changeSeq = prepared.changeSeq; result = prepared.result; statusCode = prepared.statusCode;
           receiptChildId = prepared.childId; commitDomain = prepared.commit;
         } else if (submission.path === '/api/children') {

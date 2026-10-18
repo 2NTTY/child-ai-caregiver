@@ -15,4 +15,6 @@ export interface ServerAuthPort {
   getSession(options: { headers: Headers; returnHeaders?: false }): Promise<ServerAuthSession | null>;
   getSession(options: { headers: Headers; returnHeaders: true }): Promise<ServerAuthSessionWithHeaders>;
   fromNodeHeaders(headers: IncomingHttpHeaders): Headers;
+  /** Verified native credential only; never a client-provided device identifier. */
+  nativeSessionProof?(headers: Headers): Promise<{ userId: string; sessionHash: string } | null>;
 }
