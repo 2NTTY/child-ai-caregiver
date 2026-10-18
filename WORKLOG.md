@@ -3060,3 +3060,10 @@
 
 - B交付一次Android preview OTA，來源5bd53b6／共用前端c4ac1b9，update group `a8c6bf35-1b67-42ea-9c41-cf7c0ec896a6`。官方runtime `33699576537bf6f4081bddfb9c8807cd6bdef3ee` 與已安裝APK v2相同，不重建APK。既有Web產物已獨立部署及核hash，發布入口沿c4ac1b9後差異只做OTA，沒有重建Web。
 - 手機接收、兩端系統選檔／下載、真人Agent內容理解、語音／通知及OTA回退仍待驗；沒有藉發布通過改寫人工結論。依賴draft保留，不合併未滿足gate的PR。最新分工按B提需求／前端接線、C後端實作，單作者與既有作者保留。
+
+
+### LOG-20261018-ANDROID-INPUT-CHECK
+
+- B主責：已獲授權的同一Android真機，首頁直接開原生相機並取消返回；一份581-byte合成Word經系統Downloads選取，返回原草稿顯示檔名／大小／不支援預覽／未送出，再移除。沒有上傳、模型或通知。一次短錄音開始／停止得到15秒預覽，但播放維持0秒，停止擴測並保留失敗。臨時文件與錄音已清理。
+- 局部候選明確設定前景媒體播放模式，錄音ready移至停止及模式切換完成後；只跑兩個受影響TypeScript roots，零診斷。Expo Audio 57.0.5原生播放閘及[官方audio mode](https://docs.expo.dev/versions/latest/sdk/audio/)已核；根因及修正效果仍須真機確認，不由型別通過宣稱已修。
+- 手機短暫離線由使用者回覆滑掉後台後恢復；未猜測改身份／網絡。附件OTA初次仍舊版，空草稿下安全重開後入口生效。首條聊天仍由使用者驗收，其餘門檻保留，見S12附件EV。

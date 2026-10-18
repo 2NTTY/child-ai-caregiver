@@ -202,5 +202,24 @@
     "deviceReceived": false,
     "rollbackExecuted": false,
     "releaseOwner": "B"
+  },
+  "androidInputCheck": {
+    "observedAt": "2026-10-18T10:49:44.179106+00:00",
+    "clientSource": "5bd53b6",
+    "method": "One connected authorized Android device; ADB control, no Computer Use, no messages sent",
+    "camera": "Home opens com.android.camera/.OneShotImageCapture; cancel returns to app; capture not exercised",
+    "file": "One 581-byte synthetic DOCX selected via Android Downloads, returned to local unsent draft; filename, size and unsupported-preview label visible; removed without upload",
+    "voice": "Recording start/stop produced a 15-second local preview; playback remained at zero after a bounded observation; not passed",
+    "cleanup": "Test recording discarded in app, synthetic file and temporary UI dump removed from device; no uploaded data",
+    "transientOffline": "System Wi-Fi was validated while app showed offline; user reported swipe-close fixed it; no speculative network/auth change",
+    "ota": "File control was disabled until one safe restart of an empty composer; then enabled and selected file successfully",
+    "candidateFix": "Explicit foreground playback audio mode and readiness state; two affected TypeScript roots pass; device follow-up pending",
+    "calls": {
+      "model": 0,
+      "embedding": 0,
+      "notification": 0,
+      "businessWrites": 0
+    },
+    "limits": "No first-chat, voice understanding, cross-device, download, FCM or rollback acceptance claimed"
   }
 }
