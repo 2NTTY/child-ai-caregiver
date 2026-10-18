@@ -3081,3 +3081,10 @@
 - 使用者回報昨天聊天成功、今天服務暫時未能提供。只核近期模型診斷及原run metadata，確認Google回傳504；沒有重送原訊息、呼叫模型、清零或改配額。
 - 可信SDK的指定HTTP錯誤轉為固定停止原因，由既有正式API保存到聊天正文；舊APK無須重裝即可讀取新回覆的原因。未知錯誤仍不猜測，原工具收據及unknown規則保留。
 - 真ADK配scripted provider的504流程通過：已成功工具不重做、兩次模型嘗試只計兩次、原始錯誤不披露。既有429測試首輪因過時授權次數斷言停止；核對目前兩個授權邊界後只補該項並通過，沒有改授權程式。零真模型／通知。部署待完成；詳見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
+
+
+### LOG-20261018-MODEL-ERROR-DEPLOYMENT
+
+- 使用者明確批准2aa1442三檔8.8KiB修正、hash及腳本傳送至原VM，沿既有範圍更新API／worker。先前自動批准拒絕在上傳前停止；候選hash／無網絡模組核對通過。本機啟用工具殘留舊附件檢查路徑亦在切換前停止，修正後完成部署，不隱藏首次失敗。
+- 11:26 UTC映像`error-2aa1442`／`d0435f5`正式啟用，API及worker健康，公開health為ok／firestore。Web仍files-c4ac1b9，APK與資料不變；零真模型／通知，不改配額、不重送原聊天。只讀近期READY備份metadata，真還原保持延後。保留files-a12da46及受保護配置回退。
+- 新停止回覆直接保存固定原因及HTTP代碼；不回寫舊訊息，不宣稱Google可用性已修復。證據及限制見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。

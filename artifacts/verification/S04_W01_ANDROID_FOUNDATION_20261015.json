@@ -511,7 +511,28 @@
         "remainingCheck": "passed"
       }
     ],
-    "deployment": "pending",
+    "deployment": {
+      "at": "2026-10-18T11:26:29.995Z",
+      "source": "2aa14422ebb5fd59f8dd5e91f7571f5fbe08eb04",
+      "image": "yuban-firestore-api:error-2aa1442",
+      "imageId": "sha256:d0435f5fac638461858d2be2f0df6ff66665c6d2c9e1e0f7e962bf2f4f1178e0",
+      "candidate": "Three-file hash verified, offline import and fixed error mapping passed",
+      "apiWorker": "healthy",
+      "publicHealth": "ok / firestore",
+      "webUnchanged": "files-c4ac1b9",
+      "apkUpdateRequired": false,
+      "modelCalls": 0,
+      "notifications": 0,
+      "quotaChanged": false,
+      "databaseMigration": false,
+      "backupMetadata": "2026-10-17T22:05:22.757057Z READY; restore remains deferred",
+      "rollback": "Retained files-a12da46 image and protected compose.env.before-error-2aa1442",
+      "preActivationStops": [
+        "Upload denied before execution: new private payload required approval; user explicitly approved this exact transfer and original-site update",
+        "Local delivery helper referenced old attachment check log; activation had not started; corrected only the candidate check path, then activated"
+      ],
+      "oldMessagesRewritten": false
+    },
     "limits": "Does not prove provider recovery or complete Android acceptance."
   }
 }

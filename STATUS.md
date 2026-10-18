@@ -11,13 +11,15 @@
 - **使用者明確延後：原生每日備份首份核對及一次隔離還原。** 每日 14 天排程、還原入口及測試保留，尚無真原生還原證據；不阻塞本次合併與功能使用。後續只見 [PLAN 待驗入口](PLAN.md#p2-backup-followup)，不持續輪詢或重跑既有驗收。配對備份與 F02～F07 證據保持分開；結果、失敗與限制見 [F08 EV](artifacts/verification/F08_ORIGINAL_SITE_20261013.json)。
 - **當前工作：**[S12-W05](PLAN.md#s12-w05)通用附件及首頁快捷入口已部署原站API／worker／Web；同一合成Word的真Storage保存、讀取與清理已核，原腳本失敗保留。Android相容OTA亦已發布，毋須新APK；Android相機開啟／取消與Word草稿選取／移除已核；原生預聽修正版已觀察到播放進度；一則指定FCM已由渠道接受並在手機顯示。Web選檔／兩端下載、首條真人聊天、跨端播放、照護通知目標／完成停止、跨端接續、OTA回退及draft #229／#234～#239依賴合併仍待完成。新版APK v2已獲使用者確認正常開啟、原資料保留；既有鍵盤輸入可見及回位證據不擴成全部真機通過。Android成品後先報告並停下；本人key／自選模型／限額及本地Agent入口等使用者另行定案，iOS暫緩，#214～#216不接管。
 
-- **聊天故障核對：**2026-10-18使用者表示昨天正常、今天暫不能提供。限定日誌確認Google模型服務回傳504，非本站每日用量上限；安全錯誤碼及固定原因已接入停止回覆，兩項針對性本機檢查通過，原站部署待完成。不自動重送或擴大配額。
+- **聊天故障核對：**2026-10-18使用者表示昨天正常、今天暫不能提供。限定日誌確認Google模型服務回傳504，非本站每日用量上限；安全錯誤碼及固定原因已接入停止回覆，兩項針對性本機檢查通過，原站已部署error-2aa1442，API／worker健康；新停止回覆直接顯示原因，舊聊天不回寫。不自動重送或擴大配額。
 
 - **操作範圍：**主模型實作及 review；最新使用者授權可用 Luna 按規則唯讀定位。只做最低必要檢查，局部讀取或日誌尾部，不全量、Computer Use 或重做前端設計；手機 gate 待驗時繼續獨立工作。
 - 前端依 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；本人模型 key／限額仍為可選，平台基本 AI 不要求家長提供 key。未改 UI 設計。
 
 <a id="deployment"></a>
 ## 最後部署觀察（非即時狀態）
+
+**2026-10-18 11:26 UTC 錯誤回報更新：**API／worker為`error-2aa1442`（映像`d0435f5`），兩者健康，公開`/api/health`返回ok／firestore；Web仍`files-c4ac1b9`，APK不變。只更新三個程式檔，沒有遷移、模型／通知或配額變更；保留`files-a12da46`及受保護Compose回退副本。原因分類及本機驗證不等於Google服務已恢復，首條真人聊天仍由使用者核對。詳見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
 
 **2026-10-18 10:20 UTC 附件更新：**API／worker為`files-a12da46`、Web為`files-c4ac1b9`，全部健康且公開HTML hash一致；原配額、正式資料、通知設定及VM期限不變。保留前版映像和受保護Compose副本；新附件已寫入後的回退必須保留其reader／清理能力。只核最近READY備份metadata，原生真還原仍延後；詳見[附件EV](artifacts/verification/S12_CHAT_FILES_20261018.json)。 Android OTA群組`a8c6bf35-1b67-42ea-9c41-cf7c0ec896a6`已發布，與已安裝APK v2 runtime一致；真機重開後已接收，Android文件草稿入口已核；其後原生音訊修正版0f0144a相容OTA群組`cb625df0-92fc-4a10-a14d-250d2a4689ca`已發布，4秒錄音預聽前進至1秒並已丟棄。使用者親自授予通知權限；唯一指定FCM測試已在手機顯示，未重發、未呼叫模型。原失敗與未驗界線見S12／[S13 EV](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)，不宣稱整體Android完成。
 
