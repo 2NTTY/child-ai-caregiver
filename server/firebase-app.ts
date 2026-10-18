@@ -1,3 +1,4 @@
+import { handleFirebaseChatFileRequest, type FirebaseChatFileApiPort } from './firebase-chat-files-api.ts';
 import { handleFirebaseVoiceRequest, type FirebaseVoiceApiPort } from './firebase-voice-api.ts';
 import { requestOriginAllowed } from "./request-auth-transport.ts";
 import { handleAdminRequest } from './admin-api.ts';
@@ -70,6 +71,7 @@ export interface FirebaseRequestHandlerOptions {
   documents?: FamilyDocumentStore;
   photos?: FirebasePhotoApiPort;
   voice?: FirebaseVoiceApiPort;
+  files?: FirebaseChatFileApiPort;
   photoAgent?: PhotoAgent;
   accountData?: FirebaseAccountDataPort;
   library?: Pick<PersonalLibrary, "page">;
@@ -242,6 +244,13 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const response = await handleSharedInputRequest(request, userId, options.sources, { service: options.sourceService, isCurrentUser });
         if (!await isCurrentUser()) throw new RequestError('identity_changed', 409);
         return uncached(response);
+      }
+      if (options.files && /^\/api\/children\/[^/]+\/files(?:\/|$)/u.test(path)) {
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
+        return uncached(await handleFirebaseChatFileRequest(request, userId, options.files, isCurrentUser));
       }
       if (options.voice && /^\/api\/children\/[^/]+\/voices(?:\/|$)/u.test(path)) {
         if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);

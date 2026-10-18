@@ -56,6 +56,8 @@
     "firebase-functions": "7.4.0",
     "google-auth-library": "10.9.1",
     "grammy": "1.46.0",
+    "jszip": "3.10.2",
+    "mammoth": "1.13.0",
     "mediabunny": "1.61.5",
     "pdfjs-dist": "6.4.299",
     "react": "19.2.3",

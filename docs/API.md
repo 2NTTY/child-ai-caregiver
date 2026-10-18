@@ -985,3 +985,13 @@ OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 P
 - 一個 token 同時只有一個有效身份綁定；不同帳號不得搶佔仍有效的裝置會話。舊會話已撤銷／過期後才可原子轉移，舊綁定同步撤銷。正式投遞及聯絡均重新核對會話，token 更改後不沿舊 token 發送或誤撤銷新 token。
 - `GET /api/native-push/open?reference=<JSON>`：只接受固定 reference，核對目前原生會話、綁定版本、原投遞及孩子權限後，回傳 `test` 或已授權 `care` 的資源關聯。純查回，不確認收到、不完成待辦；前端仍遵守身份切換與未提交草稿守衛。
 - 原生聯絡渠道為 `native_push`，共用本人同意、任務授權、安靜時段及終態服務；通知歷史保留相容游標，原生投遞只有真實 metadata。還原撤銷原生綁定、捨棄 token pointer，未完成投遞停止／保留 unknown，不藉還原重新投遞。
+
+
+<a id="chat-file-api"></a>
+### S12 共用聊天檔案附件
+
+通用檔案使用 `/api/children/:childId/files`，身份、同源及 `x-expected-user-id` 與現有媒體端口相同。POST 帶原 `opId`、檔名、MIME、bytes、SHA-256 預留；GET `/:id` 查回；POST `/:id/content` 帶 `expectedVersion`／base64；POST `/:id/resolve` 只核原物件；GET `/:id/content` 經當前授權下載原檔；POST `/:id/delete` 帶原 `opId`／`expectedVersion`。上限每則一份20 MiB，檔案可保存不代表內容可解析，發布狀態以 [S12-W05](../PLAN.md#s12-w05) 為準。
+
+聊天提交可帶 `file: {id, expectedVersion}`，可附文字，不能與 `voice` 同時帶入。ready、目前本人／孩子及未綁定條件在同一交易核對，再連回唯一訊息；回傳不可變ID、版本、hash、大小及格式，不複製檔案正文。下載固定 attachment／octet-stream、nosniff、private no-store；不將任意HTML或其他檔案當頁面執行。
+
+畫面只顯示檔名、大小、「不支援預覽」及實際上傳狀態，不預先標成「尚未讀取內容」。內容閱讀另返回抽取文字、原檔hash、已讀範圍與續讀位置；PDF保留頁碼。只在實際抽取後回報格式不支援、受保護／損壞、無可讀文字或容量限制；不能把片段、文字抽取或沒有預覽當作已完整理解圖片及版面。

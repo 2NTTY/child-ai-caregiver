@@ -756,3 +756,11 @@ API／worker 從同一政策建立新 run 快照，舊 run 保留模型／預算
 `native_push_bindings` 保存同一裝置授權的 ID／version、token revision及密文 token／session hash；可查 metadata 僅供授權索引與有界列表，不把 token 放入收據、匯出或產品日誌。`native_push_tokens` 是確定 hash 的唯一佔位，必須驗證原身份／世代和會話狀態後才可轉移。`native_push_deliveries` 保存一般測試的單次嘗試及真實結果；照護提醒仍使用既有 `contact_requests`，不新增另一份任務。
 
 收據、版本、變更與 outbox 沿 Firestore 同一交易。裝置會話讀取參與登記／發送前的交易；外發仍在交易外。備份／刪除 collection 清單只追加，保持原清理 cursor；隔離還原保留投遞歷史，撤銷綁定、清除 token、捨棄唯一佔位，不復活舊裝置資格或通知。
+
+
+<a id="chat-file-data"></a>
+### 共用聊天檔案
+
+`chat_file_assets` 與既有語音採相同私人儲存邊界，使用獨立的 `chat-file-asset` 加密kind、不可變 `chat-file/v1` 物件地址及generation／hash。每筆保存本人、孩子、儲存世代、原預留操作指紋、版本、上載claim、唯一messageId及刪除義務；檔名及內容metadata留在密文內。列表索引只保存必要scope與處理狀態，不把私人正文加入公共索引。
+
+檔案原件保存與可閱讀性分開；正文不進聊天document。聊天只引用原件ID／版本／hash。未知上載只查原地址，禁止換ID重送；刪除立即遮蔽metadata，先記錄獨立 `file-delete` intent，再清理固定generation。孩子／帳戶刪除、配對備份、匯出及隔離還原須同樣承接該義務；相關組裝未接好前不得開放正式上載。
