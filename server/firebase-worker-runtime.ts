@@ -43,7 +43,7 @@ export async function openFirebaseWorkerRuntime(env: Record<string, string | und
     backgroundDelivery = createFirebaseBackgroundDelivery({ ...workerConfig, workerUrl: workerConfig.workerOrigin + '/internal/product-work' });
     const dispatcher = createFirestoreTaskDispatcher({ ...options, delivery });
     const maintenance = createFirestoreBackgroundMaintenance({ ...options, knowledge: runtime.knowledgeRefresh,
-      journal: runtime.journal, photos: runtime.photos, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
+      journal: runtime.journal, photos: runtime.photos, voices: runtime.voices, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
     const background = createFirestoreBackgroundQueue({ ...options, readControl: tx => authority.readControl(tx),
       transport: backgroundDelivery, signal: controller.signal,
       async execute(job, signal) {

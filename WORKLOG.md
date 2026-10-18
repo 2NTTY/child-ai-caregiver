@@ -2914,3 +2914,12 @@
 - 語音預留／刪除接共用原操作收據；轉錄及音訊匯出核對目前來源，刪除即遮蔽並清理音訊及轉錄 session／正文。清理排程及帳戶刪除 port 已準備，正式 runtime／owner 及配對恢復尚未開放。
 - 同一合成流程加入背景工作、轉錄讀回、防重及刪除匯出；首次失敗分別為測試時鐘從 epoch zero 開始、替身缺 SDK document.get，修正同一入口後通過；六個受影響型別入口零診斷。沒有真模型、雲端、手機或通知，不重跑全量。[同包證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)。
 - 下一步完成備份恢復、搜尋及正式接線；真語音理解與手機仍待驗。S12 未完成、未部署。
+
+
+## LOG-20261018-S12-VOICE-INTEGRATION
+
+- 接續 64ec851 及額度中斷的未提交成果，保留原 master／協作者 PR。正式 API／worker、共用上傳 owner、原 ChatController／操作收據已接語音；轉錄搜尋不改寫原聊天，長內容續讀綁定 contentVersion；聊天與歷史使用同一授權播放／定位接點。未送出錄音 24 小時沿持久刪除屏障清理，已綁定訊息不受影響。
+- 配對密文備份及原生 retained-object reader 復用原照片的 generation／暫停／獨立日誌保障；voice-delete 在隔離恢復前重放，清理保留原物件範圍，不恢復未知轉錄為成功。新增三個查詢索引及私密欄位排除僅準備，未套用。
+- 必要本機檢查復用同一語音情景，補搜尋／續讀、刪除、恢復及到期；共用 owner 只補一次原操作及身份切換檢查，retained-media／密文備份共三項。首次錯誤與修正保留於[證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)，沒有全量、真模型、雲端驗收、通知、手機或新 APK。受影響型別零診斷；真語音品質／跨端真機及真原生備份還原仍未驗。
+- 使用者批准主機續期五天；原 VM 因到期已停止，已恢復至 2026-10-23 13:33:50 香港時間，API／worker 健康、公開健康檢查 Firestore 正常；仍使用 admin-8ba66e7，沒有部署語音。[續期證據](artifacts/verification/VM_RENEWAL_20261018.json)。
+- S12 尚未完成，依賴 PR／手機 gate 保留；使用者不在時保留待驗，繼續可獨立完成的工作。按當次指示主模型完成，無子代理。

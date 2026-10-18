@@ -8,7 +8,8 @@ export class VoiceApiError extends Error {
   constructor(status: number, code: string) { super('Voice operation could not be confirmed'); this.name = 'VoiceApiError'; this.status = status; this.code = code; }
 }
 export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof sha256Bytes = sha256Bytes) {
-  const base = (childId: string, id?: string) => origin + '/api/children/' + z.uuid().parse(childId) + '/voices' + (id ? '/' + z.uuid().parse(id) : '');
+  const apiRoot=origin.replace(/\/$/u,'').replace(/\/api$/u,'')+'/api';
+  const base = (childId: string, id?: string) => apiRoot + '/children/' + z.uuid().parse(childId) + '/voices' + (id ? '/' + z.uuid().parse(id) : '');
   async function request(url: string, userId: string, signal: AbortSignal, payload?: unknown) {
     if (!userId || signal.aborted) throw new VoiceApiError(0, 'identity_changed');
     let response: Response;

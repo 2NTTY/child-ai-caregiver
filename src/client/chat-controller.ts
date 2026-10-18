@@ -1,3 +1,4 @@
+import type { VoiceMessageReference } from '../shared/voice.ts';
 import { normalizeChatInput } from "./chat-input.ts";
 import type { AgentProgress, OfficialHelpId } from '../shared/agent-feedback.ts';
 import { agentStopMessage } from "../shared/agent-stop-message.ts";
@@ -8,6 +9,7 @@ type DraftPhase = "draft" | "saving" | "save_unknown" | "checked" | "replying" |
 
 export interface ChatDraft {
   text: string;
+  voice?: Pick<VoiceMessageReference,"id"|"version">;
   phase: DraftPhase;
   savedUserMessageId: string | null;
   candidateMessageId: string | null;
@@ -51,7 +53,7 @@ const SESSION_CHANGED = "登入狀態已改變，聊天內容已隱藏。請重�
 const UNKNOWN_SAVE = "這次聊天保存結果未能確認。請先重新讀取聊天核對，避免重複發送。";
 
 function emptyDraft(): ChatDraft {
-  return { text: "", phase: "draft", savedUserMessageId: null, candidateMessageId: null, notice: null, knownIds: [] };
+  return { text: "", voice: undefined, phase: "draft", savedUserMessageId: null, candidateMessageId: null, notice: null, knownIds: [] };
 }
 
 function initialState(online: boolean): ChatState {
@@ -292,7 +294,7 @@ export class ChatController {
             if (message?.childId === target && message.authorUserId === scope.userId && message.role === "user") {
               this.updateDraft(target, { phase: "reply_failed", savedUserMessageId: message.id, candidateMessageId: null,
                 notice: "Server 已確認原訊息保存；尚未要求 AI 回覆，可按需要繼續。", knownIds: [] });
-            } else this.updateDraft(target, { text: "", phase: "draft", savedUserMessageId: null, candidateMessageId: null,
+            } else this.updateDraft(target, { text: "", voice: undefined, phase: "draft", savedUserMessageId: null, candidateMessageId: null,
               notice: "Server 已確認原操作；原結果已不可用，請以最新聊天為準。", knownIds: [] });
           }
         }
@@ -319,7 +321,7 @@ export class ChatController {
       } else this.update({ remoteReply: null, replyError: null });
       const draft = this.state.drafts[childId];
       if (draft?.savedUserMessageId && page.messages.some(item => item.role === "model" && item.inReplyTo === draft.savedUserMessageId)) {
-        this.updateDraft(childId, { text: "", phase: "draft", savedUserMessageId: null,
+        this.updateDraft(childId, { text: "", voice: undefined, phase: "draft", savedUserMessageId: null,
           notice: "已在聊天記錄找到 AI 回覆。", knownIds: [] });
       }
       if (draft?.phase === "save_unknown" || draft?.phase === "checked") {
@@ -328,7 +330,7 @@ export class ChatController {
             notice: "原操作尚無確認。可以保留相同原文重試，系統會沿用原識別；不會按文字相同猜測已保存。" });
         } else {
         const matches = page.messages.filter(item => item.role === "user" && item.authorUserId === scope.userId
-          && item.text === draft.text && !draft.knownIds.includes(item.id));
+          && item.text === draft.text && item.voice?.id === draft.voice?.id && !draft.knownIds.includes(item.id));
         if (matches.length === 1) {
           this.updateDraft(childId, { phase: "checked", candidateMessageId: matches[0].id,
             notice: "找到一則相同原文的新訊息。請核對下方聊天記錄，確認是否屬於這次提交。" });
@@ -452,7 +454,7 @@ export class ChatController {
         ? this.state.messages : [...this.state.messages, reply];
       this.update({ messages, replyError: null });
       if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
-        this.updateDraft(childId, { text: "", phase: "draft", savedUserMessageId: null,
+        this.updateDraft(childId, { text: "", voice: undefined, phase: "draft", savedUserMessageId: null,
           notice: "聊天已保存，AI 已回覆。", knownIds: [] });
       }
     } catch (error) {
@@ -473,7 +475,7 @@ export class ChatController {
           const saved = page.messages.find(item => item.role === 'model' && item.inReplyTo === messageId);
           if (saved) {
             this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved], replyError: null });
-            if (this.state.drafts[childId]?.savedUserMessageId === messageId) this.updateDraft(childId, { text: '', phase: 'draft', savedUserMessageId: null, notice: '已查回原回覆，沒有重新執行。', knownIds: [] });
+            if (this.state.drafts[childId]?.savedUserMessageId === messageId) this.updateDraft(childId, { text: '', voice: undefined, phase: 'draft', savedUserMessageId: null, notice: '已查回原回覆，沒有重新執行。', knownIds: [] });
             return;
           }
           notice = original === 'running' ? '連線中斷；原運行仍在處理。請稍後重新讀取，沒有重新執行。' : '已核對原運行，聊天回覆尚未讀到。請重新讀取原結果，沒有重新執行。';
@@ -501,7 +503,13 @@ export class ChatController {
     }
   }
 
-  async send(): Promise<void> {
+  clearUnsentVoice():boolean {
+    const childId=this.state.selectedChildId,draft=childId?this.state.drafts[childId]:null;
+    if(!childId||this.state.busy||draft&&draft.phase!=='draft'||this.api.hasPendingOnline?.())return false;
+    this.updateDraft(childId,{voice:undefined});return true;
+  }
+
+  async send(voice?: Pick<VoiceMessageReference,"id"|"version">): Promise<void> {
     const childId = this.state.selectedChildId;
     if (!this.state.userId || !childId || this.state.busy || this.state.loading || !this.state.loadedAt) return;
     const draft = this.state.drafts[childId] ?? emptyDraft();
@@ -511,7 +519,7 @@ export class ChatController {
       return;
     }
     const text = normalizeChatInput(draft.text);
-    if (!text.trim() || draft.text.length > 10_000) {
+    if (!text.trim() && !voice && !draft.voice || draft.text.length > 10_000) {
       this.updateDraft(childId, { notice: "請輸入 1 至 10,000 個字元的訊息。" });
       return;
     }
@@ -519,9 +527,9 @@ export class ChatController {
     this.update({ busy: "save", replyError: null });
     try {
       if (!await this.verifyIdentity(scope)) return;
-      this.updateDraft(childId, { text, phase: "saving", notice: null, candidateMessageId: null,
+      this.updateDraft(childId, { text, voice: draft.voice ?? voice, phase: "saving", notice: null, candidateMessageId: null,
         knownIds: this.state.messages.map(item => item.id) });
-      const saved = await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId);
+      const saved = await this.api.saveMessage(childId, text, scope.controller.signal, scope.userId, draft.voice ?? voice);
       if (!this.current(scope)) return;
       this.updateDraft(childId, { phase: "reply_failed", savedUserMessageId: saved.id, candidateMessageId: null,
         notice: "聊天已獲 Server 保存確認；尚未要求 AI 回覆。" });
@@ -606,7 +614,7 @@ export class ChatController {
     if (!candidate) return;
     const replied = this.state.messages.some(item => item.role === "model" && item.inReplyTo === messageId);
     this.updateDraft(childId, replied
-      ? { text: "", phase: "draft", savedUserMessageId: null, candidateMessageId: null,
+      ? { text: "", voice: undefined, phase: "draft", savedUserMessageId: null, candidateMessageId: null,
         notice: "已確認聊天訊息及 AI 回覆。", knownIds: [] }
       : { phase: "reply_failed", savedUserMessageId: messageId, candidateMessageId: null,
         notice: "已確認聊天訊息已保存，可要求 AI 回覆。" });

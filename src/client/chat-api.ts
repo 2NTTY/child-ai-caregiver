@@ -1,3 +1,4 @@
+import { voiceMessageReferenceSchema, type VoiceMessageReference } from '../shared/voice.ts';
 import { officialHelpIdSchema, type AgentProgress } from '../shared/agent-feedback.ts';
 import { readAgentFeedback } from './agent-feedback-reader.ts';
 import type { ChatMessage, ChatPage, ChatReplyState } from "../shared/chat.ts";
@@ -42,7 +43,7 @@ export interface ChatApi {
   getSession(signal: AbortSignal): Promise<SessionUser | null>;
   listMessages(childId: string, signal: AbortSignal, before?: string | null): Promise<ChatPage>;
   cancelReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<boolean>;
-  saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string): Promise<ChatMessage>;
+  saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string, voice?: Pick<VoiceMessageReference,"id"|"version">): Promise<ChatMessage>;
   requestReply(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string, onProgress?: (event: AgentProgress) => void): Promise<ChatMessage>;
   getOriginalReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<ChatReplyState | null>;
   getReplyState?(childId: string, runId: string, signal: AbortSignal, expectedUserId: string): Promise<"running" | "completed" | "stopped" | "unknown">;
@@ -67,6 +68,7 @@ function message(value: unknown): value is ChatMessage {
     && (value.role === "user" || value.role === "model")
     && (value.agentRunId === undefined || id(value.agentRunId))
     && (value.officialHelp === undefined || Array.isArray(value.officialHelp) && value.officialHelp.length <= 2 && value.officialHelp.every(card => officialHelpIdSchema.safeParse(card).success))
+    && (value.voice === undefined || value.role === "user" && voiceMessageReferenceSchema.safeParse(value.voice).success)
     && typeof value.text === "string"
     && (value.inReplyTo === null || id(value.inReplyTo))
     && typeof value.createdAt === "string" && Number.isFinite(Date.parse(value.createdAt))
@@ -164,10 +166,11 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
       if (!object(value) || typeof value.accepted !== "boolean") throw new ChatApiError();
       return value.accepted;
     },
-    async saveMessage(childId, text, signal, expectedUserId) {
-      const value = await onlineCall(signal, outerSignal => online.submit({ path: `/api/children/${encodeURIComponent(childId)}/messages`, payload: { text } }, outerSignal, expectedUserId));
+    async saveMessage(childId, text, signal, expectedUserId, voice) {
+      const value = await onlineCall(signal, outerSignal => online.submit({ path: `/api/children/${encodeURIComponent(childId)}/messages`, payload: { text, ...(voice ? {voice:{id:voice.id,expectedVersion:voice.version}} : {}) } }, outerSignal, expectedUserId));
       if (!object(value) || !message(value.message) || value.message.childId !== childId
-        || value.message.role !== "user" || value.message.authorUserId !== expectedUserId || value.message.text !== text) {
+        || value.message.role !== "user" || value.message.authorUserId !== expectedUserId || value.message.text !== text
+        || (voice ? value.message.voice?.id !== voice.id || value.message.voice.version !== voice.version + 1 : !!value.message.voice)) {
         throw new ChatApiError();
       }
       return value.message;

@@ -53,7 +53,7 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
   }
   function envelope(row: FirestoreVoiceRow) {
     return { ...data.tags(row.scope), scopeTag: scopeTag(row.scope), assetId: row.id, state: row.state,
-      createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId, cleanupState: row.deletion?.cleanup ?? null, cleanupAt: row.deletion?.nextCheckAt ?? null,
+      createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId, cleanupState: row.deletion?.cleanup ?? (row.messageId === null ? 'unlinked' : null), cleanupAt: row.deletion?.nextCheckAt ?? null,
       ...data.seal("voice-asset", row.id, row.scope, firestoreVoiceRowSchema, row, row.version) };
   }
   function current(row: FirestoreVoiceRow) { if (["deleting", "deleted"].includes(row.state)) domainReject("voice_deleted", 410); }
@@ -202,6 +202,22 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     const deleted = await finishDeletion(prepared);
     return { operationId, deleted: true as const, cleanupPending: deleted.deletion!.cleanup !== 'complete' };
   }
+  async function expireUnlinked(scope: WorkRecoveryScope, id: string) {
+    domainParse(workRecoveryScopeSchema, scope); domainParse(uuid, id);
+    const pending = await options.database.runTransaction(async tx => {
+      if (!(await authority.readControl(tx)).enabled) return null;
+      const row = open(await tx.get(ref(id)), scope, id);
+      if (row.deletion) return row;
+      if (row.messageId || clock() < Date.parse(row.createdAt) + 86400_000) return null;
+      const { bytes, sha256, mimeType } = row.metadata!;
+      const intent: FirebaseErasureIntent = { type:'voice-delete',scope:row.objectScope,assetId:id,operationId:randomUUID(),at:now() };
+      const updated: FirestoreVoiceRow = { ...row,version:row.version+1,state:'deleting',metadata:null,updatedAt:now(),
+        deletion:{intent,proof:null,expectedVersion:row.version,integrity:{bytes,sha256,mimeType},cleanup:'pending',attempts:0,nextCheckAt:now()} };
+      tx.set(ref(id),envelope(updated));return updated;
+    });
+    if (pending) await finishDeletion(pending);
+    return pending !== null;
+  }
   async function cleanupDeleted(scope: WorkRecoveryScope, id: string) {
     domainParse(workRecoveryScopeSchema, scope); domainParse(uuid, id);
     let row = await options.database.runTransaction(async tx => open(await tx.get(ref(id)), scope, id));
@@ -303,7 +319,7 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     });
     return { ...value, attachment: view(row) };
   }
-  return { reserve, upload, reconcile, content, prepareLink, agentAudio, readEvidence, delete: deleteVoice, cleanupDeleted, eraseForScope,
+  return { reserve, upload, reconcile, content, prepareLink, agentAudio, readEvidence, delete: deleteVoice, cleanupDeleted, expireUnlinked, eraseForScope,
     readMetadata: async (b: FirestoreAuthorityTransaction, id: string) => view(await read(b,id)),
     get(userId: string, childId: string, id: string) { return authority.runTransaction(userId, childId, async b => view(await read(b, id))); } };
 }

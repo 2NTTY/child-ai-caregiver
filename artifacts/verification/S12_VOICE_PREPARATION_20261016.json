@@ -124,12 +124,81 @@
   "notifications": 0,
   "deviceActions": 0,
   "limitations": [
-    "No native recording/permission/playback evidence",
-    "No new APK/OTA/build",
-    "Runtime voice and UI send owner remain unmounted",
-    "Late-upload/delete race implementation awaits focused evidence",
-    "Real model voice quality remains pending",
-    "Agent audio has synthetic assembly evidence only; real speech understanding remains unverified",
-    "Scheduler and account-erasure ports prepared but not mounted; paired backup/restore, transcript search and formal owner remain pending; production voice stays disabled"
-  ]
+    "All native recording/permission/playback and real-model voice quality remain unverified",
+    "No new APK, OTA or voice deployment",
+    "In-branch production runtime/owner is wired; online site still runs admin-8ba66e7",
+    "Private query indexes are prepared locally, not applied",
+    "Real cloud backup/restore remains deferred; synthetic recovery is not equivalent"
+  ],
+  "continuation20261018": {
+    "baseCommit": "64ec851377049293a72e54dfe108d6855522d35a",
+    "remoteMaster": "d4686b7ff864642aaa964ca3adae9d64b52b6fa5",
+    "implemented": [
+      "Production API/worker voice services, common owner and recording send",
+      "Persisted transcript search and fixed-content-version continuation",
+      "Shared authenticated playback and segment seek",
+      "Independent deletion journal, paired encrypted backup and isolated recovery planning",
+      "Abandoned unlinked upload cleanup after 24 hours; linked messages retained",
+      "Three explicit voice query indexes and private-field exclusions prepared, not applied"
+    ],
+    "checks": [
+      {
+        "kind": "same-lifecycle-restore",
+        "passed": 1,
+        "durationMs": 656.5401,
+        "priorFailures": [
+          "Duplicate local variable in test",
+          "Restore metadata omitted voice fields and existing summaryPending"
+        ],
+        "correction": "Use existing test scope and authenticate the required metadata fields"
+      },
+      {
+        "kind": "affected-retained-media-and-paired-backup",
+        "passed": 3,
+        "durationMs": [
+          6.8045,
+          1.0308,
+          253.3186
+        ],
+        "scope": "Pinned recovery, independent journal refusal, same-address lost backup acknowledgement and new-epoch copy"
+      },
+      {
+        "kind": "same-lifecycle-search-and-continuation",
+        "passed": 1,
+        "durationMs": 988.513
+      },
+      {
+        "kind": "shared-upload-owner",
+        "passed": 1,
+        "durationMs": 2.1794,
+        "scope": "Original ID, uncertain upload lookup without resend, late response after identity switch"
+      },
+      {
+        "kind": "same-lifecycle-expiry",
+        "passed": 1,
+        "durationMs": 795.7083,
+        "initialFailure": "Expiry assertion accidentally ran after the linked source was already deleted",
+        "correction": "Check linked-source retention before deletion, then expire the unlinked reservation; no weakened product assertion"
+      },
+      {
+        "kind": "affected-types",
+        "serverRoots": 8,
+        "frontendRoots": 3,
+        "diagnostics": 0,
+        "scope": "Production owner/chat screen and personal history UI; server runtime/restore roots"
+      }
+    ],
+    "realModelCalls": 0,
+    "cloudTestCalls": 0,
+    "deviceActions": 0,
+    "notifications": 0,
+    "deployed": false,
+    "pending": [
+      "Native microphone/codec/playback and cross-device representative voice quality",
+      "New APK for native dependencies; no OTA or binary upload this continuation",
+      "Apply prepared indexes with the compatible API/worker release",
+      "Real native backup restore remains explicitly deferred",
+      "Review final deployment footprint and dependency PR gates before enabling the released UI"
+    ]
+  }
 }

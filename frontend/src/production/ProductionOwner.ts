@@ -1,3 +1,6 @@
+import { createVoiceApi, type VoiceApi } from '../../../src/client/voice-api.ts';
+import { VoiceUploadController } from './VoiceUploadController';
+import { photoSha256 } from '../platform/photo-bytes';
 import { publishOnlineRefresh } from "../../../src/client/online-refresh-events.ts";
 import type { ProductionTransport } from "./production-transport";
 import { createAccountApi } from "../../../src/client/account-api";
@@ -35,6 +38,9 @@ export class ProductionOwner {
   readonly draftOwner = createAssistantDraftOwner();
   readonly controller: RecordsController;
   readonly chatController: ChatController;
+  readonly voiceApi: VoiceApi;
+  readonly voiceOwner: VoiceUploadController;
+  private unsubscribeVoice: (()=>void)|null=null;
   readonly agentOwner: ProductAgentOwner;
   readonly authorizationOwner: AgentAuthorizationOwner;
   readonly accountOwner: AccountServiceOwner;
@@ -44,7 +50,7 @@ export class ProductionOwner {
     if (pending) this.domainPending.add(key); else this.domainPending.delete(key);
     this.syncMutationLocks(); this.snapshot = this.project(); this.emit();
   };
-  hasDomainPending = () => this.domainPending.size > 0 || Boolean(this.accountOwner?.hasPending());
+  hasDomainPending = () => this.domainPending.size > 0 || Boolean(this.accountOwner?.hasPending()) || !!this.voiceOwner?.getSnapshot().busy || !!this.voiceOwner?.getSnapshot().unknown;
   handleDomainAccessError = (error: { status?: number; code?: string | null }) => {
     if (error.status === 401 || error.code === "session_changed" || error.code === "unauthorized") void this.controller.restoreSession();
     else if (error.status === 403 || error.code === "access_denied") this.denySelectedChild();
@@ -100,6 +106,8 @@ export class ProductionOwner {
       try { return await recordsApi.getSession(signal); }
       catch (error) { if (!signal.aborted) void this.controller.restoreSession(); throw error; }
     }, this.fetcher), online);
+    this.voiceApi = createVoiceApi(this.fetcher,this.apiBaseUrl,photoSha256);
+    this.voiceOwner = new VoiceUploadController(this.voiceApi,photoSha256,this.handleDomainAccessError);
     const queries = withRecordsQueries(recordsApi, this.queryClient, () => ({ identityKey: this.identity,
       scopeKey: this.scopeKey(), childId: this.controller.getSnapshot().selectedChildId }));
     const childEvent = (action: () => void) => { this.syncingChat = true; try { action(); } finally { this.syncingChat = false; } };
@@ -118,6 +126,7 @@ export class ProductionOwner {
     this.unsubscribeAccount = this.accountOwner.subscribe(this.accountChanged);
     this.unsubscribeAgent = this.agentOwner.subscribe(() => this.syncMutationLocks());
     this.unsubscribeAuthorization = this.authorizationOwner.subscribe(() => this.syncMutationLocks());
+    this.unsubscribeVoice = this.voiceOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
     this.unsubscribe = this.controller.subscribe(() => this.sync());
     this.unsubscribeChat = this.chatController.subscribe(() => this.chatChanged());
   }
@@ -207,6 +216,7 @@ export class ProductionOwner {
         void this.queryClient.cancelQueries({ queryKey: ["production", this.snapshot.scopeKey] });
         this.queryClient.removeQueries({ queryKey: ["production", this.snapshot.scopeKey] });
       }
+      this.voiceOwner.syncContext(nextScope && userId && raw.selectedChildId ? {key:nextScope,userId,childId:raw.selectedChildId}:null,raw.online);
       this.draftOwner.retainScope(nextScope);
       this.chatController.syncContext(userId, raw.online, nextScope ? raw.selectedChildId : null);
       this.agentOwner.syncContext(nextScope && userId && raw.selectedChildId
@@ -255,6 +265,7 @@ export class ProductionOwner {
   };
   connect() {
     if (this.unsubscribe) return;
+    this.unsubscribeVoice = this.voiceOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
     this.unsubscribe = this.controller.subscribe(() => this.sync());
     this.unsubscribeChat = this.chatController.subscribe(() => this.chatChanged());
     this.unsubscribeAccount = this.accountOwner.subscribe(this.accountChanged);
@@ -265,6 +276,7 @@ export class ProductionOwner {
     this.unsubscribe?.(); this.unsubscribe = null; this.unsubscribeChat?.(); this.unsubscribeChat = null;
     this.unsubscribeAgent?.(); this.unsubscribeAgent = null; this.unsubscribeAuthorization?.(); this.unsubscribeAuthorization = null;
     this.unsubscribeAccount?.(); this.unsubscribeAccount = null;
+    this.unsubscribeVoice?.(); this.unsubscribeVoice=null; this.voiceOwner.dispose();
     this.adminOwner.dispose(); this.accountOwner.dispose(); this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();
     void this.queryClient.cancelQueries(); this.queryClient.clear(); this.listeners.clear();
   }

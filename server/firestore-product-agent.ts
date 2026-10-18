@@ -49,7 +49,8 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   if (typeof manifest.version !== 'string' || !/^\d+\.\d+\.\d+$/u.test(manifest.version)) throw new Error('Invalid prompt manifest');
   const promptPackVersion = manifest.version;
   const routing = createFirestoreModelRouting(options, options.config);
-  const services = createFirestoreProductAgentStore({ ...options, async validateKnowledge(binding, sourceId) {
+  const voiceTranscripts = options.voices ? createFirestoreVoiceTranscripts({ ...options, voices: options.voices }) : undefined;
+  const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, async validateKnowledge(binding, sourceId) {
     if (!options.knowledge) domainReject('knowledge_not_ready', 503);
     await options.knowledge.validatePublishedSource(binding.transaction, sourceId);
   }, async continuationKnowledge(b, ids) {
@@ -92,7 +93,6 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
     { async embed() { throw new AgentStopped('unavailable'); } });
   const agent = createProductAgent({ runtime, store: services.store, actions: services.actions, voices: options.voices,
     chat: options.chat, memory: options.memory, summary: options.summary, tasks: options.online.tasks, documents: options.documents, sources: options.sources, concerns: options.concerns, growth: options.growth, contact: options.contact, knowledge });
-  const voiceTranscripts = options.voices ? createFirestoreVoiceTranscripts({ ...options, voices: options.voices }) : undefined;
   const transcribeVoice = voiceTranscripts && options.voices ? createVoiceTranscription({ store: voiceTranscripts, voices: options.voices, runtime }) : undefined;
   return { ...services, routing, runtime, agent, voiceTranscripts, transcribeVoice, maintainSummary: createPrivateSummaryMaintenance({ memory: options.memory, store: services.store, runtime }) };
 }

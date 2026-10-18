@@ -34,7 +34,7 @@ const knowledgePeriod = (weekly: boolean, now = Date.now()) => {
 /** One Scheduler wake reconciles bounded pages. No interval, source model, private context, or provider send lives here. */
 export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOptions & {
   journal?: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>;
-  voices?: Pick<FirestoreVoiceStore, 'cleanupDeleted'>;
+  voices?: Pick<FirestoreVoiceStore, 'cleanupDeleted' | 'expireUnlinked'>;
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'>;
   erasures: FirestoreErasureStore; cleanup: ReturnType<typeof createFirestoreErasureCleanup>;
@@ -76,11 +76,12 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
     }
     if (stage === 'voice_assets') {
       const info=open(row,'voice-asset',firestoreVoiceRowSchema), voice=info.value;
-      if(!voice.deletion||voice.deletion.cleanup!=='pending'||Date.parse(voice.deletion.nextCheckAt??'')>Date.now())return;
+      if(voice.deletion ? voice.deletion.cleanup!=='pending'||Date.parse(voice.deletion.nextCheckAt??'')>Date.now()
+        : voice.messageId!==null||Date.parse(voice.createdAt)+86400_000>Date.now())return;
       await options.database.runTransaction(async tx=>{
         const control=await authority.readControl(tx);if(!options.enabled||!control.enabled)return;
         const fresh=await tx.get(row.ref);if(!fresh.exists||firestoreDomainHash(fresh.data())!==firestoreDomainHash(row.data()))return;
-        const identity={kind:'voice-cleanup' as const,scope:SYSTEM,resourceId:row.id,basis:firestoreDomainHash(info.id),generation:control.generation,authorizationVersion:'0'};
+        const identity={kind:'voice-cleanup' as const,scope:SYSTEM,resourceId:row.id,basis:firestoreDomainHash([info.id,voice.deletion?'delete':'expiry']),generation:control.generation,authorizationVersion:'0'};
         const wake=voice.descriptor?await prepareObjectCleanupWake(data,tx,identity,firestoreDomainHash(voice.descriptor)):()=>{};
         const work=await prepareFirestoreBackgroundWork(data,tx,identity,new Date().toISOString());work.commit();wake();
       });return;
@@ -136,7 +137,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
     }
     for (const stage of stages) {
       let q: Query = data.collection(stage).orderBy(FieldPath.documentId()).limit(5);
-      if (stage === 'voice_assets') q = q.where('cleanupState','==','pending');
+      if (stage === 'voice_assets') q = q.where('cleanupState','in',['pending','unlinked']);
       if (stage === 'content_erasures') q = q.where('stage', 'in', ['revisions', 'receipts']);
       if (stage === 'context_versions') q = q.where('summaryPending', '==', true);
       if (stage === 'work_watches') q = q.where('enabled', '==', true);
@@ -204,7 +205,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       if(!options.voices)domainReject('voice_cleanup_unavailable',503);
       const row=await data.collection('voice_assets').doc(job.resourceId).get();if(!row.exists)return{state:'completed' as const};
       const voice=open(row,'voice-asset',firestoreVoiceRowSchema).value;
-      if(!voice.deletion)domainReject('voice_delete_binding',503);
+      if(!voice.deletion && !await options.voices.expireUnlinked(voice.scope,voice.id))return {state:'completed' as const};
       const result=await options.voices.cleanupDeleted(voice.scope,voice.id);
       if(result.state==='complete')return{state:'completed' as const};
       const fresh=await row.ref.get();if(!fresh.exists)return{state:'completed' as const};

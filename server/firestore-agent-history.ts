@@ -4,7 +4,7 @@ import type { FirestoreAgentRuns } from './firestore-agent-runs.ts';
 import type { FirestoreAgentActions } from './firestore-agent-actions.ts';
 import type { FirestoreChatStore } from './firestore-chat.ts';
 import type { FirestoreMemoryStore } from './firestore-memory.ts';
-import { domainParse, domainReject } from './firestore-domain-data.ts';
+import { domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 
 const cursorSchema = z.object({ userId: z.string(), childId: z.uuid(), epoch: z.uuid(), changeSeq: z.string(),
   kind: historySearchSchema.shape.kind, query: z.string(), createdFrom: z.string().optional(), createdBefore: z.string().optional(), createdAt: z.iso.datetime({ offset: true }), id: z.uuid() }).strict();
@@ -12,8 +12,28 @@ const cursorSchema = z.object({ userId: z.string(), childId: z.uuid(), epoch: z.
 /** Bounded private search; never indexes decrypted family content in the public corpus. */
 export function createFirestoreAgentHistory(options: {
   runs: FirestoreAgentRuns; chat: FirestoreChatStore; memory: FirestoreMemoryStore; actions: FirestoreAgentActions;
+  voices?: Pick<import("./firestore-voice.ts").FirestoreVoiceStore,"readMetadata">;
+  transcripts?: Pick<ReturnType<typeof import("./firestore-voice-transcripts.ts").createFirestoreVoiceTranscripts>,"readIn">;
 }) {
   const { authority, data } = options.runs;
+  // Project the current authorized transcript without creating another writable chat copy.
+  async function content(b: import('./firestore-authority.ts').FirestoreAuthorityTransaction,
+    message: NonNullable<Awaited<ReturnType<FirestoreChatStore['readMessage']>>>) {
+    if (!message.voice) return { text: message.text };
+    let current: Awaited<ReturnType<NonNullable<typeof options.voices>['readMetadata']>> | undefined;
+    try { current = await options.voices?.readMetadata(b, message.voice.id); }
+    catch (error) {
+      // Restored deletion tombstones keep their original cleanup scope. Their message may remain readable.
+      if (!error || typeof error !== 'object' || !('status' in error) || error.status !== 404) throw error;
+    }
+    const transcript = current?.state === 'ready' ? await options.transcripts?.readIn(b, message.voice.id) : undefined;
+    const text = message.text + (transcript?.state === 'available' && transcript.content
+      ? '\n〔原錄音的自動轉錄，可能有辨識錯誤' + (transcript.content.complete ? '' : '；尚未完整覆蓋') + '〕\n'
+        + transcript.content.segments.map(segment => (segment.unclear ? '〔部分聽不清〕' : '') + segment.text).join('\n')
+      : '\n〔錄音轉錄目前不可讀；不可假定錄音內容〕');
+    return { text, voice: message.voice, contentVersion: firestoreDomainHash({ id: message.id, voice: message.voice,
+      state: current?.state ?? 'unavailable', version: transcript?.version ?? null, text }) };
+  }
   return {
     async searchHistory(userId: string, childId: string, raw: z.infer<typeof historySearchSchema>): Promise<AgentHistoryPage> {
       const input = domainParse(historySearchSchema, raw);
@@ -46,7 +66,7 @@ export function createFirestoreAgentHistory(options: {
           if (input.kind === 'message') {
             const value = await options.chat.readMessage(b, childId, id);
             if (!value || value.createdAt !== createdAt) domainReject('history_binding', 500);
-            text = value.text; version = 1; role = value.role;
+            text = (await content(b, value)).text; version = 1; role = value.role;
           } else if (input.kind === 'private_instruction') {
             const value = await options.actions.readNote(b, id);
             if (!value || value.createdAt !== createdAt) domainReject('history_binding', 500);
@@ -74,10 +94,15 @@ export function createFirestoreAgentHistory(options: {
       return authority.runTransaction(userId, childId, async b => {
         const message = await options.chat.readMessage(b, childId, input.messageId);
         if (!message) return null;
-        const end = Math.min(message.text.length, input.offset + input.limit);
+        const projected = await content(b, message);
+        if (input.contentVersion && input.contentVersion !== projected.contentVersion
+          || message.voice && input.offset > 0 && input.contentVersion !== projected.contentVersion) domainReject('version_conflict');
+        if (input.offset > projected.text.length) domainReject('invalid_input', 400);
+        const end = Math.min(projected.text.length, input.offset + input.limit);
         return { id: message.id, childId, role: message.role, version: 1, createdAt: message.createdAt,
-          text: message.text.slice(input.offset, end), offset: input.offset,
-          nextOffset: end < message.text.length ? end : null, totalCharacters: message.text.length };
+          ...(projected.voice ? { voice: projected.voice, contentVersion: projected.contentVersion } : {}),
+          text: projected.text.slice(input.offset, end), offset: input.offset,
+          nextOffset: end < projected.text.length ? end : null, totalCharacters: projected.text.length };
       });
     },
   };

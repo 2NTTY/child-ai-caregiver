@@ -6,6 +6,7 @@ import { Readable } from "node:stream";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { createVoiceObjects, VoiceObjectError } from "../server/firebase-voice-objects.ts";
 import type { FirebasePhotoBucketPort } from "../server/firebase-photo-objects.ts";
+import { createFirebaseVoiceRecovery } from "../server/firebase-voice-recovery.ts";
 import { VOICE_LIMITS } from "../src/shared/voice.ts";
 
 function wave(seconds: number) {
@@ -63,5 +64,27 @@ test("private voice storage resolves a lost upload reply at the same generation 
   assert.equal(writes, 1); assert.equal(descriptor.generation, generation);
   assert.equal((await port.read(scope, id, descriptor)).base64, wave(1));
   await assert.rejects(port.read({ ...scope, ownerUserId: "other-owner" }, id, descriptor), VoiceObjectError);
-  await port.remove(scope, id, descriptor); assert.equal(await port.inspect(scope, id), null);
+  const backupName='synthetic-independent-backups',cipher=createStorageCipher(Buffer.alloc(32,17));
+  let backupWrites=0,backupBody:Buffer|null=null,backupMeta:any;
+  const backupBucket:FirebasePhotoBucketPort={
+    async writeNew(name,body,options){backupWrites++;assert.equal(options.preconditionOpts?.ifGenerationMatch,0);
+      backupBody=Buffer.from(body);backupMeta={name,bucket:backupName,generation,size:String(body.length),
+        temporaryHold:options.metadata?.temporaryHold,metadata:options.metadata?.metadata};throw Error('synthetic lost backup reply');},
+    async metadata(name,pinned){assert.equal(name,backupMeta.name);if(pinned)assert.equal(pinned,generation);return backupMeta;},
+    readPinned(name,pinned){assert.equal(name,backupMeta.name);assert.equal(pinned,generation);let sent=false;
+      return new Readable({read(){if(sent)return;sent=true;this.emit('response',{statusCode:200,headers:{'x-goog-generation':generation}});
+        this.push(backupBody);this.push(null);}});}
+  };
+  const now=Date.now(),recovery=createFirebaseVoiceRecovery({config:{projectId:config.projectId,namespace:config.namespace,backupBucketName:backupName},
+    cipher,backupBucket,objects:port,serverClock:()=>now});
+  const backupId='50000000-0000-4000-8000-000000000001',retainedUntil=new Date(now+14*86400000).toISOString();
+  const backup=await recovery.backupVoice({backupId,scope,voiceId:id,descriptor,retainedUntil});
+  assert.equal(backupWrites,1);assert.ok(!backupBody!.includes(Buffer.from(wave(1),'base64')));
+  await port.remove(scope,id,descriptor);assert.equal(await port.inspect(scope,id),null);
+  const targetScope={...scope,storageEpoch:'60000000-0000-4000-8000-000000000001'};
+  await assert.rejects(recovery.restoreVoice({backupId,voiceId:id,scope,descriptor,backup,targetScope:{...targetScope,ownerUserId:'other'}}));
+  const restored=await recovery.restoreVoice({backupId,voiceId:id,scope,descriptor,backup,targetScope});
+  assert.notEqual(restored.objectName,descriptor.objectName);assert.equal(restored.sha256,descriptor.sha256);
+  assert.equal((await port.read(targetScope,id,restored)).base64,wave(1));assert.equal(writes,2);
+  await port.remove(targetScope,id,restored);
 });

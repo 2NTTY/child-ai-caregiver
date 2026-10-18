@@ -32,6 +32,21 @@ export function voiceObjectAddress(config: FirebasePhotoObjectsConfig, scopeInpu
     scope.ownerUserId, scope.workspaceId, scope.childId, scope.storageEpoch]));
   return { objectName: "voice/v1/" + scopeHash + "/" + id, aad: identity, tag: digest(identity) };
 }
+/** Bounded encrypted media read shared by original voice objects and their pinned backup artifacts. */
+export async function readVoiceCiphertext(bucket: Pick<FirebasePhotoBucketPort,'readPinned'>,objectName:string,revision:string,maximum:number,sha256:string) {
+  if (!Number.isSafeInteger(maximum)||maximum<1||maximum>VOICE_OBJECT_MAX_BYTES) throw new VoiceObjectError();
+  const stream=bucket.readPinned(objectName,revision),chunks:Buffer[]=[];let size=0,accepted=false;
+  stream.once('response',(response:{statusCode?:number;headers?:Record<string,string>})=>{
+    const h=response.headers??{},length=h['content-length'];
+    if (![200,206].includes(response.statusCode??0)||h['content-encoding']!==undefined&&h['content-encoding']!=='identity'
+      ||h['x-goog-generation']!==undefined&&h['x-goog-generation']!==revision
+      ||length!==undefined&&(!/^[0-9]+$/u.test(length)||BigInt(length)>BigInt(maximum)))stream.destroy(new VoiceObjectError());else accepted=true;
+  });
+  const timer=setTimeout(()=>stream.destroy(new VoiceObjectError()),15000);
+  try {for await(const part of stream){if(!accepted||!Buffer.isBuffer(part)||size+part.length>maximum)throw new VoiceObjectError();size+=part.length;chunks.push(part);}
+    const bytes=Buffer.concat(chunks,size);if(!accepted||size!==maximum||digest(bytes)!==sha256)throw new VoiceObjectError();return bytes;
+  }finally{clearTimeout(timer);stream.destroy();}
+}
 /** Object integrity only. Caller must establish current Firestore authority before and after I/O. */
 export function createVoiceObjects(options: { config: FirebasePhotoObjectsConfig; cipher: StorageCipher; bucket: FirebasePhotoBucketPort }) {
   const config = firebaseObjectStorageConfigSchema.parse(options.config), { cipher, bucket } = options;
@@ -43,25 +58,8 @@ export function createVoiceObjects(options: { config: FirebasePhotoObjectsConfig
     return value;
   }
   async function read(address: Address, raw: unknown, expected?: VoiceObjectDescriptor) {
-    const meta = metadata(raw, address, expected?.generation), chunks: Buffer[] = [];
-    const stream = bucket.readPinned(address.objectName, meta.generation), maximum = Number(meta.size);
-    let size = 0, accepted = false;
-    stream.once("response", (response: { statusCode?: number; headers?: Record<string, string> }) => {
-      const headers = response.headers ?? {}, length = headers["content-length"];
-      if ((response.statusCode !== 200 && response.statusCode !== 206)
-        || headers["content-encoding"] !== undefined && headers["content-encoding"] !== "identity"
-        || headers["x-goog-generation"] !== undefined && headers["x-goog-generation"] !== meta.generation
-        || length !== undefined && (!/^[0-9]+$/u.test(length) || BigInt(length) > BigInt(maximum))) stream.destroy(new VoiceObjectError());
-      else accepted = true;
-    });
-    const timer = setTimeout(() => stream.destroy(new VoiceObjectError()), 15_000);
-    try {
-      for await (const part of stream) {
-        if (!accepted || !Buffer.isBuffer(part) || size + part.length > maximum) throw new VoiceObjectError();
-        size += part.length; chunks.push(part);
-      }
-      const bytes = Buffer.concat(chunks, size);
-      if (!accepted || size !== maximum || digest(bytes) !== meta.metadata.cipherSha256) throw new VoiceObjectError();
+    const meta = metadata(raw, address, expected?.generation), maximum = Number(meta.size);
+    const bytes = await readVoiceCiphertext(bucket,address.objectName,meta.generation,maximum,meta.metadata.cipherSha256);
       const body = storedBodySchema.parse(JSON.parse(cipher.decrypt(new TextDecoder("utf-8", { fatal: true }).decode(bytes), address.aad)));
       const buffer = decodeVoiceBase64(body.base64);
       if (body.metadata.bytes !== buffer.length || body.metadata.sha256 !== digest(buffer) || body.metadata.sha256 !== meta.metadata.sha256) throw new VoiceObjectError();
@@ -69,7 +67,6 @@ export function createVoiceObjects(options: { config: FirebasePhotoObjectsConfig
         generation: meta.generation, cipherSha256: meta.metadata.cipherSha256 });
       if (expected && Object.keys(descriptor).some(key => descriptor[key as keyof typeof descriptor] !== expected[key as keyof typeof expected])) throw new VoiceObjectError();
       return { descriptor, base64: body.base64, buffer };
-    } finally { clearTimeout(timer); stream.destroy(); }
   }
   async function inspect(scope: WorkRecoveryScope, id: string) {
     const address = voiceObjectAddress(config, scope, id);

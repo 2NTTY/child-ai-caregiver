@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { voiceMessageReferenceSchema, type VoiceMessageReference } from "./voice.ts";
 const text = (limit: number) => z.string().min(1).max(limit).refine(value => Boolean(value.trim()));
 const version = z.number().int().min(1).max(2147483646);
 export const workResourceSchema = z.object({
@@ -36,6 +37,7 @@ export const historySearchSchema = z.object({
 }).strict().refine(value => !value.createdFrom || !value.createdBefore || Date.parse(value.createdFrom) < Date.parse(value.createdBefore));
 export const historyReadSchema = z.object({
   messageId: z.uuid(), offset: z.number().int().min(0).max(1000000), limit: z.number().int().min(1).max(4000),
+  contentVersion: z.string().regex(/^[a-f0-9]{64}$/u).optional().describe("Echo the returned contentVersion when continuing a voice message; changed or deleted transcripts invalidate continuation."),
 }).strict();
 export const memoryFactReadSchema = z.object({ factId: z.uuid().nullable(), afterId: z.uuid().nullable(), keys: z.array(text(100)).min(1).max(4).optional() }).strict()
   .refine(value => (!value.factId || value.afterId === null) && (!value.keys || (value.factId === null && value.afterId === null)));
@@ -60,6 +62,7 @@ export interface AgentHistoryPage {
 export interface AgentHistoryMessage {
   id: string; childId: string; role: "user" | "model"; version: 1; createdAt: string;
   text: string; offset: number; nextOffset: number | null; totalCharacters: number;
+  contentVersion?: string; voice?: VoiceMessageReference;
 }
 export interface AgentConfirmation {
   id: string; proposalRunId: string; proposalId: string; proposalVersion: number; expiresAt: string; question: string;
@@ -68,4 +71,4 @@ export interface AgentConfirmation {
 export const agentWorkSchema = agentWorkValuesSchema.extend({ id: z.uuid(), childId: z.uuid(), version, createdAt: z.iso.datetime({ offset: true }), updatedAt: z.iso.datetime({ offset: true }), latestFollowUp: workContinuationSchema.optional() }).strict();
 export const agentWorkPageSchema = z.object({ items: z.array(agentWorkSchema).max(10), nextCursor: z.string().max(2048).nullable(), complete: z.boolean() }).strict();
 export const agentHistoryPageSchema = z.object({ matches: z.array(z.object({ id: z.uuid(), kind: historySearchSchema.shape.kind, version, createdAt: z.iso.datetime({ offset: true }), role: z.enum(["user", "model"]).nullable(), excerpt: z.string().max(400) }).strict()).max(10), scanned: z.number().int().min(0).max(100), scanLimit: z.literal(100), complete: z.boolean(), nextCursor: z.string().max(2048).nullable() }).strict();
-export const agentHistoryMessageSchema = z.object({ id: z.uuid(), childId: z.uuid(), role: z.enum(["user", "model"]), version: z.literal(1), createdAt: z.iso.datetime({ offset: true }), text: z.string().max(4000), offset: z.number().int().min(0), nextOffset: z.number().int().min(0).nullable(), totalCharacters: z.number().int().min(0) }).strict();
+export const agentHistoryMessageSchema = z.object({ id: z.uuid(), childId: z.uuid(), role: z.enum(["user", "model"]), version: z.literal(1), createdAt: z.iso.datetime({ offset: true }), text: z.string().max(4000), offset: z.number().int().min(0), nextOffset: z.number().int().min(0).nullable(), totalCharacters: z.number().int().min(0), contentVersion: z.string().regex(/^[a-f0-9]{64}$/u).optional(), voice: voiceMessageReferenceSchema.optional() }).strict();

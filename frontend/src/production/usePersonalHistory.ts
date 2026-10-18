@@ -124,7 +124,7 @@ export function usePersonalHistory(env: TaskKnowledgeEnvironment) {
     messageLife.current.generation++; messageLife.current.controller?.abort();
     selectedMessageId.current = id;
     read("message", setMessage, async signal => appendHistoryMessage(more ? before : null,
-      await api.readHistory(env.childId!, id, more ? before!.nextOffset! : 0, signal, env.userId!)), !more, messageLife.current);
+      await api.readHistory(env.childId!, id, more ? before!.nextOffset! : 0, signal, env.userId!, more ? before!.contentVersion : undefined)), !more, messageLife.current);
   };
   const readNotifications = (more = false) => {
     const before = latest.current.notifications.data, cursor = more ? before?.nextCursor : null;

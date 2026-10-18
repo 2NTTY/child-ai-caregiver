@@ -1,3 +1,8 @@
+import { isRestoreProtocolOrUsage } from '../server/firestore-restore-usage.ts';
+import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
+import { prepareFirebaseRestore, firebaseRestoreEpoch } from '../server/firestore-restore.ts';
+import { voiceObjectAddress } from '../server/firebase-voice-objects.ts';
+import { firestoreVoiceRowSchema } from '../server/firestore-voice.ts';
 import { FirestoreSessionService } from '../server/firestore-session-service.ts';
 import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
 import { createFirestoreVoiceTranscripts } from '../server/firestore-voice-transcripts.ts';
@@ -50,7 +55,7 @@ test('voice upload and original chat operation keep one authorized attachment ac
   const stored = new Map<string, VoiceObjectDescriptor>();
   let failValidation = true, loseObjectReply = true, writes = 0;
   const objects: VoiceObjects = {
-    address(scope, id) { return 'voice/v1/' + createHash('sha256').update(JSON.stringify(scope)).digest('hex') + '/' + id; },
+    address(scope,id){return voiceObjectAddress({...options,bucketName:'synthetic-voice-private'},scope,id).objectName;},
     async write(scope, id) {
       if (failValidation) { failValidation = false; throw new VoiceFileError('invalid_voice'); }
       const objectName = this.address(scope, id);
@@ -77,7 +82,7 @@ test('voice upload and original chat operation keep one authorized attachment ac
     async read(intent, proof) { assert.deepEqual(intents.get(proof.intentSha256), intent); return intent; },
   };
   const sessions=new FirestoreSessionService({...options,namespace:options.namespace+'_adk'});
-  const voice = createFirestoreVoiceStore({ ...options, objects, journal,
+  const voice = createFirestoreVoiceStore({ ...options, objects, journal, serverClock:()=>Date.now(),
     eraseTranscriptionRun:(userId,sessionId)=>sessions.deleteSession({appName:'yuban_hk',userId,sessionId}) });
   const transcripts = createFirestoreVoiceTranscripts({ ...options, voices: voice });
   const chat = createFirestoreChatStore({ ...options, voice });
@@ -177,6 +182,13 @@ test('voice upload and original chat operation keep one authorized attachment ac
   const transcript = await client.transcript(childId, id, signal, 'parent');
   assert.equal(transcript.state, 'available'); assert.equal(transcript.messageId, message.id);
   assert.equal(transcript.content?.segments[0].text, '記得我習慣先準備手冊');
+  const history = await product.store.searchHistory('parent', childId, { kind:'message',query:'習慣先準備手冊',cursor:null });
+  assert.equal(history.matches.some(item => item.id === message.id), true);
+  const firstPage = await product.store.readHistory('parent',childId,{messageId:message.id,offset:0,limit:12});
+  assert.ok(firstPage?.contentVersion); assert.equal(firstPage.voice?.id,id);
+  const secondPage = await product.store.readHistory('parent',childId,{messageId:message.id,offset:12,limit:4000,contentVersion:firstPage.contentVersion});
+  assert.ok(secondPage?.text.includes('習慣先準備手冊'));
+  await assert.rejects(product.store.readHistory('parent',childId,{messageId:message.id,offset:12,limit:4000}), (e:any)=>e.code==='version_conflict');
   assert.equal(modelCalls, before + 1);
   assert.equal((await queue.process(scheduled)).state, 'completed'); assert.equal(modelCalls, before + 1);
   assert.equal((await product.actions.receipts('parent', childId, result!.runId))!.length, 1);
@@ -185,18 +197,58 @@ test('voice upload and original chat operation keep one authorized attachment ac
   const exporter=createFirestoreAccountExport({...options,voices:voice,transcripts,photos:{async content(){throw new Error('No photos in this scenario');}}});
   assert.equal((await exporter.page('parent',{section:'voice_transcripts',childId})).items.length,1);
   assert.equal((await exporter.page('parent',{section:'voice_content',childId})).items.length,1);
+  const codec=createFirestoreRestoreCodec(options),generation=(await authority.readControl()).generation;
+  const snapshot=()=>[...fake.records].map(([path,data])=>({path,data:structuredClone(data)})).map(record=>{
+    if(!record.path.startsWith(options.namespace+'/'))return record;
+    const decoded=codec.decode(record);if(decoded.context.kind!=='control')return record;
+    const transformed=codec.transform(decoded,{generation,newEpochByWorkspace:new Map(),photoDescriptors:new Map()});
+    return {path:transformed.path,data:transformed.data};
+  });
+  const sourceSnapshot=snapshot(),restoreId=randomUUID(),restoreScope=await authority.runTransaction('parent',childId,async b=>({...b.scope,
+    storageEpoch:firebaseRestoreEpoch(options.projectId,'synthetic-voice-restore',restoreId,b.scope.workspaceId)}));
+  const sourceDescriptor=[...stored.values()][0]!,targetDescriptor={...sourceDescriptor,objectName:objects.address(restoreScope,id)};
+  const restoreInput={restoreId,targetDatabaseId:'synthetic-voice-restore',sourceGeneration:generation,documents:sourceSnapshot,liveDocuments:sourceSnapshot,
+    authUsers:['parent','other'].map(userId=>({userId,email:userId+'@example.test',emailVerified:true,disabled:false})),
+    erasures:[],erasureDescriptors:new Map(),photoDescriptors:new Map(),voiceObjectBucketName:'synthetic-voice-private',voiceDescriptors:new Map([[id,targetDescriptor]])};
+  for(const record of sourceSnapshot.filter(r=>!isRestoreProtocolOrUsage(options.namespace,r.path)))
+    assert.doesNotThrow(()=>codec.decode(record),record.path.split('/')[0]+': '+Object.keys(record.data).join(','));
+  const restored=prepareFirebaseRestore(options,restoreInput),restoredReady=restored.records.filter(r=>!isRestoreProtocolOrUsage(options.namespace,r.path)).map(r=>codec.decode(r)).find(r=>r.context.kind==='voice-asset');
+  assert.equal(firestoreVoiceRowSchema.parse(restoredReady!.value).descriptor?.objectName,targetDescriptor.objectName);
+  assert.equal(firestoreVoiceRowSchema.parse(restoredReady!.value).version,message.voice!.version);
+  t.mock.timers.enable({apis:['Date'],now:Date.now()+86400_001});
+  assert.equal(await voice.expireUnlinked(await authority.runTransaction('parent',childId,async b=>b.scope),id),false,'A linked message survives temporary upload expiry');
+  t.mock.timers.reset();
   const current = await voice.get('parent', childId, id), deleteOp = randomUUID();
   assert.equal((await client.delete(current, deleteOp, signal, 'parent')).deleted, true);
   await assert.rejects(voice.content('parent', childId, id), (e: any) => e.code === 'voice_deleted');
+  assert.equal((await product.store.searchHistory('parent',childId,{kind:'message',query:'習慣先準備手冊',cursor:null})).matches.some(item=>item.id===message.id),false);
+  await assert.rejects(product.store.readHistory('parent',childId,{messageId:message.id,offset:12,limit:4000,contentVersion:firstPage.contentVersion}), (e:any)=>e.code==='version_conflict');
   assert.equal((await voice.reserve('parent', childId, input)).fileName, null);
   assert.equal((await exporter.page('parent',{section:'voice_transcripts',childId})).items.length,0);
   assert.equal((await exporter.page('parent',{section:'voice_content',childId})).items.length,0);
   await assert.rejects(transcripts.get('parent', childId, id), (e: any) => e.code === 'voice_deleted');
   await assert.rejects(voice.agentAudio('parent', childId, message.id, message.voice), (e: any) => e.code === 'voice_deleted');
   assert.equal((await voice.delete('parent', childId, id, current.version, deleteOp)).deleted, true);
+  const deletedSnapshot=snapshot(),proofs=new Map();for(const [hash,intent] of intents)proofs.set(hash,await journal.writeOnce(intent));
+  const deletedRestore=prepareFirebaseRestore(options,{...restoreInput,liveDocuments:deletedSnapshot,erasures:[...intents.values()],erasureDescriptors:proofs,voiceDescriptors:new Map()});
+  const restoredRecords=deletedRestore.records.filter(r=>!isRestoreProtocolOrUsage(options.namespace,r.path)).map(r=>codec.decode(r));
+  assert.equal(restoredRecords.some(r=>r.context.kind==='voice-transcript'),false);
+  const deletedVoice=firestoreVoiceRowSchema.parse(restoredRecords.find(r=>r.context.kind==='voice-asset')!.value);
+  assert.equal(deletedVoice.metadata,null);assert.equal(deletedVoice.deletion?.cleanup,'pending');
+  // Feed prepared recovery data to the actual cleanup consumer, with no model or new upload.
+  const originalRecords=new Map(fake.records);fake.records.clear();for(const row of deletedRestore.records)fake.records.set(row.path,row.data);
+  assert.equal((await voice.cleanupDeleted(deletedVoice.scope,id)).state,'complete');
+  fake.records.clear();for(const [path,value] of originalRecords)fake.records.set(path,value);
   const scope = await authority.runTransaction('parent', childId, async b => b.scope);
   assert.equal((await voice.cleanupDeleted(scope, id)).state, 'complete'); assert.equal(stored.size, 0);
   assert.equal((await voice.delete('parent', childId, id, current.version, deleteOp)).cleanupPending, false);
   assert.equal((await exporter.page('parent',{section:'voice_transcripts',childId})).items.length,0);
   await assert.rejects(voice.reserve('parent',childId,{...input,opId:deleteOp}), (e:any)=>e.code==='operation_conflict');
+  const orphanId=randomUUID();await voice.reserve('parent',childId,{...input,opId:orphanId});
+  const orphanScope=await authority.runTransaction('parent',childId,async b=>b.scope);
+  t.mock.timers.enable({apis:['Date'],now:Date.now()+86400_001});
+  assert.equal(await voice.expireUnlinked(orphanScope,orphanId),true);
+  assert.equal((await voice.cleanupDeleted(orphanScope,orphanId)).state,'complete');
+  t.mock.timers.reset();
+
 });

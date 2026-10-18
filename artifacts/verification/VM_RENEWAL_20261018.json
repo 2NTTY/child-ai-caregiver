@@ -1,0 +1,34 @@
+{
+  "observedAt": "2026-10-18T05:37:00Z",
+  "authorization": "User requested renewal of the existing VM for five days.",
+  "project": "ai-caregivers-for-children",
+  "zone": "asia-east2-a",
+  "instanceId": "2846984358678394356",
+  "oldStatus": "TERMINATED",
+  "oldTerminationTime": "2026-10-17T12:50:44Z",
+  "newTerminationTime": "2026-10-23T05:33:50.732Z",
+  "status": "RUNNING",
+  "services": {
+    "api": "healthy",
+    "worker": "healthy",
+    "web": "running",
+    "postgres": "stopped"
+  },
+  "release": "admin-8ba66e7",
+  "publicHealth": {
+    "status": "ok",
+    "storage": "firestore",
+    "stage": "foundation"
+  },
+  "freeDiskMiB": 1014,
+  "initialProbe": "Containers were starting; public health returned curl exit 22. After startup a single read-only recheck passed.",
+  "newResources": 0,
+  "deployments": 0,
+  "modelCalls": 0,
+  "notificationsSentByVerification": 0,
+  "limitations": [
+    "No product E2E or real model run",
+    "No native backup restore",
+    "No updated billing estimate"
+  ]
+}

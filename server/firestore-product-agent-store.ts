@@ -31,6 +31,7 @@ import { firestoreSharedInputSchema } from './firestore-shared-inputs.ts';
 
 export function createFirestoreProductAgentStore(options: FirestoreDomainOptions & {
   voices?: import("./firestore-voice.ts").FirestoreVoiceStore;
+  transcripts?: ReturnType<typeof import("./firestore-voice-transcripts.ts").createFirestoreVoiceTranscripts>;
   chat: FirestoreChatStore; care: FirestoreCareStore; memory: FirestoreMemoryStore; online: FirestoreOnlineStore;
   authorizeWorker?: FirestoreAgentRunOptions['authorizeWorker'];
   sources?: FirestoreSharedInputStore; concerns?: FirestoreConcernStore;
@@ -86,7 +87,7 @@ export function createFirestoreProductAgentStore(options: FirestoreDomainOptions
   }
   const continuation = createFirestoreWorkFollowUp({ ...options, resource: resourceBasis, knowledge: options.continuationKnowledge, runs: () => runs });
   const work = createFirestoreAgentWork({ runs, proposals, validateResource, validateKnowledge: options.validateKnowledge, continuation });
-  const history = createFirestoreAgentHistory({ runs, actions, chat: options.chat, memory: options.memory });
+  const history = createFirestoreAgentHistory({ runs, actions, chat: options.chat, memory: options.memory, voices: options.voices, transcripts: options.transcripts });
   async function project(b: Binding, run: FirestoreAgentRun, original: ProductAgentResult): Promise<ProductAgentResult> {
     if (!runs.matches(b, runs.current(b), run, false)) domainReject('agent_scope_changed');
     const candidates = (await proposals.inRun(b, run.id)).map(proposals.visible);
