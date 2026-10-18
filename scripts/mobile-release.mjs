@@ -41,12 +41,12 @@ function child(file, args, { cwd = root, env = process.env, label = 'command', j
   if (result.status !== 0) fail(`${label} failed; inspect only its log tail. Do not automatically retry a submitted cloud operation.`);
   return jsonResult ? JSON.parse(result.stdout) : result.stdout.trim();
 }
-function eas(args, label) {
+function eas(args, label, env = process.env) {
   // npm's JS entry avoids Windows cmd.exe argument interpolation.
   const npmCli = process.env.npm_execpath;
   if (!npmCli || !existsSync(npmCli)) fail('Run through npm run mobile:release');
   return child(process.execPath, [npmCli, 'exec', '--yes', '--package', `eas-cli@${config.cli}`, '--', 'eas', ...args],
-    { cwd: appDir, label, jsonResult: args.includes('--json') });
+    { cwd: appDir, env, label, jsonResult: args.includes('--json') });
 }
 function safeExternalEnv(path) {
   const absolute = realpathSync(resolve(path)), rel = relative(realpathSync(root), absolute);
@@ -159,7 +159,10 @@ async function main() {
     child(process.execPath, [join(root, 'frontend/tooling/normalize-fingerprint-paths.cjs')], { label: 'fingerprint-prepare' });
     // EAS env pull is read-only. File-type secrets must already be supplied through the protected local environment.
     const envPath = join(logDir, '.env.android');
-    eas(['env:pull', '--environment', channel, '--path', envPath, '--non-interactive'], 'environment');
+    // Project discovery precedes public env loading; native descriptor validation belongs to the build stage.
+    const discoveryEnv = { ...process.env };
+    for (const name of ['ANDROID_GOOGLE_SERVICES_FILE', 'EAS_BUILD_PROFILE', 'EAS_BUILD_PLATFORM']) delete discoveryEnv[name];
+    eas(['env:pull', '--environment', channel, '--path', envPath, '--non-interactive'], 'environment', discoveryEnv);
     const androidValues = parseEnv(readFileSync(envPath, 'utf8'));
     for (const [name, value] of Object.entries(androidValues)) {
       if (name.startsWith('EXPO_PUBLIC_') || name === 'EAS_PROJECT_ID') process.env[name] = value;

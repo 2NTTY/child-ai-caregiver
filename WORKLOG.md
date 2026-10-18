@@ -3008,3 +3008,8 @@
 - 使用者補充確認新版APK「能正常開啟，原資料仍在」。其後按本人授權接入ADB，核對versionCode 2；一次畫面證實鍵盤遮住輸入框，私人截圖只留本機、沒有送出訊息。
 - 鍵盤避讓移入頁面內容，導航欄按最新要求保持原位，不再隱藏／升降。站內切頁保留長駐owner草稿及原操作；只讀重讀不再冒充寫入，頁面局部草稿、切孩子／身份／離站仍保留保護。相機沿既有ImagePicker結果返回，不改成選擇選單或自動發送。
 - 一個定向導航情景及18個受影響前端入口型別通過；第一次測試harness漏theme.colors，已保留失敗並只修stub。未跑全量、模型或通知。程式review已完成；相容Web／OTA交付及修後真機尚待核對，見[同一EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
+
+### LOG-20261018-MOBILE-RELEASE-PREPARATION
+
+- `d321553`同版Web正式build已通過。Android發布在EAS讀取公開環境之前，app.config先校驗原生Firebase描述檔，因公開projectId尚未載入而停止；沒有提交OTA或build。保留原stopped manifest。
+- 固定發布入口只在env:pull專案定位階段移除原生build專用變數；讀回公開配置後仍執行完整描述檔與runtime核對。後續只補Android發布，復用d321553相同前端的已建Web產物，避免再建一次。
