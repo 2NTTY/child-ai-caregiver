@@ -1,5 +1,7 @@
 # 當前與後續開發計劃
 
+**P2 及以前的歷史計劃：**已移至 [P1／P2 歷史計劃](_archive/plans/P1-P2-20261018.md)；歸檔來源及查閱方式見[歷史索引](_archive/README.md#plan-p1-p2-20261018)。只在追溯舊工作時按需閱讀，日常直接看本文件的[當前工作](#active)。
+
 本文件維護工作包的目標、前置、狀態、未完成項及完成門檻，按包推進，不按日期或周排程。產品要求見 [SPEC](SPEC.md)，短現況與部署觀察見 [STATUS](STATUS.md)，實際測試與失敗見 [WORKLOG](WORKLOG.md) 及各包證據；執行與文件更新規則只依 [AGENTS](AGENTS.md#document-updates)。
 
 Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策修訂時保留錨點；Firestore／原站與角色階段沿 [ADR-024](docs/DECISIONS.md#adr-024)，資料庫先行次序依 [ADR-025](docs/DECISIONS.md#adr-025)，以 [ADR-008](docs/DECISIONS.md#adr-008) 追溯替代關係；不得把被替代要求當成已完成。
