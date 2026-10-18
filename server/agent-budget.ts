@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { ModelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import { canonical } from "./firestore-session-codec.ts";
 import { RootBudgetError, type BudgetAttempt, type DurableRootBudget, type RootBudgetContext, type RootBudgetSnapshot } from "./durable-root-budget.ts";
 import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
@@ -31,7 +32,7 @@ export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
   return Object.freeze(extended);
 }
 
-export type AgentStopReason = "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
+export type AgentStopReason = ModelProviderStopReason | "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
   | "input_limit" | "unauthorized" | "quota_exceeded" | "busy" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown";
 export class AgentStopped extends Error {
   readonly reason: AgentStopReason;

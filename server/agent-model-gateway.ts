@@ -9,6 +9,7 @@ import type { AiUsageStore, AttemptOutcome, TokenUsage } from "./ai-usage.ts";
 import { decodePhoto } from "./photo-files.ts";
 import { AGENT_LIMITS, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { logVertexFailure } from "./vertex-diagnostics.ts";
+import { modelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import type { InitialConversationSummary } from "./memory-summary.ts";
 import type { DurableAiUsage, DurableAiUsageRequest } from "./durable-ai-usage.ts";
 import type { RootBudgetContext } from "./durable-root-budget.ts";
@@ -238,8 +239,9 @@ export class AgentGatewayModel extends BaseLlm {
           : error.reason === "invalid_response" ? "invalid_response" : "unavailable";
         throw error;
       }
-      outcome = error instanceof ApiError && error.status === 429 ? "rate_limited" : "unavailable";
-      throw new AgentStopped("unavailable");
+      const status = error instanceof ApiError ? error.status : null;
+      outcome = status === 429 ? "rate_limited" : status === 408 || status === 504 ? "timeout" : "unavailable";
+      throw new AgentStopped(status === null ? "unavailable" : modelProviderStopReason(status));
     } finally {
       const record = { outcome, ...tokens, durationMs: Math.max(0, Date.now() - start) };
       if (daily && dailyRequest) await daily.adapter.record(dailyRequest, { kind: 'model', ...record });

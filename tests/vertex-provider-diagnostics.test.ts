@@ -83,9 +83,9 @@ test("Agent failure accounting stays unknown, sanitized and single-attempt", asy
     const gateway = new AgentGatewayModel({ config, provider: createVertexAgentProvider(config), budget,
       userId: "private-account", childId: "private-child", authorize: async () => { authorizations++; return true; },
       usage: { reserve: async () => { reservations++; return true; }, record: async record => { records.push(record); } } });
-    await assert.rejects(async () => { for await (const _ of gateway.generateContentAsync(request)) assert.fail("Must not yield"); }, { reason: "unavailable" });
-    assert.equal(gateway.failure?.message, "unavailable");
-    assert.equal(calls, 1); assert.equal(reservations, 1); assert.equal(authorizations, 1);
+    await assert.rejects(async () => { for await (const _ of gateway.generateContentAsync(request)) assert.fail("Must not yield"); }, { reason: "model_http_429" });
+    assert.equal(gateway.failure?.message, "model_http_429");
+    assert.equal(calls, 1); assert.equal(reservations, 1); assert.equal(authorizations, 2); // Before preparation and again before model admission.
     assert.deepEqual(budget.counts, { modelCalls: 1, toolCalls: 0, queryEmbeddings: 0 });
     assert.equal(records.length, 1);
     assert.equal(records[0]?.outcome, "rate_limited");

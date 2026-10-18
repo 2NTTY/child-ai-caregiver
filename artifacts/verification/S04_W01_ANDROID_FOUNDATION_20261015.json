@@ -485,5 +485,33 @@
     "215": "cb021c4b218dd57579869ff5a3598d8b38cff1ac",
     "216": "ca3314616178b72875cfd7013295a7f9ace3437d"
   },
-  "updatedAt": "2026-10-15T15:52:57.967553+00:00"
+  "updatedAt": "2026-10-15T15:52:57.967553+00:00",
+  "providerErrorFeedback20261018": {
+    "observedAt": "2026-10-18T11:13:43.475Z",
+    "userFeedback": "昨天正常聊天成功；今天服務暫時未能提供",
+    "providerHttpStatus": 504,
+    "observedRunCounts": {
+      "modelCalls": 2,
+      "toolCalls": 1,
+      "queryEmbeddings": 0
+    },
+    "change": "Trusted SDK HTTP status becomes a bounded stop reason and fixed message in the saved chat response. No raw exception, retry or quota change.",
+    "checks": [
+      {
+        "name": "Real ADK Runner, successful tool followed by synthetic 504",
+        "result": "passed",
+        "modelAttempts": 2,
+        "toolExecutions": 1,
+        "actualModelCalls": 0
+      },
+      {
+        "name": "Synthetic SDK 429 accounting and sanitized stop reason",
+        "firstResult": "failed: old fixture expected one authorization, current gateway performs two",
+        "repair": "Updated authorization count to two after checking both existing gateway boundaries; production authorization unchanged",
+        "remainingCheck": "passed"
+      }
+    ],
+    "deployment": "pending",
+    "limits": "Does not prove provider recovery or complete Android acceptance."
+  }
 }

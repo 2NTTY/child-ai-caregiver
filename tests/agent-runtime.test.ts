@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { FinishReason } from "@google/genai";
+import { ApiError, FinishReason } from "@google/genai";
+import { agentStopMessage, modelProviderStopReason } from "../src/shared/agent-stop-message.ts";
 import type { LlmRequest, LlmResponse } from "@google/adk";
 import { z } from "zod";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
@@ -148,6 +149,32 @@ test("successful tools survive final model failure without executing again", asy
   assert.equal(result.counts.modelCalls, 4);
   assert.equal(finalized, 0);
   assert.doesNotMatch(JSON.stringify(result), /secret-provider-error/u);
+});
+
+test("provider timeout reaches the saved-chat reason without repeating successful tools", async () => {
+  const s = setup(async (_, index) => {
+    if (index === 1) throw new ApiError({ status: 504, message: "private-provider-body secret-key" });
+    return call();
+  });
+  let finalized = 0;
+  s.input.finalizeOnModelLimit = true;
+  s.input.finalize = async () => { finalized++; return "Must not repeat a failed request."; };
+  const result = await s.runtime.run(s.input);
+  assert.equal(result.status, "stopped");
+  assert.equal(result.stopReason, "model_http_504");
+  assert.equal(agentStopMessage(result.stopReason!), "模型服務回覆逾時（504）");
+  assert.equal(modelProviderStopReason(499), "unavailable");
+  assert.equal(result.tools[0]?.status, "succeeded");
+  assert.equal(result.text, null);
+  assert.equal(s.executions(), 1);
+  assert.equal(s.requests.length, 2);
+  assert.equal(s.reservations(), 2);
+  assert.equal(result.counts.modelCalls, 2);
+  assert.equal(s.records.length, 2);
+  assert.equal(s.records[1]?.outcome, "timeout");
+  assert.equal(s.records[1]?.inputTokens, null);
+  assert.equal(finalized, 0);
+  assert.doesNotMatch(JSON.stringify(result), /private-provider-body|secret-key/);
 });
 
 test("unknown tool outcomes stop before a model can propose a blind retry", async () => {
