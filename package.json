@@ -13,6 +13,7 @@
     "npm": ">=11.8.0 <12"
   },
   "scripts": {
+    "agent:local": "node scripts/agent-local.mjs",
     "web": "npm run web --workspace frontend",
     "legacy:web": "node scripts/legacy-web-retired.mjs",
     "typecheck": "npm run typecheck --workspace frontend && tsc --noEmit && tsc --project tsconfig.server.json",
@@ -82,6 +83,7 @@
     "@types/react": "19.2.4",
     "@types/web-push": "3.6.4",
     "better-auth": "1.7.5",
+    "firebase-tools": "15.34.0",
     "nodemailer": "10.0.16",
     "pg": "8.23.0",
     "pg-boss": "12.34.0",

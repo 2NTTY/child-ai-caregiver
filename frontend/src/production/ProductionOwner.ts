@@ -85,7 +85,8 @@ export class ProductionOwner {
       const provider = process.env.EXPO_PUBLIC_AUTH_PROVIDER?.trim();
       const config = { apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY?.trim() ?? "",
         authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim() ?? "",
-        projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID?.trim() ?? "", appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID?.trim() ?? "" };
+        projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID?.trim() ?? "", appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID?.trim() ?? "",
+        ...(process.env.EXPO_PUBLIC_AUTH_EMULATOR_URL ? { authEmulatorUrl: process.env.EXPO_PUBLIC_AUTH_EMULATOR_URL } : {}) };
       if (this.native || provider || Object.values(config).some(Boolean)) {
         try {
           const publicOrigin = transport?.publicOrigin ?? (typeof window === "undefined" ? "" : window.location.origin);

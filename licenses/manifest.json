@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S12-W01",
-  "recordedOn": "2026-10-16",
+  "workPackage": "DEV-AGENT01",
+  "recordedOn": "2026-10-18",
   "scope": "Original licenses for selected direct dependencies and explicitly inventoried transitive packages; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "a0119e00d10ab7ef2d0c8dd2b907195b03cbbad57dea7f1e747839efbcc3843a"
+    "sha256": "807f01e537b7147ff486c78ae47351ac4603e8468386c1cd1b984d32b538c816"
   },
   "packages": [
     {
@@ -1165,6 +1165,25 @@
         {
           "path": "licenses/expo-network/LICENSE",
           "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "firebase-tools",
+      "version": "15.34.0",
+      "dependencyType": "devDependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/firebase/firebase-tools.git"
+      },
+      "tarball": "https://registry.npmjs.org/firebase-tools/-/firebase-tools-15.34.0.tgz",
+      "integrity": "sha512-Iv21U7tBtQVZloudPHVjeds/U2wqMEcNSLe318WrVo0gsOZjT/Nxp8jVWHCQUKu6HIdhFpZqkmhQCHD4HEDHuw==",
+      "files": [
+        {
+          "path": "licenses/firebase-tools/LICENSE",
+          "sha256": "e8d835c0d2deb1a9e05dab921fd932fba100f1c60fda849af35b09ea2e3212a5",
           "source": "LICENSE"
         }
       ]

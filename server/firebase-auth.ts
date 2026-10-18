@@ -26,6 +26,8 @@ export interface FirebaseAuthPortOptions {
   serverClock?: () => number;
   /** Defaults to true. Only explicitly non-production loopback HTTP may omit Secure. */
   production?: boolean;
+  /** Trusted loopback development only: cookies are not isolated by port. */
+  localCookieName?: string;
 }
 export class FirebaseAuthError extends Error {
   readonly status: 400 | 401 | 403 | 409 | 413 | 415 | 503;
@@ -58,13 +60,16 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
     throw new FirebaseAuthError(400, "invalid_configuration");
   }
   const secure = origin.protocol === "https:";
+  const cookieName = options.localCookieName ?? COOKIE_NAME;
+  if (options.localCookieName !== undefined && (production || !loopback
+    || !/^__local_session_[a-f0-9]{8}$/.test(cookieName))) throw new FirebaseAuthError(400, "invalid_configuration");
   const now = () => {
     const value = serverClock();
     if (!Number.isSafeInteger(value) || value < 0) throw new FirebaseAuthError(503, "authentication_unavailable");
     return value;
   };
   const cookieHeader = (value: string, maxAge: number) =>
-    COOKIE_NAME + "=" + value + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=" + maxAge + (secure ? "; Secure" : "");
+    cookieName + "=" + value + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=" + maxAge + (secure ? "; Secure" : "");
   const privateHeaders = () => new Headers({ "Cache-Control": "private, no-store", "Pragma": "no-cache", "Vary": "Cookie, Authorization" });
   function json(value: unknown, status = 200, cookie?: string) {
     const headers = privateHeaders(); headers.set("Content-Type", "application/json");
@@ -109,10 +114,10 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
     return user;
   }
   function extractCookie(headers: Headers) {
-    const matches = (headers.get("cookie") ?? "").split(";").map(part => part.trim()).filter(part => part.startsWith(COOKIE_NAME + "="));
+    const matches = (headers.get("cookie") ?? "").split(";").map(part => part.trim()).filter(part => part.startsWith(cookieName + "="));
     if (!matches.length) return null;
     if (matches.length !== 1) throw new FirebaseAuthError(401, "unauthorized");
-    const cookie = matches[0].slice(COOKIE_NAME.length + 1);
+    const cookie = matches[0].slice(cookieName.length + 1);
     if (!cookie || cookie.length > MAX_BODY_BYTES || !/^[A-Za-z0-9._~-]+$/.test(cookie)) throw new FirebaseAuthError(401, "unauthorized");
     return cookie;
   }

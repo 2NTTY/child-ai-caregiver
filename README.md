@@ -47,7 +47,7 @@ Frozen documents keep the relative-link context of their source commit. Their co
 <a id="run-test"></a>
 ## Running and testing
 
-Use Node.js 24.3 or newer within the Node 24 release line and npm 11.8 or newer within npm 11. The verified development baseline is Node 24.19.0 and npm 11.8.0. From the repository root:
+Use the Node/npm ranges in root `package.json`. The verified development baseline is Node 24.19.0 and npm 11.8.0. From the repository root:
 
 ```sh
 npm ci
@@ -56,7 +56,7 @@ npm run web
 
 The root npm workspace uses `frontend/` for Web and a single root lockfile. Set `EXPO_PUBLIC_API_BASE_URL` to the existing Server's `/api` URL for local development (for example `http://localhost:3001/api`); the production default is same-origin `/api`. `npm run build:web` writes `frontend/dist`, including the existing Push service worker and license notices. The Docker Web stage serves this output through the existing Caddy configuration. Routes not yet connected are explicitly unavailable during integration, never simulated successes. The replaced root test interface is retained as byte-preserving snapshots in [_archive/legacy-web-2026-10-07](_archive/legacy-web-2026-10-07/README.md). Legacy Web/build/test commands fail explicitly; they do not run production acceptance.
 
-Open the local address printed by Expo (normally `http://localhost:8081`). The record workflow requires the local server and database setup below; no model key is needed. Use synthetic data throughout P1.
+For the complete local product, use `npm run agent:local` below and open its single local URL. Running Expo alone does not start the API or initialize data.
 
 ```sh
 npm run typecheck
@@ -80,7 +80,9 @@ Dependency versions and integrity are fixed in `package-lock.json`; attribution 
 
 ## Local server development
 
-The current application uses Firestore, Firebase Authentication and private Cloud Storage through the shared Node API. It does not start PostgreSQL or run SQL migrations. Follow [the production frontend and Firestore setup](docs/PRODUCTION_FRONTEND.md#firestore-deployment), including the existing VM/Compose configuration, protected storage key and scoped application identity.
+Use [the local Agent guide](docs/AGENT_LOCAL.md) to run this branch's production Web/API/Agent with isolated Firebase emulators and your own Gemini key or local Vertex ADC. Install Java 21+, run `npm ci`, set protected `LOCAL_AGENT_CONFIG`, then run `npm run agent:local`. No GCP deployment or cloud database is required; real model calls still use your model allowance. `--no-model` is available for data/UI work. Startup never runs paid acceptance automatically.
+
+The cloud application uses Firestore, Firebase Authentication and private Cloud Storage through the same Node API. It does not start PostgreSQL or run SQL migrations. For cloud operation, follow [the production frontend and Firestore setup](docs/PRODUCTION_FRONTEND.md#firestore-deployment), including VM/Compose, protected keys and the scoped application identity.
 
 ```sh
 # Configure the protected environment described in the deployment guide first.

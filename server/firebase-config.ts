@@ -30,7 +30,8 @@ export function readFirebaseServerConfig(env: Record<string, string | undefined>
   const databaseId = env.FIREBASE_DATABASE_ID;
   const namespace = env.FIREBASE_NAMESPACE;
   if (!projectId || !/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/u.test(projectId)) throw new Error('Invalid GCP_PROJECT_ID configuration');
-  if (!databaseId || !/^[a-z][a-z0-9-]{2,61}[a-z0-9]$/u.test(databaseId)) throw new Error('Invalid FIREBASE_DATABASE_ID configuration');
+  const localDefault = databaseId === '(default)' && env.YUYF_LOCAL_DEVELOPMENT === '1' && !http.production && projectId.startsWith('demo-');
+  if (!databaseId || !localDefault && !/^[a-z][a-z0-9-]{2,61}[a-z0-9]$/u.test(databaseId)) throw new Error('Invalid FIREBASE_DATABASE_ID configuration');
   if (!namespace || !/^[a-z][a-z0-9_]{0,47}$/u.test(namespace)) throw new Error('Invalid FIREBASE_NAMESPACE configuration');
   const photoBucket = bucket(env, 'FIREBASE_PHOTO_BUCKET'), erasureBucket = bucket(env, 'FIREBASE_ERASURE_BUCKET');
   if (photoBucket === erasureBucket) throw new Error('Firebase photo and erasure buckets must differ');
@@ -39,7 +40,7 @@ export function readFirebaseServerConfig(env: Record<string, string | undefined>
     || knowledgeSourceIds.some(id => !/^[a-z0-9][a-z0-9-]{0,79}$/u.test(id)) || new Set(knowledgeSourceIds).size !== knowledgeSourceIds.length)) {
     throw new Error('Invalid FIREBASE_KNOWLEDGE_SOURCE_IDS configuration');
   }
-  if (http.production && (env.FIRESTORE_EMULATOR_HOST !== undefined || env.FIREBASE_AUTH_EMULATOR_HOST !== undefined)) {
+  if (http.production && ['FIRESTORE_EMULATOR_HOST', 'FIREBASE_AUTH_EMULATOR_HOST', 'FIREBASE_STORAGE_EMULATOR_HOST', 'STORAGE_EMULATOR_HOST', 'YUYF_LOCAL_DEVELOPMENT'].some(key => env[key] !== undefined)) {
     throw new Error('Emulator configuration is forbidden in production');
   }
   if (http.publicOrigin !== http.webOrigin) throw new Error('Firebase deployment requires a same-origin frontend');

@@ -22,7 +22,9 @@ const checkScope = { ownerUserId: 'system:model-key-check', workspaceId: '000000
 export const requireDurableUsage = Object.freeze({ async reserve(): Promise<never> { throw new AgentStopped('unavailable'); },
   async record(): Promise<never> { throw new AgentStopped('unavailable'); } });
 
-export function createFirestoreModelRouting(options: FirestoreDomainOptions, config: AiConfig) {
+export type PlatformProviderFactory = (config: AiConfig) => ReturnType<typeof createGeminiKeyProviders>;
+
+export function createFirestoreModelRouting(options: FirestoreDomainOptions, config: AiConfig, platformProviders?: PlatformProviderFactory) {
   const settings = createFirestoreModelSettings(options), authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
   const usage = { platform: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'platform' }),
     personal: new FirestoreAiUsage({ ...options, namespace: options.namespace + '_ai_usage', billingSource: 'personal' }) };
@@ -69,7 +71,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
         dailyUserAttempts: current.dailyUserAttempts, dailyGlobalAttempts: current.dailyGlobalAttempts,
         ...(personal ? { maxAttempts: 1, model: PERSONAL_MODEL, dailyUserAttempts: state.dailyLimit, dailyGlobalAttempts: current.personalDailyGlobalAttempts } : {}) };
       const disabled = async (): Promise<never> => { throw new AgentStopped('unavailable'); };
-      const providers = !enabled ? { agent: { generate: disabled }, model: { generate: disabled }, embedding: { embed: disabled } } : personal && snapshot.apiKey ? createGeminiKeyProviders(selectedConfig, snapshot.apiKey) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
+      const providers = !enabled ? { agent: { generate: disabled }, model: { generate: disabled }, embedding: { embed: disabled } } : personal && snapshot.apiKey ? createGeminiKeyProviders(selectedConfig, snapshot.apiKey) : platformProviders ? platformProviders(selectedConfig) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
       const source = personal ? 'personal' as const : 'platform' as const;
       const authorize = async () => enabled && (personal || (await policy.readPolicy()).enabled) && await allowed(userId) && await settings.isCurrent(userId, state.version);
       const gateway = createEmbeddingGateway({ config: selectedConfig, provider: enabled ? providers.embedding : undefined,
