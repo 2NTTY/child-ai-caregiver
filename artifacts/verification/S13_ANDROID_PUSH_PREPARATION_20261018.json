@@ -122,5 +122,30 @@
       "device token/permission and authorized FCM reminder/open/completion"
     ],
     "evidenceBoundary": "The earlier cloudCalls and pending fields describe the initial local wiring check. This configuration does not establish delivery or device acceptance."
+  },
+  "deviceCheck": {
+    "deliveryCreatedAt": "2026-10-18T11:03:02Z",
+    "clientSource": "0f0144a",
+    "apiImage": "yuban-firestore-api:files-a12da46",
+    "device": "Existing authorized Android device, installed versionCode 2",
+    "authorization": "User explicitly approved one fixed test to this phone and personally granted the Android notification permission",
+    "binding": "Formal settings registered one current-device FCM binding, version 1; active",
+    "title": "育有方渠道測試",
+    "body": "這是本人 Android 通知測試，沒有孩子資料。",
+    "sendAttempts": 1,
+    "resends": 0,
+    "modelCalls": 0,
+    "receipt": "Formal delivery list shows channel accepted; rolling test balance changed from 3 to 2",
+    "deviceDisplay": "Exact authorized title and body observed in Android notification shade",
+    "click": "Click returned to app; final authorized destination not established by this check, so the complete care navigation/completion gate remains open",
+    "approvalTimeout": "First click-only command was not executed because automatic approval timed out; one allowed retry clicked the existing notification, without sending again",
+    "retained": "User-authorized binding and delivery metadata; no child/task mutation or test recording retained",
+    "privacy": "No token, credential, unrelated notification or private content stored in repository evidence",
+    "stillPending": [
+      "Care notification reauthorization and task completion stopping on device",
+      "Dependency review/merges",
+      "Remaining shared-media, cross-device and compatible OTA rollback gates"
+    ],
+    "evidenceBoundary": "Earlier zero-send fields describe their original local/configuration phases and are preserved"
   }
 }

@@ -61,7 +61,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 管理員總控已於 #233 合併；每日及每輪設定只有一個權威。部署觀察、期限與未核對項只見 [STATUS](STATUS.md#deployment)。
 - 當前實作：[S12-W05](#s12-w05) 首頁快捷輸入及通用文件附件，Server／Web及相容Android OTA已交付，兩端選檔及真人流程等gate仍待驗。#229／[S04-W01](#s04-w01)首條真人聊天仍由使用者驗收；鍵盤輸入可見及收起回位的既有真機結果保留，不宣稱每幀動畫已驗。
 - 後續獨立接線與必要本機檢查已保存於 draft #234～#239：會話、同步、原運行查回、語音／附件、原生通知與固定發布工具。`bf47c47` 的新增索引、相容 API／worker／Web 已交付原站；新版 APK已完成並記錄發布基線，使用者已回覆覆蓋安裝；使用者已確認正常開啟、原登入及資料保留；其餘功能真機及依賴合併未完成。
-- Android Firebase／最小 FCM 權限及 Expo preview 描述檔已配置；已按批准提交一次新版 APK，沒有發通知。具體範圍／gate 只在[各工作包](#s13-w02)，不在此重複工作史。
+- Android Firebase／最小 FCM 權限及 Expo preview 描述檔已配置，新版 APK已安裝；本人已允許通知，一則指定FCM測試已在手機顯示，不重發。具體範圍／gate 只在[各工作包](#s13-w02)，不在此重複工作史。
 - 主模型實作、指導及 review；使用者最新容許 Luna 按規則唯讀定位。最低必要檢查，優先局部原文或日誌尾部；需本人／手機的項目待驗時繼續獨立工作，不能把待驗寫成完成。
 - OPT／LAY 已交付；[STR01](#p2-str01)及[原生備份還原](#p2-backup-followup)仍未完成。#214～#216 由協作者處理，不接管或合併。
 - 每包交付按本機協作文件及主責切換帳號、單作者提交；B提出Android／共用前端需求，C實作所需後端，接口穩定後由B接線。依賴 PR／人工 gate 保留。新包及合併前重核 master、相關 head 及本機修改。
@@ -285,7 +285,7 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s12-w01"></a>
 #### S12-W01 Web／Android 共用語音與原生檔案出口
 
-- 階段／狀態：P3；共用語音／照片／PDF、同一 ADK 音訊、持久轉錄／搜尋／播放、清理／匯出與恢復接線及必要本機證據已保存於 draft #237。新增索引與 API／worker／Web 已隨 `mobile-bf47c47` 部署；新版 APK已完成；一段合成錄音經正式 Agent 理解、原運行讀回、真 worker 轉錄及歷史搜尋通過（合共5生成／1查詢）。手機／瀏覽器錄音及播放、跨端真機、依賴合併仍待驗。沿 [S12 證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)及[同版交付](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)，不把啟動核對當完整語音流程通過；原生備份真還原及 iOS仍延後。
+- 階段／狀態：P3；共用語音／照片／PDF、同一 ADK 音訊、持久轉錄／搜尋／播放、清理／匯出與恢復接線及必要本機證據已保存於 draft #237。新增索引與 API／worker／Web 已隨 `mobile-bf47c47` 部署；新版 APK已完成；一段合成錄音經正式 Agent 理解、原運行讀回、真 worker 轉錄及歷史搜尋通過（合共5生成／1查詢）。Android本機錄音及修正版預聽已觀察到播放進度；瀏覽器輸入、聽感、跨端真機與依賴合併仍待驗。沿 [S12 證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)及[同版交付](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)，不把啟動核對當完整語音流程通過；原生備份真還原及 iOS仍延後。
 - 前置：S09-W03、S12-W03；Android 不依賴 S04-W02。
 - 交付：兩端完整錄音／預聽／發送、Agent 直接理解、持久背景轉錄、搜尋及定位播放；兩分鐘／5 MiB、權限／加密／刪除／付款防重。Android 相片、既有 PDF／匯出與 Sharing；按本節規則不設全體轉錄確認關卡。
 - gate：兩端輸入 adapter 加一段代表真音訊及轉錄、另一端讀回／搜尋／播放與同版 PDF；不重複模型品質測試。iOS 另補平台差異，分享導入仍留 S12-W02。
@@ -293,7 +293,7 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s12-w05"></a>
 #### S12-W05 共用聊天附件與首頁快捷入口
 
-- 階段／狀態：P3；正式runtime、Agent閱讀工具、Web／Android共同owner、下載、匯出、清理及恢復已接線。本機一條連貫情景及受影響型別通過；2026-10-18原站API／worker `files-a12da46`、Web `files-c4ac1b9`已健康並核公開產物hash。一份真Storage合成Word已保存／連聊天，原檔讀取及刪除以原個案補齊；腳本啟動／回傳型別失敗與撤權保留。Android相容OTA已發布（同APK v2 runtime、毋須新APK）；Android首頁原生相機開啟／取消、測試Word選取／草稿／移除已核；錄音開始／停止正常，預聽停在0秒，局部修正版待真機補核。Web選檔／兩端下載及真Agent內容理解仍未驗，見[S12附件證據](artifacts/verification/S12_CHAT_FILES_20261018.json)。
+- 階段／狀態：P3；正式runtime、Agent閱讀工具、Web／Android共同owner、下載、匯出、清理及恢復已接線。本機一條連貫情景及受影響型別通過；2026-10-18原站API／worker `files-a12da46`、Web `files-c4ac1b9`已健康並核公開產物hash。一份真Storage合成Word已保存／連聊天，原檔讀取及刪除以原個案補齊；腳本啟動／回傳型別失敗與撤權保留。Android相容OTA已發布（同APK v2 runtime、毋須新APK）；Android首頁原生相機開啟／取消、測試Word選取／草稿／移除已核；原預聽0秒失敗保留；原生修正版0f0144a相容OTA已發布，4秒錄音可播放並前進至1秒，隨後丟棄，沒有上傳或模型。Web選檔／兩端下載及真Agent內容理解仍未驗，見[S12附件證據](artifacts/verification/S12_CHAT_FILES_20261018.json)。
 - 前置：S12-W01；接續現有 Android 工作分支，保留原網站、共同 owner、身份、附件服務及原操作恢復。
 - 範圍：首頁左下角保持一按開原生相機，確認／取消後返回 App；語音及文字快捷入口連回同一聊天草稿。附件入口允許選取各類檔案，包括 PDF／Word；不做文件內容預覽，附件卡顯示檔名、大小及「不支援預覽」，另保留必要的上傳狀態；不預先顯示「尚未讀取內容」。首版每則一份、最多20 MiB，未送出原檔留本機。
 - 保存／讀取：使用同一 Server、Firestore metadata／原收據及私人加密 Storage；已提交附件連回原訊息，兩端可查回及下載。未知上傳先查原操作，身份切換清除本機資料；孩子／帳戶刪除、匯出及隔離還原須納入相同附件生命週期。
@@ -303,10 +303,10 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s13-w02"></a>
 #### S13-W02 原生本人通知
 
-- 階段／狀態：P3；draft #238（`codex/s13-w02-android-push`）接續 #237。FCM adapter、索引與原站 API／worker 已啟用，新 APK已完成，使用者回覆已覆蓋安裝；沒有發送通知。依賴合併、真機權限及明確批准的一則真通知仍是 gate，iOS 待後續。
+- 階段／狀態：P3；draft #238（`codex/s13-w02-android-push`）接續 #237。FCM adapter、索引與原站 API／worker 已啟用，APK v2已安裝。使用者親自允許通知；一則指定測試已保存投遞收據、渠道接受並在手機顯示，點擊可返回App。照護目標核權導航／完成停止及依賴合併仍待核，iOS 待後續。
 - 前置（Android）：S12-W01 Android、S07-W01、S13-W07；iOS 另依 S04-W02。
 - 本機結果：固定 Expo Notifications 57.0.21；FCM 單次 adapter、Firestore 加密綁定／原收據、同裝置 token 輪換／會話撤銷、提醒／通知歷史／匯出及還原、正式 API／worker、共用設定及核權點擊已接線。新增一條本機合成流程通過，受影響型別及配置語法通過；不把替身當真 Firestore 競爭或真 FCM。證據見 [S13 準備](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
-- 雲端配置（2026-10-18）：同專案 Android package、專用受限 key、原 VM 最小 FCM IAM 及 Expo preview secret file 已配置。10 個共用語音／通知索引、6 項欄位設定均 READY；`mobile-bf47c47` 已部署並啟用原生通知 adapter。只有啟動／資料查詢與公開入口證據，沒有裝置 token 或投遞證據；[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
+- 雲端配置（2026-10-18）：同專案 Android package、專用受限 key、原 VM 最小 FCM IAM 及 Expo preview secret file 已配置。10 個共用語音／通知索引、6 項欄位設定均 READY；`mobile-bf47c47` 已部署並啟用原生通知 adapter。部署當時只有啟動／資料查詢與公開入口證據；其後同機註冊及唯一一次真FCM結果見[S13 EV](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)，[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
 - 下一步／未驗：新版 APK已成功且使用者回覆已覆蓋安裝，待核正常開啟後集中驗原生權限、一則真通知與點擊／完成停止；不因配置成功聲稱裝置取得 token 或投遞已驗。
 - 交付：Expo Notifications／Android FCM token 註冊、輪換／撤銷與薄投遞 adapter，沿既有 Tasks／授權／偏好／安靜時段／終態／unknown；Web與App各設備授權、同一任務。
 - gate：一則明確批准通知、點擊重新核權及完成停止；不重發 Web Push／Telegram。iOS APNs 是另一平台子範圍，不能拿 FCM token 代替 APNs。

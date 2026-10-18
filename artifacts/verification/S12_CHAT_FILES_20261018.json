@@ -221,5 +221,28 @@
       "businessWrites": 0
     },
     "limits": "No first-chat, voice understanding, cross-device, download, FCM or rollback acceptance claimed"
+  },
+  "androidPlaybackFollowup": {
+    "observedAt": "2026-10-18",
+    "source": "0f0144a4b787f7126eff4569f3b2b9287b5e2c1a",
+    "updateGroup": "cb625df0-92fc-4a10-a14d-250d2a4689ca",
+    "updateId": "01a14ea4-d7f6-7efd-933e-0162bb2aa92a",
+    "runtimeVersion": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "installedVersionCode": 2,
+    "scope": "Two native audio components with unchanged web variants; existing Web artifact reused",
+    "result": "A new four-second local recording entered playing state and advanced to 1 / 4 seconds; then discarded without sending",
+    "preservedFailures": [
+      "Original 15-second preview stayed at zero",
+      "First follow-up stopped before recording because startup UI was not idle",
+      "Second helper observed playback progress, but the short clip ended before the pause-control lookup; cleanup discarded the recording"
+    ],
+    "limits": [
+      "Audibility and explicit pause not verified",
+      "No model, upload, cross-device or first-chat acceptance",
+      "No new APK; compatible OTA rollback remains pending"
+    ],
+    "notificationCalls": 0,
+    "modelCalls": 0,
+    "businessWrites": 0
   }
 }
