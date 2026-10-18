@@ -26,5 +26,19 @@
     "Planning never runs eas fingerprint:generate because the pinned command uploads fingerprints",
     "Web output is prepared-deployment-pending; existing VM path retained",
     "No product test suite or build rerun"
-  ]
+  ],
+  "keyboardFollowup": {
+    "reportedProblem": "Composer jumps when the Android keyboard opens or closes",
+    "finding": "NativeAppShell applied KeyboardAvoidingView height while Android softwareKeyboardLayoutMode was resize",
+    "change": "Disable the extra JS avoidance on Android; keep iOS padding and the existing tab hide/layout",
+    "reference": "https://docs.expo.dev/guides/keyboard-handling/",
+    "check": {
+      "kind": "single-native-shell-typecheck",
+      "roots": 1,
+      "diagnostics": 0
+    },
+    "deviceVerified": false,
+    "apkOrOtaPublished": false,
+    "subagent": "Luna read-only location; main implementation and review"
+  }
 }

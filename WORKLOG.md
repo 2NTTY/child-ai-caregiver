@@ -2956,3 +2956,9 @@
 - 原專案登記 Android package、建立專用受限公開 key，並以保留 etag 的 policy 更新向原 VM 授予唯一 FCM 發送權限；原 policy 及描述檔保留工程外。既有 Web／原生登入 key 未修改。
 - Expo preview 的 secret file 已保存。首次 CLI 因舊依賴連結無法載入配置而在寫入前失敗；只查末段與原結果，核對不存在後以既有專案的本機 metadata context 完成同一設定，沒有另建網站或服務。[證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
 - 零私有程式上傳、新 APK、部署、模型或通知；索引、裝置 token、真 FCM及依賴合併仍待驗。B 主責單作者，主模型設定／review；使用者最新允許 Luna，僅另作鍵盤問題唯讀定位，沒有代做雲端操作。
+
+
+### LOG-20261018-ANDROID-KEYBOARD-COMPOSITION
+
+- 使用者回報鍵盤開關時輸入框位移；Luna 僅定位，主模型核對原生 shell、Android resize 配置及 Expo 官方方法，移除重複 JS 高度補償，保留共用畫面、導航及 iOS 原有分支。
+- 只做變更入口型別，1 root／0 diagnostics；沒有新增鏡像單元測試、手機操作、模型或發布。實際鍵盤手感仍待真機，不把程式原因核對當使用者驗收；併入下一相容 Android 交付。[證據](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
