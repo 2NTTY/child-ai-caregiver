@@ -3097,3 +3097,12 @@
 - Added shared admin controls for request timeout and retries; default interactive deadline is 300 seconds and request timeout 90 seconds. Existing saved policy requires an explicit audited update. Client chat transport accommodates the Server ceiling; original claims and shorter background/media leases remain bounded.
 - Necessary local evidence: existing-harness admin HTTP/routing/receipt scenario and durable real-ADK/scripted-provider retry scenario passed (2 tests, zero real model/notification/cloud calls); 13 affected type roots, zero diagnostics. Recovery and exhaustion both preserve one tool effect and original-operation non-replay. No full suite or model quality claim.
 - Android resume now refreshes device network metadata with a generation guard after observing a stale offline indicator on validated Wi-Fi. Device confirmation of this fix remains pending. Web/OTA, live policy, deployment and remaining Android acceptance/PR gates are still pending at this entry; old evidence is not rewritten.
+
+
+<a id="log-20261018-android-retry-delivery"></a>
+### LOG-20261018-ANDROID-RETRY-DELIVERY
+
+- 依使用者批准的最多額外3次重試與較長等待，交付`e422bab`／`fb1681e`／`adaf08f`。原站API／worker與Web健康，Web公開hash一致；APK v2相容OTA `a209afce-39ac-47fc-821b-d13ff949ac87`已發布，毋須新APK。沒有重送舊訊息、真模型、通知或遷移。
+- 現網舊政策缺少期限欄位，初次新reader投影改變被更新前guard拒絕，未寫入；修正歷史解碼保持90秒／30秒／零重試，原操作再經管理服務明確保存v3為300秒／90秒／3次。每日200／400與用量不變。原有admin必要流程只補一次舊政策相容斷言並通過；不全量重跑。
+- 首次`fb1681e`發布工具在Web產物完成後退出3221226505，尚未提交OTA；原因未確定，保留現場。`adaf08f`以受支持Node及固定CLI完成同版Web／OTA。回退須保留新政策及媒體／附件reader，不可盲退舊API。
+- 手機鎖定，未追加真機操作；Google真實恢復、首條正常聊天、跨端接續／附件分享、照護通知終態、OTA回退及draft依賴仍待驗。Android不標完成，按要求先收束當前修正並報告；不開始本人key、本地Agent或iOS。版本、核對及未驗見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。

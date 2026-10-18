@@ -534,5 +534,110 @@
       "oldMessagesRewritten": false
     },
     "limits": "Does not prove provider recovery or complete Android acceptance."
+  },
+  "boundedRetryDelivery20261018": {
+    "observedAt": "2026-10-18T12:03:47.407665+00:00",
+    "status": "deployed-device-and-real-provider-acceptance-pending",
+    "source": "adaf08f315a351aa66c1e1e447676b18be014cd4",
+    "commits": {
+      "server": "e422bab",
+      "client": "fb1681e",
+      "policyCompatibility": "adaf08f"
+    },
+    "checks": [
+      "Targeted admin HTTP/routing/original-receipt scenario passed.",
+      "Real ADK with scripted provider: recovery/exhaustion, three additional retries, one tool effect and durable original-operation non-replay passed.",
+      "Thirteen affected TypeScript roots: zero diagnostics.",
+      "After live policy projection exposed an omitted legacy field, the same admin scenario passed with historical 90/30/0 decoding. No full suite."
+    ],
+    "preservedFailures": [
+      "Initial live policy update guard rejected an unexpected default projection before any write. Explicit legacy defaults were restored, then the original operation saved policy v3.",
+      "First mobile release at fb1681e exited 3221226505 after Web export, before OTA submission. Cause is unconfirmed; adaf08f release used the supported bundled Node runtime and completed."
+    ],
+    "apiWorker": {
+      "tag": "policy-adaf08f",
+      "image": "sha256:fc7ae7e7dbad79a994d8d61ff56a854ebdff2a24cb582e0b0183bbe38cd45f78",
+      "health": "passed"
+    },
+    "web": {
+      "state": "web-deployed",
+      "source": "adaf08f315a351aa66c1e1e447676b18be014cd4",
+      "htmlHash": "2314375ab67fbd04ba3d1025bdef2a9b2801a07b663c810bbe7fc4675c366cfc",
+      "apiWorkerNotRestarted": true,
+      "image": "sha256:373477f73b0bf495dac7b0d7d2b572b3672f25d9315ca306826e0c51dcd2bcba"
+    },
+    "android": {
+      "state": "published",
+      "action": "update",
+      "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "baseline": {
+        "id": "82cb911e-5e37-43b6-9f30-e2aa9c954de0",
+        "gitSha": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+        "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+        "appVersion": "0.1.0",
+        "versionCode": "2"
+      },
+      "updates": [
+        {
+          "id": "01a14ee1-0c54-7672-88b3-88ee3602c7b7",
+          "group": "a209afce-39ac-47fc-821b-d13ff949ac87",
+          "runtimeVersion": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+          "platform": "android",
+          "gitSha": "adaf08f315a351aa66c1e1e447676b18be014cd4"
+        }
+      ]
+    },
+    "policy": {
+      "observedAt": "2026-10-18T11:57:24.490Z",
+      "operationId": "0645bd1c-c8be-4a66-86a8-ecb15a0fc23b",
+      "before": {
+        "enabled": true,
+        "model": "gemini-3.1-flash-lite",
+        "dailyUserAttempts": 200,
+        "dailyGlobalAttempts": 400,
+        "personalDailyGlobalAttempts": 1000,
+        "maxModelCalls": 8,
+        "maxQueryEmbeddings": 4,
+        "maxToolCalls": 16,
+        "maxRunSeconds": 90,
+        "modelRequestSeconds": 30,
+        "maxModelRetries": 0,
+        "version": 2,
+        "updatedAt": "2026-10-15T16:26:31.260Z"
+      },
+      "after": {
+        "enabled": true,
+        "model": "gemini-3.1-flash-lite",
+        "dailyUserAttempts": 200,
+        "dailyGlobalAttempts": 400,
+        "personalDailyGlobalAttempts": 1000,
+        "maxModelCalls": 8,
+        "maxQueryEmbeddings": 4,
+        "maxToolCalls": 16,
+        "maxRunSeconds": 300,
+        "modelRequestSeconds": 90,
+        "maxModelRetries": 3,
+        "version": 3,
+        "updatedAt": "2026-10-18T11:57:24.435Z"
+      },
+      "usageUnchanged": true
+    },
+    "externalEffects": {
+      "realModelCalls": 0,
+      "embeddings": 0,
+      "notifications": 0,
+      "newApkBuilds": 0,
+      "migrations": 0,
+      "oldMessageResent": false
+    },
+    "rollbackConstraint": "Retain compatible policy, media and attachment readers after new fields/data are saved; do not blindly restore the older API image.",
+    "pending": [
+      "Real provider recovery and user-owned first normal Android chat",
+      "Device receipt of this OTA and foreground network refresh",
+      "Cross-device continuation/confirmation, playback and file download/share",
+      "Care-notification target and completion suppression",
+      "Compatible OTA rollback and stacked draft PR gates"
+    ],
+    "scope": "Android is not marked complete; original native backup restore remains explicitly deferred."
   }
 }

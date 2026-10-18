@@ -4,36 +4,26 @@
 
 ## 目前與接手
 
-- **管理員總控已上線：**#233 的每日／每輪政策維持單一權威，本輪部署沒有修改配額或清零用量。最後已核值為每人200／全站400、每輪8生成／16工具／4查詢／90秒。S05會話、S07同步及S09原運行查回的本機必要檢查已通過，API／Web已更新；新版APK已獲使用者確認正常開啟及原資料保留；首條真人／跨端驗收仍待完成，現場版本只見下方部署觀察。
-
-- **Firestore／正式零 SQL 及本輪 P2 review 修正已交付。** [R01～R04](PLAN.md#p2-review-repair) 分別於 #203～#206 合併，並已部署 `2c17aa7`。修正刪除披露、清理恢復、Agent 正式組裝、成果狀態及通知歷史；不把有限檢查當全面驗收。[P2-ADM01 Web 管理後台](PLAN.md#p2-adm01) 已於 #208／#209 合併並部署，指定的已驗證 UID 已綁定；正式瀏覽器管理身份讀取的 fetch 接收者缺陷已於 #211 修正及部署；上述是既有交付；本輪新增 OPT／LAY／STR 目標尚未完成，家庭多人仍在 P4。
-- **原前後端已共同使用 Firestore。** 原網站保留新前端設計，真 Agent 的官方引用、同一準備單修改／確認／保存及刷新讀回已通過。摘要 Firestore 接線缺口已補回並部署；容量操作及保存讀回已補必要證據，回覆替身與真 Agent 結果分開記錄。正式 API／worker 已退出 SQL，PostgreSQL 停止；不是分開的預覽站。排程、queue 及既有通知入口已恢復，本包未追加外發訊息。
-- **使用者明確延後：原生每日備份首份核對及一次隔離還原。** 每日 14 天排程、還原入口及測試保留，尚無真原生還原證據；不阻塞本次合併與功能使用。後續只見 [PLAN 待驗入口](PLAN.md#p2-backup-followup)，不持續輪詢或重跑既有驗收。配對備份與 F02～F07 證據保持分開；結果、失敗與限制見 [F08 EV](artifacts/verification/F08_ORIGINAL_SITE_20261013.json)。
-- **當前工作：**[S12-W05](PLAN.md#s12-w05)通用附件及首頁快捷入口已部署原站API／worker／Web；同一合成Word的真Storage保存、讀取與清理已核，原腳本失敗保留。Android相容OTA亦已發布，毋須新APK；Android相機開啟／取消與Word草稿選取／移除已核；原生預聽修正版已觀察到播放進度；一則指定FCM已由渠道接受並在手機顯示。Web選檔／兩端下載、首條真人聊天、跨端播放、照護通知目標／完成停止、跨端接續、OTA回退及draft #229／#234～#239依賴合併仍待完成。新版APK v2已獲使用者確認正常開啟、原資料保留；既有鍵盤輸入可見及回位證據不擴成全部真機通過。Android成品後先報告並停下；本人key／自選模型／限額及本地Agent入口等使用者另行定案，iOS暫緩，#214～#216不接管。
-
-- **聊天故障核對：**2026-10-18使用者表示昨天正常、今天暫不能提供。限定日誌確認Google模型服務回傳504，非本站每日用量上限；安全錯誤碼及固定原因已接入停止回覆，兩項針對性本機檢查通過，原站已部署error-2aa1442，API／worker健康；新停止回覆直接顯示原因，舊聊天不回寫。使用者其後批准最多額外3次重試及較長等待；管理員政策／同輪計量重試及相容客戶端已在本機修正，兩項必要檢查與局部型別通過，尚待部署；每日200／400不變，舊訊息不重送。
-
-- **操作範圍：**主模型實作及 review；最新使用者授權可用 Luna 按規則唯讀定位。只做最低必要檢查，局部讀取或日誌尾部，不全量、Computer Use 或重做前端設計；手機 gate 待驗時繼續獨立工作。
-- 前端依 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；本人模型 key／限額仍為可選，平台基本 AI 不要求家長提供 key。未改 UI 設計。
+- **當前：Android交付收束，尚未全數驗收／合併。** 原站及APK v2已接聊天、跨端原運行查回、語音、照片、通用附件、FCM及固定更新入口；使用者已確認覆蓋安裝後正常開啟、登入及原資料保留。相機開啟／取消、Word草稿選取、錄音預聽及一則指定FCM顯示已有證據，不能擴成完整流程通過。
+- **504修正已部署。** 管理員政策v3：每人每日200／全站400；每輪8生成／16工具／4查詢、互動300秒；單次模型90秒、最多額外3次重試。每次重試仍計入原run及每日額度，不重做已成功工具或未知副作用。原用量未清零，沒有重送舊訊息、真模型或通知；本機必要流程通過不代表Google服務已恢復。
+- **餘下Android門檻：**使用者首條正常聊天及重開讀回；Web／Android接續與確認；Web錄音／選檔、跨端播放與附件下載／PDF分享；照護通知目標／完成停止；相容OTA回退及draft #229／#234～#239依賴合併。最新OTA及前景網絡修正已發布，手機鎖定而未追加驗證。詳細gate只見PLAN各包。
+- **既有成果：**正式前後端共同使用Firestore、執行退出SQL；P2 review修正及Web管理後台已部署。家庭多人留P4，OPT／LAY既有成果保留；STR01與協作者#214～#216不接管。[原生每日備份真還原](PLAN.md#p2-backup-followup)按使用者要求延後，沒有把備份metadata核對當成還原通過。
+- **收尾邊界：**完成Android後先報告及停下；本人key／自選模型／限額、本地正式Agent測試入口待使用者另行定案，iOS暫緩。只做最低必要檢查，不全量、Computer Use或重做設計；需本人／手機的項目保留待驗。
 
 <a id="deployment"></a>
 ## 最後部署觀察（非即時狀態）
 
-**2026-10-18 11:26 UTC 錯誤回報更新：**API／worker為`error-2aa1442`（映像`d0435f5`），兩者健康，公開`/api/health`返回ok／firestore；Web仍`files-c4ac1b9`，APK不變。只更新三個程式檔，沒有遷移、模型／通知或配額變更；保留`files-a12da46`及受保護Compose回退副本。原因分類及本機驗證不等於Google服務已恢復，首條真人聊天仍由使用者核對。詳見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
+**2026-10-18 11:58 UTC 原站：**API／worker為`policy-adaf08f`（映像`fc7ae7e`），Web為`retry-adaf08f`（映像`373477f`）；服務健康，公開HTML hash與同版產物一致，Web切換未重啟API／worker。管理員政策由v2經原服務明確保存為v3，生效值見上文；帳目未變、沒有資料遷移。舊政策缺欄位仍按原90秒／30秒／零重試讀取，避免部署默改歷史設定。
 
-**2026-10-18 10:20 UTC 附件更新：**API／worker為`files-a12da46`、Web為`files-c4ac1b9`，全部健康且公開HTML hash一致；原配額、正式資料、通知設定及VM期限不變。保留前版映像和受保護Compose副本；新附件已寫入後的回退必須保留其reader／清理能力。只核最近READY備份metadata，原生真還原仍延後；詳見[附件EV](artifacts/verification/S12_CHAT_FILES_20261018.json)。 Android OTA群組`a8c6bf35-1b67-42ea-9c41-cf7c0ec896a6`已發布，與已安裝APK v2 runtime一致；真機重開後已接收，Android文件草稿入口已核；其後原生音訊修正版0f0144a相容OTA群組`cb625df0-92fc-4a10-a14d-250d2a4689ca`已發布，4秒錄音預聽前進至1秒並已丟棄。使用者親自授予通知權限；唯一指定FCM測試已在手機顯示，未重發、未呼叫模型。原失敗與未驗界線見S12／[S13 EV](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)，不宣稱整體Android完成。
+**Android：**APK v0.1.0／versionCode 2不變；相容OTA群組`a209afce-39ac-47fc-821b-d13ff949ac87`已發布，來源`adaf08f`、runtime `33699576537bf6f4081bddfb9c8807cd6bdef3ee`。毋須覆蓋安裝，最新裝置接收仍待核。部署及失敗／未驗證據見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)；語音／附件與通知詳情沿[S12 EV](artifacts/verification/S12_CHAT_FILES_20261018.json)、[S13 EV](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
 
-**2026-10-18 07:47 UTC 核對：**原 VM 的 API／worker／Web 已部署 `mobile-bf47c47`，三服務健康，公開入口 hash 對應同版產物；PostgreSQL保持停止，沒有模型、通知、資料遷移或配額修改。前置10個索引／6項欄位設定均READY，Linux音訊解析及正式組裝的4次有界查詢通過；準備腳本的掛載、CLI與查詢形狀失敗分開保留。見[同版交付證據](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。APK於07:54 UTC核對完成，固定發布入口已記錄基線；使用者其後於2026-10-18確認「能正常開啟，原資料仍在」，ADB核對versionCode 2；既有OTA不能承接新原生模組；首條真人聊天、手機功能與原生備份真還原仍待驗。
+回退保留既有映像及受保護Compose副本；新政策、附件、語音與通知資料寫入後，必須使用相容reader／worker，不能直接退回不認識新欄位的舊API。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。只讀最近READY原生備份metadata（2026-10-17 22:05 UTC，保留至10月31日），未還原，舊失敗證據不改寫。
 
-**2026-10-18 其後局部更新：**Web改為`keyboard-d321553`，公開HTML hash與產物一致；API／worker沒有重啟、資料與配額不變。APK v2相容OTA群組`759892ac-b994-45c8-b1fd-dc2502077990`已發布，真機核對輸入可見、清空及鍵盤收起後回位；過渡動畫不宣稱全面通過。Web回退使用保留的`mobile-bf47c47`映像及`compose.yaml.before-keyboard-d321553`配置。
-
-保留 `admin-8ba66e7` 映像、受保護設定副本及所有資料。新語音／通知資料寫入後，只能回退相容 reader／worker，不能盲退舊API，見[部署方法](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。部署前磁碟可用約1.0GiB，使用約7.2MB壓縮的小型更新層；沒有刪除舊備份。部署前唯讀核對最近原生備份為2026-10-17 22:05 UTC、READY、保留至10月31日；只核metadata，沒有讀取內容或還原，原延期保持。
-
-VM 此次核對為 e2-small，已按使用者要求續期 5 天，新的自動停止期限為 **2026-10-23 13:33:50 香港時間**。保留 VM 固定費與雲端保存費；未取得新的實際帳單，不宣稱免費或已降低固定費。
+VM仍為e2-small，自動停止期限 **2026-10-23 13:33:50 香港時間**；未新增續期或雲端架構，未取得新帳單，不宣稱免費。
 
 <a id="preview-history"></a>
 ## 按需追溯
 
-[歷史索引](_archive/README.md#recent-history) → 指定 LOG／EV；前端預覽見 [frontend/STATUS](frontend/STATUS.md)，不代替正式站版本。舊 A09、F02 及 F08 失敗保留在固定證據／WORKLOG，不把舊部署或舊批准當成今日現況與剩餘用量。
+[歷史索引](_archive/README.md#recent-history) → 指定LOG／EV；前端入口為[frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN](frontend/PLAN.md#active)。master、draft與部署版本分開，舊批准不當成尚未使用額度。
 
-Codex 額度：未有最新百分比，餘額未知；不推算重置。
+Codex額度：未有最新百分比，餘額未知。
