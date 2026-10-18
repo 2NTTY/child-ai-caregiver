@@ -2,7 +2,7 @@
   "date": "2026-10-18",
   "workPackage": "S12-W05",
   "inputBase": "1dfeb84e2406ab029696a5a5a81bcd67739bc8ca",
-  "status": "integrated_source_local_check_passed_not_deployed",
+  "status": "server_web_deployed_android_ota_pending_device_acceptance",
   "environment": "Node 24.19.0; in-memory Firestore fixture; synthetic object and journal ports; real Mammoth 1.13.0 / JSZip 3.10.2 workers",
   "checks": [
     {
@@ -47,16 +47,16 @@
     "notification": 0,
     "gcp": 0,
     "browser": 0,
-    "device": 0
+    "device": 0,
+    "scope": "earlier local checks only; cloud stage below"
   },
   "notVerified": [
-    "real Firestore indexes and Storage file SDK path",
     "real Agent file understanding",
     "Web/Android system picker and downloaded original",
-    "real backup restore (previously deferred)",
-    "deployment"
+    "Android attachment OTA reception",
+    "real backup restore (previously deferred)"
   ],
-  "limits": "Opaque-file storage and supported content extraction are distinct. Formal source is assembled; deployed site remains unchanged.",
+  "limits": "Local connected scenario and one real synthetic file were checked. Cloud parser and cleanup completed in bounded follow-ups after preserved harness failures; this is not a real model or device acceptance.",
   "integration": {
     "inputBase": "f4e7eab6f04065315758754299138da69afd7e6e",
     "checks": [
@@ -123,6 +123,24 @@
         "cause": "shared Storage port ceiling 16 MiB rejected file ciphertext bound 40 MiB",
         "result": "stopped before test identity or file creation; no site activation",
         "resolution": "raise only explicit adapter ceiling to 40 MiB; photo and voice caller bounds unchanged"
+      },
+      {
+        "stage": "candidate runtime configuration",
+        "cause": "isolated check inherited enabled channel settings without channel secret mounts",
+        "result": "stopped before synthetic identity creation",
+        "resolution": "disable notifications/model only in isolated check process; live configuration unchanged"
+      },
+      {
+        "stage": "production file reader in check",
+        "cause": "node --input-type=module inherited by file worker; ERR_INPUT_TYPE_NOT_ALLOWED reproduced offline",
+        "result": "one synthetic file saved and chat-linked; account revoked on failure",
+        "resolution": "use ordinary module file entrypoint; read same stored original, no new account/file"
+      },
+      {
+        "stage": "follow-up result assertion",
+        "cause": "eraseForScope returns boolean, check incorrectly expected .state",
+        "result": "reading and cleanup ran; stopped at assertion",
+        "resolution": "read-only confirmation found tombstone complete and object absent; no repeated upload/extraction"
       }
     ],
     "offlineRealSdkFactory": {
@@ -130,5 +148,41 @@
       "requests": 0,
       "assertion": "explicit 40 MiB file port assembles; photo default and voice bounds unchanged"
     }
+  },
+  "cloudFile": {
+    "image": "yuban-firestore-api:files-a12da46",
+    "source": "a12da46f00a605635aaa794758ad90ea7bc04da1",
+    "syntheticIdentities": 1,
+    "syntheticChildren": 1,
+    "files": 1,
+    "firebaseAuthUsersCreated": 0,
+    "savedAndChatLinked": true,
+    "realStoredDocxExtracted": true,
+    "revokedIdentityDenied": true,
+    "independentJournal": true,
+    "cleanup": "complete",
+    "objectAbsent": true,
+    "retained": "revoked synthetic child/message and original failure metadata",
+    "modelCalls": 0,
+    "notifications": 0,
+    "acceptance": "same file; remaining read/cleanup only, followed by one read-only result confirmation"
+  },
+  "deployment": {
+    "observedAt": "2026-10-18T10:20:22.962Z",
+    "vm": "yuban-p1",
+    "apiWorkerImage": "yuban-firestore-api:files-a12da46",
+    "apiWorkerImageId": "sha256:1c21d368887e3672509a6f6b93c64ba5ffd56107933a4df27563c7963c543131",
+    "webImage": "yuban-firestore-web:files-c4ac1b9",
+    "webImageId": "sha256:c229e21f702cd680af5995b7c4df91e683ba40bae534697573748782b955ae6c",
+    "health": "all healthy",
+    "publicHtmlSha256": "600d1c3d35f7587a44491fdb0ab196a501c70f91adab6b81347f190f394f4688",
+    "rollback": [
+      "mobile-bf47c47 API/worker image",
+      "keyboard-d321553 Web image",
+      "protected compose configuration copies"
+    ],
+    "backup": "2026-10-17T22:05:22.757057Z READY; metadata only; no restore",
+    "quotaChanged": false,
+    "migrations": 0
   }
 }

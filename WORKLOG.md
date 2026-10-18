@@ -3046,3 +3046,11 @@
 - 新附件兩個索引及兩項欄位設定已READY，Web產物已建好，官方fingerprint與APK v2相同。候選映像的首次真SDK核對在runtime啟動時拒絕40 MiB密文讀取上限；未建立本輪合成身份／附件、未切網站，零模型／通知。
 - 根因是共用Storage port保留16 MiB ceiling；本次只將可顯式指定的上限改為40 MiB，照片預設及語音10 MiB界線不變，不放寬公開照片API。原失敗及封裝／換行準備修正保留於附件EV；原核對須修正後補一次，不能將啟動失敗算已通過。
 - 修正後直接組裝正式Cloud Storage SDK file port通過，零請求；只核構造接點，不重跑已通過的本機情景或冒充雲端保存結果。
+
+
+### LOG-20261018-CHAT-FILE-CLOUD-DELIVERY
+
+- C單作者交付Server容量修正a12da46及原站更新；API／worker `files-a12da46`、Web `files-c4ac1b9`健康，公開HTML與準備產物hash相同。原映像／受保護配置保留；配額、正式資料及通知設定不變，零模型／通知，未做資料遷移或真備份還原。
+- 只使用一個合成身份、孩子及極小Word：已保存並連回聊天。檢查容器缺通知掛載與Node input-type繼承先後停批；前者未建資料，後者已撤銷合成身份。改成正式檔案入口後讀同一原檔成功，再用獨立journal及真cleanup consumer清理；boolean回傳斷言誤讀後，只唯讀確認tombstone complete及物件已不存在。未重建帳號／附件，原失敗及撤權場景保留。
+- 真SDK與資料接點的有限結果見[附件EV](artifacts/verification/S12_CHAT_FILES_20261018.json)；不等同真Agent理解或兩端選檔驗收。Android相容OTA尚待發布，原人工gate及原生備份真還原仍未通過。
+- 按使用者更新目標：Android成品後先報告並停止；個人key、自選模型／限額及本地Agent入口留待使用者重新計劃，不自動開工。

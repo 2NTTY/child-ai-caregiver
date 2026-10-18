@@ -9,13 +9,15 @@
 - **Firestore／正式零 SQL 及本輪 P2 review 修正已交付。** [R01～R04](PLAN.md#p2-review-repair) 分別於 #203～#206 合併，並已部署 `2c17aa7`。修正刪除披露、清理恢復、Agent 正式組裝、成果狀態及通知歷史；不把有限檢查當全面驗收。[P2-ADM01 Web 管理後台](PLAN.md#p2-adm01) 已於 #208／#209 合併並部署，指定的已驗證 UID 已綁定；正式瀏覽器管理身份讀取的 fetch 接收者缺陷已於 #211 修正及部署；上述是既有交付；本輪新增 OPT／LAY／STR 目標尚未完成，家庭多人仍在 P4。
 - **原前後端已共同使用 Firestore。** 原網站保留新前端設計，真 Agent 的官方引用、同一準備單修改／確認／保存及刷新讀回已通過。摘要 Firestore 接線缺口已補回並部署；容量操作及保存讀回已補必要證據，回覆替身與真 Agent 結果分開記錄。正式 API／worker 已退出 SQL，PostgreSQL 停止；不是分開的預覽站。排程、queue 及既有通知入口已恢復，本包未追加外發訊息。
 - **使用者明確延後：原生每日備份首份核對及一次隔離還原。** 每日 14 天排程、還原入口及測試保留，尚無真原生還原證據；不阻塞本次合併與功能使用。後續只見 [PLAN 待驗入口](PLAN.md#p2-backup-followup)，不持續輪詢或重跑既有驗收。配對備份與 F02～F07 證據保持分開；結果、失敗與限制見 [F08 EV](artifacts/verification/F08_ORIGINAL_SITE_20261013.json)。
-- **當前工作：**Android 首條真人聊天由使用者驗收。S05／S07／S09／S12／S13及發布工具已保存 draft #234～#239；`bf47c47` API／worker／Web、語音／通知索引已部署，一次新版 preview APK已完成（versionCode 2），相符的 runtime／發布基線已保存。同版後端語音理解／保存結果讀回／背景轉錄／搜尋已用一段合成錄音核對；真機錄音／播放、FCM、跨端接續、鍵盤／導航修正已交付Web及相容OTA，輸入可見與收起後回位有定向真機結果；首頁語音快捷入口已補程式與必要型別核對，尚未部署；通用檔案附件已接正式Agent／共同owner、匯出、清理及恢復，一條本機連貫核對通過；雲端及兩端選檔待依 [S12-W05](PLAN.md#s12-w05) 交付，OTA回退與依賴合併仍待驗；不把啟動及 bundle 當 Android 成品。細節只見 [PLAN](PLAN.md#active)。Android成品後接本人 key／自選模型及同一 Agent 本地入口；iOS未開始，#214～#216不接管。
+- **當前工作：**[S12-W05](PLAN.md#s12-w05)通用附件及首頁快捷入口已部署原站API／worker／Web；同一合成Word的真Storage保存、讀取與清理已核，原腳本失敗保留。接着發布相容Android OTA；兩端選檔／下載、首條真人聊天、真機語音／播放、FCM、跨端接續、OTA回退及draft #229／#234～#239依賴合併仍待完成。新版APK v2已獲使用者確認正常開啟、原資料保留；既有鍵盤輸入可見及回位證據不擴成全部真機通過。Android成品後先報告並停下；本人key／自選模型／限額及本地Agent入口等使用者另行定案，iOS暫緩，#214～#216不接管。
 
 - **操作範圍：**主模型實作及 review；最新使用者授權可用 Luna 按規則唯讀定位。只做最低必要檢查，局部讀取或日誌尾部，不全量、Computer Use 或重做前端設計；手機 gate 待驗時繼續獨立工作。
 - 前端依 [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active)；本人模型 key／限額仍為可選，平台基本 AI 不要求家長提供 key。未改 UI 設計。
 
 <a id="deployment"></a>
 ## 最後部署觀察（非即時狀態）
+
+**2026-10-18 10:20 UTC 附件更新：**API／worker為`files-a12da46`、Web為`files-c4ac1b9`，全部健康且公開HTML hash一致；原配額、正式資料、通知設定及VM期限不變。保留前版映像和受保護Compose副本；新附件已寫入後的回退必須保留其reader／清理能力。只核最近READY備份metadata，原生真還原仍延後；詳見[附件EV](artifacts/verification/S12_CHAT_FILES_20261018.json)。
 
 **2026-10-18 07:47 UTC 核對：**原 VM 的 API／worker／Web 已部署 `mobile-bf47c47`，三服務健康，公開入口 hash 對應同版產物；PostgreSQL保持停止，沒有模型、通知、資料遷移或配額修改。前置10個索引／6項欄位設定均READY，Linux音訊解析及正式組裝的4次有界查詢通過；準備腳本的掛載、CLI與查詢形狀失敗分開保留。見[同版交付證據](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。APK於07:54 UTC核對完成，固定發布入口已記錄基線；使用者其後於2026-10-18確認「能正常開啟，原資料仍在」，ADB核對versionCode 2；既有OTA不能承接新原生模組；首條真人聊天、手機功能與原生備份真還原仍待驗。
 
