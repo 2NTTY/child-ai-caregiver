@@ -1,3 +1,5 @@
+import { chatFileBackupDescriptorSchema } from './firebase-chat-file-recovery.ts';
+import { chatFileObjectDescriptorSchema } from './firebase-chat-file-objects.ts';
 import { voiceBackupDescriptorSchema } from './firebase-voice-recovery.ts';
 import { voiceObjectDescriptorSchema } from './firebase-voice-objects.ts';
 import { createHash } from "node:crypto";
@@ -57,6 +59,8 @@ const photoSchema: z.ZodType<FirebaseBackupPhotoManifestEntry> = z.object({
 }).strict();
 export const firebaseBackupVoiceEntrySchema = z.object({path,voiceId:uuid,scope:workRecoveryScopeSchema,descriptor:voiceObjectDescriptorSchema,backup:voiceBackupDescriptorSchema}).strict();
 export type FirebaseBackupVoiceEntry = z.infer<typeof firebaseBackupVoiceEntrySchema>;
+export const firebaseBackupChatFileEntrySchema = z.object({path,fileId:uuid,scope:workRecoveryScopeSchema,descriptor:chatFileObjectDescriptorSchema,backup:chatFileBackupDescriptorSchema}).strict();
+export type FirebaseBackupChatFileEntry = z.infer<typeof firebaseBackupChatFileEntrySchema>;
 export const firebaseBackupManifestPayloadSchema = z.object({
   format: z.literal("yuban-firebase-backup-manifest/v1"), backupId: uuid, databaseId,
   snapshotTime: z.iso.datetime({ precision: 3 }), controlGeneration: uuid, sourceCommit: z.string().regex(/^[a-f0-9]{40}$/u),
@@ -64,6 +68,7 @@ export const firebaseBackupManifestPayloadSchema = z.object({
   retainedUntil: at, nativeExport: z.object({ outputUriPrefix: z.string().min(1).max(1500), objects: nativeObjectsSchema }).strict(),
   inventory: firebaseBackupInventorySchema, photos: z.array(photoSchema).max(PHOTO_LIMITS.totalCount),
   voices: z.array(firebaseBackupVoiceEntrySchema).max(MAX_DOCUMENTS).optional(),
+  chatFiles: z.array(firebaseBackupChatFileEntrySchema).max(MAX_DOCUMENTS).optional(),
 }).strict();
 export type FirebaseBackupManifestPayload = z.infer<typeof firebaseBackupManifestPayloadSchema>;
 export const firebaseBackupManifestDescriptorSchema = z.object({

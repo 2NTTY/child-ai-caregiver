@@ -2,7 +2,7 @@
   "date": "2026-10-18",
   "workPackage": "S12-W05",
   "inputBase": "1dfeb84e2406ab029696a5a5a81bcd67739bc8ca",
-  "status": "partial_implementation_not_deployed",
+  "status": "integrated_source_local_check_passed_not_deployed",
   "environment": "Node 24.19.0; in-memory Firestore fixture; synthetic object and journal ports; real Mammoth 1.13.0 / JSZip 3.10.2 workers",
   "checks": [
     {
@@ -50,11 +50,46 @@
     "device": 0
   },
   "notVerified": [
-    "real Firestore and Storage file SDK path",
-    "production runtime and Agent tool binding",
-    "Web/Android picker and owner",
-    "export, scope cleanup and backup/restore",
+    "real Firestore indexes and Storage file SDK path",
+    "real Agent file understanding",
+    "Web/Android system picker and downloaded original",
+    "real backup restore (previously deferred)",
     "deployment"
   ],
-  "limits": "Opaque-file storage is separate from supported content parsing. Existing entries remain disabled in production."
+  "limits": "Opaque-file storage and supported content extraction are distinct. Formal source is assembled; deployed site remains unchanged.",
+  "integration": {
+    "inputBase": "f4e7eab6f04065315758754299138da69afd7e6e",
+    "checks": [
+      {
+        "command": "node --test tests/firestore-chat-files.test.ts",
+        "result": "1 passed, 0 failed; extended same connected scenario",
+        "coverage": [
+          "real ChatFileUploadController and API through formal HTTP handler",
+          "lost upload response reconciled at original object, one write",
+          "message attachment transaction and original replay",
+          "actual Agent file reader, bounded Word continuation",
+          "authorized client download and account export",
+          "isolated restore to new object scope",
+          "delete blocks HTTP, Agent and export",
+          "journal replay retains tombstone; actual cleanup consumer completes"
+        ]
+      },
+      {
+        "command": "TypeScript API: 5 affected Server roots and 5 affected frontend roots",
+        "result": "0 diagnostics each"
+      }
+    ],
+    "failures": [
+      {
+        "stage": "affected Server typecheck",
+        "result": "account exporter narrow file port did not implement chat prepareLink",
+        "resolution": "read-only memory export constructs chat store without the unused write-only file port; affected roots passed"
+      }
+    ],
+    "limits": [
+      "Firestore/object/journal ports are synthetic",
+      "does not prove real SDK, runtime model understanding, browser or Android interaction",
+      "no new cloud, model, notification or device calls"
+    ]
+  }
 }

@@ -14,7 +14,14 @@ import { firebaseErasureIntentHash, type FirebaseErasureIntent, type FirebaseEra
 import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
 import type { FirebaseAuthPort } from '../server/firebase-auth.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
-import { readChatFile } from '../server/chat-file-reader.ts';
+import { createChatFileAgentReader } from '../server/chat-file-agent.ts';
+import { createChatFileApi } from '../src/client/chat-file-api.ts';
+import { ChatFileUploadController } from '../frontend/src/production/ChatFileUploadController.ts';
+import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
+import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
+import { prepareFirebaseRestore, firebaseRestoreEpoch } from '../server/firestore-restore.ts';
+import { isRestoreProtocolOrUsage } from '../server/firestore-restore-usage.ts';
+import { firestoreChatFileRowSchema } from '../server/firestore-chat-files.ts';
 
 // One connected lifecycle, not a new per-format or per-platform test matrix.
 test('private chat files retain original receipts, linked content and deletion while Word reads stay bounded', async () => {
@@ -70,26 +77,63 @@ test('private chat files retain original receipts, linked content and deletion w
     auth:{ getSession:async()=>({user:{id:userId}}),handler:async()=>new Response(null,{status:404}) } as unknown as FirebaseAuthPort});
   const request=(path:string,payload?:unknown)=>handler(new Request(origin+path,{method:payload===undefined?'GET':'POST',headers:{origin,'content-type':'application/json','x-expected-user-id':userId},body:payload===undefined?undefined:JSON.stringify(payload)}));
   const path='/api/children/'+childId+'/files';
-  const reserved=await (await request(path,input)).json(); assert.equal(reserved.file.id,id);
-  assert.deepEqual(await files.reserve('parent',childId,input),reserved.file);
+  const fetcher: typeof fetch = async (url, init) => handler(new Request(url, { ...init,
+    headers: { ...Object.fromEntries(new Headers(init?.headers)), origin } }));
+  const api = createChatFileApi(fetcher, origin, async value => createHash('sha256').update(value).digest('hex'));
+  const owner = new ChatFileUploadController(api, async value => createHash('sha256').update(value).digest('hex'), () => {}, () => id);
+  owner.syncContext({ key:'parent-child', userId:'parent', childId }, true);
+  const local = { id:'local-file', ...input, readBase64:async()=>bytes.toString('base64') };
+  assert.equal(await owner.prepare(local), null);
+  assert.equal(owner.getSnapshot().unknown, true);
+  assert.equal(writes, 1);
+  await owner.check();
+  const ready = { file: (await owner.prepare(local))! };assert.equal(ready.file.state, 'ready');assert.equal(writes, 1);
+  assert.deepEqual(await files.reserve('parent',childId,input), ready.file);
   await assert.rejects(files.reserve('parent',childId,{...input,fileName:'changed.docx'}),(e:any)=>e.code==='operation_conflict');
-  assert.equal((await request(path+'/'+id+'/content',{expectedVersion:reserved.file.version,base64:bytes.toString('base64')})).status,503);
-  const ready=await (await request(path+'/'+id+'/resolve',{})).json();assert.equal(ready.file.state,'ready');assert.equal(writes,1);
   userId='other';assert.equal((await request(path+'/'+id)).status,403);userId='parent';
   const save=await command('/api/children/'+childId+'/messages',{text:'請整理這份到診資料',file:{id,expectedVersion:ready.file.version}});
   const submitted=await online.submit('parent',save);const message=(submitted.result as any).message;
   assert.equal(message.file.id,id);assert.deepEqual(await online.submit('parent',save),submitted);
   assert.equal((await chat.listForUser('parent',childId))?.messages[0].file?.id,id);
-  const content=await files.contentForMessage('parent',childId,message.id,message.file);
-  const extracted=await readChatFile({...content,fileName:input.fileName,mimeType:input.mimeType,sha256});
+  owner.linked(message.id,id);assert.equal(owner.getSnapshot().localId,null);
+  const agentRead=createChatFileAgentReader(files);
+  const extracted=(await agentRead('parent',childId,{id,expectedVersion:message.file.version})).result;
   assert.equal(extracted.state,'read');if(extracted.state!=='read')throw new Error('Word extraction failed');
   assert.ok(extracted.text.startsWith(paragraph));assert.ok(extracted.text.length<=12_000);assert.equal(extracted.complete,false);assert.ok(extracted.next);
-  const rest=await readChatFile({...content,fileName:input.fileName,mimeType:input.mimeType,sha256},extracted.next!);
+  const rest=(await agentRead('parent',childId,{id,expectedVersion:message.file.version,...extracted.next!})).result;
   assert.equal(rest.state,'read');if(rest.state!=='read')throw new Error('Word continuation failed');assert.equal(rest.next,null);
-  const download=await request(path+'/'+id+'/content');assert.equal(download.headers.get('content-type'),'application/octet-stream');
-  assert.match(download.headers.get('content-disposition')??'',/^attachment;/u);assert.deepEqual(Buffer.from(await download.arrayBuffer()),bytes);
+  const content=await api.content(await api.get(childId,id,new AbortController().signal,'parent'),new AbortController().signal,'parent');
+  assert.deepEqual(Buffer.from(content.bytes),bytes);
+  const exporter=createFirestoreAccountExport({...options, files, photos:{async content(){throw new Error('No photo expected');}}});
+  assert.equal((await exporter.page('parent',{section:'file_content',childId})).items.length,1);
+  const codec=createFirestoreRestoreCodec(options),generation=(await authority.readControl()).generation;
+  const snapshot=()=>[...fake.records].map(([path,data])=>({path,data:structuredClone(data)})).map(record=>{
+    if(!record.path.startsWith(options.namespace+'/'))return record;
+    const decoded=codec.decode(record);if(decoded.context.kind!=='control')return record;
+    const transformed=codec.transform(decoded,{generation,newEpochByWorkspace:new Map(),photoDescriptors:new Map()});
+    return {path:transformed.path,data:transformed.data};
+  });
+  const sourceSnapshot=snapshot(),restoreId=randomUUID(),restoreScope=await authority.runTransaction('parent',childId,async b=>({...b.scope,
+    storageEpoch:firebaseRestoreEpoch(options.projectId,'synthetic-file-restore',restoreId,b.scope.workspaceId)}));
+  const targetDescriptor={...[...stored.values()][0]!,objectName:objects.address(restoreScope,id)};
+  const restoreInput={restoreId,targetDatabaseId:'synthetic-file-restore',sourceGeneration:generation,documents:sourceSnapshot,liveDocuments:sourceSnapshot,
+    authUsers:['parent','other'].map(userId=>({userId,email:userId+'@example.test',emailVerified:true,disabled:false})),
+    erasures:[],erasureDescriptors:new Map(),photoDescriptors:new Map(),chatFileObjectBucketName:'synthetic-file-private',chatFileDescriptors:new Map([[id,targetDescriptor]])};
+  const restored=prepareFirebaseRestore(options,restoreInput);
+  const readyFile=restored.records.filter(r=>!isRestoreProtocolOrUsage(options.namespace,r.path)).map(r=>codec.decode(r)).find(r=>r.context.kind==='chat-file-asset');
+  assert.equal(firestoreChatFileRowSchema.parse(readyFile!.value).descriptor?.objectName,targetDescriptor.objectName);
   const deletion=await files.delete('parent',childId,id,message.file.version,randomUUID());assert.equal(deletion.deleted,true);
   assert.equal((await request(path+'/'+id+'/content')).status,410);
   const intent=[...intents.values()][0];assert.equal(intent.type,'file-delete');assert.equal((await files.cleanupDeleted(intent.scope,id)).state,'complete');
   assert.equal(stored.size,0);assert.equal(writes,1);assert.deepEqual(await online.submit('parent',save),submitted);
+  await assert.rejects(agentRead('parent',childId,{id,expectedVersion:message.file.version}),(e:any)=>e.code==='chat_file_deleted');
+  assert.equal((await exporter.page('parent',{section:'file_content',childId})).items.length,0);
+  const proofs=new Map();for(const [hash,value] of intents)proofs.set(hash,await journal.writeOnce(value));
+  const erased=prepareFirebaseRestore(options,{...restoreInput,liveDocuments:snapshot(),erasures:[...intents.values()],erasureDescriptors:proofs,chatFileDescriptors:new Map()});
+  const erasedFile=erased.records.filter(r=>!isRestoreProtocolOrUsage(options.namespace,r.path)).map(r=>codec.decode(r)).find(r=>r.context.kind==='chat-file-asset');
+  const tombstone=firestoreChatFileRowSchema.parse(erasedFile!.value);assert.equal(tombstone.metadata,null);assert.equal(tombstone.state,'deleted');
+  const previous=new Map(fake.records);fake.records.clear();for(const row of erased.records)fake.records.set(row.path,row.data);
+  assert.equal((await files.cleanupDeleted(tombstone.scope,id)).state,'complete');
+  fake.records.clear();for(const [path,value] of previous)fake.records.set(path,value);
+  owner.dispose();
 });

@@ -995,3 +995,7 @@ OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 P
 聊天提交可帶 `file: {id, expectedVersion}`，可附文字，不能與 `voice` 同時帶入。ready、目前本人／孩子及未綁定條件在同一交易核對，再連回唯一訊息；回傳不可變ID、版本、hash、大小及格式，不複製檔案正文。下載固定 attachment／octet-stream、nosniff、private no-store；不將任意HTML或其他檔案當頁面執行。
 
 畫面只顯示檔名、大小、「不支援預覽」及實際上傳狀態，不預先標成「尚未讀取內容」。內容閱讀另返回抽取文字、原檔hash、已讀範圍與續讀位置；PDF保留頁碼。只在實際抽取後回報格式不支援、受保護／損壞、無可讀文字或容量限制；不能把片段、文字抽取或沒有預覽當作已完整理解圖片及版面。
+
+`read_chat_file` 僅供本人互動Agent，使用 `id`／`expectedVersion` 及可選 `page`／`offset`；Server核對已提交訊息、孩子與版本，抽取後再次核對，再返回私人原件及範圍資訊。工具結果不是官方知識引用或使用者新授權，不向背景共享流程暴露。沒有正文的單獨附件亦可提交，Agent按同一訊息處理。
+
+帳戶匯出增加 `files`／`file_content`（內容每頁一份）；讀取沿同一授權及刪除屏障。Web／Android由同一 `ChatFileUploadController` 保存原預留／unknown狀態；下載原檔另核目前版本，頁面不維護第二份可寫附件。

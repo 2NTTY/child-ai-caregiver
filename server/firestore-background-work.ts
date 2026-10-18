@@ -9,7 +9,7 @@ import type { FirestoreAuthorityTransaction as Binding } from './firestore-autho
 const time = z.iso.datetime({ offset: true }), uuid = z.uuid(), text = z.string().min(1).max(256);
 const version = z.number().int().positive().max(2147483647);
 export const backgroundKindSchema = z.enum(['child-change', 'growth', 'concern', 'work-check', 'work-continuation', 'task-agent',
-  'memory-refresh', 'voice-transcription', 'document-refresh', 'knowledge-check', 'photo-cleanup', 'voice-cleanup', 'scope-erasure', 'push', 'native-push', 'telegram', 'contact']);
+  'memory-refresh', 'voice-transcription', 'document-refresh', 'knowledge-check', 'photo-cleanup', 'voice-cleanup', 'file-cleanup', 'scope-erasure', 'push', 'native-push', 'telegram', 'contact']);
 const identitySchema = z.object({ kind: backgroundKindSchema, scope: workRecoveryScopeSchema, resourceId: text,
   basis: text, generation: uuid, authorizationVersion: text }).strict();
 export const firestoreBackgroundWorkSchema = identitySchema.extend({ id: z.string().regex(/^[a-f0-9]{64}$/u),
@@ -87,7 +87,7 @@ export async function prepareFirestoreBackgroundWork(data: FirestoreDomainData, 
 
 /** Only a proven cleanup descriptor may wake an exhausted read/delete reconciliation. */
 export async function prepareObjectCleanupWake(data: FirestoreDomainData, tx: Transaction, identity: BackgroundIdentity, evidence: string) {
-  if (!['photo-cleanup','voice-cleanup'].includes(identity.kind)) domainReject('background_binding', 500);
+  if (!['photo-cleanup','voice-cleanup','file-cleanup'].includes(identity.kind)) domainReject('background_binding', 500);
   const id = jobId(identity), prior = open(data, await tx.get(ref(data, id)));
   if (!prior || prior.cleanupEvidence === evidence || !['unknown', 'failed'].includes(prior.state)) return () => {};
   return () => tx.set(ref(data, id), seal(data, { ...prior, cleanupEvidence: evidence, version: prior.version + 1, state: 'pending', failures: 0,

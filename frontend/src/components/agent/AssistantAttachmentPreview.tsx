@@ -21,7 +21,7 @@ export function AssistantAttachmentPreview({ attachments, enabled, onRemove, onR
     {attachments.map(item => <View key={item.id} testID={`assistant-attachment-${item.kind}`} style={styles.item}>
       <Pressable accessibilityRole="button" accessibilityLabel={`預覽未送出${labels[item.kind]}：${item.fileName}`} onPress={() => setSelectedId(item.id)} style={styles.preview}>
         {item.photo ? <Image source={item.photo.imageSource} accessibilityLabel="本地照片，未上傳" style={styles.thumbnail} /> : <View style={styles.thumbnail}><AppIcon name={item.kind === "voice" ? "microphone-outline" : "file-document-outline"} size={24} /></View>}
-        <View style={styles.copy}><Text numberOfLines={1} style={styles.name}>{item.fileName}</Text><Text style={styles.meta}>{labels[item.kind]} · 未送出 · {Math.max(1, Math.round(item.bytes / 1024))} KB</Text></View>
+        <View style={styles.copy}><Text numberOfLines={1} style={styles.name}>{item.fileName}</Text><Text style={styles.meta}>{labels[item.kind]} · {item.kind === "file" ? "不支援預覽 · " : ""}未送出 · {Math.max(1, Math.round(item.bytes / 1024))} KB</Text></View>
       </Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel={`移除附件：${item.fileName}`} disabled={!enabled} onPress={() => onRemove(item.id)} accessibilityState={{disabled: !enabled}} aria-disabled={!enabled} style={[styles.remove, !enabled && styles.disabled]}><AppIcon name="close" size={18} color={colors.errorInk} /></Pressable>
     </View>)}
@@ -30,7 +30,7 @@ export function AssistantAttachmentPreview({ attachments, enabled, onRemove, onR
       {selected?.photo ? <Image source={selected.photo.imageSource} accessibilityLabel="未上傳照片的本地預覽" resizeMode="contain" style={styles.fullPhoto} /> : null}
       {selected?.kind === "voice" && selected.localUri ? <LocalAudioPreview uri={selected.localUri} /> : null}
       <Text style={styles.name}>{selected?.fileName}</Text><Text style={styles.meta}>{selected?.mimeType} · {selected ? Math.max(1, Math.round(selected.bytes / 1024)) : 0} KB</Text>
-      <Text style={styles.meta}>{selected?.kind === "file" ? "目前只預覽原檔資料；文件內容讀取尚未接通。" : "本地預覽，未上傳、辨識或轉錄。"} 可補充文字後再預覽整份輸入。</Text>
+      <Text style={styles.meta}>{selected?.kind === "file" ? "不支援預覽。" : "本地預覽，未上傳、辨識或轉錄。"}</Text>
     </View></AppDialog.Content><AppDialog.Actions>
       <AppButton label="更換附件" variant="secondary" onPress={() => { if (selected) onReplace(selected); setSelectedId(null); }} />
       <AppButton label="移除" variant="quiet" onPress={() => { if (selected) onRemove(selected.id); setSelectedId(null); }} />

@@ -18,8 +18,8 @@ export function AssistantInputDialog({ kind, enabled, onPick, onDismiss, onUseTe
   return <Portal><AppDialog visible={!!kind && enabled} onDismiss={onDismiss} testID="assistant-input-dialog">
     <AppDialog.Title>{kind === "voice" ? "語音輸入" : "加入文件"}</AppDialog.Title>
     <AppDialog.Content><AppScrollView style={{ flexGrow: 0 }} contentContainerStyle={styles.content}>
-      <Text style={styles.body}>{kind === "voice" ? "錄音或選取音訊後，先試聽，再加入未送出草稿。" : "選取文件後，先與照片及文字放在同一份未送出草稿。此處不會讀取或整理文件內容。"}</Text>
-      <Text style={styles.note}>{kind === "voice" ? "每段最多兩分鐘／5 MiB，支援 M4A、WebM、OGG、WAV 及 MP3。" : "支援選取 PDF、TXT、Word 或 CSV，最多 20 MiB。"}</Text>
+      <Text style={styles.body}>{kind === "voice" ? "錄音或選取音訊後，先試聽，再加入未送出草稿。" : "選取文件並加入草稿，可補充想請助手處理的事情，再送出。"}</Text>
+      <Text style={styles.note}>{kind === "voice" ? "每段最多兩分鐘／5 MiB，支援 M4A、WebM、OGG、WAV 及 MP3。" : "各類檔案均可傳送，每則一份、最多 20 MiB。不支援預覽。"}</Text>
       {kind === "voice" && enabled ? <VoiceCapture onPick={onPick} /> : null}
       {kind ? <AssistantAttachmentPicker key={kind} kind={kind} disabled={!enabled} selectAttachment={selectAttachment} onError={setError}
         onPick={attachment => { setError(null); onPick(attachment); }} /> : null}

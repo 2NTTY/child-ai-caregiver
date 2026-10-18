@@ -215,3 +215,5 @@ A07沿既有登入／設定版型接createAccountApi（status、acknowledge、ex
 正式聊天的即時回饋沿同一 ChatController／owner：`feedback` 只包含本次 run／message、固定階段及官方卡 ID；畫面不自行推斷工具成功或另一份任務狀態。卡片在當次回覆正文上方呈現，原 message 的 `officialHelp` 支援刷新讀回；一般聊天沒有卡。斷線查原運行及聊天，登出／切孩子清除當次投影。此接點是進度 SSE，正文仍在核引用、權限及保存後完整交付；灰色 token 草稿與語義審核另依 STR01，不宣稱已接。
 
 S12 語音共用接點：ProductionOwner 的單一 VoiceUploadController 保存原預留 ID／unknown；ProductionProvider 把已核對附件交同一 ChatController，聊天保存與附件綁定使用原 online operation。VoiceMessage 按需讀取目前音訊／轉錄、下載和定位播放，聊天與歷史頁共用；scope／權限錯誤清除播放及遲到回應。自動轉錄只供閱讀／搜尋，不再執行指令，不取代原訊息。Web／Android 分別使用 Blob URL／可丟棄 FileSystem 快取，UI 不判定保存成功或實作資料庫規則。錄音套件及 permission 變更需要新 APK；程式接線與實際發布／真機結果以根 S12 狀態為準。
+
+S12-W05 通用檔案共用接點：`ChatFileUploadController` 與 `ChatController` 沿原操作保存、查回及連結一份附件；兩端選檔可不限制副檔名，首版20 MiB。`ChatFileMessage` 顯示檔名、大小、「不支援預覽」及經當前身份核對的原檔下載；Agent內容閱讀另走 `read_chat_file`，不能由沒有畫面預覽推定不支援閱讀。Android系統選檔只複製所選原件到可丟棄私人快取，移除草稿不刪使用者相簿／檔案；已送出內容由同一Server權威提供。實際發布及真機待驗見根PLAN，不另存階段狀態。
