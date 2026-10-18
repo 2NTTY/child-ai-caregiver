@@ -132,5 +132,20 @@
     },
     "dependenciesMerged": false,
     "deviceVerified": false
+  },
+  "apkCompletion": {
+    "observedAt": "2026-10-18T07:54:44.379Z",
+    "buildId": "82cb911e-5e37-43b6-9f30-e2aa9c954de0",
+    "status": "FINISHED",
+    "source": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+    "versionCode": "2",
+    "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "downloadUrl": "https://expo.dev/artifacts/eas/Nu9ISKWMtg2ntTsFkOd6OCunMr33W25pBHn-Ne77zNI.apk",
+    "buildUrl": "https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/82cb911e-5e37-43b6-9f30-e2aa9c954de0",
+    "releaseBaselineRecorded": true,
+    "recordBuildCommand": "mobile:release --record-build 82cb911e-5e37-43b6-9f30-e2aa9c954de0 --channel preview",
+    "additionalBuilds": 0,
+    "deviceInstalled": false,
+    "otaAndUpgradeAccepted": false
   }
 }

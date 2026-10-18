@@ -2977,3 +2977,9 @@
 - 實際Android與Web各一次bundle成功；發布plan及archive核對未發布。原VM以約2.6MB後端及4.7MBWeb小型層更新API／worker／Web，保留原映像與設定；10個索引／6項欄位設定READY。近期原生備份只核metadata，不改延後真還原決定。
 - 候選核對先因掛載、Compose參數及驗收腳本的非產品查詢形狀停止；保留失敗，只補相應啟動核對，沒有重建或跑全套。最終Linux音訊時長、正式runtime及4次有界空結果查詢通過；三服務健康與公開HTML hash相符。[EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
 - 零模型／通知／業務資料遷移／配額改動；沒有操作手機。真音訊、原生權限／FCM、跨端真人、覆蓋安裝、OTA回退及依賴合併仍待驗；不把靜態或啟動結果當成Android完成。主模型實作／review，Luna只定位既有部署入口；交付按Android主責單作者。
+
+
+### LOG-20261018-ANDROID-APK-READY
+
+- 原批准的唯一 build `82cb911e-5e37-43b6-9f30-e2aa9c954de0` 已於07:54 UTC核對 FINISHED；源 `bf47c47`、versionCode 2、原簽署及 preview channel。沒有重建、購買方案或追加上傳。
+- 固定 `mobile:release --record-build` 入口已核對身份／平台／runtime並保存本機發布基線；[APK及結果](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)可追溯。這是建置與基線結果，真機安裝／升級、錄音、FCM及OTA回退仍待驗，不代填使用者結果。
