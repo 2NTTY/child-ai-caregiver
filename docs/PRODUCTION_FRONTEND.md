@@ -83,7 +83,7 @@ docker compose --project-name yuban-p1 \
 - Tasks／Scheduler 呼叫 VM 的受驗證工作入口，應用核 OIDC、固定 audience 及服務身份；保留 lease／generation、收據及 unknown 不重發。不能僅暴露一條公開 worker URL 便視為安全。
 - 互動沿現有請求、進度、取消及結果接口；不為 Hosting 60 秒限制強制改協議。需要排程的工作先持久受理；私有回應 no-store，身份切換清除快取及遲到回應。
 - 依 [ADR-025](DECISIONS.md#adr-025)，F02～F07 先完成原 VM 資料接點及全部正式 SQL 退出，保留既有 API／頁面相容性；F08 再驗收受邀用戶並更新原站。不逐資料包切站或重跑完整用戶流程。未遷移功能明示，不用假成功或空資料掩蓋；不維持兩套產品網站。
-- 每次部署核對 VM 實況／期限、相容配置、資料與備份及 in-flight 工作，允許短暫維護；只有一套主寫與排程。已有新寫入只能回退相容 Firebase 應用版本或隔離還原，不能切回 SQL 舊快照；新刪除／撤銷／收據不可倒退。
+- 每次部署核對 VM 實況／期限、相容配置、資料與備份及 in-flight 工作，允許短暫維護；只有一套主寫與排程。已有新寫入只能回退相容 Firebase 應用版本或隔離還原，不能切回 SQL 舊快照；新刪除／撤銷／收據不可倒退。已寫入語音訊息、轉錄或原生通知綁定後，回退的 API／worker 仍須識別這些 schema 及清理義務；舊 Web／APK 可保留相容使用，不代表可以盲退不識別新資料的 Server。
 
 F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外 Hosting 站點與 Cloud Run API／worker 已按用途核對後清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**；不以名稱相似整批刪除。實際版本與尚未完成項見根 PLAN／STATUS，A09／F02 舊失敗保留，不以基建切片代替產品成果。
 

@@ -2,7 +2,7 @@
   "package": "S04-W03 Android",
   "date": "2026-10-18",
   "base": "ca02a2c",
-  "status": "local-tooling-prepared-not-released",
+  "status": "same-source-web-api-deployed-apk-building-device-gates-pending",
   "checks": [
     {
       "command": "node --test tests/mobile-release.test.mjs",
@@ -16,11 +16,11 @@
     }
   ],
   "pending": [
-    "real EAS runtime agreement and release",
-    "same-source Web deployment and OTA",
-    "compatible rollback",
-    "signed APK upgrade",
-    "dependency PR merge and device gates"
+    "APK build completion and signed upgrade on the same Android device",
+    "real shared voice capture/audio understanding/transcript and cross-device read-back",
+    "one explicitly authorized FCM delivery and notification tap",
+    "compatible OTA update/rollback",
+    "dependency PR merge and first real chat acceptance"
   ],
   "notes": [
     "Planning never runs eas fingerprint:generate because the pinned command uploads fingerprints",
@@ -40,5 +40,97 @@
     "deviceVerified": false,
     "apkOrOtaPublished": false,
     "subagent": "Luna read-only location; main implementation and review"
+  },
+  "sharedCloudDelivery": {
+    "source": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "eas": "24.14.0",
+    "localAndroidBundle": "local-android-bundle-ready",
+    "localWebBundle": {
+      "source": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+      "startedAt": "2026-10-18T07:33:31.320Z",
+      "state": "prepared-deployment-pending",
+      "uploads": 0,
+      "exitCode": 0,
+      "finishedAt": "2026-10-18T07:33:40.046Z"
+    },
+    "approvedUpload": {
+      "files": 650,
+      "uncompressedBytes": 25267614,
+      "buildLimit": 1,
+      "purchasedPlan": false
+    },
+    "apk": {
+      "checkedAt": "2026-10-18T07:47:30.956Z",
+      "id": "82cb911e-5e37-43b6-9f30-e2aa9c954de0",
+      "status": "IN_PROGRESS",
+      "platform": "ANDROID",
+      "appVersion": "0.1.0",
+      "appBuildVersion": "2",
+      "runtimeVersion": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "fingerprint": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "gitCommitHash": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+      "channel": "preview",
+      "priority": "NORMAL",
+      "artifacts": {}
+    },
+    "runtimeMatchesLocal": true,
+    "indexes": {
+      "added": 10,
+      "fieldConfigurations": 6,
+      "ready": true,
+      "businessDataChanged": false
+    },
+    "preflight": {
+      "formalRuntime": true,
+      "linuxAudioDurationMs": 1000,
+      "boundedEmptyMetadataQueries": 4,
+      "businessWrites": 0,
+      "models": 0,
+      "notifications": 0,
+      "limitations": "No real attachment upload, device session, FCM delivery or model quality acceptance"
+    },
+    "preparationFailures": [
+      "Local metadata inspector supplied unsupported pageSize; corrected to existing default; no mutation before failure",
+      "Isolated candidate lacked existing Web Push config mount; corrected to the unchanged Compose mounts",
+      "Compose run rejected --no-build before starting the candidate; removed the unused flag",
+      "Preflight queried an unused single-field scope index; corrected to the actual complete scope/order queries; no extra index added"
+    ],
+    "deployment": {
+      "tag": "mobile-bf47c47",
+      "apiWorkerImage": "sha256:247adf88555438ef1c0357cb28d3de8d8345c47083bc019668c64d8e48b1c2e1",
+      "webImage": "sha256:94111e8b94f6202768ed077e9ae96a4ab669c646a7f1e114cde15a643b26557a",
+      "activatedAt": "2026-10-18T07:46:42Z",
+      "servicesHealthy": true,
+      "publicEntry": {
+        "at": "2026-10-18T07:47:12.950Z",
+        "source": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+        "publicEntryMatches": true,
+        "bytes": 34373,
+        "sha256": "5ca01348470af8c52f677394e60e7759ca22e45f21f4f48f7850ef1140408656",
+        "modelCalls": 0,
+        "notifications": 0
+      },
+      "nativePushEnabled": true,
+      "quotaChanged": false,
+      "businessMigration": false,
+      "models": 0,
+      "notifications": 0,
+      "previousImagesAndConfigRetained": true
+    },
+    "backupMetadata": {
+      "at": "2026-10-18T07:45:56.159Z",
+      "latest": {
+        "name": "projects/ai-caregivers-for-children/locations/asia-east2/backups/30d79cb3-e4da-4821-ac92-5f92788b713e",
+        "snapshotTime": "2026-10-17T22:05:22.757057Z",
+        "expireTime": "2026-10-31T22:05:22.757057Z",
+        "state": "READY"
+      },
+      "contentsRead": false,
+      "restoreTested": false
+    },
+    "dependenciesMerged": false,
+    "deviceVerified": false
   }
 }

@@ -2968,3 +2968,12 @@
 
 - 按使用者要求，在目前 Android 本機修正與發布工具收束後，把 P1／P2、早期已交付文件包與原責任安排移至單一歷史文件；P3 以後及目前待驗保持根 PLAN。原文來源 `92107bb64295222379b89acbd5d58bd5fbd128f0`，六段原樣搬出，索引保存 hash、位置及查閱條件。
 - 根 PLAN 保留所有原顯式錨點，STR01／指定備份還原未標完成；不改寫舊 WORKLOG／失敗證據。只做文件範圍、錨點與搬移內容核對，不跑產品測試。
+
+
+<a id="log-20261018-shared-mobile-cloud"></a>
+### LOG-20261018-SHARED-MOBILE-CLOUD — 同版原站接線與一次 APK 建置
+
+- 固定源 `bf47c47`；Node24.19／npm11.8／EAS24.14。使用者批准的一次650檔、25.3MB前端封包已提交原Expo專案，build `82cb911e`／versionCode2／preview；當時建置中，遠端fingerprint與本機相同，不重複提交或購買方案。
+- 實際Android與Web各一次bundle成功；發布plan及archive核對未發布。原VM以約2.6MB後端及4.7MBWeb小型層更新API／worker／Web，保留原映像與設定；10個索引／6項欄位設定READY。近期原生備份只核metadata，不改延後真還原決定。
+- 候選核對先因掛載、Compose參數及驗收腳本的非產品查詢形狀停止；保留失敗，只補相應啟動核對，沒有重建或跑全套。最終Linux音訊時長、正式runtime及4次有界空結果查詢通過；三服務健康與公開HTML hash相符。[EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
+- 零模型／通知／業務資料遷移／配額改動；沒有操作手機。真音訊、原生權限／FCM、跨端真人、覆蓋安裝、OTA回退及依賴合併仍待驗；不把靜態或啟動結果當成Android完成。主模型實作／review，Luna只定位既有部署入口；交付按Android主責單作者。
