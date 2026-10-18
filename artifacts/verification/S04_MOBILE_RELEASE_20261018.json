@@ -266,7 +266,7 @@
     }
   },
   "navigationKeyboardRepair": {
-    "state": "implemented-local-checks-passed-delivery-device-check-pending",
+    "state": "web-and-compatible-ota-delivered-focused-device-check-completed",
     "baseline": "c5be91acbb63a5fd04fd1d8da79a25bb291cfbab",
     "deviceBefore": "User-authorized ADB screenshot confirmed the keyboard obscured the composer. Private screenshot remains outside Git.",
     "behavior": "Tab bar stays in place; only the screen content avoids the keyboard. Persistent workspace drafts/operations survive internal navigation; child/identity/exit and page-local form guards remain.",
@@ -280,9 +280,30 @@
         "diagnostics": 0
       }
     },
-    "deviceAfter": "pending-compatible-update",
+    "deviceAfter": {
+      "method": "authorized physical Android via ADB; one keyboard open/type/clear/close flow",
+      "result": "Input text visible above keyboard; bottom navigation did not move above keyboard; settled closed layout returned to its prior position. Test draft cleared without sending.",
+      "limit": "A transitional frame differed from settled layout; no continuous frame or animation smoothness acceptance claimed.",
+      "privateScreenshotsCommitted": false
+    },
     "modelCalls": 0,
     "notifications": 0,
-    "camera": "Unchanged: native camera result/cancel returns to existing attachment preview; no automatic send."
+    "camera": "Unchanged: native camera result/cancel returns to existing attachment preview; no automatic send.",
+    "delivery": {
+      "otaSource": "ee482ad073f90462a7afb8acaae8f47cfae085d9",
+      "group": "759892ac-b994-45c8-b1fd-dc2502077990",
+      "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "webSource": "d321553bd566b1c1b90b47958f4f4b99553b69e3",
+      "webImage": "yuban-firestore-web:keyboard-d321553",
+      "publicHtmlSha256": "d9b170b1942eda3aa1b85b009664fd9173f7d252a78e664f7436219edb5ac53d",
+      "apiWorkerNotRestarted": true,
+      "at": "2026-10-18T08:57:51.699183+00:00"
+    },
+    "releaseFailures": [
+      "EAS environment discovery validated native descriptor before public project ID was loaded; stopped before submission, fixed discovery environment.",
+      "EAS Android export overwrote frontend/dist Web output. Web rebuilt once, retained separately; fixed release tool to preserve Web artifact before Android export.",
+      "Web packaging stopped first because dist contained only Android output, then because allowlist omitted Expo _expo/.routes.json; inspected exact file, allowed only that generated routing artifact. No server change.",
+      "VM Docker build treated sha256 image ID as repository name; stopped before switching. Resumed using existing local tag after exact ID verification."
+    ]
   }
 }

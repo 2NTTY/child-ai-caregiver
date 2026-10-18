@@ -57,7 +57,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 **次序：**完成 Web／Android 共用產品及 Android 成品 → 本人 key／自選模型／可調限額 → 同一正式 Agent 的 PR 分支本地隔離入口。iOS 等 Android 完成；不是另造手機後端或測試 Agent。
 
 - 管理員總控已於 #233 合併；每日及每輪設定只有一個權威。部署觀察、期限與未核對項只見 [STATUS](STATUS.md#deployment)。
-- 當前包：[S04-W01](#s04-w01)。#229 的首條真人聊天由使用者驗收；鍵盤避讓改為只調整頁面內容，底部導航保持原位；共享 owner 的草稿／原操作不再阻擋站內切頁，待相容 OTA 及真機核對。
+- 當前包：[S04-W01](#s04-w01)。#229 的首條真人聊天由使用者驗收；鍵盤／導航修正已交付相容OTA及Web，定向真機已見輸入可讀、收起後回位；未宣稱每幀動畫已驗。下一步補首頁快捷輸入及附件送出，沿同一owner與既有媒體服務。
 - 後續獨立接線與必要本機檢查已保存於 draft #234～#239：會話、同步、原運行查回、語音／附件、原生通知與固定發布工具。`bf47c47` 的新增索引、相容 API／worker／Web 已交付原站；新版 APK已完成並記錄發布基線，使用者已回覆覆蓋安裝；使用者已確認正常開啟、原登入及資料保留；其餘功能真機及依賴合併未完成。
 - Android Firebase／最小 FCM 權限及 Expo preview 描述檔已配置；已按批准提交一次新版 APK，沒有發通知。具體範圍／gate 只在[各工作包](#s13-w02)，不在此重複工作史。
 - 主模型實作、指導及 review；使用者最新容許 Luna 按規則唯讀定位。最低必要檢查，優先局部原文或日誌尾部；需本人／手機的項目待驗時繼續獨立工作，不能把待驗寫成完成。
@@ -304,7 +304,7 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 
 - 階段／狀態：P3；按使用者「人工 gate 待驗、先做獨立工作」指示開始本機發布工具，draft #239（`codex/s04-w03-mobile-release`）接續 draft #238；只準備固定入口，S12／S13 合併、真機及正式更新 gate 保留。
 - 本包範圍：離線發布判斷、官方 fingerprint 核對、固定 EAS CLI／channels、相容 OTA 回退及有界 manifest；Web 沿原 VM 產物／部署，不改產品設計或自動購買／上傳。
-- 結果：固定入口及短交接、離線判斷與兩端正式 bundle 已通過；`bf47c47` Web／API／worker 已部署。一次 preview APK `82cb911e` 已完成（versionCode 2），固定發布工具已記錄相符的 runtime／fingerprint 基線；兩個實際 APK 的官方簽署驗證、同 applicationId／證書及遞增 versionCode 已核對。使用者於2026-10-18確認覆蓋安裝後能正常開啟、原資料仍在；ADB亦核對versionCode 2。鍵盤遮住輸入框及站內導航誤擋已作局部修正，待相容OTA／真機核對；回退及其餘功能仍待驗。[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)／[固定入口](docs/PRODUCTION_FRONTEND.md#mobile-release)。
+- 結果：固定入口及短交接、離線判斷與兩端正式 bundle 已通過；`bf47c47` Web／API／worker 已部署。一次 preview APK `82cb911e` 已完成（versionCode 2），固定發布工具已記錄相符的 runtime／fingerprint 基線；兩個實際 APK 的官方簽署驗證、同 applicationId／證書及遞增 versionCode 已核對。使用者於2026-10-18確認覆蓋安裝後能正常開啟、原資料仍在；ADB亦核對versionCode 2。鍵盤遮擋及站內導航誤擋已局部修正並交付同版Web／相容OTA，一條真機輸入／清除／鍵盤開合有結果；動畫細節、回退及其餘功能仍待驗。[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)／[固定入口](docs/PRODUCTION_FRONTEND.md#mobile-release)。
 - 前置（Android）：S12-W01 Android、S13-W02 Android；iOS 待 S04-W02 後補同平台結果。
 - 交付：本節 `mobile:release --plan`／preview／production／OTA rollback，fingerprint、固定身份與 channels、release manifest／短交接。Web及Android共用修改沿同入口交付，新原生 runtime 出 APK、相容 JS 出 OTA。
 - gate：一次共用修改 Web＋OTA、相容回退及正式同簽署 APK 升級；不為每個判斷分支另做雲端 build，不在未完成工作／unknown 中強制 reload。

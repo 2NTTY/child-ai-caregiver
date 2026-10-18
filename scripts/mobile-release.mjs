@@ -1,7 +1,7 @@
 // Thin wrapper around the pinned Expo/EAS tools. Planning never uploads or publishes.
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs, parseEnv } from 'node:util';
@@ -153,7 +153,10 @@ async function main() {
     const webValues = parseEnv(readFileSync(safeExternalEnv(values['web-env-file']), 'utf8'));
     for (const [name, value] of Object.entries(webValues)) if (name.startsWith('EXPO_PUBLIC_')) webEnv[name] = value;
     child(process.execPath, [join(root, 'scripts/mobile-release-web.mjs')], { label: 'web-build', env: webEnv });
-    manifest.web = { state: 'prepared-deployment-pending', directory: 'frontend/dist', gitSha: sha }; save();
+    // EAS Update also exports to frontend/dist. Preserve the Web artifact before Android export.
+    const webOutput = join(logDir, 'web');
+    cpSync(join(appDir, 'dist'), webOutput, { recursive: true, errorOnExist: true, force: false });
+    manifest.web = { state: 'prepared-deployment-pending', directory: relative(root, webOutput), gitSha: sha }; save();
   }
   if (impact.android || ['build', 'update'].includes(values.action)) {
     child(process.execPath, [join(root, 'frontend/tooling/normalize-fingerprint-paths.cjs')], { label: 'fingerprint-prepare' });

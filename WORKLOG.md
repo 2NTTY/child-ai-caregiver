@@ -3013,3 +3013,9 @@
 
 - `d321553`同版Web正式build已通過。Android發布在EAS讀取公開環境之前，app.config先校驗原生Firebase描述檔，因公開projectId尚未載入而停止；沒有提交OTA或build。保留原stopped manifest。
 - 固定發布入口只在env:pull專案定位階段移除原生build專用變數；讀回公開配置後仍執行完整描述檔與runtime核對。後續只補Android發布，復用d321553相同前端的已建Web產物，避免再建一次。
+
+### LOG-20261018-KEYBOARD-DELIVERY
+
+- 相容OTA群組`759892ac-b994-45c8-b1fd-dc2502077990`已發布，runtime與已裝APK v2一致。本人解鎖後，以ADB完成一次開鍵盤、四字測試草稿、清除及收鍵盤；輸入可見、導航沒有升到鍵盤上方，穩定後回原位置。過渡截圖有短暫差異，不宣稱每幀動畫已驗；私人畫面不提交，沒有送出訊息。
+- Web已部署`keyboard-d321553`並核公開HTML hash，API／worker容器與啟動時間不變。首次Docker建置把image ID當成倉庫名，切站前停止；只補使用已核對同ID的本機tag。前面的產物覆蓋及Expo路由檔allowlist失敗亦保留；Web只補建一次，沒有重發成功OTA。固定發布工具保存獨立Web產物，避免再被Android export覆蓋。
+- 零模型／通知／新APK；主機仍至10月23日13:33:50香港時間。其餘Android gate保留。使用者新要求首頁快捷入口及附件提交，列入當前接線，未宣稱已完成；詳見[交付EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
