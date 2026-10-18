@@ -32,7 +32,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
       if (saved.actorId !== actorId) domainReject('forbidden', 403); return saved;
     }, { readOnly: true });
   }
-  return { readPolicy,
+  return { readPolicy, readPolicyIn,
     async overview() { const policy = await readPolicy(); return { policy, serverEnabled: config.enabled, platformConfigured: !!config.project,
       toolCalls: policy.maxToolCalls, deadlineMs: policy.maxRunSeconds * 1000,
       outputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens), inputCharacters: config.agentMaxInputCharacters ?? AGENT_INTERACTIVE_INPUT.default }; },

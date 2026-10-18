@@ -1,3 +1,5 @@
+import { setTimeout as delay } from 'node:timers/promises';
+import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { agentAudioMarker, type AgentAudioInput } from './agent-audio.ts';
 import { BaseLlm } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
@@ -158,96 +160,117 @@ export class AgentGatewayModel extends BaseLlm {
       if (requestSize(candidate) + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters) outgoing = candidate;
     }
     // Keep the exact provider payload fixed after durable admission, including the revalidated summary.
-    const modelKey = budget.durable ? this.options.modelAttemptKey?.(request) : undefined;
-    let dailyRequest: DurableAiUsageRequest | undefined;
-    if (budget.durable) {
-      if (!modelKey) throw new AgentStopped("unavailable");
-      outgoing = { ...outgoing, contents: structuredClone(outgoing.contents), config: {
-        ...structuredClone(outgoing.config), candidateCount: 1,
-        maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
-        thinkingConfig: { thinkingLevel: nativeModelThinkingLevel(config.model, config.agentThinkingLevel) },
-      } };
-      if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
-      requestCharacters = requestSize({ contents: base.contents, config: outgoing.config });
-      if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
-      const requestFingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
-      await budget.admit({ key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 });
-      if (daily) dailyRequest = { kind: 'model', rootRunId: daily.context.binding.rootRunId, attemptKey: modelKey,
-        bindingFingerprint: agentBudgetFingerprint(daily.context), requestFingerprint, userId, childId, model: config.model,
-        deadlineAtMs: daily.context.binding.deadlineAtMs, userLimit: config.dailyUserAttempts, globalLimit: config.dailyGlobalAttempts };
-    } else budget.take("modelCalls");
-    if (daily && dailyRequest) {
-      const admission = await budget.wait(() => daily.adapter.reserve(dailyRequest!));
-      if (admission.decision === "quota_exceeded") throw new AgentStopped("quota_exceeded");
-      if (admission.decision !== "execute") throw new AgentStopped("unavailable");
-    } else if (!await budget.wait(() => usage.reserve(userId, config.dailyUserAttempts, config.dailyGlobalAttempts))) {
-      throw new AgentStopped("quota_exceeded");
-    }
-    const start = Date.now();
-    let outcome: AttemptOutcome = "unavailable";
-    let tokens: TokenUsage = { inputTokens: null, outputTokens: null, cachedTokens: null };
-    let response: LlmResponse;
-    try {
-      if (includesSummary) {
-        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
-        if (Date.now() >= validUntil) {
-          if (budget.durable) throw new AgentStopped("unavailable");
-          outgoing = request;
-        }
-      }
+    const originalModelKey = budget.durable ? this.options.modelAttemptKey?.(request) : undefined;
+    const retries = config.agentMaxRetries ?? 0;
+    if (!Number.isSafeInteger(retries) || retries < 0 || retries > AGENT_RUN_LIMITS.modelRetries.max) throw new AgentStopped("unavailable");
+    for (let retry = 0; ; retry++) {
+      const modelKey = retry && originalModelKey ? originalModelKey + ":retry:" + retry : originalModelKey;
+      let retryDelay: number | undefined;
+      let providerFailure: unknown;
+      let dailyRequest: DurableAiUsageRequest | undefined;
       if (budget.durable) {
-        await budget.checkDurable();
-        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        if (!modelKey) throw new AgentStopped("unavailable");
+        outgoing = { ...outgoing, contents: structuredClone(outgoing.contents), config: {
+          ...structuredClone(outgoing.config), candidateCount: 1,
+          maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
+          thinkingConfig: { thinkingLevel: nativeModelThinkingLevel(config.model, config.agentThinkingLevel) },
+        } };
+        if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
+        requestCharacters = requestSize({ contents: base.contents, config: outgoing.config });
         if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
+        const requestFingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
+        await budget.admit({ key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 });
+        if (daily) dailyRequest = { kind: 'model', rootRunId: daily.context.binding.rootRunId, attemptKey: modelKey,
+          bindingFingerprint: agentBudgetFingerprint(daily.context), requestFingerprint, userId, childId, model: config.model,
+          deadlineAtMs: daily.context.binding.deadlineAtMs, userLimit: config.dailyUserAttempts, globalLimit: config.dailyGlobalAttempts };
+      } else budget.take("modelCalls");
+      if (daily && dailyRequest) {
+        const admission = await budget.wait(() => daily.adapter.reserve(dailyRequest!));
+        if (admission.decision === "quota_exceeded") throw new AgentStopped("quota_exceeded");
+        if (admission.decision !== "execute") throw new AgentStopped("unavailable");
+      } else if (!await budget.wait(() => usage.reserve(userId, config.dailyUserAttempts, config.dailyGlobalAttempts))) {
+        throw new AgentStopped("quota_exceeded");
       }
-      response = await budget.wait(() => {
-        // Preparation, rejected quota and input checks do not consume the first-call opportunity.
-        this.providerCalled = true;
-        return provider.generate(outgoing, budget.signal);
-      });
-      tokens = readUsage(response);
-      if (response.errorCode || response.interrupted || response.partial || response.finishReason !== "STOP"
-        || response.content?.role !== "model" || !response.content.parts?.length) throw new AgentStopped("invalid_response");
-      if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
-      const calls = response.content.parts.filter(part => part.functionCall);
-      if (calls.length) {
-        if (budget.durable) await budget.admit({ key: modelKey! + ":tool-batch", kind: "tool_batch", units: calls.length,
-          fingerprint: agentBudgetFingerprint({ calls: calls.map(part => part.functionCall), units: calls.length }) });
-        else budget.take("toolCalls", calls.length);
+      const start = Date.now();
+      let outcome: AttemptOutcome = "unavailable";
+      let tokens: TokenUsage = { inputTokens: null, outputTokens: null, cachedTokens: null };
+      let response: LlmResponse | undefined;
+      try {
+        if (includesSummary) {
+          if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+          if (Date.now() >= validUntil) {
+            if (budget.durable) throw new AgentStopped("unavailable");
+            outgoing = request;
+          }
+        }
+        if (budget.durable) {
+          await budget.checkDurable();
+          if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+          if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
+        }
+        response = await budget.wait(() => {
+          // Preparation, rejected quota and input checks do not consume the first-call opportunity.
+          this.providerCalled = true;
+          return provider.generate(outgoing, budget.signal).catch(error => { providerFailure = error; throw error; });
+        });
+        tokens = readUsage(response);
+        if (response.errorCode || response.interrupted || response.partial || response.finishReason !== "STOP"
+          || response.content?.role !== "model" || !response.content.parts?.length) throw new AgentStopped("invalid_response");
+        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        const calls = response.content.parts.filter(part => part.functionCall);
+        if (calls.length) {
+          if (budget.durable) await budget.admit({ key: modelKey! + ":tool-batch", kind: "tool_batch", units: calls.length,
+            fingerprint: agentBudgetFingerprint({ calls: calls.map(part => part.functionCall), units: calls.length }) });
+          else budget.take("toolCalls", calls.length);
+        }
+        if (calls.some(part => !part.functionCall?.name || !Object.hasOwn(request.toolsDict, part.functionCall.name))) {
+          throw new AgentStopped("invalid_tool");
+        }
+        // Reject the complete batch before ADK can execute even its first handler.
+        if (calls.length > 1 && calls.some(part => this.options.terminalToolNames?.has(part.functionCall!.name!))) {
+          throw new AgentStopped("invalid_response");
+        }
+        const modelContentCharacters = JSON.stringify(response.content).length;
+        const projected = this.options.projectCapabilityConfig && calls.length
+          ? await budget.wait(() => this.options.projectCapabilityConfig!(request, calls.map(part => part.functionCall!))) : undefined;
+        const futureCharacters = projected ? requestSize({ contents: base.contents, config: budget.durable ? { ...projected,
+            candidateCount: outgoing.config?.candidateCount, maxOutputTokens: outgoing.config?.maxOutputTokens, thinkingConfig: outgoing.config?.thinkingConfig } : projected }) : requestCharacters;
+        const capabilityGrowthCharacters = Math.max(0, futureCharacters - requestCharacters);
+        if (capabilityGrowthCharacters > 0
+          && futureCharacters + modelContentCharacters + AGENT_TOOL_RESPONSE_RESERVE > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
+        budget.prepareToolResponseBudget(requestCharacters, modelContentCharacters, capabilityGrowthCharacters);
+        outcome = "succeeded";
+      } catch (error) {
+        if (error instanceof AgentStopped) {
+          outcome = error.reason === "unauthorized" ? "unauthorized"
+            : error.reason === "deadline" || error.reason === "cancelled" ? "timeout"
+            : error.reason === "invalid_response" ? "invalid_response" : "unavailable";
+          throw error;
+        }
+        const status = error instanceof ApiError ? error.status : null;
+        outcome = status === 429 ? "rate_limited" : status === 408 || status === 504 ? "timeout" : "unavailable";
+        const stopped = new AgentStopped(status === null ? "unavailable" : modelProviderStopReason(status));
+        const backoff = 1000 * 2 ** retry;
+        // Only an explicit transient provider response is retryable. Transport unknown,
+        // cancellation, validation, permission and tool results never enter this path.
+        if (error !== providerFailure || status === null || ![408, 429, 500, 502, 503, 504].includes(status)
+          || retry >= retries || budget.remainingModelCalls < 1 || budget.deadlineAtMs - Date.now() <= backoff + 1000) throw stopped;
+        retryDelay = backoff;
+      } finally {
+        const record = { outcome, ...tokens, durationMs: Math.max(0, Date.now() - start) };
+        if (daily && dailyRequest) await daily.adapter.record(dailyRequest, { kind: 'model', ...record });
+        else await usage.record({ userId, childId, model: config.model, ...record });
       }
-      if (calls.some(part => !part.functionCall?.name || !Object.hasOwn(request.toolsDict, part.functionCall.name))) {
-        throw new AgentStopped("invalid_tool");
+      if (retryDelay !== undefined) {
+        await budget.wait(() => delay(retryDelay, undefined, { signal: budget.signal }));
+        budget.check();
+        if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
+        continue;
       }
-      // Reject the complete batch before ADK can execute even its first handler.
-      if (calls.length > 1 && calls.some(part => this.options.terminalToolNames?.has(part.functionCall!.name!))) {
-        throw new AgentStopped("invalid_response");
-      }
-      const modelContentCharacters = JSON.stringify(response.content).length;
-      const projected = this.options.projectCapabilityConfig && calls.length
-        ? await budget.wait(() => this.options.projectCapabilityConfig!(request, calls.map(part => part.functionCall!))) : undefined;
-      const futureCharacters = projected ? requestSize({ contents: base.contents, config: budget.durable ? { ...projected,
-          candidateCount: outgoing.config?.candidateCount, maxOutputTokens: outgoing.config?.maxOutputTokens, thinkingConfig: outgoing.config?.thinkingConfig } : projected }) : requestCharacters;
-      const capabilityGrowthCharacters = Math.max(0, futureCharacters - requestCharacters);
-      if (capabilityGrowthCharacters > 0
-        && futureCharacters + modelContentCharacters + AGENT_TOOL_RESPONSE_RESERVE > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
-      budget.prepareToolResponseBudget(requestCharacters, modelContentCharacters, capabilityGrowthCharacters);
-      outcome = "succeeded";
-    } catch (error) {
-      if (error instanceof AgentStopped) {
-        outcome = error.reason === "unauthorized" ? "unauthorized"
-          : error.reason === "deadline" || error.reason === "cancelled" ? "timeout"
-          : error.reason === "invalid_response" ? "invalid_response" : "unavailable";
-        throw error;
-      }
-      const status = error instanceof ApiError ? error.status : null;
-      outcome = status === 429 ? "rate_limited" : status === 408 || status === 504 ? "timeout" : "unavailable";
-      throw new AgentStopped(status === null ? "unavailable" : modelProviderStopReason(status));
-    } finally {
-      const record = { outcome, ...tokens, durationMs: Math.max(0, Date.now() - start) };
-      if (daily && dailyRequest) await daily.adapter.record(dailyRequest, { kind: 'model', ...record });
-      else await usage.record({ userId, childId, model: config.model, ...record });
+      budget.check();
+      if (!response) throw new AgentStopped("invalid_response");
+      yield response;
+      return;
     }
-    budget.check();
-    yield response;
   }
 }

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import { InMemorySessionService } from '@google/adk';
-import { FinishReason } from '@google/genai';
+import { ApiError, FinishReason } from '@google/genai';
 import { z } from 'zod';
 import { createAgentRuntime, type AgentRunInput } from '../server/agent-runtime.ts';
 import { readAiConfig } from '../server/ai-config.ts';
@@ -159,4 +159,34 @@ test('root binding rejection happens before daily admission and provider dispatc
   const result = await createAgentRuntime(s.options).run({ ...s.input, scope: { ...s.input.scope, authorizationVersion: '9007199254740992' } });
   assert.equal(result.stopReason, 'unavailable'); assert.equal(s.providerCalls(), 0); assert.equal(s.requests.length, 0);
   assert.equal(s.f.records.size, 0);
+});
+
+
+test('transient provider retries stay in one Runner, charge each attempt and never repeat tools', async () => {
+  for (const recovers of [true, false]) {
+    const s = await fixture(); let calls = 0, effects = 0;
+    s.context.binding.limits.modelCalls = 8;
+    const configured = { ...s.options, config: { ...s.options.config, agentMaxRetries: 3 },
+      durableBudget: { ...s.options.durableBudget, runLimits: { modelCalls: 8, toolCalls: 8, queryEmbeddings: 2 } },
+      provider: { generate: async () => {
+        calls++;
+        if (calls === 1) return { ...s.success, content: { role: 'model', parts: [{ functionCall: { id: 'saved-once', name: 'save_record', args: {} } }] } };
+        if (recovers && calls === 5) return s.success;
+        throw new ApiError({ status: 504, message: 'private provider response' });
+      } } };
+    const input = { ...s.input, tools: [{ name: 'save_record', description: 'Save synthetic record', parameters: z.object({}),
+      authorize: async () => true, execute: async () => { effects++; return { status: 'succeeded' as const, reference: 'saved-record' }; } }] };
+    const result = await createAgentRuntime(configured).run(input);
+    assert.equal(result.status, recovers ? 'completed' : 'stopped', JSON.stringify(result));
+    if (!recovers) assert.equal(result.stopReason, 'model_http_504');
+    assert.equal(calls, 5); assert.equal(effects, 1);
+    assert.equal(result.counts.modelCalls, 5); assert.equal(result.counts.toolCalls, 1);
+    assert.equal((await s.daily.getForUser(s.input.scope.userId)).attempts, 5);
+    const attempts = s.requests.slice(1);
+    assert.deepEqual(attempts.map(a => a.attemptKey), [attempts[0].attemptKey, ...[1, 2, 3].map(i => attempts[0].attemptKey + ':retry:' + i)]);
+    assert.equal(new Set(attempts.map(a => a.requestFingerprint)).size, 1);
+    assert.doesNotMatch(JSON.stringify(result), /private provider response/);
+    await createAgentRuntime({ ...configured, nativeSessionService: new InMemorySessionService() }).run(input);
+    assert.equal(calls, 5); assert.equal(effects, 1);
+  }
 });

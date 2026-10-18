@@ -52,7 +52,7 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   const promptPackVersion = manifest.version;
   const routing = createFirestoreModelRouting(options, options.config);
   const voiceTranscripts = options.voices ? createFirestoreVoiceTranscripts({ ...options, voices: options.voices }) : undefined;
-  const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, async validateKnowledge(binding, sourceId) {
+  const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, readInteractiveRunSeconds: routing.readInteractiveRunSeconds, async validateKnowledge(binding, sourceId) {
     if (!options.knowledge) domainReject('knowledge_not_ready', 503);
     await options.knowledge.validatePublishedSource(binding.transaction, sourceId);
   }, async continuationKnowledge(b, ids) {

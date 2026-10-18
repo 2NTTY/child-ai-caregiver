@@ -1,3 +1,4 @@
+import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import type { AgentProgress } from '../src/shared/agent-feedback.ts';
 import { selectRecentConversation } from './agent-context-window.ts';
 import type { MemoryStore } from "./memory.ts";
@@ -73,7 +74,7 @@ export function createProductAgent(options: {
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt),
-        deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())),
+        deadlineMs: Math.max(1, Math.min(AGENT_RUN_LIMITS.deadlineSeconds.max * 1000, Date.parse(claim.expiresAt) - Date.now())),
         trigger: { kind: "worker", reference: input.reference }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context: input.context,
         ...(privateContinuation ? { toolCatalog: WORK_CONTINUATION_TOOL_CATALOG } : {}),
@@ -140,7 +141,7 @@ export function createProductAgent(options: {
           else if (event.phase === "tool_start") publish(event.tool?.includes("knowledge") ? "searching" : event.tool?.startsWith("read_") || event.tool?.startsWith("search_") ? "reading" : "working");
           else if (event.phase === "tool_end") publish("tool_finished");
         },
-        scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt), deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
+        scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt), deadlineMs: Math.max(1, Math.min(AGENT_RUN_LIMITS.deadlineSeconds.max * 1000, Date.parse(claim.expiresAt) - Date.now())), trigger: { kind: "interactive", reference: messageId }, recipeId,
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"],
         ...(options.memory.initialConversationSummary ? { readConversationSummary: async () => {
           if (!await authorize()) throw new AgentStopped("unauthorized");
