@@ -91,5 +91,44 @@
       "does not prove real SDK, runtime model understanding, browser or Android interaction",
       "no new cloud, model, notification or device calls"
     ]
+  },
+  "cloudPreparation": {
+    "source": "c4ac1b995d22f28cfd6b8330bf07e22a7e6b9c36",
+    "indexes": {
+      "created": 2,
+      "fieldConfigurations": 2,
+      "state": "READY"
+    },
+    "webBundle": "passed",
+    "androidRuntime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "apkRequired": false,
+    "failures": [
+      {
+        "stage": "local pack",
+        "cause": "workspace link lock entry has no version",
+        "resolution": "compare only versioned dependency records; archive prepared"
+      },
+      {
+        "stage": "Web build wrapper",
+        "cause": "Node rejects env-file in NODE_OPTIONS",
+        "resolution": "load public environment before invoking existing build; actual Web export passed once"
+      },
+      {
+        "stage": "candidate image script",
+        "cause": "Windows CRLF in shell script",
+        "resolution": "LF only; same source candidate image built"
+      },
+      {
+        "stage": "first real SDK check",
+        "cause": "shared Storage port ceiling 16 MiB rejected file ciphertext bound 40 MiB",
+        "result": "stopped before test identity or file creation; no site activation",
+        "resolution": "raise only explicit adapter ceiling to 40 MiB; photo and voice caller bounds unchanged"
+      }
+    ],
+    "offlineRealSdkFactory": {
+      "result": "passed",
+      "requests": 0,
+      "assertion": "explicit 40 MiB file port assembles; photo default and voice bounds unchanged"
+    }
   }
 }

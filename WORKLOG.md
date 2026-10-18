@@ -3039,3 +3039,10 @@
 - S12-W05通用附件已接正式API／worker、Agent受限閱讀、Web／Android共同owner與聊天卡、原檔下載、帳戶匯出、逾期／刪除清理及備份恢復。所有格式可保存，Word／文字／PDF按既有解析器有界讀取；畫面維持「不支援預覽」，沒有新增模型或另一套資料。
 - 擴充同一條連貫本機情景，核原操作未知查回、訊息綁定、Word續讀、隔離、下載／匯出、恢復世代、刪除遮蔽及真清理consumer；1通過。受影響Server與前端各5個roots型別0 diagnostics；首次匯出窄port型別缺口及修正保留於[附件EV](artifacts/verification/S12_CHAT_FILES_20261018.json)。沒有全量、真模型、雲端、通知或真機驗收。
 - 此為程式接線及本機結果，尚未部署；真SDK、兩端選檔與Agent內容理解仍待必要交付。既有原生備份真還原延後狀態不變。
+
+
+### LOG-20261018-CHAT-FILE-STORAGE-BOUND
+
+- 新附件兩個索引及兩項欄位設定已READY，Web產物已建好，官方fingerprint與APK v2相同。候選映像的首次真SDK核對在runtime啟動時拒絕40 MiB密文讀取上限；未建立本輪合成身份／附件、未切網站，零模型／通知。
+- 根因是共用Storage port保留16 MiB ceiling；本次只將可顯式指定的上限改為40 MiB，照片預設及語音10 MiB界線不變，不放寬公開照片API。原失敗及封裝／換行準備修正保留於附件EV；原核對須修正後補一次，不能將啟動失敗算已通過。
+- 修正後直接組裝正式Cloud Storage SDK file port通過，零請求；只核構造接點，不重跑已通過的本機情景或冒充雲端保存結果。
