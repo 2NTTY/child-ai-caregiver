@@ -147,5 +147,69 @@
     "additionalBuilds": 0,
     "deviceInstalled": false,
     "otaAndUpgradeAccepted": false
+  },
+  "voiceCloudAcceptance": {
+    "observedAt": "2026-10-18T08:13:35.109990+00:00",
+    "source": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+    "assembly": "openFirebaseRuntime -> production product.agent.reply; deployed worker owns transcription",
+    "fixture": {
+      "accounts": 1,
+      "children": 1,
+      "audioFiles": 1,
+      "audioBytes": 424562,
+      "audioSha256": "2f6b7ae60de3301bec9597306452309100b704a3afb6eef13420129bd09b4f49",
+      "durationMs": 9627,
+      "origin": "local Windows TTS; no real family recording"
+    },
+    "chat": {
+      "status": "completed",
+      "runId": "7d25fd29-fddb-4031-804d-4d62ea495f4f",
+      "counts": {
+        "modelCalls": 4,
+        "toolCalls": 4,
+        "queryEmbeddings": 1
+      },
+      "citations": 2,
+      "questionInferredFromAudio": true,
+      "runResultReadAfterReconnect": true
+    },
+    "transcription": {
+      "state": "available",
+      "segments": 3,
+      "automatic": true,
+      "backgroundWorker": true,
+      "contentMatchedRecording": true,
+      "historySearchFoundOriginalMessage": true,
+      "polls": 2
+    },
+    "usage": {
+      "day": "2026-10-18",
+      "attempts": 6,
+      "inputTokens": 48960,
+      "outputTokens": 445,
+      "cachedTokens": 0,
+      "unknownUsageAttempts": 5,
+      "billingSource": "platform"
+    },
+    "controls": {
+      "platformPolicyChanged": false,
+      "globalControlChanged": false,
+      "unrelatedSummaryDeferredForSyntheticChildOnly": true,
+      "additionalModelRuns": false,
+      "notifications": 0
+    },
+    "cleanup": {
+      "voiceAndTranscript": "complete",
+      "childErasure": "journal-and-barrier-submitted",
+      "physicalChildSweep": "not-polled",
+      "productIdentity": "revoked",
+      "firebaseIdentity": "deleted"
+    },
+    "notProven": [
+      "Microphone/browser/native capture and playback",
+      "End-to-end HTTP/session and assistant chat persistence; first real chat remains user-owned",
+      "Device-to-device presentation, keyboard, FCM and APK/OTA upgrade",
+      "Comprehensive medical accuracy or actual billed amount; five attempts have incomplete token usage"
+    ]
   }
 }

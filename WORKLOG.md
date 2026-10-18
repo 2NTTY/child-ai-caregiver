@@ -2983,3 +2983,10 @@
 
 - 原批准的唯一 build `82cb911e-5e37-43b6-9f30-e2aa9c954de0` 已於07:54 UTC核對 FINISHED；源 `bf47c47`、versionCode 2、原簽署及 preview channel。沒有重建、購買方案或追加上傳。
 - 固定 `mobile:release --record-build` 入口已核對身份／平台／runtime並保存本機發布基線；[APK及結果](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)可追溯。這是建置與基線結果，真機安裝／升級、錄音、FCM及OTA回退仍待驗，不代填使用者結果。
+
+
+### LOG-20261018-VOICE-CLOUD-ACCEPTANCE
+
+- 沿使用者對後續同類最低驗收的批准，以1個合成帳號／孩子、1段9.627秒本機合成錄音核對正式 `bf47c47` runtime：加密附件保存與hash讀回、真ADK語音理解、2項官方引用及原運行重新連線讀回。聊天4生成／1查詢；既有排程worker另用1生成完成3段轉錄，原訊息可由轉錄搜尋找到。僅2次狀態讀取，沒有第二輪聊天、真通知或手機操作。
+- 只延後本次合成孩子的無關摘要工作以限定呼叫，沒有改全站排程／配額。共6次計費嘗試；5次token用量不完整，不能據已知tokens推斷實際總費用。合成錄音／轉錄已清理，孩子已提交獨立journal及刪除屏障，身份已撤銷並刪除Firebase帳號；未輪詢整體物理清理。[EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
+- 本次由正式組裝的業務入口進入，沒有替換Agent或模型；不代替完整HTTP／登入、助手聊天保存、真人首次聊天、手機／Web錄音播放或跨設備畫面驗收，也不宣稱全面醫療品質通過。現有手機待驗及依賴合併保持。
