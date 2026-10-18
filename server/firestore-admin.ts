@@ -1,3 +1,4 @@
+import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
 import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, PLATFORM_AGENT_RUN_LIMITS } from './agent-budget.ts';
@@ -17,6 +18,7 @@ export function createFirestoreAdmin(options: FirestoreDomainOptions, config: Ai
   const defaults = domainParse(platformPolicySchema, { enabled: config.enabled, model: config.model,
     dailyUserAttempts: config.dailyUserAttempts, dailyGlobalAttempts: config.dailyGlobalAttempts,
     personalDailyGlobalAttempts: config.personalDailyGlobalAttempts ?? 1000,
+    maxRunSeconds: AGENT_RUN_LIMITS.deadlineSeconds.default, modelRequestSeconds: AGENT_RUN_LIMITS.modelRequestSeconds.default, maxModelRetries: AGENT_RUN_LIMITS.modelRetries.default,
     maxModelCalls: PLATFORM_AGENT_RUN_LIMITS.modelCalls, maxQueryEmbeddings: PLATFORM_AGENT_RUN_LIMITS.queryEmbeddings, version: 0, updatedAt: null }, 'admin_configuration', 500);
   const readPolicyIn = async (tx: import('@google-cloud/firestore').Transaction) => {
     const row = await tx.get(policyRef);

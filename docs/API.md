@@ -886,7 +886,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | POST `/api/admin/operations` | `src/shared/admin.ts` 的 policy／invite／revoke 聯合契約，必帶原 opId；policy 帶 expectedVersion |
 | GET `/api/admin/operations/:opId` | 本管理員原收據或 null；null 不表示原請求必定未生效，重送只能用同一參數／opId |
 
-管理設定的合法範圍統一於 `src/shared/agent-run-limits.ts`：生成 1–12、工具 1–16、查詢 embedding 1–6、互動期限 15–300 秒、單次模型等待 5–180 秒（預設90）、額外重試 0–3 次（預設3）。實際值以已保存 policy 為準；舊 policy 缺工具／秒數時讀成 16／300，已有90秒值不靜默覆寫。舊 policy 寫入請求可省略新欄位，保持原請求指紋並保留目前值；不以預設覆蓋新設定。API／worker 新 run 固定同一 policy 版本，執行中不動態換額度；本人 key 仍用其個人生成／向量限額，工具／期限共用管理政策。期限只可縮短原受信任 claim 的絕對期限，不能刷新或延長原 run。模型可見餘額供自主規劃，不代表必須用盡。
+管理設定的合法範圍統一於 `src/shared/agent-run-limits.ts`：生成 1–12、工具 1–16、查詢 embedding 1–6、互動期限 15–300 秒、單次模型等待 5–180 秒（預設90）、額外重試 0–3 次（預設3）。實際值以已保存 policy 為準；舊 policy／收據缺欄位時保留原有效值：16工具／90秒、單次30秒、零ADK重試；新建政策明確寫入300／90／3，現網須另以管理操作更新，不靜默覆寫。舊 policy 寫入請求可省略新欄位，保持原請求指紋並保留目前值；不以預設覆蓋新設定。API／worker 新 run 固定同一 policy 版本，執行中不動態換額度；本人 key 仍用其個人生成／向量限額，工具／期限共用管理政策。期限只可縮短原受信任 claim 的絕對期限，不能刷新或延長原 run。模型可見餘額供自主規劃，不代表必須用盡。
 
 `version_conflict`／`operation_conflict` 回 409，不覆蓋或另建操作；已使用資格回 `invitation_consumed`，不呼叫原 operator 的帳戶撤權流程。網絡／5xx 保持 unknown，Web owner 暫停其他寫入並提供查回／明確同 ID 重送。登出／身份切換取消讀取並清除管理快取；原生頁不載入管理資料。管理寫入不呼叫模型。
 

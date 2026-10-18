@@ -18,11 +18,13 @@ export const platformPolicyValuesSchema = z.object({
   maxToolCalls: tools.optional(), maxRunSeconds: seconds.optional(),
   modelRequestSeconds: requestSeconds.optional(), maxModelRetries: retries.optional(),
 }).strict();
+// Missing fields in stored policies/receipts retain their historical effective values.
+// New installations supply the current defaults explicitly in the Server bootstrap.
 export const platformPolicySchema = platformPolicyValuesSchema.extend({
-  modelRequestSeconds: requestSeconds.default(AGENT_RUN_LIMITS.modelRequestSeconds.default),
-  maxModelRetries: retries.default(AGENT_RUN_LIMITS.modelRetries.default),
+  modelRequestSeconds: requestSeconds.default(30),
+  maxModelRetries: retries.default(0),
   maxToolCalls: tools.default(AGENT_RUN_LIMITS.toolCalls.default),
-  maxRunSeconds: seconds.default(AGENT_RUN_LIMITS.deadlineSeconds.default), version: z.number().int().nonnegative(), updatedAt: z.iso.datetime().nullable() });
+  maxRunSeconds: seconds.default(90), version: z.number().int().nonnegative(), updatedAt: z.iso.datetime().nullable() });
 export type PlatformPolicy = z.infer<typeof platformPolicySchema>;
 const operation = { opId: z.uuid() }, address = z.email().max(320).transform(value => value.toLowerCase());
 export const adminCommandSchema = z.discriminatedUnion('kind', [
