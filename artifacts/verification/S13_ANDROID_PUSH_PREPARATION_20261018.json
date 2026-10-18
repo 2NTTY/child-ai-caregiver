@@ -1,0 +1,44 @@
+{
+  "baseCommit": "5bc44f1a5399620fb03549aae77cac66cc5a69e7",
+  "branch": "codex/s13-w02-android-push",
+  "scope": "Independent adapter preparation; dependency PRs and device gates remain open",
+  "versions": {
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "expoNotifications": "57.0.21",
+    "googleAuthLibrary": "10.9.1"
+  },
+  "checks": [
+    {
+      "kind": "fixed-FCM-reference-and-single-send",
+      "tests": 1,
+      "runs": 2,
+      "passed": true,
+      "durationMs": [
+        15.603,
+        15.1369
+      ],
+      "reasonForSecondRun": "Include the new incoming-reference parser and final Auth null normalization; same scenario, no extra matrix"
+    },
+    {
+      "kind": "affected-types",
+      "serverRoots": 1,
+      "frontendRoots": 2,
+      "diagnostics": 0,
+      "initialServerFailure": "GoogleAuth access token may be undefined",
+      "correction": "Normalize missing credentials to null and stop before sending; repeat server root only"
+    }
+  ],
+  "realNotifications": 0,
+  "realModelCalls": 0,
+  "cloudCalls": 0,
+  "nativeBuilds": 0,
+  "deployment": false,
+  "pending": [
+    "Firestore device/session binding, original operation receipts and token rotation",
+    "Existing contact/worker and notification-history integration",
+    "Shared settings owner and reauthorized click destination",
+    "Native plugin/Firebase app configuration and compatible APK",
+    "One explicitly authorized FCM delivery and device acceptance"
+  ]
+}

@@ -2923,3 +2923,11 @@
 - 必要本機檢查復用同一語音情景，補搜尋／續讀、刪除、恢復及到期；共用 owner 只補一次原操作及身份切換檢查，retained-media／密文備份共三項。首次錯誤與修正保留於[證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)，沒有全量、真模型、雲端驗收、通知、手機或新 APK。受影響型別零診斷；真語音品質／跨端真機及真原生備份還原仍未驗。
 - 使用者批准主機續期五天；原 VM 因到期已停止，已恢復至 2026-10-23 13:33:50 香港時間，API／worker 健康、公開健康檢查 Firestore 正常；仍使用 admin-8ba66e7，沒有部署語音。[續期證據](artifacts/verification/VM_RENEWAL_20261018.json)。
 - S12 尚未完成，依賴 PR／手機 gate 保留；使用者不在時保留待驗，繼續可獨立完成的工作。按當次指示主模型完成，無子代理。
+
+
+## LOG-20261018-S13-ANDROID-PUSH-PREPARATION
+
+- 依使用者先跨過真機待驗項的授權，從 S12 `5bc44f1` 準備 S13-W02 獨立 adapter；B 單作者，主模型實作／review，沒有派子代理。
+- 固定 Expo Notifications 57.0.21，沿官方 Google Auth＋單次 FCM HTTP v1，固定無私人內容的提示及嚴格 reference；Android 權限／token 輪換／點擊薄接點已準備，未接產品 owner 或正式發送。
+- 必要檢查：同一合成流程兩次均 1/1，第二次包含新點擊 parser；Server 型別初次揭示 SDK 可回 undefined，正規化空憑據後只補 Server 入口；兩個原生入口第一次已通過。詳見 [S13 準備證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。零真通知／模型／雲端服務／新 APK／部署。
+- 剩餘：裝置會話及原收據、Firestore／提醒／歷史接線、共用設定 owner、原生配置及一則獲授權真通知。依賴合併與真機 gate 未解除，不將 adapter 通過寫成原生通知完成。

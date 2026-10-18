@@ -968,3 +968,12 @@ ADK 事件只保存本次音訊身份 metadata；模型 adapter 在每次已授�
 原錄音播放每次下載重新核權，使用短期可丟棄的裝置快取；有可靠段落時間才提供跳播。尚未綁定聊天的 Server 上傳保留最多 24 小時，再沿獨立刪除日誌及原物件清理；已綁定訊息不受此期限影響。裝置草稿不會因此自動送出。已提交但回覆丟失的上傳只查回原 ID，不能重送成另一附件。
 
 配對備份 manifest 的 `voices` 為向後相容可選欄位；錄音密文使用獨立、固定 generation 的備份物件，保留與 manifest 相同的 14 天期限，原生熱備份讀回沿相同獨立刪除屏障。還原先重放 voice-delete／孩子／帳戶刪除，遮蔽轉錄；清理 tombstone 保留原物件範圍，活躍內容才轉換儲存世代。未結清上傳、轉錄 unknown 不被當成成功或重做許可；真原生備份還原仍按既有待驗門檻處理。
+
+
+### Android FCM 提示接點
+
+Android 使用原生 FCM token，與 Web Push 訂閱分開。Server 設定掌管 project／application ID；端點或模型不能指定另一發送專案。`ANDROID_PUSH_ENABLED` 預設關閉；固定 app 為 `org.yuyoufang.app`。
+
+通知正文由 Server 固定，沒有孩子、私人聊天、任務正文或任意 URL。資料僅帶 `v`、`kind`、`bindingId`、`bindingVersion` 及 `deliveryId`；點擊仍須按當前登入身份向 Server 核對原投遞與資源，不能依 payload 改孩子、確認或完成事項。取得系統通知權限／token 不代表已授予照護聯絡權限。
+
+OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 POST，發送前重查資格。只有 HTTP 200 與正確專案的 message name 才記渠道接受；連線中斷／成功回應不完整為 unknown，不重發。只有 FCM 明確 `UNREGISTERED` 才使 token 失效，普通 400／404 不直接當 token 過期。接受不等於裝置顯示、家長收到或照護完成。
