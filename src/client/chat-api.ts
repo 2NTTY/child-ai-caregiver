@@ -1,3 +1,4 @@
+import { AGENT_RUN_LIMITS } from '../shared/agent-run-limits.ts';
 import { chatFileMessageReferenceSchema, type ChatFileMessageReference } from '../shared/chat-files.ts';
 import { voiceMessageReferenceSchema, type VoiceMessageReference } from '../shared/voice.ts';
 import { officialHelpIdSchema, type AgentProgress } from '../shared/agent-feedback.ts';
@@ -181,7 +182,7 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
     async requestReply(childId, messageId, signal, expectedUserId, onProgress) {
       let runId: string | undefined;
       const value = await request(`/children/${encodeURIComponent(childId)}/messages/${encodeURIComponent(messageId)}/reply`,
-        signal, {}, expectedUserId, 90_000, onProgress ? event => {
+        signal, {}, expectedUserId, (AGENT_RUN_LIMITS.deadlineSeconds.max + 30) * 1000, onProgress ? event => {
           if (event.messageId !== messageId || runId && event.runId !== runId) throw new ChatApiError();
           runId = event.runId; onProgress(event);
         } : undefined);
