@@ -106,7 +106,7 @@ function useProductionValue(owner: ProductionOwner) {
     open(destination) { leave(() => router.push(productionDestinations[destination] as Href), "workspace"); },
     openAgentPhoto(original) {
       if (!currentScope() || current.current.pathname !== "/") { original.dispose?.(); return; }
-      if (owner.draftOwner.add(snapshot.scopeKey, photoAttachment(original))) router.push("/chat");
+      if (addAgentAttachment(photoAttachment(original))) openAgentDraft();
     },
     composeCare() { leave(() => router.push("/care"), "workspace"); },
     prepareQuestion(question) {
