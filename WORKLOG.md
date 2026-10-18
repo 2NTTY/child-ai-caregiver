@@ -3106,3 +3106,10 @@
 - 現網舊政策缺少期限欄位，初次新reader投影改變被更新前guard拒絕，未寫入；修正歷史解碼保持90秒／30秒／零重試，原操作再經管理服務明確保存v3為300秒／90秒／3次。每日200／400與用量不變。原有admin必要流程只補一次舊政策相容斷言並通過；不全量重跑。
 - 首次`fb1681e`發布工具在Web產物完成後退出3221226505，尚未提交OTA；原因未確定，保留現場。`adaf08f`以受支持Node及固定CLI完成同版Web／OTA。回退須保留新政策及媒體／附件reader，不可盲退舊API。
 - 手機鎖定，未追加真機操作；Google真實恢復、首條正常聊天、跨端接續／附件分享、照護通知終態、OTA回退及draft依賴仍待驗。Android不標完成，按要求先收束當前修正並報告；不開始本人key、本地Agent或iOS。版本、核對及未驗見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
+
+
+### LOG-20261018-ANDROID-CLOSEOUT-WEB-ADAPTERS
+
+- 手機仍鎖定，未追加設備操作。沿既有批准補一個本機Chromium 153.0.8010.12流程：17-byte任意檔案原始bytes讀回，正式Web錄音controller取得2220ms WebM、停止咪高峰、瀏覽器播放前進，正式Server音訊解析接受。零雲端、模型、通知及業務寫入，沒有全量測試。
+- 首次完整元件harness封裝遇Expo server-only／JSX差異，未作UI證據；沒有為此改產品或依賴，改用正式adapter直接核實瀏覽器與Server編碼相容性。不能代替正式頁面、上傳／下載或跨端驗收。原始結果與source hash追加於[S12 EV](artifacts/verification/S12_CHAT_FILES_20261018.json)。
+- 使用者其後要求盡快收尾轉往其他工作；停止追加測試，只保存本輪結果。Android待驗、PR依賴及既有延後事項保持，沒有標成全部完成。

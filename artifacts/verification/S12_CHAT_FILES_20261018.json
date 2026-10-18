@@ -244,5 +244,48 @@
     "notificationCalls": 0,
     "modelCalls": 0,
     "businessWrites": 0
+  },
+  "browserAdapterCheck20261018": {
+    "source": "b06565c",
+    "startedAt": "2026-10-18T12:09:31.098Z",
+    "status": "passed",
+    "scope": "Production Web adapter modules with real Chromium File/MediaRecorder/playback, plus production Server codec validation; no complete page/login/HTTP/storage acceptance",
+    "cloudCalls": 0,
+    "modelCalls": 0,
+    "browser": "153.0.8010.12",
+    "file": {
+      "name": "S12-arbitrary.bin",
+      "mime": "application/octet-stream",
+      "bytes": 17,
+      "roundTrip": true
+    },
+    "voice": {
+      "bytes": 15188,
+      "mimeType": "audio/webm",
+      "durationMs": 2220,
+      "trackEnded": true,
+      "playbackStarted": true,
+      "serverAccepted": true,
+      "states": [
+        "permission",
+        "recording",
+        "stopping",
+        "ready"
+      ]
+    },
+    "finishedAt": "2026-10-18T12:09:35.315Z",
+    "sourceHashes": {
+      "frontend/src/components/agent/local-voice-capture.ts": "b7145e11f53147776d76f9b6dafe3f608f937acdb552c380453837b10d92aa6c",
+      "frontend/src/components/agent/voice-attachment.ts": "f562e619a0d97c74c4526444437c62e4aee5488911fea48e0395c6b1c7da9bf1",
+      "frontend/src/components/agent/file-attachment.ts": "a5791dd79305059399b42f9fd00a5e9e55278f5dd84ad813af5f1e4480e3fc1c",
+      "src/client/blob-bytes.ts": "211d9d56381761a9d59bd2d7095746eb809cb6330d118323d8636b986b081136",
+      "server/voice-files.ts": "0d00230e5f08238a8fb84a2730c899b43e0b3e30b14c149e92563ecf4394d3a4"
+    },
+    "limitations": [
+      "Adapter-only browser harness; no production page/login/upload/download or cross-device acceptance",
+      "Synthetic Chromium microphone; no human audibility assertion",
+      "Initial full-component esbuild harness could not handle Expo server-only imports/JSX; it was not used as UI evidence",
+      "No product source or package dependency changed"
+    ]
   }
 }
