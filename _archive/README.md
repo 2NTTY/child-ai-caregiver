@@ -1,6 +1,6 @@
 # 歷史資料索引
 
-本目錄保存已凍結的 S00 基線、驗證證據及舊版參賽材料。日常工作先讀 [STATUS](../STATUS.md)，再沿所屬領域的 PLAN 當前包（[根](../PLAN.md#active)／[前端](../frontend/PLAN.md#active)），然後只按需要讀現行規格或本索引中的指定資料。歸檔內容不是現行權威；除非核對歷史決定、來源或證據，否則毋須讀取。
+本目錄保存已凍結的 P1／P2 計劃、S00 基線、驗證證據及舊版參賽材料。日常工作先讀 [STATUS](../STATUS.md)，再沿所屬領域的 PLAN 當前包（[根](../PLAN.md#active)／[前端](../frontend/PLAN.md#active)），然後只按需要讀現行規格或本索引中的指定資料。歸檔內容不是現行權威；除非核對歷史決定、來源或證據，否則毋須讀取。
 
 下方「S00／早期基線」表的來源 commit 均為 [`25244fb44d8e4464af2c8f9600019a7ed1118d6d`](https://github.com/2NTTY/child-ai-caregiver/tree/25244fb44d8e4464af2c8f9600019a7ed1118d6d)。`fullSHA` 是檔案內容的 SHA-256。已實體歸檔的 Markdown 原文逐位元保持不變；原文內的相對連結須按來源 commit 的目錄結構理解。舊路徑相容頁提供本地歸檔副本及固定 GitHub blob 入口，避免為修正歷史連結而改寫證據。
 
@@ -48,7 +48,7 @@
 
 | 原內容 | 現行目的地／查閱條件 |
 |---|---|
-| 全階段／工作包／REQ、AC／前置／未驗與完成門檻 | [根 PLAN](../PLAN.md)：當前 P2、已交付 P2、P3～P5、S 導覽各有唯一正文 |
+| 全階段／工作包／REQ、AC／前置／未驗與完成門檻 | [根 PLAN](../PLAN.md)：當前工作、P3～P5 及 S 導覽；P1／P2 舊正文改沿 [2026-10-18 索引](#plan-p1-p2-20261018) 按需查看 |
 | #171～186 的詳細 run、失敗、修正及 hash | [交付索引](../PLAN.md#chat-reliability-delivered) → 原 LOG／EV；對照整理前完整段落時讀上述固定原文；獨有補充只追加既有 WORKLOG |
 | 部署／Sites 觀察、接手及暫停安排 | [STATUS](../STATUS.md)，歷史觀察有日期／版本，未重探測不當今日狀態 |
 | 月量、成本表與假設 | [架構原成本章節](../docs/ARCHITECTURE.md#firestore-low-usage-assumptions)，2026-10-08 歷史未實測數值，不代表新授權 |
@@ -86,3 +86,21 @@
 - [artifacts/verification/S00_CHECKS.json 原版本](https://github.com/2NTTY/child-ai-caregiver/blob/25244fb44d8e4464af2c8f9600019a7ed1118d6d/artifacts/verification/S00_CHECKS.json)
 - [artifacts/verification/S00_SOURCE_INDEX.json 原版本](https://github.com/2NTTY/child-ai-caregiver/blob/25244fb44d8e4464af2c8f9600019a7ed1118d6d/artifacts/verification/S00_SOURCE_INDEX.json)
 - [OPEN_SOURCE_REUSE.md 原版本](https://github.com/2NTTY/child-ai-caregiver/blob/25244fb44d8e4464af2c8f9600019a7ed1118d6d/OPEN_SOURCE_REUSE.md)
+
+
+<a id="plan-p1-p2-20261018"></a>
+### 2026-10-18 P1／P2 計劃正文歸檔
+
+- 用途／查閱條件：追溯指定 P1／P2、早期文件包與原責任安排；不作日常必讀。當前任務及未完成 STR01／備份驗收只看 [根 PLAN](../PLAN.md#active)；P3 以後仍在根 PLAN，未驗項沒有改成完成。
+- 來源 commit：`92107bb64295222379b89acbd5d58bd5fbd128f0`；[固定原文](https://github.com/2NTTY/child-ai-caregiver/blob/92107bb64295222379b89acbd5d58bd5fbd128f0/PLAN.md)。來源整檔 SHA-256：`a8cbd57b703353ab211ae21b39c61ccd71c7f7fe8f3b34514c06a765f05ee8e3`。
+- 保存位置：[P1-P2-20261018.md](plans/P1-P2-20261018.md)；完整歸檔檔 SHA-256：`4a20efbb7aa6abd7b60789f04dae4afa8f96e28ba060a8e2c1758eaf44974923`。下列六段逐 byte 搬出；只另加歸檔說明，未改寫段內歷史／原失敗。相對連結按來源根目錄理解，需要導航時使用固定原文。
+- 相容性：根 PLAN 保留全部原顯式錨點；歷史正文的原連結只作追溯。日後不往此凍結檔寫新狀態。
+
+| 段 | 原 PLAN 行 | 起點 | 段落 SHA-256 |
+|---|---|---|---|
+| 1 | 30–41 | `<a id="phase-1"></a>` | `28eeeba62438d5c76222db50a291e9562e66b3e80f56aafb26b0dbe4a6c404cb` |
+| 2 | 63–70 | `<a id="agent-budget-followup"></a>` | `9505ad6ed1d09c120614e2ad7ad5c7200fcaeb45832345095f239a131516c168` |
+| 3 | 84–901 | `<a id="p2-optimization"></a>` | `1aa622127877d2588354f477203d36709b894b78a085ef1fb787b67a204a30d2` |
+| 4 | 1284–1311 | `<a id="s00"></a>` | `e55c203575718057f2b69bfe05bc20ab5e3c2c4f58c149a573297074a55f074b` |
+| 5 | 1427–1580 | `### P1 基礎工作包（已交付）` | `71f4c81eeb3ff62794b802bd3f320f454eda52f80b09df0336d936b0d271a373` |
+| 6 | 1675–1677 | `### P2 原責任預分配（歷史；狀態以上表為準）` | `2d13ead71a9297a364032ebe6c3857e531658cee3dde644bd7815c78993dd105` |
