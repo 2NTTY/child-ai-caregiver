@@ -68,7 +68,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 ### DOC-R05 — 歷史計劃移出日常入口
 
 - 本輪文件整理：P1／P2 及早期文件包已搬至[凍結歷史](_archive/README.md#plan-p1-p2-20261018)，根 PLAN 保留當前工作、未完成門檻、P3 以後與相容錨點。
-- 來源 `92107bb`，文件分支 `codex/plan-phase-history` 接續 Android draft #239；僅文件檢查，待 PR 合併，不改產品／部署或原驗收結果。
+- 來源 `92107bb`，文件 PR #240 隨 Android draft #239 交付；本機整理及文件檢查完成，master 尚未包含本次歸檔，不改產品／部署或原驗收結果。
 
 ## 尚未結束的 P2 門檻
 
