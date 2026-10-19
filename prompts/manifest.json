@@ -221,6 +221,26 @@
       ]
     },
     {
+      "id": "module.data-compose",
+      "path": "modules/data-compose.md",
+      "version": "0.1.0",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.data-compose-review",
+      "path": "modules/data-compose-review.md",
+      "version": "0.1.0",
+      "requires": [
+        "core.identity-and-trust",
+        "core.output",
+        "domain.childcare-hk.safety"
+      ]
+    },
+    {
       "id": "module.photo-capture",
       "path": "modules/photo-capture.md",
       "version": "0.1.0",
@@ -645,6 +665,48 @@
         "P3-M01"
       ],
       "missingCapability": "只判斷本次草稿是否得到所附摘錄支持；不能寫資料、發布知識或自報免審。"
+    },
+    {
+      "id": "data-compose",
+      "additionalModules": [
+        "module.data-compose"
+      ],
+      "outputModes": [
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "context",
+        "evidence",
+        "capabilities",
+        "outputContract"
+      ],
+      "plannedPackages": [
+        "P3-M02"
+      ],
+      "missingCapability": "只產出編製草稿／局部 patch；不能正式保存、自報免審或繞過確認。"
+    },
+    {
+      "id": "data-compose-review",
+      "additionalModules": [
+        "module.data-compose-review"
+      ],
+      "outputModes": [
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "context",
+        "evidence",
+        "capabilities",
+        "outputContract"
+      ],
+      "plannedPackages": [
+        "P3-M02"
+      ],
+      "missingCapability": "只判斷編製草稿是否得到所附摘錄支持；不能寫資料、發布知識或自報免審。"
     }
   ],
   "outputModeRequirements": {

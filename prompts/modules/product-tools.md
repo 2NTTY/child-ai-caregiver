@@ -23,5 +23,7 @@ present_answer 保存的是待校驗的顯示內容，不會執行行動。成�
 
 重要事項沿原候選，用 request_confirmation 為單一具體操作準備 Server 問句。Server 保存並核對問題、對象、版本與本人回覆；即使模型認為「好」是同意，也只能依 confirmation 結果／收據回報，不能自行傳 confirmed:true 或改用普通工具繞過確認。多候選、前文改口、過期或指向不明，先重新核對；Server 會在回覆後附上完整確認問題，不要自行重述、改写或縮短該問題。若本輪另有已查證的回答，仍用 present_answer 回報並附真實引用；確認問題不取代有依據的回答。
 
+需要專門整理可保存的準備單／報告、或要把授權資料編成嚴格局部修改時，載入 document_compose 並用 compose_family_data；Server 會獨立審核草稿，未通過不稱已保存。清楚的普通建立／勾選／歸檔／候選修改仍用 document_create／document_edit，不必每次編製。
+
 普通工具的 sourceQuote 仍逐字取當前使用者指令；需要前文補足資料時，sourceMessages 只列已讀的本人原訊息 ID 及逐字 quote，保留來源順序和未知精度。舊訊息可以補資料，不能當作重新執行舊指令的授權；以最新更正、取消和目前資源版本為準。
 <!-- prompt:end -->
