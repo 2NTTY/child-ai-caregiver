@@ -76,7 +76,7 @@ export interface BackgroundKnowledgeMaintenancePorts {
   /** Recorded fingerprints so the same operation does not double-publish. */
   loadResult?(operationFingerprint: string): Promise<BackgroundKnowledgeRunResult | null>;
   saveResult?(operationFingerprint: string, result: BackgroundKnowledgeRunResult): Promise<void>;
-  /** Exclusive claim/lease so parallel retries cannot both publish. */
+  /** Exclusive claim/lease so parallel retries cannot both publish. Renew with the same leaseToken to extend. */
   claimOperation?(operationFingerprint: string, leaseToken: string, leaseUntilMs: number): Promise<BackgroundKnowledgeClaimOutcome>;
   releaseOperation?(operationFingerprint: string, leaseToken: string): Promise<void>;
   /** Crash-safe publish receipt keyed by operation fingerprint. */
@@ -239,6 +239,21 @@ function spend(budget: BackgroundKnowledgeWorkBudget, units: number): Background
   return cloneBudget({ ...budget, usedUnits: budget.usedUnits + units });
 }
 
+/** Prefer the higher usedUnits so a stale runner cannot regress a durable budget. */
+function monotonicBudget(
+  previous: BackgroundKnowledgeWorkBudget | null,
+  next: BackgroundKnowledgeWorkBudget,
+): BackgroundKnowledgeWorkBudget {
+  if (!previous) return cloneBudget(next);
+  return cloneBudget({
+    ...next,
+    usedUnits: Math.max(previous.usedUnits, next.usedUnits),
+    modelCalls: Math.max(previous.modelCalls, next.modelCalls),
+    maxUnits: Math.max(previous.maxUnits, next.maxUnits),
+    maxModelCalls: Math.max(previous.maxModelCalls, next.maxModelCalls),
+  });
+}
+
 /**
  * Independent Runner factory. Disabled config returns not_enabled and must not be
  * treated as a successful maintenance pass. Never reads family private data.
@@ -251,7 +266,7 @@ export function createBackgroundKnowledgeMaintenanceRunner(
   const memory = new MemoryLedger();
   const reviewPort = ports.review ?? createProgrammaticKnowledgeReviewStub();
   const loadBudget = ports.loadBudget ?? (async fingerprint => memory.budgets.get(fingerprint) ?? null);
-  const saveBudget = ports.saveBudget ?? (async (fingerprint, budget) => { memory.budgets.set(fingerprint, cloneBudget(budget)); });
+  const saveBudgetRaw = ports.saveBudget ?? (async (fingerprint, budget) => { memory.budgets.set(fingerprint, cloneBudget(budget)); });
   const loadResult = ports.loadResult ?? (async fingerprint => memory.results.get(fingerprint) ?? null);
   const saveResult = ports.saveResult ?? (async (fingerprint, result) => { memory.results.set(fingerprint, result); });
   const loadPublishReceipt = ports.loadPublishReceipt ?? (async fingerprint => memory.receipts.get(fingerprint) ?? null);
@@ -285,8 +300,9 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     }
 
     const leaseToken = randomUUID();
+    let leaseUntilMs = Date.now() + BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS;
     const claimed = await claimOperation(
-      request.operationFingerprint, leaseToken, Date.now() + BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS,
+      request.operationFingerprint, leaseToken, leaseUntilMs,
     );
     if (claimed.status === "completed") {
       return backgroundKnowledgeRunResultSchema.parse({
@@ -296,6 +312,17 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       });
     }
     if (claimed.status === "busy") {
+      const busyReceipt = await loadPublishReceipt(request.operationFingerprint);
+      if (busyReceipt?.state === "committed") {
+        return backgroundKnowledgeRunResultSchema.parse({
+          status: "published",
+          code: "publish_receipt_restored",
+          watchId: request.watchId,
+          observationHash: busyReceipt.observationHash,
+          published: true,
+          publishMode: config.livePublish && request.publishMode === "live" ? "live" : request.publishMode,
+        });
+      }
       return backgroundKnowledgeRunResultSchema.parse({
         status: "rejected",
         code: "operation_claim_busy",
@@ -306,12 +333,66 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     }
 
     let budget = cloneBudget((await loadBudget(request.operationFingerprint)) ?? BACKGROUND_KNOWLEDGE_DEFAULT_BUDGET);
+
+    /** F1: renew while still inside local TTL; overdue or stolen lease stops durable writes. */
+    const holdLease = async (): Promise<"ok" | "lost" | "completed"> => {
+      if (Date.now() > leaseUntilMs) return "lost";
+      const nextUntil = Date.now() + BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS;
+      const outcome = await claimOperation(request.operationFingerprint, leaseToken, nextUntil);
+      if (outcome.status === "busy") return "lost";
+      if (outcome.status === "completed") return "completed";
+      leaseUntilMs = nextUntil;
+      return "ok";
+    };
+
+    const persistBudget = async (next: BackgroundKnowledgeWorkBudget): Promise<"ok" | "lost" | "completed"> => {
+      const held = await holdLease();
+      if (held !== "ok") return held;
+      const existing = await loadBudget(request.operationFingerprint);
+      const merged = monotonicBudget(existing, next);
+      await saveBudgetRaw(request.operationFingerprint, merged);
+      budget = merged;
+      return "ok";
+    };
+
     const finish = async (result: BackgroundKnowledgeRunResult, nextBudget = budget) => {
-      const sealed = backgroundKnowledgeRunResultSchema.parse({ ...result, budget: nextBudget });
-      await saveBudget(request.operationFingerprint, nextBudget);
-      await saveResult(request.operationFingerprint, sealed);
-      await releaseOperation(request.operationFingerprint, leaseToken);
-      return sealed;
+      const held = await holdLease();
+      if (held === "completed") {
+        const done = await loadResult(request.operationFingerprint);
+        if (done) {
+          await releaseOperation(request.operationFingerprint, leaseToken);
+          return backgroundKnowledgeRunResultSchema.parse({
+            ...done,
+            status: "already_recorded",
+            code: done.code ?? done.status,
+          });
+        }
+      }
+      if (held !== "ok") {
+        // Stale / overdue runner must not write budget or result.
+        await releaseOperation(request.operationFingerprint, leaseToken);
+        return backgroundKnowledgeRunResultSchema.parse({
+          status: "rejected",
+          code: "operation_lease_lost",
+          watchId: result.watchId ?? request.watchId,
+          observationHash: result.observationHash ?? null,
+          review: result.review,
+          published: false,
+          publishMode: result.publishMode ?? request.publishMode,
+          budget: nextBudget,
+        });
+      }
+      try {
+        const existingBudget = await loadBudget(request.operationFingerprint);
+        const sealedBudget = monotonicBudget(existingBudget, nextBudget);
+        const sealed = backgroundKnowledgeRunResultSchema.parse({ ...result, budget: sealedBudget });
+        await saveBudgetRaw(request.operationFingerprint, sealedBudget);
+        await saveResult(request.operationFingerprint, sealed);
+        return sealed;
+      } finally {
+        // Always drop our lease so a saveResult crash can retry via receipt restore (F2).
+        await releaseOperation(request.operationFingerprint, leaseToken);
+      }
     };
 
     // Reserve fetch+organize units before side effects so a crash cannot skip budget.
@@ -322,8 +403,21 @@ export function createBackgroundKnowledgeMaintenanceRunner(
         watchId: request.watchId, published: false, publishMode: request.publishMode,
       }, budget);
     }
-    budget = reserved;
-    await saveBudget(request.operationFingerprint, budget);
+    const reservedSave = await persistBudget(reserved);
+    if (reservedSave === "completed") {
+      const done = await loadResult(request.operationFingerprint);
+      if (done) {
+        return backgroundKnowledgeRunResultSchema.parse({
+          ...done, status: "already_recorded", code: done.code ?? done.status,
+        });
+      }
+    }
+    if (reservedSave !== "ok") {
+      return finish({
+        status: "rejected", code: "operation_lease_lost",
+        watchId: request.watchId, published: false, publishMode: request.publishMode,
+      }, budget);
+    }
 
     if (!isInitialWatchId(request.watchId)) {
       return finish({ status: "rejected", code: "watch_out_of_scope", watchId: request.watchId, published: false, publishMode: request.publishMode });
@@ -341,6 +435,22 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, published: false, publishMode: request.publishMode });
     }
 
+    // F2: if a prior publish already committed a receipt but saveResult crashed,
+    // restore that outcome before re-fetch / re-review / re-publish.
+    const priorReceipt = await loadPublishReceipt(request.operationFingerprint);
+    if (priorReceipt?.state === "committed") {
+      const restoreMode: BackgroundKnowledgePublishMode =
+        config.livePublish && request.publishMode === "live" ? "live" : "dry_run";
+      return finish({
+        status: "published",
+        code: "publish_receipt_restored",
+        watchId: request.watchId,
+        observationHash: priorReceipt.observationHash,
+        published: true,
+        publishMode: restoreMode,
+      });
+    }
+
     const previous = await ports.readObservation?.(request.watchId) ?? null;
     if (signal.aborted) {
       return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, published: false, publishMode: request.publishMode });
@@ -350,6 +460,23 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       fetched = await ports.fetch(definition, signal);
     } catch {
       return finish({ status: "fetch_failed", code: "fetch_threw", watchId: request.watchId, observationHash: previous?.contentHash ?? null, published: false, publishMode: request.publishMode });
+    }
+    // F1: after a long stall, refuse to continue with an overdue lease.
+    const afterFetchLease = await holdLease();
+    if (afterFetchLease === "completed") {
+      const done = await loadResult(request.operationFingerprint);
+      if (done) {
+        return backgroundKnowledgeRunResultSchema.parse({
+          ...done, status: "already_recorded", code: done.code ?? done.status,
+        });
+      }
+    }
+    if (afterFetchLease !== "ok") {
+      return finish({
+        status: "rejected", code: "operation_lease_lost",
+        watchId: request.watchId, observationHash: previous?.contentHash ?? null,
+        published: false, publishMode: request.publishMode,
+      });
     }
     if (signal.aborted) {
       return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: previous?.contentHash ?? null, published: false, publishMode: request.publishMode });
@@ -420,14 +547,47 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     }
 
     const receipt = await loadPublishReceipt(request.operationFingerprint);
-    if (receipt?.state === "committed" && receipt.observationHash === hash) {
-      return finish({ status: "published", watchId: request.watchId, observationHash: hash, review, published: true, publishMode: "live" });
+    // F3: re-check cancel after deferred receipt load, before any publish side effect.
+    if (signal.aborted) {
+      return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live" });
+    }
+    // F2: any committed receipt for this operation pins the published hash (do not publish a newer fetch).
+    if (receipt?.state === "committed") {
+      return finish({
+        status: "published",
+        code: receipt.observationHash === hash ? undefined : "publish_receipt_restored",
+        watchId: request.watchId,
+        observationHash: receipt.observationHash,
+        review,
+        published: true,
+        publishMode: "live",
+      });
+    }
+
+    const publishLease = await holdLease();
+    if (publishLease === "completed") {
+      const done = await loadResult(request.operationFingerprint);
+      if (done) {
+        return backgroundKnowledgeRunResultSchema.parse({
+          ...done, status: "already_recorded", code: done.code ?? done.status,
+        });
+      }
+    }
+    if (publishLease !== "ok") {
+      return finish({
+        status: "rejected", code: "operation_lease_lost",
+        watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live",
+      });
+    }
+    if (signal.aborted) {
+      return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live" });
     }
 
     const published = await ports.publish(candidate, review);
     if (!published.published) {
       return finish({ status: "candidate_held", code: published.code ?? "publish_pending", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live" });
     }
+    // F2: persist receipt immediately after a fenced publish so saveResult crashes can restore.
     await savePublishReceipt(request.operationFingerprint, { observationHash: hash, state: "committed" });
     return finish({ status: "published", watchId: request.watchId, observationHash: hash, review, published: true, publishMode: "live" });
   }
