@@ -9,6 +9,7 @@ import { createProductAgentTools, createDueWorkContinuationTools } from "./produ
 import type { ProductAgentStore } from "./product-agent-store.ts";
 import type { AgentPresentation, ProductAgentResult } from "../src/shared/product-agent.ts";
 import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT, type ChatDeliveryReviewBinding } from "../src/shared/chat-delivery-review.ts";
+import { DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT } from "../src/shared/data-compose.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { enforceChatDeliveryReview, type ChatDeliverySurface } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentRunResult } from "./agent-runtime.ts";
@@ -19,7 +20,9 @@ import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./pr
 import type { FirestoreWorkContinuationStore, ClaimedWorkContinuation } from "./firestore-work-continuation-store.ts";
 
 function unfinishedDeliveryText(stopReason: string | null | undefined): string {
-  return stopReason === "delivery_review_incomplete" ? CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT : "";
+  if (stopReason === "delivery_review_incomplete") return CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT;
+  if (stopReason === "compose_review_incomplete") return DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT;
+  return "";
 }
 
 /** Programmatic presentation is already done. Review shares this root run and cannot be skipped by the generator. */
