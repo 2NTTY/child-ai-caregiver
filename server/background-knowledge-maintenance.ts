@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import {
   BACKGROUND_KNOWLEDGE_POLICY_VERSION, BACKGROUND_KNOWLEDGE_ROLE_ID, M03_INITIAL_WATCH_IDS,
   backgroundKnowledgeReviewBindingSchema, backgroundKnowledgeRunRequestSchema,
@@ -19,6 +19,12 @@ export {
 export const BACKGROUND_KNOWLEDGE_DEFAULT_BUDGET = Object.freeze({
   usedUnits: 0, maxUnits: 8, modelCalls: 0, maxModelCalls: 0,
 }) satisfies BackgroundKnowledgeWorkBudget;
+
+/** Fetch + organize units reserved up front so a crash window cannot skip budget. */
+export const BACKGROUND_KNOWLEDGE_RESERVED_UNITS = 2;
+
+/** Exclusive lease TTL for one operation fingerprint (ms). */
+export const BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS = 120_000;
 
 export interface BackgroundKnowledgeMaintenanceConfig {
   enabled: boolean;
@@ -41,12 +47,22 @@ export interface BackgroundKnowledgeCandidate {
   previousObservationHash: string | null;
 }
 
+export type BackgroundKnowledgeClaimOutcome =
+  | { status: "claimed"; leaseToken: string }
+  | { status: "busy" }
+  | { status: "completed"; result: BackgroundKnowledgeRunResult };
+
+export interface BackgroundKnowledgePublishReceipt {
+  observationHash: string;
+  state: "committed";
+}
+
 /**
  * Future M01-style read-only model review port.
  * The stub never sets reviewKind to model_review or modelReviewCompleted true.
  */
 export interface KnowledgeSemanticReviewPort {
-  review(candidate: BackgroundKnowledgeCandidate): Promise<BackgroundKnowledgeReviewBinding>;
+  review(candidate: BackgroundKnowledgeCandidate, signal?: AbortSignal): Promise<BackgroundKnowledgeReviewBinding>;
 }
 
 export interface BackgroundKnowledgeMaintenancePorts {
@@ -60,9 +76,15 @@ export interface BackgroundKnowledgeMaintenancePorts {
   /** Recorded fingerprints so the same operation does not double-publish. */
   loadResult?(operationFingerprint: string): Promise<BackgroundKnowledgeRunResult | null>;
   saveResult?(operationFingerprint: string, result: BackgroundKnowledgeRunResult): Promise<void>;
+  /** Exclusive claim/lease so parallel retries cannot both publish. */
+  claimOperation?(operationFingerprint: string, leaseToken: string, leaseUntilMs: number): Promise<BackgroundKnowledgeClaimOutcome>;
+  releaseOperation?(operationFingerprint: string, leaseToken: string): Promise<void>;
+  /** Crash-safe publish receipt keyed by operation fingerprint. */
+  loadPublishReceipt?(operationFingerprint: string): Promise<BackgroundKnowledgePublishReceipt | null>;
+  savePublishReceipt?(operationFingerprint: string, receipt: BackgroundKnowledgePublishReceipt): Promise<void>;
   /**
-   * Formal publish hook. Only called when livePublish is true and stub review approves.
-   * Must not modify medical/growth execution rules.
+   * Formal publish hook. Only called when livePublish is true and model review approves.
+   * Must be idempotent on watchId + observationHash. Must not modify medical/growth execution rules.
    */
   publish?(candidate: BackgroundKnowledgeCandidate, review: BackgroundKnowledgeReviewBinding): Promise<{ published: boolean; code?: string }>;
   review?: KnowledgeSemanticReviewPort;
@@ -102,13 +124,52 @@ export function rejectPrivateMaintenanceScope(input: {
   return null;
 }
 
+/** 216D: review must bind to this candidate watch / hashes / current policy. */
+export function backgroundKnowledgeReviewMatchesCandidate(
+  review: BackgroundKnowledgeReviewBinding,
+  candidate: Pick<BackgroundKnowledgeCandidate, "watchId" | "observationHash" | "previousObservationHash">,
+): boolean {
+  return review.watchId === candidate.watchId
+    && review.observationHash === candidate.observationHash
+    && review.previousObservationHash === candidate.previousObservationHash
+    && review.policyVersion === BACKGROUND_KNOWLEDGE_POLICY_VERSION;
+}
+
+/**
+ * 216B + 216D: live publish requires a matching model semantic review binding.
+ * Programmatic stub / modelReviewCompleted=false never authorizes live publish.
+ */
+export function allowLiveBackgroundKnowledgePublish(
+  review: BackgroundKnowledgeReviewBinding,
+  candidate: Pick<BackgroundKnowledgeCandidate, "watchId" | "observationHash" | "previousObservationHash">,
+): boolean {
+  if (!backgroundKnowledgeReviewMatchesCandidate(review, candidate)) return false;
+  if (review.decision !== "approve_candidate") return false;
+  if (review.growthRuleImpact === "requires_review") return false;
+  if (review.reviewKind !== "model_review" || !review.modelReviewCompleted) return false;
+  return true;
+}
+
 /**
  * Programmatic stub review: hash / scope / completeness checks only.
  * Does not claim model semantic review or clinical validity.
  */
 export function createProgrammaticKnowledgeReviewStub(): KnowledgeSemanticReviewPort {
   return {
-    async review(candidate) {
+    async review(candidate, signal) {
+      if (signal?.aborted) {
+        return backgroundKnowledgeReviewBindingSchema.parse({
+          watchId: candidate.watchId,
+          observationHash: candidate.observationHash,
+          previousObservationHash: candidate.previousObservationHash,
+          decision: "hold_candidate",
+          reviewKind: "programmatic_stub",
+          policyVersion: BACKGROUND_KNOWLEDGE_POLICY_VERSION,
+          modelReviewCompleted: false,
+          growthRuleImpact: "none",
+          notes: ["cancelled before stub review"],
+        });
+      }
       const notes: string[] = [];
       let decision: BackgroundKnowledgeReviewBinding["decision"] = "approve_candidate";
       let growthRuleImpact: BackgroundKnowledgeReviewBinding["growthRuleImpact"] = "none";
@@ -165,6 +226,8 @@ export function createProgrammaticKnowledgeReviewStub(): KnowledgeSemanticReview
 class MemoryLedger {
   budgets = new Map<string, BackgroundKnowledgeWorkBudget>();
   results = new Map<string, BackgroundKnowledgeRunResult>();
+  claims = new Map<string, { leaseToken: string; untilMs: number }>();
+  receipts = new Map<string, BackgroundKnowledgePublishReceipt>();
 }
 
 function cloneBudget(budget: BackgroundKnowledgeWorkBudget): BackgroundKnowledgeWorkBudget {
@@ -191,6 +254,21 @@ export function createBackgroundKnowledgeMaintenanceRunner(
   const saveBudget = ports.saveBudget ?? (async (fingerprint, budget) => { memory.budgets.set(fingerprint, cloneBudget(budget)); });
   const loadResult = ports.loadResult ?? (async fingerprint => memory.results.get(fingerprint) ?? null);
   const saveResult = ports.saveResult ?? (async (fingerprint, result) => { memory.results.set(fingerprint, result); });
+  const loadPublishReceipt = ports.loadPublishReceipt ?? (async fingerprint => memory.receipts.get(fingerprint) ?? null);
+  const savePublishReceipt = ports.savePublishReceipt ?? (async (fingerprint, receipt) => { memory.receipts.set(fingerprint, receipt); });
+  const claimOperation = ports.claimOperation ?? (async (fingerprint, leaseToken, leaseUntilMs) => {
+    const prior = memory.results.get(fingerprint);
+    if (prior) return { status: "completed" as const, result: prior };
+    const current = memory.claims.get(fingerprint);
+    const now = Date.now();
+    if (current && current.untilMs > now && current.leaseToken !== leaseToken) return { status: "busy" as const };
+    memory.claims.set(fingerprint, { leaseToken, untilMs: leaseUntilMs });
+    return { status: "claimed" as const, leaseToken };
+  });
+  const releaseOperation = ports.releaseOperation ?? (async (fingerprint, leaseToken) => {
+    const current = memory.claims.get(fingerprint);
+    if (current?.leaseToken === leaseToken) memory.claims.delete(fingerprint);
+  });
 
   async function run(raw: BackgroundKnowledgeRunRequest, signal: AbortSignal): Promise<BackgroundKnowledgeRunResult> {
     const request = backgroundKnowledgeRunRequestSchema.parse(raw);
@@ -206,13 +284,46 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       });
     }
 
+    const leaseToken = randomUUID();
+    const claimed = await claimOperation(
+      request.operationFingerprint, leaseToken, Date.now() + BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS,
+    );
+    if (claimed.status === "completed") {
+      return backgroundKnowledgeRunResultSchema.parse({
+        ...claimed.result,
+        status: "already_recorded",
+        code: claimed.result.code ?? claimed.result.status,
+      });
+    }
+    if (claimed.status === "busy") {
+      return backgroundKnowledgeRunResultSchema.parse({
+        status: "rejected",
+        code: "operation_claim_busy",
+        watchId: request.watchId,
+        published: false,
+        publishMode: request.publishMode,
+      });
+    }
+
     let budget = cloneBudget((await loadBudget(request.operationFingerprint)) ?? BACKGROUND_KNOWLEDGE_DEFAULT_BUDGET);
     const finish = async (result: BackgroundKnowledgeRunResult, nextBudget = budget) => {
       const sealed = backgroundKnowledgeRunResultSchema.parse({ ...result, budget: nextBudget });
       await saveBudget(request.operationFingerprint, nextBudget);
       await saveResult(request.operationFingerprint, sealed);
+      await releaseOperation(request.operationFingerprint, leaseToken);
       return sealed;
     };
+
+    // Reserve fetch+organize units before side effects so a crash cannot skip budget.
+    const reserved = spend(budget, BACKGROUND_KNOWLEDGE_RESERVED_UNITS);
+    if (!reserved) {
+      return finish({
+        status: "budget_exhausted", code: "maintenance_budget_exhausted",
+        watchId: request.watchId, published: false, publishMode: request.publishMode,
+      }, budget);
+    }
+    budget = reserved;
+    await saveBudget(request.operationFingerprint, budget);
 
     if (!isInitialWatchId(request.watchId)) {
       return finish({ status: "rejected", code: "watch_out_of_scope", watchId: request.watchId, published: false, publishMode: request.publishMode });
@@ -226,22 +337,22 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     if (!config.liveFetch && config.livePublish && request.publishMode === "live") {
       return finish({ status: "rejected", code: "live_fetch_required_for_live_publish", watchId: request.watchId, published: false, publishMode: request.publishMode });
     }
-
-    const nextBudget = spend(budget, 1);
-    if (!nextBudget) {
-      return finish({ status: "budget_exhausted", code: "maintenance_budget_exhausted", watchId: request.watchId, published: false, publishMode: request.publishMode }, budget);
-    }
-    budget = nextBudget;
     if (signal.aborted) {
       return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, published: false, publishMode: request.publishMode });
     }
 
     const previous = await ports.readObservation?.(request.watchId) ?? null;
+    if (signal.aborted) {
+      return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, published: false, publishMode: request.publishMode });
+    }
     let fetched: SourceFetchResult;
     try {
       fetched = await ports.fetch(definition, signal);
     } catch {
       return finish({ status: "fetch_failed", code: "fetch_threw", watchId: request.watchId, observationHash: previous?.contentHash ?? null, published: false, publishMode: request.publishMode });
+    }
+    if (signal.aborted) {
+      return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: previous?.contentHash ?? null, published: false, publishMode: request.publishMode });
     }
 
     if (fetched.status === "failed") {
@@ -267,19 +378,20 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       return finish({ status: "unchanged", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: request.publishMode });
     }
 
-    const organizeBudget = spend(budget, 1);
-    if (!organizeBudget) {
-      return finish({ status: "budget_exhausted", code: "maintenance_budget_exhausted", watchId: request.watchId, observationHash: hash, published: false, publishMode: request.publishMode }, budget);
+    if (signal.aborted) {
+      return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: hash, published: false, publishMode: request.publishMode });
     }
-    budget = organizeBudget;
 
     const candidate: BackgroundKnowledgeCandidate = {
       watchId: request.watchId, definition, observed, observationHash: hash,
       previousObservationHash: previous?.contentHash ?? null,
     };
-    const review = await reviewPort.review(candidate);
-    if (review.reviewKind === "model_review" || review.modelReviewCompleted) {
-      return finish({ status: "rejected", code: "model_review_not_wired", watchId: request.watchId, observationHash: hash, review: null, published: false, publishMode: request.publishMode });
+    const review = await reviewPort.review(candidate, signal);
+    if (signal.aborted) {
+      return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: request.publishMode });
+    }
+    if (!backgroundKnowledgeReviewMatchesCandidate(review, candidate)) {
+      return finish({ status: "rejected", code: "review_binding_mismatch", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: request.publishMode });
     }
     if (review.decision === "reject_out_of_scope") {
       return finish({ status: "rejected", code: "review_out_of_scope", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: request.publishMode });
@@ -292,13 +404,31 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     if (publishMode === "dry_run" || !config.livePublish) {
       return finish({ status: "dry_run_ready", code: "publish_dry_run", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "dry_run" });
     }
+
+    // 216B: live path rejects programmatic stub / incomplete model review.
+    if (!allowLiveBackgroundKnowledgePublish(review, candidate)) {
+      return finish({
+        status: "rejected", code: "live_requires_model_review",
+        watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live",
+      });
+    }
     if (!ports.publish) {
       return finish({ status: "candidate_held", code: "publish_port_missing", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live" });
     }
+    if (signal.aborted) {
+      return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live" });
+    }
+
+    const receipt = await loadPublishReceipt(request.operationFingerprint);
+    if (receipt?.state === "committed" && receipt.observationHash === hash) {
+      return finish({ status: "published", watchId: request.watchId, observationHash: hash, review, published: true, publishMode: "live" });
+    }
+
     const published = await ports.publish(candidate, review);
     if (!published.published) {
       return finish({ status: "candidate_held", code: published.code ?? "publish_pending", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live" });
     }
+    await savePublishReceipt(request.operationFingerprint, { observationHash: hash, state: "committed" });
     return finish({ status: "published", watchId: request.watchId, observationHash: hash, review, published: true, publishMode: "live" });
   }
 

@@ -2,7 +2,8 @@ import { z } from "zod";
 
 /** P3-M03 independent background knowledge maintenance. Not a chat search submodel. */
 export const BACKGROUND_KNOWLEDGE_ROLE_ID = "background-knowledge-maintenance";
-export const BACKGROUND_KNOWLEDGE_POLICY_VERSION = "p3-m03-background-knowledge/1";
+/** /2: live publish requires model review binding; stub remains dry-run only. */
+export const BACKGROUND_KNOWLEDGE_POLICY_VERSION = "p3-m03-background-knowledge/2";
 
 /**
  * First-round allowlist only. Broader SOURCE_WATCHES stay registered for S10 refresh
@@ -44,8 +45,8 @@ export const backgroundKnowledgeReviewBindingSchema = z.object({
   decision: backgroundKnowledgeDecisionSchema,
   reviewKind: backgroundKnowledgeReviewKindSchema,
   policyVersion: z.string().min(1).max(80),
-  /** Explicit: programmatic stub is not a model pass. */
-  modelReviewCompleted: z.literal(false),
+  /** True only after a real model semantic review port completes. Stub stays false. */
+  modelReviewCompleted: z.boolean(),
   growthRuleImpact: z.enum(["none", "requires_review"]),
   notes: z.array(z.string().trim().min(1).max(240)).max(8),
 }).strict();
