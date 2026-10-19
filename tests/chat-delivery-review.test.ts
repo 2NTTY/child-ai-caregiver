@@ -9,7 +9,8 @@ import { createProductAgent } from "../server/product-agent.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import { loadAgentPrompt } from "../server/agent-prompt.ts";
 import {
-  chatDeliveryDraftHash, chatDeliveryReviewAllows, requiresChatDeliveryReview, type ChatDeliveryDraft,
+  chatDeliveryDraftHash, chatDeliveryPassNeedsSources, chatDeliveryReviewAllows, requiresChatDeliveryReview,
+  SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS, type ChatDeliveryDraft,
 } from "../server/chat-delivery-review.ts";
 import { agentAnswerSchema, type ProductAgentResult } from "../src/shared/product-agent.ts";
 import {
@@ -35,7 +36,7 @@ function draft(text = "合成句子", version = "v1", contentHash = hashA): Chat
   };
 }
 
-function passRecord(current = draft(), promptVersion = "0.1.38") {
+function passRecord(current = draft(), promptVersion = "0.1.39") {
   return {
     draftHash: chatDeliveryDraftHash(current),
     sourceVersions: current.sources.map(source => ({ citationId: source.citationId, version: source.version, contentHash: source.contentHash })),
@@ -49,12 +50,12 @@ function passRecord(current = draft(), promptVersion = "0.1.38") {
 test("review binding follows the draft hash, source version and scope", () => {
   const current = draft();
   const record = passRecord(current);
-  assert.equal(chatDeliveryReviewAllows(record, current, "0.1.38"), true);
-  assert.equal(chatDeliveryReviewAllows(record, draft("另一句沒有依據的說法"), "0.1.38"), false);
-  assert.equal(chatDeliveryReviewAllows(record, draft("合成句子", "v2"), "0.1.38"), false);
-  assert.equal(chatDeliveryReviewAllows(record, draft("合成句子", "v1", hashB), "0.1.38"), false);
-  assert.equal(chatDeliveryReviewAllows(record, { ...current, scope: { ...scope, dataVersion: "epoch:2" } }, "0.1.38"), false);
-  assert.equal(chatDeliveryReviewAllows({ ...record, decision: "revise" }, current, "0.1.38"), false);
+  assert.equal(chatDeliveryReviewAllows(record, current, "0.1.39"), true);
+  assert.equal(chatDeliveryReviewAllows(record, draft("另一句沒有依據的說法"), "0.1.39"), false);
+  assert.equal(chatDeliveryReviewAllows(record, draft("合成句子", "v2"), "0.1.39"), false);
+  assert.equal(chatDeliveryReviewAllows(record, draft("合成句子", "v1", hashB), "0.1.39"), false);
+  assert.equal(chatDeliveryReviewAllows(record, { ...current, scope: { ...scope, dataVersion: "epoch:2" } }, "0.1.39"), false);
+  assert.equal(chatDeliveryReviewAllows({ ...record, decision: "revise" }, current, "0.1.39"), false);
   assert.equal(chatDeliveryReviewAllows(record, current, "0.1.37"), false);
 });
 
@@ -62,9 +63,23 @@ test("self-labelled exemptions and publish decisions are not chat-delivery revie
   assert.equal(requiresChatDeliveryReview(draft()), true);
   assert.equal(requiresChatDeliveryReview({ ...draft(), serverSubstitutedSourceText: true }), false);
   for (const kind of ["clarification", "operation", "record_restatement"] as const) {
+    // Plain non-care wording without cites may still skip; model kind alone never forces a skip either.
     assert.equal(requiresChatDeliveryReview({ ...draft(), kind, sources: [], paragraphs: [{ text: "沒有引用的說明", citationIds: [] }] }), false);
     assert.equal(requiresChatDeliveryReview({ ...draft(), kind }), true);
   }
+  const careAsOperation = {
+    ...draft(), kind: "operation" as const, sources: [],
+    paragraphs: [{ text: "所有新生兒都應立即加鹽。", citationIds: [] }],
+  };
+  assert.equal(requiresChatDeliveryReview(careAsOperation), true);
+  assert.equal(chatDeliveryPassNeedsSources(careAsOperation), true);
+  const allowlisted = [...SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS][0]!;
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "operation", sources: [], paragraphs: [{ text: allowlisted, citationIds: [] }],
+  }), false);
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "clarification", sources: [], paragraphs: [{ text: "請補充年齡？", citationIds: [] }],
+  }), false);
   assert.equal(requiresChatDeliveryReview({ ...draft(), kind: "safety_help" }), true);
   assert.equal(requiresChatDeliveryReview({ ...draft(), kind: "private_reference" }), true);
   assert.equal(agentAnswerSchema.safeParse({ kind: "caregiving", paragraphs: [{ text: "句子", citationIds: ["chunk-1"] }], skipReview: true }).success, false);
@@ -93,7 +108,7 @@ interface Script {
   generate(request: LlmRequest): Promise<{ content: { role: "model"; parts: { text?: string; functionCall?: { id: string; name: string; args: unknown } }[] }; finishReason: FinishReason }>;
 }
 
-function product(script: Script, options: { reviewCalls?: 4 | 6; bound?: boolean } = {}) {
+function product(script: Script, options: { reviewCalls?: 4 | 6; bound?: boolean; revalidateCitations?: () => boolean | Promise<boolean> } = {}) {
   const expiresAt = new Date(Date.now() + 90_000).toISOString();
   let claimed = false, saved: ProductAgentResult | null = null;
   const runtime = createAgentRuntime({
@@ -145,7 +160,8 @@ function product(script: Script, options: { reviewCalls?: 4 | 6; bound?: boolean
       truncated: { facts: false, topics: false, messages: false } }) },
     chat: { listForUser: async () => ({ messages: [{ id: messageId, role: "user", text: "請說明合成照護情境。" }] }) },
     tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
-    knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [chunk] }), revalidateCitations: async () => true }) },
+    knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [chunk] }),
+      revalidateCitations: async () => options.revalidateCitations ? options.revalidateCitations() : true }) },
   } as unknown as Parameters<typeof createProductAgent>[0]);
   return service.reply(userId, childId, messageId, async () => true);
 }
@@ -222,7 +238,7 @@ test("an unreviewed draft that has used every model call is not formal success",
 
 test("a bound limit of four is not raised by the six-call proposal", async () => {
   const pack = await loadAgentPrompt("product-interactive", "tool_cycle", ["run", "scope", "conversation", "context", "evidence", "capabilities"]);
-  assert.equal(pack.packVersion, "0.1.38");
+  assert.equal(pack.packVersion, "0.1.39");
   let calls = 0;
   const result = await product({ calls, generate: async () => {
     const steps = [
@@ -244,7 +260,7 @@ test("a bound limit of four is not raised by the six-call proposal", async () =>
   assert.equal(config.dailyGlobalAttempts, 100);
 });
 
-test("clarification that still cites a source is reviewed, and a citation-free operation is not", async () => {
+test("clarification that still cites a source is reviewed, and a server-allowlisted operation is not", async () => {
   for (const cited of [false, true]) {
     let reviews = 0;
     const result = await product({ calls: 0, generate: async request => {
@@ -326,4 +342,75 @@ test("a repair that relabels the draft out of review does not become formal succ
   assert.equal(result?.stopReason, "delivery_review_incomplete");
   assert.equal(result?.text.includes(claim), false);
   assert.equal(result?.text.includes("請補充年齡"), false);
+});
+
+test("care advice labelled operation without cites cannot complete with zero reviews", async () => {
+  let reviews = 0;
+  const result = await product({ calls: 0, generate: async request => {
+    const { user, body } = payloadFrom(request);
+    if (user.includes("chat-delivery-review")) {
+      reviews++;
+      return model([{ text: reviewJson(body.draftHash ?? "", "pass") }]);
+    }
+    return model([{ functionCall: { id: "answer", name: "present_answer", args: {
+      kind: "operation", paragraphs: [{ text: "所有新生兒都應立即加鹽。", citationIds: [] }],
+    } } }]);
+  } });
+  assert.ok(reviews >= 1, "server gate must schedule delivery review");
+  assert.equal(result?.status, "stopped");
+  assert.equal(result?.stopReason, "delivery_review_incomplete");
+  assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
+  assert.equal(result?.text.includes("加鹽"), false);
+  assert.equal(result?.deliveryReview, undefined);
+});
+
+test("a repair that only returns a review decision does not become formal success", async () => {
+  let repairs = 0;
+  const result = await product({ calls: 0, generate: async request => {
+    const { user, body } = payloadFrom(request);
+    if (user.includes("Repair the draft")) {
+      repairs++;
+      return model([{ text: reviewJson(body.draftHash ?? "", "pass") }]);
+    }
+    if (user.includes("chat-delivery-review")) return model([{ text: reviewJson(body.draftHash ?? "", "revise") }]);
+    const responded = request.contents.some(content => content.parts?.some(part => part.functionResponse));
+    const step = responded
+      ? { id: "answer", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: claim, citationIds: [chunk.chunkId] }] } }
+      : { id: "search", name: "search_knowledge", args: { query: "合成照護主題", classification: "official_guidance" } };
+    return model([{ functionCall: step }]);
+  } }, { reviewCalls: 6 });
+  assert.equal(repairs, 1);
+  assert.equal(result?.status, "stopped");
+  assert.equal(result?.stopReason, "delivery_review_incomplete");
+  assert.equal(result?.text.includes(claim), false);
+  assert.equal(result?.deliveryReview, undefined);
+});
+
+test("source retract after a review pass does not keep the old answer", async () => {
+  let reviews = 0;
+  let revalidations = 0;
+  const result = await product({ calls: 0, generate: async request => {
+    const { user, body } = payloadFrom(request);
+    if (user.includes("chat-delivery-review")) {
+      reviews++;
+      return model([{ text: reviewJson(body.draftHash ?? "", "pass") }]);
+    }
+    const responded = request.contents.some(content => content.parts?.some(part => part.functionResponse));
+    const step = responded
+      ? { id: "answer", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: chunk.text, citationIds: [chunk.chunkId] }] } }
+      : { id: "search", name: "search_knowledge", args: { query: "合成照護主題", classification: "official_guidance" } };
+    return model([{ functionCall: step }]);
+  } }, {
+    revalidateCitations: () => {
+      revalidations++;
+      // First presentation (before review) succeeds; live re-check after pass fails closed.
+      return revalidations < 2;
+    },
+  });
+  assert.equal(reviews, 1);
+  assert.ok(revalidations >= 2, "pass must re-check live sources");
+  assert.equal(result?.status, "stopped");
+  assert.equal(result?.stopReason, "delivery_review_incomplete");
+  assert.equal(result?.text.includes(chunk.text), false);
+  assert.equal(result?.deliveryReview, undefined);
 });

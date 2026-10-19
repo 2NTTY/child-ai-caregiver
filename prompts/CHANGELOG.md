@@ -111,6 +111,12 @@
 - core.conversation 0.1.2 改為可追溯 OpenClaw 助理底稿及 Gemini CLI 局部意圖／澄清／收尾衍生文本，保留產品授權、資料及 terminal 契約。來源與授權不注入模型。
 - 其他工具、runtime、限額及三角色接口範圍不變。候選尚待靜態／協定驗證，沒有新真模型呼叫或部署。
 
+## 0.1.39 — 2026-10-15
+
+- 修正 chat-delivery-review：免審不再信任生成模型自填分類；實質照護建議即使標成 operation 且無引用亦須進審核。Server allowlist／短句純補問形狀才可免審。
+- 審核通過寫入前重核來源撤回／換版；修正回合提示與「只審核、勿輸出全文」分開，避免模型只回 decision JSON。
+- module.chat-delivery-review 0.1.1。不宣稱真 Vertex／E2E 已跑。
+
 ## 0.1.38 — 2026-10-14
 
 - 新增 `chat-delivery-review` 與 `module.chat-delivery-review` 0.1.0：Server 在程式校驗後調度唯讀聊天交付審核，決定只限 pass／revise／insufficient_evidence。不是知識發布的 approve／hold，亦不表示臨床有效。

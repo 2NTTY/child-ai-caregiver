@@ -69,11 +69,50 @@ export function chatDeliveryContentHash(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-/** Substantive claims need an independent model. A self-labelled exemption is not accepted. */
+/**
+ * Exact server-owned wording that may skip semantic review.
+ * The generating model cannot enlarge this set by self-labelling kind.
+ */
+export const SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS = new Set<string>([
+  "請先使用畫面上的緊急求助入口。",
+]);
+
+/** Care-domain and advisory markers. Used only to force review, never to grant a skip. */
+const CARE_DOMAIN_PATTERN = /新生兒|嬰兒|寶寶|幼兒|月齡|個月大|加鹽|餵食|餵奶|服藥|劑量|體溫|發燒|疫苗|母乳|配方奶|照護建議|治療|就醫|症狀|危及生命|蜂蜜|止咳|退燒|腹瀉|固體食物|加固|營養|藥物|抗生素/u;
+const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要給|不可給|可以每天/u;
+
+function joinedDraftText(draft: ChatDeliveryDraft): string {
+  return draft.paragraphs.map(paragraph => paragraph.text).join("\n").trim();
+}
+
+export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): boolean {
+  const text = joinedDraftText(draft);
+  return CARE_DOMAIN_PATTERN.test(text) || CARE_ADVISORY_PATTERN.test(text);
+}
+
+/** True when a pass would need supporting excerpts the draft does not carry. */
+export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft): boolean {
+  if (draft.sources.length > 0) return false;
+  if (draft.kind === "caregiving" || draft.kind === "safety_help" || draft.kind === "private_reference") return true;
+  return draftLooksLikeSubstantiveCareAdvice(draft);
+}
+
+/**
+ * Substantive claims need an independent model.
+ * The generating model's kind alone never grants a skip: caregiving labels force review,
+ * and citation-free wording that still looks like care advice also forces review.
+ * Exact server allowlisted UI text and short pure questions may skip; plain operation /
+ * receipt restatements without care markers keep the existing non-review path.
+ */
 export function requiresChatDeliveryReview(draft: ChatDeliveryDraft): boolean {
   if (draft.serverSubstitutedSourceText) return false;
+  if (draft.sources.length > 0) return true;
   if (draft.kind === "caregiving" || draft.kind === "safety_help" || draft.kind === "private_reference") return true;
-  return draft.sources.length > 0;
+  const text = joinedDraftText(draft);
+  if (SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS.has(text)) return false;
+  if (draftLooksLikeSubstantiveCareAdvice(draft)) return true;
+  if (text.length <= 48 && /[？?]$/u.test(text)) return false;
+  return false;
 }
 
 export function chatDeliveryDraftHash(draft: ChatDeliveryDraft): string {
@@ -181,11 +220,39 @@ export async function enforceChatDeliveryReview(input: {
     const decision = parseReview(raw, current, draftHash);
     return { decision, draftHash };
   };
+  const acceptLivePass = async (
+    judged: ChatDeliveryDraft,
+    judgedOutcome: { decision: { decision: string }; draftHash: string },
+    _presentationHint: AgentPresentation,
+  ) => {
+    if (judgedOutcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_incomplete");
+    if (chatDeliveryPassNeedsSources(judged)) throw new AgentStopped("delivery_review_incomplete");
+    // Re-check live source retract / version change before binding a pass or keeping the wording.
+    let livePresentation: AgentPresentation | null = null;
+    try {
+      livePresentation = await input.tools.presentation();
+    } catch (error) {
+      if (error instanceof AgentStopped && ["cancelled", "deadline", "unauthorized"].includes(error.reason)) throw error;
+      throw new AgentStopped("delivery_review_incomplete");
+    }
+    const liveDraft = input.tools.deliveryDraft();
+    if (!livePresentation || !liveDraft) throw new AgentStopped("delivery_review_incomplete");
+    const liveHash = chatDeliveryDraftHash(liveDraft);
+    if (liveHash !== judgedOutcome.draftHash) throw new AgentStopped("delivery_review_incomplete");
+    const review = bindingFor(liveDraft, liveHash, input.provenance!.model, prompt.packVersion);
+    if (!chatDeliveryReviewAllows(review, liveDraft, prompt.packVersion)) throw new AgentStopped("delivery_review_incomplete");
+    if (chatDeliveryPassNeedsSources(liveDraft)) throw new AgentStopped("delivery_review_incomplete");
+    // Prefer the freshly revalidated presentation; fall back only if identical draft stayed put.
+    return { presentation: livePresentation, review };
+  };
+
   let current = draft;
   let outcome = await judge(current, "review");
   if (outcome.decision.decision === "revise" && input.context.budget.remainingModelCalls >= 2) {
     const repaired = await spendText(input.context, `model:chat-delivery-repair:${outcome.draftHash}`, system,
-      "Repair the draft using only the same evidence. Return one JSON object matching the product answer schema and no other text.\n"
+      "Repair the draft using only the same evidence. This is a repair turn, not a review turn. "
+      + "Return one JSON object matching the product answer schema (kind and paragraphs) and no other text. "
+      + "Do not return a review decision object.\n"
       + JSON.stringify({ ...reviewPayload(current, outcome.draftHash), issues: outcome.decision.issues }));
     const parsed = agentAnswerSchema.safeParse(readJson(repaired));
     if (!parsed.success) throw new AgentStopped("delivery_review_incomplete");
@@ -201,14 +268,8 @@ export async function enforceChatDeliveryReview(input: {
     if (!nextDraft || !nextPresentation || !requiresChatDeliveryReview(nextDraft)) throw new AgentStopped("delivery_review_incomplete");
     current = nextDraft;
     outcome = await judge(current, "rereview");
-    if (outcome.decision.decision !== "pass" || !chatDeliveryReviewAllows(
-      bindingFor(current, outcome.draftHash, input.provenance.model, prompt.packVersion), current, prompt.packVersion)) {
-      throw new AgentStopped("delivery_review_incomplete");
-    }
-    return { presentation: nextPresentation, review: bindingFor(current, outcome.draftHash, input.provenance.model, prompt.packVersion) };
+    return acceptLivePass(current, outcome, nextPresentation);
   }
   if (outcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_incomplete");
-  const review = bindingFor(current, outcome.draftHash, input.provenance.model, prompt.packVersion);
-  if (!chatDeliveryReviewAllows(review, current, prompt.packVersion)) throw new AgentStopped("delivery_review_incomplete");
-  return { presentation: input.presentation, review };
+  return acceptLivePass(current, outcome, input.presentation);
 }

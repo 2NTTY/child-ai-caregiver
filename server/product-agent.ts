@@ -26,7 +26,7 @@ function unfinishedDeliveryText(stopReason: string | null | undefined): string {
 async function acceptReviewedDelivery(
   tools: ChatDeliverySurface,
   rendered: { value: AgentPresentation | null },
-  held: { value: ChatDeliveryReviewBinding | null },
+  held: { value: ChatDeliveryReviewBinding | null; text: string | null },
   result: Pick<AgentRunResult, "provenance">,
   context: AgentRunContext,
 ): Promise<string | { outcome: "no_action" }> {
@@ -38,15 +38,23 @@ async function acceptReviewedDelivery(
     });
     rendered.value = reviewed.presentation;
     held.value = reviewed.review;
+    held.text = reviewed.review ? reviewed.presentation.text : null;
     return rendered.value.text;
   } catch (error) {
     rendered.value = null;
+    held.value = null;
+    held.text = null;
     throw error;
   }
 }
 
-function withDeliveryReview(value: ProductAgentResult, review: ChatDeliveryReviewBinding | null): ProductAgentResult {
-  return review && value.status === "completed" ? { ...value, deliveryReview: review } : value;
+/** Attach a pass only when status and final text still match what was reviewed. */
+function withDeliveryReview(
+  value: ProductAgentResult,
+  held: { value: ChatDeliveryReviewBinding | null; text: string | null },
+): ProductAgentResult {
+  if (!held.value || held.text === null || value.status !== "completed" || value.text !== held.text) return value;
+  return { ...value, deliveryReview: held.value };
 }
 
 export function createProductAgent(options: {
@@ -72,7 +80,7 @@ export function createProductAgent(options: {
       if (!await authorize()) return null;
       let tools: ReturnType<typeof createDueWorkContinuationTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
-      const review: { value: ChatDeliveryReviewBinding | null } = { value: null };
+      const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim,
         deadlineAtMs: Date.parse(claim.expiresAt), trigger: { kind: "worker", reference: job.eventId }, recipeId: "product-work-followup",
         availableInputs: ["run", "scope", "conversation", "context", "evidence", "capabilities"], context,
@@ -87,8 +95,9 @@ export function createProductAgent(options: {
       if (!await authorize()) return null;
       return withDeliveryReview({ runId: claim.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
         ...(result.status === "completed" && rendered.value?.outcome ? { outcome: rendered.value.outcome } : {}),
-        text: result.status === "completed" ? rendered.value?.text ?? "" : unfinishedDeliveryText(result.stopReason), citations: [], privateSourceCitations: [], retrievalMode: "not_used",        tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
-        countsKnown: true, counts: result.counts, proposals: [] }, review.value);
+        text: result.status === "completed" ? rendered.value?.text ?? "" : unfinishedDeliveryText(result.stopReason), citations: [], privateSourceCitations: [], retrievalMode: "not_used",
+        tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
+        countsKnown: true, counts: result.counts, proposals: [] }, review);
     },
     async cancelReply(userId: string, childId: string, messageId: string, isCurrentUser: () => Promise<boolean>) {
       if (!await isCurrentUser()) return false;
@@ -106,7 +115,7 @@ export function createProductAgent(options: {
       const authorize = async () => await input.authorize() && await options.store.authorize(claim.scope,claim.runId);
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
-      const review: { value: ChatDeliveryReviewBinding | null } = { value: null };
+      const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       const result = await options.runtime.run({ scope: claim.scope, runId: claim.runId, claimedRun: claim, deadlineAtMs: Date.parse(claim.expiresAt),
         deadlineMs: Math.max(1, Math.min(90_000, Date.parse(claim.expiresAt) - Date.now())),
         trigger: { kind: "worker", reference: input.reference }, recipeId,
@@ -140,7 +149,7 @@ export function createProductAgent(options: {
       const value = withDeliveryReview({ runId: result.runId, provenance: result.provenance ?? null, status: result.status, stopReason: result.stopReason ?? null,
         ...(presentation?.outcome ? { outcome: presentation.outcome } : {}),
         text: presentation?.text ?? (result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : unfinishedDeliveryText(result.stopReason)), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
-        tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })), countsKnown: true, counts: result.counts, proposals: [] }, review.value);
+        tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })), countsKnown: true, counts: result.counts, proposals: [] }, review);
       if (!await input.authorize() || !await options.store.finish(claim.scope, value)) return null;
       return options.store.get(input.userId, input.childId, claim.runId);
     },
@@ -171,7 +180,7 @@ export function createProductAgent(options: {
       const authorize = async () => await isCurrentUser() && await options.store.authorize(claim.scope,claim.runId);
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
-      const review: { value: ChatDeliveryReviewBinding | null } = { value: null };
+      const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
       let confirmationPendingFallbackUsed = false;
       const result = await options.runtime.run({
         onDiagnostic: event => {
@@ -254,7 +263,7 @@ export function createProductAgent(options: {
           : documentBuilding ? "報告整理工作已提交，正文仍在整理中。請在成長檔案查看同一文件的進度，毋須再次建立。"
           : presentation?.text ?? (confirmationResult?.result ? AGENT_CONFIRMATION_SAVED_TEXT : receipts.length ? "已有 " + receipts.length + " 項操作保存了 Server 收據，但未完成文字收尾。請查看操作結果，勿重新提交同一操作；已安排不代表已發通知或照護已完成。" : result.tools.some(tool=>["generate_family_document","change_family_document"].includes(tool.name)&&tool.status==="succeeded") ? "文件操作已保存，但未完成文字收尾。請在準備單／成長檔案查看原文件及版本，勿重複建立；文件清單不代表照護任務完成。" : result.tools.some(tool=>tool.name==="contact_caregiver"&&tool.status==="succeeded") ? "已記錄獲授權聯絡請求，但未完成文字收尾。請查看聯絡台帳的真實投遞結果；入列不等於送達或完成。" : unfinishedDeliveryText(result.stopReason)), citations: presentation?.citations ?? [], privateSourceCitations:presentation?.privateSourceCitations ?? [], retrievalMode: presentation?.retrievalMode ?? "not_used",
         tools: result.tools.map(({ name, status, reference }) => ({ name, status, ...(reference ? { reference } : {}) })),
-        countsKnown: true, counts: result.counts, proposals: [] }, review.value);
+        countsKnown: true, counts: result.counts, proposals: [] }, review);
       if (!await isCurrentUser()) return null;
       if (!await options.store.finish(claim.scope, value, value.status === "completed" && !confirmationPendingFallbackUsed ? tools?.summaryDraft() : undefined)) {
         const persisted = await options.store.readCancelled(claim.scope, claim.runId)
