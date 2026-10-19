@@ -209,14 +209,20 @@ export function createProductAgent(options: {
         messages: recent.messages.map(item => ({ role: item.role, text: item.text })),
         toolCatalog: PRODUCT_AGENT_TOOL_CATALOG,
         tools: run => {
-          tools = createProductAgentTools({ ...options, includeDocuments: true, run, authorize, onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", card); } } });
+          tools = createProductAgentTools({
+            ...options, includeDocuments: true, run, authorize,
+            trustedUserMessage: page.messages[index]!.text,
+            onOfficialHelp: card => { if (!shown.has(card)) { shown.add(card); publish("help", card); } },
+          });
           return tools.tools;
         }, authorize, signal: signal ? AbortSignal.any([signal, cancellation.signal]) : cancellation.signal, finalizeOnModelLimit: true, presentationRepair: "present_answer",
         finalize: async (result, _context, reason) => {
           rendered.value = await tools!.presentation();
+          // Shared 4-call budget: after load_capabilities → compose_family_data → compose → review,
+          // Server finishes confirmation text on model_limit without a fifth present_answer call.
           if (!rendered.value && reason === "model_limit" && result.tools.length > 0
             && result.tools.every(tool => tool.status === "succeeded")
-            && ["request_confirmation", "propose_family_document_change"].includes(result.tools.at(-1)?.name ?? "")) {
+            && ["request_confirmation", "propose_family_document_change", "compose_family_data"].includes(result.tools.at(-1)?.name ?? "")) {
             if (!await authorize()) throw new AgentStopped("unauthorized");
             const questions = await options.store.confirmationQuestions?.(userId, childId, claim.runId) ?? [];
             if (!await authorize()) throw new AgentStopped("unauthorized");
