@@ -9,8 +9,10 @@ import { createProductAgent } from "../server/product-agent.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import { loadAgentPrompt } from "../server/agent-prompt.ts";
 import {
-  chatDeliveryDraftHash, chatDeliveryPassNeedsSources, chatDeliveryReviewAllows, draftLooksLikeSubstantiveCareAdvice,
-  isPureClarifyingQuestion, requiresChatDeliveryReview, SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS, type ChatDeliveryDraft,
+  chatDeliveryDraftHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewAllows,
+  chatDeliveryReviewSourceExcerpt, draftLooksLikeSubstantiveCareAdvice, isPureClarifyingQuestion,
+  looksLikeLowRiskOperationReceipt, requiresChatDeliveryReview, SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS,
+  type ChatDeliveryDraft,
 } from "../server/chat-delivery-review.ts";
 import { agentAnswerSchema, type ProductAgentResult } from "../src/shared/product-agent.ts";
 import {
@@ -63,8 +65,8 @@ test("self-labelled exemptions and publish decisions are not chat-delivery revie
   assert.equal(requiresChatDeliveryReview(draft()), true);
   assert.equal(requiresChatDeliveryReview({ ...draft(), serverSubstitutedSourceText: true }), false);
   for (const kind of ["clarification", "operation", "record_restatement"] as const) {
-    // Plain non-care wording without cites may still skip; model kind alone never forces a skip either.
-    assert.equal(requiresChatDeliveryReview({ ...draft(), kind, sources: [], paragraphs: [{ text: "沒有引用的說明", citationIds: [] }] }), false);
+    // Unknown citation-free wording fails closed into review; model kind alone never grants a skip.
+    assert.equal(requiresChatDeliveryReview({ ...draft(), kind, sources: [], paragraphs: [{ text: "沒有引用的說明", citationIds: [] }] }), true);
     assert.equal(requiresChatDeliveryReview({ ...draft(), kind }), true);
   }
   const careAsOperation = {
@@ -116,6 +118,65 @@ test("self-labelled exemptions and publish decisions are not chat-delivery revie
   assert.equal(chatDeliveryReviewDecisionSchema.safeParse("approve").success, false);
   assert.equal(chatDeliveryReviewDecisionSchema.safeParse("hold").success, false);
   assert.equal(chatDeliveryReviewDecisionSchema.safeParse("insufficient_evidence").success, true);
+});
+
+test("classmate F1: citation-free care fails closed even when keywords miss", () => {
+  for (const sample of [
+    { kind: "operation" as const, text: "Put your child to sleep on their stomach." },
+    { kind: "operation" as const, text: "瞓覺時畀孩子趴低就得。" },
+    { kind: "clarification" as const, text: "Would you try giving your baby honey?" },
+  ]) {
+    const current = {
+      ...draft(), kind: sample.kind, sources: [],
+      paragraphs: [{ text: sample.text, citationIds: [] }],
+    };
+    assert.equal(requiresChatDeliveryReview(current), true, sample.text);
+    assert.equal(isPureClarifyingQuestion(sample.text), false, sample.text);
+  }
+  // Trusted exemptions still skip.
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "clarification", sources: [], paragraphs: [{ text: "寶寶幾個月大？", citationIds: [] }],
+  }), false);
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "operation", sources: [],
+    paragraphs: [{ text: [...SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS][0]!, citationIds: [] }],
+  }), false);
+});
+
+test("classmate F2: multi-question clarifies and saved receipts with domain nouns", () => {
+  for (const text of [
+    "寶寶幾個月大？ 有沒有發燒？",
+    "寶寶幾個月大？有沒有發燒？",
+    "寶寶幾個月大？\n有沒有發燒？",
+  ]) {
+    assert.equal(isPureClarifyingQuestion(text), true, text);
+    assert.equal(requiresChatDeliveryReview({
+      ...draft(), kind: "clarification", sources: [], paragraphs: [{ text, citationIds: [] }],
+    }), false, text);
+  }
+  const receipt = "已記錄寶寶喝奶 120 毫升。";
+  assert.equal(looksLikeLowRiskOperationReceipt(receipt), true);
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "operation", sources: [], paragraphs: [{ text: receipt, citationIds: [] }],
+  }), false);
+  // Advisory care still cannot hide behind an operation label.
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "operation", sources: [],
+    paragraphs: [{ text: "Put your child to sleep on their stomach.", citationIds: [] }],
+  }), true);
+});
+
+test("classmate F3: reviewer source excerpt keeps support after the first 800 characters", () => {
+  const support = "Only after six months may fortified cereal be offered once daily.";
+  const body = `${"x".repeat(800)}${support}`;
+  assert.ok(body.length > 800 && body.length <= 4000);
+  const head = chatDeliveryExcerpt(body);
+  assert.equal(head.excerptComplete, false);
+  assert.equal(head.excerpt.includes(support), false);
+  const review = chatDeliveryReviewSourceExcerpt(body);
+  assert.equal(review.excerptComplete, true);
+  assert.equal(review.excerpt.includes(support), true);
+  assert.equal(review.excerpt, body);
 });
 
 test("a persisted pass omits excerpts and private evidence", () => {
@@ -421,6 +482,9 @@ test("english and yue care labelled operation without cites cannot complete with
     "Newborns should be given salt immediately.",
     "BB未滿一歲唔好食蜜糖。",
     "Don't give honey to infants under one year.",
+    "Put your child to sleep on their stomach.",
+    "瞓覺時畀孩子趴低就得。",
+    "Would you try giving your baby honey?",
   ]) {
     let reviews = 0;
     const result = await product({ calls: 0, generate: async request => {
@@ -442,21 +506,27 @@ test("english and yue care labelled operation without cites cannot complete with
 });
 
 test("pure clarifying questions may deliver without delivery review", async () => {
-  let reviews = 0;
-  const result = await product({ calls: 0, generate: async request => {
-    const { user, body } = payloadFrom(request);
-    if (user.includes("chat-delivery-review")) {
-      reviews++;
-      return model([{ text: reviewJson(body.draftHash ?? "", "pass") }]);
-    }
-    return model([{ functionCall: { id: "answer", name: "present_answer", args: {
-      kind: "clarification", paragraphs: [{ text: "寶寶幾個月大？", citationIds: [] }],
-    } } }]);
-  } });
-  assert.equal(reviews, 0);
-  assert.equal(result?.status, "completed", JSON.stringify(result));
-  assert.equal(result?.text, "寶寶幾個月大？");
-  assert.equal(result?.deliveryReview, undefined);
+  for (const sample of [
+    { kind: "clarification", text: "寶寶幾個月大？" },
+    { kind: "clarification", text: "寶寶幾個月大？ 有沒有發燒？" },
+    { kind: "operation", text: "已記錄寶寶喝奶 120 毫升。" },
+  ]) {
+    let reviews = 0;
+    const result = await product({ calls: 0, generate: async request => {
+      const { user, body } = payloadFrom(request);
+      if (user.includes("chat-delivery-review")) {
+        reviews++;
+        return model([{ text: reviewJson(body.draftHash ?? "", "pass") }]);
+      }
+      return model([{ functionCall: { id: "answer", name: "present_answer", args: {
+        kind: sample.kind, paragraphs: [{ text: sample.text, citationIds: [] }],
+      } } }]);
+    } });
+    assert.equal(reviews, 0, sample.text);
+    assert.equal(result?.status, "completed", JSON.stringify({ sample, result }));
+    assert.equal(result?.text, sample.text);
+    assert.equal(result?.deliveryReview, undefined);
+  }
 });
 
 test("source retract after a review pass does not keep the old answer", async () => {

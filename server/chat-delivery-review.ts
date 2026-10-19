@@ -21,6 +21,8 @@ import { loadAgentPrompt } from "./agent-prompt.ts";
  */
 
 const EXCERPT_LIMIT = 800;
+/** Accumulated knowledge reads already cap at 4000; the reviewer needs that full read, not a head truncate. */
+const REVIEW_SOURCE_EXCERPT_LIMIT = 4000;
 const modelReviewSchema = z.object({
   draftHash: z.string().regex(/^[a-f0-9]{64}$/u),
   decision: chatDeliveryReviewDecisionSchema,
@@ -61,9 +63,14 @@ function canonical(value: unknown): unknown {
 function sha256(value: unknown): string {
   return createHash("sha256").update(JSON.stringify(canonical(value))).digest("hex");
 }
-export function chatDeliveryExcerpt(text: string): { excerpt: string; excerptComplete: boolean } {
-  const excerpt = text.length > EXCERPT_LIMIT ? text.slice(0, EXCERPT_LIMIT) : text;
+export function chatDeliveryExcerpt(text: string, limit = EXCERPT_LIMIT): { excerpt: string; excerptComplete: boolean } {
+  const excerpt = text.length > limit ? text.slice(0, limit) : text;
   return { excerpt, excerptComplete: excerpt.length === text.length && excerpt.trim().length > 0 };
+}
+
+/** Reviewer-bound source body: keep the full accumulated read (≤4000) so support after char 800 stays visible. */
+export function chatDeliveryReviewSourceExcerpt(text: string): { excerpt: string; excerptComplete: boolean } {
+  return chatDeliveryExcerpt(text, REVIEW_SOURCE_EXCERPT_LIMIT);
 }
 export function chatDeliveryContentHash(value: string): string {
   return createHash("sha256").update(value).digest("hex");
@@ -79,7 +86,7 @@ export const SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS = new Set<string>([
 
 /** Care-domain and advisory markers. Used only to force review, never to grant a skip. */
 const CARE_DOMAIN_PATTERN = /新生兒|嬰兒|寶寶|幼兒|BB\b|月齡|個月大|個月以下|月以下|加鹽|餵食|餵奶|服藥|劑量|體溫|發燒|疫苗|母乳|配方奶|照護建議|治療|就醫|症狀|危及生命|蜂蜜|蜜糖|止咳|退燒|腹瀉|固體食物|加固|營養|藥物|抗生素|newborns?|infants?|babies|baby\b|toddlers?|fever|vaccine|dosage|medication|breast\s*milk|formula\s*milk|honey|cough|diarrh(?:oa|ea)|solid foods?|nutrition|antibiotics?/iu;
-const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要給|不可給|可以每天|唔好畀|唔可以畀|唔好食|唔可以食|每日(?:都)?(?:要|可以)|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t\s+give|do\s+not\s+give|avoid\s+giving|give\s+(?:the\s+)?(?:baby|infant|newborn)|you\s+can\s+give|every\s+day/iu;
+const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要給|不可給|可以每天|唔好畀|唔可以畀|唔好食|唔可以食|每日(?:都)?(?:要|可以)|趴低|瞓覺時|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t\s+give|do\s+not\s+give|avoid\s+giving|try\s+(?:to\s+)?giv(?:e|ing)|would\s+you\s+(?:try|give|put)|giv(?:e|ing)\s+(?:\w+\s+){0,3}(?:baby|infant|child|newborn|孩子|BB)|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}(?:sleep|stomach)|you\s+can\s+give|every\s+day|on\s+their\s+stomach/iu;
 
 /** Low-risk operation receipts. Positive skip signal; never inferred from model kind alone. */
 const OPERATION_RECEIPT_PATTERN = /^(?:已(?:儲存|保存|建立|更新|設定|記錄|完成|送出|寫入)|任務已|提醒已|操作已|已將|已為)|saved\s+(?:the\s+)?(?:task|reminder|record)|created\s+(?:a\s+)?(?:task|reminder)|updated\s+(?:the\s+)?(?:task|reminder|record)|reminder\s+set/iu;
@@ -93,13 +100,15 @@ export function isPureClarifyingQuestion(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 120) return false;
   if (!/[？?]/u.test(trimmed)) return false;
-  // Every non-empty segment should be question-shaped (allow brief multi-question clarifies).
-  const segments = trimmed.split(/(?<=[？?])\s+/u).map(part => part.trim()).filter(Boolean);
+  // Same-paragraph and multi-paragraph multi-questions are allowed; each segment must stay question-shaped.
+  const segments = trimmed.split(/(?<=[？?])(?:\s+|\n+)*/u).map(part => part.trim()).filter(Boolean);
   if (segments.length < 1 || segments.some(part => !/[？?]$/u.test(part))) return false;
   if (CARE_ADVISORY_PATTERN.test(trimmed)) return false;
-  // Statements mixed into a "question" (advice before/after) are not pure clarifies.
-  const withoutFinalMark = trimmed.replace(/[？?]+$/u, "").trim();
-  if (/[。．.!！；;？?]/u.test(withoutFinalMark)) return false;
+  // Inner question marks between segments are expected; only statement punctuation disqualifies a segment.
+  for (const segment of segments) {
+    const body = segment.replace(/[？?]+$/u, "").trim();
+    if (/[。．.!！；;]/u.test(body)) return false;
+  }
   return true;
 }
 
@@ -130,8 +139,9 @@ export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft): boolean 
  * Substantive claims need an independent model.
  * The generating model's kind alone never grants a skip: caregiving labels force review,
  * and citation-free wording that still looks like care advice also forces review.
- * Exact server allowlisted UI text, pure clarifying questions, and low-risk operation
- * receipts may skip. Kind labels and a thin keyword miss are not enough to exempt care advice.
+ * Only trusted server exemptions may skip: exact allowlisted UI text, pure clarifying
+ * questions, and low-risk operation receipts. Unknown wording fails closed into review;
+ * a keyword miss must not grant an exemption.
  */
 export function requiresChatDeliveryReview(draft: ChatDeliveryDraft): boolean {
   if (draft.serverSubstitutedSourceText) return false;
@@ -139,11 +149,12 @@ export function requiresChatDeliveryReview(draft: ChatDeliveryDraft): boolean {
   if (draft.kind === "caregiving" || draft.kind === "safety_help" || draft.kind === "private_reference") return true;
   const text = joinedDraftText(draft);
   if (SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS.has(text)) return false;
-  if (draftLooksLikeSubstantiveCareAdvice(draft)) return true;
-  if (isPureClarifyingQuestion(text)) return false;
+  // Trusted receipts win over care-domain nouns (e.g. 寶寶 in a saved feeding receipt).
   if (looksLikeLowRiskOperationReceipt(text)) return false;
-  if (text.length <= 48 && /[？?]$/u.test(text)) return false;
-  return false;
+  if (isPureClarifyingQuestion(text)) return false;
+  if (draftLooksLikeSubstantiveCareAdvice(draft)) return true;
+  // Fail closed: unknown citation-free wording needs review unless a trusted exemption matched.
+  return true;
 }
 
 export function chatDeliveryDraftHash(draft: ChatDeliveryDraft): string {

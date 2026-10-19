@@ -13,7 +13,7 @@ import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descri
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
-import { chatDeliveryContentHash, chatDeliveryExcerpt, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
+import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -160,8 +160,9 @@ export function createProductAgentTools(options: {
     }
     const item = evidence.get(id);
     if (!item) return null;
+    // accumulateKnowledgeRead may hold up to 4000 chars; do not hide support past the old 800-char head truncate.
     const body = item.chunk.text ?? "";
-    const excerpt = chatDeliveryExcerpt(body);
+    const excerpt = item.chunk.readCoverage ? chatDeliveryReviewSourceExcerpt(body) : chatDeliveryExcerpt(body);
     const supplied = item.chunk.contentHash ?? "";
     return { citationId: id, version: item.chunk.versionId?.trim() || "unversioned",
       contentHash: /^[a-f0-9]{64}$/u.test(supplied) ? supplied : chatDeliveryContentHash(body),
