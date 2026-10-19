@@ -81,7 +81,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
   }
   function decodeProposal(run: Pick<RunRow, "id" | "child_id" | "owner_user_id">, row: ProposalRow): AgentProposal {
     const payload = JSON.parse(cipher.decrypt(row.payload_encrypted, proposalAad(run, row))) as ProposalPayload;
-    const { documentSourceBasis: _documentSourceBasis, ...publicPayload } = payload;
+    const { documentSourceBasis: _documentSourceBasis, composeReview: _composeReview, ...publicPayload } = payload;
     return { id: row.id, runId: run.id, childId: run.child_id, version: row.version, status: row.state === "pending" && (row.is_expired ?? row.expires_at.getTime() <= Date.now()) ? "expired" : row.state,
       createdAt: row.created_at.toISOString(), expiresAt: row.expires_at.toISOString(), ...publicPayload };
   }
