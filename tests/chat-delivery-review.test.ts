@@ -9,8 +9,8 @@ import { createProductAgent } from "../server/product-agent.ts";
 import { readAiConfig } from "../server/ai-config.ts";
 import { loadAgentPrompt } from "../server/agent-prompt.ts";
 import {
-  chatDeliveryDraftHash, chatDeliveryPassNeedsSources, chatDeliveryReviewAllows, requiresChatDeliveryReview,
-  SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS, type ChatDeliveryDraft,
+  chatDeliveryDraftHash, chatDeliveryPassNeedsSources, chatDeliveryReviewAllows, draftLooksLikeSubstantiveCareAdvice,
+  isPureClarifyingQuestion, requiresChatDeliveryReview, SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS, type ChatDeliveryDraft,
 } from "../server/chat-delivery-review.ts";
 import { agentAnswerSchema, type ProductAgentResult } from "../src/shared/product-agent.ts";
 import {
@@ -73,6 +73,35 @@ test("self-labelled exemptions and publish decisions are not chat-delivery revie
   };
   assert.equal(requiresChatDeliveryReview(careAsOperation), true);
   assert.equal(chatDeliveryPassNeedsSources(careAsOperation), true);
+  const englishCare = {
+    ...draft(), kind: "operation" as const, sources: [],
+    paragraphs: [{ text: "Newborns should be given salt immediately.", citationIds: [] }],
+  };
+  const yueCare = {
+    ...draft(), kind: "operation" as const, sources: [],
+    paragraphs: [{ text: "BB未滿一歲唔好食蜜糖。", citationIds: [] }],
+  };
+  const rephrasedCare = {
+    ...draft(), kind: "record_restatement" as const, sources: [],
+    paragraphs: [{ text: "Don't give honey to infants under one year.", citationIds: [] }],
+  };
+  for (const sample of [englishCare, yueCare, rephrasedCare]) {
+    assert.equal(draftLooksLikeSubstantiveCareAdvice(sample), true);
+    assert.equal(requiresChatDeliveryReview(sample), true);
+    assert.equal(chatDeliveryPassNeedsSources(sample), true);
+  }
+  const pureClarify = "寶寶幾個月大？";
+  assert.equal(isPureClarifyingQuestion(pureClarify), true);
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "clarification", sources: [], paragraphs: [{ text: pureClarify, citationIds: [] }],
+  }), false);
+  assert.equal(chatDeliveryPassNeedsSources({
+    ...draft(), kind: "clarification", sources: [], paragraphs: [{ text: pureClarify, citationIds: [] }],
+  }), false);
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "clarification", sources: [],
+    paragraphs: [{ text: "寶寶幾個月大？建議每日加鹽。", citationIds: [] }],
+  }), true);
   const allowlisted = [...SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS][0]!;
   assert.equal(requiresChatDeliveryReview({
     ...draft(), kind: "operation", sources: [], paragraphs: [{ text: allowlisted, citationIds: [] }],
@@ -383,6 +412,50 @@ test("a repair that only returns a review decision does not become formal succes
   assert.equal(result?.status, "stopped");
   assert.equal(result?.stopReason, "delivery_review_incomplete");
   assert.equal(result?.text.includes(claim), false);
+  assert.equal(result?.deliveryReview, undefined);
+});
+
+
+test("english and yue care labelled operation without cites cannot complete with zero reviews", async () => {
+  for (const text of [
+    "Newborns should be given salt immediately.",
+    "BB未滿一歲唔好食蜜糖。",
+    "Don't give honey to infants under one year.",
+  ]) {
+    let reviews = 0;
+    const result = await product({ calls: 0, generate: async request => {
+      const { user, body } = payloadFrom(request);
+      if (user.includes("chat-delivery-review")) {
+        reviews++;
+        return model([{ text: reviewJson(body.draftHash ?? "", "pass") }]);
+      }
+      return model([{ functionCall: { id: "answer", name: "present_answer", args: {
+        kind: "operation", paragraphs: [{ text, citationIds: [] }],
+      } } }]);
+    } });
+    assert.ok(reviews >= 1, `server gate must schedule delivery review for: ${text}`);
+    assert.equal(result?.status, "stopped", text);
+    assert.equal(result?.stopReason, "delivery_review_incomplete");
+    assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
+    assert.equal(result?.deliveryReview, undefined);
+  }
+});
+
+test("pure clarifying questions may deliver without delivery review", async () => {
+  let reviews = 0;
+  const result = await product({ calls: 0, generate: async request => {
+    const { user, body } = payloadFrom(request);
+    if (user.includes("chat-delivery-review")) {
+      reviews++;
+      return model([{ text: reviewJson(body.draftHash ?? "", "pass") }]);
+    }
+    return model([{ functionCall: { id: "answer", name: "present_answer", args: {
+      kind: "clarification", paragraphs: [{ text: "寶寶幾個月大？", citationIds: [] }],
+    } } }]);
+  } });
+  assert.equal(reviews, 0);
+  assert.equal(result?.status, "completed", JSON.stringify(result));
+  assert.equal(result?.text, "寶寶幾個月大？");
   assert.equal(result?.deliveryReview, undefined);
 });
 
