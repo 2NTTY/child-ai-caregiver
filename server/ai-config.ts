@@ -24,6 +24,13 @@ export interface AiConfig {
    * is not overridden; production keeps its selected maxModelCalls, default 4.
    */
   chatDeliveryReviewModelCalls: 4 | 6;
+  /**
+   * P3-M03 independent background knowledge maintenance.
+   * Defaults keep the role uninstantiated for live work: no live fetch / publish.
+   */
+  backgroundKnowledgeMaintenanceEnabled: boolean;
+  backgroundKnowledgeLiveFetch: boolean;
+  backgroundKnowledgeLivePublish: boolean;
 }
 
 function invalidConfig(key: string): never {
@@ -42,6 +49,7 @@ function readIdentifier(value: string | undefined, key: string, fallback: string
   if (typeof result !== "string" || result.length > maxLength || !pattern.test(result)) invalidConfig(key);
   return result;
 }
+
 
 /** Empty or omitted stays at the current ceiling. Only the explicit proposal value 6 is accepted. */
 function readChatDeliveryReviewModelCalls(value: string | undefined): 4 | 6 {
@@ -66,6 +74,18 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
   if (enabled && !project) invalidConfig("GCP_PROJECT_ID");
 
   const model = readIdentifier(env.GEMINI_MODEL, "GEMINI_MODEL", "gemini-3.1-flash-lite", /^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$/u, 128);
+  const backgroundKnowledgeMaintenanceEnabled = readBoolean(
+    env.AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED, "AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED", false);
+  const backgroundKnowledgeLiveFetch = readBoolean(
+    env.AI_BACKGROUND_KNOWLEDGE_LIVE_FETCH, "AI_BACKGROUND_KNOWLEDGE_LIVE_FETCH", false);
+  const backgroundKnowledgeLivePublish = readBoolean(
+    env.AI_BACKGROUND_KNOWLEDGE_LIVE_PUBLISH, "AI_BACKGROUND_KNOWLEDGE_LIVE_PUBLISH", false);
+  if (!backgroundKnowledgeMaintenanceEnabled && (backgroundKnowledgeLiveFetch || backgroundKnowledgeLivePublish)) {
+    invalidConfig("AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED");
+  }
+  if (backgroundKnowledgeLivePublish && !backgroundKnowledgeLiveFetch) {
+    invalidConfig("AI_BACKGROUND_KNOWLEDGE_LIVE_FETCH");
+  }
 
   return {
     enabled,
@@ -83,5 +103,8 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
     agentThinkingLevel: resolveModelThinkingLevel(model, env.AI_AGENT_THINKING_LEVEL),
     maxOutputTokens: readInteger(env.AI_MAX_OUTPUT_TOKENS, "AI_MAX_OUTPUT_TOKENS", 1024, 1, 4096),
     chatDeliveryReviewModelCalls: readChatDeliveryReviewModelCalls(env.AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS),
+    backgroundKnowledgeMaintenanceEnabled,
+    backgroundKnowledgeLiveFetch,
+    backgroundKnowledgeLivePublish,
   };
 }
