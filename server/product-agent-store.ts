@@ -22,6 +22,8 @@ import { createAgentConfirmationStore } from "./agent-confirmation-store.ts";
 import type { AgentOriginalDocumentReceipts } from "./agent-original-receipts.ts";
 import { createPostgresAgentOriginalReceiptReader } from "./agent-original-receipts-postgres.ts";
 import { AGENT_LIMITS } from "./agent-budget.ts";
+import { dataComposeReviewBindingSchema, type DataComposeReviewBinding } from "../src/shared/data-compose.ts";
+import { composeReviewStillAllowsProposal } from "./data-compose.ts";
 
 interface RunRow {
   id: string; child_id: string; owner_user_id: string; trigger_kind: "interactive" | "worker";
@@ -49,7 +51,7 @@ function pendingCursor(raw: string | null, userId: string, childId: string) {
     return cursor;
   } catch { throw new FamilyError(400, "invalid_input"); }
 }
-interface ProposalPayload { value: AgentProposalValue; result: AgentProposal["result"]; targetLabel: string | null; targetVisibility?: "private" | "family"; documentSourceBasis?: string }
+interface ProposalPayload { value: AgentProposalValue; result: AgentProposal["result"]; targetLabel: string | null; targetVisibility?: "private" | "family"; documentSourceBasis?: string; composeReview?: DataComposeReviewBinding }
 export interface AgentRunClaim {
   runId: string; scope: AgentScope; created: boolean; sourceMessageId: string | null;
   state: ProductAgentResult["status"]; expiresAt: string;
@@ -379,8 +381,9 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         return true;
       }));
     },
-    async propose(scope: AgentScope, runId: string, callId: string, raw: AgentProposalValue): Promise<AgentProposal | null> {
+    async propose(scope: AgentScope, runId: string, callId: string, raw: AgentProposalValue, options?: { composeReview?: DataComposeReviewBinding }): Promise<AgentProposal | null> {
       const value = agentProposalSchema.parse(raw);
+      const composeReview = options?.composeReview ? dataComposeReviewBindingSchema.parse(options.composeReview) : undefined;
       if (!callId || callId.length > 200) throw new FamilyError(400, "invalid_input");
       return access(scope.userId, scope.childId, true, async (client, workspaceId) => {
         const run = await runFor(client, scope.userId, scope.childId, runId);
@@ -443,7 +446,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         if (previous.length >= 8) throw new FamilyError(409, "agent_proposal_limit");
         const id = randomUUID();
         const row = (await client.query<ProposalRow>("INSERT INTO agent_proposals(id,run_id,call_id,payload_encrypted) VALUES($1,$2,$3,$4) RETURNING *",
-          [id, runId, callId, cipher.encrypt(JSON.stringify({ value, result: null, targetLabel, ...(targetVisibility ? { targetVisibility } : {}), ...(documentSourceBasis ? { documentSourceBasis } : {}) }), proposalAad(run, { id, version: 1 }))])).rows[0];
+          [id, runId, callId, cipher.encrypt(JSON.stringify({ value, result: null, targetLabel, ...(targetVisibility ? { targetVisibility } : {}), ...(documentSourceBasis ? { documentSourceBasis } : {}), ...(composeReview ? { composeReview } : {}) }), proposalAad(run, { id, version: 1 }))])).rows[0];
         return decodeProposal(run, row);
       });
     },
@@ -471,6 +474,21 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
           const current = await createFamilyDocumentStore(borrowed.pool, cipher).validatePatch(userId, childId, value.documentId, value.change);
           borrowed.assertReleased();
           if (!payload.documentSourceBasis || current?.sourceBasis !== payload.documentSourceBasis) throw new FamilyError(409, "source_changed");
+          if (payload.composeReview) {
+            const scopeNow = await currentScope(client, workspaceId, userId, childId);
+            if (!composeReviewStillAllowsProposal({
+              review: payload.composeReview,
+              documentId: value.documentId,
+              expectedVersion: value.change.expectedVersion,
+              authorityVersion: value.change.authorityVersion,
+              edits: value.change.edits,
+              scope: {
+                userId, workspaceId, childId,
+                authorizationVersion: scopeNow.authorizationVersion,
+                dataVersion: scopeNow.dataVersion,
+              },
+            })) throw new FamilyError(409, "compose_review_required");
+          }
         }
         let factScope: import("../src/shared/memory.ts").MemoryFact | null = null;
         if (value.kind === "memory_fact_revise" || value.kind === "memory_fact_deactivate") {

@@ -14,12 +14,17 @@ export const DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT =
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
 
-/** Constrained parent-tool intent. No prompt paths, tool tables, or service identities. */
+/**
+ * Constrained parent-tool intent.
+ * sourceQuote is the verbatim user quote for save receipts; intent is the
+ * compose task note. No prompt paths, tool tables, or service identities.
+ */
 export const dataComposeIntentSchema = z.object({
   documentId: z.uuid(),
   expectedVersion: z.number().int().min(1),
   authorityVersion: z.string().min(1).max(128),
   intent: z.string().trim().min(1).max(500),
+  sourceQuote: z.string().min(1).max(1000).refine(value => Boolean(value.trim())),
 }).strict();
 export type DataComposeIntent = z.infer<typeof dataComposeIntentSchema>;
 

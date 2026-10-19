@@ -1,10 +1,10 @@
 # 資料編製
 
 - ID：`module.data-compose`
-- 版本：`0.1.0`
-- 使用條件：Server 透過委派工具按需編製可保存家庭文件草稿／patch。
+- 版本：`0.1.1`
+- 使用條件：Server 透過委派工具按需編製可保存家庭文件草稿／patch。父層產品 Agent 不載入本模組。
 - 依據：[資料編製](../../SPEC.md#req-p2m-02)、[委派與編製接口](../../docs/API.md#p2-agent-roles)。
-- 輸入：授權文件快照、用途 intent、expectedVersion 與 authorityVersion。
+- 輸入：授權文件快照、用途 intent、expectedVersion 與 authorityVersion。sourceQuote 只給 Server 做收據核對，不放入本角色輸入。
 - 輸出：符合領域 schema 的 draft／patch、缺項與所需確認。不是正式保存收據。
 
 ## Agent 指令
