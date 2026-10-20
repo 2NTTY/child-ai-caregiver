@@ -13,7 +13,7 @@ export interface ModelSettingsStore {
   get(userId: string): Promise<ModelSettings>;
   save(userId: string, command: ModelSettingsCommand): Promise<ModelSettings>;
   /** Server-only; never use this result in a response, prompt, job, receipt or log. */
-  resolve(userId: string): Promise<{ settings: ModelSettings; apiKey: string | null }>;
+  resolve(userId: string): Promise<{ settings: ModelSettings; apiKey: string | null; embeddingApiKey?: string | null }>;
   isCurrent(userId: string, version: number): Promise<boolean>;
   getOperation?(userId: string, opId: string): Promise<ModelSettingsOperation | null>;
 }

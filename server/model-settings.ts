@@ -5,10 +5,13 @@ import { ModelSettingsError } from "./model-settings-contract.ts";
 import type { ModelSettingsStore } from "./model-settings-contract.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { z } from 'zod';
-import { personalAdvancedShape, personalModelIdSchema, personalProviderSchema } from '../src/shared/model-settings-schema.ts';
+import { personalAdvancedShape, personalModelIdSchema, personalProviderSchema, personalBaseUrlSchema } from '../src/shared/model-settings-schema.ts';
 
-const fields = new Set(["expectedVersion", "mode", "apiKey", "removeKey", "backgroundEnabled", "dailyLimit", "maxModelCalls", "maxQueryEmbeddings", "consent", "opId", "provider", "model", ...Object.keys(personalAdvancedShape)]);
-const extensionsSchema = z.object({ opId: z.uuid().optional(), provider: personalProviderSchema.optional(), model: personalModelIdSchema.optional(), ...personalAdvancedShape }).strict();
+const extraFields = ['opId', 'provider', 'model', 'baseUrl', 'embeddingApiKey', 'removeEmbeddingKey', ...Object.keys(personalAdvancedShape)];
+const fields = new Set(["expectedVersion", "mode", "apiKey", "removeKey", "backgroundEnabled", "dailyLimit", "maxModelCalls", "maxQueryEmbeddings", "consent", ...extraFields]);
+const extensionsSchema = z.object({ opId: z.uuid().optional(), provider: personalProviderSchema.optional(), model: personalModelIdSchema.optional(),
+  baseUrl: personalBaseUrlSchema.optional(), embeddingApiKey: z.string().min(20).max(512).regex(/^[\x21-\x7e]+$/u).optional(),
+  removeEmbeddingKey: z.boolean().optional(), ...personalAdvancedShape }).strict();
 const requiredFields = ["expectedVersion", "mode", "backgroundEnabled", "dailyLimit", "maxModelCalls", "maxQueryEmbeddings", "consent"];
 const validKey = (value: unknown): value is string => typeof value === "string" && value.length >= 20 && value.length <= 512 && !/[^\x21-\x7e]/u.test(value);
 const unavailable = () => new ModelSettingsError("unavailable", 503);
@@ -31,10 +34,12 @@ export function parseModelSettingsCommand(input: unknown): ModelSettingsCommand 
     || (Object.hasOwn(value, "removeKey") && typeof value.removeKey !== "boolean")
     || (value.removeKey === true && (value.mode !== "disabled" || Object.hasOwn(value, "apiKey")))) throw new ModelSettingsError("invalid_input");
   if (value.mode === "personal" && !value.consent) throw new ModelSettingsError("consent_required");
-  const extensionKeys = ['opId', 'provider', 'model', ...Object.keys(personalAdvancedShape)];
+  const extensionKeys = extraFields;
   if (extensionKeys.some(key => Object.hasOwn(value, key) && value[key] === undefined)) throw new ModelSettingsError('invalid_input');
   const extensions = extensionsSchema.safeParse(Object.fromEntries(extensionKeys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]])));
   if (!extensions.success) throw new ModelSettingsError('invalid_input');
+  if (extensions.data.embeddingApiKey && (value.removeKey || extensions.data.removeEmbeddingKey || !value.consent))
+    throw new ModelSettingsError('invalid_input');
   return {
     ...extensions.data,
     expectedVersion: value.expectedVersion as number, mode: value.mode as ModelMode,

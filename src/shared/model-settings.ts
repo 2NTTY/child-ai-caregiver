@@ -2,9 +2,9 @@ import { AGENT_RUN_LIMITS } from './agent-run-limits.ts';
 
 export type ModelBillingSource = "platform" | "personal";
 export type ModelMode = ModelBillingSource | "disabled";
-export type PersonalModelProvider = "gemini" | "vertex";
+export type PersonalModelProvider = "gemini" | "vertex" | "openai-compatible";
 export const PERSONAL_MODEL = "gemini-3.1-flash-lite";
-export const MODEL_SETTINGS_MEDIA_TYPE = 'application/vnd.yuyoufang.model-settings.v2+json';
+export const MODEL_SETTINGS_MEDIA_TYPE = 'application/vnd.yuyoufang.model-settings.v3+json';
 export const PERSONAL_DAILY_LIMIT = { default: 100, min: 1, max: 1000 } as const;
 export const PERSONAL_RUN_LIMITS = {
   modelCalls: { ...AGENT_RUN_LIMITS.modelCalls, default: 4 },
@@ -30,6 +30,8 @@ export interface ModelSettings extends PersonalAdvancedLimits {
   mode: ModelMode;
   provider: PersonalModelProvider;
   model: string;
+  baseUrl?: string;
+  embeddingKeyConfigured?: boolean;
   keyConfigured: boolean;
   backgroundEnabled: boolean;
   dailyLimit: number;
@@ -43,6 +45,9 @@ export interface ModelSettingsCommand extends PersonalAdvancedLimits {
   expectedVersion: number;
   mode: ModelMode;
   apiKey?: string;
+  baseUrl?: string;
+  embeddingApiKey?: string;
+  removeEmbeddingKey?: boolean;
   removeKey?: boolean;
   backgroundEnabled: boolean;
   dailyLimit: number;
