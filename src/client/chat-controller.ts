@@ -1,6 +1,7 @@
 import { normalizeChatInput } from "./chat-input.ts";
 import type { AgentProgress, OfficialHelpId } from '../shared/agent-feedback.ts';
-import type { ChatMessage } from "../shared/chat.ts";
+import { agentStopMessage } from "../shared/agent-stop-message.ts";
+import type { ChatReplyState, ChatMessage } from "../shared/chat.ts";
 import { ChatApiError, type ChatApi, type ChatUsage } from "./chat-api.ts";
 
 type DraftPhase = "draft" | "saving" | "save_unknown" | "checked" | "replying" | "reply_failed";
@@ -31,6 +32,7 @@ export interface ChatState {
   usage: ChatUsage | null;
   drafts: Record<string, ChatDraft>;
   busy: "save" | "reply" | null;
+  remoteReply?: ChatReplyState | null;
   replyingMessageId: string | null;
   replyError: string | null;
   feedback?: (AgentProgress & { cards: OfficialHelpId[] }) | null;
@@ -78,7 +80,7 @@ function initialState(online: boolean): ChatState {
     userId: null, online, selectedChildId: null, messages: [], limit: 100, loading: false,
     nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null,
     loadedAt: null, error: null, available: null, usage: null, drafts: {},
-    busy: null, replyingMessageId: null, replyError: null, feedback: null,
+    busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null,
   };
 }
 
@@ -130,6 +132,7 @@ export class ChatController {
   private requests = new Set<AbortController>();
   private epoch = 0;
   private view = 0;
+  private checkingOriginal = false;
   private blockedChildIds = new Set<string>();
   private forgottenChildIds = new Set<string>();
 
@@ -177,7 +180,7 @@ export class ChatController {
     if (this.state.selectedChildId === childId) {
       this.abortRequests();
       this.update({ selectedChildId: null, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null, error: null,
-        replyingMessageId: null, replyError: null, feedback: null });
+        replyingMessageId: null, replyError: null, feedback: null, remoteReply: null });
     }
     return true;
   }
@@ -195,7 +198,7 @@ export class ChatController {
     if (this.state.selectedChildId === childId) {
       this.abortRequests();
       this.update({ drafts, selectedChildId: null, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null,
-        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null });
+        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null });
     } else this.update({ drafts });
   }
 
@@ -269,11 +272,11 @@ export class ChatController {
       if (previousId) {
         const draft = this.state.drafts[previousId];
         if (draft?.phase === "saving") this.updateDraft(previousId, { phase: "save_unknown", notice: UNKNOWN_SAVE });
-        if (draft?.phase === "replying") this.updateDraft(previousId, { phase: "reply_failed", notice: "聊天已保存。切換孩子後可重新要求同一則訊息的回覆。" });
+        if (draft?.phase === "replying") this.updateDraft(previousId, { phase: "reply_failed", notice: "聊天已保存。切換孩子後會查核原運行，不會重新執行。" });
       }
       this.abortRequests();
       this.update({ selectedChildId: childId, messages: [], loading: false, nextCursor: null, loadingOlder: false, cancelling: false, cancelNotice: null, loadedAt: null,
-        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null });
+        error: null, busy: null, replyingMessageId: null, replyError: null, feedback: null, remoteReply: null });
       if (childId && online) {
         void this.reloadMessages();
         void this.refreshMetadata();
@@ -330,6 +333,15 @@ export class ChatController {
       const retainOlder = this.state.messages.length > page.limit && this.state.messages.some(item => newestIds.has(item.id));
       this.update({ messages: retainOlder ? [...this.state.messages.filter(item => !newestIds.has(item.id)), ...page.messages] : page.messages,
         nextCursor: retainOlder ? this.state.nextCursor : page.nextCursor ?? null, limit: page.limit, loadedAt: new Date().toISOString() });
+      const latestUser = [...page.messages].reverse().find(item => item.role === "user");
+      if (latestUser && !page.messages.some(item => item.inReplyTo === latestUser.id)) {
+        try { await this.readOriginal(scope, latestUser.id); }
+        catch (error) {
+          if (sessionError(error) || childAccessDenied(error)) throw error;
+          if (this.current(scope)) this.update({ replyError: "原訊息已保存，暫時未能查核處理狀態；請稍後重新讀取。" });
+        }
+        if (!this.current(scope)) return;
+      } else this.update({ remoteReply: null, replyError: null });
       const draft = this.state.drafts[childId];
       if (draft?.savedUserMessageId && page.messages.some(item => item.role === "model" && item.inReplyTo === draft.savedUserMessageId)) {
         this.updateDraft(childId, { text: "", phase: "draft", savedUserMessageId: null,
@@ -367,6 +379,35 @@ export class ChatController {
     }
   }
 
+  private async readOriginal(scope: RequestScope, messageId: string): Promise<ChatReplyState | null> {
+    if (!scope.childId || !this.api.getOriginalReply) return null;
+    const result = await this.api.getOriginalReply(scope.childId, messageId, scope.controller.signal, scope.userId);
+    if (!this.current(scope)) return null;
+    this.update({ remoteReply: result, replyError: result?.status === "running" ? null
+      : result ? result.status === "completed" ? "原運行已完成，正在核對已保存的回覆。"
+        : agentStopMessage(result.stopReason) ?? "原運行未完成，請查看原結果；沒有重新執行。" : null,
+      messages: result ? this.state.messages.map(item => item.id === messageId ? { ...item, agentRunId: result.runId } : item) : this.state.messages });
+    return result;
+  }
+
+  /** Foreground read only. The device may have lost all local run state. */
+  async refreshOriginalReply(): Promise<void> {
+    const original = this.state.remoteReply;
+    if (!original || original.status !== "running" || this.checkingOriginal || this.state.busy || this.state.loading
+      || !this.state.online || !this.state.userId || !this.state.selectedChildId) return;
+    const scope = this.scope(); this.checkingOriginal = true;
+    try {
+      const result = await this.readOriginal(scope, original.messageId);
+      if (this.current(scope) && result?.status !== "running") await this.reloadMessages();
+    } catch (error) {
+      if (this.current(scope)) {
+        if (sessionError(error)) this.invalidateIdentity();
+        else if (childAccessDenied(error)) this.forgetChild(scope.childId!);
+        else this.update({ replyError: "暫時未能查核原運行，沒有重新執行；連線恢復後再讀取。" });
+      }
+    } finally { this.checkingOriginal = false; this.release(scope); }
+  }
+
   async loadOlderMessages(): Promise<void> {
     const { selectedChildId: childId, nextCursor } = this.state;
     if (!this.state.userId || !childId || !nextCursor || !this.state.online || this.state.loading || this.state.loadingOlder || this.state.busy) return;
@@ -387,8 +428,9 @@ export class ChatController {
   }
 
   async cancelReply(): Promise<void> {
-    const { selectedChildId: childId, replyingMessageId } = this.state;
-    if (!childId || !replyingMessageId || this.state.busy !== "reply" || this.state.cancelling || !this.state.online || !this.api.cancelReply) return;
+    const childId = this.state.selectedChildId;
+    const replyingMessageId = this.state.replyingMessageId ?? (this.state.remoteReply?.status === "running" ? this.state.remoteReply.messageId : null);
+    if (!childId || !replyingMessageId || this.state.busy !== "reply" && this.state.remoteReply?.status !== "running" || this.state.cancelling || !this.state.online || !this.api.cancelReply) return;
     const scope = this.scope();
     this.update({ cancelling: true, cancelNotice: null });
     try {
@@ -478,7 +520,7 @@ export class ChatController {
         if (this.state.drafts[childId]?.phase === "replying") {
           this.updateDraft(childId, { phase: "reply_failed", notice: "暫未能確認回覆，原文已保存。請重新讀取聊天後再試。" });
         }
-        this.update({ busy: null, replyingMessageId: null, feedback: null });
+        this.update({ busy: null, replyingMessageId: null, feedback: null, remoteReply: null });
         void this.refreshMetadata();
       }
     }
@@ -510,7 +552,7 @@ export class ChatController {
         notice: "聊天已獲 Server 保存確認；尚未要求 AI 回覆。" });
       if (!await this.verifyIdentity(scope)) return;
       this.update({ messages: [...this.state.messages.filter(item => item.id !== saved.id), saved],
-        feedback: null, busy: "reply", replyingMessageId: saved.id, cancelNotice: null });
+        feedback: null, remoteReply: null, busy: "reply", replyingMessageId: saved.id, cancelNotice: null });
       this.updateDraft(childId, { phase: "replying", savedUserMessageId: saved.id, notice: "聊天已保存，正在等候 AI 回覆。" });
       await this.performReply(scope, saved.id);
     } catch (error) {
@@ -547,12 +589,26 @@ export class ChatController {
     if ((!original && !savedDraft) || this.state.messages.some(item => item.role === "model" && item.inReplyTo === messageId)) return;
     const scope = this.scope();
     this.update({ feedback: null, busy: "reply", replyingMessageId: messageId, replyError: null, cancelNotice: null });
-    if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
-      this.updateDraft(childId, { phase: "replying", notice: "聊天已保存，正在等候 AI 回覆。" });
-    }
     try {
+      const existing = await this.readOriginal(scope, messageId);
+      if (!this.current(scope)) return;
+      if (existing) {
+        this.update({ busy: null, replyingMessageId: null });
+        await this.reloadMessages(); return;
+      }
+      this.update({ remoteReply: null });
+      if (this.state.drafts[childId]?.savedUserMessageId === messageId) {
+        this.updateDraft(childId, { phase: "replying", notice: "聊天已保存，正在等候 AI 回覆。" });
+      }
       await this.performReply(scope, messageId);
+    } catch (error) {
+      if (this.current(scope)) {
+        if (sessionError(error)) this.invalidateIdentity();
+        else if (childAccessDenied(error)) this.forgetChild(childId);
+        else this.update({ replyError: "未能確認原運行，沒有重新執行；請重新讀取。" });
+      }
     } finally {
+      if (this.current(scope)) this.update({ busy: null, replyingMessageId: null });
       this.release(scope);
     }
   }

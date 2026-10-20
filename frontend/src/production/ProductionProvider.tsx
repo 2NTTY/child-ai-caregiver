@@ -183,7 +183,7 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
   useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" && value.account.gate === "ready" ? value.userId : null, activity.online ?? value.online, async reason => {
     await owner.refresh();
     owner.invalidatePrivateReads(false, reason !== "unavailable");
-  }, owner.fetcher, activity.active);
+  }, owner.fetcher, activity.active, () => owner.chatController.refreshOriginalReply());
   useEffect(() => {
     owner.connect();
     void owner.controller.restoreSession();

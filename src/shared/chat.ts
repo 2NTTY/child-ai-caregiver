@@ -15,3 +15,11 @@ export interface ChatPage {
   limit: number;
   nextCursor?: string | null;
 }
+
+/** Read-only projection of the original run; never permission to start or repeat it. */
+export interface ChatReplyState {
+  messageId: string;
+  runId: string;
+  status: "running" | "completed" | "stopped" | "unknown";
+  stopReason: string | null;
+}

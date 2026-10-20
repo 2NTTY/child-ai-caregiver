@@ -62,6 +62,7 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 | 路由 | 真實行為 |
 |---|---|
 | POST `/api/children/:childId/messages/:messageId/reply` | 空物件；沿用原訊息，進入 product-interactive。相同訊息重取同一持久運行，不重新呼叫模型；返回聊天訊息及 `agentRunId` |
+| GET `/api/children/:childId/messages/:messageId/reply` | 唯讀 `{reply:null|{messageId,runId,status,stopReason}}`；null 只表示已核權的本人原訊息尚無 claim；錯身份／孩子／來源／授權改變回錯誤。按原 claim 確定 ID 點讀，沒有新 run、模型或寫入；期限過去可投影 unknown，不聲稱完成 |
 | GET `/api/children/:childId/agent/runs/:runId` | `{result}`：本人運行、工具狀態、當時引用、候選及停止原因；中斷且未保存統計以 `countsKnown=false` 表示未知 |
 | POST `/api/children/:childId/agent/runs/:runId/proposals/:proposalId/decide` | `{expectedVersion,decision:accept\|dismiss,confirmShared}` → `{proposal}`；精確重試返回原結果，過期候選不可接受但可明確略過；接受仍核對權限及版本 |
 | GET `/api/children/:childId/agent/pending?cursor=…` | `{proposals,nextCursor}`：本人及該孩子的 pending／expired，每頁最多 20 項，獨立於近期聊天及 20 次背景清單；過期項只能重新核對或略過 |

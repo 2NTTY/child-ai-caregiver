@@ -5,7 +5,8 @@ export { ONLINE_REFRESH_EVENT } from "./online-refresh-events.ts";
 
 /** Same metadata protocol on both platforms; native activity is supplied by its device adapter. */
 export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, online: boolean,
-  refresh: (reason: OnlineRefreshReason) => Promise<void>, fetcher: typeof fetch = fetch, nativeActive?: boolean) {
+  refresh: (reason: OnlineRefreshReason) => Promise<void>, fetcher: typeof fetch = fetch, nativeActive?: boolean, checkCurrentWork?: () => Promise<void>) {
+  const latestWork = useRef(checkCurrentWork); latestWork.current = checkCurrentWork;
   const latestRefresh = useRef(refresh); latestRefresh.current = refresh;
   useEffect(() => {
     const browser = nativeActive === undefined;
@@ -13,7 +14,10 @@ export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, onli
       || browser && (typeof window === "undefined" || typeof document === "undefined")) return;
     const observer = createOnlineChangeObserver(apiBaseUrl, userId, reason => latestRefresh.current(reason), fetcher);
     const check = (force: boolean) => {
-      if (!browser || document.visibilityState === "visible") void observer.check(force);
+      if (!browser || document.visibilityState === "visible") {
+        void latestWork.current?.();
+        void observer.check(force);
+      }
     };
     const event = () => check(true);
     const timer = setInterval(() => check(false), 5_000);
