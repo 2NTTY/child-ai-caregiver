@@ -16,7 +16,16 @@ export interface FirestoreKnowledgeOptions { database: Firestore; projectId: str
 export interface FirestoreKnowledgeEmbedding {
   chunkKey: string; inputHash: string; model: string; dimensions: number; pipeline: string; values: readonly number[];
 }
+/** Trusted operator work participates in the publication transaction, never a model argument. */
+export interface FirestoreKnowledgePublicationFence {
+  prepare(transaction: Transaction, publication: {
+    sourceId: string; versionId: string; versionHash: string; observationHash: string | null;
+    previousVersionId: string | null; sourceEnabled: boolean;
+  }): Promise<() => void>;
+}
 export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidates" | "catalog"> {
+  publishedEdition(sourceId: string): Promise<{ versionId: string; versionHash: string; observationHash: string | null;
+    source: KnowledgeSourceInput; enabled: boolean } | null>;
   continuationSources(transaction: Transaction, ids: readonly string[]): Promise<import('./agent-work-continuation-core.ts').KnowledgeCurrent[]>;
   validatePublishedSource(transaction: Transaction, id: string): Promise<void>;
   ruleCandidates(transaction: Transaction, rules: readonly { sourceId: string; key: string }[], filter: KnowledgeFilter): Promise<KnowledgeCandidate[]>;
@@ -27,7 +36,8 @@ export interface FirestoreKnowledgeStore extends Pick<KnowledgeStore, "candidate
   embedDocument(document: { hash: string; title: string; text: string }, generate: () => Promise<readonly number[]>): Promise<{ reused: boolean }>;
   review(versionId: string, expectedHash: string, reviewer: string, assessment: KnowledgeReviewAssessment,
     expectedObservation?: { sourceId: string; contentHash: string }): Promise<{ status: "reviewed" | "held"; reason?: string }>;
-  publish(versionId: string, expectedHash: string, embeddings?: readonly FirestoreKnowledgeEmbedding[]): Promise<{ status: "published" }>;
+  publish(versionId: string, expectedHash: string, embeddings?: readonly FirestoreKnowledgeEmbedding[],
+    fence?: FirestoreKnowledgePublicationFence): Promise<{ status: "published" }>;
   disable(sourceId: string, reason: string): Promise<void>;
 }
 export class FirestoreKnowledgeError extends Error {
@@ -263,6 +273,17 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
     });
   }
   return {
+    async publishedEdition(id) {
+      if (!allowedId(id)) reject("knowledge_source_not_allowed", 403);
+      return database.runTransaction(async tx => {
+        const source = await readSource(tx, id);
+        if (!source?.activeVersionId) return null;
+        const edition = await load(tx, source.activeVersionId, source);
+        return { versionId: edition.version.versionId, versionHash: edition.version.versionHash,
+          observationHash: edition.version.review?.assessment.observationHash ?? null,
+          source: edition.document, enabled: source.enabled };
+      }, { readOnly: true });
+    },
     prepareSearch,
     async listVersions(afterVersionId) {
       if (afterVersionId !== undefined && !uuid.safeParse(afterVersionId).success) reject("knowledge_version_invalid", 400);
@@ -430,7 +451,7 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
         return approved ? { status: "reviewed" as const } : { status: "held" as const, reason: assessment.decision === "hold" ? "operator_hold" : "growth_rules_require_review" };
       });
     },
-    async publish(versionId, expectedHash, supplied) {
+    async publish(versionId, expectedHash, supplied, fence) {
       if (!hash.safeParse(expectedHash).success) reject("knowledge_version_invalid", 400);
       if (supplied && (!Array.isArray(supplied) || supplied.length > 32 || new Set(supplied.map(row => row.chunkKey)).size !== supplied.length)) reject("knowledge_vector_invalid", 400);
       const publishedAt = new Date().toISOString();
@@ -468,12 +489,17 @@ export function createFirestoreKnowledgeStore(options: FirestoreKnowledgeOptions
           if (chunk.embedding !== null && chunk.vectorHash !== vectorHash) reject("knowledge_vector_conflict");
           return { ...chunk, embedding: FieldValue.vector(values), vectorHash, ...KNOWLEDGE_EMBEDDING };
         });
-        if (publication(edition) && updated.every((chunk, index) => chunk.vectorHash === edition.chunks[index]!.vectorHash)) return { status: "published" as const };
+        const commitWork = await fence?.prepare(tx, { sourceId: source.sourceId, versionId, versionHash: version.versionHash,
+          observationHash: review.assessment.observationHash, previousVersionId: source.activeVersionId, sourceEnabled: source.enabled });
+        if (publication(edition) && updated.every((chunk, index) => chunk.vectorHash === edition.chunks[index]!.vectorHash)) {
+          commitWork?.(); return { status: "published" as const };
+        }
         const nextVersion = { ...version, publishedAt: version.publishedAt ?? publishedAt };
         const nextSource = { ...bump(source), activeVersionId: versionId, enabled: true, disabledReason: null };
         writeBudget([nextVersion, nextSource, ...updated]);
         for (const chunk of updated) if (edition.chunks.find(old => old.chunkId === chunk.chunkId)!.embedding === null) tx.set(chunkRef(chunk.chunkId), chunk);
         tx.set(versionRef(versionId), nextVersion); tx.set(sourceRef(source.sourceId), nextSource);
+        commitWork?.();
         return { status: "published" as const };
       });
     },

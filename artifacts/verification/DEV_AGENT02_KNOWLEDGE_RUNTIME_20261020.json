@@ -1,0 +1,490 @@
+{
+  "package": "DEV-AGENT02",
+  "date": "2026-10-20",
+  "base": "b13fe62",
+  "scope": "Formal background model stages, encrypted Firestore work, atomic publication and explicit local maintenance CLI",
+  "environment": {
+    "node": "24.19.0",
+    "firebaseTools": "15.34.0",
+    "data": "Existing isolated demo project; separate synthetic namespace for scripted integration",
+    "provider": "Existing local Vertex ADC; gemini-3.1-flash-lite",
+    "promptPackFinal": "0.1.51"
+  },
+  "mechanicalVerification": {
+    "entry": "tests/firestore-knowledge-maintenance-emulator.mjs",
+    "result": "passed",
+    "namespace": "verify_knowledge_1792486570319",
+    "scriptedGenerations": 2,
+    "scriptedEmbeddings": 1,
+    "covers": [
+      "Formal organization and independent review through the shared gateway and daily ledger",
+      "Native emulator transaction commits source publication and work receipt together",
+      "Original text and published edition are retrievable",
+      "Reassembled service returns the same operation without fetching or generating again",
+      "Unknown model outcome is not redispatched after a new lease"
+    ],
+    "failuresBeforePass": [
+      "Strict work limit schema rejected unrelated tool/query fields before any model stage; assembly narrowed the input",
+      "Embedding gateway required UUID operation IDs; stable UUIDs now derive from the original work and document hash"
+    ],
+    "targetedModelChecks": "2 passed after original-preview and comparison binding changes",
+    "scopedTypecheck": "passed",
+    "launcherSyntax": "passed"
+  },
+  "realModelAttempts": [
+    {
+      "operation": "1728bacc39960fb6c33c5bb490d684d7bef6eb3c61d3f806fa314c7a7d1455e6",
+      "generations": 1,
+      "embeddingCalls": 0,
+      "result": "candidate_held",
+      "code": "knowledge_maintenance_quote_mismatch",
+      "published": false
+    },
+    {
+      "operation": "804194c5dcbcef93104d035e66ff6564a195529959c9f73042f0c946f83e269f",
+      "generations": 2,
+      "embeddingCalls": 0,
+      "result": "candidate_held",
+      "code": "knowledge_maintenance_invalid_json",
+      "published": false,
+      "readOnlyDiagnosis": "Saved reviewer text was complete JSON in one Markdown code fence. Exact saved-stage replay after format normalization then rejected knowledge_review_old_quote_mismatch. No extra model call or publication."
+    },
+    {
+      "operation": "b78636489b9f57f271aa0d791547a4090e0ef77081fd94cd5563df539ae8334c",
+      "codeVersion": "c9bc5b6",
+      "promptPack": "0.1.51",
+      "generations": 2,
+      "embeddingCalls": 0,
+      "result": "candidate_held",
+      "code": "review_hold",
+      "modelReviewCompleted": true,
+      "growthRuleImpact": "requires_review",
+      "published": false,
+      "observation": "Organization and independent review completed. The reviewer requested further assessment of the changed guidance; the existing publication gate retained the candidate. This is not evidence of successful publication or clinical review. No further run was started."
+    },
+    {
+      "operation": "620728fe5a33bf856679cfcf495ac5ed935c375e376270681191748a01b79ffd",
+      "codeVersion": "8873b76",
+      "promptPack": "0.1.52",
+      "generations": 1,
+      "embeddingCalls": 0,
+      "result": "candidate_held",
+      "code": "review_hold",
+      "modelReviewCompleted": true,
+      "growthRuleImpact": "requires_review",
+      "published": false,
+      "observation": "Unchanged original skipped organization; one independent review completed. Server detected the published/seed chunk hash did not match the executable growth rule binding. Candidate and usage retained; no retry.",
+      "readOnlyDiagnosis": {
+        "source": "fhs-solid-food",
+        "key": "starting-solids",
+        "ruleHash": "08cd6022928f532f75111c6e3ad702fdd98746666c2d30c51fe941a748c47396",
+        "currentSeedHash": "15700b8ff1c371150a5f83bfa4532448663a556eb7ecdff2ec87a59a222cb199",
+        "otherSeedRuleMismatches": ["fhs-toddler-development", "fhs-preschool-development", "fhs-child-vision"],
+        "scope": "Current repository seed/catalog comparison only; production deployment was not inspected and rule approvals were not changed"
+      }
+    }
+  ],
+  "fixesAfterRealAttempts": [
+    "Server derives original previews; organizer cannot retype or invent them",
+    "Accept only a complete JSON code block; retain strict parsing and schema checks",
+    "Server binds comparison versions, keys and original previews; reviewer supplies meaning, reasons and substantive checks",
+    "Preserve previous failed work identities and usage"
+  ],
+  "limits": {
+    "realGenerationsTotal": 6,
+    "realEmbeddingsTotal": 0,
+    "liveWebsiteFetches": 0,
+    "cloudDataWrites": 0,
+    "notifications": 0,
+    "deployment": false,
+    "actualBill": "not queried",
+    "fullSuite": false
+  },
+  "notProven": [
+    "True model background publication and subsequent chat citation; the latest review held the candidate",
+    "Live website and multimodal maintenance",
+    "Long-source batching and automatic continuation after partial observation",
+    "Cross-page/new-conversation joint verification and non-email local inbox",
+    "Cloud scheduling, IAM, delivery or production deployment"
+  ],
+  "readOnlyInspection": {
+    "entry": "npm run agent:local -- --inspect-knowledge",
+    "operation": "b78636489b9f57f271aa0d791547a4090e0ef77081fd94cd5563df539ae8334c",
+    "result": "passed",
+    "reads": "Original encrypted work and prepared candidate through a read-only emulator transaction",
+    "observed": "Same held result and two-call work budget; no publication receipt. The candidate omits the starting-solids key bound by the existing solid_food growth rule.",
+    "newModelCalls": 0,
+    "newEmbeddings": 0,
+    "scopedTypecheck": "passed",
+    "entrySyntax": "passed",
+    "limits": "No assertion that semantic review, publication, rule migration or cloud behavior passed"
+  },
+  "unchangedOriginalFix": {
+    "base": "34860f3",
+    "promptPack": "0.1.52",
+    "changes": [
+      "Reuse unambiguous exact original ranges and PDF page identities with the published chunk; only changed units are reorganized",
+      "Pass actual executable growth rule references to review and enforce changed/missing references on the server",
+      "Normalize fetched observation once with the durable schema before the runner hashes it; existing stored hashes are unchanged"
+    ],
+    "targetedModelContractTests": { "passed": 3, "realModelCalls": 0 },
+    "scopedRuntimeTypecheck": "passed",
+    "emulatorAttempts": [
+      { "namespace": "verify_knowledge_1792489293493", "result": "failed", "code": "knowledge_observation_changed",
+        "scriptedModelCalls": 0, "cause": "PDF extraction field order differed before versus after durable schema parsing", "stopped": true },
+      { "namespace": "verify_knowledge_1792489385944", "result": "passed",
+        "scriptedModelCalls": 2, "scriptedEmbeddings": 1,
+        "checks": ["same durable observation", "atomic PDF-source publication", "original-operation replay", "retrieval", "unknown model outcome not redispatched"] }
+    ],
+    "realModelCalls": 0,
+    "externalNotifications": 0,
+    "deployment": false,
+    "pending": "Real review completed once after this fix, but publication remains held by the existing seed/rule hash mismatch; see the fourth realModelAttempts entry"
+  },
+  "cleanup": "Local services stopped with checkpoint export; synthetic records and prior failures retained",
+  "livePdf20261020": {
+    "sourceCommit": "9fa28e1f33f524955d2b8943b60875d349b82e58",
+    "promptPack": "0.1.52",
+    "source": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+    "scope": "Actual fetch and parser; registered page 3 only, not the complete booklet.",
+    "result": {
+      "sourceMode": "allowlisted-website",
+      "operationFingerprint": "511e4edb093577b52e62039173cf2399aa2a2b4fdf419c3b91999c20ff451f41",
+      "status": "candidate_held",
+      "code": "review_hold",
+      "watchId": "fhs-feeding-booklet-en",
+      "observationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+      "review": {
+        "watchId": "fhs-feeding-booklet-en",
+        "observationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+        "previousObservationHash": null,
+        "decision": "hold_candidate",
+        "reviewKind": "model_review",
+        "policyVersion": "p3-m03-background-knowledge/2",
+        "modelReviewCompleted": true,
+        "growthRuleImpact": "requires_review",
+        "notes": [
+          "該來源涉及嬰兒成長期關鍵餵養指引，定義了引入固體食物的時間點與禁忌，屬於核心育兒規則，需經專業確認以確保與當前執行中的健康指引一致。"
+        ]
+      },
+      "publishMode": "live",
+      "budget": {
+        "usedUnits": 2,
+        "maxUnits": 8,
+        "modelCalls": 2,
+        "maxModelCalls": 2
+      },
+      "published": false
+    },
+    "trueGenerations": 2,
+    "trueEmbeddings": 0,
+    "published": false,
+    "rootCause": "The model reported executable growth-rule impact despite an empty server catalog binding. The source contents still require independent semantic approval.",
+    "fix": "Prompt Pack 0.1.53 removes rule authority fields from model output; Server computes catalog dependency while evidence holds remain model-controlled.",
+    "verification": {
+      "targetedKnowledgeChecks": 3,
+      "passed": true,
+      "typecheck": "scoped",
+      "trueModelAfterFix": "not run"
+    },
+    "productionWrites": false,
+    "notifications": false
+  },
+  "rulePinInvestigation20261020": {
+    "historicalCommit": "062e150^",
+    "changedFields": [
+      "originalText added",
+      "partial-original coverage condition added"
+    ],
+    "unchanged": [
+      "summary",
+      "source key",
+      "age ranges",
+      "existing applicability restrictions",
+      "rule behavior"
+    ],
+    "result": "All four exact prior parsed chunks match their existing rule pins. Current seed pins were not approved or changed.",
+    "sourcesChecked": [
+      "https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html",
+      "https://www.fhs.gov.hk/tc_chi/health_info/child/15654.html",
+      "https://www.fhs.gov.hk/tc_chi/health_info/child/14821.html",
+      "https://www.fhs.gov.hk/tc_chi/health_info/child/14812.html"
+    ]
+  },
+  "livePdfPublish20261020": {
+    "sourceCommit": "d3127a4701593a27938cdf7a56ee3935c27611dc",
+    "promptPack": "0.1.53",
+    "source": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+    "scope": "Actual official PDF fetch and parser; registered page 3 only, not the complete booklet.",
+    "result": {
+      "sourceMode": "allowlisted-website",
+      "operationFingerprint": "ff6b3e6bf0e1d0699335df12cd5d96e16cc2cd52d4854dd91190af1e1bae3ea4",
+      "status": "already_recorded",
+      "code": "published",
+      "watchId": "fhs-feeding-booklet-en",
+      "observationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+      "review": {
+        "watchId": "fhs-feeding-booklet-en",
+        "observationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+        "previousObservationHash": null,
+        "decision": "approve_candidate",
+        "reviewKind": "model_review",
+        "policyVersion": "p3-m03-background-knowledge/2",
+        "modelReviewCompleted": true,
+        "growthRuleImpact": "none",
+        "notes": [
+          "內容來源為衞生署家庭健康服務，準確反映了固體食物引入的原則。由於此為新錄入，且涉及餵哺發展的重要指引，雖完整性尚待進一步核對其餘頁面，但當前片段已提供清晰的健康指引。"
+        ]
+      },
+      "publishMode": "live",
+      "budget": {
+        "usedUnits": 3,
+        "maxUnits": 8,
+        "modelCalls": 2,
+        "maxModelCalls": 2
+      },
+      "published": true
+    },
+    "trueGenerations": 2,
+    "trueEmbeddings": 1,
+    "embeddingEvidence": "Two reserved baseline work units plus one embedding reservation; publication succeeded after embedding that missing document.",
+    "productionWrites": false,
+    "notifications": false,
+    "retries": 0
+  },
+  "webContinuity20261020": {
+    "sourceCommit": "d3127a4701593a27938cdf7a56ee3935c27611dc",
+    "dirtyFiles": [
+      "scripts/agent-local.mjs",
+      "server/local-agent-main.ts"
+    ],
+    "method": "Chromium headless 1243, Playwright 1.63.0, formal Web login and document page; same production clients for one subsequent paid chat run.",
+    "evidence": {
+      "phase": "one-chat-run",
+      "paid": true,
+      "status": "failed",
+      "calls": 5,
+      "steps": [
+        "real-web-login-and-same-saved-document-version-after-restart"
+      ],
+      "document": {
+        "id": "3b1171d2-db46-4e82-b92d-fe97bccffd6f",
+        "version": 2,
+        "childId": "4138dea3-7452-48a4-ad71-e2a60ffca760"
+      },
+      "messageId": "60a1f764-2767-42fe-9628-ab62c16776f6",
+      "agent": {
+        "runId": "06498f4c-9ade-4d2f-a674-32753962c53a",
+        "status": "stopped",
+        "stopReason": "quota_exceeded",
+        "counts": {
+          "modelCalls": 4,
+          "toolCalls": 3,
+          "queryEmbeddings": 1
+        },
+        "tools": [
+          {
+            "name": "load_capabilities",
+            "status": "succeeded"
+          },
+          {
+            "name": "read_family_documents",
+            "status": "succeeded"
+          },
+          {
+            "name": "search_knowledge",
+            "status": "succeeded"
+          }
+        ],
+        "citations": []
+      },
+      "error": "quota_exceeded\n+ actual - expected\n\n+ 'stopped'\n- 'completed'\n"
+    },
+    "policy": {
+      "enabled": true,
+      "model": "gemini-3.1-flash-lite",
+      "dailyUserAttempts": 20,
+      "dailyGlobalAttempts": 100,
+      "personalDailyGlobalAttempts": 1000,
+      "maxModelCalls": 8,
+      "maxQueryEmbeddings": 4,
+      "maxToolCalls": 16,
+      "maxRunSeconds": 300,
+      "modelRequestSeconds": 90,
+      "maxModelRetries": 3,
+      "version": 0,
+      "updatedAt": null,
+      "userAttemptsAfter": 20,
+      "globalAttemptsAfter": 31
+    },
+    "conclusion": "Web showed the same saved v2 document after restart. Chat read the document and searched knowledge, but daily user quota stopped final delivery. No rerun, quota change or usage reset; final PDF citation remains unverified.",
+    "scopeLimit": "No full browser suite, visual design review, notifications, deployment or cloud business writes. An initial command referenced absent tsx and failed before starting any verification; rerun used Node native TypeScript."
+  },
+  "geminiOperatorEmbedding20261020": {
+    "baseline": "f4310aae1e951fb84321949f6f5fa08f68b190ca",
+    "defect": "Explicit Gemini-key seed and maintenance commands used the query-only personal adapter, which rejected RETRIEVAL_DOCUMENT before any provider request.",
+    "change": "Only the two trusted operator entrypoints enable document embedding. Personal and chat routing remain query-only; original authority, accounting, publication and Vertex Express exclusions remain in force.",
+    "verification": {
+      "sdk": "@google/genai 2.24.0",
+      "focusedTests": 2,
+      "failedTests": 0,
+      "coverage": "Real SDK serialized document title/task/text with 1024 dimensions into mocked HTTP; normalization, conservative combined byte bound, default query-only and Vertex exclusions were checked.",
+      "typecheck": "passed: provider and test dependency closure",
+      "scriptSyntax": "passed: agent-local-knowledge.mjs and agent-local-maintain.mjs",
+      "diffCheck": "passed",
+      "realModelCalls": 0,
+      "realEmbeddingCalls": 0,
+      "cloudWrites": 0,
+      "deployments": 0
+    },
+    "limits": "SDK 2.24.0 rejects Developer API autoTruncate. Document title plus embedding text must fit the existing conservative 2000 UTF-8 byte bound; larger input fails explicitly, never silently truncates. Live Gemini key, long-source continuation and previous draft gates remain unverified."
+  },
+  "approvedContinuity20261020": {
+    "sourceCommit": "09b22f3ef472ee8dffbaaa9128a02b3a427b7d11",
+    "evidence": {
+      "at": "2026-10-20T11:38:23.775Z",
+      "status": "failed",
+      "calls": 13,
+      "steps": [],
+      "usageBefore": {
+        "day": "2026-10-20",
+        "attempts": 20,
+        "inputTokens": 173311,
+        "outputTokens": 1379,
+        "cachedTokens": 4060,
+        "unknownUsageAttempts": 18,
+        "billingSource": "platform"
+      },
+      "policyOperations": [
+        "18bc6743-4a1d-4a06-b2c6-5abe8d347d3a",
+        "70704fd4-56dd-439a-a052-a0206f7f7c67"
+      ],
+      "policyBefore": {
+        "enabled": true,
+        "model": "gemini-3.1-flash-lite",
+        "dailyUserAttempts": 20,
+        "dailyGlobalAttempts": 100,
+        "personalDailyGlobalAttempts": 1000,
+        "maxModelCalls": 8,
+        "maxQueryEmbeddings": 4,
+        "maxToolCalls": 16,
+        "maxRunSeconds": 300,
+        "modelRequestSeconds": 90,
+        "maxModelRetries": 3,
+        "version": 0,
+        "updatedAt": null
+      },
+      "temporaryPolicy": {
+        "enabled": true,
+        "model": "gemini-3.1-flash-lite",
+        "dailyUserAttempts": 26,
+        "dailyGlobalAttempts": 100,
+        "personalDailyGlobalAttempts": 1000,
+        "maxModelCalls": 4,
+        "maxQueryEmbeddings": 2,
+        "maxToolCalls": 16,
+        "maxRunSeconds": 300,
+        "modelRequestSeconds": 90,
+        "maxModelRetries": 0,
+        "version": 1,
+        "updatedAt": "2026-10-20T11:38:24.907Z"
+      },
+      "messageId": "e7f6e54e-6511-4a2d-a3d6-50faac16d98d",
+      "agent": {
+        "runId": "b2059bbe-2765-4b59-938a-eb309a7be7e3",
+        "status": "stopped",
+        "stopReason": "model_limit",
+        "counts": {
+          "modelCalls": 4,
+          "toolCalls": 4,
+          "queryEmbeddings": 0
+        },
+        "tools": [
+          {
+            "name": "load_capabilities",
+            "status": "rejected"
+          },
+          {
+            "name": "load_capabilities",
+            "status": "succeeded"
+          },
+          {
+            "name": "read_family_documents",
+            "status": "succeeded"
+          },
+          {
+            "name": "present_answer",
+            "status": "rejected"
+          }
+        ],
+        "citations": []
+      },
+      "error": "model_limit\n+ actual - expected\n\n+ 'stopped'\n- 'completed'\n",
+      "restoredPolicy": {
+        "enabled": true,
+        "model": "gemini-3.1-flash-lite",
+        "dailyUserAttempts": 20,
+        "dailyGlobalAttempts": 100,
+        "personalDailyGlobalAttempts": 1000,
+        "maxModelCalls": 8,
+        "maxQueryEmbeddings": 4,
+        "maxToolCalls": 16,
+        "maxRunSeconds": 300,
+        "modelRequestSeconds": 90,
+        "maxModelRetries": 3,
+        "version": 2,
+        "updatedAt": "2026-10-20T11:39:12.275Z"
+      },
+      "usageAfter": {
+        "day": "2026-10-20",
+        "attempts": 24,
+        "inputTokens": 217330,
+        "outputTokens": 1612,
+        "cachedTokens": 4060,
+        "unknownUsageAttempts": 22,
+        "billingSource": "platform"
+      },
+      "policyRestored": true
+    },
+    "diagnostics": [
+      {
+        "tool": "load_capabilities",
+        "stage": "schema",
+        "code": "invalid_parameters"
+      },
+      {
+        "tool": "present_answer",
+        "stage": "execution",
+        "code": "citation_required"
+      }
+    ],
+    "conclusion": "One approved attempt stopped at model_limit; no final maintained-source citation, no retry. The original policy was restored and usage retained.",
+    "limit": "Metadata does not retain rejected arguments; no specific malformed field or unsupported statement is inferred. Existing Web/readback evidence is unchanged.",
+    "notifications": 0,
+    "deployments": 0,
+    "cloudBusinessWrites": 0
+  },
+  "toolRepairGuidance20261020": {
+    "baseline": "944aba0",
+    "packVersion": "0.1.54",
+    "changes": [
+      "Catalog-scoped strict loader repair hints bounded to 512 characters; no model values echoed",
+      "Existing core retrieval needs no loader; missing-citation feedback preserves evidence checks",
+      "Presentation plus required independent review share the root budget; no limit or review exemption change"
+    ],
+    "validation": {
+      "scriptedCapabilityRejection": "passed",
+      "promptVersionAndEffectiveInstructions": "2 existing checks passed",
+      "scopedTypeScript": "passed",
+      "liveModel": "not repeated; previous one-run approval consumed"
+    },
+    "limits": [
+      "Original malformed arguments were not retained; exact root field remains unknown",
+      "No live quality or final maintained-source citation pass claimed"
+    ],
+    "generations": 0,
+    "embeddings": 0,
+    "notifications": 0,
+    "deployments": 0
+  }
+}

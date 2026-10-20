@@ -1,6 +1,6 @@
 # 育有方 Agent Prompt Pack
 
-版本 **0.1.48** · 原文件工作包 **DOC-P01** · 配方／模組定義以 [manifest](manifest.json) 為準；實作／驗收狀態只按 [根 PLAN](../PLAN.md#roadmap-packages) 的所屬包與 EV，不在本入口維護另一份進度。
+版本 **0.1.53** · 原文件工作包 **DOC-P01** · 配方／模組定義以 [manifest](manifest.json) 為準；實作／驗收狀態只按 [根 PLAN](../PLAN.md#roadmap-packages) 的所屬包與 EV，不在本入口維護另一份進度。
 
 這裏的主要交付是直接給產品 Agent 閱讀的指令正文。Gemini 是首個接入目標；Agent 在 Server 執行，Web／Android 使用同一套行為與業務契約。一般聊天輸出自然文字，工具參數和必要的草稿／背景結果才使用結構化資料。
 

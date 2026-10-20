@@ -26,6 +26,7 @@ const stopReasons: Record<string, string> = {
   embedding_limit: "知識查詢次數已到上限", input_limit: "輸入長度已到上限", unauthorized: "存取權已改變",
   quota_exceeded: "今日 AI 用量已達上限", unavailable: "服務暫時未能使用", invalid_response: "未能確認 AI 回覆",
   delivery_review_incomplete: "尚未通過獨立核對，未成為正式回覆",
+  compose_review_incomplete: "這份編製草稿尚未通過獨立核對，未成為正式保存",
   invalid_tool: "工具要求未能通過核對", tool_unknown: "工具結果未能確認", interrupted: "處理中斷，沒有自動重新執行",
 };
 /** Product copy only: never expose raw provider errors, arguments or private diagnostic text. */

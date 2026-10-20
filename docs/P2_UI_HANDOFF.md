@@ -186,6 +186,7 @@ S12-W01 準備中的原生接點：PhotoFilePicker 分別接系統相機／相�
 
 - 選平台／個人 key／停用，輸入或替換 key、明確費用／外送同意、背景 opt-in、二次確認刪除。
 - 可編輯 Gemini／Vertex Express key、Server 模型目錄及每日、每輪生成／工具／embedding、整輪期限、單次等待與重試；表單合法範圍引用共用契約，實際值只讀 Server `effective`。模型目錄和能力不等於個人憑證真生成成功；Vertex Express 的 metadata／embedding 缺口明示，不借平台額度。
+- 共用 owner 的 `selectProvider` 讀取所選服務的 Server 目錄，不先保存 key，也不混用另一服務的能力標示。原模型若不在清單，保留原選擇並提示另選，不自動換型號；服務草稿與已保存值不同時，停用已保存 key 的查核按鈕，避免舊目錄覆蓋。停用個人模式及刪 key 不受失效模型選項阻塞。
 - 分別呈現平台／私人用量、metadata 未知及供應商限制；key 保存不等於連線成功，metadata 可讀不等於生成／embedding 已驗。
 - 保存 unknown 不重播，owner 只暫存原 opId／預期版本，清除密鑰後查原收據及目前版本。收據未見且版本未變時維持 unknown；新版本使舊寫入不再可提交，不能稱原操作已成功。身份／Server／離線切換清除輸入及舊請求，孩子切換不切換本人 key；不保存憑據草稿。
 - 新版 Server 必須先提供 v2 契約，再發布共用 Web／相容 OTA；不能先把新 client 接到只認舊 command 的 Server。模型、metadata、頁面真互動及部署的實際驗證狀態只見根 PLAN／STATUS，不以共用 RN 元件或 scripted provider 當真服務／真機已驗。

@@ -1,0 +1,49 @@
+{
+  "package": "DEV-AGENT02",
+  "date": "2026-10-20",
+  "scope": "Integrate reviewed role code with the existing local runtime, personal settings and Android changes",
+  "inputs": {
+    "localSettingsHead": "f6919b748a73d26a2ccfb6bbd15c174f33e44834",
+    "reviewedMaster": "4132e1ac105fb2261abf4e789df6cfc9107059f2",
+    "preservedEarlierIntegration": "ce1d6f930a1275dd32d878e561b0e9eca3226064",
+    "promptPack": "0.1.48"
+  },
+  "checks": [
+    {
+      "name": "Scoped Server typecheck",
+      "result": "passed",
+      "entrypoints": ["server/local-agent-main.ts", "server/data-compose.ts", "server/background-knowledge-maintenance.ts"]
+    },
+    {
+      "name": "Manifest assembly using actual required inputs",
+      "result": "passed",
+      "recipes": ["product-interactive", "voice-transcription", "chat-delivery-review", "data-compose", "data-compose-review"]
+    },
+    {
+      "name": "Only two scripted checks after merge",
+      "result": "passed",
+      "tests": [
+        "server review excludes generator summaries and preserves root accounting",
+        "shared budget of 4 covers real compose+review after two outer model turns"
+      ]
+    },
+    {
+      "name": "Local launcher and explicit verification script syntax",
+      "result": "passed"
+    }
+  ],
+  "externalCalls": {
+    "model": 0,
+    "embedding": 0,
+    "notification": 0,
+    "cloudDeployment": 0
+  },
+  "limitations": [
+    "No real compose/review run or page acceptance in this integration",
+    "The earlier interrupted unknown run remains unchanged and was not retried",
+    "Background knowledge live publication, durable role accounting and true model processing are still missing",
+    "Non-email local delivery inbox is not connected",
+    "Vertex API key generation uses the existing provider adapter; embedding remains explicitly unsupported",
+    "This local merge is not a production deployment or a completed Android acceptance"
+  ]
+}

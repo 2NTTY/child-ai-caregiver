@@ -2,18 +2,30 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { access, mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { M03_INITIAL_WATCH_IDS } from '../src/shared/background-knowledge-maintenance.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const directory = join(root, '.cache', 'agent-local'), statePath = join(directory, 'state.json');
 const args = new Set(process.argv.slice(2));
-if ([...args].some(arg => !['--reset', '--confirm-local-reset', '--no-web', '--no-model', '--no-watch', '--prepare-knowledge', '--help'].includes(arg))) throw Error('Unknown local Agent option');
+const inspectionArgs = [...args].filter(arg => arg === '--inspect-knowledge' || /^--inspect-knowledge=[a-f0-9]{64}$/u.test(arg));
+const inspection = inspectionArgs.length === 1;
+if (inspectionArgs.length > 1) throw Error('Choose one knowledge work to inspect');
+if ([...args].some(arg => !['--reset', '--confirm-local-reset', '--no-web', '--no-model', '--no-watch', '--prepare-knowledge',
+  '--maintain-knowledge', '--live-source', '--new-knowledge-work', '--knowledge-watch=fhs-solid-food', '--knowledge-watch=fhs-feeding-booklet-en', '--help'].includes(arg)
+  && !inspectionArgs.includes(arg))) throw Error('Unknown local Agent option');
+if (inspection && ['--reset', '--prepare-knowledge', '--maintain-knowledge'].some(arg => args.has(arg)))
+  throw Error('Knowledge inspection cannot reset data, prepare or start maintenance');
+if (!args.has('--maintain-knowledge') && [...args].some(arg => arg === '--live-source' || arg === '--new-knowledge-work' || arg.startsWith('--knowledge-watch=')))
+  throw Error('Knowledge work options require --maintain-knowledge');
+if (args.has('--maintain-knowledge') && args.has('--prepare-knowledge')) throw Error('Choose preparation or maintenance, not both');
 if (args.has('--help')) {
-  console.log('agent:local [--no-web] [--no-model] [--no-watch]\nSet GEMINI_API_KEY or LOCAL_AGENT_CONFIG (protected JSON). ADC: LOCAL_MODEL_PROVIDER=vertex-adc, LOCAL_MODEL_PROJECT.\nFirst knowledge preparation: --prepare-knowledge (at most one paid embedding; later starts reuse it).\nReset only this worktree: --reset --confirm-local-reset');
+  console.log('agent:local [--no-web] [--no-model] [--no-watch]\nSet GEMINI_API_KEY or LOCAL_AGENT_CONFIG (protected JSON). ADC: LOCAL_MODEL_PROVIDER=vertex-adc, LOCAL_MODEL_PROJECT.\nFirst knowledge preparation: --prepare-knowledge (at most one paid embedding; later starts reuse it).\nIndependent maintenance: --maintain-knowledge [--knowledge-watch=fhs-solid-food|fhs-feeding-booklet-en] [--live-source] [--new-knowledge-work]. Default: curated fixture; original work ID reused.\nInspect saved work without a model or credentials: --inspect-knowledge[=<operation-fingerprint>].\nReset only this worktree: --reset --confirm-local-reset');
   process.exit(0);
 }
 const exists = async path => { try { await access(path); return true; } catch { return false; } };
+if (inspection && !await exists(statePath)) throw Error('No local data to inspect; initialize the local environment first');
 await mkdir(directory, { recursive: true, mode: 0o700 });
 if (process.platform === 'win32') {
   const owner = spawnSync('whoami', [], { encoding: 'utf8', windowsHide: true });
@@ -45,19 +57,20 @@ const saved = await exists(statePath) ? JSON.parse(await readFile(statePath, 'ut
 };
 if (saved.format !== 1 || saved.projectId !== 'demo-yuyf-' + fingerprint) throw Error('Local state belongs to another checkout');
 if (!await exists(statePath)) await writeFile(statePath, JSON.stringify(saved, null, 2), { mode: 0o600, flag: 'wx' });
-const configured = process.env.LOCAL_AGENT_CONFIG ? JSON.parse(await readFile(resolve(process.env.LOCAL_AGENT_CONFIG), 'utf8')) : {};
+const configured = !inspection && process.env.LOCAL_AGENT_CONFIG ? JSON.parse(await readFile(resolve(process.env.LOCAL_AGENT_CONFIG), 'utf8')) : {};
+const provider = inspection ? 'gemini' : configured.provider ?? process.env.LOCAL_MODEL_PROVIDER ?? 'gemini';
 const model = {
-  provider: configured.provider ?? process.env.LOCAL_MODEL_PROVIDER ?? 'gemini',
-  apiKey: configured.apiKey ?? process.env.GEMINI_API_KEY,
+  provider,
+  apiKey: inspection ? undefined : configured.apiKey ?? (provider === 'gemini' ? process.env.GEMINI_API_KEY : provider === 'vertex' ? process.env.VERTEX_API_KEY : undefined),
   project: configured.project ?? process.env.LOCAL_MODEL_PROJECT,
   location: configured.location ?? process.env.LOCAL_MODEL_LOCATION ?? 'global',
   model: configured.model ?? process.env.LOCAL_MODEL ?? 'gemini-3.1-flash-lite',
   adcPath: configured.adcPath ?? process.env.GOOGLE_APPLICATION_CREDENTIALS,
 };
-if (!['gemini', 'vertex-adc'].includes(model.provider)) throw Error('Unsupported local model provider');
-const enabled = !args.has('--no-model');
-if (!enabled && args.has('--prepare-knowledge')) throw Error('Knowledge preparation requires your explicit model credentials');
-if (enabled && (model.provider === 'gemini' ? !model.apiKey : !model.project)) throw Error('Set GEMINI_API_KEY or a protected LOCAL_AGENT_CONFIG; use --no-model only for data/UI development');
+if (!['gemini', 'vertex', 'vertex-adc'].includes(model.provider)) throw Error('Unsupported local model provider');
+const enabled = !inspection && !args.has('--no-model');
+if (!enabled && (args.has('--prepare-knowledge') || args.has('--maintain-knowledge'))) throw Error('Knowledge preparation/maintenance requires your explicit model credentials');
+if (enabled && (model.provider === 'vertex-adc' ? !model.project : !model.apiKey)) throw Error('Set the selected provider credential in LOCAL_AGENT_CONFIG (or GEMINI_API_KEY / VERTEX_API_KEY); use --no-model only for data/UI development');
 if (enabled && model.provider === 'vertex-adc' && model.adcPath && !await exists(model.adcPath))
   throw Error('The explicitly configured ADC file does not exist. Fix adcPath / GOOGLE_APPLICATION_CREDENTIALS; no model call was made.');
 
@@ -66,6 +79,10 @@ const baseEnv = {};
 for (const name of ['PATH', 'Path', 'PATHEXT', 'SystemRoot', 'SYSTEMROOT', 'COMSPEC', 'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'JAVA_HOME', 'LANG']) {
   if (process.env[name] !== undefined) baseEnv[name] = process.env[name];
 }
+// Firebase CLI launches "java" through PATH even after our explicit JAVA_HOME check.
+const inheritedPath = baseEnv.PATH ?? baseEnv.Path ?? '';
+delete baseEnv.Path;
+baseEnv.PATH = process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin') + delimiter + inheritedPath : inheritedPath;
 Object.assign(baseEnv, { CI: '1', NO_COLOR: '1', FIREBASE_CLI_DISABLE_TELEMETRY: '1', EXPO_NO_DOTENV: '1', EXPO_NO_TELEMETRY: '1', BROWSER: 'none' });
 const java = spawnSync(process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin', 'java') : 'java', ['-version'], { encoding: 'utf8', windowsHide: true });
 if (java.status !== 0 || !/version "(?:2[1-9]|[3-9][0-9])\./u.test(java.stderr)) throw Error('Java 21+ is required. Set JAVA_HOME to a JDK/JRE directory; the system installation need not change.');
@@ -74,7 +91,7 @@ const emulatorHost = offset => '127.0.0.1:' + (basePort + offset);
 const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', HOST: '127.0.0.1', PORT: String(basePort),
   SERVER_ORIGIN: origin, WEB_ORIGIN: origin, GCP_PROJECT_ID: saved.projectId, GCLOUD_PROJECT: saved.projectId,
   FIREBASE_DATABASE_ID: '(default)', FIREBASE_NAMESPACE: 'local_agent',
-  FIREBASE_KNOWLEDGE_SOURCE_IDS: 'fhs-solid-food',
+  FIREBASE_KNOWLEDGE_SOURCE_IDS: M03_INITIAL_WATCH_IDS.join(','),
   FIRESTORE_EMULATOR_HOST: emulatorHost(2), FIREBASE_AUTH_EMULATOR_HOST: emulatorHost(3),
   FIREBASE_STORAGE_EMULATOR_HOST: emulatorHost(4), STORAGE_EMULATOR_HOST: 'http://' + emulatorHost(4),
   FIREBASE_PHOTO_BUCKET: saved.projectId + '-private', FIREBASE_ERASURE_BUCKET: saved.projectId + '-journal',
@@ -83,6 +100,11 @@ const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', 
   YUBAN_FIREBASE_STORAGE_KEY: saved.storageKey, LOCAL_AGENT_STATE_FILE: statePath, LOCAL_WEB_PORT: String(basePort + 1),
   LOCAL_MODEL_PROVIDER: model.provider, LOCAL_MODEL_PROJECT: model.project ?? '', VERTEX_LOCATION: model.location,
   GEMINI_MODEL: model.model, AI_ENABLED: String(enabled), ...(model.apiKey ? { LOCAL_MODEL_API_KEY: model.apiKey } : {}),
+  ...(inspection ? { LOCAL_KNOWLEDGE_INSPECT_OPERATION: inspectionArgs[0].split('=')[1] ?? '' } : {}),
+  ...(args.has('--maintain-knowledge') ? {
+    LOCAL_KNOWLEDGE_WATCH: [...args].find(arg => arg.startsWith('--knowledge-watch='))?.split('=')[1] ?? 'fhs-solid-food',
+    LOCAL_KNOWLEDGE_LIVE_SOURCE: String(args.has('--live-source')), LOCAL_KNOWLEDGE_NEW_WORK: String(args.has('--new-knowledge-work')),
+  } : {}),
 };
 if (model.provider === 'vertex-adc' && model.adcPath) env.GOOGLE_APPLICATION_CREDENTIALS = resolve(model.adcPath);
 const publicEnv = { ...baseEnv, NODE_ENV: 'development', EXPO_PUBLIC_AUTH_PROVIDER: 'firebase',
@@ -90,6 +112,9 @@ const publicEnv = { ...baseEnv, NODE_ENV: 'development', EXPO_PUBLIC_AUTH_PROVID
   EXPO_PUBLIC_FIREBASE_APP_ID: '1:123456789:web:abcdef0123456789', EXPO_PUBLIC_FIREBASE_API_KEY: 'local-emulator-public-key-only',
   EXPO_PUBLIC_AUTH_EMULATOR_URL: 'http://' + emulatorHost(3), EXPO_PUBLIC_API_BASE_URL: origin + '/api',
 };
+// Expo disables Metro's file watcher in CI mode. Only the emulator/Server
+// processes need that flag; edited Web code must be available on the next read.
+delete publicEnv.CI;
 const firebasePath = join(root, 'node_modules', 'firebase-tools', 'lib', 'bin', 'firebase.js');
 await writeFile(join(directory, 'firestore.rules'), "rules_version = '2'; service cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read, write: if false; } } }\n");
 await writeFile(join(directory, 'storage.rules'), "rules_version = '2'; service firebase.storage { match /b/{bucket}/o { match /{object=**} { allow read, write: if false; } } }\n");
@@ -163,7 +188,23 @@ try {
   }
   if (!emulatorsReady || stopping) throw Error('Emulators not ready; read the tail of ' + join(directory, 'emulators.log'));
   checkpoint = setInterval(() => { if (!stopping) void save().catch(error => console.error('Local checkpoint failed; previous snapshot retained. ' + error.message)); }, 60_000);
-  if (args.has('--prepare-knowledge')) {
+  if (inspection) {
+    console.log('Inspecting saved local knowledge work; no model, external delivery or publication.');
+    await new Promise((done, reject) => {
+      const child = start('knowledge-inspection', [join(root, 'scripts', 'agent-local-inspect-knowledge.mjs')], env, root, true);
+      child.once('exit', code => code === 0 ? done() : reject(Error('Inspection failed; read the tail of ' + join(directory, 'knowledge-inspection.log'))));
+    });
+    console.log('Inspection metadata: ' + join(directory, 'knowledge-inspection.log'));
+    await stop();
+  } else if (args.has('--maintain-knowledge')) {
+    console.log('Explicit local knowledge maintenance: at most two generations, bounded missing embeddings; no family data or cloud publication.');
+    await new Promise((done, reject) => {
+      const child = start('maintenance', [join(root, 'scripts', 'agent-local-maintain.mjs')], env, root, true);
+      child.once('exit', code => code === 0 ? done() : reject(Error('Maintenance stopped; original work retained. Inspect the tail of ' + join(directory, 'maintenance.log'))));
+    });
+    console.log('Maintenance result: ' + join(directory, 'maintenance-result.json') + '\nRestart normally to inspect the same local knowledge in chat.');
+    await stop();
+  } else if (args.has('--prepare-knowledge')) {
     console.log('Preparing one reviewed local source; at most one embedding using your configured credential.');
     await new Promise((done, reject) => {
       const child = start('knowledge', [join(root, 'scripts', 'agent-local-knowledge.mjs')], env, root, true);
@@ -181,6 +222,7 @@ try {
   start('api', [...watch, join(root, 'server', 'local-agent-main.ts')], env);
   console.log('Local Agent: ' + origin + '\nAccount: ' + saved.email + '\nLocal password/data: ' + statePath
     + '\nProvider: ' + model.provider + '; model: ' + model.model + '; AI enabled: ' + enabled
+    + '\nLocal quotas and usage: ' + origin + '/admin (separate from production; restarting does not reset usage).'
     + '\nNo production data or external notifications. Ctrl+C saves the emulator snapshot.');
   }
 } catch (error) { console.error(error.message); await stop(1); }

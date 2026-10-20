@@ -5,7 +5,7 @@ export interface TelegramConfig {
 export interface TelegramSendInput { chatId:number; callbackToken:string; kind?:"test"|"care" }
 export interface TelegramSendResult {
   status:"accepted"|"rejected"|"unknown"|"stopped";
-  reason:"blocked"|"rate_limited"|"provider_rejected"|"transport_unknown"|"configuration_unavailable"|"revoked"|"worker_interrupted"|null;
+  reason:"blocked"|"rate_limited"|"provider_rejected"|"transport_unknown"|"configuration_unavailable"|"revoked"|"worker_interrupted"|"local_preview_not_sent"|null;
   providerStatus:number|null;messageId:number|null;
 }
 export interface TelegramGateway {

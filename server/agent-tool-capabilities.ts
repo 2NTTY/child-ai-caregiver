@@ -69,9 +69,15 @@ export class AgentCapabilitySelection {
 
   loader(preparePrompt: (ids: readonly string[]) => Promise<void>): AgentTool | undefined {
     if (!this.groups.length) return undefined;
+    // Only echo the trusted catalog, never model-provided field names or values.
+    const hint = { path: "$", reason: "invalid_shape",
+      expected: `Object with only "capabilities": a non-empty array of group IDs from ${JSON.stringify(this.groups.map(group => group.id))}. Use group IDs, not tool names. Tools already provided need no loading.` };
+    if (JSON.stringify([hint]).length > 512) hint.expected =
+      'Object with only "capabilities": a non-empty array of IDs from capabilityCatalog.groups[].id, not tool names. Tools already provided need no loading.';
     return { name: this.catalog.loader.name, description: this.catalog.loader.description,
       parameters: z.object({ capabilities: z.array(z.enum(this.groups.map(group => group.id)))
         .min(1).max(this.groups.length).describe(this.catalog.loader.parameterDescription) }).strict(),
+      parameterErrorHints: () => [{ ...hint }],
       authorize: async () => true,
       execute: async args => {
         const requested = args.capabilities as string[];

@@ -17,7 +17,7 @@ import { StatusAnnouncement } from "../StatusAnnouncement";
 import { personalLimits, type ModelMode, type ModelSettings, type ModelSettingsActions, type ModelSettingsUsage, type ModelSettingsViewModel } from "../../model-settings-view-model";
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
 import { MotionFeedback, MotionReveal } from "../../motion";
-import { modelCommandFromDraft, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, modelLimitFields, type ModelSettingsDraft } from "./model-settings-form";
+import { modelCatalogSelection, modelCommandFromDraft, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, modelLimitFields, type ModelSettingsDraft } from "./model-settings-form";
 
 const modelReasonText = (reason: string) => ({ invalid_key: "密鑰無效或沒有存取權限。", region_unavailable: "供應商不支援目前服務地區。",
   model_unavailable: "這份憑證目前不能存取所選模型。", quota_exceeded: "供應商配額或速率已達上限。", timeout: "供應商查核逾時。",
@@ -68,8 +68,14 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
     resolver: zodResolver(modelSettingsSchema(settings.keyConfigured, settings.provider)), defaultValues: modelSettingsDraft(settings, snapshot?.effective), mode: "onChange", shouldFocusError: false,
   });
   usePreviewLeaveGuard(isDirty, false, "account");
+  const setDraftEditing = sourceActions.setDraftEditing;
+  useEffect(() => {
+    setDraftEditing?.(active && isDirty);
+    return () => setDraftEditing?.(false);
+  }, [active, isDirty, setDraftEditing]);
   const provider = watch("provider"), selectedModel = watch("model");
-  const selectedCapabilities = model.catalog?.models.find(item => item.id === selectedModel)?.capabilities;
+  const modelSelection = modelCatalogSelection(model.catalog, provider, selectedModel);
+  const selectedCapabilities = modelSelection.capabilities;
   const mode = watch("mode"), keyText = watch("keyText"), consent = watch("consent");
   const fieldId = (name: keyof ModelSettingsDraft) => `${formId}-${name}`;
   const visibleFields = formFields.filter(item => item.name === "mode" || mode === "personal");
@@ -79,7 +85,9 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
   });
   const locked = !model.online || !model.authorized || !!model.busy || model.needsRead || !snapshot;
   const available = mode === "personal" ? snapshot?.personalAvailable : mode === "platform" ? snapshot?.platformAvailable : true;
-  const canSave = !locked && available && (mode !== "personal" || consent && (settings.keyConfigured || !!keyText.trim()));
+  const validModelChoice = modelSelection.loaded ? modelSelection.supported
+    : provider === settings.provider && selectedModel === settings.model;
+  const canSave = !locked && available && (mode !== "personal" || validModelChoice && consent && (settings.keyConfigured || !!keyText.trim()));
   useEffect(() => {
     reset(modelSettingsDraft(settings, snapshot?.effective)); setDeleteOpen(false); setDeleteConfirmed(false);
   }, [model.scopeKey, model.formRevision, settings, snapshot?.effective, reset]);
@@ -142,11 +150,12 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
           {mode === "personal" ? <View style={styles.group}>
             <Controller control={control} name="provider" render={({ field }) => <AppSelect ref={field.ref} id={fieldId("provider")} label="Google 服務" value={field.value} disabled={locked}
               options={[{ value: "gemini", label: "Gemini Developer API" }, { value: "vertex", label: "Vertex AI Express API key" }]}
-              onChange={value => { clearSecret(); field.onChange(value); }} onBlur={field.onBlur} />} />
+              onChange={value => { clearSecret(); field.onChange(value); actions.selectProvider?.(value); }} onBlur={field.onBlur} />} />
             <Controller control={control} name="model" render={({ field }) => <AppSelect ref={field.ref} id={fieldId("model")} label="聊天模型" value={field.value} disabled={locked}
-              options={Array.from(new Map([{ value: settings.model, label: settings.model }, ...(model.catalog?.models ?? []).map(item => ({ value: item.id, label: item.label }))].map(item => [item.value, item])).values())}
+              options={modelSelection.options}
               onChange={field.onChange} onBlur={field.onBlur} />} />
             <Text style={styles.meta}>選項來自 Server 已接線的模型；能否生成仍取決於你的憑證、地區及供應商服務。模型 metadata 可讀不代表真生成已通過。</Text>
+            {modelSelection.loaded && !modelSelection.supported ? <Text style={styles.warning}>目前所選模型不在此服務的接線清單，請另選模型；不會自動替你更換。</Text> : null}
             {provider === "vertex" ? <Text style={styles.warning}>Vertex Express key 的生成已接線，查詢向量及模型 metadata 暫未支援，因此混合知識檢索不可用；不會借用平台額度。此處不接收服務帳戶 JSON；ADC 只供本地開發。</Text> : null}
             {!model.catalog && !model.busy ? <Text style={styles.meta}>模型目錄尚未讀取，暫只顯示目前保存的模型；可重新讀取設定。</Text> : null}
             {selectedCapabilities ? <Text style={styles.meta}>已接能力：{Object.entries(selectedCapabilities).filter(([, enabled]) => enabled).map(([key]) => ({ tools: "工具", image: "圖片", audio: "音訊", textStreaming: "模型文字串流" })[key]).join("、")}。畫面串流仍依產品接線狀態。</Text> : null}
@@ -175,10 +184,10 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
         {settings.keyConfigured ? <SectionCard><SectionHeader density="compact" title="已保存密鑰的模型資料" subtitle="此檢查只讀取供應商模型資料，不使用未保存的輸入。" />
           <AppStatusBadge label={model.keyCheck?.version === settings.version ? model.keyCheck.status === "accessible" ? "模型資料可讀取" : "目前未能讀取模型資料" : "此版本模型資料待查核"} tone={model.keyCheck?.version === settings.version && model.keyCheck.status === "accessible" ? "success" : "warning"} />
           <Text style={styles.meta}>密鑰已保存、模型資料可讀及實際生成／查詢向量可用，須分開核對；這項檢查不能確認帳單或剩餘配額。</Text>
-          <AppButton label="檢查已保存密鑰" variant="secondary" loading={model.busy === "check"} disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || settings.mode !== "personal" || !!keyText.trim()}
+          <AppButton label="檢查已保存密鑰" variant="secondary" loading={model.busy === "check"} disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || settings.mode !== "personal" || provider !== settings.provider || !!keyText.trim()}
             onPress={() => actions.check(settings.version)} />
           {model.keyCheck?.reason ? <Text style={styles.warning}>{modelReasonText(model.keyCheck.reason)}</Text> : null}
-          {actions.refreshCatalog ? <AppButton label="查核已保存密鑰的模型目錄" variant="quiet" disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || !!keyText.trim()}
+          {actions.refreshCatalog ? <AppButton label="查核已保存密鑰的模型目錄" variant="quiet" disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || provider !== settings.provider || !!keyText.trim()}
             loading={model.busy === "catalog"} onPress={() => actions.refreshCatalog?.(settings.version)} /> : null}
           {model.catalog?.reason ? <Text style={styles.warning}>{modelReasonText(model.catalog.reason)}</Text> : null}
           {model.catalog?.truncated ? <Text style={styles.meta}>供應商目錄只讀取了有界部分；未列出不代表模型不存在。</Text> : null}

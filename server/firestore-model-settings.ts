@@ -76,7 +76,8 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
         if ((current?.version ?? 0) !== command.expectedVersion) throw new ModelSettingsError('version_conflict', 409);
         const apiKey = command.removeKey ? null : command.apiKey ?? current?.apiKey ?? null;
         const provider = command.provider ?? current?.provider ?? 'gemini', model = command.model ?? current?.model ?? PERSONAL_MODEL;
-        if (!personalModelSupported(model)) throw new ModelSettingsError('model_unsupported');
+        // A retired choice must not prevent removing its key or leaving personal mode.
+        if (command.mode === 'personal' && !personalModelSupported(model, provider)) throw new ModelSettingsError('model_unsupported');
         if (provider !== (current?.provider ?? 'gemini') && apiKey && !command.apiKey) throw new ModelSettingsError('key_required');
         if (command.mode === 'personal' && !apiKey) throw new ModelSettingsError('key_required');
         const saved = savedSchema.parse({ version: command.expectedVersion + 1, mode: command.mode, backgroundEnabled: command.backgroundEnabled,

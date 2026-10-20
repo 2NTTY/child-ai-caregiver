@@ -4,7 +4,7 @@ import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { AiConfig } from "./ai-config.ts";
 import { nativePersonalThinkingConfig } from "./model-thinking.ts";
 import type { ModelKeyCheck, PersonalModelCatalog, PersonalModelProvider } from '../src/shared/model-settings.ts';
-import { personalModelCatalog } from './personal-model-catalog.ts';
+import { personalModelCatalog, personalModelSupported } from './personal-model-catalog.ts';
 import { AGENT_LIMITS, AgentStopped } from "./agent-budget.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
 import { EmbeddingFailure } from "./embedding-gateway.ts";
@@ -39,7 +39,8 @@ function readKeyEmbedding(response: EmbedContentResponse): EmbeddingReply {
     billableCharacters: readCount(response.metadata?.billableCharacterCount) };
 }
 
-export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provider: PersonalModelProvider = 'gemini'): {
+export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provider: PersonalModelProvider = 'gemini',
+  options: { documentEmbeddings?: boolean } = {}): {
   agent: AgentModelProvider;
   model: ModelProvider;
   embedding: EmbeddingProvider;
@@ -82,6 +83,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
     agent: {
       async generate(request, signal) {
         if (signal.aborted) throw new ProviderFailure("unavailable");
+        if (!personalModelSupported(config.model, provider)) throw new AgentStopped('model_not_available');
         try {
           const response = await client.models.generateContent({ model: config.model, contents: request.contents,
             config: { ...request.config, httpOptions, candidateCount: 1,
@@ -107,6 +109,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
     model: {
       async generate(input, options) {
         if (options.signal.aborted) throw new ProviderFailure("unavailable");
+        if (!personalModelSupported(config.model, provider)) throw new ProviderFailure("unavailable");
         try {
           const response = await client.models.generateContent({ model: config.model,
             contents: input.messages.map(message => ({ role: message.role, parts: [{ text: message.text }] })),
@@ -125,13 +128,23 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
         if (signal.aborted) throw new EmbeddingFailure("cancelled");
         // Express mode has no documented embedding method. Never use platform ADC as a substitute.
         if (vertex) throw new EmbeddingFailure('unavailable');
-        if (input.task !== "RETRIEVAL_QUERY" || typeof input.text !== "string" || !input.text.trim()
-          || Buffer.byteLength(input.text, "utf8") > 2000 || input.title !== undefined) {
+        // Only trusted operator composition enables document embeddings. Personal
+        // routing stays query-only; the gateway still checks authority and usage.
+        const document = input.task === "RETRIEVAL_DOCUMENT" && options.documentEmbeddings === true;
+        if (typeof input.text !== "string" || !input.text.trim()
+          || (document ? typeof input.title !== "string" || !input.title.trim() || input.title.length > 600
+            : input.task !== "RETRIEVAL_QUERY" || input.title !== undefined)) {
+          throw new EmbeddingFailure("invalid_input");
+        }
+        // SDK 2.24.0 cannot disable Developer API truncation. Keep the existing
+        // conservative byte bound, including the title, and never truncate locally.
+        if (Buffer.byteLength(input.text, "utf8") + Buffer.byteLength(input.title ?? "", "utf8") > 2000) {
           throw new EmbeddingFailure("invalid_input");
         }
         try {
           const response = await client.models.embedContent({ model: KNOWLEDGE_EMBEDDING.model, contents: input.text,
-            config: { httpOptions, taskType: "RETRIEVAL_QUERY", outputDimensionality: KNOWLEDGE_EMBEDDING.dimensions,
+            config: { httpOptions, taskType: input.task, ...(document ? { title: input.title } : {}),
+              outputDimensionality: KNOWLEDGE_EMBEDDING.dimensions,
               abortSignal: signal } });
           return readKeyEmbedding(response);
         } catch (error) {

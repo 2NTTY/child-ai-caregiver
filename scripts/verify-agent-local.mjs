@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
-import { randomUUID, createHash } from 'node:crypto';
+import { randomUUID, createHash, createECDH, randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 import { Firestore, FieldValue } from '@google-cloud/firestore';
 import { createLocalAgentBuckets } from '../server/local-agent-storage.ts';
@@ -9,10 +9,12 @@ import { createChatApi } from '../src/client/chat-api.ts';
 import { createProductAgentApi } from '../src/client/product-agent-api.ts';
 import { createFamilyDocumentsApi } from '../src/client/family-documents-api.ts';
 import { createChatFileApi } from '../src/client/chat-file-api.ts';
+import { createTelegramApi } from '../src/client/telegram-api.ts';
+import { createWebPushApi } from '../src/client/web-push-api.ts';
 
 // Explicit bounded checks only; startup never runs this. --real-agent spends one run.
 const mode = process.argv[2];
-if (!['--data-only', '--persistence-only', '--readback', '--real-agent', '--artifacts'].includes(mode)) throw Error('Choose an explicit local verification mode; --real-agent spends at most one run');
+if (!['--data-only', '--persistence-only', '--readback', '--real-agent', '--real-compose', '--artifacts', '--deliveries'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
 const root = resolve(import.meta.dirname, '..'), directory = resolve(root, '.cache/agent-local');
 const state = JSON.parse(await readFile(resolve(directory, 'state.json'), 'utf8'));
 const fingerprint = createHash('sha256').update(root).digest('hex').slice(0, 8);
@@ -27,9 +29,10 @@ const env = { NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', HOST: '127.0
 };
 Object.assign(process.env, env);
 const steps = [], run = randomUUID(); let calls = 0, cookie = '', uid = '', database;
-let agentEvidence;
+const maximumCalls = mode === '--deliveries' ? 56 : 24;
+let agentEvidence, originalAgent;
 async function call(path, method = 'GET', body) {
-  assert.ok(++calls <= 24);
+  assert.ok(++calls <= maximumCalls);
   const response = await fetch(origin + path, { method, headers: { Origin: origin, 'Content-Type': 'application/json',
     ...(cookie ? { Cookie: cookie } : {}), ...(uid ? { 'x-expected-user-id': uid } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(15000) });
@@ -40,7 +43,7 @@ async function json(path, method, body) {
   assert.ok(response.ok, JSON.stringify({ path, status: response.status, code: value.code })); return value;
 }
 try {
-  const status = await json('/__local/status'); assert.equal(status.enabled, mode === '--real-agent'); assert.equal(status.project, state.projectId);
+  const status = await json('/__local/status'); assert.equal(status.enabled, ['--real-agent', '--real-compose'].includes(mode)); assert.equal(status.project, state.projectId);
   const proof = await fetch('http://' + env.FIREBASE_AUTH_EMULATOR_HOST + '/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=local-emulator-public-key-only', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: state.email, password: state.password, returnSecureToken: true }),
   });
@@ -52,7 +55,61 @@ try {
   assert.deepEqual(await json('/api/admin/session'), { administrator: true });
   if (mode !== '--readback') await json('/api/account/acknowledgement', 'POST', { operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION, accepted: true });
   steps.push('emulator-login-through-production-session-and-admission');
-  if (mode === '--readback') {
+  if (mode === '--deliveries') {
+    assert.equal(status.externalDelivery, 'local-inbox-not-sent');
+    const initial = await json('/__local/inbox'), initialIds = new Set(initial.deliveries.map(row => row.id));
+    const signal = AbortSignal.timeout(45_000); let lastSubmission;
+    const clientFetch = (url, init = {}) => {
+      assert.ok(++calls <= maximumCalls); assert.equal(new URL(url).origin, origin);
+      if (url.endsWith('/online/submit')) lastSubmission = JSON.parse(init.body);
+      const headers = new Headers(init.headers); headers.set('Origin', origin); headers.set('Cookie', cookie);
+      return fetch(url, { ...init, headers });
+    };
+    const telegram = createTelegramApi(origin, clientFetch), push = createWebPushApi(origin, clientFetch);
+    const challenge = await telegram.begin(signal, uid), localUrl = new URL(challenge.startUrl);
+    assert.equal(localUrl.origin, origin); assert.equal(localUrl.pathname, '/__local/telegram/start');
+    assert.ok(++calls <= maximumCalls);
+    const started = await fetch(localUrl, { method: 'POST', signal,
+      headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ token: localUrl.searchParams.get('token') }) });
+    assert.equal(started.status, 200);
+    const seen = await telegram.status(signal, uid);
+    assert.equal(seen.challenge.state, 'seen'); assert.notEqual(seen.binding?.status, 'active');
+    const binding = await telegram.confirm(challenge.id, seen.challenge.version, signal, uid);
+    const keys = createECDH('prime256v1'); keys.generateKeys();
+    const subscription = await push.register({ label: 'Local inbox verification', subscription: {
+      endpoint: 'https://updates.push.services.mozilla.com/wpush/v2/local-' + run, expirationTime: null,
+      keys: { p256dh: keys.getPublicKey().toString('base64url'), auth: randomBytes(16).toString('base64url') },
+    } }, signal, uid);
+    const queued = await telegram.test(binding.id, binding.version, signal, uid);
+    const originalSubmission = lastSubmission;
+    const queuedPush = await push.test(subscription.id, subscription.version, signal, uid);
+    let sent, sentPush;
+    for (let probe = 0; probe < 8; probe++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      sent = (await telegram.status(signal, uid)).deliveries.find(row => row.id === queued.id);
+      sentPush = (await push.status(signal, uid)).deliveries.find(row => row.id === queuedPush.id);
+      if (sent?.status === 'stopped' && sentPush?.status === 'stopped') break;
+    }
+    for (const row of [sent, sentPush]) {
+      assert.equal(row?.status, 'stopped');
+      assert.equal(row.reason, 'local_preview_not_sent'); assert.equal(row.providerStatus, null);
+    }
+    assert.equal(sent.messageId, null); assert.equal(sent.acknowledgedAt, null);
+    steps.push('formal-clients-confirm-bindings-and-worker-captures-without-provider-acceptance');
+    const replay = await json('/api/online/submit', 'POST', originalSubmission);
+    assert.equal(replay.result.delivery.id, queued.id);
+    const inbox = await json('/__local/inbox'), added = inbox.deliveries.filter(row => !initialIds.has(row.id));
+    assert.deepEqual(added.map(row => row.channel).sort(), ['telegram', 'web_push']);
+    assert.ok(added.every(row => row.delivery === 'local-only-not-sent'));
+    assert.ok(!JSON.stringify(added).includes('updates.push.services.mozilla.com'));
+    steps.push('original-operation-replay-and-bounded-inbox-without-raw-destination');
+    const revoked = await telegram.revoke(binding.id, binding.version, signal, uid);
+    await push.revoke(subscription.id, subscription.version, signal, uid);
+    await assert.rejects(telegram.test(binding.id, revoked.version, signal, uid), error => error.status === 409);
+    assert.equal((await json('/__local/inbox')).deliveries.filter(row => !initialIds.has(row.id)).length, 2);
+    steps.push('revoked-binding-cannot-add-another-preview');
+  } else if (mode === '--readback') {
     const prior = JSON.parse(await readFile(resolve(directory, 'verification-readback.json'), 'utf8'));
     assert.deepEqual(await json('/api/online/operations/' + prior.run), prior.receipt);
     assert.ok(JSON.stringify(await json('/api/children')).includes('本地入口核對'));
@@ -96,8 +153,8 @@ try {
     await assert.rejects(files.content(reopened, signal, uid), error => error.status === 410);
     steps.push('production-encrypted-attachment-reserve-save-readback-and-delete');
   }
-  if (mode === '--real-agent') {
-    const childId = children.children.find(child => child.displayName === '本地入口核對').id;
+  if (mode === '--real-agent' || mode === '--real-compose') {
+    const childId = receipt.result.child.id;
     const clientFetch = (url, init = {}) => {
       assert.ok(++calls <= 24); assert.equal(new URL(url).origin, origin);
       const headers = new Headers(init.headers); headers.set('Origin', origin); headers.set('Cookie', cookie);
@@ -105,16 +162,46 @@ try {
     };
     const signal = AbortSignal.timeout(330_000), progress = [];
     const chat = createChatApi(origin, async () => ({ id: uid, email: state.email, name: '本地開發帳號' }), clientFetch);
-    const message = await chat.saveMessage(childId, 'BB差唔多半歲，想開始加固，應該點開始？請附官方來源，再整理一份到母嬰健康院問加固問題的準備單草稿。', signal, uid);
+    let document;
+    if (mode === '--real-compose') document = await createFamilyDocumentsApi(origin, clientFetch).create(childId,
+      { kind: 'preparation', purpose: 'appointment', title: '本地到診準備', eventDate: null, period: { from: '2026-10-01', to: '2026-10-31' } }, signal, uid);
+    const message = await chat.saveMessage(childId, mode === '--real-compose'
+      ? '請用資料編製能力，把《本地到診準備》的標題整理為《下次到診問題》，其他內容保持不變。先讓我確認。'
+      : 'BB差唔多半歲，想開始加固，應該點開始？請附官方來源，再整理一份到母嬰健康院問加固問題的準備單草稿。', signal, uid);
+    originalAgent = { childId, messageId: message.id, documentId: document?.id };
+    await writeFile(resolve(directory, 'original-agent-' + run + '.json'), JSON.stringify(originalAgent), { mode: 0o600 });
     // Exactly one POST. A stopped/unknown run is retained, never automatically rerun.
     const reply = await chat.requestReply(childId, message.id, signal, uid, event => progress.push(event.phase));
     const result = await createProductAgentApi(origin, clientFetch).getRun(childId, reply.agentRunId, signal, uid);
     agentEvidence = { runId: result.runId, status: result.status, stopReason: result.stopReason, counts: result.counts,
       tools: result.tools.map(tool => ({ name: tool.name, status: tool.status })),
       citations: result.citations.map(item => ({ sourceId: item.sourceId, versionId: item.versionId, chunkId: item.chunkId })), progress };
-    await writeFile(resolve(directory, 'real-agent-result-' + run + '.json'), JSON.stringify({ childId, message, reply, result }, null, 2));
+    await writeFile(resolve(directory, 'real-agent-result-' + run + '.json'), JSON.stringify({ childId, document, message, reply, result }, null, 2));
     assert.equal(result.status, 'completed', result.stopReason ?? 'Agent incomplete');
-    assert.ok(result.citations.some(item => item.sourceId === 'fhs-solid-food'));
+    if (mode === '--real-compose') {
+      assert.ok(result.tools.some(item => item.name === 'compose_family_data' && item.status === 'succeeded'));
+      assert.equal((await createFamilyDocumentsApi(origin, clientFetch).getItem(childId, document.id, signal, uid)).version, document.version);
+      const proposals = result.proposals.filter(item => item.status === 'pending' && item.value.kind === 'family_document_change'
+        && item.value.documentId === document.id);
+      assert.equal(proposals.length, 1, 'Expected one confirmation for this synthetic document');
+      const proposal = proposals[0];
+      assert.equal(proposal.value.change.expectedVersion, document.version);
+      assert.equal(proposal.value.change.edits.length, 1);
+      const edit = proposal.value.change.edits[0];
+      assert.equal(edit.op, 'set_metadata'); assert.equal(edit.title, '下次到診問題');
+      for (const [key, value] of Object.entries(edit)) {
+        if (key !== 'op' && key !== 'title') assert.deepEqual(value, document.current[key], 'Unrequested metadata must stay unchanged');
+      }
+      // Explicit synthetic acceptance only after checking the exact requested change.
+      const accepted = await createProductAgentApi(origin, clientFetch).decideProposal(childId, result.runId, proposal.id,
+        { expectedVersion: proposal.version, decision: 'accept', confirmShared: true }, signal, uid);
+      assert.equal(accepted.status, 'accepted');
+      const saved = await createFamilyDocumentsApi(origin, clientFetch).getItem(childId, document.id, signal, uid);
+      assert.equal(saved.id, document.id); assert.equal(saved.current.title, '下次到診問題');
+      assert.equal(saved.version, document.version + 1); assert.deepEqual(saved.current.sections, document.current.sections);
+      agentEvidence.document = { id: saved.id, version: saved.version, proposalId: proposal.id, status: accepted.status };
+      steps.push('real-compose-review-explicit-confirmation-and-same-document-readback');
+    } else assert.ok(result.citations.some(item => item.sourceId === 'fhs-solid-food'));
     const history = await chat.listMessages(childId, signal);
     assert.ok(history.messages.some(item => item.id === reply.id && item.text === reply.text));
     steps.push('same-production-client-agent-real-provider-citation-and-saved-history');
@@ -146,12 +233,13 @@ try {
   await vector.delete();
   }
 } catch (error) {
-  const evidence = { run, status: 'failed', calls, steps, agent: agentEvidence, error: String(error.message).slice(0, 300) };
+  const evidence = { run, status: 'failed', calls, steps, agent: agentEvidence, originalAgent,
+    error: String(error.message).slice(0, 300), httpStatus: error.status, code: error.code, onlineCode: error.onlineCode };
   await writeFile(resolve(directory, 'verification-' + run + '.json'), JSON.stringify(evidence, null, 2));
   console.error(JSON.stringify(evidence)); process.exitCode = 1;
 } finally { await database?.terminate(); }
 if (!process.exitCode) {
   const evidence = { run, status: 'passed', calls, steps, modelCalls: agentEvidence?.counts.modelCalls ?? 0, agent: agentEvidence, notifications: 0,
-    limitation: 'Current branch only; no four-role review, visual browser or cloud IAM acceptance' };
+    limitation: 'Current branch only; no background knowledge model, visual browser or cloud IAM acceptance' };
   await writeFile(resolve(directory, 'verification-' + run + '.json'), JSON.stringify(evidence, null, 2)); console.log(JSON.stringify(evidence));
 }

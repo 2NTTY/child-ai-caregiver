@@ -19,7 +19,8 @@ const sources = JSON.parse(await readFile(new URL('../knowledge/hk-official-seed
 const source = parseKnowledgeSource(sources.find(value => value.sourceId === manifest.sourceId));
 if (sourceVersionHash(source) !== manifest.versionHash || source.chunks.length !== 1) throw Error('Local source changed; a new meaning review is required');
 const provider = process.env.LOCAL_MODEL_PROVIDER;
-if (!['gemini', 'vertex-adc'].includes(provider) || process.env.AI_ENABLED !== 'true') throw Error('Explicit local model configuration required');
+if (!['gemini', 'vertex', 'vertex-adc'].includes(provider) || process.env.AI_ENABLED !== 'true') throw Error('Explicit local model configuration required');
+if (provider === 'vertex') throw Error('Vertex API key embedding is not connected; use your own supported Gemini key or Vertex ADC explicitly. No platform fallback.');
 const ai = readAiConfig({ ...process.env, GCP_PROJECT_ID: provider === 'vertex-adc' ? process.env.LOCAL_MODEL_PROJECT : config.projectId });
 let persistence;
 try {
@@ -44,7 +45,9 @@ try {
   const pending = await store.missingDocuments(imported.versionId);
   if (pending.length > 1) throw Error('Local seed exceeds its one-embedding limit');
   const deadline = Date.now() + 120_000;
-  const embedding = provider === 'gemini' ? createGeminiKeyProviders(ai, process.env.LOCAL_MODEL_API_KEY).embedding : createVertexEmbeddingProvider(ai);
+  const embedding = provider === 'gemini'
+    ? createGeminiKeyProviders(ai, process.env.LOCAL_MODEL_API_KEY, 'gemini', { documentEmbeddings: true }).embedding
+    : createVertexEmbeddingProvider(ai);
   const gateway = createEmbeddingGateway({ config: ai, provider: embedding, usage: createFirestoreOperatorEmbeddingUsage(domain, deadline) });
   let generated = 0;
   for (const document of pending) {

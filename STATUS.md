@@ -4,17 +4,17 @@
 
 ## 目前與接手
 
-- **本分支：MODEL-SELF01／02 共用個人設定，draft #242。** 供應商／模型、進階限制、生效值及原操作查回已接Web／Android共用表單，必要本機機械檢查保留；已接回master `3795858`及前置同步。四角色本地真流程與後續修正在#244，真個人key、Android設定畫面及部署仍未完成，詳見[PLAN](PLAN.md#local-agent-personal-model)。
-- **Android已收束但未全數驗收／合併。** 原站及APK v2已接聊天、跨端原運行查回、語音、照片、通用附件、FCM及固定更新入口；使用者已確認覆蓋安裝正常、登入及原資料保留。既有媒體／通知證據保留，未驗完整頁面上傳／下載。
-- **504修正已部署。** 管理員政策v3：每人每日200／全站400；每輪8生成／16工具／4查詢、互動300秒；單次模型90秒、最多額外3次重試。每次重試仍計入原run及每日額度，不重做已成功工具或未知副作用。原用量未清零，沒有重送舊訊息、真模型或通知；本機必要流程通過不代表Google服務已恢復。
-- **餘下Android門檻：**使用者首條正常聊天及重開讀回；Web／Android接續與確認；Web正式頁面完整錄音／附件流程、跨端播放與下載／PDF分享；照護通知目標／完成停止；相容OTA回退及draft #229／#234～#239依賴合併。最新OTA及前景網絡修正已發布，手機鎖定而未追加驗證。詳細gate只見PLAN各包。
-- **既有成果：**正式前後端共同使用Firestore、執行退出SQL；P2 review修正及Web管理後台已部署。家庭多人留P4，OPT／LAY既有成果保留；STR01仍未完成；#214～#216及#243已合併，角色剩餘成果由DEV-AGENT02承接。[原生每日備份真還原](PLAN.md#p2-backup-followup)按使用者要求延後，沒有把備份metadata核對當成還原通過。
-- **依賴同步：**本分支已接回master `3795858`、三角色及語音整合；模型供應商錯誤與審核停止原因同時保留。此次不部署、不新增真機／模型驗收；原Android gate保持待驗。產品主線的本地入口／本人設定已在#241／#242／#244開始，iOS仍延後。
+- **PR 收束：**#229／#234～#239 由原 Android 主責帳號合併，#241／#242／#244 由本地／模型工作主責帳號交付。使用者於 2026-10-20 明確批准先合併、剩餘手機／真模型驗收改為後續追蹤；原作者、失敗及未驗證據保留，沒有新增部署或測試。現行次序見 [PLAN](PLAN.md#active)。
+- **本地開發入口可用：**`npm run agent:local` 啟動目前分支的正式 Web／API／四角色接點及隔離持久資料。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；方法見[本地入口](docs/AGENT_LOCAL.md)。本地環境交付與角色完整品質分開，不需先部署 GCP。
+- **角色未完成項：**官方 PDF 第3頁已整理、審核及本地發布；最終聊天引用新版的單次補驗因 `model_limit` 停止，原用量和失敗保留。長來源／圖片多模態仍欠角色能力，不能以單頁 PDF 當全部通過；見 [DEV02](PLAN.md#dev-agent02)。
+- **下一步：個人模型設定交付。**Web／Android 共用供應商模型目錄、限制與原操作查回已接線；本地 Web 保存及原生 session API 同版讀回有證據。真 Gemini key metadata 回 `region_unavailable`，沒有生成／embedding 成功；ADC 本地成功維持分開。Android 設定實機及正式部署仍待驗，見 [MODEL-SELF01／02](PLAN.md#model-self01)。
+- **Android 已合併，未全數驗收：**APK v2 覆蓋安裝、原登入／資料保留及一則指定 FCM 有證據；正常有來源聊天／重開、撤銷／切身份、跨端與媒體／附件完整流程、照護通知完成停止及 OTA 回退仍按 [S04～S17](PLAN.md#s04-w01) 追蹤，不以合併當成品完成。
+- **其他邊界：**正式資料已使用 Firestore；家庭多人留 P4、iOS 暫緩。OPT／LAY 既有成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)仍未完成。只補最低必要驗證，不全量、Computer Use 或重做前端設計。
 
 <a id="deployment"></a>
 ## 本分支保留的部署觀察（歷史，非現網最新狀態）
 
-**2026-10-18 11:58 UTC 原站：**API／worker為`policy-adaf08f`（映像`fc7ae7e`），Web為`retry-adaf08f`（映像`373477f`）；服務健康，公開HTML hash與同版產物一致，Web切換未重啟API／worker。管理員政策由v2經原服務明確保存為v3，生效值見上文；帳目未變、沒有資料遷移。舊政策缺欄位仍按原90秒／30秒／零重試讀取，避免部署默改歷史設定。
+**2026-10-18 11:58 UTC 原站：**API／worker為`policy-adaf08f`（映像`fc7ae7e`），Web為`retry-adaf08f`（映像`373477f`）；服務健康，公開HTML hash與同版產物一致，Web切換未重啟API／worker。管理員政策由v2經原服務明確保存為v3：每日每人200／全站400，每輪8生成／16工具／4查詢，互動300秒、單次90秒、最多額外3次有計量重試；帳目未變、沒有資料遷移。舊政策缺欄位仍按原90秒／30秒／零重試讀取，避免部署默改歷史設定。
 
 **Android：**APK v0.1.0／versionCode 2不變；相容OTA群組`a209afce-39ac-47fc-821b-d13ff949ac87`已發布，來源`adaf08f`、runtime `33699576537bf6f4081bddfb9c8807cd6bdef3ee`。毋須覆蓋安裝，最新裝置接收仍待核。部署及失敗／未驗證據見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)；語音／附件與通知詳情沿[S12 EV](artifacts/verification/S12_CHAT_FILES_20261018.json)、[S13 EV](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
 

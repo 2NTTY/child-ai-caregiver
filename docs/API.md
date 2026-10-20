@@ -76,7 +76,7 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 
 ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 InstructionProvider 提供，input.context 獨立放入有標籤的 user Content 資料 part；原使用者訊息仍第一個 part，原生附件、歷史及工具關聯保留。正文中的 `{name}`／`{name?}` 不作 state 展開或刪除，資料內容不能授權，也不能聲稱封裝本身保證抵禦所有 prompt injection。
 
-每輪 Server runtime metadata 的 `budget` 包含 `usedBeforeThisCall`、`remaining.modelCallsIncludingThisCall`、剩餘工具／查詢向量／時間、`reserveForFinish`、`nonTerminalToolCallsAvailable` 及 `phase`；是運行即時快照，不是新操作授權或聊天歷史。生成餘額包含本輪尚待預留的呼叫。模型自行選擇必要步驟，`finish` 階段只保留當前已有 terminal 的 schema／toolsDict／ANY allowedFunctionNames；沒有 terminal 的抽取流程沿原輸出契約。原生成／工具／配額／取消計數不重設，Server 仍拒絕未提供工具及混批；未完成或證據不足不能假造成功。
+每輪 Server runtime metadata 的 `budget` 包含 `usedBeforeThisCall`、`remaining.modelCallsIncludingThisCall`、剩餘工具／查詢向量／時間、`reserveForFinish`、`nonTerminalToolCallsAvailable` 及 `phase`；是運行即時快照，不是新操作授權或聊天歷史。生成餘額包含本輪尚待預留的呼叫，以及共用根 run 的委派／審核。reserveForFinish 的一次生成只指呈現，不包含獨立語義審核；產品指引因此要求需要審核時在呈現前保留至少兩次（呈現＋審核），有餘額才容許一次修正及重核。這是規劃提示，不新增配額或改變 Server 的審核豁免判斷。模型自行選擇必要步驟，`finish` 階段只保留當前已有 terminal 的 schema／toolsDict／ANY allowedFunctionNames；沒有 terminal 的抽取流程沿原輸出契約。原生成／工具／配額／取消計數不重設，Server 仍拒絕未提供工具及混批；未完成或證據不足不能假造成功。
 
 `present_answer` 為 terminal 工具。一般階段成功接受後，ADK skipSummarization 結束循環，既有 finalize 仍重驗引用及目前授權；unknown 停止並保留原台帳。gateway 在執行任何 handler 前拒絕 terminal 與其他工具的同一 response，不能先展示再截掉未完成副作用。
 
@@ -86,7 +86,7 @@ ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 Instructi
 
 修正只能回報已知結果或必要補問，不能重新執行被拒／未知／已成功操作，也不能把pending候選當正式任務。自然 final 本身仍不可直接展示成成功。這不保證所有F4／T9情境成功，也未建立背景安靜no_action契約；定向scripted驗證不代表真模型或正式使用已通過。
 
-工具參數修正提示：僅 `propose_task` 在執行前 strict schema 驗證失敗時，可在既有 `invalid_parameters`／`nextAction` 旁返回 `hints`。每項只有公開 schema 的固定 `path`、固定 `reason` 及 `expected` 字串；最多3項，整個提示陣列 JSON 最多512字元，超出時整項省略。只識別根、values及六個已宣告任務欄位；未知鍵不回鍵名，不轉傳原 issue、message、input、動態路徑或使用者值。這是模型 function response 的有界修參資訊，不是新增客戶端 HTTP 欄位或家庭資料副本。
+工具參數修正提示：`propose_task` 及 `load_capabilities` 在執行前 strict schema 驗證失敗時，可在既有 `invalid_parameters`／`nextAction` 旁返回 `hints`。每項只有公開 schema 的固定 `path`、固定 `reason` 及 `expected` 字串，整個提示陣列 JSON 最多512字元。任務提示最多3項，只識別根、values及六個已宣告欄位，超出容量整項省略；能力載入提示只有根物件一項，說明只傳非空 capabilities 陣列、使用本次能力群 ID 而非工具名，列出已過濾的 Server 目錄；若列表超限便只指向 capabilityCatalog.groups[].id。兩者均不回未知鍵名或轉傳原 issue、message、input、動態路徑及使用者值。這是模型 function response 的有界修參資訊，不是新增客戶端 HTTP 欄位或家庭資料副本。
 
 修正提示不放寬 schema，不替代身份、授權、版本或業務驗證；非法參數仍零執行。`not_authorized`、handler拒絕及unknown沿原規則，其他工具維持原泛用回覆。僅能使用本次剩餘預算修正，不能因收到提示而增加模型次數、換操作ID或重送未知副作用。這項改善不等於已確定歷史 T7／T8／T9 真實請求中哪個欄位失敗。
 
@@ -595,7 +595,7 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 | `GET /api/ai/settings` | 本人無密鑰設定、版本、可用狀態、平台／個人分開用量；v2 另回 `effective` 生效限制、管理政策版本及被上限收窄的欄位 |
 | `POST /api/ai/settings` | v2 帶原 `opId`、expectedVersion、mode、provider／model、可選 apiKey／removeKey、背景同意、每日／每輪限制及 consent；回同一設定的新版本 |
 | `GET /api/ai/settings/operations/:opId` | v2 只查本人原操作，回無密鑰的保存收據或 null；不回傳原請求、密鑰或指紋 |
-| `GET /api/ai/settings/models` | v2 回已接協定的模型目錄、目前設定版本及能力；不出網，不表示本人 key 已可用 |
+| `GET /api/ai/settings/models` | v2 回已接協定的模型目錄、目前設定版本及能力；可帶唯一的 `provider=gemini` 或 `provider=vertex` 查閱尚未保存的服務選項，不改設定、不使用 key 或出網，不表示本人 key 已可用 |
 | `POST /api/ai/settings/models` | v2 帶 expectedVersion；使用已保存 key，最多兩頁各100項模型 metadata，和已接模型取交集；明示 truncated，不生成內容 |
 | `POST /api/ai/settings/check` | expectedVersion；Gemini key 查選定模型 metadata；Vertex Express 未提供對應方法時回 metadata_unsupported，不發試用生成 |
 
@@ -603,7 +603,7 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 
 v2 保存先核原 opId／請求指紋，再核版本；原操作重播返回原收據，換內容回 operation_conflict，舊版本回 version_conflict。失聯先以原 opId 查回，不自動重送 key；查無收據亦不宣稱一定未提交。client 錯誤只攜帶無密鑰的 operationId，身份切換後不能查另一人的操作。輸入框仍須在送出／失敗／斷線／身份或 Server 變更時清除。模型查核與目錄刷新共用每帳號每分鐘一次／全站四槽保護；逾限429，不重設模型用量。
 
-provider 為 gemini 或 vertex；更換供應商須提供相應新 key，不能沿用舊 key 猜測認證模式。模型目錄只提供 Server 已接協定的型號，再按供應商 metadata 篩選；metadata 不證明生成／embedding／配額或帳單。錯誤只回穩定原因（認證、地區、模型、配額、逾時或未支援），不透出原始供應商正文。Vertex Express 沒有已核對的 embedding 方法，明示混合檢索不可用，不借平台額度。
+provider 為 gemini 或 vertex；更換供應商須提供相應新 key，不能沿用舊 key 猜測認證模式。模型目錄與 personal 保存檢查共用 Server 的供應商／協定支援清單；Vertex Express 不套用 Gemini Developer 的全部選項。供應商 metadata 可再收窄目錄，但不證明生成／embedding／配額或帳單。舊設定選項不再支援時仍可停用或刪 key，不靜默替換模型。目錄 POST 只檢查已保存的供應商及 key，不接受 provider query；GET 明確選擇另一服務也不會改用已保存 key。錯誤只回穩定原因（認證、地區、模型、配額、逾時或未支援），不透出原始供應商正文。Vertex Express 沒有已核對的 embedding 方法，明示混合檢索不可用，不借平台額度。
 
 舊 JSON client 保留原欄位；當選定供應商／型號不能由舊契約表示時，回 client_update_required，不偽稱仍是預設模型。舊保存保留已存在的新欄位；v2 首次明確保存才採 `limitPolicyVersion:2`，不默改舊設定的生成／查詢限額。
 
@@ -796,6 +796,23 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 背景候選 runner 的 `liveFetch=false` 只可使用明確注入的離線 `fixtureFetch`，缺少便回 `background_knowledge_fetch_disabled`，不呼叫網絡 port。PDF 的頁窗、完整頁碼及抽取 metadata 由程式在比較／審核前核對，模型回傳通過不能覆蓋這些條件。同一來源版本及排程 occurrence 的 fingerprint 不包含 worker generation，換 worker 不能取得新工作預算；排程 occurrence 由受信台帳產生，不由重試時間生成。
 
 現有背景 port 尚未具備原子 fencing 的發布交易，要求 live 發布固定回 `not_enabled / background_knowledge_live_not_connected`，不啟動抓取／模型／發布。完成接口須在同一權威交易核對持有者、lease／generation、預算並提交發布指標及收據；分開的 `claimOperation`／`saveBudget`／`publish` 不能當作此保證。離線候選、程序檢查替身及真模型審核分開表示，具體完成狀態只見 PLAN。
+
+<a id="knowledge-maintenance-model"></a>
+### 背景候選的整理與模型審核
+
+整理／審核共用正式 `AgentGatewayModel.completeText` 接點，由受信工作組裝注入已綁定的維護身份、共同預算及取消；角色不能選付款來源、另開 run 或自行重試。取得原文後，Server 產生固定單元、逐字原文預覽及真實 PDF 頁碼，模型只提出章節、摘要、關鍵詞與適用範圍。每單元恰好回傳一次；來源 URL、日期、發布者、原文、預覽及頁碼不由模型填寫。預覽不代表已完整引證，獨立審核仍讀完整原文。
+
+獨立審核接收候選的完整原文與整理、舊版原文及固定版本綁定，回傳既有 `KnowledgeReviewAssessment`；沿正式含義差異、原文引證、代表問題與規則影響檢查。模型不能把成長規則填成 `reviewed` 來創造核准。缺舊版、超出有界批次／上下文、部分原文、無效引用或儲存失敗均不產生批准；不靜默截斷。候選及審核證據由工作保存成功後才返回 `model_review` 結果；此結果不等於發布收據。
+
+背景組裝提供固定 `comparisonUnits`：Server 掌管新舊版本綁定及逐字原文預覽，審核模型回傳對應 key 的含義、理由、檢查與問題。組裝成原 assessment 後仍執行全部來源、完整差異、meaning 及引用 key 檢查。只可剝除包覆整份 JSON 的單一代碼框；不猜取夾在敘述中的物件、不修補無效 JSON。這不代表程式已核對語義，審核仍須閱讀完整原文並可拒絕。
+
+這個接點不附帶記憶體台帳或測試專用提示詞；本地與正式環境使用同一函式。`savePrepared` 必須由持久工作校驗當前 lease、來源及取消狀態；模型步驟存在不能代替該組裝、真模型品質或正式發布驗收。
+
+`createFirestoreKnowledgeMaintenance` 為共用受信工作組裝；維護工作使用獨立 namespace 台帳及相同平台每日計量，不取得家長身份或私人 key。原工作綁定來源登記版本、worker generation、模型／提示詞／政策版本、憑證識別及絕對期限；每項模型步驟先持久預留，成功結果可復用，`pending／unknown` 不重送。候選與獨立審核證據加密保存，發布時再核對目前觀察、來源及 lease，在知識版本指標的同一 Firestore 交易提交工作結果和發布收據。失去租約或來源已停用不能發布。
+
+來源重取的結果不能在同一工作內靜默換成另一個觀察版本。若原觀察已完成但程序中斷而未保存可確定的下一步，保留待核對結果，不以目前最新正文冒充原工作輸入。模型／向量外呼均在交易外；未知向量結果沿原佔位處理，不換 ID 重算。每批使用現有兩步模型及有界工作額度；長資料超出單批仍明示待分批，不截斷成已完成。
+
+本地維護由獨立 CLI 明確觸發，不新增正式 HTTP 免身份入口。可使用固定來源樣本或允許網站；樣本發布只限受保護的 `demo-`／loopback emulator 組裝。真網站、模型及發布模式顯示於工作結果，普通啟動不自動執行這個付費命令；正式排程接入與本地 CLI 可用分開驗收。
 
 <a id="firebase-foundation-auth"></a>
 ## F01 Firebase 身份與正式組裝接點
@@ -1018,10 +1035,11 @@ OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 P
 <a id="local-agent-development"></a>
 ### 本機開發端點與正式 API
 
-`npm run agent:local` 的 Web 與 API 共用 loopback origin；業務仍使用原 `/api/*`，正常 session、准入、目前身份、確認、版本及原 opId 檢查不變。只有這個明確開發入口提供以下唯讀、no-store 端點，正式 Node handler 不提供：
+`npm run agent:local` 的 Web 與 API 共用 loopback origin；業務仍使用原 `/api/*`，正常 session、准入、目前身份、確認、版本及原 opId 檢查不變。只有這個明確開發入口提供以下 no-store 端點，正式 Node handler 不提供：
 
 - `GET /__local/status`：分支、SHA、dirty、模型、Prompt Pack、角色與環境邊界；不是四角色已驗證的聲明。
 - `GET /__local/events`：最多最近 200 個既有診斷 metadata；不回傳內部思考、工具參數或私人正文。
-- `GET /__local/inbox`：Auth Emulator 最近最多 20 個驗證／重設操作連結，明示未實際寄信。連結視為本地憑證，不分享或存進工程證據。非郵件投遞仍停用，不能假報收到。
+- `GET /__local/inbox`：Auth Emulator 最近最多 20 個驗證／重設操作連結，另有最多 20 個加密保存的非郵件投遞預覽；各自標示是否截斷。連結視為本地憑證，不分享或存進工程證據。投遞只含渠道、用途、匿名目的地標記及最小資源關聯，不回傳原 token／endpoint。正式收據為 `stopped / local_preview_not_sent`，provider status／message ID 留空，不能當作收到或照護完成。
+- `GET /__local/telegram/start?token=...`：顯示本地合成 Telegram 開始表單，讀取不改變綁定；`POST` 只接受精確同源的單一 token，交正式 challenge handler 記錄合成候選。仍須原 `/api/telegram` 確認流程才能綁定，不能連接真 Telegram 或發送訊息。
 
 本機端點核對 loopback Host／Origin；受保護快照、合成帳號密碼及模型 key 不經前端設定端點提供。各 worktree 使用獨立 cookie 名稱，瀏覽器不能以另一端口的 session 當作本 worktree 身份。模型更改、斷線及程序重啟仍先查原 run，不以本地模式自動重送操作。設定與限制見[操作說明](AGENT_LOCAL.md)。

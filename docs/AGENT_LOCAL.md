@@ -19,7 +19,9 @@ $env:LOCAL_AGENT_CONFIG = 'C:\Users\你的帳號\.config\yuyoufang-local.json'
 npm run agent:local
 ```
 
-亦可自行在目前 shell 設定 `GEMINI_API_KEY`，但不要把實際 key 寫入共享命令、聊天、Git 或 `EXPO_PUBLIC_*`。前端不會收到模型憑證。Vertex API key／其他可選模型由 MODEL-SELF 包接續，這個入口目前支援 Gemini key 及 Vertex ADC。
+亦可自行在目前 shell 設定 `GEMINI_API_KEY`，但不要把實際 key 寫入共享命令、聊天、Git 或 `EXPO_PUBLIC_*`。前端不會收到模型憑證。Vertex Express API key 例如使用 `{"provider":"vertex","apiKey":"本人的 Vertex key","model":"gemini-2.5-flash"}`，須選該服務已接線的型號，不能直接沿用Developer預設；此為配置例子，不自動替換已保存模型。環境變數則明確選 `LOCAL_MODEL_PROVIDER=vertex`、`VERTEX_API_KEY` 及相應模型。Vertex沿正式個人模型 adapter；不拿Gemini key默認代替另一供應方式。Vertex key 的 embedding 接點仍未支援，不能以它初始化知識向量或假稱完整混合檢索可用；需要完整檢索時明確選擇本人可用的 Gemini key 或 ADC，不借平台額度。
+
+建立key成功或保存設定成功，不代表模型在當地可用。正式設定的「核對」只查metadata；若回 `region_unavailable`，不要重複建key、重新發問或把ADC驗收當成key通過。先核對[Google支援地區](https://ai.google.dev/gemini-api/docs/available-regions)，或明確選用下方本人ADC路徑。Google新授權key不一定沿用舊前綴，應完整按原字串保存；不根據前綴猜測供應商。[官方key類型](https://ai.google.dev/gemini-api/docs/api-key)
 
 已使用本人本機 ADC 的開發者可改用：
 
@@ -33,8 +35,8 @@ ADC 留在本機。若全局 `GOOGLE_APPLICATION_CREDENTIALS` 指向舊檔案，
 
 - 開啟終端列出的 `http://127.0.0.1:<port>`；不要另開 Expo 的直接端口。原 Web 和 API 經同一個本機 origin。
 - 本地帳號為 `developer@local.yuyoufang.test`，隨機密碼保存在終端列出的 `.cache/agent-local/state.json`；這是本機合成帳號，不是正式網站密碼。正常登入、產品條款及資料同意仍經正式流程。
-- 同一個明確初始化的本地帳號可開 `/admin` 調整本地限額；不授予正式網站權限，不清零原用量。
-- 修改共用前端可熱更新；Windows／macOS 使用 Node 原生 `--watch-path`，只監看 `server`、`src/shared`、`prompts`，不監看依賴或本地資料。Linux 沿 Node module watch，尚未實測。Prompt Pack 仍由正式組裝器讀取；不要在有付費運行時改動程式。需要固定版本核對時可加 `--no-watch`，手動停止後重開才載入修改。[Node 原生監看](https://nodejs.org/api/cli.html#--watch-path)
+- 同一個明確初始化的本地帳號可開 `/admin` 查看及調整本地限額。開始付費核對前先看當日用量；每日上限和每輪上限分開，生成與查詢 embedding 都計次數。本地沿 Server 初始政策或已保存的本地修改，不會複製正式網站的 200／400 設定；重啟不清零，不授予正式網站權限，也不改正式配額。
+- 修改共用前端由 Metro 監看；launcher 不向 Expo 傳入會停用監看的 `CI` 旗標。Windows／macOS 的 Server 使用 Node 原生 `--watch-path`，只監看 `server`、`src/shared`、`prompts`，不監看依賴或本地資料。Linux 沿 Node module watch，尚未實測。Prompt Pack 仍由正式組裝器讀取；不要在有付費運行時改動程式。`--no-watch` 只停用 Server 自動重啟，手動停止後重開才載入 Server／prompt 修改；前端仍會重新編譯，固定版本驗收時亦不要修改前端。[Node 原生監看](https://nodejs.org/api/cli.html#--watch-path)
 - 修改程式中斷運行時，不自動重發問題；先查回原 run／收據。頁面重新讀取不代表再執行一次。
 - `/__local/status` 顯示分支、SHA、dirty、模型、Prompt Pack、角色邊界；`/__local/events` 只保留最近 200 筆診斷 metadata，不輸出內部思考或私人全文。詳細結果仍從正式頁面／原 run 讀取。
 - `--no-model` 只供資料／UI 開發，明確停用模型；`--no-web` 可供已有前端入口的 API 開發。沒有憑證時不使用假模型，也不借正式平台 key。
@@ -52,21 +54,57 @@ npm run agent:local
 
 這是唯一會主動初始化模型向量的命令：首批只用既有 `fhs-solid-food` 一個章節，最多一次本人憑證 embedding，零聊天生成；已存在的向量按 hash 復用。命令輸出成功後自動保存並退出，普通啟動不重做。
 
+Gemini key 的知識初始化及維護命令明確啟用文件向量接點；一般聊天／家長個人 key 仍只可建立查詢向量。沿用同一權限、用量與發布服務，沒有平台憑證回退。固定 SDK 2.24.0 不支援 Developer API 的 `autoTruncate` 設定，因此文件標題與向量片段合計沿用保守的 2,000 UTF-8 bytes 上限；超出便明確拒絕，不截斷或冒稱完整。這是 key adapter 限制，不等於已完成長來源分批；ADC 路徑維持原契約。
+
 原文、條款與含義核對來自固定的 [seed manifest](../knowledge/local-development-seed.json) 和所指的既有證據。它是有日期、有限範圍的本地素材，不是啟動時重新抓取的最新全站知識，也沒有核准其他資料或成長執行規則。修改原文或種子版本會使舊核准失效；擴充來源沿既有 `knowledge.mjs`／來源維護管線，不把新文字自動當成已審核。
 
 Firestore Emulator 已核實支援本次版本的 `findNearest`；使用同一向量＋關鍵詞、過濾及引用服務，不做假搜尋。無知識或本人 embedding 不可用時如實回報，不以固定答案代替。首次失敗保留原操作與用量，先診斷；不可刪除未知向量佔位來盲目重試。
 
 ## 背景、附件與收件箱
 
-背景工作使用正式 Firestore 工作台帳、claim、租約、原收據及 consumer；本地 dispatcher 只替換 Tasks／Scheduler 的喚醒。AI 啟用時按既有授權處理待辦工作，不是每次啟動自動跑付費驗收。
+背景工作使用正式 Firestore 工作台帳、claim、租約、原收據及 consumer；本地 dispatcher 只替換 Tasks／Scheduler 的喚醒。停用模型仍保留確定性附件清理等 consumer；模型呼叫由相同的正式啟用與用量檢查控制，不是每次啟動自動跑付費驗收。
 
 附件經原加密／hash／授權服務保存到 Storage Emulator。本版本 emulator 忽略 generation precondition，因此薄 adapter 在單一本機 runtime 內序列化每個物件、核對固定 generation；這不能作為雲端多副本競爭或 IAM 驗收證據。
 
-驗證電郵／找回密碼由 Auth Emulator 產生本地操作連結，可在 `/__local/inbox` 查看最近 20 項；全部明示沒有實際寄出。這些連結有憑證作用，只在本機使用，不分享診斷輸出。Telegram／Web Push／FCM 保持停用，目前尚未提供其本地投遞收件箱；不回報渠道接受或收到。[Firebase 官方行為](https://firebase.google.com/docs/emulator-suite/connect_auth)
+驗證電郵／找回密碼由 Auth Emulator 產生本地操作連結，可在 `/__local/inbox` 查看最近 20 項；全部明示沒有實際寄出。這些連結有憑證作用，只在本機使用，不分享診斷輸出。[Firebase 官方行為](https://firebase.google.com/docs/emulator-suite/connect_auth)
 
-四角色使用當前分支的實際接線。基線沒有某個角色，就不能因環境啟動而宣稱四角色完成。協作者 #214／#215／#216 及真背景維護缺口由 DEV-AGENT02 承接；不擅自合併協作者分支。編製成果必須經正式保存服務，再由原頁面讀回，不能只看模型文字。
+同一收件箱另列最近最多 20 項 Telegram／Web Push／FCM 投遞預覽（渠道、用途及原資源關聯）。正式綁定、本人授權、工作台帳與撤銷仍有效，只把外部發送換成本機加密保存；結果為 `stopped / local_preview_not_sent`，沒有渠道接受、收到或完成。正式環境沒有這個替換。
 
-需要聯合核對時，可使用已固定提交的本地 `codex/dev-agent02-role-integration`；它不等於 master 或已合併的角色。#214 的審核、#215 的既有文件修改工具已接正式服務，與聊天共用預算；目前編製不是所有資料類型的通用產生器。#216 的 `KnowledgeSemanticReviewPort` 仍未接真模型，`BackgroundKnowledgeMaintenancePorts` 缺持久維護用量／工作／發布組裝及觸發，不能用預設 stub 或記憶體 ledger 當完整背景驗收。接口交回原角色包，環境不另造角色。
+本地 Telegram 設定產生的連結會開本機「模擬開始」頁，毋須真 bot；按開始後回原設定讀取並明確確認本地帳號。它只用於開發，不會綁定你的真 Telegram。瀏覽器／Android 的通知權限及訂閱仍依平台接點，本地收件箱不能代替真機收訊驗收。
+
+四角色使用當前分支的實際接線。基線沒有某個角色，就不能因環境啟動而宣稱四角色完成。#214／#215／#216 已依使用者明確授權 review 修正及合併，原作者保留；真背景維護缺口仍由 DEV-AGENT02 承接。編製成果必須經正式保存服務，再由原頁面讀回，不能只看模型文字。
+
+目前接續分支及固定基線見根 PLAN；舊 `codex/dev-agent02-role-integration` 只保留先前成果及中斷證據。#214 的審核、#215 的既有文件修改工具已接正式服務，與聊天共用預算；目前編製不是所有資料類型的通用產生器。#216 的原 runner 現經同一正式模型 gateway、Firestore 工作與原子發布組裝，由下列命令觸發；不使用預設 stub 或記憶體 ledger 冒充真模型。真模型成果與剩餘範圍以根 PLAN／證據為準。
+
+## 獨立背景知識維護
+
+先停止正常本地入口，明確執行：
+
+```sh
+npm run agent:local -- --maintain-knowledge
+```
+
+預設從已核對的 `fhs-solid-food` 種子讀原文，使用本人憑證整理、獨立審核並發布到同一個本地知識庫，無須聊天請求。最多兩次生成及有界缺少向量；首次原文預覽由程式取得，語義核對仍由真模型負責。這是付費模型操作，普通啟動不自動執行。
+
+結果在 `.cache/agent-local/maintenance-result.json`，原工作及歷次結果另按工作指紋保存。再次執行相同命令查回同一工作，不能當作重跑；修改程式／提示詞後，需要明確加 `--new-knowledge-work` 才建立新工作及新用量。未知外呼、舊期限或不同綁定保留為停止／待核對，不能清資料來重試。
+
+要查看原候選與審核原因，停止正常入口後執行：
+
+```sh
+npm run agent:local -- --inspect-knowledge
+```
+
+此命令不需要模型憑證，只讀同一份本地工作及候選，不領取 lease、修改帳目、呼叫模型或發布。終端指出受保護的 `maintenance-<工作指紋>-inspection.json`，包含原文／整理、變更核對、審核理由、原預算、發布收據及現有成長規則綁定。指定舊工作可用 `--inspect-knowledge=<64位工作指紋>`；歷史綁定必須匹配，不改寫為新工作。
+
+`candidate_held` 表示候選保留，不能當成已更新知識。若既有成長規則所引用的片段／版本需重新核對，先處理原規則與來源依賴；不要只改提示詞要求批准，或不停另開工作重試。沒有候選時仍可查原工作狀態及用量，原始模型上下文不輸出到查閱檔案。
+
+維護時會復用與已發布版本一對一相同的完整原文片段及頁碼，不重新編寫其摘要或改 key；只有真正新增／改變範圍才進編製。新觀察的審核仍保留；原成長規則綁定改變時必須待核，不因本地模式放寬。
+
+模型審核判斷原文是否支持整理內容；執行規則依賴由 Server 的 catalog 判定，不把所有健康主題都當成規則變更。工作報告保留具體語義理由及必要規則待核理由。各角色可讀本次共同預算，沒有各自重開額度；背景知識維護目前仍是最多兩次生成的獨立流程，亦受管理員較低上限約束。
+
+真網站模式明確加 `--live-source`；目前來源可選 `--knowledge-watch=fhs-solid-food` 或 `--knowledge-watch=fhs-feeding-booklet-en`。PDF 沿正式解析及已登記頁面範圍；超出單批的長資料會保留未完成，不宣稱已讀完。第一次改模式／來源須加 `--new-knowledge-work`，不能改寫原工作。網站與用途仍受現有 catalog 範圍限制。
+
+命令結束保存 emulator 快照；重新執行 `npm run agent:local`，聊天按同一份已核准維護來源清單檢索本地已發布資料，包括已發布的 PDF，毋須重新初始化種子或向量。候選仍經原發布／有效性閘隔離。尚未核對的內容不發布；真網站、多模態及長資料分批的未驗項不因樣本成功而自動通過。這個本地入口不部署或啟用正式雲端排程。
 
 ## 保存、停止與重設
 
@@ -86,7 +124,7 @@ npm run agent:local -- --reset --confirm-local-reset
 
 最低檢查才執行 `scripts/verify-agent-local.mjs`；啟動工具不自動跑測試。`--real-agent` 會花本人模型額度，最多一個原 run，失敗即停，原始合成結果留受保護 cache。不要例行反覆跑。
 
-DEV02 本地整合分支另有 `--real-compose`，只建立一次原 run，在已有文件上要求編製及待確認；不自動接受，不反覆重試。原訊息關聯在請求前保存，失敗先查同一結果。其真模型中斷及 scripted 組裝的證據分開見[角色核對](../artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)，不把一次已預留但未回報結果的呼叫當作零消耗；未載入角色的分支不提供該驗收模式。
+DEV02 本地整合分支另有 `--real-compose`，只建立一次原 run，在本輪新建合成文件上要求只改標題並準備確認；腳本先核對改動確為指定標題、其餘 metadata 不變，才明確接受這項合成修改，並沿新 client 讀回同一文件及未變章節。不是通用的自動批准入口，不處理家長文件或反覆重試。原訊息關聯在請求前保存，失敗先查同一結果。先前真模型中斷及 scripted 組裝見[角色核對](../artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)，不把未回報結果的呼叫當作零消耗；未載入角色的分支不提供該驗收模式。
 
 `--artifacts` 在 `--no-model` 入口使用正式 client 核對同一份準備單的修改／讀回／版本衝突，以及一份小附件的保存／讀回／刪除；它不驗證模型編製或審核，也不代表清理 worker 已實際刪除物件。
 

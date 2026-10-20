@@ -51,5 +51,147 @@
     "Shared client and form checks do not prove real account model availability",
     "Production Server v2 must precede Web/OTA publication",
     "Existing draft dependencies and collaborator role evidence remain separate"
-  ]
+  ],
+  "renderedSettings20261020": {
+    "base": "e4a2cb4",
+    "branch": "codex/dev-agent02-current-roles",
+    "sourceHashes": {
+      "scripts/agent-local.mjs": "28dc1895f9db40f31d31501a535e25b8171341d60b8998378857bd6b57aeec74",
+      "frontend/src/components/model-settings/ModelSettingsView.tsx": "a5dd0bd5454dc55e214cc977450904a4028a2758f74e2403e7d6f33acf2d7968",
+      "frontend/src/model-settings-view-model.ts": "b06a9cf500b0f317fd2c396268331e5fc7988c9a04b542da8029373ac59d61dd",
+      "frontend/src/production/SettingsDomainSupport.ts": "858c455145bbf709645cde8d772c24baddeb4ddffce15c4f01a5472698206869",
+      "frontend/src/production/useProductionModelSettings.ts": "af61b737962f4dad25e51bebb4ea4aff06f59b24750a34b3abaae4b7eaef1030"
+    },
+    "environment": {
+      "node": "24.19.0",
+      "playwright": "1.63.0",
+      "browser": "Chromium headless shell 1243",
+      "expoCli": "57.0.26",
+      "data": "existing isolated demo emulator; no production database"
+    },
+    "repairs": [
+      "Edited model settings defer automatic synchronization reads; explicit read, reconnect, identity cleanup and server version checks remain.",
+      "Expo no longer inherits CI=1, which disables Metro watching. A subsequent edit appeared in the served bundle without restarting."
+    ],
+    "preservedFailures": [
+      {
+        "kind": "test-transport",
+        "result": "Node fetch added Sec-Fetch-Mode; native-session gate rejected it. Test uses Node HTTP; Server gate unchanged."
+      },
+      {
+        "kind": "product",
+        "result": "Automatic refresh reset the unsaved model mode and closed the model chooser."
+      },
+      {
+        "kind": "local-launcher",
+        "result": "Verification initially served stale code because Expo inherited CI=1; no model calls."
+      },
+      {
+        "kind": "test-budget",
+        "result": "Repeated whole-page initialization exhausted the browser request cap and aborted settings requests. Failed batches and cleanup were retained; the cap was not increased."
+      }
+    ],
+    "formalWeb": {
+      "result": "core save/remove passed; whole batch remains incomplete",
+      "steps": [
+        "normal Firebase emulator Web login",
+        "normal SPA settings navigation",
+        "save synthetic key, Gemini 2.5 Flash and seven limits through shared form",
+        "native bearer-session client reads the same version and effective limits",
+        "delete synthetic key through Web",
+        "restore pre-verification platform mode"
+      ],
+      "savedSettingsVersion": 5,
+      "effectiveLimits": {
+        "daily": 35,
+        "generations": 6,
+        "queryEmbeddings": 2,
+        "tools": 12,
+        "runSeconds": 180,
+        "modelRequestSeconds": 60,
+        "extraRetries": 1
+      },
+      "browserRequestsForwarded": 150,
+      "browserRequestsBlockedByHarness": 13,
+      "nativeSettingsCalls": 4,
+      "incomplete": "Final manual Web refresh did not complete after the harness request cap was reached; no whole-flow pass claimed."
+    },
+    "cleanupRead": {
+      "result": "passed",
+      "businessReads": 2,
+      "settingsVersion": 7,
+      "mode": "platform",
+      "keyConfigured": false,
+      "modelUsageUnchanged": true
+    },
+    "checks": {
+      "scopedFrontendTypeScript": "passed",
+      "launcherNodeSyntax": "passed",
+      "diffCheck": "passed"
+    },
+    "realModelCalls": 0,
+    "cloudBusinessWrites": 0,
+    "notifications": 0,
+    "deployments": 0,
+    "remaining": [
+      "Real personal Gemini/Vertex credentials and model availability",
+      "Actual Android settings interaction and final Web reread",
+      "Production delivery and existing draft gates"
+    ]
+  },
+  "realKeyMetadata20261020": {
+    "sourceCommit": "09b22f3ef472ee8dffbaaa9128a02b3a427b7d11",
+    "evidence": {
+      "at": "2026-10-20T11:41:38.339Z",
+      "method": "formal-settings-client-and-server-real-key-metadata-only",
+      "generations": 0,
+      "embeddings": 0,
+      "saved": {
+        "version": 8,
+        "provider": "gemini",
+        "model": "gemini-3.1-flash-lite",
+        "keyConfigured": true
+      },
+      "check": {
+        "version": 8,
+        "status": "unavailable",
+        "scope": "model_metadata_only",
+        "reason": "region_unavailable"
+      },
+      "status": "unavailable",
+      "restored": true,
+      "usageUnchanged": true,
+      "calls": 6
+    },
+    "provision": "User requested creation. A dedicated service identity with no project-role grants and a Gemini-only authorization key were created in the existing owner project. Credential stored only outside the repository with a restricted Windows ACL.",
+    "setupCorrection": "Key creation succeeded before the temporary provisioning helper rejected a non-legacy prefix. The same fixed key ID was recovered and saved; no second key was created.",
+    "conclusion": "Encrypted settings persistence and real provider region error mapping worked. Generation, embeddings and personal-key product usability remain unverified. ADC evidence is separate.",
+    "productionChanges": false,
+    "organizationPolicyChanges": false,
+    "billingPlanChanges": false
+  },
+  "providerCatalog20261020": {
+    "sourceBase": "e28a2066d1b335bee858e9e861e59f42e30219cc",
+    "scope": "Provider-specific server catalog, settings/runtime guard, shared Web/Android draft selection",
+    "checks": {
+      "formalClientApiSettingsAndSdk": "2 existing tests passed with in-memory Firestore and intercepted SDK requests",
+      "providerSelectionProjection": "1 targeted pure form projection test passed",
+      "scopedServerTypeScript": "passed",
+      "scopedFrontendTypeScript": "passed"
+    },
+    "effects": [
+      "Provider catalog reads do not mutate credentials, settings or usage",
+      "Unsupported Express model is rejected before an outbound generate request",
+      "Removing the key or disabling personal mode remains possible for an outdated model",
+      "Draft provider selection does not silently substitute a model or show another provider capability"
+    ],
+    "realModelCalls": 0,
+    "externalNotifications": 0,
+    "deployments": 0,
+    "remaining": [
+      "Real personal-key generation and embeddings",
+      "Browser and actual Android interaction for this provider-selection change",
+      "Production delivery and original draft gates"
+    ]
+  }
 }

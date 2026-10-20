@@ -16,8 +16,10 @@ export interface ModelSettingsViewModel {
   originalOperationId?: string | null;
 }
 export interface ModelSettingsActions {
+  setDraftEditing?(editing: boolean): void;
   refresh(): void;
   save(command: ModelSettingsCommand): void;
   check(expectedVersion: number): void;
   refreshCatalog?(expectedVersion: number): void;
+  selectProvider?(provider: ModelSettingsSnapshot["settings"]["provider"]): void;
 }

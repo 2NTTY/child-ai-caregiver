@@ -3199,6 +3199,22 @@
 - 確認發布 lease 與實際持久寫入未原子綁定；未以多加一次檢查冒充 fencing。正式 live 發布在有副作用前明確停用，下一步須接正式交易／台帳與真模型；6 項舊模擬 live 測試保留為待接通，不算本輪通過。
 - 4 項定向 scripted 與局部 Server 型別通過；[review 證據](artifacts/verification/P3_M03_PR_REVIEW_20261020.json)。零真模型、外網抓取、雲端、通知及部署。合併只代表安全保留基礎，不代表 P3-M03 或四 Agent 目標完成。
 
+<a id="log-20261020-dev-agent02-current-roles"></a>
+## LOG-20261020-DEV-AGENT02-CURRENT-ROLES
+
+- 將已 review 合併的 master `4132e1a` 接回本地／個人設定 head `f6919b7`；保留 Android 語音、個人模型錯誤、原確認與用量，Prompt Pack 合併為 0.1.48。原 D 提交及 `ce1d6f9` 中斷現場保留，不重發舊 run。
+- 本機入口沿正式 provider 補 Vertex key 選擇，與 Gemini 環境變數分開；不支援的 embedding 明示失敗，不借平台額度。模型停用時仍啟動確定性工作，模型路由保留正式 enabled 檢查。
+- 局部型別、五個配方組裝、兩項 scripted 共用預算／審核隔離及入口語法通過。只接回原 `--real-compose` 入口，沒有執行真模型、通知、雲端或部署。
+- [整合證據](artifacts/verification/DEV_AGENT02_CURRENT_ROLES_20261020.json)。真編製／審核、頁面成果、非郵件收件箱及背景正式發布仍未完成；先前失敗及 Android draft gate 不改寫。
+
+<a id="log-20261020-dev-agent02-real-compose"></a>
+## LOG-20261020-DEV-AGENT02-REAL-COMPOSE
+
+- 正式本地入口首次啟動因 Firebase CLI 從 PATH 取得舊 Java 停止，零模型；修正子程序沿 JAVA_HOME 後成功。使用 `--no-watch`，保留原本機資料及舊 unknown。
+- 第一個真編製 run 完成編製／獨立審核並保存候選，但最終狀態回覆審核未完成；收據有一次限流及一次 provider 重試，合共 8 生成，失敗即停，沒有接受該候選。未保存 reviewer 原文，不猜具體語義／schema 拒絕。
+- 補純操作待確認回覆：只由當前 Server 確認問題替換固定狀態，不信模型自報免審。兩項定向 scripted 通過；局部 Server 型別補 nullable guard 後通過，受影響聊天 UI 型別通過。
+- 修正後一個新 run 用 6 生成／零 embedding、17 API 完成正式編製、真審核、指定合成確認及同文件 v1→v2 讀回，其他章節不變。零通知、部署或全量；沒有調高配額。停止入口成功匯出本地快照。
+- [完整證據](artifacts/verification/DEV_AGENT02_REAL_COMPOSE_20261020.json)。新對話／畫面、背景正式維護、非郵件收件箱及真個人 key 仍未驗，不能把本次三角色流程當作整個四 Agent 交付。
 <a id="log-20261020-p3-m01-postmerge-review"></a>
 ## LOG-20261020-P3-M01-POSTMERGE-REVIEW
 
@@ -3206,6 +3222,89 @@
 - 三項受影響檢查中，摘要 fixture 首次仍期待零次確認讀取；修正為一次真狀態讀取後，只補該項並通過。局部 Server 型別通過，不全量、不追加模型／通知或部署。
 - [核對證據](artifacts/verification/P3_M01_POSTMERGE_REVIEW_20261020.json)。復用本地整合 `e7279a3` 的確認邊界及真編製證據，不將本地分支成功寫成 master 或線上驗收。
 
+<a id="log-20261020-dev-agent02-knowledge-model"></a>
+## LOG-20261020-DEV-AGENT02-KNOWLEDGE-MODEL
+
+- 沿已合併 M03 候選 runner 補共用模型整理／獨立語義審核步驟與受信保存 port。復用正式 gateway 的工具外文字呼叫及既有知識 assessment，沒有另造本地 Agent；原文、來源日期、PDF 頁碼與單元完整度由 Server 核對。
+- 新增 Prompt Pack 0.1.49 的原文單元整理配方，補既有知識審核 JSON／原文比對指引。假引文、模型自行核准執行規則及保存失敗不返回批准。
+- 兩項新合成檢查及一項受影響的既有離線路徑通過。局部型別首次發現舊 helper 名稱漏改，修正後通過；未擴跑全量。零真模型、網絡抓取、雲端寫入、通知及部署。
+- [證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_MODEL_20261020.json)。目前只有共用步驟與 port，持久工作／用量／原子發布與本地觸發仍未組裝；live 發布閘保持關閉，不把 scripted 通過當成真背景品質或四 Agent 完成。
+
+<a id="log-20261020-dev-agent02-knowledge-runtime"></a>
+## LOG-20261020-DEV-AGENT02-KNOWLEDGE-RUNTIME
+
+- 接入正式 Firestore 維護工作、lease／generation、共同用量、原模型結果與原子發布收據；本地命令 `agent:local -- --maintain-knowledge` 明確觸發，資料只寫 emulator。原指令不自動開新工作，歷次候選／失敗保留，普通啟動不自動跑付費背景驗收。
+- 一條 emulator／scripted provider 流程通過發布、正式檢索、重建服務後原操作查回及 unknown 不重送；先前限額物件、UUID 接口失敗分開保留。兩項模型契約檢查、局部型別及入口語法通過，無全量或瀏覽器。
+- 兩次真模型各用 1／2 次生成，先後因改寫摘錄及 JSON 代碼框保留候選；查回已保存第二次回應後，原文檢查再拒絕錯誤舊引文。零真 embedding／網站抓取／雲端資料寫入／通知／部署；沒有重送舊工作或改寫失敗。
+- Prompt Pack 0.1.51 將原文預覽、新舊引用與版本綁定交回 Server，模型保留含義判斷；完整 JSON 代碼框可解析，其餘 schema／引用檢查不放寬。最新修正未追加真模型，不能宣稱背景完整通過。
+- [證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。已停止本機服務並保存快照；下一步沿 PLAN 補修正版必要真背景成果，頁面聯合／收件箱、長資料與真網站仍分開保留。基本本地聊天入口已可使用，不因餘下四角色 gate 而要求先部署 GCP。
+
+<a id="log-20261020-dev-agent02-knowledge-review-hold"></a>
+## LOG-20261020-DEV-AGENT02-KNOWLEDGE-REVIEW-HOLD
+
+- 查回已啟動的 `c9bc5b6`／Prompt Pack 0.1.51 本地背景工作；沒有重啟同一批次。兩次真生成完成原文整理與獨立審核，審核回報需要進一步核對，沿原發布閘保留候選（`review_hold`／`requires_review`）。
+- 本次零 embedding、真網站抓取、雲端資料寫入、通知及部署；入口已停止並保留原工作。本包累計五次真生成，實際帳單未查。只讀結果及最後日誌，不將候選保留當成發布成功或臨床核准，也不為驗收放寬審核。
+- [證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)追加本次結果，先前失敗不回寫；PLAN／STATUS 修正「最新版本未跑」的舊狀態。基本本地入口已可使用，四角色完整發布／頁面門檻仍未完成。
+
+<a id="log-20261020-dev-agent02-knowledge-inspection"></a>
+## LOG-20261020-DEV-AGENT02-KNOWLEDGE-INSPECTION
+
+- 新增本地 `--inspect-knowledge` 查閱入口，沿正式加密工作 reader，以唯讀交易核對原 request、候選 hash／來源版本及結果。可指定舊工作；不依賴模型憑證，不領取 lease、重開運行或發布。
+- 一次既有 emulator 候選查回成功，原工作兩次生成及 `review_hold` 不變；查閱檔案保留官方原文、整理及審核理由，不輸出模型上下文、密鑰或 lease token。局部型別及入口語法通過，沒有新增模型／embedding、通知、雲端資料寫入或全量測試。
+- 原程式及候選證據顯示 `solid_food` 規則綁定 `starting-solids`，本次新候選未包含該 key；因此保留規則／來源依賴待核，不以反覆生成或提示詞強迫批准。正式背景發布、新對話／頁面聯合及收件箱等未驗項仍見 PLAN。
+- [證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)與[操作說明](docs/AGENT_LOCAL.md)。本地服務已停止並保存快照，沒有改動正式環境。
+
+<a id="log-20261020-dev-agent02-local-inbox"></a>
+## LOG-20261020-DEV-AGENT02-LOCAL-INBOX
+
+- 本地正式組裝加入 Telegram／Web Push／FCM transport 替換，復用原綁定、明確確認、工作、授權及收據。本機加密收件箱只保存預覽 metadata；停止結果 `local_preview_not_sent` 不冒充渠道接受、收到或完成，沒有真通知入口。
+- 從正式 client／API 進入一條合成 Telegram／Web Push 流程，共 32 次本機 API，核對確認、原 worker、原操作重試、收件箱及撤銷。零模型／外部通知／雲端資料或部署；局部型別及語法通過。停止入口並保存 emulator 快照。
+- [本次證據](artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)追加在 `localDelivery20261020`，舊失敗與未驗描述保留原日期；原生 Android 收件箱完整路徑及畫面未驗，不用本機結果代替真投遞。背景發布／新對話與頁面聯合 gate 仍見 PLAN。
+
+<a id="log-20261020-dev-agent02-knowledge-reuse"></a>
+## LOG-20261020-DEV-AGENT02-KNOWLEDGE-REUSE
+
+- 原文未變但重新編製／命名會切斷既有規則來源。改為一對一完整原文及同頁完全相同才復用原片段，只整理變更範圍；審核仍讀原文。Prompt Pack 0.1.52 說清實際規則綁定，Server 強制阻止模型把變更依賴宣稱無影響，不改醫療／成長規則。
+- 三項針對性合成檢查與局部型別通過。一次本機持久核對在模型前因 PDF 觀察 hash 不同停止；定位為原始物件與保存正規化的欄位順序不同，統一既有 schema 接點後補同流程通過發布、查回及引用。原失敗保留，沒有改舊 hash／清庫。
+- 本次零真模型／外網抓取／通知／部署，僅 scripted provider；真語義發布仍待必要補核，不宣稱四角色完成。[證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。
+
+<a id="log-20261020-dev-agent02-existing-rule-binding"></a>
+## LOG-20261020-DEV-AGENT02-EXISTING-RULE-BINDING
+
+- `8873b76`／Prompt Pack 0.1.52 沿既有本機官方樣本補一次真維護：未變原文跳過編製，只用一次生成完成獨立審核，零 embedding／外網抓取／雲端資料／通知／部署。原工作 `620728…` 保留 `review_hold`，未發布，沒有重試。
+- 唯讀對照發現 `solid_food` 規則仍釘住 `08cd6022…`，目前種子片段為 `15700b8f…`；另外三項規則也與倉庫種子 hash 不符。這是現有來源／規則綁定待核，不是模型未完成；沒有改寫規則核准或把檢查改成永遠通過，也沒有據此推斷現網狀態。
+- 本包背景真生成累計六次；不再對同一樣本追加生成。完整背景發布及新對話引用仍未完成，其他本地接線可繼續使用。服務已停止並保存快照；[證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。
+
+<a id="log-20261020-dev-agent02-review-policy-budget"></a>
+## LOG-20261020-DEV-AGENT02-REVIEW-POLICY-BUDGET
+
+- 一次真網站維護沿已登記 FHS PDF 第3頁取得及解析，兩次生成完成整理／獨立審核，零 embedding；模型將沒有 catalog 綁定的健康主題判為執行規則，結果保留，沒有發布或重試。舊樣本六次生成及本次兩次分開保留；服務已停止及保存快照。
+- 修正責任邊界：Prompt Pack 0.1.53 的模型只審原文含義、支持程度與具體限制；Server 計算實際執行規則依賴，仍拒絕缺失／改變綁定，語義 hold 仍不能發布。沒有更改成長規則 hash。唯讀 Git 對照確認四個 pin 對應加入原文及局部覆蓋說明前的精確片段；另核官方來源，不宣稱正式資料狀態。
+- 按使用者補充核查管理員總控：一般聊天沿持久政策及共同 resolver，主循環每次提供規劃餘額；補無工具角色的相同餘額提示，沿原 root 計數，不擴額。背景知識仍固定最多兩次生成，輸入／輸出容量仍非後台可調；最後正式政策 v3 的 200／400、8／16／4、300秒／90秒／3重試只是 2026-10-18 已核對值，本次沒有改配額或部署。
+- 必要檢查：知識契約3項、共用角色預算1項及局部正式組裝型別通過；未跑全量、Computer Use、真通知。修正後真發布、頁面聯合與個人 key gate 保留。[證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。
+
+<a id="log-20261020-dev-agent02-published-web-continuity"></a>
+## LOG-20261020-DEV-AGENT02-PUBLISHED-WEB-CONTINUITY
+
+- `d3127a4`／Prompt Pack 0.1.53 沿原登記 FHS PDF 第3頁補一次真維護：兩次生成與一次缺少向量，原子發布成功，工作 `ff6b3e…` 的審核、來源及收據保留。沒有重試、通知或雲端業務寫入；舊八次生成與失敗證據不改寫，也沒有核准舊成長規則 hash。
+- 修正本地 launcher 的搜尋清單：從單一 seed 改為同一份已核准維護來源 ID；仍只讀已發布／有效內容。正常啟動不重新抓取或 embedding。首次付費 Web 命令錯加未安裝的 tsx，在載入前失敗、零 API／模型；改用現有 Node 24 原生 TypeScript，沒有安裝新套件。
+- 唯一 Chromium 正式 Web 流程沿本機合成帳號登入、選孩子，重啟後顯示原準備單 v2「下次到診問題」，章節與原內容一致。隨後一個真聊天運行使用4次生成、3次工具及1次查詢，已讀文件與檢索知識，但每日限額停止交付；沒有完整引用回覆，不標通過、不重送。
+- 唯讀核對本地政策初始20／100、每輪8／16／4；本人當日20次、全域31次。這與已保存的現網200／400政策分開。保留計量及原 run，沒有清零或調額；啟動訊息與指引補本地 `/admin` 入口。未跑全量、模型比較或 Computer Use，最終新版引用、長來源／多模態及個人憑證 gate 仍保留。[結果](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。
+
+<a id="log-20261020-model-settings-local-web"></a>
+## LOG-20261020-MODEL-SETTINGS-LOCAL-WEB
+
+- 在 `e4a2cb4` 上修正兩個實際接線問題：模型設定表單編輯期間不被自動同步重設；本地 launcher 不再向 Expo 傳入停用 Metro 監看的 CI 旗標。手動重讀、身份切換、重新連線、版本及原操作查回規則保留；沒有改 API 權限、產品配額或前端設計。
+- 固定 Expo CLI 57.0.26 原始碼確認 CI 會停用監看；重啟載入後，再次修改可在服務中的 bundle 讀到，無須重啟。原表單修正的局部型別通過，launcher 語法及 diff 檢查通過，臨時安全診斷已移除。
+- Chromium 正式本地頁面沿正常登入／SPA 導航保存合成 key、所選模型及七項限制；原生 session 的共用 API client 讀到同版本及生效值。Web 已刪除合成 key，再恢復原平台模式；補兩次業務唯讀核對版本7、無 key、模型用量與原記錄完全一致。沒有真模型、通知、正式資料或部署，不當作 Android 真機證據。
+- 原始失敗保留：Node fetch 的瀏覽器標頭遭原生入口拒絕、未保存草稿被重設、Metro 舊 bundle，以及腳本重複全頁初始化耗盡150次請求上限。改用正常 SPA 後保存／移除通過，尾部畫面重讀仍碰上原上限而停止；沒有提高上限、重跑整套或把整批改成通過。真 key、真機設定與正式交付仍待驗。[證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。
+
+<a id="log-20261020-dev-agent02-key-embedding"></a>
+## LOG-20261020-DEV-AGENT02-KEY-EMBEDDING
+
+- 核查 `f4310aa` 發現 Gemini key 的本地知識初始化及背景維護使用查詢專用 adapter，會拒絕文件向量。已為兩個明確 operator 入口啟用文件 task／title，保留一般個人 key 的查詢限制、正式 gateway 權限／計量及發布防重；沒有換模型、重算向量或使用平台憑證回退。
+- 固定 SDK 2.24.0 不接受 Developer API `autoTruncate`，維持保守的標題加正文2,000 UTF-8 bytes限制，超出明確拒絕。沒有以局部向量或加大上限冒充完整長來源；ADC既有流程不變。
+- 只跑兩項受影響SDK契約檢查，均通過；局部型別、兩個腳本語法及diff檢查通過。零真模型、embedding、雲端寫入、通知及部署；真key及既有draft gate保持未驗。[證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。
 <a id="log-20261020-s04-review-feedback-integration"></a>
 ## LOG-20261020-S04-REVIEW-FEEDBACK-INTEGRATION
 
@@ -3221,3 +3320,39 @@
 - 結果：保留原錄音載入及再次授權，補回實際模型的 run context；合併語音、聊天審核、資料編製與編製審核的模組／配方，整包 0.1.48。原工作日誌全文與前置追加部分均保留。
 - 最少驗證：兩項既有 Prompt Pack 版本／依賴載入檢查通過；只以 runtime 相依閉包執行 TypeScript 檢查並通過；`git diff --check` 通過。沒有真模型、通知、部署、瀏覽器或全量驗收。
 - 限制／下一步：原語音／手機及依賴 PR gate 保留，不把衝突收束寫成 Android 或四角色整體驗收完成；沿依賴鏈同步後續 draft。
+
+
+<a id="log-20261020-dev02-approved-continuity-key"></a>
+## LOG-20261020-DEV02-APPROVED-CONTINUITY-KEY
+
+- 基線 `09b22f3`、master `3795858`。按使用者明確批准，只將本地每日20→26，收緊本輪4生成／2查詢／零重試；一次運行用了4生成、零查詢後因 `model_limit` 停止，未保存完整引用回覆。原文件v2讀取成功；metadata顯示能力載入參數拒絕及呈現缺引用，沒有保留原參數，不臆測細節。
+- 已停止批次，finally經正式管理服務恢復原20／100及8／16／4政策，保留本人24次用量。沒有重跑、清零、通知、部署或雲端業務資料寫入；[追加結果](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)與舊失敗分開。
+- 按使用者「你自己創建」建立僅限Gemini API的授權key及零專案角色的專用身份，保存於工程外受Windows ACL保護目錄。臨時建立腳本誤判新版前綴，修正後按同一固定ID取回，沒有重建key；未修改組織政策、正式網站或計費方案。
+- 正式本地個人設定服務保存真key，唯一metadata核對回 `region_unavailable`；6次本機設定API、零生成／embedding。隨後移除業務設定內的key並恢復原模式，用量完全不變。[結果](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)只證明保存與地區拒絕回報，不宣稱個人key能生成。ADC已有成功證據維持分開。
+- 下一步：處理能力載入及收尾預算後才安排剩餘引用成果驗收；個人key受地區限制、Android設定／部署、長來源／多模態及原draft gate保留。未跑產品全量、瀏覽器、真通知或其他模型比較。
+
+<a id="log-20261020-dev02-tool-repair-guidance"></a>
+## LOG-20261020-DEV02-TOOL-REPAIR-GUIDANCE
+
+- 基線 `944aba0`，master `3795858`；沿單次真驗收的schema／citation拒絕metadata局部修正，不臆測未保存的錯填參數。
+- `load_capabilities` strict失敗提供本次受信目錄、正確物件形狀及群ID／工具名區分；提示最多512字元，不反射使用者值，載入仍不授權。核心搜尋不需loader；缺引用時提示按餘額補查，保留引用／用途檢查。
+- Prompt Pack 0.1.54明確區分呈現一次與獨立審核一次，委派仍共用原預算；不提高硬上限、不強迫純澄清額外審核、不改真收據及豁免政策。
+- 最低驗證：一條既有Runner參數拒絕／計數／未授權執行檢查加入安全修參斷言並通過；兩條既有Prompt Pack版本／有效指引檢查、局部TypeScript及diff核對通過。追加[證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)，原失敗不回寫。零真模型／embedding／通知／部署，沒有再次調整或清零用量。
+- 限制：scripted結果不證明模型已改善理解；新版最終引用、長來源／多模態、真key地區限制與各draft gate保留。下一步沿DEV02處理未完成接線；已用完的真模型批准不重用。
+
+
+<a id="log-20261020-model-provider-catalog"></a>
+## LOG-20261020-MODEL-PROVIDER-CATALOG
+
+- 基線 `e28a206`、master `3795858`；修正兩種Google服務共用不相容模型選項，以及編輯provider時仍顯示已保存provider目錄的接線缺口。
+- Server目錄、personal保存及生成前共用供應商支援判斷；保留舊選擇並容許停用／刪key，不默換模型。GET可明確讀另一服務的profile，無憑證或外網操作；POST仍只核已保存key。Web／Android共用owner及表單改讀正確目錄，拒絕遲到回應，編輯另一服務時不讓舊key查核覆蓋選項。
+- 最低驗證：兩條既有正式client／API／memory Firestore及SDK攔截檢查通過；一項表單投影檢查及Server／前端局部TypeScript通過。原驗收資料完整保留，追加[MODEL02證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。零真模型／embedding／通知／部署，無用量或憑證變更。
+- 官方Express支援清單與已接profile取交集，未新增模型adapter或改組織政策。新key地區限制、真生成／embedding、Android設定及原draft門檻維持待驗；不把本機機械檢查寫成服務可用。
+
+<a id="log-20261020-pr-stack-closeout"></a>
+## LOG-20261020-PR-STACK-CLOSEOUT
+
+- 使用者明確批准「先合併，未驗項保留追蹤」，只調整本批十個 PR 的合併安排，不把剩餘手機／真模型項目改成通過或取消。依賴次序為 #229 → #234 → #235 → #236 → #237 → #238 → #239 → #241 → #242 → #244；每個先改指 master，再以原 head 核對及 Merge commit 合併，保留原作者。Android 七包使用原主責交付帳號，本地／模型三包使用其主責帳號，沒有修改保護規則。
+- 沿用已核對的正式 API／scripted、局部型別、真機及真模型證據；本次只核對依賴、既有結果、文件 diff 及精確 head／實際合併者，未跑產品測試、真模型、通知、部署或增加配額。程式基線 `00aa6ad` 不改；本條及 PLAN／STATUS 收尾由 #244 一併交付。
+- DEV-AGENT01 的本地入口已有必要真聊天／引用、保存／重開及 Web 接線結果，可先供協作者使用。長來源／多模態及角色完整成果與環境交付分開，仍按 DEV02／所屬角色包處理。
+- 保留的後續：Android 有來源聊天與重開、撤銷／切身份、跨端同步／媒體附件完整流程、照護通知停止及 OTA 回退；背景新版最終聊天引用；個人 key 地區限制、真生成／embedding、Android 設定及部署。原失敗、備份真還原延期及其他未驗項不回寫；具體範圍只在 PLAN 各包，不另開重複清單。

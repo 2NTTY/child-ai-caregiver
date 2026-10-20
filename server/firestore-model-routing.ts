@@ -2,7 +2,7 @@ import { createFirestoreAdmin } from './firestore-admin.ts';
 import { z } from 'zod';
 import type { AiConfig } from './ai-config.ts';
 import { AGENT_INTERACTIVE_INPUT, AgentStopped } from './agent-budget.ts';
-import { type ModelKeyCheck, type ModelSettingsView, type PersonalModelCatalog } from '../src/shared/model-settings.ts';
+import { type ModelKeyCheck, type ModelSettingsView, type PersonalModelCatalog, type PersonalModelProvider } from '../src/shared/model-settings.ts';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
 import { personalModelCatalog } from './personal-model-catalog.ts';
 import { resolvePersonalModelLimits } from './personal-model-policy.ts';
@@ -69,12 +69,14 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       if (!await settings.isCurrent(userId, version)) throw new ModelSettingsError('version_conflict', 409);
       return { version, ...result, scope: 'model_metadata_only' };
     },
-    async catalog(userId: string, version: number, refresh: boolean, signal: AbortSignal): Promise<PersonalModelCatalog> {
+    async catalog(userId: string, version: number, refresh: boolean, signal: AbortSignal, provider?: PersonalModelProvider): Promise<PersonalModelCatalog> {
       const snapshot = await settings.resolve(userId), state = snapshot.settings;
       if (state.version !== version) throw new ModelSettingsError('version_conflict', 409);
-      if (!refresh) return { version, provider: state.provider, models: personalModelCatalog(state.provider), status: 'not_checked',
+      const selectedProvider = provider ?? state.provider;
+      if (refresh && selectedProvider !== state.provider) throw new ModelSettingsError('invalid_input');
+      if (!refresh) return { version, provider: selectedProvider, models: personalModelCatalog(selectedProvider), status: 'not_checked',
         scope: 'model_metadata_only', truncated: false, embedding: { model: KNOWLEDGE_EMBEDDING.model, dimensions: KNOWLEDGE_EMBEDDING.dimensions,
-          status: state.provider === 'vertex' ? 'unsupported' : 'not_checked' } };
+          status: selectedProvider === 'vertex' ? 'unsupported' : 'not_checked' } };
       if (!config.enabled || !snapshot.apiKey) throw new ModelSettingsError('key_required');
       await reserveMetadataCheck(userId);
       const result = await createGeminiKeyProviders({ ...config, model: state.model }, snapshot.apiKey, state.provider)
