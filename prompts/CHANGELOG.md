@@ -18,6 +18,9 @@
 
 - S12 語音準備：普通操作區分文字逐字來源與綁定本次原錄音的 AI 聽取；保留既有預授權、缺項補問及重要確認。錄音／轉錄不增加另一條執行指令。
 - 正式語音入口仍待完整生命週期與前端接線；此版本不表示已部署或真語音理解通過。
+
+## 0.1.46 — 2026-10-16（P3 資料編製分支）
+
 - P3-M02 data-compose／data-compose-review 叠到最新 #214（prompt pack 0.1.45／tip 6184364）。module.data-compose／review 0.1.1；module.product-tools 0.1.21。
 - 審核使用 Server 組裝 intent／逐字原文／來源／截斷標示；proposal／accept 綁定 review；共享模型預算維持 4。
 - 不宣稱真 Vertex／E2E 已跑。

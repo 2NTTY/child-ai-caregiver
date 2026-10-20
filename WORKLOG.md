@@ -3305,3 +3305,18 @@
 - 核查 `f4310aa` 發現 Gemini key 的本地知識初始化及背景維護使用查詢專用 adapter，會拒絕文件向量。已為兩個明確 operator 入口啟用文件 task／title，保留一般個人 key 的查詢限制、正式 gateway 權限／計量及發布防重；沒有換模型、重算向量或使用平台憑證回退。
 - 固定 SDK 2.24.0 不接受 Developer API `autoTruncate`，維持保守的標題加正文2,000 UTF-8 bytes限制，超出明確拒絕。沒有以局部向量或加大上限冒充完整長來源；ADC既有流程不變。
 - 只跑兩項受影響SDK契約檢查，均通過；局部型別、兩個腳本語法及diff檢查通過。零真模型、embedding、雲端寫入、通知及部署；真key及既有draft gate保持未驗。[證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。
+<a id="log-20261020-s04-review-feedback-integration"></a>
+## LOG-20261020-S04-REVIEW-FEEDBACK-INTEGRATION
+
+- 基線：Android PR #229 `9e1a9e7` 與 master `3795858`。保留已合併角色成果及 Android 共用停止原因；將 `delivery_review_incomplete` 放回共用文案，API 保存與 Web／Android 投影不各自維護另一份停止原因。
+- 必要檢查：只跑既有停止／保存／原結果重讀情景，加入真投影的審核原因斷言，1項通過。局部型別初次發現新增 fixture 漏填 `provenance`，補明確 `null` 後只重跑型別並通過；沒有再跑模型、產品全量或畫面驗收。
+- WORKLOG 核對初次錯把舊合併歷史視為純尾部追加；查明先前分支合併已插入歷史段落，改核完整原 Android 檔案與 master 新增尾部，兩者原文均保留。PLAN／STATUS 只解決現行入口衝突，沒有把後續 draft 或真機 gate 改為完成。
+- 未部署、未新增模型／通知或雲端資料寫入；#229 首條真機聊天／重開讀回待驗，正式合併仍按原門檻。
+
+<a id="log-20261020-s12-role-integration"></a>
+### LOG-20261020-S12-ROLE-INTEGRATION
+
+- 範圍／原因：draft #237 接回已同步的 #236／master `3795858`；語音與三角色同時修改 runtime／Prompt Pack，須保留兩邊接線，不能任選一邊覆蓋。
+- 結果：保留原錄音載入及再次授權，補回實際模型的 run context；合併語音、聊天審核、資料編製與編製審核的模組／配方，整包 0.1.48。原工作日誌全文與前置追加部分均保留。
+- 最少驗證：兩項既有 Prompt Pack 版本／依賴載入檢查通過；只以 runtime 相依閉包執行 TypeScript 檢查並通過；`git diff --check` 通過。沒有真模型、通知、部署、瀏覽器或全量驗收。
+- 限制／下一步：原語音／手機及依賴 PR gate 保留，不把衝突收束寫成 Android 或四角色整體驗收完成；沿依賴鏈同步後續 draft。
