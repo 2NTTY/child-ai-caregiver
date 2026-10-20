@@ -17,6 +17,9 @@ const ids = { run: "d4a1b662-d13d-476b-bf52-40a28aa1a1a7", child: "1ebcb39d-a2db
   task: "83a3109f-cdf2-46eb-a845-473802e0766f", answer: "06a6334c-343d-4934-9dcf-5ceaa7707731" };
 const userId = "synthetic-caregiver", question = "是否將合成任務標記為完成？尚未執行，請明確確認。";
 const answerText = "已儲存任務候選，仍待你確認。";
+// Post-merge M01: model-written operation prose is not an exemption. Only Server-substituted
+// receipts (actions.receipts) skip delivery review; keep answerText as the model draft only.
+const serverReceiptText = "已保存 1 項操作。請查看操作結果；已安排不代表已發出通知或照護事項完成。";
 type Fault = "invalid_response" | "unavailable" | "unknown" | "failed" | "rejected" | "conflict" | "last_read" | "citation_revalidation";
 interface FixtureOptions { normal?: boolean; fault?: Fault; questions?: "empty" | "expired" | "multiple" | "blank" | "missing_getter";
   revokeAfterRead?: boolean; cancelAfterRead?: boolean; deadlineDuringRead?: boolean; stageSummary?: boolean; initialSummary?: boolean }
@@ -123,6 +126,8 @@ function fixture(options: FixtureOptions = {}) {
       const message: ChatMessage = { id: ids.answer, childId: ids.child, authorUserId: null, role: "model", text, createdAt: now, inReplyTo: messageId };
       modelMessages.push(message); return message;
     } };
+  const emptyPolicy = { version: 0, effective: false, recordKinds: [], allowPrivateNotes: false,
+    allowRecordCorrections: false, allowSelfTasks: false, reminderConsentVersion: null, reminderBindings: [] };
   const agentOptions = { runtime, store, chat, memory: { context: async () => structuredClone(context),
     ...(options.initialSummary ? { initialConversationSummary: async () => {
       initialSummaryReads++;
@@ -134,6 +139,11 @@ function fixture(options: FixtureOptions = {}) {
       change: async () => { taskWrites++; throw new Error("Unexpected task write"); }, create: async () => { taskWrites++; throw new Error("Unexpected task write"); } },
     knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [{ chunkId: "reviewed-chunk", classification: "official_guidance", text: "Synthetic reviewed evidence" }] }),
       revalidateCitations: async () => options.fault !== "citation_revalidation" }) },
+    // Normal present_answer(operation, no cites) completes only via Server receipt substitution.
+    ...(options.normal ? { actions: {
+      policy: async () => emptyPolicy,
+      receipts: async () => [{ id: "a1b2c3d4-e5f6-4789-8abc-def012345678", kind: "save_record" }],
+    } } : {}),
   } as unknown as Parameters<typeof createProductAgent>[0];
   const service = createProductAgent(agentOptions);
   return { calls, attempts, proposals, summaryInputs, finalizations, modelMessages, requests, initialSummaryReads: () => initialSummaryReads,
@@ -174,7 +184,9 @@ test("HTTP reply appends the saved confirmation question once and reuses its sav
 
 test("normal presentation still continues after nonterminal confirmation and never uses fallback", async () => {
   const s = fixture({ normal: true }), result = assertPending(s, await s.reply());
-  assert.equal(result.status, "completed"); assert.equal(result.text, answerText); assert.equal(result.tools.at(-1)?.name, "present_answer");
+  assert.equal(result.status, "completed"); assert.equal(result.text, serverReceiptText);
+  assert.ok(result.tools.some(tool => tool.name === "present_answer"));
+  assert.equal(result.text.includes(answerText), false);
   assert.equal(s.calls.length, 4); assert.deepEqual(s.finalizations, [{ reason: "normal" }]); assert.equal(s.ledger().questionReads, 0);
 });
 
@@ -187,7 +199,8 @@ test("pending confirmation fallback discards a real staged summary", async () =>
 
 test("normal presentation preserves the existing staged summary finalization", async () => {
   const s = fixture({ stageSummary: true, normal: true }), result = assertPending(s, await s.reply());
-  assert.equal(result.status, "completed"); assert.equal(result.text, answerText);
+  assert.equal(result.status, "completed"); assert.equal(result.text, serverReceiptText);
+  assert.equal(result.text.includes(answerText), false);
   assert.equal(s.summaryInputs.length, 1); assert.ok(s.summaryInputs[0]);
   const summary = s.summaryInputs[0] as { text: string; coveredMessageIds: string[] };
   assert.equal(summary.text, "Synthetic staged summary"); assert.equal(summary.coveredMessageIds.length, 12);
