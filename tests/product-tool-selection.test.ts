@@ -146,7 +146,17 @@ test("illegal loader parameters and unloaded same-batch tools fail closed with c
     assert.deepEqual(metadata(request).capabilityCatalog.loaded, []);
     assert.ok(!Object.hasOwn(request.toolsDict, "save_item"));
     if (!index) return load(["unavailable"]);
-    if (index === 1) return call("load_capabilities", { capabilities: ["writes"], extra: true });
+    const rejected = request.contents.flatMap(content => content.parts ?? [])
+      .filter(part => part.functionResponse?.name === "load_capabilities").at(-1)?.functionResponse?.response;
+    assert.equal(rejected?.status, "rejected");
+    const data = rejected?.data as { code: string; hints: { path: string; reason: string; expected: string }[] };
+    assert.equal(data.code, "invalid_parameters");
+    assert.equal(data.hints.length, 1);
+    assert.ok(JSON.stringify(data.hints).length <= 512);
+    assert.deepEqual({ path: data.hints[0]!.path, reason: data.hints[0]!.reason }, { path: "$", reason: "invalid_shape" });
+    assert.match(data.hints[0]!.expected, /\["writes"\]/u);
+    assert.doesNotMatch(JSON.stringify(data.hints), /unavailable|private-draft-sentinel/u);
+    if (index === 1) return call("load_capabilities", { capabilities: ["writes"], extra: "private-draft-sentinel" });
     assert.equal(index, 2);
     return batch(load(), call("save_item"));
   });

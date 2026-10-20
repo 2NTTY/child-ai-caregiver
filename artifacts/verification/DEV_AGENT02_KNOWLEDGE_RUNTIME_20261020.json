@@ -463,5 +463,28 @@
     "notifications": 0,
     "deployments": 0,
     "cloudBusinessWrites": 0
+  },
+  "toolRepairGuidance20261020": {
+    "baseline": "944aba0",
+    "packVersion": "0.1.54",
+    "changes": [
+      "Catalog-scoped strict loader repair hints bounded to 512 characters; no model values echoed",
+      "Existing core retrieval needs no loader; missing-citation feedback preserves evidence checks",
+      "Presentation plus required independent review share the root budget; no limit or review exemption change"
+    ],
+    "validation": {
+      "scriptedCapabilityRejection": "passed",
+      "promptVersionAndEffectiveInstructions": "2 existing checks passed",
+      "scopedTypeScript": "passed",
+      "liveModel": "not repeated; previous one-run approval consumed"
+    },
+    "limits": [
+      "Original malformed arguments were not retained; exact root field remains unknown",
+      "No live quality or final maintained-source citation pass claimed"
+    ],
+    "generations": 0,
+    "embeddings": 0,
+    "notifications": 0,
+    "deployments": 0
   }
 }

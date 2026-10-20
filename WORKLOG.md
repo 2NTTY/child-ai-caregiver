@@ -3330,3 +3330,12 @@
 - 按使用者「你自己創建」建立僅限Gemini API的授權key及零專案角色的專用身份，保存於工程外受Windows ACL保護目錄。臨時建立腳本誤判新版前綴，修正後按同一固定ID取回，沒有重建key；未修改組織政策、正式網站或計費方案。
 - 正式本地個人設定服務保存真key，唯一metadata核對回 `region_unavailable`；6次本機設定API、零生成／embedding。隨後移除業務設定內的key並恢復原模式，用量完全不變。[結果](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)只證明保存與地區拒絕回報，不宣稱個人key能生成。ADC已有成功證據維持分開。
 - 下一步：處理能力載入及收尾預算後才安排剩餘引用成果驗收；個人key受地區限制、Android設定／部署、長來源／多模態及原draft gate保留。未跑產品全量、瀏覽器、真通知或其他模型比較。
+
+<a id="log-20261020-dev02-tool-repair-guidance"></a>
+## LOG-20261020-DEV02-TOOL-REPAIR-GUIDANCE
+
+- 基線 `944aba0`，master `3795858`；沿單次真驗收的schema／citation拒絕metadata局部修正，不臆測未保存的錯填參數。
+- `load_capabilities` strict失敗提供本次受信目錄、正確物件形狀及群ID／工具名區分；提示最多512字元，不反射使用者值，載入仍不授權。核心搜尋不需loader；缺引用時提示按餘額補查，保留引用／用途檢查。
+- Prompt Pack 0.1.54明確區分呈現一次與獨立審核一次，委派仍共用原預算；不提高硬上限、不強迫純澄清額外審核、不改真收據及豁免政策。
+- 最低驗證：一條既有Runner參數拒絕／計數／未授權執行檢查加入安全修參斷言並通過；兩條既有Prompt Pack版本／有效指引檢查、局部TypeScript及diff核對通過。追加[證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)，原失敗不回寫。零真模型／embedding／通知／部署，沒有再次調整或清零用量。
+- 限制：scripted結果不證明模型已改善理解；新版最終引用、長來源／多模態、真key地區限制與各draft gate保留。下一步沿DEV02處理未完成接線；已用完的真模型批准不重用。

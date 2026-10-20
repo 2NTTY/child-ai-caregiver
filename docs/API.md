@@ -76,7 +76,7 @@ Server／worker 須明確設定 `P2_AGENT_ENABLED=true` 並已套用 migration 0
 
 ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 InstructionProvider 提供，input.context 獨立放入有標籤的 user Content 資料 part；原使用者訊息仍第一個 part，原生附件、歷史及工具關聯保留。正文中的 `{name}`／`{name?}` 不作 state 展開或刪除，資料內容不能授權，也不能聲稱封裝本身保證抵禦所有 prompt injection。
 
-每輪 Server runtime metadata 的 `budget` 包含 `usedBeforeThisCall`、`remaining.modelCallsIncludingThisCall`、剩餘工具／查詢向量／時間、`reserveForFinish`、`nonTerminalToolCallsAvailable` 及 `phase`；是運行即時快照，不是新操作授權或聊天歷史。生成餘額包含本輪尚待預留的呼叫。模型自行選擇必要步驟，`finish` 階段只保留當前已有 terminal 的 schema／toolsDict／ANY allowedFunctionNames；沒有 terminal 的抽取流程沿原輸出契約。原生成／工具／配額／取消計數不重設，Server 仍拒絕未提供工具及混批；未完成或證據不足不能假造成功。
+每輪 Server runtime metadata 的 `budget` 包含 `usedBeforeThisCall`、`remaining.modelCallsIncludingThisCall`、剩餘工具／查詢向量／時間、`reserveForFinish`、`nonTerminalToolCallsAvailable` 及 `phase`；是運行即時快照，不是新操作授權或聊天歷史。生成餘額包含本輪尚待預留的呼叫，以及共用根 run 的委派／審核。reserveForFinish 的一次生成只指呈現，不包含獨立語義審核；產品指引因此要求需要審核時在呈現前保留至少兩次（呈現＋審核），有餘額才容許一次修正及重核。這是規劃提示，不新增配額或改變 Server 的審核豁免判斷。模型自行選擇必要步驟，`finish` 階段只保留當前已有 terminal 的 schema／toolsDict／ANY allowedFunctionNames；沒有 terminal 的抽取流程沿原輸出契約。原生成／工具／配額／取消計數不重設，Server 仍拒絕未提供工具及混批；未完成或證據不足不能假造成功。
 
 `present_answer` 為 terminal 工具。一般階段成功接受後，ADK skipSummarization 結束循環，既有 finalize 仍重驗引用及目前授權；unknown 停止並保留原台帳。gateway 在執行任何 handler 前拒絕 terminal 與其他工具的同一 response，不能先展示再截掉未完成副作用。
 
@@ -86,7 +86,7 @@ ADK 2.1.0 執行邊界：版本化指令與 Server 控制 metadata 經 Instructi
 
 修正只能回報已知結果或必要補問，不能重新執行被拒／未知／已成功操作，也不能把pending候選當正式任務。自然 final 本身仍不可直接展示成成功。這不保證所有F4／T9情境成功，也未建立背景安靜no_action契約；定向scripted驗證不代表真模型或正式使用已通過。
 
-工具參數修正提示：僅 `propose_task` 在執行前 strict schema 驗證失敗時，可在既有 `invalid_parameters`／`nextAction` 旁返回 `hints`。每項只有公開 schema 的固定 `path`、固定 `reason` 及 `expected` 字串；最多3項，整個提示陣列 JSON 最多512字元，超出時整項省略。只識別根、values及六個已宣告任務欄位；未知鍵不回鍵名，不轉傳原 issue、message、input、動態路徑或使用者值。這是模型 function response 的有界修參資訊，不是新增客戶端 HTTP 欄位或家庭資料副本。
+工具參數修正提示：`propose_task` 及 `load_capabilities` 在執行前 strict schema 驗證失敗時，可在既有 `invalid_parameters`／`nextAction` 旁返回 `hints`。每項只有公開 schema 的固定 `path`、固定 `reason` 及 `expected` 字串，整個提示陣列 JSON 最多512字元。任務提示最多3項，只識別根、values及六個已宣告欄位，超出容量整項省略；能力載入提示只有根物件一項，說明只傳非空 capabilities 陣列、使用本次能力群 ID 而非工具名，列出已過濾的 Server 目錄；若列表超限便只指向 capabilityCatalog.groups[].id。兩者均不回未知鍵名或轉傳原 issue、message、input、動態路徑及使用者值。這是模型 function response 的有界修參資訊，不是新增客戶端 HTTP 欄位或家庭資料副本。
 
 修正提示不放寬 schema，不替代身份、授權、版本或業務驗證；非法參數仍零執行。`not_authorized`、handler拒絕及unknown沿原規則，其他工具維持原泛用回覆。僅能使用本次剩餘預算修正，不能因收到提示而增加模型次數、換操作ID或重送未知副作用。這項改善不等於已確定歷史 T7／T8／T9 真實請求中哪個欄位失敗。
 

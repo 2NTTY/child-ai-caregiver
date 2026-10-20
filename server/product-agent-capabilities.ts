@@ -4,7 +4,7 @@ export const PRODUCT_AGENT_TOOL_CATALOG = {
   loader: {
     name: "load_capabilities",
     description: "依目前對話、前文指向及工具結果，載入所需的產品能力。可一次選多個能力；載入只提供工具及指引，不執行業務操作或取得授權。需要讀上下文／知識時可在同一輪分別調用讀取與載入；載入成功後才使用新增工具。只載入相關能力，不必按固定順序或把每種能力都載入。",
-    parameterDescription: "本次需要的能力 ID；只從 Server 提供的目錄選取，可同時載入多項。",
+    parameterDescription: "非空陣列，只填本次 capabilityCatalog.groups[].id，不是 toolNames。只傳 capabilities 欄位；已提供的工具可直接使用，不須載入。",
   },
   groups: [
     { id: "work", description: "保存或更新已讀的同一工作、待答問題及有依據的站內跟進，並查閱背景結果；不是執行業務操作或外發授權。",
