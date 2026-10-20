@@ -68,7 +68,8 @@ try {
     // A credential change cannot silently continue a different payer's work.
     credentialBinding: createHash('sha256').update(JSON.stringify([provider, base.project,
       provider === 'gemini' ? process.env.LOCAL_MODEL_API_KEY : process.env.GOOGLE_APPLICATION_CREDENTIALS ?? 'local-adc'])).digest('hex'),
-    ...(provider === 'gemini' ? { providers: selected => createGeminiKeyProviders(selected, process.env.LOCAL_MODEL_API_KEY, 'gemini') } : {}),
+    ...(provider === 'gemini' ? { providers: selected => createGeminiKeyProviders(selected, process.env.LOCAL_MODEL_API_KEY,
+      'gemini', { documentEmbeddings: true }) } : {}),
     readControl: tx => authority.readControl(tx), fetch: fetchKnowledgeSource,
     ...(fixture ? { fixtureFetch: async () => ({ status: 'ok', items: [fixture] }), isolatedFixturePublish: true } : {}),
   });

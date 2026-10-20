@@ -110,6 +110,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 背景接線：共用原文整理／獨立審核已接 Firestore 工作、共同計量、模型結果保存、發布交易及 `agent:local -- --maintain-knowledge`。一條真 emulator／scripted provider 流程核對發布、重建服務後原工作查回、原文檢索與 unknown 不重送；兩項模型契約檢查及局部型別通過。[本次證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)保留所有失敗，沒有把 scripted 當真品質。
 - 真背景結果：舊樣本六次生成及首輪 PDF 兩次生成的失敗／保留結果不改寫。`d3127a4`／Prompt Pack 0.1.53 沿相同正式 PDF 範圍補一次，兩次生成及一次缺少向量完成整理、獨立審核與本地發布，沒有重試。此為已登記第3頁，不代表整本手冊或圖片多模態完成。聊天入口已改用同一核准來源清單，讀已發布版本，不重新初始化向量。[完整證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。
 - 本地背景查閱：`agent:local -- --inspect-knowledge[=<工作指紋>]` 直接讀原工作及候選／審核，不需要模型 key、不領取 lease 或發布。一次原 emulator 候選查回成功，原用量及待處理結果不變；確認本次候選沒有既有 `solid_food` 規則所綁定的 `starting-solids` key。保留該依賴待核，不放寬發布閘。方法見[本地入口](docs/AGENT_LOCAL.md#獨立背景知識維護)。
+- 已修正 Gemini key 初始化／維護誤用查詢專用 adapter：兩個受控 operator 入口可建立文件向量，一般個人 key 不擴權；沿用原模型、1024維及計量，不重算既有向量。兩項 SDK 契約檢查通過，真 key 未驗；文件標題加片段超過2,000 UTF-8 bytes仍明確拒絕，長來源分批gate不變。
 - 本地非郵件收件箱已接正式 runtime／worker：Telegram 本機開始與確認、Web Push 合成訂閱、原操作防重及撤銷均通過；只保存加密預覽並回報未實際發送，不假報渠道接受。零真模型／通知；[證據](artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)的 `localDelivery20261020`。原生 Android 完整路徑未驗。
 - 正式 Web 聯合：Chromium 沿正常登入／孩子選擇，重新讀到原文件 `3b1171d2…` 的 v2「下次到診問題」，未改章節。隨後同孩子的一個真聊天讀文件並搜尋知識，4次生成／1次查詢後因每日上限停止；本地政策初始20／100、本人已用20，未保存完整引用回覆。沒有重送、調額或清零；啟動及操作文件已指向本地 `/admin`，明示與現網200／400分開。
 - 尚欠：背景新版的最終聊天引用及新對話成果接續；多模態與長來源分批仍未完成，不以單頁 PDF 達標。普通本地入口已可供協作者修改及測試，不必等這些 gate 才使用。DEV02、MODEL 真憑證及原 draft／Android gate 各自保留；再次真模型前先核當日可用預算，不重跑已通過的編製／發布。

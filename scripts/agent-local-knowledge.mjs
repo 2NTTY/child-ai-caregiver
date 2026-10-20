@@ -45,7 +45,9 @@ try {
   const pending = await store.missingDocuments(imported.versionId);
   if (pending.length > 1) throw Error('Local seed exceeds its one-embedding limit');
   const deadline = Date.now() + 120_000;
-  const embedding = provider === 'gemini' ? createGeminiKeyProviders(ai, process.env.LOCAL_MODEL_API_KEY).embedding : createVertexEmbeddingProvider(ai);
+  const embedding = provider === 'gemini'
+    ? createGeminiKeyProviders(ai, process.env.LOCAL_MODEL_API_KEY, 'gemini', { documentEmbeddings: true }).embedding
+    : createVertexEmbeddingProvider(ai);
   const gateway = createEmbeddingGateway({ config: ai, provider: embedding, usage: createFirestoreOperatorEmbeddingUsage(domain, deadline) });
   let generated = 0;
   for (const document of pending) {

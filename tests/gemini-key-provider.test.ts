@@ -102,6 +102,34 @@ test("query embeddings accept missing Vertex statistics, normalize 1024 dimensio
   assert.equal(calls.length, 7);
 });
 
+test("explicit operator embeddings preserve document titles without widening personal or Vertex access", async (context) => {
+  const calls: { url: URL; init: RequestInit }[] = [];
+  context.mock.method(globalThis, "fetch", async (url: string | URL | Request, init: RequestInit = {}) => {
+    calls.push({ url: requestUrl(url), init });
+    return Response.json({ embeddings: [{ values: vector() }] });
+  });
+  const operator = createGeminiKeyProviders(config, apiKey, "gemini", { documentEmbeddings: true });
+  const document = { task: "RETRIEVAL_DOCUMENT" as const, title: "官方準備資料", text: "有來源的完整片段。" };
+  const reply = await operator.embedding.embed(document, signal());
+  assert.equal(Math.hypot(...reply.values), 1);
+  const body = JSON.parse(String(calls[0]!.init.body));
+  assert.equal(calls[0]!.url.pathname, "/v1beta/models/gemini-embedding-001:batchEmbedContents");
+  assert.equal(body.requests.length, 1);
+  assert.equal(body.requests[0].taskType, document.task);
+  assert.equal(body.requests[0].title, document.title);
+  assert.deepEqual(body.requests[0].content.parts, [{ text: document.text }]);
+  assert.equal(body.requests[0].outputDimensionality, 1024);
+  assert.equal(body.requests[0].autoTruncate, undefined);
+  for (const invalid of [{ ...document, title: undefined }, { ...document, title: " " },
+    { ...document, text: "a".repeat(1990) }]) {
+    await assert.rejects(operator.embedding.embed(invalid, signal()), { code: "invalid_input" });
+  }
+  await assert.rejects(createGeminiKeyProviders(config, apiKey).embedding.embed(document, signal()), { code: "invalid_input" });
+  await assert.rejects(createGeminiKeyProviders(config, apiKey, "vertex", { documentEmbeddings: true })
+    .embedding.embed(document, signal()), { code: "unavailable" });
+  assert.equal(calls.length, 1);
+});
+
 test("metadata checks use only GET and native SDK errors or cancellation cannot expose the key or retry", async (context) => {
   const calls: { url: URL; init: RequestInit }[] = [];
   let mode: "metadata" | "missing-actions" | "unsupported" | "error" | "pending" = "metadata";

@@ -319,5 +319,24 @@
     },
     "conclusion": "Web showed the same saved v2 document after restart. Chat read the document and searched knowledge, but daily user quota stopped final delivery. No rerun, quota change or usage reset; final PDF citation remains unverified.",
     "scopeLimit": "No full browser suite, visual design review, notifications, deployment or cloud business writes. An initial command referenced absent tsx and failed before starting any verification; rerun used Node native TypeScript."
+  },
+  "geminiOperatorEmbedding20261020": {
+    "baseline": "f4310aae1e951fb84321949f6f5fa08f68b190ca",
+    "defect": "Explicit Gemini-key seed and maintenance commands used the query-only personal adapter, which rejected RETRIEVAL_DOCUMENT before any provider request.",
+    "change": "Only the two trusted operator entrypoints enable document embedding. Personal and chat routing remain query-only; original authority, accounting, publication and Vertex Express exclusions remain in force.",
+    "verification": {
+      "sdk": "@google/genai 2.24.0",
+      "focusedTests": 2,
+      "failedTests": 0,
+      "coverage": "Real SDK serialized document title/task/text with 1024 dimensions into mocked HTTP; normalization, conservative combined byte bound, default query-only and Vertex exclusions were checked.",
+      "typecheck": "passed: provider and test dependency closure",
+      "scriptSyntax": "passed: agent-local-knowledge.mjs and agent-local-maintain.mjs",
+      "diffCheck": "passed",
+      "realModelCalls": 0,
+      "realEmbeddingCalls": 0,
+      "cloudWrites": 0,
+      "deployments": 0
+    },
+    "limits": "SDK 2.24.0 rejects Developer API autoTruncate. Document title plus embedding text must fit the existing conservative 2000 UTF-8 byte bound; larger input fails explicitly, never silently truncates. Live Gemini key, long-source continuation and previous draft gates remain unverified."
   }
 }

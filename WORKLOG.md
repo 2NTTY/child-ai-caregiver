@@ -3298,3 +3298,10 @@
 - 固定 Expo CLI 57.0.26 原始碼確認 CI 會停用監看；重啟載入後，再次修改可在服務中的 bundle 讀到，無須重啟。原表單修正的局部型別通過，launcher 語法及 diff 檢查通過，臨時安全診斷已移除。
 - Chromium 正式本地頁面沿正常登入／SPA 導航保存合成 key、所選模型及七項限制；原生 session 的共用 API client 讀到同版本及生效值。Web 已刪除合成 key，再恢復原平台模式；補兩次業務唯讀核對版本7、無 key、模型用量與原記錄完全一致。沒有真模型、通知、正式資料或部署，不當作 Android 真機證據。
 - 原始失敗保留：Node fetch 的瀏覽器標頭遭原生入口拒絕、未保存草稿被重設、Metro 舊 bundle，以及腳本重複全頁初始化耗盡150次請求上限。改用正常 SPA 後保存／移除通過，尾部畫面重讀仍碰上原上限而停止；沒有提高上限、重跑整套或把整批改成通過。真 key、真機設定與正式交付仍待驗。[證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。
+
+<a id="log-20261020-dev-agent02-key-embedding"></a>
+## LOG-20261020-DEV-AGENT02-KEY-EMBEDDING
+
+- 核查 `f4310aa` 發現 Gemini key 的本地知識初始化及背景維護使用查詢專用 adapter，會拒絕文件向量。已為兩個明確 operator 入口啟用文件 task／title，保留一般個人 key 的查詢限制、正式 gateway 權限／計量及發布防重；沒有換模型、重算向量或使用平台憑證回退。
+- 固定 SDK 2.24.0 不接受 Developer API `autoTruncate`，維持保守的標題加正文2,000 UTF-8 bytes限制，超出明確拒絕。沒有以局部向量或加大上限冒充完整長來源；ADC既有流程不變。
+- 只跑兩項受影響SDK契約檢查，均通過；局部型別、兩個腳本語法及diff檢查通過。零真模型、embedding、雲端寫入、通知及部署；真key及既有draft gate保持未驗。[證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。
