@@ -4,6 +4,8 @@ import { z } from 'zod';
 import type { AgentScope } from './agent-runtime.ts';
 import { agentProposalSchema, agentDecisionSchema, type AgentProposal, type AgentProposalValue, type AgentDecision, type AgentPendingPage } from '../src/shared/product-agent.ts';
 import { agentSavedProposalSchema } from '../src/shared/product-agent-result.ts';
+import { dataComposeReviewBindingSchema, type DataComposeReviewBinding } from '../src/shared/data-compose.ts';
+import { composeReviewStillAllowsProposal } from './data-compose.ts';
 import { firestoreTaskSchema, domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
 import type { FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import type { FirestoreAgentRuns, FirestoreAgentRun } from './firestore-agent-runs.ts';
@@ -15,6 +17,8 @@ const uuid = z.uuid(), time = z.iso.datetime({ offset: true });
 export const firestoreAgentProposalSchema = z.object({
   proposal: agentSavedProposalSchema, callId: z.string().min(1).max(200),
   authorizationVersion: z.string().regex(/^[0-9]+$/u), sourceBasis: z.string().nullable(),
+  /** Server compose-review binding; omitted for ordinary clear-edit proposes. */
+  composeReview: dataComposeReviewBindingSchema.optional(),
 }).strict();
 export type FirestoreAgentProposal = z.infer<typeof firestoreAgentProposalSchema>;
 const cursorSchema = z.object({ userId: z.string(), childId: uuid, epoch: uuid, createdAt: time, id: uuid }).strict();
@@ -143,6 +147,17 @@ export function createFirestoreAgentProposals(options: {
       const checked = await target(b, run, p.value);
       if (checked.sourceBasis !== saved.sourceBasis || checked.visibility !== p.targetVisibility) domainReject('source_changed');
       if (checked.visibility === 'family' && !input.confirmShared) domainReject('sharing_confirmation_required', 400);
+      if (saved.composeReview && p.value.kind === 'family_document_change') {
+        const live = runs.current(b);
+        if (!composeReviewStillAllowsProposal({
+          review: saved.composeReview,
+          documentId: p.value.documentId,
+          expectedVersion: p.value.change.expectedVersion,
+          authorityVersion: p.value.change.authorityVersion,
+          edits: p.value.change.edits,
+          scope: live,
+        })) domainReject('compose_review_required');
+      }
       effect = await prepareEffect(b, run, saved, input.confirmShared);
     }
     const change = effect ? null : await b.prepareChange(p.id, 'memory', true);
@@ -152,8 +167,9 @@ export function createFirestoreAgentProposals(options: {
   }
   return {
     query, read, visible, inRun, source, target, prepareDecision,
-    async propose(scope: AgentScope, runId: string, callId: string, raw: AgentProposalValue) {
+    async propose(scope: AgentScope, runId: string, callId: string, raw: AgentProposalValue, options?: { composeReview?: DataComposeReviewBinding }) {
       const value = domainParse(agentProposalSchema, raw); domainParse(z.string().min(1).max(200), callId);
+      const composeReview = options?.composeReview ? dataComposeReviewBindingSchema.parse(options.composeReview) : undefined;
       return authority.runTransaction(scope.userId, scope.childId, async b => {
         const run = await runs.requireLive(b, scope, runId);
         if (run.trigger.kind !== 'interactive') domainReject('confirmation_requires_interactive_scope', 400);
@@ -168,7 +184,10 @@ export function createFirestoreAgentProposals(options: {
         const proposal: AgentProposal = { id: randomUUID(), runId, childId: scope.childId, version: 1, status: 'pending',
           createdAt, expiresAt: new Date(now() + 86_400_000).toISOString(), value, targetLabel: checked.label,
           ...(checked.visibility ? { targetVisibility: checked.visibility } : {}), result: null };
-        write(b, { proposal, callId, authorizationVersion: b.authorizationVersion, sourceBasis: checked.sourceBasis }, true);
+        write(b, {
+          proposal, callId, authorizationVersion: b.authorizationVersion, sourceBasis: checked.sourceBasis,
+          ...(composeReview ? { composeReview } : {}),
+        }, true);
         runs.write(b, run); return proposal;
       });
     },

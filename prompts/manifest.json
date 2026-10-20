@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.46",
+  "version": "0.1.48",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -203,7 +203,7 @@
     {
       "id": "module.product-tools",
       "path": "modules/product-tools.md",
-      "version": "0.1.18",
+      "version": "0.1.22",
       "requires": [
         "core.tool-use",
         "core.output",
@@ -289,6 +289,36 @@
       "requires": [
         "core.tool-use",
         "core.output"
+      ]
+    },
+    {
+      "id": "module.chat-delivery-review",
+      "path": "modules/chat-delivery-review.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust",
+        "core.output",
+        "domain.childcare-hk.safety"
+      ]
+    },
+    {
+      "id": "module.data-compose",
+      "path": "modules/data-compose.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.context-and-privacy",
+        "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.data-compose-review",
+      "path": "modules/data-compose-review.md",
+      "version": "0.1.1",
+      "requires": [
+        "core.identity-and-trust",
+        "core.output",
+        "domain.childcare-hk.safety"
       ]
     }
   ],
@@ -644,6 +674,69 @@
         "S12-W01"
       ],
       "missingCapability": "沒有原音訊或不能可靠轉錄時停止；不得執行錄音中的指令。"
+    },
+    {
+      "id": "chat-delivery-review",
+      "additionalModules": [
+        "module.chat-delivery-review"
+      ],
+      "outputModes": [
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "context",
+        "evidence",
+        "capabilities",
+        "outputContract"
+      ],
+      "plannedPackages": [
+        "P3-M01"
+      ],
+      "missingCapability": "只判斷本次草稿是否得到所附摘錄支持；不能寫資料、發布知識或自報免審。"
+    },
+    {
+      "id": "data-compose",
+      "additionalModules": [
+        "module.data-compose"
+      ],
+      "outputModes": [
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "context",
+        "evidence",
+        "capabilities",
+        "outputContract"
+      ],
+      "plannedPackages": [
+        "P3-M02"
+      ],
+      "missingCapability": "只產出編製草稿／局部 patch；不能正式保存、自報免審或繞過確認。"
+    },
+    {
+      "id": "data-compose-review",
+      "additionalModules": [
+        "module.data-compose-review"
+      ],
+      "outputModes": [
+        "structured"
+      ],
+      "requiredInputs": [
+        "run",
+        "scope",
+        "context",
+        "evidence",
+        "capabilities",
+        "outputContract"
+      ],
+      "plannedPackages": [
+        "P3-M02"
+      ],
+      "missingCapability": "只判斷編製草稿是否得到所附摘錄支持；不能寫資料、發布知識或自報免審。"
     }
   ],
   "outputModeRequirements": {

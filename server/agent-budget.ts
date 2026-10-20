@@ -9,6 +9,15 @@ export const AGENT_LIMITS = Object.freeze({ modelCalls: 4, toolCalls: AGENT_RUN_
   deadlineMs: AGENT_RUN_LIMITS.deadlineSeconds.default * 1000, outputTokens: 1024, inputCharacters: 32000 });
 // Platform policy is separate from legacy/fixed and personal run profiles.
 export const PLATFORM_AGENT_RUN_LIMITS = Object.freeze({ modelCalls: AGENT_RUN_LIMITS.modelCalls.default, queryEmbeddings: AGENT_RUN_LIMITS.queryEmbeddings.default });
+/**
+ * P3-M01 keeps this per-run ceiling at 4 and does not raise daily quotas.
+ * Chat-delivery review spends one remaining model call on the same root budget.
+ * A draft that has already used every call stays unfinished; it does not open
+ * another run. The P3 proposal of 6 is opt-in only: see
+ * AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS. A bound personal or platform limit,
+ * including the production default of 4, is not overridden.
+ */
+export const CHAT_DELIVERY_REVIEW_MODEL_CALLS = Object.freeze({ current: 4, proposal: 6 });
 export const AGENT_INTERACTIVE_INPUT = Object.freeze({ default: 64000, min: 32000, max: 64000 });
 export const AGENT_TOOL_RESPONSE_RESERVE = 4096;
 
@@ -33,7 +42,8 @@ export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
 }
 
 export type AgentStopReason = ModelProviderStopReason | "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
-  | "input_limit" | "unauthorized" | "quota_exceeded" | "busy" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown";
+  | "input_limit" | "unauthorized" | "quota_exceeded" | "busy" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown"
+  | "delivery_review_incomplete" | "compose_review_incomplete";
 export class AgentStopped extends Error {
   readonly reason: AgentStopReason;
   constructor(reason: AgentStopReason) { super(reason); this.reason = reason; }
@@ -55,6 +65,7 @@ export class AgentBudget {
   readonly signal: AbortSignal;
   private readonly used = { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 };
   private configured = false;
+  hasPersonalLimits(): boolean { return this.configured; }
   private inputConfigured = false;
   private responseCharacters: number | null = null;
   private selectedLimits: { [K in keyof typeof AGENT_LIMITS]: number } = { ...AGENT_LIMITS };

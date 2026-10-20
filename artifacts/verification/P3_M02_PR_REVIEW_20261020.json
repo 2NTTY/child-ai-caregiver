@@ -1,0 +1,26 @@
+{
+  "package": "P3-M02",
+  "reviewedHead": "aff68047e8e5e340bb085ade8bb25d2fbbc91cd3",
+  "integrationBase": "2f8e339bfe5936418b88848866e30432659336ef",
+  "date": "2026-10-20",
+  "fixes": [
+    "compose and review receive exact output schemas",
+    "review provenance records the run-selected model",
+    "attempt keys distinguish different intent/evidence on the same document version",
+    "resolved proposals are not reported as newly prepared confirmation",
+    "preserve M01 review budget guidance alongside compose guidance"
+  ],
+  "reviewDisposition": {
+    "promptFreshness": "promptVersion is provenance; policyVersion is the explicit invalidation gate. Unrelated prompt deployment does not discard pending confirmation.",
+    "crossRunBinding": "No current reuse path found: Server generates review on each compose flow and stores proposal within the authorized run. No model-supplied review is accepted.",
+    "existingPersistence": "Source basis, authorization, document version and terminal replay checks retained; not newly cloud-verified."
+  },
+  "checks": {
+    "targetedScripted": {"passed": 3, "failed": 0},
+    "scopedTypecheck": "passed; initial fixture-only diagnostics corrected",
+    "promptAssembly": "product-interactive/tool_cycle and compose/review structured recipes passed at 0.1.47; helper initially omitted the product recipe conversation input, corrected without product changes",
+    "diffCheck": "passed"
+  },
+  "notRun": ["real models", "cloud", "browser/device", "full suite", "deployment"],
+  "remaining": ["true model quality", "complete save and new conversation readback", "structured artifacts beyond family-document patch"]
+}

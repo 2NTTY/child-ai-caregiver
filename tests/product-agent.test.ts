@@ -68,8 +68,8 @@ for (const validCitation of [true, false]) test(`terminal product presentation r
     dueAt: new Date(Date.now() + 3600000).toISOString(), timeZone: "Asia/Hong_Kong" };
   const steps = [
     [{ id: "context-call", name: "read_context", args: {} },
-      { id: "load-tasks", name: "load_capabilities", args: { capabilities: ["tasks"] } }],
-    { id: "search-call", name: "search_knowledge", args: { query: "合成照護主題", classification: "official_guidance" } },
+      { id: "load-tasks", name: "load_capabilities", args: { capabilities: ["tasks"] } },
+      { id: "search-call", name: "search_knowledge", args: { query: "合成照護主題", classification: "official_guidance" } }],
     { id: "candidate-call", name: "propose_task", args: { values } },
     { id: "answer-call", name: "present_answer", args: { kind: "mixed", paragraphs: [{ kind: "caregiving", text: chunk.text, citationIds: [chunk.chunkId] },
       { kind: "operation", text: "候選已保存，仍待確認。", citationIds: [] }] } },
@@ -77,9 +77,22 @@ for (const validCitation of [true, false]) test(`terminal product presentation r
   let calls = 0, writes = 0, revalidations = 0, claimed = false, saved: ProductAgentResult | null = null;
   const proposals: AgentProposal[] = [];
   const runtime = createAgentRuntime({ config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
-    usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async () => {
+    usage: { reserve: async () => true, record: async () => {} }, provider: { generate: async request => {
+      const user = request.contents.flatMap(content => content.parts ?? []).map(part => part.text ?? "").join("\n");
+      if (user.includes("chat-delivery-review")) {
+        assert.equal(validCitation, true, "Invalid citations must fail before semantic review");
+        assert.deepEqual(Object.keys(request.toolsDict), []);
+        const payload = JSON.parse(user.slice(user.indexOf("{"))) as { draftHash: string; paragraphs: { text: string; citationIds: string[] }[]; sources: { citationId: string; excerpt: string }[] };
+        const supported = payload.paragraphs.every(paragraph => paragraph.citationIds.every(id => {
+          const source = payload.sources.find(item => item.citationId === id);
+          return Boolean(source?.excerpt.includes(paragraph.text));
+        }));
+        calls++;
+        return { content: { role: "model", parts: [{ text: JSON.stringify({ draftHash: payload.draftHash, decision: supported ? "pass" : "revise",
+          issues: supported ? [] : [{ paragraph: 0, reason: "unsupported meaning", support: "excerpt does not state the claim" }] }) }] }, finishReason: FinishReason.STOP };
+      }
       const step = steps[calls++];
-      assert.ok(step, "A fifth provider call must not start");
+      assert.ok(step, "An extra generator call must not start");
       return { content: { role: "model", parts: [step].flat().map(functionCall => ({ functionCall })) }, finishReason: FinishReason.STOP };
     } } });
   const options = { runtime,
@@ -111,12 +124,14 @@ for (const validCitation of [true, false]) test(`terminal product presentation r
   assert.deepEqual(result.citations, validCitation ? [chunk] : []);
   assert.deepEqual(result.tools.map(tool => ({ name: tool.name, status: tool.status })),
     steps.flat().map(step => ({ name: step.name, status: "succeeded" })));
-  assert.deepEqual(result.counts, { modelCalls: 4, toolCalls: 5, queryEmbeddings: 0 });
+  assert.deepEqual(result.counts, { modelCalls: validCitation ? 4 : 3, toolCalls: 5, queryEmbeddings: 0 });
+  assert.equal(result.deliveryReview?.decision, validCitation ? "pass" : undefined);
+  if (validCitation) assert.equal(JSON.stringify(result.deliveryReview).includes(chunk.text), false);
   assert.equal(result.proposals[0].status, "pending");
   assert.equal(result.proposals[0].result, null);
-  assert.equal(calls, 4); assert.equal(writes, 1); assert.equal(revalidations, 1);
+  assert.equal(calls, validCitation ? 4 : 3); assert.equal(writes, 1); assert.equal(revalidations, validCitation ? 2 : 1);
   assert.deepEqual(await service.reply(userId, childId, messageId, async () => true), result);
-  assert.equal(calls, 4); assert.equal(writes, 1); assert.equal(revalidations, 1);
+  assert.equal(calls, validCitation ? 4 : 3); assert.equal(writes, 1); assert.equal(revalidations, validCitation ? 2 : 1);
 });
 
 for (const growth of [false, true]) test(growth
@@ -142,7 +157,8 @@ for (const growth of [false, true]) test(growth
         assert.equal(response?.status, "rejected");
         const data = response?.data as Record<string, unknown> | undefined;
         assert.deepEqual(data && { code: data.code, nextAction: data.nextAction, citationField: data.citationField },
-          { code: "citation_required", nextAction: undefined, citationField: undefined });
+          { code: "citation_required", citationField: undefined,
+            nextAction: "Each caregiving or safety paragraph needs supporting official citationIds. Omit unsupported advice; report operation receipts separately from advice. Do not attach irrelevant citations." });
       }
       const functionCall = index === 0 ? { id: "invalid-source", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: "未有有效引用的合成建議", citationIds: ["source-metadata-id"] }] } }
         : index === 1 ? (growth ? { id: "search-call", name: "search_knowledge", args: {
@@ -150,7 +166,7 @@ for (const growth of [false, true]) test(growth
         : index === 2 ? { id: "answer-call", name: "present_answer", args: { kind: "record_restatement",
           paragraphs: growth ? [{ text: "配方奶也不足，而且要立即加固。", citationIds: [chunk.chunkId] },
             { text: "另一項未經核對的照護建議。", citationIds: [] }]
-            : [{ text: "原任務已到期，完成狀態仍待你確認。", citationIds: [] }] } } : null;
+            : [{ text: "任務已到期，完成狀態仍待你確認。", citationIds: [] }] } } : null;
       return { content: { role: "model", parts: functionCall ? [{ functionCall }] : [{ text: "完成說明。" }] }, finishReason: FinishReason.STOP };
     } } });
   const options = { runtime,
@@ -174,6 +190,6 @@ for (const growth of [false, true]) test(growth
     context: { eventType: growth ? "growth_attention" : "task_due", purpose: "station_only_due_task_briefing" }, authorize: async () => true });
   assert.equal(result?.status, "completed", JSON.stringify(result));
   assert.equal(result.provenance?.recipeId, "product-background");
-  assert.equal(result.text, growth ? chunk.text + " [1]" : "原任務已到期，完成狀態仍待你確認。");
+  assert.equal(result.text, growth ? chunk.text + " [1]" : "任務已到期，完成狀態仍待你確認。");
   assert.equal(reads, 1); assert.equal(calls, 3); assert.deepEqual(result.proposals, []);
 });

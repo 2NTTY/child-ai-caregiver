@@ -1,0 +1,29 @@
+{
+  "package": "P3-M03",
+  "reviewedHead": "eff2e664e08f7420211c2372f5010d4de752968a",
+  "integrationBase": "fbf5274ddf6bd2edc76b4576101363e8c9c3d79c",
+  "date": "2026-10-20",
+  "scope": "offline candidate foundation; not a completed production background Agent",
+  "fixes": [
+    "disabled live fetch only uses explicit offline fixture port",
+    "PDF coverage enforced independently before unchanged/review paths",
+    "logical occurrence fingerprint excludes worker generation",
+    "live publication fails closed before side effects while transactional fencing is absent"
+  ],
+  "checks": {
+    "targetedScripted": {"passed": 4, "failed": 0},
+    "scopedServerTypecheck": "passed",
+    "diffCheck": "passed"
+  },
+  "retainedPendingTests": {
+    "count": 6,
+    "reason": "Original simulated live publisher cases need the transactional fenced publisher. Bodies retained and explicitly skipped, not counted as passing."
+  },
+  "remaining": [
+    "durable transactionally fenced budget/publication/receipt adapter",
+    "real model organization and semantic review",
+    "production scheduler/runtime assembly",
+    "full background update then chat citation"
+  ],
+  "notRun": ["real models", "external fetch", "cloud", "browser/device", "full suite", "deployment"]
+}

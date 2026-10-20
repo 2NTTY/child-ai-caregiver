@@ -97,7 +97,7 @@ function domainFixture() {
     assert.ok(index < (value.document ? 3 : 1));
     const functionCall = value.document && index === 0 ? { id: 'load-documents', name: 'load_capabilities', args: { capabilities: ['document_edit'] } }
       : value.document && index === 1 ? { id: 'check-bag', name: 'change_family_document', args: { sourceQuote: value.text, documentId, change } }
-      : { id: 'answer', name: 'present_answer', args: { kind: value.document ? 'operation' : 'clarification', paragraphs: [{ text: '合成回覆。', citationIds: [] }] } };
+      : { id: 'answer', name: 'present_answer', args: { kind: value.document ? 'operation' : 'clarification', paragraphs: [{ text: '已儲存任務候選，仍待你確認。', citationIds: [] }] } };
     assert.ok(Object.hasOwn(request.toolsDict, functionCall.name));
     if (value.document && index === 0) assert.equal(Object.hasOwn(request.toolsDict, 'change_family_document'), false);
     if (index > 0) assert.ok(request.contents.some(content => content.parts?.some(part => part.functionResponse)));
@@ -313,7 +313,7 @@ test('claimed services compose real ProductAgent, shared runtime, Runner and all
     const service = s.build(), entries = Array.from({ length: 4 }, (_, i) => s.domain.add(`synthetic-user-${i}`));
     const pending = entries.map(entry => reply(service, entry)); await entered.promise;
     const duplicate = await reply(service, s.domain.add('synthetic-user-0')), fifth = await reply(service, s.domain.add('synthetic-user-4'));
-    assert.equal(duplicate?.stopReason, 'unavailable'); assert.equal(fifth?.stopReason, 'unavailable'); assert.equal(s.opens.length, 4);
+    assert.equal(duplicate?.stopReason, 'busy'); assert.equal(fifth?.stopReason, 'busy'); assert.equal(s.opens.length, 4);
     release.resolve(); for (const result of await Promise.all(pending)) assert.equal(result?.status, 'completed', JSON.stringify(result));
     const next = await reply(service, s.domain.add('synthetic-user-0')); assert.equal(next?.status, 'completed', JSON.stringify(next));
     assert.equal(s.opens.length, 5); assert.equal(s.stats().calls, 5); assert.equal(s.stats().sql, 0);
