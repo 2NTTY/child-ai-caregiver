@@ -68,6 +68,11 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
     resolver: zodResolver(modelSettingsSchema(settings.keyConfigured, settings.provider)), defaultValues: modelSettingsDraft(settings, snapshot?.effective), mode: "onChange", shouldFocusError: false,
   });
   usePreviewLeaveGuard(isDirty, false, "account");
+  const setDraftEditing = sourceActions.setDraftEditing;
+  useEffect(() => {
+    setDraftEditing?.(active && isDirty);
+    return () => setDraftEditing?.(false);
+  }, [active, isDirty, setDraftEditing]);
   const provider = watch("provider"), selectedModel = watch("model");
   const selectedCapabilities = model.catalog?.models.find(item => item.id === selectedModel)?.capabilities;
   const mode = watch("mode"), keyText = watch("keyText"), consent = watch("consent");

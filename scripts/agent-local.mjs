@@ -112,6 +112,9 @@ const publicEnv = { ...baseEnv, NODE_ENV: 'development', EXPO_PUBLIC_AUTH_PROVID
   EXPO_PUBLIC_FIREBASE_APP_ID: '1:123456789:web:abcdef0123456789', EXPO_PUBLIC_FIREBASE_API_KEY: 'local-emulator-public-key-only',
   EXPO_PUBLIC_AUTH_EMULATOR_URL: 'http://' + emulatorHost(3), EXPO_PUBLIC_API_BASE_URL: origin + '/api',
 };
+// Expo disables Metro's file watcher in CI mode. Only the emulator/Server
+// processes need that flag; edited Web code must be available on the next read.
+delete publicEnv.CI;
 const firebasePath = join(root, 'node_modules', 'firebase-tools', 'lib', 'bin', 'firebase.js');
 await writeFile(join(directory, 'firestore.rules'), "rules_version = '2'; service cloud.firestore { match /databases/{database}/documents { match /{document=**} { allow read, write: if false; } } }\n");
 await writeFile(join(directory, 'storage.rules'), "rules_version = '2'; service firebase.storage { match /b/{bucket}/o { match /{object=**} { allow read, write: if false; } } }\n");

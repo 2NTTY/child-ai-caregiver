@@ -6,6 +6,7 @@ import { settingsAccessError, settingsFailure, settingsRead, useSettingsRefresh,
 export function useProductionModelSettings(env: SettingsEnvironment) {
   const api = useMemo(() => createModelSettingsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const requests = useSettingsRequests(env, true);
+  const [draftEditing, setDraftEditing] = useState(false);
   const [state, setState] = useState<ModelSettingsViewModel>({ scopeKey: env.identityKey, accountName: "", serverLabel: env.apiBaseUrl,
     snapshot: null, online: env.online, authorized: true, busy: null, operation: "none", notice: "", needsRead: false,
     formRevision: 0, secretRevision: 0, keyCheck: null });
@@ -56,7 +57,7 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
     } catch (error) { if (request.current()) fail(error); }
     finally { if (request.current()) patch({ busy: null }); request.finish(); }
   };
-  const actions: ModelSettingsActions = { refresh: () => { void refresh(); },
+  const actions: ModelSettingsActions = { setDraftEditing, refresh: () => { void refresh(); },
     save(command) {
       const current = latest.current;
       if (!env.userId || !current.snapshot || current.needsRead || !current.authorized || command.expectedVersion !== current.snapshot.settings.version) return;
@@ -108,7 +109,7 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
   useEffect(() => { if (!env.online) patch({ busy: null, keyCheck: null, catalog: null,
     ...(pending.current ? { operation: "unknown", needsRead: true, originalOperationId: pending.current.opId } : {}),
     secretRevision: latest.current.secretRevision + 1 }); }, [env.online]);
-  useSettingsRefresh(env, actions.refresh, !requests.busy && !state.needsRead, true);
+  useSettingsRefresh(env, actions.refresh, !requests.busy && !state.needsRead, true, draftEditing);
   useDomainWriteGuard(false, state.operation === "unknown" || state.busy === "save", "account");
   const user = env.owner.getSnapshot().records.user;
   return { model: { ...state, scopeKey: env.identityKey, accountName: user?.name ?? "", online: env.online,

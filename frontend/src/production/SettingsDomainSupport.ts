@@ -52,16 +52,23 @@ export function settingsRead<T>(env: SettingsEnvironment, domain: string, accoun
   return env.queryClient.fetchQuery({ queryKey: ["production", account ? env.identityKey : env.scopeKey, "settings-domains", env.owner.getSnapshot().sessionGeneration, domain],
     queryFn: read, staleTime: 0, gcTime: 0, retry: false });
 }
-export function useSettingsRefresh(env: SettingsEnvironment, refresh: () => void, safe: boolean, account = false) {
-  const latest = useRef({ refresh, safe }); latest.current = { refresh, safe };
+export function useSettingsRefresh(env: SettingsEnvironment, refresh: () => void, safe: boolean, account = false, deferExternalRefresh = false) {
+  const latest = useRef({ refresh, safe, deferExternalRefresh }); latest.current = { refresh, safe, deferExternalRefresh };
   const deferred = useRef(false);
   useEffect(() => {
     if (env.online && latest.current.safe) latest.current.refresh();
     // Reconnection may read current state, but never retries a pending write.
   }, [env.online, account ? env.identityKey : env.scopeKey]);
   useEffect(() => {
-    const changed = () => { if (latest.current.safe) latest.current.refresh(); else deferred.current = true; };
+    // Synchronization must not replace an actively edited form. Identity and
+    // reconnect reads above still run; writes retain their version checks.
+    const changed = () => {
+      if (latest.current.safe && !latest.current.deferExternalRefresh) latest.current.refresh();
+      else deferred.current = true;
+    };
     return subscribeOnlineRefresh(changed);
   }, []);
-  useEffect(() => { if (safe && env.online && deferred.current) { deferred.current = false; latest.current.refresh(); } }, [safe, env.online]);
+  useEffect(() => {
+    if (safe && env.online && !deferExternalRefresh && deferred.current) { deferred.current = false; latest.current.refresh(); }
+  }, [safe, env.online, deferExternalRefresh]);
 }

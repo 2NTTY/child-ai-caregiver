@@ -34,7 +34,7 @@ ADC 留在本機。若全局 `GOOGLE_APPLICATION_CREDENTIALS` 指向舊檔案，
 - 開啟終端列出的 `http://127.0.0.1:<port>`；不要另開 Expo 的直接端口。原 Web 和 API 經同一個本機 origin。
 - 本地帳號為 `developer@local.yuyoufang.test`，隨機密碼保存在終端列出的 `.cache/agent-local/state.json`；這是本機合成帳號，不是正式網站密碼。正常登入、產品條款及資料同意仍經正式流程。
 - 同一個明確初始化的本地帳號可開 `/admin` 查看及調整本地限額。開始付費核對前先看當日用量；每日上限和每輪上限分開，生成與查詢 embedding 都計次數。本地沿 Server 初始政策或已保存的本地修改，不會複製正式網站的 200／400 設定；重啟不清零，不授予正式網站權限，也不改正式配額。
-- 修改共用前端可熱更新；Windows／macOS 使用 Node 原生 `--watch-path`，只監看 `server`、`src/shared`、`prompts`，不監看依賴或本地資料。Linux 沿 Node module watch，尚未實測。Prompt Pack 仍由正式組裝器讀取；不要在有付費運行時改動程式。需要固定版本核對時可加 `--no-watch`，手動停止後重開才載入修改。[Node 原生監看](https://nodejs.org/api/cli.html#--watch-path)
+- 修改共用前端由 Metro 監看；launcher 不向 Expo 傳入會停用監看的 `CI` 旗標。Windows／macOS 的 Server 使用 Node 原生 `--watch-path`，只監看 `server`、`src/shared`、`prompts`，不監看依賴或本地資料。Linux 沿 Node module watch，尚未實測。Prompt Pack 仍由正式組裝器讀取；不要在有付費運行時改動程式。`--no-watch` 只停用 Server 自動重啟，手動停止後重開才載入 Server／prompt 修改；前端仍會重新編譯，固定版本驗收時亦不要修改前端。[Node 原生監看](https://nodejs.org/api/cli.html#--watch-path)
 - 修改程式中斷運行時，不自動重發問題；先查回原 run／收據。頁面重新讀取不代表再執行一次。
 - `/__local/status` 顯示分支、SHA、dirty、模型、Prompt Pack、角色邊界；`/__local/events` 只保留最近 200 筆診斷 metadata，不輸出內部思考或私人全文。詳細結果仍從正式頁面／原 run 讀取。
 - `--no-model` 只供資料／UI 開發，明確停用模型；`--no-web` 可供已有前端入口的 API 開發。沒有憑證時不使用假模型，也不借正式平台 key。

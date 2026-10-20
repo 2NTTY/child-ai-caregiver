@@ -129,7 +129,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="model-self02"></a>
 ### MODEL-SELF02 共用設定及交付
 
-- 前置：MODEL-SELF01；2026-10-20 共用owner及表單已接同一v2契約，隨draft #242準備，尚未部署。Web／Android共用供應商／模型、七項限制、背景授權、用量及Server生效值；沒有另一份UI限額權威。保存回應丟失時查原opId，未見收據不能清成成功或重播key。兩項必要表單／原操作流程及局部型別通過，見[MODEL02證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。真個人key、正式頁面操作、兩端同版及部署仍待驗。
+- 前置：MODEL-SELF01；共用owner及表單已接同一v2契約，draft #242／#244未部署。Web／Android共用供應商／模型、七項限制、背景授權、用量及Server生效值；沒有另一份UI限額權威。保存回應丟失時查原opId，未見收據不能清成成功或重播key。原兩項表單／原操作流程及局部型別證據保留。
+- 2026-10-20 正式本地Web已保存合成key、模型與七項限制；原生session API讀到同版本及生效值，Web刪除key後回復平台模式，用量未變。修正編輯中自動重讀覆蓋草稿，以及launcher的CI旗標停用Metro監看的問題。原瀏覽器批次尾部因腳本150次請求上限停止，保留失敗；只補兩次唯讀確認清理，未將整批改稱通過。[MODEL02證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。真個人key、Android實機設定／頁面重讀及部署仍待驗；本機API讀回不等於真機通過。
 - key不進prompt、日誌、URL、瀏覽器儲存或Android持久草稿；移除／替換沿原身份與版本檢查。部署沿原站及相容Web／OTA，不另建網站。
 - 交付短指引：啟動、key／ADC、選分支、改完再試、背景觸發、角色結果、資料重設及仍需雲端確認的差異。
 
