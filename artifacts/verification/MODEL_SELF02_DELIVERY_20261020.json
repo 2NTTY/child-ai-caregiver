@@ -244,5 +244,148 @@
       "personalKeyGenerationAndEmbedding": "not-verified; previous regional refusal retained",
       "perModelLiveTests": "not-required-for-selecting-a-protocol-compatible-model; none-run"
     }
+  },
+  "vmDiskCleanup20261020": {
+    "observedAt": "2026-10-20T14:22:14.649Z",
+    "removedUploadFiles": 9,
+    "removedUploadBytes": 2414166507,
+    "removedImageTags": 69,
+    "remainingCandidateRefs": [],
+    "imageRemovalExit": 0,
+    "imageRemovalError": "",
+    "keptImages": {
+      "yuban-firestore-api:model-d53c203": "sha256:93ebfdcc300bd419a018bfee5bb8e8f892aa65eee70ebbd90b06f80c05251915",
+      "yuban-firestore-web:model-d53c203": "sha256:209c0e1f60b898fb38687ddbe2ff05da829840d236847558e79a3647242bd555",
+      "yuban-firestore-api:self02-ad4de88": "sha256:c08f674beef6a75d7a2640265422918410915813def12562cce8d07f2f374d1e",
+      "yuban-firestore-web:self02-ad4de88": "sha256:ff7e6926b77c37779cf35052b95559f3adeffb8100a52545b243a7b22d0c2166",
+      "yuban-firestore-api:policy-adaf08f": "sha256:fc7ae7e7dbad79a994d8d61ff56a854ebdff2a24cb582e0b0183bbe38cd45f78",
+      "yuban-firestore-web:retry-adaf08f": "sha256:373477f73b0bf495dac7b0d7d2b572b3672f25d9315ca306826e0c51dcd2bcba"
+    },
+    "containersUnchanged": true,
+    "health": {
+      "/": "200",
+      "/api/health": "200"
+    },
+    "beforeFreeBytes": 437239808,
+    "afterFreeBytes": 11608170496,
+    "freedBytes": 11170930688,
+    "docker": "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          8         3         2.708GB   6.316MB (0%)\nContainers      4         3         49.15kB   20.48kB (41%)\nLocal Volumes   3         3         130.1MB   0B (0%)\nBuild Cache     180       0         1.201GB   445.9MB",
+    "backupOrDataDeleted": false,
+    "servicesRestarted": false,
+    "reason": "Repeated deployments retained obsolete image tags and uploaded image archives without bounded retention.",
+    "imagesBefore": 69,
+    "imagesAfter": 8,
+    "removedUniqueImages": 61,
+    "policy": "Retain the running release and two previous candidate release image pairs; rollback requires reader/worker compatibility. Retain all data volumes, backups, secrets and deployment manifests.",
+    "cloudResourcesAdded": false,
+    "removedImageRefs": [
+      "yuban-firestore-api:retry-fb1681e",
+      "yuban-firestore-api:error-2aa1442",
+      "yuban-firestore-web:files-c4ac1b9",
+      "yuban-firestore-api:files-a12da46",
+      "yuban-firestore-api:files-c4ac1b9",
+      "yuban-firestore-web:keyboard-d321553",
+      "yuban-firestore-web:mobile-bf47c47",
+      "yuban-firestore-api:mobile-bf47c47",
+      "yuban-firestore-web:admin-8ba66e7",
+      "yuban-firestore-api:admin-8ba66e7",
+      "yuban-firestore-api:reply-8d3fc29",
+      "yuban-firestore-api:ledger-ad021bf",
+      "yuban-firestore-api:budget-1150193",
+      "yuban-firestore-web:budget-1150193",
+      "yuban-firestore-web:ledger-ad021bf",
+      "yuban-firestore-web:reply-8d3fc29",
+      "yuban-firestore-web:s04-8992ce9",
+      "yuban-firestore-api:s04-8992ce9",
+      "yuban-firestore-api:s04-c6cf75d",
+      "yuban-firestore-web:opt-b1d1565",
+      "yuban-firestore-web:s04-c6cf75d",
+      "yuban-firestore-api:opt-b1d1565",
+      "yuban-firestore-web:admin-8f916d0",
+      "yuban-firestore-api:admin-334fb4e",
+      "yuban-firestore-api:admin-8f916d0",
+      "yuban-firestore-web:admin-334fb4e",
+      "yuban-firestore-api:admin-a06e076",
+      "yuban-firestore-web:admin-a06e076",
+      "yuban-firestore-api:review-2c17aa7",
+      "yuban-firestore-web:review-2c17aa7",
+      "yuban-firestore-api:f08-566dd2c",
+      "yuban-firestore-web:f08-566dd2c",
+      "yuban-firestore-api:f08-2c58e67",
+      "yuban-firestore-api:f08-5ca55c7",
+      "yuban-firestore-api:f08-3ecea18",
+      "yuban-firestore-api:f08-cce4667",
+      "yuban-firestore-web:f08-2c58e67",
+      "yuban-firestore-web:f08-3ecea18",
+      "yuban-firestore-web:f08-5ca55c7",
+      "yuban-firestore-web:f08-cce4667",
+      "yuban-firestore-api:f02-vm",
+      "yuban-int-web:85e3a846",
+      "yuban-int-api:85e3a846",
+      "yuban-int-api:70aea07",
+      "yuban-int-web:58d70da",
+      "yuban-int-api:58d70da",
+      "yuban-int-web:4a2257a",
+      "yuban-int-api:4a2257a",
+      "yuban-int-api:a75ebb6",
+      "yuban-int-web:b7dec9d",
+      "yuban-int-api:b7dec9d",
+      "yuban-int-web:b23f12b",
+      "yuban-int-api:b23f12b",
+      "yuban-int-web:01c25a4",
+      "yuban-int-web:9c088c8",
+      "yuban-int-web:053658b",
+      "yuban-int-maintenance:053658b",
+      "yuban-int-api:053658b",
+      "yuban-p2-maintenance:s17-43ab10c",
+      "yuban-p2-api:s17-43ab10c",
+      "yuban-p2-web:s17",
+      "yuban-p2-maintenance:s17",
+      "yuban-p2-api:s17",
+      "yuban-p1-web:local",
+      "yuban-p1-maintenance:local",
+      "yuban-p1-api:local",
+      "yuban-p1-web:before-session-fix",
+      "yuban-p1-maintenance:before-session-fix",
+      "yuban-p1-api:before-session-fix"
+    ],
+    "removedUploads": [
+      {
+        "path": "/home/2NTTY/f08-original-upload/web-fix.tar.gz",
+        "bytes": 28525947
+      },
+      {
+        "path": "/home/2NTTY/f08-original-upload/images.tar.gz",
+        "bytes": 362702324
+      },
+      {
+        "path": "/home/2NTTY/f02-vm-upload/f02-vm-api.tar",
+        "bytes": 338481152
+      },
+      {
+        "path": "/home/2NTTY/batch-release-58d70da/images.tar.gz",
+        "bytes": 290235600
+      },
+      {
+        "path": "/home/2NTTY/batch-release-4a2257a/images.tar.gz",
+        "bytes": 290221036
+      },
+      {
+        "path": "/home/2NTTY/qa101-release-b23f12b/images.tar.gz",
+        "bytes": 290207135
+      },
+      {
+        "path": "/home/2NTTY/batch-release-b7dec9d/images.tar.gz",
+        "bytes": 290195247
+      },
+      {
+        "path": "/home/2NTTY/agent-release-70aea07/images.tar.gz",
+        "bytes": 261811072
+      },
+      {
+        "path": "/home/2NTTY/api104-release-a75ebb6/api-image.tar.gz",
+        "bytes": 261786994
+      }
+    ]
   }
 }
