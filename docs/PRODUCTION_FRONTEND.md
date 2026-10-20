@@ -93,11 +93,19 @@ docker compose --project-name yuban-p1 \
 
 F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外 Hosting 站點與 Cloud Run API／worker 已按用途核對後清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**；不以名稱相似整批刪除。實際版本與尚未完成項見根 PLAN／STATUS，A09／F02 舊失敗保留，不以基建切片代替產品成果。
 
+### 部署產物的有界保留
+
+- 建置前核對磁碟、`docker system df`、現行映像及所有容器引用；映像共享層的統計不等於實際可釋放空間，以清理前後磁碟差額為準。
+- 成功部署後保留現行 API／worker／Web 及最近兩組回退候選映像，保留對應 manifest、hash 與受保護配置。這不是相容性保證：已有新資料時仍須按上文核對 reader／worker，不能盲退舊版本。
+- 核對新版本及回退候選仍在、原始碼可追溯後，可移除更早且未被任何容器引用的映像，以及已完成交付的舊 code／image／Web 上傳壓縮包；保留小型 manifest／腳本。不能只因目錄名有 `upload` 就整個刪除，更不能把資料庫或附件備份當安裝包。
+- 清理使用明確的 tag／image ID／檔案清單，執行前重核引用、掛載、正規化路徑及檔案身份；不用強制移除或全站 `prune --volumes`。資料卷、備份、刪除日誌、密鑰、目前部署目錄及被容器引用的映像均不在這個保留清理範圍。
+- 清理不重啟產品；完成後只核對保留映像、容器未變及首頁／API健康。已騰出足夠空間便停止，不順帶清空所有快取或擴容。
+
 ### 原 VM Firestore 組裝
 
 2026-10-15，原站 API／worker／Web 已更新為 `opt-b1d1565`，程式源為 b1d1565（#226，master 99f53df），Prompt Pack 0.1.43；包含 #213 登入及 OPT／LAY 修改。沿固定版本 Node／npm 建置 Web，依賴未變，Server 及 Web 以已核 hash 的小型層疊加既有映像，沒有傳送密鑰或 ADC。三服務健康、原生新索引及公開產物／SSE 已核；一次合成摘要／聊天共兩次生成，沒有通知、embedding 或調高配額。[交付 EV](../artifacts/verification/P2_OPT_DELIVERY_20261015.json)；舊 ADM01／review 證據保留，不能當全面回歸。
 
-回退配置保存在 `/etc/yuban-p1/firestore/compose.env.before-opt-b1d1565`，舊映像未刪。**OPT04 摘要批次與 OPT05 卡片寫入後，舊 API 的 strict schema 不能保證讀取新格式。** UI 故障可單獨恢復舊 Web 並保留新 API／worker；後端故障先暫停受影響入口／worker，使用保留新格式 reader 的相容修正。不能直接還原舊 compose.env 便宣稱資料相容，也不能用舊資料快照覆蓋新收據／刪除。
+當次回退配置保存在 `/etc/yuban-p1/firestore/compose.env.before-opt-b1d1565`；歷史配置存在不代表對應映像永久保留，現行候選按上述保留規則及 STATUS 核對。**OPT04 摘要批次與 OPT05 卡片寫入後，舊 API 的 strict schema 不能保證讀取新格式。** UI 故障可單獨恢復相容舊 Web 並保留新 API／worker；後端故障先暫停受影響入口／worker，使用保留新格式 reader 的相容修正。不能直接還原舊 compose.env 便宣稱資料相容，也不能用舊資料快照覆蓋新收據／刪除。
 
 現場部署目錄 `/opt/yuban-firestore-cce4667/deploy/p1`；受保護設定在 `/etc/yuban-p1/firestore`，原渠道檔案在 `/etc/yuban-p1`。部署疊加 `compose.firestore.channels.yaml`，掛載設定不代表已准外發。原 Caddy 固定 IP 為 `172.30.51.3`，動態 API／worker 池為 `172.30.51.8/29`、共同子網 `172.30.51.0/28`；調整子網時須同步核對 `P1_DYNAMIC_RANGE` 與 `P1_PROXY_IP` 不重疊，避免重建時動態容器先佔用 proxy 地址。
 

@@ -14,7 +14,9 @@
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-20 14:07 UTC 原站：**API／worker為`model-d53c203`（映像`93ebfdc`），Web同tag（映像`209c0e1`）；服務健康，公開HTML hash與同版產物一致。未改業務資料、配額、用量或索引，沒有模型／通知驗收。原站更新及回退邊界見[交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)；磁碟剩約417 MiB，僅清理本次建置暫存，原映像與回退配置仍保留。
+**2026-10-20 14:07 UTC 原站：**API／worker為`model-d53c203`（映像`93ebfdc`），Web同tag（映像`209c0e1`）；服務健康，公開HTML hash與同版產物一致。未改業務資料、配額、用量或索引，沒有模型／通知驗收。原站更新及回退邊界見[交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)。
+
+**2026-10-20 14:22 UTC 磁碟：**歷次未淘汰的映像及上傳包令可用空間降至約417 MiB；已清除61個過時映像（69個標籤）及9個舊安裝包，可用空間增至約10.81 GiB，釋放約10.40 GiB。保留現行及兩組回退候選映像、全部資料卷／備份／密鑰，沒有重啟或擴容；容器未變、首頁及API健康均200。後續交付沿[有界保留](docs/PRODUCTION_FRONTEND.md#firestore-deployment)，回退仍須核對資料相容；實際清單及結果留同份交付證據。
 
 **Android，2026-10-20 14:11 UTC：**來源`d53c203`的preview OTA群組`cfe20c62-9816-4d8e-8b5c-06bcf74ab266`已發布，沿完整EAS profile；APK v0.1.0／versionCode 2及runtime `33699576537bf6f4081bddfb9c8807cd6bdef3ee`不變，毋須覆蓋安裝。本次選型OTA裝置接收未驗；前次修正版的登入、表單及重開證據仍有效，首次匯出漏身份配置的失敗保留於交付證據。沒有重設資料或保存個人設定，真key／Android保存仍待驗。
 
