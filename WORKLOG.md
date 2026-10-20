@@ -3417,3 +3417,10 @@
 - 在正式表單只保存一次原平台設定，版本0→1；完全關閉App、完成冷啟動並重新進入模型設定後，仍讀到版本1、原模型及未配置key，登入保留。沒有調整配額、模型／通知呼叫或重跑其他手機流程。
 - 這是Android表單寫入與持久讀回證據，不是個人key、七項限制的實機保存或供應商生成通過。剩餘真key地區限制、DEV02最終引用、角色長來源／多模態及其他Android待驗項不變；未擴大模型用量。
 - 結果追加至[交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)的`modelChoiceAndroidAcceptance20261020`；畫面／UI樹僅保留ignored本機位置，不提交使用者或孩子資料。PLAN／STATUS清理OTA未接收及所有Android保存均未驗的過時概括。
+
+<a id="log-20261020-personal-interface-scope"></a>
+## LOG-20261020-PERSONAL-INTERFACE-SCOPE
+
+- 使用者澄清只需提供共用個人憑證接口，不應以本機地區拒絕、替用戶取得key或逐模型驗收阻擋使用。核對現行保存、routing及表單，沒有地域或metadata成功前置；本次只更新PLAN／SPEC／STATUS及本地指引，不改產品程式或宣稱新增能力。
+- Vertex AI具備向量接口；現有個人`vertex` adapter只接Express生成，向量直接返回unavailable，仍列實作缺口。平台／本機ADC的成功與個人key分開，不新增付款回退、認證服務或組織政策修改。既有失敗、真key／Android個人模式未驗及角色缺口保留。
+- 基線master `fd92a46`，沒有其他open PR；A單作者交付。只核對相關diff、現行引用及WORKLOG追加邊界，不跑產品測試、模型、裝置或部署。

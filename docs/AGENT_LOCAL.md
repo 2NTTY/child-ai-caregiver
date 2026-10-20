@@ -21,7 +21,7 @@ npm run agent:local
 
 亦可自行在目前 shell 設定 `GEMINI_API_KEY`，但不要把實際 key 寫入共享命令、聊天、Git 或 `EXPO_PUBLIC_*`。前端不會收到模型憑證。Vertex Express API key 例如使用 `{"provider":"vertex","apiKey":"本人的 Vertex key","model":"gemini-2.5-flash"}`，須選該服務已接線的型號，不能直接沿用Developer預設；此為配置例子，不自動替換已保存模型。環境變數則明確選 `LOCAL_MODEL_PROVIDER=vertex`、`VERTEX_API_KEY` 及相應模型。Vertex沿正式個人模型 adapter；不拿Gemini key默認代替另一供應方式。Vertex key 的 embedding 接點仍未支援，不能以它初始化知識向量或假稱完整混合檢索可用；需要完整檢索時明確選擇本人可用的 Gemini key 或 ADC，不借平台額度。
 
-建立key成功或保存設定成功，不代表模型在當地可用。正式設定的「核對」只查metadata；若回 `region_unavailable`，不要重複建key、重新發問或把ADC驗收當成key通過。先核對[Google支援地區](https://ai.google.dev/gemini-api/docs/available-regions)，或明確選用下方本人ADC路徑。Google新授權key不一定沿用舊前綴，應完整按原字串保存；不根據前綴猜測供應商。[官方key類型](https://ai.google.dev/gemini-api/docs/api-key)
+提供本人key後可直接使用；正式設定的「核對」只查metadata，屬可選診斷，不是保存或生成的前置。產品不按用戶所在地或本機一次失敗封鎖；若實際請求回 `region_unavailable`，只表示供應商拒絕該次請求，不能推論Vertex或其他用戶同樣不可用。可按[Google支援地區](https://ai.google.dev/gemini-api/docs/available-regions)及所用服務核對，或明確選用下方本人ADC路徑，不自動切換身份。key建立／保存不保證所有模型、權限及配額可用。Google新授權key不一定沿用舊前綴，應完整按原字串保存；不根據前綴猜測供應商。[官方key類型](https://ai.google.dev/gemini-api/docs/api-key)
 
 已使用本人本機 ADC 的開發者可改用：
 

@@ -7,7 +7,7 @@
 - **PR 收束：**#229／#234～#239 由原 Android 主責帳號合併，#241／#242／#244 由本地／模型工作主責帳號交付。使用者於 2026-10-20 明確批准先合併、剩餘手機／真模型驗收改為後續追蹤；原作者、失敗及未驗證據保留。該合併批次沒有新增測試，後續部署見下方。現行次序見 [PLAN](PLAN.md#active)。
 - **本地開發入口可用：**`npm run agent:local` 啟動目前分支的正式 Web／API／四角色接點及隔離持久資料。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；方法見[本地入口](docs/AGENT_LOCAL.md)。本地環境交付與角色完整品質分開，不需先部署 GCP。
 - **角色未完成項：**官方 PDF 第3頁已整理、審核及本地發布；最終聊天引用新版的單次補驗因 `model_limit` 停止，原用量和失敗保留。長來源／圖片多模態仍欠角色能力，不能以單頁 PDF 當全部通過；見 [DEV02](PLAN.md#dev-agent02)。
-- **個人模型設定及直接選型已交付，真key／Android個人模式仍待驗。**#246 的 `d53c203` 已更新API／worker／Web並發布APK v2相容OTA，可直接輸入相容Gemini ID，不再以參考目錄限制使用。本地同版設定讀回已有證據；真 Gemini key metadata 回 `region_unavailable`，沒有生成／embedding成功，ADC本地成功維持分開。本次Android已顯示新模型ID欄位，原平台設定保存後版本0→1，完全重開仍讀回同版及保留登入；沒有輸入key、改限額或呼叫模型。後續只見 [MODEL-SELF01／02](PLAN.md#model-self01)。
+- **個人模型共用入口及直接選型已交付。**#246 的 `d53c203` 已更新原站及Android OTA；Android原平台設定保存／重開讀回已有證據，個人模式及真key仍待驗。依最新要求由用戶提供憑證，沒有地域或metadata前置閘，不再為取得驗收key或逐模型試用阻擋入口。單次Developer API的`region_unavailable`不代表其他用戶或Vertex不可用；Vertex本身支援向量，現有個人Express adapter的向量仍是接線缺口，不能標為完成。後續及證據只見 [MODEL-SELF01／02](PLAN.md#model-self01)。
 - **Android 已合併，未全數驗收：**APK v2 覆蓋安裝、原登入／資料保留及一則指定 FCM 有證據；正常有來源聊天／重開、撤銷／切身份、跨端與媒體／附件完整流程、照護通知完成停止及 OTA 回退仍按 [S04～S17](PLAN.md#s04-w01) 追蹤，不以合併當成品完成。
 - **其他邊界：**正式資料已使用 Firestore；家庭多人留 P4、iOS 暫緩。OPT／LAY 既有成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)仍未完成。只補最低必要驗證，不全量、Computer Use 或重做前端設計。
 
