@@ -7,7 +7,7 @@ import { AppButton } from '../ui';
 export function OfficialHelpCards({ ids }: { ids: readonly OfficialHelpId[] }) {
   return <>{[...new Set(ids)].map(id => {
     const card = OFFICIAL_HELP[id]; if (!card) return null;
-    return <View key={id} testID="official-help-card" accessibilityLiveRegion="polite">
+    return <View key={id} testID="official-help-card" accessibilityLabel={card.title} accessibilityLiveRegion="polite">
       <Text variant="titleSmall">{card.title}</Text><Text selectable>{card.text}</Text>
       {card.sources.map(source => <AppButton key={source.url} variant="quiet" density="compact" label={source.title}
         onPress={() => { void Linking.openURL(source.url).catch(() => {}); }} />)}

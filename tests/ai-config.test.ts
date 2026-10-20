@@ -17,6 +17,7 @@ test("AI configuration defaults to a disabled server-only setup", () => {
     agentMaxInputCharacters: 64000,
     agentThinkingLevel: "minimal",
     maxOutputTokens: 1024,
+    chatDeliveryReviewModelCalls: 4,
   });
   assert.equal(readAiConfig({ GCP_PROJECT_ID: "" }).project, "");
 });
@@ -47,7 +48,25 @@ test("AI configuration accepts safe identifiers and numeric boundaries", () => {
     agentMaxInputCharacters: 64000,
     agentThinkingLevel: "minimal",
     maxOutputTokens: 4096,
+    chatDeliveryReviewModelCalls: 4,
   });
+});
+
+test("chat delivery review ceiling accepts only the current limit or the explicit proposal", () => {
+  const disabled = readAiConfig({ AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS: "" });
+  assert.equal(disabled.chatDeliveryReviewModelCalls, 4);
+  assert.equal(disabled.dailyUserAttempts, 20);
+  assert.equal(disabled.dailyGlobalAttempts, 100);
+  const proposed = readAiConfig({ AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS: "6" });
+  assert.equal(proposed.chatDeliveryReviewModelCalls, 6);
+  assert.equal(proposed.dailyUserAttempts, 20);
+  assert.equal(proposed.dailyGlobalAttempts, 100);
+  assert.equal(proposed.personalDailyGlobalAttempts, 1000);
+  for (const value of ["5", "4", "7", "06", " 6", "6\n"]) {
+    assert.throws(() => readAiConfig({ AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS: value }), {
+      message: "Invalid AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS configuration",
+    });
+  }
 });
 
 test("AI configuration requires a valid project when enabled", () => {

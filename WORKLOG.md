@@ -2716,3 +2716,43 @@
 - 管理頁新增工具／期限表單及生效說明；縮短期限不延長原 claim。每步剩餘預算提示沿既有 runtime，不新增模型輪次。
 - 原有管理接線一條情景通過（24 次合成 HTTP），正式 HTTP／ADK scripted 回饋一項通過；8 個 Server/shared 型別入口與管理頁型別零診斷，一次 Web 建置成功。驗證準備中發現舊 auth 替身缺少完整介面及 checker 引用不存在的生成檔，已局部修正；無真模型、通知或全量測試。
 - 待合併及原站相容部署。Android 首條聊天及鍵盤仍待真人／真機；使用者離開期間不阻塞其他獨立工作。完成 Android 後再接本人 key／自選模型／限額，再提供同一正式 Agent 的本地隔離測試入口。證據：[EV](artifacts/verification/ADMIN_AGENT_RUN_LIMITS_20261016.json)。
+<a id="log-20261014-p3-m01-chat-delivery-review"></a>
+## LOG-20261014-001
+
+- Recorded At：2026-10-14（Asia/Hong_Kong）
+- Work Date：2026-10-14
+- Step / Package：P3-M01
+- Executor：Cursor cloud agent（本 fork 實作）
+- Goal：只接上聊天交付的 Server 唯讀語義審核；不做 M02 編製或 M03。
+- AI Assistance：按已批准實作計劃接完成路徑、契約與合成測試。
+- Human Verification：未進行。真模型／真服務未跑。
+
+### Actual Work
+- 程式校驗之後、正式完成之前，由 Server 用同一 ModelGateway 與根預算做唯讀審核。決定只限 pass、revise、insufficient_evidence，並綁定草稿 hash、來源版本與範圍。
+- 每輪模型呼叫維持 4，不提高每日配額。審核占用剩餘一次；餘額不足則交付未完成，不另開 run。`AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS=6` 只在尚未綁定個人或平台上限時生效。
+- 生成角色不能自報免審。知識發布的 approve／hold 沒有復用。不宣稱臨床有效。
+
+### Changes
+- `server/chat-delivery-review.ts`、`server/product-agent.ts` 完成路徑、提示詞 `chat-delivery-review`、共享 binding schema，以及停止原因文案。
+
+### Verification
+- Requirement / Acceptance：REQ-P2M-04／AC-P2M-02 的合成範圍
+- Method：`node --experimental-test-module-mocks --test` 針對聊天交付審核、產品 Agent、提示詞接線與 AI 設定
+- Environment / Revision：本機合成 provider，零 Vertex／Gemini
+- Result：見本次 PR；真模型與線上驗收未執行
+- Evidence：本 PR 與上述腳本輸出
+
+### Failures / Corrections
+- 無真模型呼叫。M02「改一項、其餘保留」不在本包。
+
+### Next Step
+- 使用者批准後才做真模型或線上驗收。M02／M03 不在本分支開始。
+
+
+<a id="log-20261020-p3-m01-review"></a>
+## LOG-20261020-P3-M01-REVIEW
+
+- 使用者授權接手 #214／#215／#216 的 review、必要修正與合併；保留原作者。#214 基線 `294572c`，master `d4686b7`。
+- 修正審核錯用聊天摘要／能力上下文、背景 no_action 型別，以及只按模型文字免審；真收據固定回報由 Server 產生。分段 kind 納入綁定，提示詞預留審核餘額。
+- 6 項定向 scripted 核對通過；局部型別先遇既有測試的兩處 unknown 參數型別，統一原生 LlmResponse 後通過。沒有重跑產品全量、真模型、通知、雲端或部署。
+- 證據：[M01 review](artifacts/verification/P3_M01_PR_REVIEW_20261020.json)。真模型語義品質仍待驗；下一包 #215 依賴本包合併。
