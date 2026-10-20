@@ -48,6 +48,19 @@
       "code": "knowledge_maintenance_invalid_json",
       "published": false,
       "readOnlyDiagnosis": "Saved reviewer text was complete JSON in one Markdown code fence. Exact saved-stage replay after format normalization then rejected knowledge_review_old_quote_mismatch. No extra model call or publication."
+    },
+    {
+      "operation": "b78636489b9f57f271aa0d791547a4090e0ef77081fd94cd5563df539ae8334c",
+      "codeVersion": "c9bc5b6",
+      "promptPack": "0.1.51",
+      "generations": 2,
+      "embeddingCalls": 0,
+      "result": "candidate_held",
+      "code": "review_hold",
+      "modelReviewCompleted": true,
+      "growthRuleImpact": "requires_review",
+      "published": false,
+      "observation": "Organization and independent review completed. The reviewer requested further assessment of the changed guidance; the existing publication gate retained the candidate. This is not evidence of successful publication or clinical review. No further run was started."
     }
   ],
   "fixesAfterRealAttempts": [
@@ -57,7 +70,7 @@
     "Preserve previous failed work identities and usage"
   ],
   "limits": {
-    "realGenerationsTotal": 3,
+    "realGenerationsTotal": 5,
     "realEmbeddingsTotal": 0,
     "liveWebsiteFetches": 0,
     "cloudDataWrites": 0,
@@ -67,7 +80,7 @@
     "fullSuite": false
   },
   "notProven": [
-    "Final prompt/schema version true model background publication and subsequent chat citation",
+    "True model background publication and subsequent chat citation; the latest review held the candidate",
     "Live website and multimodal maintenance",
     "Long-source batching and automatic continuation after partial observation",
     "Cross-page/new-conversation joint verification and non-email local inbox",
