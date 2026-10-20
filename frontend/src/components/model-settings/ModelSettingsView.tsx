@@ -85,9 +85,7 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
   });
   const locked = !model.online || !model.authorized || !!model.busy || model.needsRead || !snapshot;
   const available = mode === "personal" ? snapshot?.personalAvailable : mode === "platform" ? snapshot?.platformAvailable : true;
-  const validModelChoice = modelSelection.loaded ? modelSelection.supported
-    : provider === settings.provider && selectedModel === settings.model;
-  const canSave = !locked && available && (mode !== "personal" || validModelChoice && consent && (settings.keyConfigured || !!keyText.trim()));
+  const canSave = !locked && available && (mode !== "personal" || consent && (settings.keyConfigured || !!keyText.trim()));
   useEffect(() => {
     reset(modelSettingsDraft(settings, snapshot?.effective)); setDeleteOpen(false); setDeleteConfirmed(false);
   }, [model.scopeKey, model.formRevision, settings, snapshot?.effective, reset]);
@@ -151,14 +149,19 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
             <Controller control={control} name="provider" render={({ field }) => <AppSelect ref={field.ref} id={fieldId("provider")} label="Google 服務" value={field.value} disabled={locked}
               options={[{ value: "gemini", label: "Gemini Developer API" }, { value: "vertex", label: "Vertex AI Express API key" }]}
               onChange={value => { clearSecret(); field.onChange(value); actions.selectProvider?.(value); }} onBlur={field.onBlur} />} />
-            <Controller control={control} name="model" render={({ field }) => <AppSelect ref={field.ref} id={fieldId("model")} label="聊天模型" value={field.value} disabled={locked}
-              options={modelSelection.options}
-              onChange={field.onChange} onBlur={field.onBlur} />} />
-            <Text style={styles.meta}>選項來自 Server 已接線的模型；能否生成仍取決於你的憑證、地區及供應商服務。模型 metadata 可讀不代表真生成已通過。</Text>
-            {modelSelection.loaded && !modelSelection.supported ? <Text style={styles.warning}>目前所選模型不在此服務的接線清單，請另選模型；不會自動替你更換。</Text> : null}
+            <AppSelect label="模型參考選項" value={selectedModel} disabled={locked} options={modelSelection.options}
+              onChange={value => setValue("model", value, { shouldDirty: true, shouldValidate: true })} />
+            <Controller control={control} name="model" render={({ field }) => <AppTextField ref={field.ref} nativeID={fieldId("model")}
+              label="聊天模型 ID" accessibilityLabel="聊天模型 ID" value={field.value} disabled={locked} maxLength={128}
+              autoCapitalize="none" autoCorrect={false} onChangeText={field.onChange} onBlur={field.onBlur}
+              error={!!errors.model} aria-invalid={!!errors.model} aria-describedby={`${fieldId("model")}-message`} />} />
+            <FormFieldMessage id={`${fieldId("model")}-message`} error={errors.model?.message} />
+            <Text style={styles.meta}>可從選項選擇，或直接輸入相容的 Gemini 模型 ID。未列入目錄不會阻止保存；是否可用由所選服務、憑證及模型能力決定，不會自動替換模型。</Text>
             {provider === "vertex" ? <Text style={styles.warning}>Vertex Express key 的生成已接線，查詢向量及模型 metadata 暫未支援，因此混合知識檢索不可用；不會借用平台額度。此處不接收服務帳戶 JSON；ADC 只供本地開發。</Text> : null}
-            {!model.catalog && !model.busy ? <Text style={styles.meta}>模型目錄尚未讀取，暫只顯示目前保存的模型；可重新讀取設定。</Text> : null}
-            {selectedCapabilities ? <Text style={styles.meta}>已接能力：{Object.entries(selectedCapabilities).filter(([, enabled]) => enabled).map(([key]) => ({ tools: "工具", image: "圖片", audio: "音訊", textStreaming: "模型文字串流" })[key]).join("、")}。畫面串流仍依產品接線狀態。</Text> : null}
+            {!model.catalog && !model.busy ? <Text style={styles.meta}>模型目錄暫未讀取，仍可直接輸入模型 ID。</Text> : null}
+            {selectedCapabilities && Object.values(selectedCapabilities).some(Boolean)
+              ? <Text style={styles.meta}>模型能力資料：{Object.entries(selectedCapabilities).filter(([, enabled]) => enabled).map(([key]) => ({ tools: "工具", image: "圖片", audio: "音訊", textStreaming: "模型文字串流" })[key]).join("、")}。畫面串流仍依產品接線狀態。</Text>
+              : <Text style={styles.meta}>此型號的能力資料未提供，不代表不能使用。Agent 辦事需要工具呼叫能力；照片與錄音亦需模型支援相應輸入。</Text>}
             <Controller control={control} name="keyText" render={({ field }) => <AppTextField label={settings.keyConfigured ? "替換 API 密鑰" : "個人 API 密鑰"}
               accessibilityLabel="個人 API 密鑰" testID="model-api-key" secureTextEntry autoComplete="off" textContentType="none" autoCapitalize="none" autoCorrect={false}
               importantForAutofill="no" nativeID={fieldId("keyText")} aria-invalid={!!errors.keyText} aria-describedby={`${fieldId("keyText")}-message`} maxLength={512} value={model.online && model.authorized ? field.value : ""} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors.keyText} />} />

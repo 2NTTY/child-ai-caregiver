@@ -156,7 +156,7 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 <a id="section-3-6"></a>
 ## 3.6 AI、通知与部署
 
-- <a id="rule-3-6-01"></a>平台 Gemini 經 Vertex ADC 接入；S06-W05 增補本人 Gemini Developer API key 模式，首版同為 `gemini-3.1-flash-lite`，模型由 Server 固定相容清單，不接受任意網址或 headers。兩模式共用既有 ADK／工具／來源及單次限額，模型 key 模式不另建 Agent。
+- <a id="rule-3-6-01"></a>平台 Gemini 經 Vertex ADC 接入；本人模式沿MODEL-SELF支援Gemini Developer／Vertex Express key。模型目錄是參考選項，用戶可直接指定合法Gemini ID，不以未逐型號驗收作為禁止理由；不接受任意網址或headers，不以更換模型改動權限或配額。已知型號適配可選參數，其他型號使用供應商預設，實際不相容沿安全錯誤回報。各模式共用既有ADK／工具／來源及限額，不另建Agent。
 - <a id="rule-3-6-02"></a>使用结构化输出生成记录或任务草稿，经过校验和必要确认后写入。
 - <a id="rule-3-6-03"></a>数量统计、权限、排程、重复检查和完成状态由程序处理。
 - <a id="rule-3-6-04"></a>P2 經渠道無關的 NotificationGateway 送出 Web Push 及 Telegram，P3 增加 FCM；Android adapter 不承擔選人、排程或 fallback 決策。

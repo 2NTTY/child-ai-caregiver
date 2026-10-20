@@ -153,6 +153,34 @@
     "productionSettingsSaved": false,
     "keyEntered": false,
     "modelCalls": 0,
-    "notificationsSent": 0
+    "notificationsSent": 0,
+    "followup": {
+      "userReported": "User confirmed signed in after repaired OTA.",
+      "observed": "Connected Android read saved version 0 in platform mode, provider/model draft selectors and all seven limit fields. No key or consent submitted.",
+      "cleanup": "Force-stop/reopen cleared only the unsaved test draft. Current settings read successfully, version 0 and platform mode; session retained.",
+      "limitsDisplayed": {
+        "daily": 100,
+        "modelCalls": 4,
+        "queryEmbeddings": 2,
+        "toolCalls": 16,
+        "runSeconds": 300,
+        "requestSeconds": 90,
+        "modelRetries": 3
+      },
+      "scope": "Form/read/restart evidence only. Saving a real key, generation and the forthcoming unrestricted model-ID UI are not verified on this device."
+    }
+  },
+  "modelChoice20261020": {
+    "change": "Suggestion catalogs no longer gate saving or generation. Shared Web/Android form accepts a valid Gemini model ID. Unknown optional thinking settings are omitted, provider defaults apply.",
+    "validation": {
+      "settingsAndReceiptScenario": "passed",
+      "sdkScenario": "first failed because the previous whitelist-rejection fixture had empty contents; corrected only the fixture to a normal user message, focused rerun passed",
+      "formScenarios": 2,
+      "targetedServerTypecheck": "passed",
+      "targetedUiTypecheck": "passed"
+    },
+    "liveModelCalls": 0,
+    "deployment": "pending",
+    "notProven": "Individual model quality or key availability; these are not prerequisites for selecting a protocol-compatible model."
   }
 }

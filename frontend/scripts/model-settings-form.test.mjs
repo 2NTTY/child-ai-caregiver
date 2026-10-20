@@ -11,10 +11,11 @@ test("provider changes use only its server catalog without silently selecting an
   assert.equal(pending.loaded, false); assert.equal(pending.capabilities, undefined);
   assert.equal(pending.options.length, 1);
   const changed = modelCatalogSelection(catalog, "vertex", settings.model);
-  assert.equal(changed.supported, false); assert.equal(changed.options[0].value, settings.model);
+  assert.equal(changed.listed, false); assert.equal(changed.options[0].value, settings.model);
+  assert.doesNotMatch(changed.options[0].label, /未接線|不支援/);
   assert.equal(changed.options[1].value, entry.id);
   const selected = modelCatalogSelection(catalog, "vertex", entry.id);
-  assert.equal(selected.supported, true); assert.deepEqual(selected.capabilities, entry.capabilities);
+  assert.equal(selected.listed, true); assert.deepEqual(selected.capabilities, entry.capabilities);
   assert.equal(settings.model, "gemini-3.1-flash-lite");
 });
 test("personal settings require consent and valid integer budgets before any direct request", () => {
@@ -25,14 +26,15 @@ test("personal settings require consent and valid integer budgets before any dir
     assert.equal(modelSettingsSchema(true).safeParse({ ...draft, [field]: value }).success, false);
   }
   assert.equal(modelSettingsSchema(false).safeParse(draft).success, false);
-  const changed = { ...draft, provider: "vertex", model: "gemini-2.5-pro", toolCallsText: "12",
+  const changed = { ...draft, provider: "vertex", model: "gemini-future-chat", toolCallsText: "12",
     runSecondsText: "240", requestSecondsText: "120", retriesText: "3" };
   assert.equal(modelSettingsSchema(true, "gemini").safeParse(changed).success, false);
   changed.keyText = "synthetic-vertex-key-for-form";
   assert.equal(modelSettingsSchema(true, "gemini").safeParse(changed).success, true);
   const command = modelCommandFromDraft(changed, settings);
   assert.deepEqual([command.provider, command.model, command.maxToolCalls, command.maxRunSeconds, command.modelRequestSeconds, command.maxModelRetries],
-    ["vertex", "gemini-2.5-pro", 12, 240, 120, 3]);
+    ["vertex", "gemini-future-chat", 12, 240, 120, 3]);
+  assert.equal(modelSettingsSchema(true, "gemini").safeParse({ ...changed, model: "https://other.example/model" }).success, false);
   assert.equal(modelSettingsSchema(true, "gemini").safeParse({ ...changed, retriesText: "4" }).success, false);
 });
 test("new and replacement keys match the server boundary without changing the typed value", () => {

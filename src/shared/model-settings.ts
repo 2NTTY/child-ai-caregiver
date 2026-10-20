@@ -92,6 +92,7 @@ export interface PersonalModelCatalogEntry {
   id: string;
   provider: PersonalModelProvider;
   label: string;
+  /** Positive capability hints; false means unconfirmed, not a prohibition on selecting the model. */
   capabilities: { tools: boolean; image: boolean; audio: boolean; textStreaming: boolean };
   availability: "not_checked" | "listed";
 }

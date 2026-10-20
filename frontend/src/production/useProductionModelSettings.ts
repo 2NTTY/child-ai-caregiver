@@ -26,7 +26,7 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
         : failure.code === "client_update_required" ? "請更新應用程式後管理這份模型設定。"
         : failure.status === 409 ? "設定版本已改變，請先重新讀取。"
         : failure.code === "key_required" ? "請提供所選供應商的密鑰；切換供應商不能沿用另一份密鑰。"
-        : failure.code === "model_unsupported" ? "所選模型尚未接線，請重新讀取模型目錄。"
+        : failure.code === "model_unsupported" ? "目前 Server 拒絕此模型；請確認服務版本及模型 ID。"
         : failure.status === 429 ? "模型資料查核暫受限，請稍後手動重試。" : "模型設定未能確認，請核對連線後重新讀取。" });
   };
   const refresh = async () => {
