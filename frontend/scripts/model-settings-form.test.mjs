@@ -11,6 +11,15 @@ test("personal settings require consent and valid integer budgets before any dir
     assert.equal(modelSettingsSchema(true).safeParse({ ...draft, [field]: value }).success, false);
   }
   assert.equal(modelSettingsSchema(false).safeParse(draft).success, false);
+  const changed = { ...draft, provider: "vertex", model: "gemini-2.5-pro", toolCallsText: "12",
+    runSecondsText: "240", requestSecondsText: "120", retriesText: "3" };
+  assert.equal(modelSettingsSchema(true, "gemini").safeParse(changed).success, false);
+  changed.keyText = "synthetic-vertex-key-for-form";
+  assert.equal(modelSettingsSchema(true, "gemini").safeParse(changed).success, true);
+  const command = modelCommandFromDraft(changed, settings);
+  assert.deepEqual([command.provider, command.model, command.maxToolCalls, command.maxRunSeconds, command.modelRequestSeconds, command.maxModelRetries],
+    ["vertex", "gemini-2.5-pro", 12, 240, 120, 3]);
+  assert.equal(modelSettingsSchema(true, "gemini").safeParse({ ...changed, retriesText: "4" }).success, false);
 });
 test("new and replacement keys match the server boundary without changing the typed value", () => {
   const draft = { ...modelSettingsDraft(settings), consent: true };

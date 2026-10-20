@@ -1,0 +1,55 @@
+{
+  "package": "MODEL-SELF02",
+  "date": "2026-10-20",
+  "branch": "codex/model-self01-google-settings",
+  "base": "5b38ad1",
+  "pullRequest": 242,
+  "status": "shared Web/Android settings wiring implemented; live credentials, rendered interaction and deployment pending",
+  "environment": {
+    "node": "24.19.0",
+    "typescript": "6.0.3",
+    "network": "synthetic fetch only"
+  },
+  "checks": [
+    {
+      "file": "frontend/scripts/model-settings-form.test.mjs",
+      "selection": "personal settings require consent",
+      "result": "passed",
+      "coverage": [
+        "provider switch requires replacement key",
+        "shared legal ranges",
+        "all advanced fields reach the command"
+      ]
+    },
+    {
+      "file": "tests/model-settings-client.test.ts",
+      "selection": "settings recovery keeps",
+      "result": "passed",
+      "coverage": [
+        "same operation lookup after lost save response",
+        "null receipt remains unknown until version advances",
+        "one POST only",
+        "no secret in recovered projection"
+      ]
+    },
+    {
+      "name": "scoped frontend TypeScript",
+      "result": "passed",
+      "roots": [
+        "ModelSettingsView.tsx",
+        "useProductionModelSettings.ts",
+        "useModelSettingsPreview.ts"
+      ]
+    }
+  ],
+  "realModelCalls": 0,
+  "cloudWrites": 0,
+  "notifications": 0,
+  "deployments": 0,
+  "limitations": [
+    "No native device or rendered browser acceptance",
+    "Shared client and form checks do not prove real account model availability",
+    "Production Server v2 must precede Web/OTA publication",
+    "Existing draft dependencies and collaborator role evidence remain separate"
+  ]
+}

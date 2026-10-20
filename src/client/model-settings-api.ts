@@ -46,6 +46,15 @@ export interface ModelSettingsApi {
   catalog(expectedVersion: number, refresh: boolean, signal: AbortSignal, userId: string): Promise<PersonalModelCatalog>;
 }
 
+/** A missing receipt is not proof that the original request cannot still commit. */
+export async function readModelSettingsRecovery(api: ModelSettingsApi, original: { opId: string; expectedVersion: number },
+  signal: AbortSignal, userId: string) {
+  const receipt = await api.operation(original.opId, signal, userId);
+  const snapshot = await api.read(signal, userId);
+  const outcome = receipt ? "confirmed" : snapshot.settings.version > original.expectedVersion ? "superseded" : "unknown";
+  return { snapshot, outcome } as const;
+}
+
 export function createModelSettingsApi(baseUrl = "", fetcher: typeof fetch = fetch): ModelSettingsApi {
   const base = baseUrl.replace(/\/$/u, "");
   const apiUrl = base.endsWith("/api") ? base : `${base}/api`;

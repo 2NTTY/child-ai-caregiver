@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **次序：**先完成 [DEV-AGENT01](#dev-agent01) 本地正式運行環境，接續 [DEV-AGENT02](#dev-agent02) 四角色聯合接線，再做 [MODEL-SELF01／02](#model-self01) 個人模型及共用設定。使用者已批准本節完整計劃；Android 收束及未驗項保留，iOS 暫緩，不另造測試 Agent。
 
-**活動分支：**`codex/model-self01-google-settings`，從 DEV01 `feedfe3`／draft #241 建立。DEV02 固定角色整合及原失敗保留在本地 `codex/dev-agent02-role-integration`／`ce1d6f9`，本包不把協作者程式帶入交付分支。2026-10-20 重核 master `d4686b7`；#214 `294572c`、#215 `aff6804`、#216 `364937c`仍open；前兩者新增聊天呈現／client修改，#216相較原固定版本樹內容相同。原DEV02證據只適用原固定head，不更新協作者分支或合併其PR。#229／#234～#239／#241未合併前置仍有效，不能把活動基線當master或已部署版本。
+**活動分支：**`codex/model-self01-google-settings`／draft #242，從 DEV01 `feedfe3`／draft #241 建立。後端已保存為 `5b38ad1`；共用設定接線沿同一 draft 收束，避免新 v2 client 與舊前端投影不相容。正式合併／部署仍受原 draft 依賴與驗收門檻約束。DEV02 固定角色整合及原失敗保留在本地 `codex/dev-agent02-role-integration`／`ce1d6f9`，本包不把協作者程式帶入交付分支。2026-10-20 重核 master `d4686b7`；#214 `294572c`、#215 `aff6804`、#216 `364937c`仍open；前兩者新增聊天呈現／client修改，#216相較原固定版本樹內容相同。原DEV02證據只適用原固定head，不更新協作者分支或合併其PR。#229／#234～#239／#241未合併前置仍有效，不能把活動基線當master或已部署版本。
 
 ### 保留的 Android 交付狀態
 
@@ -118,12 +118,12 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 地區、憑證、模型、配額、逾時回傳安全且可分辨原因。embedding路由與聊天模型分開，維持原向量空間；本人憑證缺embedding時明示混合檢索不可用，不借平台額度／偽造引用。
 - 可調每日、每輪生成／工具／embedding、整輪期限、單次等待、重試及背景授權；共同解析器計算個人設定與管理員保護的實際值。模型知道可用預算，硬上限防失控而非要求用盡。
 - run固定模型／預算快照，重試沿原run計數、不重做成功工具／未知副作用；舊設定缺欄位維持舊行為。聊天／編製／審核／媒體／轉錄／背景用同一解析器；公共知識維護不用家長key，本地用開發者明確設定的維護憑證。
-- 版本邊界：v2明確保存才採共同管理上限；舊設定不默改。Vertex Express未有已核對的embedding／metadata方法，明示未支援；已接生成協定不等於真服務通過。新收據含備份／還原與帳戶清理接點，未跑真雲端還原。下一步為MODEL02共用表單／owner與部署；需先收束本包及既有draft前置，不把role integration或Android待驗消失。
+- 版本邊界：v2明確保存才採共同管理上限；舊設定不默改。Vertex Express未有已核對的embedding／metadata方法，明示未支援；已接生成協定不等於真服務通過。新收據含備份／還原與帳戶清理接點，未跑真雲端還原。共用表單／owner接線見MODEL02；下一步核對既有draft前置及必要真憑證／部署門檻，不把role integration或Android待驗消失。
 
 <a id="model-self02"></a>
 ### MODEL-SELF02 共用設定及交付
 
-- 前置：MODEL-SELF01；狀態待開始。Web／Android共用owner、表單與API，一端保存另一端讀同版；顯示已用次數、生效值及限制來源。
+- 前置：MODEL-SELF01；2026-10-20 共用owner及表單已接同一v2契約，隨draft #242準備，尚未部署。Web／Android共用供應商／模型、七項限制、背景授權、用量及Server生效值；沒有另一份UI限額權威。保存回應丟失時查原opId，未見收據不能清成成功或重播key。兩項必要表單／原操作流程及局部型別通過，見[MODEL02證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。真個人key、正式頁面操作、兩端同版及部署仍待驗。
 - key不進prompt、日誌、URL、瀏覽器儲存或Android持久草稿；移除／替換沿原身份與版本檢查。部署沿原站及相容Web／OTA，不另建網站。
 - 交付短指引：啟動、key／ADC、選分支、改完再試、背景觸發、角色結果、資料重設及仍需雲端確認的差異。
 

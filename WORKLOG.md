@@ -3137,3 +3137,10 @@
 - Gemini／Vertex Express走同SDK的不同認證模式。模型目錄有界、thinking參數按協定適配；Express沒有已核對的embedding／metadata方法，明示未支援且不借平台。新增key／地區／模型穩定錯誤，暫時HTTP錯誤沿原gateway計量與重試。v1 client不能表示新模型時回更新要求，不誤報預設型號。
 - 必要驗證：兩條新增合成設定／SDK流程及兩項既有client檢查、局部型別通過；初次型別只有新測試漏toolsDict，補正後才執行。新增舊限制相容與錯誤分類後，只重跑受影響兩項。零真模型／embedding／雲端寫入／通知／部署，未跑全量、壓測或Computer Use。證據見[MODEL01 EV](artifacts/verification/MODEL_SELF01_SETTINGS_20261018.json)。
 - 交付前master仍`d4686b7`；#214更新`831a820`只涉及四份測試，原DEV02固定證據仍對應舊head，#215／#216不改。現有Android／DEV01 draft前置、真個人key、共用表單／owner及部署未驗保持，不將本包寫成整個目標完成。
+
+<a id="log-20261020-model-self02"></a>
+### LOG-20261020-MODEL-SELF02
+
+- 額度中斷後接續原未提交成果；MODEL01保存為`5b38ad1`／draft #242，沒有重跑已通過的後端批次。master仍`d4686b7`，協作者三個head更新，只核差異，原固定角色與失敗證據保留。
+- 共用設定表單及正式owner接v2供應商／模型、進階限制、Server生效值及原操作查回，移除舊UI固定限額。沿同一draft收束前後端契約，未繞過前置合併／真服務門檻。只記opId／預期版本，不緩存key作重播；空收據且版本未變保持unknown，較新版本也不假稱原操作成功。
+- 只執行兩項受影響的表單／client恢復檢查及局部TypeScript；均通過，零真模型／通知／雲端寫入／部署。沒有啟動瀏覽器、真機、全量或另建依賴。證據見[MODEL02 EV](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。頁面實際互動、真個人key、兩端同版與部署仍待驗；本次不把四角色或Android改成完成。

@@ -17,14 +17,18 @@ import { StatusAnnouncement } from "../StatusAnnouncement";
 import { personalLimits, type ModelMode, type ModelSettings, type ModelSettingsActions, type ModelSettingsUsage, type ModelSettingsViewModel } from "../../model-settings-view-model";
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
 import { MotionFeedback, MotionReveal } from "../../motion";
-import { modelCommandFromDraft, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, type ModelSettingsDraft } from "./model-settings-form";
+import { modelCommandFromDraft, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, modelLimitFields, type ModelSettingsDraft } from "./model-settings-form";
 
+const modelReasonText = (reason: string) => ({ invalid_key: "密鑰無效或沒有存取權限。", region_unavailable: "供應商不支援目前服務地區。",
+  model_unavailable: "這份憑證目前不能存取所選模型。", quota_exceeded: "供應商配額或速率已達上限。", timeout: "供應商查核逾時。",
+  metadata_unsupported: "此服務未接模型 metadata 查核；不代表生成失敗。", unavailable: "供應商暫時未能完成查核。" })[reason] ?? "目前未能完成查核。";
 const empty: ModelSettings = { version: 0, mode: "disabled", provider: "gemini", model: "gemini-3.1-flash-lite", keyConfigured: false,
   backgroundEnabled: false, dailyLimit: personalLimits.daily.default, maxModelCalls: personalLimits.modelCalls.default, maxQueryEmbeddings: personalLimits.queryEmbeddings.default, updatedAt: null };
 const modeLabels: Record<ModelMode, string> = { platform: brand.platformServiceLabel, personal: "我的個人密鑰", disabled: "停用 AI" };
 const formFields = [
   { name: "mode", label: "模型模式" }, { name: "keyText", label: "個人 API 密鑰" }, { name: "consent", label: "費用及資料外送同意" },
-  { name: "dailyText", label: "個人每日呼叫上限" }, { name: "modelCallsText", label: "每次 Agent 生成上限" }, { name: "queryEmbeddingsText", label: "每次查詢向量上限" },
+  { name: "provider", label: "Google 服務" }, { name: "model", label: "聊天模型" },
+  ...modelLimitFields.map(([name, label]) => ({ name, label })),
 ] as const;
 function UsageCard({ label, usage }: { label: string; usage: ModelSettingsUsage }) {
   return <SectionCard><SectionHeader density="compact" title={label} subtitle={`計數日：${usage.day}（UTC）；資料來自最後讀取。`} />
@@ -61,9 +65,11 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
     },
   };
   const { control, reset, setValue, setFocus, watch, handleSubmit, formState: { errors, isDirty } } = useForm<ModelSettingsDraft>({
-    resolver: zodResolver(modelSettingsSchema(settings.keyConfigured)), defaultValues: modelSettingsDraft(settings), mode: "onChange", shouldFocusError: false,
+    resolver: zodResolver(modelSettingsSchema(settings.keyConfigured, settings.provider)), defaultValues: modelSettingsDraft(settings, snapshot?.effective), mode: "onChange", shouldFocusError: false,
   });
   usePreviewLeaveGuard(isDirty, false, "account");
+  const provider = watch("provider"), selectedModel = watch("model");
+  const selectedCapabilities = model.catalog?.models.find(item => item.id === selectedModel)?.capabilities;
   const mode = watch("mode"), keyText = watch("keyText"), consent = watch("consent");
   const fieldId = (name: keyof ModelSettingsDraft) => `${formId}-${name}`;
   const visibleFields = formFields.filter(item => item.name === "mode" || mode === "personal");
@@ -75,8 +81,8 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
   const available = mode === "personal" ? snapshot?.personalAvailable : mode === "platform" ? snapshot?.platformAvailable : true;
   const canSave = !locked && available && (mode !== "personal" || consent && (settings.keyConfigured || !!keyText.trim()));
   useEffect(() => {
-    reset(modelSettingsDraft(settings)); setDeleteOpen(false); setDeleteConfirmed(false);
-  }, [model.scopeKey, model.formRevision, settings, reset]);
+    reset(modelSettingsDraft(settings, snapshot?.effective)); setDeleteOpen(false); setDeleteConfirmed(false);
+  }, [model.scopeKey, model.formRevision, settings, snapshot?.effective, reset]);
   useEffect(() => {
     setValue("keyText", ""); setValue("consent", false); setDeleteOpen(false); setDeleteConfirmed(false);
   }, [model.secretRevision, model.online, model.authorized, setValue]);
@@ -96,7 +102,7 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
   }
   const narrow = width < 820;
   const statusMessage = model.notice || (model.busy === "read" ? "正在讀取模型設定…" : model.busy === "check" ? "正在讀取已保存密鑰的模型資料…"
-    : model.busy === "save" ? "正在保存模型設定…" : !model.authorized ? "本人身份或權限已改變，請重新登入。"
+    : model.busy === "catalog" ? "正在查核模型目錄…" : model.busy === "save" ? "正在保存模型設定…" : !model.authorized ? "本人身份或權限已改變，請重新登入。"
       : !model.online ? "目前離線，密鑰輸入已清除；恢復連線後先重讀設定。" : snapshot ? "模型設定已讀取；密鑰不會讀回。" : "");
   return <View testID="model-settings-view" ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.root}>
     <StatusAnnouncement eventKey={String(model.online)} message={active ? model.online ? "已恢復連線，請先重新讀取模型設定及版本。" : "目前離線，密鑰輸入已清除；恢復連線後先重讀設定。" : ""} />
@@ -111,7 +117,7 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
       </View>
       {!model.online ? <Text style={styles.warning}>目前離線，密鑰輸入已清除；恢復連線後先重讀設定。</Text> : null}
       {!model.authorized ? <Text style={styles.error}>本人身份或權限已改變，請重新登入。</Text> : null}
-      <AppButton label="重新讀取模型設定" variant="secondary" disabled={!model.online || !model.authorized || !!model.busy} onPress={actions.refresh} />
+      <AppButton label={model.originalOperationId ? "查回原操作及目前設定" : "重新讀取模型設定"} variant="secondary" disabled={!model.online || !model.authorized || !!model.busy} onPress={actions.refresh} />
     </SectionCard>
     {snapshot && model.authorized ? <View style={[styles.columns, narrow && styles.stacked]}>
       <View style={[styles.column, narrow && styles.fullColumn]}>
@@ -131,9 +137,19 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
           </View>} />
           {!snapshot.enabled ? <Text style={styles.warning}>AI 總開關目前停用。你仍可管理或刪除本人密鑰。</Text> : null}
           {!available ? <Text style={styles.warning}>所選服務目前不可用；你仍可選擇停用或刪除密鑰。</Text> : null}
-          <Text style={styles.meta}>模型：{settings.model}</Text>
+          <Text style={styles.meta}>已保存的個人模型：{settings.model}</Text>
           <AppStatusBadge label={settings.keyConfigured ? "個人密鑰已保存" : "尚未保存個人密鑰"} tone={settings.keyConfigured ? "success" : "neutral"} /><Text style={styles.meta}>密鑰原文不會顯示。</Text>
           {mode === "personal" ? <View style={styles.group}>
+            <Controller control={control} name="provider" render={({ field }) => <AppSelect ref={field.ref} id={fieldId("provider")} label="Google 服務" value={field.value} disabled={locked}
+              options={[{ value: "gemini", label: "Gemini Developer API" }, { value: "vertex", label: "Vertex AI Express API key" }]}
+              onChange={value => { clearSecret(); field.onChange(value); }} onBlur={field.onBlur} />} />
+            <Controller control={control} name="model" render={({ field }) => <AppSelect ref={field.ref} id={fieldId("model")} label="聊天模型" value={field.value} disabled={locked}
+              options={Array.from(new Map([{ value: settings.model, label: settings.model }, ...(model.catalog?.models ?? []).map(item => ({ value: item.id, label: item.label }))].map(item => [item.value, item])).values())}
+              onChange={field.onChange} onBlur={field.onBlur} />} />
+            <Text style={styles.meta}>選項來自 Server 已接線的模型；能否生成仍取決於你的憑證、地區及供應商服務。模型 metadata 可讀不代表真生成已通過。</Text>
+            {provider === "vertex" ? <Text style={styles.warning}>Vertex Express key 的生成已接線，查詢向量及模型 metadata 暫未支援，因此混合知識檢索不可用；不會借用平台額度。此處不接收服務帳戶 JSON；ADC 只供本地開發。</Text> : null}
+            {!model.catalog && !model.busy ? <Text style={styles.meta}>模型目錄尚未讀取，暫只顯示目前保存的模型；可重新讀取設定。</Text> : null}
+            {selectedCapabilities ? <Text style={styles.meta}>已接能力：{Object.entries(selectedCapabilities).filter(([, enabled]) => enabled).map(([key]) => ({ tools: "工具", image: "圖片", audio: "音訊", textStreaming: "模型文字串流" })[key]).join("、")}。畫面串流仍依產品接線狀態。</Text> : null}
             <Controller control={control} name="keyText" render={({ field }) => <AppTextField label={settings.keyConfigured ? "替換 API 密鑰" : "個人 API 密鑰"}
               accessibilityLabel="個人 API 密鑰" testID="model-api-key" secureTextEntry autoComplete="off" textContentType="none" autoCapitalize="none" autoCorrect={false}
               importantForAutofill="no" nativeID={fieldId("keyText")} aria-invalid={!!errors.keyText} aria-describedby={`${fieldId("keyText")}-message`} maxLength={512} value={model.online && model.authorized ? field.value : ""} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors.keyText} />} />
@@ -145,14 +161,13 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
             <FormFieldMessage id={`${fieldId("consent")}-message`} error={errors.consent?.message} />
             <Controller control={control} name="backgroundEnabled" render={({ field }) => <AppCheckbox checked={field.value} onChange={field.onChange} disabled={locked || !available}
               label="另行允許背景任務使用此密鑰" description="背景處理亦會使用供應商服務及計入用量；不會因加入密鑰而自動啟用。" />} />
-            <View style={styles.limitFields}><Text accessibilityRole="header" style={styles.groupTitle}>個人呼叫上限</Text>{([
-              ["dailyText", "個人每日呼叫上限", personalLimits.daily], ["modelCallsText", "每次 Agent 生成上限", personalLimits.modelCalls], ["queryEmbeddingsText", "每次查詢向量上限", personalLimits.queryEmbeddings],
-            ] as const).map(([name, label, range]) => <View key={name} style={styles.limitField}>
-              <Controller control={control} name={name} render={({ field }) => <AppTextField accessibilityLabel={label} label={name === "dailyText" ? "每日呼叫上限" : name === "modelCallsText" ? "每次生成上限" : "查詢向量上限"} keyboardType="number-pad" inputMode="numeric"
+            <View style={styles.limitFields}><Text accessibilityRole="header" style={styles.groupTitle}>個人呼叫上限</Text>{modelLimitFields.map(([name, label, range, unit]) => <View key={name} style={styles.limitField}>
+              <Controller control={control} name={name} render={({ field }) => <AppTextField accessibilityLabel={label} label={label} keyboardType="number-pad" inputMode="numeric"
                 nativeID={fieldId(name)} aria-invalid={!!errors[name]} aria-describedby={`${fieldId(name)}-message`} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors[name]} />} />
-              <FormFieldMessage id={`${fieldId(name)}-message`} error={errors[name]?.message} help={`${range.min}–${range.max} 次 · 整數`} />
+              <FormFieldMessage id={`${fieldId(name)}-message`} error={errors[name]?.message} help={`${range.min}–${range.max} ${unit} · 整數`} />
             </View>)}</View>
-          </View> : <Text style={styles.meta}>{mode === "platform" ? "平台沿用既定配額，每次 Agent 最多生成 4 次、查詢向量 2 次。" : "保存停用後不會自行切回平台；已有密鑰會保留，刪除須另行確認。"}</Text>}
+            <Text style={styles.meta}>保存後按本人設定及管理員共用保護計算。模型按需要使用預算，不必用盡；重試亦計入原運行及每日次數。</Text>
+          </View> : <Text style={styles.meta}>{mode === "platform" ? "平台模型及限額由管理員統一設定，實際值見右方。" : "保存停用後不會自行切回平台；已有密鑰會保留，刪除須另行確認。"}</Text>}
           <View style={[styles.actions, styles.group]}><AppButton label="保存模型設定" disabled={!canSave} loading={model.busy === "save"} onPress={() => void submit()} />
             <AppButton label="刪除個人密鑰" variant="danger-secondary" disabled={locked || !settings.keyConfigured} onPress={() => { clearSecret(); setDeleteConfirmed(false); setDeleteOpen(true); }} />
           </View>
@@ -162,7 +177,12 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
           <Text style={styles.meta}>密鑰已保存、模型資料可讀及實際生成／查詢向量可用，須分開核對；這項檢查不能確認帳單或剩餘配額。</Text>
           <AppButton label="檢查已保存密鑰" variant="secondary" loading={model.busy === "check"} disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || settings.mode !== "personal" || !!keyText.trim()}
             onPress={() => actions.check(settings.version)} />
-          <Text style={styles.meta}>每帳戶每分鐘最多一次；遇到 429 請稍後手動重試。</Text>
+          {model.keyCheck?.reason ? <Text style={styles.warning}>{modelReasonText(model.keyCheck.reason)}</Text> : null}
+          {actions.refreshCatalog ? <AppButton label="查核已保存密鑰的模型目錄" variant="quiet" disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || !!keyText.trim()}
+            loading={model.busy === "catalog"} onPress={() => actions.refreshCatalog?.(settings.version)} /> : null}
+          {model.catalog?.reason ? <Text style={styles.warning}>{modelReasonText(model.catalog.reason)}</Text> : null}
+          {model.catalog?.truncated ? <Text style={styles.meta}>供應商目錄只讀取了有界部分；未列出不代表模型不存在。</Text> : null}
+          <Text style={styles.meta}>查核與目錄共用每帳戶每分鐘一次限制，不呼叫生成；遇到 429 請稍後手動重試。</Text>
         </SectionCard> : null}
       </View>
       <View style={[styles.column, narrow && styles.fullColumn]}>
@@ -171,7 +191,13 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
           <Text style={styles.body}>已保存的個人每日上限：{settings.dailyLimit} 次</Text>
           <Text style={styles.meta}>全站個人服務安全上限：{snapshot.personalGlobalLimit} 次；個人上限只在個人模式生效。</Text>
           <Text style={styles.meta}>每日 UTC 00:00（香港 08:00）重置。生成及查詢向量的嘗試均計次，metadata 不代表完整供應商帳單。</Text>
-          <Text style={styles.meta}>固定上限：工具 8 次 · 每次運行 90 秒 · 每次輸出 1024 tokens。</Text>
+          {snapshot.effective ? <View style={styles.group}>
+            <Text style={styles.body}>目前生效值 · 管理政策版本 {snapshot.effective.policyVersion}</Text>
+            <Text style={styles.meta}>每日本人 {snapshot.effective.dailyLimit}／共用 {snapshot.effective.dailyGlobalLimit} 次</Text>
+            <Text style={styles.meta}>每輪生成 {snapshot.effective.maxModelCalls}／工具 {snapshot.effective.maxToolCalls}／查詢向量 {snapshot.effective.maxQueryEmbeddings} 次</Text>
+            <Text style={styles.meta}>整輪 {snapshot.effective.maxRunSeconds} 秒 · 單次模型 {snapshot.effective.modelRequestSeconds} 秒 · 最多額外重試 {snapshot.effective.maxModelRetries} 次</Text>
+            <Text style={styles.meta}>{snapshot.effective.cappedByAdministrator.length ? "部分個人設定高於管理員保護上限，實際按上述較低值執行。" : "目前設定未被較低的管理員上限調低。"} 一般修改於新運行生效；保存不會清零用量。</Text>
+          </View> : <Text style={styles.meta}>此 Server 尚未提供實際生效限制，請更新服務後重新讀取。</Text>}
           <Text style={styles.meta}>{snapshot.agentInputCharacters === undefined ? "互動上下文上限未提供" : `互動上下文上限：${snapshot.agentInputCharacters} 字元`}</Text>
           <Text style={styles.meta}>停用或刪除不會撤回供應商已接受的呼叫。</Text>
         </SectionCard>
