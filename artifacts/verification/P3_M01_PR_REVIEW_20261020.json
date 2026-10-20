@@ -1,0 +1,30 @@
+{
+  "package": "P3-M01",
+  "reviewedHead": "294572c7499342d3f5e404cf83be39041f608c74",
+  "base": "d4686b7",
+  "date": "2026-10-20",
+  "fixes": [
+    "isolated review gateway with root accounting",
+    "background no_action types",
+    "server receipt substitution; model prose does not grant exemption",
+    "per-paragraph kind retained in review hash/payload",
+    "explicit review budget guidance"
+  ],
+  "checks": {
+    "targetedScripted": {
+      "passed": 6,
+      "failed": 0
+    },
+    "scopedTypecheck": "passed after correcting pre-existing test provider type; first two diagnostics retained in local logs",
+    "diffCheck": "passed",
+    "promptAssembly": "product-interactive/tool_cycle and review/structured passed; initial helper used unsupported structured mode for product and was corrected without product changes"
+  },
+  "notRun": [
+    "real models",
+    "cloud",
+    "browser/device",
+    "full suite",
+    "deployment"
+  ],
+  "realRoleQuality": "pending"
+}
