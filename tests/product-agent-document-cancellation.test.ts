@@ -64,7 +64,7 @@ function fixture(revokeAtCommit: boolean, mode: "abort" | "source-invalid" | "pa
         [{ id: "check-bag", name: "change_family_document", args: { sourceQuote, documentId: original.id, change } },
           ...(mode === "partial-invalid" ? [{ id: "check-other-bag", name: "change_family_document", args: { sourceQuote, documentId: otherDocumentId, change } }] : []),
           { id: "stage-summary", name: "stage_private_summary", args: { text: "SYNTHETIC PRIVATE SUMMARY" } }],
-        [{ id: "answer", name: "present_answer", args: { kind: "operation", paragraphs: [{ text: "SYNTHETIC PRIVATE DOCUMENT BODY", citationIds: [] }] } }],
+        [{ id: "answer", name: "present_answer", args: { kind: "operation", paragraphs: [{ text: "已儲存文件變更。", citationIds: [] }] } }],
       ];
       return { content: { role: "model", parts: steps[index].map(functionCall => ({ functionCall })) }, finishReason: FinishReason.STOP };
     } } });
@@ -207,10 +207,10 @@ for (const mode of ["source-invalid", "partial-invalid"] as const) test(`complet
     result = await setup.service.reply(setup.userId, setup.childId, setup.messageId, setup.current, setup.abort.signal);
     const observed = setup.observe();
     assert.equal(observed.runtimeResults[0].status, "completed");
-    assert.equal(observed.runtimeResults[0].text, "SYNTHETIC PRIVATE DOCUMENT BODY");
+    assert.equal(observed.runtimeResults[0].text, "已儲存文件變更。");
     assert.ok(observed.runtimeResults[0].tools.some(tool => tool.name === "stage_private_summary" && tool.status === "succeeded"));
     assert.equal(result?.status, "stopped"); assert.equal(result?.stopReason, "document_source_changed");
-    assert.ok(!JSON.stringify(observed.saved).includes("SYNTHETIC PRIVATE DOCUMENT BODY"));
+    assert.ok(!JSON.stringify(observed.saved).includes("已儲存文件變更。"));
     assert.equal(observed.savedSummary, undefined); assert.deepEqual(result?.citations, []);
     assert.ok(!result?.tools.some(tool => tool.reference));
     assert.deepEqual(await setup.service.reply(setup.userId, setup.childId, setup.messageId, setup.current), result);

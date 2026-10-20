@@ -12,17 +12,16 @@ import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation"
 import { locateCitationSource } from "./locateCitationSource";
 import { MotionDisclosure, MotionEntrance } from "../../motion";
 import { MotionSelectionMarker } from "../../motion/MotionSelectionMarker";
+import { CHAT_CLASSIFICATION_LABELS, CHAT_SOURCE_COPY } from "./chat-copy";
 
 type CitationOrigin = { sourceId: string; anchor: RefObject<View | null> };
 const CitationContext = createContext<{ sources: readonly ChatCitationView[]; locate(id: string, anchor?: RefObject<View | null>): void } | null>(null);
 export type LocateAnswerSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => void;
-const classificationLabels: Record<ChatCitationView["classification"], string> = {
-  official_guidance: "官方指引", recent_information: "近期資訊", synthetic: "合成來源示例",
-};
+const classificationLabels = CHAT_CLASSIFICATION_LABELS;
 function sourceTime(value: string | null): string {
-  return value === null ? "未提供" : Number.isFinite(Date.parse(value))
-    ? `${new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", hour12: false })}（香港時間）`
-    : "時間資料無效，請重新讀取";
+  return value === null ? CHAT_SOURCE_COPY.missingTime : Number.isFinite(Date.parse(value))
+    ? `${new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", hour12: false })}${CHAT_SOURCE_COPY.hongKongTimeSuffix}`
+    : CHAT_SOURCE_COPY.invalidTime;
 }
 function Detail({ label, value, technical = false }: { label: string; value: string; technical?: boolean }) {
   return <View style={styles.detail}><Text style={styles.meta}>{label}</Text><Text selectable style={technical ? styles.meta : styles.body}>{value}</Text></View>;
@@ -147,14 +146,14 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
     <View testID={testID} style={styles.answer}>
       {children}
       <View testID="answer-sources" style={styles.footer}>
-        {degraded ? <Text style={styles.warning}>檢索已降級；請核對原來源及適用範圍。</Text> : null}
+        {degraded ? <Text testID="answer-sources-degraded" style={styles.warning}>{CHAT_SOURCE_COPY.degradedWarning}</Text> : null}
         {sources.length ? <View ref={panelRef} testID="answer-source-panel" style={styles.panel}>
-          <View style={styles.footerHeading}><Text accessibilityRole="header" style={styles.footerTitle}>參考來源</Text>
-            {origin && onLocateSource ? <AppButton label="返回引用句" variant="quiet" density="compact" onPress={returnToCitation} /> : null}
+          <View style={styles.footerHeading}><Text accessibilityRole="header" style={styles.footerTitle}>{CHAT_SOURCE_COPY.footerTitle}</Text>
+            {origin && onLocateSource ? <AppButton label={CHAT_SOURCE_COPY.returnToCitation} variant="quiet" density="compact" onPress={returnToCitation} /> : null}
           </View>
-          <HorizontalOverflowRail ref={tabScrollRef} testID="answer-source-tabs" rowTestID="answer-source-tab-row" accessibilityLabel="回答參考來源"
+          <HorizontalOverflowRail ref={tabScrollRef} testID="answer-source-tabs" rowTestID="answer-source-tab-row" accessibilityLabel={CHAT_SOURCE_COPY.tabAccessibilityLabel}
             layoutRevision={`${sourceLayoutKey}:${tabWidth}`}
-            hintLabel="查看更多來源" hintTestID="answer-source-scroll-hint" hintSlotTestID="answer-source-hint-slot" hintColor={chatColors.secondary}
+            hintLabel={CHAT_SOURCE_COPY.hintMoreSources} hintTestID="answer-source-scroll-hint" hintSlotTestID="answer-source-hint-slot" hintColor={chatColors.secondary}
             items={sources.flatMap(source => tabLayouts[source.id] ? [{ key: source.id, ...tabLayouts[source.id] }] : [])}
             onRevealItem={revealSource} animatedScroll={false}
             onLayout={event => setTabWidth(event.nativeEvent.layout.width)} style={styles.tabRow} contentContainerStyle={styles.tabs}>
@@ -177,42 +176,42 @@ export function AnswerSources({ sources, children, testID, onOpenSource, onLocat
           <MotionEntrance preset="panel" triggerKey={expanded ? panelTrigger : null} scopeKey={groupId} enabled={expanded} testID="answer-source-content-motion" style={styles.details}>
             {selected ? <>
             <View testID="source-detail-group" style={styles.detailGroup}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>引用內容</Text>
+              <Text accessibilityRole="header" style={styles.groupTitle}>{CHAT_SOURCE_COPY.quoteGroupTitle}</Text>
               <View style={styles.detail}><Text accessibilityRole="header" style={styles.sourceTitle}>{selected.title}</Text>
                 <Text style={styles.meta}>{selected.publisher} · {classificationLabels[selected.classification]}</Text></View>
-              <Detail label="章節" value={selected.section} />
+              <Detail label={CHAT_SOURCE_COPY.section} value={selected.section} />
               <View style={styles.quote}><Text selectable style={styles.quoteBody}>{selected.excerpt}</Text></View>
-              {selected.classification === "synthetic" ? <Text style={styles.meta}>此來源只展示引用版式，沒有真實來源證據。</Text> : null}
+              {selected.classification === "synthetic" ? <Text style={styles.meta}>{CHAT_SOURCE_COPY.syntheticNotice}</Text> : null}
             </View>
             <View testID="source-detail-group" style={[styles.detailGroup, styles.dividedGroup]}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>日期與適用範圍</Text>
-              <Detail label="來源日期" value={selected.sourceDate ?? "未提供"} />
-              <Detail label="有效至" value={sourceTime(selected.validUntil)} />
-              <Detail label="原適用範圍" value={selected.applicabilityLabel} />
-              <Detail label="內部限定" value={selected.internalOnly ? "是" : "否"} />
-              <Text style={styles.meta}>引用沿用回答當時的來源快照；請核對日期及適用範圍。</Text>
-              {selected.url ? onOpenSource ? <AppButton label="開啟原來源" accessibilityLabel={`開啟原來源：${selected.title}`} variant="secondary"
+              <Text accessibilityRole="header" style={styles.groupTitle}>{CHAT_SOURCE_COPY.datesGroupTitle}</Text>
+              <Detail label={CHAT_SOURCE_COPY.sourceDate} value={selected.sourceDate ?? CHAT_SOURCE_COPY.missingTime} />
+              <Detail label={CHAT_SOURCE_COPY.validUntil} value={sourceTime(selected.validUntil)} />
+              <Detail label={CHAT_SOURCE_COPY.applicability} value={selected.applicabilityLabel} />
+              <Detail label={CHAT_SOURCE_COPY.internalOnly} value={selected.internalOnly ? CHAT_SOURCE_COPY.internalYes : CHAT_SOURCE_COPY.internalNo} />
+              <Text style={styles.meta}>{CHAT_SOURCE_COPY.snapshotDisclaimer}</Text>
+              {selected.url ? onOpenSource ? <AppButton label={CHAT_SOURCE_COPY.openSource} accessibilityLabel={`${CHAT_SOURCE_COPY.openSource}：${selected.title}`} variant="secondary"
                 onPress={() => onOpenSource(selected.id)} /> : <Text selectable style={styles.body}>{selected.url}</Text>
-                : <Text style={styles.meta}>沒有可開啟的真實來源連結。</Text>}
+                : <Text style={styles.meta}>{CHAT_SOURCE_COPY.noOpenableUrl}</Text>}
             </View>
             <View style={[styles.technicalGroup, styles.dividedGroup]}>
-              <Pressable accessibilityRole="button" accessibilityLabel="版本與核對資料" accessibilityState={{ expanded: technicalOpen }}
+              <Pressable accessibilityRole="button" accessibilityLabel={CHAT_SOURCE_COPY.technicalToggle} accessibilityState={{ expanded: technicalOpen }}
                 aria-expanded={technicalOpen} aria-controls={`${groupId}-technical`} onPress={() => setTechnicalOpen(value => !value)} style={styles.technicalToggle}>
-                <Text style={styles.technicalTitle}>{technicalOpen ? "收起" : "查看"}版本與核對資料</Text><AppIcon name={technicalOpen ? "chevron-up" : "chevron-down"} size={16} />
+                <Text style={styles.technicalTitle}>{(technicalOpen ? CHAT_SOURCE_COPY.technicalClosePrefix : CHAT_SOURCE_COPY.technicalOpenPrefix) + CHAT_SOURCE_COPY.technicalToggle}</Text><AppIcon name={technicalOpen ? "chevron-up" : "chevron-down"} size={16} />
               </Pressable>
               <MotionDisclosure expanded={technicalOpen} scopeKey={`${groupId}:${selected.id}`}><View nativeID={`${groupId}-technical`} testID="source-detail-group" style={[styles.detailGroup, styles.technicalContents]}>
-                <Detail technical label="原來源版本" value={selected.versionId} />
-                <Detail technical label="原來源版本校驗" value={selected.versionHash} />
-                <Detail technical label="核對時間" value={sourceTime(selected.checkedAt)} />
-                <Detail technical label="擷取時間" value={sourceTime(selected.fetchedAt)} />
-                <Detail technical label="最後成功核對" value={sourceTime(selected.lastSuccessfulCheckAt)} />
+                <Detail technical label={CHAT_SOURCE_COPY.versionId} value={selected.versionId} />
+                <Detail technical label={CHAT_SOURCE_COPY.versionHash} value={selected.versionHash} />
+                <Detail technical label={CHAT_SOURCE_COPY.checkedAt} value={sourceTime(selected.checkedAt)} />
+                <Detail technical label={CHAT_SOURCE_COPY.fetchedAt} value={sourceTime(selected.fetchedAt)} />
+                <Detail technical label={CHAT_SOURCE_COPY.lastSuccessfulCheckAt} value={sourceTime(selected.lastSuccessfulCheckAt)} />
               </View></MotionDisclosure>
             </View>
             </> : null}
           </MotionEntrance>
           </AppScrollView>
           </MotionDisclosure>
-        </View> : <Text style={styles.meta}>本次沒有可核對的來源片段。</Text>}
+        </View> : <Text testID="answer-sources-empty" style={styles.meta}>{CHAT_SOURCE_COPY.emptySources}</Text>}
       </View>
     </View>
   </CitationContext.Provider>;

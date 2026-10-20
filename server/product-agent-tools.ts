@@ -14,6 +14,7 @@ import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descri
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
+import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -24,8 +25,10 @@ import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { createAgentActionTools } from "./agent-action-tools.ts";
 import { createAgentSourceTools } from "./agent-source-tools.ts";
 import { createAgentDocumentTools } from "./agent-document-tools.ts";
+import { createDataComposeTools } from "./data-compose.ts";
 import { createAgentConcernTools } from "./agent-concern-tools.ts";
 import { createAgentWorkTools } from "./agent-work-tools.ts";
+import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
 
 function validateAnswerText(answer: { paragraphs: AgentAnswer["paragraphs"] }) {
   for (const paragraph of answer.paragraphs)
@@ -60,6 +63,17 @@ export function createDueWorkContinuationTools(run: AgentRunContext, authorize: 
     if (!answer) return null; if (!await authorize()) throw new AgentStopped("unauthorized");
     if (answer.kind === "no_action") return { outcome: "no_action", text: "", citations: [], retrievalMode: "not_used" };
     return { text: answer.paragraphs.map(item => item.text).join("\n\n"), citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+  }, deliveryDraft(): ChatDeliveryDraft | null {
+    if (!answer || answer.kind === "no_action") return null;
+    return { kind: answer.kind, visibility: "private", serverSubstitutedSourceText: false,
+      paragraphs: answer.paragraphs.map(item => ({ text: item.text, citationIds: [...item.citationIds] })), sources: [], scope: run.scope };
+  }, replaceDeliveryAnswer(next: unknown) {
+    const parsed = agentAnswerSchema.parse(next);
+    if (!["clarification", "record_restatement"].includes(parsed.kind) || parsed.paragraphs.some(item => item.citationIds.length)) {
+      throw new FamilyError(400, "work_continuation_presentation_scope");
+    }
+    validateAnswerText(parsed);
+    answer = parsed;
   } };
 }
 
@@ -101,6 +115,8 @@ export function createProductAgentTools(options: {
   knowledge: Retriever; authorize: () => Promise<boolean>; visibility?: "private" | "family";
   reviewedGrowthPresentation?: boolean;
   background?: boolean;
+  /** Authenticated current user message; required for compose review binding. */
+  trustedUserMessage?: string;
 }) {
   const { run, memory, tasks, store } = options, { scope, budget, runId } = run;
   const authorize = run.authorize ?? options.authorize;
@@ -110,6 +126,7 @@ export function createProductAgentTools(options: {
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
+  let serverReceiptText: string | null = null;
   async function current(pages: { factsAfterId?: string; topicsAfterId?: string } = {}) {
     const value = await memory.context(scope.userId, scope.childId, options.visibility ?? "private", pages);
     if (!value) throw new AgentStopped("unauthorized"); return value;
@@ -126,6 +143,39 @@ export function createProductAgentTools(options: {
     }
   }
   const permitted = async () => authorize();
+  function acceptPresentedAnswer(parsed: AgentAnswer) {
+    validateAnswerText(parsed);
+    for (const paragraph of parsed.paragraphs) {
+      const kind = paragraph.kind ?? parsed.kind;
+      const official = options.reviewedGrowthPresentation || kind === "caregiving" || kind === "safety_help";
+      if ((kind === "caregiving" || kind === "safety_help") && !paragraph.citationIds.some(id => evidence.get(id)?.chunk.classification === "official_guidance")) throw new FamilyError(400, "citation_required");
+      if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id))) throw new FamilyError(400, "citation_required");
+      for (const id of paragraph.citationIds) {
+        if (privateSources?.evidence.has(id) && !options.reviewedGrowthPresentation) continue;
+        const item = evidence.get(id);
+        if (!item || official && item.chunk.classification !== "official_guidance") throw new FamilyError(400, "invalid_citation");
+      }
+    }
+    if (new Set(parsed.paragraphs.flatMap(paragraph => paragraph.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
+  }
+  function deliverySource(id: string): ChatDeliverySource | null {
+    const privateCitation = privateSources?.evidence.get(id);
+    if (privateCitation) {
+      const excerpt = chatDeliveryExcerpt(privateCitation.excerpt);
+      return { citationId: id, version: String(privateCitation.version), contentHash: privateCitation.sha256,
+        classification: "private", excerpt: excerpt.excerpt, excerptComplete: excerpt.excerptComplete };
+    }
+    const item = evidence.get(id);
+    if (!item) return null;
+    // accumulateKnowledgeRead may hold up to 4000 chars; do not hide support past the old 800-char head truncate.
+    const body = item.chunk.text ?? "";
+    const excerpt = item.chunk.readCoverage ? chatDeliveryReviewSourceExcerpt(body) : chatDeliveryExcerpt(body);
+    const supplied = item.chunk.contentHash ?? "";
+    return { citationId: id, version: item.chunk.versionId?.trim() || "unversioned",
+      contentHash: /^[a-f0-9]{64}$/u.test(supplied) ? supplied : chatDeliveryContentHash(body),
+      classification: item.chunk.classification === "recent_information" ? "recent_information" : "official_guidance",
+      excerpt: excerpt.excerpt, excerptComplete: item.chunk.readCoverage ? item.chunk.readCoverage.complete && excerpt.excerptComplete : excerpt.excerptComplete };
+  }
   const tools: AgentTool[] = [
     { name: 'show_official_help', effect: 'read',
       description: '按本次語義顯示固定官方提示：即時危險用 emergency-hk-v1；診斷或用藥判斷用 medical-consult-hk-v1。一般飲食／睡眠／發展不顯示。不是分診或外發；不用等候完整回答，也不要求家長確認。',
@@ -257,25 +307,16 @@ export function createProductAgentTools(options: {
         summaryText = args.text as string;
         return { staged: true, saved: false };
       }) },
-    { name: "present_answer", description: "提交顯示文字；每段可用 kind 指明用途，整體 kind=mixed 時每段必填 kind；未填沿舊整體 kind。citationIds 用本 run search_knowledge／read_knowledge_context 的 chunkId，或 read_private_source.citationId。私人材料回述用 private_reference，不能冒充官方；每項育兒／安全建議仍須支持的官方片段。純澄清、操作或記錄回述可無公共引用。不執行其他操作，不稱未完成事項成功。" + (options.background ? " 沒有新的有用回饋且未執行聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
+{ name: "present_answer", description: "提交顯示文字；每段可用 kind 指明用途，整體 kind=mixed 時每段必填 kind；未填沿舊整體 kind。citationIds 用本 run search_knowledge／read_knowledge_context 的 chunkId，或 read_private_source.citationId。私人材料回述用 private_reference，不能冒充官方；每項育兒／安全建議仍須支持的官方片段。純澄清、操作或記錄回述可無公共引用。不執行其他操作，不稱未完成事項成功。acceptedForValidation 只代表程式接受待核對；不能自報 approved、skipReview 或免審。實質育兒／安全內容由 Server 另排獨立模型審核。" + (options.background ? " 沒有新的有用回饋且未執行聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
         ? " 本次是成長關注：選取支持此關注的官方 chunkId；Server 只呈現片段的已核對正文，不使用你改寫的 text。沒有可用片段時呈現固定限制說明。" : ""),
       parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs. No extra fields.' }],
       parameters: options.background ? agentBackgroundAnswerSchema : agentAnswerSchema, authorize: permitted, terminal: true,
       execute: args => guard(async () => {
-        const parsed = options.background ? agentBackgroundAnswerSchema.parse(args) : agentAnswerSchema.parse(args); validateAnswerText(parsed);
+        // acceptedForValidation is programmatic acceptance only. It is not a semantic pass,
+        // and generator fields such as approved or skipReview are not in this schema.
+        const parsed = options.background ? agentBackgroundAnswerSchema.parse(args) : agentAnswerSchema.parse(args);
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
-        for (const paragraph of parsed.paragraphs) {
-          const kind = paragraph.kind ?? parsed.kind;
-          const official = options.reviewedGrowthPresentation || kind === "caregiving" || kind === "safety_help";
-          if ((kind === "caregiving" || kind === "safety_help") && !paragraph.citationIds.some(id=>evidence.get(id)?.chunk.classification==="official_guidance")) throw new FamilyError(400, "citation_required");
-          if(kind === "private_reference"&&!paragraph.citationIds.some(id=>privateSources?.evidence.has(id)))throw new FamilyError(400,"citation_required");
-          for (const id of paragraph.citationIds) {
-            if(privateSources?.evidence.has(id)&&!options.reviewedGrowthPresentation)continue;
-            const item = evidence.get(id);
-            if (!item || official && item.chunk.classification !== "official_guidance") throw new FamilyError(400, "invalid_citation");
-          }
-        }
-        if (new Set(parsed.paragraphs.flatMap(p => p.citationIds)).size > 6) throw new FamilyError(400, "citation_limit");
+        if (parsed.kind !== "no_action") acceptPresentedAnswer({ ...parsed, kind: parsed.kind });
         answer = parsed;
         return { acceptedForValidation: true, ...(options.reviewedGrowthPresentation
           ? { presentationPolicy: "reviewed_evidence", modelTextUsed: false } : {}) };
@@ -296,7 +337,13 @@ export function createProductAgentTools(options: {
   if (options.actions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(options.actions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
-  if(options.documents && options.includeDocuments && options.visibility!=="family") tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,store,run,permitted));
+  if(options.documents && options.includeDocuments && options.visibility!=="family") {
+    tools.splice(tools.length-1,0,...createAgentDocumentTools(options.documents,store,run,permitted));
+    tools.splice(tools.length-1,0,...createDataComposeTools({
+      documents: options.documents, agent: store, run, authorize: permitted,
+      trustedUserMessage: options.trustedUserMessage ?? "",
+    }));
+  }
   if(options.concerns&&options.includeConcerns!==false)tools.splice(tools.length-1,0,...createAgentConcernTools(options.concerns,store,run,permitted,options.visibility==="family"));
   if(options.summary)tools.splice(tools.length-1,0,{
     name:"read_care_summary",effect:"read",description:"讀取當前孩子指定日／七日的 Server 精確統計、記錄來源版本、缺項及已保存到診問題。日期或時區不清先補問；不自行計數，不把沒有記錄當沒有發生，不輸出 PDF 或聲稱已分享。",
@@ -327,6 +374,7 @@ export function createProductAgentTools(options: {
     summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,
       coveredMessageIds: summaryInput.messages.map(message => message.id), text: summaryText } : undefined,
     async presentation(): Promise<AgentPresentation | null> {
+      serverReceiptText = null;
       if (!answer) return null;
       if (answer.kind === "no_action") {
         if (!options.background || contactReference || !await authorize()) throw new AgentStopped("unauthorized");
@@ -346,6 +394,23 @@ export function createProductAgentTools(options: {
         } else if (!await retrieval.revalidateCitations([chunk], filter)) throw new AgentStopped("invalid_response");
       }
       if (!await authorize()) throw new AgentStopped("unauthorized");
+      if (answer.kind === "operation" && ids.length === 0 && options.actions) {
+        const receipts = await options.actions.receipts(scope.userId, scope.childId, runId);
+        if (!await authorize() || !receipts) throw new AgentStopped("unauthorized");
+        if (receipts.length) {
+          serverReceiptText = `已保存 ${receipts.length} 項操作。請查看操作結果；已安排不代表已發出通知或照護事項完成。`;
+          return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+        }
+      }
+      if (answer.kind === "operation" && ids.length === 0 && !options.background && store.confirmationQuestions) {
+        const questions = await store.confirmationQuestions(scope.userId, scope.childId, runId);
+        if (!await authorize() || !questions) throw new AgentStopped("unauthorized");
+        if (questions.length === 1 && questions[0]?.trim()) {
+          // The API appends the authoritative question. Never exempt model-written claims.
+          serverReceiptText = AGENT_CONFIRMATION_PENDING_TEXT;
+          return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+        }
+      }
       // Growth advice uses the reviewed source wording; model labels cannot bypass this policy.
       const paragraphs = options.reviewedGrowthPresentation
         ? (citations.length ? citations.map(({ chunk }) => ({ text: reviewedText.get(chunk.chunkId)!, citationIds: [chunk.chunkId] }))
@@ -354,6 +419,25 @@ export function createProductAgentTools(options: {
       const rendered = paragraphs.map(paragraph => paragraph.text + (paragraph.citationIds.length
         ? " " + paragraph.citationIds.map(id => privateSources?.evidence.has(id)?"[私人來源 "+(privateSourceCitations.findIndex(item=>item.citationId===id)+1)+"]":"[" + (citations.findIndex(item=>item.chunk.chunkId===id)+1) + "]").join("") : "")).join("\n\n");
       return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations, retrievalMode: mode };
+    },
+    deliveryDraft(): ChatDeliveryDraft | null {
+      if (!answer || answer.kind === "no_action") return null;
+      const sources: ChatDeliverySource[] = [];
+      for (const id of new Set(answer.paragraphs.flatMap(paragraph => paragraph.citationIds))) {
+        const source = deliverySource(id);
+        if (source) sources.push(source);
+      }
+      return { kind: answer.kind, visibility: options.visibility === "family" ? "family" : "private",
+        serverSubstitutedSourceText: Boolean(options.reviewedGrowthPresentation),
+        serverSubstitutedReceiptText: serverReceiptText !== null,
+        paragraphs: serverReceiptText ? [{ text: serverReceiptText, citationIds: [] }]
+          : answer.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] })),
+        sources, scope };
+    },
+    replaceDeliveryAnswer(next: unknown) {
+      const parsed = agentAnswerSchema.parse(next);
+      acceptPresentedAnswer(parsed);
+      answer = parsed;
     },
   };
 }
