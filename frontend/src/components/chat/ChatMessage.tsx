@@ -9,12 +9,10 @@ import { StatusAnnouncement } from "../StatusAnnouncement";
 import { AnswerSources, CitationText, type LocateAnswerSource } from "./AnswerSources";
 import { chatColors, chatFont, chatLayout, chatType } from "./chat-presentation";
 import { MotionDisclosure } from "../../motion";
+import { CHAT_ACTIVITY_LABELS, CHAT_MESSAGE_COPY, CHAT_PHASE_LABELS } from "./chat-copy";
 
-const phaseLabels: Record<ChatReplyPhase, string> = {
-  thinking: "思考中", streaming: "正在回覆", complete: "回覆已結束", stopped: "已停止 · 回覆未完成",
-  failed: "回覆失敗", unknown: "結果未知 · 待查核", awaiting_confirmation: "等候你的確認",
-};
-const activityLabels = { running: "處理中", succeeded: "已回報", failed: "失敗", unknown: "未知", pending: "待確認" } as const;
+const phaseLabels = CHAT_PHASE_LABELS;
+const activityLabels = CHAT_ACTIVITY_LABELS;
 
 export function ChatMessage({ message, children, header, footer, testID, embedded = false, onStop, onCheck, onLocateSource, onOpenSource, degraded, phaseLabel }: {
   message: ChatMessageView; children?: ReactNode; header?: ReactNode; footer?: ReactNode; testID?: string; embedded?: boolean;
@@ -34,14 +32,14 @@ export function ChatMessage({ message, children, header, footer, testID, embedde
       {assistant && message.phase && (message.phase !== "complete" || activities.length > 0) ? <View testID="chat-message-phase" style={styles.statusRow}>
         {active ? <ActivityIndicator size={14} color={chatColors.secondary} /> : null}
         <Text style={[styles.status, attention && styles.warning, message.phase === "failed" && styles.error]}>{phaseLabel ?? phaseLabels[message.phase]}</Text>
-        {active && onStop ? <AppButton label="停止回覆" variant="quiet" density="compact" onPress={onStop} /> : null}
-        {attention && onCheck ? <AppButton label="查核原回覆" variant="quiet" density="compact" onPress={onCheck} /> : null}
+        {active && onStop ? <AppButton label={CHAT_MESSAGE_COPY.stopReply} variant="quiet" density="compact" onPress={onStop} /> : null}
+        {attention && onCheck ? <AppButton label={CHAT_MESSAGE_COPY.checkOriginal} variant="quiet" density="compact" onPress={onCheck} /> : null}
       </View> : null}
       {assistant && activities.length ? <View style={styles.process}>
-        <Pressable testID="chat-process-toggle" accessibilityRole="button" accessibilityLabel="執行過程"
+        <Pressable testID="chat-process-toggle" accessibilityRole="button" accessibilityLabel={CHAT_MESSAGE_COPY.processToggle}
           accessibilityState={{ expanded: processOpen }} aria-expanded={processOpen} onPress={() => setProcessOpen(value => !value)}
           style={({ pressed }) => [styles.processToggle, pressed && styles.pressed]}>
-          <Text style={styles.processLabel}>執行過程 · {activities.length} 項{activities.some(item => item.state === "failed" || item.state === "unknown") ? " · 有結果待核對" : ""}</Text>
+          <Text style={styles.processLabel}>{CHAT_MESSAGE_COPY.processToggle} · {activities.length} 項{activities.some(item => item.state === "failed" || item.state === "unknown") ? CHAT_MESSAGE_COPY.processPendingNote : ""}</Text>
           <AppIcon name={processOpen ? "chevron-up" : "chevron-down"} size={16} color={chatColors.secondary} />
         </Pressable>
         <MotionDisclosure expanded={processOpen} scopeKey={message.id}><View testID="chat-process-details" style={styles.processDetails}>{activities.map((activity, index) => <View key={activity.id} style={[styles.activity, index > 0 && styles.divider]}>

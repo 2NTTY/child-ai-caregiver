@@ -98,6 +98,27 @@ export class AgentGatewayModel extends BaseLlm {
   };
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
+  /** Shared gateway path for a tool-free Server call. Counts one root model call and grants no tools. */
+  async completeText(input: { system: string; user: string; attemptKey: string }): Promise<string> {
+    const request: LlmRequest = {
+      contents: [{ role: "user", parts: [{ text: input.user }] }],
+      config: { systemInstruction: input.system },
+      toolsDict: {},
+      liveConnectConfig: {},
+    };
+    // Share accounting and authority, never the generator's summary or tool context.
+    const { config, provider, usage, budget, userId, childId, authorize, durableDailyUsage } = this.options;
+    const reviewer = new AgentGatewayModel({ config, provider, usage, budget, userId, childId, authorize,
+      durableDailyUsage, modelAttemptKey: () => input.attemptKey });
+    let text = "";
+    for await (const response of reviewer.generateContentAsync(request)) {
+      const parts = response.content?.parts ?? [];
+      if (parts.some(part => part.functionCall)) throw new AgentStopped("invalid_tool");
+      text += parts.filter(part => !part.thought && typeof part.text === "string").map(part => part.text).join("");
+    }
+    if (!text.trim()) throw new AgentStopped("invalid_response");
+    return text;
+  }
   async *generateContentAsync(request: LlmRequest): AsyncGenerator<LlmResponse, void> {
     try { yield* this.generateBounded(request); }
     catch (error) {
