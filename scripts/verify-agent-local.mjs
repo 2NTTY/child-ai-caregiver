@@ -12,7 +12,7 @@ import { createChatFileApi } from '../src/client/chat-file-api.ts';
 
 // Explicit bounded checks only; startup never runs this. --real-agent spends one run.
 const mode = process.argv[2];
-if (!['--data-only', '--persistence-only', '--readback', '--real-agent', '--artifacts'].includes(mode)) throw Error('Choose an explicit local verification mode; --real-agent spends at most one run');
+if (!['--data-only', '--persistence-only', '--readback', '--real-agent', '--real-compose', '--artifacts'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
 const root = resolve(import.meta.dirname, '..'), directory = resolve(root, '.cache/agent-local');
 const state = JSON.parse(await readFile(resolve(directory, 'state.json'), 'utf8'));
 const fingerprint = createHash('sha256').update(root).digest('hex').slice(0, 8);
@@ -27,7 +27,7 @@ const env = { NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', HOST: '127.0
 };
 Object.assign(process.env, env);
 const steps = [], run = randomUUID(); let calls = 0, cookie = '', uid = '', database;
-let agentEvidence;
+let agentEvidence, originalAgent;
 async function call(path, method = 'GET', body) {
   assert.ok(++calls <= 24);
   const response = await fetch(origin + path, { method, headers: { Origin: origin, 'Content-Type': 'application/json',
@@ -40,7 +40,7 @@ async function json(path, method, body) {
   assert.ok(response.ok, JSON.stringify({ path, status: response.status, code: value.code })); return value;
 }
 try {
-  const status = await json('/__local/status'); assert.equal(status.enabled, mode === '--real-agent'); assert.equal(status.project, state.projectId);
+  const status = await json('/__local/status'); assert.equal(status.enabled, ['--real-agent', '--real-compose'].includes(mode)); assert.equal(status.project, state.projectId);
   const proof = await fetch('http://' + env.FIREBASE_AUTH_EMULATOR_HOST + '/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=local-emulator-public-key-only', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: state.email, password: state.password, returnSecureToken: true }),
   });
@@ -96,8 +96,8 @@ try {
     await assert.rejects(files.content(reopened, signal, uid), error => error.status === 410);
     steps.push('production-encrypted-attachment-reserve-save-readback-and-delete');
   }
-  if (mode === '--real-agent') {
-    const childId = children.children.find(child => child.displayName === '本地入口核對').id;
+  if (mode === '--real-agent' || mode === '--real-compose') {
+    const childId = receipt.result.child.id;
     const clientFetch = (url, init = {}) => {
       assert.ok(++calls <= 24); assert.equal(new URL(url).origin, origin);
       const headers = new Headers(init.headers); headers.set('Origin', origin); headers.set('Cookie', cookie);
@@ -105,16 +105,27 @@ try {
     };
     const signal = AbortSignal.timeout(330_000), progress = [];
     const chat = createChatApi(origin, async () => ({ id: uid, email: state.email, name: '本地開發帳號' }), clientFetch);
-    const message = await chat.saveMessage(childId, 'BB差唔多半歲，想開始加固，應該點開始？請附官方來源，再整理一份到母嬰健康院問加固問題的準備單草稿。', signal, uid);
+    let document;
+    if (mode === '--real-compose') document = await createFamilyDocumentsApi(origin, clientFetch).create(childId,
+      { kind: 'preparation', purpose: 'appointment', title: '本地到診準備', eventDate: null, period: { from: '2026-10-01', to: '2026-10-31' } }, signal, uid);
+    const message = await chat.saveMessage(childId, mode === '--real-compose'
+      ? '請用資料編製能力，把《本地到診準備》的標題整理為《下次到診問題》，其他內容保持不變。先讓我確認。'
+      : 'BB差唔多半歲，想開始加固，應該點開始？請附官方來源，再整理一份到母嬰健康院問加固問題的準備單草稿。', signal, uid);
+    originalAgent = { childId, messageId: message.id, documentId: document?.id };
+    await writeFile(resolve(directory, 'original-agent-' + run + '.json'), JSON.stringify(originalAgent), { mode: 0o600 });
     // Exactly one POST. A stopped/unknown run is retained, never automatically rerun.
     const reply = await chat.requestReply(childId, message.id, signal, uid, event => progress.push(event.phase));
     const result = await createProductAgentApi(origin, clientFetch).getRun(childId, reply.agentRunId, signal, uid);
     agentEvidence = { runId: result.runId, status: result.status, stopReason: result.stopReason, counts: result.counts,
       tools: result.tools.map(tool => ({ name: tool.name, status: tool.status })),
       citations: result.citations.map(item => ({ sourceId: item.sourceId, versionId: item.versionId, chunkId: item.chunkId })), progress };
-    await writeFile(resolve(directory, 'real-agent-result-' + run + '.json'), JSON.stringify({ childId, message, reply, result }, null, 2));
+    await writeFile(resolve(directory, 'real-agent-result-' + run + '.json'), JSON.stringify({ childId, document, message, reply, result }, null, 2));
     assert.equal(result.status, 'completed', result.stopReason ?? 'Agent incomplete');
-    assert.ok(result.citations.some(item => item.sourceId === 'fhs-solid-food'));
+    if (mode === '--real-compose') {
+      assert.ok(result.tools.some(item => item.name === 'compose_family_data' && item.status === 'succeeded'));
+      assert.equal((await createFamilyDocumentsApi(origin, clientFetch).getItem(childId, document.id, signal, uid)).version, document.version);
+      steps.push('real-production-compose-review-pending-explicit-confirmation');
+    } else assert.ok(result.citations.some(item => item.sourceId === 'fhs-solid-food'));
     const history = await chat.listMessages(childId, signal);
     assert.ok(history.messages.some(item => item.id === reply.id && item.text === reply.text));
     steps.push('same-production-client-agent-real-provider-citation-and-saved-history');
@@ -146,7 +157,8 @@ try {
   await vector.delete();
   }
 } catch (error) {
-  const evidence = { run, status: 'failed', calls, steps, agent: agentEvidence, error: String(error.message).slice(0, 300) };
+  const evidence = { run, status: 'failed', calls, steps, agent: agentEvidence, originalAgent,
+    error: String(error.message).slice(0, 300), httpStatus: error.status, code: error.code, onlineCode: error.onlineCode };
   await writeFile(resolve(directory, 'verification-' + run + '.json'), JSON.stringify(evidence, null, 2));
   console.error(JSON.stringify(evidence)); process.exitCode = 1;
 } finally { await database?.terminate(); }

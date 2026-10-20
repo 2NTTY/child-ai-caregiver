@@ -19,7 +19,7 @@ $env:LOCAL_AGENT_CONFIG = 'C:\Users\你的帳號\.config\yuyoufang-local.json'
 npm run agent:local
 ```
 
-亦可自行在目前 shell 設定 `GEMINI_API_KEY`，但不要把實際 key 寫入共享命令、聊天、Git 或 `EXPO_PUBLIC_*`。前端不會收到模型憑證。Vertex API key／其他可選模型由 MODEL-SELF 包接續，這個入口目前支援 Gemini key 及 Vertex ADC。
+亦可自行在目前 shell 設定 `GEMINI_API_KEY`，但不要把實際 key 寫入共享命令、聊天、Git 或 `EXPO_PUBLIC_*`。前端不會收到模型憑證。Vertex API key 使用 `{"provider":"vertex","apiKey":"本人的 Vertex key","model":"gemini-3.1-flash-lite"}`，沿正式個人模型 adapter；環境變數則明確選 `LOCAL_MODEL_PROVIDER=vertex` 及 `VERTEX_API_KEY`。不拿 Gemini key 默認代替另一供應方式。Vertex key 的 embedding 接點仍未支援，不能以它初始化知識向量或假稱完整混合檢索可用；需要完整檢索時明確選擇本人可用的 Gemini key 或 ADC，不借平台額度。
 
 已使用本人本機 ADC 的開發者可改用：
 
@@ -58,15 +58,15 @@ Firestore Emulator 已核實支援本次版本的 `findNearest`；使用同一�
 
 ## 背景、附件與收件箱
 
-背景工作使用正式 Firestore 工作台帳、claim、租約、原收據及 consumer；本地 dispatcher 只替換 Tasks／Scheduler 的喚醒。AI 啟用時按既有授權處理待辦工作，不是每次啟動自動跑付費驗收。
+背景工作使用正式 Firestore 工作台帳、claim、租約、原收據及 consumer；本地 dispatcher 只替換 Tasks／Scheduler 的喚醒。停用模型仍保留確定性附件清理等 consumer；模型呼叫由相同的正式啟用與用量檢查控制，不是每次啟動自動跑付費驗收。
 
 附件經原加密／hash／授權服務保存到 Storage Emulator。本版本 emulator 忽略 generation precondition，因此薄 adapter 在單一本機 runtime 內序列化每個物件、核對固定 generation；這不能作為雲端多副本競爭或 IAM 驗收證據。
 
 驗證電郵／找回密碼由 Auth Emulator 產生本地操作連結，可在 `/__local/inbox` 查看最近 20 項；全部明示沒有實際寄出。這些連結有憑證作用，只在本機使用，不分享診斷輸出。Telegram／Web Push／FCM 保持停用，目前尚未提供其本地投遞收件箱；不回報渠道接受或收到。[Firebase 官方行為](https://firebase.google.com/docs/emulator-suite/connect_auth)
 
-四角色使用當前分支的實際接線。基線沒有某個角色，就不能因環境啟動而宣稱四角色完成。協作者 #214／#215／#216 及真背景維護缺口由 DEV-AGENT02 承接；不擅自合併協作者分支。編製成果必須經正式保存服務，再由原頁面讀回，不能只看模型文字。
+四角色使用當前分支的實際接線。基線沒有某個角色，就不能因環境啟動而宣稱四角色完成。#214／#215／#216 已依使用者明確授權 review 修正及合併，原作者保留；真背景維護缺口仍由 DEV-AGENT02 承接。編製成果必須經正式保存服務，再由原頁面讀回，不能只看模型文字。
 
-需要聯合核對時，可使用已固定提交的本地 `codex/dev-agent02-role-integration`；它不等於 master 或已合併的角色。#214 的審核、#215 的既有文件修改工具已接正式服務，與聊天共用預算；目前編製不是所有資料類型的通用產生器。#216 的 `KnowledgeSemanticReviewPort` 仍未接真模型，`BackgroundKnowledgeMaintenancePorts` 缺持久維護用量／工作／發布組裝及觸發，不能用預設 stub 或記憶體 ledger 當完整背景驗收。接口交回原角色包，環境不另造角色。
+目前接續分支及固定基線見根 PLAN；舊 `codex/dev-agent02-role-integration` 只保留先前成果及中斷證據。#214 的審核、#215 的既有文件修改工具已接正式服務，與聊天共用預算；目前編製不是所有資料類型的通用產生器。#216 的 `KnowledgeSemanticReviewPort` 仍未接真模型，`BackgroundKnowledgeMaintenancePorts` 缺持久維護用量／工作／發布組裝及觸發；正式發布在副作用前停用，不能用預設 stub 或記憶體 ledger 當完整背景驗收。環境不另造角色，也不把這個明確缺口改為假成功。
 
 ## 保存、停止與重設
 

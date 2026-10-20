@@ -26,6 +26,7 @@ P1 尚不需要組裝時可改用 [獨立文字入口](../p1/README.md)，不用
 | `proactive-follow-up` | Server 觸發、現行任務／授權／綁定／投遞及額度 | 結構化受限建議或 no_action；缺權限／unknown 留待處理，不另找人補問 | S13-W04／W07、S11-W02 |
 | `contact-reply` | 經核實的回覆者、原訊息／occurrence、回覆與現行狀態 | 自然延續、必要澄清或工具循環；收回覆不自動完成，指向含糊先問 | S13-W06／W07、P3 S13-W02 |
 | `knowledge-review` | 公共來源、候選版本／hash／日期／錯誤、發布狀態 | 結構化差異／無變／待審建議；不自動發布或建立家庭任務 | S10-W02／W03 |
+| `chat-delivery-review` | Server 組裝的聊天草稿、摘錄、內容 hash、來源版本與範圍 | pass／revise／insufficient_evidence；不能寫資料或發布，不是 product-agent 的 recipeId | P3-M01 |
 | `summary-visit` | 對象／期間、已確認事件、更正、程式統計、預約、缺項與來源 | 對話或結構化正文；無計算值不編總量，報告／PDF成功須另有工具證據 | S14-W01／W02 |
 
 另外五個 manifest 配方如下；上表的「預計接入」是原設計對照，不表示各有獨立正式呼叫點。完整清單以 manifest 為準。

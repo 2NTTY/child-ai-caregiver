@@ -15,8 +15,8 @@ const config = assertLocalAgentEnvironment(process.env);
 const state = JSON.parse(await readFile(process.env.LOCAL_AGENT_STATE_FILE!, 'utf8'));
 if (state.projectId !== config.projectId || state.storageKey !== process.env.YUBAN_FIREBASE_STORAGE_KEY) throw Error('Local state binding mismatch');
 const provider = process.env.LOCAL_MODEL_PROVIDER;
-if (provider !== 'gemini' && provider !== 'vertex-adc') throw Error('Unknown local model provider');
-if (process.env.AI_ENABLED === 'true' && (provider === 'gemini' ? !process.env.LOCAL_MODEL_API_KEY : !process.env.LOCAL_MODEL_PROJECT)) throw Error('Local model credentials missing');
+if (provider !== 'gemini' && provider !== 'vertex' && provider !== 'vertex-adc') throw Error('Unknown local model provider');
+if (process.env.AI_ENABLED === 'true' && (provider === 'vertex-adc' ? !process.env.LOCAL_MODEL_PROJECT : !process.env.LOCAL_MODEL_API_KEY)) throw Error('Local model credentials missing');
 const modelConfig = readAiConfig({ ...process.env, GCP_PROJECT_ID: provider === 'vertex-adc' ? process.env.LOCAL_MODEL_PROJECT : config.projectId });
 const events: AgentDiagnostic[] = [];
 const runtime = await openFirebaseRuntime(process.env, { worker: true, local: {
@@ -30,7 +30,7 @@ const runtime = await openFirebaseRuntime(process.env, { worker: true, local: {
       return (await auth.createUser({ email: state.email, password: state.password, emailVerified: true, displayName: '本地開發帳號' })).uid;
     }
   },
-  ...(provider === 'gemini' && modelConfig.enabled ? { providers: selected => createGeminiKeyProviders(selected, process.env.LOCAL_MODEL_API_KEY!) } : {}),
+  ...(provider !== 'vertex-adc' && modelConfig.enabled ? { providers: selected => createGeminiKeyProviders(selected, process.env.LOCAL_MODEL_API_KEY!, provider) } : {}),
   diagnostics(event) { events.push(event); if (events.length > 200) events.shift(); },
 } });
 try { await runtime.authority.readControl(); }
@@ -45,11 +45,12 @@ const manifest = JSON.parse(await readFile(new URL('../prompts/manifest.json', i
 const status = { mode: 'local-development', project: config.projectId, branch: git(['branch', '--show-current']), sha: git(['rev-parse', '--short', 'HEAD']),
   dirty: Boolean(git(['status', '--porcelain', '--untracked-files=no'])),
   model: modelConfig.model, provider, promptPack: manifest.version, enabled: modelConfig.enabled,
-  roles: { chat: 'production-runtime', review: 'requires-collaborator-implementation', compose: 'requires-collaborator-implementation', knowledgeMaintenance: 'requires-collaborator-implementation' },
+  roles: { chat: 'production-runtime', review: 'production-runtime', compose: 'production-family-document-patch', knowledgeMaintenance: 'candidate-foundation-live-not-connected' },
   externalDelivery: 'disabled', email: 'emulator-inbox-not-sent', knowledge: 'one-reviewed-section-after-explicit-preparation', snapshots: 'periodic-and-graceful-stop' };
 const api = createFirebaseNodeHandler({ publicOrigin: config.publicOrigin, auth: runtime.auth, handler: runtime.handler, telegramConfig: null });
 const worker = createLocalAgentWorker(runtime, process.env);
-if (modelConfig.enabled) worker.start();
+// Disabling paid models must not stop attachment cleanup or other deterministic work.
+worker.start();
 const webPort = Number(process.env.LOCAL_WEB_PORT);
 if (!Number.isInteger(webPort) || webPort < 1024 || webPort > 65535) throw Error('Invalid local Web port');
 const expectedHost = new URL(config.publicOrigin).host;

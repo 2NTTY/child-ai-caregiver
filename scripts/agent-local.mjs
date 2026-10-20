@@ -46,18 +46,19 @@ const saved = await exists(statePath) ? JSON.parse(await readFile(statePath, 'ut
 if (saved.format !== 1 || saved.projectId !== 'demo-yuyf-' + fingerprint) throw Error('Local state belongs to another checkout');
 if (!await exists(statePath)) await writeFile(statePath, JSON.stringify(saved, null, 2), { mode: 0o600, flag: 'wx' });
 const configured = process.env.LOCAL_AGENT_CONFIG ? JSON.parse(await readFile(resolve(process.env.LOCAL_AGENT_CONFIG), 'utf8')) : {};
+const provider = configured.provider ?? process.env.LOCAL_MODEL_PROVIDER ?? 'gemini';
 const model = {
-  provider: configured.provider ?? process.env.LOCAL_MODEL_PROVIDER ?? 'gemini',
-  apiKey: configured.apiKey ?? process.env.GEMINI_API_KEY,
+  provider,
+  apiKey: configured.apiKey ?? (provider === 'gemini' ? process.env.GEMINI_API_KEY : provider === 'vertex' ? process.env.VERTEX_API_KEY : undefined),
   project: configured.project ?? process.env.LOCAL_MODEL_PROJECT,
   location: configured.location ?? process.env.LOCAL_MODEL_LOCATION ?? 'global',
   model: configured.model ?? process.env.LOCAL_MODEL ?? 'gemini-3.1-flash-lite',
   adcPath: configured.adcPath ?? process.env.GOOGLE_APPLICATION_CREDENTIALS,
 };
-if (!['gemini', 'vertex-adc'].includes(model.provider)) throw Error('Unsupported local model provider');
+if (!['gemini', 'vertex', 'vertex-adc'].includes(model.provider)) throw Error('Unsupported local model provider');
 const enabled = !args.has('--no-model');
 if (!enabled && args.has('--prepare-knowledge')) throw Error('Knowledge preparation requires your explicit model credentials');
-if (enabled && (model.provider === 'gemini' ? !model.apiKey : !model.project)) throw Error('Set GEMINI_API_KEY or a protected LOCAL_AGENT_CONFIG; use --no-model only for data/UI development');
+if (enabled && (model.provider === 'vertex-adc' ? !model.project : !model.apiKey)) throw Error('Set the selected provider credential in LOCAL_AGENT_CONFIG (or GEMINI_API_KEY / VERTEX_API_KEY); use --no-model only for data/UI development');
 if (enabled && model.provider === 'vertex-adc' && model.adcPath && !await exists(model.adcPath))
   throw Error('The explicitly configured ADC file does not exist. Fix adcPath / GOOGLE_APPLICATION_CREDENTIALS; no model call was made.');
 
