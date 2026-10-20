@@ -3260,3 +3260,10 @@
 - 本地正式組裝加入 Telegram／Web Push／FCM transport 替換，復用原綁定、明確確認、工作、授權及收據。本機加密收件箱只保存預覽 metadata；停止結果 `local_preview_not_sent` 不冒充渠道接受、收到或完成，沒有真通知入口。
 - 從正式 client／API 進入一條合成 Telegram／Web Push 流程，共 32 次本機 API，核對確認、原 worker、原操作重試、收件箱及撤銷。零模型／外部通知／雲端資料或部署；局部型別及語法通過。停止入口並保存 emulator 快照。
 - [本次證據](artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)追加在 `localDelivery20261020`，舊失敗與未驗描述保留原日期；原生 Android 收件箱完整路徑及畫面未驗，不用本機結果代替真投遞。背景發布／新對話與頁面聯合 gate 仍見 PLAN。
+
+<a id="log-20261020-dev-agent02-knowledge-reuse"></a>
+## LOG-20261020-DEV-AGENT02-KNOWLEDGE-REUSE
+
+- 原文未變但重新編製／命名會切斷既有規則來源。改為一對一完整原文及同頁完全相同才復用原片段，只整理變更範圍；審核仍讀原文。Prompt Pack 0.1.52 說清實際規則綁定，Server 強制阻止模型把變更依賴宣稱無影響，不改醫療／成長規則。
+- 三項針對性合成檢查與局部型別通過。一次本機持久核對在模型前因 PDF 觀察 hash 不同停止；定位為原始物件與保存正規化的欄位順序不同，統一既有 schema 接點後補同流程通過發布、查回及引用。原失敗保留，沒有改舊 hash／清庫。
+- 本次零真模型／外網抓取／通知／部署，僅 scripted provider；真語義發布仍待必要補核，不宣稱四角色完成。[證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。

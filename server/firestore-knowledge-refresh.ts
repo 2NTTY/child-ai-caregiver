@@ -16,6 +16,8 @@ const bodySchema: z.ZodType<ObservedContent> = z.strictObject({ url: z.url(), ti
   text: z.string().min(1).max(256020).refine(text => text.isWellFormed()), sourcePublishedAt: date.nullable(), sourceUpdatedAt: date.nullable(),
   sourceDateText: z.string().max(200).nullable(), extraction: knowledgeExtractionSchema.optional(),
   pages: z.array(z.strictObject({ page: z.number().int().positive(), text: z.string().max(32000), status: z.enum(["text", "empty", "unreadable"]) })).max(8).optional() });
+/** Hash the same normalized representation that the durable observation stores. */
+export function parseKnowledgeObservation(input: unknown): ObservedContent { return bodySchema.parse(input); }
 const watchSchema = z.strictObject({ ...binding, id, definition: definitionSchema, definitionHash: hash, revision: z.uuid(), enabled: z.boolean(),
   registeredBy: z.string().min(1).max(80), registeredAt: date, lastAttemptAt: date.nullable(), lastSuccessfulCheckAt: date.nullable(),
   lastStatus: z.enum(["changed", "unchanged", "failed", "unavailable", "superseded"]).nullable(),
@@ -183,7 +185,7 @@ export function createFirestoreKnowledgeRefresh(options: FirestoreKnowledgeRefre
       });
       if (claim.status !== "execute") return { status: claim.status };
       const fetched = await fetcher(claim.definition, signal);
-      const items = fetched.status === "ok" ? fetched.items.map(item => bodySchema.parse(item)) : [];
+      const items = fetched.status === "ok" ? fetched.items.map(parseKnowledgeObservation) : [];
       if (items.length > 50 || fetched.status === "ok" && claim.definition.kind !== "rss" && items.length !== 1) reject("knowledge_fetch_items_invalid");
       const prepared = items.map(document => {
         const sourceId = id.parse(observationId(claim.definition, document)), contentHash = observationHash(document), body = JSON.stringify(document), segments = parts(body);

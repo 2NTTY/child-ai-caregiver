@@ -4,6 +4,7 @@ import { createModelKnowledgeReviewPort, prepareKnowledgeMaintenance, type Prepa
 import type { BackgroundKnowledgeCandidate } from "../server/background-knowledge-maintenance.ts";
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
 import { observationHash } from "../server/knowledge-observation.ts";
+import { knowledgeHash, sourceVersionHash } from "../server/knowledge-inputs.ts";
 
 const fetchedAt = "2026-10-20T00:00:00.000Z";
 function candidate(): BackgroundKnowledgeCandidate {
@@ -27,8 +28,9 @@ function provider(calls: { system: string; user: string; attemptKey: string }[],
     }
     assert.equal(payload.role, "knowledge-semantic-review");
     return "```json\n" + JSON.stringify({
-      changes: payload.candidate.chunks.map((chunk: { key: string; originalText: string }) => ({
-        key: chunk.key, meaning: "new", explanation: "The new chunk preserves the supplied original.",
+      changes: payload.comparisonUnits.map((unit: { key: string; oldQuote: string | null; newQuote: string | null }) => ({
+        key: unit.key, meaning: unit.oldQuote === null ? "new" : unit.newQuote === null ? "removed" : "unchanged",
+        explanation: "The candidate is compared with the supplied original.",
       })),
       checks: { age: "No age claim", numbersAndUnits: "No numeric claim", timing: "No timing claim",
         conditions: "Preserved", exceptions: "None supplied", prohibitions: "None supplied", withdrawal: "No previous edition" },
@@ -41,7 +43,7 @@ function provider(calls: { system: string; user: string; attemptKey: string }[],
 test("knowledge preparation preserves original evidence and stores a separate model review before returning approval", async () => {
   const source = candidate(), calls: Parameters<Completion>[0][] = [];
   let saved: PreparedKnowledgeMaintenance | null = null;
-  const port = createModelKnowledgeReviewPort({ completeText: provider(calls), baseline: async () => null,
+  const port = createModelKnowledgeReviewPort({ completeText: provider(calls), baseline: async () => null, growthRules: [],
     fetchedAt: async () => fetchedAt, savePrepared: async (bound, prepared) => {
       assert.equal(bound.observationHash, source.observationHash);
       assert.equal(prepared.source.chunks[0]!.originalText, source.observed.text);
@@ -66,15 +68,48 @@ test("knowledge preparation preserves original evidence and stores a separate mo
 
 test("knowledge model stages reject invented evidence and rule authority without returning approval", async () => {
   const calls: Parameters<Completion>[0][] = [];
-  await assert.rejects(prepareKnowledgeMaintenance({ candidate: candidate(), baseline: null, fetchedAt,
+  await assert.rejects(prepareKnowledgeMaintenance({ candidate: candidate(), baseline: null, fetchedAt, growthRules: [],
     completeText: provider(calls, "quote") }));
   assert.equal(calls.length, 1, "invalid original evidence must not reach semantic review");
   const ruleCalls: Parameters<Completion>[0][] = [];
-  await assert.rejects(prepareKnowledgeMaintenance({ candidate: candidate(), baseline: null, fetchedAt,
+  await assert.rejects(prepareKnowledgeMaintenance({ candidate: candidate(), baseline: null, fetchedAt, growthRules: [],
     completeText: provider(ruleCalls, "rules") }), { message: "knowledge_growth_rule_authority_invalid" });
   assert.equal(ruleCalls.length, 2);
   const saveCalls: Parameters<Completion>[0][] = [];
-  const port = createModelKnowledgeReviewPort({ completeText: provider(saveCalls), baseline: async () => null,
+  const port = createModelKnowledgeReviewPort({ completeText: provider(saveCalls), baseline: async () => null, growthRules: [],
     fetchedAt: async () => fetchedAt, savePrepared: async () => { throw Error("work_lease_lost"); } });
   await assert.rejects(port.review(candidate()), { message: "work_lease_lost" });
+});
+
+test("unchanged originals retain reviewed chunks and changed rule bindings cannot be model-approved", async () => {
+  const observed = candidate();
+  const initial = await prepareKnowledgeMaintenance({ candidate: observed, baseline: null, fetchedAt, growthRules: [],
+    completeText: provider([]) });
+  const source = { ...initial.source, chunks: initial.source.chunks.map(chunk => ({ ...chunk, key: "stable-preparation" })) };
+  const baseline = { source, versionHash: sourceVersionHash(source),
+    versionId: "11111111-1111-4111-8111-111111111111", observationHash: null };
+  const growthRules = [{ id: "test-rule", revision: "v1", sourceId: source.sourceId,
+    key: source.chunks[0]!.key, hash: knowledgeHash(source.chunks[0]) }];
+  const calls: Parameters<Completion>[0][] = [];
+  const unchanged = await prepareKnowledgeMaintenance({ candidate: observed, baseline, fetchedAt, growthRules,
+    completeText: provider(calls) });
+  assert.equal(calls.length, 1, "unchanged original must not be sent for model rewriting");
+  const reviewInput = JSON.parse(calls[0]!.user);
+  assert.equal(reviewInput.role, "knowledge-semantic-review");
+  assert.equal(reviewInput.growthRuleBindings[0].state, "unchanged");
+  assert.deepEqual(unchanged.source.chunks, source.chunks);
+  assert.equal(unchanged.versionHash, baseline.versionHash);
+  assert.match(unchanged.provenance.organizeAttemptKey, /^reused-originals:/u);
+  assert.equal(unchanged.review.decision, "approve_candidate");
+
+  const changedObservation = { ...observed.observed, text: observed.observed.text + "\n另帶已填寫的表格。" };
+  const changedCalls: Parameters<Completion>[0][] = [];
+  const changed = await prepareKnowledgeMaintenance({ candidate: { ...observed, observed: changedObservation,
+    observationHash: observationHash(changedObservation) }, baseline, fetchedAt, growthRules,
+    completeText: provider(changedCalls) });
+  assert.equal(changedCalls.length, 2);
+  assert.equal(JSON.parse(changedCalls[1]!.user).growthRuleBindings[0].state, "requires_review");
+  assert.equal(changed.review.decision, "hold_candidate");
+  assert.equal(changed.assessment.growthRuleImpact, "requires_review",
+    "a model's none cannot erase the server-verified changed rule dependency");
 });

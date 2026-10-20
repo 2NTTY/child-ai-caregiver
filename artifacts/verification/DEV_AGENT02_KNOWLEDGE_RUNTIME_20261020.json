@@ -98,5 +98,27 @@
     "entrySyntax": "passed",
     "limits": "No assertion that semantic review, publication, rule migration or cloud behavior passed"
   },
+  "unchangedOriginalFix": {
+    "base": "34860f3",
+    "promptPack": "0.1.52",
+    "changes": [
+      "Reuse unambiguous exact original ranges and PDF page identities with the published chunk; only changed units are reorganized",
+      "Pass actual executable growth rule references to review and enforce changed/missing references on the server",
+      "Normalize fetched observation once with the durable schema before the runner hashes it; existing stored hashes are unchanged"
+    ],
+    "targetedModelContractTests": { "passed": 3, "realModelCalls": 0 },
+    "scopedRuntimeTypecheck": "passed",
+    "emulatorAttempts": [
+      { "namespace": "verify_knowledge_1792489293493", "result": "failed", "code": "knowledge_observation_changed",
+        "scriptedModelCalls": 0, "cause": "PDF extraction field order differed before versus after durable schema parsing", "stopped": true },
+      { "namespace": "verify_knowledge_1792489385944", "result": "passed",
+        "scriptedModelCalls": 2, "scriptedEmbeddings": 1,
+        "checks": ["same durable observation", "atomic PDF-source publication", "original-operation replay", "retrieval", "unknown model outcome not redispatched"] }
+    ],
+    "realModelCalls": 0,
+    "externalNotifications": 0,
+    "deployment": false,
+    "pending": "Real semantic review and publication after this fix"
+  },
   "cleanup": "Local services stopped with checkpoint export; synthetic records and prior failures retained"
 }

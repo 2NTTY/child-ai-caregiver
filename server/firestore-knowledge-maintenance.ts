@@ -12,13 +12,14 @@ import { FirestoreRootBudget } from "./firestore-root-budget.ts";
 import { requireDurableUsage, type PlatformProviderFactory } from "./firestore-model-routing.ts";
 import type { FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import type { FirestoreKnowledgeStore } from "./firestore-knowledge.ts";
-import type { createFirestoreKnowledgeRefresh } from "./firestore-knowledge-refresh.ts";
+import { parseKnowledgeObservation, type createFirestoreKnowledgeRefresh } from "./firestore-knowledge-refresh.ts";
 import { createFirestoreKnowledgeWork, FirestoreKnowledgeWorkError } from "./firestore-knowledge-work.ts";
 import { createBackgroundKnowledgeMaintenanceRunner, type BackgroundKnowledgeCandidate } from "./background-knowledge-maintenance.ts";
 import { createModelKnowledgeReviewPort, type KnowledgeMaintenanceBaseline } from "./background-knowledge-model.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
 import { knowledgeReviewHash } from "./knowledge-review-assessment.ts";
 import { SOURCE_WATCHES } from "./knowledge-source-catalog.ts";
+import { GROWTH_RULES } from "./growth-rules.ts";
 import type { SourceFetcher } from "./knowledge-refresh-types.ts";
 import type { RootBudgetContext } from "./durable-root-budget.ts";
 
@@ -83,7 +84,11 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       const fetchThroughObservation = (fetcher: SourceFetcher): SourceFetcher => async (watch, abort) => {
         let fetched: Awaited<ReturnType<SourceFetcher>> | undefined;
         const result = await options.refresh.process(registration.data, operationId("knowledge-observation/1", request.operationFingerprint),
-          async (registered, boundedSignal) => { fetched = await fetcher(registered, boundedSignal); return fetched; }, abort);
+          async (registered, boundedSignal) => {
+            const result = await fetcher(registered, boundedSignal);
+            fetched = result.status === "ok" ? { ...result, items: result.items.map(parseKnowledgeObservation) } : result;
+            return fetched;
+          }, abort);
         if (result.status === "already_recorded") {
           // A later source check may have replaced the current observation. Do
           // not bind this original operation to that newer body on restart.
@@ -129,7 +134,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
                 }
                 return model.completeText(input);
               });
-            const reviewer = createModelKnowledgeReviewPort({ completeText, baseline: readBaseline,
+            const reviewer = createModelKnowledgeReviewPort({ completeText, baseline: readBaseline, growthRules: GROWTH_RULES,
               async fetchedAt(candidate) {
                 const observed = await options.refresh.inspect(candidate.watchId);
                 if (observed.observation?.contentHash !== candidate.observationHash) reject("knowledge_observation_changed");

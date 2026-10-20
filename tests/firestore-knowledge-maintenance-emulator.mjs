@@ -20,10 +20,15 @@ const database = new Firestore({ projectId: state.projectId, databaseId: '(defau
 const namespace = 'verify_knowledge_' + Date.now();
 const domain = { database, namespace, projectId: state.projectId, cipher: createStorageCipher(Buffer.from(state.storageKey, 'base64')) };
 const authority = createFirestoreAuthority(domain), generation = randomUUID();
-const definition = SOURCE_WATCHES.find(item => item.id === 'fhs-solid-food');
+// Use the catalog source without an executable growth-rule dependency. The
+// HTML rule source is covered by the model test's mandatory hold assertion.
+const definition = SOURCE_WATCHES.find(item => item.id === 'fhs-feeding-booklet-en');
 const text = '到診前帶上孩子的健康記錄，並先寫下希望詢問的問題。';
 const observed = { url: definition.url, title: 'Synthetic local preparation', text,
-  sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null };
+  sourcePublishedAt: null, sourceUpdatedAt: null, sourceDateText: null,
+  extraction: { format: 'text_pdf', contentHash: createHash('sha256').update(text).digest('hex'),
+    pageStart: 3, pageEnd: 3, totalPages: 20, complete: false },
+  pages: [{ page: 3, text, status: 'text' }] };
 const vector = [1, ...Array(1023).fill(0)];
 const calls = [];
 let embeddings = 0, fetches = 0;

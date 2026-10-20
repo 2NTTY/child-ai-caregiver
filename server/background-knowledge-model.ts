@@ -7,7 +7,7 @@ import {
 import type { BackgroundKnowledgeCandidate, KnowledgeSemanticReviewPort } from "./background-knowledge-maintenance.ts";
 import { backgroundKnowledgePdfCoverageIssue } from "./background-knowledge-maintenance.ts";
 import { loadAgentPrompt } from "./agent-prompt.ts";
-import { knowledgeChunkInputSchema, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
+import { knowledgeChunkInputSchema, knowledgeHash, parseKnowledgeSource, sourceVersionHash } from "./knowledge-inputs.ts";
 import { observationHash } from "./knowledge-observation.ts";
 import {
   knowledgeReviewAssessmentSchema, knowledgeReviewHash, validateKnowledgeAssessment,
@@ -41,6 +41,13 @@ export interface KnowledgeMaintenanceBaseline {
   versionHash: string;
   observationHash: string | null;
   source: KnowledgeSourceInput;
+}
+export interface KnowledgeGrowthRuleBinding {
+  id: string;
+  sourceId: string;
+  key: string;
+  hash: string;
+  revision: string;
 }
 export interface PreparedKnowledgeMaintenance {
   source: KnowledgeSourceInput;
@@ -94,6 +101,7 @@ function originalUnits(candidate: BackgroundKnowledgeCandidate): OriginalUnit[] 
 export async function prepareKnowledgeMaintenance(input: {
   candidate: BackgroundKnowledgeCandidate;
   baseline: KnowledgeMaintenanceBaseline | null;
+  growthRules: readonly KnowledgeGrowthRuleBinding[];
   fetchedAt: string;
   completeText: Pick<AgentGatewayModel, "completeText">["completeText"];
   signal?: AbortSignal;
@@ -132,15 +140,25 @@ export async function prepareKnowledgeMaintenance(input: {
     try { value = JSON.parse(fenced ? fenced[1]! : trimmed); } catch { reject("knowledge_maintenance_invalid_json"); }
     return { value, attemptKey };
   };
-  const organized = await complete("organize", organize.text, {
+  const reusable = new Map<string, KnowledgeSourceInput["chunks"][number]>();
+  for (const unit of units) {
+    // Reuse only an unambiguous, exact original range on the same PDF page.
+    // Similar wording, a short excerpt or a different location is not enough.
+    const matches = baseline?.source.chunks.filter(chunk => chunk.originalText === unit.originalText
+      && (chunk.pageStart ?? null) === unit.page && (chunk.pageEnd ?? null) === unit.page) ?? [];
+    if (matches.length === 1 && units.filter(other => other.originalText === unit.originalText && other.page === unit.page).length === 1)
+      reusable.set(unit.id, matches[0]!);
+  }
+  const pending = units.filter(unit => !reusable.has(unit.id));
+  const organized = pending.length ? await complete("organize", organize.text, {
     role: "background-knowledge-maintenance", watch: candidate.definition,
-    observationHash: candidate.observationHash, originalUnits: units,
+    observationHash: candidate.observationHash, originalUnits: pending,
     outputSchema: z.toJSONSchema(organizedSchema, { io: "input" }),
-  });
-  const drafted = organizedSchema.parse(organized.value);
+  }) : null;
+  const drafted = organized ? organizedSchema.parse(organized.value) : { units: [] };
   const byId = new Map(drafted.units.map(unit => [unit.unitId, unit]));
-  if (byId.size !== drafted.units.length || byId.size !== units.length
-    || units.some(unit => !byId.has(unit.id))) reject("knowledge_maintenance_coverage_mismatch");
+  if (byId.size !== drafted.units.length || byId.size !== pending.length
+    || pending.some(unit => !byId.has(unit.id))) reject("knowledge_maintenance_coverage_mismatch");
   const source = parseKnowledgeSource({
     sourceId: candidate.watchId, url: candidate.observed.url, title: candidate.observed.title,
     publisher: candidate.definition.publisher, classification: candidate.definition.classification,
@@ -148,6 +166,8 @@ export async function prepareKnowledgeMaintenance(input: {
     sourceDateText: candidate.observed.sourceDateText, fetchedAt: input.fetchedAt, termsUrl: candidate.definition.termsUrl,
     ...(candidate.observed.extraction ? { extraction: candidate.observed.extraction } : {}),
     chunks: units.map(unit => {
+      const existing = reusable.get(unit.id);
+      if (existing) return existing;
       const draft = byId.get(unit.id)!;
       // The short original preview is deterministic, not model-authored evidence.
       // Full original text remains available to the independent semantic review.
@@ -165,15 +185,26 @@ export async function prepareKnowledgeMaintenance(input: {
   const comparisonUnits = [...new Set([...before.keys(), ...after.keys()])].map(key => ({
     key, oldQuote: preview(before.get(key)), newQuote: preview(after.get(key)),
   }));
+  const growthRuleBindings = input.growthRules.filter(rule => rule.sourceId === candidate.watchId).map(rule => {
+    const previousHash = before.has(rule.key) ? knowledgeHash(before.get(rule.key)) : null;
+    const nextHash = after.has(rule.key) ? knowledgeHash(after.get(rule.key)) : null;
+    return { ...rule, previousHash, nextHash,
+      state: previousHash === rule.hash && nextHash === rule.hash ? "unchanged" as const : "requires_review" as const };
+  });
   const binding = { comparedVersionId: baseline?.versionId ?? null, comparedHash: baseline?.versionHash ?? null,
     observationHash: candidate.observationHash };
   const reviewed = await complete("review", reviewPrompt.text, {
     role: "knowledge-semantic-review",
-    binding, comparisonUnits, candidate: source, baseline: baseline?.source ?? null,
+    binding, comparisonUnits, growthRuleBindings, candidate: source, baseline: baseline?.source ?? null,
     outputSchema: z.toJSONSchema(modelAssessmentSchema, { io: "input" }),
   });
   const modelAssessment = modelAssessmentSchema.parse(reviewed.value);
+  // The model cannot certify executable rules or erase a changed dependency.
+  if (modelAssessment.growthRuleImpact === "reviewed") reject("knowledge_growth_rule_authority_invalid");
+  const changedRule = growthRuleBindings.some(rule => rule.state === "requires_review");
   const assessment = validateKnowledgeAssessment({ ...modelAssessment, ...binding,
+    ...(changedRule ? { growthRuleImpact: "requires_review",
+      growthRuleReason: "Server: existing growth rule source binding changed or is unavailable. " + modelAssessment.growthRuleReason.slice(0, 1800) } : {}),
     changes: modelAssessment.changes.map(change => {
       const original = comparisonUnits.find(unit => unit.key === change.key);
       if (!original) reject("knowledge_maintenance_review_unit_mismatch");
@@ -184,8 +215,6 @@ export async function prepareKnowledgeMaintenance(input: {
     || assessment.comparedVersionId !== (baseline?.versionId ?? null)
     || assessment.comparedHash !== (baseline?.versionHash ?? null))
     reject("knowledge_maintenance_review_binding_mismatch");
-  // A model cannot certify that existing executable growth rules were approved.
-  if (assessment.growthRuleImpact === "reviewed") reject("knowledge_growth_rule_authority_invalid");
   const review = backgroundKnowledgeReviewBindingSchema.parse({
     watchId: candidate.watchId, observationHash: candidate.observationHash,
     previousObservationHash: candidate.previousObservationHash,
@@ -195,12 +224,15 @@ export async function prepareKnowledgeMaintenance(input: {
     notes: [assessment.growthRuleReason.slice(0, 240)],
   });
   return { source, versionHash: sourceVersionHash(source), assessment, review,
-    provenance: { packVersion: organize.packVersion, organizeAttemptKey: organized.attemptKey, reviewAttemptKey: reviewed.attemptKey } };
+    provenance: { packVersion: organize.packVersion,
+      organizeAttemptKey: organized?.attemptKey ?? "reused-originals:" + knowledgeReviewHash([...reusable.values()]),
+      reviewAttemptKey: reviewed.attemptKey } };
 }
 
 /** No memory fallback: the durable caller must store evidence before returning approval. */
 export function createModelKnowledgeReviewPort(options: {
   completeText: Pick<AgentGatewayModel, "completeText">["completeText"];
+  growthRules: readonly KnowledgeGrowthRuleBinding[];
   baseline(candidate: BackgroundKnowledgeCandidate): Promise<KnowledgeMaintenanceBaseline | null>;
   fetchedAt(candidate: BackgroundKnowledgeCandidate): Promise<string>;
   savePrepared(candidate: BackgroundKnowledgeCandidate, prepared: PreparedKnowledgeMaintenance): Promise<void>;
@@ -209,7 +241,7 @@ export function createModelKnowledgeReviewPort(options: {
     async review(candidate, signal) {
       checkSignal(signal);
       const prepared = await prepareKnowledgeMaintenance({ candidate, baseline: await options.baseline(candidate),
-        fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, signal });
+        fetchedAt: await options.fetchedAt(candidate), completeText: options.completeText, growthRules: options.growthRules, signal });
       checkSignal(signal);
       await options.savePrepared(candidate, prepared);
       checkSignal(signal);
