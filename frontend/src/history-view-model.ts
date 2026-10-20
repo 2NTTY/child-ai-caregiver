@@ -8,7 +8,7 @@ export interface PersonalHistorySearch {
 }
 export interface HistoryMessageRead extends Omit<AgentHistoryMessage, "offset"> { offset: 0 }
 export interface NotificationHistoryItem {
-  id: string; channel: "push" | "telegram" | "web_push" | "mail"; contact: boolean;
+  id: string; channel: "push" | "telegram" | "web_push" | "native_push" | "mail"; contact: boolean;
   status: "queued" | "sending" | "accepted" | "rejected" | "unknown" | "stopped" | "failed" | "expired";
   createdAt: string | null; attemptedAt: string | null; finishedAt: string | null; acknowledgedAt: string | null; updatedAt: string | null;
 }
@@ -17,7 +17,7 @@ export interface NotificationHistoryPage {
 }
 const time = z.iso.datetime({ offset: true });
 const notificationExportSchema = z.object({
-  id: z.uuid(), channel: z.enum(["push", "telegram", "web_push", "mail"]),
+  id: z.uuid(), channel: z.enum(["push", "telegram", "web_push", "native_push", "mail"]),
   request_id: z.uuid().optional(), status: z.enum(["queued", "sending", "accepted", "rejected", "unknown", "stopped"]).optional(),
   state: z.enum(["queued", "sending", "accepted", "failed", "unknown", "expired"]).optional(),
   created_at: time.optional(), attempted_at: time.nullable().optional(), finished_at: time.nullable().optional(),
@@ -38,7 +38,7 @@ export const notificationStatusLabels: Record<NotificationHistoryItem["status"],
 };
 export function notificationChannelLabel(item: NotificationHistoryItem) {
   return item.channel === "mail" ? "帳戶電郵" : (item.contact ? "授權聯絡 · " : "")
-    + (item.channel === "telegram" ? "Telegram" : "瀏覽器通知");
+    + (item.channel === "telegram" ? "Telegram" : item.channel === "native_push" ? "Android 通知" : "瀏覽器通知");
 }
 export function personalHistoryScopeMatches(scopeKey: string, value: { scopeKey: string; childId: string; access: string } | null) {
   return !!scopeKey && value?.scopeKey === scopeKey && !!value.childId && value.access === "active";

@@ -9,6 +9,8 @@ import { randomUUID } from 'node:crypto';
 import { openFirebasePersistence } from './firebase-persistence.ts';
 import { FirestoreDeviceSessions } from './firestore-device-sessions.ts';
 import { createFirebaseAuthPort } from './firebase-auth.ts';
+import { createFirestoreNativePush } from './firestore-native-push.ts';
+import { createNativePushGateway, readNativePushConfig } from './native-push-gateway.ts';
 import { createFirebaseRequestHandler } from './firebase-app.ts';
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
@@ -87,6 +89,8 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       }
     };
     const reminders = createFirestoreTaskWorker({ ...domain, enabled: config.taskWorkerEnabled, currentAuth });
+    const nativePushGateway = createNativePushGateway(readNativePushConfig(env));
+    const nativePush = createFirestoreNativePush({ ...domain, gateway: nativePushGateway, sessions, currentAuth });
     const pushConfig = await readWebPushConfig(env), pushGateway = createWebPushGateway(pushConfig);
     const telegramConfig = await readTelegramConfig(env), telegramGateway = createTelegramGateway(telegramConfig);
     const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!pushConfig, currentAuth });
@@ -95,7 +99,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const sources = createFirestoreSharedInputStore(domain), concerns = createFirestoreConcernStore(domain);
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
     const summary = createFirestoreCareSummary(domain, care);
-    const mutations = [summary.mutation, chat.mutation, care.mutation, memory.mutation, sources.mutation, push.mutation, telegram.mutation];
+    const mutations = [summary.mutation, chat.mutation, care.mutation, memory.mutation, sources.mutation, push.mutation, telegram.mutation, nativePush.mutation];
     const online = createFirestoreOnlineStore({ ...domain, photos, erasures, reminders, mutations });
     const documents = createFirestoreFamilyDocumentStore({ database, cipher, projectId: config.projectId, namespace: config.namespace });
     const knowledgeRefresh = createFirestoreKnowledgeRefresh({ ...domain, definitions: SOURCE_WATCHES, readControl: tx => authority.readControl(tx) });
@@ -103,7 +107,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const growth = createFirestoreGrowthStore({ ...domain, memory, care, online, knowledge });
     const taskEvents = createFirestoreTaskAgentEvents(domain);
     let product: Awaited<ReturnType<typeof createFirestoreProductAgent>>;
-    const contact = createFirestoreContact({ ...domain, push, telegram, pushGateway, telegramGateway, telegramBotId: telegramConfig?.botId ?? null, growth,
+    const contact = createFirestoreContact({ ...domain, push, telegram, pushGateway, telegramGateway, nativePush, nativePushGateway, telegramBotId: telegramConfig?.botId ?? null, growth,
       runs: () => product.runs, currentAuth });
     mutations.push(contact.mutation);
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
@@ -126,11 +130,11 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
     const photoAgent = createPhotoAgent(photos, product.runtime);
     const admin = createFirestoreAdmin(domain, readAiConfig(env));
-    const handler = createFirebaseRequestHandler({ admin, adminUid: composition.worker ? null : readAdminUid(env), authority, auth, online, documents, photos, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
+    const handler = createFirebaseRequestHandler({ admin, adminUid: composition.worker ? null : readAdminUid(env), authority, auth, online, documents, photos, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { ...persistence, admin, sessions, auth, currentAuth, reminders, online, documents, photos, voices, voiceObjects, objects, journal, erasures, erasureCleanup, exporter, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
+    return { ...persistence, admin, sessions, auth, currentAuth, reminders, online, documents, photos, voices, voiceObjects, objects, journal, erasures, erasureCleanup, exporter, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
       close() { return closing ??= (async () => { try { await deleteApp(ownedApp); } finally { await persistence.close(); } })(); } };
   } catch (error) {
     try { if (app) await deleteApp(app); } finally { await persistence.close(); }

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 // EAS public identifiers are configuration, never credentials.
 export default ({ config }) => {
   const projectId = process.env.EAS_PROJECT_ID?.trim() || config.extra?.eas?.projectId;
@@ -13,7 +14,20 @@ export default ({ config }) => {
       throw new Error("Cloud builds require the approved HTTPS API endpoint");
     }
   }
-  return { ...config, owner: "2ntty",
+  // File-type EAS environment value; keep the native Firebase descriptor outside Git.
+  const googleServicesFile = process.env.ANDROID_GOOGLE_SERVICES_FILE?.trim();
+  if (googleServicesFile) {
+    let service;
+    try { service = JSON.parse(readFileSync(googleServicesFile, "utf8")); }
+    catch { throw new Error("Android Firebase descriptor is unavailable or invalid"); }
+    if (service.project_info?.project_id !== process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID
+      || !service.client?.some(client => client.client_info?.android_client_info?.package_name === "org.yuyoufang.app")) {
+      throw new Error("Android Firebase descriptor does not match the approved project and application");
+    }
+  }
+  if (process.env.EAS_BUILD_PROFILE && process.env.EAS_BUILD_PLATFORM !== "ios" && !googleServicesFile)
+    throw new Error("Configure the approved Android Firebase descriptor before building native notifications");
+  return { ...config, android: { ...config.android, ...(googleServicesFile ? { googleServicesFile } : {}) }, owner: "2ntty",
     extra: { ...config.extra, ...(projectId ? { eas: { projectId } } : {}) },
     updates: projectId ? { url: `https://u.expo.dev/${projectId}`, checkAutomatically: "ON_LOAD", fallbackToCacheTimeout: 0 }
       : { enabled: false } };

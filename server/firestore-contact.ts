@@ -21,17 +21,17 @@ import type { WebPushGateway } from './web-push-types.ts';
 import type { TelegramGateway, TelegramEvent } from './telegram-types.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000', uuid = z.uuid(), time = z.iso.datetime({ offset: true }), version = z.number().int().positive();
-const consentValue = z.object({ userId: z.string(), version: z.number().int().nonnegative(), enabled: z.boolean(), allowBackup: z.boolean(), bindings: z.array(contactBindingSchema).max(2) }).strict();
+const consentValue = z.object({ userId: z.string(), version: z.number().int().nonnegative(), enabled: z.boolean(), allowBackup: z.boolean(), bindings: z.array(contactBindingSchema).max(3) }).strict();
 export const firestoreContactConsentSchema = z.object({ value: consentValue, authorityVersion: z.string() }).strict();
 const grantValue = z.object({ taskId: uuid, version, taskVersion: version, enabled: z.boolean(), primaryUserId: z.string(), backupUserId: z.string().nullable(),
   allowFollowUp: z.boolean(), allowFallback: z.boolean(), validUntil: time, authorizedBy: z.string(), content: z.literal('generic_notice'), trigger: z.literal('task_due'), updatedAt: time }).strict();
-export const firestoreContactGrantSchema = z.object({ value: grantValue, authorityVersion: z.string(), consentVersion: z.number().int().nonnegative(), bindings: z.array(contactBindingSchema).max(2) }).strict();
-const attemptSchema = z.object({ id: uuid, recipientUserId: z.string(), channel: z.enum(['web_push', 'telegram']), grantVersion: version, taskVersion: version,
+export const firestoreContactGrantSchema = z.object({ value: grantValue, authorityVersion: z.string(), consentVersion: z.number().int().nonnegative(), bindings: z.array(contactBindingSchema).max(3) }).strict();
+const attemptSchema = z.object({ id: uuid, recipientUserId: z.string(), channel: z.enum(['web_push', 'telegram', 'native_push']), grantVersion: version, taskVersion: version,
   status: z.enum(['sending', 'accepted', 'rejected', 'unknown', 'stopped']), reason: z.string().nullable(), providerStatus: z.number().int().nullable(), messageId: z.number().int().nullable(),
   attemptedAt: time, finishedAt: time.nullable(), acknowledgedAt: time.nullable() }).strict();
 const requestSchema = z.object({ id: uuid, taskId: uuid, taskVersion: version, occurrenceId: uuid, phase: z.enum(['initial', 'follow_up']),
   state: z.enum(['pending', 'accepted', 'rejected', 'unknown', 'stopped', 'coalesced']), reason: z.string().nullable(), nextAt: time,
-  groupedTo: uuid.nullable(), createdAt: time, attempts: z.array(attemptSchema).max(2) }).strict();
+  groupedTo: uuid.nullable(), createdAt: time, attempts: z.array(attemptSchema).max(3) }).strict();
 export const firestoreContactRequestSchema = z.object({ request: requestSchema, grant: firestoreContactGrantSchema,
   generation: uuid, authorizationVersion: z.string(), runId: uuid, reminderId: uuid, batchId: uuid, callbackHash: z.string().nullable() }).strict();
 const pointerSchema = z.object({ scope: workRecoveryScopeSchema, requestId: uuid, attemptId: uuid, binding: contactBindingSchema, botId: z.string() }).strict();
@@ -47,6 +47,7 @@ const sameBinding = (a: ContactBinding, b: ContactBinding) => a.channel === b.ch
 
 /** Same consent/grant/provider evidence boundary; P2 owner-only authority never silently invents a second recipient. */
 export function createFirestoreContact(options: FirestoreDomainOptions & {
+  nativePush?: import('./firestore-native-push.ts').FirestoreNativePush; nativePushGateway?: import('./native-push-gateway.ts').NativePushGateway;
   push: FirestoreWebPush; telegram: FirestoreTelegram; pushGateway: WebPushGateway; telegramGateway: TelegramGateway; telegramBotId: string | null;
   growth: Pick<FirestoreGrowthStore, 'taskAllowedIn'>; runs(): FirestoreAgentRuns;
   currentAuth(userId: string): Promise<{ disabled: boolean; emailVerified: boolean }>;
@@ -92,6 +93,12 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
         return s.input && s.binding.status === 'active' && s.binding.version === link.bindingVersion && s.binding.vapidPublicKey === options.pushGateway.publicKey
           && (!s.binding.expiresAt || Date.parse(s.binding.expiresAt) > Date.now()) ? { channel: 'web_push' as const, subscription: s.input.subscription, label: s.binding.label } : null;
       }
+      if (link.channel === 'native_push') {
+        if (!options.nativePush || !options.nativePushGateway?.available) return null;
+        const s = await options.nativePush.readBinding(p, link.bindingId);
+        return s.token && s.binding.status === 'active' && s.binding.version === link.bindingVersion && await options.nativePush.sessionActiveIn(p, s)
+          ? { channel: 'native_push' as const, token: s.token, tokenHash: s.tokenHash, label: s.binding.label } : null;
+      }
       const s = await options.telegram.readBinding(p, link.bindingId);
       return s.target && s.binding.status === 'active' && s.binding.version === link.bindingVersion && s.botId === options.telegramBotId
         ? { channel: 'telegram' as const, target: s.target, label: s.binding.label } : null;
@@ -104,6 +111,14 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
     for (const row of push.docs) {
       const link: ContactBinding = { channel: 'web_push', bindingId: row.get('bindingId'), bindingVersion: row.get('recordVersion') }, active = await activeBinding(b, link);
       if (active) list.push({ ...link, label: active.label });
+    }
+    if (options.nativePush) {
+      const native = await b.transaction.get(query(p, 'native_push_bindings').where('status', '==', 'active').limit(6));
+      if (native.size > 5) domainReject('contact_binding', 500);
+      for (const row of native.docs) {
+        const link: ContactBinding = { channel: 'native_push', bindingId: row.get('bindingId'), bindingVersion: row.get('recordVersion') }, active = await activeBinding(b, link);
+        if (active) list.push({ ...link, label: active.label });
+      }
     }
     const telegram = await b.transaction.get(query(p, 'telegram_bindings').where('status', '==', 'active').limit(2));
     if (telegram.size > 1) domainReject('contact_binding', 500);
@@ -279,8 +294,9 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
       if (signal.aborted) return false; const auth = await options.currentAuth(scope.ownerUserId); if (auth.disabled || !auth.emailVerified) return false;
       try { return await authority.runTransaction(scope.ownerUserId, scope.childId, async b => {
         const current = await readRequest(b, saved.request.id); if (!current || current.request.state !== 'pending') return false;
-        const valid = await validRequest(b, current), a = current.request.attempts.find(a => a.id === attempt.id);
-        return !!valid && a?.status === 'sending' && !!await activeBinding(b, link) && reminderDecision(valid.task, await preferences(b), evidence, new Date().toISOString()) === 'initial';
+        const valid = await validRequest(b, current), a = current.request.attempts.find(a => a.id === attempt.id), active = await activeBinding(b, link);
+        if (started.active?.channel === 'native_push' && (active?.channel !== 'native_push' || active.tokenHash !== started.active.tokenHash)) return false;
+        return !!valid && a?.status === 'sending' && !!active && reminderDecision(valid.task, await preferences(b), evidence, new Date().toISOString()) === 'initial';
       }); } catch (error) { if (error && typeof error === 'object' && 'status' in error && [403, 404, 409].includes(Number(error.status))) return false; throw error; }
     };
     let result: { status: 'accepted' | 'rejected' | 'unknown' | 'stopped'; reason: string | null; providerStatus: number | null; messageId?: number | null };
@@ -288,6 +304,8 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
     else try {
       result = started.active.channel === 'web_push' ? await options.pushGateway.send(started.active.subscription,
         { v: 1, kind: 'care', bindingId: link.bindingId, bindingVersion: link.bindingVersion, deliveryId: attempt.id }, signal, authorized)
+        : started.active.channel === 'native_push' ? await options.nativePushGateway!.send(started.active.token,
+          { v: 1, kind: 'care', bindingId: link.bindingId, bindingVersion: link.bindingVersion, deliveryId: attempt.id }, signal, authorized)
         : await options.telegramGateway.send({ chatId: started.active.target.chatId, callbackToken: started.token!, kind: 'care' }, signal, authorized);
     } catch { result = { status: 'unknown', reason: 'transport_unknown', providerStatus: null }; }
     // The provider receipt remains recordable after revocation. No new authority or effect is created here.
@@ -299,6 +317,8 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
       const notice = noticeRow.exists ? decode(b, noticeRow, 'task-notification-outbox', current.reminderId, firestoreTaskNotificationOutboxSchema) : null;
       const invalidation = result.reason === 'subscription_expired' && link.channel === 'web_push'
         ? await options.push.prepareInvalidation(personal(b), link.bindingId, link.bindingVersion)
+        : result.reason === 'subscription_expired' && link.channel === 'native_push' && started.active?.channel === 'native_push'
+          ? await options.nativePush!.prepareInvalidation(personal(b), link.bindingId, link.bindingVersion, 'expired', started.active.tokenHash!)
         : result.reason === 'blocked' && link.channel === 'telegram' ? await options.telegram.prepareInvalidation(personal(b), link.bindingId, link.bindingVersion) : null;
       const change = await authority.prepareReceiptChange(tx, scope, randomUUID(), 'tasks');
       if (a.acknowledgedAt && (result.status === 'rejected' || result.status === 'stopped')) result = { ...result, status: 'unknown', reason: 'receipt_without_provider_confirmation' };
@@ -334,7 +354,26 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
       b.transaction.create(updateRef, envelope(b, 'contact-update', id, updateSchema, { updateId: event.updateId, attemptId: a.id })); return event.callbackQueryId;
     }); } catch (error) { if (error && typeof error === 'object' && 'status' in error && [403, 404, 409].includes(Number(error.status))) return null; throw error; }
   }
-  return { page, mutation, options: contactOptions, request, process, recorded,
+  return {
+    async resolveNativeOpen(userId: string, reference: import('../src/shared/native-push.ts').NativePushReference) {
+      return authority.runTransaction(userId, null, async b => {
+        const tags = data.tags(b.scope);
+        const rows = await b.transaction.get(data.collection('contact_requests').where('workspaceTag', '==', tags.workspaceTag)
+          .where('epochTag', '==', tags.epochTag).where('userTag', '==', tags.userTag).where('attemptIds', 'array-contains', reference.deliveryId).limit(2));
+        if (rows.size !== 1) domainReject('not_found', 404);
+        const row = rows.docs[0], raw = row.data()!, opened = openRecoveryEnvelope({ ...options, locator: raw.recovery,
+          envelope: { family: 'domain', version: raw.version, recordVersion: raw.recordVersion, ciphertext: raw.ciphertext } });
+        if (opened.context.kind !== 'contact-request' || data.ref('contact_requests', 'contact-request', opened.context.id).path !== row.ref.path
+          || opened.context.scope.ownerUserId !== userId || opened.context.scope.workspaceId !== b.scope.workspaceId || opened.context.scope.storageEpoch !== b.scope.storageEpoch)
+          domainReject('contact_binding', 500);
+        const childId = opened.context.scope.childId, child = await b.readChild(childId);
+        if (!child) domainReject('not_found', 404);
+        const saved = decode({ scope: opened.context.scope }, row, 'contact-request', opened.context.id, firestoreContactRequestSchema);
+        const attempt = saved.request.attempts.find(a => a.id === reference.deliveryId && a.channel === 'native_push' && a.recipientUserId === userId);
+        if (!attempt || !saved.grant.bindings.some(v => v.channel === 'native_push' && v.bindingId === reference.bindingId && v.bindingVersion === reference.bindingVersion)) domainReject('not_found', 404);
+        return { kind: 'care' as const, childId, taskId: saved.request.taskId };
+      });
+    }, page, mutation, options: contactOptions, request, process, recorded,
     recordedForRun: (u: string, c: string, run: string) => authority.runTransaction(u, c, b => recorded(b, run)), telegramAcknowledgement };
 }
 export type FirestoreContact = ReturnType<typeof createFirestoreContact>;

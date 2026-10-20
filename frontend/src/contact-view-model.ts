@@ -2,7 +2,7 @@ import type {TaskAssigneeView, TaskView} from './task-view-model';
 import {channelDeliveryLabels} from './channel-view-model.ts';
 
 // Presentation projections only; ContactApi and the shared input schemas stay authoritative.
-export type ContactChannel = 'web_push' | 'telegram';
+export type ContactChannel = 'web_push' | 'telegram' | 'native_push';
 export interface ContactBinding {channel: ContactChannel; bindingId: string; bindingVersion: number}
 export interface ContactConsent {userId: string; version: number; enabled: boolean; allowBackup: boolean; bindings: ContactBinding[]}
 export interface ContactConsentDecision {expectedVersion: number; enabled: boolean; allowBackup: boolean; bindings: ContactBinding[]; confirm: true}
@@ -44,7 +44,7 @@ export interface ContactActions {
   refresh(): void; markDirty(key: string): void; discard(): void;
   save(decision: ContactDecision, labels: string[]): void; setOriginalConsent(value: boolean): void; retryOriginal(): void;
 }
-export const contactChannelLabels: Record<ContactChannel, string> = {web_push: 'Web Push', telegram: 'Telegram'};
+export const contactChannelLabels: Record<ContactChannel, string> = {web_push: 'Web Push', telegram: 'Telegram', native_push: 'Android FCM'};
 export const contactRequestLabels: Record<ContactRequest['state'], string> = {pending: '待處理', accepted: '渠道已接受', rejected: '渠道已拒絕', unknown: '投遞結果未知', stopped: '已停止', coalesced: '今天已有普通提示，未另行發送'};
 export const contactAttemptLabels = channelDeliveryLabels;
 export const sameContactBinding = (a: ContactBinding, b: ContactBinding) => a.channel === b.channel && a.bindingId === b.bindingId && a.bindingVersion === b.bindingVersion;

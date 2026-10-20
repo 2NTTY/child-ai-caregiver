@@ -81,6 +81,7 @@ export interface FirebaseRequestHandlerOptions {
   concerns?: FirestoreConcernStore;
   growth?: FirestoreGrowthStore;
   push?: FirestoreWebPush;
+  nativePush?: import('./firestore-native-push.ts').FirestoreNativePush;
   contact?: FirestoreContact;
   telegram?: { store: FirestoreTelegram; config: TelegramConfig | null; gateway: TelegramGateway };
   sourceService?: SharedInputService;
@@ -150,12 +151,26 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (request.method !== 'POST' || !channel?.config || !telegramWebhookAuthorized(request.headers.get('x-telegram-bot-api-secret-token'), channel.config)) return errorResponse('forbidden', 403);
         return uncached(await handleTelegramWebhook(request, channel.store, channel.gateway, channel.config.botId, options.contact));
       }
-      if (request.method === 'GET' && (path === '/api/web-push' && options.push || path === '/api/telegram' && options.telegram)) {
+      if (request.method === 'GET' && path === '/api/native-push/open' && options.nativePush) {
+        const session = await auth.nativeSessionProof?.(request.headers);
+        if (!session) throw new RequestError('unauthorized', 401);
+        if (request.headers.get('x-expected-user-id') !== session.userId) throw new RequestError('session_changed', 409);
+        const raw = new URL(request.url).searchParams.get('reference');
+        if (!raw || raw.length > 1024) throw new RequestError('invalid_input', 400);
+        let value; try { value = JSON.parse(raw); } catch { throw new RequestError('invalid_input', 400); }
+        const ref = await options.nativePush.authorizeOpen(session.userId, session, value);
+        const result = ref.kind === 'test' ? { kind: 'test', childId: null, taskId: null } : await options.contact?.resolveNativeOpen(session.userId, ref);
+        if (!result) throw new RequestError('not_found', 404);
+        // Recheck after lookup; a tap never marks receipt or completes a task.
+        if ((await auth.nativeSessionProof?.(request.headers))?.sessionHash !== session.sessionHash) throw new RequestError('session_changed', 409);
+        return json(result);
+      }
+      if (request.method === 'GET' && (path === '/api/native-push' && options.nativePush || path === '/api/web-push' && options.push || path === '/api/telegram' && options.telegram)) {
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const expected = request.headers.get('x-expected-user-id');
         if (!expected || expected !== userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required', expected ? 409 : 428);
-        const result = path === '/api/web-push' ? await options.push!.status(userId) : await options.telegram!.store.status(userId);
+        const result = path === '/api/native-push' ? await options.nativePush!.status(userId, await auth.nativeSessionProof?.(request.headers) ?? null) : path === '/api/web-push' ? await options.push!.status(userId) : await options.telegram!.store.status(userId);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);
         return json(result);
       }
@@ -259,10 +274,10 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (expected !== null && expected !== userId) throw new RequestError("identity_changed", 409);
         let response: Response;
         if (path.startsWith("/api/online/")) response = await handleOnlineRequest(request, userId, { ...online,
-          async submit(expectedUserId, submission) {
+          async submit(expectedUserId, submission, context) {
             if ((await auth.getSession({ headers: request.headers }))?.user.id !== expectedUserId) throw new RequestError("identity_changed", 409);
-            return online.submit(expectedUserId, submission);
-          } });
+            return online.submit(expectedUserId, submission, context);
+          } }, async () => ({ nativeSession: await auth.nativeSessionProof?.(request.headers) ?? null }));
         else if (path === "/api/notification-preferences") {
           if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
           if (new URL(request.url).search) throw new RequestError("invalid_input", 400);

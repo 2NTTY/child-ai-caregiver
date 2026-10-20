@@ -1,3 +1,4 @@
+import { useNativePushNavigation } from "./useNativePushNavigation";
 import { useProductionActivity } from "./useProductionActivity";
 import { createProductionTransport } from "./production-transport";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -41,6 +42,14 @@ function useProductionValue(owner: ProductionOwner) {
     const message=pending.voice?snapshot.chat.messages.find(item=>item.voice?.id===pending.voice!.id):null;
     if(message&&snapshot.scopeKey&&pending.localId){owner.draftOwner.remove(snapshot.scopeKey,pending.localId);owner.voiceOwner.linked(message.id,message.voice!.id);}
   },[owner,snapshot.chat.messages,snapshot.scopeKey,voiceUpload.voice?.id]);
+  useNativePushNavigation(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null, target => {
+    const identity = snapshot.identityKey;
+    leave(() => { void (async () => {
+      if (!identity || owner.getSnapshot().identityKey !== identity) return;
+      if (target.childId) await owner.controller.selectChild(target.childId);
+      if (owner.getSnapshot().identityKey === identity) router.push(target.kind === "test" ? "/settings" : "/tasks");
+    })().catch(() => { if (owner.getSnapshot().identityKey === identity) setLocalNotice("通知事項未能開啟，請在待辦重新讀取。"); }); }, target.childId ? "child" : undefined);
+  }, setLocalNotice);
   const visibleDraft = draft.scope === snapshot.scopeKey ? draft : emptyAssistantDraft;
   const model = useMemo(() => projectProductionHome(snapshot), [snapshot]);
   const chatDraft = snapshot.chat.selectedChildId ? snapshot.chat.drafts[snapshot.chat.selectedChildId] : undefined;

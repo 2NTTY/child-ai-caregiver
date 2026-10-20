@@ -1087,8 +1087,10 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s13-w02"></a>
 #### S13-W02 原生本人通知
 
-- 階段／狀態：P3；Android 未開始，iOS 待後續。
+- 階段／狀態：P3；Android 正式接線已在本機實作，活動分支 `codex/s13-w02-android-push` 接續 S12 draft #237；尚未部署或發布新 APK。依使用者授權先推進不依賴真機的部分；依賴合併與明確批准的一則真通知仍是 gate，不提前標完成。iOS 待後續。
 - 前置（Android）：S12-W01 Android、S07-W01、S13-W07；iOS 另依 S04-W02。
+- 本機結果：固定 Expo Notifications 57.0.21；FCM 單次 adapter、Firestore 加密綁定／原收據、同裝置 token 輪換／會話撤銷、提醒／通知歷史／匯出及還原、正式 API／worker、共用設定及核權點擊已接線。新增一條本機合成流程通過，受影響型別及配置語法通過；不把替身當真 Firestore 競爭或真 FCM。證據見 [S13 準備](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
+- 下一步／未驗：設定同專案 Android Firebase 描述檔及 FCM 最小發送權限；套用新增索引、相容部署／新 APK後，集中驗原生權限、真提醒到達與點擊／完成停止。沒有新雲端設定、外發、APK或部署；正式開關保持關閉。
 - 交付：Expo Notifications／Android FCM token 註冊、輪換／撤銷與薄投遞 adapter，沿既有 Tasks／授權／偏好／安靜時段／終態／unknown；Web與App各設備授權、同一任務。
 - gate：一則明確批准通知、點擊重新核權及完成停止；不重發 Web Push／Telegram。iOS APNs 是另一平台子範圍，不能拿 FCM token 代替 APNs。
 

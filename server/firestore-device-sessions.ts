@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { FieldPath, type Firestore, type DocumentSnapshot } from "@google-cloud/firestore";
+import { FieldPath, type Firestore, type DocumentSnapshot, type Transaction } from "@google-cloud/firestore";
 import type { StorageCipher } from "./storage-crypto.ts";
 
 const FORMAT = "yuban-firebase-device-session";
@@ -157,6 +157,13 @@ export class FirestoreDeviceSessions implements DeviceSessionsPort {
     }));
   }
 
+  /** Participate in the caller transaction so session revocation also conflicts with registration. */
+  async assertActiveIn(transaction: Transaction, input: DeviceSessionKey): Promise<void> {
+    const key = this.#key(input), paths = this.#paths(key);
+    const [control, session] = await transaction.getAll(paths.control, paths.session);
+    if (!control.exists || !session.exists) throw new DeviceSessionError(401, "session_invalid");
+    this.#active(this.#control(control, key), this.#session(session, key), this.#now());
+  }
   async assertActive(input: DeviceSessionKey): Promise<void> {
     const key = this.#key(input), paths = this.#paths(key), now = this.#now();
     await this.#transaction(() => this.#database.runTransaction(async transaction => {

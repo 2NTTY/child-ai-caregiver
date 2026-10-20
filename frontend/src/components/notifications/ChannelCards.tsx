@@ -28,7 +28,7 @@ type SharedActions = PushSettingsActions | TelegramSettingsActions;
 type Tone = "neutral" | "warning" | "error";
 
 const permissionLabels: Record<ChannelPermission, string> = {
-  default: "尚未選擇通知權限", granted: "已允許通知", denied: "已拒絕通知", unsupported: "不支援瀏覽器通知",
+  default: "尚未選擇通知權限", granted: "已允許通知", denied: "已拒絕通知", unsupported: "此設備未支援通知",
 };
 const permissionGuidance: Record<ChannelPermission, string> = {
   default: "正式接線後，須由你在瀏覽器權限提示中選擇允許；本次預覽只模擬登記。",
@@ -136,17 +136,17 @@ function RecentDeliveries({ deliveries, emptyReady }: { deliveries: ChannelDeliv
   </View>;
 }
 
-function BrowserEnableForm({ form, disabled, stageEnable, production }: { form: UseFormReturn<BrowserLabelValues>; disabled: boolean; stageEnable(label: string): void; production: boolean }) {
+function BrowserEnableForm({ form, disabled, stageEnable, production, native = false }: { form: UseFormReturn<BrowserLabelValues>; disabled: boolean; stageEnable(label: string): void; production: boolean; native?: boolean }) {
   const formId = useId();
   const error = form.formState.errors.label?.message;
   return <View style={[styles.stack, styles.group]}>
-    <FormErrorSummary entries={error ? [{ field: "label", label: "瀏覽器名稱", message: error }] : []} onFocus={() => form.setFocus("label")} />
+    <FormErrorSummary entries={error ? [{ field: "label", label: native ? "裝置名稱" : "瀏覽器名稱", message: error }] : []} onFocus={() => form.setFocus("label")} />
     <Controller name="label" control={form.control} render={({ field, fieldState }) => <View>
-      <AppTextField ref={field.ref} nativeID={`${formId}-label`} aria-invalid={!!fieldState.error} aria-describedby={`${formId}-label-message`} label="瀏覽器名稱" accessibilityLabel="瀏覽器通知名稱" value={field.value}
+      <AppTextField ref={field.ref} nativeID={`${formId}-label`} aria-invalid={!!fieldState.error} aria-describedby={`${formId}-label-message`} label={native ? "裝置名稱" : "瀏覽器名稱"} accessibilityLabel={native ? "Android通知裝置名稱" : "瀏覽器通知名稱"} value={field.value}
         disabled={disabled} onChangeText={field.onChange} onBlur={field.onBlur} error={!!fieldState.error} />
       <FormFieldMessage id={`${formId}-label-message`} error={fieldState.error?.message} help="去除前後空格後須有內容，最多 80 字元；只供你辨認本人訂閱。" />
     </View>} />
-    <AppButton label={production ? "啟用此瀏覽器通知" : "預覽啟用此瀏覽器通知"} disabled={disabled} onPress={form.handleSubmit(values => stageEnable(values.label.trim()), () => form.setFocus("label"))} />
+    <AppButton label={native ? "啟用此 Android 裝置通知" : production ? "啟用此瀏覽器通知" : "預覽啟用此瀏覽器通知"} disabled={disabled} onPress={form.handleSubmit(values => stageEnable(values.label.trim()), () => form.setFocus("label"))} />
   </View>;
 }
 
@@ -172,29 +172,31 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
   const ready = model.readState === "ready";
   const actionBlocked = !model.online || model.locked || !!model.review || model.conflict;
   const canEnable = ready && !actionBlocked && model.available && model.browserSupported && model.permission !== "denied" && model.permission !== "unsupported";
+  const native = model.platform === "android";
+  const deviceName = native ? "Android裝置" : "瀏覽器";
   const cooldownReady = model.nextTestAt === null || Date.parse(model.nextTestAt) <= Date.now();
-  const guidance = production && model.permission === "default" ? "須由你在瀏覽器權限提示中選擇允許，才可登記本人的訂閱。" : permissionGuidance[model.permission];
+  const guidance = production && model.permission === "default" ? `須由你在${deviceName}權限提示中選擇允許，才可登記本人的訂閱。` : permissionGuidance[model.permission];
   return <SectionCard style={styles.card}>
     <ChannelAnnouncements model={model} />
     <StatusAnnouncement eventKey={model.permission} message={`通知權限：${permissionLabels[model.permission]}。${guidance}`} urgent={model.permission === "denied"} />
-    <StatusAnnouncement eventKey={`${model.available}:${model.browserSupported}`} message={!model.available ? "瀏覽器通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。" : !model.browserSupported ? "這個瀏覽器未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。" : ""} />
-    <SectionHeader density="compact" title="我的瀏覽器通知" icon="bell-outline" subtitle="只管理本人的瀏覽器訂閱。"
-      action={ready ? <AppButton label="重新讀取瀏覽器狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
+    <StatusAnnouncement eventKey={`${model.available}:${model.browserSupported}`} message={!model.available ? "通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。" : !model.browserSupported ? "此設備未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。" : ""} />
+    <SectionHeader density="compact" title={`我的${deviceName}通知`} icon="bell-outline" subtitle={`只管理本人的${deviceName}訂閱。`}
+      action={ready ? <AppButton label={`重新讀取${deviceName}狀態`} variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
     {production ? operationNotice : null}
     {!ready ? <ReadState state={model.readState} online={model.online} locked={production ? model.readState === "loading" : model.locked} refresh={actions.refresh} /> : <>
       <RuntimeNotices model={model} />
       {!production ? operationNotice : null}
-      {!model.available ? <StateNote tone="warning">瀏覽器通知服務目前未可用，不能啟用訂閱或發送測試；你仍可撤銷既有本人訂閱。</StateNote> : null}
+      {!model.available ? <StateNote tone="warning">通知服務目前未可用，不能啟用訂閱或發送測試；你仍可撤銷既有本人訂閱。</StateNote> : null}
       <View style={styles.entry}>
         <AppStatusBadge label={`通知權限：${permissionLabels[model.permission]}`} tone={model.permission === "granted" ? "success" : model.permission === "denied" ? "warning" : "neutral"} />
         <Text style={styles.body}>{guidance}</Text>
-        {!model.browserSupported && model.permission !== "unsupported" ? <Text style={styles.warning}>這個瀏覽器未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。</Text> : null}
+        {!model.browserSupported && model.permission !== "unsupported" ? <Text style={styles.warning}>此設備未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。</Text> : null}
       </View>
-      <BrowserEnableForm form={form} disabled={!canEnable} stageEnable={actions.stageEnable} production={production} />
+      <BrowserEnableForm native={native} form={form} disabled={!canEnable} stageEnable={actions.stageEnable} production={production} />
       <ChannelReviewPanel model={model} actions={actions} production={production} />
       <View style={[styles.stack, styles.group]}>
-        <Text accessibilityRole="header" style={styles.title}>本人瀏覽器訂閱</Text>
-        {model.bindings.length === 0 ? model.online ? <EmptyListCard title="目前沒有本人瀏覽器訂閱" /> : null : model.bindings.map(binding => {
+        <Text accessibilityRole="header" style={styles.title}>本人{deviceName}訂閱</Text>
+        {model.bindings.length === 0 ? model.online ? <EmptyListCard title={`目前沒有本人${deviceName}訂閱`} /> : null : model.bindings.map(binding => {
           const deliveryNeedsReview = pushDeliveryNeedsReview(model.deliveries, binding.id);
           const confirmed = !!confirmedOperation && !!bindingIntent && model.online && ready && !model.locked && !model.review && !model.conflict
             && binding.version > bindingIntent.baseVersion && (bindingIntent.kind === "enable" ? binding.id === model.currentBindingId && binding.status === "active" : binding.id === bindingIntent.id && binding.status === "revoked");
@@ -202,7 +204,7 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
             <MotionFeedback active={confirmed} triggerKey={confirmed ? confirmedOperation?.reference ?? null : null} scopeKey={`${scopeKey}:${binding.id}`} testID="push-binding-feedback" animateOnMount={confirmed && bindingIntent?.kind === "enable" && stagedBinding.current === null} style={styles.bindingMetadata}>
             <View style={styles.top}><Text style={styles.title}>{binding.label}</Text>
               <AppStatusBadge label={binding.status === "active" ? "有效綁定" : binding.status === "revoked" ? "已撤銷" : "已過期"} tone={binding.status === "active" ? "success" : binding.status === "revoked" ? "neutral" : "warning"} />
-              {model.currentBindingId === binding.id ? <AppStatusBadge label="目前瀏覽器" tone="info" /> : null}</View>
+              {model.currentBindingId === binding.id ? <AppStatusBadge label={`目前${deviceName}`} tone="info" /> : null}</View>
             <Text style={styles.meta}>提供者：{binding.providerLabel} · 版本 {binding.version}</Text>
             <Text style={styles.meta}>到期：{binding.expiresAt ? `${channelTime(binding.expiresAt)}（香港時間）` : "未提供到期時間"}</Text>
             </MotionFeedback>

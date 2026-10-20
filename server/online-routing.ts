@@ -22,6 +22,9 @@ export function onlineRoute(command: OnlineCommand): OnlineRoute {
   if (path === "/api/children" || path === "/api/notification-preferences") return {
     kind: path === "/api/children" ? "children" : "preferences", scope: "personal", roles: ["owner"], privateResult: path !== "/api/children", deleted: false,
   };
+  if (path === "/api/native-push/subscriptions" || new RegExp(`^/api/native-push/subscriptions/${uuid}/(?:revoke|test)$`, "i").test(path)) return {
+    kind: "preferences", scope: "personal", roles: ["owner"], privateResult: true, deleted: false,
+  };
   if (path === "/api/web-push/subscriptions" || new RegExp(`^/api/web-push/subscriptions/${uuid}/(?:revoke|test)$`, "i").test(path)) return {
     kind: "preferences", scope: "personal", roles: ["owner"], privateResult: true, deleted: false,
   };

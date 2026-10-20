@@ -749,3 +749,10 @@ API／worker 從同一政策建立新 run 快照，舊 run 保留模型／預算
 ### 聊天固定官方提示
 
 聊天的 optional `officialHelp` 最多兩個固定版本 ID，由同一 run 已成功選取的工具引用導出，與 model message 交易保存。沿原 message／runId／inReplyTo，不新增可獨立寫入的提示資料庫；舊訊息沒有此欄位仍可讀。卡片的正文、官方 URL、核對日期由版本化共用登記提供，含義變更建立新 ID。進度事件只供當次連線顯示，不持久化、不是保存收據，也不作記憶來源。
+
+
+### Android 原生通知資料
+
+`native_push_bindings` 保存同一裝置授權的 ID／version、token revision及密文 token／session hash；可查 metadata 僅供授權索引與有界列表，不把 token 放入收據、匯出或產品日誌。`native_push_tokens` 是確定 hash 的唯一佔位，必須驗證原身份／世代和會話狀態後才可轉移。`native_push_deliveries` 保存一般測試的單次嘗試及真實結果；照護提醒仍使用既有 `contact_requests`，不新增另一份任務。
+
+收據、版本、變更與 outbox 沿 Firestore 同一交易。裝置會話讀取參與登記／發送前的交易；外發仍在交易外。備份／刪除 collection 清單只追加，保持原清理 cursor；隔離還原保留投遞歷史，撤銷綁定、清除 token、捨棄唯一佔位，不復活舊裝置資格或通知。
