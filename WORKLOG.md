@@ -3356,3 +3356,21 @@
 - 沿用已核對的正式 API／scripted、局部型別、真機及真模型證據；本次只核對依賴、既有結果、文件 diff 及精確 head／實際合併者，未跑產品測試、真模型、通知、部署或增加配額。程式基線 `00aa6ad` 不改；本條及 PLAN／STATUS 收尾由 #244 一併交付。
 - DEV-AGENT01 的本地入口已有必要真聊天／引用、保存／重開及 Web 接線結果，可先供協作者使用。長來源／多模態及角色完整成果與環境交付分開，仍按 DEV02／所屬角色包處理。
 - 保留的後續：Android 有來源聊天與重開、撤銷／切身份、跨端同步／媒體附件完整流程、照護通知停止及 OTA 回退；背景新版最終聊天引用；個人 key 地區限制、真生成／embedding、Android 設定及部署。原失敗、備份真還原延期及其他未驗項不回寫；具體範圍只在 PLAN 各包，不另開重複清單。
+
+
+<a id="log-20261020-model-delivery-preparation-renewal"></a>
+## LOG-20261020-MODEL-DELIVERY-PREPARATION-RENEWAL
+
+- 基線 master `ad4de88`，分支 `codex/model-self02-delivery`。正式 Web 與 Android 產物已建置；首次 read-only 發布計劃因新 checkout 缺既有 Windows fingerprint 準備而誤判需要 APK，執行原 `mobile:prepare` 後確認與 APK v2 的 runtime 相同，可相容 OTA，沒有新建 APK。
+- 原 VM 維持 e2-small；使用者另明確要求續期14天，依 GCP 流程短暫停止、延長原期限並啟動，期限由10月23日延至11月6日13:33:50香港時間。首次開機連線未就緒，隨後首頁及API健康入口均200；未改映像、資料或配額。最近READY原生備份只讀metadata，沒有真還原。
+- 新私有交付包首次上傳被自動批准審查拒絕，沒有執行；使用者隨後明確批准這個固定 VM 包及現有 Expo preview 的一次相容 OTA。依批准完成上傳及候選無網絡載入，沒有模型／通知呼叫；索引排除已提交，仍須待其完成、原站切換及 OTA 發布才算上線。詳見[準備與交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)，後續結果另追加，不回寫舊失敗。
+- 保留真個人key地區限制、生成／embedding、Android設定實機及既有角色／備份未驗項；建置、候選載入及程式合併不代替實際服務品質驗收。
+
+
+<a id="log-20261020-model-self02-delivered"></a>
+## LOG-20261020-MODEL-SELF02-DELIVERED
+
+- 依本次具體批准交付 `ad4de88`：原 VM候選API／worker／Web通過無網絡匯入核對；唯一新增的私人收據索引排除完成。切換前阻止新HTTP工作並唯讀核對沒有活動Agent，之後更新API／worker，再開放新Web；健康及公開HTML hash一致。正式入口仍為 `https://ex-machina.eu.org`，沒有新增網站、資源或業務資料遷移。
+- 保留原映像及受保護Compose副本；開放新寫入後維持能讀新設定的API，不自動退回舊reader。只刪本次兩個建置暫存目錄，原封包及回退仍在，磁碟餘約505 MiB。
+- 以既有Expo帳號向preview發布一次已匯出的相容Android OTA，群組 `8f1bcdbf-220f-4379-900c-5e9dcb836cba`，runtime與APK v2相同，沒有新APK或購買方案。這次沿已核對CLI的skip-bundler／input-dir使用既有產物，沒有重跑相同Web／Android建置；固定mobile:release入口仍保留。
+- 本次僅發布／健康／hash及必要索引核對，零真模型、embedding、通知或配額修改，不跑產品全量／瀏覽器／真機。真個人key地區限制與生成／embedding、手機接收更新及設定頁仍未驗；原失敗和延期門檻保留。[完整交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)，PLAN／STATUS同步現況。

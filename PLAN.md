@@ -56,11 +56,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：PR 收束及本地入口交付。**依使用者 2026-10-20 明確批准，#229／#234～#239／#241／#242／#244 按依賴合併；剩餘手機及真模型驗收改為合併後追蹤，不再阻塞本批程式整合。這是本批特定安排，不代表測試通過、正式部署或 Android／四角色／個人模型全部完成；其他工作包沿原規則。
+**當前：MODEL-SELF02 交付收尾及保留驗收。**基線為 master `ad4de88`，活動分支 `codex/model-self02-delivery`；原站及相容 Android OTA 已更新。#229／#234～#239／#241／#242／#244 已按依賴合併；依使用者 2026-10-20 明確批准，剩餘手機及真模型驗收改為合併後追蹤。這是本批特定安排，不代表 Android／四角色／個人模型全部通過驗收；其他工作包沿原規則。
 
-**本批整合：**`codex/dev-agent02-current-roles`／#244 收束已 review 的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，沿用原驗證，不新增部署、真模型或真機操作。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
+**本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
-**下一步：**先處理 [MODEL-SELF01／02](#model-self01) 的可用個人憑證及共用設定交付；剩餘新版引用／長來源／多模態按 [DEV02](#dev-agent02) 及所屬角色包追蹤。Android 項目仍由 [S16-W03](#s16-w03) 集中承接，不重跑已有證據，iOS 暫緩。本次合併安排不增加任何模型額度、部署或外發授權。
+**下一步：**[MODEL-SELF01／02](#model-self01) 只補可用個人憑證及Android設定的未驗項；剩餘新版引用／長來源／多模態按 [DEV02](#dev-agent02) 及所屬角色包追蹤，不阻止使用已交付的本地入口。Android 項目仍由 [S16-W03](#s16-w03) 集中承接，不重跑已有證據，iOS暫緩。合併後追蹤不增加模型額度；部署及OTA已依使用者後續具體批准完成。
 
 ### 保留的 Android 交付狀態
 
@@ -123,7 +123,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="model-self01"></a>
 ### MODEL-SELF01 個人模型與共同策略
 
-- 前置：DEV-AGENT01，DEV-AGENT02可用接口已在獨立分支核對；協作者未實作及真模型gate獨立保留。狀態：後端／共用client已接Gemini／Vertex key、模型目錄、本人進階限制、生效值及原操作查回；兩條合成設定／SDK流程及兩項既有client檢查、局部型別通過。A單人實作與交付，未部署／未驗真個人key；詳見[MODEL01證據](artifacts/verification/MODEL_SELF01_SETTINGS_20261018.json)。
+- 前置：DEV-AGENT01，DEV-AGENT02可用接口已核對；協作者未實作及真模型gate獨立保留。狀態：後端／共用client已接Gemini／Vertex key、模型目錄、本人進階限制、生效值及原操作查回；兩條合成設定／SDK流程及兩項既有client檢查、局部型別通過。程式已隨MODEL02部署，真個人key生成仍未驗；原結果見[MODEL01證據](artifacts/verification/MODEL_SELF01_SETTINGS_20261018.json)。
 - 擴充現有加密設定／收據／用量及 command／view：provider、model、能力、進階限制及實際生效值；Server提供模型目錄，保留 expectedVersion／opId／unknown恢復。
 - Gemini／Vertex API key使用正確SDK模式；ADC只限本機。依供應商可用模型及已接能力提供選項，thinking／工具／圖片／音訊／串流按型號處理，不偷換模型。metadata與真生成分開；保存設定不自動試多模型。
 - 供應商目錄已修正：Express只列官方清單與現有profile交集；保存及生成前使用同一支援判斷，過時選擇仍可停用／刪key。正式API／client及SDK兩條既有檢查、局部型別通過；沒有真生成或新憑證驗收。版本化契約見[API](docs/API.md#personal-model-http)，來源見[TECH_REUSE](docs/TECH_REUSE.md#personal-google-keys)。
@@ -136,10 +136,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="model-self02"></a>
 ### MODEL-SELF02 共用設定及交付
 
-- 前置：MODEL-SELF01；共用owner及表單已接同一v2契約，#242／#244 程式隨本批整合，尚未部署。Web／Android共用供應商／模型、七項限制、背景授權、用量及Server生效值；沒有另一份UI限額權威。保存回應丟失時查原opId，未見收據不能清成成功或重播key。原兩項表單／原操作流程及局部型別證據保留，真服務及真機仍待驗。
-- 2026-10-20 正式本地Web已保存合成key、模型與七項限制；原生session API讀到同版本及生效值，Web刪除key後回復平台模式，用量未變。修正編輯中自動重讀覆蓋草稿，以及launcher的CI旗標停用Metro監看的問題。原瀏覽器批次尾部因腳本150次請求上限停止，保留失敗；只補兩次唯讀確認清理，未將整批改稱通過。[MODEL02證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。真個人key、Android實機設定／頁面重讀及部署仍待驗；本機API讀回不等於真機通過。
+- 前置：MODEL-SELF01；共用owner及表單已接同一v2契約，#242／#244 程式已部署原站並發布相容Android OTA。Web／Android共用供應商／模型、七項限制、背景授權、用量及Server生效值；沒有另一份UI限額權威。保存回應丟失時查原opId，未見收據不能清成成功或重播key。原兩項表單／原操作流程及局部型別證據保留，真服務及真機仍待驗。
+- 2026-10-20 正式本地Web已保存合成key、模型與七項限制；原生session API讀到同版本及生效值，Web刪除key後回復平台模式，用量未變。修正編輯中自動重讀覆蓋草稿，以及launcher的CI旗標停用Metro監看的問題。原瀏覽器批次尾部因腳本150次請求上限停止，保留失敗；只補兩次唯讀確認清理，未將整批改稱通過。[MODEL02證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。真個人key、Android實機設定／頁面重讀仍待驗；本機API讀回不等於真機通過。
 - key不進prompt、日誌、URL、瀏覽器儲存或Android持久草稿；移除／替換沿原身份與版本檢查。部署沿原站及相容Web／OTA，不另建網站。
-- 共用表單切換服務會先讀該服務的模型目錄，不先保存key，不沿用另一服務的能力或自動換模型；一項針對性投影檢查及局部型別通過。此修正尚未在瀏覽器／真機重驗或部署，原待驗門檻不變。
+- 共用表單切換服務會先讀該服務的模型目錄，不先保存key，不沿用另一服務的能力或自動換模型；一項針對性投影檢查及局部型別通過。已交付此修正，尚未在瀏覽器／真機重驗，原待驗門檻不變。
+- `ad4de88` 的API／worker／Web已部署原站，私人收據索引排除、候選無網絡載入、服務健康及公開HTML hash核對通過。相容OTA已發布，毋須新APK；裝置接收另列待驗。零模型／通知、沒有業務資料遷移或配額修改；保留原映像及受保護配置，開放新寫入後不退回無法讀新設定的舊API。[交付及續期證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)。首次自動批准拒絕及後續具體批准均保留；VM續期14天已完成，版本／期限只在STATUS投影。
 - 交付短指引：啟動、key／ADC、選分支、改完再試、背景觸發、角色結果、資料重設及仍需雲端確認的差異。
 
 ### 最少驗證及完成門檻
