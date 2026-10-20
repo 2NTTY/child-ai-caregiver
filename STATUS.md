@@ -7,16 +7,16 @@
 - **PR 收束：**#229／#234～#239 由原 Android 主責帳號合併，#241／#242／#244 由本地／模型工作主責帳號交付。使用者於 2026-10-20 明確批准先合併、剩餘手機／真模型驗收改為後續追蹤；原作者、失敗及未驗證據保留。該合併批次沒有新增測試，後續部署見下方。現行次序見 [PLAN](PLAN.md#active)。
 - **本地開發入口可用：**`npm run agent:local` 啟動目前分支的正式 Web／API／四角色接點及隔離持久資料。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；方法見[本地入口](docs/AGENT_LOCAL.md)。本地環境交付與角色完整品質分開，不需先部署 GCP。
 - **角色未完成項：**官方 PDF 第3頁已整理、審核及本地發布；最終聊天引用新版的單次補驗因 `model_limit` 停止，原用量和失敗保留。長來源／圖片多模態仍欠角色能力，不能以單頁 PDF 當全部通過；見 [DEV02](PLAN.md#dev-agent02)。
-- **個人模型設定已交付，真key／Android保存仍待驗。**`ad4de88` 的API／worker／Web已部署，APK v2相容OTA已發布。本地同版設定讀回已有證據；真 Gemini key metadata 回 `region_unavailable`，沒有生成／embedding成功，ADC本地成功維持分開。Android首次OTA匯出配置漏項已修正，使用者已重新登入；新版表單及七項限制已讀回，重開保留會話及原平台設定。取消個人模型固定名單、直接輸入相容Gemini ID的修正已完成必要檢查，尚未部署。活動分支及後續只見 [MODEL-SELF01／02](PLAN.md#model-self01)。
+- **個人模型設定及直接選型已交付，真key／Android保存仍待驗。**#246 的 `d53c203` 已更新API／worker／Web並發布APK v2相容OTA，可直接輸入相容Gemini ID，不再以參考目錄限制使用。本地同版設定讀回已有證據；真 Gemini key metadata 回 `region_unavailable`，沒有生成／embedding成功，ADC本地成功維持分開。前次Android配置修正後已讀到表單及七項限制、重開保留會話；本次選型OTA的裝置接收仍待驗。後續只見 [MODEL-SELF01／02](PLAN.md#model-self01)。
 - **Android 已合併，未全數驗收：**APK v2 覆蓋安裝、原登入／資料保留及一則指定 FCM 有證據；正常有來源聊天／重開、撤銷／切身份、跨端與媒體／附件完整流程、照護通知完成停止及 OTA 回退仍按 [S04～S17](PLAN.md#s04-w01) 追蹤，不以合併當成品完成。
 - **其他邊界：**正式資料已使用 Firestore；家庭多人留 P4、iOS 暫緩。OPT／LAY 既有成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)仍未完成。只補最低必要驗證，不全量、Computer Use 或重做前端設計。
 
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-20 13:13 UTC 原站：**API／worker為`self02-ad4de88`（映像`c08f674`），Web同tag（映像`ff7e692`）；服務健康，公開HTML hash與同版產物一致。一項私人模型設定收據索引排除已完成；未改業務資料、配額或用量，沒有模型／通知驗收。原站更新及回退邊界見[交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)；磁碟剩約505 MiB，僅清理本次建置暫存，原映像與回退配置仍保留。
+**2026-10-20 14:07 UTC 原站：**API／worker為`model-d53c203`（映像`93ebfdc`），Web同tag（映像`209c0e1`）；服務健康，公開HTML hash與同版產物一致。未改業務資料、配額、用量或索引，沒有模型／通知驗收。原站更新及回退邊界見[交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)；磁碟剩約417 MiB，僅清理本次建置暫存，原映像與回退配置仍保留。
 
-**Android，2026-10-20 13:37 UTC：**APK v0.1.0／versionCode 2不變；修正版preview OTA群組`b0cbacc3-cda5-4b9a-8057-fd1b85e199d2`已發布，來源`c192cc6`的產品程式與`ad4de88`相同，runtime `33699576537bf6f4081bddfb9c8807cd6bdef3ee`不變。首個OTA漏合併EAS profile的身份配置，裝置重開後登入核對失敗；修正版使用既有完整發佈配置，本人已登入，裝置已讀到新版設定頁；未保存的核對草稿已清除，重開仍保留登入及原平台設定版本0。毋須覆蓋安裝，沒有重設資料或保存個人設定；原失敗及其他Android未驗項保留。
+**Android，2026-10-20 14:11 UTC：**來源`d53c203`的preview OTA群組`cfe20c62-9816-4d8e-8b5c-06bcf74ab266`已發布，沿完整EAS profile；APK v0.1.0／versionCode 2及runtime `33699576537bf6f4081bddfb9c8807cd6bdef3ee`不變，毋須覆蓋安裝。本次選型OTA裝置接收未驗；前次修正版的登入、表單及重開證據仍有效，首次匯出漏身份配置的失敗保留於交付證據。沒有重設資料或保存個人設定，真key／Android保存仍待驗。
 
 回退保留既有映像及受保護Compose副本；新政策、附件、語音與通知資料寫入後，必須使用相容reader／worker，不能直接退回不認識新欄位的舊API。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。備份只讀metadata，未還原，舊失敗證據不改寫。
 

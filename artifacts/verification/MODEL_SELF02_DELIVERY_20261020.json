@@ -180,7 +180,69 @@
       "targetedUiTypecheck": "passed"
     },
     "liveModelCalls": 0,
-    "deployment": "pending",
+    "deployment": "deployed-and-compatible-ota-published-device-receipt-pending",
     "notProven": "Individual model quality or key availability; these are not prerequisites for selecting a protocol-compatible model."
+  },
+  "modelChoiceDelivery20261020": {
+    "source": "d53c20323923115607affd7a67643bf3b3ccc01f",
+    "codePr": "https://github.com/2NTTY/child-ai-caregiver/pull/246",
+    "mergedMaster": "de70e839f7eb4239fbd5fe09e8ccf9278ae48f82",
+    "observedAtUtc": "2026-10-20T14:07:54.041Z",
+    "approval": "The initial automatic review rejected this new private payload. The user explicitly approved this exact VM update and compatible OTA before upload.",
+    "transfer": {
+      "codeBytes": 9694588,
+      "webBytes": 4649992,
+      "androidFiles": 31,
+      "androidBytes": 13377999
+    },
+    "checks": [
+      "Web build and Android offline export passed; the first Web command was denied npm cache access before building, then the same build succeeded with approved filesystem access.",
+      "Candidate imports passed with networking disabled; no model call, data write or notification.",
+      "Existing VM identity and current base image IDs matched; no active Agent admission lease before switching.",
+      "API and worker became healthy; new Web HTML hash matched the local release and public health returned success.",
+      "Android artifacts matched the recorded hashes and existing runtime; one preview OTA published without rebuilding the APK."
+    ],
+    "deployment": {
+      "source": "d53c20323923115607affd7a67643bf3b3ccc01f",
+      "state": "deployed",
+      "apiImage": "sha256:93ebfdcc300bd419a018bfee5bb8e8f892aa65eee70ebbd90b06f80c05251915",
+      "webImage": "sha256:209c0e1f60b898fb38687ddbe2ff05da829840d236847558e79a3647242bd555",
+      "htmlHash": "7d99e6b816002171d1ad3324986f94edeff2945d1fa2722246bfc934b3e96366",
+      "modelCalls": 0,
+      "notificationsSentByAcceptance": 0,
+      "quotaChanged": false,
+      "rollback": "Pre-opening rollback only; retain compatible API after any new writes",
+      "phoneSettingsVerified": false,
+      "personalKeyGenerationVerified": false
+    },
+    "ota": {
+      "source": "d53c20323923115607affd7a67643bf3b3ccc01f",
+      "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "channel": "preview",
+      "state": "published-device-verification-pending",
+      "updates": [
+        {
+          "id": "01a159a6-ca09-7f17-84e2-04672b0c5e4e",
+          "group": "cfe20c62-9816-4d8e-8b5c-06bcf74ab266",
+          "runtimeVersion": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+          "platform": "android",
+          "createdAt": "2026-10-20T14:11:05.353Z"
+        }
+      ]
+    },
+    "androidRuntime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "cleanup": {
+      "scope": "Only this release code-build and web-build directories were removed after confirming their resolved paths. Archives, images and protected rollback configuration remain.",
+      "freeDiskBytes": 437288960
+    },
+    "modelCalls": 0,
+    "notificationsSent": 0,
+    "dataMigration": false,
+    "quotaChanged": false,
+    "acceptance": {
+      "newOtaReceivedOnDevice": "not-verified",
+      "personalKeyGenerationAndEmbedding": "not-verified; previous regional refusal retained",
+      "perModelLiveTests": "not-required-for-selecting-a-protocol-compatible-model; none-run"
+    }
   }
 }
