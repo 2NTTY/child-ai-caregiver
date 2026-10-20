@@ -2868,3 +2868,72 @@
 - 版本／方法：S05 `95f1f6f` 上獨立分支；Expo 57.0.24、expo-network 57.0.2（MIT）。React Native AbortSignal 缺 Web 靜態方法，改可清理 request controller，保留十秒期限及身份清理。
 - 實際結果：一條合成游標／失聯／遲到回應情景通過（8 次唯讀替身），兩個型別入口零診斷；沒有真機、雲端、模型或全量測試。[EV](artifacts/verification/S07_NATIVE_ONLINE_20261016.json)。
 - 未驗／交付：新套件需新 APK，不向舊 runtime 發 OTA；真機與 S04／S05 合併門檻保留。使用者離開時先準備後續獨立能力，不把本機結果當成手機通過。B 單作者交付，主模型 review，沒有子代理。
+<a id="log-20261014-p3-m01-chat-delivery-review"></a>
+## LOG-20261014-001
+
+- Recorded At：2026-10-14（Asia/Hong_Kong）
+- Work Date：2026-10-14
+- Step / Package：P3-M01
+- Executor：Cursor cloud agent（本 fork 實作）
+- Goal：只接上聊天交付的 Server 唯讀語義審核；不做 M02 編製或 M03。
+- AI Assistance：按已批准實作計劃接完成路徑、契約與合成測試。
+- Human Verification：未進行。真模型／真服務未跑。
+
+### Actual Work
+- 程式校驗之後、正式完成之前，由 Server 用同一 ModelGateway 與根預算做唯讀審核。決定只限 pass、revise、insufficient_evidence，並綁定草稿 hash、來源版本與範圍。
+- 每輪模型呼叫維持 4，不提高每日配額。審核占用剩餘一次；餘額不足則交付未完成，不另開 run。`AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS=6` 只在尚未綁定個人或平台上限時生效。
+- 生成角色不能自報免審。知識發布的 approve／hold 沒有復用。不宣稱臨床有效。
+
+### Changes
+- `server/chat-delivery-review.ts`、`server/product-agent.ts` 完成路徑、提示詞 `chat-delivery-review`、共享 binding schema，以及停止原因文案。
+
+### Verification
+- Requirement / Acceptance：REQ-P2M-04／AC-P2M-02 的合成範圍
+- Method：`node --experimental-test-module-mocks --test` 針對聊天交付審核、產品 Agent、提示詞接線與 AI 設定
+- Environment / Revision：本機合成 provider，零 Vertex／Gemini
+- Result：見本次 PR；真模型與線上驗收未執行
+- Evidence：本 PR 與上述腳本輸出
+
+### Failures / Corrections
+- 無真模型呼叫。M02「改一項、其餘保留」不在本包。
+
+### Next Step
+- 使用者批准後才做真模型或線上驗收。M02／M03 不在本分支開始。
+
+
+<a id="log-20261020-p3-m01-review"></a>
+## LOG-20261020-P3-M01-REVIEW
+
+- 使用者授權接手 #214／#215／#216 的 review、必要修正與合併；保留原作者。#214 基線 `294572c`，master `d4686b7`。
+- 修正審核錯用聊天摘要／能力上下文、背景 no_action 型別，以及只按模型文字免審；真收據固定回報由 Server 產生。分段 kind 納入綁定，提示詞預留審核餘額。
+- 6 項定向 scripted 核對通過；局部型別先遇既有測試的兩處 unknown 參數型別，統一原生 LlmResponse 後通過。沒有重跑產品全量、真模型、通知、雲端或部署。
+- 證據：[M01 review](artifacts/verification/P3_M01_PR_REVIEW_20261020.json)。真模型語義品質仍待驗；下一包 #215 依賴本包合併。
+
+<a id="log-20261020-p3-m02-review"></a>
+## LOG-20261020-P3-M02-REVIEW
+
+- 接續 #215 原 head `aff6804`，整合已合併 #214／`2f8e339`，保留原提交。補編製及審核輸出 schema、實際 run 模型綁定、原意圖／證據呼叫識別，以及已接受／略過／過期候選的真實回報。
+- 3 項定向 scripted 檢查通過；局部型別初次發現測試 fixture 的 3 處型別問題，修正後通過。審核 prompt 版本作來源記錄，policy 版本才是已保存審核的失效邊界；沒有找到現行跨 run 重用審核的路徑。
+- [review 證據](artifacts/verification/P3_M02_PR_REVIEW_20261020.json)。未跑真模型、雲端、瀏覽器、全量或部署；本次只交既有文件局部編製，完整真模型及新對話成果由本地角色整合接續。
+
+<a id="log-20261020-p3-m03-review"></a>
+## LOG-20261020-P3-M03-REVIEW
+
+- 接續 #216 最新 restack `eff2e66`，整合 #215 master `fbf5274`。保留原候選流程，修正 live fetch 關閉仍可呼叫網絡 port、PDF 頁窗缺失／越界未獨立攔截，以及 worker 替換改變邏輯工作 fingerprint。
+- 確認發布 lease 與實際持久寫入未原子綁定；未以多加一次檢查冒充 fencing。正式 live 發布在有副作用前明確停用，下一步須接正式交易／台帳與真模型；6 項舊模擬 live 測試保留為待接通，不算本輪通過。
+- 4 項定向 scripted 與局部 Server 型別通過；[review 證據](artifacts/verification/P3_M03_PR_REVIEW_20261020.json)。零真模型、外網抓取、雲端、通知及部署。合併只代表安全保留基礎，不代表 P3-M03 或四 Agent 目標完成。
+
+<a id="log-20261020-p3-m01-postmerge-review"></a>
+## LOG-20261020-P3-M01-POSTMERGE-REVIEW
+
+- Review D 的 #243／`d7da9b5`。移除待確認任務 fixture 中無關的保存記錄收據，避免只修測試而掩蓋產品接點；接入本地已核對的 Server 待確認狀態回覆。預算檢查改讀實際 manifest，不綁死版本號。
+- 三項受影響檢查中，摘要 fixture 首次仍期待零次確認讀取；修正為一次真狀態讀取後，只補該項並通過。局部 Server 型別通過，不全量、不追加模型／通知或部署。
+- [核對證據](artifacts/verification/P3_M01_POSTMERGE_REVIEW_20261020.json)。復用本地整合 `e7279a3` 的確認邊界及真編製證據，不將本地分支成功寫成 master 或線上驗收。
+
+<a id="log-20261020-s04-review-feedback-integration"></a>
+## LOG-20261020-S04-REVIEW-FEEDBACK-INTEGRATION
+
+- 基線：Android PR #229 `9e1a9e7` 與 master `3795858`。保留已合併角色成果及 Android 共用停止原因；將 `delivery_review_incomplete` 放回共用文案，API 保存與 Web／Android 投影不各自維護另一份停止原因。
+- 必要檢查：只跑既有停止／保存／原結果重讀情景，加入真投影的審核原因斷言，1項通過。局部型別初次發現新增 fixture 漏填 `provenance`，補明確 `null` 後只重跑型別並通過；沒有再跑模型、產品全量或畫面驗收。
+- WORKLOG 核對初次錯把舊合併歷史視為純尾部追加；查明先前分支合併已插入歷史段落，改核完整原 Android 檔案與 master 新增尾部，兩者原文均保留。PLAN／STATUS 只解決現行入口衝突，沒有把後續 draft 或真機 gate 改為完成。
+- 未部署、未新增模型／通知或雲端資料寫入；#229 首條真機聊天／重開讀回待驗，正式合併仍按原門檻。
