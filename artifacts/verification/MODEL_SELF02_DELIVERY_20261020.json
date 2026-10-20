@@ -387,5 +387,40 @@
         "bytes": 261786994
       }
     ]
+  },
+  "modelChoiceAndroidAcceptance20261020": {
+    "observedAt": "2026-10-20T14:38:44Z",
+    "source": "d53c20323923115607affd7a67643bf3b3ccc01f",
+    "environment": "Existing physical Android device, APK versionCode 2, production API; user confirmed unlocked",
+    "publishedOtaGroup": "cfe20c62-9816-4d8e-8b5c-06bcf74ab266",
+    "initialObservation": "Previous OTA UI still running; no direct model ID field",
+    "afterUpdate": "Direct model ID field and reference-catalog explanation visible after download and cold launch",
+    "checks": {
+      "directModelIdFieldVisible": true,
+      "personalDraftOnlyNoKeyEntered": true,
+      "restoredPlatformDraftBeforeSave": true,
+      "saveSubmissions": 1,
+      "settingsVersionBefore": 0,
+      "settingsVersionAfter": 1,
+      "coldLaunchThenSettingsVersion": 1,
+      "modeAfter": "platform",
+      "modelAfter": "gemini-3.1-flash-lite",
+      "keyConfiguredAfter": false,
+      "authenticatedAfterColdLaunch": true
+    },
+    "quotaValuesChanged": false,
+    "modelCalls": 0,
+    "notificationCalls": 0,
+    "localOnlyEvidence": {
+      "new-model-field.png": "9986b2dbb16629801c6c375fdcbd47a2963ff00c510c0080b064c9eb6bae82b7",
+      "saved-version1.xml": "e2e771d4d9ceeaeede772a9a172c9cd450189873e60fddc52f328928776a6780",
+      "reopened-version1.xml": "c4c958234f9f450a79686c721d55ae8120f4e77f6cf728d15f56c5334abe365a"
+    },
+    "notProven": [
+      "Personal API key and seven-limit save on the physical device",
+      "Live personal-key generation and embedding",
+      "Exact running OTA update ID from device runtime metadata"
+    ],
+    "privacy": "Screenshots and UI trees remain in ignored local storage; no user or child content is included here"
   }
 }
