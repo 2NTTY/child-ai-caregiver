@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S04-W01",
-  "recordedOn": "2026-10-15",
+  "workPackage": "S07-W01",
+  "recordedOn": "2026-10-16",
   "scope": "Original licenses for selected direct dependencies and explicitly inventoried transitive packages; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "46d3725e8c611104b17731e16560c258f18b83ad6027d1d7ddb67aecfa4d225d"
+    "sha256": "28b40944ab91aff5d01754e1cb012c090867155b3673a2f824af679553203721"
   },
   "packages": [
     {
@@ -1026,6 +1026,26 @@
       "files": [
         {
           "path": "licenses/expo-crypto/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-network",
+      "version": "57.0.2",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-network"
+      },
+      "tarball": "https://registry.npmjs.org/expo-network/-/expo-network-57.0.2.tgz",
+      "integrity": "sha512-BfK1kdftZcM6o9o1FAG7/y0l6vWX0n8td0M5lwkvaMeRXZ9LkRwOi9CQXwvsMTQGQiPwtQXgwiAze13cqjt75g==",
+      "files": [
+        {
+          "path": "licenses/expo-network/LICENSE",
           "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
           "source": "LICENSE"
         }

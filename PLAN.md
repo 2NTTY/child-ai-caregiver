@@ -1059,9 +1059,11 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s07-w01"></a>
 #### S07-W01 App／Web 在線同步
 
-- 階段／狀態：P3；未開始（Web 子範圍已有證據）。
+- 階段／狀態：P3；程式及最低本機檢查已完成，待新版 APK／跨端真機；分支 `codex/s07-w01-native-online` 基於 S05 `95f1f6f`（draft #234），依使用者允許先準備獨立工作，合併仍等 S04／S05。
 - 前置：S05-W03、S07-W03、P2-F08。
 - 交付：AppState／網絡 adapter 接 Query、changes cursor；背景停輪詢／前景核對，跨端同版本、原操作恢復及身份清理，不建離線重送。
+- 本輪接點：共用 metadata observer 接 Web 可見事件及 Android AppState／expo-network；前景五秒核對，背景／離線停止，恢復以同一權威服務讀回。原生取消使用可清理的 AbortController／timeout，不假定有瀏覽器 AbortSignal.any／timeout。只取消讀取，不重送業務操作。
+- 證據：一條游標／變更／失聯／遲到讀取情景與兩個型別入口通過，零雲端／模型／手機；[S07 EV](artifacts/verification/S07_NATIVE_ONLINE_20261016.json)。新增原生套件必須新 APK，不能向舊 runtime 直接發 OTA；後續原生功能合併建置以免重複。
 - gate：復用三條情景中的共用更新／版本衝突／原 opId 查回，不重驗全部 Firestore。
 
 <a id="s09-w03"></a>

@@ -2860,6 +2860,14 @@
 - 沿使用者允許的待人工期間先做獨立工作，基於 S04 `9e1a9e7` 準備 S05；不提前合併依賴。無效／到期 SecureStore 憑據清理後恢復登入，新會話交換拒絕舊請求遲到回應；真正儲存 I/O 故障仍報錯，不誤刪有效憑據。
 - 復用既有 Server 身份／撤銷與逐裝置台帳、Android 備份排除及來源隔離；沒有把 SDK 暫時 sign-out 改成網站會話清理。
 - 只跑原生正式 Node／API 情景與本包憑據生命週期情景，共兩項通過；兩個受影響型別入口零診斷。沒有操作手機、真模型、雲端或全量測試；客戶端發布與真機結論待後續同批交付。[證據](artifacts/verification/S05_NATIVE_LIFECYCLE_20261016.json)。
+
+
+## LOG-20261016-S07 — 原生在線同步接線準備
+
+- 原因／範圍：Android 未啟動 Web 的 changes cursor。沿同一 metadata／權威讀取抽出 observer，接 AppState／expo-network；背景與離線停讀、前景核版本，無離線重送或新業務副本。
+- 版本／方法：S05 `95f1f6f` 上獨立分支；Expo 57.0.24、expo-network 57.0.2（MIT）。React Native AbortSignal 缺 Web 靜態方法，改可清理 request controller，保留十秒期限及身份清理。
+- 實際結果：一條合成游標／失聯／遲到回應情景通過（8 次唯讀替身），兩個型別入口零診斷；沒有真機、雲端、模型或全量測試。[EV](artifacts/verification/S07_NATIVE_ONLINE_20261016.json)。
+- 未驗／交付：新套件需新 APK，不向舊 runtime 發 OTA；真機與 S04／S05 合併門檻保留。使用者離開時先準備後續獨立能力，不把本機結果當成手機通過。B 單作者交付，主模型 review，沒有子代理。
 <a id="log-20261014-p3-m01-chat-delivery-review"></a>
 ## LOG-20261014-001
 

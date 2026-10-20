@@ -14,6 +14,7 @@ The exact dependency tree and registry integrity values are recorded in [package
 | @expo/metro-runtime | 57.0.16 | MIT | [LICENSE](licenses/expo-metro-runtime/LICENSE) |
 | expo | 57.0.24 | MIT | [LICENSE](licenses/expo/LICENSE) |
 | expo-crypto | 57.0.3 | MIT | [LICENSE](licenses/expo-crypto/LICENSE) |
+| expo-network | 57.0.2 | MIT | [LICENSE](licenses/expo-network/LICENSE) |
 | expo-secure-store | 57.0.4 | MIT | [LICENSE](licenses/expo-secure-store/LICENSE) |
 | expo-updates | 57.0.23 | MIT | [LICENSE](licenses/expo-updates/LICENSE) |
 | expo-constants | 57.0.19 | MIT | [LICENSE](licenses/expo-constants/LICENSE) |
