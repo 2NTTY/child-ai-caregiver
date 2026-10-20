@@ -673,6 +673,15 @@ Agent 工具、準備單、成長頁及歷史共用 FamilyDocumentStore；前端
 <a id="firestore-target"></a>
 ## 原網站的 Firestore、Firebase Auth 與工作接點
 
+<a id="local-agent-runtime"></a>
+### 本機開發的同一正式組裝
+
+開發入口沿 `openFirebaseRuntime`、ADK／ModelGateway、Prompt Pack、領域服務及正式 Web。只有明確的非 production、loopback、`demo-` 專案才可注入本機 Auth／Firestore／Storage 及模型憑證接點；缺 emulator 直接失敗，資料專案與 Vertex 模型計費專案分開。正式啟動拒絕本機旗標／emulator 設定，不提供免登入 API。本人合成帳號仍經准入、政策同意、裝置會話及原操作收據。
+
+每個 worktree 使用自己的端口、資料目錄及 session cookie 名稱；cookie 本身不按端口隔離，不能共用正式 `__session`。本地背景入口只替換 Tasks／Scheduler 喚醒，復用同一 consumer、claim、generation、取消及 unknown 規則。正式環境不載入本地診斷端點；外發停用，不能把本地捕獲當成渠道接受。
+
+Auth／Firestore／Storage 快照用於本地重啟，不代替正式備份或崩潰持久性。Storage Emulator 的 generation 限制由單一本機 runtime 的薄 adapter 補齊，不作多副本競爭或 IAM 證據。模型費用仍經原用量台帳；普通啟動不自動跑驗收或重建向量。操作及能力邊界見[本機入口](AGENT_LOCAL.md)，實際門檻見 PLAN。
+
 本節保留待完成的遷移契約；F01／F02 已合併，F03 核心資料與聊天接線中，不能把目標當全量接通。沿用 Node、ADK／ModelGateway、領域服務、加密及前端 owner，只改必要資料／身份／工作接點。工作包及切換順序見 [PLAN](../PLAN.md#p2-firestore-migration)，資料與 HTTP 語義見 [DATA_MODEL](DATA_MODEL.md#firestore-target)／[API](API.md#firestore-target)。
 
 依 [ADR-025](DECISIONS.md#adr-025)，先完成全部正式 SQL 依賴替換與 GCP Firestore 資料接點，再驗收受邀用戶及切換原站。可從乾淨資料開始，無須保存或搬遷舊 SQL 測試資料；不以此取消新資料的隔離、收據、刪除及恢復。API／前端契約持續兼容，不要求每個資料域獨立部署或增加一套產品網站。

@@ -3113,6 +3113,21 @@
 - 手機仍鎖定，未追加設備操作。沿既有批准補一個本機Chromium 153.0.8010.12流程：17-byte任意檔案原始bytes讀回，正式Web錄音controller取得2220ms WebM、停止咪高峰、瀏覽器播放前進，正式Server音訊解析接受。零雲端、模型、通知及業務寫入，沒有全量測試。
 - 首次完整元件harness封裝遇Expo server-only／JSX差異，未作UI證據；沒有為此改產品或依賴，改用正式adapter直接核實瀏覽器與Server編碼相容性。不能代替正式頁面、上傳／下載或跨端驗收。原始結果與source hash追加於[S12 EV](artifacts/verification/S12_CHAT_FILES_20261018.json)。
 - 使用者其後要求盡快收尾轉往其他工作；停止追加測試，只保存本輪結果。Android待驗、PR依賴及既有延後事項保持，沒有標成全部完成。
+
+
+<a id="log-20261018-dev-agent01-local"></a>
+### LOG-20261018-DEV-AGENT01-LOCAL
+
+- 按使用者批准先交付同一正式四 Agent 的本地環境，再接個人模型；本包 A 單人主責／提交。基線 `3c4fff6`／draft #239，重核 master `d4686b7`；Android 前置及協作者 #214～#216 保留，不擅自合併。Astra 主模型實作與 review，Luna 只核既有官方種子證據。
+- 新增 `npm run agent:local`，固定 Firebase CLI 15.34.0／Java21，使用 per-worktree demo Auth／Firestore／Storage、獨立 cookie、受保護快照及原 Web。原身份、准入、權限、交易、收據、加密及業務 consumer 不另造；模型接 Gemini key 或本機 Vertex ADC，正式入口拒絕本地設定。Prompt Pack 按正式逐輪載入，Web／Server 沿已有熱更新／watch；初次知識以明確命令最多生成一段已核對官方來源向量。
+- 最少檢查：隔離設定及 cookie 各一項、受影響型別、diff 通過；正式資料保存／原操作重試／匿名拒絕、物件版本接點、原生向量查詢與重啟讀回通過。一次真 Agent 為4生成／4工具／1查詢 embedding，另1次種子 embedding；Web 正常登入並顯示同一已保存問答，零追加模型。只核局部，沒有全量、壓測、Computer Use、通知或部署。
+- 原失敗保留：命名 emulator DB 不在標準匯出內，改只限本地 default 後核讀回；Windows 第二CLI匯出退出 assertion 改同版本 Hub API；Storage emulator 忽略 precondition，以單 runtime 薄 adapter 補齊。全局 ADC 指向不存在檔案，確認該次未出網後保留原用量／恢復證據，只恢復精確未執行向量佔位，再用本人有效本機 ADC 一次完成。正式憑據／資料未改。全 Server 型別原有測試／NodeNext 錯誤不作本包廣泛修正。
+- 真模型雖正常回覆及引用，準備單只停留文字草稿，沒有實際文件資源，不計編製／審核或四角色聯合通過。非郵件本地收件箱、完整附件業務流程及角色聯合仍待補，Gemini key 真服務亦不能由 Vertex ADC 結果代替。本機服務已正常停止及保存；操作見[指南](docs/AGENT_LOCAL.md)，版本、counts、限制及失敗見[DEV01 EV](artifacts/verification/DEV_AGENT01_LOCAL_20261018.json)。
+
+### LOG-20261018-DEV-AGENT01-ARTIFACTS
+
+- 接續 `19d5373`／draft #241，只補一個零模型本地 client 流程：同一準備單修改及重新讀取，舊版本拒絕；極小文字附件經正式加密服務保存、讀回、刪除後拒絕正文。run `f26b6c03-6f48-4c27-b988-cb826a076494` 共19次API通過，零模型／通知／雲端／瀏覽器。初次命令因 sandbox 無法讀受保護合成設定，未開始業務呼叫；使用本機已授權身份後只執行一次流程。
+- 只證明目前分支的文件與附件接線，未驗照片／錄音／PDF全部路徑、實體清理或真模型編製／審核。協作者 #214／#215 已有真模型入口，#216 仍有 programmatic stub／dry-run 邊界；沒有接管角色。服務已正常停止及保存，原失敗與 Android／PR 前置保持。
 <a id="log-20261014-p3-m01-chat-delivery-review"></a>
 ## LOG-20261014-001
 

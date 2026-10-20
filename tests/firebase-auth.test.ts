@@ -111,6 +111,19 @@ async function responseCode(response: Response, status: number, code: string) {
   assert.equal(response.headers.has("set-cookie"), false);
 }
 
+test("local worktrees use distinct session cookies without changing production authentication", async () => {
+  const f = fixture(), publicOrigin = 'http://127.0.0.1:23390';
+  const first = createFirebaseAuthPort({ ...f.options, publicOrigin, production: false, localCookieName: '__local_session_aabbccdd' });
+  const second = createFirebaseAuthPort({ ...f.options, publicOrigin, production: false, localCookieName: '__local_session_11223344' });
+  const reply = await first.handler(new Request(publicOrigin + '/api/auth/session', { method: 'POST',
+    headers: { Origin: publicOrigin, 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken: f.firstToken }) }));
+  const cookie = cookieOf(reply);
+  assert.ok(cookie.startsWith('__local_session_aabbccdd='));
+  assert.equal((await first.getSession({ headers: new Headers({ Cookie: cookie }) }))?.user.id, f.userId);
+  assert.equal(await second.getSession({ headers: new Headers({ Cookie: cookie }) }), null);
+  assert.throws(() => createFirebaseAuthPort({ ...f.options, localCookieName: '__local_session_aabbccdd' }));
+});
+
 test("Firebase auth composition is inert, production defaults secure, and only explicit local development allows HTTP", async () => {
   const f = fixture(); assert.equal(f.calls.length, 0); assert.equal(f.records.size, 0);
   for (const publicOrigin of ["http://127.0.0.1:3000", "http://remote.example.test", PUBLIC_ORIGIN + "/", "bad-url"]) {

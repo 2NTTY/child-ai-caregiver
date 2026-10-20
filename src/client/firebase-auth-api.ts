@@ -1,11 +1,11 @@
 import type { NativeSessionExchange } from "./native-session-transport.ts";
 import { initializeApp } from "firebase/app";
-import { confirmPasswordReset, createUserWithEmailAndPassword, getIdToken, inMemoryPersistence, initializeAuth,
+import { connectAuthEmulator, confirmPasswordReset, createUserWithEmailAndPassword, getIdToken, inMemoryPersistence, initializeAuth,
   reload, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, updateProfile, type User } from "firebase/auth";
 import { ClientApiError, createRecordsApi, type RecordsIdentityAdapter, type SessionUser } from "./records-api.ts";
 import type { AccountIdentityAdapter } from "./account-auth-api.ts";
 
-export interface FirebasePublicConfig { apiKey: string; authDomain: string; projectId: string; appId: string }
+export interface FirebasePublicConfig { apiKey: string; authDomain: string; projectId: string; appId: string; authEmulatorUrl?: string }
 export interface FirebaseIdentityUser { readonly uid: string; readonly email: string | null; readonly emailVerified: boolean }
 /** The SDK port exists for bounded offline verification; it never represents the business session. */
 export interface FirebaseIdentitySdk {
@@ -48,12 +48,19 @@ function validate(options: Options): { apiUrl: string; continueUrl: string } {
     || !/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/u.test(config.projectId)
     || !/^1:[0-9]+:web:[a-f0-9]+$/iu.test(config.appId)
     || config.authDomain !== config.projectId + ".firebaseapp.com" && config.authDomain !== origin.hostname) throw unavailable();
+  if (config.authEmulatorUrl !== undefined) {
+    const emulator = new URL(config.authEmulatorUrl);
+    if (!local || origin.protocol !== 'http:' || !config.projectId.startsWith('demo-')
+      || emulator.protocol !== 'http:' || emulator.hostname !== '127.0.0.1' || !emulator.port
+      || emulator.origin !== config.authEmulatorUrl || emulator.username || emulator.password) throw unavailable();
+  } else if (config.projectId.startsWith('demo-')) throw unavailable();
   return { apiUrl: origin.origin + "/api", continueUrl: origin.origin + "/?account=verified" };
 }
 
 function nativeSdk(config: FirebasePublicConfig): FirebaseIdentitySdk {
   const app = initializeApp(config, "yuban-browser-auth-" + ++appSequence);
   const auth = initializeAuth(app, { persistence: inMemoryPersistence });
+  if (config.authEmulatorUrl) connectAuthEmulator(auth, config.authEmulatorUrl);
   return {
     currentUser: () => auth.currentUser,
     signIn: async (email, password) => (await signInWithEmailAndPassword(auth, email, password)).user,

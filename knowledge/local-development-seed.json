@@ -1,0 +1,42 @@
+{
+  "sourceId": "fhs-solid-food",
+  "versionHash": "0a48bc97b55de72d7589e1021dbaa825ccfc9838d11ea93ea191aa25e3d61816",
+  "reviewedOn": "2026-10-11",
+  "evidence": "artifacts/verification/F02_FIREBASE_PREFLIGHT_20261011.json#knowledgePreparation",
+  "scope": "只供具署名的非商業本地開發；保留既有固定版本核對，不表示啟動時重新查核官方網站或涵蓋全部語料。",
+  "assessment": {
+    "comparedVersionId": null,
+    "comparedHash": null,
+    "observationHash": null,
+    "changes": [
+      {
+        "key": "starting-solids",
+        "oldQuote": null,
+        "newQuote": "未足四個月大的寶寶不應吃奶以外的食物",
+        "meaning": "new",
+        "explanation": "Firebase 乾淨起點的首版來源。已對照官方現行 02/2026 版，保留四個月禁限與六個月引入的不同含義；不是舊私人資料搬遷。"
+      }
+    ],
+    "checks": {
+      "age": "官方正文区分未足四個月與六個月；檢索範圍 0–12 個月只供查找，不是所有月份都應開始加固。",
+      "numbersAndUnits": "只保存月齡門檻，沒有自行加入份量、頻率或個人化營養數值。",
+      "timing": "約六個月時開始固體食物，按適應由稀滑漸進至較稠；不能把未記錄等同尚未加固。",
+      "conditions": "一般嬰幼兒餵養資訊；原片段及香港地區／feeding 主題條件保留。",
+      "exceptions": "未提供個別過敏、早產或疾病處方；有疑問沿原文詢問醫護人員。",
+      "prohibitions": "保留未滿四個月不加入奶以外食物的限制，不能只抽出開始加固的建議。",
+      "withdrawal": "2026-10-11 官方頁仍可讀且顯示 02/2026 修訂內容；未見該頁撤回標示，後續仍以發佈/停用閘為準。"
+    },
+    "questions": [
+      {
+        "query": "BB 幾時開始加固？未足四個月可以嗎？",
+        "expectedKeys": [
+          "starting-solids"
+        ],
+        "reason": "同次檢索需同時取回一般引入時點及較小月齡的禁限。"
+      }
+    ],
+    "growthRuleImpact": "none",
+    "growthRuleReason": "本次只匯入已核對公共來源作隔離驗收，不更改成長規則或觸發個人提醒。",
+    "decision": "approve"
+  }
+}

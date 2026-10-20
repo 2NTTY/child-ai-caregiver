@@ -121,3 +121,8 @@ P2-F01 adds the unmodified Firebase Admin SDK 14.5.0 (Apache-2.0, Node >=22) for
 ## Shared voice input
 
 Expo Audio 57.0.5 is used unmodified under MIT; its [original license](licenses/expo-audio/LICENSE) is retained. Server-side media probing uses unmodified Mediabunny 1.61.5 under [MPL-2.0](licenses/mediabunny/LICENSE). Its complete corresponding source is included in the [original npm package](https://registry.npmjs.org/mediabunny/-/mediabunny-1.61.5.tgz) and maintained at [Vanilagy/mediabunny](https://github.com/Vanilagy/mediabunny). No Mediabunny source files are modified or bundled into the mobile client. The local WebM final-packet timing calculation implements RFC 6716 section 3; it does not copy a third-party decoder.
+
+
+## Local Firebase development tools
+
+The unmodified `firebase-tools` 15.34.0 CLI is a development-only dependency under MIT. Its original [license](licenses/firebase-tools/LICENSE) and package integrity are retained in the license manifest and lockfile. Only its Auth, Firestore and Storage emulators are launched; the CLI's optional platform features are not product services. Emulator binaries are downloaded by the official CLI and are not redistributed in this repository. Transitive dependencies retain their upstream notices; this entry is not a complete transitive-license audit.

@@ -1,0 +1,189 @@
+{
+  "workPackage": "DEV-AGENT01",
+  "recordedOn": "2026-10-18",
+  "status": "local-foundation-verified-role-integration-pending",
+  "baseCommit": "3c4fff63fc7be6795b854d85f2c25c2f5a318aad",
+  "remoteMaster": "d4686b7ff864642aaa964ca3adae9d64b52b6fa5",
+  "dependency": "Unmerged Android draft #239 and its stack; collaborator #214/#215/#216 unchanged.",
+  "environment": {
+    "node": "24.19.0",
+    "java": "21.0.12.1",
+    "firebaseTools": "15.34.0",
+    "data": "loopback demo project; default database; Auth/Firestore/Storage emulators",
+    "model": "gemini-3.1-flash-lite via developer local Vertex ADC",
+    "knowledge": "one reviewed fhs-solid-food section; no full-corpus or new-website review"
+  },
+  "checks": [
+    {
+      "run": "d5388d4e-e999-43e8-82cc-1991f25016df",
+      "status": "passed",
+      "calls": 8,
+      "steps": [
+        "emulator-login-through-production-session-and-admission",
+        "production-save-original-operation-replay-and-readback",
+        "anonymous-data-read-rejected",
+        "emulator-object-create-only-pinned-read-and-delete",
+        "emulator-native-findNearest-supported"
+      ]
+    },
+    {
+      "run": "557f9a0b-9748-4598-8522-e3b3ffffd284",
+      "status": "passed",
+      "calls": 7,
+      "steps": [
+        "emulator-login-through-production-session-and-admission",
+        "production-save-original-operation-replay-and-readback"
+      ]
+    },
+    {
+      "run": "7194d7d7-7d2a-43c7-9f96-55f11d1d8e2c",
+      "status": "passed",
+      "calls": 4,
+      "steps": [
+        "emulator-login-through-production-session-and-admission",
+        "restarted-auth-session-production-data-and-original-receipt-readback"
+      ]
+    },
+    {
+      "run": "bdc3fbe6-4322-4a93-a43d-a7b03a7f13f8",
+      "status": "passed",
+      "calls": 5,
+      "steps": [
+        "emulator-login-through-production-session-and-admission",
+        "restarted-auth-session-production-data-and-original-receipt-readback"
+      ]
+    },
+    {
+      "run": "5bf29aa8-281f-4ecc-bc14-6194172701b8",
+      "status": "passed",
+      "calls": 13,
+      "steps": [
+        "emulator-login-through-production-session-and-admission",
+        "production-save-original-operation-replay-and-readback",
+        "same-production-client-agent-real-provider-citation-and-saved-history"
+      ],
+      "agent": {
+        "runId": "793207d5-7989-46ab-b697-0aa1372c48fb",
+        "status": "completed",
+        "stopReason": null,
+        "counts": {
+          "modelCalls": 4,
+          "toolCalls": 4,
+          "queryEmbeddings": 1
+        },
+        "tools": [
+          {
+            "name": "search_knowledge",
+            "status": "succeeded"
+          },
+          {
+            "name": "load_capabilities",
+            "status": "succeeded"
+          },
+          {
+            "name": "present_answer",
+            "status": "succeeded"
+          }
+        ],
+        "citations": [
+          {
+            "sourceId": "fhs-solid-food",
+            "versionId": "aee84bd5-ad31-5f74-aad2-5e8463bcab01",
+            "chunkId": "150a6a19-bb77-55d0-8850-c121d05be4a8"
+          }
+        ]
+      },
+      "progress": "Events arrived; original harness mistakenly read type instead of phase. Corrected without another paid run; individual phases not asserted."
+    },
+    {
+      "kind": "headless-local-Web",
+      "status": "passed",
+      "browser": "153.0.8010.12",
+      "path": "/chat",
+      "signedIn": true,
+      "savedMessageAndReplyVisible": true,
+      "javascriptErrors": [],
+      "apiRequests": 69,
+      "modelRequests": 0,
+      "note": "One prior login-only check made six API requests. Follow-up read existing saved content only."
+    },
+    {
+      "kind": "production-local-document-and-attachment",
+      "run": "f26b6c03-6f48-4c27-b988-cb826a076494",
+      "status": "passed",
+      "apiCalls": 19,
+      "modelCalls": 0,
+      "notifications": 0,
+      "results": [
+        "same-document-create-patch-readback",
+        "stale-document-version-rejected",
+        "encrypted-attachment-upload-readback-delete",
+        "deleted-content-rejected"
+      ],
+      "limitations": [
+        "No real model composition or review",
+        "No browser/media/PDF coverage implied",
+        "No physical cleanup worker assertion"
+      ]
+    }
+  ],
+  "static": {
+    "isolatedConfigurationGuard": "one targeted test passed",
+    "localCookieIsolation": "one targeted firebase-auth test passed",
+    "targetedTypecheck": "passed after final local API/worker/auth changes",
+    "fullServerTypecheck": "not passing; pre-existing test/NodeNext/frontend diagnostics outside this package, no broad fixes or full-suite retry",
+    "diffCheck": "passed"
+  },
+  "providerCalls": {
+    "successfulGenerationAttempts": 4,
+    "successfulEmbeddingAttempts": 2,
+    "split": "one explicit seed document embedding plus one Agent query embedding",
+    "failedLocalReservedAttempt": "one seed attempt failed before network because an inherited explicit ADC path did not exist; original usage was retained",
+    "realNotifications": 0,
+    "GcpDeploymentOrDataWrites": 0
+  },
+  "failuresAndCorrections": [
+    {
+      "issue": "named emulator database not included in standard CLI export",
+      "resolution": "isolated local default database; production named database unchanged; save/restart/readback verified"
+    },
+    {
+      "issue": "Windows second CLI export process asserted UV_HANDLE_CLOSING after export",
+      "resolution": "same fixed CLI Hub export protocol, three manifests checked, periodic checkpoint and stop exit 0 verified"
+    },
+    {
+      "issue": "Storage Emulator ignored generation preconditions",
+      "resolution": "single-local-runtime object queue and pinned metadata checks; not cloud concurrency evidence"
+    },
+    {
+      "issue": "inherited explicit ADC file missing",
+      "resolution": "verified default local ADC and configured only process-local path; archived the exact known non-executed vector placeholder before one authorized recovery; did not reset usage; launcher now fails before claiming when an explicit path is absent"
+    },
+    {
+      "issue": "model produced only textual preparation draft",
+      "resolution": "preserved successful chat/source evidence; not counted as document creation, review, or four-role acceptance; no repeat model run"
+    }
+  ],
+  "remaining": [
+    "DEV-AGENT02 collaborator role integration and real review/compile/background flows",
+    "Non-email local notification inbox; all external channels stay disabled",
+    "Gemini API key real-service compatibility not proven by Vertex ADC",
+    "Prompt/code hot reload wiring exists; no extra paid before/after model comparison",
+    "No GCP IAM, Cloud Tasks OIDC, real notification, production restore or Android acceptance implied",
+    "No full suite, stress test, compatibility matrix or Computer Use"
+  ],
+  "sourceHashes": {
+    "scripts/agent-local.mjs": "2287d8b42e7979295ddfee6d4b1b0008240321ef0a677316fc1821bd6c1ce548",
+    "scripts/agent-local-knowledge.mjs": "50bb7a6e948e946f2e89920718bc2078faebcbe618aa7b2ef6971b96bbc373ec",
+    "scripts/verify-agent-local.mjs": "3a377ee0194c75f7a76f58ac3d1e0e8b906eecef7c4b2ba7c4ca1935340e1eb1",
+    "server/local-agent-config.ts": "c7854fd7694c5fad71b3c5075226363df6cf61d6d4188fa7fa139aa6321d95ca",
+    "server/local-agent-main.ts": "2fa9323bf66f89e650b259b72bd75c306334aff04c3bfff083c609c69eae7958",
+    "server/local-agent-worker.ts": "73c55d60ce9486d9caeb2de6db0c9cad6e8086023615c5df95a308f46b2f751d",
+    "server/local-agent-storage.ts": "55a30ab2574c9933c876468be18d35e3f463bf6a177d4f9fd2bc67348aace4a8",
+    "server/firebase-worker-services.ts": "ce43683fb2787c743964669ea9fd7e5ce78f143d2c841dbb668623a614ef1837",
+    "server/firebase-runtime.ts": "73f3df2eccb3c56e295d2435367901d7f3e2312b256d24b8c239991f39356ea1",
+    "server/firestore-model-routing.ts": "daf0d3f663c3370ed3c60094a2209ee7e5970635331be4366f39a4265fc05919",
+    "src/client/firebase-auth-api.ts": "213de14906ccbb2adfa9bebeff347a262d5dae8aea16e9d852ceae52dc5a13c5",
+    "knowledge/local-development-seed.json": "2e2769eaa8a03b0fae4b6c0cd7eb0a6af7a35e297c7a47166a0e709661b6e3ce"
+  }
+}

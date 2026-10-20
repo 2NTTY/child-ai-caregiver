@@ -45,12 +45,14 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
   sources?: FirestoreSharedInputStore; concerns?: FirestoreConcernStore; growth?: FirestoreGrowthStore;
   /** Trusted constructor seam for a bounded scripted Runner check; never HTTP-selected. */
   platformProvider?: AgentModelProvider;
+  /** Trusted local credential adapter; all normal routing, budgets and business services still apply. */
+  platformProviders?: import('./firestore-model-routing.ts').PlatformProviderFactory;
   diagnostics?: (event: AgentDiagnostic) => void | Promise<void>;
 }) {
   const manifest = JSON.parse(await readFile(new URL('../prompts/manifest.json', import.meta.url), 'utf8')) as { version?: unknown };
   if (typeof manifest.version !== 'string' || !/^\d+\.\d+\.\d+$/u.test(manifest.version)) throw new Error('Invalid prompt manifest');
   const promptPackVersion = manifest.version;
-  const routing = createFirestoreModelRouting(options, options.config);
+  const routing = createFirestoreModelRouting(options, options.config, options.platformProviders);
   const voiceTranscripts = options.voices ? createFirestoreVoiceTranscripts({ ...options, voices: options.voices }) : undefined;
   const services = createFirestoreProductAgentStore({ ...options, transcripts: voiceTranscripts, readInteractiveRunSeconds: routing.readInteractiveRunSeconds, async validateKnowledge(binding, sourceId) {
     if (!options.knowledge) domainReject('knowledge_not_ready', 503);

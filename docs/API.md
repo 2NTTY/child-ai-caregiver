@@ -1006,3 +1006,15 @@ OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 P
 `read_chat_file` 僅供本人互動Agent，使用 `id`／`expectedVersion` 及可選 `page`／`offset`；Server核對已提交訊息、孩子與版本，抽取後再次核對，再返回私人原件及範圍資訊。工具結果不是官方知識引用或使用者新授權，不向背景共享流程暴露。沒有正文的單獨附件亦可提交，Agent按同一訊息處理。
 
 帳戶匯出增加 `files`／`file_content`（內容每頁一份）；讀取沿同一授權及刪除屏障。Web／Android由同一 `ChatFileUploadController` 保存原預留／unknown狀態；下載原檔另核目前版本，頁面不維護第二份可寫附件。
+
+
+<a id="local-agent-development"></a>
+### 本機開發端點與正式 API
+
+`npm run agent:local` 的 Web 與 API 共用 loopback origin；業務仍使用原 `/api/*`，正常 session、准入、目前身份、確認、版本及原 opId 檢查不變。只有這個明確開發入口提供以下唯讀、no-store 端點，正式 Node handler 不提供：
+
+- `GET /__local/status`：分支、SHA、dirty、模型、Prompt Pack、角色與環境邊界；不是四角色已驗證的聲明。
+- `GET /__local/events`：最多最近 200 個既有診斷 metadata；不回傳內部思考、工具參數或私人正文。
+- `GET /__local/inbox`：Auth Emulator 最近最多 20 個驗證／重設操作連結，明示未實際寄信。連結視為本地憑證，不分享或存進工程證據。非郵件投遞仍停用，不能假報收到。
+
+本機端點核對 loopback Host／Origin；受保護快照、合成帳號密碼及模型 key 不經前端設定端點提供。各 worktree 使用獨立 cookie 名稱，瀏覽器不能以另一端口的 session 當作本 worktree 身份。模型更改、斷線及程序重啟仍先查原 run，不以本地模式自動重送操作。設定與限制見[操作說明](AGENT_LOCAL.md)。

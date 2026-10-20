@@ -314,3 +314,11 @@ S12 音訊模型接線（2026-10-16）：沿既有 ADK 2.1.0／GenAI 2.24.0／Ge
 Word `.docx` 採固定 `mammoth 1.13.0`（BSD-2-Clause）`extractRawText`，不渲染HTML、執行文件或開放外部檔案；舊 `.doc` 不冒稱相容。沿用其已有 `jszip 3.10.2`（MIT／GPL-3.0雙授權，使用MIT條款）並列為直接依賴，以公開nodeStream逐塊核對解壓量，再抽取同一原檔。Node24需用Readable.wrap接駁該版本的舊式stream，不把它直接當async iterator。兩者原碼及license不修改。
 
 解析放在有時間／記憶體上限的worker，只回有界文字及續讀位置；PDF沿既有pdfjs／knowledge-pdf逐頁方法，文字型檔案使用UTF解碼。採用依據：[Mammoth](https://github.com/mwilliamson/mammoth.js)、[JSZip nodeStream](https://stuk.github.io/jszip/documentation/api_zipobject/node_stream.html)。一個合成DOCX已核對抽取及續讀，與私人保存流程合併驗證；不把它當真Agent理解、圖片OCR或任意格式解析的證據，正式接線狀態仍見PLAN。
+
+
+<a id="local-emulators"></a>
+### DEV-AGENT01 官方本機 emulator（2026-10-18）
+
+採固定 `firebase-tools 15.34.0`（MIT，開發依賴）、Node 24.19.0／Java 21，僅啟動 Auth、Firestore、Storage。沿現有 SDK／ADK 2.1.0 與正式服務，沒有自建資料庫、測試 Agent 或新搜尋框架。[官方 Emulator Suite](https://firebase.google.com/docs/emulator-suite)／[固定 CLI 原碼](https://github.com/firebase/firebase-tools/tree/v15.34.0)。CLI 的 SQL／其他平台相依只屬其開發工具套件，沒有啟動 SQL Connect／Cloud SQL 或產品 SQL 執行。lockfile 新增 369 項依賴、原項版本沒有改動，不代表全部 transitive package 已逐一審核。
+
+實測固定版 Firestore Emulator 可執行 `findNearest`，無需另寫本地向量搜尋。Storage Emulator 忽略 generation precondition，因此只補單 runtime 的物件序列化及固定 metadata 核對，仍用正式加密／附件服務。CLI 標準匯出只涵蓋 `(default)`，開發資料庫因而使用隔離 demo 專案的 default；正式命名資料庫不改。Windows 第二個 CLI 匯出進程曾在成功後發生退出 assertion，改用同版 CLI 自身的 Hub export 接點並核三種 manifest，保存原失敗；該內部接點與固定 CLI 一起升級核對。穩定啟動、資料重開、首條真模型及 Web 讀回見 [DEV01 EV](../artifacts/verification/DEV_AGENT01_LOCAL_20261018.json)，不延伸為四角色、雲端 IAM 或真通知通過。
