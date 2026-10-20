@@ -27,6 +27,7 @@ import { createAgentDocumentTools } from "./agent-document-tools.ts";
 import { createDataComposeTools } from "./data-compose.ts";
 import { createAgentConcernTools } from "./agent-concern-tools.ts";
 import { createAgentWorkTools } from "./agent-work-tools.ts";
+import { AGENT_CONFIRMATION_PENDING_TEXT } from "./agent-work-tool-descriptions.ts";
 
 function validateAnswerText(answer: { paragraphs: AgentAnswer["paragraphs"] }) {
   for (const paragraph of answer.paragraphs)
@@ -386,6 +387,15 @@ export function createProductAgentTools(options: {
         if (!await authorize() || !receipts) throw new AgentStopped("unauthorized");
         if (receipts.length) {
           serverReceiptText = `已保存 ${receipts.length} 項操作。請查看操作結果；已安排不代表已發出通知或照護事項完成。`;
+          return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+        }
+      }
+      if (answer.kind === "operation" && ids.length === 0 && !options.background && store.confirmationQuestions) {
+        const questions = await store.confirmationQuestions(scope.userId, scope.childId, runId);
+        if (!await authorize() || !questions) throw new AgentStopped("unauthorized");
+        if (questions.length === 1 && questions[0]?.trim()) {
+          // The API appends the authoritative question. Never exempt model-written claims.
+          serverReceiptText = AGENT_CONFIRMATION_PENDING_TEXT;
           return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
         }
       }
