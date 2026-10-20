@@ -2,7 +2,7 @@ import { agentChatFileReadSchema, type ChatFileAgentReader } from './chat-file-a
 import { officialHelpIdSchema, type OfficialHelpId } from '../src/shared/agent-feedback.ts';
 import { z } from "zod";
 import { summaryQuery } from "../src/shared/care-summary.ts";
-import type { MemoryContext, SummaryInput } from "../src/shared/memory.ts";
+import type { MemoryContext, MemoryFact, SummaryInput } from "../src/shared/memory.ts";
 import { readAgentWorkSchema } from "../src/shared/agent-work.ts";
 import { agentAnswerSchema, agentBackgroundAnswerSchema } from "../src/shared/product-agent.ts";
 import type { AgentAnswer, AgentPresentation } from "../src/shared/product-agent.ts";
@@ -15,7 +15,7 @@ import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { looksLikeDurableMemoryFactStatement } from "./memory-policy.ts";
-import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
+import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, draftLooksLikeSubstantiveCareAdvice, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -125,10 +125,29 @@ export function createProductAgentTools(options: {
   const retrieval = options.knowledge.createRun({ actor: { kind: "query_embedding", actorId: scope.userId, operationId: runId },
     budget, authorize, embeddings: run.embeddings });
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
+  const memoryGrounding = new Map<string, ChatDeliverySource>();
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
   let pendingMemoryProposalCount = 0;
+  function noteConfirmedMemoryFacts(facts: Array<MemoryFact | null | undefined>) {
+    for (const fact of facts) {
+      if (!fact || fact.status !== "confirmed" || !fact.applicable || fact.sourceState !== "current") continue;
+      const excerpt = chatDeliveryExcerpt(fact.content);
+      memoryGrounding.set(fact.id, {
+        citationId: `memory-fact:${fact.id}`, version: String(fact.version),
+        contentHash: chatDeliveryContentHash(fact.content), classification: "private",
+        excerpt: excerpt.excerpt, excerptComplete: excerpt.excerptComplete,
+      });
+    }
+  }
+  function isMemoryRestatementAnswer(value: AgentAnswer): boolean {
+    const kinds = value.kind === "mixed"
+      ? value.paragraphs.map(paragraph => paragraph.kind).filter((kind): kind is NonNullable<typeof kind> => Boolean(kind))
+      : [value.kind];
+    if (!kinds.length) return false;
+    return kinds.every(kind => kind === "record_restatement" || kind === "operation" || kind === "clarification");
+  }
   async function current(pages: { factsAfterId?: string; topicsAfterId?: string } = {}) {
     const value = await memory.context(scope.userId, scope.childId, options.visibility ?? "private", pages);
     if (!value) throw new AgentStopped("unauthorized"); return value;
@@ -191,6 +210,7 @@ export function createProductAgentTools(options: {
       execute: args => guard(async () => {
         const context = await current({ factsAfterId: args.factsAfterId as string | undefined ?? undefined, topicsAfterId: args.topicsAfterId as string | undefined ?? undefined }), page = await tasks.list(scope.userId, scope.childId, args.tasksAfterId as string | undefined ?? undefined);
         if (!page) throw new AgentStopped("unauthorized");
+        noteConfirmedMemoryFacts(context.facts);
         const prepared = options.visibility !== "family" && context.recentMessages.length >= 12
           ? await memory.prepareSummary(scope.userId, scope.childId) : null;
         const sourceContext = prepared ? { ...context, recentMessages: prepared.messages,
@@ -345,7 +365,7 @@ export function createProductAgentTools(options: {
       return result;
     }),
   });
-  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(store, memory, run, permitted));
+  if (options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentWorkTools(store, memory, run, permitted, noteConfirmedMemoryFacts));
   if (options.actions && options.visibility !== "family") tools.splice(tools.length - 1, 0, ...createAgentActionTools(options.actions, run, permitted)
     .filter(tool=>!options.ordinaryToolNames || options.ordinaryToolNames.includes(tool.name)));
   if(privateSources)tools.splice(tools.length-1,0,...privateSources.tools);
@@ -448,12 +468,26 @@ export function createProductAgentTools(options: {
         const source = deliverySource(id);
         if (source) sources.push(source);
       }
-      return { kind: answer.kind, visibility: options.visibility === "family" ? "family" : "private",
+      const hasKnowledgeCitation = answer.paragraphs.some(paragraph =>
+        paragraph.citationIds.some(id => evidence.has(id)));
+      // When the answer carries no knowledge/private-source cites, attach Server-read
+      // confirmed memory facts so an independent review (if required) has excerpts.
+      if (!sources.length && memoryGrounding.size) sources.push(...memoryGrounding.values());
+      const paragraphs = serverReceiptText ? [{ text: serverReceiptText, citationIds: [] }]
+        : answer.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] }));
+      const draft: ChatDeliveryDraft = {
+        kind: answer.kind, visibility: options.visibility === "family" ? "family" : "private",
         serverSubstitutedSourceText: Boolean(options.reviewedGrowthPresentation),
         serverSubstitutedReceiptText: serverReceiptText !== null,
-        paragraphs: serverReceiptText ? [{ text: serverReceiptText, citationIds: [] }]
-          : answer.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] })),
-        sources, scope };
+        paragraphs, sources, scope,
+      };
+      // Trusted exemption: confirmed memory restatement with no knowledge retrieval.
+      if (!serverReceiptText && memoryGrounding.size > 0 && !hasKnowledgeCitation && mode === "not_used"
+        && isMemoryRestatementAnswer(answer as AgentAnswer)
+        && !draftLooksLikeSubstantiveCareAdvice(draft)) {
+        draft.serverVerifiedMemoryGrounding = true;
+      }
+      return draft;
     },
     replaceDeliveryAnswer(next: unknown) {
       const parsed = agentAnswerSchema.parse(next);

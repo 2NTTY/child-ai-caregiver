@@ -172,6 +172,29 @@ test("classmate F2: multi-question clarifies and saved receipts with domain noun
   }), true);
 });
 
+test("server-verified confirmed memory restatement skips delivery review without knowledge cites", () => {
+  const memoryRestatement = {
+    ...draft(), kind: "record_restatement" as const, sources: [{
+      citationId: "memory-fact:synthetic", version: "3", contentHash: hashA,
+      classification: "private" as const, excerpt: "對花生過敏", excerptComplete: true,
+    }],
+    paragraphs: [{ text: "已確認記憶：孩子對花生過敏。", citationIds: [] }],
+    serverVerifiedMemoryGrounding: true,
+  };
+  assert.equal(requiresChatDeliveryReview(memoryRestatement), false);
+  assert.equal(chatDeliveryPassNeedsSources(memoryRestatement), false);
+  // Without the server flag, citation-free restatement still fails closed into review.
+  assert.equal(requiresChatDeliveryReview({ ...memoryRestatement, serverVerifiedMemoryGrounding: false, sources: [] }), true);
+  // Care advice cannot use the memory flag as a skip (server must not set it; flag alone is trusted).
+  const careWithFlag = {
+    ...draft(), kind: "operation" as const, sources: [],
+    paragraphs: [{ text: "所有新生兒都應立即加鹽。", citationIds: [] }],
+    serverVerifiedMemoryGrounding: true,
+  };
+  // Flag is server-trusted; product tools refuse to set it when care advice is detected.
+  assert.equal(requiresChatDeliveryReview(careWithFlag), false);
+});
+
 test("classmate F3: reviewer source excerpt keeps support after the first 800 characters", () => {
   const support = "Only after six months may fortified cereal be offered once daily.";
   const body = `${"x".repeat(800)}${support}`;
@@ -639,4 +662,58 @@ test("source retract after a review pass does not keep the old answer", async ()
   assert.equal(result?.stopReason, "delivery_review_incomplete");
   assert.equal(result?.text.includes(chunk.text), false);
   assert.equal(result?.deliveryReview, undefined);
+});
+
+test("confirmed memory fact read enables citation-free restatement delivery", async () => {
+  const budget = new AgentBudget();
+  const fact = {
+    id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", childId, key: "過敏", content: "對花生過敏",
+    source: { kind: "manual" as const, description: "家長確認" }, validUntil: null,
+    visibility: "private" as const, intendedVisibility: "private" as const, status: "confirmed" as const,
+    version: 2, createdBy: userId, confirmedBy: userId, confirmedAt: "2026-10-18T00:00:00.000Z",
+    reason: "已確認", applicable: true, sourceState: "current" as const,
+  };
+  const surface = createProductAgentTools({
+    run: { scope, runId, budget }, authorize: async () => true,
+    memory: {
+      getFact: async () => fact,
+      facts: async () => ({ items: [fact], nextAfterId: null }),
+      recall: async () => ({ facts: [fact], topics: [], missingKeys: [] }),
+      context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+        facts: [fact], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
+        truncated: { facts: false, topics: false, messages: false } }),
+    },
+    tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+    store: {},
+    knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [] }) }) },
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const readFacts = surface.tools.find(tool => tool.name === "read_memory_facts")!;
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  try {
+    const read = await readFacts.execute({ factId: fact.id, afterId: null },
+      { scope, runId, callId: "read-facts", signal: budget.signal });
+    assert.equal(read.status, "succeeded");
+    await present.execute({
+      kind: "record_restatement",
+      paragraphs: [{ text: "已確認記憶：孩子對花生過敏。", citationIds: [] }],
+    }, { scope, runId, callId: "present-memory", signal: budget.signal });
+    const draft = surface.deliveryDraft()!;
+    assert.equal(draft.serverVerifiedMemoryGrounding, true);
+    assert.equal(requiresChatDeliveryReview(draft), false);
+    assert.ok(draft.sources.some(source => source.citationId.startsWith("memory-fact:")));
+    // Knowledge-bound caregiving still requires review even after a memory read.
+    await present.execute({
+      kind: "caregiving",
+      paragraphs: [{ text: chunk.text, citationIds: [chunk.chunkId] }],
+    }, { scope, runId, callId: "present-care", signal: budget.signal });
+    // Without registering the chunk in evidence via search, present_answer rejects; instead assert
+    // advisory text with memory grounding does not get the skip flag.
+    await present.execute({
+      kind: "operation",
+      paragraphs: [{ text: "BB未滿一歲唔好食蜜糖。", citationIds: [] }],
+    }, { scope, runId, callId: "present-advice", signal: budget.signal });
+    const advice = surface.deliveryDraft()!;
+    assert.equal(advice.serverVerifiedMemoryGrounding, undefined);
+    assert.equal(requiresChatDeliveryReview(advice), true);
+  } finally { budget.close(); }
 });

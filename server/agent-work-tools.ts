@@ -9,7 +9,9 @@ import { AgentStopped } from "./agent-budget.ts";
 import { FamilyError } from "./family-access.ts";
 import { FirestoreDomainError } from './firestore-domain-data.ts';
 import { normalizedFactKey } from "./memory-policy.ts";
-export function createAgentWorkTools(store: ProductAgentStore, memory: MemoryStore, run: AgentRunContext, authorize: () => Promise<boolean>): AgentTool[] {
+import type { MemoryFact } from "../src/shared/memory.ts";
+export function createAgentWorkTools(store: ProductAgentStore, memory: MemoryStore, run: AgentRunContext, authorize: () => Promise<boolean>,
+  onConfirmedMemoryFacts?: (facts: MemoryFact[]) => void): AgentTool[] {
   const { userId, childId } = run.scope;
   const guard = async (fn: () => Promise<unknown>): Promise<AgentToolResult> => {
     try { const value = await fn(); if (value === null) throw new AgentStopped("unauthorized"); return { status: "succeeded", data: { result: value } }; }
@@ -52,12 +54,20 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
     make("read_history", historyReadSchema, args => guard(() => store.readHistory(userId, childId, historyReadSchema.parse(args)))),
     make("read_memory_facts", memoryFactReadSchema, args => guard(async () => {
       const input = memoryFactReadSchema.parse(args);
-      if (input.factId) return memory.getFact(userId, childId, input.factId);
+      const note = (facts: Array<MemoryFact | null | undefined>) => {
+        onConfirmedMemoryFacts?.(facts.filter((fact): fact is MemoryFact => Boolean(fact)));
+      };
+      if (input.factId) {
+        const fact = await memory.getFact(userId, childId, input.factId);
+        note([fact]);
+        return fact;
+      }
       if (input.keys) {
         if (!memory.recall) throw new FirestoreDomainError(503, "memory_lookup_unavailable");
         const result = await memory.recall(userId, childId, input.keys);
         // Never truncate a keyed response into a false complete result. The caller can narrow the keys.
         if (JSON.stringify(result).length > run.budget.toolResponseCharacters - 900) throw new FirestoreDomainError(413, "response_limit");
+        note(result.facts);
         return { ...result, lookup: "exact_current_keys", historicalSearchAvailable: true };
       }
       const page = await memory.facts(userId, childId, input.afterId ?? undefined, 10);
@@ -72,6 +82,7 @@ export function createAgentWorkTools(store: ProductAgentStore, memory: MemorySto
       for (const fact of items.filter(item => item.applicable)) {
         const key = normalizedFactKey(fact.key), values = keys.get(key) ?? new Set<string>(); values.add(fact.content); keys.set(key, values);
       }
+      note(items);
       return { items, nextAfterId: items.length < page.items.length ? items.at(-1)?.id ?? input.afterId : page.nextAfterId, partial: more,
         conflictingKeys: [...keys].filter(([, values]) => values.size > 1).map(([key]) => key),
         unavailableFactKeys: items.filter(item => !item.applicable).map(item => normalizedFactKey(item.key)) };

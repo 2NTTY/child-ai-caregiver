@@ -44,6 +44,11 @@ export interface ChatDeliveryDraft {
   /** Server replaced model wording with current reviewed source text. Not a generator skip. */
   serverSubstitutedSourceText: boolean;
   serverSubstitutedReceiptText?: boolean;
+  /**
+   * Server verified this run read confirmed, applicable memory fact(s) and the draft is a
+   * citation-free memory restatement (no knowledge retrieval). Not a generator self-label.
+   */
+  serverVerifiedMemoryGrounding?: boolean;
   paragraphs: { kind?: AgentAnswer["kind"]; text: string; citationIds: string[] }[];
   sources: ChatDeliverySource[];
   scope: AgentScope;
@@ -130,11 +135,14 @@ export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft): boolean 
  * The generating model's kind alone never grants a skip: caregiving labels force review,
  * and citation-free wording that still looks like care advice also forces review.
  * Only trusted server exemptions may skip: exact allowlisted UI text, pure clarifying
- * questions, and Server-substituted operation receipts. Unknown wording fails closed into review;
+ * questions, Server-substituted operation receipts, and Server-verified confirmed-memory
+ * restatements (no knowledge retrieval). Unknown wording fails closed into review;
  * a keyword miss must not grant an exemption.
  */
 export function requiresChatDeliveryReview(draft: ChatDeliveryDraft): boolean {
   if (draft.serverSubstitutedSourceText || draft.serverSubstitutedReceiptText) return false;
+  // Confirmed memory restatement: Server-tracked grounding, no knowledge retrieval path.
+  if (draft.serverVerifiedMemoryGrounding) return false;
   if (draft.sources.length > 0) return true;
   if (draft.kind === "caregiving" || draft.kind === "safety_help" || draft.kind === "private_reference") return true;
   const text = joinedDraftText(draft);
