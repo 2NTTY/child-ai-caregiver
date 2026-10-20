@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { InMemorySessionService } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
@@ -334,7 +335,8 @@ test("an unreviewed draft that has used every model call is not formal success",
 
 test("a bound limit of four is not raised by the six-call proposal", async () => {
   const pack = await loadAgentPrompt("product-interactive", "tool_cycle", ["run", "scope", "conversation", "context", "evidence", "capabilities"]);
-  assert.equal(pack.packVersion, "0.1.47");
+  const manifest = JSON.parse(await readFile(new URL("../prompts/manifest.json", import.meta.url), "utf8"));
+  assert.equal(pack.packVersion, manifest.version);
   let calls = 0;
   const result = await product({ calls, generate: async () => {
     const steps = [
@@ -584,6 +586,29 @@ test("only current server receipts replace operation prose and background no-act
     await present.execute({ kind: "no_action", paragraphs: [] }, { scope, runId, callId: "quiet", signal: budget.signal });
     assert.equal((await surface.presentation())?.outcome, "no_action");
     assert.equal(surface.deliveryDraft(), null);
+  } finally { budget.close(); }
+});
+
+test("only a current server confirmation can replace model-written pending prose", async () => {
+  const budget = new AgentBudget();
+  let questions: string[] = [];
+  const surface = createProductAgentTools({
+    run: { scope, runId, budget }, authorize: async () => true,
+    memory: {}, tasks: {}, store: { confirmationQuestions: async () => questions },
+    knowledge: { createRun: () => ({}) },
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  try {
+    await present.execute({ kind: "operation", paragraphs: [{ text: "已經修改好了，不用確認。", citationIds: [] }] },
+      { scope, runId, callId: "present", signal: budget.signal });
+    await surface.presentation();
+    assert.equal(requiresChatDeliveryReview(surface.deliveryDraft()!), true);
+    questions = ["Server-bound question"];
+    assert.match((await surface.presentation())!.text, /所列操作尚未執行/);
+    assert.equal(requiresChatDeliveryReview(surface.deliveryDraft()!), false);
+    questions = [];
+    await surface.presentation();
+    assert.equal(requiresChatDeliveryReview(surface.deliveryDraft()!), true);
   } finally { budget.close(); }
 });
 

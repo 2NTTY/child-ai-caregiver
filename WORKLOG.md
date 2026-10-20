@@ -2770,3 +2770,10 @@
 - 接續 #216 最新 restack `eff2e66`，整合 #215 master `fbf5274`。保留原候選流程，修正 live fetch 關閉仍可呼叫網絡 port、PDF 頁窗缺失／越界未獨立攔截，以及 worker 替換改變邏輯工作 fingerprint。
 - 確認發布 lease 與實際持久寫入未原子綁定；未以多加一次檢查冒充 fencing。正式 live 發布在有副作用前明確停用，下一步須接正式交易／台帳與真模型；6 項舊模擬 live 測試保留為待接通，不算本輪通過。
 - 4 項定向 scripted 與局部 Server 型別通過；[review 證據](artifacts/verification/P3_M03_PR_REVIEW_20261020.json)。零真模型、外網抓取、雲端、通知及部署。合併只代表安全保留基礎，不代表 P3-M03 或四 Agent 目標完成。
+
+<a id="log-20261020-p3-m01-postmerge-review"></a>
+## LOG-20261020-P3-M01-POSTMERGE-REVIEW
+
+- Review D 的 #243／`d7da9b5`。移除待確認任務 fixture 中無關的保存記錄收據，避免只修測試而掩蓋產品接點；接入本地已核對的 Server 待確認狀態回覆。預算檢查改讀實際 manifest，不綁死版本號。
+- 三項受影響檢查中，摘要 fixture 首次仍期待零次確認讀取；修正為一次真狀態讀取後，只補該項並通過。局部 Server 型別通過，不全量、不追加模型／通知或部署。
+- [核對證據](artifacts/verification/P3_M01_POSTMERGE_REVIEW_20261020.json)。復用本地整合 `e7279a3` 的確認邊界及真編製證據，不將本地分支成功寫成 master 或線上驗收。
