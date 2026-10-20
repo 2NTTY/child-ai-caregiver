@@ -22,5 +22,28 @@
   "fixes": ["review-only gateway excludes generator audio/history/capability context but shares budget and credentials", "retain background no_action and shared stop messages", "Windows/macOS source-only native watch paths and explicit no-watch option", "persist original message identifiers before paid verification and preserve safe error metadata"],
   "notVerified": ["real model compose/review quality and saved result", "true background knowledge model/review/publication", "non-email local notification inbox", "all media paths and UI role flow", "cloud IAM or notification delivery"],
   "backgroundBlocker": { "source": "server/background-knowledge-maintenance.ts", "contract": "BackgroundKnowledgeMaintenancePorts / KnowledgeSemanticReviewPort", "existing": "candidate runner, programmatic stub, dry-run and injectable ports", "missing": "real semantic model port, durable maintenance usage/ledger/publish assembly and local trigger", "owner": "collaborator PR #216; not replaced by a test implementation" },
-  "scope": { "newCloudResources": 0, "notifications": 0, "deployment": false, "computerUse": false, "fullRegression": false }
+  "scope": { "newCloudResources": 0, "notifications": 0, "deployment": false, "computerUse": false, "fullRegression": false },
+  "localDelivery20261020": {
+    "base": "0de987d",
+    "branch": "codex/dev-agent02-current-roles",
+    "changes": ["server/local-agent-delivery.ts", "server/local-agent-main.ts", "server/firebase-runtime.ts", "server/firestore-telegram.ts", "server/telegram-types.ts", "src/shared/web-push.ts", "scripts/verify-agent-local.mjs"],
+    "command": "node scripts/verify-agent-local.mjs --deliveries",
+    "verificationId": "e5e325cd-5b2d-4b55-a031-e805cc41f877",
+    "environment": "Node 24.19.0, Firebase emulators, existing isolated demo data, AI disabled",
+    "status": "passed",
+    "httpCalls": 32,
+    "checks": [
+      "Formal clients and session use the same registration, explicit confirmation, queue and worker handlers",
+      "Telegram and Web Push produce stopped/local_preview_not_sent with null provider status/message ID and no acknowledgement",
+      "Original operation replay does not duplicate the local inbox entry",
+      "Revoked binding cannot create another preview",
+      "Bounded inbox excludes raw destination token/endpoint",
+      "Scoped local runtime TypeScript and verifier syntax passed"
+    ],
+    "modelCalls": 0,
+    "externalNotifications": 0,
+    "deployment": false,
+    "shutdown": "Graceful stop and emulator snapshot export completed",
+    "notVerified": ["Android native registration and inbox end-to-end", "real provider delivery", "visual browser flow", "new-conversation and full role page flow"]
+  }
 }

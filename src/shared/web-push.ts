@@ -22,7 +22,7 @@ export type PushBinding = z.infer<typeof pushBindingSchema>;
 export const pushDeliverySchema = z.object({
   id: uuid, bindingId: uuid, status: z.enum(["queued", "sending", "accepted", "rejected", "unknown", "stopped"]),
   reason: z.enum(["subscription_expired", "provider_rejected", "rate_limited", "transport_unknown", "revoked",
-    "worker_paused", "configuration_unavailable", "request_invalid", "worker_interrupted"]).nullable(),
+    "worker_paused", "configuration_unavailable", "request_invalid", "worker_interrupted", "local_preview_not_sent"]).nullable(),
   providerStatus: z.number().int().min(100).max(599).nullable(), createdAt: instant,
   attemptedAt: instant.nullable(), finishedAt: instant.nullable(),
 }).strict();

@@ -62,7 +62,11 @@ Firestore Emulator 已核實支援本次版本的 `findNearest`；使用同一�
 
 附件經原加密／hash／授權服務保存到 Storage Emulator。本版本 emulator 忽略 generation precondition，因此薄 adapter 在單一本機 runtime 內序列化每個物件、核對固定 generation；這不能作為雲端多副本競爭或 IAM 驗收證據。
 
-驗證電郵／找回密碼由 Auth Emulator 產生本地操作連結，可在 `/__local/inbox` 查看最近 20 項；全部明示沒有實際寄出。這些連結有憑證作用，只在本機使用，不分享診斷輸出。Telegram／Web Push／FCM 保持停用，目前尚未提供其本地投遞收件箱；不回報渠道接受或收到。[Firebase 官方行為](https://firebase.google.com/docs/emulator-suite/connect_auth)
+驗證電郵／找回密碼由 Auth Emulator 產生本地操作連結，可在 `/__local/inbox` 查看最近 20 項；全部明示沒有實際寄出。這些連結有憑證作用，只在本機使用，不分享診斷輸出。[Firebase 官方行為](https://firebase.google.com/docs/emulator-suite/connect_auth)
+
+同一收件箱另列最近最多 20 項 Telegram／Web Push／FCM 投遞預覽（渠道、用途及原資源關聯）。正式綁定、本人授權、工作台帳與撤銷仍有效，只把外部發送換成本機加密保存；結果為 `stopped / local_preview_not_sent`，沒有渠道接受、收到或完成。正式環境沒有這個替換。
+
+本地 Telegram 設定產生的連結會開本機「模擬開始」頁，毋須真 bot；按開始後回原設定讀取並明確確認本地帳號。它只用於開發，不會綁定你的真 Telegram。瀏覽器／Android 的通知權限及訂閱仍依平台接點，本地收件箱不能代替真機收訊驗收。
 
 四角色使用當前分支的實際接線。基線沒有某個角色，就不能因環境啟動而宣稱四角色完成。#214／#215／#216 已依使用者明確授權 review 修正及合併，原作者保留；真背景維護缺口仍由 DEV-AGENT02 承接。編製成果必須經正式保存服務，再由原頁面讀回，不能只看模型文字。
 

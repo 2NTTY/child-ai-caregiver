@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile, writeFile } from 'node:fs/promises';
-import { randomUUID, createHash } from 'node:crypto';
+import { randomUUID, createHash, createECDH, randomBytes } from 'node:crypto';
 import { resolve } from 'node:path';
 import { Firestore, FieldValue } from '@google-cloud/firestore';
 import { createLocalAgentBuckets } from '../server/local-agent-storage.ts';
@@ -9,10 +9,12 @@ import { createChatApi } from '../src/client/chat-api.ts';
 import { createProductAgentApi } from '../src/client/product-agent-api.ts';
 import { createFamilyDocumentsApi } from '../src/client/family-documents-api.ts';
 import { createChatFileApi } from '../src/client/chat-file-api.ts';
+import { createTelegramApi } from '../src/client/telegram-api.ts';
+import { createWebPushApi } from '../src/client/web-push-api.ts';
 
 // Explicit bounded checks only; startup never runs this. --real-agent spends one run.
 const mode = process.argv[2];
-if (!['--data-only', '--persistence-only', '--readback', '--real-agent', '--real-compose', '--artifacts'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
+if (!['--data-only', '--persistence-only', '--readback', '--real-agent', '--real-compose', '--artifacts', '--deliveries'].includes(mode)) throw Error('Choose an explicit local verification mode; real modes spend at most one run');
 const root = resolve(import.meta.dirname, '..'), directory = resolve(root, '.cache/agent-local');
 const state = JSON.parse(await readFile(resolve(directory, 'state.json'), 'utf8'));
 const fingerprint = createHash('sha256').update(root).digest('hex').slice(0, 8);
@@ -27,9 +29,10 @@ const env = { NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', HOST: '127.0
 };
 Object.assign(process.env, env);
 const steps = [], run = randomUUID(); let calls = 0, cookie = '', uid = '', database;
+const maximumCalls = mode === '--deliveries' ? 56 : 24;
 let agentEvidence, originalAgent;
 async function call(path, method = 'GET', body) {
-  assert.ok(++calls <= 24);
+  assert.ok(++calls <= maximumCalls);
   const response = await fetch(origin + path, { method, headers: { Origin: origin, 'Content-Type': 'application/json',
     ...(cookie ? { Cookie: cookie } : {}), ...(uid ? { 'x-expected-user-id': uid } : {}) },
     ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(15000) });
@@ -52,7 +55,61 @@ try {
   assert.deepEqual(await json('/api/admin/session'), { administrator: true });
   if (mode !== '--readback') await json('/api/account/acknowledgement', 'POST', { operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION, accepted: true });
   steps.push('emulator-login-through-production-session-and-admission');
-  if (mode === '--readback') {
+  if (mode === '--deliveries') {
+    assert.equal(status.externalDelivery, 'local-inbox-not-sent');
+    const initial = await json('/__local/inbox'), initialIds = new Set(initial.deliveries.map(row => row.id));
+    const signal = AbortSignal.timeout(45_000); let lastSubmission;
+    const clientFetch = (url, init = {}) => {
+      assert.ok(++calls <= maximumCalls); assert.equal(new URL(url).origin, origin);
+      if (url.endsWith('/online/submit')) lastSubmission = JSON.parse(init.body);
+      const headers = new Headers(init.headers); headers.set('Origin', origin); headers.set('Cookie', cookie);
+      return fetch(url, { ...init, headers });
+    };
+    const telegram = createTelegramApi(origin, clientFetch), push = createWebPushApi(origin, clientFetch);
+    const challenge = await telegram.begin(signal, uid), localUrl = new URL(challenge.startUrl);
+    assert.equal(localUrl.origin, origin); assert.equal(localUrl.pathname, '/__local/telegram/start');
+    assert.ok(++calls <= maximumCalls);
+    const started = await fetch(localUrl, { method: 'POST', signal,
+      headers: { Origin: origin, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ token: localUrl.searchParams.get('token') }) });
+    assert.equal(started.status, 200);
+    const seen = await telegram.status(signal, uid);
+    assert.equal(seen.challenge.state, 'seen'); assert.notEqual(seen.binding?.status, 'active');
+    const binding = await telegram.confirm(challenge.id, seen.challenge.version, signal, uid);
+    const keys = createECDH('prime256v1'); keys.generateKeys();
+    const subscription = await push.register({ label: 'Local inbox verification', subscription: {
+      endpoint: 'https://updates.push.services.mozilla.com/wpush/v2/local-' + run, expirationTime: null,
+      keys: { p256dh: keys.getPublicKey().toString('base64url'), auth: randomBytes(16).toString('base64url') },
+    } }, signal, uid);
+    const queued = await telegram.test(binding.id, binding.version, signal, uid);
+    const originalSubmission = lastSubmission;
+    const queuedPush = await push.test(subscription.id, subscription.version, signal, uid);
+    let sent, sentPush;
+    for (let probe = 0; probe < 8; probe++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      sent = (await telegram.status(signal, uid)).deliveries.find(row => row.id === queued.id);
+      sentPush = (await push.status(signal, uid)).deliveries.find(row => row.id === queuedPush.id);
+      if (sent?.status === 'stopped' && sentPush?.status === 'stopped') break;
+    }
+    for (const row of [sent, sentPush]) {
+      assert.equal(row?.status, 'stopped');
+      assert.equal(row.reason, 'local_preview_not_sent'); assert.equal(row.providerStatus, null);
+    }
+    assert.equal(sent.messageId, null); assert.equal(sent.acknowledgedAt, null);
+    steps.push('formal-clients-confirm-bindings-and-worker-captures-without-provider-acceptance');
+    const replay = await json('/api/online/submit', 'POST', originalSubmission);
+    assert.equal(replay.result.delivery.id, queued.id);
+    const inbox = await json('/__local/inbox'), added = inbox.deliveries.filter(row => !initialIds.has(row.id));
+    assert.deepEqual(added.map(row => row.channel).sort(), ['telegram', 'web_push']);
+    assert.ok(added.every(row => row.delivery === 'local-only-not-sent'));
+    assert.ok(!JSON.stringify(added).includes('updates.push.services.mozilla.com'));
+    steps.push('original-operation-replay-and-bounded-inbox-without-raw-destination');
+    const revoked = await telegram.revoke(binding.id, binding.version, signal, uid);
+    await push.revoke(subscription.id, subscription.version, signal, uid);
+    await assert.rejects(telegram.test(binding.id, revoked.version, signal, uid), error => error.status === 409);
+    assert.equal((await json('/__local/inbox')).deliveries.filter(row => !initialIds.has(row.id)).length, 2);
+    steps.push('revoked-binding-cannot-add-another-preview');
+  } else if (mode === '--readback') {
     const prior = JSON.parse(await readFile(resolve(directory, 'verification-readback.json'), 'utf8'));
     assert.deepEqual(await json('/api/online/operations/' + prior.run), prior.receipt);
     assert.ok(JSON.stringify(await json('/api/children')).includes('本地入口核對'));

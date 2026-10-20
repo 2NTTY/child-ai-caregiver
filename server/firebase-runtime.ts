@@ -59,6 +59,7 @@ export interface LocalRuntimePorts {
   providers?: PlatformProviderFactory;
   diagnostics?: (event: import('./agent-observer.ts').AgentDiagnostic) => void | Promise<void>;
   bootstrapAccount?: (auth: import('firebase-admin/auth').Auth) => Promise<string>;
+  deliveries?: (domain: import('./firestore-domain-data.ts').FirestoreDomainOptions) => import('./local-agent-delivery.ts').LocalDeliveryAdapters;
 }
 
 /** Production assembly; only the explicit guarded local entry may inject emulator ports. */
@@ -115,12 +116,15 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       }
     };
     const reminders = createFirestoreTaskWorker({ ...domain, enabled: config.taskWorkerEnabled, currentAuth });
-    const nativePushGateway = createNativePushGateway(readNativePushConfig(env));
+    const localDelivery = composition.local?.deliveries?.(domain);
+    const nativePushGateway = localDelivery?.nativePushGateway ?? createNativePushGateway(readNativePushConfig(env));
     const nativePush = createFirestoreNativePush({ ...domain, gateway: nativePushGateway, sessions, currentAuth });
-    const pushConfig = await readWebPushConfig(env), pushGateway = createWebPushGateway(pushConfig);
-    const telegramConfig = await readTelegramConfig(env), telegramGateway = createTelegramGateway(telegramConfig);
-    const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!pushConfig, currentAuth });
-    const telegram = createFirestoreTelegram({ ...domain, config: telegramConfig, gateway: telegramGateway, currentAuth });
+    const pushConfig = await readWebPushConfig(env), pushGateway = localDelivery?.pushGateway ?? createWebPushGateway(pushConfig);
+    const telegramConfig = localDelivery?.telegramConfig ?? await readTelegramConfig(env);
+    const telegramGateway = localDelivery?.telegramGateway ?? createTelegramGateway(telegramConfig);
+    const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!localDelivery || !!pushConfig, currentAuth });
+    const telegram = createFirestoreTelegram({ ...domain, config: telegramConfig, gateway: telegramGateway, currentAuth,
+      ...(localDelivery ? { startUrl: localDelivery.telegramStartUrl } : {}) });
     const chat = createFirestoreChatStore({ ...domain, voice: voices, files }), care = createFirestoreCareStore(domain);
     const sources = createFirestoreSharedInputStore(domain), concerns = createFirestoreConcernStore(domain);
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });

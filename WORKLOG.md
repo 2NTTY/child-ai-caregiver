@@ -3253,3 +3253,10 @@
 - 一次既有 emulator 候選查回成功，原工作兩次生成及 `review_hold` 不變；查閱檔案保留官方原文、整理及審核理由，不輸出模型上下文、密鑰或 lease token。局部型別及入口語法通過，沒有新增模型／embedding、通知、雲端資料寫入或全量測試。
 - 原程式及候選證據顯示 `solid_food` 規則綁定 `starting-solids`，本次新候選未包含該 key；因此保留規則／來源依賴待核，不以反覆生成或提示詞強迫批准。正式背景發布、新對話／頁面聯合及收件箱等未驗項仍見 PLAN。
 - [證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)與[操作說明](docs/AGENT_LOCAL.md)。本地服務已停止並保存快照，沒有改動正式環境。
+
+<a id="log-20261020-dev-agent02-local-inbox"></a>
+## LOG-20261020-DEV-AGENT02-LOCAL-INBOX
+
+- 本地正式組裝加入 Telegram／Web Push／FCM transport 替換，復用原綁定、明確確認、工作、授權及收據。本機加密收件箱只保存預覽 metadata；停止結果 `local_preview_not_sent` 不冒充渠道接受、收到或完成，沒有真通知入口。
+- 從正式 client／API 進入一條合成 Telegram／Web Push 流程，共 32 次本機 API，核對確認、原 worker、原操作重試、收件箱及撤銷。零模型／外部通知／雲端資料或部署；局部型別及語法通過。停止入口並保存 emulator 快照。
+- [本次證據](artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)追加在 `localDelivery20261020`，舊失敗與未驗描述保留原日期；原生 Android 收件箱完整路徑及畫面未驗，不用本機結果代替真投遞。背景發布／新對話與頁面聯合 gate 仍見 PLAN。

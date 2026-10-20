@@ -1035,10 +1035,11 @@ OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 P
 <a id="local-agent-development"></a>
 ### 本機開發端點與正式 API
 
-`npm run agent:local` 的 Web 與 API 共用 loopback origin；業務仍使用原 `/api/*`，正常 session、准入、目前身份、確認、版本及原 opId 檢查不變。只有這個明確開發入口提供以下唯讀、no-store 端點，正式 Node handler 不提供：
+`npm run agent:local` 的 Web 與 API 共用 loopback origin；業務仍使用原 `/api/*`，正常 session、准入、目前身份、確認、版本及原 opId 檢查不變。只有這個明確開發入口提供以下 no-store 端點，正式 Node handler 不提供：
 
 - `GET /__local/status`：分支、SHA、dirty、模型、Prompt Pack、角色與環境邊界；不是四角色已驗證的聲明。
 - `GET /__local/events`：最多最近 200 個既有診斷 metadata；不回傳內部思考、工具參數或私人正文。
-- `GET /__local/inbox`：Auth Emulator 最近最多 20 個驗證／重設操作連結，明示未實際寄信。連結視為本地憑證，不分享或存進工程證據。非郵件投遞仍停用，不能假報收到。
+- `GET /__local/inbox`：Auth Emulator 最近最多 20 個驗證／重設操作連結，另有最多 20 個加密保存的非郵件投遞預覽；各自標示是否截斷。連結視為本地憑證，不分享或存進工程證據。投遞只含渠道、用途、匿名目的地標記及最小資源關聯，不回傳原 token／endpoint。正式收據為 `stopped / local_preview_not_sent`，provider status／message ID 留空，不能當作收到或照護完成。
+- `GET /__local/telegram/start?token=...`：顯示本地合成 Telegram 開始表單，讀取不改變綁定；`POST` 只接受精確同源的單一 token，交正式 challenge handler 記錄合成候選。仍須原 `/api/telegram` 確認流程才能綁定，不能連接真 Telegram 或發送訊息。
 
 本機端點核對 loopback Host／Origin；受保護快照、合成帳號密碼及模型 key 不經前端設定端點提供。各 worktree 使用獨立 cookie 名稱，瀏覽器不能以另一端口的 session 當作本 worktree 身份。模型更改、斷線及程序重啟仍先查原 run，不以本地模式自動重送操作。設定與限制見[操作說明](AGENT_LOCAL.md)。

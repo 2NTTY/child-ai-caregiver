@@ -33,6 +33,7 @@ const pathPattern = /^\/api\/telegram\/(?:challenges|(?:challenges\/([0-9a-f-]{3
 /** Private binding and delivery ledger. Gateway/commands remain the existing Telegram protocol. */
 export function createFirestoreTelegram(options: FirestoreDomainOptions & {
   config: TelegramConfig | null; gateway: TelegramGateway; currentAuth(userId: string): Promise<{ disabled: boolean; emailVerified: boolean }>;
+  startUrl?: (token: string) => string;
 }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), config = options.config;
   const personalKey = (scope: WorkRecoveryScope) => JSON.stringify([scope.ownerUserId, scope.workspaceId, scope.storageEpoch]);
@@ -89,7 +90,7 @@ export function createFirestoreTelegram(options: FirestoreDomainOptions & {
   function viewChallenge(value: SavedChallenge): TelegramChallenge {
     if (!config || !value.token || !['waiting', 'seen'].includes(value.state)) domainReject('telegram_link_changed');
     return { id: value.id, version: value.version, state: value.state === 'seen' ? 'seen' : 'waiting', expiresAt: value.expiresAt,
-      startUrl: 'https://t.me/' + config.botUsername + '?start=' + value.token,
+      startUrl: options.startUrl?.(value.token) ?? 'https://t.me/' + config.botUsername + '?start=' + value.token,
       candidate: value.candidate ? { label: value.candidate.label, chatIdHint: hint(value.candidate.chatId) } : null };
   }
   const writeState = (b: Binding, s: Awaited<ReturnType<typeof state>>) => b.transaction.set(s.ref, envelope(b.scope, 'telegram-state', s.id, stateSchema, s.value));
