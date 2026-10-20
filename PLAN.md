@@ -126,6 +126,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 前置：DEV-AGENT01，DEV-AGENT02可用接口已在獨立分支核對；協作者未實作及真模型gate獨立保留。狀態：後端／共用client已接Gemini／Vertex key、模型目錄、本人進階限制、生效值及原操作查回；兩條合成設定／SDK流程及兩項既有client檢查、局部型別通過。A單人實作與交付，未部署／未驗真個人key；詳見[MODEL01證據](artifacts/verification/MODEL_SELF01_SETTINGS_20261018.json)。
 - 擴充現有加密設定／收據／用量及 command／view：provider、model、能力、進階限制及實際生效值；Server提供模型目錄，保留 expectedVersion／opId／unknown恢復。
 - Gemini／Vertex API key使用正確SDK模式；ADC只限本機。依供應商可用模型及已接能力提供選項，thinking／工具／圖片／音訊／串流按型號處理，不偷換模型。metadata與真生成分開；保存設定不自動試多模型。
+- 供應商目錄已修正：Express只列官方清單與現有profile交集；保存及生成前使用同一支援判斷，過時選擇仍可停用／刪key。正式API／client及SDK兩條既有檢查、局部型別通過；沒有真生成或新憑證驗收。版本化契約見[API](docs/API.md#personal-model-http)，來源見[TECH_REUSE](docs/TECH_REUSE.md#personal-google-keys)。
 - 地區、憑證、模型、配額、逾時回傳安全且可分辨原因。embedding路由與聊天模型分開，維持原向量空間；本人憑證缺embedding時明示混合檢索不可用，不借平台額度／偽造引用。
 - 可調每日、每輪生成／工具／embedding、整輪期限、單次等待、重試及背景授權；共同解析器計算個人設定與管理員保護的實際值。模型知道可用預算，硬上限防失控而非要求用盡。
 - run固定模型／預算快照，重試沿原run計數、不重做成功工具／未知副作用；舊設定缺欄位維持舊行為。聊天／編製／審核／媒體／轉錄／背景用同一解析器；公共知識維護不用家長key，本地用開發者明確設定的維護憑證。
@@ -138,6 +139,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 前置：MODEL-SELF01；共用owner及表單已接同一v2契約，draft #242／#244未部署。Web／Android共用供應商／模型、七項限制、背景授權、用量及Server生效值；沒有另一份UI限額權威。保存回應丟失時查原opId，未見收據不能清成成功或重播key。原兩項表單／原操作流程及局部型別證據保留。
 - 2026-10-20 正式本地Web已保存合成key、模型與七項限制；原生session API讀到同版本及生效值，Web刪除key後回復平台模式，用量未變。修正編輯中自動重讀覆蓋草稿，以及launcher的CI旗標停用Metro監看的問題。原瀏覽器批次尾部因腳本150次請求上限停止，保留失敗；只補兩次唯讀確認清理，未將整批改稱通過。[MODEL02證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。真個人key、Android實機設定／頁面重讀及部署仍待驗；本機API讀回不等於真機通過。
 - key不進prompt、日誌、URL、瀏覽器儲存或Android持久草稿；移除／替換沿原身份與版本檢查。部署沿原站及相容Web／OTA，不另建網站。
+- 共用表單切換服務會先讀該服務的模型目錄，不先保存key，不沿用另一服務的能力或自動換模型；一項針對性投影檢查及局部型別通過。此修正尚未在瀏覽器／真機重驗或部署，原待驗門檻不變。
 - 交付短指引：啟動、key／ADC、選分支、改完再試、背景觸發、角色結果、資料重設及仍需雲端確認的差異。
 
 ### 最少驗證及完成門檻

@@ -9,8 +9,12 @@ const models = [
   ['gemini-2.5-pro', 'Gemini 2.5 Pro'],
 ] as const;
 
-export function personalModelSupported(model: string): boolean { return models.some(([id]) => id === model); }
+// Express mode has a smaller published model list than the Developer API.
+const expressModels = new Set(['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro']);
+export function personalModelSupported(model: string, provider: PersonalModelProvider = 'gemini'): boolean {
+  return models.some(([id]) => id === model) && (provider !== 'vertex' || expressModels.has(model));
+}
 export function personalModelCatalog(provider: PersonalModelProvider): PersonalModelCatalogEntry[] {
-  return models.map(([id, label]) => ({ id, label, provider, availability: 'not_checked',
+  return models.filter(([id]) => personalModelSupported(id, provider)).map(([id, label]) => ({ id, label, provider, availability: 'not_checked',
     capabilities: { tools: true, image: true, audio: true, textStreaming: true } }));
 }

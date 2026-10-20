@@ -2,10 +2,10 @@ import { apiError, jsonResponse } from "./workspace-api.ts";
 import { ModelSettingsError } from "./model-settings-contract.ts";
 import { parseModelSettingsCommand } from "./model-settings.ts";
 import type { ModelRouting } from "./model-routing.ts";
-import { MODEL_SETTINGS_MEDIA_TYPE, PERSONAL_MODEL, type ModelSettings, type PersonalModelCatalog } from '../src/shared/model-settings.ts';
+import { MODEL_SETTINGS_MEDIA_TYPE, PERSONAL_MODEL, type ModelSettings, type PersonalModelCatalog, type PersonalModelProvider } from '../src/shared/model-settings.ts';
 
 type SettingsRouting = Pick<ModelRouting, 'view' | 'settings' | 'check'> & {
-  catalog?(userId: string, version: number, refresh: boolean, signal: AbortSignal): Promise<PersonalModelCatalog>;
+  catalog?(userId: string, version: number, refresh: boolean, signal: AbortSignal, provider?: PersonalModelProvider): Promise<PersonalModelCatalog>;
 };
 function legacySettings(value: ModelSettings): ModelSettings {
   if (value.provider !== 'gemini' || value.model !== PERSONAL_MODEL) throw new ModelSettingsError('client_update_required', 409);
@@ -18,7 +18,10 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
   if (request.headers.get("x-expected-user-id") !== userId) return apiError("session_changed", "登入身份已改變，請重新讀取。", 403);
   const url = new URL(request.url), path = url.pathname, v2 = request.headers.get('accept') === MODEL_SETTINGS_MEDIA_TYPE;
   try {
-    if (url.search) throw new ModelSettingsError('invalid_input');
+    const catalogProvider = url.searchParams.get('provider');
+    if (url.search && !(v2 && request.method === 'GET' && path === '/api/ai/settings/models'
+      && [...url.searchParams].length === 1 && (catalogProvider === 'gemini' || catalogProvider === 'vertex')))
+      throw new ModelSettingsError('invalid_input');
     if (request.method === "GET" && path === "/api/ai/settings") {
       const view = await routing.view(userId);
       if (v2) return jsonResponse(view);
@@ -30,7 +33,8 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
       return jsonResponse(await routing.settings.getOperation(userId, operation[1].toLowerCase()));
     if (v2 && request.method === 'GET' && path === '/api/ai/settings/models' && routing.catalog) {
       const state = await routing.settings.get(userId);
-      return jsonResponse(await routing.catalog(userId, state.version, false, request.signal));
+      return jsonResponse(await routing.catalog(userId, state.version, false, request.signal,
+        catalogProvider === 'gemini' || catalogProvider === 'vertex' ? catalogProvider : undefined));
     }
     if (request.method !== "POST") return apiError("not_found", "找不到此服務。", 404);
     if (!request.headers.get("content-type")?.startsWith("application/json")) throw new ModelSettingsError("invalid_input");

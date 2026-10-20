@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   MODEL_SETTINGS_MEDIA_TYPE,
-  type ModelKeyCheck, type ModelSettings, type ModelSettingsCommand, type ModelSettingsView, type ModelSettingsOperation, type PersonalModelCatalog,
+  type ModelKeyCheck, type ModelSettings, type ModelSettingsCommand, type ModelSettingsView, type ModelSettingsOperation, type PersonalModelCatalog, type PersonalModelProvider,
 } from "../shared/model-settings.ts";
 import { publicModelSettingsSchema as settingsSchema, effectiveModelLimitsSchema, modelCheckReasonSchema,
   modelSettingsOperationSchema, personalModelCatalogSchema } from '../shared/model-settings-schema.ts';
@@ -43,7 +43,7 @@ export interface ModelSettingsApi {
   save(command: ModelSettingsCommand, signal: AbortSignal, userId: string): Promise<ModelSettings>;
   check(expectedVersion: number, signal: AbortSignal, userId: string): Promise<ModelKeyCheck>;
   operation(opId: string, signal: AbortSignal, userId: string): Promise<ModelSettingsOperation | null>;
-  catalog(expectedVersion: number, refresh: boolean, signal: AbortSignal, userId: string): Promise<PersonalModelCatalog>;
+  catalog(expectedVersion: number, refresh: boolean, signal: AbortSignal, userId: string, provider?: PersonalModelProvider): Promise<PersonalModelCatalog>;
 }
 
 /** A missing receipt is not proof that the original request cannot still commit. */
@@ -129,9 +129,12 @@ export function createModelSettingsApi(baseUrl = "", fetcher: typeof fetch = fet
       if (!parsed.success || parsed.data && parsed.data.opId !== opId) throw new ModelSettingsApiError();
       return parsed.data;
     },
-    async catalog(expectedVersion, refresh, signal, userId) {
-      const parsed = personalModelCatalogSchema.safeParse(await request('/models', refresh ? JSON.stringify({ expectedVersion }) : undefined, signal, userId));
-      if (!parsed.success || parsed.data.version !== expectedVersion) throw new ModelSettingsApiError();
+    async catalog(expectedVersion, refresh, signal, userId, provider) {
+      if (provider !== undefined && (refresh || !['gemini', 'vertex'].includes(provider)))
+        throw new ModelSettingsApiError(400, 'invalid_input', false);
+      const path = '/models' + (provider ? '?provider=' + encodeURIComponent(provider) : '');
+      const parsed = personalModelCatalogSchema.safeParse(await request(path, refresh ? JSON.stringify({ expectedVersion }) : undefined, signal, userId));
+      if (!parsed.success || parsed.data.version !== expectedVersion || provider && parsed.data.provider !== provider) throw new ModelSettingsApiError();
       return parsed.data;
     },
     async check(expectedVersion, signal, userId) {

@@ -21,4 +21,5 @@ export interface ModelSettingsActions {
   save(command: ModelSettingsCommand): void;
   check(expectedVersion: number): void;
   refreshCatalog?(expectedVersion: number): void;
+  selectProvider?(provider: ModelSettingsSnapshot["settings"]["provider"]): void;
 }

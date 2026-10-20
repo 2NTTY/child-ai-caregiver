@@ -3339,3 +3339,12 @@
 - Prompt Pack 0.1.54明確區分呈現一次與獨立審核一次，委派仍共用原預算；不提高硬上限、不強迫純澄清額外審核、不改真收據及豁免政策。
 - 最低驗證：一條既有Runner參數拒絕／計數／未授權執行檢查加入安全修參斷言並通過；兩條既有Prompt Pack版本／有效指引檢查、局部TypeScript及diff核對通過。追加[證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)，原失敗不回寫。零真模型／embedding／通知／部署，沒有再次調整或清零用量。
 - 限制：scripted結果不證明模型已改善理解；新版最終引用、長來源／多模態、真key地區限制與各draft gate保留。下一步沿DEV02處理未完成接線；已用完的真模型批准不重用。
+
+
+<a id="log-20261020-model-provider-catalog"></a>
+## LOG-20261020-MODEL-PROVIDER-CATALOG
+
+- 基線 `e28a206`、master `3795858`；修正兩種Google服務共用不相容模型選項，以及編輯provider時仍顯示已保存provider目錄的接線缺口。
+- Server目錄、personal保存及生成前共用供應商支援判斷；保留舊選擇並容許停用／刪key，不默換模型。GET可明確讀另一服務的profile，無憑證或外網操作；POST仍只核已保存key。Web／Android共用owner及表單改讀正確目錄，拒絕遲到回應，編輯另一服務時不讓舊key查核覆蓋選項。
+- 最低驗證：兩條既有正式client／API／memory Firestore及SDK攔截檢查通過；一項表單投影檢查及Server／前端局部TypeScript通過。原驗收資料完整保留，追加[MODEL02證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。零真模型／embedding／通知／部署，無用量或憑證變更。
+- 官方Express支援清單與已接profile取交集，未新增模型adapter或改組織政策。新key地區限制、真生成／embedding、Android設定及原draft門檻維持待驗；不把本機機械檢查寫成服務可用。

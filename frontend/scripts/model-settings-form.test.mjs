@@ -1,8 +1,22 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { modelSettingsDraft, modelSettingsSchema, modelCommandFromDraft, removeModelKeyCommand } from "../src/components/model-settings/model-settings-form.ts";
+import { modelCatalogSelection, modelSettingsDraft, modelSettingsSchema, modelCommandFromDraft, removeModelKeyCommand } from "../src/components/model-settings/model-settings-form.ts";
 const settings = { version: 7, mode: "personal", provider: "gemini", model: "gemini-3.1-flash-lite", keyConfigured: true, backgroundEnabled: true,
   dailyLimit: 100, maxModelCalls: 4, maxQueryEmbeddings: 2, updatedAt: null };
+test("provider changes use only its server catalog without silently selecting another model", () => {
+  const entry = { provider: "vertex", id: "gemini-2.5-pro", label: "Gemini 2.5 Pro", availability: "not_checked",
+    capabilities: { tools: true, image: true, audio: true, textStreaming: true } };
+  const catalog = { provider: "vertex", models: [entry] };
+  const pending = modelCatalogSelection({ provider: "gemini", models: [{ ...entry, provider: "gemini" }] }, "vertex", settings.model);
+  assert.equal(pending.loaded, false); assert.equal(pending.capabilities, undefined);
+  assert.equal(pending.options.length, 1);
+  const changed = modelCatalogSelection(catalog, "vertex", settings.model);
+  assert.equal(changed.supported, false); assert.equal(changed.options[0].value, settings.model);
+  assert.equal(changed.options[1].value, entry.id);
+  const selected = modelCatalogSelection(catalog, "vertex", entry.id);
+  assert.equal(selected.supported, true); assert.deepEqual(selected.capabilities, entry.capabilities);
+  assert.equal(settings.model, "gemini-3.1-flash-lite");
+});
 test("personal settings require consent and valid integer budgets before any direct request", () => {
   const draft = { ...modelSettingsDraft(settings), consent: true };
   assert.equal(modelSettingsSchema(true).safeParse(draft).success, true);

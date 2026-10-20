@@ -84,6 +84,16 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       }).catch(error => { if (request.current()) fail(error, true); })
         .finally(() => { if (request.current()) patch({ busy: null }); request.finish(); });
     },
+    selectProvider(provider) {
+      const current = latest.current, version = current.snapshot?.settings.version;
+      if (!env.userId || version === undefined || current.needsRead || !current.authorized) return;
+      const request = requests.start(true); if (!request) return;
+      patch({ busy: "catalog", catalog: null, keyCheck: null });
+      void api.catalog(version, false, request.signal, env.userId, provider).then(catalog => {
+        if (request.current()) patch({ catalog });
+      }).catch(error => { if (request.current()) fail(error); })
+        .finally(() => { if (request.current()) patch({ busy: null }); request.finish(); });
+    },
     refreshCatalog(expectedVersion) {
       const current = latest.current;
       if (!env.userId || !current.snapshot?.settings.keyConfigured || current.needsRead || !current.authorized

@@ -7,6 +7,7 @@ import { createStorageCipher } from '../server/storage-crypto.ts';
 import { createFirestoreAuthority } from '../server/firestore-authority.ts';
 import { createFirestoreModelRouting } from '../server/firestore-model-routing.ts';
 import { handleModelSettingsRequest } from '../server/model-settings-api.ts';
+import { createModelSettingsApi } from '../src/client/model-settings-api.ts';
 import { readAiConfig } from '../server/ai-config.ts';
 import { createGeminiKeyProviders } from '../server/gemini-key-provider.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
@@ -37,6 +38,14 @@ test('personal settings share policy, recover the original write, isolate accoun
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   }), user, routing);
   const before = await routing.view('owner');
+  const client = createModelSettingsApi('https://local.test', async (url, init) =>
+    handleModelSettingsRequest(new Request(url, init), 'owner', routing));
+  const choices = await client.catalog(0, false, new AbortController().signal, 'owner', 'vertex');
+  assert.equal(choices.provider, 'vertex');
+  assert.deepEqual(choices.models.map(model => model.id), ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro']);
+  assert.equal(choices.status, 'not_checked');
+  assert.deepEqual(await routing.view('owner'), before, 'Reading a different provider catalog must not change settings, usage or credentials');
+  assert.equal((await call('GET', '/models?provider=vertex&provider=gemini')).status, 400);
   const policy = platformPolicySchema.parse({ version: 0, enabled: true, model: config.model,
     dailyUserAttempts: 12, dailyGlobalAttempts: 20, personalDailyGlobalAttempts: 1000,
     maxModelCalls: 4, maxQueryEmbeddings: 2, maxToolCalls: 16, maxRunSeconds: 300, modelRequestSeconds: 90, maxModelRetries: 3, updatedAt: null });
@@ -65,9 +74,18 @@ test('personal settings share policy, recover the original write, isolate accoun
   const legacy = await (await call('GET', '', undefined, 'other', false)).json();
   assert.equal('effective' in legacy, false); assert.equal('maxToolCalls' in legacy.settings, false);
   assert.equal((await call('POST', '', { ...command, opId: randomUUID(), expectedVersion: 1, provider: 'vertex', apiKey: undefined })).status, 400);
-  const vertex = await routing.settings.save('owner', { ...command, opId: randomUUID(), expectedVersion: 1, provider: 'vertex', apiKey: key + '-vertex' });
+  await assert.rejects(routing.settings.save('owner', { ...command, opId: randomUUID(), expectedVersion: 1,
+    provider: 'vertex', model: 'gemini-3.1-flash-lite', apiKey: key + '-vertex' }), { code: 'model_unsupported' });
+  assert.equal((await routing.settings.get('owner')).version, 1);
+  const vertex = await routing.settings.save('owner', { ...command, opId: randomUUID(), expectedVersion: 1, provider: 'vertex',
+    model: 'gemini-2.5-pro', apiKey: key + '-vertex' });
   assert.equal(vertex.version, 2); assert.equal(vertex.provider, 'vertex');
   assert.equal((await routing.catalog('owner', 2, false, new AbortController().signal)).embedding.status, 'unsupported');
+  const { apiKey: ignoredKey, ...withoutKey } = command;
+  const removed = await routing.settings.save('owner', { ...withoutKey, opId: randomUUID(), expectedVersion: 2,
+    mode: 'disabled', model: 'gemini-3.1-flash-lite', removeKey: true, backgroundEnabled: false, consent: false });
+  assert.equal(removed.keyConfigured, false);
+  assert.equal((await routing.settings.resolve('owner')).apiKey, null);
   const operation = [...f.records.entries()].find(([path]) => path.includes('_model_settings_operations/'))!;
   assert.doesNotMatch(JSON.stringify([...f.records.values()]), /synthetic-personal-key-not-a-credential/);
   assert.doesNotMatch(JSON.stringify(recovered), /apiKey|fingerprint|ciphertext/);
@@ -103,6 +121,10 @@ test('Google personal adapters use the chosen protocol, bounded catalog and no p
   assert.equal((await vertex.inspect(signal)).reason, 'metadata_unsupported');
   await assert.rejects(vertex.embedding.embed({ task: 'RETRIEVAL_QUERY', text: 'Synthetic' }, signal), { code: 'unavailable' });
   assert.equal(calls.length, count);
+  const unsupported = createGeminiKeyProviders({ ...config, model: 'gemini-3.1-flash-lite' }, key, 'vertex');
+  await assert.rejects(unsupported.agent.generate({ model: config.model, contents: [], config: {}, liveConnectConfig: {}, toolsDict: {} }, signal),
+    { reason: 'model_not_available' });
+  assert.equal(calls.length, count, 'Unsupported Express selections must fail before a paid request');
   response = { models: [{ name: 'models/gemini-2.5-flash', supportedGenerationMethods: ['generateContent'] },
     { name: 'models/unknown-future-model', supportedGenerationMethods: ['generateContent'] }], nextPageToken: 'more' };
   const catalog = await gemini.catalog(2, true, signal);

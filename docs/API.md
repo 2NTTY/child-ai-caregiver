@@ -595,7 +595,7 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 | `GET /api/ai/settings` | 本人無密鑰設定、版本、可用狀態、平台／個人分開用量；v2 另回 `effective` 生效限制、管理政策版本及被上限收窄的欄位 |
 | `POST /api/ai/settings` | v2 帶原 `opId`、expectedVersion、mode、provider／model、可選 apiKey／removeKey、背景同意、每日／每輪限制及 consent；回同一設定的新版本 |
 | `GET /api/ai/settings/operations/:opId` | v2 只查本人原操作，回無密鑰的保存收據或 null；不回傳原請求、密鑰或指紋 |
-| `GET /api/ai/settings/models` | v2 回已接協定的模型目錄、目前設定版本及能力；不出網，不表示本人 key 已可用 |
+| `GET /api/ai/settings/models` | v2 回已接協定的模型目錄、目前設定版本及能力；可帶唯一的 `provider=gemini` 或 `provider=vertex` 查閱尚未保存的服務選項，不改設定、不使用 key 或出網，不表示本人 key 已可用 |
 | `POST /api/ai/settings/models` | v2 帶 expectedVersion；使用已保存 key，最多兩頁各100項模型 metadata，和已接模型取交集；明示 truncated，不生成內容 |
 | `POST /api/ai/settings/check` | expectedVersion；Gemini key 查選定模型 metadata；Vertex Express 未提供對應方法時回 metadata_unsupported，不發試用生成 |
 
@@ -603,7 +603,7 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 
 v2 保存先核原 opId／請求指紋，再核版本；原操作重播返回原收據，換內容回 operation_conflict，舊版本回 version_conflict。失聯先以原 opId 查回，不自動重送 key；查無收據亦不宣稱一定未提交。client 錯誤只攜帶無密鑰的 operationId，身份切換後不能查另一人的操作。輸入框仍須在送出／失敗／斷線／身份或 Server 變更時清除。模型查核與目錄刷新共用每帳號每分鐘一次／全站四槽保護；逾限429，不重設模型用量。
 
-provider 為 gemini 或 vertex；更換供應商須提供相應新 key，不能沿用舊 key 猜測認證模式。模型目錄只提供 Server 已接協定的型號，再按供應商 metadata 篩選；metadata 不證明生成／embedding／配額或帳單。錯誤只回穩定原因（認證、地區、模型、配額、逾時或未支援），不透出原始供應商正文。Vertex Express 沒有已核對的 embedding 方法，明示混合檢索不可用，不借平台額度。
+provider 為 gemini 或 vertex；更換供應商須提供相應新 key，不能沿用舊 key 猜測認證模式。模型目錄與 personal 保存檢查共用 Server 的供應商／協定支援清單；Vertex Express 不套用 Gemini Developer 的全部選項。供應商 metadata 可再收窄目錄，但不證明生成／embedding／配額或帳單。舊設定選項不再支援時仍可停用或刪 key，不靜默替換模型。目錄 POST 只檢查已保存的供應商及 key，不接受 provider query；GET 明確選擇另一服務也不會改用已保存 key。錯誤只回穩定原因（認證、地區、模型、配額、逾時或未支援），不透出原始供應商正文。Vertex Express 沒有已核對的 embedding 方法，明示混合檢索不可用，不借平台額度。
 
 舊 JSON client 保留原欄位；當選定供應商／型號不能由舊契約表示時，回 client_update_required，不偽稱仍是預設模型。舊保存保留已存在的新欄位；v2 首次明確保存才採 `limitPolicyVersion:2`，不默改舊設定的生成／查詢限額。
 

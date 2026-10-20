@@ -4,7 +4,7 @@ import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { AiConfig } from "./ai-config.ts";
 import { nativePersonalThinkingConfig } from "./model-thinking.ts";
 import type { ModelKeyCheck, PersonalModelCatalog, PersonalModelProvider } from '../src/shared/model-settings.ts';
-import { personalModelCatalog } from './personal-model-catalog.ts';
+import { personalModelCatalog, personalModelSupported } from './personal-model-catalog.ts';
 import { AGENT_LIMITS, AgentStopped } from "./agent-budget.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
 import { EmbeddingFailure } from "./embedding-gateway.ts";
@@ -83,6 +83,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
     agent: {
       async generate(request, signal) {
         if (signal.aborted) throw new ProviderFailure("unavailable");
+        if (!personalModelSupported(config.model, provider)) throw new AgentStopped('model_not_available');
         try {
           const response = await client.models.generateContent({ model: config.model, contents: request.contents,
             config: { ...request.config, httpOptions, candidateCount: 1,
@@ -108,6 +109,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
     model: {
       async generate(input, options) {
         if (options.signal.aborted) throw new ProviderFailure("unavailable");
+        if (!personalModelSupported(config.model, provider)) throw new ProviderFailure("unavailable");
         try {
           const response = await client.models.generateContent({ model: config.model,
             contents: input.messages.map(message => ({ role: message.role, parts: [{ text: message.text }] })),

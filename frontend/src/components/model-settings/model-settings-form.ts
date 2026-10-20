@@ -1,6 +1,16 @@
 import { z } from "zod";
 import { personalLimits, type ModelSettings, type ModelSettingsCommand } from "../../model-settings-view-model.ts";
-import type { EffectiveModelLimits } from "../../../../src/shared/model-settings.ts";
+import type { EffectiveModelLimits, PersonalModelCatalog, PersonalModelProvider } from "../../../../src/shared/model-settings.ts";
+
+/** Only project the server's selected-provider catalog; never substitute a model. */
+export function modelCatalogSelection(catalog: PersonalModelCatalog | null | undefined, provider: PersonalModelProvider, selected: string) {
+  const loaded = catalog?.provider === provider;
+  const models = loaded ? catalog.models.filter(item => item.provider === provider) : [];
+  const match = models.find(item => item.id === selected);
+  return { loaded, supported: Boolean(match), capabilities: match?.capabilities,
+    options: [...(!match ? [{ value: selected, label: selected + (loaded ? "（此服務尚未接線）" : "（等待此服務目錄）") }] : []),
+      ...models.map(item => ({ value: item.id, label: item.label }))] };
+}
 
 export const modelLimitFields = [
   ["dailyText", "個人每日呼叫上限", personalLimits.daily, "次"],

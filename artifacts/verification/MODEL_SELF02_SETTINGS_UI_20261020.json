@@ -169,5 +169,29 @@
     "productionChanges": false,
     "organizationPolicyChanges": false,
     "billingPlanChanges": false
+  },
+  "providerCatalog20261020": {
+    "sourceBase": "e28a2066d1b335bee858e9e861e59f42e30219cc",
+    "scope": "Provider-specific server catalog, settings/runtime guard, shared Web/Android draft selection",
+    "checks": {
+      "formalClientApiSettingsAndSdk": "2 existing tests passed with in-memory Firestore and intercepted SDK requests",
+      "providerSelectionProjection": "1 targeted pure form projection test passed",
+      "scopedServerTypeScript": "passed",
+      "scopedFrontendTypeScript": "passed"
+    },
+    "effects": [
+      "Provider catalog reads do not mutate credentials, settings or usage",
+      "Unsupported Express model is rejected before an outbound generate request",
+      "Removing the key or disabling personal mode remains possible for an outdated model",
+      "Draft provider selection does not silently substitute a model or show another provider capability"
+    ],
+    "realModelCalls": 0,
+    "externalNotifications": 0,
+    "deployments": 0,
+    "remaining": [
+      "Real personal-key generation and embeddings",
+      "Browser and actual Android interaction for this provider-selection change",
+      "Production delivery and original draft gates"
+    ]
   }
 }
