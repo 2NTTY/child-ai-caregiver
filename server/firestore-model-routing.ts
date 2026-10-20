@@ -30,6 +30,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
   const allowed = (userId: string) => authority.runTransaction(userId, null, async () => true);
   return {
     settings,
+    async readInteractiveRunSeconds(tx: import("@google-cloud/firestore").Transaction) { return (await policy.readPolicyIn(tx)).maxRunSeconds; },
     async view(userId: string): Promise<ModelSettingsView> {
       const state = await settings.get(userId), current = await policy.readPolicy();
       return { settings: state, enabled: config.enabled, platformAvailable: config.enabled && current.enabled && Boolean(config.project),
@@ -64,6 +65,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       const enabled = config.enabled && state.mode !== 'disabled' && (personal
         ? Boolean(snapshot.apiKey) && (trigger !== 'worker' || state.backgroundEnabled) : current.enabled && Boolean(config.project));
       const selectedConfig: AiConfig = { ...config, enabled, model: current.model,
+        timeoutMs: current.modelRequestSeconds * 1000, agentMaxRetries: current.maxModelRetries,
         dailyUserAttempts: current.dailyUserAttempts, dailyGlobalAttempts: current.dailyGlobalAttempts,
         ...(personal ? { maxAttempts: 1, model: PERSONAL_MODEL, dailyUserAttempts: state.dailyLimit, dailyGlobalAttempts: current.personalDailyGlobalAttempts } : {}) };
       const disabled = async (): Promise<never> => { throw new AgentStopped('unavailable'); };

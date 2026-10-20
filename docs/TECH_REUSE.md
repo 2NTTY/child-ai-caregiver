@@ -302,3 +302,15 @@ Server 使用 `mediabunny 1.61.5`（MPL-2.0）原碼及 LICENSE 不作修改；�
 [Expo Audio](https://docs.expo.dev/versions/latest/sdk/audio/)／[Mediabunny 讀取 API](https://mediabunny.dev/guide/reading-media-files)／[Gemini 音訊格式](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/multimodal/audio-understanding) 已核對；本機以缺少總時長的 WebM 及 WAV 核對格式／上限，並核加密原物件查回。未證明手機錄音、真音訊模型品質或正式保存／轉錄全鏈；沿 S12 gate 交付。
 
 S12 音訊模型接線（2026-10-16）：沿既有 ADK 2.1.0／GenAI 2.24.0／Gemini 3.1 Flash-Lite，不加轉錄供應商。官方模型頁已核對單 prompt 一段音訊及 MP4／WebM／OGG／WAV／MPEG 支援；專案仍限兩分鐘／5 MiB。音訊原件留私有 Storage、ADK 持久事件只記身份，由 gateway 每輪暫時加入相同位元組，避免超過 Firestore 單文件容量；原工具 parts、用量與取消不變。正式 Runner＋合成 provider 的同一語音操作流程通過，不當成真音訊理解品質或正式入口已開啟。[官方規格](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-1-flash-lite)
+
+
+### S04-W03 固定發布入口
+
+2026-10-18：沿 EAS CLI 24.14.0／Expo Updates 57.0.23／fingerprint 0.20.13，不新增發布平台。核對固定 CLI：`fingerprint:generate` 會上傳 fingerprint，故零發布 plan 使用本機 `resolveRuntimeVersionAsync`；`build:view`／`update:view`／有界 `update:list` 查正式身份及 runtime，`update:republish` 作相容回退。依 [runtime](https://docs.expo.dev/eas-update/runtime-versions/)／[rollback](https://docs.expo.dev/eas-update/rollbacks/) 保留原生與 JS 相容邊界；工具 JSON 只保存 ID／版本等白名單欄位。固定 SDK 方法及本機守門已核對，真雲端發布／回退與裝置升級仍待驗；採用與否不靠模型猜測套件是否含原生改動。
+
+
+### S12-W05 有界檔案讀取（2026-10-18）
+
+Word `.docx` 採固定 `mammoth 1.13.0`（BSD-2-Clause）`extractRawText`，不渲染HTML、執行文件或開放外部檔案；舊 `.doc` 不冒稱相容。沿用其已有 `jszip 3.10.2`（MIT／GPL-3.0雙授權，使用MIT條款）並列為直接依賴，以公開nodeStream逐塊核對解壓量，再抽取同一原檔。Node24需用Readable.wrap接駁該版本的舊式stream，不把它直接當async iterator。兩者原碼及license不修改。
+
+解析放在有時間／記憶體上限的worker，只回有界文字及續讀位置；PDF沿既有pdfjs／knowledge-pdf逐頁方法，文字型檔案使用UTF解碼。採用依據：[Mammoth](https://github.com/mwilliamson/mammoth.js)、[JSZip nodeStream](https://stuk.github.io/jszip/documentation/api_zipobject/node_stream.html)。一個合成DOCX已核對抽取及續讀，與私人保存流程合併驗證；不把它當真Agent理解、圖片OCR或任意格式解析的證據，正式接線狀態仍見PLAN。

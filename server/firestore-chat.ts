@@ -1,3 +1,5 @@
+import { chatFileMessageReferenceSchema, chatFileLinkInputSchema } from '../src/shared/chat-files.ts';
+import type { FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { voiceMessageReferenceSchema, voiceLinkInputSchema } from '../src/shared/voice.ts';
 import type { FirestoreVoiceStore } from './firestore-voice.ts';
 import { officialHelpIdSchema, officialHelpFromTools } from '../src/shared/agent-feedback.ts';
@@ -21,10 +23,10 @@ export const firestoreChatMessageSchema = z.object({
   id: uuid, childId: uuid, authorUserId: z.string().min(1).max(256).nullable(),
   role: z.enum(['user', 'model']), text: messageText, inReplyTo: uuid.nullable(), createdAt: datetime,
   agentRunId: uuid.optional(), officialHelp: z.array(officialHelpIdSchema).max(2).optional(),
-  voice: voiceMessageReferenceSchema.optional(),
-}).strict().refine(v => (!v.voice || v.role === 'user') && (v.text.trim().length > 0 || v.voice !== undefined));
-const inputSchema = z.object({ text: messageText, voice: voiceLinkInputSchema.optional() }).strict()
-  .refine(v => v.text.trim().length > 0 || v.voice !== undefined);
+  voice: voiceMessageReferenceSchema.optional(), file: chatFileMessageReferenceSchema.optional(),
+}).strict().refine(v => (!(v.voice || v.file) || v.role === 'user') && !(v.voice && v.file) && (v.text.trim().length > 0 || v.voice !== undefined || v.file !== undefined));
+const inputSchema = z.object({ text: messageText, voice: voiceLinkInputSchema.optional(), file: chatFileLinkInputSchema.optional() }).strict()
+  .refine(v => !(v.voice && v.file) && (v.text.trim().length > 0 || v.voice !== undefined || v.file !== undefined));
 const messagePath = /^\/api\/children\/([0-9a-f-]{36})\/messages$/iu;
 const lockScope: WorkRecoveryScope = { ownerUserId: 'system:chat-reply',
   workspaceId: '00000000-0000-0000-0000-000000000000',
@@ -38,7 +40,7 @@ export interface FirestoreChatStore extends ChatStore {
 }
 
 /** The original chat contract, with private encrypted rows and caller-wide online receipts. */
-export function createFirestoreChatStore(options: FirestoreDomainOptions & { voice?: Pick<FirestoreVoiceStore, 'prepareLink'> }): FirestoreChatStore {
+export function createFirestoreChatStore(options: FirestoreDomainOptions & { voice?: Pick<FirestoreVoiceStore, 'prepareLink'>; files?: Pick<FirestoreChatFilesStore, 'prepareLink'> }): FirestoreChatStore {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const scopeFor = (binding: FirestoreAuthorityTransaction, childId: string) => ({ ...binding.scope, childId });
   const messageRef = (id: string) => data.ref('chat_messages', 'chat-message', id);
@@ -77,10 +79,13 @@ export function createFirestoreChatStore(options: FirestoreDomainOptions & { voi
       const message: ChatMessage = { id: randomUUID(), childId, authorUserId: binding.scope.ownerUserId,
         role: 'user', text: input.text, inReplyTo: null, createdAt: new Date().toISOString() };
       if (input.voice && !options.voice) domainReject('voice_unavailable', 503);
+      if (input.file && !options.files) domainReject('chat_file_unavailable', 503);
       const linked = input.voice ? await options.voice!.prepareLink({ ...binding, scope: scopeFor(binding, childId) }, input.voice.id, input.voice.expectedVersion, message.id) : null;
       if (linked) message.voice = linked.voice;
+      const linkedFile = input.file ? await options.files!.prepareLink({ ...binding, scope: scopeFor(binding, childId) }, input.file.id, input.file.expectedVersion, message.id) : null;
+      if (linkedFile) message.file = linkedFile.file;
       const write = await prepare(binding, message, submission.operation.opId);
-      return { ...write, childId, statusCode: 201, result: { message }, commit() { linked?.commit(); write.commit(); } };
+      return { ...write, childId, statusCode: 201, result: { message }, commit() { linked?.commit(); linkedFile?.commit(); write.commit(); } };
     },
   };
   return {

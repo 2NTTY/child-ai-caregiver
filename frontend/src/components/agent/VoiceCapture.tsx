@@ -30,14 +30,14 @@ export function VoiceCapture({ onPick }: { onPick(attachment: AssistantAttachmen
       if (!recorder.uri) throw new Error("recording_missing");
       const item = await copyNativeVoice(new File(recorder.uri), "audio/mp4", `錄音-${new Date().toISOString().replace(/[:.]/g, "-")}.m4a`);
       if (generation.current !== started || !active.current) { item.dispose?.(); return; }
-      current.current?.dispose?.(); current.current = item; setRecording(item); setState("ready");
+      current.current?.dispose?.(); current.current = item; setRecording(item);
     } catch {
       if (active.current && generation.current === started && keep) setError("錄音未能完成；請重新錄製或改選已有音訊。");
     } finally {
       try { removeRecordedFile(); } catch { /* Only our recorder's cache file; OS may already have removed it. */ }
-      await setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
+      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true, shouldPlayInBackground: false, allowsBackgroundRecording: false }).catch(() => undefined);
       busy.current = false;
-      if (active.current && !current.current) setState("idle");
+      if (active.current) setState(current.current ? "ready" : "idle");
     }
   }
   function discard() {
@@ -59,7 +59,7 @@ export function VoiceCapture({ onPick }: { onPick(attachment: AssistantAttachmen
       if (!active.current || started !== generation.current) return;
       if (AppState.currentState !== "active") return;
       if (!permission.granted) { setError("未獲咪高峰權限。你仍可選取已有音訊或使用文字。"); return; }
-      await setAudioModeAsync({ allowsRecording: true, shouldPlayInBackground: false, allowsBackgroundRecording: false, interruptionMode: "doNotMix" });
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true, shouldPlayInBackground: false, allowsBackgroundRecording: false, interruptionMode: "doNotMix" });
       if (!active.current || started !== generation.current) return;
       await recorder.prepareToRecordAsync();
       if (!active.current || started !== generation.current) { await recorder.stop().catch(() => undefined); removeRecordedFile(); return; }
@@ -70,7 +70,7 @@ export function VoiceCapture({ onPick }: { onPick(attachment: AssistantAttachmen
     finally {
       preparing.current = false; permissionWaiting.current = false;
       if (!timer.current) {
-        await setAudioModeAsync({ allowsRecording: false }).catch(() => undefined);
+        await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true, shouldPlayInBackground: false, allowsBackgroundRecording: false }).catch(() => undefined);
         if (active.current) setState("idle");
       }
     }
@@ -80,7 +80,7 @@ export function VoiceCapture({ onPick }: { onPick(attachment: AssistantAttachmen
     {recording?.localUri ? <LocalAudioPreview uri={recording.localUri} /> : null}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     <View style={styles.actions}>{state === "recording" ? <AppButton label="停止並試聽" onPress={() => { void finish(true, generation.current); }} /> :
-      recording ? <AppButton label="加入未送出草稿" disabled={busy.current} onPress={() => { const item = current.current; if (!item) return; current.current = null; setRecording(null); onPick(item); }} /> :
+      recording ? <AppButton label="加入未送出草稿" disabled={state !== "ready"} onPress={() => { const item = current.current; if (!item) return; current.current = null; setRecording(null); onPick(item); }} /> :
       <AppButton label="開始錄音" disabled={state !== "idle"} onPress={() => { void start(); }} />}
       {state !== "idle" || recording ? <AppButton label={recording ? "捨棄錄音" : "取消錄音"} variant="quiet" onPress={discard} /> : null}
     </View><Text style={styles.note}>每段最多兩分鐘／5 MiB。錄音及試聽只在本機；按聊天的送出才會上傳。離開 App 會停止未送出的錄音。</Text>

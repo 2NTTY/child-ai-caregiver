@@ -43,11 +43,11 @@ export async function openFirebaseWorkerRuntime(env: Record<string, string | und
     backgroundDelivery = createFirebaseBackgroundDelivery({ ...workerConfig, workerUrl: workerConfig.workerOrigin + '/internal/product-work' });
     const dispatcher = createFirestoreTaskDispatcher({ ...options, delivery });
     const maintenance = createFirestoreBackgroundMaintenance({ ...options, knowledge: runtime.knowledgeRefresh,
-      journal: runtime.journal, photos: runtime.photos, voices: runtime.voices, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
+      journal: runtime.journal, photos: runtime.photos, voices: runtime.voices, files: runtime.files, erasures: runtime.erasures, cleanup: runtime.erasureCleanup });
     const background = createFirestoreBackgroundQueue({ ...options, readControl: tx => authority.readControl(tx),
       transport: backgroundDelivery, signal: controller.signal,
       async execute(job, signal) {
-        if (['knowledge-check', 'photo-cleanup', 'voice-cleanup', 'scope-erasure'].includes(job.kind)) return maintenance.process(job, signal);
+        if (['knowledge-check', 'photo-cleanup', 'voice-cleanup', 'file-cleanup', 'scope-erasure'].includes(job.kind)) return maintenance.process(job, signal);
         const validIdentity = async () => {
           if (signal.aborted) return false;
           const current = await runtime.currentAuth(job.scope.ownerUserId);

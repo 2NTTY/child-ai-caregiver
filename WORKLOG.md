@@ -2940,6 +2940,179 @@
 - Android 共用設定卡改接原生 owner；通知點擊只查回當前可讀目標，不自動回覆收到或完成。歷史、匯出、刪除 collections、還原撤銷及 plugin／描述檔檢查已同步；索引只保存定義。
 - 新增一條本機合成流程 1/1 通過（154.9952ms），從正式 API／client 驗原收據、隔離、輪換、撤銷、unknown、歷史及還原。初次型別揭示舊渠道 enum及三個 import 名稱錯配，修正後 Server 3入口／前端5入口零診斷；最後呈現變更只補前端3入口型別及配置語法。沒有全量、真模型／FCM／雲端驗收／手機／新 APK／部署；真提醒完成停止及真機仍待驗。詳細見 [S13 證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
 - 後續仍須原生 Firebase 描述檔／最小權限、雲端索引、相容部署及新 APK，才能完成一則獲授權真通知的門檻；依賴分支保持 draft，不提前標 S13 或 Android 成品完成。
+
+
+<a id="log-20261018-s04-mobile-release"></a>
+### LOG-20261018-S04-MOBILE-RELEASE — 固定發布工具本機準備
+
+- 結果／原因：在原 Android 功能分支上補 `mobile:release`，共用改動同時列 Web／Android，按官方 runtime 區分 APK與OTA；保留原 VM 部署、固定簽署／遞增版本及相容回退，避免後續 AI 猜測或重畫 App。
+- 版本／方法：base `ca02a2c`，EAS 24.14.0；已確認 `fingerprint:generate` 會上傳，零發布 plan 改用本機 resolver。B 單作者；主模型實作及review，無子代理。
+- 驗證：一條合成分類／runtime／回退及正式離線 CLI 通過；[EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。零模型、雲端、手機、完整建置或全量測試。
+- 限制／下一步：Web產物只準備待部署，EAS／OTA回退／新APK覆蓋安裝及依賴合併仍待驗；不將本機工具通過當Android成品。
+
+
+### LOG-20261018-ANDROID-FCM-CONFIGURATION — 原生發佈前置
+
+- 原專案登記 Android package、建立專用受限公開 key，並以保留 etag 的 policy 更新向原 VM 授予唯一 FCM 發送權限；原 policy 及描述檔保留工程外。既有 Web／原生登入 key 未修改。
+- Expo preview 的 secret file 已保存。首次 CLI 因舊依賴連結無法載入配置而在寫入前失敗；只查末段與原結果，核對不存在後以既有專案的本機 metadata context 完成同一設定，沒有另建網站或服務。[證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
+- 零私有程式上傳、新 APK、部署、模型或通知；索引、裝置 token、真 FCM及依賴合併仍待驗。B 主責單作者，主模型設定／review；使用者最新允許 Luna，僅另作鍵盤問題唯讀定位，沒有代做雲端操作。
+
+
+### LOG-20261018-ANDROID-KEYBOARD-COMPOSITION
+
+- 使用者回報鍵盤開關時輸入框位移；Luna 僅定位，主模型核對原生 shell、Android resize 配置及 Expo 官方方法，移除重複 JS 高度補償，保留共用畫面、導航及 iOS 原有分支。
+- 只做變更入口型別，1 root／0 diagnostics；沒有新增鏡像單元測試、手機操作、模型或發布。實際鍵盤手感仍待真機，不把程式原因核對當使用者驗收；併入下一相容 Android 交付。[證據](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
+
+
+### LOG-20261018-PLAN-P1-P2-ARCHIVE
+
+- 按使用者要求，在目前 Android 本機修正與發布工具收束後，把 P1／P2、早期已交付文件包與原責任安排移至單一歷史文件；P3 以後及目前待驗保持根 PLAN。原文來源 `92107bb64295222379b89acbd5d58bd5fbd128f0`，六段原樣搬出，索引保存 hash、位置及查閱條件。
+- 根 PLAN 保留所有原顯式錨點，STR01／指定備份還原未標完成；不改寫舊 WORKLOG／失敗證據。只做文件範圍、錨點與搬移內容核對，不跑產品測試。
+
+
+<a id="log-20261018-shared-mobile-cloud"></a>
+### LOG-20261018-SHARED-MOBILE-CLOUD — 同版原站接線與一次 APK 建置
+
+- 固定源 `bf47c47`；Node24.19／npm11.8／EAS24.14。使用者批准的一次650檔、25.3MB前端封包已提交原Expo專案，build `82cb911e`／versionCode2／preview；當時建置中，遠端fingerprint與本機相同，不重複提交或購買方案。
+- 實際Android與Web各一次bundle成功；發布plan及archive核對未發布。原VM以約2.6MB後端及4.7MBWeb小型層更新API／worker／Web，保留原映像與設定；10個索引／6項欄位設定READY。近期原生備份只核metadata，不改延後真還原決定。
+- 候選核對先因掛載、Compose參數及驗收腳本的非產品查詢形狀停止；保留失敗，只補相應啟動核對，沒有重建或跑全套。最終Linux音訊時長、正式runtime及4次有界空結果查詢通過；三服務健康與公開HTML hash相符。[EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
+- 零模型／通知／業務資料遷移／配額改動；沒有操作手機。真音訊、原生權限／FCM、跨端真人、覆蓋安裝、OTA回退及依賴合併仍待驗；不把靜態或啟動結果當成Android完成。主模型實作／review，Luna只定位既有部署入口；交付按Android主責單作者。
+
+
+### LOG-20261018-ANDROID-APK-READY
+
+- 原批准的唯一 build `82cb911e-5e37-43b6-9f30-e2aa9c954de0` 已於07:54 UTC核對 FINISHED；源 `bf47c47`、versionCode 2、原簽署及 preview channel。沒有重建、購買方案或追加上傳。
+- 固定 `mobile:release --record-build` 入口已核對身份／平台／runtime並保存本機發布基線；[APK及結果](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)可追溯。這是建置與基線結果，真機安裝／升級、錄音、FCM及OTA回退仍待驗，不代填使用者結果。
+
+
+### LOG-20261018-VOICE-CLOUD-ACCEPTANCE
+
+- 沿使用者對後續同類最低驗收的批准，以1個合成帳號／孩子、1段9.627秒本機合成錄音核對正式 `bf47c47` runtime：加密附件保存與hash讀回、真ADK語音理解、2項官方引用及原運行重新連線讀回。聊天4生成／1查詢；既有排程worker另用1生成完成3段轉錄，原訊息可由轉錄搜尋找到。僅2次狀態讀取，沒有第二輪聊天、真通知或手機操作。
+- 只延後本次合成孩子的無關摘要工作以限定呼叫，沒有改全站排程／配額。共6次計費嘗試；5次token用量不完整，不能據已知tokens推斷實際總費用。合成錄音／轉錄已清理，孩子已提交獨立journal及刪除屏障，身份已撤銷並刪除Firebase帳號；未輪詢整體物理清理。[EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
+- 本次由正式組裝的業務入口進入，沒有替換Agent或模型；不代替完整HTTP／登入、助手聊天保存、真人首次聊天、手機／Web錄音播放或跨設備畫面驗收，也不宣稱全面醫療品質通過。現有手機待驗及依賴合併保持。
+
+
+### LOG-20261018-APK-UPGRADE-IDENTITY
+
+- 唯讀核對實際新舊APK。Android官方build-tools33.0.2／apksigner0.9各驗一次v2簽署，均通過；同applicationId `org.yuyoufang.app`、相同證書SHA-256，versionCode由1升至2。檔案hash及工具來源保存於[交付EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。未讀取或下載私鑰。
+- aapt兩次絕對路徑讀取失敗均為中文路徑編碼；保留錯誤，只補相對路徑metadata讀取成功，沒有重跑簽署或建置。這證明更新身份前提，不等於真機覆蓋安裝／資料保留已驗；零模型、通知、手機或上傳。部署交接移除過時驗收快照，統一指向PLAN。
+
+
+### LOG-20261018-APK-USER-INSTALL
+
+- 使用者在收到 versionCode 2／build `82cb911e` 下載連結後回覆「已覆蓋安裝」。只記錄實際回覆，正常開啟、登入／資料保留及其餘手機功能仍待確認；沒有代填完整升級通過。
+- ADB唯讀查核沒有已連接裝置，因此未操作手機；零模型／通知／重新建置。PLAN／STATUS修正過時建置與未安裝快照，[同一EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)分開保存原簽署核對與本次人工結果。
+
+### LOG-20261018-ANDROID-NAVIGATION-KEYBOARD
+
+- 使用者補充確認新版APK「能正常開啟，原資料仍在」。其後按本人授權接入ADB，核對versionCode 2；一次畫面證實鍵盤遮住輸入框，私人截圖只留本機、沒有送出訊息。
+- 鍵盤避讓移入頁面內容，導航欄按最新要求保持原位，不再隱藏／升降。站內切頁保留長駐owner草稿及原操作；只讀重讀不再冒充寫入，頁面局部草稿、切孩子／身份／離站仍保留保護。相機沿既有ImagePicker結果返回，不改成選擇選單或自動發送。
+- 一個定向導航情景及18個受影響前端入口型別通過；第一次測試harness漏theme.colors，已保留失敗並只修stub。未跑全量、模型或通知。程式review已完成；相容Web／OTA交付及修後真機尚待核對，見[同一EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
+
+### LOG-20261018-MOBILE-RELEASE-PREPARATION
+
+- `d321553`同版Web正式build已通過。Android發布在EAS讀取公開環境之前，app.config先校驗原生Firebase描述檔，因公開projectId尚未載入而停止；沒有提交OTA或build。保留原stopped manifest。
+- 固定發布入口只在env:pull專案定位階段移除原生build專用變數；讀回公開配置後仍執行完整描述檔與runtime核對。後續只補Android發布，復用d321553相同前端的已建Web產物，避免再建一次。
+
+### LOG-20261018-KEYBOARD-DELIVERY
+
+- 相容OTA群組`759892ac-b994-45c8-b1fd-dc2502077990`已發布，runtime與已裝APK v2一致。本人解鎖後，以ADB完成一次開鍵盤、四字測試草稿、清除及收鍵盤；輸入可見、導航沒有升到鍵盤上方，穩定後回原位置。過渡截圖有短暫差異，不宣稱每幀動畫已驗；私人畫面不提交，沒有送出訊息。
+- Web已部署`keyboard-d321553`並核公開HTML hash，API／worker容器與啟動時間不變。首次Docker建置把image ID當成倉庫名，切站前停止；只補使用已核對同ID的本機tag。前面的產物覆蓋及Expo路由檔allowlist失敗亦保留；Web只補建一次，沒有重發成功OTA。固定發布工具保存獨立Web產物，避免再被Android export覆蓋。
+- 零模型／通知／新APK；主機仍至10月23日13:33:50香港時間。其餘Android gate保留。使用者新要求首頁快捷入口及附件提交，列入當前接線，未宣稱已完成；詳見[交付EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
+
+
+### LOG-20261018-QUICK-INPUT-ATTACHMENTS
+
+- 首頁左下角的語音選項連回既有錄音／草稿／提交 owner；一按拍照保持，照片回傳改走共用附件檢查及站內導航，避免繞過目前錄音草稿限制。3個受影響入口型別0 diagnostics、diff檢查通過；沒有模型、通知、全量或新真機測試，尚未發布此增量。
+- 使用者增補任意類型檔案（包括Word）可發送，畫面不做文件預覽，只顯示「不支援預覽」。Agent內容處理與畫面預覽分開，不預先標尚未讀取；正式文件保存／讀取／下載與清理接點列S12-W05待實作，不能用舊預覽選檔當已交付。根PLAN開頭已補P1／P2凍結歷史直接路徑，未改歷史正文。
+
+
+### LOG-20261018-CHAT-FILE-FOUNDATION
+
+- S12-W05已補通用檔案的私人加密物件、Firestore預留／版本／原收據、未知上載查回、聊天交易綁定、授權下載及獨立刪除日誌。API只提供可組裝port，正式runtime尚未啟用，沒有部署或新增雲端資料。
+- Word採Mammoth及有界JSZip預檢；文字與既有PDF閱讀方法保留範圍／續讀及抽取限制。畫面預覽與Agent閱讀分開，不以「尚未讀取內容」冒充檔案能力結論。
+- 一條本機情景通過；6個受影響roots型別0 diagnostics。型別接點、錯誤碼預期及舊式stream相容三項修正與原失敗保留在[附件EV](artifacts/verification/S12_CHAT_FILES_20261018.json)。沒有真模型／雲端／通知／瀏覽器／真機或全量測試。正式Agent／兩端owner、匯出／清理／恢復及部署仍待完成，不能標記附件已交付。
+
+
+### LOG-20261018-CHAT-FILE-INTEGRATION
+
+- S12-W05通用附件已接正式API／worker、Agent受限閱讀、Web／Android共同owner與聊天卡、原檔下載、帳戶匯出、逾期／刪除清理及備份恢復。所有格式可保存，Word／文字／PDF按既有解析器有界讀取；畫面維持「不支援預覽」，沒有新增模型或另一套資料。
+- 擴充同一條連貫本機情景，核原操作未知查回、訊息綁定、Word續讀、隔離、下載／匯出、恢復世代、刪除遮蔽及真清理consumer；1通過。受影響Server與前端各5個roots型別0 diagnostics；首次匯出窄port型別缺口及修正保留於[附件EV](artifacts/verification/S12_CHAT_FILES_20261018.json)。沒有全量、真模型、雲端、通知或真機驗收。
+- 此為程式接線及本機結果，尚未部署；真SDK、兩端選檔與Agent內容理解仍待必要交付。既有原生備份真還原延後狀態不變。
+
+
+### LOG-20261018-CHAT-FILE-STORAGE-BOUND
+
+- 新附件兩個索引及兩項欄位設定已READY，Web產物已建好，官方fingerprint與APK v2相同。候選映像的首次真SDK核對在runtime啟動時拒絕40 MiB密文讀取上限；未建立本輪合成身份／附件、未切網站，零模型／通知。
+- 根因是共用Storage port保留16 MiB ceiling；本次只將可顯式指定的上限改為40 MiB，照片預設及語音10 MiB界線不變，不放寬公開照片API。原失敗及封裝／換行準備修正保留於附件EV；原核對須修正後補一次，不能將啟動失敗算已通過。
+- 修正後直接組裝正式Cloud Storage SDK file port通過，零請求；只核構造接點，不重跑已通過的本機情景或冒充雲端保存結果。
+
+
+### LOG-20261018-CHAT-FILE-CLOUD-DELIVERY
+
+- C單作者交付Server容量修正a12da46及原站更新；API／worker `files-a12da46`、Web `files-c4ac1b9`健康，公開HTML與準備產物hash相同。原映像／受保護配置保留；配額、正式資料及通知設定不變，零模型／通知，未做資料遷移或真備份還原。
+- 只使用一個合成身份、孩子及極小Word：已保存並連回聊天。檢查容器缺通知掛載與Node input-type繼承先後停批；前者未建資料，後者已撤銷合成身份。改成正式檔案入口後讀同一原檔成功，再用獨立journal及真cleanup consumer清理；boolean回傳斷言誤讀後，只唯讀確認tombstone complete及物件已不存在。未重建帳號／附件，原失敗及撤權場景保留。
+- 真SDK與資料接點的有限結果見[附件EV](artifacts/verification/S12_CHAT_FILES_20261018.json)；不等同真Agent理解或兩端選檔驗收。Android相容OTA尚待發布，原人工gate及原生備份真還原仍未通過。
+- 按使用者更新目標：Android成品後先報告並停止；個人key、自選模型／限額及本地Agent入口留待使用者重新計劃，不自動開工。
+
+
+### LOG-20261018-CHAT-FILE-ANDROID-UPDATE
+
+- B交付一次Android preview OTA，來源5bd53b6／共用前端c4ac1b9，update group `a8c6bf35-1b67-42ea-9c41-cf7c0ec896a6`。官方runtime `33699576537bf6f4081bddfb9c8807cd6bdef3ee` 與已安裝APK v2相同，不重建APK。既有Web產物已獨立部署及核hash，發布入口沿c4ac1b9後差異只做OTA，沒有重建Web。
+- 手機接收、兩端系統選檔／下載、真人Agent內容理解、語音／通知及OTA回退仍待驗；沒有藉發布通過改寫人工結論。依賴draft保留，不合併未滿足gate的PR。最新分工按B提需求／前端接線、C後端實作，單作者與既有作者保留。
+
+
+### LOG-20261018-ANDROID-INPUT-CHECK
+
+- B主責：已獲授權的同一Android真機，首頁直接開原生相機並取消返回；一份581-byte合成Word經系統Downloads選取，返回原草稿顯示檔名／大小／不支援預覽／未送出，再移除。沒有上傳、模型或通知。一次短錄音開始／停止得到15秒預覽，但播放維持0秒，停止擴測並保留失敗。臨時文件與錄音已清理。
+- 局部候選明確設定前景媒體播放模式，錄音ready移至停止及模式切換完成後；只跑兩個受影響TypeScript roots，零診斷。Expo Audio 57.0.5原生播放閘及[官方audio mode](https://docs.expo.dev/versions/latest/sdk/audio/)已核；根因及修正效果仍須真機確認，不由型別通過宣稱已修。
+- 手機短暫離線由使用者回覆滑掉後台後恢復；未猜測改身份／網絡。附件OTA初次仍舊版，空草稿下安全重開後入口生效。首條聊天仍由使用者驗收，其餘門檻保留，見S12附件EV。
+
+
+### LOG-20261018-ANDROID-PLAYBACK-FCM
+
+- B主責：0f0144a原生音訊修正以同APK v2 runtime發布一次相容OTA，group `cb625df0-92fc-4a10-a14d-250d2a4689ca`；Web變體未改，不重新建置Web或APK。4秒本機錄音觀察到playing及1／4秒進度，隨後丟棄，未上傳。首次補核因啟動畫面未就緒而未開始錄音；第二次短錄音播放完後pause控制已消失，這個腳本時序停止保留，不冒稱聽感或手動暫停已驗。原0秒失敗不回寫。
+- 使用者明確批准向同一手機發一次固定「育有方渠道測試」，並本人按Android權限允許。正式設定保存有效FCM綁定；只提交一次測試，台帳顯示渠道接受、24小時餘額3→2，Android通知欄確有指定標題／正文。點擊返回App；未取得最終目的地核對證據，不把一般測試當作照護提醒／完成停止驗收。第一次點擊命令在執行前因自動批准逾時未執行，依工具允許補一次點擊，沒有重發。
+- 零模型、未新增孩子／任務、未調配額或部署。保留本人已授權綁定及投遞紀錄；未保存token、私人正文或其他通知。各結果與未驗見[S12附件EV](artifacts/verification/S12_CHAT_FILES_20261018.json)及[S13 EV](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。首條聊天、跨端、下載／分享、OTA回退及draft依賴仍待收束，原生備份真還原繼續延後。
+
+
+### LOG-20261018-MODEL-ERROR-FEEDBACK
+
+- 使用者回報昨天聊天成功、今天服務暫時未能提供。只核近期模型診斷及原run metadata，確認Google回傳504；沒有重送原訊息、呼叫模型、清零或改配額。
+- 可信SDK的指定HTTP錯誤轉為固定停止原因，由既有正式API保存到聊天正文；舊APK無須重裝即可讀取新回覆的原因。未知錯誤仍不猜測，原工具收據及unknown規則保留。
+- 真ADK配scripted provider的504流程通過：已成功工具不重做、兩次模型嘗試只計兩次、原始錯誤不披露。既有429測試首輪因過時授權次數斷言停止；核對目前兩個授權邊界後只補該項並通過，沒有改授權程式。零真模型／通知。部署待完成；詳見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
+
+
+### LOG-20261018-MODEL-ERROR-DEPLOYMENT
+
+- 使用者明確批准2aa1442三檔8.8KiB修正、hash及腳本傳送至原VM，沿既有範圍更新API／worker。先前自動批准拒絕在上傳前停止；候選hash／無網絡模組核對通過。本機啟用工具殘留舊附件檢查路徑亦在切換前停止，修正後完成部署，不隱藏首次失敗。
+- 11:26 UTC映像`error-2aa1442`／`d0435f5`正式啟用，API及worker健康，公開health為ok／firestore。Web仍files-c4ac1b9，APK與資料不變；零真模型／通知，不改配額、不重送原聊天。只讀近期READY備份metadata，真還原保持延後。保留files-a12da46及受保護配置回退。
+- 新停止回覆直接保存固定原因及HTTP代碼；不回寫舊訊息，不宣稱Google可用性已修復。證據及限制見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
+
+
+<a id="log-20261018-model-retry"></a>
+## 2026-10-18 — Bounded model retries and longer admin-controlled deadlines
+
+- User approved up to three additional retries and longer waiting, then requested Android closeout. The provider's explicit transient HTTP failures now retry within the original model step with separate root/daily reservations, deterministic attempt IDs and 1/2/4-second backoff. Completed tools and unknown operations are not replayed.
+- Added shared admin controls for request timeout and retries; default interactive deadline is 300 seconds and request timeout 90 seconds. Existing saved policy requires an explicit audited update. Client chat transport accommodates the Server ceiling; original claims and shorter background/media leases remain bounded.
+- Necessary local evidence: existing-harness admin HTTP/routing/receipt scenario and durable real-ADK/scripted-provider retry scenario passed (2 tests, zero real model/notification/cloud calls); 13 affected type roots, zero diagnostics. Recovery and exhaustion both preserve one tool effect and original-operation non-replay. No full suite or model quality claim.
+- Android resume now refreshes device network metadata with a generation guard after observing a stale offline indicator on validated Wi-Fi. Device confirmation of this fix remains pending. Web/OTA, live policy, deployment and remaining Android acceptance/PR gates are still pending at this entry; old evidence is not rewritten.
+
+
+<a id="log-20261018-android-retry-delivery"></a>
+### LOG-20261018-ANDROID-RETRY-DELIVERY
+
+- 依使用者批准的最多額外3次重試與較長等待，交付`e422bab`／`fb1681e`／`adaf08f`。原站API／worker與Web健康，Web公開hash一致；APK v2相容OTA `a209afce-39ac-47fc-821b-d13ff949ac87`已發布，毋須新APK。沒有重送舊訊息、真模型、通知或遷移。
+- 現網舊政策缺少期限欄位，初次新reader投影改變被更新前guard拒絕，未寫入；修正歷史解碼保持90秒／30秒／零重試，原操作再經管理服務明確保存v3為300秒／90秒／3次。每日200／400與用量不變。原有admin必要流程只補一次舊政策相容斷言並通過；不全量重跑。
+- 首次`fb1681e`發布工具在Web產物完成後退出3221226505，尚未提交OTA；原因未確定，保留現場。`adaf08f`以受支持Node及固定CLI完成同版Web／OTA。回退須保留新政策及媒體／附件reader，不可盲退舊API。
+- 手機鎖定，未追加真機操作；Google真實恢復、首條正常聊天、跨端接續／附件分享、照護通知終態、OTA回退及draft依賴仍待驗。Android不標完成，按要求先收束當前修正並報告；不開始本人key、本地Agent或iOS。版本、核對及未驗見[S04 EV](artifacts/verification/S04_W01_ANDROID_FOUNDATION_20261015.json)。
+
+
+### LOG-20261018-ANDROID-CLOSEOUT-WEB-ADAPTERS
+
+- 手機仍鎖定，未追加設備操作。沿既有批准補一個本機Chromium 153.0.8010.12流程：17-byte任意檔案原始bytes讀回，正式Web錄音controller取得2220ms WebM、停止咪高峰、瀏覽器播放前進，正式Server音訊解析接受。零雲端、模型、通知及業務寫入，沒有全量測試。
+- 首次完整元件harness封裝遇Expo server-only／JSX差異，未作UI證據；沒有為此改產品或依賴，改用正式adapter直接核實瀏覽器與Server編碼相容性。不能代替正式頁面、上傳／下載或跨端驗收。原始結果與source hash追加於[S12 EV](artifacts/verification/S12_CHAT_FILES_20261018.json)。
+- 使用者其後要求盡快收尾轉往其他工作；停止追加測試，只保存本輪結果。Android待驗、PR依賴及既有延後事項保持，沒有標成全部完成。
 <a id="log-20261014-p3-m01-chat-delivery-review"></a>
 ## LOG-20261014-001
 

@@ -1,3 +1,6 @@
+import { replayChatFileErasures, assertRestoredChatFileRelations } from './firestore-restore-chat-files.ts';
+import { firestoreChatFileRowSchema } from './firestore-chat-files.ts';
+import type { ChatFileObjectDescriptor } from './firebase-chat-file-objects.ts';
 import { replayVoiceErasures, assertRestoredVoiceRelations } from './firestore-restore-voice.ts';
 import { firestoreVoiceRowSchema } from './firestore-voice.ts';
 import type { VoiceObjectDescriptor } from './firebase-voice-objects.ts';
@@ -26,6 +29,7 @@ export interface FirebaseRestoreInput {
   authUsers: readonly FirebaseRestoreAuthUser[]; erasures: readonly FirebaseErasureIntent[];
   photoDescriptors: ReadonlyMap<string, FirebasePhotoObjectDescriptor>;
   voiceDescriptors?: ReadonlyMap<string, VoiceObjectDescriptor>; voiceObjectBucketName?: string;
+  chatFileDescriptors?: ReadonlyMap<string, ChatFileObjectDescriptor>; chatFileObjectBucketName?: string;
   erasureDescriptors: ReadonlyMap<string, FirebaseErasureDescriptor>;
 }
 export class FirebaseRestoreError extends Error {
@@ -80,6 +84,7 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
   for (const record of records) {
     if(record.context.family==='knowledge'||record.context.kind==='photo-cleanup'
       || record.context.kind==='voice-asset' && firestoreVoiceRowSchema.parse(record.value).deletion !== null
+      || record.context.kind==='chat-file-asset' && firestoreChatFileRowSchema.parse(record.value).deletion !== null
       || record.context.kind==='photo' && photos.photo.parse(record.value).state==='deleted')continue;
     const scope=record.context.scope;
     if(scope.workspaceId===NIL)continue;
@@ -178,6 +183,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     else if(kind!=='authority-owner'&&kind!=='scope-erasure')scopeRemoved.add(record.path);
   }
   replayVoiceErasures(data,codec,decoded,live,journal,input.erasureDescriptors,scopeRemoved);
+  replayChatFileErasures(data,codec,decoded,live,journal,input.erasureDescriptors,scopeRemoved);
   const intentByAsset=new Map<string,FirebaseErasureIntent>();
   for(const intent of journal.filter(v=>v.type==='photo-delete')){const prior=intentByAsset.get(intent.assetId);if(prior&&canonical(prior.scope)!==canonical(intent.scope))reject('restore_erasure_binding');intentByAsset.set(intent.assetId,intent);}
   const erasedReservations=new Map<string,string>(), removed=new Set(scopeRemoved);
@@ -252,7 +258,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
       requireValue(!('state'in value),'restore_erasure_receipt');record.value={...value,result:null};
     }
   }
-  for(const intent of journal.filter(v=>v.type==='photo-delete'||v.type==='voice-delete')) {
+  for(const intent of journal.filter(v=>v.type==='photo-delete'||v.type==='voice-delete'||v.type==='file-delete')) {
     if(erasedByScope(intent.scope.ownerUserId,intent.scope.workspaceId,intent.scope.childId))continue;
     const epoch=newEpochByWorkspace.get(intent.scope.workspaceId);if(!epoch)continue;
     const owner=accounts.find(row=>row.value.userId===intent.scope.ownerUserId);requireValue(Boolean(owner),'restore_erasure_binding');
@@ -270,7 +276,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   // A completed erasure may leave historical owner-wide receipt metadata in an old
   // backup. Remove its authenticated child scope first, then require the entire
   // surviving content graph; missing live content is still an error.
-  assertFirestoreRestoreContent(keep);assertRestoredVoiceRelations(keep);
+  assertFirestoreRestoreContent(keep);assertRestoredVoiceRelations(keep);assertRestoredChatFileRelations(keep);
   const livePhotos=rows(keep,'photo',photos.photo).filter(row=>row.value.state==='ready'||row.value.state==='reserved');
   const quotas=new Map<string,{bytes:number;count:number}>();
   for(const row of livePhotos) {
@@ -291,7 +297,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   if(global.length)global[0]!.record.value=photos.globalQuota.parse({activeBytes,activeCount,
     cleanupBytes:allCleanup.reduce((sum,row)=>sum+row.value.bytes,0),cleanupCount:allCleanup.length});
   const generation=firebaseRestoreGeneration(options.projectId,input.targetDatabaseId,input.restoreId);
-  const records=keep.map(record=>{const transformed=codec.transform(record,{generation,newEpochByWorkspace,newAuthorizationVersionByWorkspace,photoDescriptors:input.photoDescriptors,voiceDescriptors:input.voiceDescriptors,voiceObjectBucketName:input.voiceObjectBucketName});
+  const records=keep.map(record=>{const transformed=codec.transform(record,{generation,newEpochByWorkspace,newAuthorizationVersionByWorkspace,photoDescriptors:input.photoDescriptors,voiceDescriptors:input.voiceDescriptors,voiceObjectBucketName:input.voiceObjectBucketName,chatFileDescriptors:input.chatFileDescriptors,chatFileObjectBucketName:input.chatFileObjectBucketName});
     return {path:transformed.path,data:transformed.data};}).concat(outputExtras);
   unique(records,row=>row.path);
   const outputPaths=new Set(records.map(row=>row.path));
@@ -300,7 +306,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   const encodedBytes=records.reduce((sum,row)=>sum+firebaseBackupDocumentDigest(row).bytes,0);
   requireValue(records.length<=4000&&encodedBytes<=32*1024*1024,'restore_limit');
   const restored=records.filter(row=>!isSession(row)).map(row=>codec.decode(row));
-  assertFirebaseRestoreAuthority(restored);assertFirestoreRestoreContent(restored);assertRestoredVoiceRelations(restored);
+  assertFirebaseRestoreAuthority(restored);assertFirestoreRestoreContent(restored);assertRestoredVoiceRelations(restored);assertRestoredChatFileRelations(restored);
   return {records,removePaths,generation,newEpochByWorkspace,journalHash:digest(journal.map(firebaseErasureIntentHash).sort()),
     authHash:digest([...authUsers.values()].sort((a,b)=>a.userId.localeCompare(b.userId))),
     authorityHash:digest(input.liveDocuments.filter(row=>row.path.startsWith(options.namespace+'/')).map(row=>({path:row.path,...firebaseBackupDocumentDigest(row)})).sort((a,b)=>a.path.localeCompare(b.path)))};

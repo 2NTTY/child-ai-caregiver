@@ -1,3 +1,4 @@
+import { pickNativeFile } from "./native-chat-file";
 import { pickNativeVoice } from "./native-voice-file";
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
@@ -9,7 +10,7 @@ export type AssistantAttachmentPickerProps = {
   kind: "file" | "voice"; disabled: boolean; onPick(attachment: AssistantAttachment): void; onError(message: string): void;
   selectAttachment?: (kind: "file" | "voice") => Promise<AssistantAttachment | null>;
 };
-export function AssistantAttachmentPicker({ kind, disabled, onPick, onError, selectAttachment = kind === "voice" ? pickNativeVoice : undefined }: AssistantAttachmentPickerProps) {
+export function AssistantAttachmentPicker({ kind, disabled, onPick, onError, selectAttachment = kind === "voice" ? pickNativeVoice : pickNativeFile }: AssistantAttachmentPickerProps) {
   const generation = useRef(0), disabledRef = useRef(disabled); disabledRef.current = disabled;
   const [busy, setBusy] = useState(false);
   useEffect(() => () => { generation.current++; }, []);

@@ -1,3 +1,4 @@
+import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { FirestoreDomainData, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -21,7 +22,7 @@ export function createFirestoreAgentAdmission(options: FirestoreDomainOptions & 
       const token = randomUUID();
       const lease = await options.database.runTransaction(async tx => {
         const row = await tx.get(ref), at = now();
-        if (input.deadlineAtMs <= at || input.deadlineAtMs > at + 90_000) domainReject('invalid_run_deadline');
+        if (input.deadlineAtMs <= at || input.deadlineAtMs > at + AGENT_RUN_LIMITS.deadlineSeconds.max * 1000) domainReject('invalid_run_deadline');
         const state = row.exists ? data.open('agent-admission', 'active', scope, schema, row) : { leases: [] };
         const leases = state.leases.filter(value => value.expiresAtMs > at);
         if (leases.length >= 4 || leases.some(value => value.userId === input.userId || value.runId === input.runId)) return null;

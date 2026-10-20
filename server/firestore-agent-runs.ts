@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { z } from 'zod';
 import type { DocumentSnapshot } from '@google-cloud/firestore';
 import type { AgentScope } from './agent-runtime.ts';
@@ -29,6 +30,7 @@ export interface FirestoreAgentRunOptions extends FirestoreDomainOptions {
   chat: FirestoreChatStore;
   memory: FirestoreMemoryStore;
   serverClock?: () => number;
+  readInteractiveRunSeconds?: (tx: import("@google-cloud/firestore").Transaction) => Promise<number>;
   /** Only the authenticated worker composition supplies this canonical lease/resource gate. */
   authorizeWorker?: (binding: Binding, reference: string, recipeId: string) => Promise<boolean>;
 }
@@ -129,13 +131,18 @@ export function createFirestoreAgentRuns(options: FirestoreAgentRunOptions) {
           const source = await options.chat.readMessage(b, childId, trigger.reference);
           if (!source || source.role !== 'user' || source.authorUserId !== userId) domainReject('not_found', 404);
         } else if (!await options.authorizeWorker?.(b, trigger.reference, recipeId)) domainReject('background_not_authorized', 403);
-        const old = await originalRun(b, trigger.kind, trigger.reference), at = now();
+        const old = await originalRun(b, trigger.kind, trigger.reference);
+        // Existing claims keep their original absolute deadline; a retry never extends it.
+        const seconds = old ? null : trigger.kind === "interactive"
+          ? await options.readInteractiveRunSeconds?.(b.transaction) ?? AGENT_RUN_LIMITS.deadlineSeconds.default : 90;
+        if (seconds !== null && (!Number.isSafeInteger(seconds) || seconds < AGENT_RUN_LIMITS.deadlineSeconds.min || seconds > AGENT_RUN_LIMITS.deadlineSeconds.max)) domainReject("invalid_run_deadline");
+        const at = now();
         const run: FirestoreAgentRun = old ? expired(old) : {
           id: candidate, childId, ownerUserId: userId, workspaceId: b.scope.workspaceId, storageEpoch: b.scope.storageEpoch,
           authorizationVersion: b.authorizationVersion, dataVersion: current(b).dataVersion, trigger,
           ...(trigger.kind === 'worker' ? {workerGeneration:b.generation} : {}),
           sourceMessageId: trigger.kind === 'interactive' ? trigger.reference : null, recipeId, state: 'running', stopReason: null,
-          createdAt: new Date(at).toISOString(), expiresAt: new Date(at + 90_000).toISOString(), result: null,
+          createdAt: new Date(at).toISOString(), expiresAt: new Date(at + seconds! * 1000).toISOString(), result: null,
         };
         if (!old) {
           const id = claimId(b, trigger.kind, trigger.reference);

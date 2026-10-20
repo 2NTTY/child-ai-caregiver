@@ -22,14 +22,14 @@ export function settingsAccessError(env: SettingsEnvironment, error: unknown, ac
 export function useSettingsRequests(env: SettingsEnvironment, account = false) {
   const latest = useRef(env); latest.current = env;
   const active = useRef<AbortController | null>(null), mounted = useRef(true), id = useId();
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false), [writing, setWriting] = useState(false);
   const available = () => mounted.current && latest.current.online && !!latest.current.userId
     && (account ? latest.current.currentIdentity() : latest.current.current());
   const start = (writing = false, original = false) => {
     if (!available() || active.current || writing && !original && !latest.current.canStartWrite()) return null;
     const basis = account ? latest.current.identityKey : latest.current.scopeKey;
     const generation = latest.current.owner.getSnapshot().sessionGeneration;
-    const controller = new AbortController(); active.current = controller; setBusy(true);
+    const controller = new AbortController(); active.current = controller; setBusy(true); setWriting(writing);
     if (writing) latest.current.owner.setDomainPending(id, true);
     return { signal: controller.signal,
       current: () => available() && !controller.signal.aborted && generation === latest.current.owner.getSnapshot().sessionGeneration && basis === (account ? latest.current.identityKey : latest.current.scopeKey),
@@ -37,16 +37,16 @@ export function useSettingsRequests(env: SettingsEnvironment, account = false) {
         if (active.current !== controller) return;
         active.current = null;
         latest.current.owner.setDomainPending(id, pending);
-        if (mounted.current) setBusy(false);
+        if (mounted.current) { setBusy(false); setWriting(false); }
       } };
   };
   useEffect(() => {
-    if (!env.online) { active.current?.abort(); active.current = null; latest.current.owner.setDomainPending(id, false); setBusy(false); }
+    if (!env.online) { active.current?.abort(); active.current = null; latest.current.owner.setDomainPending(id, false); setBusy(false); setWriting(false); }
   }, [env.online]);
   useEffect(() => { mounted.current = true; return () => {
     mounted.current = false; active.current?.abort(); active.current = null; latest.current.owner.setDomainPending(id, false);
   }; }, [id]);
-  return { start, busy, available };
+  return { start, busy, writing, available };
 }
 export function settingsRead<T>(env: SettingsEnvironment, domain: string, account: boolean, read: () => Promise<T>) {
   return env.queryClient.fetchQuery({ queryKey: ["production", account ? env.identityKey : env.scopeKey, "settings-domains", env.owner.getSnapshot().sessionGeneration, domain],

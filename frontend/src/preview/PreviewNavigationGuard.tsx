@@ -6,31 +6,39 @@ import { Link, usePathname, useRouter, type Href } from "expo-router";
 import { AppDialog as Dialog } from "../components/AppDialog";
 import { AppButton } from "../components/ui";
 import { chineseFont, colors, typeScale } from "../theme";
+import { isProductionRouteConnected } from "../production/routes";
 import { guardBrowserHistory, type HistoryGuardWindow, type HistoryRecoveryError } from "./browser-history-guard";
 
 export type LeaveScope = "child" | "account";
-type LeaveIntent = "navigation" | "child";
+type LeaveIntent = "navigation" | "workspace" | "child";
 export type LeavePromptCopy = { message: string; actionLabel: string };
-type LeaveState = { dirty: boolean; pending: boolean; scope: LeaveScope; copy?: LeavePromptCopy };
+type LeaveState = { dirty: boolean; pending: boolean; scope: LeaveScope; copy?: LeavePromptCopy; retainedInWorkspace?: boolean };
 type RetainedDrafts = readonly string[];
 type LeaveRequest = { blocked: boolean; action: () => void; intent: LeaveIntent; copy?: LeavePromptCopy };
 type Guard = { register(id: string, value: LeaveState): void; remove(id: string): void; request(action: () => void, intent?: LeaveIntent, retained?: RetainedDrafts): void };
 const Context = createContext<Guard | null>(null);
 
-// Mounted drafts remain owned by their workspace. Unknown writes cannot be discarded as drafts.
+// Only a provider that outlives dashboard pages can retain pending operations on a route change.
+export function navigationStates(entries: readonly (readonly [string, LeaveState])[], intent: LeaveIntent, retained: RetainedDrafts = []) {
+  return entries.filter(([, value]) => intent !== "child" || value.scope === "child")
+    .map(([id, value]) => intent === "workspace" && value.retainedInWorkspace ? { ...value, dirty: false, pending: false }
+      : retained.includes(id) && intent !== "child" ? { ...value, dirty: false } : value);
+}
+function staysInDashboard(from: string, href: Href) {
+  const to = typeof href === "string" ? href.split(/[?#]/)[0] : href.pathname;
+  return from !== "/login" && to !== "/login" && isProductionRouteConnected(from) && typeof to === "string" && isProductionRouteConnected(to);
+}
+// Mounted drafts remain owned by their workspace. Unknown writes are never discarded or replayed.
 export function PreviewNavigationGuard({ children }: { children: ReactNode }) {
   const entries = useRef(new Map<string, LeaveState>());
   const approved = useRef(false);
   const [historyError, setHistoryError] = useState<HistoryRecoveryError | null>(null);
   const [request, setRequest] = useState<LeaveRequest | null>(null);
   // Personal settings survive child selection; leaving their route still checks every guard.
-  const statesFor = (intent: LeaveIntent) => [...entries.current.values()].filter(value => intent === "navigation" || value.scope === "child");
+  const statesFor = (intent: LeaveIntent, retained: RetainedDrafts = []) => navigationStates([...entries.current.entries()], intent, retained);
   const leave = useCallback((action: () => void, intent: LeaveIntent = "navigation", retained: RetainedDrafts = []) => {
     if (approved.current) { action(); return; }
-    // Only dirty entries whose owners retain their content may accompany this navigation.
-    // Pending operations are never exempt, including those on retained owners.
-    const states = [...entries.current.entries()].filter(([, value]) => intent === "navigation" || value.scope === "child")
-      .map(([id, value]) => retained.includes(id) && intent === "navigation" ? { ...value, dirty: false } : value);
+    const states = statesFor(intent, retained);
     if (states.some(value => value.pending)) setRequest({ blocked: true, action, intent });
     else if (states.some(value => value.dirty)) {
       const dirty = states.filter(value => value.dirty), firstCopy = dirty[0]?.copy;
@@ -80,15 +88,15 @@ export function PreviewLink({ href, children }: { href: Href; children: ReactNod
   return <Link href={href} asChild onPress={event => {
     event.preventDefault();
     if (href === pathname) return;
-    leave(() => router.push(href));
+    leave(() => router.push(href), staysInDashboard(pathname, href) ? "workspace" : "navigation");
   }}>{children}</Link>;
 }
 
-export function usePreviewLeaveGuard(dirty: boolean, pending = false, scope: LeaveScope = "child", copy?: LeavePromptCopy) {
+export function usePreviewLeaveGuard(dirty: boolean, pending = false, scope: LeaveScope = "child", copy?: LeavePromptCopy, retainedInWorkspace = false) {
   const guard = useContext(Context);
   const id = useId();
   const navigation = useNavigation();
-  useLayoutEffect(() => { guard?.register(id, { dirty, pending, scope, copy }); return () => guard?.remove(id); }, [guard, id, dirty, pending, scope, copy?.message, copy?.actionLabel]);
+  useLayoutEffect(() => { guard?.register(id, { dirty, pending, scope, copy, retainedInWorkspace }); return () => guard?.remove(id); }, [guard, id, dirty, pending, scope, copy?.message, copy?.actionLabel, retainedInWorkspace]);
   usePreventRemove(!!guard && (dirty || pending), ({ data }) => guard?.request(() => navigation.dispatch(data.action)));
   useEffect(() => {
     if (Platform.OS !== "web" || !guard || !(dirty || pending)) return;

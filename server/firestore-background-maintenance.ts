@@ -1,3 +1,4 @@
+import { firestoreChatFileRowSchema, type FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
 import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
 import { settleSummaryRequest, firestoreContextRecoverySchema } from './firestore-context-basis.ts';
@@ -19,7 +20,7 @@ import type { FirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts
 import { createKnowledgeSourceFetcher } from './knowledge-source-fetch.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
-const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions', 'voice_assets'] as const;
+const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions', 'voice_assets', 'chat_file_assets'] as const;
 const cursorSchema = z.object({ after: z.record(z.string(), z.string().nullable()), complete: z.array(z.string()),
   minute: z.number().int(), token: z.uuid().nullable(), until: z.number().int().nonnegative() }).strict();
 const empty = () => ({ after: {} as Record<string, string | null>, complete: [] as string[], minute: -1, token: null as string | null, until: 0 });
@@ -35,6 +36,7 @@ const knowledgePeriod = (weekly: boolean, now = Date.now()) => {
 export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOptions & {
   journal?: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>;
   voices?: Pick<FirestoreVoiceStore, 'cleanupDeleted' | 'expireUnlinked'>;
+  files?: Pick<FirestoreChatFilesStore, 'cleanupDeleted' | 'expireUnlinked'>;
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'>;
   erasures: FirestoreErasureStore; cleanup: ReturnType<typeof createFirestoreErasureCleanup>;
@@ -83,6 +85,18 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
         const fresh=await tx.get(row.ref);if(!fresh.exists||firestoreDomainHash(fresh.data())!==firestoreDomainHash(row.data()))return;
         const identity={kind:'voice-cleanup' as const,scope:SYSTEM,resourceId:row.id,basis:firestoreDomainHash([info.id,voice.deletion?'delete':'expiry']),generation:control.generation,authorizationVersion:'0'};
         const wake=voice.descriptor?await prepareObjectCleanupWake(data,tx,identity,firestoreDomainHash(voice.descriptor)):()=>{};
+        const work=await prepareFirestoreBackgroundWork(data,tx,identity,new Date().toISOString());work.commit();wake();
+      });return;
+    }
+    if (stage === 'chat_file_assets') {
+      const info=open(row,'chat-file-asset',firestoreChatFileRowSchema), file=info.value;
+      if(file.deletion ? file.deletion.cleanup!=='pending'||Date.parse(file.deletion.nextCheckAt??'')>Date.now()
+        : file.messageId!==null||Date.parse(file.createdAt)+86400_000>Date.now())return;
+      await options.database.runTransaction(async tx=>{
+        const control=await authority.readControl(tx);if(!options.enabled||!control.enabled)return;
+        const fresh=await tx.get(row.ref);if(!fresh.exists||firestoreDomainHash(fresh.data())!==firestoreDomainHash(row.data()))return;
+        const identity={kind:'file-cleanup' as const,scope:SYSTEM,resourceId:row.id,basis:firestoreDomainHash([info.id,file.deletion?'delete':'expiry']),generation:control.generation,authorizationVersion:'0'};
+        const wake=file.descriptor?await prepareObjectCleanupWake(data,tx,identity,firestoreDomainHash(file.descriptor)):()=>{};
         const work=await prepareFirestoreBackgroundWork(data,tx,identity,new Date().toISOString());work.commit();wake();
       });return;
     }
@@ -137,7 +151,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
     }
     for (const stage of stages) {
       let q: Query = data.collection(stage).orderBy(FieldPath.documentId()).limit(5);
-      if (stage === 'voice_assets') q = q.where('cleanupState','in',['pending','unlinked']);
+      if (stage === 'voice_assets' || stage === 'chat_file_assets') q = q.where('cleanupState','in',['pending','unlinked']);
       if (stage === 'content_erasures') q = q.where('stage', 'in', ['revisions', 'receipts']);
       if (stage === 'context_versions') q = q.where('summaryPending', '==', true);
       if (stage === 'work_watches') q = q.where('enabled', '==', true);
@@ -210,6 +224,18 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       if(result.state==='complete')return{state:'completed' as const};
       const fresh=await row.ref.get();if(!fresh.exists)return{state:'completed' as const};
       const pending=open(fresh,'voice-asset',firestoreVoiceRowSchema).value.deletion!;
+      return pending.cleanup==='blocked'?{state:'unknown' as const}
+        :{state:'deferred' as const,nextAt:pending.nextCheckAt&&Date.parse(pending.nextCheckAt)>Date.now()?pending.nextCheckAt:new Date(Date.now()+60000).toISOString()};
+    }
+    if (job.kind === 'file-cleanup') {
+      if(!options.files)domainReject('chat_file_cleanup_unavailable',503);
+      const row=await data.collection('chat_file_assets').doc(job.resourceId).get();if(!row.exists)return{state:'completed' as const};
+      const file=open(row,'chat-file-asset',firestoreChatFileRowSchema).value;
+      if(!file.deletion && !await options.files.expireUnlinked(file.scope,file.id))return {state:'completed' as const};
+      const result=await options.files.cleanupDeleted(file.scope,file.id);
+      if(result.state==='complete')return{state:'completed' as const};
+      const fresh=await row.ref.get();if(!fresh.exists)return{state:'completed' as const};
+      const pending=open(fresh,'chat-file-asset',firestoreChatFileRowSchema).value.deletion!;
       return pending.cleanup==='blocked'?{state:'unknown' as const}
         :{state:'deferred' as const,nextAt:pending.nextCheckAt&&Date.parse(pending.nextCheckAt)>Date.now()?pending.nextCheckAt:new Date(Date.now()+60000).toISOString()};
     }

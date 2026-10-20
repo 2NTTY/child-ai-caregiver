@@ -1,0 +1,291 @@
+{
+  "date": "2026-10-18",
+  "workPackage": "S12-W05",
+  "inputBase": "1dfeb84e2406ab029696a5a5a81bcd67739bc8ca",
+  "status": "server_web_android_ota_delivered_device_acceptance_pending",
+  "environment": "Node 24.19.0; in-memory Firestore fixture; synthetic object and journal ports; real Mammoth 1.13.0 / JSZip 3.10.2 workers",
+  "checks": [
+    {
+      "command": "node --test tests/firestore-chat-files.test.ts",
+      "result": "1 passed",
+      "coverage": [
+        "original reservation and uncertain upload reconciliation",
+        "private account isolation through HTTP adapter",
+        "atomic chat link and original operation replay",
+        "DOCX extraction and bounded continuation",
+        "attachment download and delete with fixed-object cleanup"
+      ]
+    },
+    {
+      "command": "TypeScript API with tsconfig.server options and 6 affected roots",
+      "result": "0 diagnostics"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "failuresPreserved": [
+    {
+      "stage": "typecheck",
+      "result": "JSZip public internalStream absent from its declarations; nullable chat page in fixture",
+      "resolution": "use typed public nodeStream and correct nullable handling"
+    },
+    {
+      "stage": "single lifecycle first attempt",
+      "result": "fixture expected 404 but authority rejected foreign scope with 403",
+      "resolution": "verify unchanged canonicalChild binding rule and assert 403"
+    },
+    {
+      "stage": "single lifecycle second attempt",
+      "result": "Word worker returned cannot_read",
+      "resolution": "diagnostic isolated old-style JSZip stream without async iteration; use Node Readable.wrap; same lifecycle passed"
+    }
+  ],
+  "externalCalls": {
+    "model": 0,
+    "notification": 0,
+    "gcp": 0,
+    "browser": 0,
+    "device": 0,
+    "scope": "earlier local checks only; cloud stage below"
+  },
+  "notVerified": [
+    "real Agent file understanding",
+    "Web/Android system picker and downloaded original",
+    "Android attachment OTA reception",
+    "real backup restore (previously deferred)"
+  ],
+  "limits": "Local connected scenario and one real synthetic file were checked. Cloud parser and cleanup completed in bounded follow-ups after preserved harness failures; this is not a real model or device acceptance.",
+  "integration": {
+    "inputBase": "f4e7eab6f04065315758754299138da69afd7e6e",
+    "checks": [
+      {
+        "command": "node --test tests/firestore-chat-files.test.ts",
+        "result": "1 passed, 0 failed; extended same connected scenario",
+        "coverage": [
+          "real ChatFileUploadController and API through formal HTTP handler",
+          "lost upload response reconciled at original object, one write",
+          "message attachment transaction and original replay",
+          "actual Agent file reader, bounded Word continuation",
+          "authorized client download and account export",
+          "isolated restore to new object scope",
+          "delete blocks HTTP, Agent and export",
+          "journal replay retains tombstone; actual cleanup consumer completes"
+        ]
+      },
+      {
+        "command": "TypeScript API: 5 affected Server roots and 5 affected frontend roots",
+        "result": "0 diagnostics each"
+      }
+    ],
+    "failures": [
+      {
+        "stage": "affected Server typecheck",
+        "result": "account exporter narrow file port did not implement chat prepareLink",
+        "resolution": "read-only memory export constructs chat store without the unused write-only file port; affected roots passed"
+      }
+    ],
+    "limits": [
+      "Firestore/object/journal ports are synthetic",
+      "does not prove real SDK, runtime model understanding, browser or Android interaction",
+      "no new cloud, model, notification or device calls"
+    ]
+  },
+  "cloudPreparation": {
+    "source": "c4ac1b995d22f28cfd6b8330bf07e22a7e6b9c36",
+    "indexes": {
+      "created": 2,
+      "fieldConfigurations": 2,
+      "state": "READY"
+    },
+    "webBundle": "passed",
+    "androidRuntime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "apkRequired": false,
+    "failures": [
+      {
+        "stage": "local pack",
+        "cause": "workspace link lock entry has no version",
+        "resolution": "compare only versioned dependency records; archive prepared"
+      },
+      {
+        "stage": "Web build wrapper",
+        "cause": "Node rejects env-file in NODE_OPTIONS",
+        "resolution": "load public environment before invoking existing build; actual Web export passed once"
+      },
+      {
+        "stage": "candidate image script",
+        "cause": "Windows CRLF in shell script",
+        "resolution": "LF only; same source candidate image built"
+      },
+      {
+        "stage": "first real SDK check",
+        "cause": "shared Storage port ceiling 16 MiB rejected file ciphertext bound 40 MiB",
+        "result": "stopped before test identity or file creation; no site activation",
+        "resolution": "raise only explicit adapter ceiling to 40 MiB; photo and voice caller bounds unchanged"
+      },
+      {
+        "stage": "candidate runtime configuration",
+        "cause": "isolated check inherited enabled channel settings without channel secret mounts",
+        "result": "stopped before synthetic identity creation",
+        "resolution": "disable notifications/model only in isolated check process; live configuration unchanged"
+      },
+      {
+        "stage": "production file reader in check",
+        "cause": "node --input-type=module inherited by file worker; ERR_INPUT_TYPE_NOT_ALLOWED reproduced offline",
+        "result": "one synthetic file saved and chat-linked; account revoked on failure",
+        "resolution": "use ordinary module file entrypoint; read same stored original, no new account/file"
+      },
+      {
+        "stage": "follow-up result assertion",
+        "cause": "eraseForScope returns boolean, check incorrectly expected .state",
+        "result": "reading and cleanup ran; stopped at assertion",
+        "resolution": "read-only confirmation found tombstone complete and object absent; no repeated upload/extraction"
+      }
+    ],
+    "offlineRealSdkFactory": {
+      "result": "passed",
+      "requests": 0,
+      "assertion": "explicit 40 MiB file port assembles; photo default and voice bounds unchanged"
+    }
+  },
+  "cloudFile": {
+    "image": "yuban-firestore-api:files-a12da46",
+    "source": "a12da46f00a605635aaa794758ad90ea7bc04da1",
+    "syntheticIdentities": 1,
+    "syntheticChildren": 1,
+    "files": 1,
+    "firebaseAuthUsersCreated": 0,
+    "savedAndChatLinked": true,
+    "realStoredDocxExtracted": true,
+    "revokedIdentityDenied": true,
+    "independentJournal": true,
+    "cleanup": "complete",
+    "objectAbsent": true,
+    "retained": "revoked synthetic child/message and original failure metadata",
+    "modelCalls": 0,
+    "notifications": 0,
+    "acceptance": "same file; remaining read/cleanup only, followed by one read-only result confirmation"
+  },
+  "deployment": {
+    "observedAt": "2026-10-18T10:20:22.962Z",
+    "vm": "yuban-p1",
+    "apiWorkerImage": "yuban-firestore-api:files-a12da46",
+    "apiWorkerImageId": "sha256:1c21d368887e3672509a6f6b93c64ba5ffd56107933a4df27563c7963c543131",
+    "webImage": "yuban-firestore-web:files-c4ac1b9",
+    "webImageId": "sha256:c229e21f702cd680af5995b7c4df91e683ba40bae534697573748782b955ae6c",
+    "health": "all healthy",
+    "publicHtmlSha256": "600d1c3d35f7587a44491fdb0ab196a501c70f91adab6b81347f190f394f4688",
+    "rollback": [
+      "mobile-bf47c47 API/worker image",
+      "keyboard-d321553 Web image",
+      "protected compose configuration copies"
+    ],
+    "backup": "2026-10-17T22:05:22.757057Z READY; metadata only; no restore",
+    "quotaChanged": false,
+    "migrations": 0
+  },
+  "android": {
+    "source": "5bd53b6764a4842f10e313291ed3c719813f0e4f",
+    "preparedSharedClientSource": "c4ac1b995d22f28cfd6b8330bf07e22a7e6b9c36",
+    "previousClientSource": "ee482ad073f90462a7afb8acaae8f47cfae085d9",
+    "update": {
+      "id": "01a14e8b-5383-704a-986b-9926f64c2c5e",
+      "group": "a8c6bf35-1b67-42ea-9c41-cf7c0ec896a6",
+      "runtimeVersion": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "platform": "android",
+      "gitSha": "5bd53b6764a4842f10e313291ed3c719813f0e4f"
+    },
+    "runtimeMatchesInstalledVersionCode": 2,
+    "newApk": false,
+    "webArtifactReused": true,
+    "deviceReceived": false,
+    "rollbackExecuted": false,
+    "releaseOwner": "B"
+  },
+  "androidInputCheck": {
+    "observedAt": "2026-10-18T10:49:44.179106+00:00",
+    "clientSource": "5bd53b6",
+    "method": "One connected authorized Android device; ADB control, no Computer Use, no messages sent",
+    "camera": "Home opens com.android.camera/.OneShotImageCapture; cancel returns to app; capture not exercised",
+    "file": "One 581-byte synthetic DOCX selected via Android Downloads, returned to local unsent draft; filename, size and unsupported-preview label visible; removed without upload",
+    "voice": "Recording start/stop produced a 15-second local preview; playback remained at zero after a bounded observation; not passed",
+    "cleanup": "Test recording discarded in app, synthetic file and temporary UI dump removed from device; no uploaded data",
+    "transientOffline": "System Wi-Fi was validated while app showed offline; user reported swipe-close fixed it; no speculative network/auth change",
+    "ota": "File control was disabled until one safe restart of an empty composer; then enabled and selected file successfully",
+    "candidateFix": "Explicit foreground playback audio mode and readiness state; two affected TypeScript roots pass; device follow-up pending",
+    "calls": {
+      "model": 0,
+      "embedding": 0,
+      "notification": 0,
+      "businessWrites": 0
+    },
+    "limits": "No first-chat, voice understanding, cross-device, download, FCM or rollback acceptance claimed"
+  },
+  "androidPlaybackFollowup": {
+    "observedAt": "2026-10-18",
+    "source": "0f0144a4b787f7126eff4569f3b2b9287b5e2c1a",
+    "updateGroup": "cb625df0-92fc-4a10-a14d-250d2a4689ca",
+    "updateId": "01a14ea4-d7f6-7efd-933e-0162bb2aa92a",
+    "runtimeVersion": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "installedVersionCode": 2,
+    "scope": "Two native audio components with unchanged web variants; existing Web artifact reused",
+    "result": "A new four-second local recording entered playing state and advanced to 1 / 4 seconds; then discarded without sending",
+    "preservedFailures": [
+      "Original 15-second preview stayed at zero",
+      "First follow-up stopped before recording because startup UI was not idle",
+      "Second helper observed playback progress, but the short clip ended before the pause-control lookup; cleanup discarded the recording"
+    ],
+    "limits": [
+      "Audibility and explicit pause not verified",
+      "No model, upload, cross-device or first-chat acceptance",
+      "No new APK; compatible OTA rollback remains pending"
+    ],
+    "notificationCalls": 0,
+    "modelCalls": 0,
+    "businessWrites": 0
+  },
+  "browserAdapterCheck20261018": {
+    "source": "b06565c",
+    "startedAt": "2026-10-18T12:09:31.098Z",
+    "status": "passed",
+    "scope": "Production Web adapter modules with real Chromium File/MediaRecorder/playback, plus production Server codec validation; no complete page/login/HTTP/storage acceptance",
+    "cloudCalls": 0,
+    "modelCalls": 0,
+    "browser": "153.0.8010.12",
+    "file": {
+      "name": "S12-arbitrary.bin",
+      "mime": "application/octet-stream",
+      "bytes": 17,
+      "roundTrip": true
+    },
+    "voice": {
+      "bytes": 15188,
+      "mimeType": "audio/webm",
+      "durationMs": 2220,
+      "trackEnded": true,
+      "playbackStarted": true,
+      "serverAccepted": true,
+      "states": [
+        "permission",
+        "recording",
+        "stopping",
+        "ready"
+      ]
+    },
+    "finishedAt": "2026-10-18T12:09:35.315Z",
+    "sourceHashes": {
+      "frontend/src/components/agent/local-voice-capture.ts": "b7145e11f53147776d76f9b6dafe3f608f937acdb552c380453837b10d92aa6c",
+      "frontend/src/components/agent/voice-attachment.ts": "f562e619a0d97c74c4526444437c62e4aee5488911fea48e0395c6b1c7da9bf1",
+      "frontend/src/components/agent/file-attachment.ts": "a5791dd79305059399b42f9fd00a5e9e55278f5dd84ad813af5f1e4480e3fc1c",
+      "src/client/blob-bytes.ts": "211d9d56381761a9d59bd2d7095746eb809cb6330d118323d8636b986b081136",
+      "server/voice-files.ts": "0d00230e5f08238a8fb84a2730c899b43e0b3e30b14c149e92563ecf4394d3a4"
+    },
+    "limitations": [
+      "Adapter-only browser harness; no production page/login/upload/download or cross-device acceptance",
+      "Synthetic Chromium microphone; no human audibility assertion",
+      "Initial full-component esbuild harness could not handle Expo server-only imports/JSX; it was not used as UI evidence",
+      "No product source or package dependency changed"
+    ]
+  }
+}

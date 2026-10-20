@@ -54,6 +54,8 @@ P2 檢索適用範圍包含地區、年齡依據及精度、主題與必要條�
 - <a id="api-ar-05"></a>待確認參照綁種類、原事項／訊息、對象、內容版本、可見範圍及有效性，跨 run 持久保存。確認回覆重新核對指向、發言者與當前權限；多個可能指向先補問。事實確認、任務確認、完成及外發授權不可互換。
 - <a id="api-ar-06"></a>輸出供 UI 使用的 runId、狀態／停止原因、可理解結果、可引用來源及最小工具進度，須在呈現前重新核對權限及版本。進度只取實際工具／台帳證據，不回傳原始 provider 協定、內部推理、憑據或無權資料。API 路由與完整序列化隨工作包落碼，不把 Prompt Pack 語義直接當現有 wire format。
 
+Agent 停止原因可附加 `model_http_400／401／403／404／408／429／500／502／503／504`：只由可信模型 SDK 的 HTTP status 轉成固定產品文案。停止回覆保存時直接在聊天正文顯示原因及代碼，不必打開詳情；未知錯誤保留 unavailable，不傳原始錯誤正文。模型供應商限流與本站每日配額分開；明確模型 HTTP 408／429／500／502／503／504 可按管理員政策在同一模型步有限重試；不是重啟整輪。預設最多額外 3 次，按 1／2／4 秒退避，每次各自預留生成及每日用量，沿原根操作加確定 retry 序號。網絡結果未知、取消、權限、工具或保存結果未知不自動重做；不抹除先前已提交的工具結果。舊 stopReason 字串與已保存聊天保持相容。
+
 <a id="product-agent-http"></a>
 ### S11-W02 產品 Agent 接線
 
@@ -598,7 +600,7 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 
 版本衝突回 409；保存回應失聯先重讀版本，由使用者核對，不自動重送 key。輸入框在送出／失敗／斷線／身份或 Server 變更時清除。存取檢查每帳號每分鐘一次，Server 最多保留四個當分鐘槽位；逾限回 429。
 
-個人每日上限 1–1000（預設 100）、每次 Agent 生成 1–12（預設 4）、查詢 embedding 1–6（預設 2），UI 可編輯並經 Server 驗證。只有 personal 模式採用這些限額；平台每日配額及每次限額由管理政策控制，現行政策預設 8／4；這不覆寫個人已保存設定。工具與執行秒數由同一管理 policy 提供（未初始化預設 16 次／90 秒），平台／本人 key 共用；輸出仍固定 1024 tokens／次。互動上下文由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 決定（預設 64,000、允許 32,000–64,000 UTF-16 邏輯字元）；個人設定不可提高此界限，背景仍為 32,000。GET /api/ai/settings 回應頂層的可選 agentInputCharacters 回傳實際互動上限，嚴格驗證範圍及整數；舊 Server 缺欄位時 UI 顯示「互動上下文上限未提供」，不可猜測新預設。每個運行固定選定版本，後續模型／向量／工具及回報重查；撤回不能取消供應商已接受的呼叫。
+個人每日上限 1–1000（預設 100）、每次 Agent 生成 1–12（預設 4）、查詢 embedding 1–6（預設 2），UI 可編輯並經 Server 驗證。只有 personal 模式採用這些限額；平台每日配額及每次限額由管理政策控制，現行政策預設 8／4；這不覆寫個人已保存設定。工具與執行秒數由同一管理 policy 提供（未初始化預設 16 次／300 秒），平台／本人 key 共用；輸出仍固定 1024 tokens／次。互動上下文由 Server 的 AI_AGENT_MAX_INPUT_CHARACTERS 決定（預設 64,000、允許 32,000–64,000 UTF-16 邏輯字元）；個人設定不可提高此界限，背景仍為 32,000。GET /api/ai/settings 回應頂層的可選 agentInputCharacters 回傳實際互動上限，嚴格驗證範圍及整數；舊 Server 缺欄位時 UI 顯示「互動上下文上限未提供」，不可猜測新預設。每個運行固定選定版本，後續模型／向量／工具及回報重查；撤回不能取消供應商已接受的呼叫。
 
 `/api/ai/status`、`/api/ai/usage` 依本人目前模式回報；設定頁同時列兩種來源。UTC 每日 00:00（香港 08:00）重置計數；生成與查詢 embedding 的嘗試均計次，用量 metadata 不代表完整供應商帳單。
 
@@ -881,7 +883,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 
 | 方法／路徑 | 契約 |
 |---|---|
-| GET `/api/admin/policy` | 生效 policy／version（含 maxToolCalls／maxRunSeconds）、部署 AI 開關及固定輸入輸出容量 |
+| GET `/api/admin/policy` | 生效 policy／version（含 maxToolCalls／maxRunSeconds／modelRequestSeconds／maxModelRetries）、部署 AI 開關及固定輸入輸出容量 |
 | GET `/api/admin/invitations?cursor=` | 最多 20 筆後台管理邀請及 nextCursor；狀態重新讀權威資格 |
 | GET `/api/admin/invitation?email=` | 完整電郵定位既有資格；不以未列入列表推定不存在 |
 | GET `/api/admin/usage?day=YYYY-MM-DD` | UTC 日的平台／本人 key 全站 counters，無聊天掃描 |
@@ -889,7 +891,7 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 | POST `/api/admin/operations` | `src/shared/admin.ts` 的 policy／invite／revoke 聯合契約，必帶原 opId；policy 帶 expectedVersion |
 | GET `/api/admin/operations/:opId` | 本管理員原收據或 null；null 不表示原請求必定未生效，重送只能用同一參數／opId |
 
-管理設定的合法範圍統一於 `src/shared/agent-run-limits.ts`：生成 1–12、工具 1–16、查詢 embedding 1–6、期限 15–90 秒。實際值以已保存 policy 為準；舊 policy 缺工具／秒數時讀成 16／90。舊 policy 寫入請求可省略這兩個新欄位，保持原請求指紋並保留目前值；不以預設覆蓋新設定。API／worker 新 run 固定同一 policy 版本，執行中不動態換額度；本人 key 仍用其個人生成／向量限額，工具／期限共用管理政策。期限只可縮短原受信任 claim 的絕對期限，不能刷新或延長原 run。模型可見餘額供自主規劃，不代表必須用盡。
+管理設定的合法範圍統一於 `src/shared/agent-run-limits.ts`：生成 1–12、工具 1–16、查詢 embedding 1–6、互動期限 15–300 秒、單次模型等待 5–180 秒（預設90）、額外重試 0–3 次（預設3）。實際值以已保存 policy 為準；舊 policy／收據缺欄位時保留原有效值：16工具／90秒、單次30秒、零ADK重試；新建政策明確寫入300／90／3，現網須另以管理操作更新，不靜默覆寫。舊 policy 寫入請求可省略新欄位，保持原請求指紋並保留目前值；不以預設覆蓋新設定。API／worker 新 run 固定同一 policy 版本，執行中不動態換額度；本人 key 仍用其個人生成／向量限額，工具／期限共用管理政策。期限只可縮短原受信任 claim 的絕對期限，不能刷新或延長原 run。模型可見餘額供自主規劃，不代表必須用盡。
 
 `version_conflict`／`operation_conflict` 回 409，不覆蓋或另建操作；已使用資格回 `invitation_consumed`，不呼叫原 operator 的帳戶撤權流程。網絡／5xx 保持 unknown，Web owner 暫停其他寫入並提供查回／明確同 ID 重送。登出／身份切換取消讀取並清除管理快取；原生頁不載入管理資料。管理寫入不呼叫模型。
 
@@ -990,3 +992,17 @@ OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 P
 - 一個 token 同時只有一個有效身份綁定；不同帳號不得搶佔仍有效的裝置會話。舊會話已撤銷／過期後才可原子轉移，舊綁定同步撤銷。正式投遞及聯絡均重新核對會話，token 更改後不沿舊 token 發送或誤撤銷新 token。
 - `GET /api/native-push/open?reference=<JSON>`：只接受固定 reference，核對目前原生會話、綁定版本、原投遞及孩子權限後，回傳 `test` 或已授權 `care` 的資源關聯。純查回，不確認收到、不完成待辦；前端仍遵守身份切換與未提交草稿守衛。
 - 原生聯絡渠道為 `native_push`，共用本人同意、任務授權、安靜時段及終態服務；通知歷史保留相容游標，原生投遞只有真實 metadata。還原撤銷原生綁定、捨棄 token pointer，未完成投遞停止／保留 unknown，不藉還原重新投遞。
+
+
+<a id="chat-file-api"></a>
+### S12 共用聊天檔案附件
+
+通用檔案使用 `/api/children/:childId/files`，身份、同源及 `x-expected-user-id` 與現有媒體端口相同。POST 帶原 `opId`、檔名、MIME、bytes、SHA-256 預留；GET `/:id` 查回；POST `/:id/content` 帶 `expectedVersion`／base64；POST `/:id/resolve` 只核原物件；GET `/:id/content` 經當前授權下載原檔；POST `/:id/delete` 帶原 `opId`／`expectedVersion`。上限每則一份20 MiB，檔案可保存不代表內容可解析，發布狀態以 [S12-W05](../PLAN.md#s12-w05) 為準。
+
+聊天提交可帶 `file: {id, expectedVersion}`，可附文字，不能與 `voice` 同時帶入。ready、目前本人／孩子及未綁定條件在同一交易核對，再連回唯一訊息；回傳不可變ID、版本、hash、大小及格式，不複製檔案正文。下載固定 attachment／octet-stream、nosniff、private no-store；不將任意HTML或其他檔案當頁面執行。
+
+畫面只顯示檔名、大小、「不支援預覽」及實際上傳狀態，不預先標成「尚未讀取內容」。內容閱讀另返回抽取文字、原檔hash、已讀範圍與續讀位置；PDF保留頁碼。只在實際抽取後回報格式不支援、受保護／損壞、無可讀文字或容量限制；不能把片段、文字抽取或沒有預覽當作已完整理解圖片及版面。
+
+`read_chat_file` 僅供本人互動Agent，使用 `id`／`expectedVersion` 及可選 `page`／`offset`；Server核對已提交訊息、孩子與版本，抽取後再次核對，再返回私人原件及範圍資訊。工具結果不是官方知識引用或使用者新授權，不向背景共享流程暴露。沒有正文的單獨附件亦可提交，Agent按同一訊息處理。
+
+帳戶匯出增加 `files`／`file_content`（內容每頁一份）；讀取沿同一授權及刪除屏障。Web／Android由同一 `ChatFileUploadController` 保存原預留／unknown狀態；下載原檔另核目前版本，頁面不維護第二份可寫附件。

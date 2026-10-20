@@ -27,6 +27,7 @@ function useProductionValue(owner: ProductionOwner) {
   const agent = useSyncExternalStore(owner.agentOwner.subscribe, owner.agentOwner.getSnapshot, owner.agentOwner.getSnapshot);
   const authorization = useSyncExternalStore(owner.authorizationOwner.subscribe, owner.authorizationOwner.getSnapshot, owner.authorizationOwner.getSnapshot);
   const voiceUpload = useSyncExternalStore(owner.voiceOwner.subscribe,owner.voiceOwner.getSnapshot,owner.voiceOwner.getSnapshot);
+  const fileUpload = useSyncExternalStore(owner.fileOwner.subscribe,owner.fileOwner.getSnapshot,owner.fileOwner.getSnapshot);
   const pathname = usePathname();
   const router = useRouter();
   const leave = usePreviewNavigation();
@@ -42,6 +43,11 @@ function useProductionValue(owner: ProductionOwner) {
     const message=pending.voice?snapshot.chat.messages.find(item=>item.voice?.id===pending.voice!.id):null;
     if(message&&snapshot.scopeKey&&pending.localId){owner.draftOwner.remove(snapshot.scopeKey,pending.localId);owner.voiceOwner.linked(message.id,message.voice!.id);}
   },[owner,snapshot.chat.messages,snapshot.scopeKey,voiceUpload.voice?.id]);
+  useEffect(() => {
+    const pending=owner.fileOwner.getSnapshot();
+    const message=pending.file?snapshot.chat.messages.find(item=>item.file?.id===pending.file!.id):null;
+    if(message&&snapshot.scopeKey&&pending.localId){owner.draftOwner.remove(snapshot.scopeKey,pending.localId);owner.fileOwner.linked(message.id,message.file!.id);}
+  },[owner,snapshot.chat.messages,snapshot.scopeKey,fileUpload.file?.id]);
   useNativePushNavigation(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null, target => {
     const identity = snapshot.identityKey;
     leave(() => { void (async () => {
@@ -56,7 +62,7 @@ function useProductionValue(owner: ProductionOwner) {
 
   useLayoutEffect(() => {
     if ((!["/", "/chat"].includes(pathname) || previousPath.current === "/chat" && pathname !== "/chat")
-      && !owner.voiceOwner.getSnapshot().localId) owner.draftOwner.clearAttachments(snapshot.scopeKey);
+      && !owner.voiceOwner.getSnapshot().localId && !owner.fileOwner.getSnapshot().localId && !owner.draftOwner.getSnapshot().attachments.some(item => item.kind === "file")) owner.draftOwner.clearAttachments(snapshot.scopeKey);
     previousPath.current = pathname;
   }, [owner, pathname, snapshot.scopeKey]);
   useEffect(() => { setLocalNotice(null); setDismissedNotice(null); setLogoutConfirmation(false); }, [snapshot.identityKey]);
@@ -84,15 +90,15 @@ function useProductionValue(owner: ProductionOwner) {
   const openAgentDraft = (focusText = false) => {
     if (!currentScope()) return;
     if (focusText) setComposerFocusRequest(value => value + 1);
-    if (pathname !== "/chat") leave(() => router.push("/chat"));
+    if (pathname !== "/chat") leave(() => router.push("/chat"), "workspace");
   };
   const addAgentAttachment = (attachment: AssistantAttachment, replaceId?: string) => {
-    if (!currentScope() || current.current.pathname !== pathname || !["/", "/chat"].includes(pathname) || !["photo","voice"].includes(attachment.kind)) {
-      attachment.dispose?.(); setLocalNotice("目前支援文字、照片及錄音草稿；內容尚未送出。"); return false;
+    if (!currentScope() || current.current.pathname !== pathname || !["/", "/chat"].includes(pathname) || !["photo","voice","file"].includes(attachment.kind)) {
+      attachment.dispose?.(); setLocalNotice("目前無法加入附件；內容尚未送出。"); return false;
     }
     const currentAttachments=owner.draftOwner.getSnapshot().attachments;
-    if(owner.voiceOwner.getSnapshot().localId || (attachment.kind==='voice' ? currentAttachments.some(v=>v.id!==replaceId) : currentAttachments.some(v=>v.kind==='voice'))) {
-      attachment.dispose?.();setLocalNotice('每則先傳送一段錄音；照片另行保存及提取。請先送出或移除目前附件。');return false;
+    if(owner.voiceOwner.getSnapshot().localId || owner.fileOwner.getSnapshot().localId || (attachment.kind!=='photo' ? currentAttachments.some(v=>v.id!==replaceId) : currentAttachments.some(v=>v.kind!=='photo'))) {
+      attachment.dispose?.();setLocalNotice('每則可傳送一段錄音或一份檔案；照片另行保存及提取。請先送出或移除目前附件。');return false;
     }
     return owner.draftOwner.add(snapshot.scopeKey, attachment, replaceId);
   };
@@ -102,13 +108,13 @@ function useProductionValue(owner: ProductionOwner) {
       leave(() => { if (current.current.identityKey === snapshot.identityKey) void owner.controller.selectChild(id); }, "child");
     },
     refresh: () => { void refresh(); },
-    reviewOperation: () => { leave(() => router.push("/guide")); },
-    open(destination) { leave(() => router.push(productionDestinations[destination] as Href)); },
+    reviewOperation: () => { leave(() => router.push("/guide"), "workspace"); },
+    open(destination) { leave(() => router.push(productionDestinations[destination] as Href), "workspace"); },
     openAgentPhoto(original) {
       if (!currentScope() || current.current.pathname !== "/") { original.dispose?.(); return; }
-      if (owner.draftOwner.add(snapshot.scopeKey, photoAttachment(original))) router.push("/chat");
+      if (addAgentAttachment(photoAttachment(original))) openAgentDraft();
     },
-    composeCare() { leave(() => router.push("/care")); },
+    composeCare() { leave(() => router.push("/care"), "workspace"); },
     prepareQuestion(question) {
       if (!currentScope()) return;
       if (chatDraft?.text.trim()) setLocalNotice("保留你原本未送出的問題；可在草稿入口核對後修改。");
@@ -154,13 +160,16 @@ function useProductionValue(owner: ProductionOwner) {
     sendChat: async () => {
       if(!currentScope()||!owner.chatWritesAllowed())return;
       const attachments=owner.draftOwner.getSnapshot().attachments;
-      if(attachments.length&&(attachments.length!==1||attachments[0].kind!=='voice'))return;
+      if(attachments.length&&(attachments.length!==1||!['voice','file'].includes(attachments[0].kind)))return;
       const known=new Set(owner.chatController.getSnapshot().messages.map(item=>item.id));
-      const voice=attachments.length?await owner.voiceOwner.prepare(attachments[0]):null;
-      if(!currentScope()||attachments.length&&!voice||!owner.chatWritesAllowed())return;
-      await owner.chatController.send(voice?{id:voice.id,version:voice.version}:undefined);
+      const attachment=attachments[0];
+      const voice=attachment?.kind==='voice'?await owner.voiceOwner.prepare(attachment):null;
+      const file=attachment?.kind==='file'?await owner.fileOwner.prepare(attachment):null;
+      if(!currentScope()||attachments.length&&!voice&&!file||!owner.chatWritesAllowed())return;
+      await owner.chatController.send(voice?{id:voice.id,version:voice.version}:undefined,file?{id:file.id,version:file.version}:undefined);
       if(currentScope()&&owner.chatController.getSnapshot().messages.some(item=>!known.has(item.id)))owner.invalidatePrivateReads();
     },
+    fileUpload, checkFileUpload: () => {if(currentScope())void owner.fileOwner.check();},
     voiceUpload, checkVoiceUpload: () => {if(currentScope())void owner.voiceOwner.check();},
     requestChatReply: async (id: string) => { if (!currentScope() || !owner.chatWritesAllowed()) return; const known = new Set(owner.chatController.getSnapshot().messages.map(item => item.id)); await owner.chatController.requestReply(id); if (currentScope() && owner.chatController.getSnapshot().messages.some(item => !known.has(item.id))) owner.invalidatePrivateReads(); },
     agentModel: agent.model, agentInbox: agent.inbox, agentRuns: agent.runs, agentPending: agent.pending,
@@ -193,12 +202,18 @@ function useProductionValue(owner: ProductionOwner) {
       if(owner.voiceOwner.getSnapshot().localId===id){
         if(!owner.chatController.clearUnsentVoice())return;
         void owner.voiceOwner.discard().then(removed=>{if(removed&&currentScope())owner.draftOwner.remove(snapshot.scopeKey,id);});
+      }else if(owner.fileOwner.getSnapshot().localId===id){
+        if(!owner.chatController.clearUnsentFile())return;
+        void owner.fileOwner.discard().then(removed=>{if(removed&&currentScope())owner.draftOwner.remove(snapshot.scopeKey,id);});
       }else owner.draftOwner.remove(snapshot.scopeKey,id);
     },
     clearAgentDraft: () => { if (currentScope() && !owner.hasDomainPending()) {
       if (owner.voiceOwner.getSnapshot().localId) {
         if (!owner.chatController.clearUnsentVoice()) return;
         void owner.voiceOwner.discard().then(removed=>{if(removed&&currentScope()){owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}});
+      } else if (owner.fileOwner.getSnapshot().localId) {
+        if (!owner.chatController.clearUnsentFile()) return;
+        void owner.fileOwner.discard().then(removed=>{if(removed&&currentScope()){owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}});
       } else {owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}
     } },
     agentDraftScope: snapshot.scopeKey, composerFocusRequest, openAgentDraft,

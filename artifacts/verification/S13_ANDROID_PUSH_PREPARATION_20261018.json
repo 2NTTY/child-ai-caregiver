@@ -83,5 +83,69 @@
     "Dependency review/merges and same-site deployment; no old live acceptance is replaced"
   ],
   "latestMasterObserved": "d4686b7ff864642aaa964ca3adae9d64b52b6fa5",
-  "localBaseline": "6ed5520"
+  "localBaseline": "6ed5520",
+  "cloudConfiguration": {
+    "recordedAt": "2026-10-18",
+    "codeCommit": "9d273bd1f28ae3716768b182fe23d7e10ea500bd",
+    "project": "ai-caregivers-for-children",
+    "androidPackage": "org.yuyoufang.app",
+    "androidAppId": "1:1064034424208:android:2eb6734d2fb288b056cf15",
+    "dedicatedKeyApiTargets": [
+      "firebase.googleapis.com",
+      "logging.googleapis.com",
+      "firebaseinstallations.googleapis.com",
+      "fcmregistrations.googleapis.com"
+    ],
+    "vmServiceAccount": "yuban-p1@ai-caregivers-for-children.iam.gserviceaccount.com",
+    "role": "projects/ai-caregivers-for-children/roles/yuyoufangFcmSend",
+    "permissions": [
+      "cloudmessaging.messages.create"
+    ],
+    "expo": {
+      "projectId": "8c63b9fc-b823-4b40-ba36-375ce43fa578",
+      "environment": "preview",
+      "variable": "ANDROID_GOOGLE_SERVICES_FILE",
+      "type": "file",
+      "visibility": "secret",
+      "configured": true
+    },
+    "initialFailure": "EAS environment command could not load the current Expo config through the old linked dependency tree; no environment mutation occurred.",
+    "resolution": "Read the error tail, verified the variable was absent, then used a local metadata-only EAS context for the same existing project. env:set succeeded; no second app or deployment was created.",
+    "privateSourceUploads": 0,
+    "nativeBuilds": 0,
+    "modelCalls": 0,
+    "notifications": 0,
+    "deployment": false,
+    "stillPending": [
+      "real SDK indexes",
+      "compatible deployment/APK",
+      "device token/permission and authorized FCM reminder/open/completion"
+    ],
+    "evidenceBoundary": "The earlier cloudCalls and pending fields describe the initial local wiring check. This configuration does not establish delivery or device acceptance."
+  },
+  "deviceCheck": {
+    "deliveryCreatedAt": "2026-10-18T11:03:02Z",
+    "clientSource": "0f0144a",
+    "apiImage": "yuban-firestore-api:files-a12da46",
+    "device": "Existing authorized Android device, installed versionCode 2",
+    "authorization": "User explicitly approved one fixed test to this phone and personally granted the Android notification permission",
+    "binding": "Formal settings registered one current-device FCM binding, version 1; active",
+    "title": "育有方渠道測試",
+    "body": "這是本人 Android 通知測試，沒有孩子資料。",
+    "sendAttempts": 1,
+    "resends": 0,
+    "modelCalls": 0,
+    "receipt": "Formal delivery list shows channel accepted; rolling test balance changed from 3 to 2",
+    "deviceDisplay": "Exact authorized title and body observed in Android notification shade",
+    "click": "Click returned to app; final authorized destination not established by this check, so the complete care navigation/completion gate remains open",
+    "approvalTimeout": "First click-only command was not executed because automatic approval timed out; one allowed retry clicked the existing notification, without sending again",
+    "retained": "User-authorized binding and delivery metadata; no child/task mutation or test recording retained",
+    "privacy": "No token, credential, unrelated notification or private content stored in repository evidence",
+    "stillPending": [
+      "Care notification reauthorization and task completion stopping on device",
+      "Dependency review/merges",
+      "Remaining shared-media, cross-device and compatible OTA rollback gates"
+    ],
+    "evidenceBoundary": "Earlier zero-send fields describe their original local/configuration phases and are preserved"
+  }
 }

@@ -1,0 +1,309 @@
+{
+  "package": "S04-W03 Android",
+  "date": "2026-10-18",
+  "base": "ca02a2c",
+  "status": "same-source-web-api-deployed-apk-user-reported-installed-device-gates-pending",
+  "checks": [
+    {
+      "command": "node --test tests/mobile-release.test.mjs",
+      "passed": 1,
+      "failed": 0,
+      "durationMs": 381.4187,
+      "scope": "one connected classification/runtime/rollback/real offline CLI scenario",
+      "cloudCalls": 0,
+      "modelCalls": 0,
+      "deviceActions": 0
+    }
+  ],
+  "pending": [
+    "remaining functional Android acceptance; basic upgrade launch and retained data confirmed by user",
+    "real Web/Android recording and playback plus cross-device UI read-back; server audio/transcription acceptance is recorded separately",
+    "one explicitly authorized FCM delivery and notification tap",
+    "compatible OTA update/rollback",
+    "dependency PR merge and first real chat acceptance"
+  ],
+  "notes": [
+    "Planning never runs eas fingerprint:generate because the pinned command uploads fingerprints",
+    "Web output is prepared-deployment-pending; existing VM path retained",
+    "No product test suite or build rerun"
+  ],
+  "keyboardFollowup": {
+    "reportedProblem": "Composer jumps when the Android keyboard opens or closes",
+    "finding": "NativeAppShell applied KeyboardAvoidingView height while Android softwareKeyboardLayoutMode was resize",
+    "change": "Disable the extra JS avoidance on Android; keep iOS padding and the existing tab hide/layout",
+    "reference": "https://docs.expo.dev/guides/keyboard-handling/",
+    "check": {
+      "kind": "single-native-shell-typecheck",
+      "roots": 1,
+      "diagnostics": 0
+    },
+    "deviceVerified": false,
+    "apkOrOtaPublished": false,
+    "subagent": "Luna read-only location; main implementation and review"
+  },
+  "sharedCloudDelivery": {
+    "source": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "eas": "24.14.0",
+    "localAndroidBundle": "local-android-bundle-ready",
+    "localWebBundle": {
+      "source": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+      "startedAt": "2026-10-18T07:33:31.320Z",
+      "state": "prepared-deployment-pending",
+      "uploads": 0,
+      "exitCode": 0,
+      "finishedAt": "2026-10-18T07:33:40.046Z"
+    },
+    "approvedUpload": {
+      "files": 650,
+      "uncompressedBytes": 25267614,
+      "buildLimit": 1,
+      "purchasedPlan": false
+    },
+    "apk": {
+      "checkedAt": "2026-10-18T07:47:30.956Z",
+      "id": "82cb911e-5e37-43b6-9f30-e2aa9c954de0",
+      "status": "IN_PROGRESS",
+      "platform": "ANDROID",
+      "appVersion": "0.1.0",
+      "appBuildVersion": "2",
+      "runtimeVersion": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "fingerprint": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "gitCommitHash": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+      "channel": "preview",
+      "priority": "NORMAL",
+      "artifacts": {}
+    },
+    "runtimeMatchesLocal": true,
+    "indexes": {
+      "added": 10,
+      "fieldConfigurations": 6,
+      "ready": true,
+      "businessDataChanged": false
+    },
+    "preflight": {
+      "formalRuntime": true,
+      "linuxAudioDurationMs": 1000,
+      "boundedEmptyMetadataQueries": 4,
+      "businessWrites": 0,
+      "models": 0,
+      "notifications": 0,
+      "limitations": "No real attachment upload, device session, FCM delivery or model quality acceptance"
+    },
+    "preparationFailures": [
+      "Local metadata inspector supplied unsupported pageSize; corrected to existing default; no mutation before failure",
+      "Isolated candidate lacked existing Web Push config mount; corrected to the unchanged Compose mounts",
+      "Compose run rejected --no-build before starting the candidate; removed the unused flag",
+      "Preflight queried an unused single-field scope index; corrected to the actual complete scope/order queries; no extra index added"
+    ],
+    "deployment": {
+      "tag": "mobile-bf47c47",
+      "apiWorkerImage": "sha256:247adf88555438ef1c0357cb28d3de8d8345c47083bc019668c64d8e48b1c2e1",
+      "webImage": "sha256:94111e8b94f6202768ed077e9ae96a4ab669c646a7f1e114cde15a643b26557a",
+      "activatedAt": "2026-10-18T07:46:42Z",
+      "servicesHealthy": true,
+      "publicEntry": {
+        "at": "2026-10-18T07:47:12.950Z",
+        "source": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+        "publicEntryMatches": true,
+        "bytes": 34373,
+        "sha256": "5ca01348470af8c52f677394e60e7759ca22e45f21f4f48f7850ef1140408656",
+        "modelCalls": 0,
+        "notifications": 0
+      },
+      "nativePushEnabled": true,
+      "quotaChanged": false,
+      "businessMigration": false,
+      "models": 0,
+      "notifications": 0,
+      "previousImagesAndConfigRetained": true
+    },
+    "backupMetadata": {
+      "at": "2026-10-18T07:45:56.159Z",
+      "latest": {
+        "name": "projects/ai-caregivers-for-children/locations/asia-east2/backups/30d79cb3-e4da-4821-ac92-5f92788b713e",
+        "snapshotTime": "2026-10-17T22:05:22.757057Z",
+        "expireTime": "2026-10-31T22:05:22.757057Z",
+        "state": "READY"
+      },
+      "contentsRead": false,
+      "restoreTested": false
+    },
+    "dependenciesMerged": false,
+    "deviceVerified": false
+  },
+  "apkCompletion": {
+    "observedAt": "2026-10-18T07:54:44.379Z",
+    "buildId": "82cb911e-5e37-43b6-9f30-e2aa9c954de0",
+    "status": "FINISHED",
+    "source": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+    "versionCode": "2",
+    "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "downloadUrl": "https://expo.dev/artifacts/eas/Nu9ISKWMtg2ntTsFkOd6OCunMr33W25pBHn-Ne77zNI.apk",
+    "buildUrl": "https://expo.dev/accounts/2ntty/projects/yuyoufang/builds/82cb911e-5e37-43b6-9f30-e2aa9c954de0",
+    "releaseBaselineRecorded": true,
+    "recordBuildCommand": "mobile:release --record-build 82cb911e-5e37-43b6-9f30-e2aa9c954de0 --channel preview",
+    "additionalBuilds": 0,
+    "deviceInstalled": true,
+    "otaAndUpgradeAccepted": false,
+    "deviceInstalledEvidence": "user-reported; see apkDeviceUpgrade"
+  },
+  "voiceCloudAcceptance": {
+    "observedAt": "2026-10-18T08:13:35.109990+00:00",
+    "source": "bf47c47632933ceceb368aaaf14ee85223b9eae7",
+    "assembly": "openFirebaseRuntime -> production product.agent.reply; deployed worker owns transcription",
+    "fixture": {
+      "accounts": 1,
+      "children": 1,
+      "audioFiles": 1,
+      "audioBytes": 424562,
+      "audioSha256": "2f6b7ae60de3301bec9597306452309100b704a3afb6eef13420129bd09b4f49",
+      "durationMs": 9627,
+      "origin": "local Windows TTS; no real family recording"
+    },
+    "chat": {
+      "status": "completed",
+      "runId": "7d25fd29-fddb-4031-804d-4d62ea495f4f",
+      "counts": {
+        "modelCalls": 4,
+        "toolCalls": 4,
+        "queryEmbeddings": 1
+      },
+      "citations": 2,
+      "questionInferredFromAudio": true,
+      "runResultReadAfterReconnect": true
+    },
+    "transcription": {
+      "state": "available",
+      "segments": 3,
+      "automatic": true,
+      "backgroundWorker": true,
+      "contentMatchedRecording": true,
+      "historySearchFoundOriginalMessage": true,
+      "polls": 2
+    },
+    "usage": {
+      "day": "2026-10-18",
+      "attempts": 6,
+      "inputTokens": 48960,
+      "outputTokens": 445,
+      "cachedTokens": 0,
+      "unknownUsageAttempts": 5,
+      "billingSource": "platform"
+    },
+    "controls": {
+      "platformPolicyChanged": false,
+      "globalControlChanged": false,
+      "unrelatedSummaryDeferredForSyntheticChildOnly": true,
+      "additionalModelRuns": false,
+      "notifications": 0
+    },
+    "cleanup": {
+      "voiceAndTranscript": "complete",
+      "childErasure": "journal-and-barrier-submitted",
+      "physicalChildSweep": "not-polled",
+      "productIdentity": "revoked",
+      "firebaseIdentity": "deleted"
+    },
+    "notProven": [
+      "Microphone/browser/native capture and playback",
+      "End-to-end HTTP/session and assistant chat persistence; first real chat remains user-owned",
+      "Device-to-device presentation, keyboard, FCM and APK/OTA upgrade",
+      "Comprehensive medical accuracy or actual billed amount; five attempts have incomplete token usage"
+    ]
+  },
+  "apkUpgradeIdentity": {
+    "at": "2026-10-18T08:19:34.669701+00:00",
+    "tools": {
+      "source": "https://dl.google.com/android/repository/build-tools_r33.0.2-windows.zip",
+      "archiveSha1": "1f33813c884a039f242b386e9127d3a96915066f",
+      "apksigner": "0.9",
+      "aapt": "0.2-9420752"
+    },
+    "artifacts": [
+      {
+        "versionCode": 1,
+        "versionName": "0.1.0",
+        "package": "org.yuyoufang.app",
+        "bytes": 113909189,
+        "sha256": "7957979425284fa3dd5a11dabd64c2153461eb6ae22c040fe50e25df118e3f26",
+        "certificateSha256": "6153ebdd00cbadc004506cc468e2aab5f5430320a90c8bd00df336e0853aa8a0",
+        "v2SignatureVerified": true
+      },
+      {
+        "versionCode": 2,
+        "versionName": "0.1.0",
+        "package": "org.yuyoufang.app",
+        "bytes": 119224262,
+        "sha256": "89c46e95a902f19931348700f8ca716ebc122634594b07b5930223801215fe28",
+        "certificateSha256": "6153ebdd00cbadc004506cc468e2aab5f5430320a90c8bd00df336e0853aa8a0",
+        "v2SignatureVerified": true
+      }
+    ],
+    "upgradeIdentityCompatible": true,
+    "deviceInstallTested": false,
+    "failurePreserved": "aapt rejected non-ASCII absolute paths; only metadata reads were repeated with relative paths; signatures were not rerun"
+  },
+  "apkDeviceUpgrade": {
+    "recordedAt": "2026-10-18T08:26:35.081516+00:00",
+    "buildId": "82cb911e-5e37-43b6-9f30-e2aa9c954de0",
+    "versionCode": 2,
+    "userFeedback": "已覆蓋安裝",
+    "installation": "user-reported-success",
+    "launch": "pending-user-feedback",
+    "retainedLoginAndData": "pending-user-feedback",
+    "deviceConnection": "ADB reported no devices; no device inspection or interaction occurred",
+    "additionalModelCalls": 0,
+    "notificationsSent": 0,
+    "followup": {
+      "recordedAt": "2026-10-18T08:43:01.033384+00:00",
+      "userFeedback": "能正常開啟，原資料仍在",
+      "launch": "user-confirmed",
+      "retainedLoginAndData": "user-confirmed",
+      "adbPackage": "org.yuyoufang.app",
+      "adbVersionCode": 2
+    }
+  },
+  "navigationKeyboardRepair": {
+    "state": "web-and-compatible-ota-delivered-focused-device-check-completed",
+    "baseline": "c5be91acbb63a5fd04fd1d8da79a25bb291cfbab",
+    "deviceBefore": "User-authorized ADB screenshot confirmed the keyboard obscured the composer. Private screenshot remains outside Git.",
+    "behavior": "Tab bar stays in place; only the screen content avoids the keyboard. Persistent workspace drafts/operations survive internal navigation; child/identity/exit and page-local form guards remain.",
+    "checks": {
+      "workspaceNavigation": {
+        "passed": 1,
+        "initialHarnessFailure": "Missing theme.colors stub; corrected without changing assertions."
+      },
+      "affectedTypes": {
+        "roots": 18,
+        "diagnostics": 0
+      }
+    },
+    "deviceAfter": {
+      "method": "authorized physical Android via ADB; one keyboard open/type/clear/close flow",
+      "result": "Input text visible above keyboard; bottom navigation did not move above keyboard; settled closed layout returned to its prior position. Test draft cleared without sending.",
+      "limit": "A transitional frame differed from settled layout; no continuous frame or animation smoothness acceptance claimed.",
+      "privateScreenshotsCommitted": false
+    },
+    "modelCalls": 0,
+    "notifications": 0,
+    "camera": "Unchanged: native camera result/cancel returns to existing attachment preview; no automatic send.",
+    "delivery": {
+      "otaSource": "ee482ad073f90462a7afb8acaae8f47cfae085d9",
+      "group": "759892ac-b994-45c8-b1fd-dc2502077990",
+      "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "webSource": "d321553bd566b1c1b90b47958f4f4b99553b69e3",
+      "webImage": "yuban-firestore-web:keyboard-d321553",
+      "publicHtmlSha256": "d9b170b1942eda3aa1b85b009664fd9173f7d252a78e664f7436219edb5ac53d",
+      "apiWorkerNotRestarted": true,
+      "at": "2026-10-18T08:57:51.699183+00:00"
+    },
+    "releaseFailures": [
+      "EAS environment discovery validated native descriptor before public project ID was loaded; stopped before submission, fixed discovery environment.",
+      "EAS Android export overwrote frontend/dist Web output. Web rebuilt once, retained separately; fixed release tool to preserve Web artifact before Android export.",
+      "Web packaging stopped first because dist contained only Android output, then because allowlist omitted Expo _expo/.routes.json; inspected exact file, allowed only that generated routing artifact. No server change.",
+      "VM Docker build treated sha256 image ID as repository name; stopped before switching. Resumed using existing local tag after exact ID verification."
+    ]
+  }
+}

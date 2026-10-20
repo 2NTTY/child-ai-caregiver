@@ -72,22 +72,29 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   const apiRouting = createFirestoreModelRouting(options, config), workerRouting = createFirestoreModelRouting(options, config);
   const original = await apiRouting.resolve('parent', 'interactive'); assert.equal(original.config.dailyUserAttempts, 12); assert.equal(original.runLimits.modelCalls, 8); assert.equal(original.runLimits.queryEmbeddings, 4);
   const baseline = (await admin.overview()).policy, { version, updatedAt, ...values } = baseline;
-  const change: AdminCommand = { kind: 'policy', opId: randomUUID(), expectedVersion: 0, values: { ...values, maxModelCalls: 5, maxToolCalls: 9, maxRunSeconds: 45, dailyUserAttempts: 13 } };
+  const change: AdminCommand = { kind: 'policy', opId: randomUUID(), expectedVersion: 0, values: { ...values, maxModelCalls: 5, maxToolCalls: 9, maxRunSeconds: 180, modelRequestSeconds: 60, maxModelRetries: 1, dailyUserAttempts: 13 } };
   f.loseReply(); r = await http('operations', change); assert.equal(r.status, 503);
   const saved = await (await http('operations/' + change.opId)).json(); assert.equal(saved.receipt.result.version, 1);
   assert.equal((await (await http('operations', change)).json()).result.version, 1);
   assert.equal((await http('operations', { ...change, opId: randomUUID() })).status, 409);
   const newer = await apiRouting.resolve('parent', 'interactive'), worker = await workerRouting.resolve('parent', 'worker');
   assert.equal(newer.config.dailyUserAttempts, 13); assert.deepEqual(worker.runLimits, newer.runLimits); assert.equal(original.config.dailyUserAttempts, 12);
-  assert.equal(original.runLimits.toolCalls,16);assert.equal(original.runLimits.deadlineMs,90000);
-  assert.equal(newer.runLimits.toolCalls,9);assert.equal(newer.runLimits.deadlineMs,45000);
-  assert.equal((await admin.overview()).toolCalls,9);assert.equal((await admin.overview()).deadlineMs,45000);
+  assert.equal(original.runLimits.toolCalls,16);assert.equal(original.runLimits.deadlineMs,300000);
+  assert.equal(newer.runLimits.toolCalls,9);assert.equal(newer.runLimits.deadlineMs,180000);
+  assert.equal((await admin.overview()).toolCalls,9);assert.equal((await admin.overview()).deadlineMs,180000);
+  assert.equal(original.config.timeoutMs, 90000); assert.equal(original.config.agentMaxRetries, 3);
+  assert.equal(newer.config.timeoutMs, 60000); assert.equal(worker.config.timeoutMs, 60000);
+  assert.equal(newer.config.agentMaxRetries, 1); assert.equal(worker.config.agentMaxRetries, 1);
+  assert.equal(await options.database.runTransaction(tx => apiRouting.readInteractiveRunSeconds(tx)), 180);
+  const { modelRequestSeconds: omittedRequest, maxModelRetries: omittedRetries, maxRunSeconds: omittedRun, ...legacyPolicy } = baseline;
+  const historical = platformPolicySchema.parse(legacyPolicy);
+  assert.equal(historical.maxRunSeconds, 90); assert.equal(historical.modelRequestSeconds, 30); assert.equal(historical.maxModelRetries, 0);
   const budget = new AgentBudget();
   try {
     budget.configurePersonal(newer.runLimits);
-    assert.ok(budget.deadlineAtMs <= Date.now()+45000);
+    assert.ok(budget.deadlineAtMs <= Date.now()+180000);
     const scope={userId:'parent',childId:randomUUID(),workspaceId:randomUUID(),authorizationVersion:'1',dataVersion:'synthetic-epoch:1'};
-    const runId=randomUUID(),reference=randomUUID(),expiry=Date.now()+90000;
+    const runId=randomUUID(),reference=randomUUID(),expiry=Date.now()+300000;
     const bindingInput={runId,scope,trigger:{kind:'interactive' as const,reference},recipeId:'product-interactive',deadlineAtMs:expiry,
       claimedRun:{runId,scope,created:true,sourceMessageId:reference,state:'running' as const,expiresAt:new Date(expiry).toISOString(),
         storageEpoch:'synthetic-epoch',trigger:{kind:'interactive' as const,reference},recipeId:'product-interactive',purpose:'chat' as const}};
@@ -114,7 +121,7 @@ test('web admin uses production HTTP, invitation authority, shared policy and im
   assert.ok(!('maxToolCalls' in (adminCommandSchema.parse(pause) as typeof pause).values),'old command fingerprint shape stays unchanged');
   assert.equal(platformPolicySchema.parse({...legacyValues,version:0,updatedAt:null}).maxToolCalls,16);
   assert.equal((await http('operations', pause)).status, 200); assert.equal(await newer.authorize(), false);
-  assert.equal((await admin.readPolicy()).maxToolCalls,9);assert.equal((await admin.readPolicy()).maxRunSeconds,45);
+  assert.equal((await admin.readPolicy()).maxToolCalls,9);assert.equal((await admin.readPolicy()).maxRunSeconds,180);
   const totals = await (await http('usage')).json(); assert.equal(totals.platform.attempts, 1); assert.equal(totals.platform.inputTokens, 10); assert.equal(totals.personal.attempts, 0);
   assert.equal((await http('usage?day=2026-02-30')).status, 400);
   const codec = createFirestoreRestoreCodec(options);

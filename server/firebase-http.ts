@@ -1,3 +1,4 @@
+import { CHAT_FILE_UPLOAD_BODY_BYTES } from './firebase-chat-files-api.ts';
 import { VOICE_UPLOAD_BODY_BYTES } from './firebase-voice-api.ts';
 import { nativeRequestContext, requestOriginAllowed } from "./request-auth-transport.ts";
 import { Readable } from 'node:stream';
@@ -11,6 +12,7 @@ const MAX_BODY_BYTES = 64 * 1024, MAX_PHOTO_BODY_BYTES = 6 * 1024 * 1024, MAX_DO
 const UUID_PATH = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const photoContent = new RegExp('^/api/children/' + UUID_PATH + '/photos/' + UUID_PATH + '/content$', 'i');
 const voiceContent = new RegExp('^/api/children/' + UUID_PATH + '/voices/' + UUID_PATH + '/content$', 'i');
+const fileContent = new RegExp('^/api/children/' + UUID_PATH + '/files/' + UUID_PATH + '/content$', 'i');
 const documentWrite = new RegExp('^/api/children/' + UUID_PATH + '/documents(?:/' + UUID_PATH + '/actions)?$', 'i');
 class BodyTooLarge extends Error {}
 function readBody(request: IncomingMessage, maximum: number, signal: AbortSignal): Promise<Uint8Array> {
@@ -79,6 +81,7 @@ export function createFirebaseNodeHandler(options: {
       }
       const maximum = method === 'POST' && photoContent.test(pathname) ? MAX_PHOTO_BODY_BYTES
         : method === 'POST' && voiceContent.test(pathname) ? VOICE_UPLOAD_BODY_BYTES
+        : method === 'POST' && fileContent.test(pathname) ? CHAT_FILE_UPLOAD_BODY_BYTES
         : method === 'POST' && documentWrite.test(pathname) ? MAX_DOCUMENT_BODY_BYTES : MAX_BODY_BYTES;
       const length = headers.get('content-length');
       if (length !== null && (!/^\d+$/u.test(length) || Number(length) > maximum)) throw new BodyTooLarge();

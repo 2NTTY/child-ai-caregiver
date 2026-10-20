@@ -13,6 +13,8 @@ export interface AiConfig {
   dailyGlobalAttempts: number;
   personalDailyGlobalAttempts?: number;
   maxAttempts: number;
+  /** Server-resolved Agent retry policy; undefined keeps legacy callers single-attempt. */
+  agentMaxRetries?: number;
   timeoutMs: number;
   maxInputCharacters: number;
   agentMaxInputCharacters?: number;
@@ -96,7 +98,7 @@ export function readAiConfig(env: Record<string, string | undefined>): AiConfig 
     dailyGlobalAttempts: readInteger(env.AI_DAILY_GLOBAL_ATTEMPTS, "AI_DAILY_GLOBAL_ATTEMPTS", 100, 1, 10000),
     personalDailyGlobalAttempts: readInteger(env.AI_PERSONAL_DAILY_GLOBAL_ATTEMPTS, "AI_PERSONAL_DAILY_GLOBAL_ATTEMPTS", 1000, 1, 10000),
     maxAttempts: readInteger(env.AI_MAX_ATTEMPTS, "AI_MAX_ATTEMPTS", 2, 1, 2),
-    timeoutMs: readInteger(env.AI_TIMEOUT_MS, "AI_TIMEOUT_MS", 30000, 1000, 60000),
+    timeoutMs: readInteger(env.AI_TIMEOUT_MS, "AI_TIMEOUT_MS", 90000, 1000, 180000),
     maxInputCharacters: readInteger(env.AI_MAX_INPUT_CHARACTERS, "AI_MAX_INPUT_CHARACTERS", 10000, 1, 20000),
     agentMaxInputCharacters: readInteger(env.AI_AGENT_MAX_INPUT_CHARACTERS, "AI_AGENT_MAX_INPUT_CHARACTERS",
       AGENT_INTERACTIVE_INPUT.default, AGENT_INTERACTIVE_INPUT.min, AGENT_INTERACTIVE_INPUT.max),

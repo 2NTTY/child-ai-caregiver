@@ -1,3 +1,4 @@
+import { firestoreChatFileRowSchema, type FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
 import { firestoreVoiceTranscriptSchema, type FirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
@@ -38,6 +39,7 @@ const sections = {
   tasks: ['tasks', ['task']], task_history: ['task_revisions', ['task-revision']],
   documents: ['documents', ['family-document']], document_versions: ['document_snapshots', ['document-snapshot']],
   document_content: ['document_snapshots', ['document-snapshot']],
+  files: ['chat_file_assets', ['chat-file-asset']], file_content: ['chat_file_assets', ['chat-file-asset']],
   voices: ['voice_assets', ['voice-asset']], voice_content: ['voice_assets', ['voice-asset']], voice_transcripts: ['voice_transcripts', ['voice-transcript']],
   photos: ['photos', ['photo']], photo_content: ['photos', ['photo']],
   private_sources: ['shared_inputs', ['shared-input', 'shared-input-tombstone']],
@@ -58,6 +60,7 @@ const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId
 export function createFirestoreAccountExport(options: FirestoreAuthorityOptions & {
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'content'>;
   voices?: Pick<FirestoreVoiceStore,'content'|'readMetadata'>;
+  files?: Pick<FirestoreChatFilesStore,'content'|'readMetadata'>;
   transcripts?: Pick<FirestoreVoiceTranscripts,'readIn'>;
 }) {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
@@ -81,7 +84,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       if (previous && (previous.userId !== owner || previous.section !== section || previous.childId !== (input.childId ?? null)
         || previous.scopeVersion !== scopeVersion)) domainReject('invalid_export_cursor', 400);
       let items: unknown[] = [], nextCursor: string | null = null;
-      const photos: { id: string; version: number }[] = [], voices: {id:string;version:number}[]=[];
+      const photos: { id: string; version: number }[] = [], voices: {id:string;version:number}[]=[], files: {id:string;version:number}[]=[];
       if (section === 'manifest') {
         items = [{ format: 'yuban-personal-data:1', sections: ['account', ...Object.keys(sections)].map(key => ({ section: key,
           childScoped: !global.has(key), required: true })), scope: '本人可讀的業務資料；不包含憑據、模型 key 或內部協定狀態。' }];
@@ -101,7 +104,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
           query = query.where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag).where('userTag', '==', tags.userTag);
           if (section !== 'children') query = query.where('childTag', '==', tags.childTag);
         }
-        const limit = section === 'document_content' || section === 'photo_content' || section === 'voice_content' ? 1 : 10;
+        const limit = section === 'document_content' || section === 'photo_content' || section === 'voice_content' || section === 'file_content' ? 1 : 10;
         query = query.orderBy(suffix === 'photos' ? 'sortKey' : FieldPath.documentId()).limit(limit + 1);
         if (previous) query = query.startAfter(previous.after);
         const found = await binding.transaction.get(query);
@@ -140,6 +143,13 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const current=await options.voices.readMetadata(binding,voice.id);
             if (section==='voice_content') { if(current.state==='ready')voices.push({id:voice.id,version:current.version}); }
             else items.push(current);
+          } else if (suffix === 'chat_file_assets') {
+            const file=firestoreChatFileRowSchema.parse(value);
+            if (['deleting','deleted'].includes(file.state)) continue;
+            if (!options.files) domainReject('chat_file_export_unavailable',503);
+            const current=await options.files.readMetadata(binding,file.id);
+            if (section==='file_content') { if(current.state==='ready')files.push({id:file.id,version:current.version}); }
+            else items.push(current);
           } else if (suffix === 'voice_transcripts') {
             const stored=firestoreVoiceTranscriptSchema.parse(value), source=await binding.transaction.get(data.ref('voice_assets','voice-asset',stored.value.voice.id));
             if (!source.exists||['deleting','deleted'].includes(source.get('state'))) continue;
@@ -162,7 +172,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
               await createFirestoreSharedInputStore(options).read(binding, id); items.push(value);
             }
           } else if (section === 'summary_history') {
-            const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore(options) });
+            const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore({ ...options, files: undefined }) });
             const summary = await memory.readSummaryRevision(binding, value);
             if (summary) items.push(summary);
           } else if (section === 'native_push_bindings') items.push(firestoreNativeBindingSchema.parse(value).binding);
@@ -179,7 +189,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,
           after: suffix === 'photos' ? found.docs[limit - 1].get('sortKey') : found.docs[limit - 1].id });
       }
-      return { section, items, nextCursor, complete: nextCursor === null, scopeVersion, notices: ['歷史版本供追溯；不代表仍適用的最新建議。'], photos, voices };
+      return { section, items, nextCursor, complete: nextCursor === null, scopeVersion, notices: ['歷史版本供追溯；不代表仍適用的最新建議。'], photos, voices, files };
     });
     for (const photo of result.photos) {
       const content = await options.photos.content(owner, input.childId!, photo.id);
@@ -191,11 +201,17 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       if(content.attachment.version!==voice.version)domainReject('export_scope_changed');
       result.items.push({voiceId:voice.id,version:voice.version,base64:content.base64,mimeType:content.descriptor.mimeType});
     }
+    for (const file of result.files) {
+      if (!options.files) domainReject('chat_file_export_unavailable',503);
+      const content=await options.files.content(owner,input.childId!,file.id);
+      if(content.attachment.version!==file.version)domainReject('export_scope_changed');
+      result.items.push({fileId:file.id,version:file.version,base64:content.base64,mimeType:content.descriptor.mimeType});
+    }
     // Storage IO or a long snapshot page cannot disclose under an identity/version that changed mid-request.
     await authority.runTransaction(owner, input.childId ?? null, binding => {
       if (version(binding) !== result.scopeVersion) domainReject('export_scope_changed'); return Promise.resolve();
     });
-    const { photos: _photos, voices: _voices, ...response } = result; return response;
+    const { photos: _photos, voices: _voices, files: _files, ...response } = result; return response;
   }
   return { page };
 }

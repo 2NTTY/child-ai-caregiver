@@ -1,3 +1,5 @@
+import { firestoreChatFileRowSchema } from './firestore-chat-files.ts';
+import { chatFileObjectAddress, chatFileObjectDescriptorSchema, type ChatFileObjectDescriptor } from './firebase-chat-file-objects.ts';
 import { firestoreVoiceRowSchema } from './firestore-voice.ts';
 import { firestoreVoiceTranscriptSchema } from './firestore-voice-transcripts.ts';
 import { voiceObjectAddress, voiceObjectDescriptorSchema, type VoiceObjectDescriptor } from './firebase-voice-objects.ts';
@@ -62,6 +64,7 @@ const domainSchemas = {
   'document-operation': { suffix: 'document_operations', schema: documents.operation },
   'document-snapshot': { suffix: 'document_snapshots', schema: snapshots.manifest },
   'document-snapshot-chunk': { suffix: 'document_chunks', schema: snapshots.chunk },
+  'chat-file-asset': { suffix: 'chat_file_assets', schema: firestoreChatFileRowSchema },
   'voice-asset': { suffix: 'voice_assets', schema: firestoreVoiceRowSchema },
   'voice-transcript': { suffix: 'voice_transcripts', schema: firestoreVoiceTranscriptSchema },
   photo: { suffix: 'photos', schema: photos.photo },
@@ -95,6 +98,7 @@ export interface FirestoreRestoreTransform {
   newAuthorizationVersionByWorkspace?: ReadonlyMap<string, string>;
   photoDescriptors: ReadonlyMap<string, FirebasePhotoObjectDescriptor>;
   voiceDescriptors?: ReadonlyMap<string, VoiceObjectDescriptor>; voiceObjectBucketName?: string;
+  chatFileDescriptors?: ReadonlyMap<string, ChatFileObjectDescriptor>; chatFileObjectBucketName?: string;
 }
 export interface FirestoreRestoreRecord { oldPath: string; path: string; data: Record<string, unknown> }
 export interface FirestoreRestoreCodec {
@@ -275,6 +279,13 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         && row.objectScope.ownerUserId === scope.ownerUserId && row.objectScope.workspaceId === scope.workspaceId && row.objectScope.childId === scope.childId);
       const integrity = row.metadata ?? row.deletion?.integrity;
       if (row.descriptor) requireBinding(Boolean(integrity && ['sha256','bytes','mimeType'].every(k => row.descriptor![k as keyof VoiceObjectDescriptor] === integrity[k as keyof typeof integrity])));
+    }
+    else if (kind === 'chat-file-asset') {
+      const row = parse(firestoreChatFileRowSchema, raw); versionMatches(row.version);
+      requireBinding(row.id === id && sameScope(row.scope, scope)
+        && row.objectScope.ownerUserId === scope.ownerUserId && row.objectScope.workspaceId === scope.workspaceId && row.objectScope.childId === scope.childId);
+      const integrity = row.metadata ?? row.deletion?.integrity;
+      if (row.descriptor) requireBinding(Boolean(integrity && ['sha256','bytes','mimeType'].every(k => row.descriptor![k as keyof ChatFileObjectDescriptor] === integrity[k as keyof typeof integrity])));
     } else if (kind === 'voice-transcript') {
       const row = parse(firestoreVoiceTranscriptSchema, raw); versionMatches(row.value.version);
       requireBinding(row.value.voice.id === id && sameScope(row.scope, scope));
@@ -442,6 +453,15 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         cleanupState: row.deletion!.cleanup, cleanupAt: row.deletion!.nextCheckAt,
         ...data.seal('voice-asset',row.id,row.scope,firestoreVoiceRowSchema,row,row.version) } };
     }
+    if (context.family === 'domain' && context.kind === 'chat-file-asset' && parse(firestoreChatFileRowSchema, decoded.value).deletion) {
+      const row = parse(firestoreChatFileRowSchema, decoded.value); domainBinding({...context,kind:'chat-file-asset'}, row);
+      // Cleanup addresses remain bound to their original immutable object and scope.
+      return { oldPath: decoded.path, path: decoded.path, data: { ...data.tags(row.scope),
+        scopeTag: firestoreDomainHash(['chat-file-scope', row.scope]), assetId: row.id, state: row.state,
+        createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId,
+        cleanupState: row.deletion!.cleanup, cleanupAt: row.deletion!.nextCheckAt,
+        ...data.seal('chat-file-asset',row.id,row.scope,firestoreChatFileRowSchema,row,row.version) } };
+    }
     const scope = scopeAfter(context.scope, input);
     if (context.family === 'authority') {
       if (!key(authoritySchemas, context.kind)) reject('unsupported_restore_domain');
@@ -521,6 +541,21 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         value = { ...row, scope, descriptor, objectScope: descriptor || !row.upload ? scope : row.objectScope,
           upload: row.upload ? {...row.upload,unknown:true} : null };
         Object.assign(metadata,{scopeTag:firestoreDomainHash(['voice-scope',scope]),assetId:row.id,state:row.state,
+          createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null?'unlinked':null,cleanupAt:null}); break;
+      }
+      case 'chat-file-asset': {
+        const row = parse(firestoreChatFileRowSchema, value); let descriptor = row.descriptor;
+        if (descriptor) {
+          const replacement = input.chatFileDescriptors?.get(row.id);
+          if (!replacement || !input.chatFileObjectBucketName) reject('restore_chat_file_descriptor_missing');
+          const checked = parse(chatFileObjectDescriptorSchema,replacement);
+          requireBinding(['sha256','bytes','mimeType'].every(k => checked[k as keyof ChatFileObjectDescriptor] === descriptor![k as keyof ChatFileObjectDescriptor])
+            && checked.objectName === chatFileObjectAddress({projectId,namespace,bucketName:input.chatFileObjectBucketName},scope,row.id).objectName);
+          descriptor = checked;
+        }
+        value = { ...row, scope, descriptor, objectScope: descriptor || !row.upload ? scope : row.objectScope,
+          upload: row.upload ? {...row.upload,unknown:true} : null };
+        Object.assign(metadata,{scopeTag:firestoreDomainHash(['chat-file-scope',scope]),assetId:row.id,state:row.state,
           createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null?'unlinked':null,cleanupAt:null}); break;
       }
       case 'voice-transcript': {

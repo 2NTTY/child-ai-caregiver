@@ -1,4 +1,5 @@
-import { erasureCoversPhoto, erasureCoversVoice } from './firebase-erasure-journal.ts';
+import { chatFileObjectDescriptorSchema, type ChatFileObjects, type ChatFileObjectDescriptor } from './firebase-chat-file-objects.ts';
+import { erasureCoversPhoto, erasureCoversVoice, erasureCoversChatFile } from './firebase-erasure-journal.ts';
 import { z } from 'zod';
 import type { Bucket } from '@google-cloud/storage';
 import type { FirebasePhotoObjects, FirebasePhotoObjectDescriptor } from './firebase-photo-objects.ts';
@@ -22,7 +23,7 @@ type ManagedMediaOptions<D extends MediaDescriptor,R>={bucket:Bucket;journalBuck
   authority:Pick<ReturnType<typeof createFirestoreAuthority>,'readControl'>;sourceGeneration:string};
 /** Operator only. Photos and audio share the same pause/journal/immutable-generation safeguards. */
 function createManagedMediaReader<D extends MediaDescriptor,R>(options:ManagedMediaOptions<D,R>,policy:{
-  kind:'photo'|'voice';parse(value:unknown):D;address:RegExp;format:string;covers:typeof erasureCoversPhoto}) {
+  kind:'photo'|'voice'|'file';parse(value:unknown):D;address:RegExp;format:string;covers:typeof erasureCoversPhoto}) {
   function reject(code='recovery_retained_'+policy.kind+'_unconfirmed'):never {
     throw Object.assign(new Error('Retained media recovery rejected'),{code});
   }
@@ -85,4 +86,9 @@ export function createFirebaseManagedPhotoReader(options:ManagedMediaOptions<Fir
 export function createFirebaseManagedVoiceReader(options:ManagedMediaOptions<VoiceObjectDescriptor,Awaited<ReturnType<VoiceObjects['read']>>>):VoiceObjects['read'] {
   return createManagedMediaReader(options,{kind:'voice',parse:v=>voiceObjectDescriptorSchema.parse(v),
     address:/^voice\/v1\/[a-f0-9]{64}\/[a-f0-9-]{36}$/u,format:'yuyoufang-voice-object/v1',covers:erasureCoversVoice});
+}
+
+export function createFirebaseManagedChatFileReader(options:ManagedMediaOptions<ChatFileObjectDescriptor,Awaited<ReturnType<ChatFileObjects['read']>>>):ChatFileObjects['read'] {
+  return createManagedMediaReader(options,{kind:'file',parse:v=>chatFileObjectDescriptorSchema.parse(v),
+    address:/^chat-file\/v1\/[a-f0-9]{64}\/[a-f0-9-]{36}$/u,format:'yuyoufang-chat-file-object/v1',covers:erasureCoversChatFile});
 }

@@ -3448,6 +3448,42 @@
           "arrayConfig": "CONTAINS"
         }
       ]
+    },
+    {
+      "collectionGroup": "yuban_authority_chat_file_assets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_chat_file_assets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "state",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -4152,6 +4188,21 @@
       "collectionGroup": "yuban_authority_native_push_tokens",
       "fieldPath": "*",
       "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_chat_file_assets",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_chat_file_assets",
+      "fieldPath": "cleanupState",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
     }
   ]
 }

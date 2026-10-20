@@ -117,9 +117,10 @@ export function readFirebaseStorageResponse(bucket: Pick<FirebasePhotoSdkBucket,
   return response;
 }
 
-/** Use public requests: Storage 7.22 FileOptions.generation otherwise converts strings to Number. */
+/** Pinned generation reads with an explicit per-caller bound; the photo default stays unchanged.
+ * Storage 7.22 FileOptions.generation otherwise converts strings to Number. */
 export function createFirebasePhotoBucketPort(bucket: FirebasePhotoSdkBucket, maximum = FIREBASE_PHOTO_MAX_CIPHER_BYTES): FirebasePhotoBucketPort {
-  if (!Number.isSafeInteger(maximum) || maximum < 1 || maximum > 16 * 1024 * 1024) throw new Error("Invalid media bound");
+  if (!Number.isSafeInteger(maximum) || maximum < 1 || maximum > 40 * 1024 * 1024) throw new Error("Invalid media bound");
   return {
     async writeNew(objectName, ciphertext, options) {
       const file = bucket.file(objectName);

@@ -1,3 +1,5 @@
+import { createCloudStorageChatFileObjects } from './firebase-chat-file-objects.ts';
+import { createFirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { createCloudStorageVoiceObjects } from './firebase-voice-objects.ts';
 import { createFirestoreVoiceStore } from './firestore-voice.ts';
 import { readContextBasis } from './firestore-context-basis.ts';
@@ -68,7 +70,9 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const voiceObjects = createCloudStorageVoiceObjects({ config: { projectId: config.projectId, namespace: config.namespace, bucketName: config.photoBucket }, cipher });
     const voices = createFirestoreVoiceStore({ ...domain, objects: voiceObjects, journal,
       eraseTranscriptionRun: (userId, sessionId) => nativeSessions.deleteSession({ appName: 'yuban_hk', userId, sessionId }) });
-    const erasureCleanup = createFirestoreErasureCleanup({ ...domain, journal, erasures, photos, voices,
+    const fileObjects = createCloudStorageChatFileObjects({ config: { projectId: config.projectId, namespace: config.namespace, bucketName: config.photoBucket }, cipher });
+    const files = createFirestoreChatFilesStore({ ...domain, objects: fileObjects, journal });
+    const erasureCleanup = createFirestoreErasureCleanup({ ...domain, journal, erasures, photos, voices, files,
       deleteAgentSession: (userId, sessionId) => nativeSessions.deleteSession({ appName: 'yuban_hk', userId, sessionId }),
       eraseAgentUserPage: userId => nativeSessions.eraseUserPage('yuban_hk', userId),
       eraseDeviceSessions: (userId, cursor) => sessions.eraseUserPage(userId, cursor),
@@ -95,7 +99,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const telegramConfig = await readTelegramConfig(env), telegramGateway = createTelegramGateway(telegramConfig);
     const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!pushConfig, currentAuth });
     const telegram = createFirestoreTelegram({ ...domain, config: telegramConfig, gateway: telegramGateway, currentAuth });
-    const chat = createFirestoreChatStore({ ...domain, voice: voices }), care = createFirestoreCareStore(domain);
+    const chat = createFirestoreChatStore({ ...domain, voice: voices, files }), care = createFirestoreCareStore(domain);
     const sources = createFirestoreSharedInputStore(domain), concerns = createFirestoreConcernStore(domain);
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
     const summary = createFirestoreCareSummary(domain, care);
@@ -111,7 +115,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
       runs: () => product.runs, currentAuth });
     mutations.push(contact.mutation);
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
-    product = await createFirestoreProductAgent({ ...domain, config: readAiConfig(env), voices, chat, care, summary, memory, online, documents, knowledge, sources, concerns, growth, contact,
+    product = await createFirestoreProductAgent({ ...domain, config: readAiConfig(env), voices, files, chat, care, summary, memory, online, documents, knowledge, sources, concerns, growth, contact,
       authorizeWorker: composition.worker ? async (b, reference, recipeId) => {
         if (!config.taskWorkerEnabled || !(await authority.readControl(b.transaction)).enabled) return false;
         const job = await readFirestoreBackgroundClaim(new FirestoreDomainData(domain), b, reference); if (!job) return false;
@@ -125,16 +129,16 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
         return job.kind === 'concern' ? concerns.authorizeBackground(b, job) : job.kind === 'growth' ? growth.authorizeBackground(b, job)
           : job.kind === 'task-agent' ? !!await taskEvents.input(b, job) && await growth.taskAllowedIn(b, job.resourceId) : false;
       } : undefined });
-    const exporter = createFirestoreAccountExport({ ...domain, photos, voices, transcripts: product.voiceTranscripts });
+    const exporter = createFirestoreAccountExport({ ...domain, photos, voices, files, transcripts: product.voiceTranscripts });
     const sourceService = createSharedInputService(sources, product.runtime);
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
     const photoAgent = createPhotoAgent(photos, product.runtime);
     const admin = createFirestoreAdmin(domain, readAiConfig(env));
-    const handler = createFirebaseRequestHandler({ admin, adminUid: composition.worker ? null : readAdminUid(env), authority, auth, online, documents, photos, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
+    const handler = createFirebaseRequestHandler({ admin, adminUid: composition.worker ? null : readAdminUid(env), authority, auth, online, documents, photos, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;
-    return { ...persistence, admin, sessions, auth, currentAuth, reminders, online, documents, photos, voices, voiceObjects, objects, journal, erasures, erasureCleanup, exporter, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
+    return { ...persistence, admin, sessions, auth, currentAuth, reminders, online, documents, photos, voices, voiceObjects, files, fileObjects, objects, journal, erasures, erasureCleanup, exporter, knowledge, knowledgeRefresh, library, chat, care, summary, memory, sources, sourceService, concerns, growth, push, nativePush, telegram, telegramConfig, telegramGateway, pushGateway, contact, taskEvents, product, handler,
       close() { return closing ??= (async () => { try { await deleteApp(ownedApp); } finally { await persistence.close(); } })(); } };
   } catch (error) {
     try { if (app) await deleteApp(app); } finally { await persistence.close(); }

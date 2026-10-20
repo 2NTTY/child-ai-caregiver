@@ -102,7 +102,7 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
   useEffect(() => () => { api.resetOnline(); pending.current = null; void suspendPushBrowser().catch(() => {}); }, [api]);
   useEffect(() => { if (!env.online) { setReview(current => current ? { ...current, confirmed: false } : null); if (pending.current) { pending.current.reviewed = false; pending.current.consent = false; retain(pending.current); } } }, [env.online]);
   useSettingsRefresh(env, actions.refresh, !requests.busy && !original && !review, true);
-  useDomainWriteGuard(!!review, !!original || requests.busy, "account");
+  useDomainWriteGuard(!!review, !!original || requests.writing, "account");
   const visible = env.currentIdentity() ? status : null;
   const model: PushSettingsModel = { online: env.online, readState: env.currentIdentity() ? readState : "session_changed", locked: requests.busy || !!original,
     conflict, notice, workerEnabled: visible?.workerEnabled ?? false, review, available: visible?.available ?? false, browserSupported: pushBrowserSupported(), permission,

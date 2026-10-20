@@ -1,3 +1,5 @@
+import { createCloudStorageChatFileObjects, CHAT_FILE_OBJECT_MAX_BYTES } from '../server/firebase-chat-file-objects.ts';
+import { createFirebaseChatFileRecovery } from '../server/firebase-chat-file-recovery.ts';
 import { createCloudStorageVoiceObjects, VOICE_OBJECT_MAX_BYTES } from '../server/firebase-voice-objects.ts';
 import { createFirebaseVoiceRecovery } from '../server/firebase-voice-recovery.ts';
 import { createFirebasePhotoBucketPort } from '../server/firebase-photo-objects.ts';
@@ -14,7 +16,7 @@ import { createFirebasePhotoRecovery, createFirebasePhotoBackupBucketPort } from
 import { createFirebaseBackupArtifacts, createFirebaseBackupArtifactBucketPort } from '../server/firebase-backup-artifacts.ts';
 import { createFirebaseNativeRecovery } from '../server/firebase-native-recovery.ts';
 import { createFirebaseManagedBackup } from '../server/firebase-managed-backup.ts';
-import { createFirebaseManagedPhotoReader, createFirebaseManagedVoiceReader } from '../server/firebase-managed-photo-recovery.ts';
+import { createFirebaseManagedPhotoReader, createFirebaseManagedVoiceReader, createFirebaseManagedChatFileReader } from '../server/firebase-managed-photo-recovery.ts';
 import { createFirebaseRecoveryOperator } from '../server/firebase-recovery-operator.ts';
 
 // Explicit operator command only; never loaded by the API, scheduler or worker.
@@ -46,6 +48,10 @@ try {
     const voices={bucketName:config.photoBucket,objects:voiceObjects,recovery:createFirebaseVoiceRecovery({
       config:{projectId:config.projectId,namespace:config.namespace,backupBucketName:config.erasureBucket},cipher,
       backupBucket:createFirebasePhotoBucketPort(journalBucket,VOICE_OBJECT_MAX_BYTES),objects:voiceObjects})};
+    const chatFileObjects=createCloudStorageChatFileObjects({config:{projectId:config.projectId,namespace:config.namespace,bucketName:config.photoBucket},cipher});
+    const chatFiles={bucketName:config.photoBucket,objects:chatFileObjects,recovery:createFirebaseChatFileRecovery({
+      config:{projectId:config.projectId,namespace:config.namespace,backupBucketName:config.erasureBucket},cipher,
+      backupBucket:createFirebasePhotoBucketPort(journalBucket,CHAT_FILE_OBJECT_MAX_BYTES),objects:chatFileObjects})};
     const journal=createCloudStorageErasureJournal({config:artifactConfig,cipher});
     const native=createFirebaseNativeRecovery({projectId:config.projectId,sourceDatabaseId:config.databaseId,targetDatabaseId,backupBucketName:config.erasureBucket});
     const managed=command.includes('managed')?createFirebaseManagedBackup({projectId:config.projectId,
@@ -55,7 +61,9 @@ try {
       bucket:storage.bucket(config.photoBucket),journalBucket,journal,objects,authority:persistence.authority,sourceGeneration:input.sourceGeneration})}:objects;
     if(command==='apply-managed-restore') voices.objects={...voiceObjects,read:createFirebaseManagedVoiceReader({
       bucket:storage.bucket(config.photoBucket),journalBucket,journal,objects:voiceObjects,authority:persistence.authority,sourceGeneration:input.sourceGeneration})};
-    const operator=createFirebaseRecoveryOperator({...domain,targetDatabase:target,backupBucketName:config.erasureBucket,journalBucket,journal,photos,voices,sourceObjects,artifacts,native,managed,auth:getAuth(app),keyVersionRef:process.env.FIREBASE_STORAGE_KEY_VERSION_REF});
+    if(command==='apply-managed-restore') chatFiles.objects={...chatFileObjects,read:createFirebaseManagedChatFileReader({
+      bucket:storage.bucket(config.photoBucket),journalBucket,journal,objects:chatFileObjects,authority:persistence.authority,sourceGeneration:input.sourceGeneration})};
+    const operator=createFirebaseRecoveryOperator({...domain,targetDatabase:target,backupBucketName:config.erasureBucket,journalBucket,journal,photos,voices,chatFiles,sourceObjects,artifacts,native,managed,auth:getAuth(app),keyVersionRef:process.env.FIREBASE_STORAGE_KEY_VERSION_REF});
     if(command==='start-managed-restore')result=await managed.start(input.backupName);
     else if(command==='get-managed-restore')result=await managed.inspect(input.backupName,input.operationName);
     else if(command==='apply-managed-restore'){

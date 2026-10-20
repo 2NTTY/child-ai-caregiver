@@ -1,3 +1,4 @@
+import { ChatFileMessage } from '../production/ChatFileMessage';
 import { VoiceMessage } from '../production/VoiceMessage';
 import { OfficialHelpCards } from '../components/chat/OfficialHelpCards';
 import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
@@ -34,7 +35,7 @@ function ChatContents({ compact }: { compact: boolean }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const { model, actions, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
     addAgentAttachment, removeAgentAttachment, composerFocusRequest, sendChat, requestChatReply, agentRuns, agentModel,
-    voiceUpload, checkVoiceUpload, agentPending, readAgentPending, authorization, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
+    voiceUpload, checkVoiceUpload, fileUpload, checkFileUpload, agentPending, readAgentPending, authorization, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
   const child = model.children.find(item => item.id === model.selectedChildId);
   const draft = child ? chat.drafts[child.id] : undefined;
   const phase = draft?.phase ?? "draft", busy = chat.busy !== null;
@@ -55,9 +56,9 @@ function ChatContents({ compact }: { compact: boolean }) {
   const locateSource = (target: View | null, horizontalScroll?: NativeScrollView | null, verticalTarget?: View | null) => {
     timelineRef.current?.holdReadingPosition(); locateCitationSource(target, scrollRef.current, horizontalScroll, verticalTarget);
   };
-  const composerGuardId = usePreviewLeaveGuard(agentAttachments.length > 0 && pathname === "/chat", voiceUpload.busy || voiceUpload.unknown, "child", attachmentLeaveCopy);
+  const composerGuardId = usePreviewLeaveGuard(agentAttachments.length > 0 && pathname === "/chat", voiceUpload.busy || voiceUpload.unknown || fileUpload.busy || fileUpload.unknown, "child", attachmentLeaveCopy);
   const canSend = !!scopeKey && !!child && chat.selectedChildId === child.id && chat.online && !busy && !chat.loading
-    && chatWritesAllowed && !voiceUpload.unknown && (agentAttachments.length === 0 || agentAttachments.length === 1 && agentAttachments[0].kind === "voice") && !!chat.loadedAt && phase === "draft" && (!!chatDraft.trim() || agentAttachments.some(v=>v.kind==="voice")) && chatDraft.length <= 10_000;
+    && chatWritesAllowed && !voiceUpload.busy && !fileUpload.busy && !voiceUpload.unknown && !fileUpload.unknown && (agentAttachments.length === 0 || agentAttachments.length === 1 && ["voice", "file"].includes(agentAttachments[0].kind)) && !!chat.loadedAt && phase === "draft" && (!!chatDraft.trim() || agentAttachments.some(v=>v.kind==="voice"||v.kind==="file")) && chatDraft.length <= 10_000;
   function send() {
     if (!canSend) return;
     setFollowRequest(`send-${Date.now()}`); void sendChat();
@@ -72,9 +73,12 @@ function ChatContents({ compact }: { compact: boolean }) {
   function openSettings() {
     detailsTrigger.current = null;
     setDetailsOpen(false);
-    navigate(() => router.push("/settings?section=assistant"));
+    navigate(() => router.push("/settings?section=assistant"), "workspace");
   }
   const feedback = child ? <View style={styles.feedback}>
+    {fileUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原檔；確認保存後才開始處理…</Text>:null}
+    {fileUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{fileUpload.notice}</Text>:null}
+    {fileUpload.unknown?<AppButton label="查核原檔案上傳" disabled={fileUpload.busy||!chat.online} onPress={checkFileUpload}/>:null}
     {voiceUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原錄音；確認保存後才開始處理…</Text>:null}
     {voiceUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{voiceUpload.notice}</Text>:null}
     {voiceUpload.unknown?<AppButton label="查核原錄音上傳" disabled={voiceUpload.busy||!chat.online} onPress={checkVoiceUpload}/>:null}
@@ -132,6 +136,7 @@ function ChatContents({ compact }: { compact: boolean }) {
           phaseLabel={run?.status === "running" ? "運行仍在處理" : undefined} onLocateSource={locateSource}
           onOpenSource={run ? id => openAgentSource(run.id, id) : undefined}
           header={<>
+            {message.file?<ChatFileMessage messageId={message.id} file={message.file}/>:null}
             {message.voice?<VoiceMessage messageId={message.id} voice={message.voice}/>:null}
             {message.role === "model" && message.officialHelp?.length ? <OfficialHelpCards ids={message.officialHelp} /> : null}
             {run && (run.status === "stopped" || run.status === "unknown") && run.stopReasonLabel && !message.text.startsWith("這次回覆未完成：")
@@ -146,10 +151,9 @@ function ChatContents({ compact }: { compact: boolean }) {
               onPress={() => { void requestChatReply(message.id); }} /> : null}
           </>} />;
       }} />
-    <AgentComposer enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && phase === "draft"} compact={compact} draft={chatDraft}
+    <AgentComposer enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && phase === "draft"} compact={compact} draft={chatDraft}
       attachments={agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
-      suggestionLabel="建議問題" inputHint={agentAttachments.some(v=>v.kind==="voice") ? "按送出會保存錄音並交 AI 理解；背景補上的轉錄不會再次執行指令。" : agentAttachments.length ? "請在上方保存及核對照片；照片不會隨文字自動交模型或共享。" : undefined}
-      filesUnavailableReason="暫未支援文件，請使用文字"
+      suggestionLabel="建議問題" inputHint={agentAttachments.some(v=>v.kind==="voice") ? "按送出會保存錄音並交 AI 理解；背景補上的轉錄不會再次執行指令。" : agentAttachments.some(v=>v.kind==="file") ? "按送出會保存原檔，並讓助手按你的要求讀取及處理。" : agentAttachments.length ? "請在上方保存及核對照片；照片不會隨文字自動交模型或共享。" : undefined}
       onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
     <View style={styles.privacyFooter}><ChatAction label="AI 處理 · 僅使用獲授權資料" accessibilityLabel="查看 AI 資料處理說明"
       onPress={() => setPrivacyOpen(true)} subtle /></View>

@@ -1,3 +1,5 @@
+import { createChatFileApi, type ChatFileApi } from '../../../src/client/chat-file-api.ts';
+import { ChatFileUploadController } from './ChatFileUploadController';
 import { createVoiceApi, type VoiceApi } from '../../../src/client/voice-api.ts';
 import { VoiceUploadController } from './VoiceUploadController';
 import { photoSha256 } from '../platform/photo-bytes';
@@ -38,6 +40,9 @@ export class ProductionOwner {
   readonly draftOwner = createAssistantDraftOwner();
   readonly controller: RecordsController;
   readonly chatController: ChatController;
+  readonly fileApi: ChatFileApi;
+  readonly fileOwner: ChatFileUploadController;
+  private unsubscribeFile: (()=>void)|null=null;
   readonly voiceApi: VoiceApi;
   readonly voiceOwner: VoiceUploadController;
   private unsubscribeVoice: (()=>void)|null=null;
@@ -50,7 +55,7 @@ export class ProductionOwner {
     if (pending) this.domainPending.add(key); else this.domainPending.delete(key);
     this.syncMutationLocks(); this.snapshot = this.project(); this.emit();
   };
-  hasDomainPending = () => this.domainPending.size > 0 || Boolean(this.accountOwner?.hasPending()) || !!this.voiceOwner?.getSnapshot().busy || !!this.voiceOwner?.getSnapshot().unknown;
+  hasDomainPending = () => this.domainPending.size > 0 || Boolean(this.accountOwner?.hasPending()) || !!this.voiceOwner?.getSnapshot().busy || !!this.voiceOwner?.getSnapshot().unknown || !!this.fileOwner?.getSnapshot().busy || !!this.fileOwner?.getSnapshot().unknown;
   handleDomainAccessError = (error: { status?: number; code?: string | null }) => {
     if (error.status === 401 || error.code === "session_changed" || error.code === "unauthorized") void this.controller.restoreSession();
     else if (error.status === 403 || error.code === "access_denied") this.denySelectedChild();
@@ -106,6 +111,8 @@ export class ProductionOwner {
       try { return await recordsApi.getSession(signal); }
       catch (error) { if (!signal.aborted) void this.controller.restoreSession(); throw error; }
     }, this.fetcher), online);
+    this.fileApi = createChatFileApi(this.fetcher,this.apiBaseUrl,photoSha256);
+    this.fileOwner = new ChatFileUploadController(this.fileApi,photoSha256,this.handleDomainAccessError);
     this.voiceApi = createVoiceApi(this.fetcher,this.apiBaseUrl,photoSha256);
     this.voiceOwner = new VoiceUploadController(this.voiceApi,photoSha256,this.handleDomainAccessError);
     const queries = withRecordsQueries(recordsApi, this.queryClient, () => ({ identityKey: this.identity,
@@ -127,6 +134,7 @@ export class ProductionOwner {
     this.unsubscribeAgent = this.agentOwner.subscribe(() => this.syncMutationLocks());
     this.unsubscribeAuthorization = this.authorizationOwner.subscribe(() => this.syncMutationLocks());
     this.unsubscribeVoice = this.voiceOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
+    this.unsubscribeFile = this.fileOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
     this.unsubscribe = this.controller.subscribe(() => this.sync());
     this.unsubscribeChat = this.chatController.subscribe(() => this.chatChanged());
   }
@@ -217,6 +225,7 @@ export class ProductionOwner {
         this.queryClient.removeQueries({ queryKey: ["production", this.snapshot.scopeKey] });
       }
       this.voiceOwner.syncContext(nextScope && userId && raw.selectedChildId ? {key:nextScope,userId,childId:raw.selectedChildId}:null,raw.online);
+      this.fileOwner.syncContext(nextScope && userId && raw.selectedChildId ? {key:nextScope,userId,childId:raw.selectedChildId}:null,raw.online);
       this.draftOwner.retainScope(nextScope);
       this.chatController.syncContext(userId, raw.online, nextScope ? raw.selectedChildId : null);
       this.agentOwner.syncContext(nextScope && userId && raw.selectedChildId
@@ -266,6 +275,7 @@ export class ProductionOwner {
   connect() {
     if (this.unsubscribe) return;
     this.unsubscribeVoice = this.voiceOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
+    this.unsubscribeFile = this.fileOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
     this.unsubscribe = this.controller.subscribe(() => this.sync());
     this.unsubscribeChat = this.chatController.subscribe(() => this.chatChanged());
     this.unsubscribeAccount = this.accountOwner.subscribe(this.accountChanged);
@@ -276,6 +286,7 @@ export class ProductionOwner {
     this.unsubscribe?.(); this.unsubscribe = null; this.unsubscribeChat?.(); this.unsubscribeChat = null;
     this.unsubscribeAgent?.(); this.unsubscribeAgent = null; this.unsubscribeAuthorization?.(); this.unsubscribeAuthorization = null;
     this.unsubscribeAccount?.(); this.unsubscribeAccount = null;
+    this.unsubscribeFile?.(); this.unsubscribeFile=null; this.fileOwner.dispose();
     this.unsubscribeVoice?.(); this.unsubscribeVoice=null; this.voiceOwner.dispose();
     this.adminOwner.dispose(); this.accountOwner.dispose(); this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();
     void this.queryClient.cancelQueries(); this.queryClient.clear(); this.listeners.clear();
