@@ -107,7 +107,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 審核綁定正文／來源／對象／版本；未核准不正式保存。顯示角色、工具、審核、收據、耗時及停止原因，不預設完整私人正文／內部思考日誌。
 - 聯合測試可用獨立本地整合分支及固定提交，保留原作者；已按使用者新授權合併協作者 PR；沿既有角色及服務補缺，不重造測試 Agent。缺接口列清由本輪承接；環境可啟動、角色已接及真模型已驗分開，#216 stub 不計真審核完成。
 - 真編製／獨立審核與同一文件確認保存已通過：修正 Java 子程序路徑及多餘的待確認狀態審核後，沿原限額完成一次真模型流程，文件只改指定標題，其餘章節不變；重新讀取同一版本。[失敗與成功證據](artifacts/verification/DEV_AGENT02_REAL_COMPOSE_20261020.json)分開保留，不重跑已通過項目。
-- 尚欠：新對話模型接續及頁面聯合核對、非郵件本地收件箱。#216 的 `BackgroundKnowledgeMaintenancePorts`／`KnowledgeSemanticReviewPort` 尚缺真模型、持久用量／工作／發布組裝及本地觸發，現有記憶體 fallback／programmatic stub 不能當通過；沿本輪新授權接續必要缺口。可先開始不依賴這些缺口的 MODEL-SELF01，不能把 DEV02 標完成。
+- 背景模型步驟：已補共用原文單元整理／獨立語義審核及 `KnowledgeSemanticReviewPort` adapter；固定原文、頁碼及來源，候選保存失敗不返回批准。兩項合成檢查、既有離線路徑及局部型別通過，見[模型步驟證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_MODEL_20261020.json)。尚未接入運行中的持久工作，沒有真模型／自動發布證據。
+- 尚欠：新對話模型接續及頁面聯合核對、非郵件本地收件箱。#216 的 `BackgroundKnowledgeMaintenancePorts` 尚缺維護用量／工作、模型步驟、原子發布及本地觸發的正式組裝；下一步先接持久工作及模型結果復用，再接發布。現有記憶體 fallback／programmatic stub 不能當通過；沿本輪新授權接續必要缺口。可先開始不依賴這些缺口的 MODEL-SELF01，不能把 DEV02 標完成。
 - gate：聊天→編製→真審核→保存→頁面／新對話讀回；另無聊天時背景讀來源→整理／審核→本地發布→聊天引用新版。缺角色真實實作時保留待驗，不能以替身達標。
 
 <a id="model-self01"></a>

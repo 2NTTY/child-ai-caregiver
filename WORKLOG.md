@@ -3221,3 +3221,11 @@
 - Review D 的 #243／`d7da9b5`。移除待確認任務 fixture 中無關的保存記錄收據，避免只修測試而掩蓋產品接點；接入本地已核對的 Server 待確認狀態回覆。預算檢查改讀實際 manifest，不綁死版本號。
 - 三項受影響檢查中，摘要 fixture 首次仍期待零次確認讀取；修正為一次真狀態讀取後，只補該項並通過。局部 Server 型別通過，不全量、不追加模型／通知或部署。
 - [核對證據](artifacts/verification/P3_M01_POSTMERGE_REVIEW_20261020.json)。復用本地整合 `e7279a3` 的確認邊界及真編製證據，不將本地分支成功寫成 master 或線上驗收。
+
+<a id="log-20261020-dev-agent02-knowledge-model"></a>
+## LOG-20261020-DEV-AGENT02-KNOWLEDGE-MODEL
+
+- 沿已合併 M03 候選 runner 補共用模型整理／獨立語義審核步驟與受信保存 port。復用正式 gateway 的工具外文字呼叫及既有知識 assessment，沒有另造本地 Agent；原文、來源日期、PDF 頁碼與單元完整度由 Server 核對。
+- 新增 Prompt Pack 0.1.49 的原文單元整理配方，補既有知識審核 JSON／原文比對指引。假引文、模型自行核准執行規則及保存失敗不返回批准。
+- 兩項新合成檢查及一項受影響的既有離線路徑通過。局部型別首次發現舊 helper 名稱漏改，修正後通過；未擴跑全量。零真模型、網絡抓取、雲端寫入、通知及部署。
+- [證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_MODEL_20261020.json)。目前只有共用步驟與 port，持久工作／用量／原子發布與本地觸發仍未組裝；live 發布閘保持關閉，不把 scripted 通過當成真背景品質或四 Agent 完成。

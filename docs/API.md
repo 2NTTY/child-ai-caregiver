@@ -797,6 +797,15 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 
 現有背景 port 尚未具備原子 fencing 的發布交易，要求 live 發布固定回 `not_enabled / background_knowledge_live_not_connected`，不啟動抓取／模型／發布。完成接口須在同一權威交易核對持有者、lease／generation、預算並提交發布指標及收據；分開的 `claimOperation`／`saveBudget`／`publish` 不能當作此保證。離線候選、程序檢查替身及真模型審核分開表示，具體完成狀態只見 PLAN。
 
+<a id="knowledge-maintenance-model"></a>
+### 背景候選的整理與模型審核
+
+整理／審核共用正式 `AgentGatewayModel.completeText` 接點，由受信工作組裝注入已綁定的維護身份、共同預算及取消；角色不能選付款來源、另開 run 或自行重試。取得原文後，Server 產生固定單元及真實 PDF 頁碼，模型只提出章節、摘要、短引、關鍵詞與適用範圍。每單元恰好回傳一次，短引逐字存在於該原文；來源 URL、日期、發布者、原文及頁碼不由模型填寫。
+
+獨立審核接收候選的完整原文與整理、舊版原文及固定版本綁定，回傳既有 `KnowledgeReviewAssessment`；沿正式含義差異、原文引證、代表問題與規則影響檢查。模型不能把成長規則填成 `reviewed` 來創造核准。缺舊版、超出有界批次／上下文、部分原文、無效引用或儲存失敗均不產生批准；不靜默截斷。候選及審核證據由工作保存成功後才返回 `model_review` 結果；此結果不等於發布收據。
+
+這個接點不附帶記憶體台帳或測試專用提示詞；本地與正式環境使用同一函式。`savePrepared` 必須由持久工作校驗當前 lease、來源及取消狀態；模型步驟存在不能代替該組裝、真模型品質或正式發布驗收。
+
 <a id="firebase-foundation-auth"></a>
 ## F01 Firebase 身份與正式組裝接點
 

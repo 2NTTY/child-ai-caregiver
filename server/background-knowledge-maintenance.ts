@@ -97,7 +97,7 @@ function isInitialWatchId(value: string): value is M03InitialWatchId {
 }
 
 /** Independently enforce extraction coverage; a model pass cannot expand it. */
-function pdfCoverageIssue(candidate: BackgroundKnowledgeCandidate): string | null {
+export function backgroundKnowledgePdfCoverageIssue(candidate: BackgroundKnowledgeCandidate): string | null {
   if (candidate.definition.kind !== "pdf") return null;
   const window = candidate.definition.pdfPages;
   const extraction = candidate.observed.extraction;
@@ -202,7 +202,7 @@ export function createProgrammaticKnowledgeReviewStub(): KnowledgeSemanticReview
         decision = "hold_candidate";
         notes.push("observed text empty");
       }
-      const coverageIssue = pdfCoverageIssue(candidate);
+      const coverageIssue = backgroundKnowledgePdfCoverageIssue(candidate);
       if (coverageIssue) {
         decision = coverageIssue === "pdf_scope_invalid" ? "reject_out_of_scope" : "hold_candidate";
         notes.push(coverageIssue);
@@ -521,7 +521,7 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       watchId: request.watchId, definition, observed, observationHash: hash,
       previousObservationHash: previous?.contentHash ?? null,
     };
-    const coverageIssue = pdfCoverageIssue(candidate);
+    const coverageIssue = backgroundKnowledgePdfCoverageIssue(candidate);
     if (coverageIssue) {
       return finish({
         status: coverageIssue === "pdf_scope_invalid" ? "rejected" : "candidate_held",

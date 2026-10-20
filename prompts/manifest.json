@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.48",
+  "version": "0.1.49",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -106,10 +106,19 @@
     {
       "id": "module.knowledge-maintenance",
       "path": "modules/knowledge-maintenance.md",
-      "version": "0.1.2",
+      "version": "0.1.3",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
+        "core.output"
+      ]
+    },
+    {
+      "id": "module.knowledge-organize",
+      "path": "modules/knowledge-organize.md",
+      "version": "0.1.0",
+      "requires": [
+        "core.context-and-privacy",
         "core.output"
       ]
     },
@@ -471,6 +480,17 @@
         "S13-W02"
       ],
       "missingCapability": "原事項／回覆者未核實時不改終態；自然補問，不自動外發。"
+    },
+    {
+      "id": "knowledge-organize",
+      "additionalModules": [
+        "domain.childcare-hk.sources-freshness",
+        "module.knowledge-organize"
+      ],
+      "outputModes": ["structured"],
+      "requiredInputs": ["run", "scope", "context", "evidence", "capabilities", "outputContract"],
+      "plannedPackages": ["DEV-AGENT02", "P3-M03"],
+      "missingCapability": "只整理 Server 提供的原文單元；發布仍須獨立審核與持久交易。"
     },
     {
       "id": "knowledge-review",
