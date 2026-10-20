@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { agentProposalSchema, privateSourceCitationSchema } from './product-agent.ts';
+import { chatDeliveryReviewBindingSchema } from './chat-delivery-review.ts';
 
 const uuid = z.uuid(), identifier = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/u);
 const timestamp = z.iso.datetime({ offset: true }), version = z.number().int().positive().max(Number.MAX_SAFE_INTEGER);
@@ -44,5 +45,6 @@ export const productAgentResultSchema = z.object({
   tools: z.array(z.object({ name: z.string().min(1), status: z.enum(['succeeded', 'rejected', 'conflict', 'failed', 'unknown']), reference: z.string().optional() })),
   countsKnown: z.boolean().optional(), counts: z.object({ modelCalls: count, toolCalls: count, queryEmbeddings: count }),
   proposals: z.array(agentSavedProposalSchema),
+  deliveryReview: chatDeliveryReviewBindingSchema.optional(),
 }).refine(value => value.outcome !== 'no_action' || value.status === 'completed' && value.text === ''
   && value.citations.length === 0 && !value.privateSourceCitations?.length && value.proposals.length === 0, 'No-action cannot carry user content');

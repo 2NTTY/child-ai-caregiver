@@ -1,0 +1,28 @@
+{
+  "package": "P3-M01",
+  "pullRequest": 243,
+  "date": "2026-10-20",
+  "base": "4132e1ac105fb2261abf4e789df6cfc9107059f2",
+  "originalHead": "d7da9b562345af5ca16fd5419e2b17b2a20d426e",
+  "reviewFixes": [
+    "Read the current manifest version instead of pinning an unrelated release in the budget test",
+    "Remove an invented save_record receipt from the pending-task fixture",
+    "Use the same server-bound pending-confirmation presentation validated on the local integration branch",
+    "Keep real receipt, authorization, source and compose-review checks intact"
+  ],
+  "validation": {
+    "targetedTests": [
+      "a bound limit of four is not raised by the six-call proposal",
+      "normal presentation still continues after nonterminal confirmation and never uses fallback",
+      "normal presentation preserves the existing staged summary finalization"
+    ],
+    "result": "passed",
+    "retainedFailure": "The summary fixture still expected zero confirmation reads. Updated it to the actual one current-state read; only this remaining test was rerun.",
+    "scopedServerTypecheck": "passed",
+    "reusedEvidence": "The new confirmation-boundary check and real compose/review flow were already validated in integration commit e7279a3; they were not rerun as paid checks here.",
+    "newModelCalls": 0,
+    "notifications": 0,
+    "deployment": false,
+    "fullSuite": false
+  }
+}

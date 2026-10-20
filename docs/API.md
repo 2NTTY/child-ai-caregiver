@@ -771,7 +771,7 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 恢復環境在最新刪除 journal、現行 Auth／撤銷、附件與 epoch 核對前不接受一般 API／Agent／通知。維護狀態明確返回暫不可寫／未完成，不偽造成功；重新開放時舊 cursor／session 必須重新取得，原 opId 仍用於查已保存效果。
 
 <a id="p2-agent-roles"></a>
-## 四角色、編製及知識維護接口（待實作）
+## 四角色、編製及知識維護接口
 
 依 [ADR-024](DECISIONS.md#adr-024)，P2 只留角色識別、啟用狀態、模型／prompt 模組、工具權限與輸入輸出契約，沿既有 AgentRuntime／ModelGateway 的身份、根操作、取消及預算。下列角色內部流程由 [P3-M01～M03](../PLAN.md#p3-agent-roles) 實作；未啟用角色不得實例化、暴露工具或回假成功。不是新增四套公開 API，不取消已有產品工具及程式校驗。資料不變量見 [DATA_MODEL](DATA_MODEL.md#p2-agent-roles)，編排見 [架構](ARCHITECTURE.md#p2-agent-roles)。
 
@@ -779,8 +779,13 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 - **編製：**接收授權資料參照及新增／局部修改意圖，返回符合目標領域 schema 的 draft／patch、缺項、來源／coverage 及所需確認；正文／段落／項目按穩定 ID 修改。直接普通操作沿原 API，不必呼叫編製；任務、記憶及文件的保存仍呼叫其既有服務，不由聊天文字或 actionRequests 二次執行。
 - **審核：**Server 提供草稿與原始證據，唯讀 Agent 返回 pass／revise／insufficient_evidence 及有界問題／支持依據。程式先驗 schema、來源身份／有效性與 scope，回傳後再驗審核綁定；生成者不能提交可採信的 approved／免審標記。使用者確認及審核是兩個獨立條件；必審內容須同時符合審核、當前授權及業務 gate 才正式呈現／提交。
 - **提交與恢復：**帶原 opId／fingerprint、目標 ID／expectedVersion、草稿 hash、來源與授權版本及 Server 審核參照；交易重核後回真資源版本／收據。衝突返回現行版本及重新核對需要；回應丟失先查原收據，不換 opId。逾時、取消、審核失敗或待確認分開回報，草稿不冒稱正式保存；已成功操作的真收據可獨立回報。
+- **待確認狀態回覆：**互動回合只回報操作、沒有引用時，Server 可查回該本人／孩子／run 的唯一有效確認問題，用固定「已準備待確認、尚未執行」取代模型措辭，再由原 API 附上權威問題。這句確定性狀態毋須再呼叫審核模型；沒有有效問題、來源建議或模型自稱已準備，均不能藉此免審。編製內容的原審核、接受時的版本與授權檢查維持。
 - **獨立知識維護：**受信管理／排程入口傳已核准來源 ID／scope 版本及持久工作關聯，沒有家長聊天或私人 key。站內查閱／取得工具逐次校驗 URL、redirect、路徑、附件及批次上限，返回原檔／章節頁碼、抽取方式、完整度和續讀位置；未核內容不經一般聊天搜尋返回。發布工具重核內容／來源版本、語義審核及規則影響資格後原子更新；疑義保持候選，不讓 Agent 自行批准擴大來源或醫療規則。
 - **客戶端投影：**沿既有持久受理／run 結果接口，提供必要的編製中、核對中、待確認／修正、未完成及已保存結果，附可授權讀取的草稿／資源／版本參照。具體 wire 狀態隨包相容擴充，不直接改歷史狀態 enum。只顯示核准正文與真實進度，不回傳內部推理、子模型協定、未核串流或私人證據全文；身份切換／撤權清理保持。
+
+背景候選 runner 的 `liveFetch=false` 只可使用明確注入的離線 `fixtureFetch`，缺少便回 `background_knowledge_fetch_disabled`，不呼叫網絡 port。PDF 的頁窗、完整頁碼及抽取 metadata 由程式在比較／審核前核對，模型回傳通過不能覆蓋這些條件。同一來源版本及排程 occurrence 的 fingerprint 不包含 worker generation，換 worker 不能取得新工作預算；排程 occurrence 由受信台帳產生，不由重試時間生成。
+
+現有背景 port 尚未具備原子 fencing 的發布交易，要求 live 發布固定回 `not_enabled / background_knowledge_live_not_connected`，不啟動抓取／模型／發布。完成接口須在同一權威交易核對持有者、lease／generation、預算並提交發布指標及收據；分開的 `claimOperation`／`saveBudget`／`publish` 不能當作此保證。離線候選、程序檢查替身及真模型審核分開表示，具體完成狀態只見 PLAN。
 
 <a id="firebase-foundation-auth"></a>
 ## F01 Firebase 身份與正式組裝接點

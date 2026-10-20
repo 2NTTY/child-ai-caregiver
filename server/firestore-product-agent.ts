@@ -70,8 +70,8 @@ export async function createFirestoreProductAgent(options: FirestoreDomainOption
             settingsVersion: 'firestore:' + selected.settingsVersion, billingVersion: selected.billingSource + ':v1',
             billingSource: selected.billingSource, runLimits: limits } }, undefined, true, true, true);
         instance = createAgentRuntime({ config: selected.config, usage: requireDurableUsage, provider,
-          nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: limits,
-          admission, embeddings: selected.embeddings, diagnostics: event => {
+          chatDeliveryReviewModelCalls: selected.config.chatDeliveryReviewModelCalls,
+          nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: limits,          admission, embeddings: selected.embeddings, diagnostics: event => {
             // The observer builds a fixed metadata allowlist; no arguments, content or errors are logged.
             if (event.phase === 'tool_rejection' || event.phase === 'model_error' || event.phase === 'tool_error')
               console.warn(JSON.stringify({ event: 'agent_diagnostic', ...event }));

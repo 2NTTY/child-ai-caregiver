@@ -44,6 +44,7 @@ export function createProductAgentServices(pool: Pool, cipher: StorageCipher, co
   const selectedConfig = durable?.config ?? config;
   const store = createProductAgentStore(pool, cipher, scheduling);
   const runtime = createAgentRuntime({ config: selectedConfig, usage: createAiUsageStore(pool),
+    chatDeliveryReviewModelCalls: selectedConfig.chatDeliveryReviewModelCalls,
     ...(durable ? { nativeSessionService: durable.nativeSessionService, bindDurableRun: durable.bindDurableRun, boundRunLimits: durable.runLimits } : {}),
     provider: durable?.provider ?? (selectedConfig.enabled ? createVertexAgentProvider(selectedConfig) : { generate: async () => { throw new Error("ai_disabled"); } }),
     resolve: routing?.resolve,

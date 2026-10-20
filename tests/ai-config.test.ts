@@ -17,6 +17,10 @@ test("AI configuration defaults to a disabled server-only setup", () => {
     agentMaxInputCharacters: 64000,
     agentThinkingLevel: "minimal",
     maxOutputTokens: 1024,
+    chatDeliveryReviewModelCalls: 4,
+    backgroundKnowledgeMaintenanceEnabled: false,
+    backgroundKnowledgeLiveFetch: false,
+    backgroundKnowledgeLivePublish: false,
   });
   assert.equal(readAiConfig({ GCP_PROJECT_ID: "" }).project, "");
 });
@@ -47,7 +51,28 @@ test("AI configuration accepts safe identifiers and numeric boundaries", () => {
     agentMaxInputCharacters: 64000,
     agentThinkingLevel: "minimal",
     maxOutputTokens: 4096,
+    chatDeliveryReviewModelCalls: 4,
+    backgroundKnowledgeMaintenanceEnabled: false,
+    backgroundKnowledgeLiveFetch: false,
+    backgroundKnowledgeLivePublish: false,
   });
+});
+
+test("chat delivery review ceiling accepts only the current limit or the explicit proposal", () => {
+  const disabled = readAiConfig({ AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS: "" });
+  assert.equal(disabled.chatDeliveryReviewModelCalls, 4);
+  assert.equal(disabled.dailyUserAttempts, 20);
+  assert.equal(disabled.dailyGlobalAttempts, 100);
+  const proposed = readAiConfig({ AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS: "6" });
+  assert.equal(proposed.chatDeliveryReviewModelCalls, 6);
+  assert.equal(proposed.dailyUserAttempts, 20);
+  assert.equal(proposed.dailyGlobalAttempts, 100);
+  assert.equal(proposed.personalDailyGlobalAttempts, 1000);
+  for (const value of ["5", "4", "7", "06", " 6", "6\n"]) {
+    assert.throws(() => readAiConfig({ AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS: value }), {
+      message: "Invalid AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS configuration",
+    });
+  }
 });
 
 test("AI configuration requires a valid project when enabled", () => {
@@ -118,3 +143,27 @@ test("thinking defaults and explicit levels are compatible with the exact config
   // Do not infer compatibility for unverified model aliases or future versions.
   assert.equal(readAiConfig({ GEMINI_MODEL: "gemini-3.8-flash-preview" }).agentThinkingLevel, "minimal");
 });
+
+test("background knowledge maintenance flags default off and reject unsafe combinations", () => {
+  const defaults = readAiConfig({});
+  assert.equal(defaults.backgroundKnowledgeMaintenanceEnabled, false);
+  assert.equal(defaults.backgroundKnowledgeLiveFetch, false);
+  assert.equal(defaults.backgroundKnowledgeLivePublish, false);
+  const enabled = readAiConfig({
+    AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED: "true",
+    AI_BACKGROUND_KNOWLEDGE_LIVE_FETCH: "true",
+    AI_BACKGROUND_KNOWLEDGE_LIVE_PUBLISH: "false",
+  });
+  assert.equal(enabled.backgroundKnowledgeMaintenanceEnabled, true);
+  assert.equal(enabled.backgroundKnowledgeLiveFetch, true);
+  assert.equal(enabled.backgroundKnowledgeLivePublish, false);
+  assert.throws(() => readAiConfig({
+    AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED: "false",
+    AI_BACKGROUND_KNOWLEDGE_LIVE_FETCH: "true",
+  }), { message: "Invalid AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED configuration" });
+  assert.throws(() => readAiConfig({
+    AI_BACKGROUND_KNOWLEDGE_MAINTENANCE_ENABLED: "true",
+    AI_BACKGROUND_KNOWLEDGE_LIVE_PUBLISH: "true",
+  }), { message: "Invalid AI_BACKGROUND_KNOWLEDGE_LIVE_FETCH configuration" });
+});
+
