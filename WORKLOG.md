@@ -3348,3 +3348,11 @@
 - Server目錄、personal保存及生成前共用供應商支援判斷；保留舊選擇並容許停用／刪key，不默換模型。GET可明確讀另一服務的profile，無憑證或外網操作；POST仍只核已保存key。Web／Android共用owner及表單改讀正確目錄，拒絕遲到回應，編輯另一服務時不讓舊key查核覆蓋選項。
 - 最低驗證：兩條既有正式client／API／memory Firestore及SDK攔截檢查通過；一項表單投影檢查及Server／前端局部TypeScript通過。原驗收資料完整保留，追加[MODEL02證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。零真模型／embedding／通知／部署，無用量或憑證變更。
 - 官方Express支援清單與已接profile取交集，未新增模型adapter或改組織政策。新key地區限制、真生成／embedding、Android設定及原draft門檻維持待驗；不把本機機械檢查寫成服務可用。
+
+<a id="log-20261020-pr-stack-closeout"></a>
+## LOG-20261020-PR-STACK-CLOSEOUT
+
+- 使用者明確批准「先合併，未驗項保留追蹤」，只調整本批十個 PR 的合併安排，不把剩餘手機／真模型項目改成通過或取消。依賴次序為 #229 → #234 → #235 → #236 → #237 → #238 → #239 → #241 → #242 → #244；每個先改指 master，再以原 head 核對及 Merge commit 合併，保留原作者。Android 七包使用原主責交付帳號，本地／模型三包使用其主責帳號，沒有修改保護規則。
+- 沿用已核對的正式 API／scripted、局部型別、真機及真模型證據；本次只核對依賴、既有結果、文件 diff 及精確 head／實際合併者，未跑產品測試、真模型、通知、部署或增加配額。程式基線 `00aa6ad` 不改；本條及 PLAN／STATUS 收尾由 #244 一併交付。
+- DEV-AGENT01 的本地入口已有必要真聊天／引用、保存／重開及 Web 接線結果，可先供協作者使用。長來源／多模態及角色完整成果與環境交付分開，仍按 DEV02／所屬角色包處理。
+- 保留的後續：Android 有來源聊天與重開、撤銷／切身份、跨端同步／媒體附件完整流程、照護通知停止及 OTA 回退；背景新版最終聊天引用；個人 key 地區限制、真生成／embedding、Android 設定及部署。原失敗、備份真還原延期及其他未驗項不回寫；具體範圍只在 PLAN 各包，不另開重複清單。
