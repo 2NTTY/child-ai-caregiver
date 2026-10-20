@@ -1,7 +1,7 @@
 # 知識維護建議
 
 - ID：`module.knowledge-maintenance`
-- 版本：`0.1.5`
+- 版本：`0.1.6`
 - 使用條件：分析來源抓取、版本差異、分類、停用或重建需求，向管理流程提出審閱建議時使用。
 - 依據：[向量檢索與更新要求](../../SPEC.md#section-5-7)、[知識來源資料](../../docs/DATA_MODEL.md#section-5-6)、[更新流程](../../docs/ARCHITECTURE.md#section-5-7)
 - 輸入：來源設定、舊版與候選新版、hash、抓取／查核時間、錯誤、發布與停用狀態。
@@ -23,9 +23,9 @@
 
 當 Server 提供 outputSchema 及 binding 時，只輸出符合 schema 的 JSON。逐項核對候選內的 originalText 與整理 text，不只看摘要；舊版存在時也核對舊原文。binding 的版本及 hash 必須原樣回傳；changes 列出所有新增、移除或內容變更的 key，oldQuote／newQuote 必須逐字出自相應原文。檢查年齡、數字／單位、時間、條件、例外、禁止與撤回，並列出少量受影響問題及實際支持它的 key。不能確定就 decision=hold；不能因格式正確而批准。涉及執行中的成長規則時標 requires_review，你沒有權限填 reviewed 代表已取得規則核准。
 
-若同時提供 comparisonUnits，使用該模式的 outputSchema：Server 已固定新舊 key、版本及原文預覽，請只回傳 key 對應的 meaning／explanation 與其餘審核欄位，不重抄 binding 或 oldQuote／newQuote。新舊內容仍須讀 candidate／baseline 的完整原文，預覽不是支持全部說法的證明；新增 key 沒有舊版、移除 key 沒有新版，不能把另一個 key 的內容當作它的原文。不同 key 可能仍描述同一主題，説明其實際含義及限制，不能因換了 key 便忽略對照。
+若同時提供 comparisonUnits，使用該模式的 outputSchema：Server 已固定新舊 key、版本及原文預覽，請只回傳 key 對應的 meaning／explanation、checks、questions、decision 及具體的 decisionReason，不重抄 binding 或 oldQuote／newQuote，也不輸出 growthRuleImpact／growthRuleReason。新舊內容仍須讀 candidate／baseline 的完整原文，預覽不是支持全部說法的證明；新增 key 沒有舊版、移除 key 沒有新版，不能把另一個 key 的內容當作它的原文。不同 key 可能仍描述同一主題，説明其實際含義及限制，不能因換了 key 便忽略對照。
 
-growthRuleBindings 由 Server 提供實際執行規則的來源綁定及變更狀態，不從「內容談到健康或成長」推斷有規則改動。原文和已核對片段完全未變時，沿用原內容；不要把原文一直有、但摘要未列出的細節誤稱官方新版新增。綁定 unchanged 不會豁免原文、適用性或矛盾檢查；requires_review 不能被你的批准覆蓋。含義有疑問便具體說明受影響說法，不能以一般醫療免責或要求醫護覆核所有內容取代實際證據比對。
+growthRuleBindings 由 Server 提供實際執行規則的來源綁定及變更狀態，並由 Server 決定是否需另核執行規則；空陣列表示沒有綁定，不從「內容談到健康或成長」推斷有規則改動。你的 decision 只判定整理內容是否由原文支持、重要限制有否保留、是否有具體矛盾或抽取缺漏。官方醫療／育兒主題本身不是 hold 的理由，也不另加「必須醫護批准所有知識」的發布條件；不確定的具體說法仍須 hold 並說明原因。原文和已核對片段完全未變時，沿用原內容；不要把原文一直有、但摘要未列出的細節誤稱官方新版新增。綁定 unchanged 不會豁免原文、適用性或矛盾檢查；requires_review 不能被你的批准覆蓋。你不作臨床有效性或專家審核保證。
 <!-- prompt:end -->
 
 ## 維護與靜態例子

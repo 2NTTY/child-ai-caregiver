@@ -32,7 +32,7 @@ const modelAssessmentSchema = z.strictObject({
     explanation: reviewFields.changes.element.shape.explanation,
   })).max(64),
   checks: reviewFields.checks, questions: reviewFields.questions,
-  growthRuleImpact: reviewFields.growthRuleImpact, growthRuleReason: reviewFields.growthRuleReason,
+  decisionReason: reviewFields.growthRuleReason,
   decision: reviewFields.decision,
 });
 type OriginalUnit = { id: string; originalText: string; page: number | null };
@@ -198,13 +198,19 @@ export async function prepareKnowledgeMaintenance(input: {
     binding, comparisonUnits, growthRuleBindings, candidate: source, baseline: baseline?.source ?? null,
     outputSchema: z.toJSONSchema(modelAssessmentSchema, { io: "input" }),
   });
-  const modelAssessment = modelAssessmentSchema.parse(reviewed.value);
-  // The model cannot certify executable rules or erase a changed dependency.
-  if (modelAssessment.growthRuleImpact === "reviewed") reject("knowledge_growth_rule_authority_invalid");
+  // Executable dependencies come from the catalog, not a model's interpretation
+  // of whether a passage is about health. Semantic approval remains independent.
+  if (reviewed.value && typeof reviewed.value === "object"
+    && ("growthRuleImpact" in reviewed.value || "growthRuleReason" in reviewed.value))
+    reject("knowledge_growth_rule_authority_invalid");
+  const { decisionReason, ...modelAssessment } = modelAssessmentSchema.parse(reviewed.value);
   const changedRule = growthRuleBindings.some(rule => rule.state === "requires_review");
   const assessment = validateKnowledgeAssessment({ ...modelAssessment, ...binding,
-    ...(changedRule ? { growthRuleImpact: "requires_review",
-      growthRuleReason: "Server: existing growth rule source binding changed or is unavailable. " + modelAssessment.growthRuleReason.slice(0, 1800) } : {}),
+    growthRuleImpact: changedRule ? "requires_review" : "none",
+    growthRuleReason: changedRule
+      ? "Server: existing growth rule source binding changed or is unavailable."
+      : growthRuleBindings.length ? "Server: existing executable source bindings are unchanged."
+        : "Server: no executable growth rule is bound to this source.",
     changes: modelAssessment.changes.map(change => {
       const original = comparisonUnits.find(unit => unit.key === change.key);
       if (!original) reject("knowledge_maintenance_review_unit_mismatch");
@@ -221,7 +227,7 @@ export async function prepareKnowledgeMaintenance(input: {
     decision: assessment.decision === "approve" && assessment.growthRuleImpact === "none" ? "approve_candidate" : "hold_candidate",
     reviewKind: "model_review", policyVersion: BACKGROUND_KNOWLEDGE_POLICY_VERSION,
     modelReviewCompleted: true, growthRuleImpact: assessment.growthRuleImpact,
-    notes: [assessment.growthRuleReason.slice(0, 240)],
+    notes: [decisionReason.slice(0, 240), ...(changedRule ? [assessment.growthRuleReason] : [])],
   });
   return { source, versionHash: sourceVersionHash(source), assessment, review,
     provenance: { packVersion: organize.packVersion,

@@ -103,9 +103,13 @@ export class AgentGatewayModel extends BaseLlm {
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
   /** Shared gateway path for a tool-free Server call. Counts one root model call and grants no tools. */
   async completeText(input: { system: string; user: string; attemptKey: string }): Promise<string> {
+    const planning = this.options.budget.planningSnapshot(false);
     const request: LlmRequest = {
       contents: [{ role: "user", parts: [{ text: input.user }] }],
-      config: { systemInstruction: input.system },
+      config: { systemInstruction: input.system
+        + "\n\nThis role shares the original run budget. The remaining model count includes this call; it is a ceiling, not a target. "
+        + "Complete only this role's output contract, without inventing tools or relaxing evidence checks to finish.\nServer role budget:\n"
+        + JSON.stringify({ limits: this.options.budget.limits, budget: planning }) },
       toolsDict: {},
       liveConnectConfig: {},
     };

@@ -141,5 +141,74 @@
     "deployment": false,
     "pending": "Real review completed once after this fix, but publication remains held by the existing seed/rule hash mismatch; see the fourth realModelAttempts entry"
   },
-  "cleanup": "Local services stopped with checkpoint export; synthetic records and prior failures retained"
+  "cleanup": "Local services stopped with checkpoint export; synthetic records and prior failures retained",
+  "livePdf20261020": {
+    "sourceCommit": "9fa28e1f33f524955d2b8943b60875d349b82e58",
+    "promptPack": "0.1.52",
+    "source": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+    "scope": "Actual fetch and parser; registered page 3 only, not the complete booklet.",
+    "result": {
+      "sourceMode": "allowlisted-website",
+      "operationFingerprint": "511e4edb093577b52e62039173cf2399aa2a2b4fdf419c3b91999c20ff451f41",
+      "status": "candidate_held",
+      "code": "review_hold",
+      "watchId": "fhs-feeding-booklet-en",
+      "observationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+      "review": {
+        "watchId": "fhs-feeding-booklet-en",
+        "observationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+        "previousObservationHash": null,
+        "decision": "hold_candidate",
+        "reviewKind": "model_review",
+        "policyVersion": "p3-m03-background-knowledge/2",
+        "modelReviewCompleted": true,
+        "growthRuleImpact": "requires_review",
+        "notes": [
+          "該來源涉及嬰兒成長期關鍵餵養指引，定義了引入固體食物的時間點與禁忌，屬於核心育兒規則，需經專業確認以確保與當前執行中的健康指引一致。"
+        ]
+      },
+      "publishMode": "live",
+      "budget": {
+        "usedUnits": 2,
+        "maxUnits": 8,
+        "modelCalls": 2,
+        "maxModelCalls": 2
+      },
+      "published": false
+    },
+    "trueGenerations": 2,
+    "trueEmbeddings": 0,
+    "published": false,
+    "rootCause": "The model reported executable growth-rule impact despite an empty server catalog binding. The source contents still require independent semantic approval.",
+    "fix": "Prompt Pack 0.1.53 removes rule authority fields from model output; Server computes catalog dependency while evidence holds remain model-controlled.",
+    "verification": {
+      "targetedKnowledgeChecks": 3,
+      "passed": true,
+      "typecheck": "scoped",
+      "trueModelAfterFix": "not run"
+    },
+    "productionWrites": false,
+    "notifications": false
+  },
+  "rulePinInvestigation20261020": {
+    "historicalCommit": "062e150^",
+    "changedFields": [
+      "originalText added",
+      "partial-original coverage condition added"
+    ],
+    "unchanged": [
+      "summary",
+      "source key",
+      "age ranges",
+      "existing applicability restrictions",
+      "rule behavior"
+    ],
+    "result": "All four exact prior parsed chunks match their existing rule pins. Current seed pins were not approved or changed.",
+    "sourcesChecked": [
+      "https://www.fhs.gov.hk/tc_chi/health_info/child/30039.html",
+      "https://www.fhs.gov.hk/tc_chi/health_info/child/15654.html",
+      "https://www.fhs.gov.hk/tc_chi/health_info/child/14821.html",
+      "https://www.fhs.gov.hk/tc_chi/health_info/child/14812.html"
+    ]
+  }
 }

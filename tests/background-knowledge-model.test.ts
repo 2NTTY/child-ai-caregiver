@@ -14,7 +14,7 @@ function candidate(): BackgroundKnowledgeCandidate {
   return { watchId: "fhs-solid-food", definition, observed, observationHash: observationHash(observed), previousObservationHash: null };
 }
 type Completion = Parameters<typeof prepareKnowledgeMaintenance>[0]["completeText"];
-function provider(calls: { system: string; user: string; attemptKey: string }[], mode: "valid" | "quote" | "rules" = "valid"): Completion {
+function provider(calls: { system: string; user: string; attemptKey: string }[], mode: "valid" | "quote" | "rules" | "hold" = "valid"): Completion {
   return async input => {
     calls.push(input);
     const payload = JSON.parse(input.user);
@@ -35,7 +35,9 @@ function provider(calls: { system: string; user: string; attemptKey: string }[],
       checks: { age: "No age claim", numbersAndUnits: "No numeric claim", timing: "No timing claim",
         conditions: "Preserved", exceptions: "None supplied", prohibitions: "None supplied", withdrawal: "No previous edition" },
       questions: [{ query: "要準備甚麼？", expectedKeys: payload.candidate.chunks.map((chunk: { key: string }) => chunk.key), reason: "Directly supported" }],
-      growthRuleImpact: mode === "rules" ? "reviewed" : "none", growthRuleReason: "No executable rule change", decision: "approve",
+      ...(mode === "rules" ? { growthRuleImpact: "reviewed", growthRuleReason: "Model-created approval" } : {}),
+      decisionReason: mode === "hold" ? "The supplied original does not resolve the scope of this claim." : "All claims are supported by the supplied original.",
+      decision: mode === "hold" ? "hold" : "approve",
     }) + "\n```";
   };
 }
@@ -62,8 +64,15 @@ test("knowledge preparation preserves original evidence and stores a separate mo
   assert.equal(result.reviewKind, "model_review");
   assert.equal(result.decision, "approve_candidate");
   assert.equal(result.modelReviewCompleted, true);
+  assert.equal(result.growthRuleImpact, "none");
+  assert.equal("growthRuleImpact" in JSON.parse(calls[1]!.user).outputSchema.properties, false);
   // Preparation is not a publication receipt.
   assert.equal("published" in result, false);
+  const held = await prepareKnowledgeMaintenance({ candidate: source, baseline: null, fetchedAt, growthRules: [],
+    completeText: provider([], "hold") });
+  assert.equal(held.review.decision, "hold_candidate", "no executable rule does not override an evidence hold");
+  assert.equal(held.assessment.growthRuleImpact, "none");
+  assert.match(held.review.notes[0]!, /does not resolve/u);
 });
 
 test("knowledge model stages reject invented evidence and rule authority without returning approval", async () => {
@@ -111,5 +120,5 @@ test("unchanged originals retain reviewed chunks and changed rule bindings canno
   assert.equal(JSON.parse(changedCalls[1]!.user).growthRuleBindings[0].state, "requires_review");
   assert.equal(changed.review.decision, "hold_candidate");
   assert.equal(changed.assessment.growthRuleImpact, "requires_review",
-    "a model's none cannot erase the server-verified changed rule dependency");
+    "semantic approval cannot erase the server-verified changed rule dependency");
 });

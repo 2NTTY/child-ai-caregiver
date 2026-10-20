@@ -61,7 +61,7 @@ try {
             checks: { age: 'No age claim', numbersAndUnits: 'No numbers', timing: 'Before visit', conditions: 'Preserved',
               exceptions: 'None supplied', prohibitions: 'None supplied', withdrawal: 'No previous edition' },
             questions: [{ query: '到診帶甚麼？', expectedKeys: input.candidate.chunks.map(chunk => chunk.key), reason: 'Original supports both items' }],
-            growthRuleImpact: 'none', growthRuleReason: 'No executable rule change', decision: 'approve' };
+            decisionReason: 'The candidate is supported by the supplied original.', decision: 'approve' };
         }
         return { content: { role: 'model', parts: [{ text: JSON.stringify(output) }] }, finishReason: 'STOP',
           usageMetadata: { promptTokenCount: 20, candidatesTokenCount: 20, totalTokenCount: 40 } };
