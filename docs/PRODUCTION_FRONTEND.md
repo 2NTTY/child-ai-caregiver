@@ -201,6 +201,8 @@ Server `ANDROID_PUSH_ENABLED` 預設關閉；準備同一 GCP project 的 FCM HT
 
 Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走 Android 配置，避免兩端公開 Firebase key 混用。Android 執行才讀指定 EAS environment；不輸出其內容。`--plan` 不使用 `eas fingerprint:generate`，因固定 CLI 的該命令會上傳 fingerprint；沿 `expo-updates` 的本機 resolver 取得與 runtime 相同的判斷。
 
+Android 匯出亦須合併 `frontend/eas.json` 的 `build.base.env`，包含正式身份供應商與 API 地址，並設定相應的 `EAS_BUILD_PROFILE`／`EAS_BUILD_PLATFORM` 讓 `app.config.js` 驗證完整配置。`mobile:release` 已執行此步；單獨 `eas env:pull` 的檔案不包含全部 profile 值。若因已有產物使用 `--skip-bundler`，須先核對原匯出沿用同一配置合併與驗證，不能只憑 runtime 相容便發布。
+
 ### 正式發布、回退及失回應
 
 - production 必須同時指定 `--channel production --confirm-production`，不沿 preview 默認發布。兩個環境都使用固定 EAS 專案／application ID／channel；EAS 審批、額度及私有封包上傳授權不由這個旗標代替，不購買方案、不每次 commit 建置。

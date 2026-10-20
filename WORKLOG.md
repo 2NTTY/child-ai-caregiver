@@ -3374,3 +3374,21 @@
 - 保留原映像及受保護Compose副本；開放新寫入後維持能讀新設定的API，不自動退回舊reader。只刪本次兩個建置暫存目錄，原封包及回退仍在，磁碟餘約505 MiB。
 - 以既有Expo帳號向preview發布一次已匯出的相容Android OTA，群組 `8f1bcdbf-220f-4379-900c-5e9dcb836cba`，runtime與APK v2相同，沒有新APK或購買方案。這次沿已核對CLI的skip-bundler／input-dir使用既有產物，沒有重跑相同Web／Android建置；固定mobile:release入口仍保留。
 - 本次僅發布／健康／hash及必要索引核對，零真模型、embedding、通知或配額修改，不跑產品全量／瀏覽器／真機。真個人key地區限制與生成／embedding、手機接收更新及設定頁仍未驗；原失敗和延期門檻保留。[完整交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)，PLAN／STATUS同步現況。
+
+
+<a id="log-20261020-model-self02-ota-config"></a>
+## LOG-20261020-MODEL-SELF02-OTA-CONFIG
+
+- 使用者解鎖已接線手機後，以ADB只核本人模型設定，沒有Computer Use、真模型、通知、key輸入或正式設定寫入。舊UI讀到平台設定版本0；僅切換未保存模式草稿，隨後還原。第一次重開套用已發布OTA後，登入核對失敗，該批即停；原站健康仍200，沒有重設App或帳號資料。
+- 根因是臨時Android匯出入口只讀EAS environment，漏了既有`mobile:release`會合併的`frontend/eas.json`之`build.base.env`；身份供應商未配置，前端按原安全檢查拒絕。修正只涉及匯出配置，產品程式與已部署`ad4de88`相同；沿完整profile及app.config驗證、清除Metro建置快取重新匯出。原有正式發佈工具無需另造或重寫，部署交接補明完整配置要求。
+- 同一Expo專案preview補發一個相容OTA，31檔／13,377,168 bytes，群組`b0cbacc3-cda5-4b9a-8057-fd1b85e199d2`、update `01a15988-21ef-738f-a738-a24913e0a74c`；runtime及APK簽署不變，沒有新APK、購買方案、Server變更或配額修改。裝置下載及重開後已顯示正常電郵登入畫面；仍需本人重新登入，不能宣稱新版設定頁或真key已驗收。
+- 保留首次失敗及原發布證據；本次結果追加至[交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)的`deviceAcceptance20261020`。手機畫面只在ignored暫存，未提交含孩子資料的截圖。只做修正所需Android匯出、配置／同版程式核對及實際啟動觀察，不重跑全量或既有模型流程。
+
+
+<a id="log-20261020-model-choice"></a>
+## LOG-20261020-MODEL-CHOICE
+
+- 使用者確認重新登入，ADB讀到相容OTA的新模型設定頁、供應商／模型選項及七項限制。僅修改未保存草稿；最後重開App清除草稿，仍保留登入及平台設定版本0。沒有輸入key、保存設定、模型或通知呼叫；原首次OTA失敗不改寫，Android真key保存仍待驗。
+- 使用者指出相容模型不應因未經逐型號驗收而被禁用。已移除Firestore保存與Google provider生成的固定清單限制；既有Gemini ID格式、身份／權限、收據、配額及付款隔離保留。目錄只作參考，refresh最多兩頁並回20個合法生成模型；未列本地profile的新型號不再被刪掉。共用表單增加直接輸入ID，未知能力不顯示為禁止；已知thinking適配保留，其他型號省略可選設定。
+- 只改兩個既有Server情景及兩個表單情景：保存／讀回／原操作與隔離通過；SDK情景首次因舊白名單拒絕fixture的空contents被SDK拒絕，停下核對後僅改為正常user訊息，單項補跑通過。新增型號實際傳至受控SDK、404如實回報且不回退，目錄保留新型號；Server／UI局部型別通過。零真模型／雲端資料寫入，不安排逐型號付費測試。
+- SPEC、架構及API／研究更新為參考目錄與直接切換的契約；工作狀態及[追加證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)區分已部署OTA與本次尚未部署的模型選擇修正。

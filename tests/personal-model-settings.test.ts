@@ -74,12 +74,11 @@ test('personal settings share policy, recover the original write, isolate accoun
   const legacy = await (await call('GET', '', undefined, 'other', false)).json();
   assert.equal('effective' in legacy, false); assert.equal('maxToolCalls' in legacy.settings, false);
   assert.equal((await call('POST', '', { ...command, opId: randomUUID(), expectedVersion: 1, provider: 'vertex', apiKey: undefined })).status, 400);
-  await assert.rejects(routing.settings.save('owner', { ...command, opId: randomUUID(), expectedVersion: 1,
-    provider: 'vertex', model: 'gemini-3.1-flash-lite', apiKey: key + '-vertex' }), { code: 'model_unsupported' });
-  assert.equal((await routing.settings.get('owner')).version, 1);
   const vertex = await routing.settings.save('owner', { ...command, opId: randomUUID(), expectedVersion: 1, provider: 'vertex',
-    model: 'gemini-2.5-pro', apiKey: key + '-vertex' });
+    model: 'gemini-future-chat', apiKey: key + '-vertex' });
   assert.equal(vertex.version, 2); assert.equal(vertex.provider, 'vertex');
+  assert.equal((await routing.resolve('owner', 'interactive')).config.model, 'gemini-future-chat',
+    'A model absent from the suggestions must survive save, read and provider resolution');
   assert.equal((await routing.catalog('owner', 2, false, new AbortController().signal)).embedding.status, 'unsupported');
   const { apiKey: ignoredKey, ...withoutKey } = command;
   const removed = await routing.settings.save('owner', { ...withoutKey, opId: randomUUID(), expectedVersion: 2,
@@ -121,15 +120,24 @@ test('Google personal adapters use the chosen protocol, bounded catalog and no p
   assert.equal((await vertex.inspect(signal)).reason, 'metadata_unsupported');
   await assert.rejects(vertex.embedding.embed({ task: 'RETRIEVAL_QUERY', text: 'Synthetic' }, signal), { code: 'unavailable' });
   assert.equal(calls.length, count);
-  const unsupported = createGeminiKeyProviders({ ...config, model: 'gemini-3.1-flash-lite' }, key, 'vertex');
-  await assert.rejects(unsupported.agent.generate({ model: config.model, contents: [], config: {}, liveConnectConfig: {}, toolsDict: {} }, signal),
+  const unlisted = createGeminiKeyProviders({ ...config, model: 'gemini-future-chat' }, key, 'vertex');
+  const request = { model: config.model, contents: [{ role: 'user', parts: [{ text: 'Hello' }] }], config: {}, liveConnectConfig: {}, toolsDict: {} };
+  await unlisted.agent.generate({ ...request, config: { thinkingConfig: { thinkingBudget: 100 } } }, signal);
+  assert.equal(calls.length, count + 1);
+  assert.equal(calls.at(-1)!.url.pathname, '/v1/publishers/google/models/gemini-future-chat:generateContent');
+  assert.equal(calls.at(-1)!.body.generationConfig.thinkingConfig, undefined, 'Unlisted models use provider defaults');
+  status = 404; response = { error: { code: 404, message: 'Model is unavailable for this service.', status: 'NOT_FOUND' } };
+  await assert.rejects(unlisted.agent.generate(request, signal),
     { reason: 'model_not_available' });
-  assert.equal(calls.length, count, 'Unsupported Express selections must fail before a paid request');
+  assert.equal(calls.length, count + 2, 'Provider rejection is reported once without switching models or credentials');
+  status = 200;
   response = { models: [{ name: 'models/gemini-2.5-flash', supportedGenerationMethods: ['generateContent'] },
-    { name: 'models/unknown-future-model', supportedGenerationMethods: ['generateContent'] }], nextPageToken: 'more' };
+    { name: 'models/gemini-future-chat', supportedGenerationMethods: ['generateContent'] }], nextPageToken: 'more' };
   const catalog = await gemini.catalog(2, true, signal);
-  assert.equal(calls.length, count + 2); assert.equal(catalog.truncated, true);
-  assert.deepEqual(catalog.models.map(model => model.id), ['gemini-2.5-flash']);
+  assert.equal(calls.length, count + 4); assert.equal(catalog.truncated, true);
+  assert.deepEqual(catalog.models.map(model => model.id), ['gemini-2.5-flash', 'gemini-future-chat']);
+  assert.equal(catalog.models[1].availability, 'listed');
+  assert.equal(catalog.models[1].capabilities.tools, false, 'Do not invent capability evidence for a new model');
   status = 429; response = { error: { code: 429, message: 'Synthetic quota failure', status: 'RESOURCE_EXHAUSTED' } };
   assert.equal((await gemini.inspect(signal)).reason, 'quota_exceeded');
   await assert.rejects(gemini.agent.generate({ model: 'gemini-2.5-flash', contents: [{ role: 'user', parts: [{ text: 'Hello' }] }], config: {}, liveConnectConfig: {}, toolsDict: {} }, signal), error => error instanceof ApiError && error.status === 429);

@@ -1,6 +1,6 @@
 import type { PersonalModelCatalogEntry, PersonalModelProvider } from '../src/shared/model-settings.ts';
 
-// Profiles describe the adapter's supported protocol, not availability for a particular key.
+// Suggestions and known capability hints, never an eligibility gate.
 const models = [
   ['gemini-3.1-flash-lite', 'Gemini 3.1 Flash-Lite'],
   ['gemini-3.8-flash', 'Gemini 3.8 Flash'],
@@ -9,12 +9,13 @@ const models = [
   ['gemini-2.5-pro', 'Gemini 2.5 Pro'],
 ] as const;
 
-// Express mode has a smaller published model list than the Developer API.
+// Keep Express suggestions conservative; callers can still specify another model ID.
 const expressModels = new Set(['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro']);
-export function personalModelSupported(model: string, provider: PersonalModelProvider = 'gemini'): boolean {
-  return models.some(([id]) => id === model) && (provider !== 'vertex' || expressModels.has(model));
+export function personalModelEntry(id: string, provider: PersonalModelProvider, availability: PersonalModelCatalogEntry['availability'] = 'not_checked'): PersonalModelCatalogEntry {
+  const profile = models.find(([model]) => model === id);
+  return { id, label: profile?.[1] ?? id.slice(0, 100), provider, availability,
+    capabilities: { tools: Boolean(profile), image: Boolean(profile), audio: Boolean(profile), textStreaming: Boolean(profile) } };
 }
 export function personalModelCatalog(provider: PersonalModelProvider): PersonalModelCatalogEntry[] {
-  return models.filter(([id]) => personalModelSupported(id, provider)).map(([id, label]) => ({ id, label, provider, availability: 'not_checked',
-    capabilities: { tools: true, image: true, audio: true, textStreaming: true } }));
+  return models.filter(([id]) => provider !== 'vertex' || expressModels.has(id)).map(([id]) => personalModelEntry(id, provider));
 }

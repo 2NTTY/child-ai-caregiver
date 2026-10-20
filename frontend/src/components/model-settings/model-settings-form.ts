@@ -1,14 +1,15 @@
 import { z } from "zod";
 import { personalLimits, type ModelSettings, type ModelSettingsCommand } from "../../model-settings-view-model.ts";
 import type { EffectiveModelLimits, PersonalModelCatalog, PersonalModelProvider } from "../../../../src/shared/model-settings.ts";
+import { personalModelIdSchema } from "../../../../src/shared/model-settings-schema.ts";
 
 /** Only project the server's selected-provider catalog; never substitute a model. */
 export function modelCatalogSelection(catalog: PersonalModelCatalog | null | undefined, provider: PersonalModelProvider, selected: string) {
   const loaded = catalog?.provider === provider;
   const models = loaded ? catalog.models.filter(item => item.provider === provider) : [];
   const match = models.find(item => item.id === selected);
-  return { loaded, supported: Boolean(match), capabilities: match?.capabilities,
-    options: [...(!match ? [{ value: selected, label: selected + (loaded ? "（此服務尚未接線）" : "（等待此服務目錄）") }] : []),
+  return { loaded, listed: Boolean(match), capabilities: match?.capabilities,
+    options: [...(!match ? [{ value: selected, label: selected || "輸入模型 ID" }] : []),
       ...models.map(item => ({ value: item.id, label: item.label }))] };
 }
 
@@ -31,12 +32,14 @@ export function modelSettingsDraft(settings: ModelSettings, effective?: Effectiv
 }
 export type ModelSettingsDraft = ReturnType<typeof modelSettingsDraft>;
 export function modelSettingsSchema(keyConfigured: boolean, savedProvider: ModelSettings["provider"] = "gemini") {
-  return z.object({ mode: z.enum(["platform", "personal", "disabled"]), provider: z.enum(["gemini", "vertex"]), model: z.string().min(1).max(128),
+  return z.object({ mode: z.enum(["platform", "personal", "disabled"]), provider: z.enum(["gemini", "vertex"]), model: z.string().max(128),
     keyText: z.string().max(512, "密鑰最多 512 個字元。"), consent: z.boolean(), backgroundEnabled: z.boolean(),
     dailyText: z.string(), modelCallsText: z.string(), queryEmbeddingsText: z.string(), toolCallsText: z.string(),
     runSecondsText: z.string(), requestSecondsText: z.string(), retriesText: z.string(),
   }).superRefine((draft, context) => {
     if (draft.mode !== "personal") return;
+    if (!personalModelIdSchema.safeParse(draft.model).success)
+      context.addIssue({ code: "custom", path: ["model"], message: "請輸入 Gemini 模型 ID，例如 gemini-3.1-flash-lite；不需填寫網址。" });
     if (!draft.consent) context.addIssue({ code: "custom", path: ["consent"], message: "請確認費用及資料外送安排。" });
     if (!draft.keyText.trim()) {
       if (!keyConfigured || draft.provider !== savedProvider) context.addIssue({ code: "custom", path: ["keyText"], message: "請輸入此供應商的個人 API 密鑰。" });

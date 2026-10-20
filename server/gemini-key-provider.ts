@@ -4,7 +4,8 @@ import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { AiConfig } from "./ai-config.ts";
 import { nativePersonalThinkingConfig } from "./model-thinking.ts";
 import type { ModelKeyCheck, PersonalModelCatalog, PersonalModelProvider } from '../src/shared/model-settings.ts';
-import { personalModelCatalog, personalModelSupported } from './personal-model-catalog.ts';
+import { personalModelCatalog, personalModelEntry } from './personal-model-catalog.ts';
+import { personalModelIdSchema } from '../src/shared/model-settings-schema.ts';
 import { AGENT_LIMITS, AgentStopped } from "./agent-budget.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
 import { EmbeddingFailure } from "./embedding-gateway.ts";
@@ -49,6 +50,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
   catalog: (version: number, refresh: boolean, signal: AbortSignal) => Promise<PersonalModelCatalog>;
 } {
   if (typeof apiKey !== "string" || !apiKey.trim()) throw new ProviderFailure("unavailable");
+  if (!personalModelIdSchema.safeParse(config.model).success) throw new ProviderFailure("unavailable");
   const thinkingConfig = nativePersonalThinkingConfig(config.model), vertex = provider === 'vertex';
   const apiVersion = vertex ? 'v1' : 'v1beta';
   const httpOptions = { baseUrl: vertex ? 'https://aiplatform.googleapis.com' : "https://generativelanguage.googleapis.com", apiVersion,
@@ -83,7 +85,6 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
     agent: {
       async generate(request, signal) {
         if (signal.aborted) throw new ProviderFailure("unavailable");
-        if (!personalModelSupported(config.model, provider)) throw new AgentStopped('model_not_available');
         try {
           const response = await client.models.generateContent({ model: config.model, contents: request.contents,
             config: { ...request.config, httpOptions, candidateCount: 1,
@@ -109,7 +110,6 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
     model: {
       async generate(input, options) {
         if (options.signal.aborted) throw new ProviderFailure("unavailable");
-        if (!personalModelSupported(config.model, provider)) throw new ProviderFailure("unavailable");
         try {
           const response = await client.models.generateContent({ model: config.model,
             contents: input.messages.map(message => ({ role: message.role, parts: [{ text: message.text }] })),
@@ -166,14 +166,16 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
         const pager = await client.models.list({ config: { pageSize: 100, queryBase: true, httpOptions, abortSignal: signal } });
         const listed = new Set<string>();
         for (let page = 0; page < 2; page++) {
-          for (const model of pager.page) if (model.supportedActions?.includes('generateContent') && model.name)
-            listed.add(model.name.replace(/^models\//, ''));
+          for (const model of pager.page) {
+            const id = model.name?.replace(/^models\//, '');
+            if (model.supportedActions?.includes('generateContent') && personalModelIdSchema.safeParse(id).success) listed.add(id!);
+          }
           if (!pager.hasNextPage() || page === 1) break;
           await pager.nextPage();
         }
         if (signal.aborted) return { ...result, status: 'unavailable', reason: 'timeout' };
-        return { ...result, status: 'checked', truncated: pager.hasNextPage(),
-          models: result.models.filter(model => listed.has(model.id)).map(model => ({ ...model, availability: 'listed' })) };
+        return { ...result, status: 'checked', truncated: pager.hasNextPage() || listed.size > 20,
+          models: [...listed].slice(0, 20).map(id => personalModelEntry(id, provider, 'listed')) };
       } catch (error) { return { ...result, status: 'unavailable', reason: reason(error, signal) }; }
     },
   };
