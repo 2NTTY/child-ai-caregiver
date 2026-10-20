@@ -1,6 +1,13 @@
-import { ThinkingLevel } from "@google/genai";
+import { ThinkingLevel, type ThinkingConfig } from "@google/genai";
 
 export type AgentThinkingLevel = "minimal" | "low" | "medium" | "high";
+
+/** Gemini 2.5 uses token budgets; level enums are only sent to the existing Gemini 3 adapters. */
+export function nativePersonalThinkingConfig(model: string): ThinkingConfig {
+  if (model === 'gemini-2.5-pro') return { thinkingBudget: -1 };
+  if (model === 'gemini-2.5-flash' || model === 'gemini-2.5-flash-lite') return { thinkingBudget: 0 };
+  return { thinkingLevel: nativeModelThinkingLevel(model) };
+}
 
 export function resolveModelThinkingLevel(model: string, value: unknown = undefined): AgentThinkingLevel {
   // Only this exact model has a verified minimum different from the existing default.

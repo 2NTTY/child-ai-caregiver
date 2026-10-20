@@ -28,6 +28,12 @@
 
 完整 callback／API 對照見 [P2 UI 接點](P2_UI_HANDOFF.md#production-owners)。首頁、側欄及歷史讀取這些 owner；沒有另一份可寫副本。Agent 或人工寫入後刷新相關投影，可見頁按 changes cursor 每 5 秒核對 metadata，返回前景立即核對；沒有新事件不呼叫模型。已載入清單不當作完整歷史。
 
+### 本人模型設定
+
+相容 Server／客戶端更新後，在「設定 → 本人模型」選個人模式、Google 服務及模型，填入 key、調整限制及背景授權，再保存。Web／Android 使用同一帳戶設定；key 送出後清空且不讀回。右方顯示 Server 的實際生效值，保存不清零用量。這是操作方法，實際發布狀態仍以 STATUS 為準。
+
+「檢查已保存密鑰」及模型目錄只讀 metadata，不執行生成；遇版本衝突先重讀，結果未知用「查回原操作及目前設定」，不重送 key。Vertex Express 尚未接 metadata／embedding，頁面會說明限制；不能把已保存 key 當成知識檢索已可用。本機 ADC 只在[開發入口](AGENT_LOCAL.md)配置，不上傳到此表單。
+
 ## 部署及回復（以下保留 INT-W07 歷史版本）
 
 目前部署版本以 [STATUS](../STATUS.md#deployment) 的具日期觀察為準，不把下列053658b當最新版本。以下命令只適用該歷史 checkout；現行 `deploy/p1/compose.yaml` 已改為純 Firestore 入口，不可疊加舊 SQL／P2 overlay。

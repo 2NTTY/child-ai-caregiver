@@ -486,11 +486,13 @@ INT-W04 在同一加密 payload 保存可選 management：用途、來源性質�
 019 與 014–018 一同列入集中 migration／加密備份及空庫還原驗收；還原後既有 worker 暫停／世代規則繼續適用。型別及 scripted case 不代替 SQL、刪除或恢復證據。
 
 <a id="personal-model-settings"></a>
-## S06-W05 本人模型設定與計數（024）
+## 本人模型設定與計數（MODEL-SELF01；SQL 024 為歷史）
 
-`model_settings` 以本人 user_id 唯一保存，跟隨帳號刪除；不是孩子／家庭資料，其他家庭成員不可存取。欄位包括 version、mode、背景 opt-in、三種可調限額、更新時間及 api_key_encrypted。初次版本 0；保存時鎖帳號並 CAS，成功遞增版本。AES-GCM 沿用現有 cipher，AAD 綁帳號及版本；沒有明文、尾碼或 hash 回傳。一般停用保留 key，刪除清空密文並停用，歷史備份中的密文須按既有保留政策管理；供應商撤銷 key 是另一項操作。
+Firestore `model_settings` 以本人穩定ID保存；本人授權、預期版本、設定寫入及 preferences 變更在同一交易。密文保存 provider、model、mode、背景 opt-in、本人限制、更新時間與 key；新增欄位可缺省，舊設定按原行為讀取。首次v2保存標記 limitPolicyVersion:2；設定要求與實際管理上限分開，後者由共同解析器計算，不回寫本人選擇。不是孩子／家庭資料，其他成員不可讀取。沿原AES-GCM／scope／版本綁定，回應沒有明文、尾碼或 hash；移除key清空當前密文並停用，歷史備份依保留規則管理，不能冒稱已向供應商撤銷。
 
-`ai_attempts`／`embedding_attempts.billing_source` 由 Server factory 決定，既有列標 platform；原 counters 不清零。personal 使用 `personal:global`／`personal:user:<id>`，與平台 global／user 分開。公共語料維護僅用 platform；個人 key 不進工作佇列、Agent session、prompt、候選、online receipt 或一般日誌。每次運行只在記憶體持有快照，背景使用受信事件的執行帳號並檢查 opt-in。
+`model_settings_operations` 的確定ID綁 `[userId,opId]`，交易內保存無密鑰的結果設定及加密請求指紋；不保存可重播的原key正文。原opId查回仍須當前帳號權限。新collection加入備份／還原schema及帳戶清理列表；與其他credential／protocol資料一樣不進家長資料匯出。欄位索引預設排除；不為收據新增公開查詢或第二套設定權威。
+
+Firestore用量／root budget沿Server指定的billingSource及原run／attempt保存，platform與personal分帳，不清零。公共語料維護不使用家長key。key不進工作、Agent session、prompt、候選、公開收據或日誌；每輪只在Server記憶體持有憑證，持久綁定只記設定／政策版本與預算。背景沿受信帳號檢查opt-in，不因停用或憑證失效改借平台。
 
 
 <a id="int-concerns"></a>

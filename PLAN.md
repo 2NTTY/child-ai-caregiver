@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **次序：**先完成 [DEV-AGENT01](#dev-agent01) 本地正式運行環境，接續 [DEV-AGENT02](#dev-agent02) 四角色聯合接線，再做 [MODEL-SELF01／02](#model-self01) 個人模型及共用設定。使用者已批准本節完整計劃；Android 收束及未驗項保留，iOS 暫緩，不另造測試 Agent。
 
-**本分支：**`codex/dev-agent01-local-runtime`（#241）；2026-10-20 已接回 master `3795858`、三角色及 Android draft 依賴同步。後續四角色／個人設定的活動成果在 #242／#244；本包原實作及驗收 gate 保留，不把 draft 當已合併或已部署。
+**本分支：**`codex/model-self01-google-settings`（#242）；2026-10-20 已接回 master `3795858`、三角色及 Android draft 依賴同步。後續四角色／個人設定的活動成果在 #242／#244；本包原實作及驗收 gate 保留，不把 draft 當已合併或已部署。
 
 ### 保留的 Android 交付狀態
 
@@ -100,28 +100,30 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="dev-agent02"></a>
 ### DEV-AGENT02 四角色聯合接線
 
-- 前置：DEV-AGENT01；狀態待開始。#214 `80eb850` 審核、#215 `53c74ac` 編製依賴 #214、#216 `0360f7b` 背景維護仍含 stub／dry-run；實作時重核。
+- 前置：DEV-AGENT01；本地基礎已可使用，非郵件收件箱及原 draft gate 保留。狀態：已在獨立本地分支整合 #214 `80eb850`、#215 `53c74ac`、#216 `0360f7b`，未推送或合併原 PR。正式組裝的 scripted 編製／審核／同文件確認保存、原操作防重、錯誤引用及背景無動作核對通過；一次真模型流程遇自動重載中斷，原 run 已查回 unknown／interrupted，僅有一次未回報結果的模型預留，未重跑。詳見[DEV02 證據](artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)。A 單人負責整合，原角色作者不變。
 - 載入當前分支正式角色；聊天語義委派編製、Server控制審核，不要求每句啟動全部角色。編製更新同一資源，頁面同步；「處理頁面」是業務工具改資料，不是模擬點按。
 - 聊天／編製／審核共用根 run、取消／期限／計量；背景維護使用獨立工作預算。角色模型缺省繼承共同模型及開發者憑證，不因子 Runner／重試繞限。
 - 獨立背景入口可手動／本地排程啟動，樣本與受限真網站模式分明；遵守既有網域、路徑、頁數及用途，只發布本地知識庫。私人資料不可進公共維護上下文。
 - 審核綁定正文／來源／對象／版本；未核准不正式保存。顯示角色、工具、審核、收據、耗時及停止原因，不預設完整私人正文／內部思考日誌。
 - 聯合測試可用獨立本地整合分支及固定提交，保留原作者；不擅改／合併協作者分支、不重寫角色。缺接口列清交原包承接；環境可啟動、角色已接及真模型已驗分開，#216 stub 不計真審核完成。
+- 尚欠：真模型編製／審核成果、頁面聯合核對、非郵件本地收件箱。#216 的 `BackgroundKnowledgeMaintenancePorts`／`KnowledgeSemanticReviewPort` 尚缺真模型、持久用量／工作／發布組裝及本地觸發，現有記憶體 fallback／programmatic stub 不能當通過；保留協作者承接。可先開始不依賴這些缺口的 MODEL-SELF01，不能把 DEV02 標完成。
 - gate：聊天→編製→真審核→保存→頁面／新對話讀回；另無聊天時背景讀來源→整理／審核→本地發布→聊天引用新版。缺角色真實實作時保留待驗，不能以替身達標。
 
 <a id="model-self01"></a>
 ### MODEL-SELF01 個人模型與共同策略
 
-- 前置：DEV-AGENT01，DEV-AGENT02 先接可用接口；協作者未實作的角色 gate獨立保留。狀態待開始。
+- 前置：DEV-AGENT01，DEV-AGENT02可用接口已在獨立分支核對；協作者未實作及真模型gate獨立保留。狀態：後端／共用client已接Gemini／Vertex key、模型目錄、本人進階限制、生效值及原操作查回；兩條合成設定／SDK流程及兩項既有client檢查、局部型別通過。A單人實作與交付，未部署／未驗真個人key；詳見[MODEL01證據](artifacts/verification/MODEL_SELF01_SETTINGS_20261018.json)。
 - 擴充現有加密設定／收據／用量及 command／view：provider、model、能力、進階限制及實際生效值；Server提供模型目錄，保留 expectedVersion／opId／unknown恢復。
 - Gemini／Vertex API key使用正確SDK模式；ADC只限本機。依供應商可用模型及已接能力提供選項，thinking／工具／圖片／音訊／串流按型號處理，不偷換模型。metadata與真生成分開；保存設定不自動試多模型。
 - 地區、憑證、模型、配額、逾時回傳安全且可分辨原因。embedding路由與聊天模型分開，維持原向量空間；本人憑證缺embedding時明示混合檢索不可用，不借平台額度／偽造引用。
 - 可調每日、每輪生成／工具／embedding、整輪期限、單次等待、重試及背景授權；共同解析器計算個人設定與管理員保護的實際值。模型知道可用預算，硬上限防失控而非要求用盡。
 - run固定模型／預算快照，重試沿原run計數、不重做成功工具／未知副作用；舊設定缺欄位維持舊行為。聊天／編製／審核／媒體／轉錄／背景用同一解析器；公共知識維護不用家長key，本地用開發者明確設定的維護憑證。
+- 版本邊界：v2明確保存才採共同管理上限；舊設定不默改。Vertex Express未有已核對的embedding／metadata方法，明示未支援；已接生成協定不等於真服務通過。新收據含備份／還原與帳戶清理接點，未跑真雲端還原。共用表單／owner接線見MODEL02；下一步核對既有draft前置及必要真憑證／部署門檻，不把role integration或Android待驗消失。
 
 <a id="model-self02"></a>
 ### MODEL-SELF02 共用設定及交付
 
-- 前置：MODEL-SELF01；狀態待開始。Web／Android共用owner、表單與API，一端保存另一端讀同版；顯示已用次數、生效值及限制來源。
+- 前置：MODEL-SELF01；2026-10-20 共用owner及表單已接同一v2契約，隨draft #242準備，尚未部署。Web／Android共用供應商／模型、七項限制、背景授權、用量及Server生效值；沒有另一份UI限額權威。保存回應丟失時查原opId，未見收據不能清成成功或重播key。兩項必要表單／原操作流程及局部型別通過，見[MODEL02證據](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)。真個人key、正式頁面操作、兩端同版及部署仍待驗。
 - key不進prompt、日誌、URL、瀏覽器儲存或Android持久草稿；移除／替換沿原身份與版本檢查。部署沿原站及相容Web／OTA，不另建網站。
 - 交付短指引：啟動、key／ADC、選分支、改完再試、背景觸發、角色結果、資料重設及仍需雲端確認的差異。
 

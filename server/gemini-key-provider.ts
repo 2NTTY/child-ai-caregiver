@@ -2,8 +2,10 @@ import { ApiError, GoogleGenAI } from "@google/genai";
 import type { EmbedContentResponse } from "@google/genai";
 import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { AiConfig } from "./ai-config.ts";
-import { nativeModelThinkingLevel } from "./model-thinking.ts";
-import { AGENT_LIMITS } from "./agent-budget.ts";
+import { nativePersonalThinkingConfig } from "./model-thinking.ts";
+import type { ModelKeyCheck, PersonalModelCatalog, PersonalModelProvider } from '../src/shared/model-settings.ts';
+import { personalModelCatalog } from './personal-model-catalog.ts';
+import { AGENT_LIMITS, AgentStopped } from "./agent-budget.ts";
 import type { AgentModelProvider } from "./agent-model-gateway.ts";
 import { EmbeddingFailure } from "./embedding-gateway.ts";
 import type { EmbeddingProvider, EmbeddingReply } from "./embedding-gateway.ts";
@@ -37,24 +39,45 @@ function readKeyEmbedding(response: EmbedContentResponse): EmbeddingReply {
     billableCharacters: readCount(response.metadata?.billableCharacterCount) };
 }
 
-export function createGeminiKeyProviders(config: AiConfig, apiKey: string): {
+export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provider: PersonalModelProvider = 'gemini'): {
   agent: AgentModelProvider;
   model: ModelProvider;
   embedding: EmbeddingProvider;
   check: (signal: AbortSignal) => Promise<boolean>;
+  inspect: (signal: AbortSignal) => Promise<Pick<ModelKeyCheck, 'status' | 'reason'>>;
+  catalog: (version: number, refresh: boolean, signal: AbortSignal) => Promise<PersonalModelCatalog>;
 } {
   if (typeof apiKey !== "string" || !apiKey.trim()) throw new ProviderFailure("unavailable");
-  const thinkingLevel = nativeModelThinkingLevel(config.model);
-  const httpOptions = { baseUrl: "https://generativelanguage.googleapis.com", apiVersion: "v1beta",
+  const thinkingConfig = nativePersonalThinkingConfig(config.model), vertex = provider === 'vertex';
+  const apiVersion = vertex ? 'v1' : 'v1beta';
+  const httpOptions = { baseUrl: vertex ? 'https://aiplatform.googleapis.com' : "https://generativelanguage.googleapis.com", apiVersion,
     timeout: config.timeoutMs, retryOptions: { attempts: 1 } };
   let client: GoogleGenAI;
   try {
-    client = new GoogleGenAI({ enterprise: false, apiKey, apiVersion: "v1beta", httpOptions });
+    client = new GoogleGenAI({ enterprise: vertex, apiKey, apiVersion, httpOptions });
   } catch {
     throw new ProviderFailure("unavailable");
   }
   const failure = (error: unknown) => new ProviderFailure(
     error instanceof ApiError && error.status === 429 ? "rate_limited" : "unavailable");
+  const reason = (error: unknown, signal: AbortSignal): NonNullable<ModelKeyCheck['reason']> => {
+    if (signal.aborted) return 'timeout';
+    if (!(error instanceof ApiError)) return 'unavailable';
+    if (/user location is not supported|not available in your (country|region)/i.test(error.message)) return 'region_unavailable';
+    if (/API_KEY_INVALID|API key not valid/i.test(error.message) || error.status === 401) return 'invalid_key';
+    if (error.status === 404) return 'model_unavailable';
+    if (error.status === 429) return 'quota_exceeded';
+    return 'unavailable';
+  };
+  const inspect = async (signal: AbortSignal): Promise<Pick<ModelKeyCheck, 'status' | 'reason'>> => {
+    if (vertex) return { status: 'unavailable', reason: 'metadata_unsupported' };
+    if (signal.aborted) return { status: 'unavailable', reason: 'timeout' };
+    try {
+      const model = await client.models.get({ model: config.model, config: { httpOptions, abortSignal: signal } });
+      return !signal.aborted && (model.supportedActions === undefined || model.supportedActions.includes('generateContent'))
+        ? { status: 'accessible' } : { status: 'unavailable', reason: signal.aborted ? 'timeout' : 'model_unavailable' };
+    } catch (error) { return { status: 'unavailable', reason: reason(error, signal) }; }
+  };
   return {
     agent: {
       async generate(request, signal) {
@@ -63,12 +86,20 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string): {
           const response = await client.models.generateContent({ model: config.model, contents: request.contents,
             config: { ...request.config, httpOptions, candidateCount: 1,
               maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
-              thinkingConfig: { thinkingLevel }, abortSignal: signal } });
+              thinkingConfig, abortSignal: signal } });
           const candidate = response.candidates?.[0];
           // Preserve native parts and opaque signatures for the next ADK turn.
           return { content: response.candidates?.length === 1 ? candidate?.content : undefined,
             finishReason: candidate?.finishReason, usageMetadata: response.usageMetadata };
         } catch (error) {
+          // The shared Agent gateway owns status-only diagnostics, metering and bounded retries.
+          if (error instanceof ApiError) {
+            const cause = reason(error, signal);
+            if (cause === 'invalid_key') throw new AgentStopped('model_key_invalid');
+            if (cause === 'region_unavailable') throw new AgentStopped('model_region_unavailable');
+            if (cause === 'model_unavailable') throw new AgentStopped('model_not_available');
+            throw error;
+          }
           throw failure(error);
         }
       },
@@ -81,7 +112,7 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string): {
             contents: input.messages.map(message => ({ role: message.role, parts: [{ text: message.text }] })),
             config: { systemInstruction: input.systemInstruction, httpOptions,
               maxOutputTokens: Math.min(options.maxOutputTokens, config.maxOutputTokens, AGENT_LIMITS.outputTokens),
-              candidateCount: 1, thinkingConfig: { thinkingLevel }, abortSignal: options.signal } });
+              candidateCount: 1, thinkingConfig, abortSignal: options.signal } });
           return readVertexReply(response);
         } catch (error) {
           if (error instanceof ProviderFailure) throw error;
@@ -92,6 +123,8 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string): {
     embedding: {
       async embed(input, signal) {
         if (signal.aborted) throw new EmbeddingFailure("cancelled");
+        // Express mode has no documented embedding method. Never use platform ADC as a substitute.
+        if (vertex) throw new EmbeddingFailure('unavailable');
         if (input.task !== "RETRIEVAL_QUERY" || typeof input.text !== "string" || !input.text.trim()
           || Buffer.byteLength(input.text, "utf8") > 2000 || input.title !== undefined) {
           throw new EmbeddingFailure("invalid_input");
@@ -108,15 +141,27 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string): {
         }
       },
     },
-    async check(signal) {
-      if (signal.aborted) return false;
+    inspect,
+    async check(signal) { return (await inspect(signal)).status === 'accessible'; },
+    async catalog(version, refresh, signal) {
+      const result: PersonalModelCatalog = { version, provider, models: personalModelCatalog(provider), scope: 'model_metadata_only',
+        status: 'not_checked', truncated: false, embedding: { model: KNOWLEDGE_EMBEDDING.model, dimensions: KNOWLEDGE_EMBEDDING.dimensions,
+          status: vertex ? 'unsupported' : 'not_checked' } };
+      if (!refresh) return result;
+      if (vertex) return { ...result, status: 'unavailable', reason: 'metadata_unsupported' };
       try {
-        const model = await client.models.get({ model: config.model, config: { httpOptions, abortSignal: signal } });
-        return !signal.aborted && (model.supportedActions === undefined
-          || (Array.isArray(model.supportedActions) && model.supportedActions.includes("generateContent")));
-      } catch {
-        return false;
-      }
+        const pager = await client.models.list({ config: { pageSize: 100, queryBase: true, httpOptions, abortSignal: signal } });
+        const listed = new Set<string>();
+        for (let page = 0; page < 2; page++) {
+          for (const model of pager.page) if (model.supportedActions?.includes('generateContent') && model.name)
+            listed.add(model.name.replace(/^models\//, ''));
+          if (!pager.hasNextPage() || page === 1) break;
+          await pager.nextPage();
+        }
+        if (signal.aborted) return { ...result, status: 'unavailable', reason: 'timeout' };
+        return { ...result, status: 'checked', truncated: pager.hasNextPage(),
+          models: result.models.filter(model => listed.has(model.id)).map(model => ({ ...model, availability: 'listed' })) };
+      } catch (error) { return { ...result, status: 'unavailable', reason: reason(error, signal) }; }
     },
   };
 }

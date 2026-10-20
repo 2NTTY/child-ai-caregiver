@@ -8,9 +8,9 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const directory = join(root, '.cache', 'agent-local'), statePath = join(directory, 'state.json');
 const args = new Set(process.argv.slice(2));
-if ([...args].some(arg => !['--reset', '--confirm-local-reset', '--no-web', '--no-model', '--prepare-knowledge', '--help'].includes(arg))) throw Error('Unknown local Agent option');
+if ([...args].some(arg => !['--reset', '--confirm-local-reset', '--no-web', '--no-model', '--no-watch', '--prepare-knowledge', '--help'].includes(arg))) throw Error('Unknown local Agent option');
 if (args.has('--help')) {
-  console.log('agent:local [--no-web] [--no-model]\nSet GEMINI_API_KEY or LOCAL_AGENT_CONFIG (protected JSON). ADC: LOCAL_MODEL_PROVIDER=vertex-adc, LOCAL_MODEL_PROJECT.\nFirst knowledge preparation: --prepare-knowledge (at most one paid embedding; later starts reuse it).\nReset only this worktree: --reset --confirm-local-reset');
+  console.log('agent:local [--no-web] [--no-model] [--no-watch]\nSet GEMINI_API_KEY or LOCAL_AGENT_CONFIG (protected JSON). ADC: LOCAL_MODEL_PROVIDER=vertex-adc, LOCAL_MODEL_PROJECT.\nFirst knowledge preparation: --prepare-knowledge (at most one paid embedding; later starts reuse it).\nReset only this worktree: --reset --confirm-local-reset');
   process.exit(0);
 }
 const exists = async path => { try { await access(path); return true; } catch { return false; } };
@@ -173,7 +173,12 @@ try {
     await stop();
   } else {
   if (!args.has('--no-web')) start('web', [join(root, 'node_modules', 'expo', 'bin', 'cli'), 'start', '--web', '--localhost', '--port', String(basePort + 1)], publicEnv, join(root, 'frontend'));
-  start('api', ['--watch', '--watch-preserve-output', join(root, 'server', 'local-agent-main.ts')], env);
+  // Native watch-path disables dependency watching on supported hosts. Windows
+  // dependency activity must not restart an in-flight paid run; prompt edits do.
+  const watch = args.has('--no-watch') ? [] : process.platform === 'win32' || process.platform === 'darwin'
+    ? ['--watch-preserve-output', ...['server', 'src/shared', 'prompts'].map(path => '--watch-path=' + join(root, path))]
+    : ['--watch', '--watch-preserve-output'];
+  start('api', [...watch, join(root, 'server', 'local-agent-main.ts')], env);
   console.log('Local Agent: ' + origin + '\nAccount: ' + saved.email + '\nLocal password/data: ' + statePath
     + '\nProvider: ' + model.provider + '; model: ' + model.model + '; AI enabled: ' + enabled
     + '\nNo production data or external notifications. Ctrl+C saves the emulator snapshot.');

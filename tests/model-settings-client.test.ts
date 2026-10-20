@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createModelSettingsApi, ModelSettingsApiError } from "../src/client/model-settings-api.ts";
+import { createModelSettingsApi, ModelSettingsApiError, readModelSettingsRecovery } from "../src/client/model-settings-api.ts";
 import { PERSONAL_MODEL, type ModelSettingsCommand } from "../src/shared/model-settings.ts";
 
 const settings = { version: 2, mode: "personal", provider: "gemini", model: PERSONAL_MODEL,
@@ -26,7 +26,8 @@ test("model settings use direct account-bound requests and allowlist secret-free
       assert.deepEqual(body, { expectedVersion: 2 });
       return Response.json({ version: 2, status: "accessible", scope: "model_metadata_only" });
     }
-    assert.deepEqual(body, command());
+    const { opId, ...safe } = body;
+    assert.match(opId, /^[a-f0-9-]{36}$/); assert.deepEqual(safe, command());
     return Response.json(settings);
   });
   assert.deepEqual(await api.save({ ...command(), extraField: "not forwarded" } as ModelSettingsCommand, signal(), "alice"), settings);
@@ -68,4 +69,36 @@ test("model settings errors expose only known codes and aborted late responses c
   const saving = late.save(command(), controller.signal, "alice");
   controller.abort(); resolve(Response.json(settings));
   await assert.rejects(saving, error => error instanceof ModelSettingsApiError && error.unknownResult);
+});
+
+test("settings recovery keeps a missing in-flight receipt unknown and never resends the key", async () => {
+  let original: { opId: string; expectedVersion: number } | null = null;
+  let phase = "pending", posts = 0;
+  const api = createModelSettingsApi("/api", async (input, init) => {
+    assert.equal(new Headers(init?.headers).get("x-expected-user-id"), "alice");
+    if (init?.method === "POST") {
+      posts++;
+      const body = JSON.parse(String(init.body));
+      original = { opId: body.opId, expectedVersion: body.expectedVersion };
+      throw new Error("synthetic lost response");
+    }
+    assert.equal(init?.body, undefined);
+    if (String(input).includes("/operations/")) {
+      assert.equal(String(input).endsWith(original!.opId), true);
+      return Response.json(phase === "confirmed" ? { opId: original!.opId, settings } : null);
+    }
+    return Response.json({ ...view, settings: { ...settings, version: phase === "pending" ? 1 : 2 } });
+  });
+  await assert.rejects(api.save(command(), signal(), "alice"), error => error instanceof ModelSettingsApiError
+    && error.operationId === original?.opId && error.unknownResult);
+  assert.ok(original);
+  assert.equal((await readModelSettingsRecovery(api, original, signal(), "alice")).outcome, "unknown");
+  phase = "confirmed";
+  const recovered = await readModelSettingsRecovery(api, original, signal(), "alice");
+  assert.equal(recovered.outcome, "confirmed");
+  assert.equal(recovered.snapshot.settings.version, 2);
+  assert.equal(JSON.stringify(recovered).includes(command().apiKey!), false);
+  phase = "superseded";
+  assert.equal((await readModelSettingsRecovery(api, original, signal(), "alice")).outcome, "superseded");
+  assert.equal(posts, 1);
 });

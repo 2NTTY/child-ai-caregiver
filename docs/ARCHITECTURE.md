@@ -606,11 +606,11 @@ P2 開關預設關閉；真渠道及 SQL 等既有結果見 [S13-W07](../artifac
 <a id="personal-model-routing"></a>
 ## S06-W05 本人 key 的共用路由
 
-`model-routing` 在 Server 按登入／worker 受信帳號解析一次設定，為 ADK／P1 gateway 及查詢 embedding 提供相同付費來源；不讓模型選 key、provider、網址或擴權。私人 key 使用既有 Google Gen AI SDK 2.24.0 的 Developer API v1beta；平台及語料維護維持 Vertex ADC。SDK 重試關閉；同一運行的版本變更即阻止後續呼叫，不靜默 fallback。
+`firestore-model-routing` 按登入／worker受信帳號解析同一設定，提供正式Agent、媒體、轉錄及背景的provider／embedding／用量／預算。模型不能選key、任意endpoint或擴權。沿 Google Gen AI SDK 2.24.0：Gemini key走Developer API v1beta；Vertex key走Express v1全球入口、不帶platform project／location／ADC；平台仍用原Vertex ADC。SDK重試關閉，由共同gateway按原run計量及有限重試。
 
-個人 key 模式的 UI 可調每日及每次運行生成／query embedding 次數，範圍見 [API](API.md#personal-model-http)；本節取代前述 4／2 對 personal 模式不可變的假設，平台預設不變。全站個人服務安全上限由 `AI_PERSONAL_DAILY_GLOBAL_ATTEMPTS` 管理，預設 1000，UI 顯示但普通使用者不能改全站配置；全局 AI_ENABLED 仍有效。接線版本啟動前須 migration 024，避免憑據或計數服務悄悄退回舊路徑。
+本人可選Server已接協定的模型與進階限制，管理員控制共用保護，`personal-model-policy`計算生效值。首次明確v2保存才採新上限政策，舊設定缺欄位不自動改寫。API及worker共用Firestore權威，無SQL migration或第二套計數；Web／Android共用client。已選設定／政策綁定每個run，設定改變停止後續呼叫但保留已保存結果。相關型別及相容協議只見[API](API.md#personal-model-http)。
 
-2026-09-30 真 key 的 metadata GET 回覆地區不支援；使用者確認本包先交付設定及本機接線，真生成／向量留待可用供應商條件。不能把 Vertex ADC 通過或 metadata GET 當私人 key 真服務通過；未新增 Vertex key 路由或繞過地區限制。
+2026-09-30 Gemini key地區拒絕證據仍有效；metadata可讀、協定接線與真生成分開。Vertex Express官方只列生成／token計數／串流，未列模型目錄及embedding；對應能力明示未支援，絕不fallback平台。模型目錄是有界供應商metadata與適配profile的交集，不承諾每把key／每個地區皆可用。Gemini2.5使用thinkingBudget、既有Gemini3使用thinkingLevel；不套用同一型號參數。Google真服務、UI及部署的實際gate見PLAN，不以本節代替驗收。
 
 
 <a id="int-concern-flow"></a>

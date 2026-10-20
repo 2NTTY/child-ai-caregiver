@@ -34,7 +34,7 @@ ADC 留在本機。若全局 `GOOGLE_APPLICATION_CREDENTIALS` 指向舊檔案，
 - 開啟終端列出的 `http://127.0.0.1:<port>`；不要另開 Expo 的直接端口。原 Web 和 API 經同一個本機 origin。
 - 本地帳號為 `developer@local.yuyoufang.test`，隨機密碼保存在終端列出的 `.cache/agent-local/state.json`；這是本機合成帳號，不是正式網站密碼。正常登入、產品條款及資料同意仍經正式流程。
 - 同一個明確初始化的本地帳號可開 `/admin` 調整本地限額；不授予正式網站權限，不清零原用量。
-- 修改共用前端可熱更新；Server 的已載入程式變更由 Node watch 重啟。Prompt Pack 由正式組裝器在新一輪重新讀取，不需重新部署；同一輪已載入的版本保持原有快取語義。
+- 修改共用前端可熱更新；Windows／macOS 使用 Node 原生 `--watch-path`，只監看 `server`、`src/shared`、`prompts`，不監看依賴或本地資料。Linux 沿 Node module watch，尚未實測。Prompt Pack 仍由正式組裝器讀取；不要在有付費運行時改動程式。需要固定版本核對時可加 `--no-watch`，手動停止後重開才載入修改。[Node 原生監看](https://nodejs.org/api/cli.html#--watch-path)
 - 修改程式中斷運行時，不自動重發問題；先查回原 run／收據。頁面重新讀取不代表再執行一次。
 - `/__local/status` 顯示分支、SHA、dirty、模型、Prompt Pack、角色邊界；`/__local/events` 只保留最近 200 筆診斷 metadata，不輸出內部思考或私人全文。詳細結果仍從正式頁面／原 run 讀取。
 - `--no-model` 只供資料／UI 開發，明確停用模型；`--no-web` 可供已有前端入口的 API 開發。沒有憑證時不使用假模型，也不借正式平台 key。
@@ -66,6 +66,8 @@ Firestore Emulator 已核實支援本次版本的 `findNearest`；使用同一�
 
 四角色使用當前分支的實際接線。基線沒有某個角色，就不能因環境啟動而宣稱四角色完成。協作者 #214／#215／#216 及真背景維護缺口由 DEV-AGENT02 承接；不擅自合併協作者分支。編製成果必須經正式保存服務，再由原頁面讀回，不能只看模型文字。
 
+需要聯合核對時，可使用已固定提交的本地 `codex/dev-agent02-role-integration`；它不等於 master 或已合併的角色。#214 的審核、#215 的既有文件修改工具已接正式服務，與聊天共用預算；目前編製不是所有資料類型的通用產生器。#216 的 `KnowledgeSemanticReviewPort` 仍未接真模型，`BackgroundKnowledgeMaintenancePorts` 缺持久維護用量／工作／發布組裝及觸發，不能用預設 stub 或記憶體 ledger 當完整背景驗收。接口交回原角色包，環境不另造角色。
+
 ## 保存、停止與重設
 
 輸入 `stop` 或按 Ctrl+C：停止本機 API／worker，完成 emulator 配對匯出後退出。每分鐘另做一次 checkpoint。正常重開會匯入最後完整快照；突然斷電／強殺可能丟失最近一個 checkpoint 之後的本地修改，不宣稱 emulator 等同正式資料庫的崩潰持久性。
@@ -83,6 +85,8 @@ npm run agent:local -- --reset --confirm-local-reset
 ## 證據邊界
 
 最低檢查才執行 `scripts/verify-agent-local.mjs`；啟動工具不自動跑測試。`--real-agent` 會花本人模型額度，最多一個原 run，失敗即停，原始合成結果留受保護 cache。不要例行反覆跑。
+
+DEV02 本地整合分支另有 `--real-compose`，只建立一次原 run，在已有文件上要求編製及待確認；不自動接受，不反覆重試。原訊息關聯在請求前保存，失敗先查同一結果。其真模型中斷及 scripted 組裝的證據分開見[角色核對](../artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)，不把一次已預留但未回報結果的呼叫當作零消耗；未載入角色的分支不提供該驗收模式。
 
 `--artifacts` 在 `--no-model` 入口使用正式 client 核對同一份準備單的修改／讀回／版本衝突，以及一份小附件的保存／讀回／刪除；它不驗證模型編製或審核，也不代表清理 worker 已實際刪除物件。
 

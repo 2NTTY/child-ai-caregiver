@@ -182,13 +182,13 @@ S12-W01 準備中的原生接點：PhotoFilePicker 分別接系統相機／相�
 <a id="personal-model-ui"></a>
 ## UI-P2-18 本人模型 key 與可調上限（S06-W05 增補）
 
-入口：[ModelSettingsPanel](https://github.com/2NTTY/child-ai-caregiver/blob/0a39e018dc138b29a437ab52679866e3bfcc0378/src/client/ModelSettingsPanel.tsx)，props userId／online／apiBaseUrl，掛於正式 Web 登入帳號區；[API](API.md#personal-model-http)／[共用型別](../src/shared/model-settings.ts)。獨立前端後續接此 view model，毋須接觸或讀回密鑰。
+正式 Web／Android 共用 [ModelSettingsView](../frontend/src/components/model-settings/ModelSettingsView.tsx) 及 [useProductionModelSettings](../frontend/src/production/useProductionModelSettings.ts)，透過同一受控 transport；[API](API.md#personal-model-http)／[共用型別](../src/shared/model-settings.ts) 為契約。原 ModelSettingsPanel 已歸檔，不作新接線入口。
 
 - 選平台／個人 key／停用，輸入或替換 key、明確費用／外送同意、背景 opt-in、二次確認刪除。
-- 可編輯個人每日總呼叫數、每次 Agent 生成呼叫數及查詢 embedding 數；顯示目前版本、全站個人安全上限、固定工具／逾時／輸出限額及 UTC 重置時間。
+- 可編輯 Gemini／Vertex Express key、Server 模型目錄及每日、每輪生成／工具／embedding、整輪期限、單次等待與重試；表單合法範圍引用共用契約，實際值只讀 Server `effective`。模型目錄和能力不等於個人憑證真生成成功；Vertex Express 的 metadata／embedding 缺口明示，不借平台額度。
 - 分別呈現平台／私人用量、metadata 未知及供應商限制；key 保存不等於連線成功，metadata 可讀不等於生成／embedding 已驗。
-- 保存 unknown 不重播，清除密鑰輸入後重讀版本；身份／Server／離線切換清除輸入及舊請求，孩子切換不切換本人 key。
-- 本包先完成設定及本機接線；Google Developer API 地區限制導致真服務待驗。正式試用網站尚未部署此增補，Android 於 S04-W01 復用，不以共用 RN 元件當作真機已驗。
+- 保存 unknown 不重播，owner 只暫存原 opId／預期版本，清除密鑰後查原收據及目前版本。收據未見且版本未變時維持 unknown；新版本使舊寫入不再可提交，不能稱原操作已成功。身份／Server／離線切換清除輸入及舊請求，孩子切換不切換本人 key；不保存憑據草稿。
+- 新版 Server 必須先提供 v2 契約，再發布共用 Web／相容 OTA；不能先把新 client 接到只認舊 command 的 Server。模型、metadata、頁面真互動及部署的實際驗證狀態只見根 PLAN／STATUS，不以共用 RN 元件或 scripted provider 當真服務／真機已驗。
 
 
 <a id="account-service"></a>
