@@ -61,6 +61,27 @@
       "growthRuleImpact": "requires_review",
       "published": false,
       "observation": "Organization and independent review completed. The reviewer requested further assessment of the changed guidance; the existing publication gate retained the candidate. This is not evidence of successful publication or clinical review. No further run was started."
+    },
+    {
+      "operation": "620728fe5a33bf856679cfcf495ac5ed935c375e376270681191748a01b79ffd",
+      "codeVersion": "8873b76",
+      "promptPack": "0.1.52",
+      "generations": 1,
+      "embeddingCalls": 0,
+      "result": "candidate_held",
+      "code": "review_hold",
+      "modelReviewCompleted": true,
+      "growthRuleImpact": "requires_review",
+      "published": false,
+      "observation": "Unchanged original skipped organization; one independent review completed. Server detected the published/seed chunk hash did not match the executable growth rule binding. Candidate and usage retained; no retry.",
+      "readOnlyDiagnosis": {
+        "source": "fhs-solid-food",
+        "key": "starting-solids",
+        "ruleHash": "08cd6022928f532f75111c6e3ad702fdd98746666c2d30c51fe941a748c47396",
+        "currentSeedHash": "15700b8ff1c371150a5f83bfa4532448663a556eb7ecdff2ec87a59a222cb199",
+        "otherSeedRuleMismatches": ["fhs-toddler-development", "fhs-preschool-development", "fhs-child-vision"],
+        "scope": "Current repository seed/catalog comparison only; production deployment was not inspected and rule approvals were not changed"
+      }
     }
   ],
   "fixesAfterRealAttempts": [
@@ -70,7 +91,7 @@
     "Preserve previous failed work identities and usage"
   ],
   "limits": {
-    "realGenerationsTotal": 5,
+    "realGenerationsTotal": 6,
     "realEmbeddingsTotal": 0,
     "liveWebsiteFetches": 0,
     "cloudDataWrites": 0,
@@ -118,7 +139,7 @@
     "realModelCalls": 0,
     "externalNotifications": 0,
     "deployment": false,
-    "pending": "Real semantic review and publication after this fix"
+    "pending": "Real review completed once after this fix, but publication remains held by the existing seed/rule hash mismatch; see the fourth realModelAttempts entry"
   },
   "cleanup": "Local services stopped with checkpoint export; synthetic records and prior failures retained"
 }

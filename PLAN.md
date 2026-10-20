@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **次序：**先完成 [DEV-AGENT01](#dev-agent01) 本地正式運行環境，接續 [DEV-AGENT02](#dev-agent02) 四角色聯合接線，再做 [MODEL-SELF01／02](#model-self01) 個人模型及共用設定。使用者已批准本節完整計劃；Android 收束及未驗項保留，iOS 暫緩，不另造測試 Agent。
 
-**活動分支：**`codex/dev-agent02-current-roles`（draft #244），由 MODEL draft #242／`f6919b7` 接回 master `3795858`；#214／#215／#216／#243 已 review、修正並合併，保留原作者。基本本地聊天入口可用；背景持久工作、模型及原子發布已接 CLI，emulator 核對通過。最新 `c9bc5b6` 真整理／獨立審核完成，但審核要求進一步核對，候選保留而未發布；先前引用／格式失敗不改寫。#241／#242 及 Android draft #229／#234～#239 保留，尚未合併或部署本分支。舊 DEV02 `ce1d6f9` 的失敗／unknown 現場保留，不重發原 run。
+**活動分支：**`codex/dev-agent02-current-roles`（draft #244），由 MODEL draft #242／`f6919b7` 接回 master `3795858`；#214／#215／#216／#243 已 review、修正並合併，保留原作者。基本本地聊天入口可用；背景持久工作、模型及原子發布已接 CLI，emulator 核對通過。最新 `8873b76` 復用未變原文，只用一次真生成完成獨立審核；既有規則與種子 hash 不符，候選仍保留而未發布。先前引用／格式失敗不改寫，不再對同一樣本追加生成。#241／#242 及 Android draft #229／#234～#239 保留，尚未合併或部署本分支。舊 DEV02 `ce1d6f9` 的失敗／unknown 現場保留，不重發原 run。
 
 ### 保留的 Android 交付狀態
 
@@ -108,7 +108,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 聯合測試可用獨立本地整合分支及固定提交，保留原作者；已按使用者新授權合併協作者 PR；沿既有角色及服務補缺，不重造測試 Agent。缺接口列清由本輪承接；環境可啟動、角色已接及真模型已驗分開，#216 stub 不計真審核完成。
 - 真編製／獨立審核與同一文件確認保存已通過：修正 Java 子程序路徑及多餘的待確認狀態審核後，沿原限額完成一次真模型流程，文件只改指定標題，其餘章節不變；重新讀取同一版本。[失敗與成功證據](artifacts/verification/DEV_AGENT02_REAL_COMPOSE_20261020.json)分開保留，不重跑已通過項目。
 - 背景接線：共用原文整理／獨立審核已接 Firestore 工作、共同計量、模型結果保存、發布交易及 `agent:local -- --maintain-knowledge`。一條真 emulator／scripted provider 流程核對發布、重建服務後原工作查回、原文檢索與 unknown 不重送；兩項模型契約檢查及局部型別通過。[本次證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)保留所有失敗，沒有把 scripted 當真品質。
-- 真背景結果：首次一個生成因改寫短引停止；第二次兩個生成因 JSON 代碼框停止，查回原回應又發現舊引文不匹配。`c9bc5b6`／Prompt Pack 0.1.51 的第三次用了兩個生成，完成整理及獨立語義審核，結果為 `review_hold`／`requires_review`，未發布。三次共五個生成、零 embedding；全部原工作及用量保留，沒有為通過而放寬閘或繼續重跑。已定位未變原文被重新編製／命名：Prompt Pack 0.1.52 及正式維護接點會復用完整相同片段，並由 Server 核對實際成長規則綁定。三項局部檢查及本機持久發布流程通過；PDF 觀察正規化失敗已修正並保留。下一步只補修正版必要真語義發布，不重跑聊天；普通本地修改／測試不受此 gate 阻塞。
+- 真背景結果：首次一個生成因改寫短引停止；第二次兩個生成因 JSON 代碼框停止，查回原回應又發現舊引文不匹配。`c9bc5b6`／Prompt Pack 0.1.51 的第三次用了兩個生成，完成整理及獨立語義審核，結果為 `review_hold`／`requires_review`，未發布。三次共五個生成、零 embedding；全部原工作及用量保留，沒有為通過而放寬閘或繼續重跑。已定位未變原文被重新編製／命名：Prompt Pack 0.1.52 及正式維護接點會復用完整相同片段，並由 Server 核對實際成長規則綁定。三項局部檢查及本機持久發布流程通過；PDF 觀察正規化失敗已修正並保留。`8873b76` 補核只用一次真生成、零 embedding，已完成復用及獨立審核，但 Server 發現目前種子與既有成長規則 hash 不符，仍保留候選。本包背景累計六次生成，不再重跑同一樣本；先核來源／規則綁定，其他本地修改／測試不受此 gate 阻塞。
 - 本地背景查閱：`agent:local -- --inspect-knowledge[=<工作指紋>]` 直接讀原工作及候選／審核，不需要模型 key、不領取 lease 或發布。一次原 emulator 候選查回成功，原用量及待處理結果不變；確認本次候選沒有既有 `solid_food` 規則所綁定的 `starting-solids` key。保留該依賴待核，不放寬發布閘。方法見[本地入口](docs/AGENT_LOCAL.md#獨立背景知識維護)。
 - 本地非郵件收件箱已接正式 runtime／worker：Telegram 本機開始與確認、Web Push 合成訂閱、原操作防重及撤銷均通過；只保存加密預覽並回報未實際發送，不假報渠道接受。零真模型／通知；[證據](artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)的 `localDelivery20261020`。原生 Android 完整路徑未驗。
 - 尚欠：背景新版真發布及聊天引用、新對話模型接續與頁面聯合；真網站／多模態與長來源分批仍未完成，不以固定樣本達標。普通本地入口已可供協作者修改及測試，不必等這些 gate 才使用。DEV02、MODEL 真憑證及原 draft／Android gate 各自保留。
