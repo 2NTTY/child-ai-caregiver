@@ -123,5 +123,36 @@
     "indexes": []
   },
   "finalFreeDiskBytes": 529850368,
-  "cleanup": "Removed only this release code-build and web-build contexts after success; retained archives, manifests, prior images and protected rollback configuration"
+  "cleanup": "Removed only this release code-build and web-build contexts after success; retained archives, manifests, prior images and protected rollback configuration",
+  "deviceAcceptance20261020": {
+    "method": "One connected Android device through ADB; no Computer Use, model calls or notifications.",
+    "initialObservation": "Old installed UI read current production settings version 0. Only a local unsaved mode draft was changed and restored.",
+    "firstUpdatedStartup": "Authentication could not be confirmed after restarting into the first published OTA; acceptance stopped.",
+    "rootCause": "The ad-hoc Android export loaded Firebase public variables but omitted frontend/eas.json build.base.env. EXPO_PUBLIC_AUTH_PROVIDER was absent. The existing mobile:release implementation already merges these values.",
+    "repair": "Re-exported unchanged application source with the existing release environment merge, Android build configuration validation and a clean Metro cache. No product code, APK, credentials, quota or Server change.",
+    "repairedArchive": {
+      "files": 31,
+      "bytes": 13377168
+    },
+    "publication": {
+      "source": "c192cc6f00a7ea4d4ea07020487a398f29051670",
+      "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "channel": "preview",
+      "state": "published-device-verification-pending",
+      "updates": [
+        {
+          "id": "01a15988-21ef-738f-a738-a24913e0a74c",
+          "group": "b0cbacc3-cda5-4b9a-8057-fd1b85e199d2",
+          "runtimeVersion": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+          "platform": "android",
+          "createdAt": "2026-10-20T13:37:36.239Z"
+        }
+      ]
+    },
+    "deviceResult": "Repaired update now shows the normal email login screen. User sign-in is required before checking the new model form; not yet verified.",
+    "productionSettingsSaved": false,
+    "keyEntered": false,
+    "modelCalls": 0,
+    "notificationsSent": 0
+  }
 }
