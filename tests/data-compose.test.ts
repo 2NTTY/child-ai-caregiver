@@ -10,7 +10,7 @@ import {
   previewComposedSnapshot,
 } from "../server/data-compose.ts";
 import type { DocumentSnapshot } from "../src/shared/family-documents.ts";
-import type { DataComposeDraft } from "../src/shared/data-compose.ts";
+import type { DataComposeDraft, DataComposeReviewBinding } from "../src/shared/data-compose.ts";
 import { AGENT_LIMITS } from "../server/agent-budget.ts";
 
 const scope = {
@@ -121,6 +121,21 @@ test("unreviewed draft cannot become a formal save", async () => {
   assert.equal(accepted.status, "proposal");
   assert.equal(wrote, 0);
   assert.equal(proposed, 1);
+  let confirmations = 0;
+  for (const status of ["accepted", "dismissed", "expired"] as const) {
+    const replay = await finalizeComposedFamilyDocument({
+      draft: current, review: passRecord(current), promptVersion: "0.1.39", scope, runId: "run",
+      callId: "replayed-call", snapshot: snapshot(), sourceQuote: "請只改水壺",
+      agent: {
+        ...agent,
+        propose: async () => ({ id: "proposal", runId: "run", version: 2, status, result: null }),
+        requestConfirmation: async () => { confirmations++; },
+      } as never,
+    });
+    assert.equal(replay.status, "resolved");
+    if (replay.status === "resolved") assert.equal(replay.proposal.status, status);
+  }
+  assert.equal(confirmations, 0);
 });
 
 test("compose tool rejects self-approval and blocks formal save without review pass", async () => {
@@ -206,7 +221,7 @@ test("compose tool prepares confirmation after scripted draft and passing review
   assert.equal(result.status, "succeeded");
   assert.equal(result.data?.confirmationPrepared, true);
   assert.equal(result.data?.formalSave, false);
-  assert.equal(result.data?.review?.decision, "pass");
+  assert.equal((result.data?.review as DataComposeReviewBinding | undefined)?.decision, "pass");
   assert.equal(proposed, 1);
   assert.equal(confirmations, 1);
   assert.equal((proposeOptions as { composeReview?: { draftHash: string } } | undefined)?.composeReview?.draftHash,
@@ -323,14 +338,14 @@ test("shared budget of 4 covers real compose+review after two outer model turns"
   const agent = {
     writeDocument: async () => { throw new Error("content edits use proposals"); },
     propose: async (_s: unknown, _r: unknown, _c: unknown, _v: unknown, options?: { composeReview?: unknown }) => {
-      assert.ok(options?.composeReview);
+      assert.equal((options?.composeReview as { model: string })?.model, "gemini-2.5-flash");
       return { id: "22222222-2222-4222-8222-222222222222", runId: "11111111-1111-4111-8111-111111111111",
         version: 1, status: "pending" };
     },
     requestConfirmation: async () => {},
   };
   const run = {
-    scope, runId: "11111111-1111-4111-8111-111111111111",
+    scope, model: "gemini-2.5-flash", runId: "11111111-1111-4111-8111-111111111111",
     budget: {
       get remainingModelCalls() { return remaining; },
       toolResponseCharacters: 8000,
@@ -340,6 +355,8 @@ test("shared budget of 4 covers real compose+review after two outer model turns"
       assert.ok(remaining >= 1, "must stay within shared budget of 4");
       remaining -= 1;
       modelCalls += 1;
+      const payload = JSON.parse(input.user!.slice(input.user!.indexOf("{")));
+      assert.equal(payload.outputSchema.type, "object");
       // Real path: first spend is compose draft, second is independent review — not scriptedDraft.
       if (modelCalls === 1) {
         assert.match(String(input.attemptKey ?? input.user ?? ""), /data-compose/);
@@ -390,7 +407,7 @@ test("nullable document snapshot is rejected without narrowing crash", async () 
     }),
   };
   const run = {
-    scope, runId: "11111111-1111-4111-8111-111111111111",
+    scope, model: "gemini-3.1-flash-lite", runId: "11111111-1111-4111-8111-111111111111",
     budget: { remainingModelCalls: 2, toolResponseCharacters: 8000 },
     authorize: async () => true,
   };

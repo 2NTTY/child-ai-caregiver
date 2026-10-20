@@ -80,9 +80,6 @@ export function createVertexAgentProvider(config: AiConfig): AgentModelProvider 
 export class AgentGatewayModel extends BaseLlm {
   failure?: AgentStopped;
   private providerCalled = false;
-  /** One server-scheduled call, such as semantic review. Not a session-derived generator key. */
-  private pinnedAttemptKey?: string;
-  attemptKeyOverride(): string | undefined { return this.pinnedAttemptKey; }
   private readonly options: {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
@@ -101,18 +98,20 @@ export class AgentGatewayModel extends BaseLlm {
       contents: [{ role: "user", parts: [{ text: input.user }] }],
       config: { systemInstruction: input.system },
       toolsDict: {},
+      liveConnectConfig: {},
     };
-    this.pinnedAttemptKey = input.attemptKey;
-    try {
-      let text = "";
-      for await (const response of this.generateContentAsync(request)) {
-        const parts = response.content?.parts ?? [];
-        if (parts.some(part => part.functionCall)) throw new AgentStopped("invalid_tool");
-        text += parts.filter(part => !part.thought && typeof part.text === "string").map(part => part.text).join("");
-      }
-      if (!text.trim()) throw new AgentStopped("invalid_response");
-      return text;
-    } finally { this.pinnedAttemptKey = undefined; }
+    // Share accounting and authority, never the generator's summary or tool context.
+    const { config, provider, usage, budget, userId, childId, authorize, durableDailyUsage } = this.options;
+    const reviewer = new AgentGatewayModel({ config, provider, usage, budget, userId, childId, authorize,
+      durableDailyUsage, modelAttemptKey: () => input.attemptKey });
+    let text = "";
+    for await (const response of reviewer.generateContentAsync(request)) {
+      const parts = response.content?.parts ?? [];
+      if (parts.some(part => part.functionCall)) throw new AgentStopped("invalid_tool");
+      text += parts.filter(part => !part.thought && typeof part.text === "string").map(part => part.text).join("");
+    }
+    if (!text.trim()) throw new AgentStopped("invalid_response");
+    return text;
   }
   async *generateContentAsync(request: LlmRequest): AsyncGenerator<LlmResponse, void> {
     try { yield* this.generateBounded(request); }

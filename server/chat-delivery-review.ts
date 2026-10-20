@@ -43,7 +43,8 @@ export interface ChatDeliveryDraft {
   visibility: "private" | "family";
   /** Server replaced model wording with current reviewed source text. Not a generator skip. */
   serverSubstitutedSourceText: boolean;
-  paragraphs: { text: string; citationIds: string[] }[];
+  serverSubstitutedReceiptText?: boolean;
+  paragraphs: { kind?: AgentAnswer["kind"]; text: string; citationIds: string[] }[];
   sources: ChatDeliverySource[];
   scope: AgentScope;
 }
@@ -88,9 +89,6 @@ export const SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS = new Set<string>([
 const CARE_DOMAIN_PATTERN = /新生兒|嬰兒|寶寶|幼兒|BB\b|月齡|個月大|個月以下|月以下|加鹽|餵食|餵奶|服藥|劑量|體溫|發燒|疫苗|母乳|配方奶|照護建議|治療|就醫|症狀|危及生命|蜂蜜|蜜糖|止咳|退燒|腹瀉|固體食物|加固|營養|藥物|抗生素|newborns?|infants?|babies|baby\b|toddlers?|fever|vaccine|dosage|medication|breast\s*milk|formula\s*milk|honey|cough|diarrh(?:oa|ea)|solid foods?|nutrition|antibiotics?/iu;
 const CARE_ADVISORY_PATTERN = /應立即|應該|必須|建議(?:你|您|家長)?|不要給|不可給|可以每天|唔好畀|唔可以畀|唔好食|唔可以食|每日(?:都)?(?:要|可以)|趴低|瞓覺時|should(?:\s+not)?|must(?:\s+not)?|recommend(?:ed|s)?|don'?t\s+give|do\s+not\s+give|avoid\s+giving|try\s+(?:to\s+)?giv(?:e|ing)|would\s+you\s+(?:try|give|put)|giv(?:e|ing)\s+(?:\w+\s+){0,3}(?:baby|infant|child|newborn|孩子|BB)|put\s+(?:your\s+)?(?:child|baby|infant).{0,40}(?:sleep|stomach)|you\s+can\s+give|every\s+day|on\s+their\s+stomach/iu;
 
-/** Low-risk operation receipts. Positive skip signal; never inferred from model kind alone. */
-const OPERATION_RECEIPT_PATTERN = /^(?:已(?:儲存|保存|建立|更新|設定|記錄|完成|送出|寫入)|任務已|提醒已|操作已|已將|已為)|saved\s+(?:the\s+)?(?:task|reminder|record)|created\s+(?:a\s+)?(?:task|reminder)|updated\s+(?:the\s+)?(?:task|reminder|record)|reminder\s+set/iu;
-
 function joinedDraftText(draft: ChatDeliveryDraft): string {
   return draft.paragraphs.map(paragraph => paragraph.text).join("\n").trim();
 }
@@ -110,14 +108,6 @@ export function isPureClarifyingQuestion(text: string): boolean {
     if (/[。．.!！；;]/u.test(body)) return false;
   }
   return true;
-}
-
-/** Server-recognised low-risk receipt wording, not generator self-labels. */
-export function looksLikeLowRiskOperationReceipt(text: string): boolean {
-  const trimmed = text.trim();
-  if (!trimmed || trimmed.length > 160) return false;
-  if (CARE_ADVISORY_PATTERN.test(trimmed)) return false;
-  return OPERATION_RECEIPT_PATTERN.test(trimmed);
 }
 
 export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): boolean {
@@ -140,17 +130,16 @@ export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft): boolean 
  * The generating model's kind alone never grants a skip: caregiving labels force review,
  * and citation-free wording that still looks like care advice also forces review.
  * Only trusted server exemptions may skip: exact allowlisted UI text, pure clarifying
- * questions, and low-risk operation receipts. Unknown wording fails closed into review;
+ * questions, and Server-substituted operation receipts. Unknown wording fails closed into review;
  * a keyword miss must not grant an exemption.
  */
 export function requiresChatDeliveryReview(draft: ChatDeliveryDraft): boolean {
-  if (draft.serverSubstitutedSourceText) return false;
+  if (draft.serverSubstitutedSourceText || draft.serverSubstitutedReceiptText) return false;
   if (draft.sources.length > 0) return true;
   if (draft.kind === "caregiving" || draft.kind === "safety_help" || draft.kind === "private_reference") return true;
   const text = joinedDraftText(draft);
   if (SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS.has(text)) return false;
-  // Trusted receipts win over care-domain nouns (e.g. 寶寶 in a saved feeding receipt).
-  if (looksLikeLowRiskOperationReceipt(text)) return false;
+  // Model-written receipt-like wording is not proof of a saved operation.
   if (isPureClarifyingQuestion(text)) return false;
   if (draftLooksLikeSubstantiveCareAdvice(draft)) return true;
   // Fail closed: unknown citation-free wording needs review unless a trusted exemption matched.
@@ -161,7 +150,7 @@ export function chatDeliveryDraftHash(draft: ChatDeliveryDraft): string {
   return sha256({
     kind: draft.kind,
     visibility: draft.visibility,
-    paragraphs: draft.paragraphs.map(paragraph => ({ text: paragraph.text, citationIds: [...paragraph.citationIds] })),
+    paragraphs: draft.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] })),
     sources: draft.sources.map(source => ({ citationId: source.citationId, version: source.version, contentHash: source.contentHash }))
       .sort((left, right) => left.citationId < right.citationId ? -1 : left.citationId > right.citationId ? 1 : 0),
   });
@@ -185,7 +174,7 @@ function reviewPayload(draft: ChatDeliveryDraft, draftHash: string) {
     draftHash,
     kind: draft.kind,
     visibility: draft.visibility,
-    paragraphs: draft.paragraphs.map((paragraph, index) => ({ index, text: paragraph.text, citationIds: paragraph.citationIds })),
+    paragraphs: draft.paragraphs.map((paragraph, index) => ({ index, ...paragraph })),
     sources: draft.sources.map(source => ({
       citationId: source.citationId, version: source.version, contentHash: source.contentHash,
       classification: source.classification, excerptComplete: source.excerptComplete, excerpt: source.excerpt,

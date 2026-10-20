@@ -62,10 +62,10 @@ export function createDueWorkContinuationTools(run: AgentRunContext, authorize: 
     if (answer.kind === "no_action") return { outcome: "no_action", text: "", citations: [], retrievalMode: "not_used" };
     return { text: answer.paragraphs.map(item => item.text).join("\n\n"), citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
   }, deliveryDraft(): ChatDeliveryDraft | null {
-    if (!answer) return null;
+    if (!answer || answer.kind === "no_action") return null;
     return { kind: answer.kind, visibility: "private", serverSubstitutedSourceText: false,
       paragraphs: answer.paragraphs.map(item => ({ text: item.text, citationIds: [...item.citationIds] })), sources: [], scope: run.scope };
-  }, replaceDeliveryAnswer(next) {
+  }, replaceDeliveryAnswer(next: unknown) {
     const parsed = agentAnswerSchema.parse(next);
     if (!["clarification", "record_restatement"].includes(parsed.kind) || parsed.paragraphs.some(item => item.citationIds.length)) {
       throw new FamilyError(400, "work_continuation_presentation_scope");
@@ -123,6 +123,7 @@ export function createProductAgentTools(options: {
   const evidence = new Map<string, { chunk: KnowledgeEvidence; filter: KnowledgeFilter }>();
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
+  let serverReceiptText: string | null = null;
   async function current(pages: { factsAfterId?: string; topicsAfterId?: string } = {}) {
     const value = await memory.context(scope.userId, scope.childId, options.visibility ?? "private", pages);
     if (!value) throw new AgentStopped("unauthorized"); return value;
@@ -312,7 +313,7 @@ export function createProductAgentTools(options: {
         // and generator fields such as approved or skipReview are not in this schema.
         const parsed = options.background ? agentBackgroundAnswerSchema.parse(args) : agentAnswerSchema.parse(args);
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
-        acceptPresentedAnswer(parsed);
+        if (parsed.kind !== "no_action") acceptPresentedAnswer({ ...parsed, kind: parsed.kind });
         answer = parsed;
         return { acceptedForValidation: true, ...(options.reviewedGrowthPresentation
           ? { presentationPolicy: "reviewed_evidence", modelTextUsed: false } : {}) };
@@ -360,6 +361,7 @@ export function createProductAgentTools(options: {
     summaryDraft: () => summaryInput && summaryText ? { previousVersion: summaryInput.previousVersion, basis: summaryInput.basis,
       coveredMessageIds: summaryInput.messages.map(message => message.id), text: summaryText } : undefined,
     async presentation(): Promise<AgentPresentation | null> {
+      serverReceiptText = null;
       if (!answer) return null;
       if (answer.kind === "no_action") {
         if (!options.background || contactReference || !await authorize()) throw new AgentStopped("unauthorized");
@@ -379,6 +381,14 @@ export function createProductAgentTools(options: {
         } else if (!await retrieval.revalidateCitations([chunk], filter)) throw new AgentStopped("invalid_response");
       }
       if (!await authorize()) throw new AgentStopped("unauthorized");
+      if (answer.kind === "operation" && ids.length === 0 && options.actions) {
+        const receipts = await options.actions.receipts(scope.userId, scope.childId, runId);
+        if (!await authorize() || !receipts) throw new AgentStopped("unauthorized");
+        if (receipts.length) {
+          serverReceiptText = `已保存 ${receipts.length} 項操作。請查看操作結果；已安排不代表已發出通知或照護事項完成。`;
+          return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+        }
+      }
       // Growth advice uses the reviewed source wording; model labels cannot bypass this policy.
       const paragraphs = options.reviewedGrowthPresentation
         ? (citations.length ? citations.map(({ chunk }) => ({ text: reviewedText.get(chunk.chunkId)!, citationIds: [chunk.chunkId] }))
@@ -389,7 +399,7 @@ export function createProductAgentTools(options: {
       return { text: rendered, citations: citations.map(item => item.chunk), privateSourceCitations, retrievalMode: mode };
     },
     deliveryDraft(): ChatDeliveryDraft | null {
-      if (!answer) return null;
+      if (!answer || answer.kind === "no_action") return null;
       const sources: ChatDeliverySource[] = [];
       for (const id of new Set(answer.paragraphs.flatMap(paragraph => paragraph.citationIds))) {
         const source = deliverySource(id);
@@ -397,10 +407,12 @@ export function createProductAgentTools(options: {
       }
       return { kind: answer.kind, visibility: options.visibility === "family" ? "family" : "private",
         serverSubstitutedSourceText: Boolean(options.reviewedGrowthPresentation),
-        paragraphs: answer.paragraphs.map(paragraph => ({ text: paragraph.text, citationIds: [...paragraph.citationIds] })),
+        serverSubstitutedReceiptText: serverReceiptText !== null,
+        paragraphs: serverReceiptText ? [{ text: serverReceiptText, citationIds: [] }]
+          : answer.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] })),
         sources, scope };
     },
-    replaceDeliveryAnswer(next) {
+    replaceDeliveryAnswer(next: unknown) {
       const parsed = agentAnswerSchema.parse(next);
       acceptPresentedAnswer(parsed);
       answer = parsed;
