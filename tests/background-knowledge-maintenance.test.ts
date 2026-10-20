@@ -5,9 +5,10 @@ import {
   BACKGROUND_KNOWLEDGE_ROLE_ID, M03_INITIAL_WATCH_IDS,
   allowLiveBackgroundKnowledgePublish, backgroundKnowledgeOperationFingerprint,
   backgroundKnowledgeReviewMatchesCandidate,
-  createBackgroundKnowledgeMaintenanceRunner, createProgrammaticKnowledgeReviewStub,
+  createBackgroundKnowledgeMaintenanceRunner as createRunner, createProgrammaticKnowledgeReviewStub,
   m03InitialWatchDefinitions, rejectPrivateMaintenanceScope, resolveM03Watch,
   type BackgroundKnowledgeCandidate, type KnowledgeSemanticReviewPort,
+  type BackgroundKnowledgeMaintenanceConfig, type BackgroundKnowledgeMaintenancePorts,
 } from "../server/background-knowledge-maintenance.ts";
 import { SOURCE_WATCHES } from "../server/knowledge-source-catalog.ts";
 import { observationHash } from "../server/knowledge-observation.ts";
@@ -33,6 +34,13 @@ const fingerprint = (watchId: string, slot = "slot-1") => backgroundKnowledgeOpe
   watchId, revision: "00000000-0000-4000-8000-000000000001",
   workerGeneration: "00000000-0000-4000-8000-000000000002", slot,
 });
+
+// Existing cases inject offline fixtures explicitly; no network transport is exercised.
+function createBackgroundKnowledgeMaintenanceRunner(
+  config: BackgroundKnowledgeMaintenanceConfig, ports: BackgroundKnowledgeMaintenancePorts,
+) {
+  return createRunner(config, { ...ports, fixtureFetch: ports.fetch });
+}
 
 function mockFetcher(byId: Record<string, ObservedContent | { status: "failed"; reason: "network" } | { status: "unavailable"; httpStatus: 404 }>): SourceFetcher {
   return async (definition) => {
@@ -70,6 +78,52 @@ test("M03 first-round allowlist is exactly one FHS page and one PDF from the cat
   assert.ok(selected.every(definition => definition.publisher.includes("家庭健康服務")));
   assert.equal(resolveM03Watch("chp-recent"), null);
   assert.equal(resolveM03Watch("fhs-toddler-development"), null);
+});
+
+test("review fixes: live gates and worker replacement do not reopen side effects", async () => {
+  let fetched = 0, reviewed = 0, published = 0;
+  const ports: BackgroundKnowledgeMaintenancePorts = {
+    fetch: async () => { fetched++; return { status: "ok", items: [pageItem()] }; },
+    review: { review: async candidate => { reviewed++; return modelReviewPort().review(candidate); } },
+    publish: async () => { published++; return { published: true }; },
+  };
+  const request = {
+    watchId: "fhs-solid-food" as const, operationFingerprint: fingerprint("fhs-solid-food"),
+    workerGeneration: "00000000-0000-4000-8000-000000000002", publishMode: "live" as const,
+  };
+  const offline = await createRunner({ enabled: true, liveFetch: false, livePublish: false }, ports).start(request);
+  assert.equal(offline.code, "background_knowledge_fetch_disabled");
+  const live = await createRunner({ enabled: true, liveFetch: true, livePublish: true }, ports).start(request);
+  assert.equal(live.code, "background_knowledge_live_not_connected");
+  assert.deepEqual([fetched, reviewed, published], [0, 0, 0]);
+  const identity = { watchId: "fhs-solid-food", revision: "v1", slot: "durable-occurrence-1" };
+  assert.equal(
+    backgroundKnowledgeOperationFingerprint({ ...identity, workerGeneration: "old" }),
+    backgroundKnowledgeOperationFingerprint({ ...identity, workerGeneration: "replacement" }),
+  );
+});
+
+test("review fixes: PDF coverage is checked before an injected review or unchanged result", async () => {
+  let reviews = 0;
+  const valid = pdfItem();
+  for (const [item, code] of [
+    [{ ...valid, pages: undefined }, "pdf_coverage_missing"],
+    [{ ...valid, pages: [{ page: 4, text: "outside", status: "text" as const }] }, "pdf_scope_invalid"],
+  ] as const) {
+    const runner = createRunner({ enabled: true, liveFetch: false, livePublish: false }, {
+      fetch: async () => { throw new Error("network disabled"); },
+      fixtureFetch: mockFetcher({ "fhs-feeding-booklet-en": item }),
+      readObservation: async () => ({ contentHash: observationHash(item), unavailable: false }),
+      review: { review: async candidate => { reviews++; return modelReviewPort().review(candidate); } },
+    });
+    const result = await runner.start({
+      watchId: "fhs-feeding-booklet-en", operationFingerprint: fingerprint("fhs-feeding-booklet-en", code),
+      workerGeneration: "00000000-0000-4000-8000-000000000002",
+    });
+    assert.equal(result.code, code);
+    assert.equal(result.published, false);
+  }
+  assert.equal(reviews, 0);
 });
 
 test("disabled runner returns not_enabled and never reports published success", async () => {
@@ -172,7 +226,8 @@ test("PDF fixture follows reviewed page window; unreadable page stays candidate"
   });
   assert.equal(result.status, "candidate_held");
   assert.equal(result.published, false);
-  assert.equal(result.review?.decision, "hold_candidate");
+  assert.equal(result.code, "pdf_coverage_incomplete");
+  assert.equal(result.review, undefined);
 });
 
 test("AC-P2M-04: redelivery is idempotent and budget does not reset on restart", async () => {
@@ -270,15 +325,14 @@ test("216B: live publish rejects programmatic stub even when livePublish is on",
     workerGeneration: "00000000-0000-4000-8000-000000000002",
     publishMode: "live",
   });
-  assert.equal(result.status, "rejected");
-  assert.equal(result.code, "live_requires_model_review");
+  assert.equal(result.status, "not_enabled");
+  assert.equal(result.code, "background_knowledge_live_not_connected");
   assert.equal(result.published, false);
-  assert.equal(result.review?.reviewKind, "programmatic_stub");
-  assert.equal(result.review?.modelReviewCompleted, false);
+  assert.equal(result.review, undefined);
   assert.equal(published, 0);
 });
 
-test("216A: parallel same fingerprint publishes only once", async () => {
+test("216A: parallel same fingerprint publishes only once", { skip: "Requires transactional fenced publisher; live entry is disabled." }, async () => {
   let published = 0;
   let releaseGate!: () => void;
   const gate = new Promise<void>(resolve => { releaseGate = resolve; });
@@ -315,7 +369,7 @@ test("216A: parallel same fingerprint publishes only once", async () => {
   assert.equal(first.published && second.published, false);
 });
 
-test("216C: cancelled signal before publish does not publish", async () => {
+test("216C: cancelled signal before publish does not publish", { skip: "Requires transactional fenced publisher; live entry is disabled." }, async () => {
   let published = 0;
   const controller = new AbortController();
   const runner = createBackgroundKnowledgeMaintenanceRunner(
@@ -374,7 +428,7 @@ test("216D: publish requires review binding to match candidate watch/hash/policy
   }, candidate), false);
 });
 
-test("216B/D: model review binding can authorize scripted live publish once", async () => {
+test("216B/D: model review binding can authorize scripted live publish once", { skip: "Requires transactional fenced publisher; live entry is disabled." }, async () => {
   let published = 0;
   const item = pageItem("模型審核後發布");
   const runner = createBackgroundKnowledgeMaintenanceRunner(
@@ -411,7 +465,7 @@ test("216B/D: model review binding can authorize scripted live publish once", as
   assert.equal(published, 1);
 });
 
-test("216D: tampered review binding is rejected before publish", async () => {
+test("216D: tampered review binding is rejected before publish", { skip: "Requires transactional fenced publisher; live entry is disabled." }, async () => {
   let published = 0;
   const runner = createBackgroundKnowledgeMaintenanceRunner(
     { enabled: true, liveFetch: true, livePublish: true },
@@ -524,7 +578,7 @@ test("F1: expired lease after stall cannot overwrite budget/result of later runn
   assert.ok((budgets.get(key)?.usedUnits ?? 0) >= budgetAfterB);
 });
 
-test("F2: publish+receipt then saveResult failure restores receipt hash instead of publishing newer source", async () => {
+test("F2: publish+receipt then saveResult failure restores receipt hash instead of publishing newer source", { skip: "Requires transactional fenced publisher; live entry is disabled." }, async () => {
   const key = fingerprint("fhs-solid-food", "f2-receipt");
   const budgets = new Map();
   const results = new Map();
@@ -588,7 +642,7 @@ test("F2: publish+receipt then saveResult failure restores receipt hash instead 
   assert.notEqual(restored.observationHash, observationHash(itemB));
 });
 
-test("F3: abort during deferred loadPublishReceipt does not call publisher", async () => {
+test("F3: abort during deferred loadPublishReceipt does not call publisher", { skip: "Requires transactional fenced publisher; live entry is disabled." }, async () => {
   let published = 0;
   let releaseReceipt;
   const receiptGate = new Promise((resolve) => { releaseReceipt = resolve; });

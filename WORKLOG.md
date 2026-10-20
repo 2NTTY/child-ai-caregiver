@@ -2756,3 +2756,17 @@
 - 修正審核錯用聊天摘要／能力上下文、背景 no_action 型別，以及只按模型文字免審；真收據固定回報由 Server 產生。分段 kind 納入綁定，提示詞預留審核餘額。
 - 6 項定向 scripted 核對通過；局部型別先遇既有測試的兩處 unknown 參數型別，統一原生 LlmResponse 後通過。沒有重跑產品全量、真模型、通知、雲端或部署。
 - 證據：[M01 review](artifacts/verification/P3_M01_PR_REVIEW_20261020.json)。真模型語義品質仍待驗；下一包 #215 依賴本包合併。
+
+<a id="log-20261020-p3-m02-review"></a>
+## LOG-20261020-P3-M02-REVIEW
+
+- 接續 #215 原 head `aff6804`，整合已合併 #214／`2f8e339`，保留原提交。補編製及審核輸出 schema、實際 run 模型綁定、原意圖／證據呼叫識別，以及已接受／略過／過期候選的真實回報。
+- 3 項定向 scripted 檢查通過；局部型別初次發現測試 fixture 的 3 處型別問題，修正後通過。審核 prompt 版本作來源記錄，policy 版本才是已保存審核的失效邊界；沒有找到現行跨 run 重用審核的路徑。
+- [review 證據](artifacts/verification/P3_M02_PR_REVIEW_20261020.json)。未跑真模型、雲端、瀏覽器、全量或部署；本次只交既有文件局部編製，完整真模型及新對話成果由本地角色整合接續。
+
+<a id="log-20261020-p3-m03-review"></a>
+## LOG-20261020-P3-M03-REVIEW
+
+- 接續 #216 最新 restack `eff2e66`，整合 #215 master `fbf5274`。保留原候選流程，修正 live fetch 關閉仍可呼叫網絡 port、PDF 頁窗缺失／越界未獨立攔截，以及 worker 替換改變邏輯工作 fingerprint。
+- 確認發布 lease 與實際持久寫入未原子綁定；未以多加一次檢查冒充 fencing。正式 live 發布在有副作用前明確停用，下一步須接正式交易／台帳與真模型；6 項舊模擬 live 測試保留為待接通，不算本輪通過。
+- 4 項定向 scripted 與局部 Server 型別通過；[review 證據](artifacts/verification/P3_M03_PR_REVIEW_20261020.json)。零真模型、外網抓取、雲端、通知及部署。合併只代表安全保留基礎，不代表 P3-M03 或四 Agent 目標完成。

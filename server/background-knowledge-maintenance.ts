@@ -68,6 +68,8 @@ export interface KnowledgeSemanticReviewPort {
 export interface BackgroundKnowledgeMaintenancePorts {
   /** Injected fetcher. Production live fetch stays gated by config.liveFetch. */
   fetch: SourceFetcher;
+  /** Explicit offline fixtures. Never alias a network fetcher at production assembly. */
+  fixtureFetch?: SourceFetcher;
   /** Optional prior observation for compare / idempotent redelivery. */
   readObservation?(watchId: string): Promise<BackgroundKnowledgeObservationState | null>;
   /** Optional durable budget ledger. In-memory ledger is used when omitted (tests). */
@@ -76,15 +78,15 @@ export interface BackgroundKnowledgeMaintenancePorts {
   /** Recorded fingerprints so the same operation does not double-publish. */
   loadResult?(operationFingerprint: string): Promise<BackgroundKnowledgeRunResult | null>;
   saveResult?(operationFingerprint: string, result: BackgroundKnowledgeRunResult): Promise<void>;
-  /** Exclusive claim/lease so parallel retries cannot both publish. Renew with the same leaseToken to extend. */
+  /** Candidate-work lease. This alone does not fence an asynchronous publication transaction. */
   claimOperation?(operationFingerprint: string, leaseToken: string, leaseUntilMs: number): Promise<BackgroundKnowledgeClaimOutcome>;
   releaseOperation?(operationFingerprint: string, leaseToken: string): Promise<void>;
   /** Crash-safe publish receipt keyed by operation fingerprint. */
   loadPublishReceipt?(operationFingerprint: string): Promise<BackgroundKnowledgePublishReceipt | null>;
   savePublishReceipt?(operationFingerprint: string, receipt: BackgroundKnowledgePublishReceipt): Promise<void>;
   /**
-   * Formal publish hook. Only called when livePublish is true and model review approves.
-   * Must be idempotent on watchId + observationHash. Must not modify medical/growth execution rules.
+   * Reserved integration hook. Live publication is blocked until its transaction
+   * atomically fences the lease, budget, publication pointer and durable receipt.
    */
   publish?(candidate: BackgroundKnowledgeCandidate, review: BackgroundKnowledgeReviewBinding): Promise<{ published: boolean; code?: string }>;
   review?: KnowledgeSemanticReviewPort;
@@ -92,6 +94,21 @@ export interface BackgroundKnowledgeMaintenancePorts {
 
 function isInitialWatchId(value: string): value is M03InitialWatchId {
   return (M03_INITIAL_WATCH_IDS as readonly string[]).includes(value);
+}
+
+/** Independently enforce extraction coverage; a model pass cannot expand it. */
+function pdfCoverageIssue(candidate: BackgroundKnowledgeCandidate): string | null {
+  if (candidate.definition.kind !== "pdf") return null;
+  const window = candidate.definition.pdfPages;
+  const extraction = candidate.observed.extraction;
+  const pages = candidate.observed.pages;
+  if (!window || !extraction || !pages?.length) return "pdf_coverage_missing";
+  if (extraction.pageStart !== window.startPage || extraction.pageEnd !== window.endPage
+    || pages.some(page => page.page < window.startPage || page.page > window.endPage)) return "pdf_scope_invalid";
+  const expected = window.endPage - window.startPage + 1;
+  if (pages.length !== expected || new Set(pages.map(page => page.page)).size !== expected
+    || pages.some(page => page.status === "unreadable")) return "pdf_coverage_incomplete";
+  return null;
 }
 
 /** Resolve only the first-round M03 pair from the reviewed catalog. */
@@ -185,19 +202,10 @@ export function createProgrammaticKnowledgeReviewStub(): KnowledgeSemanticReview
         decision = "hold_candidate";
         notes.push("observed text empty");
       }
-      if (candidate.definition.kind === "pdf") {
-        const pages = candidate.observed.pages ?? [];
-        const window = candidate.definition.pdfPages;
-        if (!window || !candidate.observed.extraction) {
-          decision = "hold_candidate";
-          notes.push("pdf extraction or page window missing");
-        } else if (pages.some(page => page.status === "unreadable")) {
-          decision = "hold_candidate";
-          notes.push("pdf page unreadable; keep as candidate");
-        } else if (pages.some(page => page.page < window.startPage || page.page > window.endPage)) {
-          decision = "reject_out_of_scope";
-          notes.push("pdf page outside reviewed window");
-        }
+      const coverageIssue = pdfCoverageIssue(candidate);
+      if (coverageIssue) {
+        decision = coverageIssue === "pdf_scope_invalid" ? "reject_out_of_scope" : "hold_candidate";
+        notes.push(coverageIssue);
       }
       // Stub never invents growth-rule changes; uncertain medical impact stays held.
       if (/\b(dose|dosage|mg|ml|vaccine|臨床|劑量)\b/iu.test(candidate.observed.text)
@@ -289,6 +297,19 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     const request = backgroundKnowledgeRunRequestSchema.parse(raw);
     if (!config.enabled) {
       return backgroundKnowledgeRunResultSchema.parse({ status: "not_enabled", code: "background_knowledge_disabled", published: false });
+    }
+    // No production durable/fenced publisher is wired in this slice. Flags and
+    // an injected model-review label must not turn the prototype into a live writer.
+    if (config.livePublish && request.publishMode === "live") {
+      return backgroundKnowledgeRunResultSchema.parse({
+        status: "not_enabled", code: "background_knowledge_live_not_connected", published: false,
+      });
+    }
+    const fetchSource = config.liveFetch ? ports.fetch : ports.fixtureFetch;
+    if (!fetchSource) {
+      return backgroundKnowledgeRunResultSchema.parse({
+        status: "not_enabled", code: "background_knowledge_fetch_disabled", published: false,
+      });
     }
     const prior = await loadResult(request.operationFingerprint);
     if (prior) {
@@ -457,7 +478,7 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     }
     let fetched: SourceFetchResult;
     try {
-      fetched = await ports.fetch(definition, signal);
+      fetched = await fetchSource(definition, signal);
     } catch {
       return finish({ status: "fetch_failed", code: "fetch_threw", watchId: request.watchId, observationHash: previous?.contentHash ?? null, published: false, publishMode: request.publishMode });
     }
@@ -496,6 +517,18 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       return finish({ status: "rejected", code: "fetch_url_mismatch", watchId: request.watchId, published: false, publishMode: request.publishMode });
     }
     const hash = observationHash(observed);
+    const candidate: BackgroundKnowledgeCandidate = {
+      watchId: request.watchId, definition, observed, observationHash: hash,
+      previousObservationHash: previous?.contentHash ?? null,
+    };
+    const coverageIssue = pdfCoverageIssue(candidate);
+    if (coverageIssue) {
+      return finish({
+        status: coverageIssue === "pdf_scope_invalid" ? "rejected" : "candidate_held",
+        code: coverageIssue, watchId: request.watchId, observationHash: hash,
+        published: false, publishMode: request.publishMode,
+      });
+    }
     if (previous && !previous.unavailable && previous.contentHash === hash) {
       const review = backgroundKnowledgeReviewBindingSchema.parse({
         watchId: request.watchId, observationHash: hash, previousObservationHash: previous.contentHash,
@@ -509,10 +542,6 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: hash, published: false, publishMode: request.publishMode });
     }
 
-    const candidate: BackgroundKnowledgeCandidate = {
-      watchId: request.watchId, definition, observed, observationHash: hash,
-      previousObservationHash: previous?.contentHash ?? null,
-    };
     const review = await reviewPort.review(candidate, signal);
     if (signal.aborted) {
       return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: request.publishMode });
@@ -607,7 +636,9 @@ export type BackgroundKnowledgeMaintenanceRunner = ReturnType<typeof createBackg
 export function backgroundKnowledgeOperationFingerprint(parts: {
   watchId: string; revision: string; workerGeneration: string; slot: string;
 }): string {
+  // Slot is the durable scheduled occurrence, never a retry timestamp.
+  // Worker replacement must not create fresh budget for the same logical work.
   return createHash("sha256").update(JSON.stringify([
-    BACKGROUND_KNOWLEDGE_ROLE_ID, parts.watchId, parts.revision, parts.workerGeneration, parts.slot,
+    BACKGROUND_KNOWLEDGE_ROLE_ID, parts.watchId, parts.revision, parts.slot,
   ])).digest("hex");
 }

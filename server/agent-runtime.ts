@@ -100,6 +100,8 @@ export interface AgentTool {
   execute: (args: Record<string, unknown>, context: { scope: Readonly<AgentScope>; runId: string; callId: string; signal: AbortSignal; queryEmbeddingAttemptKey?: string }) => Promise<AgentToolResult>;
 }
 export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; budget: AgentBudget;
+  /** Server-selected model for this run, including personal routing. */
+  model?: string;
   authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway;
   /** Tool-free call on this root budget. Chat delivery review uses it; the generator cannot invoke it. */
   completeText?: (input: { system: string; user: string; attemptKey: string }) => Promise<string>; }
@@ -266,7 +268,7 @@ export function createAgentRuntime(options: {
           budget.check();
           if (!input.messages.length || input.messages.at(-1)?.role !== "user"
             || input.messages.some(message => !message.text.trim() || /[\u0000\uD800-\uDFFF]/u.test(message.text))) throw new AgentStopped("invalid_response");
-          const runContext: AgentRunContext = { scope, runId, budget, authorize,
+          const runContext: AgentRunContext = { scope, runId, budget, authorize, model: selected.config.model,
             embeddings: "embeddings" in selected ? selected.embeddings : undefined };
           const configuredTools = [...(typeof input.tools === "function" ? input.tools(runContext) : input.tools)];
           const capabilitySelection = input.toolCatalog ? new AgentCapabilitySelection(configuredTools, input.toolCatalog) : undefined;
