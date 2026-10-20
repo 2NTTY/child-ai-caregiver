@@ -1,0 +1,127 @@
+{
+  "package": "MODEL-SELF02",
+  "date": "2026-10-20",
+  "branch": "codex/model-self02-delivery",
+  "source": "ad4de88762be75cee280779a33bf2ce289b5f63a",
+  "state": "deployed-and-ota-published-device-and-live-key-verification-pending",
+  "checks": [
+    {
+      "name": "production-web-build",
+      "result": "passed",
+      "environment": "Node 24.19.0, existing Web public Firebase configuration",
+      "routes": 36,
+      "entryBundle": "index-9f8381d57b3759e1718bca1650d94577"
+    },
+    {
+      "name": "android-runtime-compatibility",
+      "result": "passed-after-existing-workspace-preparation",
+      "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+      "baselineBuild": "82cb911e-5e37-43b6-9f30-e2aa9c954de0",
+      "versionCode": 2,
+      "initialResult": "Fresh checkout had not run the existing Windows fingerprint normalization helper; the first valid plan reported a new build. The earlier wrapper also passed a quoted baseline path literally and failed before planning.",
+      "resolution": "Ran existing mobile:prepare and reran the read-only plan. It now selects an OTA update with no blockers.",
+      "newApkRequired": false
+    },
+    {
+      "name": "android-offline-export",
+      "result": "passed",
+      "files": 31,
+      "bytes": 13376992,
+      "uploaded": true
+    },
+    {
+      "name": "deployment-script-review",
+      "result": "prepared-and-syntax-checked",
+      "scope": "Exact existing image IDs, file/hash allowlists, disk reserve, candidate import with no network, maintenance before switching, bounded system admission check and rollback before reopening. After reopening, preserve the new compatible API.",
+      "remoteScriptsExecuted": true,
+      "remoteCandidateImport": "passed",
+      "candidateApiImage": "sha256:c08f674beef6a75d7a2640265422918410915813def12562cce8d07f2f374d1e",
+      "candidateWebImage": "sha256:ff7e6926b77c37779cf35052b95559f3adeffb8100a52545b243a7b22d0c2166",
+      "freeDiskAfterStagingBytes": 498515968
+    }
+  ],
+  "transfer": {
+    "codeArchiveBytes": 9694531,
+    "webArchiveBytes": 4649714,
+    "destination": "Original yuban-p1 VM and existing Expo @2ntty/yuyoufang preview",
+    "attempt": "Automatic approval review rejected the new private-source upload before execution because previous specific approvals covered other payloads.",
+    "authorization": "User explicitly approved this exact VM payload/update and one compatible preview OTA after the initial rejection.",
+    "uploaded": true,
+    "deployed": true,
+    "otaPublished": true,
+    "secretsOrFamilyDataIncluded": false
+  },
+  "cloudObservation": {
+    "project": "ai-caregivers-for-children",
+    "vm": "yuban-p1",
+    "vmId": "2846984358678394356",
+    "machineType": "e2-small",
+    "apiWorkerImage": "sha256:fc7ae7e7dbad79a994d8d61ff56a854ebdff2a24cb582e0b0183bbe38cd45f78",
+    "webImage": "sha256:373477f73b0bf495dac7b0d7d2b572b3672f25d9315ca306826e0c51dcd2bcba",
+    "readyBackupSnapshotUtc": "2026-10-19T22:25:29.709898Z",
+    "readyBackupExpiryUtc": "2026-11-02T22:25:29.709898Z",
+    "backupContentsRead": false,
+    "restoreExecuted": false,
+    "initialFreeDiskKiB": 638344,
+    "phase": "Before deployment; candidate image IDs and final deployment are recorded separately"
+  },
+  "renewal": {
+    "authority": "User explicitly requested a 14-day GCP renewal during this work.",
+    "previousTerminationUtc": "2026-10-23T05:33:50.732Z",
+    "newTerminationUtc": "2026-11-06T05:33:50.732Z",
+    "extendedDays": 14,
+    "method": "Stop, setScheduling with existing policy and STOP action, then start the same VM.",
+    "finalStatus": "RUNNING",
+    "observedAtUtc": "2026-10-20T12:55:17.402Z",
+    "firstAvailabilityResult": "Connection unavailable immediately after startup; no application result was obtained.",
+    "followupHealthStatus": 200,
+    "followupHomepageStatus": 200,
+    "machineTypeChanged": false,
+    "imagesChanged": false,
+    "businessDataChanged": false
+  },
+  "modelCalls": 0,
+  "notificationsSent": 0,
+  "quotaChanged": false,
+  "productTestsRun": false,
+  "pending": [
+    "Android OTA receipt and rendered personal-settings interaction",
+    "Usable personal credential generation/embedding; previous Gemini metadata region refusal remains unresolved",
+    "Previously deferred Android, role-quality and native backup restore evidence"
+  ],
+  "deployment": {
+    "source": "ad4de88762be75cee280779a33bf2ce289b5f63a",
+    "state": "deployed",
+    "apiImage": "sha256:c08f674beef6a75d7a2640265422918410915813def12562cce8d07f2f374d1e",
+    "webImage": "sha256:ff7e6926b77c37779cf35052b95559f3adeffb8100a52545b243a7b22d0c2166",
+    "htmlHash": "819526c9ce21d4eed635ea7272fd61f4bdaafef96767fa646b8aee9c970b2875",
+    "modelCalls": 0,
+    "notificationsSentByAcceptance": 0,
+    "quotaChanged": false,
+    "rollback": "Pre-opening rollback only; retain compatible API after any new writes",
+    "phoneSettingsVerified": false,
+    "personalKeyGenerationVerified": false
+  },
+  "ota": {
+    "source": "ad4de88762be75cee280779a33bf2ce289b5f63a",
+    "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "channel": "preview",
+    "state": "published-device-verification-pending",
+    "updates": [
+      {
+        "id": "01a15974-d358-7938-9c2b-29bb704893e2",
+        "group": "8f1bcdbf-220f-4379-900c-5e9dcb836cba",
+        "runtimeVersion": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+        "platform": "android",
+        "createdAt": "2026-10-20T13:16:30.936Z"
+      }
+    ]
+  },
+  "index": {
+    "state": "complete",
+    "field": "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_model_settings_operations/fields/*",
+    "indexes": []
+  },
+  "finalFreeDiskBytes": 529850368,
+  "cleanup": "Removed only this release code-build and web-build contexts after success; retained archives, manifests, prior images and protected rollback configuration"
+}
