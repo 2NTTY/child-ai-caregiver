@@ -4,8 +4,11 @@ import type { ModelMode, ModelSettings, ModelSettingsCommand } from "../src/shar
 import { ModelSettingsError } from "./model-settings-contract.ts";
 import type { ModelSettingsStore } from "./model-settings-contract.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
+import { z } from 'zod';
+import { personalAdvancedShape, personalModelIdSchema, personalProviderSchema } from '../src/shared/model-settings-schema.ts';
 
-const fields = new Set(["expectedVersion", "mode", "apiKey", "removeKey", "backgroundEnabled", "dailyLimit", "maxModelCalls", "maxQueryEmbeddings", "consent"]);
+const fields = new Set(["expectedVersion", "mode", "apiKey", "removeKey", "backgroundEnabled", "dailyLimit", "maxModelCalls", "maxQueryEmbeddings", "consent", "opId", "provider", "model", ...Object.keys(personalAdvancedShape)]);
+const extensionsSchema = z.object({ opId: z.uuid().optional(), provider: personalProviderSchema.optional(), model: personalModelIdSchema.optional(), ...personalAdvancedShape }).strict();
 const requiredFields = ["expectedVersion", "mode", "backgroundEnabled", "dailyLimit", "maxModelCalls", "maxQueryEmbeddings", "consent"];
 const validKey = (value: unknown): value is string => typeof value === "string" && value.length >= 20 && value.length <= 512 && !/[^\x21-\x7e]/u.test(value);
 const unavailable = () => new ModelSettingsError("unavailable", 503);
@@ -28,7 +31,12 @@ export function parseModelSettingsCommand(input: unknown): ModelSettingsCommand 
     || (Object.hasOwn(value, "removeKey") && typeof value.removeKey !== "boolean")
     || (value.removeKey === true && (value.mode !== "disabled" || Object.hasOwn(value, "apiKey")))) throw new ModelSettingsError("invalid_input");
   if (value.mode === "personal" && !value.consent) throw new ModelSettingsError("consent_required");
+  const extensionKeys = ['opId', 'provider', 'model', ...Object.keys(personalAdvancedShape)];
+  if (extensionKeys.some(key => Object.hasOwn(value, key) && value[key] === undefined)) throw new ModelSettingsError('invalid_input');
+  const extensions = extensionsSchema.safeParse(Object.fromEntries(extensionKeys.filter(key => Object.hasOwn(value, key)).map(key => [key, value[key]])));
+  if (!extensions.success) throw new ModelSettingsError('invalid_input');
   return {
+    ...extensions.data,
     expectedVersion: value.expectedVersion as number, mode: value.mode as ModelMode,
     backgroundEnabled: value.mode === "personal" && value.backgroundEnabled, dailyLimit: value.dailyLimit as number, consent: value.consent,
     maxModelCalls: value.maxModelCalls as number, maxQueryEmbeddings: value.maxQueryEmbeddings as number,
@@ -79,6 +87,8 @@ export function createModelSettingsStore(pool: Pool, cipher: StorageCipher): Mod
     },
     async save(userId, input) {
       const command = parseModelSettingsCommand(input);
+      // The retired SQL adapter cannot represent the new personal settings contract.
+      if (['opId', 'provider', 'model', ...Object.keys(personalAdvancedShape)].some(key => Object.hasOwn(command, key))) throw new ModelSettingsError('unavailable', 503);
       let client: PoolClient | undefined;
       let failed = false;
       try {

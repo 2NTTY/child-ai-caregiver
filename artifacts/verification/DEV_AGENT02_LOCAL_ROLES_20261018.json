@@ -1,0 +1,26 @@
+{
+  "package": "DEV-AGENT02",
+  "date": "2026-10-18",
+  "branch": "codex/dev-agent02-role-integration",
+  "base": "feedfe3",
+  "integrationHead": "9889fb7",
+  "collaboratorHeads": { "214": "80eb850", "215": "53c74ac", "216": "0360f7b" },
+  "delivery": "local integration only; collaborator branches and PRs unchanged",
+  "checks": [
+    { "name": "tool-free review shares root budget and authority without chat audio or summary", "result": "passed", "file": "tests/local-agent-role-integration.test.ts", "realModelCalls": 0 },
+    { "name": "production Firestore Agent composes, reviews and saves the same document after confirmation", "result": "passed", "file": "tests/local-agent-role-integration.test.ts", "scriptedModelCalls": 6, "realModelCalls": 0, "assertions": ["unchanged before confirmation", "same document and preserved other sections", "duplicate confirmation and original run lookup do not repeat effects"] },
+    { "name": "wrong supporting excerpt rejected and background no_action persists", "result": "passed", "tests": 2, "realModelCalls": 0 },
+    { "name": "scoped TypeScript and changed launcher/verifier syntax", "result": "passed", "fullSuite": false },
+    { "name": "one real compose flow", "result": "interrupted", "verificationId": "ade0ed1e-292f-43b3-9442-f1025ea7b214", "originalRunId": "c71cc47f-f37c-4b79-8755-999ad445ce2f", "httpCallsBeforeStop": 12, "cause": "Node dependency watch restarted the API during the run; origin of dependency file change event not established", "originalResult": "unknown/interrupted", "usage": { "modelReservations": 1, "recordedOutcomes": 0, "actualProviderCompletion": "unknown" }, "retried": false },
+    { "name": "zero-model restart and original run readback", "result": "passed", "note": "same synthetic message, document and usage reservation retained; original run is unknown/interrupted, not rerun" }
+  ],
+  "retainedFailures": [
+    "Scripted harness initially omitted document_compose capability, then incorrectly expected semantic review of a pure operation receipt. Corrected harness to the existing capability and exemption contracts; no product bypass.",
+    "Scoped TypeScript initially exposed missing ADK liveConnectConfig and no_action union mismatches from integration; repaired and passed.",
+    "One periodic emulator export encountered Windows EPERM; previous snapshot retained and subsequent exports succeeded. No data reset."
+  ],
+  "fixes": ["review-only gateway excludes generator audio/history/capability context but shares budget and credentials", "retain background no_action and shared stop messages", "Windows/macOS source-only native watch paths and explicit no-watch option", "persist original message identifiers before paid verification and preserve safe error metadata"],
+  "notVerified": ["real model compose/review quality and saved result", "true background knowledge model/review/publication", "non-email local notification inbox", "all media paths and UI role flow", "cloud IAM or notification delivery"],
+  "backgroundBlocker": { "source": "server/background-knowledge-maintenance.ts", "contract": "BackgroundKnowledgeMaintenancePorts / KnowledgeSemanticReviewPort", "existing": "candidate runner, programmatic stub, dry-run and injectable ports", "missing": "real semantic model port, durable maintenance usage/ledger/publish assembly and local trigger", "owner": "collaborator PR #216; not replaced by a test implementation" },
+  "scope": { "newCloudResources": 0, "notifications": 0, "deployment": false, "computerUse": false, "fullRegression": false }
+}

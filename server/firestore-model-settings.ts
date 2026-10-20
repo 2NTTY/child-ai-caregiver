@@ -5,28 +5,43 @@ import { ModelSettingsError, type ModelSettingsStore } from './model-settings-co
 import { parseModelSettingsCommand } from './model-settings.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { firestoreDomainHash } from './firestore-domain-data.ts';
+import { modelSettingsOperationSchema, personalAdvancedShape, personalModelIdSchema, personalProviderSchema } from '../src/shared/model-settings-schema.ts';
+import { personalModelSupported } from './personal-model-catalog.ts';
 
 const savedSchema = z.object({
+  limitPolicyVersion: z.literal(2).optional(),
   version: z.number().int().positive().max(2147483647), mode: z.enum(['platform', 'personal', 'disabled']),
   backgroundEnabled: z.boolean(),
   dailyLimit: z.number().int().min(PERSONAL_DAILY_LIMIT.min).max(PERSONAL_DAILY_LIMIT.max),
   maxModelCalls: z.number().int().min(PERSONAL_RUN_LIMITS.modelCalls.min).max(PERSONAL_RUN_LIMITS.modelCalls.max),
   maxQueryEmbeddings: z.number().int().min(PERSONAL_RUN_LIMITS.queryEmbeddings.min).max(PERSONAL_RUN_LIMITS.queryEmbeddings.max),
+  provider: personalProviderSchema.optional(), model: personalModelIdSchema.optional(), ...personalAdvancedShape,
   apiKey: z.string().min(20).max(512).regex(/^[\x21-\x7e]+$/u).nullable(),
   updatedAt: z.iso.datetime({ offset: true }),
 }).strict();
 type Saved = z.infer<typeof savedSchema>;
 export const firestoreModelSettingsRecoverySchema = savedSchema;
+export const firestoreModelSettingsOperationRecoverySchema = modelSettingsOperationSchema.extend({ fingerprint: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
+const advanced = (value: Saved | null) => Object.fromEntries(Object.keys(personalAdvancedShape)
+  .filter(key => value && Object.hasOwn(value, key)).map(key => [key, value![key as keyof Saved]]));
 function publicSettings(value: Saved | null): ModelSettings {
-  return { version: value?.version ?? 0, mode: value?.mode ?? 'platform', provider: 'gemini', model: PERSONAL_MODEL,
+  return { ...(value?.limitPolicyVersion ? { limitPolicyVersion: value.limitPolicyVersion } : {}),
+    version: value?.version ?? 0, mode: value?.mode ?? 'platform', provider: value?.provider ?? 'gemini', model: value?.model ?? PERSONAL_MODEL,
     keyConfigured: value?.apiKey != null, backgroundEnabled: value?.backgroundEnabled ?? false,
     dailyLimit: value?.dailyLimit ?? PERSONAL_DAILY_LIMIT.default, maxModelCalls: value?.maxModelCalls ?? PERSONAL_RUN_LIMITS.modelCalls.default,
-    maxQueryEmbeddings: value?.maxQueryEmbeddings ?? PERSONAL_RUN_LIMITS.queryEmbeddings.default, updatedAt: value?.updatedAt ?? null };
+    maxQueryEmbeddings: value?.maxQueryEmbeddings ?? PERSONAL_RUN_LIMITS.queryEmbeddings.default, ...advanced(value), updatedAt: value?.updatedAt ?? null };
 }
 /** Secrets stay within the server resolver; responses, receipts and change metadata contain no key. */
 export function createFirestoreModelSettings(options: FirestoreDomainOptions): ModelSettingsStore {
   const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
   const ref = (id: string) => data.ref('model_settings', 'model-settings', id);
+  const operationIdFor = (userId: string, opId: string) => JSON.stringify([userId, opId]);
+  const operationRef = (id: string) => data.ref('model_settings_operations', 'model-settings-operation', id);
+  async function readOperation(binding: FirestoreAuthorityTransaction, opId: string) {
+    const id = operationIdFor(binding.scope.ownerUserId, opId), row = await binding.transaction.get(operationRef(id));
+    return row.exists ? data.open('model-settings-operation', id, binding.scope, firestoreModelSettingsOperationRecoverySchema, row) : null;
+  }
   async function read(binding: FirestoreAuthorityTransaction): Promise<Saved | null> {
     const id = binding.scope.ownerUserId, row = await binding.transaction.get(ref(id));
     if (!row.exists) return null;
@@ -41,19 +56,46 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
       const saved = await read(binding); return { settings: publicSettings(saved), apiKey: saved?.apiKey ?? null };
     }),
     isCurrent: (userId, expectedVersion) => authority.runTransaction(userId, null, async binding => ((await read(binding))?.version ?? 0) === expectedVersion),
-    async save(userId, raw) {
-      const command = parseModelSettingsCommand(raw), operationId = randomUUID();
+    getOperation: (userId, opId) => {
+      if (!z.uuid().safeParse(opId).success) throw new ModelSettingsError('invalid_input');
       return authority.runTransaction(userId, null, async binding => {
+        const result = await readOperation(binding, opId);
+        return result ? { opId: result.opId, settings: result.settings } : null;
+      });
+    },
+    async save(userId, raw) {
+      const command = parseModelSettingsCommand(raw), operationId = command.opId ?? randomUUID();
+      const fingerprint = firestoreDomainHash(command);
+      return authority.runTransaction(userId, null, async binding => {
+        const original = command.opId ? await readOperation(binding, command.opId) : null;
+        if (original) {
+          if (original.fingerprint !== fingerprint) throw new ModelSettingsError('operation_conflict', 409);
+          return original.settings;
+        }
         const current = await read(binding);
         if ((current?.version ?? 0) !== command.expectedVersion) throw new ModelSettingsError('version_conflict', 409);
         const apiKey = command.removeKey ? null : command.apiKey ?? current?.apiKey ?? null;
+        const provider = command.provider ?? current?.provider ?? 'gemini', model = command.model ?? current?.model ?? PERSONAL_MODEL;
+        if (!personalModelSupported(model)) throw new ModelSettingsError('model_unsupported');
+        if (provider !== (current?.provider ?? 'gemini') && apiKey && !command.apiKey) throw new ModelSettingsError('key_required');
         if (command.mode === 'personal' && !apiKey) throw new ModelSettingsError('key_required');
         const saved = savedSchema.parse({ version: command.expectedVersion + 1, mode: command.mode, backgroundEnabled: command.backgroundEnabled,
           dailyLimit: command.dailyLimit, maxModelCalls: command.maxModelCalls, maxQueryEmbeddings: command.maxQueryEmbeddings,
+          ...(command.opId || current?.limitPolicyVersion ? { limitPolicyVersion: 2 } : {}),
+          provider, model, ...advanced(current), ...Object.fromEntries(Object.keys(personalAdvancedShape)
+            .filter(key => Object.hasOwn(command, key)).map(key => [key, command[key as keyof typeof command]])),
           apiKey, updatedAt: new Date().toISOString() });
         const change = await binding.prepareChange(operationId, 'preferences', false);
         const envelope = { ...data.tags(binding.scope), ...data.seal('model-settings', userId, binding.scope, savedSchema, saved, saved.version) };
-        change.commit(); binding.transaction.set(ref(userId), envelope); return publicSettings(saved);
+        const result = publicSettings(saved);
+        change.commit(); binding.transaction.set(ref(userId), envelope);
+        if (command.opId) {
+          const id = operationIdFor(userId, command.opId);
+          binding.transaction.set(operationRef(id), { ...data.tags(binding.scope),
+            ...data.seal('model-settings-operation', id, binding.scope, firestoreModelSettingsOperationRecoverySchema,
+              { opId: command.opId, fingerprint, settings: result }, saved.version) });
+        }
+        return result;
       });
     },
   };

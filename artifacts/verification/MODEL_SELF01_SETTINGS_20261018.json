@@ -1,0 +1,22 @@
+{
+  "package": "MODEL-SELF01",
+  "date": "2026-10-18",
+  "branch": "codex/model-self01-google-settings",
+  "base": "feedfe3b43c568717e917cb1164d6cc94a5f6c0e",
+  "masterObserved": "d4686b7ff864642aaa964ca3adae9d64b52b6fa5",
+  "status": "backend and shared client implemented; UI, live credential verification and deployment pending",
+  "environment": { "node": "24.19.0", "genai": "2.24.0", "database": "existing serial Firestore fixture", "provider": "native SDK with intercepted fetch" },
+  "checks": [
+    { "file": "tests/personal-model-settings.test.ts", "name": "personal settings share policy, recover the original write, isolate accounts and retain legacy HTTP", "result": "passed", "coverage": ["lost write response and original operation lookup", "same opId replay and changed-request rejection", "version conflict and account isolation", "legacy limits preserved until explicit v2 save", "personal model, background opt-in and administrator caps", "usage unchanged", "encrypted receipt and restore codec", "legacy HTTP projection"] },
+    { "file": "tests/personal-model-settings.test.ts", "name": "Google personal adapters use the chosen protocol, bounded catalog and no platform fallback", "result": "passed", "coverage": ["Developer API and Express endpoints", "2.5 thinkingBudget", "bounded two-page model catalog", "no Vertex metadata or embedding fallback", "safe key errors and native retryable status"] },
+    { "file": "tests/model-settings-client.test.ts", "selection": "direct account-bound|unknown model settings save", "result": "passed", "tests": 2, "coverage": ["secret-free strict responses", "one direct write with original opId", "no key replay"] },
+    { "name": "scoped TypeScript", "result": "passed", "roots": ["tests/personal-model-settings.test.ts", "src/client/model-settings-api.ts", "server/firestore-model-routing.ts", "server/model-settings-api.ts"] }
+  ],
+  "retainedFailures": ["Initial scoped type check found a missing toolsDict in the new test request. Fixed before running that test; no product or provider execution occurred."],
+  "executionNotes": "Two backend checks initially passed; after legacy-limit compatibility and safe error mapping were added, only those affected checks ran once again. No full suite.",
+  "realModelCalls": 0,
+  "realEmbeddingCalls": 0,
+  "cloudWrites": 0,
+  "notifications": 0,
+  "limitations": ["Serial fixture is not native transaction concurrency or IAM evidence", "No live Gemini or Vertex key verified", "Express embedding and model metadata are not implemented because the documented API does not provide them", "Model profiles describe adapter support, not per-account availability", "Web/Android form and owner recovery UI remain MODEL-SELF02", "Collaborator four-role branch and failed real run remain separate", "No deployment, OTA, APK or full restore performed"]
+}

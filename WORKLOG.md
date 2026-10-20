@@ -3128,3 +3128,12 @@
 
 - 接續 `19d5373`／draft #241，只補一個零模型本地 client 流程：同一準備單修改及重新讀取，舊版本拒絕；極小文字附件經正式加密服務保存、讀回、刪除後拒絕正文。run `f26b6c03-6f48-4c27-b988-cb826a076494` 共19次API通過，零模型／通知／雲端／瀏覽器。初次命令因 sandbox 無法讀受保護合成設定，未開始業務呼叫；使用本機已授權身份後只執行一次流程。
 - 只證明目前分支的文件與附件接線，未驗照片／錄音／PDF全部路徑、實體清理或真模型編製／審核。協作者 #214／#215 已有真模型入口，#216 仍有 programmatic stub／dry-run 邊界；沒有接管角色。服務已正常停止及保存，原失敗與 Android／PR 前置保持。
+
+<a id="log-20261018-model-self01"></a>
+### LOG-20261018-MODEL-SELF01
+
+- 從DEV01 `feedfe3`建立獨立個人模型包，A單作者；Astra實作／review，Luna只定位既有recovery／清理接點。DEV02角色成果保留本地`ce1d6f9`，其真模型被watch重載中斷，原run查回unknown／interrupted；只見一次未回報的模型預留，不重試、不報零消耗。watch改限定專案來源並支援`--no-watch`；方法與原失敗沿[DEV02 EV](artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)，不把協作者程式帶入本包。
+- 本包擴充同一Firestore加密設定、原opId收據及共用client；供應商／模型、工具／期限／等待／重試與管理上限由共同解析器提供。舊設定保持原行為，首次v2保存才採新限制政策。收據、變更與設定同交易，新增collection接入備份／restore codec／帳戶清理及索引排除；家長匯出不包含憑據或協定台帳。
+- Gemini／Vertex Express走同SDK的不同認證模式。模型目錄有界、thinking參數按協定適配；Express沒有已核對的embedding／metadata方法，明示未支援且不借平台。新增key／地區／模型穩定錯誤，暫時HTTP錯誤沿原gateway計量與重試。v1 client不能表示新模型時回更新要求，不誤報預設型號。
+- 必要驗證：兩條新增合成設定／SDK流程及兩項既有client檢查、局部型別通過；初次型別只有新測試漏toolsDict，補正後才執行。新增舊限制相容與錯誤分類後，只重跑受影響兩項。零真模型／embedding／雲端寫入／通知／部署，未跑全量、壓測或Computer Use。證據見[MODEL01 EV](artifacts/verification/MODEL_SELF01_SETTINGS_20261018.json)。
+- 交付前master仍`d4686b7`；#214更新`831a820`只涉及四份測試，原DEV02固定證據仍對應舊head，#215／#216不改。現有Android／DEV01 draft前置、真個人key、共用表單／owner及部署未驗保持，不將本包寫成整個目標完成。

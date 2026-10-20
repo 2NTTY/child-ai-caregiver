@@ -26,7 +26,8 @@ test("model settings use direct account-bound requests and allowlist secret-free
       assert.deepEqual(body, { expectedVersion: 2 });
       return Response.json({ version: 2, status: "accessible", scope: "model_metadata_only" });
     }
-    assert.deepEqual(body, command());
+    const { opId, ...safe } = body;
+    assert.match(opId, /^[a-f0-9-]{36}$/); assert.deepEqual(safe, command());
     return Response.json(settings);
   });
   assert.deepEqual(await api.save({ ...command(), extraField: "not forwarded" } as ModelSettingsCommand, signal(), "alice"), settings);

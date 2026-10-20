@@ -3783,6 +3783,11 @@
       "indexes": []
     },
     {
+      "collectionGroup": "yuban_authority_model_settings_operations",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
       "collectionGroup": "yuban_authority_model_key_checks",
       "fieldPath": "*",
       "indexes": []

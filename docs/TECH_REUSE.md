@@ -322,3 +322,10 @@ Word `.docx` 採固定 `mammoth 1.13.0`（BSD-2-Clause）`extractRawText`，不�
 採固定 `firebase-tools 15.34.0`（MIT，開發依賴）、Node 24.19.0／Java 21，僅啟動 Auth、Firestore、Storage。沿現有 SDK／ADK 2.1.0 與正式服務，沒有自建資料庫、測試 Agent 或新搜尋框架。[官方 Emulator Suite](https://firebase.google.com/docs/emulator-suite)／[固定 CLI 原碼](https://github.com/firebase/firebase-tools/tree/v15.34.0)。CLI 的 SQL／其他平台相依只屬其開發工具套件，沒有啟動 SQL Connect／Cloud SQL 或產品 SQL 執行。lockfile 新增 369 項依賴、原項版本沒有改動，不代表全部 transitive package 已逐一審核。
 
 實測固定版 Firestore Emulator 可執行 `findNearest`，無需另寫本地向量搜尋。Storage Emulator 忽略 generation precondition，因此只補單 runtime 的物件序列化及固定 metadata 核對，仍用正式加密／附件服務。CLI 標準匯出只涵蓋 `(default)`，開發資料庫因而使用隔離 demo 專案的 default；正式命名資料庫不改。Windows 第二個 CLI 匯出進程曾在成功後發生退出 assertion，改用同版 CLI 自身的 Hub export 接點並核三種 manifest，保存原失敗；該內部接點與固定 CLI 一起升級核對。穩定啟動、資料重開、首條真模型及 Web 讀回見 [DEV01 EV](../artifacts/verification/DEV_AGENT01_LOCAL_20261018.json)，不延伸為四角色、雲端 IAM 或真通知通過。
+
+<a id="personal-google-keys"></a>
+### MODEL-SELF01 個人 Google key（2026-10-18）
+
+沿既有 Google Gen AI SDK 2.24.0（Apache-2.0）與ADK 2.1.0，不新增供應商SDK。Gemini Developer key使用`enterprise:false`；Vertex Express key使用`enterprise:true`及global v1，不帶平台project／location，避免隱式ADC。官方Express REST只列countTokens／generateContent／streamGenerateContent，沒有已核對的模型目錄或embedding方法；因此只接生成，其他能力明示未支援，不改借平台。[Express API](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/express-mode/api-reference)／[SDK固定版本](https://github.com/googleapis/js-genai/tree/v2.24.0)。
+
+Gemini目錄使用原生`models.list`的Pager，最多兩頁各100項，只取已接協定profile；不讀完整模型列表或自動試用每個模型。Gemini2.5採thinkingBudget（Pro動態、Flash／Lite關閉可選thinking），既有Gemini3保留thinkingLevel。這是參數相容選擇，不宣稱品質／速度已實測；metadata也不等於生成或embedding可用。[模型目錄](https://ai.google.dev/api/models)／[thinking配置](https://ai.google.dev/gemini-api/docs/thinking)。SDK／HTTP重試維持一次，由正式gateway統一有限重試與計量。合成接線及真服務未驗邊界見[MODEL01 EV](../artifacts/verification/MODEL_SELF01_SETTINGS_20261018.json)。

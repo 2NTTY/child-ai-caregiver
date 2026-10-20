@@ -1,4 +1,7 @@
 const modelProviderReasons = {
+  model_key_invalid: "本人模型密鑰無效或已被撤銷，請到模型設定更新",
+  model_region_unavailable: "所選模型服務不支援目前地區",
+  model_not_available: "本人憑證無法使用所選模型，請核對模型設定",
   model_http_400: "模型服務拒絕請求格式（400）",
   model_http_401: "模型服務認證失敗（401）",
   model_http_403: "模型服務拒絕存取（403）",

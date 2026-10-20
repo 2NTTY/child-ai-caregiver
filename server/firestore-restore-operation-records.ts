@@ -5,7 +5,7 @@ import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.t
 import { firestoreBackgroundWorkSchema, firestoreBackgroundRecoverySchemas as background, firestoreBackgroundReference } from './firestore-background-work.ts';
 import { firestoreMaintenanceRecoverySchema } from './firestore-background-maintenance.ts';
 import { firestoreWorkWatchSchema, firestoreWorkEventSchema, firestoreWorkDailyRecoverySchema } from './firestore-work-followup.ts';
-import { firestoreModelSettingsRecoverySchema } from './firestore-model-settings.ts';
+import { firestoreModelSettingsRecoverySchema, firestoreModelSettingsOperationRecoverySchema } from './firestore-model-settings.ts';
 import { firestoreModelChecksRecoverySchema } from './firestore-model-routing.ts';
 import { firestoreAgentAdmissionRecoverySchema } from './firestore-agent-admission.ts';
 import { firestoreScopeErasureSchema, firestoreErasureReceiptPointerSchema } from './firestore-erasure.ts';
@@ -22,6 +22,7 @@ export const operationRestoreSchemas = {
   'work-event': { suffix: 'work_events', schema: firestoreWorkEventSchema },
   'work-daily-slot': { suffix: 'work_daily_slots', schema: firestoreWorkDailyRecoverySchema },
   'model-settings': { suffix: 'model_settings', schema: firestoreModelSettingsRecoverySchema },
+  'model-settings-operation': { suffix: 'model_settings_operations', schema: firestoreModelSettingsOperationRecoverySchema },
   'model-key-checks': { suffix: 'model_key_checks', schema: firestoreModelChecksRecoverySchema },
   'agent-admission': { suffix: 'agent_admission', schema: firestoreAgentAdmissionRecoverySchema },
   'scope-erasure': { suffix: 'erasures', schema: firestoreScopeErasureSchema },
@@ -94,6 +95,8 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
       if (target) id = JSON.stringify([target, v.day]); break;
     }
     case 'model-settings': { const v = firestoreModelSettingsRecoverySchema.parse(raw); check(id === scope.ownerUserId && version === v.version); break; }
+    case 'model-settings-operation': { const v = firestoreModelSettingsOperationRecoverySchema.parse(raw);
+      check(id === JSON.stringify([scope.ownerUserId, v.opId]) && version === v.settings.version); break; }
     case 'model-key-checks': check(id === 'active' && scope.ownerUserId === 'system:model-key-check'); break;
     case 'agent-admission': check(id === 'active'); if (target) value = { leases: [] }; break;
     case 'scope-erasure': {
