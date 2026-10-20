@@ -63,6 +63,27 @@ export function createFirestoreKnowledgeWork(options: Options) {
     } catch { reject("knowledge_work_storage_invalid"); }
   }
   return {
+    /** Operator lookup only. Never acquire a lease or restart an external effect. */
+    async inspect(raw: BackgroundKnowledgeRunRequest) {
+      const request = backgroundKnowledgeRunRequestSchema.parse(raw);
+      const workRef = ref("work", request.operationFingerprint), preparedRef = ref("prepared", request.operationFingerprint);
+      return database.runTransaction(async tx => {
+        const [snapshot, candidate] = await tx.getAll(workRef, preparedRef);
+        if (!snapshot.exists) {
+          if (candidate.exists) reject("knowledge_work_storage_invalid");
+          return null;
+        }
+        const work = open(workRef, snapshot.data(), workSchema);
+        if (knowledgeReviewHash(work.request) !== knowledgeReviewHash(request)) reject("knowledge_work_binding_changed");
+        const saved = candidate.exists ? open(preparedRef, candidate.data(), preparedSchema) : null;
+        if (work.preparedHash !== (saved ? knowledgeReviewHash(saved) : null)
+          || saved && (saved.prepared.source.sourceId !== request.watchId
+            || saved.prepared.versionHash !== sourceVersionHash(saved.prepared.source))) {
+          reject("knowledge_work_candidate_changed");
+        }
+        return { ...work, prepared: saved?.prepared ?? null };
+      }, { readOnly: true });
+    },
     async bind(raw: BackgroundKnowledgeRunRequest, leaseToken: string, configHash: string,
       limits: { modelCalls: number; deadlineMs: number }) {
       const request = backgroundKnowledgeRunRequestSchema.parse(raw);

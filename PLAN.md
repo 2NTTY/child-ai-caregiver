@@ -109,6 +109,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 真編製／獨立審核與同一文件確認保存已通過：修正 Java 子程序路徑及多餘的待確認狀態審核後，沿原限額完成一次真模型流程，文件只改指定標題，其餘章節不變；重新讀取同一版本。[失敗與成功證據](artifacts/verification/DEV_AGENT02_REAL_COMPOSE_20261020.json)分開保留，不重跑已通過項目。
 - 背景接線：共用原文整理／獨立審核已接 Firestore 工作、共同計量、模型結果保存、發布交易及 `agent:local -- --maintain-knowledge`。一條真 emulator／scripted provider 流程核對發布、重建服務後原工作查回、原文檢索與 unknown 不重送；兩項模型契約檢查及局部型別通過。[本次證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)保留所有失敗，沒有把 scripted 當真品質。
 - 真背景結果：首次一個生成因改寫短引停止；第二次兩個生成因 JSON 代碼框停止，查回原回應又發現舊引文不匹配。`c9bc5b6`／Prompt Pack 0.1.51 的第三次用了兩個生成，完成整理及獨立語義審核，結果為 `review_hold`／`requires_review`，未發布。三次共五個生成、零 embedding；全部原工作及用量保留，沒有為通過而放寬閘或繼續重跑。下一步先核對待處理候選及角色契約，普通本地修改／測試不受此發布 gate 阻塞。
+- 本地背景查閱：`agent:local -- --inspect-knowledge[=<工作指紋>]` 直接讀原工作及候選／審核，不需要模型 key、不領取 lease 或發布。一次原 emulator 候選查回成功，原用量及待處理結果不變；確認本次候選沒有既有 `solid_food` 規則所綁定的 `starting-solids` key。保留該依賴待核，不放寬發布閘。方法見[本地入口](docs/AGENT_LOCAL.md#獨立背景知識維護)。
 - 尚欠：背景新版真發布及聊天引用、新對話模型接續與頁面聯合、非郵件本地收件箱；真網站／多模態與長來源分批仍未完成，不以固定樣本達標。普通本地入口已可供協作者修改及測試，不必等這些 gate 才使用。DEV02、MODEL 真憑證及原 draft／Android gate 各自保留。
 - gate：聊天→編製→真審核→保存→頁面／新對話讀回；另無聊天時背景讀來源→整理／審核→本地發布→聊天引用新版。缺角色真實實作時保留待驗，不能以替身達標。
 

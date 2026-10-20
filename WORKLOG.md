@@ -3245,3 +3245,11 @@
 - 查回已啟動的 `c9bc5b6`／Prompt Pack 0.1.51 本地背景工作；沒有重啟同一批次。兩次真生成完成原文整理與獨立審核，審核回報需要進一步核對，沿原發布閘保留候選（`review_hold`／`requires_review`）。
 - 本次零 embedding、真網站抓取、雲端資料寫入、通知及部署；入口已停止並保留原工作。本包累計五次真生成，實際帳單未查。只讀結果及最後日誌，不將候選保留當成發布成功或臨床核准，也不為驗收放寬審核。
 - [證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)追加本次結果，先前失敗不回寫；PLAN／STATUS 修正「最新版本未跑」的舊狀態。基本本地入口已可使用，四角色完整發布／頁面門檻仍未完成。
+
+<a id="log-20261020-dev-agent02-knowledge-inspection"></a>
+## LOG-20261020-DEV-AGENT02-KNOWLEDGE-INSPECTION
+
+- 新增本地 `--inspect-knowledge` 查閱入口，沿正式加密工作 reader，以唯讀交易核對原 request、候選 hash／來源版本及結果。可指定舊工作；不依賴模型憑證，不領取 lease、重開運行或發布。
+- 一次既有 emulator 候選查回成功，原工作兩次生成及 `review_hold` 不變；查閱檔案保留官方原文、整理及審核理由，不輸出模型上下文、密鑰或 lease token。局部型別及入口語法通過，沒有新增模型／embedding、通知、雲端資料寫入或全量測試。
+- 原程式及候選證據顯示 `solid_food` 規則綁定 `starting-solids`，本次新候選未包含該 key；因此保留規則／來源依賴待核，不以反覆生成或提示詞強迫批准。正式背景發布、新對話／頁面聯合及收件箱等未驗項仍見 PLAN。
+- [證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)與[操作說明](docs/AGENT_LOCAL.md)。本地服務已停止並保存快照，沒有改動正式環境。

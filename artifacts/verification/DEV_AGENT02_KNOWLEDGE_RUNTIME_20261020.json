@@ -86,5 +86,17 @@
     "Cross-page/new-conversation joint verification and non-email local inbox",
     "Cloud scheduling, IAM, delivery or production deployment"
   ],
+  "readOnlyInspection": {
+    "entry": "npm run agent:local -- --inspect-knowledge",
+    "operation": "b78636489b9f57f271aa0d791547a4090e0ef77081fd94cd5563df539ae8334c",
+    "result": "passed",
+    "reads": "Original encrypted work and prepared candidate through a read-only emulator transaction",
+    "observed": "Same held result and two-call work budget; no publication receipt. The candidate omits the starting-solids key bound by the existing solid_food growth rule.",
+    "newModelCalls": 0,
+    "newEmbeddings": 0,
+    "scopedTypecheck": "passed",
+    "entrySyntax": "passed",
+    "limits": "No assertion that semantic review, publication, rule migration or cloud behavior passed"
+  },
   "cleanup": "Local services stopped with checkpoint export; synthetic records and prior failures retained"
 }

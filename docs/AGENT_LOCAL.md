@@ -80,6 +80,16 @@ npm run agent:local -- --maintain-knowledge
 
 結果在 `.cache/agent-local/maintenance-result.json`，原工作及歷次結果另按工作指紋保存。再次執行相同命令查回同一工作，不能當作重跑；修改程式／提示詞後，需要明確加 `--new-knowledge-work` 才建立新工作及新用量。未知外呼、舊期限或不同綁定保留為停止／待核對，不能清資料來重試。
 
+要查看原候選與審核原因，停止正常入口後執行：
+
+```sh
+npm run agent:local -- --inspect-knowledge
+```
+
+此命令不需要模型憑證，只讀同一份本地工作及候選，不領取 lease、修改帳目、呼叫模型或發布。終端指出受保護的 `maintenance-<工作指紋>-inspection.json`，包含原文／整理、變更核對、審核理由、原預算、發布收據及現有成長規則綁定。指定舊工作可用 `--inspect-knowledge=<64位工作指紋>`；歷史綁定必須匹配，不改寫為新工作。
+
+`candidate_held` 表示候選保留，不能當成已更新知識。若既有成長規則所引用的片段／版本需重新核對，先處理原規則與來源依賴；不要只改提示詞要求批准，或不停另開工作重試。沒有候選時仍可查原工作狀態及用量，原始模型上下文不輸出到查閱檔案。
+
 真網站模式明確加 `--live-source`；目前來源可選 `--knowledge-watch=fhs-solid-food` 或 `--knowledge-watch=fhs-feeding-booklet-en`。PDF 沿正式解析及已登記頁面範圍；超出單批的長資料會保留未完成，不宣稱已讀完。第一次改模式／來源須加 `--new-knowledge-work`，不能改寫原工作。網站與用途仍受現有 catalog 範圍限制。
 
 命令結束保存 emulator 快照；重新執行 `npm run agent:local`，聊天檢索同一份本地已發布資料。尚未核對的內容不發布；真網站、多模態及長資料分批的未驗項不因樣本成功而自動通過。這個本地入口不部署或啟用正式雲端排程。

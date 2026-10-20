@@ -8,16 +8,23 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const directory = join(root, '.cache', 'agent-local'), statePath = join(directory, 'state.json');
 const args = new Set(process.argv.slice(2));
+const inspectionArgs = [...args].filter(arg => arg === '--inspect-knowledge' || /^--inspect-knowledge=[a-f0-9]{64}$/u.test(arg));
+const inspection = inspectionArgs.length === 1;
+if (inspectionArgs.length > 1) throw Error('Choose one knowledge work to inspect');
 if ([...args].some(arg => !['--reset', '--confirm-local-reset', '--no-web', '--no-model', '--no-watch', '--prepare-knowledge',
-  '--maintain-knowledge', '--live-source', '--new-knowledge-work', '--knowledge-watch=fhs-solid-food', '--knowledge-watch=fhs-feeding-booklet-en', '--help'].includes(arg))) throw Error('Unknown local Agent option');
+  '--maintain-knowledge', '--live-source', '--new-knowledge-work', '--knowledge-watch=fhs-solid-food', '--knowledge-watch=fhs-feeding-booklet-en', '--help'].includes(arg)
+  && !inspectionArgs.includes(arg))) throw Error('Unknown local Agent option');
+if (inspection && ['--reset', '--prepare-knowledge', '--maintain-knowledge'].some(arg => args.has(arg)))
+  throw Error('Knowledge inspection cannot reset data, prepare or start maintenance');
 if (!args.has('--maintain-knowledge') && [...args].some(arg => arg === '--live-source' || arg === '--new-knowledge-work' || arg.startsWith('--knowledge-watch=')))
   throw Error('Knowledge work options require --maintain-knowledge');
 if (args.has('--maintain-knowledge') && args.has('--prepare-knowledge')) throw Error('Choose preparation or maintenance, not both');
 if (args.has('--help')) {
-  console.log('agent:local [--no-web] [--no-model] [--no-watch]\nSet GEMINI_API_KEY or LOCAL_AGENT_CONFIG (protected JSON). ADC: LOCAL_MODEL_PROVIDER=vertex-adc, LOCAL_MODEL_PROJECT.\nFirst knowledge preparation: --prepare-knowledge (at most one paid embedding; later starts reuse it).\nIndependent maintenance: --maintain-knowledge [--knowledge-watch=fhs-solid-food|fhs-feeding-booklet-en] [--live-source] [--new-knowledge-work]. Default: curated fixture; original work ID reused.\nReset only this worktree: --reset --confirm-local-reset');
+  console.log('agent:local [--no-web] [--no-model] [--no-watch]\nSet GEMINI_API_KEY or LOCAL_AGENT_CONFIG (protected JSON). ADC: LOCAL_MODEL_PROVIDER=vertex-adc, LOCAL_MODEL_PROJECT.\nFirst knowledge preparation: --prepare-knowledge (at most one paid embedding; later starts reuse it).\nIndependent maintenance: --maintain-knowledge [--knowledge-watch=fhs-solid-food|fhs-feeding-booklet-en] [--live-source] [--new-knowledge-work]. Default: curated fixture; original work ID reused.\nInspect saved work without a model or credentials: --inspect-knowledge[=<operation-fingerprint>].\nReset only this worktree: --reset --confirm-local-reset');
   process.exit(0);
 }
 const exists = async path => { try { await access(path); return true; } catch { return false; } };
+if (inspection && !await exists(statePath)) throw Error('No local data to inspect; initialize the local environment first');
 await mkdir(directory, { recursive: true, mode: 0o700 });
 if (process.platform === 'win32') {
   const owner = spawnSync('whoami', [], { encoding: 'utf8', windowsHide: true });
@@ -49,18 +56,18 @@ const saved = await exists(statePath) ? JSON.parse(await readFile(statePath, 'ut
 };
 if (saved.format !== 1 || saved.projectId !== 'demo-yuyf-' + fingerprint) throw Error('Local state belongs to another checkout');
 if (!await exists(statePath)) await writeFile(statePath, JSON.stringify(saved, null, 2), { mode: 0o600, flag: 'wx' });
-const configured = process.env.LOCAL_AGENT_CONFIG ? JSON.parse(await readFile(resolve(process.env.LOCAL_AGENT_CONFIG), 'utf8')) : {};
-const provider = configured.provider ?? process.env.LOCAL_MODEL_PROVIDER ?? 'gemini';
+const configured = !inspection && process.env.LOCAL_AGENT_CONFIG ? JSON.parse(await readFile(resolve(process.env.LOCAL_AGENT_CONFIG), 'utf8')) : {};
+const provider = inspection ? 'gemini' : configured.provider ?? process.env.LOCAL_MODEL_PROVIDER ?? 'gemini';
 const model = {
   provider,
-  apiKey: configured.apiKey ?? (provider === 'gemini' ? process.env.GEMINI_API_KEY : provider === 'vertex' ? process.env.VERTEX_API_KEY : undefined),
+  apiKey: inspection ? undefined : configured.apiKey ?? (provider === 'gemini' ? process.env.GEMINI_API_KEY : provider === 'vertex' ? process.env.VERTEX_API_KEY : undefined),
   project: configured.project ?? process.env.LOCAL_MODEL_PROJECT,
   location: configured.location ?? process.env.LOCAL_MODEL_LOCATION ?? 'global',
   model: configured.model ?? process.env.LOCAL_MODEL ?? 'gemini-3.1-flash-lite',
   adcPath: configured.adcPath ?? process.env.GOOGLE_APPLICATION_CREDENTIALS,
 };
 if (!['gemini', 'vertex', 'vertex-adc'].includes(model.provider)) throw Error('Unsupported local model provider');
-const enabled = !args.has('--no-model');
+const enabled = !inspection && !args.has('--no-model');
 if (!enabled && (args.has('--prepare-knowledge') || args.has('--maintain-knowledge'))) throw Error('Knowledge preparation/maintenance requires your explicit model credentials');
 if (enabled && (model.provider === 'vertex-adc' ? !model.project : !model.apiKey)) throw Error('Set the selected provider credential in LOCAL_AGENT_CONFIG (or GEMINI_API_KEY / VERTEX_API_KEY); use --no-model only for data/UI development');
 if (enabled && model.provider === 'vertex-adc' && model.adcPath && !await exists(model.adcPath))
@@ -92,6 +99,7 @@ const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', 
   YUBAN_FIREBASE_STORAGE_KEY: saved.storageKey, LOCAL_AGENT_STATE_FILE: statePath, LOCAL_WEB_PORT: String(basePort + 1),
   LOCAL_MODEL_PROVIDER: model.provider, LOCAL_MODEL_PROJECT: model.project ?? '', VERTEX_LOCATION: model.location,
   GEMINI_MODEL: model.model, AI_ENABLED: String(enabled), ...(model.apiKey ? { LOCAL_MODEL_API_KEY: model.apiKey } : {}),
+  ...(inspection ? { LOCAL_KNOWLEDGE_INSPECT_OPERATION: inspectionArgs[0].split('=')[1] ?? '' } : {}),
   ...(args.has('--maintain-knowledge') ? {
     LOCAL_KNOWLEDGE_WATCH: [...args].find(arg => arg.startsWith('--knowledge-watch='))?.split('=')[1] ?? 'fhs-solid-food',
     LOCAL_KNOWLEDGE_LIVE_SOURCE: String(args.has('--live-source')), LOCAL_KNOWLEDGE_NEW_WORK: String(args.has('--new-knowledge-work')),
@@ -176,7 +184,15 @@ try {
   }
   if (!emulatorsReady || stopping) throw Error('Emulators not ready; read the tail of ' + join(directory, 'emulators.log'));
   checkpoint = setInterval(() => { if (!stopping) void save().catch(error => console.error('Local checkpoint failed; previous snapshot retained. ' + error.message)); }, 60_000);
-  if (args.has('--maintain-knowledge')) {
+  if (inspection) {
+    console.log('Inspecting saved local knowledge work; no model, external delivery or publication.');
+    await new Promise((done, reject) => {
+      const child = start('knowledge-inspection', [join(root, 'scripts', 'agent-local-inspect-knowledge.mjs')], env, root, true);
+      child.once('exit', code => code === 0 ? done() : reject(Error('Inspection failed; read the tail of ' + join(directory, 'knowledge-inspection.log'))));
+    });
+    console.log('Inspection metadata: ' + join(directory, 'knowledge-inspection.log'));
+    await stop();
+  } else if (args.has('--maintain-knowledge')) {
     console.log('Explicit local knowledge maintenance: at most two generations, bounded missing embeddings; no family data or cloud publication.');
     await new Promise((done, reject) => {
       const child = start('maintenance', [join(root, 'scripts', 'agent-local-maintain.mjs')], env, root, true);
