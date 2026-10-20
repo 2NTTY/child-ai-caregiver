@@ -33,7 +33,7 @@ ADC 留在本機。若全局 `GOOGLE_APPLICATION_CREDENTIALS` 指向舊檔案，
 
 - 開啟終端列出的 `http://127.0.0.1:<port>`；不要另開 Expo 的直接端口。原 Web 和 API 經同一個本機 origin。
 - 本地帳號為 `developer@local.yuyoufang.test`，隨機密碼保存在終端列出的 `.cache/agent-local/state.json`；這是本機合成帳號，不是正式網站密碼。正常登入、產品條款及資料同意仍經正式流程。
-- 同一個明確初始化的本地帳號可開 `/admin` 調整本地限額；不授予正式網站權限，不清零原用量。
+- 同一個明確初始化的本地帳號可開 `/admin` 查看及調整本地限額。開始付費核對前先看當日用量；每日上限和每輪上限分開，生成與查詢 embedding 都計次數。本地沿 Server 初始政策或已保存的本地修改，不會複製正式網站的 200／400 設定；重啟不清零，不授予正式網站權限，也不改正式配額。
 - 修改共用前端可熱更新；Windows／macOS 使用 Node 原生 `--watch-path`，只監看 `server`、`src/shared`、`prompts`，不監看依賴或本地資料。Linux 沿 Node module watch，尚未實測。Prompt Pack 仍由正式組裝器讀取；不要在有付費運行時改動程式。需要固定版本核對時可加 `--no-watch`，手動停止後重開才載入修改。[Node 原生監看](https://nodejs.org/api/cli.html#--watch-path)
 - 修改程式中斷運行時，不自動重發問題；先查回原 run／收據。頁面重新讀取不代表再執行一次。
 - `/__local/status` 顯示分支、SHA、dirty、模型、Prompt Pack、角色邊界；`/__local/events` 只保留最近 200 筆診斷 metadata，不輸出內部思考或私人全文。詳細結果仍從正式頁面／原 run 讀取。
@@ -100,7 +100,7 @@ npm run agent:local -- --inspect-knowledge
 
 真網站模式明確加 `--live-source`；目前來源可選 `--knowledge-watch=fhs-solid-food` 或 `--knowledge-watch=fhs-feeding-booklet-en`。PDF 沿正式解析及已登記頁面範圍；超出單批的長資料會保留未完成，不宣稱已讀完。第一次改模式／來源須加 `--new-knowledge-work`，不能改寫原工作。網站與用途仍受現有 catalog 範圍限制。
 
-命令結束保存 emulator 快照；重新執行 `npm run agent:local`，聊天檢索同一份本地已發布資料。尚未核對的內容不發布；真網站、多模態及長資料分批的未驗項不因樣本成功而自動通過。這個本地入口不部署或啟用正式雲端排程。
+命令結束保存 emulator 快照；重新執行 `npm run agent:local`，聊天按同一份已核准維護來源清單檢索本地已發布資料，包括已發布的 PDF，毋須重新初始化種子或向量。候選仍經原發布／有效性閘隔離。尚未核對的內容不發布；真網站、多模態及長資料分批的未驗項不因樣本成功而自動通過。這個本地入口不部署或啟用正式雲端排程。
 
 ## 保存、停止與重設
 

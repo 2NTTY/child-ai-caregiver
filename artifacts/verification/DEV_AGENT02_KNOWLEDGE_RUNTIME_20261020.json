@@ -210,5 +210,114 @@
       "https://www.fhs.gov.hk/tc_chi/health_info/child/14821.html",
       "https://www.fhs.gov.hk/tc_chi/health_info/child/14812.html"
     ]
+  },
+  "livePdfPublish20261020": {
+    "sourceCommit": "d3127a4701593a27938cdf7a56ee3935c27611dc",
+    "promptPack": "0.1.53",
+    "source": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+    "scope": "Actual official PDF fetch and parser; registered page 3 only, not the complete booklet.",
+    "result": {
+      "sourceMode": "allowlisted-website",
+      "operationFingerprint": "ff6b3e6bf0e1d0699335df12cd5d96e16cc2cd52d4854dd91190af1e1bae3ea4",
+      "status": "already_recorded",
+      "code": "published",
+      "watchId": "fhs-feeding-booklet-en",
+      "observationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+      "review": {
+        "watchId": "fhs-feeding-booklet-en",
+        "observationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+        "previousObservationHash": null,
+        "decision": "approve_candidate",
+        "reviewKind": "model_review",
+        "policyVersion": "p3-m03-background-knowledge/2",
+        "modelReviewCompleted": true,
+        "growthRuleImpact": "none",
+        "notes": [
+          "內容來源為衞生署家庭健康服務，準確反映了固體食物引入的原則。由於此為新錄入，且涉及餵哺發展的重要指引，雖完整性尚待進一步核對其餘頁面，但當前片段已提供清晰的健康指引。"
+        ]
+      },
+      "publishMode": "live",
+      "budget": {
+        "usedUnits": 3,
+        "maxUnits": 8,
+        "modelCalls": 2,
+        "maxModelCalls": 2
+      },
+      "published": true
+    },
+    "trueGenerations": 2,
+    "trueEmbeddings": 1,
+    "embeddingEvidence": "Two reserved baseline work units plus one embedding reservation; publication succeeded after embedding that missing document.",
+    "productionWrites": false,
+    "notifications": false,
+    "retries": 0
+  },
+  "webContinuity20261020": {
+    "sourceCommit": "d3127a4701593a27938cdf7a56ee3935c27611dc",
+    "dirtyFiles": [
+      "scripts/agent-local.mjs",
+      "server/local-agent-main.ts"
+    ],
+    "method": "Chromium headless 1243, Playwright 1.63.0, formal Web login and document page; same production clients for one subsequent paid chat run.",
+    "evidence": {
+      "phase": "one-chat-run",
+      "paid": true,
+      "status": "failed",
+      "calls": 5,
+      "steps": [
+        "real-web-login-and-same-saved-document-version-after-restart"
+      ],
+      "document": {
+        "id": "3b1171d2-db46-4e82-b92d-fe97bccffd6f",
+        "version": 2,
+        "childId": "4138dea3-7452-48a4-ad71-e2a60ffca760"
+      },
+      "messageId": "60a1f764-2767-42fe-9628-ab62c16776f6",
+      "agent": {
+        "runId": "06498f4c-9ade-4d2f-a674-32753962c53a",
+        "status": "stopped",
+        "stopReason": "quota_exceeded",
+        "counts": {
+          "modelCalls": 4,
+          "toolCalls": 3,
+          "queryEmbeddings": 1
+        },
+        "tools": [
+          {
+            "name": "load_capabilities",
+            "status": "succeeded"
+          },
+          {
+            "name": "read_family_documents",
+            "status": "succeeded"
+          },
+          {
+            "name": "search_knowledge",
+            "status": "succeeded"
+          }
+        ],
+        "citations": []
+      },
+      "error": "quota_exceeded\n+ actual - expected\n\n+ 'stopped'\n- 'completed'\n"
+    },
+    "policy": {
+      "enabled": true,
+      "model": "gemini-3.1-flash-lite",
+      "dailyUserAttempts": 20,
+      "dailyGlobalAttempts": 100,
+      "personalDailyGlobalAttempts": 1000,
+      "maxModelCalls": 8,
+      "maxQueryEmbeddings": 4,
+      "maxToolCalls": 16,
+      "maxRunSeconds": 300,
+      "modelRequestSeconds": 90,
+      "maxModelRetries": 3,
+      "version": 0,
+      "updatedAt": null,
+      "userAttemptsAfter": 20,
+      "globalAttemptsAfter": 31
+    },
+    "conclusion": "Web showed the same saved v2 document after restart. Chat read the document and searched knowledge, but daily user quota stopped final delivery. No rerun, quota change or usage reset; final PDF citation remains unverified.",
+    "scopeLimit": "No full browser suite, visual design review, notifications, deployment or cloud business writes. An initial command referenced absent tsx and failed before starting any verification; rerun used Node native TypeScript."
   }
 }

@@ -4,6 +4,7 @@ import { access, mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/pr
 import { createServer } from 'node:net';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { M03_INITIAL_WATCH_IDS } from '../src/shared/background-knowledge-maintenance.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const directory = join(root, '.cache', 'agent-local'), statePath = join(directory, 'state.json');
@@ -90,7 +91,7 @@ const emulatorHost = offset => '127.0.0.1:' + (basePort + offset);
 const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', HOST: '127.0.0.1', PORT: String(basePort),
   SERVER_ORIGIN: origin, WEB_ORIGIN: origin, GCP_PROJECT_ID: saved.projectId, GCLOUD_PROJECT: saved.projectId,
   FIREBASE_DATABASE_ID: '(default)', FIREBASE_NAMESPACE: 'local_agent',
-  FIREBASE_KNOWLEDGE_SOURCE_IDS: 'fhs-solid-food',
+  FIREBASE_KNOWLEDGE_SOURCE_IDS: M03_INITIAL_WATCH_IDS.join(','),
   FIRESTORE_EMULATOR_HOST: emulatorHost(2), FIREBASE_AUTH_EMULATOR_HOST: emulatorHost(3),
   FIREBASE_STORAGE_EMULATOR_HOST: emulatorHost(4), STORAGE_EMULATOR_HOST: 'http://' + emulatorHost(4),
   FIREBASE_PHOTO_BUCKET: saved.projectId + '-private', FIREBASE_ERASURE_BUCKET: saved.projectId + '-journal',
@@ -218,6 +219,7 @@ try {
   start('api', [...watch, join(root, 'server', 'local-agent-main.ts')], env);
   console.log('Local Agent: ' + origin + '\nAccount: ' + saved.email + '\nLocal password/data: ' + statePath
     + '\nProvider: ' + model.provider + '; model: ' + model.model + '; AI enabled: ' + enabled
+    + '\nLocal quotas and usage: ' + origin + '/admin (separate from production; restarting does not reset usage).'
     + '\nNo production data or external notifications. Ctrl+C saves the emulator snapshot.');
   }
 } catch (error) { console.error(error.message); await stop(1); }
