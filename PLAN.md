@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **次序：**先完成 [DEV-AGENT01](#dev-agent01) 本地正式運行環境，接續 [DEV-AGENT02](#dev-agent02) 四角色聯合接線，再做 [MODEL-SELF01／02](#model-self01) 個人模型及共用設定。使用者已批准本節完整計劃；Android 收束及未驗項保留，iOS 暫緩，不另造測試 Agent。
 
-**活動分支：**`codex/model-self01-google-settings`／draft #242，從 DEV01 `feedfe3`／draft #241 建立。後端已保存為 `5b38ad1`；共用設定接線沿同一 draft 收束，避免新 v2 client 與舊前端投影不相容。正式合併／部署仍受原 draft 依賴與驗收門檻約束。DEV02 固定角色整合及原失敗保留在本地 `codex/dev-agent02-role-integration`／`ce1d6f9`，本包不把協作者程式帶入交付分支。2026-10-20 重核 master `d4686b7`；#214 `294572c`、#215 `aff6804`、#216 `364937c`仍open；前兩者新增聊天呈現／client修改，#216相較原固定版本樹內容相同。原DEV02證據只適用原固定head，不更新協作者分支或合併其PR。#229／#234～#239／#241未合併前置仍有效，不能把活動基線當master或已部署版本。
+**本分支：**`codex/model-self01-google-settings`（#242）；2026-10-20 已接回 master `3795858`、三角色及 Android draft 依賴同步。後續四角色／個人設定的活動成果在 #242／#244；本包原實作及驗收 gate 保留，不把 draft 當已合併或已部署。
 
 ### 保留的 Android 交付狀態
 
@@ -68,7 +68,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 後續獨立接線與必要本機檢查已保存於 draft #234～#239：會話、同步、原運行查回、語音／附件、原生通知與固定發布工具。`bf47c47` 的新增索引、相容 API／worker／Web 已交付原站；新版 APK已完成並記錄發布基線，使用者已回覆覆蓋安裝；使用者已確認正常開啟、原登入及資料保留；其餘功能真機及依賴合併未完成。
 - Android Firebase／最小 FCM 權限及 Expo preview 描述檔已配置，新版 APK已安裝；本人已允許通知，一則指定FCM測試已在手機顯示，不重發。具體範圍／gate 只在[各工作包](#s13-w02)，不在此重複工作史。
 - 主模型實作、指導及 review；使用者最新容許 Luna 按規則唯讀定位。最低必要檢查，優先局部原文或日誌尾部；需本人／手機的項目待驗時繼續獨立工作，不能把待驗寫成完成。
-- OPT／LAY 已交付；[STR01](#p2-str01)及[原生備份還原](#p2-backup-followup)仍未完成。#214～#216 由協作者處理，不接管或合併。
+- OPT／LAY 已交付；[STR01](#p2-str01)及[原生備份還原](#p2-backup-followup)仍未完成。#214～#216／#243 已合併，真模型／長來源等尚欠成果按 #244 的現行 gate 承接，不把合併當整體完成。
 - 每包交付按本機協作文件及主責切換帳號、單作者提交；B提出Android／共用前端需求，C實作所需後端，接口穩定後由B接線。依賴 PR／人工 gate 保留。新包及合併前重核 master、相關 head 及本機修改。
 
 <a id="local-agent-personal-model"></a>
@@ -146,7 +146,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="p2-str01"></a>
 #### P2-STR01 灰色正文串流
 
-- 前置：OPT02、OPT05、LAY05 已交付；#214 穩定審核接口仍未合併（2026-10-18 head 80eb850），因此本包未開始。這是 OPT05 完整正文交付之後的額外能力。
+- 前置：OPT02、OPT05、LAY05 已交付；#214 審核接口已合併；本包仍未開始，須沿最新介面接線，不因前置合併即標完成。這是 OPT05 完整正文交付之後的額外能力。
 - ADK TypeScript 2.1.0 [原生文字串流](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/models/google_llm.ts)可用；現有 gateway 非串流且 StreamingMode.NONE。present_answer 正文在工具參數內，而 [Gemini 3.1 Flash-Lite 不支援工具參數串流](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/tools/function-calling#streaming-fc)，不是升 SDK 或單改旗標便完成。
 - 收尾使用原生文字串流代替原呈現生成，不先全文再重生一遍；完整正文／引用／收據仍進原校驗、審核、保存管線。工具參數須完整才執行，不從 partial 執行副作用。
 - Gateway 聚合回應／終態／用量，每次生成計一次，不按 chunk 計數；中斷缺用量保留未知。送草稿前保留身份／來源／權限／隔離及禁止披露檢查，全文後才語義審核；限額不足停止，不加 run／配額。
@@ -158,7 +158,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 **接續備忘（2026-10-18 核對；等待協作者審核接口）：**
 
 - **固定基線／未完成：**遠端 master `d4686b7`；正式部署另見 STATUS，不把本地或 master 當成已上線。OPT01～05、LAY01～05 已合併及部署；STR01 尚未實作。已有真進度與最終完整正文，不是逐字草稿。兩份計劃不能整體標完成。
-- **外部前置與責任：**#214 仍 open、head `80eb850`；#215 `53c74ac`、#216 `0360f7b` 亦未合併。三包仍由協作者負責，本聊天不接管、不修改／合併其分支、不重做角色。恢復時重核最新 master／PR，不能直接依這份快照整合。
+- **外部前置與責任：**#214／#215／#216 及 #243 已合併至 master `3795858`，本次只接回既有成果；角色真模型及完整背景流程的剩餘門檻在 #244 分開保存。恢復 STR01 時核對最新審核契約，不能直接沿用先前未合併快照。
 - **最小閱讀與修改接點：**先讀本節及 #214 合併後的正式審核契約，再讀 [ModelGateway](server/model-gateway.ts)、[ADK adapter](server/agent-model-gateway.ts)、[Runner](server/agent-runtime.ts)；傳輸復用 [SSE](server/agent-feedback-stream.ts)、[事件契約](src/shared/agent-feedback.ts)、[客戶端 reader](src/client/agent-feedback-reader.ts) 與 [ChatController](src/client/chat-controller.ts)，畫面沿 [ChatTimeline](frontend/src/components/chat/ChatTimeline.tsx)。按相依符號局部追讀，不重新盤點全倉。
 - **恢復次序：**審核接口穩定且合併 → 核對成果／來源版本與審核、保存結果的綁定 → 用同一收尾生成輸出真正文字增量 → 接灰稿／核准替換／拒絕移除 → 只補本節必要驗收。不要以現有引用 ID 校驗代替語義審核，也不要提前展示工具參數、內部思考或自行提高預算。
 - **已有證據及限制：**復用 [交付 EV](artifacts/verification/P2_OPT_DELIVERY_20261015.json) 與 [交付 LOG](WORKLOG.md#log-20261015-p2-opt-delivery)。兩次真生成已核持久摘要及公開 SSE／聊天讀回；不重跑已通過項目。灰稿、語義審核交接與真正正文增量仍未驗；原生備份還原仍按原決定延後。回滾與部署限制只見 [正式部署](docs/PRODUCTION_FRONTEND.md#firestore-deployment) 及 STATUS。
@@ -201,21 +201,21 @@ P2 只留最小角色配置／契約；此處明確承接內部實作與原 AC-P
 <a id="p3-m01"></a>
 #### P3-M01 審核 Agent
 
-- 階段／狀態／前置：P3；腳本實作已接上聊天完成路徑，真模型／真服務未驗，不標完成；P2-F08。
-- 交付：Server 控制的唯讀審核，核原始證據／適用性／內容 hash、版本及輸出範圍；不能創造授權或修改業務。共享 ModelGateway／根預算，不由聊天自行決定免審。每輪上限維持 4，審核占用剩餘一次；`AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS=6` 只在未綁定 run 時採用提案，不提高每日配額，也不覆蓋正式設定快照。
-- 必要驗收：沿一條成果核對支持與錯誤引用／版本變更拒絕，保留 P2 程式檢查；對照 AC-P2M-02，不宣稱臨床有效性。合成腳本已覆蓋真實引用但含義不支持、版本變更失效，以及未審核不等於正式成功。真 Vertex／Gemini 與線上驗收仍待使用者批准。M02 的「改一項、其餘保留」不在本包。
+- 階段／狀態／前置：P3；#214／#243 程式已合併，真模型／完整成果按 DEV-AGENT02 承接；P2-F08。
+- 交付：Server 控制的唯讀審核，核原始證據／適用性／內容 hash、版本及輸出範圍；不能創造授權或修改業務。共享 ModelGateway／根預算，不由聊天自行決定免審。
+- 必要驗收：沿一條成果核對支持與錯誤引用／版本變更拒絕，保留 P2 程式檢查；對照 AC-P2M-02，不宣稱臨床有效性。
 
 <a id="p3-m02"></a>
 #### P3-M02 資料編製 Agent
 
-- 階段／狀態／前置：P3；未開始；P3-M01。
+- 階段／狀態／前置：P3；#215 程式已合併，與正式保存的完整真流程按 DEV-AGENT02 承接；P3-M01。
 - 交付：透過 ADK AgentTool 按需編製可保存／重用、嚴格格式或專門風格的資料；原領域 schema、同 ID 局部修改、審核及必要本人確認後由權威服務保存，不限於 PDF 或另造事實副本。
 - 必要驗收：一條指定項修改→其餘保留→保存→新對話讀回，與父 run 共額及取消；承接 AC-P2M-01／02／04 的互動部分。
 
 <a id="p3-m03"></a>
 #### P3-M03 背景知識維護 Agent
 
-- 階段／狀態／前置：P3；未開始；P3-M01（不依賴 M02）。
+- 階段／狀態／前置：P3；#216／#243 基礎已合併，真整理／審核／發布接線及缺口由 DEV-AGENT02 承接；P3-M01（不依賴 M02）。
 - 交付：排程啟動獨立 Runner，在指定網站範圍讀 HTML／圖片／PDF、整理與核對新版並受限發布；不讀家庭私人資料，不作聊天搜尋子模型。沿現有知識、Storage、Tasks 和發布服務。
 - 必要驗收：沒有聊天請求時完成一批有界更新→審核→發布→之後聊天引用；疑義保持候選、越界拒絕及重投防重，承接 AC-P2M-03／04。不得另開 run 重置邏輯工作預算。
 
