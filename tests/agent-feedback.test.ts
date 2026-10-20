@@ -46,7 +46,7 @@ test('formal HTTP streams real Runner progress before saving and disconnect read
       const card=medical&&step===1;
       if(!card) await gate.promise;
       return {content:{role:'model',parts:[{functionCall:{id:'step-'+step,name:card?'show_official_help':'present_answer',
-        args:card?{card:'medical-consult-hk-v1'}:{kind:'clarification',paragraphs:[{text:'可以幫你整理到診問題。',citationIds:[]}]}}}]},
+        args:card?{card:'medical-consult-hk-v1'}:{kind:'clarification',paragraphs:[{text:'已儲存任務候選，仍待你確認。',citationIds:[]}]}}}]},
         finishReason:FinishReason.STOP,usageMetadata:{promptTokenCount:10,candidatesTokenCount:5}};
     }}});
   let origin='',posts=0;

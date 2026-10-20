@@ -1,4 +1,5 @@
 import type { SourceWatchDefinition } from "./knowledge-refresh-types.ts";
+import { M03_INITIAL_WATCH_IDS } from "../src/shared/background-knowledge-maintenance.ts";
 
 /** Reviewed noncommercial source scope. Adding a feed requires source/terms review, not a model URL. */
 export const SOURCE_WATCHES: readonly SourceWatchDefinition[] = ([
@@ -18,3 +19,13 @@ export const SOURCE_WATCHES: readonly SourceWatchDefinition[] = ([
     classification: "recent_information", publisher: "香港電台", termsUrl: "https://www.rthk.hk/copyright/preview/index.html",
     itemHosts: ["news.rthk.hk"], audience: "internal_noncommercial" },
 ]);
+
+/** P3-M03 first-round pair only. Other catalog entries stay for S10 refresh, not this runner. */
+export function m03InitialSourceWatches(
+  catalog: readonly SourceWatchDefinition[] = SOURCE_WATCHES,
+): SourceWatchDefinition[] {
+  const allowed = new Set<string>(M03_INITIAL_WATCH_IDS);
+  return catalog.filter(definition => allowed.has(definition.id));
+}
+
+export { M03_INITIAL_WATCH_IDS };
