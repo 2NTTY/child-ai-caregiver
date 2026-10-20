@@ -3392,3 +3392,12 @@
 - 使用者指出相容模型不應因未經逐型號驗收而被禁用。已移除Firestore保存與Google provider生成的固定清單限制；既有Gemini ID格式、身份／權限、收據、配額及付款隔離保留。目錄只作參考，refresh最多兩頁並回20個合法生成模型；未列本地profile的新型號不再被刪掉。共用表單增加直接輸入ID，未知能力不顯示為禁止；已知thinking適配保留，其他型號省略可選設定。
 - 只改兩個既有Server情景及兩個表單情景：保存／讀回／原操作與隔離通過；SDK情景首次因舊白名單拒絕fixture的空contents被SDK拒絕，停下核對後僅改為正常user訊息，單項補跑通過。新增型號實際傳至受控SDK、404如實回報且不回退，目錄保留新型號；Server／UI局部型別通過。零真模型／雲端資料寫入，不安排逐型號付費測試。
 - SPEC、架構及API／研究更新為參考目錄與直接切換的契約；工作狀態及[追加證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)區分已部署OTA與本次尚未部署的模型選擇修正。
+
+<a id="log-20261020-model-choice-delivery"></a>
+## LOG-20261020-MODEL-CHOICE-DELIVERY
+
+- #246 模型選擇修正已合併，按使用者明確批准將 `d53c203` 的code／Web／hash與部署腳本傳至原VM，再發布既有Expo preview相容OTA。首次自動批准拒絕與之後具體授權保留；不傳密鑰、ADC或家庭資料，不修改配額。
+- Web建置及Android匯出成功；首次Web命令在建置前被sandbox拒絕npm cache存取，取得所需執行權限後同命令成功。原VM身份、基底映像及READY備份metadata已核對，沒有還原；候選無網絡載入通過，確認無活動Agent租約後短暫維護切換API／worker／Web，健康與公開HTML hash通過。
+- 2026-10-20 14:07 UTC原站更新為 `model-d53c203`，保留原映像及受保護配置。只刪本次已核對路徑內的兩個建置暫存目錄，清理後剩437,288,960 bytes；未處置其他容器、資源或備份。
+- 14:11 UTC相容OTA發布成功，31檔／13,377,999 bytes，群組 `cfe20c62-9816-4d8e-8b5c-06bcf74ab266`，沿用APK v2 runtime；沒有新APK、購買方案或追加產品測試。本次新OTA裝置接收未驗，前次表單／登入讀回與首次配置失敗維持分開；真個人key生成／embedding及Android保存亦未驗。
+- 零模型／通知、零資料遷移，僅必要建置、部署健康與版本核對。實際收據追加至[原交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)的`modelChoiceDelivery20261020`，PLAN／STATUS移除修正尚未部署的過時狀態，不把可選模型寫成逐型號品質或供應商可用性已驗。
