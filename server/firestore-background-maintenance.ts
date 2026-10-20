@@ -1,3 +1,4 @@
+import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
 import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
 import { settleSummaryRequest, firestoreContextRecoverySchema } from './firestore-context-basis.ts';
 import { createFirestoreContentErasure } from './firestore-content-erasure.ts';
@@ -8,7 +9,7 @@ import { z } from 'zod';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import { FirestoreDomainData, domainReject, firestoreDomainHash, FIRESTORE_TASK_DISPATCH_SCOPE as SYSTEM, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
-import { prepareFirestoreBackgroundWork, preparePhotoCleanupWake, firestoreBackgroundReference, type FirestoreBackgroundWork } from './firestore-background-work.ts';
+import { prepareFirestoreBackgroundWork, preparePhotoCleanupWake, prepareObjectCleanupWake, firestoreBackgroundReference, type FirestoreBackgroundWork } from './firestore-background-work.ts';
 import { firestoreFamilyDocumentSchemas } from './firestore-family-documents.ts';
 import { firestoreWorkWatchSchema } from './firestore-work-followup.ts';
 import { firestorePhotoSchemas, type createFirestorePhotoStore } from './firestore-photos.ts';
@@ -18,7 +19,7 @@ import type { FirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts
 import { createKnowledgeSourceFetcher } from './knowledge-source-fetch.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
-const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions'] as const;
+const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions', 'voice_assets'] as const;
 const cursorSchema = z.object({ after: z.record(z.string(), z.string().nullable()), complete: z.array(z.string()),
   minute: z.number().int(), token: z.uuid().nullable(), until: z.number().int().nonnegative() }).strict();
 const empty = () => ({ after: {} as Record<string, string | null>, complete: [] as string[], minute: -1, token: null as string | null, until: 0 });
@@ -33,6 +34,7 @@ const knowledgePeriod = (weekly: boolean, now = Date.now()) => {
 /** One Scheduler wake reconciles bounded pages. No interval, source model, private context, or provider send lives here. */
 export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOptions & {
   journal?: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>;
+  voices?: Pick<FirestoreVoiceStore, 'cleanupDeleted' | 'expireUnlinked'>;
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'cleanupDeleted'>;
   erasures: FirestoreErasureStore; cleanup: ReturnType<typeof createFirestoreErasureCleanup>;
@@ -71,6 +73,18 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
         queued.commit();
       }); } catch (error) { if (!error || typeof error !== 'object' || !('status' in error) || ![403, 404, 409].includes(Number(error.status))) throw error; }
       return;
+    }
+    if (stage === 'voice_assets') {
+      const info=open(row,'voice-asset',firestoreVoiceRowSchema), voice=info.value;
+      if(voice.deletion ? voice.deletion.cleanup!=='pending'||Date.parse(voice.deletion.nextCheckAt??'')>Date.now()
+        : voice.messageId!==null||Date.parse(voice.createdAt)+86400_000>Date.now())return;
+      await options.database.runTransaction(async tx=>{
+        const control=await authority.readControl(tx);if(!options.enabled||!control.enabled)return;
+        const fresh=await tx.get(row.ref);if(!fresh.exists||firestoreDomainHash(fresh.data())!==firestoreDomainHash(row.data()))return;
+        const identity={kind:'voice-cleanup' as const,scope:SYSTEM,resourceId:row.id,basis:firestoreDomainHash([info.id,voice.deletion?'delete':'expiry']),generation:control.generation,authorizationVersion:'0'};
+        const wake=voice.descriptor?await prepareObjectCleanupWake(data,tx,identity,firestoreDomainHash(voice.descriptor)):()=>{};
+        const work=await prepareFirestoreBackgroundWork(data,tx,identity,new Date().toISOString());work.commit();wake();
+      });return;
     }
     if (stage === 'erasures' || stage === 'photo_cleanup') {
       const info = stage === 'erasures' ? open(row, 'scope-erasure', firestoreScopeErasureSchema) : open(row, 'photo-cleanup', firestorePhotoSchemas.cleanup);
@@ -123,6 +137,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
     }
     for (const stage of stages) {
       let q: Query = data.collection(stage).orderBy(FieldPath.documentId()).limit(5);
+      if (stage === 'voice_assets') q = q.where('cleanupState','in',['pending','unlinked']);
       if (stage === 'content_erasures') q = q.where('stage', 'in', ['revisions', 'receipts']);
       if (stage === 'context_versions') q = q.where('summaryPending', '==', true);
       if (stage === 'work_watches') q = q.where('enabled', '==', true);
@@ -185,6 +200,18 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       const revision = job.basis.slice(0, 36), result = await options.knowledge.process({ watchId: job.resourceId, revision, workerGeneration: job.generation },
         firestoreBackgroundReference(job), fetcher, signal);
       return { state: result.status === 'unknown' ? 'unknown' as const : 'completed' as const };
+    }
+    if (job.kind === 'voice-cleanup') {
+      if(!options.voices)domainReject('voice_cleanup_unavailable',503);
+      const row=await data.collection('voice_assets').doc(job.resourceId).get();if(!row.exists)return{state:'completed' as const};
+      const voice=open(row,'voice-asset',firestoreVoiceRowSchema).value;
+      if(!voice.deletion && !await options.voices.expireUnlinked(voice.scope,voice.id))return {state:'completed' as const};
+      const result=await options.voices.cleanupDeleted(voice.scope,voice.id);
+      if(result.state==='complete')return{state:'completed' as const};
+      const fresh=await row.ref.get();if(!fresh.exists)return{state:'completed' as const};
+      const pending=open(fresh,'voice-asset',firestoreVoiceRowSchema).value.deletion!;
+      return pending.cleanup==='blocked'?{state:'unknown' as const}
+        :{state:'deferred' as const,nextAt:pending.nextCheckAt&&Date.parse(pending.nextCheckAt)>Date.now()?pending.nextCheckAt:new Date(Date.now()+60000).toISOString()};
     }
     if (job.kind === 'photo-cleanup') {
       const row = await data.collection('photo_cleanup').doc(job.resourceId).get(); if (!row.exists) return { state: 'completed' as const };

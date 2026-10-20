@@ -31,11 +31,14 @@ export const firestoreAgentActionReceiptSchema = z.object({
   state: z.enum(['saved', 'updated', 'scheduled', 'completed', 'cancelled']),
   notification: z.enum(['not_authorized', 'authorized_for_due_event']), channels: z.array(z.enum(['telegram', 'web_push'])).max(2),
   memoryOutcome: z.enum(['created', 'updated', 'duplicate']).optional(),
+  sourceBasis: z.literal("voice_interpretation").optional(),
   createdAt: time, quantityGrounding: z.object({ status: z.enum(['source_supported', 'removed', 'absent', 'unchanged']) }).optional(),
 }).strict();
 export const firestoreAgentActionSavedSchema = z.object({
   receipt: firestoreAgentActionReceiptSchema, hash: z.string().regex(/^[a-f0-9]{64}$/u), sourceMessageId: uuid,
   sourceMessageIds: z.array(uuid).max(6), policyVersion: version,
+  voiceEvidence: z.object({ kind: z.literal('voice_interpretation'), voiceId: uuid, voiceVersion: version.min(1),
+    sha256: z.string().regex(/^[a-f0-9]{64}$/u), sourceMessageId: uuid, interpretedQuote: z.string().min(1).max(2000) }).strict().optional(),
 }).strict();
 export const firestoreAgentActionCallSchema = z.object({ receiptId: uuid }).strict();
 export const firestoreAgentManualSchema = z.object({ childId: uuid, kind: z.enum(['policy', 'delete_note']),
@@ -49,6 +52,7 @@ export interface FirestoreAgentActions extends AgentActionsStore {
   readReceipts(binding: Binding, runId: string): Promise<Saved[]>;
 }
 export function createFirestoreAgentActions(options: {
+  voices?: Pick<import("./firestore-voice.ts").FirestoreVoiceStore, "readEvidence">;
   runs: FirestoreAgentRuns; proposals: FirestoreAgentProposals; care: FirestoreCareStore; online: FirestoreOnlineStore;
 }): FirestoreAgentActions {
   const { runs, proposals, care, online } = options, { authority, data } = runs;
@@ -204,8 +208,13 @@ export function createFirestoreAgentActions(options: {
         if (run.trigger.kind !== 'interactive' || !run.sourceMessageId) domainReject('agent_run_expired');
         if (saved.length >= 8) domainReject('agent_action_limit');
         const original = await proposals.source(b, run, run.sourceMessageId);
-        if (!original.text.includes(input.sourceQuote)) domainReject('agent_source_mismatch');
-        const sources = [{ quote: input.sourceQuote, original: original.text }];
+        const voiceEvidence = input.sourceBasis === 'voice_interpretation' ? (() => {
+          if (!original.voice || !options.voices) domainReject('agent_source_mismatch');
+          return options.voices.readEvidence(b, original.id, original.voice);
+        })() : undefined;
+        const audioSource = voiceEvidence ? { ...await voiceEvidence, interpretedQuote: input.sourceQuote } : undefined;
+        if (!audioSource && !original.text.includes(input.sourceQuote)) domainReject('agent_source_mismatch');
+        const sources = [{ quote: input.sourceQuote, original: audioSource ? input.sourceQuote : original.text }];
         for (const ref of input.sourceMessages ?? []) {
           const old = await proposals.source(b, run, ref.messageId);
           if (!old.text.includes(ref.quote)) domainReject('agent_source_mismatch');
@@ -232,7 +241,7 @@ export function createFirestoreAgentActions(options: {
             }
           }
           const change = await care.prepareRecord(b, receiptId, { text: input.text, details,
-            source: '依本人預先授權，由 Agent 整理的使用者陳述；未逐項確認為事實' },
+            source: audioSource ? '依本人預先授權，由 Agent 聽取原錄音整理的使用者陳述；非逐字文字或已確認事實' : '依本人預先授權，由 Agent 整理的使用者陳述；未逐項確認為事實' },
           { basis: 'preauthorized_user_statement', ...(input.kind === 'revise_record'
             ? { id: input.recordId, expectedVersion: input.expectedVersion, reason: input.reason } : {}) });
           prepared = change; resource = { kind: 'care_record', id: change.value.id, version: change.value.version };
@@ -293,9 +302,9 @@ export function createFirestoreAgentActions(options: {
           state = change.task.occurrence.state === 'completed' ? 'completed' : change.task.occurrence.state === 'cancelled' ? 'cancelled' : 'scheduled';
         }
         const receipt: AgentActionReceipt = { id: receiptId, runId, kind: input.kind, resource, state, notification: 'not_authorized',
-          channels: [], createdAt: at, ...(memoryOutcome ? { memoryOutcome } : {}), ...(quantity ? { quantityGrounding: { status: quantity.status } } : {}) };
+          channels: [], createdAt: at, ...(audioSource ? { sourceBasis: 'voice_interpretation' as const } : {}), ...(memoryOutcome ? { memoryOutcome } : {}), ...(quantity ? { quantityGrounding: { status: quantity.status } } : {}) };
         const value: Saved = { receipt, hash, sourceMessageId: run.sourceMessageId,
-          sourceMessageIds: (input.sourceMessages ?? []).map(item => item.messageId), policyVersion: policy.version };
+          sourceMessageIds: (input.sourceMessages ?? []).map(item => item.messageId), policyVersion: policy.version, ...(audioSource ? { voiceEvidence: audioSource } : {}) };
         const envelope = { ...data.tags(b.scope), runId, receiptId,
           ...data.seal('agent-action-receipt', receiptId, b.scope, firestoreAgentActionSavedSchema, value) };
         prepared.commit(); b.transaction.create(data.ref('agent_action_receipts', 'agent-action-receipt', receiptId), envelope);

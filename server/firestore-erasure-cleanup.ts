@@ -1,3 +1,4 @@
+import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
 import { createHash } from 'node:crypto';
 import { FieldPath } from '@google-cloud/firestore';
 import { z } from 'zod';
@@ -17,6 +18,7 @@ const collections = FIREBASE_BACKUP_COLLECTION_SUFFIXES.filter(suffix => !['_era
 const BATCH = 25;
 export interface FirestoreErasureCleanupOptions extends FirestoreErasureOptions {
   erasures: FirestoreErasureStore;
+  voices?: Pick<FirestoreVoiceStore, 'eraseForScope'>;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'eraseForScope'>;
   deleteAgentSession(userId: string, runId: string): Promise<void>;
   eraseAgentUserPage(userId: string): Promise<boolean>;
@@ -123,6 +125,11 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
         const photo = firestorePhotoSchemas.photo.parse(opened.value);
         if (!await options.photos.eraseForScope(photo.scope, photo.id, job.intent, job.journal!)) return erasures.result(job);
         continue;
+      }
+      if (opened.context.kind === 'voice-asset') {
+        if (!options.voices) domainReject('voice_cleanup_unavailable',503);
+        const voice = firestoreVoiceRowSchema.parse(opened.value);
+        if (!await options.voices.eraseForScope(voice.scope,voice.id,job.intent,job.journal!)) return erasures.result(job);
       }
       if (retainBarrier(opened, job)) continue;
       if (opened.context.kind === 'agent-run' || opened.context.kind === 'run')

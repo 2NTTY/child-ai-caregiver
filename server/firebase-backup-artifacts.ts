@@ -1,3 +1,5 @@
+import { voiceBackupDescriptorSchema } from './firebase-voice-recovery.ts';
+import { voiceObjectDescriptorSchema } from './firebase-voice-objects.ts';
 import { createHash } from "node:crypto";
 import type { Readable } from "node:stream";
 import { Storage, type Bucket, type SaveOptions } from "@google-cloud/storage";
@@ -53,12 +55,15 @@ export interface FirebaseBackupPhotoManifestEntry {
 const photoSchema: z.ZodType<FirebaseBackupPhotoManifestEntry> = z.object({
   path, photoId: uuid, scope: workRecoveryScopeSchema, descriptor: firebasePhotoObjectDescriptorSchema, backup: backupPhotoDescriptorSchema,
 }).strict();
+export const firebaseBackupVoiceEntrySchema = z.object({path,voiceId:uuid,scope:workRecoveryScopeSchema,descriptor:voiceObjectDescriptorSchema,backup:voiceBackupDescriptorSchema}).strict();
+export type FirebaseBackupVoiceEntry = z.infer<typeof firebaseBackupVoiceEntrySchema>;
 export const firebaseBackupManifestPayloadSchema = z.object({
   format: z.literal("yuban-firebase-backup-manifest/v1"), backupId: uuid, databaseId,
   snapshotTime: z.iso.datetime({ precision: 3 }), controlGeneration: uuid, sourceCommit: z.string().regex(/^[a-f0-9]{40}$/u),
   keyVersionRef: z.string().max(1024).regex(/^projects\/[a-zA-Z0-9-]{1,64}\/secrets\/[a-zA-Z0-9_-]{1,255}\/versions\/[1-9][0-9]{0,19}$/u),
   retainedUntil: at, nativeExport: z.object({ outputUriPrefix: z.string().min(1).max(1500), objects: nativeObjectsSchema }).strict(),
   inventory: firebaseBackupInventorySchema, photos: z.array(photoSchema).max(PHOTO_LIMITS.totalCount),
+  voices: z.array(firebaseBackupVoiceEntrySchema).max(MAX_DOCUMENTS).optional(),
 }).strict();
 export type FirebaseBackupManifestPayload = z.infer<typeof firebaseBackupManifestPayloadSchema>;
 export const firebaseBackupManifestDescriptorSchema = z.object({
@@ -248,6 +253,15 @@ export function createFirebaseBackupArtifacts(options: FirebaseBackupArtifactsOp
         || photo.backup.retainedUntil!==payload.retainedUntil) fail("backup_artifact_integrity",503);
       photoIds.add(photo.photoId);photoPaths.add(photo.path);bytes+=photo.descriptor.bytes;
       if (bytes>PHOTO_LIMITS.totalBytes) fail("backup_artifact_limit",413);
+    }
+    const voiceIds=new Set<string>();let voiceBytes=0;
+    for(const voice of payload.voices??[]) {
+      const expectedPath=config.namespace+'_voice_assets/'+digest(canonical(['voice-asset',voice.voiceId]));
+      if(voiceIds.has(voice.voiceId)||voice.path!==expectedPath||!paths.includes(voice.path)
+        ||voice.backup.objectName!==base(payload.backupId)+'/voices/'+voice.voiceId||voice.backup.retainedUntil!==payload.retainedUntil)
+        fail('backup_artifact_integrity',503);
+      voiceIds.add(voice.voiceId);voiceBytes+=voice.backup.bytes;
+      if(voiceBytes>FIREBASE_NATIVE_EXPORT_MAX_BYTES)fail('backup_artifact_limit',413);
     }
     return payload;
   }

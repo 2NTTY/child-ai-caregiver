@@ -1,13 +1,131 @@
 {
   "schemaVersion": 1,
-  "workPackage": "S07-W01",
+  "workPackage": "S12-W01",
   "recordedOn": "2026-10-16",
   "scope": "Original licenses for selected direct dependencies and explicitly inventoried transitive packages; lockfile declarations are an inventory, not a full transitive license or distribution audit.",
   "lockfile": {
     "path": "package-lock.json",
-    "sha256": "28b40944ab91aff5d01754e1cb012c090867155b3673a2f824af679553203721"
+    "sha256": "a0119e00d10ab7ef2d0c8dd2b907195b03cbbad57dea7f1e747839efbcc3843a"
   },
   "packages": [
+    {
+      "name": "expo-audio",
+      "version": "57.0.5",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-audio"
+      },
+      "tarball": "https://registry.npmjs.org/expo-audio/-/expo-audio-57.0.5.tgz",
+      "integrity": "sha512-39fX5JC5zDvELB4/eDJPj2XAYRN0W9+K2DfDWm5N3aC5WZ7HRrhupWtT6hbH09NlfYpsRSqYOwEZnocFM42ynQ==",
+      "files": [
+        {
+          "path": "licenses/expo-audio/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "mediabunny",
+      "version": "1.61.5",
+      "dependencyType": "dependency",
+      "license": "MPL-2.0",
+      "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Vanilagy/mediabunny.git"
+      },
+      "tarball": "https://registry.npmjs.org/mediabunny/-/mediabunny-1.61.5.tgz",
+      "integrity": "sha512-IYrDTozxGVRTWQ1YdIcF+P7S7qHvvkiQYsX3WUbAHkxgAcCfEn7a/RbM9i/WiJHJ1MSYZqSxZkna1UUn4FGGBQ==",
+      "files": [
+        {
+          "path": "licenses/mediabunny/LICENSE",
+          "sha256": "3f3d9e0024b1921b067d6f7f88deb4a60cbe7a78e76c64e3f1d7fc3b779b9d04",
+          "source": "LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-sharing",
+      "version": "57.0.21",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-sharing"
+      },
+      "tarball": "https://registry.npmjs.org/expo-sharing/-/expo-sharing-57.0.21.tgz",
+      "integrity": "sha512-7Kv3ai5kdSZ/3Ok05AOWUcXSfDrqeQ5rKpWztIvi86A4WxQCed+DV4AtnhfEwZ0ZeFxJj2Au/mjfQ06J4YK8HA==",
+      "files": [
+        {
+          "path": "licenses/expo-sharing/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "node_modules/expo-sharing/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-image-picker",
+      "version": "57.0.19",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-image-picker"
+      },
+      "tarball": "https://registry.npmjs.org/expo-image-picker/-/expo-image-picker-57.0.19.tgz",
+      "integrity": "sha512-SWKY235q7TOmlGhFTUWhJZnRqrW/HYHG/6USypa1qgnaQ0ndvToUGjZwVMeAlqtJeqJCXOXSAJzXTxkw7jJc+A==",
+      "files": [
+        {
+          "path": "licenses/expo-image-picker/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "node_modules/expo-image-picker/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "expo-file-system",
+      "version": "57.0.7",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/expo/expo.git",
+        "directory": "packages/expo-file-system"
+      },
+      "tarball": "https://registry.npmjs.org/expo-file-system/-/expo-file-system-57.0.7.tgz",
+      "integrity": "sha512-1vkZRadOsIputFDBcclqBa1pO3iXOO6iIsdqJipQWw4V5TSnWgmRTuOF7ro8IzrVue+PHbum++KCG3Tawem4cg==",
+      "files": [
+        {
+          "path": "licenses/expo-file-system/LICENSE",
+          "sha256": "fb3ca4a837f5779e83cef89b78253a8949cfb9429c340309f62d0465ec6610b4",
+          "source": "node_modules/expo-file-system/LICENSE"
+        }
+      ]
+    },
+    {
+      "name": "base64-js",
+      "version": "1.5.1",
+      "dependencyType": "dependency",
+      "license": "MIT",
+      "repository": {
+        "type": "git",
+        "url": "git://github.com/beatgammit/base64-js.git"
+      },
+      "tarball": "https://registry.npmjs.org/base64-js/-/base64-js-1.5.1.tgz",
+      "integrity": "sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==",
+      "files": [
+        {
+          "path": "licenses/base64-js/LICENSE",
+          "sha256": "5b37224c080cdcc97c871ada971c224e9926370fe74f11b539aa1cf9f3b1aca1",
+          "source": "node_modules/base64-js/LICENSE"
+        }
+      ]
+    },
     {
       "name": "@expo/metro-runtime",
       "version": "57.0.16",
@@ -1053,25 +1171,25 @@
     }
   ],
   "lockfileLicenseDeclarations": {
-    "packageEntries": 1141,
+    "packageEntries": 1158,
     "declarations": {
-      "Apache-2.0": 143,
-      "MIT": 866,
-      "ISC": 50,
-      "MIT AND Apache-2.0": 1,
-      "BSD-3-Clause": 24,
-      "(MIT OR CC0-1.0)": 3,
-      "Python-2.0": 1,
-      "Unlicense": 3,
-      "CC-BY-4.0": 1,
-      "BSD-2-Clause": 14,
-      "(MIT OR Apache-2.0)": 1,
-      "BlueOak-1.0.0": 11,
-      "0BSD": 2,
-      "MPL-2.0": 13,
-      "CC0-1.0": 1,
       "(BSD-3-Clause OR GPL-2.0)": 1,
-      "MIT-0": 1
+      "(MIT OR Apache-2.0)": 1,
+      "(MIT OR CC0-1.0)": 3,
+      "0BSD": 2,
+      "Apache-2.0": 143,
+      "BSD-2-Clause": 14,
+      "BSD-3-Clause": 24,
+      "BlueOak-1.0.0": 11,
+      "CC-BY-4.0": 1,
+      "CC0-1.0": 1,
+      "ISC": 50,
+      "MIT": 882,
+      "MIT AND Apache-2.0": 1,
+      "MIT-0": 1,
+      "MPL-2.0": 14,
+      "Python-2.0": 1,
+      "Unlicense": 3
     },
     "missingDeclarations": [
       "node_modules/buildcheck",

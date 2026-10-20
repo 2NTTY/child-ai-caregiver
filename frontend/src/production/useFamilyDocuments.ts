@@ -1,3 +1,4 @@
+import { exportBlob } from "../platform/file-export";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFamilyDocumentsApi, parseFamilyDocumentSnapshot, FamilyDocumentApiError, requiresFreshDocumentConfirmation } from "../../../src/client/family-documents-api";
 import { documentChangeSchema, documentRequestSchema, type DocumentChange, type DocumentPage, type DocumentRequest,
@@ -350,13 +351,12 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     const findSnapshot = (item: FamilyDocument) => item.readState !== "invalidated" && [item.current, ...item.history].some(snapshot => snapshot?.id === request.snapshotId && snapshot.version === request.snapshotVersion);
     const target = actualPage?.items.find(item => item.kind === "growth_report" && findSnapshot(item));
     // Admit only the rendered page paired with its last successful authoritative read.
-    if (pageReadGeneration !== reads.current.generation || inFlight.current || !runtime.live() || !isCurrent() || !env.online || typeof document === "undefined" || !actualPage || !target
+    if (pageReadGeneration !== reads.current.generation || inFlight.current || !runtime.live() || !isCurrent() || !env.online || !actualPage || !target
       || request.scopeKey !== env.scopeKey || request.childId !== env.childId || request.authorityVersion !== actualPage.authorityVersion
       || request.periodId !== null && request.periodId !== request.snapshotId + ":" + request.snapshotVersion) return;
     const token = { documentId: target.id, snapshotId: request.snapshotId, invalidated: false }; exporting.current = token;
     inFlight.current = true; setExportBusy(true);
     return await runtime.request(async (signal, current): Promise<GrowthReportExportResult | undefined> => {
-      let url: string | null = null;
       const valid = () => !token.invalidated && current() && isCurrent() && env.online && request.scopeKey === env.scopeKey && request.childId === env.childId
         && latest.current.page?.authorityVersion === request.authorityVersion
         && latest.current.page.items.some(item => item.id === target.id && findSnapshot(item));
@@ -365,10 +365,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
           authorityVersion: request.authorityVersion, purpose: request.purpose === "care_handoff" ? "handoff" : request.purpose,
           includeSources: request.includeSources, includeRevision: request.includeRevision }, signal, env.userId!);
         if (!valid()) return;
-        url = URL.createObjectURL(blob); const link = document.createElement("a");
-        link.href = url; link.download = `growth-report-${request.snapshotId}-v${request.snapshotVersion}.pdf`;
-        document.body.appendChild(link); try { link.click(); } finally { link.remove(); }
-        const message = "已準備所選版本的 PDF 並交給瀏覽器下載；Web 與 PDF 使用同一份正文。";
+        const message = await exportBlob(blob, `growth-report-${request.snapshotId}-v${request.snapshotVersion}.pdf`, valid);
+        if (!valid()) return;
         setNotice(message); return { state: "ready", message };
       } catch (error) {
         // Revocation still clears this owner after the dialog is canceled.
@@ -381,7 +379,6 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         const message = "PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。";
         setNotice(message); return { state: "error", message };
       } finally {
-        if (url) URL.revokeObjectURL(url);
         // Only this request can release its lock, including after access loss.
         if (exporting.current === token) { exporting.current = null; inFlight.current = false; setExportBusy(false); }
       }

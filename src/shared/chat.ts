@@ -1,3 +1,4 @@
+import type { VoiceMessageReference } from './voice.ts';
 import type { OfficialHelpId } from './agent-feedback.ts';
 export interface ChatMessage {
   id: string;
@@ -9,6 +10,7 @@ export interface ChatMessage {
   createdAt: string;
   agentRunId?: string;
   officialHelp?: OfficialHelpId[];
+  voice?: VoiceMessageReference;
 }
 export interface ChatPage {
   messages: ChatMessage[];

@@ -1,24 +1,31 @@
-import { erasureCoversPhoto } from './firebase-erasure-journal.ts';
+import { erasureCoversPhoto, erasureCoversVoice } from './firebase-erasure-journal.ts';
 import { z } from 'zod';
 import type { Bucket } from '@google-cloud/storage';
 import type { FirebasePhotoObjects, FirebasePhotoObjectDescriptor } from './firebase-photo-objects.ts';
 import { firebasePhotoObjectDescriptorSchema } from './firebase-photo-objects.ts';
+import { voiceObjectDescriptorSchema, type VoiceObjects, type VoiceObjectDescriptor } from './firebase-voice-objects.ts';
 import type { FirebaseErasureJournal } from './firebase-erasure-journal.ts';
 import { firebaseErasureIntentSchema } from './firebase-erasure-journal.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import type { createFirestoreAuthority } from './firestore-authority.ts';
 
-function reject(code='recovery_retained_photo_unconfirmed'): never { throw Object.assign(new Error('Retained photo recovery rejected'), {code}); }
 const pageSchema=z.object({items:z.array(z.object({name:z.string().regex(/^erasures\/v1\/[a-f0-9]{64}$/u),
   generation:z.string().regex(/^[1-9][0-9]*$/u)})).optional(),nextPageToken:z.string().optional()});
-function same(left:FirebasePhotoObjectDescriptor,right:FirebasePhotoObjectDescriptor) {
+type MediaDescriptor=Pick<FirebasePhotoObjectDescriptor,'objectName'|'cipherSha256'|'sha256'|'bytes'|'generation'>&{mimeType:string};
+function same(left:MediaDescriptor,right:MediaDescriptor) {
   return left.objectName===right.objectName&&left.cipherSha256===right.cipherSha256&&left.sha256===right.sha256
     &&left.bytes===right.bytes&&left.mimeType===right.mimeType;
 }
-/** Operator only. Unlike normal downloads, this verifies the independent journal and live pause itself. */
-export function createFirebaseManagedPhotoReader(options:{bucket:Bucket;journalBucket:Bucket;
-  journal:Pick<FirebaseErasureJournal,'readObject'>;objects:Pick<FirebasePhotoObjects,'read'|'inspect'>;
-  authority:Pick<ReturnType<typeof createFirestoreAuthority>,'readControl'>;sourceGeneration:string}):FirebasePhotoObjects['read'] {
+type ManagedMediaOptions<D extends MediaDescriptor,R>={bucket:Bucket;journalBucket:Bucket;
+  journal:Pick<FirebaseErasureJournal,'readObject'>;
+  objects:{read(scope:WorkRecoveryScope,id:string,descriptor:D):Promise<R>;inspect(scope:WorkRecoveryScope,id:string):Promise<D|null>};
+  authority:Pick<ReturnType<typeof createFirestoreAuthority>,'readControl'>;sourceGeneration:string};
+/** Operator only. Photos and audio share the same pause/journal/immutable-generation safeguards. */
+function createManagedMediaReader<D extends MediaDescriptor,R>(options:ManagedMediaOptions<D,R>,policy:{
+  kind:'photo'|'voice';parse(value:unknown):D;address:RegExp;format:string;covers:typeof erasureCoversPhoto}) {
+  function reject(code='recovery_retained_'+policy.kind+'_unconfirmed'):never {
+    throw Object.assign(new Error('Retained media recovery rejected'),{code});
+  }
   const {bucket,journalBucket,journal,objects,authority,sourceGeneration}=options;
   z.uuid().parse(sourceGeneration);
   if(bucket.name===journalBucket.name)reject('recovery_journal_not_independent');
@@ -34,20 +41,20 @@ export function createFirebaseManagedPhotoReader(options:{bucket:Bucket;journalB
       for(const row of value.items??[]){
         if(names.has(row.name)||names.size>=2000)reject('recovery_journal_incomplete');names.add(row.name);
         const intent=firebaseErasureIntentSchema.parse((await journal.readObject(row.name,row.generation)).intent);
-        if(erasureCoversPhoto(intent,scope,photoId))reject('recovery_photo_permanently_erased');
+        if(policy.covers(intent,scope,photoId))reject('recovery_'+policy.kind+'_permanently_erased');
       }
       if(!value.nextPageToken)return;
       if(tokens.has(value.nextPageToken))reject('recovery_journal_incomplete');tokens.add(value.nextPageToken);cursor=value.nextPageToken;
     }
     reject('recovery_journal_incomplete');
   }
-  return async(scope,photoId,value)=>{
-    const descriptor=firebasePhotoObjectDescriptorSchema.parse(value);
+  return async(scope:WorkRecoveryScope,photoId:string,value:D):Promise<R>=>{
+    const descriptor=policy.parse(value);
     await assertNotErased(scope,photoId);
     try{return await objects.read(scope,photoId,descriptor);}catch{/* A proven retained generation is required below. */}
     const found=await objects.inspect(scope,photoId);
     if(found){if(!same(found,descriptor))reject();return objects.read(scope,photoId,found);}
-    if(!/^photos\/v1\/[a-f0-9]{64}\/[a-f0-9-]{36}$/u.test(descriptor.objectName))reject();
+    if(!policy.address.test(descriptor.objectName))reject();
     const uri='/o/'+encodeURIComponent(descriptor.objectName);
     const [raw,response]=await bucket.request({method:'GET',uri,timeout:20000,
       qs:{generation:descriptor.generation,softDeleted:true},headers:{'Cache-Control':'no-store'}});
@@ -55,7 +62,7 @@ export function createFirebaseManagedPhotoReader(options:{bucket:Bucket;journalB
       metadata?:{format?:string;cipherSha256?:string;sha256?:string}};
     if(response?.statusCode!==200||metadata.name!==descriptor.objectName||metadata.bucket!==bucket.name
       ||metadata.generation!==descriptor.generation||!metadata.softDeleteTime||!metadata.hardDeleteTime
-      ||!(Date.parse(metadata.hardDeleteTime)>Date.now())||metadata.metadata?.format!=='yuban-photo-object/v1'
+      ||!(Date.parse(metadata.hardDeleteTime)>Date.now())||metadata.metadata?.format!==policy.format
       ||metadata.metadata.cipherSha256!==descriptor.cipherSha256||metadata.metadata.sha256!==descriptor.sha256)reject();
     // Re-read authenticated independent intents immediately before the only mutation; no caller-supplied approval flag.
     await assertNotErased(scope,photoId);
@@ -69,4 +76,13 @@ export function createFirebaseManagedPhotoReader(options:{bucket:Bucket;journalB
     await assertNotErased(scope,photoId);
     return objects.read(scope,photoId,restored);
   };
+}
+
+export function createFirebaseManagedPhotoReader(options:ManagedMediaOptions<FirebasePhotoObjectDescriptor,Awaited<ReturnType<FirebasePhotoObjects['read']>>>):FirebasePhotoObjects['read'] {
+  return createManagedMediaReader(options,{kind:'photo',parse:v=>firebasePhotoObjectDescriptorSchema.parse(v),
+    address:/^photos\/v1\/[a-f0-9]{64}\/[a-f0-9-]{36}$/u,format:'yuban-photo-object/v1',covers:erasureCoversPhoto});
+}
+export function createFirebaseManagedVoiceReader(options:ManagedMediaOptions<VoiceObjectDescriptor,Awaited<ReturnType<VoiceObjects['read']>>>):VoiceObjects['read'] {
+  return createManagedMediaReader(options,{kind:'voice',parse:v=>voiceObjectDescriptorSchema.parse(v),
+    address:/^voice\/v1\/[a-f0-9]{64}\/[a-f0-9-]{36}$/u,format:'yuyoufang-voice-object/v1',covers:erasureCoversVoice});
 }

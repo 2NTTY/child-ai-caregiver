@@ -1,5 +1,6 @@
+import { exportText } from "../../platform/file-export";
 import { useLayoutEffect } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,12 +9,6 @@ import { useProduction } from "../../production/ProductionProvider";
 import { AppButton, AppTextField } from "../ui";
 import { chineseFont, colors, readingType, spacing } from "../../theme";
 const deletionSchema = z.object({ password: z.string().min(1, "請輸入密碼。").max(128, "密碼最多 128 個字元。"), confirmation: z.string().refine(value => value === "永久刪除我的帳戶", "請完整輸入「永久刪除我的帳戶」。") });
-function saveWebPart(text: string, filename: string) {
-  if (Platform.OS !== "web" || typeof document === "undefined") throw new Error("Web download is unavailable");
-  const url = URL.createObjectURL(new Blob([text], { type: "application/json;charset=utf-8" }));
-  try { const link = document.createElement("a"); link.href = url; link.download = filename; document.body.appendChild(link); link.click(); link.remove(); }
-  finally { setTimeout(() => URL.revokeObjectURL(url), 0); }
-}
 export function AccountSecurityControls() {
   const { account, accountActions, user, online } = useProduction();
   return <View style={styles.group}>
@@ -33,10 +28,9 @@ export function AccountDataControls() {
     <View style={styles.group}>
       <Text style={styles.title}>下載本人資料</Text>
       <Text style={styles.body}>資料按目前可存取範圍分批下載。保留同一次的所有檔案；完成前的部分檔案不代表全部資料。續讀位置只保留在此頁，重新載入後需要重新開始。</Text>
-      <AppButton label={download.phase === "idle" ? "下載本人資料" : download.phase === "complete" ? "全部分批檔案已交付" : download.phase === "error" && download.parts === 0 ? "重新開始下載" : "繼續下載下一份"} variant="secondary" loading={account.busy === "download"} disabled={!online || Platform.OS !== "web" || deletion.phase !== "idle" || download.phase === "complete" || !!account.busy && account.busy !== "download"} onPress={() => { void accountActions.downloadNextPart(saveWebPart); }} />
+      <AppButton label={download.phase === "idle" ? "下載本人資料" : download.phase === "complete" ? "全部分批檔案已交付" : download.phase === "error" && download.parts === 0 ? "重新開始下載" : "繼續下載下一份"} variant="secondary" loading={account.busy === "download"} disabled={!online || deletion.phase !== "idle" || download.phase === "complete" || !!account.busy && account.busy !== "download"} onPress={() => { void accountActions.downloadNextPart(exportText); }} />
       {download.message ? <Text accessibilityLiveRegion="polite" style={styles.body}>{download.message}</Text> : null}
       {download.phase !== "idle" ? <AppButton label="清除這次續讀位置" variant="quiet" disabled={!!account.busy} onPress={accountActions.clearDownload} /> : null}
-      {Platform.OS !== "web" ? <Text style={styles.body}>請使用 Web 介面下載資料。</Text> : null}
     </View>
     <View style={styles.danger}>
       <Text style={styles.title}>永久刪除本人帳戶</Text>

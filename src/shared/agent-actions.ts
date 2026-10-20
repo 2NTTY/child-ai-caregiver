@@ -23,7 +23,7 @@ export interface AgentOperationPolicy {
   allowRecordCorrections: boolean;
   reminderConsentVersion: number | null; reminderBindings: ContactBinding[];
 }
-const evidence = { sourceQuote: text(2000), expectedPolicyVersion: version,
+const evidence = { sourceQuote: text(2000), sourceBasis: z.literal("voice_interpretation").optional(), expectedPolicyVersion: version,
   sourceMessages: z.array(z.object({ messageId: z.uuid(), quote: text(2000) }).strict()).max(6)
     .refine(items => new Set(items.map(item => item.messageId)).size === items.length).optional() };
 const ordinaryDetails = z.object({ kind: z.enum(ordinaryRecordKinds),
@@ -64,6 +64,7 @@ export interface AgentPrivateNote {
   memoryKey?: string;
 }
 export interface AgentActionReceipt {
+  sourceBasis?: "voice_interpretation";
   id: string; runId: string; kind: AgentDirectAction["kind"];
   resource: { kind: "care_record" | "private_note" | "task"; id: string; version: number };
   state: "saved" | "updated" | "scheduled" | "completed" | "cancelled";

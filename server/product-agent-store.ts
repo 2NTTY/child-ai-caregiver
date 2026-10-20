@@ -57,8 +57,8 @@ export interface AgentRunClaim {
   state: ProductAgentResult["status"]; expiresAt: string;
   /** Original business authority, explicitly projected for fixed-profile server assembly. */
   storageEpoch?: string;
-  purpose?: "chat" | "background" | "work-continuation" | "photo-extraction" | "shared-extraction";
-  sourceResource?: { kind: "photo" | "shared-input"; id: string; version: number };
+  purpose?: "chat" | "background" | "work-continuation" | "photo-extraction" | "shared-extraction" | "voice-transcription";
+  sourceResource?: { kind: "photo" | "shared-input" | "voice"; id: string; version: number };
   /** Original Server worker generation, only for trusted background claims. */
   workerGeneration?: string;
   trigger?: { kind: "interactive" | "worker"; reference: string };

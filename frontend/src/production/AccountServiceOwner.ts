@@ -212,7 +212,7 @@ export class AccountServiceOwner {
   }
   clearDownload() { if (this.snapshot.busy !== "download") { this.continuation = null; this.update({ download: emptyDownload() }); } }
   /** At most 40 Server pages / about 4 MiB per file; continuation contains only metadata and the current bounded part. */
-  async downloadNextPart(save: (text: string, filename: string) => void | Promise<void>) {
+  async downloadNextPart(save: (text: string, filename: string, isCurrent: () => boolean) => void | Promise<void>) {
     if (!this.isReady() || this.snapshot.deletion.phase !== "idle" || this.snapshot.download.phase === "complete") return;
     const ticket = this.begin("download"); if (!ticket?.userId) return;
     try {
@@ -246,11 +246,11 @@ export class AccountServiceOwner {
       if (!this.current(ticket)) return;
       const part = this.snapshot.download.parts + 1;
       const text = JSON.stringify({ format: "yuban-personal-data:1", scopeVersion: continuation.scopeVersion, part, complete: continuation.done, pages: continuation.pages }, null, 2);
-      await save(text, `yuban-personal-data-part-${String(part).padStart(3, "0")}.json`);
+      await save(text, `yuban-personal-data-part-${String(part).padStart(3, "0")}.json`, () => this.current(ticket));
       if (!this.current(ticket)) return;
       continuation.pages = []; continuation.bytes = 0;
       this.update({ download: { phase: continuation.done ? "complete" : "partial", parts: part,
-        message: continuation.done ? `已把全部 ${part} 份檔案交給瀏覽器下載。請保留同一次的所有分批檔案，並檢查下載是否完成。` : `第 ${part} 份檔案已交給瀏覽器下載；資料尚未完整，請繼續下載下一份。` } });
+        message: continuation.done ? `已將全部 ${part} 份檔案交給裝置下載／保存。請保留同一次的所有分批檔案，並核對是否已保存；取消系統分享不代表完成。` : `第 ${part} 份檔案已交給裝置下載／保存；請核對保存結果。資料尚未完整，請繼續下一份。` } });
       if (continuation.done) this.continuation = null;
     } catch (error) {
       if (this.current(ticket)) { if (error instanceof AccountApiError && ["export_scope_changed", "access_denied", "session_changed"].includes(error.code ?? "")) this.continuation = null;

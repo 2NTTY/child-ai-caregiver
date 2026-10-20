@@ -7,7 +7,7 @@ export const AGENT_WORK_TOOL_DESCRIPTIONS = {
   "read_background_result": "按 read_work.latestFollowUp 或已知本人 runId 分段讀回既有 Agent 結果、真實工具狀態及當時引用參照；這是歷史回報，不是新同意或目前仍適用的知識證據。同批結果可能涉及其他工作，不可當成每項工作的執行收據；先核對目前工作狀態，已取消不再接續。需要新建議必須重新核對来源；若 running／unknown 只核對原 run，不另建執行。nextOffset 仍有未讀，budgetLimited 時保存限制，不空轉。",
   "save_work": "保存或更新本人／目前孩子的一項工作目標、目前焦點、待答問題及來源引用；提問前先保存等待內容。sourceMessageIds 只列本人撰寫的 user 原訊息，不把模型回覆列為本人來源。使用既有 workId／expectedVersion 更新同一工作，不每輪新建。工作 completed 只表示這段整理結束，不代表照護任務完成；實際成果須核對原收據。取消或改口時更新原工作，勿讓舊理解繼續執行。已 cancelled 的原工作不能改成其他狀態；work_cancelled 後不要重試改狀態或自動另建來繞過取消，只有本人明確的新交代才可另建工作，原取消保留。同一原操作的查回結果是歷史收據，不表示目前工作已恢復。有實際接續價值才設 followUp：watchResources 只看本工作引用，knowledgeSourceIds 只用已讀適用官方來源，dueAt 只用有依據時間、不捏造日期。只產生本人站內回饋，沒有外部提醒或寫入授權。followUp 省略／null 或工作結束會停止新跟進；需要保留時明確帶回已讀條件。",
   "search_history": "在本人／孩子授權範圍搜尋歷史原訊息、普通交代或事實。有已知時間範圍時傳 createdFrom／createdBefore（保存時間，不能冒充事件發生時間），先在資料庫縮窄；不捏造日期。加密正文採有界掃描，結果標明完整度及續讀位置；一頁未命中不代表不存在。命中僅為歷史定位，不表示事實目前有效；memory_fact 命中須再用 read_memory_facts 核對 status／applicable／來源。保留 role、版本與精度，AI 原文不是使用者事實。公共 RAG 與私人歷史分開。",
-  "read_history": "按歷史搜尋回傳的訊息 ID、offset 及範圍讀取原文，可續讀長訊息。只引用實際已讀字句；使用者原話可以作來源，模型回覆及摘要不能作同意或確定事實。",
+  "read_history": "按歷史搜尋回傳的訊息 ID、offset 及範圍讀取原文，可續讀長訊息；若回傳 contentVersion，續讀須帶同版本。錄音的自動轉錄只作辨識參考，不冒充逐字原話或使用者確認。只引用實際已讀字句；使用者原話可以作來源，模型回覆及摘要不能作同意或確定事實。",
   "read_memory_facts": "已知事實鍵／話題標題可用 keys（最多四個，factId／afterId=null）直接讀目前原項及相關話題，包含終態及來源有效性；同義按已讀鍵查找，未命中不代表歷史從未存在，必要時 search_history。亦可分頁讀取可見的孩子記憶事實及目前 version、有效性與來源；更正或停用前讀回原項，不能只憑摘要猜 ID。私人資料不因讀取而得到共享授權。",
   "propose_fact_revision": "就已讀回的事實提出更正候選，指定 factId／expectedVersion、原文來源及理由。沿原記憶保留歷史，重要健康事實仍待本人明確確認，不自行升格推測或扩大可見範圍。",
   "propose_fact_deactivation": "提出停用某項已讀回事實的候選，指定 factId／expectedVersion 及原因。停用保留歷史，仍待本人明確確認；不是永久刪除或停用其他相似事實。",

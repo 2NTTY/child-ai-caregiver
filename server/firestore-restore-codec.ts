@@ -1,3 +1,6 @@
+import { firestoreVoiceRowSchema } from './firestore-voice.ts';
+import { firestoreVoiceTranscriptSchema } from './firestore-voice-transcripts.ts';
+import { voiceObjectAddress, voiceObjectDescriptorSchema, type VoiceObjectDescriptor } from './firebase-voice-objects.ts';
 import { adminDirectorySchema } from './firestore-admin.ts';
 import { adminReceiptSchema, platformPolicySchema } from '../src/shared/admin.ts';
 import { operationRestoreSchemas, isOperationRestoreKind, restoreOperationRecord } from './firestore-restore-operation-records.ts';
@@ -59,6 +62,8 @@ const domainSchemas = {
   'document-operation': { suffix: 'document_operations', schema: documents.operation },
   'document-snapshot': { suffix: 'document_snapshots', schema: snapshots.manifest },
   'document-snapshot-chunk': { suffix: 'document_chunks', schema: snapshots.chunk },
+  'voice-asset': { suffix: 'voice_assets', schema: firestoreVoiceRowSchema },
+  'voice-transcript': { suffix: 'voice_transcripts', schema: firestoreVoiceTranscriptSchema },
   photo: { suffix: 'photos', schema: photos.photo },
   'photo-operation': { suffix: 'photo_ops', schema: photos.operation },
   'photo-child-quota': { suffix: 'photo_quota', schema: photos.childQuota },
@@ -89,6 +94,7 @@ export interface FirestoreRestoreTransform {
   newEpochByWorkspace: ReadonlyMap<string, string>; generation: string;
   newAuthorizationVersionByWorkspace?: ReadonlyMap<string, string>;
   photoDescriptors: ReadonlyMap<string, FirebasePhotoObjectDescriptor>;
+  voiceDescriptors?: ReadonlyMap<string, VoiceObjectDescriptor>; voiceObjectBucketName?: string;
 }
 export interface FirestoreRestoreRecord { oldPath: string; path: string; data: Record<string, unknown> }
 export interface FirestoreRestoreCodec {
@@ -137,7 +143,7 @@ const authorityEnvelopeSchema = z.object({ format: z.literal('yuban-work-recover
   ciphertext: z.string().min(1), recovery: z.unknown() }).strict();
 const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domain'), version: z.literal(1), recordVersion: positive,
   ciphertext: z.string().min(1), recovery: z.unknown() }).strict();
-const privateMetadata = new Set(['workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
+const privateMetadata = new Set(['summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
   'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
   'live', 'state', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
@@ -263,6 +269,16 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     } else if (kind === 'document-snapshot') {
       const row = parse(snapshots.manifest, raw); requireBinding(row.snapshotId === id && row.childId === scope.childId); versionMatches(row.snapshotVersion);
     } else if (kind === 'document-snapshot-chunk') { const row = parse(snapshots.chunk, raw), parts = arrayId(id); requireBinding(parts.length === 2 && uuid.safeParse(parts[0]).success && parts[1] === row.index && Buffer.byteLength(row.text) <= 48 * 1024); }
+    else if (kind === 'voice-asset') {
+      const row = parse(firestoreVoiceRowSchema, raw); versionMatches(row.version);
+      requireBinding(row.id === id && sameScope(row.scope, scope)
+        && row.objectScope.ownerUserId === scope.ownerUserId && row.objectScope.workspaceId === scope.workspaceId && row.objectScope.childId === scope.childId);
+      const integrity = row.metadata ?? row.deletion?.integrity;
+      if (row.descriptor) requireBinding(Boolean(integrity && ['sha256','bytes','mimeType'].every(k => row.descriptor![k as keyof VoiceObjectDescriptor] === integrity[k as keyof typeof integrity])));
+    } else if (kind === 'voice-transcript') {
+      const row = parse(firestoreVoiceTranscriptSchema, raw); versionMatches(row.value.version);
+      requireBinding(row.value.voice.id === id && sameScope(row.scope, scope));
+    }
     else if (kind === 'photo') {
       const row = parse(photos.photo, raw); photoObjectScope(row); requireBinding(row.id === id && sameScope(row.scope, scope)); versionMatches(row.version);
       if (row.descriptor && row.metadata) requireBinding(row.descriptor.sha256 === row.metadata.sha256 && row.descriptor.bytes === row.metadata.bytes && row.descriptor.mimeType === row.metadata.mimeType);
@@ -417,6 +433,15 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       return {oldPath:decoded.path,path:decoded.path,data:{assetId:row.id,scopeTag:photoTag(context.scope),
         sortKey:row.createdAt+'/'+row.id,live:false,...original}};
     }
+    if (context.family === 'domain' && context.kind === 'voice-asset' && parse(firestoreVoiceRowSchema, decoded.value).deletion) {
+      const row = parse(firestoreVoiceRowSchema, decoded.value); domainBinding({...context,kind:'voice-asset'}, row);
+      // Cleanup addresses remain bound to their original immutable object and scope.
+      return { oldPath: decoded.path, path: decoded.path, data: { ...data.tags(row.scope),
+        scopeTag: firestoreDomainHash(['voice-scope', row.scope]), assetId: row.id, state: row.state,
+        createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId,
+        cleanupState: row.deletion!.cleanup, cleanupAt: row.deletion!.nextCheckAt,
+        ...data.seal('voice-asset',row.id,row.scope,firestoreVoiceRowSchema,row,row.version) } };
+    }
     const scope = scopeAfter(context.scope, input);
     if (context.family === 'authority') {
       if (!key(authoritySchemas, context.kind)) reject('unsupported_restore_domain');
@@ -483,6 +508,28 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       case 'document-operation': value = { ...parse(documents.operation, value), storageEpoch: scope.storageEpoch }; break;
       case 'document-snapshot': { const row = parse(snapshots.manifest, value); Object.assign(metadata, { documentId: row.documentId, snapshotId: row.snapshotId, snapshotVersion: row.snapshotVersion }); break; }
       case 'document-snapshot-chunk': for (const name of Object.keys(metadata)) delete metadata[name]; break;
+      case 'voice-asset': {
+        const row = parse(firestoreVoiceRowSchema, value); let descriptor = row.descriptor;
+        if (descriptor) {
+          const replacement = input.voiceDescriptors?.get(row.id);
+          if (!replacement || !input.voiceObjectBucketName) reject('restore_voice_descriptor_missing');
+          const checked = parse(voiceObjectDescriptorSchema,replacement);
+          requireBinding(['sha256','bytes','mimeType','durationMs'].every(k => checked[k as keyof VoiceObjectDescriptor] === descriptor![k as keyof VoiceObjectDescriptor])
+            && checked.objectName === voiceObjectAddress({projectId,namespace,bucketName:input.voiceObjectBucketName},scope,row.id).objectName);
+          descriptor = checked;
+        }
+        value = { ...row, scope, descriptor, objectScope: descriptor || !row.upload ? scope : row.objectScope,
+          upload: row.upload ? {...row.upload,unknown:true} : null };
+        Object.assign(metadata,{scopeTag:firestoreDomainHash(['voice-scope',scope]),assetId:row.id,state:row.state,
+          createdAt:row.createdAt,updatedAt:row.updatedAt,messageId:row.messageId,cleanupState:row.messageId===null?'unlinked':null,cleanupAt:null}); break;
+      }
+      case 'voice-transcript': {
+        const row = parse(firestoreVoiceTranscriptSchema,value), interrupted = row.value.state === 'running';
+        const pending = row.value.state === 'pending';
+        value = { ...row,scope,value:{...row.value,state:interrupted?'unknown':pending?'stopped':row.value.state,
+          reason:interrupted?'restore_unknown':pending?'restore_paused':row.value.reason,retryAt:null} };
+        Object.assign(metadata,{assetId:row.value.voice.id,state:(value as typeof row).value.state,retryAt:null}); break;
+      }
       case 'photo': {
         const row = parse(photos.photo, value); let upload = row.upload;
         if (upload !== null) {

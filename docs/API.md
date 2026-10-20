@@ -947,3 +947,29 @@ Prompt 組裝輸出模組字元統計，沿原 manifest 檢查依賴／版本／
 `AgentRuntimePort.run(AgentRunInput): Promise<AgentRunResult>` 是產品編排／記憶整理使用的 Server 接口。`AgentRunInput.onDiagnostic` 只由受信任組裝注入，HTTP body 與模型不能指定 callback 或觀察別人的 run。返回結果及保存仍沿原權威服務；觀察事件不代替收據。
 
 `AgentDiagnostic` 新增穩定 `layer=agent|model|tool|authorization|business`，其餘沿原 runId、phase、tool、elapsedMs、outcome、stage、code 白名單。已登記工具以外的名稱及原始錯誤內容不傳出。正常模型／工具事件不自動持久保存；斷線、HTTP 錯誤及 run 終態由各自層處理，不從最後一個進度事件猜測成功或重做。
+
+
+<a id="p3-voice-input"></a>
+## P3 共用語音接點
+
+S12 的目標契約：Web／Android 每次聊天最多一段錄音、兩分鐘／5 MiB。錄音與選檔先留裝置，按送出才保存；未送出草稿不跨端同步。M4A／MP4、WebM Opus、OGG、WAV、MP3 使用同一格式表；Server 依實際音訊包校驗，不信檔名、客戶端時長或容器宣告。無法完整核對便拒絕，不截斷後聲稱成功。
+
+正式接線必須經原身份／孩子權限：原 `opId` 預留附件、原地址上載與未知查回，再於聊天保存交易綁定唯一訊息。附件處理期間不能因重試建立第二份訊息；內容下載前後重核目前權限、版本及刪除狀態。Storage 的 generation／hash／加密正文與 Firestore metadata 分開，不能把未完成上載當已保存聊天。
+
+聊天 Agent 直接讀當前已授權音訊；背景轉錄只保存可搜尋文字及可信時間標記，沒有辦事工具，不再執行錄音指令。轉錄未完成不阻塞原聊天；後續以保存的轉錄／摘要按需召回，原錄音可追溯。刪除及還原必須處理音訊、轉錄、搜尋和衍生內容；完整生命週期接好前，正式畫面的語音入口保持未開放。實作／驗收狀態只見 [S12-W01](../PLAN.md#s12-w01)。
+
+語音 port 使用 `/api/children/:childId/voices`：POST 帶原 `opId`、檔名、MIME、bytes、hash 預留；GET `/:id` 查回；POST `/:id/content` 帶 expectedVersion／base64；POST `/:id/resolve` 只核原物件；GET `/:id/content` 返回經授權的原位元組；POST `/:id/delete` 帶原 opId／expectedVersion。與照片相同的身份、同源及 x-expected-user-id 保護；正式發布狀態見 PLAN／STATUS，不以端口存在代表手機已交付。
+
+聊天建立可帶 `voice: {id, expectedVersion}`。Server 交易確認 ready、目前本人／孩子及未綁定後，將附件與唯一訊息一併保存；回傳只帶不可變音訊身份／hash／格式／時長，不複製正文。無文字的語音訊息允許空 text，舊文字訊息不變。格式或時長拒絕是上載前已知失敗，可沿原附件修復；已進 Storage 的未知結果只查原地址。刪除先遮蔽，獨立日誌確認後清理固定 generation；unknown 上載沒有找到物件不代表已完成清理。未結清義務保持有界退避及可見停留狀態。
+
+語音交代的普通操作可帶 `sourceBasis=voice_interpretation`，`sourceQuote` 是模型本輪從原錄音聽取的片語。Server 只接受當前訊息綁定、仍 ready 的同一附件 ID／版本／hash，連同原 run、預授權版本及操作收據保存來源證據；不改寫原訊息 text 為自動轉錄，不把語音辨識當已確認事實。文字及較早文字來源仍須逐字核對，重要事項仍使用原確認服務。刪除／改版後不能引用舊錄音執行新操作。
+
+ADK 事件只保存本次音訊身份 metadata；模型 adapter 在每次已授權呼叫前將同一原位元組加入原訊息位置，維持完整 function calling 協定。音訊另計格式、5 MiB／兩分鐘及一段上限，文字／工具 schema 仍計原上下文容量；完整 provider payload 參與原呼叫指紋及用量。不能把 base64 寫進 Firestore 聊天／ADK 事件，亦不能接受模型或 HTTP 提供的任意音訊 URL。
+
+語音轉錄 GET `/:id/transcript` 使用同一身份及原音訊存取核對，返回 pending／running／available／unknown／stopped、自動辨識標記、完整度及段落時間；不將轉錄複製到原聊天 text。首次訊息綁定同交易入列，預留互動運行時間後處理；單次生成、同一付款來源及背景授權，已知配額未准入可有限次延後，未知模型結果不重做。清理及匯出沿目前音訊刪除屏障；預留／刪除的原操作占用共用收據位置，跨資源重用同 opId 拒絕。
+
+語音搜尋復用本人／孩子的聊天歷史接口：只從目前可讀的原音訊取得已保存轉錄，標明自動辨識及完整度；不改寫聊天原文、不建立另一份可修改正文。`read_history`／GET 歷史訊息可返回 `voice` 及 `contentVersion`；語音續讀帶同一 `contentVersion`，轉錄完成、原音訊刪除或可讀範圍變化後舊版本拒絕續接。新一頁須從 offset 0 重新讀取。無法讀取或未完成轉錄不等於原錄音沒有內容。
+
+原錄音播放每次下載重新核權，使用短期可丟棄的裝置快取；有可靠段落時間才提供跳播。尚未綁定聊天的 Server 上傳保留最多 24 小時，再沿獨立刪除日誌及原物件清理；已綁定訊息不受此期限影響。裝置草稿不會因此自動送出。已提交但回覆丟失的上傳只查回原 ID，不能重送成另一附件。
+
+配對備份 manifest 的 `voices` 為向後相容可選欄位；錄音密文使用獨立、固定 generation 的備份物件，保留與 manifest 相同的 14 天期限，原生熱備份讀回沿相同獨立刪除屏障。還原先重放 voice-delete／孩子／帳戶刪除，遮蔽轉錄；清理 tombstone 保留原物件範圍，活躍內容才轉換儲存世代。未結清上傳、轉錄 unknown 不被當成成功或重做許可；真原生備份還原仍按既有待驗門檻處理。

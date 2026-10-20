@@ -33,7 +33,7 @@ export async function handleProductAgentRequest(request: Request, userId: string
       if (request.method !== "GET") return apiError("method_not_allowed", "不支援此操作。", 405);
       for (const key of url.searchParams.keys()) if (url.searchParams.getAll(key).length > 1) throw new FamilyError(400, "invalid_input");
       const page = work ? await options.store.readWork(userId, childId, readAgentWorkSchema.parse({ workId: work[2]?.toLowerCase() ?? null, cursor: url.searchParams.get("cursor") }))
-        : history![2] ? await options.store.readHistory(userId, childId, historyReadSchema.parse({ messageId: history![2].toLowerCase(), offset: Number(url.searchParams.get("offset") ?? 0), limit: Number(url.searchParams.get("limit") ?? 4000) }))
+        : history![2] ? await options.store.readHistory(userId, childId, historyReadSchema.parse({ messageId: history![2].toLowerCase(), offset: Number(url.searchParams.get("offset") ?? 0), limit: Number(url.searchParams.get("limit") ?? 4000), ...(url.searchParams.has("contentVersion") ? { contentVersion: url.searchParams.get("contentVersion") } : {}) }))
         : await options.store.searchHistory(userId, childId, historySearchSchema.parse({ kind: url.searchParams.get("kind") ?? "message", query: url.searchParams.get("query") ?? "", cursor: url.searchParams.get("cursor") }));
       return page && await options.isCurrentUser(userId) ? jsonResponse(page) : apiError("not_found", "找不到可讀取的資料。", 404);
     }

@@ -2876,6 +2876,53 @@
 - 共用薄畫面顯示處理中／真停止原因及原結果入口，不用另一份任務或聊天副本；最後一則未回覆訊息有界自動查核，舊訊息按需。未發送草稿只在本機，身份／孩子切換清私人投影。
 - 首次正式 HTTP 情景在錯孩子斷言停止：Firestore authority 403 未映射，回 generic 503。局部將新讀取方法的無權／缺失範圍轉不披露的 404；保留失敗後只補同一情景，通過。原有 3 次 scripted run／4 次生成，沒有增加 execution POST；另 4 個 Server／client 及 2 個 UI 型別入口零診斷。[EV](artifacts/verification/S09_CROSS_DEVICE_RECOVERY_20261016.json)。
 - 零真模型、手機、雲端或部署。S04／S05／S07 前置及 API／新 APK／真機仍待交付；不把本機替身當實際手機通過。B 單作者，主模型實作／review，無子代理。
+
+
+## LOG-20261016-S12-MEDIA — 原生相片與檔案出口準備
+
+- 在 S09 `4d7f3cd` 上接續 S12；保留正式照片／私人來源 owner、API、收據及權限，補相機／相簿、原生 hash／Blob 與獨立照片草稿所有權；沒有另建資料副本或假成功。
+- PDF 與本人資料匯出沿同一 Server 版本／授權，Web 保留下載，Android 使用有界 cache 與系統保存／分享；遲到匯出在開啟系統前重核身份。開啟不代表使用者已保存。
+- 必要檢查：六個受影響型別入口零診斷；一條原生 Blob／hash／scope 情景通過（3 次合成 GET），沒有全量測試、真模型、手機、通知或雲端。固定 SDK 及 licenses 保存。[EV](artifacts/verification/S12_NATIVE_MEDIA_20261016.json)。
+- S12 尚未完成：共用語音繼續實作；本批需新 native runtime／APK，真機待使用者。B 單作者，主模型實作與 review，未派子代理，未合併或部署。
+
+
+<a id="log-20261016-s12-voice-preparation"></a>
+## LOG-20261016-S12-VOICE-PREPARATION
+
+- S12／B 單作者，接續 `665ac9a`；錄音共用兩分鐘／5 MiB、Android Expo Audio／試聽／選檔、Web 原草稿保留；Server 補有界實際時長校驗與私有 Storage 加密物件。Firestore 語音服務仍在接線、未掛載，正式語音入口未開放，沒有宣稱完整交付。
+- 最低驗證：4 個前端 roots 首次一個 SDK 欄位錯誤，修正後 0 diagnostics；WebM 缺時長情景首先發現最後封包 0 duration，按固定版本原碼及 RFC 6716 補局部計算後，同一情景通過。2 個 Server roots 0 diagnostics；另一次合成儲存流程核對未知上載原地址查回、加密、generation、隔離與清理通過。不以這兩條檢查代替真手機／真模型及資料生命週期。[證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)。
+- 零真模型、外發、雲端、手機及部署。下一步在同一 S12 分支完成訊息綁定、背景轉錄、刪除恢復及正式 owner，再按原 gate 交付。
+
+
+## LOG-20261016-S12-VOICE-AUTHORITY
+
+- 接續同一 S12 分支：語音上載前校驗失敗可沿原附件修復，已進 Storage 的未知結果僅查原地址；FireStore 私人範圍、版本、原操作指紋與聊天同交易綁定已準備。刪除先遮蔽、持久日誌後清理固定物件；API／共用 client 使用原身份與同源保護。正式 runtime／畫面尚未啟用，不當成完整語音交付。
+- 最低情景首次發現 online mutation 的 owner-wide binding 未換為目標孩子；按原路由綁定後，同一情景通過。隨新增刪除及 HTTP／client 接線，在同一情景補相應斷言，沒有另建一套 E2E；7 個受影響型別入口零診斷。零雲端、真模型、通知、手機或部署。[同包證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)。
+- 待接：語音 Agent／來源語義、背景轉錄搜尋、原操作台帳整合、排程清理、帳戶匯出／刪除及配對備份恢復；恢復先明確拒絕新增 voice-delete，不能靜默漏掉。原生套件需新 APK；本人不在時保留真機待驗。B 單作者、本機主模型實作與 review，未派子代理。
+
+
+## LOG-20261016-S12-VOICE-AGENT
+
+- 接續 `ecfa500`：同一正式 ADK runtime 支援受信音訊 loader、獨立二進位上限及 provider-only 位元組，持久事件只保存音訊身份。普通預授權工具區分文字原話與語音聽取，Server 在原交易核對附件／訊息／版本／hash，收據保留語音來源；不把背景轉錄當第二次執行。
+- 同一語音生命週期合成檢查加入正式 Agent 組裝：一段 1 MiB 合成位元組、最多四次 scripted 生成，保存普通私人交代、原 run 查回及刪除後拒絕再讀均通過。三個型別入口首次受舊暫存依賴影響，同步目前程式後零診斷，無產品程式返修。零真模型、雲端、通知或真機。[證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)。
+- Prompt Pack 0.1.45 只補本次音訊來源方法；未接管 #214～#216。正式語音入口仍關閉，背景轉錄、排程、原操作收據整合及備份／刪除生命週期繼續在 S12 完成；不宣稱已部署或真語音品質通過。B 單作者，主模型親寫契約／指引及實作，沒有子代理。
+
+
+## LOG-20261016-S12-VOICE-TRANSCRIPT
+
+- 接續 `bd0ce52`，新增同一正式 runtime 的單次背景轉錄；只有轉錄工具，原音訊版本／訊息／工作租約綁定，沿原付款路由及每日配額，未知結果不重做。Prompt Pack 0.1.46 補轉錄方法；未接管協作者 Agent。
+- 語音預留／刪除接共用原操作收據；轉錄及音訊匯出核對目前來源，刪除即遮蔽並清理音訊及轉錄 session／正文。清理排程及帳戶刪除 port 已準備，正式 runtime／owner 及配對恢復尚未開放。
+- 同一合成流程加入背景工作、轉錄讀回、防重及刪除匯出；首次失敗分別為測試時鐘從 epoch zero 開始、替身缺 SDK document.get，修正同一入口後通過；六個受影響型別入口零診斷。沒有真模型、雲端、手機或通知，不重跑全量。[同包證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)。
+- 下一步完成備份恢復、搜尋及正式接線；真語音理解與手機仍待驗。S12 未完成、未部署。
+
+
+## LOG-20261018-S12-VOICE-INTEGRATION
+
+- 接續 64ec851 及額度中斷的未提交成果，保留原 master／協作者 PR。正式 API／worker、共用上傳 owner、原 ChatController／操作收據已接語音；轉錄搜尋不改寫原聊天，長內容續讀綁定 contentVersion；聊天與歷史使用同一授權播放／定位接點。未送出錄音 24 小時沿持久刪除屏障清理，已綁定訊息不受影響。
+- 配對密文備份及原生 retained-object reader 復用原照片的 generation／暫停／獨立日誌保障；voice-delete 在隔離恢復前重放，清理保留原物件範圍，不恢復未知轉錄為成功。新增三個查詢索引及私密欄位排除僅準備，未套用。
+- 必要本機檢查復用同一語音情景，補搜尋／續讀、刪除、恢復及到期；共用 owner 只補一次原操作及身份切換檢查，retained-media／密文備份共三項。首次錯誤與修正保留於[證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)，沒有全量、真模型、雲端驗收、通知、手機或新 APK。受影響型別零診斷；真語音品質／跨端真機及真原生備份還原仍未驗。
+- 使用者批准主機續期五天；原 VM 因到期已停止，已恢復至 2026-10-23 13:33:50 香港時間，API／worker 健康、公開健康檢查 Firestore 正常；仍使用 admin-8ba66e7，沒有部署語音。[續期證據](artifacts/verification/VM_RENEWAL_20261018.json)。
+- S12 尚未完成，依賴 PR／手機 gate 保留；使用者不在時保留待驗，繼續可獨立完成的工作。按當次指示主模型完成，無子代理。
 <a id="log-20261014-p3-m01-chat-delivery-review"></a>
 ## LOG-20261014-001
 
@@ -2945,3 +2992,11 @@
 - 必要檢查：只跑既有停止／保存／原結果重讀情景，加入真投影的審核原因斷言，1項通過。局部型別初次發現新增 fixture 漏填 `provenance`，補明確 `null` 後只重跑型別並通過；沒有再跑模型、產品全量或畫面驗收。
 - WORKLOG 核對初次錯把舊合併歷史視為純尾部追加；查明先前分支合併已插入歷史段落，改核完整原 Android 檔案與 master 新增尾部，兩者原文均保留。PLAN／STATUS 只解決現行入口衝突，沒有把後續 draft 或真機 gate 改為完成。
 - 未部署、未新增模型／通知或雲端資料寫入；#229 首條真機聊天／重開讀回待驗，正式合併仍按原門檻。
+
+<a id="log-20261020-s12-role-integration"></a>
+### LOG-20261020-S12-ROLE-INTEGRATION
+
+- 範圍／原因：draft #237 接回已同步的 #236／master `3795858`；語音與三角色同時修改 runtime／Prompt Pack，須保留兩邊接線，不能任選一邊覆蓋。
+- 結果：保留原錄音載入及再次授權，補回實際模型的 run context；合併語音、聊天審核、資料編製與編製審核的模組／配方，整包 0.1.48。原工作日誌全文與前置追加部分均保留。
+- 最少驗證：兩項既有 Prompt Pack 版本／依賴載入檢查通過；只以 runtime 相依閉包執行 TypeScript 檢查並通過；`git diff --check` 通過。沒有真模型、通知、部署、瀏覽器或全量驗收。
+- 限制／下一步：原語音／手機及依賴 PR gate 保留，不把衝突收束寫成 Android 或四角色整體驗收完成；沿依賴鏈同步後續 draft。

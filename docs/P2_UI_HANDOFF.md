@@ -145,6 +145,8 @@ S14 必要真 API 保存／統計／來源失效及真 Agent 工具證據見 [�
 - 家庭原圖與私人未確認候選分離；viewer 唯讀。刪除明示包括已連結照護記錄，磁碟清理 pending 與 SQL 已刪分開。
 - 孩子／帳號／Server 切換、撤權清理檔案、blob URL 及候選；不將私人原圖寫入持久 Web 快取。
 
+S12-W01 準備中的原生接點：PhotoFilePicker 分別接系統相機／相簿，PhotoInputDomains 保留同一權威 owner／操作收據，平台 port 只處理原檔 bytes、hash 及暫存預覽；私人來源沿原 usePhotoInputSources，不再僅限 Web。PDF／本人資料匯出仍用同版 API 與原授權，出口按平台下載或開啟系統保存／分享，不能把開啟分享當成已保存。新 APK／真機未完成，語音另依 S12-W01 實作，不把此照片接線當作語音已支援。
+
 共用型別見 [photos](../src/shared/photos.ts)，API 以 [照片契約](API.md#p2-photos) 為準。真 API 原圖、確認／隔離及一次合成 Gemini 候選品質已有必要證據；瀏覽器選檔／預覽完整情景未驗，不以型別檢查或 API 代替。
 
 <a id="shared-input-handoff"></a>
@@ -208,3 +210,5 @@ A07沿既有登入／設定版型接createAccountApi（status、acknowledge、ex
 
 
 正式聊天的即時回饋沿同一 ChatController／owner：`feedback` 只包含本次 run／message、固定階段及官方卡 ID；畫面不自行推斷工具成功或另一份任務狀態。卡片在當次回覆正文上方呈現，原 message 的 `officialHelp` 支援刷新讀回；一般聊天沒有卡。斷線查原運行及聊天，登出／切孩子清除當次投影。此接點是進度 SSE，正文仍在核引用、權限及保存後完整交付；灰色 token 草稿與語義審核另依 STR01，不宣稱已接。
+
+S12 語音共用接點：ProductionOwner 的單一 VoiceUploadController 保存原預留 ID／unknown；ProductionProvider 把已核對附件交同一 ChatController，聊天保存與附件綁定使用原 online operation。VoiceMessage 按需讀取目前音訊／轉錄、下載和定位播放，聊天與歷史頁共用；scope／權限錯誤清除播放及遲到回應。自動轉錄只供閱讀／搜尋，不再執行指令，不取代原訊息。Web／Android 分別使用 Blob URL／可丟棄 FileSystem 快取，UI 不判定保存成功或實作資料庫規則。錄音套件及 permission 變更需要新 APK；程式接線與實際發布／真機結果以根 S12 狀態為準。

@@ -19,6 +19,22 @@
         {
           "configureAndroidBackup": true
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "拍攝你選擇交給育有方整理的照片。",
+          "photosPermission": "選擇你希望交給育有方整理的照片。"
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "錄製你選擇交給育有方的語音。",
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": false,
+          "recordAudioAndroid": true
+        }
       ]
     ],
     "web": {

@@ -8,6 +8,7 @@ import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppButton } from "../ui";
+import { VoiceMessage } from "../../production/VoiceMessage";
 import { HistoryMessageDetail } from "./HistoryMessageDetail";
 
 export function PersonalConversationHistoryView({ searchText, dateRange, onPrepareQuestion }: {
@@ -43,6 +44,7 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
         {read.data?.nextCursor ? <AppButton label={owner.busy.history ? "正在繼續搜尋…" : "繼續搜尋歷史"} variant="secondary" disabled={!owner.online || owner.busy.history || read.data.query !== searchText} onPress={owner.actions.moreHistory} /> : null}
         {read.state === "stale" ? <AppButton label="重新搜尋" variant="quiet" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /> : null}
       </>}
+    {owner.message.data?.voice ? <VoiceMessage key={scope + owner.message.data.id} messageId={owner.message.data.id} voice={owner.message.data.voice} /> : null}
     <HistoryMessageDetail read={owner.message} busy={owner.busy.message} online={owner.online} onMore={owner.actions.moreMessage} onClose={owner.actions.closeMessage}
       onPrepareQuestion={message => { if (current.current && current.current.scopeKey === scope && current.current.message.data === message) onPrepareQuestion(historyMessageQuestion(owner.childName, message)); }} />
   </View>;

@@ -1,4 +1,6 @@
-import { localAttachmentId, type AssistantAttachment } from "../../assistant-draft.ts";
+import type { AssistantAttachment } from "../../assistant-draft.ts";
+import { VOICE_LIMITS } from "../../../../src/shared/voice.ts";
+import { voiceFromBlob } from "./voice-attachment.ts";
 
 export type VoiceCaptureState = "idle" | "permission" | "recording" | "stopping" | "ready" | "error";
 export type VoiceCapturePorts = {
@@ -6,8 +8,7 @@ export type VoiceCapturePorts = {
   createRecorder(stream: MediaStream): MediaRecorder;
   createUrl(blob: Blob): string; revokeUrl(uri: string): void;
 };
-// Frontend-only resource guard, not a supported server upload limit.
-export const localVoiceLimitBytes = 20 * 1024 * 1024;
+export const localVoiceLimitBytes = VOICE_LIMITS.bytes;
 export function createLocalVoiceCapture(ports: VoiceCapturePorts, onState: (state: VoiceCaptureState, error?: string) => void,
   onReady: (attachment: AssistantAttachment) => void) {
   let generation = 0, stream: MediaStream | null = null, recorder: MediaRecorder | null = null;
@@ -36,7 +37,7 @@ export function createLocalVoiceCapture(ports: VoiceCapturePorts, onState: (stat
         current.ondataavailable = event => {
           if (generation !== started || recorder !== current || event.data.size === 0) return;
           bytes += event.data.size;
-          if (bytes > localVoiceLimitBytes) { fail("錄音超過本地 20 MiB 預覽限制，已停止並清除；請重新錄製較短片段。"); return; }
+          if (bytes > localVoiceLimitBytes) { fail("錄音超過 5 MiB 限制，已停止並清除；請重新錄製較短片段。"); return; }
           chunks.push(event.data);
         };
         current.onerror = () => { if (generation === started) fail("錄音遇到錯誤，已停止咪高峰並清除片段；原有草稿保留。"); };
@@ -48,15 +49,18 @@ export function createLocalVoiceCapture(ports: VoiceCapturePorts, onState: (stat
           const blob = new Blob(chunks, { type: mimeType });
           if (!blob.size) { fail("未收到可預覽的錄音資料；請重新錄製或選取音訊檔。"); return; }
           release();
-          let uri: string;
-          try { uri = ports.createUrl(blob); } catch { onState("error", "未能建立本地錄音預覽；原有草稿保留，請重新錄製。"); return; }
           const extension = mimeType.includes("webm") ? "webm" : mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp4") ? "m4a" : "audio";
-          onState("ready");
-          onReady({ id: localAttachmentId(), kind: "voice", fileName: `錄音-${new Date().toISOString().replace(/[:.]/g, "-")}.${extension}`,
-            mimeType, bytes: blob.size, localUri: uri, dispose: () => ports.revokeUrl(uri) });
+          try {
+            const attachment = voiceFromBlob(blob, `錄音-${new Date().toISOString().replace(/[:.]/g, "-")}.${extension}`, ports.createUrl, ports.revokeUrl);
+            onState("ready"); onReady(attachment);
+          } catch { onState("error", "未能建立受支援的錄音預覽；原有草稿保留，請重新錄製。"); }
         };
         current.start(1000); onState("recording");
-        limitTimer = setTimeout(() => { if (generation === started) fail("已達本地 5 分鐘錄音限制，咪高峰已停止，片段已清除。請分段錄製。"); }, 5 * 60 * 1000);
+        limitTimer = setTimeout(() => {
+          if (generation !== started || recorder !== current || requestedStop) return;
+          requestedStop = true; onState("stopping", "已達兩分鐘，正在停止錄音；請試聽後再送出。");
+          try { current.stop(); stopTracks(stream); stream = null; } catch { fail("未能完成錄音，請重新錄製。"); }
+        }, VOICE_LIMITS.durationMs - 250);
       } catch (cause) {
         if (generation !== started) return;
         const name = cause instanceof Error ? cause.name : "";

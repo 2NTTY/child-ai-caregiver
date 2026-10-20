@@ -1,12 +1,14 @@
+import { readBlobBytes } from "../../../src/client/blob-bytes";
+import { photoPreview, photoSha256 } from "../platform/photo-bytes";
+import { copyPhotoOriginal } from "./photo-original";
 import { createContext, memo, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { Text } from "react-native-paper";
 import { createPhotoApi, PhotoApiError, type PhotoWriteResult } from "../../../src/client/photo-api";
 import { subscribeOnlineRefresh } from "../../../src/client/online-refresh-events";
 import { photoMetadataSchema, type PhotoAttachment, type PhotoConfirmation, type PhotoMetadata } from "../../../src/shared/photos";
 import { PhotosView } from "../components/photos/PhotosView";
-import { PageFrame } from "../components/PageFrame";
 import { photoConfirmationProjection, photoDraftSchema } from "../components/photos/photo-form";
 import { SourcesView } from "../components/shared-inputs/SourcesView";
 import { AppButton, SectionCard, SectionHeader } from "../components/ui";
@@ -29,11 +31,11 @@ const photoDraft = (photo: PhotoAttachment): PhotoDraftFields => photo.extractio
 function useProductionPhotos() {
   const env = useDomainEnvironment();
   const envRef = useRef(env); envRef.current = env;
-  const api = useMemo(() => createPhotoApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
+  const api = useMemo(() => createPhotoApi(env.apiBaseUrl, env.owner.fetcher, photoSha256), [env.apiBaseUrl, env.owner.fetcher]);
   const [state, setState] = useState(() => ({
     photos: [] as PhotoAttachment[], canCreate: false, load: "loading" as PhotosViewModel["load"], lost: false, resourceUnavailable: false,
     selected: null as PhotoAttachment | null, latest: null as PhotoAttachment | null,
-    original: null as PhotoOriginal | null, previewUrl: null as string | null, source: "使用者上傳照片", sourceError: "",
+    original: null as PhotoOriginal | null, preview: null as { uri: string; dispose: () => void } | null, source: "使用者上傳照片", sourceError: "",
     draft: emptyPhotoDraft(), reviewed: null as PhotoDraftFields | null, formKey: 0, modelConsent: false, sharedConsent: false,
     operation: noOperation(), pending: null as PendingPhoto | null, direct: null as DirectPhoto | null,
     replacement: null as PhotoReplacement | null, deletion: false, deleteScope: false, deleteFinal: false,
@@ -50,13 +52,13 @@ function useProductionPhotos() {
   const releaseEditor = () => {
     composerTransfer.current = null;
     ref.current.original?.dispose?.(); ref.current.replacement?.kind === "original" && ref.current.replacement.original.dispose?.();
-    if (ref.current.previewUrl) URL.revokeObjectURL(ref.current.previewUrl);
-    update({ resourceUnavailable: false, original: null, previewUrl: null, selected: null, latest: null, replacement: null, source: "使用者上傳照片", sourceError: "",
+    ref.current.preview?.dispose();
+    update({ resourceUnavailable: false, original: null, preview: null, selected: null, latest: null, replacement: null, source: "使用者上傳照片", sourceError: "",
       draft: emptyPhotoDraft(), formKey: ref.current.formKey + 1, ...consentReset, deletion: false, reservationUnidentified: false });
   };
   const op = (phase: PhotoOperation["phase"], value: PhotoOperation["state"], message: string, checked = false) =>
     update({ notice: "", operation: { phase, state: value, message, reference: null, checked } });
-  const available = () => current() && envRef.current.online && !!envRef.current.userId && !!envRef.current.childId && !ref.current.lost && Platform.OS === "web";
+  const available = () => current() && envRef.current.online && !!envRef.current.userId && !!envRef.current.childId && !ref.current.lost;
   const editable = () => envRef.current.role !== "viewer" && envRef.current.role !== null;
   const fresh = () => available() && ref.current.load === "ready" && !ref.current.busy && !ref.current.pending && !ref.current.latest && ref.current.operation.state !== "conflict";
   const resetAccess = (error: PhotoApiError) => {
@@ -73,8 +75,8 @@ function useProductionPhotos() {
       // Keep unresolved operation bytes internally, but never display an unreadable attachment.
       if (!pending && !direct) releaseEditor();
       else {
-        if (ref.current.previewUrl) URL.revokeObjectURL(ref.current.previewUrl);
-        update({ selected: null, latest: null, previewUrl: null, resourceUnavailable: true, ...consentReset });
+        ref.current.preview?.dispose();
+        update({ selected: null, latest: null, preview: null, resourceUnavailable: true, ...consentReset });
       }
       update({ photos: [], canCreate: false, load: "error", notice: "所選照片已刪除或目前不可讀；正在重新核對孩子存取權限。" });
       const e = envRef.current;
@@ -215,7 +217,7 @@ function useProductionPhotos() {
       live.current = false; refreshRequested.current = false; request.current?.abort(); api.resetOnline();
       ref.current.original?.dispose?.();
       if (ref.current.replacement?.kind === "original") ref.current.replacement.original.dispose?.();
-      if (ref.current.previewUrl) URL.revokeObjectURL(ref.current.previewUrl);
+      ref.current.preview?.dispose();
     };
   }, [api]);
   useEffect(() => {
@@ -308,14 +310,16 @@ function useProductionPhotos() {
         update({ source: next.source, direct: { kind: "extract", photo: next, checked: false } });
       }
       const blob = next.state === "ready" ? await readResource(item.id, signal, () => api.content(next, signal, envRef.current.userId!)) : null; if (!current() || next.state === "ready" && !blob) return;
-      releaseEditor(); put(next); update({ previewUrl: blob ? URL.createObjectURL(blob) : null, source: next.source, load: "ready", operation: noOperation() });
+      const preview = blob ? photoPreview(await readBlobBytes(blob), next.mimeType) : null;
+      if (!current() || signal.aborted) { preview?.dispose(); return; }
+      releaseEditor(); put(next); update({ preview, source: next.source, load: "ready", operation: noOperation() });
       if (!next.recordId && ["running", "unknown"].includes(next.extraction.state)) {
         update({ direct: { kind: "extract", photo: next, checked: false } }); op("extract", "unknown", "原次提取尚未查明。先查核同一附件及原 run，不重送模型。");
       }
     });
   }
   const item = (photo: PhotoAttachment): PhotoItem => ({ ...photo, isUploader: photo.ownerUserId === env.userId, ownerLabel: photo.ownerUserId === env.userId ? "本人" : "家庭成員",
-    createdAtLabel: photo.createdAt, imageSource: photo.id === state.selected?.id && state.previewUrl ? { uri: state.previewUrl } : null,
+    createdAtLabel: photo.createdAt, imageSource: photo.id === state.selected?.id && state.preview?.uri ? { uri: state.preview?.uri } : null,
     extraction: { state: photo.extraction.state, candidate: photo.extraction.draft ? { ...photoDraft(photo), uncertainties: photo.extraction.draft.uncertainties } : null } });
   const isFresh = fresh(), managed = privatePhoto(state.selected, env.userId) && editable();
   const manual = !state.direct || state.direct.kind === "extract" && state.direct.checked && state.selected?.extraction.state !== "running";
@@ -377,20 +381,12 @@ function useProductionPhotos() {
       && !s.busy && !s.pending && !s.direct && !s.lost && !s.selected && !s.replacement && !s.latest;
   };
   async function receiveComposerOriginal(original: PhotoOriginal) {
-    // Copy bytes to a new owned Blob before the composer releases its resource.
+    // Copy and verify bytes before the composer releases its independently owned resource.
     if (!model.canPick || state.original || state.selected || !original.readBase64 || !composerOwns(original)) return false;
     let owned: PhotoOriginal | null = null;
     let retained = false;
     await run(async () => {
-      const encoded = await original.readBase64!(), raw = atob(encoded), bytes = Uint8Array.from(raw, value => value.charCodeAt(0));
-      if (!current()) return;
-      const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), value => value.toString(16).padStart(2, "0")).join("");
-      if (!current()) return;
-      const valid = photoMetadataSchema.safeParse({ fileName: original.fileName, mimeType: original.mimeType, bytes: bytes.length, sha256: hash, source: "照片" });
-      if (bytes.length !== original.bytes || hash !== original.sha256 || !valid.success) throw new PhotoApiError(400, "invalid_input");
-      const url = URL.createObjectURL(new Blob([bytes], { type: original.mimeType })); let kept: string | null = encoded;
-      owned = { fileName: original.fileName, mimeType: original.mimeType, bytes: original.bytes, sha256: original.sha256, imageSource: { uri: url },
-        readBase64: async () => { if (kept === null) throw new Error("Original released"); return kept; }, dispose: () => { URL.revokeObjectURL(url); kept = null; } };
+      owned = await copyPhotoOriginal(original);
       const s = ref.current;
       if (!current() || !composerOwns(original) || !editable() || s.lost || s.pending || s.direct || s.selected || s.original || s.replacement || s.reservationUnidentified) {
         owned.dispose?.(); return;
@@ -426,12 +422,10 @@ export function ProductionPhotoInputDomains({ children }: { children: ReactNode 
 }
 export function ProductionPhotosWorkspace({ onCare, capturePreferred = false }: { onCare: () => void; capturePreferred?: boolean }) {
   const domain = useContext(PhotoInputContext)?.photos;
-  if (Platform.OS !== "web") return <PageFrame density="compact" title="照片與記錄" description="原生照片輸入待 P3 接線。"><Text>原生相簿、相機、上傳及提取目前未接通；沒有開啟裝置權限。</Text></PageFrame>;
   return domain ? <PhotosView production model={domain.model} actions={domain.actions} onCare={onCare} capturePreferred={capturePreferred} scopeKey={domain.scopeKey} /> : null;
 }
 export function ProductionSourcesWorkspace({ onPhotos, onRecord }: { onPhotos: () => void; onRecord: (id: string) => void }) {
   const domain = useContext(PhotoInputContext)?.sources;
-  if (Platform.OS !== "web") return <PageFrame density="compact" title="資料來源" description="原生來源操作尚未接通。"><Text>私人來源目前由 Web 正式入口處理。</Text></PageFrame>;
   return domain ? <SourcesView production model={domain.model} actions={domain.actions} onPhotos={onPhotos} onRecord={onRecord} previewControls={null} /> : null;
 }
 export function AgentPhotoInput({ original, composerGuardId }: { original: PhotoOriginal; composerGuardId: string }) {

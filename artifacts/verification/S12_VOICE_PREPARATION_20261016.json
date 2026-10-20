@@ -1,0 +1,204 @@
+{
+  "workPackage": "S12-W01",
+  "date": "2026-10-16",
+  "baseline": "665ac9a",
+  "scope": "Prepared shared capture, private voice authority and same production Agent audio tool cycle; formal runtime/UI remain disabled pending lifecycle completion",
+  "checks": [
+    {
+      "kind": "frontend-targeted-types",
+      "roots": 4,
+      "initialDiagnostics": 1,
+      "cause": "Expo Audio uses allowsBackgroundRecording, not shouldRecordInBackground",
+      "finalDiagnostics": 0
+    },
+    {
+      "kind": "synthetic-media",
+      "passed": 1,
+      "initialFailure": "WebM with no DefaultDuration has a zero-duration final packet in Mediabunny 1.61.5",
+      "correction": "Bounded Opus packet TOC durations under RFC 6716; same scenario passed",
+      "coverage": [
+        "WebM without container duration",
+        "WAV duration",
+        "over duration and mismatched MIME",
+        "size bound"
+      ]
+    },
+    {
+      "kind": "server-targeted-types",
+      "roots": 2,
+      "diagnostics": 0
+    },
+    {
+      "kind": "synthetic-storage",
+      "passed": 1,
+      "coverage": [
+        "same immutable address after lost write response",
+        "full precision generation",
+        "encrypted byte integrity",
+        "wrong owner rejected",
+        "pinned removal"
+      ]
+    },
+    {
+      "kind": "synthetic-voice-authority-and-http",
+      "passed": 1,
+      "initialFailure": "Online mutation carries owner-wide scope; attachment binding initially read NIL child",
+      "correction": "Bind the transaction to the child parsed from the original authenticated chat route",
+      "coverage": [
+        "original reserve fingerprint",
+        "known pre-upload rejection",
+        "unknown upload reconciliation without resend",
+        "same-transaction unique message link",
+        "lost chat reply resolved by original operation",
+        "new store instance reads same audio/message",
+        "authenticated HTTP and shared client",
+        "account precondition and unauthenticated rejection",
+        "delete journal, immediate masking and pinned cleanup"
+      ]
+    },
+    {
+      "kind": "server-client-targeted-types",
+      "roots": 7,
+      "diagnostics": 0
+    },
+    {
+      "kind": "agent-audio-targeted-types",
+      "roots": 3,
+      "initialDiagnostics": 4,
+      "cause": "Stale cached AgentBudget and reply-state dependencies; no source repair required",
+      "finalDiagnostics": 0
+    },
+    {
+      "kind": "same-voice-lifecycle-production-agent",
+      "passed": 1,
+      "durationMs": 403.1497,
+      "realModelCalls": 0,
+      "coverage": [
+        "One original 1 MiB audio reaches the real ADK Runner through scripted provider",
+        "Provider-only bytes do not exceed the Firestore ADK event limit",
+        "Preauthorized ordinary instruction saves an audio-bound provenance receipt",
+        "Original empty-text voice message is not rewritten as a transcript",
+        "Original run readback repeats neither model nor action",
+        "Deleted voice cannot be loaded into a new run"
+      ]
+    },
+    {
+      "kind": "same-voice-lifecycle-background-transcription",
+      "basedOn": "bd0ce52",
+      "passed": 1,
+      "durationMs": 498.3707,
+      "initialFailure": "Synthetic Date clock started at epoch zero, so queued work was not due",
+      "correction": "Initialize mock clock from the actual test start; no product repair",
+      "coverage": [
+        "Canonical background lease",
+        "Same production ADK runtime and billing route",
+        "Only one transcription tool and model attempt",
+        "Persisted transcript without replaying audio command",
+        "Same delivery retry without another generation",
+        "Current source authorization before disclosure"
+      ]
+    },
+    {
+      "kind": "same-voice-lifecycle-erasure-and-export",
+      "passed": 1,
+      "durationMs": 527.3498,
+      "initialFailure": "Synthetic document reference omitted SDK get(); cleanup correctly remained pending",
+      "correction": "Complete the local SDK-shaped read seam; same scenario passed",
+      "coverage": [
+        "Voice reserve/delete share owner-wide operation receipts",
+        "Original-operation conflict",
+        "Fresh authorized export of audio and transcript",
+        "Deletion immediately masks both exports",
+        "Pinned object and transcription session cleanup",
+        "Physical transcript removal"
+      ]
+    },
+    {
+      "kind": "affected-server-client-types",
+      "roots": 6,
+      "diagnostics": 0
+    }
+  ],
+  "realModelCalls": 0,
+  "cloudCalls": 0,
+  "notifications": 0,
+  "deviceActions": 0,
+  "limitations": [
+    "All native recording/permission/playback and real-model voice quality remain unverified",
+    "No new APK, OTA or voice deployment",
+    "In-branch production runtime/owner is wired; online site still runs admin-8ba66e7",
+    "Private query indexes are prepared locally, not applied",
+    "Real cloud backup/restore remains deferred; synthetic recovery is not equivalent"
+  ],
+  "continuation20261018": {
+    "baseCommit": "64ec851377049293a72e54dfe108d6855522d35a",
+    "remoteMaster": "d4686b7ff864642aaa964ca3adae9d64b52b6fa5",
+    "implemented": [
+      "Production API/worker voice services, common owner and recording send",
+      "Persisted transcript search and fixed-content-version continuation",
+      "Shared authenticated playback and segment seek",
+      "Independent deletion journal, paired encrypted backup and isolated recovery planning",
+      "Abandoned unlinked upload cleanup after 24 hours; linked messages retained",
+      "Three explicit voice query indexes and private-field exclusions prepared, not applied"
+    ],
+    "checks": [
+      {
+        "kind": "same-lifecycle-restore",
+        "passed": 1,
+        "durationMs": 656.5401,
+        "priorFailures": [
+          "Duplicate local variable in test",
+          "Restore metadata omitted voice fields and existing summaryPending"
+        ],
+        "correction": "Use existing test scope and authenticate the required metadata fields"
+      },
+      {
+        "kind": "affected-retained-media-and-paired-backup",
+        "passed": 3,
+        "durationMs": [
+          6.8045,
+          1.0308,
+          253.3186
+        ],
+        "scope": "Pinned recovery, independent journal refusal, same-address lost backup acknowledgement and new-epoch copy"
+      },
+      {
+        "kind": "same-lifecycle-search-and-continuation",
+        "passed": 1,
+        "durationMs": 988.513
+      },
+      {
+        "kind": "shared-upload-owner",
+        "passed": 1,
+        "durationMs": 2.1794,
+        "scope": "Original ID, uncertain upload lookup without resend, late response after identity switch"
+      },
+      {
+        "kind": "same-lifecycle-expiry",
+        "passed": 1,
+        "durationMs": 795.7083,
+        "initialFailure": "Expiry assertion accidentally ran after the linked source was already deleted",
+        "correction": "Check linked-source retention before deletion, then expire the unlinked reservation; no weakened product assertion"
+      },
+      {
+        "kind": "affected-types",
+        "serverRoots": 8,
+        "frontendRoots": 3,
+        "diagnostics": 0,
+        "scope": "Production owner/chat screen and personal history UI; server runtime/restore roots"
+      }
+    ],
+    "realModelCalls": 0,
+    "cloudTestCalls": 0,
+    "deviceActions": 0,
+    "notifications": 0,
+    "deployed": false,
+    "pending": [
+      "Native microphone/codec/playback and cross-device representative voice quality",
+      "New APK for native dependencies; no OTA or binary upload this continuation",
+      "Apply prepared indexes with the compatible API/worker release",
+      "Real native backup restore remains explicitly deferred",
+      "Review final deployment footprint and dependency PR gates before enabling the released UI"
+    ]
+  }
+}

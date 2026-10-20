@@ -3,7 +3,7 @@ import type { PhotoOriginal } from "./photo-view-model.ts";
 // Transient presentation boundary, not a server attachment or upload contract.
 export type AssistantAttachment = {
   id: string; kind: "photo" | "file" | "voice"; fileName: string; mimeType: string; bytes: number;
-  photo?: PhotoOriginal; localUri?: string; dispose?: () => void;
+  photo?: PhotoOriginal; localUri?: string; readBase64?: () => Promise<string>; dispose?: () => void;
 };
 export type AssistantDraft = { scope: string | null; text: string; attachments: readonly AssistantAttachment[] };
 export const emptyAssistantDraft: AssistantDraft = { scope: null, text: "", attachments: [] };

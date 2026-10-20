@@ -1,3 +1,4 @@
+import { agentAudioMarker, type AgentAudioInput } from './agent-audio.ts';
 import { BaseLlm } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
 import { ApiError, GoogleGenAI } from "@google/genai";
@@ -19,12 +20,16 @@ export interface AgentModelProvider {
 }
 
 /** One logical request accounting path for both current and projected native requests. */
-export function agentRequestCharacters(request: Pick<LlmRequest, "contents" | "config">): number {
-  let images = 0;
+export function agentRequestCharacters(request: Pick<LlmRequest, "contents" | "config">, audio?: AgentAudioInput): number {
+  let media = 0;
   const contents = request.contents.map(content => ({ ...content, parts: content.parts?.map(part => {
     if (part.fileData) throw new AgentStopped("input_limit");
     if (!part.inlineData) return part;
-    if (content.role !== "user" || ++images > 1) throw new AgentStopped("input_limit");
+    if (content.role !== "user" || ++media > 1) throw new AgentStopped("input_limit");
+    if (audio) {
+      if (part.inlineData.mimeType !== audio.mimeType || part.inlineData.data !== audio.data) throw new AgentStopped("input_limit");
+      return { ...part, inlineData: { mimeType: audio.mimeType, data: "[bounded authorized audio bytes]" } };
+    }
     try { decodePhoto(part.inlineData.data ?? "", part.inlineData.mimeType ?? ""); } catch { throw new AgentStopped("input_limit"); }
     return { ...part, inlineData: { ...part.inlineData, data: "[bounded image bytes]" } };
   }) }));
@@ -83,6 +88,7 @@ export class AgentGatewayModel extends BaseLlm {
   private readonly options: {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
+    audio?: AgentAudioInput;
     terminalToolNames?: ReadonlySet<string>;
     modelAttemptKey?: (request: LlmRequest) => string | undefined;
     durableDailyUsage?: { adapter: DurableAiUsage; context: RootBudgetContext };
@@ -122,6 +128,7 @@ export class AgentGatewayModel extends BaseLlm {
   }
   private async *generateBounded(request: LlmRequest): AsyncGenerator<LlmResponse, void> {
     const { config, provider, usage, budget, userId, childId, authorize } = this.options;
+    const requestSize = (value: Pick<LlmRequest, "contents" | "config">) => agentRequestCharacters(value, this.options.audio);
     budget.check();
     const daily = this.options.durableDailyUsage;
     if (daily && (!budget.durable || daily.context.binding.ownerId !== userId || daily.context.binding.childId !== childId))
@@ -129,11 +136,26 @@ export class AgentGatewayModel extends BaseLlm {
     if (!config.enabled) throw new AgentStopped("unavailable");
     if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
     // Binary media has its own bounded allowance; all text, schemas and opaque protocol metadata remain counted.
-    let requestCharacters = agentRequestCharacters(request);
+    let requestCharacters = requestSize(request);
     if (requestCharacters > budget.limits.inputCharacters) {
       throw new AgentStopped("input_limit");
     }
-    let outgoing = request;
+    // Audio bytes never enter persistent ADK events. Reattach exactly the authorized original
+    // at its unique current-message marker, preserving every tool/protocol part unchanged.
+    let base = request;
+    if (this.options.audio) {
+      const audio = this.options.audio, marker = agentAudioMarker(audio);
+      let matches = 0;
+      base = { ...request, contents: request.contents.map(content => {
+        if (!content.parts?.some(part => part.text === marker)) return content;
+        if (content.role !== 'user' || ++matches !== 1) throw new AgentStopped('input_limit');
+        return { ...content, parts: [...content.parts, { inlineData: { mimeType: audio.mimeType, data: audio.data } }] };
+      }) };
+      if (matches !== 1) throw new AgentStopped('input_limit');
+      requestCharacters = requestSize(base);
+      if (requestCharacters > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
+    }
+    let outgoing = base;
     const initial = this.options.readConversationSummary
       ? await budget.wait(this.options.readConversationSummary)
       : !this.providerCalled ? this.options.initialConversationSummary : undefined;
@@ -142,18 +164,18 @@ export class AgentGatewayModel extends BaseLlm {
     if (initial && (validUntil === Infinity || Number.isFinite(validUntil) && Date.now() < validUntil)) {
       const context = { role: "user", parts: [{ text: INITIAL_CONVERSATION_SUMMARY_LABEL + JSON.stringify(initial.summary) }] };
       if (JSON.stringify(context).length <= 4000) {
-        const candidate = { ...request, contents: [...request.contents, context] };
-        if (agentRequestCharacters(candidate) + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters) {
+        const candidate = { ...base, contents: [...base.contents, context] };
+        if (requestSize(candidate) + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters) {
           // Fresh provider-only data never enters ADK events; count it in each request, without cumulative copies.
           outgoing = candidate;
         }
       }
     }
-    const includesSummary = outgoing !== request;
+    const includesSummary = outgoing !== base;
     if (initial && !includesSummary) {
       const marker = { role: 'user', parts: [{ text: 'Server context coverage: historical summary omitted for capacity or expiry; read authorized history/current resources when needed. Do not claim complete historical coverage.' }] };
-      const candidate = { ...request, contents: [...request.contents, marker] };
-      if (agentRequestCharacters(candidate) + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters) outgoing = candidate;
+      const candidate = { ...base, contents: [...base.contents, marker] };
+      if (requestSize(candidate) + AGENT_TOOL_RESPONSE_RESERVE <= budget.limits.inputCharacters) outgoing = candidate;
     }
     // Keep the exact provider payload fixed after durable admission, including the revalidated summary.
     const modelKey = budget.durable ? this.options.modelAttemptKey?.(request) : undefined;
@@ -165,8 +187,8 @@ export class AgentGatewayModel extends BaseLlm {
         maxOutputTokens: Math.min(config.maxOutputTokens, AGENT_LIMITS.outputTokens),
         thinkingConfig: { thinkingLevel: nativeModelThinkingLevel(config.model, config.agentThinkingLevel) },
       } };
-      if (agentRequestCharacters(outgoing) > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
-      requestCharacters = agentRequestCharacters({ contents: request.contents, config: outgoing.config });
+      if (requestSize(outgoing) > budget.limits.inputCharacters) throw new AgentStopped("input_limit");
+      requestCharacters = requestSize({ contents: base.contents, config: outgoing.config });
       if (includesSummary && Date.now() >= validUntil) throw new AgentStopped("unavailable");
       const requestFingerprint = agentBudgetFingerprint({ model: config.model, contents: outgoing.contents, config: outgoing.config });
       await budget.admit({ key: modelKey, fingerprint: requestFingerprint, kind: "model", units: 1 });
@@ -223,7 +245,7 @@ export class AgentGatewayModel extends BaseLlm {
       const modelContentCharacters = JSON.stringify(response.content).length;
       const projected = this.options.projectCapabilityConfig && calls.length
         ? await budget.wait(() => this.options.projectCapabilityConfig!(request, calls.map(part => part.functionCall!))) : undefined;
-      const futureCharacters = projected ? agentRequestCharacters({ contents: request.contents, config: budget.durable ? { ...projected,
+      const futureCharacters = projected ? requestSize({ contents: base.contents, config: budget.durable ? { ...projected,
           candidateCount: outgoing.config?.candidateCount, maxOutputTokens: outgoing.config?.maxOutputTokens, thinkingConfig: outgoing.config?.thinkingConfig } : projected }) : requestCharacters;
       const capabilityGrowthCharacters = Math.max(0, futureCharacters - requestCharacters);
       if (capabilityGrowthCharacters > 0

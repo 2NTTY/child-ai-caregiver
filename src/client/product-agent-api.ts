@@ -29,7 +29,7 @@ export interface ProductAgentApi {
   getLibrary(childId: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<PersonalLibraryPage>;
   getWork(childId: string, signal: AbortSignal, userId: string, workId?: string | null, cursor?: string | null): Promise<AgentWorkPage>;
   searchHistory(childId: string, kind: "message" | "private_instruction" | "memory_fact", query: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<AgentHistoryPage>;
-  readHistory(childId: string, messageId: string, offset: number, signal: AbortSignal, userId: string): Promise<AgentHistoryMessage>;
+  readHistory(childId: string, messageId: string, offset: number, signal: AbortSignal, userId: string, contentVersion?: string): Promise<AgentHistoryMessage>;
   getPendingProposals(childId: string, signal: AbortSignal, userId: string, cursor?: string | null): Promise<AgentPendingPage>;
   getRun(childId: string, runId: string, signal: AbortSignal, userId: string): Promise<ProductAgentResult>;
   decideProposal(childId: string, runId: string, proposalId: string, input: AgentDecision, signal: AbortSignal, userId: string): Promise<AgentProposal>;
@@ -103,9 +103,9 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
       if (!parsed.success || parsed.data.complete !== (parsed.data.nextCursor === null) || parsed.data.matches.some(item => item.kind !== kind)
         || new Set(parsed.data.matches.map(item => item.id)).size !== parsed.data.matches.length) throw new ProductAgentApiError(); return parsed.data;
     },
-    async readHistory(childId, messageId, offset, signal, userId) {
-      if (!uuid.safeParse(childId).success || !uuid.safeParse(messageId).success || !identifier.safeParse(userId).success || !Number.isInteger(offset) || offset < 0) throw new ProductAgentApiError(400, "invalid_input");
-      const parsed = agentHistoryMessageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/agent/history/messages/${messageId}?offset=${offset}&limit=4000`, signal, userId));
+    async readHistory(childId, messageId, offset, signal, userId, contentVersion) {
+      if (contentVersion !== undefined && !/^[a-f0-9]{64}$/u.test(contentVersion) || !uuid.safeParse(childId).success || !uuid.safeParse(messageId).success || !identifier.safeParse(userId).success || !Number.isInteger(offset) || offset < 0) throw new ProductAgentApiError(400, "invalid_input");
+      const parsed = agentHistoryMessageSchema.safeParse(await request(`/children/${encodeURIComponent(childId)}/agent/history/messages/${messageId}?offset=${offset}&limit=4000${contentVersion ? "&contentVersion=" + contentVersion : ""}`, signal, userId));
       if (!parsed.success || parsed.data.childId !== childId || parsed.data.id !== messageId || parsed.data.offset !== offset) throw new ProductAgentApiError(); return parsed.data;
     },
     async getPendingProposals(childId, signal, userId, cursor = null) {

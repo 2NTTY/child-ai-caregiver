@@ -48,11 +48,15 @@ export function claimedRunAssembly(config: AiConfig, persistence: ClaimedRunPers
     const background = allowProductEntrypoints && ["product-background", "memory-refresh"].includes(input.recipeId) && input.trigger.kind === "worker"
       && claim?.purpose === "background" && claim.sourceMessageId === null
       && workContinuationJobSchema.shape.workerGeneration.safeParse(claim.workerGeneration).success;
+    const transcription = allowProductEntrypoints && input.recipeId === 'voice-transcription' && input.trigger.kind === 'worker'
+      && claim?.purpose === 'voice-transcription' && claim.sourceMessageId === null && claim.sourceResource?.kind === 'voice'
+      && Number.isSafeInteger(claim.sourceResource.version) && claim.sourceResource.version > 0
+      && workContinuationJobSchema.shape.workerGeneration.safeParse(claim.workerGeneration).success;
     const capture = allowProductEntrypoints && input.trigger.kind === "interactive" && claim?.sourceMessageId === null
       && ((input.recipeId === "photo-capture" && claim.purpose === "photo-extraction" && claim.sourceResource?.kind === "photo")
         || (input.recipeId === "shared-capture" && claim.purpose === "shared-extraction" && claim.sourceResource?.kind === "shared-input"))
       && claim.sourceResource?.id === input.trigger.reference && Number.isSafeInteger(claim.sourceResource.version) && claim.sourceResource.version > 0;
-    if (!claim || claim.created !== true || claim.state !== "running" || !(interactive || continuation || background || capture)
+    if (!claim || claim.created !== true || claim.state !== "running" || !(interactive || continuation || background || capture || transcription)
       || claim.recipeId !== input.recipeId || claim.trigger?.kind !== input.trigger.kind
       || claim.trigger.reference !== input.trigger.reference
       || claim.runId !== input.runId || agentBudgetFingerprint(claim.scope) !== agentBudgetFingerprint(input.scope)
@@ -65,7 +69,7 @@ export function claimedRunAssembly(config: AiConfig, persistence: ClaimedRunPers
     return { adapter: rootBudget, dailyUsage, context: { generation: 1, binding: {
       rootRunId: claim.runId, ownerId: claim.scope.userId, workspaceId: claim.scope.workspaceId, childId: claim.scope.childId,
       authorizationVersion: claim.scope.authorizationVersion, storageEpoch: claim.storageEpoch,
-      trigger: { ...claim.trigger }, workflowVersion: profile.workflowVersion + ((continuation || background) ? ":worker:" + claim.workerGeneration : capture ? ":capture:" + claim.sourceResource!.kind + ":" + claim.sourceResource!.id + ":" + claim.sourceResource!.version : ""), promptPackVersion: packVersion,
+      trigger: { ...claim.trigger }, workflowVersion: profile.workflowVersion + ((continuation || background || transcription) ? ":worker:" + claim.workerGeneration : capture ? ":capture:" + claim.sourceResource!.kind + ":" + claim.sourceResource!.id + ":" + claim.sourceResource!.version : ""), promptPackVersion: packVersion,
       settingsVersion: profile.settingsVersion + ":" + fingerprint, billingVersion: profile.billingVersion,
       limits: { modelCalls: limits.modelCalls, toolCalls: limits.toolCalls, queryEmbeddings: limits.queryEmbeddings }, deadlineAtMs: deadline,
     } } };

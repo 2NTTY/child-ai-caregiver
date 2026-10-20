@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Platform } from "react-native";
 import { usePathname } from "expo-router";
 import { createSharedInputApi, SharedInputApiError, type SharedInputWriteResult } from "../../../src/client/shared-input-api";
 import { subscribeOnlineRefresh } from "../../../src/client/online-refresh-events";
@@ -48,7 +47,7 @@ export function usePhotoInputSources() {
   const refreshRequested = useRef(false);
   const update = (patch: Partial<typeof state>) => { ref.current = { ...ref.current, ...patch }; setState(ref.current); };
   const current = () => live.current && envRef.current.current();
-  const available = () => current() && envRef.current.online && !!envRef.current.userId && !!envRef.current.childId && !ref.current.lost && Platform.OS === "web";
+  const available = () => current() && envRef.current.online && !!envRef.current.userId && !!envRef.current.childId && !ref.current.lost;
   const editable = () => envRef.current.role !== "viewer" && envRef.current.role !== null;
   const fresh = () => available() && ref.current.load === "ready" && !ref.current.busy && !ref.current.pending && !ref.current.latest && ref.current.operation.state !== "conflict";
   const canRead = () => fresh() && !ref.current.direct && envRef.current.role !== null;

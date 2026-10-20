@@ -1,3 +1,9 @@
+import { firestoreVoiceRowSchema } from './firestore-voice.ts';
+import { erasureCoversVoice } from './firebase-erasure-journal.ts';
+import type { FirebaseVoiceRecovery } from './firebase-voice-recovery.ts';
+import type { VoiceObjects, VoiceObjectDescriptor } from './firebase-voice-objects.ts';
+import type { FirebaseBackupVoiceEntry } from './firebase-backup-artifacts.ts';
+import { assertRestoredVoiceRelations } from './firestore-restore-voice.ts';
 import { erasureCoversPhoto } from './firebase-erasure-journal.ts';
 import { createHash } from 'node:crypto';
 import { FieldPath, type Firestore } from '@google-cloud/firestore';
@@ -40,6 +46,7 @@ export interface FirebaseRecoveryOperatorOptions extends FirebaseBackupOptions {
   targetDatabase:Firestore;backupBucketName:string;journalBucket:Bucket;keyVersionRef:string;
   journal:Pick<FirebaseErasureJournal,'readObject'>;photos:FirebasePhotoRecovery;artifacts:FirebaseBackupArtifacts;
   sourceObjects?:Pick<FirebasePhotoObjects,'inspect'> & Partial<Pick<FirebasePhotoObjects,'read'|'write'|'recover'>>;
+  voices?:{bucketName:string;objects:VoiceObjects;recovery:FirebaseVoiceRecovery};
   managed?:ReturnType<typeof createFirebaseManagedBackup>;
   native:ReturnType<typeof createFirebaseNativeRecovery>;auth:Pick<Auth,'getUser'>;
 }
@@ -126,7 +133,7 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       &&plan.manifestSha256===input.descriptor.cipherSha256,'recovery_checkpoint_conflict');
     await staged.resume(applyIdentity(input),()=>assertPaused(input.sourceGeneration),async()=>{
       const restored=await readAll(target,true);assertFirebaseBackupInventory(plan.inventory,restored);
-      const records=decode(restored);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);
+      const records=decode(restored);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);
       const latest=evidence(await readAll(source),await currentAuth(records),(await journalSnapshot()).map(row=>row.intent));
       requireValue(latest.journalHash===plan.journalHash&&latest.authHash===plan.authHash&&latest.authorityHash===plan.authorityHash,'recovery_latest_state_changed');
     });return true;
@@ -142,13 +149,13 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
   return {
     async startBackup(input:{backupId:string;snapshotTime:string;generation:string}){
       await assertPaused(input.generation);const snapshot=await inspectFirebaseBackupSnapshot(options,{snapshotTime:input.snapshotTime,generation:input.generation});
-      const records=decode(snapshot.documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);
+      const records=decode(snapshot.documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);
       return options.native.startExport({backupId:input.backupId,snapshotTime:input.snapshotTime});
     },
     async finishBackup(input:{backupId:string;snapshotTime:string;generation:string;operationName:string;sourceCommit:string;retainedUntil:string}){
       await assertPaused(input.generation);const snapshot=await inspectFirebaseBackupSnapshot(options,{snapshotTime:input.snapshotTime,generation:input.generation});
       const native=assertFirebaseNativeExport(snapshot.inventory,await options.native.getExport(input.operationName),prefix(input.backupId));
-      const records=decode(snapshot.documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);
+      const records=decode(snapshot.documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);
       const objects=await options.artifacts.holdNativeExport({backupId:input.backupId,outputUriPrefix:native.outputUriPrefix});
       const photos:FirebaseBackupPhotoManifestEntry[]=[];
       for(const record of records.filter(row=>row.context.kind==='photo')){
@@ -159,12 +166,21 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         const backup=await options.photos.backupPhoto({backupId:input.backupId,scope:photoObjectScope(photo),photoId:photo.id,descriptor:photo.descriptor!,retainedUntil:input.retainedUntil});
         photos.push({path:record.path,photoId:photo.id,scope:photoObjectScope(photo),descriptor:photo.descriptor!,backup});
       }
+      const voices:FirebaseBackupVoiceEntry[]=[];let voiceBytes=0;
+      for(const record of records.filter(r=>r.context.kind==='voice-asset')) {
+        const row=firestoreVoiceRowSchema.parse(record.value);if(row.state!=='ready')continue;
+        requireValue(Boolean(options.voices&&row.descriptor),'recovery_voice_port_missing');
+        voiceBytes+=row.descriptor!.bytes;requireValue(voiceBytes<=128*1024*1024,'recovery_voice_limit');
+        const backup=await options.voices!.recovery.backupVoice({backupId:input.backupId,scope:row.objectScope,
+          voiceId:row.id,descriptor:row.descriptor!,retainedUntil:input.retainedUntil});
+        voices.push({path:record.path,voiceId:row.id,scope:row.objectScope,descriptor:row.descriptor!,backup});
+      }
       await assertPaused(input.generation);await options.artifacts.assertNativeExportObjects({backupId:input.backupId,objects});
       const payload:FirebaseBackupManifestPayload={format:'yuban-firebase-backup-manifest/v1',backupId:input.backupId,databaseId:source.databaseId,
         snapshotTime:input.snapshotTime,controlGeneration:input.generation,sourceCommit:input.sourceCommit,keyVersionRef:options.keyVersionRef,
-        retainedUntil:input.retainedUntil,nativeExport:{outputUriPrefix:native.outputUriPrefix,objects},inventory:snapshot.inventory,photos};
+        retainedUntil:input.retainedUntil,nativeExport:{outputUriPrefix:native.outputUriPrefix,objects},inventory:snapshot.inventory,photos,voices};
       const descriptor=await options.artifacts.writeManifest(payload);
-      return {descriptor,documentCount:snapshot.inventory.documentCount,photoCount:photos.length,inventorySha256:snapshot.inventory.sha256};
+      return {descriptor,documentCount:snapshot.inventory.documentCount,photoCount:photos.length,voiceCount:voices.length,inventorySha256:snapshot.inventory.sha256};
     },
     async startRestoreImport(input:{backupId:string;descriptor:FirebaseBackupManifestDescriptor}){
       const manifest=await options.artifacts.readManifest({backupId:input.backupId,descriptor:input.descriptor});
@@ -263,9 +279,29 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         // Validate the complete transform before IO. These planned names are never persisted as actual object evidence.
         expectedDescriptors.set(entry.photoId,{...entry.descriptor,objectName:'photos/v1/'+scopeHash+'/'+entry.photoId});pending.push(entry);
       }
+      const voiceRows=records.filter(r=>r.context.kind==='voice-asset').map(record=>({record,row:firestoreVoiceRowSchema.parse(record.value)}));
+      for(const intent of erasures.filter(i=>['account-delete','child-delete'].includes(i.type))) {
+        for(const record of [...records,...decode(liveDocuments)].filter(r=>r.context.kind==='voice-asset')) {
+          const row=firestoreVoiceRowSchema.parse(record.value);if(!erasureCoversVoice(intent,row.objectScope,row.id))continue;
+          requireValue(Boolean(options.voices),'recovery_voice_port_missing');
+          requireValue(await options.voices!.objects.inspect(row.objectScope,row.id)===null,'recovery_pending_scope_cleanup');
+        }
+      }
+      const voiceReady=voiceRows.filter(v=>v.row.state==='ready');
+      const voiceEntries:(Omit<FirebaseBackupVoiceEntry,'backup'>&Partial<Pick<FirebaseBackupVoiceEntry,'backup'>>)[]=manifest?(manifest.voices??[]):voiceReady.map(({record,row})=>({path:record.path,voiceId:row.id,scope:row.objectScope,descriptor:row.descriptor!}));
+      requireValue(voiceReady.length===voiceEntries.length,'recovery_voice_manifest');
+      const expectedVoice=new Map<string,VoiceObjectDescriptor>(),pendingVoice:typeof voiceEntries=[];
+      for(const entry of voiceEntries) {
+        const found=voiceReady.find(v=>v.record.path===entry.path&&v.row.id===entry.voiceId);
+        requireValue(Boolean(found&&canonical(found.row.objectScope)===canonical(entry.scope)&&canonical(found.row.descriptor)===canonical(entry.descriptor)),'recovery_voice_manifest');
+        if(erasures.some(i=>erasureCoversVoice(i,entry.scope,entry.voiceId)))continue;
+        requireValue(Boolean(options.voices),'recovery_voice_port_missing');
+        const scope={...entry.scope,storageEpoch:firebaseRestoreEpoch(projectId,target.databaseId,input.restoreId,entry.scope.workspaceId)};
+        expectedVoice.set(entry.voiceId,{...entry.descriptor,objectName:options.voices!.objects.address(scope,entry.voiceId)});pendingVoice.push(entry);
+      }
       const base={restoreId:input.restoreId,targetDatabaseId:target.databaseId,sourceGeneration:input.sourceGeneration,
-        documents:plannerDocuments,liveDocuments,authUsers,erasures,erasureDescriptors};
-      prepareFirebaseRestore(options,{...base,photoDescriptors:expectedDescriptors});
+        documents:plannerDocuments,liveDocuments,authUsers,erasures,erasureDescriptors,voiceObjectBucketName:options.voices?.bucketName};
+      prepareFirebaseRestore(options,{...base,photoDescriptors:expectedDescriptors,voiceDescriptors:expectedVoice});
       const photoDescriptors=new Map<string,FirebasePhotoObjectDescriptor>();
       for(const entry of pending){const targetScope={...entry.scope,storageEpoch:firebaseRestoreEpoch(projectId,target.databaseId,input.restoreId,entry.scope.workspaceId)};
         if(entry.backup)photoDescriptors.set(entry.photoId,await options.photos.restorePhoto({backupId:input.backupId,backup:entry.backup,targetScope}));
@@ -278,7 +314,14 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
           photoDescriptors.set(entry.photoId,await objects!.write!(targetScope,entry.photoId,{base64:content.base64,mimeType:content.mimeType}));
         }
       }
-      const plan=prepareFirebaseRestore(options,{...base,photoDescriptors});
+      const voiceDescriptors=new Map<string,VoiceObjectDescriptor>();
+      for(const entry of pendingVoice) {
+        const targetScope={...entry.scope,storageEpoch:firebaseRestoreEpoch(projectId,target.databaseId,input.restoreId,entry.scope.workspaceId)};
+        const descriptor=entry.backup?await options.voices!.recovery.restoreVoice({...entry,backup:entry.backup,backupId:input.backupId,targetScope}):
+          await options.voices!.objects.read(entry.scope,entry.voiceId,entry.descriptor).then(body=>options.voices!.objects.write(targetScope,entry.voiceId,body.base64,body.descriptor.mimeType));
+        voiceDescriptors.set(entry.voiceId,descriptor);
+      }
+      const plan=prepareFirebaseRestore(options,{...base,photoDescriptors,voiceDescriptors});
       await assertPaused(input.sourceGeneration);
       const latestLive=await readAll(source),latestUsers=await currentAuth(records),latestEntries=await journalSnapshot();
       const observed=evidence(latestLive,latestUsers,latestEntries.map(row=>row.intent));

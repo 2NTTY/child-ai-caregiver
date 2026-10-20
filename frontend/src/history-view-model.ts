@@ -66,7 +66,7 @@ export function appendHistoryMessage(previous: HistoryMessageRead | null, next: 
   if (next.offset !== offset || next.text.length + offset > next.totalCharacters || next.nextOffset !== null && next.text.length === 0
     || (next.nextOffset === null ? next.text.length + offset !== next.totalCharacters : next.nextOffset !== next.text.length + offset || next.nextOffset >= next.totalCharacters)
     || previous && (previous.id !== next.id || previous.childId !== next.childId || previous.role !== next.role
-      || previous.createdAt !== next.createdAt || previous.totalCharacters !== next.totalCharacters))
+      || previous.createdAt !== next.createdAt || previous.totalCharacters !== next.totalCharacters || previous.contentVersion !== next.contentVersion))
     throw new Error("History message coverage changed");
   return { ...next, text: (previous?.text ?? "") + next.text, offset: 0 };
 }
