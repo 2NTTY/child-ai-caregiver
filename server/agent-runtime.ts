@@ -103,7 +103,8 @@ export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; b
   authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway;
   /** Tool-free call on this root budget. Chat delivery review uses it; the generator cannot invoke it. */
   completeText?: (input: { system: string; user: string; attemptKey: string }) => Promise<string>; }
-export interface AgentRuntimePort { run(input: AgentRunInput): Promise<AgentRunResult> }export interface AgentRunInput {
+export interface AgentRuntimePort { run(input: AgentRunInput): Promise<AgentRunResult> }
+export interface AgentRunInput {
   /** Trusted observation only; no control authority and no raw model/tool payloads. */
   onDiagnostic?: (event: AgentDiagnostic) => void | Promise<void>;
   /** Trusted persisted identity; never accepted directly from an HTTP body. */
@@ -349,9 +350,8 @@ export function createAgentRuntime(options: {
           };
           let currentInstruction = "";
           const modelAnchors = new WeakMap<LlmRequest, string>();
-          let model!: AgentGatewayModel;
-          model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames,
-            ...(durable ? { modelAttemptKey: (request: LlmRequest) => model.attemptKeyOverride() ?? modelAnchors.get(request) } : {}),
+          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames,
+            ...(durable ? { modelAttemptKey: (request: LlmRequest) => modelAnchors.get(request) } : {}),
             ...(durable?.dailyUsage ? { durableDailyUsage: { adapter: durable.dailyUsage, context: durable.context } } : {}),
             ...(input.trigger.kind === "interactive" && input.recipeId === "product-interactive" ? { initialConversationSummary: input.initialConversationSummary, readConversationSummary: input.readConversationSummary } : {}),
             projectCapabilityConfig: capabilitySelection && loader ? async (request, calls) => {

@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { InMemorySessionService } from "@google/adk";
-import type { LlmRequest } from "@google/adk";
+import type { LlmRequest, LlmResponse } from "@google/adk";
 import { FinishReason } from "@google/genai";
-import { AGENT_LIMITS } from "../server/agent-budget.ts";
+import { AGENT_LIMITS, AgentBudget } from "../server/agent-budget.ts";
+import { AgentGatewayModel } from "../server/agent-model-gateway.ts";
+import { createProductAgentTools } from "../server/product-agent-tools.ts";
 import { createAgentRuntime } from "../server/agent-runtime.ts";
 import { createProductAgent } from "../server/product-agent.ts";
 import { readAiConfig } from "../server/ai-config.ts";
@@ -11,7 +13,7 @@ import { loadAgentPrompt } from "../server/agent-prompt.ts";
 import {
   chatDeliveryDraftHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewAllows,
   chatDeliveryReviewSourceExcerpt, draftLooksLikeSubstantiveCareAdvice, isPureClarifyingQuestion,
-  looksLikeLowRiskOperationReceipt, requiresChatDeliveryReview, SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS,
+  requiresChatDeliveryReview, SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS,
   type ChatDeliveryDraft,
 } from "../server/chat-delivery-review.ts";
 import { agentAnswerSchema, type ProductAgentResult } from "../src/shared/product-agent.ts";
@@ -155,9 +157,12 @@ test("classmate F2: multi-question clarifies and saved receipts with domain noun
     }), false, text);
   }
   const receipt = "已記錄寶寶喝奶 120 毫升。";
-  assert.equal(looksLikeLowRiskOperationReceipt(receipt), true);
   assert.equal(requiresChatDeliveryReview({
     ...draft(), kind: "operation", sources: [], paragraphs: [{ text: receipt, citationIds: [] }],
+  }), true);
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "operation", sources: [], serverSubstitutedReceiptText: true,
+    paragraphs: [{ text: "已保存 1 項操作。", citationIds: [] }],
   }), false);
   // Advisory care still cannot hide behind an operation label.
   assert.equal(requiresChatDeliveryReview({
@@ -195,7 +200,7 @@ test("a persisted pass omits excerpts and private evidence", () => {
 
 interface Script {
   calls: number;
-  generate(request: LlmRequest): Promise<{ content: { role: "model"; parts: { text?: string; functionCall?: { id: string; name: string; args: unknown } }[] }; finishReason: FinishReason }>;
+  generate(request: LlmRequest): Promise<LlmResponse>;
 }
 
 function product(script: Script, options: { reviewCalls?: 4 | 6; bound?: boolean; revalidateCitations?: () => boolean | Promise<boolean> } = {}) {
@@ -272,7 +277,7 @@ function reviewJson(draftHash: string, decision: "pass" | "revise" | "insufficie
   return JSON.stringify({ draftHash, decision, issues: decision === "pass" ? [] : [{ paragraph: 0, reason: "unsupported meaning", support: "excerpt does not state the claim" }] });
 }
 
-function model(parts: { text?: string; functionCall?: { id: string; name: string; args: unknown } }[]) {
+function model(parts: { text?: string; functionCall?: { id: string; name: string; args: Record<string, unknown> } }[]) {
   return { content: { role: "model" as const, parts }, finishReason: FinishReason.STOP };
 }
 
@@ -510,7 +515,6 @@ test("pure clarifying questions may deliver without delivery review", async () =
   for (const sample of [
     { kind: "clarification", text: "寶寶幾個月大？" },
     { kind: "clarification", text: "寶寶幾個月大？ 有沒有發燒？" },
-    { kind: "operation", text: "已記錄寶寶喝奶 120 毫升。" },
   ]) {
     let reviews = 0;
     const result = await product({ calls: 0, generate: async request => {
@@ -528,6 +532,59 @@ test("pure clarifying questions may deliver without delivery review", async () =
     assert.equal(result?.text, sample.text);
     assert.equal(result?.deliveryReview, undefined);
   }
+});
+
+test("server review excludes generator summaries and preserves root accounting", async () => {
+  const budget = new AgentBudget();
+  let reserves = 0, calls = 0, summaryReads = 0;
+  const gateway = new AgentGatewayModel({
+    config: readAiConfig({ AI_ENABLED: "true", GCP_PROJECT_ID: "synthetic-project" }),
+    budget, userId, childId, authorize: async () => true,
+    usage: { reserve: async () => { reserves++; return true; }, record: async () => {} },
+    readConversationSummary: async () => { summaryReads++; throw new Error("review must not load chat context"); },
+    provider: { generate: async request => {
+      calls++;
+      assert.equal(request.contents.length, 1);
+      assert.equal(request.contents[0]?.parts?.[0]?.text, "explicit evidence only");
+      assert.equal(request.config?.systemInstruction, "review instructions");
+      assert.equal(request.config?.tools, undefined);
+      return model([{ text: "reviewed" }]);
+    } },
+  });
+  try {
+    assert.equal(await gateway.completeText({ system: "review instructions", user: "explicit evidence only", attemptKey: "model:review:test" }), "reviewed");
+    assert.equal(summaryReads, 0);
+    assert.equal(calls, 1);
+    assert.equal(reserves, 1);
+    assert.equal(budget.remainingModelCalls, AGENT_LIMITS.modelCalls - 1);
+  } finally { budget.close(); }
+});
+
+test("only current server receipts replace operation prose and background no-action stays silent", async () => {
+  const budget = new AgentBudget();
+  let hasReceipt = false;
+  const surface = createProductAgentTools({
+    run: { scope, runId, budget }, background: true,
+    authorize: async () => true,
+    actions: { receipts: async () => hasReceipt ? [{ id: "receipt" }] : [] },
+    memory: {}, tasks: {}, store: {},
+    knowledge: { createRun: () => ({}) },
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  try {
+    await present.execute({ kind: "operation", paragraphs: [{ text: "已記錄寶寶喝奶 120 毫升。", citationIds: [] }] },
+      { scope, runId, callId: "present", signal: budget.signal });
+    await surface.presentation();
+    assert.equal(requiresChatDeliveryReview(surface.deliveryDraft()!), true);
+    hasReceipt = true;
+    const rendered = await surface.presentation();
+    assert.match(rendered!.text, /^已保存 1 項操作/);
+    assert.equal(rendered!.text.includes("120"), false);
+    assert.equal(requiresChatDeliveryReview(surface.deliveryDraft()!), false);
+    await present.execute({ kind: "no_action", paragraphs: [] }, { scope, runId, callId: "quiet", signal: budget.signal });
+    assert.equal((await surface.presentation())?.outcome, "no_action");
+    assert.equal(surface.deliveryDraft(), null);
+  } finally { budget.close(); }
 });
 
 test("source retract after a review pass does not keep the old answer", async () => {
