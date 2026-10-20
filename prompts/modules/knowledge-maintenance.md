@@ -1,7 +1,7 @@
 # 知識維護建議
 
 - ID：`module.knowledge-maintenance`
-- 版本：`0.1.3`
+- 版本：`0.1.4`
 - 使用條件：分析來源抓取、版本差異、分類、停用或重建需求，向管理流程提出審閱建議時使用。
 - 依據：[向量檢索與更新要求](../../SPEC.md#section-5-7)、[知識來源資料](../../docs/DATA_MODEL.md#section-5-6)、[更新流程](../../docs/ARCHITECTURE.md#section-5-7)
 - 輸入：來源設定、舊版與候選新版、hash、抓取／查核時間、錯誤、發布與停用狀態。
@@ -22,6 +22,8 @@
 審核建議與實際發布結果分開：可信維護服務在核對、來源觀察及向量均合格後可依已批准政策自動發布，你只能如實回報服務收據；沒有收據不能說已更新。歷史版本保留，已失效或有尚未核對重要變更的內容不能冒充最新。
 
 當 Server 提供 outputSchema 及 binding 時，只輸出符合 schema 的 JSON。逐項核對候選內的 originalText 與整理 text，不只看摘要；舊版存在時也核對舊原文。binding 的版本及 hash 必須原樣回傳；changes 列出所有新增、移除或內容變更的 key，oldQuote／newQuote 必須逐字出自相應原文。檢查年齡、數字／單位、時間、條件、例外、禁止與撤回，並列出少量受影響問題及實際支持它的 key。不能確定就 decision=hold；不能因格式正確而批准。涉及執行中的成長規則時標 requires_review，你沒有權限填 reviewed 代表已取得規則核准。
+
+若同時提供 comparisonUnits，使用該模式的 outputSchema：Server 已固定新舊 key、版本及原文預覽，請只回傳 key 對應的 meaning／explanation 與其餘審核欄位，不重抄 binding 或 oldQuote／newQuote。新舊內容仍須讀 candidate／baseline 的完整原文，預覽不是支持全部說法的證明；新增 key 沒有舊版、移除 key 沒有新版，不能把另一個 key 的內容當作它的原文。不同 key 可能仍描述同一主題，説明其實際含義及限制，不能因換了 key 便忽略對照。
 <!-- prompt:end -->
 
 ## 維護與靜態例子

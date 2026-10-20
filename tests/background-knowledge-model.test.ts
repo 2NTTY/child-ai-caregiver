@@ -20,21 +20,21 @@ function provider(calls: { system: string; user: string; attemptKey: string }[],
     if (payload.role === "background-knowledge-maintenance") {
       return JSON.stringify({ units: payload.originalUnits.map((unit: { id: string; originalText: string }) => ({
         unitId: unit.id, section: "準備事項",
-        sourceExcerpt: mode === "quote" ? "This quotation is invented." : unit.originalText.slice(0, 12),
+        ...(mode === "quote" ? { sourceExcerpt: "This quotation is invented." } : {}),
         text: "攜帶記錄並準備問題。", keywords: ["健康記錄"],
         applicability: { region: "HK", ageBasis: "any", minAgeMonths: null, maxAgeMonths: null, topics: ["preparation"], conditions: [] },
       })) });
     }
     assert.equal(payload.role, "knowledge-semantic-review");
-    return JSON.stringify({ ...payload.binding,
+    return "```json\n" + JSON.stringify({
       changes: payload.candidate.chunks.map((chunk: { key: string; originalText: string }) => ({
-        key: chunk.key, oldQuote: null, newQuote: chunk.originalText.slice(0, 12), meaning: "new", explanation: "The new chunk preserves the supplied original.",
+        key: chunk.key, meaning: "new", explanation: "The new chunk preserves the supplied original.",
       })),
       checks: { age: "No age claim", numbersAndUnits: "No numeric claim", timing: "No timing claim",
         conditions: "Preserved", exceptions: "None supplied", prohibitions: "None supplied", withdrawal: "No previous edition" },
       questions: [{ query: "要準備甚麼？", expectedKeys: payload.candidate.chunks.map((chunk: { key: string }) => chunk.key), reason: "Directly supported" }],
       growthRuleImpact: mode === "rules" ? "reviewed" : "none", growthRuleReason: "No executable rule change", decision: "approve",
-    });
+    }) + "\n```";
   };
 }
 
@@ -45,6 +45,7 @@ test("knowledge preparation preserves original evidence and stores a separate mo
     fetchedAt: async () => fetchedAt, savePrepared: async (bound, prepared) => {
       assert.equal(bound.observationHash, source.observationHash);
       assert.equal(prepared.source.chunks[0]!.originalText, source.observed.text);
+      assert.equal(prepared.source.chunks[0]!.sourceExcerpt, source.observed.text);
       assert.equal(prepared.source.url, source.definition.url);
       assert.equal(prepared.assessment.observationHash, source.observationHash);
       saved = prepared;
@@ -66,7 +67,7 @@ test("knowledge preparation preserves original evidence and stores a separate mo
 test("knowledge model stages reject invented evidence and rule authority without returning approval", async () => {
   const calls: Parameters<Completion>[0][] = [];
   await assert.rejects(prepareKnowledgeMaintenance({ candidate: candidate(), baseline: null, fetchedAt,
-    completeText: provider(calls, "quote") }), { message: "knowledge_maintenance_quote_mismatch" });
+    completeText: provider(calls, "quote") }));
   assert.equal(calls.length, 1, "invalid original evidence must not reach semantic review");
   const ruleCalls: Parameters<Completion>[0][] = [];
   await assert.rejects(prepareKnowledgeMaintenance({ candidate: candidate(), baseline: null, fetchedAt,

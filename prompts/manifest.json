@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.49",
+  "version": "0.1.51",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -106,7 +106,7 @@
     {
       "id": "module.knowledge-maintenance",
       "path": "modules/knowledge-maintenance.md",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "requires": [
         "core.context-and-privacy",
         "core.tool-use",
@@ -116,7 +116,7 @@
     {
       "id": "module.knowledge-organize",
       "path": "modules/knowledge-organize.md",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "requires": [
         "core.context-and-privacy",
         "core.output"

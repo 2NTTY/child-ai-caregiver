@@ -45,7 +45,7 @@ const manifest = JSON.parse(await readFile(new URL('../prompts/manifest.json', i
 const status = { mode: 'local-development', project: config.projectId, branch: git(['branch', '--show-current']), sha: git(['rev-parse', '--short', 'HEAD']),
   dirty: Boolean(git(['status', '--porcelain', '--untracked-files=no'])),
   model: modelConfig.model, provider, promptPack: manifest.version, enabled: modelConfig.enabled,
-  roles: { chat: 'production-runtime', review: 'production-runtime', compose: 'production-family-document-patch', knowledgeMaintenance: 'candidate-foundation-live-not-connected' },
+  roles: { chat: 'production-runtime', review: 'production-runtime', compose: 'production-family-document-patch', knowledgeMaintenance: 'explicit-local-maintenance-command' },
   externalDelivery: 'disabled', email: 'emulator-inbox-not-sent', knowledge: 'one-reviewed-section-after-explicit-preparation', snapshots: 'periodic-and-graceful-stop' };
 const api = createFirebaseNodeHandler({ publicOrigin: config.publicOrigin, auth: runtime.auth, handler: runtime.handler, telegramConfig: null });
 const worker = createLocalAgentWorker(runtime, process.env);

@@ -66,7 +66,23 @@ Firestore Emulator 已核實支援本次版本的 `findNearest`；使用同一�
 
 四角色使用當前分支的實際接線。基線沒有某個角色，就不能因環境啟動而宣稱四角色完成。#214／#215／#216 已依使用者明確授權 review 修正及合併，原作者保留；真背景維護缺口仍由 DEV-AGENT02 承接。編製成果必須經正式保存服務，再由原頁面讀回，不能只看模型文字。
 
-目前接續分支及固定基線見根 PLAN；舊 `codex/dev-agent02-role-integration` 只保留先前成果及中斷證據。#214 的審核、#215 的既有文件修改工具已接正式服務，與聊天共用預算；目前編製不是所有資料類型的通用產生器。#216 的 `KnowledgeSemanticReviewPort` 仍未接真模型，`BackgroundKnowledgeMaintenancePorts` 缺持久維護用量／工作／發布組裝及觸發；正式發布在副作用前停用，不能用預設 stub 或記憶體 ledger 當完整背景驗收。環境不另造角色，也不把這個明確缺口改為假成功。
+目前接續分支及固定基線見根 PLAN；舊 `codex/dev-agent02-role-integration` 只保留先前成果及中斷證據。#214 的審核、#215 的既有文件修改工具已接正式服務，與聊天共用預算；目前編製不是所有資料類型的通用產生器。#216 的原 runner 現經同一正式模型 gateway、Firestore 工作與原子發布組裝，由下列命令觸發；不使用預設 stub 或記憶體 ledger 冒充真模型。真模型成果與剩餘範圍以根 PLAN／證據為準。
+
+## 獨立背景知識維護
+
+先停止正常本地入口，明確執行：
+
+```sh
+npm run agent:local -- --maintain-knowledge
+```
+
+預設從已核對的 `fhs-solid-food` 種子讀原文，使用本人憑證整理、獨立審核並發布到同一個本地知識庫，無須聊天請求。最多兩次生成及有界缺少向量；首次原文預覽由程式取得，語義核對仍由真模型負責。這是付費模型操作，普通啟動不自動執行。
+
+結果在 `.cache/agent-local/maintenance-result.json`，原工作及歷次結果另按工作指紋保存。再次執行相同命令查回同一工作，不能當作重跑；修改程式／提示詞後，需要明確加 `--new-knowledge-work` 才建立新工作及新用量。未知外呼、舊期限或不同綁定保留為停止／待核對，不能清資料來重試。
+
+真網站模式明確加 `--live-source`；目前來源可選 `--knowledge-watch=fhs-solid-food` 或 `--knowledge-watch=fhs-feeding-booklet-en`。PDF 沿正式解析及已登記頁面範圍；超出單批的長資料會保留未完成，不宣稱已讀完。第一次改模式／來源須加 `--new-knowledge-work`，不能改寫原工作。網站與用途仍受現有 catalog 範圍限制。
+
+命令結束保存 emulator 快照；重新執行 `npm run agent:local`，聊天檢索同一份本地已發布資料。尚未核對的內容不發布；真網站、多模態及長資料分批的未驗項不因樣本成功而自動通過。這個本地入口不部署或啟用正式雲端排程。
 
 ## 保存、停止與重設
 

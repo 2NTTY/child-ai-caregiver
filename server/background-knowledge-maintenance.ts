@@ -32,6 +32,8 @@ export interface BackgroundKnowledgeMaintenanceConfig {
   liveFetch: boolean;
   /** Atomic publish into the formal knowledge pointer. Default false (dry-run only). */
   livePublish: boolean;
+  /** Only the guarded demo/emulator composition may publish explicit source fixtures. */
+  isolatedFixturePublish?: boolean;
 }
 
 export interface BackgroundKnowledgeObservationState {
@@ -90,7 +92,15 @@ export interface BackgroundKnowledgeMaintenancePorts {
    */
   publish?(candidate: BackgroundKnowledgeCandidate, review: BackgroundKnowledgeReviewBinding): Promise<{ published: boolean; code?: string }>;
   review?: KnowledgeSemanticReviewPort;
+  /** Bound by the trusted runtime to one durable operation and holder. No memory fallback. */
+  durable?: {
+    bind(request: BackgroundKnowledgeRunRequest, leaseToken: string): Promise<BackgroundKnowledgeDurableOperation>;
+  };
 }
+
+export type BackgroundKnowledgeDurableOperation = Required<Pick<BackgroundKnowledgeMaintenancePorts,
+  "loadBudget" | "saveBudget" | "loadResult" | "saveResult" | "claimOperation" | "releaseOperation"
+  | "loadPublishReceipt" | "savePublishReceipt" | "publish" | "review">>;
 
 function isInitialWatchId(value: string): value is M03InitialWatchId {
   return (M03_INITIAL_WATCH_IDS as readonly string[]).includes(value);
@@ -272,14 +282,7 @@ export function createBackgroundKnowledgeMaintenanceRunner(
 ) {
   const roleId = BACKGROUND_KNOWLEDGE_ROLE_ID;
   const memory = new MemoryLedger();
-  const reviewPort = ports.review ?? createProgrammaticKnowledgeReviewStub();
-  const loadBudget = ports.loadBudget ?? (async fingerprint => memory.budgets.get(fingerprint) ?? null);
-  const saveBudgetRaw = ports.saveBudget ?? (async (fingerprint, budget) => { memory.budgets.set(fingerprint, cloneBudget(budget)); });
-  const loadResult = ports.loadResult ?? (async fingerprint => memory.results.get(fingerprint) ?? null);
-  const saveResult = ports.saveResult ?? (async (fingerprint, result) => { memory.results.set(fingerprint, result); });
-  const loadPublishReceipt = ports.loadPublishReceipt ?? (async fingerprint => memory.receipts.get(fingerprint) ?? null);
-  const savePublishReceipt = ports.savePublishReceipt ?? (async (fingerprint, receipt) => { memory.receipts.set(fingerprint, receipt); });
-  const claimOperation = ports.claimOperation ?? (async (fingerprint, leaseToken, leaseUntilMs) => {
+  const defaultClaimOperation = ports.claimOperation ?? (async (fingerprint, leaseToken, leaseUntilMs) => {
     const prior = memory.results.get(fingerprint);
     if (prior) return { status: "completed" as const, result: prior };
     const current = memory.claims.get(fingerprint);
@@ -288,7 +291,7 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     memory.claims.set(fingerprint, { leaseToken, untilMs: leaseUntilMs });
     return { status: "claimed" as const, leaseToken };
   });
-  const releaseOperation = ports.releaseOperation ?? (async (fingerprint, leaseToken) => {
+  const defaultReleaseOperation = ports.releaseOperation ?? (async (fingerprint, leaseToken) => {
     const current = memory.claims.get(fingerprint);
     if (current?.leaseToken === leaseToken) memory.claims.delete(fingerprint);
   });
@@ -298,9 +301,8 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     if (!config.enabled) {
       return backgroundKnowledgeRunResultSchema.parse({ status: "not_enabled", code: "background_knowledge_disabled", published: false });
     }
-    // No production durable/fenced publisher is wired in this slice. Flags and
-    // an injected model-review label must not turn the prototype into a live writer.
-    if (config.livePublish && request.publishMode === "live") {
+    // A model-review label and unrelated async hooks cannot authorize publication.
+    if (config.livePublish && request.publishMode === "live" && !ports.durable) {
       return backgroundKnowledgeRunResultSchema.parse({
         status: "not_enabled", code: "background_knowledge_live_not_connected", published: false,
       });
@@ -311,6 +313,18 @@ export function createBackgroundKnowledgeMaintenanceRunner(
         status: "not_enabled", code: "background_knowledge_fetch_disabled", published: false,
       });
     }
+    const leaseToken = randomUUID();
+    const durable = await ports.durable?.bind(request, leaseToken);
+    const bound = durable ?? ports;
+    const reviewPort = bound.review ?? createProgrammaticKnowledgeReviewStub();
+    const loadBudget = bound.loadBudget ?? (async fingerprint => memory.budgets.get(fingerprint) ?? null);
+    const saveBudgetRaw = bound.saveBudget ?? (async (fingerprint, budget) => { memory.budgets.set(fingerprint, cloneBudget(budget)); });
+    const loadResult = bound.loadResult ?? (async fingerprint => memory.results.get(fingerprint) ?? null);
+    const saveResult = bound.saveResult ?? (async (fingerprint, result) => { memory.results.set(fingerprint, result); });
+    const loadPublishReceipt = bound.loadPublishReceipt ?? (async fingerprint => memory.receipts.get(fingerprint) ?? null);
+    const savePublishReceipt = bound.savePublishReceipt ?? (async (fingerprint, receipt) => { memory.receipts.set(fingerprint, receipt); });
+    const claimOperation = bound.claimOperation ?? defaultClaimOperation;
+    const releaseOperation = bound.releaseOperation ?? defaultReleaseOperation;
     const prior = await loadResult(request.operationFingerprint);
     if (prior) {
       return backgroundKnowledgeRunResultSchema.parse({
@@ -320,7 +334,6 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       });
     }
 
-    const leaseToken = randomUUID();
     let leaseUntilMs = Date.now() + BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS;
     const claimed = await claimOperation(
       request.operationFingerprint, leaseToken, leaseUntilMs,
@@ -357,7 +370,7 @@ export function createBackgroundKnowledgeMaintenanceRunner(
 
     /** F1: renew while still inside local TTL; overdue or stolen lease stops durable writes. */
     const holdLease = async (): Promise<"ok" | "lost" | "completed"> => {
-      if (Date.now() > leaseUntilMs) return "lost";
+      if (!durable && Date.now() > leaseUntilMs) return "lost";
       const nextUntil = Date.now() + BACKGROUND_KNOWLEDGE_CLAIM_TTL_MS;
       const outcome = await claimOperation(request.operationFingerprint, leaseToken, nextUntil);
       if (outcome.status === "busy") return "lost";
@@ -449,7 +462,8 @@ export function createBackgroundKnowledgeMaintenanceRunner(
     }
     // This runner never constructs a live network fetcher itself. Production may
     // wire createKnowledgeSourceFetcher only when config.liveFetch is true.
-    if (!config.liveFetch && config.livePublish && request.publishMode === "live") {
+    if (!config.liveFetch && config.livePublish && request.publishMode === "live"
+      && !(durable && config.isolatedFixturePublish)) {
       return finish({ status: "rejected", code: "live_fetch_required_for_live_publish", watchId: request.watchId, published: false, publishMode: request.publishMode });
     }
     if (signal.aborted) {
@@ -542,7 +556,14 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: hash, published: false, publishMode: request.publishMode });
     }
 
-    const review = await reviewPort.review(candidate, signal);
+    let review: BackgroundKnowledgeReviewBinding;
+    try { review = await reviewPort.review(candidate, signal); }
+    catch (error) {
+      const code = (error as { code?: unknown; reason?: unknown })?.code ?? (error as { reason?: unknown })?.reason;
+      return finish({ status: "candidate_held",
+        code: typeof code === "string" && /^[a-z_]{1,80}$/u.test(code) ? code : "knowledge_review_failed",
+        watchId: request.watchId, observationHash: hash, published: false, publishMode: request.publishMode });
+    }
     if (signal.aborted) {
       return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: request.publishMode });
     }
@@ -568,7 +589,7 @@ export function createBackgroundKnowledgeMaintenanceRunner(
         watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live",
       });
     }
-    if (!ports.publish) {
+    if (!bound.publish) {
       return finish({ status: "candidate_held", code: "publish_port_missing", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live" });
     }
     if (signal.aborted) {
@@ -612,7 +633,7 @@ export function createBackgroundKnowledgeMaintenanceRunner(
       return finish({ status: "rejected", code: "cancelled", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live" });
     }
 
-    const published = await ports.publish(candidate, review);
+    const published = await bound.publish(candidate, review);
     if (!published.published) {
       return finish({ status: "candidate_held", code: published.code ?? "publish_pending", watchId: request.watchId, observationHash: hash, review, published: false, publishMode: "live" });
     }

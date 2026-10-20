@@ -20,15 +20,26 @@ const fields = knowledgeChunkInputSchema.shape;
 const organizedSchema = z.strictObject({
   units: z.array(z.strictObject({
     unitId: z.string().regex(/^p[0-9]+-[a-f0-9]{20}$/u),
-    section: fields.section, sourceExcerpt: fields.sourceExcerpt, text: fields.text,
+    section: fields.section, text: fields.text,
     keywords: fields.keywords, applicability: fields.applicability,
   })).min(1).max(32),
+});
+const reviewFields = knowledgeReviewAssessmentSchema.shape;
+const modelAssessmentSchema = z.strictObject({
+  changes: z.array(z.strictObject({
+    key: reviewFields.changes.element.shape.key,
+    meaning: reviewFields.changes.element.shape.meaning,
+    explanation: reviewFields.changes.element.shape.explanation,
+  })).max(64),
+  checks: reviewFields.checks, questions: reviewFields.questions,
+  growthRuleImpact: reviewFields.growthRuleImpact, growthRuleReason: reviewFields.growthRuleReason,
+  decision: reviewFields.decision,
 });
 type OriginalUnit = { id: string; originalText: string; page: number | null };
 export interface KnowledgeMaintenanceBaseline {
   versionId: string;
   versionHash: string;
-  observationHash: string;
+  observationHash: string | null;
   source: KnowledgeSourceInput;
 }
 export interface PreparedKnowledgeMaintenance {
@@ -114,8 +125,11 @@ export async function prepareKnowledgeMaintenance(input: {
     const raw = await input.completeText({ system, user, attemptKey });
     checkSignal(signal);
     if (raw.length > 128000) reject("knowledge_maintenance_output_limit");
+    // Accept a complete JSON code block, never extract a guessed object from
+    // surrounding prose or repair malformed JSON. Schema/evidence checks follow.
+    const trimmed = raw.trim(), fenced = /^```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```$/u.exec(trimmed);
     let value: unknown;
-    try { value = JSON.parse(raw); } catch { reject("knowledge_maintenance_invalid_json"); }
+    try { value = JSON.parse(fenced ? fenced[1]! : trimmed); } catch { reject("knowledge_maintenance_invalid_json"); }
     return { value, attemptKey };
   };
   const organized = await complete("organize", organize.text, {
@@ -135,21 +149,37 @@ export async function prepareKnowledgeMaintenance(input: {
     ...(candidate.observed.extraction ? { extraction: candidate.observed.extraction } : {}),
     chunks: units.map(unit => {
       const draft = byId.get(unit.id)!;
-      if (!unit.originalText.includes(draft.sourceExcerpt)) reject("knowledge_maintenance_quote_mismatch");
-      return { key: unit.id, section: draft.section, sourceExcerpt: draft.sourceExcerpt,
+      // The short original preview is deterministic, not model-authored evidence.
+      // Full original text remains available to the independent semantic review.
+      const sourceExcerpt = [...unit.originalText.trim()].slice(0, 150).join("");
+      return { key: unit.id, section: draft.section, sourceExcerpt,
         originalText: unit.originalText, text: draft.text, keywords: draft.keywords, applicability: draft.applicability,
         ...(unit.page !== null ? { pageStart: unit.page, pageEnd: unit.page } : {}) };
     }),
   });
   const reviewPrompt = await loadAgentPrompt("knowledge-review", "structured", INPUTS);
+  const before = new Map(baseline?.source.chunks.map(chunk => [chunk.key, chunk]) ?? []);
+  const after = new Map(source.chunks.map(chunk => [chunk.key, chunk]));
+  const preview = (chunk: KnowledgeSourceInput["chunks"][number] | undefined) =>
+    chunk ? [...(chunk.originalText ?? chunk.sourceExcerpt).trim()].slice(0, 150).join("") : null;
+  const comparisonUnits = [...new Set([...before.keys(), ...after.keys()])].map(key => ({
+    key, oldQuote: preview(before.get(key)), newQuote: preview(after.get(key)),
+  }));
+  const binding = { comparedVersionId: baseline?.versionId ?? null, comparedHash: baseline?.versionHash ?? null,
+    observationHash: candidate.observationHash };
   const reviewed = await complete("review", reviewPrompt.text, {
     role: "knowledge-semantic-review",
-    binding: { comparedVersionId: baseline?.versionId ?? null, comparedHash: baseline?.versionHash ?? null,
-      observationHash: candidate.observationHash },
-    candidate: source, baseline: baseline?.source ?? null,
-    outputSchema: z.toJSONSchema(knowledgeReviewAssessmentSchema, { io: "input" }),
+    binding, comparisonUnits, candidate: source, baseline: baseline?.source ?? null,
+    outputSchema: z.toJSONSchema(modelAssessmentSchema, { io: "input" }),
   });
-  const assessment = validateKnowledgeAssessment(reviewed.value, source, baseline?.source ?? null);
+  const modelAssessment = modelAssessmentSchema.parse(reviewed.value);
+  const assessment = validateKnowledgeAssessment({ ...modelAssessment, ...binding,
+    changes: modelAssessment.changes.map(change => {
+      const original = comparisonUnits.find(unit => unit.key === change.key);
+      if (!original) reject("knowledge_maintenance_review_unit_mismatch");
+      return { ...change, oldQuote: original.oldQuote, newQuote: original.newQuote };
+    }),
+  }, source, baseline?.source ?? null);
   if (assessment.observationHash !== candidate.observationHash
     || assessment.comparedVersionId !== (baseline?.versionId ?? null)
     || assessment.comparedHash !== (baseline?.versionHash ?? null))

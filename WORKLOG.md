@@ -3229,3 +3229,12 @@
 - 新增 Prompt Pack 0.1.49 的原文單元整理配方，補既有知識審核 JSON／原文比對指引。假引文、模型自行核准執行規則及保存失敗不返回批准。
 - 兩項新合成檢查及一項受影響的既有離線路徑通過。局部型別首次發現舊 helper 名稱漏改，修正後通過；未擴跑全量。零真模型、網絡抓取、雲端寫入、通知及部署。
 - [證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_MODEL_20261020.json)。目前只有共用步驟與 port，持久工作／用量／原子發布與本地觸發仍未組裝；live 發布閘保持關閉，不把 scripted 通過當成真背景品質或四 Agent 完成。
+
+<a id="log-20261020-dev-agent02-knowledge-runtime"></a>
+## LOG-20261020-DEV-AGENT02-KNOWLEDGE-RUNTIME
+
+- 接入正式 Firestore 維護工作、lease／generation、共同用量、原模型結果與原子發布收據；本地命令 `agent:local -- --maintain-knowledge` 明確觸發，資料只寫 emulator。原指令不自動開新工作，歷次候選／失敗保留，普通啟動不自動跑付費背景驗收。
+- 一條 emulator／scripted provider 流程通過發布、正式檢索、重建服務後原操作查回及 unknown 不重送；先前限額物件、UUID 接口失敗分開保留。兩項模型契約檢查、局部型別及入口語法通過，無全量或瀏覽器。
+- 兩次真模型各用 1／2 次生成，先後因改寫摘錄及 JSON 代碼框保留候選；查回已保存第二次回應後，原文檢查再拒絕錯誤舊引文。零真 embedding／網站抓取／雲端資料寫入／通知／部署；沒有重送舊工作或改寫失敗。
+- Prompt Pack 0.1.51 將原文預覽、新舊引用與版本綁定交回 Server，模型保留含義判斷；完整 JSON 代碼框可解析，其餘 schema／引用檢查不放寬。最新修正未追加真模型，不能宣稱背景完整通過。
+- [證據](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)。已停止本機服務並保存快照；下一步沿 PLAN 補修正版必要真背景成果，頁面聯合／收件箱、長資料與真網站仍分開保留。基本本地聊天入口已可使用，不因餘下四角色 gate 而要求先部署 GCP。

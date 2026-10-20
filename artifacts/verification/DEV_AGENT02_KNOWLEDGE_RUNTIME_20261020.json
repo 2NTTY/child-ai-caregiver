@@ -1,0 +1,77 @@
+{
+  "package": "DEV-AGENT02",
+  "date": "2026-10-20",
+  "base": "b13fe62",
+  "scope": "Formal background model stages, encrypted Firestore work, atomic publication and explicit local maintenance CLI",
+  "environment": {
+    "node": "24.19.0",
+    "firebaseTools": "15.34.0",
+    "data": "Existing isolated demo project; separate synthetic namespace for scripted integration",
+    "provider": "Existing local Vertex ADC; gemini-3.1-flash-lite",
+    "promptPackFinal": "0.1.51"
+  },
+  "mechanicalVerification": {
+    "entry": "tests/firestore-knowledge-maintenance-emulator.mjs",
+    "result": "passed",
+    "namespace": "verify_knowledge_1792486570319",
+    "scriptedGenerations": 2,
+    "scriptedEmbeddings": 1,
+    "covers": [
+      "Formal organization and independent review through the shared gateway and daily ledger",
+      "Native emulator transaction commits source publication and work receipt together",
+      "Original text and published edition are retrievable",
+      "Reassembled service returns the same operation without fetching or generating again",
+      "Unknown model outcome is not redispatched after a new lease"
+    ],
+    "failuresBeforePass": [
+      "Strict work limit schema rejected unrelated tool/query fields before any model stage; assembly narrowed the input",
+      "Embedding gateway required UUID operation IDs; stable UUIDs now derive from the original work and document hash"
+    ],
+    "targetedModelChecks": "2 passed after original-preview and comparison binding changes",
+    "scopedTypecheck": "passed",
+    "launcherSyntax": "passed"
+  },
+  "realModelAttempts": [
+    {
+      "operation": "1728bacc39960fb6c33c5bb490d684d7bef6eb3c61d3f806fa314c7a7d1455e6",
+      "generations": 1,
+      "embeddingCalls": 0,
+      "result": "candidate_held",
+      "code": "knowledge_maintenance_quote_mismatch",
+      "published": false
+    },
+    {
+      "operation": "804194c5dcbcef93104d035e66ff6564a195529959c9f73042f0c946f83e269f",
+      "generations": 2,
+      "embeddingCalls": 0,
+      "result": "candidate_held",
+      "code": "knowledge_maintenance_invalid_json",
+      "published": false,
+      "readOnlyDiagnosis": "Saved reviewer text was complete JSON in one Markdown code fence. Exact saved-stage replay after format normalization then rejected knowledge_review_old_quote_mismatch. No extra model call or publication."
+    }
+  ],
+  "fixesAfterRealAttempts": [
+    "Server derives original previews; organizer cannot retype or invent them",
+    "Accept only a complete JSON code block; retain strict parsing and schema checks",
+    "Server binds comparison versions, keys and original previews; reviewer supplies meaning, reasons and substantive checks",
+    "Preserve previous failed work identities and usage"
+  ],
+  "limits": {
+    "realGenerationsTotal": 3,
+    "realEmbeddingsTotal": 0,
+    "liveWebsiteFetches": 0,
+    "cloudDataWrites": 0,
+    "notifications": 0,
+    "deployment": false,
+    "actualBill": "not queried",
+    "fullSuite": false
+  },
+  "notProven": [
+    "Final prompt/schema version true model background publication and subsequent chat citation",
+    "Live website and multimodal maintenance",
+    "Long-source batching and automatic continuation after partial observation",
+    "Cross-page/new-conversation joint verification and non-email local inbox",
+    "Cloud scheduling, IAM, delivery or production deployment"
+  ],
+  "cleanup": "Local services stopped with checkpoint export; synthetic records and prior failures retained"
+}
