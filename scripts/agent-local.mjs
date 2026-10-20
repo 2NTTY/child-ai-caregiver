@@ -2,7 +2,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { access, mkdir, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
-import { dirname, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -67,6 +67,10 @@ const baseEnv = {};
 for (const name of ['PATH', 'Path', 'PATHEXT', 'SystemRoot', 'SYSTEMROOT', 'COMSPEC', 'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'JAVA_HOME', 'LANG']) {
   if (process.env[name] !== undefined) baseEnv[name] = process.env[name];
 }
+// Firebase CLI launches "java" through PATH even after our explicit JAVA_HOME check.
+const inheritedPath = baseEnv.PATH ?? baseEnv.Path ?? '';
+delete baseEnv.Path;
+baseEnv.PATH = process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin') + delimiter + inheritedPath : inheritedPath;
 Object.assign(baseEnv, { CI: '1', NO_COLOR: '1', FIREBASE_CLI_DISABLE_TELEMETRY: '1', EXPO_NO_DOTENV: '1', EXPO_NO_TELEMETRY: '1', BROWSER: 'none' });
 const java = spawnSync(process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin', 'java') : 'java', ['-version'], { encoding: 'utf8', windowsHide: true });
 if (java.status !== 0 || !/version "(?:2[1-9]|[3-9][0-9])\./u.test(java.stderr)) throw Error('Java 21+ is required. Set JAVA_HOME to a JDK/JRE directory; the system installation need not change.');

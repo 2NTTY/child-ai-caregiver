@@ -124,7 +124,26 @@ try {
     if (mode === '--real-compose') {
       assert.ok(result.tools.some(item => item.name === 'compose_family_data' && item.status === 'succeeded'));
       assert.equal((await createFamilyDocumentsApi(origin, clientFetch).getItem(childId, document.id, signal, uid)).version, document.version);
-      steps.push('real-production-compose-review-pending-explicit-confirmation');
+      const proposals = result.proposals.filter(item => item.status === 'pending' && item.value.kind === 'family_document_change'
+        && item.value.documentId === document.id);
+      assert.equal(proposals.length, 1, 'Expected one confirmation for this synthetic document');
+      const proposal = proposals[0];
+      assert.equal(proposal.value.change.expectedVersion, document.version);
+      assert.equal(proposal.value.change.edits.length, 1);
+      const edit = proposal.value.change.edits[0];
+      assert.equal(edit.op, 'set_metadata'); assert.equal(edit.title, '下次到診問題');
+      for (const [key, value] of Object.entries(edit)) {
+        if (key !== 'op' && key !== 'title') assert.deepEqual(value, document.current[key], 'Unrequested metadata must stay unchanged');
+      }
+      // Explicit synthetic acceptance only after checking the exact requested change.
+      const accepted = await createProductAgentApi(origin, clientFetch).decideProposal(childId, result.runId, proposal.id,
+        { expectedVersion: proposal.version, decision: 'accept', confirmShared: true }, signal, uid);
+      assert.equal(accepted.status, 'accepted');
+      const saved = await createFamilyDocumentsApi(origin, clientFetch).getItem(childId, document.id, signal, uid);
+      assert.equal(saved.id, document.id); assert.equal(saved.current.title, '下次到診問題');
+      assert.equal(saved.version, document.version + 1); assert.deepEqual(saved.current.sections, document.current.sections);
+      agentEvidence.document = { id: saved.id, version: saved.version, proposalId: proposal.id, status: accepted.status };
+      steps.push('real-compose-review-explicit-confirmation-and-same-document-readback');
     } else assert.ok(result.citations.some(item => item.sourceId === 'fhs-solid-food'));
     const history = await chat.listMessages(childId, signal);
     assert.ok(history.messages.some(item => item.id === reply.id && item.text === reply.text));
@@ -164,6 +183,6 @@ try {
 } finally { await database?.terminate(); }
 if (!process.exitCode) {
   const evidence = { run, status: 'passed', calls, steps, modelCalls: agentEvidence?.counts.modelCalls ?? 0, agent: agentEvidence, notifications: 0,
-    limitation: 'Current branch only; no four-role review, visual browser or cloud IAM acceptance' };
+    limitation: 'Current branch only; no background knowledge model, visual browser or cloud IAM acceptance' };
   await writeFile(resolve(directory, 'verification-' + run + '.json'), JSON.stringify(evidence, null, 2)); console.log(JSON.stringify(evidence));
 }

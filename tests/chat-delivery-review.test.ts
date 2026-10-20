@@ -587,6 +587,29 @@ test("only current server receipts replace operation prose and background no-act
   } finally { budget.close(); }
 });
 
+test("only a current server confirmation can replace model-written pending prose", async () => {
+  const budget = new AgentBudget();
+  let questions: string[] = [];
+  const surface = createProductAgentTools({
+    run: { scope, runId, budget }, authorize: async () => true,
+    memory: {}, tasks: {}, store: { confirmationQuestions: async () => questions },
+    knowledge: { createRun: () => ({}) },
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  try {
+    await present.execute({ kind: "operation", paragraphs: [{ text: "已經修改好了，不用確認。", citationIds: [] }] },
+      { scope, runId, callId: "present", signal: budget.signal });
+    await surface.presentation();
+    assert.equal(requiresChatDeliveryReview(surface.deliveryDraft()!), true);
+    questions = ["Server-bound question"];
+    assert.match((await surface.presentation())!.text, /所列操作尚未執行/);
+    assert.equal(requiresChatDeliveryReview(surface.deliveryDraft()!), false);
+    questions = [];
+    await surface.presentation();
+    assert.equal(requiresChatDeliveryReview(surface.deliveryDraft()!), true);
+  } finally { budget.close(); }
+});
+
 test("source retract after a review pass does not keep the old answer", async () => {
   let reviews = 0;
   let revalidations = 0;

@@ -86,7 +86,7 @@ npm run agent:local -- --reset --confirm-local-reset
 
 最低檢查才執行 `scripts/verify-agent-local.mjs`；啟動工具不自動跑測試。`--real-agent` 會花本人模型額度，最多一個原 run，失敗即停，原始合成結果留受保護 cache。不要例行反覆跑。
 
-DEV02 本地整合分支另有 `--real-compose`，只建立一次原 run，在已有文件上要求編製及待確認；不自動接受，不反覆重試。原訊息關聯在請求前保存，失敗先查同一結果。其真模型中斷及 scripted 組裝的證據分開見[角色核對](../artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)，不把一次已預留但未回報結果的呼叫當作零消耗；未載入角色的分支不提供該驗收模式。
+DEV02 本地整合分支另有 `--real-compose`，只建立一次原 run，在本輪新建合成文件上要求只改標題並準備確認；腳本先核對改動確為指定標題、其餘 metadata 不變，才明確接受這項合成修改，並沿新 client 讀回同一文件及未變章節。不是通用的自動批准入口，不處理家長文件或反覆重試。原訊息關聯在請求前保存，失敗先查同一結果。先前真模型中斷及 scripted 組裝見[角色核對](../artifacts/verification/DEV_AGENT02_LOCAL_ROLES_20261018.json)，不把未回報結果的呼叫當作零消耗；未載入角色的分支不提供該驗收模式。
 
 `--artifacts` 在 `--no-model` 入口使用正式 client 核對同一份準備單的修改／讀回／版本衝突，以及一份小附件的保存／讀回／刪除；它不驗證模型編製或審核，也不代表清理 worker 已實際刪除物件。
 

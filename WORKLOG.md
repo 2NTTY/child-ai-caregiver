@@ -3206,3 +3206,12 @@
 - 本機入口沿正式 provider 補 Vertex key 選擇，與 Gemini 環境變數分開；不支援的 embedding 明示失敗，不借平台額度。模型停用時仍啟動確定性工作，模型路由保留正式 enabled 檢查。
 - 局部型別、五個配方組裝、兩項 scripted 共用預算／審核隔離及入口語法通過。只接回原 `--real-compose` 入口，沒有執行真模型、通知、雲端或部署。
 - [整合證據](artifacts/verification/DEV_AGENT02_CURRENT_ROLES_20261020.json)。真編製／審核、頁面成果、非郵件收件箱及背景正式發布仍未完成；先前失敗及 Android draft gate 不改寫。
+
+<a id="log-20261020-dev-agent02-real-compose"></a>
+## LOG-20261020-DEV-AGENT02-REAL-COMPOSE
+
+- 正式本地入口首次啟動因 Firebase CLI 從 PATH 取得舊 Java 停止，零模型；修正子程序沿 JAVA_HOME 後成功。使用 `--no-watch`，保留原本機資料及舊 unknown。
+- 第一個真編製 run 完成編製／獨立審核並保存候選，但最終狀態回覆審核未完成；收據有一次限流及一次 provider 重試，合共 8 生成，失敗即停，沒有接受該候選。未保存 reviewer 原文，不猜具體語義／schema 拒絕。
+- 補純操作待確認回覆：只由當前 Server 確認問題替換固定狀態，不信模型自報免審。兩項定向 scripted 通過；局部 Server 型別補 nullable guard 後通過，受影響聊天 UI 型別通過。
+- 修正後一個新 run 用 6 生成／零 embedding、17 API 完成正式編製、真審核、指定合成確認及同文件 v1→v2 讀回，其他章節不變。零通知、部署或全量；沒有調高配額。停止入口成功匯出本地快照。
+- [完整證據](artifacts/verification/DEV_AGENT02_REAL_COMPOSE_20261020.json)。新對話／畫面、背景正式維護、非郵件收件箱及真個人 key 仍未驗，不能把本次三角色流程當作整個四 Agent 交付。

@@ -1,0 +1,73 @@
+{
+  "package": "DEV-AGENT02",
+  "date": "2026-10-20",
+  "baseline": "14c8783",
+  "environment": {
+    "project": "demo-yuyf-d95740b8",
+    "database": "local Firestore Emulator",
+    "provider": "Vertex ADC",
+    "model": "gemini-3.1-flash-lite",
+    "promptPack": "0.1.48",
+    "sourceWatch": false,
+    "limitsChanged": false
+  },
+  "failuresPreserved": [
+    {
+      "stage": "startup",
+      "reason": "Firebase CLI resolved Java below 21 through PATH despite the launcher checking JAVA_HOME",
+      "fix": "Pass the same JAVA_HOME/bin to child-process PATH; system installation unchanged",
+      "modelCalls": 0
+    },
+    {
+      "verificationId": "b86d78fc-a9ea-4db7-a70f-c3cee03537f5",
+      "runId": "76ff503f-f0c9-48b8-8528-7603b46c9e77",
+      "status": "stopped",
+      "stopReason": "delivery_review_incomplete",
+      "apiCalls": 13,
+      "modelCalls": 8,
+      "queryEmbeddings": 0,
+      "observed": "Compose and its review succeeded; final status-only delivery review encountered one rate-limited attempt and one successful provider retry. The overall delivery was not approved.",
+      "limitation": "Raw final reviewer content was not logged; its precise semantic/schema rejection is not asserted.",
+      "effects": "One pending synthetic proposal, not accepted; original run and usage retained."
+    }
+  ],
+  "fix": {
+    "behavior": "A current unique server-bound confirmation can replace citation-free operation prose with the existing fixed pending-confirmation text. No model-generated statement grants an exemption.",
+    "preserved": ["compose review", "explicit confirmation", "current authority", "expected document version", "same operation identity"],
+    "checks": [
+      "Two focused scripted receipt/confirmation checks passed",
+      "Scoped Server typecheck passed after adding the nullable confirmation-query guard",
+      "Scoped changed chat UI typecheck passed"
+    ]
+  },
+  "realFlow": {
+    "verificationId": "f158009d-10bc-4a8d-bdde-12deb0a29964",
+    "runId": "128575cc-b7b5-40d6-a118-30000793a2e2",
+    "status": "completed",
+    "apiCalls": 17,
+    "modelCalls": 6,
+    "toolCalls": 4,
+    "queryEmbeddings": 0,
+    "documentId": "3b1171d2-db46-4e82-b92d-fe97bccffd6f",
+    "versionBefore": 1,
+    "versionAfter": 2,
+    "proposalStatus": "accepted",
+    "assertions": [
+      "Production conversation delegated compose and independent review using the same root budget",
+      "Document remained unchanged before explicit synthetic confirmation",
+      "Only the requested title differed; unchanged metadata and sections were preserved",
+      "Fresh production client read the same document at version 2",
+      "Saved chat reply remained readable"
+    ],
+    "notifications": 0
+  },
+  "shutdown": "Launcher received stop, exported the emulator snapshot and exited successfully",
+  "notVerified": [
+    "New-conversation model recall or visual page acceptance",
+    "Background knowledge true model and atomic publication",
+    "Non-email local inbox",
+    "Personal Gemini/Vertex API key true service routing",
+    "Production deployment, Android device or cloud IAM"
+  ],
+  "olderUnknownRun": "c71cc47f-f37c-4b79-8755-999ad445ce2f was not retried"
+}
