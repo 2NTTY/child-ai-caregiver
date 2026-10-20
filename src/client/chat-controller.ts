@@ -44,9 +44,30 @@ interface RequestScope {
   controller: AbortController;
 }
 
-const OFFLINE = "目前離線，未能提交。草稿仍保留在本頁。";
-const SESSION_CHANGED = "登入狀態已改變，聊天內容已隱藏。請重新確認登入。";
-const UNKNOWN_SAVE = "這次聊天保存結果未能確認。請先重新讀取聊天核對，避免重複發送。";
+export const CHAT_CLIENT_COPY = {
+  offline: "目前離線，未能提交。草稿仍保留在本頁。",
+  sessionChanged: "登入狀態已改變，聊天內容已隱藏。請重新確認登入。",
+  unknownSave: "這次聊天保存結果未能確認。請先重新讀取聊天核對，避免重複發送。",
+  saveInvalidInput: "訊息格式未獲接納，請檢查輸入。",
+  saveNotFound: "找不到這位孩子，請重新讀取孩子列表。",
+  saveFailed: "聊天未能保存，請稍後重試。",
+} as const;
+
+export const CHAT_REPLY_ERROR_COPY = {
+  ai_disabled: "AI 暫時未開放；聊天已保存，可稍後要求回覆。",
+  ai_busy: "AI 正忙碌；聊天已保存，可稍後再試。",
+  ai_capacity_busy: "AI 正忙碌；原訊息已保存，但未開始處理，也沒有排隊。稍後請以新訊息重新提出要求。",
+  ai_quota_exceeded: "今日 AI 調用次數已達上限；聊天已保存。",
+  ai_timeout: "AI 回覆逾時；聊天已保存，可重試取得回覆。",
+  ai_unavailable: "AI 暫時無法回覆；聊天已保存，可稍後再試。",
+  invalid_input: "AI 未能處理這則訊息；聊天已保存。",
+  not_found: "未找到待回覆訊息，請重新讀取聊天。",
+  unknown: "AI 回覆結果未能確認；聊天已保存。可重試取得同一則訊息的回覆。",
+} as const;
+
+const OFFLINE = CHAT_CLIENT_COPY.offline;
+const SESSION_CHANGED = CHAT_CLIENT_COPY.sessionChanged;
+const UNKNOWN_SAVE = CHAT_CLIENT_COPY.unknownSave;
 
 function emptyDraft(): ChatDraft {
   return { text: "", phase: "draft", savedUserMessageId: null, candidateMessageId: null, notice: null, knownIds: [] };
@@ -76,25 +97,29 @@ function childAccessDenied(error: unknown): boolean {
 }
 
 function saveErrorMessage(error: unknown): string {
-  if (error instanceof ChatApiError && error.code === "invalid_input") return "訊息格式未獲接納，請檢查輸入。";
-  if (error instanceof ChatApiError && error.code === "not_found") return "找不到這位孩子，請重新讀取孩子列表。";
-  return "聊天未能保存，請稍後重試。";
+  if (error instanceof ChatApiError && error.code === "invalid_input") return CHAT_CLIENT_COPY.saveInvalidInput;
+  if (error instanceof ChatApiError && error.code === "not_found") return CHAT_CLIENT_COPY.saveNotFound;
+  return CHAT_CLIENT_COPY.saveFailed;
+}
+
+export function chatReplyErrorMessage(error: unknown): string {
+  if (error instanceof ChatApiError) {
+    switch (error.code) {
+      case "ai_disabled": return CHAT_REPLY_ERROR_COPY.ai_disabled;
+      case "ai_busy": return CHAT_REPLY_ERROR_COPY.ai_busy;
+      case "ai_capacity_busy": return CHAT_REPLY_ERROR_COPY.ai_capacity_busy;
+      case "ai_quota_exceeded": return CHAT_REPLY_ERROR_COPY.ai_quota_exceeded;
+      case "ai_timeout": return CHAT_REPLY_ERROR_COPY.ai_timeout;
+      case "ai_unavailable": return CHAT_REPLY_ERROR_COPY.ai_unavailable;
+      case "invalid_input": return CHAT_REPLY_ERROR_COPY.invalid_input;
+      case "not_found": return CHAT_REPLY_ERROR_COPY.not_found;
+    }
+  }
+  return CHAT_REPLY_ERROR_COPY.unknown;
 }
 
 function replyErrorMessage(error: unknown): string {
-  if (error instanceof ChatApiError) {
-    switch (error.code) {
-      case "ai_disabled": return "AI 暫時未開放；聊天已保存，可稍後要求回覆。";
-      case "ai_busy": return "AI 正忙碌；聊天已保存，可稍後再試。";
-      case "ai_capacity_busy": return "AI 正忙碌；原訊息已保存，但未開始處理，也沒有排隊。稍後請以新訊息重新提出要求。";
-      case "ai_quota_exceeded": return "今日 AI 調用次數已達上限；聊天已保存。";
-      case "ai_timeout": return "AI 回覆逾時；聊天已保存，可重試取得回覆。";
-      case "ai_unavailable": return "AI 暫時無法回覆；聊天已保存，可稍後再試。";
-      case "invalid_input": return "AI 未能處理這則訊息；聊天已保存。";
-      case "not_found": return "未找到待回覆訊息，請重新讀取聊天。";
-    }
-  }
-  return "AI 回覆結果未能確認；聊天已保存。可重試取得同一則訊息的回覆。";
+  return chatReplyErrorMessage(error);
 }
 
 /** Page-memory chat state, isolated by account and child. */

@@ -12,6 +12,7 @@ import type { AgentOriginalReceiptReader } from "../server/agent-original-receip
 import { READ_ROLES, withChildAccess } from "../server/family-access.ts";
 import { createStorageCipher } from "../server/storage-crypto.ts";
 import { readAiConfig } from "../server/ai-config.ts";
+import { AGENT_LIMITS } from "../server/agent-budget.ts";
 import type { ProductAgentResult } from "../src/shared/product-agent.ts";
 
 const userId = "synthetic-parent", childId = "1ebcb39d-a2db-4b8c-a432-7ffcb3de5808";
@@ -21,6 +22,7 @@ const actionId = "11111111-1111-4111-8111-111111111111", contactId = "22222222-2
 const proposalId = "33333333-3333-4333-8333-333333333333", proposalRunId = "44444444-4444-4444-8444-444444444444";
 const confirmationId = "55555555-5555-4555-8555-555555555555";
 const scope: AgentScope = { userId, childId, workspaceId, authorizationVersion: "1", dataVersion: epoch + ":1" };
+const RECEIPT_QUERY_LIMIT = AGENT_LIMITS.toolCalls + 1;
 const cipher = createStorageCipher(Buffer.alloc(32, 42));
 const emptyResult: ProductAgentResult = { runId, status: "completed", stopReason: null, provenance: null,
   text: "PRIVATE TRANSIENT ANSWER", citations: [], privateSourceCitations: [], retrievalMode: "not_used", tools: [], proposals: [],
@@ -107,14 +109,14 @@ function harness(seed = true) {
         current.sourceExists && current.sourceOwner === userId && current.sourceAuthor === userId && current.sourceRole === "user" ? messageId : null })));
     }
     if (sql.startsWith("SELECT r.id FROM contact_requests")) {
-      assert.deepEqual(values.slice(0, 3), [userId, current.runs[0]?.id, childId]); assert.equal(values[3], 9);
+      assert.deepEqual(values.slice(0, 3), [userId, current.runs[0]?.id, childId]); assert.equal(values[3], RECEIPT_QUERY_LIMIT);
       return rows(current.contacts.slice(0, values[3]));
     }
     if (sql.startsWith("SELECT a.op_id")) {
-      assert.deepEqual(values, [current.runs[0]?.id, userId, childId, 9]);
+      assert.deepEqual(values, [current.runs[0]?.id, userId, childId, RECEIPT_QUERY_LIMIT]);
       assert.match(sql, /ON o.user_id=a.owner_user_id AND o.op_id=a.op_id/u);
       assert.doesNotMatch(sql, /ON[^\n]+o.child_id=/u);
-      return rows(current.documentLinks.slice(0, 9));
+      return rows(current.documentLinks.slice(0, values[3]));
     }
     if (sql.startsWith("SELECT * FROM family_document_operations")) {
       assert.deepEqual(values, [userId, actionId]);
@@ -123,7 +125,7 @@ function harness(seed = true) {
       return rows();
     }
     if (sql.startsWith("SELECT * FROM agent_proposals WHERE run_id=$1 ORDER BY created_at,id LIMIT $2")) {
-      assert.equal(values.length, 2); assert.equal(values[1], 9);
+      assert.equal(values.length, 2); assert.equal(values[1], RECEIPT_QUERY_LIMIT);
       return rows(current.proposals.filter(row => row.run_id === values[0]).slice(0, values[1]));
     }
     throw new Error("Unhandled synthetic query: " + sql);
@@ -227,10 +229,10 @@ test("original receipt reader distinguishes empty results from errors, changed r
       if (boundary === "contact-error") h.fail("SELECT r.id FROM contact_requests");
       if (boundary === "confirmation-error") h.fail("FROM agent_confirmations c");
       if (boundary === "document-error") h.fail("SELECT a.op_id");
-      if (boundary === "action-overflow") while (h.state.actions.length < 9) h.state.actions.push(h.state.actions[0]);
-      if (boundary === "contact-overflow") while (h.state.contacts.length < 9) h.state.contacts.push(h.state.contacts[0]);
+      if (boundary === "action-overflow") while (h.state.actions.length < RECEIPT_QUERY_LIMIT) h.state.actions.push(h.state.actions[0]);
+      if (boundary === "contact-overflow") while (h.state.contacts.length < RECEIPT_QUERY_LIMIT) h.state.contacts.push(h.state.contacts[0]);
       if (boundary === "confirmation-overflow") h.state.confirmations.push(h.state.confirmations[0]);
-      if (boundary === "document-overflow") while (h.state.documentLinks.length < 9) h.state.documentLinks.push({
+      if (boundary === "document-overflow") while (h.state.documentLinks.length < RECEIPT_QUERY_LIMIT) h.state.documentLinks.push({
         op_id: actionId, tool_name: "change_family_document", child_id: childId, receipt_child_id: childId });
       if (boundary === "action-reference-changed") h.actionRefs([contactId]);
       if (boundary === "confirmation-scope") h.state.confirmations[0].proposal_child = actionId;
@@ -291,7 +293,7 @@ function agentOptions(h: ReturnType<typeof harness>, onModel: () => Promise<void
       if (calls === 1) await onModel();
       return { content: { role: "model", parts: [{ functionCall: calls === 1
         ? { id: "read-context", name: "read_context", args: {} }
-        : { id: "answer", name: "present_answer", args: { kind: "clarification", paragraphs: [{ text: "請核對原事項。", citationIds: [] }] } } }] }, finishReason: FinishReason.STOP };
+        : { id: "answer", name: "present_answer", args: { kind: "clarification", paragraphs: [{ text: "已儲存任務候選，仍待你確認。", citationIds: [] }] } } }] }, finishReason: FinishReason.STOP };
     } } });
   const options = { runtime, store: { ...h.stores(), consumeConfirmation: async () => null },
     memory: { context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
@@ -418,15 +420,15 @@ test("receipt lookup failures and overflow remain unknown without undoing accept
     await t.test(boundary, async () => {
       const h = harness(); h.addEffects(); assert.equal(await h.stores().cancelReply(userId, childId, messageId), true);
       if (boundary === "proposal-error") h.fail("SELECT * FROM agent_proposals");
-      if (boundary === "proposal-overflow") for (let index = 0; index < 9; index++) h.state.proposals.push({
+      if (boundary === "proposal-overflow") for (let index = 0; index < RECEIPT_QUERY_LIMIT; index++) h.state.proposals.push({
         id: `00000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`, run_id: runId,
         call_id: "synthetic-" + index, version: 1, state: "pending", payload_encrypted: "yb1.not-decoded-overflow",
         created_at: new Date(), expires_at: new Date(Date.now() + 60_000) });
       if (boundary === "action-error") h.fail("SELECT id FROM agent_action_receipts");
       if (boundary === "contact-error") h.fail("SELECT r.id FROM contact_requests");
       if (boundary === "confirmation-error") h.fail("FROM agent_confirmations c");
-      if (boundary === "action-overflow") while (h.state.actions.length < 9) h.state.actions.push(h.state.actions[0]);
-      if (boundary === "contact-overflow") while (h.state.contacts.length < 9) h.state.contacts.push(h.state.contacts[0]);
+      if (boundary === "action-overflow") while (h.state.actions.length < RECEIPT_QUERY_LIMIT) h.state.actions.push(h.state.actions[0]);
+      if (boundary === "contact-overflow") while (h.state.contacts.length < RECEIPT_QUERY_LIMIT) h.state.contacts.push(h.state.contacts[0]);
       if (boundary === "confirmation-overflow") h.state.confirmations.push(h.state.confirmations[0]);
       if (boundary === "confirmation-scope") h.state.confirmations[0].proposal_child = actionId;
       if (boundary === "confirmation-payload") h.state.confirmations[0].payload_encrypted = "yb1.invalid";
@@ -512,7 +514,7 @@ test("interrupted receipt failures stay unknown and never relabel the run as can
       if (boundary === "contact-error") h.fail("SELECT r.id FROM contact_requests");
       if (boundary === "confirmation-error") h.fail("FROM agent_confirmations c");
       if (boundary === "document-error") h.fail("SELECT a.op_id");
-      if (boundary === "action-overflow") while (h.state.actions.length < 9) h.state.actions.push(h.state.actions[0]);
+      if (boundary === "action-overflow") while (h.state.actions.length < RECEIPT_QUERY_LIMIT) h.state.actions.push(h.state.actions[0]);
       if (boundary === "confirmation-scope") h.state.confirmations[0].proposal_child = actionId;
       if (boundary === "confirmation-payload") h.state.confirmations[0].payload_encrypted = "yb1.invalid";
       const value = await h.stores().get(userId, childId, runId);

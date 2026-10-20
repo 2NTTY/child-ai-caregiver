@@ -4,6 +4,7 @@ import type { KnowledgeEvidence } from "./knowledge.ts";
 import { sharedInputCreateSchema, sourceManagementSchema, sourceManagementChangeSchema } from "./shared-inputs.ts";
 import { concernValuesSchema, concernChangeSchema } from "./concerns.ts";
 import { documentPatchSchema } from "./family-documents.ts";
+import type { ChatDeliveryReviewBinding } from "./chat-delivery-review.ts";
 
 const text = (max: number) => z.string().min(1).max(max).refine(value => value.trim().length > 0);
 export const agentProposalSchema = z.discriminatedUnion("kind", [
@@ -80,4 +81,6 @@ export interface ProductAgentResult extends AgentPresentation {
   countsKnown?: boolean;
   counts: { modelCalls: number; toolCalls: number; queryEmbeddings: number };
   proposals: AgentProposal[];
+  /** Present only after an independent pass that still matches this draft. */
+  deliveryReview?: ChatDeliveryReviewBinding;
 }
