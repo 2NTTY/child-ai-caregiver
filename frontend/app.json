@@ -1,15 +1,39 @@
 {
   "expo": {
     "name": "育有方",
-    "slug": "yuban-hk-frontend-preview",
+    "slug": "yuyoufang",
     "version": "0.1.0",
-    "platforms": ["web", "android"],
-    "android": { "package": "org.yuban.frontendpreview", "softwareKeyboardLayoutMode": "resize" },
-    "plugins": ["expo-router"],
+    "platforms": [
+      "web",
+      "android"
+    ],
+    "android": {
+      "package": "org.yuyoufang.app",
+      "softwareKeyboardLayoutMode": "resize",
+      "versionCode": 1
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true
+        }
+      ]
+    ],
     "web": {
       "bundler": "metro",
       "favicon": "./assets/brand/favicon.png",
       "output": "static"
+    },
+    "scheme": "yuyoufang",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "8c63b9fc-b823-4b40-ba36-375ce43fa578"
+      }
     }
   }
 }

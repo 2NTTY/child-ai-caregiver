@@ -33,7 +33,8 @@
     "account:invitation": "node --env-file-if-exists=.env scripts/firebase-control.mjs invite",
     "account:journal": "node scripts/sql-retired.mjs",
     "firebase:control": "node --env-file-if-exists=.env scripts/firebase-control.mjs",
-    "firebase:recovery": "node --env-file-if-exists=.env scripts/firebase-recovery.mjs"
+    "firebase:recovery": "node --env-file-if-exists=.env scripts/firebase-recovery.mjs",
+    "mobile:prepare": "node frontend/tooling/normalize-fingerprint-paths.cjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "57.0.16",

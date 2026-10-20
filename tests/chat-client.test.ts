@@ -239,3 +239,24 @@ test('live progress recovers the same saved reply and drops late events after a 
   gate.resolve(modelMessage(secondChild));await pending;
   assert.equal(controller.getSnapshot().feedback,null);assert.equal(controller.getSnapshot().selectedChildId,firstChild);controller.dispose();
 });
+
+
+test("chat submission trims boundary blank lines and recovers the same normalized message", async () => {
+  const { values, api, controller } = fixture();
+  const raw = "\n \n在不在\n\n\n  \n第二段\n第三行\n\n ";
+  const expected = "在不在\n\n第二段\n第三行";
+  api.saveMessage = async (childId, text) => {
+    values.saves++; assert.equal(text, expected);
+    values.messages.push(userMessage(childId, text));
+    throw new ChatApiError();
+  };
+  controller.syncContext(alice.id, true, firstChild); await settle(); controller.setText(raw);
+  assert.equal(controller.getSnapshot().drafts[firstChild].text, raw);
+  await controller.send();
+  assert.equal(controller.getSnapshot().drafts[firstChild].text, expected);
+  assert.equal(controller.getSnapshot().drafts[firstChild].phase, "save_unknown");
+  await controller.send(); assert.equal(values.saves, 1);
+  await controller.reloadMessages();
+  assert.equal(controller.getSnapshot().drafts[firstChild].candidateMessageId, "message-1");
+  assert.equal(values.replies, 0); controller.dispose();
+});

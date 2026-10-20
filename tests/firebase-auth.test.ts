@@ -1,3 +1,10 @@
+import { IncomingMessage, type ServerResponse } from "node:http";
+import { Socket } from "node:net";
+import { EventEmitter } from "node:events";
+import { createFirebaseNodeHandler } from "../server/firebase-http.ts";
+import { createFirebaseRequestHandler } from "../server/firebase-app.ts";
+import { createNativeSessionTransport } from "../src/client/native-session-transport.ts";
+import { nativeSessionCredential, requestOriginAllowed } from "../server/request-auth-transport.ts";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Auth, DecodedIdToken, UserRecord } from "firebase-admin/auth";
@@ -319,4 +326,57 @@ test("session duration uses verified issuer time with bounded clock skew", async
   headers:{Origin:PUBLIC_ORIGIN,"Content-Type":"application/json"},body:JSON.stringify({idToken:token})}));
  assert.equal((await exchange(f.firstToken)).status,200);
  extra=1;await responseCode(await exchange(f.token()),503,"authentication_unavailable");
+});
+
+
+test("Android session transport reuses admission and revocation without accepting browser cookies or weakening Web origin", async () => {
+  const f = fixture();
+  const browserCookie = cookieOf(await f.exchange());
+  let saved: string | null = null, requests = 0;
+  const store = { read: async () => saved, write: async (value: string) => { saved = value; }, remove: async () => { saved = null; } };
+  const app = createFirebaseRequestHandler({ auth: f.port, publicOrigin: PUBLIC_ORIGIN, mailConfigured: false,
+    authority: { async accountStatus() { throw new Error("Unused account read"); }, async acknowledge() { throw new Error("Unused account write"); } } });
+  const node = createFirebaseNodeHandler({ auth: f.port, publicOrigin: PUBLIC_ORIGIN, handler: app });
+  const fetcher: typeof fetch = async (input, init) => {
+    requests++;
+    assert.equal(init?.credentials, "omit"); assert.equal(init?.redirect, "error");
+    const value = new Request(input, init);
+    assert.equal(value.headers.has("origin"), false); assert.equal(value.headers.has("cookie"), false);
+    const request = new IncomingMessage(new Socket());
+    request.url = new URL(value.url).pathname; request.method = value.method; request.headers = Object.fromEntries(value.headers);
+    const response = Object.assign(new EventEmitter(), { statusCode: 200, headersSent: false, destroyed: false, writableEnded: false,
+      headers: new Headers(), body: Buffer.alloc(0),
+      setHeader(key: string, value: string | string[]) { for (const part of Array.isArray(value) ? value : [value]) this.headers.append(key, part); },
+      end(body: Buffer) { this.body = Buffer.from(body); this.writableEnded = true; }, destroy() { this.destroyed = true; } });
+    const done = node(request, response as unknown as ServerResponse);
+    request.push(await value.text()); request.push(null); await done;
+    return new Response(response.body, { status: response.statusCode, headers: response.headers });
+  };
+  const mobile = createNativeSessionTransport({ apiBaseUrl: PUBLIC_ORIGIN + "/api", store, fetcher, clock: f.now });
+  await mobile.exchange(f.token(), f.userId, new AbortController().signal);
+  assert.ok(saved);
+  const credential = JSON.parse(saved).credential as string;
+  const headers = new Headers({ Authorization: "Bearer " + credential, "x-expected-user-id": f.userId });
+  assert.equal(requestOriginAllowed(headers, PUBLIC_ORIGIN), true);
+  assert.ok(nativeSessionCredential(headers));
+  assert.equal((await f.port.assertRecentReauthentication(headers)).user.id, f.userId);
+  const recreated = createNativeSessionTransport({ apiBaseUrl: PUBLIC_ORIGIN + "/api", store, fetcher, clock: f.now });
+  const read = await recreated.fetcher(PUBLIC_ORIGIN + "/api/auth/get-session");
+  assert.equal((await read.json()).user.id, f.userId);
+  const before = requests;
+  await assert.rejects(() => recreated.fetcher("https://outside.example.test/api/auth/get-session"));
+  assert.equal(requests, before);
+  for (const extra of [{ Origin: PUBLIC_ORIGIN }, { Cookie: browserCookie }, { "Sec-Fetch-Site": "same-origin" }]) {
+    const mixed = new Headers(headers); for (const [key, value] of Object.entries(extra)) mixed.set(key, value);
+    assert.equal(requestOriginAllowed(mixed, PUBLIC_ORIGIN), false);
+    assert.equal(await f.port.getSession({ headers: mixed }), null);
+  }
+  // A Web-issued cookie cannot be relabelled as a native credential: ledger hashes have separate domains.
+  assert.equal(await f.port.getSession({ headers: new Headers({ Authorization: "Bearer yuban-native-v1." + browserCookie.split("=")[1] }) }), null);
+  await responseCode(await f.post("/api/auth/native-session", { idToken: f.token() }), 403, "origin_rejected");
+  await responseCode(await f.post("/api/auth/session", { idToken: f.token() }, undefined, undefined, null), 403, "origin_rejected");
+  const out = await recreated.fetcher(PUBLIC_ORIGIN + "/api/auth/sign-out", { method: "POST", headers: { "content-type": "application/json", "x-expected-user-id": f.userId }, body: "{}" });
+  assert.equal(out.status, 200); assert.equal(out.headers.has("set-cookie"), false); assert.equal(saved, null);
+  assert.equal(await f.port.getSession({ headers }), null);
+  assert.equal((await (await f.get(browserCookie)).json()).user.id, f.userId);
 });

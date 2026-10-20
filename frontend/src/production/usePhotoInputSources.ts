@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { usePathname } from "expo-router";
 import { createSharedInputApi, SharedInputApiError, type SharedInputWriteResult } from "../../../src/client/shared-input-api";
-import { ONLINE_REFRESH_EVENT } from "../../../src/client/use-online-updates";
+import { subscribeOnlineRefresh } from "../../../src/client/online-refresh-events";
 import type { SharedInput, SharedInputConfirmation, SharedInputCreate, PublicInputSource, SourceManagement, SourceManagementChange } from "../../../src/shared/shared-inputs";
 import { sharedInputCreateSchema, sourceManagementChangeSchema } from "../../../src/shared/shared-inputs";
 import { sourceConfirmationProjection, sourceRecordSchema, validSourceExcerpt } from "../components/shared-inputs/source-form";
@@ -34,7 +34,7 @@ export function usePhotoInputSources() {
   const navigate = usePreviewNavigation();
   const env = useDomainEnvironment(), envRef = useRef(env); envRef.current = env;
   const production = useProduction(), productionRef = useRef(production); productionRef.current = production;
-  const api = useMemo(() => createSharedInputApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createSharedInputApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const [state, setState] = useState(() => ({
     inputs: [] as SharedInput[], sources: [] as PublicInputSource[], canCreate: false, load: "loading" as SourcesViewModel["load"], lost: false, resourceUnavailable: false,
     selected: null as SharedInput | null, latest: null as SharedInput | null, busy: false, operation: noOperation(), notice: "",
@@ -197,11 +197,7 @@ export function usePhotoInputSources() {
   }, refreshRef = useRef(refresh); refreshRef.current = refresh;
   useEffect(() => { live.current = true; return () => { live.current = false; refreshRequested.current = false; request.current?.abort(); api.resetOnline(); }; }, [api]);
   useEffect(() => { if (!env.online) { request.current?.abort(); update(consentReset); return; } refreshRef.current(); }, [env.online]);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const listener = () => refreshRef.current(); window.addEventListener(ONLINE_REFRESH_EVENT, listener);
-    return () => window.removeEventListener(ONLINE_REFRESH_EVENT, listener);
-  }, []);
+  useEffect(() => subscribeOnlineRefresh(() => refreshRef.current()), []);
   const pathname = usePathname(), previousPath = useRef(pathname);
   useEffect(() => {
     const previous = previousPath.current; previousPath.current = pathname;

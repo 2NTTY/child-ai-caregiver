@@ -27,12 +27,13 @@ export class ProductAgentOwner {
   private readonly rawRuns = new Map<string, ProductAgentResult>();
   private selectedRunId: string | null = null;
   private readonly baseUrl: string;
+  private readonly fetcher: typeof fetch;
   private readonly onAccessLost: (error: ProductAgentApiError) => void;
   private readonly onSaved: () => void;
   private readonly createApi: () => ProductAgentApi;
   constructor(baseUrl: string, online: boolean,
-    onAccessLost: (error: ProductAgentApiError) => void, onSaved: () => void, createApi = () => createProductAgentApi(baseUrl)) {
-    this.baseUrl = baseUrl; this.onAccessLost = onAccessLost; this.onSaved = onSaved; this.createApi = createApi;
+    onAccessLost: (error: ProductAgentApiError) => void, onSaved: () => void, createApi = () => createProductAgentApi(baseUrl), fetcher: typeof fetch = fetch) {
+    this.baseUrl = baseUrl; this.onAccessLost = onAccessLost; this.onSaved = onSaved; this.createApi = createApi; this.fetcher = fetcher;
     this.api = this.createApi(); this.snapshot = initial(online);
   }
   getSnapshot = () => this.snapshot;
@@ -199,7 +200,7 @@ export class ProductAgentOwner {
     const timeout = setTimeout(() => request.controller.abort(), 15_000);
     try {
       const apiUrl = this.baseUrl.endsWith("/api") ? this.baseUrl : `${this.baseUrl}/api`;
-      const response = await fetch(`${apiUrl}/children/${encodeURIComponent(request.scope.childId)}/agent/runs`, {
+      const response = await (0, this.fetcher)(`${apiUrl}/children/${encodeURIComponent(request.scope.childId)}/agent/runs`, {
         credentials: "include", cache: "no-store", headers: { Accept: "application/json", "x-expected-user-id": request.scope.userId }, signal: request.controller.signal });
       if (!request.current()) return;
       if (!response.ok) {

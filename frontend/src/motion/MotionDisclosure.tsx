@@ -9,6 +9,7 @@ import { disclosureStartHeight } from "./lifecycle";
 export interface MotionDisclosureProps extends MotionViewProps { expanded: boolean; scopeKey: string; measureWhileCollapsed?: boolean }
 export function MotionDisclosure({ expanded, scopeKey, measureWhileCollapsed = false, style, children, ...props }: MotionDisclosureProps) {
   const preferences = useMotionPreferences();
+  const nativeMeasurement = Platform.OS !== "web";
   const height = useSharedValue(0);
   const measured = useRef(0);
   const awaitingMeasure = useRef(false);
@@ -38,10 +39,11 @@ export function MotionDisclosure({ expanded, scopeKey, measureWhileCollapsed = f
     height.value = withTiming(expanded ? measured.current : 0, { duration: motionTokens.disclosure.duration, easing: motionTokens.ease, reduceMotion: ReduceMotion.System }, finished => { if (finished) runOnJS(done)(generation); });
   }, [expanded, scopeKey, measureWhileCollapsed, preferences.enabled, preferences.epoch, height, done]);
   useLayoutEffect(() => { mounted.current = true; return () => { mounted.current = false; token.current += 1; cancelAnimation(height); }; }, [height]);
+  // Native content must measure outside the collapsed height before animating.
   // Web's animated style adapter skips undefined; explicitly release fixed height.
-  const animatedStyle = useAnimatedStyle(() => ({ height: running ? height.value : expanded ? "auto" : 0, display: !measureWhileCollapsed && !expanded && !running ? "none" : "flex" }));
+  const animatedStyle = useAnimatedStyle(() => ({ height: running ? height.value : expanded ? "auto" : 0, display: !nativeMeasurement && !measureWhileCollapsed && !expanded && !running ? "none" : "flex" }));
   return <Animated.View {...props} {...motionData({ ...props.dataSet, motionKind: "disclosure", motionPhase: running ? "resizing" : "settled" })} style={[styles.outer, style, animatedStyle]} pointerEvents={expanded ? "auto" : "none"}>
-    <View ref={inner} style={measureWhileCollapsed ? styles.measurableInner : undefined} aria-hidden={!expanded} accessibilityElementsHidden={!expanded} importantForAccessibility={expanded ? "auto" : "no-hide-descendants"}
+    <View ref={inner} style={nativeMeasurement ? [styles.measurableInner, (!expanded || running) && styles.nativeMeasurement] : measureWhileCollapsed ? styles.measurableInner : undefined} aria-hidden={!expanded} accessibilityElementsHidden={!expanded} importantForAccessibility={expanded ? "auto" : "no-hide-descendants"}
       onLayout={event => { measured.current = event.nativeEvent.layout.height;
         if (expanded && awaitingMeasure.current && measured.current > 0) {
           awaitingMeasure.current = false; const generation = token.current;
@@ -49,4 +51,4 @@ export function MotionDisclosure({ expanded, scopeKey, measureWhileCollapsed = f
         } else if (expanded && !running) height.value = measured.current; }}>{children}</View>
   </Animated.View>;
 }
-const styles = StyleSheet.create({ outer: { overflow: "hidden", minWidth: 0 }, measurableInner: { flexShrink: 0 } });
+const styles = StyleSheet.create({ outer: { overflow: "hidden", minWidth: 0 }, measurableInner: { flexShrink: 0 }, nativeMeasurement: { position: "absolute", top: 0, left: 0, right: 0 } });

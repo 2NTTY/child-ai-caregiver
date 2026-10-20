@@ -66,7 +66,7 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
 type AppTextFieldProps = Omit<React.ComponentProps<typeof TextInput>, "ref"> & { ref?: Ref<React.ComponentRef<typeof TextInput>> };
 export function AppTextField({ style, outlineStyle, contentStyle, multiline, label, mode, ref, ...props }: AppTextFieldProps) {
   return <TextInput {...props} multiline={multiline} label={label} ref={(instance: React.ComponentRef<typeof TextInput> | null) => { if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }}
-    mode={mode ?? "outlined"} style={[styles.input, style]} outlineStyle={[styles.inputOutline, outlineStyle]}
+    mode={mode ?? "outlined"} style={[styles.input, style]} outlineStyle={mode === "flat" ? undefined : [styles.inputOutline, outlineStyle]}
     contentStyle={[multiline && label ? styles.multilineContent : undefined, contentStyle]} />;
 }
 

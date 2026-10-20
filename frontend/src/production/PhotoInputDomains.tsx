@@ -3,7 +3,7 @@ import { Platform, View } from "react-native";
 import { useGlobalSearchParams, usePathname, useRouter } from "expo-router";
 import { Text } from "react-native-paper";
 import { createPhotoApi, PhotoApiError, type PhotoWriteResult } from "../../../src/client/photo-api";
-import { ONLINE_REFRESH_EVENT } from "../../../src/client/use-online-updates";
+import { subscribeOnlineRefresh } from "../../../src/client/online-refresh-events";
 import { photoMetadataSchema, type PhotoAttachment, type PhotoConfirmation, type PhotoMetadata } from "../../../src/shared/photos";
 import { PhotosView } from "../components/photos/PhotosView";
 import { PageFrame } from "../components/PageFrame";
@@ -29,7 +29,7 @@ const photoDraft = (photo: PhotoAttachment): PhotoDraftFields => photo.extractio
 function useProductionPhotos() {
   const env = useDomainEnvironment();
   const envRef = useRef(env); envRef.current = env;
-  const api = useMemo(() => createPhotoApi(env.apiBaseUrl), [env.apiBaseUrl]);
+  const api = useMemo(() => createPhotoApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const [state, setState] = useState(() => ({
     photos: [] as PhotoAttachment[], canCreate: false, load: "loading" as PhotosViewModel["load"], lost: false, resourceUnavailable: false,
     selected: null as PhotoAttachment | null, latest: null as PhotoAttachment | null,
@@ -222,11 +222,7 @@ function useProductionPhotos() {
     if (!env.online) { request.current?.abort(); update({ ...consentReset, load: ref.current.photos.length ? "ready" : "error" }); return; }
     refreshRef.current();
   }, [env.online]);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const listener = () => refreshRef.current(); window.addEventListener(ONLINE_REFRESH_EVENT, listener);
-    return () => window.removeEventListener(ONLINE_REFRESH_EVENT, listener);
-  }, []);
+  useEffect(() => subscribeOnlineRefresh(() => refreshRef.current()), []);
   const pathname = usePathname(), { view } = useGlobalSearchParams<{ view?: string | string[] }>();
   const requestedView = Array.isArray(view) ? view[0] : view;
   const routeRef = useRef(pathname); routeRef.current = pathname;

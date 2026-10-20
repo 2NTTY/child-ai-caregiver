@@ -1,3 +1,4 @@
+export { RouteError as ErrorBoundary, RouteLoading as SuspenseFallback } from "../src/components/RouteFeedback";
 import { Stack, usePathname } from "expo-router";
 import Head from "expo-router/head";
 import { brand } from "../src/branding";

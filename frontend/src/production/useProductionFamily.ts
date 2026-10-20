@@ -6,7 +6,7 @@ import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { settingsAccessError, settingsFailure, settingsRead, useSettingsRefresh, useSettingsRequests, type SettingsEnvironment } from "./SettingsDomainSupport";
 type OriginalFamily = { draft: FamilyDraft; token: string; confirmed: boolean; reviewed: boolean; consent: boolean };
 export function useProductionFamily(env: SettingsEnvironment) {
-  const api = useMemo(() => createFamilyApi(env.apiBaseUrl), [env.apiBaseUrl]), requests = useSettingsRequests(env, true);
+  const api = useMemo(() => createFamilyApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]), requests = useSettingsRequests(env, true);
   const [families, setFamilies] = useState<FamilySpace[]>([]), [familyId, setFamilyId] = useState<string | null>(null);
   const [draft, setDraft] = useState<FamilyDraft | null>(null), [latestFamily, setLatestFamily] = useState<FamilySpace | null>(null);
   const [incoming, setIncoming] = useState<FamilyViewModel["incoming"]>(null), [incomingError, setIncomingError] = useState<string | null>(null);

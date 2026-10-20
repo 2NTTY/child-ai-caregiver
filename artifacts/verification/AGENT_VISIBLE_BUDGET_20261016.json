@@ -1,7 +1,7 @@
 {
   "date": "2026-10-16",
   "baseline": "4f88948cf943585954efbe32ef93e0df0c53f3c8",
-  "status": "implemented_targeted_checks_passed_deployment_pending",
+  "status": "merged_deployed_live_policy_verified",
   "scope": "Shared Agent budget guidance, terminal reserve, platform defaults; Android and Web use the same runtime.",
   "limits": {
     "platformModelCalls": 8,
@@ -48,5 +48,112 @@
     "Hard daily quota, deadline, malformed terminal or unsupported content can still stop a run honestly",
     "No collaborator PR 214/215/216 modifications",
     "Android source-backed conversation gate remains pending"
-  ]
+  ],
+  "delivery": {
+    "pullRequest": 230,
+    "commit": "11501931d2b8e608b46e7ca02432e24a6c653a4f",
+    "merge": "3b02ce510c5f817b52cc0105083f777cd9cf11df",
+    "author": "2NTTY",
+    "mergedBy": "2NTTY",
+    "developmentSignature": "unsigned",
+    "nativeCiDiagnostics": "Workspace access denied; no CI success claimed",
+    "deployedAt": "2026-10-15T16:26:01Z",
+    "apiWorkerImage": "yuban-firestore-api:budget-1150193",
+    "imageId": "sha256:1dc7feefd241fe1d5bc4b6bf641e0652567995314d0b825955c963f18650f897",
+    "webImage": "yuban-firestore-web:s04-8992ce9",
+    "webUnchanged": true,
+    "patchFiles": 5,
+    "archiveBytes": 21044,
+    "archiveSha256": "458f0d3e4e3a4ebcb7a350b9fb706a0504d96409eb22989d2590547d089caece",
+    "health": "api and worker healthy; public API ok",
+    "migration": false,
+    "vmDeadline": "2026-10-17T12:50:44Z",
+    "renewed": false,
+    "rollbackConfig": "/etc/yuban-p1/firestore/compose.env.before-budget-1150193"
+  },
+  "livePolicy": {
+    "operation": "9fc6b24b-5148-444b-93d0-cab60d707eb1",
+    "at": "2026-10-15T16:26:31.340Z",
+    "before": {
+      "enabled": true,
+      "model": "gemini-3.1-flash-lite",
+      "dailyUserAttempts": 200,
+      "dailyGlobalAttempts": 400,
+      "personalDailyGlobalAttempts": 1000,
+      "maxModelCalls": 4,
+      "maxQueryEmbeddings": 2,
+      "version": 1,
+      "updatedAt": "2026-10-15T15:37:21.790Z"
+    },
+    "after": {
+      "enabled": true,
+      "model": "gemini-3.1-flash-lite",
+      "dailyUserAttempts": 200,
+      "dailyGlobalAttempts": 400,
+      "personalDailyGlobalAttempts": 1000,
+      "maxModelCalls": 8,
+      "maxQueryEmbeddings": 4,
+      "version": 2,
+      "updatedAt": "2026-10-15T16:26:31.260Z"
+    },
+    "runtime": {
+      "policy": {
+        "enabled": true,
+        "model": "gemini-3.1-flash-lite",
+        "dailyUserAttempts": 200,
+        "dailyGlobalAttempts": 400,
+        "personalDailyGlobalAttempts": 1000,
+        "maxModelCalls": 8,
+        "maxQueryEmbeddings": 4,
+        "version": 2,
+        "updatedAt": "2026-10-15T16:26:31.260Z"
+      },
+      "serverEnabled": true,
+      "platformConfigured": true,
+      "toolCalls": 16,
+      "deadlineMs": 90000,
+      "outputTokens": 1024,
+      "inputCharacters": 64000
+    },
+    "usageBefore": {
+      "platform": {
+        "day": "2026-10-15",
+        "attempts": 21,
+        "inputTokens": 235827,
+        "outputTokens": 1158,
+        "cachedTokens": 7449,
+        "unknownUsageAttempts": 17,
+        "billingSource": "platform"
+      },
+      "personal": {
+        "day": "2026-10-15",
+        "attempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 0,
+        "billingSource": "personal"
+      }
+    },
+    "usageAfter": {
+      "platform": {
+        "day": "2026-10-15",
+        "attempts": 21,
+        "inputTokens": 235827,
+        "outputTokens": 1158,
+        "cachedTokens": 7449,
+        "unknownUsageAttempts": 17,
+        "billingSource": "platform"
+      },
+      "personal": {
+        "day": "2026-10-15",
+        "attempts": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedTokens": 0,
+        "unknownUsageAttempts": 0,
+        "billingSource": "personal"
+      }
+    }
+  }
 }

@@ -1,3 +1,4 @@
+import { subscribeOnlineRefresh } from "../../../src/client/online-refresh-events";
 import { useEffect, useId, useRef, useState } from "react";
 import type { useDomainEnvironment } from "./useDomainEnvironment";
 export type SettingsEnvironment = ReturnType<typeof useDomainEnvironment>;
@@ -59,10 +60,8 @@ export function useSettingsRefresh(env: SettingsEnvironment, refresh: () => void
     // Reconnection may read current state, but never retries a pending write.
   }, [env.online, account ? env.identityKey : env.scopeKey]);
   useEffect(() => {
-    if (typeof window === "undefined") return;
     const changed = () => { if (latest.current.safe) latest.current.refresh(); else deferred.current = true; };
-    window.addEventListener("yuban-online-refresh", changed);
-    return () => window.removeEventListener("yuban-online-refresh", changed);
+    return subscribeOnlineRefresh(changed);
   }, []);
   useEffect(() => { if (safe && env.online && deferred.current) { deferred.current = false; latest.current.refresh(); } }, [safe, env.online]);
 }
