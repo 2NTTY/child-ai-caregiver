@@ -338,5 +338,130 @@
       "deployments": 0
     },
     "limits": "SDK 2.24.0 rejects Developer API autoTruncate. Document title plus embedding text must fit the existing conservative 2000 UTF-8 byte bound; larger input fails explicitly, never silently truncates. Live Gemini key, long-source continuation and previous draft gates remain unverified."
+  },
+  "approvedContinuity20261020": {
+    "sourceCommit": "09b22f3ef472ee8dffbaaa9128a02b3a427b7d11",
+    "evidence": {
+      "at": "2026-10-20T11:38:23.775Z",
+      "status": "failed",
+      "calls": 13,
+      "steps": [],
+      "usageBefore": {
+        "day": "2026-10-20",
+        "attempts": 20,
+        "inputTokens": 173311,
+        "outputTokens": 1379,
+        "cachedTokens": 4060,
+        "unknownUsageAttempts": 18,
+        "billingSource": "platform"
+      },
+      "policyOperations": [
+        "18bc6743-4a1d-4a06-b2c6-5abe8d347d3a",
+        "70704fd4-56dd-439a-a052-a0206f7f7c67"
+      ],
+      "policyBefore": {
+        "enabled": true,
+        "model": "gemini-3.1-flash-lite",
+        "dailyUserAttempts": 20,
+        "dailyGlobalAttempts": 100,
+        "personalDailyGlobalAttempts": 1000,
+        "maxModelCalls": 8,
+        "maxQueryEmbeddings": 4,
+        "maxToolCalls": 16,
+        "maxRunSeconds": 300,
+        "modelRequestSeconds": 90,
+        "maxModelRetries": 3,
+        "version": 0,
+        "updatedAt": null
+      },
+      "temporaryPolicy": {
+        "enabled": true,
+        "model": "gemini-3.1-flash-lite",
+        "dailyUserAttempts": 26,
+        "dailyGlobalAttempts": 100,
+        "personalDailyGlobalAttempts": 1000,
+        "maxModelCalls": 4,
+        "maxQueryEmbeddings": 2,
+        "maxToolCalls": 16,
+        "maxRunSeconds": 300,
+        "modelRequestSeconds": 90,
+        "maxModelRetries": 0,
+        "version": 1,
+        "updatedAt": "2026-10-20T11:38:24.907Z"
+      },
+      "messageId": "e7f6e54e-6511-4a2d-a3d6-50faac16d98d",
+      "agent": {
+        "runId": "b2059bbe-2765-4b59-938a-eb309a7be7e3",
+        "status": "stopped",
+        "stopReason": "model_limit",
+        "counts": {
+          "modelCalls": 4,
+          "toolCalls": 4,
+          "queryEmbeddings": 0
+        },
+        "tools": [
+          {
+            "name": "load_capabilities",
+            "status": "rejected"
+          },
+          {
+            "name": "load_capabilities",
+            "status": "succeeded"
+          },
+          {
+            "name": "read_family_documents",
+            "status": "succeeded"
+          },
+          {
+            "name": "present_answer",
+            "status": "rejected"
+          }
+        ],
+        "citations": []
+      },
+      "error": "model_limit\n+ actual - expected\n\n+ 'stopped'\n- 'completed'\n",
+      "restoredPolicy": {
+        "enabled": true,
+        "model": "gemini-3.1-flash-lite",
+        "dailyUserAttempts": 20,
+        "dailyGlobalAttempts": 100,
+        "personalDailyGlobalAttempts": 1000,
+        "maxModelCalls": 8,
+        "maxQueryEmbeddings": 4,
+        "maxToolCalls": 16,
+        "maxRunSeconds": 300,
+        "modelRequestSeconds": 90,
+        "maxModelRetries": 3,
+        "version": 2,
+        "updatedAt": "2026-10-20T11:39:12.275Z"
+      },
+      "usageAfter": {
+        "day": "2026-10-20",
+        "attempts": 24,
+        "inputTokens": 217330,
+        "outputTokens": 1612,
+        "cachedTokens": 4060,
+        "unknownUsageAttempts": 22,
+        "billingSource": "platform"
+      },
+      "policyRestored": true
+    },
+    "diagnostics": [
+      {
+        "tool": "load_capabilities",
+        "stage": "schema",
+        "code": "invalid_parameters"
+      },
+      {
+        "tool": "present_answer",
+        "stage": "execution",
+        "code": "citation_required"
+      }
+    ],
+    "conclusion": "One approved attempt stopped at model_limit; no final maintained-source citation, no retry. The original policy was restored and usage retained.",
+    "limit": "Metadata does not retain rejected arguments; no specific malformed field or unsupported statement is inferred. Existing Web/readback evidence is unchanged.",
+    "notifications": 0,
+    "deployments": 0,
+    "cloudBusinessWrites": 0
   }
 }

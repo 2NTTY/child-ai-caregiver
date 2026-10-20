@@ -3320,3 +3320,13 @@
 - 結果：保留原錄音載入及再次授權，補回實際模型的 run context；合併語音、聊天審核、資料編製與編製審核的模組／配方，整包 0.1.48。原工作日誌全文與前置追加部分均保留。
 - 最少驗證：兩項既有 Prompt Pack 版本／依賴載入檢查通過；只以 runtime 相依閉包執行 TypeScript 檢查並通過；`git diff --check` 通過。沒有真模型、通知、部署、瀏覽器或全量驗收。
 - 限制／下一步：原語音／手機及依賴 PR gate 保留，不把衝突收束寫成 Android 或四角色整體驗收完成；沿依賴鏈同步後續 draft。
+
+
+<a id="log-20261020-dev02-approved-continuity-key"></a>
+## LOG-20261020-DEV02-APPROVED-CONTINUITY-KEY
+
+- 基線 `09b22f3`、master `3795858`。按使用者明確批准，只將本地每日20→26，收緊本輪4生成／2查詢／零重試；一次運行用了4生成、零查詢後因 `model_limit` 停止，未保存完整引用回覆。原文件v2讀取成功；metadata顯示能力載入參數拒絕及呈現缺引用，沒有保留原參數，不臆測細節。
+- 已停止批次，finally經正式管理服務恢復原20／100及8／16／4政策，保留本人24次用量。沒有重跑、清零、通知、部署或雲端業務資料寫入；[追加結果](artifacts/verification/DEV_AGENT02_KNOWLEDGE_RUNTIME_20261020.json)與舊失敗分開。
+- 按使用者「你自己創建」建立僅限Gemini API的授權key及零專案角色的專用身份，保存於工程外受Windows ACL保護目錄。臨時建立腳本誤判新版前綴，修正後按同一固定ID取回，沒有重建key；未修改組織政策、正式網站或計費方案。
+- 正式本地個人設定服務保存真key，唯一metadata核對回 `region_unavailable`；6次本機設定API、零生成／embedding。隨後移除業務設定內的key並恢復原模式，用量完全不變。[結果](artifacts/verification/MODEL_SELF02_SETTINGS_UI_20261020.json)只證明保存與地區拒絕回報，不宣稱個人key能生成。ADC已有成功證據維持分開。
+- 下一步：處理能力載入及收尾預算後才安排剩餘引用成果驗收；個人key受地區限制、Android設定／部署、長來源／多模態及原draft gate保留。未跑產品全量、瀏覽器、真通知或其他模型比較。

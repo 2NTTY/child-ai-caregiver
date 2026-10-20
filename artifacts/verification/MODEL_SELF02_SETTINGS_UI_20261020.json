@@ -138,5 +138,36 @@
       "Actual Android settings interaction and final Web reread",
       "Production delivery and existing draft gates"
     ]
+  },
+  "realKeyMetadata20261020": {
+    "sourceCommit": "09b22f3ef472ee8dffbaaa9128a02b3a427b7d11",
+    "evidence": {
+      "at": "2026-10-20T11:41:38.339Z",
+      "method": "formal-settings-client-and-server-real-key-metadata-only",
+      "generations": 0,
+      "embeddings": 0,
+      "saved": {
+        "version": 8,
+        "provider": "gemini",
+        "model": "gemini-3.1-flash-lite",
+        "keyConfigured": true
+      },
+      "check": {
+        "version": 8,
+        "status": "unavailable",
+        "scope": "model_metadata_only",
+        "reason": "region_unavailable"
+      },
+      "status": "unavailable",
+      "restored": true,
+      "usageUnchanged": true,
+      "calls": 6
+    },
+    "provision": "User requested creation. A dedicated service identity with no project-role grants and a Gemini-only authorization key were created in the existing owner project. Credential stored only outside the repository with a restricted Windows ACL.",
+    "setupCorrection": "Key creation succeeded before the temporary provisioning helper rejected a non-legacy prefix. The same fixed key ID was recovered and saved; no second key was created.",
+    "conclusion": "Encrypted settings persistence and real provider region error mapping worked. Generation, embeddings and personal-key product usability remain unverified. ADC evidence is separate.",
+    "productionChanges": false,
+    "organizationPolicyChanges": false,
+    "billingPlanChanges": false
   }
 }
