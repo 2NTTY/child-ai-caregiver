@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { InMemorySessionService } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
@@ -334,7 +335,8 @@ test("an unreviewed draft that has used every model call is not formal success",
 
 test("a bound limit of four is not raised by the six-call proposal", async () => {
   const pack = await loadAgentPrompt("product-interactive", "tool_cycle", ["run", "scope", "conversation", "context", "evidence", "capabilities"]);
-  assert.equal(pack.packVersion, "0.1.46");
+  const manifest = JSON.parse(await readFile(new URL("../prompts/manifest.json", import.meta.url), "utf8"));
+  assert.equal(pack.packVersion, manifest.version);
   let calls = 0;
   const result = await product({ calls, generate: async () => {
     const steps = [

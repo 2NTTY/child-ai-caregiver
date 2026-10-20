@@ -17,6 +17,7 @@ const ids = { run: "d4a1b662-d13d-476b-bf52-40a28aa1a1a7", child: "1ebcb39d-a2db
   task: "83a3109f-cdf2-46eb-a845-473802e0766f", answer: "06a6334c-343d-4934-9dcf-5ceaa7707731" };
 const userId = "synthetic-caregiver", question = "是否將合成任務標記為完成？尚未執行，請明確確認。";
 const answerText = "已儲存任務候選，仍待你確認。";
+// The pending task has no saved business-effect receipt; use its real confirmation state.
 type Fault = "invalid_response" | "unavailable" | "unknown" | "failed" | "rejected" | "conflict" | "last_read" | "citation_revalidation";
 interface FixtureOptions { normal?: boolean; fault?: Fault; questions?: "empty" | "expired" | "multiple" | "blank" | "missing_getter";
   revokeAfterRead?: boolean; cancelAfterRead?: boolean; deadlineDuringRead?: boolean; stageSummary?: boolean; initialSummary?: boolean }
@@ -174,8 +175,10 @@ test("HTTP reply appends the saved confirmation question once and reuses its sav
 
 test("normal presentation still continues after nonterminal confirmation and never uses fallback", async () => {
   const s = fixture({ normal: true }), result = assertPending(s, await s.reply());
-  assert.equal(result.status, "completed"); assert.equal(result.text, answerText); assert.equal(result.tools.at(-1)?.name, "present_answer");
-  assert.equal(s.calls.length, 4); assert.deepEqual(s.finalizations, [{ reason: "normal" }]); assert.equal(s.ledger().questionReads, 0);
+  assert.equal(result.status, "completed"); assert.equal(result.text, AGENT_CONFIRMATION_PENDING_TEXT);
+  assert.ok(result.tools.some(tool => tool.name === "present_answer"));
+  assert.equal(result.text.includes(answerText), false);
+  assert.equal(s.calls.length, 4); assert.deepEqual(s.finalizations, [{ reason: "normal" }]); assert.equal(s.ledger().questionReads, 1);
 });
 
 test("pending confirmation fallback discards a real staged summary", async () => {
@@ -187,11 +190,12 @@ test("pending confirmation fallback discards a real staged summary", async () =>
 
 test("normal presentation preserves the existing staged summary finalization", async () => {
   const s = fixture({ stageSummary: true, normal: true }), result = assertPending(s, await s.reply());
-  assert.equal(result.status, "completed"); assert.equal(result.text, answerText);
+  assert.equal(result.status, "completed"); assert.equal(result.text, AGENT_CONFIRMATION_PENDING_TEXT);
+  assert.equal(result.text.includes(answerText), false);
   assert.equal(s.summaryInputs.length, 1); assert.ok(s.summaryInputs[0]);
   const summary = s.summaryInputs[0] as { text: string; coveredMessageIds: string[] };
   assert.equal(summary.text, "Synthetic staged summary"); assert.equal(summary.coveredMessageIds.length, 12);
-  assert.equal(s.ledger().questionReads, 0); assert.equal(s.calls.length, 4);
+  assert.equal(s.ledger().questionReads, 1); assert.equal(s.calls.length, 4);
 });
 
 for (const questions of ["empty", "expired", "multiple", "blank", "missing_getter"] as const) test(`pending confirmation fallback rejects ${questions} questions`, async () => {

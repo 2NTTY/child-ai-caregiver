@@ -3215,3 +3215,9 @@
 - 補純操作待確認回覆：只由當前 Server 確認問題替換固定狀態，不信模型自報免審。兩項定向 scripted 通過；局部 Server 型別補 nullable guard 後通過，受影響聊天 UI 型別通過。
 - 修正後一個新 run 用 6 生成／零 embedding、17 API 完成正式編製、真審核、指定合成確認及同文件 v1→v2 讀回，其他章節不變。零通知、部署或全量；沒有調高配額。停止入口成功匯出本地快照。
 - [完整證據](artifacts/verification/DEV_AGENT02_REAL_COMPOSE_20261020.json)。新對話／畫面、背景正式維護、非郵件收件箱及真個人 key 仍未驗，不能把本次三角色流程當作整個四 Agent 交付。
+<a id="log-20261020-p3-m01-postmerge-review"></a>
+## LOG-20261020-P3-M01-POSTMERGE-REVIEW
+
+- Review D 的 #243／`d7da9b5`。移除待確認任務 fixture 中無關的保存記錄收據，避免只修測試而掩蓋產品接點；接入本地已核對的 Server 待確認狀態回覆。預算檢查改讀實際 manifest，不綁死版本號。
+- 三項受影響檢查中，摘要 fixture 首次仍期待零次確認讀取；修正為一次真狀態讀取後，只補該項並通過。局部 Server 型別通過，不全量、不追加模型／通知或部署。
+- [核對證據](artifacts/verification/P3_M01_POSTMERGE_REVIEW_20261020.json)。復用本地整合 `e7279a3` 的確認邊界及真編製證據，不將本地分支成功寫成 master 或線上驗收。
