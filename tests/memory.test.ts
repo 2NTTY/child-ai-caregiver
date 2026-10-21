@@ -111,7 +111,17 @@ test("memory fact content keeps the user child nickname from the source message"
 test("durable memory fact statements are distinguished from allergy questions", () => {
   assert.equal(looksLikeDurableMemoryFactStatement("BB 對雞蛋過敏"), true);
   assert.equal(looksLikeDurableMemoryFactStatement("寶寶對花生過敏"), true);
-  assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇花生過敏？"), false);
-  assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇雞蛋過敏"), false);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇對雞蛋過敏？"), false);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇花生過敏"), false);
   assert.equal(looksLikeDurableMemoryFactStatement("確認"), false);
+});
+
+test("lasting preference statements require propose_fact; preference questions do not", () => {
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 鍾意香蕉"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 喜歡蘋果"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 唔鍾意西蘭花"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB likes bananas"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 鍾唔鍾意香蕉"), false);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 鍾意香蕉嗎"), false);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇鍾意香蕉？"), false);
 });

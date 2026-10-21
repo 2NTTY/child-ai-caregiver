@@ -87,3 +87,43 @@ test("allergy questions do not require propose_fact", async () => {
   }, { callId: "c1" });
   assert.equal(accepted.status, "succeeded");
 });
+
+test("preference statements require propose_fact before citation-free present_answer", async () => {
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 鍾意香蕉"), true);
+  const surface = tools({ trustedUserMessage: "BB 鍾意香蕉" });
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  const rejected = await present.execute({
+    kind: "clarification",
+    paragraphs: [{ text: "收到，BB 鍾意香蕉。", citationIds: [] }],
+  }, { callId: "c-pref" });
+  assert.equal(rejected.status, "rejected");
+  assert.equal((rejected.data as { code?: string }).code, "propose_fact_required");
+});
+
+test("after propose_fact for preference, citation-free present becomes server pending receipt", async () => {
+  const surface = tools({
+    trustedUserMessage: "BB 鍾意香蕉",
+    propose: async () => ({
+      id: "a11ce000-77e4-4980-ae87-4c335b2b5c39", runId, childId: scope.childId, version: 1, status: "pending",
+      createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(),
+      value: { kind: "memory_fact", key: "likes-banana", content: "BB 鍾意香蕉", intendedVisibility: "private", validUntil: null },
+      targetLabel: null, result: null,
+    }),
+  });
+  const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  const proposed = await propose.execute({
+    key: "likes-banana", content: "BB 鍾意香蕉", intendedVisibility: "private", validUntil: null,
+  }, { callId: "c-propose-pref" });
+  assert.equal(proposed.status, "succeeded");
+  const accepted = await present.execute({
+    kind: "clarification",
+    paragraphs: [{ text: "已記下 BB 鍾意香蕉，待你確認。", citationIds: [] }],
+  }, { callId: "c-present-pref" });
+  assert.equal(accepted.status, "succeeded");
+  const presentation = await surface.presentation();
+  assert.equal(presentation?.text, AGENT_CONFIRMATION_PENDING_TEXT);
+  const draft = surface.deliveryDraft();
+  assert.equal(draft?.serverSubstitutedReceiptText, true);
+});
+
