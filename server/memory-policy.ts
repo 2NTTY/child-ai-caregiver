@@ -51,3 +51,16 @@ export function preserveMemoryFactUserWording(sourceText: string, content: strin
   }
   return next;
 }
+
+/**
+ * True when the current user message is a durable personal-fact statement (e.g. allergy)
+ * rather than a question/read-back. Used to require propose_fact before present_answer.
+ */
+export function looksLikeDurableMemoryFactStatement(text: string): boolean {
+  const trimmed = text.normalize("NFKC").trim();
+  if (!trimmed || trimmed.length > 400) return false;
+  // Questions / lookups must not force a new candidate.
+  if (/[？?]|(?:有冇|有没有|係咪|是不是|是否|嗎|么)\s*$/u.test(trimmed)) return false;
+  if (/(?:有冇|有没有|係咪|是不是|是否).{0,24}(?:過敏|allergy)/iu.test(trimmed)) return false;
+  return /(?:對.{0,12}過敏|過敏|allergy|忌口|唔可以食|不能吃|不吃)/iu.test(trimmed);
+}

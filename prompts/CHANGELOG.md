@@ -1,5 +1,10 @@
 # Prompt Pack 變更紀錄
 
+## 0.1.56 · 2026-10-21
+
+- memory-maintenance 0.1.8：明確陳述長期個人事實（如過敏）須先 propose_fact（保留 BB 等原稱呼）再 request_confirmation，不可只 present_answer 覆述；提問讀回則用 read_memory_facts。
+- 配合 Server：citation-free 交付核對不再擋住已保存的記憶候選收尾。
+
 ## 0.1.55 · 2026-10-21
 
 - product-ordinary-actions 0.1.2：propose_fact 須保留來源原訊息的孩子稱呼用詞（例如 BB），不可擅自改寫成寶寶等近義說法；Server 在候選入庫前亦會按來源原文還原。

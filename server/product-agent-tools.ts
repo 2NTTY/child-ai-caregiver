@@ -14,6 +14,7 @@ import { AGENT_KNOWLEDGE_TOOL_DESCRIPTIONS } from "./agent-knowledge-tool-descri
 import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
+import { looksLikeDurableMemoryFactStatement } from "./memory-policy.ts";
 import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
@@ -127,6 +128,7 @@ export function createProductAgentTools(options: {
   let mode: AgentPresentation["retrievalMode"] = "not_used", answer: z.infer<typeof agentBackgroundAnswerSchema> | undefined;
   let summaryInput: SummaryInput | null = null, summaryText: string | null = null;
   let serverReceiptText: string | null = null;
+  let pendingMemoryProposalCount = 0;
   async function current(pages: { factsAfterId?: string; topicsAfterId?: string } = {}) {
     const value = await memory.context(scope.userId, scope.childId, options.visibility ?? "private", pages);
     if (!value) throw new AgentStopped("unauthorized"); return value;
@@ -138,6 +140,7 @@ export function createProductAgentTools(options: {
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code, nextAction: "search_knowledge", citationField: "chunks[].chunkId", message: "引用只能取本次 search_knowledge 結果的原始 chunkId；背景來源 metadata 不是已登記引用。不要猜測、拼接或重送同一無效 ID。" } };
       if (error instanceof FamilyError && error.code === "use_citation_ids") return { status: "rejected", data: { code: error.code, nextAction: "Remove URLs from paragraph text. Put exact retrieved chunkId values in citationIds; the UI renders source links." } };
       if (error instanceof FamilyError && error.code === "citation_required") return { status: "rejected", data: { code: error.code, nextAction: "Use the already available search_knowledge tool if relevant evidence is missing and the remaining budget allows retrieval, presentation and review. Each caregiving or safety paragraph needs supporting official citationIds; private_reference needs a retrieved private-source citation. Otherwise state the evidence limitation without unsupported advice. Report operation receipts separately; do not invent citations or relabel advice to bypass checks." } };
+      if (error instanceof FamilyError && error.code === "propose_fact_required") return { status: "rejected", data: { code: error.code, nextAction: "load_capabilities memory if needed, then propose_fact with content that keeps the user's child nickname (e.g. BB), then request_confirmation. Do not only present_answer a restatement of a durable personal fact such as an allergy." } };
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
       throw error;
     }
@@ -298,7 +301,9 @@ export function createProductAgentTools(options: {
       execute: (args, context) => guard(async () => {
         const proposal = await store.propose(scope, runId, context.callId, { kind: "memory_fact", key: args.key as string,
           content: args.content as string, intendedVisibility: args.intendedVisibility as "private" | "family", validUntil: args.validUntil as string | null, ...(args.sourceMessageId ? { sourceMessageId: args.sourceMessageId as string } : {}) });
-        if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
+        if (!proposal) throw new AgentStopped("unauthorized");
+        pendingMemoryProposalCount += 1;
+        return proposal;
       }) },
     { name: "stage_private_summary", description: "只整理 read_context.privateSummaryInput 指定 IDs 對應的全部原訊息；summaryMode=isolated_batch 時只摘要該批，不複製舊摘要或其他工具的資料，保留原話的陳述／推測身份；舊 cumulative 模式才合併舊摘要。原文從同次 uncoveredConversation 讀取，不可補入未提供訊息。保留不確定性、來源及更正；moreUncovered=true 不表示已讀後續內容。這是私人衍生摘要，不是已確認事實；Server 在運行結束核對完整批次、來源與版本。未取得該批次全部原文時不可調用。",
       parameters: z.object({ text: shortText(6000) }), authorize: permitted,
@@ -316,6 +321,13 @@ export function createProductAgentTools(options: {
         // and generator fields such as approved or skipReview are not in this schema.
         const parsed = options.background ? agentBackgroundAnswerSchema.parse(args) : agentAnswerSchema.parse(args);
         if (parsed.kind === "no_action" && contactReference) throw new FamilyError(400, "operation_result_required");
+        // Durable personal-fact statements must persist a pending candidate first; chat delivery
+        // must not stand in for propose_fact. Questions / read-backs are unaffected.
+        if (!options.background && parsed.kind !== "no_action" && pendingMemoryProposalCount === 0
+          && options.trustedUserMessage && looksLikeDurableMemoryFactStatement(options.trustedUserMessage)
+          && !parsed.paragraphs.some(item => item.citationIds.length)) {
+          throw new FamilyError(400, "propose_fact_required");
+        }
         if (parsed.kind !== "no_action") acceptPresentedAnswer({ ...parsed, kind: parsed.kind });
         answer = parsed;
         return { acceptedForValidation: true, ...(options.reviewedGrowthPresentation
@@ -402,11 +414,20 @@ export function createProductAgentTools(options: {
           return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
         }
       }
-      if (answer.kind === "operation" && ids.length === 0 && !options.background && store.confirmationQuestions) {
-        const questions = await store.confirmationQuestions(scope.userId, scope.childId, runId);
-        if (!await authorize() || !questions) throw new AgentStopped("unauthorized");
-        if (questions.length === 1 && questions[0]?.trim()) {
-          // The API appends the authoritative question. Never exempt model-written claims.
+      // Citation-free confirmation / memory-propose receipts are Server-owned so delivery
+      // review cannot wipe a durable pending candidate when the model restated BB/allergy.
+      if (ids.length === 0 && !options.background
+        && (answer.kind === "operation" || answer.kind === "clarification" || answer.kind === "record_restatement")) {
+        if (store.confirmationQuestions) {
+          const questions = await store.confirmationQuestions(scope.userId, scope.childId, runId);
+          if (!await authorize() || !questions) throw new AgentStopped("unauthorized");
+          if (questions.length === 1 && questions[0]?.trim()) {
+            // The API appends the authoritative question. Never exempt model-written claims.
+            serverReceiptText = AGENT_CONFIRMATION_PENDING_TEXT;
+            return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+          }
+        }
+        if (pendingMemoryProposalCount > 0) {
           serverReceiptText = AGENT_CONFIRMATION_PENDING_TEXT;
           return { text: serverReceiptText, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
         }

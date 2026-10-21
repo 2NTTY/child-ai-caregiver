@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { randomUUID } from "node:crypto";
-import { factIsApplicable, normalizedFactKey, preserveMemoryFactUserWording, profileIsApplicable, requireTopicTransition, topicMayAsk } from "../server/memory-policy.ts";
+import { factIsApplicable, looksLikeDurableMemoryFactStatement, normalizedFactKey, preserveMemoryFactUserWording, profileIsApplicable, requireTopicTransition, topicMayAsk } from "../server/memory-policy.ts";
 import { factValuesSchema, summarySaveSchema } from "../server/memory-validation.ts";
 import { handleMemoryRequest } from "../server/memory-api.ts";
 import type { MemoryStore } from "../server/memory.ts";
@@ -105,4 +105,13 @@ test("memory fact content keeps the user child nickname from the source message"
   assert.equal(preserveMemoryFactUserWording("今日天氣好好", "寶寶對雞蛋過敏"), "寶寶對雞蛋過敏");
   assert.equal(preserveMemoryFactUserWording("", "寶寶對雞蛋過敏"), "寶寶對雞蛋過敏");
   assert.equal(preserveMemoryFactUserWording("BB 對雞蛋過敏", "BB 對雞蛋過敏"), "BB 對雞蛋過敏");
+});
+
+
+test("durable memory fact statements are distinguished from allergy questions", () => {
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 對雞蛋過敏"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("寶寶對花生過敏"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇花生過敏？"), false);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇雞蛋過敏"), false);
+  assert.equal(looksLikeDurableMemoryFactStatement("確認"), false);
 });
