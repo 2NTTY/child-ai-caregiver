@@ -503,9 +503,10 @@ export function createProductAgentTools(options: {
         serverSubstitutedReceiptText: serverReceiptText !== null,
         paragraphs, sources, scope,
       };
-      // Trusted exemption: confirmed memory restatement with no knowledge retrieval.
+      // Trusted exemption: confirmed memory restatement with no knowledge cites in the answer.
+      // Unused search_knowledge must not block the skip (mode may leave not_used).
       // Domain words (BB) alone do not block; directive care advice still refuses the skip.
-      if (!serverReceiptText && memoryGrounding.size > 0 && !hasKnowledgeCitation && mode === "not_used"
+      if (!serverReceiptText && memoryGrounding.size > 0 && !hasKnowledgeCitation
         && isMemoryRestatementAnswer(answer as AgentAnswer)
         && !draftLooksLikeDirectiveCareAdvice(draft)) {
         draft.serverVerifiedMemoryGrounding = true;

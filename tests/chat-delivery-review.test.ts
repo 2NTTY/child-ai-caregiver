@@ -740,6 +740,50 @@ test("citation-free memory restatement hydrates grounding without prior read_mem
   } finally { budget.close(); }
 });
 
+test("unused search_knowledge does not block confirmed memory restatement skip", async () => {
+  const budget = new AgentBudget();
+  const fact = {
+    id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", childId, key: "過敏", content: "BB 對雞蛋過敏",
+    source: { kind: "manual" as const, description: "家長確認" }, validUntil: null,
+    visibility: "private" as const, intendedVisibility: "private" as const, status: "confirmed" as const,
+    version: 2, createdBy: userId, confirmedBy: userId, confirmedAt: "2026-10-18T00:00:00.000Z",
+    reason: "已確認", applicable: true, sourceState: "current" as const,
+  };
+  const surface = createProductAgentTools({
+    run: { scope, runId, budget }, authorize: async () => true,
+    memory: {
+      getFact: async () => fact,
+      facts: async () => ({ items: [fact], nextAfterId: null }),
+      recall: async () => ({ facts: [fact], topics: [], missingKeys: [] }),
+      context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+        facts: [fact], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
+        truncated: { facts: false, topics: false, messages: false } }),
+    },
+    tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+    store: {},
+    knowledge: { createRun: () => ({
+      search: async () => ({ mode: "vector_keyword", chunks: [chunk] }),
+      revalidateCitations: async () => true, readReviewedCitations: async () => [],
+    }) },
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const search = surface.tools.find(tool => tool.name === "search_knowledge")!;
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  try {
+    const found = await search.execute({ query: "嬰兒食物過敏一般資訊", classification: "official_guidance" },
+      { scope, runId, callId: "search-unused", signal: budget.signal, queryEmbeddingAttemptKey: "q1" });
+    assert.equal(found.status, "succeeded");
+    const presented = await present.execute({
+      kind: "record_restatement",
+      paragraphs: [{ text: "已確認記憶：BB 對雞蛋過敏。", citationIds: [] }],
+    }, { scope, runId, callId: "present-after-search", signal: budget.signal });
+    assert.equal(presented.status, "succeeded");
+    const draft = surface.deliveryDraft()!;
+    assert.equal(draft.serverVerifiedMemoryGrounding, true);
+    assert.equal(requiresChatDeliveryReview(draft), false);
+    assert.equal(draft.sources.some(source => source.citationId.startsWith("memory-fact:")), true);
+  } finally { budget.close(); }
+});
+
 test("confirmed memory fact read enables citation-free restatement delivery", async () => {
   const budget = new AgentBudget();
   const fact = {
