@@ -15,7 +15,7 @@ import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { looksLikeDurableMemoryFactStatement } from "./memory-policy.ts";
-import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, draftLooksLikeSubstantiveCareAdvice, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
+import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, draftLooksLikeDirectiveCareAdvice, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -482,9 +482,10 @@ export function createProductAgentTools(options: {
         paragraphs, sources, scope,
       };
       // Trusted exemption: confirmed memory restatement with no knowledge retrieval.
+      // Domain words (BB) alone do not block; directive care advice still refuses the skip.
       if (!serverReceiptText && memoryGrounding.size > 0 && !hasKnowledgeCitation && mode === "not_used"
         && isMemoryRestatementAnswer(answer as AgentAnswer)
-        && !draftLooksLikeSubstantiveCareAdvice(draft)) {
+        && !draftLooksLikeDirectiveCareAdvice(draft)) {
         draft.serverVerifiedMemoryGrounding = true;
       }
       return draft;

@@ -13,7 +13,7 @@ import { readAiConfig } from "../server/ai-config.ts";
 import { loadAgentPrompt } from "../server/agent-prompt.ts";
 import {
   chatDeliveryDraftHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewAllows,
-  chatDeliveryReviewSourceExcerpt, draftLooksLikeSubstantiveCareAdvice, isPureClarifyingQuestion,
+  chatDeliveryReviewSourceExcerpt, draftLooksLikeSubstantiveCareAdvice, draftLooksLikeDirectiveCareAdvice, isPureClarifyingQuestion,
   requiresChatDeliveryReview, SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS,
   type ChatDeliveryDraft,
 } from "../server/chat-delivery-review.ts";
@@ -178,7 +178,7 @@ test("server-verified confirmed memory restatement skips delivery review without
       citationId: "memory-fact:synthetic", version: "3", contentHash: hashA,
       classification: "private" as const, excerpt: "對花生過敏", excerptComplete: true,
     }],
-    paragraphs: [{ text: "已確認記憶：孩子對花生過敏。", citationIds: [] }],
+    paragraphs: [{ text: "已確認記憶：BB 對花生過敏。", citationIds: [] }],
     serverVerifiedMemoryGrounding: true,
   };
   assert.equal(requiresChatDeliveryReview(memoryRestatement), false);
@@ -193,6 +193,21 @@ test("server-verified confirmed memory restatement skips delivery review without
   };
   // Flag is server-trusted; product tools refuse to set it when care advice is detected.
   assert.equal(requiresChatDeliveryReview(careWithFlag), false);
+});
+
+test("memory exemption gate ignores domain-only BB wording but blocks directive advice", () => {
+  const domainOnly = {
+    ...draft(), kind: "record_restatement" as const, sources: [],
+    paragraphs: [{ text: "已確認記憶：BB 對花生過敏。", citationIds: [] }],
+  };
+  const directive = {
+    ...draft(), kind: "operation" as const, sources: [],
+    paragraphs: [{ text: "BB未滿一歲唔好食蜜糖。", citationIds: [] }],
+  };
+  assert.equal(draftLooksLikeSubstantiveCareAdvice(domainOnly), true);
+  assert.equal(draftLooksLikeDirectiveCareAdvice(domainOnly), false);
+  assert.equal(draftLooksLikeDirectiveCareAdvice(directive), true);
+  assert.equal(draftLooksLikeSubstantiveCareAdvice(directive), true);
 });
 
 test("classmate F3: reviewer source excerpt keeps support after the first 800 characters", () => {
@@ -695,7 +710,7 @@ test("confirmed memory fact read enables citation-free restatement delivery", as
     assert.equal(read.status, "succeeded");
     await present.execute({
       kind: "record_restatement",
-      paragraphs: [{ text: "已確認記憶：孩子對花生過敏。", citationIds: [] }],
+      paragraphs: [{ text: "已確認記憶：BB 對花生過敏。", citationIds: [] }],
     }, { scope, runId, callId: "present-memory", signal: budget.signal });
     const draft = surface.deliveryDraft()!;
     assert.equal(draft.serverVerifiedMemoryGrounding, true);
@@ -706,8 +721,7 @@ test("confirmed memory fact read enables citation-free restatement delivery", as
       kind: "caregiving",
       paragraphs: [{ text: chunk.text, citationIds: [chunk.chunkId] }],
     }, { scope, runId, callId: "present-care", signal: budget.signal });
-    // Without registering the chunk in evidence via search, present_answer rejects; instead assert
-    // advisory text with memory grounding does not get the skip flag.
+    // Domain-only BB restatement already got the skip above. Directive advice must not.
     await present.execute({
       kind: "operation",
       paragraphs: [{ text: "BB未滿一歲唔好食蜜糖。", citationIds: [] }],

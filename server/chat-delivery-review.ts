@@ -118,12 +118,24 @@ export function isPureClarifyingQuestion(text: string): boolean {
 export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): boolean {
   const text = joinedDraftText(draft);
   if (!text) return false;
-  // Pure clarifies may mention 寶寶／個月大 without being advice.
+  // Pure clarifies may mention domain child words without being advice.
   if (isPureClarifyingQuestion(text)) return false;
   return CARE_DOMAIN_PATTERN.test(text) || CARE_ADVISORY_PATTERN.test(text);
 }
 
-/** True when a pass would need supporting excerpts the draft does not carry. */
+/**
+ * Directive / instructional care wording only.
+ * Used to refuse the confirmed-memory delivery exemption: domain words such as BB
+ * alone are expected when restating a remembered allergy fact and must not block that skip.
+ * Still fails closed for directive advice markers. Does not grant a review skip.
+ */
+export function draftLooksLikeDirectiveCareAdvice(draft: ChatDeliveryDraft): boolean {
+  const text = joinedDraftText(draft);
+  if (!text) return false;
+  if (isPureClarifyingQuestion(text)) return false;
+  return CARE_ADVISORY_PATTERN.test(text);
+}
+
 export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft): boolean {
   if (draft.sources.length > 0) return false;
   if (draft.kind === "caregiving" || draft.kind === "safety_help" || draft.kind === "private_reference") return true;
