@@ -115,6 +115,17 @@ export function isPureClarifyingQuestion(text: string): boolean {
   return true;
 }
 
+/** Greeting / short courtesy opener. Positive markers required; care-domain or advisory wording never skips. */
+const GREETING_PATTERN = /(?:^[\s，,。.!！？?]?)(?:你好|您好|哈囉|哈啰|嗨|早安|午安|晚安|早上好|下午好|晚上好)|(?:^|[\s，,])(?:你好|您好|哈囉|哈啰|嗨)\b|^(?:hi|hello|hey)\b|\bgood\s+(?:morning|afternoon|evening)\b|有什麼可以幫|有什么可以帮|需要什麼協助|需要什么协助|點樣幫到你|怎样帮到你|how\s+can\s+i\s+help|what\s+can\s+i\s+(?:do|help)/iu;
+
+export function isPureGreetingOrSmallTalk(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 80) return false;
+  if (!GREETING_PATTERN.test(trimmed)) return false;
+  if (CARE_DOMAIN_PATTERN.test(trimmed) || CARE_ADVISORY_PATTERN.test(trimmed)) return false;
+  return true;
+}
+
 export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): boolean {
   const text = joinedDraftText(draft);
   if (!text) return false;
@@ -147,25 +158,26 @@ export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft): boolean 
  * The generating model's kind alone never grants a skip: caregiving labels force review,
  * and citation-free wording that still looks like care advice also forces review.
  * Only trusted server exemptions may skip: exact allowlisted UI text, pure clarifying
- * questions, Server-substituted operation receipts, and Server-verified confirmed-memory
- * restatements (no knowledge retrieval). Unknown wording fails closed into review;
- * a keyword miss must not grant an exemption.
+ * questions, pure greetings / short courtesy openers, Server-substituted operation
+ * receipts, and Server-verified confirmed-memory restatements (no knowledge retrieval).
+ * Unknown wording fails closed into review; a keyword miss must not grant an exemption.
  */
 export function requiresChatDeliveryReview(draft: ChatDeliveryDraft): boolean {
   if (draft.serverSubstitutedSourceText || draft.serverSubstitutedReceiptText) return false;
   // Confirmed memory restatement: Server-tracked grounding, no knowledge retrieval path.
   if (draft.serverVerifiedMemoryGrounding) return false;
   if (draft.sources.length > 0) return true;
-  if (draft.kind === "caregiving" || draft.kind === "safety_help" || draft.kind === "private_reference") return true;
   const text = joinedDraftText(draft);
   if (SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS.has(text)) return false;
   // Model-written receipt-like wording is not proof of a saved operation.
   if (isPureClarifyingQuestion(text)) return false;
+  // Pure greetings need no cites / memory grounding; care-shaped text never matches.
+  if (isPureGreetingOrSmallTalk(text)) return false;
+  if (draft.kind === "caregiving" || draft.kind === "safety_help" || draft.kind === "private_reference") return true;
   if (draftLooksLikeSubstantiveCareAdvice(draft)) return true;
   // Fail closed: unknown citation-free wording needs review unless a trusted exemption matched.
   return true;
 }
-
 export function chatDeliveryDraftHash(draft: ChatDeliveryDraft): string {
   return sha256({
     kind: draft.kind,
