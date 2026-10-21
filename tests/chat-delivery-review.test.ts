@@ -679,6 +679,43 @@ test("source retract after a review pass does not keep the old answer", async ()
   assert.equal(result?.deliveryReview, undefined);
 });
 
+test("citation-free memory restatement hydrates grounding without prior read_memory_facts", async () => {
+  const budget = new AgentBudget();
+  const fact = {
+    id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", childId, key: "過敏", content: "BB 對雞蛋過敏",
+    source: { kind: "manual" as const, description: "家長確認" }, validUntil: null,
+    visibility: "private" as const, intendedVisibility: "private" as const, status: "confirmed" as const,
+    version: 2, createdBy: userId, confirmedBy: userId, confirmedAt: "2026-10-18T00:00:00.000Z",
+    reason: "已確認", applicable: true, sourceState: "current" as const,
+  };
+  const surface = createProductAgentTools({
+    run: { scope, runId, budget }, authorize: async () => true,
+    memory: {
+      getFact: async () => fact,
+      facts: async () => ({ items: [fact], nextAfterId: null }),
+      recall: async () => ({ facts: [fact], topics: [], missingKeys: [] }),
+      context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+        facts: [fact], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
+        truncated: { facts: false, topics: false, messages: false } }),
+    },
+    tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+    store: {},
+    knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [] }) }) },
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  try {
+    const presented = await present.execute({
+      kind: "record_restatement",
+      paragraphs: [{ text: "已確認記憶：BB 對雞蛋過敏。", citationIds: [] }],
+    }, { scope, runId, callId: "present-memory-hydrate", signal: budget.signal });
+    assert.equal(presented.status, "succeeded");
+    const draft = surface.deliveryDraft()!;
+    assert.equal(draft.serverVerifiedMemoryGrounding, true);
+    assert.equal(requiresChatDeliveryReview(draft), false);
+    assert.ok(draft.sources.some(source => source.citationId.startsWith("memory-fact:")));
+  } finally { budget.close(); }
+});
+
 test("confirmed memory fact read enables citation-free restatement delivery", async () => {
   const budget = new AgentBudget();
   const fact = {

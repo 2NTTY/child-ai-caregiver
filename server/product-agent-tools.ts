@@ -148,6 +148,22 @@ export function createProductAgentTools(options: {
     if (!kinds.length) return false;
     return kinds.every(kind => kind === "record_restatement" || kind === "operation" || kind === "clarification");
   }
+  /** Generator may skip read_memory_facts; hydrate Server grounding before a citation-free restatement. */
+  async function ensureConfirmedMemoryGrounding() {
+    if (memoryGrounding.size > 0) return;
+    // Production memory always exposes context; partial test doubles may omit it.
+    if (typeof memory.context !== "function") return;
+    const context = await current();
+    noteConfirmedMemoryFacts(context.facts);
+    if (typeof memory.facts !== "function") return;
+    let afterId = context.nextFactsAfterId ?? undefined;
+    for (let page = 0; afterId && page < 5; page += 1) {
+      const more = await memory.facts(scope.userId, scope.childId, afterId, 10);
+      if (!more) break;
+      noteConfirmedMemoryFacts(more.items);
+      afterId = more.nextAfterId ?? undefined;
+    }
+  }
   async function current(pages: { factsAfterId?: string; topicsAfterId?: string } = {}) {
     const value = await memory.context(scope.userId, scope.childId, options.visibility ?? "private", pages);
     if (!value) throw new AgentStopped("unauthorized"); return value;
@@ -347,6 +363,12 @@ export function createProductAgentTools(options: {
           && options.trustedUserMessage && looksLikeDurableMemoryFactStatement(options.trustedUserMessage)
           && !parsed.paragraphs.some(item => item.citationIds.length)) {
           throw new FamilyError(400, "propose_fact_required");
+        }
+        // Read-backs often skip read_memory_facts; Server still needs confirmed facts for delivery skip.
+        if (!options.background && parsed.kind !== "no_action"
+          && isMemoryRestatementAnswer(parsed as AgentAnswer)
+          && !parsed.paragraphs.some(item => item.citationIds.length)) {
+          await ensureConfirmedMemoryGrounding();
         }
         if (parsed.kind !== "no_action") acceptPresentedAnswer({ ...parsed, kind: parsed.kind });
         answer = parsed;
