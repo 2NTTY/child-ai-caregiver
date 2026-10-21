@@ -292,7 +292,7 @@ export function createProductAgentTools(options: {
         const proposal = await store.propose(scope, runId, context.callId, { kind: "task_change", taskId: args.taskId as string, change });
         if (!proposal) throw new AgentStopped("unauthorized"); return proposal;
       }) },
-    { name: "propose_fact", description: "從已讀的本人原訊息提出長期記憶候選；舊原話帶 sourceMessageId，省略時指本次訊息；預設 private。intendedVisibility=family 仍只是私人候選，需本人另行明示分享確認，不可把推斷當已確認事實。",
+    { name: "propose_fact", description: "從已讀的本人原訊息提出長期記憶候選；舊原話帶 sourceMessageId，省略時指本次訊息；預設 private。content 須保留來源原訊息的孩子稱呼用詞（例如 BB），不可擅自改寫成寶寶等近義說法。intendedVisibility=family 仍只是私人候選，需本人另行明示分享確認，不可把推斷當已確認事實。",
       parameters: z.object({ key: shortText(100), content: shortText(2000), intendedVisibility: z.enum(["private", "family"]),
         validUntil: z.iso.datetime({ offset: true }).nullable(), sourceMessageId: z.uuid().optional() }), authorize: permitted,
       execute: (args, context) => guard(async () => {
