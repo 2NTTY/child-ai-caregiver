@@ -26,7 +26,7 @@ export function HomeFocus({ model, actions, full = false }: { model: HomeViewMod
     </ReadStateNotice>
     {canShowItems ? <HomeOverviewItems items={visibleItems} actions={actions} /> : null}
     {section.state === "ready" && section.items.length > 0 && section.detail ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{section.detail}</Text> : null}
-    {!full && canShowItems && section.items.length > visibleItems.length ? <Text style={styles.meta}>另有 {section.items.length - visibleItems.length} 項，可在資訊側欄的「待辦／提醒」查看。</Text> : null}
+    {!full && canShowItems && section.items.length > visibleItems.length ? <Text style={styles.meta}>另有 {section.items.length - visibleItems.length} 項，可在資訊側欄查看。</Text> : null}
   </SectionCard>;
 }
 
@@ -41,7 +41,7 @@ export function HomeActionSummary({ model, actions }: { model: HomeViewModel; ac
       message={section.detail ?? (section.state === "ready" && !section.items.length ? "目前沒有待辦事項" : undefined)}>
       {["error", "stale", "unavailable"].includes(section.state) ? <AppButton label="重新讀取待辦" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
     </ReadStateNotice>
-    {["ready", "stale", "loading"].includes(section.state) ? <HomeOverviewItems items={section.items.slice(0, 2)} actions={actions} compact /> : null}
+    {["ready", "stale", "loading"].includes(section.state) ? <HomeOverviewItems items={section.items} actions={actions} compact /> : null}
     {section.state === "ready" && section.items.length > 0 && section.detail ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{section.detail}</Text> : null}
   </View>;
 }

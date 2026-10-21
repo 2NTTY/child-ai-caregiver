@@ -91,11 +91,10 @@ test('multiline descriptions remain intrinsic without fixed row or connector hei
   assert.equal(flatten(trailing.props.style).height, undefined);
 });
 
-test('archive confirmation keeps its original scope, authority and callback', () => {
-  const onArchive = () => {}, tree = render([event(0)], {scopeKey: 'scope', onArchive, archiveDisabled: true});
-  const button = nodes(tree, node => node.type === 'GrowthArchiveConcernButton')[0];
-  assert.equal(button.props.scopeKey, 'scope');
-  assert.equal(button.props.authorityVersion, 'authority');
-  assert.equal(button.props.onConfirm, onArchive);
-  assert.equal(button.props.disabled, true);
+test('reading timeline no longer duplicates the selected title or embeds a destructive trigger', () => {
+  const tree = render([event(0)]);
+  assert.equal(nodes(tree, node => node.type === 'GrowthArchiveConcernButton').length, 0);
+  assert.equal(nodes(tree, node => node.type === 'Text' && node.props.children === 'Concern').length, 0);
+  assert.equal(tree.props.accessibilityLabel, '關注：Concern');
+  assert.equal(nodes(tree, node => node.type === 'SectionHeader')[0].props.title, '跟進記錄');
 });

@@ -18,9 +18,9 @@ export function projectProductionHome(snapshot: ProductionSnapshot): HomeViewMod
     profileLoad: state.childrenLoading ? "loading" : knownChildren && state.children.length === 0 ? "ready" : "error",
     records: selected ? state.records.filter(record => record.childId === selected.id).map(record => ({
       id: record.id, childId: record.childId, kind: "note", title: "文字記錄", detail: record.text,
-      eventTimeLabel: "事件時間未提供", confirmedAtLabel: new Date(record.createdAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" }),
+      eventTimeLabel: "事件時間未提供", confirmedAtLabel: new Date(record.createdAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }),
     })) : [],
-    lastReadLabel: state.recordsLoadedAt ? new Date(state.recordsLoadedAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" }) : null,
+    lastReadLabel: state.recordsLoadedAt ? new Date(state.recordsLoadedAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }) : null,
     operation: { state: childOperation, title: childOperation === "none" ? "" : "建立孩子", detail: state.childMessage ?? (childOperation === "saving" ? "正在建立孩子…" : "") },
     guideStatus: !knownChildren ? "unknown" : state.children.length === 0 ? "first_login" : "incomplete",
     focus: { kind: "unavailable", detail: "暫時無法顯示待辦" },

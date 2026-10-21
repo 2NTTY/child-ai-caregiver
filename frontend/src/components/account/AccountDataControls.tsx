@@ -34,7 +34,7 @@ export function AccountDataControls() {
     </View>
     <View style={styles.danger}>
       <Text style={styles.title}>永久刪除本人帳戶</Text>
-      {deletion.phase === "idle" ? <><Text style={styles.body}>先由 Server 核對退出範圍，再確認密碼與固定文字。這會刪除帳戶、本人的私人資料及名下孩子與附屬資料，不能撤銷。共享家庭若仍有其他成員，須先處理責任。</Text>
+      {deletion.phase === "idle" ? <><Text style={styles.body}>先核對退出範圍，再確認密碼與固定文字。這會刪除帳戶、本人的私人資料及名下孩子與附屬資料，不能撤銷。共享家庭若仍有其他成員，須先處理責任。</Text>
         {!canPrepareAccountDeletion ? <Text style={styles.body}>請先處理未提交草稿或未確認的原操作，再退出帳戶。</Text> : null}
         <AppButton label="核對帳戶退出範圍" variant="danger-secondary" disabled={!online || !canPrepareAccountDeletion || !!account.busy} onPress={() => { void accountActions.prepareDeletion(); }} /></> : null}
       {deletion.phase === "prepared" ? <>

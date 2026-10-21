@@ -19,20 +19,20 @@ export default function MoreScreen() {
   const catalogueLayout = useContainerWidth();
   const columns = moreCatalogueColumns(catalogueLayout.width);
   const groupWidth = (catalogueLayout.width - spacing.lg * (columns - 1)) / columns;
-  return <PageFrame density="compact" title="更多功能" description="按用途找資料與管理入口；私人來源可在設定內開啟。">
+  return <PageFrame density="compact" title="全部功能" description="按用途找照顧、資料與管理入口。">
     <View ref={catalogueLayout.ref} onLayout={catalogueLayout.onLayout} testID={desktop ? "more-desktop-catalogue" : "more-mobile-list"}
       style={[styles.groups, desktop && styles.catalogue]}>{groups.map(group => <View key={group.title} style={[styles.group, desktop && styles.catalogueGroup, desktop && { width: groupWidth }]}>
       <View style={styles.heading}><Text accessibilityRole="header" style={styles.title}>{group.title}</Text><Text style={styles.detail}>{group.detail}</Text></View>
       {desktop ? <View style={styles.catalogueLinks}>{group.items.map(item => <PreviewLink key={item.key}
         href={item.key === "photos" ? { pathname: "/care", params: { view: "photos" } } : navigationItems[item.key].href}>
-        <Pressable accessibilityRole="link" accessibilityLabel={item.label}
+        <Pressable accessibilityRole="link" accessibilityLabel={navigationItems[item.key].short}
           onPressIn={() => setPressedDestination(item.key)} onPressOut={() => setPressedDestination(null)}
           style={StyleSheet.flatten([styles.catalogueLink, pressedDestination === item.key && styles.pressed])}>
           <AppIcon name={navigationItems[item.key].icon} size={20} color={colors.deepTeal} />
-          <View style={styles.linkCopy}><Text style={styles.linkTitle}>{item.label}</Text><Text style={styles.linkDetail}>{item.detail}</Text></View>
+          <View style={styles.linkCopy}><Text style={styles.linkTitle}>{navigationItems[item.key].short}</Text><Text style={styles.linkDetail}>{item.detail}</Text></View>
           <AppIcon name="chevron-right" size={16} color={colors.muted} />
         </Pressable>
-      </PreviewLink>)}</View> : <AppMenuList items={group.items.map(item => ({ ...item, icon: navigationItems[item.key].icon, onPress: () => item.key === "photos" ? leave(() => router.push({ pathname: "/care", params: { view: "photos" } }), "workspace") : item.key === "history" ? leave(() => router.push("/history"), "workspace") : actions.open(item.key) }))} />}
+      </PreviewLink>)}</View> : <AppMenuList items={group.items.map(item => ({ ...item, label: navigationItems[item.key].short, icon: navigationItems[item.key].icon, onPress: () => item.key === "photos" ? leave(() => router.push({ pathname: "/care", params: { view: "photos" } }), "workspace") : item.key === "history" || item.key === "home" ? leave(() => router.push(navigationItems[item.key].href), "workspace") : actions.open(item.key) }))} />}
     </View>)}</View>
   </PageFrame>;
 }

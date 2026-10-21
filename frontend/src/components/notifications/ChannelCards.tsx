@@ -128,10 +128,10 @@ function RecentDeliveries({ deliveries, emptyReady }: { deliveries: ChannelDeliv
     {latest.length === 0 ? emptyReady ? <EmptyListCard title="已載入資料中暫無投遞紀錄" detail="只代表本次取得的最近紀錄。" /> : null : latest.map(delivery => <View key={delivery.id} style={styles.entry}>
       <View style={styles.top}><Text style={styles.title}>{delivery.label}</Text>
         <AppStatusBadge label={channelDeliveryLabels[delivery.status]} tone={delivery.status === "unknown" ? "warning" : delivery.status === "rejected" ? "error" : delivery.status === "stopped" ? "neutral" : "info"} /></View>
-      <Text style={styles.meta}>建立：{channelTime(delivery.createdAt)}（香港時間）</Text>
+      <Text style={styles.meta}>建立：{channelTime(delivery.createdAt)}</Text>
       {delivery.reasonLabel ? <Text style={styles.meta}>狀態說明：{delivery.reasonLabel}</Text> : null}
       {delivery.status === "unknown" ? <Text style={styles.warning}>結果未知，請查核原投遞狀態；不要盲目重發。</Text> : null}
-      {"acknowledgedAt" in delivery && delivery.acknowledgedAt ? <Text style={styles.body}>收到本人回覆：{channelTime(delivery.acknowledgedAt)}（香港時間）</Text> : null}
+      {"acknowledgedAt" in delivery && delivery.acknowledgedAt ? <Text style={styles.body}>收到本人回覆：{channelTime(delivery.acknowledgedAt)}</Text> : null}
     </View>)}
   </View>;
 }
@@ -206,7 +206,7 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
               <AppStatusBadge label={binding.status === "active" ? "有效綁定" : binding.status === "revoked" ? "已撤銷" : "已過期"} tone={binding.status === "active" ? "success" : binding.status === "revoked" ? "neutral" : "warning"} />
               {model.currentBindingId === binding.id ? <AppStatusBadge label={`目前${deviceName}`} tone="info" /> : null}</View>
             <Text style={styles.meta}>提供者：{binding.providerLabel} · 版本 {binding.version}</Text>
-            <Text style={styles.meta}>到期：{binding.expiresAt ? `${channelTime(binding.expiresAt)}（香港時間）` : "未提供到期時間"}</Text>
+            <Text style={styles.meta}>到期：{binding.expiresAt ? `${channelTime(binding.expiresAt)}` : "未提供到期時間"}</Text>
             </MotionFeedback>
             {binding.status === "active" ? <>
               <View style={styles.actions}>
@@ -219,7 +219,7 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
         })}
         <Text style={styles.meta}>最近24小時一般測試餘額：{model.testsRemaining} 次。</Text>
         <Text style={styles.meta}>一般測試按最近 24 小時計算，最多 3 次；兩次測試須相隔至少 60 秒。</Text>
-        <Text style={cooldownReady ? styles.meta : styles.warning}>{model.nextTestAt ? `下一次可測試時間：${channelTime(model.nextTestAt)}（香港時間）${cooldownReady ? "，冷卻時間已過。" : "，冷卻期間不可再發測試。"}` : "目前沒有測試冷卻時間。"}</Text>
+        <Text style={cooldownReady ? styles.meta : styles.warning}>{model.nextTestAt ? `下一次可測試時間：${channelTime(model.nextTestAt)}${cooldownReady ? "，冷卻時間已過。" : "，冷卻期間不可再發測試。"}` : "目前沒有測試冷卻時間。"}</Text>
       </View>
       <RecentDeliveries deliveries={model.deliveries} emptyReady={ready && model.online} />
     </>}
@@ -282,7 +282,7 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
       {!existingBinding ? <AppButton label={production ? model.challenge ? "重新開始私人綁定" : "開始私人綁定" : model.challenge ? "預覽重新開始私人綁定" : "預覽開始私人綁定"} disabled={!canBegin} onPress={actions.stageBegin} /> : null}
       {model.challenge ? <View style={styles.entry}>
         <Text accessibilityRole="header" style={styles.title}>{challengeExpired ? "私人綁定步驟已過期" : "私人綁定步驟"}</Text>
-        <Text style={styles.meta}>版本 {model.challenge.version} · 到期：{channelTime(model.challenge.expiresAt)}（香港時間）</Text>
+        <Text style={styles.meta}>版本 {model.challenge.version} · 到期：{channelTime(model.challenge.expiresAt)}</Text>
         {challengeExpired ? <Text style={styles.warning}>這個步驟已過期，不能再確認候選帳號。請重新開始私人綁定。</Text> : <>
           <Text style={styles.body}>先在 Telegram 完成本人的綁定步驟，再回到此頁手動重新讀取；開始步驟尚未代表綁定完成。</Text>
           <View style={styles.actions}>

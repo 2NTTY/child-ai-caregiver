@@ -1,12 +1,13 @@
 import { useId } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
-import { useBackground } from "../../preview/BackgroundContext";
+import { defaultHomeBackground, useBackground } from "../../preview/BackgroundContext";
 import { useFirstScreenImage } from "../../startup/FirstScreenGate";
 import { useContainerSize } from "../useContainerSize";
 
-export function HomeBackground({ surface, protectFullWidth = false, fadeBottom = false, wideIllustration = false, fitIllustration = false, illustrationInset = 0 }: { surface: string; protectFullWidth?: boolean; fadeBottom?: boolean; wideIllustration?: boolean; fitIllustration?: boolean; illustrationInset?: number }) {
-  const { source, selected } = useBackground();
+export function HomeBackground({ surface, protectFullWidth = false, fadeBottom = false, wideIllustration = false, fitIllustration = false, illustrationInset = 0, useCustomImage = true }: { surface: string; protectFullWidth?: boolean; fadeBottom?: boolean; wideIllustration?: boolean; fitIllustration?: boolean; illustrationInset?: number; useCustomImage?: boolean }) {
+  const background = useBackground();
+  const selected = useCustomImage ? background.selected : null, source = selected ? background.source : defaultHomeBackground;
   const fade = useId();
   const bottom = `${fade}-bottom`;
   const wholeIllustration = fitIllustration && !selected;

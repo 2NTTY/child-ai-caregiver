@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { authorizedCareCaptureReview, careKindOptions, careReviewChronological, careReviewPrioritize, careReviewSourceGroups, careReviewSourceKey, careReviewMatchesQuery, careReviewIsImportantPending, careReviewDomainLabel, careReviewUsesCareOwner, careReviewMatchesTab, careReviewContentSummary, careCaptureReadiness, careImportantReviewReadiness, careReviewPageSize, careReviewPage, careReviewWindow, type CareReviewTab, type CareCaptureReview, type CareRecordsActions, type CareRecordsViewModel } from "../../care-view-model";
@@ -10,12 +10,13 @@ import { OperationNotice } from "../OperationNotice";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { useContainerWidth } from "../useContainerWidth";
 import { CareCaptureDetail } from "./CareCaptureDetail";
+import { FormDialog } from "../FormDialog";
 import { CareRecordForm } from "./CareRecordForm";
 import { CareRecordDetail } from "./CareRecordDetail";
 import { CareRecordDelete } from "./CareRecordDelete";
 
 export type CareReviewStatusFilter = "all" | "written" | "important_pending" | CareCaptureReview["reviewState"];
-type Props = { model: CareRecordsViewModel; actions: CareRecordsActions; searchText?: string; initialStatus?: CareReviewStatusFilter; olderOnly?: boolean; initialRecordId?: string; onOlderPending?: () => void; onHistory?: () => void };
+type Props = { model: CareRecordsViewModel; actions: CareRecordsActions; searchText?: string; initialStatus?: CareReviewStatusFilter; olderOnly?: boolean; initialRecordId?: string; onOlderPending?: () => void; onHistory?: () => void; manualCreateFocusRef?: RefObject<View | null> };
 
 // Both entry points consume the same scoped review owner, never a copied candidate store.
 export function CareWriteNotice({ model, actions }: { model: CareRecordsViewModel; actions: CareRecordsActions }) {
@@ -26,7 +27,7 @@ export function CareWriteNotice({ model, actions }: { model: CareRecordsViewMode
   </OperationNotice>;
 }
 export function CareReviewHistoryView(props: Props) { return <><CareWriteNotice model={props.model} actions={props.actions} /><CareReviewWorkspace {...props} history /></>; }
-export function CareReviewWorkspace({ model, actions, searchText, initialStatus = "all", olderOnly = false, initialRecordId, onOlderPending, onHistory, history = false }: Props & { history?: boolean }) {
+export function CareReviewWorkspace({ model, actions, searchText, initialStatus = "all", olderOnly = false, initialRecordId, onOlderPending, onHistory, manualCreateFocusRef, history = false }: Props & { history?: boolean }) {
   const review = authorizedCareCaptureReview(model), window = careReviewWindow(careReviewChronological(review.items));
   const [localQuery, setLocalQuery] = useState("");
   const [status, setStatus] = useState<CareReviewStatusFilter>(initialStatus);
@@ -37,6 +38,8 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [recordOpen, setRecordOpen] = useState(false);
   const tabsId = useId(), layout = useContainerWidth(), wide = layout.width >= 760;
+  const returnToCreate = useRef(false);
+  if (model.draft) returnToCreate.current = model.draft.mode === "create" && !model.draft.captureSnapshot;
   const panelRef = useRef<View>(null), listRef = useRef<View>(null), focusRequested = useRef(false);
   const closeFocusRequest = useRef<{ scopeKey: string | undefined; model: CareRecordsViewModel } | null>(null);
   const query = (searchText ?? localQuery).trim().toLocaleLowerCase("zh-HK");
@@ -58,7 +61,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
   // it to another tab so the user can finish reading the result before going back.
   const selected = review.items.find(item => item.id === selectedId) ?? null;
   const locked = ["saving", "unknown"].includes(model.operation.state), occupied = locked || !!model.draft || !!model.deletion;
-  const showPanel = !!selected || recordOpen && !!model.detail || !!model.draft || !!model.deletion;
+  const showPanel = !!selected || recordOpen && !!model.detail || !!model.deletion;
   const listVisible = wide || !showPanel;
   const canEdit = model.access === "editable" && model.list.state !== "loading";
   const ready = selected ? selected.reviewRequirement === "required" && selected.savedRecord ? careImportantReviewReadiness(selected, { childId: model.child.id, scopeKey: model.scopeKey ?? "", access: model.access, capabilities: review.capabilities, expectedVersion: selected.version, expectedSourceVersion: selected.sourceVersion, recordId: selected.savedRecord.id, recordVersion: selected.savedRecord.current.version, expectedScopeKey: model.scopeKey ?? "" }) : careCaptureReadiness(selected, { childId: model.child.id, access: model.access, capabilities: review.capabilities }) : null;
@@ -132,7 +135,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
       </View>
       {showPanel ? <View ref={panelRef} tabIndex={-1} style={[s.detailColumn, wide && s.detailDivider]} testID="care-review-detail-panel">
         {!model.draft && !model.deletion ? <AppButton label={wide ? "收起內容" : "返回記錄清單"} variant="quiet" density="compact" disabled={occupied} onPress={closeSelection} /> : null}
-        {model.deletion ? <CareRecordDelete model={model} actions={panelActions} /> : model.draft ? <CareRecordForm key={model.draft.key} model={model} actions={panelActions} /> : recordOpen && model.detail ? <CareRecordDetail detail={model.detail} actions={panelActions} canEdit={canEdit} online={model.online} /> : selected ? <CareCaptureDetail capture={selected} wide={wide && layout.width * 0.68 - spacing.lg * 2 - 1 >= 640} readiness={ready?.reason ?? ""} confirmLabel={model.submitLabel}
+        {model.deletion ? <CareRecordDelete model={model} actions={panelActions} /> : recordOpen && model.detail ? <CareRecordDetail detail={model.detail} actions={panelActions} canEdit={canEdit} online={model.online} /> : selected ? <CareCaptureDetail capture={selected} wide={wide && layout.width * 0.68 - spacing.lg * 2 - 1 >= 640} readiness={ready?.reason ?? ""} confirmLabel={model.submitLabel}
           canConfirm={selected.writeState === "not_saved" && !!ready?.allowed && !occupied && model.online} canConfirmImportant={selected.writeState === "saved" && !!ready?.allowed && !occupied && model.online}
           onConfirmImportant={actions.confirmImportantRecord && selected.savedRecord ? () => actions.confirmImportantRecord?.(selected.id, selected.version, selected.sourceVersion, selected.savedRecord!.id, selected.savedRecord!.current.version, model.scopeKey ?? "") : undefined} canEdit={canEdit && !occupied && (selected.writeState === "saved" || !!ready?.allowed)} canSkip={canEdit && !occupied && !!review.capabilities?.skip && careReviewUsesCareOwner(selected) && selected.reviewRequirement !== "required" && (!selected.operationValidity || selected.operationValidity.state === "active")}
           onConfirm={actions.confirmCapture ? () => actions.confirmCapture?.(selected.id, selected.version, selected.sourceVersion) : undefined}
@@ -142,6 +145,10 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
       </View> : null}
     </View>
     </ReviewContent>
+    <FormDialog formKey={model.draft?.key} visible={!!model.draft} scopeKey={model.scopeKey ?? model.child.id} title="記錄資料" returnFocusRef={returnToCreate.current && manualCreateFocusRef ? manualCreateFocusRef : listRef} fallbackFocusRef={showPanel ? panelRef : listRef} onClose={panelActions.closePanel}
+      recovery={<CareWriteNotice model={model} actions={actions} />}>
+      {model.draft ? <CareRecordForm key={model.draft.key} model={model} actions={panelActions} /> : null}
+    </FormDialog>
   </View>;
 }
 function ReviewContent({ history, tabsId, tab, children }: { history: boolean; tabsId: string; tab: CareReviewTab; children: ReactNode }) {

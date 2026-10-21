@@ -2,7 +2,6 @@ import { EmptyListCard } from "../components/EmptyListCard";
 import { useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { brand } from "../branding";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTextField } from "../components/ui";
 import { AppIcon } from "../components/AppIcon";
@@ -21,7 +20,7 @@ const steps: { title: string; description: string; action: string; destination: 
   { title: "查看及接續結果", description: "在對話得到回饋，也可在各頁查看同一份結果。", action: "查看照顧記錄", destination: "care", points: [
     { title: "核對重要事項", body: "對話會列清對象及將要修改的內容。待確認事項持續保留，不因關閉面板消失。" },
     { title: "待辦與準備單各有用途", body: "待辦提醒何時做甚麼；準備單整理到了那時怎麼做、要看甚麼。可以請助手修改同一份內容，用完歸檔後仍可找回。" },
-    { title: "結果未知先查原操作", body: "只有 Server 確認才算保存。逾時或斷線後先查原結果，不重做；手動更正是必要時的備援。" },
+    { title: "結果未知先查原操作", body: "收到保存確認才算完成。逾時或斷線後先查原結果，不重做；手動更正是必要時的備援。" },
   ] },
   { title: "按需要開啟提醒", description: "本人通知與資料控制可按需要設定，不阻擋日常對話。", action: "前往設定", destination: "settings", points: [
     { title: "通知需要本人授權", body: "瀏覽器通知或 Telegram 綁定由你操作。安靜時段、渠道與外發範圍分開核對；綁定不等於已發出提醒。" },
@@ -39,7 +38,7 @@ export default function GuideScreen() {
   const step = steps[currentStep];
   const narrow = layout.width < 720;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
-  return <PageFrame density="compact" title="使用引導" description="跟助手說，再查看結果；以下引導可隨時回來閱讀。" eyebrow={`${brand.name} · 開始使用`}>
+  return <PageFrame density="compact" title="說明">
     <View style={styles.intro}>
       <Text style={styles.introTitle}>{needsGuide ? "從你需要的一步開始" : "隨時重看使用方法"}</Text>
       <Text style={styles.body}>{user?.name} · {user?.email}</Text>
@@ -83,10 +82,7 @@ export default function GuideScreen() {
         </View>
       </View>
     </View>
-    <View style={styles.start}>
-      <View style={styles.startCopy}><Text accessibilityRole="header" style={styles.pointTitle}>已有孩子，便可以開始提問</Text><Text style={styles.body}>Agent 的回答應以獲授權的孩子資料和已確認內容為準。</Text></View>
-      <AppButton label="與 Agent 對話" onPress={() => actions.open("chat")} />
-    </View>
+
   </PageFrame>;
 }
 

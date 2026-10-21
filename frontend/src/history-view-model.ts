@@ -87,7 +87,7 @@ export function workResourceDestination(resource: WorkResource): { label: string
     care_record: { label: "照顧記錄", path: `/care?record=${encodeURIComponent(resource.id)}` },
     memory_fact: { label: "記憶", path: "/memory" }, private_note: { label: "私人指示", path: "/settings?section=assistant" },
     private_source: { label: "私人來源", path: "/sources" }, concern: { label: "成長關注", path: "/growth" },
-    family_document: { label: "準備單", path: "/summary?tab=preparation" }, receipt: { label: "操作結果", path: "/history?category=review" },
+    family_document: { label: "準備單", path: "/growth?tab=preparation" }, receipt: { label: "操作結果", path: "/history?category=review" },
   };
   return paths[resource.kind];
 }

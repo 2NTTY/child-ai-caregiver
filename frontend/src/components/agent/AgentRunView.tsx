@@ -35,7 +35,7 @@ const receiptDescriptions: Record<NonNullable<AgentProposalView["result"]>["kind
 };
 
 function timeLabel(value: string | null): string {
-  return value === null ? "未提供" : Number.isFinite(Date.parse(value)) ? `${agentTime(value)}（香港時間）` : "時間資料無效，請重新讀取";
+  return value === null ? "未提供" : Number.isFinite(Date.parse(value)) ? `${agentTime(value)}` : "時間資料無效，請重新讀取";
 }
 
 function StateNote({ children, tone = "neutral" }: { children: ReactNode; tone?: Tone }) {

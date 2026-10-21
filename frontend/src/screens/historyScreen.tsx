@@ -93,19 +93,19 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
       <AppButton label={current.sourceAction} variant="secondary" onPress={() => navigate(() => router.push(current.sourcePath))} />
     </View>;
 
-  return <PageFrame density="compact" title="歷史" description={notificationCategory ? "查看你各渠道的通知與聯絡投遞資料。" : `分類回看${childName}的過往資料，從原始來源查看詳情。`} scrollRef={scrollRef} scrollTestID="history-scroll"
+  return <PageFrame density="compact" title="歷史" description={notificationCategory ? undefined : `分類回看${childName}的過往資料，從原始來源查看詳情。`} scrollRef={scrollRef} scrollTestID="history-scroll"
     onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
       {compact ? <AppSelect<HistoryCategory> label="歷史分類" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))} onChange={category} />
         : <UnderlineTabs<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
       <View style={styles.sourceRow}>
-        <View style={styles.sourceCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text><Text style={styles.meta}>{notificationCategory ? "查閱本人各渠道的投遞資料，涵蓋帳戶及其他孩子" : current.description}{!growthCategory ? ` · 來源：${(notificationCategory ? "本人通知投遞資料" : current.sourceLabel)}` : null}</Text></View>
+        <View style={styles.sourceCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text><Text style={styles.meta}>{notificationCategory ? "本人通知，涵蓋帳戶及其他孩子" : current.description}{!growthCategory && !notificationCategory ? ` · 來源：${current.sourceLabel}` : null}</Text></View>
         {reviewCategory || careCategory ? <AppButton label="開啟記錄與核對" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/care"))} /> : null}
-        {taskCategory ? <AppButton label="開啟待辦" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/tasks"))} /> : null}
-        {preparationCategory ? <AppButton label="開啟準備單" variant="secondary" density="compact" onPress={() => navigate(() => router.push({ pathname: "/summary", params: { tab: "preparation" } }))} /> : null}
+        {taskCategory ? <AppButton label="開啟待辦" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/tasks"), "workspace")} /> : null}
+        {preparationCategory ? <AppButton label="開啟準備單" variant="secondary" density="compact" onPress={() => navigate(() => router.push({ pathname: "/growth", params: { tab: "preparation" } }))} /> : null}
         {growthCategory ? <View style={styles.sourceActions}>
           <AppButton label="查看持續關注" variant="secondary" density="compact" style={styles.sourceAction} onPress={() => navigate(() => router.push("/growth"))} />
-          <AppButton label="查看年度與季度檔案" variant="quiet" density="compact" style={styles.sourceAction} onPress={() => navigate(() => router.push("/growth?tab=archive"))} />
+          <AppButton label="查看年度與季度檔案" variant="quiet" density="compact" style={styles.sourceAction} onPress={() => navigate(() => router.push("/summary?tab=archive"))} />
         </View> : null}
       </View>
       {!careCategory && !showingCompactTaskDetail && !showingCompactPreparationDetail ? <View testID="history-filter-toolbar" style={styles.toolbar}>

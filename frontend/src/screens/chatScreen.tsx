@@ -5,11 +5,11 @@ import { AGENT_PROGRESS_LABELS } from '../../../src/shared/agent-feedback';
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "expo-router";
 import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type PressableStateCallbackType, type ScrollView as NativeScrollView } from "react-native";
-import { ActivityIndicator, Text } from "react-native-paper";
+import { Text } from "react-native-paper";
 import { AppButton, SectionCard } from "../components/ui";
 import { AppDialog } from "../components/AppDialog";
 import { AgentComposer } from "../components/agent/AgentComposer";
-import { ChatMessage } from "../components/chat/ChatMessage";
+import { ChatMessage, ChatProgressIndicator } from "../components/chat/ChatMessage";
 import { ChatTimeline, type ChatTimelineControls } from "../components/chat/ChatTimeline";
 import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatLayout, chatType } from "../components/chat/chat-presentation";
@@ -61,7 +61,7 @@ function ChatContents({ compact }: { compact: boolean }) {
     && chatWritesAllowed && !voiceUpload.busy && !fileUpload.busy && !voiceUpload.unknown && !fileUpload.unknown && (agentAttachments.length === 0 || agentAttachments.length === 1 && ["voice", "file"].includes(agentAttachments[0].kind)) && !!chat.loadedAt && phase === "draft" && (!!chatDraft.trim() || agentAttachments.some(v=>v.kind==="voice"||v.kind==="file")) && chatDraft.length <= 10_000;
   function send() {
     if (!canSend) return;
-    setFollowRequest(`send-${Date.now()}`); void sendChat();
+    setFollowRequest(`send-${Date.now()}`); return sendChat();
   }
   function restoreDetailsFocus() {
     const target = detailsTrigger.current as unknown as HTMLElement | null;
@@ -75,6 +75,11 @@ function ChatContents({ compact }: { compact: boolean }) {
     setDetailsOpen(false);
     navigate(() => router.push("/settings?section=assistant"), "workspace");
   }
+  const replyRunning = chat.busy === "reply" || chat.remoteReply?.status === "running";
+  const progressLabel = chat.busy === "save" ? "正在保存…"
+    : chat.busy === "reply" ? (chat.feedback ? AGENT_PROGRESS_LABELS[chat.feedback.phase] : "已保存，正在等候回覆…")
+      : chat.loading && chat.messages.length ? "正在讀取聊天…"
+        : chat.remoteReply?.status === "running" ? "原回覆仍在處理，毋須重新發送。" : null;
   const feedback = child ? <View style={styles.feedback}>
     {fileUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原檔；確認保存後才開始處理…</Text>:null}
     {fileUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{fileUpload.notice}</Text>:null}
@@ -84,17 +89,17 @@ function ChatContents({ compact }: { compact: boolean }) {
     {voiceUpload.unknown?<AppButton label="查核原錄音上傳" disabled={voiceUpload.busy||!chat.online} onPress={checkVoiceUpload}/>:null}
     {chat.available === false ? <Text style={styles.meta}>AI 暫未開放，已保存訊息可稍後再要求回覆。</Text> : null}
     {!chat.online ? <Text accessibilityRole="alert" style={styles.warning}>{chat.messages.length ? "目前離線，所示聊天是上次讀取的快照；草稿仍保留。" : "目前離線，草稿仍保留。"}</Text> : null}
-    {chat.loading && chat.messages.length || busy ? <View style={styles.statusRow}><ActivityIndicator size={14} color={chatColors.secondary} />
-      <Text accessibilityLiveRegion="polite" style={styles.meta}>{chat.busy === "save" ? "正在保存…" : chat.busy === "reply" ? (chat.feedback ? AGENT_PROGRESS_LABELS[chat.feedback.phase] : "已保存，正在等候回覆…") : "正在讀取聊天…"}</Text></View> : null}
-    {!busy && chat.remoteReply?.status === "running" ? <Text accessibilityLiveRegion="polite" style={styles.meta}>原訊息仍在處理，回覆會保存並同步到所有裝置，毋須重新發送。</Text> : null}
+    {progressLabel ? <View testID="chat-operation-status" style={styles.progressRow}>
+      <View style={styles.progressCopy}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.progressLabel}>{progressLabel}</Text></View>
+      {replyRunning ? <AppButton label="停止回覆" variant="quiet" density="compact" loading={chat.cancelling}
+        disabled={chat.cancelling || !chat.online} onPress={() => { void chatController.cancelReply(); }} /> : null}
+    </View> : null}
     {chat.busy === "reply" && chat.feedback?.cards.length ? <OfficialHelpCards ids={chat.feedback.cards} /> : null}
-    {chat.error ? <Text accessibilityRole="alert" style={styles.warning}>{chat.error}</Text> : null}
+    {chat.error ? <Text accessibilityRole="alert" style={styles.error}>{chat.error}</Text> : null}
     {draft?.notice && (phase === "save_unknown" || phase === "checked" || phase === "reply_failed" || phase === "draft" && !!chatDraft.trim()) ? <Text accessibilityRole="alert" style={styles.warning}>{draft.notice}</Text> : null}
-    {chat.replyError && chat.replyError !== draft?.notice ? <Text accessibilityRole="alert" style={styles.warning}>{chat.replyError}</Text> : null}
+    {chat.replyError && chat.replyError !== draft?.notice ? <Text accessibilityRole="alert" style={styles.error}>{chat.replyError}</Text> : null}
     {chat.error || phase === "save_unknown" || phase === "checked" ? <AppButton label={phase === "save_unknown" || phase === "checked" ? "重新讀取並查核原保存" : "重試讀取聊天"}
       variant="quiet" density="compact" loading={chat.loading} disabled={busy || chat.loading || !chat.online} onPress={() => { void chatController.reloadMessages(); }} /> : null}
-    {chat.busy === "reply" || chat.remoteReply?.status === "running" ? <AppButton label="停止回覆" variant="quiet" density="compact" loading={chat.cancelling}
-      disabled={chat.cancelling || !chat.online} onPress={() => { void chatController.cancelReply(); }} /> : null}
     {chat.cancelNotice ? <Text accessibilityLiveRegion="polite" style={styles.warning}>{chat.cancelNotice}</Text> : null}
     {phase === "checked" ? <View style={styles.statusRow}>
       {draft?.candidateMessageId ? <AppButton label="已核對，確認這則聊天已保存" variant="quiet" disabled={busy} onPress={() => chatController.confirmFoundMessage()} /> : null}
@@ -109,7 +114,7 @@ function ChatContents({ compact }: { compact: boolean }) {
       composerGuardId={composerGuardId} /> : null)}
   </View> : null;
   const empty = !child ? <SectionCard><Text style={styles.body}>先選擇孩子。</Text><AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>
-    : chat.loading ? <View style={styles.emptyState}><ActivityIndicator size={18} color={chatColors.secondary} /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></View>
+    : chat.loading ? <View style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></View>
       : chat.loadedAt && !chat.error && !busy && !agentAttachments.length && phase === "draft" ? <View testID="chat-empty-prompt" style={styles.emptyState}>
         <Text accessibilityRole="header" style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>今天想聊些甚麼？</Text></View> : null;
   return <>
@@ -142,18 +147,18 @@ function ChatContents({ compact }: { compact: boolean }) {
             {run && (run.status === "stopped" || run.status === "unknown") && run.stopReasonLabel && !message.text.startsWith("這次回覆未完成：")
               ? <Text accessibilityRole="alert" style={styles.warning}>這次回覆未完成：{run.stopReasonLabel}。</Text> : null}
           </>}
-          degraded={run?.retrievalMode === "keyword_degraded"} footer={<>
+          degraded={run?.retrievalMode === "keyword_degraded"} footer={message.agentRunId || pendingReply ? <>
             {message.agentRunId ? <ChatAction label="詳情" accessibilityLabel="查看這則回覆的來源與候選" compact={compact}
               disabled={!chat.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"}
               onPress={target => { detailsTrigger.current = target; selectAgentRun(message.agentRunId!); setDetailsOpen(true); }} /> : null}
             {pendingReply ? <ChatAction label={chat.replyingMessageId === message.id ? "正在等候回覆" : message.agentRunId ? "查核原回覆" : "取得回覆"}
               accessibilityLabel="要求這則已保存訊息的回覆" compact={compact} disabled={busy || !chat.online || chat.loading || !chatWritesAllowed}
               onPress={() => { void requestChatReply(message.id); }} /> : null}
-          </>} />;
+          </> : undefined} />;
       }} />
     <AgentComposer enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && phase === "draft"} compact={compact} draft={chatDraft}
       attachments={agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
-      suggestionLabel="建議問題" inputHint={agentAttachments.some(v=>v.kind==="voice") ? "按送出會保存錄音並交 AI 理解；背景補上的轉錄不會再次執行指令。" : agentAttachments.some(v=>v.kind==="file") ? "按送出會保存原檔，並讓助手按你的要求讀取及處理。" : agentAttachments.length ? "請在上方保存及核對照片；照片不會隨文字自動交模型或共享。" : undefined}
+      suggestionLabel="建議問題" suggestionsAvailable={!chat.messages.length && !!chat.loadedAt && !chat.loading && !chat.error} inputHint={agentAttachments.some(v=>v.kind==="voice") ? "按送出會保存錄音並交 AI 理解；背景補上的轉錄不會再次執行指令。" : agentAttachments.some(v=>v.kind==="file") ? "按送出會保存原檔，並讓助手按你的要求讀取及處理。" : agentAttachments.length ? "請在上方保存及核對照片；照片不會隨文字自動交模型或共享。" : undefined}
       onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
     <View style={styles.privacyFooter}><ChatAction label="AI 處理 · 僅使用獲授權資料" accessibilityLabel="查看 AI 資料處理說明"
       onPress={() => setPrivacyOpen(true)} subtle /></View>
@@ -184,7 +189,11 @@ const styles = StyleSheet.create({
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
+  error: { fontFamily: chatFont, color: colors.errorInk, ...chatType.tool },
   feedback: { gap: 10, minWidth: 0 }, statusRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 },
+  progressRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8, minWidth: 0 },
+  progressCopy: { flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0, flexShrink: 1 },
+  progressLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, flexShrink: 1 },
   earlier: { alignItems: "center" }, emptyState: { alignItems: "center", gap: 12, paddingVertical: 28 },
   emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "500", textAlign: "center" },
   compactEmptyTitle: { fontSize: 24, lineHeight: 34 },

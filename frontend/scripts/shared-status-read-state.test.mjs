@@ -90,7 +90,7 @@ function taskOwner() {
     async history() { state.historyReads++; return state.historyResult ?? { revisions: [], nextBeforeVersion: null }; },
     async reconcilePending() { state.checks++; return state.receipt; },
     hasPendingOnline() { return state.pending; }, resetOnline() { state.pending = false; } };
-  const env = { apiBaseUrl: "https://synthetic.invalid", userId: "user", childId: "child", childName: "Synthetic child", role: "owner", scopeKey: "scope", online: true,
+  const env = { owner: { fetcher: () => assert.fail("Synthetic API adapters must not fetch") }, apiBaseUrl: "https://synthetic.invalid", userId: "user", childId: "child", childName: "Synthetic child", role: "owner", scopeKey: "scope", online: true,
     current: () => state.active, canStartWrite: () => true, accessError() {}, invalidate() { state.invalidations++; },
     queryClient: { setQueryDefaults() {}, cancelQueries() {}, removeQueries() {}, fetchQuery({ queryFn }) { return queryFn({ signal: new AbortController().signal }); } } };
   const owner = harness("src/production/task-knowledge-tasks.ts", "useTaskKnowledgeTasks", [env], {
@@ -168,6 +168,20 @@ const home = { children: [{ id: "child", displayName: "Synthetic child" }], sele
   records: [], recordsLoad: "ready", operation: { state: "none", title: "", detail: "" },
   overview: { childId: "child", attention: { state: "ready", items: [] }, ongoing: { state: "ready", items: [] } } };
 const homeItem = { id: "task", title: "Synthetic task", detail: "", statusLabel: "待處理", action: { label: "查看事項", destination: "tasks" } };
+test("Home task summary uses all supplied items with natural height and keeps its empty state and destination", () => {
+  const opened = [], actions = { refresh() {}, open: target => opened.push(target) };
+  const items = Array.from({ length: 6 }, (_, index) => ({ ...homeItem, id: `task-${index}` }));
+  const model = { ...home, overview: { ...home.overview, attention: { state: "ready", items } } };
+  const view = harness("src/components/HomeFocus.tsx", "HomeActionSummary", [{ model, actions }]);
+  const tree = view.render();
+  assert.equal(byType(tree, "HomeOverviewItems")[0].props.items, items);
+  assert.equal(tree.props.style.height, undefined);
+  assert.equal(tree.props.style.maxHeight, undefined);
+  byType(tree, "TextLink")[0].props.onPress(); assert.deepEqual(opened, ["tasks"]);
+  const empty = view.render([{ model: home, actions }]);
+  assert.equal(byType(empty, "ReadStateNotice")[0].props.state, "empty");
+  assert.equal(byType(empty, "ReadStateNotice")[0].props.message, "目前沒有待辦事項");
+});
 test("partial and stale Home tasks stay explicit, and unavailable assistant reminders only navigate", () => {
   const actions = { refresh() {}, open() {} };
   const partial = { ...home, overview: { ...home.overview, attention: { state: "ready", items: [homeItem], detail: "尚有未載入的事項" } } };
@@ -202,6 +216,7 @@ test("Home refresh reaches the scoped task reader once and never reuses another 
     "./ProductionProvider": { useProduction: () => ({ scopeKey: "scope", model: home, actions: { refresh() { counts.production++; } } }) },
     "../workspaces/CareWorkspace": { useCareWorkspace: () => null }, "../workspaces/ProfileWorkspace": { useProfileWorkspace: () => null },
     "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
+    "../workspaces/PreparationWorkspace": { usePreparationWorkspace: () => null },
     "../workspaces/GrowthWorkspace": { useGrowthWorkspace: () => ({ scopeKey: "scope", model: { access: "read_only", load: "error", online: true, page: null }, actions: { refresh() { counts.growth++; } } }) },
     "../child-overview-view-model": { childProfileAgeLabel() {} }, "../care-view-model": { careKindOptions: [] },
   };
@@ -253,6 +268,7 @@ test("task deep-link navigation stays open for the same id and opens another id"
     "expo-router": { useLocalSearchParams: () => params, useRouter: () => ({ push() {} }) },
     "../production/ProductionProvider": { useProduction: () => ({ model: {}, actions: {}, openAgentDraft() {}, chatDraft: "", setChatDraft() {} }) },
     "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
+    "../workspaces/PreparationWorkspace": { usePreparationWorkspace: () => null },
     "../components/PageFrame": { PageFrame: "PageFrame" }, "../components/tasks/TasksView": { TasksView: "TasksView" },
     "../preview/PreviewNavigationGuard": { usePreviewNavigation: () => callback => callback() },
   });
@@ -268,9 +284,10 @@ test("Growth task navigation uses idempotent open selection", async () => {
   workspace.actions.selectTask(task.id); workspace = owner.render();
   const destinations = [];
   const growth = harness("src/screens/GrowthScreen.tsx", "GrowthScreen", [], {
-    "expo-router": { useLocalSearchParams: () => ({}), useRouter: () => ({ push: value => destinations.push(value) }) },
+    "expo-router": { usePathname: () => "/growth", useLocalSearchParams: () => ({}), useRouter: () => ({ push: value => destinations.push(value) }) },
     "../production/ProductionProvider": { useProduction: () => ({ model: { children: [{ id: "child" }], selectedChildId: "child" }, actions: {} }) },
     "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
+    "../workspaces/PreparationWorkspace": { usePreparationWorkspace: () => null },
     "../workspaces/GrowthWorkspace": { useGrowthWorkspace: () => ({ scopeKey: "scope", model: {}, actions: {} }) },
     "../production/TaskKnowledgeDomains": { useProductionFamilyDocuments: () => null },
     "../production/FamilyReportControls": { FamilyReportControls: "FamilyReportControls" },
@@ -384,4 +401,25 @@ test("reduced motion uses static loading feedback without mounting Paper's rotat
   assert.equal(byType(tree, "ActivityIndicator").length, 0);
   assert.ok(nodes(tree).some(node => node.props?.testID === "read-loading-static"));
   assert.deepEqual(visibleText(tree), ["正在讀取…"]); notice.unmount();
+});
+
+
+test("Home task summary and focus use minute precision in the occurrence timezone without a suffix", () => {
+  const item = { ...task, occurrence: { ...task.occurrence, dueAt: "2026-10-21T16:05:37.000Z" } };
+  const workspace = { scopeKey: "scope", model: { readState: "ready", reading: false, online: true, access: "editable", items: [item] } };
+  const view = harness("src/production/useProductionHome.ts", "useProductionHome", [], {
+    "./ProductionProvider": { useProduction: () => ({ scopeKey: "scope", model: home, actions: {} }) },
+    "../workspaces/CareWorkspace": { useCareWorkspace: () => null },
+    "../workspaces/ProfileWorkspace": { useProfileWorkspace: () => null },
+    "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
+    "../workspaces/GrowthWorkspace": { useGrowthWorkspace: () => null },
+  });
+  for (const [zone, day, clock] of [["Asia/Hong_Kong", "22/10/2026", "00:05"], ["America/New_York", "21/10/2026", "12:05"]]) {
+    item.occurrence.timeZone = zone;
+    const value = view.render().model, detail = value.overview.attention.items[0].detail;
+    assert.ok(detail.includes(day)); assert.ok(detail.includes(clock));
+    assert.doesNotMatch(detail, /:37|香港|Asia\/|America\/|UTC|GMT/);
+    assert.equal(value.focus.detail, detail, "the summary and home focus must use the same display projection");
+    assert.equal(item.occurrence.dueAt, "2026-10-21T16:05:37.000Z");
+  }
 });

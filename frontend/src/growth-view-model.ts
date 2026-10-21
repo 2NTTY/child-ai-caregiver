@@ -90,6 +90,7 @@ export type GrowthViewModel = {
   lastConcernChange?: GrowthConcernChange | null;
 };
 export type GrowthActions = {
+  discardLocalDraft?(key: string): void;
   refresh():void;markDirty(key:string):void;askDiscard():void;discardDrafts():void;setOriginalConsent(value:boolean):void;retryOriginal():void;
   decide(item:GrowthAttention,input:GrowthDecision):void;updateTopic(topic:GrowthTopic,input:GrowthTopicDecision):void;
   archiveConcern(id: string, expectedVersion: number, authorityVersion: string): void;
@@ -135,7 +136,7 @@ export function growthArchivedConcerns(model: GrowthViewModel, searchText = "", 
   });
 }
 export const growthActionable=(item:GrowthAttention)=>item.sourceAvailable&&(item.state==="proposed"||item.state==="snoozed");
-export const growthTime=(value:string)=>new Date(value).toLocaleString("zh-HK",{timeZone:"Asia/Hong_Kong",hour12:false});
+export const growthTime=(value:string)=>new Date(value).toLocaleString("zh-HK",{timeZone:"Asia/Hong_Kong",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
 export function growthConcernFollowUpLabel(concern: GrowthConcern): string | null {
   if (!concern.followUp) return null;
   const labels = { pending: "已安排", queued: "等候處理", completed: "已完成", stopped: "已停止", unknown: "結果待核對", cancelled: "已取消" };

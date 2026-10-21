@@ -3,6 +3,23 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## 前端精簡與接線修補（2026-10-21；同一 draft PR 候選，未推送）
+
+基線 `7b828dcbe967c92556673b97733c281d29db4386`，分支 `dot/frontend-simplify-20261021`。使用者要求一個 PR、先不合併；原生 Astra 實作及獨立審核。只改 `frontend/**`，沒有正式資料、真模型、API／權限變更、部署或 OTA。
+
+- **已實作：**孩子切換去掉年齡／地區／過敏顯示；保留檔案狀態。首頁移除兩個右下快捷入口及底部重複標語、待辦摘要自然延伸；側欄移除照顧上下文分頁。導航短名統一，「全部功能」為明確四字例外並列現有一般入口。
+- **相關頁面：**待辦完成文案／詳情去重；登入欄位內顯示密碼、保留找回／驗證與必要條件，移除登入說明／死返回首頁／底部標語。通知不顯示技術嘗試時間或診斷入口，保留必要時間、真結果與部分載入，尚非內容收件箱。
+- **內容重組：**`/growth` 關注鏈＋準備單、`/summary` 概況＋成長檔案；手機原成長格為關注，仍五個入口。歷史／相容 deep link／readiness 同步，原 authority-gated archive 與 combined refresh 保留，沒有第二資料 owner。
+- **修補：**純 GET busy 不再誤作 pending write；真草稿、unknown、原 opId 及 scope 切換保護保留。HomeWelcome 等首次資料 ready＋可見且經 paint 邊界才開始既有閱讀時間；首次 scope 初始化不提前消耗，已展示後切頁／孩子不重播。
+- **閱讀及操作：**普通手動資料表單收進共用響應式 FormDialog，原 owner／確認／恢復保持同一接線；Profile 直接閱讀已確認資料、編輯及新增孩子用彈窗，移除重複孩子列。Care 長 Agent 結果用獨立閱讀窗，原候選／來源／確認不截斷，聊天答案不隱藏。Documents／Growth 精確 local-draft 保護不由無關 pending 冒領。
+- **外觀及設定：**首頁自訂背景本機持久、服務／本人隔離、登出立即遮罩；原 native 依賴不變。設定八個 key 保留，通知偏好及渠道歸同區；顯示名稱無 API，改為正式唯讀，不保留假保存。聊天 16／27、760 閱讀欄、輕量使用者底色與統一輸入 dock；正常時間到分鐘不逐條附時區，實際換算不改。
+- **接口界線：**三個未接通需求見 [接口提案](ATTENTION_API_HANDOFF.md)。禁止前端跨 owner 湊業務總數／假正文／正式 mock fallback；主動機制暫緩。這份提案不是已完成 backend 或正式 wire schema。
+- **檢查：**合成元件／真 hooks、guard、owner 及安裝版 RN Web SSR 定向測試已執行；尺寸分支涵蓋 web/android 320／390／768／1024／1440，但不等於像素／真機驗收。完整命令、各次成敗及界線列本輪 [checks](verification/frontend-simplify-2026-10-21/checks.json)。frontend typecheck 仍有基線 ContactConsentCard 的兩項型別錯誤，已用 HEAD overlay 核實同錯，不在本包修通知授權。
+- **獨立驗收：**snapshot03 真雲端 Chrome 的 320 詳情、390 側欄、眼睛圖示三項缺陷已修，snapshot04 同界線複驗通過；背景選圖／刷新持久／恢復／延遲登出遮罩／A-B 身份隔離通過。代表尺寸 320／390／768／1024／1440 分版本記錄，不冒稱全頁全狀態矩陣。snapshot06 的來源草稿 context 遺失、欄位名稱／照片時間等已在 snapshot07 真表單複驗修復，聊天鍵盤回焦／閱讀不搶焦亦通過；Care 新增回焦在 snapshot08 通過；Tasks 已確認的 after-close GET 停用按鈕競態，改為一次回穩定待辦 heading，在 snapshot09 首次快速／穩定頁關閉及 Tab 延續通過。首頁摘要時間漏點亦已在 snapshot09 複驗分鐘／無時區後綴。
+- **唯一下一步：**snapshot09 穩定 export 及最後有界雲端 browser 複驗已通過；完成精簡證據末核後，由主對話核准推送／建立同一 draft PR；不 ready、不 merge、不 auto-merge、不發布預覽。其他新機制待後續，不擴成本包 backend 工作。
+
+下方是較早批次的完整歷史；其「當前／待交付」不代表本輪狀態，亦不重用舊 browser 或 Sites 證據作本候選通過。
+
 ## QA：七修補 v70 定向驗收與 Family 可見回焦收尾（原 20 檔，v71 已發布、有界 browser 已核、20檔待交付）
 
 2026-10-11 UTC。固定 master `d96e34bef19d34911ce3bcc285e0b1c3d21935d6`；最後獲提供的 GitHub 觀察為 07:18 UTC、open PR 0，不當持續即時狀態。本包仍為 10 產品＋7 測試＋原 3 文件共 20 檔。相對原 Settings freeze，只替換 FamilyView 及既有 Family test；另 15 份碼測逐 byte 不變。所有原 55 checks 整值、PLAN 及英文 PR 歷史與原紅保留，不新增權威或 GitHub 待辦文件。

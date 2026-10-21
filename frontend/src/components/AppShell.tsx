@@ -14,7 +14,7 @@ import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
 import { RecordsNavButton } from "./navigation/RecordsNavButton";
 import { MobileNavSelection } from "./navigation/MobileNavSelection";
 import { desktopNavigationGroups, navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
-import { RightRailContent, type RailTab } from "./RightRailContent";
+import { RightRailContent } from "./RightRailContent";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
 import { CompactHeaderIdentity } from "./CompactHeaderIdentity";
@@ -22,7 +22,6 @@ import { NotificationBell } from "./NotificationBell";
 import { ToolbarIconButton } from "./ToolbarIconButton";
 import { chineseFont, colors, mobileIcons, mobileLayout, mobileType, radius, spacing, typeScale } from "../theme";
 
-import { useCareWorkspace } from "../workspaces/CareWorkspace";
 import { useTasksWorkspace } from "../workspaces/TasksWorkspace";
 import { combineStartupReadiness, startupReadState, visibleRailStartupReadiness, visibleRailStartupRequirements } from "../startup/dataReadiness";
 import { useProductionSwitchReadiness } from "../production/ProductionFirstScreenGate";
@@ -39,25 +38,23 @@ function NavItem({ item, active, compact = false }: { item: NavigationItem; acti
   >
     {compact && active ? <MobileNavSelection /> : null}
     <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 21} color={active ? colors.deepTeal : colors.muted} />
-    <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
+    <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{item.short}</Text>
   </Pressable></PreviewLink>;
 }
 
-export function RightRail({ model, actions, home = false, contextPath = "/", overlay = false, onClose, selectedTab, onTabChange }: {
+export function RightRail({ model, actions, contextPath = "/", overlay = false, onClose }: {
   model: HomeViewModel;
   actions: HomeActions;
-  home?: boolean;
   contextPath?: string;
   overlay?: boolean;
   onClose?: () => void;
-  selectedTab?: RailTab; onTabChange?: (tab: RailTab) => void;
 }) {
   return <View testID="context-rail" style={[styles.rail, overlay && styles.railFill]}>
     <View style={styles.railHeader}>
       <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>照顧資訊</Text></View>
       {onClose ? <ToolbarIconButton icon="close" label="關閉資訊側欄" onPress={onClose} /> : null}
     </View>
-    <RightRailContent model={model} actions={actions} home={home} contextPath={contextPath} selectedTab={selectedTab} onTabChange={onTabChange} />
+    <RightRailContent model={model} actions={actions} contextPath={contextPath} />
   </View>;
 }
 
@@ -70,9 +67,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const tiny = width < 390;
   const wide = !compact;
   const { model, actions, notice, dismissNotice, scopeKey, identityKey } = useProduction();
-  const [railTab, setRailTab] = useState<RailTab>("attention");
-  const railCare = useCareWorkspace(), railTasks = useTasksWorkspace();
-  const railProps = { model, actions, home: pathname === "/", contextPath: pathname, selectedTab: railTab, onTabChange: setRailTab };
+  const railTasks = useTasksWorkspace();
+  const railProps = { model, actions, contextPath: pathname };
   // The docked context rail is shell state, not a separate choice for every route.
   const [railOpen, setRailOpen] = useState(false);
   const shell = useRef<View>(null);
@@ -98,13 +94,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   const sameRailContext = railContext.current.path === pathname && railContext.current.scope === motionScope;
   const overlayOpen = railModal && !wide && sameRailContext;
   const railExpanded = wide ? railOpen : overlayOpen;
-  const railRequirements = visibleRailStartupRequirements(railExpanded, railTab, pathname === "/");
-  const railReadiness = visibleRailStartupReadiness(railExpanded, railTab, {
-    care: startupReadState(railCare?.scopeKey === scopeKey ? railCare.model.list.state : undefined),
+  const railRequirements = visibleRailStartupRequirements(railExpanded);
+  const railReadiness = visibleRailStartupReadiness(railExpanded, {
     tasks: startupReadState(railTasks?.scopeKey === scopeKey ? railTasks.model.access === "lost" ? "error" : railTasks.model.readState : undefined),
-  }, pathname === "/");
+  });
   const screenReadiness = combineStartupReadiness([switchReadiness.state, railReadiness]);
-  const screenReadinessKey = `${switchReadiness.key}:rail:${railExpanded ? railTab : "closed"}`;
+  const screenReadinessKey = `${switchReadiness.key}:rail:${railExpanded ? "attention" : "closed"}`;
   useEffect(() => { setRailModal(false); }, [motionScope]);
 
   return <View ref={shell} style={styles.root}>
@@ -152,7 +147,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {(["home", "chat", "tasks", "growth"] as const).map(key => navigationItems[key]).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
         <RecordsNavButton active={active("/care") || active("/photos") || active("/more") || active("/history")} scopeKey={motionScope} />
       </View> : null}
-      <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}:${wide ? "dock" : "overlay"}`} label="照顧上下文" onRequestClose={closeRail}
+      <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}:${wide ? "dock" : "overlay"}`} label="照顧資訊側欄" onRequestClose={closeRail}
         backgroundRef={shell} returnFocusRef={railAnchor} restoreFocusOnClose={sameRailContext}>
         <SafeAreaView testID="context-drawer" style={styles.drawerContent}><RightRail {...railProps} overlay onClose={closeRail} /></SafeAreaView>
       </MotionDrawerOverlay>

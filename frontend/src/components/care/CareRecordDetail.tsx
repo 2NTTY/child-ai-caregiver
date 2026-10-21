@@ -24,7 +24,6 @@ export function CareRevisionContent({ revision, createdAtLabel }: { revision: Ca
   return <View style={styles.summary}><CareValueSummary values={revision.values} />
     <View style={styles.metadata}>
       <Text style={styles.meta}>時間精度：{revision.eventTimePrecision === "exact" ? "精確" : revision.eventTimePrecision === "approximate" ? "約數" : "未知"}</Text>
-      <Text style={styles.meta}>時區：{revision.timeZoneLabel}</Text>
       <Text style={styles.meta}>確認人：{revision.confirmedByLabel}</Text>
       <Text style={styles.meta}>確認時間：{revision.confirmedAtLabel}</Text>
       <Text style={styles.meta}>版本：{revision.version}</Text>

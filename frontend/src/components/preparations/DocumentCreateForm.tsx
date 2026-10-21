@@ -3,6 +3,7 @@ import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { documentRequestSchema, type DocumentRequest } from "../../../../src/shared/family-documents";
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import type { WriteOperationView } from "../../view-model";
 import { preparationPurposes } from "../../preparation-view-model";
 import { AppDateField } from "../DateTimeFields";
@@ -13,8 +14,8 @@ import { chineseFont, colors, readingType, spacing } from "../../theme";
 
 type Fields = { title: string; purpose: DocumentRequest["purpose"]; from: string; to: string; eventDate: string; reportMode: "fixed" | "living" };
 export type DocumentFormOwner = {
-  authorityVersion: string; locked: boolean; dirty: boolean; epoch: number; operation?: WriteOperationView;
-  createDocument(request: DocumentRequest): void; markDraft(): void; discardDraft(): void;
+  authorityVersion: string; locked: boolean; dirty: boolean; epoch: number; operation?: WriteOperationView; retainedDraftId?: string | null;
+  createDocument(request: DocumentRequest, draftId?: string): void; markDraft(): void; discardDraft(): void;
 };
 export function DocumentCreateForm({ owner, kind, purpose = "appointment", allowFamily = true }: { owner: DocumentFormOwner; kind: DocumentRequest["kind"]; purpose?: DocumentRequest["purpose"]; allowFamily?: boolean }) {
   const id = useId(), [basis, setBasis] = useState<string | null>(null), [shared, setShared] = useState(false);
@@ -22,6 +23,9 @@ export function DocumentCreateForm({ owner, kind, purpose = "appointment", allow
   const { control, handleSubmit, reset, setError, setFocus, watch, formState: { errors } } = useForm<Fields>({
     defaultValues: { title: "", purpose, from: "", to: "", eventDate: "", reportMode: "fixed" },
   });
+  // Form fields live here, not in the retained document owner. Only a submitted
+  // operation's frozen payload may survive workspace navigation without discarding.
+  usePreviewLeaveGuard(basis !== null && owner.dirty && owner.retainedDraftId !== id);
   const stale = basis !== null && basis !== owner.authorityVersion, disabled = owner.locked || stale;
   const labels: Record<keyof Fields, string> = { title: "文件名稱", purpose: "用途", from: "來源期間開始日", to: "來源期間結束日", eventDate: "使用日期（可不填）", reportMode: "更新方式" };
   const living = kind === "growth_report" && watch("reportMode") === "living";
@@ -43,7 +47,7 @@ export function DocumentCreateForm({ owner, kind, purpose = "appointment", allow
       }
       return;
     }
-    owner.createDocument(parsed.data);
+    owner.createDocument(parsed.data, id);
   });
   return <View style={s.stack} testID={`document-create-${kind}`}>
     <Text style={s.meta}>需要時可直接按已共享的孩子資料整理文件。這裏不會使用私人對話正文，亦不會把整理結果當成新事實。</Text>

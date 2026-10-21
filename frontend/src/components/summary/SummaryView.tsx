@@ -45,7 +45,7 @@ export function SummaryView({model, actions, onRecord, onTask, onAgent, previewT
   const currentDraftStatus = draftStatus?.scopeKey === model.scopeKey && draftStatus.formEpoch === model.formEpoch ? draftStatus : null;
   const queryChanged = !!page && !sameSummaryPeriod(page.period, model.query);
   return <PageFrame density="compact" title={recoveryMode ? `${model.childName}的舊共享準備與原操作查核` : `${model.childName}的照顧摘要`} description={recoveryMode ? "查看舊共享準備、來源與原操作結果。" : "回看已確認的照顧資料與近期觀察。"}>
-    {recoveryMode && onReturn ? <AppButton label="返回孩子概況與準備" variant="secondary" onPress={onReturn} /> : null}
+    {recoveryMode && onReturn ? <AppButton label="返回成長" variant="secondary" onPress={onReturn} /> : null}
     <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={model.notice} urgent={model.operation === 'failed'} />
     <StatusAnnouncement eventKey={model.access} message={model.access === 'lost' ? '已無權存取；舊資料及未提交內容已清除。' : ''} urgent={model.access === 'lost'} />
     <View style={s.periodToolbar}>

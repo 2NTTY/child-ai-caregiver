@@ -54,7 +54,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
   const careKey = ["production", env.scopeKey, "care"] as const;
   const profileKey = ["production", env.scopeKey, "profile"] as const;
   const [care, setCare] = useState<CareRecordsViewModel>(() => ({ child: { id: childId, name: env.childName, summary: "" },
-    scopeKey: env.scopeKey, access: editable ? "editable" : "read_only", online: env.online, dataLabel: "Server 已保存照護記錄",
+    scopeKey: env.scopeKey, access: editable ? "editable" : "read_only", online: env.online, dataLabel: "已保存照護記錄",
     list: { state: "loading", records: [], activeQuery: "", activeKind: "all", scanned: 0, hasMore: false, page: 1, hasPrevious: false, message: null },
     detail: null, draft: null, deletion: null, operation: careOperation(), submitLabel: "我已核對，確認家庭共享", checkLabel: "查核原操作" }));
   const [profile, setProfile] = useState<ProfileViewModel>(() => ({ child: { id: childId, name: env.childName }, access: editable ? "editable" : "read_only",
@@ -165,13 +165,13 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       setCare(previous => ({ ...previous, draft: null, deletion: null,
         ...(value.kind === "delete" ? { list: { ...previous.list, records: previous.list.records.filter(item => item.id !== value.recordId) } } : {}),
         detail: saved ? { record: careRecordView(saved, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : null,
-        operation: { state: "saved", kind: value.kind === "delete" ? "delete" : "review", message: value.kind === "delete" ? "Server 已確認永久刪除記錄及歷史。" : "Server 已確認家庭共享保存。",
+        operation: { state: "saved", kind: value.kind === "delete" ? "delete" : "review", message: value.kind === "delete" ? "已永久刪除記錄及歷史。" : "已保存家庭共享記錄。",
           reference: value.receipt?.operation.opId ?? null, latest: null } }));
     } else {
       if (value.kind === "delete") env.queryClient.removeQueries({ queryKey: [...profileKey, "history"] });
       if (savedProfile) publishProfile(savedProfile, true);
       setProfileDirty(false); setProfile(previous => ({ ...previous, intent: null, reviewedValues: null,
-        operation: { state: "saved", message: value.kind === "delete" ? "Server 已確認永久刪除檔案及全部歷史。" : "Server 已確認家庭共享檔案。", reference: value.receipt?.operation.opId ?? null } }));
+        operation: { state: "saved", message: value.kind === "delete" ? "已永久刪除檔案及全部歷史。" : "已保存家庭共享檔案。", reference: value.receipt?.operation.opId ?? null } }));
     }
     envRef.current.invalidate();
   }
@@ -201,7 +201,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       if (value.confirmed || error instanceof CareApiError && (error.confirmed || error.status === 0 || error.status >= 500
         || error.status === 409 && error.onlineCode !== "version_conflict")) {
         value.confirmed ||= error instanceof CareApiError && error.confirmed;
-        unknown(value, value.confirmed ? "Server 已確認原操作；請重新讀取結果，不能重送。" : "未能確認原操作結果；保留原內容，請先查核原操作。");
+        unknown(value, value.confirmed ? "原操作已確認；請重新讀取結果，不能重送。" : "未能確認原操作結果；保留原內容，請先查核原操作。");
       } else {
         api.resetOnline?.();
         attempt.current = null; setPending(false);
@@ -307,6 +307,12 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       setProfileDirty(true); setProfile(previous => ({ ...previous, reviewedValues: { ...values }, intent: "save", operation: { state: "needs_confirmation", message: "請核對原值及家庭共享範圍。", reference: null } })); },
     editDraft() { if (attempt.current) return; setProfileDirty(true); setProfile(previous => ({ ...previous, reviewedValues: null, intent: null, operation: profileOperation() })); },
     cancelReview() { if (!attempt.current) setProfile(previous => ({ ...previous, reviewedValues: null, intent: null, operation: profileOperation() })); },
+    discardDraft() {
+      if (!current() || attempt.current) return;
+      setProfileDirty(false); setProfile(previous => ({ ...previous, basis: previous.current, latest: null,
+        initialValues: profileFormFromData(previous.current?.data ?? null), formKey: previous.formKey + 1,
+        reviewedValues: null, intent: null, operation: profileOperation() }));
+    },
     submitReviewed() { const value = profileRef.current; if (!canWrite() || value.reading || value.needsRefresh || value.operation.state !== "needs_confirmation" || !value.intent || value.intent === "save" && !value.reviewedValues) return;
       void submit({ domain: "profile", kind: value.intent, version: value.basis?.version ?? 0,
         data: value.reviewedValues ? profileDataFromForm(value.reviewedValues) : null, reason: value.reviewedValues?.reason ?? "", confirmed: false, retry: false, receipt: null }); },
@@ -326,7 +332,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     recovery: { pending, profileRetryAvailable: attempt.current?.domain === "profile" && attempt.current.retry && !attempt.current.confirmed,
       checkProfile: () => { void checkOriginal("profile"); }, retryProfile: () => { const value = attempt.current; if (value?.domain === "profile") void submit(value, true); } },
     care: { scopeKey: env.scopeKey, model: careModel, actions: careActions },
-    profile: { scopeKey: env.scopeKey, model: profileModel, actions: profileActions, dataLabel: "Server 已確認孩子檔案",
+    profile: { scopeKey: env.scopeKey, model: profileModel, actions: profileActions, dataLabel: "已確認孩子檔案",
       measurements: { scopeKey: env.scopeKey, childId, state: "unavailable", height: null, weight: null },
       profileSource: { scopeKey: env.scopeKey, childId, state: profile.current && !profile.needsRefresh ? "available" : "unavailable" } },
   }); });

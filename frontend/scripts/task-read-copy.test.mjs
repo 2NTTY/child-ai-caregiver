@@ -45,6 +45,12 @@ function nodes(value) {
 }
 const named = (tree, type) => nodes(tree).filter(node => node.type === type);
 
+test('completed tab uses concise copy without changing its domain key', () => {
+  const state = renderTasks('ready');
+  const completed = named(state.tree, 'UnderlineTabs')[0].props.items.find(item => item.key === 'completed');
+  assert.deepEqual(completed, { key: 'completed', label: '已完成' });
+});
+
 test('initial task read failure stays an error, hides unknown counts and offers the existing read retry', () => {
   const state = renderTasks('error', { items: [] });
   const notice = named(state.tree, 'ReadStateNotice')[0];
@@ -113,7 +119,7 @@ test('filtered-empty, partial-loaded and completed states keep their distinct me
 
   const completed = renderTasks('ready', { items: [], tab: 'completed' });
   const completedCard = named(completed.tree, 'EmptyListCard').find(node => node.props.testID === 'tasks-empty-card');
-  assert.equal(completedCard.props.title, '暫無已回報完成的事項');
+  assert.equal(completedCard.props.title, '暫無已完成的事項');
   assert.equal(named(completedCard, 'AppButton').length, 0);
   assert.equal(named(completed.tree, 'MotionList').length, 0);
   assert.equal(named(completed.tree, 'Text').some(node => JSON.stringify(node.props.children).includes('只顯示最近')), false);
@@ -176,7 +182,7 @@ test('a successful empty mobile list cannot leave an expanded calendar without i
 test('completed empty pages qualify their loaded window until the remaining tasks are read', () => {
   const partial = renderTasks('ready', { items: [], tab: 'completed', hasMoreTasks: true });
   const card = named(partial.tree, 'EmptyListCard').find(node => node.props.testID === 'tasks-empty-card');
-  assert.equal(card.props.title, '已載入的事項中暫無已回報完成的事項');
+  assert.equal(card.props.title, '已載入的事項中暫無已完成的事項');
   assert.ok(named(partial.tree, 'AppButton').some(node => node.props.label === '載入更多事項'));
 });
 

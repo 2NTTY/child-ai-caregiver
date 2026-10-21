@@ -16,7 +16,7 @@ function load(relative, mocks = {}) {
   const module = { exports: {} };
   new Function('require', 'module', 'exports', outputText)(name => {
     if (name in mocks) return mocks[name];
-    if (name === 'react') return { useState: value => [value, () => {}], useRef: value => ({ current: value }), useId: () => 'disclosure', useEffect() {} };
+    if (name === 'react') return { useState: value => [value, () => {}], useRef: value => ({ current: value }), useId: () => 'disclosure', useEffect() {}, useLayoutEffect() {} };
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx, Fragment: 'Fragment' };
     if (name === 'react-native') return { View: 'View', Pressable: 'Pressable', StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text: 'Text' };
@@ -78,7 +78,7 @@ test('existing concerns and pending suggestion tools remain available only in th
   assert.equal(named(tree, 'GrowthConcernTimeline')[0].props.concern.id, 'concern-1');
   const panels = named(tree, 'AppTabPanel');
   assert.equal(named(panels.find(node => node.props.tabKey === 'concerns'), 'CandidateTools').length, 1);
-  assert.equal(named(panels.find(node => node.props.tabKey === 'archive'), 'CandidateTools').length, 0);
+  assert.equal(named(panels.find(node => node.props.tabKey === 'preparation'), 'CandidateTools').length, 0);
 });
 
 test('manual concern entry keeps its existing collapsed disclosure and permission checks', () => {
@@ -87,8 +87,8 @@ test('manual concern entry keeps its existing collapsed disclosure and permissio
   const props = { model: model(), actions, concern: null };
   const entry = GrowthConcernManualFallback(props);
   assert.equal(entry.type, 'SummaryDisclosure');
-  assert.equal(entry.props.label, '手動新增關注');
-  assert.equal(GrowthConcernManualFallback({ ...props, concern: { id: 'concern-1' } }).props.label, '手動管理關注');
+  assert.equal(entry.props.label, '新增關注');
+  assert.equal(GrowthConcernManualFallback({ ...props, concern: { id: 'concern-1' } }).props.label, '新增／跟進關注');
   const { SummaryDisclosure } = load('../src/components/summary/SummaryDisclosure.tsx');
   const disclosure = SummaryDisclosure(entry.props);
   assert.equal(named(disclosure, 'Pressable')[0].props['aria-expanded'], false);
@@ -101,11 +101,12 @@ test('chat entry passes through the existing navigation guard before routing to 
   const routed = [], queued = [];
   const workspace = { scopeKey: 'synthetic:child', model: model(), actions: {} };
   const { GrowthScreen } = load('../src/screens/GrowthScreen.tsx', {
-    'expo-router': { useRouter: () => ({ push: path => routed.push(path) }), useLocalSearchParams: () => ({}) },
+    'expo-router': { usePathname: () => '/growth', useRouter: () => ({ push: path => routed.push(path) }), useLocalSearchParams: () => ({}) },
     '../preview/PreviewNavigationGuard': { usePreviewNavigation: () => callback => queued.push(callback) },
     '../production/ProductionProvider': { useProduction: () => ({ model: { selectedChildId: 'child', children: [{ id: 'child' }] }, actions: {} }) },
     '../workspaces/GrowthWorkspace': { useGrowthWorkspace: () => workspace },
     '../workspaces/TasksWorkspace': { useTasksWorkspace: () => null },
+    '../workspaces/PreparationWorkspace': { usePreparationWorkspace: () => null },
     '../production/TaskKnowledgeDomains': { useProductionFamilyDocuments: () => null },
   });
   const tree = GrowthScreen();
@@ -114,4 +115,21 @@ test('chat entry passes through the existing navigation guard before routing to 
   assert.deepEqual(routed, [], 'No route change before the guard permits navigation');
   queued[0]();
   assert.deepEqual(routed, ['/chat']);
+});
+
+
+test('one lightweight management group owns the same archive basis and original form capabilities', () => {
+  let archived;
+  const value = model(), concern = { id: 'concern', childId: 'child', title: 'Synthetic topic', version: 3, status: 'following', attentionIds: [] };
+  value.page.concerns.items = [concern]; value.page.canManage = true;
+  const tree = GrowthView({ model: value, actions: { archiveConcern: (...args) => { archived = args; } }, onTask() {}, managementTools: jsx('SuggestionSettings', {}) });
+  const group = named(tree, 'SummaryDisclosure').find(n => n.props.label === '管理');
+  assert.ok(group); assert.equal(group.props.appearance, 'list');
+  assert.equal(named(group, 'GrowthConcernManualFallback')[0].props.concern, concern);
+  assert.equal(named(group, 'SuggestionSettings').length, 1);
+  const archive = named(group, 'GrowthArchiveConcernButton')[0];
+  assert.equal(archive.props.scopeKey, value.scopeKey); assert.equal(archive.props.authorityVersion, 'auth:1');
+  archive.props.onConfirm(); assert.deepEqual(archived, ['concern', 3, 'auth:1']);
+  const dirty = GrowthView({ model: { ...value, dirty: true }, actions: {}, onTask() {} });
+  assert.equal(named(dirty, 'GrowthArchiveConcernButton')[0].props.disabled, true);
 });

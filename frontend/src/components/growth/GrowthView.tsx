@@ -2,7 +2,7 @@ import { GROWTH_KNOWLEDGE_NOTICES } from "../../../../src/shared/growth";
 import { useContainerWidth } from "../useContainerWidth";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { ReadStateNotice } from "../ReadStateNotice";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import type { GrowthActions,GrowthViewModel } from "../../growth-view-model";
@@ -10,31 +10,34 @@ import { PageFrame } from "../PageFrame";
 import { EmptyListCard } from "../EmptyListCard";
 import { AppButton,AppSelect,AppTabPanel,SectionCard,UnderlineTabs } from "../ui";
 import { GrowthConcernIndex, GrowthConcernTimeline } from "./GrowthConcernTimeline";
-import { GrowthArchive } from "./GrowthArchive";
-import type { GrowthReportExportHandler } from "./growth-archive-view";
+import { PreparationWorkspace } from "../preparations/PreparationWorkspace";
 import { GrowthConcernChangeNotice } from "./GrowthConcernChangeNotice";
+import { SummaryDisclosure } from "../summary/SummaryDisclosure";
+import { GrowthArchiveConcernButton } from "./GrowthArchiveConcernButton";
 import { GrowthConcernManualFallback } from "./GrowthConcernManualFallback";
 import { GrowthOperationRecovery } from "./GrowthOperationRecovery";
 import { growthRefreshNotice } from "../../growth-view-model";
 import { growthStyles as s } from "./growth-styles";
 
-export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onExportReport,exportBusy,reportTools,previewTools,initialTab="concerns"}:{model:GrowthViewModel;actions:GrowthActions;onTask:(id:string)=>void;onRecord?:(id?:string)=>void;onHistory?:()=>void;onChat?:()=>void;onExportReport?:GrowthReportExportHandler;exportBusy?:boolean;reportTools?:React.ReactNode;previewTools?:React.ReactNode;initialTab?:"concerns"|"archive"}){
+export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPrepareQuestion,onPreparationHistory,previewTools,managementTools,tab="concerns",onTabChange}:{
+  model:GrowthViewModel;actions:GrowthActions;onTask:(id:string)=>void;onRecord?:(id?:string)=>void;onHistory?:()=>void;onChat?:()=>void;
+  onPrepareQuestion?:(question:string)=>void;onPreparationHistory?:()=>void;previewTools?:React.ReactNode;managementTools?:React.ReactNode;
+  tab?:"concerns"|"preparation";onTabChange:(tab:"concerns"|"preparation")=>void;
+}){
   const containerLayout = useContainerWidth();
   const wide = containerLayout.width >= 880;
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollView>(null), scrollPosition = useRef(0);
+  useLayoutEffect(() => { scrollPosition.current = 0; scrollRef.current?.scrollTo({ y: 0, animated: false }); }, [model.scopeKey, tab]);
   const page=model.access === "lost" ? null : model.page;
-  const [tab, setTab] = useState<"concerns" | "archive">(initialTab);
   const [selectedConcern, setSelectedConcern] = useState<string | null>(null);
   const concerns = page?.concerns?.state === "ready" ? page.concerns.items.filter(item => item.childId === model.childId) : [];
   const listedConcerns = concerns.filter(item => item.status !== "closed");
   const concern = listedConcerns.find(item => item.id === selectedConcern) ?? listedConcerns[0] ?? null;
-  useEffect(() => {setTab(model.access === "lost" ? "concerns" : initialTab); setSelectedConcern(null);}, [model.scopeKey, model.access === "lost", initialTab]);
+  useEffect(() => { setSelectedConcern(null); }, [model.scopeKey, model.access === "lost"]);
   const refreshed = model.notice === growthRefreshNotice;
   const showLoading = model.load === "loading" && !page;
   const showStatus = !model.online || model.access !== "editable" || model.load === "error" || !!model.notice && !refreshed || model.refreshPending;
   const refreshButton = model.pending || model.load === "error" || model.refreshPending || model.operation === "conflict" ? <AppButton label={model.pending?"重讀並核對原操作":"重新讀取"} accessibilityLabel={model.pending?"重讀並核對原操作":"重讀成長關注並保留草稿"} variant="secondary" density="compact" style={s.headerRefreshButton} disabled={model.busy||!model.online||model.access==="lost"} onPress={actions.refresh} /> : null;
-  const footerActions = tab === "archive" && onRecord && page
-    ? <AppButton label="前往原始記錄" variant="secondary" density="compact" onPress={() => onRecord()} /> : null;
   const unavailableAdvice = !!concern && page?.items.some(item => concern.attentionIds.includes(item.id) && !item.sourceAvailable);
   const sourceNotice = unavailableAdvice && page?.notices.includes(GROWTH_KNOWLEDGE_NOTICES.region)
     ? "目前未能將已確認地區用於建議篩選；原有資料已保留。"
@@ -42,14 +45,15 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onExp
     : unavailableAdvice && page?.notices.includes("首批關注只適用香港；沒有把香港時程套用至其他地區。") ? "這項建議只適用於香港地區。"
     : unavailableAdvice && page?.notices.includes("需要有效的出生日期才可套用本批年齡規則；約數年齡會保留，沒有推算精準提醒窗口。") ? "年齡建議未能核對，請核對孩子出生日期。" : null;
   const evaluationFailed = page?.notices.includes("背景評估已達有限重試上限，需核查故障；沒有假稱已完成。");
-  return <PageFrame scrollRef={scrollRef} scrollTestID="growth-scroll" density="compact" title="成長與關注" headerActions={
+  return <PageFrame scrollRef={scrollRef} scrollTestID="growth-scroll" density="compact" title="關注" onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }} headerActions={tab === "concerns" ?
     <View style={s.headerTools} testID="growth-refresh-toolbar">
       <View style={s.headerActions}>
         {refreshButton}
         {onHistory ? <AppButton label="查看關注歷史" variant="secondary" density="compact" onPress={onHistory} /> : null}
       </View>
-    </View>
+    </View> : undefined
   }>
+    {tab === "concerns" ? <>
     <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={refreshed ? "" : model.notice} urgent={model.operation === "failed"} />
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
     {showLoading ? <ReadStateNotice state="loading" scopeKey={model.scopeKey} message="正在讀取關注…" /> : null}
@@ -67,22 +71,22 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onExp
       {model.discardAsked?<><Text style={s.warning}>會清除未送出的表單。結果未知的原請求仍會保留並鎖定。</Text><AppButton label="確認放棄未提交草稿" variant="secondary" disabled={model.busy||!model.online||model.access==="lost"} onPress={actions.discardDrafts} /></>:null}
     </SectionCard>:null}
     <GrowthOperationRecovery model={model} actions={actions} />
+    </> : null}
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={s.workspace}>
-      <UnderlineTabs id="growth-workspace" label="成長與關注" items={[{key: "concerns", label: "持續關注"}, {key: "archive", label: "成長檔案"}]} value={tab} onChange={setTab} />
+      <UnderlineTabs id="growth-workspace" label="關注與準備" items={[{key: "concerns", label: "關注鏈"}, {key: "preparation", label: "準備單"}]} value={tab} onChange={onTabChange} />
       <AppTabPanel tabsId="growth-workspace" tabKey="concerns" active={tab === "concerns"} style={s.stack}>
+        {tab === "concerns" ? <>
         <GrowthConcernChangeNotice model={model} actions={actions} />
         {evaluationFailed ? <Text style={s.warning}>成長建議暫停更新。</Text> : null}
         {page ? <>
           <View style={wide ? s.columns : s.stack}>
             {listedConcerns.length ? <View style={wide ? s.indexAside : s.full}>
               {wide ? <GrowthConcernIndex items={listedConcerns} selectedId={concern?.id ?? null} onSelect={setSelectedConcern} />
-                : listedConcerns.length ? <AppSelect label="目前關注" value={concern?.id ?? ""} options={listedConcerns.map(item => ({value: item.id, label: `${item.title}${item.status === "closed" ? " · 已結束" : item.status === "proposed" ? " · 待核對" : ""}`}))} onChange={setSelectedConcern} /> : null}
+                : listedConcerns.length ? <AppSelect label="選擇關注" showLabel={false} value={concern?.id ?? ""} options={listedConcerns.map(item => ({value: item.id, label: item.title}))} onChange={setSelectedConcern} /> : null}
             </View> : null}
             <View style={wide && listedConcerns.length ? s.main : s.full}>
               {sourceNotice ? <Text style={s.warning}>{sourceNotice}</Text> : null}
-              {concern ? <GrowthConcernTimeline concern={concern} page={page} scopeKey={model.scopeKey} onRecord={onRecord} onTask={onTask}
-                onArchive={page.canManage ? () => actions.archiveConcern(concern.id, concern.version, page.authorityVersion) : undefined}
-                archiveDisabled={model.locked || model.dirty || page.concerns?.state !== "ready"} />
+              {concern ? <GrowthConcernTimeline concern={concern} page={page} onRecord={onRecord} onTask={onTask} />
                 : page.concerns?.state === "ready" && model.load !== "error" ? model.online ? <EmptyListCard title="暫無持續關注" detail="可以先與助手討論想留意的成長近況。" testID="growth-concerns-empty">
                   {onChat ? <AppButton label="與助手討論" onPress={onChat} /> : null}
                 </EmptyListCard> : null : <View style={s.archiveEmpty} testID="growth-concerns-unavailable">
@@ -91,12 +95,19 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onExp
             </View>
           </View>
         </> : !showLoading && model.access !== "lost" && model.load !== "error" ? <View style={s.archiveEmpty}><Text style={s.body}>目前未能取得關注資料。</Text></View> : null}
-        <GrowthConcernManualFallback model={model} actions={actions} concern={concern} />
         {previewTools}
+        {page ? <SummaryDisclosure label="管理" appearance="list" scopeKey={model.scopeKey}>
+          <GrowthConcernManualFallback model={model} actions={actions} concern={concern} />
+          {managementTools}
+          {concern && page.canManage ? <GrowthArchiveConcernButton concern={concern} scopeKey={model.scopeKey} authorityVersion={page.authorityVersion}
+            disabled={model.locked || model.dirty || page.concerns?.state !== "ready"}
+            onConfirm={() => actions.archiveConcern(concern.id, concern.version, page.authorityVersion)} /> : null}
+        </SummaryDisclosure> : null}
+        </> : null}
       </AppTabPanel>
-      <AppTabPanel tabsId="growth-workspace" tabKey="archive" active={tab === "archive"} style={s.stack}>
-        <GrowthArchive key={model.scopeKey} model={model} wide={wide} scrollRef={scrollRef} onRecord={onRecord} onExportReport={onExportReport} exportBusy={exportBusy} active={tab === "archive"} footerActions={footerActions} />
-        {reportTools}
+      <AppTabPanel tabsId="growth-workspace" tabKey="preparation" active={tab === "preparation"} style={s.stack}>
+        {tab === "preparation" ? <PreparationWorkspace onPrepareQuestion={onPrepareQuestion} onHistory={onPreparationHistory}
+          scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} /> : null}
       </AppTabPanel>
     </View>
   </PageFrame>;

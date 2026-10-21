@@ -16,6 +16,7 @@ import { StatusAnnouncement } from "../StatusAnnouncement";
 import { AppButton, AppSelect, AppSelectionTrigger, AppTextField, SectionCard, UnderlineTabs, AppTabPanel } from "../ui";
 import { TaskListRow } from "./TaskListRow";
 import { TaskDetail } from "./TaskDetail";
+import { FormDialog } from "../FormDialog";
 import { TaskForm } from "./TaskForm";
 import { taskAssigneeLabel } from "./TaskContent";
 import { TasksCalendar } from "./TasksCalendar";
@@ -52,14 +53,13 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
   const completed = recentCompletedTasks(model.items);
   const backlog = projectTaskBacklog(model.items, model.scheduleContext, { filter, query, page, selectedDay }, model.eligibleAssignees);
   const visible = tab === "completed" ? completed : backlog.items;
-  const sections = tab === "completed" ? [{ id: "completed", label: "最近回報完成", items: visible }]
+  const sections = tab === "completed" ? [{ id: "completed", label: "最近完成", items: visible }]
     : selectedDay ? [{ id: selectedDay, label: DateTime.fromISO(selectedDay, { zone: model.scheduleContext.timeZone }).setLocale("zh-HK").toFormat("M月d日 cccc"), items: visible }]
       : taskScheduleSections(visible, model.scheduleContext);
   const openCount = pending.length;
   const noPendingTasks = listReadState === "ready" && model.online && openCount === 0 && !model.hasMoreTasks;
   const reviewCount = backlog.counts.review;
-  const timeZoneLabel = model.scheduleContext.timeZone === "Asia/Hong_Kong" ? "香港時間" : model.scheduleContext.timeZone;
-  const showPanel = !!(model.selected || model.draft);
+  const showPanel = !!model.selected;
   const showAside = showPanel || (wide && tab === "pending" && !readUnavailable);
   const listVisible = wide || !showPanel;
   const scrollRef = useRef<NativeScrollView>(null);
@@ -67,9 +67,10 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
   const rowRefs = useRef(new Map<string, View>());
   const listRef = useRef<View>(null);
   const panelRef = useRef<View>(null);
+  // A background read may disable action buttons immediately after close; return to stable page context.
+  const pageHeading = useRef<View>(null);
   const anchor = useRef<{ id: string | null; position: number; scope: string } | null>(null);
   const previousPanel = useRef(showPanel);
-  const previousDraft = useRef(model.draft?.key);
   const restoreFrame = useRef<number | null>(null);
   const returnState = useRef({ showPanel, wide, scopeKey });
   returnState.current = { showPanel, wide, scopeKey };
@@ -80,13 +81,12 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
   useLayoutEffect(() => {
     const entering = !previousPanel.current && showPanel;
     const returning = previousPanel.current && !showPanel;
-    const editing = !!model.draft && model.draft.key !== previousDraft.current;
-    previousPanel.current = showPanel; previousDraft.current = model.draft?.key;
-    if ((entering || editing || model.access === "lost") && restoreFrame.current !== null) {
+    previousPanel.current = showPanel;
+    if ((entering || model.access === "lost") && restoreFrame.current !== null) {
       cancelAnimationFrame(restoreFrame.current); restoreFrame.current = null;
     }
     if (model.access === "lost") return;
-    if (!wide && (entering || editing)) {
+    if (!wide && entering) {
       scrollRef.current?.scrollTo({ y: 0, animated: false });
       if (Platform.OS === "web") (panelRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
     }
@@ -120,9 +120,9 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
   const calendar = <TasksCalendar items={pending} context={model.scheduleContext} selectedDay={selectedDay} month={calendarMonth} disabled={occupied}
     onSelectDay={selectCalendarDay} onChangeMonth={month => { if (!occupied) setCalendarMonth(month); }} />;
   const readState = listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty";
-  const readMessage = listReadState === "loading" ? "正在讀取事項…" : listReadState === "error" ? "未能讀取事項，請重試。" : !model.online ? "目前離線，已載入內容只供參考；恢復連線後才可提交。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : visible.length ? "" : tab === "pending" ? noPendingTasks ? "暫無待辦" : openCount === 0 && model.hasMoreTasks ? "已載入的事項中暫無待辦" : "沒有符合篩選的事項" : model.hasMoreTasks ? "已載入的事項中暫無已回報完成的事項" : "暫無已回報完成的事項";
+  const readMessage = listReadState === "loading" ? "正在讀取事項…" : listReadState === "error" ? "未能讀取事項，請重試。" : !model.online ? "目前離線，已載入內容只供參考；恢復連線後才可提交。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : visible.length ? "" : tab === "pending" ? noPendingTasks ? "暫無待辦" : openCount === 0 && model.hasMoreTasks ? "已載入的事項中暫無待辦" : "沒有符合篩選的事項" : model.hasMoreTasks ? "已載入的事項中暫無已完成的事項" : "暫無已完成的事項";
   return <View ref={pageLayout.ref} onLayout={pageLayout.onLayout} style={styles.pageContainer}><ScrollView ref={scrollRef} testID="tasks-page-scroll" style={styles.pageScroll} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={event => { if (listVisible) scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
-    <View style={styles.pageHeader}><View style={styles.headerCopy}><Text accessibilityRole="header" style={[styles.pageTitle, compact && mobileType.heading]}>待辦與預約</Text><Text style={styles.description}>跟助手說好安排，在這裏查看及回報</Text></View>
+    <View style={styles.pageHeader}><View ref={pageHeading} tabIndex={-1} accessibilityLabel="待辦" style={styles.headerCopy}><Text accessibilityRole="header" style={[styles.pageTitle, compact && mobileType.heading]}>待辦</Text></View>
       {model.access === "editable" ? <View style={styles.headerActions}><AppButton label="請助手安排" density="compact" disabled={occupied} onPress={onAgent} /><AppButton label="手動新增" accessibilityLabel="手動新增共享事項" density="compact" variant="secondary" disabled={occupied} onPress={() => { rememberList(null); actions.startCreate(); }} /></View> : null}
     </View>
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.stack}>
@@ -133,7 +133,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
         <View testID="tasks-workspace" style={[styles.workspace, wide && showAside && styles.workspaceWide]}>
           <MotionDetail activeKey={showPanel ? "panel" : "list"} scopeKey={scopeKey} direction="back" compact={!wide && !showPanel} style={[styles.column, wide && showAside && styles.listColumn, !listVisible && styles.hidden]}>
             <View ref={listRef} tabIndex={-1} testID="tasks-list" style={styles.listSurface} pointerEvents={listVisible ? "auto" : "none"} aria-hidden={!listVisible} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
-              <View style={styles.tabsBar}><View style={styles.tabs}><UnderlineTabs id={tabsId} label="事項分類" items={[{ key: "pending", label: "待處理", count: readUnavailable ? undefined : `${openCount}${model.hasMoreTasks ? "+" : ""}` }, { key: "completed", label: "已回報完成" }]} value={tab} onChange={next => { if (occupied) return; actions.closePanel(); setTab(next); setFilter("near"); setQuery(""); setPage(0); setSelectedDay(null); anchor.current = null; }} /></View><AppButton label="歷史" accessibilityLabel="事項歷史" variant="quiet" density="compact" disabled={occupied} onPress={onHistory} /></View>
+              <View style={styles.tabsBar}><View style={styles.tabs}><UnderlineTabs id={tabsId} label="事項分類" items={[{ key: "pending", label: "待處理", count: readUnavailable ? undefined : `${openCount}${model.hasMoreTasks ? "+" : ""}` }, { key: "completed", label: "已完成" }]} value={tab} onChange={next => { if (occupied) return; actions.closePanel(); setTab(next); setFilter("near"); setQuery(""); setPage(0); setSelectedDay(null); anchor.current = null; }} /></View><AppButton label="歷史" accessibilityLabel="事項歷史" variant="quiet" density="compact" disabled={occupied} onPress={onHistory} /></View>
               {!readUnavailable && reviewCount > 0 ? <Pressable testID="tasks-review-shortcut" accessibilityRole="button" accessibilityLabel={`查看已載入的 ${reviewCount} 項待覆核安排，已停止催辦`} disabled={occupied} accessibilityState={{ disabled: occupied }} aria-disabled={occupied} onPress={() => { if (occupied) return; setTab("pending"); setQuery(""); changeFilter(tab === "pending" && filter === "review" ? "near" : "review"); }} style={({ pressed }) => [styles.reviewShortcut, pressed && !occupied && styles.reviewPressed]}><View style={styles.reviewCopy}><Text style={styles.reviewTitle}>{reviewCount} 項待覆核{model.hasMoreTasks ? "（已載入）" : ""}</Text><Text style={styles.reviewNote}>{filter === "review" && tab === "pending" ? "返回近期安排" : "完成或取消仍未確定 · 已停催"}</Text></View><AppIcon name={filter === "review" && tab === "pending" ? "chevron-left" : "chevron-right"} size={18} color={colors.warningInk} /></Pressable> : null}
               {tab === "completed" && !readUnavailable && completed.length > 0 ? <Text style={styles.meta}>{model.hasMoreTasks ? "目前只按已載入資料顯示最近 10 項，載入更多後會重新排序。" : "只顯示最近 10 項；較早及已取消的安排可到事項歷史查看。"}</Text> : null}
               <AppTabPanel tabsId={tabsId} tabKey={tab} active>
@@ -148,7 +148,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
               {tab === "pending" && !wide && !readUnavailable && !noPendingTasks ? <MotionDisclosure expanded={calendarOpen} scopeKey={scopeKey}><View style={styles.mobileCalendar}>{calendar}</View></MotionDisclosure> : null}
               <View style={styles.scheduleList}>
               {tab === "pending" && !readUnavailable && !noPendingTasks ? <View style={styles.listContext}>
-                <Text style={styles.meta} accessibilityLiveRegion="polite">{selectedDay ? `${DateTime.fromISO(selectedDay).toFormat("M月d日")}` : backlogLabels[filter]}{!selectedDay && filter === "near" && backlog.nearLabel ? ` · ${backlog.nearLabel}` : ""}{query.trim() ? " · 搜尋結果" : ""} · {timeZoneLabel} · 已載入 {backlog.total} 項{backlog.total > 0 ? `，顯示 ${backlog.from}–${backlog.to}` : ""}</Text>
+                <Text style={styles.meta} accessibilityLiveRegion="polite">{selectedDay ? `${DateTime.fromISO(selectedDay).toFormat("M月d日")}` : backlogLabels[filter]}{!selectedDay && filter === "near" && backlog.nearLabel ? ` · ${backlog.nearLabel}` : ""}{query.trim() ? " · 搜尋結果" : ""} · 已載入 {backlog.total} 項{backlog.total > 0 ? `，顯示 ${backlog.from}–${backlog.to}` : ""}</Text>
                 {backlog.counts.earlier > 0 && filter !== "earlier" ? <Pressable accessibilityRole="button" accessibilityLabel={`查看已載入的 ${backlog.counts.earlier} 項較早未處理事項`} disabled={occupied} aria-disabled={occupied} onPress={() => changeFilter("earlier")} style={({ pressed }) => [styles.contextLink, pressed && !occupied && styles.pressed]}><Text style={styles.contextLinkText}>較早未處理 {backlog.counts.earlier}</Text></Pressable> : null}
                 {selectedDay ? <Pressable accessibilityRole="button" accessibilityLabel="只取消日期篩選" disabled={occupied} aria-disabled={occupied} onPress={() => selectCalendarDay(null)} style={({ pressed }) => [styles.contextLink, pressed && !occupied && styles.pressed]}><Text style={styles.contextLinkText}>取消日期</Text></Pressable> : null}
               </View> : null}
@@ -181,15 +181,19 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
               {model.hasMoreTasks ? <View style={styles.loadMore}><Text style={styles.meta}>仍有事項未載入；月曆、搜尋及數目只包括已載入事項。</Text><AppButton label={model.loadingMoreTasks ? "正在載入更多事項…" : "載入更多事項"} variant="secondary" disabled={model.loadingMoreTasks || !model.online || occupied} onPress={actions.loadMoreTasks} /></View> : null}
             </View>
           </MotionDetail>
-          {showAside ? <MotionDetail activeKey={showPanel ? model.draft ? `edit:${model.draft.key}` : model.selected?.id ?? "detail" : "calendar"} scopeKey={scopeKey} direction="forward" compact={!wide} style={[styles.column, wide && styles.detailColumn]}><View ref={panelRef} tabIndex={-1} testID={showPanel ? "task-detail-panel" : "task-calendar-panel"} style={styles.stack}>
+          {showAside ? <MotionDetail activeKey={showPanel ? model.selected?.id ?? "detail" : "calendar"} scopeKey={scopeKey} direction="forward" compact={!wide} style={[styles.column, wide && styles.detailColumn]}><View ref={panelRef} tabIndex={-1} testID={showPanel ? "task-detail-panel" : "task-calendar-panel"} style={styles.stack}>
             {showPanel ? <>
               {!wide ? <Text style={styles.breadcrumb}>待辦清單 / {model.draft ? "編輯安排" : "事項詳情"}</Text> : null}
-              {model.draft ? <TaskForm key={model.draft.key} model={model} actions={actions} /> : null}
-              {model.selected ? <View key="task-detail" style={model.draft ? styles.hidden : undefined} pointerEvents={model.draft ? "none" : "auto"} aria-hidden={!!model.draft} accessibilityElementsHidden={!!model.draft} importantForAccessibility={model.draft ? "no-hide-descendants" : "auto"}><TaskDetail model={model} actions={actions} /></View> : null}
+
+              {model.selected ? <View key="task-detail" ><TaskDetail model={model} actions={actions} /></View> : null}
             </> : calendar}
           </View></MotionDetail> : null}
         </View>
       </>}
+      <FormDialog formKey={model.draft?.key} visible={!!model.draft} scopeKey={scopeKey} title="安排事項" returnFocusRef={pageHeading} onClose={actions.closePanel}
+        recovery={<WriteRecoveryNotice operation={model.operation} recovery={recovery} online={model.online} />}>
+        {model.draft ? <TaskForm key={model.draft.key} model={model} actions={actions} /> : null}
+      </FormDialog>
       {previewControls}
     </View>
   </ScrollView></View>;
@@ -202,7 +206,6 @@ const styles = StyleSheet.create({
   pageHeader: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: spacing.md },
   headerCopy: { flexGrow: 1, flexShrink: 1, minWidth: 168, gap: spacing.xs },
   pageTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.title },
-  description: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
   hidden: { display: "none" }, stack: { gap: spacing.lg, minWidth: 0 },
   workspace: { gap: spacing.lg, minWidth: 0 }, workspaceWide: { flexDirection: "row", alignItems: "flex-start" },
   column: { minWidth: 0, width: "100%" }, listColumn: { flex: 1.05, width: undefined }, detailColumn: { flex: 1, width: undefined },

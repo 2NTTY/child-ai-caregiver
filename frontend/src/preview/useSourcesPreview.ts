@@ -214,6 +214,11 @@ export function useSourcesPreview(child: HomeChild, online: boolean, identity: {
         updateIntake(selected.id, value => ({ ...value, stage: "confirmed_pending_connection" }));
       },
     },
+    discardDraft(kind: "composer" | "record" | "management") {
+      if (pending.current || directRef.current || inFlight.current) return;
+      if (kind === "composer" && !selected) { setComposerSeed(null); setIntakeIntention(""); setFormKey(value => value + 1); }
+      else if (kind === "record") { setDraft(emptyPhotoDraft()); setReviewed(null); setSharedConsent(false); setChildFactConsent(false); setFormKey(value => value + 1); }
+    },
     refresh, checkOriginal: refresh,
     create(input: SourceCreate) {
       if (!fresh || !canCreate || selected || direct || pending.current || !validSourceIntakeText(intakeIntention)) return;

@@ -110,7 +110,7 @@ export function AppDateTimeField({ label, value, onChange, onBlur, disabled = fa
   const parts = dateTimeParts(value, timeZone);
   function dismiss() { setOpen(false); if (Platform.OS === "web") (anchor.current as unknown as HTMLElement | null)?.focus(); }
   return <View style={styles.field}>
-    <Text style={styles.label}>{label}</Text><Text style={styles.summary}>{parts ? `${parts.date} · ${parts.time} · ${timeZoneLabel(timeZone)}` : "尚未選擇日期與時間"}</Text>
+    <Text style={styles.label}>{label}</Text><Text style={styles.summary}>{parts ? `${parts.date} · ${parts.time}` : "尚未選擇日期與時間"}</Text>
     <AppSelectionTrigger id={id} invalid={!!error} describedBy={[describedBy, error ? messageId : undefined].filter(Boolean).join(" ") || undefined} ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={`選擇${label}`} disabled={disabled} expanded={open} onBlur={onBlur} calendar onPress={() => {
       setDate(parts?.date ?? ""); setTime(parts?.time ?? ""); setLocalError(null); setOpen(true);
     }} />

@@ -193,7 +193,6 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
           } : undefined} /> : null}
         {model.shortTerm.data?.messages.map(message => <View key={message.id} style={styles.card}><Text style={styles.meta}>{message.role === "user" ? "你的訊息" : "Agent 回覆"}</Text><Text selectable style={styles.body}>{message.text}</Text></View>)}
         {model.shortTerm.data?.hasMoreWorks ? <AppButton label="載入更多工作" variant="quiet" disabled={!model.online || workspace.reads?.workBusy} onPress={() => workspace.reads?.loadMoreWork?.()} /> : null}
-        {model.shortTerm.asOf ? <Text style={styles.meta}>讀取於 {memoryDateLabel(model.shortTerm.asOf)}</Text> : null}
       </ReadNotice>
       {model.shortTerm.data ? <Text style={styles.meta}>工作是 Agent 的整理內容，供核對及接續；不代表已確認的事實。</Text> : null}
       {["error", "unavailable", "stale"].includes(model.shortTerm.state) && workspace.reads?.refreshContext ? <AppButton label="重新讀取工作脈絡" variant="quiet" disabled={!model.online || workspace.reads.workBusy} onPress={workspace.reads.refreshContext} /> : null}
@@ -214,7 +213,6 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
         <SummaryCard key={`${model.longTerm.data?.summary?.id}:${model.longTerm.data?.summary?.version}`} summary={model.longTerm.data?.summary ?? null} emptyReady={model.longTerm.state === "ready" && model.online} />
         {other.length ? <View style={styles.section}><AppButton label={otherOpen ? "收起待核對與停用資料" : `待核對與停用資料（已載入 ${other.length} 項）`} expanded={otherOpen} variant="quiet" onPress={() => setOtherOpen(value => !value)} />
           {otherOpen ? <View style={styles.factGrid}>{other.map(renderFact)}</View> : null}</View> : null}
-        {model.longTerm.asOf ? <Text style={styles.meta}>讀取於 {memoryDateLabel(model.longTerm.asOf)}</Text> : null}
       </ReadNotice>
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} workspace={workspace} /></AppTabPanel>

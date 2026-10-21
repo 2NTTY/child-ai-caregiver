@@ -35,6 +35,7 @@ function harness(entry, symbol, initialArgs, injectedWorkspace = () => null) {
       }
     },
   };
+  react.useLayoutEffect = react.useEffect;
   const jsx = (type, props, key) => ({ type, props, key });
   function load(filename) {
     if (cache.has(filename)) return cache.get(filename);
@@ -53,7 +54,9 @@ function harness(entry, symbol, initialArgs, injectedWorkspace = () => null) {
       if (name.endsWith('/workspaces/GrowthWorkspace')) return { useGrowthWorkspace: injectedWorkspace };
       if (name.endsWith('/AppDialog')) return { AppDialog: Object.assign(function Dialog() {}, { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions' }) };
       if (name === './growth-styles') return { growthStyles: {} };
-      if (name === './GrowthArchive') return { GrowthArchive: 'GrowthArchive' };
+      if (name.endsWith('/PreparationWorkspace')) return { PreparationWorkspace: 'PreparationWorkspace' };
+      if (name.endsWith('/SummaryDisclosure')) return { SummaryDisclosure: 'SummaryDisclosure' };
+      if (name === './GrowthArchiveConcernButton') return { GrowthArchiveConcernButton: 'GrowthArchiveConcernButton' };
       if (name === './GrowthConcernManualFallback') return { GrowthConcernManualFallback: 'GrowthConcernManualFallback' };
       if (name === './GrowthConcernTimeline') return { GrowthConcernIndex: 'GrowthConcernIndex', GrowthConcernTimeline: 'GrowthConcernTimeline' };
       if (name.endsWith('/ui')) return Object.fromEntries(['AppButton', 'AppSelect', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'UnderlineTabs'].map(value => [value, value]));
@@ -129,7 +132,8 @@ test('selection, tab and newer reading position are not reset by refresh complet
   assert.ok(choices.length > 1);
   byType(tree, 'GrowthConcernIndex')[0].props.onSelect(choices[1].id);
   tree = v.render();
-  const viewport = { scrollTop: 280, scrollTo() { assert.fail('Refresh must not restore a stale scroll snapshot'); } };
+  const scrolls = [];
+  const viewport = { scrollTop: 280, scrollTo(value) { scrolls.push(value); } };
   tree.props.scrollRef.current = viewport;
   state.actions.refresh(); state = o.render(); tree = v.render([{ model: withSecondConcern(state.model), actions: state.actions }]);
   assert.equal(byType(tree, 'GrowthConcernTimeline')[0].props.concern.id, choices[1].id);
@@ -137,10 +141,13 @@ test('selection, tab and newer reading position are not reset by refresh complet
   o.tick(); state = o.render(); tree = v.render([{ model: withSecondConcern(state.model), actions: state.actions }]);
   assert.equal(viewport.scrollTop, 420);
   assert.equal(byType(tree, 'GrowthConcernTimeline')[0].props.concern.id, choices[1].id);
-  byType(tree, 'UnderlineTabs')[0].props.onChange('archive'); tree = v.render();
-  state.actions.refresh(); state = o.render(); v.render([{ model: withSecondConcern(state.model), actions: state.actions }]);
-  o.tick(); state = o.render(); tree = v.render([{ model: withSecondConcern(state.model), actions: state.actions }]);
-  assert.equal(byType(tree, 'UnderlineTabs')[0].props.value, 'archive');
+  assert.deepEqual(scrolls, [], 'Refresh must not restore a stale scroll snapshot');
+  tree = v.render([{ model: withSecondConcern(state.model), actions: state.actions, tab: 'preparation' }]);
+  assert.deepEqual(scrolls, [{ y: 0, animated: false }]); scrolls.length = 0;
+  state.actions.refresh(); state = o.render(); v.render([{ model: withSecondConcern(state.model), actions: state.actions, tab: 'preparation' }]);
+  o.tick(); state = o.render(); tree = v.render([{ model: withSecondConcern(state.model), actions: state.actions, tab: 'preparation' }]);
+  assert.equal(byType(tree, 'UnderlineTabs')[0].props.value, 'preparation');
+  assert.deepEqual(scrolls, []);
   assert.equal(viewport.scrollTop, 420);
 });
 
@@ -180,7 +187,7 @@ test('dirty and unknown original operations retain their frozen body and guard t
 
 test('lost access cancels in-flight reads and clears private data without restoring stale selection', () => {
   const o = owner(); let state = o.render(); const v = view(state.model, state.actions);
-  let tree = v.render(); byType(tree, 'UnderlineTabs')[0].props.onChange('archive'); v.render();
+  let tree = v.render();
   const oldRefresh = state.actions.refresh;
   oldRefresh(); state = o.render(); state.changeCondition('lost'); state = o.render();
   oldRefresh(); o.tick(); state = o.render(); tree = v.render([{ model: state.model, actions: state.actions }]);
@@ -251,7 +258,7 @@ test('archive, History, return and refresh share one closed chain without changi
   const o = owner(); let state = o.render(), concern = state.model.page.concerns.items[0];
   const before = structuredClone({ items: state.model.page.items, topics: state.model.page.topics });
   const v = view(state.model, state.actions); let tree = v.render();
-  const archive = byType(tree, 'GrowthConcernTimeline')[0].props.onArchive;
+  const archive = byType(tree, 'GrowthArchiveConcernButton')[0].props.onConfirm;
   assert.equal(typeof archive, 'function');
   archive(); archive(); assert.equal(o.timers.size, 1);
   o.render(); o.tick(); state = o.render(); concern = state.model.page.concerns.items[0];
@@ -332,12 +339,12 @@ test('Growth and History consume the same injected owner and mismatched scopes a
   assert.match(connected, /<MemoryReferenceWorkspaceProvider scopeKey=\{env\.scopeKey\} value=\{current\?\.memory\.value \?\? null\}>/);
 });
 
-test('ending a concern uses a filled control and frozen confirmation; cancel and dismissal never write', () => {
+test('ending a concern uses a quiet management entry and frozen confirmation; cancel and dismissal never write', () => {
   const state = owner().render(), concern = state.model.page.concerns.items[0]; let writes = 0;
   const props = { concern, scopeKey: state.model.scopeKey, authorityVersion: state.model.page.authorityVersion, disabled: false, onConfirm: () => writes++ };
   const h = harness('src/components/growth/GrowthArchiveConcernButton.tsx', 'GrowthArchiveConcernButton', [props]);
   let tree = h.render(); const trigger = () => byType(tree, 'AppButton').find(button => button.props.label === '結束關注');
-  assert.equal(trigger().props.variant, 'danger'); assert.equal(trigger().props.style.borderWidth, 0);
+  assert.equal(trigger().props.variant, 'quiet'); assert.equal(trigger().props.style.borderWidth, 0);
   trigger().props.onPress(); tree = h.render();
   let dialog = byId(tree, 'growth-archive-confirmation')[0];
   assert.equal(dialog.props.visible, true); assert.ok(dialog.props.accessibilityLabel.includes(concern.title)); assert.equal(writes, 0);

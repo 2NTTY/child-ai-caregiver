@@ -48,6 +48,7 @@ export type SourcesActions = {
     edit(patch: Partial<SourceManagement>): void; setModelPermission(value: boolean): void; setModelExcerpt(value: string): void; setReason(value: string): void;
     beginContentEdit(): void; editContent(value: SourcePersonalContent): void; cancelContentEdit(): void; history(): void;
   };
+  discardDraft?(kind: "composer" | "record" | "management"): void;
   refresh(): void; create(input: SourceCreate): void; openInput(input: SourceInput): void; newInput(): void; recreateWithText(): void;
   setFetchConsent(value: boolean): void; fetchContent(): void; setExcerpt(value: string): void; setModelConsent(value: boolean): void; extract(): void;
   adoptCandidate(): void; editDraft(draft: PhotoDraftFields): void; reviewDraft(draft: PhotoDraftFields): void;

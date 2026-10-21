@@ -14,6 +14,7 @@ import { AppStatusBadge, type AppStatusTone } from "../AppStatusBadge";
 import { AppButton, AppSelect } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
 import { SummaryDisclosure } from "../summary/SummaryDisclosure";
+import { ManualFormDialog } from "../FormDialog";
 import { DocumentCreateForm } from "./DocumentCreateForm";
 
 const stateLabels: Record<PreparationDocumentView["readState"], { label: string; tone: AppStatusTone; detail: string }> = {
@@ -80,7 +81,7 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
       <Text accessibilityRole="header" style={styles.documentTitle}>{revision?.title ?? "暫不能查看這份準備"}</Text>
       {revision ? <><Text style={styles.body}>{revision.summary}</Text>
         <Text style={styles.meta}>使用日期 {preparationDateLabel(revision.eventDate)} · 更新 {preparationDateLabel(revision.updatedAt)}</Text>
-        <Text style={styles.meta}>資料截至 {preparationDateLabel(revision.sourceAsOf)}（香港時間）</Text></> : null}
+        <Text style={styles.meta}>資料截至 {preparationDateLabel(revision.sourceAsOf)}</Text></> : null}
     </View>
     {state.detail && !content ? <View style={styles.warning}><AppStatusBadge label={state.label} tone={state.tone} /><Text style={styles.body}>{state.detail}</Text></View> : null}
     {!workspace.model.online ? <Text accessibilityRole="alert" style={styles.warningText}>目前離線，只可閱讀已載入內容；清單及歸檔暫停。</Text> : null}
@@ -193,11 +194,12 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
       <View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
       <AppButton label="到助手準備下一份" variant="accent" disabled={!workspace.model.online || workspace.model.condition === "lost" || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我為${workspace.model.child.displayName}整理一份${preparationPurposeLabel(purpose)}。先和我確認用途、日期、已知安排及仍未確定的資料。`)} />
     </View> : null}
-    {workspace.actions.createDocument && workspace.actions.markDraft && workspace.actions.discardDraft && workspace.model.scope.role !== "viewer" ? <SummaryDisclosure label="手動備援：直接整理準備單" scopeKey={workspace.scopeKey}>
+    {workspace.actions.createDocument && workspace.actions.markDraft && workspace.actions.discardDraft && workspace.model.scope.role !== "viewer" ? <ManualFormDialog label="手動建立準備單" title="建立準備單" scopeKey={workspace.scopeKey}
+      recovery={workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online && !workspace.model.busy} /> : null}>
       <DocumentCreateForm kind="preparation" purpose={purpose} owner={{ authorityVersion: workspace.model.authorityVersion ?? "", locked: workspace.model.locked ?? true,
-        dirty: workspace.model.dirty ?? false, epoch: workspace.model.epoch ?? 0, operation: workspace.model.operation,
+        dirty: workspace.model.dirty ?? false, epoch: workspace.model.epoch ?? 0, operation: workspace.model.operation, retainedDraftId: workspace.model.retainedDraftId,
         createDocument: workspace.actions.createDocument, markDraft: workspace.actions.markDraft, discardDraft: workspace.actions.discardDraft }} />
-    </SummaryDisclosure> : null}
+    </ManualFormDialog> : null}
     {previewControls}
   </View>;
 }

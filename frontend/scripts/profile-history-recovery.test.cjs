@@ -31,7 +31,7 @@ function fixture() {
   const makeEnvironment = (childId, identityKey = 'parent:epoch-1') => {
     const scopeKey = `${identityKey}:${childId}`;
     return { scopeKey, identityKey, childId, userId: 'qa-parent', childName: `Synthetic ${childId}`, role: 'owner', online: true,
-      apiBaseUrl: '/api', queryClient: client, current: () => env.scopeKey === scopeKey, currentIdentity: () => env.identityKey === identityKey,
+      owner: { fetcher: (...args) => transport(...args) }, apiBaseUrl: '/api', queryClient: client, current: () => env.scopeKey === scopeKey, currentIdentity: () => env.identityKey === identityKey,
       canStartWrite: () => true, invalidate() {}, accessError: error => accessLoss.push({ scopeKey, error }) };
   };
   env = makeEnvironment('child-a');
@@ -83,6 +83,7 @@ function fixture() {
       if (name.endsWith('/useContainerWidth')) return { useContainerWidth: () => ({ width: 1000, ref: React.useRef(null), onLayout() {} }) };
       if (name.endsWith('/AppStatusBadge')) return { AppStatusBadge: Empty };
       if (name.endsWith('/StatusAnnouncement')) return { StatusAnnouncement: Empty };
+      if (name.endsWith('/FormDialog')) return { ManualFormDialog: Wrap };
       if (name.endsWith('/ProfileForm')) return { ProfileForm: Form };
       if (name.endsWith('/ProfileSummary')) return { ProfileDataSummary: Empty, ProfileKeyFacts: Empty,
         ProfileRevisionSummary: ({ revision }) => React.createElement('span', { 'data-revision': revision.version }, `Revision ${revision.version}`) };
@@ -119,16 +120,16 @@ test('failed first history read retains a manual retry, dirty draft and form ide
   try {
     await h.start(); await h.click('Edit synthetic draft');
     const form = h.form(), formKey = h.get().model.formKey;
-    h.faults.push(() => json({}, 503)); await h.click('查看較早版本');
+    h.faults.push(() => json({}, 503)); await h.click('確認及更正歷史');
     assert.equal(h.get().model.historyOpen, false);
     assert.match(h.get().model.notice, /未能讀取檔案歷史/);
-    assert.equal(h.button('查看較早版本').disabled, false);
+    assert.equal(h.button('確認及更正歷史').disabled, false);
     await h.settle(); assert.equal(h.historyRequests().length, 1, 'No automatic retry');
     await h.click('重新讀取檔案');
     assert.equal(h.historyRequests().length, 1, 'Current profile refresh is not a history retry');
     assert.equal(h.form(), form); assert.equal(h.get().model.formKey, formKey);
     assert.equal(h.form().dataset.region, 'Unsaved synthetic draft'); assert.equal(h.dirtySignals.at(-1), true);
-    h.faults.push(({ childId }) => page(childId, [3, 2])); await h.click('查看較早版本');
+    h.faults.push(({ childId }) => page(childId, [3, 2])); await h.click('確認及更正歷史');
     assert.equal(h.historyRequests().length, 2); assert.equal(h.get().model.historyOpen, true);
     assert.deepEqual(h.get().model.history.map(value => value.version), [3, 2]);
     assert.equal(h.get().model.notice, null); assert.equal(h.button('已顯示歷史').disabled, true);
@@ -139,7 +140,7 @@ test('failed first history read retains a manual retry, dirty draft and form ide
 test('successful empty history is shown without a false error or retry loop', async () => {
   const h = fixture();
   try {
-    await h.start(); h.faults.push(({ childId }) => page(childId, [])); await h.click('查看較早版本');
+    await h.start(); h.faults.push(({ childId }) => page(childId, [])); await h.click('確認及更正歷史');
     assert.equal(h.get().model.historyOpen, true); assert.deepEqual(h.get().model.history, []);
     assert.equal(h.get().model.notice, null); assert.equal(h.button('已顯示歷史').disabled, true);
     assert.equal(h.button('載入更早版本'), undefined); await h.settle(); assert.equal(h.historyRequests().length, 1);
@@ -149,7 +150,7 @@ test('successful empty history is shown without a false error or retry loop', as
 test('failed next page retains accumulated history and cursor; manual retry clears the error and appends once', async () => {
   const h = fixture();
   try {
-    await h.start(); h.faults.push(({ childId }) => page(childId, [3, 2], 2)); await h.click('查看較早版本');
+    await h.start(); h.faults.push(({ childId }) => page(childId, [3, 2], 2)); await h.click('確認及更正歷史');
     h.faults.push(() => json({}, 503)); await h.click('載入更早版本');
     assert.equal(h.get().model.historyOpen, true); assert.deepEqual(h.get().model.history.map(value => value.version), [3, 2]);
     assert.equal(h.get().model.hasMoreHistory, true); assert.equal(h.button('載入更早版本').disabled, false);
@@ -167,7 +168,7 @@ test('rapid repeated history actions remain single-flight and reveal only the ac
     await h.start(); h.faults.push(() => wait.promise);
     await act(async () => { h.get().actions.showHistory(); h.get().actions.showHistory(); await tick(); });
     assert.equal(h.historyRequests().length, 1); assert.equal(h.get().model.reading, true);
-    assert.equal(h.get().model.historyOpen, false); assert.equal(h.button('查看較早版本').disabled, true);
+    assert.equal(h.get().model.historyOpen, false); assert.equal(h.button('確認及更正歷史').disabled, true);
     await act(async () => { wait.resolve(page('child-a', [3])); await tick(); });
     assert.deepEqual(h.get().model.history.map(value => value.version), [3]); assert.equal(h.get().model.historyOpen, true);
   } finally { wait.resolve(page('child-a', [])); await h.close(); }
@@ -179,14 +180,14 @@ for (const [name, childId, identityKey, status] of [
 ]) test(name, async () => {
   const h = fixture(), wait = deferred();
   try {
-    await h.start(); h.faults.push(() => wait.promise); await h.click('查看較早版本');
+    await h.start(); h.faults.push(() => wait.promise); await h.click('確認及更正歷史');
     const oldAction = h.get().actions.showHistory;
     await h.switchScope(childId, identityKey); const count = h.historyRequests().length;
     await act(async () => { oldAction(); wait.resolve(status === 200 ? page('child-a', [3]) : json({}, status)); await tick(); });
     assert.equal(h.historyRequests().length, count, 'Old callback cannot start a history request');
     assert.equal(h.get().model.child.id, childId); assert.deepEqual(h.get().model.history, []);
     assert.equal(h.get().model.historyOpen, false); assert.equal(h.get().model.notice, null); assert.deepEqual(h.accessLoss, []);
-    h.faults.push(({ childId }) => page(childId, [2])); await h.click('查看較早版本');
+    h.faults.push(({ childId }) => page(childId, [2])); await h.click('確認及更正歷史');
     assert.deepEqual(h.get().model.history.map(value => value.version), [2]);
   } finally { wait.resolve(page('child-a', [])); await h.close(); }
 });
@@ -194,9 +195,25 @@ for (const [name, childId, identityKey, status] of [
 test('a delayed 403 in the current scope still reaches the access-loss owner instead of becoming a retry error', async () => {
   const h = fixture(), wait = deferred();
   try {
-    await h.start(); h.faults.push(() => wait.promise); await h.click('查看較早版本');
+    await h.start(); h.faults.push(() => wait.promise); await h.click('確認及更正歷史');
     await act(async () => { wait.resolve(json({}, 403)); await tick(); });
     assert.deepEqual(h.accessLoss, [{ scopeKey: 'parent:epoch-1:child-a', error: { status: 403, code: null } }]);
     assert.equal(h.get().model.notice, null); assert.deepEqual(h.get().model.history, []);
   } finally { wait.resolve(page('child-a', [])); await h.close(); }
+});
+
+test('approved profile modal discard clears the UI draft only and rejects a stale scope callback', async () => {
+  const h = fixture();
+  try {
+    await h.start(); const saved = structuredClone(h.get().model.current), oldKey = h.get().model.formKey;
+    await h.click('Edit synthetic draft'); assert.equal(h.dirtySignals.at(-1), true);
+    await act(async () => { h.get().actions.discardDraft(); await tick(); });
+    assert.equal(h.dirtySignals.at(-1), false); assert.deepEqual(h.get().model.current, saved);
+    assert.equal(h.get().model.initialValues.region, saved.data.region); assert.equal(h.get().model.formKey, oldKey + 1);
+    assert.equal(h.get().model.reviewedValues, null); assert.equal(h.requests.some(request => request.method !== 'GET' && !request.path.endsWith('/care/search')), false);
+    const stale = h.get().actions.discardDraft; await h.switchScope('child-b', 'parent:epoch-1');
+    await h.click('Edit synthetic draft'); const key = h.get().model.formKey;
+    await act(async () => { stale(); await tick(); }); assert.equal(h.get().model.formKey, key);
+    assert.equal(h.dirtySignals.at(-1), true); assert.equal(h.form().dataset.region, 'Unsaved synthetic draft');
+  } finally { await h.close(); }
 });

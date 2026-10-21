@@ -25,7 +25,6 @@ export function TaskListRow({ task, time, assignee, warning, selected, disabled,
       <AppStatusBadge label={status} tone={review ? "warning" : task.occurrence.state === "completed" ? "success" : task.occurrence.state === "cancelled" ? "neutral" : "info"} />
     </View>{warning ? <Text style={styles.warning}>{warning}</Text> : null}</View>
     <AppIcon name={selected ? "chevron-left" : "chevron-right"} size={18} color={colors.muted} />
-    {(hovered || focused) && !disabled ? <View pointerEvents="none" style={styles.hint}><Text style={styles.hintText}>{hint}</Text></View> : null}
   </Pressable>;
 }
 const styles = StyleSheet.create({
@@ -37,6 +36,4 @@ const styles = StyleSheet.create({
   assignee: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
   warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta }, review: { borderLeftColor: colors.statusWarmLine },
   highlight: { backgroundColor: colors.paleTeal, borderRadius: radius.small }, focused: { borderLeftColor: colors.teal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
-  hint: { position: "absolute", bottom: 2, right: spacing.sm, backgroundColor: colors.paleTeal, paddingHorizontal: 4, borderRadius: 3 },
-  hintText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: 11, lineHeight: 16 },
 });

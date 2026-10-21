@@ -81,7 +81,7 @@ test('production owners compose once and keep Summary/Profile/Preparation and na
   }
   assert.doesNotMatch(composition, /<(?:PreviewProvider|PhotosWorkspaceProvider)(?:>|\s)/);
   assert.match(rootLayout, /<ProductionProvider><ProductionFirstScreenGate\b[\s\S]*<Stack\b/);
-  assert.match(layout, /<ProductionGate><BackgroundProvider key=\{identityKey\}><ProductionDomains>/);
+  assert.match(layout, /<ProductionGate><BackgroundProvider key=\{identityKey\} scope=\{backgroundScope\}><ProductionDomains>/);
   assert.match(domains, /<ProductionCareProfileDomains><ProductionTaskKnowledgeDomains><ProductionPhotoInputDomains><ProductionSettingsDomains>/);
   assert.match(care, /<CareWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{scoped\?\.care \?\? null\}>\s*<ProfileWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{scoped\?\.profile \?\? null\}>/);
   assert.match(knowledge, /<TasksWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{current\?\.tasks \?\? null\}>\s*<PreparationWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{current\?\.documents.preparation \?\? null\}>/);

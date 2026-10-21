@@ -19,8 +19,9 @@ import { useProductionSwitchReadiness } from "../../src/production/ProductionFir
 import { ProductionDomains } from "../../src/production/ProductionDomains";
 
 export default function DashboardLayout() {
-  const { identityKey } = useProduction();
-  return <ProductionGate><BackgroundProvider key={identityKey}><ProductionDomains>
+  const { identityKey, user, owner } = useProduction();
+  const backgroundScope = identityKey && user ? JSON.stringify([owner.apiBaseUrl, user.id]) : null;
+  return <ProductionGate><BackgroundProvider key={identityKey} scope={backgroundScope}><ProductionDomains>
     {Platform.OS === "web" ? <AppShell><ConnectedRoute><Slot /></ConnectedRoute></AppShell> : <NativeAppShell><NativeDashboardTabs /></NativeAppShell>}
   </ProductionDomains></BackgroundProvider></ProductionGate>;
 }
@@ -45,7 +46,7 @@ function NativeDashboardTabs() {
     <Tabs.Screen name="index" options={{ title: "今日", tabBarIcon: ({ color }) => <AppIcon name="home-outline" color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="chat" options={{ title: "助手", tabBarIcon: ({ color }) => <AppIcon name="message-text-outline" color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="tasks" options={{ title: "待辦", tabBarIcon: ({ color }) => <AppIcon name="clipboard-check-outline" color={color} size={mobileIcons.navigation} /> }} />
-    <Tabs.Screen name="growth" options={{ title: "成長", tabBarIcon: ({ color }) => <AppIcon name="chart-bar" color={color} size={mobileIcons.navigation} /> }} />
+    <Tabs.Screen name="growth" options={{ title: "關注", tabBarIcon: ({ color }) => <AppIcon name="chart-bar" color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="care" options={{ title: "記錄", tabBarButton: () => <RecordsNavButton active={pathname === "/care" || pathname === "/more" || pathname === "/photos" || pathname === "/history"} scopeKey={scopeKey} /> }} />
     {["more", "history", "memory", "photos", "sources", "summary", "contact", "profile", "family", "settings", "guide"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
   </Tabs>;

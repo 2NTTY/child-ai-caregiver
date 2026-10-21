@@ -31,7 +31,7 @@ export function ProfileDataSummary({ data }: { data: ProfileDataView | null }) {
     { label: "資料來源", value: data.source }, { label: "資料有效至", value: data.validUntil },
   ];
   return <View style={styles.rows}>{rows.map(row => <View key={row.label} style={styles.row}>
-    <Text style={styles.label}>{row.label}</Text><Text style={styles.body}>{row.value ?? "未知"}</Text>
+    <Text style={styles.label}>{row.label}</Text><Text style={[styles.body, styles.value]}>{row.value ?? "未知"}</Text>
   </View>)}</View>;
 }
 
@@ -48,7 +48,8 @@ const styles = StyleSheet.create({
   keyFact: { flex: 1, flexBasis: 160, minWidth: 0, gap: spacing.xs, borderLeftWidth: 2, borderLeftColor: colors.line, paddingLeft: spacing.md },
   factValue: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
   rows: { gap: spacing.sm, minWidth: 0 }, row: { flexDirection: "row", flexWrap: "wrap", columnGap: spacing.md, rowGap: spacing.xs, minWidth: 0, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingBottom: spacing.sm },
-  label: { minWidth: 100, fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "700" },
+  value: { flex: 1, minWidth: 120 },
+  label: { width: 100, fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 18, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   version: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.tool, fontWeight: "700" },

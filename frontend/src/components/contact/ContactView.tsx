@@ -16,13 +16,11 @@ import {AppButton, SectionCard, SectionHeader} from '../ui';
 import {ContactConsentCard} from './ContactConsentCard';
 import {ContactTaskCard} from './ContactTaskCard';
 import {ContactHistory} from './ContactHistory';
-import {MotionDisclosure} from '../../motion';
 import {contactStyles as s} from './contact-styles';
 
-export function ContactView({model, actions, onSettings, onTask, previewTools, production = false}: {model: ContactViewModel; actions: ContactActions; onSettings: () => void; onTask: (id: string) => void; previewTools?: React.ReactNode; production?: boolean}) {
+export function ContactView({model, actions, onSettings, onTask, previewTools}: {model: ContactViewModel; actions: ContactActions; onSettings: () => void; onTask: (id: string) => void; previewTools?: React.ReactNode; production?: boolean}) {
   const containerLayout = useContainerWidth();
   const wide = containerLayout.width >= 800;
-  const [details, setDetails] = useState(false);
   const [selection, setSelection] = useState<{epoch: number; id: string} | null>(null);
   const taskPanel = useRef<View>(null);
   const taskRows = useRef(new Map<string, View>());
@@ -40,7 +38,7 @@ export function ContactView({model, actions, onSettings, onTask, previewTools, p
     if (selectedId) (taskPanel.current as unknown as HTMLElement | null)?.focus({preventScroll: true});
     else if (previous?.epoch === model.epoch) (taskRows.current.get(previous.id) as unknown as HTMLElement | undefined)?.focus({preventScroll: true});
   }, [selectedId, model.epoch]);
-  return <PageFrame density="compact" title="接收同意與聯絡" description={`為${model.childName}核對誰可以接收、透過甚麼渠道，以及哪項安排已獲授權。`}>
+  return <PageFrame density="compact" title="聯絡" description={`為${model.childName}核對誰可以接收、透過甚麼渠道，以及哪項安排已獲授權。`}>
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={s.pageStack}>
       <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={model.notice} urgent={model.operation === "failed"} />
       <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
@@ -57,11 +55,9 @@ export function ContactView({model, actions, onSettings, onTask, previewTools, p
       {model.notice ? <Text style={model.load === 'error' || !model.online || model.pending || ['failed', 'conflict', 'unknown'].includes(model.operation) ? s.warning : s.body}>{model.notice}</Text> : null}
       {model.dirty ? <AppButton label="放棄全部未提交選項並載入已保存資料" variant="quiet" disabled={!model.online || model.busy || !!model.pending || model.load !== 'ready'} onPress={actions.discard} /> : null}
       {model.pending ? <SectionCard testID="contact-pending"><SectionHeader density="compact" title="原決定待核對" icon="information-outline" />
-        <AppStatusBadge label={model.pending.confirmed ? "原收據已確認 · 最新資料待讀回" : "原操作結果待核對"} tone="warning" /><Text selectable style={s.meta}>{production ? model.pending.reference ? `原操作：${model.pending.reference}` : "原操作識別由既有傳輸保留。" : `原操作：${model.pending.reference}（合成參考）`}</Text>{model.pending.labels.map((text, index) => <Text key={index} style={s.body}>{text}</Text>)}
-        <AppButton expanded={details} label={details ? '收起原提交內容' : '查看原提交內容及版本'} variant="quiet" onPress={() => setDetails(value => !value)} />
-        <MotionDisclosure expanded={details} scopeKey={`${model.scopeKey}:${model.pending.reference}`}><Text testID="contact-original-body" selectable style={s.meta}>{JSON.stringify(JSON.parse(model.pending.body), null, 2)}</Text></MotionDisclosure>
-        <Text style={s.meta}>{model.pending.confirmed ? '原收據已確認，最新資料尚未讀回；不能重送或另建提交。' : '原識別、接收者、內容及版本保持不變；GET 本身不證明原決定成功。'}</Text>
-        <AppCheckbox label="我已核對目前資料，同意以原識別內容及版本重試" checked={model.originalConsent} disabled={!canRetry} onChange={actions.setOriginalConsent} /><AppButton label="明確重試原聯絡決定" disabled={!canRetry || !model.originalConsent} onPress={actions.retryOriginal} />
+        <AppStatusBadge label={model.pending.confirmed ? "原收據已確認 · 最新資料待讀回" : "原操作結果待核對"} tone="warning" />{model.pending.labels.map((text, index) => <Text key={index} style={s.body}>{text}</Text>)}
+        <Text style={s.meta}>{model.pending.confirmed ? '原收據已確認，最新資料尚未讀回；不能重送或另建提交。' : '接收者、內容及原版本仍然保留；重新讀取不代表原決定成功。'}</Text>
+        <AppCheckbox label="我已核對目前資料，同意以原內容及版本重試" checked={model.originalConsent} disabled={!canRetry} onChange={actions.setOriginalConsent} /><AppButton label="明確重試原聯絡決定" disabled={!canRetry || !model.originalConsent} onPress={actions.retryOriginal} />
       </SectionCard> : null}
       {page ? <>
         <View testID="contact-reachability" style={[s.reachability, !wide && s.reachabilityStack]}>

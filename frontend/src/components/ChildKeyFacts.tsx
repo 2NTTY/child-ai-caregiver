@@ -12,9 +12,7 @@ type ChildFact = { label: string; value: string };
 
 function childFacts(child: HomeChild): ChildFact[] {
   return [
-    { label: "地區", value: child.regionLabel },
     { label: "檔案", value: child.profileConfirmed ? "已確認" : "待核對" },
-    { label: "過敏", value: child.allergiesLabel ?? "未提供" },
   ];
 }
 function Fact({ fact }: { fact: ChildFact }) {

@@ -59,6 +59,7 @@ const errors = evaluate(path.join(root, 'src/components/FormErrorSummary.tsx'), 
 // Actual form, RHF, AppTextField, Paper TextInput/HelperText and RN Web DOM.
 // Non-title controls and appearance/live-region dependencies are bounded doubles.
 const { DocumentCreateForm } = evaluate(path.join(root, 'src/components/preparations/DocumentCreateForm.tsx'), name => {
+  if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewLeaveGuard() {} }; // Navigation is covered by document-draft-navigation.
   if (name.endsWith('/theme')) return theme;
   if (name.endsWith('/preparation-view-model')) return { preparationPurposes: [{ key: 'appointment', label: '到診' }] };
   if (name.endsWith('/ui')) return { AppTextField: ui.AppTextField, AppSelect: empty, AppButton: Button };

@@ -60,7 +60,8 @@ export function PreviewNavigationGuard({ children }: { children: ReactNode }) {
       <AppButton label="重試返回原頁" variant="quiet" onPress={historyError.retry} />
       <AppButton label="確認離開目前頁面" variant="danger" onPress={() => leave(historyError.leave)} />
     </View> : null}
-    <Dialog visible={request !== null} onDismiss={() => setRequest(null)} testID="leave-preview-dialog">
+    {/* Mount the prompt last so RN Web visual portal order matches its active focus stack. */}
+    {request ? <Dialog visible onDismiss={() => setRequest(null)} testID="leave-preview-dialog">
       <Dialog.Title>{request?.blocked ? "先處理原操作" : "離開未保存草稿？"}</Dialog.Title>
       <Dialog.Content><Text style={styles.body}>{request?.blocked
         ? "原操作仍在處理、結果未知或待重讀。請留在此頁查核同一操作；原內容及參考會保留。"
@@ -72,7 +73,7 @@ export function PreviewNavigationGuard({ children }: { children: ReactNode }) {
           const action = request.action; setRequest(null); approved.current = true;
           try { action(); } finally { approved.current = false; }
         }} /> : null}</Dialog.Actions>
-    </Dialog>
+    </Dialog> : null}
   </Context.Provider>;
 }
 

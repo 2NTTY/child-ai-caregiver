@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { careKindOptions, type CareFilter, type CareRecordsActions, type CareRecordsViewModel } from "../../care-view-model";
@@ -8,11 +8,15 @@ import { AppStatusBadge } from "../AppStatusBadge";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { CareWriteNotice } from "./CareReviewHistoryView";
 import { CareRecordDetail } from "./CareRecordDetail";
+import { FormDialog } from "../FormDialog";
 import { CareRecordForm } from "./CareRecordForm";
 import { CareRecordDelete } from "./CareRecordDelete";
 
 // History consumes the same Care owner. The current page replaces, never appends to, the visible list.
-export function CareSavedRecordsView(props: { model: CareRecordsViewModel; actions: CareRecordsActions }) { return <><CareWriteNotice {...props} /><CareSavedRecordsBody {...props} /></>; }
+export function CareSavedRecordsView(props: { model: CareRecordsViewModel; actions: CareRecordsActions }) { const returnFocus = useRef<View>(null); return <View ref={returnFocus} tabIndex={-1} accessibilityLabel="已保存記錄"><CareWriteNotice {...props} /><CareSavedRecordsBody {...props} />
+  <FormDialog formKey={props.model.draft?.key} visible={!!props.model.draft && props.model.access !== "lost"} scopeKey={props.model.scopeKey ?? props.model.child.id} title="記錄資料" returnFocusRef={returnFocus} onClose={props.actions.closePanel} recovery={<CareWriteNotice {...props} />}>
+    {props.model.draft ? <CareRecordForm key={props.model.draft.key} {...props} /> : null}
+  </FormDialog></View>; }
 function CareSavedRecordsBody({ model, actions }: { model: CareRecordsViewModel; actions: CareRecordsActions }) {
   const [query, setQuery] = useState(model.list.activeQuery), [kind, setKind] = useState<CareFilter>(model.list.activeKind);
   const occupied = ["saving", "unknown"].includes(model.operation.state) || !!model.draft || !!model.deletion;
@@ -25,7 +29,6 @@ function CareSavedRecordsBody({ model, actions }: { model: CareRecordsViewModel;
   const readMessage = model.list.message ?? (loading && !hasSnapshot ? "正在讀取記錄…" : model.list.state === "error" ? "未能讀取記錄，請重試。" : model.list.state === "stale" ? model.online ? "記錄尚待重新核對。" : "目前離線，記錄尚未核對。" : empty ? filtered ? "沒有符合篩選的已保存記錄" : model.list.hasMore || model.list.hasPrevious ? "此頁暫無已保存記錄" : "暫無已保存記錄" : "");
   if (model.access === "lost") return <ReadStateNotice state="unavailable" message="目前沒有權限查看這個孩子的記錄。" />;
   if (model.deletion) return <CareRecordDelete model={model} actions={actions} />;
-  if (model.draft) return <CareRecordForm key={model.draft.key} model={model} actions={actions} />;
   if (model.detail) return <CareRecordDetail detail={model.detail} actions={actions} canEdit={model.access === "editable"} online={model.online} />;
   return <View style={s.workspace}>
     {showSearch ? <><AppTextField label="搜尋已保存記錄" accessibilityLabel="搜尋已保存記錄" value={query} onChangeText={setQuery} maxLength={200} disabled={occupied} />

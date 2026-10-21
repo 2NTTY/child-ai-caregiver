@@ -181,8 +181,21 @@ test('the real reporter waits only for the active settings panel and retries its
   assert.equal(app.render('/settings', query, 'model'), 'loading'); app.retry();
   assert.deepEqual(app.calls, [['profile'], ['model']]); app.calls.length = 0;
   assert.equal(app.render('/settings', query, 'notifications'), 'loading'); app.retry();
-  assert.deepEqual(app.calls, [['profile'], ['push'], ['telegram']]); app.calls.length = 0;
-  assert.equal(app.render('/settings', query, 'preferences'), 'loading'); app.retry();
-  assert.deepEqual(app.calls, [['profile'], ['preferences']]);
+  assert.deepEqual(app.calls, [['profile'], ['preferences'], ['push'], ['telegram']]); app.calls.length = 0;
+  assert.equal(app.render('/settings', query, 'preferences'), 'ready'); app.retry();
+  assert.deepEqual(app.calls, [['profile']]);
   assert.equal(app.render('/settings', query, 'account'), 'ready', 'hidden pending panels cannot delay the visible account panel');
+});
+
+test('regrouped concern/preparation and overview/archive tabs wait only for their actual owners, including old aliases', () => {
+  const h = harness(), { routeStartupRequirements, routeStartupReadiness } = h.load('src/startup/dataReadiness.ts');
+  assert.deepEqual(routeStartupRequirements('/growth', {}), ['growth']);
+  assert.deepEqual(routeStartupRequirements('/growth', { tab: 'preparation' }), ['documents']);
+  assert.deepEqual(routeStartupRequirements('/summary', {}), ['profile', 'summary']);
+  assert.deepEqual(routeStartupRequirements('/summary', { tab: 'archive' }), ['growth', 'documents']);
+  assert.deepEqual(routeStartupRequirements('/summary', { tab: 'preparation' }), ['documents']);
+  assert.deepEqual(routeStartupRequirements('/growth', { tab: 'archive' }), ['growth', 'documents']);
+  assert.equal(routeStartupReadiness('/growth', { tab: 'preparation' }, { documents: 'ready', growth: 'loading' }), 'ready');
+  assert.equal(routeStartupReadiness('/summary', { tab: 'archive' }, { documents: 'ready', growth: 'loading' }), 'loading');
+  assert.equal(routeStartupReadiness('/summary', { tab: 'archive' }, { documents: 'ready', growth: 'error' }), 'error');
 });

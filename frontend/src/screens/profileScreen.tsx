@@ -2,26 +2,24 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { brand } from "../branding";
 import { PageFrame } from "../components/PageFrame";
 import { ProfileView } from "../components/profile/ProfileView";
 import { OperationNotice } from "../components/OperationNotice";
-import { useProfileSwitchAnchor } from "../components/profile/useProfileSwitchAnchor";
-import { MotionDisclosure } from "../motion";
+import { ManualFormDialog } from "../components/FormDialog";
 import { AppButton, AppTextField, SectionCard, SectionHeader } from "../components/ui";
-import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
+import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useProduction } from "../production/ProductionProvider";
 import { useProductionCareProfile } from "../production/CareProfileDomains";
 import { useDomainWriteGuard } from "../production/useDomainEnvironment";
 import { useProfileWorkspace } from "../workspaces/ProfileWorkspace";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
-function ProfileContent({ switchPosition }: { switchPosition: ReturnType<typeof useProfileSwitchAnchor> }) {
+function ProfileContent() {
   const { model: home, actions: homeActions, online, recordsState, controller, identityKey } = useProduction();
   const workspace = useProfileWorkspace(), recovery = useProductionCareProfile(), leave = usePreviewNavigation();
   const pathname = usePathname(), lastPath = useRef(pathname);
   const child = home.children.find(item => item.id === home.selectedChildId) ?? null;
-  const [managementOpen, setManagementOpen] = useState(false), [reviewName, setReviewName] = useState<string | null>(null);
+  const [reviewName, setReviewName] = useState<string | null>(null);
   const creating = recordsState.busy === "createChild", createUnknown = ["unknown", "checked"].includes(recordsState.childOutcome);
   useEffect(() => {
     if (lastPath.current === "/profile" && pathname !== "/profile" && !creating && !createUnknown) {
@@ -30,16 +28,12 @@ function ProfileContent({ switchPosition }: { switchPosition: ReturnType<typeof 
     lastPath.current = pathname;
   }, [pathname]);
   useDomainWriteGuard(!!recordsState.childName || !!reviewName, creating || createUnknown, "account");
+  usePreviewLeaveGuard((!!recordsState.childName || !!reviewName) && !creating && !createUnknown, false, "account");
   const managementLocked = !!recovery?.pending || !!recordsState.busy || createUnknown || !!recordsState.deletion;
-  const childPicker = <View ref={switchPosition.pickerRef} style={styles.childBar}><SectionCard surface="plain"><SectionHeader density="compact" title="目前孩子" subtitle="只查看這位孩子的檔案；切換前會保護未保存草稿。" />
-    <View style={styles.childOptions}>{home.children.length ? home.children.map(item => <Pressable key={item.id} accessibilityRole="button"
-      ref={node => switchPosition.setOptionRef(item.id, node)} accessibilityLabel={"切換至" + item.displayName} accessibilityState={{ selected: item.id === child?.id }}
-      onPress={() => switchPosition.selectChild(item.id)} style={({ pressed }) => [styles.childOption, item.id === child?.id && styles.childOptionActive, pressed && (item.id === child?.id ? styles.selectedPressed : styles.pressed)]}>
-      <Text style={styles.childName}>{item.displayName}</Text><Text style={styles.meta}>{item.id === child?.id ? "目前" : "切換"}</Text>
-    </Pressable>) : <Text style={styles.meta}>沒有可切換的孩子。</Text>}</View>
-    <AppButton expanded={managementOpen} label={managementOpen ? "收起孩子管理" : "新增或管理孩子"} variant="quiet" onPress={() => setManagementOpen(value => !value)} />
-    <MotionDisclosure expanded={managementOpen || !home.children.length || creating || createUnknown} scopeKey={identityKey ?? "no-identity"}><View style={styles.childManagement}>
-      <Text>新增孩子只需要稱呼；不必先建立家庭或邀請他人。資料保存於你的空間；若日後邀請成員，才按角色提供共享資料，私人聊天保持私有。</Text>
+  const childPicker = <View style={styles.childManagement}>
+    <ManualFormDialog label="新增孩子" scopeKey={identityKey ?? "no-identity"} disabled={!!recordsState.deletion}
+      onClose={() => { if (!creating && !createUnknown) { controller.setChildName(""); setReviewName(null); } }}>
+      <Text>填寫孩子稱呼即可建立；其餘資料可以稍後補充。只有獲授權成員可讀取共享資料，私人聊天保持私有。</Text>
       <AppTextField label="孩子稱呼" accessibilityLabel="孩子稱呼" value={recordsState.childName} maxLength={80} disabled={managementLocked}
         onChangeText={value => { setReviewName(null); controller.setChildName(value); }} />
       <AppButton label="核對新增孩子" variant="secondary" disabled={managementLocked || !recordsState.childName.trim()}
@@ -55,31 +49,30 @@ function ProfileContent({ switchPosition }: { switchPosition: ReturnType<typeof 
         {recordsState.childOutcome === "checked" ? <AppButton label="我已核對，重試原建立操作" variant="secondary" disabled={!online || !!recordsState.busy}
           onPress={() => { controller.resolveUnknownChild(false); void controller.createChild(); }} /> : null}
       </> : null}
-      {child?.accessRole === "owner" ? <AppButton label="永久刪除目前孩子及其資料" variant="danger-secondary" disabled={!online || managementLocked || workspace?.model.operation.state === "conflict"}
-        onPress={() => homeActions.deleteChildPreview(child.id)} /> : null}
-    </View></MotionDisclosure>
-  </SectionCard></View>;
+
+    </ManualFormDialog>
+    {child?.accessRole === "owner" ? <AppButton label="刪除目前孩子" accessibilityLabel="永久刪除目前孩子及其資料" variant="quiet" disabled={!online || managementLocked || workspace?.model.operation.state === "conflict"}
+      onPress={() => homeActions.deleteChildPreview(child.id)} /> : null}
+  </View>;
   if (!workspace) return <>{childPicker}<SectionCard><Text>{child ? "正在讀取孩子檔案…" : "先填一個稱呼建立孩子，便可以跟助手交代事情；其他資料可稍後補充。"}</Text></SectionCard></>;
   const { model, actions } = workspace;
   return <ProfileView model={model} actions={actions} childPicker={childPicker} onOpenCare={() => homeActions.open("care")}
-    childDeletionActive={!!recordsState.deletion || creating || createUnknown} onLayoutReady={switchPosition.restorePosition} previewControls={null}
+    childDeletionActive={!!recordsState.deletion || creating || createUnknown} previewControls={null}
     writeNotice={<OperationNotice state={model.operation.state} title={model.operation.resultUnavailable ? "原操作已確認 · 待重讀結果" : "檔案操作"}
       visible={model.operation.state !== "needs_confirmation"} message={model.operation.message}
-      referenceLabel={model.operation.reference ? "原操作參考：" + model.operation.reference : undefined}>
+>
       {model.operation.state === "unknown" ? <AppButton label={model.operation.resultUnavailable ? "重新讀取目前結果" : "查核原操作"} disabled={!online} onPress={() => recovery?.checkProfile()} /> : null}
       {model.operation.state === "unknown" && recovery?.profileRetryAvailable ? <AppButton label="重試同一原操作" variant="secondary" disabled={!online} onPress={recovery.retryProfile} /> : null}
     </OperationNotice>} />;
 }
 
 export default function ProfilePage() {
-  const { model, actions, identityKey } = useProduction();
-  const switchPosition = useProfileSwitchAnchor(model.selectedChildId ?? "no-child", actions.selectChild);
-  return <PageFrame density="compact" title="子女檔案" description="只填已知資料；年齡原值、日期基準與未知欄位如實保留。" eyebrow={brand.name + " · 孩子資料"}
-    scrollRef={switchPosition.scrollRef} scrollTestID="profile-scroll"><ProfileContent key={identityKey ?? "no-identity"} switchPosition={switchPosition} /></PageFrame>;
+  const { identityKey } = useProduction();
+  return <PageFrame density="compact" title="檔案"><ProfileContent key={identityKey ?? "no-identity"} /></PageFrame>;
 }
 const styles = StyleSheet.create({
   childBar: { borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.lg },
-  childOptions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, childManagement: { gap: spacing.lg, paddingTop: spacing.md },
+  childOptions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, childManagement: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   review: { backgroundColor: colors.paleAmber, borderRadius: radius.small, padding: spacing.md, gap: spacing.md },
   childOption: { backgroundColor: colors.controlSurface, flexGrow: 1, flexBasis: 180, minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.sm,
     borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },

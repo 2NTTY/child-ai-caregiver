@@ -27,7 +27,7 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
   if (!owner) return <ReadStateNotice state="unavailable" title="對話歷史暫未提供" />;
   const read = owner.history, matches = visiblePersonalHistory(read, dateRange);
   return <View style={styles.list}>
-    <Text style={styles.meta}>只查閱你與這位孩子的對話。每次最多掃 100 則，返回最多 10 個命中；日期按香港時間篩選已掃過的結果。</Text>
+    <Text style={styles.meta}>只查閱你與這位孩子的對話。每次最多掃 100 則，返回最多 10 個命中；日期篩選只包括已掃過的結果。</Text>
     {read.state === "loading" ? <ReadStateNotice state="loading" title="正在搜尋對話…" />
       : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到對話歷史"><AppButton label="重新搜尋" variant="secondary" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /></ReadStateNotice>
       : read.state === "unavailable" ? <ReadStateNotice state="unavailable" title={owner.online ? "正在準備對話搜尋…" : "連線後才可讀取對話歷史"} />
@@ -57,8 +57,7 @@ export function PersonalNotificationHistoryView({ searchText, dateRange }: { sea
   if (!owner) return <ReadStateNotice state="unavailable" title="本人通知歷史暫未提供" />;
   const read = owner.notifications, items = visiblePersonalNotifications(read.data?.items ?? [], searchText, dateRange);
   return <View style={styles.list}>
-    <Text style={styles.meta}>本人通知：包括瀏覽器、Telegram、授權聯絡及帳戶電郵的投遞資料，涵蓋你的帳戶，並非全部屬於目前孩子。搜尋與日期只篩已載入頁。</Text>
-    <Text style={styles.meta}>排隊表示等待投遞；渠道接受不證明你已收到；只有確認收到的時間才有收悉證據。投遞嘗試完結不代表照護事項完成；結果未知不會自動重發。</Text>
+    <Text style={styles.meta}>搜尋與日期只篩已載入通知。</Text>
     {read.state === "loading" ? <ReadStateNotice state="loading" title="正在讀取本人通知…" />
       : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到本人通知" message="資料範圍可能已更新，請重新讀取。"><AppButton label="重新讀取本人通知" variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} /></ReadStateNotice>
       : read.state === "unavailable" ? <ReadStateNotice state="unavailable" title={owner.online ? "正在準備通知歷史…" : "連線後才可讀取本人通知"} />
@@ -66,18 +65,21 @@ export function PersonalNotificationHistoryView({ searchText, dateRange }: { sea
         {read.state === "stale" || !owner.online ? <ReadStateNotice state="stale" title="最新通知狀態尚未核對" /> : null}
         {items.map(item => <View key={item.id} style={styles.entry} testID="personal-notification-entry">
           <View style={styles.row}><Text style={styles.title}>{notificationChannelLabel(item)}</Text><AppStatusBadge label={notificationStatusLabels[item.status]} tone={item.status === "unknown" ? "warning" : "neutral"} /></View>
-          {item.createdAt ? <Text style={styles.meta}>建立：{memoryDateLabel(item.createdAt)}</Text> : <Text style={styles.meta}>建立時間未提供</Text>}
-          {item.attemptedAt ? <Text style={styles.meta}>投遞嘗試：{memoryDateLabel(item.attemptedAt)}</Text> : null}
-          {item.finishedAt ? <Text style={styles.meta}>投遞嘗試完結：{memoryDateLabel(item.finishedAt)}</Text> : null}
-          {item.acknowledgedAt ? <Text style={styles.meta}>確認收到：{memoryDateLabel(item.acknowledgedAt)}</Text> : null}
-          {item.channel === "mail" && item.updatedAt ? <Text style={styles.meta}>狀態更新：{memoryDateLabel(item.updatedAt)}</Text> : null}
+          <Text style={styles.meta}>{notificationTime(item.createdAt ?? item.attemptedAt ?? item.updatedAt)}</Text>
+          {item.status === "accepted" && !item.acknowledgedAt ? <Text style={styles.meta}>尚未確認收到</Text> : null}
+          {item.status === "unknown" ? <Text style={styles.meta}>結果待核對，未自動重發</Text> : null}
         </View>)}
         {!items.length ? <Text style={styles.meta}>{read.data?.complete ? "已載入完整本人通知，沒有符合篩選的項目。" : "已載入頁中沒有符合篩選的項目；仍可載入更多渠道及記錄。"}</Text> : null}
-        {read.data ? <Text style={styles.meta}>{read.data.complete ? "本人通知已完整載入" : "本人通知仍有頁未載入"} · 已載入 {read.data.items.length} 項</Text> : null}
+        {read.data ? <Text style={styles.meta}>{read.data.complete ? "已完整載入" : "尚有通知未載入"} · 已載入 {read.data.items.length} 項</Text> : null}
         {read.data?.nextCursor ? <AppButton label={owner.busy.notifications ? "正在讀取…" : "載入更多本人通知"} variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.moreNotifications} /> : null}
         {read.state === "stale" ? <AppButton label="重新讀取本人通知" variant="quiet" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} /> : null}
       </>}
   </View>;
+}
+function notificationTime(value: string | null) {
+  if (!value || !Number.isFinite(Date.parse(value))) return "時間未提供";
+  return new Intl.DateTimeFormat("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
 }
 const styles = StyleSheet.create({
   list: { gap: spacing.md, minWidth: 0 },

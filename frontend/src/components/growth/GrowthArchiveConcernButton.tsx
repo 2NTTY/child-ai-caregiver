@@ -34,7 +34,7 @@ export function GrowthArchiveConcernButton({ concern, scopeKey, authorityVersion
     reviewRef.current = null; setReview(null); review.confirm();
   }
   return <>
-    <AppButton label="結束關注" accessibilityLabel={`結束關注：${concern.title}`} variant="danger" style={a.action} disabled={disabled} onPress={open} />
+    <AppButton label="結束關注" accessibilityLabel={`結束關注：${concern.title}`} variant="quiet" style={a.managementAction} disabled={disabled} onPress={open} />
     <AppDialog visible={valid} onDismiss={cancel} danger accessibilityLabel={`確認結束關注：${review?.title ?? concern.title}`} testID="growth-archive-confirmation">
       <AppDialog.Title danger>結束這條關注？</AppDialog.Title>
       <AppDialog.Content><Text style={s.title}>「{review?.title ?? concern.title}」</Text>
@@ -49,4 +49,4 @@ export function GrowthArchiveConcernButton({ concern, scopeKey, authorityVersion
   </>;
 }
 
-const a = StyleSheet.create({ action: { alignSelf: "flex-start", borderWidth: 0 } });
+const a = StyleSheet.create({ managementAction: { alignSelf: "flex-start", borderWidth: 0 }, action: { alignSelf: "flex-start", borderWidth: 0 } });

@@ -204,7 +204,9 @@ export function usePhotoInputSources() {
     clearEditor(); update({ operation: noOperation(), notice: "", resourceUnavailable: false });
   }, [pathname]);
   const pending = state.busy || !!state.pending || !!state.direct;
-  useDomainWriteGuard(!!state.draft.text && !state.selected?.recordId || !!state.managementDraft?.dirty || !!state.intention && !state.selected, pending);
+  // Background reads lock local controls, but are not unresolved writes.
+  const writePending = state.operation.state === "saving" || !!state.pending || !!state.direct;
+  useDomainWriteGuard(!!state.draft.text && !state.selected?.recordId || !!state.managementDraft?.dirty || !!state.intention && !state.selected, writePending);
   const isFresh = fresh(), managed = manageable(), directManual = manualAllowed(), selected = state.selected;
   const unknownState = !!selected && (selected.fetchState === "unknown" || selected.extraction.state === "unknown" || selected.fetchState === "running" || selected.extraction.state === "running");
   const formLocked = state.busy || !!state.pending || !!state.latest || state.operation.state === "conflict" || !editable() || !!selected && !managed || !!state.direct && !directManual;
@@ -235,6 +237,17 @@ export function usePhotoInputSources() {
     }, kind);
   }
   const actions: SourcesActions = {
+    discardDraft(kind) {
+      const value = ref.current;
+      if (!current() || value.pending || value.direct || value.operation.state === "saving") return;
+      if (kind === "management" && value.selected) {
+        update({ managementDraft: managementDraft(value.selected), intakeStage: value.selected.management ? "saved" : "awaiting_read" });
+      } else if (kind === "composer" && !value.selected) {
+        update({ composerSeed: null, intention: "", formKey: value.formKey + 1 });
+      } else if (kind === "record") {
+        update({ draft: emptyPhotoDraft(), reviewed: null, sharedConsent: false, childFactConsent: false, formKey: value.formKey + 1 });
+      }
+    },
     intake: {
       setIntention: intention => { if (ref.current.selected) { const draft = ref.current.managementDraft; if (draft) editManagementDraft({ management: { ...draft.management, intention } }); }
         else if (fresh()) update({ intention }); },

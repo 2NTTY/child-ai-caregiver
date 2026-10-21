@@ -1,7 +1,7 @@
 import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useContainerWidth } from "../useContainerWidth";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View } from "react-native";
 import { AppScrollView as ScrollView } from "../AppScrollView";
 import { Text } from "react-native-paper";
@@ -11,6 +11,9 @@ import { AppDialog } from "../AppDialog";
 import { AppCheckbox } from "../AppCheckbox";
 import { PageFrame } from "../PageFrame";
 import { AppButton, OperationPill, SectionCard, SectionHeader } from "../ui";
+import { FormDialog, ManualFormDialog } from "../FormDialog";
+import { SourceStatus } from "./SourceStatus";
+import { usePreviewNavigation } from "../../preview/PreviewNavigationGuard";
 import { SourceComposer } from "./SourceComposer";
 import { SourceDetails, sourceTime } from "./SourceDetails";
 import { SourceRecordForm } from "./SourceRecordForm";
@@ -23,28 +26,14 @@ import { MotionList } from "../../motion";
 import { useContentListMotion } from "./useContentListMotion";
 import { useContentDeletionFocus } from "./useContentDeletionFocus";
 
-function SourceStatus({ model, actions, production }: { model: SourcesViewModel; actions: SourcesActions; production: boolean }) {
-  const op = model.operation;
-  const pill = op.state === "saved" && op.phase === "extract" ? "needs_confirmation" : op.state === "unconfirmed" ? "unknown" : op.state === "conflict" ? "needs_confirmation"
-    : op.state === "confirmed_unavailable" ? "saved" : op.state;
-  return <><StatusAnnouncement eventKey={`${op.state}:${op.phase}:${op.reference}:${op.message}:${model.notice}`} message={[op.message, model.notice].filter(Boolean).join(" ")} urgent={op.state === "failed"} />
-    {op.state === "none" && !model.notice ? null : <SectionCard surface="plain" style={s.operationBanner} testID="source-operation"><SectionHeader density="compact" title="這次來源操作" />
-    {op.state === "confirmed_unavailable" ? <AppStatusBadge label="原操作已確認 · 結果不可讀" tone="warning" /> : op.state === "saved" && op.phase === "delete" ? <AppStatusBadge label={production ? "已刪除" : "已刪除（合成預覽）"} tone="success" /> : op.state === "conflict" ? <AppStatusBadge label="版本衝突 · 待核對" tone="warning" /> : op.state !== "none" ? <OperationPill state={pill} /> : null}
-    {op.reference ? <Text selectable style={s.meta}>{production ? "原操作參考：" : "合成原操作參考："}{op.reference}</Text> : null}
-    {op.message ? <Text style={s.body}>{op.message}</Text> : null}
-    {model.notice ? <Text style={s.body}>{model.notice}</Text> : null}
-    {op.state === "unknown" || op.state === "unconfirmed" || op.state === "confirmed_unavailable" ? <AppButton label="查核原次結果" disabled={!model.online || model.busy || model.access === "lost"} variant="secondary" onPress={actions.checkOriginal} /> : null}
-    {op.state === "unconfirmed" && op.checked ? <AppButton label="沿原內容及參考重試" disabled={!model.online || model.busy || model.load !== "ready" || model.access !== "editable"} variant="secondary" onPress={actions.retryOriginal} /> : null}
-    {op.state === "confirmed_unavailable" ? <AppButton label="結束已確認操作" disabled={!op.checked || !model.online || model.load !== "ready" || model.busy || model.access === "lost"} variant="secondary" onPress={actions.finishUnavailable} /> : null}
-    {op.state === "conflict" ? <><Text style={s.warning}>編輯基準版本 {model.selected?.version ?? "未知"}；{model.latest ? `目前版本 ${model.latest.version}` : "請先重新讀取目前版本"}。草稿沒有被覆蓋。</Text>
-      <AppButton label="明確使用目前版本" disabled={!model.latest || !model.online || model.load !== "ready" || model.busy || model.access !== "editable"} variant="secondary" onPress={actions.useLatest} />
-    </> : null}
-  </SectionCard>}</>;
-}
 
 export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord, previewControls, production = false }: {
   model: SourcesViewModel; actions: SourcesActions; onPhotos: () => void; onRecord: (id: string) => void; previewControls: ReactNode; production?: boolean;
 }) {
+  const navigate = usePreviewNavigation();
+  const [composerScope, setComposerScope] = useState<string | null>(null);
+  const composerTrigger = useRef<View>(null);
+  useEffect(() => { if (model.selected && model.operation.phase === "create" && model.operation.state === "saved") setComposerScope(null); }, [model.selected?.id, model.operation.phase, model.operation.state]);
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
   const [manualSourceId, setManualSourceId] = useState<string | null>(null);
@@ -58,6 +47,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
   }
   function revealAfter(action: () => void) {setResultTrigger(++requestSerial.current); action();}
   const actions: SourcesActions = {...sourceActions,
+    recreateWithText: () => navigate(() => { sourceActions.recreateWithText(); setComposerScope(model.scopeKey); }),
     intake: sourceActions.intake ? { ...sourceActions.intake, confirmProposal: () => mutateList('move', sourceActions.intake!.confirmProposal) } : undefined,
     create: input => mutateList('add', () => sourceActions.create(input)), remove: () => {if (model.selected) deletionFocus.start(model.selected.id); mutateList('remove', sourceActions.remove);},
     confirm: () => mutateList('move', sourceActions.confirm),
@@ -81,11 +71,11 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
   const readState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online || !model.fresh ? "stale" : "ready";
   const readMessage = readState === "loading" ? "正在讀取私人來源…" : readState === "error" ? model.notice || "未能讀取來源，請重試。"
     : readState === "stale" ? !model.online ? "目前離線。本頁文字草稿保留，沒有離線提交；恢復連線後請手動重新讀取。" : "來源最新狀態尚未核對，請重新讀取。" : "";
-  return <PageFrame density="compact" title="資料來源" description="你提供的私人來源統一在這裏管理。說明用途，讓助手協助整理，再由你核對；也可以自行填寫。" eyebrow="私人保存 · 核對後才接入">
+  return <PageFrame density="compact" title="來源" description="你提供的私人來源統一在這裏管理。說明用途，讓助手協助整理，再由你核對；也可以自行填寫。" eyebrow="私人保存 · 核對後才接入">
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "目前沒有存取權限。舊原文、候選、草稿及操作已清除。" : ""} urgent={model.access === "lost"} />
     <View style={s.toolbar}><View style={s.scope}><Text style={s.meta}>目前範圍</Text><Text style={s.title}>{model.childName} · {model.accountName}本人</Text></View><View style={s.row}>
       {model.operation.state === "conflict" ? <AppButton label="重新核對來源版本" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /> : null}
-      <AppButton label="清除草稿並新增來源" variant="quiet" disabled={!model.canChoose || !model.canCreate} onPress={actions.newInput} />
+      <AppButton ref={composerTrigger} label="手動新增來源" variant="quiet" disabled={!model.canChoose || !model.canCreate} onPress={() => navigate(() => { actions.newInput(); setComposerScope(model.scopeKey); })} />
       <AppButton label="照片與記錄" variant="quiet" onPress={onPhotos} />
     </View></View>
     {model.access !== "lost" ? <ReadStateNotice state={readState} message={readMessage}>
@@ -97,7 +87,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     <SourceStatus model={model.load === "error" && model.operation.state === "none" && model.access !== "lost" ? { ...model, notice: "" } : model} actions={actions} production={production} />
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[s.columns, !columns && s.single]}>
       <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={listResultAvailable && model.fresh ? model.items.length : undefined} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
-        {listResultAvailable && model.fresh && model.items.length === 0 ? <EmptyListCard title="暫時沒有私人來源" detail="可在旁邊的新增來源區加入資料。" /> : null}
+        {listResultAvailable && model.fresh && model.items.length === 0 ? <EmptyListCard title="暫時沒有私人來源" detail="可先說明用途，或手動加入你有權提供的資料。" /> : null}
         <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => <View style={[s.item, model.selected?.id === input.id && s.itemSelected]} testID={`source-item-${input.id}`}>
           <Text style={s.title}>{input.sourceLabel}</Text><View style={s.row}><AppStatusBadge label={fetchStateLabels[input.fetchState]} tone={input.fetchState === "ready" ? "success" : input.fetchState === "failed" ? "error" : input.fetchState === "unknown" ? "warning" : input.fetchState === "running" ? "info" : "neutral"} /><AppStatusBadge label={input.recordId ? "已連結家庭記錄" : "尚未家庭共享"} tone={input.recordId ? "success" : "neutral"} /></View>
           <Text style={s.meta}>保存於 {sourceTime(input.createdAt)}</Text>
@@ -107,7 +97,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
       </SectionCard></View>
       <View style={[s.main, s.editorSurface, !columns && s.full]}>
         {model.selected ? <View style={s.detailHeading}><Text style={s.meta}>目前來源 · 版本 {model.selected.version}</Text><Text accessibilityRole="header" style={s.detailTitle}>{model.selected.sourceLabel}</Text><Text style={s.meta}>私人保存、整理用途和家庭共享分開核對</Text></View> : null}
-        {model.access !== "lost" && !model.selected ? <SourceComposer key={model.formKey} model={model} actions={actions} /> : null}
+
         {model.selected ? <>
           <SourceIntakeConversation key={`intake-${model.selected.id}`} model={model} actions={actions} />
           {!model.intake?.selected && actions.intake ? <SectionCard surface="plain" style={s.workflowSection}><SectionHeader density="compact" title="來源用途尚未設定" subtitle="舊來源不會自動推算用途、可信度或有效期。" />
@@ -116,10 +106,14 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
           <SourceDetails key={model.selected.id} model={model} actions={actions} onRecord={onRecord} resultTrigger={resultTrigger} showTools={showManual} />
           {model.intake ? <AppButton expanded={showManual} label={showManual ? "收起手動來源操作" : "取得原文、提取或核對家庭記錄"} variant="quiet" disabled={sourceIntakeIsUnresolved(model.intake.selected)} onPress={() => setManualSourceId(showManual ? null : model.selected!.id)} /> : null}
         </> : null}
-        {showManual && model.selected?.management?.enabled !== false && model.selected?.text.trim() && !model.selected.recordId && model.access === "editable" ? <SourceRecordForm key={model.formKey} model={model} actions={actions} /> : null}
+        {showManual && model.selected?.management?.enabled !== false && model.selected?.text.trim() && !model.selected.recordId && model.access === "editable" ? <ManualFormDialog formKey={model.formKey} label="人工核對記錄" scopeKey={`${listScope}:${model.selected.id}`} onClose={() => actions.discardDraft?.("record")} recovery={<SourceStatus model={model} actions={actions} production={production} />}><SourceRecordForm key={model.formKey} model={model} actions={actions} /></ManualFormDialog> : null}
       </View>
 
     </View>
+    <FormDialog formKey={model.formKey} visible={composerScope === model.scopeKey && model.access !== "lost"} scopeKey={model.scopeKey} title="新增私人來源" returnFocusRef={composerTrigger}
+      onClose={() => { actions.discardDraft?.("composer"); setComposerScope(null); }} recovery={<SourceStatus model={model} actions={actions} production={production} />}>
+      <SourceComposer key={model.formKey} model={model} actions={actions} />
+    </FormDialog>
     {previewControls}
     <AppDialog danger visible={model.deleteOpen} onDismiss={actions.closeDeletion} onClosed={deletionFocus.onClosed}><AppDialog.Title danger>刪除私人來源</AppDialog.Title><AppDialog.ScrollArea><ScrollView contentContainerStyle={s.stack}>
       <Text style={s.body}>將刪除「{model.selected?.sourceLabel}」及已連結的家庭記錄：{model.selected?.recordId ?? "目前沒有連結記錄"}。沒有刪除其他私人來源或家庭資料。</Text>

@@ -51,8 +51,8 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
         <MotionReveal value={selected.text} contentKey={selected.text} scopeKey={scopeKey} regionKey="source-original-text" triggerKey={textTrigger} eligible={textEligible} testID="source-original-motion">{shown => <ScrollView nestedScrollEnabled style={s.original} contentContainerStyle={s.originalContent}><Text selectable testID="source-full-text" style={s.reading}>{shown}</Text></ScrollView>}</MotionReveal>
       </MotionDisclosure>
       <View style={s.group}><AppButton expanded={showTechnical} label={showTechnical ? "收起來源技術資料" : "顯示來源技術資料"} variant="quiet" density="compact" onPress={() => setShowTechnical(value => !value)} />
-        <MotionDisclosure expanded={showTechnical} scopeKey={scopeKey} style={s.stack}><Text style={s.meta}>本站保存：{sourceTime(selected.createdAt)}（香港時間）</Text>
-          <Text style={s.meta}>取得正文：{sourceTime(selected.retrievedAt)}{selected.retrievedAt ? "（香港時間）" : ""}</Text>
+        <MotionDisclosure expanded={showTechnical} scopeKey={scopeKey} style={s.stack}><Text style={s.meta}>本站保存：{sourceTime(selected.createdAt)}</Text>
+          <Text style={s.meta}>取得正文：{sourceTime(selected.retrievedAt)}</Text>
           <Text selectable style={s.meta}>正文 SHA-256：{selected.sha256 || "尚未有正文完整性資料"}</Text></MotionDisclosure>
       </View>
       {model.intake?.mode === "synthetic" ? <View style={s.group}>

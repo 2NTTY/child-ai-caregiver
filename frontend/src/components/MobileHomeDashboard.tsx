@@ -9,15 +9,18 @@ import { HomeAgentImportant } from "./HomeAgentImportant";
 import { HomeOngoing } from "./HomeOngoing";
 import { HomeActionSummary } from "./HomeFocus";
 import { HomeTodayHeading, HomeWelcome } from "./HomeWelcome";
+import { HomeBackdrop } from "./appearance/HomeBackdrop";
+import { useBackground } from "../preview/BackgroundContext";
 import { HomeGuideCallout } from "./HomeGuideCallout";
 
 export function MobileHomeDashboard({ model, actions, introductionPending = false, onIntroductionPresented }: {
   model: HomeViewModel; actions: HomeActions; introductionPending?: boolean; onIntroductionPresented?: () => void;
 }) {
+  const customBackground = !!useBackground().selected;
   const knownNoChildren = model.profileLoad === "ready" && model.children.length === 0;
-  return <View style={styles.root}><ScrollView testID="mobile-home-scroll" style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
+  return <HomeBackdrop><ScrollView testID="mobile-home-scroll" style={[styles.scroll, customBackground && styles.transparent]} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <HomeWelcome compact introductionPending={introductionPending} onIntroductionPresented={onIntroductionPresented} scopeKey={homeAgentScope(model) ?? model.caregiverName} />
-    <View style={styles.content}>
+    <View style={[styles.content, customBackground && styles.readingSurface]}>
       <HomeTodayHeading />
       <HomeGuideCallout status={model.guideStatus} onOpenGuide={() => actions.open("guide")} onOpenSettings={() => actions.open("settings")} />
       {knownNoChildren && model.guideStatus === "complete" ? <SectionCard testID="mobile-child-setup">
@@ -29,11 +32,12 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
       <HomeOngoing model={model} actions={actions} />
       <HomeActionSummary model={model} actions={actions} />
     </View>
-  </ScrollView></View>;
+  </ScrollView></HomeBackdrop>;
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, minHeight: 0, backgroundColor: colors.canvas },
+  transparent: { backgroundColor: "transparent" },
+  readingSurface: { backgroundColor: colors.canvas, padding: 12 },
   scroll: { flex: 1, minHeight: 0, backgroundColor: colors.canvas },
   page: { padding: mobileLayout.pageInset, paddingBottom: 88, width: "100%", maxWidth: mobileLayout.breakpoint, alignSelf: "center" },
   content: { gap: mobileLayout.sectionGap },

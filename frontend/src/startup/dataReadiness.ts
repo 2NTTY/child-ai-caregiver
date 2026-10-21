@@ -26,10 +26,10 @@ type StartupRouteParams = { tab?: string; category?: string; section?: string; v
 export function routeStartupRequirements(pathname: string, params: StartupRouteParams, hasChild = true, includeShell = false): readonly string[] {
   const requirements: Record<string, readonly string[]> = {
     "/": ["profile", "care", "tasks", "growth"], "/chat": ["chat", "agentPending"], "/care": params.view === "photos" ? ["photos"] : ["care", "agentPending", ...(params.recordId ? ["careDetail"] : [])], "/profile": ["profile"],
-    "/tasks": ["tasks", ...(params.taskId ? ["taskDetail"] : [])], "/growth": params.tab === "archive" ? ["growth", "documents"] : ["growth"], "/memory": ["memory"], "/history": params.category === "preparations" ? ["documents"] : params.category === "growth" ? ["growth"] : params.category === "care" || params.category === "review" ? ["care"] : params.category === "conversations" ? ["conversations"] : params.category === "notifications" ? ["notifications"] : ["tasks"],
+    "/tasks": ["tasks", ...(params.taskId ? ["taskDetail"] : [])], "/growth": params.tab === "preparation" ? ["documents"] : params.tab === "archive" ? ["growth", "documents"] : ["growth"], "/memory": ["memory"], "/history": params.category === "preparations" ? ["documents"] : params.category === "growth" ? ["growth"] : params.category === "care" || params.category === "review" ? ["care"] : params.category === "conversations" ? ["conversations"] : params.category === "notifications" ? ["notifications"] : ["tasks"],
     "/photos": ["photos"], "/sources": ["sources"], "/family": ["family"], "/contact": ["contact"],
-    "/summary": params.tab === "preparation" ? ["documents"] : ["profile", "summary"],
-    "/settings": params.section === "model" ? ["model"] : params.section === "notifications" ? ["push", "telegram"] : params.section === "preferences" ? ["preferences"] : [],
+    "/summary": params.tab === "preparation" ? ["documents"] : params.tab === "archive" ? ["growth", "documents"] : ["profile", "summary"],
+    "/settings": params.section === "model" ? ["model"] : params.section === "notifications" ? ["preferences", "push", "telegram"] : [],
   };
   // Empty child pages can show onboarding, but identity-scoped pages must still finish their own reads.
   const identityReads = new Set(["family", "model", "push", "telegram", "preferences"]);
@@ -51,10 +51,10 @@ export function targetStartupReadiness(target: string | undefined, loadedId: str
   return read.state === "ready" ? "error" : read.state;
 }
 
-/** The header already requires profile; closed and hidden rail tabs add no reads. */
-export function visibleRailStartupRequirements(visible: boolean, tab: "attention" | "context", home = false): readonly string[] {
-  return !visible ? [] : tab === "attention" ? ["tasks"] : home ? [] : ["care"];
+/** The remaining rail only displays tasks; hidden rail content adds no reads. */
+export function visibleRailStartupRequirements(visible: boolean): readonly string[] {
+  return visible ? ["tasks"] : [];
 }
-export function visibleRailStartupReadiness(visible: boolean, tab: "attention" | "context", reads: Readonly<Record<string, StartupReadiness>>, home = false): StartupReadiness {
-  return combineStartupReadiness(visibleRailStartupRequirements(visible, tab, home).map(key => reads[key] ?? "loading"));
+export function visibleRailStartupReadiness(visible: boolean, reads: Readonly<Record<string, StartupReadiness>>): StartupReadiness {
+  return combineStartupReadiness(visibleRailStartupRequirements(visible).map(key => reads[key] ?? "loading"));
 }

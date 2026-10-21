@@ -4,7 +4,7 @@ import { TextInput } from "react-native-paper";
 import { chatColors, chatFont, chatLayout, chatType } from "../chat/chat-presentation";
 import { AppTextField } from "../ui";
 
-export type ChatComposerInputHandle = { focus(): void; blur(): void };
+export type ChatComposerInputHandle = { focus(options?: { preventScroll?: boolean }): void; blur(): void };
 export type ChatComposerInputProps = {
   value: string; disabled: boolean; canSubmit?: boolean; onChangeText(value: string): void; onSubmit(): void;
   onFocus(): void; onBlur(): void;

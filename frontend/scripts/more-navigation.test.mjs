@@ -7,14 +7,14 @@ import * as navigation from '../src/components/navigation/app-navigation.ts';
 
 const require = createRequire(import.meta.url);
 const nodes = tree => !tree || typeof tree !== 'object' ? [] : [tree, ...[tree.props?.children].flat(Infinity).flatMap(nodes)];
-function harness(width, pathname = '/more') {
+function harness(width, pathname = '/more', platform = 'web') {
   const events = []; let pending;
   const leave = action => { events.push('guard'); pending = action; };
   const dependencies = {
     react: { useState: value => [value, () => {}] },
     'react/jsx-runtime': require('react/jsx-runtime'),
     'expo-router': { usePathname: () => pathname, useRouter: () => ({ push: target => events.push(['push', target]) }) },
-    'react-native': { Platform: { OS: 'web' }, View: 'View', Pressable: 'Pressable', StyleSheet: { create: value => value, flatten: value => value }, useWindowDimensions: () => ({ width }) },
+    'react-native': { Platform: { OS: platform }, View: 'View', Pressable: 'Pressable', StyleSheet: { create: value => value, flatten: value => value }, useWindowDimensions: () => ({ width }) },
     'react-native-paper': { Text: 'Text' },
   };
   function load(relative) {
@@ -38,8 +38,9 @@ function harness(width, pathname = '/more') {
 }
 
 test('More keeps mobile lists and desktop links without a redundant return-to-records button', () => {
-  for (const width of [320, 390, 1024, 1440]) {
-    const h = harness(width), tree = h.more(), all = nodes(tree), desktop = width >= 900;
+  for (const platform of ['web', 'android']) for (const width of [320, 390, 768, 1024, 1440]) {
+    const h = harness(width, '/more', platform), tree = h.more(), all = nodes(tree), desktop = platform === 'web' && width >= 900;
+    assert.equal(tree.props.title, '全部功能');
     assert.equal(all.some(node => node.props?.label === '返回記錄'), false);
     assert.ok(all.some(node => node.props?.testID === (desktop ? 'more-desktop-catalogue' : 'more-mobile-list')));
     assert.equal(all.filter(node => node.type === 'AppMenuList').length, desktop ? 0 : navigation.moreNavigationGroups.length);
@@ -58,4 +59,32 @@ test('the existing Records control returns from More through the guard without s
   const alreadyOnRecords = harness(390, '/care');
   alreadyOnRecords.records().props.onPress();
   assert.deepEqual(alreadyOnRecords.events, []);
+});
+
+test('All features uses one destination name and includes every existing ordinary feature without admin or duplicate destinations', () => {
+  const keys = navigation.moreNavigationGroups.flatMap(group => group.items.map(item => item.key));
+  assert.equal(new Set(keys).size, keys.length);
+  assert.deepEqual([...keys].sort(), Object.keys(navigation.navigationItems).filter(key => key !== 'more').sort());
+  for (const width of [320, 390, 768, 1024, 1440]) {
+    const h = harness(width), tree = h.more(), all = nodes(tree);
+    if (width >= 900) {
+      const links = all.filter(node => node.type === 'PreviewLink');
+      for (const [index, key] of keys.entries()) {
+        assert.deepEqual(links[index].props.href, key === 'photos' ? { pathname: '/care', params: { view: 'photos' } } : navigation.navigationItems[key].href);
+        assert.equal(links[index].props.children.props.accessibilityLabel, navigation.navigationItems[key].short);
+      }
+    } else {
+      const items = all.filter(node => node.type === 'AppMenuList').flatMap(node => node.props.items);
+      for (const [index, key] of keys.entries()) assert.equal(items[index].label, navigation.navigationItems[key].short);
+      items.find(item => item.key === 'photos').onPress(); assert.equal(h.events.at(-1), 'guard'); h.approve();
+      assert.deepEqual(h.events.at(-1), ['push', { pathname: '/care', params: { view: 'photos' } }]);
+      items.find(item => item.key === 'home').onPress(); h.approve(); assert.deepEqual(h.events.at(-1), ['push', '/']);
+      items.find(item => item.key === 'summary').onPress(); assert.deepEqual(h.events.at(-1), ['open', 'summary']);
+    }
+    const recordButton = h.records();
+    assert.ok(recordButton.props.label.includes('全部功能')); assert.ok(recordButton.props.hint.includes('全部功能'));
+    recordButton.props.onExpand();
+    // Already on /more: no duplicate push.
+    assert.equal(h.events.at(-1)?.[1] === '/more', false);
+  }
 });

@@ -87,10 +87,11 @@ export function AppSelectionTrigger({ label, count, onPress, onBlur, disabled = 
   </Pressable>;
 }
 
-export function AppSelect<T extends string>({ label, value, options, onChange, onSelectionClosed, onBlur, disabled = false, ref, id, invalid, describedBy }: {
+export function AppSelect<T extends string>({ label, value, options, onChange, onSelectionClosed, onBlur, disabled = false, ref, id, invalid, describedBy, showLabel = true }: {
   label: string; value: T; options: readonly { value: T; label: string; count?: number }[];
   onChange: (value: T) => void; onBlur?: () => void; disabled?: boolean; ref?: Ref<View>;
   onSelectionClosed?: (value: T) => void;
+  showLabel?: boolean;
   id?: string; invalid?: boolean; describedBy?: string;
 }) {
   const [visible, setVisible] = useState(false);
@@ -113,7 +114,7 @@ export function AppSelect<T extends string>({ label, value, options, onChange, o
     // RN Modal has now released its focus trap and restored the trigger focus.
     if (next !== null && !visible && !disabled && options.some(item => item.value === next)) onSelectionClosed?.(next);
   }
-  return <><AppSelectionTrigger ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} id={id} invalid={invalid} describedBy={describedBy} label={`${label}：${selected?.label ?? value}`} count={selected?.count} disabled={disabled} onBlur={onBlur}
+  return <><AppSelectionTrigger ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} id={id} invalid={invalid} describedBy={describedBy} label={showLabel ? `${label}：${selected?.label ?? value}` : selected?.label ?? value} count={selected?.count} disabled={disabled} onBlur={onBlur}
     expanded={visible && !disabled} onPress={() => { pendingSelection.current = null; setHasOpened(true); setVisible(true); }} />
     {/* Keep the modal stable after first use so close focus and backdrop exit can finish. */}
     {hasOpened ? <Portal><Dialog visible={visible && !disabled} onDismiss={dismiss} onClosed={closed} style={styles.selectDialog}>

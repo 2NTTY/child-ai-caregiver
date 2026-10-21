@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
 import type { SourcesActions, SourcesViewModel } from "../../shared-input-view-model";
 import { sourceNatureOptions, sourcePurposeOptions, sourceTimeOptions, validSourceIntakeProposal, type SourceIntakeProposal } from "../../source-intake";
+import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
+import { FormDialog } from "../FormDialog";
+import { SourceStatus } from "./SourceStatus";
 import { AppButton, AppSelect, AppTextField } from "../ui";
 import { AppCheckbox } from "../AppCheckbox";
 import { sourceComposerDefaults, sourceComposerSchema, validSourceExcerpt } from "./source-form";
@@ -12,6 +15,9 @@ import { sourceStyles as s } from "./source-styles";
 export function SourceIntakeEditor({ model, actions }: { model: SourcesViewModel; actions: SourcesActions }) {
   const intake = model.intake?.selected, source = model.selected, adapter = actions.intake;
   const [editing, setEditing] = useState(intake?.proposalOrigin === "manual");
+  const basis = useRef(intake?.proposal ?? null);
+  const editTrigger = useRef<View>(null);
+  useEffect(() => { if (intake?.stage === "confirmed_pending_connection") setEditing(false); }, [intake?.stage]);
   if (model.intake?.mode === "production") return <ProductionSourceIntakeEditor model={model} actions={actions} />;
   if (!intake?.proposal || !source || !adapter) return null;
   const proposal = intake.proposal;
@@ -34,8 +40,10 @@ export function SourceIntakeEditor({ model, actions }: { model: SourcesViewModel
         : proposal.purpose === "track_topic" ? <Text style={s.meta}>只表達持續關注意向；未建立話題、任務、提醒、訂閱或外發授權。</Text>
           : <Text style={s.meta}>回答引用暫不可用。</Text>}
       {intake.stage === "review" ? <>
-        <AppButton expanded={editing} label={editing ? "收起建議欄位" : "修改整理建議"} variant="quiet" disabled={locked} onPress={() => setEditing(value => !value)} />
-        {editing ? <View style={s.stack}>
+        <AppButton ref={editTrigger} label="修改整理建議" variant="quiet" disabled={locked} onPress={() => { basis.current = proposal; setEditing(true); }} />
+      </> : null}
+      <FormDialog formKey={model.formKey} visible={editing} scopeKey={`${model.scopeKey}:${source.id}`} title="修改來源用途" returnFocusRef={editTrigger} onClose={() => { if (basis.current && intake.stage === "review") adapter.editProposal(basis.current); setEditing(false); }} recovery={<SourceStatus model={model} actions={actions} production={false} />}>
+        {intake.stage === "review" ? <View style={s.stack}>
           <AppSelect label="建議用途" value={proposal.purpose} options={sourcePurposeOptions} disabled={locked} onChange={value => change("purpose", value)} />
           <AppSelect label="來源性質（不代表已核實）" value={proposal.nature} options={sourceNatureOptions} disabled={locked} onChange={value => change("nature", value)} />
           <AppSelect label="資料時效" value={proposal.timeScope} options={sourceTimeOptions} disabled={locked} onChange={value => change("timeScope", value)} />
@@ -43,16 +51,19 @@ export function SourceIntakeEditor({ model, actions }: { model: SourcesViewModel
             <AppTextField label="適用期間或失效條件" accessibilityLabel="適用期間或失效條件" value={proposal.validityText} disabled={locked} multiline onChangeText={value => change("validityText", value)} error={!validSourceIntakeProposal(proposal)} />
             <Text style={validSourceIntakeProposal(proposal) ? s.meta : s.error}>請用原文說明期間或條件，最多 300 字；不會自動推算到期日。</Text>
           </> : null}
-        </View> : null}
         <AppButton label="確認這個用途（預覽）" disabled={locked || !validSourceIntakeProposal(proposal)} onPress={adapter.confirmProposal} />
         <Text style={s.meta}>確認只記下本頁意向；未有正式接入回應，不會顯示已接通。</Text>
-      </> : null}
+        </View> : null}
+        {intake.stage === "connection_unknown" ? <><Text style={s.warning}>接入結果未知（合成情境），原用途保持鎖定。</Text><AppButton label="查核原次接入結果（預覽）" disabled={locked} onPress={adapter.checkConnection} /></> : null}
+      </FormDialog>
     </View>
   );
 }
 
 function ProductionSourceIntakeEditor({ model, actions }: { model: SourcesViewModel; actions: SourcesActions }) {
   const source = model.selected, intake = model.intake?.selected, draft = model.managementDraft, adapter = actions.management;
+  const editTrigger = useRef<View>(null), reading = useRef<View>(null);
+  usePreviewLeaveGuard(!!draft?.dirty && !(model.operation.phase === "manage" && ["saving", "unknown", "unconfirmed", "confirmed_unavailable"].includes(model.operation.state)));
   if (!source || !intake || !draft || !adapter || !actions.intake) return null;
   const locked = !model.fresh || !source.canManage || model.access !== "editable" || !!model.direct;
   const editing = intake.stage === "review", management = draft.management, content = draft.content;
@@ -68,7 +79,7 @@ function ProductionSourceIntakeEditor({ model, actions }: { model: SourcesViewMo
       disabled={locked} error={!!message} onChangeText={value => adapter!.editContent({ ...content, [key]: (key === "sourceUrl" || key === "sourceDateText") && !value.length ? null : value })} />
       {message ? <Text style={s.error}>{message}</Text> : null}</View>;
   }
-  return <View style={s.review} testID="source-intake-review">
+  return <View ref={reading} tabIndex={-1} accessibilityLabel="來源設定" style={s.review} testID="source-intake-review">
     <Text style={s.title}>{editing ? "核對並保存來源設定" : source.management ? "已保存的來源設定" : "來源用途尚未設定"}</Text>
     <Text style={s.body}>用途：{source.management ? sourcePurposeOptions.find(option => option.value === source.management?.purpose)?.label : "尚未設定"}</Text>
     {source.management ? <><Text style={s.body}>來源性質：{sourceNatureOptions.find(option => option.value === source.management?.nature)?.label}</Text>
@@ -76,7 +87,8 @@ function ProductionSourceIntakeEditor({ model, actions }: { model: SourcesViewMo
       {source.management.validityText ? <Text selectable style={s.body}>適用期間／條件：{source.management.validityText}</Text> : null}</> : null}
     <Text style={s.meta}>來源性質只記下你的說明；稱為官方或較長期參考都不代表已核實。</Text>
     <Text style={s.body}>目前狀態：{source.management?.enabled === false ? "已停用" : "可使用"} · {source.management?.modelExcerpt ? "已授權所選摘錄供聊天模型使用" : "沒有聊天模型摘錄授權"}</Text>
-    {!editing ? <AppButton label="編輯來源設定" variant="quiet" disabled={locked} onPress={actions.intake.editManually} /> : <View style={s.stack}>
+    {!editing ? <AppButton ref={editTrigger} label="編輯來源設定" variant="quiet" disabled={locked} onPress={actions.intake.editManually} /> : null}
+    <FormDialog formKey={model.formKey} visible={editing} scopeKey={`${model.scopeKey}:${source.id}`} title="編輯來源設定" returnFocusRef={editTrigger} fallbackFocusRef={reading} onClose={() => actions.discardDraft?.("management")} recovery={<SourceStatus model={model} actions={actions} production />}><View style={s.stack}>
       <AppTextField label="這份資料想用來做甚麼？" accessibilityLabel="這份資料想用來做甚麼" multiline value={management.intention} disabled={locked} onChangeText={actions.intake.setIntention} />
       <AppSelect label="來源用途" value={management.purpose} options={sourcePurposeOptions} disabled={locked} onChange={purpose => adapter.edit({ purpose })} />
       <AppSelect label="來源性質（不代表已核實）" value={management.nature} options={sourceNatureOptions} disabled={locked} onChange={nature => adapter.edit({ nature })} />
@@ -101,6 +113,6 @@ function ProductionSourceIntakeEditor({ model, actions }: { model: SourcesViewMo
       <Text style={reasonValid ? s.meta : s.error}>請填寫原因，最多 500 字；用途最多 1,000 字，適用條件最多 300 字。</Text>
       <AppButton label="保存來源設定" disabled={locked || !valid} onPress={actions.intake.confirmProposal} />
       <Text style={s.meta}>記錄用途不會建立孩子事實或家庭記錄；持續關注意向不會建立任務、提醒或外發。</Text>
-    </View>}
+    </View></FormDialog>
   </View>;
 }

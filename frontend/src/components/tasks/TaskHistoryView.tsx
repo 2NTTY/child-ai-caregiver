@@ -66,7 +66,7 @@ export function TaskHistoryView({ searchText, dateRange, scrollRef, scrollPositi
     {model.access === "lost" ? <SectionCard><Text style={styles.warning}>孩子權限已失效，沒有顯示這個孩子的事項或歷史。</Text></SectionCard> : <>
       <WriteRecoveryNotice operation={model.operation} recovery={recovery} online={model.online && !model.reading} />
       {model.access === "read_only" ? <Text style={styles.meta}>目前為唯讀；可查看已載入事項及歷史。</Text> : null}
-      <Text style={styles.meta}>按完成／取消日期篩選（{model.scheduleContext.timeZone === "Asia/Hong_Kong" ? "香港時間" : model.scheduleContext.timeZone}）。{model.hasMoreTasks ? "搜尋只包括已載入事項；仍有事項未載入。" : ""}</Text>
+      <Text style={styles.meta}>按完成／取消日期篩選。{model.hasMoreTasks ? "搜尋只包括已載入事項；仍有事項未載入。" : ""}</Text>
       {!readUnavailable && (dateRange.from || dateRange.to) && unknownDates > 0 ? <Text style={styles.meta}>{unknownDates} 項完成／取消日期未提供，不包括在日期篩選內。</Text> : null}
       <View ref={layout.ref} onLayout={layout.onLayout} style={[styles.workspace, wide && showPanel && styles.split]}>
         <View ref={listRef} tabIndex={-1} testID="task-history-list" style={[styles.column, !listVisible && styles.hidden]} aria-hidden={!listVisible} pointerEvents={listVisible ? "auto" : "none"} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>

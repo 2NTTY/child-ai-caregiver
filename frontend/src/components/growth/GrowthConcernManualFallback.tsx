@@ -1,3 +1,4 @@
+import { useGrowthFormDraftGuard } from "./useGrowthFormDraftGuard";
 import { useEffect, useId, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { View } from "react-native";
@@ -8,7 +9,8 @@ import { AppCheckbox } from "../AppCheckbox";
 import { AppDateTimeField } from "../DateTimeFields";
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { AppButton, AppSelect, AppTextField } from "../ui";
-import { SummaryDisclosure } from "../summary/SummaryDisclosure";
+import { ManualFormDialog } from "../FormDialog";
+import { GrowthOperationRecovery } from "./GrowthOperationRecovery";
 import { growthStyles as s } from "./growth-styles";
 
 type Mode = "create" | "append" | "followup";
@@ -20,13 +22,14 @@ const labels: Record<keyof Fields, string> = { title: "關注名稱", reason: "�
 
 export function GrowthConcernManualFallback({ model, actions, concern }: { model: GrowthViewModel; actions: GrowthActions; concern: GrowthConcern | null }) {
   if (!actions.createConcern || !actions.updateConcern || model.access !== "editable" || !model.page) return null;
-  return <SummaryDisclosure label={concern ? "手動管理關注" : "手動新增關注"} scopeKey={model.scopeKey}>
+  return <ManualFormDialog label={concern ? "新增／跟進關注" : "新增關注"} scopeKey={model.scopeKey} recovery={<GrowthOperationRecovery model={model} actions={actions} includeRefresh />}>
     <ManualForm model={model} actions={actions} concern={concern} />
-  </SummaryDisclosure>;
+  </ManualFormDialog>;
 }
 
 function ManualForm({ model, actions, concern }: { model: GrowthViewModel; actions: GrowthActions; concern: GrowthConcern | null }) {
   const [mode, setMode] = useState<Mode>("create"), [basis, setBasis] = useState<Basis | null>(null), [shared, setShared] = useState(false);
+  const draftGuard = useGrowthFormDraftGuard(model, actions, basis?.key ?? (mode === "create" ? "concern_create:new" : `concern_update:${concern?.id ?? ""}`), !!basis && model.dirty);
   const id = useId(), previousEpoch = useRef(model.epoch);
   const { control, handleSubmit, watch, reset, setError, setFocus, formState: { errors } } = useForm<Fields>({ defaultValues: defaults });
   const followUpAt = watch("followUpAt");
@@ -48,7 +51,7 @@ function ManualForm({ model, actions, concern }: { model: GrowthViewModel; actio
     const key = mode === "create" ? "concern_create:new" : `concern_update:${concern!.id}`;
     if (!basis) setBasis({ mode, authorityVersion: model.page!.authorityVersion,
       concern: mode === "create" ? null : structuredClone(concern), key, resetCount: model.resetCounts[key] ?? 0 });
-    actions.markDirty(key);
+    draftGuard.edited(); actions.markDirty(key);
   }
   function edited() { markDraft(); setShared(false); }
   function invalid(path: string | number | undefined, message: string) {
@@ -61,6 +64,7 @@ function ManualForm({ model, actions, concern }: { model: GrowthViewModel; actio
       const parsed = concernValuesSchema.safeParse({ title: value.title, reason: value.reason, observation: value.observation,
         observedAt: value.observedAt, followUpAt: value.followUpAt || null, links });
       if (!parsed.success) { for (const issue of parsed.error.issues) invalid(issue.path[0] as string | number | undefined, "請核對這項內容及時間。" ); return; }
+      draftGuard.submitted(parsed.data, basis.authorityVersion);
       actions.createConcern?.(parsed.data, basis.authorityVersion, true);
       return;
     }
@@ -69,11 +73,14 @@ function ManualForm({ model, actions, concern }: { model: GrowthViewModel; actio
     const parsed = concernChangeSchema.safeParse(mode === "append" ? { ...common, action: "append", text: value.observation, observedAt: value.observedAt, links }
       : { ...common, action: "schedule_followup", followUpAt: value.followUpAt || null });
     if (!parsed.success) { for (const issue of parsed.error.issues) invalid(issue.path[0] as string | number | undefined, "請核對這項內容及時間。" ); return; }
-    if (parsed.data.action === "append" || parsed.data.action === "schedule_followup") actions.updateConcern?.(basis.concern.id, parsed.data, true);
+    if (parsed.data.action === "append" || parsed.data.action === "schedule_followup") {
+      draftGuard.submitted(parsed.data, basis.authorityVersion);
+      actions.updateConcern?.(basis.concern.id, parsed.data, true);
+    }
   });
   function textField(name: "title" | "reason" | "observation", maxLength: number) {
     return <Controller name={name} control={control} rules={{ required: "請填寫這項內容。", validate: value => !!value.trim() || "請填寫這項內容。", maxLength: { value: maxLength, message: `最多 ${maxLength} 字。` } }}
-      render={({ field }) => <View><AppTextField ref={field.ref} nativeID={`${id}-${name}`} label={labels[name]} value={field.value} multiline={name !== "title"}
+      render={({ field }) => <View><AppTextField ref={field.ref} nativeID={`${id}-${name}`} label={labels[name]} accessibilityLabel={labels[name]} value={field.value} multiline={name !== "title"}
         disabled={disabled} error={!!errors[name]} aria-invalid={!!errors[name]} aria-describedby={errors[name] ? `${id}-${name}-error` : undefined}
         onBlur={field.onBlur} onChangeText={value => { edited(); field.onChange(value); }} />
         <FormFieldMessage id={`${id}-${name}-error`} error={errors[name]?.message} /></View>} />;
