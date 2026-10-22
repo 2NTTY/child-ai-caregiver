@@ -80,13 +80,14 @@ export function looksLikeDurableMemoryFactStatement(text: string): boolean {
 }
 
 /**
- * True when the user is asking about an allergy / lasting preference rather than
- * stating a new durable fact. propose_fact must not open a candidate on these turns.
+ * True when the user message is a question / read-back rather than a new durable-fact
+ * statement. Any question form (嗎？／？／有冇／係咪／A-not-A, etc.) must READ memory and
+ * must not open a new propose_fact candidate — including habits beyond allergy/preference.
  */
 export function looksLikeDurableMemoryFactQuestion(text: string): boolean {
   const trimmed = text.normalize("NFKC").trim();
   if (!trimmed || trimmed.length > 400) return false;
-  return hasDurableMemoryFactTopic(trimmed) && looksLikeMemoryFactQuestionForm(trimmed);
+  return looksLikeMemoryFactQuestionForm(trimmed);
 }
 
 /** Near-term model expiries (~minutes/hours) are not valid for durable allergy/preference facts. */

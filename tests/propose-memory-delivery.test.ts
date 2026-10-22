@@ -258,3 +258,27 @@ test("dislike preference propose_fact also auto-prepares confirmation", async ()
   }
 });
 
+
+test("hydration questions reject propose_fact (read, never propose)", async () => {
+  const q = "Esther需要每天飲8杯水嗎？";
+  assert.equal(looksLikeDurableMemoryFactQuestion(q), true);
+  assert.equal(looksLikeDurableMemoryFactStatement(q), false);
+  let proposed = false;
+  const surface = tools({
+    trustedUserMessage: q,
+    propose: async () => { proposed = true; throw new Error("should not propose"); },
+  });
+  const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
+  const rejected = await propose.execute({
+    key: "Esther_water_intake", content: "Esther需要每天飲8杯水", intendedVisibility: "private", validUntil: null,
+  }, { callId: "c-hydrate-q" });
+  assert.equal(rejected.status, "rejected");
+  assert.equal((rejected.data as { code?: string }).code, "memory_read_not_propose");
+  assert.equal(proposed, false);
+});
+
+test("generic question form rejects propose_fact without allergy topic", async () => {
+  assert.equal(looksLikeDurableMemoryFactQuestion("BB幾多月大嗎？"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB幾多月大嗎？"), false);
+});
+
