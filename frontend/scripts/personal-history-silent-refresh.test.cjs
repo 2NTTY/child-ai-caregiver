@@ -15,6 +15,7 @@ const req = createRequire(path.join(root, 'frontend/package.json'));
 const React = req('react'), { createRoot } = req('react-dom/client'), ts = req('typescript');
 const { QueryClient } = req('@tanstack/react-query');
 const e = React.createElement, cache = new Map();
+let bridgeEnvironment, childBridgeEntries = 0;
 const View = ({ children, testID, ...props }) => e('div', { 'data-testid': testID }, children);
 const Text = ({ children }) => e('p', null, children);
 // Real owner, runtime, API schema validators, event subscription and browser
@@ -28,6 +29,15 @@ function load(relative) {
   const output = ts.transpileModule(fs.readFileSync(input, 'utf8'), { fileName: filename,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   new Function('require', 'module', 'exports', output)(name => {
+    if (filename.endsWith('/TaskKnowledgeDomains.tsx')) {
+      if (name === './useDomainEnvironment') return { useDomainEnvironment: () => bridgeEnvironment };
+      if (name === './task-knowledge-tasks') return { useTaskKnowledgeTasks: env => { childBridgeEntries++; return { scopeKey: env.scopeKey, model: {} }; } };
+      if (name === './task-knowledge-summary') return { useTaskKnowledgeSummary: env => ({ scopeKey: env.scopeKey }) };
+      if (name === './task-knowledge-memory') return { useTaskKnowledgeMemory: () => ({ value: null }) };
+      if (name === './task-knowledge-growth') return { useTaskKnowledgeGrowth: env => ({ scopeKey: env.scopeKey, model: { scopeKey: env.scopeKey, page: null }, actions: { refresh() {} } }) };
+      if (name === './useFamilyDocuments') return { useFamilyDocuments: () => ({ archive: { authorityVersion: null }, preparation: null, refresh() {} }) };
+    }
+
     if (name === 'react-native') return { View, StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text, ActivityIndicator: () => e('span', null, 'loading') };
     if (name.endsWith('/appearance/BackgroundSurface')) return { BackgroundSurface: View };
@@ -61,8 +71,11 @@ function fixtures(url, user) {
   const child = url.pathname.match(/\/children\/([^/]+)/)?.[1] || childA;
   if (url.pathname.endsWith('/online/spaces')) return { workspaces: [{ id: uuid(100), storageEpoch: uuid(101) }] };
   if (url.pathname.endsWith('/online/changes')) return { workspaceId: uuid(100), storageEpoch: uuid(101), cursor: '0', accessVersion: 1, changes: [], hasMore: false };
-  if (url.pathname.endsWith('/account/export')) return { section: 'notification_deliveries', scopeVersion: version, notices: [],
-    items: [{ id: uuid(30 + index), channel: 'telegram', status: 'unknown', created_at: time }], nextCursor: second ? null : 'notifications_2', complete: second };
+  if (url.pathname.endsWith('/account/messages')) return { schemaVersion: 1, userId: user, scopeVersion: version, asOf: time,
+    coverage: { kind: 'recorded_provider_acceptances', historical: 'unknown', excluded: ['authentication_email', 'unconfirmed_or_unsaved_sends'], pagination: 'live' },
+    items: [{ messageId: 'telegram:' + uuid(30 + index), contentVersion: 1, scope: { kind: 'account' }, sentAt: time,
+      contents: [{ channel: 'telegram', contentVersion: '1', title: null, body: 'Synthetic saved message ' + index, sentAt: time }] }],
+    nextCursor: second ? null : 'notifications_2', complete: second };
   if (url.pathname.endsWith('/library')) return { items: [{ sourceId: 'synthetic-' + index, versionId: uuid(40 + index), title: 'Synthetic source ' + index,
     publisher: 'Synthetic publisher', url: 'https://www.fhs.gov.hk/synthetic', classification: 'official_guidance', checkedAt: time, sourceUpdatedAt: null, validUntil: null }],
     nextCursor: second ? null : 'references_2', complete: second };
@@ -119,11 +132,11 @@ async function harness(initialGate = null) {
 
 test('a first read without a usable snapshot stays loading and a failure is never claimed empty', async () => {
   const delayed = deferred();
-  const h = await harness(call => call.url.pathname.endsWith('/account/export') ? delayed.promise : undefined);
+  const h = await harness(call => call.url.pathname.endsWith('/account/messages') ? delayed.promise : undefined);
   try {
     assert.equal(h.owner.notifications.state, 'loading'); assert.equal(h.owner.notifications.data, null);
     assert.equal(h.container.querySelector('[data-testid="notification-history-empty"]'), null);
-    h.gate(call => call.url.pathname.endsWith('/account/export') ? json({ error: { code: 'unavailable' } }, 503) : undefined);
+    h.gate(call => call.url.pathname.endsWith('/account/messages') ? json({ error: { code: 'unavailable' } }, 503) : undefined);
     await h.flush(() => delayed.resolve(json({ error: { code: 'unavailable' } }, 503)));
     assert.equal(h.owner.notifications.state, 'error'); assert.equal(h.owner.notifications.data, null);
     assert.equal(h.container.querySelector('[data-testid="notification-history-empty"]'), null);
@@ -168,7 +181,7 @@ test('a focused same-scope refresh retains every loaded page and expanded origin
 
 test('authoritative empty notification and same-query history cards stay mounted during a slow refresh', async () => {
   const emptyPage = (call, normal) => {
-    if (call.url.pathname.endsWith('/account/export')) return json({ ...fixtures(call.url, call.user), items: [], nextCursor: null, complete: true });
+    if (call.url.pathname.endsWith('/account/messages')) return json({ ...fixtures(call.url, call.user), items: [], nextCursor: null, complete: true });
     if (call.url.pathname.endsWith('/agent/history')) return json({ ...fixtures(call.url, call.user), matches: [], nextCursor: null, complete: true });
   };
   for (const kind of ['notifications', 'history']) {
@@ -178,7 +191,7 @@ test('authoritative empty notification and same-query history cards stay mounted
       const selector = `[data-testid="${kind === 'history' ? 'conversation' : 'notification'}-history-empty"]`;
       const card = h.container.querySelector(selector); assert.ok(card);
       h.gate((call, normal) => {
-        if (!call.url.pathname.endsWith(kind === 'history' ? '/agent/history' : '/account/export')) return emptyPage(call, normal);
+        if (!call.url.pathname.endsWith(kind === 'history' ? '/agent/history' : '/account/messages')) return emptyPage(call, normal);
         const wait = deferred(); pending.push({ call, wait }); return wait.promise;
       });
       await h.focus();
@@ -194,17 +207,17 @@ test('failed or cyclic later pages keep the complete prior snapshot stale withou
   const h = await harness();
   try {
     await h.warm(); const before = h.owner.notifications;
-    h.gate(call => call.url.pathname.endsWith('/account/export') && call.url.searchParams.has('cursor') ? json({ error: { code: 'unavailable' } }, 503) : undefined);
+    h.gate(call => call.url.pathname.endsWith('/account/messages') && call.url.searchParams.has('cursor') ? json({ error: { code: 'unavailable' } }, 503) : undefined);
     await h.focus();
     assert.equal(h.owner.notifications.state, 'stale'); assert.equal(h.owner.notifications.data, before.data); assert.equal(h.owner.notifications.asOf, before.asOf);
     assert.equal(h.container.querySelectorAll('[data-testid="personal-notification-entry"]').length, 2);
     assert.equal(h.container.querySelector('[data-testid="notification-history-empty"]'), null);
-    assert.match(h.container.textContent, /最新通知狀態尚未核對/);
+    assert.match(h.container.textContent, /目前顯示較早的消息/);
     const count = h.calls.length;
-    h.gate(call => call.url.pathname.endsWith('/account/export') ? json({ ...fixtures(call.url, call.user), nextCursor: 'notifications_2', complete: false }) : undefined);
+    h.gate(call => call.url.pathname.endsWith('/account/messages') ? json({ ...fixtures(call.url, call.user), nextCursor: 'notifications_2', complete: false }) : undefined);
     await h.focus();
     assert.equal(h.owner.notifications.state, 'stale'); assert.equal(h.owner.notifications.data, before.data); assert.equal(h.owner.notifications.asOf, before.asOf);
-    assert.equal(h.calls.slice(count).filter(call => call.url.pathname.endsWith('/account/export')).length, 2);
+    assert.equal(h.calls.slice(count).filter(call => call.url.pathname.endsWith('/account/messages')).length, 2);
   } finally { await h.close(); }
 });
 
@@ -233,27 +246,27 @@ test('one trailing invalidation is retained while busy and its latest successful
   try {
     await h.warm(); const pending = [], count = h.calls.length;
     h.gate((call, normal) => {
-      if (!call.url.pathname.endsWith('/account/export')) return undefined;
+      if (!call.url.pathname.endsWith('/account/messages')) return undefined;
       const wait = deferred(); pending.push({ call, wait, normal }); return wait.promise;
     });
     await h.focus(); await h.flush(() => { publishOnlineRefresh(); publishOnlineRefresh(); publishOnlineRefresh(); });
     assert.equal(pending.length, 1, 'Invalidations do not launch overlapping notification reads');
     await h.flush(() => pending[0].wait.resolve(pending[0].normal()));
     assert.equal(pending.length, 2);
-    h.gate(call => call.url.pathname.endsWith('/account/export') ? json({ ...fixtures(call.url, call.user), items: [], nextCursor: null, complete: true }) : undefined);
+    h.gate(call => call.url.pathname.endsWith('/account/messages') ? json({ ...fixtures(call.url, call.user), items: [], nextCursor: null, complete: true }) : undefined);
     await h.flush(() => pending[1].wait.resolve(pending[1].normal()));
-    assert.equal(h.calls.slice(count).filter(call => call.url.pathname.endsWith('/account/export')).length, 3, 'Exactly one bounded trailing batch, stopping at the actual end');
+    assert.equal(h.calls.slice(count).filter(call => call.url.pathname.endsWith('/account/messages')).length, 3, 'Exactly one bounded trailing batch, stopping at the actual end');
     assert.equal(h.owner.notifications.state, 'ready'); assert.equal(h.owner.notifications.data.items.length, 0);
     assert.ok(h.container.querySelector('[data-testid="notification-history-empty"]'));
   } finally { await h.close(); }
 });
 
-test('scope changes, revocation and export-version invalidation never retain private snapshots or accept late results', async () => {
+test('scope changes, revocation and message-authority invalidation never retain private snapshots or accept late results', async () => {
   const h = await harness();
   try {
     await h.warm(); const pending = [];
     h.gate((call, normal) => {
-      if (!call.url.pathname.endsWith('/account/export')) return undefined;
+      if (!call.url.pathname.endsWith('/account/messages')) return undefined;
       const wait = deferred(); pending.push({ call, wait, normal }); return wait.promise;
     });
     await h.focus(); const old = pending[0];
@@ -264,12 +277,98 @@ test('scope changes, revocation and export-version invalidation never retain pri
     h.gate(null);
     await h.flush(() => { for (const request of pending.slice(1)) request.wait.resolve(request.normal()); });
     assert.equal(h.owner.scopeKey, 'scope-b'); assert.equal(h.owner.notifications.state, 'ready');
-    h.gate(call => call.url.pathname.endsWith('/account/export') ? json({ error: { code: 'export_scope_changed' } }, 409) : undefined);
+    h.gate(call => call.url.pathname.endsWith('/account/messages') ? json({ error: { code: 'messages_scope_changed' } }, 409) : undefined);
     await h.focus(); assert.equal(h.owner.notifications.state, 'error'); assert.equal(h.owner.notifications.data, null);
     h.gate(null); await h.flush(() => h.owner.actions.loadNotifications()); assert.equal(h.owner.notifications.state, 'ready');
-    h.gate(call => call.url.pathname.endsWith('/account/export') ? json({ error: { code: 'unauthorized' } }, 403) : undefined);
+    h.gate(call => call.url.pathname.endsWith('/account/messages') ? json({ error: { code: 'unauthorized' } }, 403) : undefined);
     await h.focus(); assert.equal(h.owner.access, 'revoked');
     for (const kind of ['work', 'history', 'message', 'references', 'notifications']) assert.equal(h.owner[kind].data, null);
     assert.equal(h.container.querySelectorAll('[data-testid="personal-notification-entry"]').length, 0);
   } finally { await h.close(); }
+});
+
+test('missing message route is unavailable, not an empty inbox or loss of the other personal domains', async () => {
+  const h = await harness(call => call.url.pathname.endsWith('/account/messages') ? json({ error: { code: 'not_found' } }, 404) : undefined);
+  try {
+    assert.equal(h.owner.notificationUnavailable, true); assert.equal(h.owner.notifications.state, 'unavailable');
+    assert.equal(h.owner.access, 'active'); assert.ok(h.owner.work.data); assert.ok(h.owner.references.data);
+    assert.equal(h.container.querySelector('[data-testid="notification-history-empty"]'), null);
+    assert.match(h.container.textContent, /消息內容暫未提供/);
+    h.gate(null); await h.flush(() => h.owner.actions.loadNotifications());
+    assert.equal(h.owner.notificationUnavailable, false); assert.equal(h.owner.notifications.state, 'ready');
+  } finally { await h.close(); }
+});
+
+test('HTTP 200 with another recipient or authority never appends to previously read messages', async () => {
+  for (const change of [{ userId: 'another-synthetic-user' }, { scopeVersion: 'b'.repeat(64) }]) {
+    const h = await harness();
+    try {
+      assert.ok(h.owner.notifications.data.items.length);
+      h.gate(call => call.url.pathname.endsWith('/account/messages') ? json({ ...fixtures(call.url, call.user), ...change }) : undefined);
+      await h.flush(() => h.owner.actions.moreNotifications());
+      assert.equal(h.owner.notifications.state, 'error'); assert.equal(h.owner.notifications.data, null);
+      assert.equal(h.container.querySelectorAll('[data-testid="personal-notification-entry"]').length, 0);
+    } finally { await h.close(); }
+  }
+});
+
+
+test('the endpoint identity_changed error clears all existing personal snapshots', async () => {
+  const h = await harness();
+  try {
+    await h.warm();
+    h.gate(call => call.url.pathname.endsWith('/account/messages') ? json({ error: { code: 'identity_changed' } }, 409) : undefined);
+    await h.focus(); assert.equal(h.owner.access, 'revoked');
+    for (const kind of ['work', 'history', 'message', 'references', 'notifications']) assert.equal(h.owner[kind].data, null);
+    assert.equal(h.container.querySelectorAll('[data-testid="personal-notification-entry"]').length, 0);
+  } finally { await h.close(); }
+});
+
+
+test('the actual host mounts one account-only message owner without child reads and replaces it cleanly when a child is selected', async () => {
+  const { ProductionTaskKnowledgeDomains } = load('frontend/src/production/TaskKnowledgeDomains.tsx');
+  const { usePersonalHistoryWorkspace } = load('frontend/src/production/usePersonalHistory.ts');
+  const { PersonalNotificationContent } = load('frontend/src/components/history/PersonalHistoryViews.tsx');
+  const container = document.body.appendChild(document.createElement('main')), renderer = createRoot(container), queryClient = new QueryClient();
+  const calls = []; let currentOwner, gate, active = true;
+  const authority = { getSnapshot: () => ({ scopeKey: bridgeEnvironment.scopeKey, identityKey: bridgeEnvironment.identityKey }), fetcher: async (input, init = {}) => {
+    assert.equal(init.method || 'GET', 'GET'); const url = new URL(input, 'https://synthetic.test');
+    const call = { url, signal: init.signal, user: init.headers['x-expected-user-id'] }; calls.push(call);
+    return gate?.(call) ?? json(fixtures(url, call.user));
+  } };
+  const environment = (childId, user = 'synthetic-account') => {
+    const scopeKey = childId ? `${user}:${childId}` : '', identityKey = user;
+    return { owner: authority, scopeKey, identityKey, userId: user, childId, childName: 'Synthetic child', online: true, apiBaseUrl: 'https://synthetic.test/api', queryClient,
+      current: () => active && bridgeEnvironment.scopeKey === scopeKey && bridgeEnvironment.identityKey === identityKey,
+      currentIdentity: () => active && bridgeEnvironment.identityKey === identityKey, accessError() {} };
+  };
+  function Consumers() {
+    currentOwner = usePersonalHistoryWorkspace();
+    return e(React.Fragment, null, e(PersonalNotificationContent, { owner: currentOwner }), e(PersonalNotificationContent, { owner: currentOwner, recent: true }));
+  }
+  const render = () => renderer.render(e(ProductionTaskKnowledgeDomains, null, e(Consumers)));
+  const flush = async action => React.act(async () => { action?.(); for (let i = 0; i < 6; i++) await new Promise(setImmediate); });
+  const messages = () => calls.filter(call => call.url.pathname.endsWith('/account/messages'));
+  childBridgeEntries = 0; bridgeEnvironment = environment(null);
+  try {
+    await flush(render); assert.equal(currentOwner.notifications.state, 'ready'); assert.equal(messages().length, 1, 'history and bell share one initial read');
+    assert.equal(childBridgeEntries, 0); assert.equal(calls.length, 1, 'no work, references or conversation prefetch without a child');
+    const wait = deferred(); gate = call => call.url.pathname.endsWith('/account/messages') ? wait.promise : undefined;
+    await flush(() => currentOwner.actions.loadNotifications()); const accountRefresh = messages().at(-1);
+    bridgeEnvironment = environment(childA); gate = null; await flush(render);
+    assert.equal(accountRefresh.signal.aborted, true); assert.equal(currentOwner.scopeKey, bridgeEnvironment.scopeKey); assert.ok(childBridgeEntries > 0);
+    assert.equal(messages().length, 3, 'one account refresh and exactly one child-owner first read');
+    await flush(() => wait.resolve(json(fixtures(accountRefresh.url, accountRefresh.user)))); assert.equal(currentOwner.scopeKey, bridgeEnvironment.scopeKey);
+    const next = deferred(); gate = call => call.url.pathname.endsWith('/account/messages') ? next.promise : undefined;
+    bridgeEnvironment = environment(null); await flush(render);
+    assert.equal(currentOwner.notifications.data, null, 'returning to account mode never revives its obsolete snapshot');
+    assert.equal(currentOwner.notifications.state, 'loading'); assert.equal(messages().length, 4);
+    await flush(() => next.resolve(json(fixtures(messages().at(-1).url, 'synthetic-account')))); assert.equal(currentOwner.notifications.state, 'ready');
+    const oldIdentity = deferred(); gate = call => call.url.pathname.endsWith('/account/messages') ? oldIdentity.promise : undefined;
+    await flush(() => currentOwner.actions.loadNotifications()); const oldRead = messages().at(-1);
+    bridgeEnvironment = environment(null, 'synthetic-other-account'); await flush(render);
+    assert.equal(oldRead.signal.aborted, true); assert.equal(currentOwner.notifications.data, null);
+    gate = null; await flush(() => oldIdentity.resolve(json(fixtures(oldRead.url, oldRead.user))));
+    assert.equal(currentOwner.notifications.data, null, 'another identity cannot receive the late previous recipient page');
+  } finally { active = false; await flush(() => renderer.unmount()); queryClient.clear(); container.remove(); }
 });

@@ -134,10 +134,11 @@ export default function HistoryScreen() {
   const pathname = usePathname();
   const { category, status, older } = useLocalSearchParams<{ category?: string | string[]; status?: string | string[]; older?: string | string[] }>();
   const { model, actions, scopeKey } = useProduction();
+  const personal = usePersonalHistoryWorkspace();
   const child = model.children.find(item => item.id === model.selectedChildId);
-  const scope = scopeKey ?? "";
+  const scope = scopeKey ?? personal?.scopeKey ?? "";
   if (pathname !== "/history") return null;
-  if (!child) return <PageFrame title="歷史" density="compact" description="按分類查閱過往資料。"><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></PageFrame>;
+  if (!child && normalizeHistoryCategory(category) !== "notifications") return <PageFrame title="歷史" density="compact" description="按分類查閱過往資料。"><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></PageFrame>;
   return <HistoryWorkspace key={scope} scope={scope} initialCategory={normalizeHistoryCategory(category)} initialReviewStatus={normalizeReviewHistoryStatus(status)} olderOnly={normalizeHistoryOlderOnly(older)} />;
 }
 

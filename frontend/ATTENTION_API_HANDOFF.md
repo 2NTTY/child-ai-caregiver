@@ -78,23 +78,20 @@ interface AttentionSection {
 
 使用者用途：手機通知容易消失，需要回看**以前發送過甚麼內容**；可跨渠道顯示，同一通知不因渠道不同而重複。用戶端不提供「技術詳情」或嘗試開始／結束等診斷入口，維護者沿原有權限查原後端紀錄。
 
-### 目前 API 缺口
+### 已實作的本人消息契約（待部署啟用）
 
-- `src/production/usePersonalHistory.ts` 讀 account export 的 `notification_deliveries`；`src/history-view-model.ts` 只投影渠道、結果及時間。
-- 根 `server/account-data.ts` 與 `server/firestore-notification-history.ts` 的對應匯出只有 delivery／attempt metadata，沒有通知標題、正文或跨渠道的 logical notification ID。
-- delivery ID／contact request ID 不等於跨渠道通知 ID；前端不能按相同標題、時間或不同渠道猜去重，亦不能從目前待辦／助手文字拼造過去已發送的內容。
-- 本輪只移除用戶端技術時間與重複說明，保留正常時間、渠道真結果及部分載入狀態；**尚未交付內容收件箱**，沒有刪後端紀錄或新增維護者權限。
+- `GET /api/account/messages?cursor=&scopeVersion=`，共用 schema 為根 `src/shared/notification-messages.ts`。歷史與右上「最近消息」使用同一 `usePersonalHistory` owner／正式 client，無 production mock fallback；最近 5 則不是未讀數，不顯示未讀徽章。
+- Server 只回當前本人 recipient 且仍有權讀取的帳戶／孩子消息，保存當次真正對外 payload，只有 provider accepted 的渠道出現在 `contents[]`。每個穩定 `messageId` 一列，各渠道保留自己的 title（可 null）、body、contentVersion、sentAt；不按文字／時間猜合併，不把 accepted 說成本人收到。
+- 主畫面呈現內容、時間及渠道，不再呈現投遞診斷／自動重發說明；原投遞台帳及維護權限不變。不提供任意 href，也不捏造原事項連結。
+- `scopeVersion` 綁身份及可讀權限變更，不隨普通消息新增失效。每頁與 refresh 都驗 scope；`asOf` 為本輪時間上界，後續游標頁保持同一值，但不是隔離 snapshot。`complete` 只表示本輪沒有下一頁；尚有游標可繼續讀，晚保存內容由整輪 refresh 補上。
+- `coverage.historical=unknown`：舊消息未保存的正文不可重建；排除帳戶驗證電郵與未確認／未保存發送。UI 說明「只顯示已保存的通知內容；較早記錄可能不齊，不包括帳戶驗證電郵」。成功空、partial、loading、error、stale、unavailable 分開，不宣稱系統從未發過。
+- 消息 route 的 404／501、503 `firebase_domain_not_ready`（舊部署）及 `message_history_unavailable` 明示服務未提供，不能沿通用 404 撤權邏輯清空其他本人資料；明確身份錯誤仍清全部 owner，消息權限 epoch／游標失效則清消息並重讀。
+- `FIREBASE_MESSAGE_HISTORY_ENABLED` 預設關閉；部署者先完成 API／worker 兼容版本與索引，再啟用保存及讀取。本輪未部署 GCP、未實發消息，不能把 synthetic 合約驗收稱作正式 backend 已上線。
 
-### 供分工確認的最少接口需求（尚未實作）
+### 驗收邊界
 
-1. 專用本人通知內容讀取接口；回 schemaVersion、本人 scope／authorityVersion、asOf、items、cursor、complete 及可辨識 error／unavailable。現有通知歷史涵蓋本人帳戶及其他孩子，不能誤宣稱只屬目前孩子；每項須有明確 scope 與可讀的孩子／帳戶歸屬。
-2. 每項有後端穩定 `notificationId`／contentVersion、實際發送時保存的 title、摘要／正文或具名 detail endpoint、正常通知時間，及同一邏輯通知的渠道摘要。無可讀正文／舊資料不齊需明示，不能用空字串假完整。
-3. 與原事項關聯使用語義 destination＋受權 resource ID，不回任意可執行 href。對象已刪除、撤權或不再可讀時不洩露內容／連結；沿原 guard 與 child 邊界。
-4. Backend 決定跨渠道分組、內容版本、分頁排序／去重、內容保留及授權。前端只呈現已保存內容；`accepted` 不代表本人已收到，unknown 不改成 failed，不自行重發或修改渠道授權。此需求未授權新增敏感正文保存政策，須由後端另行確認。
-5. consumer 驗收：相同 notificationId 多渠道只一列、不同 ID 相同標題不合併、展開真正文／原事項、錯 scope／晚結果拒收、partial／error／舊資料缺正文如實。provider 驗收：內容與發送版本一致、權限／撤回／保留政策、跨渠道唯一性、穩定分頁及失效游標。
-6. 沒有 provider 前只可用獨立契約 fixture 驗展示，不掛 production mock fallback；目前本提案連共用 schema／正式 adapter 也未實作，不能以現有 metadata UI 或 build 代替端到端驗收。
+前端 synthetic 驗內容／渠道、近期與歷史同源、分頁、靜默整輪 refresh、初次缺服務、身份／scope 晚結果拒收，以及無孩子帳戶的單一消息 owner。Server／真 handler synthetic bridge 另驗 payload 保存、recipient／孩子撤權與刪除、provider accepted、舊部署 unavailable；不使用真家庭資料、模型或渠道。
 
 ## 本輪交接狀態
 
-A、B、C 都未接通新 API；A／C 的業務定義、共用 schema、Server provider、正式 adapter 及端到端驗收待分工確認，B 主動機制依使用者要求暫緩。
-頁面精簡、搬頁、登入、intro 與純讀 guard 修補可獨立驗收，不以未完成接口承諾掩蓋其待辦。
+A 的全域 attention 聚合仍未接 API；header 只投影既有頁面 owner 的明確操作狀態與原處理入口，不宣稱覆蓋所有待辦。B 主動機制仍暫緩。C 已有契約、provider、正式 adapter 與 synthetic 驗收，部署啟用仍待獨立 GCP 流程。

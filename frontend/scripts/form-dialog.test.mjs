@@ -3,6 +3,7 @@ import test from 'node:test';
 import { harness } from './scope-transition-harness.mjs';
 
 function scenario() {
+  let openRequest, requestKey = 0, disabled = false;
   let scope = 'child-a', dirty = false, pending = false, discards = 0, checks = 0, mounts = 0, closes = 0, focus = 0;
   const dialog = Object.assign('Dialog', { Title: 'Title', ScrollArea: 'ScrollArea', Content: 'Content', Actions: 'Actions' });
   const mocks = {
@@ -24,13 +25,15 @@ function scenario() {
     guard.usePreviewLeaveGuard(dirty);
     return h.jsx('Field', { value: 'Synthetic unsent text' });
   }
-  function Page() { return h.jsx(ManualFormDialog, { scopeKey: scope, label: '手動建立', title: '建立資料', onClose() { closes++; },
+  function Page() { return h.jsx(ManualFormDialog, { scopeKey: scope, openRequest, disabled, label: '手動建立', title: '建立資料', onClose() { closes++; },
     recovery: h.jsx('Button', { label: '查核原操作', onPress() { checks++; } }), children: h.jsx(Form, {}) }); }
   const tree = h.jsx(guard.PreviewNavigationGuard, { children: [h.jsx(Owner, {}, 'owner'), h.jsx(Page, {}, 'page')] });
   const render = () => h.render(tree), button = label => h.hosts().find(x => x.type === 'Button' && x.props.label === label);
   const modal = () => h.node('manual-form-dialog');
   render();
   return { h, render, button, modal, counts: () => ({ mounts, discards, closes, checks, focus }),
+    disabled(value) { disabled = value; render(); },
+    request(requestScope = scope) { openRequest = { key: ++requestKey, scopeKey: requestScope, consume() { openRequest = undefined; } }; render(); },
     open() { button('手動建立').props.ref.current = { isConnected: true, matches() { return true; }, focus() { focus++; } }; button('手動建立').props.onPress(); render(); },
     edit() { dirty = true; render(); }, pending(value) { pending = value; render(); },
     scope(value) { scope = value; dirty = false; render(); }, web() { mocks['react-native'].Platform.OS = 'web'; },
@@ -94,4 +97,28 @@ test('a controlled form replacement in the same child rejects approval for the p
   const button = label => h.hosts().find(n => n.type === 'Button' && n.props.label === label);
   render(); button('關閉').props.onPress(); render(); key = 'draft-b'; render();
   button('捨棄草稿並離開').props.onPress(); render(); assert.equal(closes, 0);
+});
+
+
+test('a one-shot header reveal opens only the current original form and retains all close protections', () => {
+  const s = scenario(); s.request('old-child'); assert.equal(s.modal(), undefined);
+  s.request(); assert.equal(s.modal().props.visible, true); assert.equal(s.counts().mounts, 1);
+  assert.equal(s.counts().checks, 0, 'reveal never checks, retries or submits an operation');
+  s.edit(); s.pending(true); s.button('關閉').props.onPress(); s.render();
+  assert.ok(s.button('留在此頁查核')); assert.equal(s.button('捨棄草稿並離開'), undefined);
+  s.scope('child-b'); assert.equal(s.modal()?.props.visible ?? false, false);
+  s.request('child-a'); assert.equal(s.modal()?.props.visible ?? false, false);
+});
+
+test('consuming the header reveal does not reopen a form after its guarded close', () => {
+  const s = scenario(); s.request(); s.button('關閉').props.onPress(); s.render();
+  assert.equal(s.modal().props.visible, false); s.render(); assert.equal(s.modal().props.visible, false);
+  s.request(); assert.equal(s.modal().props.visible, true); assert.equal(s.counts().checks, 0);
+});
+
+
+test('a disabled original form consumes a reveal instead of opening later when the blocker clears', () => {
+  const s = scenario(); s.disabled(true); s.request(); assert.equal(s.modal(), undefined);
+  s.disabled(false); assert.equal(s.modal(), undefined); s.render(); assert.equal(s.modal(), undefined);
+  s.request(); assert.equal(s.modal().props.visible, true);
 });

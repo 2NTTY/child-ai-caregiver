@@ -2,13 +2,12 @@ import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { historyMessageQuestion, notificationChannelLabel, notificationStatusLabels, visiblePersonalHistory, visiblePersonalNotifications, type HistoryDateRange } from "../../history-view-model";
+import { historyMessageQuestion, messageChannelLabel, visiblePersonalHistory, visiblePersonalMessages, type HistoryDateRange } from "../../history-view-model";
 import { memoryDateLabel } from "../../memory-reference-view-model";
-import { usePersonalHistoryWorkspace } from "../../production/usePersonalHistory";
+import { usePersonalHistoryWorkspace, type PersonalHistoryOwner } from "../../production/usePersonalHistory";
 import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { EmptyListCard } from "../EmptyListCard";
 import { ReadStateNotice } from "../ReadStateNotice";
-import { AppStatusBadge } from "../AppStatusBadge";
 import { AppButton } from "../ui";
 import { VoiceMessage } from "../../production/VoiceMessage";
 import { HistoryMessageDetail } from "./HistoryMessageDetail";
@@ -54,29 +53,46 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
 }
 
 export function PersonalNotificationHistoryView({ searchText, dateRange }: { searchText: string; dateRange: HistoryDateRange }) {
-  const owner = usePersonalHistoryWorkspace(), current = useRef(owner); current.current = owner;
+  const owner = usePersonalHistoryWorkspace();
+  return <PersonalNotificationContent owner={owner} searchText={searchText} dateRange={dateRange} />;
+}
+
+/** Both entry points render the same personal owner; Portal receives this owner explicitly. */
+export function PersonalNotificationContent({ owner, searchText = "", dateRange = { from: null, to: null }, recent = false }: {
+  owner: PersonalHistoryOwner | null; searchText?: string; dateRange?: HistoryDateRange; recent?: boolean;
+}) {
+  const current = useRef(owner); current.current = owner;
   const scope = owner?.scopeKey;
-  useEffect(() => { if (scope && current.current?.notifications.state === "unavailable") current.current.actions.loadNotifications(); }, [scope, owner?.online]);
-  if (!owner) return <ReadStateNotice state="unavailable" title="本人通知歷史暫未提供" />;
-  const read = owner.notifications, items = visiblePersonalNotifications(read.data?.items ?? [], searchText, dateRange);
+  useEffect(() => {
+    const latest = current.current;
+    if (scope && latest?.online && latest.notifications.state === "unavailable" && !latest.notificationUnavailable) latest.actions.loadNotifications();
+  }, [scope, owner?.online]);
+  if (!owner) return <ReadStateNotice state="unavailable" title="本人消息暫未提供" />;
+  const read = owner.notifications;
+  const matches = visiblePersonalMessages(read.data?.items ?? [], searchText, dateRange), items = recent ? matches.slice(0, 5) : matches;
+  const retry = <AppButton label="重新讀取消息" variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} />;
   return <View style={styles.list}>
-    <BackgroundSurface padded><Text style={styles.meta}>搜尋與日期只篩已載入通知。</Text></BackgroundSurface>
-    {read.state === "loading" ? <ReadStateNotice state="loading" title="正在讀取本人通知…" />
-      : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到本人通知" message="資料範圍可能已更新，請重新讀取。"><AppButton label="重新讀取本人通知" variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} /></ReadStateNotice>
-      : read.state === "unavailable" ? <ReadStateNotice state="unavailable" title={owner.online ? "正在準備通知歷史…" : "連線後才可讀取本人通知"} />
+    {read.state === "loading" ? <ReadStateNotice state="loading" title="正在讀取消息…" scopeKey={scope} />
+      : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到消息">{retry}</ReadStateNotice>
+      : read.state === "unavailable" ? <ReadStateNotice state="unavailable" title={owner.notificationUnavailable ? "消息內容暫未提供" : owner.online ? "正在準備消息…" : "連線後才可讀取消息"}>{owner.notificationUnavailable ? retry : null}</ReadStateNotice>
       : <>
-        {read.state === "stale" || !owner.online ? <ReadStateNotice state="stale" title="最新通知狀態尚未核對" /> : null}
+        {read.state === "stale" || !owner.online ? <ReadStateNotice state="stale" title="目前顯示較早的消息" /> : null}
+        {!recent ? <Text style={styles.meta}>搜尋與日期只篩已載入消息。</Text> : null}
         {items.map(item => <BackgroundSurface padded key={item.id} style={styles.entry} testID="personal-notification-entry">
-          <View style={styles.row}><Text style={styles.title}>{notificationChannelLabel(item)}</Text><AppStatusBadge label={notificationStatusLabels[item.status]} tone={item.status === "unknown" ? "warning" : "neutral"} /></View>
-          <Text style={styles.meta}>{notificationTime(item.createdAt ?? item.attemptedAt ?? item.updatedAt)}</Text>
-          {item.status === "accepted" && !item.acknowledgedAt ? <Text style={styles.meta}>尚未確認收到</Text> : null}
-          {item.status === "unknown" ? <Text style={styles.meta}>結果待核對，未自動重發</Text> : null}
+          <Text style={styles.meta}>{notificationTime(item.sentAt)} · {item.scope.kind === "child" ? item.scope.childName : "本人帳戶"}</Text>
+          {item.contents.map((content, index) => <View key={`${content.channel}:${index}`} style={styles.messageContent}>
+            {content.title ? <Text style={styles.title}>{content.title}</Text> : null}
+            <Text selectable style={styles.body}>{content.body}</Text>
+            <Text style={styles.meta}>{messageChannelLabel(content.channel)}{item.contents.length > 1 ? ` · ${notificationTime(content.sentAt)}` : ""}</Text>
+          </View>)}
         </BackgroundSurface>)}
-        {!items.length && read.state === "ready" && owner.online && owner.access !== "revoked" ? <EmptyListCard testID="notification-history-empty" title={read.data.complete ? "沒有符合篩選的通知" : "已載入頁中沒有符合篩選的通知"}
-          detail={read.data.complete ? "已完整載入本人通知。" : "仍有渠道或記錄未載入，可繼續讀取。"} /> : null}
-        {read.data ? <BackgroundSurface padded><Text style={styles.meta}>{read.data.complete ? "已完整載入" : "尚有通知未載入"} · 已載入 {read.data.items.length} 項</Text></BackgroundSurface> : null}
-        {read.data?.nextCursor ? <AppButton label={owner.busy.notifications ? "正在讀取…" : "載入更多本人通知"} variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.moreNotifications} /> : null}
-        {read.state === "stale" ? <AppButton label="重新讀取本人通知" variant="quiet" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} /> : null}
+        {!items.length && read.state === "ready" && owner.online && owner.access !== "revoked" ? read.data?.complete
+          ? <EmptyListCard testID="notification-history-empty" title={searchText || dateRange.from || dateRange.to ? "已載入消息沒有符合篩選的內容" : "暫未有可展示的消息內容"} />
+          : <ReadStateNotice state="unavailable" title="已載入部分未有符合的消息" message="仍有記錄未讀取。" /> : null}
+        {items.length ? <Text style={styles.meta}>只顯示已保存的通知內容；較早記錄可能不齊，不包括帳戶驗證電郵。</Text> : null}
+        {!recent && read.data ? <Text style={styles.meta}>已載入 {read.data.items.length} 則{read.data.complete ? "" : " · 尚有記錄未載入"}</Text> : null}
+        {!recent && read.data?.nextCursor ? <AppButton label={owner.busy.notifications ? "正在讀取…" : "載入更多消息"} variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.moreNotifications} /> : null}
+        {read.state === "stale" ? retry : null}
       </>}
   </View>;
 }
@@ -86,6 +102,7 @@ function notificationTime(value: string | null) {
     hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
 }
 const styles = StyleSheet.create({
+  messageContent: { gap: spacing.xs, minWidth: 0 },
   list: { gap: spacing.md, minWidth: 0 },
   entry: { gap: spacing.sm, minWidth: 0, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },

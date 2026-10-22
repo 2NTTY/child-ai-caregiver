@@ -33,3 +33,18 @@ test("an uncertain Telegram transport attempt is never retried or reported as re
     assert.doesNotMatch(JSON.stringify(result), /synthetic-private-transport-detail/);
   }
 });
+
+test('Telegram history captures the exact accepted text without authentication or callback secrets', async () => {
+  for (const kind of ['test', 'care'] as const) {
+    let sent: any;
+    const gateway = createTelegramGateway(config, async ({ body }) => {
+      sent = JSON.parse(body);
+      return Response.json({ ok: true, result: { message_id: 42, chat: { id: 123, type: 'private' }, text: sent.text } });
+    });
+    const result = await gateway.send({ chatId: 123, callbackToken: 'c'.repeat(32), kind }, new AbortController().signal, async () => true);
+    assert.equal(result.status, 'accepted'); assert.ok(result.message);
+    assert.equal(result.message.body, sent.text); assert.equal(result.message.title, null);
+    assert.equal(result.message.contentVersion, 'telegram-generic-v1'); assert.ok(Date.parse(result.message.sentAt));
+    assert.doesNotMatch(JSON.stringify(result.message), /callback|chatId|123456|cccccccc/u);
+  }
+});

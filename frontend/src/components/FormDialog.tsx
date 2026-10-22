@@ -1,3 +1,4 @@
+import type { OperationOpenRequest } from "../operation-reveal";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
@@ -68,12 +69,18 @@ export function FormDialog({ visible, scopeKey, title, children, recovery, onClo
 }
 
 /** A stable secondary trigger; closing only unmounts the form after guard approval. */
-export function ManualFormDialog({ label, title = label, scopeKey, disabled = false, recovery, children, onClose, formKey }: {
-  label: string; title?: string; scopeKey: string; disabled?: boolean; recovery?: ReactNode; children: ReactNode; onClose?(): void; formKey?: string | number;
+export function ManualFormDialog({ label, title = label, scopeKey, disabled = false, recovery, children, onClose, formKey, openRequest }: {
+  label: string; title?: string; scopeKey: string; disabled?: boolean; recovery?: ReactNode; children: ReactNode; onClose?(): void; formKey?: string | number; openRequest?: OperationOpenRequest;
 }) {
   const [state, setState] = useState<{ scopeKey: string; open: boolean } | null>(null);
   const trigger = useRef<View>(null);
   const visible = state?.scopeKey === scopeKey && state.open;
+  const consumed = useRef<number | null>(null);
+  useEffect(() => {
+    if (!openRequest || openRequest.scopeKey !== scopeKey || consumed.current === openRequest.key) return;
+    consumed.current = openRequest.key; openRequest.consume();
+    if (!disabled) setState({ scopeKey, open: true });
+  }, [openRequest?.key, openRequest?.scopeKey, scopeKey, disabled]);
   return <>
     <AppButton ref={trigger} label={label} variant="quiet" disabled={disabled} onPress={() => setState({ scopeKey, open: true })} />
     {state ? <FormDialog visible={!!visible} scopeKey={scopeKey} formKey={formKey} title={title} recovery={recovery} returnFocusRef={trigger}

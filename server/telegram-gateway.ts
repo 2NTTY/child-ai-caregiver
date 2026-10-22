@@ -101,13 +101,14 @@ const httpsTransport: TelegramTransport = async ({ url, body, signal }) => {
   });
 };
 
-function apiFor(config: TelegramConfig, transport: TelegramTransport, state: { attempted: boolean; providerStatus: number | null }) {
+function apiFor(config: TelegramConfig, transport: TelegramTransport, state: { attempted: boolean; providerStatus: number | null; sentAt?: string }) {
   const fetch: SdkFetch = async (...[url, options]: Parameters<SdkFetch>) => {
     if (typeof url !== "string" || options?.method !== "POST" || typeof options.body !== "string" || !options.signal
       || Buffer.byteLength(options.body) > REQUEST_LIMIT || options.signal.aborted
       || !["sendMessage", "answerCallbackQuery"].some(method => url === "https://api.telegram.org/bot" + config.token + "/" + method)) throw transportError();
     // grammY's Node fetch shim uses the same abort listener contract as the native signal.
     const signal = options.signal as unknown as AbortSignal;
+    state.sentAt = new Date().toISOString();
     state.attempted = true;
     const response = await transport({ url, body: options.body, signal });
     state.providerStatus = response.status;
@@ -130,7 +131,7 @@ export function createTelegramGateway(config: TelegramConfig | null, transport: 
     async send(input, signal, stillAuthorized) {
       if (!config) return result("stopped", "configuration_unavailable");
       const scope = deadline(signal);
-      const state = { attempted: false, providerStatus: null as number | null };
+      const state = { attempted: false, providerStatus: null as number | null, sentAt: undefined as string | undefined };
       try {
         if (scope.signal.aborted) return result("stopped", "worker_interrupted");
         if (!Number.isSafeInteger(input.chatId) || input.chatId <= 0 || !/^[A-Za-z0-9_-]{32}$/u.test(input.callbackToken)
@@ -138,14 +139,16 @@ export function createTelegramGateway(config: TelegramConfig | null, transport: 
         if (!await bounded(stillAuthorized(), scope.signal)) return result("stopped", "revoked");
         if (scope.signal.aborted) return result("stopped", "worker_interrupted");
         const api = apiFor(config, transport, state);
-        const care = input.kind === "care";
-        const reply: unknown = await bounded(api.sendMessage(input.chatId, care ? CARE_MESSAGE : TEST_MESSAGE, {
+        const care = input.kind === "care", text = care ? CARE_MESSAGE : TEST_MESSAGE;
+        const reply: unknown = await bounded(api.sendMessage(input.chatId, text, {
           link_preview_options: { is_disabled: true }, protect_content: true,
           reply_markup: { inline_keyboard: [[{ text: care ? "收到提示" : "收到測試", callback_data: (care ? "contact:" : "ack:") + input.callbackToken }]] },
         }, scope.signal as unknown as SdkSignal), scope.signal);
         if (scope.signal.aborted || !record(reply) || !record(reply.chat) || reply.chat.id !== input.chatId
           || !Number.isSafeInteger(reply.message_id) || Number(reply.message_id) <= 0) return result("unknown", "transport_unknown", state.providerStatus);
-        return result("accepted", null, state.providerStatus, Number(reply.message_id));
+        if (!state.sentAt) return result("unknown", "transport_unknown", state.providerStatus);
+        return { ...result("accepted", null, state.providerStatus, Number(reply.message_id)),
+          message: { channel: 'telegram', contentVersion: 'telegram-generic-v1', title: null, body: text, sentAt: state.sentAt } };
       } catch (error) {
         if (!state.attempted) return result("stopped", scope.signal.aborted ? "worker_interrupted" : "revoked");
         if (!scope.signal.aborted && error instanceof GrammyError) {

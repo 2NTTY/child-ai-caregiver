@@ -8,7 +8,7 @@ export const historyCategories = [
   { key: "profile", label: "檔案修改", description: "孩子檔案的確認及更正版本", sourceLabel: "孩子檔案", sourcePath: "/profile", sourceAction: "查看檔案", unavailable: "" },
   { key: "conversations", label: "助手對話", description: "本人與這位孩子相關的對話", sourceLabel: "助手", sourcePath: "/chat", sourceAction: "開啟助手", unavailable: "請到助手查看已載入的對話。" },
   { key: "growth", label: "關注與成長", description: "查看已結束的關注與跟進記錄", sourceLabel: "關注鏈", sourcePath: "/growth", sourceAction: "開啟關注鏈", unavailable: "" },
-  { key: "notifications", label: "通知與聯絡", description: "通知及聯絡請求的狀態歷程", sourceLabel: "聯絡授權", sourcePath: "/contact", sourceAction: "開啟聯絡授權", unavailable: "通知歷史暫未提供；請到聯絡授權查看已載入的聯絡請求記錄。" },
+  { key: "notifications", label: "消息歷史", description: "已保存的本人消息內容", sourceLabel: "本人消息", sourcePath: "/history?category=notifications", sourceAction: "查看消息歷史", unavailable: "消息內容暫未提供。" },
 ] as const;
 
 export type HistoryCategory = typeof historyCategories[number]["key"];

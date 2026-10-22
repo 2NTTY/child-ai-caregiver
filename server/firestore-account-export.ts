@@ -4,6 +4,7 @@ import { firestoreVoiceTranscriptSchema, type FirestoreVoiceTranscripts } from '
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
+import { createFirestoreNotificationMessages } from './firestore-notification-messages.ts';
 import { readNotificationHistory } from './firestore-notification-history.ts';
 import { contentVisible } from './firestore-disclosure.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
@@ -176,12 +177,12 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const summary = await memory.readSummaryRevision(binding, value);
             if (summary) items.push(summary);
           } else if (section === 'native_push_bindings') items.push(firestoreNativeBindingSchema.parse(value).binding);
-          else if (section === 'native_push_deliveries') items.push(firestoreNativeDeliverySchema.parse(value).delivery);
+          else if (section === 'native_push_deliveries') { const saved = firestoreNativeDeliverySchema.parse(value); items.push({ ...saved.delivery, ...(saved.message ? { message: saved.message } : {}) }); }
           else if (section === 'push_bindings') items.push(firestorePushBindingSchema.parse(value).binding);
-          else if (section === 'push_deliveries') items.push(firestorePushDeliverySchema.parse(value).delivery);
+          else if (section === 'push_deliveries') { const saved = firestorePushDeliverySchema.parse(value); items.push({ ...saved.delivery, ...(saved.message ? { message: saved.message } : {}) }); }
           else if (section === 'telegram_bindings') items.push(firestoreTelegramBindingSchema.parse(value).binding);
-          else if (section === 'telegram_deliveries') items.push(firestoreTelegramDeliverySchema.parse(value).delivery);
-          else if (section === 'contact_requests') items.push(firestoreContactRequestSchema.parse(value).request);
+          else if (section === 'telegram_deliveries') { const saved = firestoreTelegramDeliverySchema.parse(value); items.push({ ...saved.delivery, ...(saved.message ? { message: saved.message } : {}) }); }
+          else if (section === 'contact_requests') { const saved = firestoreContactRequestSchema.parse(value); items.push({ ...saved.request, ...(saved.messages ? { messages: saved.messages.filter(message => message.recipientUserId === owner) } : {}) }); }
           else if (section === 'contact_consents') items.push(firestoreContactConsentSchema.parse(value).value);
           else if (section === 'contact_grants') items.push(firestoreContactGrantSchema.parse(value).value);
           else if (!context.kind.endsWith('tombstone')) items.push(value);
@@ -213,5 +214,5 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
     });
     const { photos: _photos, voices: _voices, files: _files, ...response } = result; return response;
   }
-  return { page };
+  return { page, messages: createFirestoreNotificationMessages(options).page };
 }

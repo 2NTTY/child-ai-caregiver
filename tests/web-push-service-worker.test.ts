@@ -87,3 +87,14 @@ test("subscription changes suspend rather than silently rebind an account", asyn
   assert.equal(f.state().active, null);
   assert.notEqual(f.state().epoch, epoch);
 });
+
+test('push worker renders captured content while legacy references still use their original display', async () => {
+  const f = fixture(), epoch = (await f.message({ type: 'suspend' })).epoch;
+  const binding = { id: randomUUID(), userId: 'account', version: 1 };
+  await f.message({ type: 'activate', epoch, binding });
+  const content = { contentVersion: 'web-push-generic-v1', title: '育有方照護提示', body: '你有獲授權的照護事項提示，請開啟育有方查看。收到提示不代表事項已完成。' };
+  await f.push({ v: 1, kind: 'care', bindingId: binding.id, bindingVersion: 1, deliveryId: randomUUID(), content });
+  assert.equal(f.shown[0].title, content.title); assert.equal(f.shown[0].options.body, content.body);
+  await f.push({ v: 1, bindingId: binding.id, bindingVersion: 1, deliveryId: randomUUID(), content: { ...content, contentVersion: 'unknown' } });
+  assert.equal(f.shown.length, 1);
+});

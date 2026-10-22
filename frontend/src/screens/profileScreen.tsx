@@ -1,3 +1,4 @@
+import { useOperationReveal } from "../operation-reveal";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "expo-router";
 import { StyleSheet, View } from "react-native";
@@ -18,6 +19,7 @@ import { colors, radius, spacing } from "../theme";
 function ProfileContent() {
   const { model: home, actions: homeActions, online, recordsState, controller, identityKey } = useProduction();
   const workspace = useProfileWorkspace(), recovery = useProductionCareProfile(), leave = usePreviewNavigation();
+  const profileOpenRequest = useOperationReveal(workspace?.scopeKey ?? "", "profile");
   const pathname = usePathname(), lastPath = useRef(pathname);
   const child = home.children.find(item => item.id === home.selectedChildId) ?? null;
   const [managementOpen, setManagementOpen] = useState(false);
@@ -66,7 +68,7 @@ function ProfileContent() {
   </View>;
   if (!workspace) return <>{childPicker}<SectionCard><Text>{child ? "正在讀取孩子檔案…" : "先填一個稱呼建立孩子，便可以跟助手交代事情；其他資料可稍後補充。"}</Text></SectionCard></>;
   const { model, actions } = workspace;
-  return <ProfileView model={model} actions={actions} childPicker={childPicker} onOpenCare={() => homeActions.open("care")}
+  return <ProfileView openRequest={profileOpenRequest} model={model} actions={actions} childPicker={childPicker} onOpenCare={() => homeActions.open("care")}
     childDeletionActive={!!recordsState.deletion || creating || createUnknown} previewControls={null}
     writeNotice={<OperationNotice state={model.operation.state} title={model.operation.resultUnavailable ? "原操作已確認 · 待重讀結果" : "檔案操作"}
       visible={model.operation.state !== "needs_confirmation"} message={model.operation.message}

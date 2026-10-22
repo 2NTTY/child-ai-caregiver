@@ -61,7 +61,7 @@ export function ProductionStartupReadiness() {
     documents: readState(documents?.readState),
     conversations: personalHistory?.scopeKey !== scopeKey ? "loading" : personalHistory?.access === "revoked" || !personalHistory?.online ? "error"
       : personalHistory.history.state === "unavailable" ? "loading" : readState(personalHistory.history.state),
-    notifications: personalHistory?.scopeKey !== scopeKey ? "loading" : personalHistory?.access === "revoked" || !personalHistory?.online ? "error"
+    notifications: personalHistory?.scopeKey !== scopeKey ? "loading" : personalHistory?.access === "revoked" || !personalHistory?.online || personalHistory?.notificationUnavailable ? "error"
       : personalHistory.notifications.state === "unavailable" ? "loading" : readState(personalHistory.notifications.state),
     summary: !currentSummary ? "loading" : currentSummary.readFailed || currentSummary.access === "lost" ? "error" : currentSummary.page ? "ready" : "loading",
     photos: Platform.OS !== "web" ? "ready" : readState(photos?.scopeKey === scopeKey ? photos.photos.model.load : undefined),

@@ -1,6 +1,8 @@
 import { createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import type { DocumentSnapshot, Query, Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
+import { notificationMessageContentSchema } from '../src/shared/notification-messages.ts';
+import { acceptedMessage, messageSortMetadata } from './notification-message-content.ts';
 import { telegramBindingSchema, telegramDeliverySchema, telegramBeginInput, telegramConfirmInput, telegramVersionInput, telegramTestInput,
   type TelegramBinding, type TelegramChallenge, type TelegramStatus } from '../src/shared/telegram.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
@@ -17,7 +19,7 @@ export const firestoreTelegramBindingSchema = z.object({ binding: telegramBindin
 export const firestoreTelegramChallengeSchema = z.object({ id: uuid, version: z.number().int().positive(), botId: z.string(),
   token: z.string().length(32).nullable(), candidate: targetSchema.nullable(), state: z.enum(['waiting', 'seen', 'consumed', 'cancelled']), createdAt: time, expiresAt: time }).strict();
 export const firestoreTelegramDeliverySchema = z.object({ delivery: telegramDeliverySchema, botId: z.string(), bindingVersion: z.number().int().positive(),
-  generation: uuid, authorizationVersion: z.string(), callback: z.string().length(32).nullable(), attempt: uuid.nullable() }).strict();
+  generation: uuid, authorizationVersion: z.string(), callback: z.string().length(32).nullable(), attempt: uuid.nullable(), message: notificationMessageContentSchema.optional() }).strict();
 const pointerSchema = z.object({ id: uuid, scope: workRecoveryScopeSchema }).strict();
 const stateSchema = z.object({ bindingId: uuid.nullable(), challengeId: uuid.nullable() }).strict();
 const metaSchema = z.object({ key: z.string().length(44) }).strict();
@@ -52,7 +54,7 @@ export function createFirestoreTelegram(options: FirestoreDomainOptions & {
   const challengeEnvelope = (scope: WorkRecoveryScope, saved: SavedChallenge) => envelope(scope, 'telegram-challenge', saved.id,
     firestoreTelegramChallengeSchema, saved, saved.version, { challengeId: saved.id, createdAt: saved.createdAt, state: saved.state });
   const deliveryEnvelope = (scope: WorkRecoveryScope, saved: SavedDelivery) => envelope(scope, 'telegram-delivery', saved.delivery.id,
-    firestoreTelegramDeliverySchema, saved, 1, { deliveryId: saved.delivery.id, bindingId: saved.delivery.bindingId, createdAt: saved.delivery.createdAt, status: saved.delivery.status,
+    firestoreTelegramDeliverySchema, saved, 1, { ...messageSortMetadata(saved.message ? [saved.message] : []), deliveryId: saved.delivery.id, bindingId: saved.delivery.bindingId, createdAt: saved.delivery.createdAt, status: saved.delivery.status,
       unresolved: ['queued', 'sending', 'unknown'].includes(saved.delivery.status) && !saved.delivery.acknowledgedAt });
   async function state(b: Binding) {
     const id = personalKey(b.scope), ref = data.ref('telegram_state', 'telegram-state', id), row = await b.transaction.get(ref);
@@ -306,7 +308,10 @@ export function createFirestoreTelegram(options: FirestoreDomainOptions & {
       const change = await authority.prepareReceiptChange(tx, scope, randomUUID(), 'preferences');
       if (saved.delivery.acknowledgedAt && ['rejected', 'stopped'].includes(result.status)) result = { status: 'unknown', reason: 'transport_unknown', providerStatus: result.providerStatus, messageId: saved.delivery.messageId };
       change?.commit();
-      saved.delivery = { ...saved.delivery, ...result, messageId: saved.delivery.messageId ?? result.messageId,
+      const { message: capturedMessage, ...deliveryResult } = result;
+      const message = options.messageHistoryEnabled === true ? acceptedMessage({ ...deliveryResult, message: capturedMessage }, 'telegram') : undefined;
+      if (message) saved.message = message;
+      saved.delivery = { ...saved.delivery, ...deliveryResult, messageId: saved.delivery.messageId ?? result.messageId,
         finishedAt: new Date().toISOString() }; tx.set(ref, deliveryEnvelope(scope, saved));
       if (result.reason === 'blocked' && bound?.binding.status === 'active' && bound.binding.version === saved.bindingVersion) {
         if (bound.targetHash) tx.delete(data.ref('telegram_pointers', 'telegram-pointer', bound.targetHash));

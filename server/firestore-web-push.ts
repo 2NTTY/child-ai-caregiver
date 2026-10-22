@@ -1,6 +1,8 @@
 import { randomUUID, createHash } from 'node:crypto';
 import type { Query, DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
+import { notificationMessageContentSchema } from '../src/shared/notification-messages.ts';
+import { acceptedMessage, messageSortMetadata } from './notification-message-content.ts';
 import { pushRegistrationInput, pushBindingSchema, pushDeliverySchema, pushVersionInput, pushTestInput,
   type PushBinding, type PushDelivery, type WebPushStatus } from '../src/shared/web-push.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -13,7 +15,7 @@ import { checkedSubscription, pushProvider } from './web-push-gateway.ts';
 const uuid = z.uuid(), NIL = '00000000-0000-0000-0000-000000000000';
 export const firestorePushBindingSchema = z.object({ binding: pushBindingSchema, input: pushRegistrationInput.nullable() }).strict();
 export const firestorePushDeliverySchema = z.object({ delivery: pushDeliverySchema, bindingVersion: z.number().int().positive(),
-  generation: uuid, authorizationVersion: z.string(), attempt: uuid.nullable() }).strict();
+  generation: uuid, authorizationVersion: z.string(), attempt: uuid.nullable(), message: notificationMessageContentSchema.optional() }).strict();
 const endpointSchema = z.object({ ownerUserId: z.string().min(1).max(256), bindingId: uuid, endpointHash: z.string().length(64) }).strict();
 export const firestorePushEndpointRecoverySchema = endpointSchema;
 type SavedBinding = z.infer<typeof firestorePushBindingSchema>;
@@ -45,6 +47,7 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
     ...data.seal('push-binding', saved.binding.id, b.scope, firestorePushBindingSchema, saved, saved.binding.version) });
   const deliveryEnvelope = (b: Pick<Binding, 'scope'>, saved: SavedDelivery) => ({ ...data.tags(b.scope), deliveryId: saved.delivery.id,
     createdAt: saved.delivery.createdAt, bindingId: saved.delivery.bindingId, status: saved.delivery.status,
+    ...messageSortMetadata(saved.message ? [saved.message] : []),
     ...data.seal('push-delivery', saved.delivery.id, b.scope, firestorePushDeliverySchema, saved) });
   async function recent(b: Binding) {
     const rows = await b.transaction.get(query(b, 'push_deliveries').where('createdAt', '>', new Date(Date.now() - 86400_000).toISOString())
@@ -188,7 +191,10 @@ export function createFirestoreWebPush(options: FirestoreDomainOptions & {
       const pointerRow = pointer ? await tx.get(pointer) : null;
       const change = await authority.prepareReceiptChange(tx, scope, randomUUID(), 'preferences');
       change?.commit();
-      saved.delivery = { ...saved.delivery, ...result, finishedAt: new Date().toISOString() }; tx.set(ref, deliveryEnvelope(b, saved));
+      const { message: capturedMessage, ...deliveryResult } = result;
+      const message = options.messageHistoryEnabled === true ? acceptedMessage({ ...deliveryResult, message: capturedMessage }, 'web_push') : undefined;
+      if (message) saved.message = message;
+      saved.delivery = { ...saved.delivery, ...deliveryResult, finishedAt: new Date().toISOString() }; tx.set(ref, deliveryEnvelope(b, saved));
       if (expiring) {
         if (pointerRow?.exists && decode(b, pointerRow, 'push-endpoint', subscribed.binding.endpointHash!, endpointSchema).bindingId === subscribed.binding.id) tx.delete(pointer!);
         subscribed.input = null; subscribed.binding = { ...subscribed.binding, version: subscribed.binding.version + 1, status: 'expired',

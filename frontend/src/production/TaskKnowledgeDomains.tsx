@@ -1,4 +1,4 @@
-import { createContext, memo, useCallback, useContext, useLayoutEffect, useState, type ReactNode } from "react";
+import { createContext, memo, useCallback, useContext, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
 import { TasksWorkspaceProvider, type TasksWorkspaceValue } from "../workspaces/TasksWorkspace";
 import { PreparationWorkspaceProvider } from "../workspaces/PreparationWorkspace";
 import { GrowthWorkspaceProvider, type GrowthWorkspaceValue } from "../workspaces/GrowthWorkspace";
@@ -39,20 +39,39 @@ const DomainBridge = memo(function DomainBridge({ env, publish }: { env: TaskKno
   return null;
 });
 
+// An account without a selected child still has its own private message history.
+// This branch never mounts the child task, memory, document or growth owners.
+const AccountHistoryBridge = memo(function AccountHistoryBridge({ env, publish }: {
+  env: TaskKnowledgeEnvironment; publish(value: PersonalHistoryOwner): void;
+}) {
+  const history = usePersonalHistory(env);
+  useLayoutEffect(() => { publish(history); }, [history, publish]);
+  return null;
+});
+
 export function ProductionTaskKnowledgeDomains({ children }: { children: ReactNode }) {
   const env = useDomainEnvironment();
+  const historyScope = env.scopeKey || (env.identityKey && env.userId ? JSON.stringify(["account-messages", env.identityKey]) : "");
+  const accountEnv = useMemo(() => ({ ...env, scopeKey: historyScope,
+    current: () => env.currentIdentity() && !env.owner.getSnapshot().scopeKey }), [env, historyScope]);
+  const [accountHistory, setAccountHistory] = useState<PersonalHistoryOwner | null>(null);
+  useLayoutEffect(() => { if (env.scopeKey) setAccountHistory(null); }, [env.scopeKey]);
+  const publishAccount = useCallback((value: PersonalHistoryOwner) => setAccountHistory(value), []);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const publish = useCallback((value: Snapshot) => setSnapshot(value), []);
   const current = snapshot && env.scopeKey && snapshot.scopeKey === env.scopeKey ? snapshot : null;
+  const currentHistory = env.scopeKey ? current?.history ?? null
+    : accountHistory?.scopeKey === historyScope ? accountHistory : null;
   return <>
-    {env.scopeKey && env.userId && env.childId ? <DomainBridge key={env.scopeKey} env={env} publish={publish} /> : null}
+    {env.scopeKey && env.userId && env.childId ? <DomainBridge key={env.scopeKey} env={env} publish={publish} />
+      : historyScope && env.userId ? <AccountHistoryBridge key={historyScope} env={accountEnv} publish={publishAccount} /> : null}
     <TasksWorkspaceProvider scopeKey={env.scopeKey} value={current?.tasks ?? null}>
       <PreparationWorkspaceProvider scopeKey={env.scopeKey} value={current?.documents.preparation ?? null}>
         <GrowthWorkspaceProvider scopeKey={env.scopeKey} value={current?.growth ?? null}>
           <MemoryReferenceWorkspaceProvider scopeKey={env.scopeKey} value={current?.memory.value ?? null}>
             <SummaryContext.Provider value={current?.summary ?? null}>
               <MemoryContext.Provider value={current?.memory ?? null}>
-                <DocumentContext.Provider value={current?.documents ?? null}><PersonalHistoryProvider scopeKey={env.scopeKey} value={current?.history ?? null}>{children}</PersonalHistoryProvider></DocumentContext.Provider>
+                <DocumentContext.Provider value={current?.documents ?? null}><PersonalHistoryProvider scopeKey={historyScope} value={currentHistory}>{children}</PersonalHistoryProvider></DocumentContext.Provider>
               </MemoryContext.Provider>
             </SummaryContext.Provider>
           </MemoryReferenceWorkspaceProvider>

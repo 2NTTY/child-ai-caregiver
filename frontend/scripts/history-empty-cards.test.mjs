@@ -64,17 +64,18 @@ test('growth history replaces the bare empty line with a card, never during refr
   }
 });
 
-test('conversation and notification empty cards retain partial paging and disappear during busy, stale, offline or uncertain reads', () => {
+test('conversation and notification empty cards preserve successful refresh snapshots but not partial notifications or uncertain reads', () => {
   const initial = () => ({scopeKey: 'scope', access: 'editable', online: true, busy: {history: false, notifications: false, message: false}, actions: {}, message: {data: null},
     history: {state: 'ready', data: {query: '', matches: [], complete: false, nextCursor: 'more', scanned: 100}},
     notifications: {state: 'ready', data: {items: [], complete: false, nextCursor: 'more'}}});
   let owner = initial();
   const views = load('src/components/history/PersonalHistoryViews.tsx', {'../../production/usePersonalHistory': {usePersonalHistoryWorkspace: () => owner}});
-  for (const [kind, render] of [['history', () => views.PersonalConversationHistoryView({searchText: '', dateRange: range, onPrepareQuestion: noop})], ['notifications', () => views.PersonalNotificationHistoryView({searchText: '', dateRange: range})]]) {
-    owner = initial(); assert.equal(empty(render()).length, 1); assert.match(empty(render())[0].props.detail, /仍有/);
+  for (const [kind, render] of [['history', () => views.PersonalConversationHistoryView({searchText: '', dateRange: range, onPrepareQuestion: noop})], ['notifications', () => views.PersonalNotificationContent({owner, searchText: '', dateRange: range})]]) {
+    owner = initial(); assert.equal(empty(render()).length, kind === 'history' ? 1 : 0); if (kind === 'history') assert.match(empty(render())[0].props.detail, /仍有/);
     for (const state of ['loading', 'error', 'unavailable', 'stale']) { owner = initial(); owner[kind] = {...owner[kind], state, ...(state === 'stale' ? {} : {data: null})}; assert.equal(empty(render()).length, 0, state); }
-    for (const patch of [{online: false}, {access: 'revoked'}, {busy: {[kind]: true}}]) { owner = {...initial(), ...patch}; assert.equal(empty(render()).length, 0); }
+    for (const patch of [{online: false}, {access: 'revoked'}, {busy: {[kind]: true}}]) { owner = {...initial(), ...patch}; assert.equal(empty(render()).length, patch.busy && kind === 'history' ? 1 : 0); }
     owner = initial(); owner[kind].data.complete = true; owner[kind].data.nextCursor = null; assert.equal(empty(render()).length, 1);
+    owner.busy[kind] = true; assert.equal(empty(render()).length, 1, 'a successful empty snapshot stays visible during refresh');
   }
   owner = initial(); owner.history.data.query = 'previous query'; assert.equal(empty(views.PersonalConversationHistoryView({searchText: '', dateRange: range, onPrepareQuestion: noop})).length, 0);
 });

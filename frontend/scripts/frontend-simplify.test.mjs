@@ -48,13 +48,13 @@ test('desktop navigation uses two-character labels while preserving full accessi
   }
 });
 
-test('header facts expose only profile status without mutating region or allergy data', () => {
+test('header omits confirmed profile chips without changing underlying child data', () => {
   const { ChildKeyFacts } = load('components/ChildKeyFacts.tsx');
   for (const confirmed of [false, true]) {
     const child = Object.freeze({ id: 'synthetic', displayName: '合成小晴', regionLabel: '香港', allergiesLabel: '合成過敏備註', profileConfirmed: confirmed });
     const tree = ChildKeyFacts({ child, load: 'ready' });
     const facts = nodes(tree).filter(node => node.props?.fact).map(node => node.props.fact);
-    assert.deepEqual(facts, [{ label: '檔案', value: confirmed ? '已確認' : '待核對' }]);
+    assert.deepEqual(facts, []); assert.equal(text(tree).includes('已確認'), false); assert.equal(child.profileConfirmed, confirmed);
     assert.equal(child.regionLabel, '香港'); assert.equal(child.allergiesLabel, '合成過敏備註');
   }
 });
@@ -178,34 +178,27 @@ test('the rail has no context tab or record/background copy, while task navigati
   assert.ok(text(empty).includes('選擇孩子')); assert.equal(nodes(empty).some(node => node.type === 'HomeFocus'), false);
 });
 
-test('notification history removes technical details without inventing content, receipt or delivery outcomes', () => {
-  const raw = Object.freeze({ id: '00000000-0000-4000-8000-000000000001', channel: 'native_push', status: 'accepted',
-    created_at: '2026-10-18T11:03:02Z', attempted_at: '2026-10-18T11:03:06Z', finished_at: '2026-10-18T11:03:07Z',
-    acknowledged_at: null, reason: 'synthetic-internal-reason', binding_id: 'synthetic-private-binding' });
-  const accepted = Object.freeze(historyModel.notificationHistoryItem(raw));
-  const unknown = Object.freeze({ ...accepted, id: '00000000-0000-4000-8000-000000000002', status: 'unknown' });
+test('notification history renders saved message content without delivery diagnostics or inferred receipt', () => {
+  const time = '2026-10-18T11:03:02Z';
+  const item = Object.freeze({ id: 'telegram:00000000-0000-4000-8000-000000000001', messageId: 'telegram:00000000-0000-4000-8000-000000000001',
+    contentVersion: 1, scope: { kind: 'account' }, sentAt: time,
+    contents: [{ channel: 'telegram', title: 'Synthetic saved title', body: 'Synthetic original body', contentVersion: '1', sentAt: time }] });
   const events = [];
   const owner = { scopeKey: 'synthetic-parent:child', online: true, busy: { notifications: false },
-    notifications: { state: 'ready', data: { items: Object.freeze([accepted, unknown]), complete: false, nextCursor: 'synthetic-cursor' } },
+    notifications: { state: 'ready', data: { items: [item], complete: false, nextCursor: 'synthetic-cursor' } },
     actions: { loadNotifications: () => events.push('reload'), moreNotifications: () => events.push('more') } };
-  const { PersonalNotificationHistoryView } = load('components/history/PersonalHistoryViews.tsx', {
-    '../../production/usePersonalHistory': { usePersonalHistoryWorkspace: () => owner }, '../../history-view-model': historyModel,
-  });
-  const render = () => PersonalNotificationHistoryView({ searchText: '', dateRange: { from: null, to: null } });
-  let tree = render(), entries = nodes(tree).filter(node => node.props?.testID === 'personal-notification-entry');
-  assert.equal(entries.length, 2, 'do not guess cross-channel logical IDs or deduplicate by timestamps');
+  const { PersonalNotificationContent } = load('components/history/PersonalHistoryViews.tsx', { '../../history-view-model': historyModel });
+  const render = () => PersonalNotificationContent({ owner, searchText: '', dateRange: { from: null, to: null } });
+  let tree = render();
+  assert.equal(nodes(tree).filter(node => node.props?.testID === 'personal-notification-entry').length, 1);
   const copy = text(tree);
-  for (const forbidden of ['技術詳情', '建立：', '投遞嘗試：', '投遞嘗試完結：', '11:03:02', '19:03:02', '19:03:06', '19:03:07', raw.reason, raw.binding_id]) assert.equal(copy.includes(forbidden), false, forbidden);
-  assert.ok(copy.includes('19:03')); assert.equal(copy.includes('香港時間'), false); assert.ok(copy.includes('尚有通知未載入'));
-  assert.equal(nodes(entries[0]).find(node => node.type === 'AppStatusBadge').props.label, '渠道已接受');
-  assert.ok(text(entries[0]).includes('尚未確認收到')); assert.equal(text(entries[0]).includes('已收到'), false);
-  assert.equal(nodes(entries[1]).find(node => node.type === 'AppStatusBadge').props.label, '結果未知');
-  assert.ok(text(entries[1]).includes('未自動重發')); assert.equal(text(entries[1]).includes('失敗'), false);
-  nodes(tree).find(node => node.props?.label === '載入更多本人通知').props.onPress(); assert.deepEqual(events, ['more']);
+  for (const forbidden of ['技術詳情', '投遞嘗試', '尚未確認收到', '結果待核對', '未自動重發', '渠道已接受', '已收到', '已完整載入']) assert.equal(copy.includes(forbidden), false, forbidden);
+  for (const expected of ['Synthetic saved title', 'Synthetic original body', 'Telegram', '19:03', '尚有記錄未載入']) assert.ok(copy.includes(expected), expected);
+  assert.equal(nodes(tree).some(node => node.type === 'AppStatusBadge'), false);
+  nodes(tree).find(node => node.props?.label === '載入更多消息').props.onPress(); assert.deepEqual(events, ['more']);
   owner.notifications = { state: 'error', data: null }; tree = render();
   assert.equal(nodes(tree).some(node => node.props?.testID === 'personal-notification-entry'), false);
-  nodes(tree).find(node => node.props?.label === '重新讀取本人通知').props.onPress(); assert.deepEqual(events, ['more', 'reload']);
-  assert.equal(accepted.finishedAt, raw.finished_at); assert.equal(accepted.attemptedAt, raw.attempted_at, 'audit data is retained by the existing projection');
+  nodes(tree).find(node => node.props?.label === '重新讀取消息').props.onPress(); assert.deepEqual(events, ['more', 'reload']);
 });
 
 test('settings keeps eight stable sections, one readonly identity, and persistent notification forms in their own panel', () => {
@@ -280,4 +273,63 @@ test('expanded task arrangement history formats original timestamps to minutes u
   assert.match(copy, /記錄時間： 2026年10月21日 12:05/);
   assert.doesNotMatch(copy, /T16:05:37Z|香港時間|Asia\/Hong_Kong|America\/New_York/);
   assert.equal(task.occurrence.dueAt, stamp); assert.equal(revisionTask.occurrence.timeZone, 'America/New_York');
+});
+
+
+test('recent messages consume the same owner, show at most five saved messages and never invent unread counts', () => {
+  const items = Array.from({ length: 7 }, (_, i) => ({ id: String(i), scope: { kind: 'account' }, sentAt: '2026-10-18T11:03:02Z',
+    contents: [{ channel: 'telegram', title: null, body: 'Saved body ' + i, contentVersion: '1', sentAt: '2026-10-18T11:03:02Z' }] }));
+  const owner = { scopeKey: 'synthetic-scope', online: true, notifications: { state: 'ready', data: { items, complete: false } }, busy: { notifications: false }, actions: {} };
+  const { PersonalNotificationContent } = load('components/history/PersonalHistoryViews.tsx', { '../../history-view-model': historyModel });
+  const recent = PersonalNotificationContent({ owner, recent: true });
+  assert.equal(nodes(recent).filter(node => node.props?.testID === 'personal-notification-entry').length, 5);
+  assert.equal(text(recent).includes('Saved body 5'), false); assert.equal(text(recent).includes('未讀'), false);
+  const navigated = [];
+  const { NotificationBell } = load('components/NotificationBell.tsx', {
+    react: { useState: () => [true, () => {}], useRef: current => ({ current }), useEffect() {} },
+    'expo-router': { useRouter: () => ({ push: path => navigated.push(path) }) },
+    '../preview/PreviewNavigationGuard': { usePreviewNavigation: () => action => action() },
+    '../production/usePersonalHistory': { usePersonalHistoryWorkspace: () => owner },
+    './AppDialog': { AppDialog: { Title: 'Title', Content: 'Content', Actions: 'Actions' } },
+  });
+  const bell = NotificationBell();
+  assert.ok(text(bell).includes('最近消息')); assert.equal(text(bell).includes('操作提示'), false);
+  assert.equal(nodes(bell).find(node => node.type === 'PersonalNotificationContent').props.owner, owner);
+  assert.equal(nodes(bell).some(node => /Badge|OperationNotice/.test(String(node.type))), false);
+  nodes(bell).find(node => node.props?.label === '查看消息歷史').props.onPress(); assert.deepEqual(navigated, ['/history?category=notifications']);
+});
+
+test('header maps only explicit operation types to static textual lights and preserves original callbacks', () => {
+  const { headerOperationHints } = load('header-operation-hints.ts');
+  const called = [];
+  const states = ['none', 'saved', 'saving', 'needs_confirmation', 'unknown', 'conflict', 'failed', 'confirmed_unread'];
+  const hints = headerOperationHints(states.map(state => ({ id: state, page: '合成頁面', state, onReview: () => called.push(state) })));
+  assert.equal(hints.length, 6); assert.deepEqual(hints.map(hint => hint.tone), ['info', 'warning', 'warning', 'warning', 'error', 'warning']);
+  assert.equal(headerOperationHints([{ id: 'no-action', page: '合成', state: 'failed' }]).length, 0);
+  const { HeaderOperationHint } = load('components/HeaderOperationHint.tsx');
+  for (const hint of hints) {
+    const tree = HeaderOperationHint({ hint }); assert.match(tree.props.accessibilityLabel, /合成頁面.*前往處理/);
+    assert.ok(text(tree).includes(hint.status)); tree.props.onPress();
+  }
+  assert.deepEqual(called, states.slice(2));
+});
+
+
+test('an account without a child can open message history but not the other child history sections', () => {
+  let category = 'notifications';
+  const personal = { scopeKey: 'synthetic-account-message-scope', messageOnly: true };
+  const filters = load('components/history/history-filters.ts');
+  const { default: HistoryScreen } = load('screens/historyScreen.tsx', {
+    'expo-router': { usePathname: () => '/history', useLocalSearchParams: () => ({ category }) },
+    '../production/ProductionProvider': { useProduction: () => ({ model: { children: [], selectedChildId: null }, actions: {}, scopeKey: null }) },
+    '../production/usePersonalHistory': { usePersonalHistoryWorkspace: () => personal },
+    '../components/history/history-filters': filters,
+  });
+  let tree = HistoryScreen(); assert.equal(tree.props.scope, personal.scopeKey); assert.equal(tree.props.initialCategory, 'notifications');
+  for (const section of ['conversations', 'care', 'profile', 'tasks']) {
+    category = section; tree = HistoryScreen(); assert.ok(text(tree).includes('先選擇孩子')); assert.equal(tree.props.scope, undefined);
+  }
+  assert.equal(historyModel.personalHistoryScopeMatches(personal.scopeKey, { ...personal, childId: '', access: 'active' }), true);
+  assert.equal(historyModel.personalHistoryScopeMatches('other-account', { ...personal, childId: '', access: 'active' }), false);
+  assert.equal(historyModel.personalHistoryScopeMatches(personal.scopeKey, { scopeKey: personal.scopeKey, childId: '', access: 'active' }), false);
 });

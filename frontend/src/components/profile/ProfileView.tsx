@@ -1,3 +1,4 @@
+import type { OperationOpenRequest } from "../../operation-reveal";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useContainerWidth } from "../useContainerWidth";
@@ -13,9 +14,9 @@ import { ProfileDataSummary, ProfileReadingSummary, ProfileRevisionDetails, Prof
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { MotionDisclosure, MotionReveal } from "../../motion";
 
-export function ProfileView({ model, actions: sourceActions, childPicker, writeNotice, previewControls, onOpenCare, childDeletionActive = false, onLayoutReady }: {
+export function ProfileView({ model, actions: sourceActions, childPicker, writeNotice, previewControls, onOpenCare, childDeletionActive = false, onLayoutReady, openRequest }: {
   model: ProfileViewModel; actions: ProfileActions; childPicker: ReactNode; writeNotice: ReactNode;
-  previewControls: ReactNode; onOpenCare: () => void; childDeletionActive?: boolean; onLayoutReady?: () => void;
+  previewControls: ReactNode; onOpenCare: () => void; childDeletionActive?: boolean; onLayoutReady?: () => void; openRequest?: OperationOpenRequest;
 }) {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
@@ -66,7 +67,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
             <AppStatusBadge label={model.current?.data ? "已確認檔案" : model.reading ? "正在讀取檔案" : "尚未確認檔案"} tone={model.current?.data ? "success" : model.reading ? "info" : "warning"} />
           </View>
         </View> : <Text accessibilityRole="header" style={styles.childName}>尚未有孩子</Text>}
-        {model.access === "editable" ? <ManualFormDialog formKey={model.formKey} label={model.child ? "編輯檔案" : "填寫檔案"} title="編輯孩子檔案" scopeKey={scopeKey} disabled={childDeletionActive} onClose={actions.discardDraft} recovery={writeNotice}><View style={styles.editor}><SectionHeader density="compact" title={model.child ? "核對檔案草稿" : "本地檔案草稿"}
+        {model.access === "editable" ? <ManualFormDialog openRequest={openRequest ? { ...openRequest, scopeKey } : undefined} formKey={model.formKey} label={model.child ? "編輯檔案" : "填寫檔案"} title="編輯孩子檔案" scopeKey={scopeKey} disabled={childDeletionActive} onClose={actions.discardDraft} recovery={writeNotice}><View style={styles.editor}><SectionHeader density="compact" title={model.child ? "核對檔案草稿" : "本地檔案草稿"}
           subtitle={model.child ? `修改基準：版本 ${model.basis?.version ?? 0}；更正會新增版本。` : "僅作前端草稿，不建立真孩子或家庭共享資料。"} />
           <ProfileForm key={model.formKey} initialValues={model.initialValues} editable={editable}
             canReview={canReview && model.intent !== "delete"} draftOnly={!model.child} onEdit={actions.editDraft} onReview={actions.reviewDraft} />

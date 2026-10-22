@@ -1,3 +1,4 @@
+import { useOperationReveal } from "../operation-reveal";
 import { EmptyListCard } from "../components/EmptyListCard";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "expo-router";
@@ -37,6 +38,7 @@ export default function GuideScreen() {
   const [currentStep, setCurrentStep] = useState(0);
   const [focusedChild, setFocusedChild] = useState<string | null>(null);
   const pathname = usePathname(), lastPath = useRef(pathname);
+  const openChildRequest = useOperationReveal(identityKey ?? "no-identity", "create-child");
   const creating = recordsState.busy === "createChild";
   const createUnknown = recordsState.childOutcome === "unknown" || recordsState.childOutcome === "checked";
   useEffect(() => {
@@ -85,7 +87,7 @@ export default function GuideScreen() {
             })}
           </View> : null}
           <View style={styles.childActions} testID="guide-child-actions">
-            <ManualFormDialog key={`${identityKey}:${pathname}`} label={createUnknown ? "查看原建立操作" : "新增孩子"} title="新增孩子"
+            <ManualFormDialog key={`${identityKey}:${pathname}`} label={createUnknown ? "查看原建立操作" : "新增孩子"} title="新增孩子" openRequest={openChildRequest}
               scopeKey={identityKey ?? "no-identity"} disabled={!!recordsState.deletion}
               onClose={() => { if (!creating && !createUnknown) controller.setChildName(""); }}>
               <Text style={styles.body}>填寫孩子稱呼即可建立；其餘資料可以稍後補充。</Text>

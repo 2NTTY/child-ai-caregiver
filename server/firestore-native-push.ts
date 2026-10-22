@@ -1,6 +1,8 @@
 import { randomUUID, createHash } from 'node:crypto';
 import type { Query, DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
+import { notificationMessageContentSchema } from '../src/shared/notification-messages.ts';
+import { acceptedMessage, messageSortMetadata } from './notification-message-content.ts';
 import { nativePushBindingSchema, nativePushRegistrationSchema, nativePushReferenceSchema, type NativePushBinding } from '../src/shared/native-push.ts';
 import { pushDeliverySchema, pushVersionInput, pushTestInput, type PushDelivery } from '../src/shared/web-push.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -18,7 +20,7 @@ export const firestoreNativeBindingSchema = z.object({ binding: nativePushBindin
   token: z.string().min(20).max(4096).nullable(), tokenHash: z.string().length(64).nullable(), sessionHash: z.string().length(64),
 }).strict();
 export const firestoreNativeDeliverySchema = z.object({ delivery: pushDeliverySchema, bindingVersion: z.number().int().positive(),
-  generation: uuid, authorizationVersion: z.string(), attempt: uuid.nullable() }).strict();
+  generation: uuid, authorizationVersion: z.string(), attempt: uuid.nullable(), message: notificationMessageContentSchema.optional() }).strict();
 export const firestoreNativePointerSchema = z.object({ scope: workRecoveryScopeSchema, bindingId: uuid, tokenHash: z.string().length(64) }).strict();
 type SavedBinding = z.infer<typeof firestoreNativeBindingSchema>;
 type SavedDelivery = z.infer<typeof firestoreNativeDeliverySchema>;
@@ -50,6 +52,7 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
     ...data.seal('native-push-binding', saved.binding.id, b.scope, firestoreNativeBindingSchema, saved, saved.binding.version) });
   const deliveryEnvelope = (b: Pick<Binding, 'scope'>, saved: SavedDelivery) => ({ ...data.tags(b.scope), deliveryId: saved.delivery.id,
     bindingId: saved.delivery.bindingId, createdAt: saved.delivery.createdAt, status: saved.delivery.status,
+    ...messageSortMetadata(saved.message ? [saved.message] : []),
     ...data.seal('native-push-delivery', saved.delivery.id, b.scope, firestoreNativeDeliverySchema, saved) });
   async function pointer(b: Pick<Binding, 'transaction'>, hash: string) {
     const ref = data.ref('native_push_tokens', 'native-push-token', hash), row = await b.transaction.get(ref);
@@ -232,7 +235,10 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
         ? await prepareInvalidation(b, saved.delivery.bindingId, saved.bindingVersion) : null;
       const change = await authority.prepareReceiptChange(tx, scope, randomUUID(), 'preferences');
       change?.commit(); expired?.commit();
-      saved.delivery = { ...saved.delivery, ...result, finishedAt: new Date().toISOString() }; tx.set(ref, deliveryEnvelope(b, saved));
+      const { message: capturedMessage, ...deliveryResult } = result;
+      const message = options.messageHistoryEnabled === true ? acceptedMessage({ ...deliveryResult, message: capturedMessage }, 'native_push') : undefined;
+      if (message) saved.message = message;
+      saved.delivery = { ...saved.delivery, ...deliveryResult, finishedAt: new Date().toISOString() }; tx.set(ref, deliveryEnvelope(b, saved));
     });
     return { state: result.status === 'unknown' ? 'unknown' as const : 'completed' as const };
   }

@@ -34,6 +34,10 @@ export const webPushStatusSchema = z.object({
   testsRemaining: z.number().int().min(0).max(3), nextTestAt: instant.nullable(),
 }).strict();
 export type WebPushStatus = z.infer<typeof webPushStatusSchema>;
+export const webPushContent = Object.freeze({
+  test: { contentVersion: 'web-push-generic-v1', title: '育有方通知測試', body: '這是你剛才要求的測試通知，不代表照護事項已完成。' },
+  care: { contentVersion: 'web-push-generic-v1', title: '育有方照護提示', body: '你有獲授權的照護事項提示，請開啟育有方查看。收到提示不代表事項已完成。' },
+});
 /** Fixed, non-sensitive wake-up reference. Never include family/chat text or a navigation URL. */
 export interface PushPayload { v: 1; kind?: "test" | "care"; bindingId: string; bindingVersion: number; deliveryId: string }
 export interface PushBrowserBinding { userId: string; id: string; version: number }

@@ -10,6 +10,7 @@ export interface FirebaseServerConfig extends ServerHttpConfig {
   photoBucket: string;
   erasureBucket: string;
   taskWorkerEnabled: boolean;
+  messageHistoryEnabled: boolean;
   knowledgeSourceIds: readonly string[] | null;
 }
 function bucket(env: Record<string, string | undefined>, key: string): string {
@@ -26,6 +27,7 @@ export function readFirebaseServerConfig(env: Record<string, string | undefined>
   const http = readServerHttpConfig(env);
   if (env.FIREBASE_AUTH_EMAIL_ENABLED !== undefined && !['true', 'false'].includes(env.FIREBASE_AUTH_EMAIL_ENABLED)) throw new Error('Invalid FIREBASE_AUTH_EMAIL_ENABLED configuration');
   if (env.FIREBASE_TASK_WORKER_ENABLED !== undefined && !['true', 'false'].includes(env.FIREBASE_TASK_WORKER_ENABLED)) throw new Error('Invalid FIREBASE_TASK_WORKER_ENABLED configuration');
+  if (env.FIREBASE_MESSAGE_HISTORY_ENABLED !== undefined && !['true', 'false'].includes(env.FIREBASE_MESSAGE_HISTORY_ENABLED)) throw new Error('Invalid FIREBASE_MESSAGE_HISTORY_ENABLED configuration');
   const projectId = env.GCP_PROJECT_ID;
   const databaseId = env.FIREBASE_DATABASE_ID;
   const namespace = env.FIREBASE_NAMESPACE;
@@ -45,7 +47,7 @@ export function readFirebaseServerConfig(env: Record<string, string | undefined>
   }
   if (http.publicOrigin !== http.webOrigin) throw new Error('Firebase deployment requires a same-origin frontend');
   return { ...http, projectId, databaseId, namespace, sessionNamespace: namespace + '_sessions', authEmailEnabled: env.FIREBASE_AUTH_EMAIL_ENABLED === 'true',
-    photoBucket, erasureBucket, taskWorkerEnabled: env.FIREBASE_TASK_WORKER_ENABLED === 'true', knowledgeSourceIds };
+    photoBucket, erasureBucket, taskWorkerEnabled: env.FIREBASE_TASK_WORKER_ENABLED === 'true', messageHistoryEnabled: env.FIREBASE_MESSAGE_HISTORY_ENABLED === 'true', knowledgeSourceIds };
 }
 
 /** Production no longer accepts SQL or an implicit fallback. */
