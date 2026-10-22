@@ -14,6 +14,7 @@ function setup(initial = run()) {
   const calls = [], mocks = {};
   const h = harness(mocks);
   mocks.react = { ...h.react, useId: () => h.react.useRef('synthetic-id').current };
+  mocks['react-native'] = { View: 'View', Pressable: 'Pressable', Platform: { OS: 'web' }, StyleSheet: { create: value => value } };
   const theme = { colors: {}, spacing: {}, radius: {}, readingType: {}, workspaceType: {} };
   mocks['../../theme'] = theme; mocks['../theme'] = theme;
   for (const prefix of ['../', '../components/']) for (const name of ['AppIcon', 'AppStatusBadge', 'AppCheckbox', 'ReadStateNotice', 'StatusAnnouncement']) mocks[prefix + name] = { [name]: name };
@@ -29,9 +30,17 @@ function setup(initial = run()) {
   const state = { scopeKey: 'scope-a', agentModel: { online: true, readState: 'ready', busy: null, run: initial, loadedAt: at,
     sharedConfirmed: {}, pendingDecision: null, notice: null, writesBlocked: false },
     agentActions: { refresh: action('refresh'), setSharedConfirmation(id, value) { state.agentModel.sharedConfirmed[id] = value; calls.push(['shared', id, value]); }, decide: action('decide'), retryOriginal: action('retry'), openSource: action('source') },
-    agentPending: { state: 'ready', entries: [], hasSnapshot: true, nextCursor: null }, readAgentPending: action('pending'), selectAgentRun: action('select'),
+    agentPending: { state: 'ready', entries: [], hasSnapshot: true, nextCursor: null }, readAgentPending: action('pending'), selectAgentRun(id) {
+      calls.push(['select', id]); state.agentModel = { ...state.agentModel, readState: 'loading', busy: 'read', sharedConfirmed: {} };
+    },
     agentInbox: { online: true, locked: false, state: 'idle', loadedAt: null, entries: [], selectedRunId: null },
-    agentInboxActions: { refresh: action('inbox'), select: action('inbox-select'), collapse: action('inbox-collapse') },
+    agentInboxActions: { refresh: action('inbox'), select(id) {
+      calls.push(['inbox-select', id]); state.agentInbox.selectedRunId = id;
+      state.agentModel = { ...state.agentModel, readState: 'loading', busy: 'read', sharedConfirmed: {} };
+    }, collapse() {
+      calls.push(['inbox-collapse']); state.agentModel = { ...state.agentModel, run: null, readState: 'idle', sharedConfirmed: {}, notice: null };
+      state.agentInbox.selectedRunId = null;
+    } },
     authorization: { online: true, receipts: { [initial.id]: { state: 'ready', items: [] } } }, authorizationActions: { readReceipts: action('receipts') } };
   const { AgentRunView } = h.load('src/components/agent/AgentRunView.tsx');
   const { AgentConversation } = h.load('src/production/AgentConversation.tsx');
@@ -58,6 +67,102 @@ test('pending changes precede handled results and retain exact content, destinat
   }
   pending.expiresAt = at; s.render(true); assert.equal(s.button('建立待辦').props.disabled, true); assert.equal(s.button('略過').props.disabled, false);
   s.button('略過').props.onPress(); assert.deepEqual(s.calls.at(-1), ['decide', 'pending', 'dismiss']);
+});
+
+test('whole pending cards show original change text and open only the selected item after the original run read', () => {
+  const a = proposal('first'), b = proposal('second'), s = setup(run([a, b]));
+  s.state.agentModel = { ...s.state.agentModel, readState: 'idle', run: null };
+  s.state.agentPending.entries = [a, b].map(proposal => ({ runId: 'synthetic-run', proposal }));
+  s.conversation();
+  const card = s.h.node('activity-card-proposal-synthetic-run-second');
+  assert.equal(card.type, 'Pressable'); assert.equal(card.props.accessibilityRole, 'button'); assert.equal(card.props.disabled, false);
+  assert.match(card.props.accessibilityLabel, /Original content second/);
+  assert.equal(s.button('核對原運行與候選'), undefined); assert.equal(s.button('建立待辦'), undefined);
+  const descendants = element => !element || typeof element !== 'object' ? [] : Array.isArray(element) ? element.flatMap(descendants) : [element, ...descendants(element.props?.children)];
+  assert.equal(descendants(card.props.children).some(node => ['Button', 'Pressable', 'AppCheckbox'].includes(node.type)), false);
+  card.props.onFocus(); s.conversation();
+  assert.ok(s.h.node('activity-card-proposal-synthetic-run-second').props.style({ pressed: false }).some(style => style?.borderWidth === 2));
+  s.h.node('activity-card-proposal-synthetic-run-second').props.onPress(); s.conversation();
+  assert.deepEqual(s.calls.at(-1), ['select', 'synthetic-run']);
+  assert.equal(s.state.agentModel.readState, 'loading'); assert.equal(s.h.node('agent-proposal-first'), undefined); assert.equal(s.h.node('agent-proposal-second'), undefined);
+  s.state.agentModel = { ...s.state.agentModel, readState: 'ready', busy: null, run: run([a, b]) }; s.conversation();
+  assert.equal(s.h.node('agent-proposal-first'), undefined); assert.ok(s.h.node('agent-proposal-second'));
+  assert.equal(s.h.node('agent-activity-detail').props.accessibilityLabel, '活動詳情：Synthetic second');
+  assert.equal(s.button('建立待辦').props.disabled, true, 'fresh owner confirmation is still required');
+  assert.deepEqual(s.state.agentModel.sharedConfirmed, {});
+  s.button('返回活動').props.onPress(); s.conversation();
+  assert.deepEqual(s.calls.at(-1), ['inbox-collapse']); assert.ok(s.h.node('activity-card-proposal-synthetic-run-second'));
+  assert.equal(s.h.node('agent-activity-detail'), undefined);
+  assert.equal(s.calls.some(call => call[0] === 'decide' || call[0] === 'retry'), false);
+});
+
+test('selected activity version, run, kind and scope mismatches never expose another confirmation and a newer version is explicit', () => {
+  const p = proposal('target'), other = proposal('other'), s = setup();
+  s.state.agentModel = { ...s.state.agentModel, readState: 'idle', run: null };
+  s.state.agentPending.entries = [{ runId: 'synthetic-run', proposal: p }]; s.conversation();
+  s.h.node('activity-card-proposal-synthetic-run-target').props.onPress();
+  const ready = projected => { s.state.agentModel = { ...s.state.agentModel, readState: 'ready', busy: null, run: projected }; s.conversation(); };
+  ready(run([other, { ...p, version: 5, content: 'Exact new version content' }]));
+  assert.match(s.text(), /內容已更新/); assert.match(s.text(), /Exact new version content/); assert.equal(s.h.node('agent-proposal-other'), undefined);
+  assert.equal(s.button('建立待辦').props.disabled, true); assert.deepEqual(s.state.agentModel.sharedConfirmed, {});
+  const mismatches = [run([other]), run([{ ...p, version: 3 }]), run([{ ...p, scope: 'private' }]), run([{ ...p, kind: 'memory_fact' }]), { ...run([p]), id: 'different-run' }];
+  for (const snapshot of mismatches) {
+    ready(snapshot); assert.match(s.text(), /未能核對你點選的事項/); assert.equal(s.button('建立待辦'), undefined); assert.equal(s.button('確認資料'), undefined);
+    assert.equal(s.state.agentModel.run, snapshot, 'display targeting does not rewrite or invalidate the authoritative run');
+  }
+  s.named('重新檢查這項活動').props.onPress(); assert.deepEqual(s.calls.at(-1), ['refresh']);
+  s.state.scopeKey = 'scope-b'; s.state.agentModel = { ...s.state.agentModel, readState: 'idle', run: null }; s.state.agentPending.entries = [];
+  s.conversation(); assert.equal(s.h.node('agent-activity-detail'), undefined); assert.doesNotMatch(s.text(), /Exact new version content|Synthetic target/);
+});
+
+test('whole-card navigation and return keep original unknown, busy, denied and offline gates', () => {
+  const p = proposal('guarded'), s = setup();
+  s.state.agentModel = { ...s.state.agentModel, readState: 'idle', run: null };
+  s.state.agentPending.entries = [{ runId: 'synthetic-run', proposal: p }];
+  for (const patch of [{ online: false }, { busy: 'read' }, { writesBlocked: true }, { pendingDecision: { runId: 'synthetic-run' } }]) {
+    const original = s.state.agentModel; s.state.agentModel = { ...original, ...patch }; s.conversation();
+    const card = s.h.node('activity-card-proposal-synthetic-run-guarded'); assert.equal(card.props.disabled, true);
+    const count = s.calls.length; card.props.onPress(); assert.equal(s.calls.length, count); s.state.agentModel = original;
+  }
+  s.conversation(); s.h.node('activity-card-proposal-synthetic-run-guarded').props.onPress();
+  const pending = { runId: 'synthetic-run', proposalId: p.id, input: { expectedVersion: 4, decision: 'accept', confirmShared: true }, reviewed: false, reconfirm: false };
+  s.state.agentModel = { ...s.state.agentModel, readState: 'ready', busy: null, run: run([p]), pendingDecision: pending }; s.state.agentInbox.locked = true;
+  s.conversation(); assert.equal(s.button('返回活動').props.disabled, true); assert.match(s.text(), /結果還未確定/);
+  const count = s.calls.length; s.button('返回活動').props.onPress(); assert.equal(s.calls.length, count); assert.equal(s.state.agentModel.pendingDecision, pending);
+  assert.equal(s.button('明確重試原確認').props.disabled, true); assert.equal(s.button('建立待辦').props.disabled, true);
+  s.state.agentModel.readState = 'denied'; s.conversation(); assert.doesNotMatch(s.text(), /Original content guarded/);
+  assert.equal(s.button('返回活動').props.disabled, true);
+});
+
+test('closing clears only local card targeting so external different-run and same-run chat entries reopen normally', () => {
+  const a = proposal('first'), b = proposal('second'), s = setup();
+  s.state.agentModel = { ...s.state.agentModel, readState: 'idle', run: null };
+  s.state.agentPending.entries = [{ runId: 'synthetic-run', proposal: a }]; s.conversation();
+  s.h.node('activity-card-proposal-synthetic-run-first').props.onPress();
+  s.state.agentModel = { ...s.state.agentModel, readState: 'ready', busy: null, run: run([a, b]) }; s.conversation();
+  assert.ok(s.h.node('agent-proposal-first')); assert.equal(s.h.node('agent-proposal-second'), undefined);
+  const authoritativeRun = s.state.agentModel.run, callsBeforeClose = s.calls.length;
+  s.conversation(false); assert.equal(s.state.agentModel.run, authoritativeRun); assert.equal(s.calls.length, callsBeforeClose);
+  s.conversation(); assert.ok(s.h.node('agent-proposal-first')); assert.ok(s.h.node('agent-proposal-second'), 'same-run entry is no longer filtered to the old card');
+  s.conversation(false); s.state.agentModel.run = { ...run([b]), id: 'external-run' }; s.conversation();
+  assert.ok(s.h.node('agent-proposal-second')); assert.doesNotMatch(s.text(), /未能核對你點選的事項/);
+  assert.equal(s.h.node('agent-activity-detail').props.accessibilityLabel, '活動詳情');
+});
+
+test('list previews preserve actual task cancellation and source deactivation verbs without internal save boilerplate', () => {
+  const s = setup(); const { projectAgentProposal } = s.h.load('src/production/agent-projection.ts');
+  const { proposalPrimaryText, proposalContextLabel } = s.h.load('src/components/agent/proposal-presentation.ts');
+  const common = { id: 'change', version: 4, status: 'pending', createdAt: at, expiresAt: later, targetLabel: 'Exact original target', result: null };
+  for (const action of ['cancel', 'complete', 'reschedule', 'resolve']) {
+    const p = projectAgentProposal({ ...common, value: { kind: 'task_change', taskId: 'original-task', change: { action, expectedVersion: 3, note: '',
+      dueAt: later, timeZone: 'Asia/Hong_Kong', assigneeUserId: 'Exact new assignee', outcome: 'cancelled' } } });
+    assert.ok(proposalPrimaryText(p).includes(p.details.find(detail => detail.label === '操作').value));
+    s.state.agentModel.run = run([p]); s.render(true); assert.ok(s.text().includes(p.details.find(detail => detail.label === '操作').value));
+  }
+  const p = projectAgentProposal({ ...common, value: { kind: 'private_source_change', inputId: 'original-source', change: { expectedVersion: 3,
+    management: { intention: 'Exact original intention', purpose: 'answer_reference', nature: 'personal', timeScope: 'current', validityText: '', enabled: false, modelExcerpt: null } } } });
+  assert.match(proposalContextLabel(p), /停用原來源/); s.state.agentModel.run = run([p]); s.render(true);
+  assert.match(s.text(), /停用原來源/); assert.match(s.text(), /未授權；不讀來源正文/); assert.doesNotMatch(s.text(), /尚未執行/);
 });
 
 test('handled results start concise, expand without a modal and never treat accepted without a receipt as saved', () => {
@@ -94,18 +199,20 @@ test('activity defers duplicate reply, Care keeps it, empty sources are omitted 
   assert.doesNotMatch(s.text(), /結果讀取時間|運行建立|AI 調用|知識查詢|本次沒有可核對的來源/);
 });
 
-test('activity has one title and close action, deduplicates only the current authoritative proposal and preserves pending pagination', () => {
+test('activity has one title and close action, returns through the original owner and preserves discovery pagination', () => {
   const p = proposal('pending'), s = setup(run([p]));
   s.state.agentPending.entries = [{ runId: 'synthetic-run', proposal: p }, { runId: 'older-run', proposal: proposal('older') }];
   s.state.agentPending.nextCursor = 'synthetic-next'; s.conversation();
   assert.deepEqual(s.h.hosts().filter(n => n.type === 'Title').map(n => n.props.children), ['活動']);
   assert.equal(s.button('助手設定'), undefined); assert.equal(s.button('重新讀取聊天'), undefined);
   assert.equal(s.h.hosts().filter(n => n.props.accessibilityLabel === '核對待確認事項：Synthetic pending').length, 0);
-  s.named('核對待確認事項：Synthetic older').props.onPress(); assert.deepEqual(s.calls.at(-1), ['select', 'older-run']);
+  assert.equal(s.h.node('agent-activity-list'), undefined, 'discovery cards are a list, not mixed into the open detail');
+  s.button('返回活動').props.onPress(); s.conversation(); assert.deepEqual(s.calls.at(-1), ['inbox-collapse']);
   s.button('讀取下一頁候選').props.onPress(); assert.deepEqual(s.calls.at(-1), ['pending', true]);
   s.button('關閉').props.onPress(); assert.deepEqual(s.calls.at(-1), ['close']);
   s.state.agentPending.entries[0] = { runId: 'synthetic-run', proposal: { ...p, version: 5 } }; s.conversation();
-  assert.ok(s.named('核對待確認事項：Synthetic pending'), 'a newer discovery cannot be suppressed by an older run');
+  assert.ok(s.h.node('activity-card-proposal-synthetic-run-pending'), 'the discovered newer item remains reachable');
+  s.h.node('activity-card-proposal-older-run-older').props.onPress(); assert.deepEqual(s.calls.at(-1), ['select', 'older-run']);
 });
 
 test('receipt read failures, offline evidence and stale pending recovery remain explicit without empty success panels', () => {
@@ -115,10 +222,12 @@ test('receipt read failures, offline evidence and stale pending recovery remain 
   s.state.authorization.receipts['synthetic-run'] = { state: 'failed', items: [] }; s.conversation();
   assert.match(s.text(), /暫時無法確認是否已保存/); s.button('重新檢查').props.onPress(); assert.deepEqual(s.calls.at(-1), ['receipts', 'synthetic-run', true]);
   s.state.agentPending = { state: 'failed', hasSnapshot: true, entries: [{ runId: 'older', proposal: proposal('stale') }], nextCursor: 'more' }; s.conversation();
+  s.button('返回活動').props.onPress(); s.conversation();
   assert.match(s.text(), /上次讀取/); assert.ok(s.button('讀取下一頁候選')); s.button('重新讀取待確認候選').props.onPress(); assert.deepEqual(s.calls.at(-1), ['pending']);
   s.state.agentModel.pendingDecision = { runId: 'synthetic-run', proposalId: 'stale', input: { expectedVersion: 4, decision: 'dismiss' } }; s.conversation();
   assert.equal(s.button('重新讀取待確認候選').props.disabled, true); assert.equal(s.button('讀取下一頁候選').props.disabled, true);
-  s.state.authorization.online = false; s.state.authorization.receipts['synthetic-run'] = { state: 'ready', items: [] }; s.conversation(); assert.match(s.text(), /操作收據尚未重新核對/);
+  s.state.authorization.online = false; s.state.authorization.receipts['synthetic-run'] = { state: 'ready', items: [] };
+  s.state.agentModel = { ...s.state.agentModel, run: run(), readState: 'ready' }; s.conversation(); assert.match(s.text(), /操作收據尚未重新核對/);
 });
 
 test('direct receipts retain destination and delivery limits, private-source snapshots and background recovery stay reachable', () => {
@@ -128,8 +237,8 @@ test('direct receipts retain destination and delivery limits, private-source sna
   s.conversation(); assert.match(s.text(), /只供本人查看/); assert.match(s.text(), /不表示已發送或送達/); assert.doesNotMatch(s.text(), /note-id|Exact authorized excerpt/);
   s.button('查看保存詳情').props.onPress(); s.conversation(); assert.match(s.text(), /note-id/);
   s.button('私人來源 1 · Synthetic private source').props.onPress(); s.conversation(); assert.match(s.text(), /Exact authorized excerpt/);
-  s.state.agentInbox.state = 'failed'; s.conversation(); assert.match(s.text(), /未能讀取私人背景結果/);
-  s.button('重試讀取私人背景結果').props.onPress(); assert.deepEqual(s.calls.at(-1), ['inbox']);
+  s.button('返回活動').props.onPress(); s.state.agentInbox.state = 'failed'; s.conversation(); assert.match(s.text(), /未能載入其他活動/);
+  s.button('重新載入活動記錄').props.onPress(); assert.deepEqual(s.calls.at(-1), ['inbox']);
   s.state.agentModel.readState = 'denied'; s.state.agentPending.state = 'denied'; s.conversation();
   assert.doesNotMatch(s.text(), /Exact authorized excerpt|note-id|Exact change/);
 });
@@ -137,15 +246,16 @@ test('direct receipts retain destination and delivery limits, private-source sna
 
 test('twenty identically titled background runs keep a human date-time and a distinguishable accessible selection', () => {
   const s = setup();
+  s.state.agentModel.readState = 'idle';
   s.state.agentInbox = { online: true, locked: false, state: 'ready', loadedAt: at, selectedRunId: 'background-3',
     entries: Array.from({ length: 20 }, (_, i) => ({ runId: `background-${i}`, label: '已保存背景運行', createdAt: `2026-10-22T00:${String(i).padStart(2, '0')}:00Z` })) };
-  s.conversation(); s.button('私人背景結果').props.onPress(); s.conversation();
-  const controls = s.h.hosts().filter(n => n.type === 'Button' && n.props.label === '查看結果');
+  s.conversation();
+  const controls = s.h.hosts().filter(n => n.type === 'Pressable' && n.props.testID?.startsWith('activity-card-run-'));
   assert.equal(controls.length, 20); assert.equal(new Set(controls.map(n => n.props.accessibilityLabel)).size, 20);
-  assert.ok(controls.every(n => /已保存背景運行，.*08:\d{2}$/.test(n.props.accessibilityLabel)));
+  assert.ok(controls.every(n => /活動結果；.*08:\d{2}$/.test(n.props.accessibilityLabel)));
   assert.match(s.text(), /08:00/); assert.match(s.text(), /08:19/); assert.doesNotMatch(s.text(), /運行建立|香港時間|GMT|UTC|08:00:00/);
+  assert.equal(s.h.hosts().filter(n => n.props['aria-current'] === 'true').length, 1);
   controls[3].props.onPress(); assert.deepEqual(s.calls.at(-1), ['inbox-select', 'background-3']);
-  assert.equal(s.h.hosts().filter(n => n.props['aria-selected'] === true).length, 1);
 });
 
 test('activity title, loaded pending count and original wrapped refresh share one compact header', () => {
@@ -173,19 +283,19 @@ test('activity title, loaded pending count and original wrapped refresh share on
   s.named('更新待確認活動').props.onPress(); assert.deepEqual(s.calls.at(-1), ['pending']);
 });
 
-test('private fact merges only the exact scope duplicate, retains candidate expiry and reveals its source and version', () => {
+test('private fact keeps source and scope labels visible, merges only the exact scope duplicate and defers only technical version', () => {
   const p = proposal('fact', { kind: 'memory_fact', scope: 'private', details: [
     { label: '來源', value: 'Exact original source' }, { label: '接受後可見範圍', value: '只限你本人' }, { label: '有效至', value: '未設定' },
   ] });
   const s = setup(run([p])); s.render(true);
-  assert.match(s.text(), /私人 · 只限你本人/); assert.doesNotMatch(s.text(), /接受後可見範圍|Exact original source|候選版本/);
-  const validityLine = s.h.hosts().find(n => n.type === 'Text' && Array.isArray(n.props.children) && n.props.children[1] === '未設定');
-  assert.deepEqual(validityLine.props.children[0].props.children, ['有效至', '：'], 'unset validity is one inline labelled text, not two rows');
-  assert.match(s.text(), /確認期限：.*2099/);
+  assert.match(s.text(), /只限你本人/); assert.match(s.text(), /Exact original source/); assert.doesNotMatch(s.text(), /候選版本|尚未執行|保存確認事實/);
+  assert.equal(s.h.hosts().filter(n => n.type === 'Text' && n.props.children === '接受後可見範圍').length, 1);
+  assert.ok(s.h.hosts().some(n => n.type === 'Text' && n.props.children === '來源'));
+  assert.match(s.text(), /有效至.*未設定/); assert.match(s.text(), /確認期限.*2099/);
   assert.equal(s.h.hosts().filter(n => n.type === 'AppCheckbox').length, 0);
-  const snapshot = structuredClone(p); s.named('查看來源與詳情：Synthetic fact').props.onPress(); s.render(true);
+  const snapshot = structuredClone(p); s.named('查看其他詳情：Synthetic fact').props.onPress(); s.render(true);
   assert.match(s.text(), /Exact original source/); assert.match(s.text(), /候選版本 4/); assert.deepEqual(p, snapshot);
-  s.named('收起來源與詳情：Synthetic fact').props.onPress(); s.render(true);
+  s.named('收起其他詳情：Synthetic fact').props.onPress(); s.render(true);
   p.details[1].value = 'Synthetic differing visibility'; p.details.push({ label: 'Unrecognised safety term', value: 'Exact new condition' });
   s.render(true); assert.match(s.text(), /Synthetic differing visibility/); assert.match(s.text(), /Exact new condition/);
   const { proposalDetailIcon } = s.h.load('src/components/agent/proposal-presentation.ts');
@@ -231,11 +341,11 @@ test('all ten projected proposal kinds retain complete changes and mandatory sco
     const original = structuredClone(p); s.state.agentModel.run.proposals = [p]; s.render(true);
     for (const required of fixture.visible) assert.ok(s.text().includes(required), `${p.kind}: visible ${required}`);
     assert.match(s.text(), /確認期限/); assert.doesNotMatch(s.text(), /候選版本/);
-    assert.ok(s.h.hosts().some(n => n.type === 'AppIcon' && n.props.name === (p.scope === 'family' ? 'account-group-outline' : 'lock-outline')));
+    assert.ok(s.text().includes(p.scope === 'family' ? '確認後按家庭權限共享' : '只限你本人'));
     const check = s.h.hosts().find(n => n.type === 'AppCheckbox');
     assert.equal(!!check, p.scope === 'family', p.kind);
     if (check) { assert.match(check.props.label, /明確同意寫入家庭共享資料/); assert.equal(check.props.disabled, false); }
-    s.named('查看來源與詳情：' + p.title).props.onPress(); s.render(true);
+    s.named('查看其他詳情：' + p.title).props.onPress(); s.render(true);
     for (const detail of p.details) assert.ok(s.text().includes(detail.value), `${p.kind}: preserved ${detail.label}`);
     assert.deepEqual(p, original, 'presentation never changes the confirmation payload or snapshot');
   }

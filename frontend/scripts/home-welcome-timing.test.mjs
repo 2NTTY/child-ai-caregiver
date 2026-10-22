@@ -30,7 +30,7 @@ function harness({ ready = false, active = true, reducedMotion = false, timestam
       withTiming: (value, config, callback) => { animations.push({ config, callback }); return value; } };
     if (name === '../motion') return { useMotionPreferences: () => preferences, motionTokens: {} };
     if (name.endsWith('/FirstScreenGate')) return { useFirstScreenReady: () => ready };
-    if (name.endsWith('/theme')) return { colors: {}, spacing: { lg: 16 }, radius: {}, readingType: {}, workspaceType: {} };
+    if (name.endsWith('/theme')) return { colors: { paper: '#fff' }, spacing: { lg: 16 }, radius: {}, readingType: {}, workspaceType: {} };
     if (name.endsWith('/HomeBackground')) return { HomeBackground: 'HomeBackground' };
     assert.fail(name);
   };
@@ -66,47 +66,91 @@ test('greeting subline uses the current Hong Kong date instead of the former slo
   }
 });
 
-test('welcome reuses the right-side cover illustration without feeding zoomed measurements into image geometry', () => {
-  for (const compact of [false, true]) {
-    const h = harness({ compact }), welcome = h.render();
-    const background = welcome.props.children.props.children[0];
+function renderBackground(props, { platform = 'web', selected = {}, fallback = false } = {}) {
+  const module = { exports: {} }, measurements = [], readiness = [];
+  const startup = { fallback, onLoad() {}, onError() {} };
+  const code = ts.transpileModule(readFileSync(new URL('../src/components/appearance/HomeBackground.tsx', import.meta.url), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+  }).outputText;
+  const jsx = (type, props) => ({ type, props });
+  new Function('require', 'module', 'exports', code)(name => {
+    if (name === 'react') return { useId: () => 'synthetic-image' };
+    if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
+    if (name === 'react-native') return { Platform: { OS: platform }, Image: 'Image', View: 'View', StyleSheet: { create: value => value, absoluteFill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 } } };
+    if (name.endsWith('/BackgroundContext')) return { defaultHomeBackground: 'existing-harbour-asset', useBackground: () => ({ selected, source: 'custom-image' }) };
+    if (name.endsWith('/FirstScreenGate')) return { useFirstScreenImage: (key, ready) => { readiness.push(ready); return startup; } };
+    if (name.endsWith('/useContainerSize')) return { useContainerSize: enabled => { measurements.push(enabled); return { ref: {}, size: { width: 1120, height: 246.4 } }; } };
+    return new Proxy({}, { get: (_, symbol) => String(symbol) });
+  }, module, module.exports);
+  return { tree: module.exports.HomeBackground(props), measurements, readiness, startup };
+}
+
+const flattenStyle = style => Object.assign({}, ...[style].flat().filter(Boolean));
+
+test('welcome contains the complete height-anchored illustration without feeding zoomed measurements into styles', () => {
+  for (const compact of [false, true]) for (const platform of ['web', 'android']) {
+    const background = harness({ compact }).render().props.children.props.children[0];
     assert.equal(background.type, 'HomeBackground');
     assert.equal(background.props.useCustomImage, false);
-    assert.equal(background.props.wideIllustration, !compact);
+    assert.equal(background.props.containIllustration, true);
+    assert.equal(background.props.webCssFade, true);
+    assert.equal(background.props.wideIllustration, undefined);
+    assert.equal(background.props.illustrationMinWidth, undefined);
     assert.equal(background.props.fitIllustration, undefined);
     assert.equal(background.props.fadeBottom, undefined);
-    const module = { exports: {} }, measurements = [], readiness = [];
-    const code = ts.transpileModule(readFileSync(new URL('../src/components/appearance/HomeBackground.tsx', import.meta.url), 'utf8'), {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
-    }).outputText;
-    const jsx = (type, props) => ({ type, props });
-    new Function('require', 'module', 'exports', code)(name => {
-      if (name === 'react') return { useId: () => 'synthetic-image' };
-      if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
-      if (name === 'react-native') return { Image: 'Image', View: 'View', StyleSheet: { create: value => value, absoluteFill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 } } };
-      if (name.endsWith('/BackgroundContext')) return { defaultHomeBackground: 'existing-harbour-asset', useBackground: () => ({ selected: {}, source: 'custom-image' }) };
-      if (name.endsWith('/FirstScreenGate')) return { useFirstScreenImage: (key, ready) => { readiness.push(ready); return { fallback: false }; } };
-      if (name.endsWith('/useContainerSize')) return { useContainerSize: enabled => { measurements.push(enabled); return { ref: {}, size: { width: 1120, height: 246.4 } }; } };
-      return new Proxy({}, { get: (_, symbol) => String(symbol) });
-    }, module, module.exports);
-    const tree = module.exports.HomeBackground(background.props);
-    const [illustration, svg] = tree.props.children;
+    const { tree, measurements, readiness, startup } = renderBackground(background.props, { platform });
+    const [frame, fade] = tree.props.children, illustration = frame.props.children;
     assert.deepEqual(measurements, [false]);
     assert.deepEqual(readiness, [true]);
+    assert.equal(frame.props.testID, 'home-illustration-frame');
+    assert.deepEqual(flattenStyle(frame.props.style), { position: 'absolute', right: 0, top: 0, height: '100%', aspectRatio: 1672 / 941 });
     assert.equal(illustration.props.source, 'existing-harbour-asset');
-    assert.equal(illustration.props.resizeMode, 'cover');
-    const style = Object.assign({}, ...illustration.props.style.filter(Boolean));
-    assert.equal(style.width, compact ? '100%' : '50%');
+    assert.equal(illustration.props.resizeMode, 'contain');
+    assert.equal(illustration.props.onLoad, startup.onLoad);
+    assert.equal(illustration.props.onError, startup.onError);
+    const style = flattenStyle(illustration.props.style);
+    assert.equal(style.width, '100%');
     assert.equal(style.height, '100%');
-    assert.equal(style.left, compact ? 0 : 'auto');
-    assert.equal(style.minWidth, compact ? undefined : 260);
+    assert.equal(style.left, 0);
     assert.equal(style.right, 0);
     assert.equal(style.top, 0);
-    const stops = svg.props.children[0].props.children[0].props.children;
-    assert.equal(stops[1].props.offset, compact ? 0.48 : 0.64);
-    assert.equal(stops[2].props.offset, compact ? 0.68 : 0.88);
-    assert.equal(stops[2].props.stopOpacity, 0);
+    if (platform === 'web') {
+      assert.equal(fade.type, 'View');
+      assert.equal(fade.props.testID, 'home-background-css-fade');
+      assert.equal(flattenStyle(fade.props.style).backgroundImage,
+        `linear-gradient(to right, #fff 0%, #fff ${compact ? 48 : 64}%, transparent ${compact ? 68 : 88}%, transparent 100%)`);
+    } else {
+      assert.equal(fade.type, 'default');
+      const stops = fade.props.children[0].props.children[0].props.children;
+      assert.equal(stops[1].props.offset, compact ? 0.48 : 0.64);
+      assert.equal(stops[2].props.offset, compact ? 0.68 : 0.88);
+      assert.equal(stops[2].props.stopOpacity, 0);
+    }
   }
+});
+
+test('other backgrounds retain default cover/custom image and SVG protection; welcome fallback still settles without an image', () => {
+  for (const props of [{ surface: '#fff' }, { surface: '#fff', wideIllustration: true },
+    { surface: '#fff', webCssFade: true, protectFullWidth: true }, { surface: '#fff', webCssFade: true, fadeBottom: true }]) {
+    const { tree } = renderBackground(props);
+    const [illustration, svg] = tree.props.children;
+    assert.equal(illustration.type, 'Image');
+    assert.equal(illustration.props.source, 'custom-image');
+    assert.equal(illustration.props.resizeMode, 'cover');
+    assert.equal(svg.type, 'default');
+    const stops = svg.props.children[0].props.children[0].props.children;
+    assert.equal(stops[1].props.offset, 0.64);
+    assert.equal(stops[2].props.offset, 0.88);
+    assert.equal(stops[2].props.stopOpacity, props.protectFullWidth ? 0.94 : 0);
+  }
+  const { tree } = renderBackground({ surface: '#fff', useCustomImage: false, wideIllustration: true, illustrationMinWidth: 260 });
+  assert.equal(tree.props.children[0].props.resizeMode, 'cover');
+  assert.equal(flattenStyle(tree.props.children[0].props.style).minWidth, 260);
+  const welcome = harness().render().props.children.props.children[0];
+  const fallback = renderBackground(welcome.props, { fallback: true });
+  assert.equal(fallback.tree.props.children[0], null);
+  assert.deepEqual(fallback.readiness, [true]);
+  assert.equal(fallback.tree.props.children[1].props.testID, 'home-background-css-fade');
 });
 
 test('desktop and mobile keep the today navigation anchor on the reading panel without a duplicate date row', () => {

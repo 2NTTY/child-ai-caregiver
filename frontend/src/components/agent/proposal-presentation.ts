@@ -3,7 +3,6 @@ import type { AppIconName } from "../AppIcon";
 
 // Display-only, exact-schema mappings. Unrecognised rows stay visible verbatim.
 const supportingLabels: Partial<Record<AgentProposalView["kind"], readonly string[]>> = {
-  memory_fact: ["來源"],
   memory_fact_revise: ["原事實與版本", "本人原話參照"],
   memory_fact_deactivate: ["原事實與版本"],
   family_document_change: ["原文件及版本"],
@@ -36,10 +35,26 @@ export function proposalDetailIcon(label: string): AppIconName {
 }
 
 export function proposalDetailIsChange(kind: AgentProposalView["kind"], label: string): boolean {
+  if (kind === "task_change") return ["操作", "新到期時間", "新負責人識別", "覆核為"].includes(label);
   if (kind === "concern_create" || kind === "concern_change") return label === "將共享的觀察";
   if (kind === "private_source_create" || kind === "private_source_change") return label === "將保存的原文";
   if (kind === "family_document_change") return /^[1-9]\d*\. (修改文件資料|新增／修改章節|移除章節|移動章節|新增／修改項目|移除項目|移動項目)$/u.test(label);
   return false;
+}
+
+export function proposalContextLabel(proposal: AgentProposalView): string {
+  if (proposal.kind === "task_create") return `新增待辦 · ${proposal.title}`;
+  if (proposal.kind === "family_document_change") return `修改文件 · ${proposal.title}`;
+  if (["task_change", "memory_fact_revise", "memory_fact_deactivate", "private_source_create", "private_source_change"].includes(proposal.kind)) {
+    const operation = proposal.details.find(detail => detail.label === "操作");
+    if (operation) return `${operation.value} · ${proposal.title}`;
+  }
+  return proposal.title;
+}
+
+export function proposalPrimaryText(proposal: AgentProposalView): string {
+  const changes = proposal.details.filter(detail => proposalDetailIsChange(proposal.kind, detail.label));
+  return changes.length ? changes.map(detail => detail.value).join("\n\n") : proposal.content;
 }
 
 export function proposalDetailGroups(proposal: AgentProposalView): { visible: AgentDetailRow[]; supporting: AgentDetailRow[] } {

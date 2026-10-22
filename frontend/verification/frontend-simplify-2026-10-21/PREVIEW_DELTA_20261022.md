@@ -123,4 +123,14 @@ unknown 固定失敗為 repo 外合成 fixture，不是真保存；共享確認�
 
 獨立 Chrome 有界驗收 **PASS**，64 copied artifacts 及 live bundle 精確吻合：活動正常卡 320／390／1024／1440、來源 disclosure 的 Enter／ARIA／focus-visible、Escape 返回原活動 trigger；成長圖示在桌面及手機「全部功能」可見，Enter 仍導向 `/summary`，手機原五格不變。320 expired 確認停用、略過可用但未按；390 一次合成 confirm 固定回 503，原 retry／新 accept／skip 均鎖住，明確只讀原 run 後僅原 retry 可用，**未重新提交**，沒有冒充保存。既有黃色 unknown 恢復卡及下方 pending 保留，沒有新增自動讀取或統一卡。1024／1440 receipt「重新檢查」維持 fail-closed，不寫成成功。報告及有效圖見 `activity-icon-qa-20261022/review.md`；四新測試獨立 4/4 是原 20/20 的子集，不加總。其他十種變更／共享授權等沿 source／unit 證據，不冒稱逐一 browser 重演。
 
+## snapshot19 活動整卡閱讀與歡迎插圖跨瀏覽器候選
+
+活動列表整卡沿原 select／getRun 開啟對應項目，移除額外開啟按鈕；詳情保留完整原文、來源／可見範圍、實際確認期限與共享 checkbox。背景列表契約只有 runId／createdAt，因此如實顯示「活動結果」與真時間，不虛構標題或批量讀取。局部選中只限定同 scope／run／id／kind，權威新版明示須重新閱讀；返回、close／reopen 不清 owner 或 pendingDecision。原 unknown 黃色恢復區及讀後才可原 retry 的流程未重設，沒有自動讀取／重送。
+
+活動作者 25/25、舊 suite 活動 scoped 5/5；獨立關鍵子集 7/7 是重疊案例。最初 nullable scope 型別錯、舊 denied shallow assertion 及 close→其他／同 run 入口殘留局部選中的缺口，均在本次 freeze 前修正，原紅保留。Home 只在歡迎橫幅 opt-in 右貼 `height: 100%`／aspect ratio／contain 及 Web 局部 CSS fade；native 仍 SVG，原 image ready callbacks、日期及動畫未改。Home 作者／獨立同組 9/9，source review 均通過；不把 Chrome 證據當成已解決用戶 LIVE 回報；Firefox 實際驗收亦未完成。
+
+唯一離線 export 成功，538 inputs 前後相同、對 18 精確 5 產品差異、64 artifacts；combined typecheck 仍只有同兩項 ContactConsentCard 基線錯。JS `index-defac32f931fa6242a0d30ef7dd98042.js` SHA256 `01a15d2e1b6897012dd39db137e5d8eeb773a7208ba1bcb423c002736d4357b6`；來源 manifest `3f90bc504c9133411dc67d11dd9c996eefa9f1b6af0cf9b5d31786ad86c9ee15`；artifact manifest `07441322ddc31fce7f018a46d5d67ff20f5d03207a9541d7b7e95c7fbd1c84e8`。
+
+Activity 獨立 Chrome 320／390／1024／1440 **PASS**：Enter／Space 開精確同 run 第一／第二候選，整卡返回精確回焦；背景卡選中對應 receipt run；權威新版明示且 checkbox 重置；未知決定唯一一次合成 POST 固定 503，明確 GET 後僅原 retry 解鎖，未重新提交，Escape 重開保留原 pendingDecision。報告 `activity-cards19-qa-20261022/review.md` 區分最終圖與中途圖；18 expired 不重跑冒稱。窄屏已知「有效至／未設定」仍兩行，主對話留待下一增量；入場即刻兩次自動 pointer 未轉詳情，穩態單擊及鍵盤通過，保留為時序觀察、不猜因改產品。Home19 獨立 Chrome 320／390／556／649／650／1024／1440／1920（既有 HTML zoom 1.2／1.4）**PASS**：556 母親頭部不再被 cover 裁掉，母子及指尖完整；實際淡出為 CSS gradient，歡迎卡內無 SVG，日期只在展開時出現一次。320／1920 前景 trace 約 ready＋3 秒才收合；較早背景 tab 的 556／1024 trace 保留但不拿來證明精確時序。詳見 `home-greeting-qa-20261022/snapshot19/cua-review.md`。**Firefox 無可用實測環境，仍未驗，沒有結案用戶 Firefox hosted 回報**；native 亦僅 source-reviewed，非真機通過。
+
 僅合成資料／圖片，無真家庭資料、真訊息或模型呼叫；不宣稱 Android 真機、完整讀屏或所有尺寸／狀態組合通過。維持同一 draft PR，不合併；公開預覽更新由主代理按本次明確授權處理。

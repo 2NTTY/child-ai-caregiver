@@ -56,6 +56,7 @@ function load(relative, suffix = "") {
     : name.endsWith('/useChatScrollIntent') ? { useChatScrollIntent: noop }
     : name.endsWith('/chat-arrival') ? { isNewReplyArrival: () => false }
     : name.endsWith('/agent-view-model') ? { proposalExpired: proposal => Date.parse(proposal.expiresAt) < Date.now(), agentTime: value => value, agentProposalLabels: { pending: '待你確認' } }
+    : name.endsWith('/proposal-presentation') ? load('src/components/agent/proposal-presentation.ts')
     : name.endsWith('/AgentAuthorizationOwner') ? { mayRetryAuthorization: () => false, maySavePolicy: () => false, reminderEligible: () => false }
     : name.endsWith('/routes') ? { isProductionRouteConnected: () => true }
     : name.endsWith('/branding') ? { brand: { name: '育伴港' } }
@@ -202,15 +203,17 @@ test('activity owns a real dialog, reads no receipts while closed, and exposes g
   assert.equal(node(view.tree, 'AgentAuthorization'), undefined);
   assert.equal(label(view.tree, '重新讀取待確認候選'), undefined); assert.equal(label(view.tree, '助手設定'), undefined);
   assert.equal(label(view.tree, '重新讀取聊天'), undefined); assert.ok(label(view.tree, '關閉'));
-  assert.match(content(view.tree), /會自動讀取/);
+  assert.ok(node(view.tree, 'AgentRunView'), 'the selected run remains in its detail renderer');
   view = render(AgentConversation, { ...view.props, visible: true }); view.effects.forEach(fn => fn());
   assert.deepEqual(calls, [['receipts', 'synthetic-run']]);
+  production.agentModel = { ...production.agentModel, readState: 'idle', run: null };
   production.agentPending = { state: 'failed', entries: [] }; rerender(view);
   const retry = label(view.tree, '重新讀取待確認候選');
   assert.equal(retry.props.disabled, false); retry.props.onPress(); assert.deepEqual(calls.at(-1), ['pending']);
   for (const guard of [{ online: false }, { busy: 'read' }, { pendingDecision: {} }, { writesBlocked: true }, { readState: 'denied' }]) {
     const original = production.agentModel; production.agentModel = { ...original, ...guard }; rerender(view);
-    assert.equal(label(view.tree, '重新讀取待確認候選').props.disabled, true);
+    if (guard.readState === 'denied') assert.equal(label(view.tree, '重新讀取待確認候選'), undefined, 'access loss shows only the guarded detail notice, not discovery controls');
+    else assert.equal(label(view.tree, '重新讀取待確認候選').props.disabled, true);
     production.agentModel = original;
   }
   for (const state of ['idle', 'loading', 'ready', 'denied']) {

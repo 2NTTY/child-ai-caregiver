@@ -82,8 +82,7 @@ export function HomeWelcome({ introductionPending, onIntroductionPresented, scop
     {...{ dataSet: { introPhase: closed ? "settled" : closing ? "collapsing" : presented ? "reading" : "waiting" } }}>
     <Animated.View testID={compact ? "mobile-home-greeting" : "desktop-home-banner"}
       onLayout={event => setHeight(event.nativeEvent.layout.height)} style={[styles.card, compact && styles.compactCard, cardStyle]}>
-      <HomeBackground useCustomImage={false} surface={colors.paper} wideIllustration={!compact}
-        illustrationMinWidth={compact ? undefined : 260}
+      <HomeBackground useCustomImage={false} surface={colors.paper} containIllustration webCssFade
         fadeStart={compact ? 0.48 : 0.64} fadeEnd={compact ? 0.68 : 0.88} />
       <View style={[styles.copy, compact && styles.compactCopy]}>
         <Text accessibilityRole="header" style={[styles.greeting, compact && styles.compactGreeting]}>你好</Text>
