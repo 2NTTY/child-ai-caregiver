@@ -85,7 +85,7 @@ function fixture() {
       if (name.endsWith('/StatusAnnouncement')) return { StatusAnnouncement: Empty };
       if (name.endsWith('/FormDialog')) return { ManualFormDialog: Wrap };
       if (name.endsWith('/ProfileForm')) return { ProfileForm: Form };
-      if (name.endsWith('/ProfileSummary')) return { ProfileDataSummary: Empty, ProfileKeyFacts: Empty,
+      if (name.endsWith('/ProfileSummary')) return { ProfileDataSummary: Empty, ProfileKeyFacts: Empty, ProfileReadingSummary: Empty, ProfileRevisionDetails: Empty,
         ProfileRevisionSummary: ({ revision }) => React.createElement('span', { 'data-revision': revision.version }, `Revision ${revision.version}`) };
       if (name.endsWith('/motion')) return { MotionDisclosure: ({ expanded, children }) => expanded ? children : null, MotionReveal: ({ children, value }) => children(value) };
       if (name.endsWith('/ui')) return { AppButton: Button, SectionCard: Wrap, SectionHeader: Empty, TextLink: Button };
@@ -107,10 +107,10 @@ function fixture() {
   return { requests, faults, accessLoss, dirtySignals, button, settle, get: () => projection,
     historyRequests: () => requests.filter(request => request.path.endsWith('/profile/history')),
     form: () => document.querySelector('[data-form-instance]'),
-    async start() { await render(); await settle(); assert.ok(projection.model.current); },
+    async start() { await render(); await settle(); assert.ok(projection.model.current); await this.click('檔案詳情'); },
     async click(label) { const node = button(label); assert.ok(node, 'Missing button ' + label); assert.equal(node.disabled, false, 'Disabled button ' + label);
       await act(async () => { node.click(); await tick(); }); },
-    async switchScope(childId, identityKey) { env = makeEnvironment(childId, identityKey); await render(); await settle(); },
+    async switchScope(childId, identityKey) { env = makeEnvironment(childId, identityKey); await render(); await settle(); await this.click('檔案詳情'); },
     async close() { await act(async () => root.unmount()); client.clear(); dom.window.close(); global.fetch = previousFetch; assert.equal(nativeCalls, 0); },
   };
 }

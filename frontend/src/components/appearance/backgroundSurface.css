@@ -1,0 +1,35 @@
+/* Solid by default, including unsupported browsers. Text itself is never blurred. */
+[data-background-surface] {
+  background-color: #fffffe !important;
+}
+@supports ((backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px))) {
+  [data-background-surface="frosted"] {
+    background-color: rgba(255, 255, 254, 0.84) !important;
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  /* Unbounded lists use tint, not a separate blur layer for every row. */
+  [data-background-surface="tint"] {
+    background-color: rgba(255, 255, 254, 0.94) !important;
+  }
+}
+@media (prefers-reduced-transparency: reduce), (forced-colors: active) {
+  [data-background-surface] {
+    background-color: #fffffe !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-background-surface] { background-color: Canvas !important; }
+}
+
+/* Named page regions replace removed visual page titles as stable keyboard return targets. */
+[data-page-surface="true"]:focus-visible {
+  outline: 2px solid #272343;
+  outline-offset: -2px;
+}
+@media (forced-colors: active) {
+  [data-page-surface="true"]:focus-visible { outline-color: CanvasText; }
+}

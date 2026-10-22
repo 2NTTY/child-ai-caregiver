@@ -8,7 +8,8 @@ import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 import { AppButton, SectionHeader } from "../ui";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { BackgroundImagePicker } from "./BackgroundImagePicker";
-import { HomeBackdrop } from "./HomeBackdrop";
+import { AppBackdrop } from "./AppBackdrop";
+import { BackgroundSurface } from "./BackgroundSurface";
 
 export function BackgroundSettings({ pickImage }: { pickImage?: PickBackgroundImage }) {
   const background = useBackground();
@@ -16,21 +17,21 @@ export function BackgroundSettings({ pickImage }: { pickImage?: PickBackgroundIm
   const busy = reading || background.busy;
   const message = error ?? background.notice;
   return <SectionCard testID="background-settings">
-    <SectionHeader density="compact" title="首頁背景" subtitle="只保存在此裝置，不會同步或傳給助手。" />
+    <SectionHeader density="compact" title="應用背景" subtitle="只保存在此裝置，不會同步或傳給助手。" />
     <StatusAnnouncement eventKey={`${busy}:${message}`} message={busy ? "正在處理本機背景…" : message} urgent={!busy && !!error} />
-    <View style={styles.preview} testID="background-preview"><HomeBackdrop>
-      <View style={styles.previewInset}><View style={styles.readingSurface}>
-        <Text style={styles.heading}>今日</Text><Text style={styles.body}>內容保留底色，背景不影響閱讀。</Text>
+    <View style={styles.preview} testID="background-preview"><AppBackdrop preview>
+      <View style={styles.previewInset}><BackgroundSurface frosted padded style={styles.readingSurface}>
+        <Text style={styles.heading}>今日</Text><Text style={styles.body}>霧化面板承托內容，原有卡片保留底色。</Text>
         <View style={styles.previewLine} /><View style={styles.previewLine} />
-      </View></View>
-    </HomeBackdrop></View>
+      </BackgroundSurface></View>
+    </AppBackdrop></View>
     <Text style={styles.body}>{background.selected ? "目前使用自選圖片" : "目前使用預設背景"}</Text>
     <View style={styles.actions}>
       <BackgroundImagePicker disabled={background.busy} pickImage={pickImage} onReadingChange={setReading} onError={setError} onSelected={async image => { setError(null); await background.select(image); }} />
       <AppButton label="恢復預設背景" variant="quiet" disabled={busy || !background.selected && !background.notice} onPress={() => { setError(null); void background.restore(); }} />
     </View>
     {message ? <Text style={error ? styles.error : styles.note}>{message}</Text> : null}
-    <Text style={styles.note}>JPG／PNG／WebP · 最多 4 MiB、1,600 萬像素。只套用首頁；重新開啟仍保留，網頁與手機各自設定。登出後不顯示個人圖片。</Text>
+    <Text style={styles.note}>JPG／PNG／WebP · 最多 4 MiB、1,600 萬像素。套用登入後的首頁、聊天及其他頁面；重新開啟仍保留，網頁與手機各自設定。登出後不顯示個人圖片。</Text>
   </SectionCard>;
 }
 const styles = StyleSheet.create({

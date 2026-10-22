@@ -5,9 +5,10 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import type { FactSource, FactValues } from "../../../src/shared/memory";
 import { canManageMemory, factStatusLabels, topicStatusLabels, visibilityLabels, type MemoryFactView, type MemoryTopicView } from "../memory-view-model";
-import { AppButton, AppSelect, AppTextField, SectionCard, SectionHeader } from "../components/ui";
+import { AppButton, AppSelect, AppTextField } from "../components/ui";
 import { AppCheckbox } from "../components/AppCheckbox";
 import { AppDialog } from "../components/AppDialog";
+import { FormDialog } from "../components/FormDialog";
 import { AppScrollView } from "../components/AppScrollView";
 import { AppDateTimeField } from "../components/DateTimeFields";
 import { growthStyles as s } from "../components/growth/growth-styles";
@@ -26,6 +27,7 @@ const valuesSchema = z.object({ key: text(100), content: text(4000), source: sou
 
 export function TaskKnowledgeMemoryManagement() {
   const owner = useProductionTaskKnowledgeMemory(), [open, setOpen] = useState(false), [editor, setEditor] = useState<Editor | null>(null);
+  const trigger = useRef<View>(null);
   const navigate = usePreviewNavigation(), latest = useRef(owner); latest.current = owner;
   useEffect(() => () => { const value = latest.current; if (value?.management.dirty && !value.management.pending && !value.management.busy) value.management.discard(); }, []);
   useEffect(() => { if (owner?.management.operation === "saved" && !owner.management.pending && !owner.management.busy) setEditor(null); }, [owner?.management.operation, owner?.management.epoch, owner?.management.busy]);
@@ -33,9 +35,12 @@ export function TaskKnowledgeMemoryManagement() {
   const management = owner.management, role = owner.role ?? "viewer";
   const close = () => navigate(() => { management.discard(); setEditor(null); });
   function edit(value: Editor) { navigate(() => { management.discard(); setEditor(value); }); }
-  return <SectionCard><SectionHeader density="compact" title="人工管理記憶（備援）" subtitle={open ? "沿原資料 owner 手動核對；候選未確認前只供本人，話題狀態不代表任務完成。" : undefined}
-    action={<AppButton label={open ? "收起人工管理" : "展開人工管理"} expanded={open} variant="quiet" onPress={() => open ? navigate(() => { management.discard(); setOpen(false); }) : setOpen(true)} />} />
-    {open ? <View style={s.stack}>
+  return <>
+    <View style={s.compactActions}><AppButton ref={trigger} label="管理記憶" variant="quiet" density="compact" onPress={() => setOpen(true)} /></View>
+    <FormDialog visible={open} scopeKey={owner.value.scopeKey} title="管理記憶" returnFocusRef={trigger}
+      onClose={() => { management.discard(); setEditor(null); setOpen(false); }}>
+      <View style={s.stack}>
+      <Text style={s.meta}>手動核對事實及話題。候選未確認前只供本人；話題狀態不代表任務完成。</Text>
       <MemoryRecovery owner={owner} onLatest={value => setEditor(value)} />
       <View style={s.compactActions}><AppButton label="人工新增候選事實" variant="secondary" disabled={owner.busy || management.locked} onPress={() => edit({ kind: "fact", item: null })} />
         <AppButton label="人工新增話題" variant="secondary" disabled={owner.busy || management.locked} onPress={() => edit({ kind: "topic", item: null })} />
@@ -53,15 +58,16 @@ export function TaskKnowledgeMemoryManagement() {
       </View>)}
       {owner.hasMoreTopics ? <AppButton label="載入更多話題" variant="quiet" disabled={owner.busy || !!management.pending} onPress={owner.moreTopics} /> : null}
       <Text style={s.meta}>分頁只是已取得的視窗。私人資料沿本人權限讀取，不由模型填入已確認事實。</Text>
-    </View> : null}
-    <AppDialog visible={!!editor} onDismiss={close} accessibilityLabel="人工管理記憶">
+      </View>
+    </FormDialog>
+    <AppDialog visible={!!editor} onDismiss={close} accessibilityLabel={editor?.kind === "fact" ? "人工核對事實" : "人工處理話題"}>
       <AppDialog.Title>{editor?.kind === "fact" ? "人工核對事實" : "人工處理話題"}</AppDialog.Title>
       <AppDialog.ScrollArea><AppScrollView><MemoryRecovery owner={owner} onLatest={value => setEditor(value)} />
         {editor?.kind === "fact" ? <FactEditor key={`fact:${editor.item?.id ?? "new"}:${management.epoch}`} owner={owner} basis={editor.item} /> : editor ? <TopicEditor key={`topic:${editor.item?.id ?? "new"}:${management.epoch}`} owner={owner} basis={editor.item} /> : null}
       </AppScrollView></AppDialog.ScrollArea>
-      <AppDialog.Actions><AppButton label="返回記憶查閱" variant="quiet" onPress={close} /></AppDialog.Actions>
+      <AppDialog.Actions><AppButton label="返回記憶管理" variant="quiet" onPress={close} /></AppDialog.Actions>
     </AppDialog>
-  </SectionCard>;
+  </>;
 }
 
 function MemoryRecovery({ owner, onLatest }: { owner: Owner; onLatest(value: MemoryManagementEntity): void }) {

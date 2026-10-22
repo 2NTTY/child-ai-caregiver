@@ -24,10 +24,10 @@ const hooks = {
 };
 const dialog = Object.assign(() => null, { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions', ScrollArea: 'DialogScrollArea' });
 const flatten = value => Array.isArray(value) ? Object.assign({}, ...value.filter(Boolean).map(flatten)) : value || {};
-const nodes = value => !value || typeof value !== 'object' ? [] : [value, ...[value.props?.children].flat(Infinity).flatMap(nodes)];
+const nodes = value => !value || typeof value !== 'object' ? [] : [value, ...[value.props?.children, value.props?.pendingContent].flat(Infinity).flatMap(nodes)];
 const node = (tree, type) => nodes(tree).find(item => item.type === type);
 const label = (tree, name) => nodes(tree).find(item => item.props?.label === name);
-const content = tree => !tree ? '' : Array.isArray(tree) ? tree.map(content).join(' ') : typeof tree === 'object' ? (tree.type === 'EmptyListCard' ? [tree.props.title, tree.props.detail].filter(Boolean).join(' ') : content(tree.props?.children)) : String(tree);
+const content = tree => !tree ? '' : Array.isArray(tree) ? tree.map(content).join(' ') : typeof tree === 'object' ? (tree.type === 'EmptyListCard' ? [tree.props.title, tree.props.detail].filter(Boolean).join(' ') : content([tree.props?.children, tree.props?.pendingContent])) : String(tree);
 const theme = load('src/theme.ts');
 const presentation = load('src/components/chat/chat-presentation.ts');
 function load(relative, suffix = "") {
@@ -42,6 +42,9 @@ function load(relative, suffix = "") {
     : name.endsWith('/theme') ? theme
     : name.endsWith('/chat-presentation') ? presentation
     : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/BackgroundSurface') ? { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false }
+    : name.endsWith('/ProductionFirstScreenGate') ? { useProductionVisibleSettingsSection: noop }
+    : name.endsWith('/agent-feedback') ? { AGENT_PROGRESS_LABELS: {} }
     : name.endsWith('/CareProfileDomains') ? { useProductionCareProfile: () => null }
     : name.endsWith('/CareWorkspace') ? { useCareWorkspace: () => null }
     : name.endsWith('/SettingsDomains') ? { useProductionSettingsDomains: () => ({ modelSettings: { model: {}, actions: {} } }), ProductionChannelSettings: 'ProductionChannelSettings', ProductionNotificationPreferences: 'ProductionNotificationPreferences' }
@@ -65,11 +68,12 @@ function load(relative, suffix = "") {
 }
 function componentDependency(name) {
   const modules = {
-    '/EmptyListCard': ['EmptyListCard'],
+    '/EmptyListCard': ['EmptyListCard'], '/ChatFileMessage': ['ChatFileMessage'], '/VoiceMessage': ['VoiceMessage'],
+    '/OfficialHelpCards': ['OfficialHelpCards'], '/AdminEntry': ['AdminEntry'], '/AccountDataControls': ['AccountDataControls', 'AccountSecurityControls'],
     '/ui': ['AppButton', 'AppTextField', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'TextLink'],
     '/AgentComposer': ['AgentComposer'], '/ChatMessage': ['ChatMessage'], '/ChatTimeline': ['ChatTimeline'],
     '/AgentConversation': ['AgentConversation'], '/PhotoInputDomains': ['AgentPhotoInput'],
-    '/AppScrollView': ['AppScrollView'], '/AppIcon': ['AppIcon'], '/motion': ['MotionEntrance'],
+    '/AppScrollView': ['AppScrollView'], '/AppIcon': ['AppIcon'], '/AppStatusBadge': ['AppStatusBadge'], '/motion': ['MotionEntrance', 'MotionDisclosure'],
     '/AgentInboxView': ['AgentInboxView'], '/AgentRunView': ['AgentRunView'], '/ReadStateNotice': ['ReadStateNotice'],
     '/AppCheckbox': ['AppCheckbox'], '/BackgroundSettings': ['BackgroundSettings'], '/MotionSettings': ['MotionSettings'],
     '/PageFrame': ['PageFrame'], '/AgentAuthorization': ['AgentAuthorization'], '/ModelSettingsView': ['ModelSettingsView'],
@@ -121,7 +125,7 @@ test('clean empty chat has one prompt, separate toolbar, stable composer, and co
   assert.deepEqual(flatten(heading.props.style), { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 });
   const toolbar = nodes(view.tree).find(item => item.props?.testID === 'chat-top-toolbar');
   assert.equal(flatten(toolbar.props.style).justifyContent, 'flex-end');
-  assert.equal(content(timeline.props.emptyState), '今天想聊些甚麼？');
+  assert.equal(content(timeline.props.emptyState), '想先聊聊什麼？');
   assert.equal(timeline.props.header, undefined);
   assert.equal(node(view.tree, 'AgentComposer').props.inputHint, undefined);
   assert.equal(node(view.tree, 'AgentConversation').props.visible, false);
@@ -196,7 +200,8 @@ test('activity owns a real dialog, reads no receipts while closed, and exposes g
   let view = render(AgentConversation, { visible: false, onDismiss: noop, onOpenSettings: noop, onReloadChat: noop, reloadDisabled: false });
   view.effects.forEach(fn => fn()); assert.deepEqual(calls, []); assert.equal(view.tree.type, dialog);
   assert.equal(node(view.tree, 'AgentAuthorization'), undefined);
-  assert.equal(label(view.tree, '重新讀取待確認候選'), undefined); assert.ok(label(view.tree, '助手設定'));
+  assert.equal(label(view.tree, '重新讀取待確認候選'), undefined); assert.equal(label(view.tree, '助手設定'), undefined);
+  assert.equal(label(view.tree, '重新讀取聊天'), undefined); assert.ok(label(view.tree, '關閉'));
   assert.match(content(view.tree), /會自動讀取/);
   view = render(AgentConversation, { ...view.props, visible: true }); view.effects.forEach(fn => fn());
   assert.deepEqual(calls, [['receipts', 'synthetic-run']]);

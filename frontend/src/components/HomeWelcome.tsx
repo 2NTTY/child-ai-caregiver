@@ -1,11 +1,11 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import Animated, { cancelAnimation, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { motionTokens, useMotionPreferences } from "../motion";
 import { useFirstScreenReady } from "../startup/FirstScreenGate";
-import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../theme";
+import { chineseFont, colors, radius, readingType, spacing } from "../theme";
 import { HomeBackground } from "./appearance/HomeBackground";
 
 // The existing session owner consumes the intro. Routes and child changes never reset it.
@@ -92,8 +92,7 @@ export function HomeWelcome({ introductionPending, onIntroductionPresented, scop
 
 export function HomeTodayHeading() {
   const date = new Date().toLocaleDateString("zh-HK", { timeZone: "Asia/Hong_Kong", month: "long", day: "numeric" });
-  return <View testID="home-today-heading" style={styles.today}>
-    <Text accessibilityRole="header" style={styles.todayTitle}>今日</Text>
+  return <View testID="home-today-heading" style={styles.today} role="region" accessibilityLabel="今日" tabIndex={-1} {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
     <Text style={styles.date}>{date} · 先看重要的，再繼續日常</Text>
   </View>;
 }
@@ -108,6 +107,5 @@ const styles = StyleSheet.create({
   compactGreeting: { fontSize: 26, lineHeight: 34 },
   subline: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
   today: { gap: spacing.xs },
-  todayTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.title },
   date: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
 });

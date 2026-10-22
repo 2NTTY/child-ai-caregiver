@@ -13,7 +13,7 @@ export function RecordsNavButton({ active, scopeKey, style }: { active: boolean;
   const router = useRouter(), pathname = usePathname(), leave = usePreviewNavigation();
   const [selected, setSelected] = useState(false);
   const openMore = () => { setSelected(false); if (pathname !== "/more") leave(() => router.push("/more"), "workspace"); };
-  return <DirectionalPressable label="記錄，向上拖曳開啟全部功能" hint="點按查看記錄；按方向鍵上亦可開啟全部功能"
+  return <DirectionalPressable label="核對，向上拖曳開啟全部功能" hint="點按開啟核對；按方向鍵上亦可開啟全部功能"
     selected={active} current={active}
     scopeKey={`${scopeKey}:${pathname}`} testID="records-navigation" style={[styles.button, selected && styles.selected, style]}
     onPress={() => { if (pathname !== "/care") leave(() => router.push("/care"), "workspace"); }} onExpand={openMore}
@@ -21,7 +21,7 @@ export function RecordsNavButton({ active, scopeKey, style }: { active: boolean;
     onGestureCancel={() => setSelected(false)} onGestureEnd={(dx, dy, dragged) => { setSelected(false); if (dragged && recordsMoreDirection(dx, dy)) openMore(); }}>
     {active ? <MobileNavSelection /> : null}
     <AppIcon name={selected ? "chevron-up" : "notebook-outline"} size={mobileIcons.navigation} color={active || selected ? colors.deepTeal : colors.muted} />
-    <View style={styles.copy}><Text style={[styles.label, active && styles.active]}>記錄</Text><Text style={styles.hint}>{selected ? "放手開更多" : "上拉更多"}</Text></View>
+    <View style={styles.copy}><Text style={[styles.label, active && styles.active]}>核對</Text><Text style={styles.hint}>{selected ? "放手開更多" : "上拉更多"}</Text></View>
   </DirectionalPressable>;
 }
 const styles = StyleSheet.create({

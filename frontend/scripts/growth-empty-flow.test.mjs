@@ -22,6 +22,7 @@ function load(relative, mocks = {}) {
     if (name === 'react-native-paper') return { Text: 'Text' };
     if (name.endsWith('/useContainerWidth')) return { useContainerWidth: () => ({ width: 1440, ref: null, onLayout() {} }) };
     if (name.endsWith('/growth-styles')) return { growthStyles: {} };
+    if (name.endsWith('/theme')) return { mobileLayout: { breakpoint: 650 }, spacing: {} };
     if (name.endsWith('/summary-styles')) return { summaryStyles: {} };
     if (name.endsWith('/shared/growth')) return { GROWTH_KNOWLEDGE_NOTICES: { region: 'region', age: 'age' } };
     if (name.endsWith('/growth-view-model')) return { growthRefreshNotice: '已重新讀取' };
@@ -32,7 +33,7 @@ function load(relative, mocks = {}) {
 function nodes(tree) {
   if (Array.isArray(tree)) return tree.flatMap(nodes);
   if (!tree || typeof tree !== 'object') return [];
-  return [tree, ...nodes(tree.props?.children)];
+  return [tree, ...nodes(tree.props?.children), ...nodes(tree.props?.primary)];
 }
 const named = (tree, type) => nodes(tree).filter(node => node.type === type);
 const model = () => ({ scopeKey: 'synthetic:child', childId: 'child', online: true, access: 'editable', load: 'ready',
@@ -81,18 +82,20 @@ test('existing concerns and pending suggestion tools remain available only in th
   assert.equal(named(panels.find(node => node.props.tabKey === 'preparation'), 'CandidateTools').length, 0);
 });
 
-test('manual concern entry keeps its existing collapsed disclosure and permission checks', () => {
+test('manual concern entry keeps its existing closed form dialog and permission checks', () => {
   const { GrowthConcernManualFallback } = load('../src/components/growth/GrowthConcernManualFallback.tsx');
   const actions = { createConcern() {}, updateConcern() {} };
   const props = { model: model(), actions, concern: null };
   const entry = GrowthConcernManualFallback(props);
-  assert.equal(entry.type, 'SummaryDisclosure');
+  assert.equal(entry.type, 'ManualFormDialog');
   assert.equal(entry.props.label, '新增關注');
+  assert.equal(entry.props.scopeKey, props.model.scopeKey);
   assert.equal(GrowthConcernManualFallback({ ...props, concern: { id: 'concern-1' } }).props.label, '新增／跟進關注');
-  const { SummaryDisclosure } = load('../src/components/summary/SummaryDisclosure.tsx');
-  const disclosure = SummaryDisclosure(entry.props);
-  assert.equal(named(disclosure, 'Pressable')[0].props['aria-expanded'], false);
-  assert.equal(named(disclosure, 'MotionDisclosure')[0].props.expanded, false);
+  const { ManualFormDialog } = load('../src/components/FormDialog.tsx');
+  const dialog = ManualFormDialog(entry.props);
+  assert.equal(named(dialog, 'AppButton')[0].props.variant, 'quiet');
+  assert.equal(named(dialog, 'AppButton')[0].props.label, '新增關注');
+  assert.equal(named(dialog, 'AppDialog').length, 0);
   for (const access of ['read_only', 'lost']) assert.equal(GrowthConcernManualFallback({ ...props, model: { ...model(), access } }), null);
   assert.equal(GrowthConcernManualFallback({ ...props, actions: {} }), null);
 });
@@ -118,18 +121,65 @@ test('chat entry passes through the existing navigation guard before routing to 
 });
 
 
-test('one lightweight management group owns the same archive basis and original form capabilities', () => {
+test('the compact detail action group separates manual entry from secondary management and retains the archive basis', () => {
   let archived;
   const value = model(), concern = { id: 'concern', childId: 'child', title: 'Synthetic topic', version: 3, status: 'following', attentionIds: [] };
   value.page.concerns.items = [concern]; value.page.canManage = true;
   const tree = GrowthView({ model: value, actions: { archiveConcern: (...args) => { archived = args; } }, onTask() {}, managementTools: jsx('SuggestionSettings', {}) });
-  const group = named(tree, 'SummaryDisclosure').find(n => n.props.label === '管理');
-  assert.ok(group); assert.equal(group.props.appearance, 'list');
-  assert.equal(named(group, 'GrowthConcernManualFallback')[0].props.concern, concern);
-  assert.equal(named(group, 'SuggestionSettings').length, 1);
-  const archive = named(group, 'GrowthArchiveConcernButton')[0];
+  const group = named(tree, 'GrowthConcernActions')[0];
+  assert.ok(group); assert.equal(group.props.hasManagement, true);
+  assert.equal(group.props.primary.type, 'GrowthConcernManualFallback');
+  assert.equal(group.props.primary.props.concern, concern);
+  assert.equal(named(group.props.children, 'GrowthConcernManualFallback').length, 0);
+  assert.equal(named(group.props.children, 'SuggestionSettings').length, 1);
+  const detail = nodes(tree).find(node => node.props?.testID === 'growth-detail-surface');
+  assert.ok(detail, 'The action group belongs to the detail column, not below the full-width workspace');
+  assert.equal(detail.type, 'BackgroundSurface');
+  assert.equal(detail.props.padded, true);
+  assert.ok(detail.props.children.includes(group));
+  const index = nodes(tree).find(node => node.props?.testID === 'growth-index-surface');
+  assert.equal(index.type, 'BackgroundSurface'); assert.equal(index.props.padded, true);
+  assert.ok(named(detail, 'GrowthConcernTimeline').length);
+  const archive = named(group.props.children, 'GrowthArchiveConcernButton')[0];
   assert.equal(archive.props.scopeKey, value.scopeKey); assert.equal(archive.props.authorityVersion, 'auth:1');
   archive.props.onConfirm(); assert.deepEqual(archived, ['concern', 3, 'auth:1']);
   const dirty = GrowthView({ model: { ...value, dirty: true }, actions: {}, onTask() {} });
   assert.equal(named(dirty, 'GrowthArchiveConcernButton')[0].props.disabled, true);
+  const locked = GrowthView({ model: { ...value, locked: true }, actions: {}, onTask() {} });
+  assert.equal(named(locked, 'GrowthArchiveConcernButton')[0].props.disabled, true);
+  const readOnly = structuredClone(value); readOnly.page.canManage = false;
+  assert.equal(named(view(readOnly), 'GrowthArchiveConcernButton').length, 0);
+  assert.equal(named(view({ ...value, access: 'lost' }), 'GrowthConcernActions').length, 0);
+  assert.equal(named(view(value, { tab: 'preparation' }), 'GrowthConcernActions').length, 0);
+});
+
+test('history and recovery share the original tab toolbar with compact labels and unchanged callbacks', () => {
+  for (const width of [320, 390, 1024, 1440]) {
+    const { GrowthView: SizedGrowthView } = load('../src/components/growth/GrowthView.tsx', {
+      '../useContainerWidth': { useContainerWidth: () => ({ width, ref: null, onLayout() {} }) },
+    });
+    let histories = 0, refreshes = 0;
+    const onHistory = () => histories++, refresh = () => refreshes++;
+    const value = { ...model(), load: 'error' };
+    const props = { model: value, actions: { refresh }, onTask() {}, onHistory, onTabChange() {} };
+    const tree = SizedGrowthView(props);
+    const status = nodes(tree).find(node => node.props?.testID === 'growth-status-surface');
+    assert.equal(status.type, 'BackgroundSurface'); assert.equal(status.props.padded, true);
+    assert.equal(tree.props.headerActions, undefined);
+    const toolbar = named(tree, 'TabToolbar')[0];
+    assert.equal(named(toolbar, 'UnderlineTabs')[0].props.id, 'growth-workspace');
+    const buttons = named(toolbar.props.actions, 'AppButton');
+    const history = buttons.find(node => node.props.accessibilityLabel === '查看關注歷史');
+    const recovery = buttons.find(node => node.props.accessibilityLabel === '重讀成長關注並保留草稿');
+    assert.equal(history.props.label, width < 650 ? '歷史' : '查看關注歷史');
+    assert.equal(history.props.onPress, onHistory); history.props.onPress(); assert.equal(histories, 1);
+    assert.equal(recovery.props.label, width < 650 ? '重讀' : '重新讀取');
+    assert.equal(recovery.props.onPress, refresh); recovery.props.onPress(); assert.equal(refreshes, 1);
+    const pending = SizedGrowthView({ ...props, model: { ...value, pending: { original: true }, busy: true } });
+    const pendingButton = named(named(pending, 'TabToolbar')[0].props.actions, 'AppButton').find(node => node.props.accessibilityLabel === '重讀並核對原操作');
+    assert.equal(pendingButton.props.label, width < 650 ? '核對原操作' : '重讀並核對原操作');
+    assert.equal(pendingButton.props.disabled, true);
+    const preparation = SizedGrowthView({ ...props, tab: 'preparation' });
+    assert.equal(named(preparation, 'TabToolbar')[0].props.actions, undefined);
+  }
 });

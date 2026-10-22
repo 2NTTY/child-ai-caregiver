@@ -1,3 +1,4 @@
+import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { EmptyListCard } from "../EmptyListCard";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Linking, StyleSheet, View } from "react-native";
@@ -15,7 +16,7 @@ import { useMemoryReferenceWorkspace } from "../../workspaces/MemoryReferenceWor
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { ReadStateNotice } from "../ReadStateNotice";
-import { AppButton, AppTabPanel, SectionHeader, UnderlineTabs } from "../ui";
+import { AppButton, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
 
 type Tab = "short" | "long" | "references";
@@ -29,7 +30,7 @@ function ReadNotice({ read, unavailable, empty, emptyTitle = "暫無可顯示的
   if (read.state === "error") return <ReadStateNotice state="error" title="暫時讀不到資料" message="請稍後重新讀取。" />;
   if (read.state === "unavailable") return <ReadStateNotice state="unavailable" title={unavailable} />;
   return <>{read.state === "stale" ? <ReadStateNotice state="stale" title="目前顯示上次讀取的資料" message="最新狀態尚未確認，請連線後再核對。" /> : null}
-    {empty ? read.state === "ready" && online ? <EmptyListCard title={emptyTitle} /> : <Text style={styles.meta}>尚未取得可確認的最新資料</Text> : children}</>;
+    {empty ? read.state === "ready" && online ? <EmptyListCard title={emptyTitle} /> : <BackgroundSurface padded><Text style={styles.meta}>尚未取得可確認的最新資料</Text></BackgroundSurface> : children}</>;
 }
 function Metadata({ label, children }: { label: string; children: ReactNode }) {
   return <Text selectable style={styles.meta}>{label}：{children}</Text>;
@@ -136,24 +137,24 @@ function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; w
   const sources = visibleKnowledgeReferences(model.references);
   const catalog = model.references.data?.catalog;
   const groups = [{ key: "official_guidance", title: "官方指引", detail: "公共機構及專業指引的來源資料" }, { key: "recent_information", title: "近期資訊", detail: "新聞及具時效性的參考來源" }] as const;
-  return <View style={styles.section}><SectionHeader density="compact" title="參考資料" subtitle={catalog ? "查看目前可查閱的公共來源目錄" : "查看資料出處、日期及適用範圍"} />
+  return <View style={styles.section}>
     {model.references.state !== "ready" ? <ReadNotice read={model.references} unavailable="參考來源暫未提供" /> : null}
     {!["loading", "error", "unavailable"].includes(model.references.state) ? groups.map(group => {
       const entries = sources.filter(source => source.classification === group.key);
       const catalogEntries = catalog?.filter(source => source.classification === group.key);
-      return <View key={group.key} style={styles.section}><View><Text accessibilityRole="header" style={styles.sectionTitle}>{group.title}</Text><Text style={styles.meta}>{group.detail}</Text></View>
-        {catalogEntries ? catalogEntries.length ? catalogEntries.map(source => <CatalogCard key={`${source.sourceId}:${source.versionId}`} source={source} />) : model.references.state === "ready" && model.online ? <EmptyListCard title={`已載入資料中暫無${group.title}`} detail={model.references.data.hasMore ? "仍有來源未載入，可繼續讀取。" : undefined} /> : <Text style={styles.meta}>最新來源尚未核對</Text> : entries.length ? entries.map(source => <ReferenceCard key={`${source.sourceId}:${source.versionId}:${source.chunkId}`} source={source} />)
-          : model.references.state === "ready" && model.online ? <EmptyListCard title={`已載入資料中暫無${group.title}`} detail={model.references.data.hasMore ? "仍有來源未載入，可繼續讀取。" : undefined} /> : <Text style={styles.meta}>最新來源尚未核對</Text>}
+      return <View key={group.key} style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" style={styles.sectionTitle}>{group.title}</Text><Text style={styles.meta}>{group.detail}</Text></BackgroundSurface>
+        {catalogEntries ? catalogEntries.length ? catalogEntries.map(source => <CatalogCard key={`${source.sourceId}:${source.versionId}`} source={source} />) : model.references.state === "ready" && model.online ? <EmptyListCard title={`已載入資料中暫無${group.title}`} detail={model.references.data.hasMore ? "仍有來源未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>最新來源尚未核對</Text></BackgroundSurface> : entries.length ? entries.map(source => <ReferenceCard key={`${source.sourceId}:${source.versionId}:${source.chunkId}`} source={source} />)
+          : model.references.state === "ready" && model.online ? <EmptyListCard title={`已載入資料中暫無${group.title}`} detail={model.references.data.hasMore ? "仍有來源未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>最新來源尚未核對</Text></BackgroundSurface>}
       </View>;
     }) : null}
-    {catalog ? <Text style={styles.meta}>這是來源目錄，未逐項判定適用於這位孩子；來源存在亦不代表支持某句回答。</Text> : null}
+    {catalog ? <BackgroundSurface padded><Text style={styles.meta}>這是來源目錄，未逐項判定適用於這位孩子；來源存在亦不代表支持某句回答。</Text></BackgroundSurface> : null}
     {["error", "unavailable", "stale"].includes(model.references.state) && workspace.reads?.refreshContext ? <AppButton label="重新讀取參考" variant="quiet" disabled={!model.online || workspace.reads.referencesBusy} onPress={workspace.reads.refreshContext} /> : null}
     {model.references.data?.hasMore ? workspace.reads?.loadMoreReferences ? <AppButton label="載入更多來源" variant="quiet" disabled={!model.online || workspace.reads.referencesBusy} onPress={workspace.reads.loadMoreReferences} />
-      : <Text style={styles.meta}>仍有來源未載入</Text> : null}
+      : <BackgroundSurface padded><Text style={styles.meta}>仍有來源未載入</Text></BackgroundSurface> : null}
   </View>;
 }
-type MemoryReferenceViewProps = { confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void };
-function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuestion }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
+type MemoryReferenceViewProps = { tabActions?: ReactNode; confirmerDisplay?: MemoryConfirmerDisplay; onPrepareQuestion?: (question: string) => void };
+function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuestion, tabActions }: MemoryReferenceViewProps & { workspace: MemoryReferenceWorkspaceValue }) {
   const { model } = workspace;
   const router = useRouter(), navigate = usePreviewNavigation();
   const [tab, setTab] = useState<Tab>("long"), [otherOpen, setOtherOpen] = useState(false);
@@ -175,11 +176,8 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
       <FactCard fact={fact} model={model} workspace={workspace} confirmerDisplay={confirmerDisplay} onQuestion={onQuestion} /></View>;
   }
   return <View ref={container.ref} onLayout={container.onLayout} style={styles.root}>
-    <View style={styles.context}><View style={styles.contextCopy}><Text style={styles.sectionTitle}>{model.childName}的記憶與參考</Text>
-      <Text style={styles.meta}>{model.dataLabel || "查看已保存記憶及來源"}</Text></View></View>
-    <UnderlineTabs id={tabsId} label="記憶與參考分類" items={tabs} value={tab} onChange={setTab} />
+    <TabToolbar actions={tabActions}><UnderlineTabs id={tabsId} label="記憶與參考分類" items={tabs} value={tab} onChange={setTab} /></TabToolbar>
     <AppTabPanel tabsId={tabsId} tabKey="short" active={tab === "short"}><View style={styles.section}>
-      <SectionHeader density="compact" title="目前工作脈絡" subtitle="Agent 已保存的工作、待答問題及相關訊息" />
       <ReadNotice read={model.shortTerm} unavailable="目前工作脈絡暫未提供" online={model.online} emptyTitle="目前暫無可顯示的工作脈絡" empty={model.shortTerm.data?.works ? model.shortTerm.data.works.length === 0 && model.shortTerm.data.messages.length === 0 : model.shortTerm.data?.messages.length === 0}>
         {model.shortTerm.data?.works ? <PersistentWorkCards items={model.shortTerm.data.works} online={model.online} busy={workspace.reads?.messageBusy}
           onMessage={workspace.reads?.readWorkMessage ? id => {
@@ -203,13 +201,12 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
         } : undefined} /> : null}
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="long" active={tab === "long"}><View style={styles.section}>
-      <SectionHeader density="compact" title="長期記憶" subtitle="已保存的事實、來源及對話摘要" />
       <ReadNotice read={model.longTerm} unavailable="記憶資料暫未提供">
-        <View style={styles.section}><Text accessibilityRole="header" style={styles.sectionTitle}>已確認事實</Text>
-          {confirmed.length ? <View style={styles.factGrid}>{confirmed.map(renderFact)}</View> : model.longTerm.state === "ready" && model.online ? <EmptyListCard title="已載入資料中沒有已確認事實" detail={model.longTerm.data.hasMoreFacts ? "仍有記憶未載入，可繼續讀取。" : undefined} /> : <Text style={styles.meta}>已確認事實尚未重新核對</Text>}
+        <View style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" style={styles.sectionTitle}>已確認事實</Text></BackgroundSurface>
+          {confirmed.length ? <View style={styles.factGrid}>{confirmed.map(renderFact)}</View> : model.longTerm.state === "ready" && model.online ? <EmptyListCard title="已載入資料中沒有已確認事實" detail={model.longTerm.data.hasMoreFacts ? "仍有記憶未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>已確認事實尚未重新核對</Text></BackgroundSurface>}
         </View>
         {model.longTerm.data?.hasMoreFacts ? workspace.reads?.loadMoreFacts ? <AppButton label="載入更多記憶" variant="quiet" disabled={!model.online} onPress={workspace.reads.loadMoreFacts} />
-          : <Text style={styles.meta}>仍有記憶未載入</Text> : null}
+          : <BackgroundSurface padded><Text style={styles.meta}>仍有記憶未載入</Text></BackgroundSurface> : null}
         <SummaryCard key={`${model.longTerm.data?.summary?.id}:${model.longTerm.data?.summary?.version}`} summary={model.longTerm.data?.summary ?? null} emptyReady={model.longTerm.state === "ready" && model.online} />
         {other.length ? <View style={styles.section}><AppButton label={otherOpen ? "收起待核對與停用資料" : `待核對與停用資料（已載入 ${other.length} 項）`} expanded={otherOpen} variant="quiet" onPress={() => setOtherOpen(value => !value)} />
           {otherOpen ? <View style={styles.factGrid}>{other.map(renderFact)}</View> : null}</View> : null}
@@ -218,16 +215,15 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
     <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} workspace={workspace} /></AppTabPanel>
   </View>;
 }
-export function MemoryReferenceView({ confirmerDisplay, onPrepareQuestion }: MemoryReferenceViewProps) {
+export function MemoryReferenceView({ confirmerDisplay, onPrepareQuestion, tabActions }: MemoryReferenceViewProps) {
   const workspace = useMemoryReferenceWorkspace();
   const currentDisplay = workspace && confirmerDisplay?.scopeKey === workspace.scopeKey && confirmerDisplay.childId === workspace.model.childId ? confirmerDisplay : undefined;
-  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} workspace={workspace} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} />
-    : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。" />;
+  return workspace ? <ScopedMemoryReferenceView key={workspace.scopeKey} workspace={workspace} tabActions={tabActions} confirmerDisplay={currentDisplay} onPrepareQuestion={onPrepareQuestion} />
+    : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。">{tabActions}</ReadStateNotice>;
 }
 const styles = StyleSheet.create({
   root: { width: "100%", minWidth: 0, gap: spacing.lg },
-  context: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.sm },
-  contextCopy: { flex: 1, minWidth: 0, gap: spacing.xs }, section: { gap: spacing.md, minWidth: 0 },
+  section: { gap: spacing.md, minWidth: 0 },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section },
   factGrid: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: spacing.md, minWidth: 0 },
   factSlot: { flexGrow: 1, flexBasis: "47%", minWidth: 0 }, fullWidth: { flexBasis: "100%" },

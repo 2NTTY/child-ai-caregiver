@@ -44,6 +44,7 @@ function harness() {
     '../components/history/history-filters': filters,
     '../components/DateTimeFields': { AppDateField: 'AppDateField' },
     '../components/PageFrame': { PageFrame: 'PageFrame' },
+    '../components/appearance/BackgroundSurface': { BackgroundSurface: 'View' },
     '../components/ui': { AppButton: 'AppButton', AppSelect: 'AppSelect', AppTabPanel: 'AppTabPanel', AppTextField: 'AppTextField', UnderlineTabs: 'UnderlineTabs' },
     '../components/tasks/TaskHistoryView': { TaskHistoryView: 'TaskHistoryView' },
     '../components/care/CareReviewHistoryView': { CareReviewHistoryView: 'CareReviewHistoryView' },
@@ -99,6 +100,7 @@ test('native Records navigation recognizes History without adding a sixth primar
   const layout = readFileSync(path.join(root, 'app/(dashboard)/_layout.tsx'), 'utf8');
   const predicate = layout.match(/<RecordsNavButton\s+active=\{([^}]+)\}/)?.[1];
   assert.ok(predicate, 'Native Records must declare its route activity');
+  assert.match(layout, /<Tabs\.Screen name="care" options=\{\{ title: "核對"/);
   const active = new Function('pathname', `return (${predicate});`);
   for (const pathname of ['/care', '/more', '/photos', '/history']) assert.equal(active(pathname), true, pathname);
   for (const pathname of ['/', '/chat', '/tasks', '/growth']) assert.equal(active(pathname), false, pathname);
@@ -149,4 +151,17 @@ test('category navigation waits for the guard and clears prior review-only URL f
   assert.ok(find(h.render(), 'CareReviewHistoryView')); h.approve();
   assert.deepEqual(h.events.slice(1), ['close-task', 'close-preparation', 'close-care', ['params', { category: 'preparations', status: undefined, older: undefined }]]);
   assert.ok(find(h.render(), 'PreparationHistoryView'));
+});
+
+
+test('both Care history categories return to Review through the existing guard and route', () => {
+  for (const category of ['review', 'care']) {
+    const metadata = filters.historyCategories.find(item => item.key === category);
+    assert.equal(metadata.sourceLabel, '核對'); assert.equal(metadata.sourceAction, '開啟核對');
+    assert.equal(metadata.sourcePath, '/care');
+    const h = harness(), tree = h.render({ initialCategory: category });
+    label(tree, '開啟核對').props.onPress();
+    assert.deepEqual(h.events, ['guard']); h.approve();
+    assert.deepEqual(h.events, ['guard', ['push', '/care']]);
+  }
 });

@@ -302,7 +302,7 @@ for (const {kind, inModal, outcome = "confirmed"} of [
     value.actions.clearEditor(); value.actions.editSource("Replacement must stay blocked"); value.actions.upload();
     value = f.owner.render(); assert.equal(value.model.original, original); assert.equal(value.model.source, source);
     assert.equal(button(tree, "重試原操作"), undefined); assert.equal(button(tree, "結束待查並核對清單"), undefined);
-    assert.equal(button(tree, "返回記錄").props.disabled, true); assert.equal(value.model.formLocked, true);
+    assert.equal(button(tree, "返回核對").props.disabled, true); assert.equal(value.model.formLocked, true);
     for (const capability of ["canPick", "canUpload", "canExtract", "canConfirm", "canDelete"]) assert.equal(value.model[capability], false, capability);
     assert.equal(f.counters.guard.at(-1)[1], true);
     value.actions.retryOriginal(); value.actions.finishUnidentified(); value = f.owner.render();
@@ -335,7 +335,7 @@ for (const {kind, inModal, outcome = "confirmed"} of [
     assert.equal(value.model.operation.state, "confirmed_unavailable", "stale identity cannot release the recovery gate");
     f.counters.active = true; finish.props.onPress(); value = f.owner.render(); tree = photoView(value);
     assert.equal(value.model.operation.state, "saved"); assert.equal(f.counters.guard.at(-1)[1], false);
-    assert.equal(button(tree, "返回記錄").props.disabled, false); assert.equal(button(tree, "重試原操作"), undefined);
+    assert.equal(button(tree, "返回核對").props.disabled, false); assert.equal(button(tree, "重試原操作"), undefined);
     assert.equal(button(tree, "結束待查並核對清單"), undefined); assert.equal(f.state.writes.length, 1);
     if (kind === "reserve") {assert.ok(value.model.original); assert.equal(value.model.reservationUnidentified, true); assert.equal(value.model.canUpload, false);}
     else {assert.equal(value.model.selected, null); assert.equal(value.model.deletion, false);}

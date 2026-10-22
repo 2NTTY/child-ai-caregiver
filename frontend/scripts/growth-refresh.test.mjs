@@ -47,7 +47,8 @@ function harness(entry, symbol, initialArgs, injectedWorkspace = () => null) {
       if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx, Fragment: 'Fragment' };
       if (name === 'react-native') return { View: 'View', Text: 'Text', Pressable: 'Pressable', StyleSheet: { create: value => value }, useWindowDimensions: () => ({ width: 1200 }) };
       if (name === 'react-native-paper') return { Text: 'Text', Button: 'PaperButton' };
-      if (name.endsWith('/theme')) return { colors: {}, radius: {}, spacing: { xs: 4, sm: 8, md: 12, lg: 16 }, mobileLayout: { breakpoint: 650, touchTarget: 48 } };
+      if (name.endsWith('/theme')) return { colors: {}, radius: {}, readingType: {}, spacing: { xs: 4, sm: 8, md: 12, lg: 16 }, mobileLayout: { breakpoint: 650, touchTarget: 48 } };
+      if (name.endsWith('/motion')) return { MotionFeedback: 'MotionFeedback', MotionReveal: 'MotionReveal' };
       if (name.endsWith('/useInteractionDensity')) return { useInteractionDensity: () => false };
       if (name.endsWith('/useContainerWidth')) return { useContainerWidth: () => ({ width: 1200, ref: null, onLayout() {} }) };
       if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewLeaveGuard: (...values) => guards.push(values) };
@@ -56,10 +57,12 @@ function harness(entry, symbol, initialArgs, injectedWorkspace = () => null) {
       if (name === './growth-styles') return { growthStyles: {} };
       if (name.endsWith('/PreparationWorkspace')) return { PreparationWorkspace: 'PreparationWorkspace' };
       if (name.endsWith('/SummaryDisclosure')) return { SummaryDisclosure: 'SummaryDisclosure' };
+      if (name.endsWith('/GrowthConcernActions')) return { GrowthConcernActions: 'GrowthConcernActions' };
+      if (name.endsWith('/BackgroundSurface')) return { BackgroundSurface: 'BackgroundSurface' };
       if (name === './GrowthArchiveConcernButton') return { GrowthArchiveConcernButton: 'GrowthArchiveConcernButton' };
       if (name === './GrowthConcernManualFallback') return { GrowthConcernManualFallback: 'GrowthConcernManualFallback' };
       if (name === './GrowthConcernTimeline') return { GrowthConcernIndex: 'GrowthConcernIndex', GrowthConcernTimeline: 'GrowthConcernTimeline' };
-      if (name.endsWith('/ui')) return Object.fromEntries(['AppButton', 'AppSelect', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'UnderlineTabs'].map(value => [value, value]));
+      if (name.endsWith('/ui')) return Object.fromEntries(['AppButton', 'AppSelect', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'TabToolbar', 'UnderlineTabs'].map(value => [value, value]));
       for (const component of ['AppCheckbox', 'PageFrame', 'StatusAnnouncement', 'ReadStateNotice', 'EmptyListCard', 'AppIcon', 'AppStatusBadge']) {
         if (name.endsWith(`/${component}`)) return { [component]: component };
       }
@@ -89,7 +92,7 @@ function nodes(tree, predicate, prefix = []) {
   if (!tree || typeof tree !== 'object') return [];
   if (Array.isArray(tree)) return tree.flatMap((value, index) => nodes(value, predicate, [...prefix, index]));
   const pureChild = typeof tree.type === 'function' && ['GrowthOperationRecovery', 'GrowthOriginalRequest', 'GrowthConcernChangeNotice'].includes(tree.type.name) ? tree.type(tree.props) : null;
-  return [...(predicate(tree) ? [{ node: tree, path: prefix }] : []), ...nodes(pureChild, predicate, [...prefix, 'render']), ...nodes(tree.props?.headerActions, predicate, [...prefix, 'headerActions']), ...nodes(tree.props?.children, predicate, [...prefix, 'children'])];
+  return [...(predicate(tree) ? [{ node: tree, path: prefix }] : []), ...nodes(pureChild, predicate, [...prefix, 'render']), ...nodes(tree.props?.headerActions, predicate, [...prefix, 'headerActions']), ...nodes(tree.props?.actions, predicate, [...prefix, 'actions']), ...nodes(tree.props?.children, predicate, [...prefix, 'children'])];
 }
 const byType = (tree, type) => nodes(tree, node => node.type === type).map(value => value.node);
 const byId = (tree, id) => nodes(tree, node => node.props?.testID === id).map(value => value.node);
@@ -101,9 +104,13 @@ test('ordinary refresh keeps content stable without a toolbar reload or loading/
   const o = owner(); let state = o.render(); const v = view(state.model, state.actions);
   let tree = v.render(); const pageBefore = state.model.page;
   assert.equal(refreshNodes(tree).length, 0);
-  assert.equal(tree.props.headerActions.props.testID, 'growth-refresh-toolbar');
+  assert.equal(tree.props.headerActions, undefined);
+  const toolbar = byId(tree, 'growth-tabs-toolbar')[0];
+  assert.equal(toolbar.type, 'TabToolbar');
+  assert.equal(toolbar.props.actions.props.testID, 'growth-refresh-toolbar');
+  assert.equal(byType(toolbar, 'UnderlineTabs')[0].props.id, 'growth-workspace');
   assert.equal(tree.props.description, undefined);
-  const headerButtons = byType(tree.props.headerActions, 'AppButton');
+  const headerButtons = byType(toolbar.props.actions, 'AppButton');
   assert.deepEqual(headerButtons.map(button => button.props.label), ['查看關注歷史']);
   state.actions.refresh(); state.actions.refresh();
   assert.equal(o.timers.size, 1, 'Repeated requests cannot start a second read');

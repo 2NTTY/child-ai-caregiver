@@ -10,8 +10,9 @@ import { useModalBackdrop } from "../motion/useModalBackdrop";
 import { chineseFont, colors, spacing, typeScale } from "../theme";
 import { calendarDate, calendarValue, dateTimeParts, dateTimeValue, hongKongTimeZone, timeZoneLabel, timeZoneOptions } from "./date-time";
 import { AppButton, AppSelect, AppSelectionTrigger, AppTextField } from "./ui";
+import "./date-picker-action";
 
-registerTranslation("zh-HK", { ...zhTW, save: "選用日期" });
+registerTranslation("zh-HK", { ...zhTW, save: "確認日期" });
 
 type FieldProps = { label: string; value: string; onChange: (value: string) => void; onBlur?: () => void; disabled?: boolean; error?: string; id?: string; errorId?: string; describedBy?: string };
 type TextFieldProps = FieldProps & { ref?: Ref<React.ElementRef<typeof TextInput>> };

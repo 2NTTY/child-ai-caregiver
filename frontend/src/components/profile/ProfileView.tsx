@@ -1,3 +1,4 @@
+import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useContainerWidth } from "../useContainerWidth";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -8,7 +9,7 @@ import { profileDataFromForm, type ProfileActions, type ProfileViewModel } from 
 import { chineseFont, colors, radius, spacing, typeScale , readingType } from "../../theme";
 import { ManualFormDialog } from "../FormDialog";
 import { ProfileForm } from "./ProfileForm";
-import { ProfileDataSummary, ProfileRevisionSummary } from "./ProfileSummary";
+import { ProfileDataSummary, ProfileReadingSummary, ProfileRevisionDetails, ProfileRevisionSummary } from "./ProfileSummary";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { MotionDisclosure, MotionReveal } from "../../motion";
 
@@ -36,6 +37,8 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
     && model.operation.state === 'saved' && !!model.current?.data;
   const revealTrigger = model.operation.state === 'saving' || revealEligible ? revisionTrigger : null;
   const scopeKey = JSON.stringify([model.child?.id ?? 'no-child', model.access]);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  useLayoutEffect(() => { setDetailsOpen(false); }, [scopeKey]);
   const pending = childDeletionActive || model.operation.state === "saving" || model.operation.state === "unknown";
   const conflict = model.operation.state === "conflict";
   const canReview = model.access === "editable" && !model.reading && !pending && !conflict
@@ -53,12 +56,16 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
 
     {!model.online ? <View style={styles.warning}><Text style={styles.body}>目前離線，當前草稿暫時保留。恢復連線後先重新讀取及核對；刷新或關閉頁面可能遺失草稿。</Text></View> : null}
     {model.online && model.needsRefresh && model.child ? <View style={styles.warning}><Text style={styles.body}>連線已恢復，請先重新讀取及核對檔案，再確認共享。</Text><AppButton label="重新讀取及核對" onPress={actions.refresh} disabled={model.reading || pending} /></View> : null}
-    {model.notice ? <Text style={styles.body}>{model.notice}</Text> : null}
+    {model.notice ? <BackgroundSurface padded><Text style={styles.body}>{model.notice}</Text></BackgroundSurface> : null}
     {writeNotice}
-    {childPicker}
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={styles.reading}>
-      <View style={styles.readingActions}>
-        {model.child ? <AppStatusBadge label={model.current?.data ? "已確認檔案" : model.reading ? "正在讀取檔案" : "尚未確認檔案"} tone={model.current?.data ? "success" : model.reading ? "info" : "warning"} /> : null}
+      <View style={styles.identityRow}>
+        {model.child ? <View style={styles.identity}>
+          <View style={styles.avatar} importantForAccessibility="no-hide-descendants"><Text style={styles.avatarText}>{model.child.name.slice(0, 1)}</Text></View>
+          <View style={styles.identityCopy}><Text accessibilityRole="header" style={styles.childName}>{model.child.name}</Text>
+            <AppStatusBadge label={model.current?.data ? "已確認檔案" : model.reading ? "正在讀取檔案" : "尚未確認檔案"} tone={model.current?.data ? "success" : model.reading ? "info" : "warning"} />
+          </View>
+        </View> : <Text accessibilityRole="header" style={styles.childName}>尚未有孩子</Text>}
         {model.access === "editable" ? <ManualFormDialog formKey={model.formKey} label={model.child ? "編輯檔案" : "填寫檔案"} title="編輯孩子檔案" scopeKey={scopeKey} disabled={childDeletionActive} onClose={actions.discardDraft} recovery={writeNotice}><View style={styles.editor}><SectionHeader density="compact" title={model.child ? "核對檔案草稿" : "本地檔案草稿"}
           subtitle={model.child ? `修改基準：版本 ${model.basis?.version ?? 0}；更正會新增版本。` : "僅作前端草稿，不建立真孩子或家庭共享資料。"} />
           <ProfileForm key={model.formKey} initialValues={model.initialValues} editable={editable}
@@ -87,41 +94,48 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
           </View> : null}
           {model.operation.state === "failed" && model.intent === "delete" ? <AppButton label="返回檔案草稿" variant="secondary" onPress={actions.cancelReview} /> : null}
         </View></ManualFormDialog> : null}
-        {model.child ? <TextLink label="查看照顧記錄" onPress={onOpenCare} /> : null}
       </View>
-      <SectionCard surface="plain"><SectionHeader density="compact" title={model.child ? "已確認資料" : "尚未有孩子"} />
-        {model.child ? <>
-          {model.reading ? <Text style={styles.body}>正在讀取檔案…</Text> : null}
-          <MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown ? <ProfileRevisionSummary revision={shown} /> : !model.reading ? <Text style={styles.body}>尚未取得可顯示的檔案。</Text> : null}</MotionReveal>
-          <AppButton label="重新讀取檔案" variant="quiet" onPress={actions.refresh} disabled={!model.online || model.reading || pending} />
-        </> : <Text style={styles.body}>新增孩子後，可以在這裏核對檔案。</Text>}
+      {model.child ? <>
+        {model.reading ? <Text style={styles.meta}>正在讀取檔案…</Text> : null}
+        <MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown?.data ? <ProfileReadingSummary data={shown.data} compact={width < 640} /> : !model.reading ? <SectionCard><Text style={styles.body}>{shown ? "沒有已確認檔案。" : "尚未取得可顯示的檔案。"}</Text></SectionCard> : null}</MotionReveal>
         {model.access === "read_only" ? <Text style={styles.notice}>目前為唯讀，可查看檔案及歷史。</Text> : null}
-      </SectionCard>
-      {model.child ? <View style={styles.sectionRule}>
-        <AppButton label={model.historyOpen ? "已顯示歷史" : "確認及更正歷史"} variant="quiet" onPress={actions.showHistory} disabled={!model.online || model.reading || model.historyOpen} />
-        <MotionDisclosure expanded={model.historyOpen} scopeKey={scopeKey} testID="profile-history-disclosure"><View style={styles.historyList}>
-          {model.history.length ? model.history.map(revision => <View key={revision.version} style={styles.historyItem}><ProfileRevisionSummary revision={revision} /></View>) : <Text style={styles.body}>尚未取得較早版本。</Text>}
-          {model.hasMoreHistory ? <AppButton label="載入更早版本" variant="quiet" onPress={actions.loadOlderHistory} disabled={!model.online || model.reading} /> : null}
-        </View></MotionDisclosure>
-      </View> : null}
+        <View style={styles.readingActions}>
+          <AppButton label="檔案詳情" accessibilityLabel="檔案詳情及更正歷史" variant="quiet" density="compact" expanded={detailsOpen} onPress={() => setDetailsOpen(value => !value)} />
+          <AppButton label="重新讀取檔案" variant="quiet" density="compact" onPress={actions.refresh} disabled={!model.online || model.reading || pending} />
+          <TextLink label="開啟核對" onPress={onOpenCare} />
+        </View>
+        <MotionDisclosure expanded={detailsOpen} scopeKey={scopeKey} testID="profile-details-disclosure">
+          <SectionCard style={styles.details}>
+            {model.current ? <ProfileRevisionDetails revision={model.current} /> : <Text style={styles.meta}>尚未取得可顯示的檔案詳情。</Text>}
+            <View style={styles.sectionRule}>
+              <AppButton label={model.historyOpen ? "已顯示歷史" : "確認及更正歷史"} variant="quiet" onPress={actions.showHistory} disabled={!model.online || model.reading || model.historyOpen} />
+              <MotionDisclosure expanded={model.historyOpen} scopeKey={scopeKey} testID="profile-history-disclosure"><View style={styles.historyList}>
+                {model.history.length ? model.history.map(revision => <View key={revision.version} style={styles.historyItem}><ProfileRevisionSummary revision={revision} /></View>) : <Text style={styles.body}>尚未取得較早版本。</Text>}
+                {model.hasMoreHistory ? <AppButton label="載入更早版本" variant="quiet" onPress={actions.loadOlderHistory} disabled={!model.online || model.reading} /> : null}
+              </View></MotionDisclosure>
+            </View>
+          </SectionCard>
+        </MotionDisclosure>
+      </> : <SectionCard><Text style={styles.body}>新增孩子後，可以在這裏核對檔案。</Text></SectionCard>}
+      <View style={styles.management}>{childPicker}</View>
       {previewControls}
     </View>
   </>);
 }
 const styles = StyleSheet.create({
-  identityHeader: { gap: spacing.xl, paddingVertical: spacing.sm },
-  identityRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md },
-  avatar: { width: 56, height: 56, borderRadius: radius.medium, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
-  avatarText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, fontWeight: "700" },
-  identityCopy: { flex: 1, minWidth: 120, gap: spacing.xs },
-  childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, lineHeight: 38, fontWeight: "700" },
-  sectionRule: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.lg },
+  identityRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.md, minWidth: 0 },
+  identity: { flexDirection: "row", alignItems: "center", gap: spacing.md, flexGrow: 1, flexShrink: 1, minWidth: 0 },
+  avatar: { width: 48, height: 48, flexShrink: 0, borderRadius: radius.medium, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
+  avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "700" },
+  identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs, alignItems: "flex-start" },
+  childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 30, fontWeight: "700", flexShrink: 1 },
+  sectionRule: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.md },
   editor: { gap: spacing.md },
-  reading: { width: "100%", maxWidth: 960, gap: spacing.lg },
-  readingActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md },
+  reading: { width: "100%", maxWidth: 960, gap: spacing.lg, minWidth: 0 },
+  readingActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.md, rowGap: spacing.sm, minWidth: 0 },
+  details: { gap: spacing.lg },
+  management: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   historyList: { gap: spacing.md },
-  columns: { width: "100%", flexDirection: "row", alignItems: "flex-start", gap: spacing.xl }, stacked: { flexDirection: "column" },
-  column: { flex: 1, minWidth: 0, gap: spacing.lg }, formColumn: { flex: 1.4 }, fullColumn: { width: "100%", flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   notice: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },

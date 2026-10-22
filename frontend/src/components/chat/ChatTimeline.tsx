@@ -1,3 +1,4 @@
+import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { useId, useImperativeHandle, useLayoutEffect, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
@@ -107,8 +108,8 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
       contentContainerStyle={[styles.content, compact && styles.compact, presentation === "conversation" && styles.conversation, !items.length && !!emptyState && styles.empty]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16}
       onScroll={onScroll} onScrollBeginDrag={readerIntent} onContentSizeChange={contentChanged} onLayout={event => { metrics.current.viewport = event.nativeEvent.layout.height; if (following.current) queueBottom(); else updateLatestVisibility(); }}>
       {header}
-      {start > 0 ? <View testID="chat-history-entry" style={styles.history}><AppButton label={`查看較早記錄（${start} 則）`} variant="quiet" style={styles.historyButton} onPress={revealEarlier} />
-        {presentation === "standard" ? <Text style={styles.hint}>分批展開已載入的記錄</Text> : null}</View> : items.length && presentation === "standard" ? <Text testID="chat-history-start" style={styles.hint}>已到本次載入記錄的最早位置</Text> : null}
+      {start > 0 ? <BackgroundSurface testID="chat-history-entry" style={styles.history}><AppButton label={`查看較早記錄（${start} 則）`} variant="quiet" style={styles.historyButton} onPress={revealEarlier} />
+        {presentation === "standard" ? <Text style={styles.hint}>分批展開已載入的記錄</Text> : null}</BackgroundSurface> : items.length && presentation === "standard" ? <Text testID="chat-history-start" style={styles.hint}>已到本次載入記錄的最早位置</Text> : null}
       {!items.length ? emptyState : null}
       {items.slice(start).map(item => <TimelineEntry key={item.id} id={item.id} scopeKey={motionScope} arriving={arrivingId === item.id}>{renderItem(item)}</TimelineEntry>)}
       {footer}

@@ -22,7 +22,8 @@ export function AgentEntryButton({ active }: { active: boolean }) {
     <View style={styles.content}>
       <View style={styles.icon}><AppIcon name="star-four-points" size={23} color={colors.white} /></View>
       <View style={styles.copy}>
-        <Text numberOfLines={1} style={styles.label}>助手</Text>
+        <Text numberOfLines={1} style={styles.label}>與 Agent 對話</Text>
+        <Text numberOfLines={1} style={styles.hint}>提問・整理・規劃</Text>
       </View>
       <AppIcon name="chevron-right" size={16} color={colors.onAccent} />
     </View>
@@ -36,4 +37,5 @@ const styles = StyleSheet.create({
   icon: { width: 36, height: 36, flexShrink: 0, alignItems: "center", justifyContent: "center", backgroundColor: colors.teal, borderRadius: radius.small },
   copy: { flex: 1, minWidth: 0, gap: 2 },
   label: { fontFamily: chineseFont, color: colors.onAccent, fontSize: typeScale.small, fontWeight: "800", lineHeight: 21 },
+  hint: { fontFamily: chineseFont, color: colors.onAccent, fontSize: typeScale.caption, lineHeight: 18 },
 });

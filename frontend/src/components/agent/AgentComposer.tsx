@@ -1,3 +1,4 @@
+import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { useEffect, useRef, useState } from "react";
 import { Keyboard, Platform, Pressable, StyleSheet, View, type GestureResponderEvent, type PressableStateCallbackType } from "react-native";
 import { AppScrollView as ScrollView } from "../AppScrollView";
@@ -165,7 +166,7 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
         <Text style={styles.suggestionText}>{item}</Text></Pressable>)}
     </ScrollView></MotionDisclosure>
     </View>
-    {inputHint || attachments.length ? <Text style={styles.composerHint}>{inputHint ?? "未送出 · 附件離頁清除；文字草稿保留"}</Text> : null}
+    {inputHint || attachments.length ? <BackgroundSurface activeStyle={{ paddingHorizontal: spacing.sm }}><Text style={styles.composerHint}>{inputHint ?? "未送出 · 附件離頁清除；文字草稿保留"}</Text></BackgroundSurface> : null}
     </View>
     <AssistantInputDialog kind={inputDialog} enabled={enabled} onPick={addAttachment}
       onDismiss={() => { setInputDialog(null); setReplacement(null); }}

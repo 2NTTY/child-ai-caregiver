@@ -15,6 +15,7 @@ function loadUi(width = 1440) {
     if (name === 'react-native') return { View: 'View', Pressable: 'Pressable', Platform: { OS: 'web' }, StyleSheet: { create: value => value }, useWindowDimensions: () => ({ width }) };
     if (name === 'react-native-paper') return { Text: 'Text' };
     if (name === '../theme') return { colors: { sage: '#BAE8E8', ink: '#272343', paleTeal: '#E3F6F5' }, radius: { pill: 999 }, spacing: { sm: 8 }, mobileLayout: { breakpoint: 650 }, mobileType: {}, workspaceType: {}, typeScale: { small: 14 } };
+    if (name === './appearance/BackgroundSurface') return { BackgroundSurface: 'View', useCustomBackground: () => false };
     if (name === './useInteractionDensity') return { useInteractionDensity: () => false };
     return elements;
   };
@@ -100,4 +101,14 @@ test('section headings without counts keep their original title without a badge'
     assert.equal(named(tree, 'Text').length, 1);
     assert.equal(named(tree, 'Text')[0].props.children, '待辦摘要');
   }
+});
+
+
+test('tab toolbar keeps original tabs and action slots on one row with a shrinkable tab rail', () => {
+  const tabs = { type: 'tabs' }, actions = { type: 'actions' };
+  const tree = loadUi().TabToolbar({ children: tabs, actions, testID: 'toolbar' });
+  assert.equal(tree.props.testID, 'toolbar'); assert.equal(tree.props.style.flexDirection, 'row');
+  const [tabSlot, actionSlot] = tree.props.children;
+  assert.equal(tabSlot.props.children, tabs); assert.equal(tabSlot.props.style.flex, 1); assert.equal(tabSlot.props.style.minWidth, 0);
+  assert.equal(actionSlot.props.children, actions); assert.equal(actionSlot.props.style.flexShrink, 0);
 });

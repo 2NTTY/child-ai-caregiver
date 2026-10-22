@@ -9,7 +9,7 @@ type NavigationKey = "home" | HomeDestination | "more" | "history";
 export const navigationItems = {
   home: { href: "/", label: "今日", short: "今日", icon: "home-outline" },
   chat: { href: "/chat", label: "助手", short: "助手", icon: "message-text-outline" },
-  care: { href: "/care", label: "記錄與核對", short: "記錄", icon: "notebook-outline" },
+  care: { href: "/care", label: "核對", short: "核對", icon: "notebook-outline" },
   photos: { href: "/photos", label: "照片與記錄", short: "照片", icon: "image-outline" },
   sources: { href: "/sources", label: "私人來源", short: "來源", icon: "link-variant" },
   tasks: { href: "/tasks", label: "待辦與預約", short: "待辦", icon: "clipboard-check-outline" },
@@ -28,8 +28,8 @@ export const navigationItems = {
 export const desktopNavigationGroups = [
   { label: "常用", keys: ["home"] },
   { label: "行動", keys: ["tasks", "growth"] },
-  { label: "照顧", keys: ["care", "summary", "history"] },
-  { label: "管理", keys: ["profile", "memory", "more"] },
+  { label: "照顧", keys: ["summary", "history"] },
+  { label: "管理", keys: ["profile", "care", "memory", "more"] },
 ] as const;
 
 // Catalogue labels derive from navigationItems so the same destination has one visible name.

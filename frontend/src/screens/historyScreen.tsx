@@ -1,3 +1,4 @@
+import { BackgroundSurface } from "../components/appearance/BackgroundSurface";
 import { useEffect, useReducer, useRef } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { StyleSheet, View, type ScrollView } from "react-native";
@@ -23,7 +24,7 @@ import { useGrowthWorkspace } from "../workspaces/GrowthWorkspace";
 import { searchPreparationHistory } from "../preparation-view-model";
 import { chineseFont, colors, readingType, spacing } from "../theme";
 
-function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStatus, olderOnly }: { scope: string; childName: string; initialCategory: HistoryCategory; initialReviewStatus: CareReviewStatusFilter; olderOnly: boolean }) {
+function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOnly }: { scope: string; initialCategory: HistoryCategory; initialReviewStatus: CareReviewStatusFilter; olderOnly: boolean }) {
   const router = useRouter(), navigate = usePreviewNavigation();
   const { actions: homeActions } = useProduction();
   const tasks = useTasksWorkspace();
@@ -93,30 +94,31 @@ function HistoryWorkspace({ scope, childName, initialCategory, initialReviewStat
       <AppButton label={current.sourceAction} variant="secondary" onPress={() => navigate(() => router.push(current.sourcePath))} />
     </View>;
 
-  return <PageFrame density="compact" title="歷史" description={notificationCategory ? undefined : `分類回看${childName}的過往資料，從原始來源查看詳情。`} scrollRef={scrollRef} scrollTestID="history-scroll"
+  const resultSurface = <BackgroundSurface padded enabled={!reviewCategory && !careCategory && !personalCategory}>{results}</BackgroundSurface>;
+  return <PageFrame density="compact" title="歷史" scrollRef={scrollRef} scrollTestID="history-scroll"
     onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
       {compact ? <AppSelect<HistoryCategory> label="歷史分類" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))} onChange={category} />
         : <UnderlineTabs<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
-      <View style={styles.sourceRow}>
+      <BackgroundSurface padded style={styles.sourceRow}>
         <View style={styles.sourceCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text><Text style={styles.meta}>{notificationCategory ? "本人通知，涵蓋帳戶及其他孩子" : current.description}{!growthCategory && !notificationCategory ? ` · 來源：${current.sourceLabel}` : null}</Text></View>
-        {reviewCategory || careCategory ? <AppButton label="開啟記錄與核對" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/care"))} /> : null}
+        {reviewCategory || careCategory ? <AppButton label="開啟核對" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/care"))} /> : null}
         {taskCategory ? <AppButton label="開啟待辦" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/tasks"), "workspace")} /> : null}
         {preparationCategory ? <AppButton label="開啟準備單" variant="secondary" density="compact" onPress={() => navigate(() => router.push({ pathname: "/growth", params: { tab: "preparation" } }))} /> : null}
         {growthCategory ? <View style={styles.sourceActions}>
           <AppButton label="查看持續關注" variant="secondary" density="compact" style={styles.sourceAction} onPress={() => navigate(() => router.push("/growth"))} />
           <AppButton label="查看年度與季度檔案" variant="quiet" density="compact" style={styles.sourceAction} onPress={() => navigate(() => router.push("/summary?tab=archive"))} />
         </View> : null}
-      </View>
-      {!careCategory && !showingCompactTaskDetail && !showingCompactPreparationDetail ? <View testID="history-filter-toolbar" style={styles.toolbar}>
+      </BackgroundSurface>
+      {!careCategory && !showingCompactTaskDetail && !showingCompactPreparationDetail ? <BackgroundSurface padded testID="history-filter-toolbar" style={styles.toolbar}>
         <AppTextField label={`搜尋${current.label}`} accessibilityLabel={`搜尋${current.label}`} value={filters.searchText} maxLength={200} disabled={filterDisabled} onChangeText={value => filter({ type: "search", value })} />
         {!reviewCategory ? <View style={[styles.dateRow, compact && styles.dateStack]}>
           <View style={styles.dateField}><AppDateField label="開始日期（可不填）" value={filters.from} error={dateErrors.from} disabled={filterDisabled} onChange={value => filter({ type: "from", value })} /></View>
           <View style={styles.dateField}><AppDateField label="結束日期（可不填）" value={filters.to} error={dateErrors.to} disabled={filterDisabled} onChange={value => filter({ type: "to", value })} /></View>
           <AppButton label="清除篩選" variant="quiet" style={[styles.clearFilter, compact && styles.clearFilterStack]} disabled={!hasFilters || currentLocked} onPress={() => filter({ type: "reset" })} />
         </View> : <><Text style={styles.meta}>核對記錄尚未提供可核實的日期欄位，這裏只按內容及處理狀態搜尋。</Text><AppButton label="清除搜尋" variant="quiet" disabled={!filters.searchText || currentLocked} onPress={() => filter({ type: "search", value: "" })} /></>}
-      </View> : null}
-      {compact ? <View style={styles.results}>{results}</View> : <AppTabPanel tabsId="history-categories" tabKey={filters.category} active style={styles.results}>{results}</AppTabPanel>}
+      </BackgroundSurface> : null}
+      {compact ? <View style={styles.results}>{resultSurface}</View> : <AppTabPanel tabsId="history-categories" tabKey={filters.category} active style={styles.results}>{resultSurface}</AppTabPanel>}
     </View>
   </PageFrame>;
 }
@@ -129,7 +131,7 @@ export default function HistoryScreen() {
   const scope = scopeKey ?? "";
   if (pathname !== "/history") return null;
   if (!child) return <PageFrame title="歷史" density="compact" description="按分類查閱過往資料。"><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></PageFrame>;
-  return <HistoryWorkspace key={scope} scope={scope} childName={child.displayName} initialCategory={normalizeHistoryCategory(category)} initialReviewStatus={normalizeReviewHistoryStatus(status)} olderOnly={normalizeHistoryOlderOnly(older)} />;
+  return <HistoryWorkspace key={scope} scope={scope} initialCategory={normalizeHistoryCategory(category)} initialReviewStatus={normalizeReviewHistoryStatus(status)} olderOnly={normalizeHistoryOlderOnly(older)} />;
 }
 
 const styles = StyleSheet.create({

@@ -1,24 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
+import { MotionDisclosure } from "../motion";
 import { PageFrame } from "../components/PageFrame";
 import { ProfileView } from "../components/profile/ProfileView";
 import { OperationNotice } from "../components/OperationNotice";
 import { ManualFormDialog } from "../components/FormDialog";
-import { AppButton, AppTextField, SectionCard, SectionHeader } from "../components/ui";
+import { AppButton, AppTextField, SectionCard } from "../components/ui";
 import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useProduction } from "../production/ProductionProvider";
 import { useProductionCareProfile } from "../production/CareProfileDomains";
 import { useDomainWriteGuard } from "../production/useDomainEnvironment";
 import { useProfileWorkspace } from "../workspaces/ProfileWorkspace";
-import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
+import { colors, radius, spacing } from "../theme";
 
 function ProfileContent() {
   const { model: home, actions: homeActions, online, recordsState, controller, identityKey } = useProduction();
   const workspace = useProfileWorkspace(), recovery = useProductionCareProfile(), leave = usePreviewNavigation();
   const pathname = usePathname(), lastPath = useRef(pathname);
   const child = home.children.find(item => item.id === home.selectedChildId) ?? null;
+  const [managementOpen, setManagementOpen] = useState(false);
+  useEffect(() => { setManagementOpen(false); }, [child?.id, child?.accessRole]);
   const [reviewName, setReviewName] = useState<string | null>(null);
   const creating = recordsState.busy === "createChild", createUnknown = ["unknown", "checked"].includes(recordsState.childOutcome);
   useEffect(() => {
@@ -30,7 +33,8 @@ function ProfileContent() {
   useDomainWriteGuard(!!recordsState.childName || !!reviewName, creating || createUnknown, "account");
   usePreviewLeaveGuard((!!recordsState.childName || !!reviewName) && !creating && !createUnknown, false, "account");
   const managementLocked = !!recovery?.pending || !!recordsState.busy || createUnknown || !!recordsState.deletion;
-  const childPicker = <View style={styles.childManagement}>
+  const childPicker = <View style={styles.management}>
+    <View style={styles.childManagement}>
     <ManualFormDialog label="新增孩子" scopeKey={identityKey ?? "no-identity"} disabled={!!recordsState.deletion}
       onClose={() => { if (!creating && !createUnknown) { controller.setChildName(""); setReviewName(null); } }}>
       <Text>填寫孩子稱呼即可建立；其餘資料可以稍後補充。只有獲授權成員可讀取共享資料，私人聊天保持私有。</Text>
@@ -51,8 +55,14 @@ function ProfileContent() {
       </> : null}
 
     </ManualFormDialog>
-    {child?.accessRole === "owner" ? <AppButton label="刪除目前孩子" accessibilityLabel="永久刪除目前孩子及其資料" variant="quiet" disabled={!online || managementLocked || workspace?.model.operation.state === "conflict"}
-      onPress={() => homeActions.deleteChildPreview(child.id)} /> : null}
+      {child?.accessRole === "owner" ? <AppButton label="管理" accessibilityLabel="管理目前孩子" variant="quiet" density="compact" expanded={managementOpen} onPress={() => setManagementOpen(value => !value)} /> : null}
+    </View>
+    {child?.accessRole === "owner" ? <MotionDisclosure expanded={managementOpen} scopeKey={`${identityKey}:${child.id}`} testID="profile-child-management">
+      <SectionCard><Text>目前孩子：{child.displayName}</Text>
+        <AppButton label="刪除目前孩子" accessibilityLabel="永久刪除目前孩子及其資料" variant="danger-secondary" disabled={!online || managementLocked || workspace?.model.operation.state === "conflict"}
+          onPress={() => homeActions.deleteChildPreview(child.id)} />
+      </SectionCard>
+    </MotionDisclosure> : null}
   </View>;
   if (!workspace) return <>{childPicker}<SectionCard><Text>{child ? "正在讀取孩子檔案…" : "先填一個稱呼建立孩子，便可以跟助手交代事情；其他資料可稍後補充。"}</Text></SectionCard></>;
   const { model, actions } = workspace;
@@ -71,12 +81,7 @@ export default function ProfilePage() {
   return <PageFrame density="compact" title="檔案"><ProfileContent key={identityKey ?? "no-identity"} /></PageFrame>;
 }
 const styles = StyleSheet.create({
-  childBar: { borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.lg },
-  childOptions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, childManagement: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
+  management: { gap: spacing.md, minWidth: 0 },
+  childManagement: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
   review: { backgroundColor: colors.paleAmber, borderRadius: radius.small, padding: spacing.md, gap: spacing.md },
-  childOption: { backgroundColor: colors.controlSurface, flexGrow: 1, flexBasis: 180, minHeight: 48, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.sm,
-    borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  childOptionActive: { backgroundColor: colors.selectedNav, borderColor: colors.teal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedPressed },
-  childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "700" },
-  meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },
 });

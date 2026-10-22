@@ -7,7 +7,6 @@ import { careKindOptions, type CareKind } from "../care-view-model";
 import { ReadStateNotice } from "../components/ReadStateNotice";
 import { PageFrame } from "../components/PageFrame";
 import { CareRecordsView } from "../components/care/CareRecordsView";
-import { CareSavedRecordsView } from "../components/care/CareSavedRecordsView";
 import { AppDialog } from "../components/AppDialog";
 import { AppScrollView } from "../components/AppScrollView";
 import { agentRunLabels } from "../agent-view-model";
@@ -88,18 +87,13 @@ function CareWorkspace({ initialKind, initialRecordId }: { initialKind?: CareKin
     if (initialRecordId) workspace.actions.openRecord(initialRecordId);
     else if (initialKind) workspace.actions.startCreate(initialKind);
   }, [workspace?.scopeKey, workspace?.model.list.state, workspace?.model.online, workspace?.model.access, recovery?.pending, externalLocked, initialKind, initialRecordId]);
-  if (!workspace) return <PageFrame title="記錄" density="compact"><ReadStateNotice state="loading" message="正在讀取記錄…" /></PageFrame>;
+  if (!workspace) return <PageFrame title="核對" density="compact"><ReadStateNotice state="loading" message="正在讀取記錄…" /></PageFrame>;
   const { model, actions } = workspace, panelOpen = !!model.detail || !!model.draft || !!model.deletion;
   return <CareRecordsView manualCreateFocusRef={manualCreateTrigger} model={model} actions={actions} initialRecordId={model.detail?.record.id ?? initialRecordId}
+    manualCreateAction={!panelOpen && model.access === "editable" ? <AppButton ref={manualCreateTrigger} label="手動新增" accessibilityLabel="手動新增共享記錄" density="compact" variant="secondary" disabled={!model.online || !!recovery?.pending || externalLocked} onPress={() => actions.startCreate()} /> : undefined}
     onReviewHistory={() => navigate(() => router.push("/history?category=review"))}
     onOlderPending={() => navigate(() => router.push("/history?category=review&status=pending&older=1"))}
-    previewControls={<>
-      {!panelOpen ? <SectionCard surface="plain"><SectionHeader density="compact" title="查找已保存記錄"
-        action={model.access === "editable" ? <AppButton ref={manualCreateTrigger} label="手動新增共享記錄" disabled={!model.online || !!recovery?.pending || externalLocked} onPress={() => actions.startCreate()} /> : undefined} />
-        <CareSavedRecordsView model={model} actions={actions} />
-      </SectionCard> : null}
-      <AgentPendingReview />
-    </>} />;
+    previewControls={<AgentPendingReview />} />;
 }
 
 export default function CarePage() {
@@ -113,7 +107,7 @@ export default function CarePage() {
   if (child && requestedView === "photos") return <PhotoWorkspace key={scopeKey ?? "no-child"} capturePreferred={false} onCare={() => navigate(() => router.push("/care"))} />;
   const initialRecordId = typeof recordId === "string" ? recordId : typeof record === "string" ? record : undefined;
   return child && scopeKey ? <CareWorkspace key={scopeKey} initialKind={initialKind} initialRecordId={initialRecordId} />
-    : <PageFrame density="compact" title="記錄" description="選擇有權查看的孩子，再核對 Agent 整理的內容。"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    : <PageFrame density="compact" title="核對" description="選擇有權查看的孩子，再核對 Agent 整理的內容。"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }
 
 const styles = StyleSheet.create({ resultDialog: { maxWidth: 860 }, resultScroll: { paddingHorizontal: 0, flexShrink: 1 }, resultContent: { padding: spacing.lg, gap: spacing.md } });

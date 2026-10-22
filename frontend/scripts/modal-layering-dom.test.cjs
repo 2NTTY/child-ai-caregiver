@@ -49,10 +49,10 @@ function load(file) {
     if (name === 'react-native-paper') return {Text: p => e('p', null, p.children), Portal: PaperPortal};
     if (name.endsWith('/AppDialog')) return {AppDialog: Dialog};
     if (name.endsWith('/AppScrollView')) return {AppScrollView: p => e('div', null, p.children)};
-    if (name.endsWith('/ui')) return {AppButton: Button, AppTextField: Field, SectionCard: Group, SectionHeader: () => null, AppTabPanel: Group, UnderlineTabs: () => null,
+    if (name.endsWith('/ui')) return {AppButton: Button, AppTextField: Field, SectionCard: Group, SectionHeader: () => null, AppTabPanel: Group, UnderlineTabs: () => null, TabToolbar: ({children, actions}) => e(native.View, null, children, actions),
       AppSelect: ({label, value, options, onChange, disabled}) => e('select', {'aria-label': label, value, disabled, onChange: event => onChange(event.target.value)}, options.map(o => e('option', {key: o.value, value: o.value}, o.label)))};
     if (name.endsWith('/FormErrorSummary')) return {FormErrorSummary: () => null, FormFieldMessage: () => null};
-    if (name.endsWith('/useContainerWidth')) return {useContainerWidth: () => ({width: 320, ref: null, onLayout() {}})};
+    if (name.endsWith('/useContainerWidth')) return {useContainerWidth: () => ({width: 320, ref: React.useRef(null), onLayout() {}})};
     if (name.endsWith('/motion')) return {MotionDetail: Group, MotionDisclosure: Group, MotionList: () => null};
     if (name.endsWith('/TaskForm')) return {TaskForm: Form};
     if (name.endsWith('/TaskContent')) return {taskAssigneeLabel: () => 'Synthetic parent'};
@@ -173,7 +173,7 @@ test('real source composer local RHF draft survives stay and preserves productio
   await React.act(async () => renderer.render(null));
 });
 
-test('real TasksView returns once to its stable heading across a read beginning after approved close', async () => {
+test('real TasksView returns once to its stable named region across a read beginning after approved close', async () => {
   const TasksView = load('src/components/tasks/TasksView.tsx').TasksView;
   const model = {child: {id: 'synthetic-child', displayName: 'Synthetic child'}, access: 'editable', online: true, readState: 'ready', reading: false, loadingMoreTasks: false,
     items: [], eligibleAssignees: [], histories: {}, reminders: [], work: [], selected: null, draft: null, hasMoreTasks: false,
@@ -190,6 +190,9 @@ test('real TasksView returns once to its stable heading across a read beginning 
   model.reading = true; await draw();
   if (document.activeElement === button('手動新增') && button('手動新增').disabled) { document.body.tabIndex = -1; document.body.focus(); }
   assert.equal(document.activeElement.getAttribute('aria-label'), '待辦', 'a read beginning after close must not remove the logical return focus');
+  assert.equal(document.activeElement.getAttribute('role'), 'region');
+  assert.equal(document.activeElement.getAttribute('data-page-surface'), 'true');
+  assert.equal([...document.querySelectorAll('[role="heading"],h1,h2,h3')].some(node => node.textContent.trim() === '待辦'), false, 'The same named return region needs no duplicate visible page heading');
   const stableHeading = document.activeElement;
   model.reading = false; await draw(); assert.equal(document.activeElement, stableHeading);
   button('手動新增').focus(); model.reading = true; await draw(); model.reading = false; await draw();
@@ -223,6 +226,46 @@ test('a retained narrow detail uses its visible fallback instead of the hidden l
 });
 
 
+test('an owner-backed close survives same-projection renders after dirty stay and retry', async () => {
+  let projection = { open: false, key: 'owner-form' }, closes = 0;
+  function OwnerPage() {
+    const trigger = React.useRef(null);
+    return e(PreviewNavigationGuard, null,
+      e(Button, {ref: trigger, label: 'Owner create', onPress() {projection = {...projection, open: true}; draw();}}),
+      e(FormDialog, {visible: projection.open, scopeKey: 'child-a', formKey: projection.key, title: 'Owner form', returnFocusRef: trigger,
+        closeOutcome: {revision: projection, ready: !projection.open}, onClose() {closes++;}}, e(Form)));
+  }
+  async function draw() {await React.act(async () => renderer.render(paper(e(OwnerPage))));}
+  dirty = true; pending = false; await draw(); await click('Owner create');
+  await click('關閉'); await click('繼續編輯'); assert.equal(closes, 0); assert.ok(document.querySelector('input'));
+  await click('關閉'); projection = {...projection}; await draw();
+  await click('捨棄草稿並離開'); assert.equal(closes, 1);
+  await draw(); assert.ok(document.querySelector('input'), 'Unchanged owner projection does not erase or accept the pending close');
+  projection = {...projection, open: false}; await draw();
+  assert.equal(document.querySelector('input'), null); assert.equal(document.activeElement, button('Owner create'));
+  await React.act(async () => renderer.render(null));
+});
+
+for (const transition of ['form', 'scope', 'reopen', 'unmount']) test(`an approved stale close cannot act after ${transition}`, async () => {
+  let scope = 'child-a', key = 'form-a', open = true, mounted = true, closes = 0;
+  function ChangingPage() {
+    const trigger = React.useRef(null);
+    return e(PreviewNavigationGuard, null, e(Button, {ref: trigger, label: 'Stable owner trigger', onPress() {}}),
+      mounted ? e(FormDialog, {visible: open, scopeKey: scope, formKey: key, title: 'Changing form', returnFocusRef: trigger,
+        onClose() {closes++;}}, e(Form)) : null);
+  }
+  async function draw() {await React.act(async () => renderer.render(paper(e(ChangingPage))));}
+  dirty = true; pending = false; await draw(); await click('關閉'); assertTopDialog('捨棄草稿並離開');
+  if (transition === 'form') key = 'form-b';
+  if (transition === 'scope') scope = 'child-b';
+  if (transition === 'unmount') mounted = false;
+  if (transition === 'reopen') {open = false; await draw(); open = true;}
+  await draw(); await click('捨棄草稿並離開');
+  assert.equal(closes, 0, 'A stale guard callback cannot close the replacement or unmounted form');
+  assert.equal(!!document.querySelector('input'), mounted);
+  await React.act(async () => renderer.render(null));
+});
+
 test('a create trigger remounted after closing remains the explicit return target', async () => {
   let open = false;
   function RemountedPage() {
@@ -238,8 +281,8 @@ test('a create trigger remounted after closing remains the explicit return targe
   const screen = fs.readFileSync(path.join(root, 'src/screens/careScreen.tsx'), 'utf8');
   const page = fs.readFileSync(path.join(root, 'src/components/care/CareRecordsView.tsx'), 'utf8');
   const view = fs.readFileSync(path.join(root, 'src/components/care/CareReviewHistoryView.tsx'), 'utf8');
-  assert.match(screen, /CareRecordsView manualCreateFocusRef=\{manualCreateTrigger\}/); assert.match(screen, /AppButton ref=\{manualCreateTrigger\} label="手動新增共享記錄"/);
+  assert.match(screen, /CareRecordsView manualCreateFocusRef=\{manualCreateTrigger\}/); assert.match(screen, /AppButton ref=\{manualCreateTrigger\} label="手動新增" accessibilityLabel="手動新增共享記錄"/);
   assert.match(page, /CareReviewWorkspace manualCreateFocusRef=\{manualCreateFocusRef\}/);
-  assert.match(view, /returnFocusRef=\{returnToCreate.current && manualCreateFocusRef \? manualCreateFocusRef : listRef\}/);
+  assert.match(view, /returnFocusRef=\{returnToCreate.current && manualCreateFocusRef \? manualCreateFocusRef : showPanel \? panelRef : listRef\}/);
   await React.act(async () => renderer.unmount());
 });

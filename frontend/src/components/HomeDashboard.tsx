@@ -12,15 +12,13 @@ import { HomeOngoing } from "./HomeOngoing";
 import { HomeQuickActions } from "./HomeQuickActions";
 import { HomeActionSummary } from "./HomeFocus";
 import { HomeTodayHeading, HomeWelcome } from "./HomeWelcome";
-import { HomeBackdrop } from "./appearance/HomeBackdrop";
-import { useBackground } from "../preview/BackgroundContext";
+import { BackgroundSurface } from "./appearance/BackgroundSurface";
 import { HomeGuideCallout } from "./HomeGuideCallout";
 
 export function HomeDashboard({ model, actions, introductionPending = false, onIntroductionPresented }: {
   model: HomeViewModel; actions: HomeActions; introductionPending?: boolean; onIntroductionPresented?: () => void;
 }) {
   const { width: windowWidth } = useWindowDimensions();
-  const customBackground = !!useBackground().selected;
   const scrollRef = useRef<NativeScrollView | null>(null);
   const [width, setWidth] = useState(900);
   const stacked = Math.min(width, windowWidth) < 760;
@@ -31,9 +29,9 @@ export function HomeDashboard({ model, actions, introductionPending = false, onI
   }, [windowWidth]);
   const knownNoChildren = model.profileLoad === "ready" && model.children.length === 0;
   if (windowWidth < 650) return <MobileHomeDashboard model={model} actions={actions} introductionPending={introductionPending} onIntroductionPresented={onIntroductionPresented} />;
-  return <HomeBackdrop><ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={[styles.page, windowWidth < 900 && styles.floatingInputClearance]} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+  return <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={[styles.page, windowWidth < 900 && styles.floatingInputClearance]} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <HomeWelcome introductionPending={introductionPending} onIntroductionPresented={onIntroductionPresented} scopeKey={homeAgentScope(model) ?? model.caregiverName} />
-    <View style={[styles.content, customBackground && styles.readingSurface]}>
+    <BackgroundSurface padded frosted testID="home-reading-panel" style={styles.content}>
       <HomeTodayHeading />
       <HomeGuideCallout status={model.guideStatus} onOpenGuide={() => actions.open("guide")} onOpenSettings={() => actions.open("settings")} />
       {knownNoChildren && model.guideStatus === "complete" ? <SectionCard><Text style={styles.rowTitle}>先建立第一位孩子的檔案</Text><Text style={styles.meta}>只填已知資料；未知及約數都可以如實保留。</Text><AppButton label="建立孩子檔案" onPress={() => actions.open("profile")} /></SectionCard> : null}
@@ -47,12 +45,11 @@ export function HomeDashboard({ model, actions, introductionPending = false, onI
           <HomeActionSummary model={model} actions={actions} />
         </View>
       </View>
-    </View>
-  </ScrollView></HomeBackdrop>;
+    </BackgroundSurface>
+  </ScrollView>;
 }
 const styles = StyleSheet.create({
   scroll: { flex: 1 }, page: { width: "100%", maxWidth: 1160, alignSelf: "center", padding: spacing.xl },
-  readingSurface: { backgroundColor: colors.canvas, padding: spacing.md },
   floatingInputClearance: { paddingBottom: 88 }, content: { gap: spacing.lg },
   grid: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xl }, gridStack: { flexDirection: "column" },
   column: { flex: 1, minWidth: 0, width: "100%", gap: spacing.lg }, mainColumn: { flex: 2 },

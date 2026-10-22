@@ -19,7 +19,7 @@ export default function MoreScreen() {
   const catalogueLayout = useContainerWidth();
   const columns = moreCatalogueColumns(catalogueLayout.width);
   const groupWidth = (catalogueLayout.width - spacing.lg * (columns - 1)) / columns;
-  return <PageFrame density="compact" title="全部功能" description="按用途找照顧、資料與管理入口。">
+  return <PageFrame density="compact" title="全部功能">
     <View ref={catalogueLayout.ref} onLayout={catalogueLayout.onLayout} testID={desktop ? "more-desktop-catalogue" : "more-mobile-list"}
       style={[styles.groups, desktop && styles.catalogue]}>{groups.map(group => <View key={group.title} style={[styles.group, desktop && styles.catalogueGroup, desktop && { width: groupWidth }]}>
       <View style={styles.heading}><Text accessibilityRole="header" style={styles.title}>{group.title}</Text><Text style={styles.detail}>{group.detail}</Text></View>

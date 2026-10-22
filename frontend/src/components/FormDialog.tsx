@@ -7,9 +7,11 @@ import { AppScrollView } from "./AppScrollView";
 import { AppButton } from "./ui";
 
 /** Presentation only: the existing form and owner still own drafts, writes and recovery. */
-export function FormDialog({ visible, scopeKey, title, children, recovery, onClose, returnFocusRef, fallbackFocusRef, formKey }: {
+export function FormDialog({ visible, scopeKey, title, children, recovery, onClose, returnFocusRef, fallbackFocusRef, formKey, closeOutcome }: {
   visible: boolean; scopeKey: string; title: string; children: ReactNode; recovery?: ReactNode;
   onClose(): void; returnFocusRef?: RefObject<View | null>; fallbackFocusRef?: RefObject<View | null>; formKey?: string | number;
+  /** Optional owner projection acknowledgement; ordinary local-state dialogs need no port. */
+  closeOutcome?: { revision: unknown; ready: boolean };
 }) {
   const leave = usePreviewNavigation();
   const mounted = useRef(true);
@@ -18,25 +20,42 @@ export function FormDialog({ visible, scopeKey, title, children, recovery, onClo
   if (generation.current.scopeKey !== scopeKey || generation.current.formKey !== formKey || !generation.current.visible && visible) generation.current.value++;
   generation.current = { visible, scopeKey, formKey, value: generation.current.value };
   const openedGeneration = generation.current.value;
-  const current = useRef({ visible, scopeKey, onClose }); current.current = { visible, scopeKey, onClose };
-  const closedScope = useRef<string | null>(null);
+  const current = useRef({ visible, scopeKey, onClose, closeOutcome }); current.current = { visible, scopeKey, onClose, closeOutcome };
+  const closeRequest = useRef<{ scopeKey: string; generation: number; closedGeneration: number | null; revision: unknown; outcomeObserved: boolean } | null>(null);
+  const request = closeRequest.current;
+  if (request) {
+    if (request.scopeKey !== scopeKey || visible && request.generation !== openedGeneration) closeRequest.current = null;
+    else {
+      // Only a new owner projection can acknowledge or reject an owner-backed close.
+      if (closeOutcome && !request.outcomeObserved && request.revision !== closeOutcome.revision) {
+        request.outcomeObserved = true;
+        if (visible || !closeOutcome.ready) closeRequest.current = null;
+      }
+      if (closeRequest.current && !visible) {
+        if (closeOutcome && !closeOutcome.ready || request.closedGeneration !== null && request.closedGeneration !== openedGeneration) closeRequest.current = null;
+        else request.closedGeneration = openedGeneration;
+      }
+    }
+  }
   const close = () => leave(() => {
     if (!mounted.current || generation.current.value !== openedGeneration || !current.current.visible || current.current.scopeKey !== scopeKey) return;
-    closedScope.current = scopeKey;
+    closeRequest.current = { scopeKey, generation: openedGeneration, closedGeneration: null, revision: current.current.closeOutcome?.revision, outcomeObserved: false };
     current.current.onClose();
   });
   const closed = () => {
-    if (closedScope.current === current.current.scopeKey && !current.current.visible && Platform.OS === "web") {
+    const request = closeRequest.current, outcome = current.current.closeOutcome;
+    if (request?.scopeKey === current.current.scopeKey && request.closedGeneration === generation.current.value && !current.current.visible && (!outcome || request.outcomeObserved && outcome.ready) && Platform.OS === "web") {
       for (const ref of [returnFocusRef, fallbackFocusRef]) {
         const host = ref?.current as unknown as HTMLElement | null;
         const target = host?.matches?.('button,[role="button"],[tabindex]') ? host : host?.querySelector<HTMLElement>('button,[role="button"],[tabindex]');
         if (!mounted.current || !target?.isConnected || target.hasAttribute?.("disabled") || target.getAttribute?.("aria-disabled") === "true"
           || target.closest?.('[aria-hidden="true"]') || target.getClientRects && !target.getClientRects().length) continue;
+        if (typeof document !== "undefined" && document.activeElement === target) break;
         target.focus({ preventScroll: true });
         if (typeof document !== "undefined" && document.activeElement === target) break;
       }
     }
-    closedScope.current = null;
+    closeRequest.current = null;
   };
   // RN Modal already portals natively; a Paper Portal here would lose page/owner contexts.
   return <AppDialog visible={visible} onDismiss={close} onClosed={closed} accessibilityLabel={title} style={styles.dialog} testID="manual-form-dialog">

@@ -78,8 +78,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     const changed = previousPath.current !== pathname; previousPath.current = pathname;
     if (!changed || Platform.OS !== "web") return;
-    const heading = (routeSurface.current as unknown as HTMLElement | null)?.querySelector<HTMLElement>('[role="heading"],h1,h2');
-    if (heading) { heading.tabIndex = -1; heading.focus({ preventScroll: true }); }
+    const surface = routeSurface.current as unknown as HTMLElement | null;
+    const target = surface?.querySelector<HTMLElement>('[data-page-surface="true"]') ?? surface?.querySelector<HTMLElement>('[role="heading"],h1,h2');
+    if (target) { target.tabIndex = -1; target.focus({ preventScroll: true }); }
   }, [pathname]);
   const [railModal, setRailModal] = useState(false);
   const railContext = useRef({ path: pathname, scope: "" });
@@ -157,7 +158,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, flexDirection: "row", minHeight: 0, backgroundColor: colors.canvas },
+  root: { flex: 1, flexDirection: "row", minHeight: 0 },
   pressed: { backgroundColor: colors.paleTeal }, scenarioPressed: { backgroundColor: colors.inkPressed },
   sidebar: { width: 216, minHeight: 0, backgroundColor: colors.sidebar, borderRightColor: colors.line, borderRightWidth: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.xs },
   brandLink: { width: "100%", minHeight: 93, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },

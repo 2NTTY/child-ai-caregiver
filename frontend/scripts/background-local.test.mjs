@@ -51,17 +51,104 @@ test('scope changes and logout synchronously hide the old picture and reject lat
   assert.equal(read.value().selected, b); assert.equal(readLate.released, 1);
 });
 
-test('selected backgrounds are persistent Home decoration, not children of the transient greeting', () => {
-  const source = readFileSync(new URL('../src/components/HomeDashboard.tsx', import.meta.url), 'utf8');
-  const mobile = readFileSync(new URL('../src/components/MobileHomeDashboard.tsx', import.meta.url), 'utf8');
-  assert.ok(source.includes('return <HomeBackdrop><ScrollView')); assert.ok(mobile.includes('return <HomeBackdrop><ScrollView'));
-  for (const code of [source, mobile]) assert.ok(code.includes('customBackground && styles.readingSurface'));
-  const mocks = { '../../preview/BackgroundContext': { useBackground: () => ({ selected: picture('synthetic'), source: { uri: 'blob:synthetic' }, imageFailed() {} }) } };
-  const h = harness(mocks), { HomeBackdrop } = h.load('src/components/appearance/HomeBackdrop.tsx');
-  h.render(h.jsx(HomeBackdrop, { children: null })); // Greeting absent/settled: backdrop is still mounted.
-  assert.ok(h.node('custom-home-background'));
+test('the authenticated shell owns one background and Home has one compact reading glass panel', () => {
+  const layout = readFileSync(new URL('../app/(dashboard)/_layout.tsx', import.meta.url), 'utf8');
+  assert.match(layout, /<ProductionGate><BackgroundProvider key=\{identityKey\} scope=\{backgroundScope\}><ProductionDomains>/);
+  assert.match(layout, /<AppBackdrop>\{Platform.OS/);
+  assert.match(layout, /JSON.stringify\(\[owner.apiBaseUrl, user.id\]\)/);
+  for (const file of ['HomeDashboard.tsx', 'MobileHomeDashboard.tsx']) {
+    const code = readFileSync(new URL('../src/components/' + file, import.meta.url), 'utf8');
+    assert.ok(!code.includes('HomeBackdrop') && !code.includes('readingSurface'));
+    assert.ok(code.includes('<HomeWelcome') && code.includes('<BackgroundSurface padded frosted'));
+    assert.equal((code.match(/<BackgroundSurface\b/g) ?? []).length, 1);
+    assert.ok(code.includes('testID="home-reading-panel"'));
+    assert.ok(code.indexOf('<HomeWelcome') < code.indexOf('<BackgroundSurface'), 'greeting lifecycle stays outside the reading panel');
+  }
+  const mocks = {
+    '../../theme': { colors: { paper: '#FFFFFE', canvas: '#F7FCFC' }, radius: { medium: 16 }, spacing: { lg: 16 } },
+    '../../preview/BackgroundContext': { useBackground: () => background },
+  };
+  const selected = picture('synthetic'), failures = [];
+  let background = { selected, source: { uri: selected.uri }, imageFailed: image => failures.push(image) };
+  const h = harness(mocks), { AppBackdrop } = h.load('src/components/appearance/AppBackdrop.tsx');
+  h.render(h.jsx(AppBackdrop, { children: null }));
+  assert.equal(h.hosts().filter(node => node.props.testID === 'custom-app-background').length, 1);
   assert.ok(h.hosts().some(node => node.props.pointerEvents === 'none' && node.props['aria-hidden']));
-  assert.equal(h.node('custom-home-background').props.accessible, false);
+  assert.equal(h.node('custom-app-background').props.accessible, false);
+  h.node('custom-app-background').props.onError(); assert.deepEqual(failures, [selected]);
+  background = { ...background, selected: null }; h.render(); assert.equal(h.node('custom-app-background'), undefined);
+});
+
+test('one reading panel suppresses additional glass without changing original solid card styles or native fallback', () => {
+  const h = harness({ '../../theme': { colors: { paper: '#FFFFFE' }, radius: { medium: 16 }, spacing: { lg: 16 } } });
+  const { BackgroundSurface, BackgroundSurfaceProvider } = h.load('src/components/appearance/BackgroundSurface.tsx');
+  const flatten = value => Array.isArray(value) ? Object.assign({}, ...value.filter(Boolean).map(flatten)) : value || {};
+  const children = h.jsx(BackgroundSurface, { testID: 'module', padded: true, frosted: true, children: h.jsx(BackgroundSurface, { testID: 'nested', padded: true, style: { backgroundColor: '#E3F6F5', borderRadius: 12, padding: 8 } }) });
+  h.render(children); assert.deepEqual(flatten(h.node('module').props.style), {});
+  h.render(h.jsx(BackgroundSurfaceProvider, { active: true, children }));
+  assert.equal(flatten(h.node('module').props.style).backgroundColor, '#FFFFFE');
+  assert.equal(flatten(h.node('module').props.style).padding, 16);
+  assert.deepEqual(flatten(h.node('nested').props.style), { backgroundColor: '#E3F6F5', borderRadius: 12, padding: 8 }, 'deduplication must never strip an original card');
+  h.render(h.jsx(BackgroundSurfaceProvider, { active: false, children }));
+  assert.deepEqual(flatten(h.node('module').props.style), {});
+});
+
+test('Web frost has a fixed blur, opaque unsupported/reduced-transparency fallbacks and no per-message blur', () => {
+  const css = readFileSync(new URL('../src/components/appearance/backgroundSurface.css', import.meta.url), 'utf8');
+  assert.match(css, /@supports/); assert.match(css, /blur\(12px\)/);
+  assert.match(css, /prefers-reduced-transparency: reduce/); assert.match(css, /forced-colors: active/);
+  assert.match(css, /backdrop-filter: none/); assert.match(css, /0\.84/); assert.match(css, /0\.94/);
+  const message = readFileSync(new URL('../src/components/chat/ChatMessage.tsx', import.meta.url), 'utf8');
+  assert.ok(!message.includes('BackgroundSurface') && !message.includes('frosted'), 'original message bubbles are not glass surfaces');
+  const settings = readFileSync(new URL('../src/components/appearance/BackgroundSettings.tsx', import.meta.url), 'utf8');
+  assert.ok(settings.includes('應用背景') && settings.includes('首頁、聊天及其他頁面'));
+});
+
+test('shared pages retain visible named regions without repeated title text or empty header spacing', () => {
+  const theme = { colors: { paper: '#FFFFFE', canvas: '#F7FCFC' }, radius: { medium: 16 }, spacing: { lg: 16 }, mobileLayout: { breakpoint: 650 }, mobileType: {}, typeScale: {} };
+  const h = harness({ '../../theme': theme, '../theme': theme,
+    './useContainerWidth': { useContainerWidth: () => ({ width: 390, ref: { current: null }, onLayout() {} }) },
+    './AppScrollView': { AppScrollView: 'ScrollView' } });
+  const { PageFrame } = h.load('src/components/PageFrame.tsx');
+  h.render(h.jsx(PageFrame, { title: '檔案', children: h.jsx('Text', { children: 'Known profile' }) }));
+  const region = h.hosts().find(node => node.props.role === 'region');
+  assert.equal(region.props.accessibilityLabel, '檔案'); assert.equal(region.props.tabIndex, -1);
+  assert.equal(region.props.dataSet.pageSurface, 'true');
+  assert.equal(h.hosts().some(node => node.props.children === '檔案'), false);
+  assert.equal(h.hosts().filter(node => node.type === 'View').length, 2, 'only the named page region and single reading panel remain; no empty heading wrapper');
+  assert.ok(h.node('page-reading-panel'));
+  h.render(h.jsx(PageFrame, { title: '歷史', description: 'Keep useful description', headerActions: h.jsx('Button', { label: 'History action' }), children: null }));
+  assert.ok(h.hosts().some(node => node.props.children === 'Keep useful description'));
+  assert.ok(h.hosts().some(node => node.props.label === 'History action'));
+  const shell = readFileSync(new URL('../src/components/AppShell.tsx', import.meta.url), 'utf8');
+  assert.match(shell, /querySelector<HTMLElement>\('\[data-page-surface="true"\]'\)/);
+});
+
+
+test('shared page glass is exactly one layer, while nested wrappers and original card styles are preserved', () => {
+  const theme = { colors: { paper: '#FFFFFE', canvas: '#F7FCFC' }, radius: { medium: 16 }, spacing: { lg: 16 }, mobileLayout: { breakpoint: 650 }, mobileType: {}, typeScale: {} };
+  const h = harness({ '../../theme': theme, '../theme': theme,
+    './background-surface-style': { backgroundSurfaceProps: frosted => ({ dataSet: { backgroundSurface: frosted ? 'frosted' : 'tint' } }) },
+    './useContainerWidth': { useContainerWidth: () => ({ width: 390, ref: { current: null }, onLayout() {} }) },
+    './AppScrollView': { AppScrollView: 'ScrollView' } });
+  const { PageFrame } = h.load('src/components/PageFrame.tsx');
+  const { BackgroundSurface, BackgroundSurfaceProvider } = h.load('src/components/appearance/BackgroundSurface.tsx');
+  h.render(h.jsx(BackgroundSurfaceProvider, { active: true, children: h.jsx(PageFrame, { title: '記錄', description: 'Keep the existing description', children:
+    h.jsx(BackgroundSurface, { testID: 'nested-bare', padded: true, frosted: true, dataSet: { pageSurface: 'true' }, children: h.jsx('View', { testID: 'original-card', style: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16 } }) }) }) }));
+  assert.deepEqual(h.hosts().filter(node => node.props.dataSet?.backgroundSurface).map(node => node.props.testID), ['page-reading-panel']);
+  assert.deepEqual(h.node('original-card').props.style, { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16 });
+  assert.equal(h.node('nested-bare').props.dataSet.pageSurface, 'true');
+  h.render(h.jsx(BackgroundSurfaceProvider, { active: true, children: h.jsx(BackgroundSurface, { frosted: true, testID: 'tasks-panel', dataSet: { pageSurface: 'true' } }) }));
+  assert.deepEqual(h.node('tasks-panel').props.dataSet, { pageSurface: 'true', backgroundSurface: 'frosted' }, 'the glass decoration must preserve route/modal focus markers');
+  const ui = readFileSync(new URL('../src/components/ui.tsx', import.meta.url), 'utf8');
+  const sectionCard = ui.slice(ui.indexOf('export function SectionCard'), ui.indexOf('export function SectionHeader'));
+  assert.match(sectionCard, /return <View/); assert.ok(!sectionCard.includes('BackgroundSurface'));
+  const important = readFileSync(new URL('../src/components/HomeAgentImportant.tsx', import.meta.url), 'utf8');
+  assert.ok(!important.includes('importantOnBackground'));
+  for (const [file, marker] of [['components/tasks/TasksView.tsx', 'tasks-reading-panel'], ['screens/chatScreen.tsx', 'chat-reading-panel']]) {
+    const code = readFileSync(new URL('../src/' + file, import.meta.url), 'utf8');
+    assert.equal((code.match(new RegExp('testID="' + marker + '"', 'g')) ?? []).length, 1);
+  }
 });
 
 function compile(file, resolve, withoutGlobalCrypto = false) {

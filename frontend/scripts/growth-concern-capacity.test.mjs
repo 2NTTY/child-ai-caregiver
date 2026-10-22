@@ -33,6 +33,7 @@ function harness(component, initialProps, workspace = null) {
       if (name.endsWith("/growth-styles")) return { growthStyles: {} };
       if (name.endsWith("/theme")) return { chineseFont: "", colors: {}, mobileLayout: { breakpoint: 650, touchTarget: 44 }, radius: {}, spacing: {} };
       if (name.endsWith("/AppDialog")) return { AppDialog };
+      if (name.endsWith("/BackgroundSurface")) return { BackgroundSurface: "BackgroundSurface" };
       if (name.endsWith("/ui")) return { AppButton: "AppButton" };
       if (name.endsWith("/GrowthWorkspace")) return { useGrowthWorkspace: () => workspace };
       if (name.endsWith("/useInteractionDensity")) return { useInteractionDensity: () => false };

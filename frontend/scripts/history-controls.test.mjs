@@ -42,6 +42,8 @@ function harness(width = 1024, initialCategory = 'growth') {
     '../components/date-time': {timeZoneLabel: value => value},
     '../preparation-view-model': {searchPreparationHistory: () => []},
     '../components/DateTimeFields': {AppDateField: 'AppDateField'},
+    '../components/appearance/BackgroundSurface': { BackgroundSurface: 'View' },
+    './appearance/BackgroundSurface': { BackgroundSurface: 'View', useCustomBackground: () => false },
     '../components/PageFrame': {PageFrame: 'PageFrame'},
     '../components/ui': {AppButton: 'AppButton', AppSelect: 'AppSelect', AppTabPanel: 'AppTabPanel', AppTextField: 'AppTextField', UnderlineTabs: 'UnderlineTabs'},
     '../components/tasks/TaskHistoryView': {TaskHistoryView: 'TaskHistoryView'},

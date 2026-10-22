@@ -1,3 +1,4 @@
+import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { useRef } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -16,7 +17,7 @@ export function SettingsNavigation<T extends string>({ id, items, value, onChang
     event.preventDefault(); onChange(items[next].key);
     (controls.current.get(items[next].key) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true });
   }
-  return <View style={styles.navigation}>
+  return <BackgroundSurface frosted activeStyle={{ paddingVertical: spacing.md }} style={styles.navigation}>
     <Text style={styles.eyebrow}>設定分類</Text>
     <View accessibilityRole="tablist" accessibilityLabel="設定分類" aria-orientation="vertical" style={styles.items}>
       {items.map((item, index) => <Pressable key={item.key} nativeID={`${id}-tab-${encodeURIComponent(item.key)}`}
@@ -29,7 +30,7 @@ export function SettingsNavigation<T extends string>({ id, items, value, onChang
       </Pressable>)}
     </View>
     <Text style={styles.note}>孩子與家庭的共享權限，仍以目前身份核定</Text>
-  </View>;
+  </BackgroundSurface>;
 }
 
 const styles = StyleSheet.create({

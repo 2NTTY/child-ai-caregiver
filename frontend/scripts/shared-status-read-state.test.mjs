@@ -46,6 +46,7 @@ function harness(entry, symbol, args = [], overrides = {}) {
     const resolve = name => {
       if (name in overrides) return overrides[name];
       if (name === "react") return react;
+      if (name.endsWith("/appearance/BackgroundSurface")) return { BackgroundSurface: "View", useCustomBackground: () => false };
       if (name.endsWith("/motion/preferences")) return { useMotionPreferences: () => ({ enabled: true, reducedMotion: false, preferenceReady: true }) };
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
       if (name === "react-native") return { View: "View", Pressable: "Pressable", StyleSheet: { create: value => value } };

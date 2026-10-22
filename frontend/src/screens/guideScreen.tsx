@@ -17,7 +17,7 @@ const steps: { title: string; description: string; action: string; destination: 
     { title: "普通交代，按授權保存", body: "在助手設定開啟本人普通記錄授權後，可直接交代日常照護情況；重要資料及超出授權的操作仍會清楚詢問。" },
     { title: "只補影響辦事的資料", body: "助手可根據前文補問。推測與未知不當作事實；回答的重要建議應有實際支持的官方來源。" },
   ] },
-  { title: "查看及接續結果", description: "在對話得到回饋，也可在各頁查看同一份結果。", action: "查看照顧記錄", destination: "care", points: [
+  { title: "查看及接續結果", description: "在對話得到回饋，也可在各頁查看同一份結果。", action: "開啟核對", destination: "care", points: [
     { title: "核對重要事項", body: "對話會列清對象及將要修改的內容。待確認事項持續保留，不因關閉面板消失。" },
     { title: "待辦與準備單各有用途", body: "待辦提醒何時做甚麼；準備單整理到了那時怎麼做、要看甚麼。可以請助手修改同一份內容，用完歸檔後仍可找回。" },
     { title: "結果未知先查原操作", body: "收到保存確認才算完成。逾時或斷線後先查原結果，不重做；手動更正是必要時的備援。" },

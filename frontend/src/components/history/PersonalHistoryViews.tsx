@@ -1,3 +1,4 @@
+import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
@@ -27,20 +28,20 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
   if (!owner) return <ReadStateNotice state="unavailable" title="對話歷史暫未提供" />;
   const read = owner.history, matches = visiblePersonalHistory(read, dateRange);
   return <View style={styles.list}>
-    <Text style={styles.meta}>只查閱你與這位孩子的對話。每次最多掃 100 則，返回最多 10 個命中；日期篩選只包括已掃過的結果。</Text>
+    <BackgroundSurface padded><Text style={styles.meta}>只查閱你與這位孩子的對話。每次最多掃 100 則，返回最多 10 個命中；日期篩選只包括已掃過的結果。</Text></BackgroundSurface>
     {read.state === "loading" ? <ReadStateNotice state="loading" title="正在搜尋對話…" />
       : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到對話歷史"><AppButton label="重新搜尋" variant="secondary" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /></ReadStateNotice>
       : read.state === "unavailable" ? <ReadStateNotice state="unavailable" title={owner.online ? "正在準備對話搜尋…" : "連線後才可讀取對話歷史"} />
       : <>
         {read.state === "stale" || !owner.online ? <ReadStateNotice state="stale" title="最新歷史尚未核對" message="目前保留已載入結果。" /> : null}
-        {read.data?.query !== searchText ? <Text style={styles.meta}>正在套用新搜尋條件；以下是先前的結果。</Text> : null}
-        {matches.map(match => <View key={match.id} style={styles.entry} testID={`history-message-${match.id}`}>
+        {read.data?.query !== searchText ? <BackgroundSurface padded><Text style={styles.meta}>正在套用新搜尋條件；以下是先前的結果。</Text></BackgroundSurface> : null}
+        {matches.map(match => <BackgroundSurface padded key={match.id} style={styles.entry} testID={`history-message-${match.id}`}>
           <Text style={styles.meta}>{match.role === "user" ? "你的訊息" : "助手回覆"} · {memoryDateLabel(match.createdAt)}</Text>
           <Text selectable style={styles.body}>{match.excerpt}</Text><Text style={styles.meta}>搜尋摘要，原文尚未完整讀取</Text>
           <AppButton label="查看原文" variant="quiet" density="compact" disabled={!owner.online || owner.busy.message} onPress={() => owner.actions.readMessage(match.id)} />
-        </View>)}
-        {!matches.length ? <Text style={styles.meta}>{read.data?.complete ? "已掃過全部可讀歷史，沒有符合篩選的結果。" : "已掃過的範圍未有符合篩選的結果；可繼續搜尋。"}</Text> : null}
-        {read.data ? <Text style={styles.meta}>已掃 {read.data.scanned} 則 · {read.data.complete ? "本次搜尋已完整掃過可讀歷史" : "搜尋尚未完整，仍有歷史未掃過"}</Text> : null}
+        </BackgroundSurface>)}
+        {!matches.length ? <BackgroundSurface padded><Text style={styles.meta}>{read.data?.complete ? "已掃過全部可讀歷史，沒有符合篩選的結果。" : "已掃過的範圍未有符合篩選的結果；可繼續搜尋。"}</Text></BackgroundSurface> : null}
+        {read.data ? <BackgroundSurface padded><Text style={styles.meta}>已掃 {read.data.scanned} 則 · {read.data.complete ? "本次搜尋已完整掃過可讀歷史" : "搜尋尚未完整，仍有歷史未掃過"}</Text></BackgroundSurface> : null}
         {read.data?.nextCursor ? <AppButton label={owner.busy.history ? "正在繼續搜尋…" : "繼續搜尋歷史"} variant="secondary" disabled={!owner.online || owner.busy.history || read.data.query !== searchText} onPress={owner.actions.moreHistory} /> : null}
         {read.state === "stale" ? <AppButton label="重新搜尋" variant="quiet" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /> : null}
       </>}
@@ -57,20 +58,20 @@ export function PersonalNotificationHistoryView({ searchText, dateRange }: { sea
   if (!owner) return <ReadStateNotice state="unavailable" title="本人通知歷史暫未提供" />;
   const read = owner.notifications, items = visiblePersonalNotifications(read.data?.items ?? [], searchText, dateRange);
   return <View style={styles.list}>
-    <Text style={styles.meta}>搜尋與日期只篩已載入通知。</Text>
+    <BackgroundSurface padded><Text style={styles.meta}>搜尋與日期只篩已載入通知。</Text></BackgroundSurface>
     {read.state === "loading" ? <ReadStateNotice state="loading" title="正在讀取本人通知…" />
       : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到本人通知" message="資料範圍可能已更新，請重新讀取。"><AppButton label="重新讀取本人通知" variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} /></ReadStateNotice>
       : read.state === "unavailable" ? <ReadStateNotice state="unavailable" title={owner.online ? "正在準備通知歷史…" : "連線後才可讀取本人通知"} />
       : <>
         {read.state === "stale" || !owner.online ? <ReadStateNotice state="stale" title="最新通知狀態尚未核對" /> : null}
-        {items.map(item => <View key={item.id} style={styles.entry} testID="personal-notification-entry">
+        {items.map(item => <BackgroundSurface padded key={item.id} style={styles.entry} testID="personal-notification-entry">
           <View style={styles.row}><Text style={styles.title}>{notificationChannelLabel(item)}</Text><AppStatusBadge label={notificationStatusLabels[item.status]} tone={item.status === "unknown" ? "warning" : "neutral"} /></View>
           <Text style={styles.meta}>{notificationTime(item.createdAt ?? item.attemptedAt ?? item.updatedAt)}</Text>
           {item.status === "accepted" && !item.acknowledgedAt ? <Text style={styles.meta}>尚未確認收到</Text> : null}
           {item.status === "unknown" ? <Text style={styles.meta}>結果待核對，未自動重發</Text> : null}
-        </View>)}
-        {!items.length ? <Text style={styles.meta}>{read.data?.complete ? "已載入完整本人通知，沒有符合篩選的項目。" : "已載入頁中沒有符合篩選的項目；仍可載入更多渠道及記錄。"}</Text> : null}
-        {read.data ? <Text style={styles.meta}>{read.data.complete ? "已完整載入" : "尚有通知未載入"} · 已載入 {read.data.items.length} 項</Text> : null}
+        </BackgroundSurface>)}
+        {!items.length ? <BackgroundSurface padded><Text style={styles.meta}>{read.data?.complete ? "已載入完整本人通知，沒有符合篩選的項目。" : "已載入頁中沒有符合篩選的項目；仍可載入更多渠道及記錄。"}</Text></BackgroundSurface> : null}
+        {read.data ? <BackgroundSurface padded><Text style={styles.meta}>{read.data.complete ? "已完整載入" : "尚有通知未載入"} · 已載入 {read.data.items.length} 項</Text></BackgroundSurface> : null}
         {read.data?.nextCursor ? <AppButton label={owner.busy.notifications ? "正在讀取…" : "載入更多本人通知"} variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.moreNotifications} /> : null}
         {read.state === "stale" ? <AppButton label="重新讀取本人通知" variant="quiet" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} /> : null}
       </>}

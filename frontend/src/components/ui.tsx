@@ -11,6 +11,7 @@ import { useInteractionDensity } from "./useInteractionDensity";
 import { MotionEntrance } from "../motion";
 import { MotionSelectionMarker } from "../motion/MotionSelectionMarker";
 import { HorizontalOverflowRail } from "./HorizontalOverflowRail";
+import { BackgroundSurface } from "./appearance/BackgroundSurface";
 import { AppStatusBadge } from "./AppStatusBadge";
 
 export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", density = "standard", disabled = false, loading = false, expanded, style, ref }: {
@@ -198,6 +199,14 @@ export function TextLink({ label, onPress }: { label: string; onPress: () => voi
   );
 }
 
+/** Keep page actions beside the existing scrollable tabs, not in a duplicate page header. */
+export function TabToolbar({ children, actions, testID }: { children: ReactNode; actions?: ReactNode; testID?: string }) {
+  return <BackgroundSurface testID={testID} style={styles.tabToolbar}>
+    <View style={styles.tabToolbarTabs}>{children}</View>
+    {actions ? <View style={styles.tabToolbarActions}>{actions}</View> : null}
+  </BackgroundSurface>;
+}
+
 function tabId(tabsId: string, key: string) { return `${tabsId}-tab-${encodeURIComponent(key)}`; }
 function tabPanelId(tabsId: string, key: string) { return `${tabsId}-panel-${encodeURIComponent(key)}`; }
 
@@ -272,6 +281,9 @@ const styles = StyleSheet.create({
   disclosureLabel: { color: colors.ink, lineHeight: 22, flexShrink: 1 },
   focusedButton: { borderColor: colors.ink },
   buttonPressed: { backgroundColor: colors.pressedOverlay },
+  tabToolbar: { flexDirection: "row", alignItems: "center", minWidth: 0, width: "100%", gap: spacing.sm },
+  tabToolbarTabs: { flex: 1, minWidth: 0 },
+  tabToolbarActions: { flexDirection: "row", alignItems: "center", flexShrink: 0, gap: spacing.sm },
   card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md },
   mobileCard: { borderRadius: mobileLayout.cardRadius, padding: mobileLayout.cardInset },
   insetCard: { borderWidth: 0, borderRadius: radius.small, backgroundColor: colors.quietSurface, padding: spacing.md },

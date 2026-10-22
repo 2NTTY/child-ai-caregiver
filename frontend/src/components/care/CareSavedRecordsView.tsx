@@ -17,7 +17,8 @@ export function CareSavedRecordsView(props: { model: CareRecordsViewModel; actio
   <FormDialog formKey={props.model.draft?.key} visible={!!props.model.draft && props.model.access !== "lost"} scopeKey={props.model.scopeKey ?? props.model.child.id} title="記錄資料" returnFocusRef={returnFocus} onClose={props.actions.closePanel} recovery={<CareWriteNotice {...props} />}>
     {props.model.draft ? <CareRecordForm key={props.model.draft.key} {...props} /> : null}
   </FormDialog></View>; }
-function CareSavedRecordsBody({ model, actions }: { model: CareRecordsViewModel; actions: CareRecordsActions }) {
+export function CareSavedRecordsList(props: { model: CareRecordsViewModel; actions: CareRecordsActions }) { return <CareSavedRecordsBody {...props} inlineDetail={false} />; }
+function CareSavedRecordsBody({ model, actions, inlineDetail = true }: { model: CareRecordsViewModel; actions: CareRecordsActions; inlineDetail?: boolean }) {
   const [query, setQuery] = useState(model.list.activeQuery), [kind, setKind] = useState<CareFilter>(model.list.activeKind);
   const occupied = ["saving", "unknown"].includes(model.operation.state) || !!model.draft || !!model.deletion;
   const loading = ["loading", "loading_more"].includes(model.list.state);
@@ -28,8 +29,8 @@ function CareSavedRecordsBody({ model, actions }: { model: CareRecordsViewModel;
   const readState = loading && !hasSnapshot ? "loading" : model.list.state === "error" ? "error" : model.list.state === "stale" ? hasSnapshot ? "stale" : "unavailable" : model.list.message ? "unavailable" : model.list.records.length ? "ready" : "empty";
   const readMessage = model.list.message ?? (loading && !hasSnapshot ? "正在讀取記錄…" : model.list.state === "error" ? "未能讀取記錄，請重試。" : model.list.state === "stale" ? model.online ? "記錄尚待重新核對。" : "目前離線，記錄尚未核對。" : empty ? filtered ? "沒有符合篩選的已保存記錄" : model.list.hasMore || model.list.hasPrevious ? "此頁暫無已保存記錄" : "暫無已保存記錄" : "");
   if (model.access === "lost") return <ReadStateNotice state="unavailable" message="目前沒有權限查看這個孩子的記錄。" />;
-  if (model.deletion) return <CareRecordDelete model={model} actions={actions} />;
-  if (model.detail) return <CareRecordDetail detail={model.detail} actions={actions} canEdit={model.access === "editable"} online={model.online} />;
+  if (inlineDetail && model.deletion) return <CareRecordDelete model={model} actions={actions} />;
+  if (inlineDetail && model.detail) return <CareRecordDetail detail={model.detail} actions={actions} canEdit={model.access === "editable"} online={model.online} />;
   return <View style={s.workspace}>
     {showSearch ? <><AppTextField label="搜尋已保存記錄" accessibilityLabel="搜尋已保存記錄" value={query} onChangeText={setQuery} maxLength={200} disabled={occupied} />
     <View style={s.controls}><View style={s.filter}><AppSelect<CareFilter> label="種類" value={kind} options={[{ value: "all", label: "全部" }, ...careKindOptions]} onChange={setKind} disabled={occupied} /></View>

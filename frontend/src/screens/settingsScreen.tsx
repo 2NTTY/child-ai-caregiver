@@ -1,3 +1,4 @@
+import { BackgroundSurface } from "../components/appearance/BackgroundSurface";
 import { AdminEntry } from '../production/AdminEntry';
 import { EmptyListCard } from "../components/EmptyListCard";
 import { useContainerWidth } from "../components/useContainerWidth";
@@ -52,7 +53,7 @@ export default function SettingsPage() {
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.workspace, compactNavigation && styles.workspaceStack]}>
     <SettingsNavigation id={tabsId} items={tabs} value={tab} onChange={setTab} compact={compactNavigation} />
     <View style={styles.settingsContent}>
-    <View style={styles.scopeNote}><Text style={styles.muted}>{tab === "children" ? "可存取的孩子" : tab === "assistant" ? "目前孩子" : "本人設定"}</Text></View>
+    <BackgroundSurface padded style={styles.scopeNote}><Text style={styles.muted}>{tab === "children" ? "可存取的孩子" : tab === "assistant" ? "目前孩子" : "本人設定"}</Text></BackgroundSurface>
     <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
       <View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="個人資料" />
@@ -74,11 +75,11 @@ export default function SettingsPage() {
         </SectionCard>
       </View>
     </AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="children" active={tab === "children"}><SectionCard><SectionHeader density="compact" title="孩子設定" />
+    <AppTabPanel tabsId={tabsId} tabKey="children" active={tab === "children"}><SectionCard>
       {model.children.length === 0 ? recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && online ? <EmptyListCard title="目前沒有孩子檔案" /> : <Text style={styles.body}>{recordsState.childrenLoading ? "正在讀取孩子列表…" : recordsState.childrenError ? "孩子列表未能讀取，請重新核對。" : "孩子列表尚未核對。"}</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => leave(() => { actions.selectChild(child.id); actions.open("profile"); })} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
 
     </SectionCard></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><SectionHeader density="compact" title="家庭" subtitle="家庭協作尚未開放。本人聯絡與授權仍可管理。" />
+    <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><Text style={styles.muted}>家庭協作尚未開放。本人聯絡與授權仍可管理。</Text>
       <View style={styles.timeRow}><AppButton label="聯絡" variant="quiet" onPress={() => actions.open("contact")} /></View>
     </SectionCard></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={styles.sections}>

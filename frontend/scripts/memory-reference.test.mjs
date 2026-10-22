@@ -32,14 +32,15 @@ function freeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) { Object.freeze(value); for (const next of Object.values(value)) freeze(next); }
   return value;
 }
-function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuestion } = {}) {
-  const buttons = [];
-  const nativeElement = tag => ({ children }) => React.createElement(tag, null, children);
+function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuestion, tabActions } = {}) {
+  const buttons = [], panels = [], tabLists = [];
+  const nativeElement = tag => ({ children, accessibilityRole }) => React.createElement(tag, accessibilityRole === 'header' ? { role: 'heading' } : null, children);
   const ui = {
     AppButton: props => { buttons.push(props); return React.createElement('button', null, props.label); },
-    AppTabPanel: ({ active, children }) => active ? React.createElement('div', null, children) : null,
+    TabToolbar: ({ children, actions }) => React.createElement('div', null, children, actions),
+    AppTabPanel: props => { panels.push(props); return props.active ? React.createElement('div', null, props.children) : null; },
     SectionHeader: ({ title, subtitle }) => React.createElement('header', null, title, subtitle),
-    UnderlineTabs: ({ items }) => React.createElement('nav', null, items.map(item => item.label).join(' / ')),
+    UnderlineTabs: props => { tabLists.push(props); return React.createElement('nav', null, props.items.map(item => item.label).join(' / ')); },
   };
   const api = compile('../src/components/memory/MemoryReferenceView.tsx', name => {
     if (name === 'react') return { ...React, useState: initial => React.useState(initial === 'long' ? tab : expanded && initial === false ? true : initial) };
@@ -55,6 +56,7 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     if (name === '../../memory-reference-view-model') return projections;
     if (name === '../../workspaces/MemoryReferenceWorkspace') return { useMemoryReferenceWorkspace: () => workspace };
     if (name === '../../theme') return { colors: {}, spacing: {}, radius: {}, readingType: {}, workspaceType: {} };
+    if (name === '../appearance/BackgroundSurface') return { BackgroundSurface: nativeElement('div') };
     if (name === '../AppStatusBadge') return { AppStatusBadge: ({ label }) => React.createElement('span', null, label) };
     if (name === '../ReadStateNotice') return { ReadStateNotice: ({ title, message }) => React.createElement('aside', null, title, message) };
     if (name === '../EmptyListCard') return { EmptyListCard: ({ title, detail }) => React.createElement('aside', { 'data-empty': 'true' }, title, detail) };
@@ -62,8 +64,34 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     if (name === '../useContainerWidth') return { useContainerWidth: () => ({ width: 1440, ref: null, onLayout() {} }) };
     assert.fail(`Unexpected view dependency ${name}`);
   });
-  return { html: renderToStaticMarkup(React.createElement(api.MemoryReferenceView, { onPrepareQuestion })), buttons };
+  return { html: renderToStaticMarkup(React.createElement(api.MemoryReferenceView, { onPrepareQuestion, tabActions })), buttons, panels, tabLists };
 }
+
+test('memory tabs replace duplicate introductions but keep real content headings and reading boundaries', () => {
+  const value = snapshot();
+  value.model.dataLabel = '查看已保存記憶及來源';
+  value.model.shortTerm = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { runId: 'synthetic', messages: [{ id: 'message', role: 'user', text: 'Synthetic saved context' }] } };
+  value.model.references = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { audience: 'public', items: [], catalog: [], hasMore: false } };
+  for (const tab of ['short', 'long', 'references']) {
+    const { html, panels, tabLists } = renderView(freeze(value), { tab, tabActions: React.createElement('button', null, '重讀') });
+    assert.doesNotMatch(html, /Test child的記憶與參考|查看已保存記憶及來源|Agent 已保存的工作、待答問題及相關訊息|已保存的事實、來源及對話摘要|查看目前可查閱的公共來源目錄|查看資料出處、日期及適用範圍/);
+    assert.equal((html.match(/長期記憶/g) ?? []).length, 1);
+    assert.equal((html.match(/參考資料/g) ?? []).length, 1);
+    assert.match(html, /<button>重讀<\/button>/);
+    assert.equal(tabLists.length, 1); assert.equal(tabLists[0].label, '記憶與參考分類');
+    assert.deepEqual(tabLists[0].items.map(item => item.key), ['short', 'long', 'references']);
+    assert.deepEqual(panels.filter(panel => panel.active).map(panel => panel.tabKey), [tab]);
+    assert.ok(panels.every(panel => panel.tabsId === tabLists[0].id));
+    if (tab === 'long') {
+      assert.match(html, /role="heading">已確認事實</); assert.match(html, /對話摘要|睡前觀察/);
+    } else if (tab === 'short') {
+      assert.match(html, /Synthetic saved context/); assert.match(html, /不代表已確認的事實/);
+    } else {
+      assert.match(html, /role="heading">官方指引</); assert.match(html, /role="heading">近期資訊</);
+      assert.match(html, /未逐項判定適用於這位孩子；來源存在亦不代表支持某句回答/);
+    }
+  }
+});
 
 test('read provider passes the exact owner value and masks all scope, child and access mismatches', () => {
   const api = compile('../src/workspaces/MemoryReferenceWorkspace.tsx', name => {
