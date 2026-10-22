@@ -14,7 +14,7 @@ export const navigationItems = {
   sources: { href: "/sources", label: "私人來源", short: "來源", icon: "link-variant" },
   tasks: { href: "/tasks", label: "待辦與預約", short: "待辦", icon: "clipboard-check-outline" },
   growth: { href: "/growth", label: "關注鏈與準備單", short: "關注", icon: "chart-bar" },
-  summary: { href: "/summary", label: "成長檔案與概況", short: "成長", icon: "clipboard-check-outline" },
+  summary: { href: "/summary", label: "成長檔案與概況", short: "成長", icon: "growth-outline" },
   contact: { href: "/contact", label: "聯絡授權", short: "聯絡", icon: "bell-outline" },
   profile: { href: "/profile", label: "子女檔案", short: "檔案", icon: "account-child-outline" },
   family: { href: "/family", label: "家庭協調", short: "家庭", icon: "account-group-outline" },

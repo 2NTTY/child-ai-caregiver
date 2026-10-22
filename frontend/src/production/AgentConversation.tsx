@@ -85,6 +85,16 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
     || !run.proposals.some(proposal => proposal.id === entry.proposal.id && proposal.version >= entry.proposal.version));
   const showPending = !run || pendingEntries.length > 0 || agentPending.state !== "ready" || !!agentPending.nextCursor;
   const showReceipts = !!run && (receipt?.state !== "ready" || receipt.items.length > 0 || !authorization.online);
+  const loadedPendingCount = (run?.proposals.filter(proposal => proposal.status === "pending" || proposal.status === "expired").length ?? 0)
+    + (agentPending.state === "ready" ? pendingEntries.filter(entry => entry.proposal.status === "pending" || entry.proposal.status === "expired").length : 0);
+  const pendingCountKnown = agentModel.online && agentPending.state === "ready" && (agentModel.readState === "idle" || agentModel.readState === "ready");
+  const activityHeading = <View style={styles.activityHeading}>
+    <AppDialog.Title style={styles.activityTitle}>活動</AppDialog.Title>
+    <Text testID="agent-activity-count" style={styles.activityCount} accessibilityLabel={pendingCountKnown
+      ? `已載入 ${loadedPendingCount} 項待確認${agentPending.nextCursor ? "，仍有更多待讀取" : ""}` : "待確認數量尚未核對"}>
+      {pendingCountKnown ? `${loadedPendingCount}${agentPending.nextCursor ? "+" : ""} 項待確認` : "待確認未核對"}
+    </Text>
+  </View>;
   const pendingContent = showPending ? <View testID="agent-other-pending" style={styles.section}>
         <Text accessibilityRole="header" style={styles.heading}>{run ? "其他待確認" : "待你確認"}</Text>
         {agentPending.state === "failed" ? <AppButton label="重新讀取待確認候選" variant="quiet" density="compact" disabled={!agentModel.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"} onPress={() => readAgentPending()} style={styles.inlineButton} /> : null}
@@ -99,16 +109,20 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
         {agentPending.nextCursor ? <AppButton label="讀取下一頁候選" variant="quiet" density="compact" disabled={!!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || !agentModel.online} onPress={() => readAgentPending(true)} style={styles.inlineButton} /> : null}
       </View> : null;
   return <AppDialog visible={visible} onDismiss={onDismiss} onClosed={onClosed} accessibilityLabel="活動" style={styles.dialog}>
-    <AppDialog.Title>活動</AppDialog.Title>
     <AppDialog.ScrollArea style={styles.scrollArea}><AppScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.contents}>
-      {agentModel.readState !== "idle" ? <AgentRunView model={agentModel} actions={agentActions} onLocateSource={onLocateSource} activity pendingContent={run ? pendingContent : undefined} /> : null}
+      {agentModel.readState !== "idle" ? <AgentRunView model={agentModel} actions={agentActions} onLocateSource={onLocateSource} activity activityHeading={activityHeading} pendingContent={run ? pendingContent : undefined} />
+        : <View testID="agent-activity-header" style={styles.activityToolbar}>{activityHeading}
+          <AppButton label="更新" accessibilityLabel="更新待確認活動" variant="quiet" density="compact"
+            disabled={!agentModel.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentPending.state === "loading" || agentPending.state === "denied"}
+            onPress={() => readAgentPending()} style={styles.inlineButton} />
+        </View>}
       {!run ? pendingContent : null}
       {showReceipts && run ? <View testID="agent-operation-receipts" style={styles.section}>
         <View style={styles.rowHeading}><Text accessibilityRole="header" style={styles.heading}>操作結果</Text>
-          <AppButton label={receipt?.state === "failed" ? "重試讀取收據" : "更新"} accessibilityLabel="重新讀取本次收據" variant="quiet" density="compact" disabled={!authorization.online || receipt?.state === "loading"} onPress={() => authorizationActions.readReceipts(run.id, true)} style={styles.inlineButton} /></View>
+          <AppButton label="重新檢查" accessibilityLabel="重新檢查本次操作是否已保存" variant="quiet" density="compact" disabled={!authorization.online || receipt?.state === "loading"} onPress={() => authorizationActions.readReceipts(run.id, true)} style={styles.inlineButton} /></View>
         {receipt?.state === "ready" ? receipt.items.length ? receipt.items.map(item => <Receipt key={`${run.id}:${item.id}`} item={item} />)
           : <Text style={styles.warning}>目前離線，操作收據尚未重新核對。</Text>
-          : <Text style={receipt?.state === "failed" ? styles.error : styles.label}>{receipt?.state === "loading" ? "正在讀取操作收據…" : receipt?.state === "denied" ? "沒有權限查看操作收據。" : "操作收據尚未確認；不能推斷已保存。"}</Text>}
+          : <Text style={receipt?.state === "failed" ? styles.error : styles.label}>{receipt?.state === "loading" ? "正在檢查是否已保存…" : receipt?.state === "denied" ? "沒有權限查看操作結果。" : "暫時無法確認是否已保存"}</Text>}
       </View> : null}
       {run?.privateSourceCitations?.length ? <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.heading}>私人參考</Text>
@@ -125,6 +139,10 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
 const styles = StyleSheet.create({
   dialog: { maxWidth: 720 }, scrollArea: { paddingHorizontal: 0, minHeight: 0 },
   contents: { gap: spacing.lg, minWidth: 0, padding: spacing.md },
+  activityToolbar: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 },
+  activityHeading: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 },
+  activityTitle: { marginHorizontal: 0, marginVertical: 0, flexShrink: 0, fontSize: 22, lineHeight: 28 },
+  activityCount: { fontFamily: chatFont, color: chatColors.secondary, fontSize: 13, lineHeight: 18, flexShrink: 1, minWidth: 0 },
   section: { gap: spacing.sm, minWidth: 0, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   row: { gap: spacing.sm, minWidth: 0, paddingVertical: spacing.sm },
   rowHeading: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },

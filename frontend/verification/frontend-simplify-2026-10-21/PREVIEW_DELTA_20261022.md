@@ -113,4 +113,14 @@ unknown 固定失敗為 repo 外合成 fixture，不是真保存；共享確認�
 
 另按使用者明確要求，同 PR 的 `docs/REQUIREMENTS_BACKLOG.md` 由獨立作者補 v0.8 ADK 需求與證據；該文件已獨立審核通過，只有規劃描述，不代表 SDK／後端功能已實作。這是本次明確批准的根文件例外，不改上述 snapshot15 的 frontend-only 歷史；需求及前端狀態／驗證文件均不屬 536 build inputs。
 
+## snapshot18 活動詳情圖示與成長導航圖示
+
+本增量限已凍結的 6 產品＋2 測試：活動標題／數量／原刷新同列，正常變更詳情使用圖示及較少重複 scope 文案，保留完整文件 edits、授權來源摘錄、未知名稱的原文字，以及原 owner／確認／receipt／unknown 恢復行為。成長導航使用獨立 GrowthIcon，不改 route 或其他導航順序。使用者後續要求的「整卡開啟活動、取消額外按鈕」尚未納入本版，不把該新方案當作已完成。
+
+活動定向 20/20、另兩舊 suite 的活動 scoped 5/5；Growth／導航 6/6。最初測試的 nested Text 排序假設、SVG mock 缺 `__esModule`，及新 ReactNode 條件型別錯誤均保留原紅與最小修正證據；獨立 reviewer 另指出 prototype-key 圖示查表問題，已以 `Object.hasOwn` 保護，`constructor`／`toString`／`__proto__` 保留未知文字 fallback。兩範圍 source review 通過，不宣稱全套舊 suite 重跑。
+
+唯一離線 export 成功：新增兩產品檔令 build inputs 536→538，對 17 精確 6 產品差異，538 inputs 前後完全相同，64 artifacts。JS `index-c30fb0b93cf43f13f0a22ceefc8944a4.js` SHA256 `32bee80fa38d2e258809c86b006a7e3ccb358cd8ea83f049a1fa5c2fe5411c8c`；來源 manifest `851997f02cbb85b43049f26275938b2c2de02e5b76c56d6819f1bdc5afcc5356`；artifact manifest `87c6bbc30e3849cae8b90216b15dd6d7464bd48c0e8ab2fc27f2dd79877877e8`。combined typecheck 仍僅原兩項 ContactConsentCard 錯。
+
+獨立 Chrome 有界驗收 **PASS**，64 copied artifacts 及 live bundle 精確吻合：活動正常卡 320／390／1024／1440、來源 disclosure 的 Enter／ARIA／focus-visible、Escape 返回原活動 trigger；成長圖示在桌面及手機「全部功能」可見，Enter 仍導向 `/summary`，手機原五格不變。320 expired 確認停用、略過可用但未按；390 一次合成 confirm 固定回 503，原 retry／新 accept／skip 均鎖住，明確只讀原 run 後僅原 retry 可用，**未重新提交**，沒有冒充保存。既有黃色 unknown 恢復卡及下方 pending 保留，沒有新增自動讀取或統一卡。1024／1440 receipt「重新檢查」維持 fail-closed，不寫成成功。報告及有效圖見 `activity-icon-qa-20261022/review.md`；四新測試獨立 4/4 是原 20/20 的子集，不加總。其他十種變更／共享授權等沿 source／unit 證據，不冒稱逐一 browser 重演。
+
 僅合成資料／圖片，無真家庭資料、真訊息或模型呼叫；不宣稱 Android 真機、完整讀屏或所有尺寸／狀態組合通過。維持同一 draft PR，不合併；公開預覽更新由主代理按本次明確授權處理。

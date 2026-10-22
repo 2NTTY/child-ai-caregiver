@@ -60,6 +60,7 @@ import Users from "lucide-react-native/icons/users";
 import Utensils from "lucide-react-native/icons/utensils";
 import X from "lucide-react-native/icons/x";
 import { colors, iconTokens } from "../theme";
+import { GrowthIcon } from "./icons/GrowthIcon";
 
 // Keep aliases used by existing view models and Paper controls in one place.
 const icons = {
@@ -69,6 +70,7 @@ const icons = {
   "link-variant": Link2,
   "clipboard-check-outline": ClipboardCheck,
   "clipboard-check": ClipboardCheck,
+  "growth-outline": GrowthIcon,
   "account-child-outline": Baby,
   "account-outline": UserRound,
   "account-group-outline": Users,
