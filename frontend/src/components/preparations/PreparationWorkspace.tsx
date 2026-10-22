@@ -123,8 +123,8 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
     {archived && !document.historical && workspace.model.capabilities?.restore ? <AppButton label="恢復這份準備單" variant="secondary" onPress={() => workspace.actions.restoreDocument?.(document.id, document.version)} /> : null}
     {!archived ? <View style={styles.footer}>
       {workspace.model.notice && workspace.model.condition !== "refresh_failed" ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{workspace.model.notice}</Text> : null}
-      <View style={styles.actions}><AppButton label="使用完畢，歸檔" variant="primary" disabled={!canArchive} onPress={() => setArchiveAsked(true)} />
-        <AppButton label="到助手補充／更新" variant="secondary" disabled={!revision || !workspace.model.online || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我更新${workspace.model.child.displayName}的「${revision!.title}」準備單；先核對現有資料及未確認的地方。`)} /></View>
+      <View style={styles.actions}><AppButton label="到助手補充／更新" variant="secondary" disabled={!revision || !workspace.model.online || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我更新${workspace.model.child.displayName}的「${revision!.title}」準備單；先核對現有資料及未確認的地方。`)} />
+        <AppButton label="使用完畢，歸檔" variant="quiet" disabled={!canArchive} onPress={() => setArchiveAsked(true)} /></View>
       {archiveAsked && canArchive ? <View testID="preparation-archive-confirm" style={styles.archiveNote}>
         <Text style={styles.body}>把「{revision?.title}」移到歷史？會保留目前版本，只歸檔這一份準備單。</Text>
         {workspace.model.archiveNotice ? <Text style={styles.meta}>{workspace.model.archiveNotice}</Text> : null}
@@ -218,18 +218,20 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
   const selected = workspace.model.selected?.status === "active";
   return <View testID="preparation-workspace" style={styles.workspace}>
     {workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
-    {workspace.actions.refresh ? <AppButton label={workspace.model.busy ? "正在處理文件…" : workspace.model.operation?.recovery === "check" ? "重讀並核對原操作" : "重新讀取準備單"}
-      variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} onPress={workspace.actions.refresh} /> : null}
     {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{active.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}
     {!selected ? <Text style={styles.meta}>待用準備單{!workspace.model.online || !["ready", "empty", "read_only"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
+    {!selected ? <View testID="preparation-list-actions" style={styles.intentControls}>
+      <AppButton label="到助手準備下一份" variant="secondary" density="compact" disabled={!workspace.model.online || workspace.model.condition === "lost" || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我為${workspace.model.child.displayName}整理一份${preparationPurposeLabel(purpose)}。先和我確認用途、日期、已知安排及仍未確定的資料。`)} />
+      <View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
+    </View> : null}
     <PreparationReader workspace={workspace} documents={active} onHistory={onHistory} onPrepareQuestion={onPrepareQuestion} scrollRef={scrollRef} getScrollPosition={getScrollPosition} />
     {!selected && workspace.model.reading?.activeHasMore ? <AppButton label={workspace.model.reading.pageBusy ? "正在載入…" : "載入更多準備單"} variant="quiet" disabled={workspace.model.reading.pageBusy || !workspace.model.reading.online} onPress={() => workspace.model.reading?.loadMoreDocuments("active")} /> : null}
     {workspace.model.reading?.pageError ? <Text accessibilityRole="alert" style={styles.warningText}>未能載入更多文件，已取得的內容保留。</Text> : null}
-    {!selected ? <View testID="preparation-list-actions" style={styles.intentControls}>
-      {onHistory ? <AppButton label="查看已歸檔" variant="secondary" density="compact" onPress={onHistory} /> : null}
-      <View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
-      <AppButton label="到助手準備下一份" variant="accent" disabled={!workspace.model.online || workspace.model.condition === "lost" || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我為${workspace.model.child.displayName}整理一份${preparationPurposeLabel(purpose)}。先和我確認用途、日期、已知安排及仍未確定的資料。`)} />
-    </View> : null}
+    <View testID="preparation-secondary-actions" style={styles.intentControls}>
+      {!selected && onHistory ? <AppButton label="查看已歸檔" variant="quiet" density="compact" onPress={onHistory} /> : null}
+      {workspace.actions.refresh ? <AppButton label={workspace.model.busy ? "正在處理文件…" : workspace.model.operation?.recovery === "check" ? "重讀並核對原操作" : "重新讀取準備單"}
+        variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} onPress={workspace.actions.refresh} /> : null}
+    </View>
     {workspace.actions.createDocument && workspace.actions.markDraft && workspace.actions.discardDraft && workspace.model.scope.role !== "viewer" ? <ManualFormDialog label="手動建立準備單" title="建立準備單" scopeKey={workspace.scopeKey}
       recovery={workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online && !workspace.model.busy} /> : null}>
       <DocumentCreateForm kind="preparation" purpose={purpose} owner={{ authorityVersion: workspace.model.authorityVersion ?? "", locked: workspace.model.locked ?? true,
@@ -270,7 +272,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   eyebrow: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700", flexGrow: 1, flexShrink: 1 },
-  intentControls: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md }, purposeField: { flexGrow: 1, minWidth: 180 },
+  intentControls: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm }, purposeField: { maxWidth: "100%", flexShrink: 1 },
   list: { gap: spacing.md, minWidth: 0, flex: 1 }, listColumn: { flex: 0.8 }, detailColumn: { flex: 1.4, minWidth: 0 }, split: { flexDirection: "row", alignItems: "flex-start" },
   historyCard: { flexGrow: 1 },
   documentRow: { gap: spacing.sm, padding: spacing.md, borderRadius: radius.medium, backgroundColor: colors.controlSurface, borderWidth: 1, borderColor: colors.line, minWidth: 0 },

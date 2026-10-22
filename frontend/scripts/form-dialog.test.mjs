@@ -42,7 +42,9 @@ function scenario() {
 
 test('manual form is absent from the reading page, then scrolls with its original recovery inside the dialog', () => {
   const s = scenario(); assert.equal(s.counts().mounts, 0); assert.equal(s.modal(), undefined);
+  assert.equal(s.button('手動建立').props.accessibilityLabel, '手動建立：建立資料');
   s.open(); assert.equal(s.counts().mounts, 1); assert.equal(s.modal().props.visible, true);
+  assert.equal(s.modal().props.accessibilityLabel, '建立資料');
   assert.equal(s.h.hosts().find(x => x.type === 'ScrollView').props.keyboardShouldPersistTaps, 'handled');
   s.button('查核原操作').props.onPress(); assert.equal(s.counts().checks, 1);
 });

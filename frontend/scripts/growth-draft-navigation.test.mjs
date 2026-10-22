@@ -53,7 +53,7 @@ function scenario(kind) {
   const render = () => h.render(tree), host = (type, label) => h.hosts().find(n => n.type === type && (n.props.label === label || n.props.accessibilityLabel === label));
   const button = label => host('Button', label), field = label => host('TextField', label), checkbox = prefix => h.hosts().find(n => n.type === 'Checkbox' && n.props.label.startsWith(prefix));
   render();
-  button(kind === 'attention' ? '查看來源與核對候選' : kind === 'manual' ? '新增關注' : '建議設定').props.onPress(); render();
+  button(kind === 'attention' ? '查看來源與核對候選' : kind === 'manual' ? '手動' : '建議設定').props.onPress(); render();
   function edit() {
     if (kind === 'manual') { field('關注名稱').props.onChangeText('Synthetic unsent concern'); }
     else if (kind === 'topic') host('Select', '這次確認：Synthetic context').props.onChange('observed');

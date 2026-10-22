@@ -69,3 +69,13 @@ test("profile modifications have a separate category and canonical source withou
   assert.equal(category?.label, "檔案修改"); assert.equal(category?.sourcePath, "/profile");
   assert.deepEqual(createHistoryFilters("identity:child:role", "profile"), { scope: "identity:child:role", category: "profile", searchText: "", from: "", to: "" });
 });
+
+
+test("date apply commits both bounds together and refuses invalid drafts", () => {
+  const original = { ...createHistoryFilters("one", "growth"), searchText: "  family  ", from: "2026-09-01", to: "2026-09-30" };
+  const next = historyFilterReducer(original, { type: "dates", from: "2026-10-01", to: "2026-10-31" });
+  assert.deepEqual(next, { ...original, from: "2026-10-01", to: "2026-10-31" });
+  assert.equal(historyFilterReducer(next, { type: "dates", from: "2026-10-31", to: "2026-10-01" }), next);
+  assert.equal(historyFilterReducer(next, { type: "dates", from: "bad-date", to: "" }), next);
+  assert.deepEqual(historyFilterReducer(next, { type: "dates", from: "", to: "" }), { ...original, from: "", to: "" });
+});

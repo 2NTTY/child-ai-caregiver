@@ -42,6 +42,7 @@ function harness(width = 1024, initialCategory = 'growth') {
     '../components/date-time': {timeZoneLabel: value => value},
     '../preparation-view-model': {searchPreparationHistory: () => []},
     '../components/DateTimeFields': {AppDateField: 'AppDateField'},
+    '../components/FormDialog': {FormDialog: 'FormDialog'},
     '../components/appearance/BackgroundSurface': { BackgroundSurface: 'View' },
     './appearance/BackgroundSurface': { BackgroundSurface: 'View', useCustomBackground: () => false },
     '../components/PageFrame': {PageFrame: 'PageFrame'},
@@ -52,7 +53,7 @@ function harness(width = 1024, initialCategory = 'growth') {
     '../components/preparations/PreparationWorkspace': {PreparationHistoryView: 'PreparationHistoryView'},
     '../components/profile/ProfileHistoryView': {ProfileHistoryView: 'ProfileHistoryView'},
     '../workspaces/ProfileWorkspace': {useProfileWorkspace: () => ({scopeKey: 'scope-a', model: {child: {id: 'child-a'}}, actions: {showHistory() {events.push('profile-history-read');}}})},
-    '../production/usePersonalHistory': {usePersonalHistoryWorkspace: () => null},
+    '../production/usePersonalHistory': {usePersonalHistoryWorkspace: () => ({scopeKey: 'scope-a'})},
     '../components/history/PersonalHistoryViews': {PersonalConversationHistoryView: 'PersonalConversationHistoryView', PersonalNotificationHistoryView: 'PersonalNotificationHistoryView'},
     '../components/growth/GrowthHistoryView': {GrowthHistoryView: 'GrowthHistoryView'},
     '../workspaces/TasksWorkspace': {useTasksWorkspace: workspace.useTasksWorkspace},
@@ -80,92 +81,113 @@ function harness(width = 1024, initialCategory = 'growth') {
   const {HistoryWorkspace} = load('src/screens/historyScreen.tsx');
   const {AppButton} = load('src/components/ui.tsx');
   return {
-    events, lock() {locked = true;}, button: props => AppButton(props),
+    events, lock(value = true) {locked = value;}, button: props => AppButton(props),
     render() {cursor = 0; const tree = HistoryWorkspace({scope: 'scope-a', childName: 'A', initialCategory, initialReviewStatus: 'all', olderOnly: false}); while (effects.length) effects.shift()(); return tree;},
   };
 }
 
-test('growth history keeps the same subtitle slot and typography as the other categories', () => {
-  for (const width of [1440, 1024, 390, 320]) {
-    let referenceCopyStyle, referenceSubtitleStyle;
-    for (const category of historyFilters.historyCategories) {
-      const tree = harness(width, category.key).render();
-      const copy = nodes(tree).find(node => node.type === 'View' && Array.isArray(node.props.children)
-        && node.props.children[0]?.props?.accessibilityRole === 'header'
-        && node.props.children[0].props.children === category.label);
-      assert.ok(copy, `${category.key} header at ${width}px`);
-      const texts = nodes(copy).filter(node => node.type === 'Text');
-      assert.equal(texts.length, 2, `${category.key} has one title and one subtitle`);
-      const expectedSubtitle = category.key === 'notifications' ? '本人通知，涵蓋帳戶及其他孩子' : category.key === 'growth' ? category.description : `${category.description} · 來源：${category.sourceLabel}`;
-      assert.equal(texts[1].props.children.join(''), expectedSubtitle);
-      referenceCopyStyle ??= copy.props.style;
-      referenceSubtitleStyle ??= texts[1].props.style;
-      assert.deepEqual(copy.props.style, referenceCopyStyle);
-      assert.deepEqual(texts[1].props.style, referenceSubtitleStyle);
-      if (category.key === 'growth') {
-        assert.equal(texts[1].props.children.join(''), '查看已結束的關注與跟進記錄');
-      }
-    }
+test('all eight categories keep one category control without duplicate source headings or inline dates', () => {
+  for (const width of [1440, 1024, 390, 320]) for (const category of historyFilters.historyCategories) {
+    const tree = harness(width, category.key).render();
+    const picker = nodes(tree).find(node => node.type === (width < 680 ? 'AppSelect' : 'UnderlineTabs'));
+    assert.equal(picker.props.value, category.key);
+    assert.equal((picker.props.options ?? picker.props.items).length, 8);
+    assert.equal(nodes(tree).some(node => node.props?.accessibilityRole === 'header' && node.props.children === category.label), false);
+    assert.equal(nodes(tree).some(node => node.type === 'AppDateField'), false);
+    assert.equal(nodes(tree).some(node => node.type === 'Text' && JSON.stringify(node.props.children).includes('來源：')), false);
+    assert.equal(!!labelled(tree, '日期篩選'), !['review', 'care', 'profile'].includes(category.key));
+    assert.equal(!!labelled(tree, `搜尋${category.label}`), !['care', 'profile'].includes(category.key));
+    if (category.key === 'notifications') assert.ok(nodes(tree).some(node => node.props?.children === '本人消息，涵蓋帳戶及其他孩子'));
+    if (category.key === 'review') assert.ok(nodes(tree).some(node => node.props?.children === '按內容及處理狀態搜尋；暫不支援日期篩選。'));
   }
 });
 
-test('growth source actions share compact sizing and centered self-alignment without a Link wrapper', () => {
+test('navigation and dates share one wrapping toolbar and touch-safe AppButton sizing', () => {
   for (const width of [1440, 1024, 390, 320]) {
     const h = harness(width), tree = h.render();
-    const first = labelled(tree, '查看持續關注'), second = labelled(tree, '查看年度與季度檔案');
-    const group = nodes(tree).find(node => node.type === 'View' && node.props.children?.includes?.(first) && node.props.children.includes(second));
-    assert.ok(group);
-    assert.equal(group.props.style.flexWrap, 'wrap');
-    assert.equal(group.props.style.maxWidth, '100%');
-    assert.equal(group.props.style.alignItems, 'center');
-    const buttons = [first, second].map(node => h.button(node.props));
-    assert.ok(buttons.every(node => node.props.compact && node.props.mode === 'outlined'));
-    assert.deepEqual(flatten(buttons[0].props.contentStyle), flatten(buttons[1].props.contentStyle));
-    for (const button of buttons) {
-      assert.equal(flatten(button.props.style).alignSelf, 'center');
+    const first = labelled(tree, '查看持續關注'), second = labelled(tree, '查看年度與季度檔案'), date = labelled(tree, '日期篩選');
+    const group = nodes(tree).find(node => node.type === 'View' && node.props.children?.includes?.(date));
+    assert.ok(nodes(group).includes(first) && nodes(group).includes(second));
+    assert.equal(group.props.style.flexWrap, 'wrap'); assert.equal(group.props.style.maxWidth, '100%'); assert.equal(group.props.style.alignItems, 'center');
+    for (const entry of [first, second, date]) {
+      const button = h.button(entry.props);
+      assert.equal(button.props.compact, true); assert.equal(button.props.mode, 'outlined');
       assert.equal(flatten(button.props.style).height, undefined);
       if (width < 650) assert.ok(flatten(button.props.contentStyle).minHeight >= 48);
     }
     first.props.onPress(); second.props.onPress();
     assert.deepEqual(h.events, ['guard', ['push', '/growth'], 'guard', ['push', '/summary?tab=archive']]);
+    const search = labelled(tree, '搜尋關注與成長'), wrapper = nodes(tree).find(node => node.props?.children === search);
+    assert.equal(wrapper.props.style.minWidth, 0); assert.equal(wrapper.props.style.maxWidth, '100%');
   }
 });
 
-test('date clear aligns with the Paper outlined border and drops the offset when stacked', () => {
-  for (const width of [1440, 1024, 390, 320]) {
-    const h = harness(width), tree = h.render(), clear = labelled(tree, '清除篩選');
-    const row = nodes(tree).find(node => node.type === 'View' && node.props.children?.includes?.(clear));
-    const style = flatten(clear.props.style);
-    assert.equal(style.minHeight, 50);
-    assert.equal(style.justifyContent, 'center');
-    assert.equal(style.marginTop, width < 680 ? 0 : 6);
-    assert.equal(flatten(row.props.style).flexDirection, width < 680 ? 'column' : 'row');
-    assert.equal(flatten(row.props.style).alignItems, width < 680 ? 'stretch' : 'flex-start');
-    assert.equal(nodes(row).filter(node => node.type === 'AppDateField').length, 2);
-    assert.ok(flatten(h.button(clear.props).props.contentStyle).minHeight >= 44);
-  }
-});
+const result = (tree, type = 'GrowthHistoryView') => nodes(tree).find(node => node.type === type);
+const dateDialog = tree => nodes(tree).find(node => node.type === 'FormDialog' && node.props.title === '日期篩選');
+const appliedDates = tree => nodes(tree).find(node => node.props?.testID === 'history-applied-dates');
 
-test('date filtering, reset and the original locked guard are unchanged by the layout', () => {
+test('date drafts do not filter, close readers or show applied state before atomic apply', () => {
   const h = harness(); let tree = h.render();
-  assert.equal(labelled(tree, '清除篩選').props.disabled, true);
-  labelled(tree, '搜尋關注與成長').props.onChangeText('  family  ');
-  labelled(tree, '開始日期（可不填）').props.onChange('2026-09-01');
-  labelled(tree, '結束日期（可不填）').props.onChange('2026-09-30');
-  tree = h.render();
-  const result = nodes(tree).find(node => node.type === 'GrowthHistoryView');
-  assert.equal(result.props.searchText, '  family  ');
-  assert.deepEqual(result.props.dateRange, {from: '2026-09-01', to: '2026-09-30'});
+  assert.equal(labelled(tree, '清除篩選'), undefined);
+  labelled(tree, '搜尋關注與成長').props.onChangeText('  family  '); tree = h.render();
+  const beforeEdit = h.events.length, trigger = labelled(tree, '日期篩選'); trigger.props.onPress(); tree = h.render();
+  assert.equal(dateDialog(tree).props.visible, true); assert.equal(dateDialog(tree).props.returnFocusRef, trigger.props.ref);
+  labelled(tree, '開始日期（可不填）').props.onChange('2026-09-01'); tree = h.render();
+  labelled(tree, '結束日期（可不填）').props.onChange('2026-09-30'); tree = h.render();
+  assert.equal(h.events.length, beforeEdit); assert.deepEqual(result(tree).props.dateRange, {from: null, to: null}); assert.equal(appliedDates(tree), undefined);
+  labelled(tree, '套用日期').props.onPress(); tree = h.render();
+  assert.deepEqual(h.events.slice(beforeEdit), ['close-tasks', 'close-preparation', 'close-care']); assert.equal(dateDialog(tree).props.visible, false);
+  assert.equal(result(tree).props.searchText, '  family  '); assert.deepEqual(result(tree).props.dateRange, {from: '2026-09-01', to: '2026-09-30'});
+  assert.equal(appliedDates(tree).props.children.join(''), '日期：2026-09-01 至 2026-09-30'); assert.ok(labelled(tree, '日期已篩選'));
   labelled(tree, '清除篩選').props.onPress(); tree = h.render();
-  assert.equal(labelled(tree, '搜尋關注與成長').props.value, '');
-  assert.equal(labelled(tree, '開始日期（可不填）').props.value, '');
-  assert.equal(labelled(tree, '結束日期（可不填）').props.value, '');
+  assert.equal(labelled(tree, '搜尋關注與成長').props.value, ''); assert.deepEqual(result(tree).props.dateRange, {from: null, to: null}); assert.equal(appliedDates(tree), undefined);
+});
+
+test('cancel, invalid drafts and draft clear leave results intact; reopen uses applied dates', () => {
+  const h = harness(); let tree = h.render();
+  labelled(tree, '日期篩選').props.onPress(); tree = h.render();
+  labelled(tree, '開始日期（可不填）').props.onChange('2026-09-30'); tree = h.render();
+  labelled(tree, '套用日期').props.onPress(); tree = h.render();
+  assert.equal(appliedDates(tree).props.children.join(''), '日期：2026-09-30 起');
+  const applied = result(tree).props.dateRange, beforeEdit = h.events.length;
+  labelled(tree, '日期已篩選').props.onPress(); tree = h.render();
+  for (const invalid of ['2026-09-01', '2026-02-29', '2026-9-1']) {
+    labelled(tree, '結束日期（可不填）').props.onChange(invalid); tree = h.render();
+    assert.ok(labelled(tree, '結束日期（可不填）').props.error); assert.equal(labelled(tree, '套用日期').props.disabled, true);
+    labelled(tree, '套用日期').props.onPress(); tree = h.render();
+    assert.equal(dateDialog(tree).props.visible, true); assert.deepEqual(result(tree).props.dateRange, applied);
+  }
+  labelled(tree, '清空日期').props.onPress(); tree = h.render();
+  assert.equal(labelled(tree, '開始日期（可不填）').props.value, ''); assert.equal(labelled(tree, '結束日期（可不填）').props.value, ''); assert.deepEqual(result(tree).props.dateRange, applied);
+  dateDialog(tree).props.onClose(); tree = h.render(); assert.equal(dateDialog(tree).props.visible, false); assert.equal(h.events.length, beforeEdit);
+  labelled(tree, '日期已篩選').props.onPress(); tree = h.render();
+  assert.equal(labelled(tree, '開始日期（可不填）').props.value, '2026-09-30'); assert.equal(labelled(tree, '結束日期（可不填）').props.value, '');
+  labelled(tree, '清空日期').props.onPress(); tree = h.render(); labelled(tree, '套用日期').props.onPress(); tree = h.render();
+  assert.deepEqual(result(tree).props.dateRange, {from: null, to: null});
+});
+
+test('original locks block search and apply without trapping disposable filter drafts', () => {
+  const h = harness(); let tree = h.render();
+  labelled(tree, '搜尋關注與成長').props.onChangeText('family'); tree = h.render();
+  labelled(tree, '日期篩選').props.onPress(); tree = h.render(); labelled(tree, '開始日期（可不填）').props.onChange('2026-09-01'); tree = h.render();
   h.lock(); tree = h.render(); const count = h.events.length;
-  assert.equal(labelled(tree, '清除篩選').props.disabled, true);
-  labelled(tree, '搜尋關注與成長').props.onChangeText('blocked');
-  labelled(tree, '清除篩選').props.onPress();
-  assert.equal(h.events.length, count);
-  assert.equal(labelled(h.render(), '搜尋關注與成長').props.value, '');
+  for (const label of ['清除篩選', '搜尋關注與成長', '套用日期', '開始日期（可不填）', '結束日期（可不填）']) assert.equal(labelled(tree, label).props.disabled, true);
+  labelled(tree, '搜尋關注與成長').props.onChangeText('blocked'); labelled(tree, '清除篩選').props.onPress(); labelled(tree, '套用日期').props.onPress(); tree = h.render();
+  assert.equal(h.events.length, count); assert.equal(labelled(tree, '搜尋關注與成長').props.value, 'family'); assert.deepEqual(result(tree).props.dateRange, {from: null, to: null});
+  dateDialog(tree).props.onClose(); tree = h.render(); assert.equal(dateDialog(tree).props.visible, false);
+});
+
+test('unsupported categories do not claim hidden dates are applied or lose original owners', () => {
+  const h = harness(); let tree = h.render();
+  labelled(tree, '日期篩選').props.onPress(); tree = h.render(); labelled(tree, '結束日期（可不填）').props.onChange('2026-09-30'); tree = h.render();
+  labelled(tree, '套用日期').props.onPress(); tree = h.render();
+  for (const [category, view] of [['review', 'CareReviewHistoryView'], ['care', 'CareSavedRecordsView'], ['profile', 'ProfileHistoryView']]) {
+    nodes(tree).find(node => node.type === 'UnderlineTabs').props.onChange(category); tree = h.render();
+    assert.ok(result(tree, view)); assert.equal(labelled(tree, '日期篩選'), undefined); assert.equal(labelled(tree, '日期已篩選'), undefined);
+    assert.equal(appliedDates(tree), undefined); assert.equal(dateDialog(tree).props.visible, false);
+  }
+  nodes(tree).find(node => node.type === 'UnderlineTabs').props.onChange('growth'); tree = h.render();
+  assert.deepEqual(result(tree).props.dateRange, {from: null, to: '2026-09-30'});
 });
 
 test('History removes only the permanent closing caveat and keeps restore and coverage conditions', () => {
@@ -285,10 +307,7 @@ test('success is concise while unknown and failure messages remain explicit and 
     assert.ok(texts.includes(h.workspace.model.notice));
   }
   const screen = readFileSync(path.join(root, 'src/screens/historyScreen.tsx'), 'utf8');
-  const growthHeader = nodes(harness().render()).find(node => node.type === 'View' && Array.isArray(node.props.children)
-    && node.props.children[0]?.props?.accessibilityRole === 'header'
-    && node.props.children[0].props.children === '關注與成長');
-  assert.equal(growthHeader.props.children[1].props.children.join(''), '查看已結束的關注與跟進記錄');
+  assert.equal(nodes(harness().render()).some(node => node.props?.accessibilityRole === 'header' && node.props.children === '關注與成長'), false);
   assert.ok(!screen.includes('日期按結束關注的時間篩選'));
 });
 

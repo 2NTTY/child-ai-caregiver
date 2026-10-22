@@ -129,6 +129,7 @@ export function ProductionNotificationPreferences() {
   const { version: _version, ...defaults } = DEFAULT_NOTIFICATION_PREFERENCES;
   const form = useForm<ProductionPreferenceValues>({ defaultValues: defaults, resolver: zodResolver(preferenceSchema), mode: "onSubmit", shouldFocusError: false });
   const locked = domain.busy || !!domain.original || !domain.online || !domain.fresh;
+  const needsAttention = !domain.fresh || !!domain.original || domain.busy || !domain.online;
   const fields = [{ name: "timeZone", label: "通知時區" }, { name: "quietStart", label: "安靜時段開始" }, { name: "quietEnd", label: "安靜時段結束" }] as const;
   const errors = fields.flatMap(field => form.formState.errors[field.name]?.message ? [{ field: field.name, label: field.label, message: form.formState.errors[field.name]!.message! }] : []);
   useEffect(() => {
@@ -149,12 +150,18 @@ export function ProductionNotificationPreferences() {
       {name === "timeZone" ? <FormFieldMessage id={`${formId}-${name}-message`} error={fieldState.error?.message} /> : null}
     </View>} />;
   }
-  return <SectionCard><SectionHeader density="compact" title="通知偏好" subtitle="只管理本人的安靜時段；設定不代表渠道已綁定或外發已獲授權。" />
-    <Text style={styles.meta}>{domain.preferences ? `目前版本 ${domain.preferences.version}` : "尚未讀取目前通知偏好。"}</Text>
-    <AppButton label="重新讀取通知偏好" variant="quiet" disabled={!domain.online || domain.busy} onPress={domain.refresh} />
+  return <SectionCard><SectionHeader density="compact" title="通知偏好" subtitle="設定本人的安靜時段，不會綁定通知渠道或授權發送。"
+    action={<AppButton label="重新讀取" accessibilityLabel="重新讀取通知偏好" variant="quiet" density="compact" disabled={!domain.online || domain.busy} onPress={domain.refresh} />} />
+    {!domain.online ? <Text style={styles.meta}>目前離線；恢復連線並重新讀取後才可保存。</Text> : null}
+    {needsAttention && domain.notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{domain.notice}</Text> : null}
+    {!domain.preferences && !domain.notice ? <Text style={styles.meta}>{domain.busy ? "正在讀取通知偏好…" : "尚未讀取通知偏好，請重新讀取。"}</Text> : null}
+    {domain.original ? <SettingsOriginalRecovery busy={domain.busy} confirmed={domain.original.confirmed} reviewed={domain.original.reviewed} consent={domain.original.consent}
+      online={domain.online} onRead={domain.refresh} onConfirm={domain.confirmOriginal} onRetry={domain.retryOriginal}>
+      <Text style={styles.meta}>原版本 {domain.original.input.expectedVersion} · {domain.original.input.timeZone} · {domain.original.input.quietStart}–{domain.original.input.quietEnd}</Text>
+    </SettingsOriginalRecovery> : null}
     <FormErrorSummary entries={errors} onFocus={field => form.setFocus(field as "timeZone" | "quietStart" | "quietEnd")} />
-    {input("timeZone", "通知時區")}
     <View style={styles.timeRow}><View style={styles.timeField}>{input("quietStart", "安靜時段開始")}</View><View style={styles.timeField}>{input("quietEnd", "安靜時段結束")}</View></View>
+    {input("timeZone", "通知時區")}
     <Controller name="allowAppointmentDuringQuiet" control={form.control} render={({ field }) => <View style={styles.switchRow}>
       <View style={styles.copy}><Text style={styles.title}>預約提醒例外</Text><Text style={styles.meta}>只在本人明確開啟後容許例外；預設關閉。</Text></View>
       <Switch accessibilityLabel="預約提醒例外" value={field.value} disabled={locked} onValueChange={value => { field.onChange(value); setReview(null); }} />
@@ -162,11 +169,7 @@ export function ProductionNotificationPreferences() {
     <AppButton label="核對通知偏好" disabled={locked} onPress={form.handleSubmit(values => { if (domain.preferences) setReview({ ...values, expectedVersion: domain.preferences.version }); })} />
     {review && !locked ? <View style={styles.recovery}><Text style={styles.title}>待確認 · 尚未保存 · 版本 {review.expectedVersion}</Text><Text style={styles.body}>{review.timeZone}；安靜時段 {review.quietStart}–{review.quietEnd}；預約例外{review.allowAppointmentDuringQuiet ? "開啟" : "關閉"}。</Text>
       <AppButton label="確認保存本人偏好" onPress={() => { domain.save(review, review.expectedVersion); setReview(null); }} /><AppButton label="返回修改" variant="quiet" onPress={() => setReview(null)} /></View> : null}
-    {domain.notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{domain.notice}</Text> : null}
-    {domain.original ? <SettingsOriginalRecovery busy={domain.busy} confirmed={domain.original.confirmed} reviewed={domain.original.reviewed} consent={domain.original.consent}
-      online={domain.online} onRead={domain.refresh} onConfirm={domain.confirmOriginal} onRetry={domain.retryOriginal}>
-      <Text style={styles.meta}>原版本 {domain.original.input.expectedVersion} · {domain.original.input.timeZone} · {domain.original.input.quietStart}–{domain.original.input.quietEnd}</Text>
-    </SettingsOriginalRecovery> : null}
+    {!needsAttention && domain.notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{domain.notice}</Text> : null}
     <Text style={styles.meta}>設定頁籤之間會保留草稿；離頁須確認捨棄，待查操作須先處理。重新載入不能恢復本次草稿。</Text>
   </SectionCard>;
 }

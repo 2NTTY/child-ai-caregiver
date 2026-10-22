@@ -69,7 +69,7 @@ export function SummaryScreen() {
           {tab === "overview" ? <><ChildOverviewContent onOpenProfile={() => guarded(() => router.push("/profile"))} onOpenProfileHistory={openProfileHistory}
             measurements={profile?.measurements} profileSource={profile?.profileSource}
             onOpenMeasurement={recordId => guarded(() => router.push({ pathname: "/care", params: { record: recordId } }))} />
-            <TaskKnowledgeSummaryContent onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={() => guarded(() => router.push("/tasks"))} />
+            <TaskKnowledgeSummaryContent onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} />
           </> : null}
         </AppTabPanel>
         <AppTabPanel tabsId="child-growth-tabs" tabKey="archive" active={tab === "archive"}>
@@ -82,7 +82,7 @@ export function SummaryScreen() {
           </> : <ReadStateNotice state="loading" scopeKey={scopeKey} message="正在讀取成長檔案…" /> : null}
         </AppTabPanel>
         {tab === "legacy-preparation" ? <TaskKnowledgeSummaryContent preparation onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))}
-          onTask={() => guarded(() => router.push("/tasks"))} onAgent={() => actions.prepareQuestion("想核對這份到診準備的問題與來源：")} /> : null}
+          onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} onAgent={() => actions.prepareQuestion("想核對這份到診準備的問題與來源：")} /> : null}
       </>}
     </View>
   </PageFrame>;

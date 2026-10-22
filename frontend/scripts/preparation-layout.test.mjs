@@ -53,14 +53,21 @@ function harness() {
   };
 }
 
-test('preparation documents lead the page and compact actions plus preview tools follow the content', () => {
+test('compact assistant actions precede documents while secondary tools and manual forms stay below', () => {
   const h = harness(), tree = h.render(), ordered = nodes(tree), content = reader(tree), footer = actions(tree);
   assert.deepEqual(content.props.documents.map(document => document.id), ['active-a']);
-  assert.ok(ordered.indexOf(content) < ordered.indexOf(footer));
+  assert.ok(ordered.indexOf(footer) < ordered.indexOf(content));
   assert.ok(ordered.indexOf(footer) < ordered.indexOf(h.props.previewControls));
-  assert.ok(label(footer, '查看已歸檔'));
+  assert.equal(label(footer, '查看已歸檔'), undefined);
+  assert.ok(ordered.indexOf(content) < ordered.indexOf(label(tree, '查看已歸檔')));
+  assert.ok(ordered.indexOf(content) < ordered.indexOf(label(tree, '重新讀取準備單')));
+  assert.equal(label(tree, '查看已歸檔').props.variant, 'quiet');
   assert.ok(label(footer, '用途'));
-  assert.ok(label(footer, '到助手準備下一份'));
+  assert.equal(label(footer, '到助手準備下一份').props.variant, 'secondary');
+  assert.equal(label(footer, '到助手準備下一份').props.density, 'compact');
+  const purposeField = nodes(footer).find(node => node.props?.children === label(footer, '用途'));
+  assert.equal(purposeField.props.style.flexGrow, undefined);
+  assert.equal(purposeField.props.style.minWidth, undefined);
   assert.equal(footer.props.style.flexDirection, 'row');
   assert.equal(footer.props.style.flexWrap, 'wrap');
   assert.equal(footer.props.style.minHeight, undefined);
@@ -118,4 +125,26 @@ test('document evidence, actionable warnings, archive guards and responsive read
   assert.ok(detail.indexOf('label="來源與版本"') < detail.indexOf('label="使用完畢，歸檔"'));
   for (const retained of ['canChangePreparation(document, workspace.model.scope) && !pending', 'disabled={!canArchive}', 'archiveAsked && canArchive', 'workspace.actions.archiveDocument(document.id, document.version)', 'workspace.actions.checkItem(document.id, document.version, section.id, item.id, value)', 'document.sources.map', 'state.detail', '目前離線', '目前為唯讀', 'workspace.model.archiveNotice']) assert.ok(detail.includes(retained), retained);
   for (const retained of ['來源權限已改變', '來源已失效', '來源狀態未知', '來源已有更新', '暫時未能取得準備單', '孩子權限已失效', 'wide = layout.width >= 840', '!selected || wide', 'anchor.current?.scope === workspace.scopeKey']) assert.ok(content.includes(retained), retained);
+});
+
+
+test('empty, one and multiple document lists preserve assistant-first order and the original manual permission gate', () => {
+  const h = harness();
+  Object.assign(h.workspace.actions, { createDocument() {}, markDraft() {}, discardDraft() {} });
+  h.workspace.model.scope = { role: 'owner' };
+  for (const count of [0, 1, 7]) {
+    h.workspace.model.documents = Array.from({ length: count }, (_, i) => ({ id: `active-${i}`, status: 'active' }));
+    for (const condition of ['ready', 'read_only', 'refresh_failed']) {
+      h.workspace.model.condition = condition;
+      const tree = h.render(), ordered = nodes(tree), assistant = label(tree, '到助手準備下一份');
+      const manual = label(tree, '手動建立準備單'), content = reader(tree);
+      assert.equal(content.props.documents.length, count);
+      assert.ok(ordered.indexOf(assistant) < ordered.indexOf(content));
+      assert.ok(ordered.indexOf(content) < ordered.indexOf(manual));
+      assert.equal(manual.props.scopeKey, h.workspace.scopeKey);
+    }
+  }
+  h.workspace.model.scope.role = 'viewer';
+  assert.equal(label(h.render(), '手動建立準備單'), undefined);
+  assert.ok(label(h.render(), '到助手準備下一份'), 'Read-only readers may discuss without mutating documents');
 });

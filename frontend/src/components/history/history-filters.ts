@@ -16,6 +16,7 @@ export type HistoryFilters = { scope: string; category: HistoryCategory; searchT
 export type HistoryFilterAction =
   | { type: "category"; value: HistoryCategory }
   | { type: "search" | "from" | "to"; value: string }
+  | { type: "dates"; from: string; to: string }
   | { type: "reset" }
   | { type: "scope"; scope: string; category: HistoryCategory };
 
@@ -43,6 +44,7 @@ export function historyFilterReducer(state: HistoryFilters, action: HistoryFilte
   if (action.type === "reset") return createHistoryFilters(state.scope, state.category);
   if (action.type === "category") return { ...state, category: action.value };
   if (action.type === "search") return { ...state, searchText: action.value };
+  if (action.type === "dates") return historyDateRange(action.from, action.to) ? { ...state, from: action.from, to: action.to } : state;
   return { ...state, [action.type]: action.value };
 }
 

@@ -88,16 +88,17 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
             <BackgroundSurface padded style={wide && listedConcerns.length ? s.main : s.full} testID="growth-detail-surface">
               {sourceNotice ? <Text style={s.warning}>{sourceNotice}</Text> : null}
               <GrowthConcernActions scopeKey={model.scopeKey} hasManagement={!!managementTools || !!(concern && page.canManage)}
-                primary={<GrowthConcernManualFallback model={model} actions={actions} concern={concern} />}>
+                primary={<>
+                  {onChat && (concern || page.concerns?.state === "ready" && model.load !== "error" && model.online) ? <AppButton label={concern ? "與助手跟進" : "與助手討論"} variant="primary" density="compact" disabled={!model.online} onPress={onChat} /> : null}
+                  <GrowthConcernManualFallback model={model} actions={actions} concern={concern} />
+                </>}>
                 {managementTools}
                 {concern && page.canManage ? <GrowthArchiveConcernButton concern={concern} scopeKey={model.scopeKey} authorityVersion={page.authorityVersion}
                   disabled={model.locked || model.dirty || page.concerns?.state !== "ready"}
                   onConfirm={() => actions.archiveConcern(concern.id, concern.version, page.authorityVersion)} /> : null}
               </GrowthConcernActions>
               {concern ? <GrowthConcernTimeline concern={concern} page={page} onRecord={onRecord} onTask={onTask} />
-                : page.concerns?.state === "ready" && model.load !== "error" ? model.online ? <EmptyListCard title="暫無持續關注" detail="可以先與助手討論想留意的成長近況。" testID="growth-concerns-empty">
-                  {onChat ? <AppButton label="與助手討論" onPress={onChat} /> : null}
-                </EmptyListCard> : null : <View style={s.archiveEmpty} testID="growth-concerns-unavailable">
+                : page.concerns?.state === "ready" && model.load !== "error" ? model.online ? <EmptyListCard title="暫無持續關注" detail="可以先與助手討論想留意的成長近況。" testID="growth-concerns-empty" /> : null : <View style={s.archiveEmpty} testID="growth-concerns-unavailable">
                   <Text accessibilityRole="header" style={s.concernTitle}>{model.load === "error" || page.concerns?.state === "error" ? "關注歷程未能讀取" : page.concerns?.state === "loading" ? "正在讀取關注歷程" : "關注歷程尚未接通"}</Text>
                 </View>}
             </BackgroundSurface>

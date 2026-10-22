@@ -83,12 +83,18 @@ const task = { id: "8c0614da-d04f-454e-837a-b0d0f1649034", childId: "child", ver
   occurrence: { id: "occurrence", dueAt: "2026-10-06T02:00:00Z", timeZone: "Asia/Hong_Kong", state: "scheduled", terminalBasisVersion: null } };
 class ApiError extends Error { constructor(status) { super("Synthetic transport error"); this.status = status; } }
 function taskOwner() {
-  const state = { readFailure: null, pending: false, receipt: null, writeInputs: [], reads: 0, historyReads: 0, historyResult: null, items: [task], checks: 0, invalidations: 0, active: true };
+  const state = { readFailure: null, pending: false, receipt: null, writeInputs: [], reads: 0, historyReads: 0, historyResult: null, taskReads: [], taskResult: null, items: [task], checks: 0, invalidations: 0, active: true };
   const api = { async getSession() { return "user"; },
     async tasks() { state.reads++; if (state.readFailure) throw state.readFailure;
       return { items: state.items, eligibleAssignees: [{ userId: "user", name: "Synthetic caregiver" }], nextAfterId: null }; },
     async changeTask(child, id, input) { state.pending = true; state.writeInputs.push(input); throw new ApiError(0); },
     async history() { state.historyReads++; return state.historyResult ?? { revisions: [], nextBeforeVersion: null }; },
+    async task(child, id) {
+      state.taskReads.push({ child, id });
+      const result = state.taskResult ?? state.items.find(item => item.id === id);
+      if (!result) throw new ApiError(404);
+      return result;
+    },
     async reconcilePending() { state.checks++; return state.receipt; },
     hasPendingOnline() { return state.pending; }, resetOnline() { state.pending = false; } };
   const env = { owner: { fetcher: () => assert.fail("Synthetic API adapters must not fetch") }, apiBaseUrl: "https://synthetic.invalid", userId: "user", childId: "child", childName: "Synthetic child", role: "owner", scopeKey: "scope", online: true,
@@ -99,6 +105,16 @@ function taskOwner() {
     "./useDomainEnvironment": { useDomainWriteGuard() {} },
   });
   return { owner, state, env };
+}
+
+function taskRoute(workspace, params) {
+  return harness("src/screens/tasksScreen.tsx", "default", [], {
+    "expo-router": { useLocalSearchParams: params, useRouter: () => ({ push() {} }) },
+    "../production/ProductionProvider": { useProduction: () => ({ model: {}, actions: {}, openAgentDraft() {}, chatDraft: "", setChatDraft() {} }) },
+    "../workspaces/TasksWorkspace": { useTasksWorkspace: workspace },
+    "../components/PageFrame": { PageFrame: "PageFrame" }, "../components/tasks/TasksView": { TasksView: "TasksView" },
+    "../preview/PreviewNavigationGuard": { usePreviewNavigation: () => callback => callback() },
+  });
 }
 
 test("initial task read failure becomes error without creating a mutation; one retry becomes ready", async () => {
@@ -264,20 +280,58 @@ test("task deep-link navigation stays open for the same id and opens another id"
   const { owner, state } = taskOwner();
   const other = { ...task, id: "cd90c73b-7934-4eac-b34e-4262cecf26ab", title: "Other synthetic task" }; state.items = [task, other];
   owner.render(); let workspace = await owner.settle(), params = {};
-  workspace.actions.selectTask(task.id); workspace = owner.render(); assert.equal(workspace.model.selected.id, task.id);
-  const route = harness("src/screens/tasksScreen.tsx", "default", [], {
-    "expo-router": { useLocalSearchParams: () => params, useRouter: () => ({ push() {} }) },
-    "../production/ProductionProvider": { useProduction: () => ({ model: {}, actions: {}, openAgentDraft() {}, chatDraft: "", setChatDraft() {} }) },
-    "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
-    "../workspaces/PreparationWorkspace": { usePreparationWorkspace: () => null },
-    "../components/PageFrame": { PageFrame: "PageFrame" }, "../components/tasks/TasksView": { TasksView: "TasksView" },
-    "../preview/PreviewNavigationGuard": { usePreviewNavigation: () => callback => callback() },
-  });
+  assert.equal(workspace.model.selected, null);
+  const route = taskRoute(() => workspace, () => params);
   route.render(); params = { taskId: task.id }; route.render(); workspace = owner.render();
   assert.equal(workspace.model.selected.id, task.id);
+  workspace.actions.selectTask(task.id); workspace = owner.render(); assert.equal(workspace.model.selected.id, task.id);
+  route.render(); workspace = owner.render(); assert.equal(workspace.model.selected.id, task.id);
   params = { taskId: other.id }; route.render(); workspace = owner.render(); assert.equal(workspace.model.selected.id, other.id);
   workspace.actions.selectTask(other.id, "toggle"); workspace = owner.render(); assert.equal(workspace.model.selected, null);
   assert.equal(state.writeInputs.length, 0); route.unmount(); owner.unmount();
+});
+
+test("task deep links read an unloaded exact id and reject invalid or missing ids without title fallback", async () => {
+  const { owner, state, env } = taskOwner();
+  const other = { ...task, id: "cd90c73b-7934-4eac-b34e-4262cecf26ab" };
+  state.items = [other]; state.taskResult = task;
+  owner.render(); let workspace = await owner.settle(), params = { taskId: task.id };
+  assert.equal(workspace.model.selected, null);
+  const route = taskRoute(() => workspace, () => params);
+  route.render(); workspace = owner.render(); assert.deepEqual(workspace.model.detailRead, { id: task.id, state: "loading" });
+  workspace = await owner.settle(); assert.equal(workspace.model.selected.id, task.id);
+  assert.deepEqual(state.taskReads, [{ child: env.childId, id: task.id }]);
+  assert.equal(workspace.model.items.length, 2, "The exact linked record is added without substituting the same-title list row");
+  params = { taskId: "invalid&id=other#task" }; route.render(); workspace = owner.render();
+  assert.equal(workspace.model.selected, null); assert.equal(workspace.model.detailRead.state, "error");
+  assert.equal(state.taskReads.length, 1, "Malformed ids must not reach the task API");
+  state.taskResult = null;
+  params = { taskId: "e99431c3-e245-43e7-9536-125cc9c06df5" }; route.render(); workspace = await owner.settle();
+  assert.equal(workspace.model.selected, null); assert.deepEqual(workspace.model.items, []);
+  assert.equal(workspace.model.detailRead.state, "error"); assert.equal(workspace.model.readState, "error");
+  assert.deepEqual(state.taskReads.at(-1), { child: env.childId, id: params.taskId });
+  assert.equal(state.writeInputs.length, 0); route.unmount(); owner.unmount();
+});
+
+test("task deep-link responses and captured selection callbacks cannot outlive their child scope", async () => {
+  const first = taskOwner(); first.state.items = [];
+  let release; first.state.taskResult = new Promise(resolve => { release = resolve; });
+  first.owner.render(); let workspace = await first.owner.settle();
+  const route = taskRoute(() => workspace, () => ({ taskId: task.id }));
+  route.render(); const oldActions = workspace.actions;
+  await new Promise(setImmediate); assert.deepEqual(first.state.taskReads, [{ child: first.env.childId, id: task.id }]);
+  first.state.active = false; route.unmount(); first.owner.unmount();
+  const second = taskOwner(); second.env.childId = "other-child"; second.env.scopeKey = "other-scope"; second.state.items = [];
+  second.owner.render(); let newWorkspace = await second.owner.settle();
+  assert.equal(newWorkspace.model.selected, null);
+  const newRoute = taskRoute(() => newWorkspace, () => ({ taskId: task.id }));
+  newRoute.render(); newWorkspace = await second.owner.settle();
+  assert.equal(newWorkspace.model.detailRead.state, "error");
+  assert.deepEqual(second.state.taskReads, [{ child: "other-child", id: task.id }]);
+  release(task); await new Promise(setImmediate); oldActions.selectTask(task.id);
+  assert.equal(first.state.taskReads.length, 1); assert.equal(first.owner.render().model.selected, null);
+  assert.equal(second.owner.render().model.selected, null); assert.equal(second.state.taskReads.length, 1);
+  assert.equal(first.state.writeInputs.length + second.state.writeInputs.length, 0); newRoute.unmount(); second.owner.unmount();
 });
 
 test("Growth task navigation uses idempotent open selection", async () => {

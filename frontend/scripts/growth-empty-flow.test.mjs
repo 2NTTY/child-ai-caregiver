@@ -49,8 +49,12 @@ test('successful empty concerns show one card and a direct chat action, with man
   const cards = named(tree, 'EmptyListCard');
   assert.equal(cards.length, 1);
   assert.equal(cards[0].props.title, '暫無持續關注');
-  const button = named(cards[0], 'AppButton')[0];
+  const group = named(tree, 'GrowthConcernActions')[0];
+  const button = named(group.props.primary, 'AppButton')[0];
+  assert.ok(nodes(group.props.primary).indexOf(button) < nodes(group.props.primary).indexOf(named(group, 'GrowthConcernManualFallback')[0]));
+  assert.equal(named(cards[0], 'AppButton').length, 0, 'No duplicated empty-state chat action');
   assert.equal(button.props.label, '與助手討論');
+  assert.equal(button.props.variant, 'primary'); assert.equal(button.props.density, 'compact');
   button.props.onPress(); assert.equal(chats, 1);
   const panel = named(tree, 'AppTabPanel').find(node => node.props.tabKey === 'concerns');
   assert.equal(named(panel, 'GrowthConcernManualFallback').length, 1);
@@ -88,13 +92,18 @@ test('manual concern entry keeps its existing closed form dialog and permission 
   const props = { model: model(), actions, concern: null };
   const entry = GrowthConcernManualFallback(props);
   assert.equal(entry.type, 'ManualFormDialog');
-  assert.equal(entry.props.label, '新增關注');
+  assert.equal(entry.props.label, '手動');
+  assert.equal(entry.props.title, '新增關注');
   assert.equal(entry.props.scopeKey, props.model.scopeKey);
-  assert.equal(GrowthConcernManualFallback({ ...props, concern: { id: 'concern-1' } }).props.label, '新增／跟進關注');
+  const followup = GrowthConcernManualFallback({ ...props, concern: { id: 'concern-1' } });
+  assert.equal(followup.props.label, '手動'); assert.equal(followup.props.title, '新增／跟進關注');
   const { ManualFormDialog } = load('../src/components/FormDialog.tsx');
   const dialog = ManualFormDialog(entry.props);
   assert.equal(named(dialog, 'AppButton')[0].props.variant, 'quiet');
-  assert.equal(named(dialog, 'AppButton')[0].props.label, '新增關注');
+  assert.equal(named(dialog, 'AppButton')[0].props.label, '手動');
+  assert.equal(named(dialog, 'AppButton')[0].props.accessibilityLabel, '手動：新增關注');
+  assert.equal(named(ManualFormDialog(followup.props), 'AppButton')[0].props.accessibilityLabel, '手動：新增／跟進關注');
+  assert.equal(named(ManualFormDialog({ ...entry.props, label: '其他手動', title: undefined }), 'AppButton')[0].props.accessibilityLabel, '其他手動');
   assert.equal(named(dialog, 'AppDialog').length, 0);
   for (const access of ['read_only', 'lost']) assert.equal(GrowthConcernManualFallback({ ...props, model: { ...model(), access } }), null);
   assert.equal(GrowthConcernManualFallback({ ...props, actions: {} }), null);
@@ -128,8 +137,7 @@ test('the compact detail action group separates manual entry from secondary mana
   const tree = GrowthView({ model: value, actions: { archiveConcern: (...args) => { archived = args; } }, onTask() {}, managementTools: jsx('SuggestionSettings', {}) });
   const group = named(tree, 'GrowthConcernActions')[0];
   assert.ok(group); assert.equal(group.props.hasManagement, true);
-  assert.equal(group.props.primary.type, 'GrowthConcernManualFallback');
-  assert.equal(group.props.primary.props.concern, concern);
+  assert.equal(named(group.props.primary, 'GrowthConcernManualFallback')[0].props.concern, concern);
   assert.equal(named(group.props.children, 'GrowthConcernManualFallback').length, 0);
   assert.equal(named(group.props.children, 'SuggestionSettings').length, 1);
   const detail = nodes(tree).find(node => node.props?.testID === 'growth-detail-surface');
@@ -181,5 +189,30 @@ test('history and recovery share the original tab toolbar with compact labels an
     assert.equal(pendingButton.props.disabled, true);
     const preparation = SizedGrowthView({ ...props, tab: 'preparation' });
     assert.equal(named(preparation, 'TabToolbar')[0].props.actions, undefined);
+  }
+});
+
+
+test('loaded concerns keep a compact assistant action before the manual fallback through refresh and read-only views', () => {
+  for (const width of [320, 390, 1024, 1440]) {
+    const { GrowthView: SizedGrowthView } = load('../src/components/growth/GrowthView.tsx', {
+      '../useContainerWidth': { useContainerWidth: () => ({ width, ref: null, onLayout() {} }) },
+    });
+    for (const access of ['editable', 'read_only']) {
+      let chats = 0;
+      const value = model(); value.access = access; value.load = 'loading'; value.busy = true;
+      value.page.concerns.items = [{ id: 'concern-1', childId: 'child', title: 'Synthetic concern', status: 'following', attentionIds: [] }];
+      const onChat = () => chats++;
+      const tree = SizedGrowthView({ model: value, actions: {}, onTask() {}, onChat });
+      const primary = named(tree, 'GrowthConcernActions')[0].props.primary, ordered = nodes(primary);
+      const button = named(primary, 'AppButton')[0], manual = named(primary, 'GrowthConcernManualFallback')[0];
+      assert.equal(button.props.label, '與助手跟進'); assert.equal(button.props.variant, 'primary');
+      assert.equal(button.props.density, 'compact'); assert.equal(button.props.disabled, false);
+      assert.equal(button.props.onPress, onChat); assert.ok(ordered.indexOf(button) < ordered.indexOf(manual));
+      button.props.onPress(); assert.equal(chats, 1);
+      assert.equal(named(tree, 'GrowthConcernTimeline').length, 1);
+      value.online = false;
+      assert.equal(named(SizedGrowthView({ model: value, actions: {}, onTask() {}, onChat }), 'AppButton').find(node => node.props.label === '與助手跟進').props.disabled, true);
+    }
   }
 });

@@ -5,6 +5,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import ts from 'typescript';
+import { careKindOptions } from '../src/care-view-model.ts';
+import { taskStateLabels } from '../src/task-view-model.ts';
+import { summaryPeriodLabel, summaryTime } from '../src/summary-view-model.ts';
+import { summaryPeriodSchema } from '../src/components/summary/summary-form.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -76,11 +80,81 @@ function harness(screen = "summary") {
     query(value) { params = value; }, route(value) { route = value; },
     child(value) { model = { ...model, selectedChildId: value }; },
     identity(value) { identityKey = value; },
+    role(value) { model = { ...model, children: model.children.map(child => child.id === model.selectedChildId ? { ...child, accessRole: value } : child) }; },
     profile(value) { ({ measurements, profileSource } = value); },
     approve() { const action = pending; pending = null; action?.(); },
+    cancel() { pending = null; },
     unmount() { slots.forEach(slot => slot?.cleanup?.()); },
   };
 }
+
+// Execute the shipped summary content, record list and row callbacks with synthetic data.
+// Host components are shallow; this does not exercise a browser, Expo Router or the guard dialog.
+function summaryTaskRows(props) {
+  const tasks = [
+    { id: '8c0614da-d04f-454e-837a-b0d0f1649034' },
+    { id: 'cd90c73b-7934-4eac-b34e-4262cecf26ab' },
+  ].map(task => ({ ...task, title: 'Same synthetic appointment title', details: '', assigneeUserId: 'synthetic-parent',
+    createdBy: 'synthetic-parent', updatedAt: '2026-10-22T08:00:00Z', version: 1,
+    occurrence: { id: `occurrence-${task.id}`, state: 'scheduled', dueAt: '2026-10-23T08:00:00Z', timeZone: 'Asia/Hong_Kong' } }));
+  const query = { startDay: '2026-10-22', period: 'day', timeZone: 'Asia/Hong_Kong' };
+  const page = { period: query, generatedAt: '2026-10-22T08:00:00Z', canManage: true,
+    counts: {}, metrics: [], records: [], conflicts: tasks, appointments: tasks,
+    missing: { unknownEventTime: 0, invalidQuantities: 0, emptyKinds: [] } };
+  const elements = new Proxy({}, { get: (_target, key) => String(key) });
+  const dependencies = {
+    react: { useState: value => [value, () => {}], useRef: value => ({ current: value }), useEffect() {} },
+    'react/jsx-runtime': require('react/jsx-runtime'), 'react-native': { View: 'View' }, 'react-native-paper': { Text: 'Text' },
+    '../preview/PreviewNavigationGuard': { usePreviewNavigation: () => () => assert.fail('Rows must use the screen guard') },
+    './TaskKnowledgeDomains': { useProductionTaskKnowledgeSummary: () => ({ model: {
+      scopeKey: 'synthetic-scope', page, query, online: true, busy: false, pending: null, access: 'editable', operation: 'none',
+    }, actions: {} }) },
+    '../summary-view-model': { summaryPeriodLabel, summaryTime }, '../../summary-view-model': { summaryTime },
+    '../../care-view-model': { careKindOptions }, '../../task-view-model': { taskStateLabels },
+    '../components/summary/summary-form': { summaryPeriodSchema },
+    '../components/summary/summary-styles': { summaryStyles: {} }, './summary-styles': { summaryStyles: {} },
+  };
+  const resolve = name => dependencies[name] ?? elements;
+  const { TaskKnowledgeSummaryContent } = compile('src/production/TaskKnowledgeSummaryContent.tsx', resolve);
+  const { SummaryRecords } = compile('src/components/summary/SummaryRecords.tsx', resolve);
+  const content = TaskKnowledgeSummaryContent(props), records = find(content, 'SummaryRecords');
+  return nodes(SummaryRecords(records.props)).filter(node => node.type?.name === 'TaskSource').map(node => ({
+    group: node.props.group, id: node.props.task.id,
+    press: nodes(node.type(node.props)).find(button => button.type === 'AppButton' && button.props.label === '核對這項任務').props.onPress,
+  }));
+}
+
+test('summary conflict and appointment rows preserve the exact A/B task id through the screen guard', () => {
+  for (const group of ['conflict', 'appointment']) for (const index of [0, 1]) {
+    const h = harness(), content = find(h.render(), 'TaskKnowledgeSummaryContent');
+    const rows = summaryTaskRows(content.props).filter(row => row.group === group), row = rows[index];
+    assert.notEqual(rows[0].id, rows[1].id);
+    row.press(); assert.deepEqual(h.events, [['guard']], 'No selection or navigation before guard approval');
+    h.approve(); assert.deepEqual(h.events, [['guard'], ['push', `/tasks?taskId=${encodeURIComponent(row.id)}`]]);
+    h.unmount();
+  }
+});
+
+test('both summary branches preserve and encode task ids without selecting another owner', () => {
+  for (const tab of ['overview', 'legacy-preparation']) for (const id of ['8c0614da-d04f-454e-837a-b0d0f1649034', 'cd90c73b-7934-4eac-b34e-4262cecf26ab', 'invalid&id=other#task']) {
+    const h = harness(); h.query({ tab });
+    find(h.render(), 'TaskKnowledgeSummaryContent').props.onTask(id); h.approve();
+    assert.deepEqual(h.events, [['guard'], ['push', `/tasks?taskId=${encodeURIComponent(id)}`]]);
+    h.unmount();
+  }
+});
+
+test('summary task navigation rejects cancellation and late approval after scope, route, tab or unmount changes', () => {
+  for (const tab of ['overview', 'legacy-preparation']) for (const change of [
+    h => h.child('child-b'), h => h.identity('other-parent'), h => h.role('viewer'),
+    h => h.route('/history'), h => h.query({ tab: 'archive' }), h => h.cancel(), h => h.unmount(),
+  ]) {
+    const h = harness(); h.query({ tab });
+    find(h.render(), 'TaskKnowledgeSummaryContent').props.onTask('8c0614da-d04f-454e-837a-b0d0f1649034');
+    change(h); if (!change.toString().includes('unmount')) h.render(); h.approve();
+    assert.deepEqual(h.events, [['guard']]); h.unmount();
+  }
+});
 
 test('summary defaults to overview while archive consumes the same authority-gated growth projection', () => {
   const h = harness();

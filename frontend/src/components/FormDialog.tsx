@@ -8,11 +8,13 @@ import { AppScrollView } from "./AppScrollView";
 import { AppButton } from "./ui";
 
 /** Presentation only: the existing form and owner still own drafts, writes and recovery. */
-export function FormDialog({ visible, scopeKey, title, children, recovery, onClose, returnFocusRef, fallbackFocusRef, formKey, closeOutcome }: {
+export function FormDialog({ visible, scopeKey, title, children, recovery, onClose, returnFocusRef, fallbackFocusRef, formKey, closeOutcome, dismissMode = "guarded" }: {
   visible: boolean; scopeKey: string; title: string; children: ReactNode; recovery?: ReactNode;
   onClose(): void; returnFocusRef?: RefObject<View | null>; fallbackFocusRef?: RefObject<View | null>; formKey?: string | number;
   /** Optional owner projection acknowledgement; ordinary local-state dialogs need no port. */
   closeOutcome?: { revision: unknown; ready: boolean };
+  /** Local dismissal is only for disposable presentation state, never an owner-backed draft or write. */
+  dismissMode?: "guarded" | "local";
 }) {
   const leave = usePreviewNavigation();
   const mounted = useRef(true);
@@ -38,11 +40,12 @@ export function FormDialog({ visible, scopeKey, title, children, recovery, onClo
       }
     }
   }
-  const close = () => leave(() => {
+  const dismiss = () => {
     if (!mounted.current || generation.current.value !== openedGeneration || !current.current.visible || current.current.scopeKey !== scopeKey) return;
     closeRequest.current = { scopeKey, generation: openedGeneration, closedGeneration: null, revision: current.current.closeOutcome?.revision, outcomeObserved: false };
     current.current.onClose();
-  });
+  };
+  const close = () => { if (dismissMode === "local") dismiss(); else leave(dismiss); };
   const closed = () => {
     const request = closeRequest.current, outcome = current.current.closeOutcome;
     if (request?.scopeKey === current.current.scopeKey && request.closedGeneration === generation.current.value && !current.current.visible && (!outcome || request.outcomeObserved && outcome.ready) && Platform.OS === "web") {
@@ -82,7 +85,7 @@ export function ManualFormDialog({ label, title = label, scopeKey, disabled = fa
     if (!disabled) setState({ scopeKey, open: true });
   }, [openRequest?.key, openRequest?.scopeKey, scopeKey, disabled]);
   return <>
-    <AppButton ref={trigger} label={label} variant="quiet" disabled={disabled} onPress={() => setState({ scopeKey, open: true })} />
+    <AppButton ref={trigger} label={label} accessibilityLabel={label === title ? label : `${label}：${title}`} variant="quiet" disabled={disabled} onPress={() => setState({ scopeKey, open: true })} />
     {state ? <FormDialog visible={!!visible} scopeKey={scopeKey} formKey={formKey} title={title} recovery={recovery} returnFocusRef={trigger}
       onClose={() => { onClose?.(); setState({ scopeKey, open: false }); }}>{children}</FormDialog> : null}
   </>;
