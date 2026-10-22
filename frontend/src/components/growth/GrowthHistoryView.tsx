@@ -3,6 +3,8 @@ import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Button, Text } from "react-native-paper";
 import { growthArchivedConcerns, growthConcernAtCapacity, growthConcernCanRestore } from "../../growth-view-model";
 import { useGrowthWorkspace } from "../../workspaces/GrowthWorkspace";
+import { EmptyListCard } from "../EmptyListCard";
+import { ReadStateNotice } from "../ReadStateNotice";
 import { AppButton } from "../ui";
 import { AppIcon } from "../AppIcon";
 import { useInteractionDensity } from "../useInteractionDensity";
@@ -48,7 +50,8 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
       {model.page.canManage && !growthConcernCanRestore(selected) ? <Text style={s.meta}>{growthConcernAtCapacity(selected) ? "已達歷史容量限制" : "未取得原狀態，暫未能恢復。"}</Text> : null}
       <GrowthConcernTimeline concern={selected} page={model.page} onRecord={onRecord} onTask={onTask} />
     </View> : <>
-      {!archived.length ? <Text style={s.body}>{searchText || dateRange.from || dateRange.to ? "沒有符合篩選的關注。" : "暫無已結束關注。"}</Text> : null}
+      {!archived.length && model.online && model.load === "ready" ? <EmptyListCard testID="growth-history-empty" title={searchText || dateRange.from || dateRange.to ? "沒有符合篩選的關注" : "暫無已結束關注"} /> : null}
+      {!archived.length && model.online && model.load === "loading" ? <ReadStateNotice state="loading" title="正在讀取關注歷史…" /> : null}
       {archived.map(concern => <View key={concern.id} style={styles.concernListCard} testID={`growth-history-${concern.id}`}>
         <View style={styles.concernRow}>
           <Pressable accessibilityRole="button" accessibilityLabel={`查看已結束關注：${concern.title}`} onPress={() => setSelection({ scopeKey, id: concern.id })}

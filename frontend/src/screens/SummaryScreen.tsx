@@ -56,8 +56,7 @@ export function SummaryScreen() {
   }
   function openProfileHistory() {
     guarded(() => {
-      profile?.actions.showHistory();
-      router.push("/profile");
+      router.push("/history?category=profile");
     });
   }
   if (pathname !== "/summary") return null;

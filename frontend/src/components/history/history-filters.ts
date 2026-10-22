@@ -5,6 +5,7 @@ export const historyCategories = [
   { key: "preparations", label: "準備單", description: "使用後歸檔的文件與當時版本", sourceLabel: "準備單", sourcePath: "/growth?tab=preparation", sourceAction: "開啟準備單", unavailable: "" },
   { key: "review", label: "核對記錄", description: "寫入結果與家長確認分開查看", sourceLabel: "核對", sourcePath: "/care", sourceAction: "開啟核對", unavailable: "" },
   { key: "care", label: "照顧記錄", description: "已保存記錄、更正與原始來源", sourceLabel: "核對", sourcePath: "/care", sourceAction: "開啟核對", unavailable: "" },
+  { key: "profile", label: "檔案修改", description: "孩子檔案的確認及更正版本", sourceLabel: "孩子檔案", sourcePath: "/profile", sourceAction: "查看檔案", unavailable: "" },
   { key: "conversations", label: "助手對話", description: "本人與這位孩子相關的對話", sourceLabel: "助手", sourcePath: "/chat", sourceAction: "開啟助手", unavailable: "請到助手查看已載入的對話。" },
   { key: "growth", label: "關注與成長", description: "查看已結束的關注與跟進記錄", sourceLabel: "關注鏈", sourcePath: "/growth", sourceAction: "開啟關注鏈", unavailable: "" },
   { key: "notifications", label: "通知與聯絡", description: "通知及聯絡請求的狀態歷程", sourceLabel: "聯絡授權", sourcePath: "/contact", sourceAction: "開啟聯絡授權", unavailable: "通知歷史暫未提供；請到聯絡授權查看已載入的聯絡請求記錄。" },

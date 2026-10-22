@@ -133,4 +133,18 @@ unknown 固定失敗為 repo 外合成 fixture，不是真保存；共享確認�
 
 Activity 獨立 Chrome 320／390／1024／1440 **PASS**：Enter／Space 開精確同 run 第一／第二候選，整卡返回精確回焦；背景卡選中對應 receipt run；權威新版明示且 checkbox 重置；未知決定唯一一次合成 POST 固定 503，明確 GET 後僅原 retry 解鎖，未重新提交，Escape 重開保留原 pendingDecision。報告 `activity-cards19-qa-20261022/review.md` 區分最終圖與中途圖；18 expired 不重跑冒稱。窄屏已知「有效至／未設定」仍兩行，主對話留待下一增量；入場即刻兩次自動 pointer 未轉詳情，穩態單擊及鍵盤通過，保留為時序觀察、不猜因改產品。Home19 獨立 Chrome 320／390／556／649／650／1024／1440／1920（既有 HTML zoom 1.2／1.4）**PASS**：556 母親頭部不再被 cover 裁掉，母子及指尖完整；實際淡出為 CSS gradient，歡迎卡內無 SVG，日期只在展開時出現一次。320／1920 前景 trace 約 ready＋3 秒才收合；較早背景 tab 的 556／1024 trace 保留但不拿來證明精確時序。詳見 `home-greeting-qa-20261022/snapshot19/cua-review.md`。**Firefox 無可用實測環境，仍未驗，沒有結案用戶 Firefox hosted 回報**；native 亦僅 source-reviewed，非真機通過。
 
+## snapshot20 概況名稱與圖示（已獨立交付）
+
+`/summary` 入口統一「概況」及自畫三分區裝飾圖示，桌面／全部功能／RightRail／頁面可及名稱同步；內部「成長檔案」頁籤、route、原五格底欄與權限不變。9 raw paths 經 Git rename 合併為 8 檔；獨立定向 8/8、1024 desktop／390 More 的圖示／Tab／Enter／內頁 Arrow 鍵與 RightRail 導航通過，不把未跑的完整舊 Summary suite 宣稱綠。
+
+唯一 export 為 538 inputs 前後同、64 artifacts；JS `index-b4b81c760f4fb8842b7e17c099f635b3.js` SHA256 `8d4d1a3ae991dc20ed66c05ff54ea8593ee01cd5a9507fdb77a4a29a215daa57`，來源 manifest `38767c31e70dbac009a380a1b69e4ad39ea06351058c0fec9a564143fe239aa7`，artifact manifest `85fbd80b625d90d511ed73b14399f9d60f165be1862b10dadc11ad6131db6100`。獨立報告 `overview20-qa-20261022/review.md`。已正常交付同 draft PR 的 `9483adf874a415e48f718c92eb12bc2e7ab49c47`；主對話驗證 Site80 於 2026-10-22 06:25:52 UTC 成功、source `bad44028c96d7cc6f25d353fed62735353f1ef8e`。該合成預覽發布不是 Firefox 驗收或正式後端部署；Home Firefox 候選仍待用戶覆核。
+
+## snapshot21 檔案修改歷史、空結果與聊天活動入口
+
+從精確 snapshot20 tree `8516ff4b780f8784af49e1a32831e25d2b9fbfb3` 的 detached 本機隔離 worktree 開發，兩作者及獨立 reviewer 的 21 檔（12 產品＋9 測試）freeze hash 完全相同後，僅有界 patch 套回同 tree 的主工作區；沒有外部 QA fixture、Overview 回退或下一批圖示混入。
+
+檔案更正歷史移到 `/history?category=profile`，由同一 child-scoped Profile owner 提供明確手動讀取／較早版本分頁；Profile／概況入口僅導航，不預先讀取或複製歷史。不對沒有 current、busy、unknown、離線或錯誤誤顯成功空狀態，保留版本零、原 pending operation、scope/readiness 與更正 guard。其他歷史類別清理多餘空內容卡但保留必要狀態。聊天活動入口按實際 layout 寬度放在閱讀欄外右側，窄屏回上方；原閱讀欄／輸入／owner 行為保持。僅略去精確新 `memory_fact` 的「有效至＝未設定」投影，真候選確認期限、其他種類或未知值不隱藏。
+
+Profile 首批 component 59/60 中的一項原 Summary 導航組別斷言與基線已不同；保留原紅，最小同步後相關 15 項複驗通過，不能相加成全新全套綠；Profile owner DOM 10/10。Chat／Activity／receipt 41/41，兩組 source review 通過。唯一整合 export：新增 ProfileHistoryView 令 inputs 538→539，對 20 精確 12 產品差異，539 inputs 前後完全相同、64 artifacts；combined typecheck 仍僅兩項 ContactConsentCard 舊錯。JS `index-33fefacddb0fa9e4eed8328f2a364f11.js` SHA256 `5a7b69ca377869682401761efde7458225476e6cb273e1d8422cdfab95711c0f`；來源 manifest `c77c0a1acc4a81c0865821644251e030268e36ac298a69546785de5a397fba6f`；artifact manifest `b5712fc3d369008323cbcb3d247935df99f3664e36ef26a427acdc5024995ee9`。截至 2026-10-22 06:35 UTC，此文件作來源／build 的階段快照凍結，獨立新 bundle CUA 仍待驗；不以 source／unit 代稱已通過。後續最終 QA 結果另存 repo 外報告及同 PR 正文，不倒填本次階段快照。
+
 僅合成資料／圖片，無真家庭資料、真訊息或模型呼叫；不宣稱 Android 真機、完整讀屏或所有尺寸／狀態組合通過。維持同一 draft PR，不合併；公開預覽更新由主代理按本次明確授權處理。

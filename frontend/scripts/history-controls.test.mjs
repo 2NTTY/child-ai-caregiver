@@ -50,6 +50,10 @@ function harness(width = 1024, initialCategory = 'growth') {
     '../components/care/CareReviewHistoryView': {CareReviewHistoryView: 'CareReviewHistoryView'},
     '../components/care/CareSavedRecordsView': {CareSavedRecordsView: 'CareSavedRecordsView'},
     '../components/preparations/PreparationWorkspace': {PreparationHistoryView: 'PreparationHistoryView'},
+    '../components/profile/ProfileHistoryView': {ProfileHistoryView: 'ProfileHistoryView'},
+    '../workspaces/ProfileWorkspace': {useProfileWorkspace: () => ({scopeKey: 'scope-a', model: {child: {id: 'child-a'}}, actions: {showHistory() {events.push('profile-history-read');}}})},
+    '../production/usePersonalHistory': {usePersonalHistoryWorkspace: () => null},
+    '../components/history/PersonalHistoryViews': {PersonalConversationHistoryView: 'PersonalConversationHistoryView', PersonalNotificationHistoryView: 'PersonalNotificationHistoryView'},
     '../components/growth/GrowthHistoryView': {GrowthHistoryView: 'GrowthHistoryView'},
     '../workspaces/TasksWorkspace': {useTasksWorkspace: workspace.useTasksWorkspace},
     '../workspaces/CareWorkspace': {useCareWorkspace: workspace.useCareWorkspace},
@@ -92,7 +96,7 @@ test('growth history keeps the same subtitle slot and typography as the other ca
       assert.ok(copy, `${category.key} header at ${width}px`);
       const texts = nodes(copy).filter(node => node.type === 'Text');
       assert.equal(texts.length, 2, `${category.key} has one title and one subtitle`);
-      const expectedSubtitle = category.key === 'growth' ? category.description : `${category.description} · 來源：${category.sourceLabel}`;
+      const expectedSubtitle = category.key === 'notifications' ? '本人通知，涵蓋帳戶及其他孩子' : category.key === 'growth' ? category.description : `${category.description} · 來源：${category.sourceLabel}`;
       assert.equal(texts[1].props.children.join(''), expectedSubtitle);
       referenceCopyStyle ??= copy.props.style;
       referenceSubtitleStyle ??= texts[1].props.style;
@@ -123,7 +127,7 @@ test('growth source actions share compact sizing and centered self-alignment wit
       if (width < 650) assert.ok(flatten(button.props.contentStyle).minHeight >= 48);
     }
     first.props.onPress(); second.props.onPress();
-    assert.deepEqual(h.events, ['guard', ['push', '/growth'], 'guard', ['push', '/growth?tab=archive']]);
+    assert.deepEqual(h.events, ['guard', ['push', '/growth'], 'guard', ['push', '/summary?tab=archive']]);
   }
 });
 
@@ -194,6 +198,7 @@ function closedHistoryHarness(width = 1024, touch = false) {
     './growth-styles': {growthStyles: {stack: {gap: 12}}},
     '../ui': {AppButton: 'AppButton'}, '../AppIcon': {AppIcon: 'AppIcon'},
     './GrowthConcernTimeline': {GrowthConcernTimeline: 'GrowthConcernTimeline'},
+    '../EmptyListCard': {EmptyListCard: 'EmptyListCard'}, '../ReadStateNotice': {ReadStateNotice: 'ReadStateNotice'},
     './GrowthOperationRecovery': {GrowthOperationRecovery: 'GrowthOperationRecovery'},
     '../StatusAnnouncement': {StatusAnnouncement: 'StatusAnnouncement'},
   };
@@ -293,4 +298,19 @@ test('success is concise while unknown and failure messages remain explicit and 
     && node.props.children[0].props.children === '關注與成長');
   assert.equal(growthHeader.props.children[1].props.children.join(''), '查看已結束的關注與跟進記錄');
   assert.ok(!screen.includes('日期按結束關注的時間篩選'));
+});
+
+
+test('profile history category renders the same scoped reader on desktop and mobile without fake search or eager reads', () => {
+  for (const width of [1440, 1024, 390, 320]) {
+    const h = harness(width, 'profile'), tree = h.render();
+    assert.ok(nodes(tree).some(node => node.type === 'ProfileHistoryView'));
+    assert.equal(nodes(tree).some(node => node.props?.testID === 'history-filter-toolbar'), false);
+    const picker = nodes(tree).find(node => node.type === (width < 680 ? 'AppSelect' : 'UnderlineTabs'));
+    assert.equal(picker.props.value, 'profile');
+    assert.ok((picker.props.options ?? picker.props.items).some(item => (item.value ?? item.key) === 'profile' && item.label === '檔案修改'));
+    assert.equal(h.events.includes('profile-history-read'), false);
+    labelled(tree, '查看檔案').props.onPress();
+    assert.deepEqual(h.events, ['guard', ['push', '/profile']]);
+  }
 });

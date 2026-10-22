@@ -291,7 +291,7 @@ test('private fact keeps source and scope labels visible, merges only the exact 
   assert.match(s.text(), /只限你本人/); assert.match(s.text(), /Exact original source/); assert.doesNotMatch(s.text(), /候選版本|尚未執行|保存確認事實/);
   assert.equal(s.h.hosts().filter(n => n.type === 'Text' && n.props.children === '接受後可見範圍').length, 1);
   assert.ok(s.h.hosts().some(n => n.type === 'Text' && n.props.children === '來源'));
-  assert.match(s.text(), /有效至.*未設定/); assert.match(s.text(), /確認期限.*2099/);
+  assert.doesNotMatch(s.text(), /有效至|未設定/); assert.match(s.text(), /確認期限.*2099/);
   assert.equal(s.h.hosts().filter(n => n.type === 'AppCheckbox').length, 0);
   const snapshot = structuredClone(p); s.named('查看其他詳情：Synthetic fact').props.onPress(); s.render(true);
   assert.match(s.text(), /Exact original source/); assert.match(s.text(), /候選版本 4/); assert.deepEqual(p, snapshot);
@@ -346,7 +346,11 @@ test('all ten projected proposal kinds retain complete changes and mandatory sco
     assert.equal(!!check, p.scope === 'family', p.kind);
     if (check) { assert.match(check.props.label, /明確同意寫入家庭共享資料/); assert.equal(check.props.disabled, false); }
     s.named('查看其他詳情：' + p.title).props.onPress(); s.render(true);
-    for (const detail of p.details) assert.ok(s.text().includes(detail.value), `${p.kind}: preserved ${detail.label}`);
+    for (const detail of p.details) {
+      if (p.kind === 'memory_fact' && detail.label === '有效至' && detail.value === '未設定') {
+        assert.ok(!s.text().includes('未設定'), 'the exact optional new-fact placeholder is omitted even in disclosure');
+      } else assert.ok(s.text().includes(detail.value), `${p.kind}: preserved ${detail.label}`);
+    }
     assert.deepEqual(p, original, 'presentation never changes the confirmation payload or snapshot');
   }
 });
@@ -363,4 +367,26 @@ test('unknown receipts only reread original receipts, while recovery preserves i
   s.state.authorization.online = false; s.conversation(); assert.equal(s.named('重新檢查本次操作是否已保存').props.disabled, true);
   s.state.authorization.online = true; s.state.authorization.receipts['synthetic-run'].state = 'loading'; s.conversation();
   assert.equal(s.named('重新檢查本次操作是否已保存').props.disabled, true);
+});
+
+
+test('only the exact new-fact unset validity placeholder is omitted, never real expiry or unknown fields', () => {
+  const p = proposal('validity', { kind: 'memory_fact', scope: 'private', details: [{ label: '有效至', value: '未設定' }] });
+  const s = setup(run([p]));
+  const { proposalDetailGroups } = s.h.load('src/components/agent/proposal-presentation.ts');
+  const before = structuredClone(p);
+  assert.deepEqual(proposalDetailGroups(p), { visible: [], supporting: [] });
+  assert.deepEqual(p, before, 'presentation never mutates projected facts or candidate expiry');
+  for (const detail of [
+    { label: '有效至', value: later }, { label: '有效至', value: '未設期限' },
+    { label: '有效至', value: '未設定 ' }, { label: '未知有效至', value: '未設定' },
+    { label: '確認期限', value: '未設定' },
+  ]) assert.deepEqual(proposalDetailGroups({ ...p, details: [detail] }).visible, [detail]);
+  for (const kind of ['memory_fact_revise', 'memory_fact_deactivate', 'task_create', 'task_change', 'private_source_create', 'private_source_change', 'concern_create', 'concern_change', 'family_document_change']) {
+    assert.deepEqual(proposalDetailGroups({ ...p, kind }).visible, p.details, `${kind} does not inherit the new-fact placeholder rule`);
+  }
+  p.expiresAt = '2020-01-01T00:00:00Z'; s.render(true);
+  assert.doesNotMatch(s.text(), /有效至|未設定/);
+  assert.match(s.text(), /確認期限.*2020/); assert.match(s.text(), /候選已過期/);
+  assert.equal(s.button('確認資料').props.disabled, true);
 });

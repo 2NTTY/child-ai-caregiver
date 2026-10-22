@@ -103,6 +103,8 @@ function base() {
     chatState: { userId: 'synthetic-user', selectedChildId: 'synthetic-child', drafts: {}, messages: [], busy: null, online: true, loading: false, loadedAt: '2026-10-06T00:00:00Z', limit: 20, nextCursor: null },
     chatController: { reloadMessages: action('reload'), loadOlderMessages: action('older'), cancelReply: action('cancel'), confirmFoundMessage: action('confirm'), unlockCheckedSave: action('unlock'), startNewMessage: action('new-message') },
     chatDraft: '', setChatDraft: noop, agentAttachments: [], addAgentAttachment: noop, removeAgentAttachment: noop,
+    voiceUpload: { busy: false, unknown: false, notice: null }, fileUpload: { busy: false, unknown: false, notice: null },
+    checkVoiceUpload: action('check-voice'), checkFileUpload: action('check-file'),
     sendChat: action('send'), requestChatReply: action('reply'), agentRuns: {}, chatWritesAllowed: true, selectAgentRun: action('select-run'), openAgentSource: noop,
     agentModel: { online: true, readState: 'idle', run: null, busy: null, pendingDecision: null },
     agentPending: { state: 'idle', entries: [] }, agentInbox: {}, agentActions: {}, agentInboxActions: {}, readAgentPending: action('pending'),
@@ -116,7 +118,12 @@ const { ChatTimeline } = load('src/components/chat/ChatTimeline.tsx');
 const { AgentConversation } = load('src/production/AgentConversation.tsx');
 const { AgentAuthorization } = load('src/production/AgentAuthorization.tsx');
 const { default: SettingsPage } = load('src/screens/settingsScreen.tsx');
-function chat() { const page = render(ChatPage).tree; return render(page.props.children.type, page.props.children.props); }
+function chat() {
+  const page = render(ChatPage).tree;
+  const contents = nodes(page).find(item => typeof item.type === 'function');
+  assert.ok(contents, 'ChatContents remains mounted under the page-local layout');
+  return render(contents.type, contents.props);
+}
 
 test('clean empty chat has one prompt, separate toolbar, stable composer, and compact privacy access', () => {
   base(); const view = chat(); const timeline = node(view.tree, 'ChatTimeline');
@@ -126,17 +133,59 @@ test('clean empty chat has one prompt, separate toolbar, stable composer, and co
   assert.deepEqual(flatten(heading.props.style), { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 });
   const toolbar = nodes(view.tree).find(item => item.props?.testID === 'chat-top-toolbar');
   assert.equal(flatten(toolbar.props.style).justifyContent, 'flex-end');
-  assert.equal(content(timeline.props.emptyState), '想先聊聊什麼？');
+  assert.equal(content(timeline.props.emptyState).trim(), '想先聊聊什麼？');
   assert.equal(timeline.props.header, undefined);
   assert.equal(node(view.tree, 'AgentComposer').props.inputHint, undefined);
   assert.equal(node(view.tree, 'AgentConversation').props.visible, false);
   assert.equal(node(view.tree, 'AgentAuthorization'), undefined);
-  assert.ok(label(view.tree, 'Google AI 處理 · 僅供合成資料試用'));
+  assert.ok(label(view.tree, 'AI 處理 · 僅使用獲授權資料'));
   assert.doesNotMatch(content(timeline.props.footer), /已讀取|最後讀取|尚未有已保存聊天/);
-  const oldComposer = [view.tree.props.children].flat().findIndex(item => item?.type === 'AgentComposer');
+  const readingPanel = nodes(view.tree).find(item => item.props?.testID === 'chat-reading-panel');
+  const oldComposer = [readingPanel.props.children].flat().findIndex(item => item?.type === 'AgentComposer');
+  assert.ok(oldComposer >= 0);
   production.chatState.messages = [{ id: 'u1', role: 'user', text: '合成問題', authorUserId: 'synthetic-user' }];
   rerender(view);
-  assert.equal([view.tree.props.children].flat().findIndex(item => item?.type === 'AgentComposer'), oldComposer);
+  assert.equal([nodes(view.tree).find(item => item.props?.testID === 'chat-reading-panel').props.children].flat().findIndex(item => item?.type === 'AgentComposer'), oldComposer);
+});
+
+test('activity toolbar uses page-local layout units and leaves the reading panel only when a full side gutter fits', () => {
+  base(); const page = render(ChatPage);
+  const child = () => nodes(page.tree).find(item => typeof item.type === 'function');
+  const layout = () => nodes(page.tree).find(item => item.props?.testID === 'chat-page-layout');
+  assert.equal(child().props.externalActivity, false, 'unknown layout width must use the safe in-flow toolbar');
+  const view = render(child().type, child().props);
+  const panel = () => nodes(view.tree).find(item => item.props?.testID === 'chat-reading-panel');
+  const toolbar = () => nodes(view.tree).find(item => item.props?.testID === 'chat-top-toolbar');
+  const timeline = node(view.tree, 'ChatTimeline'), composer = node(view.tree, 'AgentComposer');
+  const childShape = () => [panel().props.children].flat().filter(Boolean).map(item => [item.type, item.key]);
+  const originalShape = childShape(), scrollRef = timeline.props.scrollRef, controlsRef = timeline.props.controlsRef;
+  assert.ok(!nodes(panel()).includes(toolbar()), 'activity is outside the body reading surface, never in message content');
+  assert.equal(flatten(toolbar().props.style).maxWidth, undefined);
+  for (const width of [1440, 1112, 1111, 1024, 800, 390, 320, 1440]) {
+    layout().props.onLayout({ nativeEvent: { layout: { width } } }); rerender(page);
+    child().props.onPaneLayout({ nativeEvent: { layout: { width: Math.min(width, 760) } } }); rerender(page);
+    view.props = child().props; rerender(view);
+    const floating = width >= 1112, style = flatten(toolbar().props.style);
+    assert.equal(child().props.externalActivity, floating, `CSS layout width ${width}; no visual/zoom rect conversion`);
+    assert.equal(style.position, floating ? 'absolute' : undefined);
+    assert.equal(style.width, floating ? 152 : '100%');
+    if (floating) {
+      const bodyRight = width / 2 + 760 / 2, toolbarLeft = width - style.right - style.width;
+      assert.ok(toolbarLeft - bodyRight >= 16, 'a full gap separates the toolbar and maximum reading column');
+    }
+    assert.deepEqual(childShape(), originalShape, 'responsive positioning never reparents timeline/composer');
+    assert.equal(node(view.tree, 'ChatTimeline').props.scrollRef, scrollRef);
+    assert.equal(node(view.tree, 'ChatTimeline').props.controlsRef, controlsRef);
+    assert.equal(node(view.tree, 'ChatTimeline').key, timeline.key);
+    assert.equal(node(view.tree, 'AgentComposer').key, composer.key);
+    assert.equal(node(view.tree, 'ChatTimeline').props.followRequest, undefined);
+  }
+  label(view.tree, '活動 · 尚未讀取').props.onPress(); rerender(view);
+  assert.equal(node(view.tree, 'AgentConversation').props.visible, true);
+  assert.deepEqual(calls, [], 'moving the entry neither selects another run nor issues any new read/write');
+  assert.equal(node(view.tree, 'ChatTimeline').props.scrollRef, scrollRef);
+  production.model.children = []; rerender(view);
+  assert.equal(label(view.tree, '活動 · 尚未讀取').props.disabled, true);
 });
 
 test('conversation timeline opts into top alignment and centered empty prompt without changing generic defaults', () => {

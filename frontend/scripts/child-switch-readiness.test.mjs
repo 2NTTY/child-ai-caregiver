@@ -286,3 +286,13 @@ test('old visible-tab recovery and timeout callbacks cannot affect the current t
   assert.equal(retries, 0); assert.equal(returns, 0); assert.equal(h.node('motion-child-recovery'), undefined);
   assert.equal(content(h).props['aria-hidden'], true);
 });
+
+
+test('profile history cold route waits only for the existing current profile, never a manual history request', () => {
+  const h = harness(), { routeStartupRequirements, routeStartupReadiness } = h.load('src/startup/dataReadiness.ts');
+  assert.deepEqual(routeStartupRequirements('/history', { category: 'profile' }, true, true), ['profile']);
+  for (const state of ['ready', 'error', 'loading']) {
+    assert.equal(routeStartupReadiness('/history', { category: 'profile' }, { profile: state, tasks: 'loading', profileHistory: 'loading' }, true, true), state);
+  }
+  assert.deepEqual(routeStartupRequirements('/history', { category: 'profile' }, false, true), []);
+});

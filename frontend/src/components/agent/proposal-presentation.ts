@@ -60,6 +60,8 @@ export function proposalPrimaryText(proposal: AgentProposalView): string {
 export function proposalDetailGroups(proposal: AgentProposalView): { visible: AgentDetailRow[]; supporting: AgentDetailRow[] } {
   const visible: AgentDetailRow[] = [], supporting: AgentDetailRow[] = [];
   for (const detail of proposal.details) {
+    // Only the exact projected new-fact placeholder is omitted; candidate expiry is separate.
+    if (proposal.kind === "memory_fact" && detail.label === "有效至" && detail.value === "未設定") continue;
     // The same visibility is already stated beside the lock/group icon. A mismatch is never hidden.
     if (proposal.kind === "memory_fact" && detail.label === "接受後可見範圍"
       && detail.value === (proposal.scope === "family" ? "家庭共享" : "只限你本人")) continue;

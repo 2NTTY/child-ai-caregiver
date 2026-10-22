@@ -24,10 +24,10 @@ function CareSavedRecordsBody({ model, actions, inlineDetail = true }: { model: 
   const loading = ["loading", "loading_more"].includes(model.list.state);
   const hasSnapshot = model.list.hasSnapshot ?? model.list.records.length > 0;
   const filtered = !!model.list.activeQuery.trim() || model.list.activeKind !== "all";
-  const empty = (model.list.state === "ready" || loading && hasSnapshot) && !model.list.records.length && model.list.message === null;
+  const empty = model.online && model.list.state === "ready" && !model.list.records.length && model.list.message === null;
   const showSearch = !empty || filtered || !!query.trim() || kind !== "all" || model.list.hasPrevious || model.list.hasMore;
-  const readState = loading && !hasSnapshot ? "loading" : model.list.state === "error" ? "error" : model.list.state === "stale" ? hasSnapshot ? "stale" : "unavailable" : model.list.message ? "unavailable" : model.list.records.length ? "ready" : "empty";
-  const readMessage = model.list.message ?? (loading && !hasSnapshot ? "正在讀取記錄…" : model.list.state === "error" ? "未能讀取記錄，請重試。" : model.list.state === "stale" ? model.online ? "記錄尚待重新核對。" : "目前離線，記錄尚未核對。" : empty ? filtered ? "沒有符合篩選的已保存記錄" : model.list.hasMore || model.list.hasPrevious ? "此頁暫無已保存記錄" : "暫無已保存記錄" : "");
+  const readState = !model.list.records.length && !model.online ? "stale" : loading && (!hasSnapshot || !model.list.records.length) ? "loading" : model.list.state === "error" ? "error" : model.list.state === "stale" ? hasSnapshot ? "stale" : "unavailable" : model.list.message ? "unavailable" : model.list.records.length ? "ready" : "empty";
+  const readMessage = model.list.message ?? (!model.list.records.length && !model.online ? "目前離線，記錄尚未核對。" : loading && (!hasSnapshot || !model.list.records.length) ? "正在讀取記錄…" : model.list.state === "error" ? "未能讀取記錄，請重試。" : model.list.state === "stale" ? model.online ? "記錄尚待重新核對。" : "目前離線，記錄尚未核對。" : empty ? filtered ? "沒有符合篩選的已保存記錄" : model.list.hasMore || model.list.hasPrevious ? "此頁暫無已保存記錄" : "暫無已保存記錄" : "");
   if (model.access === "lost") return <ReadStateNotice state="unavailable" message="目前沒有權限查看這個孩子的記錄。" />;
   if (inlineDetail && model.deletion) return <CareRecordDelete model={model} actions={actions} />;
   if (inlineDetail && model.detail) return <CareRecordDetail detail={model.detail} actions={actions} canEdit={model.access === "editable"} online={model.online} />;

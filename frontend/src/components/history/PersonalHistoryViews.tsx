@@ -6,6 +6,7 @@ import { historyMessageQuestion, notificationChannelLabel, notificationStatusLab
 import { memoryDateLabel } from "../../memory-reference-view-model";
 import { usePersonalHistoryWorkspace } from "../../production/usePersonalHistory";
 import { chineseFont, colors, readingType, spacing } from "../../theme";
+import { EmptyListCard } from "../EmptyListCard";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppButton } from "../ui";
@@ -40,7 +41,8 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
           <Text selectable style={styles.body}>{match.excerpt}</Text><Text style={styles.meta}>搜尋摘要，原文尚未完整讀取</Text>
           <AppButton label="查看原文" variant="quiet" density="compact" disabled={!owner.online || owner.busy.message} onPress={() => owner.actions.readMessage(match.id)} />
         </BackgroundSurface>)}
-        {!matches.length ? <BackgroundSurface padded><Text style={styles.meta}>{read.data?.complete ? "已掃過全部可讀歷史，沒有符合篩選的結果。" : "已掃過的範圍未有符合篩選的結果；可繼續搜尋。"}</Text></BackgroundSurface> : null}
+        {!matches.length && read.state === "ready" && !owner.busy.history && owner.online && owner.access !== "revoked" && read.data.query === searchText ? <EmptyListCard testID="conversation-history-empty" title={read.data.complete ? "沒有符合篩選的對話" : "已搜尋的範圍未有符合結果"}
+          detail={read.data.complete ? "本次搜尋已完整掃過可讀歷史。" : "仍有歷史未搜尋，可繼續搜尋。"} /> : null}
         {read.data ? <BackgroundSurface padded><Text style={styles.meta}>已掃 {read.data.scanned} 則 · {read.data.complete ? "本次搜尋已完整掃過可讀歷史" : "搜尋尚未完整，仍有歷史未掃過"}</Text></BackgroundSurface> : null}
         {read.data?.nextCursor ? <AppButton label={owner.busy.history ? "正在繼續搜尋…" : "繼續搜尋歷史"} variant="secondary" disabled={!owner.online || owner.busy.history || read.data.query !== searchText} onPress={owner.actions.moreHistory} /> : null}
         {read.state === "stale" ? <AppButton label="重新搜尋" variant="quiet" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /> : null}
@@ -70,7 +72,8 @@ export function PersonalNotificationHistoryView({ searchText, dateRange }: { sea
           {item.status === "accepted" && !item.acknowledgedAt ? <Text style={styles.meta}>尚未確認收到</Text> : null}
           {item.status === "unknown" ? <Text style={styles.meta}>結果待核對，未自動重發</Text> : null}
         </BackgroundSurface>)}
-        {!items.length ? <BackgroundSurface padded><Text style={styles.meta}>{read.data?.complete ? "已載入完整本人通知，沒有符合篩選的項目。" : "已載入頁中沒有符合篩選的項目；仍可載入更多渠道及記錄。"}</Text></BackgroundSurface> : null}
+        {!items.length && read.state === "ready" && !owner.busy.notifications && owner.online && owner.access !== "revoked" ? <EmptyListCard testID="notification-history-empty" title={read.data.complete ? "沒有符合篩選的通知" : "已載入頁中沒有符合篩選的通知"}
+          detail={read.data.complete ? "已完整載入本人通知。" : "仍有渠道或記錄未載入，可繼續讀取。"} /> : null}
         {read.data ? <BackgroundSurface padded><Text style={styles.meta}>{read.data.complete ? "已完整載入" : "尚有通知未載入"} · 已載入 {read.data.items.length} 項</Text></BackgroundSurface> : null}
         {read.data?.nextCursor ? <AppButton label={owner.busy.notifications ? "正在讀取…" : "載入更多本人通知"} variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.moreNotifications} /> : null}
         {read.state === "stale" ? <AppButton label="重新讀取本人通知" variant="quiet" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} /> : null}

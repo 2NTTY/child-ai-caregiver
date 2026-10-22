@@ -90,14 +90,14 @@ test('all known health/care values remain exact; no null is converted into an ab
   assert.equal(s.profile().current.data, exact);
 });
 
-test('metadata and unchanged history owner are behind an accessible reversible disclosure, reset on child change', () => {
+test('profile details retain metadata but no history entry, reset on child change', () => {
   const s = scenario(); assert.equal(s.button('檔案詳情').props.expanded, false); s.click('檔案詳情');
   assert.equal(s.button('檔案詳情').props.expanded, true);
   for (const text of ['合成檔案來源', '合成更正原因', '合成家長', '2026-10-07 14:00', '資料有效至']) assert.ok(s.copy().includes(text));
   assert.ok(s.h.node('profile-revision-details')); assert.equal(s.counts().histories, 0);
-  s.click('確認及更正歷史'); assert.equal(s.counts().histories, 1); assert.equal(s.button('已顯示歷史').props.disabled, true);
+  assert.equal(s.button('確認及更正歷史'), undefined); assert.equal(s.button('檔案詳情').props.accessibilityLabel, '檔案詳情');
   s.click('檔案詳情'); assert.equal(s.h.node('profile-revision-details'), undefined);
-  s.click('檔案詳情'); assert.equal(s.counts().histories, 1);
+  s.click('檔案詳情'); assert.equal(s.counts().histories, 0);
   s.patch({ child: { id: 'child-b', name: '合成小晴' } }); assert.equal(s.button('檔案詳情').props.expanded, false);
 });
 

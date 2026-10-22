@@ -52,6 +52,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
     : careReviewMatchesTab(item, tab))
     && (sourceKey === "all" || careReviewSourceKey(item) === sourceKey) && careReviewMatchesQuery(item, query)));
   const filtered = !!query || sourceKey !== "all" || history && status !== "all";
+  const emptyHistoryState = !model.online || model.list.state === "stale" ? "stale" : ["loading", "loading_more"].includes(model.list.state) ? "loading" : model.list.state === "error" ? "error" : model.list.message ? "unavailable" : "empty";
   const hasTabItems = sourceItems.some(item => history || careReviewMatchesTab(item, tab));
   const showFilters = review.state === "ready" && (hasTabItems || filtered || !!review.hasMore);
   const visiblePage = careReviewPage(items, page), currentPage = visiblePage.page, pageItems = visiblePage.items;
@@ -91,7 +92,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
   const openRecord = (id: string) => { if (occupied) return; setRecordOpen(true); focusRequested.current = true; actions.openRecord(id); };
   const changeTab = (next: CareReviewTab) => { if (occupied) return; actions.closePanel(); setTab(next); setPage(0); setRecordOpen(false); setSelectedId(null); };
   return <View ref={layout.ref} onLayout={layout.onLayout} style={s.workspace} testID={history ? "care-review-history" : "care-review-gate"}>
-    {history && review.state === "ready" && (model.list.state === "error" || model.list.state === "stale") ? <ReadStateNotice state={model.list.hasSnapshot ? "stale" : "error"} message={model.list.message ?? "未能更新記錄，請重試。"}>
+    {history && items.length > 0 && review.state === "ready" && (model.list.state === "error" || model.list.state === "stale") ? <ReadStateNotice state={model.list.hasSnapshot ? "stale" : "error"} message={model.list.message ?? "未能更新記錄，請重試。"}>
       <AppButton label="重新讀取記錄" density="compact" variant="quiet" disabled={occupied || !model.online} onPress={() => actions.search(model.list.activeQuery, model.list.activeKind)} />
     </ReadStateNotice> : null}
     {review.state === "ready" && review.notice ? <BackgroundSurface padded><Text accessibilityLiveRegion="polite" style={s.notice}>{review.notice}</Text></BackgroundSurface> : null}
@@ -115,7 +116,8 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
           {window.olderPendingCount && onOlderPending ? <AppButton label="查看較早待確認" density="compact" variant="secondary" onPress={onOlderPending} disabled={occupied} /> : onHistory ? <AppButton label="查看較早記錄" density="compact" variant="secondary" onPress={onHistory} disabled={occupied} /> : null}</View> : null}
         {review.state !== "ready" ? <ReadStateNotice state={review.state === "loading" ? "loading" : review.state === "error" ? "error" : "unavailable"} title={review.state === "loading" ? "正在讀取核對記錄…" : review.state === "error" ? "未能讀取核對記錄，請重試" : "核對記錄暫不可用"} message={review.state === "unavailable" ? review.notice ?? (model.access === "lost" ? "目前沒有查看這個孩子的權限。" : "暫未取得這個孩子的核對記錄。") : ""}>
           {history && model.access !== "lost" && (model.list.state === "error" || model.list.state === "stale") ? <AppButton label="重新讀取記錄" density="compact" variant="quiet" disabled={occupied || !model.online} onPress={() => actions.search(model.list.activeQuery, model.list.activeKind)} /> : null}
-        </ReadStateNotice> : !items.length ? <ReadStateNotice state="empty" message={filtered ? "沒有符合篩選的核對記錄" : history ? "暫無核對記錄" : window.olderPendingCount || review.hasMore ? "近期暫無待確認記錄" : "暫無待確認記錄"}>
+        </ReadStateNotice> : !items.length ? <ReadStateNotice state={history ? emptyHistoryState : "empty"} message={history && emptyHistoryState !== "empty" ? emptyHistoryState === "loading" ? "正在讀取核對記錄…" : model.list.message ?? "核對記錄尚未更新，請重新讀取。" : filtered ? history && review.hasMore ? "已載入範圍沒有符合篩選的核對記錄" : "沒有符合篩選的核對記錄" : history ? review.hasMore ? "已載入範圍暫無核對記錄" : "暫無核對記錄" : window.olderPendingCount || review.hasMore ? "近期暫無待確認記錄" : "暫無待確認記錄"}>
+          {history && ["error", "stale"].includes(emptyHistoryState) ? <AppButton label="重新讀取記錄" density="compact" variant="quiet" disabled={occupied || !model.online} onPress={() => actions.search(model.list.activeQuery, model.list.activeKind)} /> : null}
           {filtered && searchText === undefined ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied} onPress={() => { if (occupied) return; setLocalQuery(""); setSourceKey("all"); setStatus("all"); }} /> : null}
         </ReadStateNotice> : <View style={s.list}>
           {sections.filter(section => section.items.length).map(section => <View key={section.key} style={s.groupSection}>

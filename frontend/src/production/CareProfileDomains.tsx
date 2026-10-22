@@ -1,5 +1,6 @@
 import { createContext, memo, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "expo-router";
+import { replaceEqualDeep } from "@tanstack/react-query";
 import { CareApiError, createCareApi } from "../../../src/client/care-api";
 import { subscribeOnlineRefresh } from "../../../src/client/online-refresh-events";
 import type { CareCursor, CareRecord, CareValues, ChildProfile, ChildProfileData } from "../../../src/shared/care";
@@ -69,6 +70,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
   const draftBasis = useRef<CareSnapshot | null>(null);
   const pageCursors = useRef<(CareCursor | null)[]>([null]), pageIndex = useRef(0), nextCursor = useRef<CareCursor | null>(null);
   const careHistoryCursor = useRef<number | null>(null), profileHistoryCursor = useRef<number | null>(null);
+  const profileSnapshot = useRef<ChildProfile | null>(null), profileHistoryNotice = useRef<string | null>(null);
   const careGeneration = useRef(0), profileGeneration = useRef(0), historyGeneration = useRef(0);
   const openGeneration = useRef(0);
   const recordReadGeneration = useRef(0), recordRemovals = useRef(new Map<string, number>());
@@ -85,18 +87,25 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     setCare, careRecordView, careRevisionView, savedRecordReview, careOperation });
   const { verify, accessError, read, rawRecord, publishRecord, removeRecord, loadCare, latestCare, careHistory } = careReads;
   function publishProfile(value: ChildProfile, reset: boolean) {
+    // A routine current-profile refresh does not invalidate an already-read history.
+    // Compare raw canonical data, not formatted labels; this ref is scoped with the owner.
+    const unchanged = profileSnapshot.current !== null && replaceEqualDeep(profileSnapshot.current, value) === profileSnapshot.current;
+    profileSnapshot.current = value;
+    if (!unchanged) { profileHistoryCursor.current = null; profileHistoryNotice.current = null; }
+    const historyNotice = profileHistoryNotice.current;
     env.queryClient.setQueryData([...profileKey, "current"], value);
     const revision = profileRevisionView(value, userId);
-    setProfile(previous => ({ ...previous, current: revision, reading: false, needsRefresh: false, notice: null,
+    setProfile(previous => ({ ...previous, current: revision, reading: false, needsRefresh: false, notice: historyNotice,
+      ...(!unchanged ? { history: [], historyOpen: false, hasMoreHistory: false } : {}),
       ...(!reset && previous.operation.state === "conflict" ? { latest: revision } : {}),
       ...(reset ? { basis: revision, latest: null, initialValues: profileFormFromData(value.data), formKey: previous.formKey + 1,
-        reviewedValues: null, intent: null, history: [], historyOpen: false, hasMoreHistory: false } : {}) }));
+        reviewedValues: null, intent: null } : {}) }));
     if (reset) setProfileDirty(false);
   }
   async function loadProfile(recovery = false): Promise<boolean> {
     if (!current() || !envRef.current.online || writing.current || attempt.current && !recovery) return false;
     profileRead.current?.abort(); const control = controller(); profileRead.current = control; const generation = ++profileGeneration.current;
-    setProfile(previous => ({ ...previous, reading: true, notice: null }));
+    setProfile(previous => ({ ...previous, reading: true, notice: profileHistoryNotice.current }));
     try {
       await env.queryClient.cancelQueries({ queryKey: [...profileKey, "current"] });
       if (!current() || generation !== profileGeneration.current || control.signal.aborted) return false;
@@ -212,8 +221,11 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
           } else {
             try {
               const latest = await read([...profileKey, "current"], control, signal => api.getProfile(childId, signal));
-              if (current()) setProfile(previous => ({ ...previous, current: profileRevisionView(latest, userId), latest: profileRevisionView(latest, userId),
-                operation: { state: "conflict", message: "檔案版本已改變，原操作未保存；請比較最新基準。", reference: null } }));
+              if (current()) {
+                publishProfile(latest, false);
+                setProfile(previous => ({ ...previous, latest: profileRevisionView(latest, userId),
+                  operation: { state: "conflict", message: "檔案版本已改變，原操作未保存；請比較最新基準。", reference: null } }));
+              }
             } catch (readError) { if (current() && !accessError(readError, true)) setProfile(previous => ({ ...previous, latest: null, needsRefresh: true,
               operation: { state: "conflict", message: "版本已改變；未能讀取最新基準，請重新讀取檔案。", reference: null } })); }
           }
@@ -257,13 +269,19 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     if (!current() || !envRef.current.online || profileRef.current.reading || !profileRef.current.current || more && !profileRef.current.hasMoreHistory) return;
     const before = more ? profileHistoryCursor.current : profileRef.current.current.version;
     const generation = ++profileGeneration.current, control = controller();
+    profileHistoryNotice.current = null;
     setProfile(previous => ({ ...previous, reading: true, notice: null }));
     try {
       const page = await read([...profileKey, "history", before], control, signal => api.profileHistory(childId, before, signal));
       if (!current() || generation !== profileGeneration.current) return;
       profileHistoryCursor.current = page.nextBeforeVersion;
       setProfile(previous => ({ ...previous, reading: false, historyOpen: true, history: [...(more ? previous.history : []), ...page.revisions.map(value => profileRevisionView(value, userId))], hasMoreHistory: page.nextBeforeVersion !== null }));
-    } catch (error) { if (current() && generation === profileGeneration.current && !accessError(error, true)) setProfile(previous => ({ ...previous, reading: false, notice: "未能讀取檔案歷史，請稍後重試。" })); }
+    } catch (error) {
+      if (current() && generation === profileGeneration.current && !accessError(error, true)) {
+        const notice = "未能讀取檔案歷史，請稍後重試。"; profileHistoryNotice.current = notice;
+        setProfile(previous => ({ ...previous, reading: false, notice }));
+      }
+    }
     finally { released(control); }
   }
 

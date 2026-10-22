@@ -100,20 +100,13 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
         <MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown?.data ? <ProfileReadingSummary data={shown.data} compact={width < 640} /> : !model.reading ? <SectionCard><Text style={styles.body}>{shown ? "沒有已確認檔案。" : "尚未取得可顯示的檔案。"}</Text></SectionCard> : null}</MotionReveal>
         {model.access === "read_only" ? <Text style={styles.notice}>目前為唯讀，可查看檔案及歷史。</Text> : null}
         <View style={styles.readingActions}>
-          <AppButton label="檔案詳情" accessibilityLabel="檔案詳情及更正歷史" variant="quiet" density="compact" expanded={detailsOpen} onPress={() => setDetailsOpen(value => !value)} />
+          <AppButton label="檔案詳情" accessibilityLabel="檔案詳情" variant="quiet" density="compact" expanded={detailsOpen} onPress={() => setDetailsOpen(value => !value)} />
           <AppButton label="重新讀取檔案" variant="quiet" density="compact" onPress={actions.refresh} disabled={!model.online || model.reading || pending} />
           <TextLink label="開啟核對" onPress={onOpenCare} />
         </View>
         <MotionDisclosure expanded={detailsOpen} scopeKey={scopeKey} testID="profile-details-disclosure">
           <SectionCard style={styles.details}>
             {model.current ? <ProfileRevisionDetails revision={model.current} /> : <Text style={styles.meta}>尚未取得可顯示的檔案詳情。</Text>}
-            <View style={styles.sectionRule}>
-              <AppButton label={model.historyOpen ? "已顯示歷史" : "確認及更正歷史"} variant="quiet" onPress={actions.showHistory} disabled={!model.online || model.reading || model.historyOpen} />
-              <MotionDisclosure expanded={model.historyOpen} scopeKey={scopeKey} testID="profile-history-disclosure"><View style={styles.historyList}>
-                {model.history.length ? model.history.map(revision => <View key={revision.version} style={styles.historyItem}><ProfileRevisionSummary revision={revision} /></View>) : <Text style={styles.body}>尚未取得較早版本。</Text>}
-                {model.hasMoreHistory ? <AppButton label="載入更早版本" variant="quiet" onPress={actions.loadOlderHistory} disabled={!model.online || model.reading} /> : null}
-              </View></MotionDisclosure>
-            </View>
           </SectionCard>
         </MotionDisclosure>
       </> : <SectionCard><Text style={styles.body}>新增孩子後，可以在這裏核對檔案。</Text></SectionCard>}
@@ -129,13 +122,11 @@ const styles = StyleSheet.create({
   avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "700" },
   identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs, alignItems: "flex-start" },
   childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 30, fontWeight: "700", flexShrink: 1 },
-  sectionRule: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.md },
   editor: { gap: spacing.md },
   reading: { width: "100%", maxWidth: 960, gap: spacing.lg, minWidth: 0 },
   readingActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.md, rowGap: spacing.sm, minWidth: 0 },
   details: { gap: spacing.lg },
   management: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
-  historyList: { gap: spacing.md },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   notice: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
@@ -145,5 +136,4 @@ const styles = StyleSheet.create({
   deletionConfirmation: { backgroundColor: colors.paleCoral },
   deletionTitle: { color: colors.errorInk },
   confirmationTitle: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool, fontWeight: "700" },
-  historyItem: { borderTopWidth: 1, borderColor: colors.line, paddingTop: spacing.md },
 });

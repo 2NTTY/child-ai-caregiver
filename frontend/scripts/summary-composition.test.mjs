@@ -109,14 +109,16 @@ test('old preparation and archive links redirect once to canonical pages without
   growth.query({ tab: 'preparation' }); assert.equal(growth.render().type, 'GrowthView');
 });
 
-test('injected overview measurements and profile history keep guarded original owner callbacks', () => {
+test('overview measurements keep the original owner and profile history navigates only after approval', () => {
   const h = harness(), measurements = { childId: 'child-a', state: 'ready' }, profileSource = { state: 'available' };
   h.profile({ measurements, profileSource }); const overview = find(h.render(), 'ChildOverviewContent');
   assert.equal(overview.props.measurements, measurements); assert.equal(overview.props.profileSource, profileSource);
   overview.props.onOpenMeasurement('canonical-record'); assert.deepEqual(h.events, [['guard']]); h.approve();
   assert.deepEqual(h.events.at(-1), ['push', { pathname: '/care', params: { record: 'canonical-record' } }]);
-  overview.props.onOpenProfileHistory(); h.approve();
-  assert.deepEqual(h.events.slice(-2), [['profile-history'], ['push', '/profile']]);
+  const before = h.events.length; overview.props.onOpenProfileHistory();
+  assert.deepEqual(h.events.slice(before), [['guard']]); h.approve();
+  assert.deepEqual(h.events.at(-1), ['push', '/history?category=profile']);
+  assert.equal(h.events.some(event => event[0] === 'profile-history'), false, 'Navigation must not eagerly read history');
 });
 
 test('growth preparation and concern actions stay wired, and switching tabs closes only after guard approval', () => {
@@ -175,7 +177,7 @@ test('shared production owners mount once without altering five native tabs or n
   assert.match(layout, /\["more", "history", "memory", "photos", "sources", "summary"/);
   const navigation = compile('src/components/navigation/app-navigation.ts', name => { throw new Error(`Unexpected import ${name}`); });
   assert.equal(navigation.navigationItems.summary.label, '概況');
-  assert.deepEqual(navigation.desktopNavigationGroups.map(group => group.keys), [['home'], ['tasks', 'growth'], ['care', 'summary', 'history'], ['profile', 'memory', 'more']]);
+  assert.deepEqual(navigation.desktopNavigationGroups.map(group => group.keys), [['home'], ['tasks', 'growth'], ['summary', 'history'], ['profile', 'care', 'memory', 'more']]);
   assert.ok(navigation.moreNavigationGroups.flatMap(group => group.items).some(item => item.key === 'summary'));
   assert.equal(navigation.navigationItems.summary.short, '概況');
 });

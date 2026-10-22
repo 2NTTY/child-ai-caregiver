@@ -11,6 +11,8 @@ import { TaskHistoryView } from "../components/tasks/TaskHistoryView";
 import { CareReviewHistoryView, type CareReviewStatusFilter } from "../components/care/CareReviewHistoryView";
 import { CareSavedRecordsView } from "../components/care/CareSavedRecordsView";
 import { PreparationHistoryView } from "../components/preparations/PreparationWorkspace";
+import { ProfileHistoryView } from "../components/profile/ProfileHistoryView";
+import { useProfileWorkspace } from "../workspaces/ProfileWorkspace";
 import { GrowthHistoryView } from "../components/growth/GrowthHistoryView";
 import { createHistoryFilters, historyCategories, historyDateErrors, historyDateRange, historyFilterReducer, normalizeHistoryCategory, normalizeReviewHistoryStatus, normalizeHistoryOlderOnly, type HistoryCategory, type HistoryFilterAction } from "../components/history/history-filters";
 import { useProduction } from "../production/ProductionProvider";
@@ -32,6 +34,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
   const care = useCareWorkspace();
   const growth = useGrowthWorkspace();
   const personal = usePersonalHistoryWorkspace();
+  const profile = useProfileWorkspace();
   const [filters, dispatch] = useReducer(historyFilterReducer, undefined, () => createHistoryFilters(scope, initialCategory));
   const layout = useContainerWidth(), compact = layout.width < 680;
   const scrollRef = useRef<ScrollView>(null), scrollPosition = useRef(0);
@@ -42,6 +45,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
   const taskCategory = filters.category === "tasks";
   const preparationCategory = filters.category === "preparations";
   const growthCategory = filters.category === "growth";
+  const profileCategory = filters.category === "profile";
   const reviewCategory = filters.category === "review", careCategory = filters.category === "care";
   const showingCompactTaskDetail = taskCategory && layout.width < 840 && !!tasks?.model.selected && ["completed", "cancelled"].includes(tasks.model.selected.occurrence.state);
   const taskLocked = !!tasks && (tasks.model.reading || tasks.model.access === "lost" || ["saving", "unknown", "conflict"].includes(tasks.model.operation.state) || !!tasks.model.draft);
@@ -82,6 +86,8 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
       : <Text style={styles.meta}>正在讀取核對記錄…</Text>
     : careCategory ? care ? <CareSavedRecordsView key={care.scopeKey} model={care.model} actions={care.actions} />
       : <Text style={styles.meta}>正在讀取已保存記錄…</Text>
+    : profileCategory ? profile ? <ProfileHistoryView key={profile.scopeKey} model={profile.model} actions={profile.actions} />
+      : <Text style={styles.meta}>正在讀取孩子檔案…</Text>
     : growthCategory ? dateRange ? <GrowthHistoryView key={growth?.scopeKey ?? scope} searchText={filters.searchText} dateRange={dateRange}
       onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onTask={id => navigate(() => { tasks?.actions.selectTask(id); router.push("/tasks"); })} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
@@ -94,7 +100,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
       <AppButton label={current.sourceAction} variant="secondary" onPress={() => navigate(() => router.push(current.sourcePath))} />
     </View>;
 
-  const resultSurface = <BackgroundSurface padded enabled={!reviewCategory && !careCategory && !personalCategory}>{results}</BackgroundSurface>;
+  const resultSurface = <BackgroundSurface padded enabled={!reviewCategory && !careCategory && !personalCategory && !profileCategory}>{results}</BackgroundSurface>;
   return <PageFrame density="compact" title="歷史" scrollRef={scrollRef} scrollTestID="history-scroll"
     onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
@@ -103,6 +109,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
       <BackgroundSurface padded style={styles.sourceRow}>
         <View style={styles.sourceCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text><Text style={styles.meta}>{notificationCategory ? "本人通知，涵蓋帳戶及其他孩子" : current.description}{!growthCategory && !notificationCategory ? ` · 來源：${current.sourceLabel}` : null}</Text></View>
         {reviewCategory || careCategory ? <AppButton label="開啟核對" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/care"))} /> : null}
+        {profileCategory ? <AppButton label="查看檔案" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/profile"))} /> : null}
         {taskCategory ? <AppButton label="開啟待辦" variant="secondary" density="compact" onPress={() => navigate(() => router.push("/tasks"), "workspace")} /> : null}
         {preparationCategory ? <AppButton label="開啟準備單" variant="secondary" density="compact" onPress={() => navigate(() => router.push({ pathname: "/growth", params: { tab: "preparation" } }))} /> : null}
         {growthCategory ? <View style={styles.sourceActions}>
@@ -110,7 +117,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
           <AppButton label="查看年度與季度檔案" variant="quiet" density="compact" style={styles.sourceAction} onPress={() => navigate(() => router.push("/summary?tab=archive"))} />
         </View> : null}
       </BackgroundSurface>
-      {!careCategory && !showingCompactTaskDetail && !showingCompactPreparationDetail ? <BackgroundSurface padded testID="history-filter-toolbar" style={styles.toolbar}>
+      {!careCategory && !profileCategory && !showingCompactTaskDetail && !showingCompactPreparationDetail ? <BackgroundSurface padded testID="history-filter-toolbar" style={styles.toolbar}>
         <AppTextField label={`搜尋${current.label}`} accessibilityLabel={`搜尋${current.label}`} value={filters.searchText} maxLength={200} disabled={filterDisabled} onChangeText={value => filter({ type: "search", value })} />
         {!reviewCategory ? <View style={[styles.dateRow, compact && styles.dateStack]}>
           <View style={styles.dateField}><AppDateField label="開始日期（可不填）" value={filters.from} error={dateErrors.from} disabled={filterDisabled} onChange={value => filter({ type: "from", value })} /></View>
