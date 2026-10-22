@@ -52,6 +52,21 @@ export function preserveMemoryFactUserWording(sourceText: string, content: strin
   return next;
 }
 
+function hasDurableMemoryFactTopic(trimmed: string): boolean {
+  const allergyOrRestriction = /(?:對.{0,12}過敏|過敏|allergy|忌口|唔可以食|不能吃|不吃)/iu.test(trimmed);
+  const preference = /(?:唔鍾意|不喜歡|不喜欢|鍾意|钟意|喜歡|喜欢|愛食|爱吃|愛吃|愛喝|爱喝|偏好|偏愛|偏爱|\blikes?\b|\bloves?\b|\bdislikes?\b|\bprefers?\b)/iu.test(trimmed);
+  return allergyOrRestriction || preference;
+}
+
+function looksLikeMemoryFactQuestionForm(trimmed: string): boolean {
+  // Questions / lookups must not force a new candidate.
+  if (/[？?]|(?:有冇|有没有|係咪|是不是|是否|嗎|么)\s*$/u.test(trimmed)) return true;
+  if (/(?:有冇|有没有|係咪|是不是|是否).{0,24}(?:過敏|allergy|鍾意|钟意|喜歡|喜欢)/iu.test(trimmed)) return true;
+  // A-not-A preference questions (with or without ?).
+  if (/鍾唔鍾意|钟唔钟意|喜不喜[歡欢]|愛唔愛|爱唔爱/u.test(trimmed)) return true;
+  return false;
+}
+
 /**
  * True when the current user message is a durable personal-fact statement
  * (allergy, food restriction, or lasting preference such as likes/dislikes)
@@ -60,12 +75,31 @@ export function preserveMemoryFactUserWording(sourceText: string, content: strin
 export function looksLikeDurableMemoryFactStatement(text: string): boolean {
   const trimmed = text.normalize("NFKC").trim();
   if (!trimmed || trimmed.length > 400) return false;
-  // Questions / lookups must not force a new candidate.
-  if (/[？?]|(?:有冇|有没有|係咪|是不是|是否|嗎|么)\s*$/u.test(trimmed)) return false;
-  if (/(?:有冇|有没有|係咪|是不是|是否).{0,24}(?:過敏|allergy|鍾意|钟意|喜歡|喜欢)/iu.test(trimmed)) return false;
-  // A-not-A preference questions (with or without ?).
-  if (/鍾唔鍾意|钟唔钟意|喜不喜[歡欢]|愛唔愛|爱唔爱/u.test(trimmed)) return false;
-  const allergyOrRestriction = /(?:對.{0,12}過敏|過敏|allergy|忌口|唔可以食|不能吃|不吃)/iu.test(trimmed);
-  const preference = /(?:唔鍾意|不喜歡|不喜欢|鍾意|钟意|喜歡|喜欢|愛食|爱吃|愛吃|愛喝|爱喝|偏好|偏愛|偏爱|\blikes?\b|\bloves?\b|\bdislikes?\b|\bprefers?\b)/iu.test(trimmed);
-  return allergyOrRestriction || preference;
+  if (looksLikeMemoryFactQuestionForm(trimmed)) return false;
+  return hasDurableMemoryFactTopic(trimmed);
+}
+
+/**
+ * True when the user is asking about an allergy / lasting preference rather than
+ * stating a new durable fact. propose_fact must not open a candidate on these turns.
+ */
+export function looksLikeDurableMemoryFactQuestion(text: string): boolean {
+  const trimmed = text.normalize("NFKC").trim();
+  if (!trimmed || trimmed.length > 400) return false;
+  return hasDurableMemoryFactTopic(trimmed) && looksLikeMemoryFactQuestionForm(trimmed);
+}
+
+/** Near-term model expiries (~minutes/hours) are not valid for durable allergy/preference facts. */
+const DURABLE_FACT_MIN_VALID_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Coerce absurdly short validUntil values on allergy/preference proposals to null
+ * (no expiry). Longer intentional windows are kept.
+ */
+export function sanitizeDurableMemoryFactValidUntil(content: string, validUntil: string | null, now = Date.now()): string | null {
+  if (validUntil === null) return null;
+  if (!hasDurableMemoryFactTopic(content.normalize("NFKC").trim())) return validUntil;
+  const until = Date.parse(validUntil);
+  if (!Number.isFinite(until) || until - now < DURABLE_FACT_MIN_VALID_MS) return null;
+  return validUntil;
 }

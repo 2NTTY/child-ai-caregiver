@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { randomUUID } from "node:crypto";
-import { factIsApplicable, looksLikeDurableMemoryFactStatement, normalizedFactKey, preserveMemoryFactUserWording, profileIsApplicable, requireTopicTransition, topicMayAsk } from "../server/memory-policy.ts";
+import { factIsApplicable, looksLikeDurableMemoryFactQuestion, looksLikeDurableMemoryFactStatement, normalizedFactKey, preserveMemoryFactUserWording, profileIsApplicable, requireTopicTransition, sanitizeDurableMemoryFactValidUntil, topicMayAsk } from "../server/memory-policy.ts";
 import { factValuesSchema, summarySaveSchema } from "../server/memory-validation.ts";
 import { handleMemoryRequest } from "../server/memory-api.ts";
 import type { MemoryStore } from "../server/memory.ts";
@@ -124,4 +124,22 @@ test("lasting preference statements require propose_fact; preference questions d
   assert.equal(looksLikeDurableMemoryFactStatement("BB 鍾唔鍾意香蕉"), false);
   assert.equal(looksLikeDurableMemoryFactStatement("BB 鍾意香蕉嗎"), false);
   assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇鍾意香蕉？"), false);
+});
+
+test("allergy questions are not durable statements and are classified as questions", () => {
+  assert.equal(looksLikeDurableMemoryFactStatement("Esther\u5c0d\u829d\u9ebb\u904e\u654f"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("Esther\u5c0d\u829d\u9ebb\u904e\u654f\u55ce\uff1f"), false);
+  assert.equal(looksLikeDurableMemoryFactQuestion("Esther\u5c0d\u829d\u9ebb\u904e\u654f\u55ce\uff1f"), true);
+  assert.equal(looksLikeDurableMemoryFactQuestion("Esther\u5c0d\u829d\u9ebb\u904e\u654f\uff1f"), true);
+  assert.equal(looksLikeDurableMemoryFactQuestion("Esther\u5c0d\u829d\u9ebb\u904e\u654f"), false);
+  assert.equal(looksLikeDurableMemoryFactQuestion("BB \u5c0d\u96de\u86cb\u904e\u654f\u55ce\uff1f"), true);
+});
+
+test("short validUntil on allergy proposals is coerced to null", () => {
+  const now = Date.parse("2026-10-22T01:53:52.706Z");
+  assert.equal(sanitizeDurableMemoryFactValidUntil("Esther\u5c0d\u829d\u9ebb\u904e\u654f", "2026-10-22T02:00:00.000Z", now), null);
+  assert.equal(sanitizeDurableMemoryFactValidUntil("Esther\u5c0d\u829d\u9ebb\u904e\u654f", null, now), null);
+  const long = "2099-12-31T23:59:00.000Z";
+  assert.equal(sanitizeDurableMemoryFactValidUntil("Esther\u5c0d\u829d\u9ebb\u904e\u654f", long, now), long);
+  assert.equal(sanitizeDurableMemoryFactValidUntil("\u666e\u901a\u5099\u8a3b", "2026-10-22T02:00:00.000Z", now), "2026-10-22T02:00:00.000Z");
 });

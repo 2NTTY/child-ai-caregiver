@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createProductAgentTools } from "../server/product-agent-tools.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT } from "../server/agent-work-tool-descriptions.ts";
-import { looksLikeDurableMemoryFactStatement } from "../server/memory-policy.ts";
+import { looksLikeDurableMemoryFactQuestion, looksLikeDurableMemoryFactStatement } from "../server/memory-policy.ts";
 import type { AgentRunContext } from "../server/agent-runtime.ts";
 
 const scope = {
@@ -127,3 +127,56 @@ test("after propose_fact for preference, citation-free present becomes server pe
   assert.equal(draft?.serverSubstitutedReceiptText, true);
 });
 
+test("allergy questions reject propose_fact and do not require propose on present", async () => {
+  assert.equal(looksLikeDurableMemoryFactQuestion("Esther\u5c0d\u829d\u9ebb\u904e\u654f\u55ce\uff1f"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("Esther\u5c0d\u829d\u9ebb\u904e\u654f\u55ce\uff1f"), false);
+  let proposed = false;
+  const surface = tools({
+    trustedUserMessage: "Esther\u5c0d\u829d\u9ebb\u904e\u654f\u55ce\uff1f",
+    propose: async () => { proposed = true; throw new Error("should not propose"); },
+  });
+  const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
+  const rejected = await propose.execute({
+    key: "allergy-sesame-esther", content: "Esther\u829d\u9ebb\u904e\u654f", intendedVisibility: "private", validUntil: null,
+  }, { callId: "c-q-propose" });
+  assert.equal(rejected.status, "rejected");
+  assert.equal((rejected.data as { code?: string }).code, "memory_read_not_propose");
+  assert.equal(proposed, false);
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  const accepted = await present.execute({
+    kind: "clarification",
+    paragraphs: [{ text: "memory says Esther sesame allergy", citationIds: [] }],
+  }, { callId: "c-q-present" });
+  assert.equal(accepted.status, "succeeded");
+});
+
+test("allergy statement propose clears near-term validUntil", async () => {
+  const captured: Array<string | null> = [];
+  const surface = tools({
+    trustedUserMessage: "Esther\u5c0d\u829d\u9ebb\u904e\u654f",
+    propose: async (...args: unknown[]) => {
+      const value = args[3] as { validUntil: string | null };
+      captured.push(value.validUntil);
+      return {
+        id: "f49a222e-77e4-4980-ae87-4c335b2b5c40", runId, childId: scope.childId, version: 1, status: "pending",
+        createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(),
+        value: { kind: "memory_fact", key: "allergy-sesame", content: "Esther\u5c0d\u829d\u9ebb\u904e\u654f", intendedVisibility: "private", validUntil: value.validUntil },
+        targetLabel: null, result: null,
+      };
+    },
+  });
+  const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
+  const short = await propose.execute({
+    key: "allergy-sesame", content: "Esther\u5c0d\u829d\u9ebb\u904e\u654f", intendedVisibility: "private",
+    validUntil: new Date(Date.now() + 6 * 60 * 1000).toISOString(),
+  }, { callId: "c-short" });
+  assert.equal(short.status, "succeeded");
+  assert.equal(captured[0], null);
+  const longUntil = new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString();
+  const long = await propose.execute({
+    key: "allergy-sesame", content: "Esther\u5c0d\u829d\u9ebb\u904e\u654f", intendedVisibility: "private",
+    validUntil: longUntil,
+  }, { callId: "c-long" });
+  assert.equal(long.status, "succeeded");
+  assert.equal(captured[1], longUntil);
+});
