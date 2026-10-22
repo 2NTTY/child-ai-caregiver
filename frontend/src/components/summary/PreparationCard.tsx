@@ -30,7 +30,7 @@ export function PreparationCard(props: PreparationProps) {
     feedback.current.trigger = feedback.current.before !== contentKey ? feedback.current.reference : null;
     feedback.current.reference = null;
   } else if (['none', 'failed', 'conflict'].includes(model.operation) && !model.pending) feedback.current.reference = null;
-  return <SectionCard testID="summary-preparation"><SectionHeader density="compact" title="到診準備單" icon="clipboard-check-outline" subtitle="問題、清單、預約選擇及核對標記會共享給有權讀取這個孩子的家庭成員。" />
+  return <SectionCard testID="summary-preparation"><SectionHeader density="compact" title="到診準備單" icon="preparation-outline" subtitle="問題、清單、預約選擇及核對標記會共享給有權讀取這個孩子的家庭成員。" />
     <MotionFeedback active={model.operation === 'saved' && !model.busy && !model.pending && !model.readFailed} triggerKey={feedback.current.trigger} scopeKey={scopeKey} style={s.smallStack} testID="preparation-saved-feedback">
     <AppStatusBadge label={page.reviewCurrent ? '已核對，仍與目前來源吻合' : page.preparation.reviewed ? '來源已改變，須重新核對' : '到診準備尚未核對'} tone={page.reviewCurrent ? 'success' : 'warning'} />
     <Text style={s.meta}>家庭共享 · {page.preparation.updatedAt ? `最近保存：${page.preparation.updatedBy ?? '未提供保存者'} · ${summaryTime(page.preparation.updatedAt)}` : '尚未有保存時間'}</Text>
@@ -152,7 +152,7 @@ function PreparationForm({model, actions, onAgent, onRecord, onTask, onDraftStat
         <AppButton label={`移除${label}`} variant="quiet" disabled={!editable || removed} onPress={() => removeRow('checklist', index, item.id)} />
       </View>;
     }} />
-    {!checklist.fields.length && emptyReady ? <EmptyListCard title="目前準備草稿沒有清單項目" detail="可使用「新增到診準備」補充；新增內容仍須核對及保存。" icon="clipboard-check-outline" testID="preparation-editor-checklist-empty" /> : null}
+    {!checklist.fields.length && emptyReady ? <EmptyListCard title="目前準備草稿沒有清單項目" detail="可使用「新增到診準備」補充；新增內容仍須核對及保存。" icon="preparation-outline" testID="preparation-editor-checklist-empty" /> : null}
     <AppButton ref={addChecklistRef} label="新增到診準備" variant="secondary" disabled={!editable || checklist.fields.length >= 16} onPress={() => appendRow('checklist')} />
     <Text style={s.meta}>問題最多 500 字，準備項目最多 300 字；不截短。依正式契約，保存內容會移除兩端空白；原草稿保留，下方顯示實際保存內容。</Text>
     {parsed.success ? <View style={s.box} testID="summary-save-review"><Text style={s.title}>保存前核對</Text>{parsed.data.questions.map((item, index) => <Text key={index} selectable style={s.body}>問題 {index + 1}：{item.text}</Text>)}{parsed.data.checklist.map((item, index) => <Text key={index} selectable style={s.body}>準備 {index + 1}：{item.done ? '已完成' : '未完成'} · {item.text}</Text>)}<Text style={s.meta}>核對標記：{parsed.data.reviewed ? '已核對' : '未核對'}</Text></View> : <HelperText type="error">請核對空白欄位及字數；不會自動刪項或截短。</HelperText>}

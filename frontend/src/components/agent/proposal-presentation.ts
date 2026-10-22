@@ -16,7 +16,7 @@ export const proposalDestinationIcons: Record<AgentProposalView["kind"], AppIcon
   family_document_change: "file-document-outline",
   memory_fact: "notebook-outline", memory_fact_revise: "notebook-outline", memory_fact_deactivate: "notebook-outline",
   private_source_create: "link-variant", private_source_change: "link-variant",
-  concern_create: "eye", concern_change: "eye",
+  concern_create: "concern-outline", concern_change: "concern-outline",
 };
 
 const rowIcons: Record<string, AppIconName> = {

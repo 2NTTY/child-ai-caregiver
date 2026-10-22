@@ -93,11 +93,14 @@ test('GET loading can close without a write warning, while an original pending d
   const s = resultScenario(); s.open(); s.patch({agentModel: {...s.model.agentModel, busy: 'read'}});
   s.button('關閉結果').props.onPress(); s.render(); assert.equal(s.dialog().props.visible, false);
   s.patch({agentModel: {...s.model.agentModel, busy: null}}); s.open();
-  s.patch({agentModel: {...s.model.agentModel, pendingDecision: {opId: 'original'}, run: {id: 'run-a', childId: 'child-a', status: 'unknown', proposals: []}}});
-  s.dialog().props.onDismiss(); s.render(); assert.ok(s.button('留在此頁查核')); assert.equal(s.button('捨棄草稿並離開'), undefined);
-  s.button('留在此頁查核').props.onPress(); s.render();
+  s.patch({agentModel: {...s.model.agentModel, pendingDecision: {runId: 'run-a', proposalId: 'proposal-a', input: {expectedVersion: 1, decision: 'accept', confirmShared: true}, reviewed: false, reconfirm: false}, run: {id: 'run-a', childId: 'child-a', status: 'unknown', proposals: []}}});
+  s.dialog().props.onDismiss(); s.render(); assert.equal(s.dialog().props.visible, false);
+  assert.equal(s.button('留在此頁查核'), undefined); assert.equal(s.button('捨棄草稿並離開'), undefined);
+  s.button('查看所選結果').props.onPress(); s.render(); assert.equal(s.dialog().props.visible, true);
   s.h.hosts().find(n => n.type === 'AgentRunView').props.actions.checkOriginal(); assert.equal(s.counts().checks, 1);
-  assert.equal(s.model.agentModel.pendingDecision.opId, 'original');
+  assert.equal(s.model.agentModel.pendingDecision.runId, 'run-a'); assert.equal(s.model.agentModel.pendingDecision.input.expectedVersion, 1);
+  assert.deepEqual(s.counts().selected, ['run-a', 'run-a', 'run-a'], 'every explicit reopen reselects the same owner run for GET');
+
 });
 test('scope replacement hides old results immediately and rejects old close callbacks', () => {
   const s = resultScenario(); s.open(); const close = s.button('關閉結果').props.onPress;
@@ -107,13 +110,14 @@ test('scope replacement hides old results immediately and rejects old close call
 });
 
 
-test('read-only result modal preserves pending decisions across workspace navigation but still guards a child change', () => {
+test('read-only result modal preserves pending decisions while allowing closure and child navigation owned above the page', () => {
   const s = resultScenario(); s.open();
-  const pendingDecision = {opId: 'original', decision: 'accept'};
+  const pendingDecision = {runId: 'run-a', proposalId: 'proposal-a', input: {expectedVersion: 1, decision: 'accept', confirmShared: true}, reviewed: false, reconfirm: false};
   s.patch({agentModel: {...s.model.agentModel, pendingDecision}});
   let navigated = 0; s.navigate(() => navigated++, 'workspace'); assert.equal(navigated, 1);
   assert.equal(s.button('留在此頁查核'), undefined); assert.equal(s.model.agentModel.pendingDecision, pendingDecision);
-  s.navigate(() => navigated++, 'child'); assert.equal(navigated, 1); assert.ok(s.button('留在此頁查核'));
+  s.navigate(() => navigated++, 'child'); assert.equal(navigated, 2); assert.equal(s.button('留在此頁查核'), undefined);
+  assert.equal(s.model.agentModel.pendingDecision, pendingDecision);
   assert.equal(s.button('捨棄草稿並離開'), undefined);
 });
 test('denied and idle selected runs never claim an active read or expose another run body', () => {

@@ -64,23 +64,22 @@ function ChangeDetail({ label, value, prominent = false }: { label: string; valu
   </View>;
 }
 
+function decisionMessage(model: AgentRunModel): string {
+  const pending = model.pendingDecision;
+  return pending?.rejected || pending?.reconfirm
+    ? pending.input.decision === "accept" ? "未接受成功" : "未略過成功"
+    : "暫時無法確認結果";
+}
+
 function OriginalDecision({ model, actions }: { model: AgentRunModel; actions: AgentRunActions }) {
   const pending = model.pendingDecision;
   if (!pending) return null;
-  const originalProposal = model.run?.proposals.find(proposal => proposal.id === pending.proposalId);
-  return <View style={styles.review}>
-    <Text accessibilityRole="header" style={styles.title}>原確認結果待查核</Text>
-    <Text style={styles.body}>原操作的結果尚未確定，所有新決定暫停。先讀取原運行並核對，不要另建一次確認。</Text>
-    <DetailRow label="原決定" value={pending.input.decision === "accept" ? "接受" : "略過"} />
-    <DetailRow label="原核對版本" value={String(pending.input.expectedVersion)} />
-    <DetailRow label="原候選事項" value={originalProposal?.title ?? pending.proposalId} />
-    <Text style={styles.warning}>{!pending.reviewed
-      ? "尚未重新讀取原運行；核對後才可明確重試原決定。"
-      : pending.reconfirm
-        ? "原確認條件已變更，請重新讀取並核對；目前不能重試原決定。"
-        : "已讀取原運行，請核對事項、版本及家庭共享同意；明確重試會沿用原決定。"}</Text>
-    <AppButton label={pending.input.decision === "accept" ? "明確重試原確認" : "明確重試原略過"}
-      variant="secondary" disabled={!mayRetryOriginal(model)} onPress={actions.retryOriginal} style={styles.fullButton} />
+  return <View testID="agent-decision-recovery" style={styles.recovery}>
+    <StateNote tone={pending.rejected || pending.reconfirm ? "error" : "warning"}>
+      {model.busy === "read" ? "正在確認…" : decisionMessage(model)}
+    </StateNote>
+    {pending.reviewed && !pending.reconfirm ? <AppButton label={pending.input.decision === "accept" ? "再次接受" : "再次略過"}
+      variant="secondary" disabled={!mayRetryOriginal(model)} onPress={actions.retryOriginal} style={styles.inlineButton} /> : null}
   </View>;
 }
 
@@ -112,7 +111,7 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
       </View>
       <View style={styles.metadata}>
         {metadata.map((detail, index) => <ChangeDetail key={`${index}-${detail.label}`} label={detail.label} value={detail.value} />)}
-        <ChangeDetail label="接受後可見範圍" value={proposal.scope === "family" ? "家庭共享；目前只限你查看，確認後按家庭權限共享。" : "只限你本人"} />
+        <ChangeDetail label="接受後可見範圍" value={proposal.scope === "family" ? "家庭共享；目前只限你查看，確認後按家庭權限共享。" : "本人"} />
         <ChangeDetail label="確認期限" value={timeLabel(proposal.expiresAt)} />
       </View>
       <AppButton label={sourceExpanded ? "收起其他詳情" : "其他詳情"} expanded={sourceExpanded}
@@ -227,14 +226,10 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
       : model.notice ? `notice:${model.notice.tone}:${model.notice.text}`
         : model.pendingDecision ? `decision:pending:${model.pendingDecision.reviewed}:${model.pendingDecision.reconfirm}`
           : `run:${run?.status ?? "empty"}`;
-  const announcementMessage = readMessage
+  const announcementMessage = model.pendingDecision ? model.busy === "read" ? "正在確認…" : decisionMessage(model) : readMessage
     ?? (!model.online ? "目前離線，恢復連線後才可重新讀取或確認事項。"
       : model.busy === "write" ? "正在處理原決定，請等候原操作結果。"
-        : model.notice?.text ?? (model.pendingDecision
-          ? !model.pendingDecision.reviewed ? "原確認結果待查核，請先重新讀取原運行。"
-            : model.pendingDecision.reconfirm ? "原確認條件已變更，請重新讀取並核對。"
-              : "已讀取原運行，請核對原決定及家庭共享同意，再明確重試。"
-          : run ? `Agent 運行${agentRunLabels[run.status]}；請核對結果。` : ""));
+        : model.notice?.text ?? (run ? `Agent 運行${agentRunLabels[run.status]}；請核對結果。` : ""));
   const selectedProposals = run?.proposals.filter(proposal => !proposalTarget || (proposal.id === proposalTarget.id
     && proposal.kind === proposalTarget.kind && proposal.scope === proposalTarget.scope && proposal.version >= proposalTarget.version)) ?? [];
   const pending = selectedProposals.filter(proposal => proposal.status === "pending" || proposal.status === "expired");
@@ -242,26 +237,26 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
   const targetUnavailable = !!proposalTarget && ready && (!run || selectedProposals.length === 0);
   const problems = run?.tools.filter(tool => tool.status !== "succeeded") ?? [];
   const recoveryNeeded = targetUnavailable || !!model.pendingDecision || model.readState === "failed" || run?.status === "unknown" || problems.length > 0;
-  const refreshLabel = model.pendingDecision || run?.status === "unknown" || problems.length ? "讀取原運行並核對" : model.readState === "failed" ? "重試讀取結果" : targetUnavailable ? "重新檢查這項活動" : "更新";
+  const refreshLabel = model.pendingDecision ? "重新確認" : run?.status === "unknown" || problems.length ? "讀取原運行並核對" : model.readState === "failed" ? "重試讀取結果" : targetUnavailable ? "重新檢查這項活動" : "更新";
   return <View testID="agent-run-view" style={styles.root}>
     <StatusAnnouncement eventKey={announcementKey} message={announcementMessage}
       urgent={model.readState === "failed" || announcementKey.startsWith("notice:error:")} />
     <View testID={activityHeading ? "agent-activity-header" : undefined} style={[styles.toolbar, !!activityHeading && styles.activityToolbar]}>
       {activityHeading ?? (run && ready ? <AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /> : null)}
-      <AppButton label={activityHeading && recoveryNeeded ? "重新檢查" : refreshLabel} accessibilityLabel={recoveryNeeded ? refreshLabel : "更新活動結果"} variant={recoveryNeeded ? "secondary" : "quiet"} density="compact"
+      <AppButton label={model.pendingDecision ? "重新確認" : activityHeading && recoveryNeeded ? "重新檢查" : refreshLabel} accessibilityLabel={recoveryNeeded ? refreshLabel : "更新活動結果"} variant={recoveryNeeded ? "secondary" : "quiet"} density="compact"
         disabled={!model.online || !!model.busy || denied || model.readState === "loading"} loading={model.busy === "read"}
         onPress={actions.refresh} style={styles.inlineButton} />
     </View>
     {activityNavigation}
     {activityHeading && run && ready && run.status !== "completed" ? <View style={styles.scope}><AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /></View> : null}
-    {readMessage ? <StateNote tone={model.readState === "failed" ? "error" : denied ? "warning" : "neutral"}>{readMessage}</StateNote> : null}
+    {readMessage && !model.pendingDecision ? <StateNote tone={model.readState === "failed" ? "error" : denied ? "warning" : "neutral"}>{readMessage}</StateNote> : null}
     {targetUnavailable ? <StateNote tone="warning">未能核對你點選的事項，請重新檢查；不會改為展示另一項供你確認。</StateNote> : null}
     {proposalTarget && ready && selectedProposals.some(proposal => proposal.version > proposalTarget.version) ? <Text style={styles.meta}>內容已更新，以下是剛讀取的版本，請重新核對。</Text> : null}
     {!model.online ? <StateNote tone="warning">目前離線；所示資料是上次讀取的快照。恢復連線後才可重新讀取或確認事項。</StateNote> : null}
     {!denied ? <>
-      {model.notice ? <StateNote tone={model.notice.tone}>{model.notice.text}</StateNote> : null}
+      {model.notice && !model.pendingDecision && !readMessage ? <StateNote tone={model.notice.tone}>{model.notice.text}</StateNote> : null}
       {model.busy === "write" ? <StateNote>正在處理原決定，請等候原操作結果。</StateNote> : null}
-      <OriginalDecision model={model} actions={actions} />
+      {model.busy !== "write" ? <OriginalDecision model={model} actions={actions} /> : null}
     </> : null}
     {run ? <View style={[styles.runContents, !ready && styles.hidden]} aria-hidden={!ready} accessibilityElementsHidden={!ready} importantForAccessibility={ready ? "auto" : "no-hide-descendants"} pointerEvents={ready ? "auto" : "none"}>
       {run.stopReasonLabel ? <StateNote tone="warning">{run.stopReasonLabel}</StateNote> : null}
@@ -322,7 +317,7 @@ const styles = StyleSheet.create({
   warningNote: { backgroundColor: colors.paleAmber, borderLeftWidth: 3, borderLeftColor: colors.amber },
   errorNote: { backgroundColor: colors.paleCoral, borderLeftWidth: 3, borderLeftColor: colors.coral },
   warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool, flexShrink: 1 }, error: { color: colors.errorInk },
-  review: { backgroundColor: colors.paleAmber, borderWidth: 1, borderColor: colors.amber, borderRadius: radius.medium, padding: spacing.md, gap: spacing.md, minWidth: 0 },
+  recovery: { gap: spacing.sm, minWidth: 0 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 }, decisionButton: { flexGrow: 1, flexBasis: 120, minWidth: 0, maxWidth: "100%" },
   fullButton: { alignSelf: "stretch", maxWidth: "100%", minWidth: 0 }, inlineButton: { alignSelf: "flex-start", maxWidth: "100%", minWidth: 0 },
   problems: { gap: spacing.sm, minWidth: 0 }, tool: { gap: spacing.sm, paddingBottom: spacing.sm },

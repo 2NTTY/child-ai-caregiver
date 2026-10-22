@@ -44,6 +44,7 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
     <Button
       ref={ref}
       mode={filled ? "contained" : "outlined"}
+      icon={variant === "danger" || variant === "danger-secondary" ? ({ color, size }) => <AppIcon name="alert-outline" color={color} size={size} importantForAccessibility="no" /> : undefined}
       buttonColor={variant === "danger" ? colors.errorInk : variant === "accent" ? colors.accent : filled ? undefined : "transparent"}
       textColor={variant === "danger" ? colors.white : variant === "danger-secondary" ? colors.errorInk : variant === "accent" ? colors.onAccent : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
       rippleColor={variant === "primary" || variant === "danger" ? colors.darkActionRipple : undefined}

@@ -1,8 +1,10 @@
 import { EmptyListCard } from "../components/EmptyListCard";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { PageFrame } from "../components/PageFrame";
+import { ManualFormDialog } from "../components/FormDialog";
 import { AppButton, AppTextField } from "../components/ui";
 import { AppIcon } from "../components/AppIcon";
 import { useContainerWidth } from "../components/useContainerWidth";
@@ -31,29 +33,74 @@ const steps: { title: string; description: string; action: string; destination: 
 
 export default function GuideScreen() {
   const layout = useContainerWidth();
-  const { model, actions, controller, recordsState, refresh, signOut, user, online } = useProduction();
+  const { model, actions, controller, recordsState, refresh, signOut, user, online, identityKey } = useProduction();
   const [currentStep, setCurrentStep] = useState(0);
+  const [focusedChild, setFocusedChild] = useState<string | null>(null);
+  const pathname = usePathname(), lastPath = useRef(pathname);
+  const creating = recordsState.busy === "createChild";
+  const createUnknown = recordsState.childOutcome === "unknown" || recordsState.childOutcome === "checked";
+  useEffect(() => {
+    if (lastPath.current === "/guide" && pathname !== "/guide" && !creating && !createUnknown) controller.setChildName("");
+    lastPath.current = pathname;
+  }, [pathname]);
   const lockedChild = !!recordsState.busy || recordsState.childrenLoading || recordsState.childOutcome !== "draft";
-  usePreviewLeaveGuard(!!recordsState.childName, recordsState.childOutcome === "unknown" || recordsState.childOutcome === "checked" || recordsState.busy === "createChild", "account");
+  usePreviewLeaveGuard(!!recordsState.childName, createUnknown || creating, "account");
+  const refreshDisabled = !recordsState.online || !!recordsState.busy || recordsState.childrenLoading;
+  const childRecovery = <>
+    {recordsState.childMessage ? <Text accessibilityLiveRegion="polite" style={styles.body}>{recordsState.childMessage}</Text> : null}
+    {recordsState.childOutcome === "checked" ? <View style={styles.childRecovery}>
+      <Text style={styles.body}>已重讀目前孩子清單；原建立結果仍未確認。只可以查核或重試同一項原操作。</Text>
+      <AppButton label="重試原建立操作" variant="secondary" disabled={refreshDisabled}
+        onPress={() => { controller.resolveUnknownChild(false); void controller.createChild(); }} />
+    </View> : null}
+  </>;
+
   const step = steps[currentStep];
   const narrow = layout.width < 720;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
   return <PageFrame density="compact" title="說明">
     <View style={styles.intro}>
       <Text style={styles.introTitle}>{needsGuide ? "從你需要的一步開始" : "隨時重看使用方法"}</Text>
-      <Text style={styles.body}>{user?.name} · {user?.email}</Text>
-      <View style={styles.checklist} testID="production-child-setup">
+      <View style={styles.accountRow} testID="guide-account-actions" accessibilityLabel="目前帳戶">
+        <Text style={[styles.body, styles.accountCopy]}>{user?.name} · {user?.email}</Text>
+        <AppButton label="登出" variant="quiet" density="compact" disabled={!recordsState.online || !!recordsState.busy} onPress={() => { void signOut(); }} />
+      </View>
+      <View style={styles.childSetup} testID="production-child-setup">
         <Text accessibilityRole="header" style={styles.pointTitle}>你的孩子</Text>
         {recordsState.childrenLoading ? <Text style={styles.body}>正在讀取孩子列表…</Text> : null}
         {recordsState.childrenError ? <Text accessibilityLiveRegion="polite" style={styles.body}>{recordsState.childrenError}</Text> : null}
         {online && recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && model.children.length === 0 ? <EmptyListCard title="目前沒有可存取的孩子" detail="可以先建立第一位孩子。" /> : null}
-        <View style={styles.stepControls}>{model.children.map(child => <AppButton key={child.id} label={`${child.displayName}${child.id === model.selectedChildId ? "（目前孩子）" : ""}`} variant={child.id === model.selectedChildId ? "primary" : "secondary"} disabled={lockedChild} onPress={() => actions.selectChild(child.id)} />)}</View>
-        <AppTextField label="孩子稱呼" accessibilityLabel="孩子稱呼" value={recordsState.childName} onChangeText={value => controller.setChildName(value)} disabled={lockedChild} maxLength={80} />
-        <View style={styles.stepControls}><AppButton label="建立孩子" loading={recordsState.busy === "createChild"} disabled={lockedChild || !recordsState.online || !recordsState.childName.trim()} onPress={() => { void controller.createChild(); }} />
-          <AppButton label={recordsState.childOutcome === "unknown" || recordsState.childOutcome === "checked" ? "查核原建立操作" : "重新讀取孩子"} variant="quiet" disabled={!recordsState.online || !!recordsState.busy} onPress={() => { void refresh(); }} /></View>
-        {recordsState.childMessage ? <Text accessibilityLiveRegion="polite" style={styles.body}>{recordsState.childMessage}</Text> : null}
-        {recordsState.childOutcome === "checked" ? <><Text style={styles.body}>已重讀目前孩子清單；原建立結果仍未確認。只可以查核或重試同一項原操作。</Text><AppButton label="重試原建立操作" variant="secondary" disabled={!!recordsState.busy || !recordsState.online} onPress={() => { controller.resolveUnknownChild(false); void controller.createChild(); }} /></> : null}
-        <AppButton label="登出" variant="quiet" disabled={!recordsState.online || !!recordsState.busy} onPress={() => { void signOut(); }} />
+        <View style={styles.childToolbar} testID="guide-child-toolbar">
+          {model.children.length ? <View style={styles.childOptions} testID="guide-child-options" accessibilityLabel="選擇孩子">
+            {model.children.map(child => {
+              const selected = child.id === model.selectedChildId;
+              return <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`${child.displayName}${selected ? "，目前孩子" : ""}`}
+                accessibilityState={{ selected, disabled: lockedChild }} aria-pressed={selected} aria-disabled={lockedChild} disabled={lockedChild}
+                onPress={() => actions.selectChild(child.id)} onFocus={() => setFocusedChild(child.id)} onBlur={() => setFocusedChild(null)}
+                style={({ pressed }) => [styles.childOption, selected && styles.childOptionSelected, focusedChild === child.id && styles.childOptionFocused,
+                  lockedChild && styles.childOptionDisabled, pressed && !lockedChild && (selected ? styles.selectedPressed : styles.pressed)]}>
+                {selected ? <AppIcon name="check" size={16} importantForAccessibility="no" /> : null}
+                <Text style={styles.childName}>{child.displayName}</Text>
+              </Pressable>;
+            })}
+          </View> : null}
+          <View style={styles.childActions} testID="guide-child-actions">
+            <ManualFormDialog key={`${identityKey}:${pathname}`} label={createUnknown ? "查看原建立操作" : "新增孩子"} title="新增孩子"
+              scopeKey={identityKey ?? "no-identity"} disabled={!!recordsState.deletion}
+              onClose={() => { if (!creating && !createUnknown) controller.setChildName(""); }}>
+              <Text style={styles.body}>填寫孩子稱呼即可建立；其餘資料可以稍後補充。</Text>
+              <AppTextField label="孩子稱呼" accessibilityLabel="孩子稱呼" value={recordsState.childName} onChangeText={value => controller.setChildName(value)} disabled={lockedChild} maxLength={80} />
+              <View style={styles.actions}><AppButton label="建立孩子" loading={creating} disabled={lockedChild || !recordsState.online || !recordsState.childName.trim()}
+                onPress={() => { void controller.createChild(); }} /></View>
+              {childRecovery}
+              {createUnknown ? <View style={styles.actions}><AppButton label="查核原建立操作" variant="quiet" disabled={refreshDisabled} onPress={() => { void refresh(); }} /></View> : null}
+            </ManualFormDialog>
+            <AppButton label={createUnknown ? "查核原建立操作" : recordsState.childrenError ? "重試讀取孩子" : "重新整理"}
+              accessibilityLabel={createUnknown ? "查核原建立操作" : recordsState.childrenError ? "重試讀取孩子" : "重新讀取孩子"}
+              variant="quiet" density="compact" disabled={refreshDisabled} onPress={() => { void refresh(); }} />
+          </View>
+        </View>
+        {childRecovery}
       </View>
     </View>
     <View ref={layout.ref} onLayout={layout.onLayout} style={[styles.workspace, narrow && styles.workspaceNarrow]}>
@@ -88,6 +135,18 @@ export default function GuideScreen() {
 
 const styles = StyleSheet.create({
   intro: { gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.lg },
+  accountRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
+  accountCopy: { flexShrink: 1, maxWidth: "100%" },
+  childSetup: { gap: spacing.sm, paddingTop: spacing.md, paddingBottom: spacing.sm, minWidth: 0 },
+  childToolbar: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md, minWidth: 0 },
+  childOptions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, maxWidth: "100%", minWidth: 0 },
+  childActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.xs, maxWidth: "100%", minWidth: 0 },
+  childOption: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minHeight: 44, maxWidth: "100%", flexShrink: 1, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderRadius: radius.pill, borderWidth: 2, borderColor: colors.line, backgroundColor: colors.controlSurface },
+  childOptionSelected: { borderColor: colors.selectedNav, backgroundColor: colors.paleTeal },
+  childOptionFocused: { borderColor: colors.ink }, childOptionDisabled: { opacity: 0.55 },
+  childName: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700", flexShrink: 1 },
+  childRecovery: { gap: spacing.sm, alignItems: "flex-start", minWidth: 0 },
   introTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section },
   workspace: { flexDirection: "row", gap: spacing.xxl, alignItems: "flex-start", width: "100%", minWidth: 0 }, workspaceNarrow: { flexDirection: "column", gap: spacing.xl },
   steps: { width: 248, flexShrink: 0, gap: spacing.sm }, stepsNarrow: { width: "100%" },

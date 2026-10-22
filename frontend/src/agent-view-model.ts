@@ -25,7 +25,7 @@ export interface AgentRunView {
 export interface AgentPendingDecision {
   runId: string; proposalId: string;
   input: { expectedVersion: number; decision: AgentDecisionKind; confirmShared: boolean };
-  reviewed: boolean; reconfirm: boolean;
+  reviewed: boolean; reconfirm: boolean; rejected?: boolean;
 }
 export interface AgentRunModel {
   online: boolean; writesBlocked?: boolean; readState: AgentReadState; busy: "read" | "write" | null;

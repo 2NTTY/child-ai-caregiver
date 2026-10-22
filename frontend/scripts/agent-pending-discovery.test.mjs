@@ -160,7 +160,9 @@ test('unavailable metadata polls do not retry failed discovery, while genuine ch
   const code = ts.transpileModule(readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const hookModule = { exports: {} };
   new Function('require', 'module', 'exports', code)(name => {
-    assert.equal(name, 'react'); return { useRef: value => ({ current: value }), useEffect: callback => { cleanup = callback(); } };
+    if (name === 'react') return { useRef: value => ({ current: value }), useEffect: callback => { cleanup = callback(); } };
+    assert.ok(['./online-change-observer.ts', './online-refresh-events.ts'].includes(name));
+    return load('src/client/' + name.slice(2));
   }, hookModule, hookModule.exports);
   await agent.readPending(); assert.equal(pendingReads, 1); assert.equal(agent.getSnapshot().pending.state, 'failed');
   hookModule.exports.useOnlineUpdates('/api', 'synthetic-parent', true, async reason => {

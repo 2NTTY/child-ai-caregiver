@@ -13,7 +13,7 @@ export const navigationItems = {
   photos: { href: "/photos", label: "照片與記錄", short: "照片", icon: "image-outline" },
   sources: { href: "/sources", label: "私人來源", short: "來源", icon: "link-variant" },
   tasks: { href: "/tasks", label: "待辦與預約", short: "待辦", icon: "clipboard-check-outline" },
-  growth: { href: "/growth", label: "關注鏈與準備單", short: "關注", icon: "chart-bar" },
+  growth: { href: "/growth", label: "關注鏈與準備單", short: "關注", icon: "concern-outline" },
   summary: { href: "/summary", label: "概況", short: "概況", icon: "overview-outline" },
   contact: { href: "/contact", label: "聯絡授權", short: "聯絡", icon: "bell-outline" },
   profile: { href: "/profile", label: "子女檔案", short: "檔案", icon: "account-child-outline" },

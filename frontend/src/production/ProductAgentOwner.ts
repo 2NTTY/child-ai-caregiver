@@ -1,10 +1,15 @@
 import { z } from "zod";
 import { createProductAgentApi, ProductAgentApiError, requiresFreshAgentConfirmation, type ProductAgentApi } from "../../../src/client/product-agent-api.ts";
 import type { AgentDecision, ProductAgentResult } from "../../../src/shared/product-agent.ts";
-import { mayCheckShared, mayDecide, mayRetryOriginal, type AgentDecisionKind, type AgentInboxModel, type AgentRunModel, type AgentRunView, type AgentProposalView, type AgentReadState } from "../agent-view-model.ts";
+import { mayCheckShared, mayDecide, mayRetryOriginal, type AgentDecisionKind, type AgentInboxModel, type AgentRunModel, type AgentRunView, type AgentProposalView, type AgentReadState, type AgentPendingDecision } from "../agent-view-model.ts";
 import { projectAgentRun, projectAgentProposal } from "./agent-projection.ts";
 
 interface PrivateScope { key: string; userId: string; childId: string }
+export interface AgentRecoveryContext { identityKey: string | null; allowedScopeKeys?: readonly string[] }
+interface DecisionRecovery {
+  scope: PrivateScope; api: ProductAgentApi; pending: AgentPendingDecision;
+  run: AgentRunView | null; rawRun: ProductAgentResult | null;
+}
 export interface AgentPendingDiscovery { state: AgentReadState; hasSnapshot?: boolean; entries: { runId: string; proposal: AgentProposalView }[]; nextCursor: string | null }
 export interface ProductAgentSnapshot { pending: AgentPendingDiscovery; model: AgentRunModel; inbox: AgentInboxModel; runs: Readonly<Record<string, AgentRunView>> }
 const runsSchema = z.object({ runs: z.array(z.object({ runId: z.uuid(), createdAt: z.iso.datetime({ offset: true }) })).max(20) });
@@ -26,6 +31,8 @@ export class ProductAgentOwner {
   private readonly listeners = new Set<() => void>();
   private readonly rawRuns = new Map<string, ProductAgentResult>();
   private selectedRunId: string | null = null;
+  private identityKey: string | null = null;
+  private readonly recovery = new Map<string, DecisionRecovery>();
   private readonly baseUrl: string;
   private readonly fetcher: typeof fetch;
   private readonly onAccessLost: (error: ProductAgentApiError) => void;
@@ -57,16 +64,50 @@ export class ProductAgentOwner {
     });
   }
   private model(patch: Partial<AgentRunModel>) { this.update({ model: { ...this.snapshot.model, ...patch } }); }
-  syncContext(scope: PrivateScope | null, online: boolean) {
-    if (scope?.key !== this.scope?.key) {
+  syncContext(scope: PrivateScope | null, online: boolean, context?: AgentRecoveryContext) {
+    const identityKey = context?.identityKey ?? null;
+    const identityChanged = identityKey !== this.identityKey;
+    if (identityChanged) this.recovery.clear();
+    this.identityKey = identityKey;
+    const allowed = context?.allowedScopeKeys ? new Set(context.allowedScopeKeys) : null;
+    if (allowed) {
+      for (const key of this.recovery.keys()) if (!allowed.has(key)) this.recovery.delete(key);
+      if (scope && !allowed.has(scope.key)) scope = null;
+    }
+    if (scope?.key !== this.scope?.key || scope?.userId !== this.scope?.userId || scope?.childId !== this.scope?.childId || identityChanged) {
+      const pending = this.snapshot.model.pendingDecision;
+      // Only this identity's unresolved operation survives presentation/child changes.
+      // An unknown/loading child list is not authority to erase recovery.
+      if (!identityChanged && identityKey && this.scope && pending && (!allowed || allowed.has(this.scope.key))) {
+        this.recovery.set(this.scope.key, { scope: this.scope, api: this.api,
+          pending: { ...pending, input: { ...pending.input }, reviewed: false }, run: this.snapshot.model.run,
+          rawRun: this.rawRuns.get(pending.runId) ?? null });
+      }
       this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.scope = scope;
-      this.api = this.createApi(); this.selectedRunId = null; this.rawRuns.clear();
-      this.update(initial(online));
+      const candidate = identityKey && scope ? this.recovery.get(scope.key) : undefined;
+      const saved = candidate && candidate.scope.userId === scope?.userId && candidate.scope.childId === scope?.childId ? candidate : undefined;
+      this.recovery.delete(scope?.key ?? "");
+      this.api = saved?.api ?? this.createApi(); this.selectedRunId = saved?.pending.runId ?? null; this.rawRuns.clear();
+      const next = initial(online);
+      if (saved && scope && saved.scope.userId === scope.userId && saved.scope.childId === scope.childId) {
+        if (saved.rawRun) this.rawRuns.set(saved.pending.runId, saved.rawRun);
+        next.model = { ...next.model, run: saved.run, pendingDecision: { ...saved.pending, reviewed: false } };
+      }
+      this.update(next);
+      // Recovery is read-only. A failed read never schedules another read or a POST.
+      if (next.model.pendingDecision && online) void this.refresh();
     } else if (online !== this.snapshot.model.online) {
       if (!online) this.request?.abort();
       this.update({ model: { ...this.snapshot.model, online }, inbox: { ...this.snapshot.inbox, online } });
       if (online) this.resumePendingRead();
     }
+  }
+  forgetChild(childId: string) {
+    for (const [key, saved] of this.recovery) if (saved.scope.childId === childId) this.recovery.delete(key);
+    if (this.scope?.childId !== childId) return;
+    this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null;
+    this.rawRuns.clear(); this.selectedRunId = null; this.api = this.createApi();
+    this.update(initial(this.snapshot.model.online));
   }
   private begin(kind: "read" | "write") {
     if (!this.scope || !this.snapshot.model.online || this.request || this.snapshot.model.readState === "denied" || kind === "write" && this.snapshot.model.writesBlocked) return null;
@@ -79,6 +120,9 @@ export class ProductAgentOwner {
       } };
   }
   private deny(error: ProductAgentApiError) {
+    const identityLost = error.status === 401 || error.code === "session_changed" || error.code === "unauthorized";
+    if (identityLost) this.recovery.clear();
+    else for (const [key, saved] of this.recovery) if (saved.scope.childId === this.scope?.childId) this.recovery.delete(key);
     this.rawRuns.clear(); this.selectedRunId = null; this.pendingRead = null;
     this.update({ ...initial(this.snapshot.model.online), model: { ...initial(this.snapshot.model.online).model,
       readState: "denied", notice: { tone: "warning", text: "登入、存取權或資料已改變；私人結果已清除。" } },
@@ -98,7 +142,7 @@ export class ProductAgentOwner {
   }
   selectRun = (runId: string, background = false) => {
     const model = this.snapshot.model;
-    if (!this.scope || !model.online || model.busy || model.pendingDecision || model.writesBlocked || model.readState === "denied") return;
+    if (!this.scope || !model.online || model.busy || model.pendingDecision && model.pendingDecision.runId !== runId || model.writesBlocked || model.readState === "denied") return;
     if (background && !this.snapshot.inbox.entries.some(item => item.runId === runId)) return;
     this.selectedRunId = runId;
     this.update({ inbox: { ...this.snapshot.inbox, selectedRunId: background ? runId : null },
@@ -119,12 +163,12 @@ export class ProductAgentOwner {
       let notice: AgentRunModel["notice"] = null;
       if (pending) {
         const proposal = result.proposals.find(item => item.id === pending!.proposalId);
-        if (!proposal) notice = { tone: "warning", text: "原事項仍未能核對；所有新決定暫停，請再次讀取原運行。" };
+        if (!proposal) notice = { tone: "warning", text: "暫時無法確認結果" };
         else if (proposal.status === "accepted" || proposal.status === "dismissed") {
-          pending = null; notice = { tone: "saved", text: "Server 已確認原候選的終態，以下顯示實際保存結果。" }; this.onSaved();
+          pending = null; notice = { tone: "saved", text: proposal.status === "accepted" ? "已接受" : "已略過" }; this.onSaved();
         } else if (pending.reconfirm || proposal.version !== pending.input.expectedVersion || pending.input.decision === "accept" && proposal.status === "expired") {
-          pending = null; notice = { tone: "warning", text: "事項或確認基準已變更；請核對新版本，再作新的明確確認。" };
-        } else { pending = { ...pending, reviewed: true }; notice = { tone: "warning", text: "原事項仍待確認；只能明確重試原決定，沒有自動重新提交。" }; }
+          pending = null; notice = { tone: "warning", text: proposal.status === "expired" ? "已過期" : "內容已更新，請重新核對。" };
+        } else { pending = { ...pending, reviewed: true }; notice = { tone: "warning", text: "暫時無法確認結果" }; }
       }
       this.model({ run, readState: "ready", loadedAt: new Date().toISOString(), sharedConfirmed: {}, pendingDecision: pending, notice });
     } catch (error) {
@@ -132,7 +176,7 @@ export class ProductAgentOwner {
       if (accessLost(error)) this.deny(error as ProductAgentApiError);
       else {
         const runs = { ...this.snapshot.runs }; delete runs[runId]; this.rawRuns.delete(runId); this.update({ runs });
-        this.model({ readState: "failed", sharedConfirmed: {}, notice: { tone: "error", text: "未能讀取原運行；現時不能提交變更，原決定仍保留。" } });
+        this.model({ readState: "failed", sharedConfirmed: {}, notice: { tone: "error", text: "暫時無法確認結果" } });
       }
     } finally { request.finish(); }
   };
@@ -153,9 +197,12 @@ export class ProductAgentOwner {
   private async submit(proposalId: string, input: AgentDecision) {
     const runId = this.snapshot.model.run?.id, original = runId ? this.rawRuns.get(runId) : null;
     if (!runId || !original) return;
-    const request = this.begin("write"); if (!request) return;
+    const api = this.api, previous = this.snapshot.model.pendingDecision;
+    const request = this.begin("write"); if (!request || !request.current()) return;
+    const attempt: AgentPendingDecision = { runId, proposalId, input: { ...input }, reviewed: false, reconfirm: false };
+    this.model({ pendingDecision: attempt, sharedConfirmed: {}, notice: null });
     try {
-      const saved = await this.api.decideProposal(request.scope.childId, runId, proposalId, input, request.controller.signal, request.scope.userId);
+      const saved = await api.decideProposal(request.scope.childId, runId, proposalId, input, request.controller.signal, request.scope.userId);
       if (!request.current()) return;
       const run = this.store({ ...original, proposals: original.proposals.map(item => item.id === saved.id ? saved : item) });
       this.model({ run, readState: "ready", sharedConfirmed: {}, pendingDecision: null,
@@ -165,9 +212,18 @@ export class ProductAgentOwner {
     } catch (error) {
       if (!request.current()) return;
       if (accessLost(error)) this.deny(error as ProductAgentApiError);
-      else this.model({ sharedConfirmed: {}, pendingDecision: { runId, proposalId, input: { ...input }, reviewed: false,
-        reconfirm: error instanceof ProductAgentApiError && requiresFreshAgentConfirmation(error) },
-        notice: { tone: "warning", text: "原決定結果未知；請先重新讀取原運行，所有新決定暫停。" } });
+      else if (error instanceof ProductAgentApiError && error.status === 405 && !previous) {
+        this.model({ sharedConfirmed: {}, pendingDecision: null,
+          notice: { tone: "error", text: input.decision === "accept" ? "未接受成功" : "未略過成功" } });
+      } else {
+        // Only explicit contractual rejections are failures; transport/5xx remain unknown.
+        const rejected = error instanceof ProductAgentApiError && (requiresFreshAgentConfirmation(error)
+          || error.status === 400 && ["invalid_input", "sharing_confirmation_required"].includes(error.code ?? ""));
+        this.model({ sharedConfirmed: {}, pendingDecision: { ...attempt, rejected,
+          reconfirm: error instanceof ProductAgentApiError && requiresFreshAgentConfirmation(error) },
+          notice: { tone: rejected ? "error" : "warning", text: rejected
+            ? input.decision === "accept" ? "未接受成功" : "未略過成功" : "暫時無法確認結果" } });
+      }
     } finally { request.finish(); }
     if (request.current() && !this.snapshot.model.pendingDecision && this.snapshot.pending.state === "ready" && !this.pendingRead) void this.readPending();
   }
@@ -234,5 +290,5 @@ export class ProductAgentOwner {
       return url.href;
     } catch { return null; }
   };
-  dispose() { this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.rawRuns.clear(); this.scope = null; this.selectedRunId = null; this.snapshot = initial(this.snapshot.model.online); this.listeners.clear(); }
+  dispose() { this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.rawRuns.clear(); this.recovery.clear(); this.identityKey = null; this.scope = null; this.selectedRunId = null; this.snapshot = initial(this.snapshot.model.online); this.listeners.clear(); }
 }

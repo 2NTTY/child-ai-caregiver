@@ -246,7 +246,8 @@ test('send, unknown recovery, stop, original reply retry, and attachment gates k
 });
 
 test('activity owns a real dialog, reads no receipts while closed, and exposes guarded retry only after candidate failure', () => {
-  base(); production.agentModel = { ...production.agentModel, readState: 'ready', run: { id: 'synthetic-run', proposals: [] } };
+  base(); production.agentActions = { refresh: () => calls.push(['original-run-get']) };
+  production.agentModel = { ...production.agentModel, readState: 'ready', run: { id: 'synthetic-run', proposals: [] } };
   let view = render(AgentConversation, { visible: false, onDismiss: noop, onOpenSettings: noop, onReloadChat: noop, reloadDisabled: false });
   view.effects.forEach(fn => fn()); assert.deepEqual(calls, []); assert.equal(view.tree.type, dialog);
   assert.equal(node(view.tree, 'AgentAuthorization'), undefined);
@@ -259,9 +260,17 @@ test('activity owns a real dialog, reads no receipts while closed, and exposes g
   production.agentPending = { state: 'failed', entries: [] }; rerender(view);
   const retry = label(view.tree, '重新讀取待確認候選');
   assert.equal(retry.props.disabled, false); retry.props.onPress(); assert.deepEqual(calls.at(-1), ['pending']);
-  for (const guard of [{ online: false }, { busy: 'read' }, { pendingDecision: {} }, { writesBlocked: true }, { readState: 'denied' }]) {
+  for (const guard of [{ online: false }, { busy: 'read' }, { pendingDecision: { runId: 'synthetic-run', proposalId: 'synthetic-proposal', input: { expectedVersion: 1, decision: 'accept', confirmShared: false }, reviewed: false, reconfirm: false } }, { writesBlocked: true }, { readState: 'denied' }]) {
     const original = production.agentModel; production.agentModel = { ...original, ...guard }; rerender(view);
-    if (guard.readState === 'denied') assert.equal(label(view.tree, '重新讀取待確認候選'), undefined, 'access loss shows only the guarded detail notice, not discovery controls');
+    if (guard.readState === 'denied' || guard.pendingDecision) {
+      assert.equal(label(view.tree, '重新讀取待確認候選'), undefined, 'access loss and original recovery show guarded details, not discovery controls');
+      const details = node(view.tree, 'AgentRunView'); assert.ok(details);
+      if (guard.pendingDecision) {
+        assert.equal(details.props.model.pendingDecision, guard.pendingDecision);
+        assert.equal(details.props.actions, production.agentActions);
+        details.props.actions.refresh(); assert.deepEqual(calls.at(-1), ['original-run-get']);
+      }
+    }
     else assert.equal(label(view.tree, '重新讀取待確認候選').props.disabled, true);
     production.agentModel = original;
   }

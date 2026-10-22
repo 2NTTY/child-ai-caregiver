@@ -36,7 +36,7 @@ test('desktop navigation uses two-character labels while preserving full accessi
   const { NavItem } = load('components/AppShell.tsx', {}, '\nexports.NavItem = NavItem;');
   assert.deepEqual(desktopNavigationGroups.map(group => group.label), ['常用', '行動', '照顧', '管理']);
   const keys = desktopNavigationGroups.flatMap(group => group.keys);
-  assert.deepEqual(keys.map(key => navigationItems[key].short), ['今日', '待辦', '關注', '記錄', '成長', '歷史', '檔案', '記憶', '全部功能']);
+  assert.deepEqual(keys.map(key => navigationItems[key].short), ['今日', '待辦', '關注', '概況', '歷史', '檔案', '核對', '記憶', '全部功能']);
   for (const key of [...keys, 'settings']) {
     const item = navigationItems[key], tree = NavItem({ item, active: key === 'tasks' });
     assert.equal(tree.props.href, item.href);

@@ -76,7 +76,7 @@ function BackgroundRuns({ model, actions, onSelect, cardRef }: { model: AgentInb
       {model.state === "failed" ? <Text style={styles.error}>未能載入其他活動，請重試。</Text> : null}
       {denied ? <Text style={styles.warning}>已失去讀取權限，原清單已隱藏。</Text> : null}
       {!model.online ? <Text style={styles.warning}>目前離線，所示清單只是上次讀取的快照。</Text> : null}
-      {model.locked && !denied ? <Text style={styles.warning}>原操作待查核，暫時不能切換或收起結果。</Text> : null}
+      {model.locked && !denied ? <Text style={styles.warning}>暫時無法確認結果</Text> : null}
       <AppButton label={model.state === "failed" ? "重新載入活動記錄" : ready ? "更新活動記錄" : "載入活動記錄"} variant="quiet" density="compact"
         disabled={!model.online || model.locked || loading || denied} loading={loading} onPress={actions.refresh} style={styles.inlineButton} />
       {ready ? model.entries.length ? model.entries.slice(0, 20).map(entry => <ActivityCard key={entry.runId} cardKey={`run-${entry.runId}`}
@@ -94,11 +94,13 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
   const cardRefs = useRef(new Map<string, View>()), scrollPosition = useRef(0), selectionSerial = useRef(0);
   const returnAnchor = useRef<{ scopeKey: string; cardKey: string; y: number } | null>(null);
   const pendingReturn = useRef(false), focusedSelection = useRef<string | null>(null);
+  const visibleScope = useRef<string | null>(null);
   const [selection, setSelection] = useState<{ scopeKey: string; runId: string; cardKey: string; label: string; serial: number; target?: ActivityProposalTarget } | null>(null);
+  const [listRequested, setListRequested] = useState(false);
   const selected = selection?.scopeKey === scopeKey ? selection : null;
-  const showDetails = !!selected || agentModel.readState !== "idle";
+  const showDetails = !listRequested && (!!selected || !!agentModel.pendingDecision || agentModel.readState !== "idle");
   const cannotNavigate = !scopeKey || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied";
-  const cannotReturn = agentInbox.locked || cannotNavigate;
+  const cannotReturn = agentModel.busy === "write" || !!agentModel.writesBlocked || agentModel.readState === "denied";
   function cardRef(key: string, node: View | null) { if (node) cardRefs.current.set(key, node); else cardRefs.current.delete(key); }
   function openProposal(entry: { runId: string; proposal: AgentProposalView }) {
     if (!scopeKey || cannotNavigate || !agentModel.online) return;
@@ -106,27 +108,28 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
     returnAnchor.current = { scopeKey, cardKey, y: scrollPosition.current };
     setSelection({ scopeKey, runId: entry.runId, cardKey, label: entry.proposal.title, serial: ++selectionSerial.current,
       target: { runId: entry.runId, id: entry.proposal.id, version: entry.proposal.version, kind: entry.proposal.kind, scope: entry.proposal.scope } });
-    selectAgentRun(entry.runId);
+    setListRequested(false); selectAgentRun(entry.runId);
   }
   function openBackground(runId: string, time: string) {
     if (!scopeKey || cannotNavigate || agentInbox.locked || !agentInbox.online) return;
     const cardKey = `run-${runId}`;
     returnAnchor.current = { scopeKey, cardKey, y: scrollPosition.current };
     setSelection({ scopeKey, runId, cardKey, label: `活動結果 · ${time}`, serial: ++selectionSerial.current });
-    agentInboxActions.select(runId);
+    setListRequested(false); agentInboxActions.select(runId);
   }
   function returnToCards() {
     if (cannotReturn) return;
     pendingReturn.current = true;
-    agentInboxActions.collapse();
-    setSelection(null);
+    if (!agentModel.pendingDecision) agentInboxActions.collapse();
+    setSelection(null); setListRequested(true);
   }
   useLayoutEffect(() => {
     if (selection && selection.scopeKey !== scopeKey) {
-      setSelection(null); returnAnchor.current = null; pendingReturn.current = false; focusedSelection.current = null;
+      setSelection(null); setListRequested(false); returnAnchor.current = null; pendingReturn.current = false; focusedSelection.current = null;
     }
     if (!visible) {
       if (selection) setSelection(null);
+      setListRequested(false);
       returnAnchor.current = null; pendingReturn.current = false; focusedSelection.current = null;
       return;
     }
@@ -149,6 +152,11 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
     scrollRef.current?.scrollTo?.({ y: 0, animated: false });
     if (Platform.OS === "web") (detailRef.current as unknown as HTMLElement | null)?.focus?.({ preventScroll: true });
   }, [visible, scopeKey, showDetails, selected?.serial, agentModel.readState, agentModel.run]);
+  useLayoutEffect(() => {
+    const openedScope = visible && agentModel.online ? scopeKey : null;
+    if (openedScope && visibleScope.current !== openedScope && agentModel.pendingDecision && !agentModel.busy) agentActions.refresh();
+    visibleScope.current = openedScope;
+  }, [visible, scopeKey, agentModel.online]);
   const onLocateSource = (target: View | null, horizontalScroll?: ScrollView | null, verticalTarget?: View | null) =>
     locateCitationSource(target, scrollRef.current, horizontalScroll, verticalTarget);
   const run = agentModel.readState === "ready" ? agentModel.run : null;
@@ -189,7 +197,7 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
       {showDetails ? <View ref={detailRef} tabIndex={-1} testID="agent-activity-detail" accessibilityLabel={`活動詳情${selected ? `：${selected.label}` : ""}`} style={styles.details}>
         <AgentRunView model={agentModel} actions={agentActions} onLocateSource={onLocateSource} activity activityHeading={activityHeading} proposalTarget={selected?.target}
           activityNavigation={<View style={styles.details}><AppButton label="返回活動" accessibilityLabel="返回活動列表" variant="quiet" density="compact" disabled={cannotReturn} onPress={returnToCards} style={styles.inlineButton} />
-            {cannotReturn ? <Text style={styles.label}>{agentModel.pendingDecision ? "這次操作的結果還未確定，請先核對結果再返回。" : "目前正在處理或未能核對存取權，暫時不能返回。"}</Text> : null}</View>} />
+            {cannotReturn ? <Text style={styles.label}>{"目前正在處理或未能核對存取權，暫時不能返回。"}</Text> : null}</View>} />
       </View>
         : <View testID="agent-activity-header" style={styles.activityToolbar}>{activityHeading}
           <AppButton label="更新" accessibilityLabel="更新待確認活動" variant="quiet" density="compact"
@@ -197,6 +205,9 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
             onPress={() => readAgentPending()} style={styles.inlineButton} />
         </View>}
       {!showDetails ? <View ref={listRef} tabIndex={-1} accessibilityLabel="活動列表" testID="agent-activity-list" style={styles.details}>
+        {agentModel.pendingDecision ? <AppButton label="查看待確認結果" variant="quiet" density="compact"
+          disabled={!agentModel.online || !!agentModel.busy || agentModel.readState === "denied"}
+          onPress={() => { setListRequested(false); selectAgentRun(agentModel.pendingDecision!.runId); }} style={styles.inlineButton} /> : null}
         {pendingContent}
         <BackgroundRuns key={scopeKey} model={agentInbox} actions={agentInboxActions} onSelect={openBackground} cardRef={cardRef} />
       </View> : null}

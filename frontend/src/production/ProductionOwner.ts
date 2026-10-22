@@ -190,7 +190,7 @@ export class ProductionOwner {
   private denySelectedChild() {
     const childId = this.controller.getSnapshot().selectedChildId;
     if (!childId) return;
-    this.deniedChildren.add(childId); this.sync();
+    this.deniedChildren.add(childId); this.agentOwner.forgetChild(childId); this.sync();
   }
   private sync() {
     const raw = this.controller.getSnapshot(), userId = confirmedUserId(raw);
@@ -229,8 +229,13 @@ export class ProductionOwner {
       this.fileOwner.syncContext(nextScope && userId && raw.selectedChildId ? {key:nextScope,userId,childId:raw.selectedChildId}:null,raw.online);
       this.draftOwner.retainScope(nextScope);
       this.chatController.syncContext(userId, raw.online, nextScope ? raw.selectedChildId : null);
+      const allowedAgentScopes = raw.childrenLoadedAt && !raw.childrenLoading && !raw.childrenError
+        ? raw.children.filter(child => !this.deniedChildren.has(child.id)).map(child =>
+          productionScopeKey(this.apiBaseUrl, { ...raw, selectedChildId: child.id }, this.generation)).filter((key): key is string => key !== null)
+        : undefined;
       this.agentOwner.syncContext(nextScope && userId && raw.selectedChildId
-        ? { key: nextScope, userId, childId: raw.selectedChildId } : null, raw.online);
+        ? { key: nextScope, userId, childId: raw.selectedChildId } : null, raw.online,
+        { identityKey: this.identity, allowedScopeKeys: allowedAgentScopes });
       this.authorizationOwner.syncContext(nextScope && userId && raw.selectedChildId ? { key: nextScope, userId, childId: raw.selectedChildId } : null, raw.online);
       this.syncMutationLocks();
     } finally { this.syncingChat = false; }

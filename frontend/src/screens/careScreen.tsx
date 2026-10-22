@@ -31,7 +31,8 @@ export function AgentPendingReview() {
   const current = useRef({ scopeKey, selected, visible }); current.current = { scopeKey, selected, visible };
   const mounted = useRef(true), closedScope = useRef<string | null>(null);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
-  usePreviewLeaveGuard(false, visible && (agentModel.busy === "write" || !!agentModel.pendingDecision), "child", undefined, true);
+  // The app-level owner retains unresolved decisions across closing and navigation.
+  usePreviewLeaveGuard(false, visible && agentModel.busy === "write", "child", undefined, true);
   const close = () => leave(() => {
     if (!mounted.current || current.current.scopeKey !== scopeKey || current.current.selected !== selected) return;
     closedScope.current = scopeKey; setOpened(null);
@@ -53,13 +54,16 @@ export function AgentPendingReview() {
       : agentPending.state === "denied" ? <Text>目前沒有權限查看這個孩子的待確認事項。</Text> : agentPending.state === "ready" && online && !agentPending.entries.length ? <EmptyListCard title={agentPending.nextCursor ? "已載入頁面暫無待確認提案" : "暫無待確認提案"} detail={agentPending.nextCursor ? "仍有待確認事項未載入，可繼續讀取。" : undefined} /> : null}
     {agentPending.entries.map(({ runId, proposal }) => <View key={runId + ":" + proposal.id} style={{ gap: spacing.sm }}>
       <Text>{proposal.title}</Text><Text>{proposal.scope === "family" ? "家庭共享" : "私人"} · {proposal.status === "expired" ? "原提案已過期；仍可查看及略過" : "待你核對"}</Text>
-      <AppButton ref={node => { if (node) rowRefs.current.set(runId, node); else rowRefs.current.delete(runId); }} label="查看結果" accessibilityLabel="查看原提案及確認範圍" variant="secondary" disabled={locked || !!agentModel.busy || !!agentModel.pendingDecision}
+      <AppButton ref={node => { if (node) rowRefs.current.set(runId, node); else rowRefs.current.delete(runId); }} label="查看結果" accessibilityLabel="查看原提案及確認範圍" variant="secondary" disabled={locked || !!agentModel.busy || !!agentModel.pendingDecision && agentModel.pendingDecision.runId !== runId}
         onPress={() => { trigger.current = rowRefs.current.get(runId) ?? null; setSelected(runId); setOpened({ scope: scopeKey ?? "", runId }); selectAgentRun(runId); }} />
     </View>)}
+    {agentModel.pendingDecision && !agentPending.entries.some(entry => entry.runId === agentModel.pendingDecision?.runId) ? <AppButton
+      label="查看待確認結果" variant="quiet" disabled={locked || !!agentModel.busy}
+      onPress={() => { const runId = agentModel.pendingDecision!.runId; setSelected(runId); setOpened({ scope: scopeKey ?? "", runId }); selectAgentRun(runId); }} /> : null}
     {agentPending.nextCursor ? <AppButton label="載入較早待確認事項" variant="quiet" disabled={!online || agentPending.state === "loading" || locked} onPress={() => readAgentPending(true)} /> : null}
     {validSelection ? <View style={{ gap: spacing.sm }}>
-      <Text>{agentModel.pendingDecision ? "原確認結果待查核" : agentModel.run!.status === "unknown" ? "結果未知，請查看原運行" : agentRunLabels[agentModel.run!.status]}{agentModel.run!.proposals.some(proposal => proposal.status === "pending" || proposal.status === "expired") ? " · 有待核對提案" : ""}</Text>
-      <AppButton label="查看所選結果" variant="quiet" onPress={() => setOpened({ scope: scopeKey ?? "", runId: selected! })} />
+      <Text>{agentModel.pendingDecision ? "暫時無法確認結果" : agentModel.run!.status === "unknown" ? "結果未知，請查看原運行" : agentRunLabels[agentModel.run!.status]}{agentModel.run!.proposals.some(proposal => proposal.status === "pending" || proposal.status === "expired") ? " · 有待核對提案" : ""}</Text>
+      <AppButton label="查看所選結果" variant="quiet" onPress={() => { setOpened({ scope: scopeKey ?? "", runId: selected! }); selectAgentRun(selected!); }} />
     </View> : null}
     <AppDialog visible={visible} accessibilityLabel="助手運行結果" onDismiss={close} onClosed={closed} style={styles.resultDialog}>
       <AppDialog.Title>助手運行結果</AppDialog.Title>
