@@ -86,7 +86,8 @@ test('summary defaults to overview while archive consumes the same authority-gat
   const h = harness();
   for (const value of [undefined, '', 'report', 'unknown', [], ['overview', 'archive']]) assert.equal(h.normalize(value), 'overview');
   assert.equal(h.normalize('archive'), 'archive'); assert.equal(h.normalize('legacy-preparation'), 'legacy-preparation');
-  let tree = h.render(); assert.equal(tree.props.title, '成長');
+  let tree = h.render(); assert.equal(tree.props.title, '概況');
+  assert.equal(find(tree, 'UnderlineTabs').props.label, '概況與成長檔案');
   assert.deepEqual(find(tree, 'UnderlineTabs').props.items, [{ key: 'overview', label: '概況' }, { key: 'archive', label: '成長檔案' }]);
   assert.ok(find(tree, 'ChildOverviewContent')); assert.ok(find(tree, 'TaskKnowledgeSummaryContent'));
   assert.equal(find(tree, 'GrowthArchive'), undefined); assert.equal(find(tree, 'PreparationWorkspace'), undefined);
@@ -173,10 +174,10 @@ test('shared production owners mount once without altering five native tabs or n
   assert.equal((layout.match(/<Tabs\.Screen name=/g) ?? []).length, 5);
   assert.match(layout, /\["more", "history", "memory", "photos", "sources", "summary"/);
   const navigation = compile('src/components/navigation/app-navigation.ts', name => { throw new Error(`Unexpected import ${name}`); });
-  assert.equal(navigation.navigationItems.summary.label, '成長檔案與概況');
+  assert.equal(navigation.navigationItems.summary.label, '概況');
   assert.deepEqual(navigation.desktopNavigationGroups.map(group => group.keys), [['home'], ['tasks', 'growth'], ['care', 'summary', 'history'], ['profile', 'memory', 'more']]);
   assert.ok(navigation.moreNavigationGroups.flatMap(group => group.items).some(item => item.key === 'summary'));
-  assert.equal(navigation.navigationItems.summary.short, '成長');
+  assert.equal(navigation.navigationItems.summary.short, '概況');
 });
 
 test('production summary composition uses the shared owner and retains original-operation recovery guards', () => {

@@ -10,7 +10,7 @@ import { HomeFocus } from "./HomeFocus";
 export function RightRailContent({ model, actions, contextPath = "/" }: { model: HomeViewModel; actions: HomeActions; contextPath?: string }) {
   const child = model.children.find(item => item.id === model.selectedChildId);
   const routeContext = contextPath === "/chat" ? { title: "目前對話", label: "記憶與參考", destination: "memory" as const }
-    : contextPath === "/growth" ? { title: "關注與準備", label: "成長檔案與概況", destination: "summary" as const }
+    : contextPath === "/growth" ? { title: "關注與準備", label: "概況", destination: "summary" as const }
     : contextPath === "/care" || contextPath === "/photos" ? { title: "記錄核對", label: "請助手協助", destination: "chat" as const }
     : contextPath === "/tasks" ? { title: "行動安排", label: "家庭日常交接", destination: "family" as const }
     : { title: "照顧空間", label: "前往助手", destination: "chat" as const };

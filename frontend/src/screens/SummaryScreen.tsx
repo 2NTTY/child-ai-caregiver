@@ -62,9 +62,9 @@ export function SummaryScreen() {
   }
   if (pathname !== "/summary") return null;
   if (tab === "preparation") return <Redirect href="/growth?tab=preparation" />;
-  return <PageFrame density="compact" title="成長" scrollRef={scrollRef} scrollTestID="child-growth-scroll">
+  return <PageFrame density="compact" title="概況" scrollRef={scrollRef} scrollTestID="child-growth-scroll">
     <View key={scopeKey} ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
-      <UnderlineTabs<SummaryTab> id="child-growth-tabs" label="成長檔案與概況" items={[{ key: "overview", label: "概況" }, { key: "archive", label: "成長檔案" }]} value={tab === "legacy-preparation" ? "overview" : tab} onChange={changeTab} />
+      <UnderlineTabs<SummaryTab> id="child-growth-tabs" label="概況與成長檔案" items={[{ key: "overview", label: "概況" }, { key: "archive", label: "成長檔案" }]} value={tab === "legacy-preparation" ? "overview" : tab} onChange={changeTab} />
       {!child ? <View style={styles.empty}><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" variant="secondary" onPress={() => guarded(() => router.push("/profile"))} /></View> : <>
         <AppTabPanel tabsId="child-growth-tabs" tabKey="overview" active={tab === "overview"}>
           {tab === "overview" ? <><ChildOverviewContent onOpenProfile={() => guarded(() => router.push("/profile"))} onOpenProfileHistory={openProfileHistory}
