@@ -282,3 +282,53 @@ test("generic question form rejects propose_fact without allergy topic", async (
   assert.equal(looksLikeDurableMemoryFactStatement("BB幾多月大嗎？"), false);
 });
 
+
+test("mixed remember + question still allows propose_fact", async () => {
+  const mixed = "請記住：BB 對雞蛋過敏。明天要帶甚麼？";
+  assert.equal(looksLikeDurableMemoryFactQuestion(mixed), false);
+  assert.equal(looksLikeDurableMemoryFactStatement(mixed), true);
+  let proposed = 0;
+  const surface = tools({
+    trustedUserMessage: mixed,
+    propose: async () => {
+      proposed += 1;
+      return {
+        id: "d00dle00-77e4-4980-ae87-4c335b2b5c39", runId, childId: scope.childId, version: 1, status: "pending",
+        createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(),
+        value: { kind: "memory_fact", key: "allergy-egg", content: "BB 對雞蛋過敏", intendedVisibility: "private", validUntil: null },
+        targetLabel: null, result: null,
+      };
+    },
+  });
+  const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
+  const accepted = await propose.execute({
+    key: "allergy-egg", content: "BB 對雞蛋過敏", intendedVisibility: "private", validUntil: null,
+  }, { callId: "c-mixed" });
+  assert.equal(accepted.status, "succeeded");
+  assert.equal(proposed, 1);
+});
+
+test("explicit short-lived preference propose keeps short validUntil", async () => {
+  const content = "BB 只係今日偏好飲暖水，今晚後不適用";
+  const sixHours = new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString();
+  const captured: Array<string | null> = [];
+  const surface = tools({
+    trustedUserMessage: content,
+    propose: async (...args: unknown[]) => {
+      const value = args[3] as { validUntil: string | null };
+      captured.push(value.validUntil);
+      return {
+        id: "e11cafe0-77e4-4980-ae87-4c335b2b5c39", runId, childId: scope.childId, version: 1, status: "pending",
+        createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(),
+        value: { kind: "memory_fact", key: "warm-water-today", content, intendedVisibility: "private", validUntil: value.validUntil },
+        targetLabel: null, result: null,
+      };
+    },
+  });
+  const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
+  const short = await propose.execute({
+    key: "warm-water-today", content, intendedVisibility: "private", validUntil: sixHours,
+  }, { callId: "c-short-pref" });
+  assert.equal(short.status, "succeeded");
+  assert.equal(captured[0], sixHours);
+});

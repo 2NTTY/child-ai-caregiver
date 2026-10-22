@@ -58,6 +58,19 @@ function hasDurableMemoryFactTopic(trimmed: string): boolean {
   return allergyOrRestriction || preference;
 }
 
+/** Explicit ask to record/remember a fact (may appear beside a later question clause). */
+function hasExplicitMemoryRecordRequest(trimmed: string): boolean {
+  return /(?:請記住|请记住|記住|记住|記低|记低|記著|记着|幫我記|帮我记|請記錄|请记录|記錄一下|记录一下|記一記|记一记)/u.test(trimmed);
+}
+
+/**
+ * User wording that marks a short-lived window (today/tonight only), not a durable fact.
+ * When present, an explicit short validUntil must be kept rather than coerced to null.
+ */
+function looksLikeExplicitShortLivedFact(trimmed: string): boolean {
+  return /(?:只係今日|只是今日|只係今晚|只是今晚|只限今日|只限今晚|今晚後不適用|今晚后不适用|今日後不適用|今日后不适用|今晚之後不適用|今晚之后不适用|臨時|暂时|暫時|今次先|今次而已)/u.test(trimmed);
+}
+
 function looksLikeMemoryFactQuestionForm(trimmed: string): boolean {
   // Questions / lookups must not force a new candidate.
   if (/[？?]|(?:有冇|有没有|係咪|是不是|是否|嗎|么)\s*$/u.test(trimmed)) return true;
@@ -75,7 +88,8 @@ function looksLikeMemoryFactQuestionForm(trimmed: string): boolean {
 export function looksLikeDurableMemoryFactStatement(text: string): boolean {
   const trimmed = text.normalize("NFKC").trim();
   if (!trimmed || trimmed.length > 400) return false;
-  if (looksLikeMemoryFactQuestionForm(trimmed)) return false;
+  // Mixed remember + later question still counts as a durable statement when record intent is explicit.
+  if (looksLikeMemoryFactQuestionForm(trimmed) && !hasExplicitMemoryRecordRequest(trimmed)) return false;
   return hasDurableMemoryFactTopic(trimmed);
 }
 
@@ -87,19 +101,25 @@ export function looksLikeDurableMemoryFactStatement(text: string): boolean {
 export function looksLikeDurableMemoryFactQuestion(text: string): boolean {
   const trimmed = text.normalize("NFKC").trim();
   if (!trimmed || trimmed.length > 400) return false;
+  // Explicit record request + trailing question must still allow propose_fact for the remember part.
+  if (hasExplicitMemoryRecordRequest(trimmed)) return false;
   return looksLikeMemoryFactQuestionForm(trimmed);
 }
 
-/** Near-term model expiries (~minutes/hours) are not valid for durable allergy/preference facts. */
+/** Near-term model expiries (~minutes/hours) are not valid for durable allergy/preference facts unless the user stated an explicit short-lived window. */
 const DURABLE_FACT_MIN_VALID_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Coerce absurdly short validUntil values on allergy/preference proposals to null
- * (no expiry). Longer intentional windows are kept.
+ * (no expiry), unless the content itself marks an explicit short-lived window.
+ * Longer intentional windows are kept.
  */
 export function sanitizeDurableMemoryFactValidUntil(content: string, validUntil: string | null, now = Date.now()): string | null {
   if (validUntil === null) return null;
-  if (!hasDurableMemoryFactTopic(content.normalize("NFKC").trim())) return validUntil;
+  const normalized = content.normalize("NFKC").trim();
+  if (!hasDurableMemoryFactTopic(normalized)) return validUntil;
+  // Explicit short-lived wording (e.g. 只係今日／今晚後不適用) keeps the stated window.
+  if (looksLikeExplicitShortLivedFact(normalized)) return validUntil;
   const until = Date.parse(validUntil);
   if (!Number.isFinite(until) || until - now < DURABLE_FACT_MIN_VALID_MS) return null;
   return validUntil;

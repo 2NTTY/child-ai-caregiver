@@ -45,8 +45,8 @@ export interface ChatDeliveryDraft {
   serverSubstitutedSourceText: boolean;
   serverSubstitutedReceiptText?: boolean;
   /**
-   * Server verified this run read confirmed, applicable memory fact(s) and the draft is a
-   * citation-free memory restatement (no knowledge retrieval). Not a generator self-label.
+   * Deprecated: previously granted a delivery-review skip for confirmed-memory restatements.
+   * Kept optional for draft shape compatibility; must never grant a review free pass.
    */
   serverVerifiedMemoryGrounding?: boolean;
   paragraphs: { kind?: AgentAnswer["kind"]; text: string; citationIds: string[] }[];
@@ -136,8 +136,7 @@ export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): b
 
 /**
  * Directive / instructional care wording only.
- * Used to refuse the confirmed-memory delivery exemption: domain words such as BB
- * alone are expected when restating a remembered allergy fact and must not block that skip.
+ * Domain words such as BB alone are expected when restating a remembered allergy fact.
  * Still fails closed for directive advice markers. Does not grant a review skip.
  */
 export function draftLooksLikeDirectiveCareAdvice(draft: ChatDeliveryDraft): boolean {
@@ -158,14 +157,12 @@ export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft): boolean 
  * The generating model's kind alone never grants a skip: caregiving labels force review,
  * and citation-free wording that still looks like care advice also forces review.
  * Only trusted server exemptions may skip: exact allowlisted UI text, pure clarifying
- * questions, pure greetings / short courtesy openers, Server-substituted operation
- * receipts, and Server-verified confirmed-memory restatements (no knowledge retrieval).
+ * questions, pure greetings / short courtesy openers, and Server-substituted operation
+ * receipts. Confirmed memory is review evidence, never a free pass for model-written text.
  * Unknown wording fails closed into review; a keyword miss must not grant an exemption.
  */
 export function requiresChatDeliveryReview(draft: ChatDeliveryDraft): boolean {
   if (draft.serverSubstitutedSourceText || draft.serverSubstitutedReceiptText) return false;
-  // Confirmed memory restatement: Server-tracked grounding, no knowledge retrieval path.
-  if (draft.serverVerifiedMemoryGrounding) return false;
   if (draft.sources.length > 0) return true;
   const text = joinedDraftText(draft);
   if (SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS.has(text)) return false;

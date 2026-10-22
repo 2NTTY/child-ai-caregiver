@@ -143,3 +143,23 @@ test("short validUntil on allergy proposals is coerced to null", () => {
   assert.equal(sanitizeDurableMemoryFactValidUntil("Esther\u5c0d\u829d\u9ebb\u904e\u654f", long, now), long);
   assert.equal(sanitizeDurableMemoryFactValidUntil("\u666e\u901a\u5099\u8a3b", "2026-10-22T02:00:00.000Z", now), "2026-10-22T02:00:00.000Z");
 });
+
+test("explicit short-lived preference keeps short validUntil; durable preference still clamps", () => {
+  const now = Date.parse("2026-10-22T12:00:00.000Z");
+  const sixHours = "2026-10-22T18:00:00.000Z";
+  assert.equal(
+    sanitizeDurableMemoryFactValidUntil("BB 只係今日偏好飲暖水，今晚後不適用", sixHours, now),
+    sixHours,
+  );
+  assert.equal(sanitizeDurableMemoryFactValidUntil("BB 偏好飲暖水", sixHours, now), null);
+  // Allergy without short-lived wording still clamps.
+  assert.equal(sanitizeDurableMemoryFactValidUntil("BB 對雞蛋過敏", sixHours, now), null);
+});
+
+test("mixed remember + question is a statement, not a pure question", () => {
+  const mixed = "請記住：BB 對雞蛋過敏。明天要帶甚麼？";
+  assert.equal(looksLikeDurableMemoryFactQuestion(mixed), false);
+  assert.equal(looksLikeDurableMemoryFactStatement(mixed), true);
+  assert.equal(looksLikeDurableMemoryFactQuestion("BB 對雞蛋過敏嗎？"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 對雞蛋過敏嗎？"), false);
+});

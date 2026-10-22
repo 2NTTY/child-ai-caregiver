@@ -15,7 +15,7 @@ import { taskChangeSchema, taskValuesSchema } from "../src/shared/tasks.ts";
 import { taskParameterHints } from "./task-parameter-hints.ts";
 import { AgentStopped } from "./agent-budget.ts";
 import { looksLikeDurableMemoryFactQuestion, looksLikeDurableMemoryFactStatement, sanitizeDurableMemoryFactValidUntil } from "./memory-policy.ts";
-import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, draftLooksLikeDirectiveCareAdvice, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
+import { chatDeliveryContentHash, chatDeliveryExcerpt, chatDeliveryReviewSourceExcerpt, type ChatDeliveryDraft, type ChatDeliverySource } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentTool } from "./agent-runtime.ts";
 import type { createKnowledgeRetriever } from "./knowledge-retriever.ts";
 import type { MemoryStore } from "./memory.ts";
@@ -377,7 +377,7 @@ export function createProductAgentTools(options: {
           && !parsed.paragraphs.some(item => item.citationIds.length)) {
           throw new FamilyError(400, "propose_fact_required");
         }
-        // Read-backs often skip read_memory_facts; Server still needs confirmed facts for delivery skip.
+        // Read-backs often skip read_memory_facts; Server still attaches confirmed facts as review evidence.
         if (!options.background && parsed.kind !== "no_action"
           && isMemoryRestatementAnswer(parsed as AgentAnswer)
           && !parsed.paragraphs.some(item => item.citationIds.length)) {
@@ -503,8 +503,6 @@ export function createProductAgentTools(options: {
         const source = deliverySource(id);
         if (source) sources.push(source);
       }
-      const hasKnowledgeCitation = answer.paragraphs.some(paragraph =>
-        paragraph.citationIds.some(id => evidence.has(id)));
       // When the answer carries no knowledge/private-source cites, attach Server-read
       // confirmed memory facts so an independent review (if required) has excerpts.
       if (!sources.length && memoryGrounding.size) sources.push(...memoryGrounding.values());
@@ -516,14 +514,7 @@ export function createProductAgentTools(options: {
         serverSubstitutedReceiptText: serverReceiptText !== null,
         paragraphs, sources, scope,
       };
-      // Trusted exemption: confirmed memory restatement with no knowledge cites in the answer.
-      // Unused search_knowledge must not block the skip (mode may leave not_used).
-      // Domain words (BB) alone do not block; directive care advice still refuses the skip.
-      if (!serverReceiptText && memoryGrounding.size > 0 && !hasKnowledgeCitation
-        && isMemoryRestatementAnswer(answer as AgentAnswer)
-        && !draftLooksLikeDirectiveCareAdvice(draft)) {
-        draft.serverVerifiedMemoryGrounding = true;
-      }
+      // Confirmed memory may appear in sources as review evidence; it never sets a review skip.
       return draft;
     },
     replaceDeliveryAnswer(next: unknown) {
