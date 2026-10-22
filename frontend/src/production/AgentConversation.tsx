@@ -166,8 +166,8 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
     || !run.proposals.some(proposal => proposal.id === entry.proposal.id && proposal.version >= entry.proposal.version));
   const showPending = !run || pendingEntries.length > 0 || agentPending.state !== "ready" || !!agentPending.nextCursor;
   const showReceipts = !!run && (receipt?.state !== "ready" || receipt.items.length > 0 || !authorization.online);
-  const loadedPendingCount = (run?.proposals.filter(proposal => proposal.status === "pending" || proposal.status === "expired").length ?? 0)
-    + (agentPending.state === "ready" ? pendingEntries.filter(entry => entry.proposal.status === "pending" || entry.proposal.status === "expired").length : 0);
+  const loadedPendingCount = (run?.proposals.filter(proposal => proposal.status === "pending" && proposal.contentState !== "invalidated" && !proposalExpired(proposal)).length ?? 0)
+    + (agentPending.state === "ready" ? pendingEntries.filter(entry => entry.proposal.status === "pending" && entry.proposal.contentState !== "invalidated" && !proposalExpired(entry.proposal)).length : 0);
   const pendingCountKnown = agentModel.online && agentPending.state === "ready" && (agentModel.readState === "idle" || agentModel.readState === "ready");
   const activityHeading = <View style={styles.activityHeading}>
     <AppDialog.Title style={styles.activityTitle}>活動</AppDialog.Title>
@@ -195,7 +195,7 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
     <AppDialog.ScrollArea style={styles.scrollArea}><AppScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.contents}
       onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }} scrollEventThrottle={16}>
       {showDetails ? <View ref={detailRef} tabIndex={-1} testID="agent-activity-detail" accessibilityLabel={`活動詳情${selected ? `：${selected.label}` : ""}`} style={styles.details}>
-        <AgentRunView model={agentModel} actions={agentActions} onLocateSource={onLocateSource} activity activityHeading={activityHeading} proposalTarget={selected?.target}
+        <AgentRunView model={agentModel} actions={agentActions} onLocateSource={onLocateSource} activity activityHeading={activityHeading} proposalTarget={selected?.target} proposalOnly={!!selected?.target}
           activityNavigation={<View style={styles.details}><AppButton label="返回活動" accessibilityLabel="返回活動列表" variant="quiet" density="compact" disabled={cannotReturn} onPress={returnToCards} style={styles.inlineButton} />
             {cannotReturn ? <Text style={styles.label}>{"目前正在處理或未能核對存取權，暫時不能返回。"}</Text> : null}</View>} />
       </View>
@@ -211,14 +211,14 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
         {pendingContent}
         <BackgroundRuns key={scopeKey} model={agentInbox} actions={agentInboxActions} onSelect={openBackground} cardRef={cardRef} />
       </View> : null}
-      {showDetails && showReceipts && run && (!selected || selected.runId === run.id) ? <View testID="agent-operation-receipts" style={styles.section}>
+      {showDetails && !selected?.target && showReceipts && run && (!selected || selected.runId === run.id) ? <View testID="agent-operation-receipts" style={styles.section}>
         <View style={styles.rowHeading}><Text accessibilityRole="header" style={styles.heading}>操作結果</Text>
           <AppButton label="重新檢查" accessibilityLabel="重新檢查本次操作是否已保存" variant="quiet" density="compact" disabled={!authorization.online || receipt?.state === "loading"} onPress={() => authorizationActions.readReceipts(run.id, true)} style={styles.inlineButton} /></View>
         {receipt?.state === "ready" ? receipt.items.length ? receipt.items.map(item => <Receipt key={`${run.id}:${item.id}`} item={item} />)
           : <Text style={styles.warning}>目前離線，操作收據尚未重新核對。</Text>
           : <Text style={receipt?.state === "failed" ? styles.error : styles.label}>{receipt?.state === "loading" ? "正在檢查是否已保存…" : receipt?.state === "denied" ? "沒有權限查看操作結果。" : "暫時無法確認是否已保存"}</Text>}
       </View> : null}
-      {showDetails && (!selected || selected.runId === run?.id) && run?.privateSourceCitations?.length ? <View style={styles.section}>
+      {showDetails && !selected?.target && (!selected || selected.runId === run?.id) && run?.privateSourceCitations?.length ? <View style={styles.section}>
         <Text accessibilityRole="header" style={styles.heading}>私人參考</Text>
         <Text style={styles.label}>回答當時獲授權的原文快照；不是已核對的官方育兒來源，停用或更正後不供新回答使用。</Text>
         {run.privateSourceCitations.map((source, index) => <ActivityDetails key={`${run.id}:${source.citationId}`} label={`私人來源 ${index + 1} · ${source.label}`} scopeKey={`${run.id}:${source.citationId}`}>

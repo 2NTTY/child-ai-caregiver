@@ -7,11 +7,11 @@ import { harness } from './scope-transition-harness.mjs';
 function ports(extra = {}) {
   const dialog = Object.assign('Dialog', { Title: 'Title', ScrollArea: 'ScrollArea', Content: 'Content', Actions: 'Actions' });
   const mocks = {
-    'react-native': { View: 'View', Platform: { OS: 'android' }, StyleSheet: { create: x => x } },
+    'react-native': { View: 'View', Pressable: 'Pressable', Platform: { OS: 'android' }, StyleSheet: { create: x => x } },
     'react-native-paper': { Text: 'Text', Portal: 'Portal' },
     'expo-router': { usePathname: () => '/care', useRouter: () => ({ push() {} }), useLocalSearchParams: () => ({}) },
     'expo-router/react-navigation': { useNavigation: () => ({dispatch() {}}), usePreventRemove() {} },
-    '../theme': {spacing: {}, colors: {}, radius: {}, typeScale: {}},
+    '../theme': {spacing: {}, colors: {}, radius: {}, readingType: {}, typeScale: {}},
     '../components/ui': { AppButton: 'Button', SectionCard: 'SectionCard', SectionHeader: 'SectionHeader' },
     '../ui': { AppButton: 'Button', SectionCard: 'SectionCard', SectionHeader: 'SectionHeader', OperationPill: 'OperationPill' },
     '../AppDialog': {AppDialog: dialog}, '../components/AppDialog': {AppDialog: dialog},
@@ -28,7 +28,7 @@ function ports(extra = {}) {
   };
   for (const [prefix, names] of [['../', ['EmptyListCard','AppStatusBadge','AppCheckbox','ReadStateNotice','StatusAnnouncement','PageFrame']],
     ['./', ['SourceStatus','SourceComposer','SourceDetails','SourceRecordForm','SourceIntakeConversation']],
-    ['../components/', ['EmptyListCard','ReadStateNotice','PageFrame']], ['../components/care/', ['CareRecordsView','CareSavedRecordsView']],
+    ['../components/', ['EmptyListCard','ReadStateNotice','PageFrame','AppIcon','AppStatusBadge']], ['../components/care/', ['CareRecordsView','CareSavedRecordsView']],
     ['../components/agent/', ['AgentRunView']]]) {
     for (const name of names) mocks[prefix + name] = {[name]: name, ...(name === 'SourceDetails' ? {sourceTime: x => x} : {})};
   }
@@ -66,18 +66,18 @@ function resultScenario() {
   const {AgentPendingReview} = h.load('src/screens/careScreen.tsx');
   let reads = 0, selected = [], checks = 0;
   let model = {scopeKey: 'child-a', selectedChildId: 'child-a', online: true,
-    agentPending: {state: 'ready', entries: [{runId: 'run-a', proposal: {id: 'proposal-a', title: 'Synthetic proposal', status: 'pending', scope: 'family'}}]},
-    agentModel: {run: null, readState: 'ready', busy: null, pendingDecision: null}, agentActions: {checkOriginal() {checks++;}},
+    agentPending: {state: 'ready', entries: [{runId: 'run-a', proposal: {id: 'proposal-a', title: 'Synthetic proposal', content: 'Synthetic exact content', kind: 'memory_fact', version: 1, details: [], expiresAt: '2099-01-01T00:00:00Z', status: 'pending', scope: 'family'}}]},
+    agentModel: {run: null, readState: 'ready', busy: null, pendingDecision: null}, agentActions: {refresh() {selected.push("run-a");}, checkOriginal() {checks++;}},
     readAgentPending() {reads++;}, selectAgentRun(id) {selected.push(id);}};
   let navigate;
   function Page() {navigate = guard.usePreviewNavigation(); return h.jsx(AgentPendingReview, {});}
   const tree = h.jsx(guard.PreviewNavigationGuard, {children: h.jsx(Page, {})});
   const render = () => {h.production(model); h.render(tree);};
   const button = label => h.hosts().find(n => n.type === 'Button' && n.props.label === label);
-  const dialog = () => h.hosts().find(n => n.props.accessibilityLabel === '助手運行結果');
+  const dialog = () => h.hosts().find(n => n.props.accessibilityLabel === '核對事項詳情');
   render();
   return {h, render, button, dialog, navigate(action, intent) {navigate(action, intent); render();}, get model() {return model;}, patch(next) {model = {...model, ...next}; render();},
-    open() {button('查看結果').props.onPress(); render();}, counts: () => ({reads, selected, checks})};
+    open() {h.node('care-pending-card-run-a-proposal-a').props.onPress(); render();}, counts: () => ({reads, selected, checks})};
 }
 test('care run is absent until selected, then the unchanged run/actions render only inside the result dialog', () => {
   const s = resultScenario(); assert.equal(s.h.hosts().some(n => n.type === 'AgentRunView'), false); s.open();
@@ -96,7 +96,8 @@ test('GET loading can close without a write warning, while an original pending d
   s.patch({agentModel: {...s.model.agentModel, pendingDecision: {runId: 'run-a', proposalId: 'proposal-a', input: {expectedVersion: 1, decision: 'accept', confirmShared: true}, reviewed: false, reconfirm: false}, run: {id: 'run-a', childId: 'child-a', status: 'unknown', proposals: []}}});
   s.dialog().props.onDismiss(); s.render(); assert.equal(s.dialog().props.visible, false);
   assert.equal(s.button('留在此頁查核'), undefined); assert.equal(s.button('捨棄草稿並離開'), undefined);
-  s.button('查看所選結果').props.onPress(); s.render(); assert.equal(s.dialog().props.visible, true);
+  s.patch({agentPending: {state: 'ready', entries: [], hasSnapshot: true, nextCursor: null}});
+  s.button('查核原決定').props.onPress(); s.render(); assert.equal(s.dialog().props.visible, true);
   s.h.hosts().find(n => n.type === 'AgentRunView').props.actions.checkOriginal(); assert.equal(s.counts().checks, 1);
   assert.equal(s.model.agentModel.pendingDecision.runId, 'run-a'); assert.equal(s.model.agentModel.pendingDecision.input.expectedVersion, 1);
   assert.deepEqual(s.counts().selected, ['run-a', 'run-a', 'run-a'], 'every explicit reopen reselects the same owner run for GET');

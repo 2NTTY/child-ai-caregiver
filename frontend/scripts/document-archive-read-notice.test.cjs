@@ -54,6 +54,7 @@ function fixture() {
     return status === 'archived' ? take(archivedResponses, () => page([]), { signal: init.signal })
       : take(activeResponses, () => page(), { signal: init.signal });
   };
+  env.owner = { fetcher: transport };
   const modules = new Map();
   function compile(relative) {
     const file = path.resolve(source, relative);

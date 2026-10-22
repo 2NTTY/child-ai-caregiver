@@ -254,16 +254,16 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
   </HorizontalOverflowRail>;
 }
 
-export function AppTabPanel({ tabsId, tabKey, active, children, style, ...props }: ViewProps & {
-  tabsId: string; tabKey: string; active: boolean; children: ReactNode;
+export function AppTabPanel({ tabsId, tabKey, active, hasTabList = true, children, style, ...props }: ViewProps & {
+  tabsId: string; tabKey: string; active: boolean; hasTabList?: boolean; children: ReactNode;
 }) {
   const panel = useRef<View>(null);
   useLayoutEffect(() => {
     if (Platform.OS === "web" && panel.current) (panel.current as unknown as HTMLElement).inert = !active;
   }, [active]);
-  return <MotionEntrance {...props} ref={panel} preset="panel" triggerKey={active ? `${tabsId}:${tabKey}:active` : null} scopeKey={tabsId} enabled={active} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" ? "tabpanel" : undefined}
-    aria-labelledby={tabId(tabsId, tabKey)} aria-hidden={!active} accessibilityElementsHidden={!active}
-    importantForAccessibility={active ? "auto" : "no-hide-descendants"} tabIndex={active ? 0 : -1} pointerEvents={active ? "auto" : "none"}
+  return <MotionEntrance {...props} ref={panel} preset="panel" triggerKey={active ? `${tabsId}:${tabKey}:active` : null} scopeKey={tabsId} enabled={active} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" && hasTabList ? "tabpanel" : undefined}
+    aria-labelledby={hasTabList ? tabId(tabsId, tabKey) : undefined} aria-hidden={!active} accessibilityElementsHidden={!active}
+    importantForAccessibility={active ? "auto" : "no-hide-descendants"} tabIndex={hasTabList ? active ? 0 : -1 : undefined} pointerEvents={active ? "auto" : "none"}
     style={[style, !active && styles.hiddenPanel]}>{children}</MotionEntrance>;
 }
 

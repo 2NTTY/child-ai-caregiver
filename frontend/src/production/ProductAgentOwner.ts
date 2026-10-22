@@ -28,6 +28,7 @@ export class ProductAgentOwner {
   private epoch = 0;
   private request: AbortController | null = null;
   private pendingRead: "first" | "more" | null = null;
+  private pendingLoadedPages = 0;
   private readonly listeners = new Set<() => void>();
   private readonly rawRuns = new Map<string, ProductAgentResult>();
   private selectedRunId: string | null = null;
@@ -83,7 +84,7 @@ export class ProductAgentOwner {
           pending: { ...pending, input: { ...pending.input }, reviewed: false }, run: this.snapshot.model.run,
           rawRun: this.rawRuns.get(pending.runId) ?? null });
       }
-      this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.scope = scope;
+      this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.pendingLoadedPages = 0; this.scope = scope;
       const candidate = identityKey && scope ? this.recovery.get(scope.key) : undefined;
       const saved = candidate && candidate.scope.userId === scope?.userId && candidate.scope.childId === scope?.childId ? candidate : undefined;
       this.recovery.delete(scope?.key ?? "");
@@ -105,7 +106,7 @@ export class ProductAgentOwner {
   forgetChild(childId: string) {
     for (const [key, saved] of this.recovery) if (saved.scope.childId === childId) this.recovery.delete(key);
     if (this.scope?.childId !== childId) return;
-    this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null;
+    this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.pendingLoadedPages = 0;
     this.rawRuns.clear(); this.selectedRunId = null; this.api = this.createApi();
     this.update(initial(this.snapshot.model.online));
   }
@@ -123,7 +124,7 @@ export class ProductAgentOwner {
     const identityLost = error.status === 401 || error.code === "session_changed" || error.code === "unauthorized";
     if (identityLost) this.recovery.clear();
     else for (const [key, saved] of this.recovery) if (saved.scope.childId === this.scope?.childId) this.recovery.delete(key);
-    this.rawRuns.clear(); this.selectedRunId = null; this.pendingRead = null;
+    this.rawRuns.clear(); this.selectedRunId = null; this.pendingRead = null; this.pendingLoadedPages = 0;
     this.update({ ...initial(this.snapshot.model.online), model: { ...initial(this.snapshot.model.online).model,
       readState: "denied", notice: { tone: "warning", text: "登入、存取權或資料已改變；私人結果已清除。" } },
       pending: { state: "denied", entries: [], nextCursor: null },
@@ -133,8 +134,12 @@ export class ProductAgentOwner {
   private store(result: ProductAgentResult) {
     if (!this.scope) return null;
     this.rawRuns.set(result.runId, result);
-    const terminal = new Set(result.proposals.filter(item => item.status === "accepted" || item.status === "dismissed").map(item => item.id));
-    if (terminal.size) this.update({ pending: { ...this.snapshot.pending, entries: this.snapshot.pending.entries.filter(item => !terminal.has(item.proposal.id)) } });
+    const latest = new Map(result.proposals.map(proposal => [proposal.id, proposal]));
+    this.update({ pending: { ...this.snapshot.pending, entries: this.snapshot.pending.entries.flatMap(entry => {
+      const proposal = entry.runId === result.runId ? latest.get(entry.proposal.id) : undefined;
+      if (!proposal || proposal.version < entry.proposal.version) return [entry];
+      return proposal.status === "accepted" || proposal.status === "dismissed" ? [] : [{ runId: entry.runId, proposal: projectAgentProposal(proposal) }];
+    }) } });
     const createdAt = this.snapshot.inbox.entries.find(item => item.runId === result.runId)?.createdAt ?? null;
     const run = projectAgentRun(result, this.scope.childId, createdAt);
     this.update({ runs: { ...this.snapshot.runs, [result.runId]: run } });
@@ -208,7 +213,7 @@ export class ProductAgentOwner {
       this.model({ run, readState: "ready", sharedConfirmed: {}, pendingDecision: null,
         notice: { tone: "saved", text: saved.status === "accepted" ? "Server 已確認接受並保存此事項；任務及記憶的最新狀態請重新讀取核對。" : "Server 已確認略過此事項。" } });
       this.onSaved();
-      this.update({ pending: { ...this.snapshot.pending, entries: this.snapshot.pending.entries.filter(item => item.proposal.id !== proposalId) } });
+      this.update({ pending: { ...this.snapshot.pending, entries: this.snapshot.pending.entries.filter(item => item.runId !== runId || item.proposal.id !== proposalId) } });
     } catch (error) {
       if (!request.current()) return;
       if (accessLost(error)) this.deny(error as ProductAgentApiError);
@@ -234,15 +239,32 @@ export class ProductAgentOwner {
     if (this.snapshot.model.pendingDecision || this.snapshot.model.writesBlocked || this.request || !this.snapshot.model.online) return;
     more = this.pendingRead === "more"; this.pendingRead = null;
     const request = this.begin("read"); if (!request) return;
-    const cursor = more ? this.snapshot.pending.nextCursor : null;
+    // Refresh the bounded loaded window with new cursors; never mix a new head with an old tail.
+    const limit = more ? 1 : Math.max(1, this.pendingLoadedPages);
+    let cursor = more ? this.snapshot.pending.nextCursor : null, pagesRead = 0;
+    const entries = new Map((more ? this.snapshot.pending.entries : []).map(entry => [`${entry.runId}:${entry.proposal.id}`, entry]));
+    const seenCursors = new Set<string | null>();
     this.update({ pending: { ...this.snapshot.pending, state: "loading", entries: this.snapshot.pending.entries } });
     try {
-      const page = await this.api.getPendingProposals(request.scope.childId, request.controller.signal, request.scope.userId, cursor);
-      if (!request.current()) return;
-      if (request.controller.signal.aborted) { this.update({ pending: { ...this.snapshot.pending, state: this.snapshot.pending.hasSnapshot ? "failed" : "idle" } }); return; }
-      const ids = new Set(page.proposals.map(item => item.id));
-      const prior = more ? this.snapshot.pending.entries.filter(item => !ids.has(item.proposal.id)) : [];
-      this.update({ pending: { state: "ready", hasSnapshot: true, entries: [...prior, ...page.proposals.map(proposal => ({ runId: proposal.runId, proposal: projectAgentProposal(proposal) }))], nextCursor: page.nextCursor } });
+      while (pagesRead < limit) {
+        if (seenCursors.has(cursor)) throw new ProductAgentApiError();
+        seenCursors.add(cursor);
+        const page = await this.api.getPendingProposals(request.scope.childId, request.controller.signal, request.scope.userId, cursor);
+        if (!request.current()) return;
+        if (request.controller.signal.aborted) { this.update({ pending: { ...this.snapshot.pending, state: this.snapshot.pending.hasSnapshot ? "failed" : "idle" } }); return; }
+        for (const discovered of page.proposals) {
+          // A later discovery page cannot resurrect a locally read server receipt or older version.
+          const known = this.rawRuns.get(discovered.runId)?.proposals.find(item => item.id === discovered.id);
+          const proposal = known && known.version >= discovered.version ? known : discovered;
+          if (proposal.status === "accepted" || proposal.status === "dismissed") continue;
+          const key = `${proposal.runId}:${proposal.id}`, previous = entries.get(key);
+          if (!previous || proposal.version >= previous.proposal.version) entries.set(key, { runId: proposal.runId, proposal: projectAgentProposal(proposal) });
+        }
+        pagesRead++; cursor = page.nextCursor;
+        if (!cursor) break;
+      }
+      this.pendingLoadedPages = more ? this.pendingLoadedPages + pagesRead : pagesRead;
+      this.update({ pending: { state: "ready", hasSnapshot: true, entries: [...entries.values()], nextCursor: cursor } });
     } catch (error) {
       if (!request.current()) return;
       if (accessLost(error)) this.deny(error as ProductAgentApiError);
@@ -290,5 +312,5 @@ export class ProductAgentOwner {
       return url.href;
     } catch { return null; }
   };
-  dispose() { this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.rawRuns.clear(); this.recovery.clear(); this.identityKey = null; this.scope = null; this.selectedRunId = null; this.snapshot = initial(this.snapshot.model.online); this.listeners.clear(); }
+  dispose() { this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.pendingLoadedPages = 0; this.rawRuns.clear(); this.recovery.clear(); this.identityKey = null; this.scope = null; this.selectedRunId = null; this.snapshot = initial(this.snapshot.model.online); this.listeners.clear(); }
 }

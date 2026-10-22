@@ -402,7 +402,8 @@ test('History restores through the same owner and provides recovery locally for 
   state.actions.archiveConcern(concern.id, concern.version, state.model.page.authorityVersion); o.render(); o.tick(); state = o.render();
   state.setOutcome('unknown'); state = o.render();
   const history = harness('src/components/growth/GrowthHistoryView.tsx', 'GrowthHistoryView', [{ searchText: '', dateRange: { from: null, to: null }, onTask() {} }], () => ({ scopeKey: state.model.scopeKey, model: state.model, actions: state.actions }));
-  let tree = history.render(); byType(tree, 'PaperButton').find(button => button.props.accessibilityLabel === `恢復關注：${concern.title}`).props.onPress({ stopPropagation() {} });
+  let tree = history.render(); byType(tree, 'Pressable').find(button => button.props.accessibilityLabel === `查看已結束關注：${concern.title}`).props.onPress();
+  tree = history.render(); byType(tree, 'PaperButton').find(button => button.props.accessibilityLabel === `恢復關注：${concern.title}`).props.onPress({ stopPropagation() {} });
   o.render(); o.tick(); state = o.render(); tree = history.render();
   assert.equal(state.model.pending.attempt.input.action, 'restore'); const frozen = structuredClone(state.model.pending.attempt);
   assert.equal(state.model.page.concerns.items[0].status, 'closed'); assert.equal(byId(tree, 'growth-pending').length, 1);

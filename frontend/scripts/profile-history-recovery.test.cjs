@@ -70,7 +70,7 @@ function fixture({ version = 4, initialFailure = false, editor = true, focusBrid
     projection = value;
     return React.createElement(React.Fragment, null, children, editor && value && React.createElement(ProfileView,
       { model: value.model, actions: value.actions, onOpenCare() {}, childPicker: null, writeNotice: null, previewControls: null }),
-      value && React.createElement(ProfileHistoryView, { model: value.model, actions: value.actions }));
+      value && React.createElement(ProfileHistoryView, { model: value.model, actions: value.actions, scopeKey: value.scopeKey }));
   }
   const cache = new Map();
   function compile(relative) {
@@ -80,7 +80,7 @@ function fixture({ version = 4, initialFailure = false, editor = true, focusBrid
     const js = ts.transpileModule(fs.readFileSync(file, 'utf8'), { fileName: file,
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
     new Function('require', 'module', 'exports', js)(name => {
-      if (name === 'react-native') return { Platform: { OS: 'web' }, View: Wrap, StyleSheet: { create: value => value } };
+      if (name === 'react-native') return { Platform: { OS: 'web' }, View: Wrap, Pressable: ({children, onPress, testID, accessibilityLabel}) => React.createElement('button', {'data-testid': testID, 'aria-label': accessibilityLabel, onClick: onPress}, children), StyleSheet: { create: value => value } };
       if (name === 'react-native-paper') return { Text: Wrap };
       if (name === 'expo-router') return { usePathname: () => '/history' };
       if (name.endsWith('/useDomainEnvironment')) return { useDomainEnvironment: () => env, useDomainWriteGuard: dirty => dirtySignals.push(dirty) };
@@ -91,7 +91,7 @@ function fixture({ version = 4, initialFailure = false, editor = true, focusBrid
       if (name.endsWith('/EmptyListCard')) return { EmptyListCard: ({title, detail, testID}) => React.createElement('div', {'data-testid': testID}, title, detail) };
       if (name.endsWith('/ReadStateNotice')) return { ReadStateNotice: ({state, title, message, children}) => React.createElement('div', {'data-read-state': state}, title, message, children) };
       if (name.endsWith('/StatusAnnouncement')) return { StatusAnnouncement: Empty };
-      if (name.endsWith('/FormDialog')) return { ManualFormDialog: Wrap };
+      if (name.endsWith('/FormDialog')) return { ManualFormDialog: Wrap, FormDialog: ({visible, children, title, onClose}) => visible ? React.createElement('section', {role: 'dialog', 'aria-label': title}, React.createElement('button', {onClick: onClose}, 'Close detail'), children) : null };
       if (name.endsWith('/ProfileForm')) return { ProfileForm: Form };
       if (name.endsWith('/ProfileSummary')) return { ProfileDataSummary: Empty, ProfileKeyFacts: Empty, ProfileReadingSummary: Empty, ProfileRevisionDetails: Empty,
         ProfileRevisionSummary: ({ revision }) => React.createElement('span', { 'data-revision': revision.version }, `Revision ${revision.version}`) };

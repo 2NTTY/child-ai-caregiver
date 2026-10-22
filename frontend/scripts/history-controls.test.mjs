@@ -189,9 +189,10 @@ function closedHistoryHarness(width = 1024, touch = false) {
   const modelModule = {exports: {}};
   new Function('require', 'module', 'exports', modelSource)(require, modelModule, modelModule.exports);
   const dependencies = {
-    'react': {useState: initial => {const index = cursor++; if (!(index in slots)) slots[index] = initial; return [slots[index], value => {slots[index] = value;}];}}, 'react/jsx-runtime': require('react/jsx-runtime'),
+    'react': {useRef: value => ({current: value}), useEffect() {}, useState: initial => {const index = cursor++; if (!(index in slots)) slots[index] = initial; return [slots[index], value => {slots[index] = value;}];}}, 'react/jsx-runtime': require('react/jsx-runtime'),
     'react-native': {View: 'View', Pressable: 'Pressable', StyleSheet: {create: value => value}, useWindowDimensions: () => ({width})}, 'react-native-paper': {Text: 'Text', Button: 'Button'},
     '../useInteractionDensity': {useInteractionDensity: () => touch},
+    '../history/HistoryCards': {HistoryCardGrid: 'HistoryCardGrid'}, '../FormDialog': {FormDialog: 'FormDialog'},
     '../../growth-view-model': modelModule.exports,
     '../../workspaces/GrowthWorkspace': {useGrowthWorkspace: () => workspace},
     '../../theme': {colors: {line: '#CAC9D4', controlSurface: '#FFFFFE', ink: '#272343', quietSurface: '#EDFAF9', paleTeal: '#E3F6F5'}, mobileLayout: {breakpoint: 650, touchTarget: 48}, radius: {small: 10}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}},
@@ -210,35 +211,25 @@ const identified = (tree, id) => nodes(tree).find(node => node.props?.testID ===
 const restoreControl = tree => nodes(tree).find(node => node.type === 'Button' && node.props.accessibilityLabel?.startsWith('恢復關注：'));
 const readingControl = tree => nodes(tree).find(node => node.type === 'Pressable' && node.props.accessibilityLabel?.startsWith('查看已結束關注：'));
 
-test('closed chains are distinct name/date rows with sibling reading targets and small right-side restore tools', () => {
+test('closed concerns are whole content-first cards; restore remains a secondary detail action', () => {
   for (const [width, touch] of [[1440, false], [1024, true], [390, false], [320, false]]) {
-    const h = closedHistoryHarness(width, touch), tree = h.render();
-    assert.ok(tree.props.style.gap > 0);
+    const h = closedHistoryHarness(width, touch);
     for (const id of ['one', 'two']) {
-      const card = identified(tree, `growth-history-${id}`);
-      assert.equal(card.key, id);
-      assert.equal(card.props.style.borderWidth, 1);
-      assert.equal(card.props.style.backgroundColor, '#FFFFFE');
-      const row = card.props.children[0], reading = readingControl(row), restore = restoreControl(row);
-      assert.equal(row.props.style.flexDirection, 'row');
-      assert.equal(row.props.children[0], reading);
-      assert.equal(row.props.children[1], restore);
-      assert.equal(restoreControl(reading), undefined, 'Restore must not nest inside the reading button');
-      const texts = nodes(reading).filter(node => node.type === 'Text');
-      assert.equal(texts.length, 2);
+      let tree = h.render(); const card = identified(tree, `growth-history-${id}`);
+      assert.equal(card.type, 'Pressable'); assert.equal(card.key, id);
+      const style = flatten(card.props.style({pressed: false}));
+      assert.equal(style.borderWidth, 1); assert.equal(style.backgroundColor, '#FFFFFE');
+      assert.equal(restoreControl(card), undefined, 'No nested mutation inside the reading target');
+      const texts = nodes(card).filter(node => node.type === 'Text');
       assert.equal(texts[0].props.children, id === 'one' ? '第一條' : '第二條');
-      assert.match(texts[1].props.children, /^結束於 /);
-      assert.ok(!texts.some(node => node.props.children.includes('摘要')));
-      const readStyle = flatten(reading.props.style({pressed: false}));
-      assert.equal(readStyle.flex, 1); assert.ok(readStyle.minHeight >= 48);
+      assert.ok(texts[1].props.children.includes('摘要')); assert.match(texts[2].props.children, /^結束於 /);
+      card.props.onPress(); tree = h.render();
+      const dialog = nodes(tree).find(node => node.type === 'FormDialog'); assert.equal(dialog.props.visible, true);
+      const restore = restoreControl(dialog); assert.ok(restore);
       assert.equal(restore.props.mode, 'text'); assert.equal(restore.props.compact, true);
-      assert.equal(restore.props.children, '恢復');
-      assert.equal(restore.props.style.borderWidth, 0); assert.equal(restore.props.style.flexShrink, 0);
       assert.ok(flatten(restore.props.contentStyle).minHeight >= (touch || width < 650 ? 48 : 40));
-      let stopped = false;
-      restore.props.onPress({stopPropagation() {stopped = true;}});
-      assert.equal(stopped, true);
-      assert.equal(nodes(h.render()).filter(node => node.type === 'GrowthConcernTimeline').length, 0);
+      let stopped = false; restore.props.onPress({stopPropagation() {stopped = true;}}); assert.equal(stopped, true);
+      dialog.props.onClose(); tree = h.render(); assert.equal(restoreControl(tree), undefined);
     }
     assert.deepEqual(h.calls, [['one', 3, 'auth-a'], ['two', 7, 'auth-a']]);
   }
@@ -258,7 +249,7 @@ test('selected History keeps its chain identity through reorder and filtering an
   tree = h.render(); assert.equal(timeline()[0].props.concern.id, 'two');
   restoreControl(tree).props.onPress({stopPropagation() {}});
   assert.deepEqual(h.calls, [['two', 7, 'auth-a']]);
-  labelled(tree, '返回關注歷史').props.onPress(); tree = h.render();
+  nodes(tree).find(node => node.type === 'FormDialog').props.onClose(); tree = h.render();
   readingControl(identified(tree, 'growth-history-one')).props.onPress(); tree = h.render();
   assert.equal(timeline().length, 1); assert.equal(timeline()[0].props.concern.id, 'one');
   h.setWorkspace({...h.workspace, scopeKey: 'scope-b'}); tree = h.render();
@@ -268,7 +259,8 @@ test('selected History keeps its chain identity through reorder and filtering an
 test('lightweight restore retains locked, dirty, missing-state and viewer gates, with keyboard and hover reading feedback', () => {
   for (const mutate of [model => {model.locked = true;}, model => {model.dirty = true;}, model => {delete model.page.concerns.items[0].statusBeforeArchive;}]) {
     const h = closedHistoryHarness(); mutate(h.workspace.model);
-    assert.equal(restoreControl(identified(h.render(), 'growth-history-one')).props.disabled, true);
+    const card = readingControl(identified(h.render(), 'growth-history-one')); card.props.onPress();
+    assert.equal(restoreControl(h.render()).props.disabled, true);
   }
   const h = closedHistoryHarness(); let tree = h.render(), reading = readingControl(identified(tree, 'growth-history-one'));
   reading.props.onFocus(); tree = h.render(); reading = readingControl(identified(tree, 'growth-history-one'));

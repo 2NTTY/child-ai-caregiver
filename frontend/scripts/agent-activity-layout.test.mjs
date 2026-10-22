@@ -413,3 +413,27 @@ test('opening an unresolved activity rereads once, including reconnect, but ordi
   assert.equal(s.calls.filter(call => call[0] === 'decide' || call[0] === 'retry').length, 0);
   assert.equal(s.state.agentModel.pendingDecision, pending);
 });
+
+
+test('proposal-specific activity details omit run prose, receipts and private sources; generic activity keeps them', () => {
+  const p = proposal('chosen'), s = setup();
+  const receipt = { id: 'receipt', kind: 'save_record', state: 'saved', resource: { kind: 'care_record', id: 'record', version: 1 }, notification: 'none', channels: [] };
+  const loaded = { ...run([p]), privateSourceCitations: [{ citationId: 'private', label: 'Synthetic source', version: 1, excerpt: 'Synthetic private excerpt' }] };
+  s.state.agentModel = { ...s.state.agentModel, readState: 'idle', run: null };
+  s.state.agentPending.entries = [{ runId: loaded.id, proposal: p }]; s.conversation(); s.h.node('activity-card-proposal-synthetic-run-chosen').props.onPress();
+  s.state.agentModel = { ...s.state.agentModel, readState: 'ready', busy: null, run: loaded };
+  s.state.authorization.receipts[loaded.id] = { state: 'ready', items: [receipt] }; s.conversation();
+  assert.ok(s.h.node('agent-proposal-chosen')); assert.equal(s.h.hosts().some(n => n.type === 'ChatMessage'), false);
+  assert.equal(s.h.node('agent-operation-receipts'), undefined); assert.doesNotMatch(s.text(), /私人參考/);
+  s.conversation(false); s.conversation();
+  assert.ok(s.button('查看原回覆')); s.button('查看原回覆').props.onPress(); s.conversation();
+  assert.equal(s.h.hosts().some(n => n.type === 'ChatMessage'), true); assert.ok(s.h.node('agent-operation-receipts')); assert.match(s.text(), /私人參考/);
+});
+
+test('activity loaded count excludes expired and invalidated proposals without concealing their status', () => {
+  const s = setup(); s.state.agentModel = { ...s.state.agentModel, readState: 'idle', run: null };
+  s.state.agentPending.entries = [proposal('ready'), proposal('expired', { status: 'expired' }), proposal('elapsed', { expiresAt: at }), proposal('invalidated', { contentState: 'invalidated' })].map(proposal => ({ runId: 'synthetic-run', proposal }));
+  s.state.agentPending.nextCursor = 'more'; s.conversation();
+  assert.equal(s.h.node('agent-activity-count').props.accessibilityLabel, '已載入 1 項待確認，仍有更多待讀取');
+  assert.match(s.h.node('activity-card-proposal-synthetic-run-expired').props.accessibilityLabel, /已過期/);
+});

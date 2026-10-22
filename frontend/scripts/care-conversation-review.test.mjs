@@ -21,6 +21,7 @@ function renderer(relative, name, width = 1024) {
   const react = {
     useState(initial) { const i = cursor++; slots[i] ??= { value: typeof initial === 'function' ? initial() : initial }; return [slots[i].value, next => { const value = typeof next === 'function' ? next(slots[i].value) : next; if (!Object.is(value, slots[i].value)) { slots[i].value = value; dirty = true; } }]; },
     useId() { return 'care-tabs'; },
+    useLayoutEffect(fn, deps) { return react.useEffect(fn, deps); },
     useRef(value) { return slots[cursor++] ??= { current: value }; },
     useEffect(fn, deps) { const i = cursor++, old = slots[i]; if (!old || deps.some((value, index) => !Object.is(value, old[index]))) effects.push(fn); slots[i] = deps; },
   };
@@ -28,6 +29,7 @@ function renderer(relative, name, width = 1024) {
     'react': react, 'react/jsx-runtime': require('react/jsx-runtime'),
     'react-native': { View: 'View', Pressable: 'Pressable', StyleSheet: { create: value => value } }, 'react-native-paper': { Text: 'Text' },
     '../../care-view-model': values, '../../theme': { colors: {}, readingType: {}, workspaceType: {}, spacing: { xs: 4, sm: 8, md: 12, lg: 16 }, radius: {} },
+    '../appearance/BackgroundSurface': { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false },
     '../useContainerWidth': { useContainerWidth: () => ({ width, ref: null, onLayout() {} }) },
   };
   const filename = new URL(relative, import.meta.url);

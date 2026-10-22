@@ -322,8 +322,8 @@ test('Care and activity never describe unread, loading, failed or denied discove
     production.agentPending = { state, entries: [] };
     const care = content(render(AgentPendingReview).tree);
     const activity = content(render(AgentConversation, { visible: true, onDismiss: noop, onOpenSettings: noop, onReloadChat: noop, reloadDisabled: false }).tree);
-    if (state === 'ready') { assert.match(care, /暫無待確認提案/u); assert.match(activity, /沒有待確認/u); }
-    else { assert.doesNotMatch(care, /沒有待確認|暫無待確認提案/u); assert.doesNotMatch(activity, /沒有待確認/u); }
+    if (state === 'ready') { assert.match(care, /暫無可確認事項/u); assert.match(activity, /沒有待確認/u); }
+    else { assert.doesNotMatch(care, /沒有待確認|暫無可確認事項/u); assert.doesNotMatch(activity, /沒有待確認/u); }
     if (state === 'idle') { assert.match(care, /尚未讀取/u); assert.match(activity, /尚未讀取/u); }
     if (state === 'denied') { assert.match(care, /沒有權限/u); assert.match(activity, /沒有權限/u); }
   }

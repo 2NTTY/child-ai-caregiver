@@ -16,7 +16,8 @@ const React = req('react'), { createRoot } = req('react-dom/client'), ts = req('
 const { QueryClient } = req('@tanstack/react-query');
 const e = React.createElement, cache = new Map();
 let bridgeEnvironment, childBridgeEntries = 0;
-const View = ({ children, testID, ...props }) => e('div', { 'data-testid': testID }, children);
+const View = React.forwardRef(({ children, testID, tabIndex }, ref) => e('div', { ref, tabIndex, 'data-testid': testID }, children));
+const Pressable = React.forwardRef(({ children, testID, accessibilityLabel, disabled, onPress, onFocus, onBlur }, ref) => e('button', { ref, 'data-testid': testID, 'aria-label': accessibilityLabel, disabled, onClick: onPress, onFocus, onBlur }, children));
 const Text = ({ children }) => e('p', null, children);
 // Real owner, runtime, API schema validators, event subscription and browser
 // observer run against a synthetic GET-only transport. DOM ports do not claim
@@ -38,10 +39,12 @@ function load(relative) {
       if (name === './useFamilyDocuments') return { useFamilyDocuments: () => ({ archive: { authorityVersion: null }, preparation: null, refresh() {} }) };
     }
 
-    if (name === 'react-native') return { View, StyleSheet: { create: value => value } };
+    if (name === 'react-native') return { View, Pressable, StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text, ActivityIndicator: () => e('span', null, 'loading') };
     if (name.endsWith('/appearance/BackgroundSurface')) return { BackgroundSurface: View };
     if (name.endsWith('/motion/preferences')) return { useMotionPreferences: () => ({ enabled: false }) };
+    if (name.endsWith('/useContainerWidth')) return { useContainerWidth: () => ({ width: 1000, ref: React.useRef(null), onLayout() {} }) };
+    if (name.endsWith('/FormDialog')) return { FormDialog: ({visible, children, title, onClose}) => visible ? e('section', {role: 'dialog', 'aria-label': title}, e('button', {onClick: onClose}, 'Close detail'), children) : null };
     if (name.endsWith('/VoiceMessage')) return { VoiceMessage: () => null };
     if (name.endsWith('/ui')) return { AppButton: ({ label, disabled, onPress }) => e('button', { disabled, onClick: onPress }, label) };
     if (name.endsWith('/AppStatusBadge')) return { AppStatusBadge: ({ label }) => e('span', null, label) };
@@ -58,7 +61,7 @@ function load(relative) {
   return module.exports;
 }
 const { usePersonalHistory, PersonalHistoryProvider } = load('frontend/src/production/usePersonalHistory.ts');
-const { PersonalConversationHistoryView, PersonalNotificationHistoryView } = load('frontend/src/components/history/PersonalHistoryViews.tsx');
+const { PersonalConversationHistoryView, PersonalNotificationHistoryView, PersonalNotificationContent } = load('frontend/src/components/history/PersonalHistoryViews.tsx');
 const { useOnlineUpdates } = load('src/client/use-online-updates.ts');
 const { publishOnlineRefresh } = load('src/client/online-refresh-events.ts');
 const uuid = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -89,7 +92,7 @@ function fixtures(url, user) {
   assert.fail('Unexpected synthetic request ' + url.pathname);
 }
 async function harness(initialGate = null) {
-  let owner, scope = 'scope-a', user = 'synthetic-a', child = childA, gate = initialGate, view = 'notifications', mounted = true;
+  let owner, scope = 'scope-a', user = 'synthetic-a', child = childA, gate = initialGate, view = 'notifications', searchText = '', mounted = true;
   const container = document.body.appendChild(document.createElement('main')), renderer = createRoot(container), calls = [], queryClient = new QueryClient();
   const fetcher = async (input, init = {}) => {
     assert.equal(init.method || 'GET', 'GET', 'No write or real model transport is allowed');
@@ -105,9 +108,9 @@ async function harness(initialGate = null) {
       current: () => mounted && scope === currentScope && user === currentUser, accessError() {} });
     owner = value;
     useOnlineUpdates('https://synthetic.test/api', currentUser, true, async () => {}, fetcher);
-    return e(PersonalHistoryProvider, { scopeKey: currentScope, value }, view === 'notifications'
-      ? e(PersonalNotificationHistoryView, { searchText: '', dateRange: { from: null, to: null } })
-      : e(PersonalConversationHistoryView, { searchText: '', dateRange: { from: null, to: null }, onPrepareQuestion() {} }));
+    return e(PersonalHistoryProvider, { scopeKey: currentScope, value }, view === 'recent' ? e(PersonalNotificationContent, {owner: value, recent: true}) : view === 'notifications'
+      ? e(PersonalNotificationHistoryView, { searchText, dateRange: { from: null, to: null } })
+      : e(PersonalConversationHistoryView, { searchText, dateRange: { from: null, to: null }, onPrepareQuestion() {} }));
   }
   const render = () => renderer.render(e(Owner, { key: scope, currentScope: scope, currentUser: user, currentChild: child }));
   const flush = async action => React.act(async () => { action?.(); for (let i = 0; i < 5; i++) await new Promise(setImmediate); });
@@ -124,7 +127,9 @@ async function harness(initialGate = null) {
       assert.equal(owner.message.data?.text, 'Synthetic original message');
     },
     async focus() { await flush(() => { window.dispatchEvent(new window.Event('focus')); document.dispatchEvent(new window.Event('visibilitychange')); window.dispatchEvent(new window.Event('focus')); }); },
-    async showConversation() { view = 'conversation'; await flush(render); },
+    async showConversation(open = false) { view = 'conversation'; await flush(render); if (open) await flush(() => container.querySelector('[data-testid="history-message-' + messageId + '"]').click()); },
+    async showRecent() { view = 'recent'; await flush(render); },
+    async filter(value) { searchText = value; await flush(render); },
     async switchScope(nextScope, nextUser = user, nextChild = childB) { scope = nextScope; user = nextUser; child = nextChild; await flush(render); },
     async close() { mounted = false; await flush(() => renderer.unmount()); queryClient.clear(); container.remove(); },
   };
@@ -148,7 +153,7 @@ test('a first read without a usable snapshot stays loading and a failure is neve
 test('a focused same-scope refresh retains every loaded page and expanded original until the atomic batch completes', async () => {
   const h = await harness();
   try {
-    await h.warm(); await h.showConversation();
+    await h.warm(); await h.showConversation(true);
     const before = h.owner, detail = h.container.querySelector('[data-testid="history-message-detail"]');
     assert.ok(detail); h.container.scrollTop = 247;
     const delayed = deferred(), initialCalls = h.calls.length;
@@ -371,4 +376,49 @@ test('the actual host mounts one account-only message owner without child reads 
     gate = null; await flush(() => oldIdentity.resolve(json(fixtures(oldRead.url, oldRead.user))));
     assert.equal(currentOwner.notifications.data, null, 'another identity cannot receive the late previous recipient page');
   } finally { active = false; await flush(() => renderer.unmount()); queryClient.clear(); container.remove(); }
+});
+
+test('conversation cards open a standalone original reader and retain segmented readMessages authority', async () => {
+  const h = await harness();
+  try {
+    h.gate((call) => {
+      if (!call.url.pathname.includes('/agent/history/messages/')) return;
+      const offset = Number(call.url.searchParams.get('offset') || 0);
+      return json({...fixtures(call.url, call.user), offset, text: offset === 0 ? 'A'.repeat(4000) : offset === 4000 ? 'B'.repeat(4000) : 'C',
+        nextOffset: offset === 0 ? 4000 : offset === 4000 ? 8000 : null, totalCharacters: 8001});
+    });
+    await h.flush(() => h.owner.actions.searchHistory('')); await h.showConversation();
+    assert.equal(h.container.querySelector('[role="dialog"]'), null);
+    const card = h.container.querySelector(`[data-testid="history-message-${messageId}"]`); assert.equal(card.tagName, 'BUTTON');
+    assert.equal(card.querySelector('button'), null, 'The card itself is the single reading target');
+    await h.flush(() => card.click());
+    assert.equal(h.container.querySelectorAll('[role="dialog"]').length, 1);
+    assert.equal(h.owner.message.data.text.length, 4000); assert.equal(h.owner.message.data.nextOffset, 4000);
+    const more = () => [...h.container.querySelectorAll('button')].find(button => button.textContent === '繼續讀取原文');
+    await h.flush(() => more().click()); assert.equal(h.owner.message.data.text, 'A'.repeat(4000) + 'B'.repeat(4000));
+    await h.flush(() => more().click()); assert.equal(h.owner.message.data.text.length, 8001); assert.equal(more(), undefined);
+    assert.match(h.container.querySelector('[role="dialog"]').textContent, /這則原文已完整讀取/);
+    await h.showRecent(); assert.equal(h.owner.message.state, 'unavailable', 'Leaving this reader closes only its opened original');
+    assert.equal(h.container.querySelector('[role="dialog"]'), null, 'Bell does not inherit the original-reader modal');
+  } finally { await h.close(); }
+});
+
+test('changing conversation filters or child while an original read is pending aborts it and late private text never reappears', async () => {
+  for (const transition of ['filter', 'child']) {
+    const h = await harness(), pending = deferred(); let original;
+    try {
+      await h.flush(() => h.owner.actions.searchHistory('')); await h.showConversation();
+      h.gate((call, normal) => {
+        if (!call.url.pathname.includes('/agent/history/messages/')) return;
+        original = {call, normal}; return pending.promise;
+      });
+      await h.flush(() => h.container.querySelector(`[data-testid="history-message-${messageId}"]`).click());
+      assert.ok(h.container.querySelector('[role="dialog"]')); assert.equal(h.owner.message.state, 'loading');
+      if (transition === 'filter') await h.filter('different query'); else await h.switchScope('scope-b', 'synthetic-b', childB);
+      assert.equal(original.call.signal.aborted, true); assert.equal(h.container.querySelector('[role="dialog"]'), null);
+      await h.flush(() => pending.resolve(original.normal()));
+      assert.equal(h.owner.message.data, null); assert.doesNotMatch(h.container.textContent, /Synthetic original message/);
+      if (transition === 'filter') { await h.filter(''); assert.equal(h.container.querySelector('[role="dialog"]'), null); }
+    } finally { await h.close(); }
+  }
 });

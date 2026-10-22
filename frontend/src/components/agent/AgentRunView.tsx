@@ -182,7 +182,7 @@ function RunAnswer({ run, activity, actions, onLocateSource }: {
   </View>;
 }
 
-export function AgentRunView({ model, actions: sourceActions, onLocateSource, activity = false, activityHeading, activityNavigation, proposalTarget, pendingContent }: { model: AgentRunModel; actions: AgentRunActions; onLocateSource?: LocateAnswerSource; activity?: boolean; activityHeading?: ReactNode; activityNavigation?: ReactNode; proposalTarget?: ActivityProposalTarget; pendingContent?: ReactNode }) {
+export function AgentRunView({ model, actions: sourceActions, onLocateSource, activity = false, activityHeading, activityNavigation, proposalTarget, proposalOnly = false, pendingContent }: { model: AgentRunModel; actions: AgentRunActions; onLocateSource?: LocateAnswerSource; activity?: boolean; activityHeading?: ReactNode; activityNavigation?: ReactNode; proposalTarget?: ActivityProposalTarget; proposalOnly?: boolean; pendingContent?: ReactNode }) {
   const instanceScope = useId();
   const serial = useRef(0);
   const [readIntent, setReadIntent] = useState<{ serial: number; runId: string } | null>(null);
@@ -229,24 +229,26 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
   const announcementMessage = model.pendingDecision ? model.busy === "read" ? "正在確認…" : decisionMessage(model) : readMessage
     ?? (!model.online ? "目前離線，恢復連線後才可重新讀取或確認事項。"
       : model.busy === "write" ? "正在處理原決定，請等候原操作結果。"
-        : model.notice?.text ?? (run ? `Agent 運行${agentRunLabels[run.status]}；請核對結果。` : ""));
-  const selectedProposals = run?.proposals.filter(proposal => !proposalTarget || (proposal.id === proposalTarget.id
+        : model.notice?.text ?? (run ? proposalOnly && run.status === "completed" ? "請核對所選事項。" : `Agent 運行${agentRunLabels[run.status]}；請核對結果。` : ""));
+  const selectedProposals = run?.proposals.filter(proposal => !proposalTarget ? !proposalOnly : (proposal.id === proposalTarget.id
     && proposal.kind === proposalTarget.kind && proposal.scope === proposalTarget.scope && proposal.version >= proposalTarget.version)) ?? [];
   const pending = selectedProposals.filter(proposal => proposal.status === "pending" || proposal.status === "expired");
   const handled = selectedProposals.filter(proposal => proposal.status === "accepted" || proposal.status === "dismissed");
-  const targetUnavailable = !!proposalTarget && ready && (!run || selectedProposals.length === 0);
+  const targetUnavailable = (proposalOnly || !!proposalTarget) && ready && (!run || selectedProposals.length === 0);
   const problems = run?.tools.filter(tool => tool.status !== "succeeded") ?? [];
-  const recoveryNeeded = targetUnavailable || !!model.pendingDecision || model.readState === "failed" || run?.status === "unknown" || problems.length > 0;
-  const refreshLabel = model.pendingDecision ? "重新確認" : run?.status === "unknown" || problems.length ? "讀取原運行並核對" : model.readState === "failed" ? "重試讀取結果" : targetUnavailable ? "重新檢查這項活動" : "更新";
+  const recoveryNeeded = targetUnavailable || !!model.pendingDecision || model.readState === "failed" || run?.status === "unknown" || !proposalOnly && problems.length > 0;
+  const refreshLabel = model.pendingDecision ? "重新確認" : run?.status === "unknown" || !proposalOnly && problems.length ? "讀取原運行並核對" : model.readState === "failed" ? "重試讀取結果" : targetUnavailable ? "重新檢查這項活動" : "更新";
+  const showRunToolbar = !proposalOnly || recoveryNeeded || !ready || !model.online || run?.status !== "completed"
+    || model.notice?.tone === "error" || selectedProposals.some(proposal => proposal.contentState === "invalidated");
   return <View testID="agent-run-view" style={styles.root}>
     <StatusAnnouncement eventKey={announcementKey} message={announcementMessage}
       urgent={model.readState === "failed" || announcementKey.startsWith("notice:error:")} />
-    <View testID={activityHeading ? "agent-activity-header" : undefined} style={[styles.toolbar, !!activityHeading && styles.activityToolbar]}>
-      {activityHeading ?? (run && ready ? <AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /> : null)}
+    {showRunToolbar ? <View testID={activityHeading ? "agent-activity-header" : undefined} style={[styles.toolbar, !!activityHeading && styles.activityToolbar]}>
+      {activityHeading ?? (run && ready && (!proposalOnly || run.status !== "completed") ? <AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /> : null)}
       <AppButton label={model.pendingDecision ? "重新確認" : activityHeading && recoveryNeeded ? "重新檢查" : refreshLabel} accessibilityLabel={recoveryNeeded ? refreshLabel : "更新活動結果"} variant={recoveryNeeded ? "secondary" : "quiet"} density="compact"
         disabled={!model.online || !!model.busy || denied || model.readState === "loading"} loading={model.busy === "read"}
         onPress={actions.refresh} style={styles.inlineButton} />
-    </View>
+    </View> : null}
     {activityNavigation}
     {activityHeading && run && ready && run.status !== "completed" ? <View style={styles.scope}><AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /></View> : null}
     {readMessage && !model.pendingDecision ? <StateNote tone={model.readState === "failed" ? "error" : denied ? "warning" : "neutral"}>{readMessage}</StateNote> : null}
@@ -259,18 +261,18 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
       {model.busy !== "write" ? <OriginalDecision model={model} actions={actions} /> : null}
     </> : null}
     {run ? <View style={[styles.runContents, !ready && styles.hidden]} aria-hidden={!ready} accessibilityElementsHidden={!ready} importantForAccessibility={ready ? "auto" : "no-hide-descendants"} pointerEvents={ready ? "auto" : "none"}>
-      {run.stopReasonLabel ? <StateNote tone="warning">{run.stopReasonLabel}</StateNote> : null}
+      {run.stopReasonLabel && (!proposalOnly || run.status !== "completed") ? <StateNote tone="warning">{run.stopReasonLabel}</StateNote> : null}
       {run.status === "running" ? <StateNote>仍在處理；可稍後更新查看結果。</StateNote> : null}
       {run.status === "unknown" ? <StateNote tone="warning">本次運行結果未知，請讀取原運行核對；未知不能當作已成功或已完成。</StateNote> : null}
-      {problems.length ? <View testID="agent-run-problems" style={styles.problems}>
+      {!proposalOnly && problems.length ? <View testID="agent-run-problems" style={styles.problems}>
         {problems.map(tool => <StateNote key={tool.id} tone={tool.status === "failed" ? "error" : "warning"}>{tool.nameLabel}：{agentToolLabels[tool.status]}。請讀取原運行核對，不要以新操作代替。</StateNote>)}
       </View> : null}
-      {run.retrievalMode === "keyword_degraded" && !run.citations.length ? <StateNote tone="warning">檢索已降級；請核對原來源及適用範圍。</StateNote> : null}
-      {!targetUnavailable && (!activityHeading || (!pending.length && !handled.length)) ? <Text testID="agent-run-summary" style={styles.meta}>{pending.length || handled.length
+      {!proposalOnly && run.retrievalMode === "keyword_degraded" && !run.citations.length ? <StateNote tone="warning">檢索已降級；請核對原來源及適用範圍。</StateNote> : null}
+      {!proposalOnly && !targetUnavailable && (!activityHeading || (!pending.length && !handled.length)) ? <Text testID="agent-run-summary" style={styles.meta}>{pending.length || handled.length
         ? [pending.length ? `${pending.length} 項待你確認` : null, handled.length ? `${handled.length} 項已處理` : null].filter(Boolean).join(" · ")
         : ready && model.online && run.status === "completed" && !problems.length ? "本次沒有待確認事項。" : "請核對以下結果；尚未確認的結果不代表已保存。"}</Text> : null}
       {pending.length ? <View testID="agent-pending-proposals" style={styles.proposalGroup}>
-        {!activityHeading ? <Text accessibilityRole="header" style={styles.title}>待你確認</Text> : null}
+        {!activityHeading && !proposalOnly ? <Text accessibilityRole="header" style={styles.title}>待你確認</Text> : null}
         {pending.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
       </View> : null}
       {pendingContent}
@@ -278,8 +280,8 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
         <Text accessibilityRole="header" style={styles.title}>已處理</Text>
         {handled.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
       </View> : null}
-      {!targetUnavailable ? <RunAnswer key={`answer-${run.id}`} run={run} activity={activity} actions={actions} onLocateSource={onLocateSource} /> : null}
-      {!targetUnavailable ? <RunDetails key={run.id} run={run} /> : null}
+      {!proposalOnly && !targetUnavailable ? <RunAnswer key={`answer-${run.id}`} run={run} activity={activity} actions={actions} onLocateSource={onLocateSource} /> : null}
+      {!proposalOnly && !targetUnavailable ? <RunDetails key={run.id} run={run} /> : null}
     </View> : null}
   </View>;
 }

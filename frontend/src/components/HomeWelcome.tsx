@@ -7,6 +7,8 @@ import { motionTokens, useMotionPreferences } from "../motion";
 import { useFirstScreenReady } from "../startup/FirstScreenGate";
 import { chineseFont, colors, radius, readingType, spacing } from "../theme";
 import { HomeBackground } from "./appearance/HomeBackground";
+import { backgroundSurfaceProps } from "./appearance/background-surface-style";
+import { homeWelcomeArtworkProps } from "./appearance/home-welcome-glass-style";
 
 // The existing session owner consumes the intro. Routes and child changes never reset it.
 export function HomeWelcome({ introductionPending, onIntroductionPresented, scopeKey, compact = false }: {
@@ -75,6 +77,8 @@ export function HomeWelcome({ introductionPending, onIntroductionPresented, scop
   // Height, spacing and upward travel share one progress, including the final zero-height seam.
   const frameStyle = useAnimatedStyle(() => ({ height: (height + spacing.lg) * (1 - progress.value) }));
   const cardStyle = useAnimatedStyle(() => ({ transform: [{ translateY: -(height + spacing.lg) * progress.value }] }));
+  const fadeStart = compact ? 0.48 : 0.64, fadeEnd = compact ? 0.68 : 0.88;
+  const artwork = homeWelcomeArtworkProps(fadeStart, fadeEnd);
   // Keep the initial decorative image mounted until its load/fallback settles the startup gate.
   if (closed && firstScreenReady) return null;
   return <Animated.View testID="home-welcome" style={[styles.clip, frameStyle]} pointerEvents="none"
@@ -82,8 +86,13 @@ export function HomeWelcome({ introductionPending, onIntroductionPresented, scop
     {...{ dataSet: { introPhase: closed ? "settled" : closing ? "collapsing" : presented ? "reading" : "waiting" } }}>
     <Animated.View testID={compact ? "mobile-home-greeting" : "desktop-home-banner"}
       onLayout={event => setHeight(event.nativeEvent.layout.height)} style={[styles.card, compact && styles.compactCard, cardStyle]}>
-      <HomeBackground useCustomImage={false} surface={colors.paper} containIllustration webCssFade
-        fadeStart={compact ? 0.48 : 0.64} fadeEnd={compact ? 0.68 : 0.88} />
+      <View testID="home-welcome-glass" aria-hidden importantForAccessibility="no-hide-descendants" pointerEvents="none"
+        {...backgroundSurfaceProps(true)} style={[StyleSheet.absoluteFill, styles.surface]} />
+      <View testID="home-welcome-artwork" aria-hidden importantForAccessibility="no-hide-descendants" pointerEvents="none"
+        {...artwork} style={[StyleSheet.absoluteFill, artwork.style]}>
+        <HomeBackground useCustomImage={false} surface={colors.paper} containIllustration webCssFade
+          fadeStart={fadeStart} fadeEnd={fadeEnd} />
+      </View>
       <View style={[styles.copy, compact && styles.compactCopy]}>
         <Text accessibilityRole="header" style={[styles.greeting, compact && styles.compactGreeting]}>你好</Text>
         <Text style={styles.subline}>{date} · 先看重要的，再繼續日常</Text>
@@ -94,7 +103,8 @@ export function HomeWelcome({ introductionPending, onIntroductionPresented, scop
 
 const styles = StyleSheet.create({
   clip: { overflow: "hidden", flexShrink: 0 },
-  card: { width: "100%", maxWidth: 800, alignSelf: "center", minHeight: 176, backgroundColor: colors.paper, borderRadius: radius.medium, overflow: "hidden", justifyContent: "center" },
+  card: { width: "100%", maxWidth: 800, alignSelf: "center", minHeight: 176, borderRadius: radius.medium, overflow: "hidden", justifyContent: "center" },
+  surface: { backgroundColor: colors.paper },
   compactCard: { minHeight: 152, maxWidth: undefined },
   copy: { width: "56%", minWidth: 0, gap: spacing.sm, paddingVertical: spacing.xl, paddingHorizontal: 32 },
   compactCopy: { width: "60%", paddingVertical: spacing.lg, paddingHorizontal: spacing.lg },

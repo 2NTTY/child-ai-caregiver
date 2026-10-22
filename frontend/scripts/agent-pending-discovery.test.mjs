@@ -217,3 +217,128 @@ test('late refresh responses cannot restore a previous child snapshot', async ()
   delayed.resolve(page(proposal('previous-child'))); await work;
   assert.deepEqual(h.owner.getSnapshot().pending.entries, []); h.owner.dispose();
 });
+
+
+test('pagination deduplicates by run and proposal without replacing a newer loaded version', async () => {
+  const h = harness(async () => ({ proposals: [proposal('same', 'run-a'), proposal('same', 'run-b')], nextCursor: 'page2' }));
+  await h.owner.readPending();
+  h.api.getPendingProposals = async () => ({ proposals: [{ ...proposal('same', 'run-a'), version: 3 }, proposal('second', 'run-a')], nextCursor: 'page3' });
+  await h.owner.readPending(true);
+  h.api.getPendingProposals = async () => ({ proposals: [proposal('same', 'run-a'), proposal('second', 'run-a')], nextCursor: null });
+  await h.owner.readPending(true);
+  const entries = h.owner.getSnapshot().pending.entries;
+  assert.equal(entries.length, 3); assert.equal(entries.find(p => p.runId === 'run-a' && p.proposal.id === 'same').proposal.version, 3);
+  assert.ok(entries.some(p => p.runId === 'run-b' && p.proposal.id === 'same')); h.owner.dispose();
+});
+
+test('stale discovery cannot resurrect an accepted/dismissed receipt or downgrade a read expiry', async () => {
+  for (const status of ['accepted', 'dismissed', 'expired']) {
+    const h = harness(); await h.owner.readPending();
+    const fresh = { ...proposal(), version: 2, status, result: status === 'accepted' ? { kind: 'memory_fact', id: 'saved', version: 1 } : null };
+    h.api.getRun = async () => ({ runId: 'synthetic-run', status: 'completed', text: '', proposals: [fresh], citations: [], tools: [], retrievalMode: 'not_used', counts: null });
+    h.owner.selectRun('synthetic-run'); await settle(); await h.owner.readPending();
+    const entries = h.owner.getSnapshot().pending.entries;
+    assert.equal(entries.length, status === 'expired' ? 1 : 0);
+    if (status === 'expired') { assert.equal(entries[0].proposal.status, 'expired'); assert.equal(entries[0].proposal.version, 2); }
+    h.owner.dispose();
+  }
+});
+
+// Real production invalidation -> owner -> API/parser, with synthetic fetch responses only.
+const wireId = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+const wireChild = wireId(1), wireRun = wireId(10);
+const wireProposal = n => ({ ...proposal(wireId(100 + n), wireRun), childId: wireChild, targetLabel: null });
+const wireResult = proposals => ({ provenance: null, runId: wireRun, status: 'completed', stopReason: null, text: '', citations: [],
+  retrievalMode: 'not_used', tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 }, proposals });
+function wireHarness(firstCount = 20, tailCount = 2) {
+  const calls = [], first = Array.from({ length: firstCount }, (_, i) => wireProposal(i)), tail = Array.from({ length: tailCount }, (_, i) => wireProposal(firstCount + i));
+  let read = async cursor => ({ proposals: cursor ? tail : first, nextCursor: cursor ? null : 'cold_page2' }), run = wireResult([...first, ...tail]);
+  const fetcher = async (url, options) => {
+    const parsed = new URL(String(url), 'https://synthetic.invalid'), child = parsed.pathname.split('/')[3], cursor = parsed.searchParams.get('cursor');
+    assert.equal(options.method, 'GET', 'refresh and discovery must never issue a decision'); assert.equal(options.headers['x-expected-user-id'], 'synthetic-parent');
+    if (!parsed.pathname.endsWith('/pending')) return Response.json({ result: run });
+    calls.push({ child, cursor, signal: options.signal }); const value = await read(cursor, child);
+    return value instanceof Response ? value : Response.json(value);
+  };
+  const { ProductionOwner } = load('frontend/src/production/ProductionOwner.ts');
+  const production = new ProductionOwner('/api', true, {}, {}, undefined, undefined, { platform: 'web', fetcher });
+  const owner = production.agentOwner;
+  let currentChild = wireChild; production.scopeKey = () => currentChild;
+  const sync = child => { currentChild = child; owner.syncContext({ key: child, childId: child, userId: 'synthetic-parent' }, true, { identityKey: 'synthetic-parent' }); };
+  sync(wireChild);
+  return { owner, production, calls, first, tail, sync, setRead(fn) { read = fn; }, setRun(value) { run = value; },
+    async loadWindow() { await owner.readPending(); await owner.readPending(true); assert.equal(owner.getSnapshot().pending.entries.length, firstCount + tailCount); },
+    focus() { production.invalidatePrivateReads(false); }, dispose() { production.dispose(); } };
+}
+
+test('API-backed refresh replaces the whole loaded 20+2 window atomically using fresh cursors and a bounded depth', async () => {
+  const h = wireHarness(); await h.loadWindow(); const original = h.owner.getSnapshot().pending, second = deferred();
+  const fresh = values => values.map(value => ({ ...value, version: 2, value: { ...value.value, content: 'Fresh synthetic content' } }));
+  h.setRead(async cursor => cursor === null ? { proposals: fresh(h.first), nextCursor: 'fresh_page2' } : second.promise);
+  const work = h.owner.readPending(); await settle();
+  assert.deepEqual(h.calls.map(c => c.cursor), [null, 'cold_page2', null, 'fresh_page2']);
+  assert.equal(h.owner.getSnapshot().pending.state, 'loading'); assert.equal(h.owner.getSnapshot().pending.entries, original.entries);
+  second.resolve({ proposals: fresh(h.tail), nextCursor: 'fresh_page3' }); await work;
+  assert.equal(h.owner.getSnapshot().pending.entries.length, 22); assert.ok(h.owner.getSnapshot().pending.entries.every(e => e.proposal.version === 2));
+  assert.equal(h.owner.getSnapshot().pending.nextCursor, 'fresh_page3'); assert.equal(h.calls.length, 4, 'do not prefetch beyond the loaded two-page window');
+  h.setRead(async () => page()); await h.owner.readPending(); assert.deepEqual(h.owner.getSnapshot().pending.entries, []); assert.equal(h.calls.length, 5);
+  h.setRead(async () => ({ proposals: h.first, nextCursor: 'new_page2' })); await h.owner.readPending();
+  assert.equal(h.calls.length, 6, 'an authoritative early end shrinks the next refresh depth'); h.dispose();
+});
+
+test('a focus invalidation queued during load-more preserves both 20+2 and empty-first-page 0+1 windows', async () => {
+  for (const [firstCount, tailCount] of [[20, 2], [0, 1]]) {
+    const h = wireHarness(firstCount, tailCount), more = deferred(); await h.owner.readPending();
+    h.setRead(async cursor => cursor === 'cold_page2' ? more.promise : { proposals: cursor ? h.tail : h.first, nextCursor: cursor ? null : 'fresh_page2' });
+    const work = h.owner.readPending(true); h.focus(); h.focus();
+    assert.equal(h.calls.length, 2); more.resolve({ proposals: h.tail, nextCursor: null }); await work; await settle();
+    assert.deepEqual(h.calls.map(c => c.cursor), [null, 'cold_page2', null, 'fresh_page2']);
+    assert.equal(h.owner.getSnapshot().pending.entries.length, firstCount + tailCount); assert.equal(h.owner.getSnapshot().pending.nextCursor, null);
+    assert.equal(h.owner.getSnapshot().pending.state, 'ready'); h.dispose();
+  }
+});
+
+test('a failed or malformed refresh tail keeps the full prior snapshot and never schedules its own retry', async () => {
+  for (const failure of [Response.json({ error: { code: 'ai_unavailable' } }, { status: 503 }), { proposals: [{ invalid: true }], nextCursor: null }]) {
+    const h = wireHarness(); await h.loadWindow(); const original = h.owner.getSnapshot().pending;
+    h.setRead(async cursor => cursor ? failure : { proposals: h.first.map(p => ({ ...p, version: 2 })), nextCursor: 'fresh_page2' }); await h.owner.readPending();
+    assert.equal(h.owner.getSnapshot().pending.state, 'failed'); assert.equal(h.owner.getSnapshot().pending.entries, original.entries);
+    assert.equal(h.owner.getSnapshot().pending.nextCursor, original.nextCursor); h.owner.setWritesBlocked(true); h.owner.setWritesBlocked(false); await settle();
+    assert.equal(h.calls.length, 4, 'no automatic retry after the failed tail');
+    h.setRead(async cursor => ({ proposals: cursor ? h.tail : h.first, nextCursor: cursor ? null : 'retry_page2' })); await h.owner.readPending();
+    assert.equal(h.owner.getSnapshot().pending.state, 'ready'); assert.equal(h.owner.getSnapshot().pending.entries.length, 22); h.dispose();
+  }
+});
+
+test('a scope change aborts the refreshing tail and resets the loaded depth for the next child', async () => {
+  const h = wireHarness(); await h.loadWindow(); const tail = deferred();
+  h.setRead(async cursor => cursor ? tail.promise : { proposals: h.first, nextCursor: 'fresh_page2' });
+  const work = h.owner.readPending(); await settle(); const oldCall = h.calls.at(-1); assert.equal(oldCall.cursor, 'fresh_page2');
+  const childB = wireId(2); h.sync(childB); assert.equal(oldCall.signal.aborted, true);
+  tail.resolve({ proposals: h.tail, nextCursor: null }); await work;
+  assert.equal(h.owner.getSnapshot().pending.state, 'idle'); assert.deepEqual(h.owner.getSnapshot().pending.entries, []);
+  h.setRead(async () => ({ proposals: [{ ...wireProposal(50), childId: childB }], nextCursor: 'child_b_page2' })); await h.owner.readPending();
+  assert.equal(h.calls.filter(c => c.child === childB).length, 1); assert.equal(h.owner.getSnapshot().pending.entries.length, 1); h.dispose();
+});
+
+test('full-window API refresh never resurrects known accepted/dismissed proposals or downgrades expired versions', async () => {
+  for (const status of ['accepted', 'dismissed', 'expired']) {
+    const h = wireHarness(); await h.loadWindow(); const item = h.tail[0];
+    h.setRun(wireResult([{ ...item, version: 2, status, result: status === 'accepted' ? { kind: 'memory_fact', id: wireId(900), version: 1 } : null }]));
+    h.owner.selectRun(wireRun); await settle(); await h.owner.readPending();
+    assert.equal(h.owner.getSnapshot().pending.entries.length, status === 'expired' ? 22 : 21);
+    const known = h.owner.getSnapshot().pending.entries.find(e => e.proposal.id === item.id);
+    if (status === 'expired') { assert.equal(known.proposal.status, 'expired'); assert.equal(known.proposal.version, 2); }
+    else assert.equal(known, undefined); assert.equal(h.calls.length, 4); h.dispose();
+  }
+});
+
+
+test('permission loss on a refreshing tail clears the complete cached window and its queued intent', async () => {
+  const h = wireHarness(); await h.loadWindow(); const tail = deferred();
+  h.setRead(async cursor => cursor ? tail.promise : { proposals: h.first, nextCursor: 'fresh_page2' });
+  const work = h.owner.readPending(); await settle(); h.focus();
+  tail.resolve(Response.json({ error: { code: 'not_found' } }, { status: 404 })); await work; await settle();
+  assert.equal(h.owner.getSnapshot().pending.state, 'denied'); assert.deepEqual(h.owner.getSnapshot().pending.entries, []);
+  assert.equal(h.owner.getSnapshot().pending.nextCursor, null); assert.equal(h.calls.length, 4); h.dispose();
+});

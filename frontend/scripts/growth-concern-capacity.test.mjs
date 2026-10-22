@@ -30,14 +30,16 @@ function harness(component, initialProps, workspace = null) {
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
       if (name === "react-native") return { View: "View", Pressable: "Pressable", StyleSheet: { create: value => value }, useWindowDimensions: () => ({ width: 390 }) };
       if (name === "react-native-paper") return { Text: "Text", Button: "Button" };
+      if (name.endsWith("/FormDialog")) return { FormDialog: "FormDialog" };
+      if (name.endsWith("/HistoryCards")) return { HistoryCardGrid: "HistoryCardGrid" };
       if (name.endsWith("/growth-styles")) return { growthStyles: {} };
-      if (name.endsWith("/theme")) return { chineseFont: "", colors: {}, mobileLayout: { breakpoint: 650, touchTarget: 44 }, radius: {}, spacing: {} };
+      if (name.endsWith("/theme")) return { chineseFont: "", colors: {}, mobileLayout: { breakpoint: 650, touchTarget: 44 }, radius: {}, spacing: {}, readingType: {} };
       if (name.endsWith("/AppDialog")) return { AppDialog };
       if (name.endsWith("/BackgroundSurface")) return { BackgroundSurface: "BackgroundSurface" };
       if (name.endsWith("/ui")) return { AppButton: "AppButton" };
       if (name.endsWith("/GrowthWorkspace")) return { useGrowthWorkspace: () => workspace };
       if (name.endsWith("/useInteractionDensity")) return { useInteractionDensity: () => false };
-      for (const leaf of ["AppIcon", "GrowthConcernTimeline", "GrowthOperationRecovery", "StatusAnnouncement"])
+      for (const leaf of ["AppIcon", "GrowthConcernTimeline", "GrowthOperationRecovery", "StatusAnnouncement", "ReadStateNotice", "EmptyListCard"])
         if (name.endsWith("/" + leaf)) return { [leaf]: leaf };
       if (!name.startsWith(".")) return require(name);
       const location = path.resolve(path.dirname(filename), name);
@@ -100,8 +102,7 @@ test("history list and detail retain reading but explain capacity-blocked restor
     const h = harness("GrowthHistoryView", { searchText: "", dateRange: { from: null, to: null }, onTask() {} }, workspace);
     let tree = h.render();
     const restore = tree => nodes(tree).find(node => node.type === "Button" && node.props.accessibilityLabel === "恢復關注：合成關注");
-    assert.equal(restore(tree).props.disabled, count >= 200);
-    assert.equal(text(tree).includes("已達歷史容量限制"), count >= 200);
+    assert.equal(restore(tree), undefined, "Restore is not a nested card action");
     assert.equal(text(tree).includes("未取得原狀態"), false);
     nodes(tree).find(node => node.type === "Pressable" && node.props.accessibilityLabel === "查看已結束關注：合成關注").props.onPress();
     tree = h.render();

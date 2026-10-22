@@ -1,10 +1,24 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import test from 'node:test';
 import ts from 'typescript';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+
+function loadAppearanceStyle(file) {
+  const module = { exports: {} };
+  const code = ts.transpileModule(readFileSync(new URL(`../src/components/appearance/${file}`, import.meta.url), 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS },
+  }).outputText;
+  new Function('require', 'module', 'exports', code)(name => {
+    assert.ok(name.endsWith('.css'), `Unexpected style dependency: ${name}`);
+  }, module, module.exports);
+  return module.exports;
+}
 
 // Shipped HomeWelcome with deterministic hook, frame and timer ports; not browser pixels.
-function harness({ ready = false, active = true, reducedMotion = false, timestamp, compact = false } = {}) {
+function harness({ ready = false, active = true, reducedMotion = false, timestamp, compact = false, platform = 'web' } = {}) {
   let cursor = 0, dirty = false, now = 0, serial = 0, tree, consumed = 0;
   let scopeKey = 'Synthetic Parent', pathname = '/', preferences = { preferenceReady: true, active, reducedMotion, enabled: active && !reducedMotion, epoch: 0 };
   const slots = [], effects = [], frames = new Map(), timers = new Map(), animations = [];
@@ -23,7 +37,7 @@ function harness({ ready = false, active = true, reducedMotion = false, timestam
     if (name === 'react') return react;
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
     if (name === 'expo-router') return { usePathname: () => pathname };
-    if (name === 'react-native') return { StyleSheet: { create: value => value }, View: 'View' };
+    if (name === 'react-native') return { StyleSheet: { create: value => value, absoluteFill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 } }, View: 'View' };
     if (name === 'react-native-paper') return { Text: 'Text' };
     if (name === 'react-native-reanimated') return { __esModule: true, default: { View: 'AnimatedView' }, ReduceMotion: { System: 'system' },
       useSharedValue: value => react.useRef({ value }).current, useAnimatedStyle: callback => callback(), cancelAnimation() {}, runOnJS: callback => callback,
@@ -32,6 +46,8 @@ function harness({ ready = false, active = true, reducedMotion = false, timestam
     if (name.endsWith('/FirstScreenGate')) return { useFirstScreenReady: () => ready };
     if (name.endsWith('/theme')) return { colors: { paper: '#fff' }, spacing: { lg: 16 }, radius: {}, readingType: {}, workspaceType: {} };
     if (name.endsWith('/HomeBackground')) return { HomeBackground: 'HomeBackground' };
+    if (name.endsWith('/background-surface-style')) return loadAppearanceStyle(`background-surface-style${platform === 'web' ? '.web' : ''}.ts`);
+    if (name.endsWith('/home-welcome-glass-style')) return loadAppearanceStyle(`home-welcome-glass-style${platform === 'web' ? '.web' : ''}.ts`);
     assert.fail(name);
   };
   const CurrentDate = timestamp ? class extends Date { constructor(...args) { super(...(args.length ? args : [timestamp])); } } : Date;
@@ -86,10 +102,77 @@ function renderBackground(props, { platform = 'web', selected = {}, fallback = f
 }
 
 const flattenStyle = style => Object.assign({}, ...[style].flat().filter(Boolean));
+const welcomeBackground = tree => tree.props.children.props.children[1].props.children;
+
+test('welcome frost belongs only to an empty background plane, with unchanged artwork geometry and sharp copy', () => {
+  for (const compact of [false, true]) for (const platform of ['web', 'android']) {
+    const card = harness({ compact, platform }).render().props.children;
+    const [glass, artwork, copy] = card.props.children;
+    const background = artwork.props.children;
+    assert.equal(glass.props.testID, 'home-welcome-glass');
+    assert.equal(glass.props.children, undefined, 'the blur plane must not contain text, artwork or cards');
+    assert.equal(glass.props.pointerEvents, 'none');
+    assert.equal(glass.props['aria-hidden'], true);
+    assert.deepEqual(flattenStyle(glass.props.style), { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: '#fff' });
+    assert.equal(flattenStyle(card.props.style).backgroundColor, undefined, 'the outer card cannot obscure the glass with a solid fill');
+    assert.equal(flattenStyle(card.props.style).minHeight, compact ? 152 : 176);
+    assert.equal(flattenStyle(card.props.style).maxWidth, compact ? undefined : 800);
+    assert.equal(artwork.props.testID, 'home-welcome-artwork');
+    assert.equal(background.type, 'HomeBackground');
+    assert.equal(background.props.useCustomImage, false, 'selected backgrounds remain behind, not in place of, the existing artwork');
+    assert.equal(background.props.fadeStart, compact ? 0.48 : 0.64);
+    assert.equal(background.props.fadeEnd, compact ? 0.68 : 0.88);
+    const artworkStyle = flattenStyle(artwork.props.style);
+    assert.deepEqual(Object.fromEntries(['position', 'top', 'right', 'bottom', 'left'].map(key => [key, artworkStyle[key]])), { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 });
+    for (const node of [card, glass, artwork, copy, ...copy.props.children]) {
+      assert.equal(flattenStyle(node.props.style).filter, undefined, 'foreground content must never receive filter blur');
+      assert.equal(flattenStyle(node.props.style).backdropFilter, undefined, 'only the existing background CSS owns backdrop blur');
+    }
+    if (platform === 'web') {
+      assert.deepEqual(glass.props.dataSet, { backgroundSurface: 'frosted' });
+      assert.deepEqual(artwork.props.dataSet, { homeWelcomeArtwork: 'true' });
+      assert.equal(artworkStyle.maskImage, `linear-gradient(to right, transparent 0%, transparent ${background.props.fadeStart * 100}%, #000 ${background.props.fadeEnd * 100}%, #000 100%)`);
+      assert.equal(artworkStyle.WebkitMaskImage, artworkStyle.maskImage);
+    } else {
+      assert.equal(glass.props.dataSet, undefined);
+      assert.equal(artwork.props.dataSet, undefined);
+      assert.equal(artworkStyle.maskImage, undefined);
+      assert.equal(artworkStyle.WebkitMaskImage, undefined);
+    }
+  }
+});
+
+test('welcome reuses readable glass fallbacks and keeps the original fade when CSS masks are unsupported', () => {
+  const css = readFileSync(new URL('../src/components/appearance/homeWelcomeGlass.css', import.meta.url), 'utf8');
+  assert.match(css, /@supports \(\(mask-image: linear-gradient/);
+  assert.match(css, /-webkit-mask-image: linear-gradient/);
+  assert.match(css, /\[data-home-welcome-artwork="true"\] \[data-testid="home-background-css-fade"\] \{\s*display: none;/);
+  assert.equal((css.match(/display: none/g) ?? []).length, 1);
+  assert.doesNotMatch(css, /(?:filter|mix-blend-mode)\s*:/);
+  const surface = readFileSync(new URL('../src/components/appearance/backgroundSurface.css', import.meta.url), 'utf8');
+  assert.match(surface, /\[data-background-surface\] \{\s*background-color: #fffffe !important;/);
+  assert.match(surface, /@supports[\s\S]*rgba\(255, 255, 254, 0\.84\)/);
+  assert.match(surface, /backdrop-filter: blur\(12px\)/);
+  assert.match(surface, /prefers-reduced-transparency: reduce/);
+  assert.match(surface, /forced-colors: active/);
+  assert.match(surface, /backdrop-filter: none/);
+  assert.deepEqual(loadAppearanceStyle('home-welcome-glass-style.ts').homeWelcomeArtworkProps(0.64, 0.88), {});
+  assert.deepEqual(loadAppearanceStyle('background-surface-style.ts').backgroundSurfaceProps(true), {});
+});
+
+test('installed RN Web preserves the local standard and prefixed CSS mask without applying a foreground filter', () => {
+  const { View } = createRequire(import.meta.url)('react-native-web');
+  const props = loadAppearanceStyle('home-welcome-glass-style.web.ts').homeWelcomeArtworkProps(0.64, 0.88);
+  const html = renderToStaticMarkup(createElement(View, props));
+  assert.match(html, /data-home-welcome-artwork="true"/);
+  assert.match(html, /mask-image:linear-gradient\(to right, transparent 0%, transparent 64%, #000 88%, #000 100%\)/);
+  assert.match(html, /-webkit-mask-image:/);
+  assert.doesNotMatch(html, /(?:backdrop-)?filter:/);
+});
 
 test('welcome contains the complete height-anchored illustration without feeding zoomed measurements into styles', () => {
   for (const compact of [false, true]) for (const platform of ['web', 'android']) {
-    const background = harness({ compact }).render().props.children.props.children[0];
+    const background = welcomeBackground(harness({ compact, platform }).render());
     assert.equal(background.type, 'HomeBackground');
     assert.equal(background.props.useCustomImage, false);
     assert.equal(background.props.containIllustration, true);
@@ -146,7 +229,7 @@ test('other backgrounds retain default cover/custom image and SVG protection; we
   const { tree } = renderBackground({ surface: '#fff', useCustomImage: false, wideIllustration: true, illustrationMinWidth: 260 });
   assert.equal(tree.props.children[0].props.resizeMode, 'cover');
   assert.equal(flattenStyle(tree.props.children[0].props.style).minWidth, 260);
-  const welcome = harness().render().props.children.props.children[0];
+  const welcome = welcomeBackground(harness().render());
   const fallback = renderBackground(welcome.props, { fallback: true });
   assert.equal(fallback.tree.props.children[0], null);
   assert.deepEqual(fallback.readiness, [true]);

@@ -1,3 +1,4 @@
+import { HistoryCardGrid } from "../history/HistoryCards";
 import { EmptyListCard } from "../EmptyListCard";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Platform, Pressable, StyleSheet, View, type ScrollView } from "react-native";
@@ -42,15 +43,15 @@ function PreparationEmptyState({ workspace, history = false }: { workspace: Prep
   return <View testID="preparation-empty" style={styles.empty}><Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.meta}>{detail}</Text> : null}</View>;
 }
 
-function PreparationRow({ document, selected, onPress, rowRef }: { document: PreparationDocumentView; selected: boolean; onPress(): void; rowRef(node: View | null): void }) {
+function PreparationRow({ document, selected, onPress, rowRef, history = false }: { document: PreparationDocumentView; selected: boolean; history?: boolean; onPress(): void; rowRef(node: View | null): void }) {
   const state = stateLabels[document.readState], revision = document.revision;
   return <Pressable ref={rowRef} testID={`preparation-row-${document.id}`} accessibilityRole="button"
     accessibilityLabel={`開啟${revision?.title ?? "暫不能查看的準備單"}`} accessibilityState={{ selected }} aria-selected={selected}
-    onPress={onPress} style={({ pressed }) => [styles.documentRow, selected && styles.selectedRow, pressed && (selected ? styles.selectedPressedRow : styles.pressedRow)]}>
+    onPress={onPress} style={({ pressed }) => [styles.documentRow, history && styles.historyCard, selected && styles.selectedRow, pressed && (selected ? styles.selectedPressedRow : styles.pressedRow)]}>
     <View style={styles.row}><Text style={styles.eyebrow}>{preparationPurposeLabel(document.purpose)}</Text><AppStatusBadge label={document.status === "archived" && document.readState === "ready" ? "已歸檔" : state.label} tone={document.status === "archived" && document.readState === "ready" ? "neutral" : state.tone} /></View>
-    <Text accessibilityRole="header" style={styles.rowTitle}>{revision?.title ?? "暫不能查看的準備單"}</Text>
-    <Text style={styles.body}>{revision?.summary ?? state.detail}</Text>
-    <View style={styles.row}><Text style={styles.meta}>{document.status === "archived" ? `歸檔 ${preparationDateLabel(document.archivedAt)}` : `使用日期 ${preparationDateLabel(revision?.eventDate ?? null)}`}</Text><Text style={styles.openLabel}>打開準備單 ›</Text></View>
+    <Text numberOfLines={history ? 2 : undefined} accessibilityRole="header" style={styles.rowTitle}>{revision?.title ?? "暫不能查看的準備單"}</Text>
+    <Text numberOfLines={history ? 3 : undefined} style={styles.body}>{revision?.summary ?? state.detail}</Text>
+    <View style={styles.row}><Text style={styles.meta}>{document.status === "archived" ? `歸檔 ${preparationDateLabel(document.archivedAt)}` : `使用日期 ${preparationDateLabel(revision?.eventDate ?? null)}`}</Text>{!history ? <Text style={styles.openLabel}>打開準備單 ›</Text> : null}</View>
   </Pressable>;
 }
 
@@ -133,6 +134,10 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
   </View>;
 }
 
+function PreparationListGrid({ history, children }: { history: boolean; children: ReactNode }) {
+  return history ? <HistoryCardGrid testID="preparation-history-cards">{children}</HistoryCardGrid> : <>{children}</>;
+}
+
 type ReadingProps = { scrollRef?: RefObject<ScrollView | null>; getScrollPosition?(): number };
 
 function PreparationReader({ workspace, documents, history = false, onHistory, onPrepareQuestion, scrollRef, getScrollPosition }: ReadingProps & {
@@ -143,16 +148,47 @@ function PreparationReader({ workspace, documents, history = false, onHistory, o
   const archivedSelection = !history && workspace.model.justArchivedId;
   const rowRefs = useRef(new Map<string, View>()), listRef = useRef<View>(null), panelRef = useRef<View>(null);
   const anchor = useRef<{ id: string; y: number; scope: string } | null>(null), previousSelected = useRef<string | null>(null);
+  const previousPanel = useRef<View | null>(null), returnState = useRef({ scope: workspace.scopeKey, selected: workspace.model.selected?.id, condition: workspace.model.condition });
+  returnState.current = { scope: workspace.scopeKey, selected: workspace.model.selected?.id, condition: workspace.model.condition };
   useLayoutEffect(() => {
-    const before = previousSelected.current; previousSelected.current = selected?.id ?? null;
+    const before = previousSelected.current, closingPanel = previousPanel.current as unknown as HTMLElement | null;
+    previousSelected.current = selected?.id ?? null; previousPanel.current = panelRef.current;
     if (!before && selected && !wide) {
       scrollRef?.current?.scrollTo({ y: 0, animated: false });
       if (Platform.OS === "web") (panelRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
     } else if (before && !selected && anchor.current?.scope === workspace.scopeKey) {
       if (!wide) scrollRef?.current?.scrollTo({ y: anchor.current.y, animated: false });
-      if (Platform.OS === "web") ((rowRefs.current.get(anchor.current.id) ?? listRef.current) as unknown as HTMLElement | null)?.focus({ preventScroll: true });
+      if (Platform.OS !== "web" || typeof document === "undefined" || workspace.model.condition === "lost") return;
+      const saved = anchor.current;
+      const candidates = () => [rowRefs.current.get(saved.id), listRef.current] as unknown as (HTMLElement | null | undefined)[];
+      const neutralFocus = (target: Element | null) => !target?.isConnected || target === document.body || target === document.documentElement;
+      const active = document.activeElement;
+      // A filter, navigation or another control may already have claimed focus.
+      if (!neutralFocus(active) && active !== closingPanel && !closingPanel?.contains?.(active) && !candidates().includes(active as HTMLElement)) return;
+      const restore = () => {
+        for (const target of candidates()) {
+          if (!target?.isConnected || !target.getClientRects().length || target.closest?.('[hidden], [inert], [aria-hidden="true"]')) continue;
+          if (typeof window !== "undefined" && ["hidden", "collapse"].includes(window.getComputedStyle(target).visibility)) continue;
+          try { target.focus({ preventScroll: true }); } catch { continue; }
+          if (document.activeElement === target) return;
+        }
+      };
+      restore();
+      if (typeof requestAnimationFrame !== "function") return;
+      // One post-layout chance only, without overriding newer selection, scope or focus.
+      const restored = document.activeElement;
+      let focusMoved = false;
+      const onFocus = (event: FocusEvent) => { if (event.target !== restored) focusMoved = true; };
+      document.addEventListener("focusin", onFocus, true);
+      const frame = requestAnimationFrame(() => {
+        document.removeEventListener("focusin", onFocus, true);
+        const current = returnState.current;
+        if (focusMoved || current.scope !== saved.scope || current.selected || current.condition === "lost" || anchor.current !== saved) return;
+        if (neutralFocus(document.activeElement)) restore();
+      });
+      return () => { cancelAnimationFrame(frame); document.removeEventListener("focusin", onFocus, true); };
     }
-  }, [selected?.id, wide, workspace.scopeKey]);
+  }, [selected?.id, wide, workspace.scopeKey, workspace.model.condition]);
   return <View ref={layout.ref} onLayout={layout.onLayout} style={styles.stack}>
     {archivedSelection ? <View accessibilityLiveRegion="polite" testID="preparation-archive-success" style={styles.archiveNote}>
       <AppStatusBadge label={workspace.model.dataLabel?.startsWith("Server") ? "已歸檔" : "已在本次預覽歸檔"} tone="success" /><Text style={styles.body}>這份準備單已移到歷史，使用時的版本仍保留。</Text>
@@ -160,10 +196,10 @@ function PreparationReader({ workspace, documents, history = false, onHistory, o
       <AppButton label="繼續看其他準備" variant="quiet" density="compact" onPress={workspace.actions.closeDocument} />
     </View> : null}
     <View style={[styles.stack, wide && selected && styles.split]}>
-      {!selected || wide ? <View ref={listRef} tabIndex={-1} testID="preparation-document-list" style={[styles.list, wide && selected && styles.listColumn]}>
-        {documents.length ? documents.map(document => <PreparationRow key={document.id} document={document} selected={selected?.id === document.id}
+      {!selected || wide ? <View ref={listRef} tabIndex={-1} accessibilityLabel={history ? "已歸檔準備單清單" : "準備單清單"} testID="preparation-document-list" style={[styles.list, wide && selected && styles.listColumn]}>
+        {documents.length ? <PreparationListGrid history={history}>{documents.map(document => <PreparationRow history={history} key={document.id} document={document} selected={selected?.id === document.id}
           rowRef={node => { if (node) rowRefs.current.set(document.id, node); else rowRefs.current.delete(document.id); }}
-          onPress={() => { anchor.current = { id: document.id, y: getScrollPosition?.() ?? 0, scope: workspace.scopeKey }; workspace.actions.selectDocument(document.id); }} />)
+          onPress={() => { anchor.current = { id: document.id, y: getScrollPosition?.() ?? 0, scope: workspace.scopeKey }; workspace.actions.selectDocument(document.id); }} />)}</PreparationListGrid>
           : <PreparationEmptyState workspace={workspace} history={history} />}
       </View> : null}
       {selected ? <View ref={panelRef} tabIndex={-1} style={styles.detailColumn}><PreparationDocumentDetail key={`${workspace.scopeKey}:${selected.id}`} document={selected} workspace={workspace}
@@ -236,6 +272,7 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700", flexGrow: 1, flexShrink: 1 },
   intentControls: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md }, purposeField: { flexGrow: 1, minWidth: 180 },
   list: { gap: spacing.md, minWidth: 0, flex: 1 }, listColumn: { flex: 0.8 }, detailColumn: { flex: 1.4, minWidth: 0 }, split: { flexDirection: "row", alignItems: "flex-start" },
+  historyCard: { flexGrow: 1 },
   documentRow: { gap: spacing.sm, padding: spacing.md, borderRadius: radius.medium, backgroundColor: colors.controlSurface, borderWidth: 1, borderColor: colors.line, minWidth: 0 },
   selectedRow: { borderColor: "transparent", borderWidth: 2, backgroundColor: colors.paleTeal }, pressedRow: { backgroundColor: colors.quietSurface }, selectedPressedRow: { backgroundColor: colors.selectedNav },
   rowTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 17, lineHeight: 26, fontWeight: "700" }, openLabel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700" },

@@ -7,8 +7,8 @@ import { PageFrame } from "../PageFrame";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { CareReviewWorkspace, CareWriteNotice } from "./CareReviewHistoryView";
 
-export function CareRecordsView({ model, actions, previewControls, onReviewHistory, onOlderPending, initialRecordId, manualCreateFocusRef, manualCreateAction }: {
-  model: CareRecordsViewModel; actions: CareRecordsActions; previewControls?: ReactNode;
+export function CareRecordsView({ model, actions, pendingReview, onReviewHistory, onOlderPending, initialRecordId, manualCreateFocusRef, manualCreateAction }: {
+  model: CareRecordsViewModel; actions: CareRecordsActions; pendingReview?: { content: ReactNode; loadedCount?: string };
   onReviewHistory?: () => void; onOlderPending?: () => void; initialRecordId?: string; manualCreateFocusRef?: RefObject<View | null>; manualCreateAction?: ReactNode;
 }) {
   return <PageFrame title="核對" density="compact" description={`${model.child.name} · 核對助手記下的內容，有誤時更正`} scrollTestID="care-page-scroll">
@@ -17,8 +17,7 @@ export function CareRecordsView({ model, actions, previewControls, onReviewHisto
       {model.access === "read_only" ? <Text style={styles.warning}>你可閱讀及對照內容；確認寫入或更正須由擁有人或照顧者處理。</Text> : null}
     </BackgroundSurface> : null}
     <CareWriteNotice model={model} actions={actions} />
-    {model.access === "lost" ? <BackgroundSurface padded><Text style={styles.warning}>已無權查看這個孩子；原文、提案、記錄與草稿已隱藏。</Text></BackgroundSurface> : <CareReviewWorkspace manualCreateFocusRef={manualCreateFocusRef} manualCreateAction={manualCreateAction} model={model} actions={actions} initialRecordId={initialRecordId} onOlderPending={onOlderPending} onHistory={onReviewHistory} />}
-    {previewControls}
+    {model.access === "lost" ? <BackgroundSurface padded><Text style={styles.warning}>已無權查看這個孩子；原文、提案、記錄與草稿已隱藏。</Text></BackgroundSurface> : <CareReviewWorkspace pendingReview={pendingReview} manualCreateFocusRef={manualCreateFocusRef} manualCreateAction={manualCreateAction} model={model} actions={actions} initialRecordId={initialRecordId} onOlderPending={onOlderPending} onHistory={onReviewHistory} />}
   </PageFrame>;
 }
 const styles = StyleSheet.create({ warning: { fontFamily: chineseFont, ...readingType.tool, color: colors.warningInk } });

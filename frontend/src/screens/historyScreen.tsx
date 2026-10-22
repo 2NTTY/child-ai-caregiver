@@ -86,7 +86,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
       : <Text style={styles.meta}>正在讀取核對記錄…</Text>
     : careCategory ? care ? <CareSavedRecordsView key={care.scopeKey} model={care.model} actions={care.actions} />
       : <Text style={styles.meta}>正在讀取已保存記錄…</Text>
-    : profileCategory ? profile ? <ProfileHistoryView key={profile.scopeKey} model={profile.model} actions={profile.actions} />
+    : profileCategory ? profile ? <ProfileHistoryView key={profile.scopeKey} scopeKey={profile.scopeKey} model={profile.model} actions={profile.actions} />
       : <Text style={styles.meta}>正在讀取孩子檔案…</Text>
     : growthCategory ? dateRange ? <GrowthHistoryView key={growth?.scopeKey ?? scope} searchText={filters.searchText} dateRange={dateRange}
       onRecord={id => navigate(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))} onTask={id => navigate(() => { tasks?.actions.selectTask(id); router.push("/tasks"); })} />
@@ -100,7 +100,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
       <AppButton label={current.sourceAction} variant="secondary" onPress={() => navigate(() => router.push(current.sourcePath))} />
     </View>;
 
-  const resultSurface = <BackgroundSurface padded enabled={!reviewCategory && !careCategory && !personalCategory && !profileCategory}>{results}</BackgroundSurface>;
+  const resultSurface = <View style={styles.results}>{results}</View>;
   return <PageFrame density="compact" title="歷史" scrollRef={scrollRef} scrollTestID="history-scroll"
     onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
@@ -125,7 +125,8 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
           <AppButton label="清除篩選" variant="quiet" style={[styles.clearFilter, compact && styles.clearFilterStack]} disabled={!hasFilters || currentLocked} onPress={() => filter({ type: "reset" })} />
         </View> : <><Text style={styles.meta}>核對記錄尚未提供可核實的日期欄位，這裏只按內容及處理狀態搜尋。</Text><AppButton label="清除搜尋" variant="quiet" disabled={!filters.searchText || currentLocked} onPress={() => filter({ type: "search", value: "" })} /></>}
       </BackgroundSurface> : null}
-      {compact ? <View style={styles.results}>{resultSurface}</View> : <AppTabPanel tabsId="history-categories" tabKey={filters.category} active style={styles.results}>{resultSurface}</AppTabPanel>}
+      {/* Keep reader identity across responsive control changes; compact uses a select, not tabs. */}
+      <AppTabPanel tabsId="history-categories" tabKey={filters.category} active hasTabList={!compact} style={styles.results}>{resultSurface}</AppTabPanel>
     </View>
   </PageFrame>;
 }

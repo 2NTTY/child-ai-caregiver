@@ -203,21 +203,21 @@ test('a restored family decision requires fresh sharing consent before its exact
   h.owner.retryOriginal(); await settle(); assert.deepEqual(h.posts()[1], h.posts()[0]); h.owner.dispose();
 });
 
-test('real Care close, route remount and both reopen handlers keep the real owner tuple and issue GET only', async () => {
+test('real Care card close, route remount and original-decision recovery keep the real owner tuple and issue GET only', async () => {
   const { harness: componentHarness } = await import('./scope-transition-harness.mjs');
   const dialog = Object.assign('Dialog', { Title: 'Title', ScrollArea: 'ScrollArea', Content: 'Content', Actions: 'Actions' });
   const mocks = {
-    'react-native': { View: 'View', Platform: { OS: 'android' }, StyleSheet: { create: x => x } },
+    'react-native': { View: 'View', Pressable: 'Pressable', Platform: { OS: 'android' }, StyleSheet: { create: x => x } },
     'react-native-paper': { Text: 'Text', Portal: 'Portal' },
     'expo-router': { usePathname: () => '/care', useRouter: () => ({ push() {} }), useLocalSearchParams: () => ({}) },
     'expo-router/react-navigation': { useNavigation: () => ({ dispatch() {} }), usePreventRemove() {} },
-    '../theme': { spacing: {}, colors: {}, radius: {}, typeScale: {} },
+    '../theme': { spacing: {}, colors: {}, radius: {}, readingType: {}, typeScale: {} },
     '../components/ui': { AppButton: 'Button', SectionCard: 'SectionCard', SectionHeader: 'SectionHeader' },
     '../components/AppDialog': { AppDialog: dialog }, '../components/AppScrollView': { AppScrollView: 'ScrollView' },
     '../production/CareProfileDomains': { useProductionCareProfile: () => null },
     '../production/useDomainEnvironment': {}, '../workspaces/CareWorkspace': { useCareWorkspace: () => null }, './photosScreen': {},
   };
-  for (const [prefix, names] of [['../components/', ['EmptyListCard', 'ReadStateNotice', 'PageFrame']],
+  for (const [prefix, names] of [['../components/', ['EmptyListCard', 'ReadStateNotice', 'PageFrame', 'AppIcon', 'AppStatusBadge']],
     ['../components/care/', ['CareRecordsView']], ['../components/agent/', ['AgentRunView']]])
     for (const name of names) mocks[prefix + name] = { [name]: name };
   const ui = componentHarness(mocks); let serial = 0;
@@ -233,10 +233,11 @@ test('real Care close, route remount and both reopen handlers keep the real owne
     ui.render(ui.jsx(guard.PreviewNavigationGuard, { children: ui.jsx(Page, {}) }));
   };
   const button = label => ui.hosts().find(n => n.type === 'Button' && n.props.label === label);
-  const modal = () => ui.hosts().find(n => n.props.accessibilityLabel === '助手運行結果');
+  const modal = () => ui.hosts().find(n => n.props.accessibilityLabel === '核對事項詳情');
   const runReads = () => h.calls.filter(c => c.method === 'GET' && c.url.endsWith(runA)).length;
-  render(); await settle(); render(); assert.equal(button('查看結果').props.disabled, false);
-  button('查看結果').props.onPress(); await settle(); render();
+  const card = () => ui.hosts().find(n => n.props.testID === `care-pending-card-${runA}-${proposalA}`);
+  render(); await settle(); render(); assert.equal(card().props.disabled, false);
+  card().props.onPress(); await settle(); render();
   ui.hosts().find(n => n.type === 'AgentRunView').props.actions.decide(proposalA, 'accept'); await settle(); render();
   const original = h.owner.getSnapshot().model.pendingDecision, api = h.owner.api;
   modal().props.onDismiss(); render(); assert.equal(modal().props.visible, false); assert.equal(button('留在此頁查核'), undefined);
@@ -244,13 +245,14 @@ test('real Care close, route remount and both reopen handlers keep the real owne
   ui.unmount(); render(); assert.equal(modal().props.visible, false);
   assert.equal(h.owner.getSnapshot().model.pendingDecision, original); assert.equal(h.owner.api, api); assert.equal(h.posts().length, 1);
   const read = deferred(); h.setGet(() => read.promise); const readsBefore = runReads();
-  button('查看結果').props.onPress(); render(); assert.equal(runReads(), readsBefore + 1);
+  card().props.onPress(); render(); assert.equal(runReads(), readsBefore + 1);
   h.owner.decide(proposalA, 'accept'); h.owner.retryOriginal(); assert.equal(h.posts().length, 1);
   read.resolve(Response.json({ result: result() })); await settle(); render();
   assert.equal(h.owner.getSnapshot().model.pendingDecision.reviewed, true);
   button('關閉結果').props.onPress(); render(); assert.equal(modal().props.visible, false);
   h.setGet(null); h.runValues.set(childA, result(childA, [accepted(childA)]));
-  button('查看所選結果').props.onPress(); await settle(); render();
+  h.owner.snapshot = { ...h.owner.getSnapshot(), pending: { state: 'ready', hasSnapshot: true, entries: [], nextCursor: null } }; render();
+  button('查核原決定').props.onPress(); await settle(); render();
   assert.equal(runReads(), readsBefore + 2); assert.equal(h.owner.getSnapshot().model.pendingDecision, null);
   assert.equal(h.owner.getSnapshot().model.run.proposals[0].status, 'accepted'); assert.equal(h.posts().length, 1);
   ui.unmount(); h.owner.dispose();

@@ -32,8 +32,8 @@ export function CareRevisionContent({ revision, createdAtLabel }: { revision: Ca
   </View>;
 }
 
-export function CareRecordDetail({ detail, actions, canEdit, online, active = true, revealIntent = null, revealEligible = false }: {
-  detail: NonNullable<CareRecordsViewModel["detail"]>; actions: CareRecordsActions; canEdit: boolean; online: boolean; active?: boolean; revealIntent?: string | number | null; revealEligible?: boolean;
+export function CareRecordDetail({ detail, actions, canEdit, online, active = true, revealIntent = null, revealEligible = false, onReturnToList }: {
+  detail: NonNullable<CareRecordsViewModel["detail"]>; actions: CareRecordsActions; canEdit: boolean; online: boolean; active?: boolean; onReturnToList?(): void; revealIntent?: string | number | null; revealEligible?: boolean;
 }) {
   const { record } = detail;
   const headingRef = useRef<View>(null);
@@ -46,7 +46,7 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
   useEffect(() => {
     if (active && Platform.OS === "web") (headingRef.current as unknown as HTMLElement | null)?.focus({ preventScroll: true });
   }, [record.id, active]);
-  return <View style={styles.detail}><SectionHeader title="已確認的整理結果" density="compact" action={<AppButton label="返回記錄" density="compact" variant="quiet" onPress={actions.closePanel} />} />
+  return <View style={styles.detail}><SectionHeader title="已確認的整理結果" density="compact" action={<AppButton label="返回記錄" density="compact" variant="quiet" onPress={onReturnToList ?? actions.closePanel} />} />
     <View ref={headingRef} accessibilityLabel={record.title} tabIndex={-1} style={styles.recordHeading}><Text accessibilityRole="header" style={styles.title}>{record.title}</Text><AppStatusBadge label="已確認保存" tone="success" /></View>
     <MotionReveal value={record.current} contentKey={JSON.stringify(record.current.values)} scopeKey={`${record.childId}:${record.id}`} regionKey="record-detail-text" triggerKey={revealIntent} eligible={revealEligible && active} preset="local">{revision => <CareValueSummary values={revision.values} />}</MotionReveal>
     {record.current.eventTimePrecision === "unknown" ? <Text style={styles.warning}>事件時間尚未確定，原文保留供核對。</Text> : null}

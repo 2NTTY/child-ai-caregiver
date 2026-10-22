@@ -21,6 +21,7 @@ function load(relative, overrides = {}, suffix = '') {
     if (name === 'react-native') return {View: 'View', Pressable: 'Pressable', Platform: {OS: 'web'}, StyleSheet: {create: value => value}, useWindowDimensions: () => ({width: 1024})};
     if (name === 'react-native-paper') return {Text: 'Text', Button: 'Button'};
     if (name.endsWith('/theme')) return {colors: {}, spacing: {}, radius: {}, readingType: {}, workspaceType: {}, typeScale: {}, mobileLayout: {breakpoint: 650}};
+    if (name.endsWith('/appearance/BackgroundSurface')) return {BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false};
     if (name.endsWith('/useContainerWidth')) return {useContainerWidth: () => ({width: 1024, ref: null, onLayout: noop})};
     if (name.endsWith('/useInteractionDensity')) return {useInteractionDensity: () => false};
     if (name.endsWith('/growth-styles')) return {growthStyles: {}};
@@ -64,16 +65,16 @@ test('growth history replaces the bare empty line with a card, never during refr
   }
 });
 
-test('conversation and notification empty cards preserve successful refresh snapshots but not partial notifications or uncertain reads', () => {
+test('conversation and notification empty cards preserve successful refresh snapshots with explicit partial coverage but not uncertain reads', () => {
   const initial = () => ({scopeKey: 'scope', access: 'editable', online: true, busy: {history: false, notifications: false, message: false}, actions: {}, message: {data: null},
     history: {state: 'ready', data: {query: '', matches: [], complete: false, nextCursor: 'more', scanned: 100}},
     notifications: {state: 'ready', data: {items: [], complete: false, nextCursor: 'more'}}});
   let owner = initial();
   const views = load('src/components/history/PersonalHistoryViews.tsx', {'../../production/usePersonalHistory': {usePersonalHistoryWorkspace: () => owner}});
   for (const [kind, render] of [['history', () => views.PersonalConversationHistoryView({searchText: '', dateRange: range, onPrepareQuestion: noop})], ['notifications', () => views.PersonalNotificationContent({owner, searchText: '', dateRange: range})]]) {
-    owner = initial(); assert.equal(empty(render()).length, kind === 'history' ? 1 : 0); if (kind === 'history') assert.match(empty(render())[0].props.detail, /仍有/);
+    owner = initial(); assert.equal(empty(render()).length, 1); if (kind === 'history') assert.match(empty(render())[0].props.detail, /仍有/);
     for (const state of ['loading', 'error', 'unavailable', 'stale']) { owner = initial(); owner[kind] = {...owner[kind], state, ...(state === 'stale' ? {} : {data: null})}; assert.equal(empty(render()).length, 0, state); }
-    for (const patch of [{online: false}, {access: 'revoked'}, {busy: {[kind]: true}}]) { owner = {...initial(), ...patch}; assert.equal(empty(render()).length, patch.busy && kind === 'history' ? 1 : 0); }
+    for (const patch of [{online: false}, {access: 'revoked'}, {busy: {[kind]: true}}]) { owner = {...initial(), ...patch}; assert.equal(empty(render()).length, patch.busy ? 1 : 0); }
     owner = initial(); owner[kind].data.complete = true; owner[kind].data.nextCursor = null; assert.equal(empty(render()).length, 1);
     owner.busy[kind] = true; assert.equal(empty(render()).length, 1, 'a successful empty snapshot stays visible during refresh');
   }
@@ -102,4 +103,28 @@ test('existing task and preparation history still use successful-empty cards, no
   const model = {online: true, condition: 'ready', reading: {archiveReady: true, pageBusy: false, pageError: null, archiveHasMore: true}};
   assert.equal(empty(PreparationEmptyState({workspace: {model}, history: true})).length, 1);
   for (const patch of [{online: false}, {condition: 'loading'}, {condition: 'refresh_failed'}, {condition: 'lost'}, {reading: {...model.reading, archiveReady: false}}, {reading: {...model.reading, pageBusy: true}}, {reading: {...model.reading, pageError: 'Failed'}}]) assert.equal(empty(PreparationEmptyState({workspace: {model: {...model, ...patch}}, history: true})).length, 0);
+});
+
+test('the actual PreparationHistoryView reader wiring gates archive empty by archive readiness and paging, not active documents', () => {
+  const ready = {scopeKey: 'scope', actions: {}, model: {condition: 'ready', online: true, documents: [], selected: null,
+    reading: {archiveStarted: true, archiveReady: true, pageBusy: false, pageError: null, archiveHasMore: false, activeHasMore: true, online: true}}};
+  let workspace = ready;
+  const {PreparationHistoryView} = load('src/components/preparations/PreparationWorkspace.tsx', {
+    '../../workspaces/PreparationWorkspace': {usePreparationWorkspace: () => workspace},
+  });
+  const render = () => {
+    const page = PreparationHistoryView({searchText: '', dateRange: range});
+    const reader = nodes(page).find(node => typeof node.type === 'function' && node.type.name === 'PreparationReader');
+    assert.ok(reader); assert.equal(reader.props.history, true);
+    const list = reader.type(reader.props);
+    const emptyState = nodes(list).find(node => typeof node.type === 'function' && node.type.name === 'PreparationEmptyState');
+    assert.ok(emptyState); assert.equal(emptyState.props.history, true, 'Reader must propagate archive context');
+    return emptyState.type(emptyState.props);
+  };
+  assert.equal(empty(render()).length, 1); assert.equal(empty(render())[0].props.detail, '試試其他搜尋或日期。');
+  for (const reading of [{archiveReady: false}, {pageBusy: true}, {pageError: 'Synthetic failure'}]) {
+    workspace = {...ready, model: {...ready.model, reading: {...ready.model.reading, ...reading}}}; assert.equal(empty(render()).length, 0);
+  }
+  workspace = {...ready, model: {...ready.model, reading: {...ready.model.reading, archiveHasMore: true, activeHasMore: false}}};
+  assert.match(empty(render())[0].props.detail, /仍有更多文件/);
 });
