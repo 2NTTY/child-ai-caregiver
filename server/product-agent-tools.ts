@@ -345,6 +345,13 @@ export function createProductAgentTools(options: {
           content, intendedVisibility: args.intendedVisibility as "private" | "family", validUntil, ...(args.sourceMessageId ? { sourceMessageId: args.sourceMessageId as string } : {}) });
         if (!proposal) throw new AgentStopped("unauthorized");
         pendingMemoryProposalCount += 1;
+        // Bind the confirmation question immediately (same as propose_family_document_change) so
+        // chat delivery can append the full receipt even when the model skips request_confirmation.
+        if (proposal.status === "pending" && store.requestConfirmation) {
+          await store.requestConfirmation(scope, runId, { runId: proposal.runId, proposalId: proposal.id,
+            expectedVersion: proposal.version, workId: null });
+          return { ...proposal, confirmationPrepared: true };
+        }
         return proposal;
       }) },
     { name: "stage_private_summary", description: "只整理 read_context.privateSummaryInput 指定 IDs 對應的全部原訊息；summaryMode=isolated_batch 時只摘要該批，不複製舊摘要或其他工具的資料，保留原話的陳述／推測身份；舊 cumulative 模式才合併舊摘要。原文從同次 uncoveredConversation 讀取，不可補入未提供訊息。保留不確定性、來源及更正；moreUncovered=true 不表示已讀後續內容。這是私人衍生摘要，不是已確認事實；Server 在運行結束核對完整批次、來源與版本。未取得該批次全部原文時不可調用。",

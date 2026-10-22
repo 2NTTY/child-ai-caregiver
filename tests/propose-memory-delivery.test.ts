@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createProductAgentTools } from "../server/product-agent-tools.ts";
-import { AGENT_CONFIRMATION_PENDING_TEXT } from "../server/agent-work-tool-descriptions.ts";
+import { AGENT_CONFIRMATION_PENDING_TEXT, buildAgentConfirmationQuestion } from "../server/agent-work-tool-descriptions.ts";
 import { looksLikeDurableMemoryFactQuestion, looksLikeDurableMemoryFactStatement } from "../server/memory-policy.ts";
 import type { AgentRunContext } from "../server/agent-runtime.ts";
 
@@ -16,8 +16,10 @@ const runId = "d4a1b662-d13d-476b-bf52-40a28aa1a1a7";
 
 function tools(options: {
   trustedUserMessage?: string;
-  propose?: () => Promise<unknown>;
+  propose?: (...args: unknown[]) => Promise<unknown>;
   confirmationQuestions?: () => Promise<string[]>;
+  requestConfirmation?: (...args: unknown[]) => Promise<unknown>;
+  confirmations?: Array<{ runId: string; proposalId: string; expectedVersion: number; workId: null }>;
 }) {
   const run = {
     scope, runId, budget: { toolResponseCharacters: 12000, remainingModelCalls: 4, signal: new AbortController().signal },
@@ -31,6 +33,10 @@ function tools(options: {
       targetLabel: null, result: null,
     })),
     confirmationQuestions: options.confirmationQuestions,
+    requestConfirmation: options.requestConfirmation ?? (async (_scope: unknown, _asking: string, raw: { runId: string; proposalId: string; expectedVersion: number; workId: null }) => {
+      options.confirmations?.push(raw);
+      return { id: "conf-1", proposalRunId: raw.runId, proposalId: raw.proposalId, proposalVersion: raw.expectedVersion, expiresAt: new Date(Date.now() + 86400000).toISOString(), question: "prepared" };
+    }),
   };
   return createProductAgentTools({
     run, authorize: async () => true,
@@ -180,3 +186,75 @@ test("allergy statement propose clears near-term validUntil", async () => {
   assert.equal(long.status, "succeeded");
   assert.equal(captured[1], longUntil);
 });
+
+
+test("preference propose_fact auto-prepares confirmation for full receipt append", async () => {
+  const confirmations: Array<{ runId: string; proposalId: string; expectedVersion: number; workId: null }> = [];
+  const preferenceContent = "BB 鐘意牛油果";
+  const proposalValue = {
+    id: "b0a7eca0-77e4-4980-ae87-4c335b2b5c39", runId, childId: scope.childId, version: 1, status: "pending" as const,
+    createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(),
+    value: { kind: "memory_fact" as const, key: "likes-avocado", content: preferenceContent, intendedVisibility: "private" as const, validUntil: null },
+    targetLabel: null, result: null,
+  };
+  const surface = tools({
+    trustedUserMessage: preferenceContent,
+    confirmations,
+    propose: async () => proposalValue,
+  });
+  const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
+  const proposed = await propose.execute({
+    key: "likes-avocado", content: preferenceContent, intendedVisibility: "private", validUntil: null,
+  }, { callId: "c-avocado" });
+  assert.equal(proposed.status, "succeeded");
+  assert.equal((proposed.data as { result?: { confirmationPrepared?: boolean } }).result?.confirmationPrepared, true);
+  assert.equal(confirmations.length, 1);
+  assert.equal(confirmations[0]?.proposalId, proposalValue.id);
+  assert.equal(confirmations[0]?.expectedVersion, 1);
+  const question = buildAgentConfirmationQuestion(
+    { value: proposalValue.value, targetLabel: null },
+    false,
+    "BB",
+  );
+  assert.ok(question.includes("事實名稱"));
+  assert.ok(question.includes("內容"));
+  assert.ok(question.includes("保存範圍"));
+  assert.ok(question.includes("確認"));
+  assert.ok(question.includes(preferenceContent));
+  const receipt = AGENT_CONFIRMATION_PENDING_TEXT + "\n\n" + question;
+  assert.ok(receipt.includes("已準備待確認"));
+  assert.ok(receipt.includes("事實名稱"));
+  assert.ok(receipt.includes("保存範圍"));
+});
+
+test("dislike preference propose_fact also auto-prepares confirmation", async () => {
+  const confirmations: Array<{ runId: string; proposalId: string; expectedVersion: number; workId: null }> = [];
+  const content = "BB 唔鐘意西蘭花";
+  const surface = tools({
+    trustedUserMessage: content,
+    confirmations,
+    propose: async () => ({
+      id: "c0ffee00-77e4-4980-ae87-4c335b2b5c39", runId, childId: scope.childId, version: 1, status: "pending",
+      createdAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(),
+      value: { kind: "memory_fact", key: "dislikes-broccoli", content, intendedVisibility: "private", validUntil: null },
+      targetLabel: null, result: null,
+    }),
+  });
+  const propose = surface.tools.find(tool => tool.name === "propose_fact")!;
+  const proposed = await propose.execute({
+    key: "dislikes-broccoli", content, intendedVisibility: "private", validUntil: null,
+  }, { callId: "c-broccoli" });
+  assert.equal(proposed.status, "succeeded");
+  assert.equal((proposed.data as { result?: { confirmationPrepared?: boolean } }).result?.confirmationPrepared, true);
+  assert.equal(confirmations.length, 1);
+  const question = buildAgentConfirmationQuestion(
+    { value: { kind: "memory_fact", key: "dislikes-broccoli", content, intendedVisibility: "private", validUntil: null }, targetLabel: null },
+    false,
+    "BB",
+  );
+  const receipt = [AGENT_CONFIRMATION_PENDING_TEXT, question].join("\n\n");
+  for (const cue of ["事實名稱", "內容", "保存範圍", "確認"]) {
+    assert.ok(receipt.includes(cue), "missing cue " + cue);
+  }
+});
+
