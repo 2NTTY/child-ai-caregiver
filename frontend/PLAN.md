@@ -3,9 +3,12 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## 前端精簡與接線修補（2026-10-21；同一 draft PR 候選，未推送）
+## 前端精簡與接線修補（2026-10-22；同一 draft PR，首頁歡迎橫幅修補進行中）
 
-基線 `7b828dcbe967c92556673b97733c281d29db4386`，分支 `dot/frontend-simplify-20261021`。使用者要求一個 PR、先不合併；原生 Astra 實作及獨立審核。只改 `frontend/**`，沒有正式資料、真模型、API／權限變更、部署或 OTA。
+基線 `7b828dcbe967c92556673b97733c281d29db4386`，分支 `dot/frontend-simplify-20261021`。2026-10-22 04:46 UTC 已核 [draft PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253) head `19ac8dec3f6364241f29814c24b602305bdffad3`；snapshot15 已推送，主對話已確認既有公開 Site76 為 snapshot15。產品只改 `frontend/**`；本次另獲准納入已獨立審核的需求 v0.8 文件，不代表 ADK 功能已實作。沒有正式家庭資料、真模型、API／權限變更、正式服務部署或 OTA。使用者要求維持一個 draft PR、先不合併；原生 Astra 實作及獨立審核。
+
+- **當前小增量：**修正「你好」橫幅插圖裁切，副句改為動態香港日期＋「先看重要的，再繼續日常」，移除橫幅外重複日期列。snapshot16 的穩定 export 及定向測試通過，但 1024 實屏仍裁右手指，未批准交付；原證據保留。最小修正後 snapshot17 的 536 inputs 前後一致、獨立四尺寸驗圖通過，主對話已親看 1024 指尖完整；本增量正待正常提交，GitHub 與 Sites 各按實際讀回確認，不預填完成。
+- **已交付分層證據：**snapshot10–15 的唯一 saved list、modal focus、單面板背景、核對導航、Profile／活動／去重與各次失敗／修復，見[增量驗證](verification/frontend-simplify-2026-10-21/PREVIEW_DELTA_20261022.md)。snapshot15 536 build inputs 前後一致，兩組有界 Chrome 驗收通過；typecheck 仍有同兩項基線錯誤，舊 harness 阻塞及未驗項保留，並非全倉測試全綠。
 
 - **已實作：**孩子切換去掉年齡／地區／過敏顯示；保留檔案狀態。首頁移除兩個右下快捷入口及底部重複標語、待辦摘要自然延伸；側欄移除照顧上下文分頁。導航短名統一，「全部功能」為明確四字例外並列現有一般入口。
 - **相關頁面：**待辦完成文案／詳情去重；登入欄位內顯示密碼、保留找回／驗證與必要條件，移除登入說明／死返回首頁／底部標語。通知不顯示技術嘗試時間或診斷入口，保留必要時間、真結果與部分載入，尚非內容收件箱。
@@ -16,7 +19,7 @@
 - **接口界線：**三個未接通需求見 [接口提案](ATTENTION_API_HANDOFF.md)。禁止前端跨 owner 湊業務總數／假正文／正式 mock fallback；主動機制暫緩。這份提案不是已完成 backend 或正式 wire schema。
 - **檢查：**合成元件／真 hooks、guard、owner 及安裝版 RN Web SSR 定向測試已執行；尺寸分支涵蓋 web/android 320／390／768／1024／1440，但不等於像素／真機驗收。完整命令、各次成敗及界線列本輪 [checks](verification/frontend-simplify-2026-10-21/checks.json)。frontend typecheck 仍有基線 ContactConsentCard 的兩項型別錯誤，已用 HEAD overlay 核實同錯，不在本包修通知授權。
 - **獨立驗收：**snapshot03 真雲端 Chrome 的 320 詳情、390 側欄、眼睛圖示三項缺陷已修，snapshot04 同界線複驗通過；背景選圖／刷新持久／恢復／延遲登出遮罩／A-B 身份隔離通過。代表尺寸 320／390／768／1024／1440 分版本記錄，不冒稱全頁全狀態矩陣。snapshot06 的來源草稿 context 遺失、欄位名稱／照片時間等已在 snapshot07 真表單複驗修復，聊天鍵盤回焦／閱讀不搶焦亦通過；Care 新增回焦在 snapshot08 通過；Tasks 已確認的 after-close GET 停用按鈕競態，改為一次回穩定待辦 heading，在 snapshot09 首次快速／穩定頁關閉及 Tab 延續通過。首頁摘要時間漏點亦已在 snapshot09 複驗分鐘／無時區後綴。
-- **唯一下一步：**snapshot09 穩定 export 及最後有界雲端 browser 複驗已通過；完成精簡證據末核後，由主對話核准推送／建立同一 draft PR；不 ready、不 merge、不 auto-merge、不發布預覽。其他新機制待後續，不擴成本包 backend 工作。
+- **唯一下一步：**把已通過來源／穩定 export／有界驗圖的 snapshot17 及獨立審核的需求 v0.8 更新至現有 draft PR；主對話另處理獲授權的同站預覽發布。PR、驗收與 Sites 結果分開記錄；不 ready、不 merge、不 auto-merge，不擴成本包 backend 工作。
 
 下方是較早批次的完整歷史；其「當前／待交付」不代表本輪狀態，亦不重用舊 browser 或 Sites 證據作本候選通過。
 

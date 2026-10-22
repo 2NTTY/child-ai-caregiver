@@ -1,8 +1,8 @@
 # 育伴港前端現況
 
-2026-10-21：在 master `7b828dc` 上準備一個未推送的精簡候選。已調整導航／全部功能、孩子切換、首頁／側欄、待辦、登入與通知呈現；關注＋準備單及概況＋成長檔案重新組合，保留原 owner／路由兼容。另修純讀誤觸寫入 guard、首次歡迎動畫在 loading 被提前消耗的問題；已加入本機首頁背景、設定分類／唯讀身份、Agent-first 手動表單彈窗、檔案閱讀優先、聊天閱讀／輸入手感及短時間格式。
+2026-10-22 04:46 UTC 最後已核：基於 master `7b828dc` 的同一 [draft PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253) 已推至 `19ac8dec`（snapshot15），未合併；主對話已確認既有公開 Site76 部署 snapshot15。導航／核對唯一已保存列表、單面板本機背景、guarded modal、Profile／活動呈現等已按版本驗證，保留原 owner／路由與權限；詳見[增量證據](verification/frontend-simplify-2026-10-21/PREVIEW_DELTA_20261022.md)。
 
-合成定向測試與 export／獨立 review 分層記錄；snapshot04 背景持久／隔離及 snapshot07 表單草稿／恢復／聊天互動已有真雲端 Chrome 證據，Care 回焦及 Tasks 背景讀取後回焦、首頁摘要時間最後增量已在 snapshot08／09 定向複驗通過；基線 ContactConsentCard 兩項 typecheck 錯誤及 PDF 測試同步 URL 清理斷言仍明列。窄 Web／native 分支測試不是像素或真機通過。頂條提示、重要提醒與通知正文尚缺 API，不聲稱已接通；主動機制暫緩。只保留同一 draft PR，不合併、不部署；唯一下一步與驗收界線見 [PLAN#active](PLAN.md#active)。
+當前僅修「你好」橫幅插圖、動態日期副句與外層重複日期列。snapshot16 雖有穩定 export，1024 實屏仍裁右手指，故未交付；最小修正後 snapshot17 的穩定 export 及獨立四尺寸驗圖已通過，正待正常提交；推送／發布不預填完成。既有 ContactConsentCard 兩項 typecheck 錯誤、舊 harness／PDF 測試界線與未驗項保留，不宣稱全量綠、真機或真服務驗收。頂條提示、重要提醒與通知正文仍為未接 API 提案，主動機制暫緩。維持同一 draft PR，不合併、不做正式部署／OTA；授權的公開合成預覽由主對話另處理。唯一下一步及 gate 見 [PLAN#active](PLAN.md#active)。
 
 ## 2026-10-11 歷史快照（不是本候選結果）
 

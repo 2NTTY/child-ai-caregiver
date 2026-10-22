@@ -5,7 +5,7 @@ import { defaultHomeBackground, useBackground } from "../../preview/BackgroundCo
 import { useFirstScreenImage } from "../../startup/FirstScreenGate";
 import { useContainerSize } from "../useContainerSize";
 
-export function HomeBackground({ surface, protectFullWidth = false, fadeBottom = false, wideIllustration = false, fitIllustration = false, illustrationInset = 0, useCustomImage = true }: { surface: string; protectFullWidth?: boolean; fadeBottom?: boolean; wideIllustration?: boolean; fitIllustration?: boolean; illustrationInset?: number; useCustomImage?: boolean }) {
+export function HomeBackground({ surface, protectFullWidth = false, fadeBottom = false, wideIllustration = false, fitIllustration = false, illustrationInset = 0, useCustomImage = true, fadeStart = 0.64, fadeEnd = 0.88, illustrationMinWidth = 0 }: { surface: string; protectFullWidth?: boolean; fadeBottom?: boolean; wideIllustration?: boolean; fitIllustration?: boolean; illustrationInset?: number; useCustomImage?: boolean; fadeStart?: number; fadeEnd?: number; illustrationMinWidth?: number }) {
   const background = useBackground();
   const selected = useCustomImage ? background.selected : null, source = selected ? background.source : defaultHomeBackground;
   const fade = useId();
@@ -19,13 +19,14 @@ export function HomeBackground({ surface, protectFullWidth = false, fadeBottom =
     {!startupImage.fallback || selected ? <Image testID="home-background-image" source={source} accessible={false} resizeMode={wholeIllustration ? "contain" : "cover"}
       onLoad={startupImage.onLoad} onError={startupImage.onError}
       style={[styles.image, wideIllustration && !selected && styles.wideIllustration,
+        wideIllustration && !selected && illustrationMinWidth > 0 && { left: "auto", minWidth: illustrationMinWidth },
         wholeIllustration && { left: "auto", right: 0, width: illustrationHeight * (1672 / 941), height: illustrationHeight, top: wholeIllustration && illustrationInset > 0 ? size.height - illustrationHeight - illustrationInset / 2 : (size.height - illustrationHeight) / 2, opacity: illustrationHeight > 0 ? 1 : 0 }]} /> : null}
     <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} aria-hidden focusable={false}>
       <Defs>
         <LinearGradient id={fade} x1={0} y1={0} x2={1} y2={0}>
           <Stop offset={0} stopColor={surface} stopOpacity={1} />
-          <Stop offset={wholeIllustration ? illustrationFadeStart : 0.64} stopColor={surface} stopOpacity={1} />
-          <Stop offset={wholeIllustration ? Math.max(0.68, illustrationFadeStart + 0.16) : 0.88} stopColor={surface} stopOpacity={protectFullWidth ? 0.94 : 0} />
+          <Stop offset={wholeIllustration ? illustrationFadeStart : fadeStart} stopColor={surface} stopOpacity={1} />
+          <Stop offset={wholeIllustration ? Math.max(0.68, illustrationFadeStart + 0.16) : fadeEnd} stopColor={surface} stopOpacity={protectFullWidth ? 0.94 : 0} />
           <Stop offset={1} stopColor={surface} stopOpacity={protectFullWidth ? 0.94 : 0} />
         </LinearGradient>
         <LinearGradient id={bottom} x1={0} y1={0} x2={0} y2={1}>

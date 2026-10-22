@@ -1,6 +1,6 @@
 # 育伴港｜待實施需求彙整
 
-- 文件版本：v0.7
+- 文件版本：v0.8
 - 建立日期：2026-10-21；更新日期：2026-10-22（香港時間）
 - 項目：2NTTY/child-ai-caregiver
 - 用途：持續收集及規劃需求，待使用者整理完多個需求包後，一併交給 Codex 分析與實施。
@@ -202,6 +202,7 @@
 ### 5.4 預算與審核恢復
 
 - 主流程保留正式審核的模型次數與時間；修正＋重審也納入總預算。
+- 收尾規劃須按當前交付路徑計入初次審核，以及仍允許的修訂／重審與終態交付，不只預留最後一次生成及終態工具。餘額不足時提早有界收束並說明缺項，不讓模型先耗盡再跳過審核；具體 reserve 算法及政策相容待實施驗證，現有缺口仍見第 10 節。
 - 格式／引用錯誤回傳具體原因，限制同類無效提交，不只提高總次數。
 - 證據不足時允許有界補查或必要澄清，不無限循環。
 - 區分內容不受支持、證據不足、技術故障及預算不足，避免全部映射成同一個籠統訊息。
@@ -353,7 +354,7 @@
 
 若同一問題需要互不依賴的 `xxx`、`aaa`、`bbb` 三項資料，模型應可在同一輪提出三個查詢，而不是「問模型 → 查一項 → 再問模型 → 再查一項」逐項往返。
 
-- 優先沿用現有多工具呼叫能力，先確認模型能否實際產生合適的一組呼叫、SDK 如何排程，以及本項目如何限制並行；「可接受多個呼叫」不等於「已證明同時執行或一定較快」。
+- 優先沿用現有多工具呼叫能力。已核 ADK JS 2.1.0 對同一回應的多個 function calls 採逐項 `await`，同輪多查詢可減少模型往返，但不等於工具已同時執行；固定來源見第 9.1 節。實施時再核選定版本、模型能否產生合適的一組呼叫，以及項目的有界並行接點，不把靜態原碼當實際提速證據。
 - 只對已確認互不依賴、唯讀且獲授權的查詢並行；需要先得知型號、年齡、地區、來源內容或前一項結果的後續查詢，仍按依賴次序執行。
 - 設置可配置的批次大小、同時在途數、每項逾時與整體期限；具體值先測量再定，不預設無限並行，也不把全部查詢塞進一批。
 - 每項查詢保留獨立身份、來源、成功／失敗狀態及工具／供應商用量。一次批次呼叫不能把多項成本隱藏成一次，並行前仍須通過可用預算與配額檢查。
@@ -403,6 +404,12 @@
 - 模型、供應商、思考設定及基礎設施的調校，排在實際瓶頸量測之後；比較品質、引用、完成率、成本與延遲，不單憑「較小模型較快」作決定。
 - 不擅自換用未批准的模型／付款身份、增加配額、升級付費資源或犧牲原有品質門檻。
 
+### 3.8 無工具角色的原生結構化輸出
+
+- 編製、獨立審核及背景整理／核對等無工具生成，優先評估沿現有 gateway 傳遞 provider 原生 JSON schema 約束；採 ADK `LlmAgent` 時使用其 `outputSchema` 接點，直接 `completeText` 路徑則需明確接入相容的 `responseSchema`／JSON MIME 設定。把 schema 寫進提示詞不等於 provider 已啟用約束，不為此把現有角色一律改成 `AgentTool`。
+- 先核指定模型、provider／SDK 的 schema 子集及無工具條件；支援時使用原生約束，不支援時明示降級為既有提示詞＋嚴格解析／有界修正，或返回清楚的不支援結果。不得靜默刪必要欄位、換模型／付款身份，或另開不計帳的修復生成。
+- **格式合規不等於內容正確。**保留 Zod／業務校驗、來源及引用、內容／版本 hash、身份與授權、獨立語義審核及保存前重核；JSON 合法但證據不符、過期版本或撤權仍須拒絕。此為待實施方案，現況與官方接點見第 9.1 節。
+
 ## 4. B：持續顯示真實、有意義的過程
 
 ### 4.1 以真實事件產生進度
@@ -425,6 +432,13 @@
 - 斷線重連先查回原 run、已保存結果與最新權威狀態，不為恢復畫面重跑搜索、生成或業務操作。
 - 完成、部分可用、失敗、取消、逾時及結果尚未確認要可區分；已完成後不再留下「原運行仍在處理」的過時警告。
 - 連線斷開不等於 Server 已失敗或已取消；對取消及未知結果的說明以 Server 確認為準，恢復後收斂到同一終態。
+
+### 4.4 角色級 metadata-only 追蹤與事件接點
+
+- 沿現有 runtime／gateway、編製／審核入口及背景工作台帳，關聯原 root／工作、角色、階段、模型 attempt／工具子項的安全識別；記開始／結束、耗時、狀態、受控失敗細碼、模型輪次／工具量、可取得的 tokens 及審核／收尾剩額。直接走 `completeText` 的角色亦須涵蓋，不能只追主 `LlmAgent` callbacks 便宣稱四角色可觀測；不得為追蹤新增模型呼叫。
+- 復用第 7.1 節時間點，分開來源首次可展示、答案首次獲核准及整輪終態；失敗帶實際角色／階段，未知就標未知。從同一事實事件映射既有 SSE 的來源取得、角色處理、審核與保存進度，詳情不暴露內部正文；不另建第二套權威狀態，也不把 token 到達當正文已可披露。
+- 項目已關閉 ADK span 正文捕捉並停用其 logger，須保留此邊界；不能把上游預設當安全預設。若接入 OpenTelemetry／exporter，採最小 metadata 欄位白名單、最小保留及存取範圍，預設不收家庭正文、prompt、模型回答、工具參數／結果、完整私人查詢、附件或憑證；例外／錯誤及重試路徑亦不得繞過，不能只靠 UI 隱藏或事後遮罩。
+- 用合成識別字串核對 span attributes／events、logger 及實際 exporter payload 的允許欄位與禁收內容；核對四角色、直接 gateway 呼叫及失敗／取消仍可對回原 run，沒有因脫敏而遺失必要計量或把臨時聊天正文持久化。現有保護不等於新增全路徑追蹤已驗，固定證據見第 9.1 節。
 
 ## 5. C：分階段交付，而不是最後才全部出現
 
@@ -485,7 +499,9 @@
 | 搜索結果需補原文 | 回傳相關片段及完整來源條件；缺漏／截斷明示，不以摘要冒充原文 |
 | 追問復用與來源更新 | 有效資料可復用；版本、有效期、地區／年齡或權限變更會重新核對／失效，私人資料不跨家庭 |
 | 格式／引用拒絕 | 精準補錯、保留成功資料、有界次數及正式審核資源，不反覆原樣提交 |
+| 無工具角色的原生 schema 與降級 | 模擬 provider 可觀察到正確 schema／JSON 設定；不支援路徑明示且仍嚴格校驗。合法 JSON 但錯引用／hash／版本／授權不能通過；拒絕及修正仍計原帳 |
 | 修正影響正文含義或證據 | 受影響內容重新審核，不套用舊核准或移除必要引用求過關 |
+| 接近收尾餘額及修訂／重審 | 規劃保留該路徑必要 review／revision／re-review 及交付資源；不足時如實收束，不把只剩最後生成的 snapshot 當審核已獲保證 |
 | 並行事件亂序／重複 | 以實際事件去重及收斂，來源數、工具數、當前階段與終態不矛盾 |
 | 斷線後原 run 完成 | 查回原結果與終態，消除過時 running 提示，不另開 run 或重做業務操作 |
 | 來源先到、答案仍審核中 | 來源卡不冒充已核准建議；必要適用條件及求助訊息不被延後隱藏 |
@@ -493,17 +509,19 @@
 | 最後補充失敗 | 合格的部分成果保留，缺項與下一步清楚；未核草稿不升格為正式答案 |
 | 非關鍵工作改為背景 | 主結果先可靠保存；背景失敗可追蹤／恢復且有獨立預算，不延後關鍵審核或寫入 |
 | Web／手機／輔助閱讀 | 主要進度、部分可用、核准、失敗及恢復含義一致；詳情可操作，更新不搶焦點 |
+| 四角色追蹤與 OTel 禁收正文 | 正常、失敗、重試與取消可用 metadata 關聯原 run／角色／階段及首結果時間；合成敏感標記不進 span／log／exporter，直接 `completeText` 路徑不漏計或重複計量 |
 
 ## 8. 待決事項與本包不展開的工作
 
 待決事項：
 1. 代表問題、基線環境、樣本量、時間點定義及品質／成本可接受門檻。
-2. 當前模型／SDK 的多工具介面及實際排程；原生方案是否真的存在需要 `batch_search` 的缺口。
+2. 已知 ADK JS 2.1.0 多工具逐項執行；實施時核對選定版本及模型採用情況，再決定最小有界並行接點或 `batch_search`，不把同輪呼叫誤當並行已落地。
 3. 並行上限、批次大小、每項逾時、取消／部分失敗策略，以及審核預留如何配置。
 4. 工具結果片段／上下文上限、追問復用範圍、快取有效期與版本失效條件。
 5. 進度事件契約、詳情層級，以及是否採用供應商原生可公開的推理摘要。
 6. 哪些來源卡／答案部分能獨立交付、分段審核與最終一致性核對的單位、額外成本與停止條件。
 7. 與 REQ-001、既有審核及串流工作包的共同責任、接口與實施次序；真模型驗收的有效批准與預算。
+8. 無工具角色的 schema 相容／降級契約、角色事件與 trace 欄位白名單／保留及 exporter 邊界；同 run compaction 的接入與驗收沿 REQ-005 第 4.2 節，不重建跨聊天記憶。
 
 本包不直接展開：更換整套 Agent 框架、通用多代理／排程平台、全量性能或壓力測試、未批准的模型／付費資源切換、繞過引用或審核、展示內部思考、真實家庭資料外發，以及尚未要求實施的其他助手功能。
 
@@ -515,6 +533,25 @@
 - [主 runtime](https://github.com/2NTTY/child-ai-caregiver/blob/9d319a079c03e3d3c6700bad37832c8de88a745e/server/agent-runtime.ts) 的目前呼叫設定為 `StreamingMode.NONE`，不能把已有進度事件當成答案正文真串流。
 - [回饋通道](https://github.com/2NTTY/child-ai-caregiver/blob/9d319a079c03e3d3c6700bad37832c8de88a745e/server/agent-feedback-stream.ts) 可發送進度與最後結果，heartbeat 只維持連線；這不等於本包的來源卡、分段核准及所有恢復情境已完成。
 - 審核預算及原 run 恢復的既有調查見 REQ-001 第 10 節；不從程式局部證據宣稱已確定每次慢或失敗的根因。
+
+### 9.1 ADK 固定版本補充調查（2026-10-22；不是實作成果）
+
+項目補查基線為 `19ac8dec3f6364241f29814c24b602305bdffad3`，依賴仍為 ADK JS 2.1.0；下列固定 tag 原碼與項目接點只支持所列靜態結論，不代表已完成批次、原生 schema、compaction、追蹤接線或真模型品質／效能驗收。
+
+| 主題 | 已核證據與適用邊界 |
+|---|---|
+| 多工具排程 | 官方 [2.1.0 `functions.ts`](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/agents/functions.ts#L479-L560) 對呼叫列表逐項 `await callToolAsync`；同輪多工具與並行執行分開。沿第 3.1 節驗證最小接點，未實作 `batch_search`。 |
+| 原生輸出 schema | 官方 [basic request processor](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/agents/processors/basic_llm_request_processor.ts#L40-L53) 與 [`setOutputSchema`](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/models/llm_request.ts#L109-L117) 有相應接點；本項目 [`completeText`](https://github.com/2NTTY/child-ai-caregiver/blob/19ac8dec3f6364241f29814c24b602305bdffad3/server/agent-model-gateway.ts#L104-L127) 尚未傳 provider response schema，編製／背景 payload 的 `outputSchema` 仍是提示詞資料，不是已啟用原生約束。 |
+| 同 run context 壓縮 | 官方 [`TokenBasedContextCompactor`](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/context/token_based_context_compactor.ts#L21-L129) 可按 token 門檻壓縮 session events；[`LlmSummarizer`](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/context/summarizers/llm_summarizer.ts#L55-L105) 直接呼叫傳入的模型，不能推論已接本項目 root budget／取消。採用條件及跨聊天分層見 REQ-005 第 4.2 節。 |
+| Tracing 與隱私 | 官方 [2.1.0 tracing](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/telemetry/tracing.ts#L478-L491) 的 message-content span 捕捉預設開啟；項目 [`agent-runtime.ts`](https://github.com/2NTTY/child-ai-caregiver/blob/19ac8dec3f6364241f29814c24b602305bdffad3/server/agent-runtime.ts#L18-L22) 已設 `ADK_CAPTURE_MESSAGE_CONTENT_IN_SPANS=false` 及 `setLogger(null)`。此為既有保護，不代表任意 exporter／新角色接點都已核對。 |
+| 審核收尾預留 | [`planningSnapshot`](https://github.com/2NTTY/child-ai-caregiver/blob/19ac8dec3f6364241f29814c24b602305bdffad3/server/agent-budget.ts#L151-L165) 目前只列 1 次生成及可選 1 次終態工具；[`spendText`](https://github.com/2NTTY/child-ai-caregiver/blob/19ac8dec3f6364241f29814c24b602305bdffad3/server/chat-delivery-review.ts#L185-L192) 與[修訂條件](https://github.com/2NTTY/child-ai-caregiver/blob/19ac8dec3f6364241f29814c24b602305bdffad3/server/chat-delivery-review.ts#L280-L288) 仍另需審核及修訂／再審餘額。這補強 REQ-001 的已知缺口，不表示已修或任何舊 run 的根因已確定。 |
+
+### 9.2 實施相容注意，不另立產品功能
+
+- 不盲目把現有角色換成 `AgentTool`：官方 [2.1.0 實作](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/tools/agent_tool.ts#L146-L176) 建立新 Runner，承接部分 session／memory／credential 服務及 abort signal，但此路徑未傳父 `runConfig`／plugins；項目 root 預算及權限不能因此假定自動繼承。保留現有 Firestore session／memory／summary 權威、版本及隔離，不以 SDK 內存服務替換持久資料。
+- 2.1.0→2.3 的版本差異只列相容性評估候選，不是已批准升級、解鎖並行或取代現有架構；實施時核選定固定版本、gateway／provider、持久事件與 callbacks，再做必要有界驗證及回退設計。這份文件沒有改動依賴。
+- 官方 [Evaluation](https://adk.dev/evaluate/) 與 [App context caching](https://adk.dev/context/caching/) 是動態文件：2026-10-22 查閱時，前者列 ADK Python 支援，後者支援表未列 TypeScript；另已核固定 tag 的 [2.1.0 TS App](https://github.com/google/adk-js/blob/adk-v2.1.0/core/src/apps/app.ts#L51-L64) 未列對應配置。此為當時支援範圍，實施時重核，不泛化至未來 TS 版本。不能把 Python 範例／其他語言能力當成本項目現成接線，亦不能據此推論 provider 完全沒有 cache 能力；先復用現有合成驗證，有具體收益才另核適用介面。
+- 模型技術重試、工作接續及工具副作用分開；沿 REQ-005 的同帳、有界重試及原 opId／unknown 契約，不因 SDK/plugin 能重試就重播已執行或結果未知的保存、通知等操作。
 
 ---
 
@@ -891,6 +928,14 @@
 
 技術摘要的用途邊界沿 REQ-003：可為同一主聊天承接只是聊天的內容，但保留來源訊息 ID／版本／產生模式，不將其轉成已確認事實、長期私人記憶、助手任務或同意；只聊→摘要→助手不得觸發補操作。修復摘要可前進性不代表每輪都要摘要，仍按需／背景處理；單純寒暄不為花滿 soft 載入能力或多叫摘要／分類模型，臨時內容仍隔離並於退出清除。
 
+### 4.2 同一 run 的原生 context compaction 與跨聊天記憶分層
+
+- 第 4.1 節處理既有 recent／history／聊天摘要的選取、覆蓋及前進性；本節另評估長 run 內持續累積的工具／模型 events。項目目前以 [`runId` 作 `sessionId`](https://github.com/2NTTY/child-ai-caregiver/blob/19ac8dec3f6364241f29814c24b602305bdffad3/server/agent-runtime.ts#L493-L505)，故此處的「同 run」是本項目接入範圍，不是聲稱 ADK 原生只能處理單次 invocation。`TokenBasedContextCompactor`＋`LlmSummarizer` 是候選接點，未接入，也不取代 Firestore 的跨訊息／聊天歷史、私人記憶及摘要水位；官方來源與限制只見 REQ-002 第 9.1 節。
+- 觸發門檻與保留區納入本包集中 context 政策，按完整 request 的可取得 token 用量／明示估算及指定模型能力判斷，不把每輪都摘要或填滿 128k 當目標。先保留完整 native function call／response 配對、仍需用的原始證據／來源位置與版本、未解決操作及收據、授權／撤權與 review 綁定；壓縮不能把不可信內容、模型推斷或未核草稿升格為系統指令、用戶同意或已核准事實，摘要也不是可取代原文的引用。
+- summarizer 必須經相同受控 gateway／付款身份及 root 或原工作總帳計入模型嘗試、tokens、重試與期限，保留審核／修訂／再審及收尾餘額；確認取消／撤權可阻止未派發工作，已發出但取消未確認不報已停止。不得直接接入一個繞過本項目計量、授權或 abort 管理的原生模型。
+- 摘要失敗、無效、逾時或餘額不足時，不丟原事件、不推進 coverage／摘要水位、不產生假成功；原上下文仍符合完整 request 邊界才可沿用，否則以可恢復的明確狀態停止或要求有界補讀，不截掉安全條件後硬送。重試仍受原總帳及停止條件約束。
+- 接入前驗證 compaction event 的持久格式／重啟相容、原事件追溯及按需補讀、身份／孩子／模式隔離、取消與失敗回退。以合成 provider 檢查壓縮觸發、計量與保護內容不變；它不證明真模型摘要品質或效能提升，必要的真模型對照仍須另有批准及有界預算。
+
 ## 5. 官方參考與重試語義
 
 下列官方資料於 2026-10-21 核對，實施時再按選定模型、SDK 及服務版本確認；本輪沒有更換模型、地區或帳戶，也沒有讀取實際 active quota。
@@ -967,6 +1012,8 @@
 | 權限與聊天模式 | 私人／family／孩子切換及 REQ-003 模式／臨時隔離維持，不以擴窗或預載越權補讀，不把模型文字／摘要當用戶同意 |
 | 純聊天承接摘要與正式資料 | 來源 ID／版本／模式可追溯；摘要保留聊天語境但不自動成為正式事實、長期記憶或任務，切助手不補做；按需摘要不變成每輪額外模型流程，臨時內容不混入 |
 | 最近 picker 與完整 input 預算 | 分層有效值與 token／字元單位可辨；當輪工具、媒體及完整 native parts 不為擴窗而丟失，總預算保留回答／review，不填滿 128k 或 soft 目標 |
+| 同 run compaction 的保留與回退 | 模擬長工具上下文可按政策觸發且不拆 function call／response，不升格證據／同意／審核；摘要失敗／取消／重啟可追溯原事件，不跳 coverage 或混入其他聊天 |
+| Summarizer 用量與審核餘額 | 摘要生成及重試記原 root／工作帳，低餘額仍保留必要 review／revision／re-review；不能旁路 gateway、另開 run 清零或以壓縮成功代表正式記憶已更新 |
 
 待決：各出資方貨幣預算、實際 active quota、每日混合計次的遷移單位、預期活躍人數、共享容量與併發承載、比例的逐維度適用表／角色及工作類型覆蓋、整數取整與邊界契約、運行中政策版本的生效方式、代表工作量測校正、精確重試／接續及告警策略、各資料域分頁／統計／備份一致性方法，以及摘要前進性的有界首筆／分段方案、turn／定位契約、投影容量相容與後續真模型對照門檻／調整範圍。`softBudgetRatio = 0.25` 共用預設已確認，不再列為未定比例。未完成這些前置前，不宣稱起始數字可直接在現行架構安全套用。
 
@@ -1131,3 +1178,4 @@
 | 2026-10-21 | v0.5 | 補充 REQ-005：確認集中可調的 1/4 軟／硬預算預設、同帳與逐維度適用、超 soft 不犧牲必要品質及對應驗收；其餘需求包與 audit 原文保留，未改程式或提高實際配額。 |
 | 2026-10-22 | v0.6 | 整合 REQ-004 持續發現／同步、分層差異處理及已驗讀取設定；補 REQ-005 已完成的上下文靜態／離線評估、摘要前進性優先修復與分層校正計劃；細化 REQ-006 機構／系列卡片、可攜讀取方法及聊天兩步引用。保留 1/4 軟預算、其他需求與 audit，未啟動實作或調整實際配額。 |
 | 2026-10-22 | v0.7 | 整體審查補明：即時搜索沿同一命名／兩步引用、以顏色及非色彩線索辨識但不強制建庫；純聊天技術摘要與正式記憶／操作分界、外部 query 最小化、搜索優先首交付切片、在途政策變更與單純寒暄驗收。保留原評估、未完成證據與 audit，未實作或調整配額。 |
+| 2026-10-22 | v0.8 | 依 ADK 調查補原生無工具輸出 schema、同 run compaction／跨聊天記憶分層、summarizer 同帳與回退、角色級 metadata-only trace 及合成驗收；記明 TS 2.1 多工具串行的固定證據，細化既有審核收尾預留與版本／AgentTool／eval／cache 相容注意。保留已關閉 span 正文捕捉、0.25 政策及舊失敗／未驗界線；只補需求與技術方案，未改產品或 SDK、未執行測試／真模型、未批准升級或調整配額。 |

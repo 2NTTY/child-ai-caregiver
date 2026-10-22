@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { usePathname } from "expo-router";
-import { Platform, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import Animated, { cancelAnimation, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { motionTokens, useMotionPreferences } from "../motion";
@@ -15,6 +15,7 @@ export function HomeWelcome({ introductionPending, onIntroductionPresented, scop
   const pathname = usePathname();
   const preferences = useMotionPreferences();
   const firstScreenReady = useFirstScreenReady();
+  const date = new Date().toLocaleDateString("zh-HK", { timeZone: "Asia/Hong_Kong", month: "long", day: "numeric" });
   const play = useRef(introductionPending).current;
   const initiallyClosed = !play || (preferences.preferenceReady && preferences.reducedMotion);
   const [closed, setClosed] = useState(initiallyClosed);
@@ -81,20 +82,15 @@ export function HomeWelcome({ introductionPending, onIntroductionPresented, scop
     {...{ dataSet: { introPhase: closed ? "settled" : closing ? "collapsing" : presented ? "reading" : "waiting" } }}>
     <Animated.View testID={compact ? "mobile-home-greeting" : "desktop-home-banner"}
       onLayout={event => setHeight(event.nativeEvent.layout.height)} style={[styles.card, compact && styles.compactCard, cardStyle]}>
-      <HomeBackground useCustomImage={false} surface={colors.paper} fitIllustration illustrationInset={compact ? 8 : 4} fadeBottom />
+      <HomeBackground useCustomImage={false} surface={colors.paper} wideIllustration={!compact}
+        illustrationMinWidth={compact ? undefined : 260}
+        fadeStart={compact ? 0.48 : 0.64} fadeEnd={compact ? 0.68 : 0.88} />
       <View style={[styles.copy, compact && styles.compactCopy]}>
         <Text accessibilityRole="header" style={[styles.greeting, compact && styles.compactGreeting]}>你好</Text>
-        <Text style={styles.subline}>每個小日常，都值得好好記下。</Text>
+        <Text style={styles.subline}>{date} · 先看重要的，再繼續日常</Text>
       </View>
     </Animated.View>
   </Animated.View>;
-}
-
-export function HomeTodayHeading() {
-  const date = new Date().toLocaleDateString("zh-HK", { timeZone: "Asia/Hong_Kong", month: "long", day: "numeric" });
-  return <View testID="home-today-heading" style={styles.today} role="region" accessibilityLabel="今日" tabIndex={-1} {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
-    <Text style={styles.date}>{date} · 先看重要的，再繼續日常</Text>
-  </View>;
 }
 
 const styles = StyleSheet.create({
@@ -106,6 +102,4 @@ const styles = StyleSheet.create({
   greeting: { fontFamily: chineseFont, color: colors.ink, fontSize: 30, lineHeight: 38, fontWeight: "800" },
   compactGreeting: { fontSize: 26, lineHeight: 34 },
   subline: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
-  today: { gap: spacing.xs },
-  date: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
 });

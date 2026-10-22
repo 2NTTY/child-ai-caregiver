@@ -11,7 +11,7 @@ import { HomeAgentImportant } from "./HomeAgentImportant";
 import { HomeOngoing } from "./HomeOngoing";
 import { HomeQuickActions } from "./HomeQuickActions";
 import { HomeActionSummary } from "./HomeFocus";
-import { HomeTodayHeading, HomeWelcome } from "./HomeWelcome";
+import { HomeWelcome } from "./HomeWelcome";
 import { BackgroundSurface } from "./appearance/BackgroundSurface";
 import { HomeGuideCallout } from "./HomeGuideCallout";
 
@@ -31,8 +31,8 @@ export function HomeDashboard({ model, actions, introductionPending = false, onI
   if (windowWidth < 650) return <MobileHomeDashboard model={model} actions={actions} introductionPending={introductionPending} onIntroductionPresented={onIntroductionPresented} />;
   return <ScrollView ref={scrollRef} style={styles.scroll} contentContainerStyle={[styles.page, windowWidth < 900 && styles.floatingInputClearance]} onLayout={event => setWidth(event.nativeEvent.layout.width)}>
     <HomeWelcome introductionPending={introductionPending} onIntroductionPresented={onIntroductionPresented} scopeKey={homeAgentScope(model) ?? model.caregiverName} />
-    <BackgroundSurface padded frosted testID="home-reading-panel" style={styles.content}>
-      <HomeTodayHeading />
+    <BackgroundSurface padded frosted testID="home-reading-panel" style={styles.content} role="region" accessibilityLabel="今日" tabIndex={-1}
+      {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
       <HomeGuideCallout status={model.guideStatus} onOpenGuide={() => actions.open("guide")} onOpenSettings={() => actions.open("settings")} />
       {knownNoChildren && model.guideStatus === "complete" ? <SectionCard><Text style={styles.rowTitle}>先建立第一位孩子的檔案</Text><Text style={styles.meta}>只填已知資料；未知及約數都可以如實保留。</Text><AppButton label="建立孩子檔案" onPress={() => actions.open("profile")} /></SectionCard> : null}
       <View testID="desktop-home-grid" style={[styles.grid, stacked && styles.gridStack]}>

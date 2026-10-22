@@ -95,4 +95,22 @@ Chrome 390 驗收發現 Profile 兩張閱讀卡因窄屏 flex-basis 高度收縮
 
 unknown 固定失敗為 repo 外合成 fixture，不是真保存；共享確認／版本／授權邊界沿 source 與既有測試，未另做完整 browser 安全矩陣。未執行最終刪除、真 API／模型或原決定重試。
 
+## snapshot16 首頁歡迎橫幅小修
+
+相對已推送 `19ac8dec`，只改 HomeWelcome、桌面／手機 HomeDashboard、共用 HomeBackground 的限定 fade props，以及既有 timing test。歡迎橫幅改用原插圖的相對容器佈局，不再把已受 zoom 影響的量測值再次用於圖像幾何；副句改為每次 render 依香港時區取得的日期＋「先看重要的，再繼續日常」，不是硬編碼 10 月 22 日。外層重複日期列移除，原「今日」具名 region／page-surface／返回焦點錨點移至既有閱讀面板；首次 ready／paint／閱讀／收合／不重播流程不改。
+
+作者及獨立 reviewer 均跑既有 `home-welcome-timing.test.mjs` 8/8（同組不重複加總），包括跨香港午夜日期、原插圖佈局、不重複日期列及既有 timing；source gate／diff check 通過。全新離線 export 成功，536 inputs 前後相同、對 15 精確 4 個產品差異、64 artifacts；typecheck 仍僅原兩個 ContactConsentCard 錯。JS `index-9f49762996b6fc5f9d4fb1e3b3fa1ce3.js` SHA256 `e20ba7086818ea09d945f3b50e4c9b95f21120899357231131fddab1240b015e`；來源 manifest `64f9ef22c559dbeab9d37961af04bf38e2a899cc4b60e015d98a8b0ae4f2992d`；artifact manifest `3ae2a9a641d33fe9aba3a90c982dc272bae7da1302b99a1ee55bdf8652500e97`。
+
+實屏已改善原雙 zoom 問題，但 1024 仍裁掉右側孩子手指，因此 **snapshot16 插圖完整性未通過、未交付**；按原範圍最小修正後另捕捉 snapshot17，不覆寫本版原圖／hash。其餘文字／日期／timing 結果按獨立 reviewer 的分版本報告保留，不以 source／unit 代稱圖像驗收通過。PLAN／STATUS 同步最後已核 PR／Sites 狀態，兩份文件不屬 536 build inputs。
+
+## snapshot17 歡迎插圖右側完整性補修
+
+相對 16 僅 HomeWelcome／HomeBackground 兩個產品檔變動：桌面歡迎插圖 opt-in `minWidth: 260`、`left: "auto"` 並保留 right 0；手機及其他共用背景的預設不變，日期／外層去重與原 timing 保持。相同定向測試 8/8、獨立 source review 與 diff check 通過；不把重跑加總成新案例數。
+
+唯一離線 export 成功，536 inputs 前後相同、64 artifacts；typecheck 仍僅同兩項 ContactConsentCard 基線錯誤。JS `index-29e280488a203be98ab50c301c8c9d86.js` SHA256 `90c4f04b16ea1a0ba92297d95e2f0a3c6bfc7764012bea0e89d505b664ac62a2`；來源 manifest `395a0837561c32a4d2cc1801037468aef5951e02dd46d501c86cd405c262aaa6`；artifact manifest `1ac13833a3a7909fefe6bd844af5e18026b757f2fa6413c4ab4b2fd620dd2fb8`。獨立 Chrome 1440／1024（HTML zoom 1.4）及 390／320（zoom 1.2）圖層／日期驗收通過；主對話親看 1024 指尖完整，沒有再裁掉右手指。保留 snapshot16 原紅，不以新圖覆蓋。
+
+本機分版本報告及圖片在 `home-greeting-qa-20261022/review.md`、`snapshot17-{1440,1024,390,320}-expanded.jpg`。動畫來源未改，慢啟動及焦點沿用 snapshot16 的獨立通過證據：320 延遲 ready 後約 3 秒閱讀再收起，1024 原合成檔案控制焦點不被搶；不是宣稱在 17 重跑。日期只在展開歡迎橫幅出現，原「今日」region 保留，未新增外層日期列。
+
+另按使用者明確要求，同 PR 的 `docs/REQUIREMENTS_BACKLOG.md` 由獨立作者補 v0.8 ADK 需求與證據；該文件已獨立審核通過，只有規劃描述，不代表 SDK／後端功能已實作。這是本次明確批准的根文件例外，不改上述 snapshot15 的 frontend-only 歷史；需求及前端狀態／驗證文件均不屬 536 build inputs。
+
 僅合成資料／圖片，無真家庭資料、真訊息或模型呼叫；不宣稱 Android 真機、完整讀屏或所有尺寸／狀態組合通過。維持同一 draft PR，不合併；公開預覽更新由主代理按本次明確授權處理。

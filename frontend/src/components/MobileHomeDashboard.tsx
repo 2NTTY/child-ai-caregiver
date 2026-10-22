@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import type { HomeActions, HomeViewModel } from "../view-model";
@@ -8,7 +8,7 @@ import { AppButton, SectionCard } from "./ui";
 import { HomeAgentImportant } from "./HomeAgentImportant";
 import { HomeOngoing } from "./HomeOngoing";
 import { HomeActionSummary } from "./HomeFocus";
-import { HomeTodayHeading, HomeWelcome } from "./HomeWelcome";
+import { HomeWelcome } from "./HomeWelcome";
 import { BackgroundSurface } from "./appearance/BackgroundSurface";
 import { HomeGuideCallout } from "./HomeGuideCallout";
 
@@ -18,8 +18,8 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
   const knownNoChildren = model.profileLoad === "ready" && model.children.length === 0;
   return <ScrollView testID="mobile-home-scroll" style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
     <HomeWelcome compact introductionPending={introductionPending} onIntroductionPresented={onIntroductionPresented} scopeKey={homeAgentScope(model) ?? model.caregiverName} />
-    <BackgroundSurface padded frosted testID="home-reading-panel" style={styles.content}>
-      <HomeTodayHeading />
+    <BackgroundSurface padded frosted testID="home-reading-panel" style={styles.content} role="region" accessibilityLabel="今日" tabIndex={-1}
+      {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
       <HomeGuideCallout status={model.guideStatus} onOpenGuide={() => actions.open("guide")} onOpenSettings={() => actions.open("settings")} />
       {knownNoChildren && model.guideStatus === "complete" ? <SectionCard testID="mobile-child-setup">
         <Text style={styles.title}>先建立第一位孩子的檔案</Text>

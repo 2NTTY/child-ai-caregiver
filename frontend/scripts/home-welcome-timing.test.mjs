@@ -4,7 +4,7 @@ import test from 'node:test';
 import ts from 'typescript';
 
 // Shipped HomeWelcome with deterministic hook, frame and timer ports; not browser pixels.
-function harness({ ready = false, active = true, reducedMotion = false } = {}) {
+function harness({ ready = false, active = true, reducedMotion = false, timestamp, compact = false } = {}) {
   let cursor = 0, dirty = false, now = 0, serial = 0, tree, consumed = 0;
   let scopeKey = 'Synthetic Parent', pathname = '/', preferences = { preferenceReady: true, active, reducedMotion, enabled: active && !reducedMotion, epoch: 0 };
   const slots = [], effects = [], frames = new Map(), timers = new Map(), animations = [];
@@ -34,11 +34,12 @@ function harness({ ready = false, active = true, reducedMotion = false } = {}) {
     if (name.endsWith('/HomeBackground')) return { HomeBackground: 'HomeBackground' };
     assert.fail(name);
   };
-  new Function('require', 'module', 'exports', 'requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout', code)(resolve, module, module.exports,
+  const CurrentDate = timestamp ? class extends Date { constructor(...args) { super(...(args.length ? args : [timestamp])); } } : Date;
+  new Function('require', 'module', 'exports', 'requestAnimationFrame', 'cancelAnimationFrame', 'setTimeout', 'clearTimeout', 'Date', code)(resolve, module, module.exports,
     callback => { const id = ++serial; frames.set(id, callback); return id; }, id => frames.delete(id),
-    (callback, delay) => { const id = ++serial; timers.set(id, { callback, at: now + delay }); return id; }, id => timers.delete(id));
+    (callback, delay) => { const id = ++serial; timers.set(id, { callback, at: now + delay }); return id; }, id => timers.delete(id), CurrentDate);
   const render = () => { let rounds = 0; do { assert.ok(++rounds < 12); dirty = false; cursor = 0;
-    tree = module.exports.HomeWelcome({ scopeKey, introductionPending: consumed === 0, onIntroductionPresented: () => consumed++ });
+    tree = module.exports.HomeWelcome({ scopeKey, introductionPending: consumed === 0, onIntroductionPresented: () => consumed++, compact });
     while (effects.length) effects.shift()();
   } while (dirty); return tree; };
   return { render, frames, timers, animations, consumed: () => consumed, phase: () => tree?.props.dataSet.introPhase ?? 'absent',
@@ -50,6 +51,91 @@ function harness({ ready = false, active = true, reducedMotion = false } = {}) {
     unmount: () => slots.forEach(state => state.cleanup?.()),
   };
 }
+
+function textContent(node) {
+  if (node === null || node === undefined) return '';
+  if (Array.isArray(node)) return node.map(textContent).join('');
+  if (typeof node !== 'object') return String(node);
+  return textContent(node.props?.children);
+}
+
+test('greeting subline uses the current Hong Kong date instead of the former slogan or a fixed example', () => {
+  for (const [timestamp, date] of [['2026-10-21T16:05:00Z', '10月22日'], ['2026-10-22T16:05:00Z', '10月23日']]) {
+    const h = harness({ timestamp });
+    assert.equal(textContent(h.render()), `你好${date} · 先看重要的，再繼續日常`);
+  }
+});
+
+test('welcome reuses the right-side cover illustration without feeding zoomed measurements into image geometry', () => {
+  for (const compact of [false, true]) {
+    const h = harness({ compact }), welcome = h.render();
+    const background = welcome.props.children.props.children[0];
+    assert.equal(background.type, 'HomeBackground');
+    assert.equal(background.props.useCustomImage, false);
+    assert.equal(background.props.wideIllustration, !compact);
+    assert.equal(background.props.fitIllustration, undefined);
+    assert.equal(background.props.fadeBottom, undefined);
+    const module = { exports: {} }, measurements = [], readiness = [];
+    const code = ts.transpileModule(readFileSync(new URL('../src/components/appearance/HomeBackground.tsx', import.meta.url), 'utf8'), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+    }).outputText;
+    const jsx = (type, props) => ({ type, props });
+    new Function('require', 'module', 'exports', code)(name => {
+      if (name === 'react') return { useId: () => 'synthetic-image' };
+      if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
+      if (name === 'react-native') return { Image: 'Image', View: 'View', StyleSheet: { create: value => value, absoluteFill: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 } } };
+      if (name.endsWith('/BackgroundContext')) return { defaultHomeBackground: 'existing-harbour-asset', useBackground: () => ({ selected: {}, source: 'custom-image' }) };
+      if (name.endsWith('/FirstScreenGate')) return { useFirstScreenImage: (key, ready) => { readiness.push(ready); return { fallback: false }; } };
+      if (name.endsWith('/useContainerSize')) return { useContainerSize: enabled => { measurements.push(enabled); return { ref: {}, size: { width: 1120, height: 246.4 } }; } };
+      return new Proxy({}, { get: (_, symbol) => String(symbol) });
+    }, module, module.exports);
+    const tree = module.exports.HomeBackground(background.props);
+    const [illustration, svg] = tree.props.children;
+    assert.deepEqual(measurements, [false]);
+    assert.deepEqual(readiness, [true]);
+    assert.equal(illustration.props.source, 'existing-harbour-asset');
+    assert.equal(illustration.props.resizeMode, 'cover');
+    const style = Object.assign({}, ...illustration.props.style.filter(Boolean));
+    assert.equal(style.width, compact ? '100%' : '50%');
+    assert.equal(style.height, '100%');
+    assert.equal(style.left, compact ? 0 : 'auto');
+    assert.equal(style.minWidth, compact ? undefined : 260);
+    assert.equal(style.right, 0);
+    assert.equal(style.top, 0);
+    const stops = svg.props.children[0].props.children[0].props.children;
+    assert.equal(stops[1].props.offset, compact ? 0.48 : 0.64);
+    assert.equal(stops[2].props.offset, compact ? 0.68 : 0.88);
+    assert.equal(stops[2].props.stopOpacity, 0);
+  }
+});
+
+test('desktop and mobile keep the today navigation anchor on the reading panel without a duplicate date row', () => {
+  for (const component of ['HomeDashboard', 'MobileHomeDashboard']) {
+    const module = { exports: {} };
+    const code = ts.transpileModule(readFileSync(new URL(`../src/components/${component}.tsx`, import.meta.url), 'utf8'), {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
+    }).outputText;
+    const jsx = (type, props) => ({ type, props });
+    new Function('require', 'module', 'exports', code)(name => {
+      if (name === 'react') return { useRef: value => ({ current: value }), useState: value => [value, () => {}], useLayoutEffect() {} };
+      if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx };
+      if (name === 'react-native') return { Platform: { OS: 'web' }, StyleSheet: { create: value => value }, useWindowDimensions: () => ({ width: 1440 }), View: 'View' };
+      if (name === '../theme') return { colors: {}, spacing: {}, readingType: {}, workspaceType: {}, mobileLayout: {}, mobileType: {} };
+      if (name === '../home-agent-entry') return { homeAgentScope: () => 'synthetic-scope' };
+      return new Proxy({}, { get: (_, symbol) => String(symbol) });
+    }, module, module.exports);
+    const tree = module.exports[component]({ model: { profileLoad: 'ready', children: [{}] }, actions: {} });
+    const [greeting, panel] = tree.props.children;
+    assert.equal(greeting.type, 'HomeWelcome');
+    assert.equal(panel.props.testID, 'home-reading-panel');
+    assert.equal(panel.props.role, 'region');
+    assert.equal(panel.props.accessibilityLabel, '今日');
+    assert.equal(panel.props.tabIndex, -1);
+    assert.equal(panel.props.dataSet.pageSurface, 'true');
+    assert.equal(panel.props.children.some(child => child?.type === 'HomeTodayHeading'), false);
+    assert.equal(textContent(panel), '');
+  }
+});
 
 test('startup scope and layout changes do not consume the greeting while loading; visible paint gets the full reading time', () => {
   const h = harness(); h.render(); h.advance(15000); h.scope('api:synthetic:child-a:owner'); h.preferences({ epoch: 1 });
