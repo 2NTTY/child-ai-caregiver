@@ -1,0 +1,19 @@
+{
+  "package": "S12-W01 iOS adapters",
+  "date": "2026-10-24",
+  "baseline": "9f500a5d027a286d6435a50e0824e8866ed80e61",
+  "branch": "codex/s12-ios-media",
+  "environment": { "os": "Windows", "node": "24.19.0", "imagePicker": "57.0.19", "fileSystem": "57.0.7", "audio": "57.0.5", "sharing": "57.0.21" },
+  "change": "iOS requests a compatible image representation and documented JPEG base64 fallback; actual JPEG/PNG bytes take precedence. Original and decoded copy remain bounded by the existing 4 MiB limit. Server format and Android behavior are unchanged.",
+  "check": {
+    "command": "node --test frontend/scripts/native-photo-picker.test.mjs",
+    "passed": 3,
+    "failed": 0,
+    "coverage": ["iOS JPEG copy with real metadata, hash and preview code", "Existing JPEG/PNG preferred; picker base64 released", "Android original bytes and options; cancellation", "Length, base64 and computed size rejected before decoding; decoded JPEG signature and size checked"],
+    "substituted": ["Expo picker", "Expo File port", "Native crypto port"],
+    "limits": "Synthetic bytes test routing and signature boundaries, not native image decoding or iPhone behavior"
+  },
+  "review": "Primary model reviewed the implementation, full targeted test, unchanged Server photo contract and installed SDK types. Existing iOS AAC/M4A, file-picker copy and share adapters were inspected; no redundant implementation or test run.",
+  "pending": ["Native HEIC conversion and system picker return", "iPhone camera and microphone permission", "Recording/listening and file/PDF sharing on iPhone", "Signed build and TestFlight"],
+  "notPerformed": ["Full suite or typecheck", "Repeat application export", "Browser or device automation", "Cloud upload or deployment", "Model calls", "Notifications"]
+}

@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：[S04-W02 iOS 基礎](#s04-w02)。**2026-10-24 使用者批准現在開始 iOS，以 TestFlight 交付 iPhone App，取代「Android 全部驗收完成後才開始」的次序；Android 未驗不改成通過。開工 master `560f051`，交付整合 `a84f349`，活動分支 `codex/s04-w02-ios-bootstrap`；配置及共用入口已接，本機 iOS JS／Hermes export 通過，尚無簽署 build／發布。Apple 付費團隊未定只阻塞首次 App 註冊／簽署及真投遞。完整範圍與順序見 [iOS 計劃](#p3-ios)。本輪只用 Astra 主模型及按需要的 Astra xhigh 子代理；不接管協作者角色及前端增補。
+**當前：[S12-W01 iOS 媒體接點](#s12-w01)。**[S04-W02](#s04-w02) 基礎程式已由 #272 合併，活動分支 `codex/s12-ios-media` 從 master `9f500a5` 接續，補 HEIC 相容副本及共用錄音／附件／分享的平台差異。付費 Apple 團隊、簽署及真機仍待辦，不阻塞獨立實作；不把本機 export 當成可安裝成品。完整順序見 [iOS 計劃](#p3-ios)，本輪只用 Astra；協作者前端／角色工作與 Android 未驗項保持獨立。
 
 **另行接續：[ATTACHMENT-READ01](#attachment-read01) 附件回看已整合獨立來源候選，型別／GUI／部署未過門檻；不追加已合併的 #253。**
 
@@ -401,9 +401,10 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - gate：已保存成果及目前工作讀回，靜態核對 [UI 接點](docs/P2_UI_HANDOFF.md)，不逐頁 E2E。照片／PDF平台出口與語音交 S12-W01。
 
 <a id="s12-w01"></a>
-#### S12-W01 Web／Android 共用語音與原生檔案出口
+#### S12-W01 共用語音與原生檔案出口
 
-- 階段／狀態：P3；共用語音／照片／PDF、同一 ADK 音訊、持久轉錄／搜尋／播放、清理／匯出與恢復接線及必要本機證據已由 #237 合併。新增索引與 API／worker／Web 已隨 `mobile-bf47c47` 部署；新版 APK已完成；一段合成錄音經正式 Agent 理解、原運行讀回、真 worker 轉錄及歷史搜尋通過（合共5生成／1查詢）。Android本機錄音及修正版預聽已觀察到播放進度；Web正式adapter配真Chromium錄音／播放及Server解析已核；正式頁面完整流程、聽感與跨端真機仍待驗。沿 [S12 證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)及[同版交付](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)，不把啟動核對當完整語音流程通過；原生備份真還原及 iOS仍延後。
+- 階段／狀態：P3；共用語音／照片／PDF、同一 ADK 音訊、持久轉錄／搜尋／播放、清理／匯出與恢復接線及必要本機證據已由 #237 合併。新增索引與 API／worker／Web 已隨 `mobile-bf47c47` 部署；新版 APK已完成；一段合成錄音經正式 Agent 理解、原運行讀回、真 worker 轉錄及歷史搜尋通過（合共5生成／1查詢）。Android本機錄音及修正版預聽已觀察到播放進度；Web正式adapter配真Chromium錄音／播放及Server解析已核；正式頁面完整流程、聽感與跨端真機仍待驗。沿 [S12 證據](artifacts/verification/S12_VOICE_PREPARATION_20261016.json)及[同版交付](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)，不把啟動核對當完整語音流程通過；原生備份真還原仍延後。
+- iOS 子範圍：2026-10-24 接續 #272／`9f500a5`，分支 `codex/s12-ios-media`。已用既有 ImagePicker 57.0.19 JPEG 輸出補 HEIC 相容，原 JPEG／PNG 優先；原檔與副本各守 4 MiB、decode 前後校驗，hash／metadata 沿正式路徑。三項必要 adapter 檢查通過，沒有新增套件或修改 Android 轉檔；錄音、檔案及 PDF 分享沿固定 SDK／既有 native adapter。原生轉檔、iPhone 權限／返回／播放仍待簽署後一次驗收。[證據](artifacts/verification/S12_IOS_MEDIA_20261024.json)。
 - 前置：S09-W03、S12-W03；Android 不依賴 S04-W02。
 - 交付：兩端完整錄音／預聽／發送、Agent 直接理解、持久背景轉錄、搜尋及定位播放；兩分鐘／5 MiB、權限／加密／刪除／付款防重。Android 相片、既有 PDF／匯出與 Sharing；按本節規則不設全體轉錄確認關卡。
 - gate：兩端輸入 adapter 加一段代表真音訊及轉錄、另一端讀回／搜尋／播放與同版 PDF；不重複模型品質測試。iOS 另補平台差異，分享導入仍留 S12-W02。
@@ -458,7 +459,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s04-w02"></a>
 #### S04-W02 iOS 接線與可安裝首版
 
-- 階段／狀態：P3；2026-10-24 基線 `560f051`，分支 `codex/s04-w02-ios-bootstrap`。iPhone 配置、獨立 `ios-preview` store profile／channel、原品牌不透明圖標及 Apple 憑據封包排除已實作；共用身份／聊天／同步入口沿現有 native adapter，沒有重建第二套頁面。
+- 階段／狀態：P3；2026-10-24 已由 #272 合併至 `9f500a5`，開工基線 `560f051`。iPhone 配置、獨立 `ios-preview` store profile／channel、原品牌不透明圖標及 Apple 憑據封包排除已實作；共用身份／聊天／同步入口沿現有 native adapter，沒有重建第二套頁面。
 - 必要驗證：3 項配置檢查及靜態 review 通過，Android descriptor gate 保留。首次 iOS export 因 Windows sandbox TEMP 拒絕 Hermes 寫入失敗；只把暫存移至本 worktree 後，既定同一 export 通過。這只證明 JS／平台解析及 Hermes 產物，不是 IPA、Keychain／鍵盤或 iPhone 驗收。[證據](artifacts/verification/S04_W02_IOS_BOOTSTRAP_20261024.json)。
 - 前置：已合併的共用原生身份／transport／owner／同步程式；解除原 S17-W03 Android 全部驗收的開工前置，但保留其未驗項。
 - 交付：同一 Expo 應用啟用 iOS、固定候選 bundle ID、獨立 TestFlight profile、Keychain 及共用登入／聊天；照片等差異與通知／發佈沿下列包，不重畫頁面。

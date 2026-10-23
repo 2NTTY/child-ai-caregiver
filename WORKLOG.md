@@ -3513,3 +3513,10 @@
 - iOS 不再誤讀 Android descriptor，仍保留 Firebase 公開設定／HTTPS gate。原品牌 SVG 轉成 1024 不透明 iOS 圖標，沒有改美術或加入產品依賴；EAS 封包另排除 Apple 私鑰／描述檔。主模型核對共用入口及 diff，Astra 子代理完成限定配置實作與獨立靜態 review，沒有 blocking finding。
 - 3 項必要配置檢查通過。首次 iOS JS／Hermes export 因 Windows sandbox TEMP 拒絕寫入失敗，保留現場；只調整本命令 TEMP／TMP 至 worktree cache，補同一 export 後通過。這不是 IPA、簽署或真機驗收；沒有重跑 Web／Android、全量測試、模型、通知或 Computer Use。[本包證據](artifacts/verification/S04_W02_IOS_BOOTSTRAP_20261024.json)。
 - 未上傳 EAS、建立 Apple App 或購買會員。首次封包、團隊／簽署、TestFlight、iPhone 與後續媒體／APNs／更新仍待辦；不把 Android 未驗或協作者四 Agent 最後補驗改為完成。交付前發現 master 新合併 #269／#259，按原成果整合，不接管其待驗工作。
+
+<a id="log-20261024-s12-ios-media"></a>
+## LOG-20261024-S12-IOS-MEDIA
+
+- 接續已合併 #272／`9f500a5`，以 `codex/s12-ios-media` 補 iPhone 照片相容。ImagePicker iOS 原 bytes 仍可能是 HEIC，故只在實際 bytes 非 JPEG／PNG 時使用官方 JPEG base64 副本；原件與副本各限4 MiB，decode 前後核對，清除 picker 額外編碼參照。hash、metadata、加密上傳及 Server 格式沿原契約，Android 原行為不變。
+- Astra 子代理只實作 adapter 及一份定向檢查；主模型核原碼／SDK型別／完整測試，親寫照片契約與技術採用說明。3項離線檢查通過，沿真 metadata／hash／preview，只替換系統 ports。主模型另核固定 SDK 的 iOS AAC/M4A、選檔副本及 Sharing 接線，無須另寫服務；不重複跑已通過檢查。[證據](artifacts/verification/S12_IOS_MEDIA_20261024.json)。
+- 沒有新增依賴、全量型別／build、模型、通知、部署或真機。原生 HEIC、iPhone權限／鍵盤／錄音聽感／檔案分享仍待簽署後驗收，不把合成bytes當成真圖片或設備通過。下一包為相容原生通知契約與 APNs；簽署團隊未定時先做獨立程式。

@@ -298,6 +298,10 @@ iOS 圖標由既有 `assets/brand/app-icon-source.svg` 以本機工具匯出 102
 
 Expo fetch 57.0.24 在未裝 expo-blob 時返回 React Native Blob；RN 0.86.3 Blob 沒有 arrayBuffer，但 FileReader.readAsArrayBuffer 有原生實作。共用讀取保留此後備，SHA-256 由原生 expo-crypto 薄 port 提供；不偽造整套 Web Crypto。相簿／相機只在明確點按開啟，按實際 bytes／JPEG／PNG／4 MiB 核對，使用同一照片 API、收據及授權。私人來源原 owner 可共用，不另造手機版。
 
+2026-10-24 iOS 補充：固定 ImagePicker 57.0.19 的 `MediaHandler.swift`／`ImageUtils.swift` 顯示 `.current` 可直接複製 HEIC，而 `.compatible` 仍不能保證檔案已變 JPEG；其 `base64` 輸出則經 `readJpegBase64From` 產生 JPEG，符合 [SDK 57 契約](https://docs.expo.dev/versions/v57.0.0/sdk/imagepicker/)。因此只在 iOS 要求相容表示及 JPEG base64，原 bytes 已為 JPEG／PNG 時保持原件，其餘使用有界副本；不新增轉檔套件、不降低 quality 或裁切。JS 接收後先限制編碼大小、格式再 decode／核真 bytes；單張選取仍不等於保證系統解碼大照片的記憶體峰值，iPhone 原生轉檔與返回仍待真機。
+
+iOS 其餘媒體沿既有 adapter：FileSystem 57.0.7 的 `FilePickingUtils.swift` 以 `UIDocumentPickerViewController(..., asCopy: true)` 選檔；Audio 57.0.5 的 HIGH_QUALITY 在 iOS 使用 AAC／M4A；Sharing 57.0.21 開系統分享。現有兩分鐘／5 MiB、本人草稿 cache、scope 核對及清理不變，不因跨端另建上傳或解析服務；此為固定原碼接線核對，不當成 iPhone 聽感／權限／保存已驗。
+
 PDF 與資料下載只替換出口：Web 原下載；Android 私有 cache＋系統 shareAsync，開啟前重核當前 scope。固定 Android Sharing 在 chooser 的 activity result 返回，不能證明接收應用已保存；不即刻刪檔令接收方讀不到。暫存最多 16 份、每份最多 16 MiB，下次匯出清理超過 24 小時項目，不宣稱嚴格定時清理；取消亦不當保存成功。檔案是本人明確要求的匯出副本，不是可寫業務主庫。SDK 原生套件須新 APK/runtime；型別及原生 Blob 合成接點已驗，裝置權限／選圖／PDF 分享仍待真機。
 
 
