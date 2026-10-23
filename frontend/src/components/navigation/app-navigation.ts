@@ -28,7 +28,7 @@ export const navigationItems = {
 export const desktopNavigationGroups = [
   { label: "常用", keys: ["home"] },
   { label: "行動", keys: ["tasks", "growth"] },
-  { label: "照顧", keys: ["summary", "history"] },
+  { label: "回顧", keys: ["summary", "history"] },
   { label: "管理", keys: ["care", "memory", "profile", "more"] },
 ] as const;
 

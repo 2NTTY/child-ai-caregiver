@@ -249,9 +249,9 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
       urgent={model.readState === "failed" || announcementKey.startsWith("notice:error:")} />
     {showRunToolbar ? <View testID={activityHeading ? "agent-activity-header" : undefined} style={[styles.toolbar, !!activityHeading && styles.activityToolbar]}>
       {activityHeading ?? (run && ready && (!proposalOnly || run.status !== "completed") ? <AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /> : null)}
-      <AppButton label={model.pendingDecision ? "重新確認" : activityHeading && recoveryNeeded ? "重新檢查" : refreshLabel} accessibilityLabel={recoveryNeeded ? refreshLabel : "更新活動結果"} variant={recoveryNeeded ? "secondary" : "quiet"} density="compact"
+      {recoveryNeeded || !ready || run?.status !== "completed" || model.notice?.tone === "error" || selectedProposals.some(proposal => proposal.contentState === "invalidated") ? <AppButton label={model.pendingDecision ? "重新確認" : activityHeading && recoveryNeeded ? "重新檢查" : refreshLabel} accessibilityLabel={recoveryNeeded ? refreshLabel : "更新活動結果"} variant={recoveryNeeded ? "secondary" : "quiet"} density="compact"
         disabled={!model.online || !!model.busy || denied || model.readState === "loading"} loading={model.busy === "read"}
-        onPress={actions.refresh} style={styles.inlineButton} />
+        onPress={actions.refresh} style={styles.inlineButton} /> : null}
     </View> : null}
     {activityNavigation}
     {activityHeading && run && ready && run.status !== "completed" ? <View style={styles.scope}><AppStatusBadge label={agentRunLabels[run.status]} tone={run.status === "unknown" ? "warning" : run.status === "running" ? "info" : "neutral"} /></View> : null}

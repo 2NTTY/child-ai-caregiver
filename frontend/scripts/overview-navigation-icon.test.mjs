@@ -99,3 +99,14 @@ test('the custom overview SVG inherits AppIcon sizing, stroke, colors and decora
     assert.ok(svg.props.children.every(rect => rect.type === 'Rect' && rect.props.rx === 1.5));
   }
 });
+
+
+test('desktop overview and history use the review group label without changing routes, order or other care labels', () => {
+  assert.deepEqual(desktopNavigationGroups, [
+    {label: '常用', keys: ['home']}, {label: '行動', keys: ['tasks', 'growth']},
+    {label: '回顧', keys: ['summary', 'history']}, {label: '管理', keys: ['care', 'memory', 'profile', 'more']},
+  ]);
+  assert.deepEqual(navigationItems.history, {href: '/history', label: '歷史', short: '歷史', icon: 'history'});
+  assert.equal(moreNavigationGroups.find(group => group.title === '照顧資料')?.items[1].key, 'summary');
+  assert.equal(navigationItems.care.short, '核對');
+});

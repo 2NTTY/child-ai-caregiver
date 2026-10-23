@@ -103,15 +103,17 @@ function model(overrides = {}) {
   return { state, calls, editing, render: async () => act(async () => root.render(h(ModelSettingsView, { model: state, actions }))) };
 }
 
-test('notification controls precede secondary information, with a compact labelled refresh and unchanged save confirmation', async () => {
+test('notification controls have no ready refresh, but retain dirty-deferred reads and unchanged save confirmation', async () => {
   await clear(); const f = notification(); await f.render();
-  const refresh = button('重新讀取通知偏好');
-  assert.equal(refresh.textContent, '重新讀取'); assert.equal(refresh.dataset.variant, 'quiet'); assert.equal(refresh.dataset.density, 'compact'); assert.equal(refresh.parentElement.tagName, 'HEADER');
+  assert.equal(buttons().some(node => node.getAttribute('aria-label') === '重新讀取通知偏好'), false);
   assert.doesNotMatch(copy(), /目前版本 7/); assert.match(copy(), /設定本人的安靜時段，不會綁定通知渠道或授權發送/);
   assert.ok(before(field('安靜時段開始'), field('安靜時段結束'))); assert.ok(before(field('安靜時段結束'), field('通知時區')));
   assert.ok(before(button('核對通知偏好'), textNode(f.domain.notice)));
+  await change('安靜時段開始', '21:30');
+  const refresh = button('重新讀取通知偏好');
+  assert.equal(refresh.textContent, '重新讀取'); assert.equal(refresh.dataset.variant, 'quiet'); assert.equal(refresh.dataset.density, 'compact'); assert.equal(refresh.parentElement.tagName, 'HEADER');
   await click('重新讀取通知偏好'); assert.deepEqual(f.calls, [['refresh']]);
-  await change('安靜時段開始', '21:30'); await click('核對通知偏好');
+  await click('核對通知偏好');
   assert.match(copy(), /待確認 · 尚未保存 · 版本 7/); assert.deepEqual(f.calls, [['refresh']]);
   await click('返回修改'); assert.equal(field('安靜時段開始').value, '21:30');
   await click('核對通知偏好'); await click('確認保存本人偏好');
@@ -130,7 +132,8 @@ test('notification errors and original-operation recovery stay before the locked
   await change('我已核對目前資料，同意以原內容及版本重試', true); assert.deepEqual(f.calls.at(-1), ['confirm', true]);
   f.domain.original.consent = true; await f.render(); await click('明確重試原操作'); assert.deepEqual(f.calls.at(-1), ['retry']);
   f.domain.original.confirmed = true; await f.render(); assert.equal(buttons().some(node => node.textContent === '明確重試原操作'), false);
-  f.domain.online = false; await f.render(); assert.equal(button('重新讀取通知偏好').disabled, true); assert.match(copy(), /目前離線/);
+  f.domain.online = false; await f.render(); assert.equal(button('查原收據及目前狀態').disabled, true); assert.match(copy(), /目前離線/);
+  assert.equal(buttons().some(node => node.getAttribute('aria-label') === '重新讀取通知偏好'), false);
 });
 
 test('notification validation and missing reads remain visible without fabricating a saved state', async () => {
@@ -152,10 +155,12 @@ test('model copy prioritizes personal choices while preserving advanced limits, 
   assert.match(copy(), /並加密儲存/); assert.match(copy(), /必要對話與資料會送到供應商，費用按其帳戶計算/);
   assert.equal(field('個人 API 密鑰').type, 'password'); assert.equal(field('聊天模型 ID').value, f.state.snapshot.settings.model);
   for (const [, label] of modelLimitFields) assert.ok(field(label)); assert.ok(field('另行允許背景任務使用此密鑰'));
+  assert.equal(buttons().some(node => node.getAttribute('aria-label') === '重新讀取模型設定'), false);
+  await click('檢查已保存密鑰'); await click('查核已保存密鑰的模型目錄');
+  assert.deepEqual(f.calls, [['check', 7], ['catalog', 7]]); assert.equal(button('保存模型設定').disabled, true);
+  await change('我同意個人服務的費用及資料外送', true); await change('個人每日呼叫上限', '80');
   const refresh = button('重新讀取模型設定'); assert.equal(refresh.textContent, '重新讀取'); assert.equal(refresh.dataset.density, 'compact');
-  await click('重新讀取模型設定'); await click('檢查已保存密鑰'); await click('查核已保存密鑰的模型目錄');
-  assert.deepEqual(f.calls, [['refresh'], ['check', 7], ['catalog', 7]]); assert.equal(button('保存模型設定').disabled, true);
-  await change('我同意個人服務的費用及資料外送', true); await change('個人每日呼叫上限', '80'); await click('保存模型設定');
+  await click('重新讀取模型設定'); assert.deepEqual(f.calls.at(-1), ['refresh']); await click('保存模型設定');
   assert.equal(f.calls.at(-1)[0], 'save'); assert.equal(f.calls.at(-1)[1].expectedVersion, 7); assert.equal(f.calls.at(-1)[1].dailyLimit, 80);
   assert.equal(f.calls.at(-1)[1].model, f.state.snapshot.settings.model); assert.equal('apiKey' in f.calls.at(-1)[1], false);
 });

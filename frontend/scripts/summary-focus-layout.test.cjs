@@ -163,3 +163,36 @@ test('overview still clears inaccessible, unavailable, invalidated and confirmed
   assert.equal(readChildProfile({ ...profileModel, reading: true }, source.scopeKey, '2026-10-23').data, null);
   assert.equal(read({ current: null }).state, 'loading');
 });
+
+test('overview review dialog keeps mounted filter focus and disclosure through quiet refresh, then preserves draft on reopen', async t => {
+  const container = document.body.appendChild(document.createElement('main')), renderer = createRoot(container);
+  let model = { ...baseSummary, page: { ...baseSummary.page, childId: 'child-a', endDayExclusive: '2026-10-30', records: [], missing: { unknownEventTime: 0 } } };
+  const actions = { updateQuery(query) { model = { ...model, query }; }, refresh() {}, discard() { assert.fail('Closing read-only review must not discard owner state'); } };
+  const flush = callback => React.act(async () => { callback?.(); });
+  const render = patch => { model = { ...model, ...patch }; return flush(() => renderer.render(e(Summary.Provider, { value: { model, actions } }, e(TaskKnowledgeSummaryContent, { presentation: 'overview', scopeKey: 'synthetic-a', childId: 'child-a', onRecord() {}, onTask() {} })))); };
+  const button = label => [...container.querySelectorAll('button')].find(node => node.getAttribute('aria-label') === label);
+  t.after(async () => { await flush(() => renderer.unmount()); container.remove(); });
+  await render(); assert.equal(container.querySelector('[data-testid="summary-records"]'), null);
+  await flush(() => button('查看完整回顧').click()); assert.ok(container.querySelector('[role="dialog"]'));
+  await flush(() => button('選擇摘要期間').click()); const input = container.querySelector('input'), report = container.querySelector('[data-testid="summary-records"]');
+  await flush(() => input.focus()); await render({ busy: true });
+  assert.equal(container.querySelector('input'), input); assert.equal(document.activeElement, input); assert.equal(input.readOnly, true);
+  assert.equal(container.querySelector('[data-testid="summary-records"]'), report);
+  await render({ busy: false, query: { ...model.query, startDay: '2026-09-01' } });
+  await flush(() => button('關閉完整回顧').click()); assert.equal(container.querySelector('[role="dialog"]'), null);
+  await flush(() => button('查看完整回顧').click()); await flush(() => button('選擇摘要期間').click());
+  assert.equal(container.querySelector('input').value, '2026-09-01'); assert.equal(model.page.period.startDay, applied.startDay);
+  await render({ access: 'lost' }); assert.equal(container.querySelector('[role="dialog"]'), null); assert.equal(container.querySelector('[data-testid="summary-records"]'), null);
+});
+
+test('profile source details stay open and retain original text through same-scope quiet refresh', async t => {
+  const container = document.body.appendChild(document.createElement('main')), renderer = createRoot(container);
+  const flush = callback => React.act(async () => { callback?.(); });
+  const render = patch => flush(() => renderer.render(e(Profile.Provider, { value: { scopeKey: source.scopeKey, model: { ...profileModel, ...patch }, profileSource: source } }, e(ChildOverviewContent, { onOpenProfile() {}, onOpenProfileHistory() {} }))));
+  const button = label => [...container.querySelectorAll('button')].find(node => node.getAttribute('aria-label') === label);
+  t.after(async () => { await flush(() => renderer.unmount()); container.remove(); });
+  await render({}); await flush(() => button('查看照顧資料與來源').click()); const dialog = container.querySelector('[role="dialog"]');
+  assert.match(dialog.textContent, /Synthetic source/); await render({ reading: true }); assert.equal(container.querySelector('[role="dialog"]'), dialog);
+  assert.match(dialog.textContent, /Synthetic confirmed preference/);
+  await render({ access: 'lost' }); assert.equal(container.querySelector('[role="dialog"]'), null);
+});

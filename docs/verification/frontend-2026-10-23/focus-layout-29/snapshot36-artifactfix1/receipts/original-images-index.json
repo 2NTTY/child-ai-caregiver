@@ -1,0 +1,62 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "originalReceiptSha256": "4868d2b3a1b7dbe98d0fa96ea5cb40a6b97534806b7ddcc1c7b7d93e5a7f45d2",
+  "images": [
+    {
+      "format": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "sha256": "5782a8364ddb5fa91ac868a6be3e9dd18788a394bd2a16d78809df79024bf190",
+      "cssIframeViewport": [
+        1023,
+        600
+      ],
+      "nominalIframeViewport": [
+        1024,
+        600
+      ],
+      "capture": "Original native cloud desktop, includes browser chrome; not fullpage/mobile",
+      "path": "images/01-ready-focused-0.jpg"
+    },
+    {
+      "format": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "sha256": "bd174979c02f3388b965546fecec3f7d380cce06ae4442f50176771aaef24610",
+      "cssIframeViewport": [
+        1023,
+        600
+      ],
+      "nominalIframeViewport": [
+        1024,
+        600
+      ],
+      "capture": "Original native cloud desktop, includes browser chrome; not fullpage/mobile",
+      "path": "images/02-error-retained-0.jpg"
+    },
+    {
+      "format": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "sha256": "48538d356c49f64ec2c9a6dcf378c8e969ee203cea94d205ffbe07624340bbda",
+      "cssIframeViewport": [
+        1023,
+        600
+      ],
+      "nominalIframeViewport": [
+        1024,
+        600
+      ],
+      "capture": "Original native cloud desktop, includes browser chrome; not fullpage/mobile",
+      "path": "images/03-error-focused-0.jpg"
+    }
+  ],
+  "imageBytesPreserved": true,
+  "metadataPathsRelativized": true
+}

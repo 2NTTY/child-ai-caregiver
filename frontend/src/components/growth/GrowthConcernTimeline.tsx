@@ -19,7 +19,9 @@ export function GrowthConcernTimeline({concern, page, onRecord, onTask}: {concer
   const entries = growthConcernTimelineEntries(concern, page);
   const followUpLabel = growthConcernFollowUpLabel(concern);
   return <View style={s.timelinePanel} testID="growth-concern-timeline" accessibilityLabel={`關注：${concern.title}`}>
-    <View style={s.concernHeading}><AppStatusBadge label={concernLabels[concern.status]} tone={concern.status === "proposed" ? "warning" : concern.status === "following" ? "info" : "neutral"} /><Text style={s.reading}>{concern.reason}</Text>
+    <View style={s.concernHeading} testID="growth-concern-summary">
+      <View style={s.row}><Text accessibilityRole="header" style={s.eyebrow}>關注說明</Text><AppStatusBadge label={concernLabels[concern.status]} tone={concern.status === "proposed" ? "warning" : concern.status === "following" ? "info" : "neutral"} /></View>
+      <Text style={s.concernSummary}>{concern.reason}</Text>
     </View>
     {followUpLabel ? <Text style={s.meta}>{followUpLabel}</Text> : null}
     <SectionHeader density="compact" title="跟進記錄" />
@@ -42,13 +44,14 @@ export function GrowthConcernTimeline({concern, page, onRecord, onTask}: {concer
         </View>;
       }
       const { event } = entry;
+      const eventTime = Number.isNaN(Date.parse(event.at)) ? "時間未提供" : growthTime(event.at);
       return <View key={`event:${event.id}`} style={s.timelineEvent}>
       {marker}
       <Text style={s.title}>{event.title}</Text><Text style={s.reading}>{event.text}</Text>
       <View style={s.row}>
         {event.kind === "pending_record" || event.kind === "confirmed_action" ? <AppStatusBadge label={eventLabels[event.kind]} tone={event.kind === "pending_record" ? "warning" : "success"} />
           : <View accessible accessibilityLabel={`事件種類：${eventLabels[event.kind]}`} style={styles.metadataItem}><AppIcon name={event.kind === "agent_proposal" ? "star-four-points" : "notebook-outline"} size={14} /><Text style={s.meta}>{eventLabels[event.kind]}</Text></View>}
-        <View accessible accessibilityLabel={`事件時間：${growthTime(event.at)}`} style={styles.metadataItem}><AppIcon name="clock-outline" size={14} /><Text style={s.meta}>{growthTime(event.at)}</Text></View>
+        <View accessible accessibilityLabel={`事件時間：${eventTime}`} style={styles.metadataItem}><AppIcon name="clock-outline" size={14} /><Text style={s.meta}>{eventTime}</Text></View>
       </View>
       {event.recordId && onRecord ? <AppButton label="查看原始記錄" variant="quiet" onPress={() => onRecord(event.recordId)} /> : null}
       {event.kind === "pending_record" && onRecord ? <AppButton label="前往待核對記錄" variant="quiet" onPress={() => onRecord()} /> : null}

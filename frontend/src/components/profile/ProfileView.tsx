@@ -102,7 +102,6 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
         {model.access === "read_only" ? <Text style={styles.notice}>目前為唯讀，可查看檔案及歷史。</Text> : null}
         <View style={styles.readingActions}>
           <AppButton label="檔案詳情" accessibilityLabel="檔案詳情" variant="quiet" density="compact" expanded={detailsOpen} onPress={() => setDetailsOpen(value => !value)} />
-          <AppButton label="重新讀取檔案" variant="quiet" density="compact" onPress={actions.refresh} disabled={!model.online || model.reading || pending} />
           <TextLink label="開啟核對" onPress={onOpenCare} />
         </View>
         <MotionDisclosure expanded={detailsOpen} scopeKey={scopeKey} testID="profile-details-disclosure">

@@ -7,8 +7,9 @@ import { SERVICE_POLICY_VERSION, type AccountServiceStatus, type AccountExportPa
 export type AccountGateState = "checking" | "error" | "verification" | "consent" | "ready";
 export interface AccountServiceSnapshot {
   userId: string | null; online: boolean; gate: AccountGateState; status: AccountServiceStatus | null;
-  busy: "status" | "consent" | "mail" | "reset" | "sessions" | "download" | "prepare" | "delete" | "check" | null;
+  busy: "status" | "consent" | "mail" | "reset" | "sessions" | "download" | "prepare" | "verify" | "delete" | "check" | null;
   notice: string | null;
+  deletionVerification: { available: boolean; expiresAtMs: number | null };
   callback: null | { kind: "verified" | "reset" | "invalid"; phase: "form" | "done"; message: string };
   download: { phase: "idle" | "partial" | "complete" | "error"; parts: number; message: string | null };
   deletion: { phase: "idle" | "prepared" | "unknown" | "completed"; childCount: number | null; attachmentsPending: boolean; message: string | null };
@@ -35,7 +36,7 @@ interface DownloadContinuation {
 }
 const emptyDownload = (): AccountServiceSnapshot["download"] => ({ phase: "idle", parts: 0, message: null });
 const emptyDeletion = (): AccountServiceSnapshot["deletion"] => ({ phase: "idle", childCount: null, attachmentsPending: false, message: null });
-function initial(online: boolean): AccountServiceSnapshot { return { userId: null, online, gate: "checking", status: null, busy: null, notice: null, callback: null, download: emptyDownload(), deletion: emptyDeletion() }; }
+function initial(online: boolean, verificationAvailable = false): AccountServiceSnapshot { return { deletionVerification: { available: verificationAvailable, expiresAtMs: null }, userId: null, online, gate: "checking", status: null, busy: null, notice: null, callback: null, download: emptyDownload(), deletion: emptyDeletion() }; }
 function gateFor(status: AccountServiceStatus, userId: string | null): AccountGateState {
   if (!userId) return "checking";
   if (!status.enabled) return "ready";
@@ -47,6 +48,8 @@ function errorMessage(error: unknown): string {
   if (error instanceof ClientApiError && error.onlineCode === "firebase_reauthentication_required") return "請先登出並重新登入，再明確要求電郵驗證指引。重新載入頁面後，原登入資料不會保留。";
   if (error instanceof ClientApiError && error.onlineCode === "auth_provider_unavailable") return "身份服務設定未完整，暫時不能處理登入或電郵指引。";
   if (code === "shared_workspace_requires_resolution") return "這個帳戶仍與其他成員共享資料。請先處理共享家庭的責任及成員，再重新核對退出範圍。";
+  if (code === "recent_reauthentication_required") return "身份驗證已失效。請重新驗證目前密碼，再確認原退出操作；尚未刪除帳戶。";
+  if (code === "reauthentication_unavailable") return "目前登入方式尚未接通安全的重新驗證，暫時不能刪除帳戶。";
   if (code === "password_verification_failed") return "未能確認密碼。請重新輸入；尚未刪除帳戶。";
   if (code === "erasure_receipt_expired" || code === "account_scope_changed") return "退出範圍或確認期限已改變。請查核原操作，再重新核對範圍。";
   if (code === "export_scope_changed" || code === "access_denied") return "資料範圍已改變。這次下載未完整，請棄用這次分批檔案，重新開始。";
@@ -63,11 +66,12 @@ export class AccountServiceOwner {
   private receipt: Pick<PreparedAccountDeletion, "operationId" | "receiptToken"> | null = null;
   private deletionUserId: string | null = null; private acknowledgementId: string | null = null;
   private continuation: DownloadContinuation | null = null;
+  private verificationTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly listeners = new Set<() => void>();
   constructor(baseUrl: string, online: boolean, onDeleted: () => void, onAccessLost: () => void, dependencies: AccountServiceDependencies = {}) {
     this.onDeleted = onDeleted; this.onAccessLost = onAccessLost;
     this.api = dependencies.api ?? createAccountApi(baseUrl, fetch, dependencies.reauthentication); this.authApi = dependencies.authApi ?? createAccountAuthApi(baseUrl);
-    this.legacyTrial = dependencies.legacyTrial === true; this.snapshot = initial(online);
+    this.legacyTrial = dependencies.legacyTrial === true; this.snapshot = initial(online, this.api.canVerifyDeletionIdentity());
   }
   getSnapshot = () => this.snapshot;
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
@@ -80,17 +84,17 @@ export class AccountServiceOwner {
       if (callbackChanged) { this.resetToken = null; this.callbackUserId = null; }
       else if (userId && this.snapshot.callback) this.callbackUserId = userId;
       const retainUnknown = !userId && this.snapshot.deletion.phase === "unknown" && !!this.receipt;
-      this.request?.abort(); this.request = null; this.epoch++; this.context = identityKey;
+      this.request?.abort(); this.request = null; this.epoch++; this.context = identityKey; this.clearDeletionVerification();
       this.api.setIdentity(userId); this.acknowledgementId = null; this.continuation = null;
       if (!retainUnknown) { this.receipt = null; this.deletionUserId = null; }
       const recovery = userId ? this.api.deletionRecovery() : null;
       if (recovery?.receiptToken) { this.receipt = { operationId: recovery.operationId, receiptToken: recovery.receiptToken }; this.deletionUserId = userId; }
-      this.update({ ...initial(online), userId, callback: callbackChanged ? null : this.snapshot.callback,
+      this.update({ ...initial(online, this.api.canVerifyDeletionIdentity()), userId, callback: callbackChanged ? null : this.snapshot.callback,
         notice: this.snapshot.deletion.phase === "completed" && !userId ? this.snapshot.deletion.message : null,
         deletion: retainUnknown ? this.snapshot.deletion : recovery?.receiptToken ? { ...emptyDeletion(), phase: "unknown", message: "請先查核這個帳戶原來的退出結果。" } : emptyDeletion() });
       if (online && !retainUnknown) void this.loadStatus();
     } else if (online !== this.snapshot.online) {
-      if (!online) { this.request?.abort(); this.request = null; this.epoch++; }
+      if (!online) { this.request?.abort(); this.request = null; this.epoch++; this.clearDeletionVerification(); }
       this.update({ online, ...(!online ? { busy: null } : {}) });
       if (online && !this.snapshot.status && this.snapshot.deletion.phase !== "unknown") void this.loadStatus();
     }
@@ -158,6 +162,7 @@ export class AccountServiceOwner {
   async prepareDeletion() {
     if (!this.isReady() || this.snapshot.deletion.phase !== "idle") return;
     const ticket = this.begin("prepare"); if (!ticket?.userId) return;
+    this.clearDeletionVerification();
     try { const receipt = await this.api.prepareDeletion(ticket.userId, ticket.controller.signal);
       if (this.current(ticket)) { this.receipt = receipt; this.deletionUserId = ticket.userId;
         this.update({ deletion: { phase: receipt.state === "completed" ? "completed" : "prepared", childCount: receipt.summary.childCount, attachmentsPending: receipt.attachmentsPending, message: null } });
@@ -167,24 +172,65 @@ export class AccountServiceOwner {
   }
   async cancelPreparedDeletion() {
     if (this.snapshot.deletion.phase !== "prepared" || !this.snapshot.userId) return;
+    if (this.snapshot.busy === "verify") {
+      this.request?.abort(); this.request = null; this.epoch++; this.update({ busy: null });
+    }
     const ticket = this.begin("check"); if (!ticket?.userId) return;
+    this.clearDeletionVerification();
     try { await this.api.discardPreparedDeletion(ticket.userId, ticket.controller.signal);
       if (this.current(ticket)) { this.receipt = null; this.deletionUserId = null; this.update({ deletion: emptyDeletion() }); } }
     catch (error) { if (this.current(ticket)) this.update({ deletion: { ...this.snapshot.deletion, phase: "unknown", message: errorMessage(error) } }); }
     finally { this.finish(ticket); }
   }
-  async executeDeletion(password: string, confirmation: string) {
-    if (!this.isReady() || this.snapshot.deletion.phase !== "prepared" || !this.receipt || this.deletionUserId !== this.snapshot.userId || confirmation !== "永久刪除我的帳戶" || !password || password.length > 128) return;
+  private clearDeletionVerification() {
+    if (this.verificationTimer) clearTimeout(this.verificationTimer);
+    this.verificationTimer = null; this.api.clearDeletionVerification();
+    if (this.snapshot.deletionVerification.expiresAtMs !== null) this.update({ deletionVerification: { ...this.snapshot.deletionVerification, expiresAtMs: null } });
+  }
+  private scheduleDeletionVerificationExpiry(expiresAtMs: number, ticket: { epoch: number; userId: string | null; controller: AbortController }, receipt: Pick<PreparedAccountDeletion, "operationId" | "receiptToken"> | null) {
+    // This timer retains only operation metadata, never the password verification frame.
+    this.verificationTimer = setTimeout(() => {
+      if (this.current(ticket) && this.receipt === receipt) {
+        this.clearDeletionVerification();
+        if (this.snapshot.deletion.phase === "prepared") this.update({ deletion: { ...this.snapshot.deletion, message: "身份驗證已過期。請重新輸入目前密碼驗證；尚未提交刪除。" } });
+      }
+    }, Math.max(0, expiresAtMs - Date.now()));
+  }
+  async verifyDeletionIdentity(password: string) {
+    if (!this.isReady() || this.snapshot.deletion.phase !== "prepared" || !this.receipt || this.deletionUserId !== this.snapshot.userId
+      || !password || password.length > 128) return;
+    const ticket = this.begin("verify"); if (!ticket?.userId) return;
+    this.clearDeletionVerification();
+    const receipt = this.receipt;
+    try {
+      const verified = await this.api.verifyDeletionIdentity(ticket.userId, password, ticket.controller.signal);
+      if (!this.current(ticket) || this.receipt !== receipt || this.snapshot.deletion.phase !== "prepared") return;
+      this.update({ deletionVerification: { ...this.snapshot.deletionVerification, expiresAtMs: verified.expiresAtMs },
+        deletion: { ...this.snapshot.deletion, message: "身份已重新驗證。請核對刪除範圍及確認文字，再親自確認永久刪除。" } });
+      this.scheduleDeletionVerificationExpiry(verified.expiresAtMs, ticket, receipt);
+    } catch (error) {
+      if (this.current(ticket)) { this.clearDeletionVerification(); this.update({ deletion: { ...this.snapshot.deletion, message: errorMessage(error) } }); }
+    } finally { this.finish(ticket); }
+  }
+  async executeDeletion(confirmation: string) {
+    if (this.snapshot.busy || !this.isReady() || this.snapshot.deletion.phase !== "prepared" || !this.receipt || this.deletionUserId !== this.snapshot.userId || confirmation !== "永久刪除我的帳戶") return;
+    if (!this.api.deletionVerification()) {
+      this.clearDeletionVerification();
+      this.update({ deletion: { ...this.snapshot.deletion, message: "請先重新驗證目前密碼，才能永久刪除帳戶。" } }); return;
+    }
     const ticket = this.begin("delete"); if (!ticket?.userId) return;
-    this.update({ deletion: { ...this.snapshot.deletion, phase: "unknown", message: "正在確認原退出操作；確認完成前請保留此頁。" } });
-    try { const result = await this.api.executeDeletion(ticket.userId, { password, confirmation }, ticket.controller.signal);
+    if (this.verificationTimer) clearTimeout(this.verificationTimer); this.verificationTimer = null;
+    this.update({ deletionVerification: { ...this.snapshot.deletionVerification, expiresAtMs: null },
+      deletion: { ...this.snapshot.deletion, phase: "unknown", message: "正在確認原退出操作；確認完成前請保留此頁。" } });
+    try { const result = await this.api.executeVerifiedDeletion(ticket.userId, confirmation, ticket.controller.signal);
       if (this.current(ticket)) result.state === "completed" ? this.confirmCompleted(result) : this.update({ deletion: { ...this.snapshot.deletion, phase: "unknown",
         message: result.state === 'processing' ? '帳戶存取已停止，Server 正在分批清理；請查核原結果，不要重新提交。' : "Server 尚未確認刪除完成，請查核原結果。" } }); }
-    catch (error) { if (this.current(ticket)) { const definite = error instanceof AccountApiError && ["password_verification_failed", "erasure_receipt_expired", "account_scope_changed", "invalid_input"].includes(error.code ?? "") && error.status >= 400 && error.status < 500;
+    catch (error) { if (this.current(ticket)) { const definite = error instanceof AccountApiError && ["password_verification_failed", "recent_reauthentication_required", "erasure_receipt_expired", "account_scope_changed", "invalid_input"].includes(error.code ?? "") && error.status >= 400 && error.status < 500;
       this.update({ deletion: { ...this.snapshot.deletion, phase: definite ? "prepared" : "unknown", message: errorMessage(error) } }); } }
-    finally { this.finish(ticket); }
+    finally { if (this.current(ticket)) this.clearDeletionVerification(); this.finish(ticket); }
   }
   private confirmCompleted(result: AccountEraseReceipt) {
+    this.clearDeletionVerification();
     this.receipt = null; this.deletionUserId = null; this.continuation = null;
     this.update({ gate: "checking", status: null, deletion: { phase: "completed", childCount: null, attachmentsPending: result.attachmentsPending, message: result.attachmentsPending ? "帳戶已刪除；附件仍在 Server 清理隊列中。" : "Server 已確認帳戶及附屬資料刪除。" } });
     this.onDeleted();
@@ -192,6 +238,7 @@ export class AccountServiceOwner {
   async checkDeletion() {
     if (this.snapshot.deletion.phase !== "unknown" || !this.receipt) return;
     const ticket = this.begin("check"); if (!ticket) return;
+    this.clearDeletionVerification();
     try {
       const result = await this.api.deletionStatus(this.receipt, ticket.controller.signal);
       if (!this.current(ticket)) return;
@@ -257,5 +304,5 @@ export class AccountServiceOwner {
         this.update({ download: { ...this.snapshot.download, parts: this.continuation ? this.snapshot.download.parts : 0, phase: "error", message: errorMessage(error) } }); }
     } finally { this.finish(ticket); }
   }
-  dispose() { this.request?.abort(); this.epoch++; this.resetToken = null; this.receipt = null; this.continuation = null; this.api.setIdentity(null); this.listeners.clear(); }
+  dispose() { this.clearDeletionVerification(); this.request?.abort(); this.epoch++; this.resetToken = null; this.receipt = null; this.continuation = null; this.api.setIdentity(null); this.listeners.clear(); }
 }

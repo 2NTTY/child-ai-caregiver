@@ -17,7 +17,8 @@ global.requestAnimationFrame = callback => { const id = ++sequence; frames.set(i
 global.cancelAnimationFrame = id => frames.delete(id);
 Object.defineProperty(HTMLElement.prototype, 'getClientRects', {configurable: true, value() { return this.isConnected && !this.closest('[hidden]') ? [{}] : []; }});
 // Actual React effects and DOM focus with native/layout/child-detail ports.
-// This is not browser layout or proof of the CUA compound timing failure.
+// Covers the unchanged non-history inline reader. History modal focus lives in
+// history-modal-readers.test.cjs; neither suite proves browser layout or visual timing.
 const View = React.forwardRef(({children, testID, accessibilityLabel, tabIndex}, ref) => e('div', {ref, tabIndex, 'data-testid': testID, 'aria-label': accessibilityLabel}, children));
 const Pressable = React.forwardRef(({children, testID, accessibilityLabel, onPress}, ref) => e('button', {ref, onClick: onPress, 'data-testid': testID, 'aria-label': accessibilityLabel}, children));
 const Button = ({label, onPress, disabled}) => e('button', {onClick: onPress, disabled}, label);
@@ -36,8 +37,8 @@ function load(relative) {
     if (name.endsWith('/workspaces/PreparationWorkspace')) return {usePreparationWorkspace: () => workspace};
     if (name.endsWith('/useContainerWidth')) return {useContainerWidth: () => ({width, ref: null, onLayout() {}})};
     if (name.endsWith('/ui')) return {AppButton: Button, AppSelect: Empty};
-    const ports = {WriteRecoveryNotice: Empty, AppCheckbox: Empty, AppStatusBadge: Empty, SummaryDisclosure: Empty, EmptyListCard: View, ManualFormDialog: Empty, DocumentCreateForm: Empty};
-    if (/\/(WriteRecoveryNotice|AppCheckbox|AppStatusBadge|SummaryDisclosure|EmptyListCard|FormDialog|DocumentCreateForm)$/.test(name)) return ports;
+    const ports = {AppIcon: Empty, WriteRecoveryNotice: Empty, AppCheckbox: Empty, AppStatusBadge: Empty, SummaryDisclosure: Empty, EmptyListCard: View, ManualFormDialog: Empty, DocumentCreateForm: Empty};
+    if (/\/(AppIcon|WriteRecoveryNotice|AppCheckbox|AppStatusBadge|SummaryDisclosure|EmptyListCard|FormDialog|DocumentCreateForm)$/.test(name)) return ports;
     if (!name.startsWith('.')) return req(name);
     const target = path.resolve(path.dirname(filename), name);
     const found = [target, `${target}.ts`, `${target}.tsx`].find(file => fs.existsSync(file) && fs.statSync(file).isFile());
@@ -45,20 +46,19 @@ function load(relative) {
   }, module, module.exports);
   return module.exports;
 }
-const {PreparationHistoryView} = load('src/components/preparations/PreparationWorkspace.tsx');
-const fixture = () => ({id: 'doc-a', childId: 'child-a', version: 3, status: 'archived', archivedAt: '2026-10-20T00:00:00Z', purpose: 'school', readState: 'ready', historical: false, sources: [], revision: {id: 'snapshot-2', number: 2, title: 'Synthetic preparation', summary: 'Original snapshot', eventDate: '2026-10-20', updatedAt: '2026-10-20T00:00:00Z', sourceAsOf: '2026-10-20T00:00:00Z', sections: [], sourceRefs: []}});
-const range = {from: null, to: null};
+const {PreparationWorkspace} = load('src/components/preparations/PreparationWorkspace.tsx');
+const fixture = () => ({id: 'doc-a', childId: 'child-a', version: 3, status: 'active', archivedAt: null, purpose: 'school', readState: 'ready', historical: false, sources: [], revision: {id: 'snapshot-2', number: 2, title: 'Synthetic preparation', summary: 'Original snapshot', eventDate: '2026-10-20', updatedAt: '2026-10-20T00:00:00Z', sourceAsOf: '2026-10-20T00:00:00Z', sections: [], sourceRefs: []}});
 async function setup(t, initialWidth = 1100) {
   width = initialWidth; frames.clear(); const doc = fixture();
   workspace = {scopeKey: 'parent:child-a', model: {scope: {childId: 'child-a', online: true, condition: 'ready', role: 'owner'}, child: {id: 'child-a', displayName: 'Synthetic'}, documents: [doc], selected: null, condition: 'ready', online: true,
     reading: {indexes: [], archiveStarted: true, archiveReady: true, archiveHasMore: false, pageBusy: false, ensureArchived() {}}},
     actions: {selectDocument() {workspace.model.selected = doc;}, closeDocument() {workspace.model.selected = null;}}};
   const app = createRoot(document.getElementById('root')); let mounted = true;
-  const render = () => React.act(() => app.render(e(PreparationHistoryView, {searchText: '', dateRange: range})));
+  const render = () => React.act(() => app.render(e(PreparationWorkspace)));
   const node = id => document.querySelector(`[data-testid="${id}"]`);
   const row = () => node('preparation-row-doc-a'), list = () => node('preparation-document-list');
   const open = async () => { row().focus(); row().click(); await render(); };
-  const close = async () => { const button = [...document.querySelectorAll('button')].find(node => node.textContent === '返回歸檔清單'); button.focus(); button.click(); await render(); };
+  const close = async () => { const button = [...document.querySelectorAll('button')].find(node => node.textContent === '返回準備單清單'); button.focus(); button.click(); await render(); };
   const flush = async () => { await React.act(() => { const pending = [...frames.values()]; frames.clear(); for (const callback of pending) callback(); }); };
   const unmount = async () => { if (mounted) { mounted = false; await React.act(() => app.unmount()); } assert.equal(frames.size, 0, 'Unmount cancels pending focus retry'); };
   t.after(unmount);
@@ -83,7 +83,7 @@ test('a rejecting, hidden or disconnected original row falls back to the named f
     if (failure === 'hidden') row.style.visibility = 'hidden';
     if (failure === 'disconnected') Object.defineProperty(row, 'isConnected', {configurable: true, value: false});
     await h.close(); assert.equal(document.activeElement, h.list(), failure);
-    assert.equal(h.list().getAttribute('aria-label'), '已歸檔準備單清單'); assert.equal(h.list().tabIndex, -1);
+    assert.equal(h.list().getAttribute('aria-label'), '準備單清單'); assert.equal(h.list().tabIndex, -1);
     await h.flush(); assert.equal(document.activeElement, h.list());
     row.focus = original; row.style.visibility = ''; if (failure === 'disconnected') delete row.isConnected;
   }

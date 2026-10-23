@@ -422,3 +422,56 @@ test('changing conversation filters or child while an original read is pending a
     } finally { await h.close(); }
   }
 });
+
+test('catalog true 503 refresh retains all loaded sources and freshness, while a later authoritative empty success clears them', async () => {
+  const h = await harness(), delayed = deferred();
+  try {
+    await h.warm(); const before = h.owner.references;
+    const started = h.calls.length;
+    h.gate(call => call.url.pathname.endsWith('/library') ? delayed.promise : undefined);
+    await h.focus();
+    assert.equal(h.owner.references.state, 'ready');
+    assert.equal(h.owner.references.data, before.data);
+    assert.equal(h.owner.references.asOf, before.asOf);
+    assert.equal(h.owner.busy.references, true);
+    await h.flush(() => delayed.resolve(json({error: {code: 'synthetic_transient_read'}}, 503)));
+    assert.equal(h.owner.references.state, 'stale');
+    assert.equal(h.owner.references.data, before.data);
+    assert.equal(h.owner.references.revision, before.revision);
+    assert.equal(h.owner.references.asOf, before.asOf);
+    assert.equal(h.owner.references.data.catalog.length, 2);
+    assert.equal(h.calls.slice(started).filter(call => call.url.pathname.endsWith('/library')).length, 1);
+    h.gate(call => call.url.pathname.endsWith('/library') ? json({items: [], nextCursor: null, complete: true}) : undefined);
+    await h.focus();
+    assert.equal(h.owner.references.state, 'ready');
+    assert.deepEqual(h.owner.references.data.catalog, []);
+    assert.equal(h.owner.references.data.hasMore, false);
+  } finally { delayed.resolve(json({}, 503)); await h.close(); }
+});
+
+test('catalog later-page failure never commits a partial refresh and recovery follows fresh cursors at the loaded depth', async () => {
+  const h = await harness();
+  try {
+    await h.warm(); const before = h.owner.references;
+    h.gate(call => call.url.pathname.endsWith('/library') && call.url.searchParams.has('cursor') ? json({}, 503) : undefined);
+    await h.focus();
+    assert.equal(h.owner.references.state, 'stale');
+    assert.equal(h.owner.references.data, before.data);
+    assert.equal(h.owner.references.asOf, before.asOf);
+    const start = h.calls.length; h.gate(null); await h.focus();
+    assert.equal(h.owner.references.state, 'ready'); assert.equal(h.owner.references.data.catalog.length, 2);
+    assert.deepEqual(h.calls.slice(start).filter(call => call.url.pathname.endsWith('/library')).map(call => call.url.searchParams.get('cursor')), [null, 'references_2']);
+  } finally { await h.close(); }
+});
+
+test('catalog permission loss clears its old sources and rejects delayed same-owner results', async () => {
+  const h = await harness(), delayed = deferred();
+  try {
+    await h.warm();
+    h.gate(call => call.url.pathname.endsWith('/library') ? delayed.promise : call.url.pathname.endsWith('/agent/work') ? json({}, 403) : undefined);
+    await h.focus();
+    assert.equal(h.owner.access, 'revoked'); assert.equal(h.owner.references.data, null);
+    await h.flush(() => delayed.resolve(json(fixtures(new URL('https://synthetic.test/library'), 'synthetic-a'))));
+    assert.equal(h.owner.references.data, null);
+  } finally { delayed.resolve(json({}, 503)); await h.close(); }
+});

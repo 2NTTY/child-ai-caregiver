@@ -1,0 +1,12 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "originalReceiptSha256": "6ba622770fac09c58dba9be8fd247bbcd375d0eb099538798792bccd6419b40f",
+  "utc": "2026-10-23T10:38:21.259798+00:00",
+  "files": 72,
+  "allPrivateCandidateBytesEqual": true,
+  "bundleSha256": "00b168eda1e95d0e2a05c03d8e6e54dd6e1d2e876ab8089516f77a145cd4fa1b",
+  "fixtureSha256": "9d507a2d46b1da27f5ec64e242e53cab2d5748c2bf6f4e054e77c9b4f6c59e6f",
+  "portsSha256": "c2e5a438e4064ad2bd29c02e70cc92f77853aec62521a6b782fbc9341dc22510",
+  "wrapperSha256": "5b75aee4fb68bda900980cb726f851e9416f7c51f001409fce563534554d3d6f",
+  "archiveSha256": "c257b9c381cb031acc4815d1e9811f6178dbf7475aa95a510e4f9abb00877f3e"
+}

@@ -181,7 +181,7 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
     <StatusAnnouncement eventKey={model.permission} message={`通知權限：${permissionLabels[model.permission]}。${guidance}`} urgent={model.permission === "denied"} />
     <StatusAnnouncement eventKey={`${model.available}:${model.browserSupported}`} message={!model.available ? "通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。" : !model.browserSupported ? "此設備未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。" : ""} />
     <SectionHeader density="compact" title={`我的${deviceName}通知`} icon="bell-outline" subtitle={`只管理本人的${deviceName}訂閱。`}
-      action={ready ? <AppButton label={`重新讀取${deviceName}狀態`} variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
+      action={ready && (model.conflict || model.permission === "denied") ? <AppButton label={`重新讀取${deviceName}狀態`} variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
     {production ? operationNotice : null}
     {!ready ? <ReadState state={model.readState} online={model.online} locked={production ? model.readState === "loading" : model.locked} refresh={actions.refresh} /> : <>
       <RuntimeNotices model={model} />
@@ -259,7 +259,7 @@ export function TelegramSettingsCard({ model, actions: sourceActions, operationN
     <StatusAnnouncement eventKey={String(model.configured)} message={!model.configured ? "Telegram 渠道目前未設定或未可用，不能開始、確認新綁定或發送測試；既有本人綁定仍可撤銷。" : ""} />
     <StatusAnnouncement eventKey={`${model.binding?.id ?? ""}:${model.binding?.status ?? "none"}`} message={model.binding?.status === "blocked" ? "本人 Telegram 渠道已封鎖，不能發送測試；須先撤銷，才可重新開始私人綁定。" : ""} urgent={model.binding?.status === "blocked"} />
     <SectionHeader density="compact" title="我的 Telegram" icon="message-text-outline" subtitle="只綁定本人的私人帳號。"
-      action={ready ? <AppButton label="重新讀取 Telegram 狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
+      action={ready && model.conflict ? <AppButton label="重新讀取 Telegram 狀態" variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
     {production ? operationNotice : null}
     {!ready ? <ReadState state={model.readState} online={model.online} locked={production ? model.readState === "loading" : model.locked} refresh={actions.refresh} /> : <>
       <RuntimeNotices model={model} />

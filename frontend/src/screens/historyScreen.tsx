@@ -24,7 +24,6 @@ import { useTasksWorkspace } from "../workspaces/TasksWorkspace";
 import { useCareWorkspace } from "../workspaces/CareWorkspace";
 import { usePreparationWorkspace } from "../workspaces/PreparationWorkspace";
 import { useGrowthWorkspace } from "../workspaces/GrowthWorkspace";
-import { searchPreparationHistory } from "../preparation-view-model";
 import { chineseFont, colors, readingType, spacing } from "../theme";
 
 function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOnly }: { scope: string; initialCategory: HistoryCategory; initialReviewStatus: CareReviewStatusFilter; olderOnly: boolean }) {
@@ -51,7 +50,6 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
   const growthCategory = filters.category === "growth";
   const profileCategory = filters.category === "profile";
   const reviewCategory = filters.category === "review", careCategory = filters.category === "care";
-  const showingCompactTaskDetail = taskCategory && layout.width < 840 && !!tasks?.model.selected && ["completed", "cancelled"].includes(tasks.model.selected.occurrence.state);
   const taskLocked = !!tasks && (tasks.model.reading || tasks.model.access === "lost" || ["saving", "unknown", "conflict"].includes(tasks.model.operation.state) || !!tasks.model.draft);
   const preparationLocked = !preparations || ["loading", "unavailable", "lost"].includes(preparations.model.condition);
   const careLocked = !care || care.model.access === "lost" || ["loading", "loading_more"].includes(care.model.list.state)
@@ -60,9 +58,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
   const growthLocked = !growth || growth.model.access === "lost" || growth.model.busy || !!growth.model.pending || growth.model.dirty || growth.model.page?.concerns?.state !== "ready";
   const currentLocked = taskCategory ? taskLocked : preparationCategory ? preparationLocked : growthCategory ? growthLocked : reviewCategory || careCategory ? careLocked : false;
   const filterDisabled = taskCategory ? !tasks || taskLocked : preparationCategory ? preparationLocked : growthCategory ? growthLocked : reviewCategory ? careLocked : personalCategory ? !personal : true;
-  const showingCompactPreparationDetail = preparationCategory && layout.width < 840 && preparations?.model.selected?.status === "archived" && !!dateRange
-    && searchPreparationHistory(preparations.model.documents, filters.searchText, dateRange).some(document => document.id === preparations.model.selected?.id);
-  const showSearch = !careCategory && !profileCategory && !showingCompactTaskDetail && !showingCompactPreparationDetail;
+  const showSearch = !careCategory && !profileCategory;
   const supportsDates = taskCategory || preparationCategory || growthCategory || personalCategory;
   const hasDates = supportsDates && !!(filters.from || filters.to);
   const hasFilters = !!filters.searchText || hasDates;
@@ -85,7 +81,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
       care?.actions.closePanel();
       dispatch({ type: "category", value: next });
       router.setParams({ category: next, status: undefined, older: undefined });
-    });
+    }, "workspace");
   }
   const results = taskCategory ? dateRange ? <TaskHistoryView searchText={filters.searchText} dateRange={dateRange} scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} />
     : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
@@ -106,7 +102,6 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
     : <View testID={`history-unavailable-${filters.category}`}  style={styles.unavailable}>
       <Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
       <Text style={styles.body}>{current.unavailable}</Text>
-      <AppButton label={current.sourceAction} variant="secondary" onPress={() => navigate(() => router.push(current.sourcePath))} />
     </View>;
 
   const resultSurface = <View style={styles.results}>{results}</View>;
@@ -115,28 +110,20 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
     <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
       {compact ? <AppSelect<HistoryCategory> label="歷史分類" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))} onChange={category} />
         : <UnderlineTabs<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
-      <BackgroundSurface padded testID={showSearch ? "history-filter-toolbar" : undefined} style={styles.toolbar}>
+      {showSearch ? <BackgroundSurface padded testID="history-filter-toolbar" style={styles.toolbar}>
         <View style={styles.controlRow}>
           {showSearch ? <View style={styles.searchField}><AppTextField label={`搜尋${current.label}`} accessibilityLabel={`搜尋${current.label}`} value={filters.searchText} maxLength={200} disabled={filterDisabled} onChangeText={value => filter({ type: "search", value })} /></View> : null}
-          <View style={styles.toolbarActions}>
+          {supportsDates || hasFilters ? <View style={styles.toolbarActions}>
             {showSearch && supportsDates ? <AppButton ref={dateTrigger} label={hasDates ? "日期已篩選" : "日期篩選"} variant="secondary" density="compact" disabled={filterDisabled}
               onPress={() => { if (!filterDisabled) setDateDraft({ scope, category: filters.category, from: filters.from, to: filters.to }); }} /> : null}
             {showSearch && hasFilters ? <AppButton label={reviewCategory ? "清除搜尋" : "清除篩選"} variant="quiet" density="compact" disabled={currentLocked}
               onPress={() => filter(reviewCategory ? { type: "search", value: "" } : { type: "reset" })} /> : null}
-            {reviewCategory || careCategory ? <AppButton label="開啟核對" variant="quiet" density="compact" onPress={() => navigate(() => router.push("/care"))} /> : null}
-            {profileCategory ? <AppButton label="查看檔案" variant="quiet" density="compact" onPress={() => navigate(() => router.push("/profile"))} /> : null}
-            {taskCategory ? <AppButton label="開啟待辦" variant="quiet" density="compact" onPress={() => navigate(() => router.push("/tasks"), "workspace")} /> : null}
-            {preparationCategory ? <AppButton label="開啟準備單" variant="quiet" density="compact" onPress={() => navigate(() => router.push({ pathname: "/growth", params: { tab: "preparation" } }))} /> : null}
-            {growthCategory ? <>
-              <AppButton label="查看持續關注" variant="quiet" density="compact" onPress={() => navigate(() => router.push("/growth"))} />
-              <AppButton label="查看年度與季度檔案" variant="quiet" density="compact" onPress={() => navigate(() => router.push("/summary?tab=archive"))} />
-            </> : null}
-          </View>
+          </View> : null}
         </View>
         {showSearch && hasDates ? <Text testID="history-applied-dates" style={styles.meta}>日期：{filters.from && filters.to ? `${filters.from} 至 ${filters.to}` : filters.from ? `${filters.from} 起` : `截至 ${filters.to}`}</Text> : null}
         {notificationCategory ? <Text style={styles.meta}>本人消息，涵蓋帳戶及其他孩子</Text> : null}
         {reviewCategory ? <Text style={styles.meta}>按內容及處理狀態搜尋；暫不支援日期篩選。</Text> : null}
-      </BackgroundSurface>
+      </BackgroundSurface> : null}
       {/* Keep reader identity across responsive control changes; compact uses a select, not tabs. */}
       <AppTabPanel tabsId="history-categories" tabKey={filters.category} active hasTabList={!compact} style={styles.results}>{resultSurface}</AppTabPanel>
       <FormDialog visible={dateDialogVisible} dismissMode="local" scopeKey={scope} formKey={filters.category} title="日期篩選" returnFocusRef={dateTrigger} onClose={() => setDateDraft(null)}>

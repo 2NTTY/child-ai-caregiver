@@ -23,7 +23,7 @@ function setup() {
 const flatten = style => Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean).map(flatten)) : style;
 const range = {from: null, to: null};
 
-test('task history alone uses one record per row while retaining its responsive list-detail split and scroll return', () => {
+test('task history keeps its single-column list unchanged while opening an independent reader', () => {
   const h = setup(), fixture = createTaskFixture('synthetic-history-child', 'normal');
   h.mocks['react-native'].Platform = {OS: 'android'};
   h.mocks['../AppIcon'] = {AppIcon: 'AppIcon'};
@@ -51,11 +51,12 @@ test('task history alone uses one record per row while retaining its responsive 
     first.props.onPress(); render();
     assert.deepEqual(calls.at(-1), [id, 'toggle']);
     assert.equal(h.hosts().find(node => node.type === 'TaskDetail').props.model.selected.id, id);
-    assert.equal(h.node('task-history-list').props['aria-hidden'], width < 840);
-    assert.equal(flatten(h.hosts().find(node => node.props.onLayout).props.style).flexDirection, width >= 840 ? 'row' : undefined);
+    assert.equal(h.node('task-history-list').props['aria-hidden'], undefined);
+    assert.equal(h.hosts().find(node => node.type === 'DetailDialog').props.dismissMode, 'local');
+    assert.equal(h.hosts().find(node => node.type === 'TaskDetail').props.hideCloseAction, true);
     actions.closePanel(); render();
-    assert.equal(h.node('task-history-list').props['aria-hidden'], false);
-    if (width < 840) assert.deepEqual(scrolls.slice(-2), [{y: 0, animated: false}, {y: 246, animated: false}]);
+    assert.equal(h.node('task-history-list').props['aria-hidden'], undefined);
+    assert.deepEqual(scrolls, [], 'Opening and closing never scrolls the background list');
   }
 });
 
@@ -162,4 +163,25 @@ test('a missing closed concern invalidates its modal selection but a retained sa
   workspace.model = {...workspace.model, load: 'loading'}; render(); assert.equal(timeline().props.concern, concern);
   workspace.model = {...workspace.model, load: 'ready', page: {...workspace.model.page, concerns: {state: 'ready', items: []}}}; render(); assert.equal(timeline(), undefined);
   workspace.model = {...workspace.model, page: {...workspace.model.page, concerns: {state: 'ready', items: [concern]}}}; render(); assert.equal(timeline(), undefined, 'A formerly missing concern does not reopen without a click');
+});
+
+test('profile entry waits for a readable current scope and never auto-retries an error or pending operation', () => {
+  const ready = () => ({child: {id: 'child-a', name: 'Synthetic'}, access: 'editable', online: true, reading: false,
+    needsRefresh: false, current: {version: 4}, history: [], historyOpen: false, hasMoreHistory: false, notice: null, operation: {state: 'none'}});
+  for (const patch of [{child: null}, {access: 'lost'}, {online: false}, {reading: true}, {needsRefresh: true}, {current: null},
+    {current: {version: 0}}, {historyOpen: true}, {notice: 'Synthetic read failure'}, ...['saving', 'unknown', 'conflict'].map(state => ({operation: {state}}))]) {
+    const h = setup(), {ProfileHistoryView} = h.load('src/components/profile/ProfileHistoryView.tsx');
+    let model = {...ready(), ...patch}, requests = 0;
+    const render = () => h.render(h.jsx(ProfileHistoryView, {scopeKey: 'parent-a:child-a', model, actions: {showHistory() {requests++;}}}));
+    render(); render(); assert.equal(requests, 0, JSON.stringify(patch));
+    model = ready(); render(); render(); assert.equal(requests, 1, 'Readiness admits one request, not one per action-object render');
+    model = {...model, notice: 'Synthetic first-page failure'}; render(); render();
+    assert.equal(requests, 1); assert.ok(h.hosts().some(node => node.props.label === '重試讀取修改歷史'));
+  }
+  const h = setup(), {ProfileHistoryView} = h.load('src/components/profile/ProfileHistoryView.tsx');
+  let requests = 0, scopeKey = '';
+  const model = {...ready(), access: 'read_only'}, actions = {showHistory() {requests++;}};
+  const render = () => h.render(h.jsx(ProfileHistoryView, {scopeKey, model, actions}));
+  render(); assert.equal(requests, 0, 'Missing identity cannot load');
+  scopeKey = 'parent-a:child-a'; render(); render(); assert.equal(requests, 1, 'Read-only access retains its read capability');
 });

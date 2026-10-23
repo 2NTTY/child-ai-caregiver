@@ -31,7 +31,12 @@ function scenario(width = 1024) {
     '../workspaces/ProfileWorkspace': { useProfileWorkspace: () => ({ model: profile, actions }) },
   };
   const h = harness(mocks); let id = 0;
-  mocks.react = { ...h.react, useId: () => h.react.useRef(`profile-${++id}`).current };
+  mocks.react = { ...h.react, useId: () => h.react.useRef(`profile-${++id}`).current,
+    useSyncExternalStore(subscribe, getSnapshot) {
+      const [, changed] = h.react.useState(0);
+      h.react.useEffect(() => subscribe(() => changed(value => value + 1)), [subscribe]);
+      return getSnapshot();
+    } };
   const motion = { MotionDisclosure: ({ expanded, children, ...props }) => h.jsx('Disclosure', { ...props, expanded, children: expanded ? children : null }),
     MotionReveal: ({ children, value }) => children(value) };
   mocks['../../motion'] = mocks['../motion'] = motion;
@@ -116,8 +121,15 @@ test('unknown blocks close and writes, but preserves existing recovery and non-m
   const s = scenario(); s.click('編輯檔案'); s.pending(true); s.patch({ operation: { state: 'unknown', message: '原操作未確認', reference: 'original-op' } });
   s.click('關閉'); assert.ok(s.button('留在此頁查核')); assert.equal(s.button('捨棄草稿並離開'), undefined);
   assert.equal(s.h.hosts().find(x => x.type === 'ProfileForm').props.editable, false);
-  assert.equal(s.button('重新讀取檔案').props.disabled, true); assert.equal(s.counts().discarded, 0);
+  assert.equal(s.button('重新讀取檔案'), undefined); assert.equal(s.counts().discarded, 0);
   s.click('留在此頁查核'); assert.ok(s.h.hosts().find(x => x.type === 'ProfileForm'));
+});
+
+test('normal profile reading has no persistent refresh, while freshness recovery keeps its original callback and lock', () => {
+  const s = scenario(); assert.equal(s.button('重新讀取檔案'), undefined); assert.equal(s.button('重新讀取及核對'), undefined);
+  s.patch({ needsRefresh: true }); s.click('重新讀取及核對'); assert.equal(s.counts().reads, 1);
+  s.patch({ reading: true }); assert.equal(s.button('重新讀取及核對').props.disabled, true);
+  s.patch({ reading: false, operation: { state: 'unknown', reference: 'original-op' } }); assert.equal(s.button('重新讀取及核對').props.disabled, true);
 });
 
 test('child deletion stays secondary and forwards only to the original owner with every existing gate', () => {

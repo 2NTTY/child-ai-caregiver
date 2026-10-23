@@ -27,7 +27,9 @@ export class ProductAgentOwner {
   private snapshot: ProductAgentSnapshot;
   private epoch = 0;
   private request: AbortController | null = null;
-  private pendingRead: "first" | "more" | null = null;
+  private pendingRead: { kind: "first" | "more"; quiet: boolean } | null = null;
+  private inboxRead: boolean | null = null;
+  private quietCancel: (() => void) | null = null;
   private pendingLoadedPages = 0;
   private readonly listeners = new Set<() => void>();
   private readonly rawRuns = new Map<string, ProductAgentResult>();
@@ -57,11 +59,13 @@ export class ProductAgentOwner {
     if (!blocked) this.resumePendingRead();
   }
   private resumePendingRead() {
-    if (!this.pendingRead) return;
+    if (!this.pendingRead && this.inboxRead === null) return;
     const epoch = this.epoch;
     // Defer until mutation-lock subscribers have settled; failures never schedule a retry.
     queueMicrotask(() => {
-      if (epoch === this.epoch && this.pendingRead) void this.readPending(this.pendingRead === "more");
+      if (epoch !== this.epoch) return;
+      if (this.pendingRead) void this.readPending(this.pendingRead.kind === "more", this.pendingRead.quiet);
+      else if (this.inboxRead !== null) void this.readInbox(this.inboxRead);
     });
   }
   private model(patch: Partial<AgentRunModel>) { this.update({ model: { ...this.snapshot.model, ...patch } }); }
@@ -84,7 +88,7 @@ export class ProductAgentOwner {
           pending: { ...pending, input: { ...pending.input }, reviewed: false }, run: this.snapshot.model.run,
           rawRun: this.rawRuns.get(pending.runId) ?? null });
       }
-      this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.pendingLoadedPages = 0; this.scope = scope;
+      this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.inboxRead = null; this.quietCancel = null; this.pendingLoadedPages = 0; this.scope = scope;
       const candidate = identityKey && scope ? this.recovery.get(scope.key) : undefined;
       const saved = candidate && candidate.scope.userId === scope?.userId && candidate.scope.childId === scope?.childId ? candidate : undefined;
       this.recovery.delete(scope?.key ?? "");
@@ -106,25 +110,33 @@ export class ProductAgentOwner {
   forgetChild(childId: string) {
     for (const [key, saved] of this.recovery) if (saved.scope.childId === childId) this.recovery.delete(key);
     if (this.scope?.childId !== childId) return;
-    this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.pendingLoadedPages = 0;
+    this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.inboxRead = null; this.quietCancel = null; this.pendingLoadedPages = 0;
     this.rawRuns.clear(); this.selectedRunId = null; this.api = this.createApi();
     this.update(initial(this.snapshot.model.online));
   }
-  private begin(kind: "read" | "write") {
+  private begin(kind: "read" | "write", quiet = false) {
+    // Explicit run reads/decisions take priority over an interruptible list GET.
+    // Their existing confirmation reset and original-operation rules stay unchanged.
+    if (!quiet && this.quietCancel) {
+      const cancel = this.quietCancel; this.quietCancel = null;
+      this.request?.abort(); this.request = null; cancel();
+    }
     if (!this.scope || !this.snapshot.model.online || this.request || this.snapshot.model.readState === "denied" || kind === "write" && this.snapshot.model.writesBlocked) return null;
     const controller = new AbortController(), epoch = this.epoch, scope = this.scope;
-    this.request = controller; this.model({ busy: kind });
-    return { controller, scope, current: () => epoch === this.epoch && this.scope?.key === scope.key,
+    this.request = controller;
+    if (!quiet) this.model({ busy: kind });
+    return { controller, scope, current: () => epoch === this.epoch && this.scope?.key === scope.key && (!quiet || this.request === controller),
       finish: () => {
-        if (this.request === controller) this.request = null;
-        if (epoch === this.epoch) { this.model({ busy: null }); this.resumePendingRead(); }
+        if (this.request !== controller) return;
+        this.request = null; this.quietCancel = null;
+        if (epoch === this.epoch) { if (!quiet) this.model({ busy: null }); this.resumePendingRead(); }
       } };
   }
   private deny(error: ProductAgentApiError) {
     const identityLost = error.status === 401 || error.code === "session_changed" || error.code === "unauthorized";
     if (identityLost) this.recovery.clear();
     else for (const [key, saved] of this.recovery) if (saved.scope.childId === this.scope?.childId) this.recovery.delete(key);
-    this.rawRuns.clear(); this.selectedRunId = null; this.pendingRead = null; this.pendingLoadedPages = 0;
+    this.rawRuns.clear(); this.selectedRunId = null; this.pendingRead = null; this.inboxRead = null; this.quietCancel = null; this.pendingLoadedPages = 0;
     this.update({ ...initial(this.snapshot.model.online), model: { ...initial(this.snapshot.model.online).model,
       readState: "denied", notice: { tone: "warning", text: "登入、存取權或資料已改變；私人結果已清除。" } },
       pending: { state: "denied", entries: [], nextCursor: null },
@@ -230,21 +242,33 @@ export class ProductAgentOwner {
             ? input.decision === "accept" ? "未接受成功" : "未略過成功" : "暫時無法確認結果" } });
       }
     } finally { request.finish(); }
-    if (request.current() && !this.snapshot.model.pendingDecision && this.snapshot.pending.state === "ready" && !this.pendingRead) void this.readPending();
+    if (request.current() && !this.snapshot.model.pendingDecision && this.snapshot.pending.state === "ready" && !this.pendingRead) void this.readPending(false, true);
   }
-  readPending = async (more = false) => {
-    if (!this.scope || this.snapshot.model.readState === "denied" || more && !this.snapshot.pending.nextCursor) return;
+  readPending = async (more = false, quiet = false) => {
+    if (!this.scope || this.snapshot.model.readState === "denied") return;
+    if (more && !this.snapshot.pending.nextCursor) {
+      // A quiet refresh can remove the cursor while a next-page intent is queued.
+      // Drop only that obsolete intent so the visible inbox (or a newer first read) can drain.
+      if (this.pendingRead?.kind === "more") this.pendingRead = null;
+      this.resumePendingRead();
+      return;
+    }
     // A fresh read supersedes queued pagination. Keep only one intent in this private scope.
-    this.pendingRead = more && this.pendingRead !== "first" ? "more" : "first";
+    this.pendingRead = { kind: more && this.pendingRead?.kind !== "first" ? "more" : "first", quiet: quiet && (this.pendingRead?.quiet ?? true) };
     if (this.snapshot.model.pendingDecision || this.snapshot.model.writesBlocked || this.request || !this.snapshot.model.online) return;
-    more = this.pendingRead === "more"; this.pendingRead = null;
-    const request = this.begin("read"); if (!request) return;
+    more = this.pendingRead.kind === "more"; quiet = this.pendingRead.quiet && !more; this.pendingRead = null;
+    const request = this.begin("read", quiet); if (!request) return;
+    const before = this.snapshot.pending;
+    if (quiet) this.quietCancel = () => {
+      this.pendingRead = { kind: "first", quiet: true };
+      this.update({ pending: before });
+    };
     // Refresh the bounded loaded window with new cursors; never mix a new head with an old tail.
     const limit = more ? 1 : Math.max(1, this.pendingLoadedPages);
     let cursor = more ? this.snapshot.pending.nextCursor : null, pagesRead = 0;
     const entries = new Map((more ? this.snapshot.pending.entries : []).map(entry => [`${entry.runId}:${entry.proposal.id}`, entry]));
     const seenCursors = new Set<string | null>();
-    this.update({ pending: { ...this.snapshot.pending, state: "loading", entries: this.snapshot.pending.entries } });
+    if (!quiet || !before.hasSnapshot) this.update({ pending: { ...before, state: "loading" } });
     try {
       while (pagesRead < limit) {
         if (seenCursors.has(cursor)) throw new ProductAgentApiError();
@@ -271,10 +295,22 @@ export class ProductAgentOwner {
       else this.update({ pending: { ...this.snapshot.pending, state: request.controller.signal.aborted && !this.snapshot.pending.hasSnapshot ? "idle" : "failed" } });
     } finally { request.finish(); }
   };
-  readInbox = async () => {
-    if (this.snapshot.inbox.locked || this.snapshot.inbox.state === "denied") return;
-    const request = this.begin("read"); if (!request) return;
-    this.update({ inbox: { ...this.snapshot.inbox, state: "loading" } });
+  readActivity = (includePending = true) => {
+    if (includePending) void this.readPending(false, true);
+    void this.readInbox(true);
+  };
+  readInbox = async (quiet = false) => {
+    if (!this.scope || this.snapshot.inbox.state === "denied") return;
+    this.inboxRead = quiet && (this.inboxRead ?? true);
+    if (this.snapshot.inbox.locked || this.request || !this.snapshot.model.online) return;
+    quiet = this.inboxRead; this.inboxRead = null;
+    const request = this.begin("read", quiet); if (!request) return;
+    const before = this.snapshot.inbox;
+    if (quiet) this.quietCancel = () => {
+      this.inboxRead = true;
+      this.update({ inbox: { ...this.snapshot.inbox, state: before.state, entries: before.entries, loadedAt: before.loadedAt } });
+    };
+    if (!quiet || !before.loadedAt) this.update({ inbox: { ...before, state: "loading" } });
     const timeout = setTimeout(() => request.controller.abort(), 15_000);
     try {
       const apiUrl = this.baseUrl.endsWith("/api") ? this.baseUrl : `${this.baseUrl}/api`;
@@ -288,6 +324,7 @@ export class ProductAgentOwner {
       }
       const parsed = runsSchema.safeParse(await response.json());
       if (!request.current()) return;
+      if (request.controller.signal.aborted || !this.snapshot.model.online) throw new ProductAgentApiError();
       if (!parsed.success || new Set(parsed.data.runs.map(item => item.runId)).size !== parsed.data.runs.length) throw new ProductAgentApiError();
       this.update({ inbox: { ...this.snapshot.inbox, state: "ready", loadedAt: new Date().toISOString(),
         entries: parsed.data.runs.map(item => ({ ...item, label: "已保存背景運行" })) } });
@@ -312,5 +349,5 @@ export class ProductAgentOwner {
       return url.href;
     } catch { return null; }
   };
-  dispose() { this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.pendingLoadedPages = 0; this.rawRuns.clear(); this.recovery.clear(); this.identityKey = null; this.scope = null; this.selectedRunId = null; this.snapshot = initial(this.snapshot.model.online); this.listeners.clear(); }
+  dispose() { this.epoch++; this.request?.abort(); this.request = null; this.pendingRead = null; this.inboxRead = null; this.quietCancel = null; this.pendingLoadedPages = 0; this.rawRuns.clear(); this.recovery.clear(); this.identityKey = null; this.scope = null; this.selectedRunId = null; this.snapshot = initial(this.snapshot.model.online); this.listeners.clear(); }
 }

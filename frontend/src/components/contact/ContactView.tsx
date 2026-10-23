@@ -43,7 +43,7 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
       <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={model.notice} urgent={model.operation === "failed"} />
       <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
       <View style={s.toolbar}><View style={s.copy}><Text style={s.meta}>接收同意、任務授權、渠道結果各自核對；本頁不發送通知。</Text></View>
-        <AppButton label={model.pending ? '先查原收據及更新聯絡資料' : '更新聯絡資料並保留選項'} density="compact" variant="secondary" disabled={!model.online || model.busy || model.access === 'lost'} onPress={actions.refresh} />
+        {model.pending || model.load === 'error' || model.operation === 'conflict' || model.dirty ? <AppButton label={model.pending ? '先查原收據及更新聯絡資料' : model.dirty ? '核對目前聯絡資料並保留選項' : '重試讀取聯絡資料'} density="compact" variant="secondary" disabled={!model.online || model.busy || model.access === 'lost'} onPress={actions.refresh} /> : null}
       </View>
       {model.busy ? <Text style={s.meta}>正在讀取／提交，尚未確認最新狀態。</Text> : null}
       {!model.online ? <Text style={s.warning}>目前離線；不提交、不排隊外發。選項及原操作只留本頁。</Text> : null}

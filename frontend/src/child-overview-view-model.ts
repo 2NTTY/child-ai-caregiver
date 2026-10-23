@@ -45,10 +45,25 @@ export function readChildProfile(model: ProfileViewModel | null, scopeKey: strin
   return { state: "confirmed", data, statusLabel: "已確認檔案", message: null };
 }
 
-export function childProfileAgeLabel(data: ProfileDataView | null): string {
+export function childProfileAgeLabel(data: ProfileDataView | null, today?: string): string {
   const age = data?.age;
   if (!age || age.kind === "unknown") return "年齡未知";
-  if (age.kind === "birth_date") return `出生日期 ${age.date}`;
+  if (age.kind === "birth_date") {
+    if (!today) return `出生日期 ${age.date}`;
+    const calendarDate = (value: string) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+      const date = new Date(`${value}T00:00:00Z`);
+      return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value ? date : null;
+    };
+    const birth = calendarDate(age.date), current = calendarDate(today);
+    if (!birth || !current || birth > current) return "出生日期待核對";
+    let months = (current.getUTCFullYear() - birth.getUTCFullYear()) * 12 + current.getUTCMonth() - birth.getUTCMonth();
+    const anniversaryDay = Math.min(birth.getUTCDate(), new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 0)).getUTCDate());
+    if (current.getUTCDate() < anniversaryDay) months--;
+    if (months < 1) return `${Math.floor((current.getTime() - birth.getTime()) / 86400000)} 日`;
+    if (months < 12) return `${months} 個月`;
+    return `${Math.floor(months / 12)} 歲${months % 12 ? ` ${months % 12} 個月` : ""}`;
+  }
   return `約 ${age.rawValue} ${profileAgeUnitOptions.find(item => item.value === age.unit)?.label ?? age.unit}（截至 ${age.asOf}）`;
 }
 

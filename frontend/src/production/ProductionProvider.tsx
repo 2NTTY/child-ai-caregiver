@@ -9,6 +9,7 @@ import { Text } from "react-native-paper";
 import type { AuthMode, Credentials } from "../../../src/client/records-api";
 import { emptyAssistantDraft, photoAttachment, type AssistantAttachment } from "../assistant-draft";
 import { AppDialog } from "../components/AppDialog";
+import { DeleteChildDialog } from "../components/DeleteChildDialog";
 import { AppButton } from "../components/ui";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import type { PreviewScenario } from "../preview/fixture";
@@ -147,7 +148,8 @@ function useProductionValue(owner: ProductionOwner) {
       prepareDeletion: () => { const raw = owner.controller.getSnapshot();
         if (current.current.identityKey === snapshot.identityKey && owner.canStartDomainWrite() && !raw.busy && raw.childOutcome === "draft" && !raw.deletion
           && Object.values(raw.drafts).every(item => item.outcome === "draft") && !owner.chatController.hasUnsavedInput() && !owner.draftOwner.getSnapshot().attachments.length) return owner.accountOwner.prepareDeletion(); },
-      executeDeletion: (password: string, confirmation: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.executeDeletion(password, confirmation); },
+      verifyDeletionIdentity: (password: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.verifyDeletionIdentity(password); },
+      executeDeletion: (confirmation: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.executeDeletion(confirmation); },
       cancelPreparedDeletion: () => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.cancelPreparedDeletion(); },
       checkDeletion: () => owner.accountOwner.checkDeletion(),
       downloadNextPart: (save: (text: string, filename: string, isCurrent: () => boolean) => void | Promise<void>) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.downloadNextPart(save); },
@@ -174,6 +176,7 @@ function useProductionValue(owner: ProductionOwner) {
     requestChatReply: async (id: string) => { if (!currentScope() || !owner.chatWritesAllowed()) return; const known = new Set(owner.chatController.getSnapshot().messages.map(item => item.id)); await owner.chatController.requestReply(id); if (currentScope() && owner.chatController.getSnapshot().messages.some(item => !known.has(item.id))) owner.invalidatePrivateReads(); },
     agentModel: agent.model, agentInbox: agent.inbox, agentRuns: agent.runs, agentPending: agent.pending,
     chatWritesAllowed: !owner.hasDomainPending() && !agent.model.busy && !agent.model.pendingDecision && !authorization.busy && !authorization.pending,
+    readAgentActivity: (includePending = true) => { if (currentScope()) owner.agentOwner.readActivity(includePending); },
     readAgentPending: (more = false) => { if (currentScope()) void owner.agentOwner.readPending(more); },
     authorization, authorizationActions: {
       readPolicy: () => { if (currentScope()) void owner.authorizationOwner.readPolicy(); },
@@ -267,17 +270,7 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
     if (state.auth !== "signedIn" || !owner.accountOwner.isReady()) void owner.refresh();
   }, [owner, activity.active, activity.online]);
   return <QueryClientProvider client={owner.queryClient}><ProductionOwnerContext.Provider value={owner}><ProductionContext.Provider value={value}><AccountCallbackGate>{children}</AccountCallbackGate>
-    <AppDialog visible={value.recordsState.deletion !== null} onDismiss={() => owner.controller.cancelDeleteChild()}>
-      <AppDialog.Title>永久刪除這位孩子及附屬資料？</AppDialog.Title>
-      <AppDialog.Content><Text>這會刪除所選孩子、照護記錄、私人聊天、記憶、任務及附屬資料。此操作不能撤銷。</Text>
-        {value.recordsState.deletion?.message ? <Text>{value.recordsState.deletion.message}</Text> : null}</AppDialog.Content>
-      <AppDialog.Actions>
-        <AppButton label="保留孩子" variant="quiet" disabled={!!value.recordsState.busy || value.recordsState.deletion?.phase === "unknown"} onPress={() => owner.controller.cancelDeleteChild()} />
-        {value.recordsState.deletion?.phase === "confirm" ? <AppButton label="確認永久刪除" variant="danger" disabled={!!value.recordsState.busy || !value.online} onPress={() => { void owner.controller.confirmDeleteChild(); }} />
-          : <AppButton label="查核原刪除結果" disabled={!!value.recordsState.busy || !value.online} onPress={() => { void owner.controller.reloadChildren(); }} />}
-        {value.recordsState.deletion?.phase === "checked" ? <AppButton label="核對後重試原刪除" variant="danger" disabled={!!value.recordsState.busy || !value.online} onPress={() => owner.controller.reviewDeleteChild()} /> : null}
-      </AppDialog.Actions>
-    </AppDialog>
+    <DeleteChildDialog state={value.recordsState} confirmationKey={owner.childDeletionConfirmationKey()} getConfirmationKey={owner.childDeletionConfirmationKey} controller={owner.controller} />
     <AppDialog visible={value.logoutConfirmation} onDismiss={value.cancelLogout}>
       <AppDialog.Title>登出並清除未提交內容？</AppDialog.Title>
       <AppDialog.Content><Text>這次登出會清除本頁的文字及照片草稿。已提交但結果未知的操作仍須沿原操作查核。</Text></AppDialog.Content>

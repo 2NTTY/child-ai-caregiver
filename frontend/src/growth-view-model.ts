@@ -118,7 +118,12 @@ export function growthConcernTimelineEntries(concern: GrowthConcern, page: Growt
   }
   return entries.sort((a, b) => {
     const left = Date.parse(a.at), right = Date.parse(b.at);
-    return Number.isNaN(left) ? Number.isNaN(right) ? 0 : 1 : Number.isNaN(right) ? -1 : left - right;
+    // Newest known event/state-update time first; missing times never imply recency.
+    if (Number.isFinite(left) && Number.isFinite(right) && left !== right) return right - left;
+    if (Number.isFinite(left) !== Number.isFinite(right)) return Number.isFinite(left) ? -1 : 1;
+    const key = (entry: GrowthConcernTimelineEntry) => entry.kind === "event" ? `event:${entry.event.id}` : `attention:${entry.item.id}:${entry.item.version}`;
+    const leftKey = key(a), rightKey = key(b);
+    return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
   });
 }
 export function growthArchivedConcerns(model: GrowthViewModel, searchText = "", dateRange: { from: string | null; to: string | null } = { from: null, to: null }): GrowthConcern[] {

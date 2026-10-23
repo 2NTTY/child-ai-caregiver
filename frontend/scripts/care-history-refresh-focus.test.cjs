@@ -10,6 +10,9 @@ const dom = new JSDOM('<!doctype html><html><body><div id="root"></div><input id
 for (const key of ['window', 'document', 'HTMLElement', 'Element', 'Node', 'getComputedStyle', 'ShadowRoot']) global[key] = dom.window[key];
 Object.defineProperty(global, 'navigator', {value: dom.window.navigator, configurable: true});
 global.IS_REACT_ACT_ENVIRONMENT = true;
+global.requestAnimationFrame = dom.window.requestAnimationFrame.bind(dom.window);
+global.cancelAnimationFrame = dom.window.cancelAnimationFrame.bind(dom.window);
+global.MutationObserver = dom.window.MutationObserver;
 const React = req('react'), {createRoot} = req('react-dom/client'), ts = req('typescript'), e = React.createElement;
 let width = 736, focusEvents = [], rejectCard = false;
 const realFocus = HTMLElement.prototype.focus;
@@ -34,7 +37,10 @@ function load(relative) {
     if (name.endsWith('/useContainerWidth')) return {useContainerWidth: () => ({width, ref: null, onLayout() {}})};
     if (name.endsWith('/ui')) return {AppButton: Button, AppTextField: Empty, AppSelect: Empty, AppSelectionTrigger: Button, SectionHeader: ({action}) => e('header', null, action)};
     if (name.endsWith('/motion')) return {MotionReveal: ({children, value}) => children(value), MotionDisclosure: ({children, expanded}) => expanded ? children : null};
-    if (name.endsWith('/FormDialog')) return {FormDialog: ({visible, children, onClose}) => visible ? e('section', {'data-testid': 'correction-form'}, e(Button, {label: 'Close form', onPress: onClose}), children) : null};
+    if (name.endsWith('/AppDialog')) return {AppDialog: Object.assign(({visible, children, onDismiss, onClosed}) => e(req('react-native-web').Modal, {visible, transparent: true, animationType: 'none', onRequestClose: onDismiss, onDismiss: onClosed}, e('section', null, children)), Object.fromEntries(['Title', 'Content', 'Actions', 'ScrollArea'].map(key => [key, View])))};
+    if (name.endsWith('/AppScrollView')) return {AppScrollView: View};
+    if (name.endsWith('/PreviewNavigationGuard')) return {usePreviewNavigation: () => callback => callback()};
+    if (name.endsWith('/AppIcon')) return {AppIcon: Empty};
     const ports = {AppStatusBadge: Empty, ReadStateNotice: View, CareWriteNotice: Empty, CareRecordForm: Empty, CareRecordDelete: Empty};
     if (/\/(AppStatusBadge|ReadStateNotice|CareReviewHistoryView|CareRecordForm|CareRecordDelete)$/.test(name)) return ports;
     if (!name.startsWith('.')) return req(name);
@@ -55,7 +61,7 @@ async function setup(t) {
     showHistory() {model.detail = {...model.detail, historyOpen: true, historyState: 'ready', history: [{...current, version: 1, values: {...current.values, text: 'Synthetic original v1'}}]};},
     startCorrection(id) {assert.equal(id, record.id); calls.correction++;}, startDeletion(id) {assert.equal(id, record.id); calls.deletion++;}};
   const app = createRoot(document.getElementById('root'));
-  const render = (Component = CareSavedRecordsView) => React.act(() => app.render(e(Component, {model, actions})));
+  const render = (Component = CareSavedRecordsView) => React.act(() => app.render(e(Component, {model: {...model}, actions})));
   const row = () => document.querySelector('[data-testid="care-history-card-care-a"]'), list = () => document.querySelector('[data-testid="care-history-list"]');
   const button = label => [...document.querySelectorAll('button')].find(node => node.textContent === label);
   const open = async () => {await React.act(() => {row().focus(); row().click();}); await render();};

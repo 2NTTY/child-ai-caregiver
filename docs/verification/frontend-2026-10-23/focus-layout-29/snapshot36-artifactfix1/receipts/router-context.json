@@ -1,0 +1,23 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "originalReceiptSha256": "376f6343781c726af49adbfe46c82cef9ee2597547facd072cb0713af292c371",
+  "status": "PASS_ISOLATED_CONTEXT_ONLY36",
+  "entriesDecoded": 4174,
+  "contextCount": 5,
+  "otherSnapshotDependencies": [],
+  "prepSourceSha256": "c2a36a29bd20b6d97d45bdd8958c4649f38a2cc52082319ce016c330b601d941",
+  "prepTransforms": [
+    {
+      "sourceSha1": "8bccbe8b3ad7fdebd8dfe68bf9a1ec9501fcb6d9",
+      "codeSha256": "26c541c46e6d8fac5c9d981d3ed72e014bd44d2ab2ba18df3d6938b611bfd134",
+      "hasSnapshotToken": true
+    },
+    {
+      "sourceSha1": "8bccbe8b3ad7fdebd8dfe68bf9a1ec9501fcb6d9",
+      "codeSha256": "96baba7e8cb68eadd72d81847af243530f16b4ca7947c14f5d779cad145dc137",
+      "hasSnapshotToken": true
+    }
+  ],
+  "sharedPriorContextHashesUnchanged": true,
+  "note": "Dedicated per-artifact cache; old source35 cached routes are not reused."
+}

@@ -42,6 +42,7 @@ function load(relative, suffix = "") {
     : name.endsWith('/theme') ? theme
     : name.endsWith('/chat-presentation') ? presentation
     : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/online-refresh-events') ? { subscribeOnlineRefresh: () => noop }
     : name.endsWith('/BackgroundSurface') ? { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false }
     : name.endsWith('/ProductionFirstScreenGate') ? { useProductionVisibleSettingsSection: noop }
     : name.endsWith('/agent-feedback') ? { AGENT_PROGRESS_LABELS: {} }
@@ -52,6 +53,7 @@ function load(relative, suffix = "") {
     : name.endsWith('/AppDialog') ? { AppDialog: dialog }
     : name.endsWith('/useContainerWidth') ? { useContainerWidth: () => ({ width: 390, ref: null, onLayout: noop }) }
     : name.endsWith('/useInteractionDensity') ? { useInteractionDensity: () => false }
+    : name.endsWith('/useQuietReadFocus') ? load('src/components/useQuietReadFocus.ts')
     : name.endsWith('/useChatInitialPosition') ? { useChatInitialPosition: () => noop }
     : name.endsWith('/useChatScrollIntent') ? { useChatScrollIntent: noop }
     : name.endsWith('/chat-arrival') ? { isNewReplyArrival: () => false }
@@ -74,7 +76,7 @@ function componentDependency(name) {
     '/ui': ['AppButton', 'AppTextField', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'TextLink'],
     '/AgentComposer': ['AgentComposer'], '/ChatMessage': ['ChatMessage'], '/ChatTimeline': ['ChatTimeline'],
     '/AgentConversation': ['AgentConversation'], '/PhotoInputDomains': ['AgentPhotoInput'],
-    '/AppScrollView': ['AppScrollView'], '/AppIcon': ['AppIcon'], '/AppStatusBadge': ['AppStatusBadge'], '/motion': ['MotionEntrance', 'MotionDisclosure'],
+    '/AppScrollView': ['AppScrollView'], '/AppIcon': ['AppIcon'], '/AppStatusBadge': ['AppStatusBadge'], '/StatusAnnouncement': ['StatusAnnouncement'], '/motion': ['MotionEntrance', 'MotionDisclosure'],
     '/AgentInboxView': ['AgentInboxView'], '/AgentRunView': ['AgentRunView'], '/ReadStateNotice': ['ReadStateNotice'],
     '/AppCheckbox': ['AppCheckbox'], '/BackgroundSettings': ['BackgroundSettings'], '/MotionSettings': ['MotionSettings'],
     '/PageFrame': ['PageFrame'], '/AgentAuthorization': ['AgentAuthorization'], '/ModelSettingsView': ['ModelSettingsView'],
@@ -107,7 +109,7 @@ function base() {
     checkVoiceUpload: action('check-voice'), checkFileUpload: action('check-file'),
     sendChat: action('send'), requestChatReply: action('reply'), agentRuns: {}, chatWritesAllowed: true, selectAgentRun: action('select-run'), openAgentSource: noop,
     agentModel: { online: true, readState: 'idle', run: null, busy: null, pendingDecision: null },
-    agentPending: { state: 'idle', entries: [] }, agentInbox: {}, agentActions: {}, agentInboxActions: {}, readAgentPending: action('pending'),
+    agentPending: { state: 'idle', entries: [] }, agentInbox: {}, agentActions: {}, agentInboxActions: {}, readAgentPending: action('pending'), readAgentActivity: noop,
     authorization: { policy: null, policyState: 'idle', draft: { recordKinds: [], allowPrivateNotes: false, allowSelfTasks: false, allowRecordCorrections: false, reminders: false }, notes: [], receipts: {}, online: true },
     authorizationActions: { readReceipts: action('receipts') }, owner: { authorizationOwner: { mayDelete: () => false } }, signOut: noop,
   };

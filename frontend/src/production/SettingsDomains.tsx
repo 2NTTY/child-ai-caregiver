@@ -166,7 +166,7 @@ function NotificationPreferencesForm({ domain }: { domain: PersonalDomains["pref
     </View>} />;
   }
   return <SectionCard><SectionHeader density="compact" title="通知偏好" subtitle="設定本人的安靜時段，不會綁定通知渠道或授權發送。"
-    action={<AppButton label="重新讀取" accessibilityLabel="重新讀取通知偏好" variant="quiet" density="compact" disabled={!domain.online || domain.busy} onPress={domain.refresh} />} />
+    action={!domain.original && (!domain.fresh || form.formState.isDirty || !!review) ? <AppButton label="重新讀取" accessibilityLabel="重新讀取通知偏好" variant="quiet" density="compact" disabled={!domain.online || domain.busy} onPress={domain.refresh} /> : undefined} />
     {!domain.online ? <Text style={styles.meta}>目前離線；恢復連線並重新讀取後才可保存。</Text> : null}
     {needsAttention && domain.notice ? <Text accessibilityLiveRegion="polite" style={styles.meta}>{domain.notice}</Text> : null}
     {!domain.preferences && !domain.notice ? <Text style={styles.meta}>{domain.busy ? "正在讀取通知偏好…" : "尚未讀取通知偏好，請重新讀取。"}</Text> : null}

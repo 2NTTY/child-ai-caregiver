@@ -8,7 +8,7 @@ import { MotionDisclosure } from "../../motion";
 import { AppButton, SectionCard, SectionHeader } from "../ui";
 import { TaskSnapshot, TaskSnapshotMetadata, TaskWorkerMetadata, taskAssigneeLabel, taskDisplayTime } from "./TaskContent";
 
-export function TaskDetail({ model, actions }: { model: TasksViewModel; actions: TasksActions }) {
+export function TaskDetail({ model, actions, hideCloseAction = false }: { model: TasksViewModel; actions: TasksActions; hideCloseAction?: boolean }) {
   const task = model.selected!;
   const compactHeader = useWindowDimensions().width < 650;
   const locked = model.reading || ["saving", "unknown", "conflict"].includes(model.operation.state);
@@ -21,7 +21,7 @@ export function TaskDetail({ model, actions }: { model: TasksViewModel; actions:
     : model.workerEnabled === false ? "提醒處理目前暫停。" : metadata.reminders.length ? `有 ${metadata.reminders.length} 次本人站內提醒記錄；外部通知送達仍須另行核對。`
       : work?.status === "pending" && nextCheck?.isValid ? `下次檢查提醒安排：${nextCheck.toFormat("M月d日 HH:mm")}。這不是送達確認。`
         : "尚無可核對的提醒安排。";
-  const close = <AppButton label="關閉詳情" variant="quiet" style={styles.closeButton} onPress={actions.closePanel} disabled={locked} />;
+  const close = hideCloseAction ? null : <AppButton label="關閉詳情" variant="quiet" style={styles.closeButton} onPress={actions.closePanel} disabled={locked} />;
   return <SectionCard><View style={styles.detailHeader}>
     <SectionHeader density="compact" title={task.title} action={compactHeader ? undefined : close} />
     {compactHeader ? close : null}

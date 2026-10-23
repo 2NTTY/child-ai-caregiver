@@ -44,7 +44,7 @@ export function TaskKnowledgeMemoryManagement() {
       <MemoryRecovery owner={owner} onLatest={value => setEditor(value)} />
       <View style={s.compactActions}><AppButton label="人工新增候選事實" variant="secondary" disabled={owner.busy || management.locked} onPress={() => edit({ kind: "fact", item: null })} />
         <AppButton label="人工新增話題" variant="secondary" disabled={owner.busy || management.locked} onPress={() => edit({ kind: "topic", item: null })} />
-        <AppButton label="重新讀取並核對" variant="quiet" disabled={owner.busy || management.locked && !management.pending && !management.conflict} onPress={owner.refresh} /></View>
+        {owner.failed && !management.pending && !management.conflict ? <AppButton label="重試讀取記憶" variant="quiet" disabled={owner.busy || !owner.value.model.online} onPress={owner.refresh} /> : null}</View>
       <Text style={s.title}>已取得的事實</Text>
       {owner.facts.map(item => <View key={item.id} style={s.smallStack}><Text selectable style={s.body}>{item.key}：{item.content}</Text>
         <Text style={s.meta}>{factStatusLabels[item.status]} · {visibilityLabels[item.visibility]} · 版本 {item.version} · {item.sourceState === "changed" ? "來源已改變" : "來源目前版本"}</Text>

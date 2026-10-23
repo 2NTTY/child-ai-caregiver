@@ -60,7 +60,7 @@ test('compact assistant actions precede documents while secondary tools and manu
   assert.ok(ordered.indexOf(footer) < ordered.indexOf(h.props.previewControls));
   assert.equal(label(footer, '查看已歸檔'), undefined);
   assert.ok(ordered.indexOf(content) < ordered.indexOf(label(tree, '查看已歸檔')));
-  assert.ok(ordered.indexOf(content) < ordered.indexOf(label(tree, '重新讀取準備單')));
+  assert.equal(label(tree, '重新讀取準備單'), undefined);
   assert.equal(label(tree, '查看已歸檔').props.variant, 'quiet');
   assert.ok(label(footer, '用途'));
   assert.equal(label(footer, '到助手準備下一份').props.variant, 'secondary');
@@ -117,6 +117,46 @@ test('normal preview detail stays inside the existing accessible disclosure', ()
   assert.ok(label(tree, '準備單預覽狀態'));
   label(tree, '預覽來源與限制').props.onPress();
   assert.equal(label(h.renderPreview(), '合成準備單示例'), undefined);
+});
+
+test('normal ready, empty and read-only pages have no persistent refresh during quiet reads', () => {
+  const h = harness();
+  for (const documents of [[], [{id: 'active-a', status: 'active'}]]) {
+    h.workspace.model.documents = documents;
+    for (const condition of ['ready', 'empty', 'read_only']) {
+      h.workspace.model.condition = condition; h.workspace.model.busy = false;
+      assert.equal(label(h.render(), '重新讀取準備單'), undefined);
+      h.workspace.model.busy = true;
+      assert.equal(label(h.render(), '重新讀取準備單'), undefined); assert.equal(label(h.render(), '正在處理文件…'), undefined);
+      assert.deepEqual(reader(h.render()).props.documents, documents);
+      h.workspace.model.busy = false;
+      assert.equal(label(h.render(), '重新讀取準備單'), undefined);
+    }
+  }
+});
+
+test('failed reads and original-operation checks keep contextual recovery without a cold or revoked refresh control', () => {
+  const h = harness(); h.workspace.model.busy = true;
+  for (const condition of ['loading', 'lost']) {
+    h.workspace.model.condition = condition; assert.equal(label(h.render(), '正在處理文件…'), undefined);
+  }
+  for (const condition of ['unavailable', 'refresh_failed', 'unknown']) {
+    h.workspace.model.condition = condition;
+    const busy = label(h.render(), '正在處理文件…'); assert.ok(busy); assert.equal(busy.props.disabled, true); assert.equal(busy.props.preserveFocusWhenDisabled, false);
+    h.workspace.model.busy = false;
+    const retry = label(h.render(), '重新讀取準備單'); assert.equal(retry.props.disabled, false); assert.equal(retry.props.onPress, h.workspace.actions.refresh);
+    h.workspace.model.busy = true;
+  }
+  h.workspace.model.condition = 'ready';
+  for (const state of ['saving', 'unknown', 'conflict', 'saved', 'failed']) {
+    const operation = {state, reference: 'synthetic-original-op', recovery: 'check'}; h.workspace.model.operation = operation;
+    const busy = label(h.render(), '正在處理文件…'); assert.ok(busy); assert.equal(busy.props.preserveFocusWhenDisabled, false); assert.equal(h.workspace.model.operation, operation);
+  }
+  h.workspace.model.operation = {state: 'none'}; h.workspace.model.condition = 'refresh_failed'; h.workspace.model.dirty = true;
+  assert.equal(label(h.render(), '正在處理文件…').props.preserveFocusWhenDisabled, false);
+  h.workspace.model.dirty = false; h.workspace.model.online = false;
+  assert.equal(label(h.render(), '正在處理文件…').props.preserveFocusWhenDisabled, false);
+  assert.equal(label(h.render(), '正在處理文件…').props.disabled, true);
 });
 
 test('document evidence, actionable warnings, archive guards and responsive reader remain present', () => {

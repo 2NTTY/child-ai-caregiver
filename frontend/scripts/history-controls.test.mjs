@@ -16,7 +16,7 @@ const labelled = (tree, label) => nodes(tree).find(node => node.props?.label ===
 // Hook and control-prop checks only; final browser geometry is a separate acceptance step.
 function harness(width = 1024, initialCategory = 'growth') {
   const slots = [], effects = [], events = [], cache = new Map();
-  let cursor = 0, locked = false;
+  let cursor = 0, locked = false, selectedTask = null, selectedPreparation = null;
   const react = {
     useRef(value) { const index = cursor++; return slots[index] ??= {current: value}; },
     useState(value) { const index = cursor++; if (!(index in slots)) slots[index] = typeof value === 'function' ? value() : value; return [slots[index], next => { slots[index] = next; }]; },
@@ -27,9 +27,9 @@ function harness(width = 1024, initialCategory = 'growth') {
   const native = {Platform: {OS: 'web'}, View: 'View', StyleSheet: {create: value => value, flatten}, useWindowDimensions: () => ({width})};
   const paper = {Text: 'Text', Button: 'PaperButton'};
   const workspace = {
-    useTasksWorkspace: () => ({model: {reading: false, access: 'editable', operation: {state: 'none'}, scheduleContext: {timeZone: 'Asia/Hong_Kong'}}, actions: {closePanel: () => events.push('close-tasks')}}),
+    useTasksWorkspace: () => ({model: {selected: selectedTask, reading: false, access: 'editable', operation: {state: 'none'}, scheduleContext: {timeZone: 'Asia/Hong_Kong'}}, actions: {closePanel: () => events.push('close-tasks')}}),
     useCareWorkspace: () => ({model: {access: 'editable', list: {state: 'ready'}, operation: {state: 'none'}, review: {state: 'ready'}}, actions: {closePanel: () => events.push('close-care')}}),
-    usePreparationWorkspace: () => ({model: {condition: 'ready', documents: []}, actions: {closeDocument: () => events.push('close-preparation')}}),
+    usePreparationWorkspace: () => ({model: {condition: 'ready', selected: selectedPreparation, documents: selectedPreparation ? [selectedPreparation] : []}, actions: {closeDocument: () => events.push('close-preparation')}}),
     useGrowthWorkspace: () => ({scopeKey: 'scope-a', model: {access: 'editable', busy: locked, page: {concerns: {state: 'ready'}}}}),
   };
   const dependencies = {
@@ -40,7 +40,7 @@ function harness(width = 1024, initialCategory = 'growth') {
     '../components/useContainerWidth': {useContainerWidth: () => ({width, ref: null, onLayout() {}})},
     '../components/history/history-filters': historyFilters,
     '../components/date-time': {timeZoneLabel: value => value},
-    '../preparation-view-model': {searchPreparationHistory: () => []},
+    '../preparation-view-model': {searchPreparationHistory: () => selectedPreparation ? [selectedPreparation] : []},
     '../components/DateTimeFields': {AppDateField: 'AppDateField'},
     '../components/FormDialog': {FormDialog: 'FormDialog'},
     '../components/appearance/BackgroundSurface': { BackgroundSurface: 'View' },
@@ -61,6 +61,7 @@ function harness(width = 1024, initialCategory = 'growth') {
     '../workspaces/PreparationWorkspace': {usePreparationWorkspace: workspace.usePreparationWorkspace},
     '../workspaces/GrowthWorkspace': {useGrowthWorkspace: workspace.useGrowthWorkspace},
     '../theme': theme,
+    './useQuietReadFocus': {useQuietReadFocus: disabled => ({host: {current: null}, preserveWebFocus: false, nativeDisabled: disabled})},
     './useInteractionDensity': {useInteractionDensity: () => false},
     './AppScrollView': {AppScrollView: 'AppScrollView'}, './AppIcon': {AppIcon: 'AppIcon'},
     './AppRadioItem': {AppRadioItem: 'AppRadioItem'}, './AppDialog': {AppDialog: 'AppDialog'},
@@ -82,6 +83,7 @@ function harness(width = 1024, initialCategory = 'growth') {
   const {AppButton} = load('src/components/ui.tsx');
   return {
     events, lock(value = true) {locked = value;}, button: props => AppButton(props),
+    selectHistory(task, preparation) {selectedTask = task; selectedPreparation = preparation;},
     render() {cursor = 0; const tree = HistoryWorkspace({scope: 'scope-a', childName: 'A', initialCategory, initialReviewStatus: 'all', olderOnly: false}); while (effects.length) effects.shift()(); return tree;},
   };
 }
@@ -102,21 +104,41 @@ test('all eight categories keep one category control without duplicate source he
   }
 });
 
-test('navigation and dates share one wrapping toolbar and touch-safe AppButton sizing', () => {
+
+test('task and preparation modal selection keeps the complete history filter toolbar at every width', () => {
+  for (const width of [1440, 1024, 390, 320]) for (const category of ['tasks', 'preparations']) {
+    const h = harness(width, category);
+    const label = historyFilters.historyCategories.find(item => item.key === category).label;
+    const assertToolbar = tree => {
+      assert.equal(nodes(tree).filter(node => node.props?.testID === 'history-filter-toolbar').length, 1);
+      assert.equal(nodes(tree).filter(node => node.type === 'AppTextField' && node.props.label === `搜尋${label}`).length, 1);
+      assert.equal(labelled(tree, '日期篩選').props.disabled, false);
+      assert.ok(nodes(tree).some(node => node.type === (category === 'tasks' ? 'TaskHistoryView' : 'PreparationHistoryView')));
+    };
+    assertToolbar(h.render());
+    for (const state of ['completed', 'cancelled']) {
+      h.selectHistory({ occurrence: { state } }, { id: 'synthetic-archived-preparation', status: 'archived' });
+      assertToolbar(h.render());
+    }
+    h.selectHistory(null, null);
+    assertToolbar(h.render());
+    assert.deepEqual(h.events, [], 'Selection must not navigate, close the owner or mutate filters');
+  }
+});
+
+test('history date controls keep a wrapping toolbar and touch-safe AppButton sizing without return shortcuts', () => {
   for (const width of [1440, 1024, 390, 320]) {
     const h = harness(width), tree = h.render();
-    const first = labelled(tree, '查看持續關注'), second = labelled(tree, '查看年度與季度檔案'), date = labelled(tree, '日期篩選');
+    const date = labelled(tree, '日期篩選');
     const group = nodes(tree).find(node => node.type === 'View' && node.props.children?.includes?.(date));
-    assert.ok(nodes(group).includes(first) && nodes(group).includes(second));
     assert.equal(group.props.style.flexWrap, 'wrap'); assert.equal(group.props.style.maxWidth, '100%'); assert.equal(group.props.style.alignItems, 'center');
-    for (const entry of [first, second, date]) {
+    for (const entry of [date]) {
       const button = h.button(entry.props);
       assert.equal(button.props.compact, true); assert.equal(button.props.mode, 'outlined');
       assert.equal(flatten(button.props.style).height, undefined);
       if (width < 650) assert.ok(flatten(button.props.contentStyle).minHeight >= 48);
     }
-    first.props.onPress(); second.props.onPress();
-    assert.deepEqual(h.events, ['guard', ['push', '/growth'], 'guard', ['push', '/summary?tab=archive']]);
+    assert.deepEqual(h.events, []);
     const search = labelled(tree, '搜尋關注與成長'), wrapper = nodes(tree).find(node => node.props?.children === search);
     assert.equal(wrapper.props.style.minWidth, 0); assert.equal(wrapper.props.style.maxWidth, '100%');
   }
@@ -321,7 +343,22 @@ test('profile history category renders the same scoped reader on desktop and mob
     assert.equal(picker.props.value, 'profile');
     assert.ok((picker.props.options ?? picker.props.items).some(item => (item.value ?? item.key) === 'profile' && item.label === '檔案修改'));
     assert.equal(h.events.includes('profile-history-read'), false);
-    labelled(tree, '查看檔案').props.onPress();
-    assert.deepEqual(h.events, ['guard', ['push', '/profile']]);
+    assert.equal(labelled(tree, '查看檔案'), undefined);
+    assert.deepEqual(h.events, []);
+  }
+});
+
+
+test('all history categories omit redundant return shortcuts and empty toolbars while preserving the reader', () => {
+  const shortcuts = ['開啟待辦', '開啟準備單', '開啟核對', '查看檔案', '查看持續關注', '查看年度與季度檔案'];
+  for (const width of [1440, 1024, 390, 320]) for (const category of historyFilters.historyCategories) {
+    const h = harness(width, category.key), tree = h.render();
+    for (const shortcut of shortcuts) assert.equal(labelled(tree, shortcut), undefined, `${category.key}: ${shortcut}`);
+    assert.equal(tree.props.title, '歷史');
+    const toolbar = tree.props.children.props.children[1];
+    if (['care', 'profile'].includes(category.key)) assert.equal(toolbar, null, 'Do not leave an empty surface or spacing row');
+    else assert.equal(toolbar.props.testID, 'history-filter-toolbar');
+    assert.ok(nodes(tree).some(node => node.type === 'AppTabPanel' && node.props.tabKey === category.key));
+    assert.deepEqual(h.events, []);
   }
 });

@@ -1,0 +1,15 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "originalReceiptSha256": "ebc0c57fa12c4859bb8e9dc0fa66fa086e9f1f1b92fb88ba1d302c74c9966f9f",
+  "status": "PASS_EXACT_ONE_TRAILING_SOURCE_MAP_COMMENT_REMOVED",
+  "rawBundleSha256": "3b88ddb269c7bced60136c1b3153f5e0cd3191f2d7e256286c1400c3ece96650",
+  "publicBundleSha256": "00b168eda1e95d0e2a05c03d8e6e54dd6e1d2e876ab8089516f77a145cd4fa1b",
+  "removedLine": "//# sourceMappingURL=/_expo/static/js/web/index-917dd79fa78f01a2baf193146d390693.js.map\n",
+  "removedByteCount": 88,
+  "offset": 5668171,
+  "inverseRestoresRaw": true,
+  "rawModuleSha256": "0c4645ef340ccc267b1ce44ceca80390ab921332addaff74d301b76306cd0d8a",
+  "publicModuleSha256": "0c4645ef340ccc267b1ce44ceca80390ab921332addaff74d301b76306cd0d8a",
+  "compiledModuleByteExact": true,
+  "method": "Only the exact terminal local sourceMappingURL comment is removed; no executable bytes are changed. External maps remain private."
+}

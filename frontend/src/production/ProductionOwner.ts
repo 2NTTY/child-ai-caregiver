@@ -147,6 +147,19 @@ export class ProductionOwner {
     const raw = this.controller.getSnapshot();
     return raw.selectedChildId && this.deniedChildren.has(raw.selectedChildId) ? null : productionScopeKey(this.apiBaseUrl, raw, this.generation);
   }
+  /** Confirmation may edit while ordinary child reads/writes stay behind the deletion barrier. */
+  childDeletionConfirmationKey = (): string | null => {
+    const raw = this.controller.getSnapshot(), deletion = raw.deletion;
+    const child = raw.children.find(item => item.id === deletion?.childId);
+    if (!this.identity || this.identity !== productionIdentityKey(this.apiBaseUrl, raw, this.generation)
+      || !deletion || !["confirm", "checked"].includes(deletion.phase) || !child || child.accessRole !== "owner"
+      || child.id !== raw.selectedChildId || this.deniedChildren.has(child.id) || !raw.online || raw.busy || raw.childrenLoading
+      || !this.canStartDomainWrite()) return null;
+    // The deletion barrier clears chat selection, not the original target's unknown write.
+    const draft = this.chatController.getSnapshot().drafts[child.id];
+    if (draft?.phase === "saving" || draft?.phase === "replying" || draft?.phase === "save_unknown" || draft?.phase === "checked") return null;
+    return JSON.stringify([this.identity, child.id, child.accessRole, child.displayName]);
+  };
   private project(): ProductionSnapshot {
     const raw = this.controller.getSnapshot(), scopeKey = this.scopeKey(), userId = confirmedUserId(raw);
     const records = userId && this.accountOwner.isReady() ? raw : { ...raw, user: userId ? raw.user : null, children: [], selectedChildId: null,
@@ -250,7 +263,7 @@ export class ProductionOwner {
     this.authorizationOwner?.invalidateReceipts();
     const authorization = this.authorizationOwner?.getSnapshot();
     // New chat proposals must be discoverable even before the list has ever been opened.
-    if (scope && refreshPending) void this.agentOwner?.readPending();
+    if (scope && refreshPending) void this.agentOwner?.readPending(false, true);
     if (authorization?.notesState === "ready" && !authorization.busy && !authorization.pending) void this.authorizationOwner.readNotes(false, true);
     if (emitEvent) publishOnlineRefresh();
   };

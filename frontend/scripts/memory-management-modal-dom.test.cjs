@@ -14,7 +14,7 @@ Object.defineProperty(HTMLElement.prototype, 'getClientRects', { configurable: t
 const root = path.resolve(__dirname, '../..'), req = createRequire(path.join(root, 'frontend/package.json'));
 const React = req('react'), { createRoot } = req('react-dom/client'), native = req('react-native-web'), ts = req('typescript');
 const e = React.createElement;
-let networkCalls = 0;
+let networkCalls = 0, containerWidth = 1440;
 const originalFetch = global.fetch;
 global.fetch = () => { networkCalls++; throw new Error('Real network is forbidden in this synthetic test.'); };
 // RN Web's installed Modal, focus trap and portal are real. Appearance and native inputs
@@ -40,11 +40,22 @@ function load(relative) {
     if (name === 'react-native-paper') return { Text: p => e('p', null, p.children) };
     if (name.endsWith('/AppDialog')) return { AppDialog: Dialog };
     if (name.endsWith('/AppScrollView')) return { AppScrollView: p => e('div', null, p.children) };
-    if (name.endsWith('/ui')) return { AppButton: Button, AppTextField: Field, AppSelect: Select };
+    if (name.endsWith('/ui')) return { AppButton: Button, AppTextField: Field, AppSelect: Select,
+      TabToolbar: ({ children, actions, stacked }) => e('header', { 'data-testid': 'memory-toolbar', 'data-stacked': String(stacked) }, children, e('div', { 'data-testid': 'memory-toolbar-actions' }, actions)),
+      UnderlineTabs: ({ items, value, onChange }) => e('div', { role: 'tablist' }, items.map(item => e('button', { key: item.key, role: 'tab', 'aria-selected': item.key === value, onClick: () => onChange(item.key) }, item.label))),
+      AppTabPanel: ({ active, children }) => active ? e('section', { role: 'tabpanel' }, children) : null };
+    if (name.endsWith('/MemoryReferenceWorkspace')) return { useMemoryReferenceWorkspace: () => React.useContext(Context)?.value };
+    if (name.endsWith('/SettingsDomains')) return { useProductionSettingsDomains: () => ({ family: { model: { selfUserId: 'user-a', loadState: 'ready', families: [] } } }) };
+    if (name.endsWith('/PageFrame')) return { PageFrame: ({ children }) => e('main', null, children) };
+    if (name.endsWith('/BackgroundSurface')) return { BackgroundSurface: ({ children }) => e('div', null, children) };
+    if (name.endsWith('/ReadStateNotice')) return { ReadStateNotice: ({ title, children }) => e('div', null, title, children) };
+    if (name.endsWith('/useContainerWidth')) return { useContainerWidth: () => ({ width: containerWidth, ref: null, onLayout() {} }) };
+    if (/\/(AppIcon|AppStatusBadge|EmptyListCard|HistoryMessageDetail|PersistentWorkCards)$/.test(name)) return new Proxy({}, { get: () => () => null });
     if (name.endsWith('/AppCheckbox')) return { AppCheckbox: Checkbox };
     if (name.endsWith('/DateTimeFields')) return { AppDateTimeField: ({ onChange, ...props }) => e(Field, { ...props, onChangeText: onChange }) };
     if (name.endsWith('/TaskKnowledgeDomains')) return { useProductionTaskKnowledgeMemory: () => React.useContext(Context) };
-    if (name.endsWith('/ProductionProvider')) return { useProductionOwner: () => productionOwner };
+    if (name.endsWith('/ProductionProvider')) return { useProductionOwner: () => productionOwner,
+      useProduction: () => ({ model: { children: [{ id: activeScope === 'scope-a' ? 'child-a' : 'child-b' }], selectedChildId: activeScope === 'scope-a' ? 'child-a' : 'child-b' }, actions: {}, online: true, recordsState: { children: [] }, auth: 'signedIn', userId: 'user-a', scopeKey: activeScope }) };
     if (name.endsWith('/theme')) return { colors: {}, radius: {}, spacing: {}, typeScale: {}, readingType: {}, workspaceType: {} };
     if (name.endsWith('/browser-history-guard')) return { guardBrowserHistory: () => () => {} };
     if (name.endsWith('/production/routes')) return { isProductionRouteConnected: () => true };
@@ -62,7 +73,7 @@ function load(relative) {
 const { PreviewNavigationGuard } = load('frontend/src/preview/PreviewNavigationGuard.tsx');
 const { useTaskKnowledgeMemoryManagement } = load('frontend/src/production/task-knowledge-memory-management.ts');
 const { useTaskKnowledgeRuntime } = load('frontend/src/production/task-knowledge-runtime.ts');
-const { TaskKnowledgeMemoryManagement } = load('frontend/src/production/TaskKnowledgeMemoryManagement.tsx');
+const { default: MemoryPage } = load('frontend/src/screens/memoryScreen.tsx');
 const { QueryClient } = req('@tanstack/react-query');
 const renderer = createRoot(document.getElementById('root'));
 const fact = { id: 'synthetic-fact', childId: 'child-a', key: 'Synthetic fact', content: 'Original synthetic content', source: { kind: 'manual', description: 'Synthetic source' }, validUntil: null, visibility: 'private', intendedVisibility: 'private', status: 'candidate', version: 4, authorSelf: true, reason: '', sourceState: 'current' };
@@ -91,14 +102,16 @@ function Owner({ scope }) {
     async latestEntity(entity) { return entity; } });
   owner = { management, facts, topics: [topic], role, busy: management.busy, lost: runtime.lost, hasMoreTopics: false, topicHistories: {},
     refresh() { reads++; }, topicHistory() { historyReads++; },
-    value: { scopeKey: scope, model: { online: true, longTerm: { data: { hasMoreFacts: false, histories: {} } } }, reads: { readFactHistory() { historyReads++; } } } };
-  return e(Context.Provider, { value: owner }, e(TaskKnowledgeMemoryManagement, { key: scope }));
+    value: { scopeKey: scope, model: { scopeKey: scope, childId: env.childId, childName: 'Synthetic child', access: 'active', online: true,
+      shortTerm: { scopeKey: scope, state: 'unavailable', data: null }, references: { scopeKey: scope, state: 'unavailable', data: null },
+      longTerm: { scopeKey: scope, state: 'ready', data: { childId: env.childId, facts, summary: null, hasMoreFacts: false, histories: {} } } }, reads: { readFactHistory() { historyReads++; } } } };
+  return e(Context.Provider, { value: owner }, e(MemoryPage));
 }
 function Page() { return e(PreviewNavigationGuard, null, e(Owner, { key: activeScope, scope: activeScope })); }
 async function render() { await React.act(async () => renderer.render(e(Page))); }
 async function reset(options = {}) {
   await React.act(async () => renderer.render(null));
-  calls = []; reads = historyReads = 0; mode = 'saved'; session = 'user-a'; pendingOnline = false; activeScope = 'scope-a'; role = options.role || 'owner'; facts = options.facts || [{ ...fact }];
+  calls = []; reads = historyReads = 0; mode = 'saved'; session = 'user-a'; pendingOnline = false; activeScope = 'scope-a'; role = options.role || 'owner'; facts = options.facts || [{ ...fact }]; containerWidth = 1440;
   await render();
 }
 const buttons = label => [...document.querySelectorAll('button')].filter(node => node.textContent === label);
@@ -114,10 +127,33 @@ async function check(label) { await React.act(async () => field(label).click());
 function activeDialog() { const dialogs = document.querySelectorAll('[role="dialog"]'); assert.equal(dialogs.length, 1); assert.ok(dialogs[0].contains(document.activeElement)); return dialogs[0]; }
 const confirmation = '我已核對原內容、來源、可見範圍及版本，明確確認這次操作';
 
+test('Memory width changes keep the same tabs, management trigger and open-modal focus across the opt-in breakpoint', async () => {
+  await reset();
+  const entry = button('管理記憶'), tabs = [...document.querySelectorAll('[role="tab"]')];
+  tabs[1].focus();
+  for (const width of [320, 390, 480, 1024]) {
+    containerWidth = width; await render();
+    assert.equal(document.querySelector('[data-testid="memory-toolbar"]').dataset.stacked, String(width < 480));
+    assert.equal(button('管理記憶'), entry); assert.equal(document.activeElement, tabs[1]);
+    assert.deepEqual([...document.querySelectorAll('[role="tab"]')], tabs);
+  }
+  await click('管理記憶'); const add = button('人工新增候選事實'); add.focus();
+  for (const width of [320, 390, 480, 1024]) {
+    containerWidth = width; await render(); assert.equal(button('人工新增候選事實'), add); assert.equal(document.activeElement, add); activeDialog();
+  }
+  await escape(); assert.equal(document.activeElement, entry); assert.equal(calls.length, 0);
+});
+
 test('only a compact entry is on the page; nested editor Escape returns to the exact list trigger, then outer Escape returns to entry', async () => {
   await reset();
   assert.equal(document.body.textContent.includes('已取得的事實'), false);
   assert.equal(buttons('管理記憶').length, 1); assert.doesNotMatch(document.body.textContent, /人工管理記憶（備援）|owner/);
+  const entry = button('管理記憶'), toolbar = document.querySelector('[data-testid="memory-toolbar-actions"]');
+  assert.ok(toolbar.contains(entry)); assert.equal(buttons('重讀').length, 0); assert.equal(buttons('重試讀取').length, 0);
+  for (const tab of ['短期脈絡', '參考資料', '長期記憶']) {
+    await click(tab); assert.equal(buttons('管理記憶').length, 1); assert.equal(button('管理記憶'), entry, 'Tab changes keep the exact single management trigger');
+    assert.equal(document.querySelector('[role="tabpanel"]').contains(entry), false);
+  }
   await click('管理記憶'); assert.match(activeDialog().textContent, /候選未確認前只供本人/);
   const edit = button('人工確認／更正／停用／刪除');
   await click('人工確認／更正／停用／刪除'); assert.ok(activeDialog().contains(field('內容（最多 4,000 字）')));

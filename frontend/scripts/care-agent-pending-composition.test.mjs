@@ -213,3 +213,14 @@ test('narrow Care toolbar alone reclaims the custom-background inset and keeps t
     assert.equal(flatten(s.h.node('care-review-tabs-bar').props.style).marginHorizontal, undefined); s.end();
   }
 });
+
+
+test('care removes the duplicate introductory row while retaining its accessible page identity and pending workspace', async () => {
+  const s = setup(); await s.ready();
+  const frame = s.h.hosts().find(node => node.type === 'PageFrame');
+  assert.ok(frame); assert.equal(frame.props.title, '核對');
+  assert.equal(frame.props.description, undefined);
+  assert.ok(s.card());
+  assert.doesNotMatch(s.text(), /核對助手記下的內容，有誤時更正/);
+  s.end();
+});

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { Platform, Pressable, StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import type { AgentActionReceipt } from "../../../src/shared/agent-actions";
+import { subscribeOnlineRefresh } from "../../../src/client/online-refresh-events";
 import { useProduction } from "./ProductionProvider";
 import { AgentRunView, type ActivityProposalTarget } from "../components/agent/AgentRunView";
 import { ReadStateNotice } from "../components/ReadStateNotice";
@@ -68,27 +69,35 @@ function ActivityCard({ cardKey, content, context, status, warning = false, sele
 function BackgroundRuns({ model, actions, onSelect, cardRef }: { model: AgentInboxModel; actions: AgentInboxActions;
   onSelect(runId: string, label: string): void; cardRef(key: string, node: View | null): void }) {
   const loading = model.state === "loading", denied = model.state === "denied", ready = model.state === "ready";
+  const hasSnapshot = !denied && !!model.loadedAt;
   return <View testID="agent-activity-background" style={styles.section}>
       <Text accessibilityRole="header" style={styles.heading}>其他活動</Text>
       <Text style={styles.label}>只限你本人查看，最多展示 20 項。</Text>
       {model.state === "idle" ? <Text style={styles.label}>尚未載入其他活動。</Text> : null}
-      {loading ? <ReadStateNotice state="loading" message="正在載入其他活動…" /> : null}
-      {model.state === "failed" ? <Text style={styles.error}>未能載入其他活動，請重試。</Text> : null}
+      {loading ? <ReadStateNotice state="loading" refreshing={hasSnapshot} message="正在載入其他活動…" /> : null}
+      {model.state === "failed" ? <Text style={styles.error}>{hasSnapshot ? "未能更新其他活動，顯示上次讀取的內容。" : "未能載入其他活動，請重試。"}</Text> : null}
       {denied ? <Text style={styles.warning}>已失去讀取權限，原清單已隱藏。</Text> : null}
       {!model.online ? <Text style={styles.warning}>目前離線，所示清單只是上次讀取的快照。</Text> : null}
       {model.locked && !denied ? <Text style={styles.warning}>暫時無法確認結果</Text> : null}
-      <AppButton label={model.state === "failed" ? "重新載入活動記錄" : ready ? "更新活動記錄" : "載入活動記錄"} variant="quiet" density="compact"
-        disabled={!model.online || model.locked || loading || denied} loading={loading} onPress={actions.refresh} style={styles.inlineButton} />
-      {ready ? model.entries.length ? model.entries.slice(0, 20).map(entry => <ActivityCard key={entry.runId} cardKey={`run-${entry.runId}`}
+      {model.state === "failed" ? <AppButton label="重新載入活動記錄" variant="quiet" density="compact"
+        disabled={!model.online || model.locked} onPress={actions.refresh} style={styles.inlineButton} /> : null}
+      {ready || hasSnapshot ? model.entries.length ? model.entries.slice(0, 20).map(entry => <ActivityCard key={entry.runId} cardKey={`run-${entry.runId}`}
         content="活動結果" context={backgroundTime(entry.createdAt)} selected={entry.runId === model.selectedRunId}
         disabled={model.locked || !model.online || loading} onPress={() => onSelect(entry.runId, backgroundTime(entry.createdAt))}
         cardRef={node => cardRef(`run-${entry.runId}`, node)} />)
-        : model.online ? <Text style={styles.label}>目前沒有其他活動。</Text> : null : null}
+        : ready && model.online ? <Text style={styles.label}>目前沒有其他活動。</Text> : null : null}
   </View>;
 }
 
 export function AgentConversation({ visible, onDismiss, onClosed }: { visible: boolean; onDismiss(): void; onClosed?(): void; onOpenSettings(): void; onReloadChat(): void; reloadDisabled: boolean }) {
-  const { scopeKey, agentModel, agentActions, agentInbox, agentInboxActions, agentPending, readAgentPending, selectAgentRun, authorization, authorizationActions } = useProduction();
+  const { scopeKey, agentModel, agentActions, agentInbox, agentInboxActions, agentPending, readAgentPending, readAgentActivity, selectAgentRun, authorization, authorizationActions } = useProduction();
+  const activityRead = useRef(readAgentActivity); activityRead.current = readAgentActivity;
+  useEffect(() => {
+    if (!visible || !scopeKey || !agentModel.online) return;
+    activityRead.current();
+    // The global invalidation already re-reads pending; only add the visible inbox.
+    return subscribeOnlineRefresh(() => activityRead.current(false));
+  }, [visible, scopeKey, agentModel.online]);
   const scrollRef = useRef<ScrollView | null>(null);
   const detailRef = useRef<View | null>(null), listRef = useRef<View | null>(null);
   const cardRefs = useRef(new Map<string, View>()), scrollPosition = useRef(0), selectionSerial = useRef(0);
@@ -199,11 +208,7 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
           activityNavigation={<View style={styles.details}><AppButton label="返回活動" accessibilityLabel="返回活動列表" variant="quiet" density="compact" disabled={cannotReturn} onPress={returnToCards} style={styles.inlineButton} />
             {cannotReturn ? <Text style={styles.label}>{"目前正在處理或未能核對存取權，暫時不能返回。"}</Text> : null}</View>} />
       </View>
-        : <View testID="agent-activity-header" style={styles.activityToolbar}>{activityHeading}
-          <AppButton label="更新" accessibilityLabel="更新待確認活動" variant="quiet" density="compact"
-            disabled={!agentModel.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentPending.state === "loading" || agentPending.state === "denied"}
-            onPress={() => readAgentPending()} style={styles.inlineButton} />
-        </View>}
+        : <View testID="agent-activity-header" style={styles.activityToolbar}>{activityHeading}</View>}
       {!showDetails ? <View ref={listRef} tabIndex={-1} accessibilityLabel="活動列表" testID="agent-activity-list" style={styles.details}>
         {agentModel.pendingDecision ? <AppButton label="查看待確認結果" variant="quiet" density="compact"
           disabled={!agentModel.online || !!agentModel.busy || agentModel.readState === "denied"}

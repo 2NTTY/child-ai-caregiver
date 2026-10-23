@@ -1,8 +1,8 @@
 # 育伴港前端現況
 
-2026-10-23 已核來源 `58080880e3ebbe9e3d323efef7d9b5666f324e20`及驗收文件 commit `fe60f4d6c4699539a26952790fa905e2f2b24c93`均在遠端及 [PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)，仍open／draft／未合併。[既有公開合成預覽](https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site)已於04:59:33.978 UTC發布Site87／snapshot31（Sites source `b1fb6db5cd7820cd2183a732f866d8673973bb10`）。05:08完成live有界smoke，public DOM的bundle檔名對應31，導航／核對／記憶／Summary前後狀態及390樣式通過；沒有逐毫秒全程穩定或live bytes hash的結論。
+2026-10-23 source36／artifactfix1 已完成本地來源與有界驗收，正作交付。相對基底 `5a39776f703bc436528b858f393621bcf8030b03` 精確89檔（45產品＋44測試）；559inputs、417個輸出第一方文字來源＋1PNG鏈、隔離Router context、安全validator及archive readback均已核。原36錯源artifact已撤回，並非重新修改產品guard。新版尚未更新公開站點；最後已記錄公開版仍是Site87／snapshot31（04:59:33.978 UTC）。[PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)維持draft／未合併；需求文件不在本次修改。
 
-snapshot31已核63檔scope／553inputs、11個必要scripts／80項通過、穩定export及靜態安全validator；04:28:53 UTC的四組有界browser通過，原Summary自然focus紅項在本次未復現，真Paper日期blur與「本人」短名已核。30的metadata／分頁不當成31重跑，原紅保留。30完整TypeScript兩環境均exit137且原因未知，31未重跑，門檻仍未通過；04:40 UTC GitHub無CI結果、combined pending，不是綠燈。不宣稱全站、真機或正式服務全綠。只用合成資料，不合併、不做GCP／OTA。後續交接、未過門檻及分版證據見 [PLAN#active](PLAN.md#active)。
+source36定向30／30；先前各版結果保留而不相加。正確artifact的同scope503 settled保留checkbox、原生pointer／Space／Enter不寫入、聚焦後再次讀取保留focus／scroll／高度，有界GUI通過；不是全站、真機或逐幀零閃動。完整TypeScript仍未過（兩環境137，原因未知），CI未新查，自然OS app-switch／Android／完整讀屏與全尺寸未完成。只用合成資料，沒有正式刪除、模型或後端部署。精確身份、原圖、原紅與下一步見[PLAN#active](PLAN.md#active)及[本輪收據](../docs/verification/frontend-2026-10-23/focus-layout-29/snapshot36-artifactfix1/README.md)。
 
 ## 2026-10-11 歷史快照（不是本候選結果）
 

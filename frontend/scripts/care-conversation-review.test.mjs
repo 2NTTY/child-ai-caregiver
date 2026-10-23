@@ -294,11 +294,14 @@ test('multi-chat pager replaces ten items while retaining the selected source', 
   const selectedSource = values.careReviewSourceKey(base);
   component(tree, 'AppSelect', '來源對話').props.onChange(selectedSource); tree = h.render();
   const first = rows(tree).map(node => node.key);
-  assert.equal(first.length, 10); component(tree, 'AppButton', '下一頁').props.onPress(); tree = h.render();
+  assert.equal(first.length, 10); const pager = component(tree, 'CareReviewPagination').props;
+  assert.equal(pager.loadedCount, 13); assert.equal(pager.page, 0); assert.equal(pager.pageSize, 10);
+  pager.onPageChange(1); tree = h.render();
   const second = rows(tree).map(node => node.key);
   assert.equal(second.length, 3); assert.equal(second.some(key => first.includes(key)), false);
   assert.equal(component(tree, 'AppSelect', '來源對話').props.value, selectedSource);
-  component(tree, 'AppButton', '上一頁').props.onPress(); tree = h.render();
+  assert.equal(component(tree, 'CareReviewPagination').props.page, 1);
+  component(tree, 'CareReviewPagination').props.onPageChange(0); tree = h.render();
   assert.deepEqual(rows(tree).map(node => node.key), first);
 });
 

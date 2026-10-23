@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { Redirect, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
+import { ChildOverviewConcerns } from "../components/child-overview/ChildOverviewConcerns";
 import { ChildOverviewContent } from "../components/child-overview/ChildOverviewContent";
 import { GrowthArchive } from "../components/growth/GrowthArchive";
 import { useContainerWidth } from "../components/useContainerWidth";
@@ -68,8 +69,9 @@ export function SummaryScreen() {
         <AppTabPanel tabsId="child-growth-tabs" tabKey="overview" active={tab === "overview"}>
           {tab === "overview" ? <><ChildOverviewContent onOpenProfile={() => guarded(() => router.push("/profile"))} onOpenProfileHistory={openProfileHistory}
             measurements={profile?.measurements} profileSource={profile?.profileSource}
+            companion={<ChildOverviewConcerns model={growth?.model ?? null} scopeKey={scopeKey} childId={child.id} onOpen={() => guarded(() => router.push("/growth?tab=concerns"))} />}
             onOpenMeasurement={recordId => guarded(() => router.push({ pathname: "/care", params: { record: recordId } }))} />
-            <TaskKnowledgeSummaryContent onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} />
+            <TaskKnowledgeSummaryContent presentation="overview" scopeKey={scopeKey} childId={child.id} onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} />
           </> : null}
         </AppTabPanel>
         <AppTabPanel tabsId="child-growth-tabs" tabKey="archive" active={tab === "archive"}>

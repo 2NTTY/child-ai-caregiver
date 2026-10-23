@@ -65,6 +65,7 @@ function harness(screen = "summary") {
     '../workspaces/TasksWorkspace': { useTasksWorkspace: () => ({ actions: { selectTask: id => events.push(['task', id]) } }) },
     '../workspaces/PreparationWorkspace': { usePreparationWorkspace: () => ({ actions: { closeDocument: () => events.push(['close-preparation']) } }) },
     '../theme': { colors: {}, readingType: {}, spacing: {} },
+    '../components/child-overview/ChildOverviewConcerns': { ChildOverviewConcerns: 'ChildOverviewConcerns' },
     '../components/child-overview/ChildOverviewContent': { ChildOverviewContent: 'ChildOverviewContent' },
     '../components/preparations/PreparationWorkspace': { PreparationWorkspace: 'PreparationWorkspace' },
     '../components/PageFrame': { PageFrame: 'PageFrame' },
@@ -98,7 +99,7 @@ function summaryTaskRows(props) {
     createdBy: 'synthetic-parent', updatedAt: '2026-10-22T08:00:00Z', version: 1,
     occurrence: { id: `occurrence-${task.id}`, state: 'scheduled', dueAt: '2026-10-23T08:00:00Z', timeZone: 'Asia/Hong_Kong' } }));
   const query = { startDay: '2026-10-22', period: 'day', timeZone: 'Asia/Hong_Kong' };
-  const page = { period: query, generatedAt: '2026-10-22T08:00:00Z', canManage: true,
+  const page = { childId: props.childId ?? 'child-a', period: query, generatedAt: '2026-10-22T08:00:00Z', canManage: true,
     counts: {}, metrics: [], records: [], conflicts: tasks, appointments: tasks,
     missing: { unknownEventTime: 0, invalidQuantities: 0, emptyKinds: [] } };
   const elements = new Proxy({}, { get: (_target, key) => String(key) });
@@ -107,7 +108,7 @@ function summaryTaskRows(props) {
     'react/jsx-runtime': require('react/jsx-runtime'), 'react-native': { View: 'View' }, 'react-native-paper': { Text: 'Text' },
     '../preview/PreviewNavigationGuard': { usePreviewNavigation: () => () => assert.fail('Rows must use the screen guard') },
     './TaskKnowledgeDomains': { useProductionTaskKnowledgeSummary: () => ({ model: {
-      scopeKey: 'synthetic-scope', page, query, online: true, busy: false, pending: null, access: 'editable', operation: 'none',
+      scopeKey: props.scopeKey ?? 'synthetic-scope', page, query, online: true, busy: false, pending: null, access: 'editable', operation: 'none',
     }, actions: {} }) },
     '../summary-view-model': { summaryPeriodLabel, summaryTime }, '../../summary-view-model': { summaryTime },
     '../../care-view-model': { careKindOptions }, '../../task-view-model': { taskStateLabels },
@@ -291,9 +292,13 @@ test('the archive retry invokes the original combined owner and cannot bypass mi
   const { FamilyReportControls } = compile('src/production/FamilyReportControls.tsx', name => {
     if (name === 'react/jsx-runtime') return require(name);
     if (name === './TaskKnowledgeDomains') return { useProductionFamilyDocuments: () => ({ ...documents, operation: {}, busy: false }) };
+    if (name === '../workspaces/GrowthWorkspace') return { useGrowthWorkspace: () => ({ ...snapshot.growth, scopeKey: 'synthetic-scope' }) };
     if (name.endsWith('/growth-styles')) return { growthStyles: {} };
     return new Proxy({}, { get: (_target, key) => String(key) });
   });
+  assert.equal(nodes(FamilyReportControls({ scopeKey: 'synthetic-scope', online: true })).find(node => node.props?.label === '重新讀取報告'), undefined);
+  growth.model.page = { authorityVersion: 'older' }; render();
+  assert.equal(nodes(FamilyReportControls({ scopeKey: 'different-scope', online: true })).find(node => node.props?.label === '重新讀取報告'), undefined);
   const before = growthReads, controls = FamilyReportControls({ scopeKey: 'synthetic-scope', online: true, onRefresh: snapshot.growth.actions.refresh });
   nodes(controls).find(node => node.props?.label === '重新讀取報告').props.onPress();
   assert.equal(growthReads, before + 1); assert.equal(documentReads, growthReads);

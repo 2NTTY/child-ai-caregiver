@@ -20,7 +20,7 @@ global.cancelAnimationFrame = id => frames.delete(id);
 // Real workspace/reader and manual dialog lifecycle; DOM/native/modal layout are ports.
 // This does not establish live-browser geometry, native modal timing or visual acceptance.
 const View = React.forwardRef(({children, testID, accessibilityLabel, tabIndex}, ref) => e('div', {ref, tabIndex, 'data-testid': testID, 'aria-label': accessibilityLabel}, children));
-const Pressable = React.forwardRef(({children, testID, accessibilityLabel, onPress}, ref) => e('button', {ref, onClick: onPress, 'data-testid': testID, 'aria-label': accessibilityLabel}, children));
+const Pressable = React.forwardRef(({children, testID, accessibilityLabel, accessibilityRole, onPress, onKeyDown, disabled, 'aria-checked': checked, 'aria-disabled': ariaDisabled}, ref) => e('button', {ref, onClick: onPress, onKeyDown, disabled, role: accessibilityRole, 'aria-checked': checked, 'aria-disabled': ariaDisabled, 'data-testid': testID, 'aria-label': accessibilityLabel}, children));
 const Button = React.forwardRef(({label, onPress, disabled, variant, accessibilityLabel}, ref) => e('button', {ref, onClick: onPress, disabled, 'aria-label': accessibilityLabel, 'data-variant': variant}, label));
 const Select = ({label, value, options, onChange}) => e('select', {'aria-label': label, value, onChange: event => onChange(event.target.value)}, options.map(item => e('option', {key: item.value, value: item.value}, item.label)));
 const Empty = () => null, Text = ({children}) => e('span', null, children);
@@ -40,19 +40,20 @@ function load(relative) {
   const filename = path.resolve(root, relative);
   if (cache.has(filename)) return cache.get(filename).exports;
   const module = {exports: {}}; cache.set(filename, module);
-  const output = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {fileName: filename, compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX}}).outputText;
+  const input = relative === 'src/components/preparations/PreparationWorkspace.tsx' && process.env.WORKSPACE_SOURCE ? process.env.WORKSPACE_SOURCE : filename;
+  const output = ts.transpileModule(fs.readFileSync(input, 'utf8'), {fileName: filename, compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX}}).outputText;
   new Function('require', 'module', 'exports', output)(name => {
-    if (name === 'react-native') return {View, Pressable, Platform: {OS: 'web'}, StyleSheet: {create: value => value}};
+    if (name === 'react-native') return {View, Pressable, useWindowDimensions: () => ({width, height: 900}), Platform: {OS: 'web'}, StyleSheet: {create: value => value}};
     if (name === 'react-native-paper') return {Text};
-    if (name.endsWith('/theme')) return {colors: {}, radius: {}, readingType: {}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}};
+    if (name.endsWith('/theme')) return {colors: {}, radius: {}, readingType: {}, mobileLayout: {breakpoint: 480, touchTarget: 44}, mobileIcons: {content: 24}, mobileType: {body: {}}, typeScale: {small: 14, caption: 12}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}};
     if (name.endsWith('/workspaces/PreparationWorkspace')) return {usePreparationWorkspace: () => workspace};
     if (name.endsWith('/useContainerWidth')) return {useContainerWidth: () => ({width, ref: null, onLayout() {}})};
     if (name.endsWith('/ui')) return {AppButton: Button, AppSelect: Select};
     if (name.endsWith('/AppDialog')) return {AppDialog: Dialog};
     if (name.endsWith('/AppScrollView')) return {AppScrollView: View};
     if (name.endsWith('/PreviewNavigationGuard')) return {usePreviewNavigation: () => callback => queued.push(callback)};
-    const ports = {WriteRecoveryNotice: Empty, AppCheckbox: Empty, AppStatusBadge: Empty, SummaryDisclosure: Empty, EmptyListCard: View, DocumentCreateForm: DraftPort};
-    if (/\/(WriteRecoveryNotice|AppCheckbox|AppStatusBadge|SummaryDisclosure|EmptyListCard|DocumentCreateForm)$/.test(name)) return ports;
+    const ports = {WriteRecoveryNotice: Empty, AppIcon: Empty, AppStatusBadge: Empty, SummaryDisclosure: Empty, EmptyListCard: View, DocumentCreateForm: DraftPort};
+    if (/\/(WriteRecoveryNotice|AppIcon|AppStatusBadge|SummaryDisclosure|EmptyListCard|DocumentCreateForm)$/.test(name)) return ports;
     if (!name.startsWith('.')) return req(name);
     const target = path.resolve(path.dirname(filename), name);
     const found = [target, `${target}.ts`, `${target}.tsx`].find(file => fs.existsSync(file) && fs.statSync(file).isFile());
@@ -105,3 +106,116 @@ test('assistant-first composition preserves reader return, purpose, mounted manu
   assert.equal(queued.length, 1); await flush(() => queued.shift()());
   assert.equal(document.querySelector('[role="dialog"]'), null); assert.equal(document.activeElement, manual);
 });
+
+function checkboxFixture() {
+  return {id: 'doc-check', childId: 'child-a', version: 3, status: 'active', purpose: 'appointment', readState: 'ready', historical: false, sources: [],
+    revision: {id: 'snapshot-check', number: 2, title: 'Synthetic checklist', summary: 'Same authorized snapshot', eventDate: null, updatedAt: '2026-10-22T00:00:00Z', sourceAsOf: '2026-10-22T00:00:00Z', sourceRefs: [],
+      sections: [{id: 'list', kind: 'checklist', title: 'Two checks', items: [{id: 'a', text: 'First retained check', checked: false}, {id: 'b', text: 'Second retained check', checked: true}]}]}};
+}
+async function checkboxHarness(t, initialCondition = 'ready') {
+  const doc = checkboxFixture(), calls = [];
+  workspace = {scopeKey: 'parent:child-a', model: {scope: {childId: 'child-a', online: true, condition: 'ready', role: 'owner'}, child: {id: 'child-a', displayName: 'Synthetic'}, documents: [doc], selected: doc, condition: 'ready', online: true, busy: false,
+    reading: {indexes: []}, capabilities: {archive: true, checkItem: true}}, actions: {checkItem(...args) {calls.push(args);}, closeDocument() {}, refresh() {}}};
+  workspace.model.condition = workspace.model.scope.condition = initialCondition;
+  workspace.model.capabilities = {archive: initialCondition === 'ready', checkItem: initialCondition === 'ready'};
+  const host = document.body.appendChild(document.createElement('main')), app = createRoot(host);
+  const flush = async action => React.act(async () => {action?.();});
+  const render = () => flush(() => app.render(e(PreparationWorkspace)));
+  const checks = () => [...host.querySelectorAll('[role="checkbox"]')];
+  t.after(async () => {await flush(() => app.unmount()); host.remove(); frames.clear();});
+  await render(); return {doc, host, calls, checks, render, flush};
+}
+
+test('quiet preparation GET keeps every actual checkbox node and focus while activation stays disabled', async t => {
+  const h = await checkboxHarness(t), original = h.checks(); assert.equal(original.length, 2);
+  original[1].focus(); h.host.scrollTop = 631;
+  workspace.model.busy = true; workspace.model.capabilities = {archive: false, checkItem: false};
+  await h.render();
+  assert.deepEqual(h.checks(), original, 'A quiet GET must not replace any checkbox with static text');
+  assert.equal(document.activeElement, original[1]); assert.equal(h.host.scrollTop, 631);
+  for (const checkbox of original) {
+    assert.equal(checkbox.disabled, true); assert.equal(checkbox.getAttribute('aria-disabled'), 'true');
+    checkbox.click(); checkbox.dispatchEvent(new dom.window.KeyboardEvent('keydown', {key: ' ', bubbles: true}));
+  }
+  assert.equal(h.calls.length, 0);
+  workspace.model.busy = false; workspace.model.capabilities = {archive: true, checkItem: true};
+  await h.render();
+  assert.deepEqual(h.checks(), original); assert.equal(document.activeElement, original[1]);
+  assert.equal(original[0].getAttribute('aria-checked'), 'false'); assert.equal(original[1].getAttribute('aria-checked'), 'true');
+  assert.equal(original[0].disabled, false); assert.equal(h.calls.length, 0);
+});
+
+test('quiet preparation retention does not expand unknown, offline, viewer, historical or foreign-scope controls', async t => {
+  const h = await checkboxHarness(t);
+  const initialScope = {...workspace.model.scope};
+  for (const condition of ['unknown', 'offline', 'viewer', 'historical', 'foreign', 'invalidated']) {
+    workspace.model.scope = {...initialScope}; workspace.model.selected = {...h.doc};
+    workspace.model.busy = true; workspace.model.capabilities = {checkItem: false}; workspace.model.operation = undefined;
+    if (condition === 'unknown') {workspace.model.scope.condition = 'unknown'; workspace.model.operation = {state: 'unknown', recovery: 'check'};}
+    if (condition === 'offline') workspace.model.scope.online = false;
+    if (condition === 'viewer') workspace.model.scope.role = 'viewer';
+    if (condition === 'historical') workspace.model.selected.historical = true;
+    if (condition === 'foreign') workspace.model.scope.childId = 'child-b';
+    if (condition === 'invalidated') {workspace.model.selected.readState = 'invalidated'; workspace.model.selected.revision = null;}
+    await h.render(); assert.equal(h.checks().length, 0, condition); assert.equal(h.calls.length, 0);
+  }
+});
+
+function failedPreparationRead() {
+  workspace.model.busy = false;
+  workspace.model.condition = workspace.model.scope.condition = 'refresh_failed';
+  workspace.model.capabilities = {archive: false, checkItem: false};
+}
+
+test('failed preparation refresh retains previously actionable checkbox nodes focus and disabled guards through retry', async t => {
+  const h = await checkboxHarness(t), original = h.checks(); assert.equal(original.length, 2);
+  original[1].focus(); h.host.scrollTop = 213;
+  workspace.model.busy = true; workspace.model.capabilities = {archive: false, checkItem: false}; await h.render();
+  failedPreparationRead(); await h.render();
+  assert.deepEqual(h.checks(), original, 'Settled same-snapshot read failure must not replace prior checkboxes');
+  assert.equal(document.activeElement, original[1]); assert.equal(h.host.scrollTop, 213);
+  for (const checkbox of original) {
+    assert.equal(checkbox.disabled, true); assert.equal(checkbox.getAttribute('aria-disabled'), 'true');
+    checkbox.click(); checkbox.dispatchEvent(new dom.window.KeyboardEvent('keydown', {key: ' ', bubbles: true}));
+  }
+  assert.equal(h.calls.length, 0);
+  workspace.model.busy = true; await h.render();
+  assert.deepEqual(h.checks(), original); assert.equal(document.activeElement, original[1]);
+  workspace.model.busy = false; workspace.model.condition = workspace.model.scope.condition = 'ready';
+  workspace.model.capabilities = {archive: true, checkItem: true}; await h.render();
+  assert.deepEqual(h.checks(), original); assert.equal(original[0].disabled, false); assert.equal(h.calls.length, 0);
+});
+
+test('failed preparation refresh never introduces checkbox controls into an initially read-only document', async t => {
+  const h = await checkboxHarness(t, 'read_only'); assert.equal(h.checks().length, 0);
+  failedPreparationRead(); await h.render();
+  assert.equal(h.checks().length, 0); assert.equal(h.calls.length, 0);
+  workspace.model.busy = true; await h.render(); assert.equal(h.checks().length, 0);
+});
+
+for (const boundary of ['unknown', 'saving', 'recovery', 'offline', 'viewer', 'historical', 'scope', 'authority', 'role', 'child', 'version', 'revision', 'invalidated', 'read_only', 'lost']) {
+  test(`failed preparation refresh discards retained checkbox presentation on ${boundary}`, async t => {
+    const h = await checkboxHarness(t); assert.equal(h.checks().length, 2);
+    failedPreparationRead(); await h.render(); assert.equal(h.checks().length, 2);
+    if (boundary === 'unknown') workspace.model.operation = {state: 'unknown', recovery: 'check'};
+    if (boundary === 'saving') workspace.model.operation = {state: 'saving'};
+    if (boundary === 'recovery') workspace.model.operation = {state: 'saved', recovery: 'reload'};
+    if (boundary === 'offline') workspace.model.online = workspace.model.scope.online = false;
+    if (boundary === 'viewer') workspace.model.scope.role = 'viewer';
+    if (boundary === 'historical') workspace.model.selected = {...h.doc, historical: true};
+    if (boundary === 'scope') workspace.scopeKey = 'other-parent:child-a';
+    if (boundary === 'authority') workspace.model.scope.authorityKey = 'other-authority';
+    if (boundary === 'role') workspace.model.scope.role = 'caregiver';
+    if (boundary === 'child') workspace.model.scope.childId = 'child-b';
+    if (boundary === 'version') workspace.model.selected = {...h.doc, version: h.doc.version + 1};
+    if (boundary === 'revision') workspace.model.selected = {...h.doc, revision: {...h.doc.revision, number: 3}};
+    if (boundary === 'invalidated') workspace.model.selected = {...h.doc, readState: 'invalidated', revision: null};
+    if (boundary === 'read_only' || boundary === 'lost') workspace.model.condition = workspace.model.scope.condition = boundary;
+    await h.render(); assert.equal(h.checks().length, 0, boundary); assert.equal(h.calls.length, 0);
+    // Returning only to a failed projection cannot resurrect the prior presentation marker.
+    workspace.scopeKey = 'parent:child-a'; workspace.model.scope = {childId: 'child-a', online: true, condition: 'refresh_failed', role: 'owner'};
+    workspace.model.online = true; workspace.model.condition = 'refresh_failed'; workspace.model.operation = undefined;
+    workspace.model.selected = h.doc;
+    await h.render(); assert.equal(h.checks().length, 0, boundary + ' marker cleared'); assert.equal(h.calls.length, 0);
+  });
+}

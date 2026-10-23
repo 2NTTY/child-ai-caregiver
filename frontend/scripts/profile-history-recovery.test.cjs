@@ -19,7 +19,7 @@ const page = (childId, versions, nextBeforeVersion = null) => json({ revisions: 
 
 // Real domain bridge, keyed owner, QueryClient, Care API/parser and the moved ProfileHistoryView plus original editor conditions.
 // Native layout, motion, and form presentation are bounded doubles, not browser coverage.
-function fixture({ version = 4, initialFailure = false, editor = true, focusBridge = false } = {}) {
+function fixture({ version = 4, initialFailure = false, editor = true, focusBridge = false, strict = false, historyVisible = true } = {}) {
   const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://synthetic.invalid/history?category=profile' });
   Object.assign(global, { window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true });
   const previousEvent = global.Event; global.Event = dom.window.Event;
@@ -28,7 +28,7 @@ function fixture({ version = 4, initialFailure = false, editor = true, focusBrid
   const previousFetch = global.fetch;
   global.fetch = () => { nativeCalls++; throw new Error('Native network is forbidden'); };
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  const requests = [], faults = [], currentResponses = [], accessLoss = [], dirtySignals = [];
+  const requests = [], faults = [], currentResponses = [], accessLoss = [], dirtySignals = [], entryCalls = [];
   let profilePatch = {};
   let env, projection, formSerial = 0, ProfileView, ProfileHistoryView;
   const makeEnvironment = (childId, identityKey = 'parent:epoch-1') => {
@@ -70,7 +70,8 @@ function fixture({ version = 4, initialFailure = false, editor = true, focusBrid
     projection = value;
     return React.createElement(React.Fragment, null, children, editor && value && React.createElement(ProfileView,
       { model: value.model, actions: value.actions, onOpenCare() {}, childPicker: null, writeNotice: null, previewControls: null }),
-      value && React.createElement(ProfileHistoryView, { model: value.model, actions: value.actions, scopeKey: value.scopeKey }));
+      historyVisible && value && React.createElement(ProfileHistoryView, { model: value.model, scopeKey: value.scopeKey,
+        actions: {...value.actions, showHistory() { entryCalls.push(value.scopeKey); value.actions.showHistory(); }} }));
   }
   const cache = new Map();
   function compile(relative) {
@@ -112,10 +113,11 @@ function fixture({ version = 4, initialFailure = false, editor = true, focusBrid
   const { useOnlineUpdates } = compile('src/client/use-online-updates.ts');
   function FocusBridge() { useOnlineUpdates('/api', env.userId, env.online, async () => {}, transport); return null; }
   const root = createRoot(document.getElementById('root'));
-  const render = () => act(async () => { root.render(React.createElement(React.Fragment, null, focusBridge && React.createElement(FocusBridge), React.createElement(ProductionCareProfileDomains))); await tick(); });
+  const render = () => act(async () => { root.render(React.createElement(strict ? React.StrictMode : React.Fragment, null, focusBridge && React.createElement(FocusBridge), React.createElement(ProductionCareProfileDomains))); await tick(); });
   const button = label => [...document.querySelectorAll('button')].find(node => node.textContent === label);
   const settle = () => act(async () => { await tick(); });
-  return { requests, faults, currentResponses, accessLoss, dirtySignals, button, settle, mount: render,
+  return { requests, faults, currentResponses, accessLoss, dirtySignals, entryCalls, button, settle, mount: render,
+    async category(visible) { historyVisible = visible; await render(); await settle(); },
     changeCurrent(patch) { if (patch.version !== undefined) version = patch.version; profilePatch = patch; },
     async focus() { await act(async () => { dom.window.dispatchEvent(new dom.window.Event("focus")); await tick(); await tick(); }); },
     async revoke() { env = {...env, scopeKey: "", childId: null}; await render(); await settle(); },
@@ -130,60 +132,98 @@ function fixture({ version = 4, initialFailure = false, editor = true, focusBrid
   };
 }
 
+test('cold category entry loads existing history through the real owner without a read button', async () => {
+  const h = fixture({editor: false});
+  try {
+    h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.start();
+    assert.deepEqual(h.historyRequests().map(request => request.before), ['4']);
+    assert.equal(h.get().model.historyOpen, true);
+    assert.deepEqual(h.get().model.history.map(value => value.version), [3, 2]);
+    assert.ok(document.querySelector('[data-testid="profile-history-version-3"]'));
+    assert.ok(document.querySelector('[data-testid="profile-history-version-2"]'));
+    assert.equal(h.button('讀取修改歷史'), undefined); assert.equal(h.button('重新讀取修改歷史'), undefined);
+    assert.equal(h.button('重試讀取修改歷史'), undefined); assert.equal(h.button('載入更早版本').disabled, false);
+    assert.doesNotMatch(document.body.textContent, /按版本查閱|最新資料可到檔案頁/);
+    h.faults.push(({childId}) => page(childId, [1])); await h.click('載入更早版本');
+    assert.deepEqual(h.historyRequests().map(request => request.before), ['4', '2']);
+    assert.deepEqual(h.get().model.history.map(value => value.version), [3, 2, 1]);
+  } finally { await h.close(); }
+});
+
+test('StrictMode entry reads once and loaded history survives rerenders and category remounts', async () => {
+  const h = fixture({editor: false, strict: true, historyVisible: false});
+  try {
+    await h.start(); assert.equal(h.historyRequests().length, 0, 'Other categories do not request profile history');
+    h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.category(true);
+    const history = h.get().model.history;
+    assert.equal(h.historyRequests().length, 1); assert.equal(h.entryCalls.length, 1, 'Effect replay delegates to the real owner once');
+    await h.mount(); await h.settle(); await h.category(false); await h.category(true);
+    assert.equal(h.historyRequests().length, 1); assert.equal(h.entryCalls.length, 1); assert.equal(h.get().model.history, history);
+    assert.equal(h.get().model.hasMoreHistory, true);
+  } finally { await h.close(); }
+});
+
 test('failed first history read retains a manual retry, dirty draft and form identity across profile refresh', async () => {
-  const h = fixture();
+  const h = fixture({historyVisible: false});
   try {
     await h.start(); await h.click('Edit synthetic draft');
     const form = h.form(), formKey = h.get().model.formKey;
-    h.faults.push(() => json({}, 503)); await h.click('讀取修改歷史');
-    assert.equal(h.get().model.historyOpen, false);
-    assert.match(h.get().model.notice, /未能讀取檔案歷史/);
-    assert.equal(h.button('讀取修改歷史').disabled, false);
-    await h.settle(); assert.equal(h.historyRequests().length, 1, 'No automatic retry');
+    h.faults.push(() => json({}, 503)); await h.category(true);
+    assert.equal(h.get().model.historyOpen, false); assert.match(h.get().model.notice, /未能讀取檔案歷史/);
+    assert.equal(h.button('重試讀取修改歷史').disabled, false);
+    await h.mount(); await h.category(false); await h.category(true);
+    assert.equal(h.historyRequests().length, 1, 'Errors never cause automatic retries, including on re-entry');
     await h.click('重新讀取檔案');
     assert.equal(h.historyRequests().length, 1, 'Current profile refresh is not a history retry');
     assert.equal(h.form(), form); assert.equal(h.get().model.formKey, formKey);
     assert.equal(h.form().dataset.region, 'Unsaved synthetic draft'); assert.equal(h.dirtySignals.at(-1), true);
-    h.faults.push(({ childId }) => page(childId, [3, 2])); await h.click('讀取修改歷史');
+    h.faults.push(({childId}) => page(childId, [3, 2])); await h.click('重試讀取修改歷史');
     assert.equal(h.historyRequests().length, 2); assert.equal(h.get().model.historyOpen, true);
     assert.deepEqual(h.get().model.history.map(value => value.version), [3, 2]);
-    assert.equal(h.get().model.notice, null); assert.equal(h.button('重新讀取修改歷史').disabled, false);
+    assert.equal(h.get().model.notice, null); assert.equal(h.button('重試讀取修改歷史'), undefined);
     assert.equal(h.form(), form); assert.equal(h.form().dataset.region, 'Unsaved synthetic draft');
   } finally { await h.close(); }
 });
 
-test('successful empty history is shown without a false error or retry loop', async () => {
-  const h = fixture();
-  try {
-    await h.start(); h.faults.push(({ childId }) => page(childId, [])); await h.click('讀取修改歷史');
-    assert.equal(h.get().model.historyOpen, true); assert.deepEqual(h.get().model.history, []);
-    assert.equal(h.get().model.notice, null); assert.equal(h.button('重新讀取修改歷史').disabled, false);
-    assert.equal(h.button('載入更早版本'), undefined); await h.settle(); assert.equal(h.historyRequests().length, 1);
-  } finally { await h.close(); }
+test('successful empty history and current version zero are authoritative without a retry loop or invalid cursor', async () => {
+  for (const version of [4, 0]) {
+    const h = fixture({version, editor: false});
+    try {
+      if (version > 0) h.faults.push(({childId}) => page(childId, [])); await h.start();
+      assert.deepEqual(h.get().model.history, []); assert.equal(h.get().model.historyOpen, version > 0);
+      assert.ok(document.querySelector('[data-testid="profile-history-empty"]'));
+      assert.equal(h.get().model.notice, null); assert.equal(h.button('重試讀取修改歷史'), undefined);
+      assert.equal(h.button('載入更早版本'), undefined); await h.settle();
+      assert.equal(h.historyRequests().length, version > 0 ? 1 : 0);
+    } finally { await h.close(); }
+  }
 });
 
 test('failed next page retains accumulated history and cursor; manual retry clears the error and appends once', async () => {
-  const h = fixture();
+  const h = fixture({editor: false});
   try {
-    await h.start(); h.faults.push(({ childId }) => page(childId, [3, 2], 2)); await h.click('讀取修改歷史');
+    h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.start();
     h.faults.push(() => json({}, 503)); await h.click('載入更早版本');
     assert.equal(h.get().model.historyOpen, true); assert.deepEqual(h.get().model.history.map(value => value.version), [3, 2]);
     assert.equal(h.get().model.hasMoreHistory, true); assert.equal(h.button('載入更早版本').disabled, false);
-    assert.match(h.get().model.notice, /未能讀取檔案歷史/);
-    h.faults.push(({ childId }) => page(childId, [1])); await h.click('載入更早版本');
+    assert.match(h.get().model.notice, /未能讀取檔案歷史/); assert.equal(h.button('重試讀取修改歷史'), undefined);
+    await h.mount(); assert.equal(h.historyRequests().length, 2, 'The original next-page retry remains manual');
+    h.faults.push(({childId}) => page(childId, [1])); await h.click('載入更早版本');
     assert.deepEqual(h.historyRequests().map(request => request.before), ['4', '2', '2']);
     assert.deepEqual(h.get().model.history.map(value => value.version), [3, 2, 1]);
     assert.equal(h.get().model.notice, null); assert.equal(h.get().model.hasMoreHistory, false);
   } finally { await h.close(); }
 });
 
-test('rapid repeated history actions remain single-flight and reveal only the accepted success', async () => {
-  const h = fixture(), wait = deferred();
+test('repeated owner actions during the entry read remain single-flight and expose no first-read button', async () => {
+  const h = fixture({editor: false, strict: true}), wait = deferred();
   try {
-    await h.start(); h.faults.push(() => wait.promise);
+    h.faults.push(() => wait.promise); await h.start();
     await act(async () => { h.get().actions.showHistory(); h.get().actions.showHistory(); await tick(); });
     assert.equal(h.historyRequests().length, 1); assert.equal(h.get().model.reading, true);
-    assert.equal(h.get().model.historyOpen, false); assert.equal(h.button('讀取修改歷史').disabled, true);
+    assert.equal(h.get().model.historyOpen, false); assert.equal(h.button('讀取修改歷史'), undefined);
+    assert.equal(h.button('重試讀取修改歷史'), undefined);
+    assert.ok(document.querySelector('[data-read-state="loading"]'));
     await act(async () => { wait.resolve(page('child-a', [3])); await tick(); });
     assert.deepEqual(h.get().model.history.map(value => value.version), [3]); assert.equal(h.get().model.historyOpen, true);
   } finally { wait.resolve(page('child-a', [])); await h.close(); }
@@ -193,85 +233,74 @@ for (const [name, childId, identityKey, status] of [
   ['child change rejects late success', 'child-b', 'parent:epoch-1', 200],
   ['identity epoch rejects late 403', 'child-a', 'parent:epoch-2', 403],
 ]) test(name, async () => {
-  const h = fixture(), wait = deferred();
+  const h = fixture({editor: false}), wait = deferred();
   try {
-    await h.start(); h.faults.push(() => wait.promise); await h.click('讀取修改歷史');
-    const oldAction = h.get().actions.showHistory;
-    await h.switchScope(childId, identityKey); const count = h.historyRequests().length;
+    h.faults.push(() => wait.promise); await h.start(); const oldAction = h.get().actions.showHistory;
+    h.faults.push(({childId}) => page(childId, [2])); await h.switchScope(childId, identityKey);
+    const count = h.historyRequests().length;
     await act(async () => { oldAction(); wait.resolve(status === 200 ? page('child-a', [3]) : json({}, status)); await tick(); });
     assert.equal(h.historyRequests().length, count, 'Old callback cannot start a history request');
-    assert.equal(h.get().model.child.id, childId); assert.deepEqual(h.get().model.history, []);
-    assert.equal(h.get().model.historyOpen, false); assert.equal(h.get().model.notice, null); assert.deepEqual(h.accessLoss, []);
-    h.faults.push(({ childId }) => page(childId, [2])); await h.click('讀取修改歷史');
-    assert.deepEqual(h.get().model.history.map(value => value.version), [2]);
+    assert.equal(count, 2, 'The new identity loads its own first page once');
+    assert.equal(h.get().model.child.id, childId); assert.deepEqual(h.get().model.history.map(value => value.version), [2]);
+    assert.equal(h.get().model.historyOpen, true); assert.equal(h.get().model.notice, null); assert.deepEqual(h.accessLoss, []);
   } finally { wait.resolve(page('child-a', [])); await h.close(); }
 });
 
 test('a delayed 403 in the current scope still reaches the access-loss owner instead of becoming a retry error', async () => {
-  const h = fixture(), wait = deferred();
+  const h = fixture({editor: false}), wait = deferred();
   try {
-    await h.start(); h.faults.push(() => wait.promise); await h.click('讀取修改歷史');
+    h.faults.push(() => wait.promise); await h.start();
     await act(async () => { wait.resolve(json({}, 403)); await tick(); });
-    assert.deepEqual(h.accessLoss, [{ scopeKey: 'parent:epoch-1:child-a', error: { status: 403, code: null } }]);
+    assert.deepEqual(h.accessLoss, [{scopeKey: 'parent:epoch-1:child-a', error: {status: 403, code: null}}]);
     assert.equal(h.get().model.notice, null); assert.deepEqual(h.get().model.history, []);
+    assert.equal(h.button('重試讀取修改歷史'), undefined);
+    const stale = h.get().actions.showHistory, count = h.historyRequests().length;
+    await h.revoke(); await act(async () => { stale(); await tick(); });
+    assert.equal(h.get(), null); assert.equal(h.historyRequests().length, count);
   } finally { wait.resolve(page('child-a', [])); await h.close(); }
 });
 
 test('approved profile modal discard clears the UI draft only and rejects a stale scope callback', async () => {
   const h = fixture();
   try {
-    await h.start(); const saved = structuredClone(h.get().model.current), oldKey = h.get().model.formKey;
+    h.faults.push(({childId}) => page(childId, [3])); await h.start();
+    const saved = structuredClone(h.get().model.current), oldKey = h.get().model.formKey;
     await h.click('Edit synthetic draft'); assert.equal(h.dirtySignals.at(-1), true);
     await act(async () => { h.get().actions.discardDraft(); await tick(); });
     assert.equal(h.dirtySignals.at(-1), false); assert.deepEqual(h.get().model.current, saved);
     assert.equal(h.get().model.initialValues.region, saved.data.region); assert.equal(h.get().model.formKey, oldKey + 1);
     assert.equal(h.get().model.reviewedValues, null); assert.equal(h.requests.some(request => request.method !== 'GET' && !request.path.endsWith('/care/search')), false);
-    const stale = h.get().actions.discardDraft; await h.switchScope('child-b', 'parent:epoch-1');
+    const stale = h.get().actions.discardDraft;
+    h.faults.push(({childId}) => page(childId, [3])); await h.switchScope('child-b', 'parent:epoch-1');
     await h.click('Edit synthetic draft'); const key = h.get().model.formKey;
     await act(async () => { stale(); await tick(); }); assert.equal(h.get().model.formKey, key);
     assert.equal(h.dirtySignals.at(-1), true); assert.equal(h.form().dataset.region, 'Unsaved synthetic draft');
   } finally { await h.close(); }
 });
 
-
-test('cold history entry is actionable without eager history reads and successful version zero needs no invalid cursor', async () => {
-  for (const version of [4, 0]) {
-    const h = fixture({ version, editor: false });
-    try {
-      await h.start(); assert.equal(h.historyRequests().length, 0);
-      assert.equal(h.get().model.reading, false); assert.equal(h.get().model.needsRefresh, false);
-      assert.equal(h.get().model.current.version, version);
-      assert.equal(!!document.querySelector('[data-testid="profile-history-empty"]'), version === 0);
-      if (version > 0) assert.equal(h.button('讀取修改歷史').disabled, false);
-      else assert.equal(h.button('讀取修改歷史'), undefined);
-    } finally { await h.close(); }
-  }
-});
-
-test('failed current-profile cold read exposes recovery and never claims an empty history', async () => {
-  const h = fixture({ initialFailure: true, editor: false });
+test('failed current-profile cold read exposes recovery and only then admits the first history page', async () => {
+  const h = fixture({initialFailure: true, editor: false});
   try {
     await h.mount(); await h.settle();
     assert.equal(h.get().model.needsRefresh, true); assert.equal(h.get().model.reading, false);
     assert.equal(document.querySelector('[data-testid="profile-history-empty"]'), null);
-    assert.equal(h.button('重新讀取檔案').disabled, false);
-    await h.click('重新讀取檔案'); assert.equal(h.get().model.needsRefresh, false);
-    assert.equal(h.button('讀取修改歷史').disabled, false); assert.equal(h.historyRequests().length, 0);
+    assert.equal(h.button('重新讀取檔案').disabled, false); assert.equal(h.historyRequests().length, 0);
+    h.faults.push(({childId}) => page(childId, [3])); await h.click('重新讀取檔案'); await h.settle();
+    assert.equal(h.get().model.needsRefresh, false); assert.equal(h.button('重新讀取檔案'), undefined);
+    assert.equal(h.historyRequests().length, 1); assert.deepEqual(h.get().model.history.map(value => value.version), [3]);
   } finally { await h.close(); }
 });
 
-
-test('window focus keeps same-canonical paged history and its cursor without any automatic history request', async () => {
+test('window focus keeps same-canonical paged history and its cursor without another history request', async () => {
   const h = fixture({focusBridge: true, editor: false});
   try {
-    await h.start(); h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.click('讀取修改歷史');
+    h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.start();
     const savedHistory = h.get().model.history, count = h.historyRequests().length;
     const currentReads = h.requests.filter(request => request.path.endsWith('/profile')).length;
     await h.focus();
     assert.ok(h.requests.filter(request => request.path.endsWith('/profile')).length > currentReads, 'The real focus pipeline refreshed current canonical data');
     assert.equal(h.get().model.historyOpen, true); assert.equal(h.get().model.history, savedHistory);
     assert.equal(h.get().model.hasMoreHistory, true); assert.equal(h.historyRequests().length, count);
-    // JSON property order is not a canonical content change.
     h.currentResponses.push(({childId}) => { const raw = revision(childId, 4); return json({profile: Object.fromEntries(Object.entries(raw).reverse())}); });
     await h.focus(); assert.equal(h.get().model.history, savedHistory);
     h.faults.push(({childId}) => page(childId, [1])); await h.click('載入更早版本');
@@ -286,7 +315,7 @@ test('window focus keeps same-canonical paged history and its cursor without any
 test('same-canonical focus preserves a failed page and original retry cursor, including across a failed current refresh', async () => {
   const h = fixture({focusBridge: true, editor: false});
   try {
-    await h.start(); h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.click('讀取修改歷史');
+    h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.start();
     h.faults.push(() => json({}, 503)); await h.click('載入更早版本');
     const notice = h.get().model.notice, history = h.get().model.history;
     await h.focus(); assert.equal(h.get().model.notice, notice); assert.equal(h.get().model.history, history);
@@ -299,73 +328,70 @@ test('same-canonical focus preserves a failed page and original retry cursor, in
   } finally { await h.close(); }
 });
 
-test('canonical version, data and raw confirmation metadata changes invalidate history instead of relabelling it', async () => {
+test('canonical version, data and raw confirmation metadata invalidation loads a new first page, not stale history', async () => {
   for (const patch of [{version: 5}, {data: {...revision('child-a', 4).data, region: 'Changed canonical region'}}, {confirmedAt: '2026-10-10T00:00:30Z'}]) {
     const h = fixture({focusBridge: true, editor: false});
     try {
-      await h.start(); h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.click('讀取修改歷史');
+      h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.start();
       h.faults.push(() => json({}, 503)); await h.click('載入更早版本');
-      h.changeCurrent(patch); await h.focus();
-      assert.equal(h.get().model.historyOpen, false); assert.deepEqual(h.get().model.history, []);
+      h.changeCurrent(patch); h.faults.push(({childId}) => page(childId, [1])); await h.focus();
+      assert.equal(h.get().model.historyOpen, true); assert.deepEqual(h.get().model.history.map(value => value.version), [1]);
       assert.equal(h.get().model.hasMoreHistory, false); assert.equal(h.get().model.notice, null);
-      assert.equal(h.historyRequests().length, 2);
-      h.faults.push(({childId}) => page(childId, [1])); await h.click('讀取修改歷史');
-      assert.equal(h.historyRequests().at(-1).before, String(patch.version ?? 4));
+      assert.equal(h.historyRequests().length, 3); assert.equal(h.historyRequests().at(-1).before, String(patch.version ?? 4));
     } finally { await h.close(); }
   }
 });
 
-test('focus refresh preserves a dirty draft and basis but invalidates history when canonical content really changes', async () => {
+test('focus refresh and history invalidation preserve the dirty draft, form identity and original basis', async () => {
   const h = fixture({focusBridge: true});
   try {
-    await h.start(); h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.click('讀取修改歷史');
+    h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.start();
     await h.click('Edit synthetic draft'); const form = h.form(), formKey = h.get().model.formKey, basis = h.get().model.basis;
     await h.focus(); assert.equal(h.get().model.historyOpen, true);
-    h.changeCurrent({version: 5}); await h.focus();
+    h.changeCurrent({version: 5}); h.faults.push(({childId}) => page(childId, [4])); await h.focus();
     assert.equal(h.get().model.current.version, 5); assert.equal(h.get().model.basis, basis);
     assert.equal(h.get().model.formKey, formKey); assert.equal(h.form(), form);
     assert.equal(h.form().dataset.region, 'Unsaved synthetic draft'); assert.equal(h.dirtySignals.at(-1), true);
-    assert.equal(h.get().model.historyOpen, false); assert.deepEqual(h.get().model.history, []);
+    assert.equal(h.get().model.historyOpen, true); assert.deepEqual(h.get().model.history.map(value => value.version), [4]);
   } finally { await h.close(); }
 });
 
 test('focus invalidation rejects a late history response and a superseded current response', async () => {
   const h = fixture({focusBridge: true, editor: false}), historyWait = deferred(), currentWait = deferred();
   try {
-    await h.start(); h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.click('讀取修改歷史');
+    h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.start();
     h.faults.push(() => historyWait.promise); await h.click('載入更早版本');
-    h.changeCurrent({version: 5}); await h.focus();
+    h.changeCurrent({version: 5}); h.faults.push(({childId}) => page(childId, [4])); await h.focus();
     await act(async () => { historyWait.resolve(page('child-a', [1])); await tick(); });
-    assert.equal(h.get().model.current.version, 5); assert.deepEqual(h.get().model.history, []); assert.equal(h.get().model.historyOpen, false);
+    assert.equal(h.get().model.current.version, 5); assert.deepEqual(h.get().model.history.map(value => value.version), [4]);
     h.currentResponses.push(() => currentWait.promise); await h.focus();
-    h.changeCurrent({version: 6}); await h.focus();
+    h.changeCurrent({version: 6}); h.faults.push(({childId}) => page(childId, [5])); await h.focus();
     await act(async () => { currentWait.resolve(json({profile: revision('child-a', 4)})); await tick(); });
-    assert.equal(h.get().model.current.version, 6); assert.equal(h.get().model.historyOpen, false); assert.equal(h.get().model.notice, null);
+    assert.equal(h.get().model.current.version, 6); assert.equal(h.get().model.historyOpen, true); assert.equal(h.get().model.notice, null);
+    assert.deepEqual(h.get().model.history.map(value => value.version), [5]);
   } finally { historyWait.resolve(page('child-a', [])); currentWait.resolve(json({profile: revision('child-a', 4)})); await h.close(); }
 });
 
 test('focus refresh cannot retain history through child, identity or revoked-scope transitions', async () => {
   const h = fixture({focusBridge: true, editor: false}), wait = deferred();
   try {
-    await h.start(); h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.click('讀取修改歷史');
+    h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.start();
     h.currentResponses.push(() => wait.promise); await h.focus();
-    await h.switchScope('child-b', 'parent:epoch-1');
+    h.faults.push(({childId}) => page(childId, [2])); await h.switchScope('child-b', 'parent:epoch-1');
     await act(async () => { wait.resolve(json({profile: revision('child-a', 4)})); await tick(); });
-    assert.equal(h.get().model.child.id, 'child-b'); assert.deepEqual(h.get().model.history, []);
-    h.faults.push(({childId}) => page(childId, [3], 3)); await h.click('讀取修改歷史');
-    await h.switchScope('child-b', 'parent:epoch-2'); assert.deepEqual(h.get().model.history, []); assert.equal(h.get().model.historyOpen, false);
-    h.faults.push(({childId}) => page(childId, [3], 3)); await h.click('讀取修改歷史');
+    assert.equal(h.get().model.child.id, 'child-b'); assert.deepEqual(h.get().model.history.map(value => value.version), [2]);
+    h.faults.push(({childId}) => page(childId, [1])); await h.switchScope('child-b', 'parent:epoch-2');
+    assert.deepEqual(h.get().model.history.map(value => value.version), [1]);
     const stale = h.get().actions.showHistory, count = h.historyRequests().length;
     await h.revoke(); await act(async () => { stale(); await tick(); });
     assert.equal(h.get(), null); assert.equal(h.historyRequests().length, count);
   } finally { wait.resolve(json({profile: revision('child-a', 4)})); await h.close(); }
 });
 
-
 test('a focus current-read permission denial reaches the access owner even with a retained history error', async () => {
   const h = fixture({focusBridge: true, editor: false});
   try {
-    await h.start(); h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.click('讀取修改歷史');
+    h.faults.push(({childId}) => page(childId, [3, 2], 2)); await h.start();
     h.faults.push(() => json({}, 503)); await h.click('載入更早版本');
     h.currentResponses.push(() => json({}, 403)); await h.focus();
     assert.equal(h.accessLoss.length, 1); assert.equal(h.accessLoss[0].error.status, 403);

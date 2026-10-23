@@ -46,7 +46,8 @@ export function createFirestoreNotificationMessages(options: FirestoreDomainOpti
       if (input.scopeVersion && input.scopeVersion !== version) domainReject('messages_scope_changed');
       if (previous && (previous.userId !== owner || previous.scopeVersion !== version)) domainReject('invalid_message_cursor', 400);
       const asOf = previous?.asOf ?? new Date().toISOString();
-      const cursor = previous?.positions ?? definitions.map(() => ({ after: null, done: false }));
+      // A retried transaction must start from the same input, not the discarded attempt's progress.
+      const cursor = previous ? structuredClone(previous.positions) : definitions.map(() => ({ after: null, done: false }));
       const streams = await Promise.all(definitions.map(async ([suffix, , field], index) => {
         if (cursor[index].done) return [];
         let query: Query = data.collection(suffix).where('workspaceTag', '==', tags.workspaceTag)

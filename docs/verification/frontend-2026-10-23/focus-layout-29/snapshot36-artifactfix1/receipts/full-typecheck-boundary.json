@@ -1,0 +1,33 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "status": "NOT_PASS",
+  "attempts": [
+    {
+      "originalReceiptSha256": "27bb1c7faea08cfc083077d2a711b9efdb0f6f3738e8d997ce77eee5954899cd",
+      "sourceVersion": "snapshot30",
+      "environment": "build namespace",
+      "scope": "full frontend original tsconfig",
+      "NODE_OPTIONS": "--max-old-space-size=768",
+      "exit": 137,
+      "seconds": 5.93,
+      "maxChildRssKiB": 676292,
+      "productInputsUnchanged": true,
+      "logSha256": "ff00ab5c8903f6a358231e751caf81434de47bfb37f806e6f71ab934fab0af96",
+      "diagnostics": "No TypeScript diagnostics before termination; cause unestablished"
+    },
+    {
+      "originalReceiptSha256": "953cd291cb74e3c0ff1f1a46437a3bbb2231d586f9f6b292506adb8f6b1f19a9",
+      "sourceVersion": "snapshot30",
+      "environment": "cloud Terminal namespace",
+      "scope": "full frontend original tsconfig",
+      "NODE_OPTIONS": "--max-old-space-size=768",
+      "exit": 137,
+      "seconds": 9.854,
+      "maxChildRssKiB": 842696,
+      "productInputsUnchanged": true,
+      "logSha256": "87d5132f1e000f47753160652d397b2cbff9f851f45bfebfd2c480ca186cd1b3",
+      "diagnostics": "No TypeScript diagnostics before termination; cause unestablished"
+    }
+  ],
+  "current36": "Not rerun; export/targeted/browser evidence does not substitute for semantic typecheck or CI."
+}

@@ -1,0 +1,8 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "originalReceiptSha256": "7f696e06d4d44d00106478778567d2e5e9ffffbb6744c3491302691f53c94816",
+  "status": "PASS",
+  "files": 143,
+  "sha256": "c257b9c381cb031acc4815d1e9811f6178dbf7475aa95a510e4f9abb00877f3e",
+  "sourcemapsExcluded": true
+}

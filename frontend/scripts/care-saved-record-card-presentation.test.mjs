@@ -63,7 +63,8 @@ test('the active saved list gives original event text three readable lines and a
     assert.equal(card.props.style.width, undefined);
     assert.equal(card.props.style.height, undefined);
     assert.equal(card.props.style.aspectRatio, undefined);
-    assert.equal(card.props.style.padding, 12, 'Existing card inset and parent layout remain unchanged');
+    assert.deepEqual(card.props.style, {padding: 12, borderWidth: 1, borderColor: '#CAC9D4', backgroundColor: '#FFFFFE', gap: 8},
+      'Use the original straight-edged thin frame without changing card width, height or parent layout');
     const labels = descendants(card).find(node => node.type === 'View');
     assert.equal(labels.props.style.flexWrap, 'wrap');
     card.props.onPress();

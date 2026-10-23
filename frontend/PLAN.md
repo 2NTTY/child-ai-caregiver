@@ -3,19 +3,16 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## 前端頁型、讀取穩定性與 metadata（2026-10-23；snapshot31 已發布合成預覽，保留未過門檻）
+## 頁面專屬歷史與安靜讀取（2026-10-23；source36／artifactfix1 本地交付）
 
-沿用分支 `dot/frontend-simplify-20261021`；來源 commit `58080880e3ebbe9e3d323efef7d9b5666f324e20`及驗收文件 commit `fe60f4d6c4699539a26952790fa905e2f2b24c93`均已核遠端與 [PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)，仍 open／draft／未合併。[既有公開合成預覽](https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site)已於2026-10-23 04:59:33.978 UTC發布 Site87／snapshot31；Sites source `b1fb6db5cd7820cd2183a732f866d8673973bb10`，deployment `appgdep_6adae9ac9e308191adaad1d5d4ef47a5`為 succeeded，公開範圍不變。
+沿用 `dot/frontend-simplify-20261021`／[PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)，本輪以 `5a39776f703bc436528b858f393621bcf8030b03` 為基底，PR 仍 draft／未合併；此為交付時已知狀態，未另查 CI。新版尚未更新公開站點；最後已記錄的公開版本仍為04:59:33.978 UTC的Site87／snapshot31（Sites source `b1fb6db5cd7820cd2183a732f866d8673973bb10`），不把本地結果當新公開驗收。
 
-05:08 UTC完成同站有界smoke：public DOM載入31的 `index-31bd1794b883237095fb089582d30780.js`，導航、核對、記憶、Summary離開前／返回後狀態及390樣式通過。這不是live檔案bytes的SHA核對，Summary前後證據亦不宣稱逐毫秒全程穩定；完整TypeScript與CI未過門檻不變。
-
-- **本輪範圍：**歷史待辦單欄、已保存核對正文優先、重新讀取時的內容／焦點穩定、Tabs／導航、metadata 圖標與短值，以及既有 Contact 渠道 schema 修補。保留各 owner、權限、草稿、確認版本及原操作恢復；不以共用元件統一所有頁型。
-- **定稿候選：**snapshot31 補修 Summary 自然 focus／位移及概況同範圍重驗內容保留，記憶私人短標籤改為「本人」。來源範圍 **63 檔＝37 產品＋25 測試＋1 設計文件、553 build inputs**；此為產品候選 scope，不包含另附的交付報告及本次 PLAN／STATUS 更新。
-- **分版本證據：**[snapshot29](../docs/verification/frontend-2026-10-23/focus-layout-29/README.md) 的限定場景通過；[snapshot30](../docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/README.md) 的 metadata／分頁等代表結果與 Summary 紅項均已凍結，Tasks 1440 自然 focus 仍未知。30結果不冒稱31重跑，後版修好不回寫前版為綠，也不把版本或作者測試相加。
-- **31已核：**11個 unique 必要 scripts／80項通過；唯一export exit0（133.295秒）、靜態安全validator通過，63檔scope／553inputs前後一致。04:28:53 UTC的[31有界browser報告](../docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/README.md)確認1024自然focus未再出現原Summary失焦／位移，ready-state鍵盤、真Paper日期blur及390「本人」短名通過；不是全站重跑或真機驗收。
-- **未過門檻：**snapshot30 完整 TypeScript 在兩個環境均 exit137、未完成且原因未知；31 未重跑，不以定向測試、export或有界browser抵銷。04:40 UTC 的GitHub觀察為0 runs／checks／statuses、combined pending，亦不是CI綠燈。
-- **後續：**本輪來源、驗收文件及合成預覽已交付；保留完整TypeScript／CI未過門檻及原未驗項作後續交接。維持同一draft PR，不 ready、不 merge、不 auto-merge。
-- **界線：**產品修改限 `frontend/**`，只用合成資料；沒有真家庭資料、真模型、API／帳戶權限變更、GCP或OTA。原未接接口仍見 [接口提案](ATTENTION_API_HANDOFF.md)。
+- **精確來源：**相對 source31 共89檔＝45產品＋44測試；頁面專屬歷史卡／閱讀彈窗、概況四區、記憶入口／本地分頁、確認作用域、唯讀關閉及安靜讀取。server訊息歷史完整性只交源碼，不代表後端部署。需求文件、avatar及附件增量不在本包。
+- **安靜讀取：**同scope保留舊內容／控制／焦點；settled refresh_failed 保留已顯示的checkbox為disabled。identity／scope／撤權仍清除敏感資料，沒有放寬寫入或原確認guard。
+- **來源到產物：**559inputs無漂移；417個實際輸出的第一方文字來源hash＋1PNG來源／registry／輸出鏈通過，Router只指本版。原36共享cache帶入35舊模組的artifact已撤回；artifactfix1隔離cache重新產出並核來源，不改產品。公開bundle僅移除唯一末尾map註解，逆轉及模組bytes均已核，maps不公開。
+- **分層證據：**source36兩個必要scripts 30／30；32–35各版184／66／79／16不相加、不當36重跑。fresh安全validator與archive逐檔readback通過。10:38:21 UTC封存的36-artifactfix1 GUI只針對同owner503 settled、disabled原生pointer／Space／Enter及聚焦後再讀，結果PASS_BOUNDED；1023×600 iframe，不是全站／手機驗收。原錯誤提示增加高度與scroll有明列，不宣稱整頁零位移。
+- **未過門檻：**完整TypeScript歷史兩環境exit137、原因未確診，仍未通過；CI未新查。自然OS app-switch、Android、完整讀屏／四尺寸、真API與全站回歸未完成。源碼／export／有界GUI不能抵銷這些界線。
+- **交付：**[精簡工程收據與三張合成原圖](../docs/verification/frontend-2026-10-23/focus-layout-29/snapshot36-artifactfix1/README.md)列精確89path、artifact身份、分版本紅綠與公開摘要hash；本階段僅本地source及文件，遠端PR／公開預覽狀態另按實際交付記錄，未合併。只用合成資料，沒有真家庭資料、真模型、正式刪除、GCP或OTA。
 
 下方是較早批次的完整歷史；其「當前／待交付」不代表本輪狀態，亦不重用舊 browser 或 Sites 證據作本候選通過。
 

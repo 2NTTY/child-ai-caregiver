@@ -130,7 +130,7 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
     <StatusAnnouncement eventKey={`${model.busy ?? "none"}:${model.operation}:${model.notice}:${model.keyCheck?.status ?? "none"}`}
       message={active && model.online && model.authorized ? statusMessage : ""} urgent={!model.busy && (model.operation === "failed" || model.keyCheck?.status === "unavailable")} />
     <SectionCard><SectionHeader density="compact" title="本人模型設定" subtitle={`適用於${model.accountName}；切換孩子會沿用本人的設定。`}
-      action={!model.originalOperationId ? <AppButton label="重新讀取" accessibilityLabel="重新讀取模型設定" variant="quiet" density="compact" disabled={!model.online || !model.authorized || !!model.busy} onPress={actions.refresh} /> : undefined} />
+      action={!model.originalOperationId && (!snapshot || model.needsRead || model.operation === "failed" || isDirty || deleteOpen) ? <AppButton label="重新讀取" accessibilityLabel="重新讀取模型設定" variant="quiet" density="compact" disabled={!model.online || !model.authorized || !!model.busy} onPress={actions.refresh} /> : undefined} />
       <View style={styles.statusRow}>{model.busy && (snapshot || model.busy !== "read") ? <ActivityIndicator size={20} /> : null}
         {model.operation !== "none" ? <OperationPill state={model.operation} /> : null}
         {!snapshot && model.busy === "read" ? <ReadStateNotice state="loading" message="正在讀取模型設定…" />

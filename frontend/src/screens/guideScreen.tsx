@@ -97,9 +97,9 @@ export default function GuideScreen() {
               {childRecovery}
               {createUnknown ? <View style={styles.actions}><AppButton label="查核原建立操作" variant="quiet" disabled={refreshDisabled} onPress={() => { void refresh(); }} /></View> : null}
             </ManualFormDialog>
-            <AppButton label={createUnknown ? "查核原建立操作" : recordsState.childrenError ? "重試讀取孩子" : "重新整理"}
+            {createUnknown || recordsState.childrenError ? <AppButton label={createUnknown ? "查核原建立操作" : "重試讀取孩子"}
               accessibilityLabel={createUnknown ? "查核原建立操作" : recordsState.childrenError ? "重試讀取孩子" : "重新讀取孩子"}
-              variant="quiet" density="compact" disabled={refreshDisabled} onPress={() => { void refresh(); }} />
+              variant="quiet" density="compact" disabled={refreshDisabled} onPress={() => { void refresh(); }} /> : null}
           </View>
         </View>
         {childRecovery}

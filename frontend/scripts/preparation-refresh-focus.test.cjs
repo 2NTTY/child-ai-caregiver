@@ -22,7 +22,8 @@ const Pressable = React.forwardRef(({children, testID, accessibilityLabel, onPre
 const Empty = () => null, Text = ({children}) => e('span', null, children);
 const cache = new Map();
 // Real owner, runtime, API parsers, QueryClient, online observer, workspace provider,
-// reader, React effects and DOM focus. Native/layout and non-reader controls are ports.
+// reader, React effects and DOM focus during refresh. The modal is a presentation port;
+// actual modal return focus is covered by history-modal-readers.test.cjs.
 // Synthetic HTTP latency is controlled; this is not live-browser timing evidence.
 function load(relative) {
   const filename = path.resolve(root, relative);
@@ -37,8 +38,8 @@ function load(relative) {
     if (name.endsWith('/theme')) return {colors: {}, radius: {}, readingType: {}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}};
     if (name.endsWith('/useContainerWidth')) return {useContainerWidth: () => ({width, ref: null, onLayout() {}})};
     if (name.endsWith('/ui')) return {AppButton: ({label, onPress, disabled}) => e('button', {onClick: onPress, disabled}, label), AppSelect: Empty};
-    const ports = {WriteRecoveryNotice: Empty, AppCheckbox: Empty, AppStatusBadge: Empty, SummaryDisclosure: Empty, EmptyListCard: View, ManualFormDialog: Empty, DocumentCreateForm: Empty};
-    if (/\/(WriteRecoveryNotice|AppCheckbox|AppStatusBadge|SummaryDisclosure|EmptyListCard|FormDialog|DocumentCreateForm)$/.test(name)) return ports;
+    const ports = {AppIcon: Empty, WriteRecoveryNotice: Empty, AppCheckbox: Empty, AppStatusBadge: Empty, SummaryDisclosure: Empty, EmptyListCard: View, ManualFormDialog: Empty, FormDialog: ({visible, children, onClose}) => visible ? e('section', null, children, e('button', {onClick: onClose}, 'Close synthetic reader')) : null, DocumentCreateForm: Empty};
+    if (/\/(AppIcon|WriteRecoveryNotice|AppCheckbox|AppStatusBadge|SummaryDisclosure|EmptyListCard|FormDialog|DocumentCreateForm)$/.test(name)) return ports;
     if (!name.startsWith('.')) return req(name);
     const target = path.resolve(path.dirname(filename), name);
     const found = [target, `${target}.ts`, `${target}.tsx`].find(file => fs.existsSync(file) && fs.statSync(file).isFile());
@@ -96,15 +97,16 @@ async function harness({pages = 1, activePages = 1} = {}) {
   await flush(render);
   assert.equal(owner.preparation.model.reading.archiveReady, true);
   return {container, calls, accessLoss, get owner() {return owner;}, row, flush, gate(fn) {gate = fn;},
-    async compoundReturn() {
+    async prepareReadArchiveFocus() {
       await flush(() => {row().focus(); row().click();});
       await flush(() => click('來源與版本'));
       await flush(() => owner.preparation.model.reading.readVersion(docA, snapshot(docA, 1).id, 1));
       assert.equal(owner.preparation.model.selected.revision.number, 1);
       for (const next of [350, 1100]) {width = next; await flush(render);}
-      await flush(() => click('返回歸檔清單'));
+      await flush(() => click('Close synthetic reader'));
       await flush(() => {const pending = [...frames.values()]; frames.clear(); pending.forEach(fn => fn());});
-      assert.equal(document.activeElement, row()); return row();
+      // Establish the list-focus precondition; this owner suite does not claim modal focus restoration.
+      row().focus(); assert.equal(document.activeElement, row()); return row();
     },
     async focus() {await flush(() => window.dispatchEvent(new Event('focus')));},
     async more(status = 'archived') {await flush(() => owner.preparation.model.reading.loadMoreDocuments(status));},
@@ -116,16 +118,16 @@ async function harness({pages = 1, activePages = 1} = {}) {
   };
 }
 
-test('real focus refresh never detaches the returned archive card while its verified replacement is loading', async () => {
+test('real focus refresh never detaches a previously read archive card while its verified replacement is loading', async () => {
   const h = await harness(), pending = deferred();
   try {
-    const original = await h.compoundReturn(), before = h.calls.length;
+    const original = await h.prepareReadArchiveFocus(), before = h.calls.length;
     h.gate((call, normal) => call.url.searchParams.get('status') === 'archived' ? pending.promise.then(normal) : undefined);
     await h.focus();
     assert.ok(h.calls.slice(before).some(call => call.url.pathname.endsWith('/online/spaces')));
     assert.ok(h.calls.slice(before).some(call => call.url.searchParams.get('status') === 'active'));
     assert.ok(h.calls.slice(before).some(call => call.url.searchParams.get('status') === 'archived'));
-    assert.equal(original.isConnected, true, 'An active-only intermediate commit must not remove the returned archived row');
+    assert.equal(original.isConnected, true, 'An active-only intermediate commit must not remove the focused archived row');
     assert.equal(document.activeElement, original);
     await h.flush(() => pending.resolve());
     assert.equal(h.row(), original); assert.equal(document.activeElement, original);

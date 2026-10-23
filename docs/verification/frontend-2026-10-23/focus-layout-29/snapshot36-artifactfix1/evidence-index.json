@@ -1,0 +1,123 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "hashAlgorithm": "SHA-256",
+  "publicFiles": {
+    "README.md": {
+      "sha256": "42c0023b8b881d01eba3e3a56f607e0fd9536f93f4e865af7cdbc0ad5e569d6a",
+      "bytes": 5182,
+      "representation": "public summary/excerpt"
+    },
+    "checks.json": {
+      "sha256": "8287e11d3cd34ed17201d2ed679af6a41f4f1853e9897cdb277fadc05a34806a",
+      "bytes": 2212,
+      "representation": "public summary/excerpt"
+    },
+    "images/01-ready-focused-0.jpg": {
+      "sha256": "5782a8364ddb5fa91ac868a6be3e9dd18788a394bd2a16d78809df79024bf190",
+      "bytes": 169192,
+      "representation": "original synthetic image; bytes unchanged"
+    },
+    "images/02-error-retained-0.jpg": {
+      "sha256": "bd174979c02f3388b965546fecec3f7d380cce06ae4442f50176771aaef24610",
+      "bytes": 162011,
+      "representation": "original synthetic image; bytes unchanged"
+    },
+    "images/03-error-focused-0.jpg": {
+      "sha256": "48538d356c49f64ec2c9a6dcf378c8e969ee203cea94d205ffbe07624340bbda",
+      "bytes": 162041,
+      "representation": "original synthetic image; bytes unchanged"
+    },
+    "receipts/archive-integrity.json": {
+      "sha256": "b1e1d14d0cc31081b0387d1924ea3abf71867b96ecfd212a2b8c2ceed64fb8f4",
+      "bytes": 328,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/artifact-identity.json": {
+      "sha256": "847e5f88db23c4ba63a7ac61f182030a0e5adb6a554c8b1e052161d05a9be321",
+      "bytes": 1463,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/bundle-sanitization.json": {
+      "sha256": "73c4f1f0b284dc34171e0e26db7e29a2b14f35430b71d476e56ae196a5257eff",
+      "bytes": 977,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/export-attempts.json": {
+      "sha256": "86f44bd6f47d2074a0fce8d43bed7a5eb7a371336d8b289270562e95153255f5",
+      "bytes": 2609,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/full-typecheck-boundary.json": {
+      "sha256": "748045c85507f8049b44ee99210df6a12eea790e8a46e9368e02e4a46bfea114",
+      "bytes": 1407,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/original-images-index.json": {
+      "sha256": "6ca197e58613f69b16b77fc58849b9cfa4df62d0237d0960832638237c72a973",
+      "bytes": 1633,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/qa-close-integrity.json": {
+      "sha256": "3dd2ea82818b66db337a2e947d0fbaf7357d6ad138e23302663d71760a9ee2bc",
+      "bytes": 715,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/qa-report.json": {
+      "sha256": "4b65641abce23c41338f90eb8228adbb57b3f69902872b5e77dba5207bdc5019",
+      "bytes": 8066,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/retracted-artifact36.json": {
+      "sha256": "d107927621d0a8361a754148bc402fa14da1dd80fae07dcdb22fd2f9a1d13b69",
+      "bytes": 1173,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/router-context.json": {
+      "sha256": "3302728950c636dc1f90ea09e77076fe95c758b8adda38fc21f1317627b19322",
+      "bytes": 947,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/source-provenance.json": {
+      "sha256": "ca450868be67a6468531f936b225411a1c01f31d478f90746377098bfdd2add7",
+      "bytes": 2719,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/source-scope.json": {
+      "sha256": "acde7b81a6d4d6bd887aa6364e7dffcfa61161cac5e091ad7a0b16e611e5b770",
+      "bytes": 22711,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/targeted-source36.json": {
+      "sha256": "fcecb3b5b0d4b81c777e39cb1c30b992e303a77fccc72ddede5d7cf2286fe355",
+      "bytes": 1266,
+      "representation": "public summary/excerpt"
+    },
+    "receipts/versioned-history.json": {
+      "sha256": "aa7d12b0482d2559d5576da46f85e149d5538cb09bd2e12b9b5adc924072d41d",
+      "bytes": 7516,
+      "representation": "public summary/excerpt"
+    }
+  },
+  "originalReceiptProvenance": {
+    "receipts/archive-integrity.json": "7f696e06d4d44d00106478778567d2e5e9ffffbb6744c3491302691f53c94816",
+    "receipts/artifact-identity.json": "4f61a7ccb4b4d7d686615c3d25906c6af65c1822f950ba16a090a240b3526551",
+    "receipts/bundle-sanitization.json": "ebc0c57fa12c4859bb8e9dc0fa66fa086e9f1f1b92fb88ba1d302c74c9966f9f",
+    "receipts/export-attempts.json": "110149681b2d105b1c17a9dc284014428cadf30f17280a501a8a45151b1c6ce4",
+    "receipts/original-images-index.json": "4868d2b3a1b7dbe98d0fa96ea5cb40a6b97534806b7ddcc1c7b7d93e5a7f45d2",
+    "receipts/qa-close-integrity.json": "6ba622770fac09c58dba9be8fd247bbcd375d0eb099538798792bccd6419b40f",
+    "receipts/qa-report.json": "0915ce99b8cd333837cbc631bf2682a2005fff807242ac9a3fd726b02d868a37",
+    "receipts/retracted-artifact36.json": "5fd8cea7602c17acf3e458c7f2c1f562169e5ea66182ddebf9636a69a5ab084f",
+    "receipts/router-context.json": "376f6343781c726af49adbfe46c82cef9ee2597547facd072cb0713af292c371",
+    "receipts/source-provenance.json": "7720be2ce1d4ce25f1ddb9873f50de72a5caab799f48bd280d4585b02a951f76",
+    "receipts/source-scope.json": "fe3a80b882318a453eb722adc97972a3c417ff707eb0180a6b9081b2d0b60d7e",
+    "receipts/targeted-source36.json": "952873abec93211f12a668bd057d98f8e385f895bbcdd41222e739f2c7daa83b"
+  },
+  "excluded": [
+    "private source maps/cache",
+    "bundles/archives",
+    "large duplicate traces",
+    "credentials",
+    "unrelated work"
+  ],
+  "indexHashBoundary": "This index does not hash itself; its staged blob hash is recorded in the delivery review receipt."
+}

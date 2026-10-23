@@ -71,7 +71,7 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
         {read.state === "stale" ? <AppButton label="重新搜尋" variant="quiet" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /> : null}
       </>}
     <FormDialog visible={!!visible} scopeKey={scope ?? ""} formKey={selection?.id} title="訊息原文"
-      returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={close}>
+      dismissMode="local" returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={close}>
       {visible && selectedRead ? <>
         {owner.message.data?.voice ? <VoiceMessage key={scope + owner.message.data.id} messageId={owner.message.data.id} voice={owner.message.data.voice} /> : null}
         <HistoryMessageDetail embedded read={owner.message} busy={owner.busy.message} online={owner.online} onMore={owner.actions.moreMessage}
@@ -146,7 +146,7 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
         {read.state === "stale" ? retry : null}
       </>}
     {!recent ? <FormDialog visible={!!selected} scopeKey={scope ?? ""} formKey={selection ? `${selection.id}:${selection.version}` : undefined} title="消息內容"
-      returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => setSelection(null)}>
+      dismissMode="local" returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => setSelection(null)}>
       {selected ? <View style={styles.list} testID="notification-history-detail">
         <Text style={styles.meta}>{notificationTime(selected.sentAt)} · {selected.scope.kind === "child" ? selected.scope.childName : "本人帳戶"}</Text>
         {selected.contents.map(content => <View key={content.channel} style={styles.channelDetail}>

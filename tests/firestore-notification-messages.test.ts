@@ -12,6 +12,7 @@ import { firestoreTelegramDeliverySchema } from '../server/firestore-telegram.ts
 import { firestoreNativeDeliverySchema } from '../server/firestore-native-push.ts';
 import { firestoreContactRequestSchema } from '../server/firestore-contact.ts';
 import { restoreOperationRecord } from '../server/firestore-restore-operation-records.ts';
+import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
 import { workRecoveryAad, workRecoveryDocumentId } from '../server/firestore-work-continuation-recovery.ts';
 import { openRecoveryEnvelope } from '../server/firestore-recovery-envelope.ts';
 import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
@@ -51,15 +52,15 @@ async function seed(f: Awaited<ReturnType<typeof fixture>>, i: number, owner = '
   });
   return { id, path, message };
 }
-async function seedContact(f: Awaited<ReturnType<typeof fixture>>) {
+async function seedContact(f: Awaited<ReturnType<typeof fixture>>, captured = true) {
   const id = randomUUID(), taskId = randomUUID(), sentAt = at(1);
   await f.authority.runTransaction('owner', f.child.id, async b => {
     const attempts = (['web_push', 'telegram'] as const).map(channel => ({ id: randomUUID(), recipientUserId: 'owner', channel, grantVersion: 1, taskVersion: 1, status: 'accepted', reason: null, providerStatus: 200, messageId: channel === 'telegram' ? 1 : null, attemptedAt: sentAt, finishedAt: sentAt, acknowledgedAt: null }));
     const value = { request: { id, taskId, taskVersion: 1, occurrenceId: randomUUID(), phase: 'initial', state: 'accepted', reason: null, nextAt: sentAt, groupedTo: null, createdAt: at(80), attempts },
       grant: { value: { taskId, version: 1, taskVersion: 1, enabled: true, primaryUserId: 'owner', backupUserId: null, allowFollowUp: false, allowFallback: true, validUntil: sentAt, authorizedBy: 'owner', content: 'generic_notice', trigger: 'task_due', updatedAt: sentAt }, authorityVersion: b.authorizationVersion, consentVersion: 1, bindings: [] },
       generation: f.generation, authorizationVersion: b.authorizationVersion, runId: randomUUID(), reminderId: id, batchId: randomUUID(), callbackHash: null,
-      messages: attempts.map(a => ({ attemptId: a.id, recipientUserId: a.recipientUserId, content: { channel: a.channel, contentVersion: 'synthetic-v1', title: null, body: 'Exact ' + a.channel + ' body', sentAt } })) };
-    b.transaction.create(f.data.ref('contact_requests', 'contact-request', id), { ...f.data.tags(b.scope), requestId: id, createdAt: value.request.createdAt, messageSentAt: sentAt, ...f.data.seal('contact-request', id, b.scope, firestoreContactRequestSchema, value as any) });
+      ...(captured ? { messages: attempts.map(a => ({ attemptId: a.id, recipientUserId: a.recipientUserId, content: { channel: a.channel, contentVersion: 'synthetic-v1', title: null, body: 'Exact ' + a.channel + ' body', sentAt } })) } : {}) };
+    b.transaction.create(f.data.ref('contact_requests', 'contact-request', id), { ...f.data.tags(b.scope), requestId: id, createdAt: value.request.createdAt, ...(captured ? { messageSentAt: sentAt } : {}), ...f.data.seal('contact-request', id, b.scope, firestoreContactRequestSchema, value as any) });
   });
   return id;
 }
@@ -98,6 +99,69 @@ test('message metadata tampering is rejected and encrypted recovery preserves ex
   assert.deepEqual(firestorePushDeliverySchema.parse(restored.value).message, stored.message);
   f.records.set(stored.path, { ...row, messageSentAt: at(60) });
   await assert.rejects(f.history.page('owner', {}), (e: any) => e.code === 'message_content_binding');
+});
+
+test('restore codec round trips all message sources and rebuilds sort metadata only from authenticated content', async () => {
+  const f = await fixture(), codec = createFirestoreRestoreCodec(f.options), newEpoch = randomUUID(), generation = randomUUID();
+  for (const captured of [true, false]) {
+    const stored = [];
+    for (let i = 0; i < 3; i++) stored.push(await seed(f, i, 'owner', captured));
+    const contactId = await seedContact(f, captured);
+    const paths = [...stored.map(row => row.path), f.data.ref('contact_requests', 'contact-request', contactId).path];
+    for (const path of paths) {
+      const row = f.records.get(path), original = codec.decode({ path, data: row });
+      assert.equal(original.context.family, 'domain');
+      if (original.context.family !== 'domain') throw new Error('Expected a domain message record');
+      const target = { generation, newEpochByWorkspace: new Map([[original.context.scope.workspaceId, newEpoch]]), photoDescriptors: new Map() };
+      const { messageSentAt: _projection, ...withoutProjection } = row;
+      // Old rows may omit the projection; hostile plaintext must neither replace content nor invent legacy history.
+      for (const source of [row, withoutProjection, { ...row, messageSentAt: '2099-01-01T00:00:00.000Z' }]) {
+        const restored = codec.transform(codec.decode({ path, data: source }), target), reopened = codec.decode(restored);
+        assert.equal(restored.oldPath, path); assert.equal(restored.path, path);
+        assert.deepEqual(reopened.value, original.value);
+        assert.equal(reopened.context.family, 'domain');
+        if (reopened.context.family !== 'domain') throw new Error('Expected a restored domain message record');
+        assert.deepEqual(reopened.context.scope, { ...original.context.scope, storageEpoch: newEpoch });
+        assert.equal(restored.data.messageSentAt, captured ? row.messageSentAt : undefined);
+        assert.equal(Object.hasOwn(restored.data, 'messageSentAt'), captured);
+      }
+    }
+  }
+});
+
+test('message pagination retries replay the original cursor without skipping the second page', async () => {
+  const f = await fixture(), expectedIds: string[] = [];
+  for (let i = 0; i < 45; i++) { const saved = await seed(f, i); expectedIds.push(saved.message.channel + ':' + saved.id); }
+  const ids = (page: Awaited<ReturnType<typeof f.history.page>>) => page.items.map(item => item.messageId);
+  const first = await f.history.page('owner', {});
+  assert.equal(first.items.length, 20); assert.equal(first.complete, false); assert.ok(first.nextCursor);
+  assert.deepEqual(ids(first), expectedIds.slice(0, 20));
+  const query = { scopeVersion: first.scopeVersion, cursor: first.nextCursor };
+  const ordinary = await f.history.page('owner', query);
+  assert.equal(ordinary.items.length, 20); assert.equal(ordinary.complete, false); assert.ok(ordinary.nextCursor);
+  assert.deepEqual(ids(ordinary), expectedIds.slice(20, 40));
+  const underlying = f.options.database.runTransaction.bind(f.options.database);
+  let transactionCalls = 0, discardedAttempts = 0;
+  f.options.database.runTransaction = ((callback: any, ...args: any[]) => {
+    // Activation is the first transaction; discard/replay the actual page-read callback.
+    if (++transactionCalls === 2) f.retry(async () => { discardedAttempts++; });
+    return (underlying as any)(callback, ...args);
+  }) as typeof f.options.database.runTransaction;
+  let retried: Awaited<ReturnType<typeof f.history.page>>;
+  try { retried = await f.history.page('owner', query); }
+  finally { f.options.database.runTransaction = underlying; }
+  assert.equal(transactionCalls, 3); assert.equal(discardedAttempts, 1);
+  assert.equal(retried.items.length, 20); assert.equal(retried.complete, false); assert.ok(retried.nextCursor);
+  assert.deepEqual(retried.items, ordinary.items);
+  const cursorValue = (cursor: string) => JSON.parse(f.options.cipher.decrypt(Buffer.from(cursor, 'base64url').toString(), 'notification-messages-cursor:1:owner'));
+  assert.deepEqual(cursorValue(retried.nextCursor), cursorValue(ordinary.nextCursor));
+  const last = await f.history.page('owner', { scopeVersion: retried.scopeVersion, cursor: retried.nextCursor });
+  assert.equal(last.items.length, 5); assert.equal(last.complete, true); assert.equal(last.nextCursor, null);
+  assert.deepEqual(ids(last), expectedIds.slice(40));
+  assert.deepEqual([...ids(first), ...ids(retried), ...ids(last)], expectedIds);
+  for (const page of [ordinary, retried, last]) {
+    assert.equal(page.scopeVersion, first.scopeVersion); assert.equal(page.asOf, first.asOf);
+  }
 });
 
 test('deleting a child invalidates all previously loaded message pages without using ordinary changeSeq', async () => {

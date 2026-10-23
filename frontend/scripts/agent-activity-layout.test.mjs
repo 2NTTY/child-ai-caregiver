@@ -11,8 +11,9 @@ const proposal = (id, patch = {}) => ({ id, kind: 'task_create', title: `Synthet
 const run = (proposals = []) => ({ id: 'synthetic-run', childId: 'synthetic-child', status: 'completed', createdAt: at,
   text: 'Original synthetic reply', stopReasonLabel: null, citations: [], tools: [], proposals, retrievalMode: 'not_used', counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 } });
 function setup(initial = run()) {
-  const calls = [], mocks = {};
+  const calls = [], activityReads = [], signals = new Set(), mocks = {};
   const h = harness(mocks);
+  mocks['../../../src/client/online-refresh-events'] = { subscribeOnlineRefresh(fn) { signals.add(fn); return () => signals.delete(fn); } };
   mocks.react = { ...h.react, useId: () => h.react.useRef('synthetic-id').current };
   mocks['react-native'] = { View: 'View', Pressable: 'Pressable', Platform: { OS: 'web' }, StyleSheet: { create: value => value } };
   const theme = { colors: {}, spacing: {}, radius: {}, readingType: {}, workspaceType: {} };
@@ -30,7 +31,7 @@ function setup(initial = run()) {
   const state = { scopeKey: 'scope-a', agentModel: { online: true, readState: 'ready', busy: null, run: initial, loadedAt: at,
     sharedConfirmed: {}, pendingDecision: null, notice: null, writesBlocked: false },
     agentActions: { refresh: action('refresh'), setSharedConfirmation(id, value) { state.agentModel.sharedConfirmed[id] = value; calls.push(['shared', id, value]); }, decide: action('decide'), retryOriginal: action('retry'), openSource: action('source') },
-    agentPending: { state: 'ready', entries: [], hasSnapshot: true, nextCursor: null }, readAgentPending: action('pending'), selectAgentRun(id) {
+    agentPending: { state: 'ready', entries: [], hasSnapshot: true, nextCursor: null }, readAgentPending: action('pending'), readAgentActivity: (includePending = true) => activityReads.push(includePending), selectAgentRun(id) {
       calls.push(['select', id]); state.agentModel = { ...state.agentModel, readState: 'loading', busy: 'read', sharedConfirmed: {} };
     },
     agentInbox: { online: true, locked: false, state: 'idle', loadedAt: null, entries: [], selectedRunId: null },
@@ -49,7 +50,7 @@ function setup(initial = run()) {
   const button = label => h.hosts().find(n => n.type === 'Button' && n.props.label === label);
   const named = name => h.hosts().find(n => n.props.accessibilityLabel === name);
   const text = () => h.hosts().filter(n => n.type === 'Text').map(n => n.props.children).flat(Infinity).filter(x => typeof x === 'string' || typeof x === 'number').join(' ');
-  return { h, state, calls, render, conversation, button, named, text };
+  return { h, state, calls, activityReads, signals, render, conversation, button, named, text };
 }
 
 test('pending changes precede handled results and retain exact content, destination, sharing, version and decision guards', () => {
@@ -266,7 +267,7 @@ test('twenty identically titled background runs keep a human date-time and a dis
   controls[3].props.onPress(); assert.deepEqual(s.calls.at(-1), ['inbox-select', 'background-3']);
 });
 
-test('activity title, loaded pending count and original wrapped refresh share one compact header', () => {
+test('activity title and loaded count remain compact without normal ready refresh controls', () => {
   const s = setup(run([proposal('pending')])); s.conversation();
   const header = s.h.node('agent-activity-header');
   assert.ok(header); assert.equal(header.props.style[1].flexWrap, 'nowrap');
@@ -274,7 +275,7 @@ test('activity title, loaded pending count and original wrapped refresh share on
   assert.equal(s.h.hosts().find(n => n.type === 'Title').props.children, '活動');
   assert.equal(s.h.node('agent-activity-count').props.children, '1 項待確認');
   assert.equal(s.h.node('agent-run-summary'), undefined, 'the same count is not repeated below the header');
-  s.named('更新活動結果').props.onPress(); assert.deepEqual(s.calls.at(-1), ['refresh']);
+  assert.equal(s.named('更新活動結果'), undefined);
   s.state.agentPending.nextCursor = 'synthetic-more'; s.conversation();
   assert.equal(s.h.node('agent-activity-count').props.children, '1+ 項待確認');
   assert.match(s.h.node('agent-activity-count').props.accessibilityLabel, /仍有更多待讀取/);
@@ -285,10 +286,10 @@ test('activity title, loaded pending count and original wrapped refresh share on
   s.state.agentPending.state = 'ready';
   s.state.agentModel.online = false; s.conversation();
   assert.equal(s.h.node('agent-activity-count').props.children, '待確認未核對');
-  assert.equal(s.named('更新活動結果').props.disabled, true);
+  assert.equal(s.named('更新活動結果'), undefined);
   s.state.agentModel.online = true; s.state.agentModel.readState = 'idle'; s.conversation();
   assert.equal(s.h.hosts().filter(n => n.type === 'Title').length, 1);
-  s.named('更新待確認活動').props.onPress(); assert.deepEqual(s.calls.at(-1), ['pending']);
+  assert.equal(s.named('更新待確認活動'), undefined);
 });
 
 test('private fact keeps source and scope labels visible, merges only the exact scope duplicate and defers only technical version', () => {
@@ -438,4 +439,26 @@ test('activity loaded count excludes expired and invalidated proposals without c
   s.state.agentPending.nextCursor = 'more'; s.conversation();
   assert.equal(s.h.node('agent-activity-count').props.accessibilityLabel, '已載入 1 項待確認，仍有更多待讀取');
   assert.match(s.h.node('activity-card-proposal-synthetic-run-expired').props.accessibilityLabel, /已過期/);
+});
+
+
+test('visible activity opens quietly once, observes the shared invalidation, and unsubscribes on close', () => {
+  const s = setup(); s.state.agentModel.readState = 'idle'; s.state.agentModel.run = null;
+  s.conversation(false); assert.deepEqual(s.activityReads, []); assert.equal(s.signals.size, 0);
+  s.conversation(); assert.deepEqual(s.activityReads, [true]); assert.equal(s.signals.size, 1);
+  s.conversation(); assert.deepEqual(s.activityReads, [true]);
+  for (const signal of s.signals) signal(); assert.deepEqual(s.activityReads, [true, false]);
+  s.conversation(false); assert.equal(s.signals.size, 0);
+  s.conversation(); assert.deepEqual(s.activityReads, [true, false, true]);
+  s.state.agentModel.online = false; s.conversation(); assert.equal(s.signals.size, 0);
+  s.state.agentModel.online = true; s.conversation(); assert.deepEqual(s.activityReads, [true, false, true, true]);
+  assert.equal(s.calls.some(call => ['refresh', 'decide', 'retry'].includes(call[0])), false);
+});
+
+test('failed inbox read keeps loaded cards and shows only contextual retry, never a false empty result', () => {
+  const s = setup(); s.state.agentModel.readState = 'idle'; s.state.agentModel.run = null;
+  s.state.agentInbox = { ...s.state.agentInbox, state: 'failed', loadedAt: at, entries: [{ runId: 'old-run', createdAt: at, label: 'Saved' }] };
+  s.conversation(); assert.ok(s.h.node('activity-card-run-old-run')); assert.ok(s.button('重新載入活動記錄'));
+  assert.match(s.text(), /顯示上次讀取/); assert.doesNotMatch(s.text(), /目前沒有其他活動/);
+  s.state.agentInbox.state = 'ready'; s.conversation(); assert.equal(s.button('更新活動記錄'), undefined); assert.equal(s.button('重新載入活動記錄'), undefined);
 });

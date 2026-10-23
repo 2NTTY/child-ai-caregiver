@@ -211,10 +211,10 @@ export function TextLink({ label, onPress }: { label: string; onPress: () => voi
 }
 
 /** Keep page actions beside the existing scrollable tabs, not in a duplicate page header. */
-export function TabToolbar({ children, actions, testID }: { children: ReactNode; actions?: ReactNode; testID?: string }) {
-  return <BackgroundSurface testID={testID} style={styles.tabToolbar}>
-    <View style={styles.tabToolbarTabs}>{children}</View>
-    {actions ? <View style={styles.tabToolbarActions}>{actions}</View> : null}
+export function TabToolbar({ children, actions, testID, stacked = false }: { children: ReactNode; actions?: ReactNode; testID?: string; stacked?: boolean }) {
+  return <BackgroundSurface testID={testID} style={[styles.tabToolbar, stacked && styles.tabToolbarStacked]}>
+    <View style={[styles.tabToolbarTabs, stacked && styles.tabToolbarFullTabs]}>{children}</View>
+    {actions ? <View style={[styles.tabToolbarActions, stacked && styles.tabToolbarWrappedActions]}>{actions}</View> : null}
   </BackgroundSurface>;
 }
 
@@ -307,8 +307,11 @@ const styles = StyleSheet.create({
   focusedButton: { borderColor: colors.ink },
   buttonPressed: { backgroundColor: colors.pressedOverlay },
   tabToolbar: { flexDirection: "row", alignItems: "center", minWidth: 0, width: "100%", gap: spacing.sm },
+  tabToolbarStacked: { flexDirection: "column", alignItems: "stretch" },
   tabToolbarTabs: { flex: 1, minWidth: 0 },
+  tabToolbarFullTabs: { flex: undefined, width: "100%" },
   tabToolbarActions: { flexDirection: "row", alignItems: "center", flexShrink: 0, gap: spacing.sm },
+  tabToolbarWrappedActions: { flexWrap: "wrap", alignSelf: "flex-end", maxWidth: "100%" },
   card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md },
   mobileCard: { borderRadius: mobileLayout.cardRadius, padding: mobileLayout.cardInset },
   insetCard: { borderWidth: 0, borderRadius: radius.small, backgroundColor: colors.quietSurface, padding: spacing.md },
