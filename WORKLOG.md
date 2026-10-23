@@ -3433,3 +3433,11 @@
 - v3設定沿原加密資料、版本及操作收據。現有共用client仍使用v2；新設定令舊client明確要求更新，而不是默默改回Google。沒有改#253的ModelSettingsView／owner或#254的runtime／提示詞；未重疊form schema僅對齊共用provider型別。
 - 初輪相關10項合成檢查通過；恢復v2預設後有1項原操作查回失敗，定位為新預先讀取消耗遺失回覆注入，已把資格核對移到原寫入交易，6項受影響檢查通過。寬Server型別入口含未改前端及舊測試錯誤；本包限定型別與模型設定畫面依賴型別通過。不修改其他錯誤來湊全綠。方法、版本及未驗見[後端證據](artifacts/verification/MODEL_SELF03_BACKEND_20261023.json)。
 - 零真模型／embedding／通知、無雲端更新或付費資源。新表單、全部密鑰清理接點與正式部署待#253穩定後承接；本地開發入口仍可用，但不能把後端這一段當成相容模型已在網站／Android交付，整體目標維持未完成。
+
+<a id="log-20261023-local-compatible-model"></a>
+## LOG-20261023-LOCAL-COMPATIBLE-MODEL
+
+- 接續#255的正式provider factory，將本地launcher、聊天runtime、知識初始化及維護組裝接到同一配置；加入相容API地址及獨立Gemini向量key。工程外憑證只傳Server，不進Web配置／狀態頁；模型與付款來源改變不接續未知舊工作。
+- 發現本地模型會被平台固定型號覆蓋，改為僅受信任本地組裝能設定的模型選擇，實際run／用量使用同一型號；每日與每輪限制仍沿管理政策。保留原Gemini／ADC工作綁定及個人模式優先，未改角色工具／提示詞或協作者分支。
+- 補回前包最後清理import後遺留的PlatformProviderFactory型別引用。最初錯用tsx而未執行測試；改用倉庫Node原生入口後，SDK payload斷言層級錯誤造成一項合成失敗，修正requests[0]後兩項通過。限定型別及腳本語法通過，沒有反覆重跑全量；詳見[證據](artifacts/verification/LOCAL_COMPATIBLE_MODEL_20261023.json)。
+- 零真模型／embedding／通知、未啟動雲端資源或部署。#253／#254仍由原協作者處理；新模型畫面及真服務驗證維持未完成。操作方法直接更新既有docs/AGENT_LOCAL.md。
