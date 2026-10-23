@@ -3451,6 +3451,15 @@
 - 新出現的附件#259及Agent #254保持協作者分支不動；#259未改本包照片同意句。部署review確認#253訊息歷史須四個索引READY及共同開關，首次讀取會增加權限fence，回退不能使用不認識新欄位的舊reader。只更新部署交接／配置範例，尚未動雲端。
 - [本機證據](artifacts/verification/MODEL_SELF03_UI_20261023.json)區分實作、建置、失敗及未驗。零真模型／embedding／通知／業務寫入／配額調整，未上傳或發布VM／OTA；真供應商、裝置及其他既有待驗不改稱通過。
 
+<a id="log-20261023-compatible-model-delivery"></a>
+## LOG-20261023-COMPATIBLE-MODEL-DELIVERY
+
+- #260由A合併為`1282e09`，本次交付記錄使用獨立分支`codex/model-self03-delivery`及A單作者。#254／#259仍由協作者處理，沒有修改或合併；最低本機檢查沿用[UI證據](artifacts/verification/MODEL_SELF03_UI_20261023.json)，不重跑產品測試。
+- 自動批准審查先拒絕新私有封包上傳；收到使用者對具體VM、payload、四索引及一次OTA的明確批准後才上傳。封包只含固定來源程式／Web／hash及review腳本，不含憑證或家庭資料。初次archive核對發現CRLF，已按Git原始blob重打Linux封包；Web產物未變，原失敗保留於[交付證據](artifacts/verification/MODEL_SELF03_DELIVERY_20261023.json)。
+- 四個messageSentAt索引READY後，候選在network none下通過正式runtime import／v3 schema核對。短暫維護先檢查活動Agent數為0，備份配置，再更新原VM API／worker／Web；公開HTML hash及health通過。新runtime開始後維持相容reader，不自動退回舊API。沒有資料回填、模型／通知呼叫、配額修改或主機續期。
+- 13:59 UTC發布同版Android preview OTA `b18efe75-f8ed-4ced-9f66-a5e3b4d961ff`，runtime與APK v2一致，沒有新APK、重新bundle或強制重載手機。14:00 UTC API／worker健康、Web運行、磁碟約10.66 GiB可用；最新原生備份metadata為READY，未執行還原。
+- 此次只證明部署與OTA發布；用戶真key、獨立向量key及新表單真機操作仍未驗，既有角色品質／長來源／多模態及Android待驗仍按PLAN承接。兩位原Astra子代理復用於封包及腳本唯讀核對，主模型親自作部署、相容性裁決與文件；不以部署完成代替整體目標完成。
+
 <a id="log-20261023-attachment-media-source"></a>
 ## LOG-20261023-ATTACHMENT-MEDIA-SOURCE
 
