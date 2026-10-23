@@ -10,11 +10,19 @@ import { readFirebaseStorageResponse, FIREBASE_PHOTO_TIMEOUT_MS, type FirebasePh
 const FORMAT = "yuban-erasure-journal", MAX_BYTES = 8192;
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
 const generation = z.string().regex(/^[1-9][0-9]{0,19}$/u).refine(value => BigInt(value) <= 18446744073709551615n);
-export const firebaseErasureIntentSchema = z.object({
-  scope: workRecoveryScopeSchema, assetId: z.uuid(), operationId: z.uuid(),
-  at: z.iso.datetime({ offset: true }), type: z.enum(["photo-delete", "voice-delete", "file-delete", "child-delete", "account-delete", "content-delete"]),
-  content: z.object({ kind: z.enum(['care', 'profile', 'fact', 'topic']), throughVersion: z.number().int().positive() }).strict().optional(),
+const intentBase = { scope: workRecoveryScopeSchema, assetId: z.uuid(), operationId: z.uuid(), at: z.iso.datetime({ offset: true }) };
+const contentIntent = z.object({ kind: z.enum(['care', 'profile', 'fact', 'topic']), throughVersion: z.number().int().positive() }).strict();
+const legacyErasureIntentSchema = z.object({ ...intentBase,
+  type: z.enum(['photo-delete', 'voice-delete', 'file-delete', 'child-delete', 'account-delete', 'content-delete']),
+  content: contentIntent.optional(), avatar: z.never().optional(),
 }).strict().refine(value => (value.type === 'content-delete') === (value.content !== undefined));
+export const firebaseAvatarErasureIntentSchema = z.object({ ...intentBase, type: z.literal('avatar-delete'), content: z.never().optional(),
+  avatar: z.object({ targetKind: z.enum(['self', 'child']), targetId: z.string().min(1).max(256),
+    throughVersion: z.number().int().min(0).max(2147483646) }).strict(),
+}).strict().refine(value => value.avatar.targetKind === 'self'
+  ? value.scope.childId === '00000000-0000-0000-0000-000000000000' && value.avatar.targetId === value.scope.ownerUserId
+  : value.scope.childId !== '00000000-0000-0000-0000-000000000000' && value.avatar.targetId === value.scope.childId);
+export const firebaseErasureIntentSchema = z.discriminatedUnion('type', [legacyErasureIntentSchema, firebaseAvatarErasureIntentSchema]);
 export type FirebaseErasureIntent = z.infer<typeof firebaseErasureIntentSchema>;
 /** Content-only erasure never authorizes attachment removal or suppresses its recovery. */
 export function erasureCoversPhoto(intent: FirebaseErasureIntent, scope: FirebaseErasureIntent['scope'], id: string): boolean {
@@ -33,6 +41,22 @@ export function erasureCoversChatFile(intent: FirebaseErasureIntent, scope: Fire
   return intent.scope.ownerUserId === scope.ownerUserId && (intent.type === 'account-delete'
     || intent.scope.workspaceId === scope.workspaceId && (intent.type === 'child-delete' && intent.scope.childId === scope.childId
       || intent.type === 'file-delete' && intent.scope.childId === scope.childId && intent.assetId === id));
+}
+/** Explicit avatar removal is target/version-scoped; it never erases another media domain. */
+export function erasureCoversAvatar(intent: FirebaseErasureIntent, candidate: {
+  scope: FirebaseErasureIntent['scope']; targetKind: 'self' | 'child'; targetId: string;
+  committedVersion: number | null; expectedVersion?: number;
+}): boolean {
+  const { scope } = candidate;
+  if (intent.scope.ownerUserId !== scope.ownerUserId) return false;
+  if (intent.type === 'account-delete') return true;
+  if (intent.scope.workspaceId !== scope.workspaceId) return false;
+  if (intent.type === 'child-delete') return candidate.targetKind === 'child' && intent.scope.childId === scope.childId;
+  if (intent.type !== 'avatar-delete' || intent.avatar.targetKind !== candidate.targetKind || intent.avatar.targetId !== candidate.targetId
+    || intent.scope.childId !== scope.childId) return false;
+  return candidate.committedVersion === null
+    ? candidate.expectedVersion !== undefined && candidate.expectedVersion <= intent.avatar.throughVersion
+    : candidate.committedVersion <= intent.avatar.throughVersion;
 }
 export const firebaseErasureDescriptorSchema = z.object({
   objectName: z.string().min(1).max(256), generation, cipherSha256: hash,

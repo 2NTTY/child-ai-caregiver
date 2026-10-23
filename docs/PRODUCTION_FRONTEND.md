@@ -240,3 +240,17 @@ Android 匯出亦須合併 `frontend/eas.json` 的 `build.base.env`，包含正�
 - OTA 沿現有 ON_LOAD／下次安全啟動套用；工具不呼叫 App reload，不在聊天、確認或 unknown 期間強制重載。
 
 本文件只定義固定交付方法；實際 EAS／部署／真機／OTA 狀態與證據以[根 PLAN](../PLAN.md#s04-w03)為準。APK 檢查使用[Android 官方工具](https://developer.android.com/tools/apksigner)，不修改或重新簽署已交付的 APK；Windows `aapt` 若不接受中文絕對路徑，從專案目錄傳入相對路徑。
+
+
+<a id="avatar-deployment-gate"></a>
+## AVATAR-01 部署／啟用門檻
+
+本包是未啟用的開發候選，不在此指示切流量或開啟寫入。`server/avatar-release.ts` 的 source gate 固定 false；`AVATAR_WRITES_ENABLED=true` 不能替代驗收，也不能把 unavailable 改成假成功。工作狀態只見[PLAN](../PLAN.md#avatar-01)。
+
+正式部署責任人須先取得以下同版證據，才另行審核解除 gate：
+- 完整必要型別／定向回歸與獨立 review；unknown copy／來源證據改變、legacy partial plan 的恢復／清理責任有可驗處理。保留歷次真紅，不以窄 roots PASS 取代完整 server。
+- clean lockfile 安裝及部署平台的 `sharp@0.35.5` 專用子程序、小合成 decode／方向／metadata去除／hard-kill-close 資源收斂；server optional binary 與實際 LGPL／Apache／第三方 notices及來源資訊完整，不進 Web／Android bundle。
+- 同版 API、worker、export、backup/restore、獨立 erasure journal reader/writer、private encrypted Storage及精確索引；原生 Firestore 跨實例 admission／lease／CAS 與 cleanup scheduler 有實際讀回證據。
+- 隔離合成備份→還原→最新刪除日誌重放→匯出／清理演練，包含 source evidence 改變、unknown與中斷查回；不接正式流量，不上傳家庭照或呼叫模型。GCP／部署由既有責任人依有效授權處理，本包未執行。
+
+首次新 avatar schema／journal 寫入後，不可回退至不認識它們的舊 reader／worker；關寫入仍需保留相容清理、匯出、備份與恢復接點。marker partial-staging 的本機合成 PASS 不是原生 restore 全完成；資料與 codec/license細節見[資料契約](DATA_MODEL.md#avatars)及[決策](DECISIONS.md#avatar-codec-decision)。

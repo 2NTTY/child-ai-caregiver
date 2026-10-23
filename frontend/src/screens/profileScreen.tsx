@@ -1,3 +1,6 @@
+import { AvatarView } from '../components/avatar/AvatarView';
+import { AvatarEditor } from '../components/avatar/AvatarEditor';
+import { useProductionAvatar } from '../production/useProductionAvatar';
 import { useOperationReveal } from "../operation-reveal";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "expo-router";
@@ -17,6 +20,7 @@ import { useProfileWorkspace } from "../workspaces/ProfileWorkspace";
 import { colors, radius, spacing } from "../theme";
 
 function ProfileContent() {
+  const avatar = useProductionAvatar('child', true);
   const { model: home, actions: homeActions, online, recordsState, controller, identityKey } = useProduction();
   const workspace = useProfileWorkspace(), recovery = useProductionCareProfile(), leave = usePreviewNavigation();
   const profileOpenRequest = useOperationReveal(workspace?.scopeKey ?? "", "profile");
@@ -36,6 +40,7 @@ function ProfileContent() {
   usePreviewLeaveGuard((!!recordsState.childName || !!reviewName) && !creating && !createUnknown, false, "account");
   const managementLocked = !!recovery?.pending || !!recordsState.busy || createUnknown || !!recordsState.deletion;
   const childPicker = <View style={styles.management}>
+    {child ? <View style={styles.childManagement}><AvatarView name={child.displayName} uri={avatar.state.uri} /><AvatarEditor lane={avatar.lane} state={avatar.state} name={child.displayName} kind="child" /></View> : null}
     <View style={styles.childManagement}>
     <ManualFormDialog label="新增孩子" scopeKey={identityKey ?? "no-identity"} disabled={!!recordsState.deletion}
       onClose={() => { if (!creating && !createUnknown) { controller.setChildName(""); setReviewName(null); } }}>

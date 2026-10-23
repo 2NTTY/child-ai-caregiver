@@ -3644,6 +3644,28 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "yuban_authority_avatar_uploads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "targetTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "actorTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "pending",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -4362,6 +4384,31 @@
     {
       "collectionGroup": "yuban_authority_chat_file_assets",
       "fieldPath": "cleanupState",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_avatar_heads",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_avatar_uploads",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_avatar_cleanup",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "yuban_authority_avatar_cleanup",
+      "fieldPath": "complete",
       "indexes": [
         {
           "order": "ASCENDING",

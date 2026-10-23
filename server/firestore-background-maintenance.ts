@@ -1,3 +1,6 @@
+import { AVATAR_CLEANUP_RETRY_MS } from './avatar-config.ts';
+import { avatarCleanupRecordSchema } from './avatar-data.ts';
+import type { FirestoreAvatarCleanup } from './firestore-avatar-cleanup.ts';
 import { firestoreChatFileRowSchema, type FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
 import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
@@ -20,7 +23,7 @@ import type { FirestoreKnowledgeRefresh } from './firestore-knowledge-refresh.ts
 import { createKnowledgeSourceFetcher } from './knowledge-source-fetch.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 
-const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions', 'voice_assets', 'chat_file_assets'] as const;
+const stages = ['documents', 'work_watches', 'photo_cleanup', 'erasures', 'content_erasures', 'context_versions', 'voice_assets', 'chat_file_assets', 'avatar_cleanup'] as const;
 const cursorSchema = z.object({ after: z.record(z.string(), z.string().nullable()), complete: z.array(z.string()),
   minute: z.number().int(), token: z.uuid().nullable(), until: z.number().int().nonnegative() }).strict();
 const empty = () => ({ after: {} as Record<string, string | null>, complete: [] as string[], minute: -1, token: null as string | null, until: 0 });
@@ -35,6 +38,7 @@ const knowledgePeriod = (weekly: boolean, now = Date.now()) => {
 /** One Scheduler wake reconciles bounded pages. No interval, source model, private context, or provider send lives here. */
 export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOptions & {
   journal?: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>;
+  avatars?: Pick<FirestoreAvatarCleanup, 'process'>;
   voices?: Pick<FirestoreVoiceStore, 'cleanupDeleted' | 'expireUnlinked'>;
   files?: Pick<FirestoreChatFilesStore, 'cleanupDeleted' | 'expireUnlinked'>;
   enabled: boolean; knowledge: FirestoreKnowledgeRefresh;
@@ -74,6 +78,21 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
           basis: String(value.summaryRequest), generation: b.generation, authorizationVersion: b.authorizationVersion }, new Date().toISOString());
         queued.commit();
       }); } catch (error) { if (!error || typeof error !== 'object' || !('status' in error) || ![403, 404, 409].includes(Number(error.status))) throw error; }
+      return;
+    }
+    if (stage === 'avatar_cleanup') {
+      const info = open(row, 'avatar-cleanup', avatarCleanupRecordSchema), cleanup = info.value;
+      if (cleanup.state === 'complete' || cleanup.reason === 'staging' && cleanup.committedVersion !== null
+        || Date.parse(cleanup.nextAttemptAt) > Date.now()) return;
+      await options.database.runTransaction(async tx => {
+        const control = await authority.readControl(tx); if (!options.enabled || !control.enabled) return;
+        const fresh = await tx.get(row.ref); if (!fresh.exists || firestoreDomainHash(fresh.data()) !== firestoreDomainHash(row.data())) return;
+        const identity = { kind: 'avatar-cleanup' as const, scope: SYSTEM, resourceId: row.id, basis: firestoreDomainHash(info.id),
+          generation: control.generation, authorizationVersion: '0' };
+        const wake = cleanup.descriptor ? await prepareObjectCleanupWake(data, tx, identity,
+          firestoreDomainHash([cleanup.descriptor, cleanup.reason, cleanup.committedVersion]), { avatarLifecycle: true }) : () => {};
+        const work = await prepareFirestoreBackgroundWork(data, tx, identity, new Date().toISOString()); work.commit(); wake();
+      });
       return;
     }
     if (stage === 'voice_assets') {
@@ -152,6 +171,7 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
     for (const stage of stages) {
       let q: Query = data.collection(stage).orderBy(FieldPath.documentId()).limit(5);
       if (stage === 'voice_assets' || stage === 'chat_file_assets') q = q.where('cleanupState','in',['pending','unlinked']);
+      if (stage === 'avatar_cleanup') q = q.where('complete', '==', false);
       if (stage === 'content_erasures') q = q.where('stage', 'in', ['revisions', 'receipts']);
       if (stage === 'context_versions') q = q.where('summaryPending', '==', true);
       if (stage === 'work_watches') q = q.where('enabled', '==', true);
@@ -214,6 +234,19 @@ export function createFirestoreBackgroundMaintenance(options: FirestoreDomainOpt
       const revision = job.basis.slice(0, 36), result = await options.knowledge.process({ watchId: job.resourceId, revision, workerGeneration: job.generation },
         firestoreBackgroundReference(job), fetcher, signal);
       return { state: result.status === 'unknown' ? 'unknown' as const : 'completed' as const };
+    }
+    if (job.kind === 'avatar-cleanup') {
+      if (!options.avatars) domainReject('avatar_unavailable', 503);
+      const row = await data.collection('avatar_cleanup').doc(job.resourceId).get();
+      if (!row.exists) return { state: 'completed' as const };
+      const value = open(row, 'avatar-cleanup', avatarCleanupRecordSchema).value;
+      const result = await options.avatars.process(value.binding, value.assetId);
+      if (result.state === 'complete') return { state: 'completed' as const };
+      if (result.nextAt) return { state: 'deferred' as const,
+        nextAt: new Date(Math.max(Date.parse(result.nextAt), Date.now() + AVATAR_CLEANUP_RETRY_MS)).toISOString() };
+      // Retained current content is not a deleted object. A later due non-current responsibility
+      // must carry fresh descriptor+reason/version evidence through the avatar-only wake above.
+      return { state: result.state === 'retained' ? 'completed' as const : 'unknown' as const };
     }
     if (job.kind === 'voice-cleanup') {
       if(!options.voices)domainReject('voice_cleanup_unavailable',503);
