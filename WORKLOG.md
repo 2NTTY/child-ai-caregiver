@@ -3459,3 +3459,12 @@
 - 四個messageSentAt索引READY後，候選在network none下通過正式runtime import／v3 schema核對。短暫維護先檢查活動Agent數為0，備份配置，再更新原VM API／worker／Web；公開HTML hash及health通過。新runtime開始後維持相容reader，不自動退回舊API。沒有資料回填、模型／通知呼叫、配額修改或主機續期。
 - 13:59 UTC發布同版Android preview OTA `b18efe75-f8ed-4ced-9f66-a5e3b4d961ff`，runtime與APK v2一致，沒有新APK、重新bundle或強制重載手機。14:00 UTC API／worker健康、Web運行、磁碟約10.66 GiB可用；最新原生備份metadata為READY，未執行還原。
 - 此次只證明部署與OTA發布；用戶真key、獨立向量key及新表單真機操作仍未驗，既有角色品質／長來源／多模態及Android待驗仍按PLAN承接。兩位原Astra子代理復用於封包及腳本唯讀核對，主模型親自作部署、相容性裁決與文件；不以部署完成代替整體目標完成。
+
+<a id="log-20261023-local-continuity-followup"></a>
+## LOG-20261023-LOCAL-CONTINUITY-FOLLOWUP
+
+- 從遠端 `4fb210c` 開獨立分支 `codex/dev-agent02-continuity-closeout`，A單作者；保留協作者 #254／#259 及新 #262～#265，不修改或合併其程式。復用原子代理作手機核對、工具準備及唯讀文件review；主模型負責實際本地驗收、裁決及文件，沒有重做四角色或前端。
+- 原 worktree 的本地快照缺失，原因未確定；新建隔離合成資料，不宣稱恢復原文件／原失敗run。補齊工程外／ignored工具依賴，使用Node24.19、Java21及既有Firebase emulator；僅從目前分支正式API建立一個孩子、一份準備單。準備時沙盒連線失敗、關閉的本地管理政策及metadata輔助腳本欄位錯誤，與產品模型結果分開保留。
+- 官方PDF登記第3頁沿原工作完成2次真生成、1次向量及獨立審核／本地發布。後續一條自然聊天讀文件、搜尋成功，但能力載入和引用參數修正用完8次生成／1次查詢，終態 `delivery_review_incomplete`；沒有完整已審核答案，沒有自動重送或加額。原run／訊息、片段版本及腳本保留在受保護本地目錄；去識別化結果見[本次證據](artifacts/verification/DEV_AGENT02_CONTINUITY_20261023.json)。
+- 本地日配額20／100未提高；驗收暫時啟用模型、限制零重試，結束後恢復原關閉政策及設定，保留12次用量並正常保存快照。帳目仍有10次用量未完整回報，不能從已知tokens宣稱完整費用。零正式業務資料寫入、通知或部署，不重跑編製／雲端／全量測試。
+- PLAN修正過時的P3角色、Android開工盤點及備份狀態，未把已發布或單頁成功當整包完成；STATUS只投影本次實質結果。本地使用說明補管理政策關閉的排除方法。下一步先核對協作者的審核／預算與引用修正，再補同一資料的一條聊天；原備份還原及角色長來源／多模態缺口不改寫為通過。
