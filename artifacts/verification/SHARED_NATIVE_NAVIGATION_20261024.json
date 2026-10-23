@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "package": "MODEL-SELF03 shared native navigation and draft device follow-up",
+  "dateHongKong": "2026-10-24",
+  "baseCommit": "65c094c65ee45b606351886eb7cdbe9d863099a9",
+  "navigation": {
+    "state": "implemented-reviewed-not-published",
+    "files": ["frontend/app/(dashboard)/_layout.tsx", "frontend/src/components/navigation/RecordsNavButton.tsx"],
+    "authority": "frontend/src/components/navigation/app-navigation.ts",
+    "scope": "Five native tab labels/icons plus care/more navigation targets and accessibility names use shared metadata. Layout, gestures, guards and existing displayed values remain unchanged.",
+    "checks": [
+      {"name": "Records retains guarded tap, upward-drag and keyboard-expand routes with selected semantics", "result": "passed"},
+      {"name": "Desktop management puts Profile below Memory while keeping Review naming and mobile entry order", "result": "passed"},
+      {"name": "git diff --check", "result": "passed"}
+    ],
+    "executor": "Sol 6.1 high; root reviewed both source diffs and the existing check assertions",
+    "limitations": ["No new export or OTA for this metadata-only wiring", "Native layout and gesture regression evidence is scoped to the two existing checks"]
+  },
+  "device": {
+    "expectedSource": "4bfdf98885db57fbf7a157305e22aa5f4f9c7ae5",
+    "expectedOtaGroup": "df51a917-ee74-4e03-8fbc-db472314007d",
+    "exactOtaIdentityVerified": false,
+    "initialObservation": "First restart still displayed the old chart icon and retained the unsaved draft. That batch stopped; it is not evidence of a regression in the new bundle. The first return also used a deep link without observing completed navigation.",
+    "diagnosticFailure": "One post-restart UI hierarchy dump failed to reach idle. Its stale XML was excluded; a fresh screenshot showed the new concern icon.",
+    "correctedObservation": "After the new shared concern icon appeared, changed only unsaved mode and provider, discarded via the ordinary dialog, observed leaving settings, and returned. Saved platform mode was restored and the form was no longer dirty.",
+    "result": "bounded-draft-discard-pass",
+    "loginRetained": true,
+    "restoredMode": "platform",
+    "dirty": false,
+    "credentialEntered": false,
+    "settingsSaveSubmitted": false,
+    "modelCalls": 0,
+    "notifications": 0,
+    "cleanup": "Only agent-created unsaved drafts were discarded; app returned to Today. Private UI captures remain ignored outside committed evidence.",
+    "evidenceDirectory": ".cache/model03-draft-device-final/",
+    "limitations": ["No true-key save or provider call", "No new navigation-source build installed", "No claim of all-page device acceptance"]
+  }
+}
