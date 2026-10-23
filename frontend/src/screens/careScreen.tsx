@@ -10,7 +10,7 @@ import { PageFrame } from "../components/PageFrame";
 import { CareRecordsView } from "../components/care/CareRecordsView";
 import { AppDialog } from "../components/AppDialog";
 import { AppScrollView } from "../components/AppScrollView";
-import { proposalExpired, type AgentProposalView } from "../agent-view-model";
+import { agentTime, proposalExpired, type AgentProposalView } from "../agent-view-model";
 import type { AgentPendingDiscovery } from "../production/ProductAgentOwner";
 import { AppIcon } from "../components/AppIcon";
 import { AppStatusBadge } from "../components/AppStatusBadge";
@@ -48,10 +48,9 @@ function PendingCard({ runId, proposal, disabled, quietRefresh, onPress, cardRef
     accessibilityState={{ disabled }} aria-disabled={disabled} disabled={readFocus.nativeDisabled} onPress={() => { if (!disabled) onPress(); }}
     onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
     style={({ pressed }) => [styles.proposalCard, hovered && !disabled && styles.cardHighlighted, focused && styles.cardFocused, pressed && !disabled && styles.cardHighlighted, disabled && !readFocus.preserveWebFocus && styles.cardDisabled]}>
-    <View style={styles.cardCopy}><Text numberOfLines={3} style={styles.cardContent}>{proposalPrimaryText(proposal)}</Text>
-      <Text style={styles.meta}>{proposalContextLabel(proposal)}</Text>
-      <View style={styles.cardMeta}><Text style={styles.meta}>{proposal.scope === "family" ? "家庭共享" : "本人"}</Text><AppStatusBadge label={status} tone="warning" /></View>
-    </View><AppIcon name="chevron-right" size={20} />
+    <View style={styles.cardLabels}><Text style={[styles.meta, styles.cardKind]}>{proposalContextLabel(proposal)}</Text><AppStatusBadge label={status} tone="warning" /></View>
+    <Text numberOfLines={3} style={styles.cardContent}>{proposalPrimaryText(proposal)}</Text>
+    <View style={styles.cardMeta}><AppIcon name="clock-outline" size={14} /><Text style={[styles.meta, styles.cardTime]}>{Number.isFinite(Date.parse(proposal.createdAt)) ? `提出於 ${agentTime(proposal.createdAt)}` : "提出時間未知"} · {proposal.scope === "family" ? "家庭共享" : "本人"}</Text></View>
   </Pressable>;
 }
 
@@ -171,8 +170,10 @@ const styles = StyleSheet.create({
   manualCreate: { minHeight: 48, minWidth: 64, paddingHorizontal: spacing.xs, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small },
   manualCreateLabel: { fontFamily: chineseFont, fontSize: 14, lineHeight: 20, fontWeight: "700", color: colors.ink }, manualCreateFocused: { borderColor: colors.ink },
   resultDialog: { maxWidth: 860 }, resultScroll: { paddingHorizontal: 0, flexShrink: 1 }, resultContent: { padding: spacing.lg, gap: spacing.md },
-  pendingList: { gap: spacing.md, minWidth: 0 }, cardGrid: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: spacing.md, minWidth: 0 }, proposalCard: { flexBasis: 280, flexGrow: 1, flexShrink: 1, maxWidth: 420, minHeight: 148, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.lg, minWidth: 0, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.white },
-  cardCopy: { flex: 1, minWidth: 0, gap: spacing.sm }, cardContent: { fontFamily: chineseFont, fontSize: 20, lineHeight: 29, fontWeight: "600", color: colors.ink, minWidth: 0 },
-  cardMeta: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, minWidth: 0, flexShrink: 1 },
+  pendingList: { gap: spacing.md, minWidth: 0 }, cardGrid: { gap: spacing.md, minWidth: 0 },
+  proposalCard: { minWidth: 0, gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 0, backgroundColor: colors.controlSurface },
+  cardLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }, cardKind: { flex: 1, minWidth: 0 },
+  cardContent: { fontFamily: chineseFont, ...readingType.body, color: colors.ink, minWidth: 0 },
+  cardMeta: { flexDirection: "row", gap: spacing.sm, alignItems: "center" }, cardTime: { flex: 1 }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, minWidth: 0, flexShrink: 1 },
   cardHighlighted: { backgroundColor: colors.paleTeal }, cardFocused: { borderColor: colors.ink, borderWidth: 2 }, cardDisabled: { opacity: 0.6 },
 });

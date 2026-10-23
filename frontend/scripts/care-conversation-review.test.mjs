@@ -354,3 +354,48 @@ test('multi-chat unrelated domains and missing source dates cannot inherit Care 
   const window = values.careReviewWindow(values.careReviewChronological([...Array.from({ length: 100 }, (_, i) => ({ ...original, id: `recent-${i}`, reviewState: 'not_required', reviewRequirement: 'optional' })), old]));
   assert.equal(window.recent.length, 100); assert.equal(window.olderPendingCount, 1); assert.equal(window.older[0].id, old.id);
 });
+
+
+test('review-only history and fallback pending cards use one full-width straight frame and preserve their reader', () => {
+  for (const width of [1440, 1024, 390, 320]) {
+    for (const history of [true, false]) {
+      const h = workspace(undefined, width, { history }), tree = h.render();
+      for (const row of rows(tree)) {
+        const style = flatten(row.props.style({ pressed: false }));
+        assert.equal(style.borderWidth, 1); assert.equal(style.borderRadius, 0); assert.equal(style.padding, 12);
+        for (const key of ['maxWidth', 'width', 'height', 'minHeight', 'flexBasis', 'aspectRatio', 'flexDirection']) assert.equal(style[key], undefined, key);
+        const [header, body, source, footer] = row.props.children;
+        assert.equal(header.props.style.justifyContent, 'space-between');
+        assert.equal(body.props.numberOfLines, 3); assert.ok(source.props.children);
+        assert.equal(footer.props.children[0].props.name, 'clock-outline');
+        assert.equal(component(row, 'AppButton'), undefined);
+      }
+      const row = rows(tree)[0]; row.props.onPress();
+      assert.equal(component(h.render(), 'CareCaptureDetail').props.capture.id, row.key);
+      assert.deepEqual(h.calls, ['close'], 'Opening only reads the original selected capture');
+      const renderList = renderer('../src/components/care/CareReviewHistoryView.tsx', 'ReviewCards', width);
+      const list = renderList({ history, children: [row] });
+      assert.equal(list.type, 'View'); assert.equal(list.props.style.flexDirection, undefined);
+      assert.equal(list.props.style.flexWrap, undefined); assert.equal(list.props.children[0], row);
+    }
+  }
+});
+
+test('review card status and time remain truthful for saved, corrected, pending, expired, unknown and failed items', () => {
+  const base = fixtures().find(item => item.writeState === 'saved' && item.reviewState === 'not_required');
+  const cases = [
+    [{}, '已保存', 'success'],
+    [{savedRecord: {...base.savedRecord, current: {...base.savedRecord.current, version: 2}}}, '已更正', 'success'],
+    [{writeState: 'not_saved', savedRecord: null, reviewState: 'pending'}, '寫入前確認', 'warning'],
+    [{writeState: 'not_saved', savedRecord: null, reviewState: 'pending', operationValidity: {state: 'expired'}}, '原操作已過期', 'warning'],
+    [{writeState: 'unknown', savedRecord: null}, '結果未知', 'warning'],
+    [{writeState: 'failed', savedRecord: null}, '保存失敗', 'error'],
+  ];
+  for (const [patch, label, tone] of cases) {
+    const item = {...base, ...patch}, h = workspace([item], 1024, {history: true}), row = rows(h.render())[0];
+    const badge = component(row, 'AppStatusBadge'); assert.equal(badge.props.label, label); assert.equal(badge.props.tone, tone);
+    const footer = row.props.children[3].props.children[1].props.children;
+    assert.equal(footer, item.writeState === 'saved' ? `確認於 ${item.savedRecord.current.confirmedAtLabel}` : item.sourceContext.dateLabel);
+    assert.equal(item.writeState, patch.writeState ?? 'saved'); assert.deepEqual(h.calls, []);
+  }
+});

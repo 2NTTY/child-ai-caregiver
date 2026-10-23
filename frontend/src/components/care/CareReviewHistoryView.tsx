@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } fr
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { authorizedCareCaptureReview, careKindOptions, careReviewChronological, careReviewPrioritize, careReviewSourceGroups, careReviewSourceKey, careReviewMatchesQuery, careReviewIsImportantPending, careReviewDomainLabel, careReviewUsesCareOwner, careReviewMatchesTab, careReviewContentSummary, careCaptureReadiness, careImportantReviewReadiness, careReviewPageSize, careReviewPage, careReviewWindow, type CareReviewTab, type CareCaptureReview, type CareRecordsActions, type CareRecordsViewModel } from "../../care-view-model";
-import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
+import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
 import { AppButton, AppSelect, AppTabPanel, AppTextField, UnderlineTabs } from "../ui";
 import { AppIcon } from "../AppIcon";
 import { AppStatusBadge } from "../AppStatusBadge";
@@ -16,7 +16,6 @@ import { CareRecordDetail } from "./CareRecordDetail";
 import { CareRecordDelete } from "./CareRecordDelete";
 import { CareSavedRecordsList } from "./CareSavedRecordsView";
 import { CareReviewPagination } from "./CareReviewPagination";
-import { HistoryCardGrid } from "../history/HistoryCards";
 import { BackgroundSurface, useCustomBackground } from "../appearance/BackgroundSurface";
 
 export type CareReviewStatusFilter = "all" | "written" | "important_pending" | CareCaptureReview["reviewState"];
@@ -169,13 +168,15 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
             <ReviewCards history={history}>{section.items.map(item => {
               const important = careReviewIsImportantPending(item), selectedRow = selected?.id === item.id;
               const kind = item.writeState === "saved" && item.savedRecord ? item.savedRecord.current.values.kind : item.proposedValues.kind;
-              const statusLabel = item.operationValidity?.state === "expired" ? `${important ? "重要 · " : ""}原操作已過期` : item.sourceState !== "ready" ? "來源需重新核對" : item.writeState === "unknown" ? "結果未知" : item.writeState === "failed" ? "保存失敗" : important ? "重要 · 待確認" : item.reviewState === "pending" ? "寫入前確認" : item.reviewState === "skipped" ? "已略過" : null;
+              const statusLabel = item.operationValidity?.state === "expired" ? `${important ? "重要 · " : ""}原操作已過期` : item.sourceState !== "ready" ? "來源需重新核對" : item.writeState === "unknown" ? "結果未知" : item.writeState === "failed" ? "保存失敗" : important ? "重要 · 待確認" : item.reviewState === "pending" ? "寫入前確認" : item.reviewState === "skipped" ? "已略過" : item.writeState === "saved" ? (item.savedRecord?.current.version ?? 1) > 1 ? "已更正" : "已保存" : item.reviewState === "confirmed" ? "已明確確認" : null;
+              const statusTone = item.writeState === "failed" ? "error" : statusLabel === "已略過" ? "neutral" : ["已保存", "已更正", "已明確確認"].includes(statusLabel ?? "") ? "success" : "warning";
+              const timeLabel = item.writeState === "saved" && item.savedRecord ? item.savedRecord.current.confirmedAtLabel ? `確認於 ${item.savedRecord.current.confirmedAtLabel}` : "確認時間未知" : item.sourceContext?.dateLabel ?? item.createdAtLabel;
               return <Pressable key={item.id} ref={history ? node => { if (node) historyCardRefs.current.set(item.id, node); else historyCardRefs.current.delete(item.id); } : undefined} testID="care-review-row" accessibilityRole="button" accessibilityLabel={`核對${item.title}：${careReviewContentSummary(item)}${statusLabel ? `，${statusLabel}` : ""}`} accessibilityState={{ expanded: selectedRow, disabled: occupied }} aria-expanded={selectedRow} aria-current={selectedRow ? "true" : undefined} disabled={occupied}
-                onPress={() => { if (occupied) return; if (history) { historyAnchor.current = { id: item.id, context: historyContext }; historyReturnFocusRef.current = historyCardRefs.current.get(item.id) ?? null; } actions.closePanel(); setSelectedId(selectedRow ? null : item.id); setRecordOpen(false); focusRequested.current = !history; }} style={({ pressed }) => [s.row, history && s.historyCard, important && s.importantRow, selectedRow && s.selected, pressed && !occupied && (selectedRow ? s.selectedPressed : s.pressed)]}>
-                <View style={s.copy}><Text numberOfLines={3} style={s.rowContent}>{careReviewContentSummary(item)}</Text>
-                  <Text numberOfLines={2} style={s.meta}>{item.target.kind === "update" ? "更新" : "新增"} · {careReviewUsesCareOwner(item) ? careKindOptions.find(option => option.value === kind)?.label : careReviewDomainLabel(item)} · {item.sourceContext?.conversationLabel ?? item.sourceLabel}</Text>
-                  <View style={s.rowMeta}><Text style={s.meta}>{item.sourceContext?.dateLabel ?? "未提供對話日期"}</Text>{statusLabel ? <AppStatusBadge label={statusLabel} tone={item.writeState === "failed" ? "error" : "warning"} /> : null}</View>
-                </View><AppIcon name={selectedRow ? "chevron-down" : "chevron-right"} size={18} />
+                onPress={() => { if (occupied) return; if (history) { historyAnchor.current = { id: item.id, context: historyContext }; historyReturnFocusRef.current = historyCardRefs.current.get(item.id) ?? null; } actions.closePanel(); setSelectedId(selectedRow ? null : item.id); setRecordOpen(false); focusRequested.current = !history; }} style={({ pressed }) => [s.row, selectedRow && s.selected, pressed && !occupied && (selectedRow ? s.selectedPressed : s.pressed)]}>
+                <View style={s.rowLabels}><Text style={[s.meta, s.rowKind]}>{careReviewUsesCareOwner(item) ? careKindOptions.find(option => option.value === kind)?.label : careReviewDomainLabel(item)}</Text>{statusLabel ? <AppStatusBadge label={statusLabel} tone={statusTone} /> : null}</View>
+                <Text numberOfLines={3} style={s.rowContent}>{careReviewContentSummary(item)}</Text>
+                <Text numberOfLines={2} style={s.meta}>{item.target.kind === "update" ? "更新" : "新增"} · {item.sourceContext?.conversationLabel ?? item.sourceLabel}</Text>
+                <View style={s.rowMeta}><AppIcon name="clock-outline" size={14} /><Text style={[s.meta, s.rowTime]}>{timeLabel || "未提供對話日期"}</Text></View>
               </Pressable>;
             })}</ReviewCards>
           </View>)}
@@ -203,7 +204,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
     </FormDialog>}
   </View>;
 }
-function ReviewCards({ history, children }: { history: boolean; children: ReactNode }) { return history ? <HistoryCardGrid testID="review-history-cards">{children}</HistoryCardGrid> : <>{children}</>; }
+function ReviewCards({ history, children }: { history: boolean; children: ReactNode }) { return <View testID={history ? "review-history-cards" : undefined} style={s.list}>{children}</View>; }
 function ReviewContent({ history, tabsId, tab, children }: { history: boolean; tabsId: string; tab: CareReviewTab; children: ReactNode }) {
   return history ? <View style={s.workspace}>{children}</View> : <AppTabPanel tabsId={tabsId} tabKey={tab} active style={s.workspace}>{children}</AppTabPanel>;
 }
@@ -220,7 +221,7 @@ const s = StyleSheet.create({
   filterBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }, filterContext: { flex: 1, minWidth: 0, fontFamily: chineseFont, ...readingType.meta, color: colors.muted }, filters: { gap: spacing.sm },
   older: { gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine }, importantReminder: { flexDirection: "row", gap: spacing.xs, alignItems: "center" },
   sectionLabel: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted }, groupSection: { gap: spacing.xs }, list: { gap: spacing.md },
-  historyCard: { flexGrow: 1, alignItems: "flex-start", padding: spacing.lg, borderWidth: 1, borderLeftWidth: 1, borderColor: colors.line, borderLeftColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.controlSurface },
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 3, borderLeftColor: "transparent" }, importantRow: { borderLeftColor: colors.statusWarmLine },
-  copy: { flex: 1, minWidth: 0, gap: spacing.xs }, rowContent: { fontFamily: chineseFont, ...workspaceType.row, color: colors.ink }, rowMeta: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, alignItems: "center" }, selected: { backgroundColor: colors.paleTeal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
+  row: { minWidth: 0, gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 0, backgroundColor: colors.controlSurface },
+  rowLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }, rowKind: { flex: 1, minWidth: 0 },
+  rowContent: { fontFamily: chineseFont, ...readingType.body, color: colors.ink }, rowMeta: { flexDirection: "row", gap: spacing.sm, alignItems: "center" }, rowTime: { flex: 1 }, selected: { backgroundColor: colors.paleTeal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
 });

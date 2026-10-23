@@ -83,7 +83,7 @@ test('composed /care uses real pending cards inside the pending panel, never the
   assert.equal(s.button('查看結果'), undefined); assert.equal(s.button('查看所選結果'), undefined);
   assert.equal(s.h.hosts().filter(n => n.props.testID === 'care-agent-pending').length, 1);
   assert.doesNotMatch(s.text(), /只限你本人|已載入/); assert.match(s.text(), /本人/);
-  assert.equal(s.h.node('care-pending-grid').props.style.flexWrap, 'wrap'); assert.equal(s.card().props.style({ pressed: false })[0].maxWidth, 420);
+  assert.equal(s.h.node('care-pending-grid').props.style.flexDirection, undefined); assert.equal(s.card().props.style({ pressed: false })[0].maxWidth, undefined);
   s.tabs().props.onChange('recorded'); s.render(); assert.equal(s.card(), undefined); assert.equal(s.h.node('care-agent-pending'), undefined); assert.match(s.text(), /暫無已保存記錄/);
   s.tabs().props.onChange('pending'); await s.ready(); assert.ok(s.card()); assert.equal(s.h.hosts().filter(n => n.props.testID === 'care-agent-pending').length, 1); s.end();
 });
@@ -223,4 +223,30 @@ test('care removes the duplicate introductory row while retaining its accessible
   assert.ok(s.card());
   assert.doesNotMatch(s.text(), /核對助手記下的內容，有誤時更正/);
   s.end();
+});
+
+
+test('pending cards use only the review full-row straight frame with category/status above content and a truthful time below', async () => {
+  for (const width of [1440, 1024, 390, 320]) {
+    const s = setup([proposal('a'), proposal('b')], { width }); await s.ready();
+    const grid = s.h.node('care-pending-grid');
+    assert.equal(grid.props.style.flexDirection, undefined); assert.equal(grid.props.style.flexWrap, undefined);
+    for (const id of ['a', 'b']) {
+      const card = s.card(id), style = card.props.style({ pressed: false })[0];
+      assert.equal(style.borderWidth, 1); assert.equal(style.borderRadius, 0); assert.equal(style.padding, 12);
+      for (const key of ['maxWidth', 'width', 'height', 'minHeight', 'flexBasis', 'aspectRatio']) assert.equal(style[key], undefined, key);
+      const [header, content, footer] = card.props.children;
+      assert.equal(header.props.style.justifyContent, 'space-between');
+      assert.equal(header.props.children[1].type, 'AppStatusBadge');
+      assert.equal(header.props.children[1].props.label, '待你確認'); assert.equal(header.props.children[1].props.tone, 'warning');
+      assert.equal(content.props.children, `Synthetic exact content ${id}`); assert.equal(content.props.numberOfLines, 3);
+      assert.equal(footer.props.children[0].props.name, 'clock-outline');
+      assert.match(footer.props.children[1].props.children.join(''), /^提出於 /);
+      assert.doesNotMatch(footer.props.children[1].props.children.join(''), /確認於|已保存/);
+      assert.equal(card.props.children.some(node => node.type === 'Button'), false);
+    }
+    assert.equal(s.calls.some(call => call[0] === 'decide'), false); s.end();
+  }
+  const s = setup([proposal('a', { createdAt: 'not-a-date' })]); await s.ready();
+  assert.match(s.text(), /提出時間未知/); assert.doesNotMatch(s.text(), /Invalid Date/); s.end();
 });
