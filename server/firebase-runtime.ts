@@ -19,6 +19,7 @@ import { FirestoreDeviceSessions } from './firestore-device-sessions.ts';
 import { createFirebaseAuthPort } from './firebase-auth.ts';
 import { createFirestoreNativePush } from './firestore-native-push.ts';
 import { createNativePushGateway, readNativePushConfig } from './native-push-gateway.ts';
+import { createApnsPushGateway, readApnsPushConfig } from './apns-push-gateway.ts';
 import { createFirebaseRequestHandler } from './firebase-app.ts';
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
@@ -132,7 +133,9 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     };
     const reminders = createFirestoreTaskWorker({ ...domain, enabled: config.taskWorkerEnabled, currentAuth });
     const localDelivery = composition.local?.deliveries?.(domain);
-    const nativePushGateway = localDelivery?.nativePushGateway ?? createNativePushGateway(readNativePushConfig(env));
+    const apnsConfig = localDelivery ? null : await readApnsPushConfig(env);
+    const nativePushGateway = localDelivery?.nativePushGateway ?? { ...createNativePushGateway(readNativePushConfig(env)),
+      ...(apnsConfig ? { apns: createApnsPushGateway(apnsConfig) } : {}) };
     const nativePush = createFirestoreNativePush({ ...domain, gateway: nativePushGateway, sessions, currentAuth });
     const pushConfig = await readWebPushConfig(env), pushGateway = localDelivery?.pushGateway ?? createWebPushGateway(pushConfig);
     const telegramConfig = localDelivery?.telegramConfig ?? await readTelegramConfig(env);

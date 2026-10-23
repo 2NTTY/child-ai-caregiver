@@ -753,11 +753,13 @@ API／worker 從同一政策建立新 run 快照，舊 run 保留模型／預算
 聊天的 optional `officialHelp` 最多兩個固定版本 ID，由同一 run 已成功選取的工具引用導出，與 model message 交易保存。沿原 message／runId／inReplyTo，不新增可獨立寫入的提示資料庫；舊訊息沒有此欄位仍可讀。卡片的正文、官方 URL、核對日期由版本化共用登記提供，含義變更建立新 ID。進度事件只供當次連線顯示，不持久化、不是保存收據，也不作記憶來源。
 
 
-### Android 原生通知資料
+### Android／iOS 原生通知資料
 
 `native_push_bindings` 保存同一裝置授權的 ID／version、token revision及密文 token／session hash；可查 metadata 僅供授權索引與有界列表，不把 token 放入收據、匯出或產品日誌。`native_push_tokens` 是確定 hash 的唯一佔位，必須驗證原身份／世代和會話狀態後才可轉移。`native_push_deliveries` 保存一般測試的單次嘗試及真實結果；照護提醒仍使用既有 `contact_requests`，不新增另一份任務。
 
 收據、版本、變更與 outbox 沿 Firestore 同一交易。裝置會話讀取參與登記／發送前的交易；外發仍在交易外。備份／刪除 collection 清單只追加，保持原清理 cursor；隔離還原保留投遞歷史，撤銷綁定、清除 token、捨棄唯一佔位，不復活舊裝置資格或通知。
+
+iOS 綁定的密文增加 `apns: {topic, environment}`，平台／provider 由其導出；缺欄位明確屬舊 Android／FCM。APNs token 唯一指紋包含 provider、topic、環境及規範化 token；舊 FCM 指紋不重算。平台或 APNs 配置改變不能沿原綁定輪換，避免舊授權轉移至不同目的地。測試投遞另存平台快照供 v1 過濾，照護提醒仍使用原聯絡台帳。新增欄位仍在加密及恢復 schema 內，還原保留 metadata 但撤銷 token；回退至少須支援這個相容 reader，不能退至不認識 iOS 記錄的版本。
 
 
 <a id="chat-file-data"></a>

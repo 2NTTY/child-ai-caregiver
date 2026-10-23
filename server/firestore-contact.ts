@@ -1,4 +1,5 @@
 import { randomBytes, randomUUID } from 'node:crypto';
+import { nativePushSender } from './native-push-gateway.ts';
 import type { DocumentSnapshot, Query } from '@google-cloud/firestore';
 import { z } from 'zod';
 import type { NotificationMessageContent } from '../src/shared/notification-messages.ts';
@@ -96,10 +97,11 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
           && (!s.binding.expiresAt || Date.parse(s.binding.expiresAt) > Date.now()) ? { channel: 'web_push' as const, subscription: s.input.subscription, label: s.binding.label } : null;
       }
       if (link.channel === 'native_push') {
-        if (!options.nativePush || !options.nativePushGateway?.available) return null;
+        if (!options.nativePush || !options.nativePushGateway) return null;
         const s = await options.nativePush.readBinding(p, link.bindingId);
-        return s.token && s.binding.status === 'active' && s.binding.version === link.bindingVersion && await options.nativePush.sessionActiveIn(p, s)
-          ? { channel: 'native_push' as const, token: s.token, tokenHash: s.tokenHash, label: s.binding.label } : null;
+        return nativePushSender(options.nativePushGateway, s.apns).available && s.token && s.binding.status === 'active'
+          && s.binding.version === link.bindingVersion && await options.nativePush.sessionActiveIn(p, s)
+          ? { channel: 'native_push' as const, token: s.token, tokenHash: s.tokenHash, label: s.binding.label, apns: s.apns } : null;
       }
       const s = await options.telegram.readBinding(p, link.bindingId);
       return s.target && s.binding.status === 'active' && s.binding.version === link.bindingVersion && s.botId === options.telegramBotId
@@ -306,7 +308,7 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
     else try {
       result = started.active.channel === 'web_push' ? await options.pushGateway.send(started.active.subscription,
         { v: 1, kind: 'care', bindingId: link.bindingId, bindingVersion: link.bindingVersion, deliveryId: attempt.id }, signal, authorized)
-        : started.active.channel === 'native_push' ? await options.nativePushGateway!.send(started.active.token,
+        : started.active.channel === 'native_push' ? await nativePushSender(options.nativePushGateway!, started.active.apns).send(started.active.token,
           { v: 1, kind: 'care', bindingId: link.bindingId, bindingVersion: link.bindingVersion, deliveryId: attempt.id }, signal, authorized)
         : await options.telegramGateway.send({ chatId: started.active.target.chatId, callbackToken: started.token!, kind: 'care' }, signal, authorized);
     } catch { result = { status: 'unknown', reason: 'transport_unknown', providerStatus: null }; }
