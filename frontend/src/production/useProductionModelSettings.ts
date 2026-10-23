@@ -25,9 +25,20 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       notice: saving && failure.unknownResult ? "保存結果未知；密鑰已清除。請查回原操作及目前設定，系統不會重播密鑰。"
         : failure.code === "client_update_required" ? "請更新應用程式後管理這份模型設定。"
         : failure.status === 409 ? "設定版本已改變，請先重新讀取。"
-        : failure.code === "key_required" ? "請提供所選供應商的密鑰；切換供應商不能沿用另一份密鑰。"
+        : failure.code === "key_required" ? "請提供所選供應商的密鑰；切換供應商或更換 API 地址後，必須重新輸入聊天密鑰。"
+        : failure.code === "consent_required" ? "請先確認所選服務的資料傳送及收費安排，再保存個人模型設定。"
+        : failure.code === "invalid_input" ? "設定輸入未被接受；請核對公開 HTTPS API 地址、模型 ID、密鑰及限制後再保存。"
         : failure.code === "model_unsupported" ? "目前 Server 拒絕此模型；請確認服務版本及模型 ID。"
         : failure.status === 429 ? "模型資料查核暫受限，請稍後手動重試。" : "模型設定未能確認，請核對連線後重新讀取。" });
+  };
+  const metadataFail = (error: unknown) => {
+    const failure = settingsFailure(error);
+    if (failure.status === 401 || failure.status === 403 || failure.status === 409
+      || failure.code === "session_changed" || failure.code === "access_denied" || failure.code === "client_update_required") {
+      fail(error); return;
+    }
+    patch({ catalog: null, keyCheck: null, secretRevision: latest.current.secretRevision + 1,
+      notice: "模型資料暫未能查核；已讀取的設定仍可編輯及保存，模型 ID 可直接填寫。" });
   };
   const refresh = async () => {
     const request = requests.start(); if (!request || !env.userId) return;
@@ -92,7 +103,7 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       patch({ busy: "catalog", catalog: null, keyCheck: null });
       void api.catalog(version, false, request.signal, env.userId, provider).then(catalog => {
         if (request.current()) patch({ catalog });
-      }).catch(error => { if (request.current()) fail(error); })
+      }).catch(error => { if (request.current()) metadataFail(error); })
         .finally(() => { if (request.current()) patch({ busy: null }); request.finish(); });
     },
     refreshCatalog(expectedVersion) {
@@ -102,8 +113,10 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       const request = requests.start(true); if (!request) return;
       patch({ busy: "catalog", keyCheck: null, secretRevision: current.secretRevision + 1 });
       void api.catalog(expectedVersion, true, request.signal, env.userId).then(catalog => {
-        if (request.current()) patch({ catalog, notice: "已查核已保存密鑰的模型目錄；未呼叫生成，亦未改變所選模型。" });
-      }).catch(error => { if (request.current()) fail(error); })
+        if (request.current()) patch({ catalog, notice: catalog.reason === "metadata_unsupported"
+          ? "目前接入未支援模型資料查核；仍可直接填寫模型 ID 及保存設定。"
+          : "已查核已保存密鑰的模型目錄；未呼叫生成，亦未改變所選模型。" });
+      }).catch(error => { if (request.current()) metadataFail(error); })
         .finally(() => { if (request.current()) patch({ busy: null }); request.finish(); });
     },
     check(expectedVersion) {
@@ -113,8 +126,10 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       const request = requests.start(true); if (!request) return;
       patch({ busy: "check", keyCheck: null, secretRevision: current.secretRevision + 1 });
       void api.check(expectedVersion, request.signal, env.userId).then(keyCheck => {
-        if (request.current()) patch({ keyCheck, notice: "只查核已保存版本的模型資料；不代表生成或帳單已驗證。" });
-      }).catch(error => { if (request.current()) fail(error); })
+        if (request.current()) patch({ keyCheck, notice: keyCheck.reason === "metadata_unsupported"
+          ? "目前接入未支援模型資料查核；仍可保存及使用所選模型，實際請求結果由供應商決定。"
+          : "只查核已保存版本的模型資料；不代表生成或帳單已驗證。" });
+      }).catch(error => { if (request.current()) metadataFail(error); })
         .finally(() => { if (request.current()) patch({ busy: null }); request.finish(); });
     } };
   useEffect(() => { if (!env.online) patch({ busy: null, keyCheck: null, catalog: null,

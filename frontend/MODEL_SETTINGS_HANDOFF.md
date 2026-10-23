@@ -1,5 +1,16 @@
 # 本人模型設定前端交接
 
+## 正式接線（現行）
+
+共用設定頁已使用 `useProductionModelSettings` → `createModelSettingsApi`，契約見[本人模型 API](../docs/API.md#personal-model-http)，進度／部署只見[MODEL-SELF03](../PLAN.md#model-self03)與[STATUS](../STATUS.md#deployment)。下方 FE-W13 是早期預覽交接，當中的舊固定模型、限制、無 opId 及待接說明不再作正式規範。
+
+- Web／Android 使用同一 owner、表單及 v3 client；新增相容 API 地址、直接模型 ID、聊天 key 及獨立 Gemini 向量 key，不另建設定資料副本。
+- 目錄查核可省略，普通 metadata 失敗不阻擋保存；身份、版本及原操作結果仍須核對。unknown 只查原 opId，兩份 key 均不進重送佇列。
+- SettingsPage 把真實路由與模型分頁狀態一併傳入 `active`。保留的 Android tab 離頁後須清密鑰及停用隱藏表單的導航 guard；AppState 進背景亦清兩份 key。本人／Server 切換沿既有 scope 清理，切孩子不換本人設定。
+- API 地址改變不能沿用已保存聊天 key。照片／模型外送同意對應目前選用服務，知識查詢另外說明 Google 向量用途；正文與密鑰不進診斷。
+
+## FE-W13 早期預覽交接（歷史參考）
+
 更新：2026-10-01。FE-W13 只修改 `frontend/**`，沿現有 draft PR #73；前置 `433d31202b6e56e97f742e626e37bed3ade451dd`，源碼及驗證交付 `095f1356c1f1d1b9ad62ee1ad589b2d7e23582cb`，其後只補交付定位文件。主責 B，前端責任份額 100%、相對權重 5；使用者比較視覺，主聊天接正式 API／權限及驗收。
 
 **前端已實作；合成操作可預覽，沒有保存真密鑰、呼叫 Server 或 Google。** 不改後端、正式 App、根依賴／配置、AGENTS 或主聊天文件，不自行 merge。

@@ -56,11 +56,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：MODEL-SELF03 用戶自行試用相容模型接口，後端已接線，畫面待整合。**新增OpenAI相容API地址、key及模型ID的設定／呼叫服務，不以模型清單、metadata或預先逐型號調查作門檻。2026-10-23核對#253正修改模型設定畫面，#254修改Agent記憶／提案；依使用者要求不接管或修改它們。現行Web／Android維持v2設定契約，新v3入口待#253穩定後接畫面；不把後端接通當成用戶已可填寫。向量保留原索引，只分離本人查詢憑證。詳細範圍及剩餘接點見[MODEL03](#model-self03)，已部署版本仍見[STATUS](STATUS.md#deployment)。
+**當前：MODEL-SELF03 Web／Android 個人模型設定整合。**#253已於2026-10-23合併為`339c707`，從此基線接入已完成的相容API地址、key、模型ID及獨立Gemini向量key；保留新前端設計、既有owner與版本／原操作恢復。共用client與表單一併轉v3，不以模型目錄或metadata成功作保存門檻；向量保留原索引，不借平台憑證。#254仍由協作者處理。詳細範圍與實際驗證見[MODEL03](#model-self03)，程式接線與正式部署分開報告。
 
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
-**下一步：**待#253模型設定畫面穩定後接[MODEL-SELF03](#model-self03)的v3欄位、密鑰清理與原站／OTA交付，不為取得驗收key或逐模型調查阻擋接口。#254由協作者處理。MODEL01／02及Android原平台設定保存／重開證據保留，個人key與新接口真生成仍未驗。剩餘新版引用／長來源／多模態按[DEV02](#dev-agent02)及所屬角色包追蹤；Android由[S16-W03](#s16-w03)集中承接，iOS暫緩。不重跑既有證據或增加模型額度。
+**下一步：**[MODEL-SELF03](#model-self03)共用v3表單、供應商說明、密鑰清理與最低本機檢查已完成，Web／Android匯出通過；完成PR收束後準備原站／相容OTA交付。部署須先核新訊息歷史索引及相容reader，不能只換Web。MODEL01／02及Android原平台設定保存／重開證據保留，個人key與新接口真生成仍未驗；不為取得key或逐模型測試阻擋接口。#254及新出現的附件#259保留協作者責任，不混入本包。
 
 ### 保留的 Android 交付狀態
 
@@ -79,14 +79,14 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="model-self03"></a>
 ### MODEL-SELF03 自行試用相容模型接口
 
-- 基線由恢復快照`9fccfce`接回，已整合master `7b828dc`；活動分支`codex/personal-compatible-provider`，A單作者。後端／共用契約已實作及合成驗證，尚未部署或真供應商試用。既有前端及協作者Agent成果保留。
+- 後端及本地入口已由#255／#256合併，原恢復與失敗證據保留。本次從#253合併基線`339c707`開`codex/personal-compatible-ui`，A單作者；只接現有Web／Android表單、owner及client，未部署或真供應商試用。使用者本輪特許Astra子代理承接獨立範圍，主模型負責契約、整合與review。
 - 沿同一Web／Android設定、加密保存、原opId、配額及ADK Agent，新增相容API base URL、key與直接輸入模型ID。普通Chat Completions、工具往返及可轉換媒體接薄adapter；不另造Agent、不換模型、不新增自動重試或逐模型測試。供應商不接受某請求時回報錯誤，不把未知能力當作禁止選用。
 - 自訂地址限公開HTTPS，不把憑證送到內網／metadata服務或重新導向；不開任意headers。必要資料外送說明改為用戶所選服務，私人內容與key不入日誌。
 - 向量保留`gemini-embedding-001`／1024維／現有索引。提供可分開保存的本人Gemini向量key，聊天可用另一供應商；舊Gemini設定維持同key行為。未配置相容查詢憑證時如實回報，不借平台ADC／額度，不拿其他模型的向量查舊索引。其他向量模型及索引重建留後續，不以本包宣稱通用向量已完成。
 - 最少驗證：一條合成工具往返與用量轉換；共用設定保存／原操作及密鑰遮蔽；地址拒絕及舊契約相容。只跑受影響檢查及必要型別，零真模型／通知／全量。部署及私有封包傳送另依有效範圍，不把本機接線當已上線。
 - 已接：`server/personal-model-providers.ts`復用同一ADK gateway；Chat Completions文字／工具、圖片及WAV／MP3轉換；其他媒體明示不支援。Gemini／Vertex舊路由保留；另填Gemini向量key，不配置時明確回報`embedding_not_configured`。密鑰、模型不存在、餘額不足、限流、工具／媒體、連線及HTTP拒絕分開回報；只輸出受控分類，不把可能夾有key或私人正文的供應商原始錯誤放到聊天。
 - 設定契約：`Accept: application/vnd.yuyoufang.model-settings.v3+json`沿既有`/api/ai/settings`及operations接口；新增`provider: openai-compatible`、`baseUrl`、`embeddingApiKey`／`removeEmbeddingKey`，只讀回`embeddingKeyConfigured`。地址改變須重新提供聊天key，避免轉送原憑證；舊v2保持既有Google設定，遇新設定回`client_update_required`，其保存資格在同一交易內核對，保留原opId恢復。
-- 剩餘：#253的`ModelSettingsView.tsx`／owner穩定後，加入相容服務、API地址及獨立向量key欄位、所選供應商外送說明與密鑰清理，再切共用client到v3及更新原站／OTA；目前沒有改這些重疊檔案、#254或任何Prompt Pack。只在未重疊的form schema對齊共用provider型別，不更改畫面。不要只切HTTP版本而漏表單及secret清理。
+- 本次接線：在#253現有`ModelSettingsView.tsx`加入相容服務、API地址及獨立向量key，保留現有視覺和七項限制。切換身份／供應商／模式、離頁、保存與失敗時清理兩份密鑰；地址改變不沿用原聊天key，同意內容對應所選服務及Google向量用途。共用client採v3，舊v2 Server相容保留；unknown只查原opId，不重播key。最低client／form／三項React接線及限定型別通過，Web與Android本機匯出成功；Android runtime相容APK v2。首次Hermes暫存權限失敗及修復保留於[UI證據](artifacts/verification/MODEL_SELF03_UI_20261023.json)。不修改#254、#259分支或Prompt Pack，正式部署／OTA及真key未驗。
 - 證據見[MODEL03後端核對](artifacts/verification/MODEL_SELF03_BACKEND_20261023.json)。一次v2恢復檢查失敗已修正為交易內核對並局部補驗；更廣的Server型別入口帶入未改前端／舊測試錯誤，限定本包及模型設定畫面型別均通過。未跑真模型、雲端、裝置或全量；整包仍未完成。
 - 本地接續：從#255／`d1cfac6`接入同一相容provider，`agent:local`、知識初始化及獨立維護共用工程外配置與獨立向量key。明確模型ID不再被管理政策的固定模型覆蓋，配額仍由原政策控制；角色／提示詞未改。兩項合成路由／憑證檢查及限定型別通過，沒有新增真模型或emulator全流程；方法見[本地入口](docs/AGENT_LOCAL.md)，證據見[本地相容接線](artifacts/verification/LOCAL_COMPATIBLE_MODEL_20261023.json)。
 
