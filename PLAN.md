@@ -56,11 +56,20 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+**另行接續：[ATTACHMENT-READ01](#attachment-read01) 附件回看已整合獨立來源候選，型別／GUI／部署未過門檻；不追加已合併的 #253。**
+
 **當前：MODEL-SELF03 用戶自行試用相容模型接口，後端已接線，畫面待整合。**新增OpenAI相容API地址、key及模型ID的設定／呼叫服務，不以模型清單、metadata或預先逐型號調查作門檻。2026-10-23核對#253正修改模型設定畫面，#254修改Agent記憶／提案；依使用者要求不接管或修改它們。現行Web／Android維持v2設定契約，新v3入口待#253穩定後接畫面；不把後端接通當成用戶已可填寫。向量保留原索引，只分離本人查詢憑證。詳細範圍及剩餘接點見[MODEL03](#model-self03)，已部署版本仍見[STATUS](STATUS.md#deployment)。
 
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
 **下一步：**待#253模型設定畫面穩定後接[MODEL-SELF03](#model-self03)的v3欄位、密鑰清理與原站／OTA交付，不為取得驗收key或逐模型調查阻擋接口。#254由協作者處理。MODEL01／02及Android原平台設定保存／重開證據保留，個人key與新接口真生成仍未驗。剩餘新版引用／長來源／多模態按[DEV02](#dev-agent02)及所屬角色包追蹤；Android由[S16-W03](#s16-w03)集中承接，iOS暫緩。不重跑既有證據或增加模型額度。
+
+<a id="attachment-read01"></a>
+### ATTACHMENT-READ01：附件回看與私人清單（source review，未完成）
+
+- 基線 `339c707`，獨立分支 `dot/attachment-media-followup-20261023`；26 個 source/test 檔＝22 產品＋4 測試。原照片 owner 保留；語音／影片／文件走[唯讀清單契約](docs/API.md#private-attachment-lists)，必要來源／時間改用可關閉詳情彈窗，媒體操作獨立，不展示技術版本字串。
+- 定向結果分列：跨層 10/10（包含既有後端 8 項）、附件 focused 16/16、真 RN Web Modal 的有界 DOM 2/2。首 DOM 0/2 是 jsdom 沒有原生按鈕 Enter／Space default click 的測試方法錯誤，已保留並修正方法；真瀏覽器鍵盤仍未驗。8-root strict 512 MiB 檢查 exit137／無 diagnostics，原因未確定；不是完整或局部型別通過。精確版本、原紅及限制見[來源證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)。
+- `voice_assets`／`chat_file_assets` 各新增一個 `scopeTag ASC,state ASC,createdAt DESC,assetId DESC` composite index **源碼**；未部署索引、服務、GCP或OTA。來源 review 已通過；後續建立獨立草稿 PR，再排 build／四尺寸 GUI／原圖與原音、下載及正式 API／索引驗收；合成預覽不代替正式接通，不自動 merge。
 
 ### 保留的 Android 交付狀態
 

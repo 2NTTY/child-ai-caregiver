@@ -91,10 +91,10 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const erasures = createFirestoreErasureStore({ ...domain, journal });
     const nativeSessions = new FirestoreSessionService({ ...domain, namespace: config.namespace + '_adk' });
     const voiceObjects = composition.local ? createVoiceObjects({ ...objectOptions, bucket: composition.local.bucket(config.photoBucket) }) : createCloudStorageVoiceObjects(objectOptions);
-    const voices = createFirestoreVoiceStore({ ...domain, objects: voiceObjects, journal,
+    const voices = createFirestoreVoiceStore({ ...domain, attachmentListPolicy: config.attachmentListPolicy, objects: voiceObjects, journal,
       eraseTranscriptionRun: (userId, sessionId) => nativeSessions.deleteSession({ appName: 'yuban_hk', userId, sessionId }) });
     const fileObjects = composition.local ? createChatFileObjects({ ...objectOptions, bucket: composition.local.bucket(config.photoBucket) }) : createCloudStorageChatFileObjects(objectOptions);
-    const files = createFirestoreChatFilesStore({ ...domain, objects: fileObjects, journal });
+    const files = createFirestoreChatFilesStore({ ...domain, attachmentListPolicy: config.attachmentListPolicy, objects: fileObjects, journal });
     const erasureCleanup = createFirestoreErasureCleanup({ ...domain, journal, erasures, photos, voices, files,
       deleteAgentSession: (userId, sessionId) => nativeSessions.deleteSession({ appName: 'yuban_hk', userId, sessionId }),
       eraseAgentUserPage: userId => nativeSessions.eraseUserPage('yuban_hk', userId),

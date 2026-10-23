@@ -3441,3 +3441,10 @@
 - 發現本地模型會被平台固定型號覆蓋，改為僅受信任本地組裝能設定的模型選擇，實際run／用量使用同一型號；每日與每輪限制仍沿管理政策。保留原Gemini／ADC工作綁定及個人模式優先，未改角色工具／提示詞或協作者分支。
 - 補回前包最後清理import後遺留的PlatformProviderFactory型別引用。最初錯用tsx而未執行測試；改用倉庫Node原生入口後，SDK payload斷言層級錯誤造成一項合成失敗，修正requests[0]後兩項通過。限定型別及腳本語法通過，沒有反覆重跑全量；詳見[證據](artifacts/verification/LOCAL_COMPATIBLE_MODEL_20261023.json)。
 - 零真模型／embedding／通知、未啟動雲端資源或部署。#253／#254仍由原協作者處理；新模型畫面及真服務驗證維持未完成。操作方法直接更新既有docs/AGENT_LOCAL.md。
+
+<a id="log-20261023-attachment-media-source"></a>
+## LOG-20261023-ATTACHMENT-MEDIA-SOURCE
+
+- 接續原附件前後端候選，將26個source/test檔整合到`339c707`的獨立分支；不改已合併#253或頭像候選。只新增唯讀本人聊天附件清單及薄前端呈現，原照片／播放／下載授權與unknown邊界保留；詳情移至既有local dialog，權限短標為「本人」。
+- 跨層10/10、focused16/16及RN Web Modal DOM2/2分開記錄；首DOM0/2由jsdom不執行native-button default click造成，修正測試方法而非新增產品鍵盤handler。8-root strict 512 MiB檢查exit137、沒有diagnostics，原因未知；未重試或當作型別通過。[證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)保留完整來源hash、原紅及驗證界線。
+- 兩個Firestore composite index僅源碼，未部署。build／四尺寸GUI、真瀏覽器Enter／Space、原音／下載、實際API與雲端索引仍待驗；只有合成資料，沒有真模型／家庭媒體、GCP、OTA或正式資料操作。獨立草稿來源交付與驗收／發布／合併分開。
