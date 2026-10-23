@@ -1,7 +1,9 @@
-import { readServerHttpConfig, type ServerHttpConfig } from './config.ts';
+import type { AttachmentListPolicy } from '../src/shared/attachment-list.ts';
+import { readAttachmentListPolicy, readServerHttpConfig, type ServerHttpConfig } from './config.ts';
 import { isIP } from 'node:net';
 
 export interface FirebaseServerConfig extends ServerHttpConfig {
+  attachmentListPolicy: AttachmentListPolicy;
   projectId: string;
   databaseId: string;
   namespace: string;
@@ -46,7 +48,7 @@ export function readFirebaseServerConfig(env: Record<string, string | undefined>
     throw new Error('Emulator configuration is forbidden in production');
   }
   if (http.publicOrigin !== http.webOrigin) throw new Error('Firebase deployment requires a same-origin frontend');
-  return { ...http, projectId, databaseId, namespace, sessionNamespace: namespace + '_sessions', authEmailEnabled: env.FIREBASE_AUTH_EMAIL_ENABLED === 'true',
+  return { ...http, attachmentListPolicy: readAttachmentListPolicy(env), projectId, databaseId, namespace, sessionNamespace: namespace + '_sessions', authEmailEnabled: env.FIREBASE_AUTH_EMAIL_ENABLED === 'true',
     photoBucket, erasureBucket, taskWorkerEnabled: env.FIREBASE_TASK_WORKER_ENABLED === 'true', messageHistoryEnabled: env.FIREBASE_MESSAGE_HISTORY_ENABLED === 'true', knowledgeSourceIds };
 }
 

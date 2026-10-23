@@ -10,7 +10,7 @@ export const navigationItems = {
   home: { href: "/", label: "今日", short: "今日", icon: "home-outline" },
   chat: { href: "/chat", label: "助手", short: "助手", icon: "message-text-outline" },
   care: { href: "/care", label: "核對", short: "核對", icon: "notebook-outline" },
-  photos: { href: "/photos", label: "照片與記錄", short: "照片", icon: "image-outline" },
+  photos: { href: "/photos", label: "附件回看", short: "附件", icon: "paperclip" },
   sources: { href: "/sources", label: "私人來源", short: "來源", icon: "link-variant" },
   tasks: { href: "/tasks", label: "待辦與預約", short: "待辦", icon: "clipboard-check-outline" },
   growth: { href: "/growth", label: "關注鏈與準備單", short: "關注", icon: "concern-outline" },
@@ -44,7 +44,7 @@ export const moreNavigationGroups = [
   { title: "照顧資料", detail: "原始資料、概況與成長檔案", items: [
     { key: "history", detail: "按分類搜尋過往安排與資料" },
     { key: "summary", detail: "孩子概況、照顧摘要與成長檔案" },
-    { key: "photos", detail: "篩選含照片的記錄，查看原始附件" },
+    { key: "photos", detail: "回看照片、語音、影片與文件原檔" },
     { key: "profile", detail: "查看及更正孩子的基本資料" },
   ] },
   { title: "助手與家庭", detail: "對話背景、家庭協作與聯絡安排", items: [

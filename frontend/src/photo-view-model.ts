@@ -38,6 +38,8 @@ export type PhotosViewModel = {
   busy: boolean; fresh: boolean; formLocked: boolean; canPick: boolean; canUpload: boolean; canExtract: boolean; canConfirm: boolean; canDelete: boolean;
 };
 export type PhotosActions = {
+  /** Read-only, scope-checked original bytes for a bounded visible thumbnail window. */
+  readThumbnail?: (item: PhotoItem, signal: AbortSignal) => Promise<{ uri: string; dispose: () => void } | null>;
   pickOriginal: (original: PhotoOriginal) => void; reportFileError: (message: string) => void;
   discardRecordDraft?: () => void;
   openPhoto: (item: PhotoItem) => void; clearEditor: () => void;

@@ -1,3 +1,5 @@
+import { chatFileAttachmentPageSchema, type ChatFileAttachmentPage } from '../shared/chat-files.ts';
+import { attachmentListQuerySchema, type AttachmentListQuery } from '../shared/attachment-list.ts';
 import { z } from 'zod';
 import { CHAT_FILE_LIMITS, chatFileAttachmentSchema, chatFileReservationSchema, type ChatFileAttachment, type ChatFileReservation } from '../shared/chat-files.ts';
 import { readBlobBytes, sha256Bytes } from './blob-bytes.ts';
@@ -32,6 +34,19 @@ export function createChatFileApi(fetcher: typeof fetch, origin = '', hash: type
     return parsed.data.file;
   }
   return {
+    async list(childId: string, query: AttachmentListQuery, signal: AbortSignal, userId: string): Promise<ChatFileAttachmentPage> {
+      const input = attachmentListQuerySchema.parse(query), params = new URLSearchParams();
+      if (input.limit !== undefined) params.set('limit', String(input.limit));
+      if (input.cursor != null) params.set('cursor', input.cursor);
+      const response = await request(base(childId) + (params.size ? '?' + params : ''), userId, signal);
+      let raw: unknown; try { raw = await response.json(); } catch { throw new ChatFileApiError(0, 'file_response_invalid'); }
+      if (signal.aborted) throw new ChatFileApiError(0, 'identity_changed');
+      const page = chatFileAttachmentPageSchema.safeParse(raw);
+      if (!page.success || page.data.items.some(item => item.childId !== childId)
+        || input.limit !== undefined && page.data.items.length > input.limit
+        || input.cursor != null && page.data.nextCursor === input.cursor) throw new ChatFileApiError(0, 'file_response_invalid');
+      return page.data;
+    },
     // The owner retains opId across unknown submissions. Never generate a replacement ID here.
     async reserve(childId: string, input: ChatFileReservation, signal: AbortSignal, userId: string) {
       const payload = chatFileReservationSchema.parse(input);

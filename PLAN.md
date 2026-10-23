@@ -56,11 +56,20 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：[S04-W02 iOS 基礎](#s04-w02)。**2026-10-24 使用者批准現在開始 iOS，以 TestFlight 交付 iPhone App，取代「Android 全部驗收完成後才開始」的次序；Android 未驗不改成通過。開工 master `560f051`，活動分支 `codex/s04-w02-ios-bootstrap`；配置及共用入口已接，本機 iOS JS／Hermes export 通過，尚無簽署 build／發布。Apple 付費團隊未定只阻塞首次 App 註冊／簽署及真投遞。完整範圍與順序見 [iOS 計劃](#p3-ios)。本輪只用 Astra 主模型及按需要的 Astra xhigh 子代理；不接管協作者角色及前端增補。
+**當前：[S04-W02 iOS 基礎](#s04-w02)。**2026-10-24 使用者批准現在開始 iOS，以 TestFlight 交付 iPhone App，取代「Android 全部驗收完成後才開始」的次序；Android 未驗不改成通過。開工 master `560f051`，交付整合 `a84f349`，活動分支 `codex/s04-w02-ios-bootstrap`；配置及共用入口已接，本機 iOS JS／Hermes export 通過，尚無簽署 build／發布。Apple 付費團隊未定只阻塞首次 App 註冊／簽署及真投遞。完整範圍與順序見 [iOS 計劃](#p3-ios)。本輪只用 Astra 主模型及按需要的 Astra xhigh 子代理；不接管協作者角色及前端增補。
+
+**另行接續：[ATTACHMENT-READ01](#attachment-read01) 附件回看已整合獨立來源候選，型別／GUI／部署未過門檻；不追加已合併的 #253。**
 
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
 **保留的前批交付：**[MODEL-SELF03](#model-self03)可由用戶在 Web／Android 自行填寫憑證與模型試用；#270 共用導航及 #271 延後聯合補驗已合併，導航接線尚未另發布。依使用者指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗等待四個 Agent 真正完成且協作者先自行檢查，不提前重跑或接管。iOS 不以新模型驗收取代這些缺口。
+
+<a id="attachment-read01"></a>
+### ATTACHMENT-READ01：附件回看與私人清單（source review，未完成）
+
+- #259 已於 2026-10-24 合併；來源基線 `339c707`，分支 `dot/attachment-media-followup-20261023`；26 個 source/test 檔＝22 產品＋4 測試。原照片 owner 保留；語音／影片／文件走[唯讀清單契約](docs/API.md#private-attachment-lists)，必要來源／時間改用可關閉詳情彈窗，媒體操作獨立，不展示技術版本字串。
+- 定向結果分列：跨層 10/10（包含既有後端 8 項）、附件 focused 16/16、真 RN Web Modal 的有界 DOM 2/2。首 DOM 0/2 是 jsdom 沒有原生按鈕 Enter／Space default click 的測試方法錯誤，已保留並修正方法；真瀏覽器鍵盤仍未驗。8-root strict 512 MiB 檢查 exit137／無 diagnostics，原因未確定；不是完整或局部型別通過。精確版本、原紅及限制見[來源證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)。
+- `voice_assets`／`chat_file_assets` 各新增一個 `scopeTag ASC,state ASC,createdAt DESC,assetId DESC` composite index **源碼**；未部署索引、服務、GCP或OTA。來源 review 已通過及合併；原型別、build／GUI、原圖與原音、下載及正式 API／索引門檻繼續保留，不因合併改為通過。
 
 ### 保留的 Android 交付狀態
 

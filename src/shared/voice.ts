@@ -1,3 +1,4 @@
+import { ATTACHMENT_LIST_BOUNDS, attachmentListPageFields, consistentAttachmentPage } from './attachment-list.ts';
 import { z } from "zod";
 
 export const VOICE_LIMITS = Object.freeze({ bytes: 5 * 1024 * 1024, durationMs: 120_000, filesPerMessage: 1 });
@@ -35,3 +36,11 @@ export type VoiceAttachment = z.infer<typeof voiceAttachmentSchema>;
 export const voiceMessageReferenceSchema = voiceFileMetadataSchema.extend({ id: z.uuid(), version: z.number().int().positive() }).strict();
 export type VoiceMessageReference = z.infer<typeof voiceMessageReferenceSchema>;
 export const voiceLinkInputSchema = z.object({ id: z.uuid(), expectedVersion: z.number().int().positive() }).strict();
+
+/** Metadata only; no unlinked or removed recordings enter the library. */
+export const voiceAttachmentPageSchema = z.object({
+  items: z.array(voiceAttachmentSchema.refine(value => value.state === 'ready' && value.messageId !== null
+    && value.fileName !== null && value.mimeType !== null && value.bytes !== null && value.sha256 !== null && value.durationMs !== null))
+    .max(ATTACHMENT_LIST_BOUNDS.maxLimit), ...attachmentListPageFields,
+}).strict().refine(consistentAttachmentPage);
+export type VoiceAttachmentPage = z.infer<typeof voiceAttachmentPageSchema>;

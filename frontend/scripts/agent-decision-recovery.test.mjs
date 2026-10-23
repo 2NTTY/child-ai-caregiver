@@ -240,7 +240,7 @@ test('real Care card close, route remount and original-decision recovery keep th
   card().props.onPress(); await settle(); render();
   ui.hosts().find(n => n.type === 'AgentRunView').props.actions.decide(proposalA, 'accept'); await settle(); render();
   const original = h.owner.getSnapshot().model.pendingDecision, api = h.owner.api;
-  modal().props.onDismiss(); render(); assert.equal(modal().props.visible, false); assert.equal(button('留在此頁查核'), undefined);
+  modal().props.onDismiss(); render(); assert.equal(modal().props.visible, false); assert.equal(button('留在此頁'), undefined);
   let left = false; navigate(() => { left = true; }); render(); assert.equal(left, true);
   ui.unmount(); render(); assert.equal(modal().props.visible, false);
   assert.equal(h.owner.getSnapshot().model.pendingDecision, original); assert.equal(h.owner.api, api); assert.equal(h.posts().length, 1);
