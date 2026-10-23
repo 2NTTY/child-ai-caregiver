@@ -1,12 +1,68 @@
 {
-  "schemaVersion": 1,
-  "frozenAtUTC": "2026-10-22T18:16:44.865409+00:00",
-  "fileCountExcludingManifest": 25,
+  "schemaVersion": 2,
+  "frozenAtUTC": "2026-10-22T23:47:14.090518+00:00",
+  "previousStage": {
+    "documentCommit": "18fd71fd3d061c7e413514c5dce7fa67acce50fe",
+    "manifestSha256": "64fc53272da2b501510f3bed3ba836a32ada94658663a22ca6527b280e0a34d2",
+    "frozenAtUTC": "2026-10-22T18:16:44.865409+00:00",
+    "note": "Earlier evidence-index and staged reports remain unchanged; this manifest adds independent background follow-up."
+  },
+  "fileCountExcludingManifest": 35,
   "files": [
     {
       "path": "README.md",
-      "bytes": 5623,
-      "sha256": "040c89e73354119ff20dd793569ee1cf0f3da4eec90609d82a274ceb1d93ecc7"
+      "bytes": 6468,
+      "sha256": "5846335759adec9dc2c0d8df16f4a6e5bebb5a0d8d1c93b04a932d9c4e7553db"
+    },
+    {
+      "path": "background-followup/evidence-index.json",
+      "bytes": 44815,
+      "sha256": "774c73843a239771d39a1d908d47c451f4d44c7b4242fd4b333dc90e46ea212e"
+    },
+    {
+      "path": "background-followup/portable-contract-rerun.log",
+      "bytes": 499,
+      "sha256": "646bf22817a0f5b64c747d15af0230b88c192dc16513dd1aa0e110f20561dd5e"
+    },
+    {
+      "path": "background-followup/report.md",
+      "bytes": 7947,
+      "sha256": "ff93c5e6c498f7549c398a15c31f78cb46afa7f1671e602e4cffd3a5e7a936f1"
+    },
+    {
+      "path": "background-followup/screenshots/12-history-390-cards.jpg",
+      "bytes": 79626,
+      "sha256": "7a9b1de71cf277378082725dde0f120f8a15bdec091d7f6e104884768f5daa32"
+    },
+    {
+      "path": "background-followup/screenshots/19-home-1024.jpg",
+      "bytes": 183121,
+      "sha256": "c2bc12168cd11cc624686f9160d32dd269eb69b29e74f32d6b17509ee39ca8f5"
+    },
+    {
+      "path": "background-followup/screenshots/20-chat-1024.jpg",
+      "bytes": 177667,
+      "sha256": "3c83f525c4e6e00a1bbde1ec3f14efb77f629aaaaa2020b2ad2d838944b7c60e"
+    },
+    {
+      "path": "background-followup/screenshots/22-chat-390-messages.jpg",
+      "bytes": 139601,
+      "sha256": "594d8ddd34a199bb188edc8d2155925d4f83bcc1361bcc997e330eec706a6017"
+    },
+    {
+      "path": "background-followup/screenshots/25-restored-settings-1024.jpg",
+      "bytes": 161468,
+      "sha256": "7f465d62f389c63e8182ba33db346cfee040a1c6b4bf8e195a572ca2778ea478"
+    },
+    {
+      "path": "background-followup/screenshots/30-default-chat-390-readable-user.jpg",
+      "bytes": 129642,
+      "sha256": "fd7396ff23ef2b0a217eeac8f50e709884f6e59e882d76d9a8a6eb2ba29251a0"
+    },
+    {
+      "path": "background-followup/screenshots/34-restored-after-reload-summary-1024.jpg",
+      "bytes": 161784,
+      "sha256": "8c0a94043d887b90089838a9f4913e8f5cd633376a3e458c9718883a7c5e0f7b"
     },
     {
       "path": "changes-and-tests.md",
@@ -130,5 +186,12 @@
     }
   ],
   "selfExcluded": true,
-  "limits": "Integrity only, not a full-function pass; original pictures retain stage distinctions."
+  "relatedRepositoryArtifacts": [
+    {
+      "path": "frontend/scripts/background-web-picker-contract.test.mjs",
+      "sha256": "890a9a87f9ea0df0aa724cfe20e4baa62aff753d11046b8e1f72e9ff36228d88",
+      "bytes": 4882
+    }
+  ],
+  "limits": "Integrity only; added background sample does not rewrite prior-stage coverage or certify all-function/browser stability."
 }

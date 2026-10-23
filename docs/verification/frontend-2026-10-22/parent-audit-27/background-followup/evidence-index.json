@@ -1,0 +1,1249 @@
+{
+  "schemaVersion": 1,
+  "status": "FROZEN_BOUNDED_BACKGROUND_PASS_WITH_P3_AND_STABILITY_LIMIT",
+  "scope": "Independent background readability follow-up after parent audit27a; no product change or deployment",
+  "sourceRevision": "18fd71fd3d061c7e413514c5dce7fa67acce50fe",
+  "productRevision": "c18a6b67740013ea5631669fd8bf63acc2d1f5a3",
+  "sourceFiles": [
+    {
+      "path": "frontend/src/components/appearance/BackgroundSettings.tsx",
+      "sha256": "c44c611a332d7974f96e29fdf09cbf6e6ef9936f40d3f3b96d9955c41c79eb3a",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/components/appearance/BackgroundSettings.tsx",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/src/components/appearance/BackgroundImagePicker.web.tsx",
+      "sha256": "a82c066d440aa4683078e58a67eef7ff746a995d444813b4d8b90b22c35d22a7",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/components/appearance/BackgroundImagePicker.web.tsx",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/src/preview/BackgroundContext.tsx",
+      "sha256": "9b0d96f69fde9c893a6d7ca822d44027df17fbe9e44010650f32d3cd0be411af",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/preview/BackgroundContext.tsx",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/src/platform/background-storage.ts",
+      "sha256": "756c08c97bbe787517a57e00def0c176f91701266a1c347265c022fa631ca5de",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/platform/background-storage.ts",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/src/platform/background-image.ts",
+      "sha256": "66875bd017895011a12c552220bb13f3595ad3d16ba6daf2ace3339bbab621ba",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/platform/background-image.ts",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/src/background-view-model.ts",
+      "sha256": "3fafc8c60165f4598aa6644f060894eeb49b10746f1f49b186df8711d219a11b",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/background-view-model.ts",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/src/components/appearance/AppBackdrop.tsx",
+      "sha256": "4662b337b65e3c63ddf254c974daecebb190b94b52309eee513b17b20a8f2f6d",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/components/appearance/AppBackdrop.tsx",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/src/components/appearance/BackgroundSurface.tsx",
+      "sha256": "555d463a8c944f5dff7199335a05ab4a566d1df7dd4d96e01d78f7e82b635803",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/components/appearance/BackgroundSurface.tsx",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/src/components/appearance/backgroundSurface.css",
+      "sha256": "586f1cb816800e9310ee2078e0036c3c16af35c2207e39729a6f87eead705b07",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/components/appearance/backgroundSurface.css",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/src/components/PageFrame.tsx",
+      "sha256": "e6fff2a3dd1911ef945154c7e289938380b6f16fab2a9353d2fbb450d2b73393",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/components/PageFrame.tsx",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/src/screens/chatScreen.tsx",
+      "sha256": "b826eed7564fc844d012897d15f1d75d205d84be49f1adc881563faca4b4b272",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/screens/chatScreen.tsx",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/app/(dashboard)/_layout.tsx",
+      "sha256": "fa3fe198416483c29a5ed654fa65bc13507cb96ef99ccbd0de16d31f3a6bf3ce",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/app/(dashboard)/_layout.tsx",
+      "matchesSnapshot27a": true
+    },
+    {
+      "path": "frontend/scripts/background-local.test.mjs",
+      "sha256": "a422d8b5548e3808ee0e0c7e3f1405c3d6d33dd0ed3bf0855ac60357b147d646",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/scripts/background-local.test.mjs"
+    },
+    {
+      "path": "frontend/scripts/scope-transition-harness.mjs",
+      "sha256": "144fff21e28594c38bdfe2fc422ffe4fcdd8f82ebd06f76efc2fb2dc9b806192",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/scripts/scope-transition-harness.mjs"
+    }
+  ],
+  "sourceIdentity": {
+    "matchedSnapshot27aFileCount": 12,
+    "trackedProductDiffEmpty": true
+  },
+  "localContract": {
+    "status": "PASS",
+    "tests": 1,
+    "sequentialObservations": 4,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "nodeVersion": "v24.19.0",
+    "realSource": "frontend/src/components/appearance/BackgroundImagePicker.web.tsx",
+    "ports": [
+      "React hooks/UI host",
+      "Image decoder dimensions/completion",
+      "object URL lifecycle"
+    ],
+    "networkTripwireCalls": 0,
+    "doesNotProve": [
+      "real image codec or browser Image pixel reporting",
+      "browser visual readability",
+      "native chooser behavior",
+      "actual IndexedDB engine"
+    ],
+    "portableRerun": {
+      "exitCode": 0,
+      "commandFromRepositoryRoot": "node --test frontend/scripts/background-web-picker-contract.test.mjs",
+      "count": {
+        "tests": 1,
+        "observations": 4,
+        "additionalDistinctCases": 0
+      },
+      "purpose": "Portable import verification rerun of same original test, not additional product cases",
+      "sourceOriginalSha256": "d6ad584925c85aa0ce1e2dfc76c8569e2db6e3aa1c9a75991263254be584709b",
+      "portableTestSha256": "890a9a87f9ea0df0aa724cfe20e4baa62aff753d11046b8e1f72e9ff36228d88",
+      "onlyImportChanged": true,
+      "sourceInputHashes": [
+        {
+          "path": "frontend/scripts/scope-transition-harness.mjs",
+          "sha256": "144fff21e28594c38bdfe2fc422ffe4fcdd8f82ebd06f76efc2fb2dc9b806192",
+          "matchesCanonical": true
+        },
+        {
+          "path": "frontend/src/components/appearance/BackgroundImagePicker.web.tsx",
+          "sha256": "a82c066d440aa4683078e58a67eef7ff746a995d444813b4d8b90b22c35d22a7",
+          "matchesCanonical": true
+        },
+        {
+          "path": "frontend/src/platform/background-image.ts",
+          "sha256": "66875bd017895011a12c552220bb13f3595ad3d16ba6daf2ace3339bbab621ba",
+          "matchesCanonical": true
+        }
+      ],
+      "logSha256": "646bf22817a0f5b64c747d15af0230b88c192dc16513dd1aa0e110f20561dd5e",
+      "nodeVersion": "v24.19.0",
+      "noDependencyInstall": true,
+      "canonicalModified": false
+    },
+    "portableTestRepositoryPath": "frontend/scripts/background-web-picker-contract.test.mjs",
+    "portableRerunLog": "portable-contract-rerun.log"
+  },
+  "fixture": {
+    "filename": "high-contrast-1600x1000.png",
+    "format": "PNG",
+    "bytes": 22856,
+    "width": 1600,
+    "height": 1000,
+    "sha256": "1f16dd95b6bbedacc5f56ab70e75095e661615d560ca092a4efe117faf57120d",
+    "containsPersonalData": false,
+    "description": "Deterministic synthetic color blocks, black-white stripes and red grid; not a family photo or product asset",
+    "included": false
+  },
+  "browserStage": {
+    "status": "PASS_BOUNDED_VISUAL_SAMPLE",
+    "completedAtUTC": "2026-10-22T23:36:46Z",
+    "pageTypes": 5,
+    "representativeViewportGroups": 10,
+    "cssViewports": [
+      [
+        1024,
+        600
+      ],
+      [
+        390,
+        600
+      ]
+    ],
+    "fixtureCount": 1,
+    "environment": "Isolated snapshot27a Chrome preview; distinct from public Site86 smoke",
+    "normalNavigationAndReloadRetainSelection": "PASS within same tested origin/synthetic scope",
+    "restoreDefault": "PASS via original appearance UI; customImages=0 and surfaces=[]",
+    "restoreAfterReload": "PASS: summary after ordinary reload; customImages=0 and surfaces=[]",
+    "browserStability": "NOT_VERIFIED: Chrome crash code9 also occurred with restored default; cause not isolated",
+    "remoteHttpResponseByteHash": "NOT_VERIFIED; DOM bundle path is not a remote byte hash",
+    "browserBlobHash": "not extracted or rehashed",
+    "fullNetworkTrace": "not collected",
+    "productChanged": false,
+    "publicSiteChanged": false,
+    "mainSurfaceObservation": "One principal reading panel; chat toolbar, home temporary greeting and settings illustration are additional specific surfaces, not a claim of exactly one blur element on every page",
+    "styleEvidenceLimits": [
+      "09-14 full-div backdrop scans plus source support no per-card blur; 16 onward read only marked surfaces.",
+      "23-chat-message-styles.json matched actions container only, not independently verified message text style."
+    ],
+    "matrix": [
+      {
+        "page": "summary",
+        "wideEvidence": [
+          "BG-08"
+        ],
+        "narrowEvidence": [
+          "BG-09"
+        ],
+        "result": "Visible content and controls readable; one main reading panel"
+      },
+      {
+        "page": "history",
+        "wideEvidence": [
+          "BG-10"
+        ],
+        "narrowEvidence": [
+          "BG-11",
+          "BG-12"
+        ],
+        "result": "Visible search/filter and white/pale-blue cards readable"
+      },
+      {
+        "page": "settings/appearance",
+        "wideEvidence": [
+          "BG-14"
+        ],
+        "narrowEvidence": [
+          "BG-16",
+          "BG-17"
+        ],
+        "result": "Visible motion/background/restore controls readable; illustration has separate surface"
+      },
+      {
+        "page": "home",
+        "wideEvidence": [
+          "BG-19"
+        ],
+        "narrowEvidence": [
+          "BG-18",
+          "BG-18B"
+        ],
+        "result": "Yellow/white card fills retained; temporary greeting adds its own surface"
+      },
+      {
+        "page": "chat",
+        "wideEvidence": [
+          "BG-20",
+          "BG-24"
+        ],
+        "narrowEvidence": [
+          "BG-21",
+          "BG-22",
+          "BG-23"
+        ],
+        "result": "Visible content/composer readable against background; local return-latest overlap recorded separately"
+      }
+    ]
+  },
+  "sourceReceipts": [
+    {
+      "id": "source-audit",
+      "sha256": "f9ecd329a003294c0049a35e3383bb492eae00aa0c6c2e68b27afae7e465baf0",
+      "rawIncluded": false
+    },
+    {
+      "id": "source-manifest",
+      "sha256": "d3e4c0b287ec093c2636d8294e979b7afeb648db9f6641d3ac6ad82478539535",
+      "rawIncluded": false
+    },
+    {
+      "id": "local-contract-audit",
+      "sha256": "d2bbee1a3f9a26a54bed8b5fce40474bdebe3add31a6f9e8432ed9edfa0e8d25",
+      "rawIncluded": false
+    },
+    {
+      "id": "local-contract-source-manifest",
+      "sha256": "7c64b48bd1bf239599cdf58d3b4f1fa83f1fb56fbdea70c461b748b76596984a",
+      "rawIncluded": false
+    },
+    {
+      "id": "web-picker-contract.test",
+      "sha256": "d6ad584925c85aa0ce1e2dfc76c8569e2db6e3aa1c9a75991263254be584709b",
+      "rawIncluded": false
+    },
+    {
+      "id": "web-picker-contract-run01",
+      "sha256": "480786a21f3605801d3bb1de030612e00f6cf9b757af8518693d224d3f60ad49",
+      "rawIncluded": false
+    },
+    {
+      "id": "background-final-visual-review",
+      "sha256": "e6e7a35085821c9df3b06864e7faccdb4fd4ca2ca2044a5934a407e167293234",
+      "rawIncluded": false
+    },
+    {
+      "id": "background-evidence-manifest",
+      "sha256": "4256ce184f23d86b4a5eedb0b5d1ab7193640fe58291312e873fefb1aea649e5",
+      "rawIncluded": false
+    }
+  ],
+  "originalImages": [
+    {
+      "id": "BG-12",
+      "originalFilename": "12-history-390-cards.png",
+      "includedPath": "screenshots/12-history-390-cards.jpg",
+      "format": "JPEG",
+      "pixels": [
+        1188,
+        761
+      ],
+      "appCssViewport": [
+        390,
+        600
+      ],
+      "bytes": 79626,
+      "sha256": "7a9b1de71cf277378082725dde0f120f8a15bdec091d7f6e104884768f5daa32",
+      "byteCopy": true,
+      "privacyReview": "Viewed individually: synthetic content only; no real family information or credentials observed. QA frame and local address are retained unmodified.",
+      "stage": "Isolated27a follow-up; not publicSite86 smoke",
+      "finalManifestConfirmed": true
+    },
+    {
+      "id": "BG-19",
+      "originalFilename": "19-home-1024-native.png",
+      "includedPath": "screenshots/19-home-1024.jpg",
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        1024,
+        600
+      ],
+      "bytes": 183121,
+      "sha256": "c2bc12168cd11cc624686f9160d32dd269eb69b29e74f32d6b17509ee39ca8f5",
+      "byteCopy": true,
+      "privacyReview": "Viewed individually: synthetic content only; no real family information or credentials observed. QA frame and local address are retained unmodified.",
+      "stage": "Isolated27a follow-up; not publicSite86 smoke",
+      "finalManifestConfirmed": true
+    },
+    {
+      "id": "BG-20",
+      "originalFilename": "20-chat-1024-native.png",
+      "includedPath": "screenshots/20-chat-1024.jpg",
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        1024,
+        600
+      ],
+      "bytes": 177667,
+      "sha256": "3c83f525c4e6e00a1bbde1ec3f14efb77f629aaaaa2020b2ad2d838944b7c60e",
+      "byteCopy": true,
+      "privacyReview": "Viewed individually: synthetic content only; no real family information or credentials observed. QA frame and local address are retained unmodified.",
+      "stage": "Isolated27a follow-up; not publicSite86 smoke",
+      "finalManifestConfirmed": true
+    },
+    {
+      "id": "BG-22",
+      "originalFilename": "22-chat-390-messages-native.png",
+      "includedPath": "screenshots/22-chat-390-messages.jpg",
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        390,
+        600
+      ],
+      "bytes": 139601,
+      "sha256": "594d8ddd34a199bb188edc8d2155925d4f83bcc1361bcc997e330eec706a6017",
+      "byteCopy": true,
+      "privacyReview": "Viewed individually: synthetic content only; no real family information or credentials observed. QA frame and local address are retained unmodified.",
+      "stage": "Isolated27a follow-up; not publicSite86 smoke",
+      "finalManifestConfirmed": true
+    },
+    {
+      "id": "BG-25",
+      "originalFilename": "25-restored-settings-native.png",
+      "includedPath": "screenshots/25-restored-settings-1024.jpg",
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        1024,
+        600
+      ],
+      "bytes": 161468,
+      "sha256": "7f465d62f389c63e8182ba33db346cfee040a1c6b4bf8e195a572ca2778ea478",
+      "byteCopy": true,
+      "privacyReview": "Viewed individually: synthetic content only; no real family information or credentials observed. QA frame and local address are retained unmodified.",
+      "stage": "Isolated27a follow-up; not publicSite86 smoke",
+      "finalManifestConfirmed": true
+    },
+    {
+      "id": "BG-30",
+      "originalFilename": "30-default-chat-390-readable-user-native.png",
+      "includedPath": "screenshots/30-default-chat-390-readable-user.jpg",
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        390,
+        600
+      ],
+      "bytes": 129642,
+      "sha256": "fd7396ff23ef2b0a217eeac8f50e709884f6e59e882d76d9a8a6eb2ba29251a0",
+      "byteCopy": true,
+      "privacyReview": "Viewed individually: synthetic content only; no real family information or credentials observed. QA frame and local address are retained unmodified.",
+      "stage": "Default-background follow-up to overlap finding; not high-contrast scroll-position proof",
+      "finalManifestConfirmed": true
+    },
+    {
+      "id": "BG-34",
+      "originalFilename": "34-restored-after-reload-summary-native.png",
+      "includedPath": "screenshots/34-restored-after-reload-summary-1024.jpg",
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        1024,
+        600
+      ],
+      "bytes": 161784,
+      "sha256": "8c0a94043d887b90089838a9f4913e8f5cd633376a3e458c9718883a7c5e0f7b",
+      "byteCopy": true,
+      "privacyReview": "Viewed individually: synthetic content only; no real family information or credentials observed. QA frame and local address are retained unmodified.",
+      "stage": "Restored-default background after ordinary reload; not high-contrast screenshot",
+      "finalManifestConfirmed": true
+    }
+  ],
+  "notConflatedWith": [
+    "original136 product regression cases",
+    "original27a6 incremental browser groups",
+    "Site86 public5 smoke groups",
+    "HTTP response-body verification"
+  ],
+  "frozen": true,
+  "additionalSourceEvidence": [
+    {
+      "path": "frontend/src/components/chat/ChatTimeline.tsx",
+      "lines": [
+        "117-122",
+        "141-143"
+      ],
+      "sha256": "f632585537cf5e13762af92304eb4dbf56a92263533651f272b619d5b22bf727",
+      "matchesSnapshot27a": true,
+      "purpose": "Existing return-latest overlay placement; separate from original12 background-source identity count",
+      "githubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/18fd71fd3d061c7e413514c5dce7fa67acce50fe/frontend/src/components/chat/ChatTimeline.tsx#L117-L143"
+    }
+  ],
+  "frozenAtUTC": "2026-10-22T23:47:14.090518+00:00",
+  "findings": [
+    {
+      "id": "BG-P3-01",
+      "priority": "P3",
+      "title": "Return-latest floating button partly overlaps text at some narrow scrolled positions",
+      "impact": "Some message words need a different scroll position to read.",
+      "highContrastEvidence": [
+        "BG-22",
+        "BG-23"
+      ],
+      "defaultBackgroundFollowupEvidence": [
+        "BG-29",
+        "BG-30",
+        "BG-31",
+        "BG-32"
+      ],
+      "disposition": "Suggestion only; no product change. Default-background normal scrolling made tested user sentence and reply readable; return-latest removed the button.",
+      "limits": [
+        "Default-background recovery is not proof of every high-contrast scroll position.",
+        "No tested text was found permanently unreachable; does not certify all long messages.",
+        "BG-27 coarse scroll overshot and is not accepted as full-reading recovery evidence."
+      ]
+    }
+  ],
+  "remainingLimits": [
+    "All17routes or all states/images/sizes not verified",
+    "Firefox and native mobile not verified",
+    "Full keyboard/screenreader matrix not verified",
+    "Forced-colors/reduced-transparency fallback not browser verified",
+    "Real login/logout identity switching not browser verified",
+    "No productionAPI, real model or actual family content tested",
+    "Original retained-workspace and successful-model-form browser limits remain"
+  ],
+  "artifactIndex": [
+    {
+      "originalFilename": "07-recovered-selected-direct.png",
+      "sha256": "e9c976e2279c85364ad72d548f4a66897d96c1ce403e8bd8477868540aaf085c",
+      "bytes": 120220,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1188,
+        761
+      ],
+      "evidenceId": "BG-07"
+    },
+    {
+      "originalFilename": "07-recovered-selected-dom.json",
+      "sha256": "411f4c82dcbf050a6da7e7f33696ccd3aa9117f23c44779f9e79b413169d0303",
+      "bytes": 1090,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "08-summary-1024-dom.json",
+      "sha256": "da949d53ad775a64c0e3b6a216c8194e36ecf3062c07be8737b08c4993feb15e",
+      "bytes": 284,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "08-summary-1024.png",
+      "sha256": "24fff07990708b5e64b1d3bac3d8af8d78023e076c7ac8078355a28e4665f9b8",
+      "bytes": 109248,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1188,
+        761
+      ],
+      "evidenceId": "BG-08"
+    },
+    {
+      "originalFilename": "09-summary-390-dom.json",
+      "sha256": "ea9f953bca3143046affa3b3555a7253e7f6efd2ee66b3bf2edb5ac29ec18817",
+      "bytes": 476,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "09-summary-390.png",
+      "sha256": "d72d0aabdac935787fc447d06fb187231ac57165cf2dc001de788d25958526a5",
+      "bytes": 73478,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1188,
+        761
+      ],
+      "evidenceId": "BG-09"
+    },
+    {
+      "originalFilename": "10-history-1024-dom.json",
+      "sha256": "f549218d37bd5ce0083ff85ce91a62fbba4da6142eea9be6892e9520d618435e",
+      "bytes": 477,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "10-history-1024.ax.txt",
+      "sha256": "f666159a71e03de699b385441ca97f138516a19e107b5f6b527eaa37a162d8e8",
+      "bytes": 5452,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "10-history-1024.png",
+      "sha256": "0477158ad97b7ed2326c565bdccef0e4e30a5257a96cd6320f005731a828c61d",
+      "bytes": 121432,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1188,
+        761
+      ],
+      "evidenceId": "BG-10"
+    },
+    {
+      "originalFilename": "11-history-390-dom.json",
+      "sha256": "6fa90292a04b4ef9ae2a9a1d64aac30e95034274678fcc9eae4ed3ee3b533fc6",
+      "bytes": 476,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "11-history-390.ax.txt",
+      "sha256": "a2f5e5c7319e18e7e20003fb9d80b3b37c1cf09fc21ac0f385fb52e38ddee7ff",
+      "bytes": 4860,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "11-history-390.png",
+      "sha256": "c43a0d59348e4a2d2ff53003b77026be2e16fcaad1289de362bf9a2edafc60e9",
+      "bytes": 77684,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1188,
+        761
+      ],
+      "evidenceId": "BG-11"
+    },
+    {
+      "originalFilename": "12-history-390-cards-dom.json",
+      "sha256": "6fa90292a04b4ef9ae2a9a1d64aac30e95034274678fcc9eae4ed3ee3b533fc6",
+      "bytes": 476,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "12-history-390-cards.ax.txt",
+      "sha256": "a2f5e5c7319e18e7e20003fb9d80b3b37c1cf09fc21ac0f385fb52e38ddee7ff",
+      "bytes": 4860,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "12-history-390-cards.png",
+      "sha256": "7a9b1de71cf277378082725dde0f120f8a15bdec091d7f6e104884768f5daa32",
+      "bytes": 79626,
+      "rawIncluded": true,
+      "publiclyViewableInThisPackage": true,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1188,
+        761
+      ],
+      "evidenceId": "BG-12",
+      "includedPath": "screenshots/12-history-390-cards.jpg"
+    },
+    {
+      "originalFilename": "14-settings-appearance-1024-dom.json",
+      "sha256": "50681b027d214f417f24c822a0fe2158c4d49c80317b0fa858ee56baa2cf09d3",
+      "bytes": 763,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "14-settings-appearance-1024.ax.txt",
+      "sha256": "ee8fd3b7338d82c9992a3ff625f33ae1a29d9b29f8a916813f2a9c09764adf38",
+      "bytes": 5381,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "14-settings-appearance-1024.png",
+      "sha256": "a97be2b1fcb71e222623ab21174b8999fa8e98badae543d2f5386b3fcf91ae04",
+      "bytes": 115647,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1188,
+        761
+      ],
+      "evidenceId": "BG-14"
+    },
+    {
+      "originalFilename": "16-settings-390-native-dom.json",
+      "sha256": "aba8cc1846182f6c553d3032fbd6c638bf36a72117b770528aa65b8a0de067b0",
+      "bytes": 436,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "16-settings-390-native.ax.txt",
+      "sha256": "13f7f9344ca6c4a4619648fc54ca0ec9bd13a7cb00de8b3ce0abaa10e3390547",
+      "bytes": 4795,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "16-settings-390-native.png",
+      "sha256": "bd6c351e166be6dae05b3eed3353ec655f84cf292e5d7a76b48d63ece4f03708",
+      "bytes": 144971,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-16"
+    },
+    {
+      "originalFilename": "17-settings-390-background-controls-native-dom.json",
+      "sha256": "aba8cc1846182f6c553d3032fbd6c638bf36a72117b770528aa65b8a0de067b0",
+      "bytes": 436,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "17-settings-390-background-controls-native.ax.txt",
+      "sha256": "13f7f9344ca6c4a4619648fc54ca0ec9bd13a7cb00de8b3ce0abaa10e3390547",
+      "bytes": 4795,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "17-settings-390-background-controls-native.png",
+      "sha256": "dea85fcd662aab7ae2e70646b2fc261d03e6b4f4425af11def254fb8e8f8cce7",
+      "bytes": 143239,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-17"
+    },
+    {
+      "originalFilename": "18-home-390-native-dom.json",
+      "sha256": "927b866e9ad709402a6dd72defe70cd3113ed1da229d1336b8bd144b415ede5e",
+      "bytes": 459,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "18-home-390-native.ax.txt",
+      "sha256": "9d5940665991552aa6e69fc270b5bf3c28fe2f07ce5cdc1b62647c2cc6e33d95",
+      "bytes": 4923,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "18-home-390-native.png",
+      "sha256": "3e99bccad4600d2d2623403471699a080232a416e2ecb4964155899a04f45267",
+      "bytes": 155080,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-18"
+    },
+    {
+      "originalFilename": "18b-home-390-top-native-dom.json",
+      "sha256": "20da8fd0acf2018d9df1f03c1a76f230d9e1d4ef8faee43565db2ab38064720b",
+      "bytes": 251,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "18b-home-390-top-native.ax.txt",
+      "sha256": "9d5940665991552aa6e69fc270b5bf3c28fe2f07ce5cdc1b62647c2cc6e33d95",
+      "bytes": 4923,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "18b-home-390-top-native.png",
+      "sha256": "e9c49a6620b6c052cc7af5ab3be7b4900fae98e5b6467656ec93474757822e3d",
+      "bytes": 145851,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-18B"
+    },
+    {
+      "originalFilename": "19-home-1024-native-dom.json",
+      "sha256": "07b75746fcf6bfb216249644f2b5f5599d0ea5b698234ef226d11bc813294036",
+      "bytes": 253,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "19-home-1024-native.ax.txt",
+      "sha256": "09c39fefa887ee1ea956db86f26881f36ae5bdb2fb9b1621a0138eabb62b953c",
+      "bytes": 5811,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "19-home-1024-native.png",
+      "sha256": "c2bc12168cd11cc624686f9160d32dd269eb69b29e74f32d6b17509ee39ca8f5",
+      "bytes": 183121,
+      "rawIncluded": true,
+      "publiclyViewableInThisPackage": true,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-19",
+      "includedPath": "screenshots/19-home-1024.jpg"
+    },
+    {
+      "originalFilename": "20-chat-1024-native-dom.json",
+      "sha256": "442b4c071d8ec7850f1d35b164d932d794fe9782a0048fc934e3683663d9e292",
+      "bytes": 462,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "20-chat-1024-native.ax.txt",
+      "sha256": "c590c9954b2b1ef2020a63918482f6ab7f70235327ac0ac09e254043cee66700",
+      "bytes": 4341,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "20-chat-1024-native.png",
+      "sha256": "3c83f525c4e6e00a1bbde1ec3f14efb77f629aaaaa2020b2ad2d838944b7c60e",
+      "bytes": 177667,
+      "rawIncluded": true,
+      "publiclyViewableInThisPackage": true,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-20",
+      "includedPath": "screenshots/20-chat-1024.jpg"
+    },
+    {
+      "originalFilename": "21-chat-390-native-dom.json",
+      "sha256": "ca0cb9cd040e11ff098728cfd992ad9f950d377d6f693ff76ef258ae86e333e0",
+      "bytes": 458,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "21-chat-390-native.ax.txt",
+      "sha256": "791599e87311f14d57dad66a095c4014ffb525ca59112a16b7ce3bd32f21b9c2",
+      "bytes": 3747,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "21-chat-390-native.png",
+      "sha256": "f5b46467b073c2f9c3b176710cefd293f879285592b909920893f4cde4151329",
+      "bytes": 139476,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-21"
+    },
+    {
+      "originalFilename": "22-chat-390-messages-native-dom.json",
+      "sha256": "ca0cb9cd040e11ff098728cfd992ad9f950d377d6f693ff76ef258ae86e333e0",
+      "bytes": 458,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "22-chat-390-messages-native.ax.txt",
+      "sha256": "7d33466bd55eb2d369bedc55a808d1f2b11571d5d5704a1a4add24277e782e48",
+      "bytes": 3780,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "22-chat-390-messages-native.png",
+      "sha256": "594d8ddd34a199bb188edc8d2155925d4f83bcc1361bcc997e330eec706a6017",
+      "bytes": 139601,
+      "rawIncluded": true,
+      "publiclyViewableInThisPackage": true,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-22",
+      "includedPath": "screenshots/22-chat-390-messages.jpg"
+    },
+    {
+      "originalFilename": "23-chat-390-reply-native-dom.json",
+      "sha256": "ca0cb9cd040e11ff098728cfd992ad9f950d377d6f693ff76ef258ae86e333e0",
+      "bytes": 458,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "23-chat-390-reply-native.ax.txt",
+      "sha256": "7d33466bd55eb2d369bedc55a808d1f2b11571d5d5704a1a4add24277e782e48",
+      "bytes": 3780,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "23-chat-390-reply-native.png",
+      "sha256": "99c41c516524424259b9e96b7116beb499b8057ee85c017ce429c9c70428d574",
+      "bytes": 145006,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-23"
+    },
+    {
+      "originalFilename": "23-chat-message-styles.json",
+      "sha256": "8638a2ac7ba566882b3ecd358099a5c437ac2895188d9524a37ff7860529df9d",
+      "bytes": 110,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "evidenceLimit": "Actions container only; not accepted as message-text computed style."
+    },
+    {
+      "originalFilename": "24-chat-1024-reply-native-dom.json",
+      "sha256": "442b4c071d8ec7850f1d35b164d932d794fe9782a0048fc934e3683663d9e292",
+      "bytes": 462,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "24-chat-1024-reply-native.ax.txt",
+      "sha256": "6f75d558fb7bf6fe18ce8de5811dd5bba231f64cb2e0b9320e4f46875c3ff009",
+      "bytes": 4372,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "24-chat-1024-reply-native.png",
+      "sha256": "19ab463050df3d3233a210847e5f0fe966cbad36218de60956eb1c5bd4bb4eed",
+      "bytes": 189963,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-24"
+    },
+    {
+      "originalFilename": "25-restored-settings-native-dom.json",
+      "sha256": "3d2cc53be21e1211ad73f9c1d711e41819a151ad26f925518a00455d3ecac4d9",
+      "bytes": 41,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "25-restored-settings-native.ax.txt",
+      "sha256": "6bebb87278f8a6be4ca3b64a789898e0814c5e63a9f496f4bd187255c47943a5",
+      "bytes": 5478,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "25-restored-settings-native.png",
+      "sha256": "7f465d62f389c63e8182ba33db346cfee040a1c6b4bf8e195a572ca2778ea478",
+      "bytes": 161468,
+      "rawIncluded": true,
+      "publiclyViewableInThisPackage": true,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-25",
+      "includedPath": "screenshots/25-restored-settings-1024.jpg"
+    },
+    {
+      "originalFilename": "26-default-chat-390-top-native-dom.json",
+      "sha256": "3d2cc53be21e1211ad73f9c1d711e41819a151ad26f925518a00455d3ecac4d9",
+      "bytes": 41,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "26-default-chat-390-top-native.ax.txt",
+      "sha256": "7d33466bd55eb2d369bedc55a808d1f2b11571d5d5704a1a4add24277e782e48",
+      "bytes": 3780,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "26-default-chat-390-top-native.png",
+      "sha256": "9d4e972c3e8b7b9dbda019528ced499ea8d15556d52ba36754e08d14be22b4ed",
+      "bytes": 126960,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-26"
+    },
+    {
+      "originalFilename": "28-default-chat-390-return-latest-native-dom.json",
+      "sha256": "3d2cc53be21e1211ad73f9c1d711e41819a151ad26f925518a00455d3ecac4d9",
+      "bytes": 41,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "28-default-chat-390-return-latest-native.ax.txt",
+      "sha256": "5347862e96b839d683b7534f341cea1af522b5d354afac068b77bdf6aee7883d",
+      "bytes": 3819,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "28-default-chat-390-return-latest-native.png",
+      "sha256": "ff189d93d6b35fe8c3ed8ac4281b6ac6085ef9a5cd210f4ee1bb386899b3269b",
+      "bytes": 126618,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-28"
+    },
+    {
+      "originalFilename": "29-default-chat-390-latest-stable-native-dom.json",
+      "sha256": "3d2cc53be21e1211ad73f9c1d711e41819a151ad26f925518a00455d3ecac4d9",
+      "bytes": 41,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "29-default-chat-390-latest-stable-native.ax.txt",
+      "sha256": "2455e9c52df88639a0cd020f238ebcff51796123f0962586d9cc884994ff0c32",
+      "bytes": 3778,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "29-default-chat-390-latest-stable-native.png",
+      "sha256": "131193ecba361a9b53732a3e76e6f1b57ff3de2901813a0882852d9befb3d625",
+      "bytes": 125794,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-29"
+    },
+    {
+      "originalFilename": "30-default-chat-390-readable-user-native-dom.json",
+      "sha256": "3d2cc53be21e1211ad73f9c1d711e41819a151ad26f925518a00455d3ecac4d9",
+      "bytes": 41,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "30-default-chat-390-readable-user-native.ax.txt",
+      "sha256": "94f4b073fbc9bf97bc86145f46a965a51443b5cef22f5dcbe0c0315da49816c3",
+      "bytes": 4439,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "30-default-chat-390-readable-user-native.png",
+      "sha256": "fd7396ff23ef2b0a217eeac8f50e709884f6e59e882d76d9a8a6eb2ba29251a0",
+      "bytes": 129642,
+      "rawIncluded": true,
+      "publiclyViewableInThisPackage": true,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-30",
+      "includedPath": "screenshots/30-default-chat-390-readable-user.jpg"
+    },
+    {
+      "originalFilename": "31-default-chat-390-reply-start-native-dom.json",
+      "sha256": "3d2cc53be21e1211ad73f9c1d711e41819a151ad26f925518a00455d3ecac4d9",
+      "bytes": 41,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "31-default-chat-390-reply-start-native.ax.txt",
+      "sha256": "94f4b073fbc9bf97bc86145f46a965a51443b5cef22f5dcbe0c0315da49816c3",
+      "bytes": 4439,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "31-default-chat-390-reply-start-native.png",
+      "sha256": "6fb0d5e3818086423f658f3019f21240dcacdbfd058973f93a78a18e72359da7",
+      "bytes": 134771,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-31"
+    },
+    {
+      "originalFilename": "32-default-chat-390-reply-end-native-dom.json",
+      "sha256": "3d2cc53be21e1211ad73f9c1d711e41819a151ad26f925518a00455d3ecac4d9",
+      "bytes": 41,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "32-default-chat-390-reply-end-native.ax.txt",
+      "sha256": "94f4b073fbc9bf97bc86145f46a965a51443b5cef22f5dcbe0c0315da49816c3",
+      "bytes": 4439,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "32-default-chat-390-reply-end-native.png",
+      "sha256": "8647537e8f8184e624134d014b64e1c6af71dd289850c9775d3cff3ef7d2077d",
+      "bytes": 132221,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-32"
+    },
+    {
+      "originalFilename": "34-restored-after-reload-summary-native-dom.json",
+      "sha256": "3d2cc53be21e1211ad73f9c1d711e41819a151ad26f925518a00455d3ecac4d9",
+      "bytes": 41,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "34-restored-after-reload-summary-native.ax.txt",
+      "sha256": "f30a32c9b164406d9ef485095511baf23dc83a6a0045798cd9a86c0ab69ab19e",
+      "bytes": 7360,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    },
+    {
+      "originalFilename": "34-restored-after-reload-summary-native.png",
+      "sha256": "8c0a94043d887b90089838a9f4913e8f5cd633376a3e458c9718883a7c5e0f7b",
+      "bytes": 161784,
+      "rawIncluded": true,
+      "publiclyViewableInThisPackage": true,
+      "originalRetainedLocally": true,
+      "format": "JPEG",
+      "pixels": [
+        1364,
+        1024
+      ],
+      "evidenceId": "BG-34",
+      "includedPath": "screenshots/34-restored-after-reload-summary-1024.jpg"
+    },
+    {
+      "originalFilename": "34-restored-version.json",
+      "sha256": "8a95b4e2b76c13297d0088f7f2de539f7725234c19f30833eb997f3843499adf",
+      "bytes": 477,
+      "rawIncluded": false,
+      "publiclyViewableInThisPackage": false,
+      "originalRetainedLocally": true
+    }
+  ],
+  "publicEvidenceAvailability": {
+    "includedOriginalImages": 7,
+    "otherRawArtifactsIncluded": false,
+    "meaning": "Only the seven linked JPEGs and portable-test log are readable in this package. Other screenshot/DOM/AX hashes are archival references; local originals are retained but not uploaded as part of this addendum."
+  }
+}
