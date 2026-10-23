@@ -30,6 +30,12 @@
         "buildType": "apk"
       }
     },
+    "ios-preview": {
+      "extends": "base",
+      "distribution": "store",
+      "channel": "ios-preview",
+      "environment": "preview"
+    },
     "production": {
       "extends": "base",
       "channel": "production",

@@ -3498,3 +3498,11 @@
 
 - 使用者明確把本地最後引用／審核補驗延後，先等四個Agent真正完成及協作者自行檢查。PLAN／STATUS已改為此恢復條件，不以個別PR合併或環境啟動取代角色自查；本聊天不提前整合／重跑或接管協作者修改。
 - 先前只唯讀核對#263／#265固定head及相關程式差異，沒有建立角色整合分支、修改角色、啟動本地服務或呼叫模型。原失敗、快照與有效證據保留；這次只改文件、核對diff及既有連結，不跑產品測試。
+
+<a id="log-20261024-s04-w02-ios-bootstrap"></a>
+## LOG-20261024-S04-W02-IOS-BOOTSTRAP
+
+- 使用者批准 iOS TestFlight 計劃；先更新根 PLAN，再從 master `560f051` 開 `codex/s04-w02-ios-bootstrap`。沿現有 Expo 57、原生身份／transport／owner／同步及畫面，啟用 iPhone 配置與獨立 store profile／channel；Android 配置及入口不重建，Apple 團隊未定。
+- iOS 不再誤讀 Android descriptor，仍保留 Firebase 公開設定／HTTPS gate。原品牌 SVG 轉成 1024 不透明 iOS 圖標，沒有改美術或加入產品依賴；EAS 封包另排除 Apple 私鑰／描述檔。主模型核對共用入口及 diff，Astra 子代理完成限定配置實作與獨立靜態 review，沒有 blocking finding。
+- 3 項必要配置檢查通過。首次 iOS JS／Hermes export 因 Windows sandbox TEMP 拒絕寫入失敗，保留現場；只調整本命令 TEMP／TMP 至 worktree cache，補同一 export 後通過。這不是 IPA、簽署或真機驗收；沒有重跑 Web／Android、全量測試、模型、通知或 Computer Use。[本包證據](artifacts/verification/S04_W02_IOS_BOOTSTRAP_20261024.json)。
+- 未上傳 EAS、建立 Apple App 或購買會員。首次封包、團隊／簽署、TestFlight、iPhone 與後續媒體／APNs／更新仍待辦；不把 Android 未驗或協作者四 Agent 最後補驗改為完成。交付前發現 master 新合併 #269／#259，按原成果整合，不接管其待驗工作。

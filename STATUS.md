@@ -4,12 +4,13 @@
 
 ## 目前與接手
 
+- **iOS 基礎程式已接：[S04-W02](PLAN.md#s04-w02)。**2026-10-24 基線 `560f051`；iPhone 配置、獨立 TestFlight profile／channel、共用身份及畫面入口已核，3 項配置與 iOS JS／Hermes export 通過。首次暫存權限失敗保留；沒有 IPA／發布／真機證據。付費簽署團隊待定，後續媒體、APNs、固定更新按 [iOS 計劃](PLAN.md#p3-ios) 接續，本輪只用 Astra。
 - **MODEL-SELF03 已發布，手機草稿捨棄補核通過。**新關注圖標出現後，捨棄模式／供應商草稿、離頁及返回恢復平台模式，零key輸入／保存／模型。精確裝置OTA ID與真key流程未驗。另將其餘原生底欄接回Web同一導航metadata，保留版面／手勢；兩項定向檢查通過，這批接線尚未發布，見 [MODEL03](PLAN.md#model-self03)。#254／#259、#262～#265及#269仍由協作者處理。
 - **本地開發入口可用：**`npm run agent:local` 使用目前分支的正式 Web／API／四角色接點及隔離持久資料，不需部署 GCP。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；新增相容模型與獨立向量 key 路由只有合成證據。方法見[本地入口](docs/AGENT_LOCAL.md)。
 - **角色聯合補驗依使用者指示延後：**等待四個Agent真正完成且協作者先自行檢查，再安排最後引用／審核及接續流程。本聊天不提前重跑或接管修改；`delivery_review_incomplete`失敗現場、單頁PDF已通過證據及長來源／多模態缺口保留。本地入口仍可供協作者使用，恢復條件及證據只見 [DEV02](PLAN.md#dev-agent02)。
 - **個人模型：**由用戶提供憑證與模型 ID 自行嘗試，沒有地域或 metadata 預驗門檻。聊天可用 Google 或相容接口；向量維持現有 Gemini／1024維索引，可另填本人 key，不借平台額度。其他向量模型及 Vertex Express 直接向量接線不宣稱已完成。
 - **Android 未全數驗收：**APK v2 覆蓋安裝、原登入／資料保留及一則指定 FCM 已有證據；跨端、媒體／附件、照護通知完成停止、OTA 回退及各包餘下真機項按 [S04～S17](PLAN.md#s04-w01) 追蹤。使用者已允許先合併、未驗項後續追蹤，不以合併或 OTA 發布當真機通過。
-- **其他邊界：**正式資料使用 Firestore；家庭多人留 P4、iOS 暫緩。OPT／LAY 成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)未完成。只補必要驗證，不全量、Computer Use 或重做設計。
+- **其他邊界：**正式資料使用 Firestore；家庭多人留 P4。OPT／LAY 成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)未完成；Android 尚欠驗收不阻塞 iOS 開工。只補必要驗證，不全量、Computer Use 或重做設計。
 
 <a id="deployment"></a>
 ## 最近部署觀察

@@ -5,12 +5,18 @@
     "version": "0.1.0",
     "platforms": [
       "web",
-      "android"
+      "android",
+      "ios"
     ],
     "android": {
       "package": "org.yuyoufang.app",
       "softwareKeyboardLayoutMode": "resize",
       "versionCode": 1
+    },
+    "ios": {
+      "bundleIdentifier": "org.yuyoufang.app",
+      "supportsTablet": false,
+      "icon": "./assets/brand/app-icon-ios.png"
     },
     "plugins": [
       "expo-router",

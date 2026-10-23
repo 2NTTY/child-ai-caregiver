@@ -1,0 +1,26 @@
+{
+  "package": "S04-W02",
+  "date": "2026-10-24",
+  "baseline": "560f0510538a41d384a9b6110d40bc388ae8297a",
+  "branch": "codex/s04-w02-ios-bootstrap",
+  "scope": "iOS configuration and reuse of shared native entry points; no signed build or release",
+  "environment": { "os": "Windows", "node": "24.19.0", "expo": "57" },
+  "checks": [
+    { "name": "iOS config, public environment gates, Android descriptor compatibility", "command": "node --test scripts/ios-config.test.mjs", "passed": 3, "failed": 0 },
+    { "name": "shared identity, transport, lifecycle and shell review", "result": "No blocking Android-only gate found; device behavior remains unverified" },
+    { "name": "configuration and packaging static review", "result": "No blocking finding; no duplicated test run" },
+    { "name": "initial iOS JS/Hermes export", "result": "failed", "reason": "Hermes could not write index.hbc to the Windows sandbox TEMP directory", "exitCode": 1, "compilerExitCode": 6, "localLog": ".cache/ios-bootstrap-export.log" },
+    { "name": "bounded export after local TEMP/TMP repair", "result": "passed", "command": "expo export --platform ios --output-dir ../.cache/ios-bootstrap-export-02 --max-workers 1", "adjustment": "TEMP and TMP point only to the worktree .cache/ios-bundler-temp; no product change", "exitCode": 0, "localLog": ".cache/ios-bootstrap-export-02.log", "bundle": "_expo/static/js/ios/index-8646e693530971e2f9b00a31d433fd7d.hbc", "sha256": "d4288323675d43e589990502ee2a92fbc91a6ce01dbf7ed2edd0adffccc22a68" }
+  ],
+  "icon": {
+    "source": "assets/brand/app-icon-source.svg",
+    "sourceSha256": "10686ecb5d59a927379d8b3ddc8d2504fa0a308392e80139e95ea3860014f35c",
+    "output": "frontend/assets/brand/app-icon-ios.png",
+    "sha256": "7a7eaa143588490dd9d62c4b602073c9ab9b4e741f5ede688cfe470f4922792a",
+    "size": "1024x1024",
+    "opaque": true,
+    "method": "Deterministic SVG rendering using bundled sharp 0.35.5; existing design preserved, no new product dependency"
+  },
+  "notPerformed": ["Full test suite", "Web or Android rebuild", "Computer Use", "Cloud upload or resource creation", "Apple registration or signing", "IPA build", "TestFlight submission", "iPhone acceptance", "Model calls", "Notifications"],
+  "pending": ["Paid Apple signing team and bundle ID availability", "First actual upload archive inspection", "Signed build and TestFlight delivery", "iPhone login, keyboard and Keychain behavior", "Media, APNs and common release tool packages"]
+}
