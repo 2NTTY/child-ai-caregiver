@@ -10,11 +10,11 @@
 
 | ID | Title | Why first / next | Status |
 |---|---|---|---|
-| **B0** | Greeting / small-talk early-path | Smallest safe UX bite from inventory: citation-free 你好/hi must not fail closed into independent review; care-shaped text never exempt. No memory free-pass, no propose widen. | **This branch** |
-| B1 | Failure taxonomy + cite UI | Map delivery-review / no-source / budget stops to clearer user copy + expandable details; keep fail-closed. | Next |
+| **B0** | Greeting / small-talk early-path | Smallest safe UX bite from inventory. | **PR #262** (`cursor/slice-b-greeting-early-path` @ `bc5f78c`) |
+| **B1** | Failure taxonomy + cite UI | Map delivery-review / no-source / budget stops to clearer user copy + detail hint in activity UI; keep fail-closed. | **Local branch** `cursor/slice-b-failure-taxonomy` (not in #262) |
 | B2 | True progress + review-aware call budget | REQ-002 event-driven progress; reserve review/revision within root budget (4-call tension). | After B1 |
 
-## B0 definition (done here)
+## B0 definition
 
 1. Add `isPureGreetingOrSmallTalk` with positive greeting markers.
 2. Skip delivery review only when greeting matches and care-domain / advisory patterns do not.
@@ -22,14 +22,25 @@
 4. Unknown citation-free wording still fails closed into review.
 5. Do **not** reintroduce `serverVerifiedMemoryGrounding` free-pass.
 
-## Out of scope for B0
+## B1 definition (this branch)
 
-- Opening a PR (supervisor decides)
-- Merging #254
-- Labels strip PR
+1. Split opaque `delivery_review_incomplete` into:
+   - `delivery_review_rejected` — independent review did not pass / insufficient evidence
+   - `delivery_review_no_sources` — pass would need supporting excerpts but draft has none
+   - `delivery_review_budget` — no remaining model calls for review / repair+re-review
+   - keep `delivery_review_incomplete` for parse / hash / live retract / provenance gaps
+2. Parent-facing labels via `agentStopMessage`; optional next-step hint via `agentStopDetailHint`.
+3. Activity / run details surface the detail hint under the stop label (`stopReasonDetail`).
+4. Durable chat body text stays the shared incomplete copy (does not leak unreviewed claims).
+5. Fail-closed unchanged: unreviewed care wording still never becomes a formal reply.
+
+## Out of scope
+
+- Opening B1 PR until tip ready and supervisor asks
+- Merging #254 / labels strip
 - Corpus ingestion, Android, assistant modes
 
 ## Follow-ups
 
-- B1 / B2 only after supervisor green-lights next ticket
-- Rebase onto master if #254 or other review-path PRs land first
+- Open B1 PR when tests green and supervisor asks
+- B2 after B1

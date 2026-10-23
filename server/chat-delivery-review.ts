@@ -197,11 +197,11 @@ function reviewPayload(draft: ChatDeliveryDraft, draftHash: string) {
 
 async function spendText(context: AgentRunContext, attemptKey: string, system: string, user: string): Promise<string> {
   if (!context.completeText) throw new AgentStopped("unavailable");
-  if (context.budget.remainingModelCalls < 1) throw new AgentStopped("delivery_review_incomplete");
+  if (context.budget.remainingModelCalls < 1) throw new AgentStopped("delivery_review_budget");
   try {
     return await context.completeText({ system, user, attemptKey });
   } catch (error) {
-    if (error instanceof AgentStopped && ["cancelled", "deadline", "unauthorized", "quota_exceeded", "input_limit"].includes(error.reason)) throw error;
+    if (error instanceof AgentStopped && ["cancelled", "deadline", "unauthorized", "quota_exceeded", "input_limit", "delivery_review_budget"].includes(error.reason)) throw error;
     throw new AgentStopped("delivery_review_incomplete");
   }
 }
@@ -269,8 +269,8 @@ export async function enforceChatDeliveryReview(input: {
     judgedOutcome: { decision: { decision: string }; draftHash: string },
     _presentationHint: AgentPresentation,
   ) => {
-    if (judgedOutcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_incomplete");
-    if (chatDeliveryPassNeedsSources(judged)) throw new AgentStopped("delivery_review_incomplete");
+    if (judgedOutcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_rejected");
+    if (chatDeliveryPassNeedsSources(judged)) throw new AgentStopped("delivery_review_no_sources");
     // Re-check live source retract / version change before binding a pass or keeping the wording.
     let livePresentation: AgentPresentation | null = null;
     try {
@@ -285,7 +285,7 @@ export async function enforceChatDeliveryReview(input: {
     if (liveHash !== judgedOutcome.draftHash) throw new AgentStopped("delivery_review_incomplete");
     const review = bindingFor(liveDraft, liveHash, input.provenance!.model, prompt.packVersion);
     if (!chatDeliveryReviewAllows(review, liveDraft, prompt.packVersion)) throw new AgentStopped("delivery_review_incomplete");
-    if (chatDeliveryPassNeedsSources(liveDraft)) throw new AgentStopped("delivery_review_incomplete");
+    if (chatDeliveryPassNeedsSources(liveDraft)) throw new AgentStopped("delivery_review_no_sources");
     // Prefer the freshly revalidated presentation; fall back only if identical draft stayed put.
     return { presentation: livePresentation, review };
   };
@@ -314,6 +314,7 @@ export async function enforceChatDeliveryReview(input: {
     outcome = await judge(current, "rereview");
     return acceptLivePass(current, outcome, nextPresentation);
   }
-  if (outcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_incomplete");
+  if (outcome.decision.decision === "revise") throw new AgentStopped("delivery_review_budget");
+  if (outcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_rejected");
   return acceptLivePass(current, outcome, input.presentation);
 }

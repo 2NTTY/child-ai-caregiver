@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { handleProductAgentRequest } from "../server/product-agent-api.ts";
-import { agentStopMessage } from "../src/shared/agent-stop-message.ts";
+import { agentStopDetailHint, agentStopMessage } from "../src/shared/agent-stop-message.ts";
 import { projectAgentRun } from "../frontend/src/production/agent-projection.ts";
 
 test("stopped replies persist a safe reason with saved results and reread without executing again", async () => {
@@ -32,3 +32,18 @@ test("stopped replies persist a safe reason with saved results and reread withou
   assert.equal(reviewed.stopReasonLabel, agentStopMessage("delivery_review_incomplete"));
   assert.equal(agentStopMessage("toString"), "未能確認停止原因");
 });
+
+test("delivery review taxonomy maps distinct labels and detail hints", () => {
+  const child = "669fc3c0-1734-42c9-b541-3b7f55f584e1", id = "7a640e02-926b-4b0a-a812-799776883e02";
+  assert.equal(agentStopMessage("delivery_review_rejected"), "獨立核對未接納這次整理，未成為正式回覆");
+  assert.equal(agentStopMessage("delivery_review_no_sources"), "缺少可核對的來源依據，未成為正式回覆");
+  assert.equal(agentStopMessage("delivery_review_budget"), "這次核對步驟已用盡可用的 AI 調用，未成為正式回覆");
+  assert.ok(agentStopDetailHint("delivery_review_no_sources")?.includes("來源"));
+  assert.ok(agentStopDetailHint("delivery_review_budget")?.includes("新訊息"));
+  const projected = projectAgentRun({ runId: id, status: "stopped", stopReason: "delivery_review_no_sources",
+    text: "", provenance: null, tools: [], proposals: [], citations: [], privateSourceCitations: [],
+    counts: { modelCalls: 1, toolCalls: 0, queryEmbeddings: 0 }, retrievalMode: "not_used" }, child, null);
+  assert.equal(projected.stopReasonLabel, agentStopMessage("delivery_review_no_sources"));
+  assert.equal(projected.stopReasonDetail, agentStopDetailHint("delivery_review_no_sources"));
+});
+

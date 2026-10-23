@@ -45,10 +45,25 @@ const stopReasons: Record<string, string> = {
   embedding_limit: "知識查詢次數已到上限", input_limit: "輸入長度已到上限", unauthorized: "存取權已改變",
   quota_exceeded: "今日 AI 用量已達上限", unavailable: "服務暫時未能使用", invalid_response: "未能確認 AI 回覆",
   delivery_review_incomplete: "尚未通過獨立核對，未成為正式回覆",
+  delivery_review_rejected: "獨立核對未接納這次整理，未成為正式回覆",
+  delivery_review_no_sources: "缺少可核對的來源依據，未成為正式回覆",
+  delivery_review_budget: "這次核對步驟已用盡可用的 AI 調用，未成為正式回覆",
   compose_review_incomplete: "這份編製草稿尚未通過獨立核對，未成為正式保存",
   invalid_tool: "工具要求未能通過核對", tool_unknown: "工具結果未能確認", interrupted: "處理中斷，沒有自動重新執行",
 };
 /** Product copy only: never expose raw provider errors, arguments or private diagnostic text. */
 export function agentStopMessage(reason: string | null): string | null {
   return reason ? Object.hasOwn(stopReasons, reason) ? stopReasons[reason] : "未能確認停止原因" : null;
+}
+
+
+/** Optional expandable hint under the stop label. Product copy only; no provider or private text. */
+const stopDetailHints: Partial<Record<string, string>> = {
+  delivery_review_incomplete: "獨立核對未能完成。未通過核對的內容不會成為正式回覆；可稍後重試或改寫問題。",
+  delivery_review_rejected: "獨立核對未接納這次整理。可改用更具體的問題，或核對來源後再開新訊息再問。",
+  delivery_review_no_sources: "正式照護／知識回覆需要可核對的來源摘錄。目前沒有足夠依據；可換官方／知識問題，或稍後再試。",
+  delivery_review_budget: "這次處理已用盡可用的 AI 調用，獨立核對未能完成。可開新訊息再問同一問題。",
+};
+export function agentStopDetailHint(reason: string | null): string | null {
+  return reason && Object.hasOwn(stopDetailHints, reason) ? stopDetailHints[reason]! : null;
 }

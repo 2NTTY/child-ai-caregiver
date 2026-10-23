@@ -15,7 +15,7 @@ export interface AgentProposalView {
 export type AgentCitationView = ChatCitationView;
 export interface AgentRunView {
   id: string; childId: string; status: AgentRunStatus; createdAt: string | null;
-  text: string; stopReasonLabel: string | null;
+  text: string; stopReasonLabel: string | null; stopReasonDetail: string | null;
   counts: { modelCalls: number; toolCalls: number; queryEmbeddings: number } | null;
   retrievalMode: "vector_keyword" | "keyword_degraded" | "not_used";
   tools: { id: string; nameLabel: string; status: "succeeded" | "rejected" | "conflict" | "failed" | "unknown"; savesCandidate: boolean }[];
