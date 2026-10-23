@@ -45,5 +45,10 @@
         "buildType": "apk"
       }
     }
+  },
+  "submit": {
+    "ios-preview": {
+      "ios": {}
+    }
   }
 }

@@ -197,7 +197,7 @@ iOS 與 Android 使用同一原生 transport、SecureStore、AppState、畫面�
 - 私有 `.p8`、`.p12`、描述檔及其他簽署憑據留工程外；`.easignore` 亦排除它們。APNs Server 私鑰不進 App 或 EAS 前端封包；上傳前核對實際 archive，不能只以 ignore 存在當作已檢查。
 - Keychain 沿 `WHEN_UNLOCKED_THIS_DEVICE_ONLY` 保存 Server session，沒有業務資料副本；卸載可能保留項目，因此重開仍核 Server，明確登出／撤權才清理，不宣稱卸載已撤權。
 - iPhone 照片入口沿同一服務：JPEG／PNG 保留選取 bytes，HEIC 等由系統 ImagePicker 產生 JPEG 相容副本後核對 4 MiB／hash，手機原圖不變；附件下載所見是實際上傳的副本。錄音、一般選檔及 PDF 分享共用原生 adapter，不新增 iOS 後端；實機選取／取消／播放仍列 S12 待驗。
-- 雲端 build／submit 由固定發佈入口的 iOS 擴充承接；在該包未完成前，不用既有 Android-only `mobile:release` 指令發布 iOS。EAS 可以從 Windows 操作；最終安裝、相機／鍵盤及通知仍須 iPhone 核對。
+- 雲端 build／submit 由下方固定發佈入口承接，明確指定 `--platform ios`。EAS 可以從 Windows 操作；最終安裝、相機／鍵盤及通知仍須 iPhone 核對。
 
 TestFlight build 最長有效 90 天；OTA 只更新相容 JS／資產，不能延長二進位 build 有效期。本人內測及外部 Beta Review 分開，不因上傳成功而宣稱已可安裝或全部驗收完成。[EAS iOS](https://docs.expo.dev/submit/ios/)／[TestFlight](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)
 
@@ -224,28 +224,39 @@ Server `ANDROID_PUSH_ENABLED` 預設關閉；準備同一 GCP project 的 FCM HT
 
 
 <a id="mobile-release"></a>
-## 共用 Web／Android 的固定發布入口
+## 共用 Web／Android／iOS 的固定發布入口
 
-從根目錄執行 `npm run mobile:release -- --plan`。預設 preview，純本機：讀 Git 差異、現有 app／EAS 配置及可用的官方 runtime，不登入、不上傳、不建置、不發布。未知路徑明列待 review；缺本機依賴或 Android Firebase 描述檔時，不能聲稱 OTA 相容。文件改動不觸發建置，Server 改動不要求重發 App；`src/shared` 的相容契約改動須先交付 Server。
+從根目錄執行 `npm run mobile:release -- --plan`。預設 Android preview；加入 `--platform ios` 使用獨立 `ios-preview` profile／channel及 `preview` environment。純 plan 只讀 Git、配置及可用的官方 runtime，不登入、不上傳、不雲端建置或發布；`--record-build` 是另外的唯讀雲端查詢，不能與 `--plan` 混用。缺依賴或該平台設定不能宣稱 OTA 相容。文件不觸發 build，API 相容的 Server 修改不用更新 App。
+
+共用程式會列出 Web、Android、iOS 三端影響；`.native` 影響兩個 App，`.ios`／`.android` 只影響所屬平台。一次執行只發布選定平台，`otherMobileDelivery` 保留另一端待交付；不能把一端成功當作三端完成。沒有 iOS build 時，不阻止既有 Android 發布。
 
 ### 每次修改後的短流程
 
-1. 在目前分支完成所需修改及 review，保留單一共用畫面／owner；不另外重畫 Android。只跑本次必要檢查。
+1. 在目前分支完成所需修改及 review，保留單一共用畫面／owner，不重畫另一端。只跑本次必要檢查。
 2. 執行 `npm run mobile:release -- --plan --since <上一交付的Git-SHA>`。已有正式 build 記錄時可加 `--baseline <build-記錄路徑>`，會核對專案、profile、channel、package、已完成狀態及 fingerprint。
 3. 正式執行要求乾淨提交、實體 dependency installation（不能指向另一 worktree 的 junction）、固定 Node／npm／EAS，及工程外 Web Firebase 環境檔。Android 的 `ANDROID_GOOGLE_SERVICES_FILE` 是已核對的同專案描述檔，不能進 Git／上傳原始碼封包。`mobile:prepare` 沿固定 Windows fingerprint 修正，不能手填舊 runtime。
 4. 共用修改用同一入口準備 Web 及 Android；例如 `npm run mobile:release -- --execute --channel preview --build-id <目前APK的EAS-build-ID> --web-env-file <工程外Web環境檔>`。它先產生 Web 產物，再核對官方 runtime：相同才 OTA，不同便 APK；沒有 baseline 不能猜 OTA。用 `--action update` 可要求不相容即停；`--action build` 明確要求新 APK。
 5. Web 使用 `frontend/dist`，沿本文件原 VM／Caddy 部署及回滾接點傳送；工具目前只把 Web 標為 **prepared-deployment-pending**，不會冒稱網站已更新。部署私人產物、API 相容修正、新索引及雲端費用依有效授權處理。
 6. build 使用固定簽署（`--freeze-credentials`）、遠端遞增 versionCode、`--no-wait`；排入 EAS 不等於 APK 成功。完成後執行 `npm run mobile:release -- --record-build <ID> --channel preview`，只讀 EAS 結果並保存供下次 plan 使用的精簡記錄。首次新 APK 升級交付核對實際產物的 applicationId、遞增 versionCode 及原證書，以 Android 官方 `apksigner verify --verbose --print-certs` 驗證簽署；不只相信 build metadata。覆蓋安裝及裝置結果仍須實測。
 
-Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走 Android 配置，避免兩端公開 Firebase key 混用。Android 執行才讀指定 EAS environment；不輸出其內容。`--plan` 不使用 `eas fingerprint:generate`，因固定 CLI 的該命令會上傳 fingerprint；沿 `expo-updates` 的本機 resolver 取得與 runtime 相同的判斷。
+Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走原生配置，避免公開 Firebase key 混用。原生執行才讀指定 EAS environment，不輸出其內容。`--plan` 不使用會上傳 fingerprint 的 `eas fingerprint:generate`，而用 `expo-updates` 本機 resolver。iOS runtime 不要求 Android descriptor，也不能拿 Android build 的 runtime 作基線。
 
-Android 匯出亦須合併 `frontend/eas.json` 的 `build.base.env`，包含正式身份供應商與 API 地址，並設定相應的 `EAS_BUILD_PROFILE`／`EAS_BUILD_PLATFORM` 讓 `app.config.js` 驗證完整配置。`mobile:release` 已執行此步；單獨 `eas env:pull` 的檔案不包含全部 profile 值。若因已有產物使用 `--skip-bundler`，須先核對原匯出沿用同一配置合併與驗證，不能只憑 runtime 相容便發布。
+兩端匯出均須合併 `frontend/eas.json` 的 base及選定profile環境，包含正式身份供應商與 API 地址，並設定 `EAS_BUILD_PROFILE`／`EAS_BUILD_PLATFORM`。`mobile:release` 已執行；單獨 `eas env:pull` 不含全部 profile 值。已有產物若用 `--skip-bundler`，仍核對同一配置，不能只憑 runtime 相容發布。
+
+### iOS 首次及後續交付
+
+1. 先由本人確認付費 Apple 團隊、候選 Bundle ID 可用性及 App Store Connect 的既有 App。確認後才填 `frontend/app.json` 的 `expo.ios.appleTeamId`；`frontend/eas.json` 的 `submit.ios-preview.ios` 填同一 `appleTeamId` 及數字 `ascAppId`。目前空設定是待辦，不能填假的團隊或 App ID。
+2. 經授權在 EAS 準備同團隊的 distribution certificate／provisioning profile，以及指定 App 的提交憑證。工具 build 使用 `--freeze-credentials`，不自行改簽署。私鑰留工程外；若用 `ascApiKeyPath`，須為工程外絕對路徑，連同 key ID／issuer按官方設定；亦可用已在 EAS 設定的憑證。首次封包及實際簽署仍需核對，單靠 metadata 不能證明證書身份。
+3. `npm run mobile:release -- --platform ios --plan --since <上一交付SHA>` 列出缺項。獲准後以 `--execute --action build` 建 store build；若含共用畫面改動，另傳 `--web-env-file <工程外Web設定>`。沒有 baseline 只建新 binary，不猜 OTA；不自動提交 Apple。
+4. EAS 完成後：`npm run mobile:release -- --platform ios --record-build <ID>` 保存精簡基線。核對同專案／bundle／profile／channel、STORE、非 simulator及 fingerprint；IPA 與 iPhone 安裝仍待實核。
+5. 提交已核對的同一 build：`npm run mobile:release -- --platform ios --execute --action submit --build-id <ID>`。固定 CLI 使用明確 ID、非互動、`--no-wait --no-auto-testflight-setup`，不選 latest、不自動新增測試群組或邀請。提交回應只表示排入處理，待 App Store Connect 處理、出口合規及必要 Beta Review 完成，才可稱 TestFlight 可安裝。
+6. 後續相容更新沿原入口：`--platform ios --execute --action update --build-id <已安裝build-ID> --web-env-file <工程外Web設定>`；不相容即停止，另建 binary。回退沿下節指令加 `--platform ios --channel ios-preview`，仍只限同 runtime。OTA 不延長 TestFlight 90天期限，不改原資料或在工作中強制重載。
 
 ### 正式發布、回退及失回應
 
 - production 必須同時指定 `--channel production --confirm-production`，不沿 preview 默認發布。兩個環境都使用固定 EAS 專案／application ID／channel；EAS 審批、額度及私有封包上傳授權不由這個旗標代替，不購買方案、不每次 commit 建置。
 - 相容回退：`npm run mobile:release -- --execute --action rollback --channel preview --build-id <已安裝build-ID> --rollback-group <原update-group-ID>`。先查同專案 branch 的最近最多 50 組，核對 Android／同 runtime，再沿原生 `update:republish`。找不到便停，不搜尋全部歷史或強制跨 runtime。回退只改客戶端，不還原業務資料。
-- 每次結果在 `.cache/mobile-releases/<Git-SHA-channel-action>/release.json`：保留 SHA、build／update ID、runtime、App版本、Web產物與待部署狀態。日誌只在同一 ignored 目錄，診斷先看末段；manifest 不保存 key、環境正文、signed URL 或完整雲端日誌。
+- 每次結果在 `.cache/mobile-releases/<Git-SHA-platform-channel-action>/release.json`：保留 SHA、platform、build／update ID、runtime、App版本、Web產物與待部署狀態。舊 Android 記錄仍可讀且阻止同一操作重送；iOS submit 按同一 build ID 保存獨立記錄，不因 Git SHA 改變重複提交。日誌只在同一 ignored 目錄，先看末段；manifest 不保存 key、環境正文、signed URL 或完整雲端日誌。
 - 雲端呼叫前保存 submitted。回應丟失／失敗時保留 unknown，**不自動重新發布**；先在原 EAS 專案按 ID／SHA 查原結果。同一提交／channel／action 不自動建立第二次操作。
 - OTA 沿現有 ON_LOAD／下次安全啟動套用；工具不呼叫 App reload，不在聊天、確認或 unknown 期間強制重載。
 

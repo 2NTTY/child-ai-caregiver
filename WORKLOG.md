@@ -3544,3 +3544,10 @@
 - B 接續 C 已合併 #275／`b4dfd5a`，沿同一通知 client、owner 及卡片接 iOS；Android 保留 v1。iOS 使用 v2 原收據與平台可用狀態，混合本人訂閱保留真實 provider；APNs hex token、provisional 權限及輪換按 Expo 57.0.21 接入，點擊仍走 Server 核權，不自動完成照護事項或發測試。
 - Sol 完成範圍內六個產品檔及一份檢查；主模型核完整 diff、測試、SDK enum及原導航，親寫契約與交付。Sol 首次使用 Node24.11、兩項通過，但低於工程 engine；主模型只以指定24.19補跑同檔2/2通過，另核 client及native adapter／view model窄型別。[證據](artifacts/verification/S13_IOS_CLIENT_20261024.json)。不把重跑合計成四項，沒有全量型別／suite。
 - 沒有部署、Apple憑證、真模型、通知或iPhone畫面；完成來源合併後接共用發布工具，最終export集中核一次，TestFlight及真人授權保持待辦。原前端設計、協作者Agent及Android未驗項不改寫。
+
+<a id="log-20261024-s04-ios-release"></a>
+## LOG-20261024-S04-IOS-RELEASE
+
+- 接續 #276／`6871bab`，擴充原 `mobile:release`，不另造發布服務。預設Android保持；iOS獨立profile、官方fingerprint、STORE／非simulator基線及相容OTA／回退。指定build提交TestFlight，不使用latest、不自動建測試群組／邀請，不把EAS排隊當Apple已完成。原操作未知不自動重發，舊Android記錄仍受保護。
+- 主模型親寫CLI、交付指引及review；Sol只做可界定的policy與既有定向檢查。Node24.19的一條policy／CLI檢查、合成公開設定iOS runtime及整合JS／Hermes匯出通過。第一次匯出命令錯指未hoist路徑，尚未進入bundling便失敗；核實安裝位置後只補同一匯出，沒有改產品或反覆重建。[證據](artifacts/verification/S04_IOS_RELEASE_20261024.json)。
+- 沒有全量、Web／Android重建、模型、通知、部署或雲端上傳。Apple團隊及App身份未定，submit profile留空，不填假身份或購買會員；IPA、APNs配置、真機、OTA與TestFlight繼續待辦。Android與協作者未驗項保留，不因本機工具合併而結案。
