@@ -2,6 +2,7 @@ import { usePathname, Slot, Tabs } from "expo-router";
 import type { ReactNode } from "react";
 import { Platform } from "react-native";
 import { RecordsNavButton } from "../../src/components/navigation/RecordsNavButton";
+import { navigationItems } from "../../src/components/navigation/app-navigation";
 import { MobileQuickInputDock } from "../../src/components/agent/MobileQuickInputDock";
 import { AppIcon } from "../../src/components/AppIcon";
 import { AppBackdrop } from "../../src/components/appearance/AppBackdrop";
@@ -47,7 +48,7 @@ function NativeDashboardTabs() {
     <Tabs.Screen name="index" options={{ title: "今日", tabBarIcon: ({ color }) => <AppIcon name="home-outline" color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="chat" options={{ title: "助手", tabBarIcon: ({ color }) => <AppIcon name="message-text-outline" color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="tasks" options={{ title: "待辦", tabBarIcon: ({ color }) => <AppIcon name="clipboard-check-outline" color={color} size={mobileIcons.navigation} /> }} />
-    <Tabs.Screen name="growth" options={{ title: "關注", tabBarIcon: ({ color }) => <AppIcon name="chart-bar" color={color} size={mobileIcons.navigation} /> }} />
+    <Tabs.Screen name="growth" options={{ title: navigationItems.growth.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.growth.icon} color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="care" options={{ title: "核對", tabBarButton: () => <RecordsNavButton active={pathname === "/care" || pathname === "/more" || pathname === "/photos" || pathname === "/history"} scopeKey={scopeKey} /> }} />
     {["more", "history", "memory", "photos", "sources", "summary", "contact", "profile", "family", "settings", "guide"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
   </Tabs>;

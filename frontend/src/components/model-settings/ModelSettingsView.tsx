@@ -109,7 +109,12 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
     }
   }, [deleteCurrent, deleteReview, !!snapshot, model.online, model.authorized, model.needsRead, model.operation]);
   function clearSecret() { setValue("keyText", ""); setValue("embeddingKeyText", ""); setValue("removeEmbeddingKey", false); setValue("consent", false); }
-  useEffect(() => { if (!active) { clearSecret(); setDeleteReview(null); setDeleteConfirmed(false); } }, [active, setValue]);
+  useEffect(() => {
+    if (!active) {
+      reset(modelSettingsDraft(settings, snapshot?.effective));
+      setDeleteReview(null); setDeleteConfirmed(false);
+    }
+  }, [active, formBasis, reset]);
   useEffect(() => {
     const subscription = AppState.addEventListener("change", state => {
       if (state !== "active") { clearSecret(); setDeleteReview(null); setDeleteConfirmed(false); }
