@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：[S12-W01 iOS 媒體接點](#s12-w01)。**[S04-W02](#s04-w02) 基礎程式已由 #272 合併，活動分支 `codex/s12-ios-media` 從 master `9f500a5` 接續，補 HEIC 相容副本及共用錄音／附件／分享的平台差異。付費 Apple 團隊、簽署及真機仍待辦，不阻塞獨立實作；不把本機 export 當成可安裝成品。完整順序見 [iOS 計劃](#p3-ios)，本輪只用 Astra；協作者前端／角色工作與 Android 未驗項保持獨立。
+**當前：[S13-W02 iOS 通知後端](#s13-w02)。**#272 基礎配置、#274 媒體接點已合併；活動分支 `codex/s13-ios-notification-server` 從 master `405f3ed` 接續。B 主責 iOS，先以相容接口交 C 實作 APNs 後端，再由 B 接設定與設備；付費 Apple 團隊、簽署及真機仍待辦，不阻塞獨立實作。完整順序見 [iOS 計劃](#p3-ios)，子代理恢復根 AGENTS 預設；協作者角色工作與 Android 未驗項保持獨立。
 
 **另行接續：[ATTACHMENT-READ01](#attachment-read01) 附件回看已整合獨立來源候選，型別／GUI／部署未過門檻；不追加已合併的 #253。**
 
@@ -431,6 +431,8 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s13-w02"></a>
 #### S13-W02 原生本人通知
 
+- iOS 後端子包：C 於 `405f3ed` 接續 #274，已接 APNs 與 `/api/native-push/v2`，保留 v1 Android 收據／嚴格回應；等待本包合併後由 B 接設定頁。測試與照護提醒共用原台帳，配置不符或投遞未知不改環境重發。APNs adapter、真 API／收據／worker 合成流程、舊 Android 兩項及 adapter 窄型別通過；測試首次誤讀孩子範圍的失敗保留。[證據](artifacts/verification/S13_IOS_SERVER_20261024.json)。沒有 Apple 憑證、真 APNs／Firestore、部署或 iPhone 驗收。
+
 - 階段／狀態：P3；PR #238 已在 #237 後合併。FCM adapter、索引與原站 API／worker 已啟用，APK v2已安裝。使用者親自允許通知；一則指定測試已保存投遞收據、渠道接受並在手機顯示，點擊可返回App。照護目標核權導航／完成停止仍待核，iOS 待後續。
 - 前置（Android）：S12-W01 Android、S07-W01、S13-W07；iOS 另依 S04-W02。
 - 本機結果：固定 Expo Notifications 57.0.21；FCM 單次 adapter、Firestore 加密綁定／原收據、同裝置 token 輪換／會話撤銷、提醒／通知歷史／匯出及還原、正式 API／worker、共用設定及核權點擊已接線。新增一條本機合成流程通過，受影響型別及配置語法通過；不把替身當真 Firestore 競爭或真 FCM。證據見 [S13 準備](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
@@ -515,7 +517,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 | [S04-W03](#s04-w03) iOS | 三端固定更新工具、TestFlight 提交及相容 OTA／回退 |
 | [S16-W03](#s16-w03)／[S17-W03](#s17-w03) iOS | 只補整合缺口、iPhone 驗收及可安裝成品；不代結整個 P3 |
 
-每包獨立分支、必要 review／驗證及 PR／合併。主模型親寫契約與計劃、整合共享配置；本輪特許只用 Astra xhigh 子代理處理有收益且不重疊部分。提交帳號按實際主責及本機協作指引核對，單作者，不把權重當共同署名。
+每包獨立分支、必要 review／驗證及 PR／合併。主模型親寫契約與計劃、整合共享配置；2026-10-24 使用者撤銷 Astra 子代理特許，恢復根 AGENTS 的 Sol／Luna 分工。B 主責 iOS、以接口契約交 C 處理後端；提交帳號按實際主責及本機協作指引核對，單作者，不把權重當共同署名。
 
 #### 最低必要驗收
 

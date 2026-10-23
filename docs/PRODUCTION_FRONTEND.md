@@ -202,6 +202,14 @@ iOS 與 Android 使用同一原生 transport、SecureStore、AppState、畫面�
 TestFlight build 最長有效 90 天；OTA 只更新相容 JS／資產，不能延長二進位 build 有效期。本人內測及外部 Beta Review 分開，不因上傳成功而宣稱已可安裝或全部驗收完成。[EAS iOS](https://docs.expo.dev/submit/ios/)／[TestFlight](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)
 
 
+### iOS APNs Server 接點
+
+`IOS_PUSH_ENABLED` 預設關閉，與 Android 開關獨立。開啟時 API／worker 必須共用 `APNS_TEAM_ID`、`APNS_KEY_ID`、`APNS_BUNDLE_ID`、`APNS_ENVIRONMENT` 及 `APNS_PRIVATE_KEY_FILE`；私鑰以工程外受保護檔案唯讀掛載，Linux 檔案不可向 group／other 開放。設定缺漏或不是 P-256 私鑰便拒絕啟動，不靜默降級。TestFlight 使用 `production`，開發簽署才用 `sandbox`；不自動換環境重發。
+
+先部署相容 Server reader，再開啟 iOS 登記。iOS 裝置用 `/api/native-push/v2`，舊 Android 繼續 v1；兩者共用授權及原收據。已保存 iOS 綁定後，回退 API／worker 亦須理解 `apns`／平台欄位，不能退回本包之前的嚴格 reader。停用 APNs 只停止新增投遞，不刪收據或解除業務義務；恢復仍須重新核對原綁定環境。
+
+本機模式只寫明示「未實際發送」的收件箱，不讀取 APNs 私鑰或聯絡 Apple。沒有 Apple 團隊、憑證及真機證據時，只能交付程式，不宣稱已支援實際 iPhone 推送。
+
 ### Android FCM 建置與部署接點
 
 共用設定卡在 Android 使用原生通知 owner，在 Web 沿原 Web Push。`expo-notifications` 的 `defaultChannel` 固定為 `yuyoufang-reminders`；包含本套件／plugin 的版本需要新 APK，不能只發 OTA。

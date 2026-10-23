@@ -36,6 +36,12 @@ P／A／架分別表示需要調整 PLAN／AGENTS／架構；本次已落實文�
 S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01 的統計與來源關係，以及 S13-W03／S15 的單主切換仍由項目控制；通用庫沒有理由取代這些領域規則。已完成工作包只復用成果，不因本表選型返工。
 
 <a id="worker"></a>
+### S13-W02 iOS APNs（2026-10-24）
+
+沿 Expo Notifications 57.0.21（MIT）取得 APNs token；已核固定版 iOS `NotificationRecords.swift` 由 `userInfo.body` 提取產品 data，故保留原五欄 reference。Server 採 Node 24.19 原生 HTTP/2／crypto，無新增套件。已比較 apns2 與 @parse/node-apn 的重試／總期限接點，不能直接保持本項目的單次投遞及取消語義，故只寫薄 APNs adapter，授權／防重仍復用原服務。
+
+按 [Apple HTTP/2 請求](https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns)及[token 認證](https://developer.apple.com/documentation/usernotifications/establishing-a-token-based-connection-to-apns)核對 ES256、Team／Key／topic／環境、JWT 有效期、apns-id 及固定 payload。JWT 有界復用，單次請求涵蓋連線、授權查核及完整回應的期限；unknown 不重送。目前低用量每次關閉連線，不宣稱高流量連線池能力。adapter 與正式 API／worker 的合成結果見[S13 證據](../artifacts/verification/S13_IOS_SERVER_20261024.json)，不等同 Apple 真簽署／推送通過。
+
 ## S13-W04：框架與業務台帳的分界
 
 2026-09-28 接入補充：已固定安裝 pg-boss 12.34.0／schema 42，原 MIT 許可及 tarball integrity 已入 [清單](../licenses/manifest.json)；Node 24／pg 8.23 的型別接線通過，真 PostgreSQL 採用閘已獲批准並通過分段驗收，hard-kill 恢復 68.895 秒，詳見 [證據](../artifacts/verification/S13_W04_CHECKS.json)。主模型已核對安裝套件的 createJob、constructor／stop、schema check、heartbeat／重試及 keep_until SQL；固定來源與可復用約束見 [worker Skill](../.agents/skills/postgres-durable-worker/SKILL.md)。使用既有交易 client 的 send、框架原生領取／heartbeat／dead letter，業務僅保存授權及唯一效果。原生 transactional work 適合短 SQL handler，但本包已有 workspace／opId 交易與可重領台帳，不另建第二套互不協調的交易。產品操作見 [P2_WORKER](P2_WORKER.md)。

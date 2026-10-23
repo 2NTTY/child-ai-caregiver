@@ -191,7 +191,10 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
             const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore({ ...options, files: undefined }) });
             const summary = await memory.readSummaryRevision(binding, value);
             if (summary) items.push(summary);
-          } else if (section === 'native_push_bindings') items.push(firestoreNativeBindingSchema.parse(value).binding);
+          } else if (section === 'native_push_bindings') {
+            const saved = firestoreNativeBindingSchema.parse(value);
+            items.push(saved.apns ? { ...saved.binding, platform: 'ios', provider: 'apns' } : saved.binding);
+          }
           else if (section === 'native_push_deliveries') { const saved = firestoreNativeDeliverySchema.parse(value); items.push({ ...saved.delivery, ...(saved.message ? { message: saved.message } : {}) }); }
           else if (section === 'push_bindings') items.push(firestorePushBindingSchema.parse(value).binding);
           else if (section === 'push_deliveries') { const saved = firestorePushDeliverySchema.parse(value); items.push({ ...saved.delivery, ...(saved.message ? { message: saved.message } : {}) }); }

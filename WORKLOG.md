@@ -3530,3 +3530,10 @@
 - 接續已合併 #272／`9f500a5`，以 `codex/s12-ios-media` 補 iPhone 照片相容。ImagePicker iOS 原 bytes 仍可能是 HEIC，故只在實際 bytes 非 JPEG／PNG 時使用官方 JPEG base64 副本；原件與副本各限4 MiB，decode 前後核對，清除 picker 額外編碼參照。hash、metadata、加密上傳及 Server 格式沿原契約，Android 原行為不變。
 - Astra 子代理只實作 adapter 及一份定向檢查；主模型核原碼／SDK型別／完整測試，親寫照片契約與技術採用說明。3項離線檢查通過，沿真 metadata／hash／preview，只替換系統 ports。主模型另核固定 SDK 的 iOS AAC/M4A、選檔副本及 Sharing 接線，無須另寫服務；不重複跑已通過檢查。[證據](artifacts/verification/S12_IOS_MEDIA_20261024.json)。
 - 沒有新增依賴、全量型別／build、模型、通知、部署或真機。原生 HEIC、iPhone權限／鍵盤／錄音聽感／檔案分享仍待簽署後驗收，不把合成bytes當成真圖片或設備通過。下一包為相容原生通知契約與 APNs；簽署團隊未定時先做獨立程式。
+
+<a id="log-20261024-s13-ios-server"></a>
+## LOG-20261024-S13-IOS-SERVER
+
+- 接續 master `405f3ed`，C 後端包補 APNs 與 v2 原生通知接口；舊 Android v1 嚴格回應及原收據保持。iOS 綁定含 Server 固定 topic／環境，照護與測試共用原授權、終態及投遞台帳；配置不符停止、unknown 不重送。還原撤銷 token 並保留平台 metadata，匯出不披露 token／session。
+- 主模型親寫契約、adapter 與組裝並 review；Sol 只補有界的合成 transport 檢查。APNs 一項、正式 API／store／worker 一項、既有 Android 兩項及 adapter 窄型別通過。新測試先誤讀不同孩子範圍，再誤假設 scopeTag，均停批後查清並改用實際四個 tag；沒有放寬產品隔離。保留兩次失敗與成功證據，不宣稱原生 Firestore 競爭或 Apple 已通過。[證據](artifacts/verification/S13_IOS_SERVER_20261024.json)。
+- 沒有真模型、通知、部署、Apple 憑證、全量測試或 Computer Use。B 的 iOS 設定接線在本後端合併後進行；簽署、真機及 TestFlight 繼續待辦。APNs 預設關閉，新資料發布後僅允許理解該 schema 的相容 Server 回退。

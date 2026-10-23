@@ -1035,6 +1035,14 @@ OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 P
 - `GET /api/native-push/open?reference=<JSON>`：只接受固定 reference，核對目前原生會話、綁定版本、原投遞及孩子權限後，回傳 `test` 或已授權 `care` 的資源關聯。純查回，不確認收到、不完成待辦；前端仍遵守身份切換與未提交草稿守衛。
 - 原生聯絡渠道為 `native_push`，共用本人同意、任務授權、安靜時段及終態服務；通知歷史保留相容游標，原生投遞只有真實 metadata。還原撤銷原生綁定、捨棄 token pointer，未完成投遞停止／保留 unknown，不藉還原重新投遞。
 
+#### iOS／Android v2 接口（S13，實作及發布狀態見 PLAN）
+
+- `GET /api/native-push/v2` 沿相同身份檢查，增加 `availablePlatforms: {android, ios}`；綁定增加 `platform`／`provider`。v1 只投影 Android，欄位與舊 APK 嚴格 schema 不變；列表仍有界，測試次數共用本人原上限。
+- 新命令路徑為 `/api/native-push/v2/subscriptions` 及 `/{id}/revoke|test`。註冊多帶 `platform: android|ios`，其他原操作／版本規則不變；不得指定 APNs topic、環境或身份。平台不能藉輪換變更，需明確撤銷後重新登記。
+- v2 綁定操作結果帶平台／provider；v1 保存原形狀。收據沿原命令保存，原 `opId` 查回返回同一版本，不在 lookup 時改寫結果。v1 不管理 iOS 綁定；新端必須用 v2。
+- Server 在 iOS 登記時綁定目前 APNs topic／環境；後續配置不同便停止，不能換環境重發。缺欄位舊記錄屬 Android／FCM。兩平台點擊共用既有 `open`，只帶原 reference，返回前重核目前會話／資源。
+- APNs 使用固定 alert 及 Expo `body` 下的五個 reference 字串；不帶私人正文。僅完整 HTTP 200、相符 `apns-id` 才記渠道接受；明確 `Unregistered` 才作失效，其他拒絕不冒稱 token 過期。已提交後逾時／斷線保留 unknown，不重試或切換 APNs 環境。
+
 
 <a id="chat-file-api"></a>
 ### S12 共用聊天檔案附件
