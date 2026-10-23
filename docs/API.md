@@ -588,24 +588,26 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 <a id="personal-model-http"></a>
 ## S06-W05 本人模型設定
 
-所有路由需登入；GET／POST 均帶 `x-expected-user-id`，身份不符回 403。POST 沿用 Origin／JSON 檢查及有界正文。新版共用 client 使用 `Accept: application/vnd.yuyoufang.model-settings.v2+json`；設定不進通用 online 重送佇列，key 正文不持久保存到 client。部署須先更新相容 Server，再發布共用 Web／Android client。
+所有路由需登入；GET／POST 均帶 `x-expected-user-id`，身份不符回 403。POST 沿用 Origin／JSON 檢查及有界正文。新版共用 client 使用 `Accept: application/vnd.yuyoufang.model-settings.v3+json`；v2 為舊 Google client 保留。設定不進通用 online 重送佇列，key 正文不持久保存到 client。部署須先更新相容 Server，再發布共用 Web／Android client。
 
 | 路由 | 輸入／結果 |
 |---|---|
 | `GET /api/ai/settings` | 本人無密鑰設定、版本、可用狀態、平台／個人分開用量；v2 另回 `effective` 生效限制、管理政策版本及被上限收窄的欄位 |
-| `POST /api/ai/settings` | v2 帶原 `opId`、expectedVersion、mode、provider／model、可選 apiKey／removeKey、背景同意、每日／每輪限制及 consent；回同一設定的新版本 |
+| `POST /api/ai/settings` | 帶原 `opId`、expectedVersion、mode、provider／model、可選 apiKey／removeKey、背景同意、每日／每輪限制及 consent；v3 另接受 baseUrl、embeddingApiKey／removeEmbeddingKey，回無密鑰設定及新版本 |
 | `GET /api/ai/settings/operations/:opId` | v2 只查本人原操作，回無密鑰的保存收據或 null；不回傳原請求、密鑰或指紋 |
-| `GET /api/ai/settings/models` | v2 回模型參考選項、目前設定版本及已知能力；可帶唯一的 `provider=gemini` 或 `provider=vertex` 查閱尚未保存的服務選項，不改設定、不使用 key 或出網，不表示本人 key 已可用 |
+| `GET /api/ai/settings/models` | 回模型參考選項、目前設定版本及已知能力；可帶唯一的 `provider=gemini`、`provider=vertex`，v3 亦接受 `provider=openai-compatible`。不改設定、不使用 key 或出網；相容服務沒有目錄仍可直接填模型 ID |
 | `POST /api/ai/settings/models` | v2 帶 expectedVersion；使用已保存 key，最多兩頁各100項模型 metadata，取支援 generateContent 的合法 Gemini ID，去重後最多回20項；明示 truncated，不生成內容，也不以本地清單刪去新型號 |
 | `POST /api/ai/settings/check` | expectedVersion；Gemini key 查選定模型 metadata；Vertex Express 未提供對應方法時回 metadata_unsupported，不發試用生成 |
 
-精確型別見 [model-settings.ts](../src/shared/model-settings.ts)。`platform / personal / disabled` 需明確選擇；personal 須同意費用及資料外送，背景另行 opt-in。key 不讀回。刪除必須 removeKey=true、mode=disabled，不可同時傳新 key；停用與刪除後不自動使用平台。
+精確型別見 [model-settings.ts](../src/shared/model-settings.ts)。`platform / personal / disabled` 需明確選擇；personal 須同意費用及所選模型／向量服務的資料外送，背景另行 opt-in。兩份 key 均不讀回，v3 只回 `embeddingKeyConfigured`。刪除全部密鑰必須 removeKey=true、mode=disabled，不可同時傳新 key；停用與刪除後不自動使用平台。只刪獨立向量 key 使用 `removeEmbeddingKey:true`，不可同時替換它。
 
-v2 保存先核原 opId／請求指紋，再核版本；原操作重播返回原收據，換內容回 operation_conflict，舊版本回 version_conflict。失聯先以原 opId 查回，不自動重送 key；查無收據亦不宣稱一定未提交。client 錯誤只攜帶無密鑰的 operationId，身份切換後不能查另一人的操作。輸入框仍須在送出／失敗／斷線／身份或 Server 變更時清除。模型查核與目錄刷新共用每帳號每分鐘一次／全站四槽保護；逾限429，不重設模型用量。
+v2／v3 保存先核原 opId／請求指紋，再核版本；原操作重播返回原收據，換內容回 operation_conflict，舊版本回 version_conflict。失聯先以原 opId 查回，不自動重送 key；查無收據亦不宣稱一定未提交。client 錯誤只攜帶無密鑰的 operationId，身份切換後不能查另一人的操作。兩份密鑰輸入在送出／失敗／斷線／身份或 Server 變更、換服務／模式／地址、離頁及 App 進背景時清除；Android 保留頁面也須接入路由失焦。模型查核與目錄刷新共用每帳號每分鐘一次／全站四槽保護；逾限429，不重設模型用量。一般 metadata 查核失敗不撤銷已讀設定或禁止保存；身份、權限、版本或客戶端不相容仍須重讀／拒絕。
 
-provider 為 gemini 或 vertex；更換供應商須提供相應新 key，不能沿用舊 key 猜測認證模式。模型目錄只提供參考，不能作為保存或生成的白名單；Web／Android可直接輸入符合既有格式的Gemini ID，不需先通過逐型號驗收。Server只校驗ID格式，不接受任意URL／headers；相容性及存取失敗沿原供應商錯誤處理，不換模型或付款來源。已知型號保留必要參數適配，其他型號省略可選thinking設定，使用供應商預設。capabilities中的true是已有能力資料，false表示未確認，不以此禁止選擇；metadata不等於生成／embedding／配額或帳單。目錄POST只檢查已保存的供應商及key，不接受provider query；GET明確選另一服務也不會改用已保存key。錯誤只回穩定原因，不透出原始供應商正文。Vertex Express沒有已核對的embedding方法，明示混合檢索不可用，不借平台額度。
+provider 為 gemini、vertex 或 openai-compatible；更換供應商或相容 API 地址須提供相應新聊天 key，不能轉送舊憑證。模型目錄只供參考，不作保存或生成的白名單；Web／Android 可直接填模型 ID。相容服務的 baseUrl 須公開 HTTPS，禁止內網、metadata、重新導向及任意 headers；模型 ID 不是 URL。供應商拒絕工具、媒體或存取時回報受控原因，不換模型或付款來源。已知 Google 型號保留必要參數適配，其他型號省略可選 thinking 設定。capabilities 的 false 表示未確認，不禁止選擇；metadata 不等於生成、向量、配額或帳單。目錄 POST 只檢查已保存供應商及 key，不接受 provider query；GET 不改用已保存 key。錯誤不透出可能含密鑰或私人正文的原始供應商回應。
 
-舊 JSON client 保留原欄位；當選定供應商／型號不能由舊契約表示時，回 client_update_required，不偽稱仍是預設模型。舊保存保留已存在的新欄位；v2 首次明確保存才採 `limitPolicyVersion:2`，不默改舊設定的生成／查詢限額。
+查詢向量保持 `gemini-embedding-001`／1024 維及既有索引。Gemini 沒有獨立向量 key 時沿用本人聊天 key；Vertex／相容服務可另填本人 Gemini 向量 key。缺少它不阻擋保存或普通聊天，需要向量時回 `embedding_not_configured`，不借平台額度、不把其他 embedding 空間套入舊索引。獨立 key 的新增、替換及刪除沿同一版本、交易及原操作收據。
+
+舊 JSON／v2 client 保留原欄位；新設定不能由其契約表示時回 client_update_required，不偽稱仍是預設模型，並在保存交易內核對。舊保存保留能安全表達的新欄位；v2／v3 明確保存採 `limitPolicyVersion:2`，不默改歷史配額或授權。
 
 個人每日1–1000、生成1–12、查詢 embedding 1–6、工具1–16、整輪15–300秒、單次等待5–180秒、額外重試0–3。精確預設與範圍沿 [shared 限制](../src/shared/agent-run-limits.ts)；新進階欄位缺省繼承當前管理政策。v2 每輪生效值為本人要求與管理上限中較小者；本人每日與平台每日分開，仍受共用 personal 全站上限。設定 view、互動、媒體、轉錄及背景均使用同一解析器；每輪固定快照，重試計入原run及每日用量，不重做工具。互動上下文仍沿 AI_AGENT_MAX_INPUT_CHARACTERS（32,000–64,000邏輯字元），輸出仍受原Server上限；不因換模型提高。後續呼叫重核設定版本及授權，撤回不代表供應商已接受的請求可免收費。
 

@@ -14,6 +14,7 @@ let network = 0;
 global.fetch = () => { network++; throw new Error('Real network forbidden'); };
 const React = req('react'), { act } = React, { createRoot } = req('react-dom/client'), ts = req('typescript');
 const h = React.createElement, fields = new Map(), guards = [];
+const appStateListeners = new Set();
 // Real view components, React hooks, RHF and schemas. UI/motion/layout and owner ports
 // are synthetic; DOM order and callbacks are tested, not browser pixels or transport.
 const block = ({ children, testID, accessibilityRole, accessibilityLiveRegion }) => h('div', { 'data-testid': testID, role: accessibilityRole, 'aria-live': accessibilityLiveRegion }, children);
@@ -43,7 +44,8 @@ function compile(relative) {
   const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), { fileName: filename,
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX } }).outputText;
   new Function('require', 'module', 'exports', code + (relative.endsWith('/SettingsDomains.tsx') ? '\nexports.TestPersonalContext = PersonalContext;' : ''))(name => {
-    if (name === 'react-native') return { View: block, StyleSheet: { create: value => value }, Platform: { OS: 'web', select: values => values.web ?? values.default } };
+    if (name === 'react-native') return { View: block, StyleSheet: { create: value => value }, Platform: { OS: 'web', select: values => values.web ?? values.default },
+      AppState: { addEventListener: (_event, listener) => { appStateListeners.add(listener); return { remove: () => appStateListeners.delete(listener) }; } } };
     if (name === 'react-native-paper') return { Text: block, ActivityIndicator: () => h('span', null, 'Busy'), MD3LightTheme: { colors: {}, fonts: {} }, configureFonts: value => value };
     if (name.endsWith('/ui')) return { AppButton, AppSelect: Field, AppTextField: Field, SectionHeader, OperationPill: ({ state }) => h('span', { 'data-operation': state }, state) };
     if (name.endsWith('/SettingsSection')) return { SettingsSection: block };
@@ -100,7 +102,7 @@ function model(overrides = {}) {
     snapshot: { enabled: true, platformAvailable: true, personalAvailable: true, settings, personalGlobalLimit: 500, usage: { platform: usage, personal: usage } }, ...overrides };
   const actions = { setDraftEditing: value => editing.push(value), refresh: () => calls.push(['refresh']), save: command => calls.push(['save', command]), check: version => calls.push(['check', version]),
     refreshCatalog: version => calls.push(['catalog', version]), selectProvider: value => calls.push(['provider', value]) };
-  return { state, calls, editing, render: async () => act(async () => root.render(h(ModelSettingsView, { model: state, actions }))) };
+  return { state, calls, editing, render: async (active = true) => act(async () => root.render(h(ModelSettingsView, { model: state, actions, active }))) };
 }
 
 test('notification controls have no ready refresh, but retain dirty-deferred reads and unchanged save confirmation', async () => {
@@ -149,15 +151,15 @@ test('model copy prioritizes personal choices while preserving advanced limits, 
   await clear(); const f = model(); await f.render();
   assert.doesNotMatch(copy(), /ADC|本地開發|接線|metadata|最後讀到的版本|管理政策版本/);
   assert.match(copy(), /上次讀取：我的個人密鑰/); assert.match(copy(), /連接服務：\/api/);
-  assert.match(copy(), /此服務目前未支援 Vertex Express 的查詢向量及模型資料查核/); assert.match(copy(), /混合知識檢索不可用/); assert.match(copy(), /不會改用平台額度/);
+  assert.match(copy(), /知識搜尋可另填下方 Gemini 向量密鑰/); assert.match(copy(), /不會借用平台額度/);
   assert.doesNotMatch(copy(), /Vertex Express key 目前不支援/);
   assert.match(copy(), /不接受服務帳戶 JSON/); assert.match(copy(), /不會自動替換模型/); assert.match(copy(), /回覆也不一定會逐字顯示/);
-  assert.match(copy(), /並加密儲存/); assert.match(copy(), /必要對話與資料會送到供應商，費用按其帳戶計算/);
+  assert.match(copy(), /並加密儲存/); assert.match(copy(), /Google/); assert.match(copy(), /必要對話/);
   assert.equal(field('個人 API 密鑰').type, 'password'); assert.equal(field('聊天模型 ID').value, f.state.snapshot.settings.model);
   for (const [, label] of modelLimitFields) assert.ok(field(label)); assert.ok(field('另行允許背景任務使用此密鑰'));
   assert.equal(buttons().some(node => node.getAttribute('aria-label') === '重新讀取模型設定'), false);
-  await click('檢查已保存密鑰'); await click('查核已保存密鑰的模型目錄');
-  assert.deepEqual(f.calls, [['check', 7], ['catalog', 7]]); assert.equal(button('保存模型設定').disabled, true);
+  assert.equal(buttons().some(node => node.textContent === '檢查已保存密鑰'), false);
+  assert.deepEqual(f.calls, []); assert.equal(button('保存模型設定').disabled, true);
   await change('我同意個人服務的費用及資料外送', true); await change('個人每日呼叫上限', '80');
   const refresh = button('重新讀取模型設定'); assert.equal(refresh.textContent, '重新讀取'); assert.equal(refresh.dataset.density, 'compact');
   await click('重新讀取模型設定'); assert.deepEqual(f.calls.at(-1), ['refresh']); await click('保存模型設定');
@@ -168,12 +170,47 @@ test('model copy prioritizes personal choices while preserving advanced limits, 
 test('model unknown, metadata-unavailable and read failures retain recovery instead of success or credential replay', async () => {
   await clear(); const f = model({ originalOperationId: 'synthetic-original', operation: 'unknown', needsRead: true,
     notice: '保存結果未知；密鑰已清除。請查回原操作及目前設定，系統不會重播密鑰。', keyCheck: { version: 7, status: 'unavailable', reason: 'metadata_unsupported' } }); await f.render();
-  assert.match(copy(), /保存結果未知/); assert.match(copy(), /此服務暫不支援模型資料查核；不代表模型無法回答/);
-  assert.match(copy(), /上次讀取：我的個人密鑰/); assert.doesNotMatch(copy(), /目前使用/);
+  assert.match(copy(), /保存結果未知/); assert.match(copy(), /可直接到助手試用已保存的模型/);
+  assert.match(copy(), /上次讀取：我的個人密鑰/); assert.doesNotMatch(copy(), /目前使用：/);
   assert.equal(buttons().some(node => node.getAttribute('aria-label') === '重新讀取模型設定'), false);
   assert.equal(button('保存模型設定').disabled, true); await click('查回原操作及目前設定'); assert.deepEqual(f.calls, [['refresh']]); assert.equal(field('個人 API 密鑰').value, '');
   f.state.snapshot = null; f.state.originalOperationId = null; f.state.notice = '模型設定未能確認，請核對連線後重新讀取。'; f.state.operation = 'failed'; await f.render();
   assert.match(copy(), /模型設定未能確認/); assert.equal(button('重新讀取模型設定').disabled, false); assert.equal(buttons().some(node => node.textContent === '保存模型設定'), false);
+});
+
+test('compatible model form submits both credentials once and clears them on save, route leave and background', async () => {
+  await clear(); const f = model(); await f.render();
+  await change('模型服務', 'openai-compatible');
+  await change('API 基底地址', 'https://api.synthetic.invalid/v1');
+  await change('聊天模型 ID', 'vendor/model-1');
+  await change('個人 API 密鑰', 'synthetic-chat-key');
+  await change('Gemini 向量密鑰', 'synthetic-embedding-key');
+  await change('我同意個人服務的費用及資料外送', true);
+  assert.equal(field('Gemini 向量密鑰').type, 'password');
+  assert.match(copy(), /你填寫的 API 服務/);
+  assert.equal(button('保存模型設定').disabled, false);
+  await click('保存模型設定');
+  const saves = f.calls.filter(call => call[0] === 'save');
+  assert.equal(saves.length, 1);
+  assert.equal(saves[0][1].provider, 'openai-compatible');
+  assert.equal(saves[0][1].baseUrl, 'https://api.synthetic.invalid/v1');
+  assert.equal(saves[0][1].apiKey, 'synthetic-chat-key');
+  assert.equal(saves[0][1].embeddingApiKey, 'synthetic-embedding-key');
+  assert.equal(saves[0][1].expectedVersion, 7);
+  assert.equal(field('個人 API 密鑰').value, '');
+  assert.equal(field('Gemini 向量密鑰').value, '');
+  await change('個人 API 密鑰', 'unsent-chat-key');
+  await change('Gemini 向量密鑰', 'unsent-vector-key');
+  await f.render(false); assert.equal(guards.at(-1).dirty, false); await f.render(true);
+  assert.equal(field('個人 API 密鑰').value, '');
+  assert.equal(field('Gemini 向量密鑰').value, '');
+  await change('個人 API 密鑰', 'unsent-chat-key');
+  await change('Gemini 向量密鑰', 'unsent-vector-key');
+  await act(async () => { for (const listener of appStateListeners) listener('background'); });
+  assert.equal(field('個人 API 密鑰').value, '');
+  assert.equal(field('Gemini 向量密鑰').value, '');
+  assert.equal(f.calls.filter(call => call[0] === 'save').length, 1);
+  assert.equal(network, 0);
 });
 
 test('notification review survives equal reads and busy locking without losing its focused DOM node', async () => {
