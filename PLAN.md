@@ -62,6 +62,15 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **下一步：**待#253模型設定畫面穩定後接[MODEL-SELF03](#model-self03)的v3欄位、密鑰清理與原站／OTA交付，不為取得驗收key或逐模型調查阻擋接口。#254由協作者處理。MODEL01／02及Android原平台設定保存／重開證據保留，個人key與新接口真生成仍未驗。剩餘新版引用／長來源／多模態按[DEV02](#dev-agent02)及所屬角色包追蹤；Android由[S16-W03](#s16-w03)集中承接，iOS暫緩。不重跑既有證據或增加模型額度。
 
+<a id="avatar-01"></a>
+### AVATAR-01 本人／孩子頭像（並行開發候選）
+
+- **範圍：**本人及有既有寫入權限的孩子可選圖、裁切、更換、明確移除；獨立私人資源，不進照片分析、模型或分享。沿已凍結[API](docs/API.md#avatar-api)及[data lifecycle](docs/DATA_MODEL.md#avatars)。
+- **狀態：**以 master `339c707` 整合原後端 freeze04 與新版前端差異，保留已合併 #253 內容；本包未部署，`AVATAR_LIFECYCLE_RELEASE_READY=false`，環境變數不能繞過，不當成完整可用。
+- **本輪證據：**真 client／owner 定向及 server codec 窄 roots 型別有證據；restore05 新增 authenticated staging marker／token fence、partial rollback與完整頁 promote。合成真 operator 跨頁中斷→重啟已核原 inventory、provenance、責任保留、不重 copy、current 後才 retire；不是原生 Firestore 演練。
+- **尚缺：**unknown／不可讀 copy、source/Auth/journal/provenance 改變或 legacy 未索引 partial plan 仍保留責任停住，`NOT_FULLY_RECOVERABLE`。domain／完整 server TS 未通（明確 heap OOM及原 signal9 收據保留）；既有 56 PASS／10 exact-baseline FAIL 不改成全過。原生 concurrency/index、clean lock 安裝、Web／Android EXIF一致及隔離恢復部署證據另待完成。
+- **完成門檻／次序：**只補受影響窄驗證與未解恢復路徑，獨立 review 後先交草稿；部署／解除 gate 依[頭像部署門檻](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)，不因本機codec或前端預覽綠直接開寫入。
+
 ### 保留的 Android 交付狀態
 
 - 管理員總控已於 #233 合併；每日及每輪設定只有一個權威。部署觀察、期限與未核對項只見 [STATUS](STATUS.md#deployment)。

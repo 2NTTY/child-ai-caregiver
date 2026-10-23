@@ -1,3 +1,7 @@
+import { avatarBinding, type AvatarHeadRecord } from './avatar-data.ts';
+import { avatarPublicState } from './avatar-policy.ts';
+import { createFirestoreAvatarData } from './firestore-avatar-data.ts';
+import type { FirebaseAvatarApiPort } from './firebase-avatar-api.ts';
 import { firestoreChatFileRowSchema, type FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
 import { firestoreVoiceTranscriptSchema, type FirestoreVoiceTranscripts } from './firestore-voice-transcripts.ts';
@@ -43,6 +47,8 @@ const sections = {
   files: ['chat_file_assets', ['chat-file-asset']], file_content: ['chat_file_assets', ['chat-file-asset']],
   voices: ['voice_assets', ['voice-asset']], voice_content: ['voice_assets', ['voice-asset']], voice_transcripts: ['voice_transcripts', ['voice-transcript']],
   photos: ['photos', ['photo']], photo_content: ['photos', ['photo']],
+  self_avatar: ['avatar_heads', ['avatar-head']], self_avatar_content: ['avatar_heads', ['avatar-head']],
+  child_avatar: ['avatar_heads', ['avatar-head']], child_avatar_content: ['avatar_heads', ['avatar-head']],
   private_sources: ['shared_inputs', ['shared-input', 'shared-input-tombstone']],
   private_source_history: ['shared_input_management_revisions', ['shared-input-management']],
   concerns: ['concerns', ['concern']], concern_events: ['concern_events', ['concern-event']], concern_history: ['concern_revisions', ['concern-revision']],
@@ -54,7 +60,7 @@ const sections = {
   telegram_bindings: ['telegram_bindings', ['telegram-binding']], telegram_deliveries: ['telegram_deliveries', ['telegram-delivery']],
   contact_consents: ['contact_consents', ['contact-consent']], contact_grants: ['contact_grants', ['contact-grant']], contact_requests: ['contact_requests', ['contact-request']],
 } as const;
-const global = new Set(['native_push_bindings', 'native_push_deliveries', 'notification_deliveries', 'manifest', 'account', 'children', 'notification_preferences', 'push_bindings', 'push_deliveries', 'telegram_bindings', 'telegram_deliveries']);
+const global = new Set(['self_avatar', 'self_avatar_content', 'native_push_bindings', 'native_push_deliveries', 'notification_deliveries', 'manifest', 'account', 'children', 'notification_preferences', 'push_bindings', 'push_deliveries', 'telegram_bindings', 'telegram_deliveries']);
 const querySchema = z.object({ section: z.string().max(80), childId: z.uuid().optional(),
   scopeVersion: z.string().regex(/^[a-f0-9]{64}$/u).optional(), cursor: z.string().max(16000).optional() }).strict();
 const cursorSchema = z.object({ userId: z.string(), section: z.string(), childId: z.uuid().nullable(), scopeVersion: z.string(), after: z.string().max(2000) }).strict();
@@ -63,8 +69,9 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
   voices?: Pick<FirestoreVoiceStore,'content'|'readMetadata'>;
   files?: Pick<FirestoreChatFilesStore,'content'|'readMetadata'>;
   transcripts?: Pick<FirestoreVoiceTranscripts,'readIn'>;
+  avatars?: Pick<FirebaseAvatarApiPort, 'content'>;
 }) {
-  const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
+  const authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options), avatarData = createFirestoreAvatarData(options);
   function version(binding: FirestoreAuthorityTransaction) {
     return firestoreDomainHash([binding.scope.ownerUserId, binding.scope.workspaceId, binding.scope.storageEpoch, binding.authorizationVersion, binding.changeSeq]);
   }
@@ -86,7 +93,15 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         || previous.scopeVersion !== scopeVersion)) domainReject('invalid_export_cursor', 400);
       let items: unknown[] = [], nextCursor: string | null = null;
       const photos: { id: string; version: number }[] = [], voices: {id:string;version:number}[]=[], files: {id:string;version:number}[]=[];
-      if (section === 'manifest') {
+      let avatar: AvatarHeadRecord | null = null;
+      if (['self_avatar', 'self_avatar_content', 'child_avatar', 'child_avatar_content'].includes(section)) {
+        if (previous) domainReject('invalid_export_cursor', 400);
+        const target = input.childId ? { kind: 'child' as const, childId: input.childId } : { kind: 'self' as const };
+        avatar = await avatarData.head(binding, avatarBinding(binding.scope, target));
+        const { canManage: _canManage, ...current } = avatarPublicState(avatar, false);
+        // Only the current normalized image/version is exportable; no uploads, raw inputs or storage descriptors.
+        if (!section.endsWith('_content')) items.push(current);
+      } else if (section === 'manifest') {
         items = [{ format: 'yuban-personal-data:1', sections: ['account', ...Object.keys(sections)].map(key => ({ section: key,
           childScoped: !global.has(key), required: true })), scope: '本人可讀的業務資料；不包含憑據、模型 key 或內部協定狀態。' }];
       } else if (section === 'notification_deliveries') {
@@ -190,7 +205,7 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
         if (found.size > limit) nextCursor = encode({ userId: owner, section, childId: input.childId ?? null, scopeVersion,
           after: suffix === 'photos' ? found.docs[limit - 1].get('sortKey') : found.docs[limit - 1].id });
       }
-      return { section, items, nextCursor, complete: nextCursor === null, scopeVersion, notices: ['歷史版本供追溯；不代表仍適用的最新建議。'], photos, voices, files };
+      return { section, items, nextCursor, complete: nextCursor === null, scopeVersion, notices: ['歷史版本供追溯；不代表仍適用的最新建議。'], photos, voices, files, avatar };
     });
     for (const photo of result.photos) {
       const content = await options.photos.content(owner, input.childId!, photo.id);
@@ -208,11 +223,23 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       if(content.attachment.version!==file.version)domainReject('export_scope_changed');
       result.items.push({fileId:file.id,version:file.version,base64:content.base64,mimeType:content.descriptor.mimeType});
     }
+    if (result.avatar?.descriptor && section.endsWith('_content')) {
+      if (!options.avatars) domainReject('avatar_export_unavailable', 503);
+      const head = result.avatar, content = await options.avatars.content(owner, head.binding.target, head.descriptor.asset.id, head.version);
+      try { result.items.push({ target: head.binding.target, version: head.version, asset: head.descriptor.asset,
+        base64: content.buffer.toString('base64'), mimeType: 'image/jpeg' }); } finally { content.buffer.fill(0); }
+    }
     // Storage IO or a long snapshot page cannot disclose under an identity/version that changed mid-request.
-    await authority.runTransaction(owner, input.childId ?? null, binding => {
-      if (version(binding) !== result.scopeVersion) domainReject('export_scope_changed'); return Promise.resolve();
+    await authority.runTransaction(owner, input.childId ?? null, async binding => {
+      if (version(binding) !== result.scopeVersion) domainReject('export_scope_changed');
+      // Avatar commits intentionally do not enqueue child/Agent changes, so changeSeq alone is not a head fence.
+      if (result.avatar) {
+        const current = await avatarData.head(binding, result.avatar.binding);
+        if (current.removal?.state === 'pending' || current.version !== result.avatar.version
+          || firestoreDomainHash(current.descriptor) !== firestoreDomainHash(result.avatar.descriptor)) domainReject('export_scope_changed');
+      }
     });
-    const { photos: _photos, voices: _voices, files: _files, ...response } = result; return response;
+    const { photos: _photos, voices: _voices, files: _files, avatar: _avatar, ...response } = result; return response;
   }
   return { page, messages: createFirestoreNotificationMessages(options).page };
 }

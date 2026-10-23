@@ -6,6 +6,8 @@
 
 - **目前：MODEL-SELF03後端已接，畫面待整合。**2026-10-23同步master `7b828dc`並接回未完快照；相容API地址／key／模型ID、獨立Gemini向量key及具體錯誤分類已有本機接線與必要合成證據。#253正修改同一模型設定畫面，#254修改Agent；依使用者要求未接管／修改／合併兩者。現有client保持v2，新v3表單及部署仍待承接，不能宣稱已可在網站輸入相容服務。唯一接續點見[MODEL03](PLAN.md#model-self03)。
 
+- **頭像並行候選：**AVATAR-01 已按契約整合本人／孩子 UI 與 server source；本機真 operator 的 avatar partial-staging 中斷／恢復有合成證據。仍 `release=false`／`NOT_FULLY_RECOVERABLE`，domain／完整 TS、unknown recovery及原生部署門檻未通，未上線；精確接續見[AVATAR-01](PLAN.md#avatar-01)。
+
 - **PR 收束：**#229／#234～#239 由原 Android 主責帳號合併，#241／#242／#244 由本地／模型工作主責帳號交付。使用者於 2026-10-20 明確批准先合併、剩餘手機／真模型驗收改為後續追蹤；原作者、失敗及未驗證據保留。該合併批次沒有新增測試，後續部署見下方。現行次序見 [PLAN](PLAN.md#active)。
 - **本地開發入口可用：**`npm run agent:local` 啟動目前分支的正式 Web／API／四角色接點及隔離持久資料。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；已補相容模型與獨立向量key的本地配置接線，這條新增路由只有合成證據。方法見[本地入口](docs/AGENT_LOCAL.md)。本地環境交付與角色完整品質分開，不需先部署 GCP。
 - **角色未完成項：**官方 PDF 第3頁已整理、審核及本地發布；最終聊天引用新版的單次補驗因 `model_limit` 停止，原用量和失敗保留。長來源／圖片多模態仍欠角色能力，不能以單頁 PDF 當全部通過；見 [DEV02](PLAN.md#dev-agent02)。

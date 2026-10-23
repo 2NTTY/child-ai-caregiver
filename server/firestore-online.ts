@@ -63,7 +63,7 @@ export interface FirestoreOnlineMutation {
   }>;
 }
 export interface FirestoreOnlineOptions extends FirestoreDomainOptions {
-  photos?: FirestoreOnlinePhotosPort; erasures?: FirestoreOnlinePhotosPort;
+  photos?: FirestoreOnlinePhotosPort; erasures?: FirestoreOnlinePhotosPort; avatars?: FirestoreOnlinePhotosPort;
   reminders?: FirestoreOnlineReminderViewPort; mutations?: readonly FirestoreOnlineMutation[];
 }
 export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): FirestoreOnlineStore {
@@ -281,6 +281,10 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     },
     async submit(userId, raw, context) {
       const submission = domainParse(onlineSubmissionSchema, raw);
+      if (/^\/api\/(?:me|children\/[0-9a-f-]{36})\/avatar\/(?:uploads|commit|remove)$/iu.test(submission.path)) {
+        if (!options.avatars) domainReject('avatar_unavailable', 503);
+        return options.avatars.submitOnline(userId, submission);
+      }
       if (options.erasures && /^\/api\/children\/[0-9a-f-]{36}\/delete$/iu.test(submission.path))
         return options.erasures.submitOnline(userId, submission);
       if (options.photos && /^\/api\/children\/[0-9a-f-]{36}\/photos(?:\/[0-9a-f-]{36}\/(delete|confirm))?$/iu.test(submission.path))

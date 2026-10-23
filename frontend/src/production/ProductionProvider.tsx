@@ -257,7 +257,7 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
       recheck();
     };
     const focus = recheck;
-    const beforeUnload = (event: BeforeUnloadEvent) => { if (owner.chatController.hasUnsavedInput() || owner.draftOwner.getSnapshot().attachments.length || owner.agentOwner.getSnapshot().model.pendingDecision || owner.authorizationOwner.getSnapshot().pending || owner.adminOwner.getSnapshot().pending) { event.preventDefault(); event.returnValue = ""; } };
+    const beforeUnload = (event: BeforeUnloadEvent) => { if (owner.hasDomainPending() || owner.chatController.hasUnsavedInput() || owner.draftOwner.getSnapshot().attachments.length || owner.agentOwner.getSnapshot().model.pendingDecision || owner.authorizationOwner.getSnapshot().pending || owner.adminOwner.getSnapshot().pending) { event.preventDefault(); event.returnValue = ""; } };
     window.addEventListener("beforeunload", beforeUnload); window.addEventListener("online", connection); window.addEventListener("offline", connection); window.addEventListener("focus", focus);
     return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("online", connection); window.removeEventListener("offline", connection); window.removeEventListener("focus", focus); owner.dispose(); };
   }, [owner]);

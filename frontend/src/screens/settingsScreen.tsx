@@ -1,3 +1,6 @@
+import { AvatarView } from '../components/avatar/AvatarView';
+import { AvatarEditor } from '../components/avatar/AvatarEditor';
+import { useProductionAvatar } from '../production/useProductionAvatar';
 import { BackgroundSurface } from "../components/appearance/BackgroundSurface";
 import { AdminEntry } from '../production/AdminEntry';
 import { EmptyListCard } from "../components/EmptyListCard";
@@ -34,6 +37,7 @@ function LabeledValue({ label, value }: { label: string; value: string }) {
 }
 
 export default function SettingsPage() {
+  const avatar = useProductionAvatar('self', true);
   const leave = usePreviewNavigation();
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
@@ -57,7 +61,8 @@ export default function SettingsPage() {
     <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
       <View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="個人資料" />
-          <View style={styles.identity}><View style={styles.avatar}><Text style={styles.avatarText}>{accountName.slice(0, 1) || "育"}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{accountName || "未命名"}</Text><Text style={styles.muted}>{user?.email ?? "尚未讀取電郵"}</Text></View></View>
+          <View style={styles.identity}><AvatarView name={accountName} uri={avatar.state.uri} size={55} /><View style={styles.identityText}><Text style={styles.identityName}>{accountName || "未命名"}</Text><Text style={styles.muted}>{user?.email ?? "尚未讀取電郵"}</Text></View></View>
+          <AvatarEditor lane={avatar.lane} state={avatar.state} name={accountName} kind="self" />
           <Divider style={styles.divider} />
           <LabeledValue label="登入方式" value="電郵與密碼" />
         </SectionCard>

@@ -3441,3 +3441,13 @@
 - 發現本地模型會被平台固定型號覆蓋，改為僅受信任本地組裝能設定的模型選擇，實際run／用量使用同一型號；每日與每輪限制仍沿管理政策。保留原Gemini／ADC工作綁定及個人模式優先，未改角色工具／提示詞或協作者分支。
 - 補回前包最後清理import後遺留的PlatformProviderFactory型別引用。最初錯用tsx而未執行測試；改用倉庫Node原生入口後，SDK payload斷言層級錯誤造成一項合成失敗，修正requests[0]後兩項通過。限定型別及腳本語法通過，沒有反覆重跑全量；詳見[證據](artifacts/verification/LOCAL_COMPATIBLE_MODEL_20261023.json)。
 - 零真模型／embedding／通知、未啟動雲端資源或部署。#253／#254仍由原協作者處理；新模型畫面及真服務驗證維持未完成。操作方法直接更新既有docs/AGENT_LOCAL.md。
+
+
+<a id="log-20261023-avatar-draft"></a>
+## LOG-20261023-AVATAR-DRAFT
+
+- 依使用者本人／孩子可調整頭像及按接口契約做後端的要求，在 master `339c707` 上整合獨立候選；原 freeze04／較早前端及失敗證據保留。只套頭像差異，restore-codec交集合併保留master既有修復，不覆舊docs或PR253整包。dot原生代理依特別指派分別寫後端／前端，獨立只讀review核source與receipt；沒有真人驗收或部署。
+- 沿既有online收據、身份／epoch、private加密Storage及獨立erasure journal；不新增公開URL、模型用途或operation ledger。sharp固定server-only，原圖不持久。補avatar-only未prepared lease fence及scheduler閉環；本輪另補authenticated final-plan staging marker／attempt fence、partial rollback／完整頁promote，以及每頁／handoff前後native provenance再核。
+- 本輪restore helper7例、強化後真building-token ABA單例、真operator provenance單例及真avatar跨頁中斷／恢復單例均有合成PASS；首個E2E因40sessions共用control未跨2頁而紅，僅改80sessions試件後PASS，原紅保留。新前端真client4、remove owner3、bounded DOM3及8-root strict有證據；後端codec6-root strictPASS。不把窄root／合成bucket當完整typecheck或原生Firestore。
+- domain strict384MiB明確V8OOM；歷史完整server兩次signal9及256MiBOOM未通，既有56PASS／10exact-baselineFAIL不豁免。unknown／不可讀copy或source/Auth/journal/provenance變更、legacy無marker partialplan仍停住保責任，`NOT_FULLY_RECOVERABLE`／`AVATAR_LIFECYCLE_RELEASE_READY=false`不變。沒有真家庭照、真模型、GCP／OTA、帳戶或正式資料變更。
+- 本包只準備草稿程式，不開功能或宣稱上線；下一步與部署門檻見[AVATAR-01](PLAN.md#avatar-01)。精簡版本、測試、原紅及未驗見[合成核對收據](artifacts/verification/AVATAR_DRAFT_20261023.json)，原長logs留本地不重複提交。
