@@ -1,3 +1,5 @@
+import { AvatarView } from '../components/avatar/AvatarView';
+import { useProductionAvatar } from '../production/useProductionAvatar';
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { Redirect, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { StyleSheet, View, type ScrollView } from "react-native";
@@ -26,6 +28,7 @@ export function normalizeSummaryTab(value: string | string[] | undefined): Summa
 }
 
 export function SummaryScreen() {
+  const avatar = useProductionAvatar('child');
   const { model, actions, scopeKey: productionScope } = useProduction(), profile = useProfileWorkspace();
   const growth = useGrowthWorkspace(), documents = useProductionFamilyDocuments(), layout = useContainerWidth();
   const router = useRouter(), navigate = usePreviewNavigation(), pathname = usePathname();
@@ -68,6 +71,7 @@ export function SummaryScreen() {
       {!child ? <View style={styles.empty}><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" variant="secondary" onPress={() => guarded(() => router.push("/profile"))} /></View> : <>
         <AppTabPanel tabsId="child-growth-tabs" tabKey="overview" active={tab === "overview"}>
           {tab === "overview" ? <><ChildOverviewContent onOpenProfile={() => guarded(() => router.push("/profile"))} onOpenProfileHistory={openProfileHistory}
+            avatar={<AvatarView name={child.displayName} uri={avatar.state.key === scopeKey ? avatar.state.uri : null} size={64} subtle />}
             measurements={profile?.measurements} profileSource={profile?.profileSource}
             companion={<ChildOverviewConcerns model={growth?.model ?? null} scopeKey={scopeKey} childId={child.id} onOpen={() => guarded(() => router.push("/growth?tab=concerns"))} />}
             onOpenMeasurement={recordId => guarded(() => router.push({ pathname: "/care", params: { record: recordId } }))} />

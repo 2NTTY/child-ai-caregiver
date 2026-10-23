@@ -1,3 +1,5 @@
+import { replayAvatarLifecycle, assertRestoredAvatarRelations, restoredAvatarCleanupRecords, mergeAvatarCopyResponsibilities } from './firestore-restore-avatars.ts';
+import type { AvatarObjectDescriptor, AvatarCleanupRecord } from './avatar-data.ts';
 import { replayChatFileErasures, assertRestoredChatFileRelations } from './firestore-restore-chat-files.ts';
 import { firestoreChatFileRowSchema } from './firestore-chat-files.ts';
 import type { ChatFileObjectDescriptor } from './firebase-chat-file-objects.ts';
@@ -28,6 +30,8 @@ export interface FirebaseRestoreInput {
   documents: FirebaseBackupDocument[]; liveDocuments: FirebaseBackupDocument[];
   authUsers: readonly FirebaseRestoreAuthUser[]; erasures: readonly FirebaseErasureIntent[];
   photoDescriptors: ReadonlyMap<string, FirebasePhotoObjectDescriptor>;
+  avatarDescriptors?: ReadonlyMap<string, AvatarObjectDescriptor>; avatarObjectBucketName?: string;
+  avatarCopyResponsibilities?: readonly AvatarCleanupRecord[];
   voiceDescriptors?: ReadonlyMap<string, VoiceObjectDescriptor>; voiceObjectBucketName?: string;
   chatFileDescriptors?: ReadonlyMap<string, ChatFileObjectDescriptor>; chatFileObjectBucketName?: string;
   erasureDescriptors: ReadonlyMap<string, FirebaseErasureDescriptor>;
@@ -82,7 +86,7 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
     requireValue(account.value.userId===id);
   }
   for (const record of records) {
-    if(record.context.family==='knowledge'||record.context.kind==='photo-cleanup'
+    if(record.context.family==='knowledge'||record.context.kind==='photo-cleanup'||record.context.kind==='avatar-cleanup'
       || record.context.kind==='voice-asset' && firestoreVoiceRowSchema.parse(record.value).deletion !== null
       || record.context.kind==='chat-file-asset' && firestoreChatFileRowSchema.parse(record.value).deletion !== null
       || record.context.kind==='photo' && photos.photo.parse(record.value).state==='deleted')continue;
@@ -185,6 +189,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     else if(kind==='child')record.value={...authority.child.parse(record.value),status:'deleted'};
     else if(kind!=='authority-owner'&&kind!=='scope-erasure')scopeRemoved.add(record.path);
   }
+  replayAvatarLifecycle(data,codec,decoded,live,journal,input.erasureDescriptors,scopeRemoved);
   replayVoiceErasures(data,codec,decoded,live,journal,input.erasureDescriptors,scopeRemoved);
   replayChatFileErasures(data,codec,decoded,live,journal,input.erasureDescriptors,scopeRemoved);
   const intentByAsset=new Map<string,FirebaseErasureIntent>();
@@ -261,7 +266,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
       requireValue(!('state'in value),'restore_erasure_receipt');record.value={...value,result:null};
     }
   }
-  for(const intent of journal.filter(v=>v.type==='photo-delete'||v.type==='voice-delete'||v.type==='file-delete')) {
+  for(const intent of journal.filter(v=>v.type==='photo-delete'||v.type==='voice-delete'||v.type==='file-delete'||v.type==='avatar-delete')) {
     if(erasedByScope(intent.scope.ownerUserId,intent.scope.workspaceId,intent.scope.childId))continue;
     const epoch=newEpochByWorkspace.get(intent.scope.workspaceId);if(!epoch)continue;
     const owner=accounts.find(row=>row.value.userId===intent.scope.ownerUserId);requireValue(Boolean(owner),'restore_erasure_binding');
@@ -279,7 +284,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   // A completed erasure may leave historical owner-wide receipt metadata in an old
   // backup. Remove its authenticated child scope first, then require the entire
   // surviving content graph; missing live content is still an error.
-  assertFirestoreRestoreContent(keep);assertRestoredVoiceRelations(keep);assertRestoredChatFileRelations(keep);
+  assertFirestoreRestoreContent(keep);assertRestoredVoiceRelations(keep);assertRestoredChatFileRelations(keep);assertRestoredAvatarRelations(keep);
   const livePhotos=rows(keep,'photo',photos.photo).filter(row=>row.value.state==='ready'||row.value.state==='reserved');
   const quotas=new Map<string,{bytes:number;count:number}>();
   for(const row of livePhotos) {
@@ -300,8 +305,14 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   if(global.length)global[0]!.record.value=photos.globalQuota.parse({activeBytes,activeCount,
     cleanupBytes:allCleanup.reduce((sum,row)=>sum+row.value.bytes,0),cleanupCount:allCleanup.length});
   const generation=firebaseRestoreGeneration(options.projectId,input.targetDatabaseId,input.restoreId);
-  const records=keep.map(record=>{const transformed=codec.transform(record,{generation,newEpochByWorkspace,newAuthorizationVersionByWorkspace,photoDescriptors:input.photoDescriptors,voiceDescriptors:input.voiceDescriptors,voiceObjectBucketName:input.voiceObjectBucketName,chatFileDescriptors:input.chatFileDescriptors,chatFileObjectBucketName:input.chatFileObjectBucketName});
-    return {path:transformed.path,data:transformed.data};}).concat(outputExtras);
+  const transform = {generation,newEpochByWorkspace,newAuthorizationVersionByWorkspace,photoDescriptors:input.photoDescriptors,voiceDescriptors:input.voiceDescriptors,voiceObjectBucketName:input.voiceObjectBucketName,chatFileDescriptors:input.chatFileDescriptors,chatFileObjectBucketName:input.chatFileObjectBucketName,avatarDescriptors:input.avatarDescriptors,avatarObjectBucketName:input.avatarObjectBucketName};
+  const records=keep.map(record=>{const transformed=codec.transform(record,transform);
+    return {path:transformed.path,data:transformed.data};}).concat(outputExtras, restoredAvatarCleanupRecords(data, keep, transform));
+  if (input.avatarCopyResponsibilities?.length) {
+    requireValue(Boolean(input.avatarObjectBucketName), 'restore_avatar_descriptor_missing');
+    mergeAvatarCopyResponsibilities(data, codec, records, input.avatarCopyResponsibilities, { bucketName: input.avatarObjectBucketName!,
+      epochFor: binding => firebaseRestoreEpoch(options.projectId, input.targetDatabaseId, input.restoreId, binding.scope.workspaceId), erasures: journal });
+  }
   unique(records,row=>row.path);
   const outputPaths=new Set(records.map(row=>row.path));
   const removePaths=input.documents.filter(row=>!outputPaths.has(row.path)).map(row=>row.path);
@@ -309,7 +320,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   const encodedBytes=records.reduce((sum,row)=>sum+firebaseBackupDocumentDigest(row).bytes,0);
   requireValue(records.length<=4000&&encodedBytes<=32*1024*1024,'restore_limit');
   const restored=records.filter(row=>!isSession(row)).map(row=>codec.decode(row));
-  assertFirebaseRestoreAuthority(restored);assertFirestoreRestoreContent(restored);assertRestoredVoiceRelations(restored);assertRestoredChatFileRelations(restored);
+  assertFirebaseRestoreAuthority(restored);assertFirestoreRestoreContent(restored);assertRestoredVoiceRelations(restored);assertRestoredChatFileRelations(restored);assertRestoredAvatarRelations(restored,true);
   return {records,removePaths,generation,newEpochByWorkspace,journalHash:digest(journal.map(firebaseErasureIntentHash).sort()),
     authHash:digest([...authUsers.values()].sort((a,b)=>a.userId.localeCompare(b.userId))),
     authorityHash:digest(input.liveDocuments.filter(row=>row.path.startsWith(options.namespace+'/')).map(row=>({path:row.path,...firebaseBackupDocumentDigest(row)})).sort((a,b)=>a.path.localeCompare(b.path)))};

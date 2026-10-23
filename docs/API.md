@@ -1070,3 +1070,42 @@ OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 P
 - `GET /__local/telegram/start?token=...`：顯示本地合成 Telegram 開始表單，讀取不改變綁定；`POST` 只接受精確同源的單一 token，交正式 challenge handler 記錄合成候選。仍須原 `/api/telegram` 確認流程才能綁定，不能連接真 Telegram 或發送訊息。
 
 本機端點核對 loopback Host／Origin；受保護快照、合成帳號密碼及模型 key 不經前端設定端點提供。各 worktree 使用獨立 cookie 名稱，瀏覽器不能以另一端口的 session 當作本 worktree 身份。模型更改、斷線及程序重啟仍先查原 run，不以本地模式自動重送操作。設定與限制見[操作說明](AGENT_LOCAL.md)。
+
+
+<a id="avatar-api"></a>
+## 本人／孩子頭像（AVATAR-01）
+
+**目前為開發草稿，未啟用：**`AVATAR_LIFECYCLE_RELEASE_READY=false`，未提供的 avatar API／online command 回受控 unavailable；前端合成預覽及本機個別綠項不代表此 API 已上線。解除門檻見[AVATAR-01](../PLAN.md#avatar-01)。
+
+頭像為獨立資源；不增加 Child／SessionUser／Firebase Auth photoURL 欄位。令 `B` 為 `/api/me/avatar` 或 `/api/children/:childId/avatar`。本人由 Server 取目前身份的 personal workspace／epoch，無孩子亦可使用；孩子沿既有 READ_ROLES／WRITE_ROLES，每次重核目前授權。本人固定 private；暫存 upload 僅建立者讀寫，commit 後孩子 current 才沿既有讀取範圍披露。沒有任意 user ID、公開或簽名 URL、分享設定、照片分析或模型接點。
+
+所有請求要求既有 session、`x-expected-user-id`、Origin／CSRF 規則及 `Cache-Control: private, no-store`。精確 strict wire schema 見 [`src/shared/avatars.ts`](../src/shared/avatars.ts)，共用 client port 見 [`src/client/avatars-api.ts`](../src/client/avatars-api.ts)。`AvatarTarget` 僅 self 或 child/childId；`AvatarState` 的 target、version、asset、updatedAt、canManage 為獨立 view。version 為非負整數，沿 domain 上限；只有從未變更為 0／null／null，移除不重設版本。asset 僅不透明 UUID、JPEG MIME、bytes、SHA-256、方形尺寸；不回傳原圖 hash、內部路徑或下載憑證。
+
+| Endpoint | 回應／前置 |
+|---|---|
+| `GET B` | `200 {avatar, policy}`；policy 含 policyId、acceptedMimeTypes、maxInputBytes、maxInputPixels、maxInputDimension、outputSize、maxOutputBytes、maxCropZoom。讀失敗不可當空頭像。 |
+| `POST B/uploads` | online command；strict expectedVersion、policyId、mimeType、bytes、sha256、crop；201 原收據 `{upload}`，只預留，不改 current/version。 |
+| `GET B/uploads/:uploadId` | `200 {upload}`；只回本人發起且目前有權的原 upload。 |
+| `POST B/uploads/:uploadId/content` | strict `{base64}`；200 `{upload}`，首次成功為ready；原upload已committed時可回原committed，不重新decode。同一 upload 只容許同原 bytes/hash/MIME/crop，重傳回原 normalized descriptor，不覆寫物件。 |
+| `POST B/commit` | online command；strict `{uploadId, expectedVersion}`；200 原收據 `{avatar, cleanupPending}`。只有同 actor/target/scope/basis、ready且未過期可原子換 head。 |
+| `POST B/remove` | online command；strict `{expectedVersion, confirmRemove:true}`；沿獨立 erasure barrier/journal，200 原收據 `{avatar, cleanupPending}`，物理清理未完不得說已清除。 |
+| `GET B/content?assetId=UUID&version=N` | 僅 current 的這一版本之 JPEG bytes，讀前／後重核權限及head；固定 generation/hash 校驗後輸出。舊asset/version 409；不存在／無權404。 |
+
+upload 回 id、target、expectedVersion、policyId、state（reserved／processing／ready／committed／rejected／expired）、expiresAt、normalized、errorCode。ready／committed 的 normalized 必須完整且 errorCode=null；尚未可用／已拒絕／過期只回 normalized=null。crop centerX/Y 為 finite [0,1]，zoom 為 finite [1, policy.maxCropZoom]；policyId 綁精確 recipe，不接受舊policy時回409 avatar_policy_changed，不暗換配方。既有預留沿其配方完成，安全修訂可明示拒絕／過期。
+
+reserve／commit／remove 只走既有 `/api/online/context`、`/api/online/submit`，直接 POST command path 回428。沿 OnlineSubmission，payload 不加 opId、不另建 avatar operation ledger；每一步各自原 opId/body。raw bytes 不入收據。內容傳送以原 upload ID、immutable input hash及recipe辨認，不為重傳新增操作ID。
+
+內容 endpoint 在讀 body／解析 base64 前先取得有界 ingress admission，並由集中 maxInputBytes 算 base64＋JSON streaming 上限；不放寬其他 API、不只信 Content-Length、不在完整 allocation 後才限制。decode/Storage I/O 不放 Firestore retry callback：先持久清理責任，再限額 lease、decode、immutable write；ready finalization 再核 scope/generation/lease/deletion barrier。commit 同交易核 basis=current=payload、換 head、標 committed、保存原收據及排舊asset清理；任何失敗保留原head。
+
+reserve／commit／remove 失聯先查原 `/api/online/operations/:opId`。頭像 lookup 的模糊404不證明原操作終態，保留原op/body，不自動POST；此保留策略只由頭像client啟用。unconfirmed 不證明未執行，僅按既有 unknown 協議原樣續行；confirmed receipt 是當時結果，result null 不代表未保存，GET B 才是現況。content 失聯先 GET 原upload，ready/committed不再decode；processing不並行另起。寫object後崩潰按原地址 inspect/hash/generation reconcile；無法判定保留unknown，不能猜成功／失敗。
+
+409版本衝突保留使用者本頁選圖，重讀後由使用者再次確認才以新basis建立新操作，不自動rebase。remove 即使current=null仍遞增tombstone；barrier後在途content/commit不可復活舊圖，remove unknown只續原操作。
+
+新增錯誤：avatar_policy_changed／avatar_version_conflict／avatar_upload_not_ready為409；avatar_upload_expired為410；avatar_input_too_large為413；avatar_unsupported_format為415；avatar_invalid_image／avatar_decode_limit為422；avatar_busy為429及Retry-After；avatar_integrity_failed／avatar_unavailable為503。身份／scope epoch／原操作衝突及428沿原契約；不回decoder細節、metadata或路徑。舊server／feature未提供須明示unavailable，不假回empty或本機保存。
+
+client本人key沿既有serverIdentity＋userId＋identity generation；孩子另帶childId及已知access scope。Server真workspace/storageEpoch仍每次讀寫前後核，前端不假裝預知未曝露的epoch、不為此擴wire。收到epoch/scope失效或原owner撤權invalidation即清並重核。換孩子僅清孩子，換身份／Server或已知epoch失效清兩者，取消本機請求及revoke短命object URL，晚到回覆不得套新target；本機取消不代表遠端原操作已取消。選圖／crop／committed分開，不optimistic改head；pending/unknown不開第二條寫入。帶身份fetch後才轉短命blob，不能直接以受保護URL交img、省核對或存localStorage／離線資料庫。可在進頁／focus重讀；若用既有無正文invalidation，self=preferences、child=profile並suppress agent/background wake，不廣播staged資料。未能保證隔離時僅GET/focus。
+
+頭像 account export sections：`self_avatar` / `self_avatar_content` 不帶 childId；`child_avatar` / `child_avatar_content` 必須帶可讀 childId。只含目前 normalized asset / version（content 為 JPEG base64），不含 pending upload、原輸入、operation 或 Storage descriptor。因 avatar 不推 child changeSeq，export 在外部 I/O 後另核 head version / descriptor 與授權；變更時整頁 `export_scope_changed`，不混接版本。
+
+
+Account export可直接驗讀空head／null內容，不因未裝avatar內容port而令舊有空帳戶匯出失敗；若確有current normalized object但內容port缺失，該content section明示503，不省略真內容假稱完整。public avatar服務未開仍是unavailable，不由這項匯出相容行為推斷功能可用。

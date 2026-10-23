@@ -1,3 +1,13 @@
+import { createFirebaseAvatarRestoreCopies, type AvatarCopyPayload } from './firebase-avatar-restore-copies.ts';
+import { avatarObjectAddress } from './firebase-avatar-objects.ts';
+import type { AvatarRecoveryBatch } from './avatar-config.ts';
+import { erasureCoversAvatar } from './firebase-erasure-journal.ts';
+import { avatarHeadRecordSchema, avatarCleanupRecordSchema, avatarCleanupId, sameAvatarBinding, type AvatarObjectDescriptor } from './avatar-data.ts';
+import { assertRestoredAvatarRelations } from './firestore-restore-avatars.ts';
+import type { FirebaseAvatarRecovery } from './firebase-avatar-recovery.ts';
+import type { AvatarObjects } from './firebase-avatar-objects.ts';
+import type { ManagedAvatarRead } from './firebase-managed-avatar-recovery.ts';
+import type { FirebaseBackupAvatarEntry } from './firebase-backup-artifacts.ts';
 import { firestoreChatFileRowSchema } from './firestore-chat-files.ts';
 import { erasureCoversChatFile } from './firebase-erasure-journal.ts';
 import type { FirebaseChatFileRecovery } from './firebase-chat-file-recovery.ts';
@@ -54,6 +64,7 @@ export interface FirebaseRecoveryOperatorOptions extends FirebaseBackupOptions {
   sourceObjects?:Pick<FirebasePhotoObjects,'inspect'> & Partial<Pick<FirebasePhotoObjects,'read'|'write'|'recover'>>;
   voices?:{bucketName:string;objects:VoiceObjects;recovery:FirebaseVoiceRecovery};
   chatFiles?:{bucketName:string;objects:ChatFileObjects;recovery:FirebaseChatFileRecovery};
+  avatars?:{bucketName:string;objects:AvatarObjects;readNormalized:ManagedAvatarRead;recovery:FirebaseAvatarRecovery;batches?:AvatarRecoveryBatch};
   managed?:ReturnType<typeof createFirebaseManagedBackup>;
   native:ReturnType<typeof createFirebaseNativeRecovery>;auth:Pick<Auth,'getUser'>;
 }
@@ -66,6 +77,8 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
   const codec=createFirestoreRestoreCodec(options),checkpointCollection=namespace+'_restore_operations';
   const checkpointRef=target.collection(checkpointCollection).doc('current');
   const staged=createFirebaseRestoreApply({database:target,cipher,projectId,namespace});
+  const avatarCopies = options.avatars ? createFirebaseAvatarRestoreCopies({ database: target, cipher, projectId, namespace,
+    targetBucket: options.avatars.bucketName, objects: options.avatars.objects, batches: options.avatars.batches }) : null;
   const sessionPath=namespace+'_sessions/';
   const prefix=(backupId:string)=>{uuid.parse(backupId);return 'gs://'+options.backupBucketName+'/firebase-backups/v1/'+backupId+'/firestore';};
   const decode=(docs:FirebaseBackupDocument[])=>docs.filter(row=>!isRestoreProtocolOrUsage(namespace,row.path)).map(row=>codec.decode(row));
@@ -132,18 +145,35 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
   }
   function checkpointAad(){return canonical(['yuban-firebase-restore',1,projectId,target.databaseId,namespace,'current']);}
   const applyIdentity=(input:{backupId:string;restoreId:string;descriptor:Pick<FirebaseBackupManifestDescriptor,'cipherSha256'>})=>digest([input.backupId,input.restoreId,input.descriptor.cipherSha256]);
-  async function resumeStaged(input:{backupId:string;restoreId:string;descriptor:Pick<FirebaseBackupManifestDescriptor,'cipherSha256'>;sourceGeneration:string}){
-    const state=await staged.read(applyIdentity(input));if(!state)return false;
-    const final=z.object({format:z.literal('yuban-firebase-restore'),version:z.literal(1),ciphertext:z.string()}).strict().parse(state.final);
+  function readPlan(input:{backupId:string;restoreId:string;descriptor:Pick<FirebaseBackupManifestDescriptor,'cipherSha256'>;sourceGeneration:string}, raw:unknown){
+    const final=z.object({format:z.literal('yuban-firebase-restore'),version:z.literal(1),ciphertext:z.string()}).strict().parse(raw);
     const plan=checkpointSchema.parse(JSON.parse(cipher.decrypt(final.ciphertext,checkpointAad())));
     requireValue(plan.sourceGeneration===input.sourceGeneration&&plan.restoreId===input.restoreId&&plan.backupId===input.backupId
-      &&plan.manifestSha256===input.descriptor.cipherSha256,'recovery_checkpoint_conflict');
-    await staged.resume(applyIdentity(input),()=>assertPaused(input.sourceGeneration),async()=>{
+      &&plan.manifestSha256===input.descriptor.cipherSha256&&plan.sourceDatabaseId===source.databaseId
+      &&plan.targetDatabaseId===target.databaseId,'recovery_checkpoint_conflict');
+    return plan;
+  }
+  async function resumeStaged(input:{backupId:string;restoreId:string;descriptor:Pick<FirebaseBackupManifestDescriptor,'cipherSha256'>;sourceGeneration:string}, verifySnapshot:()=>Promise<void>){
+    const state=await staged.read(applyIdentity(input));if(!state)return false;
+    const plan=readPlan(input,state.final);
+    const copyInventory = avatarCopies ? await avatarCopies.inventory(applyIdentity(input), await staged.checkpointState(applyIdentity(input)), value => {
+      requireValue(value.restoreId === input.restoreId && value.sourceGeneration === input.sourceGeneration
+        && value.provenanceHash === input.descriptor.cipherSha256 && canonical(value.evidence) === canonical({ journalHash: plan.journalHash,
+          authHash: plan.authHash, authorityHash: plan.authorityHash }), 'recovery_avatar_copy_source_changed');
+    }) : null;
+    const frozen = copyInventory?.present ? await avatarCopies!.freeze(applyIdentity(input)) : null;
+    await staged.resume(applyIdentity(input),async()=>{await assertPaused(input.sourceGeneration);await verifySnapshot();},async()=>{
       const restored=await readAll(target,true);assertFirebaseBackupInventory(plan.inventory,restored);
-      const records=decode(restored);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);assertRestoredChatFileRelations(records);
+      const records=decode(restored);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);assertRestoredChatFileRelations(records);assertRestoredAvatarRelations(records, true);
       const latest=evidence(await readAll(source),await currentAuth(records),(await journalSnapshot()).map(row=>row.intent));
       requireValue(latest.journalHash===plan.journalHash&&latest.authHash===plan.authHash&&latest.authorityHash===plan.authorityHash,'recovery_latest_state_changed');
-    });return true;
+    }, frozen ? {
+      prepare: (finalHash, validateCompletedPlan) => avatarCopies!.handoff(frozen, finalHash,
+        new Map(plan.inventory.documents.map(row => [row.path, row.sha256])), validateCompletedPlan),
+      activate: (tx, finalHash) => avatarCopies!.prepareActivation(tx, frozen, finalHash),
+    } : undefined);
+    if (frozen) await avatarCopies!.retire(applyIdentity(input));
+    return true;
   }
   async function applied(input:{backupId:string;restoreId:string;descriptor:Pick<FirebaseBackupManifestDescriptor,'cipherSha256'>}){
     const snapshot=await checkpointRef.get();if(!snapshot.exists)return null;
@@ -156,13 +186,13 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
   return {
     async startBackup(input:{backupId:string;snapshotTime:string;generation:string}){
       await assertPaused(input.generation);const snapshot=await inspectFirebaseBackupSnapshot(options,{snapshotTime:input.snapshotTime,generation:input.generation});
-      const records=decode(snapshot.documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);assertRestoredChatFileRelations(records);
+      const records=decode(snapshot.documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);assertRestoredChatFileRelations(records);assertRestoredAvatarRelations(records);
       return options.native.startExport({backupId:input.backupId,snapshotTime:input.snapshotTime});
     },
     async finishBackup(input:{backupId:string;snapshotTime:string;generation:string;operationName:string;sourceCommit:string;retainedUntil:string}){
       await assertPaused(input.generation);const snapshot=await inspectFirebaseBackupSnapshot(options,{snapshotTime:input.snapshotTime,generation:input.generation});
       const native=assertFirebaseNativeExport(snapshot.inventory,await options.native.getExport(input.operationName),prefix(input.backupId));
-      const records=decode(snapshot.documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);assertRestoredChatFileRelations(records);
+      const records=decode(snapshot.documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);assertRestoredChatFileRelations(records);assertRestoredAvatarRelations(records);
       const objects=await options.artifacts.holdNativeExport({backupId:input.backupId,outputUriPrefix:native.outputUriPrefix});
       const photos:FirebaseBackupPhotoManifestEntry[]=[];
       for(const record of records.filter(row=>row.context.kind==='photo')){
@@ -191,12 +221,21 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
           fileId:row.id,descriptor:row.descriptor!,retainedUntil:input.retainedUntil});
         chatFiles.push({path:record.path,fileId:row.id,scope:row.objectScope,descriptor:row.descriptor!,backup});
       }
+      const avatars: FirebaseBackupAvatarEntry[] = [];
+      for (const record of records.filter(row => row.context.kind === 'avatar-head')) {
+        const head = avatarHeadRecordSchema.parse(record.value);
+        requireValue(head.removal?.state !== 'pending', 'recovery_unsettled_avatar'); if (!head.descriptor) continue;
+        requireValue(Boolean(options.avatars), 'recovery_avatar_port_missing');
+        const backup = await options.avatars!.recovery.backupAvatar({ backupId: input.backupId, binding: head.binding,
+          version: head.version, descriptor: head.descriptor, retainedUntil: input.retainedUntil });
+        avatars.push({ path: record.path, binding: head.binding, version: head.version, descriptor: head.descriptor, backup });
+      }
       await assertPaused(input.generation);await options.artifacts.assertNativeExportObjects({backupId:input.backupId,objects});
       const payload:FirebaseBackupManifestPayload={format:'yuban-firebase-backup-manifest/v1',backupId:input.backupId,databaseId:source.databaseId,
         snapshotTime:input.snapshotTime,controlGeneration:input.generation,sourceCommit:input.sourceCommit,keyVersionRef:options.keyVersionRef,
-        retainedUntil:input.retainedUntil,nativeExport:{outputUriPrefix:native.outputUriPrefix,objects},inventory:snapshot.inventory,photos,voices,chatFiles};
+        retainedUntil:input.retainedUntil,nativeExport:{outputUriPrefix:native.outputUriPrefix,objects},inventory:snapshot.inventory,photos,voices,chatFiles,avatars};
       const descriptor=await options.artifacts.writeManifest(payload);
-      return {descriptor,documentCount:snapshot.inventory.documentCount,photoCount:photos.length,voiceCount:voices.length,fileCount:chatFiles.length,inventorySha256:snapshot.inventory.sha256};
+      return {descriptor,documentCount:snapshot.inventory.documentCount,photoCount:photos.length,voiceCount:voices.length,fileCount:chatFiles.length,avatarCount:avatars.length,inventorySha256:snapshot.inventory.sha256};
     },
     async startRestoreImport(input:{backupId:string;descriptor:FirebaseBackupManifestDescriptor}){
       const manifest=await options.artifacts.readManifest({backupId:input.backupId,descriptor:input.descriptor});
@@ -228,15 +267,56 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         else reject('recovery_snapshot_missing');
       }
       await verifySnapshot();
+      const identity = applyIdentity(input), checkpointState = await staged.checkpointState(identity);
+      const copyInventory = avatarCopies ? await avatarCopies.inventory(identity, checkpointState, value => {
+        requireValue(value.restoreId === input.restoreId && value.sourceGeneration === input.sourceGeneration
+          && value.provenanceHash === input.descriptor.cipherSha256
+          && (!manifest || value.originalInventoryHash === manifest.inventory.sha256), 'recovery_avatar_copy_source_changed');
+      }) : null;
+      if (!avatarCopies) {
+        requireValue(checkpointState.phase !== 'avatar-staging', 'recovery_avatar_port_missing');
+        // Without an avatar port, even a fast path must reject hidden/foreign checkpoint metadata.
+        let cursor: string | undefined;
+        while (true) {
+          let query = target.collection(checkpointCollection).orderBy(FieldPath.documentId()).limit(100); if (cursor) query = query.startAfter(cursor);
+          const page = await query.get();
+          for (const row of page.docs) requireValue(checkpointState.ids.has(row.id), row.id.startsWith('avatar-copy-')
+            ? 'recovery_avatar_port_missing' : 'recovery_checkpoint_inventory_unconfirmed');
+          if (page.size < 100) break; cursor = page.docs.at(-1)!.id;
+        }
+      }
+      if (checkpointState.phase === 'avatar-staging') {
+        requireValue(copyInventory?.present === true && avatarCopies !== null, 'recovery_avatar_port_missing');
+        await staged.recoverAvatarStage(identity, async value => {
+          await assertPaused(input.sourceGeneration); await verifySnapshot();
+          const plan = readPlan(input, value.header.final);
+          const original = await readAll(target, true);
+          const originalHash = digest(original.map(row => ({ path: row.path, sha256: firebaseBackupDocumentDigest(row).sha256 })).sort((a,b) => a.path.localeCompare(b.path)));
+          requireValue(originalHash === value.binding.originalInventoryHash, 'recovery_target_changed');
+          const observed = evidence(await readAll(source), await currentAuth(decode(original)), (await journalSnapshot()).map(row => row.intent));
+          requireValue(canonical(observed) === canonical({ journalHash: plan.journalHash, authHash: plan.authHash,
+            authorityHash: plan.authorityHash }), 'recovery_latest_state_changed');
+          const current = await avatarCopies!.inventory(identity, await staged.checkpointState(identity), payload => {
+            requireValue(payload.restoreId === input.restoreId && payload.sourceGeneration === input.sourceGeneration
+              && payload.provenanceHash === input.descriptor.cipherSha256 && payload.originalInventoryHash === originalHash
+              && canonical(payload.evidence) === canonical(observed), 'recovery_avatar_copy_source_changed');
+          });
+          requireValue(current.present, 'recovery_avatar_copy_header_missing');
+        });
+      }
       const prior=await applied(input);
       if(prior){
         const live=await readAll(source),users=await currentAuth(decode(await readAll(target,true))),entries=await journalSnapshot();
         const observed=evidence(live,users,entries.map(row=>row.intent));
         requireValue(prior.sourceGeneration===input.sourceGeneration&&observed.journalHash===prior.journalHash
           &&observed.authHash===prior.authHash&&observed.authorityHash===prior.authorityHash,'recovery_latest_state_changed');
+        if (copyInventory?.present) {
+          requireValue(copyInventory.payloads.every(value => canonical(value.evidence) === canonical(observed)), 'recovery_avatar_copy_source_changed');
+          await avatarCopies!.retire(identity);
+        }
         return {state:prior.state,replayed:true,documentCount:prior.inventory.documentCount,generation:prior.generation,inventorySha256:prior.inventory.sha256};
       }
-      if(await resumeStaged(input)){
+      if(await resumeStaged(input,verifySnapshot)){
         const restored=await applied(input);requireValue(restored!==null,'recovery_apply_unknown');
         return {state:restored.state,replayed:true,documentCount:restored.inventory.documentCount,generation:restored.generation,inventorySha256:restored.inventory.sha256};
       }
@@ -245,7 +325,7 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         requireValue(operation.metadata.inputUriPrefix===manifest.nativeExport.outputUriPrefix
           &&BigInt(operation.metadata.progressDocuments.completedWork)===BigInt(manifest.inventory.documentCount),'recovery_import_mismatch');
       }
-      const documents=await readAll(target,false,proof?.endTime);
+      const documents=await readAll(target,copyInventory?.present === true,proof?.endTime);
       if(manifest)assertFirebaseBackupInventory(manifest.inventory,documents);
       else requireValue(proof!==null&&documents.length===proof.documentCount,'recovery_native_inventory_mismatch');
       const records=decode(documents);assertFirebaseRestoreAuthority(records);
@@ -261,6 +341,15 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
       // to satisfy an obsolete operation receipt in the imported snapshot.
       const liveDocuments=await readAll(source),authUsers=await currentAuth(records),entries=await journalSnapshot();
       const erasures=entries.map(row=>row.intent),erasureDescriptors=new Map(entries.map(row=>[firebaseErasureIntentHash(row.intent),row.descriptor]));
+      const sourceEvidence = evidence(liveDocuments, authUsers, erasures);
+      const originalInventoryHash = digest(documents.map(row => ({ path: row.path, sha256: firebaseBackupDocumentDigest(row).sha256 })).sort((a,b) => a.path.localeCompare(b.path)));
+      requireValue(!copyInventory || copyInventory.payloads.every(value => value.originalInventoryHash === originalInventoryHash
+        && canonical(value.evidence) === canonical(sourceEvidence)), 'recovery_avatar_copy_source_changed');
+      const validateAvatarSource = async () => {
+        await assertPaused(input.sourceGeneration); await verifySnapshot();
+        const latest = evidence(await readAll(source), await currentAuth(records), (await journalSnapshot()).map(row => row.intent));
+        requireValue(canonical(latest) === canonical(sourceEvidence), 'recovery_avatar_copy_source_changed');
+      };
       // Journal replay does not trust a Firestore cleanup flag alone: check that all original objects are gone.
       for(const intent of erasures.filter(v=>['child-delete','account-delete'].includes(v.type))){
         const affected=new Map<string,{scope:typeof intent.scope;photoId:string}>();
@@ -274,6 +363,20 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         }
         requireValue(affected.size===0||typeof options.sourceObjects?.inspect==='function','recovery_cleanup_verifier_missing');
         for(const item of affected.values())requireValue(await options.sourceObjects!.inspect!(item.scope,item.photoId)===null,'recovery_pending_scope_cleanup');
+      }
+      for (const intent of erasures.filter(value => ['account-delete','child-delete'].includes(value.type))) {
+        const responsibilities = new Map<string, ReturnType<typeof avatarCleanupRecordSchema.parse>>();
+        for (const record of [...records, ...decode(liveDocuments)].filter(row => row.context.kind === 'avatar-cleanup')) {
+          const row = avatarCleanupRecordSchema.parse(record.value);
+          if (erasureCoversAvatar(intent, { scope: row.binding.scope, targetKind: row.binding.target.kind, targetId: row.binding.targetId,
+            committedVersion: row.committedVersion, expectedVersion: row.expectedVersion })) responsibilities.set(avatarCleanupId(row.binding, row.assetId), row);
+        }
+        for (const row of responsibilities.values()) {
+          if (!row.preparedAsset && !row.descriptor) continue;
+          requireValue(Boolean(options.avatars), 'recovery_avatar_port_missing');
+          requireValue(await options.avatars!.objects.inspect(row.objectBinding, row.assetId, row.preparedAsset ?? undefined) === null,
+            'recovery_pending_scope_cleanup');
+        }
       }
       type PhotoEntry=Omit<FirebaseBackupPhotoManifestEntry,'backup'> & Partial<Pick<FirebaseBackupPhotoManifestEntry,'backup'>>;
       const deleted=(entry:PhotoEntry)=>erasures.some(row=>erasureCoversPhoto(row,entry.scope,entry.photoId));
@@ -335,9 +438,61 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         const scope={...entry.scope,storageEpoch:firebaseRestoreEpoch(projectId,target.databaseId,input.restoreId,entry.scope.workspaceId)};
         expectedChatFile.set(entry.fileId,{...entry.descriptor,objectName:options.chatFiles!.objects.address(scope,entry.fileId)});pendingChatFile.push(entry);
       }
+      const avatarHeads = records.filter(row => row.context.kind === 'avatar-head').map(record => ({ record, head: avatarHeadRecordSchema.parse(record.value) }));
+      const avatarReady = avatarHeads.filter(row => row.head.descriptor !== null);
+      type AvatarEntry = Omit<FirebaseBackupAvatarEntry, 'backup'> & Partial<Pick<FirebaseBackupAvatarEntry, 'backup'>>;
+      const avatarEntries: AvatarEntry[] = manifest ? manifest.avatars ?? [] : avatarReady.map(({ record, head }) => ({ path: record.path,
+        binding: head.binding, version: head.version, descriptor: head.descriptor! }));
+      requireValue(avatarEntries.length === avatarReady.length && new Set(avatarEntries.map(row => row.descriptor.asset.id)).size === avatarEntries.length,
+        'recovery_avatar_manifest');
+      const expectedAvatar = new Map<string, AvatarObjectDescriptor>(), eligibleAvatars: AvatarEntry[] = [];
+      for (const entry of avatarEntries) {
+        const found = avatarReady.find(row => row.record.path === entry.path);
+        requireValue(Boolean(found && sameAvatarBinding(found.head.binding, entry.binding) && found.head.version === entry.version
+          && canonical(found.head.descriptor) === canonical(entry.descriptor)), 'recovery_avatar_manifest');
+        if (erasures.some(intent => erasureCoversAvatar(intent, { scope: entry.binding.scope, targetKind: entry.binding.target.kind,
+          targetId: entry.binding.targetId, committedVersion: entry.version }))) continue;
+        requireValue(Boolean(options.avatars), 'recovery_avatar_port_missing');
+        const binding = { ...entry.binding, scope: { ...entry.binding.scope,
+          storageEpoch: firebaseRestoreEpoch(projectId, target.databaseId, input.restoreId, entry.binding.scope.workspaceId) } };
+        expectedAvatar.set(entry.descriptor.asset.id, { ...entry.descriptor, objectName: avatarObjectAddress({ projectId, namespace,
+          bucketName: options.avatars!.bucketName }, binding, entry.descriptor.asset.id).objectName }); eligibleAvatars.push(entry);
+      }
       const base={restoreId:input.restoreId,targetDatabaseId:target.databaseId,sourceGeneration:input.sourceGeneration,
-        documents:plannerDocuments,liveDocuments,authUsers,erasures,erasureDescriptors,voiceObjectBucketName:options.voices?.bucketName,chatFileObjectBucketName:options.chatFiles?.bucketName};
-      prepareFirebaseRestore(options,{...base,photoDescriptors:expectedDescriptors,voiceDescriptors:expectedVoice,chatFileDescriptors:expectedChatFile});
+        documents:plannerDocuments,liveDocuments,authUsers,erasures,erasureDescriptors,voiceObjectBucketName:options.voices?.bucketName,chatFileObjectBucketName:options.chatFiles?.bucketName,avatarObjectBucketName:options.avatars?.bucketName};
+      const provisional = prepareFirebaseRestore(options,{...base,photoDescriptors:expectedDescriptors,voiceDescriptors:expectedVoice,
+        chatFileDescriptors:expectedChatFile,avatarDescriptors:expectedAvatar});
+      const survivingAvatar = decode(provisional.records).filter(row => row.context.kind === 'avatar-head').map(row => avatarHeadRecordSchema.parse(row.value));
+      const pendingAvatar = eligibleAvatars.filter(entry => survivingAvatar.some(head => head.descriptor?.asset.id === entry.descriptor.asset.id));
+      const copyPayloads: AvatarCopyPayload[] = pendingAvatar.map(entry => {
+        const original = records.filter(row => row.context.kind === 'avatar-cleanup').map(row => avatarCleanupRecordSchema.parse(row.value))
+          .find(row => sameAvatarBinding(row.binding, entry.binding) && row.assetId === entry.descriptor.asset.id);
+        requireValue(Boolean(original && original.expectedVersion + 1 === entry.version && original.committedVersion === entry.version
+          && canonical(original.descriptor) === canonical(entry.descriptor)), 'recovery_avatar_manifest');
+        const binding = { ...entry.binding, scope: { ...entry.binding.scope,
+          storageEpoch: firebaseRestoreEpoch(projectId, target.databaseId, input.restoreId, entry.binding.scope.workspaceId) } };
+        return { format: 'yuyoufang-avatar-restore-copy/v1', identity, restoreId: input.restoreId, sourceGeneration: input.sourceGeneration,
+          provenanceHash: input.descriptor.cipherSha256, originalInventoryHash, targetDatabaseId: target.databaseId,
+          targetBucket: options.avatars!.bucketName, evidence: sourceEvidence, source: entry,
+          cleanup: avatarCleanupRecordSchema.parse({ ...original!, binding, objectBinding: binding, reason: 'staging', state: 'writing',
+            preparedAsset: entry.descriptor.asset, descriptor: null, writeLease: null, attempt: 0 }) };
+      });
+      if (copyPayloads.length) { await validateAvatarSource(); await avatarCopies!.stage(copyPayloads); }
+      else requireValue(!copyInventory?.present, 'recovery_avatar_copy_inventory_changed');
+      const avatarDescriptors = new Map<string, AvatarObjectDescriptor>();
+      for (const copy of copyPayloads) {
+        const entry = copy.source;
+        const descriptor = await avatarCopies!.execute(copy, async () => {
+          await validateAvatarSource();
+          if (entry.backup) return options.avatars!.recovery.restoreAvatar({ ...entry, backup: entry.backup, backupId: input.backupId,
+            targetBinding: copy.cleanup.binding, authorizeCopy: validateAvatarSource });
+          const bytes = await options.avatars!.readNormalized(entry.binding, entry.descriptor, entry.version);
+          try { await validateAvatarSource(); return await options.avatars!.objects.write(copy.cleanup.binding, entry.descriptor.asset, bytes); }
+          finally { bytes.fill(0); }
+        });
+        avatarDescriptors.set(entry.descriptor.asset.id, descriptor);
+      }
+      const frozenCopies = copyPayloads.length ? await avatarCopies!.freeze(identity) : null;
       const photoDescriptors=new Map<string,FirebasePhotoObjectDescriptor>();
       for(const entry of pending){const targetScope={...entry.scope,storageEpoch:firebaseRestoreEpoch(projectId,target.databaseId,input.restoreId,entry.scope.workspaceId)};
         if(entry.backup)photoDescriptors.set(entry.photoId,await options.photos.restorePhoto({backupId:input.backupId,backup:entry.backup,targetScope}));
@@ -364,7 +519,8 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
           await options.chatFiles!.objects.read(entry.scope,entry.fileId,entry.descriptor).then(body=>options.chatFiles!.objects.write(targetScope,entry.fileId,body.base64,body.descriptor.mimeType));
         chatFileDescriptors.set(entry.fileId,descriptor);
       }
-      const plan=prepareFirebaseRestore(options,{...base,photoDescriptors,voiceDescriptors,chatFileDescriptors});
+      const plan=prepareFirebaseRestore(options,{...base,photoDescriptors,voiceDescriptors,chatFileDescriptors,avatarDescriptors,
+        avatarCopyResponsibilities:frozenCopies?.rows.map(row=>row.responsibility)});
       await assertPaused(input.sourceGeneration);
       const latestLive=await readAll(source),latestUsers=await currentAuth(records),latestEntries=await journalSnapshot();
       const observed=evidence(latestLive,latestUsers,latestEntries.map(row=>row.intent));
@@ -378,8 +534,10 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
         manifestSha256:input.descriptor.cipherSha256,sourceDatabaseId:source.databaseId,targetDatabaseId:target.databaseId,
         sourceGeneration:input.sourceGeneration,generation:plan.generation,journalHash:plan.journalHash,authHash:plan.authHash,authorityHash:plan.authorityHash,inventory});
       const ciphertext=cipher.encrypt(canonical(checkpoint),checkpointAad());
-      await staged.stage(applyIdentity(input),documents,plan.records,plan.removePaths,{format:'yuban-firebase-restore',version:1,ciphertext});
-      await resumeStaged(input);
+      await staged.stage(applyIdentity(input),documents,plan.records,plan.removePaths,{format:'yuban-firebase-restore',version:1,ciphertext},
+        frozenCopies ? { binding: { setHash: frozenCopies.setHash, recordsHash: frozenCopies.recordsHash, originalInventoryHash },
+          validateSource: validateAvatarSource } : undefined);
+      await resumeStaged(input,verifySnapshot);
       const result=await applied(input);requireValue(result!==null,'recovery_apply_unknown');
       await assertPaused(input.sourceGeneration);
       const after=evidence(await readAll(source),await currentAuth(records),(await journalSnapshot()).map(row=>row.intent));

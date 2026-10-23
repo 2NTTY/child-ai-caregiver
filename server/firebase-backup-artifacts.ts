@@ -1,3 +1,5 @@
+import { avatarBindingSchema, avatarObjectDescriptorSchema } from './avatar-data.ts';
+import { avatarBackupDescriptorSchema } from './firebase-avatar-recovery.ts';
 import { chatFileBackupDescriptorSchema } from './firebase-chat-file-recovery.ts';
 import { chatFileObjectDescriptorSchema } from './firebase-chat-file-objects.ts';
 import { voiceBackupDescriptorSchema } from './firebase-voice-recovery.ts';
@@ -61,6 +63,9 @@ export const firebaseBackupVoiceEntrySchema = z.object({path,voiceId:uuid,scope:
 export type FirebaseBackupVoiceEntry = z.infer<typeof firebaseBackupVoiceEntrySchema>;
 export const firebaseBackupChatFileEntrySchema = z.object({path,fileId:uuid,scope:workRecoveryScopeSchema,descriptor:chatFileObjectDescriptorSchema,backup:chatFileBackupDescriptorSchema}).strict();
 export type FirebaseBackupChatFileEntry = z.infer<typeof firebaseBackupChatFileEntrySchema>;
+export const firebaseBackupAvatarEntrySchema = z.object({ path, binding: avatarBindingSchema, version: z.number().int().min(1).max(2147483647),
+  descriptor: avatarObjectDescriptorSchema, backup: avatarBackupDescriptorSchema }).strict();
+export type FirebaseBackupAvatarEntry = z.infer<typeof firebaseBackupAvatarEntrySchema>;
 export const firebaseBackupManifestPayloadSchema = z.object({
   format: z.literal("yuban-firebase-backup-manifest/v1"), backupId: uuid, databaseId,
   snapshotTime: z.iso.datetime({ precision: 3 }), controlGeneration: uuid, sourceCommit: z.string().regex(/^[a-f0-9]{40}$/u),
@@ -69,6 +74,7 @@ export const firebaseBackupManifestPayloadSchema = z.object({
   inventory: firebaseBackupInventorySchema, photos: z.array(photoSchema).max(PHOTO_LIMITS.totalCount),
   voices: z.array(firebaseBackupVoiceEntrySchema).max(MAX_DOCUMENTS).optional(),
   chatFiles: z.array(firebaseBackupChatFileEntrySchema).max(MAX_DOCUMENTS).optional(),
+  avatars: z.array(firebaseBackupAvatarEntrySchema).max(MAX_DOCUMENTS).optional(),
 }).strict();
 export type FirebaseBackupManifestPayload = z.infer<typeof firebaseBackupManifestPayloadSchema>;
 export const firebaseBackupManifestDescriptorSchema = z.object({

@@ -1,3 +1,4 @@
+import { discloseAvatarReceipt } from './avatar-receipt-disclosure.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
@@ -105,6 +106,8 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
         }
       }
     }
+    if (visible && /^\/api\/(?:me|children\/[^/]+)\/avatar\/(?:uploads|commit|remove)$/u.test(record.path))
+      result = await discloseAvatarReceipt(data, binding, record.path, result);
     return { state: "confirmed", path: record.path, operation: record.operation, changeSeq: record.changeSeq,
       statusCode: record.statusCode, result: visible ? result : null };
   }
@@ -129,7 +132,7 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
     return { ownerUserId: binding.scope.ownerUserId, fingerprint: firestoreOnlineFingerprint(submission),
       childId, path: submission.path, operation: submission.operation };
   }
-  function preparePending(binding: FirestoreAuthorityTransaction, submission: OnlineSubmission, childId: string) {
+  function preparePending(binding: FirestoreAuthorityTransaction, submission: OnlineSubmission, childId: string | null) {
     const record: FirestoreOnlinePending = { ...identityFor(binding, submission, childId), state: "pending" };
     return { record, commit: prepare(binding, record, false) };
   }

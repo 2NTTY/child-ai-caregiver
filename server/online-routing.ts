@@ -35,6 +35,12 @@ export function onlineRoute(command: OnlineCommand): OnlineRoute {
     const target = z.object({ confirmWorkspaceId: z.uuid(), token: z.string().regex(/^[A-Za-z0-9_-]{43}$/u) }).strict().parse(command.payload);
     return { kind: "family", scope: "invitation", targetId: target.confirmWorkspaceId, roles: READ_ROLES, privateResult: true, deleted: false };
   }
+  if (/^\/api\/me\/avatar\/(?:uploads|commit|remove)$/u.test(path)) return {
+    kind: 'preferences', scope: 'personal', roles: ['owner'], privateResult: true, deleted: path.endsWith('/remove'),
+  };
+  const avatar = new RegExp(`^/api/children/(${uuid})/avatar/(?:uploads|commit|remove)$`, 'i').exec(path);
+  if (avatar) return { kind: 'profile', scope: 'child', targetId: avatar[1].toLowerCase(), roles: WRITE_ROLES,
+    privateResult: true, deleted: path.endsWith('/remove') };
   const child = new RegExp(`^/api/children/(${uuid})/(records|messages|delete|profile(?:/delete)?|care(?:/${uuid}/(?:revise|delete))?)$`, "i").exec(path);
   if (child) {
     const section = child[2];

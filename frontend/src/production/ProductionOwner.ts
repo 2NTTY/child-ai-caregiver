@@ -1,3 +1,5 @@
+import { createAvatarApi } from '../../../src/client/avatars-api.ts';
+import { AvatarOwner } from './AvatarOwner';
 import { createChatFileApi, type ChatFileApi } from '../../../src/client/chat-file-api.ts';
 import { ChatFileUploadController } from './ChatFileUploadController';
 import { createVoiceApi, type VoiceApi } from '../../../src/client/voice-api.ts';
@@ -32,6 +34,7 @@ export interface ProductionSnapshot {
 }
 export class ProductionOwner {
   readonly apiBaseUrl: string;
+  readonly avatarOwner: AvatarOwner;
   readonly fetcher: typeof fetch;
   private readonly native: boolean;
   readonly adminOwner: AdminOwner;
@@ -55,7 +58,7 @@ export class ProductionOwner {
     if (pending) this.domainPending.add(key); else this.domainPending.delete(key);
     this.syncMutationLocks(); this.snapshot = this.project(); this.emit();
   };
-  hasDomainPending = () => this.domainPending.size > 0 || Boolean(this.accountOwner?.hasPending()) || !!this.voiceOwner?.getSnapshot().busy || !!this.voiceOwner?.getSnapshot().unknown || !!this.fileOwner?.getSnapshot().busy || !!this.fileOwner?.getSnapshot().unknown;
+  hasDomainPending = () => !!this.avatarOwner?.hasPending() || this.domainPending.size > 0 || Boolean(this.accountOwner?.hasPending()) || !!this.voiceOwner?.getSnapshot().busy || !!this.voiceOwner?.getSnapshot().unknown || !!this.fileOwner?.getSnapshot().busy || !!this.fileOwner?.getSnapshot().unknown;
   handleDomainAccessError = (error: { status?: number; code?: string | null }) => {
     if (error.status === 401 || error.code === "session_changed" || error.code === "unauthorized") void this.controller.restoreSession();
     else if (error.status === 403 || error.code === "access_denied") this.denySelectedChild();
@@ -130,6 +133,15 @@ export class ProductionOwner {
       else this.denySelectedChild();
     }, this.invalidatePrivateReads, () => createProductAgentApi(this.apiBaseUrl, this.fetcher), this.fetcher);
     this.authorizationOwner = new AgentAuthorizationOwner(this.apiBaseUrl, online, identity => { if (identity) void this.controller.restoreSession(); else this.denySelectedChild(); }, this.invalidatePrivateReads, this.fetcher);
+    this.avatarOwner = new AvatarOwner(createAvatarApi(this.apiBaseUrl, this.fetcher, photoSha256), error => {
+      if (error.code === 'storage_epoch_changed' || error.code === 'identity_changed' || error.code === 'account_scope_changed') {
+        this.avatarOwner.syncContext(null, null, this.controller.getSnapshot().online); void this.controller.restoreSession();
+      } else if (error.status === 403 && error.target.kind === 'child') this.denySelectedChild();
+      else if (error.status === 403) void this.controller.restoreSession();
+      else this.handleDomainAccessError(error);
+    }, this.canStartDomainWrite, () => {
+      if (!this.syncingChat && this.snapshot) { this.syncMutationLocks(); this.snapshot = this.project(); this.emit(); }
+    });
     this.snapshot = this.project();
     this.unsubscribeAccount = this.accountOwner.subscribe(this.accountChanged);
     this.unsubscribeAgent = this.agentOwner.subscribe(() => this.syncMutationLocks());
@@ -238,6 +250,8 @@ export class ProductionOwner {
         void this.queryClient.cancelQueries({ queryKey: ["production", this.snapshot.scopeKey] });
         this.queryClient.removeQueries({ queryKey: ["production", this.snapshot.scopeKey] });
       }
+      this.avatarOwner?.syncContext(this.accountOwner.isReady() && this.identity && userId ? { key: this.identity, userId } : null,
+        nextScope && raw.selectedChildId ? { key: nextScope, childId: raw.selectedChildId } : null, raw.online);
       this.voiceOwner.syncContext(nextScope && userId && raw.selectedChildId ? {key:nextScope,userId,childId:raw.selectedChildId}:null,raw.online);
       this.fileOwner.syncContext(nextScope && userId && raw.selectedChildId ? {key:nextScope,userId,childId:raw.selectedChildId}:null,raw.online);
       this.draftOwner.retainScope(nextScope);
@@ -260,6 +274,7 @@ export class ProductionOwner {
     if (scope) {
       void this.queryClient.invalidateQueries({ queryKey: ["production", scope] });
     }
+    this.avatarOwner?.invalidate();
     this.authorizationOwner?.invalidateReceipts();
     const authorization = this.authorizationOwner?.getSnapshot();
     // New chat proposals must be discoverable even before the list has ever been opened.
@@ -307,6 +322,7 @@ export class ProductionOwner {
     this.unsubscribeAccount?.(); this.unsubscribeAccount = null;
     this.unsubscribeFile?.(); this.unsubscribeFile=null; this.fileOwner.dispose();
     this.unsubscribeVoice?.(); this.unsubscribeVoice=null; this.voiceOwner.dispose();
+    this.avatarOwner.dispose();
     this.adminOwner.dispose(); this.accountOwner.dispose(); this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();
     void this.queryClient.cancelQueries(); this.queryClient.clear(); this.listeners.clear();
   }

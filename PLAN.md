@@ -71,6 +71,15 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 定向結果分列：跨層 10/10（包含既有後端 8 項）、附件 focused 16/16、真 RN Web Modal 的有界 DOM 2/2。首 DOM 0/2 是 jsdom 沒有原生按鈕 Enter／Space default click 的測試方法錯誤，已保留並修正方法；真瀏覽器鍵盤仍未驗。8-root strict 512 MiB 檢查 exit137／無 diagnostics，原因未確定；不是完整或局部型別通過。精確版本、原紅及限制見[來源證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)。
 - `voice_assets`／`chat_file_assets` 各新增一個 `scopeTag ASC,state ASC,createdAt DESC,assetId DESC` composite index **源碼**；未部署索引、服務、GCP或OTA。來源 review 已通過及合併；原型別、build／GUI、原圖與原音、下載及正式 API／索引門檻繼續保留，不因合併改為通過。
 
+<a id="avatar-01"></a>
+### AVATAR-01 本人／孩子頭像（並行開發候選）
+
+- **範圍：**本人及有既有寫入權限的孩子可選圖、裁切、更換、明確移除；獨立私人資源，不進照片分析、模型或分享。沿已凍結[API](docs/API.md#avatar-api)及[data lifecycle](docs/DATA_MODEL.md#avatars)。
+- **狀態：**以 master `339c707` 整合原後端 freeze04 與新版前端差異，保留已合併 #253 內容；本包未部署，`AVATAR_LIFECYCLE_RELEASE_READY=false`，環境變數不能繞過，不當成完整可用。
+- **本輪證據：**真 client／owner 定向及 server codec 窄 roots 型別有證據；restore05 新增 authenticated staging marker／token fence、partial rollback與完整頁 promote。合成真 operator 跨頁中斷→重啟已核原 inventory、provenance、責任保留、不重 copy、current 後才 retire；不是原生 Firestore 演練。
+- **尚缺：**unknown／不可讀 copy、source/Auth/journal/provenance 改變或 legacy 未索引 partial plan 仍保留責任停住，`NOT_FULLY_RECOVERABLE`。domain／完整 server TS 未通（明確 heap OOM及原 signal9 收據保留）；既有 56 PASS／10 exact-baseline FAIL 不改成全過。原生 concurrency/index、clean lock 安裝、Web／Android EXIF一致及隔離恢復部署證據另待完成。
+- **完成門檻／次序：**只補受影響窄驗證與未解恢復路徑，獨立 review 後先交草稿；部署／解除 gate 依[頭像部署門檻](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)，不因本機codec或前端預覽綠直接開寫入。
+
 ### 保留的 Android 交付狀態
 
 - 管理員總控已於 #233 合併；每日及每輪設定只有一個權威。部署觀察、期限與未核對項只見 [STATUS](STATUS.md#deployment)。
