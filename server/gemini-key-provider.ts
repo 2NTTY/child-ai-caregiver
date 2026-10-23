@@ -13,6 +13,7 @@ import type { EmbeddingProvider, EmbeddingReply } from "./embedding-gateway.ts";
 import { ProviderFailure } from "./model-gateway.ts";
 import type { ModelProvider } from "./model-gateway.ts";
 import { readVertexReply } from "./vertex-provider.ts";
+import { personalProviderHttpError } from './personal-provider-error.ts';
 
 function readCount(value: unknown): number | null {
   if (value === undefined) return null;
@@ -40,7 +41,7 @@ function readKeyEmbedding(response: EmbedContentResponse): EmbeddingReply {
     billableCharacters: readCount(response.metadata?.billableCharacterCount) };
 }
 
-export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provider: PersonalModelProvider = 'gemini',
+export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provider: Exclude<PersonalModelProvider, 'openai-compatible'> = 'gemini',
   options: { documentEmbeddings?: boolean } = {}): {
   agent: AgentModelProvider;
   model: ModelProvider;
@@ -150,7 +151,8 @@ export function createGeminiKeyProviders(config: AiConfig, apiKey: string, provi
         } catch (error) {
           if (signal.aborted) throw new EmbeddingFailure("cancelled");
           if (error instanceof EmbeddingFailure) throw error;
-          throw new EmbeddingFailure(error instanceof ApiError && error.status === 400 ? "invalid_input" : "unavailable");
+          if (error instanceof ApiError) throw personalProviderHttpError(error.status, error.message, 'embedding');
+          throw new EmbeddingFailure("unavailable");
         }
       },
     },

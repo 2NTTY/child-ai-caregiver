@@ -6,7 +6,7 @@ import { parseModelSettingsCommand } from './model-settings.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { firestoreDomainHash } from './firestore-domain-data.ts';
-import { modelSettingsOperationSchema, personalAdvancedShape, personalModelIdSchema, personalProviderSchema } from '../src/shared/model-settings-schema.ts';
+import { modelSettingsOperationSchema, personalAdvancedShape, personalModelIdSchema, personalProviderSchema, personalBaseUrlSchema } from '../src/shared/model-settings-schema.ts';
 
 const savedSchema = z.object({
   limitPolicyVersion: z.literal(2).optional(),
@@ -16,7 +16,9 @@ const savedSchema = z.object({
   maxModelCalls: z.number().int().min(PERSONAL_RUN_LIMITS.modelCalls.min).max(PERSONAL_RUN_LIMITS.modelCalls.max),
   maxQueryEmbeddings: z.number().int().min(PERSONAL_RUN_LIMITS.queryEmbeddings.min).max(PERSONAL_RUN_LIMITS.queryEmbeddings.max),
   provider: personalProviderSchema.optional(), model: personalModelIdSchema.optional(), ...personalAdvancedShape,
-  apiKey: z.string().min(20).max(512).regex(/^[\x21-\x7e]+$/u).nullable(),
+  apiKey: z.string().min(1).max(512).regex(/^[\x21-\x7e]+$/u).nullable(),
+  baseUrl: personalBaseUrlSchema.optional(),
+  embeddingApiKey: z.string().min(1).max(512).regex(/^[\x21-\x7e]+$/u).nullable().optional(),
   updatedAt: z.iso.datetime({ offset: true }),
 }).strict();
 type Saved = z.infer<typeof savedSchema>;
@@ -28,6 +30,8 @@ function publicSettings(value: Saved | null): ModelSettings {
   return { ...(value?.limitPolicyVersion ? { limitPolicyVersion: value.limitPolicyVersion } : {}),
     version: value?.version ?? 0, mode: value?.mode ?? 'platform', provider: value?.provider ?? 'gemini', model: value?.model ?? PERSONAL_MODEL,
     keyConfigured: value?.apiKey != null, backgroundEnabled: value?.backgroundEnabled ?? false,
+    ...(value?.baseUrl ? { baseUrl: value.baseUrl } : {}),
+    ...(value?.embeddingApiKey !== undefined ? { embeddingKeyConfigured: value.embeddingApiKey !== null } : {}),
     dailyLimit: value?.dailyLimit ?? PERSONAL_DAILY_LIMIT.default, maxModelCalls: value?.maxModelCalls ?? PERSONAL_RUN_LIMITS.modelCalls.default,
     maxQueryEmbeddings: value?.maxQueryEmbeddings ?? PERSONAL_RUN_LIMITS.queryEmbeddings.default, ...advanced(value), updatedAt: value?.updatedAt ?? null };
 }
@@ -52,7 +56,8 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
   return {
     get: userId => authority.runTransaction(userId, null, async binding => publicSettings(await read(binding))),
     resolve: userId => authority.runTransaction(userId, null, async binding => {
-      const saved = await read(binding); return { settings: publicSettings(saved), apiKey: saved?.apiKey ?? null };
+      const saved = await read(binding); return { settings: publicSettings(saved), apiKey: saved?.apiKey ?? null,
+        embeddingApiKey: saved?.embeddingApiKey ?? null };
     }),
     isCurrent: (userId, expectedVersion) => authority.runTransaction(userId, null, async binding => ((await read(binding))?.version ?? 0) === expectedVersion),
     getOperation: (userId, opId) => {
@@ -62,7 +67,7 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
         return result ? { opId: result.opId, settings: result.settings } : null;
       });
     },
-    async save(userId, raw) {
+    async save(userId, raw, client) {
       const command = parseModelSettingsCommand(raw), operationId = command.opId ?? randomUUID();
       const fingerprint = firestoreDomainHash(command);
       return authority.runTransaction(userId, null, async binding => {
@@ -72,17 +77,27 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
           return original.settings;
         }
         const current = await read(binding);
+        // Check in the same write transaction; an extra pre-read would consume a lost-response recovery attempt.
+        if (client?.maxSettingsVersion === 2 && (current?.provider === 'openai-compatible' || current?.baseUrl || current?.embeddingApiKey))
+          throw new ModelSettingsError('client_update_required', 409);
         if ((current?.version ?? 0) !== command.expectedVersion) throw new ModelSettingsError('version_conflict', 409);
         const apiKey = command.removeKey ? null : command.apiKey ?? current?.apiKey ?? null;
         const provider = command.provider ?? current?.provider ?? 'gemini', model = command.model ?? current?.model ?? PERSONAL_MODEL;
+        if (command.baseUrl !== undefined && provider !== 'openai-compatible') throw new ModelSettingsError('invalid_input');
+        const baseUrl = provider === 'openai-compatible' ? command.baseUrl ?? current?.baseUrl ?? 'https://api.openai.com/v1' : undefined;
         if (provider !== (current?.provider ?? 'gemini') && apiKey && !command.apiKey) throw new ModelSettingsError('key_required');
+        if (baseUrl !== current?.baseUrl && provider === 'openai-compatible' && apiKey && !command.apiKey)
+          throw new ModelSettingsError('key_required');
         if (command.mode === 'personal' && !apiKey) throw new ModelSettingsError('key_required');
         const saved = savedSchema.parse({ version: command.expectedVersion + 1, mode: command.mode, backgroundEnabled: command.backgroundEnabled,
           dailyLimit: command.dailyLimit, maxModelCalls: command.maxModelCalls, maxQueryEmbeddings: command.maxQueryEmbeddings,
           ...(command.opId || current?.limitPolicyVersion ? { limitPolicyVersion: 2 } : {}),
           provider, model, ...advanced(current), ...Object.fromEntries(Object.keys(personalAdvancedShape)
             .filter(key => Object.hasOwn(command, key)).map(key => [key, command[key as keyof typeof command]])),
-          apiKey, updatedAt: new Date().toISOString() });
+          apiKey, ...(baseUrl ? { baseUrl } : {}),
+          ...(command.removeKey || command.removeEmbeddingKey || command.embeddingApiKey || current?.embeddingApiKey !== undefined
+            ? { embeddingApiKey: command.removeKey || command.removeEmbeddingKey ? null : command.embeddingApiKey ?? current?.embeddingApiKey ?? null } : {}),
+          updatedAt: new Date().toISOString() });
         const change = await binding.prepareChange(operationId, 'preferences', false);
         const envelope = { ...data.tags(binding.scope), ...data.seal('model-settings', userId, binding.scope, savedSchema, saved, saved.version) };
         const result = publicSettings(saved);

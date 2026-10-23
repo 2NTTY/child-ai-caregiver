@@ -326,6 +326,8 @@ Word `.docx` 採固定 `mammoth 1.13.0`（BSD-2-Clause）`extractRawText`，不�
 <a id="personal-google-keys"></a>
 ### MODEL-SELF01 個人 Google key（2026-10-18）
 
+MODEL-SELF03補充（2026-10-23）：沿ADK 2.1.0的現有`AgentModelProvider`端口接OpenAI相容Chat Completions；固定依賴未有原生相容provider，使用Node 24 HTTPS薄adapter，沒有新增Agent框架或供應商SDK。依[官方Chat Completions契約](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)保留`tool_calls.id`與`tool_call_id`、JSON參數、用量及完整工具往返；只送完整函式參數，不把普通文字當已完成業務操作。圖片及WAV／MP3按協定轉換，其他媒體明示限制，不宣稱逐模型兼容已驗。地址沿既有公共IP檢查並固定DNS結果，HTTPS憑證不跟隨redirect；無SDK暗中重試。供應商錯誤只轉成具體受控原因，不回傳原始body；相同gateway負責用量／重試／取消，餘額耗盡不當成普通限流重試。向量仍用原Gemini模型／1024維索引，只分離本人key。合成工具、設定／收據、錯誤及型別證據見[MODEL03](../artifacts/verification/MODEL_SELF03_BACKEND_20261023.json)，真服務及畫面接線仍待完成。
+
 沿既有 Google Gen AI SDK 2.24.0（Apache-2.0）與ADK 2.1.0，不新增供應商SDK。Gemini Developer key使用`enterprise:false`；Vertex Express key使用`enterprise:true`及global v1，不帶平台project／location，避免隱式ADC。官方Express REST只列countTokens／generateContent／streamGenerateContent，沒有已核對的模型目錄或embedding方法；因此只接生成，其他能力明示未支援，不改借平台。[Express API](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/express-mode/api-reference)／[SDK固定版本](https://github.com/googleapis/js-genai/tree/v2.24.0)。
 
 Gemini目錄使用原生`models.list`的Pager，最多兩頁各100項，取支援generateContent的合法Gemini ID，去重後最多回20項並明示截斷；不讀完整列表或自動試用每個模型。目錄只作參考，用戶亦可直接指定模型ID。已知Gemini2.5採thinkingBudget（Pro動態、Flash／Lite關閉可選thinking），既有Gemini3保留thinkingLevel；其餘型號省略可選thinking參數，避免錯套另一型號設定。這是參數相容選擇，不宣稱品質／速度已實測；metadata也不等於生成或embedding可用。[模型目錄](https://ai.google.dev/api/models)／[thinking配置](https://ai.google.dev/gemini-api/docs/thinking)。SDK／HTTP重試維持一次，由正式gateway統一有限重試與計量。合成接線及真服務未驗邊界見[MODEL01 EV](../artifacts/verification/MODEL_SELF01_SETTINGS_20261018.json)。

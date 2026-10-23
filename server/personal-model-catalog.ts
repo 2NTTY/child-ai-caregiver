@@ -17,5 +17,6 @@ export function personalModelEntry(id: string, provider: PersonalModelProvider, 
     capabilities: { tools: Boolean(profile), image: Boolean(profile), audio: Boolean(profile), textStreaming: Boolean(profile) } };
 }
 export function personalModelCatalog(provider: PersonalModelProvider): PersonalModelCatalogEntry[] {
+  if (provider === 'openai-compatible') return [];
   return models.filter(([id]) => provider !== 'vertex' || expressModels.has(id)).map(([id]) => personalModelEntry(id, provider));
 }

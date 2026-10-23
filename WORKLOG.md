@@ -3424,3 +3424,12 @@
 - 使用者澄清只需提供共用個人憑證接口，不應以本機地區拒絕、替用戶取得key或逐模型驗收阻擋使用。核對現行保存、routing及表單，沒有地域或metadata成功前置；本次只更新PLAN／SPEC／STATUS及本地指引，不改產品程式或宣稱新增能力。
 - Vertex AI具備向量接口；現有個人`vertex` adapter只接Express生成，向量直接返回unavailable，仍列實作缺口。平台／本機ADC的成功與個人key分開，不新增付款回退、認證服務或組織政策修改。既有失敗、真key／Android個人模式未驗及角色缺口保留。
 - 基線master `fd92a46`，沒有其他open PR；A單作者交付。只核對相關diff、現行引用及WORKLOG追加邊界，不跑產品測試、模型、裝置或部署。
+
+<a id="log-20261023-compatible-model-backend"></a>
+## LOG-20261023-COMPATIBLE-MODEL-BACKEND
+
+- 額度中斷後由恢復快照`9fccfce`接回原MODEL-SELF03修改，並同步master `7b828dc`。核對#253前端及#254 Agent仍未合併，依使用者指示不修改／接管／合併其成果。活動分支`codex/personal-compatible-provider`，A單作者；一位獲准Sol只處理設定API相容及合成檢查，主模型負責模型協定、外送邊界、錯誤／交易裁決與review。
+- 相容Chat Completions以API地址、本人key及模型ID直接使用既有ADK gateway；不查模型名單或先跑metadata。保留工具關聯、共同用量／取消／重試；公開HTTPS固定DNS、不跟redirect送密鑰。另存本人Gemini向量key，保持原1024維索引，不借平台憑證。錯誤分類區分key、模型、供應商餘額、限流、工具／媒體、向量配置及HTTP拒絕；原始錯誤可能包含私人輸入，所以不直接回傳body。
+- v3設定沿原加密資料、版本及操作收據。現有共用client仍使用v2；新設定令舊client明確要求更新，而不是默默改回Google。沒有改#253的ModelSettingsView／owner或#254的runtime／提示詞；未重疊form schema僅對齊共用provider型別。
+- 初輪相關10項合成檢查通過；恢復v2預設後有1項原操作查回失敗，定位為新預先讀取消耗遺失回覆注入，已把資格核對移到原寫入交易，6項受影響檢查通過。寬Server型別入口含未改前端及舊測試錯誤；本包限定型別與模型設定畫面依賴型別通過。不修改其他錯誤來湊全綠。方法、版本及未驗見[後端證據](artifacts/verification/MODEL_SELF03_BACKEND_20261023.json)。
+- 零真模型／embedding／通知、無雲端更新或付費資源。新表單、全部密鑰清理接點與正式部署待#253穩定後承接；本地開發入口仍可用，但不能把後端這一段當成相容模型已在網站／Android交付，整體目標維持未完成。
