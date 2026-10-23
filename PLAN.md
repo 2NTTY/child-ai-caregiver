@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：MODEL-SELF03 共用個人模型設定及真機發現的局部修正已發布。**#267的`4bfdf98`已更新原站Web及Android preview OTA，修正草稿捨棄及共用關注圖標；API／worker保持`1282e09`。手機先前已見新設定欄位，但最新修正版真機補核、真key保存／呼叫未驗。#254、#259及#262～#265維持協作者處理；詳見[MODEL03](#model-self03)。
+**當前：MODEL-SELF03 已發布，手機草稿捨棄補核通過；收束共用導航接線。**#267的`4bfdf98`已更新原站Web及Android preview OTA；手機載入新關注圖標後，未保存模式／供應商草稿捨棄、離頁及返回已通過，精確裝置OTA ID未讀取。`codex/shared-native-navigation`再把其餘原生底欄圖標／標籤接回Web同一`navigationItems`；兩項現有定向檢查通過，這批接線尚未發布。真key保存／呼叫未驗；#254、#259及#262～#265／#269維持協作者處理。詳見[MODEL03](#model-self03)。
 
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
@@ -79,7 +79,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="model-self03"></a>
 ### MODEL-SELF03 自行試用相容模型接口
 
-- 2026-10-23手機補核：一次正常重開後出現新導航及相容設定；沒有輸入key、保存、模型或通知。發現保留掛載的設定頁只清密鑰，沒有清除已捨棄的模式／供應商／限額草稿。#267改為離頁時從權威快照重設本機表單，不清原unknown操作；兩項針對性React檢查通過，保留初次斷言失敗。另按使用者回報，Android關注圖標／標籤改讀Web同一份metadata，不改版面。`4bfdf98`已更新原站Web及相容Android OTA，API／worker未動；最新裝置回歸及真key仍待驗。[補核與修正](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)／[發布證據](artifacts/verification/MODEL_SELF03_DRAFT_DELIVERY_20261023.json)。
+- 2026-10-23手機補核發現捨棄後殘留草稿；#267已修正並發布`4bfdf98`，保留原失敗及兩項React檢查。2026-10-24補核先觀察到手機仍載入舊圖標／舊表單，停止該批；新圖標出現後，只補同一流程，確認未保存個人模式／相容服務草稿可捨棄，實際離頁再返回會恢復平台模式且不再dirty。沒有輸入key、保存設定或呼叫模型，精確OTA ID未讀取，真key仍未驗。[原修正](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)／[發布](artifacts/verification/MODEL_SELF03_DRAFT_DELIVERY_20261023.json)／[本次補核](artifacts/verification/SHARED_NATIVE_NAVIGATION_20261024.json)。
+- 共用導航：按使用者要求，五個原生Tabs及核對按鈕的圖標／標籤讀同一`frontend/src/components/navigation/app-navigation.ts`，圖案沿`AppIcon`；核對／更多目的地亦沿共用href。手機五入口、手勢、選中狀態與離頁guard保持。修改共用metadata會同時影響Web／Android來源，發布仍沿原Web／相容OTA流程，不代表網站發布會自動更新已安裝App。本批只改兩個產品檔案、兩項現有定向檢查通過；現有顯示值不變，未為此重建／發布，下一次相容Android更新帶入。
 - 後端／本地入口#255、#256及共用畫面[#260](https://github.com/2NTTY/child-ai-caregiver/pull/260)已合併。A單作者；#260合併版本`1282e09`於2026-10-23更新原站與相容Android preview OTA，沒有改#254／#259。主模型統籌契約、整合及review，本輪特許的原Astra子代理接續獨立核對；[交付證據](artifacts/verification/MODEL_SELF03_DELIVERY_20261023.json)分開已發布、未驗及回退邊界。
 - 沿同一Web／Android設定、加密保存、原opId、配額及ADK Agent，新增相容API base URL、key與直接輸入模型ID。普通Chat Completions、工具往返及可轉換媒體接薄adapter；不另造Agent、不換模型、不新增自動重試或逐模型測試。供應商不接受某請求時回報錯誤，不把未知能力當作禁止選用。
 - 自訂地址限公開HTTPS，不把憑證送到內網／metadata服務或重新導向；不開任意headers。必要資料外送說明改為用戶所選服務，私人內容與key不入日誌。
