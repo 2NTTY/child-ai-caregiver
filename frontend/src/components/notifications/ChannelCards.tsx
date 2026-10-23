@@ -97,6 +97,7 @@ function RuntimeNotices({ model }: { model: SharedModel }) {
 
 function ChannelReviewPanel({ model, actions, production }: { model: SharedModel; actions: SharedActions; production: boolean }) {
   const replacingChallenge = model.review?.kind === "begin" && "challenge" in model && model.challenge !== null;
+  const native = "platform" in model && (model.platform === "android" || model.platform === "ios");
   return <>
     {model.conflict ? <View style={styles.review}>
       <Text accessibilityRole="header" style={styles.title}>渠道狀態已有更新</Text>
@@ -109,8 +110,8 @@ function ChannelReviewPanel({ model, actions, production }: { model: SharedModel
       <Text style={styles.meta}>核對版本：{model.review.expectedVersion === null ? "新登記／綁定，未有既有版本" : model.review.expectedVersion}</Text>
       <Text style={styles.body}>{replacingChallenge
         ? "服務接受重新開始後，會立即令目前的 Telegram 連結及候選帳號失效，並建立新的 10 分鐘連結；舊候選與勾選須重新核對。每小時最多 6 次開始，達限時請稍後重讀。"
-        : reviewScope[model.review.kind]}</Text>
-      <AppCheckbox label={replacingChallenge ? "我明白舊連結及候選帳號會失效，並同意重新開始" : reviewLabels[model.review.kind]} checked={model.review.confirmed}
+        : native && model.review.kind === "enable" ? "只登記本人的這個裝置。系統通知權限及裝置訂閱不代表已授權所有任務提醒或主動聯絡。" : reviewScope[model.review.kind]}</Text>
+      <AppCheckbox label={replacingChallenge ? "我明白舊連結及候選帳號會失效，並同意重新開始" : native && model.review.kind === "enable" ? "我同意登記本人的這個裝置" : reviewLabels[model.review.kind]} checked={model.review.confirmed}
         disabled={model.locked || model.conflict} onChange={actions.confirmReview} />
       <View style={styles.actions}>
         <AppButton label={production ? "確認這項渠道操作" : "模擬確認這項渠道操作"} disabled={!model.online || model.locked || model.conflict || !model.review.confirmed} onPress={actions.submit} />
@@ -136,17 +137,18 @@ function RecentDeliveries({ deliveries, emptyReady }: { deliveries: ChannelDeliv
   </View>;
 }
 
-function BrowserEnableForm({ form, disabled, stageEnable, production, native = false }: { form: UseFormReturn<BrowserLabelValues>; disabled: boolean; stageEnable(label: string): void; production: boolean; native?: boolean }) {
+function BrowserEnableForm({ form, disabled, stageEnable, production, platform }: { form: UseFormReturn<BrowserLabelValues>; disabled: boolean; stageEnable(label: string): void; production: boolean; platform?: PushSettingsModel["platform"] }) {
   const formId = useId();
   const error = form.formState.errors.label?.message;
+  const native = platform === "android" || platform === "ios", deviceName = platform === "ios" ? "iOS" : "Android";
   return <View style={[styles.stack, styles.group]}>
     <FormErrorSummary entries={error ? [{ field: "label", label: native ? "裝置名稱" : "瀏覽器名稱", message: error }] : []} onFocus={() => form.setFocus("label")} />
     <Controller name="label" control={form.control} render={({ field, fieldState }) => <View>
-      <AppTextField ref={field.ref} nativeID={`${formId}-label`} aria-invalid={!!fieldState.error} aria-describedby={`${formId}-label-message`} label={native ? "裝置名稱" : "瀏覽器名稱"} accessibilityLabel={native ? "Android通知裝置名稱" : "瀏覽器通知名稱"} value={field.value}
+      <AppTextField ref={field.ref} nativeID={`${formId}-label`} aria-invalid={!!fieldState.error} aria-describedby={`${formId}-label-message`} label={native ? "裝置名稱" : "瀏覽器名稱"} accessibilityLabel={native ? `${deviceName}通知裝置名稱` : "瀏覽器通知名稱"} value={field.value}
         disabled={disabled} onChangeText={field.onChange} onBlur={field.onBlur} error={!!fieldState.error} />
       <FormFieldMessage id={`${formId}-label-message`} error={fieldState.error?.message} help="去除前後空格後須有內容，最多 80 字元；只供你辨認本人訂閱。" />
     </View>} />
-    <AppButton label={native ? "啟用此 Android 裝置通知" : production ? "啟用此瀏覽器通知" : "預覽啟用此瀏覽器通知"} disabled={disabled} onPress={form.handleSubmit(values => stageEnable(values.label.trim()), () => form.setFocus("label"))} />
+    <AppButton label={native ? `啟用此 ${deviceName} 裝置通知` : production ? "啟用此瀏覽器通知" : "預覽啟用此瀏覽器通知"} disabled={disabled} onPress={form.handleSubmit(values => stageEnable(values.label.trim()), () => form.setFocus("label"))} />
   </View>;
 }
 
@@ -168,34 +170,40 @@ export function WebPushSettingsCard({ model, actions: sourceActions, operationNo
       sourceActions.submit();
     },
   };
-  const form = useForm<BrowserLabelValues>({ defaultValues: { label: "我的瀏覽器" }, resolver: zodResolver(browserLabelSchema), mode: "onSubmit", shouldFocusError: false });
+  const form = useForm<BrowserLabelValues>({ defaultValues: { label: model.platform === "ios" ? "我的iOS裝置" : model.platform === "android" ? "我的Android裝置" : "我的瀏覽器" }, resolver: zodResolver(browserLabelSchema), mode: "onSubmit", shouldFocusError: false });
   const ready = model.readState === "ready";
   const actionBlocked = !model.online || model.locked || !!model.review || model.conflict;
   const canEnable = ready && !actionBlocked && model.available && model.browserSupported && model.permission !== "denied" && model.permission !== "unsupported";
-  const native = model.platform === "android";
-  const deviceName = native ? "Android裝置" : "瀏覽器";
+  const native = model.platform === "android" || model.platform === "ios";
+  const deviceName = native ? model.platform === "ios" ? "iOS裝置" : "Android裝置" : "瀏覽器";
   const cooldownReady = model.nextTestAt === null || Date.parse(model.nextTestAt) <= Date.now();
-  const guidance = production && model.permission === "default" ? `須由你在${deviceName}權限提示中選擇允許，才可登記本人的訂閱。` : permissionGuidance[model.permission];
+  const guidance = native ? ({ default: `須由你在${deviceName}權限提示中選擇允許，才可登記本人的訂閱。`,
+    granted: "系統通知權限已允許；仍須登記本人裝置，才可使用這個渠道。",
+    denied: "請到系統設定更改育有方的通知權限，再回來重新讀取；本頁不能代你更改權限。",
+    unsupported: "這個裝置目前不支援通知。你仍可查看及撤銷既有本人訂閱。" }[model.permission])
+    : production && model.permission === "default" ? `須由你在${deviceName}權限提示中選擇允許，才可登記本人的訂閱。` : permissionGuidance[model.permission];
+  const unavailable = native ? "此裝置的通知服務目前未可用，不能啟用此裝置；你仍可撤銷既有本人訂閱，測試按各訂閱的服務狀態提供。"
+    : "通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。";
   return <SectionCard style={styles.card}>
     <ChannelAnnouncements model={model} />
     <StatusAnnouncement eventKey={model.permission} message={`通知權限：${permissionLabels[model.permission]}。${guidance}`} urgent={model.permission === "denied"} />
-    <StatusAnnouncement eventKey={`${model.available}:${model.browserSupported}`} message={!model.available ? "通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。" : !model.browserSupported ? "此設備未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。" : ""} />
+    <StatusAnnouncement eventKey={`${model.available}:${model.browserSupported}`} message={!model.available ? unavailable : !model.browserSupported ? "此設備未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。" : ""} />
     <SectionHeader density="compact" title={`我的${deviceName}通知`} icon="bell-outline" subtitle={`只管理本人的${deviceName}訂閱。`}
       action={ready && (model.conflict || model.permission === "denied") ? <AppButton label={`重新讀取${deviceName}狀態`} variant="quiet" disabled={!model.online || model.locked || !!model.review} onPress={actions.refresh} /> : undefined} />
     {production ? operationNotice : null}
     {!ready ? <ReadState state={model.readState} online={model.online} locked={production ? model.readState === "loading" : model.locked} refresh={actions.refresh} /> : <>
       <RuntimeNotices model={model} />
       {!production ? operationNotice : null}
-      {!model.available ? <StateNote tone="warning">通知服務目前未可用，不能啟用訂閱或發送測試；你仍可撤銷既有本人訂閱。</StateNote> : null}
+      {!model.available ? <StateNote tone="warning">{unavailable}</StateNote> : null}
       <View style={styles.entry}>
         <AppStatusBadge label={`通知權限：${permissionLabels[model.permission]}`} tone={model.permission === "granted" ? "success" : model.permission === "denied" ? "warning" : "neutral"} />
         <Text style={styles.body}>{guidance}</Text>
         {!model.browserSupported && model.permission !== "unsupported" ? <Text style={styles.warning}>此設備未具備所需支援，不能啟用新訂閱；既有訂閱仍可撤銷。</Text> : null}
       </View>
-      <BrowserEnableForm native={native} form={form} disabled={!canEnable} stageEnable={actions.stageEnable} production={production} />
+      <BrowserEnableForm platform={model.platform} form={form} disabled={!canEnable} stageEnable={actions.stageEnable} production={production} />
       <ChannelReviewPanel model={model} actions={actions} production={production} />
       <View style={[styles.stack, styles.group]}>
-        <Text accessibilityRole="header" style={styles.title}>本人{deviceName}訂閱</Text>
+        <Text accessibilityRole="header" style={styles.title}>本人{native ? "裝置" : deviceName}訂閱</Text>
         {model.bindings.length === 0 ? model.online ? <EmptyListCard title={`目前沒有本人${deviceName}訂閱`} /> : null : model.bindings.map(binding => {
           const deliveryNeedsReview = pushDeliveryNeedsReview(model.deliveries, binding.id);
           const confirmed = !!confirmedOperation && !!bindingIntent && model.online && ready && !model.locked && !model.review && !model.conflict
