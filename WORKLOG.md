@@ -3498,3 +3498,10 @@
 
 - 使用者明確把本地最後引用／審核補驗延後，先等四個Agent真正完成及協作者自行檢查。PLAN／STATUS已改為此恢復條件，不以個別PR合併或環境啟動取代角色自查；本聊天不提前整合／重跑或接管協作者修改。
 - 先前只唯讀核對#263／#265固定head及相關程式差異，沒有建立角色整合分支、修改角色、啟動本地服務或呼叫模型。原失敗、快照與有效證據保留；這次只改文件、核對diff及既有連結，不跑產品測試。
+
+<a id="log-20261023-attachment-media-source"></a>
+## LOG-20261023-ATTACHMENT-MEDIA-SOURCE
+
+- 接續原附件前後端候選，將26個source/test檔整合到`339c707`的獨立分支；不改已合併#253或頭像候選。只新增唯讀本人聊天附件清單及薄前端呈現，原照片／播放／下載授權與unknown邊界保留；詳情移至既有local dialog，權限短標為「本人」。
+- 跨層10/10、focused16/16及RN Web Modal DOM2/2分開記錄；首DOM0/2由jsdom不執行native-button default click造成，修正測試方法而非新增產品鍵盤handler。8-root strict 512 MiB檢查exit137、沒有diagnostics，原因未知；未重試或當作型別通過。[證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)保留完整來源hash、原紅及驗證界線。
+- 兩個Firestore composite index僅源碼，未部署。build／四尺寸GUI、真瀏覽器Enter／Space、原音／下載、實際API與雲端索引仍待驗；只有合成資料，沒有真模型／家庭媒體、GCP、OTA或正式資料操作。獨立草稿來源交付與驗收／發布／合併分開。

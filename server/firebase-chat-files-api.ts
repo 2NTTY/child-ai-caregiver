@@ -1,9 +1,10 @@
+import { attachmentListQuery } from './firestore-attachment-list.ts';
 import { z } from 'zod';
 import { CHAT_FILE_LIMITS, chatFileReservationSchema } from '../src/shared/chat-files.ts';
 import type { FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { FirestoreDomainError, domainParse, domainReject } from './firestore-domain-data.ts';
 
-export type FirebaseChatFileApiPort = Pick<FirestoreChatFilesStore, 'reserve' | 'get' | 'upload' | 'reconcile' | 'content' | 'delete'>;
+export type FirebaseChatFileApiPort = Pick<FirestoreChatFilesStore, 'reserve' | 'get' | 'upload' | 'reconcile' | 'content' | 'delete'> & Partial<Pick<FirestoreChatFilesStore, 'list'>>;
 export const CHAT_FILE_UPLOAD_BODY_BYTES = Math.ceil(CHAT_FILE_LIMITS.bytes / 3) * 4 + 1024;
 const version = z.number().int().positive();
 const uploadSchema = z.object({ expectedVersion: version, base64: z.string().min(1).max(CHAT_FILE_UPLOAD_BODY_BYTES - 1024) }).strict();
@@ -30,11 +31,16 @@ export async function handleFirebaseChatFileRequest(request: Request, userId: st
   if (expected !== userId) domainReject('session_changed', 409);
   const url = new URL(request.url), match = /^\/api\/children\/([^/]+)\/files(?:\/([^/]+)(?:\/(content|resolve|delete))?)?$/u.exec(url.pathname);
   if (!match || !z.uuid().safeParse(match[1]).success || match[2] && !z.uuid().safeParse(match[2]).success) domainReject('not_found', 404);
-  if (url.search) domainReject('invalid_input', 400);
+  const listing = request.method === 'GET' && !match[2];
+  const listQuery = listing ? attachmentListQuery(url) : undefined;
+  if (!listing && url.search) domainReject('invalid_input', 400);
   const childId = match[1].toLowerCase(), id = match[2]?.toLowerCase(), action = match[3];
   const active = async () => { if (!await isCurrentUser(userId)) domainReject('identity_changed', 409); };
   await active(); let response: Response;
-  if (request.method === 'POST' && !id) {
+  if (listing) {
+    if (!chatFile.list) domainReject('attachment_list_unavailable', 503);
+    response = Response.json(await chatFile.list(userId, childId, listQuery));
+  } else if (request.method === 'POST' && !id) {
     const input = domainParse(chatFileReservationSchema, await json(request)); await active();
     response = Response.json({ file: await chatFile.reserve(userId, childId, input) }, { status: 201 });
   } else if (request.method === 'GET' && id && !action) response = Response.json({ file: await chatFile.get(userId, childId, id) });

@@ -1048,6 +1048,17 @@ OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 P
 帳戶匯出增加 `files`／`file_content`（內容每頁一份）；讀取沿同一授權及刪除屏障。Web／Android由同一 `ChatFileUploadController` 保存原預留／unknown狀態；下載原檔另核目前版本，頁面不維護第二份可寫附件。
 
 
+<a id="private-attachment-lists"></a>
+### 本人已傳送附件的唯讀清單
+
+- `GET /api/children/:childId/voices` 及 `GET /api/children/:childId/files` 接受可選 `limit`／不透明 `cursor`；省略 cursor 讀首頁。共用 client 為 `voiceApi.list`／`fileApi.list`，不取代既有上傳、原 opId、查回或刪除流程。
+- 回應 `{items,nextCursor,complete,scanned,pagePolicy?}`；items 沿既有附件 DTO，但只包含目前本人、同孩子、`ready` 且已連結聊天的附件 metadata，不含原件、轉錄或 Storage URL。語音保留時長；影片仍為可下載的通用原檔，不新增播放或分析能力。
+- 排序為 `createdAt DESC, id DESC`。游標指向最後掃描項；空 items 仍可有下一頁，`complete === (nextCursor === null)` 只代表該次遍歷已到末端，不代表永久完整快照或全庫總量。照片保持原清單，不把三類首頁合稱全庫最新排序。
+- 沿 session、同源及 `x-expected-user-id`；Server 在查詢及回傳前核對權限。加密游標綁本人／workspace／孩子／儲存世代、來源及授權版本，跨範圍／版本回 `409 attachment_scope_changed`；非法游標回 `400 invalid_cursor`，完整性不符回 `503 attachment_list_integrity`，清單能力缺失回 `503 attachment_list_unavailable`。
+- 清單按 Server policy 控制單次返回與掃描工作量，不是附件總數上限；`ATTACHMENT_LIST_DEFAULT_LIMIT`／`ATTACHMENT_LIST_MAX_LIMIT`／`ATTACHMENT_LIST_SCAN_LIMIT` 的預設及校驗集中於共用 schema。前端清除失權／換 scope 的舊頁及游標，拒絕遲到結果；同 scope 網絡失敗保留舊內容並標示可重試，不回退假空清單。原件播放／下載仍逐次重新授權及核對版本／hash。
+
+部署／驗收狀態見 [ATTACHMENT-READ01](../PLAN.md#attachment-read01)，端點源碼存在不代表正式服務或索引已部署。
+
 <a id="local-agent-development"></a>
 ### 本機開發端點與正式 API
 

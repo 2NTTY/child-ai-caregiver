@@ -56,11 +56,20 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
+**另行接續：[ATTACHMENT-READ01](#attachment-read01) 附件回看已整合獨立來源候選，型別／GUI／部署未過門檻；不追加已合併的 #253。**
+
 **當前：MODEL-SELF03 已發布，手機草稿捨棄補核通過；收束共用導航接線。**#267的`4bfdf98`已更新原站Web及Android preview OTA；手機載入新關注圖標後，未保存模式／供應商草稿捨棄、離頁及返回已通過，精確裝置OTA ID未讀取。`codex/shared-native-navigation`再把其餘原生底欄圖標／標籤接回Web同一`navigationItems`；兩項現有定向檢查通過，這批接線尚未發布。真key保存／呼叫未驗；#254、#259及#262～#265／#269維持協作者處理。詳見[MODEL03](#model-self03)。
 
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
 **下一步：**[MODEL-SELF03](#model-self03)已可由用戶在Web／Android自行填寫憑證及模型試用；不再為逐模型預驗阻擋入口。只在取得真實錯誤或有效驗收條件時補受影響項，不重跑已通過檢查。依使用者2026-10-24指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗延後，等待四個Agent真正完成且協作者先自行檢查，之後再安排；不因個別PR可合併或環境可啟動便提前重跑、接管角色修改。既有角色缺口及Android未驗項保留。
+
+<a id="attachment-read01"></a>
+### ATTACHMENT-READ01：附件回看與私人清單（source review，未完成）
+
+- 基線 `339c707`，獨立分支 `dot/attachment-media-followup-20261023`；26 個 source/test 檔＝22 產品＋4 測試。原照片 owner 保留；語音／影片／文件走[唯讀清單契約](docs/API.md#private-attachment-lists)，必要來源／時間改用可關閉詳情彈窗，媒體操作獨立，不展示技術版本字串。
+- 定向結果分列：跨層 10/10（包含既有後端 8 項）、附件 focused 16/16、真 RN Web Modal 的有界 DOM 2/2。首 DOM 0/2 是 jsdom 沒有原生按鈕 Enter／Space default click 的測試方法錯誤，已保留並修正方法；真瀏覽器鍵盤仍未驗。8-root strict 512 MiB 檢查 exit137／無 diagnostics，原因未確定；不是完整或局部型別通過。精確版本、原紅及限制見[來源證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)。
+- `voice_assets`／`chat_file_assets` 各新增一個 `scopeTag ASC,state ASC,createdAt DESC,assetId DESC` composite index **源碼**；未部署索引、服務、GCP或OTA。來源 review 已通過；後續建立獨立草稿 PR，再排 build／四尺寸 GUI／原圖與原音、下載及正式 API／索引驗收；合成預覽不代替正式接通，不自動 merge。
 
 ### 保留的 Android 交付狀態
 

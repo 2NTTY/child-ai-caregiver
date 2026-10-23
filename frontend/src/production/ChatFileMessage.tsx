@@ -9,7 +9,7 @@ import { exportAttachment } from '../platform/file-export';
 import { AppButton } from '../components/ui';
 
 /** Presentation only: the shared API authorizes every download of the original. */
-export function ChatFileMessage({ messageId, file }: { messageId: string; file: ChatFileMessageReference }) {
+export function ChatFileMessage({ messageId, file, compact = false }: { messageId: string; file: ChatFileMessageReference; compact?: boolean }) {
   const env = useDomainEnvironment(), api = env.owner.fileApi;
   const [busy, setBusy] = useState(false), [notice, setNotice] = useState<string | null>(null);
   const request = useRef<AbortController | null>(null), live = useRef(true);
@@ -40,8 +40,7 @@ export function ChatFileMessage({ messageId, file }: { messageId: string; file: 
   }
   const attachment = metadata.isError ? undefined : metadata.data, readable = attachment && matches(attachment);
   return <View>
-    <Text>{readable ? attachment.fileName : attachment ? '附件已刪除或不可用' : '檔案附件'} · {Math.max(1,Math.round(file.bytes / 1024))} KB</Text>
-    <Text>不支援預覽</Text>
+    {!compact ? <><Text>{readable ? attachment.fileName : attachment ? '附件已刪除或不可用' : '檔案附件'} · {Math.max(1,Math.round(file.bytes / 1024))} KB</Text><Text>不支援預覽</Text></> : attachment && !readable ? <Text>附件已刪除或不可用</Text> : null}
     <AppButton label="下載原檔" variant="quiet" disabled={!env.online || !readable || busy} loading={busy} onPress={() => { void download(); }} />
     {metadata.isError ? <AppButton label="重新讀取附件資料" variant="quiet" disabled={!env.online || metadata.isFetching} onPress={() => { void metadata.refetch(); }} /> : null}
     {notice ? <Text accessibilityRole="alert">{notice}</Text> : null}
