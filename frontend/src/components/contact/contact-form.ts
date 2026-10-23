@@ -2,8 +2,8 @@ import {z} from 'zod';
 import type {ContactBinding, ContactConsentDecision, ContactGrant, ContactGrantDecision, ContactPage} from '../../contact-view-model.ts';
 import {sameContactBinding} from '../../contact-view-model.ts';
 
-const binding = z.object({channel: z.enum(['web_push', 'telegram']), bindingId: z.uuid(), bindingVersion: z.number().int().positive()});
-export function contactConsentFormSchema(available: ContactBinding[]) {return z.object({enabled: z.boolean(), allowBackup: z.boolean(), bindings: z.array(binding).max(2)}).superRefine((value, context) => {
+const binding = z.object({channel: z.enum(['web_push', 'telegram', 'native_push']), bindingId: z.uuid(), bindingVersion: z.number().int().positive()});
+export function contactConsentFormSchema(available: ContactBinding[]) {return z.object({enabled: z.boolean(), allowBackup: z.boolean(), bindings: z.array(binding).max(3)}).superRefine((value, context) => {
   if (value.enabled && (!value.bindings.length || new Set(value.bindings.map(item => item.channel)).size !== value.bindings.length || value.bindings.some(item => !available.some(current => sameContactBinding(current, item))))) context.addIssue({code: 'custom', path: ['bindings'], message: '每渠道最多選一個目前可用的本人綁定，至少選一個。'});
 });}
 export type ConsentFormValues = {enabled: boolean; allowBackup: boolean; bindings: ContactBinding[]};

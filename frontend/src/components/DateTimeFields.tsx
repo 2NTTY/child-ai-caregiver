@@ -10,12 +10,13 @@ import { useModalBackdrop } from "../motion/useModalBackdrop";
 import { chineseFont, colors, spacing, typeScale } from "../theme";
 import { calendarDate, calendarValue, dateTimeParts, dateTimeValue, hongKongTimeZone, timeZoneLabel, timeZoneOptions } from "./date-time";
 import { AppButton, AppSelect, AppSelectionTrigger, AppTextField } from "./ui";
+import { useQuietReadFocus } from "./useQuietReadFocus";
 import "./date-picker-action";
 
 registerTranslation("zh-HK", { ...zhTW, save: "確認日期" });
 
 type FieldProps = { label: string; value: string; onChange: (value: string) => void; onBlur?: () => void; disabled?: boolean; error?: string; id?: string; errorId?: string; describedBy?: string };
-type TextFieldProps = FieldProps & { ref?: Ref<React.ElementRef<typeof TextInput>> };
+type TextFieldProps = FieldProps & { ref?: Ref<React.ElementRef<typeof TextInput>>; preserveFocusWhenDisabled?: boolean };
 function webEscape(dismiss: () => void) {
   return Platform.OS === "web" ? { onKeyDown: (event: { key: string; preventDefault: () => void; stopPropagation: () => void }) => {
     if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); dismiss(); }
@@ -67,19 +68,21 @@ function TimePickerDialog({ label, value, visible, onConfirm, onDismiss }: { lab
     <AppButton label="取消" variant="quiet" onPress={onDismiss} /><AppButton label="選用時間" disabled={!valid}
     onPress={() => onConfirm(`${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`)} /></Dialog.Actions></Dialog></Portal>;
 }
-export function AppDateField({ label, value, onChange, onBlur, disabled = false, error, ref, id, errorId, describedBy }: TextFieldProps) {
+export function AppDateField({ label, value, onChange, onBlur, disabled = false, preserveFocusWhenDisabled = false, error, ref, id, errorId, describedBy }: TextFieldProps) {
   const generatedId = useId();
   const messageId = errorId ?? `${generatedId}-error`;
   const [open, setOpen] = useState(false);
   const field = useRef<React.ElementRef<typeof TextInput>>(null);
   const restoreFocus = useRef(false);
+  const readFocus = useQuietReadFocus(disabled, preserveFocusWhenDisabled);
+  const quietRead = disabled && readFocus.preserveWebFocus;
   function dismiss() { restoreFocus.current = true; setOpen(false); }
   function closed() {
     if (restoreFocus.current && !open && !disabled && Platform.OS === "web") field.current?.focus();
     restoreFocus.current = false;
   }
-  return <View><AppTextField nativeID={id} aria-invalid={!!error} aria-describedby={[describedBy, error ? messageId : undefined].filter(Boolean).join(" ") || undefined} ref={instance => { field.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={label} accessibilityLabel={label} value={value} onChangeText={onChange} onBlur={onBlur} disabled={disabled} error={!!error}
-    placeholder="YYYY-MM-DD" right={<TextInput.Icon icon="calendar-month-outline" accessibilityLabel={`選擇${label}`} disabled={disabled} onPress={() => { restoreFocus.current = false; setOpen(true); }} />} />
+  return <View ref={readFocus.host}><AppTextField nativeID={id} aria-invalid={!!error} tabIndex={quietRead ? -1 : undefined} readOnly={quietRead ? true : undefined} aria-describedby={[describedBy, error ? messageId : undefined].filter(Boolean).join(" ") || undefined} ref={instance => { field.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} label={label} accessibilityLabel={label} value={value} onChangeText={next => { if (!disabled) onChange(next); }} onBlur={onBlur} disabled={readFocus.nativeDisabled} error={!!error}
+    placeholder="YYYY-MM-DD" right={<TextInput.Icon icon="calendar-month-outline" accessibilityLabel={`選擇${label}`} forceTextInputFocus={!disabled} disabled={readFocus.nativeDisabled} onPress={() => { if (!disabled) { restoreFocus.current = false; setOpen(true); } }} />} />
     {error ? <HelperText nativeID={messageId} type="error">{error}</HelperText> : null}
     <DatePickerDialog label={label} value={value} visible={open && !disabled} onDismiss={dismiss} onClosed={closed} onConfirm={next => { onChange(next); dismiss(); }} />
   </View>;
@@ -96,9 +99,9 @@ export function AppTimeField({ label, value, onChange, onBlur, disabled = false,
     <TimePickerDialog label={label} value={value} visible={open && !disabled} onDismiss={dismiss} onConfirm={next => { onChange(next); dismiss(); }} />
   </View>;
 }
-export function AppTimeZoneSelect({ value, onChange, onBlur, disabled = false, ref, id, invalid, describedBy }: { value: string; onChange: (value: string) => void; onBlur?: () => void; disabled?: boolean; ref?: Ref<View>; id?: string; invalid?: boolean; describedBy?: string }) {
+export function AppTimeZoneSelect({ value, onChange, onBlur, disabled = false, preserveFocusWhenDisabled = false, ref, id, invalid, describedBy }: { value: string; onChange: (value: string) => void; onBlur?: () => void; disabled?: boolean; preserveFocusWhenDisabled?: boolean; ref?: Ref<View>; id?: string; invalid?: boolean; describedBy?: string }) {
   const options = timeZoneOptions.some(item => item.value === value) ? timeZoneOptions : [...timeZoneOptions, { value, label: `${value}（原設定）` }];
-  return <AppSelect ref={ref} id={id} invalid={invalid} describedBy={describedBy} label="時區" value={value} options={options} onChange={onChange} onBlur={onBlur} disabled={disabled} />;
+  return <AppSelect ref={ref} id={id} invalid={invalid} describedBy={describedBy} label="時區" value={value} options={options} onChange={onChange} onBlur={onBlur} disabled={disabled} preserveFocusWhenDisabled={preserveFocusWhenDisabled} />;
 }
 export function AppDateTimeField({ label, value, onChange, onBlur, disabled = false, error, timeZone = hongKongTimeZone, optional = false, ref, id, errorId, describedBy }: FieldProps & { timeZone?: string; optional?: boolean; ref?: Ref<View> }) {
   const generatedId = useId();

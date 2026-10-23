@@ -23,15 +23,19 @@ const rowIcons: Record<string, AppIconName> = {
   "操作": "pencil-outline", "種類": "clipboard-check-outline", "負責人": "account-outline",
   "負責人識別": "account-outline", "新負責人識別": "account-outline", "原任務": "clipboard-check-outline",
   "到期時間": "calendar-clock-outline", "新到期時間": "calendar-clock-outline", "時區": "clock-outline",
-  "有效至": "clock-outline", "觀察時間": "calendar-clock-outline", "一次站內跟進": "calendar-clock-outline",
+  "有效至": "clock-outline", "確認期限": "calendar-clock-outline", "觀察時間": "calendar-clock-outline", "一次站內跟進": "calendar-clock-outline",
   "接受後可見範圍": "eye", "範圍": "shield-check-outline", "邊界": "shield-check-outline",
-  "明確授權交模型的片段": "shield-check-outline", "用途": "information-outline",
-  "適用性聲稱": "information-outline", "來源連結": "link-variant", "關聯": "link-variant",
+  "明確授權交模型的片段": "shield-check-outline", "用途": "compass-outline",
+  "適用性聲稱": "shield-check-outline", "來源": "file-document-outline", "來源連結": "link-variant", "關聯": "link-variant",
   "更新後名稱": "pencil-outline", "原因": "message-text-outline", "覆核為": "clipboard-check-outline",
 };
 
-export function proposalDetailIcon(label: string): AppIconName {
-  return Object.hasOwn(rowIcons, label) ? rowIcons[label] : "information-outline";
+export function proposalDetailIcon(label: string, value?: string): AppIconName | null {
+  // This exact projection describes a chat source; free-form source text stays neutral.
+  if (label === "來源" && value === "你在這次聊天提供的內容，需由你核對") return "message-text-outline";
+  if (label === "接受後可見範圍" && value === "本人") return "lock-outline";
+  if (label === "接受後可見範圍" && value === "家庭共享；目前只限你查看，確認後按家庭權限共享。") return "account-group-outline";
+  return Object.hasOwn(rowIcons, label) ? rowIcons[label] : null;
 }
 
 export function proposalDetailIsChange(kind: AgentProposalView["kind"], label: string): boolean {

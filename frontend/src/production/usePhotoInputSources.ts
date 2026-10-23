@@ -49,7 +49,8 @@ export function usePhotoInputSources() {
   const current = () => live.current && envRef.current.current();
   const available = () => current() && envRef.current.online && !!envRef.current.userId && !!envRef.current.childId && !ref.current.lost;
   const editable = () => envRef.current.role !== "viewer" && envRef.current.role !== null;
-  const fresh = () => available() && ref.current.load === "ready" && !ref.current.busy && !ref.current.pending && !ref.current.latest && ref.current.operation.state !== "conflict";
+  const readFresh = () => available() && ref.current.load === "ready" && !ref.current.pending && !ref.current.latest && ref.current.operation.state !== "conflict";
+  const fresh = () => readFresh() && !ref.current.busy;
   const canRead = () => fresh() && !ref.current.direct && envRef.current.role !== null;
   const consentReset = { fetchConsent: false, modelConsent: false, sharedConsent: false, childFactConsent: false, reviewed: null, deleteScope: false, deleteFinal: false };
   const clearEditor = () => update({ resourceUnavailable: false, selected: null, latest: null, direct: null, composerSeed: null, draft: emptyPhotoDraft(), uncertainties: [], excerpt: "",
@@ -172,7 +173,7 @@ export function usePhotoInputSources() {
     }
     const page = await e.queryClient.fetchQuery({ queryKey: ["production", e.scopeKey, "shared-inputs"], queryFn: () => api.inputs(e.childId!, signal, e.userId!), staleTime: 0, retry: false });
     if (!current()) return;
-    update({ inputs: page.inputs, sources: page.sources, canCreate: page.canCreate, load: "ready" });
+    update({ inputs: page.inputs, sources: page.sources, canCreate: page.canCreate });
     const basis = ref.current.selected, unresolved = ref.current.pending;
     if (basis && !ref.current.direct && !(unresolved?.confirmed && unresolved.kind === "delete")) {
       const next = await readResource(basis.id, signal, () => api.input(e.childId!, basis.id, signal, e.userId!)); if (!current() || !next) return;
@@ -186,7 +187,7 @@ export function usePhotoInputSources() {
       update({ pending: { ...ref.current.pending, checked: true } }); op(ref.current.pending!.kind, "confirmed_unavailable", "原收據已確認，但結果無法識別。清單已重讀；不能按原文或 hash 猜測，也不會再次建立。", true);
     }
     // List success alone does not recover a failed selected-detail read.
-    if (ref.current.notice === readFailureNotice) update({ notice: "" });
+    update({ load: "ready", ...(ref.current.notice === readFailureNotice ? { notice: "" } : {}) });
   }
   const refresh = () => {
     if (ref.current.busy) { refreshRequested.current = true; return; }
@@ -221,7 +222,7 @@ export function usePhotoInputSources() {
     notice: state.notice, draft: state.draft, draftUncertainties: state.uncertainties, formKey: state.formKey, reviewed: state.reviewed, confirmationKind: state.confirmationKind,
     composerSeed: state.composerSeed ? projectSource(state.composerSeed) : null, excerpt: state.excerpt, fetchConsent: state.fetchConsent, modelConsent: state.modelConsent,
     sharedConsent: state.sharedConsent, childFactConsent: state.childFactConsent, deleteOpen: state.deleteOpen, deleteScope: state.deleteScope, deleteFinal: state.deleteFinal,
-    busy: state.busy, fresh: isFresh, formLocked, canChoose: isFresh && !state.direct && editable(),
+    busy: state.busy, readFresh: readFresh(), fresh: isFresh, formLocked, canChoose: isFresh && !state.direct && editable(),
     canFetch: isFresh && managed && !state.managementDraft?.dirty && selected?.management?.enabled !== false && !selected?.recordId && !!selected?.sourceUrl && selected.kind !== "paste" && !state.direct && !unknownState && ["not_requested", "failed"].includes(selected.fetchState),
     canExtract: isFresh && managed && !state.managementDraft?.dirty && selected?.management?.enabled !== false && !selected?.recordId && !!selected?.text.trim() && !state.direct && !unknownState && ["not_requested", "failed"].includes(selected.extraction.state),
     canConfirm, canDelete: isFresh && managed && directManual,

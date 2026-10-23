@@ -9,6 +9,7 @@ import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type Layout
 import { Text } from "react-native-paper";
 import { AppButton, SectionCard } from "../components/ui";
 import { AppDialog } from "../components/AppDialog";
+import { StatusAnnouncement } from "../components/StatusAnnouncement";
 import { AgentComposer } from "../components/agent/AgentComposer";
 import { ChatMessage, ChatProgressIndicator } from "../components/chat/ChatMessage";
 import { ChatTimeline, type ChatTimelineControls } from "../components/chat/ChatTimeline";
@@ -88,8 +89,7 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const replyRunning = chat.busy === "reply" || chat.remoteReply?.status === "running";
   const progressLabel = chat.busy === "save" ? "正在保存…"
     : chat.busy === "reply" ? (chat.feedback ? AGENT_PROGRESS_LABELS[chat.feedback.phase] : "已保存，正在等候回覆…")
-      : chat.loading && chat.messages.length ? "正在讀取聊天…"
-        : chat.remoteReply?.status === "running" ? "原回覆仍在處理，毋須重新發送。" : null;
+      : chat.remoteReply?.status === "running" ? "原回覆仍在處理，毋須重新發送。" : null;
   const feedback = child ? <BackgroundSurface style={styles.feedback}>
     {fileUpload.busy?<Text accessibilityLiveRegion="polite" style={styles.meta}>正在上傳原檔；確認保存後才開始處理…</Text>:null}
     {fileUpload.notice?<Text accessibilityRole="alert" style={styles.warning}>{fileUpload.notice}</Text>:null}
@@ -124,12 +124,13 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
       composerGuardId={composerGuardId} /> : null)}
   </BackgroundSurface> : null;
   const confirmedEmptyChat = !!child && chat.selectedChildId === child.id && !chat.messages.length && !!chat.loadedAt
-    && !chat.loading && !chat.loadingOlder && !chat.nextCursor && !chat.error;
+    && !chat.loadingOlder && !chat.nextCursor && !chat.error;
   const empty = !child ? <SectionCard><Text style={styles.body}>先選擇孩子。</Text><AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>
-    : chat.loading ? <BackgroundSurface padded frosted style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></BackgroundSurface>
+    : chat.loading && !chat.loadedAt ? <BackgroundSurface padded frosted style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></BackgroundSurface>
       : confirmedEmptyChat && !busy && !agentAttachments.length && phase === "draft" ? <BackgroundSurface padded frosted testID="chat-empty-prompt" style={styles.emptyState}>
         <Text accessibilityRole="header" style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>想先聊聊什麼？</Text></BackgroundSurface> : null;
   return <>
+    <StatusAnnouncement eventKey={chat.loading && !!chat.loadedAt ? "refreshing" : "settled"} message={chat.loading && !!chat.loadedAt ? "正在重新核對聊天。" : ""} />
     <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn, externalActivity && styles.externalToolbar]}>
       <Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text>
       <View style={styles.toolbarActions}>

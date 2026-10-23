@@ -5,6 +5,8 @@ import { careKindOptions, type CareFilter, type CareRecordsActions, type CareRec
 import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 import { AppButton, AppSelect, AppTextField } from "../ui";
 import { AppStatusBadge } from "../AppStatusBadge";
+import { AppIcon } from "../AppIcon";
+import { useQuietReadFocus } from "../useQuietReadFocus";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { CareWriteNotice } from "./CareReviewHistoryView";
 import { CareRecordDetail } from "./CareRecordDetail";
@@ -60,10 +62,10 @@ function CareSavedRecordsBody({ model, actions, inlineDetail = true, history = f
   const loading = ["loading", "loading_more"].includes(model.list.state);
   const hasSnapshot = model.list.hasSnapshot ?? model.list.records.length > 0;
   const filtered = !!model.list.activeQuery.trim() || model.list.activeKind !== "all";
-  const empty = model.online && model.list.state === "ready" && !model.list.records.length && model.list.message === null;
+  const empty = model.online && (model.list.state === "ready" || loading && hasSnapshot) && !model.list.records.length && model.list.message === null;
   const showSearch = !empty || filtered || !!query.trim() || kind !== "all" || model.list.hasPrevious || model.list.hasMore;
-  const readState = !model.list.records.length && !model.online ? "stale" : loading && (!hasSnapshot || !model.list.records.length) ? "loading" : model.list.state === "error" ? "error" : model.list.state === "stale" ? hasSnapshot ? "stale" : "unavailable" : model.list.message ? "unavailable" : model.list.records.length ? "ready" : "empty";
-  const readMessage = model.list.message ?? (!model.list.records.length && !model.online ? "目前離線，記錄尚未核對。" : loading && (!hasSnapshot || !model.list.records.length) ? "正在讀取記錄…" : model.list.state === "error" ? "未能讀取記錄，請重試。" : model.list.state === "stale" ? model.online ? "記錄尚待重新核對。" : "目前離線，記錄尚未核對。" : empty ? filtered ? "沒有符合篩選的已保存記錄" : model.list.hasMore || model.list.hasPrevious ? "此頁暫無已保存記錄" : "暫無已保存記錄" : "");
+  const readState = !model.list.records.length && !model.online ? "stale" : loading && !hasSnapshot ? "loading" : model.list.state === "error" ? "error" : model.list.state === "stale" ? hasSnapshot ? "stale" : "unavailable" : model.list.message ? "unavailable" : model.list.records.length ? "ready" : "empty";
+  const readMessage = model.list.message ?? (!model.list.records.length && !model.online ? "目前離線，記錄尚未核對。" : loading && !hasSnapshot ? "正在讀取記錄…" : model.list.state === "error" ? "未能讀取記錄，請重試。" : model.list.state === "stale" ? model.online ? "記錄尚待重新核對。" : "目前離線，記錄尚未核對。" : empty ? filtered ? "沒有符合篩選的已保存記錄" : model.list.hasMore || model.list.hasPrevious ? "此頁暫無已保存記錄" : "暫無已保存記錄" : "");
   if (model.access === "lost") return <ReadStateNotice state="unavailable" message="目前沒有權限查看這個孩子的記錄。" />;
   if (inlineDetail && model.deletion) return <CareRecordDelete model={model} actions={actions} />;
   if (inlineDetail && model.detail) return <CareRecordDetail detail={model.detail} actions={actions} canEdit={model.access === "editable"} online={model.online} onReturnToList={history ? returnToList : undefined} />;
@@ -79,10 +81,20 @@ function CareSavedRecordsBody({ model, actions, inlineDetail = true, history = f
       const content = <><Text numberOfLines={history ? 2 : undefined} style={s.title}>{record.title}</Text><Text numberOfLines={history ? 3 : 2} style={s.body}>{record.current.values.text}</Text>
         <AppStatusBadge label={record.current.version > 1 ? "已更正" : "已保存"} tone="success" />{history ? <Text style={s.meta}>{record.current.confirmedAtLabel ?? "確認時間未知"} · 版本 {record.current.version}</Text> : null}</>;
       return history ? <HistoryEntryCard key={record.id} testID={`care-history-card-${record.id}`} cardRef={node => { if (node) cardRefs.current.set(record.id, node); else cardRefs.current.delete(record.id); }} accessibilityLabel={`查看${record.title}`} disabled={occupied || loading} preserveFocusWhenDisabled={loading && hasSnapshot && !occupied} onPress={() => { cancelReturn(); anchor.current = { id: record.id, context }; actions.openRecord(record.id); }} style={s.historyCard}>{content}</HistoryEntryCard>
-        : <Pressable key={record.id} accessibilityRole="button" accessibilityLabel={`查看${record.title}`} disabled={occupied || loading} onPress={() => actions.openRecord(record.id)} style={s.row}>{content}</Pressable>;
+        : <SavedRecordCard key={record.id} id={record.id} label={savedRecordAccessibilityLabel(record.current.values.text || record.title)} disabled={occupied || loading} quietRefresh={loading && hasSnapshot && !occupied} onPress={() => actions.openRecord(record.id)}>
+          <View style={s.recordLabels}>{record.current.values.text ? <Text style={s.recordKind}>{record.title}</Text> : null}<AppStatusBadge label={record.current.version > 1 ? "已更正" : "已保存"} tone="success" /></View>
+          <Text numberOfLines={3} style={s.recordText}>{record.current.values.text || record.title}</Text>
+          <View style={s.recordLabels}><AppIcon name="clock-outline" size={14} /><Text accessibilityLabel={`確認時間：${record.current.confirmedAtLabel ?? "未知"}`} style={[s.meta, { flex: 1 }]}>{record.current.confirmedAtLabel == null ? "確認時間未知" : `確認於 ${record.current.confirmedAtLabel}`}</Text></View>
+        </SavedRecordCard>;
     })}</SavedRecordsGrid>
     {model.list.hasPrevious || model.list.hasMore ? <View style={s.controls}><AppButton label="上一頁" density="compact" variant="secondary" onPress={() => actions.previousPage?.()} disabled={occupied || loading || !model.online || !model.list.hasPrevious || !actions.previousPage} /><Text style={s.meta}>第 {model.list.page ?? 1} 頁</Text><AppButton label="下一頁" density="compact" variant="secondary" onPress={actions.loadMore} disabled={occupied || loading || !model.online || !model.list.hasMore || model.list.state === "stale"} /></View> : null}
   </View>;
 }
+function SavedRecordCard({ id, label, disabled, quietRefresh, onPress, children }: { id: string; label: string; disabled: boolean; quietRefresh: boolean; onPress(): void; children: ReactNode }) {
+  const readFocus = useQuietReadFocus(disabled, quietRefresh);
+  return <Pressable ref={readFocus.host} testID={`care-saved-card-${id}`} accessibilityRole="button" accessibilityLabel={label}
+    accessibilityState={{ disabled }} aria-disabled={disabled} disabled={readFocus.nativeDisabled} onPress={() => { if (!disabled) onPress(); }} style={s.row}>{children}</Pressable>;
+}
+function savedRecordAccessibilityLabel(text: string) { const characters = Array.from(text); return `查看${characters.slice(0, 100).join("")}${characters.length > 100 ? "…" : ""}`; }
 function SavedRecordsGrid({ history, children }: { history: boolean; children: ReactNode }) { return history ? <HistoryCardGrid testID="care-history-cards">{children}</HistoryCardGrid> : <>{children}</>; }
-const s = StyleSheet.create({ historyCard: { padding: spacing.md, borderRadius: radius.medium }, workspace: { gap: spacing.md }, controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" }, filter: { flexGrow: 1, minWidth: 0 }, row: { padding: spacing.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.controlSurface, gap: spacing.sm }, title: { fontFamily: chineseFont, ...readingType.tool, fontWeight: "700", color: colors.ink }, body: { fontFamily: chineseFont, ...readingType.tool, color: colors.ink }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted } });
+const s = StyleSheet.create({ historyCard: { padding: spacing.md, borderRadius: radius.medium }, workspace: { gap: spacing.md }, controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" }, filter: { flexGrow: 1, minWidth: 0 }, row: { padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small, backgroundColor: colors.controlSurface, gap: spacing.sm }, recordLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }, recordKind: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, flexShrink: 1 }, recordText: { fontFamily: chineseFont, ...readingType.body, color: colors.ink }, title: { fontFamily: chineseFont, ...readingType.tool, fontWeight: "700", color: colors.ink }, body: { fontFamily: chineseFont, ...readingType.tool, color: colors.ink }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted } });

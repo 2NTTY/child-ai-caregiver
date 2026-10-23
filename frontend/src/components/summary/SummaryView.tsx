@@ -34,7 +34,7 @@ export function SummaryView({model, actions, onRecord, onTask, onAgent, previewT
   const [refreshTrigger, setRefreshTrigger] = useState<number | null>(null);
   const refreshSerial = useRef(0);
   const page = model.page, queryValid = summaryPeriodSchema.safeParse(model.query).success;
-  const emptyReady = !!page && model.online && !model.readFailed && !model.busy && !model.pending && model.access !== 'lost'
+  const emptyReady = !!page && model.online && !model.readFailed && !model.pending && model.access !== 'lost'
     && (model.operation === 'none' || model.operation === 'saved');
   const revealEligible = !!page && model.online && !model.busy && !model.readFailed && !model.pending && model.access !== 'lost'
     && (model.operation === 'none' || model.operation === 'saved');

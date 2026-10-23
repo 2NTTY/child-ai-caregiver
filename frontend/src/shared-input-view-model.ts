@@ -40,6 +40,8 @@ export type SourcesViewModel = {
   draft: PhotoDraftFields; draftUncertainties: readonly string[]; formKey: number; reviewed: PhotoDraftFields | null; confirmationKind: SourceConfirmationKind;
   composerSeed: SourceInput | null; excerpt: string; fetchConsent: boolean; modelConsent: boolean; sharedConsent: boolean; childFactConsent: boolean;
   deleteOpen: boolean; deleteScope: boolean; deleteFinal: boolean;
+  // A successful reading snapshot stays visible while controls are locked by a background GET.
+  readFresh?: boolean;
   busy: boolean; fresh: boolean; formLocked: boolean; canChoose: boolean; canFetch: boolean; canExtract: boolean; canConfirm: boolean; canDelete: boolean;
 };
 export type SourcesActions = {

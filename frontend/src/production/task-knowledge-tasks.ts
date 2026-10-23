@@ -1,3 +1,4 @@
+import { readLoadedIdWindow } from "./task-knowledge-read-window";
 import { projectConfirmedTask } from "./task-projection.ts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
@@ -21,9 +22,10 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
   const [detailRead, setDetailRead] = useState<TasksViewModel["detailRead"]>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null), [draft, setDraft] = useState<TaskDraft | null>(null);
   const [latest, setLatest] = useState<TaskView | null>(null), [operation, setOperation] = useState(none);
-  const [histories, setHistories] = useState<Record<string, { items: TaskRevisionView[]; cursor: number | null }>>({});
+  const [histories, setHistories] = useState<Record<string, { taskVersion: number; items: TaskRevisionView[]; cursor: number | null }>>({});
   const [historyOpen, setHistoryOpen] = useState(false), [loadingMore, setLoadingMore] = useState(false);
   const busy = useRef(false), attempt = useRef<Attempt | null>(null), committed = useRef(false), checked = useRef(false);
+  const readThrough = useRef<string | null>(null);
   const clock = useRef(new Date().toISOString());
   const queuedSelection = useRef<{ id: string; intent: TaskSelectionIntent } | null>(null), selectLatest = useRef<(id: string, intent: TaskSelectionIntent) => void>(() => {});
   const canManage = env.role === "owner" || env.role === "caregiver";
@@ -37,8 +39,11 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
     if (await api.getSession(signal) !== env.userId) throw new TaskApiError(401);
     return result;
   };
-  const load = async (signal: AbortSignal, current: () => boolean, after: string | null = null) => {
-    const value = await runtime.read(["page", after], next => verified(inner => api.tasks(env.childId!, after, inner), next), signal);
+  const load = async (signal: AbortSignal, current: () => boolean, after: string | null = null, preserveReading = false) => {
+    const readPage = (cursor: string | null) => runtime.read(["page", cursor], next => verified(inner => api.tasks(env.childId!, cursor, inner), next), signal);
+    const pages = after === null ? await readLoadedIdWindow(preserveReading ? readThrough.current : null, current, readPage) : [await readPage(after)];
+    const value: TaskPage = pages.length === 1 ? pages[0]! : { ...pages.at(-1)!, items: pages.flatMap(page => page.items),
+      reminders: pages.flatMap(page => page.reminders ?? []), work: pages.flatMap(page => page.work ?? []) };
     if (!current()) return;
     if (after === null) {
       const outsidePage = selectedId && !value.items.some(item => item.id === selectedId);
@@ -47,14 +52,17 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
         : null;
       if (!current()) return;
       setLinkedTask(selectedValue);
+      const versions = new Map([...value.items, ...(selectedValue ? [selectedValue] : [])].map(item => [item.id, item.version]));
+      setHistories(previous => Object.fromEntries(Object.entries(previous).filter(([id, history]) => versions.get(id) === history.taskVersion)));
     }
+    readThrough.current = value.items.at(-1)?.id ?? (after === null ? null : readThrough.current);
     setReadState("ready");
     clock.current = new Date().toISOString();
     setPage(before => after && before ? { ...value, items: mergeById(before.items, value.items),
       reminders: [...(before.reminders ?? []).filter(item => !value.items.some(task => task.id === item.taskId)), ...(value.reminders ?? [])],
       work: [...(before.work ?? []).filter(item => !value.items.some(task => task.id === item.taskId)), ...(value.work ?? [])] } : value);
   };
-  const refresh = () => {
+  const refresh = (preserveReading = false) => {
     if (busy.current || !env.online || !runtime.live()) return;
     busy.current = true; setReading(true); setReadState(previous => page ? previous : "loading");
     void runtime.request(async (signal, current) => {
@@ -73,7 +81,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
             setOperation({ state: "unknown", message: api.hasPendingOnline() ? "原操作尚未確認。可明確沿同一請求重試。" : "沒有待核對操作識別；可明確解除提交並保留草稿。", reference: operation.reference, recovery: "retry" });
           }
         }
-        await load(signal, current);
+        await load(signal, current, null, preserveReading);
         if (current() && operation.state === "conflict" && draft?.basis) {
           const value = await runtime.read(["task", draft.basis.id], next => verified(inner => api.task(env.childId!, draft.basis!.id, inner), next), signal);
           if (current()) setLatest(value);
@@ -90,7 +98,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
       } finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const { id, intent } = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id, intent); } } }
     });
   };
-  useTaskKnowledgeRefresh(refresh, env.online && !!env.childId && !runtime.lost, reading || operation.state === "saving");
+  useTaskKnowledgeRefresh(() => refresh(true), env.online && !!env.childId && !runtime.lost, reading || operation.state === "saving");
   const write = (original: Attempt, retry = false) => {
     if (busy.current || !env.online || !runtime.live() || !canManage || !retry && !env.canStartWrite()) return;
     busy.current = true; committed.current = false; checked.current = false; attempt.current = original;
@@ -128,7 +136,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
       try {
         const value = await runtime.read(["history", basis.id, before], next => verified(inner => api.history(env.childId!, basis.id, before, inner), next), signal);
         if (current()) setHistories(previous => ({ ...previous, [basis.id]: {
-          items: before === null ? value.revisions : [...(previous[basis.id]?.items ?? []), ...value.revisions.filter(item => !previous[basis.id]?.items.some(old => old.task.version === item.task.version))], cursor: value.nextBeforeVersion,
+          taskVersion: basis.version, items: before === null ? value.revisions : [...(previous[basis.id]?.items ?? []), ...value.revisions.filter(item => !previous[basis.id]?.items.some(old => old.task.version === item.task.version))], cursor: value.nextBeforeVersion,
         } }));
       } catch (error) { if (current() && !runtime.accessError(error)) setOperation(previous => ({ ...previous, message: "任務歷史尚未讀取；完成時間不會以安排時間代替。" })); }
       finally { if (current()) { busy.current = false; setReading(false); if (queuedSelection.current) { const { id, intent } = queuedSelection.current; queuedSelection.current = null; selectLatest.current(id, intent); } } }
@@ -220,7 +228,7 @@ export function useTaskKnowledgeTasks(env: TaskKnowledgeEnvironment): TasksWorks
       });
     },
   }, recovery: {
-    checkOriginalOperation: refresh, reloadCurrent: refresh,
+    checkOriginalOperation: () => refresh(), reloadCurrent: () => refresh(),
     retryOriginalOperation() {
       if (!checked.current || committed.current || operation.state !== "unknown" || !attempt.current || busy.current) return;
       if (api.hasPendingOnline()) write(attempt.current, true);

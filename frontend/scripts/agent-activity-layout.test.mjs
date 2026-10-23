@@ -297,8 +297,10 @@ test('private fact keeps source and scope labels visible, merges only the exact 
   ] });
   const s = setup(run([p])); s.render(true);
   assert.match(s.text(), /本人/); assert.doesNotMatch(s.text(), /只限你本人/); assert.match(s.text(), /Exact original source/); assert.doesNotMatch(s.text(), /候選版本|尚未執行|保存確認事實/);
-  assert.equal(s.h.hosts().filter(n => n.type === 'Text' && n.props.children === '接受後可見範圍').length, 1);
-  assert.ok(s.h.hosts().some(n => n.type === 'Text' && n.props.children === '來源'));
+  assert.equal(s.h.hosts().filter(n => n.type === 'Text' && n.props.accessibilityLabel === '接受後可見範圍：本人').length, 1);
+  assert.equal(s.h.hosts().some(n => n.type === 'Text' && n.props.children === '接受後可見範圍'), false);
+  assert.ok(s.h.hosts().some(n => n.type === 'Text' && n.props.accessibilityLabel === '來源：Exact original source'));
+  assert.equal(s.h.hosts().some(n => n.type === 'Text' && n.props.children === '來源'), false);
   assert.doesNotMatch(s.text(), /有效至|未設定/); assert.match(s.text(), /確認期限.*2099/);
   assert.equal(s.h.hosts().filter(n => n.type === 'AppCheckbox').length, 0);
   const snapshot = structuredClone(p); s.named('查看其他詳情：Synthetic fact').props.onPress(); s.render(true);
@@ -308,7 +310,7 @@ test('private fact keeps source and scope labels visible, merges only the exact 
   s.render(true); assert.match(s.text(), /Synthetic differing visibility/); assert.match(s.text(), /Exact new condition/);
   const { proposalDetailIcon } = s.h.load('src/components/agent/proposal-presentation.ts');
   for (const label of ['constructor', 'toString', '__proto__']) {
-    assert.equal(proposalDetailIcon(label), 'information-outline');
+    assert.equal(proposalDetailIcon(label), null);
     p.details.push({ label, value: `Exact unknown ${label}` });
   }
   s.render(true);

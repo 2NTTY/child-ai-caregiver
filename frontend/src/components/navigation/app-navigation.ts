@@ -29,7 +29,7 @@ export const desktopNavigationGroups = [
   { label: "常用", keys: ["home"] },
   { label: "行動", keys: ["tasks", "growth"] },
   { label: "照顧", keys: ["summary", "history"] },
-  { label: "管理", keys: ["profile", "care", "memory", "more"] },
+  { label: "管理", keys: ["care", "memory", "profile", "more"] },
 ] as const;
 
 // Catalogue labels derive from navigationItems so the same destination has one visible name.

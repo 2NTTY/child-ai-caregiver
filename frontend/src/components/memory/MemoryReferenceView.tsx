@@ -1,7 +1,7 @@
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { EmptyListCard } from "../EmptyListCard";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { Linking, StyleSheet, View } from "react-native";
+import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { useRouter, type Href } from "expo-router";
 import { usePreviewNavigation } from "../../preview/PreviewNavigationGuard";
 import type { PersonalLibraryItem } from "../../../../src/shared/personal-library";
@@ -15,6 +15,7 @@ import { memoryClarificationQuestion, memoryConfirmerLabel, memoryDateLabel, vis
 import { useMemoryReferenceWorkspace } from "../../workspaces/MemoryReferenceWorkspace";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 import { AppStatusBadge } from "../AppStatusBadge";
+import { AppIcon, type AppIconName } from "../AppIcon";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { AppButton, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
@@ -35,6 +36,11 @@ function ReadNotice({ read, unavailable, empty, emptyTitle = "暫無可顯示的
 function Metadata({ label, children }: { label: string; children: ReactNode }) {
   return <Text selectable style={styles.meta}>{label}：{children}</Text>;
 }
+const factSources: Record<MemoryFactView["source"]["kind"], { label: string; icon: AppIconName }> = {
+  private_chat: { label: "私人聊天", icon: "message-text-outline" },
+  care_record: { label: "照顧記錄", icon: "notebook-outline" },
+  manual: { label: "手動描述", icon: "pencil-outline" },
+};
 function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
   fact: Readonly<MemoryFactView>; model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue; onQuestion?: (fact: Readonly<MemoryFactView>) => void;
   confirmerDisplay?: MemoryConfirmerDisplay;
@@ -44,20 +50,27 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
   const versions = visibleMemoryHistory(model, fact);
   const currentHistory = history?.factVersion === fact.version ? history : undefined;
   const available = factIsApplicable(fact);
+  const source = factSources[fact.source.kind];
   return <View testID={`memory-reference-fact-${fact.id}`} style={styles.card}>
-    <View style={styles.titleRow}><Text accessibilityRole="header" style={styles.cardTitle}>{fact.key}</Text>
+    <View style={styles.titleRow}><Text accessibilityRole="header" style={styles.factTopic}>{fact.key}</Text>
       <AppStatusBadge label={factStatusLabels[fact.status]} tone={fact.status === "confirmed" && available ? "success" : fact.status === "candidate" ? "warning" : "neutral"} /></View>
-    <Text selectable style={styles.body}>{fact.content}</Text>
-    <Text style={styles.meta}>{visibilityLabels[fact.visibility]} · {factSourceLabel(fact.source)}</Text>
+    <Text selectable style={styles.factContent}>{fact.content}</Text>
+    <View style={styles.factContext}>
+      <View style={styles.metadataLine}><AppIcon name={fact.visibility === "private" ? "lock-outline" : "account-group-outline"} size={15} /><Text accessibilityLabel={`可見範圍：${visibilityLabels[fact.visibility]}`} style={styles.meta}>{visibilityLabels[fact.visibility]}</Text></View>
+      <Pressable testID={`memory-fact-source-${fact.id}`} accessibilityRole="button" accessibilityLabel={`${details ? "收起" : "查看"}來源：${source.label}`} accessibilityState={{ expanded: details }} aria-expanded={details}
+        onPress={() => { setDetails(value => !value); setHistoryOpen(false); }} style={({ pressed }) => [styles.sourceTrigger, pressed && styles.sourcePressed]}>
+        <AppIcon name={source.icon} size={15} color={colors.deepTeal} /><Text style={styles.sourceLabel}>{source.label}</Text><AppIcon name={details ? "chevron-up" : "chevron-down"} size={14} color={colors.deepTeal} />
+      </Pressable>
+    </View>
     {!available ? <Text style={styles.warning}>{factUnavailableReason(fact)}</Text> : null}
-    <View style={styles.actions}><AppButton label={details ? "收起來源" : "查看來源"} expanded={details} variant="quiet" density="compact" onPress={() => { setDetails(value => !value); setHistoryOpen(false); }} />
-      {onQuestion ? <AppButton label="請 Agent 核對" variant="quiet" density="compact" onPress={() => onQuestion(fact)} /> : null}</View>
+    {onQuestion ? <View style={styles.actions}><AppButton label="請 Agent 核對" variant="quiet" density="compact" onPress={() => onQuestion(fact)} /></View> : null}
     {details ? <View style={styles.details}>
+      <Metadata label="來源">{factSourceLabel(fact.source)}</Metadata>
       <Metadata label="記憶版本">{fact.version}</Metadata>
       <Metadata label="來源狀態">{fact.sourceState === "current" ? "目前版本" : "來源已更改，須重新核對"}</Metadata>
       <Metadata label="確認者">{memoryConfirmerLabel(fact.confirmedBy, confirmerDisplay)}</Metadata>
       <Metadata label="確認時間">{memoryDateLabel(fact.confirmedAt)}</Metadata>
-      <Metadata label="有效至">{fact.validUntil ? memoryDateLabel(fact.validUntil) : "未設定期限"}</Metadata>
+      {fact.validUntil ? <Metadata label="有效至">{memoryDateLabel(fact.validUntil)}</Metadata> : null}
       {fact.reason ? <Metadata label="最近變更原因">{fact.reason}</Metadata> : null}
       {fact.source.kind === "care_record" ? <Metadata label="原記錄">{fact.source.recordId} · 版本 {fact.source.version}</Metadata> : null}
       <AppButton label={historyOpen ? "收起版本記錄" : "查看版本記錄"} expanded={historyOpen} variant="quiet" density="compact" onPress={() => {
@@ -74,7 +87,7 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
             <Text style={styles.meta}>{visibilityLabels[version.visibility]} · {factSourceLabel(version.source)}</Text>
             <Metadata label="確認者">{memoryConfirmerLabel(version.confirmedBy, confirmerDisplay)}</Metadata>
             <Metadata label="確認時間">{memoryDateLabel(version.confirmedAt)}</Metadata>
-            <Metadata label="有效至">{version.validUntil ? memoryDateLabel(version.validUntil) : "未設定期限"}</Metadata>
+            {version.validUntil ? <Metadata label="有效至">{memoryDateLabel(version.validUntil)}</Metadata> : null}
             <Metadata label="適用狀態">{factUnavailableReason(version)}</Metadata>
             {version.reason ? <Metadata label="原因">{version.reason}</Metadata> : null}
           </View>)}
@@ -90,30 +103,42 @@ function SummaryCard({ summary, emptyReady }: { emptyReady: boolean; summary: Re
     {summary ? <><Text selectable style={styles.body}>{summary.text}</Text><Text style={styles.meta}>整理自你的對話，供延續脈絡時參考</Text>
       <AppButton label={details ? "收起摘要來源" : "查看摘要來源"} expanded={details} variant="quiet" density="compact" onPress={() => setDetails(value => !value)} />
       {details ? <View style={styles.details}><Metadata label="建立時間">{memoryDateLabel(summary.createdAt)}</Metadata><Metadata label="摘要版本">{summary.version}</Metadata>
-        <Metadata label="摘要識別">{summary.id}</Metadata><Metadata label="前一摘要">{summary.previousId ?? "未提供"}</Metadata>
+        <Metadata label="摘要識別">{summary.id}</Metadata>{summary.previousId ? <Metadata label="前一摘要">{summary.previousId}</Metadata> : null}
         <Metadata label="已涵蓋訊息">{summary.coveredMessageIds.join("、") || "未提供"}</Metadata><Metadata label="最後涵蓋訊息">{summary.lastCoveredMessageId}</Metadata>
         <Text style={styles.meta}>摘要是整理出的內容，須與原訊息及事實一併核對。</Text></View> : null}</>
       : <Text style={styles.meta}>{emptyReady ? "目前沒有可用摘要" : "摘要尚未重新核對"}</Text>}
   </View>;
 }
+function readableReferenceUrl(value: string): string | null {
+  // Match the HTTPS/no-credentials source contract without normalising the original URL.
+  if (!/^https:\/\//iu.test(value) || /[\u0000-\u0020\u007f\\]/u.test(value)) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && !!url.hostname && !url.username && !url.password ? value : null;
+  } catch { return null; }
+}
 function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
-  const [details, setDetails] = useState(false), [technical, setTechnical] = useState(false);
+  const [details, setDetails] = useState(false), [technical, setTechnical] = useState(false), [linkFailed, setLinkFailed] = useState(false);
+  const sourceUrl = readableReferenceUrl(source.url);
   return <View testID={`memory-reference-source-${source.sourceId}-${source.chunkId}`} style={styles.card}>
     <Text accessibilityRole="header" style={styles.cardTitle}>{source.title}</Text>
     <Text style={styles.meta}>{source.publisher}</Text>
     {source.section ? <Text style={styles.meta}>{source.section}</Text> : null}
     <Text selectable style={styles.body}>{source.sourceExcerpt}</Text>
-    <Metadata label="來源日期">{source.sourceDateText || memoryDateLabel(source.sourcePublishedAt)}</Metadata>
-    <AppButton label={details ? "收起來源資料" : "查看來源資料"} expanded={details} variant="quiet" density="compact" onPress={() => { setDetails(value => !value); setTechnical(false); }} />
-    {details ? <View style={styles.details}>
-      <Metadata label="原文網址">{source.url}</Metadata><Metadata label="發布時間">{memoryDateLabel(source.sourcePublishedAt)}</Metadata>
+    {source.usageScope === "internal_noncommercial" ? <Text style={styles.warning}>限內部非商業參考</Text> : null}
+    {source.sourceDateText || source.sourcePublishedAt ? <View style={styles.metadataLine}><AppIcon name="calendar-month-outline" size={15} /><Text accessibilityLabel={`來源日期：${source.sourceDateText || memoryDateLabel(source.sourcePublishedAt)}`} style={styles.meta}>{source.sourceDateText || memoryDateLabel(source.sourcePublishedAt)}</Text></View> : null}
+    {source.url && !sourceUrl ? <Text style={styles.warning}>來源網址未能安全開啟，可在來源資料核對原文。</Text> : null}
+    <View style={styles.actions}>{sourceUrl ? <AppButton label="閱讀來源" variant="quiet" density="compact" onPress={() => { setLinkFailed(false); void Linking.openURL(sourceUrl).catch(() => setLinkFailed(true)); }} /> : null}
+      <AppButton label={details ? "收起來源資料" : "查看來源資料"} expanded={details} variant="quiet" density="compact" onPress={() => { setDetails(value => !value); setTechnical(false); }} /></View>
+    {linkFailed ? <Text style={styles.warning}>暫未能開啟來源，可複製下方網址。</Text> : null}
+    {details || linkFailed ? <View style={styles.details}>
+      {source.url ? <Metadata label="原文網址">{source.url}</Metadata> : null}<Metadata label="發布時間">{memoryDateLabel(source.sourcePublishedAt)}</Metadata>
       <Metadata label="來源更新">{memoryDateLabel(source.sourceUpdatedAt)}</Metadata><Metadata label="最近覆核">{memoryDateLabel(source.checkedAt)}</Metadata>
-      <Metadata label="最近成功取得">{memoryDateLabel(source.lastSuccessfulCheckAt)}</Metadata><Metadata label="有效至">{source.validUntil ? memoryDateLabel(source.validUntil) : "未提供"}</Metadata>
+      <Metadata label="最近成功取得">{memoryDateLabel(source.lastSuccessfulCheckAt)}</Metadata>{source.validUntil ? <Metadata label="有效至">{memoryDateLabel(source.validUntil)}</Metadata> : null}
       <Metadata label="地區">{source.applicability.region || "未提供"}</Metadata>
       <Metadata label="年齡依據">{source.applicability.ageBasis === "any" ? "未限年齡依據" : source.applicability.ageBasis === "corrected" ? "校正年齡" : "實際年齡"}</Metadata>
       <Metadata label="月齡範圍">{source.applicability.minAgeMonths ?? "未提供下限"} 至 {source.applicability.maxAgeMonths ?? "未提供上限"}{source.applicability.maxAgeMonthsExclusive ? "（不含上限）" : ""}</Metadata>
       {source.applicability.conditions.length ? <Metadata label="適用條件">{source.applicability.conditions.join("；")}</Metadata> : null}
-      {source.usageScope === "internal_noncommercial" ? <Text style={styles.warning}>限內部非商業參考</Text> : null}
       <Text style={styles.meta}>發布機構與覆核日期供追溯來源；內容仍須按適用條件判斷。</Text>
       <AppButton label={technical ? "收起版本識別" : "查看版本識別"} expanded={technical} variant="quiet" density="compact" onPress={() => setTechnical(value => !value)} />
       {technical ? <View style={styles.details}><Metadata label="來源">{source.sourceId}</Metadata><Metadata label="版本">{source.versionId}</Metadata><Metadata label="片段">{source.chunkId}</Metadata>
@@ -130,7 +155,7 @@ function CatalogCard({ source }: { source: PersonalLibraryItem }) {
       <AppButton label={details ? "收起來源資料" : "查看來源資料"} expanded={details} variant="quiet" density="compact" onPress={() => setDetails(value => !value)} /></View>
     {linkFailed ? <Text style={styles.warning}>暫未能開啟來源，可複製下方網址。</Text> : null}
     {details || linkFailed ? <View style={styles.details}><Metadata label="原文網址">{source.url}</Metadata><Metadata label="來源更新">{memoryDateLabel(source.sourceUpdatedAt)}</Metadata>
-      <Metadata label="有效至">{source.validUntil ? memoryDateLabel(source.validUntil) : "未設定期限"}</Metadata></View> : null}
+      {source.validUntil ? <Metadata label="有效至">{memoryDateLabel(source.validUntil)}</Metadata> : null}</View> : null}
   </View>;
 }
 function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue }) {
@@ -230,6 +255,13 @@ const styles = StyleSheet.create({
   card: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radius.medium, padding: spacing.lg, gap: spacing.sm, minWidth: 0 },
   titleRow: { flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
   cardTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, flexShrink: 1 },
+  factTopic: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flex: 1, minWidth: 0 },
+  factContent: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "600", flexShrink: 1 },
+  factContext: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
+  metadataLine: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minWidth: 0, flexShrink: 1 },
+  sourceTrigger: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minHeight: 36, paddingHorizontal: spacing.xs, borderRadius: radius.small, minWidth: 0, flexShrink: 1 },
+  sourceLabel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, flexShrink: 1 },
+  sourcePressed: { backgroundColor: colors.paleTeal },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, flexShrink: 1 },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
   warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool, flexShrink: 1 },

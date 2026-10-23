@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { harness } from './scope-transition-harness.mjs';
+import { createTaskFixture, taskPreviewClock } from '../src/preview/task-fixture.ts';
 
 // Actual presentation and scope effects; native hosts/dialog/focus are ports.
 // Grid percentages are structural evidence, not browser pixel/keyboard coverage.
@@ -21,6 +22,62 @@ function setup() {
 }
 const flatten = style => Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean).map(flatten)) : style;
 const range = {from: null, to: null};
+
+test('task history alone uses one record per row while retaining its responsive list-detail split and scroll return', () => {
+  const h = setup(), fixture = createTaskFixture('synthetic-history-child', 'normal');
+  h.mocks['react-native'].Platform = {OS: 'android'};
+  h.mocks['../AppIcon'] = {AppIcon: 'AppIcon'};
+  h.mocks['../AppStatusBadge'] = {AppStatusBadge: 'AppStatusBadge'};
+  h.mocks['../StatusAnnouncement'] = {StatusAnnouncement: 'StatusAnnouncement'};
+  h.mocks['../WriteRecoveryNotice'] = {WriteRecoveryNotice: 'WriteRecoveryNotice'};
+  h.mocks['./TaskDetail'] = {TaskDetail: 'TaskDetail'};
+  h.mocks['./TaskContent'] = {taskAssigneeLabel: () => 'Synthetic caregiver'};
+  let model = {...fixture, child: {id: 'synthetic-history-child'}, access: 'editable', online: true, readState: 'ready',
+    reading: false, selected: null, operation: {state: 'none'}, scheduleContext: taskPreviewClock};
+  const calls = [], scrolls = [];
+  const actions = {selectTask(id, mode) { calls.push([id, mode]); model = {...model, selected: model.selected?.id === id ? null : model.items.find(task => task.id === id)}; }, closePanel() { model = {...model, selected: null}; }};
+  h.mocks['../../workspaces/TasksWorkspace'] = {useTasksWorkspace: () => ({scopeKey: 'parent:synthetic-history-child', model, actions})};
+  const {TaskHistoryView} = h.load('src/components/tasks/TaskHistoryView.tsx');
+  const render = () => h.render(h.jsx(TaskHistoryView, {searchText: '', dateRange: range, scrollRef: {current: {scrollTo: value => scrolls.push(value)}}, getScrollPosition: () => 246}));
+  const records = () => h.hosts().filter(node => node.props.testID?.startsWith('task-row-'));
+  for (const width of [1440, 1024, 840, 839, 390, 320]) {
+    h.width(width); render();
+    assert.equal(flatten(h.node('task-history-rows').props.style).flexDirection, 'column');
+    assert.equal(flatten(h.node('task-history-rows').props.style).alignItems, 'stretch');
+    assert.equal(records().length, 2);
+    assert.equal(h.node('task-history-rows').props.children.length, 2, 'Rows are direct children, with no half-width cells');
+    assert.ok(records().every(row => flatten(row.props.style({pressed: false})).borderWidth === undefined));
+    const first = records()[0], id = first.props.testID.slice('task-row-'.length);
+    first.props.onPress(); render();
+    assert.deepEqual(calls.at(-1), [id, 'toggle']);
+    assert.equal(h.hosts().find(node => node.type === 'TaskDetail').props.model.selected.id, id);
+    assert.equal(h.node('task-history-list').props['aria-hidden'], width < 840);
+    assert.equal(flatten(h.hosts().find(node => node.props.onLayout).props.style).flexDirection, width >= 840 ? 'row' : undefined);
+    actions.closePanel(); render();
+    assert.equal(h.node('task-history-list').props['aria-hidden'], false);
+    if (width < 840) assert.deepEqual(scrolls.slice(-2), [{y: 0, animated: false}, {y: 246, animated: false}]);
+  }
+});
+
+test('history row density is opt-in and preserves button identity, status, focus and disabled semantics', () => {
+  const h = setup();
+  h.mocks['../../theme'].colors.teal = '#126b67';
+  h.mocks['../AppIcon'] = {AppIcon: 'AppIcon'};
+  h.mocks['../AppStatusBadge'] = {AppStatusBadge: 'AppStatusBadge'};
+  const {TaskListRow} = h.load('src/components/tasks/TaskListRow.tsx');
+  const task = createTaskFixture('synthetic-history-child', 'normal').items.find(task => task.occurrence.state === 'completed');
+  let count = 0;
+  const props = {task, time: 'Synthetic completion time', assignee: 'Synthetic caregiver', selected: false, disabled: false, onPress() {count++;}};
+  const render = patch => h.render(h.jsx(TaskListRow, {...props, ...patch}));
+  const row = () => h.node(`task-row-${task.id}`), style = () => flatten(row().props.style({pressed: false}));
+  render({}); assert.equal(style().paddingVertical, 16); assert.equal(style().minHeight, 80);
+  render({history: true}); assert.equal(style().paddingVertical, 12); assert.equal(style().minHeight, 48);
+  assert.equal(style().borderBottomWidth, 1); assert.equal(style().borderWidth, undefined); assert.equal(style().backgroundColor, undefined);
+  assert.equal(row().props.accessibilityRole, 'button'); assert.match(row().props.accessibilityLabel, /Synthetic completion time.*Synthetic caregiver.*已完成/);
+  row().props.onPress(); assert.equal(count, 1);
+  row().props.onFocus(); h.render(); assert.equal(style().borderLeftColor, '#126b67');
+  render({history: true, disabled: true}); assert.equal(row().props.disabled, true); assert.equal(row().props['aria-disabled'], true); assert.equal(row().props.accessibilityState.disabled, true);
+});
 
 test('history grid holds equal percentage columns including the last item and narrows to one column', () => {
   const h = setup(), {HistoryCardGrid} = h.load('src/components/history/HistoryCards.tsx');

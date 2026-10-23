@@ -20,6 +20,8 @@ export function useTaskKnowledgeSummary(env: TaskKnowledgeEnvironment): TaskKnow
   const api = useMemo(() => createCareSummaryApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const runtime = useTaskKnowledgeRuntime(env, "summary");
   const [query, setQuery] = useState(summaryQueryDefaults), [page, setPage] = useState<SummaryPage | null>(null);
+  // A draft period is applied only explicitly, even before the first read succeeds.
+  const requestedPeriod = useRef(query);
   const [busy, setBusy] = useState(false), [readFailed, setReadFailed] = useState(false), [dirty, setDirty] = useState(false);
   const [pending, setPending] = useState<SummaryPending | null>(null), [originalConsent, setOriginalConsent] = useState(false);
   const [operation, setOperation] = useState<SummaryViewModel["operation"]>("none"), [notice, setNotice] = useState("");
@@ -38,9 +40,10 @@ export function useTaskKnowledgeSummary(env: TaskKnowledgeEnvironment): TaskKnow
     setPage(projectSummary(value)); setReadFailed(false); setOriginalConsent(false); setConfirmationEpoch(value => value + 1);
     if (replaceDraft) { setDirty(false); setFormEpoch(value => value + 1); }
   };
-  const refresh = () => {
-    const entry = original.current, input = summaryQuery.safeParse(entry?.input.period ?? query);
+  const refresh = (applyQuery = false) => {
+    const entry = original.current, input = summaryQuery.safeParse(entry?.input.period ?? (applyQuery ? query : page?.period ?? requestedPeriod.current));
     if (inFlight.current || !env.online || !runtime.live() || !input.success) return;
+    requestedPeriod.current = input.data;
     inFlight.current = true; setBusy(true); setOriginalConsent(false);
     if (entry) { entry.checked = false; setPending({ ...entry }); }
     void runtime.request(async (signal, current) => {
@@ -91,7 +94,7 @@ export function useTaskKnowledgeSummary(env: TaskKnowledgeEnvironment): TaskKnow
     query, page: visible, online: env.online, access: runtime.lost ? "lost" : canManage ? "editable" : "read_only", readFailed, busy,
     operation: runtime.lost ? "none" : operation, notice, pending: runtime.lost ? null : pending, originalConsent, dirty: !runtime.lost && dirty, formEpoch, confirmationEpoch };
   const actions: SummaryActions = {
-    updateQuery(value) { if (!inFlight.current && !original.current && runtime.live()) setQuery({ ...value }); }, refresh,
+    updateQuery(value) { if (!inFlight.current && !original.current && runtime.live()) setQuery({ ...value }); }, refresh: () => refresh(true),
     markDirty() { if (!inFlight.current && !original.current && runtime.live() && canManage) { setDirty(true); setOriginalConsent(false); setOperation("none"); } },
     save(input, appointmentLabel) {
       const parsed = preparationInput.safeParse(input);
@@ -132,5 +135,5 @@ export function useTaskKnowledgeSummary(env: TaskKnowledgeEnvironment): TaskKnow
   }, actions: {
     selectDocument(id) { if (document?.id === id && !runtime.lost) setSelectedId(id); }, closeDocument() { setSelectedId(null); },
     archiveDocument() {}, checkItem() {},
-  }, recovery: { checkOriginalOperation: refresh, reloadCurrent: refresh } } };
+  }, recovery: { checkOriginalOperation: () => refresh(), reloadCurrent: () => refresh() } } };
 }

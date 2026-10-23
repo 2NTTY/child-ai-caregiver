@@ -68,7 +68,8 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     settled: !['saving', 'unknown', 'unconfirmed'].includes(model.operation.state), targetId: listIntent.current?.targetId});
   const columns = width >= 780;
   const canRead = model.fresh && !model.direct && model.access !== "lost";
-  const readState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online || !model.fresh ? "stale" : "ready";
+  const readFresh = model.readFresh ?? model.fresh;
+  const readState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online || !readFresh ? "stale" : "ready";
   const readMessage = readState === "loading" ? "正在讀取私人來源…" : readState === "error" ? model.notice || "未能讀取來源，請重試。"
     : readState === "stale" ? !model.online ? "目前離線。本頁文字草稿保留，沒有離線提交；恢復連線後請手動重新讀取。" : "來源最新狀態尚未核對，請重新讀取。" : "";
   return <PageFrame density="compact" title="來源" description="你提供的私人來源統一在這裏管理。說明用途，讓助手協助整理，再由你核對；也可以自行填寫。" eyebrow="私人保存 · 核對後才接入">
@@ -86,8 +87,8 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     {model.access === "editable" && !model.canCreate ? <Text style={s.warning}>{production ? "目前不能新增來源" : "合成新增容量限制"}；已有來源及人工草稿仍可核對。</Text> : null}
     <SourceStatus model={model.load === "error" && model.operation.state === "none" && model.access !== "lost" ? { ...model, notice: "" } : model} actions={actions} production={production} />
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[s.columns, !columns && s.single]}>
-      <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={listResultAvailable && model.fresh ? model.items.length : undefined} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
-        {listResultAvailable && model.fresh && model.items.length === 0 ? <EmptyListCard title="暫時沒有私人來源" detail="可先說明用途，或手動加入你有權提供的資料。" /> : null}
+      <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={listResultAvailable && readFresh ? model.items.length : undefined} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
+        {listResultAvailable && readFresh && model.items.length === 0 ? <EmptyListCard title="暫時沒有私人來源" detail="可先說明用途，或手動加入你有權提供的資料。" /> : null}
         <MotionList items={model.items} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => <View style={[s.item, model.selected?.id === input.id && s.itemSelected]} testID={`source-item-${input.id}`}>
           <Text style={s.title}>{input.sourceLabel}</Text><View style={s.row}><AppStatusBadge label={fetchStateLabels[input.fetchState]} tone={input.fetchState === "ready" ? "success" : input.fetchState === "failed" ? "error" : input.fetchState === "unknown" ? "warning" : input.fetchState === "running" ? "info" : "neutral"} /><AppStatusBadge label={input.recordId ? "已連結家庭記錄" : "尚未家庭共享"} tone={input.recordId ? "success" : "neutral"} /></View>
           <Text style={s.meta}>保存於 {sourceTime(input.createdAt)}</Text>

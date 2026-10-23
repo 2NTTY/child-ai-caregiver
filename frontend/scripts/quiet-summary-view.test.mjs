@@ -39,6 +39,7 @@ test('ordinary summary refresh retains the report without loading text, while pe
     assert.equal(buttons(view.tree).some(node => node.props.label === '重新讀取摘要'), false);
     assert.equal(nodes(view.tree).some(node => node.type === 'ReadStateNotice'), false);
     assert.equal(nodes(view.tree).filter(node => node.type === 'SummaryRecords')[0].props.page, page);
+    assert.equal(nodes(view.tree).filter(node => node.type === 'SummaryRecords')[0].props.emptyReady, true);
     const apply = buttons(view.tree).find(node => node.props.label === '套用期間');
     assert.equal(apply.props.disabled, busy);
     if (!busy) { apply.props.onPress(); assert.equal(view.reads(), 1); }

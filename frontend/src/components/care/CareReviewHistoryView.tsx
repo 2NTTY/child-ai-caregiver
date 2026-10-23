@@ -54,7 +54,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
     : careReviewMatchesTab(item, tab))
     && (sourceKey === "all" || careReviewSourceKey(item) === sourceKey) && careReviewMatchesQuery(item, query)));
   const filtered = !!query || sourceKey !== "all" || history && status !== "all";
-  const emptyHistoryState = !model.online || model.list.state === "stale" ? "stale" : ["loading", "loading_more"].includes(model.list.state) ? "loading" : model.list.state === "error" ? "error" : model.list.message ? "unavailable" : "empty";
+  const emptyHistoryState = !model.online || model.list.state === "stale" ? "stale" : ["loading", "loading_more"].includes(model.list.state) && !model.list.hasSnapshot ? "loading" : model.list.state === "error" ? "error" : model.list.message ? "unavailable" : "empty";
   const hasTabItems = sourceItems.some(item => history || careReviewMatchesTab(item, tab));
   const showFilters = review.state === "ready" && (hasTabItems || filtered || !!review.hasMore);
   const visiblePage = careReviewPage(items, page), currentPage = visiblePage.page, pageItems = visiblePage.items;
@@ -69,6 +69,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
   const showPanel = !!selected || recordOpen && !!model.detail || !!model.deletion;
   const listVisible = wide || !showPanel;
   const canEdit = model.access === "editable" && model.list.state !== "loading";
+  const reading = ["loading", "loading_more"].includes(model.list.state);
   const ready = selected ? selected.reviewRequirement === "required" && selected.savedRecord ? careImportantReviewReadiness(selected, { childId: model.child.id, scopeKey: model.scopeKey ?? "", access: model.access, capabilities: review.capabilities, expectedVersion: selected.version, expectedSourceVersion: selected.sourceVersion, recordId: selected.savedRecord.id, recordVersion: selected.savedRecord.current.version, expectedScopeKey: model.scopeKey ?? "" }) : careCaptureReadiness(selected, { childId: model.child.id, access: model.access, capabilities: review.capabilities }) : null;
   const previousDraft = useRef(model.draft);
   useEffect(() => { closeFocusRequest.current = null; setPage(0); setSelectedId(null); setRecordOpen(false); setLocalQuery(""); setStatus(initialStatus); setTab("pending"); setSourceKey("all"); setFiltersOpen(false); }, [model.scopeKey, initialStatus, olderOnly]);
@@ -144,7 +145,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
       </BackgroundSurface>
       {showPanel ? <BackgroundSurface padded ref={panelRef} tabIndex={-1} style={[s.detailColumn, wide && s.detailDivider]} testID="care-review-detail-panel">
         {!model.draft && !model.deletion ? <AppButton label={wide ? "收起內容" : "返回記錄清單"} variant="quiet" density="compact" disabled={occupied} onPress={closeSelection} /> : null}
-        {model.deletion ? <CareRecordDelete model={model} actions={panelActions} /> : recordOpen && model.detail ? <CareRecordDetail detail={model.detail} actions={panelActions} canEdit={canEdit} online={model.online} /> : selected ? <CareCaptureDetail capture={selected} wide={wide && layout.width * 0.68 - spacing.lg * 2 - 1 >= 640} readiness={ready?.reason ?? ""} confirmLabel={model.submitLabel}
+        {model.deletion ? <CareRecordDelete model={model} actions={panelActions} /> : recordOpen && model.detail ? <CareRecordDetail detail={model.detail} actions={panelActions} canEdit={model.access === "editable"} online={model.online} reading={reading} /> : selected ? <CareCaptureDetail capture={selected} wide={wide && layout.width * 0.68 - spacing.lg * 2 - 1 >= 640} readiness={ready?.reason ?? ""} confirmLabel={model.submitLabel}
           canConfirm={selected.writeState === "not_saved" && !!ready?.allowed && !occupied && model.online} canConfirmImportant={selected.writeState === "saved" && !!ready?.allowed && !occupied && model.online}
           onConfirmImportant={actions.confirmImportantRecord && selected.savedRecord ? () => actions.confirmImportantRecord?.(selected.id, selected.version, selected.sourceVersion, selected.savedRecord!.id, selected.savedRecord!.current.version, model.scopeKey ?? "") : undefined} canEdit={canEdit && !occupied && (selected.writeState === "saved" || !!ready?.allowed)} canSkip={canEdit && !occupied && !!review.capabilities?.skip && careReviewUsesCareOwner(selected) && selected.reviewRequirement !== "required" && (!selected.operationValidity || selected.operationValidity.state === "active")}
           onConfirm={actions.confirmCapture ? () => actions.confirmCapture?.(selected.id, selected.version, selected.sourceVersion) : undefined}

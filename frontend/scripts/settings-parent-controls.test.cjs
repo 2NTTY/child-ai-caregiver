@@ -84,23 +84,23 @@ async function change(label, value) { await act(async () => { const props = fiel
 async function click(label) { await act(async () => button(label).click()); }
 async function clear() { await act(async () => root.render(null)); fields.clear(); guards.length = 0; }
 function notification(overrides = {}) {
-  const calls = [];
-  const domain = { preferences: { version: 7, timeZone: 'Asia/Hong_Kong', quietStart: '22:00', quietEnd: '08:00', allowAppointmentDuringQuiet: false },
+  const calls = [], editing = [];
+  const domain = { scopeKey: 'synthetic-parent:1', setDraftEditing: value => editing.push(value), preferences: { version: 7, timeZone: 'Asia/Hong_Kong', quietStart: '22:00', quietEnd: '08:00', allowAppointmentDuringQuiet: false },
     online: true, busy: false, original: null, fresh: true, notice: '目前通知偏好已讀取。',
     refresh: () => calls.push(['refresh']), save: (...args) => calls.push(['save', ...args]), confirmOriginal: value => calls.push(['confirm', value]), retryOriginal: () => calls.push(['retry']), ...overrides };
-  return { calls, domain, render: async () => act(async () => root.render(h(TestPersonalContext.Provider, { value: { preferences: domain } }, h(ProductionNotificationPreferences)))) };
+  return { calls, domain, editing, render: async () => act(async () => root.render(h(TestPersonalContext.Provider, { value: { preferences: domain } }, h(ProductionNotificationPreferences)))) };
 }
 function model(overrides = {}) {
-  const calls = [], usage = { day: '2026-10-22', attempts: 2, inputTokens: 30, outputTokens: 20, cachedTokens: 0, unknownUsageAttempts: 1 };
+  const calls = [], editing = [], usage = { day: '2026-10-22', attempts: 2, inputTokens: 30, outputTokens: 20, cachedTokens: 0, unknownUsageAttempts: 1 };
   const settings = { version: 7, mode: 'personal', provider: 'vertex', model: 'gemini-3.1-flash-lite', keyConfigured: true, backgroundEnabled: false,
     dailyLimit: 100, maxModelCalls: 4, maxQueryEmbeddings: 2, updatedAt: null };
   const state = { scopeKey: 'synthetic-parent', accountName: '合成家長', serverLabel: '/api', online: true, authorized: true, busy: null, operation: 'none', notice: '',
     needsRead: false, formRevision: 0, secretRevision: 0, keyCheck: null, originalOperationId: null,
     catalog: { provider: 'vertex', models: [{ id: settings.model, provider: 'vertex', label: 'Synthetic model', capabilities: { tools: true, image: false, audio: false, textStreaming: true } }] },
     snapshot: { enabled: true, platformAvailable: true, personalAvailable: true, settings, personalGlobalLimit: 500, usage: { platform: usage, personal: usage } }, ...overrides };
-  const actions = { refresh: () => calls.push(['refresh']), save: command => calls.push(['save', command]), check: version => calls.push(['check', version]),
+  const actions = { setDraftEditing: value => editing.push(value), refresh: () => calls.push(['refresh']), save: command => calls.push(['save', command]), check: version => calls.push(['check', version]),
     refreshCatalog: version => calls.push(['catalog', version]), selectProvider: value => calls.push(['provider', value]) };
-  return { state, calls, render: async () => act(async () => root.render(h(ModelSettingsView, { model: state, actions }))) };
+  return { state, calls, editing, render: async () => act(async () => root.render(h(ModelSettingsView, { model: state, actions }))) };
 }
 
 test('notification controls precede secondary information, with a compact labelled refresh and unchanged save confirmation', async () => {
@@ -169,6 +169,64 @@ test('model unknown, metadata-unavailable and read failures retain recovery inst
   assert.equal(button('保存模型設定').disabled, true); await click('查回原操作及目前設定'); assert.deepEqual(f.calls, [['refresh']]); assert.equal(field('個人 API 密鑰').value, '');
   f.state.snapshot = null; f.state.originalOperationId = null; f.state.notice = '模型設定未能確認，請核對連線後重新讀取。'; f.state.operation = 'failed'; await f.render();
   assert.match(copy(), /模型設定未能確認/); assert.equal(button('重新讀取模型設定').disabled, false); assert.equal(buttons().some(node => node.textContent === '保存模型設定'), false);
+});
+
+test('notification review survives equal reads and busy locking without losing its focused DOM node', async () => {
+  await clear(); const f = notification(); await f.render();
+  await click('核對通知偏好'); assert.equal(f.editing.at(-1), true);
+  const confirm = button('確認保存本人偏好'); confirm.focus();
+  f.domain.busy = true; await f.render();
+  assert.equal(button('確認保存本人偏好'), confirm); assert.equal(confirm.disabled, true);
+  assert.equal(document.activeElement, confirm); await click('確認保存本人偏好'); assert.equal(f.calls.length, 0);
+  f.domain.preferences = Object.fromEntries(Object.entries(f.domain.preferences).reverse()); f.domain.busy = false; await f.render();
+  assert.equal(button('確認保存本人偏好'), confirm); assert.equal(document.activeElement, confirm);
+  assert.equal(confirm.disabled, false); assert.match(copy(), /待確認 · 尚未保存 · 版本 7/);
+  await click('返回修改'); assert.equal(f.editing.at(-1), false);
+});
+
+test('notification basis changes invalidate review but retain the draft; identity and access loss clear it', async () => {
+  await clear(); const f = notification(); await f.render();
+  await change('安靜時段開始', '21:30'); assert.equal(f.editing.at(-1), true); await click('核對通知偏好');
+  f.domain.preferences = { ...f.domain.preferences, version: 8, quietStart: '20:00' }; await f.render();
+  assert.equal(buttons().some(node => node.textContent === '確認保存本人偏好'), false);
+  assert.match(copy(), /原確認已失效/); assert.equal(field('安靜時段開始').value, '21:30'); assert.equal(f.calls.length, 0);
+  await click('核對通知偏好'); assert.match(copy(), /待確認 · 尚未保存 · 版本 8/);
+  f.domain.original = { confirmed: false, reviewed: false, consent: false, input: { ...f.domain.preferences, expectedVersion: 8 } }; await f.render();
+  assert.equal(button('確認保存本人偏好').disabled, true); await click('確認保存本人偏好'); assert.equal(f.calls.length, 0);
+  f.domain.original = null; f.domain.scopeKey = 'synthetic-other:2'; await f.render();
+  assert.equal(field('安靜時段開始').value, '20:00'); assert.doesNotMatch(copy(), /待確認/); assert.equal(f.editing.at(-1), false);
+  await change('安靜時段開始', '21:00'); await click('核對通知偏好');
+  f.domain.preferences = null; f.domain.fresh = false; await f.render();
+  assert.equal(field('安靜時段開始').value, '22:00'); assert.doesNotMatch(copy(), /待確認/); assert.equal(button('核對通知偏好').disabled, true);
+});
+
+test('model deletion pins the reviewed basis and preserves the same dialog through a same-basis read', async () => {
+  await clear(); const f = model(); await f.render(); await click('刪除個人密鑰');
+  assert.equal(f.editing.at(-1), true); const dialog = document.querySelector('[role=dialog]');
+  await change('我確認刪除密鑰並停用 AI', true); const confirm = button('確認刪除並停用'); confirm.focus();
+  f.state.busy = 'read'; f.state.secretRevision++; await f.render();
+  assert.equal(document.querySelector('[role=dialog]'), dialog); assert.equal(document.activeElement, confirm); assert.equal(confirm.disabled, true);
+  await click('確認刪除並停用'); assert.equal(f.calls.length, 0);
+  f.state.snapshot = structuredClone(f.state.snapshot); f.state.busy = null; f.state.secretRevision++; await f.render();
+  assert.equal(document.querySelector('[role=dialog]'), dialog); assert.equal(document.activeElement, confirm);
+  assert.equal(field('我確認刪除密鑰並停用 AI').checked, true); assert.equal(confirm.disabled, false);
+  await click('確認刪除並停用'); assert.equal(f.calls.length, 1); assert.equal(f.calls[0][1].expectedVersion, 7);
+  assert.equal(f.calls[0][1].removeKey, true); assert.equal('apiKey' in f.calls[0][1], false);
+});
+
+test('model newer settings, unknown results, revoked access and identity changes never inherit delete consent', async () => {
+  for (const changeState of [
+    state => { state.snapshot = { ...state.snapshot, settings: { ...state.snapshot.settings, version: 8 } }; state.formRevision++; },
+    state => { state.snapshot = { ...state.snapshot, settings: { ...state.snapshot.settings, dailyLimit: 50 } }; },
+    state => { state.needsRead = true; state.operation = 'unknown'; state.originalOperationId = 'synthetic-original'; },
+    state => { state.authorized = false; state.snapshot = null; },
+  ]) {
+    await clear(); const f = model(); await f.render(); await click('刪除個人密鑰'); await change('我確認刪除密鑰並停用 AI', true);
+    changeState(f.state); await f.render(); assert.equal(document.querySelector('[role=dialog]'), null); assert.match(copy(), /刪除確認已失效/); assert.equal(f.calls.length, 0);
+    if (f.state.snapshot && !f.state.needsRead) { await click('刪除個人密鑰'); assert.equal(field('我確認刪除密鑰並停用 AI').checked, false); assert.equal(button('確認刪除並停用').disabled, true); }
+  }
+  await clear(); const f = model(); await f.render(); await change('個人每日呼叫上限', '80'); await click('刪除個人密鑰');
+  f.state.scopeKey = 'synthetic-other:2'; await f.render(); assert.equal(document.querySelector('[role=dialog]'), null); assert.equal(field('個人每日呼叫上限').value, '100'); assert.equal(f.calls.length, 0);
 });
 
 test.after(async () => { await act(async () => root.unmount()); dom.window.close(); assert.equal(network, 0); });

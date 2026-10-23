@@ -38,13 +38,21 @@ function UsageCard({ label, usage }: { label: string; usage: ModelSettingsUsage 
   </SectionCard>;
 }
 
-export function ModelSettingsView({ model, actions: sourceActions, active = true }: { model: ModelSettingsViewModel; actions: ModelSettingsActions; active?: boolean }) {
+type ModelSettingsViewProps = { model: ModelSettingsViewModel; actions: ModelSettingsActions; active?: boolean };
+export function ModelSettingsView(props: ModelSettingsViewProps) {
+  return <ModelSettingsForm key={props.model.scopeKey} {...props} />;
+}
+function ModelSettingsForm({ model, actions: sourceActions, active = true }: ModelSettingsViewProps) {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteReview, setDeleteReview] = useState<{ basis: string; settings: ModelSettings } | null>(null);
+  const [deleteNotice, setDeleteNotice] = useState("");
+  const deleteOpen = !!deleteReview;
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const formId = useId();
   const snapshot = model.snapshot, settings = snapshot?.settings ?? empty;
+  const settingsBasis = JSON.stringify(settings), formBasis = JSON.stringify([settings, snapshot?.effective]);
+  const deleteCurrent = deleteReview?.basis === settingsBasis;
   const motionSerial = useRef(0);
   const [readIntent, setReadIntent] = useState<{ serial: number; scopeKey: string } | null>(null);
   const [saveIntent, setSaveIntent] = useState<{ serial: number; scopeKey: string; baseVersion: number } | null>(null);
@@ -67,12 +75,12 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
   const { control, reset, setValue, setFocus, watch, handleSubmit, formState: { errors, isDirty } } = useForm<ModelSettingsDraft>({
     resolver: zodResolver(modelSettingsSchema(settings.keyConfigured, settings.provider)), defaultValues: modelSettingsDraft(settings, snapshot?.effective), mode: "onChange", shouldFocusError: false,
   });
-  usePreviewLeaveGuard(isDirty, false, "account");
+  usePreviewLeaveGuard(isDirty || deleteOpen, false, "account");
   const setDraftEditing = sourceActions.setDraftEditing;
   useEffect(() => {
-    setDraftEditing?.(active && isDirty);
+    setDraftEditing?.(active && (isDirty || deleteOpen));
     return () => setDraftEditing?.(false);
-  }, [active, isDirty, setDraftEditing]);
+  }, [active, isDirty, deleteOpen, setDraftEditing]);
   const provider = watch("provider"), selectedModel = watch("model");
   const modelSelection = modelCatalogSelection(model.catalog, provider, selectedModel);
   const selectedCapabilities = modelSelection.capabilities;
@@ -87,13 +95,19 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
   const available = mode === "personal" ? snapshot?.personalAvailable : mode === "platform" ? snapshot?.platformAvailable : true;
   const canSave = !locked && available && (mode !== "personal" || consent && (settings.keyConfigured || !!keyText.trim()));
   useEffect(() => {
-    reset(modelSettingsDraft(settings, snapshot?.effective)); setDeleteOpen(false); setDeleteConfirmed(false);
-  }, [model.scopeKey, model.formRevision, settings, snapshot?.effective, reset]);
+    reset(modelSettingsDraft(settings, snapshot?.effective));
+  }, [model.scopeKey, model.formRevision, formBasis, reset]);
   useEffect(() => {
-    setValue("keyText", ""); setValue("consent", false); setDeleteOpen(false); setDeleteConfirmed(false);
+    setValue("keyText", ""); setValue("consent", false);
   }, [model.secretRevision, model.online, model.authorized, setValue]);
+  useEffect(() => {
+    if (deleteReview && (!deleteCurrent || !snapshot || !model.online || !model.authorized || model.needsRead || model.operation === "unknown")) {
+      setDeleteReview(null); setDeleteConfirmed(false);
+      setDeleteNotice("設定或存取狀態已改變，刪除確認已失效；請重新核對後再開啟。");
+    }
+  }, [deleteCurrent, deleteReview, !!snapshot, model.online, model.authorized, model.needsRead, model.operation]);
   function clearSecret() { setValue("keyText", ""); setValue("consent", false); }
-  useEffect(() => { if (!active) { setValue("keyText", ""); setValue("consent", false); setDeleteOpen(false); setDeleteConfirmed(false); } }, [active, setValue]);
+  useEffect(() => { if (!active) { setValue("keyText", ""); setValue("consent", false); setDeleteReview(null); setDeleteConfirmed(false); } }, [active, setValue]);
   const submit = handleSubmit(draft => {
     if (!canSave) return;
     const command = modelCommandFromDraft(draft, settings);
@@ -182,7 +196,7 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
             <Text style={styles.meta}>保存後按本人設定及管理員共用保護計算。模型按需要使用預算，不必用盡；重試亦計入原運行及每日次數。</Text>
           </View> : <Text style={styles.meta}>{mode === "platform" ? "平台模型及限額由管理員統一設定，實際值見「用量與安全上限」。" : "保存停用後不會自行切回平台；已有密鑰會保留，刪除須另行確認。"}</Text>}
           <View style={[styles.actions, styles.group]}><AppButton label="保存模型設定" disabled={!canSave} loading={model.busy === "save"} onPress={() => void submit()} />
-            <AppButton label="刪除個人密鑰" variant="danger-secondary" disabled={locked || !settings.keyConfigured} onPress={() => { clearSecret(); setDeleteConfirmed(false); setDeleteOpen(true); }} />
+            <AppButton label="刪除個人密鑰" variant="danger-secondary" disabled={locked || !settings.keyConfigured} onPress={() => { clearSecret(); setDeleteConfirmed(false); setDeleteNotice(""); setDeleteReview({ basis: settingsBasis, settings: { ...settings } }); }} />
           </View>
         </SectionCard>
         {settings.keyConfigured ? <SectionCard><SectionHeader density="compact" title="已保存密鑰的模型資料" subtitle="此檢查只讀取供應商模型資料，不使用未保存的輸入。" />
@@ -217,12 +231,13 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
         </SectionCard>
       </View>
     </View> : null}
-    <Dialog danger visible={deleteOpen} onDismiss={() => setDeleteOpen(false)}>
+    {deleteNotice ? <Text accessibilityLiveRegion="polite" style={styles.warning}>{deleteNotice}</Text> : null}
+    <Dialog danger visible={deleteOpen} onDismiss={() => setDeleteReview(null)}>
       <Dialog.Title danger>刪除個人密鑰並停用 AI</Dialog.Title><Dialog.Content>
-        <Text style={styles.body}>將刪除目前版本 {settings.version} 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。</Text>
-        <AppCheckbox label="我確認刪除密鑰並停用 AI" checked={deleteConfirmed} onChange={setDeleteConfirmed} disabled={locked} />
-      </Dialog.Content><Dialog.Actions><AppButton label="取消" variant="quiet" onPress={() => setDeleteOpen(false)} />
-        <AppButton label="確認刪除並停用" variant="danger" disabled={locked || !deleteConfirmed} onPress={() => { if (locked || !deleteConfirmed) return; clearSecret(); setDeleteOpen(false); actions.save(removeModelKeyCommand(settings)); }} />
+        <Text style={styles.body}>將刪除已核對版本 {deleteReview?.settings.version} 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。</Text>
+        <AppCheckbox label="我確認刪除密鑰並停用 AI" checked={deleteConfirmed} onChange={setDeleteConfirmed} disabled={locked || !deleteCurrent} />
+      </Dialog.Content><Dialog.Actions><AppButton label="取消" variant="quiet" onPress={() => setDeleteReview(null)} />
+        <AppButton label="確認刪除並停用" variant="danger" disabled={locked || !deleteCurrent || !deleteConfirmed} onPress={() => { if (locked || !deleteCurrent || !deleteConfirmed || !deleteReview) return; clearSecret(); setDeleteReview(null); actions.save(removeModelKeyCommand(deleteReview.settings)); }} />
       </Dialog.Actions>
     </Dialog>
   </View>;

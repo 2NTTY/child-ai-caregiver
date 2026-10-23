@@ -48,7 +48,11 @@ test('review and saved-record history use cards only for successfully read empty
     // Execute the private saved-list body rather than its wrapper element.
     const inspect = model => { let tree = render(model); if (typeof tree.type === 'function') tree = tree.type(tree.props); return tree; };
     const model = careModel(); assert.equal(empty(inspect(model)).length, 1);
-    for (const state of ['loading', 'loading_more', 'error', 'stale']) assert.equal(empty(inspect({...model, list: {...model.list, state}})).length, 0, state);
+    for (const state of ['loading', 'loading_more']) {
+      assert.equal(empty(inspect({...model, list: {...model.list, state, hasSnapshot: false}})).length, 0, `${state}: initial read has no confirmed empty snapshot`);
+      assert.equal(empty(inspect({...model, list: {...model.list, state, hasSnapshot: true}})).length, 1, `${state}: background read retains the successful empty snapshot`);
+    }
+    for (const state of ['error', 'stale']) assert.equal(empty(inspect({...model, list: {...model.list, state}})).length, 0, state);
     for (const patch of [{online: false}, {access: 'lost'}, {list: {...model.list, message: 'Not yet verified'}}]) assert.equal(empty(inspect({...model, ...patch})).length, 0);
     const partial = inspect({...model, list: {...model.list, hasMore: true}, review: {...model.review, hasMore: true}});
     assert.equal(empty(partial).length, 1); assert.match(empty(partial)[0].props.message, /此頁|已載入範圍/);

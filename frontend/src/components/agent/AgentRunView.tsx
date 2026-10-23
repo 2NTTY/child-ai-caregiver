@@ -58,9 +58,11 @@ function ChangeDetail({ label, value, prominent = false }: { label: string; valu
     <Text style={styles.detailLabel}>{label}</Text>
     <Text selectable style={styles.changeBody}>{value}</Text>
   </View>;
+  const icon = proposalDetailIcon(label, value);
+  const concise = label === "來源" || label === "負責人" || label === "接受後可見範圍";
   return <View style={styles.changeDetail}>
-    <View style={styles.fieldLabel}><AppIcon name={proposalDetailIcon(label)} size={14} /><Text style={styles.fieldLabelText}>{label}</Text></View>
-    <Text selectable style={styles.detailCopy}>{value}</Text>
+    {icon ? <AppIcon name={icon} size={15} /> : null}
+    <Text selectable accessibilityLabel={`${label}：${value}`} style={styles.detailCopy}>{concise ? value : `${label}：${value}`}</Text>
   </View>;
 }
 
@@ -83,9 +85,9 @@ function OriginalDecision({ model, actions }: { model: AgentRunModel; actions: A
   </View>;
 }
 
-function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEligible, decisionIntent }: {
+function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEligible, decisionIntent, preserveDecisionFocusOnRead = false }: {
   proposal: AgentProposalView; model: AgentRunModel; actions: AgentRunActions; scopeKey: string;
-  readTrigger: number | null; readEligible: boolean; decisionIntent: DecisionMotionIntent | null;
+  readTrigger: number | null; readEligible: boolean; decisionIntent: DecisionMotionIntent | null; preserveDecisionFocusOnRead?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [sourceExpanded, setSourceExpanded] = useState(false);
@@ -127,8 +129,10 @@ function ProposalCard({ proposal, model, actions, scopeKey, readTrigger, readEli
         disabled={!mayCheckShared(model, proposal)} onChange={checked => actions.setSharedConfirmation(proposal.id, checked)} /> : null}
       <View style={styles.actions}>
         <AppButton label={acceptLabel} accessibilityLabel={`明確${acceptLabel}：${proposal.title}`} disabled={!mayDecide(model, proposal, "accept")}
+          preserveFocusWhenDisabled={preserveDecisionFocusOnRead && model.busy === "read" && mayDecide({ ...model, busy: null }, proposal, "accept")}
           onPress={() => actions.decide(proposal.id, "accept")} style={styles.decisionButton} />
         <AppButton label="略過" accessibilityLabel={`略過此事項：${proposal.title}`} variant="quiet" disabled={!mayDecide(model, proposal, "dismiss")}
+          preserveFocusWhenDisabled={preserveDecisionFocusOnRead && model.busy === "read" && mayDecide({ ...model, busy: null }, proposal, "dismiss")}
           onPress={() => actions.decide(proposal.id, "dismiss")} style={styles.decisionButton} />
       </View>
     </> : <>
@@ -182,7 +186,7 @@ function RunAnswer({ run, activity, actions, onLocateSource }: {
   </View>;
 }
 
-export function AgentRunView({ model, actions: sourceActions, onLocateSource, activity = false, activityHeading, activityNavigation, proposalTarget, proposalOnly = false, pendingContent }: { model: AgentRunModel; actions: AgentRunActions; onLocateSource?: LocateAnswerSource; activity?: boolean; activityHeading?: ReactNode; activityNavigation?: ReactNode; proposalTarget?: ActivityProposalTarget; proposalOnly?: boolean; pendingContent?: ReactNode }) {
+export function AgentRunView({ model, actions: sourceActions, onLocateSource, activity = false, activityHeading, activityNavigation, proposalTarget, proposalOnly = false, pendingContent, preserveDecisionFocusOnRead = false }: { model: AgentRunModel; actions: AgentRunActions; onLocateSource?: LocateAnswerSource; activity?: boolean; activityHeading?: ReactNode; activityNavigation?: ReactNode; proposalTarget?: ActivityProposalTarget; proposalOnly?: boolean; pendingContent?: ReactNode; preserveDecisionFocusOnRead?: boolean }) {
   const instanceScope = useId();
   const serial = useRef(0);
   const [readIntent, setReadIntent] = useState<{ serial: number; runId: string } | null>(null);
@@ -273,7 +277,7 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
         : ready && model.online && run.status === "completed" && !problems.length ? "本次沒有待確認事項。" : "請核對以下結果；尚未確認的結果不代表已保存。"}</Text> : null}
       {pending.length ? <View testID="agent-pending-proposals" style={styles.proposalGroup}>
         {!activityHeading && !proposalOnly ? <Text accessibilityRole="header" style={styles.title}>待你確認</Text> : null}
-        {pending.map(proposal => <ProposalCard key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
+        {pending.map(proposal => <ProposalCard preserveDecisionFocusOnRead={preserveDecisionFocusOnRead} key={proposal.id} proposal={proposal} model={model} actions={actions} scopeKey={scopeKey} readTrigger={readTrigger} readEligible={readEligible} decisionIntent={decisionIntent} />)}
       </View> : null}
       {pendingContent}
       {handled.length ? <View testID="agent-handled-proposals" style={styles.section}>
@@ -302,10 +306,8 @@ const styles = StyleSheet.create({
   changeBody: { fontFamily: chineseFont, color: colors.ink, fontSize: 22, lineHeight: 32, fontWeight: "600", minWidth: 0, flexShrink: 1 },
   changeDetails: { gap: spacing.sm, minWidth: 0 },
   exactChange: { gap: spacing.xs, minWidth: 0 },
-  changeDetail: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: spacing.sm, minWidth: 0 },
-  fieldLabel: { flexDirection: "row", alignItems: "center", gap: spacing.xs, alignSelf: "flex-start", borderWidth: 1, borderColor: colors.line, backgroundColor: colors.quietSurface, borderRadius: radius.small, paddingHorizontal: spacing.sm, paddingVertical: 3, maxWidth: "100%" },
-  fieldLabelText: { fontFamily: chineseFont, color: colors.muted, fontSize: 13, lineHeight: 18, flexShrink: 1 },
-  detailCopy: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, flexGrow: 1, flexShrink: 1, flexBasis: 180, minWidth: 0, paddingTop: 3 },
+  changeDetail: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xs, minWidth: 0 },
+  detailCopy: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flex: 1, minWidth: 0 },
   metadata: { gap: spacing.sm, minWidth: 0 },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1, minWidth: 0 },
   destination: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, flexShrink: 1, minWidth: 0 },

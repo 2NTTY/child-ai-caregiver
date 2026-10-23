@@ -25,18 +25,19 @@ export function TaskKnowledgeSummaryContent({ preparation = false, onRecord, onT
   useEffect(() => () => { const value = latest.current; if (value?.model.dirty && !value.model.pending && !value.model.busy) value.actions.discard(); }, []);
   if (!owner) return <ReadStateNotice state="loading" message="正在讀取摘要…" />;
   const { model, actions } = owner, page = model.page;
-  const emptyReady = !!page && model.online && !model.readFailed && !model.busy && !model.pending && model.access !== "lost"
+  const emptyReady = !!page && model.online && !model.readFailed && !model.pending && model.access !== "lost"
     && (model.operation === "none" || model.operation === "saved");
   const canRetry = model.online && !model.busy && !model.readFailed && model.access === "editable" && !!page?.canManage && !!model.pending?.checked && !model.pending.confirmed;
   const locked = model.busy || !!model.pending || model.access === "lost";
+  const quietRead = model.busy && emptyReady;
   return <View style={s.stack}>
     <SectionCard><SectionHeader density="compact" title={preparation ? "單一到診準備" : "已確認照顧摘要"} subtitle={model.dataLabel}
       action={model.readFailed || model.pending ? <AppButton label={model.pending ? "查原收據及更新摘要" : "重新讀取摘要"} variant="secondary" density="compact" disabled={!model.online || model.busy || model.access === "lost" || !summaryPeriodSchema.safeParse(model.query).success} onPress={actions.refresh} /> : undefined} />
       <SummaryDisclosure label="選擇摘要期間" scopeKey={model.scopeKey}>
-        <AppDateField label="摘要開始日" value={model.query.startDay} disabled={locked} onChange={startDay => actions.updateQuery({ ...model.query, startDay })} />
-        <AppSelect label="摘要期間" value={model.query.period} options={[{ value: "day", label: "一日" }, { value: "week", label: "連續七日" }]} disabled={locked} onChange={period => actions.updateQuery({ ...model.query, period })} />
-        <AppTimeZoneSelect value={model.query.timeZone} disabled={locked} onChange={timeZone => actions.updateQuery({ ...model.query, timeZone })} />
-        <AppButton label="套用期間" variant="secondary" density="compact" disabled={locked || !model.online || !summaryPeriodSchema.safeParse(model.query).success} onPress={actions.refresh} />
+        <AppDateField label="摘要開始日" value={model.query.startDay} disabled={locked} preserveFocusWhenDisabled={quietRead} onChange={startDay => actions.updateQuery({ ...model.query, startDay })} />
+        <AppSelect label="摘要期間" value={model.query.period} options={[{ value: "day", label: "一日" }, { value: "week", label: "連續七日" }]} disabled={locked} preserveFocusWhenDisabled={quietRead} onChange={period => actions.updateQuery({ ...model.query, period })} />
+        <AppTimeZoneSelect value={model.query.timeZone} disabled={locked} preserveFocusWhenDisabled={quietRead} onChange={timeZone => actions.updateQuery({ ...model.query, timeZone })} />
+        <AppButton label="套用期間" variant="secondary" density="compact" disabled={locked || !model.online || !summaryPeriodSchema.safeParse(model.query).success} preserveFocusWhenDisabled={quietRead} onPress={actions.refresh} />
       </SummaryDisclosure>
       {!model.online ? <Text style={s.warning}>目前離線；已有資料可能過時，沒有離線提交佇列。</Text> : null}
       {model.readFailed && !model.notice ? <Text style={s.warning}>最新摘要未能核對，暫停保存；目前已顯示資料可能過時。</Text> : null}

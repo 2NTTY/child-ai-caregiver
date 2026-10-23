@@ -11,6 +11,7 @@ import { usePreparationWorkspace, type PreparationWorkspaceValue } from "../../w
 import { WriteRecoveryNotice } from "../WriteRecoveryNotice";
 import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
+import { AppIcon, type AppIconName } from "../AppIcon";
 import { AppStatusBadge, type AppStatusTone } from "../AppStatusBadge";
 import { AppButton, AppSelect } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
@@ -43,15 +44,25 @@ function PreparationEmptyState({ workspace, history = false }: { workspace: Prep
   return <View testID="preparation-empty" style={styles.empty}><Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.meta}>{detail}</Text> : null}</View>;
 }
 
+function PreparationMetadata({ icon, label, value }: { icon: AppIconName; label: string; value: string }) {
+  return <View accessible accessibilityLabel={`${label}：${value}`} style={styles.metadataItem}>
+    <AppIcon name={icon} size={14} /><Text style={styles.meta}>{value}</Text>
+  </View>;
+}
+
 function PreparationRow({ document, selected, onPress, rowRef, history = false }: { document: PreparationDocumentView; selected: boolean; history?: boolean; onPress(): void; rowRef(node: View | null): void }) {
   const state = stateLabels[document.readState], revision = document.revision;
   return <Pressable ref={rowRef} testID={`preparation-row-${document.id}`} accessibilityRole="button"
     accessibilityLabel={`開啟${revision?.title ?? "暫不能查看的準備單"}`} accessibilityState={{ selected }} aria-selected={selected}
     onPress={onPress} style={({ pressed }) => [styles.documentRow, history && styles.historyCard, selected && styles.selectedRow, pressed && (selected ? styles.selectedPressedRow : styles.pressedRow)]}>
-    <View style={styles.row}><Text style={styles.eyebrow}>{preparationPurposeLabel(document.purpose)}</Text><AppStatusBadge label={document.status === "archived" && document.readState === "ready" ? "已歸檔" : state.label} tone={document.status === "archived" && document.readState === "ready" ? "neutral" : state.tone} /></View>
     <Text numberOfLines={history ? 2 : undefined} accessibilityRole="header" style={styles.rowTitle}>{revision?.title ?? "暫不能查看的準備單"}</Text>
     <Text numberOfLines={history ? 3 : undefined} style={styles.body}>{revision?.summary ?? state.detail}</Text>
-    <View style={styles.row}><Text style={styles.meta}>{document.status === "archived" ? `歸檔 ${preparationDateLabel(document.archivedAt)}` : `使用日期 ${preparationDateLabel(revision?.eventDate ?? null)}`}</Text>{!history ? <Text style={styles.openLabel}>打開準備單 ›</Text> : null}</View>
+    <View style={styles.row}><PreparationMetadata icon="preparation-outline" label="用途" value={preparationPurposeLabel(document.purpose)} /><AppStatusBadge label={document.status === "archived" && document.readState === "ready" ? "已歸檔" : state.label} tone={document.status === "archived" && document.readState === "ready" ? "neutral" : state.tone} /></View>
+    {document.status === "archived" || revision?.eventDate || !history ? <View style={styles.row}>
+      {document.status === "archived" ? <PreparationMetadata icon="history" label="歸檔日期" value={`歸檔 ${preparationDateLabel(document.archivedAt)}`} />
+        : revision?.eventDate ? <PreparationMetadata icon="calendar-outline" label="使用日期" value={`使用 ${preparationDateLabel(revision.eventDate)}`} /> : null}
+      {!history ? <Text style={styles.openLabel}>打開準備單 ›</Text> : null}
+    </View> : null}
   </Pressable>;
 }
 
@@ -77,12 +88,16 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
   return <View testID="preparation-document-detail" style={styles.document}>
     <AppButton label={archived ? "返回歸檔清單" : "返回準備單清單"} variant="secondary" density="compact" onPress={onClose} />
     <View style={styles.documentHeader}>
-      <View style={styles.row}><Text style={styles.eyebrow}>{preparationPurposeLabel(document.purpose)} · {workspace.model.child.displayName}</Text>
-        <AppStatusBadge label={archived ? "已歸檔" : state.label} tone={archived ? "neutral" : state.tone} /></View>
       <Text accessibilityRole="header" style={styles.documentTitle}>{revision?.title ?? "暫不能查看這份準備"}</Text>
-      {revision ? <><Text style={styles.body}>{revision.summary}</Text>
-        <Text style={styles.meta}>使用日期 {preparationDateLabel(revision.eventDate)} · 更新 {preparationDateLabel(revision.updatedAt)}</Text>
-        <Text style={styles.meta}>資料截至 {preparationDateLabel(revision.sourceAsOf)}</Text></> : null}
+      {revision ? <Text style={styles.body}>{revision.summary}</Text> : null}
+      <View style={styles.row}><PreparationMetadata icon="preparation-outline" label="用途" value={preparationPurposeLabel(document.purpose)} />
+        <PreparationMetadata icon="account-child-outline" label="孩子" value={workspace.model.child.displayName} />
+        <AppStatusBadge label={archived ? "已歸檔" : state.label} tone={archived ? "neutral" : state.tone} /></View>
+      {revision ? <View style={styles.row}>
+        {revision.eventDate ? <PreparationMetadata icon="calendar-outline" label="使用日期" value={`使用 ${preparationDateLabel(revision.eventDate)}`} /> : null}
+        <PreparationMetadata icon="history" label="更新日期" value={`更新 ${preparationDateLabel(revision.updatedAt)}`} />
+        <PreparationMetadata icon="file-document-outline" label="資料截至" value={`資料截至 ${preparationDateLabel(revision.sourceAsOf)}`} />
+      </View> : null}
     </View>
     {state.detail && !content ? <View style={styles.warning}><AppStatusBadge label={state.label} tone={state.tone} /><Text style={styles.body}>{state.detail}</Text></View> : null}
     {!workspace.model.online ? <Text accessibilityRole="alert" style={styles.warningText}>目前離線，只可閱讀已載入內容；清單及歸檔暫停。</Text> : null}
@@ -108,7 +123,14 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
       <AppButton label="來源與版本" variant="quiet" density="compact" expanded={sourceOpen} onPress={() => { setSourceOpen(value => !value); if (!sourceOpen && index && !index.started) reading?.loadVersions(document.id); }} />
       {sourceOpen ? <View style={styles.stack}>
         <Text style={styles.meta}>正文版本 {revision.number} · 文件版本 {document.version}</Text>
-        {document.sources.map(source => <Text key={source.id} style={styles.meta}>{source.label} · {source.visibility === "private" ? "私人來源" : "家庭來源"} · 來源日期 {preparationDateLabel(source.updatedAt)}{source.version !== revision.sourceRefs.find(ref => ref.id === source.id)?.version ? " · 已有較新版本" : ""}</Text>)}
+        {document.sources.map(source => <View key={source.id} style={styles.stack}>
+          <PreparationMetadata icon="file-document-outline" label="來源" value={source.label} />
+          <View style={styles.row}>
+            <PreparationMetadata icon={source.visibility === "private" ? "lock-outline" : "account-group-outline"} label="來源可見範圍" value={source.visibility === "private" ? "私人來源" : "家庭來源"} />
+            <PreparationMetadata icon="calendar-outline" label="來源日期" value={preparationDateLabel(source.updatedAt)} />
+            {source.version !== revision.sourceRefs.find(ref => ref.id === source.id)?.version ? <Text style={styles.warningText}>已有較新版本</Text> : null}
+          </View>
+        </View>)}
         {index ? <View style={styles.stack} testID="preparation-version-index">
           <Text style={styles.meta}>較早修訂按需讀取，這份清單只涵蓋已載入版本。</Text>
           {index.versions.map(version => <AppButton key={version.snapshotId} label={`正文版本 ${version.snapshotVersion} · ${preparationDateLabel(version.generatedAt)}${version.invalidated ? " · 來源已失效" : ""}`} variant="quiet" density="compact" disabled={version.invalidated || !reading?.online} onPress={() => reading?.readVersion(document.id, version.snapshotId, version.snapshotVersion)} />)}
@@ -270,8 +292,8 @@ export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestio
 const styles = StyleSheet.create({
   workspace: { gap: spacing.lg, minWidth: 0 }, stack: { gap: spacing.md, minWidth: 0 }, row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "700" },
-  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
-  eyebrow: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700", flexGrow: 1, flexShrink: 1 },
+  body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flexShrink: 1 },
+  metadataItem: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minWidth: 0, maxWidth: "100%", flexShrink: 1 },
   intentControls: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm }, purposeField: { maxWidth: "100%", flexShrink: 1 },
   list: { gap: spacing.md, minWidth: 0, flex: 1 }, listColumn: { flex: 0.8 }, detailColumn: { flex: 1.4, minWidth: 0 }, split: { flexDirection: "row", alignItems: "flex-start" },
   historyCard: { flexGrow: 1 },

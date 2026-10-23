@@ -251,7 +251,7 @@ test('shared production owners mount once without altering five native tabs or n
   assert.match(layout, /\["more", "history", "memory", "photos", "sources", "summary"/);
   const navigation = compile('src/components/navigation/app-navigation.ts', name => { throw new Error(`Unexpected import ${name}`); });
   assert.equal(navigation.navigationItems.summary.label, '概況');
-  assert.deepEqual(navigation.desktopNavigationGroups.map(group => group.keys), [['home'], ['tasks', 'growth'], ['summary', 'history'], ['profile', 'care', 'memory', 'more']]);
+  assert.deepEqual(navigation.desktopNavigationGroups.map(group => group.keys), [['home'], ['tasks', 'growth'], ['summary', 'history'], ['care', 'memory', 'profile', 'more']]);
   assert.ok(navigation.moreNavigationGroups.flatMap(group => group.items).some(item => item.key === 'summary'));
   assert.equal(navigation.navigationItems.summary.short, '概況');
 });

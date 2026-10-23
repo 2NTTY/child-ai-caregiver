@@ -30,6 +30,7 @@ function load(relative) {
   new Function('require', 'module', 'exports', output)(name => {
     if (name === 'react-native') return {View, Pressable, Platform: {OS: 'web'}, StyleSheet: {create: value => value}};
     if (name === 'react-native-paper') return {Text};
+    if (name.endsWith('/AppIcon')) return {AppIcon: ({name: iconName}) => e('span', {'aria-hidden': true, 'data-testid': `svg-icon-${iconName}`})};
     if (name.endsWith('/theme')) return theme;
     if (name.endsWith('/useContainerWidth')) return {useContainerWidth: () => ({width, ref: null, onLayout() {}})};
     if (name.endsWith('/ui')) return {AppButton: Button, AppTextField: Empty, AppSelect: Empty, AppSelectionTrigger: Button, SectionHeader: ({action}) => e('header', null, action)};

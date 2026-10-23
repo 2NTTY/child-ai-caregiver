@@ -85,7 +85,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       historyGeneration, openGeneration, pageCursors, pageIndex, nextCursor, careHistoryCursor },
     current, online: () => envRef.current.online, controller, released, onAccessError: error => envRef.current.accessError(error),
     setCare, careRecordView, careRevisionView, savedRecordReview, careOperation });
-  const { verify, accessError, read, rawRecord, publishRecord, removeRecord, loadCare, latestCare, careHistory } = careReads;
+  const { verify, accessError, read, rawRecord, publishRecord, removeRecord, loadCare, refreshCare, latestCare, careHistory } = careReads;
   function publishProfile(value: ChildProfile, reset: boolean) {
     // A routine current-profile refresh does not invalidate an already-read history.
     // Compare raw canonical data, not formatted labels; this ref is scoped with the owner.
@@ -119,11 +119,11 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     } finally { released(control); }
   }
 
-  const reloadRef = useRef({ loadCare, loadProfile }); reloadRef.current = { loadCare, loadProfile };
+  const reloadRef = useRef({ loadCare, refreshCare, loadProfile }); reloadRef.current = { loadCare, refreshCare, loadProfile };
   useEffect(() => {
     if (env.online) {
       if (attempt.current || writing.current) refreshDeferred.current = true;
-      else { refreshDeferred.current = false; void reloadRef.current.loadCare(); void reloadRef.current.loadProfile(); }
+      else { refreshDeferred.current = false; void reloadRef.current.refreshCare(); void reloadRef.current.loadProfile(); }
     } else {
       careReads.pauseReads(); profileGeneration.current++; profileRead.current?.abort();
       setProfile(previous => ({ ...previous, reading: false, needsRefresh: true }));
@@ -134,7 +134,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       if (!current()) return;
       if (attempt.current || writing.current) { refreshDeferred.current = true; setProfile(previous => ({ ...previous, needsRefresh: true })); return; }
       refreshDeferred.current = false;
-      void reloadRef.current.loadCare(); void reloadRef.current.loadProfile();
+      void reloadRef.current.refreshCare(); void reloadRef.current.loadProfile();
     };
     const unsubscribe = subscribeOnlineRefresh(refresh);
     return () => {
@@ -260,7 +260,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     finally {
       writing.current = false; released(control);
       if (current() && !attempt.current && refreshDeferred.current) {
-        refreshDeferred.current = false; void reloadRef.current.loadCare(); void reloadRef.current.loadProfile();
+        refreshDeferred.current = false; void reloadRef.current.refreshCare(); void reloadRef.current.loadProfile();
       }
     }
   }

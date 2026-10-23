@@ -8,7 +8,6 @@ import { WriteRecoveryNotice } from "../WriteRecoveryNotice";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { useContainerWidth } from "../useContainerWidth";
 import { TaskDetail } from "./TaskDetail";
-import { HistoryCardGrid } from "../history/HistoryCards";
 import { TaskListRow } from "./TaskListRow";
 import { taskAssigneeLabel } from "./TaskContent";
 import { searchTaskHistory, taskCompletionLabel, taskHistoryTime, taskHistoryDateMatches, type TaskHistoryDateRange } from "../../task-view-model";
@@ -75,12 +74,12 @@ export function TaskHistoryView({ searchText, dateRange, scrollRef, scrollPositi
             {(listReadState === "error" || listReadState === "stale" || !model.online) && recovery?.reloadCurrent ? <AppButton label="重新讀取事項" variant="secondary" density="compact" disabled={!model.online || model.reading || ["saving", "unknown", "conflict"].includes(model.operation.state) || !!model.draft} onPress={recovery.reloadCurrent} /> : null}
           </ReadStateNotice>
           {!readUnavailable && visible.length > 0 ? <Text style={styles.meta}>{model.hasMoreTasks ? "已載入的事項中有 " : ""}{visible.length} 項符合</Text> : null}
-          {!readUnavailable && visible.length > 0 ? <HistoryCardGrid testID="task-history-cards">{visible.map(task => {
+          {!readUnavailable && visible.length > 0 ? <View testID="task-history-rows" style={styles.records}>{visible.map(task => {
             const cancelledAt = task.terminalAt ? DateTime.fromISO(task.terminalAt, { setZone: true }).setZone(model.scheduleContext.timeZone) : null;
             const time = task.occurrence.state === "completed" ? taskCompletionLabel(task, model.scheduleContext.timeZone) : cancelledAt?.isValid ? `${cancelledAt.toFormat("M月d日 HH:mm")} 取消` : "取消時間未提供";
             return <TaskListRow history key={task.id} task={task} time={time} assignee={taskAssigneeLabel(task.assigneeUserId, model.eligibleAssignees)} selected={selected?.id === task.id} disabled={locked}
               rowRef={node => { if (node) rowRefs.current.set(task.id, node); else rowRefs.current.delete(task.id); }} onPress={() => { anchor.current = { id: task.id, y: getScrollPosition?.() ?? scrollPosition, scope }; actions.selectTask(task.id, "toggle"); }} />;
-          })}</HistoryCardGrid> : null}
+          })}</View> : null}
           {model.hasMoreTasks ? <AppButton label={model.loadingMoreTasks ? "正在載入…" : "載入更多事項"} variant="secondary" disabled={locked || model.loadingMoreTasks || !model.online} onPress={actions.loadMoreTasks} /> : null}
         </View>
         {showPanel ? <View ref={panelRef} tabIndex={-1} style={styles.column}><TaskDetail model={model} actions={actions} /></View> : null}
@@ -90,6 +89,7 @@ export function TaskHistoryView({ searchText, dateRange, scrollRef, scrollPositi
 }
 const styles = StyleSheet.create({
   workspace: { gap: spacing.lg, minWidth: 0 }, split: { flexDirection: "row", alignItems: "flex-start" },
+  records: { minWidth: 0, flexDirection: "column", alignItems: "stretch" },
   column: { flex: 1, minWidth: 0, gap: spacing.md }, hidden: { display: "none" },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta }, warning: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },
 });

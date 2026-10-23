@@ -59,7 +59,7 @@ export interface MemoryPreviewWriteContext {
 
 export const factStatusLabels: Record<FactStatus, string> = { candidate: "待確認候選", confirmed: "已確認", inactive: "已停用" };
 export const topicStatusLabels: Record<TopicStatus, string> = { pending: "待處理", answered: "已回答", snoozed: "已暫緩", resolved: "已解決" };
-export const visibilityLabels: Record<MemoryVisibility, string> = { private: "只供本人", family: "家庭共享" };
+export const visibilityLabels: Record<MemoryVisibility, string> = { private: "本人", family: "家庭共享" };
 export const roleLabels: Record<MemoryRole, string> = { owner: "家庭擁有人", caregiver: "照顧者", viewer: "唯讀成員" };
 export const isTerminalTopic = (topic: Pick<MemoryTopicView, "status">) => topic.status === "answered" || topic.status === "resolved";
 export function canManageMemory(role: MemoryRole, item: { visibility: MemoryVisibility; authorSelf: boolean }) {

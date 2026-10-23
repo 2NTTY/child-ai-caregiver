@@ -29,10 +29,13 @@ export function readChildProfile(model: ProfileViewModel | null, scopeKey: strin
   if (!model) return empty("loading", "正在讀取檔案");
   if (model.access === "lost") return empty("access_lost", "孩子權限已失效", "舊檔案及來源已清除，請重新核對家庭權限。");
   if (!model.child) return empty("no_child", "尚未有孩子", "可到原子女檔案加入孩子及核對基本資料。");
-  if (model.reading) return empty("loading", "正在讀取檔案");
+  // Keep a same-scope confirmed revision during revalidation; source and access
+  // checks below still reject unavailable or invalidated authority immediately.
+  if (model.reading && !model.current) return empty("loading", "正在讀取檔案");
   if (source && (source.scopeKey !== scopeKey || source.childId !== model.child.id || source.state === "unavailable")) return empty("source_unavailable", "來源暫不可讀", "未能核對這位孩子的原來源，暫不顯示舊資料。");
   if (source?.state === "invalidated") return empty("source_invalidated", "原來源已失效", "這份檔案需要重新核對，舊來源內容不再作為目前資料。");
   if (model.operation.resultUnavailable) return empty("source_unavailable", "原操作已確認，結果不可讀", "請返回原檔案核對；不以舊內容代替目前結果。");
+  if (model.reading && (!source || !model.online || model.needsRefresh)) return empty("loading", "正在讀取檔案");
   const data = model.current?.data ?? null;
   if (!data) return empty("missing", "尚未有已確認檔案");
   const validUntil = data.validUntil;

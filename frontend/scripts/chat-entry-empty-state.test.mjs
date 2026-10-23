@@ -64,7 +64,7 @@ test('desktop primary entry restores both lines and the original guarded link, i
 test('the initial prompt requires a confirmed empty selected-child history, not a loading/error/older-page gap', () => {
   const s = setup(), state = s.owner.chatState;
   assert.equal(text(s.render().props.emptyState), '想先聊聊什麼？'); assert.equal(s.composer().props.suggestionsAvailable, true);
-  for (const patch of [{ loadedAt: null }, { loading: true }, { error: '合成讀取失敗' }, { loadingOlder: true }, { nextCursor: 'older-page' },
+  for (const patch of [{ loadedAt: null }, { loading: true, loadedAt: null }, { error: '合成讀取失敗' }, { loadingOlder: true }, { nextCursor: 'older-page' },
     { selectedChildId: 'child-b' }, { messages: [{ id: 'existing', role: 'user', text: '已保存訊息' }] }]) {
     const previous = { ...state }; Object.assign(state, patch);
     assert.doesNotMatch(text(s.render().props.emptyState), /想先聊聊/); assert.equal(s.composer().props.suggestionsAvailable, false);

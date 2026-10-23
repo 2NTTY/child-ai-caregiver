@@ -92,12 +92,12 @@ test('All features uses one destination name and includes every existing ordinar
 });
 
 
-test('Review uses one display name and sits immediately above Memory only in the desktop sidebar', () => {
+test('Desktop management puts Profile below Memory while keeping Review naming and mobile entry order', () => {
   assert.deepEqual(navigation.navigationItems.care, { href: '/care', label: '核對', short: '核對', icon: 'notebook-outline' });
   const desktopKeys = navigation.desktopNavigationGroups.flatMap(group => group.keys);
   assert.equal(desktopKeys.filter(key => key === 'care').length, 1);
   assert.equal(desktopKeys[desktopKeys.indexOf('memory') - 1], 'care');
-  assert.deepEqual(navigation.desktopNavigationGroups.find(group => group.label === '管理').keys, ['profile', 'care', 'memory', 'more']);
+  assert.deepEqual(navigation.desktopNavigationGroups.find(group => group.label === '管理').keys, ['care', 'memory', 'profile', 'more']);
   const layout = readFileSync(new URL('../app/(dashboard)/_layout.tsx', import.meta.url), 'utf8');
   assert.deepEqual([...layout.matchAll(/<Tabs\.Screen name="([^"]+)"/g)].map(match => match[1]), ['index', 'chat', 'tasks', 'growth', 'care']);
   const screen = readFileSync(new URL('../src/screens/careScreen.tsx', import.meta.url), 'utf8');

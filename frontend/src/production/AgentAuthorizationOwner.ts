@@ -45,6 +45,7 @@ export class AgentAuthorizationOwner {
   private scope: Scope | null = null;
   private epoch = 0;
   private request: AbortController | null = null;
+  private loadedNotesRange: { afterId: string | null } | null = null;
   private readonly receiptRequests = new Map<string, AbortController>();
   private snapshot: AgentAuthorizationSnapshot;
   private readonly listeners = new Set<() => void>();
@@ -62,7 +63,7 @@ export class AgentAuthorizationOwner {
   syncContext(scope: Scope | null, online: boolean) {
     if (scope?.key !== this.scope?.key) {
       this.epoch++; this.request?.abort(); this.request = null; this.receiptRequests.forEach(request => request.abort()); this.receiptRequests.clear();
-      this.scope = scope; this.contactApi.resetOnline(); this.snapshot = initial(online); this.listeners.forEach(listener => listener());
+      this.scope = scope; this.loadedNotesRange = null; this.contactApi.resetOnline(); this.snapshot = initial(online); this.listeners.forEach(listener => listener());
     } else if (this.snapshot.online !== online) {
       if (!online) { this.request?.abort(); this.receiptRequests.forEach(request => request.abort()); }
       this.update({ online });
@@ -82,6 +83,7 @@ export class AgentAuthorizationOwner {
       || contactError && (error.status === 401 || error.status === 409);
     if (!identity && (!(actionError || contactError) || ![403, 404].includes((error as AgentActionsApiError).status))) return false;
     this.epoch++; this.request?.abort(); this.request = null; this.receiptRequests.forEach(request => request.abort()); this.receiptRequests.clear();
+    this.loadedNotesRange = null;
     this.snapshot = { ...initial(this.snapshot.online), policyState: "denied", notesState: "denied", contactState: "denied", notice: "存取權已改變，私人授權及記錄已清除。" };
     this.listeners.forEach(listener => listener()); this.onAccessLost(!!identity); return true;
   }
@@ -123,21 +125,39 @@ export class AgentAuthorizationOwner {
     } finally { request.finish(); }
   };
   readNotes = async (more = false, keepQuery = false) => {
-    if (this.snapshot.pending?.kind === "policy" || more && (!this.snapshot.nextAfterId || this.snapshot.pending)) return;
+    if (this.snapshot.pending?.kind === "policy" || more && (this.snapshot.notesState !== "ready" || !this.snapshot.nextAfterId || this.snapshot.pending)) return;
     const request = this.begin("read"); if (!request) return;
     const query = this.snapshot.pending?.kind === "delete" ? "" : more || keepQuery ? this.snapshot.query : this.snapshot.queryDraft.trim();
     const after = more ? this.snapshot.nextAfterId : null;
-    this.update({ notesState: "loading", notes: more ? this.snapshot.notes : [], nextAfterId: null,
+    const preserve = !!this.loadedNotesRange && !this.snapshot.pending && query === this.snapshot.query
+      && (this.snapshot.notesState === "ready" && (more || keepQuery) || this.snapshot.notesState === "failed");
+    const rangeToRead = preserve && !more ? this.loadedNotesRange : null;
+    this.update({ notesState: preserve ? this.snapshot.notesState : "loading", notes: preserve || more ? this.snapshot.notes : [], nextAfterId: preserve ? this.snapshot.nextAfterId : null,
       pending: this.snapshot.pending ? { ...this.snapshot.pending, reviewed: false } : null });
     try {
-      const page = await this.api.listNotes(request.scope.childId, request.controller.signal, request.scope.userId, query, after);
-      if (!request.current()) return;
-      const prior = more ? this.snapshot.notes : [], ids = new Set(page.items.map(item => item.id));
-      this.update({ notesState: "ready", notes: [...prior.filter(item => !ids.has(item.id)), ...page.items], query, nextAfterId: page.nextAfterId,
+      // The cursor is the last scanned ID, even when a filtered page has no matches.
+      // A formerly complete range has no exposed scan boundary; re-read it to the end.
+      let notes: AgentPrivateNote[] = [], nextAfterId = after;
+      do {
+        const page = await this.api.listNotes(request.scope.childId, request.controller.signal, request.scope.userId, query, nextAfterId);
+        if (!request.current()) return;
+        if (request.controller.signal.aborted || !this.snapshot.online) throw new AgentActionsApiError();
+        if (page.nextAfterId !== null && nextAfterId !== null && page.nextAfterId <= nextAfterId) throw new AgentActionsApiError();
+        const ids = new Set(page.items.map(item => item.id));
+        notes = [...notes.filter(item => !ids.has(item.id)), ...page.items];
+        nextAfterId = page.nextAfterId;
+      } while (nextAfterId && rangeToRead && (rangeToRead.afterId === null || nextAfterId < rangeToRead.afterId));
+      const ids = new Set(notes.map(item => item.id));
+      this.loadedNotesRange = { afterId: nextAfterId };
+      this.update({ notesState: "ready", notes: [...(more ? this.snapshot.notes.filter(item => !ids.has(item.id)) : []), ...notes], query, nextAfterId,
         pending: this.snapshot.pending?.kind === "delete" ? this.snapshot.pending.reconfirm ? null : { ...this.snapshot.pending, reviewed: true } : this.snapshot.pending,
         notice: this.snapshot.pending?.kind === "delete" ? "已重新讀取私人記錄；清單中未出現原記錄不代表刪除已確認，請核對後重試原操作。" : null });
     } catch (error) {
-      if (request.current() && !this.lost(error)) this.update({ notesState: "failed", notes: [], nextAfterId: null, notice: "未能讀取私人記錄；暫時不能刪除。" });
+      if (request.current() && !this.lost(error)) {
+        if (!preserve) this.loadedNotesRange = null;
+        this.update({ notesState: "failed", notes: preserve ? this.snapshot.notes : [], nextAfterId: preserve ? this.snapshot.nextAfterId : null,
+          notice: preserve ? "未能重新核對私人記錄；保留上次讀取的內容，暫時不能刪除。" : "未能讀取私人記錄；暫時不能刪除。" });
+      }
     } finally { request.finish(); }
   };
   savePolicy = () => {

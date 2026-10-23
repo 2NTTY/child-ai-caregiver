@@ -16,30 +16,48 @@ function nodes(tree) {
 const component = (tree, type, label) => nodes(tree).find(node => node.type === type && (!label || node.props.label === label));
 const flatten = style => Array.isArray(style) ? Object.assign({}, ...style.filter(Boolean).map(flatten)) : style || {};
 const byTestId = (tree, id) => nodes(tree).find(node => node.props?.testID === id);
-function renderer(relative, name, width = 1024) {
-  const slots = []; let cursor = 0, dirty = false, effects = [];
+function renderer(relative, name, width = 1024, expandComponents = false) {
+  const instances = new Map(); let slots = [], cursor = 0, dirty = false, effects = [];
   const react = {
-    useState(initial) { const i = cursor++; slots[i] ??= { value: typeof initial === 'function' ? initial() : initial }; return [slots[i].value, next => { const value = typeof next === 'function' ? next(slots[i].value) : next; if (!Object.is(value, slots[i].value)) { slots[i].value = value; dirty = true; } }]; },
+    useState(initial) { const state = slots[cursor++] ??= { value: typeof initial === 'function' ? initial() : initial }; return [state.value, next => { const value = typeof next === 'function' ? next(state.value) : next; if (!Object.is(value, state.value)) { state.value = value; dirty = true; } }]; },
     useId() { return 'care-tabs'; },
     useLayoutEffect(fn, deps) { return react.useEffect(fn, deps); },
     useRef(value) { return slots[cursor++] ??= { current: value }; },
-    useEffect(fn, deps) { const i = cursor++, old = slots[i]; if (!old || deps.some((value, index) => !Object.is(value, old[index]))) effects.push(fn); slots[i] = deps; },
+    useEffect(fn, deps) { const i = cursor++, old = slots[i]; if (!deps || !old || deps.some((value, index) => !Object.is(value, old[index]))) effects.push(fn); slots[i] = deps; },
   };
   const dependencies = {
     'react': react, 'react/jsx-runtime': require('react/jsx-runtime'),
-    'react-native': { View: 'View', Pressable: 'Pressable', StyleSheet: { create: value => value } }, 'react-native-paper': { Text: 'Text' },
+    'react-native': { View: 'View', Pressable: 'Pressable', Platform: { OS: 'web' }, StyleSheet: { create: value => value } }, 'react-native-paper': { Text: 'Text' },
     '../../care-view-model': values, '../../theme': { colors: {}, readingType: {}, workspaceType: {}, spacing: { xs: 4, sm: 8, md: 12, lg: 16 }, radius: {} },
     '../appearance/BackgroundSurface': { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false },
     '../useContainerWidth': { useContainerWidth: () => ({ width, ref: null, onLayout() {} }) },
   };
-  const filename = new URL(relative, import.meta.url);
-  const output = ts.transpileModule(readFileSync(filename, 'utf8'), { fileName: filename.pathname, compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
-  const module = { exports: {} };
-  new Function('require', 'module', 'exports', output + `\nmodule.exports.${name} = ${name};`)(key => dependencies[key] ?? new Proxy({}, { get: (_target, prop) => String(prop) }), module, module.exports);
+  function load(relative, name) {
+    const filename = new URL(relative, import.meta.url);
+    const output = ts.transpileModule(readFileSync(filename, 'utf8'), { fileName: filename.pathname, compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX } }).outputText;
+    const module = { exports: {} };
+    new Function('require', 'module', 'exports', output + (name ? `\nmodule.exports.${name} = ${name};` : ''))(key => dependencies[key] ?? new Proxy({}, { get: (_target, prop) => String(prop) }), module, module.exports);
+    return module.exports;
+  }
+  if (expandComponents) dependencies['../useQuietReadFocus'] = load('../src/components/useQuietReadFocus.ts');
+  const target = load(relative, name)[name];
+  function execute(type, props, address) {
+    slots = instances.get(address) ?? []; instances.set(address, slots); cursor = 0;
+    return type(props);
+  }
+  // Expand actual local children with separate hook slots; imports remain explicit
+  // host ports. This checks their press guards, not browser focus or DOM effects.
+  function expand(tree, address) {
+    if (!tree || typeof tree !== 'object') return tree;
+    if (Array.isArray(tree)) return tree.map((child, index) => expand(child, `${address}/${child?.key ?? index}`));
+    if (typeof tree.type === 'function') return expand(execute(tree.type, tree.props, address), `${address}/render`);
+    return { ...tree, props: { ...tree.props, children: expand(tree.props?.children, `${address}/children`) } };
+  }
   return props => {
     for (let count = 0; count < 10; count++) {
-      cursor = 0; dirty = false; effects = [];
-      const tree = module.exports[name](props); effects.forEach(fn => fn());
+      dirty = false; effects = [];
+      const output = execute(target, props, 'root'), tree = expandComponents ? expand(output, 'root/render') : output;
+      effects.forEach(fn => fn());
       if (!dirty) return tree;
     }
     throw new Error('Unstable component');
@@ -112,7 +130,7 @@ test('zero or unavailable pending counts retain their read-state boundary', () =
 });
 
 test('the sole saved list keeps server search and cursor actions without duplicating detail or forms', () => {
-  const h = workspace(), render = renderer('../src/components/care/CareSavedRecordsView.tsx', 'CareSavedRecordsBody');
+  const h = workspace(), render = renderer('../src/components/care/CareSavedRecordsView.tsx', 'CareSavedRecordsBody', 1024, true);
   const draw = () => render({ model: h.model, actions: h.actions, inlineDetail: false });
   let tree = draw();
   assert.equal(nodes(tree).filter(node => node.type === 'Pressable').length, h.model.list.records.length);
@@ -134,10 +152,23 @@ test('the sole saved list keeps server search and cursor actions without duplica
     h.model.deletion = state === 'deletion' ? {} : null; tree = draw();
     assert.equal(component(tree, 'AppTextField', '搜尋已保存記錄').props.disabled, true);
     for (const label of ['搜尋', '下一頁', '上一頁']) assert.equal(component(tree, 'AppButton', label).props.disabled, true);
-    assert.ok(nodes(tree).filter(node => node.type === 'Pressable').every(node => node.props.disabled));
+    const cards = nodes(tree).filter(node => node.type === 'Pressable');
+    assert.equal(cards.length, h.model.list.records.length);
+    assert.ok(cards.every(node => node.props.disabled));
+    const before = h.calls.length; cards.forEach(card => card.props.onPress());
+    assert.equal(h.calls.length, before, 'Occupied card handlers remain guarded');
     assert.equal(component(tree, 'CareRecordDelete'), undefined);
   }
   h.model.operation.state = 'none'; h.model.draft = null; h.model.deletion = null;
+  h.model.list.state = 'loading'; h.model.list.hasSnapshot = true; tree = draw();
+  const refreshingCards = nodes(tree).filter(node => node.type === 'Pressable');
+  assert.equal(refreshingCards.length, h.model.list.records.length);
+  assert.ok(refreshingCards.every(card => !card.props.disabled && card.props['aria-disabled'] === true));
+  const before = h.calls.length; refreshingCards.forEach(card => card.props.onPress());
+  assert.equal(h.calls.length, before, 'Quiet reads preserve the host but never activate a card');
+  h.model.list.state = 'ready'; tree = draw();
+  component(tree, 'Pressable').props.onPress();
+  assert.deepEqual(h.calls.at(-1), ['open', h.model.list.records[0].id]);
   assert.ok(render({ model: h.model, actions: h.actions }).type.toString().includes('CareRecordDetail'));
 });
 

@@ -5,16 +5,21 @@ import { careKindOptions, type CareFormValues, type CareRecordsActions, type Car
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
 import { MotionDisclosure, MotionReveal } from "../../motion";
 import { AppStatusBadge } from "../AppStatusBadge";
+import { AppIcon, type AppIconName } from "../AppIcon";
 import { AppButton, AppSelectionTrigger, SectionHeader } from "../ui";
 
-export function CareValueSummary({ values }: { values: CareFormValues }) {
+function CareMetadata({ icon, label, value }: { icon: AppIconName; label: string; value: string }) {
+  return <View style={styles.metadataLine}><AppIcon name={icon} size={15} /><Text selectable accessibilityLabel={`${label}：${value}`} style={[styles.meta, styles.metadataValue]}>{value}</Text></View>;
+}
+
+export function CareValueSummary({ values, hideEmptyQuantity = false }: { values: CareFormValues; hideEmptyQuantity?: boolean }) {
   return <View style={styles.summary}>
     <Text style={styles.body}>{values.text}</Text>
     <View style={styles.valueContext}>
-      <Text style={styles.tool}>種類：{careKindOptions.find(item => item.value === values.kind)?.label}</Text>
-      <Text style={styles.tool}>來源：{values.source}</Text>
-      <Text style={styles.tool}>數量：{values.quantityRaw ? `${values.quantityRaw} ${values.quantityUnit}（${values.quantityPrecision === "exact" ? "精確" : "約數"}）` : "未提供"}</Text>
-      <Text style={styles.tool}>事件時間原文：{values.eventTimeRaw || "未提供"}</Text>
+      <CareMetadata icon="notebook-outline" label="種類" value={careKindOptions.find(item => item.value === values.kind)?.label ?? values.kind} />
+      <CareMetadata icon="file-document-outline" label="資料來源" value={values.source || "來源未提供"} />
+      {values.quantityRaw || !hideEmptyQuantity ? <CareMetadata icon="ruler" label="數量" value={values.quantityRaw ? `${values.quantityRaw} ${values.quantityUnit}（${values.quantityPrecision === "exact" ? "精確" : "約數"}）` : "數量未提供"} /> : null}
+      <CareMetadata icon="calendar-clock-outline" label="事件時間原文" value={values.eventTimeRaw || "事件時間未提供"} />
       {values.reason ? <Text style={styles.tool}>更正原因：{values.reason}</Text> : null}
     </View>
   </View>;
@@ -32,8 +37,8 @@ export function CareRevisionContent({ revision, createdAtLabel }: { revision: Ca
   </View>;
 }
 
-export function CareRecordDetail({ detail, actions, canEdit, online, active = true, revealIntent = null, revealEligible = false, onReturnToList }: {
-  detail: NonNullable<CareRecordsViewModel["detail"]>; actions: CareRecordsActions; canEdit: boolean; online: boolean; active?: boolean; onReturnToList?(): void; revealIntent?: string | number | null; revealEligible?: boolean;
+export function CareRecordDetail({ detail, actions, canEdit, online, reading = false, active = true, revealIntent = null, revealEligible = false, onReturnToList }: {
+  detail: NonNullable<CareRecordsViewModel["detail"]>; actions: CareRecordsActions; canEdit: boolean; online: boolean; reading?: boolean; active?: boolean; onReturnToList?(): void; revealIntent?: string | number | null; revealEligible?: boolean;
 }) {
   const { record } = detail;
   const headingRef = useRef<View>(null);
@@ -48,7 +53,7 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
   }, [record.id, active]);
   return <View style={styles.detail}><SectionHeader title="已確認的整理結果" density="compact" action={<AppButton label="返回記錄" density="compact" variant="quiet" onPress={onReturnToList ?? actions.closePanel} />} />
     <View ref={headingRef} accessibilityLabel={record.title} tabIndex={-1} style={styles.recordHeading}><Text accessibilityRole="header" style={styles.title}>{record.title}</Text><AppStatusBadge label="已確認保存" tone="success" /></View>
-    <MotionReveal value={record.current} contentKey={JSON.stringify(record.current.values)} scopeKey={`${record.childId}:${record.id}`} regionKey="record-detail-text" triggerKey={revealIntent} eligible={revealEligible && active} preset="local">{revision => <CareValueSummary values={revision.values} />}</MotionReveal>
+    <MotionReveal value={record.current} contentKey={JSON.stringify(record.current.values)} scopeKey={`${record.childId}:${record.id}`} regionKey="record-detail-text" triggerKey={revealIntent} eligible={revealEligible && active} preset="local">{revision => <CareValueSummary values={revision.values} hideEmptyQuantity />}</MotionReveal>
     {record.current.eventTimePrecision === "unknown" ? <Text style={styles.warning}>事件時間尚未確定，原文保留供核對。</Text> : null}
     <View style={styles.summary}>
       <AppSelectionTrigger label="來源、確認時間及版本" expanded={provenanceOpen} onPress={() => setExpanded({recordId: record.id, provenance: !provenanceOpen, history: expanded.recordId !== record.id || expanded.history})} />
@@ -60,7 +65,7 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
       </View></MotionDisclosure>
     </View>
     <Text style={styles.meta}>家庭共享記錄；更正會建立新版本，並保留舊版。</Text>
-    {canEdit ? <View style={styles.actions}><AppButton label="更正這筆記錄" onPress={() => actions.startCorrection(record.id)} /></View> : null}
+    {canEdit ? <View style={styles.actions}><AppButton label="更正這筆記錄" disabled={reading} preserveFocusWhenDisabled={reading && online} onPress={() => { if (!reading) actions.startCorrection(record.id); }} /></View> : null}
     <AppSelectionTrigger label="更正歷史" expanded={historyOpen} onPress={() => {setExpanded({recordId: record.id, provenance: provenanceOpen, history: !historyOpen}); if (!detail.historyOpen) actions.showHistory();}} />
     <MotionDisclosure expanded={historyOpen} scopeKey={`${record.childId}:${record.id}`}><View style={styles.history}><Text accessibilityRole="header" style={styles.title}>更正歷史</Text>
       {detail.historyLoading ? <Text style={styles.tool}>正在讀取更正歷史…</Text> : historyError ? <Text style={styles.tool}>未能讀取更正歷史，請重試。</Text>
@@ -70,7 +75,7 @@ export function CareRecordDetail({ detail, actions, canEdit, online, active = tr
         : detail.hasMoreHistory ? <AppButton label="載入更早版本" variant="secondary" onPress={actions.loadOlderHistory} loading={detail.historyLoading} disabled={!online} />
           : historyReady && !detail.historyLoading ? <Text style={styles.meta}>已到最早的已載入版本。</Text> : null}
     </View></MotionDisclosure>
-    {canEdit ? <AppButton label="永久刪除此記錄及歷史" variant="danger-secondary" disabled={!online} onPress={() => actions.startDeletion(record.id)} /> : null}
+    {canEdit ? <AppButton label="永久刪除此記錄及歷史" variant="danger-secondary" disabled={!online || reading} preserveFocusWhenDisabled={reading && online} onPress={() => { if (!reading) actions.startDeletion(record.id); }} /> : null}
   </View>;
 }
 
@@ -78,6 +83,8 @@ const styles = StyleSheet.create({
   detail: {padding:spacing.lg,backgroundColor:colors.paper,gap:spacing.lg},
   summary: { gap: spacing.md },
   valueContext: { gap: spacing.xs },
+  metadataLine: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xs, minWidth: 0 },
+  metadataValue: { flexShrink: 1, minWidth: 0 },
   metadata: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.xs },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
   tool: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
