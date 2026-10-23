@@ -1,0 +1,26 @@
+{
+  "README.md": {
+    "sha256": "88abd2722ad40b2cde4c8193696afb1ab82f32a94a18cb5a69855323badca02e",
+    "bytes": 7121
+  },
+  "evidence-index.json": {
+    "sha256": "8cfe87cf1805be136575e5b4c92cce14b15b86fdea9f9878b49f382be2e3cd4e",
+    "bytes": 58855
+  },
+  "screenshots/25b-home-glass-1024.jpg": {
+    "sha256": "f0cc635f52822a272f84bd29fb30046debe9e34c42800676971581412daedc47",
+    "bytes": 102255
+  },
+  "screenshots/25d2-care-toolbar-320.jpg": {
+    "sha256": "4cd86f97cc6c100c367eca9fe3c3bba766244ca2a43ce0bb4592cc11fbf2a2c1",
+    "bytes": 67462
+  },
+  "screenshots/26-messages-1440.jpg": {
+    "sha256": "6d76be69187d70880304a4e9969f2c996e0d199472951ffd782f13a5b4cd74bb",
+    "bytes": 167664
+  },
+  "screenshots/26c-tasks-1024.jpg": {
+    "sha256": "1e4714d88eba80fa1df4feaba8f33d5b842927e4b9e1f62cbc6f87a4f0bdc356",
+    "bytes": 155851
+  }
+}

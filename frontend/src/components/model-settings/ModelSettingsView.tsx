@@ -21,7 +21,7 @@ import { modelCatalogSelection, modelCommandFromDraft, modelSettingsDraft, model
 
 const modelReasonText = (reason: string) => ({ invalid_key: "密鑰無效或沒有存取權限。", region_unavailable: "供應商不支援目前服務地區。",
   model_unavailable: "這份憑證目前不能存取所選模型。", quota_exceeded: "供應商配額或速率已達上限。", timeout: "供應商查核逾時。",
-  metadata_unsupported: "此服務未接模型 metadata 查核；不代表生成失敗。", unavailable: "供應商暫時未能完成查核。" })[reason] ?? "目前未能完成查核。";
+  metadata_unsupported: "此服務暫不支援模型資料查核；不代表模型無法回答。", unavailable: "供應商暫時未能完成查核。" })[reason] ?? "目前未能完成查核。";
 const empty: ModelSettings = { version: 0, mode: "disabled", provider: "gemini", model: "gemini-3.1-flash-lite", keyConfigured: false,
   backgroundEnabled: false, dailyLimit: personalLimits.daily.default, maxModelCalls: personalLimits.modelCalls.default, maxQueryEmbeddings: personalLimits.queryEmbeddings.default, updatedAt: null };
 const modeLabels: Record<ModelMode, string> = { platform: brand.platformServiceLabel, personal: "我的個人密鑰", disabled: "停用 AI" };
@@ -38,13 +38,21 @@ function UsageCard({ label, usage }: { label: string; usage: ModelSettingsUsage 
   </SectionCard>;
 }
 
-export function ModelSettingsView({ model, actions: sourceActions, active = true }: { model: ModelSettingsViewModel; actions: ModelSettingsActions; active?: boolean }) {
+type ModelSettingsViewProps = { model: ModelSettingsViewModel; actions: ModelSettingsActions; active?: boolean };
+export function ModelSettingsView(props: ModelSettingsViewProps) {
+  return <ModelSettingsForm key={props.model.scopeKey} {...props} />;
+}
+function ModelSettingsForm({ model, actions: sourceActions, active = true }: ModelSettingsViewProps) {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteReview, setDeleteReview] = useState<{ basis: string; settings: ModelSettings } | null>(null);
+  const [deleteNotice, setDeleteNotice] = useState("");
+  const deleteOpen = !!deleteReview;
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const formId = useId();
   const snapshot = model.snapshot, settings = snapshot?.settings ?? empty;
+  const settingsBasis = JSON.stringify(settings), formBasis = JSON.stringify([settings, snapshot?.effective]);
+  const deleteCurrent = deleteReview?.basis === settingsBasis;
   const motionSerial = useRef(0);
   const [readIntent, setReadIntent] = useState<{ serial: number; scopeKey: string } | null>(null);
   const [saveIntent, setSaveIntent] = useState<{ serial: number; scopeKey: string; baseVersion: number } | null>(null);
@@ -67,12 +75,12 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
   const { control, reset, setValue, setFocus, watch, handleSubmit, formState: { errors, isDirty } } = useForm<ModelSettingsDraft>({
     resolver: zodResolver(modelSettingsSchema(settings.keyConfigured, settings.provider)), defaultValues: modelSettingsDraft(settings, snapshot?.effective), mode: "onChange", shouldFocusError: false,
   });
-  usePreviewLeaveGuard(isDirty, false, "account");
+  usePreviewLeaveGuard(isDirty || deleteOpen, false, "account");
   const setDraftEditing = sourceActions.setDraftEditing;
   useEffect(() => {
-    setDraftEditing?.(active && isDirty);
+    setDraftEditing?.(active && (isDirty || deleteOpen));
     return () => setDraftEditing?.(false);
-  }, [active, isDirty, setDraftEditing]);
+  }, [active, isDirty, deleteOpen, setDraftEditing]);
   const provider = watch("provider"), selectedModel = watch("model");
   const modelSelection = modelCatalogSelection(model.catalog, provider, selectedModel);
   const selectedCapabilities = modelSelection.capabilities;
@@ -87,13 +95,19 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
   const available = mode === "personal" ? snapshot?.personalAvailable : mode === "platform" ? snapshot?.platformAvailable : true;
   const canSave = !locked && available && (mode !== "personal" || consent && (settings.keyConfigured || !!keyText.trim()));
   useEffect(() => {
-    reset(modelSettingsDraft(settings, snapshot?.effective)); setDeleteOpen(false); setDeleteConfirmed(false);
-  }, [model.scopeKey, model.formRevision, settings, snapshot?.effective, reset]);
+    reset(modelSettingsDraft(settings, snapshot?.effective));
+  }, [model.scopeKey, model.formRevision, formBasis, reset]);
   useEffect(() => {
-    setValue("keyText", ""); setValue("consent", false); setDeleteOpen(false); setDeleteConfirmed(false);
+    setValue("keyText", ""); setValue("consent", false);
   }, [model.secretRevision, model.online, model.authorized, setValue]);
+  useEffect(() => {
+    if (deleteReview && (!deleteCurrent || !snapshot || !model.online || !model.authorized || model.needsRead || model.operation === "unknown")) {
+      setDeleteReview(null); setDeleteConfirmed(false);
+      setDeleteNotice("設定或存取狀態已改變，刪除確認已失效；請重新核對後再開啟。");
+    }
+  }, [deleteCurrent, deleteReview, !!snapshot, model.online, model.authorized, model.needsRead, model.operation]);
   function clearSecret() { setValue("keyText", ""); setValue("consent", false); }
-  useEffect(() => { if (!active) { setValue("keyText", ""); setValue("consent", false); setDeleteOpen(false); setDeleteConfirmed(false); } }, [active, setValue]);
+  useEffect(() => { if (!active) { setValue("keyText", ""); setValue("consent", false); setDeleteReview(null); setDeleteConfirmed(false); } }, [active, setValue]);
   const submit = handleSubmit(draft => {
     if (!canSave) return;
     const command = modelCommandFromDraft(draft, settings);
@@ -115,21 +129,22 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
     <StatusAnnouncement eventKey={String(model.authorized)} message={active && !model.authorized ? "本人身份或權限已改變，輸入及模型資料已清除。請重新登入。" : ""} urgent={!model.authorized} />
     <StatusAnnouncement eventKey={`${model.busy ?? "none"}:${model.operation}:${model.notice}:${model.keyCheck?.status ?? "none"}`}
       message={active && model.online && model.authorized ? statusMessage : ""} urgent={!model.busy && (model.operation === "failed" || model.keyCheck?.status === "unavailable")} />
-    <SectionCard><SectionHeader density="compact" title="本人模型設定" subtitle={`適用於${model.accountName} · ${model.serverLabel}；切換孩子會沿用本人的設定。`} />
+    <SectionCard><SectionHeader density="compact" title="本人模型設定" subtitle={`適用於${model.accountName}；切換孩子會沿用本人的設定。`}
+      action={!model.originalOperationId && (!snapshot || model.needsRead || model.operation === "failed" || isDirty || deleteOpen) ? <AppButton label="重新讀取" accessibilityLabel="重新讀取模型設定" variant="quiet" density="compact" disabled={!model.online || !model.authorized || !!model.busy} onPress={actions.refresh} /> : undefined} />
       <View style={styles.statusRow}>{model.busy && (snapshot || model.busy !== "read") ? <ActivityIndicator size={20} /> : null}
         {model.operation !== "none" ? <OperationPill state={model.operation} /> : null}
         {!snapshot && model.busy === "read" ? <ReadStateNotice state="loading" message="正在讀取模型設定…" />
-          : <Text style={[styles.body, model.operation === "unknown" && styles.warning]}>{model.notice || (model.busy ? "正在讀取模型設定…" : "選擇平台服務、自己的密鑰，或停用 AI。")}</Text>}
+          : <Text style={[styles.body, model.operation === "unknown" && styles.warning]}>{model.notice || (model.busy ? statusMessage : "選擇平台服務、自己的密鑰，或停用 AI。")}</Text>}
       </View>
       {!model.online ? <Text style={styles.warning}>目前離線，密鑰輸入已清除；恢復連線後先重讀設定。</Text> : null}
       {!model.authorized ? <Text style={styles.error}>本人身份或權限已改變，請重新登入。</Text> : null}
-      <AppButton label={model.originalOperationId ? "查回原操作及目前設定" : "重新讀取模型設定"} variant="secondary" disabled={!model.online || !model.authorized || !!model.busy} onPress={actions.refresh} />
+      {model.originalOperationId ? <AppButton label="查回原操作及目前設定" variant="secondary" disabled={!model.online || !model.authorized || !!model.busy} onPress={actions.refresh} /> : null}
     </SectionCard>
     {snapshot && model.authorized ? <View style={[styles.columns, narrow && styles.stacked]}>
       <View style={[styles.column, narrow && styles.fullColumn]}>
         <SectionCard><MotionFeedback active={saved} triggerKey={saved ? saveIntent?.serial ?? null : null} scopeKey={model.scopeKey} testID="model-settings-feedback">
           <MotionReveal value={metadata} contentKey={JSON.stringify([metadata.version, metadata.mode])} scopeKey={model.scopeKey} regionKey="model-settings-metadata" triggerKey={readTrigger} eligible={readEligible}>
-            {shown => <SectionHeader density="compact" title="使用方式" subtitle={`最後讀到的版本：${shown.version} · ${modeLabels[shown.mode]}`} />}
+            {shown => <SectionHeader density="compact" title="使用方式" subtitle={`上次讀取：${modeLabels[shown.mode]}`} />}
           </MotionReveal></MotionFeedback>
           <FormErrorSummary entries={errorEntries} onFocus={name => {
             const target = visibleFields.find(item => item.name === name);
@@ -157,17 +172,17 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
               error={!!errors.model} aria-invalid={!!errors.model} aria-describedby={`${fieldId("model")}-message`} />} />
             <FormFieldMessage id={`${fieldId("model")}-message`} error={errors.model?.message} />
             <Text style={styles.meta}>可從選項選擇，或直接輸入相容的 Gemini 模型 ID。未列入目錄不會阻止保存；是否可用由所選服務、憑證及模型能力決定，不會自動替換模型。</Text>
-            {provider === "vertex" ? <Text style={styles.warning}>Vertex Express key 的生成已接線，查詢向量及模型 metadata 暫未支援，因此混合知識檢索不可用；不會借用平台額度。此處不接收服務帳戶 JSON；ADC 只供本地開發。</Text> : null}
+            {provider === "vertex" ? <Text style={styles.warning}>此服務目前未支援 Vertex Express 的查詢向量及模型資料查核，因此混合知識檢索不可用；不會改用平台額度。此處只接受 API key，不接受服務帳戶 JSON。</Text> : null}
             {!model.catalog && !model.busy ? <Text style={styles.meta}>模型目錄暫未讀取，仍可直接輸入模型 ID。</Text> : null}
             {selectedCapabilities && Object.values(selectedCapabilities).some(Boolean)
-              ? <Text style={styles.meta}>模型能力資料：{Object.entries(selectedCapabilities).filter(([, enabled]) => enabled).map(([key]) => ({ tools: "工具", image: "圖片", audio: "音訊", textStreaming: "模型文字串流" })[key]).join("、")}。畫面串流仍依產品接線狀態。</Text>
-              : <Text style={styles.meta}>此型號的能力資料未提供，不代表不能使用。Agent 辦事需要工具呼叫能力；照片與錄音亦需模型支援相應輸入。</Text>}
+              ? <Text style={styles.meta}>模型能力資料：{Object.entries(selectedCapabilities).filter(([, enabled]) => enabled).map(([key]) => ({ tools: "工具", image: "圖片", audio: "音訊", textStreaming: "文字串流" })[key]).join("、")}。即使模型支援文字串流，回覆也不一定會逐字顯示。</Text>
+              : <Text style={styles.meta}>此型號的能力資料未提供，不代表不能使用。助手執行操作需要工具呼叫能力；照片與錄音亦需模型支援相應輸入。</Text>}
             <Controller control={control} name="keyText" render={({ field }) => <AppTextField label={settings.keyConfigured ? "替換 API 密鑰" : "個人 API 密鑰"}
               accessibilityLabel="個人 API 密鑰" testID="model-api-key" secureTextEntry autoComplete="off" textContentType="none" autoCapitalize="none" autoCorrect={false}
               importantForAutofill="no" nativeID={fieldId("keyText")} aria-invalid={!!errors.keyText} aria-describedby={`${fieldId("keyText")}-message`} maxLength={512} value={model.online && model.authorized ? field.value : ""} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors.keyText} />} />
             <FormFieldMessage id={`${fieldId("keyText")}-message`} error={errors.keyText?.message}
               help={`${settings.keyConfigured ? "留空會保留已保存密鑰。" : ""}密鑰只在確認保存時送出；送出或失敗後會清空，原密鑰不會讀回。`} />
-            <Text style={styles.body}>保存時，密鑰會送到目前連接的育有方 Server（{model.serverLabel}）並加密儲存，只供你授權的 Google AI 呼叫使用；密鑰原文不會讀回。</Text>
+            <Text style={styles.body}>保存時，密鑰會送到目前連接的{brand.name}服務（{model.serverLabel}）並加密儲存，只供你授權的 Google AI 呼叫使用；密鑰原文不會讀回。</Text>
             <Controller control={control} name="consent" render={({ field }) => <AppCheckbox ref={field.ref} id={fieldId("consent")} invalid={!!errors.consent} describedBy={errors.consent ? `${fieldId("consent")}-message` : undefined} onBlur={field.onBlur} checked={field.value} onChange={value => setValue("consent", value, { shouldValidate: true })} disabled={locked || !available}
               label="我同意個人服務的費用及資料外送" description="使用你自己的 Google AI 服務；必要對話與資料會送到供應商，費用按其帳戶計算。" />} />
             <FormFieldMessage id={`${fieldId("consent")}-message`} error={errors.consent?.message} />
@@ -179,9 +194,9 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
               <FormFieldMessage id={`${fieldId(name)}-message`} error={errors[name]?.message} help={`${range.min}–${range.max} ${unit} · 整數`} />
             </View>)}</View>
             <Text style={styles.meta}>保存後按本人設定及管理員共用保護計算。模型按需要使用預算，不必用盡；重試亦計入原運行及每日次數。</Text>
-          </View> : <Text style={styles.meta}>{mode === "platform" ? "平台模型及限額由管理員統一設定，實際值見右方。" : "保存停用後不會自行切回平台；已有密鑰會保留，刪除須另行確認。"}</Text>}
+          </View> : <Text style={styles.meta}>{mode === "platform" ? "平台模型及限額由管理員統一設定，實際值見「用量與安全上限」。" : "保存停用後不會自行切回平台；已有密鑰會保留，刪除須另行確認。"}</Text>}
           <View style={[styles.actions, styles.group]}><AppButton label="保存模型設定" disabled={!canSave} loading={model.busy === "save"} onPress={() => void submit()} />
-            <AppButton label="刪除個人密鑰" variant="danger-secondary" disabled={locked || !settings.keyConfigured} onPress={() => { clearSecret(); setDeleteConfirmed(false); setDeleteOpen(true); }} />
+            <AppButton label="刪除個人密鑰" variant="danger-secondary" disabled={locked || !settings.keyConfigured} onPress={() => { clearSecret(); setDeleteConfirmed(false); setDeleteNotice(""); setDeleteReview({ basis: settingsBasis, settings: { ...settings } }); }} />
           </View>
         </SectionCard>
         {settings.keyConfigured ? <SectionCard><SectionHeader density="compact" title="已保存密鑰的模型資料" subtitle="此檢查只讀取供應商模型資料，不使用未保存的輸入。" />
@@ -202,25 +217,27 @@ export function ModelSettingsView({ model, actions: sourceActions, active = true
         <SectionCard><SectionHeader density="compact" title="用量與安全上限" />
           <Text style={styles.body}>已保存的個人每日上限：{settings.dailyLimit} 次</Text>
           <Text style={styles.meta}>全站個人服務安全上限：{snapshot.personalGlobalLimit} 次；個人上限只在個人模式生效。</Text>
-          <Text style={styles.meta}>每日 UTC 00:00（香港 08:00）重置。生成及查詢向量的嘗試均計次，metadata 不代表完整供應商帳單。</Text>
+          <Text style={styles.meta}>每日 UTC 00:00（香港 08:00）重置。生成及查詢向量的嘗試均計次；此處用量不代表供應商的完整帳單。</Text>
           {snapshot.effective ? <View style={styles.group}>
-            <Text style={styles.body}>目前生效值 · 管理政策版本 {snapshot.effective.policyVersion}</Text>
+            <Text style={styles.body}>目前生效上限</Text>
             <Text style={styles.meta}>每日本人 {snapshot.effective.dailyLimit}／共用 {snapshot.effective.dailyGlobalLimit} 次</Text>
             <Text style={styles.meta}>每輪生成 {snapshot.effective.maxModelCalls}／工具 {snapshot.effective.maxToolCalls}／查詢向量 {snapshot.effective.maxQueryEmbeddings} 次</Text>
             <Text style={styles.meta}>整輪 {snapshot.effective.maxRunSeconds} 秒 · 單次模型 {snapshot.effective.modelRequestSeconds} 秒 · 最多額外重試 {snapshot.effective.maxModelRetries} 次</Text>
             <Text style={styles.meta}>{snapshot.effective.cappedByAdministrator.length ? "部分個人設定高於管理員保護上限，實際按上述較低值執行。" : "目前設定未被較低的管理員上限調低。"} 一般修改於新運行生效；保存不會清零用量。</Text>
-          </View> : <Text style={styles.meta}>此 Server 尚未提供實際生效限制，請更新服務後重新讀取。</Text>}
+          </View> : <Text style={styles.meta}>目前連接的服務尚未提供實際生效上限；如需確認，請聯絡服務管理員。</Text>}
           <Text style={styles.meta}>{snapshot.agentInputCharacters === undefined ? "互動上下文上限未提供" : `互動上下文上限：${snapshot.agentInputCharacters} 字元`}</Text>
+          <Text style={styles.meta}>連接服務：{model.serverLabel}</Text>
           <Text style={styles.meta}>停用或刪除不會撤回供應商已接受的呼叫。</Text>
         </SectionCard>
       </View>
     </View> : null}
-    <Dialog danger visible={deleteOpen} onDismiss={() => setDeleteOpen(false)}>
+    {deleteNotice ? <Text accessibilityLiveRegion="polite" style={styles.warning}>{deleteNotice}</Text> : null}
+    <Dialog danger visible={deleteOpen} onDismiss={() => setDeleteReview(null)}>
       <Dialog.Title danger>刪除個人密鑰並停用 AI</Dialog.Title><Dialog.Content>
-        <Text style={styles.body}>將刪除目前版本 {settings.version} 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。</Text>
-        <AppCheckbox label="我確認刪除密鑰並停用 AI" checked={deleteConfirmed} onChange={setDeleteConfirmed} disabled={locked} />
-      </Dialog.Content><Dialog.Actions><AppButton label="取消" variant="quiet" onPress={() => setDeleteOpen(false)} />
-        <AppButton label="確認刪除並停用" variant="danger" disabled={locked || !deleteConfirmed} onPress={() => { if (locked || !deleteConfirmed) return; clearSecret(); setDeleteOpen(false); actions.save(removeModelKeyCommand(settings)); }} />
+        <Text style={styles.body}>將刪除已核對版本 {deleteReview?.settings.version} 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。</Text>
+        <AppCheckbox label="我確認刪除密鑰並停用 AI" checked={deleteConfirmed} onChange={setDeleteConfirmed} disabled={locked || !deleteCurrent} />
+      </Dialog.Content><Dialog.Actions><AppButton label="取消" variant="quiet" onPress={() => setDeleteReview(null)} />
+        <AppButton label="確認刪除並停用" variant="danger" disabled={locked || !deleteCurrent || !deleteConfirmed} onPress={() => { if (locked || !deleteCurrent || !deleteConfirmed || !deleteReview) return; clearSecret(); setDeleteReview(null); actions.save(removeModelKeyCommand(deleteReview.settings)); }} />
       </Dialog.Actions>
     </Dialog>
   </View>;

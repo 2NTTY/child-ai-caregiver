@@ -1,0 +1,56 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "originalReceiptSha256": "7720be2ce1d4ce25f1ddb9873f50de72a5caab799f48bd280d4585b02a951f76",
+  "status": "PASS_SOURCE_TO_ARTIFACT",
+  "bundle": "_expo/static/js/web/index-917dd79fa78f01a2baf193146d390693.js",
+  "bundleSha256": "3b88ddb269c7bced60136c1b3153f5e0cd3191f2d7e256286c1400c3ece96650",
+  "mapSha256": "d1aaba011f0f6ff594cfb90bc2b09ce277059cdc5fe466a8c51c4423b5f97bb1",
+  "mapDebugId": "46225224-a179-43f4-879a-deb24c5bd9d3",
+  "frozenSourceInputs": 559,
+  "inputsUnchanged": true,
+  "emittedFirstPartyTextSourcesChecked": 417,
+  "binaryAssetChecks": [
+    {
+      "source": "/frontend/assets/images/harbour-family-hero.png",
+      "sourcesContent": "empty as expected for binary asset",
+      "sourceSha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+      "frozenSha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+      "registryUri": "/assets/assets/images/harbour-family-hero.acf73643e80f2452876d97c45756232e.png",
+      "registryModuleCount": 1,
+      "registryModuleSha256": "7e6509ec102991b2109d5aa562ee96267b201e4769fa331ae28d316641c7e29c",
+      "assetContentMd5": "acf73643e80f2452876d97c45756232e",
+      "pngDimensions": [
+        1672,
+        941
+      ],
+      "emittedSha256": "2d6831182f397c2388f0f6239be093b7480eef2c70fe4ff4894cdcb1dee13c29",
+      "emittedByteExact": true,
+      "pass": true
+    }
+  ],
+  "emittedFirstPartyTotal": 418,
+  "emittedDependencies": 1648,
+  "virtualOrOtherCount": 7,
+  "prepSource": [
+    {
+      "source": "/frontend/src/components/preparations/PreparationWorkspace.tsx",
+      "path": "frontend/src/components/preparations/PreparationWorkspace.tsx",
+      "sourcesContentSha256": "c2a36a29bd20b6d97d45bdd8958c4649f38a2cc52082319ce016c330b601d941",
+      "frozenSha256": "c2a36a29bd20b6d97d45bdd8958c4649f38a2cc52082319ce016c330b601d941"
+    }
+  ],
+  "compiledPrepModuleSha256": "0c4645ef340ccc267b1ce44ceca80390ab921332addaff74d301b76306cd0d8a",
+  "newCompiledSemanticChecks": {
+    "dynamicSnapshotToken": true,
+    "authorityBound": true,
+    "failureState": true,
+    "refHook": true,
+    "priorCheckboxPresentation": true,
+    "disabledCheckGuard": true
+  },
+  "oldBodyDifferent": true,
+  "issues": [],
+  "limitation": "Map checks every emitted firstparty text source; exact PNG uses source/registry/output byte chain instead of UTF8 sourcesContent. Not every unused559input is emitted. Source/unit results are separate from actual browser acceptance. No realAPI or fullTS claim.",
+  "allFirstPartyInventorySha256": "2143829a5630f735198aa1c025ea7a563ef27930eecf4d07a58cd83f6113142b",
+  "privateMapPublished": false
+}

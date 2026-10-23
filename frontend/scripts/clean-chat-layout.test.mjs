@@ -24,10 +24,10 @@ const hooks = {
 };
 const dialog = Object.assign(() => null, { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions', ScrollArea: 'DialogScrollArea' });
 const flatten = value => Array.isArray(value) ? Object.assign({}, ...value.filter(Boolean).map(flatten)) : value || {};
-const nodes = value => !value || typeof value !== 'object' ? [] : [value, ...[value.props?.children].flat(Infinity).flatMap(nodes)];
+const nodes = value => !value || typeof value !== 'object' ? [] : [value, ...[value.props?.children, value.props?.pendingContent].flat(Infinity).flatMap(nodes)];
 const node = (tree, type) => nodes(tree).find(item => item.type === type);
 const label = (tree, name) => nodes(tree).find(item => item.props?.label === name);
-const content = tree => !tree ? '' : Array.isArray(tree) ? tree.map(content).join(' ') : typeof tree === 'object' ? (tree.type === 'EmptyListCard' ? [tree.props.title, tree.props.detail].filter(Boolean).join(' ') : content(tree.props?.children)) : String(tree);
+const content = tree => !tree ? '' : Array.isArray(tree) ? tree.map(content).join(' ') : typeof tree === 'object' ? (tree.type === 'EmptyListCard' ? [tree.props.title, tree.props.detail].filter(Boolean).join(' ') : content([tree.props?.children, tree.props?.pendingContent])) : String(tree);
 const theme = load('src/theme.ts');
 const presentation = load('src/components/chat/chat-presentation.ts');
 function load(relative, suffix = "") {
@@ -42,6 +42,10 @@ function load(relative, suffix = "") {
     : name.endsWith('/theme') ? theme
     : name.endsWith('/chat-presentation') ? presentation
     : name.endsWith('/ProductionProvider') ? { useProduction: () => production }
+    : name.endsWith('/online-refresh-events') ? { subscribeOnlineRefresh: () => noop }
+    : name.endsWith('/BackgroundSurface') ? { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false }
+    : name.endsWith('/ProductionFirstScreenGate') ? { useProductionVisibleSettingsSection: noop }
+    : name.endsWith('/agent-feedback') ? { AGENT_PROGRESS_LABELS: {} }
     : name.endsWith('/CareProfileDomains') ? { useProductionCareProfile: () => null }
     : name.endsWith('/CareWorkspace') ? { useCareWorkspace: () => null }
     : name.endsWith('/SettingsDomains') ? { useProductionSettingsDomains: () => ({ modelSettings: { model: {}, actions: {} } }), ProductionChannelSettings: 'ProductionChannelSettings', ProductionNotificationPreferences: 'ProductionNotificationPreferences' }
@@ -49,10 +53,12 @@ function load(relative, suffix = "") {
     : name.endsWith('/AppDialog') ? { AppDialog: dialog }
     : name.endsWith('/useContainerWidth') ? { useContainerWidth: () => ({ width: 390, ref: null, onLayout: noop }) }
     : name.endsWith('/useInteractionDensity') ? { useInteractionDensity: () => false }
+    : name.endsWith('/useQuietReadFocus') ? load('src/components/useQuietReadFocus.ts')
     : name.endsWith('/useChatInitialPosition') ? { useChatInitialPosition: () => noop }
     : name.endsWith('/useChatScrollIntent') ? { useChatScrollIntent: noop }
     : name.endsWith('/chat-arrival') ? { isNewReplyArrival: () => false }
     : name.endsWith('/agent-view-model') ? { proposalExpired: proposal => Date.parse(proposal.expiresAt) < Date.now(), agentTime: value => value, agentProposalLabels: { pending: '待你確認' } }
+    : name.endsWith('/proposal-presentation') ? load('src/components/agent/proposal-presentation.ts')
     : name.endsWith('/AgentAuthorizationOwner') ? { mayRetryAuthorization: () => false, maySavePolicy: () => false, reminderEligible: () => false }
     : name.endsWith('/routes') ? { isProductionRouteConnected: () => true }
     : name.endsWith('/branding') ? { brand: { name: '育伴港' } }
@@ -65,11 +71,12 @@ function load(relative, suffix = "") {
 }
 function componentDependency(name) {
   const modules = {
-    '/EmptyListCard': ['EmptyListCard'],
+    '/EmptyListCard': ['EmptyListCard'], '/ChatFileMessage': ['ChatFileMessage'], '/VoiceMessage': ['VoiceMessage'],
+    '/OfficialHelpCards': ['OfficialHelpCards'], '/AdminEntry': ['AdminEntry'], '/AccountDataControls': ['AccountDataControls', 'AccountSecurityControls'],
     '/ui': ['AppButton', 'AppTextField', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'TextLink'],
     '/AgentComposer': ['AgentComposer'], '/ChatMessage': ['ChatMessage'], '/ChatTimeline': ['ChatTimeline'],
     '/AgentConversation': ['AgentConversation'], '/PhotoInputDomains': ['AgentPhotoInput'],
-    '/AppScrollView': ['AppScrollView'], '/AppIcon': ['AppIcon'], '/motion': ['MotionEntrance'],
+    '/AppScrollView': ['AppScrollView'], '/AppIcon': ['AppIcon'], '/AppStatusBadge': ['AppStatusBadge'], '/StatusAnnouncement': ['StatusAnnouncement'], '/motion': ['MotionEntrance', 'MotionDisclosure'],
     '/AgentInboxView': ['AgentInboxView'], '/AgentRunView': ['AgentRunView'], '/ReadStateNotice': ['ReadStateNotice'],
     '/AppCheckbox': ['AppCheckbox'], '/BackgroundSettings': ['BackgroundSettings'], '/MotionSettings': ['MotionSettings'],
     '/PageFrame': ['PageFrame'], '/AgentAuthorization': ['AgentAuthorization'], '/ModelSettingsView': ['ModelSettingsView'],
@@ -98,9 +105,11 @@ function base() {
     chatState: { userId: 'synthetic-user', selectedChildId: 'synthetic-child', drafts: {}, messages: [], busy: null, online: true, loading: false, loadedAt: '2026-10-06T00:00:00Z', limit: 20, nextCursor: null },
     chatController: { reloadMessages: action('reload'), loadOlderMessages: action('older'), cancelReply: action('cancel'), confirmFoundMessage: action('confirm'), unlockCheckedSave: action('unlock'), startNewMessage: action('new-message') },
     chatDraft: '', setChatDraft: noop, agentAttachments: [], addAgentAttachment: noop, removeAgentAttachment: noop,
+    voiceUpload: { busy: false, unknown: false, notice: null }, fileUpload: { busy: false, unknown: false, notice: null },
+    checkVoiceUpload: action('check-voice'), checkFileUpload: action('check-file'),
     sendChat: action('send'), requestChatReply: action('reply'), agentRuns: {}, chatWritesAllowed: true, selectAgentRun: action('select-run'), openAgentSource: noop,
     agentModel: { online: true, readState: 'idle', run: null, busy: null, pendingDecision: null },
-    agentPending: { state: 'idle', entries: [] }, agentInbox: {}, agentActions: {}, agentInboxActions: {}, readAgentPending: action('pending'),
+    agentPending: { state: 'idle', entries: [] }, agentInbox: {}, agentActions: {}, agentInboxActions: {}, readAgentPending: action('pending'), readAgentActivity: noop,
     authorization: { policy: null, policyState: 'idle', draft: { recordKinds: [], allowPrivateNotes: false, allowSelfTasks: false, allowRecordCorrections: false, reminders: false }, notes: [], receipts: {}, online: true },
     authorizationActions: { readReceipts: action('receipts') }, owner: { authorizationOwner: { mayDelete: () => false } }, signOut: noop,
   };
@@ -111,7 +120,12 @@ const { ChatTimeline } = load('src/components/chat/ChatTimeline.tsx');
 const { AgentConversation } = load('src/production/AgentConversation.tsx');
 const { AgentAuthorization } = load('src/production/AgentAuthorization.tsx');
 const { default: SettingsPage } = load('src/screens/settingsScreen.tsx');
-function chat() { const page = render(ChatPage).tree; return render(page.props.children.type, page.props.children.props); }
+function chat() {
+  const page = render(ChatPage).tree;
+  const contents = nodes(page).find(item => typeof item.type === 'function');
+  assert.ok(contents, 'ChatContents remains mounted under the page-local layout');
+  return render(contents.type, contents.props);
+}
 
 test('clean empty chat has one prompt, separate toolbar, stable composer, and compact privacy access', () => {
   base(); const view = chat(); const timeline = node(view.tree, 'ChatTimeline');
@@ -121,17 +135,59 @@ test('clean empty chat has one prompt, separate toolbar, stable composer, and co
   assert.deepEqual(flatten(heading.props.style), { position: 'absolute', width: 1, height: 1, overflow: 'hidden', opacity: 0 });
   const toolbar = nodes(view.tree).find(item => item.props?.testID === 'chat-top-toolbar');
   assert.equal(flatten(toolbar.props.style).justifyContent, 'flex-end');
-  assert.equal(content(timeline.props.emptyState), '今天想聊些甚麼？');
+  assert.equal(content(timeline.props.emptyState).trim(), '想先聊聊什麼？');
   assert.equal(timeline.props.header, undefined);
   assert.equal(node(view.tree, 'AgentComposer').props.inputHint, undefined);
   assert.equal(node(view.tree, 'AgentConversation').props.visible, false);
   assert.equal(node(view.tree, 'AgentAuthorization'), undefined);
-  assert.ok(label(view.tree, 'Google AI 處理 · 僅供合成資料試用'));
+  assert.ok(label(view.tree, 'AI 處理 · 僅使用獲授權資料'));
   assert.doesNotMatch(content(timeline.props.footer), /已讀取|最後讀取|尚未有已保存聊天/);
-  const oldComposer = [view.tree.props.children].flat().findIndex(item => item?.type === 'AgentComposer');
+  const readingPanel = nodes(view.tree).find(item => item.props?.testID === 'chat-reading-panel');
+  const oldComposer = [readingPanel.props.children].flat().findIndex(item => item?.type === 'AgentComposer');
+  assert.ok(oldComposer >= 0);
   production.chatState.messages = [{ id: 'u1', role: 'user', text: '合成問題', authorUserId: 'synthetic-user' }];
   rerender(view);
-  assert.equal([view.tree.props.children].flat().findIndex(item => item?.type === 'AgentComposer'), oldComposer);
+  assert.equal([nodes(view.tree).find(item => item.props?.testID === 'chat-reading-panel').props.children].flat().findIndex(item => item?.type === 'AgentComposer'), oldComposer);
+});
+
+test('activity toolbar uses page-local layout units and leaves the reading panel only when a full side gutter fits', () => {
+  base(); const page = render(ChatPage);
+  const child = () => nodes(page.tree).find(item => typeof item.type === 'function');
+  const layout = () => nodes(page.tree).find(item => item.props?.testID === 'chat-page-layout');
+  assert.equal(child().props.externalActivity, false, 'unknown layout width must use the safe in-flow toolbar');
+  const view = render(child().type, child().props);
+  const panel = () => nodes(view.tree).find(item => item.props?.testID === 'chat-reading-panel');
+  const toolbar = () => nodes(view.tree).find(item => item.props?.testID === 'chat-top-toolbar');
+  const timeline = node(view.tree, 'ChatTimeline'), composer = node(view.tree, 'AgentComposer');
+  const childShape = () => [panel().props.children].flat().filter(Boolean).map(item => [item.type, item.key]);
+  const originalShape = childShape(), scrollRef = timeline.props.scrollRef, controlsRef = timeline.props.controlsRef;
+  assert.ok(!nodes(panel()).includes(toolbar()), 'activity is outside the body reading surface, never in message content');
+  assert.equal(flatten(toolbar().props.style).maxWidth, undefined);
+  for (const width of [1440, 1112, 1111, 1024, 800, 390, 320, 1440]) {
+    layout().props.onLayout({ nativeEvent: { layout: { width } } }); rerender(page);
+    child().props.onPaneLayout({ nativeEvent: { layout: { width: Math.min(width, 760) } } }); rerender(page);
+    view.props = child().props; rerender(view);
+    const floating = width >= 1112, style = flatten(toolbar().props.style);
+    assert.equal(child().props.externalActivity, floating, `CSS layout width ${width}; no visual/zoom rect conversion`);
+    assert.equal(style.position, floating ? 'absolute' : undefined);
+    assert.equal(style.width, floating ? 152 : '100%');
+    if (floating) {
+      const bodyRight = width / 2 + 760 / 2, toolbarLeft = width - style.right - style.width;
+      assert.ok(toolbarLeft - bodyRight >= 16, 'a full gap separates the toolbar and maximum reading column');
+    }
+    assert.deepEqual(childShape(), originalShape, 'responsive positioning never reparents timeline/composer');
+    assert.equal(node(view.tree, 'ChatTimeline').props.scrollRef, scrollRef);
+    assert.equal(node(view.tree, 'ChatTimeline').props.controlsRef, controlsRef);
+    assert.equal(node(view.tree, 'ChatTimeline').key, timeline.key);
+    assert.equal(node(view.tree, 'AgentComposer').key, composer.key);
+    assert.equal(node(view.tree, 'ChatTimeline').props.followRequest, undefined);
+  }
+  label(view.tree, '活動 · 尚未讀取').props.onPress(); rerender(view);
+  assert.equal(node(view.tree, 'AgentConversation').props.visible, true);
+  assert.deepEqual(calls, [], 'moving the entry neither selects another run nor issues any new read/write');
+  assert.equal(node(view.tree, 'ChatTimeline').props.scrollRef, scrollRef);
+  production.model.children = []; rerender(view);
+  assert.equal(label(view.tree, '活動 · 尚未讀取').props.disabled, true);
 });
 
 test('conversation timeline opts into top alignment and centered empty prompt without changing generic defaults', () => {
@@ -192,20 +248,32 @@ test('send, unknown recovery, stop, original reply retry, and attachment gates k
 });
 
 test('activity owns a real dialog, reads no receipts while closed, and exposes guarded retry only after candidate failure', () => {
-  base(); production.agentModel = { ...production.agentModel, readState: 'ready', run: { id: 'synthetic-run', proposals: [] } };
+  base(); production.agentActions = { refresh: () => calls.push(['original-run-get']) };
+  production.agentModel = { ...production.agentModel, readState: 'ready', run: { id: 'synthetic-run', proposals: [] } };
   let view = render(AgentConversation, { visible: false, onDismiss: noop, onOpenSettings: noop, onReloadChat: noop, reloadDisabled: false });
   view.effects.forEach(fn => fn()); assert.deepEqual(calls, []); assert.equal(view.tree.type, dialog);
   assert.equal(node(view.tree, 'AgentAuthorization'), undefined);
-  assert.equal(label(view.tree, '重新讀取待確認候選'), undefined); assert.ok(label(view.tree, '助手設定'));
-  assert.match(content(view.tree), /會自動讀取/);
+  assert.equal(label(view.tree, '重新讀取待確認候選'), undefined); assert.equal(label(view.tree, '助手設定'), undefined);
+  assert.equal(label(view.tree, '重新讀取聊天'), undefined); assert.ok(label(view.tree, '關閉'));
+  assert.ok(node(view.tree, 'AgentRunView'), 'the selected run remains in its detail renderer');
   view = render(AgentConversation, { ...view.props, visible: true }); view.effects.forEach(fn => fn());
   assert.deepEqual(calls, [['receipts', 'synthetic-run']]);
+  production.agentModel = { ...production.agentModel, readState: 'idle', run: null };
   production.agentPending = { state: 'failed', entries: [] }; rerender(view);
   const retry = label(view.tree, '重新讀取待確認候選');
   assert.equal(retry.props.disabled, false); retry.props.onPress(); assert.deepEqual(calls.at(-1), ['pending']);
-  for (const guard of [{ online: false }, { busy: 'read' }, { pendingDecision: {} }, { writesBlocked: true }, { readState: 'denied' }]) {
+  for (const guard of [{ online: false }, { busy: 'read' }, { pendingDecision: { runId: 'synthetic-run', proposalId: 'synthetic-proposal', input: { expectedVersion: 1, decision: 'accept', confirmShared: false }, reviewed: false, reconfirm: false } }, { writesBlocked: true }, { readState: 'denied' }]) {
     const original = production.agentModel; production.agentModel = { ...original, ...guard }; rerender(view);
-    assert.equal(label(view.tree, '重新讀取待確認候選').props.disabled, true);
+    if (guard.readState === 'denied' || guard.pendingDecision) {
+      assert.equal(label(view.tree, '重新讀取待確認候選'), undefined, 'access loss and original recovery show guarded details, not discovery controls');
+      const details = node(view.tree, 'AgentRunView'); assert.ok(details);
+      if (guard.pendingDecision) {
+        assert.equal(details.props.model.pendingDecision, guard.pendingDecision);
+        assert.equal(details.props.actions, production.agentActions);
+        details.props.actions.refresh(); assert.deepEqual(calls.at(-1), ['original-run-get']);
+      }
+    }
+    else assert.equal(label(view.tree, '重新讀取待確認候選').props.disabled, true);
     production.agentModel = original;
   }
   for (const state of ['idle', 'loading', 'ready', 'denied']) {
@@ -256,8 +324,8 @@ test('Care and activity never describe unread, loading, failed or denied discove
     production.agentPending = { state, entries: [] };
     const care = content(render(AgentPendingReview).tree);
     const activity = content(render(AgentConversation, { visible: true, onDismiss: noop, onOpenSettings: noop, onReloadChat: noop, reloadDisabled: false }).tree);
-    if (state === 'ready') { assert.match(care, /暫無待確認提案/u); assert.match(activity, /沒有待確認/u); }
-    else { assert.doesNotMatch(care, /沒有待確認|暫無待確認提案/u); assert.doesNotMatch(activity, /沒有待確認/u); }
+    if (state === 'ready') { assert.match(care, /暫無可確認事項/u); assert.match(activity, /沒有待確認/u); }
+    else { assert.doesNotMatch(care, /沒有待確認|暫無可確認事項/u); assert.doesNotMatch(activity, /沒有待確認/u); }
     if (state === 'idle') { assert.match(care, /尚未讀取/u); assert.match(activity, /尚未讀取/u); }
     if (state === 'denied') { assert.match(care, /沒有權限/u); assert.match(activity, /沒有權限/u); }
   }

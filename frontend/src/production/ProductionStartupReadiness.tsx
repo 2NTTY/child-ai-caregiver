@@ -19,7 +19,8 @@ const first = (value: string | string[] | undefined) => Array.isArray(value) ? v
 export function ProductionStartupReadiness() {
   const pathname = usePathname(), params = useGlobalSearchParams<{ tab?: string | string[]; category?: string | string[]; section?: string | string[]; view?: string | string[]; taskId?: string | string[]; recordId?: string | string[]; record?: string | string[] }>();
   const visibleSection = useProductionVisibleSettingsSection();
-  const { scopeKey, chatState, chatController, agentPending, readAgentPending } = useProduction();
+  const { scopeKey, chatState, chatController, agentModel, agentActions, agentPending, readAgentPending } = useProduction();
+  const recoveringDecision = !!agentModel?.pendingDecision;
   const care = useCareWorkspace(), profile = useProfileWorkspace(), tasks = useTasksWorkspace(), growth = useGrowthWorkspace();
   const memoryOwner = useProductionTaskKnowledgeMemory(), personalHistory = usePersonalHistoryWorkspace();
   const memory = useMemoryReferenceWorkspace(), documents = useProductionFamilyDocuments(), summary = useProductionTaskKnowledgeSummary();
@@ -35,7 +36,7 @@ export function ProductionStartupReadiness() {
     tasks: tasks?.recovery.reloadCurrent, growth: growth?.actions.refresh,
     taskDetail: routeParams.taskId && tasks ? () => tasks.actions.selectTask(routeParams.taskId!) : undefined,
     careDetail: routeParams.recordId && care ? () => care.actions.openRecord(routeParams.recordId!) : undefined,
-    chat: () => { void chatController.reloadMessages(); }, agentPending: readAgentPending, memory: memoryOwner?.refresh,
+    chat: () => { void chatController.reloadMessages(); }, agentPending: recoveringDecision ? agentActions.refresh : readAgentPending, memory: memoryOwner?.refresh,
     documents: documents?.refresh, summary: summary?.actions.refresh,
     conversations: personalHistory ? () => personalHistory.actions.searchHistory(personalHistory.history.data?.query ?? "") : undefined,
     notifications: personalHistory?.actions.loadNotifications,
@@ -52,13 +53,15 @@ export function ProductionStartupReadiness() {
     growth: readState(growth?.scopeKey === scopeKey ? growth.model.access === "lost" ? "error" : growth.model.load : undefined),
     chat: chatState.error ? "error" : chatState.loading || !chatState.loadedAt ? "loading" : "ready",
     // ProductionOwner resets this owner before publishing the new child scope.
-    // Only its first visible page holds the curtain, not subsequent background refreshes.
-    agentPending: agentPending?.state === "denied" ? "error" : agentPending?.hasSnapshot ? "ready" : readState(agentPending?.state),
+    // Recovery deliberately blocks discovery; its original-run GET is the visible read.
+    // Do not mark the unread discovery page as loaded or let it strand the curtain.
+    agentPending: recoveringDecision ? readState(agentModel.readState)
+      : agentPending?.state === "denied" ? "error" : agentPending?.hasSnapshot ? "ready" : readState(agentPending?.state),
     memory: readState(memory?.scopeKey === scopeKey ? memory.model.access === "revoked" ? "error" : memory.model.longTerm.state : undefined),
     documents: readState(documents?.readState),
     conversations: personalHistory?.scopeKey !== scopeKey ? "loading" : personalHistory?.access === "revoked" || !personalHistory?.online ? "error"
       : personalHistory.history.state === "unavailable" ? "loading" : readState(personalHistory.history.state),
-    notifications: personalHistory?.scopeKey !== scopeKey ? "loading" : personalHistory?.access === "revoked" || !personalHistory?.online ? "error"
+    notifications: personalHistory?.scopeKey !== scopeKey ? "loading" : personalHistory?.access === "revoked" || !personalHistory?.online || personalHistory?.notificationUnavailable ? "error"
       : personalHistory.notifications.state === "unavailable" ? "loading" : readState(personalHistory.notifications.state),
     summary: !currentSummary ? "loading" : currentSummary.readFailed || currentSummary.access === "lost" ? "error" : currentSummary.page ? "ready" : "loading",
     photos: Platform.OS !== "web" ? "ready" : readState(photos?.scopeKey === scopeKey ? photos.photos.model.load : undefined),

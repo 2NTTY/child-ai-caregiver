@@ -47,7 +47,7 @@ const base = {childName: '合成孩子', scopeKey: 'synthetic-scope', dataLabel:
   originalConsent: false, dirty: false, formEpoch: 1, confirmationEpoch: 1};
 const pending = {reference: 'synthetic-operation', confirmed: false, checked: false, appointmentLabel: '沒有指定預約',
   input: {expectedVersion: 1, basisVersion: 'synthetic-basis', period, appointmentTaskId: null, questions: [], checklist: [], reviewed: false}};
-const blocked = [{online: false}, {readFailed: true}, {busy: true}, {access: 'lost'}, {pending},
+const blocked = [{online: false}, {readFailed: true}, {access: 'lost'}, {pending},
   ...['saving', 'failed', 'unknown', 'conflict', 'confirmed_unread'].map(operation => ({operation}))];
 const {SummaryRecords} = compile('src/components/summary/SummaryRecords.tsx');
 const recordProps = extra => ({page, onRecord() {}, onTask() {}, motion: {scopeKey: base.scopeKey, triggerKey: null, eligible: false}, ...extra});
@@ -99,7 +99,7 @@ test('both summary owners pass successful-read readiness, excluding stale, offli
       const {TaskKnowledgeSummaryContent} = compile('src/production/TaskKnowledgeSummaryContent.tsx', {'./TaskKnowledgeDomains': {useProductionTaskKnowledgeSummary: () => ({model, actions: {}})}});
       return TaskKnowledgeSummaryContent(props);
     }
-    for (const patch of [{}, {operation: 'saved'}, {access: 'read_only'}]) {
+    for (const patch of [{}, {busy: true}, {operation: 'saved'}, {busy: true, operation: 'saved'}, {access: 'read_only'}]) {
       const tree = render(patch), records = find(tree, 'SummaryRecords');
       assert.equal(records.props.page, page, file);
       assert.equal(records.props.emptyReady, true, `${file}: ${JSON.stringify(patch)}`);

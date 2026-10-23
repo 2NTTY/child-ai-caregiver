@@ -18,4 +18,5 @@ export function preparationProjection(raw: PreparationFormValues, basis: Summary
   return {...basis, period: {...basis.period}, confirmShared: true, appointmentTaskId: values.appointmentTaskId || null,
     questions: values.questions.map(item => item.text), checklist: values.checklist.map(item => ({...item})), reviewed: values.reviewed};
 }
-export const summaryQueryDefaults = (): SummaryPeriod => ({startDay: DateTime.now().setZone('Asia/Hong_Kong').toISODate()!, period: 'week', timeZone: 'Asia/Hong_Kong'});
+// The server uses [startDay, startDay + 7 days); a new default includes today and the preceding six days.
+export const summaryQueryDefaults = (): SummaryPeriod => ({startDay: DateTime.now().setZone('Asia/Hong_Kong').minus({days: 6}).toISODate()!, period: 'week', timeZone: 'Asia/Hong_Kong'});

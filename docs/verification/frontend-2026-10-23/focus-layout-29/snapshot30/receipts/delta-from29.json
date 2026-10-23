@@ -1,0 +1,93 @@
+{
+  "fromSnapshot": 29,
+  "toSnapshot": 30,
+  "changedFiles": 16,
+  "roles": {
+    "test": 7,
+    "product": 9
+  },
+  "files": {
+    "frontend/scripts/agent-activity-layout.test.mjs": {
+      "role": "test",
+      "beforeSha256": "50e25f7a298553f56a1e026b84a39556bb0c2bf7c91e1b3e594de5b1426ccc44",
+      "afterSha256": "a3633fe110412658b60bfa6ee79d939cb5c7afcad7adb5801f8975bc05cfdef9"
+    },
+    "frontend/scripts/care-history-return-focus.test.cjs": {
+      "role": "test",
+      "beforeSha256": "896d89191173f82114cdfcb150a62f536c976b6562a685d56ed51d75311b370c",
+      "afterSha256": "1e6898263701b4cbc7d80c0cadc35681108a3624f2b5be494fd499bd355875e2"
+    },
+    "frontend/scripts/care-saved-record-card-presentation.test.mjs": {
+      "role": "test",
+      "beforeSha256": "ded6d95d1b8e388c85145d10cd22d69220f0cd4b4fafb1b4fe70f14305f12b51",
+      "afterSha256": "b0cbfbb6e8156368566cac5984187e7bb00171b707717ba18451bf5d8c2da418"
+    },
+    "frontend/scripts/contact-form.test.mjs": {
+      "role": "test",
+      "beforeSha256": "4cd2a7835d91ac5c936e6385810978efa54e0822218524d7ca743fed2c78c253",
+      "afterSha256": "9618e28fe015b20aa890718d3ee45106a88e9d3a3ffe96b80e0583f98f64315e"
+    },
+    "frontend/scripts/memory-source-display.test.mjs": {
+      "role": "test",
+      "beforeSha256": "da501af8a6b53bd33e7ebdeafb0a15232ef2a91ab3378634d7cf9a90538d425c",
+      "afterSha256": "0e12f5d827f6591eb2837fbc9be603b97b4f34d2e8c95feda4f1cf3ab451f5e8"
+    },
+    "frontend/scripts/metadata-hierarchy.test.mjs": {
+      "role": "test",
+      "beforeSha256": null,
+      "afterSha256": "d722a93c25fa804d48830f258d294b6d984112f8f51fa1a70244ec8b1910811b"
+    },
+    "frontend/scripts/metadata-reading-presentation.test.mjs": {
+      "role": "test",
+      "beforeSha256": null,
+      "afterSha256": "f740e9863bdfe35bebf13dd829e726b8d2a202656a319ffe4273b809a458e0cb"
+    },
+    "frontend/src/components/agent/AgentRunView.tsx": {
+      "role": "product",
+      "beforeSha256": "ea2fa6d759c0135cd4460073441af3b0615361940051a9c24ddb04eeb75ec8e3",
+      "afterSha256": "1f423266e216b7e1c7a18f2297bef8954b188b85c80294287d66adcfd9d1dbfc"
+    },
+    "frontend/src/components/agent/proposal-presentation.ts": {
+      "role": "product",
+      "beforeSha256": "2f17642ecf9865caf440dcb4135abaefc41b80f570700bef231f35baaeff4803",
+      "afterSha256": "b3444ba59cfc6e3cf5ae756c6d64154c7bde8b045abe9e85fdf9654ea0671cae"
+    },
+    "frontend/src/components/care/CareRecordDetail.tsx": {
+      "role": "product",
+      "beforeSha256": "f41eb36aa40f57a7a020c3d3c1d2f05433c8f4b7c97298d26db56e6d9b2f9ad5",
+      "afterSha256": "d9a070fe792199bcf5cb57b39b1930de354b6039119929a69e52199732ee2fc5"
+    },
+    "frontend/src/components/care/CareSavedRecordsView.tsx": {
+      "role": "product",
+      "beforeSha256": "bdb64154ec7f1ee346c55da97972475f18f0ec97791f9c6369d2de81fc734691",
+      "afterSha256": "0302a4d95be654f5b423d9de7d2f4f8811dae78edfb9efee8e2a490ba051cc13"
+    },
+    "frontend/src/components/contact/contact-form.ts": {
+      "role": "product",
+      "beforeSha256": "1b0b697a6ed9bdb7982f74aa55f105004f860a1d1468dedf2bfee097c7ca2d18",
+      "afterSha256": "e0edbea830b6dab7adca1d615e2340fc689ecc18185f5bd4f0698fdfc7b602e0"
+    },
+    "frontend/src/components/growth/GrowthConcernTimeline.tsx": {
+      "role": "product",
+      "beforeSha256": "8a504f882e64646e0e16f6b3dcebc1a66ee671c6fc02262c5f2ba31ace376fda",
+      "afterSha256": "6a51c551ef91b8575d61b25d21f58e1b7fedb29651ffbb7cb3d68778f5631fbf"
+    },
+    "frontend/src/components/memory/MemoryReferenceView.tsx": {
+      "role": "product",
+      "beforeSha256": "ee9ffc066c4d0cc2b9cfd3bed441ddfb3f27e56358c0ebbc5604b13b0db34d70",
+      "afterSha256": "b0d2efe588d5e7bfa78df3423308a98fdec5d9e945241a511ba4273e440c1f88"
+    },
+    "frontend/src/components/preparations/PreparationWorkspace.tsx": {
+      "role": "product",
+      "beforeSha256": "fb5793dfb3d21dd73e5199d4a9b15ebdfb883f4e3ebd35aef7f711dfd5894217",
+      "afterSha256": "fa2cd1b646515a59e4c150bf502421164562bb19362246560b595e7b6bde4488"
+    },
+    "frontend/src/components/tasks/TaskContent.tsx": {
+      "role": "product",
+      "beforeSha256": "08e12a6d1a186af0e21ad23b66887e0891eca35291e8aa835cb87dca39bb305e",
+      "afterSha256": "a231e74cd889e609558ae6586ac2d0785853153674aad2ac9584a5be3e899df1"
+    }
+  },
+  "originalPatchSha256": "73312bec86b1e12403b5cc13589bc7d17fcf084f96c8c017d710ddd243bf4759",
+  "note": "9 product and7 test delta files. Three product files and one test were already in29 scope; total scope57 is a union, not45+16."
+}

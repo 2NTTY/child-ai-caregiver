@@ -91,11 +91,38 @@ test('multiline descriptions remain intrinsic without fixed row or connector hei
   assert.equal(flatten(trailing.props.style).height, undefined);
 });
 
-test('archive confirmation keeps its original scope, authority and callback', () => {
-  const onArchive = () => {}, tree = render([event(0)], {scopeKey: 'scope', onArchive, archiveDisabled: true});
-  const button = nodes(tree, node => node.type === 'GrowthArchiveConcernButton')[0];
-  assert.equal(button.props.scopeKey, 'scope');
-  assert.equal(button.props.authorityVersion, 'authority');
-  assert.equal(button.props.onConfirm, onArchive);
-  assert.equal(button.props.disabled, true);
+test('reading timeline no longer duplicates the selected title or embeds a destructive trigger', () => {
+  const tree = render([event(0)]);
+  assert.equal(nodes(tree, node => node.type === 'GrowthArchiveConcernButton').length, 0);
+  assert.equal(nodes(tree, node => node.type === 'Text' && node.props.children === 'Concern').length, 0);
+  assert.equal(tree.props.accessibilityLabel, '關注：Concern');
+  assert.equal(nodes(tree, node => node.type === 'SectionHeader')[0].props.title, '跟進記錄');
+});
+
+test('concern explanation has its own heading and emphasis without truncating the full description', () => {
+  const reason = 'Synthetic concern explanation.\n'.repeat(30);
+  const tree = render([event(0)], {concern: {id: 'concern', title: 'Concern', status: 'following', reason, historyComplete: true}});
+  const summary = nodes(tree, node => node.props?.testID === 'growth-concern-summary')[0];
+  const heading = nodes(summary, node => node.type === 'Text' && node.props.children === '關注說明')[0];
+  const description = nodes(summary, node => node.type === 'Text' && node.props.children === reason)[0];
+  assert.equal(heading.props.accessibilityRole, 'header');
+  assert.equal(description.props.style, styles.concernSummary);
+  assert.equal(description.props.numberOfLines, undefined);
+  assert.ok(styles.concernSummary.fontSize > styles.reading.fontSize);
+  assert.equal(styles.concernSummary.fontWeight, '600');
+  assert.equal(styles.concernHeading.borderBottomWidth, 1);
+  assert.equal(styles.concernHeading.height, undefined);
+  assert.equal(styles.concernSummary.maxHeight, undefined);
+  assert.equal(nodes(summary, node => node.type === 'AppStatusBadge')[0].props.label, '持續關注');
+  const children = tree.props.children.flat().filter(Boolean);
+  assert.ok(children.indexOf(summary) < children.findIndex(node => node.type === 'SectionHeader'));
+});
+
+test('unknown event times remain explicitly unknown with the existing clock metadata icon', () => {
+  const entry = event(0); entry.event.at = 'invalid';
+  const tree = render([entry]);
+  const time = nodes(tree, node => node.props?.accessibilityLabel === '事件時間：時間未提供')[0];
+  assert.ok(time);
+  assert.equal(nodes(time, node => node.type === 'AppIcon')[0].props.name, 'clock-outline');
+  assert.equal(nodes(time, node => node.type === 'Text')[0].props.children, '時間未提供');
 });

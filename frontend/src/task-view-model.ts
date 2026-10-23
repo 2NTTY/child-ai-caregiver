@@ -60,7 +60,7 @@ export interface TasksActions {
   loadMoreTasks(): void;
 }
 export const taskStateLabels: Record<TaskState, string> = {
-  scheduled: "待處理", completed: "已回報完成", cancelled: "已取消", needs_review: "待覆核 · 已停催",
+  scheduled: "待處理", completed: "已完成", cancelled: "已取消", needs_review: "待覆核 · 已停催",
 };
 export const taskActionLabels: Record<TaskDraftMode, string> = {
   create: "新增事項", reschedule: "改期／轉派", complete: "完成事項", cancel: "取消事項", resolve: "核對完成或取消",
@@ -109,7 +109,7 @@ export function recentCompletedTasks(tasks: readonly TaskView[], limit = RECENT_
 }
 export function taskCompletionLabel(task: TaskView, timeZone: string) {
   const at = task.completedAt ? DateTime.fromISO(task.completedAt, { setZone: true }).setZone(timeZone) : null;
-  return at?.isValid ? `${at.toFormat("M月d日 HH:mm")} 回報完成` : "完成時間未提供";
+  return at?.isValid ? `${at.toFormat("M月d日 HH:mm")} 完成` : "完成時間未提供";
 }
 export interface TaskHistoryDateRange { from: string | null; to: string | null }
 export function taskHistoryTime(task: TaskView) { return task.occurrence.state === "completed" ? task.completedAt : task.occurrence.state === "cancelled" ? task.terminalAt : undefined; }

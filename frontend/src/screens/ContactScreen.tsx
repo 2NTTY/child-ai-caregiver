@@ -13,5 +13,5 @@ export function ContactScreen() {
   return child ? <ContactView production model={contact.model} actions={contact.actions}
     onTask={id => leave(() => router.push({ pathname: "/tasks", params: { taskId: id } }))}
     onSettings={() => actions.open("settings")} /> :
-    <PageFrame density="compact" title="接收同意與聯絡"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="聯絡"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

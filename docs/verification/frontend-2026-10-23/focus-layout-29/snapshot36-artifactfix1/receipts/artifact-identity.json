@@ -1,0 +1,28 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "originalReceiptSha256": "4f61a7ccb4b4d7d686615c3d25906c6af65c1822f950ba16a090a240b3526551",
+  "bundle": {
+    "path": "_expo/static/js/web/index-917dd79fa78f01a2baf193146d390693.js",
+    "sha256": "00b168eda1e95d0e2a05c03d8e6e54dd6e1d2e876ab8089516f77a145cd4fa1b",
+    "bytes": 5668219
+  },
+  "fixtureSha256": "9d507a2d46b1da27f5ec64e242e53cab2d5748c2bf6f4e054e77c9b4f6c59e6f",
+  "buildManifestSha256": "9bdc5dad74051abb468b69f1f3e09f881fc1cb069e3a7142847ab28ad818353f",
+  "productManifestSha256": "e0caffaf41d032ee0bf7c4c9448c54aee2d6c97948809debf813e5099a906bd4",
+  "validatorSha256": "bb99eff636775b720662f316098f85f0f1e3255433a81d49c34ed7506e06fa3d",
+  "sourceInputCount": 559,
+  "scopeCount": 131,
+  "canonicalDeliveryPaths": 89,
+  "canonicalDeltaPatchSha256": "ab9bee8f4dac6e87ced6217bb7019b0ed695355cf6aeed31e69700511c7bea03",
+  "archiveBytes": 5810555,
+  "archiveSha256": "c257b9c381cb031acc4815d1e9811f6178dbf7475aa95a510e4f9abb00877f3e",
+  "sourceArtifactGate": "PASS",
+  "staticValidator": "PASS",
+  "old36Retracted": true,
+  "archiveFilename": "frontend-site-preview-snapshot36-artifactfix1.tar.gz",
+  "sourceVersion": "snapshot36",
+  "artifactVersion": "snapshot36-artifactfix1",
+  "publicationAtReceipt": "NOT_PERFORMED",
+  "fullTypecheck": "NOT_PASS",
+  "browserOutcome": "See independently sealed qa-report.json; original build identity predates that QA."
+}

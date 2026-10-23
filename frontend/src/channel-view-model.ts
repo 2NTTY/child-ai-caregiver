@@ -56,7 +56,7 @@ export const channelDeliveryLabels: Record<ChannelDeliveryState, string> = {
   rejected: "渠道已拒絕", unknown: "投遞結果未知", stopped: "已停止",
 };
 export function channelTime(value: string): string {
-  return new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", hour12: false });
+  return new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
 }
 export function pushTestAllowed(
   status: Pick<PushSettingsModel, "available" | "workerEnabled" | "testsRemaining" | "nextTestAt">,

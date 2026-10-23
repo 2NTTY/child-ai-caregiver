@@ -1,3 +1,4 @@
+import { BackgroundSurface } from "./appearance/BackgroundSurface";
 import { useState } from "react";
 import { usePathname } from "expo-router";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
@@ -24,7 +25,7 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
   const [error, setError] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
   const available = !!child && active && (model.scopeKey !== undefined ? !!model.scopeKey : model.profileLoad === "ready");
-  return <View testID="home-quick-actions" style={[styles.section, docked && styles.docked]}>
+  return <BackgroundSurface padded frosted testID="home-quick-actions" style={[styles.section, docked && styles.docked]}>
     <Text accessibilityRole="header" style={styles.heading}>有新情況，直接交代</Text>
     <View style={styles.captureRow}><PhotoFilePicker disabled={!available || opening} capturePreferred captureOriginal={captureOriginal}
       onPick={original => { setError(null); setOpening(true); actions.openAgentPhoto(original); }} onError={setError}
@@ -48,7 +49,7 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
     </View></View>
     {Platform.OS !== "web" && !captureOriginal ? <Text style={styles.note}>相機暫不可用，可先用文字輸入。</Text> : null}
     {error ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
-  </View>;
+  </BackgroundSurface>;
 }
 
 const styles = StyleSheet.create({

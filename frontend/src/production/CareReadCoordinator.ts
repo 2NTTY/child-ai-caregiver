@@ -104,6 +104,7 @@ export function createCareReadCoordinator(ports: CareReadPorts) {
               ? { historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : {}) } : previous.detail };
     });
   }
+  const refreshCare = () => loadCare(undefined, undefined, pageIndex.current);
   async function loadCare(query = careRef.current.list.activeQuery, kind = careRef.current.list.activeKind, index = 0, recovery = false): Promise<boolean> {
     if (!current() || !online() || writing.current || attempt.current && !recovery) return false;
     careRead.current?.abort(); const control = controller(); careRead.current = control; const generation = ++careGeneration.current;
@@ -133,7 +134,9 @@ export function createCareReadCoordinator(ports: CareReadPorts) {
           && !careRef.current.draft && !careRef.current.deletion && latest && careRef.current.detail?.record.id === latest.id) {
           if (latest.version !== selected.record.current.version) historyGeneration.current++;
           setCare(previous => ({ ...previous, detail: previous.detail?.record.id === latest.id
-            ? { record: careRecordView(latest, userId), historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : previous.detail }));
+            ? { ...previous.detail, record: careRecordView(latest, userId),
+              ...(latest.version !== previous.detail.record.current.version
+                ? { historyOpen: false, history: [], historyLoading: false, historyState: "unread", historyRetryMore: false, hasMoreHistory: false } : {}) } : previous.detail }));
         }
       }
       return current() && generation === careGeneration.current;
@@ -224,5 +227,5 @@ export function createCareReadCoordinator(ports: CareReadPorts) {
       items: care.list.records.flatMap(record => { const raw = rawRecord(record.id); return raw ? [savedRecordReview(raw, userId)] : []; }) };
   }
   return { verify, accessError, read, rawRecord, freshRecord, publishRecord, removeRecord, publishPage,
-    loadCare, latestCare, careHistory, openRecord, pauseReads, reviewProjection };
+    loadCare, refreshCare, latestCare, careHistory, openRecord, pauseReads, reviewProjection };
 }

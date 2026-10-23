@@ -33,6 +33,7 @@ export const summaryStyles = StyleSheet.create({
   attention: {borderLeftWidth: 3, borderLeftColor: colors.amber, paddingLeft: spacing.md, gap: spacing.sm},
   disclosure: {minWidth: 0},
   disclosureTrigger: {alignSelf: 'flex-start', maxWidth: '100%', backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small, paddingHorizontal: spacing.md, minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start', gap: spacing.sm},
+  disclosureListTrigger: {alignSelf: "stretch", borderWidth: 0, borderRadius: 0, paddingHorizontal: 0, borderBottomWidth: 1, borderBottomColor: colors.softLine, justifyContent: "space-between"},
   disclosureLabel: {fontFamily: chineseFont, ...readingType.tool, color: colors.ink, fontWeight: '600', flexShrink: 1, minWidth: 0},
   disclosureContent: {paddingTop: spacing.sm, gap: spacing.sm, paddingBottom: spacing.sm},
   sourceRow: {gap: spacing.xs, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.sm},

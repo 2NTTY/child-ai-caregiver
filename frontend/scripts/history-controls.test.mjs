@@ -16,7 +16,7 @@ const labelled = (tree, label) => nodes(tree).find(node => node.props?.label ===
 // Hook and control-prop checks only; final browser geometry is a separate acceptance step.
 function harness(width = 1024, initialCategory = 'growth') {
   const slots = [], effects = [], events = [], cache = new Map();
-  let cursor = 0, locked = false;
+  let cursor = 0, locked = false, selectedTask = null, selectedPreparation = null;
   const react = {
     useRef(value) { const index = cursor++; return slots[index] ??= {current: value}; },
     useState(value) { const index = cursor++; if (!(index in slots)) slots[index] = typeof value === 'function' ? value() : value; return [slots[index], next => { slots[index] = next; }]; },
@@ -27,9 +27,9 @@ function harness(width = 1024, initialCategory = 'growth') {
   const native = {Platform: {OS: 'web'}, View: 'View', StyleSheet: {create: value => value, flatten}, useWindowDimensions: () => ({width})};
   const paper = {Text: 'Text', Button: 'PaperButton'};
   const workspace = {
-    useTasksWorkspace: () => ({model: {reading: false, access: 'editable', operation: {state: 'none'}, scheduleContext: {timeZone: 'Asia/Hong_Kong'}}, actions: {closePanel: () => events.push('close-tasks')}}),
+    useTasksWorkspace: () => ({model: {selected: selectedTask, reading: false, access: 'editable', operation: {state: 'none'}, scheduleContext: {timeZone: 'Asia/Hong_Kong'}}, actions: {closePanel: () => events.push('close-tasks')}}),
     useCareWorkspace: () => ({model: {access: 'editable', list: {state: 'ready'}, operation: {state: 'none'}, review: {state: 'ready'}}, actions: {closePanel: () => events.push('close-care')}}),
-    usePreparationWorkspace: () => ({model: {condition: 'ready', documents: []}, actions: {closeDocument: () => events.push('close-preparation')}}),
+    usePreparationWorkspace: () => ({model: {condition: 'ready', selected: selectedPreparation, documents: selectedPreparation ? [selectedPreparation] : []}, actions: {closeDocument: () => events.push('close-preparation')}}),
     useGrowthWorkspace: () => ({scopeKey: 'scope-a', model: {access: 'editable', busy: locked, page: {concerns: {state: 'ready'}}}}),
   };
   const dependencies = {
@@ -40,20 +40,28 @@ function harness(width = 1024, initialCategory = 'growth') {
     '../components/useContainerWidth': {useContainerWidth: () => ({width, ref: null, onLayout() {}})},
     '../components/history/history-filters': historyFilters,
     '../components/date-time': {timeZoneLabel: value => value},
-    '../preparation-view-model': {searchPreparationHistory: () => []},
+    '../preparation-view-model': {searchPreparationHistory: () => selectedPreparation ? [selectedPreparation] : []},
     '../components/DateTimeFields': {AppDateField: 'AppDateField'},
+    '../components/FormDialog': {FormDialog: 'FormDialog'},
+    '../components/appearance/BackgroundSurface': { BackgroundSurface: 'View' },
+    './appearance/BackgroundSurface': { BackgroundSurface: 'View', useCustomBackground: () => false },
     '../components/PageFrame': {PageFrame: 'PageFrame'},
     '../components/ui': {AppButton: 'AppButton', AppSelect: 'AppSelect', AppTabPanel: 'AppTabPanel', AppTextField: 'AppTextField', UnderlineTabs: 'UnderlineTabs'},
     '../components/tasks/TaskHistoryView': {TaskHistoryView: 'TaskHistoryView'},
     '../components/care/CareReviewHistoryView': {CareReviewHistoryView: 'CareReviewHistoryView'},
     '../components/care/CareSavedRecordsView': {CareSavedRecordsView: 'CareSavedRecordsView'},
     '../components/preparations/PreparationWorkspace': {PreparationHistoryView: 'PreparationHistoryView'},
+    '../components/profile/ProfileHistoryView': {ProfileHistoryView: 'ProfileHistoryView'},
+    '../workspaces/ProfileWorkspace': {useProfileWorkspace: () => ({scopeKey: 'scope-a', model: {child: {id: 'child-a'}}, actions: {showHistory() {events.push('profile-history-read');}}})},
+    '../production/usePersonalHistory': {usePersonalHistoryWorkspace: () => ({scopeKey: 'scope-a'})},
+    '../components/history/PersonalHistoryViews': {PersonalConversationHistoryView: 'PersonalConversationHistoryView', PersonalNotificationHistoryView: 'PersonalNotificationHistoryView'},
     '../components/growth/GrowthHistoryView': {GrowthHistoryView: 'GrowthHistoryView'},
     '../workspaces/TasksWorkspace': {useTasksWorkspace: workspace.useTasksWorkspace},
     '../workspaces/CareWorkspace': {useCareWorkspace: workspace.useCareWorkspace},
     '../workspaces/PreparationWorkspace': {usePreparationWorkspace: workspace.usePreparationWorkspace},
     '../workspaces/GrowthWorkspace': {useGrowthWorkspace: workspace.useGrowthWorkspace},
     '../theme': theme,
+    './useQuietReadFocus': {useQuietReadFocus: disabled => ({host: {current: null}, preserveWebFocus: false, nativeDisabled: disabled})},
     './useInteractionDensity': {useInteractionDensity: () => false},
     './AppScrollView': {AppScrollView: 'AppScrollView'}, './AppIcon': {AppIcon: 'AppIcon'},
     './AppRadioItem': {AppRadioItem: 'AppRadioItem'}, './AppDialog': {AppDialog: 'AppDialog'},
@@ -74,92 +82,134 @@ function harness(width = 1024, initialCategory = 'growth') {
   const {HistoryWorkspace} = load('src/screens/historyScreen.tsx');
   const {AppButton} = load('src/components/ui.tsx');
   return {
-    events, lock() {locked = true;}, button: props => AppButton(props),
+    events, lock(value = true) {locked = value;}, button: props => AppButton(props),
+    selectHistory(task, preparation) {selectedTask = task; selectedPreparation = preparation;},
     render() {cursor = 0; const tree = HistoryWorkspace({scope: 'scope-a', childName: 'A', initialCategory, initialReviewStatus: 'all', olderOnly: false}); while (effects.length) effects.shift()(); return tree;},
   };
 }
 
-test('growth history keeps the same subtitle slot and typography as the other categories', () => {
-  for (const width of [1440, 1024, 390, 320]) {
-    let referenceCopyStyle, referenceSubtitleStyle;
-    for (const category of historyFilters.historyCategories) {
-      const tree = harness(width, category.key).render();
-      const copy = nodes(tree).find(node => node.type === 'View' && Array.isArray(node.props.children)
-        && node.props.children[0]?.props?.accessibilityRole === 'header'
-        && node.props.children[0].props.children === category.label);
-      assert.ok(copy, `${category.key} header at ${width}px`);
-      const texts = nodes(copy).filter(node => node.type === 'Text');
-      assert.equal(texts.length, 2, `${category.key} has one title and one subtitle`);
-      const expectedSubtitle = category.key === 'growth' ? category.description : `${category.description} · 來源：${category.sourceLabel}`;
-      assert.equal(texts[1].props.children.join(''), expectedSubtitle);
-      referenceCopyStyle ??= copy.props.style;
-      referenceSubtitleStyle ??= texts[1].props.style;
-      assert.deepEqual(copy.props.style, referenceCopyStyle);
-      assert.deepEqual(texts[1].props.style, referenceSubtitleStyle);
-      if (category.key === 'growth') {
-        assert.equal(texts[1].props.children.join(''), '查看已結束的關注與跟進記錄');
-      }
-    }
+test('all eight categories keep one category control without duplicate source headings or inline dates', () => {
+  for (const width of [1440, 1024, 390, 320]) for (const category of historyFilters.historyCategories) {
+    const tree = harness(width, category.key).render();
+    const picker = nodes(tree).find(node => node.type === (width < 680 ? 'AppSelect' : 'UnderlineTabs'));
+    assert.equal(picker.props.value, category.key);
+    assert.equal((picker.props.options ?? picker.props.items).length, 8);
+    assert.equal(nodes(tree).some(node => node.props?.accessibilityRole === 'header' && node.props.children === category.label), false);
+    assert.equal(nodes(tree).some(node => node.type === 'AppDateField'), false);
+    assert.equal(nodes(tree).some(node => node.type === 'Text' && JSON.stringify(node.props.children).includes('來源：')), false);
+    assert.equal(!!labelled(tree, '日期篩選'), !['review', 'care', 'profile'].includes(category.key));
+    assert.equal(!!labelled(tree, `搜尋${category.label}`), !['care', 'profile'].includes(category.key));
+    if (category.key === 'notifications') assert.ok(nodes(tree).some(node => node.props?.children === '本人消息，涵蓋帳戶及其他孩子'));
+    if (category.key === 'review') assert.ok(nodes(tree).some(node => node.props?.children === '按內容及處理狀態搜尋；暫不支援日期篩選。'));
   }
 });
 
-test('growth source actions share compact sizing and centered self-alignment without a Link wrapper', () => {
+
+test('task and preparation modal selection keeps the complete history filter toolbar at every width', () => {
+  for (const width of [1440, 1024, 390, 320]) for (const category of ['tasks', 'preparations']) {
+    const h = harness(width, category);
+    const label = historyFilters.historyCategories.find(item => item.key === category).label;
+    const assertToolbar = tree => {
+      assert.equal(nodes(tree).filter(node => node.props?.testID === 'history-filter-toolbar').length, 1);
+      assert.equal(nodes(tree).filter(node => node.type === 'AppTextField' && node.props.label === `搜尋${label}`).length, 1);
+      assert.equal(labelled(tree, '日期篩選').props.disabled, false);
+      assert.ok(nodes(tree).some(node => node.type === (category === 'tasks' ? 'TaskHistoryView' : 'PreparationHistoryView')));
+    };
+    assertToolbar(h.render());
+    for (const state of ['completed', 'cancelled']) {
+      h.selectHistory({ occurrence: { state } }, { id: 'synthetic-archived-preparation', status: 'archived' });
+      assertToolbar(h.render());
+    }
+    h.selectHistory(null, null);
+    assertToolbar(h.render());
+    assert.deepEqual(h.events, [], 'Selection must not navigate, close the owner or mutate filters');
+  }
+});
+
+test('history date controls keep a wrapping toolbar and touch-safe AppButton sizing without return shortcuts', () => {
   for (const width of [1440, 1024, 390, 320]) {
     const h = harness(width), tree = h.render();
-    const first = labelled(tree, '查看持續關注'), second = labelled(tree, '查看年度與季度檔案');
-    const group = nodes(tree).find(node => node.type === 'View' && node.props.children?.includes?.(first) && node.props.children.includes(second));
-    assert.ok(group);
-    assert.equal(group.props.style.flexWrap, 'wrap');
-    assert.equal(group.props.style.maxWidth, '100%');
-    assert.equal(group.props.style.alignItems, 'center');
-    const buttons = [first, second].map(node => h.button(node.props));
-    assert.ok(buttons.every(node => node.props.compact && node.props.mode === 'outlined'));
-    assert.deepEqual(flatten(buttons[0].props.contentStyle), flatten(buttons[1].props.contentStyle));
-    for (const button of buttons) {
-      assert.equal(flatten(button.props.style).alignSelf, 'center');
+    const date = labelled(tree, '日期篩選');
+    const group = nodes(tree).find(node => node.type === 'View' && node.props.children?.includes?.(date));
+    assert.equal(group.props.style.flexWrap, 'wrap'); assert.equal(group.props.style.maxWidth, '100%'); assert.equal(group.props.style.alignItems, 'center');
+    for (const entry of [date]) {
+      const button = h.button(entry.props);
+      assert.equal(button.props.compact, true); assert.equal(button.props.mode, 'outlined');
       assert.equal(flatten(button.props.style).height, undefined);
       if (width < 650) assert.ok(flatten(button.props.contentStyle).minHeight >= 48);
     }
-    first.props.onPress(); second.props.onPress();
-    assert.deepEqual(h.events, ['guard', ['push', '/growth'], 'guard', ['push', '/growth?tab=archive']]);
+    assert.deepEqual(h.events, []);
+    const search = labelled(tree, '搜尋關注與成長'), wrapper = nodes(tree).find(node => node.props?.children === search);
+    assert.equal(wrapper.props.style.minWidth, 0); assert.equal(wrapper.props.style.maxWidth, '100%');
   }
 });
 
-test('date clear aligns with the Paper outlined border and drops the offset when stacked', () => {
-  for (const width of [1440, 1024, 390, 320]) {
-    const h = harness(width), tree = h.render(), clear = labelled(tree, '清除篩選');
-    const row = nodes(tree).find(node => node.type === 'View' && node.props.children?.includes?.(clear));
-    const style = flatten(clear.props.style);
-    assert.equal(style.minHeight, 50);
-    assert.equal(style.justifyContent, 'center');
-    assert.equal(style.marginTop, width < 680 ? 0 : 6);
-    assert.equal(flatten(row.props.style).flexDirection, width < 680 ? 'column' : 'row');
-    assert.equal(flatten(row.props.style).alignItems, width < 680 ? 'stretch' : 'flex-start');
-    assert.equal(nodes(row).filter(node => node.type === 'AppDateField').length, 2);
-    assert.ok(flatten(h.button(clear.props).props.contentStyle).minHeight >= 44);
-  }
-});
+const result = (tree, type = 'GrowthHistoryView') => nodes(tree).find(node => node.type === type);
+const dateDialog = tree => nodes(tree).find(node => node.type === 'FormDialog' && node.props.title === '日期篩選');
+const appliedDates = tree => nodes(tree).find(node => node.props?.testID === 'history-applied-dates');
 
-test('date filtering, reset and the original locked guard are unchanged by the layout', () => {
+test('date drafts do not filter, close readers or show applied state before atomic apply', () => {
   const h = harness(); let tree = h.render();
-  assert.equal(labelled(tree, '清除篩選').props.disabled, true);
-  labelled(tree, '搜尋關注與成長').props.onChangeText('  family  ');
-  labelled(tree, '開始日期（可不填）').props.onChange('2026-09-01');
-  labelled(tree, '結束日期（可不填）').props.onChange('2026-09-30');
-  tree = h.render();
-  const result = nodes(tree).find(node => node.type === 'GrowthHistoryView');
-  assert.equal(result.props.searchText, '  family  ');
-  assert.deepEqual(result.props.dateRange, {from: '2026-09-01', to: '2026-09-30'});
+  assert.equal(labelled(tree, '清除篩選'), undefined);
+  labelled(tree, '搜尋關注與成長').props.onChangeText('  family  '); tree = h.render();
+  const beforeEdit = h.events.length, trigger = labelled(tree, '日期篩選'); trigger.props.onPress(); tree = h.render();
+  assert.equal(dateDialog(tree).props.visible, true); assert.equal(dateDialog(tree).props.returnFocusRef, trigger.props.ref);
+  labelled(tree, '開始日期（可不填）').props.onChange('2026-09-01'); tree = h.render();
+  labelled(tree, '結束日期（可不填）').props.onChange('2026-09-30'); tree = h.render();
+  assert.equal(h.events.length, beforeEdit); assert.deepEqual(result(tree).props.dateRange, {from: null, to: null}); assert.equal(appliedDates(tree), undefined);
+  labelled(tree, '套用日期').props.onPress(); tree = h.render();
+  assert.deepEqual(h.events.slice(beforeEdit), ['close-tasks', 'close-preparation', 'close-care']); assert.equal(dateDialog(tree).props.visible, false);
+  assert.equal(result(tree).props.searchText, '  family  '); assert.deepEqual(result(tree).props.dateRange, {from: '2026-09-01', to: '2026-09-30'});
+  assert.equal(appliedDates(tree).props.children.join(''), '日期：2026-09-01 至 2026-09-30'); assert.ok(labelled(tree, '日期已篩選'));
   labelled(tree, '清除篩選').props.onPress(); tree = h.render();
-  assert.equal(labelled(tree, '搜尋關注與成長').props.value, '');
-  assert.equal(labelled(tree, '開始日期（可不填）').props.value, '');
-  assert.equal(labelled(tree, '結束日期（可不填）').props.value, '');
+  assert.equal(labelled(tree, '搜尋關注與成長').props.value, ''); assert.deepEqual(result(tree).props.dateRange, {from: null, to: null}); assert.equal(appliedDates(tree), undefined);
+});
+
+test('cancel, invalid drafts and draft clear leave results intact; reopen uses applied dates', () => {
+  const h = harness(); let tree = h.render();
+  labelled(tree, '日期篩選').props.onPress(); tree = h.render();
+  labelled(tree, '開始日期（可不填）').props.onChange('2026-09-30'); tree = h.render();
+  labelled(tree, '套用日期').props.onPress(); tree = h.render();
+  assert.equal(appliedDates(tree).props.children.join(''), '日期：2026-09-30 起');
+  const applied = result(tree).props.dateRange, beforeEdit = h.events.length;
+  labelled(tree, '日期已篩選').props.onPress(); tree = h.render();
+  for (const invalid of ['2026-09-01', '2026-02-29', '2026-9-1']) {
+    labelled(tree, '結束日期（可不填）').props.onChange(invalid); tree = h.render();
+    assert.ok(labelled(tree, '結束日期（可不填）').props.error); assert.equal(labelled(tree, '套用日期').props.disabled, true);
+    labelled(tree, '套用日期').props.onPress(); tree = h.render();
+    assert.equal(dateDialog(tree).props.visible, true); assert.deepEqual(result(tree).props.dateRange, applied);
+  }
+  labelled(tree, '清空日期').props.onPress(); tree = h.render();
+  assert.equal(labelled(tree, '開始日期（可不填）').props.value, ''); assert.equal(labelled(tree, '結束日期（可不填）').props.value, ''); assert.deepEqual(result(tree).props.dateRange, applied);
+  dateDialog(tree).props.onClose(); tree = h.render(); assert.equal(dateDialog(tree).props.visible, false); assert.equal(h.events.length, beforeEdit);
+  labelled(tree, '日期已篩選').props.onPress(); tree = h.render();
+  assert.equal(labelled(tree, '開始日期（可不填）').props.value, '2026-09-30'); assert.equal(labelled(tree, '結束日期（可不填）').props.value, '');
+  labelled(tree, '清空日期').props.onPress(); tree = h.render(); labelled(tree, '套用日期').props.onPress(); tree = h.render();
+  assert.deepEqual(result(tree).props.dateRange, {from: null, to: null});
+});
+
+test('original locks block search and apply without trapping disposable filter drafts', () => {
+  const h = harness(); let tree = h.render();
+  labelled(tree, '搜尋關注與成長').props.onChangeText('family'); tree = h.render();
+  labelled(tree, '日期篩選').props.onPress(); tree = h.render(); labelled(tree, '開始日期（可不填）').props.onChange('2026-09-01'); tree = h.render();
   h.lock(); tree = h.render(); const count = h.events.length;
-  assert.equal(labelled(tree, '清除篩選').props.disabled, true);
-  labelled(tree, '搜尋關注與成長').props.onChangeText('blocked');
-  labelled(tree, '清除篩選').props.onPress();
-  assert.equal(h.events.length, count);
-  assert.equal(labelled(h.render(), '搜尋關注與成長').props.value, '');
+  for (const label of ['清除篩選', '搜尋關注與成長', '套用日期', '開始日期（可不填）', '結束日期（可不填）']) assert.equal(labelled(tree, label).props.disabled, true);
+  labelled(tree, '搜尋關注與成長').props.onChangeText('blocked'); labelled(tree, '清除篩選').props.onPress(); labelled(tree, '套用日期').props.onPress(); tree = h.render();
+  assert.equal(h.events.length, count); assert.equal(labelled(tree, '搜尋關注與成長').props.value, 'family'); assert.deepEqual(result(tree).props.dateRange, {from: null, to: null});
+  dateDialog(tree).props.onClose(); tree = h.render(); assert.equal(dateDialog(tree).props.visible, false);
+});
+
+test('unsupported categories do not claim hidden dates are applied or lose original owners', () => {
+  const h = harness(); let tree = h.render();
+  labelled(tree, '日期篩選').props.onPress(); tree = h.render(); labelled(tree, '結束日期（可不填）').props.onChange('2026-09-30'); tree = h.render();
+  labelled(tree, '套用日期').props.onPress(); tree = h.render();
+  for (const [category, view] of [['review', 'CareReviewHistoryView'], ['care', 'CareSavedRecordsView'], ['profile', 'ProfileHistoryView']]) {
+    nodes(tree).find(node => node.type === 'UnderlineTabs').props.onChange(category); tree = h.render();
+    assert.ok(result(tree, view)); assert.equal(labelled(tree, '日期篩選'), undefined); assert.equal(labelled(tree, '日期已篩選'), undefined);
+    assert.equal(appliedDates(tree), undefined); assert.equal(dateDialog(tree).props.visible, false);
+  }
+  nodes(tree).find(node => node.type === 'UnderlineTabs').props.onChange('growth'); tree = h.render();
+  assert.deepEqual(result(tree).props.dateRange, {from: null, to: '2026-09-30'});
 });
 
 test('History removes only the permanent closing caveat and keeps restore and coverage conditions', () => {
@@ -183,15 +233,17 @@ function closedHistoryHarness(width = 1024, touch = false) {
   const modelModule = {exports: {}};
   new Function('require', 'module', 'exports', modelSource)(require, modelModule, modelModule.exports);
   const dependencies = {
-    'react': {useState: initial => {const index = cursor++; if (!(index in slots)) slots[index] = initial; return [slots[index], value => {slots[index] = value;}];}}, 'react/jsx-runtime': require('react/jsx-runtime'),
+    'react': {useRef: value => ({current: value}), useEffect() {}, useState: initial => {const index = cursor++; if (!(index in slots)) slots[index] = initial; return [slots[index], value => {slots[index] = value;}];}}, 'react/jsx-runtime': require('react/jsx-runtime'),
     'react-native': {View: 'View', Pressable: 'Pressable', StyleSheet: {create: value => value}, useWindowDimensions: () => ({width})}, 'react-native-paper': {Text: 'Text', Button: 'Button'},
     '../useInteractionDensity': {useInteractionDensity: () => touch},
+    '../history/HistoryCards': {HistoryCardGrid: 'HistoryCardGrid'}, '../FormDialog': {FormDialog: 'FormDialog'},
     '../../growth-view-model': modelModule.exports,
     '../../workspaces/GrowthWorkspace': {useGrowthWorkspace: () => workspace},
     '../../theme': {colors: {line: '#CAC9D4', controlSurface: '#FFFFFE', ink: '#272343', quietSurface: '#EDFAF9', paleTeal: '#E3F6F5'}, mobileLayout: {breakpoint: 650, touchTarget: 48}, radius: {small: 10}, spacing: {xs: 4, sm: 8, md: 12, lg: 16}},
     './growth-styles': {growthStyles: {stack: {gap: 12}}},
     '../ui': {AppButton: 'AppButton'}, '../AppIcon': {AppIcon: 'AppIcon'},
     './GrowthConcernTimeline': {GrowthConcernTimeline: 'GrowthConcernTimeline'},
+    '../EmptyListCard': {EmptyListCard: 'EmptyListCard'}, '../ReadStateNotice': {ReadStateNotice: 'ReadStateNotice'},
     './GrowthOperationRecovery': {GrowthOperationRecovery: 'GrowthOperationRecovery'},
     '../StatusAnnouncement': {StatusAnnouncement: 'StatusAnnouncement'},
   };
@@ -203,35 +255,25 @@ const identified = (tree, id) => nodes(tree).find(node => node.props?.testID ===
 const restoreControl = tree => nodes(tree).find(node => node.type === 'Button' && node.props.accessibilityLabel?.startsWith('恢復關注：'));
 const readingControl = tree => nodes(tree).find(node => node.type === 'Pressable' && node.props.accessibilityLabel?.startsWith('查看已結束關注：'));
 
-test('closed chains are distinct name/date rows with sibling reading targets and small right-side restore tools', () => {
+test('closed concerns are whole content-first cards; restore remains a secondary detail action', () => {
   for (const [width, touch] of [[1440, false], [1024, true], [390, false], [320, false]]) {
-    const h = closedHistoryHarness(width, touch), tree = h.render();
-    assert.ok(tree.props.style.gap > 0);
+    const h = closedHistoryHarness(width, touch);
     for (const id of ['one', 'two']) {
-      const card = identified(tree, `growth-history-${id}`);
-      assert.equal(card.key, id);
-      assert.equal(card.props.style.borderWidth, 1);
-      assert.equal(card.props.style.backgroundColor, '#FFFFFE');
-      const row = card.props.children[0], reading = readingControl(row), restore = restoreControl(row);
-      assert.equal(row.props.style.flexDirection, 'row');
-      assert.equal(row.props.children[0], reading);
-      assert.equal(row.props.children[1], restore);
-      assert.equal(restoreControl(reading), undefined, 'Restore must not nest inside the reading button');
-      const texts = nodes(reading).filter(node => node.type === 'Text');
-      assert.equal(texts.length, 2);
+      let tree = h.render(); const card = identified(tree, `growth-history-${id}`);
+      assert.equal(card.type, 'Pressable'); assert.equal(card.key, id);
+      const style = flatten(card.props.style({pressed: false}));
+      assert.equal(style.borderWidth, 1); assert.equal(style.backgroundColor, '#FFFFFE');
+      assert.equal(restoreControl(card), undefined, 'No nested mutation inside the reading target');
+      const texts = nodes(card).filter(node => node.type === 'Text');
       assert.equal(texts[0].props.children, id === 'one' ? '第一條' : '第二條');
-      assert.match(texts[1].props.children, /^結束於 /);
-      assert.ok(!texts.some(node => node.props.children.includes('摘要')));
-      const readStyle = flatten(reading.props.style({pressed: false}));
-      assert.equal(readStyle.flex, 1); assert.ok(readStyle.minHeight >= 48);
+      assert.ok(texts[1].props.children.includes('摘要')); assert.match(texts[2].props.children, /^結束於 /);
+      card.props.onPress(); tree = h.render();
+      const dialog = nodes(tree).find(node => node.type === 'FormDialog'); assert.equal(dialog.props.visible, true);
+      const restore = restoreControl(dialog); assert.ok(restore);
       assert.equal(restore.props.mode, 'text'); assert.equal(restore.props.compact, true);
-      assert.equal(restore.props.children, '恢復');
-      assert.equal(restore.props.style.borderWidth, 0); assert.equal(restore.props.style.flexShrink, 0);
       assert.ok(flatten(restore.props.contentStyle).minHeight >= (touch || width < 650 ? 48 : 40));
-      let stopped = false;
-      restore.props.onPress({stopPropagation() {stopped = true;}});
-      assert.equal(stopped, true);
-      assert.equal(nodes(h.render()).filter(node => node.type === 'GrowthConcernTimeline').length, 0);
+      let stopped = false; restore.props.onPress({stopPropagation() {stopped = true;}}); assert.equal(stopped, true);
+      dialog.props.onClose(); tree = h.render(); assert.equal(restoreControl(tree), undefined);
     }
     assert.deepEqual(h.calls, [['one', 3, 'auth-a'], ['two', 7, 'auth-a']]);
   }
@@ -251,7 +293,7 @@ test('selected History keeps its chain identity through reorder and filtering an
   tree = h.render(); assert.equal(timeline()[0].props.concern.id, 'two');
   restoreControl(tree).props.onPress({stopPropagation() {}});
   assert.deepEqual(h.calls, [['two', 7, 'auth-a']]);
-  labelled(tree, '返回關注歷史').props.onPress(); tree = h.render();
+  nodes(tree).find(node => node.type === 'FormDialog').props.onClose(); tree = h.render();
   readingControl(identified(tree, 'growth-history-one')).props.onPress(); tree = h.render();
   assert.equal(timeline().length, 1); assert.equal(timeline()[0].props.concern.id, 'one');
   h.setWorkspace({...h.workspace, scopeKey: 'scope-b'}); tree = h.render();
@@ -261,7 +303,8 @@ test('selected History keeps its chain identity through reorder and filtering an
 test('lightweight restore retains locked, dirty, missing-state and viewer gates, with keyboard and hover reading feedback', () => {
   for (const mutate of [model => {model.locked = true;}, model => {model.dirty = true;}, model => {delete model.page.concerns.items[0].statusBeforeArchive;}]) {
     const h = closedHistoryHarness(); mutate(h.workspace.model);
-    assert.equal(restoreControl(identified(h.render(), 'growth-history-one')).props.disabled, true);
+    const card = readingControl(identified(h.render(), 'growth-history-one')); card.props.onPress();
+    assert.equal(restoreControl(h.render()).props.disabled, true);
   }
   const h = closedHistoryHarness(); let tree = h.render(), reading = readingControl(identified(tree, 'growth-history-one'));
   reading.props.onFocus(); tree = h.render(); reading = readingControl(identified(tree, 'growth-history-one'));
@@ -286,9 +329,36 @@ test('success is concise while unknown and failure messages remain explicit and 
     assert.ok(texts.includes(h.workspace.model.notice));
   }
   const screen = readFileSync(path.join(root, 'src/screens/historyScreen.tsx'), 'utf8');
-  const growthHeader = nodes(harness().render()).find(node => node.type === 'View' && Array.isArray(node.props.children)
-    && node.props.children[0]?.props?.accessibilityRole === 'header'
-    && node.props.children[0].props.children === '關注與成長');
-  assert.equal(growthHeader.props.children[1].props.children.join(''), '查看已結束的關注與跟進記錄');
+  assert.equal(nodes(harness().render()).some(node => node.props?.accessibilityRole === 'header' && node.props.children === '關注與成長'), false);
   assert.ok(!screen.includes('日期按結束關注的時間篩選'));
+});
+
+
+test('profile history category renders the same scoped reader on desktop and mobile without fake search or eager reads', () => {
+  for (const width of [1440, 1024, 390, 320]) {
+    const h = harness(width, 'profile'), tree = h.render();
+    assert.ok(nodes(tree).some(node => node.type === 'ProfileHistoryView'));
+    assert.equal(nodes(tree).some(node => node.props?.testID === 'history-filter-toolbar'), false);
+    const picker = nodes(tree).find(node => node.type === (width < 680 ? 'AppSelect' : 'UnderlineTabs'));
+    assert.equal(picker.props.value, 'profile');
+    assert.ok((picker.props.options ?? picker.props.items).some(item => (item.value ?? item.key) === 'profile' && item.label === '檔案修改'));
+    assert.equal(h.events.includes('profile-history-read'), false);
+    assert.equal(labelled(tree, '查看檔案'), undefined);
+    assert.deepEqual(h.events, []);
+  }
+});
+
+
+test('all history categories omit redundant return shortcuts and empty toolbars while preserving the reader', () => {
+  const shortcuts = ['開啟待辦', '開啟準備單', '開啟核對', '查看檔案', '查看持續關注', '查看年度與季度檔案'];
+  for (const width of [1440, 1024, 390, 320]) for (const category of historyFilters.historyCategories) {
+    const h = harness(width, category.key), tree = h.render();
+    for (const shortcut of shortcuts) assert.equal(labelled(tree, shortcut), undefined, `${category.key}: ${shortcut}`);
+    assert.equal(tree.props.title, '歷史');
+    const toolbar = tree.props.children.props.children[1];
+    if (['care', 'profile'].includes(category.key)) assert.equal(toolbar, null, 'Do not leave an empty surface or spacing row');
+    else assert.equal(toolbar.props.testID, 'history-filter-toolbar');
+    assert.ok(nodes(tree).some(node => node.type === 'AppTabPanel' && node.props.tabKey === category.key));
+    assert.deepEqual(h.events, []);
+  }
 });

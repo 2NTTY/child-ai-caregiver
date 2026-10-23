@@ -13,6 +13,19 @@ INT 正式接線現行位置以 [共用 owner 清單](../docs/P2_UI_HANDOFF.md#p
 4. 保留既有版型與操作時按需讀 [DESIGN_SYSTEM](DESIGN_SYSTEM.md#user-first-principles)，不把研究稿或舊截圖當新要求
 5. 正式 wire schema、Server 授權與現有 controller 以根 `docs/P2_UI_HANDOFF.md`、`docs/API.md` 及實際程式重核；本域不複製另一套正式 API 規範
 
+## 本輪接線差異（2026-10-21）
+
+- `/growth` 顯示關注鏈＋準備單；`/summary` 顯示概況＋成長檔案。舊 `summary?tab=preparation`／`growth?tab=archive` 轉向新位置；`legacy-preparation` 保留原 care-summary owner／原操作。
+- 成長檔案仍沿既有 growth/documents `authorityVersion` 比對後的投影；報告重讀沿原 combined refresh，不另建資料 owner。
+- 手機五個主入口的原 growth 位置為「關注」，成長檔案／概況由「全部功能」可達；子女基本檔案仍獨立。
+- 「全部功能」沿既有一般使用者路由列出入口；照片保留 `/care?view=photos` 篩選，不加入 admin 或改授權。
+- 手動表單只換呈現容器：共用 FormDialog 沿原 owner／API／scope／原操作，close 是 navigation intent，不是 workspace；同 scope 新 draft key、卸載及遲到批准均拒舊 close。關窗後才回原有效 trigger，未知操作的查核／原次重試留在窗內。AppDialog 已由 RN Modal 承擔平台 portal；FormDialog 不再套 Paper Portal，避免本地 guard／production context 丟失。
+- Profile 新 `discardDraft`、Sources／Photos 的精確 draft discard 只重設 UI 草稿，不刪已保存資料／選取或重建原操作；pending 時拒絕。Documents 的 draftId 與 Growth 的精確提交 basis 只屬 UI 擁有權，用來區分已凍結提交與其他未送出草稿，不加入 wire payload。
+- Care 的長 Agent 結果只把原 AgentRunView 搬進閱讀窗；摘要保留待確認／unknown 真相。唯讀窗的 pending 可隨 workspace 留在常駐 owner，child／default close 仍沿 guard；不改聊天答案或確認 API。
+- 背景只用本機 platform adapter：Web IndexedDB Blob，native 既有 picker／filesystem／secure storage，按服務＋本人分隔，登出即遮罩。沒有新增 native dependency、雲同步、資料上傳或模型；是否可 OTA 仍須另核 runtime fingerprint，本包沒有發佈。
+- 日期僅縮短展示：保留原 timestamp 及排程明確時區的換算，去秒／逐條時區後綴；原 schema／cursor／排程 timezone 輸入不變。聊天改呈現及焦點消耗，不改附件、提交、取消、run 或 receipt 契約。
+- 頁面提示、首頁重要提醒及通知內容歷史尚缺權威 API；需求、薄前端邊界與分工驗收見 [接口需求提案](ATTENTION_API_HANDOFF.md)，不是已完成接線或正式 wire schema。
+
 下文「產品方向」是要達成的需求，「合成／目前前端」是已存在的預覽，「歷史 backend 核對」只是固定版本依據；三者不能互相當完成證明。
 
 <a id="p2-coverage"></a>

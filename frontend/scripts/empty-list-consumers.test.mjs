@@ -10,6 +10,7 @@ const root = path.resolve(import.meta.dirname, '..'), require = createRequire(im
 const noop = () => {}, jsx = (type, props) => ({ type, props });
 const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tree) ? tree.flatMap(nodes) : [tree, ...nodes(tree.props?.children)];
 const cards = tree => nodes(tree).filter(node => node.type === 'EmptyListCard');
+const visibleText = tree => !tree ? '' : Array.isArray(tree) ? tree.map(visibleText).join(' ') : typeof tree === 'object' ? visibleText(tree.props?.children) : String(tree);
 const cardText = tree => cards(tree).map(node => `${node.props.title} ${node.props.detail ?? ''}`).join(' ');
 const placeholders = new Proxy({}, { get: (_, key) => String(key) });
 function load(relative, overrides = {}, suffix = '') {
@@ -23,6 +24,7 @@ function load(relative, overrides = {}, suffix = '') {
     if (name === 'react-native') return { View: 'View', Pressable: 'Pressable', Platform: { OS: 'web' }, StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text: 'Text' };
     if (name === 'expo-router') return { useRouter: () => ({ push: noop }), useLocalSearchParams: () => ({}), usePathname: () => '/' };
+    if (name.endsWith('/ProductionFirstScreenGate')) return { useProductionVisibleSettingsSection: noop };
     if (name.endsWith('/theme')) return { colors: {}, spacing: {}, radius: {}, readingType: {}, workspaceType: {}, typeScale: {} };
     if (name.endsWith('/agent-view-model')) return { agentTime: value => value, agentRunLabels: {}, agentProposalLabels: {} };
     if (name.endsWith('/chat-presentation')) return { chatColors: {}, chatType: {} };
@@ -54,11 +56,12 @@ test('Agent activity empty snapshots do not become success after failures, loadi
   const production = { agentModel: { readState: 'idle', online: true }, agentActions: {}, agentInbox: {}, agentInboxActions: {}, authorization: { receipts: {} }, authorizationActions: {} };
   const { AgentConversation } = load('src/production/AgentConversation.tsx', { './ProductionProvider': { useProduction: () => production } });
   const render = state => { production.agentPending = { state, entries: [], hasSnapshot: true, nextCursor: null }; return AgentConversation({ visible: true }); };
-  assert.equal(cards(render('ready')).length, 1);
-  for (const state of ['idle', 'loading', 'failed', 'denied']) assert.equal(cards(render(state)).length, 0, state);
-  production.agentModel.online = false; assert.equal(cards(render('ready')).length, 0);
+  assert.equal(cards(render('ready')).length, 0, 'activity uses a quiet empty line rather than another nested card');
+  assert.match(visibleText(render('ready')), /目前沒有待確認/);
+  for (const state of ['idle', 'loading', 'failed', 'denied']) assert.doesNotMatch(visibleText(render(state)), /目前沒有待確認/, state);
+  production.agentModel.online = false; assert.doesNotMatch(visibleText(render('ready')), /目前沒有待確認/);
   production.agentModel.online = true; render('ready'); production.agentPending.nextCursor = 'more';
-  assert.match(cardText(AgentConversation({ visible: true })), /已載入頁面/);
+  assert.match(visibleText(AgentConversation({ visible: true })), /已載入頁面/);
 });
 
 test('inbox shows a successful empty card only after a current online read', () => {
@@ -70,15 +73,15 @@ test('inbox shows a successful empty card only after a current online read', () 
   }
 });
 
-test('completed run tools and candidates use cards, unfinished or stale run outcomes remain unknown', () => {
+test('completed activity has a quiet empty summary, never a false empty outcome for unfinished or stale runs', () => {
   const { AgentRunView, RunDetails } = load('src/components/agent/AgentRunView.tsx', {}, '\nexports.RunDetails = RunDetails;');
   const run = { id: 'synthetic', tools: [], proposals: [], status: 'completed', counts: null, citations: [], text: '' };
   const model = { online: true, readState: 'ready', run, loadedAt: '2026-10-07T00:00:00Z' };
-  assert.equal(cards(AgentRunView({ model, actions: {} })).length, 1);
-  assert.equal(cards(RunDetails({ run, emptyReady: true })).length, 1);
-  assert.equal(cards(RunDetails({ run, emptyReady: false })).length, 0);
-  for (const status of ['running', 'unknown', 'failed', 'cancelled']) assert.equal(cards(AgentRunView({ model: { ...model, run: { ...run, status } }, actions: {} })).length, 0);
-  assert.equal(cards(AgentRunView({ model: { ...model, online: false }, actions: {} })).length, 0);
+  assert.equal(cards(AgentRunView({ model, actions: {} })).length, 0);
+  assert.match(visibleText(AgentRunView({ model, actions: {} })), /本次沒有待確認事項/);
+  assert.equal(RunDetails({ run }), null, 'no empty tool-placeholder disclosure');
+  for (const status of ['running', 'unknown', 'failed', 'cancelled']) assert.doesNotMatch(visibleText(AgentRunView({ model: { ...model, run: { ...run, status } }, actions: {} })), /本次沒有待確認事項/);
+  assert.doesNotMatch(visibleText(AgentRunView({ model: { ...model, online: false }, actions: {} })), /本次沒有待確認事項/);
 });
 
 test('preparation empty state preserves failure, loading, offline and uncertain-source semantics', () => {

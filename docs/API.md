@@ -900,6 +900,20 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 `GET /api/account/export?section=notification_deliveries` 保留既有前端 owner 契約，回傳本人的 Push／Telegram 投遞及聯絡 attempts metadata；含 id、channel、status、created_at、attempted_at、finished_at、acknowledged_at，聯絡項另有 request_id。沒有真 attempt 的聯絡請求不投影成送達；不新增假電郵、私密正文、渠道地址或 binding。按原請求建立時間倒序有界合併三來源，每頁最多掃十筆來源列，游標各自保存進度，空頁仍須沿 nextCursor 續讀。此分頁不是穩定歷史快照；新投遞／回執由重新讀取更新，身份或資料範圍變更使旧游標失效。
 
 
+#### 本人已保存的外發消息內容
+
+`GET /api/account/messages?scopeVersion=&cursor=` 與投遞診斷匯出分開；完整歷史與鈴鐺最近消息讀同一接口。必須是目前 Firebase session，並帶相符 `x-expected-user-id`；回應 `private, no-store`，返回前重核 session、本人權限及每項孩子存取。只涵蓋本人收件的 Web Push／Android FCM／Telegram 渠道測試與既有 contact 通知，不新增外發、主動 Agent、排程或渠道授權。
+
+- Wire 由 `src/shared/notification-messages.ts` 定義：`schemaVersion:1`、`userId`、`scopeVersion`、`asOf`、`items`、`nextCursor`、`complete`、`coverage`。`scopeVersion` 是本人／workspace／storage epoch／權限版本（含只在孩子刪除屏障同交易遞增的 `childAccessVersion`；舊 workspace 缺欄位在權限計算按 0 讀取、重序列化仍保留缺省而不插入新欄位），不以一般 `changeSeq` 把日常新消息視作撤權。真正範圍失效回 `409 messages_scope_changed`；不合法或跨身份游標回 `400 invalid_message_cursor`；provider 未組裝回 `503 message_history_unavailable`。尚未部署此路由的舊 Server 可能回 404，亦可能回 `503 firebase_domain_not_ready`；client 僅對此新路由將這兩種已知缺接線回應窄映射為未接通，其他 503 仍是一般錯誤，不能冒作其他歷史的撤權。
+- 分兩階段 rollout（[部署及回退步驟](NOTIFICATION_MESSAGE_HISTORY_ROLLOUT.md)）：`FIREBASE_MESSAGE_HISTORY_ENABLED` 預設／`false` 只提供兼容 reader，消息 API 回 `503 message_history_unavailable`、不查新索引、不首次保存快照或權限欄；`true` 才啟用新 capture／API。部署者須先確認全部 API、worker、維護／restore reader 都在本兼容版本以上且四個索引 ready，再設定此旗標；本輪不執行部署。回退 floor 是這個兼容版本，不能退回 pre-bridge strict reader。首次啟用的本人消息讀取先在原生 authority transaction 寫 `childAccessVersion:0` 作持久 activation marker，commit 後才可返回任何頁／游標，不改普通 `changeSeq`。所有兼容實例之後即使旗標關閉，只要 workspace 已有 marker，孩子刪除同一交易仍必遞增；未啟用 workspace 則保留缺欄。初始化與刪除讀寫同一 workspace，依原生 transaction 衝突重試排序；本地串行合成測試不是雲端並發驗證。普通寫入、還原保留已有欄，還原以來源／live 較高 revision 保留 marker，且仍換 epoch；關閉旗標不能取消已建立的權限屏障。
+- 每項 `messageId` 是真來源及 ID：三種渠道測試用原 delivery ID，contact 用原 request ID；不按相同標題／時間猜去重。`contentVersion:1`、`scope`（帳戶，或目前可讀孩子的 ID／名稱）、`sentAt`、`contents[]`。每渠道保存當次實際 title／body／contentVersion／sentAt；Telegram 沒有獨立標題，故 `title:null`。同一 contact 的渠道正文可不同，不捏造共同正文。現有通知沒有來源引用，接口不假造 sources 或事項連結。
+- `sentAt` 是 gateway 在唯一實際 provider request 發起邊界取得的時間，**不是** worker 預先 `attemptedAt`，也不是裝置收到／已讀時間。gateway 用同一當次 payload／text 產生快照，只在核實 provider 接受後返回；worker 將快照與原投遞終態放在同一原有加密 envelope／交易。Web Push 新 payload 攜固定、無家庭敏感資料的版本化內容，SW 顯示該內容；舊 SW 可繼續顯示原固定文案，但不以 API 接受當成已驗證裝置顯示。FCM 快照取本次 `notification`，Telegram 取本次 `sendMessage.text`。不從讀取時的模板補寫過去內容。
+- 非 accepted、未真正發出、legacy 無快照的資料不投影為已保存消息。provider 接受後交易失敗仍沿原 `sending → unknown` 防重，不能為補歷史另發一次；重跑已終結原工作不新增消息。原診斷台帳及未知狀態仍供既有維護渠道使用，不加用戶端技術診斷入口。
+- `coverage.kind=recorded_provider_acceptances`、`historical=unknown`、`excluded=[authentication_email,unconfirmed_or_unsaved_sends]` 明確表示**已保存且可證實對外提交的當次內容**，不承諾全系統歷史完整。舊正文沒有保存，不能還原；provider 回應不明或回應未能保存亦可能缺漏。Firebase 驗證／重設郵件不在此歷史，不能保存或透露其秘密連結。空頁不能解讀為系統從未發過消息，亦沒有未讀／已讀計數。
+- 四個來源各按已驗證加密快照對應的 `messageSentAt DESC`＋真 entity ID 排序，有界合併，每頁最多掃 20 來源行；非本人或已失去孩子權限項目不披露。正文不放 plaintext 索引或日誌；唯一新增排序欄是時間。游標加密綁本人／範圍、首頁 `asOf` 及四個來源位置，後續頁維持同 `asOf`。`coverage.pagination=live`：這是 time-bounded live pagination，不是隔離資料庫 snapshot；晚接受／晚保存者可能要下一次完整靜默 refresh 才出現。`complete` 只表示本次讀取已窮盡，不表示所有渠道／歷史完整。client 按穩定 ID 合併，保留空頁續讀、循環游標防護及靜默多頁刷新。
+- 快照沿原 Push／FCM／Telegram delivery、child-scoped contact envelope 加密保存；本人下載的各原來源 section 同時包含已保存快照。孩子／帳戶清理沿原集合；還原 codec 從加密快照重建排序 metadata，不產生新的外發工作。新增四個查詢索引的 manifest 已列出，**不等於已部署**；既有 ADK events index helper 限制沒有在此包順手修改。合成記憶資料庫不驗證雲端索引或真並發，公開預覽亦不等於 GCP provider／真渠道驗收。 新 reader 可讀缺少快照／childAccessVersion 的舊資料，不代表雙向回退相容；寫入新增欄位後，舊 strict schema 的 API／worker 會拒讀，不能直接退回不支援這些欄位的 binary。
+
+
 <a id="web-admin"></a>
 ## Web 管理 API
 

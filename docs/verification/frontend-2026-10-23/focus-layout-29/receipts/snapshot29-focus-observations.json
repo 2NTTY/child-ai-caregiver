@@ -1,0 +1,2183 @@
+{
+  "snapshot": 29,
+  "bundleSha256": "6f3e3bc65a6201f666d8bf96c0d5933ac64133b724ef579874adfcaaa257c8e5",
+  "sourceArtifact": "focus-window-summary.json",
+  "sourceArtifactSha256": "f5a5cb5b3d8eb89358fe8b7a55ff40ad09ae007d69de945a9e15d703f87674b8",
+  "note": "Selected product DOM observations from original sparse audit. Unchanged frames omitted; not continuous video or proof that every descendant stayed mounted. Field values and tool/session details omitted.",
+  "cases": [
+    {
+      "case": "pending-count",
+      "focusEventEpochMs": 1792724271795,
+      "observationWindowMs": 1800,
+      "changedSamples": 3,
+      "states": [
+        {
+          "at": 1792724263973,
+          "kind": "mutation",
+          "tab": "待確認1",
+          "pending": [
+            9
+          ],
+          "saved": [],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": 225.53125,
+            "w": 654.421875,
+            "h": 291.171875
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 0
+            }
+          ]
+        },
+        {
+          "at": 1792724271796,
+          "kind": "focus",
+          "tab": "待確認1",
+          "pending": [
+            9
+          ],
+          "saved": [],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": 225.53125,
+            "w": 654.421875,
+            "h": 291.171875
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 0
+            }
+          ]
+        },
+        {
+          "at": 1792724272201,
+          "kind": "mutation",
+          "tab": "待確認1",
+          "pending": [
+            9
+          ],
+          "saved": [],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": 225.53125,
+            "w": 654.421875,
+            "h": 291.171875
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 0
+            }
+          ]
+        },
+        {
+          "at": 1792724272253,
+          "kind": "mutation",
+          "tab": "待確認1",
+          "pending": [
+            9
+          ],
+          "saved": [],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": 225.53125,
+            "w": 654.421875,
+            "h": 291.171875
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "saved-list",
+      "focusEventEpochMs": 1792724315151,
+      "observationWindowMs": 1800,
+      "changedSamples": 5,
+      "states": [
+        {
+          "at": 1792724308221,
+          "kind": "blur",
+          "tab": "已保存",
+          "pending": [],
+          "saved": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 342.8571472167969,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -254.46875,
+            "w": 654.421875,
+            "h": 6119.9375
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 342.8571472167969
+            }
+          ],
+          "fields": [
+            {
+              "node": 34,
+              "label": "搜尋已保存記錄",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792724315152,
+          "kind": "focus",
+          "tab": "已保存",
+          "pending": [],
+          "saved": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 342.8571472167969,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -254.46875,
+            "w": 654.421875,
+            "h": 6119.9375
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 342.8571472167969
+            }
+          ],
+          "fields": [
+            {
+              "node": 34,
+              "label": "搜尋已保存記錄",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792724315653,
+          "kind": "mutation",
+          "tab": "已保存",
+          "pending": [],
+          "saved": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 342.8571472167969,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -254.46875,
+            "w": 654.421875,
+            "h": 6119.9375
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 342.8571472167969
+            }
+          ],
+          "fields": [
+            {
+              "node": 34,
+              "label": "搜尋已保存記錄",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792724315686,
+          "kind": "mutation",
+          "tab": "已保存",
+          "pending": [],
+          "saved": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 342.8571472167969,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -254.46875,
+            "w": 654.421875,
+            "h": 6119.9375
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 342.8571472167969
+            }
+          ],
+          "fields": [
+            {
+              "node": 34,
+              "label": "搜尋已保存記錄",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792724315725,
+          "kind": "mutation",
+          "tab": "已保存",
+          "pending": [],
+          "saved": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 342.8571472167969,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -254.46875,
+            "w": 654.421875,
+            "h": 6119.9375
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 342.8571472167969
+            }
+          ],
+          "fields": [
+            {
+              "node": 34,
+              "label": "搜尋已保存記錄",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792724315927,
+          "kind": "mutation",
+          "tab": "已保存",
+          "pending": [],
+          "saved": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 342.8571472167969,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -254.46875,
+            "w": 654.421875,
+            "h": 6119.9375
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 342.8571472167969
+            }
+          ],
+          "fields": [
+            {
+              "node": 34,
+              "label": "搜尋已保存記錄",
+              "checked": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "saved-detail",
+      "focusEventEpochMs": 1792724349344,
+      "observationWindowMs": 1800,
+      "changedSamples": 3,
+      "states": [
+        {
+          "at": 1792724341476,
+          "kind": "blur",
+          "tab": "已保存",
+          "pending": [],
+          "saved": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 342.8571472167969,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -254.46875,
+            "w": 654.421875,
+            "h": 1073
+          },
+          "detail": {
+            "node": 35,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -170.484375,
+            "w": 654.421875,
+            "h": 989.015625
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 342.8571472167969
+            }
+          ],
+          "fields": [
+            {
+              "node": 34,
+              "label": "搜尋已保存記錄",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792724349345,
+          "kind": "focus",
+          "tab": "已保存",
+          "pending": [],
+          "saved": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 342.8571472167969,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -254.46875,
+            "w": 654.421875,
+            "h": 1073
+          },
+          "detail": {
+            "node": 35,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -170.484375,
+            "w": 654.421875,
+            "h": 989.015625
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 342.8571472167969
+            }
+          ],
+          "fields": [
+            {
+              "node": 34,
+              "label": "搜尋已保存記錄",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792724349947,
+          "kind": "mutation",
+          "tab": "已保存",
+          "pending": [],
+          "saved": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 342.8571472167969,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -254.46875,
+            "w": 654.421875,
+            "h": 1073
+          },
+          "detail": {
+            "node": 35,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -170.484375,
+            "w": 654.421875,
+            "h": 989.015625
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 342.8571472167969
+            }
+          ],
+          "fields": [
+            {
+              "node": 34,
+              "label": "搜尋已保存記錄",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792724350180,
+          "kind": "mutation",
+          "tab": "已保存",
+          "pending": [],
+          "saved": [
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30,
+            31,
+            32,
+            33
+          ],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 342.8571472167969,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.390625,
+            "y": 137.34375,
+            "w": 721.609375,
+            "h": 462.65625
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -254.46875,
+            "w": 654.421875,
+            "h": 1073
+          },
+          "detail": {
+            "node": 35,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.984375,
+            "y": -170.484375,
+            "w": 654.421875,
+            "h": 989.015625
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 342.8571472167969
+            }
+          ],
+          "fields": [
+            {
+              "node": 34,
+              "label": "搜尋已保存記錄",
+              "checked": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "successful-empty",
+      "focusEventEpochMs": 1792724973340,
+      "observationWindowMs": 1800,
+      "changedSamples": 3,
+      "states": [
+        {
+          "at": 1792724964160,
+          "kind": "mutation",
+          "tab": "待確認0",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": 225.76171875,
+            "w": 654.1796875,
+            "h": 167.65625
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 0
+            }
+          ]
+        },
+        {
+          "at": 1792724973341,
+          "kind": "focus",
+          "tab": "待確認0",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": 225.76171875,
+            "w": 654.1796875,
+            "h": 167.65625
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 0
+            }
+          ]
+        },
+        {
+          "at": 1792724973736,
+          "kind": "mutation",
+          "tab": "待確認0",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": 225.76171875,
+            "w": 654.1796875,
+            "h": 167.65625
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 0
+            }
+          ]
+        },
+        {
+          "at": 1792724973788,
+          "kind": "mutation",
+          "tab": "待確認0",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [],
+          "page": {
+            "node": 3,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875
+          },
+          "gate": {
+            "node": 4,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": 225.76171875,
+            "w": 654.1796875,
+            "h": 167.65625
+          },
+          "dialogNodes": [],
+          "scrollables": [
+            {
+              "testid": "care-page-scroll",
+              "node": 3,
+              "scroll": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "case": "model-review",
+      "focusEventEpochMs": 1792725173067,
+      "observationWindowMs": 1800,
+      "changedSamples": 9,
+      "states": [
+        {
+          "at": 1792725163275,
+          "kind": "blur",
+          "tab": "模型",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [
+            "狀態：通知權限：已拒絕通知。請到瀏覽器的網站權限設定更改通知選擇，再回來重新讀取；本頁不能代你更改權限。",
+            "狀態：通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。",
+            "狀態：目前本人 Telegram 狀態已讀取。",
+            "狀態：目前設定及版本已讀取。",
+            "刪除個人密鑰並停用 AI將刪除已核對版本 7 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。我確認刪除密鑰並停用 AI取消確認刪除並停用"
+          ],
+          "settings": {
+            "node": 1,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": -2212.421875,
+            "w": 654.1796875,
+            "h": 4169.84375
+          },
+          "dialogNodes": [
+            28
+          ],
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "checked": false
+            },
+            {
+              "node": 26,
+              "label": "瀏覽器通知名稱",
+              "checked": false
+            },
+            {
+              "node": 27,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "聊天模型 ID",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": "個人每日呼叫上限",
+              "checked": false
+            },
+            {
+              "node": 20,
+              "label": "每輪生成上限",
+              "checked": false
+            },
+            {
+              "node": 21,
+              "label": "每輪查詢向量上限",
+              "checked": false
+            },
+            {
+              "node": 22,
+              "label": "每輪工具上限",
+              "checked": false
+            },
+            {
+              "node": 23,
+              "label": "整輪期限",
+              "checked": false
+            },
+            {
+              "node": 24,
+              "label": "單次模型等待",
+              "checked": false
+            },
+            {
+              "node": 25,
+              "label": "最多額外重試",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792725173068,
+          "kind": "focus",
+          "tab": "模型",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [
+            "狀態：通知權限：已拒絕通知。請到瀏覽器的網站權限設定更改通知選擇，再回來重新讀取；本頁不能代你更改權限。",
+            "狀態：通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。",
+            "狀態：目前本人 Telegram 狀態已讀取。",
+            "狀態：目前設定及版本已讀取。",
+            "刪除個人密鑰並停用 AI將刪除已核對版本 7 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。我確認刪除密鑰並停用 AI取消確認刪除並停用"
+          ],
+          "settings": {
+            "node": 1,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": -2212.421875,
+            "w": 654.1796875,
+            "h": 4169.84375
+          },
+          "dialogNodes": [
+            28
+          ],
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "checked": false
+            },
+            {
+              "node": 26,
+              "label": "瀏覽器通知名稱",
+              "checked": false
+            },
+            {
+              "node": 27,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "聊天模型 ID",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": "個人每日呼叫上限",
+              "checked": false
+            },
+            {
+              "node": 20,
+              "label": "每輪生成上限",
+              "checked": false
+            },
+            {
+              "node": 21,
+              "label": "每輪查詢向量上限",
+              "checked": false
+            },
+            {
+              "node": 22,
+              "label": "每輪工具上限",
+              "checked": false
+            },
+            {
+              "node": 23,
+              "label": "整輪期限",
+              "checked": false
+            },
+            {
+              "node": 24,
+              "label": "單次模型等待",
+              "checked": false
+            },
+            {
+              "node": 25,
+              "label": "最多額外重試",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792725173164,
+          "kind": "mutation",
+          "tab": "模型",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [
+            "狀態：通知權限：已拒絕通知。請到瀏覽器的網站權限設定更改通知選擇，再回來重新讀取；本頁不能代你更改權限。",
+            "狀態：通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。",
+            "狀態：目前本人 Telegram 狀態已讀取。",
+            "狀態：目前設定及版本已讀取。",
+            "刪除個人密鑰並停用 AI將刪除已核對版本 7 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。我確認刪除密鑰並停用 AI取消確認刪除並停用"
+          ],
+          "settings": {
+            "node": 1,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": -2212.421875,
+            "w": 654.1796875,
+            "h": 4169.84375
+          },
+          "dialogNodes": [
+            28
+          ],
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "checked": false
+            },
+            {
+              "node": 26,
+              "label": "瀏覽器通知名稱",
+              "checked": false
+            },
+            {
+              "node": 27,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "聊天模型 ID",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": "個人每日呼叫上限",
+              "checked": false
+            },
+            {
+              "node": 20,
+              "label": "每輪生成上限",
+              "checked": false
+            },
+            {
+              "node": 21,
+              "label": "每輪查詢向量上限",
+              "checked": false
+            },
+            {
+              "node": 22,
+              "label": "每輪工具上限",
+              "checked": false
+            },
+            {
+              "node": 23,
+              "label": "整輪期限",
+              "checked": false
+            },
+            {
+              "node": 24,
+              "label": "單次模型等待",
+              "checked": false
+            },
+            {
+              "node": 25,
+              "label": "最多額外重試",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792725173251,
+          "kind": "mutation",
+          "tab": "模型",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [
+            "狀態：通知權限：已拒絕通知。請到瀏覽器的網站權限設定更改通知選擇，再回來重新讀取；本頁不能代你更改權限。",
+            "狀態：通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。",
+            "狀態：目前本人 Telegram 狀態已讀取。",
+            "狀態：目前設定及版本已讀取。",
+            "刪除個人密鑰並停用 AI將刪除已核對版本 7 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。我確認刪除密鑰並停用 AI取消確認刪除並停用"
+          ],
+          "settings": {
+            "node": 1,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": -2212.421875,
+            "w": 654.1796875,
+            "h": 4169.84375
+          },
+          "dialogNodes": [
+            28
+          ],
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "checked": false
+            },
+            {
+              "node": 26,
+              "label": "瀏覽器通知名稱",
+              "checked": false
+            },
+            {
+              "node": 27,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "聊天模型 ID",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": "個人每日呼叫上限",
+              "checked": false
+            },
+            {
+              "node": 20,
+              "label": "每輪生成上限",
+              "checked": false
+            },
+            {
+              "node": 21,
+              "label": "每輪查詢向量上限",
+              "checked": false
+            },
+            {
+              "node": 22,
+              "label": "每輪工具上限",
+              "checked": false
+            },
+            {
+              "node": 23,
+              "label": "整輪期限",
+              "checked": false
+            },
+            {
+              "node": 24,
+              "label": "單次模型等待",
+              "checked": false
+            },
+            {
+              "node": 25,
+              "label": "最多額外重試",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792725173386,
+          "kind": "mutation",
+          "tab": "模型",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [
+            "狀態：通知權限：已拒絕通知。請到瀏覽器的網站權限設定更改通知選擇，再回來重新讀取；本頁不能代你更改權限。",
+            "狀態：通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。",
+            "狀態：目前本人 Telegram 狀態已讀取。",
+            "狀態：目前設定及版本已讀取。",
+            "刪除個人密鑰並停用 AI將刪除已核對版本 7 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。我確認刪除密鑰並停用 AI取消確認刪除並停用"
+          ],
+          "settings": {
+            "node": 1,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": -2212.421875,
+            "w": 654.1796875,
+            "h": 4169.84375
+          },
+          "dialogNodes": [
+            28
+          ],
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "checked": false
+            },
+            {
+              "node": 26,
+              "label": "瀏覽器通知名稱",
+              "checked": false
+            },
+            {
+              "node": 27,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "聊天模型 ID",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": "個人每日呼叫上限",
+              "checked": false
+            },
+            {
+              "node": 20,
+              "label": "每輪生成上限",
+              "checked": false
+            },
+            {
+              "node": 21,
+              "label": "每輪查詢向量上限",
+              "checked": false
+            },
+            {
+              "node": 22,
+              "label": "每輪工具上限",
+              "checked": false
+            },
+            {
+              "node": 23,
+              "label": "整輪期限",
+              "checked": false
+            },
+            {
+              "node": 24,
+              "label": "單次模型等待",
+              "checked": false
+            },
+            {
+              "node": 25,
+              "label": "最多額外重試",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792725173473,
+          "kind": "mutation",
+          "tab": "模型",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [
+            "狀態：通知權限：已拒絕通知。請到瀏覽器的網站權限設定更改通知選擇，再回來重新讀取；本頁不能代你更改權限。",
+            "狀態：通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。",
+            "狀態：目前本人 Telegram 狀態已讀取。",
+            "狀態：目前設定及版本已讀取。",
+            "刪除個人密鑰並停用 AI將刪除已核對版本 7 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。我確認刪除密鑰並停用 AI取消確認刪除並停用"
+          ],
+          "settings": {
+            "node": 1,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": -2212.421875,
+            "w": 654.1796875,
+            "h": 4169.84375
+          },
+          "dialogNodes": [
+            28
+          ],
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "checked": false
+            },
+            {
+              "node": 26,
+              "label": "瀏覽器通知名稱",
+              "checked": false
+            },
+            {
+              "node": 27,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "聊天模型 ID",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": "個人每日呼叫上限",
+              "checked": false
+            },
+            {
+              "node": 20,
+              "label": "每輪生成上限",
+              "checked": false
+            },
+            {
+              "node": 21,
+              "label": "每輪查詢向量上限",
+              "checked": false
+            },
+            {
+              "node": 22,
+              "label": "每輪工具上限",
+              "checked": false
+            },
+            {
+              "node": 23,
+              "label": "整輪期限",
+              "checked": false
+            },
+            {
+              "node": 24,
+              "label": "單次模型等待",
+              "checked": false
+            },
+            {
+              "node": 25,
+              "label": "最多額外重試",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792725173978,
+          "kind": "mutation",
+          "tab": "模型",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [
+            "狀態：通知權限：已拒絕通知。請到瀏覽器的網站權限設定更改通知選擇，再回來重新讀取；本頁不能代你更改權限。",
+            "狀態：通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。",
+            "狀態：目前本人 Telegram 狀態已讀取。",
+            "狀態：目前設定及版本已讀取。",
+            "刪除個人密鑰並停用 AI將刪除已核對版本 7 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。我確認刪除密鑰並停用 AI取消確認刪除並停用"
+          ],
+          "settings": {
+            "node": 1,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": -2212.421875,
+            "w": 654.1796875,
+            "h": 4169.84375
+          },
+          "dialogNodes": [
+            28
+          ],
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "checked": false
+            },
+            {
+              "node": 26,
+              "label": "瀏覽器通知名稱",
+              "checked": false
+            },
+            {
+              "node": 27,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "聊天模型 ID",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": "個人每日呼叫上限",
+              "checked": false
+            },
+            {
+              "node": 20,
+              "label": "每輪生成上限",
+              "checked": false
+            },
+            {
+              "node": 21,
+              "label": "每輪查詢向量上限",
+              "checked": false
+            },
+            {
+              "node": 22,
+              "label": "每輪工具上限",
+              "checked": false
+            },
+            {
+              "node": 23,
+              "label": "整輪期限",
+              "checked": false
+            },
+            {
+              "node": 24,
+              "label": "單次模型等待",
+              "checked": false
+            },
+            {
+              "node": 25,
+              "label": "最多額外重試",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792725174085,
+          "kind": "mutation",
+          "tab": "模型",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [
+            "狀態：通知權限：已拒絕通知。請到瀏覽器的網站權限設定更改通知選擇，再回來重新讀取；本頁不能代你更改權限。",
+            "狀態：通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。",
+            "狀態：目前本人 Telegram 狀態已讀取。",
+            "狀態：目前設定及版本已讀取。",
+            "刪除個人密鑰並停用 AI將刪除已核對版本 7 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。我確認刪除密鑰並停用 AI取消確認刪除並停用"
+          ],
+          "settings": {
+            "node": 1,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": -2212.421875,
+            "w": 654.1796875,
+            "h": 4169.84375
+          },
+          "dialogNodes": [
+            28
+          ],
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "checked": false
+            },
+            {
+              "node": 26,
+              "label": "瀏覽器通知名稱",
+              "checked": false
+            },
+            {
+              "node": 27,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "聊天模型 ID",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": "個人每日呼叫上限",
+              "checked": false
+            },
+            {
+              "node": 20,
+              "label": "每輪生成上限",
+              "checked": false
+            },
+            {
+              "node": 21,
+              "label": "每輪查詢向量上限",
+              "checked": false
+            },
+            {
+              "node": 22,
+              "label": "每輪工具上限",
+              "checked": false
+            },
+            {
+              "node": 23,
+              "label": "整輪期限",
+              "checked": false
+            },
+            {
+              "node": 24,
+              "label": "單次模型等待",
+              "checked": false
+            },
+            {
+              "node": 25,
+              "label": "最多額外重試",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792725174174,
+          "kind": "mutation",
+          "tab": "模型",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [
+            "狀態：通知權限：已拒絕通知。請到瀏覽器的網站權限設定更改通知選擇，再回來重新讀取；本頁不能代你更改權限。",
+            "狀態：通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。",
+            "狀態：目前本人 Telegram 狀態已讀取。",
+            "狀態：目前設定及版本已讀取。",
+            "刪除個人密鑰並停用 AI將刪除已核對版本 7 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。我確認刪除密鑰並停用 AI取消確認刪除並停用"
+          ],
+          "settings": {
+            "node": 1,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": -2212.421875,
+            "w": 654.1796875,
+            "h": 4169.84375
+          },
+          "dialogNodes": [
+            28
+          ],
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "checked": false
+            },
+            {
+              "node": 26,
+              "label": "瀏覽器通知名稱",
+              "checked": false
+            },
+            {
+              "node": 27,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "聊天模型 ID",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": "個人每日呼叫上限",
+              "checked": false
+            },
+            {
+              "node": 20,
+              "label": "每輪生成上限",
+              "checked": false
+            },
+            {
+              "node": 21,
+              "label": "每輪查詢向量上限",
+              "checked": false
+            },
+            {
+              "node": 22,
+              "label": "每輪工具上限",
+              "checked": false
+            },
+            {
+              "node": 23,
+              "label": "整輪期限",
+              "checked": false
+            },
+            {
+              "node": 24,
+              "label": "單次模型等待",
+              "checked": false
+            },
+            {
+              "node": 25,
+              "label": "最多額外重試",
+              "checked": false
+            }
+          ]
+        },
+        {
+          "at": 1792725174246,
+          "kind": "mutation",
+          "tab": "模型",
+          "pending": [],
+          "saved": [],
+          "historyRows": [],
+          "loading": [
+            "狀態：通知權限：已拒絕通知。請到瀏覽器的網站權限設定更改通知選擇，再回來重新讀取；本頁不能代你更改權限。",
+            "狀態：通知服務目前未可用，不能啟用訂閱或發送測試；既有本人訂閱仍可撤銷。",
+            "狀態：目前本人 Telegram 狀態已讀取。",
+            "狀態：目前設定及版本已讀取。",
+            "刪除個人密鑰並停用 AI將刪除已核對版本 7 的已保存密鑰並停用 AI。使用平台服務須另行選擇及保存。我確認刪除密鑰並停用 AI取消確認刪除並停用"
+          ],
+          "settings": {
+            "node": 1,
+            "scroll": 0,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "x": 335.9765625,
+            "y": -2212.421875,
+            "w": 654.1796875,
+            "h": 4169.84375
+          },
+          "dialogNodes": [
+            28
+          ],
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "checked": false
+            },
+            {
+              "node": 26,
+              "label": "瀏覽器通知名稱",
+              "checked": false
+            },
+            {
+              "node": 27,
+              "label": null,
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "聊天模型 ID",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": "個人每日呼叫上限",
+              "checked": false
+            },
+            {
+              "node": 20,
+              "label": "每輪生成上限",
+              "checked": false
+            },
+            {
+              "node": 21,
+              "label": "每輪查詢向量上限",
+              "checked": false
+            },
+            {
+              "node": 22,
+              "label": "每輪工具上限",
+              "checked": false
+            },
+            {
+              "node": 23,
+              "label": "整輪期限",
+              "checked": false
+            },
+            {
+              "node": 24,
+              "label": "單次模型等待",
+              "checked": false
+            },
+            {
+              "node": 25,
+              "label": "最多額外重試",
+              "checked": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

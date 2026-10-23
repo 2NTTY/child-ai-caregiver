@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createECDH } from "node:crypto";
+import { createRequire } from "node:module";
 import { EventEmitter } from "node:events";
 import type { IncomingMessage } from "node:http";
 import type { RequestOptions } from "node:https";
@@ -166,7 +167,17 @@ test("web push gateway public boundaries with mocked DNS and HTTPS", async conte
     ] as const) {
       status = code;
       const count = requests.length;
-      assert.deepEqual(await send(), { status: resultStatus, reason, providerStatus: code });
+      const result = await send();
+      const { message, ...delivery } = result;
+      assert.deepEqual(delivery, { status: resultStatus, reason, providerStatus: code });
+      if (resultStatus === 'accepted') {
+        const ecdh = createECDH('prime256v1'); ecdh.setPrivateKey(Buffer.alloc(32, 2));
+        const ece = createRequire(import.meta.url)('http_ece');
+        const sent = JSON.parse(ece.decrypt(requests.at(-1)!.body, { version: 'aes128gcm', privateKey: ecdh, authSecret: subscription.keys.auth }).toString());
+        assert.ok(message); assert.equal(message.channel, 'web_push'); assert.ok(Date.parse(message.sentAt));
+        const { channel: _channel, sentAt: _sentAt, ...content } = message;
+        assert.deepEqual(sent.content, content);
+      } else assert.equal(message, undefined);
       assert.equal(requests.length, count + 1);
       const record = requests.at(-1)!;
       assert.equal(record.url.href, subscription.endpoint);

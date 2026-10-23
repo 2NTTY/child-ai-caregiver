@@ -1,0 +1,167 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "countBoundary": "各版本只記自身去重必要測試；不跨版本相加，不當本版重跑。",
+  "versions": [
+    {
+      "version": 32,
+      "browser": {
+        "originalReceiptSha256": "3fbb040d021da7e40bb66d53cbdb800ca934ae2ebf89c382549412c5dbebfd02",
+        "originalOutcome": "BOUNDED_COMPLETE_WITH_NOT_RUN_ENVIRONMENT_INTERRUPTION",
+        "coverage": {
+          "passedCoverage": [
+            "Preparation active0/4 bounded natural focus",
+            "Task/Preparation archive modal readers at1440/390",
+            "Care saved/review modal readers at1024/390",
+            "Care local pager at1024/390/320",
+            "Restore405 recovery and subsequent history navigation"
+          ],
+          "notRunOrLimits": [
+            "Memory/profile/child/account/saved nonhistory remainder interrupted by browser environment",
+            "No complete AX isolation or every-frame stability proof",
+            "Modal quiet refresh used a controlled same-owner read; natural focus evidence limited to Preparation active list"
+          ],
+          "laterResolution": "Later versions cover selected remaining scenarios; original NOT_RUN remains historical."
+        },
+        "currentVersionClaim": "Historical bounded evidence only; not rerun or all-green on artifactfix1."
+      },
+      "targetedTests": {
+        "originalReceiptSha256": "a80a5e474ae99ea21bb44376fa1cf8b4ac2439c10d233756e0db1914e10a4cb7",
+        "status": "NECESSARY_TARGETED_PASS_PER_SOURCE_PHASE",
+        "scriptCount": 25,
+        "totals": {
+          "tests": 184,
+          "pass": 184,
+          "fail": 0,
+          "skipped": 0
+        },
+        "countBoundary": "Per-version deduplicated necessary scripts; no across-version or author/integrator count addition."
+      }
+    },
+    {
+      "version": 33,
+      "browser": {
+        "originalReceiptSha256": "a82c36ec2cf868844ce3c9f4b206bfe1b762c2786bdba2758a829418d4d7fea2",
+        "originalOutcome": "MIXED: bounded GUI complete; two confirmed UI defects; not approval for all-green delivery",
+        "coverage": {
+          "passedCoverage": [
+            "Memory synthetic examples and one shared management entry with draft guard",
+            "Overview four regions/read dialogs/source navigation atdesktop/390",
+            "Care saved nonhistory straight frame",
+            "Local conversation/notification/profile history close",
+            "Account prepare405 failclosed"
+          ],
+          "failedOrNotRun": [
+            "Memory320 selected label clipped",
+            "Child confirmation input blocked by scope guard",
+            "Natural app focus read not verified",
+            "Actual account reauthentication/delete and foreign pending/unknown browser branches not exercised"
+          ],
+          "laterResolution": "Memory320 and child input fixed and boundedly checked in34."
+        },
+        "currentVersionClaim": "Historical bounded evidence only; not rerun or all-green on artifactfix1."
+      },
+      "targetedTests": {
+        "originalReceiptSha256": "ed8ddb31fdfe93ebb9748d474c134027dba14f73c9e75ec0b071ab40cdcb4d8d",
+        "status": "PASS_TARGETED_FRONTEND_ONLY",
+        "scriptCount": 9,
+        "totals": {
+          "tests": 66,
+          "pass": 66,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "countBoundary": "Per-version deduplicated necessary scripts; no across-version or author/integrator count addition."
+      }
+    },
+    {
+      "version": 34,
+      "browser": {
+        "originalReceiptSha256": "f20fefbb12c4a086a560ce376701f29a1e1abf1a0fa5fe555ea7b2548a8f1301",
+        "originalOutcome": "MIXED_DO_NOT_PUBLISH",
+        "coverage": {
+          "passedCoverage": [
+            "Child wrong/exact name entry and cancel without delete",
+            "Memory320/390 labels",
+            "Profile/overview preference display",
+            "Memory draft and activity/historical same-owner read retention",
+            "Scope revocation masking"
+          ],
+          "failedOrNotRun": [
+            "Preparation quiet-read checkbox replacement",
+            "Reference library error scenario was actually200empty, not a valid503 fixture test",
+            "Natural OS focus refresh not verified"
+          ],
+          "laterResolution": "35 addresses busy checkbox retention and genuine503 fixture;36source addresses settled failure."
+        },
+        "currentVersionClaim": "Historical bounded evidence only; not rerun or all-green on artifactfix1."
+      },
+      "targetedTests": {
+        "originalReceiptSha256": "1fc08913b45a672fd1772d3e318a79016ff01b297a593a15f07b5d03b1a106e8",
+        "status": "PASS_TARGETED_FRONTEND_ONLY",
+        "scriptCount": 9,
+        "totals": {
+          "tests": 79,
+          "pass": 79,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "countBoundary": "Per-version deduplicated necessary scripts; no across-version or author/integrator count addition."
+      }
+    },
+    {
+      "version": 35,
+      "browser": {
+        "originalReceiptSha256": "6643f4f6e04f6e949b9517b2f44cf44a650277f14c259f92ac803d9e558f3e6b",
+        "originalOutcome": "MIXED_DO_NOT_PUBLISH",
+        "coverage": {
+          "passedCoverage": [
+            "Preparation normal/slow quiet reads retain checkbox nodes/state/geometry/focus within bounded samples",
+            "Reference catalog real503 retains old entries",
+            "Authoritative200empty clears old entries"
+          ],
+          "failedOrNotRun": [
+            "Settled Preparation refresh_failed still replaced checkboxes",
+            "Earlier keyboard attempt auto-waited until enabled and produced one synthetic mutation405; not a disabledguard failure",
+            "Natural OS app-switch read not verified"
+          ],
+          "laterResolution": "Source36 failed-read presentation is verified on artifactfix1;35 failure remains preserved."
+        },
+        "currentVersionClaim": "Historical bounded evidence only; not rerun or all-green on artifactfix1."
+      },
+      "targetedTests": {
+        "originalReceiptSha256": "86d4119c60bd93f3227fe05a44d1d84b1960ab867a2e21a49d7be4fdad025b6a",
+        "status": "PASS_TARGETED_FRONTEND_ONLY",
+        "scriptCount": 3,
+        "totals": {
+          "tests": 16,
+          "pass": 16,
+          "fail": 0,
+          "cancelled": 0,
+          "skipped": 0,
+          "todo": 0
+        },
+        "countBoundary": "Per-version deduplicated necessary scripts; no across-version or author/integrator count addition."
+      }
+    },
+    {
+      "version": 36,
+      "browser": {
+        "originalReceiptSha256": "440bb6667c8d127f6100cac8d9de3e8124e9ccd684ace4db2385a500bd763f27",
+        "originalOutcome": "FAIL_TARGETED_ERROR_BRANCH_DO_NOT_PUBLISH",
+        "coverage": {
+          "passedCoverage": [],
+          "failedOrNotRun": [
+            "Original served artifact still contained35 Preparation module; targeted settled error UI remained red",
+            "Dependent keyboard/scope cases not run after red"
+          ],
+          "laterResolution": "Artifact36 withdrawn for source mismatch. Do not interpret its failure as source36 behavior; artifactfix1 is a separate corrected build/QA identity."
+        },
+        "currentVersionClaim": "Historical bounded evidence only; not rerun or all-green on artifactfix1."
+      }
+    }
+  ]
+}

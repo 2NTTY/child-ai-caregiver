@@ -18,7 +18,7 @@ export interface PreparationWorkspaceValue {
     justArchivedId: string | null;
     dataLabel?: string;
     archiveNotice?: string;
-    operation?: WriteOperationView;
+    operation?: WriteOperationView; retainedDraftId?: string | null;
     capabilities?: { archive: boolean; checkItem: boolean; restore?: boolean; refresh?: boolean; create?: boolean };
     busy?: boolean; locked?: boolean; dirty?: boolean; epoch?: number; authorityVersion?: string;
   };
@@ -29,7 +29,7 @@ export interface PreparationWorkspaceValue {
     checkItem(id: string, expectedVersion: number, sectionId: string, itemId: string, checked: boolean): void;
     restoreDocument?(id: string, expectedVersion: number): void;
     refreshDocument?(id: string, expectedVersion: number): void;
-    createDocument?(request: DocumentRequest): void;
+    createDocument?(request: DocumentRequest, draftId?: string): void;
     refresh?(): void; markDraft?(): void; discardDraft?(): void;
   };
   recovery?: WriteRecoveryActions;

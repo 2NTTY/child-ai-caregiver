@@ -1,0 +1,191 @@
+{
+  "status": "SNAPSHOT31_TARGETED_BROWSER_PASS_FULL_TS_NOT_PASSED",
+  "pageEntries": 18,
+  "parentEntries": 17,
+  "gatedEntries": 1,
+  "sourceTraceBaseline": "snapshot26d; existing audit, not rerun",
+  "candidateScope": "snapshot31 scope63;37product25tests1doc",
+  "routes": [
+    {
+      "route": "/login",
+      "purpose": "登入",
+      "candidateSourceScope": "無本輪產品改動",
+      "snapshot29Browser": "本批未重驗",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "本批30未重驗；不以29圖或共用元件測試當此route全驗。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/",
+      "purpose": "首頁",
+      "candidateSourceScope": "共用導航排序；非首頁重設計",
+      "snapshot29Browser": "本批未重驗",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "本批30未重驗；不以29圖或共用元件測試當此route全驗。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/chat",
+      "purpose": "聊天",
+      "candidateSourceScope": "已載空 snapshot 與 focus 刷新",
+      "snapshot29Browser": "本批來源／測試已覆，29未作browser代表驗收。",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "本批30未重驗；不以29圖或共用元件測試當此route全驗。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/tasks",
+      "purpose": "待辦",
+      "candidateSourceScope": "loaded-ID 原子範圍刷新",
+      "snapshot29Browser": "29未驗loaded-more自然focus，留30。",
+      "snapshot30Source": "新增TaskContent metadata；loaded-ID owner保留",
+      "snapshot30Browser": "有界PASS：390/1440 metadata；390合法兩頁自然focus／詳情／關閉回列。1440自然focus遭Chrome code9，未知。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/growth",
+      "purpose": "關注／準備",
+      "candidateSourceScope": "共用 Tabs 量測；主內容未改",
+      "snapshot29Browser": "僅共用Tabs來源／測試相關；29未重驗此route。",
+      "snapshot30Source": "新增關注時間線／準備單metadata",
+      "snapshot30Browser": "有界PASS：關注／準備metadata390/1440、來源／版本disclosure；真來源到Care與關閉回焦。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/summary",
+      "purpose": "概況／成長檔案",
+      "candidateSourceScope": "空 snapshot、已套用期間；共用 Tabs",
+      "snapshot29Browser": "29未驗未套用期間自然focus，留30。",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "RED：未套期間／日期與week讀取保留；nativefocus後+538ms失焦至BODY，tab/marker位移31.25CSSpx約276ms。",
+      "snapshot31Source": "Summary控制quiet-read／DateTime／overview同scope穩定性修補。",
+      "snapshot31Browser": "有界PASS：1024自然focus原紅未復現；ready Enter/Space/Escape；mixedUI/GET真Tab與Paperblur。非所有busy鍵盤分支。"
+    },
+    {
+      "route": "/care",
+      "purpose": "核對",
+      "candidateSourceScope": "已保存正文優先；count／empty／page／detail focus",
+      "snapshot29Browser": "29有界PASS：pending1/成功空0/saved24/detail自然focus；390事件卡；Tabs1024/390。",
+      "snapshot30Source": "新增proposal／Care詳情及確認時間metadata；29focus owner保留",
+      "snapshot30Browser": "有界PASS：Care詳情／歷史比較390/1440；null數量主讀省略、舊版本缺失保留；合成memory_fact提案390/1440。不重稱29focus場景全重跑。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/memory",
+      "purpose": "記憶",
+      "candidateSourceScope": "loaded-ID 原子範圍刷新；共用 Tabs",
+      "snapshot29Browser": "29未驗loaded-more自然focus，留30。",
+      "snapshot30Source": "新增事實內容／來源metadata、安全來源link及disclosure；loaded-ID owner保留",
+      "snapshot30Browser": "有界PASS：390合法3+2頁自然focus保留第四來源展開與row身份；1440版面／追溯；topics空終頁。本人短標籤尚未全統一。",
+      "snapshot31Source": "private可見短名本人；其他來源／owner bytes沿用30。",
+      "snapshot31Browser": "有界PASS僅390本人短名／AX；不重跑30兩頁自然focus。"
+    },
+    {
+      "route": "/history",
+      "purpose": "歷史",
+      "candidateSourceScope": "待辦單欄；核對／記憶／待辦已載範圍；共用 Tabs",
+      "snapshot29Browser": "29有界PASS：待辦390/1440、1024/360補充；click/Enter/Space/AX/回焦；刷新只test harness。",
+      "snapshot30Source": "待辦單欄保留；共用TaskContent／Care／Preparation／Growth閱讀受30增量影響",
+      "snapshot30Browser": "有界PASS：共用TaskContent／Care／Preparation／Growth代表閱讀；29單欄歷史全部操作並非30全重跑。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/settings",
+      "purpose": "設定",
+      "candidateSourceScope": "模型／通知／備註；草稿／確認依據／focus；共用 Tabs",
+      "snapshot29Browser": "29僅合成模型審閱窗→自然focus→取消有界PASS；通知／備註等未browser覆蓋。",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "有界PASS：通知審閱→自然focus→取消；審閱期間fields/focus保留，取消後GET才執行。取消焦點BODY不算回焦PASS；其他設定未30重驗。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/more",
+      "purpose": "全部功能",
+      "candidateSourceScope": "管理導航排序／既有入口",
+      "snapshot29Browser": "導航來源／測試已覆，29未單獨browser驗收。",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "本批30未重驗；不以29圖或共用元件測試當此route全驗。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/profile",
+      "purpose": "檔案",
+      "candidateSourceScope": "導航排序；內容未改",
+      "snapshot29Browser": "本批未重驗",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "本批30未重驗；不以29圖或共用元件測試當此route全驗。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/photos",
+      "purpose": "照片",
+      "candidateSourceScope": "無本輪照片能力改動",
+      "snapshot29Browser": "本批未重驗",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "本批30未重驗；不以29圖或共用元件測試當此route全驗。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/sources",
+      "purpose": "來源",
+      "candidateSourceScope": "readFresh 與寫入鎖；同 scope 讀取",
+      "snapshot29Browser": "本批來源／測試已覆，29未作browser代表驗收。",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "本批30未重驗；不以29圖或共用元件測試當此route全驗。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/contact",
+      "purpose": "聯絡",
+      "candidateSourceScope": "無本輪產品改動",
+      "snapshot29Browser": "本批未重驗",
+      "snapshot30Source": "表單schema既有native_push與max3對齊",
+      "snapshot30Browser": "有界PASS僅503明確讀取失敗與一次人工重試；三渠道保存／綁定未browser驗收。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/family",
+      "purpose": "家庭",
+      "candidateSourceScope": "無本輪產品改動",
+      "snapshot29Browser": "本批未重驗；不驗權限",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "本批30未重驗；不以29圖或共用元件測試當此route全驗。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/guide",
+      "purpose": "指引",
+      "candidateSourceScope": "無本輪產品改動",
+      "snapshot29Browser": "本批未重驗",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "本批30未重驗；不以29圖或共用元件測試當此route全驗。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "未31重跑；保留上列29／30版本結果與限制。"
+    },
+    {
+      "route": "/admin",
+      "purpose": "管理員",
+      "candidateSourceScope": "既有 gated 入口，無本輪改動",
+      "snapshot29Browser": "不屬一般家長 browser 範圍",
+      "snapshot30Source": "29來源保留；無30專屬產品增量",
+      "snapshot30Browser": "不屬一般家長browser範圍；既有gate未改。",
+      "snapshot31Source": "29／30來源bytes沿用；共用ui/DateTime可能影響，不以page未改宣稱全無影響。",
+      "snapshot31Browser": "不屬一般家長browser範圍；沒有31驗收。"
+    }
+  ],
+  "sourceCarryForward": "receipts/source-carry-forward.json"
+}

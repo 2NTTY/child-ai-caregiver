@@ -1,0 +1,137 @@
+{
+  "snapshot": 30,
+  "status": "FROZEN_HISTORICAL_MIXED_RESULTS_NOT_RELEASE_ACCEPTANCE",
+  "frozenAt": "2026-10-23T04:17:35.155780+00:00",
+  "fileCountExcludingManifest": 25,
+  "checks": "Local JSON parse, link resolution, image original hashes and public-field scan; no product tests/build/browser rerun.",
+  "summaryRegressionPreserved": true,
+  "fullTypecheckGatePassed": false,
+  "no31Evidence": true,
+  "files": [
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/README.md",
+      "bytes": 4569,
+      "sha256": "c9e80e86ba03881be7c4fc4a0516bd5d3282f69e0aa601d2af6650c8ef14864a"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/all-changes.md",
+      "bytes": 6378,
+      "sha256": "fb8340ffd5529b4d17035e0d6b557372c25c9e794ff91b026cc6c06ac1e2ae7d"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/browser-evidence.md",
+      "bytes": 5190,
+      "sha256": "0513845ee5c84d37c96b90f95b670831f1ea261725812847ceed492b56ef8331"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/checks-and-limits.md",
+      "bytes": 2896,
+      "sha256": "130ae4c7a0ce810fcd904dc0fce787be3a49b6dcad2b48cf0d255ec6d2fdd49e"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/evidence-index.json",
+      "bytes": 6014,
+      "sha256": "47c487ebac4521f625079a0e8f6f7eee10693075e31139068fd030d38d3826f9"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/original-images-index.json",
+      "bytes": 43177,
+      "sha256": "aa48c5c12210805c99d605f2ca81972208288b13694392098725898bb26ebe3d"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/receipts/browser-checks.json",
+      "bytes": 4523,
+      "sha256": "3f589fb5733e02196ef26a073edbb6d1fca4a9ea0f239f6f937289366c7a0c62"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/receipts/browser-focus-observations.json",
+      "bytes": 117176,
+      "sha256": "fa6046614d760850afa89b157bfa56b1dc8ef83a7b15a34a64fce5b3057126dc"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/receipts/checks.json",
+      "bytes": 8419,
+      "sha256": "681f5fb79fc453047b4d6ffc7a4c22d37580045b3d376567b921e075b5269030"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/receipts/delta-from29.json",
+      "bytes": 4550,
+      "sha256": "37715c2268b19aa39ff3f2d3bfea2be6dd08052029859619ba78e5b513644b4a"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/receipts/documentation-addendum.json",
+      "bytes": 812,
+      "sha256": "d41cd2789fefa188bc78fc684a7f314e57fc00f2a28503fe6875b26c752bb0a1"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/receipts/export-identity.json",
+      "bytes": 1975,
+      "sha256": "d040fb8bdb39b0a6c7ada03d0977b66ae1089d4e700a578e52f4dea7acf0eee9"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/receipts/external-status.json",
+      "bytes": 480,
+      "sha256": "93d370c24c73379aa8d6fa1622602cc58071797813dff9c8dfbf04618b0aeb8a"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/receipts/source-scope57.json",
+      "bytes": 16482,
+      "sha256": "72ce311c50a49dbaf72914781e3560efeab4443efea8b223d88835f0fe2585f8"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/route-coverage.json",
+      "bytes": 7873,
+      "sha256": "d177e1c732d8cb5c8bfa1235578d7d966dce2418e27c393c6d04c6b5552e3102"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/route-coverage.md",
+      "bytes": 4227,
+      "sha256": "4638f7659b3577f8625eb1fa158dcc2379897b56bcc22eb2751ea9cdf9682aff"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/screenshots/07-task-metadata390-body-0.jpg",
+      "bytes": 134464,
+      "sha256": "657c02fb8198746633a81ea34aa68d71e37cb11c6f26c084c35398a38813aaec"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/screenshots/14-preparation390-metadata-0.jpg",
+      "bytes": 135994,
+      "sha256": "7420d1f8e2b3af82bba329a8f5cd3686c79951c0f2cf294b73f4f8c13527c4d5"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/screenshots/23-growth1440-metadata-0.jpg",
+      "bytes": 162077,
+      "sha256": "cc50b79977bc4005e5376c9508fea1be4701367f22b6d3d9fcee6beed64b6927"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/screenshots/39-summary-unapplied-after-focus-0.jpg",
+      "bytes": 147520,
+      "sha256": "1ba1224af17ef8678d8958f72e34b8839fffa4c9c19e5ea6fcd60b68273d4366"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/screenshots/48-memory-page2-after-focus-0.jpg",
+      "bytes": 129717,
+      "sha256": "35d0e78cad5f938f055609b9d0feccd0eb4ed2b6c623cf9eb87944dd0feec732"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/screenshots/62-agent390-metadata-0.jpg",
+      "bytes": 126708,
+      "sha256": "4cdfb8b58d668ae88b4bc92a0efc0dc5a973c74eeb1789eafa152652f5224ecb"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/screenshots/68-care390-old-version-quantity-0.jpg",
+      "bytes": 134153,
+      "sha256": "c32e535985210d822432b7b9d6b90c62482e090a45a993a5eba88951ff26e73c"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/screenshots/83-notifications-review-after-focus-0.jpg",
+      "bytes": 150581,
+      "sha256": "10953086ed8d3a911ad9805990613c8886259d3a85218f0c98b5003b09501522"
+    },
+    {
+      "file": "frontend/DESIGN_SYSTEM.md",
+      "bytes": 54103,
+      "sha256": "d5b16b8d5778e0d0d1231a08d35d1713359b6533c641ce342ec8ae5f7a24faf6"
+    }
+  ]
+}

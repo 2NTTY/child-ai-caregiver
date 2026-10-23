@@ -144,7 +144,10 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   const newEpochByWorkspace=new Map<string,string>(),newAuthorizationVersionByWorkspace=new Map<string,string>();
   for(const {record,value}of rows(decoded,'workspace',authority.workspace)) {
     const latest=current(record,authority.workspace);requireValue(Boolean(latest&&latest.ownerUserId===value.ownerUserId),'restore_live_workspace_missing');
+    const childAccessVersion = value.childAccessVersion === undefined && latest!.childAccessVersion === undefined ? undefined
+      : BigInt(value.childAccessVersion ?? '0') > BigInt(latest!.childAccessVersion ?? '0') ? value.childAccessVersion! : latest!.childAccessVersion ?? '0';
     record.value={...value,status:restricted(value.status,latest!.status,accountRank),
+      ...(childAccessVersion === undefined ? {} : { childAccessVersion }),
       accessVersion:BigInt(value.accessVersion)>BigInt(latest!.accessVersion)?value.accessVersion:latest!.accessVersion};
     newAuthorizationVersionByWorkspace.set(value.id,(BigInt(authority.workspace.parse(record.value).accessVersion)+1n).toString());
     newEpochByWorkspace.set(value.id,firebaseRestoreEpoch(options.projectId,input.targetDatabaseId,input.restoreId,value.id));

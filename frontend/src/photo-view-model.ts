@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import type { ImageRequireSource, ImageURISource } from "react-native/Libraries/Image/ImageSource";
 import type { CareKind } from "./care-view-model.ts";
 
@@ -38,6 +39,7 @@ export type PhotosViewModel = {
 };
 export type PhotosActions = {
   pickOriginal: (original: PhotoOriginal) => void; reportFileError: (message: string) => void;
+  discardRecordDraft?: () => void;
   openPhoto: (item: PhotoItem) => void; clearEditor: () => void;
   confirmReplacement: () => void; cancelReplacement: () => void;
   editSource: (source: string) => void; upload: () => void; refresh: () => void;
@@ -54,4 +56,9 @@ export const photoExtractionLabels: Record<PhotoItem["extraction"]["state"], str
 };
 export function samePhotoOriginal(photo: Pick<PhotoOriginal, "mimeType" | "bytes" | "sha256">, original: PhotoOriginal) {
   return photo.mimeType === original.mimeType && photo.bytes === original.bytes && photo.sha256 === original.sha256;
+}
+
+export function photoTime(value: string) {
+  const date = DateTime.fromISO(value).setZone("Asia/Hong_Kong");
+  return date.isValid ? date.toFormat("yyyy年M月d日 HH:mm") : "時間未能核對";
 }

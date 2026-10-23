@@ -141,6 +141,7 @@ function reporterScenario() {
     push: { model: { readState: 'loading' }, actions: { refresh: action('push') } }, telegram: { model: { readState: 'loading' }, actions: { refresh: action('telegram') } },
     preferences: { busy: true, refresh: action('preferences') },
   };
+  const personalHistory = { scopeKey, online: true, access: 'active', notificationUnavailable: false, notifications: { state: 'unavailable' }, history: { state: 'ready', data: { query: '' } }, actions: { loadNotifications: action('messages'), searchHistory: action('conversations') } };
   let state, retry, activeSection = 'account';
   const h = harness({
     './ProductionFirstScreenGate': { useProductionStartupReadiness: (value, action) => { state = value; retry = action; }, useProductionVisibleSettingsSection: () => activeSection },
@@ -149,12 +150,12 @@ function reporterScenario() {
     '../workspaces/TasksWorkspace': { useTasksWorkspace: () => tasks }, '../workspaces/GrowthWorkspace': { useGrowthWorkspace: () => null },
     '../workspaces/MemoryReferenceWorkspace': { useMemoryReferenceWorkspace: () => null },
     './TaskKnowledgeDomains': { useProductionFamilyDocuments: () => null, useProductionTaskKnowledgeSummary: () => null, useProductionTaskKnowledgeMemory: () => null },
-    './PhotoInputDomains': { useProductionPhotoInputDomains: () => null }, './usePersonalHistory': { usePersonalHistoryWorkspace: () => null },
+    './PhotoInputDomains': { useProductionPhotoInputDomains: () => null }, './usePersonalHistory': { usePersonalHistoryWorkspace: () => personalHistory },
     './SettingsDomains': { useProductionContactDomain: () => ({ model: {}, actions: { refresh() {} } }), useProductionSettingsDomains: () => settings },
   });
   const { ProductionStartupReadiness } = h.load('src/production/ProductionStartupReadiness.tsx');
   h.production({ scopeKey, chatState: {}, chatController: { reloadMessages() {} }, agentPending: { state: 'ready', hasSnapshot: true }, readAgentPending: action('agentPending') });
-  return { care, tasks, settings, calls, retry: () => retry(), render(path, params = {}, section = activeSection) {
+  return { care, tasks, settings, personalHistory, calls, retry: () => retry(), render(path, params = {}, section = activeSection) {
     activeSection = section; h.route(path, params); h.render(h.jsx(ProductionStartupReadiness)); return state;
   } };
 }
@@ -181,8 +182,31 @@ test('the real reporter waits only for the active settings panel and retries its
   assert.equal(app.render('/settings', query, 'model'), 'loading'); app.retry();
   assert.deepEqual(app.calls, [['profile'], ['model']]); app.calls.length = 0;
   assert.equal(app.render('/settings', query, 'notifications'), 'loading'); app.retry();
-  assert.deepEqual(app.calls, [['profile'], ['push'], ['telegram']]); app.calls.length = 0;
-  assert.equal(app.render('/settings', query, 'preferences'), 'loading'); app.retry();
-  assert.deepEqual(app.calls, [['profile'], ['preferences']]);
+  assert.deepEqual(app.calls, [['profile'], ['preferences'], ['push'], ['telegram']]); app.calls.length = 0;
+  assert.equal(app.render('/settings', query, 'preferences'), 'ready'); app.retry();
+  assert.deepEqual(app.calls, [['profile']]);
   assert.equal(app.render('/settings', query, 'account'), 'ready', 'hidden pending panels cannot delay the visible account panel');
+});
+
+test('regrouped concern/preparation and overview/archive tabs wait only for their actual owners, including old aliases', () => {
+  const h = harness(), { routeStartupRequirements, routeStartupReadiness } = h.load('src/startup/dataReadiness.ts');
+  assert.deepEqual(routeStartupRequirements('/growth', {}), ['growth']);
+  assert.deepEqual(routeStartupRequirements('/growth', { tab: 'preparation' }), ['documents']);
+  assert.deepEqual(routeStartupRequirements('/summary', {}), ['profile', 'summary']);
+  assert.deepEqual(routeStartupRequirements('/summary', { tab: 'archive' }), ['growth', 'documents']);
+  assert.deepEqual(routeStartupRequirements('/summary', { tab: 'preparation' }), ['documents']);
+  assert.deepEqual(routeStartupRequirements('/growth', { tab: 'archive' }), ['growth', 'documents']);
+  assert.equal(routeStartupReadiness('/growth', { tab: 'preparation' }, { documents: 'ready', growth: 'loading' }), 'ready');
+  assert.equal(routeStartupReadiness('/summary', { tab: 'archive' }, { documents: 'ready', growth: 'loading' }), 'loading');
+  assert.equal(routeStartupReadiness('/summary', { tab: 'archive' }, { documents: 'ready', growth: 'error' }), 'error');
+});
+
+
+test('a confirmed missing message API is recoverable error only for messages, not ready conversations', () => {
+  const app = reporterScenario();
+  assert.equal(app.render('/history', { category: 'notifications' }), 'loading', 'not-yet-requested is not falsely ready');
+  app.personalHistory.notificationUnavailable = true;
+  assert.equal(app.render('/history', { category: 'notifications' }), 'error'); app.retry();
+  assert.ok(app.calls.some(([name]) => name === 'messages'));
+  assert.equal(app.render('/history', { category: 'conversations' }), 'ready');
 });

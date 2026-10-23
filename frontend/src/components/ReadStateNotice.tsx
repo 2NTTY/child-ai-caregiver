@@ -1,3 +1,4 @@
+import { BackgroundSurface } from "./appearance/BackgroundSurface";
 import { useEffect, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import { ActivityIndicator, Text } from "react-native-paper";
@@ -29,13 +30,13 @@ export function ReadStateNotice({ state, title, message = "", children, refreshi
   const detail = state !== "loading" && title && message && title !== message ? message : "";
   const announcement = visible ? [heading, detail].filter(Boolean).join("。") : "";
   return <><StatusAnnouncement eventKey={announcement ? `${state}:${announcement}` : "quiet"} message={announcement} urgent={state === "error"} />
-    {visible ? state === "empty" ? <EmptyListCard testID="read-state-empty" title={heading} detail={detail}>{children}</EmptyListCard> : <View testID={`read-state-${state}`} style={[styles.notice, state === "error" && styles.error]}>
+    {visible ? state === "empty" ? <EmptyListCard testID="read-state-empty" title={heading} detail={detail}>{children}</EmptyListCard> : <BackgroundSurface padded testID={`read-state-${state}`} style={[styles.notice, state === "error" && styles.error]}>
       {state === "loading" ? motion.enabled ? <ActivityIndicator color={colors.teal} /> : <View testID="read-loading-static" accessible={false} aria-hidden style={styles.staticIndicator} /> : null}
       <View style={styles.copy}>
         <Text accessibilityRole={title ? "header" : "text"} style={title ? styles.title : styles.body}>{heading}</Text>
         {detail ? <Text style={styles.body}>{detail}</Text> : null}{children}
       </View>
-    </View> : null}</>;
+    </BackgroundSurface> : null}</>;
 }
 const styles = StyleSheet.create({
   staticIndicator: { width: 16, height: 16, marginTop: 2, borderRadius: 8, borderWidth: 2, borderColor: colors.teal },

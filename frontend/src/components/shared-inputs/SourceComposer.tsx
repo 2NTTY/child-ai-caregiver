@@ -25,7 +25,7 @@ export function SourceComposer({ model, actions }: { model: SourcesViewModel; ac
   const visibleFields: { field: keyof SourceComposerDraft; label: string }[] = kind === "public_source" ? [{ field: "sourceId", label: "公開來源" }]
     : [{ field: "sourceUrl", label: "來源連結" }, { field: "text", label: "來源原文" }, { field: "sourceLabel", label: "來源名稱" }, { field: "sourceDateText", label: "來源日期原文" }, ...(kind === "personal_source" ? [{ field: "sourceNotes" as const, label: "私人來源備註" }] : [])];
   const errorEntries = visibleFields.flatMap(item => errors[item.field]?.message ? [{ ...item, message: String(errors[item.field]?.message) }] : []);
-  usePreviewLeaveGuard(isDirty || !!intake?.intention, model.busy || ["unknown", "unconfirmed", "confirmed_unavailable"].includes(model.operation.state));
+  usePreviewLeaveGuard(isDirty || !!intake?.intention, ["saving", "unknown", "unconfirmed", "confirmed_unavailable"].includes(model.operation.state));
   const locked = model.busy || !model.canChoose || model.access !== "editable";
   function field(name: "sourceLabel" | "sourceUrl" | "sourceDateText" | "sourceNotes" | "text", label: string, help?: string) {
     return <Controller name={name} control={control} render={({ field: input, fieldState }) => <View>

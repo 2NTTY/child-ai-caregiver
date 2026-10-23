@@ -15,6 +15,7 @@ function loadUi(width = 1440) {
     if (name === 'react-native') return { View: 'View', Pressable: 'Pressable', Platform: { OS: 'web' }, StyleSheet: { create: value => value }, useWindowDimensions: () => ({ width }) };
     if (name === 'react-native-paper') return { Text: 'Text' };
     if (name === '../theme') return { colors: { sage: '#BAE8E8', ink: '#272343', paleTeal: '#E3F6F5' }, radius: { pill: 999 }, spacing: { sm: 8 }, mobileLayout: { breakpoint: 650 }, mobileType: {}, workspaceType: {}, typeScale: { small: 14 } };
+    if (name === './appearance/BackgroundSurface') return { BackgroundSurface: 'View', useCustomBackground: () => false };
     if (name === './useInteractionDensity') return { useInteractionDensity: () => false };
     return elements;
   };
@@ -33,6 +34,7 @@ function nodes(value) {
   return [value, ...nodes(value.props?.children)];
 }
 const named = (tree, type) => nodes(tree).filter(node => node.type === type);
+const style = value => Array.isArray(value) ? Object.assign({}, ...value.filter(Boolean).map(style)) : value || {};
 
 test('zero, one, larger and partial counts use a separate filled pill while the tab label stays plain', () => {
   for (const count of [0, 1, 12, '50+']) {
@@ -99,5 +101,34 @@ test('section headings without counts keep their original title without a badge'
     assert.equal(named(tree, 'View').some(node => node.props.style?.backgroundColor), false);
     assert.equal(named(tree, 'Text').length, 1);
     assert.equal(named(tree, 'Text')[0].props.children, '待辦摘要');
+  }
+});
+
+
+test('tab toolbar keeps original tabs and action slots on one row with a shrinkable tab rail', () => {
+  const tabs = { type: 'tabs' }, actions = { type: 'actions' };
+  const tree = loadUi().TabToolbar({ children: tabs, actions, testID: 'toolbar' });
+  assert.equal(tree.props.testID, 'toolbar'); assert.equal(style(tree.props.style).flexDirection, 'row');
+  const [tabSlot, actionSlot] = tree.props.children;
+  assert.equal(tabSlot.props.children, tabs); assert.equal(style(tabSlot.props.style).flex, 1); assert.equal(style(tabSlot.props.style).minWidth, 0);
+  assert.equal(actionSlot.props.children, actions); assert.equal(style(actionSlot.props.style).flexShrink, 0);
+});
+
+test('opt-in stacked toolbar preserves slot order and elements while giving tabs full width and actions a separate wrapping row', () => {
+  const tabs = { type: 'tabs' }, actions = { type: 'actions' };
+  for (const width of [320, 390, 480, 1024]) {
+    const ui = loadUi(width), ordinary = ui.TabToolbar({ children: tabs, actions });
+    assert.equal(style(ordinary.props.style).flexDirection, 'row', 'Other pages never inherit a viewport policy');
+    const stacked = width < 480, tree = ui.TabToolbar({ children: tabs, actions, stacked });
+    const [tabSlot, actionSlot] = tree.props.children;
+    assert.equal(tree.type, ordinary.type); assert.equal(tabSlot.type, ordinary.props.children[0].type); assert.equal(actionSlot.type, ordinary.props.children[1].type);
+    assert.equal(tabSlot.props.children, tabs); assert.equal(actionSlot.props.children, actions);
+    assert.equal(style(tree.props.style).flexDirection, stacked ? 'column' : 'row');
+    assert.equal(style(tree.props.style).gap, 8);
+    if (stacked) {
+      assert.equal(style(tabSlot.props.style).flex, undefined); assert.equal(style(tabSlot.props.style).width, '100%');
+      assert.equal(style(actionSlot.props.style).flexWrap, 'wrap'); assert.equal(style(actionSlot.props.style).alignSelf, 'flex-end');
+      assert.equal(style(actionSlot.props.style).maxWidth, '100%');
+    }
   }
 });

@@ -83,6 +83,11 @@ export function useProfilePreview(child: HomeChild | null, online: boolean, read
       if (!currentRead() || live.current.blocked) return;
       setReviewedValues(null); setIntent(null); controller.edit();
     },
+    discardDraft() {
+      if (!sameScope() || live.current.locked) return;
+      controller.reset(); setBasis(current); setLatest(null); setReviewedValues(null); setIntent(null);
+      setInitialValues(profileFormFromData(current?.data ?? null)); setFormKey(value => value + 1);
+    },
     submitReviewed() {
       if (!currentReview() || !live.current.canSubmit || controller.operation.state !== "needs_confirmation" || !intent || intent === "save" && !reviewedValues) return;
       const submittedValues = reviewedValues ? { ...reviewedValues } : null;

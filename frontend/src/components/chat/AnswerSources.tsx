@@ -20,7 +20,7 @@ export type LocateAnswerSource = (target: View | null, horizontalScroll?: Native
 const classificationLabels = CHAT_CLASSIFICATION_LABELS;
 function sourceTime(value: string | null): string {
   return value === null ? CHAT_SOURCE_COPY.missingTime : Number.isFinite(Date.parse(value))
-    ? `${new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", hour12: false })}${CHAT_SOURCE_COPY.hongKongTimeSuffix}`
+    ? `${new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}`
     : CHAT_SOURCE_COPY.invalidTime;
 }
 function Detail({ label, value, technical = false }: { label: string; value: string; technical?: boolean }) {

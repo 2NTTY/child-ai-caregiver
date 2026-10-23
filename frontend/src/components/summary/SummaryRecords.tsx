@@ -41,7 +41,7 @@ function TaskSource({task, onTask, motion, group}: {task: TaskView; onTask: (id:
   return <View style={s.item}>
     <Readout value={task} regionKey={`summary-${group}-${task.id}-text`} motion={motion}>{shown => <>
       <Text style={s.title}>{shown.title}</Text><View style={s.row}><AppStatusBadge label={taskStateLabels[shown.occurrence.state]} tone={shown.occurrence.state === "completed" ? "success" : shown.occurrence.state === "needs_review" ? "warning" : shown.occurrence.state === "cancelled" ? "neutral" : "info"} />{group === "conflict" ? <AppStatusBadge label="安排有衝突" tone="warning" /> : null}<Text style={s.meta}>{summaryTime(shown.occurrence.dueAt, shown.occurrence.timeZone)}</Text></View>
-      <Text style={s.meta}>負責人：{shown.assigneeUserId} · {shown.occurrence.timeZone}</Text>
+      <Text style={s.meta}>負責人：{shown.assigneeUserId ? '見原安排' : '未指定'} · {shown.occurrence.timeZone}</Text>
     </>}</Readout>
     <View style={s.row}><AppButton label="核對這項任務" density="compact" variant="quiet" onPress={() => onTask(task.id)} /></View>
     <SummaryDisclosure label="安排詳情與來源版本" scopeKey={`${motion.scopeKey}:${task.id}`}>

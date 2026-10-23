@@ -14,9 +14,10 @@ export const colors = {
   onAccent: "#272343",
   amber: "#A38B19",
   paleAmber: "#FFF7D8",
-  coral: "#C86D52",
-  paleCoral: "#FFF0EB",
-  errorInk: "#954026",
+  // Destructive actions and errors share a vivid red, separate from the brand palette.
+  coral: "#D61F26",
+  paleCoral: "#FEF2F2",
+  errorInk: "#D61F26",
   white: "#FFFFFE",
   muted: "#2D334A",
   line: "#CAC9D4",
@@ -42,7 +43,7 @@ export const colors = {
   statusUnknown: "#FFF7D8",
   statusWarmLine: "#A38B19",
   statusUnknownLine: "#A38B19",
-  statusFailedLine: "#C86D52",
+  statusFailedLine: "#D61F26",
   warningInk: "#5E4F0C",
   overlay: "rgba(39, 35, 67, 0.24)",
 } as const;

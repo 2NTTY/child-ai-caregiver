@@ -1,0 +1,438 @@
+{
+  "snapshot": 29,
+  "status": "BOUNDED_BROWSER_PASS_WITH_REMAINING_CASES_DEFERRED_TO_30",
+  "bundleSha256": "6f3e3bc65a6201f666d8bf96c0d5933ac64133b724ef579874adfcaaa257c8e5",
+  "fixtureSha256": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d",
+  "sourceReportName": "bounded-browser-report.json",
+  "sourceReportSha256": "4946c8e1cf02599d55ed3b9d0529d2e539d40f4c9afa2b360698739576fccf80",
+  "results": [
+    {
+      "case": "care pending count",
+      "viewport_css": [
+        1024,
+        600
+      ],
+      "html_zoom": 1.4,
+      "chrome_zoom_percent": 100,
+      "outcome": "PASS bounded natural focus",
+      "observed": "Count1 and pending node9/page3 retained in three changed passive states during return window; old27a 58ms count disappearance not observed.",
+      "evidence": [
+        "07-pending-native-before-0.png",
+        "08-pending-native-away-0.png",
+        "09-pending-native-return-0.png",
+        "20-care-native-render.json"
+      ],
+      "limit": "Transport ring100 had truncated this early sequence by final export; no assertion that this sequence had no GET.",
+      "originalEvidence": [
+        {
+          "name": "07-pending-native-before-0.png",
+          "sha256": "f81a681c36e6d05103db8ab41bf131845f8bfc205c8567fa8484077700f5dc2d",
+          "attached": false
+        },
+        {
+          "name": "08-pending-native-away-0.png",
+          "sha256": "6e47c77a08a573eb1bce7f72ab2dc9ceeb26e554930c27b26548ee06cac08445",
+          "attached": false
+        },
+        {
+          "name": "09-pending-native-return-0.png",
+          "sha256": "eb7885afbabccf6fcf1e385d0a6807540c79f4317f214247ecacef7ca465b638",
+          "attached": true
+        },
+        {
+          "name": "20-care-native-render.json",
+          "sha256": "03ce2b2140272913ad11ab40fbdbc09ba3e8260f83d323f1ba9b091dc1e11381",
+          "attached": false
+        }
+      ]
+    },
+    {
+      "case": "care saved list/detail",
+      "viewport_css": [
+        1024,
+        600
+      ],
+      "html_zoom": 1.4,
+      "chrome_zoom_percent": 100,
+      "outcome": "PASS bounded natural focus",
+      "observed": "24 saved nodes10–33 retained; detail node35/page3 stable; list/detail scroll342.8571472167969 retained.",
+      "evidence": [
+        "13-saved-list-before-focus-0.png",
+        "15-saved-list-native-return-0.png",
+        "17-saved-detail-settled-0.png",
+        "19-saved-detail-native-return-0.png",
+        "20-care-native-render.json",
+        "20-care-native-transport.json"
+      ],
+      "originalEvidence": [
+        {
+          "name": "13-saved-list-before-focus-0.png",
+          "sha256": "567e7afe9739f27f0a4573a669a5df2b901be032cf30f7beb4e0c95a5878666a",
+          "attached": false
+        },
+        {
+          "name": "15-saved-list-native-return-0.png",
+          "sha256": "42c3096ca2cab7e44e91d64c8108456878e43650e8e67199359ea505d08a234e",
+          "attached": false
+        },
+        {
+          "name": "17-saved-detail-settled-0.png",
+          "sha256": "a15b2f9502098b1a1f6dac17b7813b089400aaf797569efad36015a8581ec37f",
+          "attached": false
+        },
+        {
+          "name": "19-saved-detail-native-return-0.png",
+          "sha256": "a15b2f9502098b1a1f6dac17b7813b089400aaf797569efad36015a8581ec37f",
+          "attached": true
+        },
+        {
+          "name": "20-care-native-render.json",
+          "sha256": "03ce2b2140272913ad11ab40fbdbc09ba3e8260f83d323f1ba9b091dc1e11381",
+          "attached": false
+        },
+        {
+          "name": "20-care-native-transport.json",
+          "sha256": "32a7029724855c35c6e6871f2c0fb2250dd6d32e5c87c8c8f648f0827264208a",
+          "attached": false
+        }
+      ]
+    },
+    {
+      "case": "Tabs settled alignment",
+      "outcome": "PASS normal motion",
+      "observed": "1024 selected x484.3125 vs marker484.3843688964844 (0.0718688964844 renderedpx rounding); old27a error50.328125. At390 after repeated switching selected146.3671875 vs marker146.3992156982422 (0.0320282px).",
+      "evidence": [
+        "21-care-dom-settled.json",
+        "40-care390-settled.json",
+        "41-care390-repeat-settled-0.png"
+      ],
+      "limit": "Reduced-motion branch not independently browser-tested.",
+      "originalEvidence": [
+        {
+          "name": "21-care-dom-settled.json",
+          "sha256": "a70e3196296fe81f7da7b9864ca635a5bfdbb25e59c56ef3c4a0f0bc1bc535d7",
+          "attached": false
+        },
+        {
+          "name": "40-care390-settled.json",
+          "sha256": "04b0a44c53a08837f56ed72aa6a94c54c26ff469c3a2e7cc7f47f92aa3636b6e",
+          "attached": false
+        },
+        {
+          "name": "41-care390-repeat-settled-0.png",
+          "sha256": "06ebd811fad9883de871c0b2277ffc0b78087145390212056407699fbfe2228b",
+          "attached": false
+        }
+      ]
+    },
+    {
+      "case": "history390 rows/detail/keyboard",
+      "viewport_css": [
+        390,
+        700
+      ],
+      "html_zoom": 1.2,
+      "chrome_zoom_percent": 80,
+      "outcome": "PASS",
+      "observed": "Three vertical rows, no horizontal overflow; long title two lines and summary three-line ellipsis visually; whole-row click/Enter/Space open correct long appointment. Detail list displaynone/aria-hiddentrue/0 visible rows; AX hides rows. Close restores originating row focus. Click scroll412.4999694824219 restored; keyboard auto-scroll anchor413.5416564941406 restored.",
+      "evidence": [
+        "23-history390-list.json",
+        "24-history390-long-rows-scroll-0.png",
+        "25-history390-before-open.json",
+        "26-history390-click-detail-0.png",
+        "27-history390-detail-ax.txt",
+        "28-history390-interactions.json"
+      ],
+      "originalEvidence": [
+        {
+          "name": "23-history390-list.json",
+          "sha256": "f5aeea571d5b869d4f88bfedac4582052c3c4ba2e74dda09f4989e6f10c8114a",
+          "attached": false
+        },
+        {
+          "name": "24-history390-long-rows-scroll-0.png",
+          "sha256": "16330796ee84828c63d77c654d59ae7ffeb781e2d4e8c7fe336d3e1b1c4af580",
+          "attached": true
+        },
+        {
+          "name": "25-history390-before-open.json",
+          "sha256": "a0a22dca3de8c324fbc430863a453434bd902a6ecc9ea5df8f00f97ea6d0f703",
+          "attached": false
+        },
+        {
+          "name": "26-history390-click-detail-0.png",
+          "sha256": "0e830c263b3c2c5b98e6cd9de4b97a3f1df345d598660524378bca22cbfe9f78",
+          "attached": false
+        },
+        {
+          "name": "27-history390-detail-ax.txt",
+          "sha256": "ee2a09353a660659ed135d1c55dac15a0ea5a8fcc853453917656826d1afa45c",
+          "attached": false
+        },
+        {
+          "name": "28-history390-interactions.json",
+          "sha256": "51bca826a1cdcd939cac5991e7e6af38dba54dc11aecf22a9e7d4400a23d9aad",
+          "attached": false
+        }
+      ]
+    },
+    {
+      "case": "history390 refresh",
+      "viewport_css": [
+        390,
+        700
+      ],
+      "outcome": "PASS test harness refresh only",
+      "observed": "Three loaded row nodes4,5,6 remain through three changed audit states, no loading placeholder; synthetic tasks GET200.",
+      "evidence": [
+        "29-history390-harness-refresh-0.png",
+        "30-history390-render.json",
+        "30-history390-transport.json"
+      ],
+      "originalEvidence": [
+        {
+          "name": "29-history390-harness-refresh-0.png",
+          "sha256": "e04fba2df80c92a9d130b9cffd0e657d70bafd92d4e89b184192ef4ff65c6d2b",
+          "attached": false
+        },
+        {
+          "name": "30-history390-render.json",
+          "sha256": "90ac233fed58c566e44d3b6a04a9f8c6cfd03004406daa0d5f7f399d836df845",
+          "attached": false
+        },
+        {
+          "name": "30-history390-transport.json",
+          "sha256": "05e99899e56421e1a1c76f53d4d308020feb6ec74760e0811d65c14755dfcc5c",
+          "attached": false
+        }
+      ]
+    },
+    {
+      "case": "history1440 single list and split workspace",
+      "viewport_css": [
+        1440,
+        700
+      ],
+      "html_zoom": 1.4,
+      "chrome_zoom_percent": 80,
+      "outcome": "PASS",
+      "observed": "Single-column list, not two history items in parallel. With detail at measured rendered content width1070.4296875, left list and right detail widths524.0234375 each; all left rows share x335.9765625.",
+      "evidence": [
+        "31-history1440-list-0.png",
+        "32-history1440-layout.json",
+        "33-history1440-detail-0.png",
+        "34-history1440-split.json"
+      ],
+      "originalEvidence": [
+        {
+          "name": "31-history1440-list-0.png",
+          "sha256": "54324fd38c789ad8e9db065d3ab4b8338f4c103878842fa76aa455359e13c8af",
+          "attached": false
+        },
+        {
+          "name": "32-history1440-layout.json",
+          "sha256": "7f1be58631a2200fa38bb021a66c3a59239bec34b31ba639ad003f0b7bf14a45",
+          "attached": false
+        },
+        {
+          "name": "33-history1440-detail-0.png",
+          "sha256": "5b6da0cdb2bc1771451bd4d21247c6f8062185ed58aa41ab5b8a574feb64ca45",
+          "attached": true
+        },
+        {
+          "name": "34-history1440-split.json",
+          "sha256": "eb5cb9f12d87950e37c55c861c7116d4cc9bea2b3d67ef8b4709f18b0d2cc339",
+          "attached": false
+        }
+      ]
+    },
+    {
+      "case": "history1024/360 supplementary",
+      "viewport_css": [
+        [
+          1024,
+          700
+        ],
+        [
+          360,
+          700
+        ]
+      ],
+      "outcome": "PASS bounded supplemental",
+      "observed": "1024 available content below split threshold: hidden list and focused detail.360 resize while detailopen preserves hidden list; close returns originating row focus.",
+      "evidence": [
+        "35-history1024-detail.json",
+        "36-history1024-detail-0.png",
+        "37-history360-state.json",
+        "38-history360-list-return-0.png"
+      ],
+      "limit": "360 was resized while detailopen; does not establish same-viewport scroll-restoration contract.390 does.",
+      "originalEvidence": [
+        {
+          "name": "35-history1024-detail.json",
+          "sha256": "0d36f166d9917c4e0348b84f54ef6c20176e48f34c97503c4a129043c14b7885",
+          "attached": false
+        },
+        {
+          "name": "36-history1024-detail-0.png",
+          "sha256": "4fb2925c68bd61b8aa973972e111ec5d3a5a7d2b560945b4cb188bce2bb4de6f",
+          "attached": false
+        },
+        {
+          "name": "37-history360-state.json",
+          "sha256": "3ce405ad8f3f4d153abe4b7e4e939c1814cd4510a832f186a72d912d26e57727",
+          "attached": false
+        },
+        {
+          "name": "38-history360-list-return-0.png",
+          "sha256": "5b7e9a1bb9f6f3500e2cee579593a08c567f91b0b96e9d6c6e824b9ebfb6414a",
+          "attached": false
+        }
+      ]
+    },
+    {
+      "case": "care390 saved eventcard",
+      "viewport_css": [
+        390,
+        700
+      ],
+      "html_zoom": 1.2,
+      "chrome_zoom_percent": 80,
+      "outcome": "PASS visual/DOM",
+      "observed": "Event kind/status metadata, body16px vs metadata12px; long eventbody visually clamped three lines. First three cards same x19.199, width351.602,height196.934; no horizontal overflow.",
+      "evidence": [
+        "39-care390-saved-top-0.png",
+        "40-care390-settled.json"
+      ],
+      "originalEvidence": [
+        {
+          "name": "39-care390-saved-top-0.png",
+          "sha256": "2abbb2b21930418f7bdeca037d656e5dd0a27b9b763254dd11cd8e214016e216",
+          "attached": true
+        },
+        {
+          "name": "40-care390-settled.json",
+          "sha256": "04b0a44c53a08837f56ed72aa6a94c54c26ff469c3a2e7cc7f47f92aa3636b6e",
+          "attached": false
+        }
+      ]
+    },
+    {
+      "case": "care successful empty",
+      "viewport_css": [
+        1024,
+        600
+      ],
+      "html_zoom": 1.4,
+      "chrome_zoom_percent": 80,
+      "outcome": "PASS bounded natural focus",
+      "observed": "Count0 and empty gate node4/page3 retained with loading[]; pending synthetic GET200 ids[].",
+      "evidence": [
+        "46-care-empty-settled-0.png",
+        "47-care-empty-away-0.png",
+        "48-care-empty-native-return-0.png",
+        "49-care-empty-native-render.json",
+        "49-care-empty-native-transport.json"
+      ],
+      "originalEvidence": [
+        {
+          "name": "46-care-empty-settled-0.png",
+          "sha256": "d82aa18dde56d7e02c4d8a9f1600a58e93e2da589b1cc83aad593ec414a4a2c4",
+          "attached": false
+        },
+        {
+          "name": "47-care-empty-away-0.png",
+          "sha256": "79a0111c89291f2f43b5f1f8dba57b5ca0f31a1426b4e35d03527c84df7fb1e1",
+          "attached": false
+        },
+        {
+          "name": "48-care-empty-native-return-0.png",
+          "sha256": "a35ca66c9aca8e2f33e6ed50b4305cb8fce6dcc01d95c517677eab9c45da02bf",
+          "attached": true
+        },
+        {
+          "name": "49-care-empty-native-render.json",
+          "sha256": "0e3158585fb53f3a987da021d9d85bcf436c9ecffecc866f31ea190c34312b4f",
+          "attached": false
+        },
+        {
+          "name": "49-care-empty-native-transport.json",
+          "sha256": "dce39b961621c3303d810de72effdf6aa53464e86ea70d60d7f4a1899bcd96ce",
+          "attached": false
+        }
+      ]
+    },
+    {
+      "case": "model delete review",
+      "viewport_css": [
+        1024,
+        600
+      ],
+      "html_zoom": 1.4,
+      "chrome_zoom_percent": 80,
+      "outcome": "PASS synthetic natural focus; cancelled",
+      "observed": "Review dialog node28/settingsroot1 and non-secret field nodes/values retained on native return; checkbox unselected and confirm visuallydisabled. Before cancel only four initial GET rows (two initial load pairs) existed; no GET during review focus. Cancel removes modal, then exactly one settings+models GET pair (six total). No nonGET settings audit rows.",
+      "evidence": [
+        "59-model-delete-review-before-0.png",
+        "60-model-review-away-0.png",
+        "61-model-review-native-return-0.png",
+        "62-model-native-before-cancel-render.json",
+        "62-model-native-before-cancel-settings.json",
+        "63-model-review-cancelled-0.png",
+        "64-model-after-cancel-settings.json"
+      ],
+      "limit": "Only synthetic GET fixture, not proof real backend/model integration. No checkbox/confirm submission/secret input.",
+      "originalEvidence": [
+        {
+          "name": "59-model-delete-review-before-0.png",
+          "sha256": "5a2278cb158025d5a118c505d1bb69cf6184495c2e01a8142f50e445e2a64a8c",
+          "attached": false
+        },
+        {
+          "name": "60-model-review-away-0.png",
+          "sha256": "6981b2df3d3863e48ba30b22289c4c0665544ca3fba9988fb4454ff20a1abf03",
+          "attached": false
+        },
+        {
+          "name": "61-model-review-native-return-0.png",
+          "sha256": "217a07dc5c9c4e6db8ec4b8e911bb880395a24fd7f35089760ab4e62fe70c10f",
+          "attached": true
+        },
+        {
+          "name": "62-model-native-before-cancel-render.json",
+          "sha256": "753105e163b7a95a7ff93d63158ee4f17690d04b78b8e679193583652816c5d7",
+          "attached": false
+        },
+        {
+          "name": "62-model-native-before-cancel-settings.json",
+          "sha256": "bc181684167f9411b6272c67042ab50dd7cced349c28c6fb7f50ba4187d1747e",
+          "attached": false
+        },
+        {
+          "name": "63-model-review-cancelled-0.png",
+          "sha256": "3fb420a66a8114bc17a3e6aed0629b24919c4c7d4cdbaf8cf2a4ec9f2622b8ef",
+          "attached": false
+        },
+        {
+          "name": "64-model-after-cancel-settings.json",
+          "sha256": "e8075d7ea58a04221d486d98c42113efd97d13882c0b2f301a31447382078700",
+          "attached": false
+        }
+      ]
+    }
+  ],
+  "remaining": [
+    "Memory loaded-more natural focus",
+    "Tasks loaded-more natural focus",
+    "Summary unapplied-period natural focus",
+    "Notification preference form representative not tested in29"
+  ],
+  "limits": [
+    "Synthetic inputs only; no real model/API write/credential validation.",
+    "History refresh evidence uses explicit test harness, not natural application focus.",
+    "Pending early transport was truncated by the100-entry ring; cannot infer noGET.",
+    "Reduced motion not independently browser tested.",
+    "Screenshots are endpoints, not continuous video.",
+    "Not full-route, full-state or WCAG conformance acceptance."
+  ]
+}

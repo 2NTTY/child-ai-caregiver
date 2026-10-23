@@ -7,7 +7,7 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
   const api = useMemo(() => createModelSettingsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const requests = useSettingsRequests(env, true);
   const [draftEditing, setDraftEditing] = useState(false);
-  const [state, setState] = useState<ModelSettingsViewModel>({ scopeKey: env.identityKey, accountName: "", serverLabel: env.apiBaseUrl,
+  const [state, setState] = useState<ModelSettingsViewModel>({ scopeKey: JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]), accountName: "", serverLabel: env.apiBaseUrl,
     snapshot: null, online: env.online, authorized: true, busy: null, operation: "none", notice: "", needsRead: false,
     formRevision: 0, secretRevision: 0, keyCheck: null });
   const latest = useRef(state); latest.current = state;
@@ -40,12 +40,13 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       // A null receipt alone does not prove that an in-flight write cannot commit.
       const unresolved = recovery?.outcome === "unknown", confirmed = recovery?.outcome === "confirmed";
       if (!unresolved) pending.current = null;
+      const formChanged = JSON.stringify([snapshot.settings, snapshot.effective]) !== JSON.stringify([latest.current.snapshot?.settings, latest.current.snapshot?.effective]);
       patch({ snapshot, authorized: true, catalog: null, originalOperationId: pending.current?.opId ?? null,
         needsRead: unresolved, operation: unresolved ? "unknown" : confirmed ? "saved" : "none",
         notice: unresolved ? "原操作尚未確認；保留原操作識別，稍後可再查。密鑰不會自動重送。"
           : confirmed ? "原操作已保存，並已讀取目前設定；沒有再次提交密鑰。"
           : original ? "目前版本已更新，舊版本不能再寫入；請核對目前設定。" : "目前設定及版本已讀取。",
-        formRevision: latest.current.formRevision + 1, secretRevision: latest.current.secretRevision + 1 });
+        formRevision: latest.current.formRevision + Number(formChanged), secretRevision: latest.current.secretRevision + 1 });
       try {
         const catalog = await api.catalog(snapshot.settings.version, false, request.signal, env.userId!);
         if (request.current()) patch({ catalog });
@@ -122,6 +123,6 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
   useSettingsRefresh(env, actions.refresh, !requests.busy && !state.needsRead, true, draftEditing);
   useDomainWriteGuard(false, state.operation === "unknown" || state.busy === "save", "account");
   const user = env.owner.getSnapshot().records.user;
-  return { model: { ...state, scopeKey: env.identityKey, accountName: user?.name ?? "", online: env.online,
+  return { model: { ...state, scopeKey: JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]), accountName: user?.name ?? "", online: env.online,
     snapshot: env.currentIdentity() ? state.snapshot : null, authorized: env.currentIdentity() && state.authorized }, actions };
 }

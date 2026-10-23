@@ -1,0 +1,220 @@
+{
+  "snapshot": 31,
+  "integration": {
+    "status": "PASS",
+    "scripts": 11,
+    "tests": 80,
+    "pass": 80,
+    "fail": 0,
+    "skipped": 0,
+    "results": [
+      {
+        "script": "frontend/scripts/summary-focus-layout.test.cjs",
+        "exit": 0,
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "b2b0d39c7400bb27b27c8ac94918ad58cccc5bc3d5947ceba206e69f20f9aea1",
+        "originalLogName": "summary-focus-layout.test.cjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/summary-sources-focus-refresh.test.cjs",
+        "exit": 0,
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "6853665c0982b444ad93deeaa591081a64c8ddd5db8f090d0ae412e67a2979b2",
+        "originalLogName": "summary-sources-focus-refresh.test.cjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/child-overview.test.mjs",
+        "exit": 0,
+        "tests": 7,
+        "pass": 7,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "f9898a2da77ef4291ac64cd01c5bd8f0a2b942bd40dafbbdd40b4b9d15894969",
+        "originalLogName": "child-overview.test.mjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/date-picker-action-dom.test.cjs",
+        "exit": 0,
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "982e3da5d5aec76e70e1b4ca3a48da3396a4133724af0ad9b254f3a38ef2f53c",
+        "originalLogName": "date-picker-action-dom.test.cjs.remaining.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/quiet-summary-view.test.mjs",
+        "exit": 0,
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "b62f18f550855bfafd9f477cb2c98509b561446d212ac8f8efd3f467ad3ea0bf",
+        "originalLogName": "quiet-summary-view.test.mjs.remaining.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/summary-empty-cards.test.mjs",
+        "exit": 0,
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "43a51fc18225fe25559330f3a88987565b2aa8facf206f459c0f04a3d7812bc0",
+        "originalLogName": "summary-empty-cards.test.mjs.remaining.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/summary-assignee-display.test.mjs",
+        "exit": 0,
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "bb817da2469a272f6c1a0fd42b7cb71194077701a76d40fe9d8d56a36b23c948",
+        "originalLogName": "summary-assignee-display.test.mjs.remaining.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/control-affordances.test.mjs",
+        "exit": 0,
+        "tests": 11,
+        "pass": 11,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "7a79fcc5c9374640f7c6a8b07b6ef8aae8b377999c6555354b256252248f821e",
+        "originalLogName": "control-affordances-green.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/summary-composition.test.mjs",
+        "exit": 0,
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "ec178ae49b57d55ad7373df57e4dba8596705c5bf257ecd8173786da73ec24ee",
+        "originalLogName": "summary-composition-green.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/memory-source-display.test.mjs",
+        "exit": 0,
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "9f19a947a3c87806760ca6773e306cf39b951b74ead68ef0f8ba3642058503d7",
+        "originalLogName": "memory-source-display.test.mjs.label.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/memory-preview.test.mjs",
+        "exit": 0,
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "6bb56da7b2fdaf83bbf8cdc968bca5ea392c9b59acee51705cf02eae40ffd492",
+        "originalLogName": "memory-preview.test.mjs.label.log",
+        "originalLogAttached": false
+      }
+    ]
+  },
+  "counting": "Only final31 unique selected scripts; not added to159 snapshot29 or144 snapshot30 or author replays. Not full suite.",
+  "testHarnessRepairs": {
+    "scope": "Two test files only; product freeze retained; no assertions deleted",
+    "files": [
+      {
+        "path": "frontend/scripts/control-affordances.test.mjs",
+        "baseSha256": "9010fc8c4de079ae016bf50a0bf33f7b765d96d1062095f1c573a222f7faf2ea",
+        "newSha256": "f3a4fe2b6e46d194d899941539dbba60bf2076cd923bf7653cc07e0705d3bf73",
+        "patchSha256": "9db41b1ba42e3ce8eea1d382ebf39965aaea01973dba166ba937b35f23e0d76a"
+      },
+      {
+        "path": "frontend/scripts/summary-composition.test.mjs",
+        "baseSha256": "344b84c68f5040e727b72f99da1fe3b406dbed0659ea78c22206f6790e2deb34",
+        "newSha256": "4a958d1ec716b337c5b3f9cfc60410a30e02aa0f9275acd325e91e2f14895aa7",
+        "patchSha256": "ccd16467ab4198a5343001d5f70e953e10a7063eed8d4f0d65b381f1acbdbbe0"
+      }
+    ],
+    "changes": [
+      "Register BackgroundSurface as a structural token and load the real useQuietReadFocus hook with existing ref/effect harness ports.",
+      "Align the same static export guard test with already-present local pending and async result checks; preserve adapter/scope/authority/no-fake-success checks.",
+      "Follow the existing SourcesView -> SourceStatus extraction for the unchanged warning/not-failed expectations.",
+      "Align the exact desktop navigation order with the previously approved care/memory/profile/more ordering; all other composition expectations unchanged."
+    ],
+    "checks": [
+      {
+        "command": "node --test frontend/scripts/control-affordances.test.mjs",
+        "log": "control-affordances-green.log",
+        "passed": 11,
+        "failed": 0
+      },
+      {
+        "command": "node --test frontend/scripts/summary-composition.test.mjs",
+        "log": "summary-composition-green.log",
+        "passed": 13,
+        "failed": 0
+      }
+    ],
+    "limits": [
+      "Structural/props/static-source tests only; no browser/DOM/runtime acceptance claimed."
+    ]
+  },
+  "preservedFailureReceipts": [
+    {
+      "name": "control-affordances-baseline30.log",
+      "sha256": "acf4ba3390b6c79529b0684414fa8834027c481afc0c248ded55b3632e966b46",
+      "originalAttached": false
+    },
+    {
+      "name": "summary-composition-baseline30.log",
+      "sha256": "eb68b1402f16d2f813aeb9d605b9f56471c0e170a94c730b4e222b25ffeb98a3",
+      "originalAttached": false
+    },
+    {
+      "name": "targeted-tests-result.json",
+      "sha256": "a5484fc9f9e360a5ced469f3fb189c1bb08b933d909ca41a3ce9a74a9566cef8",
+      "originalAttached": false
+    },
+    {
+      "name": "harness-fix/control-affordances-red-after-loader.log",
+      "sha256": "4e8d493ec74827da58f9b840fa61ba73fd7caadc409b2187f90e488d5d7a88c7",
+      "originalAttached": false
+    },
+    {
+      "name": "harness-fix/control-affordances-red-after-export.log",
+      "sha256": "ee2045bb9cf7315eb1b0ea801c05ad98753505f2aa58643e88d40986bdf0c477",
+      "originalAttached": false
+    }
+  ],
+  "additionalOlderReferenceTests": {
+    "includedInRequired80": false,
+    "pass": 3,
+    "fail": 8,
+    "reason": "7 old harness unexpected ../AppIcon; 1 isolated copy lacks app/(dashboard)/_layout.tsx. Stopped, no harness edits or rerun.",
+    "originalLogName": "focused-tests.log",
+    "originalLogSha256": "28ec95d0e7e8162136ac30f67273c0062b73c3c29c8ddde9554a9e6341001e4c",
+    "originalAttached": false,
+    "note": "7unexpectedAppIcon oldloader and1missingisolatedlayout; stopped, no expansion/repair; no full-suite green."
+  },
+  "fullTypecheck": {
+    "snapshot31": "NOT_RUN",
+    "inheritedGate": "NOT_PASSED",
+    "snapshot30": "Two environments137/Killed without diagnostics; cause unknown, not provenOOM",
+    "previousReceipts": "../../snapshot30/receipts/checks.json"
+  },
+  "browser": "BOUNDED_BROWSER_PASS_FULL_TYPECHECK_REMAINS_BLOCKED",
+  "independentReview": "Source and focused replays reviewed; not GitHub required-review/CI green; not all step-by-step logs attached."
+}

@@ -17,6 +17,7 @@ function load(file) {
   const module = { exports: {} };
   new Function('require', 'module', 'exports', output.outputText)(name => name === 'react' ? react : name === 'react/jsx-runtime' ? require(name)
     : name === 'react-native' ? native : name === 'react-native-paper' ? paper : name.endsWith('/theme') ? load('src/theme.ts')
+      : name.startsWith('lucide-react-native/icons/') ? { __esModule: true, default: name }
       : name.endsWith('/useInteractionDensity') ? { useInteractionDensity: () => false } : new Proxy({}, { get: (_target, key) => String(key) }), module, module.exports);
   cache.set(file, module.exports); return module.exports;
 }
@@ -57,10 +58,65 @@ test('dark action ripple keeps filled backgrounds, white text and existing unava
   assert.equal(paperTheme.colors.onSurface, colors.ink, 'no global onSurface change');
 });
 
+test('destructive actions share vivid red, an explicit label and a decorative warning icon', () => {
+  assert.equal(colors.errorInk, '#D61F26');
+  assert.equal(colors.coral, colors.errorInk);
+  assert.equal(colors.statusFailedLine, colors.errorInk);
+  assert.equal(colors.paleCoral, '#FEF2F2');
+  assert.equal(paperTheme.colors.error, colors.errorInk);
+  assert.equal(paperTheme.colors.errorContainer, colors.paleCoral);
+  for (const variant of ['danger', 'danger-secondary']) {
+    const button = AppButton({ label: '確認永久刪除帳戶', variant, onPress() {} });
+    assert.equal(button.props.children, '確認永久刪除帳戶');
+    assert.equal(button.props.accessibilityLabel, '確認永久刪除帳戶');
+    const icon = button.props.icon({ color: variant === 'danger' ? colors.white : colors.errorInk, size: 18 });
+    assert.equal(icon.props.name, 'alert-outline');
+    assert.equal(icon.props.importantForAccessibility, 'no');
+    if (variant === 'danger-secondary') {
+      assert.equal(button.props.mode, 'outlined');
+      assert.equal(button.props.buttonColor, 'transparent');
+      assert.equal(button.props.textColor, colors.errorInk);
+      assert.equal(flatten(button.props.style).borderColor, colors.errorInk);
+    }
+    for (const state of [{ disabled: true }, { loading: true }]) {
+      const unavailable = AppButton({ label: '確認永久刪除帳戶', variant, ...state, onPress() {} });
+      assert.equal(unavailable.props.disabled, true);
+      assert.equal(unavailable.props.loading, !!state.loading);
+      assert.equal(unavailable.props.theme.colors.onSurfaceDisabled, colors.muted);
+      const disabledIcon = unavailable.props.icon({ color: colors.muted, size: 18 });
+      assert.equal(disabledIcon.props.color, colors.muted, 'icon follows Paper disabled colour');
+      assert.equal(flatten(unavailable.props.style).backgroundColor, variant === 'danger' ? colors.softLine : 'transparent');
+      if (variant === 'danger-secondary') assert.equal(flatten(unavailable.props.style).borderColor, colors.line);
+    }
+  }
+  for (const variant of ['primary', 'secondary', 'quiet', 'accent']) {
+    assert.equal(AppButton({ label: '取消', variant, onPress() {} }).props.icon, undefined);
+  }
+});
+
 const rgb = value => value.slice(1).match(/../g).map(channel => parseInt(channel, 16));
 const composite = (foreground, background, alpha) => foreground.map((channel, i) => channel * alpha + background[i] * (1 - alpha));
 const luminance = value => value.map(channel => channel / 255).map(channel => channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4).reduce((sum, channel, i) => sum + channel * [.2126, .7152, .0722][i], 0);
 const contrast = (a, b) => { const values = [luminance(a), luminance(b)].sort((x, y) => y - x); return (values[0] + .05) / (values[1] + .05); };
+
+test('destructive red is readable on filled, outlined and pale error surfaces', () => {
+  assert.ok(contrast(rgb(colors.white), rgb(colors.errorInk)) >= 4.5);
+  for (const surface of ['white', 'canvas', 'paleTeal', 'paleCoral']) {
+    assert.ok(contrast(rgb(colors.errorInk), rgb(colors[surface])) >= 4.5, surface);
+  }
+});
+
+test('the shared warning icon resolves to a hidden decorative triangle rather than a deletion-only symbol', () => {
+  assert.ok(require.resolve('lucide-react-native/icons/triangle-alert'));
+  const { AppIcon } = load('src/components/AppIcon.tsx');
+  const icon = AppIcon({ name: 'alert-outline', size: 18, color: colors.errorInk, importantForAccessibility: 'no' });
+  assert.equal(icon.props['aria-hidden'], true);
+  assert.equal(icon.props.accessible, false);
+  assert.equal(icon.props.importantForAccessibility, 'no');
+  assert.equal(icon.props.children.type, 'lucide-react-native/icons/triangle-alert');
+  assert.equal(icon.props.children.props['aria-hidden'], true);
+  assert.equal(icon.props.children.props.focusable, false);
+});
 
 test('Paper hover and held ripple darken both action surfaces with readable contrast', () => {
   const match = colors.darkActionRipple.match(/^rgba\((\d+), (\d+), (\d+), ([\d.]+)\)$/);

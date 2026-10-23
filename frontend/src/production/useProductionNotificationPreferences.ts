@@ -7,6 +7,7 @@ export type ProductionPreferenceValues = Omit<NotificationPreferences, "version"
 type OriginalPreference = { input: ProductionPreferenceValues & { expectedVersion: number }; confirmed: boolean; reviewed: boolean; consent: boolean };
 export function useProductionNotificationPreferences(env: SettingsEnvironment) {
   const api = useMemo(() => createFamilyApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]), requests = useSettingsRequests(env, true);
+  const [draftEditing, setDraftEditing] = useState(false);
   const [preferences, setPreferences] = useState<NotificationPreferences | null>(null), [notice, setNotice] = useState("");
   const [original, setOriginal] = useState<OriginalPreference | null>(null), [fresh, setFresh] = useState(false), [denied, setDenied] = useState(false);
   const pending = useRef<OriginalPreference | null>(null), values = useRef(preferences); values.current = preferences;
@@ -56,9 +57,9 @@ export function useProductionNotificationPreferences(env: SettingsEnvironment) {
   };
   useEffect(() => () => { api.resetOnline?.(); pending.current = null; }, [api]);
   useEffect(() => { if (!env.online) { setFresh(false); if (pending.current) { pending.current.consent = false; pending.current.reviewed = false; retain(pending.current); } } }, [env.online]);
-  useSettingsRefresh(env, () => { void refresh(); }, !requests.busy && !original, true);
+  useSettingsRefresh(env, () => { void refresh(); }, !requests.busy && !original, true, draftEditing);
   useDomainWriteGuard(false, !!original || requests.writing, "account");
-  return { preferences: env.currentIdentity() ? preferences : null, online: env.online, busy: requests.busy, original, fresh, notice,
+  return { scopeKey: JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]), setDraftEditing, preferences: env.currentIdentity() ? preferences : null, online: env.online, busy: requests.busy, original, fresh, notice,
     refresh: () => { void refresh(); }, save: (input: ProductionPreferenceValues, expectedVersion: number) => { void save(input, expectedVersion); },
     confirmOriginal(value: boolean) { if (pending.current?.reviewed) { pending.current.consent = value; retain(pending.current); } },
     retryOriginal() { if (pending.current) void save(pending.current.input, pending.current.input.expectedVersion, true); } };

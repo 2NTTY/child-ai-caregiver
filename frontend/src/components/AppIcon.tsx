@@ -55,11 +55,15 @@ import Square from "lucide-react-native/icons/square";
 import SquareCheck from "lucide-react-native/icons/square-check";
 import Thermometer from "lucide-react-native/icons/thermometer";
 import Trash2 from "lucide-react-native/icons/trash";
+import TriangleAlert from "lucide-react-native/icons/triangle-alert";
 import UserRound from "lucide-react-native/icons/user-round";
 import Users from "lucide-react-native/icons/users";
 import Utensils from "lucide-react-native/icons/utensils";
 import X from "lucide-react-native/icons/x";
 import { colors, iconTokens } from "../theme";
+import { ConcernIcon } from "./icons/ConcernIcon";
+import { OverviewIcon } from "./icons/OverviewIcon";
+import { PreparationIcon } from "./icons/PreparationIcon";
 
 // Keep aliases used by existing view models and Paper controls in one place.
 const icons = {
@@ -69,6 +73,9 @@ const icons = {
   "link-variant": Link2,
   "clipboard-check-outline": ClipboardCheck,
   "clipboard-check": ClipboardCheck,
+  "overview-outline": OverviewIcon,
+  "concern-outline": ConcernIcon,
+  "preparation-outline": PreparationIcon,
   "account-child-outline": Baby,
   "account-outline": UserRound,
   "account-group-outline": Users,
@@ -134,6 +141,7 @@ const icons = {
   "eye-off": EyeOff,
   "plus": Plus,
   "delete-outline": Trash2,
+  "alert-outline": TriangleAlert,
 } as const;
 
 export type AppIconName = keyof typeof icons;

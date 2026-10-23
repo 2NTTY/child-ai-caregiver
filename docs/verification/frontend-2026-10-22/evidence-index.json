@@ -1,0 +1,469 @@
+{
+  "format_version": 1,
+  "document_status": "LOCAL_PACKAGE_FINAL — Site84 published; product24c committed and remote read-back verified; evidence package PREPARED_NOT_UPLOADED",
+  "assembled_at_utc": "2026-10-22T08:49:22.236633+00:00",
+  "scope": "Bounded 22c/23b review, 24b core matrix and final24c narrow-label acceptance; Site84 is published",
+  "public_preview": {
+    "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+    "reported_live_version": 84,
+    "reported_live_snapshot": "24c",
+    "source_git_commit": "6da49037c04f9aa19ed81bf142b3c727d46ab93d",
+    "verification_source": "Delivery coordinator handoff; no Site action performed by document assembler",
+    "reported_deployment_status": "succeeded",
+    "reported_deployment_succeeded_at_utc": "2026-10-22T09:48:50.562Z",
+    "source_commit_kind": "Site source repository commit, not the project PR commit",
+    "site_version_id": "appgprj_6ac1e7c965308191bc2c599951348a51~appgver_3c02c4e20c348191960d1ea640c48e2f",
+    "deployment_id": "appgdep_6ad9dbfa24188191a92454ecb3fb30ff"
+  },
+  "single_pr": {
+    "url": "https://github.com/2NTTY/child-ai-caregiver/pull/253",
+    "required_state": "draft; unmerged",
+    "reported_remote_snapshot": "24c",
+    "reported_remote_head_short": "baba62d4",
+    "project_24c_commit": "baba62d4e6c6fd0332387ff7600bb2cc5c2a70f0",
+    "project_24c_ref_updated": true,
+    "product_update_status": "COMMITTED_REMOTE_READBACK_VERIFIED",
+    "verification_source": "Delivery coordinator handoff: explicit user approval obtained; normal remote ref update and commit/tree/65-file hash read-back verified. Document assembler performed no Git write or upload.",
+    "project_24c_tree": "d6539050b43dd4435831b70d7ee7a358b1ef5f99",
+    "project_24c_parent_short": "b3384c3",
+    "changed_files_verified": 65,
+    "all_65_file_hashes_match": true,
+    "force_push": false,
+    "merged": false,
+    "user_explicit_upload_approval_reported": true
+  },
+  "source22c_git_commit": "0d5bed5316c0163ed2b369d191c7bb51e60aac51",
+  "original_manifest_integrity_check": {
+    "22c": {
+      "matched": 46,
+      "listed": 46,
+      "mismatches": 0,
+      "missing": 0
+    },
+    "23b": {
+      "matched": 60,
+      "listed": 60,
+      "mismatches": 0,
+      "missing": 0
+    },
+    "claim": "File integrity only, not a fresh execution of product tests",
+    "24_final": {
+      "matched": 57,
+      "listed": 57,
+      "mismatches": 0,
+      "missing": 0,
+      "central_index_sha256": "c5977250871505feb313c73486ced101837c24c87027afe89c7c7c01a0e22cb5"
+    }
+  },
+  "screenshots": [
+    {
+      "origin": "message-history24b-qa/bell320x480-top.png",
+      "file": "screenshots/bell320x480-top.png",
+      "snapshot": "24b",
+      "css_viewport": {
+        "width": 320,
+        "height": 480
+      },
+      "qa_display_scale": 1.0,
+      "purpose": "修正後的短畫面鈴鐺正文捲動區與底部歷史／關閉按鈕；原始 24b 圖沿用未改部分，不是 24c 重拍。最終分層索引確認限定範圍通過，並非全矩陣通過。",
+      "bundle_sha256": "8e5422a16fed0186a682a1c9a6d1230ef8e2a684d8c8dca8b668405e5689d822",
+      "fixture_sha256": "8b0f6148dab42ec98fef13182292706e07899ec6ce26321f565546d2c27f3734",
+      "bytes": 65627,
+      "sha256": "9d454d84194b3ba3e9bd53090d0bd0c5666c0b61b64f49b3c99ea156a13bb716",
+      "copy_verified": true,
+      "image_processing": "none; original bytes copied, not cropped, composited, retouched or generated",
+      "raw_image_pixels": {
+        "width": 1280,
+        "height": 757
+      },
+      "browser": "cloud Chrome; real app iframe; not native Android/iOS",
+      "data": "synthetic only; no real family data or model",
+      "supporting_evidence": [
+        "message-history24b-qa/bell320x480-bounds.json"
+      ],
+      "history_button_bottom_css_px": 360.8125,
+      "close_button_bottom_css_px": 430,
+      "qa_wrapper_label_caveat": "Raw image retains in-progress status and static all-not-run QA template text. These are not final reviewer verdicts; final layered evidence index controls scope and status."
+    },
+    {
+      "origin": "reviewer22-evidence/chain-reading-start-desktop.png",
+      "file": "screenshots/chain-reading-start-desktop.png",
+      "snapshot": "22b, unchanged event-chain portion carried into 22c",
+      "css_viewport": {
+        "width": 1440,
+        "height": 820
+      },
+      "qa_display_scale": 0.6,
+      "purpose": "合成閱讀關注鏈、索引及查看原始紀錄入口；僅代表畫面可見範圍。",
+      "bundle_sha256": "58377f3b00a88ce18bffa37bf931adb320c9f949c4f798252a22b938207cecb2",
+      "bytes": 68189,
+      "sha256": "380e0fa9311ff891b15973c2e73d64799c18db220479dbe6368fa449f83d7fea",
+      "copy_verified": true,
+      "image_processing": "none; original bytes copied, not cropped, composited, retouched or generated",
+      "raw_image_pixels": {
+        "width": 1265,
+        "height": 748
+      },
+      "browser": "cloud Chrome; real app iframe; not native Android/iOS",
+      "data": "synthetic only; no real family data or model"
+    },
+    {
+      "origin": "reviewer22-evidence/22c-retry405-still-unknown-320.png",
+      "file": "screenshots/22c-retry405-still-unknown-320.png",
+      "snapshot": "22c",
+      "css_viewport": {
+        "width": 320,
+        "height": 480
+      },
+      "qa_display_scale": 1.0,
+      "purpose": "已有未知結果後重試遇 405，仍顯示暫時無法確認結果，保留關閉出口。先前 503 由隔離 QA 合成，不是公開站故障。",
+      "bundle_sha256": "479491dcfa8d4259d2aa063a5d2697a66d11072d959e3e27a3741f1128f71fe8",
+      "bytes": 48289,
+      "sha256": "9091a9df9b617a8745e4525e55edb24661b24318e716baf3968bb46dfa627709",
+      "copy_verified": true,
+      "image_processing": "none; original bytes copied, not cropped, composited, retouched or generated",
+      "raw_image_pixels": {
+        "width": 1280,
+        "height": 757
+      },
+      "browser": "cloud Chrome; real app iframe; not native Android/iOS",
+      "data": "synthetic only; no real family data or model"
+    },
+    {
+      "origin": "silent-refresh23-qa/history-expanded320-pending-page1.jpg",
+      "file": "screenshots/history-expanded320-pending-page1.jpg",
+      "snapshot": "23b",
+      "css_viewport": {
+        "width": 320,
+        "height": 820
+      },
+      "qa_display_scale": 0.6,
+      "purpose": "窄屏歷史原文維持展開；慢讀 pending 由同批 JSON 觀測證實，截圖本身不證明網路時序或逐幀無閃動。畫面外層模式標籤可能落後於實際讀取。",
+      "bundle_sha256": "ad61c8ab65a777044061045cb46a3cc47e508b0c437dcc046c41b48f31cb7471",
+      "supporting_evidence": [
+        "history-expanded320-scroll-before.json",
+        "history-expanded320-pending-page1.json",
+        "history-expanded320-pending-page2.json"
+      ],
+      "bytes": 45037,
+      "sha256": "145eff94922cd3191347aca59d519e7443d91f65a74af9cdd13658037d5fd007",
+      "copy_verified": true,
+      "image_processing": "none; original bytes copied, not cropped, composited, retouched or generated",
+      "raw_image_pixels": {
+        "width": 1265,
+        "height": 748
+      },
+      "browser": "cloud Chrome; real app iframe; not native Android/iOS",
+      "data": "synthetic only; no real family data or model"
+    }
+  ],
+  "source_evidence": [
+    {
+      "id": "22c_review",
+      "original_evidence_path": "reviewer22-evidence/source-review-final22c.json",
+      "sha256": "cdf8d0afd09cae7c3165ceabfa6f7869fbfec8ff306cd7ec8d61bb667f63ea99",
+      "bytes": 14911,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "22c_evidence_index",
+      "original_evidence_path": "reviewer22-evidence/evidence-index22c.json",
+      "sha256": "1038be0540932a18c8ba4b7beb804f0396a19620f7bb45af71e88fe89f8db2c2",
+      "bytes": 4661,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "22c_source_union",
+      "original_evidence_path": "reviewer22-evidence/source-union-freeze22c.json",
+      "sha256": "4b74436fbe44a94c217e0e1257ac1582406be77cf242c7ce0a55dbf95bb700ae",
+      "bytes": 8335,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "22c_artifact_manifest",
+      "original_evidence_path": "reviewer22-evidence/local22c-artifact-manifest.json",
+      "sha256": "ba8b907a934f333adca9b5f3776891b07fd7bd9a91fc745e4109dd624adaec24",
+      "bytes": 10048,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "22b_artifact_manifest",
+      "original_evidence_path": "reviewer22-evidence/local22b-artifact-manifest.json",
+      "sha256": "39bdd694aff4c25f9e9f50779c574d2f58366b76f063ad2ba7410bdd091aeb38",
+      "bytes": 10191,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "23b_review",
+      "original_evidence_path": "silent-refresh23-qa/review23b.md",
+      "sha256": "81f3977ad78ab253e4f541c4880242fc8afdc35d0f27c3837550bd99536e7adf",
+      "bytes": 10259,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "23b_evidence_index",
+      "original_evidence_path": "silent-refresh23-qa/review23b-evidence-manifest.json",
+      "sha256": "92b16c040fe48adb6feb70e7cea2dcbf791f9430a3c5c8cf58282fd38199b8a5",
+      "bytes": 8607,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "23b_copied_artifacts",
+      "original_evidence_path": "silent-refresh23-qa/copied-artifact23b-sha256.json",
+      "sha256": "fe8093e8804435fc658914cfac64f81daf24111f39f0a163ed07081d7b0183c8",
+      "bytes": 8363,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "23b_before_observation",
+      "original_evidence_path": "silent-refresh23-qa/history-expanded320-scroll-before.json",
+      "sha256": "5fb2c16472407f998362634fc07c972b7624bdb88330d71d3edef81cbc1a6118",
+      "bytes": 2154,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "23b_pending_observation",
+      "original_evidence_path": "silent-refresh23-qa/history-expanded320-pending-page1.json",
+      "sha256": "c465c14e0c1e1557caa765322b4970fbffbd9a5a0cbbe33e3c36f4cd769fbe0f",
+      "bytes": 2448,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "23b_after_observation",
+      "original_evidence_path": "silent-refresh23-qa/history-expanded320-pending-page2.json",
+      "sha256": "64f1e41adb6b9d93b74877bd1d44822842ea190c5027f415090276f0bed69611",
+      "bytes": 2752,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24b_bell_bounds",
+      "original_evidence_path": "message-history24b-qa/bell320x480-bounds.json",
+      "sha256": "3f133cf16584d725cecff2d0cc16d3510068152d65a3b852d27e283874b296a4",
+      "bytes": 429,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24_original_bell_red",
+      "original_evidence_path": "message-history24-qa/bell320x480-before.png",
+      "sha256": "c4e1858824c230ad21ed53a238e921082b55ff9969239ad4854a726d4b58968a",
+      "bytes": 72474,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24_final_index",
+      "original_evidence_path": "message-history24-review-evidence/index.json",
+      "sha256": "c5977250871505feb313c73486ced101837c24c87027afe89c7c7c01a0e22cb5",
+      "bytes": 17426,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24_final_review",
+      "original_evidence_path": "message-history24-review-evidence/FINAL_REVIEW.md",
+      "sha256": "8b4dbceb1e476271b93301d1b5d49c948f64204eedc6bf164eadee286dd40635",
+      "bytes": 2255,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24_final_summary",
+      "original_evidence_path": "message-history24-review-evidence/final-summary.json",
+      "sha256": "b053998e1783b1abc3d6405ede639010a158369b0738deaa6276883442d9a011",
+      "bytes": 1917,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24b_final_matrix",
+      "original_evidence_path": "message-history24b-qa/matrix.json",
+      "sha256": "729304c92480b070f32841d865773abf2156fd662731e1964b563ffee6308e67",
+      "bytes": 15336,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24c_label_provenance",
+      "original_evidence_path": "message-history24c-qa/new-label-and-provenance.json",
+      "sha256": "64b91f4fb72caf4fa0cd0215f9a81b6331f0f9d16ae84831f6fc64826100067c",
+      "bytes": 1036,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24c_true_click",
+      "original_evidence_path": "message-history24c-qa/true-click-original-route.json",
+      "sha256": "593913c685c9b3be65102689ecb3a3ba723f9d520bb81bd2d24d151c7078d18d",
+      "bytes": 19107,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24c_cancel_clears_hint",
+      "original_evidence_path": "message-history24c-qa/cancel-clears-hint.json",
+      "sha256": "226ccfda47826e27adb0c784e6bce574ec9d1b0909b05b28ad66144f2bbe49bc",
+      "bytes": 15584,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24_hosted_index",
+      "original_evidence_path": "message-history24-review-evidence/hosted-smoke-index.json",
+      "sha256": "0e16a4f76ea372ed27632d5c99778082b784a933eecdfd6776d6538a1757798e",
+      "bytes": 482,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24_hosted_report",
+      "original_evidence_path": "message-history24-review-evidence/HOSTED_SMOKE.md",
+      "sha256": "57efe9ccbff52073e6b729aac46dc361bbaaceda8c56128ba529f0beda1467e0",
+      "bytes": 1328,
+      "included_in_delivery_package": false
+    },
+    {
+      "id": "24_hosted_receipt",
+      "original_evidence_path": "message-history24c-hosted-smoke/receipt.json",
+      "sha256": "912153219213df85a704518cb3e8d27181484da9d2cd583f541dc5e8088077e5",
+      "bytes": 2856,
+      "included_in_delivery_package": false
+    }
+  ],
+  "excluded_from_delivery": [
+    "Credentials, internal private notes and raw browser-session metadata",
+    "Real family records, photos or messages",
+    "Generated, cropped or composited screenshots",
+    "Full-matrix/all-browser/production-activation PASS assertions unsupported by evidence"
+  ],
+  "known_open_item": {
+    "snapshot": "24c",
+    "area": "Upload this documentation/evidence package to the existing PR253",
+    "status": "PREPARED_NOT_UPLOADED",
+    "product_commit": "baba62d4e6c6fd0332387ff7600bb2cc5c2a70f0",
+    "product_remote_ref_updated": true,
+    "documentation_commit": null,
+    "next_step": "Coordinator reviews this package, then integrator may upload it to the same PR under the explicit user approval. Document assembler must not upload or change the repository.",
+    "do_not_claim": [
+      "This documentation/evidence package already uploaded",
+      "All 28 matrix cases PASS",
+      "All screenshots recaptured on final24c",
+      "Production message API enabled or real provider tested"
+    ]
+  },
+  "handoff_note": "Only independent delivery directory written. No product/repository, Site, CUA or Library changes by document assembler. Product24c commit and Site84 delivery recorded from coordinator read-back evidence; this documentation/evidence package is locally finalized and prepared for upload, not yet uploaded. No product tests rerun for this metadata-only closeout.",
+  "updated_at_utc": "2026-10-22T11:51:17.353449+00:00",
+  "production_activation_boundary": {
+    "code_delivered": true,
+    "default_enabled": false,
+    "required_deployment_owner_steps": [
+      "Phase 1: compatible fleet-wide deployment and all 4 indexes READY",
+      "Phase 2: explicit activation only after readiness verified"
+    ],
+    "not_verified": [
+      "Real provider",
+      "Native/device delivery",
+      "Firestore concurrency",
+      "Production activation"
+    ],
+    "code_reviewed_locally": true,
+    "git_delivery_pending_explicit_approval": false,
+    "project_commit": "baba62d4e6c6fd0332387ff7600bb2cc5c2a70f0",
+    "production_deployed": false,
+    "production_enabled": false
+  },
+  "qa_only_correction": {
+    "original_problem": "HTML inline command() name collided with DOM property",
+    "correction": "Renamed QA control to qaCommand and revalidated",
+    "classification": "QA harness issue, not product bug",
+    "product_source_changed_for_this_issue": false
+  },
+  "cua_not_run_despite_source_coverage": [
+    "Multiple header hints simultaneously visible",
+    "Background guard-navigation races"
+  ],
+  "acceptance24": {
+    "status": "BOUNDED_PASS",
+    "final_version": "24c",
+    "final_bundle": "_expo/static/js/web/index-b74c0f31a4369ccff9cda3abb1b3cfde.js",
+    "final_bundle_sha256": "f07300294bb393acc521c59e8007e9ea2b3be58b8d0e7da5a44931c7738b54e4",
+    "fixture_sha256": "8b0f6148dab42ec98fef13182292706e07899ec6ce26321f565546d2c27f3734",
+    "matrix24b": {
+      "PASS": 21,
+      "PARTIAL": 4,
+      "NOT_RUN": 3
+    },
+    "narrow24c": "Newlabel/reveal/originalroute/cancelPASS; unchanged24b evidence inherited",
+    "completed_at_utc": "2026-10-22T09:46:35Z",
+    "original24_red_retained": true,
+    "unchanged24b_cases_inherited_not_rerun": true,
+    "known_baseline_failures": [
+      "Root aggregate typecheck90diagnostics exactly baseline,notwhole-repoPASS",
+      "Frontendexport typecheck retains knownContactConsentCard2 diagnostics",
+      "Earlierrecovery4/configpostgres1 failures confirmedbaseline"
+    ],
+    "not_run": [
+      "Production endpoint/provider sending",
+      "Native Firestore four new indexes and full compatible fleet activation/rollback",
+      "Allnative devices/allUIcombinations",
+      "Multiownerhint and inaccessible background-header guardraces inCUA",
+      "Late response identityrace inCUA(source truehandler-ownerbridge covers)"
+    ],
+    "partial_or_not_run_cases": [
+      {
+        "id": "H02",
+        "status": "PARTIAL",
+        "reason": "真profile待確認色點163,139,25與短字已驗；原inline care真點返回/care且review保留。profile modal背景header不可合法點，未穿透DOM。24c將care顯名照顧改核對。"
+      },
+      {
+        "id": "H03",
+        "status": "PARTIAL",
+        "reason": "一個真operation在390/320經合法rail reveal，完整短字與色點可見、height52.8且Bell不受遮；多owner同時狀態無自然fixture場景，CUA未造。"
+      },
+      {
+        "id": "H05",
+        "status": "NOT_RUN",
+        "reason": "背景header dirty/unknown guard race無合法自然UI路徑；原關閉guard有顯示並正式捨棄，但不冒充此案。source真guard tests覆蓋。"
+      },
+      {
+        "id": "H06",
+        "status": "NOT_RUN",
+        "reason": "延遲批准/disabled/reveal跨scope場景只在已驗source真React/guard測試覆蓋；CUA不改store造場景。"
+      },
+      {
+        "id": "S02",
+        "status": "PARTIAL",
+        "reason": "真409 identity_changed與403均5→0；晚舊200競態是前面真handler/provider/owner bridge實測，非本CUA。"
+      },
+      {
+        "id": "S04",
+        "status": "NOT_RUN",
+        "reason": "慢讀切孩子/late identity此CUA未完成；selector未命中時沒有執行切換，不列FAIL/PASS。source真handler/owner identity/epoch/race測已覆蓋。"
+      },
+      {
+        "id": "E01",
+        "status": "PARTIAL",
+        "reason": "scope錯誤Bell可關、404/503可離到對話；真Back/Forward回首頁再助手且0ghostmodal。再次切孩子組合未做。"
+      }
+    ]
+  },
+  "hosted_smoke": {
+    "status": "PASS_BOUNDED_HOSTED_SMOKE",
+    "observed_at_utc": "2026-10-22T09:51:00Z/2026-10-22T09:53:01Z",
+    "finished_at_utc": "2026-10-22T09:53:12Z",
+    "checks": {
+      "publicUrlLoadsWithoutLogin": "PASS",
+      "explicitSyntheticNoBackendAINotice": "PASS",
+      "new24cProductScriptReference": "PASS",
+      "noFakeConfirmedBadge": "PASS count0",
+      "bellShowsRecentFiveOriginalSyntheticMessages": "PASS",
+      "trueBellHistoryClick": "PASS /history?category=notifications",
+      "deepRouteFullBrowserReload": "PASS same title and5messages plusmore",
+      "writeSubmission": "NOT_PERFORMED"
+    },
+    "script_reference": "/_expo/static/js/web/index-b74c0f31a4369ccff9cda3abb1b3cfde.js",
+    "corresponding_reviewed_artifact_sha256": "f07300294bb393acc521c59e8007e9ea2b3be58b8d0e7da5a44931c7738b54e4",
+    "remote_asset_content_independently_rehashed": false,
+    "limits": "This is public static synthetic preview smoke only, not production message API/provider/index/fleet activation, not a repeat of the24b matrix. The browser DOM references the reviewed new product filename; remote bytes were not independently downloaded and hashed. Existing90baseline and matrix limits remain.",
+    "original_final_index_unchanged": true,
+    "evidence_files_verified": 7,
+    "visual_note": "Hosted bell.png is readable; hosted history.png captured the loading frame and is not used as loaded-history visual proof. Settled DOM/AX records support the deep reload assertion."
+  },
+  "documentation_package_delivery": {
+    "status": "PREPARED_NOT_UPLOADED",
+    "target": "Existing PR253 only",
+    "uploaded": false,
+    "docs_commit": null,
+    "authority": "Coordinator reports explicit user approval for this public PR upload. Document assembler is only preparing local package; integrator owns upload."
+  }
+}

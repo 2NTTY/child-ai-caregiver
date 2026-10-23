@@ -31,7 +31,7 @@ export const firestoreReminderOutboxSchema = z.object({ taskId: z.uuid(), occurr
   attempts: z.number().int().nonnegative().max(2147483647), failures: z.number().int().min(0).max(3).default(0),
   lease: z.object({ token: z.uuid(), generation: z.uuid(), until: datetime }).strict().nullable() }).strict();
 export type FirestoreReminderOutbox = z.infer<typeof firestoreReminderOutboxSchema>;
-export interface FirestoreDomainOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
+export interface FirestoreDomainOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string; messageHistoryEnabled?: boolean }
 export interface FirestoreDomainEnvelope { format: 'yuban-firestore-domain'; version: 1; recordVersion: number; ciphertext: string; recovery?: FirestoreRecoveryLocator }
 export class FirestoreDomainError extends Error {
   readonly status: number;

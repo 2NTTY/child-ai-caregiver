@@ -66,9 +66,14 @@ self.addEventListener("push", event => {
     if (!current.active || current.active.id !== payload.bindingId || current.active.version !== payload.bindingVersion
       || current.seen.includes(payload.deliveryId)) return;
     await state(previous => ({ ...previous, seen: [...previous.seen.slice(-19), payload.deliveryId] }));
-    const care = payload.kind === "care";
-    await self.registration.showNotification(care ? "育有方照護提示" : "育有方通知測試", {
-      body: care ? "你有獲授權的照護事項提示，請開啟育有方查看。收到提示不代表事項已完成。" : "這是你剛才要求的測試通知，不代表照護事項已完成。",
+    const care = payload.kind === "care", content = payload.content;
+    // New sends carry their exact generic content. Legacy reference-only payloads keep their old display.
+    const genericTitle = care ? '育有方照護提示' : '育有方通知測試';
+    const genericBody = care ? '你有獲授權的照護事項提示，請開啟育有方查看。收到提示不代表事項已完成。' : '這是你剛才要求的測試通知，不代表照護事項已完成。';
+    if (content !== undefined && (!content || content.contentVersion !== 'web-push-generic-v1'
+      || content.title !== genericTitle || content.body !== genericBody)) return;
+    await self.registration.showNotification(content ? content.title : care ? "育有方照護提示" : "育有方通知測試", {
+      body: content ? content.body : care ? "你有獲授權的照護事項提示，請開啟育有方查看。收到提示不代表事項已完成。" : "這是你剛才要求的測試通知，不代表照護事項已完成。",
       tag: (care ? "yuban-care-" : "yuban-test-") + payload.deliveryId,
       data: { bindingId: payload.bindingId, bindingVersion: payload.bindingVersion },
     });

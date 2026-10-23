@@ -49,6 +49,7 @@ function harness() {
       if (name === 'react-native-paper') return { Text: 'Text' };
       if (name === 'react-native-reanimated') return animated;
       if (name === 'expo-router') return { usePathname: () => pathname, useGlobalSearchParams: () => params, Redirect: 'Redirect' };
+      if (name.endsWith('/AccountCallbackGate')) return { AccountAccessPanel: 'AccountAccessPanel', AccountDeletionRecoveryPanel: 'AccountDeletionRecoveryPanel' };
       if (name.endsWith('/ProductionProvider')) return { useProduction: () => production };
       if (name.endsWith('/preferences')) return { useMotionPreferences: () => preference };
       if (name.endsWith('/theme')) return { colors: {}, spacing: {}, typeScale: { small: 14 } };
@@ -143,7 +144,7 @@ test('a report for a previous route/scope cannot release a new startup', () => {
 
 test('children-list failure exposes the actual refresh control', () => {
   const h = harness(), { ProductionGate } = h.load('src/production/ProductionGate.tsx'); let calls = 0;
-  h.production({ identityKey: 'parent:1', online: true, recordsState: records({ childrenLoadedAt: null, childrenError: 'Synthetic list failure' }), refresh() { calls++; } });
+  h.production({ identityKey: 'parent:1', online: true, account: { gate: 'ready', deletion: { phase: 'idle' } }, recordsState: records({ childrenLoadedAt: null, childrenError: 'Synthetic list failure' }), refresh() { calls++; } });
   h.render(h.jsx(ProductionGate, { children: 'private' })); assert.ok(h.node('production-children-error'));
   h.hosts().find(x => x.type === 'Button').props.onPress(); assert.equal(calls, 1);
 });
@@ -197,7 +198,7 @@ test('startup only depends on the current route, and any required error remains 
   assert.equal(routeStartupReadiness('/', {}, home), 'ready');
   for (const key of ['profile', 'care', 'tasks', 'growth']) assert.equal(routeStartupReadiness('/', {}, { ...home, [key]: 'loading' }), 'loading');
   assert.equal(routeStartupReadiness('/', {}, { ...home, growth: 'loading', tasks: 'error' }), 'error');
-  assert.equal(routeStartupReadiness('/chat', {}, { chat: 'ready', profile: 'loading' }), 'ready');
+  assert.equal(routeStartupReadiness('/chat', {}, { chat: 'ready', agentPending: 'ready', profile: 'loading' }), 'ready');
   assert.equal(routeStartupReadiness('/summary', { tab: 'preparation' }, { documents: 'ready', profile: 'loading' }), 'ready');
   assert.equal(routeStartupReadiness('/history', {}, { tasks: 'ready', documents: 'loading' }), 'ready');
   assert.equal(routeStartupReadiness('/history', { category: 'care' }, { care: 'error', tasks: 'loading' }), 'error');
@@ -214,7 +215,7 @@ test('no-child onboarding skips child reads but still waits for identity-scoped 
   const none = records({ children: [], selectedChildId: null });
   assert.equal(routeStartupReadiness('/', {}, {}, false), 'ready');
   for (const [pathname, params, key] of [['/family', {}, 'family'], ['/settings', { section: 'model' }, 'model'],
-    ['/settings', { section: 'notifications' }, 'push'], ['/settings', { section: 'preferences' }, 'preferences']]) {
+    ['/settings', { section: 'notifications' }, 'push'], ['/settings', { section: 'notifications' }, 'preferences']]) {
     const pending = routeStartupReadiness(pathname, params, {}, false);
     assert.equal(pending, 'loading', `${pathname} must not treat an unread identity owner as empty`);
     assert.equal(productionStartupReadiness(none, null, pending), 'loading');
@@ -222,11 +223,12 @@ test('no-child onboarding skips child reads but still waits for identity-scoped 
   }
 });
 
-test('preferences deep links wait for their existing read, then expose success or retry', () => {
+test('notification deep links wait for preferences and channels, while appearance has no account reads', () => {
   const h = harness(), { routeStartupReadiness } = h.load('src/startup/dataReadiness.ts');
-  const params = { section: 'preferences' };
+  const params = { section: 'notifications' };
+  assert.equal(routeStartupReadiness('/settings', { section: 'preferences' }, {}), 'ready');
   assert.equal(routeStartupReadiness('/settings', params, { preferences: 'loading' }), 'loading');
-  assert.equal(routeStartupReadiness('/settings', params, { preferences: 'ready' }), 'ready');
+  assert.equal(routeStartupReadiness('/settings', params, { preferences: 'ready', push: 'ready', telegram: 'ready' }), 'ready');
   assert.equal(routeStartupReadiness('/settings', params, { preferences: 'error' }), 'error');
   h.render(startup(h, { state: records({ children: [], selectedChildId: null }), report: 'loading' }));
   assert.ok(h.node('frontend-startup-loading'));
@@ -240,7 +242,7 @@ test('care photo deep links wait only for the photo consumer', () => {
   assert.equal(routeStartupReadiness('/care', { view: 'photos' }, { care: 'ready', photos: 'loading' }), 'loading');
   assert.equal(routeStartupReadiness('/care', { view: 'photos' }, { care: 'loading', photos: 'ready' }), 'ready');
   assert.equal(routeStartupReadiness('/care', { view: 'photos' }, { care: 'loading', photos: 'error' }), 'error');
-  assert.equal(routeStartupReadiness('/care', {}, { care: 'ready', photos: 'loading' }), 'ready');
+  assert.equal(routeStartupReadiness('/care', {}, { care: 'ready', agentPending: 'ready', photos: 'loading' }), 'ready');
 });
 
 test('growth archive deep links wait for both the visible page authority and document archive', () => {

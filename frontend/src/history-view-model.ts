@@ -1,6 +1,18 @@
 import { z } from "zod";
 import type { AgentHistoryMessage, AgentWork, HistoryMatch, WorkResource } from "../../src/shared/agent-work.ts";
 import type { MemoryReadProjection } from "./memory-reference-view-model";
+import type { NotificationMessage, NotificationMessagesPage } from "../../src/shared/notification-messages.ts";
+
+export type PersonalMessageHistoryItem = NotificationMessage & { id: string };
+export type PersonalMessagesPage = Omit<NotificationMessagesPage, "items"> & { items: readonly PersonalMessageHistoryItem[] };
+export function messageChannelLabel(channel: NotificationMessage["contents"][number]["channel"]) {
+  return channel === "telegram" ? "Telegram" : channel === "native_push" ? "Android 通知" : "瀏覽器通知";
+}
+export function visiblePersonalMessages(items: readonly PersonalMessageHistoryItem[], query: string, range: HistoryDateRange) {
+  const search = query.trim().toLocaleLowerCase();
+  return items.filter(item => personalHistoryDateMatches(item.sentAt, range) && (!search ||
+    item.contents.some(content => [content.title ?? "", content.body, messageChannelLabel(content.channel)].some(value => value.toLocaleLowerCase().includes(search)))));
+}
 
 export type HistoryDateRange = { from: string | null; to: string | null };
 export interface PersonalHistorySearch {
@@ -40,8 +52,8 @@ export function notificationChannelLabel(item: NotificationHistoryItem) {
   return item.channel === "mail" ? "帳戶電郵" : (item.contact ? "授權聯絡 · " : "")
     + (item.channel === "telegram" ? "Telegram" : item.channel === "native_push" ? "Android 通知" : "瀏覽器通知");
 }
-export function personalHistoryScopeMatches(scopeKey: string, value: { scopeKey: string; childId: string; access: string } | null) {
-  return !!scopeKey && value?.scopeKey === scopeKey && !!value.childId && value.access === "active";
+export function personalHistoryScopeMatches(scopeKey: string, value: { scopeKey: string; childId: string; access: string; messageOnly?: boolean } | null) {
+  return !!scopeKey && value?.scopeKey === scopeKey && (!!value.childId || value.messageOnly === true) && value.access === "active";
 }
 function hongKongDate(value: string) {
   if (!Number.isFinite(Date.parse(value))) return null;
@@ -87,7 +99,7 @@ export function workResourceDestination(resource: WorkResource): { label: string
     care_record: { label: "照顧記錄", path: `/care?record=${encodeURIComponent(resource.id)}` },
     memory_fact: { label: "記憶", path: "/memory" }, private_note: { label: "私人指示", path: "/settings?section=assistant" },
     private_source: { label: "私人來源", path: "/sources" }, concern: { label: "成長關注", path: "/growth" },
-    family_document: { label: "準備單", path: "/summary?tab=preparation" }, receipt: { label: "操作結果", path: "/history?category=review" },
+    family_document: { label: "準備單", path: "/growth?tab=preparation" }, receipt: { label: "操作結果", path: "/history?category=review" },
   };
   return paths[resource.kind];
 }

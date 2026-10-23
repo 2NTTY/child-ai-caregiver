@@ -1,0 +1,14 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "originalReceiptSha256": "5fd8cea7602c17acf3e458c7f2c1f562169e5ea66182ddebf9636a69a5ab084f",
+  "status": "RETRACTED_DO_NOT_PUBLISH",
+  "retractedBundleSha256": "bb0fd8b2e968d1f1e74694b0e16573a160a739023acc7ab1583d51b960a9fd80",
+  "retractedArchiveSha256": "3cdf070b10d52837cf1e8ccc2ed0ca7948e97ee429b48f4904b3cb589e022c2b",
+  "rawEqualsPackaged": true,
+  "sourcePrepSha256": "c2a36a29bd20b6d97d45bdd8958c4649f38a2cc52082319ce016c330b601d941",
+  "cause": "Shared transform cache reused an Expo Router context targeting snapshot35 while snapshot36 source/cwd were correct. The emitted Preparation module remained35. A new bundle hash alone did not prove its source version.",
+  "evidenceLimits": "Original cache reads were not traced; decoded cached dependencies, equal cache keys and compiled35 module provide the mechanism evidence.",
+  "sourceTestsRemainSeparate": true,
+  "originalBrowserFailurePreservedNotAttributedToSource36": true,
+  "correctiveGates": "All emitted firstparty source text, exact binary asset chain, changed compiled module and isolated Router context checks."
+}

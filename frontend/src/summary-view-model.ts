@@ -48,7 +48,7 @@ export interface SummaryActions {
 export const sameSummaryPeriod = (a: SummaryPeriod, b: SummaryPeriod) => a.startDay === b.startDay && a.period === b.period && a.timeZone === b.timeZone;
 export const summaryBasis = (page: SummaryPage): SummaryBasis => ({expectedVersion: page.preparation.version, basisVersion: page.basisVersion, period: {...page.period}});
 export const summaryBasisChanged = (basis: SummaryBasis, page: SummaryPage) => basis.expectedVersion !== page.preparation.version || basis.basisVersion !== page.basisVersion || !sameSummaryPeriod(basis.period, page.period);
-export const summaryPeriodLabel = (value: SummaryPeriod) => `${value.startDay} 起${value.period === 'day' ? '一日' : '七日'} · ${value.timeZone}`;
+export const summaryPeriodLabel = (value: SummaryPeriod) => `${value.startDay} 起${value.period === 'day' ? '一日' : '七日'}`;
 export function summaryTime(value: string, timeZone = 'Asia/Hong_Kong') {
-  try { return new Date(value).toLocaleString('zh-HK', {timeZone, hour12: false}); } catch { return value; }
+  try { return new Date(value).toLocaleString('zh-HK', {timeZone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false}); } catch { return value; }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Linking, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
@@ -11,20 +11,17 @@ import { AppScrollView } from "../components/AppScrollView";
 import { AppDateTimeField, AppTimeZoneSelect } from "../components/DateTimeFields";
 import { AppButton, AppSelect, AppTextField, SectionCard, SectionHeader } from "../components/ui";
 import { SummaryDisclosure } from "../components/summary/SummaryDisclosure";
+import { ManualFormDialog } from "../components/FormDialog";
 import { GrowthOperationRecovery } from "../components/growth/GrowthOperationRecovery";
 import { growthStyles as s } from "../components/growth/growth-styles";
+import { useGrowthFormDraftGuard } from "../components/growth/useGrowthFormDraftGuard";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 
 export function TaskKnowledgeGrowthCandidates({ model, actions, onTask }: { model: GrowthViewModel; actions: GrowthActions; onTask(id: string): void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null), navigate = usePreviewNavigation();
-  const latest = useRef({ model, actions }); latest.current = { model, actions };
-  useEffect(() => () => { const value = latest.current; if (value.model.dirty && !value.model.pending && !value.model.busy) value.actions.discardDrafts(); }, []);
   const page = model.access === "lost" ? null : model.page;
   if (!page) return null;
   const selected = page.items.find(item => item.id === selectedId);
-  const applicabilityNotice = page.notices.includes(GROWTH_KNOWLEDGE_NOTICES.region)
-    ? "目前未能將已確認地區用於建議篩選；原有資料已保留。"
-    : page.notices.includes(GROWTH_KNOWLEDGE_NOTICES.age) ? "目前的建議只適用於 0–10 歲。" : null;
   return <View style={s.stack}>
     {page.items.length || page.historyHasMore ? <SectionCard><SectionHeader density="compact" title="成長建議" />
       {page.items.length ? <Text style={s.meta}>接受建議只記錄知悉或建立共享事項，不代表已完成、已預約或醫療判斷。</Text> : null}
@@ -35,24 +32,35 @@ export function TaskKnowledgeGrowthCandidates({ model, actions, onTask }: { mode
       </View>) : null}
       {page.historyHasMore ? <Text style={s.meta}>仍有較早建議未載入。</Text> : null}
     </SectionCard> : null}
-    {page.topics.length ? <SummaryDisclosure label="建議設定" scopeKey={model.scopeKey}>
-      {applicabilityNotice ? <Text style={s.meta}>{applicabilityNotice}</Text> : null}
-      {page.topics.map(topic => <TopicForm key={`${model.scopeKey}:${topic.id}:${model.epoch}:${model.resetCounts[`topic:${topic.id}`] ?? 0}`} topic={topic} model={model} actions={actions} />)}
-    </SummaryDisclosure> : null}
-    <AppDialog visible={!!selected} accessibilityLabel="核對成長候選" onDismiss={() => navigate(() => { if (model.dirty && !model.pending) actions.discardDrafts(); setSelectedId(null); })}>
+    <AppDialog visible={!!selected} accessibilityLabel="核對成長候選" onDismiss={() => navigate(() => { setSelectedId(null); })}>
       <AppDialog.Title>{selected?.title ?? "核對成長候選"}</AppDialog.Title>
       <AppDialog.ScrollArea><AppScrollView>{selected ? <AttentionForm key={`${model.scopeKey}:${selected.id}:${model.epoch}:${model.resetCounts[`item:${selected.id}`] ?? 0}`} item={selected} model={model} actions={actions} onTask={onTask} /> : null}
         <GrowthOperationRecovery model={model} actions={actions} includeRefresh />
       </AppScrollView></AppDialog.ScrollArea>
-      <AppDialog.Actions><AppButton label="返回候選列表" variant="quiet" onPress={() => navigate(() => { if (model.dirty && !model.pending) actions.discardDrafts(); setSelectedId(null); })} /></AppDialog.Actions>
+      <AppDialog.Actions><AppButton label="返回候選列表" variant="quiet" onPress={() => navigate(() => { setSelectedId(null); })} /></AppDialog.Actions>
     </AppDialog>
   </View>;
+}
+
+export function GrowthSuggestionSettings({ model, actions }: { model: GrowthViewModel; actions: GrowthActions }) {
+  const page = model.access === "lost" ? null : model.page;
+  if (!page) return null;
+  const applicabilityNotice = page.notices.includes(GROWTH_KNOWLEDGE_NOTICES.region)
+    ? "目前未能將已確認地區用於建議篩選；原有資料已保留。"
+    : page.notices.includes(GROWTH_KNOWLEDGE_NOTICES.age) ? "目前的建議只適用於 0–10 歲。" : null;
+  return <>
+    {page.topics.length ? <ManualFormDialog label="建議設定" scopeKey={model.scopeKey} recovery={<GrowthOperationRecovery model={model} actions={actions} includeRefresh />}>
+      {applicabilityNotice ? <Text style={s.meta}>{applicabilityNotice}</Text> : null}
+      {page.topics.map(topic => <TopicForm key={`${model.scopeKey}:${topic.id}:${model.epoch}:${model.resetCounts[`topic:${topic.id}`] ?? 0}`} topic={topic} model={model} actions={actions} />)}
+    </ManualFormDialog> : null}
+  </>;
 }
 
 type CandidateFields = { action: "accept" | "snooze" | "dismiss"; mode: "none" | "create"; values: TaskValues; until: string; note: string };
 function AttentionForm({ item, model, actions, onTask }: { item: GrowthAttention; model: GrowthViewModel; actions: GrowthActions; onTask(id: string): void }) {
   const navigate = usePreviewNavigation();
   const page = model.page!, [basis, setBasis] = useState<{ item: GrowthAttention; authorityVersion: string } | null>(null);
+  const draftGuard = useGrowthFormDraftGuard(model, actions, `item:${item.id}`, !!basis && model.dirty);
   const [confirmed, setConfirmed] = useState(false), [shared, setShared] = useState(false), [error, setError] = useState("");
   const { control, watch, handleSubmit, reset } = useForm<CandidateFields>({ defaultValues: { action: "accept", mode: "none", until: "", note: "",
     values: { title: item.title, details: item.advice, kind: "ordinary", assigneeUserId: "", dueAt: "", timeZone: "Asia/Hong_Kong" } } });
@@ -60,7 +68,7 @@ function AttentionForm({ item, model, actions, onTask }: { item: GrowthAttention
   const stale = !!basis && (basis.item.version !== item.version || basis.authorityVersion !== page.authorityVersion);
   const disabled = model.locked || stale || !growthActionable(item) || page.topics.find(topic => topic.id === item.topicId)?.disabled !== false;
   useEffect(() => { if (!basis) reset({ action: "accept", mode: "none", until: "", note: "", values: { title: item.title, details: item.advice, kind: "ordinary", assigneeUserId: "", dueAt: "", timeZone: "Asia/Hong_Kong" } }); }, [item.version, page.authorityVersion, basis, reset]);
-  function markDraft() { if (!basis) setBasis({ item: structuredClone(item), authorityVersion: page.authorityVersion }); actions.markDirty(`item:${item.id}`); }
+  function markDraft() { draftGuard.edited(); if (!basis) setBasis({ item: structuredClone(item), authorityVersion: page.authorityVersion }); actions.markDirty(`item:${item.id}`); }
   function edited() { markDraft(); setConfirmed(false); setShared(false); setError(""); }
   const url = growthSourceUrl(item.source.url);
   const submit = handleSubmit(value => {
@@ -71,6 +79,7 @@ function AttentionForm({ item, model, actions, onTask }: { item: GrowthAttention
     const parsed = growthActionSchema.safeParse(input);
     if (!parsed.success || value.action === "snooze" && Date.parse(value.until) <= Date.now()) { setError("請核對所有欄位、將來的延後時間及任務時區；內容不會截短。"); return; }
     if (value.action === "accept" && value.mode === "create" && (!shared || !page.eligibleAssignees.some(person => person.userId === value.values.assigneeUserId))) { setError("請明確選擇合資格負責人並確認家庭共享安排。"); return; }
+    draftGuard.submitted(parsed.data, original.authorityVersion);
     actions.decide(original.item, parsed.data);
   });
   return <View style={s.stack}>
@@ -105,19 +114,20 @@ function AttentionForm({ item, model, actions, onTask }: { item: GrowthAttention
     </> : <Text style={s.meta}>目前只有閱讀權限，不能接受或修改候選。</Text>}
     {error ? <Text accessibilityRole="alert" style={s.warning}>{error}</Text> : null}
     {model.notice ? <Text style={s.meta}>{model.notice}</Text> : null}
-    {model.dirty && !model.pending ? <AppButton label="放棄草稿並重新核對" variant="quiet" disabled={model.busy} onPress={() => navigate(() => actions.discardDrafts())} /> : null}
+    {model.dirty && !model.pending ? <AppButton label="放棄草稿並重新核對" variant="quiet" disabled={model.busy} onPress={() => navigate(() => { actions.discardLocalDraft?.(`item:${item.id}`); draftGuard.edited(); reset(); setBasis(null); setConfirmed(false); setShared(false); setError(""); })} /> : null}
   </View>;
 }
 
 type ContextFields = { values: Record<string, string> };
 function TopicForm({ topic, model, actions }: { topic: GrowthTopic; model: GrowthViewModel; actions: GrowthActions }) {
   const page = model.page!, [basis, setBasis] = useState<{ topic: GrowthTopic; authorityVersion: string } | null>(null);
+  const draftGuard = useGrowthFormDraftGuard(model, actions, `topic:${topic.id}`, !!basis && model.dirty);
   const [shared, setShared] = useState(false), [enabledConsent, setEnabledConsent] = useState(false), [error, setError] = useState("");
   const { control, watch, handleSubmit } = useForm<ContextFields>({ defaultValues: { values: {} } });
   const values = watch("values"), original = basis ?? { topic, authorityVersion: page.authorityVersion };
   const stale = !!basis && (basis.topic.version !== topic.version || basis.authorityVersion !== page.authorityVersion || JSON.stringify(basis.topic.inputs.map(input => input.factRefs)) !== JSON.stringify(topic.inputs.map(input => input.factRefs)));
   const conflict = topic.inputs.some(input => input.conflict), disabled = model.locked || stale || model.missingTargets.includes(`topic:${topic.id}`);
-  function markDraft() { if (!basis) setBasis({ topic: structuredClone(topic), authorityVersion: page.authorityVersion }); actions.markDirty(`topic:${topic.id}`); }
+  function markDraft() { draftGuard.edited(); if (!basis) setBasis({ topic: structuredClone(topic), authorityVersion: page.authorityVersion }); actions.markDirty(`topic:${topic.id}`); }
   const selected = original.topic.inputs.filter(input => !input.conflict && values[input.key] && input.choices.some(choice => choice.value === values[input.key]));
   const submit = handleSubmit(value => {
     if (disabled || !shared || conflict || !selected.length) return;
@@ -130,6 +140,7 @@ function TopicForm({ topic, model, actions }: { topic: GrowthTopic; model: Growt
       action: "confirm_context", values: Object.fromEntries(selected.map(input => [input.key, value.values[input.key]])),
       expectedFacts: [...references.values()].sort((a, b) => a.id.localeCompare(b.id)), confirmShared: true });
     if (!parsed.success) { setError("請明確選擇至少一項近況並核對原版本。"); return; }
+    if (!enabledConsent) draftGuard.submitted(parsed.data, original.authorityVersion);
     actions.updateTopic(original.topic, parsed.data);
   });
   return <SectionCard><SectionHeader density="compact" title={topic.title} subtitle={`版本 ${topic.version} · ${topic.disabled ? "已停用" : "已啟用"}`} />
@@ -142,7 +153,12 @@ function TopicForm({ topic, model, actions }: { topic: GrowthTopic; model: Growt
       <AppCheckbox label="我已核對所選近況，明確同意保存為家庭共享已確認資料" checked={shared} disabled={disabled || conflict || !selected.length} onChange={value => { markDraft(); setShared(value); }} />
       <AppButton label="確認保存所選近況" disabled={disabled || conflict || !shared || !selected.length} onPress={submit} />
       <AppCheckbox label={topic.disabled ? "我明確同意重新啟用這個主題" : "我明確同意永久停用這個主題"} checked={enabledConsent} disabled={disabled} onChange={value => { markDraft(); setEnabledConsent(value); }} />
-      <AppButton label={topic.disabled ? "確認重新啟用主題" : "確認永久停用主題"} variant="secondary" disabled={disabled || !enabledConsent} onPress={() => actions.updateTopic(original.topic, { action: "set_enabled", enabled: topic.disabled, authorityVersion: original.authorityVersion, expectedVersion: original.topic.version, confirm: true })} />
+      <AppButton label={topic.disabled ? "確認重新啟用主題" : "確認永久停用主題"} variant="secondary" disabled={disabled || !enabledConsent} onPress={() => {
+        const parsed = growthTopicActionSchema.safeParse({ action: "set_enabled", enabled: topic.disabled, authorityVersion: original.authorityVersion, expectedVersion: original.topic.version, confirm: true });
+        if (!parsed.success) return;
+        if (!selected.length && !shared) draftGuard.submitted(parsed.data, original.authorityVersion);
+        actions.updateTopic(original.topic, parsed.data);
+      }} />
     </> : null}
     {error ? <Text accessibilityRole="alert" style={s.warning}>{error}</Text> : null}
   </SectionCard>;

@@ -128,7 +128,7 @@ test('shell profile and current route are required, unrelated pages are not', ()
   assert.equal(routeStartupReadiness('/chat', {}, { profile: 'loading', chat: 'ready', agentPending: 'ready' }, true, true), 'loading');
   assert.equal(routeStartupReadiness('/chat', {}, { profile: 'ready', chat: 'ready', agentPending: 'ready', photos: 'loading' }, true, true), 'ready');
   assert.equal(routeStartupReadiness('/growth', { tab: 'archive' }, { profile: 'ready', growth: 'ready', documents: 'loading' }, true, true), 'loading');
-  assert.deepEqual(routeStartupRequirements('/settings', { section: 'notifications' }, false, true), ['push', 'telegram']);
+  assert.deepEqual(routeStartupRequirements('/settings', { section: 'notifications' }, false, true), ['preferences', 'push', 'telegram']);
 });
 
 test('late prior-key readiness reports cannot replace the current ready report', () => {
@@ -232,18 +232,16 @@ test('the real readiness reporter follows scoped personal-history state and owne
   assert.equal(historyRetries, 1); assert.equal(notificationRetries, 1); assert.equal(profileRetries, 2);
 });
 
-test('only the visible information-rail tab can hold the current screen', () => {
+test('the remaining visible rail waits only for tasks and never removed context reads', () => {
   const h = harness(), { visibleRailStartupReadiness } = h.load('src/startup/dataReadiness.ts');
-  assert.equal(visibleRailStartupReadiness(true, 'attention', { tasks: 'loading', care: 'ready' }), 'loading');
-  assert.equal(visibleRailStartupReadiness(false, 'attention', { tasks: 'loading' }), 'ready');
-  assert.equal(visibleRailStartupReadiness(true, 'attention', { tasks: 'ready', care: 'loading' }), 'ready');
-  assert.equal(visibleRailStartupReadiness(true, 'context', { tasks: 'loading', care: 'ready' }), 'ready');
-  assert.equal(visibleRailStartupReadiness(true, 'context', { care: 'loading' }), 'loading');
-  assert.equal(visibleRailStartupReadiness(true, 'context', { care: 'error' }), 'error');
-  assert.equal(visibleRailStartupReadiness(true, 'attention', {}), 'loading', 'new scope without a projection must not use the prior rail');
+  assert.equal(visibleRailStartupReadiness(true, { tasks: 'loading', care: 'ready' }), 'loading');
+  assert.equal(visibleRailStartupReadiness(false, { tasks: 'loading' }), 'ready');
+  assert.equal(visibleRailStartupReadiness(true, { tasks: 'ready', care: 'loading' }), 'ready');
+  assert.equal(visibleRailStartupReadiness(true, { tasks: 'error', care: 'ready' }), 'error');
+  assert.equal(visibleRailStartupReadiness(true, {}), 'loading', 'new scope without a projection must not use the prior rail');
 });
 
-test('the actual web shell includes only its open, selected rail tab and its guarded scope', () => {
+test('the actual web shell includes only its open rail content and its guarded scope', () => {
   let scopeKey = 'parent:A', tasksState = 'loading', careState = 'ready', careScope = scopeKey, taskScope = scopeKey, retried;
   const native = { View: 'View', Pressable: 'Pressable', Platform: { OS: 'web' }, StyleSheet: { create: value => value, flatten: value => value, absoluteFill: {} }, useWindowDimensions: () => ({ width: 1440, height: 900 }) };
   const mocks = {
@@ -271,11 +269,10 @@ test('the actual web shell includes only its open, selected rail tab and its gua
   h.render(h.jsx(AppShell, { children: 'chat' })); assert.equal(shell().readiness, 'ready', 'closed rail cannot hold the page');
   railToggle(); h.render(); assert.equal(shell().readiness, 'loading'); assert.match(shell().readinessKey, /rail:attention$/);
   shell().onRetry(); assert.deepEqual(retried, ['tasks']);
-  h.hosts().find(x => x.type === 'RightRailContent').props.onTabChange('context'); h.render();
-  assert.equal(shell().readiness, 'ready'); assert.match(shell().readinessKey, /rail:context$/);
-  careState = 'loading'; h.render(); assert.equal(shell().readiness, 'loading'); shell().onRetry(); assert.deepEqual(retried, ['care']);
-  careState = 'ready'; scopeKey = 'parent:B'; h.render(); assert.equal(shell().readiness, 'loading', 'old-scope care is not current');
-  careScope = scopeKey; h.render(); assert.equal(shell().readiness, 'ready');
+  assert.equal(h.hosts().find(x => x.type === 'RightRailContent').props.onTabChange, undefined);
+  tasksState = 'ready'; careState = 'loading'; h.render(); assert.equal(shell().readiness, 'ready');
+  scopeKey = 'parent:B'; h.render(); assert.equal(shell().readiness, 'loading', 'old-scope tasks are not current');
+  taskScope = scopeKey; h.render(); assert.equal(shell().readiness, 'ready');
   railToggle(); h.render(); tasksState = 'loading'; careState = 'loading'; h.render(); assert.equal(shell().readiness, 'ready');
 });
 
@@ -288,4 +285,14 @@ test('old visible-tab recovery and timeout callbacks cannot affect the current t
   oldButtons.forEach(x => x.props.onPress()); oldTimer(); h.render();
   assert.equal(retries, 0); assert.equal(returns, 0); assert.equal(h.node('motion-child-recovery'), undefined);
   assert.equal(content(h).props['aria-hidden'], true);
+});
+
+
+test('profile history cold route waits only for the existing current profile, never a manual history request', () => {
+  const h = harness(), { routeStartupRequirements, routeStartupReadiness } = h.load('src/startup/dataReadiness.ts');
+  assert.deepEqual(routeStartupRequirements('/history', { category: 'profile' }, true, true), ['profile']);
+  for (const state of ['ready', 'error', 'loading']) {
+    assert.equal(routeStartupReadiness('/history', { category: 'profile' }, { profile: state, tasks: 'loading', profileHistory: 'loading' }, true, true), state);
+  }
+  assert.deepEqual(routeStartupRequirements('/history', { category: 'profile' }, false, true), []);
 });

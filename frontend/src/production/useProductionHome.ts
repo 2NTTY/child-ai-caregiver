@@ -35,7 +35,7 @@ export function useProductionHome() {
     : taskReadState === "ready" && !currentTasks.online ? "stale" : taskReadState;
   const tasksReady = attentionState === "ready";
   const attention: HomeOverviewSection = { state: attentionState, items: pending.slice(0, 6).map(item => ({
-    id: item.id, title: item.title, detail: `${new Date(item.occurrence.dueAt).toLocaleString("zh-HK", { timeZone: item.occurrence.timeZone })} · ${item.occurrence.timeZone}`,
+    id: item.id, title: item.title, detail: new Date(item.occurrence.dueAt).toLocaleString("zh-HK", { timeZone: item.occurrence.timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }),
     statusLabel: item.occurrence.state === "needs_review" ? "待覆核 · 已停催" : "待處理",
     action: { label: "查看事項", destination: "tasks" as const },
   })), detail: attentionState === "loading" ? "正在讀取待辦…" : attentionState === "stale" ? "暫時無法更新，顯示較早的待辦"

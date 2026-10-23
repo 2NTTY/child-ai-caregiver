@@ -1,0 +1,388 @@
+{
+  "baseline": {
+    "head": "7b828dcbe967c92556673b97733c281d29db4386",
+    "branch": "dot/frontend-simplify-20261021",
+    "changed_scope": "frontend/**",
+    "publication": "not pushed; one draft PR required; no merge/deployment",
+    "remote_observation": {
+      "utc": "2026-10-21T20:16Z",
+      "master": "7b828dcbe967c92556673b97733c281d29db4386",
+      "source": "git ls-remote origin refs/heads/master",
+      "open_pull_requests": 0,
+      "open_pr_source": "GitHub connector search_prs, is:open, repository 2NTTY/child-ai-caregiver",
+      "open_pr_observation_utc": "2026-10-21T20:16Z"
+    }
+  },
+  "latest_checks": [
+    {
+      "command": "node --test frontend/scripts/{form-dialog,modal-wiring,document-draft-navigation,growth-draft-navigation,time-display,frontend-simplify}.test.mjs",
+      "status": "passed",
+      "scope": "real page/form/guard logic and date presentation with synthetic hosts; separate from production-owner and browser evidence",
+      "local_log": "modal-final33.log",
+      "log_sha256": "84a61a34fb9bba1ac11e7bf102e80be5e6fa178844284e34f3e886945f9b7254",
+      "tests": {
+        "passed": 48,
+        "failed": 0
+      }
+    },
+    {
+      "command": "node --test frontend/scripts/modal-wiring.test.mjs frontend/scripts/care-conversation-review.test.mjs frontend/scripts/task-read-copy.test.mjs",
+      "status": "passed",
+      "scope": "post-07 four-file focus delta consumer regression; overlaps earlier suites",
+      "tests": {
+        "passed": 34,
+        "failed": 0
+      },
+      "local_log": "modal-return-consumers43.log",
+      "log_sha256": "191fe1dc83d3a0296165832a928a54ff09a4eaf018c2bac481315aab81c566c5"
+    },
+    {
+      "command": "JSDOM_MODULE=<installed-jsdom-path> node --test frontend/scripts/modal-layering-dom.test.cjs",
+      "status": "passed",
+      "scope": "real installed Paper/RN Web Modal and guard; actual SourceComposer/RHF and TasksView with synthetic host/action ports. Tasks close returns once to a stable heading; a later GET cannot disable it. JSDOM disabled-button-to-BODY transition is an explicit browser port, not a Chrome result.",
+      "local_log": "task-close-after-read46.log",
+      "log_sha256": "9147508dcf6235af9d886b022236d1ab01672336639a9598583054431ba2c21e",
+      "tests": {
+        "passed": 7,
+        "failed": 0
+      }
+    },
+    {
+      "command": "node --test frontend/scripts/source-photo-recovery.test.mjs",
+      "status": "passed",
+      "scope": "true source/photo hooks with synthetic API/host ports; read-versus-write, scope, original unknown operation and precise modal draft discard",
+      "local_log": "source-photo-owner36.log",
+      "log_sha256": "7a0dc93b4483b5ddc6f28757d22c076c6cd3536e9048b29a73617de083c6c35e",
+      "tests": {
+        "passed": 41,
+        "failed": 0
+      }
+    },
+    {
+      "command": "node --test --test-name-pattern='unknown original|accepted create form token|unrelated local document draft' frontend/scripts/family-document-lifecycle.test.mjs",
+      "status": "passed",
+      "scope": "true document owner/API parser; original opId/input retained, UI draft ID never added to wire payload",
+      "local_log": "document-owner-targeted38.log",
+      "log_sha256": "a53cd25a713e47c203e47107918333facdb6e36e58229847c40d37d27cb62569",
+      "tests": {
+        "passed": 3,
+        "failed": 0
+      }
+    },
+    {
+      "command": "JSDOM_MODULE=<installed-jsdom-path> node --test frontend/scripts/chat-send-focus-dom.test.cjs",
+      "status": "passed",
+      "scope": "true composer keyboard focus ticket with DOM events; JSDOM disabled-input-to-BODY browser transition is an explicit host port",
+      "local_log": "chat-send-focus-dom04.log",
+      "log_sha256": "6c81c0e354005dad125c4fba3313e372e4a87855d028b32062369919e04f761e",
+      "tests": {
+        "passed": 4,
+        "failed": 0
+      }
+    },
+    {
+      "command": "node --test frontend/scripts/chat-interaction-polish.test.mjs frontend/scripts/composer-presentation.test.mjs",
+      "status": "passed",
+      "scope": "chat presentation/interaction projections; no model/transport calls",
+      "local_log": "chat-send-focus-regression05.log",
+      "log_sha256": "919a0390e2b8d9f450541f863bd631bf464e09f976ae2794d5445465e7d107a3",
+      "tests": {
+        "passed": 10,
+        "failed": 0
+      }
+    },
+    {
+      "command": "JSDOM_MODULE=<installed-jsdom-path> node --test frontend/scripts/chat-composer-input-dom.test.cjs frontend/scripts/profile-history-recovery.test.cjs",
+      "status": "passed",
+      "scope": "chat textarea DOM: 2; real React Profile owner/API parser with synthetic transport: 8; not browser pixels",
+      "local_log": "modal-chat-dom20.log",
+      "log_sha256": "d627cfcb51f1b56b67e5b0f6c205ce068227c5f5d7b85f791802d5313a0fc8dc",
+      "tests": {
+        "passed": 10,
+        "failed": 0
+      }
+    },
+    {
+      "command": "node --test frontend/scripts/background-local.test.mjs",
+      "status": "passed",
+      "tests": {
+        "passed": 8,
+        "failed": 0
+      },
+      "scope": "post-export native-only UUID port fix; native storage executed without global crypto, using existing expo-crypto port; not an Android device test",
+      "local_log": "background-native-run04.log",
+      "log_sha256": "8b0d0b76b30b58925dfe0ca603d6973bda30085dea4d4d5aee2f0cfad5b73f8d"
+    },
+    {
+      "command": "node --test frontend/scripts/family-document-lifecycle.test.mjs",
+      "status": "blocked_baseline",
+      "scope": "two existing PDF assertions expect synchronous object-URL revocation; shipped Web export adapter schedules cleanup. Same two failures reproduced against HEAD product source in isolated overlay; no product export/timer changes",
+      "local_log": "document-owner-full39.log",
+      "log_sha256": "f0fd9993bf178a7dcecd0e554bea96c1e8ad62a30561213dab507fe849ae950b",
+      "tests": {
+        "passed": 34,
+        "failed": 2
+      }
+    },
+    {
+      "command": "node --test --test-name-pattern=\"report export returns precise failure|report export failed browser handoff\" <isolated-baseline>/frontend/scripts/family-document-lifecycle.test.mjs",
+      "status": "expected_baseline_failure",
+      "scope": "git archive 7b828dc frontend/src and src/client/shared/config; current harness with explicit host ports, existing dependencies. Both same revoke assertions fail; this is baseline-product evidence, not unchanged-baseline-harness evidence",
+      "local_log": "document-export-baseline40.log",
+      "log_sha256": "d0e0d7f95cb32322d3b431388b2d249e2040147ed27615b1160fd774abdd93ad",
+      "tests": {
+        "passed": 0,
+        "failed": 2
+      }
+    },
+    {
+      "command": "npm run typecheck --workspace frontend",
+      "status": "blocked_baseline",
+      "scope": "only existing ContactConsentCard.tsx TS2322 at 33 and TS2345 at 99; baseline overlay separately reproduced same two errors",
+      "local_log": "typecheck-focus-time49.log",
+      "log_sha256": "7a856aca404875d61f43e4f56aed8cba14ac7052d1daf9addfeabfd01a83a1a9"
+    },
+    {
+      "command": "git diff --check",
+      "status": "passed"
+    },
+    {
+      "command": "node --test frontend/scripts/shared-status-read-state.test.mjs frontend/scripts/time-display.test.mjs",
+      "status": "passed",
+      "scope": "existing read-state hooks and display formatters; new actual Home projection verifies Hong Kong cross-day and New York occurrence timezone, minute precision and shared focus/summary detail without changing timestamps",
+      "local_log": "home-summary-time48.log",
+      "log_sha256": "89b01456ad57713ba0a9b44c85e8f26a39b638824edba5eb4a9548382eb1768e",
+      "tests": {
+        "passed": 25,
+        "failed": 0
+      }
+    }
+  ],
+  "earlier_targeted_checks": [
+    {
+      "command": "node --test frontend/scripts/form-dialog.test.mjs frontend/scripts/source-photo-recovery.test.mjs",
+      "status": "passed",
+      "scope": "at this slice: wrapper 7, real source/photo owners 41; wrapper later expanded in latest checks; counts overlap",
+      "local_log": "modal-owner-run01.log",
+      "log_sha256": "3743ec7d2cf7af0e1ec1b5cd93840affede3cf6ef78da53c2fe4437d368f9923",
+      "tests": {
+        "passed": 48,
+        "failed": 0
+      }
+    },
+    {
+      "command": "node --test frontend/scripts/care-conversation-review.test.mjs frontend/scripts/task-read-copy.test.mjs frontend/scripts/task-forms.test.mjs frontend/scripts/task-layout.test.mts",
+      "status": "passed",
+      "scope": "synthetic Care/Tasks view/form/read contracts, not modal pixel acceptance",
+      "local_log": "modal-care-task-run01.log",
+      "log_sha256": "dadab0fc90d99b908a39d5adce5a6b58cded4b5cf15b361b4a5ef118332211a5",
+      "tests": {
+        "passed": 38,
+        "failed": 0
+      }
+    },
+    {
+      "command": "node --test frontend/scripts/background-local.test.mjs",
+      "status": "passed",
+      "scope": "storage/provider lifecycle with synthetic image blobs and ports",
+      "local_log": "background-local-run03.log",
+      "log_sha256": "db7181f5757f0b32b9a049c24bb6aeee18a339fed14bb4befbc18dd049005740",
+      "tests": {
+        "passed": 8,
+        "failed": 0
+      }
+    },
+    {
+      "command": "node --test frontend/scripts/home-welcome-timing.test.mjs",
+      "status": "passed",
+      "scope": "true welcome lifecycle, synthetic frame/timer/visibility ports",
+      "local_log": "home-welcome-timing-batch03.log",
+      "log_sha256": "58ede2dbfd9d2b4f139c75dd680a753b27cf61013ee6fcfa1f591367a2ee7087",
+      "tests": {
+        "passed": 5,
+        "failed": 0
+      }
+    },
+    {
+      "command": "node --test frontend/scripts/growth-refresh.test.mjs frontend/scripts/child-switch-readiness.test.mjs",
+      "status": "passed",
+      "scope": "growth refresh 18 and child scope 19",
+      "local_log": "growth-child-delta12.log",
+      "log_sha256": "143372abbd9da16a76d0ffe7d3bb7aed839209cf8764f083832ff289969646e7",
+      "tests": {
+        "passed": 37,
+        "failed": 0
+      }
+    },
+    {
+      "command": "node --test frontend/scripts/{form-dialog,modal-wiring,time-display,growth-draft-navigation,document-draft-navigation,chat-interaction-polish,frontend-simplify}.test.mjs",
+      "status": "passed",
+      "scope": "real page/form/guard logic with synthetic host/data ports; owner and DOM tests below are separate",
+      "local_log": "modal-chat-targeted19.log",
+      "log_sha256": "0c335556b45d970751ab7083cae1e7a9e5a5a2d6341f727f39073a3592757f2e",
+      "tests": {
+        "passed": 49,
+        "failed": 0
+      }
+    },
+    {
+      "command": "JSDOM_MODULE=<installed-jsdom-path> node --test frontend/scripts/modal-layering-dom.test.cjs",
+      "status": "passed",
+      "tests": {
+        "passed": 2,
+        "failed": 0
+      },
+      "scope": "true installed RN Web Modal/Portal/FocusTrap and true guard/FormDialog; dialog appearance is a semantic host port, not pixel proof",
+      "local_log": "modal-layering-run03.log",
+      "log_sha256": "ad7dd6a00e714fa81dcb1c48086eb54a2568a0c5a7466465ce7c7e1de07d72de"
+    },
+    {
+      "command": "node --test frontend/scripts/{form-dialog,modal-wiring,document-draft-navigation,growth-draft-navigation}.test.mjs",
+      "status": "passed",
+      "tests": {
+        "passed": 27,
+        "failed": 0
+      },
+      "scope": "post-layering-fix true guarded form and run-result behavior; overlaps earlier 49",
+      "local_log": "modal-layering-guard22.log",
+      "log_sha256": "bae48dffedaaa3f5f00ee274484c91bc0c536ea4d33bc82eb05bee2fce736116"
+    }
+  ],
+  "history_retained": [
+    {
+      "log": "modal-chat-targeted18.log",
+      "result": "48/49; old assertion required a visible timezone suffix; corrected to latest user-approved no-suffix contract; latest 49/49 above"
+    },
+    {
+      "log": "modal-wiring-run01.log",
+      "result": "1/4; new harness theme port lacked colors; fixed harness only; subsequent modal-time-run03 19/19 and latest combined passed"
+    },
+    {
+      "log": "form-dialog-growth-run02.log",
+      "result": "11/13; product JSX closing tag/import error from modal conversion; repaired before form-dialog-growth-run03 13/13; latest combined also passed"
+    },
+    {
+      "log": "typecheck-modal14.log",
+      "result": "baseline two errors plus new implicit-any in preview discard parameter; explicit union fixed; latest typecheck only baseline"
+    },
+    {
+      "log": "related-ui-delta10.log",
+      "result": "61/92; existing source/photo controls and memory harness missing ports; representative HEAD overlay in extra-harness-baseline.log also failed; not counted as product-green or fully repaired"
+    },
+    {
+      "log": "growth-settings-delta09.log",
+      "result": "old resolver EISDIR and obsolete label mocks; narrow growth/child suite later repaired and passed 37/37; no full-suite claim"
+    },
+    {
+      "log": "background-native-global-red.log",
+      "result": "0/1 real native storage with no global crypto reproduced failure; fixed by importing existing expo-crypto.randomUUID; same contract passed in background-native-run04 8/8"
+    },
+    {
+      "log": "modal-layering-red01.log",
+      "result": "new JSDOM harness initialization failed: missing ShadowRoot global; corrected harness only"
+    },
+    {
+      "log": "modal-layering-red02.log",
+      "result": "true RN Web DOM reproduced prompt portal behind form (first test); second failed after the uncleared first fixture. Request-only guard mount fixes first cause; clean run03 2/2 passes"
+    },
+    {
+      "log": "modal-paper-context-red28.log",
+      "result": "0/3 true installed Paper provider/portal reproduced loss of local guard context; remove redundant FormDialog Paper Portal while retaining RN Modal; run29 3/3, expanded consumers32 6/6"
+    },
+    {
+      "log": "modal-owner-regression35.log",
+      "result": "39/77: newly imported photoTime and FormDialog absent in test ports, plus legacy export assertions. Ports now load real formatter and Web file-export adapter, not a fake successful export. Source/photo36 41/41; document full39 34/36 with baseline failures explicitly retained"
+    },
+    {
+      "log": "document-owner-targeted37.log",
+      "result": "new FormDialog test port missing in preparation projection; exact owner subset rerun38 3/3 after host marker added"
+    },
+    {
+      "log": "chat-send-focus-dom01.log",
+      "result": "new JSDOM harness did not simulate real browser disabled-input blur to BODY; diag02/03 retained. Explicit transition port used in dom04 4/4; final real-browser focus still separately required"
+    },
+    {
+      "log": "task-close-after-read-red44.log",
+      "result": "6/7: JSDOM blur() on a disabled button did not emulate Chrome. No product change; transition port made explicit in the next run."
+    },
+    {
+      "log": "task-close-after-read-red45.log",
+      "result": "6/7: after-close GET reproduced loss of the logical return focus using the explicit disabled-button-to-BODY port. Stable-heading product fix passed 7/7 in run46; Chrome remains separate."
+    },
+    {
+      "log": "home-summary-time-red47.log",
+      "result": "0/1: Home retained seconds and timezone suffix before the minute-only display correction. Same projection test passed in run48."
+    }
+  ],
+  "browser": {
+    "environment": "official remote cloud Chrome/CDP; local static export with synthetic API fixtures and CSP; no user desktop or public deployment",
+    "snapshot03": "representative widths 320/390/768/1024/1440; found narrow task-close clipping, zoomed rail overflow and missing eye icon",
+    "snapshot04": {
+      "bundle_sha256": "9f367aded90a236e1634120cf06d8d985464daf71aae9d4c7b941b8ef592ea8d",
+      "result": "three visual regressions fixed; true mobile gesture; settings grouping; synthetic file chooser, refresh persistence, restore, delayed logout mask and A/B identity isolation passed",
+      "report": "verification-s04.md",
+      "screenshots": 18,
+      "scope": "320/390/1440 targeted recheck, not every page at every width; does not cover later modal/chat/login-row"
+    },
+    "snapshot05": "Dirty-close prompt rendered behind form: screenshot and hit-test failed; fixed by request-time guard mount. Chat multiline, scroll anchor, return-latest, attachments and login auxiliary row received targeted true-browser evidence; see snapshot06 report for carried scope.",
+    "snapshot06": {
+      "bundle_sha256": "642e7bb151f008610ffcaa9f916d5d10a327bb146c3834c98ebcb3573b1d9b15",
+      "report": "verification-s06.md",
+      "result": "guard layering passed true pixels/hit-test; profile, care long result, document unknown recovery and representative manual flows checked. Found controlled Tasks/Care close focus BODY, SourceComposer silent dirty loss through Paper Portal, three Growth unnamed fields and raw Photo ISO time; all source fixes included in snapshot07, subsequently checked in snapshots07–09",
+      "scope": "320/390/768 targeted checks; no all-page/all-size claim; source-photo and document synthetic ports only"
+    },
+    "snapshot07": {
+      "bundle_sha256": "2e05c57eaeb5ed0ed957b4ba5ba90df512b65762170313b5019ae31a07a42639",
+      "status": "passed_except_two_focus_followups",
+      "report": "verification-s07.md",
+      "result": "Sources local-only drafts now guard correctly; concerns/preparation/report dirty stay/discard/reopen, field accessible names, photo minute time, unknown warning/recovery, keyboard chat-send focus and wheel cancellation passed. Care returned to list instead of create trigger; Tasks initial read race left BODY while trigger disabled. Care closes to its create trigger in snapshot08; Tasks after-close read race is resolved in snapshot09.",
+      "scope": "targeted 320/390/768/1440 interactions; carried earlier checks only where their product source did not change"
+    },
+    "snapshot08": {
+      "bundle_sha256": "c7fa1514ae5d5008a4bf72a7d6acdd7bbb069f65c35e511467cac42fe3d4618a",
+      "status": "care_passed_tasks_after_close_read_race",
+      "scope": "only four reviewed focus-wiring product files changed after snapshot07; previous accepted paths are carried by exact source comparison, not rerun",
+      "report": "verification-s08.md",
+      "result": "Care returns to its remounted create trigger. Tasks onClosed initially focused the enabled trigger, then a background GET disabled it about 101ms later and Chrome blurred to BODY. Same snapshot verified from the browser script src; buffered focus/mutation trace isolated the ordering. Home task summary still included seconds and a timezone suffix. Both local display/focus corrections are in snapshot09."
+    },
+    "snapshot09": {
+      "bundle_sha256": "7cb286fc54518a7f6bf327955a358c169085d725962b9e617f1953ca690d442a",
+      "status": "passed_targeted",
+      "scope": "Tasks first-route and stable-page close to the stable Tasks heading, Tab continuation, and Home task summary minute/no-suffix display. Only two product files differ from snapshot08.",
+      "report": "verification-s09.md",
+      "result": "Uninstrumented cloud Chrome with actual snapshot09 script: at 320px, both fresh-route rapid and stable-page discard return once to the Tasks heading; focus survives the later read, Tab reaches assistant/create controls and Enter reopens an empty form. At 390px the Home task summary shows minute precision without seconds or timezone suffix and has no horizontal overflow. Two final product regressions closed; not a full screen/state matrix."
+    }
+  },
+  "unimplemented_api_contracts": [
+    "header page attention projection and matching filtered details",
+    "home important reminders (proactive mechanism deferred)",
+    "content-centric notification inbox and cross-channel logical IDs"
+  ],
+  "not_verified": [
+    "Android device/APK/OTA/runtime fingerprint",
+    "real authentication, live API, true model or family data",
+    "all screen/state/keyboard/assistive-technology permutations",
+    "browser Back/Forward pending-operation intent redesign"
+  ],
+  "evidence_policy": "Local logs, build trees, screenshot captures and full input manifests are retained in the authorized workspace, not committed. Only this compact index, README and reproducible tests belong in the PR. Counts overlap and must not be summed as unique cases.",
+  "export": {
+    "command": "CI=1 EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 __UNSAFE_EXPO_HOME_DIRECTORY=<temporary-expo-home> NODE_OPTIONS=--max-old-space-size=1536 npm run build:web --workspace frontend -- --clear --max-workers 1",
+    "status": "passed",
+    "snapshot": "09",
+    "input_count": 524,
+    "input_hashes_stable": true,
+    "routes": 35,
+    "artifacts": 62,
+    "bundle": "_expo/static/js/web/index-0fbc8d57815e965d8fcf200fc2df3eda.js",
+    "bundle_sha256": "7cb286fc54518a7f6bf327955a358c169085d725962b9e617f1953ca690d442a",
+    "local_log": "build-web-snapshot09.log",
+    "log_sha256": "249b15500560aee5a3dafd78d8906d2c5366e87be5d55fd71820434c250d0933",
+    "after_export_product_delta": {
+      "file": "frontend/src/components/shared-inputs/SourceStatus.tsx",
+      "change": "removed one trailing blank-line byte exposed by the first staged diff check; no executable code change",
+      "source_sha256": "bece595cf4d66757cfeb2950ea8d2a411d77265d71a99eae06683c36e44cad8a",
+      "verification": "TypeScript transpileModule with CommonJS/ES2022/react-jsx produced byte-identical JavaScript before and after; all other 523 inputs still match snapshot09. No extra Web build."
+    },
+    "input_manifest_sha256": "76f500a514b9a2d159041c7b1cdb749493099fd9a4e475ea3e0f883bb962269b"
+  }
+}

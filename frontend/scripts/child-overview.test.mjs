@@ -161,3 +161,19 @@ test("original profile and current child content consume shared owner without co
   assert.ok(content.includes("useProfileWorkspace()")); assert.ok(!content.includes("createCareFixtures"));
   assert.ok(!content.includes("useSummaryPreview")); assert.ok(content.includes("AppStatusBadge")); assert.ok(content.includes("AppButton"));
 });
+
+test("birth dates derive display-only calendar age while unknown and approximate stay raw", () => {
+  const age = (date, today) => childProfileAgeLabel({ age: { kind: "birth_date", date } }, today);
+  assert.equal(age("2023-06-08", "2026-10-23"), "3 歲 4 個月");
+  assert.equal(age("2023-06-24", "2026-10-23"), "3 歲 3 個月");
+  assert.equal(age("2026-10-23", "2026-10-23"), "0 日");
+  assert.equal(age("2026-10-01", "2026-10-23"), "22 日");
+  assert.equal(age("2026-01-31", "2026-02-28"), "1 個月");
+  assert.equal(age("2024-02-29", "2025-02-28"), "1 歲");
+  assert.equal(age("2026-02-30", "2026-10-23"), "出生日期待核對");
+  assert.equal(age("2026-10-24", "2026-10-23"), "出生日期待核對");
+  assert.equal(age("2023-06-08", undefined), "出生日期 2023-06-08");
+  assert.equal(childProfileAgeLabel(null, "2026-10-23"), "年齡未知");
+  assert.equal(childProfileAgeLabel({ age: { kind: "unknown" } }, "2026-10-23"), "年齡未知");
+  assert.equal(childProfileAgeLabel({ age: { kind: "approximate", rawValue: "約三", unit: "years", asOf: "2026-01-01" } }, "2026-10-23"), "約 約三 歲（截至 2026-01-01）");
+});

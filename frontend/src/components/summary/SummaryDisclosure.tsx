@@ -6,8 +6,9 @@ import {AppIcon} from '../AppIcon';
 import {summaryStyles as s} from './summary-styles';
 
 // Summary evidence stays mounted while hidden so reading and form state survive.
-export function SummaryDisclosure({label, scopeKey, children, expanded, onExpandedChange}: {
+export function SummaryDisclosure({label, scopeKey, children, expanded, onExpandedChange, appearance = "button"}: {
   label: string; scopeKey: string; children: ReactNode;
+  appearance?: "button" | "list";
   expanded?: boolean; onExpandedChange?: (expanded: boolean) => void;
 }) {
   const id = useId();
@@ -17,7 +18,7 @@ export function SummaryDisclosure({label, scopeKey, children, expanded, onExpand
     <Pressable nativeID={`${id}-trigger`} accessibilityRole="button" accessibilityLabel={label}
       accessibilityState={{expanded: open}} aria-expanded={open} aria-controls={`${id}-content`}
       onPress={() => {setLocal({scopeKey, open: !open}); onExpandedChange?.(!open);}}
-      style={({pressed}) => [s.disclosureTrigger, pressed && s.pressed]}>
+      style={({pressed}) => [s.disclosureTrigger, appearance === "list" && s.disclosureListTrigger, pressed && s.pressed]}>
       <Text style={s.disclosureLabel}>{label}</Text><AppIcon name={open ? 'chevron-up' : 'chevron-down'} size={18} />
     </Pressable>
     <MotionDisclosure expanded={open} scopeKey={scopeKey} nativeID={`${id}-content`}>

@@ -1,0 +1,283 @@
+{
+  "stage": "snapshot29 final source/test freeze before export",
+  "sourceHead": "2fdb8aa31a59fe4b01be8b7470da91740a793bae",
+  "productInputCount": 553,
+  "scopeFiles": 45,
+  "roles": {
+    "design-document": 1,
+    "test": 16,
+    "product": 28
+  },
+  "scope": {
+    "frontend/DESIGN_SYSTEM.md": {
+      "sha256": "2e11a8bf8deb17ef7be1f71ee4fc2979af312daec5e5bf72da2286c780afb15f",
+      "headSha256": "297bf0c801681453d248ecaf8b77ba6d4990972f9969006939308dc27105becb",
+      "tracking": "tracked-diff",
+      "role": "design-document"
+    },
+    "frontend/scripts/care-focus-refresh.test.cjs": {
+      "sha256": "3582a0217ac9f3427f8c08ee4272418a49a76c5523c72356c48ed88466e1407b",
+      "headSha256": null,
+      "tracking": "untracked-source-or-test",
+      "role": "test"
+    },
+    "frontend/scripts/care-saved-record-card-presentation.test.mjs": {
+      "sha256": "ded6d95d1b8e388c85145d10cd22d69220f0cd4b4fafb1b4fe70f14305f12b51",
+      "headSha256": null,
+      "tracking": "untracked-source-or-test",
+      "role": "test"
+    },
+    "frontend/scripts/chat-entry-empty-state.test.mjs": {
+      "sha256": "e177470fb534a0bdb755fc170b7a3a257e24e152ed6f55955662515988900b2e",
+      "headSha256": "3217fbc47a5fcf36d884488ba5028a9e48708a6cbe254544de6dc41432829a25",
+      "tracking": "tracked-diff",
+      "role": "test"
+    },
+    "frontend/scripts/history-card-presentation.test.mjs": {
+      "sha256": "c231619a27b0497fa75ffeffbe3962be984dd6e710e47b703181dab50b9cf187",
+      "headSha256": "0d83bc87fadbd4517854eff8b1765a045e930028ca09802c2202918815013a0e",
+      "tracking": "tracked-diff",
+      "role": "test"
+    },
+    "frontend/scripts/more-navigation.test.mjs": {
+      "sha256": "bab273185c8719c32c9f234268375d095cca4c50dd14d8391fc7c16eb1c3e1a2",
+      "headSha256": "b4b9722595f4b021476f716c45b021c8d831516b3f32b240599fa0f508d30ea5",
+      "tracking": "tracked-diff",
+      "role": "test"
+    },
+    "frontend/scripts/notes-chat-focus-refresh.test.cjs": {
+      "sha256": "375bd962463a4d177069cd6952fb9c4d7ba78fcc4448bf069f08de957f0d1c17",
+      "headSha256": null,
+      "tracking": "untracked-source-or-test",
+      "role": "test"
+    },
+    "frontend/scripts/private-notes-refresh.test.mts": {
+      "sha256": "6faa9bbe9692c9ee860733a9666a9c304dfddcf9abe425ba34183050566e83d1",
+      "headSha256": null,
+      "tracking": "untracked-source-or-test",
+      "role": "test"
+    },
+    "frontend/scripts/quiet-summary-view.test.mjs": {
+      "sha256": "2753d3a60c0eba774a5da2e9160b5d2f11d770be696f972769118e397ca2cf61",
+      "headSha256": "1ee56db28e5c7d9d83529016b5bb41bda204f3a945f8c18da9430a4a94aea068",
+      "tracking": "tracked-diff",
+      "role": "test"
+    },
+    "frontend/scripts/settings-parent-controls.test.cjs": {
+      "sha256": "d7486a1e08960a80dd31a07d025d525e5bdc131966a1d8f04e9df5f23b1d7849",
+      "headSha256": "61819887c7ac760e7d9dbfd6cddc95325d5217c0b5207fbe1278554356272b47",
+      "tracking": "tracked-diff",
+      "role": "test"
+    },
+    "frontend/scripts/settings-review-refresh.test.cjs": {
+      "sha256": "55977ca9dffe0492e29c6928f27a1c47f9b6a756611accece6b68fd82b8b3f69",
+      "headSha256": null,
+      "tracking": "untracked-source-or-test",
+      "role": "test"
+    },
+    "frontend/scripts/summary-empty-cards.test.mjs": {
+      "sha256": "4e69f59f78fa2b5a98dc990259bb75f8f0cceb0c567e06658107b4a14c55d29d",
+      "headSha256": "885031f82107048d808c9c220d7f5545c330afa8effd343c6f3dff479df5ba6b",
+      "tracking": "tracked-diff",
+      "role": "test"
+    },
+    "frontend/scripts/summary-sources-focus-refresh.test.cjs": {
+      "sha256": "bb3e70f2ebe70588711f351ffe699ca0453cd7ea8925d0ceecf4da26dc99cedd",
+      "headSha256": null,
+      "tracking": "untracked-source-or-test",
+      "role": "test"
+    },
+    "frontend/scripts/tab-indicator-layout.test.cjs": {
+      "sha256": "3b8f71138e04e776703897adcef883acfb7d1e5ab28dd98052033614bd6929e1",
+      "headSha256": null,
+      "tracking": "untracked-source-or-test",
+      "role": "test"
+    },
+    "frontend/scripts/task-memory-focus-refresh.test.cjs": {
+      "sha256": "2af579b1e1434d431332575c10f9cd6835df6ac07634da50a5ce290e2dd2c567",
+      "headSha256": null,
+      "tracking": "untracked-source-or-test",
+      "role": "test"
+    },
+    "frontend/src/components/agent/AgentRunView.tsx": {
+      "sha256": "ea2fa6d759c0135cd4460073441af3b0615361940051a9c24ddb04eeb75ec8e3",
+      "headSha256": "1d5ba93a03f55a1a64b9e5c4387226782449f42f022aec619e282bbe6c24e441",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/care/CareRecordDetail.tsx": {
+      "sha256": "f41eb36aa40f57a7a020c3d3c1d2f05433c8f4b7c97298d26db56e6d9b2f9ad5",
+      "headSha256": "e46ab6ff14e73b6fdec86f5a5fb59c9624f726138a94518629e7efb4eb1ed633",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/care/CareReviewHistoryView.tsx": {
+      "sha256": "7b62d80064ae662a4bfd03580c14e83831a09b4ec59b1d6b16590e51903d2548",
+      "headSha256": "5882e8fae30991439c0dc79f9f62f45bfab0eef204e220901a8f35b26f41743a",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/care/CareSavedRecordsView.tsx": {
+      "sha256": "bdb64154ec7f1ee346c55da97972475f18f0ec97791f9c6369d2de81fc734691",
+      "headSha256": "edbda55df7062bab8c6284bb1d68452c1193fc0686941e5969afadd51084e275",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/model-settings/ModelSettingsView.tsx": {
+      "sha256": "723d0a613f39c7e97dc14832d14dc3cad901e75dd7087d6d97ecc60134ff364b",
+      "headSha256": "8436ea88d1937814e8166e6cb6fcbefa9aaa072b7c174a0d27c789e6e50fa868",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/navigation/app-navigation.ts": {
+      "sha256": "12fdf026f66c69f6659163582f59b538747120c6c504f8725649e861304db660",
+      "headSha256": "3ba6698a11d98a8eff339e68f17e2408eff82f6d82302d45191f58911bceb144",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/shared-inputs/SourcesView.tsx": {
+      "sha256": "67ef5a697a76ecbfcc7a070ff00b3dbe9d387cee5299d83c89286b89eb7c6222",
+      "headSha256": "d79220b8ef03d2fa3a163520b4fb45e27f00525027a423034899c593a1951adf",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/summary/SummaryView.tsx": {
+      "sha256": "8e8541288c7bcca88df049efb2e818ee8cda820645b60f3f10f88776f52a553a",
+      "headSha256": "35980398dc19d6cd1ea0488f1019fc6bf448c7ba11bcbb23c092ae98d84e7433",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/tasks/TaskHistoryView.tsx": {
+      "sha256": "54b24906236c8109071d177943dd5469ba39437a420a742f64f68c229385efd1",
+      "headSha256": "dcae47f9dbe29d595e9420b7d6cf9ba70a40879730abdc53104202411247567b",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/tasks/TaskListRow.tsx": {
+      "sha256": "f17f83115786cbf11bfb238da0279ba96c95b6359c3bb2c9f56e3eaca9f0bc69",
+      "headSha256": "4366901d3c6aef086fd89e18e77ae6e2a5942579098b578eb7bf6e83d18919ee",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/ui.tsx": {
+      "sha256": "1a59c5dba32114080cde75ba03e0787d54b88be5ebb4e0b2087fa4fae5cb8dae",
+      "headSha256": "ee8a46d7aa4f73a9d5de3ec05b7c736ae922f94bc85a58a8707f71f154276564",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/components/useQuietReadFocus.ts": {
+      "sha256": "101c96d2f916c2bb2acf63c23a4bed2d6e3d53671d82794db0f4804eb57700aa",
+      "headSha256": null,
+      "tracking": "untracked-source-or-test",
+      "role": "product"
+    },
+    "frontend/src/production/AgentAuthorization.tsx": {
+      "sha256": "7a2dc55b2f1679e98bd2d6267fb91b29ca535d65603f94f092d72bc5ff4c1f54",
+      "headSha256": "f0a3f21b5591bb70d2b660d1d1d692f0322755b06c2e1b1a9d43446860743aa4",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/AgentAuthorizationOwner.ts": {
+      "sha256": "83c1539aa2dd0cb49c2746bd524fd5e5eb018b0e8087443a1193579d0545db91",
+      "headSha256": "f6e9696621cfb0e81593e3117ee2a6e4accced1c7170fe310caca66a3d9e3d99",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/CareProfileDomains.tsx": {
+      "sha256": "6de73894962b5882525c56a281c4d53c329a22eaafb3bad0ec99ed8032cba382",
+      "headSha256": "532968d5213d9285609c42eb06636a4fe066a182f69c61fc3604f044afec53cb",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/CareReadCoordinator.ts": {
+      "sha256": "04b1a03c4015d04adfdc07a422142db7160732213737f47cb7870492940b5bff",
+      "headSha256": "6463fe6ebd625d9a84a0b640d3bc3015632dbed4f9a203eab6483d10ddd99895",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/SettingsDomains.tsx": {
+      "sha256": "1bc22e111270049c253cdb9f06f11b7f0bd0d72afaf8e1af311b8e8b1013bcbc",
+      "headSha256": "360e937212ab3957214b014c1fb12e34fe9165b7223e105d289a6a332143ad83",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/TaskKnowledgeSummaryContent.tsx": {
+      "sha256": "a8712afcea2aa0ed4ac269d579bfdf854b0806792d0f6fee6200a2df4437c4a3",
+      "headSha256": "1c41c1bff56e2f29d0e3195aa009af14b0a5b0ca1e4a4124abb852cf3a629801",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/task-knowledge-memory.ts": {
+      "sha256": "6cc6573283a4c6699875dbd3227dc81b54138029220b794e09ca91edbb64815b",
+      "headSha256": "756ddc68944e87942e16197d72898b2be9583440ac6c8ef655d5c2712a579b84",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/task-knowledge-read-window.ts": {
+      "sha256": "699f6b75f6023d433576d59708f435c3578daef7a1444d864d8e8249de4075c7",
+      "headSha256": null,
+      "tracking": "untracked-source-or-test",
+      "role": "product"
+    },
+    "frontend/src/production/task-knowledge-summary.ts": {
+      "sha256": "de9bba9a78a57cd68359a809f81575b8a532b5d8ec35705ae62191f2fa4b1ed7",
+      "headSha256": "86d5234a968f4325a8ce5be6899ce58f1da18aa3b71460a03e963edb6c08b4a6",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/task-knowledge-tasks.ts": {
+      "sha256": "6bc960b971fc731bbba0f457a8207338eb7c1447a8bf31b703a419e41421bb60",
+      "headSha256": "cb6869f62f96c2bd6a257e978dd5c1ff3bf19d11344dabd021ad2e55508b707c",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/usePhotoInputSources.ts": {
+      "sha256": "e99248859c30901d5f75f4b61f7c77b21f7844d0d6cde84477868932d622a806",
+      "headSha256": "1d3c4074f8b260d053c4396f880d95fdc1ae399a769efbaa817c818eda81fc08",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/useProductionModelSettings.ts": {
+      "sha256": "b5c3eea1bb9644a661ebb1c8ae70d1f648c2f311192d34542c2cc0f9c73fc8d7",
+      "headSha256": "46a366f0f55709c832dcef071131a6fbc0cbf2de71680d3ec99330598a12653e",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/production/useProductionNotificationPreferences.ts": {
+      "sha256": "70fdaffc5b6f4c2350d4d3ad82acbf56407d16587cd4a2bd67bbf4ba683f6702",
+      "headSha256": "70acee483a150ec1b7ac57971a2aef9b3f161e4b6d8f0e515839f866d23ff47d",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/screens/careScreen.tsx": {
+      "sha256": "f9f9092c151b20ce0ab0defccf7628d90e05282a3d8b5c5f3ca300cd37f90be5",
+      "headSha256": "bbb09a5a71fc32686e903ee8c463c9e82a19e004447178c9718291a9d8f2340c",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/screens/chatScreen.tsx": {
+      "sha256": "8dab7a8132a558438ddf9c22dcda1f7663e57a187951ce72bac2922cb97e361e",
+      "headSha256": "b826eed7564fc844d012897d15f1d75d205d84be49f1adc881563faca4b4b272",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/src/shared-input-view-model.ts": {
+      "sha256": "47008ad3c9e5bbf3f71d646a43a3dd24045f1b289afd5313306dbc3d5a9e19d0",
+      "headSha256": "177a153a8ce6364a567a99377aefdbad7b347bd533ecf988437de6b9c0ba5dcc",
+      "tracking": "tracked-diff",
+      "role": "product"
+    },
+    "frontend/scripts/care-conversation-review.test.mjs": {
+      "sha256": "c6123c67d56fdb524b913fe6123453a561b728fbf5c21d79c703d6d64b58da28",
+      "headSha256": "bbbfa47492926ebc732f8acc59f701c000db10e01fa86d4e436a4686e422e6fb",
+      "tracking": "tracked-diff",
+      "role": "test"
+    },
+    "frontend/scripts/history-empty-cards.test.mjs": {
+      "sha256": "0f11c541f8d7f57956a93a252da73b8d9c8feaad0ab77f68ac0702ff1d349cd5",
+      "headSha256": "a72dc11bd0ca8d687fdc8e5b25cc24945194ed51c33d7ded6ec02f677301cead",
+      "tracking": "tracked-diff",
+      "role": "test"
+    }
+  }
+}

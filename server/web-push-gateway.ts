@@ -5,7 +5,7 @@ import { isIP } from "node:net";
 import { readFile, stat } from "node:fs/promises";
 import webPush from "web-push";
 import { z } from "zod";
-import { pushSubscriptionInput, type PushPayload, type WebPushSubscription } from "../src/shared/web-push.ts";
+import { webPushContent, pushSubscriptionInput, type PushPayload, type WebPushSubscription } from "../src/shared/web-push.ts";
 import type { PushSendResult, VapidConfig, WebPushGateway } from "./web-push-types.ts";
 
 const hosts = new Map([["fcm.googleapis.com", "fcm"], ["updates.push.services.mozilla.com", "mozilla"]] as const);
@@ -104,15 +104,16 @@ export function createWebPushGateway(config: VapidConfig | null): WebPushGateway
           if (!await bounded(stillAuthorized())) return stopped("revoked");
         } catch { return stopped(signal.aborted ? "worker_interrupted" : "request_invalid"); }
         if (signal.aborted) return stopped("worker_interrupted");
+        const content = { ...webPushContent[payload.kind === "care" ? "care" : "test"] };
         let details: ReturnType<typeof webPush.generateRequestDetails>;
         try {
-          details = webPush.generateRequestDetails(subscription, JSON.stringify(payload), {
+          details = webPush.generateRequestDetails(subscription, JSON.stringify({ ...payload, content }), {
             TTL: 300, urgency: "normal", contentEncoding: "aes128gcm",
             vapidDetails: config,
           });
         } catch { return stopped("request_invalid"); }
         return await new Promise<PushSendResult>(resolve => {
-          let settled = false;
+          let settled = false, sentAt: string | null = null;
           const finish = (result: PushSendResult) => { if (!settled) { settled = true; resolve(result); } };
           // generateRequestDetails performs crypto only; this is the sole network request.
           const req = request(url, { method: "POST", headers: details.headers, agent: false, family: 4, signal,
@@ -120,12 +121,15 @@ export function createWebPushGateway(config: VapidConfig | null): WebPushGateway
           }, response => {
             const status = response.statusCode;
             // HTTP status is sufficient evidence. Do not accumulate arbitrary provider bodies.
-            finish(status ? providerResult(status) : unknown());
+            const result = status ? providerResult(status) : unknown();
+            finish(result.status === 'accepted' && sentAt
+              ? { ...result, message: { ...content, channel: 'web_push', sentAt } } : result);
             response.on("error", () => {});
             response.destroy();
           });
           req.on("error", () => finish(unknown()));
           req.setTimeout(10000, () => req.destroy());
+          sentAt = new Date().toISOString();
           req.end(details.body);
         });
       } catch { return unknown(); }

@@ -73,9 +73,19 @@ function verifyRadios(element, checked, labels) {
 const children = [{ id: 'a', displayName: 'Synthetic child A', ageLabel: '3 歲' }, { id: 'b', displayName: 'Synthetic child B', ageLabel: '4 歲' }];
 const options = [{ value: 'observation', label: '觀察' }, { value: 'milestone', label: '里程碑' }];
 
-test('child picker DOM exposes one named radio per child and follows the selected child', () => {
+test('child picker DOM exposes one name-only radio per child and follows the selected child', () => {
   for (const selectedId of ['a', 'b']) verifyRadios(ChildPicker({ children, selectedId, onSelect() {} }),
-    children.map(child => child.id === selectedId), children.map(child => `${child.displayName} · ${child.ageLabel}`));
+    children.map(child => child.id === selectedId), children.map(child => child.displayName));
+});
+
+test('child identity and options omit both known and unknown age without changing child data', () => {
+  for (const ageLabel of ['3 歲', '年齡資料未載入', '年齡資料未確認']) {
+    const child = Object.freeze({ ...children[0], ageLabel });
+    const markup = renderToStaticMarkup(ChildPicker({ children: [child], selectedId: child.id, onSelect() {} }));
+    assert.equal(markup.includes(ageLabel), false);
+    assert.ok(markup.includes(child.displayName));
+    assert.equal(child.ageLabel, ageLabel);
+  }
 });
 
 test('record-kind AppSelect exposes one radio per option with actual checked state', () => {

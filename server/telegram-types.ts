@@ -1,3 +1,4 @@
+import type { NotificationMessageContent } from '../src/shared/notification-messages.ts';
 import type { PoolClient } from "pg";
 export interface TelegramConfig {
   token:string;botId:string;botUsername:string;webhookSecret:string;
@@ -7,6 +8,7 @@ export interface TelegramSendResult {
   status:"accepted"|"rejected"|"unknown"|"stopped";
   reason:"blocked"|"rate_limited"|"provider_rejected"|"transport_unknown"|"configuration_unavailable"|"revoked"|"worker_interrupted"|"local_preview_not_sent"|null;
   providerStatus:number|null;messageId:number|null;
+  message?: NotificationMessageContent;
 }
 export interface TelegramGateway {
   send(input:TelegramSendInput,signal:AbortSignal,stillAuthorized:()=>Promise<boolean>):Promise<TelegramSendResult>;

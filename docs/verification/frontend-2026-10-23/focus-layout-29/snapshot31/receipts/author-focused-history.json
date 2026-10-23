@@ -1,0 +1,76 @@
+{
+  "snapshot31Preintegration": true,
+  "patchSha256": "b5a3b15e220fbc31b2f816411c10bbab8ff8174e6cbf3677d67b8f365800121e",
+  "checksChronologicalNotAdditive": [
+    {
+      "log": "summary-focus-layout-red.log",
+      "phase": "baseline red",
+      "pass": 2,
+      "fail": 6,
+      "logSha256": "2640c4d55162e71ce6445e472847a63df5b9587dfc9b293134c262bee44ee0f0",
+      "originalLogAttached": false
+    },
+    {
+      "log": "summary-focus-layout-final.log",
+      "phase": "final frozen source, QA-safe window",
+      "pass": 8,
+      "fail": 0,
+      "logSha256": "3e3cb3126a1441780ac315d897e0f96e8d7c42d38062d7440fe00d927cbe0a24",
+      "originalLogAttached": false
+    },
+    {
+      "log": "summary-owner-regression.log",
+      "phase": "owner authority regression; owner code unchanged",
+      "pass": 13,
+      "fail": 0,
+      "logSha256": "a2094dcf75c8db5c6ada974ce9b7b0dc1af11f090c70e9fefa9feaf9e2b1a3e0",
+      "originalLogAttached": false
+    },
+    {
+      "log": "summary-overview-regression.log",
+      "phase": "prior to final stricter revalidation authority guard; final guard covered by targeted test",
+      "pass": 7,
+      "fail": 0,
+      "logSha256": "ea0b2a29e24b55b59e29864969dac76c5f95effaf4c921d84b7db7aad7ea518d",
+      "originalLogAttached": false
+    },
+    {
+      "log": "summary-focus-layout-paper-red.log",
+      "phase": "prior candidate with editable=false, installed Paper owner",
+      "pass": 8,
+      "fail": 1,
+      "logSha256": "8d600e0b357d76c953adc56d9ccfa62316e45d333e17b86eec5c76e3517779e5",
+      "originalLogAttached": false
+    },
+    {
+      "log": "summary-focus-layout-paper-green.log",
+      "phase": "final frozen source readOnly fix, installed Paper owner, QA-safe window",
+      "pass": 9,
+      "fail": 0,
+      "logSha256": "1551b9b76f53f7cb5f2c0e383de6c3a47e584175546a56c9aa7ebc622c40faf4",
+      "originalLogAttached": false
+    },
+    {
+      "log": "summary-focus-layout-final10.log",
+      "phase": "final readOnly true/undefined, installed Paper state owner and native props branch, QA-safe window",
+      "pass": 10,
+      "fail": 0,
+      "logSha256": "64bc4e8652a888874363d87c00c8913d8c0bcc11031f026e61fa04216c66888c",
+      "originalLogAttached": false
+    }
+  ],
+  "limits": [
+    "React 19 / installed RN Web DOM in jsdom; installed Paper TextInput state owner and focus/blur handlers are real, Flat/Outlined appearance and adornments are substituted.",
+    "Explicit click callback blocking verified. Synthetic KeyboardEvent dispatch does not establish native Enter/Space default activation.",
+    "Date input mounted identity, DOM readOnly and restoration verified; installed Paper focus state clears and onBlur forwards when DOM focus moves away during GET. This is not a native Tab or CSS appearance test.",
+    "DOM text/element structure stability is not browser pixel or scroll-height measurement; observed 31.25px natural-focus movement remains QA.",
+    "No build, full typecheck, real server, model, production data or CUA performed.",
+    "Native disabled props branches checked on RN Web test host; not Android device/runtime acceptance."
+  ],
+  "independentSourceReview": "Allow after final hashes and true Paper blur/native readOnly findings were checked; not a GitHub platform review or browser pass.",
+  "findings": [
+    "editable=false made installed Paper skip blur; retained Paper-focused state. Recorded8pass1fail, fixed9pass0fail.",
+    "Unconditional readOnly=false could override native editable=false; final true/undefined preserves native/default disabled behavior.",
+    "Final10/10 includes native props and true Paper state owner; appearance skins substituted, not native-device/Tab/default Enter or pixel acceptance."
+  ]
+}

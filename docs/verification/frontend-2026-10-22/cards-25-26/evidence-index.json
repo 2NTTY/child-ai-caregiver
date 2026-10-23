@@ -1,0 +1,1188 @@
+{
+  "format_version": 2,
+  "status": "BOUNDED_ACCEPTANCE_READY_LOCAL_PACKAGE_NOT_UPLOADED",
+  "assembled_at_utc": "2026-10-22T14:20:28.896406+00:00",
+  "scope": "25–26d staged acceptance; two original focus regressions closed on exact26d; unchanged cases carried with explicit limits; no all-site/all-device claim",
+  "planned_repository_documentation_destination": "docs/verification/frontend-2026-10-22",
+  "single_pr": {
+    "url": "https://github.com/2NTTY/child-ai-caregiver/pull/253",
+    "state": "open",
+    "draft": true,
+    "merge_authorized_for_this_delivery": false,
+    "last_readback_head": "07db542db3d9057a874d419130f3119812bc8e7a",
+    "last_readback_at": null,
+    "new25_26_product_commit": "07db542db3d9057a874d419130f3119812bc8e7a",
+    "new_docs_commit": null,
+    "verification_source": "Integrator reported successful ref, raw PR and compare read-back; all44 product-scope blobs match; PR253 remains open Draft. Document assembler made no Git request.",
+    "upload_authorization": "Authorized and completed product normal ref update; no merge",
+    "documentation_status": "PREPARED_NOT_UPLOADED",
+    "prior_readback_head": "6758a7176e5113a4739744f7c0f1ee11afffc9e1",
+    "prior_readback_at": "2026-10-22T14:14:43Z",
+    "readback_time_boundary": "Success reported by integrator at2026-10-22T16:35:49Z; exact server readback timestamp not separately supplied",
+    "new25_26_product_commit_url": "https://github.com/2NTTY/child-ai-caregiver/commit/07db542db3d9057a874d419130f3119812bc8e7a",
+    "product_tree": "cf2400eb97d69b2e955904674211a3638d21abf7",
+    "product_parent": "6758a7176e5113a4739744f7c0f1ee11afffc9e1",
+    "product_scope_blob_hashes_verified": 44,
+    "ci_readback": {
+      "runs": 0,
+      "checks": 0,
+      "statuses": 0,
+      "conclusion": "NO_CHECKS_REPORTED_NOT_GREEN",
+      "source": "Root read-back handoff; document assembler did not queryGitHub"
+    }
+  },
+  "public_preview": {
+    "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+    "currently_published_version": 85,
+    "new26d_published": true,
+    "new26d_release_status": "DEPLOYMENT_SUCCEEDED_AND_BOUNDED_LIVE_SMOKE_PASS",
+    "new_deployment": "appgdep_6ada3a62e4348191a498ee30c2f6cd8f",
+    "site_source_commit": "c1139310fe37c5ecc938763abdc5e86a47a5efce",
+    "version_id": "appgprj_6ac1e7c965308191bc2c599951348a51~appgver_e43fadd8867c819195029d23ac52df35",
+    "succeeded_at_utc": "2026-10-22T16:31:42.284793+00:00",
+    "published_audience": "public",
+    "access_policy_revision": 2,
+    "verification_source": "Local Site publish receipt and independent live smoke; document assembler made no Site changes",
+    "receipt_path": "frontend-site-publish26d-20261022.json",
+    "receipt_sha256": "383718c140aee97b7becdc453901505fc60a1a94b388ed2ffccd8fe60c726f55",
+    "site_dist_manifest_sha256": "39a8d0dcd1bc0e074255bc47a744eceaaec787d42838bf93e46030ef6400b1af",
+    "packaging_boundary": "72 exact static payloadfiles plus dist/.openai/hosting.json helper; localgzip/localtar/native savedtar packing hashes differ. Native savedarchive download was unavailable/notretried, so no independent nativearchive payload equality claim."
+  },
+  "candidate26b": {
+    "bundle_path": "_expo/static/js/web/index-1880188d9c67c647a6b3011217181602.js",
+    "bundle_sha256": "1d3f9832c29c570b0e1c7eba8a6116589b2ea1b473d7a04ebb531930620cae7b",
+    "source_input_count": 551,
+    "source_before_after_manifest_sha256": "88fd44a28485fe47f9bda54770ddf7e21a15710d451fda540c4d8233dbbfdc0f",
+    "scope_file_count": 37,
+    "product_file_count": 21,
+    "test_file_count": 16,
+    "raw_artifact_count": 65,
+    "scope_before_after_manifest_sha256": "10f30a0cdc5ee0919d4d7ebae63d698aab4ed8a08e60d07c0814f918c780093a",
+    "raw_artifact_manifest_sha256": "22b8b5323ed3e7141a058f6d759045bf33610c0d025f2394a9e47a50ac4d7d09",
+    "site_build_manifest_sha256": "8fac6da6b53e36ac355b0ecc2ba4b04382dd35a91f77bec5fc8ee8dc3823c40d",
+    "scope_hashes_verified": {
+      "matched": 37,
+      "expected": 37
+    },
+    "raw_artifact_hashes_verified": {
+      "matched": 65,
+      "expected": 65
+    },
+    "site_candidate_hashes_verified": {
+      "matched": 72,
+      "expected": 72
+    },
+    "no_product_tests_rerun_by_document_assembler": true,
+    "verification_at_utc": "2026-10-22T14:17:47Z",
+    "verification_boundary": "Historical frozen26b identity; current writer26c changes are not covered by37-file26b verification."
+  },
+  "fixture_boundary": {
+    "old_fixture_sha256": "8b0f6148dab42ec98fef13182292706e07899ec6ce26321f565546d2c27f3734",
+    "other_six_preview_files_unchanged": true,
+    "independent_real_reader_schema_projection_check_groups": 18,
+    "independent_reader_check_status": "PASS",
+    "does_not_prove": [
+      "Cloud pixels/focus",
+      "Production API",
+      "Real model or writes",
+      "Final26b eight-category CUA"
+    ],
+    "new_copy_delta": {
+      "status": "READER_AND_TEXT_COMPARISON_PASS_NOT_PIXEL_OR_PUBLIC_INTEGRATION",
+      "from_fixture_sha256": "44ae64574c020362d0ff14e75649061bd12fc7cfda61d211f07a959e1fce9b1a",
+      "to_fixture_sha256": "1299e4e16b32937a39670cf6c2af6ca40b70dae3cf794f386db1e31f30bf62e3",
+      "reader_check_groups": 18,
+      "text_expression_replacements": 8,
+      "comparison_observations": 156,
+      "changed_text_fields": 206,
+      "invariants": "Entire h26Read and transport; inverse8text substitutions restores exact44ae; IDs/versions/dates/scopes/cursors/schema shapes; original15care/original3concerns/original6logicalmessages; profile/agent history; isolatedcandidate unchanged",
+      "not_run_at_reader_check_stage": [
+        "browser copy/layout acceptance",
+        "public integration"
+      ],
+      "later_pixel_evidence": "26c-task-text1024-native.png; copy pixels carried into26d unchanged, not a26d retake"
+    },
+    "26b_fixture_sha256": "44ae64574c020362d0ff14e75649061bd12fc7cfda61d211f07a959e1fce9b1a",
+    "final_26d_fixture_sha256": "1299e4e16b32937a39670cf6c2af6ca40b70dae3cf794f386db1e31f30bf62e3"
+  },
+  "test_evidence": {
+    "25_V5": {
+      "author_group_passed": 92,
+      "independent_rerun_passed": 69,
+      "additional_independent_owner_scenarios": 2,
+      "source_status": "BOUNDED_PASS"
+    },
+    "25_V6": {
+      "independent_toolbar_passed": 18,
+      "source_status": "BOUNDED_PASS"
+    },
+    "26_V4": {
+      "regression_passed": 202,
+      "failed": 0,
+      "typecheck": "Two known ContactConsentCard diagnostics only; not all-green"
+    },
+    "count_policy": "Overlapping batches and historical evidence; not summed as unique tests",
+    "26d": {
+      "preparation_independent_refresh": {
+        "pass": 10,
+        "fail": 0
+      },
+      "preparation_independent_notice": {
+        "pass": 6,
+        "fail": 0
+      },
+      "care_independent_quiet_refresh": {
+        "pass": 4,
+        "fail": 0
+      },
+      "care_independent_busy_locks": {
+        "pass": 3,
+        "fail": 0
+      },
+      "not_added_to_unique_total": true,
+      "unadapted_preparation_lifecycle_baseline_and_candidate": "Both24/36;12same failing titles retained:10missingHistoryCardsport and2deferredblobcleanupassertions; adapted runner is separate evidence",
+      "typecheck": "Two known ContactConsentCard diagnostics; not all-green",
+      "source_reviews_original_browser_pending_status": "Historical source-only gate wording; superseded for exact two browser cases by final26d report, not rewritten"
+    }
+  },
+  "historical_stages": [
+    {
+      "version": "25b",
+      "source_report": "review-cards25-qa/review25b-bounded.json",
+      "report_sha256": "4634557cd5f207c9745c27bcea727e1b5ed171a5f128979871ad847fe34c6692",
+      "bundle_sha256": "d80c94f34150740df4658c1dcf407027aed3c28df76e78a5f985ae864774d75c",
+      "status": "BOUNDED_PASSES_WITH_RECORDED_FAILURES",
+      "fixture_sha256": "8b0f6148dab42ec98fef13182292706e07899ec6ce26321f565546d2c27f3734",
+      "carried_forward_only": true,
+      "not_claimed": "Entire stage rerun on26b or all cases PASS",
+      "recorded_failures": [
+        "320 loaded-count string clipped before visible number",
+        "pending cursor page2 overwritten by forced first-page refresh after iframe focus (partial0+1, many20+2)"
+      ],
+      "blocked": [],
+      "not_run": [
+        "late-scope browser race",
+        "strict Tab reachability sequence (Enter activation passed)",
+        "native gestures/device/Firefox/unsupported backdrop browser",
+        "real backend/production mutation/model"
+      ]
+    },
+    {
+      "version": "25c",
+      "source_report": "review-cards25-qa/review25c-bounded.json",
+      "report_sha256": "5333c34b61b1ab008bae46b76aec8302625be8adefdb4076387421e5b3ad0924",
+      "bundle_sha256": "9f2c31a5b6c5f82d6dca224d400a23bd41cc27057404fccb2a8dc460b3079768",
+      "status": "DELTA_TESTED_ONE_VISUAL_BLOCKER_AWAITING_25D",
+      "fixture_sha256": "8b0f6148dab42ec98fef13182292706e07899ec6ce26321f565546d2c27f3734",
+      "carried_forward_only": true,
+      "not_claimed": "Entire stage rerun on26b or all cases PASS",
+      "recorded_failures": [
+        "320 at app zoom1.2/custom background: count1/3 still clipped by rail chevron; saved tab off rail; card body visible, html scrollWidth=clientWidth320"
+      ],
+      "blocked": [
+        {
+          "action": "Additional25c unknown503 controls verification",
+          "target": "tab30 original proposal50 after private503 accept",
+          "reason": "Chromium renderer crash code9 confirmed native screenshot; snapshot runtime timeout",
+          "status": "BLOCKED_BROWSER",
+          "priorEvidence": "25b original tuple GET and same retry acrossA-B-A passed; not reclassified as25c pass"
+        }
+      ],
+      "not_run": [
+        "Firefox/native gestures/real device",
+        "non-abortable late response browser path (source tests only)",
+        "stale-tail failure refresh CUA (source tests only)",
+        "real backend, model or production mutation"
+      ]
+    },
+    {
+      "version": "25d2",
+      "source_report": "review-cards25-qa/review25d2-bounded.json",
+      "report_sha256": "10a22fb838b7cbafb2fa25b9e668626525821d3610df4e674cc9e5ac660d0e4f",
+      "bundle_sha256": "cb5b6230a6c7e552e7c9c85de80b58b068272e3a31c81949b99e8d7861436fe1",
+      "status": "BOUNDED_TOOLBAR_PASS_REMAINING_BLOCKED_BY_CHROME_RENDERER_CRASH",
+      "fixture_sha256": "8b0f6148dab42ec98fef13182292706e07899ec6ce26321f565546d2c27f3734",
+      "carried_forward_only": true,
+      "not_claimed": "Entire stage rerun on26b or all cases PASS",
+      "recorded_failures": [],
+      "blocked": [
+        {
+          "action": "Read/capture N+ after many fixture Apply reload",
+          "target": "tab31, /care?qa25=many, 320 custom background",
+          "reason": "Runtime.evaluate timeout followed by native confirmed renderer crash code9",
+          "status": "BLOCKED_BROWSER",
+          "evidence": "25d2-tab31-after-many-native.png"
+        }
+      ],
+      "not_run": [
+        "25d2 custom390 count1/N+",
+        "25d2 default320/390 count1/N+",
+        "25d2 unknown recovery repeat",
+        "native/Firefox/real backend/model/production writes"
+      ]
+    },
+    {
+      "version": "26",
+      "source_report": "review-cards25-qa/review26-bounded.json",
+      "report_sha256": "fdcf87a881d737ad886ce67ffb4fd1fd0c611d52fd6cfbba2a1c7a5ed4a9feae",
+      "bundle_sha256": "48fbcc83e091937dd9ec7b0006724ff65d02e9fe0c538bae82694a0f9b0e08fe",
+      "status": "BOUNDED_RESULTS_NOT_RELEASE_GATE_RESIZE_REGRESSION_AND_BROWSER_CRASH",
+      "fixture_sha256": "8b0f6148dab42ec98fef13182292706e07899ec6ce26321f565546d2c27f3734",
+      "carried_forward_only": true,
+      "not_claimed": "Entire stage rerun on26b or all cases PASS",
+      "recorded_failures": [
+        {
+          "case": "History responsive breakpoint preserves open selected reader",
+          "status": "FAIL_SOURCE_CONFIRMED_FIX_PENDING26b",
+          "action": "Open1440 second notification then wrapper390x844",
+          "result": "Reader disappears while scope/category/query and5loaded records unchanged. Wrapper resize only iframe dimensions, no src/reload. Independent reviewer proved HistoryScreen AppTabPanel-to-View remount.",
+          "evidence": "26-notification-resize-reader-closed.png"
+        }
+      ],
+      "blocked": [
+        {
+          "action": "Capture selected care-review detail fullPage, then inspect close rect/focus",
+          "target": "tab31,/history,1440,核對記錄 first階段回看 card",
+          "reason": "Page.getLayoutMetrics timed out after25.2s; native screenshot then confirms renderer crashcode9. Cause not established; no timeout adjustment.",
+          "status": "BLOCKED_BROWSER",
+          "evidence": "26-care-review-renderer-health.jpg"
+        }
+      ],
+      "not_run": [
+        "History320 and comprehensive1024 categories",
+        "History keyboard Enter/Space card controls",
+        "Completed/cancelled task oldrevision",
+        "Archived preparation exact snapshot and gated restore failure",
+        "Care/profile multiple version selection",
+        "True Agent history text/voice/segment pagination/latescope",
+        "Complete eight-category final release gate",
+        "26b responsive fix (not built at this report time)",
+        "Firefox/native app/realbackend/model/production mutations"
+      ]
+    }
+  ],
+  "screenshots": {
+    "final_selection_owner": "root",
+    "final_count_limit": 4,
+    "selected": [
+      {
+        "original_path": "review-cards25-qa/evidence/26c-task-text1024-native.png",
+        "copy_path": "screenshots/26c-tasks-1024.jpg",
+        "sha256": "1e4714d88eba80fa1df4feaba8f33d5b842927e4b9e1f62cbc6f87a4f0bdc356",
+        "bytes": 155851,
+        "actual_format": "JPEG",
+        "original_filename_extension_mismatch": true,
+        "copy_preserves_exact_bytes": true,
+        "original_qa_file_unmodified": true,
+        "raw_image_pixels": {
+          "width": 1288,
+          "height": 848
+        },
+        "snapshot": "26c",
+        "bundle_sha256": "b052fb285deabd0c8b672ef292f122743099b826f59eab1c0fd52fa1d19b2e7f",
+        "fixture_sha256": "1299e4e16b32937a39670cf6c2af6ca40b70dae3cf794f386db1e31f30bf62e3",
+        "css_viewport": {
+          "width": 1024,
+          "height": 820
+        },
+        "document_zoom": null,
+        "zoom_note": "Exact selected screenshot zoom not separately remeasured by document assembler; CSS viewport derives from reviewer case/root selection.",
+        "purpose_and_limits": "已核准新文字示例的待辦桌面卡片；原生雲端瀏覽器視窗截圖，非手機裝置。26d沿用同一核准fixture與未改卡面；不是26d焦點重驗圖。",
+        "selected_and_visually_reviewed_by_root": true,
+        "manually_inspected_by_document_assembler": true,
+        "all_data_synthetic": true,
+        "image_processing": "none; original bytes copied with correct JPEG extension; no crop/composite/generation"
+      },
+      {
+        "original_path": "review-cards25-qa/evidence/26-messages1440-fullpage.jpg",
+        "copy_path": "screenshots/26-messages-1440.jpg",
+        "sha256": "6d76be69187d70880304a4e9969f2c996e0d199472951ffd782f13a5b4cd74bb",
+        "bytes": 167664,
+        "actual_format": "JPEG",
+        "original_filename_extension_mismatch": false,
+        "copy_preserves_exact_bytes": true,
+        "original_qa_file_unmodified": true,
+        "raw_image_pixels": {
+          "width": 1440,
+          "height": 965
+        },
+        "snapshot": "26",
+        "bundle_sha256": "48fbcc83e091937dd9ec7b0006724ff65d02e9fe0c538bae82694a0f9b0e08fe",
+        "fixture_sha256": "8b0f6148dab42ec98fef13182292706e07899ec6ce26321f565546d2c27f3734",
+        "css_viewport": {
+          "width": 1440,
+          "height": 820
+        },
+        "document_zoom": 1.4,
+        "zoom_note": "Snapshot26 report records desktop document zoom1.4 and browser menu100%; no QA zoom change.",
+        "purpose_and_limits": "桌面消息卡與已載入6則，真正full-page捕捉。消息fixture與卡面未變而沿用26階段，非26d重拍；QA外框仍寫25不作source版本依據。",
+        "selected_and_visually_reviewed_by_root": true,
+        "manually_inspected_by_document_assembler": true,
+        "all_data_synthetic": true,
+        "image_processing": "none; original bytes copied with correct JPEG extension; no crop/composite/generation"
+      },
+      {
+        "original_path": "review-cards25-qa/evidence/25d2-custom320-count1.png",
+        "copy_path": "screenshots/25d2-care-toolbar-320.jpg",
+        "sha256": "4cd86f97cc6c100c367eca9fe3c3bba766244ca2a43ce0bb4592cc11fbf2a2c1",
+        "bytes": 67462,
+        "actual_format": "JPEG",
+        "original_filename_extension_mismatch": true,
+        "copy_preserves_exact_bytes": true,
+        "original_qa_file_unmodified": true,
+        "raw_image_pixels": {
+          "width": 1265,
+          "height": 748
+        },
+        "snapshot": "25d2",
+        "bundle_sha256": "cb5b6230a6c7e552e7c9c85de80b58b068272e3a31c81949b99e8d7861436fe1",
+        "fixture_sha256": "8b0f6148dab42ec98fef13182292706e07899ec6ce26321f565546d2c27f3734",
+        "css_viewport": {
+          "width": 320,
+          "height": 720
+        },
+        "document_zoom": 1.2,
+        "zoom_note": "Snapshot25d2 report records actual320×720,document zoom1.2,DPR1.",
+        "purpose_and_limits": "繁複合成背景下，核對卡、數字1與手動新增在320可見；25d2局部修正原圖。26另覆N+，此圖不單獨證明N+或26d重跑。",
+        "selected_and_visually_reviewed_by_root": true,
+        "manually_inspected_by_document_assembler": true,
+        "all_data_synthetic": true,
+        "image_processing": "none; original bytes copied with correct JPEG extension; no crop/composite/generation"
+      },
+      {
+        "original_path": "review-cards25-qa/evidence/25b-home-busy-reading1024.png",
+        "copy_path": "screenshots/25b-home-glass-1024.jpg",
+        "sha256": "f0cc635f52822a272f84bd29fb30046debe9e34c42800676971581412daedc47",
+        "bytes": 102255,
+        "actual_format": "JPEG",
+        "original_filename_extension_mismatch": true,
+        "copy_preserves_exact_bytes": true,
+        "original_qa_file_unmodified": true,
+        "raw_image_pixels": {
+          "width": 1265,
+          "height": 748
+        },
+        "snapshot": "25b",
+        "bundle_sha256": "d80c94f34150740df4658c1dcf407027aed3c28df76e78a5f985ae864774d75c",
+        "fixture_sha256": "8b0f6148dab42ec98fef13182292706e07899ec6ce26321f565546d2c27f3734",
+        "css_viewport": {
+          "width": 1024,
+          "height": 820
+        },
+        "document_zoom": null,
+        "zoom_note": "Exact selected Hero capture zoom not independently recorded;1024×820 actual iframe viewport documented.",
+        "purpose_and_limits": "首頁reading階段在繁複合成背景的玻璃遮罩；blur僅背景，文字及畫面清楚。Hero最後實作未變沿用25b，不是26d重拍。",
+        "selected_and_visually_reviewed_by_root": true,
+        "manually_inspected_by_document_assembler": true,
+        "all_data_synthetic": true,
+        "image_processing": "none; original bytes copied with correct JPEG extension; no crop/composite/generation"
+      }
+    ],
+    "copy_policy": "Selected copies now exact bytes with real JPEG extension; originals unchanged; metadata maps stages and hashes; no crop/composite/generation.",
+    "required_metadata": [
+      "snapshot/source bundle SHA",
+      "fixture SHA",
+      "original path",
+      "copy path",
+      "actual file format",
+      "file SHA-256",
+      "raw pixel dimensions",
+      "CSS viewport",
+      "browser/document/display zoom when evidenced",
+      "purpose and limits"
+    ],
+    "selection_status": "Root approved four originals; unchanged portions carried at their actual recorded stages; no26d retake claim"
+  },
+  "environment_limits": {
+    "renderer_code9": "Observed multiple times; causal attribution unproven; preserved in source review records",
+    "build25d_killed137": "Reported by root; cause not established, not labeled OOM or a product regression",
+    "recovery_boundary": "Authorized resource exclusivity/safe reload/native-browser-viewport evidence path; no timeout/policy bypass",
+    "no_firefox_or_native_device_pass": true,
+    "native_viewport_means": "Actual cloud browser window viewport, not native iOS/Android hardware",
+    "not_all_routes_states_combinations": true,
+    "26d_boundary": "No code9/tab disappearance observed on the two26d retakes; not a global stability or environment root-cause conclusion."
+  },
+  "remaining_gates": [
+    "Separate documentation commit read-back; seven-file package currently local prepared only"
+  ],
+  "source_evidence": [
+    {
+      "id": "delivery_plan",
+      "original_path": "/tmp/snapshot26b-delivery-plan.json",
+      "sha256": "6b5ed98ce1d2152240efceabbb20f6e82c06882957561ec24dc6a4ebe8872fad",
+      "bytes": 10493,
+      "included_in_public_package": false
+    },
+    {
+      "id": "export_receipt",
+      "original_path": "/tmp/snapshot26b-export-receipt.json",
+      "sha256": "4614e03e4ead52fe361effd45a899564055bf3c8c865d818e406336efef05de2",
+      "bytes": 2661,
+      "included_in_public_package": false
+    },
+    {
+      "id": "25_v5_source_review",
+      "original_path": "/tmp/review-pending25/V5_SOURCE_REVIEW.md",
+      "sha256": "b674075af788fc2c2c3b74e962e6246fa5a80c9f25b61b2fd80432a42f26a940",
+      "bytes": 5707,
+      "included_in_public_package": false
+    },
+    {
+      "id": "25_v6_toolbar_review",
+      "original_path": "/tmp/review-pending25/V6_TOOLBAR_REVIEW.md",
+      "sha256": "53acc0da022c582eb163868bbdc4b573bc0948846c93ae84dd9e73f998ae5d02",
+      "bytes": 4070,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26_v4_freeze",
+      "original_path": "/tmp/snapshot26-history-writer-freeze-v4.json",
+      "sha256": "a607ba31ae7c0a2604886c3cd2e02eb546a093abad8c27a1bd281fb0f741f086",
+      "bytes": 5004,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26_v4_202_regression",
+      "original_path": "/tmp/snapshot26-final-regression-v4.log",
+      "sha256": "8415dc0d391f9292c613b137aa0d9a3cb07f60d9190457af9c2d8b7b63bfe0f8",
+      "bytes": 22053,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26_v4_typecheck",
+      "original_path": "/tmp/snapshot26-typecheck-v4.log",
+      "sha256": "b95ca11cc691e531f4b740c6188e3814a53f12409d241fb7a9e9481adff9aebc",
+      "bytes": 2222,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26_fixture_18_reader_checks",
+      "original_path": "/tmp/history26-fixture-independent-validation-v2.json",
+      "sha256": "d4668d584bdab827b79fd5898b749eed1e1e7b4d57d384e127b93f01f17cae7d",
+      "bytes": 3319,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26b_site_manifest",
+      "original_path": "site-snapshot26b-20261022/preview-build-manifest.json",
+      "sha256": "8fac6da6b53e36ac355b0ecc2ba4b04382dd35a91f77bec5fc8ee8dc3823c40d",
+      "bytes": 9167,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26b_site_product_provenance",
+      "original_path": "site-snapshot26b-20261022/preview-product-manifest.json",
+      "sha256": "90adcf602b0fc00e8589ff9a0b1338fbf32ecb3e502d049372cc110ed8eaf2ea",
+      "bytes": 12230,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26b_original_fixture_package",
+      "original_path": "review-cards25-qa/exact26b-package-manifest.json",
+      "sha256": "dfead1fcfd3e40f7ccf11646a6a90422b578a6b45862785a527f6ccda20914e4",
+      "bytes": 19023,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26b_approved_fixture_package",
+      "original_path": "review-cards25-qa/exact26b-approved-fixture-manifest.json",
+      "sha256": "d2b047892757d5b084396952cfbc62d090160d17b72c0b19b80e0ab37ecaa64b",
+      "bytes": 10114,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26b_actual_resize_same_reader",
+      "original_path": "review-cards25-qa/evidence/26b-notification-resize.json",
+      "sha256": "a6e24a29766784c94cff9f836d3624ef651dbd68b3aaa8d1ad3bf76713de0f0a",
+      "bytes": 1429,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26b_actual_resize_close_focus",
+      "original_path": "review-cards25-qa/evidence/26b-notification-resize-close-focus.json",
+      "sha256": "254b4ec3b641d1e4e6effe72f579c908d5a2056ac6b167639ec9a5f09f0daff4",
+      "bytes": 230,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26b_bounded_mainline_report",
+      "original_path": "review-cards25-qa/review26b-bounded.json",
+      "sha256": "46c1cd5ffc33313fc41955b882387550793d2da40958ad9df301691a791f696e",
+      "bytes": 20236,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26c_copy_18_reader_checks",
+      "original_path": "/tmp/history26-copy-independent-contract-result.json",
+      "sha256": "52ebe5c5df8dfcf2b13d46a82712891ccbac2c8a96f7e503486cebeb738c0724",
+      "bytes": 3319,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26c_copy_156_observation_comparison",
+      "original_path": "/tmp/history26-copy-independent-text-result.json",
+      "sha256": "e38e43b9d92911401d659996061249d3a5a0b4d6f7cc922955b49d9a4f69bd87",
+      "bytes": 616,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26c_export_receipt",
+      "original_path": "/tmp/snapshot26c-export-receipt.json",
+      "sha256": "0194f707dfeedc9049a3db4e7e4a56a432019b3aa80482ac6ef34067de5cbdf8",
+      "bytes": 2743,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26c_site_build_manifest",
+      "original_path": "site-snapshot26c-20261022/preview-build-manifest.json",
+      "sha256": "0d52eb635981a20ab5942154f30e05b4510eaa5c1067ebe1c65d56ee8a36dba8",
+      "bytes": 9167,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26c_bounded_report",
+      "original_path": "review-cards25-qa/review26c-bounded.json",
+      "sha256": "1d70f1bc1cb9baf1a238c5438ae8c11e5eefdcbcd52b1f4e7a8c66f995764f33",
+      "bytes": 8101,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26c_passive_focus_diagnosis",
+      "original_path": "review-cards25-qa/review26c-focus-diagnosis.json",
+      "sha256": "317b45a560eac4c6f2a3324cf025eae190d8d1d76663d84804e332ff1ff50e8a",
+      "bytes": 8567,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26d_bounded_report",
+      "original_path": "review-cards25-qa/review26d-bounded.json",
+      "sha256": "29e5d86b080ff4ff2a65c23658ff755a6209fc5c2ac4423e81957906b43616ee",
+      "bytes": 7995,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26d_independent_final_gate",
+      "original_path": "/tmp/history26d-final-independent-gate.json",
+      "sha256": "25d19788a9186f2db925efc4ca02abf77782cf11633a34fe93422d3c1f9018eb",
+      "bytes": 1326,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26d_care_source_review",
+      "original_path": "/tmp/history26d-care-independent-review.json",
+      "sha256": "b8d01449b4aaaba5ec1e433adcdf1c4e6a90e98ee971e9f42a578852e6a54dc2",
+      "bytes": 1861,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26d_preparation_source_review",
+      "original_path": "/tmp/history26d-preparation-independent-review.json",
+      "sha256": "5afc08aca14cbf151754c28a50c0f0bacdeec6520a7deddc1989d8982c5b4b90",
+      "bytes": 1479,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26d_export_receipt",
+      "original_path": "/tmp/snapshot26d-export-receipt.json",
+      "sha256": "0caea0c68063b351057bc147e682b7a81b5aca03ea54845416870c76caac82c5",
+      "bytes": 2864,
+      "included_in_public_package": false
+    },
+    {
+      "id": "26d_site_build_manifest",
+      "original_path": "site-snapshot26d-20261022/preview-build-manifest.json",
+      "sha256": "39a8d0dcd1bc0e074255bc47a744eceaaec787d42838bf93e46030ef6400b1af",
+      "bytes": 9167,
+      "included_in_public_package": false
+    },
+    {
+      "id": "site85_publish_receipt",
+      "original_path": "frontend-site-publish26d-20261022.json",
+      "sha256": "383718c140aee97b7becdc453901505fc60a1a94b388ed2ffccd8fe60c726f55",
+      "bytes": 4567,
+      "included_in_public_package": false
+    },
+    {
+      "id": "site85_live_smoke",
+      "original_path": "review-cards25-qa/site85-live-smoke.json",
+      "sha256": "1e86a2e30665fcd8348802ad536fbf74a0ef541284c638e338af8046195a18d2",
+      "bytes": 6676,
+      "included_in_public_package": false
+    }
+  ],
+  "privacy": "Synthetic examples only. Do not include private notes, credentials, real family data or model/provider output.",
+  "assembler_actions": "Only this repository-external delivery directory written; local read-only hash checks; no source modifications, product tests, Git, Site, CUA, external Codex, uploads or real-data actions.",
+  "updated_at_utc": "2026-10-22T16:45:03.981522+00:00",
+  "acceptance_frozen_at_utc": "2026-10-22T16:33:51.639716+00:00",
+  "historical_26b_evidence": {
+    "status": "BOUNDED_MAINLINE_COMPLETE_TWO_FOCUS_RETESTS_AND_FINAL_COPY_VISUAL_PENDING_NOT_RELEASE_PASS",
+    "report": "review-cards25-qa/review26b-bounded.json",
+    "report_sha256": "46c1cd5ffc33313fc41955b882387550793d2da40958ad9df301691a791f696e",
+    "bundle_sha256": "1d3f9832c29c570b0e1c7eba8a6116589b2ea1b473d7a04ebb531930620cae7b",
+    "fixture_sha256": "44ae64574c020362d0ff14e75649061bd12fc7cfda61d211f07a959e1fce9b1a",
+    "evidence_integrity": {
+      "verified": 49,
+      "expected": 49,
+      "sha_and_bytes_match": true
+    },
+    "history": {
+      "待辦與預約": {
+        "status": "BOUNDED_PASS",
+        "checks": [
+          "Three terminal cards; exact selected inline detail. Current completed/cancelled differs from original v1 scheduled revision.",
+          "390 single-column native views; close returns exact card. Native Space opens first; Tab+Enter opens different cancelled card."
+        ],
+        "evidence": [
+          "26b-tasks1024-native.png",
+          "26b-tasks390-native.png",
+          "26b-task-original-v1-390-native.png",
+          "26b-task-close-focus.json",
+          "26b-task-keyboard.json"
+        ],
+        "limits": [
+          "No mutation executed; hidden original list text is not treated as a second visible detail."
+        ]
+      },
+      "準備單": {
+        "status": "CONTENT_VERSION_PASS_COMPOUND_CLOSE_FOCUS_RED",
+        "checks": [
+          "Three archived cards; 1440 all widths524.015625 incl odd last.",
+          "School document current v2 retains restore action; select v1 shows historical read-only original date/summary, no current restore action.",
+          "Selected v1 survives390→1440 actual responsive breakpoint.",
+          "Plain1440 open/back returns exact school card; compound version+resize/back returned BODY/null."
+        ],
+        "evidence": [
+          "26b-preparations1024-cards-native.png",
+          "26b-preparation-old-v1-390-native.png",
+          "26b-preparation-old-v1-resize.json",
+          "26b-preparation-close-focus-grid1440.json",
+          "26b-preparation-plain-back-focus.json"
+        ],
+        "limits": [
+          "Original compound red is not cancelled by subsequent plain-back pass.",
+          "390 preparation screenshots only partially show cards; not full mobile-card visual proof."
+        ]
+      },
+      "核對記錄": {
+        "status": "BOUNDED_PASS_EXISTING_LIST_CONTAINER_FOCUS",
+        "checks": [
+          "Saved-record review projection, not fabricated Agent decision audit.",
+          "Whole first card opens existing inline selected raw/structured content; original gated correction/saved-record links remain.",
+          "390 body readable and scrollWidth390; return focuses care-review-list tabindex=-1, not BODY."
+        ],
+        "evidence": [
+          "26b-review1024-native.png",
+          "26b-review-selected-detail.txt",
+          "26b-review-detail390-body-native.png",
+          "26b-review-close-focus.json"
+        ],
+        "limits": [
+          "Return is original list-container focus, not exact originating card. Header-only initial screenshot is not body proof."
+        ]
+      },
+      "照顧記錄": {
+        "status": "CONTENT_VERSION_PASS_CLOSE_FOCUS_RED",
+        "checks": [
+          "Exact long saved record030102 opened via whole card.",
+          "Existing correction history shows original v1 text, event date, reason and version1; current record is v2. Original correction/delete actions preserved, not executed.",
+          "390 list/body fit html390; return leaves BODY while originating card still exists."
+        ],
+        "evidence": [
+          "26b-care1024-native.png",
+          "26b-care-old-v1-390-native.png",
+          "26b-care-return390-native.png",
+          "26b-care-close-focus.json"
+        ],
+        "limits": [
+          "Current-stage close-focus red awaiting bounded fix/retest. Care search pagination replacement not freshly exercised in CUA."
+        ]
+      },
+      "檔案修改": {
+        "status": "BOUNDED_PASS",
+        "checks": [
+          "Unread state explicitly offers load and current4, not false empty. Loaded old versions3/2/1.",
+          "Whole v3 opens only v3 long text.320 native scroll readable; close returns exact profile-history-version-3 BUTTON.",
+          "Native Tab+Enter opens distinct v2 text, not v3/current4.",
+          "1440 all three cards524.015625 wide;390 single-column screenshot."
+        ],
+        "evidence": [
+          "26b-profile1024-native.png",
+          "26b-profile-loaded1024-native.png",
+          "26b-profile-v3-320-body-native.png",
+          "26b-profile-v3-close-focus.json",
+          "26b-profile-keyboard-v2.json",
+          "26b-profile-grid1440.json",
+          "26b-profile-list390-native.png"
+        ],
+        "limits": []
+      },
+      "助手對話": {
+        "status": "BOUNDED_PASS_TEXT_MAINLINE",
+        "checks": [
+          "True /agent/history three messages, not legacy/chat data.",
+          "Selected030402 GET messages/:id offset0/limit4000 then same id offset4000/limit4000; UI4000/4774 still unread→4774 complete, continue control disappears.",
+          "Single-message reader390 readable; close returns exact030402 BUTTON;0dialogs;html width=scrollWidth390.",
+          "Native1024 and390 card captures preserve excerpt vs full-text distinction and complete scanned3 coverage."
+        ],
+        "evidence": [
+          "26b-agent-history1024-cards-native.png",
+          "26b-agent-long-first-segment.txt",
+          "26b-agent-long-full.txt",
+          "26b-agent-long390-native.png",
+          "26b-agent-return390-native.png",
+          "26b-agent-close-focus.json",
+          "26b-agent-ui-get-trace.json"
+        ],
+        "limits": [
+          "Fixture is text-only; voice/contentVersion NOT_RUN. New late-scope/query/fault suite not added at root closeout boundary."
+        ]
+      },
+      "關注與成長": {
+        "status": "CARRIED_BOUNDED_PASS_SNAPSHOT26",
+        "checks": [
+          "Existing closed concern exact5-event timeline, preserved restore action not executed, close exact card.",
+          "390 card geometry no overflow; prior image was filters-only and is not mobile card pixel proof."
+        ],
+        "evidence": [
+          "26-growth1440-oldfixture.png",
+          "26-growth-detail.ax.txt",
+          "26-growth-close-focus.json"
+        ],
+        "limits": [
+          "Reviewed fixture adds closed records but no new CUA suite; prior evidence unaffected."
+        ]
+      },
+      "消息歷史": {
+        "status": "CARRIED_BOUNDED_PASS_PLUS_26B_RESIZE_PASS",
+        "checks": [
+          "Snapshot26: logical cards5→6 truthful coverage, all channels original/null-title integrity, other-child scope, Bell recent5 unaffected, exact close focus.",
+          "26b selected long message survives1440→390→1024; one dialog and identical521-character content; close exact second card.",
+          "Original26 responsive-remount red fixed and independently source-reviewed; fresh26b CUA verifies."
+        ],
+        "evidence": [
+          "26-messages1440-fullpage.jpg",
+          "26-messages390-list.png",
+          "26-notification-three-channel-detail.ax.txt",
+          "26-notification-other-child-detail.ax.txt",
+          "26-bell-after-six-loaded.ax.txt",
+          "26b-notification-resize.json",
+          "26b-notification-resize390-native.png",
+          "26b-notification-resize-close-focus.json"
+        ],
+        "limits": []
+      }
+    },
+    "known_reds": [
+      {
+        "case": "Preparation compound v1+resize+back focus",
+        "status": "RED_PENDING_FIX_RETEST",
+        "evidence": "26b-preparation-close-focus-grid1440.json"
+      },
+      {
+        "case": "Saved-care detail return focus",
+        "status": "RED_PENDING_FIX_RETEST",
+        "evidence": "26b-care-close-focus.json"
+      }
+    ],
+    "not_run": [
+      "New comprehensive all-history320/1024/fault/pagination suite (root bounded closeout; source tests separate)",
+      "Conversation voice/audio/contentVersion (no matching synthetic fixture)",
+      "Fresh26b history error/partial transport UI for each category; independent fixture reader tests are not CUA",
+      "Formal backend/model, real family data, writes/deletes/restores, Firefox/native apps, deployment/Git merge"
+    ],
+    "browser_limit": "Cloud Chrome; actual window/iframe dimensions. Native viewport is not native Android/iOS device. Partial1440 screenshots not full-width proof.",
+    "stage_boundary": "Historical26b report preserved, including two REDs; final26d separately closes only those exact regressions",
+    "next_only_at_that_stage": [
+      "Two known focus fixes on exact final export",
+      "Small representative native visual check of approved revised synthetic copy",
+      "Append bounded final delta; no rerun of unaffected categories"
+    ]
+  },
+  "historical_26c": {
+    "status": "HISTORICAL_26C_NOT_RELEASED_SUPERSEDED_BY_26D",
+    "bundle_sha256": "b052fb285deabd0c8b672ef292f122743099b826f59eab1c0fd52fa1d19b2e7f",
+    "scope": "Only known Preparation compound-close focus and saved-care return-focus fixes; representative approved new synthetic copy pixels",
+    "new_fixture_sha256": "1299e4e16b32937a39670cf6c2af6ca40b70dae3cf794f386db1e31f30bf62e3",
+    "source_case_status": "Do not infer pixel PASS from writer tests",
+    "unchanged_cases_inherit_actual_recorded_stages": true,
+    "new_release_pass": false,
+    "bundle_path": "_expo/static/js/web/index-5582f4fe00f2de644aa659d01711436a.js",
+    "site_build_manifest_sha256": "0d52eb635981a20ab5942154f30e05b4510eaa5c1067ebe1c65d56ee8a36dba8",
+    "source_input_count": 551,
+    "scope_file_count": 40,
+    "raw_artifact_count": 65,
+    "packaged_file_count": 72,
+    "manifest_hashes_verified": true,
+    "raw_artifact_hashes_verified": 65,
+    "site_packaged_hashes_verified": 72,
+    "source_before_after_manifest_sha256": "8eddb5c827cfc67866f272372af81ec17800d6460f7e3ee60e0c66d0e9f3b4fe",
+    "scope_before_after_manifest_sha256": "2062346839ae481885a0d47686d4eb35ada2d79cb154e2e86233187ad4e21ae3",
+    "parallel_repair_ownership": [
+      "Preparation compound-back focus writer",
+      "Saved-care return-focus writer"
+    ],
+    "final_product_version": "26d",
+    "user_decision": "Continue repairs and use parallel dot units; do not publish residual issues as final.",
+    "original_stage_status": "NOT_FINAL_TWO_FOCUS_ISSUES_UNRESOLVED_AWAITING_ROOT_CAUSE_FIX_AND_EXACT_RETEST",
+    "stage_boundary": "Original red report and passive diagnosis remain immutable; candidate26d separately passed exact two focus retakes"
+  },
+  "candidate26d": {
+    "status": "EXACT_EXPORT_BOUNDED_SOURCE_AND_CUA_PASS_PUBLISHED_AS_SITE85",
+    "bundle_path": "_expo/static/js/web/index-f755ffc22d2d04a315ec8db050591e40.js",
+    "bundle_sha256": "ece5a95e1aeaac0e7933d7c1b62578124545db6473fc59de260331095b2a71cc",
+    "source_input_count": 551,
+    "scope_file_count": 44,
+    "product_file_count": 23,
+    "test_file_count": 21,
+    "raw_artifact_count": 65,
+    "packaged_file_count": 72,
+    "source_before_after_manifest_sha256": "c174f3e93f4ee87ea993c63f13aa6a98e61e2c2f29f0677733fe0411bab233e7",
+    "scope_before_after_manifest_sha256": "4f0a8a4e1df522c890651f47a098b95500068f621c003999c7807b2f8e96a194",
+    "raw_artifact_manifest_sha256": "2ce8647e08fa211f1c1deb4c271ddc2b90dc2de076f8c75967c4b50279c84946",
+    "site_build_manifest_sha256": "39a8d0dcd1bc0e074255bc47a744eceaaec787d42838bf93e46030ef6400b1af",
+    "fixture_sha256": "1299e4e16b32937a39670cf6c2af6ca40b70dae3cf794f386db1e31f30bf62e3",
+    "independently_rechecked_by_document_assembler": {
+      "input_files_per_manifest": 551,
+      "scope_files_per_manifest": 44,
+      "raw_artifacts": 65,
+      "site_packaged_files": 72,
+      "new_QA_evidence_hashes_and_sizes": 12,
+      "four_exact_image_copies": true,
+      "at_utc": "2026-10-22T16:33:51.639716+00:00"
+    },
+    "source_boundary": "Three product source files changed versus26c; 44-file combined25+26 scope. All5 receipt manifests hashed and every entry rehashed; no product tests rerun by document assembler.",
+    "six_other_preview_files_unchanged": true,
+    "private_passive_QA_observer_in_public_candidate": false
+  },
+  "final_26d_acceptance": {
+    "status": "TWO_ORIGINAL_FOCUS_REGRESSIONS_RED_TO_GREEN_WITH_BOUNDED_PRIOR_MAINLINES_CARRIED",
+    "report_path": "review-cards25-qa/review26d-bounded.json",
+    "report_sha256": "29e5d86b080ff4ff2a65c23658ff755a6209fc5c2ac4423e81957906b43616ee",
+    "independent_final_gate_sha256": "25d19788a9186f2db925efc4ca02abf77782cf11633a34fe93422d3c1f9018eb",
+    "results": {
+      "care": {
+        "status": "PASS",
+        "exactTarget": "care-history-card-10000000-0000-4000-8000-000000030102",
+        "firstFocusEpochMs": 1792686018914,
+        "laterTargetFocusoutCount": 0,
+        "settled": {
+          "active": {
+            "id": "care-history-card-10000000-0000-4000-8000-000000030102",
+            "tag": "BUTTON"
+          },
+          "at": "2026-10-22T16:20:45.440Z",
+          "card": {
+            "ariaDisabled": null,
+            "connected": true,
+            "disabled": false,
+            "tabindex": "0"
+          }
+        }
+      },
+      "preparation": {
+        "status": "PASS",
+        "exactTarget": "preparation-row-10000000-0000-4000-8000-000000030300",
+        "firstFocusEpochMs": 1792686114301,
+        "laterTargetFocusoutCount": 0,
+        "settled": {
+          "active": {
+            "aria": "開啟合成小明：合成學校交流準備單",
+            "id": "preparation-row-10000000-0000-4000-8000-000000030300",
+            "tag": "BUTTON"
+          },
+          "at": "2026-10-22T16:22:23.052Z",
+          "card": {
+            "ariaDisabled": null,
+            "connected": true,
+            "disabled": false,
+            "tabindex": "0"
+          }
+        }
+      }
+    },
+    "browser": {
+      "selectedBrowser": "1",
+      "tab": 32,
+      "nativeWindow": 27262980,
+      "nativePixels": [
+        1188,
+        848
+      ],
+      "method": "Real cloud Chromium, native viewport screenshot + normal Playwright/CUA UI input; no fullPage/Page.getLayoutMetrics, no zoom/DOM-state alteration.",
+      "careViewport": "1024→390×844",
+      "preparationViewport": "1024→390×844→1440×820;1440 image is a viewport segment, not full-width evidence."
+    },
+    "instrumentation_boundary": "Unchanged private passive focus observer; no product DOM/state manipulation; not included in publiccandidate72.",
+    "care": {
+      "root_cause": "Baseline Chrome directly observed focused original card becoming native-disabled during same-snapshot quiet refresh, then focusout to BODY. Scoped web exception preserves focus while guarding activation; occupied/native/default callers retain native-disabled behavior.",
+      "source_review_sha256": "b8d01449b4aaaba5ec1e433adcdf1c4e6a90e98ee971e9f42a578852e6a54dc2",
+      "baseline_trace_sha256": "6532186b6a3e7be53b0529252ac2caf7ca5f128b2855dadb253a30c61c5ad135",
+      "steps": "History→record030102 currentv2→oldv1→390→PageDown→Return; same original card remains connected/enabled/tab0 across care/search refresh",
+      "first_focus_utc": "2026-10-22T16:20:18.914Z",
+      "settled_utc": "2026-10-22T16:20:45.440Z",
+      "approx_stable_seconds": 26.526,
+      "later_target_focusout_count": 0,
+      "settled_DOM_sha256": "2740483409e8f1ee8c696d4fcfd0a734f37e5fdd7aa7e828ac5218da51f6475a",
+      "settled_focus_trace_sha256": "091674f2e017e824856587eb998d458c1ddca6f5fd2272d149f20a164f8be673",
+      "settled_GET_sha256": "9bfbbd74e7ae1ae03fe63b5777124de97f0becebf3fc275940a879dc19bdfb8b",
+      "read_failure_preserved": "Immediate document.hasFocus evaluator read unsupported; passive after-return-frame is immediate proof, not a fabricated successful DOM read."
+    },
+    "preparation": {
+      "root_cause": "Independent real owner/controlled synthetic GET reproduced a sufficient mechanism: replacing active head before verified archived pages temporarily detaches the returned archive card. Refresh now rereads loaded depth with fresh cursors and atomically commits verified active+archived pages. This probe is not claimed as direct browser proof of the precise internal26c causal chain.",
+      "source_review_sha256": "5afc08aca14cbf151754c28a50c0f0bacdeec6520a7deddc1989d8982c5b4b90",
+      "baseline_trace_sha256": "632d9bddef081d413fa71e60cd15b2d3b9c16c9d18442c89397c2576c5d0bd4b",
+      "steps": "School030300 currentv2→versions→oldv1→390→1440→Return; exact original enabled connected card remains focused across active+archived reads",
+      "first_focus_utc": "2026-10-22T16:21:54.301Z",
+      "settled_utc": "2026-10-22T16:22:23.052Z",
+      "approx_stable_seconds": 28.751,
+      "later_target_focusout_count": 0,
+      "settled_DOM_sha256": "6a7719fdea6bb80ccd8724090f8c17d1858da63b9285e0fcedb5b177ae58b612",
+      "settled_focus_trace_sha256": "269bede3c5087f35a1e10cf42b0cfd9762715b14e813ad9422b5d7d8c388a090",
+      "settled_GET_sha256": "0cf67cb08045150fde92be4240f21c40ca1a86be330ca764c40f49cdd8b4a5fc"
+    },
+    "GET_timestamp_boundary": "rows.at is request initiation; status200 is eventual recorded result, not a response completion timestamp.",
+    "new_evidence": [
+      {
+        "path": "evidence/26d-care-return390-native.png",
+        "sha256": "94a0da436e544667212ee23d884649d41a6cb9ec808498c1cbbd39bfbcce35de",
+        "bytes": 93765,
+        "original_path": "review-cards25-qa/evidence/26d-care-return390-native.png",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-care-settled-dom.json",
+        "sha256": "2740483409e8f1ee8c696d4fcfd0a734f37e5fdd7aa7e828ac5218da51f6475a",
+        "bytes": 254,
+        "original_path": "review-cards25-qa/evidence/26d-care-settled-dom.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-care-settled-focus.json",
+        "sha256": "091674f2e017e824856587eb998d458c1ddca6f5fd2272d149f20a164f8be673",
+        "bytes": 26301,
+        "original_path": "review-cards25-qa/evidence/26d-care-settled-focus.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-care-settled-get.json",
+        "sha256": "9bfbbd74e7ae1ae03fe63b5777124de97f0becebf3fc275940a879dc19bdfb8b",
+        "bytes": 19382,
+        "original_path": "review-cards25-qa/evidence/26d-care-settled-get.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-care-v1-390-native.png",
+        "sha256": "021fdcf49fdcb948d7a40aceb639c1458f6376554a11018c6fd729d4e9334f38",
+        "bytes": 97417,
+        "original_path": "review-cards25-qa/evidence/26d-care-v1-390-native.png",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-preparation-immediate-dom.json",
+        "sha256": "59a688a380a451a92551da72f5d8fafffe33318408af76f5367fd2b1bbe26af4",
+        "bytes": 316,
+        "original_path": "review-cards25-qa/evidence/26d-preparation-immediate-dom.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-preparation-immediate-focus.json",
+        "sha256": "269bede3c5087f35a1e10cf42b0cfd9762715b14e813ad9422b5d7d8c388a090",
+        "bytes": 62529,
+        "original_path": "review-cards25-qa/evidence/26d-preparation-immediate-focus.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-preparation-immediate-get.json",
+        "sha256": "1cdf353f4889d55872d2f69e3ad28b9ced4d277cabe0d1f360fbae10878e1650",
+        "bytes": 19206,
+        "original_path": "review-cards25-qa/evidence/26d-preparation-immediate-get.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-preparation-return1440-segment-native.png",
+        "sha256": "3c1a6499c34dab472f76791ca1e234da9cc2cc389ff384e7f4c753782feb029e",
+        "bytes": 141655,
+        "original_path": "review-cards25-qa/evidence/26d-preparation-return1440-segment-native.png",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-preparation-settled-dom.json",
+        "sha256": "6a7719fdea6bb80ccd8724090f8c17d1858da63b9285e0fcedb5b177ae58b612",
+        "bytes": 316,
+        "original_path": "review-cards25-qa/evidence/26d-preparation-settled-dom.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-preparation-settled-focus.json",
+        "sha256": "269bede3c5087f35a1e10cf42b0cfd9762715b14e813ad9422b5d7d8c388a090",
+        "bytes": 62529,
+        "original_path": "review-cards25-qa/evidence/26d-preparation-settled-focus.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/26d-preparation-settled-get.json",
+        "sha256": "0cf67cb08045150fde92be4240f21c40ca1a86be330ca764c40f49cdd8b4a5fc",
+        "bytes": 19579,
+        "original_path": "review-cards25-qa/evidence/26d-preparation-settled-get.json",
+        "included_in_public_package": false
+      }
+    ],
+    "carried_not_rerun": "Existing8 history-category bounded mainlines, toolbar25d/26, pending-card/405/unknown/scope/focus pagination, Hero glass. Concrete-copy visual26c already root-approved. Only original two regressions retested on26d.",
+    "not_run": [
+      "Firefox/native-app execution",
+      "Voice playback",
+      "Live production backend/model/data/writes",
+      "All-history category fault/pagination matrix as fresh26d CUA",
+      "Busy-window Enter/Space/click as new26d CUA; independent source/trueDOM gate covers guard",
+      "Full-width1440 native screenshot on26d; earlier26 messages full-width evidence preserved"
+    ],
+    "decision_boundary": "Bounded QA can be closed for these two regressions. Publishing/credentials/PR decision belongs to root; no release performed."
+  },
+  "backend_activation_boundary": "Synthetic read-only preview is not production API/model/provider readiness. Previously delivered message backend remains default-disabled and requires deployment owner whole-fleet and four-index readiness followed by staged activation; not verified or deployed by this package.",
+  "documentation_frozen_at_utc": "2026-10-22T16:45:03.981522+00:00",
+  "live_site85_smoke": {
+    "status": "BOUNDED_LIVE_SMOKE_PASS_WITH_EXPLICIT_INITIAL_ACTION_LIMITS",
+    "report_path": "review-cards25-qa/site85-live-smoke.json",
+    "report_sha256": "1e86a2e30665fcd8348802ad536fbf74a0ef541284c638e338af8046195a18d2",
+    "recorded_at_utc": "2026-10-22T16:43:46.089844+00:00",
+    "evidence_integrity": {
+      "verified_hashes_and_sizes": 10,
+      "new_screenshots_added_to_public_package": 0
+    },
+    "browser_identity": {
+      "selectedBrowser": "1",
+      "tab": "36",
+      "nativeWindow": 27262980,
+      "nativeWindowPixels": [
+        1188,
+        848
+      ],
+      "publicWrapper": "/qa-viewport.html normalized by host to /qa-viewport",
+      "frame": "#app-frame",
+      "noInjectedPrivateObserver": true,
+      "observedBundleURL": "/_expo/static/js/web/index-f755ffc22d2d04a315ec8db050591e40.js",
+      "byteBoundary": "Observed live DOM script URL and matching new synthetic content. Expected byte SHA is package/deployment identity, not a separately fetched live byte hash."
+    },
+    "results": [
+      {
+        "check": "Live load/synthetic boundary",
+        "status": "PASS",
+        "evidence": "site85-live-identity.json",
+        "detail": "Expected newbundle, synthetic-only notice and no backend/AI notice visible. No private __qa-ports script."
+      },
+      {
+        "check": "Task and preparation examples",
+        "status": "PASS_RENDERED_TEXT_SMOKE",
+        "evidence": [
+          "site85-task-live-text.json",
+          "site85-preparation-text.json"
+        ],
+        "detail": "Three terminal tasks contain concrete library/rainy-park/school content; three archived preparations contain distinct handoff/outing/school text. Not a new full pixel matrix."
+      },
+      {
+        "check": "Care currentv2→old-history→390→Return",
+        "status": "PASS_AFTER_NORMAL_SCROLL_TO_VISIBLE_CONTROL",
+        "immediate": "2026-10-22T16:41:01.533Z original030102 button connected/enabled/tab0",
+        "settled": "2026-10-22T16:41:52.345Z same exact030102 button",
+        "boundary": "Initial automatedclick after PageDown left detail open; not a completed Return and not classified as focus RED. Native screenshot showed Return overlapping sticky header. Normal PageUp exposed it; explicit native activation of live tab and native visible-button click returned correctly. This live smoke is not the exact uninterrupted timing of the private26d passive-trace retest."
+      },
+      {
+        "check": "Preparation school currentv2→oldv1→390→1440→Return",
+        "status": "PASS",
+        "immediate": "2026-10-22T16:41:58.952Z exact030300button",
+        "settled": "2026-10-22T16:42:36.811Z samebutton connected/enabled/tab0",
+        "boundary": "Normal PageUp used before clicking Return to avoid header occlusion. Public wrapperheight900, not private820/844. No private event/GET trace injected; no claim that local trace is live."
+      }
+    ],
+    "initial_action_limits_preserved": [
+      {
+        "action": "Public wrapper setChecked on AX-described checkbox1024",
+        "result": "NOT_EXECUTED_NO_MATCH",
+        "reason": "Actual DOM is native button with aria-pressed, native AX calls it checkbox; small DOM inspection then ordinary button click succeeded."
+      },
+      {
+        "action": "First Care Return locator click after PageDown",
+        "result": "NOT_TRANSITIONED",
+        "reason": "Reader remainedopen; Return was partly behind sticky header in native screenshot. Preserved initial BODY/null-card files as incomplete action, not completed-return focus regression."
+      },
+      {
+        "action": "Native full-desktop scroll observation",
+        "result": "WRONG_VISIBLE_TAB_OBSERVED",
+        "reason": "Next native screenshot displayed old private localhost tab33 code9, while live36 DOM remained readable. No cause asserted; not assigned to Site85. Native tabbar click explicitly activated identified live tab36 before successful Return."
+      }
+    ],
+    "scope_boundary": "Not eight-category full retest;26d original two fast paths plus refresh event-trace PASS remain separately documented in review26d-bounded.json. New full-site visual audit belongs to another task.",
+    "new_evidence": [
+      {
+        "path": "evidence/site85-care-immediate.json",
+        "sha256": "fa1f5b775ba3fdf91d29a4d563a6d4c9b76a2c2f0aad47423b9ec769204c7c8a",
+        "bytes": 200,
+        "original_path": "review-cards25-qa/evidence/site85-care-immediate.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/site85-care-return-not-transitioned-native.png",
+        "sha256": "2544a072a1d4a841e73ac26d6f787bc4bfa182f1f8b280bbba46925ebd557ea4",
+        "bytes": 135852,
+        "original_path": "review-cards25-qa/evidence/site85-care-return-not-transitioned-native.png",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/site85-care-settled.json",
+        "sha256": "5c5fa866d30116abccf9c6732b7899c166ba3c72d6665a5ad604efd235e32db7",
+        "bytes": 219,
+        "original_path": "review-cards25-qa/evidence/site85-care-settled.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/site85-care-visible-return-immediate.json",
+        "sha256": "02395cf9307dd159b5c1785a9f522e13fee1cc6c7159aec73f5a9ae5e1e163a5",
+        "bytes": 232,
+        "original_path": "review-cards25-qa/evidence/site85-care-visible-return-immediate.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/site85-care-visible-return-settled.json",
+        "sha256": "107d9bc80e630a9ee68b6f17d58be441d43c9635ec788149c0b94881e8113963",
+        "bytes": 149,
+        "original_path": "review-cards25-qa/evidence/site85-care-visible-return-settled.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/site85-live-identity.json",
+        "sha256": "de70582c2d66f68e13a1cad5fab88696e0d101e542c96efbf3c7ad6aadeb4692",
+        "bytes": 1521,
+        "original_path": "review-cards25-qa/evidence/site85-live-identity.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/site85-preparation-return-immediate.json",
+        "sha256": "c6c04707cbc30cb5c3980d6aa6638272ffb2be6d88dc5fe38c09e57e2ea38e04",
+        "bytes": 163,
+        "original_path": "review-cards25-qa/evidence/site85-preparation-return-immediate.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/site85-preparation-return-settled.json",
+        "sha256": "c02dd1018f3c8a6d44ebdf2793215d6c113d936494b5eacd4f21718280804217",
+        "bytes": 477,
+        "original_path": "review-cards25-qa/evidence/site85-preparation-return-settled.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/site85-preparation-text.json",
+        "sha256": "5d12a407ea1ebe1492147b3ad4021378a8b7adff80d653cbe2d4bc98370ac5ba",
+        "bytes": 903,
+        "original_path": "review-cards25-qa/evidence/site85-preparation-text.json",
+        "included_in_public_package": false
+      },
+      {
+        "path": "evidence/site85-task-live-text.json",
+        "sha256": "acf7c36ce105accf4fddd32f31f502a34ed793352919196e72db1fe0f03c7aee",
+        "bytes": 982,
+        "original_path": "review-cards25-qa/evidence/site85-task-live-text.json",
+        "included_in_public_package": false
+      }
+    ]
+  }
+}

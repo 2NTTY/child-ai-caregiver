@@ -18,7 +18,7 @@ export function useProductionContact(env: SettingsEnvironment) {
   const apply = (page: NonNullable<ContactViewModel["page"]>) => {
     const currentIds = new Set(page.tasks.map(task => task.id));
     patch({ page, access: page.canManage && env.role !== "viewer" ? "editable" : "read_only", load: "ready",
-      dataLabel: "最後讀取：" + new Date().toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" }),
+      dataLabel: "最後讀取：" + new Date().toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }),
       missingTasks: latest.current.page?.tasks.filter(task => !currentIds.has(task.id)).map(task => task.id) ?? [],
       originalConsent: false, confirmationEpoch: latest.current.confirmationEpoch + 1 });
   };
