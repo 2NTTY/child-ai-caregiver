@@ -3,23 +3,17 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## 前端精簡與接線修補（2026-10-22；同一 draft PR，首頁歡迎橫幅修補進行中）
+## 前端頁型、讀取穩定性與 metadata（2026-10-23；snapshot31 有界驗收通過，交付收尾）
 
-基線 `7b828dcbe967c92556673b97733c281d29db4386`，分支 `dot/frontend-simplify-20261021`。2026-10-22 04:46 UTC 已核 [draft PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253) head `19ac8dec3f6364241f29814c24b602305bdffad3`；snapshot15 已推送，主對話已確認既有公開 Site76 為 snapshot15。產品只改 `frontend/**`；本次另獲准納入已獨立審核的需求 v0.8 文件，不代表 ADK 功能已實作。沒有正式家庭資料、真模型、API／權限變更、正式服務部署或 OTA。使用者要求維持一個 draft PR、先不合併；原生 Astra 實作及獨立審核。
+沿用分支 `dot/frontend-simplify-20261021`。本輪來源已正常推送至遠端 commit `58080880e3ebbe9e3d323efef7d9b5666f324e20`，63個 blobs、tree及分支ref已核一致；2026-10-23 04:39:31 UTC 的兩路PR讀回確認 [PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253) head同為該commit，仍 open／draft／未合併。公開合成預覽仍為 Site86／snapshot27a，未發布本輪；Sites更新及所需憑證的當次批准待回。
 
-- **當前小增量：**修正「你好」橫幅插圖裁切，副句改為動態香港日期＋「先看重要的，再繼續日常」，移除橫幅外重複日期列。snapshot16 的穩定 export 及定向測試通過，但 1024 實屏仍裁右手指，未批准交付；原證據保留。最小修正後 snapshot17 的 536 inputs 前後一致、獨立四尺寸驗圖通過，主對話已親看 1024 指尖完整；本增量正待正常提交，GitHub 與 Sites 各按實際讀回確認，不預填完成。
-- **已交付分層證據：**snapshot10–15 的唯一 saved list、modal focus、單面板背景、核對導航、Profile／活動／去重與各次失敗／修復，見[增量驗證](verification/frontend-simplify-2026-10-21/PREVIEW_DELTA_20261022.md)。snapshot15 536 build inputs 前後一致，兩組有界 Chrome 驗收通過；typecheck 仍有同兩項基線錯誤，舊 harness 阻塞及未驗項保留，並非全倉測試全綠。
-
-- **已實作：**孩子切換去掉年齡／地區／過敏顯示；保留檔案狀態。首頁移除兩個右下快捷入口及底部重複標語、待辦摘要自然延伸；側欄移除照顧上下文分頁。導航短名統一，「全部功能」為明確四字例外並列現有一般入口。
-- **相關頁面：**待辦完成文案／詳情去重；登入欄位內顯示密碼、保留找回／驗證與必要條件，移除登入說明／死返回首頁／底部標語。通知不顯示技術嘗試時間或診斷入口，保留必要時間、真結果與部分載入，尚非內容收件箱。
-- **內容重組：**`/growth` 關注鏈＋準備單、`/summary` 概況＋成長檔案；手機原成長格為關注，仍五個入口。歷史／相容 deep link／readiness 同步，原 authority-gated archive 與 combined refresh 保留，沒有第二資料 owner。
-- **修補：**純 GET busy 不再誤作 pending write；真草稿、unknown、原 opId 及 scope 切換保護保留。HomeWelcome 等首次資料 ready＋可見且經 paint 邊界才開始既有閱讀時間；首次 scope 初始化不提前消耗，已展示後切頁／孩子不重播。
-- **閱讀及操作：**普通手動資料表單收進共用響應式 FormDialog，原 owner／確認／恢復保持同一接線；Profile 直接閱讀已確認資料、編輯及新增孩子用彈窗，移除重複孩子列。Care 長 Agent 結果用獨立閱讀窗，原候選／來源／確認不截斷，聊天答案不隱藏。Documents／Growth 精確 local-draft 保護不由無關 pending 冒領。
-- **外觀及設定：**首頁自訂背景本機持久、服務／本人隔離、登出立即遮罩；原 native 依賴不變。設定八個 key 保留，通知偏好及渠道歸同區；顯示名稱無 API，改為正式唯讀，不保留假保存。聊天 16／27、760 閱讀欄、輕量使用者底色與統一輸入 dock；正常時間到分鐘不逐條附時區，實際換算不改。
-- **接口界線：**三個未接通需求見 [接口提案](ATTENTION_API_HANDOFF.md)。禁止前端跨 owner 湊業務總數／假正文／正式 mock fallback；主動機制暫緩。這份提案不是已完成 backend 或正式 wire schema。
-- **檢查：**合成元件／真 hooks、guard、owner 及安裝版 RN Web SSR 定向測試已執行；尺寸分支涵蓋 web/android 320／390／768／1024／1440，但不等於像素／真機驗收。完整命令、各次成敗及界線列本輪 [checks](verification/frontend-simplify-2026-10-21/checks.json)。frontend typecheck 仍有基線 ContactConsentCard 的兩項型別錯誤，已用 HEAD overlay 核實同錯，不在本包修通知授權。
-- **獨立驗收：**snapshot03 真雲端 Chrome 的 320 詳情、390 側欄、眼睛圖示三項缺陷已修，snapshot04 同界線複驗通過；背景選圖／刷新持久／恢復／延遲登出遮罩／A-B 身份隔離通過。代表尺寸 320／390／768／1024／1440 分版本記錄，不冒稱全頁全狀態矩陣。snapshot06 的來源草稿 context 遺失、欄位名稱／照片時間等已在 snapshot07 真表單複驗修復，聊天鍵盤回焦／閱讀不搶焦亦通過；Care 新增回焦在 snapshot08 通過；Tasks 已確認的 after-close GET 停用按鈕競態，改為一次回穩定待辦 heading，在 snapshot09 首次快速／穩定頁關閉及 Tab 延續通過。首頁摘要時間漏點亦已在 snapshot09 複驗分鐘／無時區後綴。
-- **唯一下一步：**把已通過來源／穩定 export／有界驗圖的 snapshot17 及獨立審核的需求 v0.8 更新至現有 draft PR；主對話另處理獲授權的同站預覽發布。PR、驗收與 Sites 結果分開記錄；不 ready、不 merge、不 auto-merge，不擴成本包 backend 工作。
+- **本輪範圍：**歷史待辦單欄、已保存核對正文優先、重新讀取時的內容／焦點穩定、Tabs／導航、metadata 圖標與短值，以及既有 Contact 渠道 schema 修補。保留各 owner、權限、草稿、確認版本及原操作恢復；不以共用元件統一所有頁型。
+- **定稿候選：**snapshot31 補修 Summary 自然 focus／位移及概況同範圍重驗內容保留，記憶私人短標籤改為「本人」。來源範圍 **63 檔＝37 產品＋25 測試＋1 設計文件、553 build inputs**；此為產品候選 scope，不包含另附的交付報告及本次 PLAN／STATUS 更新。
+- **分版本證據：**[snapshot29](../docs/verification/frontend-2026-10-23/focus-layout-29/README.md) 的限定場景通過；[snapshot30](../docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/README.md) 的 metadata／分頁等代表結果與 Summary 紅項均已凍結，Tasks 1440 自然 focus 仍未知。30結果不冒稱31重跑，後版修好不回寫前版為綠，也不把版本或作者測試相加。
+- **31已核：**11個 unique 必要 scripts／80項通過；唯一export exit0（133.295秒）、靜態安全validator通過，63檔scope／553inputs前後一致。04:28:53 UTC的[31有界browser報告](../docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/README.md)確認1024自然focus未再出現原Summary失焦／位移，ready-state鍵盤、真Paper日期blur及390「本人」短名通過；不是全站重跑或真機驗收。
+- **未過門檻：**snapshot30 完整 TypeScript 在兩個環境均 exit137、未完成且原因未知；31 未重跑，不以定向測試、export或有界browser抵銷。04:40 UTC 的GitHub觀察為0 runs／checks／statuses、combined pending，亦不是CI綠燈。
+- **唯一下一步：**完成驗收文檔及現況更新的正常交付與遠端讀回；既有Sites更新及所需憑證待當次批准，不預填發布。維持同一draft PR，不 ready、不 merge、不 auto-merge。
+- **界線：**產品修改限 `frontend/**`，只用合成資料；沒有真家庭資料、真模型、API／帳戶權限變更、GCP或OTA。原未接接口仍見 [接口提案](ATTENTION_API_HANDOFF.md)。
 
 下方是較早批次的完整歷史；其「當前／待交付」不代表本輪狀態，亦不重用舊 browser 或 Sites 證據作本候選通過。
 

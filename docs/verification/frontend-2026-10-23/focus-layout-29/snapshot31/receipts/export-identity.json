@@ -1,0 +1,36 @@
+{
+  "snapshot": 31,
+  "status": "STATIC_VALIDATED_FROZEN_SNAPSHOT31_READY_FOR_INDEPENDENT_QA_NOT_PUBLISHED",
+  "bundle": {
+    "path": "_expo/static/js/web/index-31bd1794b883237095fb089582d30780.js",
+    "sha256": "9ce151e4f0313d609b088e007e915d03f59e7ce9631dd83a10627a70ce851b4c",
+    "bytes": 5631795
+  },
+  "fixtureSha256": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d",
+  "buildManifestSha256": "520831dbc7f0e9037d9b6cf3db6d927f9bbb86ad6fbedb7813e52eefb3de5776",
+  "archive": "frontend-site-preview-snapshot31.tar.gz",
+  "archiveSha256": "5be4d798b735e7f3df1b69f7d8a02b05b14014968339de68c0c1575ec13e3fef",
+  "archiveBytes": 4835245,
+  "sourceScope": 63,
+  "productInputs": 553,
+  "beforeAfterEqual": true,
+  "rawArtifactCount": 65,
+  "rawHtmlCount": 36,
+  "packagedArtifactCount": 72,
+  "staticValidator": "PASS",
+  "build": {
+    "exit": 0,
+    "seconds": 133.295,
+    "maxChildRssKiB": 656436,
+    "NODE_OPTIONS": "--max-old-space-size=384",
+    "startUtc": "2026-10-23T04:18:19.322446+00:00",
+    "endUtc": "2026-10-23T04:20:32.617450+00:00",
+    "logSha256": "cd64f33b78bc819726fa506dc5d4c615fc588b88b5f72fa38ca70d64f727024e",
+    "inputsUnchanged": true,
+    "scopeUnchanged": true
+  },
+  "publicSafetyAndFixtureUnchanged": true,
+  "fullTS31": "NOT_RUN; prior30 two environment exit137 without diagnostics, cause unknown; fullTS gate not passed",
+  "browser": "BOUNDED_BROWSER_PASS_FULL_TYPECHECK_REMAINS_BLOCKED",
+  "publication": "NOT_PERFORMED"
+}

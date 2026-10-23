@@ -1,0 +1,93 @@
+{
+  "snapshot": 31,
+  "bundleSha256": "9ce151e4f0313d609b088e007e915d03f59e7ce9631dd83a10627a70ce851b4c",
+  "attachedCount": 4,
+  "originalCount": 20,
+  "images": [
+    {
+      "file": "screenshots/12-summary-before-native-focus-0.jpg",
+      "sha256": "b9928e5068655c0370f0e8c1c4054181b81350121e913f56da8d7c106087fef1",
+      "bytes": 151354,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "caption": "Summary自然focus前：未套用一日／日期與原七日報告",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "originalBytesUnmodified": true
+    },
+    {
+      "file": "screenshots/14-summary-native-return-0.jpg",
+      "sha256": "2234da9206fcbb13d070e4826cb1b6bbe7658a06df95bd135850e83849f0b78f",
+      "bytes": 151219,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "caption": "Summary自然focus返回終態：與被動trace共同支持限定通過",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "originalBytesUnmodified": true
+    },
+    {
+      "file": "screenshots/18-date-focused-before-harness-0.jpg",
+      "sha256": "7a985dfecba2b8c1b197b6b34aaa6e55f8f3a8f9423b9564705aa4a04e5618af",
+      "bytes": 153447,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "caption": "日期focus起態；真Tab／Paperblur由另附派生trace支持，非第二次純AltTab",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "originalBytesUnmodified": true
+    },
+    {
+      "file": "screenshots/21-memory-private-label390-0.jpg",
+      "sha256": "ca94b40bd7cb7594c07e9588bade882281af5307ad3cc8cfdbab05a5c67bd7f9",
+      "bytes": 134347,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "caption": "記憶短名「本人」；只label smoke，非多頁／focus重跑",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "originalBytesUnmodified": true
+    }
+  ],
+  "note": "Static images support captured state; passive observations and real key events support transitions. Not continuous video."
+}

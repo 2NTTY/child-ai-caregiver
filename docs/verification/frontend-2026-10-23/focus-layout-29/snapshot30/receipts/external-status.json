@@ -1,0 +1,14 @@
+{
+  "observedAt": "2026-10-23T03:37:00Z",
+  "timePrecision": "minute",
+  "provider": "GitHub live readback",
+  "pullRequest": "https://github.com/2NTTY/child-ai-caregiver/pull/253",
+  "state": "open",
+  "draft": true,
+  "merged": false,
+  "head": "2fdb8aa31a59fe4b01be8b7470da91740a793bae",
+  "base": "master",
+  "snapshot30CommitPublished": false,
+  "snapshot30SitePublished": false,
+  "limit": "Historical observation, not a continuing guarantee; recheck before publication."
+}

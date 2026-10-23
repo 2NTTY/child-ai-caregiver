@@ -1,0 +1,54 @@
+{
+  "snapshot": 31,
+  "baseSnapshot": 30,
+  "count": 9,
+  "files": {
+    "frontend/scripts/control-affordances.test.mjs": {
+      "role": "test",
+      "beforeSha256": "9010fc8c4de079ae016bf50a0bf33f7b765d96d1062095f1c573a222f7faf2ea",
+      "afterSha256": "f3a4fe2b6e46d194d899941539dbba60bf2076cd923bf7653cc07e0705d3bf73"
+    },
+    "frontend/scripts/memory-source-display.test.mjs": {
+      "role": "test",
+      "beforeSha256": "0e12f5d827f6591eb2837fbc9be603b97b4f34d2e8c95feda4f1cf3ab451f5e8",
+      "afterSha256": "b22ca445527f6f18e581a92690b75d114b0f6392cf47ed2fd219eee28a1b48d4"
+    },
+    "frontend/scripts/summary-composition.test.mjs": {
+      "role": "test",
+      "beforeSha256": "344b84c68f5040e727b72f99da1fe3b406dbed0659ea78c22206f6790e2deb34",
+      "afterSha256": "4a958d1ec716b337c5b3f9cfc60410a30e02aa0f9275acd325e91e2f14895aa7"
+    },
+    "frontend/scripts/summary-focus-layout.test.cjs": {
+      "role": "test",
+      "beforeSha256": null,
+      "afterSha256": "1ab08dfe2e1a26699f381bf0dd85799c4d41ead47efb2b4028fac0ecf32a01f9"
+    },
+    "frontend/src/child-overview-view-model.ts": {
+      "role": "product",
+      "beforeSha256": "05cba47111a6e5d1cb7d611d02ccf923d5771518a0e5fe878ddc5a473ae34463",
+      "afterSha256": "550d7534550c00bb7348dbe536081e2107b0686fdb8089b5b137c6f7b316d101"
+    },
+    "frontend/src/components/DateTimeFields.tsx": {
+      "role": "product",
+      "beforeSha256": "f018549763991c2b4fdeaa1908fbb4c2efec8d91111d0f6bd4a8decdb0af7aee",
+      "afterSha256": "13a22848c92b6dbee8a5c77f476316309e506b671d4b20a2e7db7006b2d5b71d"
+    },
+    "frontend/src/components/ui.tsx": {
+      "role": "product",
+      "beforeSha256": "1a59c5dba32114080cde75ba03e0787d54b88be5ebb4e0b2087fa4fae5cb8dae",
+      "afterSha256": "7d1a930bfcba234b42e9513d35e947ab53c00b4e68bafd52b12a376755ea4d4e"
+    },
+    "frontend/src/memory-view-model.ts": {
+      "role": "product",
+      "beforeSha256": "822f4be051b5cd69f2c06ccc3467dd4a7997e507858e2d0af4ede7f258c0e094",
+      "afterSha256": "de9472c160d50907e946d2ebba7a45e087b9bc36b71a7e28a9a408faabf8c7e4"
+    },
+    "frontend/src/production/TaskKnowledgeSummaryContent.tsx": {
+      "role": "product",
+      "beforeSha256": "a8712afcea2aa0ed4ac269d579bfdf854b0806792d0f6fee6200a2df4437c4a3",
+      "afterSha256": "a2126c53c37a3805aecde64cfc62556535e880be678d6acf2b3cbbf17e15b99a"
+    }
+  },
+  "patchSha256": "c9ad8045de1e38e0aebfdf715e4cb6da4861bd7d54c556ce812929493fa4d929",
+  "note": "Five product and four test files; overlapping existing scope means57+9 is not the cumulative63. Public fixture/safety unchanged."
+}

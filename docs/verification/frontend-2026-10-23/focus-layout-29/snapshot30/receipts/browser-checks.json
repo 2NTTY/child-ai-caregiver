@@ -1,0 +1,85 @@
+{
+  "snapshot": 30,
+  "completedAt": "2026-10-23T04:09:51.296538+00:00",
+  "status": "BOUNDED_RESULTS_WITH_SUMMARY_REGRESSION_AND_TYPECHECK_BLOCKER",
+  "candidateIdentity": {
+    "bundle": "_expo/static/js/web/index-eb4de3969c443fc568907cc1a09f7cb9.js",
+    "bundleSha256": "a5b1662b88e46d14216430967f4ec4f7071a280aadb031481f1d27e23d68ec47",
+    "manifestSha256": "06ccb8cad2b5d30f0d93080e84d3c4bcc43778e9a49d6a6e62e6eae1067b663f",
+    "publicFixtureSha256": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d"
+  },
+  "syntheticOnly": true,
+  "results": [
+    "Task detail metadata 390/1440 and arrangement disclosure",
+    "Archived preparation metadata 390/1440 and source/version disclosure",
+    "Growth event metadata 390/1440, internal source navigation, close focus restoration",
+    "Care saved metadata 390/1440; null quantity hidden on main view and retained in correction history",
+    "Agent memory_fact/private proposal metadata 390/1440 and details disclosure",
+    "Memory 390 true focus with 3+2 legal pages retained; 1440 source/version/candidate caution",
+    "Tasks 390 true focus with 3+3 legal pages retained and second-page detail close restoration",
+    "Notification review true focus, fields/focus/motion retained; deferred preferences GET drains after cancel only",
+    "Contact fixture 503 explicit fail-closed and one manual GET retry"
+  ],
+  "limits": [
+    "Summary30 remains red: focus falls to BODY and tab/marker moves31.25CSSpx;31 fix must have its own acceptance.",
+    "Full TypeScript in both environments exited137 without diagnostics; gate not passed and root cause unknown.",
+    "Tasks1440 natural-focus attempt ended with Chromium code9 before trace export; unknown technical cause, not PASS or a demonstrated product failure.",
+    "Memory labels still include只供本人 in30, not globally normalized to本人.",
+    "Notifications natural-focus review passed; cancel leaves BODY, not cancel-focus restoration. No save.",
+    "Contact original503 safe failure and manual retry only; no three-channel binding/save browser test.",
+    "Public malformed partial cursor fixture correctly fails closed. Legal synthetic facts/tasks paging is separate; its9fixture-validator cases are not part of144product tests.",
+    "Topics remain empty terminal page. Reference external-link/open-failure/bad-scheme scenarios have unit callback coverage only; no browser entry in empty synthetic library.",
+    "Care non-null quantity/missing metadata and Agent non-memory_fact/family scenarios not browser exercised.",
+    "No full-site/all-branches/WCAG/screen-reader/native-device/real-service/model/family-data acceptance or publication."
+  ],
+  "fullTypecheckGatePassed": false,
+  "summaryAccepted": false,
+  "sourceReceipts": [
+    {
+      "name": "bounded-browser-report.json",
+      "sha256": "9d0b8aff1501feb25d7ad65a8990fee265810c6f718af726faafe29a2becf0b9",
+      "originalAttached": false
+    },
+    {
+      "name": "bounded-browser-report.md",
+      "sha256": "d0936cf729cfc1e7973f7f2fdf2b6f6f5aa768089547e212316907f5f2f26c23",
+      "originalAttached": false
+    },
+    {
+      "name": "focus-window-summary.json",
+      "sha256": "28d5f87467873e475bef953d984e815ea44a39da9132e1f80fc18553dd0f28d0",
+      "originalAttached": false
+    },
+    {
+      "name": "original-images-index.json",
+      "sha256": "ad9437521350705dbd5465ac3a928b4efdb958b7bab696f6b2fa6714bc5af52e",
+      "originalAttached": false
+    },
+    {
+      "name": "closing-identity.json",
+      "sha256": "d17bb9ad8474144e4ca288222a4b03f6879799cfd2bc24edf60dfa74e4b75ff8",
+      "originalAttached": false
+    }
+  ],
+  "closingIdentity": {
+    "candidateFileCount": 72,
+    "byteDiffs": [],
+    "publicFiles": {
+      "_expo/static/js/web/index-eb4de3969c443fc568907cc1a09f7cb9.js": {
+        "qaSHA": "a5b1662b88e46d14216430967f4ec4f7071a280aadb031481f1d27e23d68ec47",
+        "candidateSHA": "a5b1662b88e46d14216430967f4ec4f7071a280aadb031481f1d27e23d68ec47",
+        "same": true
+      },
+      "preview/synthetic-ports.js": {
+        "qaSHA": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d",
+        "candidateSHA": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d",
+        "same": true
+      }
+    },
+    "manifestSha256": "06ccb8cad2b5d30f0d93080e84d3c4bcc43778e9a49d6a6e62e6eae1067b663f"
+  },
+  "screenshots": "../evidence-index.json",
+  "focusObservations": "browser-focus-observations.json",
+  "noMutationSubmitted": true,
+  "publicationAccepted": false
+}

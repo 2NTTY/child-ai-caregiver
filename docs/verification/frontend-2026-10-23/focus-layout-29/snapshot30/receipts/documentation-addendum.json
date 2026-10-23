@@ -1,0 +1,12 @@
+{
+  "status": "REVIEWED_DOCUMENTATION_ADDENDUM_NOT_PRODUCT_REBUILD",
+  "file": "frontend/DESIGN_SYSTEM.md",
+  "snapshot30BuildDocumentSha256": "2e11a8bf8deb17ef7be1f71ee4fc2979af312daec5e5bf72da2286c780afb15f",
+  "deliveryDocumentSha256": "d5b16b8d5778e0d0d1231a08d35d1713359b6533c641ce342ec8ae5f7a24faf6",
+  "patchSha256": "db845baa93d2498ccecb4fa1cb0d740a855a3f3f49dc5719591649d4d4d60ce3",
+  "scope": "Two existing sections only: metadata hierarchy and truthful interaction/state semantics.",
+  "productInputsChanged": false,
+  "frozenSnapshot30Changed": false,
+  "canonicalApplied": false,
+  "note": "The snapshot30 source freeze intentionally retains the original design-document hash. This documentation-only addendum is delivered separately and does not imply a rebuilt or newly browser-tested product."
+}

@@ -1,0 +1,105 @@
+{
+  "snapshot": 31,
+  "completedAt": "2026-10-23T04:28:53.122963+00:00",
+  "status": "BOUNDED_BROWSER_PASS_FULL_TYPECHECK_REMAINS_BLOCKED",
+  "identity": {
+    "bundle": "_expo/static/js/web/index-31bd1794b883237095fb089582d30780.js",
+    "bundleSha256": "9ce151e4f0313d609b088e007e915d03f59e7ce9631dd83a10627a70ce851b4c",
+    "manifestSha256": "520831dbc7f0e9037d9b6cf3db6d927f9bbb86ad6fbedb7813e52eefb3de5776",
+    "archiveSha256": "5be4d798b735e7f3df1b69f7d8a02b05b14014968339de68c0c1575ec13e3fef",
+    "publicFixtureSha256": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d"
+  },
+  "results": [
+    {
+      "case": "summary unapplied period natural focus",
+      "status": "PASS in tested1024x600/appzoom1.4/Chrome80 case",
+      "evidence": "12–15",
+      "observedRenderRows": 3,
+      "enhancedRows": 5,
+      "periodDraft": "day",
+      "displayedAndRequestedReportPeriod": "week",
+      "date": "2026-10-23",
+      "focusRetained": "摘要期間：一日",
+      "tabY": -1028.06640625,
+      "observedYDelta": 0,
+      "overviewTextRectRetained": true
+    },
+    {
+      "case": "ready-state period keyboard",
+      "status": "PASS",
+      "evidence": "16–17",
+      "keys": "Native Enter and Space each open; Escape closes and restores focus; no apply"
+    },
+    {
+      "case": "real Paper date blur during quiet read",
+      "status": "PASS",
+      "evidence": "18–20",
+      "protocol": "Mixed wrapper-delayed refresh preparation + earlier iframe-focus quiet GET. True Tab during readonly; later scheduled harness GET separate. Not claimed as pure natural Alt-Tab.",
+      "inputReadonlyWhileBusy": true,
+      "inputNativeDisabledWhileBusy": false,
+      "inputTabindexWhileBusy": "-1",
+      "dateLostFocusByUserTab": true,
+      "nextAvailableFocus": "期間記錄與原始依據 · 0 筆",
+      "afterRead": "Readonly false, nativeDisabled false, tabindex removed; date unchanged; next focus retained",
+      "paperActiveLabelOpacity": "0",
+      "paperInactiveLabelOpacity": "1"
+    },
+    {
+      "case": "memory private label390x700",
+      "status": "PASS label-only smoke",
+      "evidence": "21",
+      "visibleText": "本人",
+      "accessibleLabel": "可見範圍：本人",
+      "sameLabelsInLoadedCards": 3
+    }
+  ],
+  "limits": [
+    "Not a whole-site31 regression run: Snapshot30 metadata/paging results remain version30, not rerun/relabeled31",
+    "No ReactNative actual-device test; browser is RNWeb/installed Paper",
+    "No busy Enter/Space activation-block browser claim; ready-state keyboard smoke plus source/test coverage are distinct",
+    "Full TypeScript remains blocked by prior two exit137/no diagnostics; not rerun or declared green",
+    "No backend/model/binding/write integration tested"
+  ],
+  "closingIdentity": {
+    "candidateFiles": 72,
+    "byteDiffs": [],
+    "bundleSHA": "9ce151e4f0313d609b088e007e915d03f59e7ce9631dd83a10627a70ce851b4c",
+    "publicFixtureSHA": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d"
+  },
+  "sourceReceipts": [
+    {
+      "name": "bounded-browser-report.json",
+      "sha256": "4e50f7de8b2c1b8e13586d54df69f5492c5dbce4bbfa271a5dc367460f6f8985",
+      "originalAttached": false
+    },
+    {
+      "name": "bounded-browser-report.md",
+      "sha256": "9c8c7e851664d7ea9610cd5c95722b256e087b42f672cd298e517f744c634293",
+      "originalAttached": false
+    },
+    {
+      "name": "focus-window-summary.json",
+      "sha256": "e9c550e224ca885b7992a2cf74d90d98f95ce90f34600f4b9b84bf8ccc0cc221",
+      "originalAttached": false
+    },
+    {
+      "name": "original-images-index.json",
+      "sha256": "9256f7fde18d53335ba8cbe727c0285b3730580ec51b3815ff048508825154aa",
+      "originalAttached": false
+    },
+    {
+      "name": "closing-identity.json",
+      "sha256": "032a9a3fdfa3839f8805642b2c7c23a31f50f03d14ec96953e2b7269ebe4cf85",
+      "originalAttached": false
+    },
+    {
+      "name": "20-paper-after-blur-dom.json",
+      "sha256": "2756a1851aae89e10739611aebf55597783640584a81cc44aec1263ab6b604ec",
+      "originalAttached": false
+    }
+  ],
+  "syntheticOnly": true,
+  "noApplySaveSendOrModel": true,
+  "fullTypecheckGatePassed": false,
+  "publicationAccepted": false
+}

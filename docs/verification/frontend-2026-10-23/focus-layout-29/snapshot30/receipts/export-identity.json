@@ -1,0 +1,46 @@
+{
+  "sourceHead": "2fdb8aa31a59fe4b01be8b7470da91740a793bae",
+  "bundle": {
+    "path": "_expo/static/js/web/index-eb4de3969c443fc568907cc1a09f7cb9.js",
+    "sha256": "a5b1662b88e46d14216430967f4ec4f7071a280aadb031481f1d27e23d68ec47",
+    "bytes": 5631052
+  },
+  "fixtureSha256": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d",
+  "rawArtifactCount": 65,
+  "rawHtmlCount": 36,
+  "packagedArtifactCount": 72,
+  "productInputs": 553,
+  "scopeFiles": 57,
+  "scopeRoles": {
+    "design-document": 1,
+    "test": 22,
+    "product": 34
+  },
+  "buildManifestSha256": "06ccb8cad2b5d30f0d93080e84d3c4bcc43778e9a49d6a6e62e6eae1067b663f",
+  "productManifestSha256": "5f6e5656e414b017fbc2f71481fa453de3e0052ef8738d2ef67b284df14de5ab",
+  "validatorSha256": "04017f1193b6fc8b35ee7102db8eb49cc81cd11332cd469e454683f26fc21362",
+  "scopeManifestSha256": "0d993914041485797c101e2bf2f36795d8f06bed15e4431e0809ad3d8efc1618",
+  "inputManifestSha256": "6ab04a529af4f406bd0c94a3ae780e3d15f51967e5be79ce10cdedc7fe71ff65",
+  "staticValidator": "PASS",
+  "browserAcceptance": "BOUNDED_CAPTURE_COMPLETE_SUMMARY_RED_FULL_TS_NOT_PASSED",
+  "publication": "NOT_PERFORMED",
+  "snapshot": 30,
+  "build": {
+    "NODE_OPTIONS": "--max-old-space-size=384",
+    "exit": 0,
+    "startUtc": "2026-10-23T03:23:01.737140+00:00",
+    "endUtc": "2026-10-23T03:25:17.038464+00:00",
+    "seconds": 135.301,
+    "maxChildRssKiB": 682236,
+    "logSha256": "a04367c65720be931db3b176efbe691dfe74c104491207c0cb76a7afe3c85182",
+    "inputsUnchanged": true,
+    "scopeUnchanged": true,
+    "command": "npm run build:web -- --clear --max-workers1 --output-dir <frozen-export-directory>"
+  },
+  "archive": {
+    "filename": "frontend-site-preview-snapshot30.tar.gz",
+    "bytes": 4805416,
+    "sha256": "c3235bf2cd357a7d19154150f639b1ff6124399aecf3436b09a14bd3c78801b4"
+  },
+  "verifiedForPackage": "Bundle/archive/buildlog hashes and before-after inputs/scope checked without running product tests/build."
+}

@@ -1,8 +1,8 @@
 # 育伴港前端現況
 
-2026-10-22 04:46 UTC 最後已核：基於 master `7b828dc` 的同一 [draft PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253) 已推至 `19ac8dec`（snapshot15），未合併；主對話已確認既有公開 Site76 部署 snapshot15。導航／核對唯一已保存列表、單面板本機背景、guarded modal、Profile／活動呈現等已按版本驗證，保留原 owner／路由與權限；詳見[增量證據](verification/frontend-simplify-2026-10-21/PREVIEW_DELTA_20261022.md)。
+2026-10-23 本輪來源已正常推送至遠端 `58080880e3ebbe9e3d323efef7d9b5666f324e20`，63個blobs／tree／ref已核；04:39:31 UTC兩路讀回確認 [PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253) head一致，仍open／draft／未合併。公開合成預覽仍為Site86／snapshot27a；本輪未發布，Sites更新及所需憑證待當次批准。
 
-當前僅修「你好」橫幅插圖、動態日期副句與外層重複日期列。snapshot16 雖有穩定 export，1024 實屏仍裁右手指，故未交付；最小修正後 snapshot17 的穩定 export 及獨立四尺寸驗圖已通過，正待正常提交；推送／發布不預填完成。既有 ContactConsentCard 兩項 typecheck 錯誤、舊 harness／PDF 測試界線與未驗項保留，不宣稱全量綠、真機或真服務驗收。頂條提示、重要提醒與通知正文仍為未接 API 提案，主動機制暫緩。維持同一 draft PR，不合併、不做正式部署／OTA；授權的公開合成預覽由主對話另處理。唯一下一步及 gate 見 [PLAN#active](PLAN.md#active)。
+snapshot31已核63檔scope／553inputs、11個必要scripts／80項通過、穩定export及靜態安全validator；04:28:53 UTC的四組有界browser通過，原Summary自然focus紅項在本次未復現，真Paper日期blur與「本人」短名已核。30的metadata／分頁不當成31重跑，原紅保留。30完整TypeScript兩環境均exit137且原因未知，31未重跑，門檻仍未通過；04:40 UTC GitHub無CI結果、combined pending，不是綠燈。不宣稱全站、真機或正式服務全綠。只用合成資料，不合併、不做GCP／OTA。唯一下一步、門檻及分版證據見 [PLAN#active](PLAN.md#active)。
 
 ## 2026-10-11 歷史快照（不是本候選結果）
 

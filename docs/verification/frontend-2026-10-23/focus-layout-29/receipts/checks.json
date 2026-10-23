@@ -1,0 +1,359 @@
+{
+  "stage": "snapshot29 bounded browser evidence recorded",
+  "sourceScopeFiles": 45,
+  "productInputCount": 553,
+  "integration": {
+    "status": "PASS_FINAL_FROZEN_TEST_INPUTS",
+    "scripts": 20,
+    "tests": 159,
+    "pass": 159,
+    "fail": 0,
+    "skipped": 0,
+    "counting": "Each unique script counted once at its final frozen bytes. Earlier attempts, author tests and independent replays not added.",
+    "results": [
+      {
+        "script": "frontend/scripts/care-agent-pending-composition.test.mjs",
+        "exit": 0,
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "7d85dbf1b5776d78fd882a0f6b346c014a803a20cb933c9c51381424431f0e8e",
+        "originalLogName": "care-agent-pending-composition.test.mjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/care-conversation-review.test.mjs",
+        "exit": 0,
+        "tests": 16,
+        "pass": 16,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "af11048cb8e0f409022a2b3896902f677d709547b01087d0d10f2869429a771f",
+        "originalLogName": "care-conversation-review.test.mjs-repaired.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/care-focus-refresh.test.cjs",
+        "exit": 0,
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "36b175f0a33474ebba1e8013cc70d9a9a6ab535076d9f7ed77c6116d296446c7",
+        "originalLogName": "care-focus-refresh.test.cjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/care-history-return-focus.test.cjs",
+        "exit": 0,
+        "tests": 10,
+        "pass": 10,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "a7dfccc04bf20e6cb897c6dd56a861b0f5b0ca1877b9e89c5564ab67beb92f99",
+        "originalLogName": "care-history-return-focus.test.cjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/care-saved-record-card-presentation.test.mjs",
+        "exit": 0,
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "c50bc0f9eeb73e083a7a6b297b6e2ba21b4e2e5b3cf246393a3a130442991e10",
+        "originalLogName": "care-saved-record-card-presentation.test.mjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/chat-entry-empty-state.test.mjs",
+        "exit": 0,
+        "tests": 5,
+        "pass": 5,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "4dd17c2524a262fd264f7c1b194a0c2679fee09f78e052d93847da976881ff5c",
+        "originalLogName": "chat-entry-empty-state.test.mjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/history-card-presentation.test.mjs",
+        "exit": 0,
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "a9163d7016c1580438f2c0376a7e9782bcc9a0a1af96ba50a2d43dac6ae140d6",
+        "originalLogName": "history-card-presentation.test.mjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/history-empty-cards.test.mjs",
+        "exit": 0,
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "d271495eb5f00225d409f94f533746cf91be4ad0c34be5788d36ba21e5f9c6c4",
+        "originalLogName": "history-empty-cards.test.mjs-repaired.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/more-navigation.test.mjs",
+        "exit": 0,
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "55b14ce9b55a437f76fa20edc44e10005f4f59824bce9eed9fda380c998e7235",
+        "originalLogName": "more-navigation.test.mjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/notes-chat-focus-refresh.test.cjs",
+        "exit": 0,
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "c2f4d9203cb0cc78dedbf86b0b31ee0cef04c0f28840f0e494fa4098727ee3a1",
+        "originalLogName": "notes-chat-focus-refresh.test.cjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/private-notes-refresh.test.mts",
+        "exit": 0,
+        "tests": 8,
+        "pass": 8,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "5518f6b2456db8bd5a3af22c44f0f5cd25009e8a3eb285c9e60f80c51370fee5",
+        "originalLogName": "private-notes-refresh.test.mts.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/quiet-summary-view.test.mjs",
+        "exit": 0,
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "b123dbde76556e158a7cc9f832e739dfb651505b111f177825534f25ad015f65",
+        "originalLogName": "quiet-summary-view.test.mjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/settings-parent-controls.test.cjs",
+        "exit": 0,
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "27f28fb2f6bc6a788d05409bb7e9b19906aadcd459367e06fe42c4c58393efc3",
+        "originalLogName": "settings-parent-controls.test.cjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/settings-review-refresh.test.cjs",
+        "exit": 0,
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "0a07348388ff9066f28fee49d45e29e6ad971906e2b1bfe42977e6382ff5b422",
+        "originalLogName": "settings-review-refresh.test.cjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/summary-empty-cards.test.mjs",
+        "exit": 0,
+        "tests": 3,
+        "pass": 3,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "e32f8c004c8fabc1ecf1da50dc5761f3b33c462cac262aaab32cd245cce428ae",
+        "originalLogName": "summary-empty-cards.test.mjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/summary-sources-focus-refresh.test.cjs",
+        "exit": 0,
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "1288ca89680dcebbdfd49040731bc6c1a796f9eafa6c0f98ffcf2d574dea7456",
+        "originalLogName": "summary-sources-focus-refresh.test.cjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/tab-count-badge.test.mjs",
+        "exit": 0,
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "5f22c91e4b8404bfc580500fef0c93c30a524fab162c514548aa5b0c11c79858",
+        "originalLogName": "tab-count-badge.test.mjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/tab-indicator-layout.test.cjs",
+        "exit": 0,
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "e946b5f4b702d07d66edb433858db7d59203a117d96285e0b01d29d336f11a6c",
+        "originalLogName": "tab-indicator-layout.test.cjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/task-memory-focus-refresh.test.cjs",
+        "exit": 0,
+        "tests": 9,
+        "pass": 9,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "17b1a248aee9595db99f6ede5cceb8236b8b795880b676d4f00425a04ef33e98",
+        "originalLogName": "task-memory-focus-refresh.test.cjs.log",
+        "originalLogAttached": false
+      },
+      {
+        "script": "frontend/scripts/task-read-copy.test.mjs",
+        "exit": 0,
+        "tests": 16,
+        "pass": 16,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "9ef5d2a8a39b107a948acd6aef97a3ee01767c7f05a269528a1e1dc73efd7b45",
+        "originalLogName": "task-read-copy.test.mjs.log",
+        "originalLogAttached": false
+      }
+    ]
+  },
+  "retainedFailures": [
+    {
+      "version": "snapshot28",
+      "stage": "full typecheck",
+      "result": "exit137",
+      "cause": "Unknown; no retrospective OOM diagnosis"
+    },
+    {
+      "version": "snapshot28",
+      "stage": "combined3root scoped typecheck",
+      "result": "SIGKILL",
+      "cause": "Unknown"
+    },
+    {
+      "version": "snapshot28",
+      "stage": "export",
+      "result": "interrupted exit130; no deliverable"
+    },
+    {
+      "version": "snapshot29",
+      "script": "care-conversation-review.test.mjs",
+      "result": "15/16 before harness repair, then16/16",
+      "repair": "Execute extracted SavedRecordCard; retain rows/locks and strengthen guarded callback assertions",
+      "productChanged": false
+    },
+    {
+      "version": "snapshot29",
+      "script": "history-empty-cards.test.mjs",
+      "result": "5/6 before expectation repair, then6/6",
+      "repair": "Separate initial read with no snapshot from background read with confirmed empty snapshot; preserve error/stale/offline/access checks",
+      "productChanged": false
+    }
+  ],
+  "fullTypecheck": [
+    {
+      "scope": "full frontend tsconfig",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "NODE_OPTIONS": "--max-old-space-size=384",
+      "exit": 134,
+      "seconds": 5.419,
+      "maxChildRssKiB": 611352,
+      "productInputsUnchanged": true,
+      "logSha256": "a6052663c1f13f8ffa827c2cd9fae3255082ab868d11a2339f3c9ca6cbc5d0fb",
+      "originalReceiptName": "typecheck-full-result.json",
+      "originalLogName": "typecheck-full-snapshot29.log",
+      "status": "BLOCKED_V8_HEAP_OUT_OF_MEMORY",
+      "fullPass": false
+    },
+    {
+      "scope": "full frontend tsconfig",
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "NODE_OPTIONS": "--max-old-space-size=512",
+      "exit": 134,
+      "seconds": 12.195,
+      "maxChildRssKiB": 678940,
+      "productInputsUnchanged": true,
+      "logSha256": "b87635db7b607b0213b5dbfea5741e18cd632fe69a57b9fec848d682b3b3d9cf",
+      "originalReceiptName": "typecheck-full-512-result.json",
+      "originalLogName": "typecheck-full-512-snapshot29.log",
+      "status": "BLOCKED_V8_HEAP_OUT_OF_MEMORY",
+      "fullPass": false
+    }
+  ],
+  "scopedTypecheck": {
+    "status": "STOPPED_AFTER_CARE_HEAP_FAILURE",
+    "plannedGroups": 7,
+    "completedGroups": 2,
+    "unrunGroups": 5,
+    "results": [
+      {
+        "group": "shared-ui-navigation",
+        "roots": [
+          "frontend/src/components/ui.tsx",
+          "frontend/src/components/useQuietReadFocus.ts",
+          "frontend/src/components/navigation/app-navigation.ts"
+        ],
+        "exit": 0,
+        "seconds": 4.535,
+        "logSha256": "abcd9e7f88e00e3562fe15e0c222d7d1a54b31f9b84545ae570e53e0810180bd",
+        "sourceCount": 845,
+        "diagnostics": [],
+        "status": "PASS_SCOPED_ONLY",
+        "originalLogName": "scoped-shared-ui-navigation.log"
+      },
+      {
+        "group": "care-ui",
+        "roots": [
+          "frontend/src/components/agent/AgentRunView.tsx",
+          "frontend/src/components/care/CareRecordDetail.tsx",
+          "frontend/src/components/care/CareReviewHistoryView.tsx",
+          "frontend/src/components/care/CareSavedRecordsView.tsx",
+          "frontend/src/screens/careScreen.tsx"
+        ],
+        "exit": -6,
+        "seconds": 8.32,
+        "logSha256": "9d02f3a39aadc1b0c14588cc32270524c4139bc7e3b55d32f679714018c265c9",
+        "sourceCount": null,
+        "diagnostics": null,
+        "status": "BLOCKED_V8_HEAP_OUT_OF_MEMORY",
+        "originalLogName": "scoped-care-ui.log"
+      }
+    ]
+  },
+  "export": {
+    "status": "PASS_EXPORT_AND_STATIC_PACKAGING",
+    "exit": 0,
+    "seconds": 153.595,
+    "receipt": "export-identity.json"
+  },
+  "browser": {
+    "status": "BOUNDED_PASS_WITH_DEFERRED_CASES",
+    "receipt": "browser-checks.json"
+  },
+  "publication": "NOT_PERFORMED",
+  "receiptNote": "Original logs remain with the named integration run. SHA-256 verified while preparing this package; only explicitly attached logs are included."
+}

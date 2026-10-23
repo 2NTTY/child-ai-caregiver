@@ -1,0 +1,929 @@
+{
+  "newSnapshot29Originals": 52,
+  "baselineOriginalsIndexed": 3,
+  "attachedOriginals": 8,
+  "allOriginalsAvailableLocally": true,
+  "note": "Only the eight explicitly attached originals accompany this package. Source filenames ending .png contain JPEG bytes; bytes and original names are preserved in the index.",
+  "images": [
+    {
+      "version": "snapshot29",
+      "originalName": "00-existing-window-0.png",
+      "sha256": "7f39c5f76be97d22e16f788f9152e63a22bfd44de73c91a5ac381e5bba92cbdf",
+      "bytes": 86733,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": null,
+      "chromeZoomPercent": null,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "01-new-own-tab-0.png",
+      "sha256": "a564bd677b793311539f511b10f60130a03e78655a4f24c6817fa368ac65c32d",
+      "bytes": 87994,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": null,
+      "chromeZoomPercent": null,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "02-load-0.png",
+      "sha256": "b631f6a9cb4d80abee797b05e54ad4a6b444b2f9520e5550bc0e3678ec82333e",
+      "bytes": 124596,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "03-window-fit-0.png",
+      "sha256": "c3552d0a74021656b76626ce1677ab9569bcbe5c0a27bcd4042bd8efc9e58ce7",
+      "bytes": 173168,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "04-window-fit-key-0.png",
+      "sha256": "cb5c030c5f556213b60fd013ea8c0f6c43a944fd217b76d313ab7ee313c08368",
+      "bytes": 174675,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "05-care-loading-0.png",
+      "sha256": "22c6004cc89efd3f75e1593a8f21583dd2903f77f6962a2b472b48432a35936e",
+      "bytes": 110413,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "06-care-settled-0.png",
+      "sha256": "81efad5d728f08f59a07034d238204beedc71a418a2af1ed76f31ef412ac83f6",
+      "bytes": 167546,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "07-pending-native-before-0.png",
+      "sha256": "f81a681c36e6d05103db8ab41bf131845f8bfc205c8567fa8484077700f5dc2d",
+      "bytes": 167789,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "08-pending-native-away-0.png",
+      "sha256": "6e47c77a08a573eb1bce7f72ab2dc9ceeb26e554930c27b26548ee06cac08445",
+      "bytes": 295964,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "09-pending-native-return-0.png",
+      "sha256": "eb7885afbabccf6fcf1e385d0a6807540c79f4317f214247ecacef7ca465b638",
+      "bytes": 167835,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": "screenshots/snapshot29/09-pending-native-return-0.jpg"
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "10-saved-after-native-click-0.png",
+      "sha256": "c0fb326f1ad66b825ac6f502c9589478d540aa3e103cd990bde501d6320e7dcb",
+      "bytes": 167596,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "11-saved-settled-before-0.png",
+      "sha256": "23d9b076ba1dbc9daab849203a8c1c4bf67b63d6962f287278f17358c3374370",
+      "bytes": 175527,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "12-saved-scroll-0.png",
+      "sha256": "88351359efbbca36c3f91257851ec5fe75ea92980d415a31809fe4c4b316e559",
+      "bytes": 197922,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "13-saved-list-before-focus-0.png",
+      "sha256": "567e7afe9739f27f0a4573a669a5df2b901be032cf30f7beb4e0c95a5878666a",
+      "bytes": 198465,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "14-saved-list-away-0.png",
+      "sha256": "fbb94587b4ed15b87483d9d464747059447b3eaddc5be33176e7961f7713ab23",
+      "bytes": 295881,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "15-saved-list-native-return-0.png",
+      "sha256": "42c3096ca2cab7e44e91d64c8108456878e43650e8e67199359ea505d08a234e",
+      "bytes": 198450,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "16-saved-detail-open-0.png",
+      "sha256": "54f424348cef3805e11f844b38ff123b56b938fc47cc3578a1c993c90dc94140",
+      "bytes": 198485,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "17-saved-detail-settled-0.png",
+      "sha256": "a15b2f9502098b1a1f6dac17b7813b089400aaf797569efad36015a8581ec37f",
+      "bytes": 187850,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "18-saved-detail-away-0.png",
+      "sha256": "8c9628886602333725c7e801371a2343050b7b2bc58758161434c903f235d44b",
+      "bytes": 295966,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "19-saved-detail-native-return-0.png",
+      "sha256": "a15b2f9502098b1a1f6dac17b7813b089400aaf797569efad36015a8581ec37f",
+      "bytes": 187850,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": "screenshots/snapshot29/19-saved-detail-native-return-0.jpg"
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "22-browser-zoom-80-0.png",
+      "sha256": "bc19ac8dc2c2c6f0a4dab538a7f12b8ee0f9a23187129216376a2528af8a4f1f",
+      "bytes": 131054,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "24-history390-long-rows-scroll-0.png",
+      "sha256": "16330796ee84828c63d77c654d59ae7ffeb781e2d4e8c7fe336d3e1b1c4af580",
+      "bytes": 139045,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        390,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": "screenshots/snapshot29/24-history390-long-rows-scroll-0.jpg"
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "26-history390-click-detail-0.png",
+      "sha256": "0e830c263b3c2c5b98e6cd9de4b97a3f1df345d598660524378bca22cbfe9f78",
+      "bytes": 132576,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        390,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "29-history390-harness-refresh-0.png",
+      "sha256": "e04fba2df80c92a9d130b9cffd0e657d70bafd92d4e89b184192ef4ff65c6d2b",
+      "bytes": 136362,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        390,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "31-history1440-list-0.png",
+      "sha256": "54324fd38c789ad8e9db065d3ab4b8338f4c103878842fa76aa455359e13c8af",
+      "bytes": 182638,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1440,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "33-history1440-detail-0.png",
+      "sha256": "5b6da0cdb2bc1771451bd4d21247c6f8062185ed58aa41ab5b8a574feb64ca45",
+      "bytes": 189538,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1440,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": "screenshots/snapshot29/33-history1440-detail-0.jpg"
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "36-history1024-detail-0.png",
+      "sha256": "4fb2925c68bd61b8aa973972e111ec5d3a5a7d2b560945b4cb188bce2bb4de6f",
+      "bytes": 158070,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "38-history360-list-return-0.png",
+      "sha256": "5b7e9a1bb9f6f3500e2cee579593a08c567f91b0b96e9d6c6e824b9ebfb6414a",
+      "bytes": 128562,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        360,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "39-care390-saved-top-0.png",
+      "sha256": "2abbb2b21930418f7bdeca037d656e5dd0a27b9b763254dd11cd8e214016e216",
+      "bytes": 135345,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        390,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": "screenshots/snapshot29/39-care390-saved-top-0.jpg"
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "41-care390-repeat-settled-0.png",
+      "sha256": "06ebd811fad9883de871c0b2277ffc0b78087145390212056407699fbfe2228b",
+      "bytes": 135333,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        390,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "42-empty-new-tab-0.png",
+      "sha256": "db1fc48e6aaa7d4c54a1705c0ee9c262da3015c59668ee8f053c534466ec59f9",
+      "bytes": 109036,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": null,
+      "chromeZoomPercent": null,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "43-empty-wrapper-0.png",
+      "sha256": "dd34bddee2b62542f5d820ab9262faece4875dcf278daab3a015bc893ab44354",
+      "bytes": 109926,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "44-empty-scenario-menu-0.png",
+      "sha256": "c391c47816641a740e75d85ff7ac9e5f0a6d5404859ea290cc3c7cad59482942",
+      "bytes": 151936,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "45-care-empty-loading-0.png",
+      "sha256": "8a3556377b123f932b21bef9dc308a24a5b02c01d094489cfa12995fce5e6d47",
+      "bytes": 99570,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "46-care-empty-settled-0.png",
+      "sha256": "d82aa18dde56d7e02c4d8a9f1600a58e93e2da589b1cc83aad593ec414a4a2c4",
+      "bytes": 136304,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "47-care-empty-away-0.png",
+      "sha256": "79a0111c89291f2f43b5f1f8dba57b5ca0f31a1426b4e35d03527c84df7fb1e1",
+      "bytes": 297124,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "48-care-empty-native-return-0.png",
+      "sha256": "a35ca66c9aca8e2f33e6ed50b4305cb8fce6dcc01d95c517677eab9c45da02bf",
+      "bytes": 136418,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": "screenshots/snapshot29/48-care-empty-native-return-0.jpg"
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "50-model-new-tab-0.png",
+      "sha256": "bddda646547c8ab7ae7073ddcf8266770e7a2675057a89228abcc3c003662d37",
+      "bytes": 107931,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": null,
+      "chromeZoomPercent": null,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "51-model-wrapper-0.png",
+      "sha256": "cb73b147883a86bf141c11175f9aeec526c0cd9f3a725111a7f50283fed4c247",
+      "bytes": 109781,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "52-model-loading-0.png",
+      "sha256": "3021fa85b84594328de987498cce3d3d4115087d8b5f5b30d4302af99f8fb1cb",
+      "bytes": 109425,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "53-model-settled-0.png",
+      "sha256": "684615b5632bd71a2417ca5ceda1972029d45a4756f3929ecf6b3a2decc70af9",
+      "bytes": 144069,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "54-model-form-scroll-0.png",
+      "sha256": "6580d32cc038a3e17a26ccfc85cc3c2260e33f0f57a1337abcece0e3d050b7cb",
+      "bytes": 162520,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "55-model-limits-scroll-0.png",
+      "sha256": "0781ffe3504b4f3089935e103af364bdee33fe2d8b23d3abce61b0e274d00bd5",
+      "bytes": 140897,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "56-model-review-trigger-0.png",
+      "sha256": "a88eee9bd37450b8d1702f0bb425b5cc4b4ca82a9c2597fd4454f25f5d6a070c",
+      "bytes": 153012,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "57-model-review-trigger-settled-0.png",
+      "sha256": "d4570c26ad8c536eab581883bd57b79b91e07fdc60150a6c9d6f82aeb0023ac5",
+      "bytes": 151972,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "58-model-delete-review-open-0.png",
+      "sha256": "0b8a26967769131213f366475881b41654ed8d7185e586cddc87a655ddd00d16",
+      "bytes": 151589,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "59-model-delete-review-before-0.png",
+      "sha256": "5a2278cb158025d5a118c505d1bb69cf6184495c2e01a8142f50e445e2a64a8c",
+      "bytes": 153157,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "60-model-review-away-0.png",
+      "sha256": "6981b2df3d3863e48ba30b22289c4c0665544ca3fba9988fb4454ff20a1abf03",
+      "bytes": 300473,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "61-model-review-native-return-0.png",
+      "sha256": "217a07dc5c9c4e6db8ec4b8e911bb880395a24fd7f35089760ab4e62fe70c10f",
+      "bytes": 152866,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": "screenshots/snapshot29/61-model-review-native-return-0.jpg"
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "63-model-review-cancelled-0.png",
+      "sha256": "3fb420a66a8114bc17a3e6aed0629b24919c4c7d4cdbaf8cf2a4ec9f2622b8ef",
+      "bytes": 153153,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "65-memory-fresh-tab-0.png",
+      "sha256": "c6277f72fcfd10296828294625ac0ea6fa1d9a6e8bbfe0671621098a5a3fff06",
+      "bytes": 108932,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": null,
+      "chromeZoomPercent": null,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot29",
+      "originalName": "66-memory-wrapper-0.png",
+      "sha256": "766f6a39fd8be58e6cb82e01aca3f294c894c6eaa3bb4d4e8a8171ea43d69b26",
+      "bytes": 109806,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot27a",
+      "originalName": "11-old-saved-tab-marker-0.png",
+      "sha256": "5fb780fd807d34c63442d7cc96bd950d4563e822b417c41f39f118db8a0cab01",
+      "bytes": 173245,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": "screenshots/baseline27a/11-old-saved-tab-marker-0.jpg"
+    },
+    {
+      "version": "snapshot27a",
+      "originalName": "13-native-only-before-0.png",
+      "sha256": "d1c0fbc7a4c6ed692a9fa5b8bef266a3bcea4f585944c0c9336eb7e89bb8375c",
+      "bytes": 161452,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    },
+    {
+      "version": "snapshot27a",
+      "originalName": "14-native-only-return-0.png",
+      "sha256": "5b525999c6ce51ae7bd85d15ab0f3e6c8b79d96a437d9591422b21dfc5cf2698",
+      "bytes": 161476,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "attachedFile": null
+    }
+  ]
+}

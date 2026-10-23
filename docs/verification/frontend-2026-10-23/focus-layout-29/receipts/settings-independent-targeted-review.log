@@ -1,0 +1,21 @@
+✔ notification controls precede secondary information, with a compact labelled refresh and unchanged save confirmation (123.992353ms)
+✔ notification errors and original-operation recovery stay before the locked form and retain their exact callbacks (31.999214ms)
+✔ notification validation and missing reads remain visible without fabricating a saved state (28.604105ms)
+✔ model copy prioritizes personal choices while preserving advanced limits, endpoint, consent and capability boundaries (60.131111ms)
+✔ model unknown, metadata-unavailable and read failures retain recovery instead of success or credential replay (34.135609ms)
+✔ notification review survives equal reads and busy locking without losing its focused DOM node (19.367352ms)
+✔ notification basis changes invalidate review but retain the draft; identity and access loss clear it (37.253806ms)
+✔ model deletion pins the reviewed basis and preserves the same dialog through a same-basis read (62.51911ms)
+✔ model newer settings, unknown results, revoked access and identity changes never inherit delete consent (211.219149ms)
+✔ notification owner defers dirty/review signals, drains once, and still rechecks reconnect and identity (71.848032ms)
+✔ notification busy and original-unknown guards reject new writes and never auto-retry (13.60455ms)
+✔ model owner preserves equal-read form basis, defers editing/review and clears access on an explicit recheck (28.250031ms)
+✔ model unknown and version-conflict recovery preserve write guards and the original operation ID (13.441028ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2477.653583

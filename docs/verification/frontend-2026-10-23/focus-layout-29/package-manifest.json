@@ -1,0 +1,140 @@
+{
+  "status": "FROZEN_LOCAL_EVIDENCE_PACKAGE",
+  "frozenAt": "2026-10-23T03:26:54.907614+00:00",
+  "snapshot": 29,
+  "files": [
+    {
+      "file": "README.md",
+      "bytes": 4582,
+      "sha256": "b56ff48a5fe9c7b22f044d92408cae9235a066ed4fff40dfd378125bd68d074a"
+    },
+    {
+      "file": "browser-evidence.md",
+      "bytes": 4358,
+      "sha256": "2be51bff924aa0c89e33a3d9740f597bea3e3707f3a05d01cb4ee25450ee16da"
+    },
+    {
+      "file": "changes-and-tests.md",
+      "bytes": 7420,
+      "sha256": "777c441dafee725c13645424e384f84e84b758972b1c8bbcaeb859bc055cbf53"
+    },
+    {
+      "file": "evidence-index.json",
+      "bytes": 6328,
+      "sha256": "14163486cb22f459408ecf44bc8f5634e16855136127acc852f4d18ffba8de01"
+    },
+    {
+      "file": "original-images-index.json",
+      "bytes": 23184,
+      "sha256": "a0b5ad0a0a75f7844930b35f224696c6239b83b443004bdbe16042ba7d3e1fe4"
+    },
+    {
+      "file": "receipts/baseline27a-observations.json",
+      "bytes": 1124,
+      "sha256": "178041f810676ff8331c2dc8922bdeea074ac117145837f89d591c825952c95c"
+    },
+    {
+      "file": "receipts/browser-checks.json",
+      "bytes": 16432,
+      "sha256": "567599195f76c93a3a2afaec3285034f28fcd24834456bc62d2299542dd91c3e"
+    },
+    {
+      "file": "receipts/checks.json",
+      "bytes": 12145,
+      "sha256": "d25cdb80675e8f80ff357d189ba5a069d77f56ff866e2006856333695a39595c"
+    },
+    {
+      "file": "receipts/export-identity.json",
+      "bytes": 2271,
+      "sha256": "0678afe6c00857b8156d91e02005b236b0e45180d50a808d07778cfb6e2085ee"
+    },
+    {
+      "file": "receipts/settings-independent-source.sha256",
+      "bytes": 666,
+      "sha256": "77062247927fb0bce654238cfaaf252a64c24f8e2c9b842957d7ba9e205de160"
+    },
+    {
+      "file": "receipts/settings-independent-targeted-review.log",
+      "bytes": 1687,
+      "sha256": "80ca9950868e91bc8851d7cc909b57ba82d729d18cb4e693baa6456fe7fc3908"
+    },
+    {
+      "file": "receipts/snapshot29-focus-observations.json",
+      "bytes": 57981,
+      "sha256": "1bc4189c0eeced6744981ee8226e8bb9f27a35e8d88e79843afe15ca07d45d08"
+    },
+    {
+      "file": "receipts/source-scope-final45.json",
+      "bytes": 12984,
+      "sha256": "5f8dbccd889929f31102739c94dbd91b11f8976aec22429b58027fb874a81b53"
+    },
+    {
+      "file": "receipts/source-scope-initial43.json",
+      "bytes": 12298,
+      "sha256": "d66e7ec11691ca31610297a44a3df698bde14075ac5c1f98628f19b10811a3a3"
+    },
+    {
+      "file": "route-coverage.json",
+      "bytes": 4213,
+      "sha256": "602cf2a59d9d0cd5e4489b5310c040fb45a509711126462c2693bdc9c0e5c0c9"
+    },
+    {
+      "file": "route-coverage.md",
+      "bytes": 3184,
+      "sha256": "af92a73621d4b2ef27f59de3c584f3cf6a931684cf70821901324dcf115f4c1c"
+    },
+    {
+      "file": "screenshots/baseline27a/11-old-saved-tab-marker-0.jpg",
+      "bytes": 173245,
+      "sha256": "5fb780fd807d34c63442d7cc96bd950d4563e822b417c41f39f118db8a0cab01"
+    },
+    {
+      "file": "screenshots/snapshot29/09-pending-native-return-0.jpg",
+      "bytes": 167835,
+      "sha256": "eb7885afbabccf6fcf1e385d0a6807540c79f4317f214247ecacef7ca465b638"
+    },
+    {
+      "file": "screenshots/snapshot29/19-saved-detail-native-return-0.jpg",
+      "bytes": 187850,
+      "sha256": "a15b2f9502098b1a1f6dac17b7813b089400aaf797569efad36015a8581ec37f"
+    },
+    {
+      "file": "screenshots/snapshot29/24-history390-long-rows-scroll-0.jpg",
+      "bytes": 139045,
+      "sha256": "16330796ee84828c63d77c654d59ae7ffeb781e2d4e8c7fe336d3e1b1c4af580"
+    },
+    {
+      "file": "screenshots/snapshot29/33-history1440-detail-0.jpg",
+      "bytes": 189538,
+      "sha256": "5b6da0cdb2bc1771451bd4d21247c6f8062185ed58aa41ab5b8a574feb64ca45"
+    },
+    {
+      "file": "screenshots/snapshot29/39-care390-saved-top-0.jpg",
+      "bytes": 135345,
+      "sha256": "2abbb2b21930418f7bdeca037d656e5dd0a27b9b763254dd11cd8e214016e216"
+    },
+    {
+      "file": "screenshots/snapshot29/48-care-empty-native-return-0.jpg",
+      "bytes": 136418,
+      "sha256": "a35ca66c9aca8e2f33e6ed50b4305cb8fce6dcc01d95c517677eab9c45da02bf"
+    },
+    {
+      "file": "screenshots/snapshot29/61-model-review-native-return-0.jpg",
+      "bytes": 152866,
+      "sha256": "217a07dc5c9c4e6db8ec4b8e911bb880395a24fd7f35089760ab4e62fe70c10f"
+    }
+  ],
+  "excludedSelf": "package-manifest.json is not included in its own hash list",
+  "validation": {
+    "jsonReadable": true,
+    "uniqueRoutes": 18,
+    "selectedOriginalImages": 8,
+    "newOriginalsIndexed": 52,
+    "finalSourceFiles": 45,
+    "uniqueIntegrationScripts": 20,
+    "integrationPass": 159,
+    "markdownLocalLinksChecked": 27,
+    "publicOperationalMetadataRemoved": true,
+    "noProductTestBuildBrowserRunByPackAuthor": true
+  }
+}
