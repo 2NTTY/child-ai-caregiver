@@ -247,7 +247,7 @@ function PreparationReader({ workspace, documents, history = false, onHistory, o
     </View>
     {history ? <FormDialog key={readerKey.current} visible={!!selected && workspace.model.condition !== "lost"} scopeKey={workspace.scopeKey} formKey={readerKey.current ?? undefined} title="準備單詳情" dismissMode="local"
       returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={workspace.actions.closeDocument}
-      recovery={workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
+      recovery={workspace.model.operation ? <WriteRecoveryNotice plainLanguage showReference={false} operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
       closeOutcome={{ revision: workspace.model, ready: !workspace.model.selected }}>
       {selected ? <PreparationDocumentDetail document={selected} workspace={workspace} onClose={workspace.actions.closeDocument} onPrepareQuestion={onPrepareQuestion} hideReturnAction /> : null}
     </FormDialog> : null}
@@ -265,7 +265,7 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
   const quietRead = !!workspace.model.busy && workspace.model.online && ["ready", "empty", "read_only"].includes(workspace.model.condition)
     && !workspace.model.dirty && (!workspace.model.operation || workspace.model.operation.state === "none");
   return <View testID="preparation-workspace" style={styles.workspace}>
-    {workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
+    {workspace.model.operation ? <WriteRecoveryNotice plainLanguage showReference={false} operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
     {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{active.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}
     {!selected ? <Text style={styles.meta}>待用準備單{!workspace.model.online || !["ready", "empty", "read_only"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
     {!selected ? <View testID="preparation-list-actions" style={styles.intentControls}>
@@ -277,13 +277,13 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
     {workspace.model.reading?.pageError ? <Text accessibilityRole="alert" style={styles.warningText}>未能載入更多文件，已取得的內容保留。</Text> : null}
     <View testID="preparation-secondary-actions" style={styles.intentControls}>
       {!selected && onHistory ? <AppButton label="查看已歸檔" variant="quiet" density="compact" onPress={onHistory} /> : null}
-      {workspace.actions.refresh && (["unavailable", "refresh_failed", "unknown"].includes(workspace.model.condition) || workspace.model.operation?.recovery === "check") ? <AppButton label={workspace.model.busy && !quietRead ? "正在處理文件…" : workspace.model.operation?.recovery === "check" ? "重讀並核對原操作" : "重新讀取準備單"}
+      {workspace.actions.refresh && (["unavailable", "refresh_failed", "unknown"].includes(workspace.model.condition) || workspace.model.operation?.recovery === "check") ? <AppButton label={workspace.model.busy && !quietRead ? "正在處理文件…" : workspace.model.operation?.recovery === "check" ? "重新載入" : "重新載入"}
         variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} preserveFocusWhenDisabled={quietRead} onPress={workspace.actions.refresh} /> : null}
     </View>
     {workspace.actions.createDocument && workspace.actions.markDraft && workspace.actions.discardDraft && workspace.model.scope.role !== "viewer" ? <ManualFormDialog label="手動建立準備單" title="建立準備單" scopeKey={workspace.scopeKey}
-      recovery={workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online && !workspace.model.busy} /> : null}>
+      recovery={workspace.model.operation ? <WriteRecoveryNotice plainLanguage showReference={false} operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online && !workspace.model.busy} /> : null}>
       <DocumentCreateForm kind="preparation" purpose={purpose} owner={{ authorityVersion: workspace.model.authorityVersion ?? "", locked: workspace.model.locked ?? true,
-        dirty: workspace.model.dirty ?? false, epoch: workspace.model.epoch ?? 0, operation: workspace.model.operation, retainedDraftId: workspace.model.retainedDraftId,
+        editingLocked: workspace.model.editingLocked, createDraft: workspace.model.createDraft, dirty: workspace.model.dirty ?? false, epoch: workspace.model.epoch ?? 0, operation: workspace.model.operation, retainedDraftId: workspace.model.retainedDraftId,
         createDocument: workspace.actions.createDocument, markDraft: workspace.actions.markDraft, discardDraft: workspace.actions.discardDraft }} />
     </ManualFormDialog> : null}
     {previewControls}
@@ -303,8 +303,8 @@ export function PreparationHistoryView({ searchText, dateRange, onPrepareQuestio
   const unknownDates = workspace.model.documents.filter(document => document.status === "archived" && !document.archivedAt).length;
   return <View testID="preparation-history" style={styles.workspace}>
     {previewControls}
-    {workspace.model.operation ? <WriteRecoveryNotice operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
-    {workspace.actions.refresh && (["unavailable", "refresh_failed", "unknown"].includes(workspace.model.condition) || workspace.model.operation?.recovery === "check") ? <AppButton label="重新讀取／核對文件" variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} onPress={workspace.actions.refresh} /> : null}
+    {workspace.model.operation ? <WriteRecoveryNotice plainLanguage showReference={false} operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
+    {workspace.actions.refresh && (["unavailable", "refresh_failed", "unknown"].includes(workspace.model.condition) || workspace.model.operation?.recovery === "check") ? <AppButton label="重新載入" variant="quiet" density="compact" disabled={workspace.model.busy || !workspace.model.online || workspace.model.condition === "lost"} onPress={workspace.actions.refresh} /> : null}
     {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{documents.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}
     <Text style={styles.meta}>只搜尋可查看的已歸檔準備單：標題、內容、用途及來源名稱。日期按歸檔時間，並非使用日期。{available ? "只涵蓋目前已載入資料。" : "目前尚未取得可確認的結果。"}</Text>
     {unknownDates ? <Text style={styles.meta}>{unknownDates} 份未提供歸檔時間，套用日期範圍時不會把它們歸入任何日期。</Text> : null}

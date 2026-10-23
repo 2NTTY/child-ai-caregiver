@@ -1,3 +1,5 @@
+import { createPrivateAttachmentList } from './firestore-attachment-list.ts';
+import type { AttachmentListPolicy } from '../src/shared/attachment-list.ts';
 import { createFirestoreOnlineReceipts } from './firestore-online-receipts.ts';
 import { firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, erasureCoversChatFile, firebaseErasureIntentHash, type FirebaseErasureJournal, type FirebaseErasureIntent, type FirebaseErasureDescriptor } from './firebase-erasure-journal.ts';
 import { randomUUID, createHash } from "node:crypto";
@@ -28,7 +30,7 @@ export const firestoreChatFileRowSchema = z.object({
   && (v.state !== "ready" || v.descriptor !== null)
   && (!v.deletion || erasureCoversChatFile(v.deletion.intent, v.objectScope, v.id)));
 export type FirestoreChatFileRow = z.infer<typeof firestoreChatFileRowSchema>;
-export interface FirestoreChatFileOptions extends FirestoreDomainOptions { objects: ChatFileObjects; journal: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>; serverClock?: () => number }
+export interface FirestoreChatFileOptions extends FirestoreDomainOptions { attachmentListPolicy?: AttachmentListPolicy; objects: ChatFileObjects; journal: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>; serverClock?: () => number }
 /** Private file authority. Upload and object reads occur outside retried Firestore callbacks. */
 export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), clock = options.serverClock ?? Date.now;
@@ -300,7 +302,8 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
     });
     return { ...value, attachment: view(row) };
   }
-  return { reserve, upload, reconcile, content, prepareLink, contentForMessage, readEvidence, delete: deleteChatFile, cleanupDeleted, expireUnlinked, eraseForScope,
+  const list = createPrivateAttachmentList({ data, authority, source: 'files', policy: options.attachmentListPolicy, scopeTag, open, view });
+  return { list, reserve, upload, reconcile, content, prepareLink, contentForMessage, readEvidence, delete: deleteChatFile, cleanupDeleted, expireUnlinked, eraseForScope,
     readMetadata: async (b: FirestoreAuthorityTransaction, id: string) => view(await read(b,id)),
     get(userId: string, childId: string, id: string) { return authority.runTransaction(userId, childId, async b => view(await read(b, id))); } };
 }

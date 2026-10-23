@@ -3460,6 +3460,60 @@
 - 13:59 UTC發布同版Android preview OTA `b18efe75-f8ed-4ced-9f66-a5e3b4d961ff`，runtime與APK v2一致，沒有新APK、重新bundle或強制重載手機。14:00 UTC API／worker健康、Web運行、磁碟約10.66 GiB可用；最新原生備份metadata為READY，未執行還原。
 - 此次只證明部署與OTA發布；用戶真key、獨立向量key及新表單真機操作仍未驗，既有角色品質／長來源／多模態及Android待驗仍按PLAN承接。兩位原Astra子代理復用於封包及腳本唯讀核對，主模型親自作部署、相容性裁決與文件；不以部署完成代替整體目標完成。
 
+<a id="log-20261023-local-continuity-followup"></a>
+## LOG-20261023-LOCAL-CONTINUITY-FOLLOWUP
+
+- 從遠端 `4fb210c` 開獨立分支 `codex/dev-agent02-continuity-closeout`，A單作者；保留協作者 #254／#259 及新 #262～#265，不修改或合併其程式。復用原子代理作手機核對、工具準備及唯讀文件review；主模型負責實際本地驗收、裁決及文件，沒有重做四角色或前端。
+- 原 worktree 的本地快照缺失，原因未確定；新建隔離合成資料，不宣稱恢復原文件／原失敗run。補齊工程外／ignored工具依賴，使用Node24.19、Java21及既有Firebase emulator；僅從目前分支正式API建立一個孩子、一份準備單。準備時沙盒連線失敗、關閉的本地管理政策及metadata輔助腳本欄位錯誤，與產品模型結果分開保留。
+- 官方PDF登記第3頁沿原工作完成2次真生成、1次向量及獨立審核／本地發布。後續一條自然聊天讀文件、搜尋成功，但能力載入和引用參數修正用完8次生成／1次查詢，終態 `delivery_review_incomplete`；沒有完整已審核答案，沒有自動重送或加額。原run／訊息、片段版本及腳本保留在受保護本地目錄；去識別化結果見[本次證據](artifacts/verification/DEV_AGENT02_CONTINUITY_20261023.json)。
+- 本地日配額20／100未提高；驗收暫時啟用模型、限制零重試，結束後恢復原關閉政策及設定，保留12次用量並正常保存快照。帳目仍有10次用量未完整回報，不能從已知tokens宣稱完整費用。零正式業務資料寫入、通知或部署，不重跑編製／雲端／全量測試。
+- PLAN修正過時的P3角色、Android開工盤點及備份狀態，未把已發布或單頁成功當整包完成；STATUS只投影本次實質結果。本地使用說明補管理政策關閉的排除方法。下一步先核對協作者的審核／預算與引用修正，再補同一資料的一條聊天；原備份還原及角色長來源／多模態缺口不改寫為通過。
+
+<a id="log-20261023-model-draft-reset"></a>
+## LOG-20261023-MODEL-DRAFT-RESET
+
+- 從最新master `216d87e`開獨立分支`codex/model-self03-discard-draft`，沿使用者明確授權由A單作者交付；本機協作文件缺失，不另猜人員分工。協作者#254／#259及#262～#265未改。
+- 原真機代理取得設備後只作未保存設定核對：最初仍是舊導航／兩個Google選項，正常重開一次後出現關注／核對、新相容服務、獨立向量key及七項上限，登入保留。未取得精確OTA ID，不把預期版本當實測。沒有輸入密鑰、保存、模型或通知；草稿捨棄失敗後停止，手動回復原平台模式並返首頁，已解除ADB佔用。
+- 主模型修正共用表單inactive時只清密鑰的缺口：按權威快照重設全部本機草稿，保留owner的原操作及unknown狀態；背景只清密鑰的行為不變。不改UI設計、Server或Agent。原代理另作局部唯讀review。
+- Node24.19／既有React、RHF及jsdom，只跑兩項受影響檢查。密鑰／背景／離頁還原首輪通過；新增原操作檢查的斷言漏計使用者已觸發的selectProvider回調，修正為核對離頁沒有額外回調後，只補該項通過。未跑全量、瀏覽器、真key或模型；手機修正回歸及發布仍待完成。[證據](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)。
+- 使用者另指出Android關注圖標與Web不同；局部核對為native tab仍寫死`chart-bar`。已改讀Web同一`navigationItems.growth`的圖標／標籤，不改版面或新增測試；發布產物使用此最終來源。獨立表單review未發現阻塞問題。
+
+<a id="log-20261023-model-draft-delivery"></a>
+## LOG-20261023-MODEL-DRAFT-DELIVERY
+
+- A合併#267為`53d8f38`，產品來源`4bfdf98`；本分支只記錄已完成的Web／OTA交付。原匯出代理尚未開始build，使用者要求主模型接手後正式中止，核對沒有匯出程序，再由主模型完成，沒有另開代理或重複建置。
+- Node24.19沿原公開配置各匯出Web／Android一次，runtime與APK v2相同。Android build成功，末端資產核對因Windows反斜線與已正規化路徑比較而誤報缺檔；保留原失敗記錄，只正規化比較及核對既有31檔，沒有重跑export或改產品。共用表單兩項檢查沿用#267，不增全量測試。
+- 固定VM身份／IP及11月6日期限已核對；Web封包及hash經IAP傳送至指定0700目錄，無密鑰、ADC或家庭資料。候選網絡隔離建置／首頁hash通過，保存0600 Compose副本後只更新Web。15:39 UTC Web healthy、公開HTML一致、API health200，API／worker映像及配置不動；約10.62GiB可用，未清理舊SQL或備份。
+- 同來源Android preview OTA `df51a917-ee74-4e03-8fbc-db472314007d`已發布，不新建APK、不購買方案、不強制重載手機。草稿捨棄／關注圖標的最新真機補核仍待驗；此前舊UI→一次重開→新版欄位可見的證據不能代替此版本驗收。真key及DEV02末段審核缺口亦保留。[交付證據](artifacts/verification/MODEL_SELF03_DRAFT_DELIVERY_20261023.json)。零模型／通知、業務資料寫入、配額修改及新索引。
+
+<a id="log-20261024-shared-native-navigation"></a>
+## LOG-20261024-SHARED-NATIVE-NAVIGATION
+
+- 使用者要求原生導航不再寫死、修改Web共用來源即可更新App。以master `65c094c`開`codex/shared-native-navigation`；Sol 6.1 high只改兩個指定產品檔案，主模型親自核對diff及既有檢查。五個Tabs圖標／標籤及核對／更多路由沿同一navigationItems，不搬Web版式或改手勢／權限；A單作者交付，沒有修改協作者#254／#259／#262～#265／#269。
+- 兩項既有定向導航檢查通過，diff check通過；沒有新增測試、全量型別／build、模型或通知。現有顯示值相同，本次不重新匯出或發OTA，來源接線留下一次相容Android發布帶入；不宣稱已安裝App會因Web發布自動更新。
+- 主模型沿原授權補手機草稿一次：首先仍見舊柱狀圖及捨棄後殘留，停止該批；原步驟亦未等待離頁便深連結返回。另一次重開後XML idle失敗，舊檔不作證據；新截圖顯示共用關注圖標。只補同範圍流程並確認已實際離頁，平台模式／非dirty狀態成功還原。原觀察與失敗保留，未讀精確裝置OTA ID、不輸入key、不保存設定、不驗真模型；已返回今日。[本次證據](artifacts/verification/SHARED_NATIVE_NAVIGATION_20261024.json)。
+
+<a id="log-20261024-defer-dev02-joint-acceptance"></a>
+## LOG-20261024-DEFER-DEV02-JOINT-ACCEPTANCE
+
+- 使用者明確把本地最後引用／審核補驗延後，先等四個Agent真正完成及協作者自行檢查。PLAN／STATUS已改為此恢復條件，不以個別PR合併或環境啟動取代角色自查；本聊天不提前整合／重跑或接管協作者修改。
+- 先前只唯讀核對#263／#265固定head及相關程式差異，沒有建立角色整合分支、修改角色、啟動本地服務或呼叫模型。原失敗、快照與有效證據保留；這次只改文件、核對diff及既有連結，不跑產品測試。
+
+<a id="log-20261023-attachment-media-source"></a>
+## LOG-20261023-ATTACHMENT-MEDIA-SOURCE
+
+- 接續原附件前後端候選，將26個source/test檔整合到`339c707`的獨立分支；不改已合併#253或頭像候選。只新增唯讀本人聊天附件清單及薄前端呈現，原照片／播放／下載授權與unknown邊界保留；詳情移至既有local dialog，權限短標為「本人」。
+- 跨層10/10、focused16/16及RN Web Modal DOM2/2分開記錄；首DOM0/2由jsdom不執行native-button default click造成，修正測試方法而非新增產品鍵盤handler。8-root strict 512 MiB檢查exit137、沒有diagnostics，原因未知；未重試或當作型別通過。[證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)保留完整來源hash、原紅及驗證界線。
+- 兩個Firestore composite index僅源碼，未部署。build／四尺寸GUI、真瀏覽器Enter／Space、原音／下載、實際API與雲端索引仍待驗；只有合成資料，沒有真模型／家庭媒體、GCP、OTA或正式資料操作。獨立草稿來源交付與驗收／發布／合併分開。
+
+<a id="log-20261024-s04-w02-ios-bootstrap"></a>
+## LOG-20261024-S04-W02-IOS-BOOTSTRAP
+
+- 使用者批准 iOS TestFlight 計劃；先更新根 PLAN，再從 master `560f051` 開 `codex/s04-w02-ios-bootstrap`。沿現有 Expo 57、原生身份／transport／owner／同步及畫面，啟用 iPhone 配置與獨立 store profile／channel；Android 配置及入口不重建，Apple 團隊未定。
+- iOS 不再誤讀 Android descriptor，仍保留 Firebase 公開設定／HTTPS gate。原品牌 SVG 轉成 1024 不透明 iOS 圖標，沒有改美術或加入產品依賴；EAS 封包另排除 Apple 私鑰／描述檔。主模型核對共用入口及 diff，Astra 子代理完成限定配置實作與獨立靜態 review，沒有 blocking finding。
+- 3 項必要配置檢查通過。首次 iOS JS／Hermes export 因 Windows sandbox TEMP 拒絕寫入失敗，保留現場；只調整本命令 TEMP／TMP 至 worktree cache，補同一 export 後通過。這不是 IPA、簽署或真機驗收；沒有重跑 Web／Android、全量測試、模型、通知或 Computer Use。[本包證據](artifacts/verification/S04_W02_IOS_BOOTSTRAP_20261024.json)。
+- 未上傳 EAS、建立 Apple App 或購買會員。首次封包、團隊／簽署、TestFlight、iPhone 與後續媒體／APNs／更新仍待辦；不把 Android 未驗或協作者四 Agent 最後補驗改為完成。交付前發現 master 新合併 #269／#259，按原成果整合，不接管其待驗工作。
+
 
 <a id="log-20261023-avatar-draft"></a>
 ## LOG-20261023-AVATAR-DRAFT

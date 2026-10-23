@@ -1,6 +1,50 @@
 {
   "indexes": [
     {
+      "collectionGroup": "yuban_authority_voice_assets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "assetId",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_chat_file_assets",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "assetId",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "events",
       "queryScope": "COLLECTION",
       "fields": [

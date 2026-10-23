@@ -26,6 +26,11 @@
 **/*.keystore
 **/*.jks
 **/*.p12
+**/*.p8
+**/*.pfx
+**/*.pem
+**/*.mobileprovision
+**/*.provisionprofile
 **/*.key
 **/*.keys
 **/private/

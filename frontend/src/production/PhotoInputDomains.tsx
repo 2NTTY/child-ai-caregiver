@@ -17,6 +17,7 @@ import { useDomainEnvironment, useDomainWriteGuard } from "./useDomainEnvironmen
 import { useProduction } from "./ProductionProvider";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { usePhotoInputSources } from "./usePhotoInputSources";
+import { useAttachmentReview } from "./useAttachmentReview";
 
 type PendingPhoto = ({ kind: "reserve"; metadata: PhotoMetadata } | { kind: "confirm"; photo: PhotoAttachment; input: PhotoConfirmation } | { kind: "delete"; photo: PhotoAttachment })
   & { checked: boolean; confirmed: boolean };
@@ -339,6 +340,25 @@ function useProductionPhotos() {
     canDelete: isFresh && editable() && !!state.selected?.canManage && manual,
   };
   const actions: PhotosActions = {
+    readThumbnail: async (photo, signal) => {
+      const e = envRef.current;
+      const readable = () => current() && envRef.current.scopeKey === e.scopeKey && envRef.current.userId === e.userId && !signal.aborted && available();
+      if (!readable() || photo.state !== "ready" || photo.childId !== e.childId) return null;
+      try {
+        const next = await api.photo(e.childId!, photo.id, signal, e.userId!);
+        if (!readable() || next.state !== "ready" || next.id !== photo.id || next.childId !== photo.childId || next.version !== photo.version || next.sha256 !== photo.sha256) return null;
+        const blob = await api.content(next, signal, e.userId!);
+        if (!readable()) return null;
+        const bytes = await readBlobBytes(blob);
+        if (!readable()) return null;
+        const preview = photoPreview(bytes, next.mimeType);
+        if (!readable()) { preview.dispose(); return null; }
+        return preview;
+      } catch (error) {
+        if (readable() && error instanceof PhotoApiError && ([401, 403].includes(error.status) || error.onlineCode === "session_changed")) resetAccess(error);
+        return null;
+      }
+    },
     pickOriginal: chooseOriginal, reportFileError: message => update({ notice: message }), openPhoto,
     discardRecordDraft: () => { const value = ref.current; if (current() && !value.pending && !value.direct && value.operation.state !== "saving") update({ draft: emptyPhotoDraft(), reviewed: null, sharedConsent: false, formKey: value.formKey + 1 }); },
     clearEditor: () => { if (!ref.current.busy && !ref.current.pending && !ref.current.direct) { releaseEditor(); update({ operation: noOperation() }); } },
@@ -425,7 +445,8 @@ export function ProductionPhotoInputDomains({ children }: { children: ReactNode 
 }
 export function ProductionPhotosWorkspace({ onCare, capturePreferred = false }: { onCare: () => void; capturePreferred?: boolean }) {
   const domain = useContext(PhotoInputContext)?.photos;
-  return domain ? <PhotosView production model={domain.model} actions={domain.actions} onCare={onCare} capturePreferred={capturePreferred} scopeKey={domain.scopeKey} /> : null;
+  const attachments = useAttachmentReview(), { actions } = useProduction();
+  return domain ? <PhotosView production model={domain.model} actions={domain.actions} onCare={onCare} onChat={() => actions.open("chat")} attachments={attachments} capturePreferred={capturePreferred} scopeKey={domain.scopeKey} /> : null;
 }
 export function ProductionSourcesWorkspace({ onPhotos, onRecord }: { onPhotos: () => void; onRecord: (id: string) => void }) {
   const domain = useContext(PhotoInputContext)?.sources;
