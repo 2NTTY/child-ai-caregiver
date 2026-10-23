@@ -1,10 +1,11 @@
 import { EmptyListCard } from "../components/EmptyListCard";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { useRouter } from "expo-router";
 import { AppCheckbox } from "../components/AppCheckbox";
 import { AppDialog } from "../components/AppDialog";
+import { StatusAnnouncement } from "../components/StatusAnnouncement";
 import { AppButton, AppTextField, SectionCard, SectionHeader, TextLink } from "../components/ui";
 import { chineseFont, colors, readingType, spacing } from "../theme";
 import { mayRetryAuthorization, maySavePolicy, reminderEligible } from "./AgentAuthorizationOwner";
@@ -15,8 +16,8 @@ import { usePreviewLeaveGuard, usePreviewNavigation } from "../preview/PreviewNa
 const recordOptions = [{ kind: "note", label: "日常備註" }, { kind: "feeding", label: "餵食" }, { kind: "sleep", label: "睡眠" }, { kind: "diaper", label: "換片" }] as const;
 const channelLabel = (channel: string) => channel === "telegram" ? "Telegram" : "瀏覽器推送";
 export function AgentAuthorization() {
-  const { authorization: state, authorizationActions: actions, owner } = useProduction();
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { authorization: state, authorizationActions: actions, owner, scopeKey } = useProduction();
+  const [deleteSelection, setDeleteSelection] = useState<{ id: string; version: number; scopeKey: string | null } | null>(null);
   const router = useRouter(), navigate = usePreviewNavigation();
   const policy = state.policy;
   const dirty = !!policy && state.policyState === "ready" && (
@@ -28,9 +29,13 @@ export function AgentAuthorization() {
   });
   const editing = state.policyState === "ready" && !state.busy && !state.pending && !state.writesBlocked && state.online;
   const shared = state.pending?.kind === "policy" ? !!state.pending.input.recordKinds.length || state.pending.input.allowSelfTasks || state.pending.input.allowRecordCorrections : !!state.draft.recordKinds.length || state.draft.allowSelfTasks || state.draft.allowRecordCorrections;
-  const deleting = state.notes.find(note => note.id === deleteId);
+  const deleting = deleteSelection && deleteSelection.scopeKey === scopeKey ? state.notes.find(note => note.id === deleteSelection.id && note.version === deleteSelection.version) : undefined;
+  useEffect(() => { if (deleteSelection && !deleting) setDeleteSelection(null); }, [deleteSelection, deleting]);
   const locked = !state.online || !!state.busy;
+  const hasNotesSnapshot = state.notesState === "ready" || state.notes.length > 0;
+  const quietNotesRead = state.busy === "read" && hasNotesSnapshot;
   return <View style={styles.root}>
+    <StatusAnnouncement eventKey={quietNotesRead ? "refreshing" : "settled"} message={quietNotesRead ? "正在重新核對資料。" : ""} />
     <View style={styles.contents}>
       <SectionCard><SectionHeader title="助手授權" density="compact" subtitle="按你的明確交代保存日常資料；勾選不會自行保存。" />
         <Text style={styles.meta}>照護記錄及本人待辦會按家庭權限共享。私人備註只供本人查看，不會成為已確認健康事實。未授權的種類不會自動寫入。</Text>
@@ -65,21 +70,25 @@ export function AgentAuthorization() {
         </View> : null}
       </SectionCard>
       <SectionCard><SectionHeader title="本人私人備註" density="compact" subtitle="每頁 20 項，只供本人查看；來源是本人交代，不代表已確認健康事實。" />
-        <AppTextField label="搜尋私人備註" value={state.queryDraft} maxLength={200} disabled={locked || !!state.pending} onChangeText={actions.setQuery} />
-        <AppButton label="讀取私人備註" variant="quiet" loading={state.notesState === "loading"} disabled={locked || state.notesState === "denied" || state.pending?.kind === "policy"} onPress={() => actions.readNotes()} />
-        {state.notesState === "failed" ? <Text style={styles.warning}>未能讀取私人備註，原清單已隱藏。</Text> : null}
-        {state.notesState === "ready" ? state.notes.length ? state.notes.map(note => <View key={note.id} style={styles.note}>
+        <AppTextField label="搜尋私人備註" value={state.queryDraft} maxLength={200} disabled={locked && !quietNotesRead || !!state.pending} editable={!locked && !state.pending} onChangeText={actions.setQuery} />
+        <AppButton label="讀取私人備註" variant="quiet" loading={state.notesState === "loading"} disabled={locked || state.notesState === "denied" || state.pending?.kind === "policy"} preserveFocusWhenDisabled={quietNotesRead} onPress={() => actions.readNotes()} />
+        {state.notesState === "failed" ? <Text accessibilityRole="alert" style={styles.warning}>{state.notes.length ? "未能重新核對私人備註，以下保留上次讀取的內容；刪除已停用。" : "未能讀取私人備註，暫時不能刪除。"}</Text> : null}
+        {hasNotesSnapshot ? state.notes.length ? state.notes.map(note => <View key={note.id} style={styles.note}>
           <Text style={styles.body}>{note.title}</Text><Text selectable style={styles.body}>{note.text}</Text>
-          <Text style={styles.meta}>本人交代 · 版本 {note.version} · {new Date(note.updatedAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong" })}</Text>
+          <Text style={styles.meta}>本人交代 · 版本 {note.version} · {new Date(note.updatedAt).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}</Text>
           <Text selectable style={styles.meta}>來源聊天：{note.sourceMessageId}</Text>
-          <AppButton label="刪除此私人備註" variant="quiet" disabled={!owner.authorizationOwner.mayDelete(note.id)} onPress={() => setDeleteId(note.id)} />
+          <AppButton label="刪除此私人備註" variant="quiet" disabled={!owner.authorizationOwner.mayDelete(note.id)} preserveFocusWhenDisabled={quietNotesRead} onPress={() => setDeleteSelection({ id: note.id, version: note.version, scopeKey })} />
         </View>) : state.online ? <EmptyListCard title="已載入頁面暫無符合搜尋的私人備註" detail={state.nextAfterId ? "仍有備註未載入，可繼續讀取。" : undefined} /> : <Text style={styles.meta}>私人備註尚未重新核對。</Text> : null}
-        {state.nextAfterId ? <AppButton label="讀取下一頁" variant="quiet" disabled={locked || !!state.pending} onPress={() => actions.readNotes(true)} /> : null}
+        {state.nextAfterId ? <AppButton label="讀取下一頁" variant="quiet" disabled={locked || !!state.pending || state.notesState !== "ready"} preserveFocusWhenDisabled={quietNotesRead} onPress={() => actions.readNotes(true)} /> : null}
       </SectionCard>
     </View>
-    <AppDialog visible={!!deleting} onDismiss={() => setDeleteId(null)}>
+    <AppDialog visible={!!deleting} onDismiss={() => setDeleteSelection(null)}>
       <AppDialog.Title>刪除此私人備註？</AppDialog.Title><AppDialog.Content><Text>「{deleting?.title}」將從本人私人備註移除。請確認是這則內容及版本 {deleting?.version}。</Text></AppDialog.Content>
-      <AppDialog.Actions><AppButton label="保留" variant="quiet" onPress={() => setDeleteId(null)} /><AppButton label="確認刪除" variant="danger" disabled={!deleteId || !owner.authorizationOwner.mayDelete(deleteId)} onPress={() => { if (deleteId) actions.deleteNote(deleteId); setDeleteId(null); }} /></AppDialog.Actions>
+      <AppDialog.Actions><AppButton label="保留" variant="quiet" onPress={() => setDeleteSelection(null)} /><AppButton label="確認刪除" variant="danger" disabled={!deleting || !owner.authorizationOwner.mayDelete(deleting.id)} preserveFocusWhenDisabled={quietNotesRead} onPress={() => {
+        const current = owner.authorizationOwner.getSnapshot().notes.find(note => note.id === deleteSelection?.id);
+        if (current && deleteSelection?.scopeKey === scopeKey && current.version === deleteSelection?.version) actions.deleteNote(current.id);
+        setDeleteSelection(null);
+      }} /></AppDialog.Actions>
     </AppDialog>
   </View>;
 }

@@ -14,7 +14,7 @@ export function ImportantRecordPreviewTools({ onEdit }: { onEdit: (recordId: str
   if (!workspace) return null;
   const item = workspace.model.review?.items.find(candidate => candidate.id === `preview-capture:${workspace.model.child.id}:important-appointment`);
   const busy = ["saving", "unknown"].includes(workspace.model.operation.state);
-  return <View style={styles.content}><Text style={styles.label}>重要記錄確認示例</Text><Text style={styles.meta}>正式對話／來源關聯、自動彈窗及跨重載確認狀態尚未接通。此工具只測試聊天與記錄頁共用的合成狀態。</Text>
+  return <View style={styles.content}><Text style={styles.label}>重要記錄確認示例</Text><Text style={styles.meta}>正式對話／來源關聯、自動彈窗及跨重載確認狀態尚未接通。此工具只測試聊天與核對頁共用的合成狀態。</Text>
     <AppSelect label="模擬重要確認結果" value={workspace.outcome} options={[{ value: "success", label: "成功" }, { value: "unknown", label: "結果未知" }, { value: "failed", label: "失敗" }, { value: "conflict", label: "版本改變" }]} onChange={workspace.setOutcome} disabled={busy} />
     <AppSelect label="模擬重要確認查核" value={workspace.lookupOutcome} options={[{ value: "unknown", label: "仍未查明" }, { value: "saved", label: "已確認" }, { value: "not_applied", label: "未取得確認收據" }]} onChange={workspace.setLookupOutcome} />
     <AppButton label="開啟重要記錄確認（合成示例）" variant="secondary" disabled={!item} onPress={() => setItemId(item?.id ?? null)} />

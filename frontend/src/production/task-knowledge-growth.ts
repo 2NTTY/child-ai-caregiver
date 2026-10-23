@@ -144,6 +144,10 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
     dirty: !runtime.lost && dirty, discardAsked, epoch, resetCounts, refreshPending, missingTargets, lastConcernChange: runtime.lost ? null : lastConcernChange,
   }, actions: {
     refresh() { refresh(); }, markDirty(key) { if (!locked) setDirtyKeys(before => before.includes(key) ? before : [...before, key]); },
+    discardLocalDraft(key) {
+      if (!runtime.live() || original.current && `${original.current.attempt.kind}:${original.current.attempt.id}` === key) return;
+      setDirtyKeys(before => before.filter(item => item !== key));
+    },
     askDiscard() { if (!busy) setDiscardAsked(true); },
     discardDrafts() { if (busy || original.current || !runtime.live()) return; setDirtyKeys([]); setEpoch(value => value + 1); setDiscardAsked(false); if (env.online) refresh(); },
     setOriginalConsent(value) { if (!busy && original.current?.reviewed && !original.current.reconfirm) setOriginalConsent(value); },

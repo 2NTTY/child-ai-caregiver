@@ -1,0 +1,5893 @@
+{
+  "schemaVersion": 1,
+  "documentStatus": "FROZEN_ENGINEERING_DELIVERY_WITH_EXPLICIT_LIMITS",
+  "date": "2026-10-22",
+  "release": {
+    "canonicalPr": "https://github.com/2NTTY/child-ai-caregiver/pull/253",
+    "existingPreview": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+    "previousAccepted": {
+      "snapshot": "26d",
+      "siteVersion": 85,
+      "status": "completed prior gate",
+      "repositoryRevision": "db37215b5c658bbc41db3bc30822273513cd6ee6"
+    },
+    "candidate": {
+      "snapshot": "27",
+      "sourceReview": "passed within 20-file scope",
+      "browserQa": "RED_PENDING_27A: 19 PASS / 1 RED / 2 NOT_BROWSER_VERIFIED grouped cases",
+      "published": false,
+      "commit": null
+    },
+    "nextCandidate": {
+      "snapshot": "27a",
+      "status": "published_bounded_smoke_pass",
+      "commit": "c18a6b67740013ea5631669fd8bf63acc2d1f5a3",
+      "browserQa": "6 incremental grouped cases PASS; 2 carried limits remain",
+      "scope": "23 files = 10 product + 13 test",
+      "testTotal": 136,
+      "bundleSha256": "abf3e8dc7d012a87db73ac5732721cc10429c68454144b2fbfff8c3aba4dbcf2",
+      "published": true,
+      "sourceReview": "passed",
+      "localBuild": "static validated",
+      "siteVersion": 86,
+      "siteSourceCommit": "a1c6b91e487786ac2a0338dab041774e6e885623",
+      "sitePublishedAt": "2026-10-22T18:07:49Z",
+      "publicScope": "unchanged",
+      "publicRevision": 2,
+      "publicationStatus": "terminal succeeded",
+      "liveSmoke": "PASS_BOUNDED_BROWSER_SMOKE: 5 grouped cases",
+      "githubFinalMetadataAndChecks": "readback completed; zero CI runs/checks/statuses, combined state pending, not green",
+      "githubTree": "ec0617f9c0f0e7584df7dbb5cc27bc8b52a74702",
+      "githubParent": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+      "remoteCompareExact": true,
+      "remoteSourceBlobCount": 23,
+      "prMetadata": {
+        "head": "c18a6b67740013ea5631669fd8bf63acc2d1f5a3",
+        "state": "open",
+        "draft": true,
+        "commits": 14,
+        "changedFiles": 307
+      },
+      "ci": {
+        "workflowRuns": 0,
+        "checkRuns": 0,
+        "statuses": 0,
+        "combinedState": "pending",
+        "green": false
+      },
+      "merged": false,
+      "sourceArchive": {
+        "fileCount": 73,
+        "nativeTarSha256": "f6e11ccf9897fb048a18d7af7dcbb629aecc8746432379c139f9145c4f65a486",
+        "content": "72 manifest assets plus hosting metadata; not the source product Git repository"
+      },
+      "remoteHttpBytes": {
+        "status": "NOT_VERIFIED",
+        "bundleGet": "HTTP 403 Forbidden",
+        "failureLayer": "unknown",
+        "fixtureGet": "not attempted",
+        "retryOrAlternateChannel": false,
+        "effect": "No remote response-body SHA equality claim; native publication readback and browser smoke remain separate passed evidence."
+      }
+    },
+    "repositoryDistinction": "GitHub product commit and Site source commit belong to different repositories; neither substitutes for the other."
+  },
+  "baseline": {
+    "siteVersion": "85",
+    "source": "c1139310fe37c5ecc938763abdc5e86a47a5efce",
+    "bundle": "index-f755ffc22d2d04a315ec8db050591e40.js",
+    "bundleSha256": "ece5a95e1aeaac0e7933d7c1b62578124545db6473fc59de260331095b2a71cc",
+    "fixtureSha256": "1299e4e16b32937a39670cf6c2af6ca40b70dae3cf794f386db1e31f30bf62e3"
+  },
+  "sourceReference": {
+    "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+    "basis": "551 frozen product build inputs matched the canonical repository revision in the integration preflight; baseline Site source label is retained separately."
+  },
+  "coverage": {
+    "parentRoutes": 17,
+    "wide": {
+      "cssPixels": [
+        1024,
+        600
+      ],
+      "representativeRoutes": 17
+    },
+    "narrow": {
+      "cssPixels": [
+        390,
+        600
+      ],
+      "representativeRoutes": 17
+    },
+    "extra320Routes": [
+      "/login",
+      "/tasks",
+      "/guide"
+    ],
+    "historyCategoriesEntered": 8,
+    "settingsSectionsEntered": 8,
+    "fullFunctionalPass": false,
+    "allSubviewsAtBothSizes": false,
+    "completeAccessibilityAudit": false,
+    "nativeMobileCertification": false
+  },
+  "originalCounts": {
+    "sourceFindings": {
+      "total": 15,
+      "P1": 1,
+      "P2": 7,
+      "P3": 7
+    },
+    "visualFindings": {
+      "total": 12,
+      "P1": 0,
+      "P2": 7,
+      "P3": 5
+    },
+    "additionProhibited": "Overlapping source and visual findings must not be added into a unique defect count.",
+    "images": 113,
+    "accessibilityTextArtifacts": 2,
+    "includedBaselineImages": 6
+  },
+  "sourceFindings": [
+    {
+      "id": "IA-01",
+      "priority": "P1",
+      "title": "概況未定位所選任務",
+      "parentGoal": "從概況核對同一項安排",
+      "impact": "父頁沒有傳遞 taskId，只開待辦清單，家長須重新尋找。",
+      "directionAndBoundary": "沿既有 guarded navigation 傳遞原 taskId，不猜標題或重建任務。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/screens/SummaryScreen.tsx",
+          "lines": "69-85",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/SummaryScreen.tsx#L69-L85"
+        },
+        {
+          "path": "frontend/src/components/summary/SummaryRecords.tsx",
+          "lines": "40-48",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/summary/SummaryRecords.tsx#L40-L48"
+        },
+        {
+          "path": "frontend/src/screens/tasksScreen.tsx",
+          "lines": "15-22",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/tasksScreen.tsx#L15-L22"
+        }
+      ],
+      "visualIds": [],
+      "routes": [
+        "/summary"
+      ],
+      "currentDisposition": "snapshot27 有界瀏覽器通過 A/B 精確定位、返回及320鍵盤重訪；未遍歷所有衝突／失效分支。"
+    },
+    {
+      "id": "IA-02",
+      "priority": "P2",
+      "title": "概況負責人顯示機器識別",
+      "parentGoal": "辨認誰負責安排",
+      "impact": "主 metadata 直接顯示 assigneeUserId；概況資料沒有權威顯示名稱契約。",
+      "directionAndBoundary": "有 assignee 時顯示「負責人：見原安排」，沒有則「未指定」；不猜本人／家人。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/summary/SummaryRecords.tsx",
+          "lines": "40-48",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/summary/SummaryRecords.tsx#L40-L48"
+        },
+        {
+          "path": "src/client/care-summary-api.ts",
+          "lines": "65-87",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/src/client/care-summary-api.ts#L65-L87"
+        },
+        {
+          "path": "src/shared/tasks.ts",
+          "lines": "13-53",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/src/shared/tasks.ts#L13-L53"
+        }
+      ],
+      "visualIds": [],
+      "routes": [
+        "/summary"
+      ],
+      "currentDisposition": "snapshot27 320／390／1024 實屏確認安全替代文字、不露UUID；權威姓名契約仍未提供。"
+    },
+    {
+      "id": "IA-03",
+      "priority": "P2",
+      "title": "有關注時助手入口不在近旁",
+      "parentGoal": "讀完關注後請助手跟進",
+      "impact": "有內容時近旁先是手動新增／跟進，與空態及待辦入口不一致。",
+      "directionAndBoundary": "把既有「與助手跟進」放在手動入口之前；保留正文、手動 modal 及管理。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/growth/GrowthView.tsx",
+          "lines": "90-99",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/growth/GrowthView.tsx#L90-L99"
+        },
+        {
+          "path": "frontend/src/screens/GrowthScreen.tsx",
+          "lines": "40-49",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/GrowthScreen.tsx#L40-L49"
+        }
+      ],
+      "visualIds": [
+        "V06"
+      ],
+      "routes": [
+        "/growth"
+      ],
+      "currentDisposition": "snapshot27原主次RED保留；27a在320／390／1024重驗通過，完整手動名稱／表單／回焦保留。"
+    },
+    {
+      "id": "IA-04",
+      "priority": "P2",
+      "title": "準備單助手入口在全清單後",
+      "parentGoal": "閱讀準備單並交代下一份需要",
+      "impact": "文件增加時，助手動作離清單入口更遠。",
+      "directionAndBoundary": "把既有助手動作移到清單前的緊湊工具列，刷新與歸檔退至次級。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/preparations/PreparationWorkspace.tsx",
+          "lines": "219-238",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/preparations/PreparationWorkspace.tsx#L219-L238"
+        }
+      ],
+      "visualIds": [
+        "V06"
+      ],
+      "routes": [
+        "/growth"
+      ],
+      "currentDisposition": "snapshot27 準備單入口／用途／手動層級有界通過；27a保留未改實作，另重驗共用手動dialog標題與回焦。"
+    },
+    {
+      "id": "IA-05",
+      "priority": "P2",
+      "title": "家庭入口承諾超出落地能力",
+      "parentGoal": "查看成員分工與交接",
+      "impact": "入口描述成員／角色／分工，落地頁卻尚未開放，讓家長白走一次。",
+      "directionAndBoundary": "只修正入口承諾及未開放標示，不趁機實作家庭協作。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/navigation/app-navigation.ts",
+          "lines": "50-53",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/navigation/app-navigation.ts#L50-L53"
+        },
+        {
+          "path": "frontend/src/components/RightRailContent.tsx",
+          "lines": "15",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/RightRailContent.tsx#L15"
+        },
+        {
+          "path": "frontend/src/screens/familyScreen.tsx",
+          "lines": "9-13",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/familyScreen.tsx#L9-L13"
+        }
+      ],
+      "visualIds": [],
+      "routes": [
+        "/family",
+        "/more",
+        "/settings",
+        "/login"
+      ],
+      "currentDisposition": "待處理，本批未修改"
+    },
+    {
+      "id": "IA-06",
+      "priority": "P3",
+      "title": "安排記錄含背景管線診斷",
+      "parentGoal": "理解安排何時如何改動",
+      "impact": "次級記錄中的 worker 狀態、失敗次數可能被誤讀成通知進度。",
+      "directionAndBoundary": "保留修改內容、時間、原因及未確認送達界線；不把 processed 當已送達。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/tasks/TaskDetail.tsx",
+          "lines": "20-48",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/tasks/TaskDetail.tsx#L20-L48"
+        },
+        {
+          "path": "frontend/src/components/tasks/TaskContent.tsx",
+          "lines": "40-52",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/tasks/TaskContent.tsx#L40-L52"
+        }
+      ],
+      "visualIds": [],
+      "routes": [
+        "/tasks"
+      ],
+      "currentDisposition": "待處理，本批未修改"
+    },
+    {
+      "id": "IA-07",
+      "priority": "P2",
+      "title": "聯絡授權混用讀取與提交狀態",
+      "parentGoal": "理解本人同意與可用渠道",
+      "impact": "主要說明偏向系統關卡，busy 同時描述讀取與提交；失敗態另有重複提示。",
+      "directionAndBoundary": "分開已知讀取／保存階段；不臆造細分狀態，不刪渠道與投遞／已讀界線。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/contact/ContactView.tsx",
+          "lines": "45-66",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/contact/ContactView.tsx#L45-L66"
+        }
+      ],
+      "visualIds": [
+        "V12"
+      ],
+      "routes": [
+        "/contact"
+      ],
+      "currentDisposition": "待處理，本批未修改"
+    },
+    {
+      "id": "IA-08",
+      "priority": "P3",
+      "title": "記憶術語及來源識別不易理解",
+      "parentGoal": "知道助手記住甚麼及來源",
+      "impact": "來源展開偏重機器 ID；部分技術識別實際在第二層，不能說全在首屏。",
+      "directionAndBoundary": "用不改資料語義的用途說明及已有可讀來源；短期摘要不能改稱有效任務。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/memory/MemoryReferenceView.tsx",
+          "lines": "23-24",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/memory/MemoryReferenceView.tsx#L23-L24"
+        },
+        {
+          "path": "frontend/src/components/memory/MemoryReferenceView.tsx",
+          "lines": "48-120",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/memory/MemoryReferenceView.tsx#L48-L120"
+        }
+      ],
+      "visualIds": [],
+      "routes": [
+        "/memory"
+      ],
+      "currentDisposition": "待處理，本批未修改"
+    },
+    {
+      "id": "IA-09",
+      "priority": "P3",
+      "title": "歷史先解釋搜尋實作",
+      "parentGoal": "找回內容並理解搜尋範圍",
+      "impact": "掃100則／最多10命中與 API 缺日期欄位等文字先於內容。",
+      "directionAndBoundary": "保留未完整、日期只覆已搜尋資料及帳戶／孩子範圍。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/history/PersonalHistoryViews.tsx",
+          "lines": "48-69",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/history/PersonalHistoryViews.tsx#L48-L69"
+        },
+        {
+          "path": "frontend/src/screens/historyScreen.tsx",
+          "lines": "126",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/historyScreen.tsx#L126"
+        },
+        {
+          "path": "frontend/src/components/history/HistoryMessageDetail.tsx",
+          "lines": "25",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/history/HistoryMessageDetail.tsx#L25"
+        }
+      ],
+      "visualIds": [
+        "V10"
+      ],
+      "routes": [
+        "/history"
+      ],
+      "currentDisposition": "部分處理：核對類日期限制已改短；對話掃描額度及全文成功提示仍待處理"
+    },
+    {
+      "id": "IA-10",
+      "priority": "P3",
+      "title": "助手設定仍含 worker 與 raw 來源識別",
+      "parentGoal": "分清授權助手與核對私人備註",
+      "impact": "現版已有兩個區塊，不把它誤報成授權等於確認；技術文字仍可簡化。",
+      "directionAndBoundary": "保留可寫入種類、共享同意、私人備註非健康事實及未知操作恢復。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/production/AgentAuthorization.tsx",
+          "lines": "35-77",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/production/AgentAuthorization.tsx#L35-L77"
+        }
+      ],
+      "visualIds": [],
+      "routes": [
+        "/settings"
+      ],
+      "currentDisposition": "待處理，本批未修改"
+    },
+    {
+      "id": "IA-11",
+      "priority": "P3",
+      "title": "模型設定的實作說明過重",
+      "parentGoal": "選模型方式並理解成本與資料去向",
+      "impact": "本地開發／接線用語與家長可控制選項混在正文。",
+      "directionAndBoundary": "保留 key、模型 ID、endpoint、本人額度、送往服務及不自動後備；限制歸於本服務，不誤稱供應商本身不支援。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/model-settings/ModelSettingsView.tsx",
+          "lines": "118-170",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/model-settings/ModelSettingsView.tsx#L118-L170"
+        }
+      ],
+      "visualIds": [
+        "V10"
+      ],
+      "routes": [
+        "/settings"
+      ],
+      "currentDisposition": "source／DOM通過；瀏覽器只驗正確未確認讀取態，成功模型表單未覆蓋。"
+    },
+    {
+      "id": "IA-12",
+      "priority": "P2",
+      "title": "回訪說明頁先呈現帳戶管理",
+      "parentGoal": "直接查使用方法",
+      "impact": "已完成引導者仍先看到帳戶與孩子管理，三步說明後移。",
+      "directionAndBoundary": "按既有首次引導狀態排序；保留首次必需設定與安全界線。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/screens/guideScreen.tsx",
+          "lines": "62-133",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/guideScreen.tsx#L62-L133"
+        }
+      ],
+      "visualIds": [
+        "V08"
+      ],
+      "routes": [
+        "/guide"
+      ],
+      "currentDisposition": "待處理，本批未修改"
+    },
+    {
+      "id": "IA-13",
+      "priority": "P2",
+      "title": "登入錯誤與普通通知同語意",
+      "parentGoal": "辨認輸入錯誤並修正",
+      "impact": "已知本地錯誤與一般通知使用同一文字／色彩，可能誤讀成功。",
+      "directionAndBoundary": "沿用既有錯誤語意及欄位關聯，不用訊息字串猜結果。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/screens/loginScreen.tsx",
+          "lines": "59-64",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/loginScreen.tsx#L59-L64"
+        },
+        {
+          "path": "frontend/src/screens/loginScreen.tsx",
+          "lines": "124-144",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/loginScreen.tsx#L124-L144"
+        }
+      ],
+      "visualIds": [],
+      "routes": [
+        "/login"
+      ],
+      "currentDisposition": "待處理；錯誤分支僅 source-confirmed"
+    },
+    {
+      "id": "IA-14",
+      "priority": "P3",
+      "title": "私人來源重複解釋同一流程",
+      "parentGoal": "讀來源並決定助手如何使用",
+      "impact": "範圍、用途、保存與接入說明重複，把原內容壓後。",
+      "directionAndBoundary": "一次必要摘要，授權細節就近於模型／共享動作；不合併保存與接入承諾。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/shared-inputs/SourcesView.tsx",
+          "lines": "74-99",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/shared-inputs/SourcesView.tsx#L74-L99"
+        },
+        {
+          "path": "frontend/src/components/shared-inputs/SourceIntakeConversation.tsx",
+          "lines": "13-26",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/shared-inputs/SourceIntakeConversation.tsx#L13-L26"
+        }
+      ],
+      "visualIds": [
+        "V01",
+        "V11"
+      ],
+      "routes": [
+        "/sources"
+      ],
+      "currentDisposition": "待處理，本批未修改"
+    },
+    {
+      "id": "IA-15",
+      "priority": "P3",
+      "title": "背景預覽用設計系統解說",
+      "parentGoal": "查看背景下的真實閱讀效果",
+      "impact": "「霧化面板承托內容」不是家長需要的示例；不是功能故障。",
+      "directionAndBoundary": "可改短合成照顧內容；保留本裝置、不送助手等私隱界線。",
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/appearance/BackgroundSettings.tsx",
+          "lines": "24",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/appearance/BackgroundSettings.tsx#L24"
+        },
+        {
+          "path": "frontend/src/components/appearance/BackgroundSurface.tsx",
+          "lines": "18-24",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/appearance/BackgroundSurface.tsx#L18-L24"
+        }
+      ],
+      "visualIds": [
+        "V10"
+      ],
+      "routes": [
+        "/settings"
+      ],
+      "currentDisposition": "待處理，本批未修改"
+    }
+  ],
+  "visualFindings": [
+    {
+      "id": "V01",
+      "priority": "P2",
+      "title": "首屏控制及維護資訊過重",
+      "routes": [
+        "/history",
+        "/settings",
+        "/sources"
+      ],
+      "sourceIds": [
+        "IA-14"
+      ],
+      "screenshotIds": [
+        11,
+        58,
+        62,
+        85
+      ],
+      "currentDisposition": "snapshot27 history工具列與通知層級有界通過；sources完全未改，模型成功表單未驗。"
+    },
+    {
+      "id": "V02",
+      "priority": "P2",
+      "title": "手機目前位置語意不穩定",
+      "routes": [
+        "/settings",
+        "/memory",
+        "/history",
+        "/photos",
+        "/more",
+        "/family"
+      ],
+      "sourceIds": [],
+      "screenshotIds": [
+        6,
+        51,
+        62,
+        74,
+        75
+      ],
+      "currentDisposition": "待處理；本批沒有修改頁名或底欄高亮。"
+    },
+    {
+      "id": "V03",
+      "priority": "P2",
+      "title": "首頁異常及未完成提示壓過既有內容",
+      "routes": [
+        "/"
+      ],
+      "sourceIds": [],
+      "screenshotIds": [
+        2,
+        28,
+        29
+      ],
+      "currentDisposition": "待處理；不能為精簡偽裝助手可用。"
+    },
+    {
+      "id": "V04",
+      "priority": "P3",
+      "title": "浮動相機閱讀干擾屬非阻斷取捨",
+      "routes": [
+        "/"
+      ],
+      "sourceIds": [],
+      "screenshotIds": [
+        29,
+        110,
+        111,
+        112
+      ],
+      "currentDisposition": "保留使用者指定外形；正常捲動可讀所有現有段落及最後卡，不是待修阻斷。"
+    },
+    {
+      "id": "V05",
+      "priority": "P2",
+      "title": "較早未處理事項被近期零筆弱化",
+      "routes": [
+        "/tasks"
+      ],
+      "sourceIds": [],
+      "screenshotIds": [
+        30,
+        31,
+        99
+      ],
+      "currentDisposition": "待處理；保留期間邊界，不假稱全量統計。"
+    },
+    {
+      "id": "V06",
+      "priority": "P2",
+      "title": "助手與手動入口跨工作頁不一致",
+      "routes": [
+        "/growth"
+      ],
+      "sourceIds": [
+        "IA-03",
+        "IA-04"
+      ],
+      "screenshotIds": [
+        38,
+        39,
+        40,
+        42,
+        100
+      ],
+      "currentDisposition": "27a關注主次重驗通過；準備單沿27已驗部分及27a共用dialog回歸，有界結案，不代表助手生成。"
+    },
+    {
+      "id": "V07",
+      "priority": "P2",
+      "title": "概況窄版身份區日期斷行",
+      "routes": [
+        "/summary"
+      ],
+      "sourceIds": [],
+      "screenshotIds": [
+        27,
+        26
+      ],
+      "currentDisposition": "待處理；保留估計年齡與截至日期。"
+    },
+    {
+      "id": "V08",
+      "priority": "P2",
+      "title": "說明頁先成帳戶管理頁",
+      "routes": [
+        "/guide"
+      ],
+      "sourceIds": [
+        "IA-12"
+      ],
+      "screenshotIds": [
+        94,
+        95,
+        96
+      ],
+      "currentDisposition": "與 IA-12 同一主題，待處理。"
+    },
+    {
+      "id": "V09",
+      "priority": "P3",
+      "title": "已保存卡通用類型壓過事件",
+      "routes": [
+        "/care",
+        "/history"
+      ],
+      "sourceIds": [],
+      "screenshotIds": [
+        48,
+        49,
+        69
+      ],
+      "currentDisposition": "待處理；保留原領域卡及全文入口。"
+    },
+    {
+      "id": "V10",
+      "priority": "P3",
+      "title": "維護用語應退位",
+      "routes": [
+        "/settings",
+        "/history"
+      ],
+      "sourceIds": [
+        "IA-09",
+        "IA-11",
+        "IA-15"
+      ],
+      "screenshotIds": [
+        7,
+        13,
+        66
+      ],
+      "currentDisposition": "模型文案source／DOM已納候選；成功模型表單未驗；對話掃描額度與背景預覽仍未改。"
+    },
+    {
+      "id": "V11",
+      "priority": "P3",
+      "title": "來源詳情反覆解釋流程",
+      "routes": [
+        "/sources"
+      ],
+      "sourceIds": [
+        "IA-14"
+      ],
+      "screenshotIds": [
+        84,
+        86,
+        87
+      ],
+      "currentDisposition": "與 IA-14 同一主題，待處理。"
+    },
+    {
+      "id": "V12",
+      "priority": "P3",
+      "title": "聯絡失敗提示重複且混讀寫",
+      "routes": [
+        "/contact"
+      ],
+      "sourceIds": [
+        "IA-07"
+      ],
+      "screenshotIds": [
+        77,
+        78
+      ],
+      "currentDisposition": "同屬 IA-07 狀態語意；只見合成讀取失敗，正常授權關卡未實屏。"
+    }
+  ],
+  "routes": [
+    {
+      "route": "/login",
+      "name": "登入",
+      "parentGoal": "安全進入照顧空間，找回帳戶",
+      "priorityAndIds": "IA-13 P2；家庭宣傳亦涉 IA-05 P2",
+      "problemAndImpact": "登入及註冊代表畫面可讀；錯誤狀態沒有觸發，不能把 source 問題說已實屏重現。",
+      "sourceIds": [
+        "IA-13",
+        "IA-05"
+      ],
+      "visualIds": [],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/screens/loginScreen.tsx",
+          "lines": "59-64",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/loginScreen.tsx#L59-L64"
+        },
+        {
+          "path": "frontend/src/components/navigation/app-navigation.ts",
+          "lines": "50-53",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/navigation/app-navigation.ts#L50-L53"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E103",
+        "E104",
+        "E105",
+        "E106",
+        "E107"
+      ],
+      "baselineInteractions": "利用fixture已攔截、只改分頁狀態的合成登出抵達；切註冊再切登入；320捲至登入按鈕。沒有填寫或提交憑證。",
+      "notCovered": "驗證錯誤、寄信、真登入、真註冊與soft keyboard不在本輪。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改。"
+    },
+    {
+      "route": "/",
+      "name": "首頁",
+      "parentGoal": "先知道今天最重要的事，繼續未完工作",
+      "priorityAndIds": "V03 P2；V04 P3",
+      "problemAndImpact": "引導及助手不可用提示先於現有關注與待辦；相機只在部分捲動位置重疊。",
+      "sourceIds": [],
+      "visualIds": [
+        "V03",
+        "V04"
+      ],
+      "sourceEvidence": [],
+      "baselineScreenshotIds": [
+        "E001",
+        "E002",
+        "E028",
+        "E029",
+        "E108",
+        "E109",
+        "E110",
+        "E111",
+        "E112"
+      ],
+      "baselineInteractions": "正常捲動、從繼續使用引導到guide；未使用相機／麥克風。 17:23補核正常wheel捲動每段及到底再下捲，確認相機不永久遮擋。",
+      "notCovered": "未驗首頁所有健康提醒成功態、自選背景、右欄HomeFocus重複問題。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改；相機保持既定外形，正常捲動可完整閱讀，不列阻斷。"
+    },
+    {
+      "route": "/chat",
+      "name": "聊天",
+      "parentGoal": "說出近況或問題，獲取可行幫助",
+      "priorityAndIds": "本輪未新增主要問題",
+      "problemAndImpact": "對話、活動待確認與 Bell 分工已成立；不要改成管理卡牆。",
+      "sourceIds": [],
+      "visualIds": [],
+      "sourceEvidence": [],
+      "baselineScreenshotIds": [
+        "E016",
+        "E017",
+        "E018",
+        "E019",
+        "E020",
+        "E021"
+      ],
+      "baselineInteractions": "捲讀歷史、回最新、開活動待確認modal，Escape關閉且AX回焦原活動按鈕。沒有發訊息。",
+      "notCovered": "真模型、串流、送出、聲音、附件及全套keyboard不在本輪。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改；保留對話閱讀與原活動入口。"
+    },
+    {
+      "route": "/tasks",
+      "name": "待辦",
+      "parentGoal": "知道接下來做甚麼，完成或調整安排",
+      "priorityAndIds": "V05 P2；IA-06 P3",
+      "problemAndImpact": "待處理 1，但近期 7 天顯示 0；較早未處理入口較弱。安排記錄仍有技術管線文字。",
+      "sourceIds": [
+        "IA-06"
+      ],
+      "visualIds": [
+        "V05"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/tasks/TaskDetail.tsx",
+          "lines": "20-48",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/tasks/TaskDetail.tsx#L20-L48"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E034",
+        "E035",
+        "E036",
+        "E037",
+        "E030",
+        "E031",
+        "E032",
+        "E033",
+        "E099",
+        "E100"
+      ],
+      "baselineInteractions": "點較早未處理→開詳情→展開安排記錄→關閉回清單；320打開操作選單。沒有執行改期／完成／取消。",
+      "notCovered": "完成、取消、保存、所有任務狀態及概況深連結未驗。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批針對概況深連結接入既有 task owner 作測試；未修改較早待辦呈現或安排記錄文字。"
+    },
+    {
+      "route": "/growth",
+      "name": "關注與準備",
+      "parentGoal": "追蹤孩子近況，為就診或會面準備",
+      "priorityAndIds": "IA-03／IA-04／V06 P2，同一主題",
+      "problemAndImpact": "有關注時缺近旁助手入口；準備單助手動作排在完整清單後。",
+      "sourceIds": [
+        "IA-03",
+        "IA-04"
+      ],
+      "visualIds": [
+        "V06"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/growth/GrowthView.tsx",
+          "lines": "90-99",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/growth/GrowthView.tsx#L90-L99"
+        },
+        {
+          "path": "frontend/src/components/preparations/PreparationWorkspace.tsx",
+          "lines": "219-238",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/preparations/PreparationWorkspace.tsx#L219-L238"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E038",
+        "E039",
+        "E043",
+        "E040",
+        "E041",
+        "E042"
+      ],
+      "baselineInteractions": "切關注／準備tabs、打開手動關注表單並Escape離開、正常捲讀時間線；未填表或提交。",
+      "notCovered": "準備單本輪只有空態；長文件reader焦點回歸屬前一獨立gate，不能冒充本輪多文件已覆。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "27原主次RED已由27a重驗關閉；320／390／1024主次、完整手動名稱／表單／回焦通過，準備單原域保留。"
+    },
+    {
+      "route": "/summary",
+      "name": "概況",
+      "parentGoal": "快速了解孩子整體狀態與變化",
+      "priorityAndIds": "IA-01 P1；IA-02／V07 P2",
+      "problemAndImpact": "「核對這項任務」未帶 taskId；主 metadata 顯示 ID；窄版日期斷行。基線當時無預約／衝突卡。",
+      "sourceIds": [
+        "IA-01",
+        "IA-02"
+      ],
+      "visualIds": [
+        "V07"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/screens/SummaryScreen.tsx",
+          "lines": "69-85",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/SummaryScreen.tsx#L69-L85"
+        },
+        {
+          "path": "frontend/src/components/summary/SummaryRecords.tsx",
+          "lines": "40-48",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/summary/SummaryRecords.tsx#L40-L48"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E022",
+        "E023",
+        "E024",
+        "E025",
+        "E026",
+        "E027"
+      ],
+      "baselineInteractions": "切概況／成長檔案；用UI把摘要起點由2026-10-23改到2026-10-08並套用，預約／跟進仍0。",
+      "notCovered": "預約／衝突任務卡、負責人UUID實屏、匯出結果未驗。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "候選已傳 taskId 並使用安全負責人替代文字；姓名契約仍缺，日期排版未改。兩項新合成預約供候選驗收，不是代家長預約功能。"
+    },
+    {
+      "route": "/care",
+      "name": "核對",
+      "parentGoal": "理解並確認助手整理是否符合原意",
+      "priorityAndIds": "V09 P3",
+      "problemAndImpact": "待確認卡正文優先可保留；已保存卡反覆強調通用類型，掃描具體事件較慢。",
+      "sourceIds": [],
+      "visualIds": [
+        "V09"
+      ],
+      "sourceEvidence": [],
+      "baselineScreenshotIds": [
+        "E044",
+        "E049",
+        "E045",
+        "E046",
+        "E047",
+        "E048"
+      ],
+      "baselineInteractions": "待確認整卡開modal、Escape關閉；切已保存、捲讀原域卡。沒有確認或刪除記錄。",
+      "notCovered": "長文回原卡精確回焦屬前批Site85 smoke，不混成本輪全面回歸；非本輪全部卡操作。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改；已保存與本人已核對仍分開。"
+    },
+    {
+      "route": "/memory",
+      "name": "記憶",
+      "parentGoal": "知道系統記得甚麼，修正或移除不合適內容",
+      "priorityAndIds": "V02 P2；IA-08 P3",
+      "problemAndImpact": "手機頁面定位較弱；記憶及來源技術文字需整理，部分識別只在次級層。",
+      "sourceIds": [
+        "IA-08"
+      ],
+      "visualIds": [
+        "V02"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/memory/MemoryReferenceView.tsx",
+          "lines": "23-24",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/memory/MemoryReferenceView.tsx#L23-L24"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E050",
+        "E057",
+        "E051",
+        "E052",
+        "E056",
+        "E053",
+        "E054",
+        "E055"
+      ],
+      "baselineInteractions": "實際切三tabs，390用更多分類箭頭橫向露出參考資料後選取；未管理／改記憶。",
+      "notCovered": "raw來源ID及第二層版本識別未全展開，IA-08不冒稱都已實屏。50檔名short但實為long；53／54仍short，正確reference為56。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改，不把短期摘要改稱有效任務。"
+    },
+    {
+      "route": "/history",
+      "name": "歷史",
+      "parentGoal": "找回之前內容及變更",
+      "priorityAndIds": "V01／V02 P2；IA-09／V09／V10 P3",
+      "problemAndImpact": "首屏分類、搜尋及兩個日期欄壓後內容；底欄位置語意與維護用語仍需改善。",
+      "sourceIds": [
+        "IA-09"
+      ],
+      "visualIds": [
+        "V01",
+        "V02",
+        "V09",
+        "V10"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/history/PersonalHistoryViews.tsx",
+          "lines": "48-69",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/history/PersonalHistoryViews.tsx#L48-L69"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E058",
+        "E059",
+        "E060",
+        "E066",
+        "E067",
+        "E068",
+        "E069",
+        "E070",
+        "E071",
+        "E072",
+        "E061",
+        "E062",
+        "E063",
+        "E064"
+      ],
+      "baselineInteractions": "切8分類；檔案修改從未載入點讀取歷史；消息整卡開全文再關閉。其餘分類主要閱讀，不逐卡操作。",
+      "notCovered": "所有分類雙尺寸／全部資料頁未覆；58只見任務分類首屏，不聲稱任務history全部卡有真圖。搜尋命中、翻頁、載入更多未操作。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "候選將日期放入局部 modal、搜尋及動作收緊，保留讀者身分及範圍。只有核對類日期限制文案改短；掃描100／10、卡標題及底欄定位未改。"
+    },
+    {
+      "route": "/settings",
+      "name": "設定",
+      "parentGoal": "控制帳戶、通知、外觀與模型選擇",
+      "priorityAndIds": "V01／V02 P2；IA-10／IA-11／IA-15／V10 P3",
+      "problemAndImpact": "通知重讀及版本先於欄位；模型含接線語句；助手授權與備註原本已有分區。",
+      "sourceIds": [
+        "IA-10",
+        "IA-11",
+        "IA-15",
+        "IA-05"
+      ],
+      "visualIds": [
+        "V01",
+        "V02",
+        "V10"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/production/AgentAuthorization.tsx",
+          "lines": "35-77",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/production/AgentAuthorization.tsx#L35-L77"
+        },
+        {
+          "path": "frontend/src/components/model-settings/ModelSettingsView.tsx",
+          "lines": "118-170",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/model-settings/ModelSettingsView.tsx#L118-L170"
+        },
+        {
+          "path": "frontend/src/components/appearance/BackgroundSettings.tsx",
+          "lines": "24",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/appearance/BackgroundSettings.tsx#L24"
+        },
+        {
+          "path": "frontend/src/components/navigation/app-navigation.ts",
+          "lines": "50-53",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/navigation/app-navigation.ts#L50-L53"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E003",
+        "E004",
+        "E012",
+        "E013",
+        "E014",
+        "E015",
+        "E005",
+        "E006",
+        "E007",
+        "E008",
+        "E009",
+        "E010",
+        "E011"
+      ],
+      "baselineInteractions": "切tabs及捲動；沒有改值／保存／換背景／輸入key／撤會話／刪帳戶。",
+      "notCovered": "8tabs不是每tab都兩尺寸；自選高對比背景未套用，真模型／通知接線／權限與保存完全未驗。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "候選只整理通知／模型設定層級與局部文案；IA-10、背景示例 IA-15 及手機定位未改。家庭能力仍未開放。"
+    },
+    {
+      "route": "/more",
+      "name": "全部功能",
+      "parentGoal": "找到較少用但需要的功能",
+      "priorityAndIds": "IA-05／V02 P2",
+      "problemAndImpact": "家庭入口描述比實際能力多；手機全部功能仍高亮核對，現在位置容易混淆。",
+      "sourceIds": [
+        "IA-05"
+      ],
+      "visualIds": [
+        "V02"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/navigation/app-navigation.ts",
+          "lines": "50-53",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/navigation/app-navigation.ts#L50-L53"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E073",
+        "E074",
+        "E081"
+      ],
+      "baselineInteractions": "從目錄到家庭／聯絡／來源／說明；390由底部核對上拉實際導航至more。",
+      "notCovered": "寬版全部條目描述未逐張截圖；不是所有入口能力都做了功能驗收。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改，不新增家庭協作。"
+    },
+    {
+      "route": "/profile",
+      "name": "檔案",
+      "parentGoal": "查看和更新孩子基本資料",
+      "priorityAndIds": "本輪未新增主要問題",
+      "problemAndImpact": "孩子名、確認狀態、已知與未知資料可辨，寬窄閱讀層級合理。",
+      "sourceIds": [],
+      "visualIds": [],
+      "sourceEvidence": [],
+      "baselineScreenshotIds": [
+        "E083",
+        "E082"
+      ],
+      "baselineInteractions": "由more導航、尺寸切換、閱讀首屏；沒有按編輯或新增孩子。",
+      "notCovered": "編輯modal、修改來源與孩子管理未實作驗收。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改；保留內容優先，不強迫改成歷史卡。"
+    },
+    {
+      "route": "/photos",
+      "name": "照片",
+      "parentGoal": "查看及整理孩子相片",
+      "priorityAndIds": "V02 P2，僅導航定位",
+      "problemAndImpact": "合成附件及來源可閱讀，提取同意與危險刪除清楚；手機底欄仍以核對高亮。",
+      "sourceIds": [],
+      "visualIds": [
+        "V02"
+      ],
+      "sourceEvidence": [],
+      "baselineScreenshotIds": [
+        "E089",
+        "E090",
+        "E091",
+        "E088",
+        "E092",
+        "E093"
+      ],
+      "baselineInteractions": "從來源進/photos，開既有合成四色圖，捲至同意及危險區；無上傳、勾同意、提取、刪除。",
+      "notCovered": "care?view=photos相容入口未單獨走；不驗照片寫入／模型。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改；不因缺自動縮圖而繞過私人附件讀取界線。"
+    },
+    {
+      "route": "/sources",
+      "name": "來源",
+      "parentGoal": "找回提供的資料及來源內容",
+      "priorityAndIds": "V01 P2；IA-14／V11 P3",
+      "problemAndImpact": "多段範圍與流程說明壓後來源本體；選取後仍重複用途與保存層次。",
+      "sourceIds": [
+        "IA-14"
+      ],
+      "visualIds": [
+        "V01",
+        "V11"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/shared-inputs/SourcesView.tsx",
+          "lines": "74-99",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/shared-inputs/SourcesView.tsx#L74-L99"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E084",
+        "E085",
+        "E086",
+        "E087"
+      ],
+      "baselineInteractions": "點查看既有合成來源、捲讀詳細內容，再導航照片；沒有保存、修改、刪除或交助手。",
+      "notCovered": "完整原文disclosure、技術來源層、來源修改記錄未全部打開；沒有網頁抓取。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "明確待處理，本批完全沒有修改 sources；不可因 history/settings 改善便說 V01 全部完成。"
+    },
+    {
+      "route": "/contact",
+      "name": "聯絡",
+      "parentGoal": "了解本人的通知渠道及授權",
+      "priorityAndIds": "IA-07 P2；V12 P3，同一狀態語意主題",
+      "problemAndImpact": "合成讀取失敗出現兩段重複且混讀寫提示；正常三關卡及保存 busy 未實屏。",
+      "sourceIds": [
+        "IA-07"
+      ],
+      "visualIds": [
+        "V12"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/contact/ContactView.tsx",
+          "lines": "45-66",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/contact/ContactView.tsx#L45-L66"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E077",
+        "E078"
+      ],
+      "baselineInteractions": "導航及兩尺寸閱讀；未重試寫入、調整同意或發通知。",
+      "notCovered": "正常聯絡資料／渠道／三checkpoint／保存busy無樣本，明確待核。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改；既有 Contact 型別兩錯另列工程限制，不增加設計問題數。"
+    },
+    {
+      "route": "/family",
+      "name": "家庭",
+      "parentGoal": "知道誰可參與照顧及可見範圍",
+      "priorityAndIds": "IA-05／V02 P2",
+      "problemAndImpact": "落地頁明說尚未開放，不是假空列表；但入口宣傳會讓家長期待成員、角色及交接。",
+      "sourceIds": [
+        "IA-05"
+      ],
+      "visualIds": [
+        "V02"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/components/navigation/app-navigation.ts",
+          "lines": "50-53",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/components/navigation/app-navigation.ts#L50-L53"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E076",
+        "E075"
+      ],
+      "baselineInteractions": "從more進來，寬窄閱讀；未改任何權限或成員。",
+      "notCovered": "家庭協作本來未開放，不把未提供功能判為這次回歸。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改。可用聯絡設定不等於家庭協作已接通。"
+    },
+    {
+      "route": "/guide",
+      "name": "指引",
+      "parentGoal": "了解安全和使用方法",
+      "priorityAndIds": "IA-12／V08 P2，同一主題",
+      "problemAndImpact": "回訪者先見帳戶與孩子管理，真正三步使用說明在後。",
+      "sourceIds": [
+        "IA-12"
+      ],
+      "visualIds": [
+        "V08"
+      ],
+      "sourceEvidence": [
+        {
+          "path": "frontend/src/screens/guideScreen.tsx",
+          "lines": "62-133",
+          "revision": "db37215b5c658bbc41db3bc30822273513cd6ee6",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/db37215b5c658bbc41db3bc30822273513cd6ee6/frontend/src/screens/guideScreen.tsx#L62-L133"
+        }
+      ],
+      "baselineScreenshotIds": [
+        "E094",
+        "E102",
+        "E095",
+        "E096",
+        "E097",
+        "E098"
+      ],
+      "baselineInteractions": "切第3步、正常捲讀；320抽查；最後只用合成登出開login。",
+      "notCovered": "不聲稱完成新帳戶引導、孩子建立或通知授權。",
+      "wide": "representative observed",
+      "narrow": "representative observed",
+      "currentDisposition": "本批未修改；後續應依首次引導狀態排序，保留能力與授權界線。"
+    }
+  ],
+  "baselineEvidence": [
+    {
+      "id": "E000",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "9b09179df70bb72c0d94d12e6cc0349adc0ef577e76df62cfe33f7778c569b60",
+      "bytes": 144566,
+      "route": "/growth?tab=preparation",
+      "appViewportCssPx": "not-this-audit",
+      "status": "excluded",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "非本輪畫面，排除。"
+    },
+    {
+      "id": "E001",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "3b0ebe87fe2ae5c7b3937ff109537c6323a2880deac270e401f0d4a1e0a9727b",
+      "bytes": 165478,
+      "route": "/",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E002",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "a079dcb8de93045e79f635d7175a6806ccd8ee2e83e4a95ec8b7970a0deaf916",
+      "bytes": 166007,
+      "route": "/",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E003",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "a939908861a66d2be499c0d3a2f1acd30c51f34ea6463434ebfcf0a7e3390a19",
+      "bytes": 166300,
+      "route": "/settings",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E004",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "c8db000a9454f069e26b9986cc61a3e03b2e58dd457b99687fee909e4ae727af",
+      "bytes": 178494,
+      "route": "/settings",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E005",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "2e5900569bad1f994a15ac66f79869b097218bdfcc6fbb5779a4157769ed3e0c",
+      "bytes": 139546,
+      "route": "/settings",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E006",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "d4d96a7cf1135a980ed30e6804fc9a0fcdf814334b4f749667823a9fd9abc8f9",
+      "bytes": 132726,
+      "route": "/settings",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E007",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "5df22d7522b71fc9cdddf729ec752226f82230f1ef77f30955d37473cee07f02",
+      "bytes": 137998,
+      "route": "/settings",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E008",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "34ac5a145c21c0be55c204d1b1f6afa851105cb8a1ea39a4764cddd0483841eb",
+      "bytes": 131107,
+      "route": "/settings",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E009",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "7c4dea9cb769b6cd7db4e4f475ed86f62661b18f630067da3f50f11bbd617fb8",
+      "bytes": 142399,
+      "route": "/settings",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E010",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "b6b89fd9b6baab775b38fade14b845c252b6ad58082a7950b95060692eafbe3d",
+      "bytes": 146410,
+      "route": "/settings",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E011",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "99d436b75aa911dc06d1c7efbb54f05e452b2ad193d08a8fbfaad077fc689d6e",
+      "bytes": 134287,
+      "route": "/settings",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": "screenshots/baseline/011-notification-settings-390.jpg",
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "caption": "通知設定先出版本及重讀控制，V01。",
+      "copyMethod": "byte-for-byte copy; correct .jpg extension; no crop, composite or regeneration"
+    },
+    {
+      "id": "E012",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "bfb754055ef7fac997fee51af3a301f154ce551d19c3692fb6f8dc2263b80912",
+      "bytes": 173042,
+      "route": "/settings",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E013",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "d89adb4e3131d979eef91457d4addf2d9b35cf467cd66d9836f22467d594f794",
+      "bytes": 158177,
+      "route": "/settings",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E014",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "24ffd29a2a0f54580d3301c50442c4b2bb8adb1e5b550b94e089cfc053458f2f",
+      "bytes": 164272,
+      "route": "/settings",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E015",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "10c85a5b47a1f5bd7889d7cf7cb7f057e81393411c625c08e4e1e6c715994f32",
+      "bytes": 157579,
+      "route": "/settings",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E016",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "9b93e697a9bb5a16c20396dd6651638df56bc1dcd82f97ad71e89b71d0cb4704",
+      "bytes": 161819,
+      "route": "/chat",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E017",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "f9d43b6fa54592d3004bdcc45ade802d8b2e5162f89626131b88dd769b39e553",
+      "bytes": 172467,
+      "route": "/chat",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E018",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "010331108af807d315363a3ad37854bfcc4b89beb32f72f5b1cd0da892c43f44",
+      "bytes": 134504,
+      "route": "/chat",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E019",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "5b794cbb961be398cc7b2c2e1ab2413333f649dfa9dc6148d391770aa41e4ba8",
+      "bytes": 134121,
+      "route": "/chat",
+      "appViewportCssPx": "390x600",
+      "status": "transient",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "載入或關閉動畫，不用作穩態版面缺陷證據。"
+    },
+    {
+      "id": "E020",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "63c4784829c496c6461610d89d14d7e3edaa764d282672ab40eecdeaf8e7871f",
+      "bytes": 134257,
+      "route": "/chat",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E021",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "7f108f5b91c380732ef462779d51976f103bb5bb7d644fcc0bfa7933d5f2d048",
+      "bytes": 132480,
+      "route": "/chat",
+      "appViewportCssPx": "390x600",
+      "status": "transient",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "載入或關閉動畫，不用作穩態版面缺陷證據。"
+    },
+    {
+      "id": "E022",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "94775d174ccd124d60be78698c76cf3ec587e17dfab50a3e32b3a2ce035df8f1",
+      "bytes": 176021,
+      "route": "/summary",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E023",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "d60b6d45312c9f3fc06ac5949e8f0438f6a6bc80aa0d53b4e4e0ecf3df1c2dc2",
+      "bytes": 175359,
+      "route": "/summary",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E024",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "5bad2ec376524e7450d5802492a5e973639020813e0fa019389cff5f80c612ab",
+      "bytes": 182360,
+      "route": "/summary",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E025",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "8d2ff87b0ef9ab226bcd8eaf62666238477d5313331191d7590dedf2a909f2ed",
+      "bytes": 173537,
+      "route": "/summary?tab=archive",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E026",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "11dae21bfc091814200e0d8775f7ca4e1ba034a1d59c5e546f8dca31c8b8ce57",
+      "bytes": 139187,
+      "route": "/summary?tab=archive",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E027",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "6a05220d5462f1c7bf2b3f06eb894517901501cd8c775c3e050fa1a56292eb86",
+      "bytes": 138033,
+      "route": "/summary",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E028",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "767deae0c027b9035cab651a07eef85efb81f808d0d3f9ef943b5d48918c10d6",
+      "bytes": 141730,
+      "route": "/",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E029",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "22737bcd3423ffb1a6742f47b022ecefd31dca6e5fbbe8fd11f5ecb50045fc8b",
+      "bytes": 146376,
+      "route": "/",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": "screenshots/baseline/029-home-camera-reading-390.jpg",
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "caption": "相機在部分捲動位置重疊正文；補核證實正常捲動可完整閱讀，屬 V04 P3。",
+      "copyMethod": "byte-for-byte copy; correct .jpg extension; no crop, composite or regeneration"
+    },
+    {
+      "id": "E030-AX",
+      "type": "accessibility-tree",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "5567a5811d3033b41f371d66563e7124b0dcd04670f068ad447194f3f5bfeca9",
+      "bytes": 1723,
+      "route": "/tasks",
+      "appViewportCssPx": null,
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "text/plain"
+    },
+    {
+      "id": "E030",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "a26862fecb8f185649155cb1fe59a5baea5ec7f55c4089db007d272030cd8047",
+      "bytes": 142460,
+      "route": "/tasks",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E031",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "d8f40b0e0a8ca3d6f3218fdd5c45fe3e0dd64270ab905457a9b7c2f36a913dfd",
+      "bytes": 144692,
+      "route": "/tasks",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E032-AX",
+      "type": "accessibility-tree",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "874cebf28e8c3af02f3909e45d9c6d45fd0e7b1a4606c7c5757669b1d53772e5",
+      "bytes": 2078,
+      "route": "/tasks",
+      "appViewportCssPx": null,
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "text/plain"
+    },
+    {
+      "id": "E032",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "1ae8a70710730bedb9c27f1e00b99e7cbfd927d2a29ea8c25ded109e1447f304",
+      "bytes": 140219,
+      "route": "/tasks",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E033",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "d549200c559cb88d83866f0cb6cc23fa72db02eb818f10bae820d488b9380e68",
+      "bytes": 139800,
+      "route": "/tasks",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E034",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "0750778f07314fe709ee3847c031ed446f67c2afcd705f330d59483baa65f30f",
+      "bytes": 173802,
+      "route": "/tasks",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E035",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "64345e66d383467c1f5f9ce5563c44639db8fe2b3628c2b50f51b49e9cf70a67",
+      "bytes": 176976,
+      "route": "/tasks",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E036",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "5b03a5da4da6f847b2835c5f5b3c8c8dd41d92fc83c7ac03140ed66868762abe",
+      "bytes": 176821,
+      "route": "/tasks",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E037",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "6f42c27d30e45ebb153a41e5aff28f64396a5f550888c79fdfd7958468d16e64",
+      "bytes": 176757,
+      "route": "/tasks",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E038",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "f217fbe84e8fd23333d3a5197dfb23f5dd8e1ce7a2189d10ae842c5d2d900d1f",
+      "bytes": 173670,
+      "route": "/growth",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": "screenshots/baseline/038-growth-actions-1024.jpg",
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "caption": "有關注內容時近旁先是手動入口，V06／IA-03。",
+      "copyMethod": "byte-for-byte copy; correct .jpg extension; no crop, composite or regeneration"
+    },
+    {
+      "id": "E039",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "747185973968ae3ec2ed714d3ee68c90b5d59aa50e8c21d7c82d62de1e0d053a",
+      "bytes": 150166,
+      "route": "/growth",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E040",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "c7c5c9c2b726207217021d31844ee651d9f53f0f68ee53cb042230f58af9371c",
+      "bytes": 140704,
+      "route": "/growth",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E041",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "99a5ae7b6199747ff836f1d6f2fb33cf4394deafc88702c071d04cd6cea2d01b",
+      "bytes": 144276,
+      "route": "/growth",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E042",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "76536a3f1b0e7efb4a3fe5eb3ac4182074a79e8c119033d703c3d9211ed10729",
+      "bytes": 137448,
+      "route": "/growth?tab=preparation",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E043",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "02d8b53c2cdb487134e99c32c5832b72a9668993389a80ae5fcf068d5a724032",
+      "bytes": 167603,
+      "route": "/growth?tab=preparation",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E044",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "4e21e6808f846f01e56dd04b03986e6d5dbe168f2d2b23b2060056668fcff1a5",
+      "bytes": 169276,
+      "route": "/care",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E045",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "48bc7034d86d9672e0d46147f5c91e6fef0be0dfa75465b72235fa9f063bfef0",
+      "bytes": 138931,
+      "route": "/care",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E046",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "c3d1f3345015a777bd88f2932c4eb2fcabe1e25e271194cb88093494a2ae5153",
+      "bytes": 135342,
+      "route": "/care",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E047",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "73beb7254ba895c225f821294e3bfff1f0968748150df5787bd531cb95759e88",
+      "bytes": 144220,
+      "route": "/care",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E048",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "00681feef519fe730ef406782ed2cbcd77c2cc73cb9643ba1aaa1dd44f8f51aa",
+      "bytes": 145804,
+      "route": "/care",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E049",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "55109783fee3febe5d730197aa1dd70fd89068f0362d8ff7efb254c71d9270cf",
+      "bytes": 188841,
+      "route": "/care",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E050",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "3e62ff2fdcc2aca561c9168b915bb755d9641628c3d2992328ac65cb246ef94f",
+      "bytes": 184545,
+      "route": "/memory",
+      "appViewportCssPx": "1024x600",
+      "status": "valid-corrected-label",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "檔名short，實際為長期記憶1024"
+    },
+    {
+      "id": "E051",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "d05ed3d9ebc22deeabb3c2a5585f1835878a6bb06e26b1fde73e74c80d2b5a40",
+      "bytes": 145887,
+      "route": "/memory",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E052",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "5fe6926a68749859e7ef4dc0378381f7ffb1cfff2a757aafe11aaee162b06f03",
+      "bytes": 135323,
+      "route": "/memory",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E053",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "91383119646736c3084532994bdce90e9a49a3988cf196dfd2fc4d33351423f1",
+      "bytes": 135490,
+      "route": "/memory",
+      "appViewportCssPx": "390x600",
+      "status": "valid-corrected-label",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "檔名reference，實際仍短期脈絡；參考資料真圖56"
+    },
+    {
+      "id": "E054",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "91383119646736c3084532994bdce90e9a49a3988cf196dfd2fc4d33351423f1",
+      "bytes": 135490,
+      "route": "/memory",
+      "appViewportCssPx": "390x600",
+      "status": "valid-corrected-label",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "檔名reference-current，實際短期脈絡"
+    },
+    {
+      "id": "E055",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "f9c6ecaa84fda2c8c379eb7228f7caddbcdf2301006f1aef7fe8275431b6b51c",
+      "bytes": 135364,
+      "route": "/memory",
+      "appViewportCssPx": "390x600",
+      "status": "valid-corrected-label",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "不是menu；更多分類按鈕把tab列橫捲並聚焦參考，內容仍短期"
+    },
+    {
+      "id": "E056",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "17941f4ebc97991fde85350a6efcbf56475ed638d30b33b7cc2dfbeb267b693c",
+      "bytes": 139394,
+      "route": "/memory",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E057",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "37902b4a0d4dbf6f422b3a07a4e0c31c67b9715faa56dd64db3566c87b507a3c",
+      "bytes": 167363,
+      "route": "/memory",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E058",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "7473672a5d6eb17a5066cee9d80c9f0883204ef521c2eca358116ff7a90cdaaa",
+      "bytes": 177732,
+      "route": "/history?category=tasks",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E059",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "a731ff6ce158154fa49cb6c68dd2c8ae569637524eb3434ac300509b51c2b950",
+      "bytes": 157343,
+      "route": "/history?category=tasks",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E060",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "420192dca929d01108bfe82a64a9611c5c5483d0bc7c8988d85371f817d2b329",
+      "bytes": 197717,
+      "route": "/history?category=notifications",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E061",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "f6ef003f67aab09b4d0291c753ff3b744ad9ebda1f6266468b6b17775d174923",
+      "bytes": 136562,
+      "route": "/history?category=notifications",
+      "appViewportCssPx": "390x600",
+      "status": "valid-corrected-label",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "不是完整cards視窗；寬窄轉換後停在filters底端、首卡開頭"
+    },
+    {
+      "id": "E062",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "ed0dabc2fa5ea299bae8e4db393ef511f633b52f67ed8986a309a3afd0a099a2",
+      "bytes": 138750,
+      "route": "/history?category=notifications",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": "screenshots/baseline/062-history-controls-390.jpg",
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "caption": "歷史首屏被分類及搜尋／日期控制佔用，V01／V02。",
+      "copyMethod": "byte-for-byte copy; correct .jpg extension; no crop, composite or regeneration"
+    },
+    {
+      "id": "E063",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "70b45323fdb7d43cd9c1337e4ecf5c5179ff7eb19682af6fd59386418c65f531",
+      "bytes": 154821,
+      "route": "/history?category=notifications",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E064",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "a283e26ce64990f281fc2f00e5267878f085c64727bf59691db1599663038bcd",
+      "bytes": 138654,
+      "route": "/history?category=notifications",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E065",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "6d46ac03922884c2a44d487756a380fe5774644035444ebf8275828d6f9b6ed1",
+      "bytes": 146997,
+      "route": "/history?category=notifications",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": "screenshots/baseline/065-bell-content-390.jpg",
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "caption": "正向例子：讀真正保存正文，歷史與關閉入口固定可達。",
+      "copyMethod": "byte-for-byte copy; correct .jpg extension; no crop, composite or regeneration"
+    },
+    {
+      "id": "E066",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "36b51785220d68f0c9ac4ea017192b3af63628715c8b5fd98dfa20b8c18b25fc",
+      "bytes": 196512,
+      "route": "/history?category=conversations",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E067",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "b3a203a9af34c5a32d8c8f86488fd00f45324f20d9d7059044f9a5e5fbea2cd3",
+      "bytes": 183362,
+      "route": "/history?category=preparations",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E068",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "b9d3ac4d4d73c4229f4175c77a2f73c20b1e298affcd4d15e84fdf713dd2d26f",
+      "bytes": 190550,
+      "route": "/history?category=review",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E069",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "fb51b7e14f6d039c70085f00edee6484449eb5b3b71ac7477f636118b725a585",
+      "bytes": 188236,
+      "route": "/history?category=care",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E070",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "b86acdf4ff02133ca1c966eff96184a4d0673592bf5fbf5e6719b6ae0bccff7c",
+      "bytes": 171265,
+      "route": "/history?category=profile",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E071",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "84aaaae67d465d6e7a248dcfaeee155aafdee2803802ec19280a81e22af69116",
+      "bytes": 180275,
+      "route": "/history?category=profile",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E072",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "0fdcea2d71d1449d2fc5fa89f1182c0acb3106d23faae2a90db46f1f9f1426a6",
+      "bytes": 178425,
+      "route": "/history?category=growth",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E073",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "0d908988a4a80cf11a4138b713a16edf26e1017d36f7c49d989f1fa60d649d09",
+      "bytes": 163602,
+      "route": "/more",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E074",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "c381964002ccdd31d9bc33469a7025ab49b1b5f7108bfccbde4d71964df97ffc",
+      "bytes": 128637,
+      "route": "/more",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E075",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "de771bd4aac4c7cdb4a37db2f0c98c4b5e6a3885c44fa02ad0c87b6c53629742",
+      "bytes": 127812,
+      "route": "/family",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E076",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "8e3b20d3e7bb100a2d5a4a21828e49716a0963c45513861dba6ac34992652a51",
+      "bytes": 149122,
+      "route": "/family",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E077",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "c27a661b575f0abbb0d059a9881a866d889855f26e5b83a51a8bf989e9766903",
+      "bytes": 174394,
+      "route": "/contact",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E078",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "30bde4af2abc54109f5ed80d2a10d6771ad6e53d7732310114d0cac5503cd48f",
+      "bytes": 146706,
+      "route": "/contact",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E079",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "512a4d549132380d9b6bd1de3e4e005bce7851a2ad156eab9fd41e13f730969d",
+      "bytes": 129469,
+      "route": "/contact",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E080",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "4d544899d5677c2ca7a903b0666773752e4bf617cded290d98383436b3046f59",
+      "bytes": 142570,
+      "route": "/contact",
+      "appViewportCssPx": "390x600",
+      "status": "transient",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "載入或關閉動畫，不用作穩態版面缺陷證據。"
+    },
+    {
+      "id": "E081",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "71acd56b1a83da87d03bf0d5ad03c0f7cbb9cf63fcb87458f22d5802a5120328",
+      "bytes": 129210,
+      "route": "/more",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E082",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "f9dbe1b458bdaab63779b2c618f3c0d87e43d956972443166bd78e4e50c61c07",
+      "bytes": 134425,
+      "route": "/profile",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E083",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "9779ae5158523db5e1c6c1b22d79f249365b70d48150df6f2bab1461060fe107",
+      "bytes": 176366,
+      "route": "/profile",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E084",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "b83a5b3c0f02bf75b6d5acb42524923b3a7b7867ad98d56d39703ed44c3bee55",
+      "bytes": 174217,
+      "route": "/sources",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E085",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "7dd9585663c85bb08e0f02ffdab69626c9c525a8ff3f6cd1d556d84225e7a33c",
+      "bytes": 143335,
+      "route": "/sources",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": "screenshots/baseline/085-sources-scope-390.jpg",
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "caption": "來源的範圍／流程說明先於內容，V01／IA-14。",
+      "copyMethod": "byte-for-byte copy; correct .jpg extension; no crop, composite or regeneration"
+    },
+    {
+      "id": "E086",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "faf347d30a8b2344770f3aafef63522e8abf5358f5d3e1fc1c48a0052b83511a",
+      "bytes": 140655,
+      "route": "/sources",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E087",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "feff7225378d54330eb57db17655f13bea68854bc085c32cd488c9fc4fd0c769",
+      "bytes": 147213,
+      "route": "/sources",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E088",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "09c64d81ef1d5eac851861b575dfc658eefd741a16c13494fb91a436598f98db",
+      "bytes": 141050,
+      "route": "/photos",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E089",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "a36f57e2ad3fb56b7686b7ac534e071be7cd5b6598bb62a9b3ae1b8531a81c2c",
+      "bytes": 166022,
+      "route": "/photos",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E090",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "968098a2858ac5f5a28083ad9eb136a75b0dbf6d57f43f4af1f304c01608d632",
+      "bytes": 167259,
+      "route": "/photos",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E091",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "880a8ebe58baf88d2fc18f1a25986df05deaf1c9b3cb76952789e019253be7d4",
+      "bytes": 169303,
+      "route": "/photos",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E092",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "8a069591f9feddc4c7ca779eb7bb2d94f77e8003413d8b694cfc97fdecafdc9b",
+      "bytes": 133422,
+      "route": "/photos",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E093",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "2b6a370d8d3ccbb053737ec87fdae65435353151563b1cd54dc16868d5386a1a",
+      "bytes": 138670,
+      "route": "/photos",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E094",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "e30289d739368df6d225d77c67d459b43230f2614a29e45d487c680165ad4a54",
+      "bytes": 168145,
+      "route": "/guide",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E095",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "98e10f768c9c5363199bd94878a726133f9c1cb1300fd0c8ab25383268a91814",
+      "bytes": 135178,
+      "route": "/guide",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E096",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "1f3d6afbdea1ff6f75a9eae2b5fbe23544b4acdd3303f87b63e98ff7f4543bc2",
+      "bytes": 138226,
+      "route": "/guide",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E097",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "221398e479f46001e8497fdb26c36b699a18bc45b9bba80e43db0bd724b365d1",
+      "bytes": 139384,
+      "route": "/guide",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E098",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "11f3647b880c33468b36c97c5504bfef36f894f6ecf1aca097673cd11ad7d502",
+      "bytes": 137149,
+      "route": "/guide",
+      "appViewportCssPx": "320x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E099",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "398f44c27ec646e033eb995f9e56211007e86e9b71bab009e6f09aa69b72bc17",
+      "bytes": 138219,
+      "route": "/tasks",
+      "appViewportCssPx": "320x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E100",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "6fadcf429b90eaa16d55e6a006c78fad5ee004f249c08407986d3c512681dc5b",
+      "bytes": 137712,
+      "route": "/tasks",
+      "appViewportCssPx": "320x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E101",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "4c1fed5ef58fc16bee023aef26139721683c65184c891ff52300f34616194479",
+      "bytes": 86348,
+      "route": "/",
+      "appViewportCssPx": "native approximately1180x758, not login",
+      "status": "excluded-for-login",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "導回已登入首頁的載入畫面，不能作登入證據。"
+    },
+    {
+      "id": "E102",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "69a56559ed6e0aa1a6eb4ff19006e0e9ef055378e5aca77ac688b9512e2b43c3",
+      "bytes": 168310,
+      "route": "/guide",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E103",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "5df58d8129c41b5a83fe3ddb7933cca1f409f20e0c1b1f9123d8441830a37662",
+      "bytes": 184388,
+      "route": "/login",
+      "appViewportCssPx": "1024x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E104",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "0224312c159cec9484c2473a7f9b6d8f8b9fa901d67693b8d8a1848bcac6a538",
+      "bytes": 130677,
+      "route": "/login",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E105",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "126b4a1d3446b6015a2b12c8203dc9f8b7e7a88fe5469981fe88e679a74b10b5",
+      "bytes": 132686,
+      "route": "/login",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E106",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "bc09203fb4984af9990f5b390f946421d09da081f16e584c4171f0ad062402b2",
+      "bytes": 130096,
+      "route": "/login",
+      "appViewportCssPx": "320x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E107",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "487f4fb91e85d3ff41ba4676e11eb503e5de90c50b096e0334a8d3dd367dcce2",
+      "bytes": 132431,
+      "route": "/login",
+      "appViewportCssPx": "320x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。"
+    },
+    {
+      "id": "E108",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "e203afc692a7153cce01bbb5c61024cfd51f39f3c0e4faba6f72bba6bfe872c3",
+      "bytes": 139339,
+      "route": "/",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "相機正常捲動補核；沒有啟動相機或請求權限。"
+    },
+    {
+      "id": "E109",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "9376df0892de562437cabbec505bbf9cf9e5bb9e3484458c79124523f657d905",
+      "bytes": 137841,
+      "route": "/",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "相機正常捲動補核；沒有啟動相機或請求權限。"
+    },
+    {
+      "id": "E110",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "818a0700b1a385fd52e45394669d72fdc817da48d38e43f04b3a4beabfe69131",
+      "bytes": 145105,
+      "route": "/",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "相機正常捲動補核；沒有啟動相機或請求權限。"
+    },
+    {
+      "id": "E111",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "c94caa0703e6ae18d391e5b1bafb616ccdb0e266a9748e45983c32eab278410d",
+      "bytes": 138533,
+      "route": "/",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "相機正常捲動補核；沒有啟動相機或請求權限。"
+    },
+    {
+      "id": "E112",
+      "type": "screenshot",
+      "baseline": "Site85 / snapshot26d",
+      "sha256": "f6519f5087a80781d9ad72d6c872a69835ba554fa4717a304ce7e5972bca9fb3",
+      "bytes": 134103,
+      "route": "/",
+      "appViewportCssPx": "390x600",
+      "status": "valid",
+      "includedPath": null,
+      "mediaType": "image/jpeg",
+      "nativeImageSize": [
+        1364,
+        1024
+      ],
+      "capture": "原生桌面視窗，含瀏覽器與尺寸檢查外框；非 full-page，部分最底約 8px 未完全可見。",
+      "limitation": "相機正常捲動補核；沒有啟動相機或請求權限。"
+    }
+  ],
+  "snapshot27Evidence": [
+    {
+      "id": "P27-01",
+      "stage": "snapshot27",
+      "sourceArtifact": "01-summary1024-top.jpg",
+      "sha256": "f3617d3f49fad8a638d6b9755055fc1a358b83e63d0b0cf5bb7649ed1fde780d",
+      "bytes": 161349,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-02",
+      "stage": "snapshot27",
+      "sourceArtifact": "02-summary1024-appointments.jpg",
+      "sha256": "bce1510df458471c07235ee43951a197500ecbd95b796ca37f33ab6b8950e53d",
+      "bytes": 164790,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": "screenshots/snapshot27/02-summary-appointments-1024.jpg",
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "caption": "概況兩項合成預約與「負責人：見原安排」安全替代；不是權威姓名契約。"
+    },
+    {
+      "id": "P27-03",
+      "stage": "snapshot27",
+      "sourceArtifact": "03-summary-taskA1024.jpg",
+      "sha256": "fccacff17b18c28fb9028321b8fc05f283d10086ac5553a50ba073883c6f8e4d",
+      "bytes": 176879,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-04",
+      "stage": "snapshot27",
+      "sourceArtifact": "04-summary-taskB390.jpg",
+      "sha256": "43d2456295b42d1358db628ae38668d07ef0011a29acfa9d316fa4ea252b47a7",
+      "bytes": 139048,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-05",
+      "stage": "snapshot27",
+      "sourceArtifact": "05-summary-revisitA320.jpg",
+      "sha256": "e754424c360afbad27d452b437044ffc465b3eb1f750110f91388177793197aa",
+      "bytes": 137776,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-06",
+      "stage": "snapshot27",
+      "sourceArtifact": "06-history-toolbar320.jpg",
+      "sha256": "e904dc5778f593dd6c8cfd5d8447ffc24c3d68b90ab51b2d0a1cada5f4be8351",
+      "bytes": 129770,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-07",
+      "stage": "snapshot27",
+      "sourceArtifact": "07-history-date-draft320.jpg",
+      "sha256": "77465f19884cc7a248e3f4c711da38d150f942df3009fb5a070005c5fe8bfae6",
+      "bytes": 121836,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "sourceLimitation": "Immediate field animation frame; settled value visible in 10. Not used alone to judge text rendering."
+    },
+    {
+      "id": "P27-09",
+      "stage": "snapshot27",
+      "sourceArtifact": "09-history-inner-calendar320.jpg",
+      "sha256": "9afd4bea88763f4f603a18bbe5d753c7af569becebafc4a368fe2bd10d3e6d28",
+      "bytes": 115913,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "sourceLimitation": "Existing fixed synthetic preview notice overlays top of calendar; Escape/control semantics verified."
+    },
+    {
+      "id": "P27-10",
+      "stage": "snapshot27",
+      "sourceArtifact": "10-history-date-after-calendar320.jpg",
+      "sha256": "c54c61afbee43d66c77b0f8d66f51d219ddf60471727efb250777148f5a1fcbb",
+      "bytes": 122641,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-11",
+      "stage": "snapshot27",
+      "sourceArtifact": "11-history-applied-date320.jpg",
+      "sha256": "c83e5d79c21f4de3091789e4cd2cfc6fb99722c46b3d1132bcd25aed8cedda0a",
+      "bytes": 128608,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": "screenshots/snapshot27/11-history-applied-date-320.jpg",
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "caption": "日期篩選已套用與活動範圍提示；畫面沒有直接展示下方所有結果。"
+    },
+    {
+      "id": "P27-12",
+      "stage": "snapshot27",
+      "sourceArtifact": "12-history-toolbar1024.jpg",
+      "sha256": "5cda87fc06dbe1d762e37f9e00e8922c5d9a0b2493eced1bc52d90bfa5d4217e",
+      "bytes": 172050,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-13",
+      "stage": "snapshot27",
+      "sourceArtifact": "13-history-preparation1024.jpg",
+      "sha256": "d762bf1acab2526bfa42e20fa6121abe6d6d1008401a6b8a5ed9987cb38676b7",
+      "bytes": 164459,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-14",
+      "stage": "snapshot27",
+      "sourceArtifact": "14-history-review1024.jpg",
+      "sha256": "cba425f6088a3737803aabeaca4515f3ed2583ac5e1b38b0603014c4b7244338",
+      "bytes": 161537,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-15",
+      "stage": "snapshot27",
+      "sourceArtifact": "15-history-care1024.jpg",
+      "sha256": "1dbbad03b270dc4a011f7c000709d1795babce5eae61a085e6aa8786fce022c3",
+      "bytes": 156655,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-16",
+      "stage": "snapshot27",
+      "sourceArtifact": "16-history-profile390.jpg",
+      "sha256": "7525ca8a5db2f5acc8e2a254b85738c2749e9ada7a0df08196e14e3ee287bd35",
+      "bytes": 130405,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-17",
+      "stage": "snapshot27",
+      "sourceArtifact": "17-history-conversations390.jpg",
+      "sha256": "95ba27feb97ea3e74810be65b4f4837028155dedaf39c5cf048d5c14d8e6d3e9",
+      "bytes": 137235,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-18",
+      "stage": "snapshot27",
+      "sourceArtifact": "18-history-growth390.jpg",
+      "sha256": "58350c317e59a4ae9dbc93e7a4e06701787e6bc346cba771b6833ffc97251036",
+      "bytes": 129657,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-19",
+      "stage": "snapshot27",
+      "sourceArtifact": "19-history-notifications390.jpg",
+      "sha256": "2a163e0f2287ad4208bd2785b0418d61ca60a2927eec5b19c877582adb7d64c6",
+      "bytes": 130180,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-20",
+      "stage": "snapshot27",
+      "sourceArtifact": "20-history-child2-empty390.jpg",
+      "sha256": "986873657d9752d039155c7d3263618f225f2d92bb6f176b70d3716b055da946",
+      "bytes": 132163,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "sourceLimitation": "Filename includes empty but actual child2 normal history has 3 items. NOT true-empty evidence. True empty is 21 using existing qa=empty."
+    },
+    {
+      "id": "P27-21",
+      "stage": "snapshot27",
+      "sourceArtifact": "21-history-real-empty390.jpg",
+      "sha256": "d5aca2b7be3922f946fdecdc4cca99dddcd906906e47e65d28bc83bd1b722574",
+      "bytes": 128202,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-22",
+      "stage": "snapshot27",
+      "sourceArtifact": "22-growth-actions390.jpg",
+      "sha256": "092114d70f15d1fa95d3d477484322c6d34c54d0a634491b4c14b6509f28a438",
+      "bytes": 129274,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-23",
+      "stage": "snapshot27",
+      "sourceArtifact": "23-growth-actions320.jpg",
+      "sha256": "4f22f2a9bfbd62480396f36a4bf0fcde5938c9e89d5dcba0a4e77c4e06e6472f",
+      "bytes": 127487,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": "screenshots/snapshot27/23-growth-hierarchy-red-320.jpg",
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "caption": "RED 原圖：助手及較大手動入口同為描邊，操作列佔兩排；不是修後通過圖。"
+    },
+    {
+      "id": "P27-24",
+      "stage": "snapshot27",
+      "sourceArtifact": "24-growth-manual-form320.jpg",
+      "sha256": "8e28a9b0e5513a19d3fafb66ed8fd971683dcc7500f59996fcf5ae67d9030215",
+      "bytes": 125178,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "sourceLimitation": "Existing synthetic notice overlays modal upper edge. Body/footer are visible and usable; not a claim of unobscured production modal header."
+    },
+    {
+      "id": "P27-25",
+      "stage": "snapshot27",
+      "sourceArtifact": "25-growth-draft-guard320.jpg",
+      "sha256": "0b6c6d5d2652d87f3f60ae60c232375d88f9bfa4ee68d53ebf3af1de9bcc60f9",
+      "bytes": 128873,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-26",
+      "stage": "snapshot27",
+      "sourceArtifact": "26-growth-actions1024.jpg",
+      "sha256": "84e807c99c1b963bed268ef22ea2f5232af5d6a173f0bd477db3f7ffe2813999",
+      "bytes": 163266,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-28",
+      "stage": "snapshot27",
+      "sourceArtifact": "28-preparation-actions1024.jpg",
+      "sha256": "2e1aac9bdd93b8de9affcff45f0f41ce23781812bf53d08000ab944de39c5212",
+      "bytes": 161854,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-29",
+      "stage": "snapshot27",
+      "sourceArtifact": "29-preparation-actions320.jpg",
+      "sha256": "15903dbbbcd21e00ed0e8c32e7bb4514622666854137ce62c6f8dc18798f58ea",
+      "bytes": 129742,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-30",
+      "stage": "snapshot27",
+      "sourceArtifact": "30-preparation-manual320.jpg",
+      "sha256": "30f746b49974a775337a78d742bb528e9f94308741f4196ece01ea3cc4b474b9",
+      "bytes": 128890,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "sourceLimitation": "Existing synthetic notice overlays modal upper edge. Body/footer are visible and usable; not a claim of unobscured production modal header."
+    },
+    {
+      "id": "P27-31",
+      "stage": "snapshot27",
+      "sourceArtifact": "31-preparation-reader390.jpg",
+      "sha256": "e4e1025ce8f770f22301df47099d517446f8bf5aee2088734551dc5bbcc9bc6c",
+      "bytes": 130639,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "sourceLimitation": "Reader opened, top of page still visible; reader body is 32."
+    },
+    {
+      "id": "P27-32",
+      "stage": "snapshot27",
+      "sourceArtifact": "32-preparation-reader-body390.jpg",
+      "sha256": "7ddfc2a962bfad996a83021d79b183cc8f3b8de5bf0b670a99214b0d64df0ec0",
+      "bytes": 138873,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-33",
+      "stage": "snapshot27",
+      "sourceArtifact": "33-preparation-return-settled390.jpg",
+      "sha256": "799bb88f02fda026fb891f4f85b1f1769a3978794f7e4cff924916861ac0c26b",
+      "bytes": 136979,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-34",
+      "stage": "snapshot27",
+      "sourceArtifact": "34-growth-reader390.jpg",
+      "sha256": "d6fe9eaa3d284545bfbb865b4796a8adaf3c5fc0a6ea2715c6499500a6b936e3",
+      "bytes": 128554,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "sourceLimitation": "Existing synthetic notice overlays modal upper edge. Body/footer are visible and usable; not a claim of unobscured production modal header."
+    },
+    {
+      "id": "P27-36",
+      "stage": "snapshot27",
+      "sourceArtifact": "36-notifications390.jpg",
+      "sha256": "9c880a0488da2f3483f937193519477312627d128b02075452ef011501e8944d",
+      "bytes": 128341,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": "screenshots/snapshot27/36-notifications-390.jpg",
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "caption": "通知本人範圍、精簡重讀與安靜時段；沒有保存、渠道綁定或授權發送。"
+    },
+    {
+      "id": "P27-37",
+      "stage": "snapshot27",
+      "sourceArtifact": "37-notification-invalid390.jpg",
+      "sha256": "aa684e8d398e252fc85fa8ed5b0a4ce8f4c52e2212c6ddc732f52d25fad0ab4f",
+      "bytes": 132518,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "sourceLimitation": "Validation action lower-page frame; visible error/repair field in 38."
+    },
+    {
+      "id": "P27-38",
+      "stage": "snapshot27",
+      "sourceArtifact": "38-notification-error-repair390.jpg",
+      "sha256": "5871aa997f3b498596e8369070e7167f4c33536499f7196af77195fa10c3b3b5",
+      "bytes": 134309,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-39",
+      "stage": "snapshot27",
+      "sourceArtifact": "39-notifications1024.jpg",
+      "sha256": "99981ed94cf693b28285a9088da4217b2db5646267d59a272590d6d0c38748d9",
+      "bytes": 164275,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-40",
+      "stage": "snapshot27",
+      "sourceArtifact": "40-model1024-top.jpg",
+      "sha256": "164a6eb5d339ec87260a055bcb11ebdb73a3daa42ff4150894592528bfa879c2",
+      "bytes": 156366,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-41",
+      "stage": "snapshot27",
+      "sourceArtifact": "41-model-unconfirmed320.jpg",
+      "sha256": "7729504c47fb00da2c664737bb02ff2d5a806f47ab209ef442dcc8d4f63ac300",
+      "bytes": 121413,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "sourceLimitation": "Immediate re-read transition; settled unconfirmed state is 45/46."
+    },
+    {
+      "id": "P27-43",
+      "stage": "snapshot27",
+      "sourceArtifact": "43-summary-appointments320.jpg",
+      "sha256": "3bdd90edb13e7cb15ada26dad9dff0ec181f69a83753567766a5a8ad6ccd7e97",
+      "bytes": 131354,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。",
+      "sourceLimitation": "Viewport scrolled to appointment A; section heading partly behind sticky app header. Not a full-page screenshot."
+    },
+    {
+      "id": "P27-44",
+      "stage": "snapshot27",
+      "sourceArtifact": "44-summary-appointments390.jpg",
+      "sha256": "8fb9299cd964aba755b9a89b919b2b6e1a674f6c1182e06bbe4e5a0a0ec0b9ba",
+      "bytes": 136276,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-45",
+      "stage": "snapshot27",
+      "sourceArtifact": "45-model-unconfirmed-settled390.jpg",
+      "sha256": "eeb03d1d9dcc24459bb9d3daa0b685cbb400389347da0fc7b8e7fc19c83d82c1",
+      "bytes": 127365,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-46",
+      "stage": "snapshot27",
+      "sourceArtifact": "46-model-unconfirmed-settled320.jpg",
+      "sha256": "3863fe286ef976d17ae713c7758af2f372fc10e9882facbbe84f387c15ac40f5",
+      "bytes": 125452,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-47",
+      "stage": "snapshot27",
+      "sourceArtifact": "47-preparation-background-refresh390.jpg",
+      "sha256": "958007056021302c1f218933802350eddaf80daf8c2f0348a38697fa9715b1c3",
+      "bytes": 138760,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    },
+    {
+      "id": "P27-48",
+      "stage": "snapshot27",
+      "sourceArtifact": "48-growth-background-refresh390.jpg",
+      "sha256": "40b990a895e2cc2e4cb81572adfd45cc69e2910eb7ec3eff4f6c643811c681bd",
+      "bytes": 140114,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面 JPEG，含瀏覽器及合成檢查外框，非 full-page。"
+    }
+  ],
+  "changes": [
+    {
+      "path": "frontend/src/screens/SummaryScreen.tsx",
+      "kind": "product",
+      "package": "summary",
+      "baselineSha256": "1fb5b176d4447c32c36531d80cb4b45cc3c5a9fe38c9026b1cb15050ae09f4c0",
+      "candidateSha256": "5c29aaeb394f8dc534949c44563f39a3208a25ac28c2376f47d6381ac99187d0",
+      "candidateLineRanges": [
+        "72",
+        "84-85"
+      ],
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/screens/SummaryScreen.tsx",
+      "candidateSourceReferences": [
+        {
+          "lines": "72",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/screens/SummaryScreen.tsx#L72"
+        },
+        {
+          "lines": "84-85",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/screens/SummaryScreen.tsx#L84-L85"
+        }
+      ],
+      "confirmedGithubBlob": "c862aa411fde6b98044b40c33de57c8186cbc87d"
+    },
+    {
+      "path": "frontend/scripts/summary-composition.test.mjs",
+      "kind": "test",
+      "package": "summary",
+      "baselineSha256": "f4180ded287ba3e0d3b6e735f9a96a14444d0b5849c48c9fa0124d91b79f35e7",
+      "candidateSha256": "344b84c68f5040e727b72f99da1fe3b406dbed0659ea78c22206f6790e2deb34",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/summary-composition.test.mjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "92d0b69c8e5c9d2fb66cad8b66974b76a8e2104b"
+    },
+    {
+      "path": "frontend/scripts/shared-status-read-state.test.mjs",
+      "kind": "test",
+      "package": "summary",
+      "baselineSha256": "e35cfb6d0107966bc5d2e54cf6f3abea3b28549f3a19b0ecada782aa4ad12ad2",
+      "candidateSha256": "13c292ee5c06694514967920512a2d73ac16232af41cf999f06552297a53cb0c",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/shared-status-read-state.test.mjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "adb922bff5ffda86cd8c7b4827aa68d93124da44"
+    },
+    {
+      "path": "frontend/src/components/growth/GrowthView.tsx",
+      "kind": "product",
+      "package": "growth-actions-r2",
+      "baselineSha256": "20a0d6c81607941c6baab864ca8ea6d2db7f9057529ef3b03da3b08dd688df42",
+      "candidateSha256": "e81509fa1b7e880fc5ed25aedc07f55aebed8adaa7549e6b7b7fba12e7f3a1f9",
+      "snapshot27Sha256": "d6613c5b12f64ff0947cbf2d16a904aa34a7321a5170bb2f0258d9e85e9d5888",
+      "candidateLineRanges": [
+        "90-102"
+      ],
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/growth/GrowthView.tsx",
+      "candidateSourceReferences": [
+        {
+          "lines": "90-102",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/growth/GrowthView.tsx#L90-L102"
+        }
+      ],
+      "confirmedGithubBlob": "cefe8dcb108254925017001d0ed7bab5305a0a37"
+    },
+    {
+      "path": "frontend/src/components/preparations/PreparationWorkspace.tsx",
+      "kind": "product",
+      "package": "assistant",
+      "baselineSha256": "c7096b2ddf47a5e64cfcf0795e485204754b24423791aad9ba7584c1dc17b032",
+      "candidateSha256": "fb5793dfb3d21dd73e5199d4a9b15ebdfb883f4e3ebd35aef7f711dfd5894217",
+      "candidateLineRanges": [
+        "123-130",
+        "218-243"
+      ],
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/preparations/PreparationWorkspace.tsx",
+      "candidateSourceReferences": [
+        {
+          "lines": "123-130",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/preparations/PreparationWorkspace.tsx#L123-L130"
+        },
+        {
+          "lines": "218-243",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/preparations/PreparationWorkspace.tsx#L218-L243"
+        }
+      ],
+      "confirmedGithubBlob": "8bfbfd45c06ac78efd80f4c18d135f2adda32183"
+    },
+    {
+      "path": "frontend/scripts/growth-empty-flow.test.mjs",
+      "kind": "test",
+      "package": "growth-actions-r2",
+      "baselineSha256": "60b66ce49e7676d724e0f636d295c3f22e8747f075d52b2536f6e990cec34044",
+      "candidateSha256": "edec79b4ebe5b29e61fd55e0b9e09448ae778fbe09f59a1ce18daaedac9aa73b",
+      "snapshot27Sha256": "01bed4f007c14230cc64efc371fd930286eb8c4e74ba43fbf71a5f08454073ba",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/growth-empty-flow.test.mjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "51c8b10fd1a147f49248fb00b8a8352fb9361ddb"
+    },
+    {
+      "path": "frontend/scripts/preparation-layout.test.mjs",
+      "kind": "test",
+      "package": "assistant",
+      "baselineSha256": "d7d59ea2da352febecf26b26decaf747ed2b493a45539da4c1f7cf4a2524d7a3",
+      "candidateSha256": "8fa1f6315d4921d81b0d25047d7710bf39c54aab9645315bba40c85524feee51",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/preparation-layout.test.mjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "52db643c33cfddcd555f51bdfc6f9f6b3089330f"
+    },
+    {
+      "path": "frontend/scripts/preparation-action-lifecycle.test.cjs",
+      "kind": "test",
+      "package": "assistant",
+      "baselineSha256": null,
+      "candidateSha256": "95287bb6c6948916e19104dc07e119845f195165e9310d312df343086904fbb4",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/preparation-action-lifecycle.test.cjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "fed0e44e457edd3192ae2f7a3614a8b2993e0328"
+    },
+    {
+      "path": "frontend/src/production/SettingsDomains.tsx",
+      "kind": "product",
+      "package": "settings-r2",
+      "baselineSha256": "314de0d8a8095eb44f5e4caf40e2df4e2c953ebc15fa99e75d3d7a37cbdac6af",
+      "candidateSha256": "360e937212ab3957214b014c1fb12e34fe9165b7223e105d289a6a332143ad83",
+      "candidateLineRanges": [
+        "129-173"
+      ],
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/production/SettingsDomains.tsx",
+      "candidateSourceReferences": [
+        {
+          "lines": "129-173",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/production/SettingsDomains.tsx#L129-L173"
+        }
+      ],
+      "confirmedGithubBlob": "b550b5859682a6ab05baec0825c72565d8b5c9c2"
+    },
+    {
+      "path": "frontend/src/components/model-settings/ModelSettingsView.tsx",
+      "kind": "product",
+      "package": "settings-r2",
+      "baselineSha256": "f4fe76bdf52c4c87f3b3aef01e84dab5aa90ab4140f426ebdb3c93ec0e53e8c4",
+      "candidateSha256": "8436ea88d1937814e8166e6cb6fcbefa9aaa072b7c174a0d27c789e6e50fa868",
+      "candidateLineRanges": [
+        "115-174"
+      ],
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/model-settings/ModelSettingsView.tsx",
+      "candidateSourceReferences": [
+        {
+          "lines": "115-174",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/model-settings/ModelSettingsView.tsx#L115-L174"
+        }
+      ],
+      "confirmedGithubBlob": "e2dde91a7f67e482d18d1864f491fee8400717b4"
+    },
+    {
+      "path": "frontend/scripts/settings-parent-controls.test.cjs",
+      "kind": "test",
+      "package": "settings-r2",
+      "baselineSha256": null,
+      "candidateSha256": "61819887c7ac760e7d9dbfd6cddc95325d5217c0b5207fbe1278554356272b47",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/settings-parent-controls.test.cjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "c2b960e3b005c11d1a8c2684209a8e357fd73587"
+    },
+    {
+      "path": "frontend/src/screens/historyScreen.tsx",
+      "kind": "product",
+      "package": "history-v2",
+      "baselineSha256": "ee8fd7944c587ea2bff24bed6705cd713fb7957603a507ea6ce8cf81471078b7",
+      "candidateSha256": "95db642d08054ca014029767dddc87694c08f104451e2c7727259f85509bb339",
+      "candidateLineRanges": [
+        "65-79",
+        "113-155"
+      ],
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/screens/historyScreen.tsx",
+      "candidateSourceReferences": [
+        {
+          "lines": "65-79",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/screens/historyScreen.tsx#L65-L79"
+        },
+        {
+          "lines": "113-155",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/screens/historyScreen.tsx#L113-L155"
+        }
+      ],
+      "confirmedGithubBlob": "bf795f5a8d24fd4892d387a5fe3ba23e318a320e"
+    },
+    {
+      "path": "frontend/src/components/history/history-filters.ts",
+      "kind": "product",
+      "package": "history-v2",
+      "baselineSha256": "9aa1e468578dc9d02f0d359fb7663538b35f2bc437046b3ba53664abe4b4f2fc",
+      "candidateSha256": "3f81b70d867f4c1e09c1d14cb80d5e9e0ae4f24fbf42f680d736f8ffaf7870c1",
+      "candidateLineRanges": [
+        "15-21",
+        "41-61"
+      ],
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/history/history-filters.ts",
+      "candidateSourceReferences": [
+        {
+          "lines": "15-21",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/history/history-filters.ts#L15-L21"
+        },
+        {
+          "lines": "41-61",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/history/history-filters.ts#L41-L61"
+        }
+      ],
+      "confirmedGithubBlob": "bf6f54d049dc8b35b578d8d65efd47919627e386"
+    },
+    {
+      "path": "frontend/src/components/FormDialog.tsx",
+      "kind": "product",
+      "package": "growth-actions-r2",
+      "baselineSha256": "a27511e59866212a7516c9558d9170beafc9a3605c9a3d5a0e988d9f09b24f7d",
+      "candidateSha256": "19150ef54beb3983c5bbb6cfab7ba144d1aa95565799c122fa84989c58a03fb4",
+      "snapshot27Sha256": "be1aefeb14c42d776a5d514855b222ece8ed9faf5f7f60589993d2df24dc8085",
+      "candidateLineRanges": [
+        "11-20",
+        "43-48",
+        "75-90"
+      ],
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/FormDialog.tsx",
+      "candidateSourceReferences": [
+        {
+          "lines": "11-20",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/FormDialog.tsx#L11-L20"
+        },
+        {
+          "lines": "43-48",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/FormDialog.tsx#L43-L48"
+        },
+        {
+          "lines": "75-90",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/FormDialog.tsx#L75-L90"
+        }
+      ],
+      "confirmedGithubBlob": "b567673b99aa961922f201fd0a77953f38bfb54c"
+    },
+    {
+      "path": "frontend/scripts/history-controls.test.mjs",
+      "kind": "test",
+      "package": "history-v2",
+      "baselineSha256": "200910c9628202050d44b30f10bcc262eb4123da51b512a672f2da37cec278af",
+      "candidateSha256": "5a98f72307dd979465a0fbed078dae64949554401293175fa58fe7cba6f20243",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/history-controls.test.mjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "5293df5a1764e1e31d1deeb35a49d71998e20086"
+    },
+    {
+      "path": "frontend/scripts/history-filters.test.mts",
+      "kind": "test",
+      "package": "history-v2",
+      "baselineSha256": "9f32e79db7808eeaa01258366f7b690056a8b339f70a510f16ef3a466d01cc04",
+      "candidateSha256": "5147e36208e21e751f8ee005bc8f7d43a02c71811661f66980e0d9fe45b70b2a",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/history-filters.test.mts",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "bf2736cfcc75cf8057f95dfe85d0bbdd4dfd045a"
+    },
+    {
+      "path": "frontend/scripts/history-responsive-reader.test.mjs",
+      "kind": "test",
+      "package": "history-v2",
+      "baselineSha256": "4141897b0ffc737c3627280167d165305cc83fda7100b8a8eaddf59362a671d4",
+      "candidateSha256": "180b5f5ecc861533f5a14ae685fc01fa85ebaf1aadaa13a3c1a9bdcff24c2b05",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/history-responsive-reader.test.mjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "d5cfdd16c3c959b396cd7e170c55f4f6d3c1da4a"
+    },
+    {
+      "path": "frontend/scripts/history-filter-dialog-dom.test.cjs",
+      "kind": "test",
+      "package": "history-v2",
+      "baselineSha256": null,
+      "candidateSha256": "7ee417f5cec8216431479531a1315b5bb804f4d5b352dc77361ea24b89391846",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/history-filter-dialog-dom.test.cjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "bd6a21c536c38ac0bedbb442187619fd1698f256"
+    },
+    {
+      "path": "frontend/src/components/summary/SummaryRecords.tsx",
+      "kind": "product",
+      "package": "ia02",
+      "baselineSha256": "3e659a753d4a99888ad5cedeb83bdcf01ab8d38c5a555344913f8901cd87b8ef",
+      "candidateSha256": "bdf4f2141d1040fd668e6f79509a5b3d609289fd3b4dba76deda8dcfe9f4d164",
+      "candidateLineRanges": [
+        "40-48"
+      ],
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/summary/SummaryRecords.tsx",
+      "candidateSourceReferences": [
+        {
+          "lines": "40-48",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/summary/SummaryRecords.tsx#L40-L48"
+        }
+      ],
+      "confirmedGithubBlob": "46b55f9a1a93200b1575bded6aaa760ef0ac1964"
+    },
+    {
+      "path": "frontend/scripts/summary-assignee-display.test.mjs",
+      "kind": "test",
+      "package": "ia02",
+      "baselineSha256": null,
+      "candidateSha256": "33a0cfc9abb6f19f1d85b281bc0d4250b376c91b3b922fe32906cf38297a7ebf",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/summary-assignee-display.test.mjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "0f7b6ef543a76090e6e64282d41e4c1b81721835"
+    },
+    {
+      "path": "frontend/src/components/growth/GrowthConcernManualFallback.tsx",
+      "kind": "product",
+      "package": "growth-actions-r2",
+      "baselineSha256": "e1b989ce33b53d10af3484f0dfab7355b8ad989a7603f506f334556ae0b4591d",
+      "candidateSha256": "ab512084d06fa39f04f2aa59c0269cd4274483f0f7c2aef58265c87214a0d4e9",
+      "snapshot27Sha256": "e1b989ce33b53d10af3484f0dfab7355b8ad989a7603f506f334556ae0b4591d",
+      "candidateLineRanges": [
+        "23-27"
+      ],
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/growth/GrowthConcernManualFallback.tsx",
+      "candidateSourceReferences": [
+        {
+          "lines": "23-27",
+          "url": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/src/components/growth/GrowthConcernManualFallback.tsx#L23-L27"
+        }
+      ],
+      "confirmedGithubBlob": "9cf01254f81c8030df3f5c65d82c987b237e2494"
+    },
+    {
+      "path": "frontend/scripts/growth-draft-navigation.test.mjs",
+      "kind": "test",
+      "package": "growth-actions-r2",
+      "baselineSha256": "2ef2b65ce83156d9db45939598c3b9e22862ea3b45d5734351638321ad13edd7",
+      "candidateSha256": "a02969e7fb22a7ee19a0f9050385d1b0db572fd3c84a5f755dadbaa692e69a35",
+      "snapshot27Sha256": "2ef2b65ce83156d9db45939598c3b9e22862ea3b45d5734351638321ad13edd7",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/growth-draft-navigation.test.mjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "ec5c55ecb819bc7f62e39fcab4446c66181fddff"
+    },
+    {
+      "path": "frontend/scripts/form-dialog.test.mjs",
+      "kind": "test",
+      "package": "growth-actions-r2",
+      "baselineSha256": "dc553f30631eed258c6df5d6502df92f844c7e3871b9a2bcbdea81d2f93c3a81",
+      "candidateSha256": "3f139831403cbbd4cecbd2817bff956e823bc3cdd88b4171778ba22192b31b8e",
+      "snapshot27Sha256": "dc553f30631eed258c6df5d6502df92f844c7e3871b9a2bcbdea81d2f93c3a81",
+      "candidateGithubUrl": "https://github.com/2NTTY/child-ai-caregiver/blob/c18a6b67740013ea5631669fd8bf63acc2d1f5a3/frontend/scripts/form-dialog.test.mjs",
+      "candidateSourceReferences": [],
+      "confirmedGithubBlob": "55b2be7e47edddb97094eb3befadaffd685f9d86"
+    }
+  ],
+  "verification": {
+    "stage": "snapshot27a final six-group regression after export",
+    "testGroups": [
+      {
+        "group": "summary",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "scripts/summary-composition.test.mjs",
+          "scripts/summary-assignee-display.test.mjs",
+          "scripts/summary-empty-cards.test.mjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 19,
+        "tests": 19,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "cc6b13101551f54f15c6a460dd4dbe1efef2af6b73e5f6147fcb0833a8c43b16"
+      },
+      {
+        "group": "task-navigation",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "--test-name-pattern=task deep-link|task deep links|task disclosure callbacks|selection queued during",
+          "scripts/shared-status-read-state.test.mjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 5,
+        "tests": 5,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "b0945678a699e9893927481d15f87dd34778fbafe4e91284a7afc36c03673ae7"
+      },
+      {
+        "group": "history",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "scripts/history-controls.test.mjs",
+          "scripts/history-filters.test.mts",
+          "scripts/history-responsive-reader.test.mjs",
+          "scripts/form-dialog.test.mjs",
+          "scripts/history-filter-dialog-dom.test.cjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 43,
+        "tests": 43,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "8f5e2c1606cce4e56daf999f92b2411954b07535d6eb7241741b03c3cd6ff49c"
+      },
+      {
+        "group": "assistant-actions",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "scripts/growth-empty-flow.test.mjs",
+          "scripts/preparation-layout.test.mjs",
+          "scripts/preparation-action-lifecycle.test.cjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 15,
+        "tests": 15,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "2a7a5f65b1803a381cfa6fcfde1ee8262d9d98da2b719880c0d726702c2a7973"
+      },
+      {
+        "group": "settings",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "scripts/settings-parent-controls.test.cjs",
+          "scripts/model-settings-form.test.mjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 10,
+        "tests": 10,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "0dd33c27b530d68a32ebf23a19524406ff3f65dc3da2c91d247cad6783259bdb"
+      },
+      {
+        "group": "return-focus-and-guards",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "scripts/preparation-return-focus.test.cjs",
+          "scripts/preparation-refresh-focus.test.cjs",
+          "scripts/growth-concern-actions.test.mjs",
+          "scripts/growth-draft-navigation.test.mjs",
+          "scripts/growth-refresh.test.mjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 44,
+        "tests": 44,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "16724ea209fd79a4992b04a662176484c1ed5e5a41021ae1733618412665208b"
+      }
+    ],
+    "totalPassed": 136,
+    "duplicateCountRule": "The earlier 31 delta checks repeat within these six groups. Do not add them to 136 or combine with snapshot27 tests.",
+    "typecheck": {
+      "exit": 2,
+      "diagnostics": [
+        [
+          "src/components/contact/ContactConsentCard.tsx(33,218)",
+          "TS2322"
+        ],
+        [
+          "src/components/contact/ContactConsentCard.tsx(99,197)",
+          "TS2345"
+        ]
+      ],
+      "baselineOnly": true,
+      "gateSatisfied": true,
+      "fullPass": false
+    },
+    "packaging": {
+      "bundle": {
+        "path": "_expo/static/js/web/index-b25abcd6abf772c2344980e5241248a5.js",
+        "sha256": "abf3e8dc7d012a87db73ac5732721cc10429c68454144b2fbfff8c3aba4dbcf2"
+      },
+      "fixtureSha256": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d",
+      "packagedFiles": 72,
+      "originalArtifacts": 65,
+      "productInputs": 551,
+      "scopeFiles": 23,
+      "productFiles": 10,
+      "deltaFrom27Files": 6,
+      "deltaFrom27ProductFiles": 3,
+      "unchangedSafetyFiles": 6,
+      "staticValidator": "PASS",
+      "buildManifestSha256": "4c820b9e30d27cac907449c19234341710faa3e14c5c4d04a8b1a7ad559d77d0",
+      "productManifestSha256": "699d296ea63f3d39efa4acc4de5cf37c97110b39fc433574bede819e5680cafa",
+      "validatorSha256": "30c9c5dbfabdffa2f688e1f3281099ce2c30e733b0a6d10e0440cabb308eaf51",
+      "exportReceiptSha256": "fc13b13b0d69fbc718937ab90bc91f5e57b1cb3b73e5a7cfe8d46bb86dd36e3d"
+    },
+    "fixtureParserTests": {
+      "passed": 8,
+      "nativeNetworkCalls": 0,
+      "scope": "synthetic fixture parser/transport tests only; not all browser asset traffic"
+    }
+  },
+  "supportingReceipts": [
+    {
+      "id": "27a-review-green",
+      "sha256": "97b2d126f35c91dd2fe52cad370253116be79e4631cebe26e96923e5358acbc5",
+      "rawIncluded": false
+    },
+    {
+      "id": "27a-full-integration-tests-result",
+      "sha256": "5e07cd1335fb111aea6f7520fa087ffbbd490b3502cf6cd8380eb2d7cf30f362",
+      "rawIncluded": false
+    },
+    {
+      "id": "27a-tests-result",
+      "sha256": "e76342b262785a4150685197095f1f12473beb4167635855dfb0cd8324f2b89b",
+      "rawIncluded": false
+    },
+    {
+      "id": "27a-typecheck-result",
+      "sha256": "25df24423b08608cb0140056af2ad25f2c28b669d42d449944bf949be5cbfb2b",
+      "rawIncluded": false
+    },
+    {
+      "id": "27a-integration-scope",
+      "sha256": "3640a8f94ff7e5e749f97b25169210e6559fb988084efcdbd498f2414bc60434",
+      "rawIncluded": false
+    },
+    {
+      "id": "27a-snapshot27a-packaging",
+      "sha256": "498c04557e68d34fca4f757f7c5168b9c8f00945112a42f03c42ab813f25488f",
+      "rawIncluded": false
+    },
+    {
+      "id": "27a-snapshot27-to27a-diff",
+      "sha256": "2beb1e03931989fc14011d4a3d2a4a4753457648e5ab57b2f4a2353cbece3426",
+      "rawIncluded": false
+    },
+    {
+      "id": "27a-github-release",
+      "sha256": "a02baca78d38c0a1bb3cb6d2cf31fd13288b6abf05f4bc17f92f6af721edc9f8",
+      "rawIncluded": false
+    },
+    {
+      "id": "27a-site-publication",
+      "sha256": "d620cfdd302fc7a23fef6abf322958f95a43b9155ad4ef9414c232556669b8d5",
+      "rawIncluded": false
+    },
+    {
+      "id": "site86-live-smoke-report",
+      "sha256": "6cda3b98f0a14609fa63ae38db0a1496715b42397df386856b615d828958cf1f",
+      "rawIncluded": false
+    },
+    {
+      "id": "site86-live-smoke-manifest",
+      "sha256": "88ead746db24ae811d22327fdac18446a390603869a826cf221ff84478a3dca5",
+      "rawIncluded": false
+    },
+    {
+      "id": "site86-http-byte-readback",
+      "sha256": "c6cfffd306b2d3180d139ac3ed141d0e80baf4a4fc69a8ad145051692aa46668",
+      "rawIncluded": false
+    }
+  ],
+  "documentFreeze": {
+    "finalized": true,
+    "frozenAtUTC": "2026-10-22T18:16:44.865409+00:00",
+    "scope": "Parent-facing baseline audit plus exact snapshot27a source, bounded candidate and Site86 public smoke; separate background-choice follow-up excluded.",
+    "packageManifest": "package-manifest.json",
+    "manifestRule": "Manifest lists all other files; it excludes itself to avoid circular hashing.",
+    "notUploadedByThisPackagePreparation": true
+  },
+  "changesStage": "snapshot27a final source; 23 files = 10 product + 13 test; 6-file delta from snapshot27",
+  "visualReviewRevisions": [
+    {
+      "stage": "snapshot27",
+      "finding": "Growth assistant secondary and larger manual action share outline treatment; 320 long manual label causes the action area to use two rows and pushes reading content down.",
+      "result": "RED",
+      "plannedCorrection": "compact primary assistant; short visible manual label with full dialog title and accessible name retained",
+      "followupStage": "snapshot27a",
+      "followupResult": "6 bounded incremental grouped cases PASS; growth hierarchy RED resolved"
+    }
+  ],
+  "modelUiBoundary": "Observed fixture read-error state only; model key, endpoint, limits and save boundaries have source/DOM evidence, not successful live-form pixel acceptance.",
+  "snapshot27SupplementalArtifacts": [
+    {
+      "sourceArtifact": "04-summary-taskB390-dom.txt",
+      "sha256": "ec2c48f8371885b807e34ccca078c892d0365000fd2c011b35a87481e7c21aeb",
+      "bytes": 2716,
+      "included": false
+    },
+    {
+      "sourceArtifact": "05-summary-navigation-evidence.json",
+      "sha256": "12a6d87ee467ba24776ccee8bf92011b6196b7e6c12fc00e9fc2aea30ed5d182",
+      "bytes": 22232,
+      "included": false
+    },
+    {
+      "sourceArtifact": "08-date-cancel320.json",
+      "sha256": "6368fb40e8fc27050d208a2310746ad8eca6ec5a790892421a63fab42ae63e63",
+      "bytes": 4395,
+      "included": false
+    },
+    {
+      "sourceArtifact": "10-inner-calendar-escape320.txt",
+      "sha256": "99b8b271d503335698d7da533b51606d8989d4f1c1c41054b1d3c6e9d26a1225",
+      "bytes": 4322,
+      "included": false
+    },
+    {
+      "sourceArtifact": "11-date-escape-apply320.json",
+      "sha256": "5d167a721686951e3d63d0bb08b776c4bbe7eb095699e9aa8ee9b8f2408cee4f",
+      "bytes": 7860,
+      "included": false
+    },
+    {
+      "sourceArtifact": "13-history-preparation1024.txt",
+      "sha256": "94979635e655c918c1bc2baf105d4389c49c829c2ef07a421780c667cecc5b77",
+      "bytes": 4144,
+      "included": false
+    },
+    {
+      "sourceArtifact": "14-history-review1024.txt",
+      "sha256": "8417b87ba83fae371d4a2ca3a45143defafc060db98f60a9033cab60999c0b05",
+      "bytes": 11779,
+      "included": false
+    },
+    {
+      "sourceArtifact": "15-history-care1024.txt",
+      "sha256": "c6f629a1c5ec2c10813ebc9641b66dd78d7de4d9bf8458d14b49c0789f677385",
+      "bytes": 12974,
+      "included": false
+    },
+    {
+      "sourceArtifact": "16-history-profile390.txt",
+      "sha256": "a110652440921af1cd54327d5b6d2e519031a7ca3e98d555cf0cd3ef059c57ad",
+      "bytes": 2237,
+      "included": false
+    },
+    {
+      "sourceArtifact": "17-history-conversations390.txt",
+      "sha256": "3ab47b6c36684a2d32436445fb37d5993a9b22ded3ad3788e648a22462cce975",
+      "bytes": 5839,
+      "included": false
+    },
+    {
+      "sourceArtifact": "18-history-growth390.txt",
+      "sha256": "685cf120bbee099d943107fd034319d91e8620cae17682bae259fe4379a91c7f",
+      "bytes": 3193,
+      "included": false
+    },
+    {
+      "sourceArtifact": "19-history-notifications390.txt",
+      "sha256": "9d66057a1a501976ae6c7bf6ad22ae454bcff39db6b984fef0cba2809cf3fa67",
+      "bytes": 4988,
+      "included": false
+    },
+    {
+      "sourceArtifact": "20-history-child2-empty390-settled.txt",
+      "sha256": "1e2361fe1bb73efad86187187f0e5fb2a3dbe177952acbe49d82dbfac96e6ed7",
+      "bytes": 3615,
+      "included": false
+    },
+    {
+      "sourceArtifact": "20-history-child2-empty390.txt",
+      "sha256": "1f4aeb19e25c23c6e47aef33cfe303b1dcaba7a410fedc8b07b51b2497f9aaf3",
+      "bytes": 2000,
+      "included": false
+    },
+    {
+      "sourceArtifact": "21-history-real-empty390.json",
+      "sha256": "f08dfeab2731dfde9ec8da7a487852bf4a0d2cb037d8a722d12e187ba45a2a0a",
+      "bytes": 14487,
+      "included": false
+    },
+    {
+      "sourceArtifact": "25-growth-draft-guard320.txt",
+      "sha256": "20be0a351a202e8acf3a41540fc5f7ae0ee1419e4f1689dbd5bd0b6c01442451",
+      "bytes": 6503,
+      "included": false
+    },
+    {
+      "sourceArtifact": "27-growth-assistant-entry.json",
+      "sha256": "468c75c6fb8aadfc95c7a61230104bd759f621bb73789c5e7a987cd8d4f2e0d0",
+      "bytes": 25899,
+      "included": false
+    },
+    {
+      "sourceArtifact": "33-preparation-return-settled390.json",
+      "sha256": "d979d1975f073e1a6436a1af4f2971f482c0496d8613057a396ac753e8005d83",
+      "bytes": 116560,
+      "included": false
+    },
+    {
+      "sourceArtifact": "35-growth-reader-return390.json",
+      "sha256": "8c415bb5f828a41121c990a1658031e9579a9fb740eec9a2677d4733ce964bc8",
+      "bytes": 119938,
+      "included": false
+    },
+    {
+      "sourceArtifact": "36-notifications390.txt",
+      "sha256": "254db3290eb368fd74cf69dee5228df59e78d55cba9323134aae3ee0073be899",
+      "bytes": 6472,
+      "included": false
+    },
+    {
+      "sourceArtifact": "37-notification-invalid390.txt",
+      "sha256": "c76bf477caf580338779aa3ae8d76c00ef66233135f471ad5a2216bd54a20a29",
+      "bytes": 6790,
+      "included": false
+    },
+    {
+      "sourceArtifact": "40-model1024.txt",
+      "sha256": "cec59a0444c68ce2f967cce1ac8adac6c394f1c8f8e4760282b7a9a6470dca55",
+      "bytes": 3121,
+      "included": false
+    },
+    {
+      "sourceArtifact": "41-model-unconfirmed320.json",
+      "sha256": "346b8e9136742f9e74914e47d2b70f0e30768cc376eb657d8a8d6ddf0864e1aa",
+      "bytes": 26043,
+      "included": false
+    },
+    {
+      "sourceArtifact": "42-history-dialog-clear320.json",
+      "sha256": "08d63e7714777b631e00dfbdb32114bc437a57583ef8f0a8f7ddb529aea3a9bd",
+      "bytes": 8707,
+      "included": false
+    },
+    {
+      "sourceArtifact": "46-model-unconfirmed-settled320.json",
+      "sha256": "8a9dd54521e915138040c29baca5a2667223341c7fa0904d5c342b3c67452d08",
+      "bytes": 24215,
+      "included": false
+    },
+    {
+      "sourceArtifact": "47-preparation-background-refresh390.json",
+      "sha256": "e0992f8423b66e71ef601bfae069248244e86b9bcdf311fa581f5c164fc8a932",
+      "bytes": 58212,
+      "included": false
+    },
+    {
+      "sourceArtifact": "48-growth-background-refresh390.json",
+      "sha256": "81d770c87a047e507347251bf6400700e69319b2e555172579a5fd9a38be4ae0",
+      "bytes": 88107,
+      "included": false
+    }
+  ],
+  "snapshot27BrowserStage": {
+    "overall": "RED_PENDING_27A",
+    "groupedCaseCounts": {
+      "total": 22,
+      "pass": 19,
+      "red": 1,
+      "notBrowserVerified": 2
+    },
+    "countsAreGroupedCasesNotFullFunctionalPass": true,
+    "originalImages": 44,
+    "allImageAndSupplementalArtifacts": 71,
+    "exactCandidateFiles": 72,
+    "evidenceManifestSha256": "98b0ff221a571eb90a3f9da10969e436b819f5995cbe8eabbd0c29c75382cef7",
+    "sourceReportSha256": "b507ca76177667feeb866b7c3539f397d876d940f86cc95cc8d9ecf5e85cce10",
+    "cases": [
+      {
+        "sourceCaseId": "summary-exact-A",
+        "name": "概況任務 A",
+        "status": "PASS",
+        "scopeAndLimit": "1024 點開原 A，taskId 與學校交流標題／詳情相符。",
+        "evidenceRefs": "P27-02、03；定位補證"
+      },
+      {
+        "sourceCaseId": "summary-exact-B",
+        "name": "概況任務 B",
+        "status": "PASS",
+        "scopeAndLimit": "390 點開原 B，taskId 與圖書館活動標題／詳情相符。",
+        "evidenceRefs": "P27-04"
+      },
+      {
+        "sourceCaseId": "summary-back-revisit",
+        "name": "返回與鍵盤重訪",
+        "status": "PASS",
+        "scopeAndLimit": "瀏覽器返回後切320，Enter 重訪 A，仍是正確任務。",
+        "evidenceRefs": "P27-05"
+      },
+      {
+        "sourceCaseId": "summary-assignee",
+        "name": "負責人替代",
+        "status": "PASS",
+        "scopeAndLimit": "320／390／1024 顯示「負責人：見原安排」，主 metadata 無 UUID。",
+        "evidenceRefs": "P27-02、43、44"
+      },
+      {
+        "sourceCaseId": "history-eight-toolbar",
+        "name": "八類歷史工具列",
+        "status": "PASS",
+        "scopeAndLimit": "實際切入八類；核對／照顧／檔案沒有假的日期篩選。不是八類每種寬度全覆。",
+        "evidenceRefs": "P27-06、12–19"
+      },
+      {
+        "sourceCaseId": "history-success-empty",
+        "name": "真空態",
+        "status": "PASS",
+        "scopeAndLimit": "既有合成 empty 情境確實回零筆歷史；沒有造資料。",
+        "evidenceRefs": "P27-21；20不是空態"
+      },
+      {
+        "sourceCaseId": "history-date-cancel",
+        "name": "日期關閉",
+        "status": "PASS",
+        "scopeAndLimit": "320 關閉丟棄局部草稿、結果維持3筆，回焦原入口。",
+        "evidenceRefs": "08補證"
+      },
+      {
+        "sourceCaseId": "history-date-escape",
+        "name": "日期 Escape",
+        "status": "PASS",
+        "scopeAndLimit": "外層 Escape 丟棄草稿，再開為空；回焦原入口。",
+        "evidenceRefs": "11補證"
+      },
+      {
+        "sourceCaseId": "history-inner-calendar",
+        "name": "內層月曆 Escape",
+        "status": "PASS",
+        "scopeAndLimit": "只關月曆，外層日期草稿仍在，焦點回開始日期欄。",
+        "evidenceRefs": "P27-09、10及補證"
+      },
+      {
+        "sourceCaseId": "history-date-apply",
+        "name": "日期套用",
+        "status": "PASS",
+        "scopeAndLimit": "套用起點2026-10-05後匹配2筆，日期提示及已篩選入口同步。",
+        "evidenceRefs": "P27-11及補證"
+      },
+      {
+        "sourceCaseId": "history-date-clear",
+        "name": "兩種清除",
+        "status": "PASS",
+        "scopeAndLimit": "工具列清除回3筆；modal清空兩欄後套用，預設入口及焦點恢復。",
+        "evidenceRefs": "P27-12；42補證"
+      },
+      {
+        "sourceCaseId": "history-unrelated-retained-state",
+        "name": "跨工作區 retained 狀態",
+        "status": "NOT_BROWSER_VERIFIED",
+        "scopeAndLimit": "無正常 UI 路徑保留其他工作區 dirty／pending／unknown 再編日期；只有既有 source／DOM。",
+        "evidenceRefs": "P27-25不證明可留草稿離開"
+      },
+      {
+        "sourceCaseId": "growth-hierarchy",
+        "name": "關注按鈕主次",
+        "status": "RED",
+        "scopeAndLimit": "320 助手與較大手動入口同描邊，列佔兩排壓正文；27a須修正重驗。",
+        "evidenceRefs": "P27-22、23、26"
+      },
+      {
+        "sourceCaseId": "growth-manual-and-guard",
+        "name": "關注手動與離頁 guard",
+        "status": "PASS",
+        "scopeAndLimit": "320 開表單、未送出的合成草稿觸發繼續／捨棄防護；沒有保存。",
+        "evidenceRefs": "P27-24、25"
+      },
+      {
+        "sourceCaseId": "growth-assistant-entry",
+        "name": "關注助手導航",
+        "status": "PASS",
+        "scopeAndLimit": "實際到聊天，沒有自動送出或呼叫模型；不代表助手生成通過。",
+        "evidenceRefs": "27補證"
+      },
+      {
+        "sourceCaseId": "preparation-hierarchy-purpose",
+        "name": "準備單入口及用途",
+        "status": "PASS",
+        "scopeAndLimit": "320／1024 助手先於手動，四個用途有標籤；出行用途帶入手動表單。",
+        "evidenceRefs": "P27-28–30"
+      },
+      {
+        "sourceCaseId": "preparation-reader-focus",
+        "name": "準備單 reader 回焦",
+        "status": "PASS",
+        "scopeAndLimit": "390 長文可讀，返回原卡；同 owner 背景文件讀取200後仍在原卡。",
+        "evidenceRefs": "P27-32、47及補證"
+      },
+      {
+        "sourceCaseId": "growth-reader-focus",
+        "name": "關注 reader 回焦",
+        "status": "PASS",
+        "scopeAndLimit": "390 Escape 回原卡；同 owner 關注／成長讀取200後焦點保留。",
+        "evidenceRefs": "P27-34、48及補證"
+      },
+      {
+        "sourceCaseId": "notifications-reading",
+        "name": "通知閱讀",
+        "status": "PASS",
+        "scopeAndLimit": "390／1024 本人範圍、安靜時段、短重讀及完整讀屏名稱可辨。",
+        "evidenceRefs": "P27-36、39"
+      },
+      {
+        "sourceCaseId": "notifications-validation",
+        "name": "通知本地錯誤修正",
+        "status": "PASS",
+        "scopeAndLimit": "輸入25:61顯示HH:mm錯誤，修正入口回欄位；恢復22:00，無保存。",
+        "evidenceRefs": "P27-38及37補證"
+      },
+      {
+        "sourceCaseId": "model-read-unconfirmed",
+        "name": "模型未確認讀取",
+        "status": "PASS",
+        "scopeAndLimit": "合成模型設定讀取503，1024／390／320顯未確認及重試，不假成功。",
+        "evidenceRefs": "P27-40、45、46"
+      },
+      {
+        "sourceCaseId": "model-form-required-info",
+        "name": "模型成功表單必要資訊",
+        "status": "NOT_BROWSER_VERIFIED",
+        "scopeAndLimit": "固定 fixture 無成功模型讀取；key、endpoint、費用及 write-unknown 只看 source／DOM。",
+        "evidenceRefs": "沒有輸入或保存 key"
+      }
+    ],
+    "boundaries": [
+      "Other-workspace retained dirty/pending/unknown is source/DOM only.",
+      "Model successful read form, key/endpoint/cost and write-unknown have no browser-pixel verification.",
+      "Some modal/calendar top edges are overlaid by the fixed synthetic notice.",
+      "Baseline Site85 is not snapshot27.",
+      "Successful summary A/B UI uses synthetic appointment cards, not external bookings."
+    ]
+  },
+  "snapshot27aEvidence": [
+    {
+      "id": "P27A-01",
+      "stage": "snapshot27a",
+      "sourceArtifact": "01-growth-hierarchy320.jpg",
+      "sha256": "70176b6a9b48e9ec223d5d33dd8ba1e0c877ed6ba2f23cee6cb88aa2090112c0",
+      "bytes": 126796,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": "screenshots/snapshot27a/01-growth-hierarchy320.jpg",
+      "unaltered": true,
+      "capture": "原生桌面截圖，含瀏覽器與合成檢查外框，非full-page。",
+      "caption": "320 助手為緊湊主要樣式，與短「手動」同列，管理自然換行；未縮小點按目標。"
+    },
+    {
+      "id": "P27A-02",
+      "stage": "snapshot27a",
+      "sourceArtifact": "02-growth-hierarchy390.jpg",
+      "sha256": "6e96894507271b0e79d0e13c28abe9a0e6525b816eb9b76e71fe5f6c483b9673",
+      "bytes": 133870,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": "screenshots/snapshot27a/02-growth-hierarchy390.jpg",
+      "unaltered": true,
+      "capture": "原生桌面截圖，含瀏覽器與合成檢查外框，非full-page。",
+      "caption": "390 助手、手動、管理同列，主要／次級差異可辨。"
+    },
+    {
+      "id": "P27A-03",
+      "stage": "snapshot27a",
+      "sourceArtifact": "03-growth-hierarchy1024.jpg",
+      "sha256": "c2a7bb704baa1ef0cc8199ee00a643c0d413b976b9d5fde379737f24573394f6",
+      "bytes": 159954,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": "screenshots/snapshot27a/03-growth-hierarchy1024.jpg",
+      "unaltered": true,
+      "capture": "原生桌面截圖，含瀏覽器與合成檢查外框，非full-page。",
+      "caption": "1024 助手、手動、管理同列；保留原關注正文。"
+    },
+    {
+      "id": "P27A-04",
+      "stage": "snapshot27a",
+      "sourceArtifact": "04-growth-manual-title1024.jpg",
+      "sha256": "d63a5f32d3f67d7cdf32a424d623b6bef1b481d0920aa559879f61ce7e524061",
+      "bytes": 160970,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面截圖，含瀏覽器與合成檢查外框，非full-page。",
+      "limitation": "真實modal過渡動畫，不作穩態透明度或版面證據。"
+    },
+    {
+      "id": "P27A-05",
+      "stage": "snapshot27a",
+      "sourceArtifact": "05-growth-manual-title320.jpg",
+      "sha256": "3c8ceef488a0c661ea31c8ae82ccd383148ea7bd30952e2915148c2268bb199e",
+      "bytes": 129805,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面截圖，含瀏覽器與合成檢查外框，非full-page。",
+      "limitation": "真實modal過渡動畫，不作穩態透明度或版面證據。"
+    },
+    {
+      "id": "P27A-06",
+      "stage": "snapshot27a",
+      "sourceArtifact": "06-growth-manual-settled320.jpg",
+      "sha256": "71d17c9fd01c72c7b84addb916ad375a7b98809dbed16dbcda10bc16feffa168",
+      "bytes": 124714,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": "screenshots/snapshot27a/06-growth-manual-settled320.jpg",
+      "unaltered": true,
+      "capture": "原生桌面截圖，含瀏覽器與合成檢查外框，非full-page。",
+      "caption": "320 穩態手動表單仍用完整「新增／跟進關注」標題及原欄位、說明和關閉。"
+    },
+    {
+      "id": "P27A-07",
+      "stage": "snapshot27a",
+      "sourceArtifact": "07-growth-manual-settled1024.jpg",
+      "sha256": "afa7e49e70a066bcdc9471af80bd58759ad972eb4af5f261801a06e420779935",
+      "bytes": 139461,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        1024,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面截圖，含瀏覽器與合成檢查外框，非full-page。"
+    },
+    {
+      "id": "P27A-08",
+      "stage": "snapshot27a",
+      "sourceArtifact": "08-common-preparation-dialog390.jpg",
+      "sha256": "7d0de3d154493f975ce25ad76f914fe79a604f1f8248b357db19af34ef723c03",
+      "bytes": 129699,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        390,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面截圖，含瀏覽器與合成檢查外框，非full-page。"
+    },
+    {
+      "id": "P27A-09",
+      "stage": "snapshot27a",
+      "sourceArtifact": "09-common-date-dialog320.jpg",
+      "sha256": "169bbdf824c3fa6ad0e1d012991d317d6d4dc7f4e4cdcda2a08e4a4485f236ae",
+      "bytes": 121556,
+      "mediaType": "image/jpeg",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "iframeCssViewport": [
+        320,
+        600
+      ],
+      "includedPath": null,
+      "unaltered": true,
+      "capture": "原生桌面截圖，含瀏覽器與合成檢查外框，非full-page。"
+    }
+  ],
+  "snapshot27aSupplementalArtifacts": [
+    {
+      "sourceArtifact": "03-growth-accessible-label.json",
+      "sha256": "36b7c21b532ddc9991622b6c5d372339e737122338692d86c8f437f6b0508165",
+      "bytes": 5785,
+      "included": false
+    },
+    {
+      "sourceArtifact": "05-growth-modal-focus.json",
+      "sha256": "cbc5a89ae3e082a48950de8730a96eb72b992dccc904f6e522fa320ec52aec3b",
+      "bytes": 41115,
+      "included": false
+    },
+    {
+      "sourceArtifact": "08-common-preparation-dialog.json",
+      "sha256": "eba7c10fc3445ddf99957d175fa3c99aafc2cf30abd5766f3b53674f7d6cc94a",
+      "bytes": 4379,
+      "included": false
+    },
+    {
+      "sourceArtifact": "09-common-date-dialog320.json",
+      "sha256": "5e74e6f6e2c67c55ef98a4b239785f7f1dbf5034d4351efdcdeea0722582937a",
+      "bytes": 29970,
+      "included": false
+    }
+  ],
+  "snapshot27aBrowserStage": {
+    "overall": "PASS_BOUNDED_INCREMENTAL_WITH_CARRIED_LIMITS",
+    "closesSnapshot27Red": "growth-hierarchy",
+    "cases": [
+      {
+        "sourceCaseId": "growth-hierarchy",
+        "name": "關注主要次級層級",
+        "status": "PASS",
+        "scopeAndLimit": "320／390／1024 主次可辨；320助手＋手動同列、管理換行，390／1024三者同列。",
+        "evidenceRefs": "P27A-01、02、03"
+      },
+      {
+        "sourceCaseId": "manual-accessible-label",
+        "name": "手動完整無障礙名稱",
+        "status": "PASS",
+        "scopeAndLimit": "可見短名「手動」，無障礙樹為「手動：新增／跟進關注」；不是螢幕閱讀器語音實測。",
+        "evidenceRefs": "03補證"
+      },
+      {
+        "sourceCaseId": "manual-modal-title",
+        "name": "手動完整表單標題",
+        "status": "PASS",
+        "scopeAndLimit": "320／1024完整標題、原說明／欄位及關閉保留，無保存或模型呼叫。",
+        "evidenceRefs": "P27A-06、07"
+      },
+      {
+        "sourceCaseId": "manual-return-focus",
+        "name": "手動關閉回原入口",
+        "status": "PASS",
+        "scopeAndLimit": "1024 Enter開啟／Escape關閉及320點按開關都回焦原手動入口。",
+        "evidenceRefs": "05補證"
+      },
+      {
+        "sourceCaseId": "common-preparation-dialog",
+        "name": "共用準備單dialog",
+        "status": "PASS",
+        "scopeAndLimit": "可見「手動建立準備單」未改；完整無障礙名稱、表單標題及Escape回焦可用。",
+        "evidenceRefs": "P27A-08及補證"
+      },
+      {
+        "sourceCaseId": "common-date-dialog",
+        "name": "共用日期dialog",
+        "status": "PASS",
+        "scopeAndLimit": "320起訖欄與關閉名稱保留；未套用日期Escape丟棄，不觸發家庭guard，回焦原入口，再開為空。",
+        "evidenceRefs": "P27A-09及補證"
+      }
+    ],
+    "groupedCasesPassed": 6,
+    "originalImages": 9,
+    "includedImages": 4,
+    "sourceReportSha256": "7deeb2f1ac8dae53c27a47b582a3c9b482b7219d5a09b0e18dda1c02c68c1f71",
+    "evidenceManifestSha256": "d3eef43b16c93e3111bcb698deb565c6d4200be812d65bebb9b9b49f0ae0fdb6",
+    "bundleSha256": "abf3e8dc7d012a87db73ac5732721cc10429c68454144b2fbfff8c3aba4dbcf2",
+    "fixtureSha256": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d",
+    "candidateDistManifestSha256": "4c820b9e30d27cac907449c19234341710faa3e14c5c4d04a8b1a7ad559d77d0",
+    "scope": "Narrow incremental retest only; unchanged snapshot27 cases are carried by exact-source review, not rerun or relabelled as27a images.",
+    "retainedNotBrowserVerified": [
+      "history-unrelated-retained-state",
+      "model-form-required-info"
+    ]
+  },
+  "snapshot27Changes": [
+    {
+      "path": "frontend/src/screens/SummaryScreen.tsx",
+      "kind": "product",
+      "package": "summary",
+      "baselineSha256": "1fb5b176d4447c32c36531d80cb4b45cc3c5a9fe38c9026b1cb15050ae09f4c0",
+      "candidateSha256": "5c29aaeb394f8dc534949c44563f39a3208a25ac28c2376f47d6381ac99187d0",
+      "candidateLineRanges": [
+        "72",
+        "84-85"
+      ]
+    },
+    {
+      "path": "frontend/scripts/summary-composition.test.mjs",
+      "kind": "test",
+      "package": "summary",
+      "baselineSha256": "f4180ded287ba3e0d3b6e735f9a96a14444d0b5849c48c9fa0124d91b79f35e7",
+      "candidateSha256": "344b84c68f5040e727b72f99da1fe3b406dbed0659ea78c22206f6790e2deb34"
+    },
+    {
+      "path": "frontend/scripts/shared-status-read-state.test.mjs",
+      "kind": "test",
+      "package": "summary",
+      "baselineSha256": "e35cfb6d0107966bc5d2e54cf6f3abea3b28549f3a19b0ecada782aa4ad12ad2",
+      "candidateSha256": "13c292ee5c06694514967920512a2d73ac16232af41cf999f06552297a53cb0c"
+    },
+    {
+      "path": "frontend/src/components/growth/GrowthView.tsx",
+      "kind": "product",
+      "package": "assistant",
+      "baselineSha256": "20a0d6c81607941c6baab864ca8ea6d2db7f9057529ef3b03da3b08dd688df42",
+      "candidateSha256": "d6613c5b12f64ff0947cbf2d16a904aa34a7321a5170bb2f0258d9e85e9d5888",
+      "candidateLineRanges": [
+        "90-102"
+      ]
+    },
+    {
+      "path": "frontend/src/components/preparations/PreparationWorkspace.tsx",
+      "kind": "product",
+      "package": "assistant",
+      "baselineSha256": "c7096b2ddf47a5e64cfcf0795e485204754b24423791aad9ba7584c1dc17b032",
+      "candidateSha256": "fb5793dfb3d21dd73e5199d4a9b15ebdfb883f4e3ebd35aef7f711dfd5894217",
+      "candidateLineRanges": [
+        "123-130",
+        "218-243"
+      ]
+    },
+    {
+      "path": "frontend/scripts/growth-empty-flow.test.mjs",
+      "kind": "test",
+      "package": "assistant",
+      "baselineSha256": "60b66ce49e7676d724e0f636d295c3f22e8747f075d52b2536f6e990cec34044",
+      "candidateSha256": "01bed4f007c14230cc64efc371fd930286eb8c4e74ba43fbf71a5f08454073ba"
+    },
+    {
+      "path": "frontend/scripts/preparation-layout.test.mjs",
+      "kind": "test",
+      "package": "assistant",
+      "baselineSha256": "d7d59ea2da352febecf26b26decaf747ed2b493a45539da4c1f7cf4a2524d7a3",
+      "candidateSha256": "8fa1f6315d4921d81b0d25047d7710bf39c54aab9645315bba40c85524feee51"
+    },
+    {
+      "path": "frontend/scripts/preparation-action-lifecycle.test.cjs",
+      "kind": "test",
+      "package": "assistant",
+      "baselineSha256": null,
+      "candidateSha256": "95287bb6c6948916e19104dc07e119845f195165e9310d312df343086904fbb4"
+    },
+    {
+      "path": "frontend/src/production/SettingsDomains.tsx",
+      "kind": "product",
+      "package": "settings-r2",
+      "baselineSha256": "314de0d8a8095eb44f5e4caf40e2df4e2c953ebc15fa99e75d3d7a37cbdac6af",
+      "candidateSha256": "360e937212ab3957214b014c1fb12e34fe9165b7223e105d289a6a332143ad83",
+      "candidateLineRanges": [
+        "129-173"
+      ]
+    },
+    {
+      "path": "frontend/src/components/model-settings/ModelSettingsView.tsx",
+      "kind": "product",
+      "package": "settings-r2",
+      "baselineSha256": "f4fe76bdf52c4c87f3b3aef01e84dab5aa90ab4140f426ebdb3c93ec0e53e8c4",
+      "candidateSha256": "8436ea88d1937814e8166e6cb6fcbefa9aaa072b7c174a0d27c789e6e50fa868",
+      "candidateLineRanges": [
+        "115-174"
+      ]
+    },
+    {
+      "path": "frontend/scripts/settings-parent-controls.test.cjs",
+      "kind": "test",
+      "package": "settings-r2",
+      "baselineSha256": null,
+      "candidateSha256": "61819887c7ac760e7d9dbfd6cddc95325d5217c0b5207fbe1278554356272b47"
+    },
+    {
+      "path": "frontend/src/screens/historyScreen.tsx",
+      "kind": "product",
+      "package": "history-v2",
+      "baselineSha256": "ee8fd7944c587ea2bff24bed6705cd713fb7957603a507ea6ce8cf81471078b7",
+      "candidateSha256": "95db642d08054ca014029767dddc87694c08f104451e2c7727259f85509bb339",
+      "candidateLineRanges": [
+        "65-79",
+        "113-155"
+      ]
+    },
+    {
+      "path": "frontend/src/components/history/history-filters.ts",
+      "kind": "product",
+      "package": "history-v2",
+      "baselineSha256": "9aa1e468578dc9d02f0d359fb7663538b35f2bc437046b3ba53664abe4b4f2fc",
+      "candidateSha256": "3f81b70d867f4c1e09c1d14cb80d5e9e0ae4f24fbf42f680d736f8ffaf7870c1",
+      "candidateLineRanges": [
+        "15-21",
+        "41-61"
+      ]
+    },
+    {
+      "path": "frontend/src/components/FormDialog.tsx",
+      "kind": "product",
+      "package": "history-v2",
+      "baselineSha256": "a27511e59866212a7516c9558d9170beafc9a3605c9a3d5a0e988d9f09b24f7d",
+      "candidateSha256": "be1aefeb14c42d776a5d514855b222ece8ed9faf5f7f60589993d2df24dc8085",
+      "candidateLineRanges": [
+        "11-20",
+        "43-48"
+      ]
+    },
+    {
+      "path": "frontend/scripts/history-controls.test.mjs",
+      "kind": "test",
+      "package": "history-v2",
+      "baselineSha256": "200910c9628202050d44b30f10bcc262eb4123da51b512a672f2da37cec278af",
+      "candidateSha256": "5a98f72307dd979465a0fbed078dae64949554401293175fa58fe7cba6f20243"
+    },
+    {
+      "path": "frontend/scripts/history-filters.test.mts",
+      "kind": "test",
+      "package": "history-v2",
+      "baselineSha256": "9f32e79db7808eeaa01258366f7b690056a8b339f70a510f16ef3a466d01cc04",
+      "candidateSha256": "5147e36208e21e751f8ee005bc8f7d43a02c71811661f66980e0d9fe45b70b2a"
+    },
+    {
+      "path": "frontend/scripts/history-responsive-reader.test.mjs",
+      "kind": "test",
+      "package": "history-v2",
+      "baselineSha256": "4141897b0ffc737c3627280167d165305cc83fda7100b8a8eaddf59362a671d4",
+      "candidateSha256": "180b5f5ecc861533f5a14ae685fc01fa85ebaf1aadaa13a3c1a9bdcff24c2b05"
+    },
+    {
+      "path": "frontend/scripts/history-filter-dialog-dom.test.cjs",
+      "kind": "test",
+      "package": "history-v2",
+      "baselineSha256": null,
+      "candidateSha256": "7ee417f5cec8216431479531a1315b5bb804f4d5b352dc77361ea24b89391846"
+    },
+    {
+      "path": "frontend/src/components/summary/SummaryRecords.tsx",
+      "kind": "product",
+      "package": "ia02",
+      "baselineSha256": "3e659a753d4a99888ad5cedeb83bdcf01ab8d38c5a555344913f8901cd87b8ef",
+      "candidateSha256": "bdf4f2141d1040fd668e6f79509a5b3d609289fd3b4dba76deda8dcfe9f4d164",
+      "candidateLineRanges": [
+        "40-48"
+      ]
+    },
+    {
+      "path": "frontend/scripts/summary-assignee-display.test.mjs",
+      "kind": "test",
+      "package": "ia02",
+      "baselineSha256": null,
+      "candidateSha256": "33a0cfc9abb6f19f1d85b281bc0d4250b376c91b3b922fe32906cf38297a7ebf"
+    }
+  ],
+  "snapshot27Verification": {
+    "testGroups": [
+      {
+        "group": "summary",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "scripts/summary-composition.test.mjs",
+          "scripts/summary-assignee-display.test.mjs",
+          "scripts/summary-empty-cards.test.mjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 19,
+        "tests": 19,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "41000956ecd08963af34e073d9294e9df5d6af5a64a0f006c0e0a4184a4e6bc1"
+      },
+      {
+        "group": "task-navigation",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "--test-name-pattern=task deep-link|task deep links|task disclosure callbacks|selection queued during",
+          "scripts/shared-status-read-state.test.mjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 5,
+        "tests": 5,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "6b142c6157655acc2e79035cf8d3fc9ed7e8982ea015bd9c8e86be2f9e5bece6"
+      },
+      {
+        "group": "history",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "scripts/history-controls.test.mjs",
+          "scripts/history-filters.test.mts",
+          "scripts/history-responsive-reader.test.mjs",
+          "scripts/form-dialog.test.mjs",
+          "scripts/history-filter-dialog-dom.test.cjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 43,
+        "tests": 43,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "fbbd5a05435baa5eb6194a500b85f348f5c7d169c723a63f6df657ce2f90ccd7"
+      },
+      {
+        "group": "assistant-actions",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "scripts/growth-empty-flow.test.mjs",
+          "scripts/preparation-layout.test.mjs",
+          "scripts/preparation-action-lifecycle.test.cjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 15,
+        "tests": 15,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "38918f251e3d61104beb44e344adcf743cd45adcacef32c61f64eb7fa114d387"
+      },
+      {
+        "group": "settings",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "scripts/settings-parent-controls.test.cjs",
+          "scripts/model-settings-form.test.mjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 10,
+        "tests": 10,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "2081ef83dfd746080b5707815446cee20ae02419cb700a78935ab384c3297330"
+      },
+      {
+        "group": "return-focus-and-guards",
+        "command": [
+          "node",
+          "--test",
+          "--test-concurrency=1",
+          "scripts/preparation-return-focus.test.cjs",
+          "scripts/preparation-refresh-focus.test.cjs",
+          "scripts/growth-concern-actions.test.mjs",
+          "scripts/growth-draft-navigation.test.mjs",
+          "scripts/growth-refresh.test.mjs"
+        ],
+        "workingDirectory": "frontend",
+        "pass": 44,
+        "tests": 44,
+        "fail": 0,
+        "skipped": 0,
+        "logSha256": "a53095f32e7bd4c670217588f6ed83c9592b2adab3874c75173f26715693af47"
+      }
+    ],
+    "totalPassed": 136,
+    "typecheck": {
+      "exit": 2,
+      "diagnostics": [
+        [
+          "src/components/contact/ContactConsentCard.tsx(33,218)",
+          "TS2322"
+        ],
+        [
+          "src/components/contact/ContactConsentCard.tsx(99,197)",
+          "TS2345"
+        ]
+      ],
+      "baselineOnly": true,
+      "gateSatisfied": true,
+      "fullPass": false
+    },
+    "packaging": {
+      "bundle": {
+        "path": "_expo/static/js/web/index-db651d1229a81b888e1f453d347eb94b.js",
+        "sha256": "98ef2997bbba8f1e7e4906c0f390b374f6679dd1de9f3c42921416e7e32df175"
+      },
+      "fixtureSha256": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d",
+      "packagedFiles": 72,
+      "originalArtifacts": 65,
+      "productInputs": 551,
+      "scopeFiles": 20,
+      "productFiles": 9,
+      "unchangedSafetyFiles": 6,
+      "staticValidator": "PASS"
+    },
+    "fixtureParserTests": {
+      "passed": 8,
+      "nativeNetworkCalls": 0,
+      "scope": "synthetic fixture parser/transport tests only; not all browser asset traffic"
+    },
+    "stage": "snapshot27 only; not the final snapshot27a totals"
+  },
+  "snapshot27SupportingReceipts": [
+    {
+      "id": "review-green",
+      "sha256": "db1fd11ed706966bb3d6fcee30a46f07a02f9907228282d1ae88a087efefb361",
+      "rawIncluded": false
+    },
+    {
+      "id": "tests-result",
+      "sha256": "09c155ee30373d1c8d1a89e822c6e9578d419aa5ea526fa61b14a7595247ae96",
+      "rawIncluded": false
+    },
+    {
+      "id": "typecheck-result",
+      "sha256": "25df24423b08608cb0140056af2ad25f2c28b669d42d449944bf949be5cbfb2b",
+      "rawIncluded": false
+    },
+    {
+      "id": "integration-scope",
+      "sha256": "cde620d48e961a7672105cabbc49dcca339e48db9983cc10fc55bbab032ba57e",
+      "rawIncluded": false
+    },
+    {
+      "id": "snapshot27-packaging",
+      "sha256": "29311058391081e0b69fdbc3695dae05bdef3464cea8f7d763dc3c74dd48f316",
+      "rawIncluded": false
+    },
+    {
+      "id": "product-input-diff",
+      "sha256": "244c6da84c5c9b83af9381787f38efde4f99776f26af638b1e44c70fbb58b086",
+      "rawIncluded": false
+    }
+  ],
+  "site86Evidence": [
+    {
+      "id": "LIVE86-00-SUPPORT",
+      "originalFilename": "00-rendered-identity.json",
+      "stage": "Site86 live bounded smoke",
+      "sha256": "42271c76ca28b480e9f755e5fc942d28ab75ad3da39f597bf67a072ba216a7c5",
+      "bytes": 302,
+      "includedPath": null,
+      "rawIncluded": false
+    },
+    {
+      "id": "LIVE86-01",
+      "originalFilename": "01-summary-A.jpg",
+      "stage": "Site86 live bounded smoke",
+      "sha256": "83a9f1222e47f9b7d9a32bbae283bf33e04d22ad3c2150f9f70e13584db69dfe",
+      "bytes": 165768,
+      "includedPath": "screenshots/site86/01-summary-A.jpg",
+      "rawIncluded": true,
+      "format": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        1188,
+        761
+      ],
+      "unaltered": true
+    },
+    {
+      "id": "LIVE86-01-SUPPORT",
+      "originalFilename": "01-summary-A.json",
+      "stage": "Site86 live bounded smoke",
+      "sha256": "42c9838df84a495e319ba104f8d412e5a03335871aa18d772c39ed3dca29421a",
+      "bytes": 2360,
+      "includedPath": null,
+      "rawIncluded": false
+    },
+    {
+      "id": "LIVE86-02",
+      "originalFilename": "02-summary-B.jpg",
+      "stage": "Site86 live bounded smoke",
+      "sha256": "53f52f4bb986725e46d0ed0eeb4131024952e376d4a2043db9d94349fc8fce0f",
+      "bytes": 165407,
+      "includedPath": null,
+      "rawIncluded": false,
+      "format": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        1188,
+        761
+      ],
+      "unaltered": true
+    },
+    {
+      "id": "LIVE86-02-SUPPORT",
+      "originalFilename": "02-summary-B.json",
+      "stage": "Site86 live bounded smoke",
+      "sha256": "724dc954be2967651d785f0d38d92e762bd13df2807d0ab06e2324c8b42770e2",
+      "bytes": 2419,
+      "includedPath": null,
+      "rawIncluded": false
+    },
+    {
+      "id": "LIVE86-03-SUPPORT",
+      "originalFilename": "03-history-close.json",
+      "stage": "Site86 live bounded smoke",
+      "sha256": "f42c74d62deb2f716d6674fc35237820dca57ab3cd5ab603311b235aae6cd7dc",
+      "bytes": 3945,
+      "includedPath": null,
+      "rawIncluded": false
+    },
+    {
+      "id": "LIVE86-03",
+      "originalFilename": "03-history-local-date.jpg",
+      "stage": "Site86 live bounded smoke",
+      "sha256": "27cc54a89781f7f0da0841bc6238397b5350346f30920918856cac667b6284f3",
+      "bytes": 126872,
+      "includedPath": null,
+      "rawIncluded": false,
+      "format": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        1188,
+        761
+      ],
+      "unaltered": true
+    },
+    {
+      "id": "LIVE86-04",
+      "originalFilename": "04-growth320.jpg",
+      "stage": "Site86 live bounded smoke",
+      "sha256": "e01dc2550f749c2b1fb8b2a8fe85ac63d1f644104e3bd3dc6d0691f771c6ba88",
+      "bytes": 132566,
+      "includedPath": "screenshots/site86/04-growth320.jpg",
+      "rawIncluded": true,
+      "format": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        320,
+        600
+      ],
+      "unaltered": true
+    },
+    {
+      "id": "LIVE86-05-SUPPORT",
+      "originalFilename": "05-growth-focus.json",
+      "stage": "Site86 live bounded smoke",
+      "sha256": "0f086f160fb341849d938fc6be2e944207c36e8a5fa82dcc6f95496d06d006eb",
+      "bytes": 4697,
+      "includedPath": null,
+      "rawIncluded": false
+    },
+    {
+      "id": "LIVE86-05",
+      "originalFilename": "05-growth-manual320.jpg",
+      "stage": "Site86 live bounded smoke",
+      "sha256": "05a6682f46c0935a70ad6cc2385b1c14f0da45b4b8f7628765c712c0618e2903",
+      "bytes": 129907,
+      "includedPath": null,
+      "rawIncluded": false,
+      "format": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "appCssViewport": [
+        320,
+        600
+      ],
+      "unaltered": true
+    }
+  ],
+  "site86BrowserSmoke": {
+    "status": "PASS_BOUNDED_BROWSER_SMOKE",
+    "groups": 5,
+    "evidenceCapturedAt": "2026-10-22T18:13:22.674671+00:00",
+    "cases": [
+      {
+        "id": "LIVE86-IDENTITY",
+        "status": "PASS",
+        "scope": "Actual new bundle script and public synthetic/no backend or AI notice. Identity observation is separate from HTTP response-body hashes."
+      },
+      {
+        "id": "LIVE86-SUMMARY-A-B",
+        "status": "PASS",
+        "scope": "Actual summary actions navigated to distinct synthetic school and library task IDs and content; Back between."
+      },
+      {
+        "id": "LIVE86-HISTORY-DATE",
+        "status": "PASS",
+        "scope": "Local date draft Close discarded without family warning; focus returned to date filter and reopen empty. No Apply or service write."
+      },
+      {
+        "id": "LIVE86-GROWTH-320",
+        "status": "PASS",
+        "scope": "Primary dark assistant and outline short manual share first row; management next row, at actual public 320x600 CSS viewport."
+      },
+      {
+        "id": "LIVE86-MANUAL-FOCUS",
+        "status": "PASS",
+        "scope": "Full manual title and real form shown; Escape returned focus to full accessible manual name."
+      }
+    ],
+    "limits": [
+      "Narrow public smoke, not full 17-page or candidate rerun.",
+      "Original two unverified browser scenarios remain.",
+      "Background-choice verification is separate and not included."
+    ]
+  }
+}

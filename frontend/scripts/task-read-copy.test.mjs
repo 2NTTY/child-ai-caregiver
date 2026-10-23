@@ -26,6 +26,7 @@ function renderTasks(readState, { items, operation = 'idle', online = true, hist
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx, Fragment: 'Fragment' };
     if (name === 'react-native') return { ...elements, View: 'View', Pressable: 'Pressable', Platform: { OS: 'web' }, StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text: 'Text', TextInput: { Icon: 'Icon' } };
+    if (name.endsWith('/appearance/BackgroundSurface')) return { BackgroundSurface: 'View', useCustomBackground: () => false };
     if (name === 'luxon') return { DateTime };
     if (name.endsWith('/task-view-model')) return taskViewModel;
     if (name === './task-calendar') return calendar;
@@ -41,9 +42,16 @@ function renderTasks(readState, { items, operation = 'idle', online = true, hist
 function nodes(value) {
   if (Array.isArray(value)) return value.flatMap(nodes);
   if (!value || typeof value !== 'object') return [];
-  return [value, ...nodes(value.props?.children)];
+  // TabToolbar renders its action slot beside children in the real component.
+  return [value, ...nodes(value.props?.children), ...nodes(value.type === "TabToolbar" ? value.props?.actions : null)];
 }
 const named = (tree, type) => nodes(tree).filter(node => node.type === type);
+
+test('completed tab uses concise copy without changing its domain key', () => {
+  const state = renderTasks('ready');
+  const completed = named(state.tree, 'UnderlineTabs')[0].props.items.find(item => item.key === 'completed');
+  assert.deepEqual(completed, { key: 'completed', label: '已完成' });
+});
 
 test('initial task read failure stays an error, hides unknown counts and offers the existing read retry', () => {
   const state = renderTasks('error', { items: [] });
@@ -113,7 +121,7 @@ test('filtered-empty, partial-loaded and completed states keep their distinct me
 
   const completed = renderTasks('ready', { items: [], tab: 'completed' });
   const completedCard = named(completed.tree, 'EmptyListCard').find(node => node.props.testID === 'tasks-empty-card');
-  assert.equal(completedCard.props.title, '暫無已回報完成的事項');
+  assert.equal(completedCard.props.title, '暫無已完成的事項');
   assert.equal(named(completedCard, 'AppButton').length, 0);
   assert.equal(named(completed.tree, 'MotionList').length, 0);
   assert.equal(named(completed.tree, 'Text').some(node => JSON.stringify(node.props.children).includes('只顯示最近')), false);
@@ -168,7 +176,8 @@ test('pending tabs keep the text separate from their count at zero, one and high
 
 test('a successful empty mobile list cannot leave an expanded calendar without its toggle', () => {
   const state = renderTasks('ready', { items: [], calendarOpen: true, width: 390 });
-  assert.equal(named(state.tree, 'MotionDisclosure').length, 0);
+  assert.equal(named(state.tree, 'MotionDisclosure').filter(node => named(node, 'TasksCalendar').length > 0).length, 0);
+  assert.equal(named(state.tree, 'TasksCalendar').length, 0);
   assert.ok(named(state.tree, 'EmptyListCard').some(node => node.props.testID === 'tasks-empty-card'));
 });
 
@@ -176,7 +185,7 @@ test('a successful empty mobile list cannot leave an expanded calendar without i
 test('completed empty pages qualify their loaded window until the remaining tasks are read', () => {
   const partial = renderTasks('ready', { items: [], tab: 'completed', hasMoreTasks: true });
   const card = named(partial.tree, 'EmptyListCard').find(node => node.props.testID === 'tasks-empty-card');
-  assert.equal(card.props.title, '已載入的事項中暫無已回報完成的事項');
+  assert.equal(card.props.title, '已載入的事項中暫無已完成的事項');
   assert.ok(named(partial.tree, 'AppButton').some(node => node.props.label === '載入更多事項'));
 });
 
@@ -207,4 +216,30 @@ test('task history never claims success-empty for unavailable, stale or offline 
     assert.notEqual(named(state.tree, 'ReadStateNotice')[0].props.state, 'empty');
     assert.equal(named(state.tree, 'Text').some(node => JSON.stringify(node.props.children).includes('項符合')), false);
   }
+});
+
+
+test('Tasks removes the repeated visible page title while retaining its stable named content focus target', () => {
+  const { tree } = renderTasks('ready');
+  const region = nodes(tree).find(node => node.props?.role === 'region' && node.props.accessibilityLabel === '待辦');
+  assert.ok(region); assert.equal(region.props.tabIndex, -1);
+  assert.equal(region.props.dataSet.pageSurface, 'true');
+  assert.ok(!named(tree, 'Text').some(node => node.props.accessibilityRole === 'header' && node.props.children === '待辦'));
+  const form = named(tree, 'FormDialog')[0];
+  // The real layout port owns a ref; this shallow fixture does not invoke native refs.
+  assert.ok(form.props.returnFocusRef);
+  assert.ok(named(tree, 'UnderlineTabs').length);
+});
+
+
+test('page actions share the tab toolbar, with a compact disclosure instead of squeezing the tabs', () => {
+  const wide = renderTasks('ready', { width: 1440 }).tree;
+  const toolbar = named(wide, 'TabToolbar')[0]; assert.ok(toolbar);
+  assert.ok(named(toolbar.props.children, 'UnderlineTabs').length);
+  assert.deepEqual(named(toolbar.props.actions, 'AppButton').map(node => node.props.label), ['請助手安排', '手動新增', '歷史']);
+  const compact = renderTasks('ready', { width: 320 }).tree;
+  const smallToolbar = named(compact, 'TabToolbar')[0];
+  assert.equal(smallToolbar.props.actions.props.accessibilityLabel, '待辦操作');
+  const menu = nodes(compact).find(node => node.props?.testID === 'tasks-page-actions'); assert.ok(menu);
+  assert.deepEqual(named(menu, 'AppButton').map(node => node.props.label), ['請助手安排', '手動新增', '歷史']);
 });

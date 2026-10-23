@@ -2,11 +2,14 @@ import { z } from "zod";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
 import { accountAcknowledgementSchema, accountEraseExecuteSchema, SERVICE_POLICY_VERSION, type AccountExportPage, type AccountEraseReceipt, type AccountServiceStatus } from "../shared/account-service.ts";
 const receiptSchema = z.object({ operationId: z.uuid(), state: z.enum(["prepared", "processing", "completed"]), attachmentsPending: z.boolean() }).strict();
+const verifiedEraseSchema = accountEraseExecuteSchema.omit({ password: true });
+export const ACCOUNT_DELETION_VERIFICATION_MS = 2 * 60 * 1000;
 const preparedSchema = receiptSchema.extend({ receiptToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/), summary: z.object({ childCount: z.number().int().nonnegative() }).strict(), expiresAt: z.iso.datetime() }).strict();
 const exportPageSchema = z.object({ section: z.string().min(1).max(80), items: z.array(z.unknown()).max(200), nextCursor: z.string().max(16000).nullable(), complete: z.boolean(), scopeVersion: z.string().regex(/^[a-f0-9]{64}$/), notices: z.array(z.string()).max(20) }).strict();
 const statusSchema = z.object({ enabled: z.boolean(), registration: z.enum(["invite", "trial"]), mailConfigured: z.boolean(), policyVersion: z.string(), notice: z.string(),
   user: z.object({ id: z.string(), emailVerified: z.boolean(), acknowledged: z.boolean(), acknowledgementVersion: z.string().nullable() }).strict().nullable() }).strict();
 export type PreparedAccountDeletion = z.infer<typeof preparedSchema>;
+interface AccountDeletionAttempt { userId: string; operationId: string; receipt: PreparedAccountDeletion | null; executionUnknown: boolean }
 export interface AccountDownload { format: "yuban-personal-data:1"; scopeVersion: string; sections: { section: string; childId: string | null; items: unknown[]; notices: string[]; complete: true }[]; complete: true }
 export class AccountApiError extends Error {
   readonly status: number; readonly code: string | null;
@@ -15,11 +18,21 @@ export class AccountApiError extends Error {
 export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch,
   credentials?: { reauthenticate(userId: string, password: string, signal: AbortSignal): Promise<void> }) {
   const base = resolveApiBaseUrl(baseUrl), apiUrl = base.endsWith("/api") ? base : base + "/api";
-  let identity: string | null = null, generation = 0, pending: { userId: string; operationId: string; receipt: PreparedAccountDeletion | null; executionUnknown: boolean } | null = null;
+  let identity: string | null = null, generation = 0, pending: AccountDeletionAttempt | null = null;
+  // This ephemeral UI gate is not an authorization credential. The Server still verifies auth_time.
+  let verification: { attempt: AccountDeletionAttempt; generation: number; expiresAtMs: number } | null = null;
+  let verificationSequence = 0;
+  function clearDeletionVerification() { verification = null; verificationSequence++; }
+  function deletionVerification() {
+    if (!verification || verification.attempt !== pending || verification.generation !== generation
+      || pending?.executionUnknown || pending?.receipt?.state !== "prepared" || Date.now() >= verification.expiresAtMs) return null;
+    return { expiresAtMs: verification.expiresAtMs };
+  }
   const active = new Set<AbortController>();
   const recoveries = new Map<string, { operationId: string; receiptToken: string | null; executionUnknown: boolean }>();
   function setIdentity(userId: string | null) {
     if (identity === userId) return;
+    clearDeletionVerification();
     if (pending?.receipt?.state === "completed") recoveries.delete(pending.userId);
     else if (pending) recoveries.set(pending.userId, { operationId: pending.operationId, receiptToken: pending.receipt?.receiptToken ?? recoveries.get(pending.userId)?.receiptToken ?? null, executionUnknown: pending.executionUnknown });
     for (const controller of active) controller.abort(); active.clear(); identity = userId; generation++; pending = null;
@@ -55,7 +68,51 @@ export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch,
     if (page.section !== query.section || page.complete !== (page.nextCursor === null) || query.scopeVersion && page.scopeVersion !== query.scopeVersion) throw new AccountApiError(409, "export_scope_changed");
     return page;
   }
+  async function executeAttempt(userId: string, attempt: AccountDeletionAttempt, body: unknown, signal: AbortSignal): Promise<AccountEraseReceipt> {
+    if (pending !== attempt || identity !== userId || signal.aborted) throw new AccountApiError(409, "session_changed");
+    if (attempt.executionUnknown) throw new AccountApiError(409, "check_original_erasure");
+    clearDeletionVerification();
+    attempt.executionUnknown = true;
+    try {
+      const result = receiptSchema.parse(await request("/account/delete", signal, userId, body));
+      if (result.operationId !== attempt.operationId) throw new AccountApiError();
+      if (result.state === "completed") attempt.executionUnknown = false;
+      attempt.receipt = { ...attempt.receipt!, state: result.state, attachmentsPending: result.attachmentsPending };
+      return result;
+    } catch (error) {
+      if (error instanceof AccountApiError && ["password_verification_failed", "recent_reauthentication_required", "erasure_receipt_expired", "account_scope_changed", "invalid_input"].includes(error.code ?? "") && error.status >= 400 && error.status < 500) attempt.executionUnknown = false;
+      throw error;
+    }
+  }
   return {
+    clearDeletionVerification, deletionVerification,
+    canVerifyDeletionIdentity: () => !!credentials,
+    async verifyDeletionIdentity(userId: string, password: string, signal: AbortSignal): Promise<{ expiresAtMs: number }> {
+      requireIdentity(userId);
+      clearDeletionVerification();
+      const attempt = pending, sequence = verificationSequence, ticket = generation;
+      if (!credentials) throw new AccountApiError(409, "reauthentication_unavailable");
+      if (!attempt?.receipt || attempt.userId !== userId || attempt.receipt.state !== "prepared") throw new AccountApiError(409, "erasure_prepare_required");
+      if (attempt.executionUnknown) throw new AccountApiError(409, "check_original_erasure");
+      if (!password || password.length > 128 || signal.aborted) throw new AccountApiError(400, "invalid_input");
+      try { await credentials.reauthenticate(userId, password, signal); }
+      catch { throw new AccountApiError(401, "password_verification_failed"); }
+      if (signal.aborted || pending !== attempt || identity !== userId || generation !== ticket || verificationSequence !== sequence)
+        throw new AccountApiError(409, "session_changed");
+      const expiresAtMs = Math.min(Date.now() + ACCOUNT_DELETION_VERIFICATION_MS, Date.parse(attempt.receipt.expiresAt));
+      if (expiresAtMs <= Date.now()) throw new AccountApiError(409, "erasure_receipt_expired");
+      verification = { attempt, generation, expiresAtMs };
+      return { expiresAtMs };
+    },
+    async executeVerifiedDeletion(userId: string, confirmation: string, signal: AbortSignal): Promise<AccountEraseReceipt> {
+      requireIdentity(userId);
+      const attempt = pending;
+      if (!credentials || !attempt?.receipt || attempt.userId !== userId || !deletionVerification()) {
+        clearDeletionVerification(); throw new AccountApiError(401, "recent_reauthentication_required");
+      }
+      const body = verifiedEraseSchema.parse({ confirmation, operationId: attempt.operationId, receiptToken: attempt.receipt.receiptToken });
+      return executeAttempt(userId, attempt, body, signal);
+    },
     setIdentity,
     async status(userId: string | null, signal: AbortSignal): Promise<AccountServiceStatus> {
       const status = statusSchema.parse(await request("/account", signal, userId));
@@ -95,6 +152,7 @@ export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch,
     },
     async prepareDeletion(userId: string, signal: AbortSignal, operationId?: string): Promise<PreparedAccountDeletion> {
       requireIdentity(userId);
+      clearDeletionVerification();
       if (pending && (pending.userId !== userId || operationId && pending.operationId !== operationId)) throw new AccountApiError(409, "check_original_erasure");
       const recovery = recoveries.get(userId);
       if (recovery && operationId && operationId !== recovery.operationId) throw new AccountApiError(409, "check_original_erasure");
@@ -105,29 +163,25 @@ export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch,
     async executeDeletion(userId: string, input: { password: string; confirmation: string }, signal: AbortSignal): Promise<AccountEraseReceipt> {
       requireIdentity(userId);
       const attempt = pending; if (!attempt?.receipt || attempt.userId !== userId) throw new AccountApiError(409, "erasure_prepare_required");
+      if (attempt.executionUnknown) throw new AccountApiError(409, "check_original_erasure");
       const body = accountEraseExecuteSchema.parse({ ...input, operationId: attempt.operationId, receiptToken: attempt.receipt.receiptToken });
       if (credentials) {
         try { await credentials.reauthenticate(userId, body.password, signal); }
         catch { throw new AccountApiError(401, "password_verification_failed"); }
         if (pending !== attempt || identity !== userId || signal.aborted) throw new AccountApiError(409, "session_changed");
       }
-      attempt.executionUnknown = true;
-      try {
-        const { password: _password, ...firebaseBody } = body;
-        const result = receiptSchema.parse(await request("/account/delete", signal, userId, credentials ? firebaseBody : body));
-        if (result.operationId !== attempt.operationId) throw new AccountApiError();
-        if (result.state === "completed") attempt.executionUnknown = false;
-        attempt.receipt = { ...attempt.receipt, state: result.state, attachmentsPending: result.attachmentsPending };
-        return result;
-      } catch (error) {
-        if (error instanceof AccountApiError && ["password_verification_failed", "erasure_receipt_expired", "account_scope_changed", "invalid_input"].includes(error.code ?? "") && error.status >= 400 && error.status < 500) attempt.executionUnknown = false;
-        throw error;
-      }
+      const { password: _password, ...firebaseBody } = body;
+      return executeAttempt(userId, attempt, credentials ? firebaseBody : body, signal);
     },
     async deletionStatus(receipt: Pick<PreparedAccountDeletion, "operationId" | "receiptToken">, signal: AbortSignal): Promise<AccountEraseReceipt> {
       z.uuid().parse(receipt.operationId); z.string().regex(/^[A-Za-z0-9_-]{43}$/).parse(receipt.receiptToken);
       const result = receiptSchema.parse(await request("/account/deletion/" + receipt.operationId, signal, null, undefined, receipt.receiptToken));
       if (result.operationId !== receipt.operationId) throw new AccountApiError();
+      if (result.state === "prepared") {
+        // Only a receipt read can release an unknown execution, never a local retry or a new prepare.
+        if (pending?.operationId === result.operationId) pending.executionUnknown = false;
+        for (const recovery of recoveries.values()) if (recovery.operationId === result.operationId) recovery.executionUnknown = false;
+      }
       if (pending?.operationId === result.operationId && result.state === "completed") {
         pending.executionUnknown = false;
         if (pending.receipt) pending.receipt = { ...pending.receipt, state: result.state, attachmentsPending: result.attachmentsPending };
@@ -137,6 +191,7 @@ export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch,
     },
     async discardPreparedDeletion(userId: string, signal: AbortSignal) {
       requireIdentity(userId);
+      clearDeletionVerification();
       const attempt = pending;
       if (!attempt || attempt.userId !== userId || attempt.executionUnknown) throw new AccountApiError(409, "check_original_erasure");
       if (attempt.receipt) {

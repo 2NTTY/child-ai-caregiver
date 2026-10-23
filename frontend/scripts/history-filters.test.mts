@@ -50,7 +50,7 @@ test("record review and preparation categories keep their own deep links and con
   assert.equal(normalizeHistoryCategory("review"), "review");
   assert.equal(normalizeHistoryCategory("preparations"), "preparations");
   assert.equal(historyCategories.find(item => item.key === "review")?.sourcePath, "/care");
-  assert.equal(historyCategories.find(item => item.key === "preparations")?.sourcePath, "/summary");
+  assert.equal(historyCategories.find(item => item.key === "preparations")?.sourcePath, "/growth?tab=preparation");
   assert.equal(historyCategories.find(item => item.key === "care")?.unavailable, "");
   for (const value of ["pending", "written", "confirmed", "skipped"] as const) assert.equal(normalizeReviewHistoryStatus(value), value);
   assert.equal(normalizeReviewHistoryStatus(["pending", "confirmed"]), "pending");
@@ -60,4 +60,22 @@ test("record review and preparation categories keep their own deep links and con
   assert.equal(normalizeHistoryOlderOnly(["1", "0"]), true);
   assert.equal(normalizeHistoryOlderOnly("true"), false);
   assert.equal(normalizeHistoryOlderOnly(undefined), false);
+});
+
+
+test("profile modifications have a separate category and canonical source without copied data", () => {
+  assert.equal(normalizeHistoryCategory("profile"), "profile");
+  const category = historyCategories.find(item => item.key === "profile");
+  assert.equal(category?.label, "檔案修改"); assert.equal(category?.sourcePath, "/profile");
+  assert.deepEqual(createHistoryFilters("identity:child:role", "profile"), { scope: "identity:child:role", category: "profile", searchText: "", from: "", to: "" });
+});
+
+
+test("date apply commits both bounds together and refuses invalid drafts", () => {
+  const original = { ...createHistoryFilters("one", "growth"), searchText: "  family  ", from: "2026-09-01", to: "2026-09-30" };
+  const next = historyFilterReducer(original, { type: "dates", from: "2026-10-01", to: "2026-10-31" });
+  assert.deepEqual(next, { ...original, from: "2026-10-01", to: "2026-10-31" });
+  assert.equal(historyFilterReducer(next, { type: "dates", from: "2026-10-31", to: "2026-10-01" }), next);
+  assert.equal(historyFilterReducer(next, { type: "dates", from: "bad-date", to: "" }), next);
+  assert.deepEqual(historyFilterReducer(next, { type: "dates", from: "", to: "" }), { ...original, from: "", to: "" });
 });

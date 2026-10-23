@@ -182,7 +182,8 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
       if (path.startsWith('/api/admin/') && request.headers.has('authorization')) return errorResponse('forbidden', 403);
       if (path.startsWith('/api/admin/') && options.admin) return uncached(await handleAdminRequest(request, { auth, admin: options.admin, adminUid: options.adminUid ?? null, publicOrigin, readJson }));
       if (path.startsWith("/api/auth/")) return uncached(await auth.handler(request));
-      if (options.accountData && (path === '/api/account/export' || path === '/api/account/delete' || path.startsWith('/api/account/deletion/'))) {
+      if (path === '/api/account/messages' && !options.accountData) return errorResponse('message_history_unavailable', 503);
+      if (options.accountData && (path === '/api/account/messages' || path === '/api/account/export' || path === '/api/account/delete' || path.startsWith('/api/account/deletion/'))) {
         if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
         return uncached(await handleFirebaseAccountData(request, auth, options.accountData, readJson));
       }

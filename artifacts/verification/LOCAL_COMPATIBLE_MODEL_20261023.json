@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-23",
+  "baseline": "d1cfac6",
+  "scope": "Local launcher and knowledge operator commands reuse the production personal provider factory",
+  "checks": [
+    { "name": "initial test invocation", "result": "not_run", "reason": "Incorrect tsx import; this repository uses native Node TypeScript" },
+    { "name": "local credential and production routing scenario", "result": "failed", "passed": 1, "failed": 1, "reason": "Fixture expected taskType at the JSON root; Google SDK uses requests[0].taskType" },
+    { "name": "corrected local configuration file", "result": "passed", "tests": 2 },
+    { "name": "affected TypeScript and launcher/entry syntax", "result": "passed" }
+  ],
+  "verified": [
+    "Explicit compatible model ID survives the real Firestore routing service and retains policy daily limits",
+    "Local credential closures use the production provider factory and do not disclose keys in public status",
+    "Separate embedding credential is sent through the existing Google SDK document-embedding path; provider denial remains specific",
+    "Missing credentials or incompatible local configuration reject without cloud fallback",
+    "Changed endpoint or embedding payer changes the knowledge-work credential binding; unchanged Gemini binding is preserved",
+    "Production environment parsing has no local model override switch"
+  ],
+  "reviewFixes": [
+    "Replaced the stale PlatformProviderFactory type reference left by the prior package's final import cleanup",
+    "Kept the existing admin policy schema and applied a local-only model selection before constructing each run"
+  ],
+  "notVerified": [
+    "Real compatible provider, multimodal support or full four-role run",
+    "Full emulator startup with the new compatible configuration",
+    "Live website, Android settings fields or deployment"
+  ],
+  "cost": { "realModelCalls": 0, "embeddingCalls": 0, "notifications": 0, "cloudDeployment": false }
+}

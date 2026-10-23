@@ -153,6 +153,7 @@ export function usePhotosPreview(child: HomeChild, online: boolean, reading: boo
       } else requestReplacement({ kind: "original", original: file });
     },
     reportFileError: setNotice,
+    discardRecordDraft: () => { if (!hardLocked) { setDraft(emptyPhotoDraft()); setReviewed(null); setSharedConsent(false); setFormKey(value => value + 1); } },
     openPhoto: item => requestReplacement({ kind: "item", item }), clearEditor: () => requestReplacement({ kind: "clear" }),
     confirmReplacement() { if (!replacement || hardLocked) return; const next = replacement; setReplacement(null); replaceNow(next); },
     cancelReplacement() { if (replacement?.kind === "original") replacement.original.dispose?.(); setReplacement(null); },

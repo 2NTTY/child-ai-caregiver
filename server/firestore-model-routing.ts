@@ -13,7 +13,7 @@ import { FirestoreDomainData, type FirestoreDomainOptions } from './firestore-do
 import { createVertexAgentProvider } from './agent-model-gateway.ts';
 import { createVertexEmbeddingProvider } from './vertex-embedding.ts';
 import { createVertexProvider } from './vertex-provider.ts';
-import { createGeminiKeyProviders } from './gemini-key-provider.ts';
+import { createPersonalModelProviders } from './personal-model-providers.ts';
 import { createEmbeddingGateway } from './embedding-gateway.ts';
 import { ModelSettingsError } from './model-settings-contract.ts';
 
@@ -25,7 +25,7 @@ const checkScope = { ownerUserId: 'system:model-key-check', workspaceId: '000000
 export const requireDurableUsage = Object.freeze({ async reserve(): Promise<never> { throw new AgentStopped('unavailable'); },
   async record(): Promise<never> { throw new AgentStopped('unavailable'); } });
 
-export type PlatformProviderFactory = (config: AiConfig) => Pick<ReturnType<typeof createGeminiKeyProviders>, 'agent' | 'model' | 'embedding'>;
+export type PlatformProviderFactory = (config: AiConfig) => Pick<ReturnType<typeof createPersonalModelProviders>, 'agent' | 'model' | 'embedding'>;
 
 export function createFirestoreModelRouting(options: FirestoreDomainOptions, config: AiConfig, platformProviders?: PlatformProviderFactory) {
   const settings = createFirestoreModelSettings(options), authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
@@ -64,7 +64,8 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       if (snapshot.settings.version !== version) throw new ModelSettingsError('version_conflict', 409);
       if (!config.enabled || !snapshot.apiKey) throw new ModelSettingsError('unavailable', 503);
       await reserveMetadataCheck(userId);
-      const result = await createGeminiKeyProviders({ ...config, model: snapshot.settings.model }, snapshot.apiKey, snapshot.settings.provider)
+      const result = await createPersonalModelProviders({ ...config, model: snapshot.settings.model }, snapshot.apiKey, snapshot.settings.provider,
+        { baseUrl: snapshot.settings.baseUrl, embeddingApiKey: snapshot.embeddingApiKey })
         .inspect(AbortSignal.any([signal, AbortSignal.timeout(10_000)]));
       if (!await settings.isCurrent(userId, version)) throw new ModelSettingsError('version_conflict', 409);
       return { version, ...result, scope: 'model_metadata_only' };
@@ -76,10 +77,11 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       if (refresh && selectedProvider !== state.provider) throw new ModelSettingsError('invalid_input');
       if (!refresh) return { version, provider: selectedProvider, models: personalModelCatalog(selectedProvider), status: 'not_checked',
         scope: 'model_metadata_only', truncated: false, embedding: { model: KNOWLEDGE_EMBEDDING.model, dimensions: KNOWLEDGE_EMBEDDING.dimensions,
-          status: selectedProvider === 'vertex' ? 'unsupported' : 'not_checked' } };
+          status: selectedProvider === 'gemini' || snapshot.embeddingApiKey ? 'not_checked' : 'unsupported' } };
       if (!config.enabled || !snapshot.apiKey) throw new ModelSettingsError('key_required');
       await reserveMetadataCheck(userId);
-      const result = await createGeminiKeyProviders({ ...config, model: state.model }, snapshot.apiKey, state.provider)
+      const result = await createPersonalModelProviders({ ...config, model: state.model }, snapshot.apiKey, state.provider,
+        { baseUrl: state.baseUrl, embeddingApiKey: snapshot.embeddingApiKey })
         .catalog(version, true, AbortSignal.any([signal, AbortSignal.timeout(10_000)]));
       if (!await settings.isCurrent(userId, version)) throw new ModelSettingsError('version_conflict', 409);
       return result;
@@ -89,12 +91,15 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       const limits = resolvePersonalModelLimits(state, current);
       const enabled = config.enabled && state.mode !== 'disabled' && (personal
         ? Boolean(snapshot.apiKey) && (trigger !== 'worker' || state.backgroundEnabled) : current.enabled && Boolean(config.project));
-      const selectedConfig: AiConfig = { ...config, enabled, model: current.model,
+      const selectedConfig: AiConfig = { ...config, enabled, model: config.localModelOverride ?? current.model,
         timeoutMs: limits.modelRequestSeconds * 1000, agentMaxRetries: limits.maxModelRetries,
         dailyUserAttempts: limits.dailyLimit, dailyGlobalAttempts: limits.dailyGlobalLimit,
         ...(personal ? { maxAttempts: 1, model: state.model } : {}) };
       const disabled = async (): Promise<never> => { throw new AgentStopped('unavailable'); };
-      const providers = !enabled ? { agent: { generate: disabled }, model: { generate: disabled }, embedding: { embed: disabled } } : personal && snapshot.apiKey ? createGeminiKeyProviders(selectedConfig, snapshot.apiKey, state.provider) : platformProviders ? platformProviders(selectedConfig) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
+      const providers = !enabled ? { agent: { generate: disabled }, model: { generate: disabled }, embedding: { embed: disabled } }
+        : personal && snapshot.apiKey ? createPersonalModelProviders(selectedConfig, snapshot.apiKey, state.provider,
+          { baseUrl: state.baseUrl, embeddingApiKey: snapshot.embeddingApiKey })
+        : platformProviders ? platformProviders(selectedConfig) : { agent: createVertexAgentProvider(selectedConfig), model: createVertexProvider(selectedConfig), embedding: createVertexEmbeddingProvider(selectedConfig) };
       const source = personal ? 'personal' as const : 'platform' as const;
       const authorize = async () => enabled && (personal || (await policy.readPolicy()).enabled) && await allowed(userId) && await settings.isCurrent(userId, state.version);
       const gateway = createEmbeddingGateway({ config: selectedConfig, provider: enabled ? providers.embedding : undefined,
@@ -106,6 +111,8 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
         embeddings: { embed: (...args: Parameters<typeof gateway.embed>) => {
           const [input, actor, signal, resourceAccess, durable] = args;
           if (!durable) throw new AgentStopped('unavailable');
+          if (personal && state.provider !== 'gemini' && !snapshot.embeddingApiKey)
+            throw new AgentStopped('embedding_not_configured');
           return gateway.embed(input, actor, signal, async () => actor.actorId === userId && actor.kind === 'query_embedding'
             && await authorize() && await resourceAccess(), durable);
         } },

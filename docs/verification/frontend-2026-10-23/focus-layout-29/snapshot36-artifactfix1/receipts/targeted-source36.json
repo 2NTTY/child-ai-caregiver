@@ -1,0 +1,39 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "originalReceiptSha256": "952873abec93211f12a668bd057d98f8e385f895bbcdd41222e739f2c7daa83b",
+  "version": "snapshot36",
+  "status": "PASS_TARGETED_FRONTEND_ONLY",
+  "scriptCount": 2,
+  "totals": {
+    "tests": 30,
+    "pass": 30,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "results": [
+    {
+      "script": "frontend/scripts/preparation-action-lifecycle.test.cjs",
+      "sha256": "434cf4f983213e5d3f7249e7a6446d8f6c2c955a7973df340ba1788bdd4fa29e",
+      "exit": 0,
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "skipped": 0,
+      "logSha256": "f4f1fa2b0e2867ba3b6e710117726130af5951c9492049c1c2ed08847a0f4fe5"
+    },
+    {
+      "script": "frontend/scripts/preparation-refresh-focus.test.cjs",
+      "sha256": "57f67b0aa5e56d70be19f1ec748536a3ca83f491d65de1f98b86729337125a84",
+      "exit": 0,
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "skipped": 0,
+      "logSha256": "a280a32f866621499166a78529788b29e10bacd02dfc71bf31d7a61e16eaf3e5"
+    }
+  ],
+  "carriedNotRerunForArtifactfix1": true,
+  "countBoundary": "Per-version deduplicated necessary scripts; no across-version or author/integrator count addition."
+}

@@ -54,6 +54,7 @@ export interface FirestoreAuthorityTransaction {
   readonly transaction: Transaction;
   readonly scope: Readonly<WorkRecoveryScope>;
   readonly authorizationVersion: string;
+  readonly childAccessVersion: string;
   readonly changeSeq: string;
   readonly generation: string;
   readonly identityEmail: string;
@@ -252,6 +253,17 @@ export class FirestoreAuthority {
       throw error;
     }
   }
+  /** First history read installs its permission fence before exposing any cached child content.
+   * Compatibility-mode erasures maintain an existing fence independently of capture configuration. */
+  async activateNotificationMessageHistory(userId: string): Promise<void> {
+    parse(userIdSchema, userId);
+    await this.options.database.runTransaction(async tx => {
+      const { workspace } = await this.account(tx, userId);
+      if (workspace.childAccessVersion !== undefined) return;
+      this.write(tx, 'workspace', workspace.id, ownerScope(userId, workspace.id, workspace.storageEpoch),
+        { ...workspace, childAccessVersion: '0' });
+    });
+  }
   /** Each SDK callback owns a fresh binding. Domain writes use this native transaction after all reads. */
   async runTransaction<T>(userId: string, childId: string | null, operation: (binding: FirestoreAuthorityTransaction) => Promise<T>): Promise<T> {
     parse(userIdSchema, userId); if (childId !== null) parse(uuid, childId);
@@ -269,7 +281,7 @@ export class FirestoreAuthority {
         const scope = Object.freeze(ownerScope(userId, workspace.id, workspace.storageEpoch, childId ?? NIL));
         if (childId !== null) await this.canonicalChild(tx, scope);
         const binding: FirestoreAuthorityTransaction = Object.freeze({ transaction: tx, scope,
-          authorizationVersion: workspace.accessVersion, changeSeq: workspace.changeSeq, generation: control.generation, identityEmail: identity.email, workspaceCreatedAt: owner.workspaceCreatedAt ?? null,
+          authorizationVersion: workspace.accessVersion, childAccessVersion: workspace.childAccessVersion ?? '0', changeSeq: workspace.changeSeq, generation: control.generation, identityEmail: identity.email, workspaceCreatedAt: owner.workspaceCreatedAt ?? null,
           readChild: async (requestedChildId: string) => {
             assertActive(); parse(uuid, requestedChildId);
             const childScope = ownerScope(userId, workspace.id, workspace.storageEpoch, requestedChildId);
@@ -303,7 +315,8 @@ export class FirestoreAuthority {
             const targetScope = type === 'child' ? ownerScope(userId, workspace.id, workspace.storageEpoch, parse(uuid, requestedChildId)) : scope;
             if (type === 'child') await this.canonicalChild(tx, targetScope);
             const account = type === 'account' ? await this.read(tx, 'account', userId, ownerScope(userId), schemas.account) : null;
-            const change = await this.change(tx, targetScope, workspace, operationId, 'children', true);
+            const permissionWorkspace = type === 'child' && workspace.childAccessVersion !== undefined ? { ...workspace, childAccessVersion: increment(workspace.childAccessVersion ?? '0') } : workspace;
+            const change = await this.change(tx, targetScope, permissionWorkspace, operationId, 'children', true);
             const barrier = type === 'child'
               ? this.seal('child', targetScope.childId, targetScope, { id: targetScope.childId, workspaceId: workspace.id, status: 'deleting' })
               : this.seal('account', userId, ownerScope(userId), { ...account!, status: 'deleting', admitted: false, invitationLive: false });

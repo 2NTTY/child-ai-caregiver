@@ -1,0 +1,4179 @@
+{
+  "snapshot": 30,
+  "sourceName": "focus-window-summary.json",
+  "sourceSha256": "28d5f87467873e475bef953d984e815ea44a39da9132e1f80fc18553dd0f28d0",
+  "method": "Synthetic native window away/return; passive event/mutation samples, not frame-by-frame video. DOM node identities and CSS geometry are evidence distinct from screenshots.",
+  "windows": {
+    "summary": {
+      "sourcePrefix": "40-summary-natural",
+      "nativeBlurAt": 1792727229725,
+      "nativeFocusAt": 1792727235934,
+      "sampleCountAfterFocus": 6,
+      "samples": [
+        {
+          "at": 1792727219878,
+          "kind": "mutation",
+          "path": "/summary",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": null,
+            "aria": "摘要期間：一日"
+          },
+          "fields": [
+            {
+              "node": 6,
+              "label": "摘要開始日",
+              "type": null,
+              "value": "2026-10-23",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "概況",
+              "selected": "true",
+              "node": 8,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -1028.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "成長檔案",
+              "selected": "false",
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -1028.06640625,
+              "w": 100.76171875,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 7,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "x": 335.9765625,
+              "y": -965.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": -16056
+        },
+        {
+          "at": 1792727235935,
+          "kind": "focus",
+          "path": "/summary",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": null,
+            "aria": "摘要期間：一日"
+          },
+          "fields": [
+            {
+              "node": 6,
+              "label": "摘要開始日",
+              "type": null,
+              "value": "2026-10-23",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "概況",
+              "selected": "true",
+              "node": 8,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -1028.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "成長檔案",
+              "selected": "false",
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -1028.06640625,
+              "w": 100.76171875,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 7,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "x": 335.9765625,
+              "y": -965.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 1
+        },
+        {
+          "at": 1792727236472,
+          "kind": "mutation",
+          "path": "/summary",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "testid": null,
+            "aria": null
+          },
+          "fields": [
+            {
+              "node": 6,
+              "label": "摘要開始日",
+              "type": null,
+              "value": "2026-10-23",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "概況",
+              "selected": "true",
+              "node": 8,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -996.81640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "成長檔案",
+              "selected": "false",
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -996.81640625,
+              "w": 100.76171875,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 7,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "x": 335.9765625,
+              "y": -934.43359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 538
+        },
+        {
+          "at": 1792727236483,
+          "kind": "mutation",
+          "path": "/summary",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "testid": null,
+            "aria": null
+          },
+          "fields": [
+            {
+              "node": 6,
+              "label": "摘要開始日",
+              "type": null,
+              "value": "2026-10-23",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "概況",
+              "selected": "true",
+              "node": 8,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -996.81640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "成長檔案",
+              "selected": "false",
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -996.81640625,
+              "w": 100.76171875,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 7,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "x": 335.9765625,
+              "y": -934.43359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 549
+        },
+        {
+          "at": 1792727236560,
+          "kind": "mutation",
+          "path": "/summary",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "testid": null,
+            "aria": null
+          },
+          "fields": [
+            {
+              "node": 6,
+              "label": "摘要開始日",
+              "type": null,
+              "value": "2026-10-23",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "概況",
+              "selected": "true",
+              "node": 8,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -996.81640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "成長檔案",
+              "selected": "false",
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -996.81640625,
+              "w": 100.76171875,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 7,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "x": 335.9765625,
+              "y": -934.43359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 626
+        },
+        {
+          "at": 1792727236748,
+          "kind": "mutation",
+          "path": "/summary",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "testid": null,
+            "aria": null
+          },
+          "fields": [
+            {
+              "node": 6,
+              "label": "摘要開始日",
+              "type": null,
+              "value": "2026-10-23",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "概況",
+              "selected": "true",
+              "node": 8,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -1028.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "成長檔案",
+              "selected": "false",
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -1028.06640625,
+              "w": 100.76171875,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 7,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "x": 335.9765625,
+              "y": -965.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 814
+        },
+        {
+          "at": 1792727236754,
+          "kind": "mutation",
+          "path": "/summary",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BODY",
+            "id": "",
+            "testid": null,
+            "aria": null
+          },
+          "fields": [
+            {
+              "node": 6,
+              "label": "摘要開始日",
+              "type": null,
+              "value": "2026-10-23",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "概況",
+              "selected": "true",
+              "node": 8,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -1028.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "成長檔案",
+              "selected": "false",
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -1028.06640625,
+              "w": 100.76171875,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 7,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 0, 0)",
+              "x": 335.9765625,
+              "y": -965.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 820
+        }
+      ],
+      "selectedSyntheticTransport": [
+        {
+          "at": 1792727236430,
+          "method": "GET",
+          "path": "/api/children/00000000-0000-4000-8000-000000000001/summary",
+          "query": "?startDay=2026-10-23&period=week&timeZone=Asia%2FHong_Kong",
+          "status": 200
+        },
+        {
+          "at": 1792727236561,
+          "method": "GET",
+          "path": "/api/children/00000000-0000-4000-8000-000000000001/memory/summary",
+          "query": "",
+          "status": 200
+        }
+      ]
+    },
+    "memory": {
+      "sourcePrefix": "49-memory-two-pages-natural",
+      "nativeBlurAt": 1792727427603,
+      "nativeFocusAt": 1792727444942,
+      "sampleCountAfterFocus": 5,
+      "samples": [
+        {
+          "at": 1792727421537,
+          "kind": "frame",
+          "path": "/memory",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "memory-fact-source-10000000-0000-4000-8000-000000000503",
+            "aria": "收起來源：私人聊天"
+          },
+          "fields": [],
+          "memoryRows": [
+            7,
+            8,
+            9,
+            10
+          ],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 134.8046875,
+            "w": 390,
+            "h": 487.1484375,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 58.0078125,
+            "w": 390,
+            "h": 563.9453125,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "短期脈絡",
+              "selected": "false",
+              "node": 4,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 17.94921875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "長期記憶",
+              "selected": "true",
+              "node": 5,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 118.73046875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "參考資料",
+              "selected": "false",
+              "node": 6,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 219.51171875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 3,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 84, 0)",
+              "x": 118.74922180175781,
+              "y": -1142.65625,
+              "w": 86.38671875,
+              "h": 2.3828125,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": -23405
+        },
+        {
+          "at": 1792727444942,
+          "kind": "focus",
+          "path": "/memory",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "memory-fact-source-10000000-0000-4000-8000-000000000503",
+            "aria": "收起來源：私人聊天"
+          },
+          "fields": [],
+          "memoryRows": [
+            7,
+            8,
+            9,
+            10
+          ],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 134.8046875,
+            "w": 390,
+            "h": 487.1484375,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 58.0078125,
+            "w": 390,
+            "h": 563.9453125,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "短期脈絡",
+              "selected": "false",
+              "node": 4,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 17.94921875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "長期記憶",
+              "selected": "true",
+              "node": 5,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 118.73046875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "參考資料",
+              "selected": "false",
+              "node": 6,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 219.51171875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 3,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 84, 0)",
+              "x": 118.74922180175781,
+              "y": -1142.65625,
+              "w": 86.38671875,
+              "h": 2.3828125,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 0
+        },
+        {
+          "at": 1792727445444,
+          "kind": "mutation",
+          "path": "/memory",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "memory-fact-source-10000000-0000-4000-8000-000000000503",
+            "aria": "收起來源：私人聊天"
+          },
+          "fields": [],
+          "memoryRows": [
+            7,
+            8,
+            9,
+            10
+          ],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 134.8046875,
+            "w": 390,
+            "h": 487.1484375,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 58.0078125,
+            "w": 390,
+            "h": 563.9453125,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "短期脈絡",
+              "selected": "false",
+              "node": 4,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 17.94921875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "長期記憶",
+              "selected": "true",
+              "node": 5,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 118.73046875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "參考資料",
+              "selected": "false",
+              "node": 6,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 219.51171875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 3,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 84, 0)",
+              "x": 118.74922180175781,
+              "y": -1142.65625,
+              "w": 86.38671875,
+              "h": 2.3828125,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 502
+        },
+        {
+          "at": 1792727445462,
+          "kind": "mutation",
+          "path": "/memory",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "memory-fact-source-10000000-0000-4000-8000-000000000503",
+            "aria": "收起來源：私人聊天"
+          },
+          "fields": [],
+          "memoryRows": [
+            7,
+            8,
+            9,
+            10
+          ],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 134.8046875,
+            "w": 390,
+            "h": 487.1484375,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 58.0078125,
+            "w": 390,
+            "h": 563.9453125,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "短期脈絡",
+              "selected": "false",
+              "node": 4,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 17.94921875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "長期記憶",
+              "selected": "true",
+              "node": 5,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 118.73046875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "參考資料",
+              "selected": "false",
+              "node": 6,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 219.51171875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 3,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 84, 0)",
+              "x": 118.74922180175781,
+              "y": -1142.65625,
+              "w": 86.38671875,
+              "h": 2.3828125,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 520
+        },
+        {
+          "at": 1792727445845,
+          "kind": "mutation",
+          "path": "/memory",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "memory-fact-source-10000000-0000-4000-8000-000000000503",
+            "aria": "收起來源：私人聊天"
+          },
+          "fields": [],
+          "memoryRows": [
+            7,
+            8,
+            9,
+            10
+          ],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 134.8046875,
+            "w": 390,
+            "h": 487.1484375,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 58.0078125,
+            "w": 390,
+            "h": 563.9453125,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "短期脈絡",
+              "selected": "false",
+              "node": 4,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 17.94921875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "長期記憶",
+              "selected": "true",
+              "node": 5,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 118.73046875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "參考資料",
+              "selected": "false",
+              "node": 6,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 219.51171875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 3,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 84, 0)",
+              "x": 118.74922180175781,
+              "y": -1142.65625,
+              "w": 86.38671875,
+              "h": 2.3828125,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 903
+        },
+        {
+          "at": 1792727445856,
+          "kind": "mutation",
+          "path": "/memory",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "memory-fact-source-10000000-0000-4000-8000-000000000503",
+            "aria": "收起來源：私人聊天"
+          },
+          "fields": [],
+          "memoryRows": [
+            7,
+            8,
+            9,
+            10
+          ],
+          "historyRows": [],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 134.8046875,
+            "w": 390,
+            "h": 487.1484375,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 58.0078125,
+            "w": 390,
+            "h": 563.9453125,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "短期脈絡",
+              "selected": "false",
+              "node": 4,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 17.94921875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "長期記憶",
+              "selected": "true",
+              "node": 5,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 118.73046875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            },
+            {
+              "label": "參考資料",
+              "selected": "false",
+              "node": 6,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 219.51171875,
+              "y": -1197.87109375,
+              "w": 86.38671875,
+              "h": 57.59765625,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 3,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 84, 0)",
+              "x": 118.74922180175781,
+              "y": -1142.65625,
+              "w": 86.38671875,
+              "h": 2.3828125,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 914
+        }
+      ],
+      "selectedSyntheticTransport": [
+        {
+          "at": 1792727445494,
+          "method": "GET",
+          "path": "/api/children/00000000-0000-4000-8000-000000000001/memory/facts",
+          "query": "",
+          "status": 200
+        },
+        {
+          "at": 1792727445702,
+          "method": "GET",
+          "path": "/api/children/00000000-0000-4000-8000-000000000001/memory/facts",
+          "query": "?afterId=10000000-0000-4000-8000-000000000502",
+          "status": 200
+        }
+      ]
+    },
+    "tasks390": {
+      "sourcePrefix": "76-task390-two-pages-natural",
+      "nativeBlurAt": 1792727997400,
+      "nativeFocusAt": 1792728006090,
+      "sampleCountAfterFocus": 3,
+      "samples": [
+        {
+          "at": 1792727988720,
+          "kind": "mutation",
+          "path": "/tasks",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "DIV",
+            "id": "",
+            "testid": "task-detail-panel",
+            "aria": null
+          },
+          "fields": [
+            {
+              "node": 7,
+              "label": "搜尋已載入事項",
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [
+            8,
+            9
+          ],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 134.8046875,
+            "w": 390,
+            "h": 487.1484375,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 58.0078125,
+            "w": 390,
+            "h": 563.9453125,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "待處理3",
+              "selected": "true",
+              "node": 5,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            },
+            {
+              "label": "已完成",
+              "selected": "false",
+              "node": 6,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 4,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": -17370
+        },
+        {
+          "at": 1792728006091,
+          "kind": "focus",
+          "path": "/tasks",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "DIV",
+            "id": "",
+            "testid": "task-detail-panel",
+            "aria": null
+          },
+          "fields": [
+            {
+              "node": 7,
+              "label": "搜尋已載入事項",
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [
+            8,
+            9
+          ],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 134.8046875,
+            "w": 390,
+            "h": 487.1484375,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 58.0078125,
+            "w": 390,
+            "h": 563.9453125,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "待處理3",
+              "selected": "true",
+              "node": 5,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            },
+            {
+              "label": "已完成",
+              "selected": "false",
+              "node": 6,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 4,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 1
+        },
+        {
+          "at": 1792728006684,
+          "kind": "mutation",
+          "path": "/tasks",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "DIV",
+            "id": "",
+            "testid": "task-detail-panel",
+            "aria": null
+          },
+          "fields": [
+            {
+              "node": 7,
+              "label": "搜尋已載入事項",
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [
+            8,
+            9
+          ],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 134.8046875,
+            "w": 390,
+            "h": 487.1484375,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 58.0078125,
+            "w": 390,
+            "h": 563.9453125,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "待處理3",
+              "selected": "true",
+              "node": 5,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            },
+            {
+              "label": "已完成",
+              "selected": "false",
+              "node": 6,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 4,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 594
+        },
+        {
+          "at": 1792728007108,
+          "kind": "mutation",
+          "path": "/tasks",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "DIV",
+            "id": "",
+            "testid": "task-detail-panel",
+            "aria": null
+          },
+          "fields": [
+            {
+              "node": 7,
+              "label": "搜尋已載入事項",
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [
+            8,
+            9
+          ],
+          "motion": {
+            "node": 1,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 134.8046875,
+            "w": 390,
+            "h": 487.1484375,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 2,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 0,
+            "y": 58.0078125,
+            "w": 390,
+            "h": 563.9453125,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "待處理3",
+              "selected": "true",
+              "node": 5,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            },
+            {
+              "label": "已完成",
+              "selected": "false",
+              "node": 6,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 4,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 0,
+              "y": 0,
+              "w": 0,
+              "h": 0,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 1018
+        }
+      ],
+      "selectedSyntheticTransport": [
+        {
+          "at": 1792728006743,
+          "method": "GET",
+          "path": "/api/children/00000000-0000-4000-8000-000000000001/tasks",
+          "query": "",
+          "status": 200
+        },
+        {
+          "at": 1792728006957,
+          "method": "GET",
+          "path": "/api/children/00000000-0000-4000-8000-000000000001/tasks",
+          "query": "?afterId=10000000-0000-4000-8000-000000030201",
+          "status": 200
+        }
+      ]
+    },
+    "notifications": {
+      "sourcePrefix": "84-notifications-natural-review",
+      "nativeBlurAt": 1792728225674,
+      "nativeFocusAt": 1792728234803,
+      "sampleCountAfterFocus": 10,
+      "samples": [
+        {
+          "at": 1792728217164,
+          "kind": "mutation",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": -17639
+        },
+        {
+          "at": 1792728234804,
+          "kind": "focus",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 1
+        },
+        {
+          "at": 1792728234873,
+          "kind": "mutation",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 70
+        },
+        {
+          "at": 1792728234939,
+          "kind": "mutation",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 136
+        },
+        {
+          "at": 1792728235032,
+          "kind": "mutation",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 229
+        },
+        {
+          "at": 1792728235112,
+          "kind": "mutation",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 309
+        },
+        {
+          "at": 1792728235493,
+          "kind": "mutation",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 690
+        },
+        {
+          "at": 1792728235575,
+          "kind": "mutation",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 772
+        },
+        {
+          "at": 1792728235636,
+          "kind": "mutation",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 833
+        },
+        {
+          "at": 1792728235680,
+          "kind": "mutation",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 877
+        },
+        {
+          "at": 1792728235730,
+          "kind": "mutation",
+          "path": "/settings",
+          "visibility": "visible",
+          "focused": true,
+          "focus": {
+            "tag": "BUTTON",
+            "id": "",
+            "testid": "button",
+            "aria": "核對通知偏好"
+          },
+          "fields": [
+            {
+              "node": 2,
+              "label": "減少動畫",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 3,
+              "label": null,
+              "type": "file",
+              "value": "",
+              "checked": false
+            },
+            {
+              "node": 4,
+              "label": "安靜時段開始",
+              "type": null,
+              "value": "22:00",
+              "checked": false
+            },
+            {
+              "node": 5,
+              "label": "安靜時段結束",
+              "type": null,
+              "value": "08:00",
+              "checked": false
+            },
+            {
+              "node": 6,
+              "label": "預約提醒例外",
+              "type": "checkbox",
+              "value": "on",
+              "checked": false
+            },
+            {
+              "node": 18,
+              "label": "瀏覽器通知名稱",
+              "type": null,
+              "value": "我的瀏覽器",
+              "checked": false
+            },
+            {
+              "node": 19,
+              "label": null,
+              "type": null,
+              "value": "",
+              "checked": false
+            }
+          ],
+          "memoryRows": [],
+          "historyRows": [],
+          "motion": {
+            "node": 7,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 137.578125,
+            "w": 721.3671875,
+            "h": 462.421875,
+            "scroll": 0
+          },
+          "childMotion": {
+            "node": 8,
+            "display": "flex",
+            "visibility": "visible",
+            "opacity": "1",
+            "transform": "none",
+            "x": 302.3828125,
+            "y": 39.58984375,
+            "w": 721.3671875,
+            "h": 560.41015625,
+            "scroll": 0
+          },
+          "tabs": [
+            {
+              "label": "帳戶",
+              "selected": "false",
+              "node": 10,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 335.9765625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "孩子",
+              "selected": "false",
+              "node": 11,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 414.35546875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "家庭",
+              "selected": "false",
+              "node": 12,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 492.734375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "外觀",
+              "selected": "false",
+              "node": 13,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 571.11328125,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "通知",
+              "selected": "true",
+              "node": 14,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 649.4921875,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "助手",
+              "selected": "false",
+              "node": 15,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 727.87109375,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "模型",
+              "selected": "false",
+              "node": 16,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 806.25,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            },
+            {
+              "label": "私隱",
+              "selected": "false",
+              "node": 17,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "none",
+              "x": 884.62890625,
+              "y": -278.06640625,
+              "w": 61.58203125,
+              "h": 64.39453125,
+              "scroll": 0
+            }
+          ],
+          "markers": [
+            {
+              "node": 9,
+              "display": "flex",
+              "visibility": "visible",
+              "opacity": "1",
+              "transform": "matrix(1, 0, 0, 1, 224, 0)",
+              "x": 649.5765380859375,
+              "y": -215.68359375,
+              "w": 61.58203125,
+              "h": 2.79296875,
+              "scroll": 0
+            }
+          ],
+          "offsetFromNativeFocusMs": 927
+        }
+      ],
+      "selectedSyntheticTransport": [],
+      "preferencesGETDuringReview": [],
+      "preferencesGETAfterCancel": [
+        {
+          "at": 1792728258726,
+          "method": "GET",
+          "path": "/api/notification-preferences",
+          "status": 200
+        }
+      ],
+      "cancelFocusRestorationAccepted": false,
+      "cancelOutcome": "Inline review removed; active element BODY. No save/permission operation."
+    }
+  },
+  "summaryTimingClarification": {
+    "nativeFocusAt": 1792727235934,
+    "firstRenderFocusAt": 1792727235935,
+    "bodyFocusAt": 1792727236472,
+    "relativeToNativeFocusMs": 538,
+    "relativeToFirstRenderFocusMs": 537,
+    "geometryReturnsAt": 1792727236748,
+    "observedDisplacementDurationMs": 276,
+    "tabAndMarkerDisplacementCssPx": 31.25,
+    "note": "Original report used537ms without distinguishing baseline. Original report/trace retained; these exact timestamps clarify the1ms difference."
+  }
+}

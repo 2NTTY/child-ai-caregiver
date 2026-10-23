@@ -1,0 +1,174 @@
+{
+  "snapshot": 30,
+  "bundleSha256": "a5b1662b88e46d14216430967f4ec4f7071a280aadb031481f1d27e23d68ec47",
+  "nativeFormat": "JPEG",
+  "nativePixelSize": [
+    1364,
+    1024
+  ],
+  "attachedCount": 8,
+  "originalCount": 80,
+  "images": [
+    {
+      "file": "screenshots/07-task-metadata390-body-0.jpg",
+      "sha256": "657c02fb8198746633a81ea34aa68d71e37cb11c6f26c084c35398a38813aaec",
+      "bytes": 134464,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "caption": "有界通過：待辦正文／次層metadata；非保存驗收",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "viewOnlyNoEdits": true
+    },
+    {
+      "file": "screenshots/14-preparation390-metadata-0.jpg",
+      "sha256": "7420d1f8e2b3af82bba329a8f5cd3686c79951c0f2cf294b73f4f8c13527c4d5",
+      "bytes": 135994,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "caption": "有界通過：已歸檔準備單metadata／版本提示",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "viewOnlyNoEdits": true
+    },
+    {
+      "file": "screenshots/23-growth1440-metadata-0.jpg",
+      "sha256": "cc50b79977bc4005e5376c9508fea1be4701367f22b6d3d9fcee6beed64b6927",
+      "bytes": 162077,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "caption": "有界通過：關注時間線正文與真來源入口",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "viewOnlyNoEdits": true
+    },
+    {
+      "file": "screenshots/39-summary-unapplied-after-focus-0.jpg",
+      "sha256": "1ba1224af17ef8678d8958f72e34b8839fffa4c9c19e5ea6fcd60b68273d4366",
+      "bytes": 147520,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "caption": "紅項背景：Summary終態；失焦／瞬時位移另由trace證明",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "viewOnlyNoEdits": true
+    },
+    {
+      "file": "screenshots/48-memory-page2-after-focus-0.jpg",
+      "sha256": "35d0e78cad5f938f055609b9d0feccd0eb4ed2b6c623cf9eb87944dd0feec732",
+      "bytes": 129717,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "caption": "有界通過：第二頁來源展開；「只供本人」短標籤尚未統一",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "viewOnlyNoEdits": true
+    },
+    {
+      "file": "screenshots/62-agent390-metadata-0.jpg",
+      "sha256": "4cdfb8b58d668ae88b4bc92a0efc0dc5a973c74eeb1789eafa152652f5224ecb",
+      "bytes": 126708,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "caption": "有界通過：合成memory_fact提案metadata；沒有確認／略過",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "viewOnlyNoEdits": true
+    },
+    {
+      "file": "screenshots/68-care390-old-version-quantity-0.jpg",
+      "sha256": "c32e535985210d822432b7b9d6b90c62482e090a45a993a5eba88951ff26e73c",
+      "bytes": 134153,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "caption": "有界通過：歷史比較仍顯示「數量未提供」；沒有刪除",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "viewOnlyNoEdits": true
+    },
+    {
+      "file": "screenshots/83-notifications-review-after-focus-0.jpg",
+      "sha256": "10953086ed8d3a911ad9805990613c8886259d3a85218f0c98b5003b09501522",
+      "bytes": 150581,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "caption": "有界通過：通知審閱自然focus；非取消回焦／保存驗收",
+      "syntheticOnly": true,
+      "visualReviewed": true,
+      "viewOnlyNoEdits": true
+    }
+  ],
+  "note": "Original bytes. A static image proves only the captured state; natural-focus transitions are supported separately by sampled event/mutation observations."
+}

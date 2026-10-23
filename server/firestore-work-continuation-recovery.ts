@@ -22,7 +22,7 @@ const schemas = {
   control: z.object({ enabled: z.boolean(), generation: uuid }).strict(),
   account: z.object({ userId: id, status: state, admitted: z.boolean(), invitationLive: z.boolean(),
     emailVerified: z.boolean(), acknowledgementVersion: bounded(128).nullable() }).strict(),
-  workspace: z.object({ id: uuid, ownerUserId: id, storageEpoch: uuid, accessVersion: decimal, changeSeq: decimal, status: state }).strict(),
+  workspace: z.object({ id: uuid, ownerUserId: id, storageEpoch: uuid, accessVersion: decimal, childAccessVersion: decimal.optional(), changeSeq: decimal, status: state }).strict(),
   child: z.object({ id: uuid, workspaceId: uuid, status: state }).strict(),
   work: z.object({ ...scopeSchema.shape, id: uuid, version: integer.min(1).max(2147483646),
     status: agentWorkValuesSchema.shape.status, payloadEncrypted: bounded(64 * 1024) }).strict(),

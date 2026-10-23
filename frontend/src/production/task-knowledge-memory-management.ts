@@ -79,7 +79,7 @@ export function useTaskKnowledgeMemoryManagement({ env, api, runtime, loadAll, c
         original.current = null; setPending(null); setConflict(null); setOperation("saved");
         try { await loadAll(signal, current); }
         catch (error) { if (!current() || access(error)) return; readFailed(); setNotice("原記憶操作已確認，最新清單未讀回；請重新讀取，毋須再提交。"); }
-        if (current()) { setNotice(previous => previous || "記憶操作已獲 Server 確認；主頁與備援使用同一資料 owner。"); env.invalidate(); }
+        if (current()) { setNotice(previous => previous || "記憶操作已確認。"); env.invalidate(); }
       } catch (error) {
         if (!current() || access(error)) return;
         const failure = domainFailure(error); entry.confirmed ||= failure.confirmed;

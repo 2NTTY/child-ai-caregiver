@@ -32,19 +32,20 @@ function freeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) { Object.freeze(value); for (const next of Object.values(value)) freeze(next); }
   return value;
 }
-function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuestion } = {}) {
-  const buttons = [];
-  const nativeElement = tag => ({ children }) => React.createElement(tag, null, children);
+function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuestion, tabActions, width = 1440 } = {}) {
+  const buttons = [], panels = [], tabLists = [], toolbars = [];
+  const nativeElement = tag => ({ children, accessibilityRole, accessibilityLabel }) => React.createElement(tag, { role: accessibilityRole === 'header' ? 'heading' : undefined, 'aria-label': accessibilityLabel }, children);
   const ui = {
     AppButton: props => { buttons.push(props); return React.createElement('button', null, props.label); },
-    AppTabPanel: ({ active, children }) => active ? React.createElement('div', null, children) : null,
+    TabToolbar: props => { toolbars.push(props); return React.createElement('div', null, props.children, props.actions); },
+    AppTabPanel: props => { panels.push(props); return props.active ? React.createElement('div', null, props.children) : null; },
     SectionHeader: ({ title, subtitle }) => React.createElement('header', null, title, subtitle),
-    UnderlineTabs: ({ items }) => React.createElement('nav', null, items.map(item => item.label).join(' / ')),
+    UnderlineTabs: props => { tabLists.push(props); return React.createElement('nav', null, props.items.map(item => item.label).join(' / ')); },
   };
   const api = compile('../src/components/memory/MemoryReferenceView.tsx', name => {
     if (name === 'react') return { ...React, useState: initial => React.useState(initial === 'long' ? tab : expanded && initial === false ? true : initial) };
     if (name === 'react/jsx-runtime') return require(name);
-    if (name === 'react-native') return { View: nativeElement('div'), StyleSheet: { create: value => value } };
+    if (name === 'react-native') return { View: nativeElement('div'), Pressable: nativeElement('button'), StyleSheet: { create: value => value } };
     if (name === 'react-native-paper') return { Text: nativeElement('span') };
     if (name === 'expo-router') return { useRouter: () => ({ push() {} }) };
     if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewNavigation: () => ({ navigate: action => action() }) };
@@ -55,15 +56,55 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     if (name === '../../memory-reference-view-model') return projections;
     if (name === '../../workspaces/MemoryReferenceWorkspace') return { useMemoryReferenceWorkspace: () => workspace };
     if (name === '../../theme') return { colors: {}, spacing: {}, radius: {}, readingType: {}, workspaceType: {} };
+    if (name === '../appearance/BackgroundSurface') return { BackgroundSurface: nativeElement('div') };
+    if (name === '../AppIcon') return { AppIcon: () => null };
     if (name === '../AppStatusBadge') return { AppStatusBadge: ({ label }) => React.createElement('span', null, label) };
     if (name === '../ReadStateNotice') return { ReadStateNotice: ({ title, message }) => React.createElement('aside', null, title, message) };
     if (name === '../EmptyListCard') return { EmptyListCard: ({ title, detail }) => React.createElement('aside', { 'data-empty': 'true' }, title, detail) };
     if (name === '../ui') return ui;
-    if (name === '../useContainerWidth') return { useContainerWidth: () => ({ width: 1440, ref: null, onLayout() {} }) };
+    if (name === '../useContainerWidth') return { useContainerWidth: () => ({ width, ref: null, onLayout() {} }) };
     assert.fail(`Unexpected view dependency ${name}`);
   });
-  return { html: renderToStaticMarkup(React.createElement(api.MemoryReferenceView, { onPrepareQuestion })), buttons };
+  return { html: renderToStaticMarkup(React.createElement(api.MemoryReferenceView, { onPrepareQuestion, tabActions })), buttons, panels, tabLists, toolbars };
 }
+
+test('only narrow Memory toolbars stack actions after the full-width tabs without changing their semantics', () => {
+  const value = freeze(snapshot()), action = React.createElement('button', null, '管理記憶');
+  for (const width of [320, 390, 480, 1024]) {
+    const { html, panels, tabLists, toolbars } = renderView(value, { width, tabActions: action });
+    assert.equal(toolbars.length, 1); assert.equal(toolbars[0].stacked, width < 480); assert.equal(toolbars[0].actions, action);
+    assert.ok(html.indexOf('短期脈絡') < html.indexOf('管理記憶'));
+    assert.deepEqual(tabLists[0].items.map(item => item.key), ['short', 'long', 'references']);
+    assert.deepEqual(panels.filter(panel => panel.active).map(panel => panel.tabKey), ['long']);
+    assert.ok(panels.every(panel => panel.tabsId === tabLists[0].id));
+  }
+});
+
+test('memory tabs replace duplicate introductions but keep real content headings and reading boundaries', () => {
+  const value = snapshot();
+  value.model.dataLabel = '查看已保存記憶及來源';
+  value.model.shortTerm = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { runId: 'synthetic', messages: [{ id: 'message', role: 'user', text: 'Synthetic saved context' }] } };
+  value.model.references = { scopeKey, state: 'ready', revision: '1', asOf: null, data: { audience: 'public', items: [], catalog: [], hasMore: false } };
+  for (const tab of ['short', 'long', 'references']) {
+    const { html, panels, tabLists } = renderView(freeze(value), { tab, tabActions: React.createElement('button', null, '重讀') });
+    assert.doesNotMatch(html, /Test child的記憶與參考|查看已保存記憶及來源|Agent 已保存的工作、待答問題及相關訊息|已保存的事實、來源及對話摘要|查看目前可查閱的公共來源目錄|查看資料出處、日期及適用範圍/);
+    assert.equal((html.match(/長期記憶/g) ?? []).length, 1);
+    assert.equal((html.match(/參考資料/g) ?? []).length, 1);
+    assert.match(html, /<button>重讀<\/button>/);
+    assert.equal(tabLists.length, 1); assert.equal(tabLists[0].label, '記憶與參考分類');
+    assert.deepEqual(tabLists[0].items.map(item => item.key), ['short', 'long', 'references']);
+    assert.deepEqual(panels.filter(panel => panel.active).map(panel => panel.tabKey), [tab]);
+    assert.ok(panels.every(panel => panel.tabsId === tabLists[0].id));
+    if (tab === 'long') {
+      assert.match(html, /role="heading">已確認事實</); assert.match(html, /對話摘要|睡前觀察/);
+    } else if (tab === 'short') {
+      assert.match(html, /Synthetic saved context/); assert.doesNotMatch(html, /工作是 Agent 的整理內容，供核對及接續；不代表已確認的事實。/);
+    } else {
+      assert.match(html, /role="heading">官方指引</); assert.match(html, /role="heading">近期資訊</);
+      assert.match(html, /未逐項判定適用於這位孩子；來源存在亦不代表支持某句回答/);
+    }
+  }
+});
 
 test('read provider passes the exact owner value and masks all scope, child and access mismatches', () => {
   const api = compile('../src/workspaces/MemoryReferenceWorkspace.tsx', name => {
@@ -177,7 +218,15 @@ test('one scoped production memory owner and an independent preview owner keep c
   const view = fs.readFileSync(new URL('../src/components/memory/MemoryReferenceView.tsx', import.meta.url), 'utf8');
   assert.match(view, /usePreviewNavigation/);
   assert.doesNotMatch(view, /preview\/(?:MemoryReferenceWorkspaceProvider|useMemoryPreview|useSourcesPreview)/);
-  assert.equal((connected.match(/usePersonalHistory\(env\)/g) ?? []).length, 1);
+  const childBridge = connected.match(/const DomainBridge = memo\(function DomainBridge[\s\S]*?return null;\n\}\);/)?.[0];
+  const accountBridge = connected.match(/const AccountHistoryBridge = memo\(function AccountHistoryBridge[\s\S]*?return null;\n\}\);/)?.[0];
+  assert.ok(childBridge && accountBridge, 'Both scoped owner branches must be present');
+  assert.equal((childBridge.match(/usePersonalHistory\(env\)/g) ?? []).length, 1);
+  assert.equal((accountBridge.match(/usePersonalHistory\(env\)/g) ?? []).length, 1);
+  assert.equal((connected.match(/usePersonalHistory\(env\)/g) ?? []).length, 2);
+  assert.match(childBridge, /useTaskKnowledgeMemory\(env, history\)/);
+  assert.doesNotMatch(accountBridge, /useTaskKnowledge(?:Tasks|Memory|Summary|Growth)|useFamilyDocuments/);
+  assert.match(connected, /env\.scopeKey && env\.userId && env\.childId \? <DomainBridge[^>]*\/>\s*: historyScope && env\.userId \? <AccountHistoryBridge[^>]*\/> : null/);
   assert.match(view, /current\.current !== workspace/);
 });
 
@@ -192,6 +241,7 @@ test('authorized reference cards display original source metadata while excluded
     items: [source, { ...source, sourceId: 'restricted', title: 'Internal source must stay hidden', usageScope: 'internal_noncommercial' }] } };
   const { html, buttons } = renderView(freeze(value), { tab: 'references', expanded: true });
   for (const text of [source.title, source.publisher, source.sourceExcerpt, source.versionId, source.chunkId, source.sourceId, source.versionHash, source.contentHash, '來源日期：2026-09', '發布時間：未提供', '最近成功取得：未提供', '不含上限']) assert.ok(html.includes(text), text);
+  assert.match(html, /<span aria-label="來源日期：2026-09">2026-09<\/span>/, 'Original source date stays visible with its full accessible meaning');
   assert.doesNotMatch(html, /Internal source must stay hidden|已驗證|可靠度/);
   assert.ok(buttons.every(button => /來源|版本/.test(button.label)));
 });

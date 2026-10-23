@@ -46,6 +46,7 @@ function harness(entry, symbol, args = [], overrides = {}) {
     const resolve = name => {
       if (name in overrides) return overrides[name];
       if (name === "react") return react;
+      if (name.endsWith("/appearance/BackgroundSurface")) return { BackgroundSurface: "View", useCustomBackground: () => false };
       if (name.endsWith("/motion/preferences")) return { useMotionPreferences: () => ({ enabled: true, reducedMotion: false, preferenceReady: true }) };
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
       if (name === "react-native") return { View: "View", Pressable: "Pressable", StyleSheet: { create: value => value } };
@@ -82,15 +83,21 @@ const task = { id: "8c0614da-d04f-454e-837a-b0d0f1649034", childId: "child", ver
   occurrence: { id: "occurrence", dueAt: "2026-10-06T02:00:00Z", timeZone: "Asia/Hong_Kong", state: "scheduled", terminalBasisVersion: null } };
 class ApiError extends Error { constructor(status) { super("Synthetic transport error"); this.status = status; } }
 function taskOwner() {
-  const state = { readFailure: null, pending: false, receipt: null, writeInputs: [], reads: 0, historyReads: 0, historyResult: null, items: [task], checks: 0, invalidations: 0, active: true };
+  const state = { readFailure: null, pending: false, receipt: null, writeInputs: [], reads: 0, historyReads: 0, historyResult: null, taskReads: [], taskResult: null, items: [task], checks: 0, invalidations: 0, active: true };
   const api = { async getSession() { return "user"; },
     async tasks() { state.reads++; if (state.readFailure) throw state.readFailure;
       return { items: state.items, eligibleAssignees: [{ userId: "user", name: "Synthetic caregiver" }], nextAfterId: null }; },
     async changeTask(child, id, input) { state.pending = true; state.writeInputs.push(input); throw new ApiError(0); },
     async history() { state.historyReads++; return state.historyResult ?? { revisions: [], nextBeforeVersion: null }; },
+    async task(child, id) {
+      state.taskReads.push({ child, id });
+      const result = state.taskResult ?? state.items.find(item => item.id === id);
+      if (!result) throw new ApiError(404);
+      return result;
+    },
     async reconcilePending() { state.checks++; return state.receipt; },
     hasPendingOnline() { return state.pending; }, resetOnline() { state.pending = false; } };
-  const env = { apiBaseUrl: "https://synthetic.invalid", userId: "user", childId: "child", childName: "Synthetic child", role: "owner", scopeKey: "scope", online: true,
+  const env = { owner: { fetcher: () => assert.fail("Synthetic API adapters must not fetch") }, apiBaseUrl: "https://synthetic.invalid", userId: "user", childId: "child", childName: "Synthetic child", role: "owner", scopeKey: "scope", online: true,
     current: () => state.active, canStartWrite: () => true, accessError() {}, invalidate() { state.invalidations++; },
     queryClient: { setQueryDefaults() {}, cancelQueries() {}, removeQueries() {}, fetchQuery({ queryFn }) { return queryFn({ signal: new AbortController().signal }); } } };
   const owner = harness("src/production/task-knowledge-tasks.ts", "useTaskKnowledgeTasks", [env], {
@@ -98,6 +105,16 @@ function taskOwner() {
     "./useDomainEnvironment": { useDomainWriteGuard() {} },
   });
   return { owner, state, env };
+}
+
+function taskRoute(workspace, params) {
+  return harness("src/screens/tasksScreen.tsx", "default", [], {
+    "expo-router": { useLocalSearchParams: params, useRouter: () => ({ push() {} }) },
+    "../production/ProductionProvider": { useProduction: () => ({ model: {}, actions: {}, openAgentDraft() {}, chatDraft: "", setChatDraft() {} }) },
+    "../workspaces/TasksWorkspace": { useTasksWorkspace: workspace },
+    "../components/PageFrame": { PageFrame: "PageFrame" }, "../components/tasks/TasksView": { TasksView: "TasksView" },
+    "../preview/PreviewNavigationGuard": { usePreviewNavigation: () => callback => callback() },
+  });
 }
 
 test("initial task read failure becomes error without creating a mutation; one retry becomes ready", async () => {
@@ -168,6 +185,20 @@ const home = { children: [{ id: "child", displayName: "Synthetic child" }], sele
   records: [], recordsLoad: "ready", operation: { state: "none", title: "", detail: "" },
   overview: { childId: "child", attention: { state: "ready", items: [] }, ongoing: { state: "ready", items: [] } } };
 const homeItem = { id: "task", title: "Synthetic task", detail: "", statusLabel: "待處理", action: { label: "查看事項", destination: "tasks" } };
+test("Home task summary uses all supplied items with natural height and keeps its empty state and destination", () => {
+  const opened = [], actions = { refresh() {}, open: target => opened.push(target) };
+  const items = Array.from({ length: 6 }, (_, index) => ({ ...homeItem, id: `task-${index}` }));
+  const model = { ...home, overview: { ...home.overview, attention: { state: "ready", items } } };
+  const view = harness("src/components/HomeFocus.tsx", "HomeActionSummary", [{ model, actions }]);
+  const tree = view.render();
+  assert.equal(byType(tree, "HomeOverviewItems")[0].props.items, items);
+  assert.equal(tree.props.style.height, undefined);
+  assert.equal(tree.props.style.maxHeight, undefined);
+  byType(tree, "TextLink")[0].props.onPress(); assert.deepEqual(opened, ["tasks"]);
+  const empty = view.render([{ model: home, actions }]);
+  assert.equal(byType(empty, "ReadStateNotice")[0].props.state, "empty");
+  assert.equal(byType(empty, "ReadStateNotice")[0].props.message, "目前沒有待辦事項");
+});
 test("partial and stale Home tasks stay explicit, and unavailable assistant reminders only navigate", () => {
   const actions = { refresh() {}, open() {} };
   const partial = { ...home, overview: { ...home.overview, attention: { state: "ready", items: [homeItem], detail: "尚有未載入的事項" } } };
@@ -202,6 +233,7 @@ test("Home refresh reaches the scoped task reader once and never reuses another 
     "./ProductionProvider": { useProduction: () => ({ scopeKey: "scope", model: home, actions: { refresh() { counts.production++; } } }) },
     "../workspaces/CareWorkspace": { useCareWorkspace: () => null }, "../workspaces/ProfileWorkspace": { useProfileWorkspace: () => null },
     "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
+    "../workspaces/PreparationWorkspace": { usePreparationWorkspace: () => null },
     "../workspaces/GrowthWorkspace": { useGrowthWorkspace: () => ({ scopeKey: "scope", model: { access: "read_only", load: "error", online: true, page: null }, actions: { refresh() { counts.growth++; } } }) },
     "../child-overview-view-model": { childProfileAgeLabel() {} }, "../care-view-model": { careKindOptions: [] },
   };
@@ -248,19 +280,58 @@ test("task deep-link navigation stays open for the same id and opens another id"
   const { owner, state } = taskOwner();
   const other = { ...task, id: "cd90c73b-7934-4eac-b34e-4262cecf26ab", title: "Other synthetic task" }; state.items = [task, other];
   owner.render(); let workspace = await owner.settle(), params = {};
-  workspace.actions.selectTask(task.id); workspace = owner.render(); assert.equal(workspace.model.selected.id, task.id);
-  const route = harness("src/screens/tasksScreen.tsx", "default", [], {
-    "expo-router": { useLocalSearchParams: () => params, useRouter: () => ({ push() {} }) },
-    "../production/ProductionProvider": { useProduction: () => ({ model: {}, actions: {}, openAgentDraft() {}, chatDraft: "", setChatDraft() {} }) },
-    "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
-    "../components/PageFrame": { PageFrame: "PageFrame" }, "../components/tasks/TasksView": { TasksView: "TasksView" },
-    "../preview/PreviewNavigationGuard": { usePreviewNavigation: () => callback => callback() },
-  });
+  assert.equal(workspace.model.selected, null);
+  const route = taskRoute(() => workspace, () => params);
   route.render(); params = { taskId: task.id }; route.render(); workspace = owner.render();
   assert.equal(workspace.model.selected.id, task.id);
+  workspace.actions.selectTask(task.id); workspace = owner.render(); assert.equal(workspace.model.selected.id, task.id);
+  route.render(); workspace = owner.render(); assert.equal(workspace.model.selected.id, task.id);
   params = { taskId: other.id }; route.render(); workspace = owner.render(); assert.equal(workspace.model.selected.id, other.id);
   workspace.actions.selectTask(other.id, "toggle"); workspace = owner.render(); assert.equal(workspace.model.selected, null);
   assert.equal(state.writeInputs.length, 0); route.unmount(); owner.unmount();
+});
+
+test("task deep links read an unloaded exact id and reject invalid or missing ids without title fallback", async () => {
+  const { owner, state, env } = taskOwner();
+  const other = { ...task, id: "cd90c73b-7934-4eac-b34e-4262cecf26ab" };
+  state.items = [other]; state.taskResult = task;
+  owner.render(); let workspace = await owner.settle(), params = { taskId: task.id };
+  assert.equal(workspace.model.selected, null);
+  const route = taskRoute(() => workspace, () => params);
+  route.render(); workspace = owner.render(); assert.deepEqual(workspace.model.detailRead, { id: task.id, state: "loading" });
+  workspace = await owner.settle(); assert.equal(workspace.model.selected.id, task.id);
+  assert.deepEqual(state.taskReads, [{ child: env.childId, id: task.id }]);
+  assert.equal(workspace.model.items.length, 2, "The exact linked record is added without substituting the same-title list row");
+  params = { taskId: "invalid&id=other#task" }; route.render(); workspace = owner.render();
+  assert.equal(workspace.model.selected, null); assert.equal(workspace.model.detailRead.state, "error");
+  assert.equal(state.taskReads.length, 1, "Malformed ids must not reach the task API");
+  state.taskResult = null;
+  params = { taskId: "e99431c3-e245-43e7-9536-125cc9c06df5" }; route.render(); workspace = await owner.settle();
+  assert.equal(workspace.model.selected, null); assert.deepEqual(workspace.model.items, []);
+  assert.equal(workspace.model.detailRead.state, "error"); assert.equal(workspace.model.readState, "error");
+  assert.deepEqual(state.taskReads.at(-1), { child: env.childId, id: params.taskId });
+  assert.equal(state.writeInputs.length, 0); route.unmount(); owner.unmount();
+});
+
+test("task deep-link responses and captured selection callbacks cannot outlive their child scope", async () => {
+  const first = taskOwner(); first.state.items = [];
+  let release; first.state.taskResult = new Promise(resolve => { release = resolve; });
+  first.owner.render(); let workspace = await first.owner.settle();
+  const route = taskRoute(() => workspace, () => ({ taskId: task.id }));
+  route.render(); const oldActions = workspace.actions;
+  await new Promise(setImmediate); assert.deepEqual(first.state.taskReads, [{ child: first.env.childId, id: task.id }]);
+  first.state.active = false; route.unmount(); first.owner.unmount();
+  const second = taskOwner(); second.env.childId = "other-child"; second.env.scopeKey = "other-scope"; second.state.items = [];
+  second.owner.render(); let newWorkspace = await second.owner.settle();
+  assert.equal(newWorkspace.model.selected, null);
+  const newRoute = taskRoute(() => newWorkspace, () => ({ taskId: task.id }));
+  newRoute.render(); newWorkspace = await second.owner.settle();
+  assert.equal(newWorkspace.model.detailRead.state, "error");
+  assert.deepEqual(second.state.taskReads, [{ child: "other-child", id: task.id }]);
+  release(task); await new Promise(setImmediate); oldActions.selectTask(task.id);
+  assert.equal(first.state.taskReads.length, 1); assert.equal(first.owner.render().model.selected, null);
+  assert.equal(second.owner.render().model.selected, null); assert.equal(second.state.taskReads.length, 1);
+  assert.equal(first.state.writeInputs.length + second.state.writeInputs.length, 0); newRoute.unmount(); second.owner.unmount();
 });
 
 test("Growth task navigation uses idempotent open selection", async () => {
@@ -268,9 +339,10 @@ test("Growth task navigation uses idempotent open selection", async () => {
   workspace.actions.selectTask(task.id); workspace = owner.render();
   const destinations = [];
   const growth = harness("src/screens/GrowthScreen.tsx", "GrowthScreen", [], {
-    "expo-router": { useLocalSearchParams: () => ({}), useRouter: () => ({ push: value => destinations.push(value) }) },
+    "expo-router": { usePathname: () => "/growth", useLocalSearchParams: () => ({}), useRouter: () => ({ push: value => destinations.push(value) }) },
     "../production/ProductionProvider": { useProduction: () => ({ model: { children: [{ id: "child" }], selectedChildId: "child" }, actions: {} }) },
     "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
+    "../workspaces/PreparationWorkspace": { usePreparationWorkspace: () => null },
     "../workspaces/GrowthWorkspace": { useGrowthWorkspace: () => ({ scopeKey: "scope", model: {}, actions: {} }) },
     "../production/TaskKnowledgeDomains": { useProductionFamilyDocuments: () => null },
     "../production/FamilyReportControls": { FamilyReportControls: "FamilyReportControls" },
@@ -384,4 +456,25 @@ test("reduced motion uses static loading feedback without mounting Paper's rotat
   assert.equal(byType(tree, "ActivityIndicator").length, 0);
   assert.ok(nodes(tree).some(node => node.props?.testID === "read-loading-static"));
   assert.deepEqual(visibleText(tree), ["正在讀取…"]); notice.unmount();
+});
+
+
+test("Home task summary and focus use minute precision in the occurrence timezone without a suffix", () => {
+  const item = { ...task, occurrence: { ...task.occurrence, dueAt: "2026-10-21T16:05:37.000Z" } };
+  const workspace = { scopeKey: "scope", model: { readState: "ready", reading: false, online: true, access: "editable", items: [item] } };
+  const view = harness("src/production/useProductionHome.ts", "useProductionHome", [], {
+    "./ProductionProvider": { useProduction: () => ({ scopeKey: "scope", model: home, actions: {} }) },
+    "../workspaces/CareWorkspace": { useCareWorkspace: () => null },
+    "../workspaces/ProfileWorkspace": { useProfileWorkspace: () => null },
+    "../workspaces/TasksWorkspace": { useTasksWorkspace: () => workspace },
+    "../workspaces/GrowthWorkspace": { useGrowthWorkspace: () => null },
+  });
+  for (const [zone, day, clock] of [["Asia/Hong_Kong", "22/10/2026", "00:05"], ["America/New_York", "21/10/2026", "12:05"]]) {
+    item.occurrence.timeZone = zone;
+    const value = view.render().model, detail = value.overview.attention.items[0].detail;
+    assert.ok(detail.includes(day)); assert.ok(detail.includes(clock));
+    assert.doesNotMatch(detail, /:37|香港|Asia\/|America\/|UTC|GMT/);
+    assert.equal(value.focus.detail, detail, "the summary and home focus must use the same display projection");
+    assert.equal(item.occurrence.dueAt, "2026-10-21T16:05:37.000Z");
+  }
 });

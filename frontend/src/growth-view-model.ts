@@ -90,6 +90,7 @@ export type GrowthViewModel = {
   lastConcernChange?: GrowthConcernChange | null;
 };
 export type GrowthActions = {
+  discardLocalDraft?(key: string): void;
   refresh():void;markDirty(key:string):void;askDiscard():void;discardDrafts():void;setOriginalConsent(value:boolean):void;retryOriginal():void;
   decide(item:GrowthAttention,input:GrowthDecision):void;updateTopic(topic:GrowthTopic,input:GrowthTopicDecision):void;
   archiveConcern(id: string, expectedVersion: number, authorityVersion: string): void;
@@ -117,7 +118,12 @@ export function growthConcernTimelineEntries(concern: GrowthConcern, page: Growt
   }
   return entries.sort((a, b) => {
     const left = Date.parse(a.at), right = Date.parse(b.at);
-    return Number.isNaN(left) ? Number.isNaN(right) ? 0 : 1 : Number.isNaN(right) ? -1 : left - right;
+    // Newest known event/state-update time first; missing times never imply recency.
+    if (Number.isFinite(left) && Number.isFinite(right) && left !== right) return right - left;
+    if (Number.isFinite(left) !== Number.isFinite(right)) return Number.isFinite(left) ? -1 : 1;
+    const key = (entry: GrowthConcernTimelineEntry) => entry.kind === "event" ? `event:${entry.event.id}` : `attention:${entry.item.id}:${entry.item.version}`;
+    const leftKey = key(a), rightKey = key(b);
+    return leftKey < rightKey ? -1 : leftKey > rightKey ? 1 : 0;
   });
 }
 export function growthArchivedConcerns(model: GrowthViewModel, searchText = "", dateRange: { from: string | null; to: string | null } = { from: null, to: null }): GrowthConcern[] {
@@ -135,7 +141,7 @@ export function growthArchivedConcerns(model: GrowthViewModel, searchText = "", 
   });
 }
 export const growthActionable=(item:GrowthAttention)=>item.sourceAvailable&&(item.state==="proposed"||item.state==="snoozed");
-export const growthTime=(value:string)=>new Date(value).toLocaleString("zh-HK",{timeZone:"Asia/Hong_Kong",hour12:false});
+export const growthTime=(value:string)=>new Date(value).toLocaleString("zh-HK",{timeZone:"Asia/Hong_Kong",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
 export function growthConcernFollowUpLabel(concern: GrowthConcern): string | null {
   if (!concern.followUp) return null;
   const labels = { pending: "已安排", queued: "等候處理", completed: "已完成", stopped: "已停止", unknown: "結果待核對", cancelled: "已取消" };

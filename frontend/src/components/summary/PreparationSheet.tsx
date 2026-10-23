@@ -64,7 +64,7 @@ export function PreparationSheet({ model, values, onEdit, onAgent, onRecord, onT
       {checklist.length ? checklist.map((item, index) => <View key={index} style={s.preparationListRow}>
         <AppIcon name={item.done ? "check-circle" : "checkbox-blank-outline"} size={19} />
         <View style={s.preparationItemCopy}><Text selectable style={s.reading}>{item.text || "空白準備項目，待補充"}</Text><AppStatusBadge label={item.done ? model.dirty ? "草稿已勾選 · 未保存" : "已回報準備好" : "尚待準備"} tone={item.done && !model.dirty ? "success" : "warning"} /></View>
-      </View>) : preparationEmptyReady ? <EmptyListCard title={draftEmptyReady ? "目前草稿沒有準備清單項目" : "已載入的準備單沒有準備清單項目"} detail="可在修改準備單時補充要帶的物品與準備。" icon="clipboard-check-outline" testID="preparation-reading-checklist-empty" /> : null}
+      </View>) : preparationEmptyReady ? <EmptyListCard title={draftEmptyReady ? "目前草稿沒有準備清單項目" : "已載入的準備單沒有準備清單項目"} detail="可在修改準備單時補充要帶的物品與準備。" icon="preparation-outline" testID="preparation-reading-checklist-empty" /> : null}
     </View>
   </View>;
 }

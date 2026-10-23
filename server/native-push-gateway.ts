@@ -69,11 +69,12 @@ export function createNativePushGateway(config: NativePushConfig | null, ports: 
         // Recheck after authentication and immediately before the only external effect.
         if (!await bounded(stillAuthorized)) return stopped("revoked");
         if (signal.aborted) return stopped("worker_interrupted");
-        const r = reference.data, content = nativePushContent[r.kind];
+        const r = reference.data, content = { ...nativePushContent[r.kind] };
         const message = { token: token.data, notification: content,
           data: { v: "1", kind: r.kind, bindingId: r.bindingId, bindingVersion: String(r.bindingVersion), deliveryId: r.deliveryId },
           android: { restricted_package_name: ANDROID_PUSH_PACKAGE, priority: "normal", ttl: "300s",
             notification: { channel_id: ANDROID_PUSH_CHANNEL, tag: r.deliveryId } } };
+        const sentAt = new Date().toISOString();
         issued = true;
         const response = await bounded(() => transport(`https://fcm.googleapis.com/v1/projects/${config.projectId}/messages:send`, {
           method: "POST", redirect: "error", signal, headers: { authorization: "Bearer " + credential, "content-type": "application/json" },
@@ -84,7 +85,7 @@ export function createNativePushGateway(config: NativePushConfig | null, ports: 
           return value && typeof value === "object" && "name" in value && typeof value.name === "string"
             && value.name.startsWith(`projects/${config.projectId}/messages/`) && value.name.length < 512
             && value.name.length > `projects/${config.projectId}/messages/`.length
-            ? { status: "accepted", reason: null, providerStatus: 200 } : unknown();
+            ? { status: "accepted", reason: null, providerStatus: 200, message: { ...content, channel: "native_push", contentVersion: "native-push-generic-v1", sentAt } } : unknown();
         }
         let expired = false;
         if (response.status === 404 || response.status === 400) {

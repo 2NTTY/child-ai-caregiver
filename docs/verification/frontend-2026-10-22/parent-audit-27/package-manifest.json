@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 2,
+  "frozenAtUTC": "2026-10-22T23:47:14.090518+00:00",
+  "previousStage": {
+    "documentCommit": "18fd71fd3d061c7e413514c5dce7fa67acce50fe",
+    "manifestSha256": "64fc53272da2b501510f3bed3ba836a32ada94658663a22ca6527b280e0a34d2",
+    "frozenAtUTC": "2026-10-22T18:16:44.865409+00:00",
+    "note": "Earlier evidence-index and staged reports remain unchanged; this manifest adds independent background follow-up."
+  },
+  "fileCountExcludingManifest": 35,
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 6468,
+      "sha256": "5846335759adec9dc2c0d8df16f4a6e5bebb5a0d8d1c93b04a932d9c4e7553db"
+    },
+    {
+      "path": "background-followup/evidence-index.json",
+      "bytes": 44815,
+      "sha256": "774c73843a239771d39a1d908d47c451f4d44c7b4242fd4b333dc90e46ea212e"
+    },
+    {
+      "path": "background-followup/portable-contract-rerun.log",
+      "bytes": 499,
+      "sha256": "646bf22817a0f5b64c747d15af0230b88c192dc16513dd1aa0e110f20561dd5e"
+    },
+    {
+      "path": "background-followup/report.md",
+      "bytes": 7947,
+      "sha256": "ff93c5e6c498f7549c398a15c31f78cb46afa7f1671e602e4cffd3a5e7a936f1"
+    },
+    {
+      "path": "background-followup/screenshots/12-history-390-cards.jpg",
+      "bytes": 79626,
+      "sha256": "7a9b1de71cf277378082725dde0f120f8a15bdec091d7f6e104884768f5daa32"
+    },
+    {
+      "path": "background-followup/screenshots/19-home-1024.jpg",
+      "bytes": 183121,
+      "sha256": "c2bc12168cd11cc624686f9160d32dd269eb69b29e74f32d6b17509ee39ca8f5"
+    },
+    {
+      "path": "background-followup/screenshots/20-chat-1024.jpg",
+      "bytes": 177667,
+      "sha256": "3c83f525c4e6e00a1bbde1ec3f14efb77f629aaaaa2020b2ad2d838944b7c60e"
+    },
+    {
+      "path": "background-followup/screenshots/22-chat-390-messages.jpg",
+      "bytes": 139601,
+      "sha256": "594d8ddd34a199bb188edc8d2155925d4f83bcc1361bcc997e330eec706a6017"
+    },
+    {
+      "path": "background-followup/screenshots/25-restored-settings-1024.jpg",
+      "bytes": 161468,
+      "sha256": "7f465d62f389c63e8182ba33db346cfee040a1c6b4bf8e195a572ca2778ea478"
+    },
+    {
+      "path": "background-followup/screenshots/30-default-chat-390-readable-user.jpg",
+      "bytes": 129642,
+      "sha256": "fd7396ff23ef2b0a217eeac8f50e709884f6e59e882d76d9a8a6eb2ba29251a0"
+    },
+    {
+      "path": "background-followup/screenshots/34-restored-after-reload-summary-1024.jpg",
+      "bytes": 161784,
+      "sha256": "8c0a94043d887b90089838a9f4913e8f5cd633376a3e458c9718883a7c5e0f7b"
+    },
+    {
+      "path": "changes-and-tests.md",
+      "bytes": 9583,
+      "sha256": "9b43d953cb695fb336a451b104cbde5ae6b8812e8865f5e25360bfdf5a01298e"
+    },
+    {
+      "path": "evidence-index.json",
+      "bytes": 210294,
+      "sha256": "7b12667c1abfd77a552d801a137ac93df3ebdce232aaac182865b9d21af7e140"
+    },
+    {
+      "path": "findings-and-status.md",
+      "bytes": 15805,
+      "sha256": "cadd6654347b8d252d6b59e457613b9bb1816878ddf6f2b8eef73800154edb05"
+    },
+    {
+      "path": "page-audit.md",
+      "bytes": 18932,
+      "sha256": "7349431c10d1512c03cac61dbf79aef0c9d4bcb81613cab1cd561d47e6e774c2"
+    },
+    {
+      "path": "screenshots/baseline/011-notification-settings-390.jpg",
+      "bytes": 134287,
+      "sha256": "99d436b75aa911dc06d1c7efbb54f05e452b2ad193d08a8fbfaad077fc689d6e"
+    },
+    {
+      "path": "screenshots/baseline/029-home-camera-reading-390.jpg",
+      "bytes": 146376,
+      "sha256": "22737bcd3423ffb1a6742f47b022ecefd31dca6e5fbbe8fd11f5ecb50045fc8b"
+    },
+    {
+      "path": "screenshots/baseline/038-growth-actions-1024.jpg",
+      "bytes": 173670,
+      "sha256": "f217fbe84e8fd23333d3a5197dfb23f5dd8e1ce7a2189d10ae842c5d2d900d1f"
+    },
+    {
+      "path": "screenshots/baseline/062-history-controls-390.jpg",
+      "bytes": 138750,
+      "sha256": "ed0dabc2fa5ea299bae8e4db393ef511f633b52f67ed8986a309a3afd0a099a2"
+    },
+    {
+      "path": "screenshots/baseline/065-bell-content-390.jpg",
+      "bytes": 146997,
+      "sha256": "6d46ac03922884c2a44d487756a380fe5774644035444ebf8275828d6f9b6ed1"
+    },
+    {
+      "path": "screenshots/baseline/085-sources-scope-390.jpg",
+      "bytes": 143335,
+      "sha256": "7dd9585663c85bb08e0f02ffdab69626c9c525a8ff3f6cd1d556d84225e7a33c"
+    },
+    {
+      "path": "screenshots/site86/01-summary-A.jpg",
+      "bytes": 165768,
+      "sha256": "83a9f1222e47f9b7d9a32bbae283bf33e04d22ad3c2150f9f70e13584db69dfe"
+    },
+    {
+      "path": "screenshots/site86/04-growth320.jpg",
+      "bytes": 132566,
+      "sha256": "e01dc2550f749c2b1fb8b2a8fe85ac63d1f644104e3bd3dc6d0691f771c6ba88"
+    },
+    {
+      "path": "screenshots/snapshot27/02-summary-appointments-1024.jpg",
+      "bytes": 164790,
+      "sha256": "bce1510df458471c07235ee43951a197500ecbd95b796ca37f33ab6b8950e53d"
+    },
+    {
+      "path": "screenshots/snapshot27/11-history-applied-date-320.jpg",
+      "bytes": 128608,
+      "sha256": "c83e5d79c21f4de3091789e4cd2cfc6fb99722c46b3d1132bcd25aed8cedda0a"
+    },
+    {
+      "path": "screenshots/snapshot27/23-growth-hierarchy-red-320.jpg",
+      "bytes": 127487,
+      "sha256": "4f22f2a9bfbd62480396f36a4bf0fcde5938c9e89d5dcba0a4e77c4e06e6472f"
+    },
+    {
+      "path": "screenshots/snapshot27/36-notifications-390.jpg",
+      "bytes": 128341,
+      "sha256": "9c880a0488da2f3483f937193519477312627d128b02075452ef011501e8944d"
+    },
+    {
+      "path": "screenshots/snapshot27/README.md",
+      "bytes": 262,
+      "sha256": "bba2f7aa2184d75dbb57e7d3120df492e37a9d57edcb7b71747ca65bca47f353"
+    },
+    {
+      "path": "screenshots/snapshot27a/01-growth-hierarchy320.jpg",
+      "bytes": 126796,
+      "sha256": "70176b6a9b48e9ec223d5d33dd8ba1e0c877ed6ba2f23cee6cb88aa2090112c0"
+    },
+    {
+      "path": "screenshots/snapshot27a/02-growth-hierarchy390.jpg",
+      "bytes": 133870,
+      "sha256": "6e96894507271b0e79d0e13c28abe9a0e6525b816eb9b76e71fe5f6c483b9673"
+    },
+    {
+      "path": "screenshots/snapshot27a/03-growth-hierarchy1024.jpg",
+      "bytes": 159954,
+      "sha256": "c2a7bb704baa1ef0cc8199ee00a643c0d413b976b9d5fde379737f24573394f6"
+    },
+    {
+      "path": "screenshots/snapshot27a/06-growth-manual-settled320.jpg",
+      "bytes": 124714,
+      "sha256": "71d17c9fd01c72c7b84addb916ad375a7b98809dbed16dbcda10bc16feffa168"
+    },
+    {
+      "path": "site86-live-smoke.md",
+      "bytes": 2400,
+      "sha256": "9c77e12af591f3ac92a3b32ffb980993bdc3b7f4ee09e5ae99a231f28635bc5b"
+    },
+    {
+      "path": "snapshot27-browser-stage.md",
+      "bytes": 5040,
+      "sha256": "07766d6468cc62bba2cad6ca42e203c359fbccc01d6f2d63d3dcdb27a589efc1"
+    },
+    {
+      "path": "snapshot27a-browser-stage.md",
+      "bytes": 2863,
+      "sha256": "220b603441d6148ae0f764acd5c078e152a6bf7a109f1304b090deea96c114c6"
+    }
+  ],
+  "selfExcluded": true,
+  "relatedRepositoryArtifacts": [
+    {
+      "path": "frontend/scripts/background-web-picker-contract.test.mjs",
+      "sha256": "890a9a87f9ea0df0aa724cfe20e4baa62aff753d11046b8e1f72e9ff36228d88",
+      "bytes": 4882
+    }
+  ],
+  "limits": "Integrity only; added background sample does not rewrite prior-stage coverage or certify all-function/browser stability."
+}

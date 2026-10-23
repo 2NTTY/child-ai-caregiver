@@ -1,0 +1,1352 @@
+{
+  "snapshot": 30,
+  "bundleSha256": "a5b1662b88e46d14216430967f4ec4f7071a280aadb031481f1d27e23d68ec47",
+  "status": "bounded Snapshot30 capture complete; no Snapshot31 evidence",
+  "images": [
+    {
+      "file": "00-browser-recovery-0.jpg",
+      "sha256": "0bf59df6a58748e85238ae5aa103e50fecbdc9d464582d675c0e3020b6942dfd",
+      "bytes": 69040,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": null,
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "01-memory-new-native-tab-0.jpg",
+      "sha256": "90e02fe173758ae473936c556f5d10b044b9c27f76a58a5a56d8a1890497b7b5",
+      "bytes": 87921,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": null,
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "02-candidate30-first-load-0.jpg",
+      "sha256": "b9cbb3f514319d7e42b02b829d0b6ab4fbbd2dbce5660cd1be7fafa080eeae8c",
+      "bytes": 123930,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": null,
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "03-memory390-loading-0.jpg",
+      "sha256": "d85f2dd688fe4eef2c38ccedf14e16f23daf09baa8e509c9eabc3fdfb54397fc",
+      "bytes": 106126,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "04-memory390-settled-0.jpg",
+      "sha256": "124503bd2e4b2e4e7b39f65857a19db817526efc5d7f128ddf757c325df78e32",
+      "bytes": 129894,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "06-task-metadata390-0.jpg",
+      "sha256": "55f89f9752047a0c3ef32a6e09da8b8a073ea7781951b3d587dfa896893b36ae",
+      "bytes": 131581,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "07-task-metadata390-body-0.jpg",
+      "sha256": "657c02fb8198746633a81ea34aa68d71e37cb11c6f26c084c35398a38813aaec",
+      "bytes": 134464,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": true
+    },
+    {
+      "file": "09-task-metadata1440-0.jpg",
+      "sha256": "bc00664235b3ba17605693269f0437a08ebb8d77a7aeb2d5cb94e2d900c3bcf5",
+      "bytes": 204828,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "10-task-snapshot1440-0.jpg",
+      "sha256": "88aa5d08f1a86969f0b1dc5b20f1df30644a932613ef7525f3bf3742eb644dae",
+      "bytes": 162870,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "11-preparations1440-list-0.jpg",
+      "sha256": "e0b51b442c172af03e35ab07c02cb577195541850af15a08430f09260733e935",
+      "bytes": 185697,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "12-preparation1440-detail-0.jpg",
+      "sha256": "d71849d5ec33bb923fbc3b7a4c72a22efbcca199a230eb54d10f46e83798e9d9",
+      "bytes": 190667,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "13-preparation390-detail-0.jpg",
+      "sha256": "9a8d4ce3fe6c4e29c07bbf2ede1aa37f6526f3ea7822a3620737d1c3e73587a2",
+      "bytes": 136074,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "14-preparation390-metadata-0.jpg",
+      "sha256": "7420d1f8e2b3af82bba329a8f5cd3686c79951c0f2cf294b73f4f8c13527c4d5",
+      "bytes": 135994,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": true
+    },
+    {
+      "file": "15-preparation390-sources-0.jpg",
+      "sha256": "44385eba3ea71a55bd22b6186d0c047685e722266542ce0b49543bfa9889f325",
+      "bytes": 136670,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "16-growth390-detail-0.jpg",
+      "sha256": "8aa656301bb1751fe2f2ae3b021a1f05d917ab87d402f48f87dde290a48a738b",
+      "bytes": 131226,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "17-growth390-event-metadata-0.jpg",
+      "sha256": "b8a7b2e93faaf8f9da4423c22d01a9ce0b6f2bc703128c2337ad6701b64edcae",
+      "bytes": 132532,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "18-growth-source-navigation-0.jpg",
+      "sha256": "7d515ef0c43a0780bd48847b8dd7affd7099505b159b45ff26643e596d10dd43",
+      "bytes": 129536,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "19-growth-source-result-0.jpg",
+      "sha256": "0b58368fc6a00b881edf835ca7efebe02444a9b0b03b8550a55146ff9d908951",
+      "bytes": 129898,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "20-care390-source-metadata-0.jpg",
+      "sha256": "e75a23b07ba3ce7aaf2a86c45ef2a8414bb294762f92f225bf075275da9fa2fa",
+      "bytes": 134974,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "21-care1440-source-metadata-0.jpg",
+      "sha256": "9bcd6898d2a712121e6233d3852f62d395f7ac400d7b8c861aabb4d7f3009dd0",
+      "bytes": 188226,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "22-growth1440-event-metadata-0.jpg",
+      "sha256": "4bad3d44ef00f6c7b609a957d48716a32ac2ef40c501d232801a78b1fe95c406",
+      "bytes": 157204,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "23-growth1440-metadata-0.jpg",
+      "sha256": "cc50b79977bc4005e5376c9508fea1be4701367f22b6d3d9fcee6beed64b6927",
+      "bytes": 162077,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": true
+    },
+    {
+      "file": "24-growth-after-close-locator-miss-0.jpg",
+      "sha256": "879c1d54c29f38ec5b908e0c5ce074a957dfda38f8d4f2513a60dea85b9f5c11",
+      "bytes": 166451,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "26-summary-native-tab-0.jpg",
+      "sha256": "f3529baf7df8188131f4b66b840a9d8a0501481b9ce07b8bcbbfe0cd26778916",
+      "bytes": 108397,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "27-summary-initial-load-0.jpg",
+      "sha256": "3fd4ed83a814571e6136c9191daecfd82c727f4bdbf64cf8a5526bbc01f26b5f",
+      "bytes": 109490,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "28-summary-ready-0.jpg",
+      "sha256": "29b7773b6261f1862af459a254c56901bba5e507040fe1c471ed9dc8accafc2c",
+      "bytes": 146551,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "29-summary-current-0.jpg",
+      "sha256": "29b7773b6261f1862af459a254c56901bba5e507040fe1c471ed9dc8accafc2c",
+      "bytes": 146551,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "30-summary-report-area-0.jpg",
+      "sha256": "b5f3efcbd896a3969a14d19d764b4b78e04402f365cac2100aeed17838739261",
+      "bytes": 143278,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "31-summary-period-open-0.jpg",
+      "sha256": "98b1c8f6308da60fa70b9f8eeeda741e2f70b45428a94b0266660d6981cf1c4f",
+      "bytes": 158452,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "32-summary-period-position-0.jpg",
+      "sha256": "ceb37c3c49798cd0a3c35f7dc119c3fbc95d63c530cd1a472015511b63330ca4",
+      "bytes": 149105,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "33-summary-period-expanded-0.jpg",
+      "sha256": "8c54a23f4be7cd118db246384617c07999b774b4bc2c85847ecd5c4ea2950287",
+      "bytes": 148489,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "34-summary-period-control-0.jpg",
+      "sha256": "e5f3e49382e954ddd96b0c5006a30606374acee7ce1ee7ff7d34f857a1055436",
+      "bytes": 146330,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "35-summary-period-select-0.jpg",
+      "sha256": "3a94e737331bf6b848188d2ac4584a429494cfd144143bb7884643a2937e9eae",
+      "bytes": 148365,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "36-summary-period-options-0.jpg",
+      "sha256": "0e1e5dcce8133a4d2a3887007444d0668c49964fa76820ca71402fee44f253dc",
+      "bytes": 146121,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "37-summary-unapplied-before-focus-0.jpg",
+      "sha256": "1ba1224af17ef8678d8958f72e34b8839fffa4c9c19e5ea6fcd60b68273d4366",
+      "bytes": 147520,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "38-summary-native-away-0.jpg",
+      "sha256": "8318085723b4b700483115ef7d3956e0b0cccc467abfa2f983b7e25d0ea100c3",
+      "bytes": 297210,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "39-summary-unapplied-after-focus-0.jpg",
+      "sha256": "1ba1224af17ef8678d8958f72e34b8839fffa4c9c19e5ea6fcd60b68273d4366",
+      "bytes": 147520,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": true
+    },
+    {
+      "file": "41-private-paging-wrapper-0.jpg",
+      "sha256": "f24941dd67cb7ad95799fc9d4c1dfbf33c13edd15277657d2c25aded8ef9f991",
+      "bytes": 148321,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "42-memory390-legal-page1-0.jpg",
+      "sha256": "182ce0429b747892ce2c843d4b26f9ec05807bc5a2aa1833a8040482b432b790",
+      "bytes": 131851,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "43-memory390-source-expanded-0.jpg",
+      "sha256": "0cddc66cfdc088bcd891cc861064e92fc99acee5b468d7758b938114c7d97bdf",
+      "bytes": 132189,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "44-memory390-page1-bottom-0.jpg",
+      "sha256": "20be84208572b76e3f404ba50d26094d028751ad1d80ef54ec3b8ccdef7fa25a",
+      "bytes": 127983,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "45-memory390-page2-0.jpg",
+      "sha256": "4621945ff6419adc4d1b5eacd0bfb47efd42aaa3e666d1238237dde74a9c79fb",
+      "bytes": 133800,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "46-memory-page2-before-focus-0.jpg",
+      "sha256": "35d0e78cad5f938f055609b9d0feccd0eb4ed2b6c623cf9eb87944dd0feec732",
+      "bytes": 129717,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "47-memory-native-away-0.jpg",
+      "sha256": "11adb121d455025aec742cad910e1cc7d5f758c43a15333e20ce1e69382f4d79",
+      "bytes": 299478,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": null,
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "48-memory-page2-after-focus-0.jpg",
+      "sha256": "35d0e78cad5f938f055609b9d0feccd0eb4ed2b6c623cf9eb87944dd0feec732",
+      "bytes": 129717,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": true
+    },
+    {
+      "file": "51-memory1440-source-versions-0.jpg",
+      "sha256": "d322068acfa022d63dfb3dc248a3ecdb1122dddc21d35f15024b8780ad33f657",
+      "bytes": 164719,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "52-memory1440-main-0.jpg",
+      "sha256": "30d6011a21ef2c7610f76ee7614a529415b26148fd2281465da0e6d0f7deb70a",
+      "bytes": 174499,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "53-memory-candidate-warning-0.jpg",
+      "sha256": "7345cb615c000e21734e9e06950073f54f9a1ebaa020e97f9d76bd8cc62c9b04",
+      "bytes": 165689,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "54-tasks-native-wrapper-0.jpg",
+      "sha256": "6be9c19b352c55f65bd0b1d0dc8b11c32d89e5a60a23334af36f45c4d43c22de",
+      "bytes": 76833,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": null,
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "55-tasks-recovered-wrapper-0.jpg",
+      "sha256": "27d306dc766e4cfe609f40a1eedc680cf9e030be2a2ac44f388517e4efca142c",
+      "bytes": 148344,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "56-tasks1440-page1-0.jpg",
+      "sha256": "ed1d17bae1a444702e83c8cb2a4331b5ece23d13c3956d75187c30c07ef413a2",
+      "bytes": 169212,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "57-tasks-load-more-0.jpg",
+      "sha256": "f2b18b15ed4fa39333cd7baa50f6e9954d1e6c750c61fc9d8659d20c3aefef42",
+      "bytes": 167234,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "58-tasks-page2-0.jpg",
+      "sha256": "7eb7e9318496e83117165141d6229cd18e8b8dc188902a0440967f3e8b40041e",
+      "bytes": 170339,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "59-tasks-page2-detail-before-focus-0.jpg",
+      "sha256": "fcf8a51bc477409b5200d6449c764a2eb44154c68e9b765ca63590ec13f0431d",
+      "bytes": 187600,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "60-tasks-native-away-0.jpg",
+      "sha256": "88bb356c67672aa6e746f51ca7e65ae03b8013e10fad3f3c14c879a91e71786d",
+      "bytes": 299304,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": null,
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "61-tasks-page2-detail-after-focus-0.jpg",
+      "sha256": "97a03230c45b17ce2928535fdcef18ea98e6ab3569351c7eee9f0fdbef5703b9",
+      "bytes": 84350,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "setup-or-technical",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "62-agent390-metadata-0.jpg",
+      "sha256": "4cdfb8b58d668ae88b4bc92a0efc0dc5a973c74eeb1789eafa152652f5224ecb",
+      "bytes": 126708,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": true
+    },
+    {
+      "file": "63-agent1440-metadata-expanded-0.jpg",
+      "sha256": "bc9865e67f5acbd69bc1f94b3f28770e838a55c0e3d4fe321c19158b8b3c2de2",
+      "bytes": 143675,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "64-care-long1440-detail-0.jpg",
+      "sha256": "770870fa0bdd02aeadd9b06dd1060b49f68d9984be75ac8cfb3204bb2979a156",
+      "bytes": 232953,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1440,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "65-care390-long-source-0.jpg",
+      "sha256": "639435b798abcf74671da70d8163967305a9a0981b16d461e67dac75d672d0ee",
+      "bytes": 134064,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "67-care390-history-0.jpg",
+      "sha256": "938b98c1b20effa155563ff11036f0fb43e9afbfbfa2258ebe1609c15bf07914",
+      "bytes": 132505,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "68-care390-old-version-quantity-0.jpg",
+      "sha256": "c32e535985210d822432b7b9d6b90c62482e090a45a993a5eba88951ff26e73c",
+      "bytes": 134153,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": true
+    },
+    {
+      "file": "69-task390-wrapper-0.jpg",
+      "sha256": "5a060356ac24f6c74da976ce224009b8c115c1fe2cf567dd70407c2234941e67",
+      "bytes": 148425,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "setup-or-cleanup",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "70-task390-page1-0.jpg",
+      "sha256": "c9ff3cce936b7b3c54e6759e14b38a7304a6ea9582a9d7ad0fb57a338fcfd9b2",
+      "bytes": 128612,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "71-task390-load-more-0.jpg",
+      "sha256": "6763ff1a094e20e71d14c2335328e03e013c2d5542faf3ee306488be03e347cb",
+      "bytes": 127205,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "72-task390-page2-0.jpg",
+      "sha256": "e6af8a29374385ad1f38b451f23fbe286f4480d6d9575cc4464c7d61cc8f2fdc",
+      "bytes": 130725,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "73-task390-detail-before-focus-0.jpg",
+      "sha256": "b120ff06db14f7365c6d5a846f89edf61fc8ff9d69756430cd14d4774f088253",
+      "bytes": 136813,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "74-task390-native-away-0.jpg",
+      "sha256": "18b27aa790164b28ec7aab8a69d37c8d5a148c535a1023e9a31cc8d75cd9b7d4",
+      "bytes": 299625,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "native-app-away",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "75-task390-detail-after-focus-0.jpg",
+      "sha256": "89aa6e051608d1b8a9878f8cce72508b5b0a751670cb4c8669565d4486766d51",
+      "bytes": 136813,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "77-task390-return-two-rows-0.jpg",
+      "sha256": "443bc58250a4fb158fc7a8c9b6905747bbd4e620b78c9c9050def3e55928b48f",
+      "bytes": 130735,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "78-notifications-wrapper-0.jpg",
+      "sha256": "9fdfdd02a154adf11fb4a3fce3369964619a92d4a808a20a2cfbd14651989dd8",
+      "bytes": 148423,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-cleanup",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "79-notifications-initial-0.jpg",
+      "sha256": "dce37f47acc9ddd47cf338cf1d614fbbb4a59fc71411105d63ef83367e73fc32",
+      "bytes": 150003,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "80-notifications-review-button-0.jpg",
+      "sha256": "3d726f428f2baa700e2b8e62c5cc501e45fcc610218c0cfc994582db0d309717",
+      "bytes": 151725,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "81-notifications-review-before-focus-0.jpg",
+      "sha256": "f2259d527c937921a898bee86a90c5210e03c9b66d3f5a52da4bd28803451581",
+      "bytes": 150584,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "82-notifications-native-away-0.jpg",
+      "sha256": "30fd71257e02fc2ec3465253c5e50f55438e1bc46d4ba1cc51ffd91d735fab0b",
+      "bytes": 299187,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "native-app-away",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "83-notifications-review-after-focus-0.jpg",
+      "sha256": "10953086ed8d3a911ad9805990613c8886259d3a85218f0c98b5003b09501522",
+      "bytes": 150581,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": true
+    },
+    {
+      "file": "85-notifications-after-cancel-0.jpg",
+      "sha256": "f14f8a8a37f11bd96460161c19b0cb9226dfe0f2c66700f17db943910d00dc0f",
+      "bytes": 149642,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "86-contact-safe-error-0.jpg",
+      "sha256": "cb3d05647044431f2231c2a313a789e38135158d508a6b2808c853623a8aafc2",
+      "bytes": 150770,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "87-contact-read-retry-0.jpg",
+      "sha256": "8489fca258965a6a1816a9e1e454306e97a97229e3448516e0a986e615faa484",
+      "bytes": 150505,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "result",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    },
+    {
+      "file": "88-cleanup-zoom-restored-0.jpg",
+      "sha256": "0312f5ccdd47f05dc2c2547ae51dd718fb65de4c7979c778408995e762f0c7c2",
+      "bytes": 177636,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "role": "setup-or-cleanup",
+      "note": "Original native screenshot bytes; no crop/resize. CSS iframe viewport is not native pixel size. Away/technical frames may not show the product.",
+      "attached": false
+    }
+  ],
+  "completedAt": "2026-10-23T04:09:51.296538+00:00",
+  "imageCount": 80,
+  "note": "80 local originals indexed; only the8 representative images in evidence-index.json are attached. Setup/technical frames are not product acceptance. No31 evidence."
+}

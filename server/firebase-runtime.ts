@@ -82,7 +82,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const auth = createFirebaseAuthPort({ auth: nativeAuth, sessions, lifecycle: authority,
       publicOrigin: config.publicOrigin, production: config.production,
       ...(composition.local ? { localCookieName: '__local_session_' + createHash('sha256').update(config.projectId).digest('hex').slice(0, 8) } : {}) });
-    const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace };
+    const domain = { database, cipher, projectId: config.projectId, namespace: config.namespace, messageHistoryEnabled: config.messageHistoryEnabled };
     const objectOptions = { config: { projectId: config.projectId, namespace: config.namespace, bucketName: config.photoBucket }, cipher };
     const journalOptions = { config: { ...objectOptions.config, bucketName: config.erasureBucket }, cipher };
     const objects = composition.local ? createFirebasePhotoObjects({ ...objectOptions, bucket: composition.local.bucket(config.photoBucket) }) : createCloudStoragePhotoObjects(objectOptions);

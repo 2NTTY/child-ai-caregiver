@@ -1,3 +1,4 @@
+import { messageSortMetadata } from './notification-message-content.ts';
 import { z } from 'zod';
 import { FirestoreDomainData, firestoreDomainHash, FIRESTORE_TASK_DISPATCH_SCOPE as SYSTEM } from './firestore-domain-data.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
@@ -114,7 +115,7 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
     case 'native-push-delivery': {
       const v = firestoreNativeDeliverySchema.parse(raw); check(id === v.delivery.id);
       const delivery = target ? { ...v.delivery, status: v.delivery.status === 'queued' ? 'stopped' as const : v.delivery.status === 'sending' ? 'unknown' as const : v.delivery.status } : v.delivery;
-      value = { ...v, delivery }; Object.assign(metadata, { deliveryId: id, createdAt: delivery.createdAt, bindingId: delivery.bindingId, status: delivery.status }); break;
+      value = { ...v, delivery }; Object.assign(metadata, { ...messageSortMetadata(v.message ? [v.message] : []), deliveryId: id, createdAt: delivery.createdAt, bindingId: delivery.bindingId, status: delivery.status }); break;
     }
     case 'native-push-token': { const v = firestoreNativePointerSchema.parse(raw); check(v.tokenHash === id && same(v.scope, scope)); break; }
     case 'push-binding': {
@@ -126,7 +127,7 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
     case 'push-delivery': {
       const v = firestorePushDeliverySchema.parse(raw); check(id === v.delivery.id);
       const delivery = target ? { ...v.delivery, status: v.delivery.status === 'queued' ? 'stopped' as const : v.delivery.status === 'sending' ? 'unknown' as const : v.delivery.status } : v.delivery;
-      value = { ...v, delivery }; Object.assign(metadata, { deliveryId: id, createdAt: delivery.createdAt, bindingId: delivery.bindingId, status: delivery.status }); break;
+      value = { ...v, delivery }; Object.assign(metadata, { ...messageSortMetadata(v.message ? [v.message] : []), deliveryId: id, createdAt: delivery.createdAt, bindingId: delivery.bindingId, status: delivery.status }); break;
     }
     case 'push-endpoint': { const v = firestorePushEndpointRecoverySchema.parse(raw); check(v.endpointHash === id && v.ownerUserId === scope.ownerUserId); break; }
     case 'telegram-binding': {
@@ -144,7 +145,7 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
       const v = firestoreTelegramDeliverySchema.parse(raw); check(v.delivery.id === id);
       const delivery = target ? { ...v.delivery, status: v.delivery.status === 'queued' ? 'stopped' as const : v.delivery.status === 'sending' ? 'unknown' as const : v.delivery.status } : v.delivery;
       value = target ? { ...v, delivery, callback: null } : v;
-      Object.assign(metadata, { deliveryId: id, bindingId: delivery.bindingId, createdAt: delivery.createdAt, status: delivery.status,
+      Object.assign(metadata, { ...messageSortMetadata(v.message ? [v.message] : []), deliveryId: id, bindingId: delivery.bindingId, createdAt: delivery.createdAt, status: delivery.status,
         unresolved: ['queued', 'sending', 'unknown'].includes(delivery.status) && !delivery.acknowledgedAt }); break;
     }
     case 'telegram-state':
@@ -168,7 +169,7 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
       const request = target ? { ...v.request, state: v.request.state === 'pending' ? 'stopped' as const : v.request.state,
         attempts: v.request.attempts.map(a => ({ ...a, status: a.status === 'sending' ? 'unknown' as const : a.status })) } : v.request;
       value = target ? { ...v, request, callbackHash: null } : v;
-      Object.assign(metadata, { requestId: id, runId: v.runId, taskId: request.taskId, createdAt: request.createdAt,
+      Object.assign(metadata, { ...messageSortMetadata((v.messages ?? []).map(message => message.content)), requestId: id, runId: v.runId, taskId: request.taskId, createdAt: request.createdAt,
         attemptIds: request.attempts.map(a => a.id), unresolved: request.attempts.some(a => ['sending', 'unknown'].includes(a.status) && !a.acknowledgedAt) }); break;
     }
     case 'contact-callback': check(same(contact.pointer.parse(raw).scope, scope)); break;

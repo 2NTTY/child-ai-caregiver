@@ -11,9 +11,11 @@ import { useInteractionDensity } from "./useInteractionDensity";
 import { MotionEntrance } from "../motion";
 import { MotionSelectionMarker } from "../motion/MotionSelectionMarker";
 import { HorizontalOverflowRail } from "./HorizontalOverflowRail";
+import { BackgroundSurface } from "./appearance/BackgroundSurface";
+import { useQuietReadFocus } from "./useQuietReadFocus";
 import { AppStatusBadge } from "./AppStatusBadge";
 
-export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", density = "standard", disabled = false, loading = false, expanded, style, ref }: {
+export function AppButton({ label, accessibilityLabel = label, onPress, variant = "primary", density = "standard", disabled = false, loading = false, preserveFocusWhenDisabled = false, expanded, style, ref }: {
   label: string;
   accessibilityLabel?: string;
   onPress: () => void;
@@ -21,6 +23,8 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
   density?: "standard" | "compact";
   disabled?: boolean;
   loading?: boolean;
+  /** Quiet same-scope reads only; activation remains disabled. */
+  preserveFocusWhenDisabled?: boolean;
   expanded?: boolean;
   style?: StyleProp<ViewStyle>;
   ref?: Ref<View>;
@@ -29,33 +33,38 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
   const touch = useInteractionDensity();
   const [focused, setFocused] = useState(false);
   const unavailable = disabled || loading;
+  const readFocus = useQuietReadFocus(unavailable, preserveFocusWhenDisabled);
+  const buttonRef = (node: View | null) => { readFocus.host.current = node; if (typeof ref === "function") return ref(node); else if (ref) ref.current = node; };
+  const press = () => { if (!unavailable) onPress(); };
+  const visuallyDisabled = unavailable && !readFocus.preserveWebFocus;
   const filled = variant === "primary" || variant === "accent" || variant === "danger";
   // Disclosure state belongs on the actual control; Paper Button replaces it internally.
-  if (expanded !== undefined) return <Pressable ref={ref} accessibilityRole="button" accessibilityLabel={accessibilityLabel}
+  if (expanded !== undefined) return <Pressable ref={buttonRef} accessibilityRole="button" accessibilityLabel={accessibilityLabel}
     accessibilityState={{ expanded, disabled: unavailable, busy: loading }} aria-expanded={expanded} aria-disabled={unavailable} aria-busy={loading}
-    disabled={unavailable} onPress={onPress} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+    disabled={readFocus.nativeDisabled} onPress={press} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
     style={({ pressed }) => [styles.button, styles.buttonContent, styles.disclosureButton, density === "compact" && styles.compactButtonContent,
-      (compact || touch) && styles.mobileTarget, unavailable && styles.disabledOutlineButton, focused && styles.focusedButton, pressed && !unavailable && styles.buttonPressed, style]}>
-    <Text style={[styles.buttonLabel, styles.disclosureLabel, compact && mobileType.itemTitle, unavailable && styles.disabledLabel]}>{label}</Text>
-    <AppIcon name={expanded ? "chevron-up" : "chevron-down"} size={18} color={unavailable ? colors.muted : colors.ink} />
+      (compact || touch) && styles.mobileTarget, visuallyDisabled && styles.disabledOutlineButton, focused && styles.focusedButton, pressed && !unavailable && styles.buttonPressed, style]}>
+    <Text style={[styles.buttonLabel, styles.disclosureLabel, compact && mobileType.itemTitle, visuallyDisabled && styles.disabledLabel]}>{label}</Text>
+    <AppIcon name={expanded ? "chevron-up" : "chevron-down"} size={18} color={visuallyDisabled ? colors.muted : colors.ink} />
   </Pressable>;
   return (
     <Button
-      ref={ref}
+      ref={buttonRef}
       mode={filled ? "contained" : "outlined"}
+      icon={variant === "danger" || variant === "danger-secondary" ? ({ color, size }) => <AppIcon name="alert-outline" color={color} size={size} importantForAccessibility="no" /> : undefined}
       buttonColor={variant === "danger" ? colors.errorInk : variant === "accent" ? colors.accent : filled ? undefined : "transparent"}
       textColor={variant === "danger" ? colors.white : variant === "danger-secondary" ? colors.errorInk : variant === "accent" ? colors.onAccent : variant === "secondary" || variant === "quiet" ? colors.ink : undefined}
       rippleColor={variant === "primary" || variant === "danger" ? colors.darkActionRipple : undefined}
       theme={{ colors: { surfaceDisabled: colors.softLine, onSurfaceDisabled: colors.muted } }}
-      onPress={onPress}
-      disabled={unavailable}
+      onPress={press}
+      disabled={readFocus.nativeDisabled}
       loading={loading}
       compact={density === "compact"}
       contentStyle={[styles.buttonContent, density === "compact" && styles.compactButtonContent, (compact || touch) && styles.mobileTarget]}
       labelStyle={[styles.buttonLabel, compact && mobileType.itemTitle]}
       style={[styles.button, (variant === "secondary" || variant === "quiet") && styles.outlineButton,
         variant === "quiet" && styles.quietButton, variant === "danger-secondary" && styles.secondaryDangerButton,
-        unavailable && (filled ? styles.disabledFilledButton : styles.disabledOutlineButton), style]}
+        visuallyDisabled && (filled ? styles.disabledFilledButton : styles.disabledOutlineButton), style]}
       accessibilityLabel={accessibilityLabel}
     >
       {label}
@@ -74,23 +83,27 @@ function SelectionCount({ count }: { count: number | string }) {
   return <View style={styles.selectionCount} aria-hidden accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><Text style={styles.selectionCountText}>{count}</Text></View>;
 }
 
-export function AppSelectionTrigger({ label, count, onPress, onBlur, disabled = false, expanded, ref, calendar = false, id, invalid, describedBy }: {
+export function AppSelectionTrigger({ label, count, onPress, onBlur, disabled = false, preserveFocusWhenDisabled = false, expanded, ref, calendar = false, id, invalid, describedBy }: {
   label: string; onPress: () => void; onBlur?: () => void; disabled?: boolean; expanded: boolean; ref?: Ref<View>; calendar?: boolean;
+  preserveFocusWhenDisabled?: boolean;
   count?: number; id?: string; invalid?: boolean; describedBy?: string;
 }) {
   const compact = useWindowDimensions().width < mobileLayout.breakpoint;
   const touch = useInteractionDensity();
+  const readFocus = useQuietReadFocus(disabled, preserveFocusWhenDisabled);
   // Paper 5.15 Button replaces expanded state on its inner control; expose it on the selection trigger itself.
-  return <Pressable ref={ref} nativeID={id} accessibilityRole="button" accessibilityLabel={count === undefined ? label : `${label}，${count} 項`} accessibilityState={{ expanded, disabled }} aria-expanded={expanded} aria-disabled={disabled} aria-invalid={invalid} aria-describedby={describedBy} disabled={disabled}
-    onPress={onPress} onBlur={onBlur} style={({ pressed }) => [styles.selectionTrigger, (compact || touch) && styles.mobileTarget, disabled && styles.selectionDisabled, pressed && !disabled && styles.selectionPressed]}>
+  return <Pressable ref={instance => { readFocus.host.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} nativeID={id} accessibilityRole="button" accessibilityLabel={count === undefined ? label : `${label}，${count} 項`} accessibilityState={{ expanded, disabled }} aria-expanded={expanded} aria-disabled={disabled} aria-invalid={invalid} aria-describedby={describedBy} disabled={readFocus.nativeDisabled}
+    onPress={() => { if (!disabled) onPress(); }} onBlur={onBlur} style={({ pressed }) => [styles.selectionTrigger, (compact || touch) && styles.mobileTarget, disabled && !readFocus.preserveWebFocus && styles.selectionDisabled, pressed && !disabled && styles.selectionPressed]}>
     <Text style={styles.selectionLabel}>{label}</Text>{count !== undefined ? <SelectionCount count={count} /> : null}<AppIcon name={calendar ? "calendar-clock-outline" : "chevron-down"} size={20} color={colors.deepTeal} />
   </Pressable>;
 }
 
-export function AppSelect<T extends string>({ label, value, options, onChange, onSelectionClosed, onBlur, disabled = false, ref, id, invalid, describedBy }: {
+export function AppSelect<T extends string>({ label, value, options, onChange, onSelectionClosed, onBlur, disabled = false, preserveFocusWhenDisabled = false, ref, id, invalid, describedBy, showLabel = true }: {
   label: string; value: T; options: readonly { value: T; label: string; count?: number }[];
   onChange: (value: T) => void; onBlur?: () => void; disabled?: boolean; ref?: Ref<View>;
   onSelectionClosed?: (value: T) => void;
+  preserveFocusWhenDisabled?: boolean;
+  showLabel?: boolean;
   id?: string; invalid?: boolean; describedBy?: string;
 }) {
   const [visible, setVisible] = useState(false);
@@ -113,7 +126,7 @@ export function AppSelect<T extends string>({ label, value, options, onChange, o
     // RN Modal has now released its focus trap and restored the trigger focus.
     if (next !== null && !visible && !disabled && options.some(item => item.value === next)) onSelectionClosed?.(next);
   }
-  return <><AppSelectionTrigger ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} id={id} invalid={invalid} describedBy={describedBy} label={`${label}：${selected?.label ?? value}`} count={selected?.count} disabled={disabled} onBlur={onBlur}
+  return <><AppSelectionTrigger ref={instance => { anchor.current = instance; if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }} id={id} invalid={invalid} describedBy={describedBy} label={showLabel ? `${label}：${selected?.label ?? value}` : selected?.label ?? value} count={selected?.count} disabled={disabled} preserveFocusWhenDisabled={preserveFocusWhenDisabled} onBlur={onBlur}
     expanded={visible && !disabled} onPress={() => { pendingSelection.current = null; setHasOpened(true); setVisible(true); }} />
     {/* Keep the modal stable after first use so close focus and backdrop exit can finish. */}
     {hasOpened ? <Portal><Dialog visible={visible && !disabled} onDismiss={dismiss} onClosed={closed} style={styles.selectDialog}>
@@ -197,6 +210,14 @@ export function TextLink({ label, onPress }: { label: string; onPress: () => voi
   );
 }
 
+/** Keep page actions beside the existing scrollable tabs, not in a duplicate page header. */
+export function TabToolbar({ children, actions, testID, stacked = false }: { children: ReactNode; actions?: ReactNode; testID?: string; stacked?: boolean }) {
+  return <BackgroundSurface testID={testID} style={[styles.tabToolbar, stacked && styles.tabToolbarStacked]}>
+    <View style={[styles.tabToolbarTabs, stacked && styles.tabToolbarFullTabs]}>{children}</View>
+    {actions ? <View style={[styles.tabToolbarActions, stacked && styles.tabToolbarWrappedActions]}>{actions}</View> : null}
+  </BackgroundSurface>;
+}
+
 function tabId(tabsId: string, key: string) { return `${tabsId}-tab-${encodeURIComponent(key)}`; }
 function tabPanelId(tabsId: string, key: string) { return `${tabsId}-panel-${encodeURIComponent(key)}`; }
 
@@ -213,6 +234,20 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
   const [positions, setPositions] = useState<Record<string, { x: number; width: number }>>({});
   const [revealRevision, setRevealRevision] = useState(0);
   const selection = positions[value];
+  function measureWebTabs() {
+    if (Platform.OS !== "web") return;
+    const next: typeof positions = {};
+    controls.current.forEach((control, key) => {
+      const node = control as unknown as HTMLElement;
+      // These share the marker's positioned parent, without screen zoom or transforms.
+      next[key] = { x: node.offsetLeft, width: node.offsetWidth };
+    });
+    setPositions(current => Object.keys(current).length === Object.keys(next).length
+      && Object.keys(next).every(key => current[key]?.x === next[key].x && current[key]?.width === next[key].width) ? current : next);
+  }
+  // RN Web observes each tab's size, not position. A preceding badge can move a
+  // tab without resizing it; measure the whole row after commits and any resize.
+  useLayoutEffect(measureWebTabs);
   function select(key: T) {
     setRevealRevision(revision => revision + 1);
     onChange(key);
@@ -230,9 +265,9 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
     items={items.flatMap(item => positions[item.key] ? [{ key: item.key, ...positions[item.key] }] : [])}
     revealTarget={selection ? { key: value, ...selection } : undefined} revealRevision={revealRevision} hintLabel={`查看更多${label ?? "分頁"}`}
     onRevealItem={key => { if (Platform.OS === "web") (controls.current.get(key as T) as unknown as HTMLElement | undefined)?.focus({ preventScroll: true }); }}>
-    <View accessibilityRole="tablist" accessibilityLabel={label} aria-orientation="horizontal" style={styles.tabs}>
+    <View accessibilityRole="tablist" accessibilityLabel={label} aria-orientation="horizontal" style={styles.tabs} onLayout={Platform.OS === "web" ? measureWebTabs : undefined}>
     {items.map((item, index) => <Pressable
-      key={item.key} nativeID={tabId(id, item.key)} onLayout={event => { const { x, width } = event.nativeEvent.layout; setPositions(current => current[item.key]?.x === x && current[item.key]?.width === width ? current : { ...current, [item.key]: { x, width } }); }} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
+      key={item.key} nativeID={tabId(id, item.key)} onLayout={event => { if (Platform.OS === "web") { measureWebTabs(); return; } const { x, width } = event.nativeEvent.layout; setPositions(current => current[item.key]?.x === x && current[item.key]?.width === width ? current : { ...current, [item.key]: { x, width } }); }} ref={instance => { if (instance) controls.current.set(item.key, instance); else controls.current.delete(item.key); }}
       accessibilityRole="tab" accessibilityLabel={item.count === undefined ? item.label : `${item.label} ${item.count}`} aria-controls={tabPanelId(id, item.key)} tabIndex={value === item.key ? 0 : -1}
       accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key} onPress={() => select(item.key)}
       {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault: () => void }) => move(event, index) } : {})}
@@ -243,16 +278,16 @@ export function UnderlineTabs<T extends string>({ id, label, items, value, onCha
   </HorizontalOverflowRail>;
 }
 
-export function AppTabPanel({ tabsId, tabKey, active, children, style, ...props }: ViewProps & {
-  tabsId: string; tabKey: string; active: boolean; children: ReactNode;
+export function AppTabPanel({ tabsId, tabKey, active, hasTabList = true, children, style, ...props }: ViewProps & {
+  tabsId: string; tabKey: string; active: boolean; hasTabList?: boolean; children: ReactNode;
 }) {
   const panel = useRef<View>(null);
   useLayoutEffect(() => {
     if (Platform.OS === "web" && panel.current) (panel.current as unknown as HTMLElement).inert = !active;
   }, [active]);
-  return <MotionEntrance {...props} ref={panel} preset="panel" triggerKey={active ? `${tabsId}:${tabKey}:active` : null} scopeKey={tabsId} enabled={active} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" ? "tabpanel" : undefined}
-    aria-labelledby={tabId(tabsId, tabKey)} aria-hidden={!active} accessibilityElementsHidden={!active}
-    importantForAccessibility={active ? "auto" : "no-hide-descendants"} tabIndex={active ? 0 : -1} pointerEvents={active ? "auto" : "none"}
+  return <MotionEntrance {...props} ref={panel} preset="panel" triggerKey={active ? `${tabsId}:${tabKey}:active` : null} scopeKey={tabsId} enabled={active} nativeID={tabPanelId(tabsId, tabKey)} role={Platform.OS === "web" && hasTabList ? "tabpanel" : undefined}
+    aria-labelledby={hasTabList ? tabId(tabsId, tabKey) : undefined} aria-hidden={!active} accessibilityElementsHidden={!active}
+    importantForAccessibility={active ? "auto" : "no-hide-descendants"} tabIndex={hasTabList ? active ? 0 : -1 : undefined} pointerEvents={active ? "auto" : "none"}
     style={[style, !active && styles.hiddenPanel]}>{children}</MotionEntrance>;
 }
 
@@ -271,6 +306,12 @@ const styles = StyleSheet.create({
   disclosureLabel: { color: colors.ink, lineHeight: 22, flexShrink: 1 },
   focusedButton: { borderColor: colors.ink },
   buttonPressed: { backgroundColor: colors.pressedOverlay },
+  tabToolbar: { flexDirection: "row", alignItems: "center", minWidth: 0, width: "100%", gap: spacing.sm },
+  tabToolbarStacked: { flexDirection: "column", alignItems: "stretch" },
+  tabToolbarTabs: { flex: 1, minWidth: 0 },
+  tabToolbarFullTabs: { flex: undefined, width: "100%" },
+  tabToolbarActions: { flexDirection: "row", alignItems: "center", flexShrink: 0, gap: spacing.sm },
+  tabToolbarWrappedActions: { flexWrap: "wrap", alignSelf: "flex-end", maxWidth: "100%" },
   card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md },
   mobileCard: { borderRadius: mobileLayout.cardRadius, padding: mobileLayout.cardInset },
   insetCard: { borderWidth: 0, borderRadius: radius.small, backgroundColor: colors.quietSurface, padding: spacing.md },

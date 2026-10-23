@@ -40,6 +40,8 @@ export type SourcesViewModel = {
   draft: PhotoDraftFields; draftUncertainties: readonly string[]; formKey: number; reviewed: PhotoDraftFields | null; confirmationKind: SourceConfirmationKind;
   composerSeed: SourceInput | null; excerpt: string; fetchConsent: boolean; modelConsent: boolean; sharedConsent: boolean; childFactConsent: boolean;
   deleteOpen: boolean; deleteScope: boolean; deleteFinal: boolean;
+  // A successful reading snapshot stays visible while controls are locked by a background GET.
+  readFresh?: boolean;
   busy: boolean; fresh: boolean; formLocked: boolean; canChoose: boolean; canFetch: boolean; canExtract: boolean; canConfirm: boolean; canDelete: boolean;
 };
 export type SourcesActions = {
@@ -48,6 +50,7 @@ export type SourcesActions = {
     edit(patch: Partial<SourceManagement>): void; setModelPermission(value: boolean): void; setModelExcerpt(value: string): void; setReason(value: string): void;
     beginContentEdit(): void; editContent(value: SourcePersonalContent): void; cancelContentEdit(): void; history(): void;
   };
+  discardDraft?(kind: "composer" | "record" | "management"): void;
   refresh(): void; create(input: SourceCreate): void; openInput(input: SourceInput): void; newInput(): void; recreateWithText(): void;
   setFetchConsent(value: boolean): void; fetchContent(): void; setExcerpt(value: string): void; setModelConsent(value: boolean): void; extract(): void;
   adoptCandidate(): void; editDraft(draft: PhotoDraftFields): void; reviewDraft(draft: PhotoDraftFields): void;

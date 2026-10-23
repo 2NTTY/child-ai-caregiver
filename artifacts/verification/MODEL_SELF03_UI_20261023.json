@@ -1,0 +1,26 @@
+{
+  "package": "MODEL-SELF03",
+  "date": "2026-10-23",
+  "baseline": "339c70712e10efb2547c8752fa6baa20a00ed795",
+  "branch": "codex/personal-compatible-ui",
+  "scope": "Shared Web/Android v3 personal model form and client, credential lifecycle, optional metadata and provider consent copy",
+  "state": "implemented-local-checks-passed-delivery-pending",
+  "checks": [
+    { "command": "node --test tests/model-settings-client.test.ts", "result": "passed", "cases": 6, "scope": "v3 serialization, safe readback, separate credentials, original-operation recovery without replay", "node": "24.11.0" },
+    { "command": "node --test frontend/scripts/model-settings-form.test.mjs", "result": "passed", "cases": 6, "scope": "existing limits plus compatible endpoint/model and separate embedding credential commands", "node": "24.11.0" },
+    { "command": "JSDOM_MODULE=<ignored helper> node --test --test-name-pattern='^(model copy|model unknown|compatible model form)' frontend/scripts/settings-parent-controls.test.cjs", "result": "passed-after-one-targeted-assertion-fix", "cases": 3, "initial": "Two passed; the old whole-page /currently using/ assertion matched explanatory vector-service text rather than saved settings status.", "repair": "Narrowed the existing assertion to the settings status label and reran only the failed case. Then reran only the credential-lifecycle case after adding inactive-route guard suppression.", "environment": "Real React/RHF/Zod view with synthetic presentation and owner ports; jsdom 26.1.0 in ignored .cache. No browser pixels or real backend.", "node": "24.11.0 initial, 24.19.0 final credential-lifecycle check" },
+    { "command": "node node_modules/typescript/bin/tsc -p .cache/tsconfig-model-self03-ui.json --pretty false", "result": "passed", "scope": "ModelSettingsView and imported dependencies only", "node": "24.19.0" },
+    { "name": "main-review-and-readonly-privacy-audit", "result": "passed-with-local-fixes", "fixes": ["Retained Android settings route now deactivates the model form and clears both credentials on navigation", "Background transition clears both credentials", "Photo extraction consent names the selected model service rather than Gemini only"], "protectedPullRequest": 254 },
+    { "name": "web-export", "result": "passed", "environment": "Final source with Node 24.19.0 and existing public Web Firebase configuration; public files, service worker and notices copied with prepare-web-output.mjs", "output": "frontend/dist" },
+    { "name": "android-export-and-runtime", "result": "passed-after-local-temp-repair", "environment": "Node 24.19.0, EAS 24.14.0, existing preview public configuration and native descriptor", "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee", "baselineBuild": "82cb911e-5e37-43b6-9f30-e2aa9c954de0", "versionCode": 2, "runtimeCompatible": true, "attempts": 2, "firstFailure": "Hermes could not write index.hbc in sandbox Temp; stopped with compiler exit 6 and export exit 1.", "repair": "Set TEMP/TMP to ignored workspace directory and repeated only this local export; no code, native configuration or credentials changed.", "artifacts": "metadata, Hermes bundle and 29 assets present; six required public configuration values embedded", "bundleSha256": "34ff63095659f6be4806ee58607a7d2bef431b374b1bedc011524211df7fb0b2", "failedLogSha256": "82b011d16a33dd37999707b8a61ab202394cd98db83b0041f968bf27d8eb299c", "output": ".cache/model-android-export" }
+  ],
+  "setupFailure": "Initial helper download was denied by the sandbox proxy before any test ran; the permitted download succeeded. No product dependency or lockfile was changed.",
+  "limitations": ["Initial Node 24.11.0 checks are below the project >=24.12.0 requirement; final type and release work uses bundled Node 24.19.0", "No true compatible-provider generation, embedding, live credential, device or visual acceptance in this package", "No deployment or OTA publication yet; master and production remain separate"],
+  "deploymentReview": "API/worker must support settings v3 before new clients. The already merged notification history also requires four messageSentAt indexes READY and FIREBASE_MESSAGE_HISTORY_ENABLED on both services. Its first read writes workspace.childAccessVersion, so a subsequent server rollback must retain a compatible reader. No cloud configuration was changed.",
+  "collaboratorBoundaries": "PR #254 remains untouched. PR #259 appeared during delivery preparation; its PhotosView diff does not alter the provider consent sentence changed here. Neither collaborator branch was changed or merged.",
+  "modelCalls": 0,
+  "notifications": 0,
+  "businessDataWrites": 0,
+  "quotaChanges": false,
+  "computerUse": false
+}

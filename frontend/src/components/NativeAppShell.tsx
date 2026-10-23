@@ -1,3 +1,4 @@
+import { useHeaderOperationHints } from "../production/useHeaderOperationHints";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "expo-router";
@@ -20,6 +21,7 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const leave = usePreviewNavigation();
   const pathname = usePathname();
+  const operationHints = useHeaderOperationHints();
   const { model, actions, notice, dismissNotice, scopeKey, identityKey } = useProduction();
   const [railOpen, setRailOpen] = useState(false);
   const selectedChild = model.children.find(item => item.id === model.selectedChildId);
@@ -29,9 +31,9 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
   useEffect(() => { setRailOpen(false); }, [pathname, motionScope]);
   return <View style={[styles.root, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]}>
     <View>
-      <View style={styles.header}><CompactHeaderIdentity showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
+      <View style={styles.header}><CompactHeaderIdentity hints={operationHints} showContext scopeKey={motionScope} routeKey={pathname} model={model} actions={actions}
         brand={<Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} onPress={() => leave(() => router.push("/"), "workspace")} style={styles.brand}><BrandLogo style={styles.logo} decorative /></Pressable>} />
-        <View testID="header-actions" style={styles.actions}><NotificationBell operation={model.operation} connection={model.connection} onReview={actions.reviewOperation} />
+        <View testID="header-actions" style={styles.actions}><NotificationBell />
           <ToolbarIconButton icon="page-layout-sidebar-right" label={overlayOpen ? "收起資訊側欄" : "開啟資訊側欄"} expanded={overlayOpen} onPress={() => { railContext.current = { path: pathname, scope: motionScope }; setRailOpen(value => !value); }} />
         </View>
       </View>
@@ -39,8 +41,8 @@ export function NativeAppShell({ children }: { children: ReactNode }) {
     </View>
     {notice ? <Pressable accessibilityRole="button" accessibilityLabel="關閉提示" onPress={dismissNotice} style={styles.notice}><Text style={[styles.meta, {flex: 1}]}>{notice}</Text><AppIcon name="close" size={18} color={colors.warningInk} /></Pressable> : null}
     <View style={styles.content}>{children}</View>
-    <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}`} label="照顧上下文" onRequestClose={() => setRailOpen(false)}>
-      <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}><RightRail model={model} actions={actions} home={pathname === "/"} contextPath={pathname} overlay onClose={() => setRailOpen(false)} /></View>
+    <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}`} label="照顧資訊側欄" onRequestClose={() => setRailOpen(false)}>
+      <View style={{ flex: 1, paddingTop: insets.top, paddingBottom: insets.bottom }}><RightRail model={model} actions={actions} contextPath={pathname} overlay onClose={() => setRailOpen(false)} /></View>
     </MotionDrawerOverlay>
   </View>;
 }
@@ -56,7 +58,7 @@ export function NativeKeyboardPane({ children }: { children: ReactNode }) {
   </View>;
 }
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.canvas },
+  root: { flex: 1 },
   header: { height: mobileLayout.headerMinHeight, flexShrink: 0, backgroundColor: colors.sidebar, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   brand: { flexShrink: 1, minWidth: 0, justifyContent: "center", minHeight: 48 },
   logo: { width: 124, height: 44 },

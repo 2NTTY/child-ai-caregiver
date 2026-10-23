@@ -7,7 +7,7 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
   const api = useMemo(() => createModelSettingsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const requests = useSettingsRequests(env, true);
   const [draftEditing, setDraftEditing] = useState(false);
-  const [state, setState] = useState<ModelSettingsViewModel>({ scopeKey: env.identityKey, accountName: "", serverLabel: env.apiBaseUrl,
+  const [state, setState] = useState<ModelSettingsViewModel>({ scopeKey: JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]), accountName: "", serverLabel: env.apiBaseUrl,
     snapshot: null, online: env.online, authorized: true, busy: null, operation: "none", notice: "", needsRead: false,
     formRevision: 0, secretRevision: 0, keyCheck: null });
   const latest = useRef(state); latest.current = state;
@@ -25,9 +25,20 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       notice: saving && failure.unknownResult ? "保存結果未知；密鑰已清除。請查回原操作及目前設定，系統不會重播密鑰。"
         : failure.code === "client_update_required" ? "請更新應用程式後管理這份模型設定。"
         : failure.status === 409 ? "設定版本已改變，請先重新讀取。"
-        : failure.code === "key_required" ? "請提供所選供應商的密鑰；切換供應商不能沿用另一份密鑰。"
+        : failure.code === "key_required" ? "請提供所選供應商的密鑰；切換供應商或更換 API 地址後，必須重新輸入聊天密鑰。"
+        : failure.code === "consent_required" ? "請先確認所選服務的資料傳送及收費安排，再保存個人模型設定。"
+        : failure.code === "invalid_input" ? "設定輸入未被接受；請核對公開 HTTPS API 地址、模型 ID、密鑰及限制後再保存。"
         : failure.code === "model_unsupported" ? "目前 Server 拒絕此模型；請確認服務版本及模型 ID。"
         : failure.status === 429 ? "模型資料查核暫受限，請稍後手動重試。" : "模型設定未能確認，請核對連線後重新讀取。" });
+  };
+  const metadataFail = (error: unknown) => {
+    const failure = settingsFailure(error);
+    if (failure.status === 401 || failure.status === 403 || failure.status === 409
+      || failure.code === "session_changed" || failure.code === "access_denied" || failure.code === "client_update_required") {
+      fail(error); return;
+    }
+    patch({ catalog: null, keyCheck: null, secretRevision: latest.current.secretRevision + 1,
+      notice: "模型資料暫未能查核；已讀取的設定仍可編輯及保存，模型 ID 可直接填寫。" });
   };
   const refresh = async () => {
     const request = requests.start(); if (!request || !env.userId) return;
@@ -40,12 +51,13 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       // A null receipt alone does not prove that an in-flight write cannot commit.
       const unresolved = recovery?.outcome === "unknown", confirmed = recovery?.outcome === "confirmed";
       if (!unresolved) pending.current = null;
+      const formChanged = JSON.stringify([snapshot.settings, snapshot.effective]) !== JSON.stringify([latest.current.snapshot?.settings, latest.current.snapshot?.effective]);
       patch({ snapshot, authorized: true, catalog: null, originalOperationId: pending.current?.opId ?? null,
         needsRead: unresolved, operation: unresolved ? "unknown" : confirmed ? "saved" : "none",
         notice: unresolved ? "原操作尚未確認；保留原操作識別，稍後可再查。密鑰不會自動重送。"
           : confirmed ? "原操作已保存，並已讀取目前設定；沒有再次提交密鑰。"
           : original ? "目前版本已更新，舊版本不能再寫入；請核對目前設定。" : "目前設定及版本已讀取。",
-        formRevision: latest.current.formRevision + 1, secretRevision: latest.current.secretRevision + 1 });
+        formRevision: latest.current.formRevision + Number(formChanged), secretRevision: latest.current.secretRevision + 1 });
       try {
         const catalog = await api.catalog(snapshot.settings.version, false, request.signal, env.userId!);
         if (request.current()) patch({ catalog });
@@ -91,7 +103,7 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       patch({ busy: "catalog", catalog: null, keyCheck: null });
       void api.catalog(version, false, request.signal, env.userId, provider).then(catalog => {
         if (request.current()) patch({ catalog });
-      }).catch(error => { if (request.current()) fail(error); })
+      }).catch(error => { if (request.current()) metadataFail(error); })
         .finally(() => { if (request.current()) patch({ busy: null }); request.finish(); });
     },
     refreshCatalog(expectedVersion) {
@@ -101,8 +113,10 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       const request = requests.start(true); if (!request) return;
       patch({ busy: "catalog", keyCheck: null, secretRevision: current.secretRevision + 1 });
       void api.catalog(expectedVersion, true, request.signal, env.userId).then(catalog => {
-        if (request.current()) patch({ catalog, notice: "已查核已保存密鑰的模型目錄；未呼叫生成，亦未改變所選模型。" });
-      }).catch(error => { if (request.current()) fail(error); })
+        if (request.current()) patch({ catalog, notice: catalog.reason === "metadata_unsupported"
+          ? "目前接入未支援模型資料查核；仍可直接填寫模型 ID 及保存設定。"
+          : "已查核已保存密鑰的模型目錄；未呼叫生成，亦未改變所選模型。" });
+      }).catch(error => { if (request.current()) metadataFail(error); })
         .finally(() => { if (request.current()) patch({ busy: null }); request.finish(); });
     },
     check(expectedVersion) {
@@ -112,8 +126,10 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
       const request = requests.start(true); if (!request) return;
       patch({ busy: "check", keyCheck: null, secretRevision: current.secretRevision + 1 });
       void api.check(expectedVersion, request.signal, env.userId).then(keyCheck => {
-        if (request.current()) patch({ keyCheck, notice: "只查核已保存版本的模型資料；不代表生成或帳單已驗證。" });
-      }).catch(error => { if (request.current()) fail(error); })
+        if (request.current()) patch({ keyCheck, notice: keyCheck.reason === "metadata_unsupported"
+          ? "目前接入未支援模型資料查核；仍可保存及使用所選模型，實際請求結果由供應商決定。"
+          : "只查核已保存版本的模型資料；不代表生成或帳單已驗證。" });
+      }).catch(error => { if (request.current()) metadataFail(error); })
         .finally(() => { if (request.current()) patch({ busy: null }); request.finish(); });
     } };
   useEffect(() => { if (!env.online) patch({ busy: null, keyCheck: null, catalog: null,
@@ -122,6 +138,6 @@ export function useProductionModelSettings(env: SettingsEnvironment) {
   useSettingsRefresh(env, actions.refresh, !requests.busy && !state.needsRead, true, draftEditing);
   useDomainWriteGuard(false, state.operation === "unknown" || state.busy === "save", "account");
   const user = env.owner.getSnapshot().records.user;
-  return { model: { ...state, scopeKey: env.identityKey, accountName: user?.name ?? "", online: env.online,
+  return { model: { ...state, scopeKey: JSON.stringify([env.identityKey, env.owner.getSnapshot().sessionGeneration]), accountName: user?.name ?? "", online: env.online,
     snapshot: env.currentIdentity() ? state.snapshot : null, authorized: env.currentIdentity() && state.authorized }, actions };
 }

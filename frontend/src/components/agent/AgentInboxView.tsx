@@ -8,7 +8,7 @@ import { AppButton, SectionCard, SectionHeader } from "../ui";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 
 function timeLabel(value: string): string {
-  return Number.isFinite(Date.parse(value)) ? `${agentTime(value)}（香港時間）` : "時間資料無效，請重新讀取";
+  return Number.isFinite(Date.parse(value)) ? `${agentTime(value)}` : "時間資料無效，請重新讀取";
 }
 
 export function AgentInboxView({ model, actions }: { model: AgentInboxModel; actions: AgentInboxActions }) {

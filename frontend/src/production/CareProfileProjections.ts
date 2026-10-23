@@ -2,7 +2,7 @@ import type { CareRecord, CareRevision, CareValues, ChildProfile } from "../../.
 import { careKindOptions, type CareCaptureReview, type CareFormValues, type CareRecordView, type CareRevisionView } from "../care-view-model";
 import type { ProfileRevisionView } from "../profile-view-model";
 
-const time = (value: string) => new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", hour12: false });
+const time = (value: string) => new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
 // A single-record history read supplies a real revision but no creation metadata.
 export type CareSnapshot = CareRevision & Pick<CareRecord, "id" | "childId"> & { createdAt: string | null };
 export function careRevisionView(revision: CareRevision, userId: string | null): CareRevisionView {

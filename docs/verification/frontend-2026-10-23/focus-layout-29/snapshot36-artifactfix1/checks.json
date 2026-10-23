@@ -1,0 +1,72 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "source": "snapshot36 unchanged after reviewed integration",
+  "baseCommit": "5a39776f703bc436528b858f393621bcf8030b03",
+  "scope": {
+    "sourceDeltaPaths": 89,
+    "products": 45,
+    "tests": 44,
+    "buildInputs": 559,
+    "historicalCumulativeScope": 131,
+    "latestSourceDeltaFrom35": "1 product +1 existing test"
+  },
+  "testsByVersion": {
+    "32": {
+      "scripts": 25,
+      "passed": 184,
+      "note": "Deduplicated final per-source-phase selection"
+    },
+    "33": {
+      "scripts": 9,
+      "passed": 66
+    },
+    "34": {
+      "scripts": 9,
+      "passed": 79
+    },
+    "35": {
+      "scripts": 3,
+      "passed": 16
+    },
+    "36": {
+      "scripts": 2,
+      "passed": 30
+    }
+  },
+  "doNotSumTestVersions": true,
+  "fixtureChecks": "Fixture/parser checks separate from product counts; final packaged validator freshly passed on corrected artifact. No real backend/model calls.",
+  "sourceArtifact": {
+    "textSources": 417,
+    "binaryAssets": 1,
+    "compiledPrepSemanticChecks": 6,
+    "routerContexts": 5,
+    "status": "PASS"
+  },
+  "archive": {
+    "filesReadBack": 143,
+    "publicMapFiles": 0,
+    "status": "PASS"
+  },
+  "browser": {
+    "status": "PASS_BOUNDED_SETTLED503_TARGET",
+    "actualIframeCSS": [
+      1023,
+      600
+    ],
+    "nativeScreenshotPixels": [
+      1364,
+      1024
+    ],
+    "newScope": "Retained five disabled checkbox nodes; native pointer/Space/Enter do not mutate; subsequent same-error read preserves focused node/scroll/height"
+  },
+  "notVerified": [
+    "Full semantic TypeScript remains NOT_PASS",
+    "CI result not newly checked",
+    "Natural OS app-switch focus not revalidated for this increment",
+    "Android/native runtime and full screen-reader matrix not exercised",
+    "Full-site and all four widths not rerun",
+    "Real authentication/delete/model/backend deployment not exercised"
+  ],
+  "publicPreview": "At this local delivery preparation, new artifact not published; existing snapshot31 deployment remains last observed public version.",
+  "requirements": "Separate requirements PR is not modified by this source/evidence delivery."
+}

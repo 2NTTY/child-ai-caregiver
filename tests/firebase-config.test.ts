@@ -47,3 +47,11 @@ test('knowledge composition needs an explicit bounded source allowlist without e
     assert.throws(() => readFirebaseServerConfig({ ...env, FIREBASE_KNOWLEDGE_SOURCE_IDS: value }), /Invalid FIREBASE_KNOWLEDGE_SOURCE_IDS/u);
   }
 });
+
+
+test('message history starts in reader-compatible mode and requires an explicit activation flag', () => {
+  assert.equal(readFirebaseServerConfig(env).messageHistoryEnabled, false);
+  assert.equal(readFirebaseServerConfig({ ...env, FIREBASE_MESSAGE_HISTORY_ENABLED: 'false' }).messageHistoryEnabled, false);
+  assert.equal(readFirebaseServerConfig({ ...env, FIREBASE_MESSAGE_HISTORY_ENABLED: 'true' }).messageHistoryEnabled, true);
+  for (const value of ['', 'TRUE', '1']) assert.throws(() => readFirebaseServerConfig({ ...env, FIREBASE_MESSAGE_HISTORY_ENABLED: value }), /Invalid FIREBASE_MESSAGE_HISTORY_ENABLED/u);
+});

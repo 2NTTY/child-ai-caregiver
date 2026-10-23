@@ -21,8 +21,21 @@ export function AccountDataControls() {
   const { account, accountActions, identityKey, online, canPrepareAccountDeletion } = useProduction();
   const form = useForm<{ password: string; confirmation: string }>({ resolver: zodResolver(deletionSchema), defaultValues: { password: "", confirmation: "" } });
   useLayoutEffect(() => { form.reset(); }, [form.reset, identityKey, online, account.deletion.phase]);
+  useLayoutEffect(() => () => { form.reset(); }, [form.reset]);
   const deletion = account.deletion, download = account.download;
-  const submit = form.handleSubmit(async input => { form.reset(); await accountActions.executeDeletion(input.password, input.confirmation); });
+  const password = form.watch("password"), confirmation = form.watch("confirmation");
+  const verification = account.deletionVerification;
+  const verified = verification.expiresAtMs !== null && verification.expiresAtMs > Date.now();
+  const verify = async () => {
+    if (!online || account.busy || !verification.available || deletion.phase !== "prepared") return;
+    if (!await form.trigger("password")) return;
+    const secret = form.getValues("password"); form.resetField("password");
+    await accountActions.verifyDeletionIdentity(secret);
+  };
+  const submit = () => {
+    if (!online || account.busy || deletion.phase !== "prepared" || !verified || confirmation !== "永久刪除我的帳戶") return;
+    form.reset(); void accountActions.executeDeletion(confirmation);
+  };
   return <View style={styles.group}>
     <Text style={styles.body}>{account.status?.notice ?? "資料使用說明尚未確認。"}</Text>
     <View style={styles.group}>
@@ -34,17 +47,25 @@ export function AccountDataControls() {
     </View>
     <View style={styles.danger}>
       <Text style={styles.title}>永久刪除本人帳戶</Text>
-      {deletion.phase === "idle" ? <><Text style={styles.body}>先由 Server 核對退出範圍，再確認密碼與固定文字。這會刪除帳戶、本人的私人資料及名下孩子與附屬資料，不能撤銷。共享家庭若仍有其他成員，須先處理責任。</Text>
+      {deletion.phase === "idle" ? <><Text style={styles.body}>先核對退出範圍，再重新驗證目前密碼，最後輸入確認文字。這會刪除帳戶、本人的私人資料及名下孩子與附屬資料，不能撤銷。共享家庭若仍有其他成員，須先處理責任。</Text>
         {!canPrepareAccountDeletion ? <Text style={styles.body}>請先處理未提交草稿或未確認的原操作，再退出帳戶。</Text> : null}
         <AppButton label="核對帳戶退出範圍" variant="danger-secondary" disabled={!online || !canPrepareAccountDeletion || !!account.busy} onPress={() => { void accountActions.prepareDeletion(); }} /></> : null}
       {deletion.phase === "prepared" ? <>
-        <Text style={styles.body}>已核對：本人帳戶、私人資料及 {deletion.childCount === null ? "名下" : deletion.childCount} 位孩子與附屬資料。請完整輸入「永久刪除我的帳戶」並以密碼確認。</Text>
-        <Controller control={form.control} name="confirmation" render={({ field, fieldState }) => <AppTextField label="確認文字" accessibilityLabel="帳戶刪除確認文字" value={field.value} onChangeText={field.onChange} ref={field.ref} error={!!fieldState.error} autoCorrect={false} autoComplete="off" disabled={!online || !!account.busy} />} />
-        {form.formState.errors.confirmation ? <Text style={styles.body}>{form.formState.errors.confirmation.message}</Text> : null}
-        <Controller control={form.control} name="password" render={({ field, fieldState }) => <AppTextField label="目前密碼" accessibilityLabel="帳戶刪除密碼" value={field.value} onChangeText={field.onChange} ref={field.ref} error={!!fieldState.error} secureTextEntry autoCapitalize="none" autoCorrect={false} autoComplete="off" disabled={!online || !!account.busy} />} />
-        {form.formState.errors.password ? <Text style={styles.body}>{form.formState.errors.password.message}</Text> : null}
-        <AppButton label="確認永久刪除帳戶" variant="danger" loading={account.busy === "delete"} disabled={!online || !!account.busy && account.busy !== "delete"} onPress={() => { void submit(); }} />
-        <AppButton label="取消這次退出確認" variant="quiet" disabled={!online || !!account.busy} onPress={() => { form.reset(); void accountActions.cancelPreparedDeletion(); }} />
+        <Text style={styles.body}>已核對：本人帳戶、私人資料及 {deletion.childCount === null ? "名下" : deletion.childCount} 位孩子與全部附屬資料。永久刪除不能撤銷，亦無法從歷史復原。</Text>
+        {verification.available ? <>
+          <Text style={styles.body}>第一步：重新輸入目前密碼驗證本人身份。密碼只交給既有身份服務驗證，不會送往資料刪除接口。</Text>
+          <Controller control={form.control} name="password" render={({ field, fieldState }) => <AppTextField label="目前密碼" accessibilityLabel="帳戶刪除身份驗證密碼" aria-invalid={!!fieldState.error} aria-describedby={fieldState.error ? "account-deletion-password-error" : undefined} importantForAutofill="no" value={field.value} onChangeText={field.onChange} ref={field.ref} error={!!fieldState.error} secureTextEntry autoCapitalize="none" autoCorrect={false} autoComplete="off" disabled={!online || !!account.busy || verified} />} />
+          {form.formState.errors.password ? <Text nativeID="account-deletion-password-error" style={styles.error}>{form.formState.errors.password.message}</Text> : null}
+          <AppButton label={verified ? "本人身份已驗證" : "驗證目前密碼"} variant="secondary" loading={account.busy === "verify"}
+            disabled={!online || !!account.busy || verified || !password || password.length > 128} onPress={() => { void verify(); }} />
+          <Text accessibilityLiveRegion="polite" style={styles.body}>{verified ? "身份已驗證，只限這次退出操作短時間內使用；更改身份、取消或逾時後須重新驗證。" : "未完成身份驗證，不能提交永久刪除。"}</Text>
+        </> : <Text style={styles.error}>目前登入方式尚未接通安全的重新驗證，為保障帳戶，暫時不能永久刪除。</Text>}
+        <Text nativeID="account-deletion-confirmation-help" style={styles.body}>第二步：請完整輸入「永久刪除我的帳戶」，再確認以下最終操作。</Text>
+        <Controller control={form.control} name="confirmation" render={({ field, fieldState }) => <AppTextField label="確認文字" accessibilityLabel="帳戶刪除確認文字" aria-invalid={!!fieldState.error} aria-describedby="account-deletion-confirmation-help" value={field.value} onChangeText={field.onChange} ref={field.ref} error={!!fieldState.error} autoCapitalize="none" autoCorrect={false} autoComplete="off" disabled={!online || !!account.busy} />} />
+        {form.formState.errors.confirmation ? <Text style={styles.error}>{form.formState.errors.confirmation.message}</Text> : null}
+        <AppButton label="確認永久刪除帳戶" variant="danger" loading={account.busy === "delete"}
+          disabled={!online || !!account.busy || !verified || confirmation !== "永久刪除我的帳戶"} onPress={submit} />
+        <AppButton label="取消這次退出確認" variant="quiet" disabled={!online || !!account.busy && account.busy !== "verify"} onPress={() => { form.reset(); void accountActions.cancelPreparedDeletion(); }} />
       </> : null}
       {deletion.phase === "unknown" ? <><Text style={styles.body}>退出結果仍未確認。請保留此頁，沿原收據查核；現在不能重新建立退出操作。</Text><AppButton label="查核原退出結果" disabled={!online} loading={account.busy === "check"} onPress={() => { void accountActions.checkDeletion(); }} /></> : null}
       {deletion.message ? <Text accessibilityLiveRegion="polite" style={styles.body}>{deletion.message}</Text> : null}
@@ -52,4 +73,4 @@ export function AccountDataControls() {
     {account.notice ? <Text accessibilityLiveRegion="polite" style={styles.body}>{account.notice}</Text> : null}
   </View>;
 }
-const styles = StyleSheet.create({ group: { gap: spacing.md }, danger: { gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.lg }, title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" }, body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool } });
+const styles = StyleSheet.create({ group: { gap: spacing.md }, danger: { gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.errorInk, paddingTop: spacing.lg }, error: { fontFamily: chineseFont, color: colors.errorInk, ...readingType.tool }, title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" }, body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool } });

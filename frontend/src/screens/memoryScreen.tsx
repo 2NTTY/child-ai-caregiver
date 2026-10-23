@@ -1,5 +1,5 @@
+import { BackgroundSurface } from "../components/appearance/BackgroundSurface";
 import { Text } from "react-native-paper";
-import { brand } from "../branding";
 import { MemoryReferenceView } from "../components/memory/MemoryReferenceView";
 import { PageFrame } from "../components/PageFrame";
 import { ReadStateNotice } from "../components/ReadStateNotice";
@@ -19,10 +19,11 @@ export default function MemoryPage() {
     members: family.model.selfUserId === userId && family.model.loadState !== "lost"
       ? family.model.families.find(item => item.id === selectedChild.workspaceId)?.members ?? [] : [],
   } : undefined;
-  return <PageFrame density="compact" title="記憶與參考" description="查閱對話脈絡、已保存記憶與參考來源" eyebrow={`${brand.name} · 資料查閱`}
-    headerActions={child && memory ? <AppButton label={memory.busy ? "正在讀取…" : "重新讀取記憶"} variant="secondary" density="compact" disabled={!online || memory.busy || memory.lost} onPress={memory.refresh} /> : undefined}>
-    {child ? <><MemoryReferenceView confirmerDisplay={confirmerDisplay} onPrepareQuestion={actions.prepareQuestion} /><TaskKnowledgeMemoryManagement key={memory?.value.scopeKey ?? "no-memory-scope"} />
-      {memory?.lost ? <Text>孩子存取已失效，舊記憶及私人摘要已清除。</Text> : memory?.failed ? <Text>最新記憶未能核對；已載入內容可能過時。</Text> : null}
+  const tabActions = child ? <><TaskKnowledgeMemoryManagement key={memory?.value.scopeKey ?? "no-memory-scope"} />
+    {memory?.failed ? <AppButton label={memory.busy ? "讀取中…" : "重試讀取"} accessibilityLabel={memory.busy ? "正在讀取記憶" : "重新讀取記憶"} variant="secondary" density="compact" disabled={!online || memory.busy || memory.lost} onPress={memory.refresh} /> : null}</> : undefined;
+  return <PageFrame density="compact" title="記憶">
+    {child ? <><MemoryReferenceView tabActions={tabActions} confirmerDisplay={confirmerDisplay} onPrepareQuestion={actions.prepareQuestion} />
+      {memory?.lost ? <BackgroundSurface padded><Text>孩子存取已失效，舊記憶及私人摘要已清除。</Text></BackgroundSurface> : memory?.failed ? <BackgroundSurface padded><Text>最新記憶未能核對；已載入內容可能過時。</Text></BackgroundSurface> : null}
     </> : <ReadStateNotice state="empty" title="先選擇孩子" message="選擇孩子後才可查看對應記憶與參考。"><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></ReadStateNotice>}
   </PageFrame>;
 }

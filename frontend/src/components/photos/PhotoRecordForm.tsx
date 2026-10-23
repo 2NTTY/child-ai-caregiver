@@ -21,7 +21,7 @@ export function PhotoRecordForm({ model, actions }: { model: PhotosViewModel; ac
   });
   usePreviewLeaveGuard(isDirty);
   function change<K extends keyof PhotoDraftFields>(name: K, value: PhotoDraftFields[K]) { actions.editDraft({ ...getValues(), [name]: value }); }
-  return <SectionCard testID="photo-record-form"><SectionHeader density="compact" title="核對記錄內容" subtitle="本頁手動草稿尚未共享；提取失敗或結果未知也可手動整理。" icon="pencil-outline" />
+  return <SectionCard surface="plain" testID="photo-record-form"><SectionHeader density="compact" title="核對記錄內容" subtitle="本頁手動草稿尚未共享；提取失敗或結果未知也可手動整理。" icon="pencil-outline" />
     <FormErrorSummary entries={errorEntries} onFocus={name => {
       const target = recordDraftFieldOrder.find(field => field === name);
       if (target) setFocus(target);

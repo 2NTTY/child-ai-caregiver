@@ -49,9 +49,8 @@ export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel
       <FormFieldMessage id={`${fieldId(name)}-message`} error={fieldState.error?.message} help={help} />
     </View>} />;
   }
-  return <SectionCard><SectionHeader density="compact" title={draft.captureSnapshot ? "調整待確認提案" : draft.mode === "create" ? "新增共享記錄" : "更正記錄"}
-    subtitle={draft.basis ? `以版本 ${draft.basis.current.version} 作基準；草稿尚未保存。` : "填寫後先核對內容及家庭共享範圍。"}
-    action={<AppButton label="取消草稿" variant="quiet" disabled={busy} onPress={actions.closePanel} />} />
+  return <SectionCard surface="plain"><SectionHeader density="compact" title={draft.captureSnapshot ? "調整待確認提案" : draft.mode === "create" ? "新增共享記錄" : "更正記錄"}
+    subtitle={draft.basis ? `以版本 ${draft.basis.current.version} 作基準；草稿尚未保存。` : "填寫後先核對內容及家庭共享範圍。"} />
     {draft.captureSnapshot ? <View style={styles.review}><Text style={styles.label}>原始輸入（保留不改寫）</Text>
       {model.review?.items.find(item => item.id === draft.captureId)?.sourceState === "ready" ? <Text selectable style={styles.meta}>{draft.captureSnapshot.originalText}</Text> : <Text style={styles.noticeTitle}>原始來源已變更或不可用，舊原文暫不顯示；請重新核對提案。</Text>}
       <Text style={styles.meta}>只調整下方將要寫入的內容；私人原文不會自動共享。</Text></View> : null}

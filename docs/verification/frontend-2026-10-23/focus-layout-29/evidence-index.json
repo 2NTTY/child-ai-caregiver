@@ -1,0 +1,193 @@
+{
+  "status": "FROZEN_SNAPSHOT29_BOUNDED_EVIDENCE",
+  "candidateBrowserStatus": "BOUNDED_PASS_WITH_DEFERRED_CASES",
+  "images": [
+    {
+      "id": "B01",
+      "file": "screenshots/baseline27a/11-old-saved-tab-marker-0.jpg",
+      "originalName": "11-old-saved-tab-marker-0.png",
+      "sha256": "5fb780fd807d34c63442d7cc96bd950d4563e822b417c41f39f118db8a0cab01",
+      "bytes": 173245,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "htmlZoom": 1.4,
+      "chromeZoomPercent": 100,
+      "version": "snapshot27a",
+      "synthetic": true,
+      "result": "BASELINE_RED",
+      "caption": "舊27a已保存底線明顯偏左；精確偏差另由幾何量測。",
+      "transformation": "none; original bytes copied with correct JPEG filename extension"
+    },
+    {
+      "id": "G01",
+      "file": "screenshots/snapshot29/09-pending-native-return-0.jpg",
+      "originalName": "09-pending-native-return-0.png",
+      "sha256": "eb7885afbabccf6fcf1e385d0a6807540c79f4317f214247ecacef7ca465b638",
+      "bytes": 167835,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "htmlZoom": 1.4,
+      "chromeZoomPercent": 100,
+      "version": "snapshot29",
+      "synthetic": true,
+      "result": "BOUNDED_PASS",
+      "caption": "29自然focus返回，待確認1保留；瞬時穩定性另由取樣時間序列支持。",
+      "transformation": "none; original bytes copied with correct JPEG filename extension"
+    },
+    {
+      "id": "G02",
+      "file": "screenshots/snapshot29/19-saved-detail-native-return-0.jpg",
+      "originalName": "19-saved-detail-native-return-0.png",
+      "sha256": "a15b2f9502098b1a1f6dac17b7813b089400aaf797569efad36015a8581ec37f",
+      "bytes": 187850,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "htmlZoom": 1.4,
+      "chromeZoomPercent": 100,
+      "version": "snapshot29",
+      "synthetic": true,
+      "result": "BOUNDED_PASS",
+      "caption": "29已保存詳情自然focus後維持讀取位置；非全頁截圖。",
+      "transformation": "none; original bytes copied with correct JPEG filename extension"
+    },
+    {
+      "id": "G03",
+      "file": "screenshots/snapshot29/24-history390-long-rows-scroll-0.jpg",
+      "originalName": "24-history390-long-rows-scroll-0.png",
+      "sha256": "16330796ee84828c63d77c654d59ae7ffeb781e2d4e8c7fe336d3e1b1c4af580",
+      "bytes": 139045,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        390,
+        700
+      ],
+      "htmlZoom": 1.2,
+      "chromeZoomPercent": 80,
+      "version": "snapshot29",
+      "synthetic": true,
+      "result": "BOUNDED_PASS",
+      "caption": "29歷史待辦單欄及長內容截行；截圖不是全部清單。",
+      "transformation": "none; original bytes copied with correct JPEG filename extension"
+    },
+    {
+      "id": "G04",
+      "file": "screenshots/snapshot29/33-history1440-detail-0.jpg",
+      "originalName": "33-history1440-detail-0.png",
+      "sha256": "5b6da0cdb2bc1771451bd4d21247c6f8062185ed58aa41ab5b8a574feb64ca45",
+      "bytes": 189538,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1440,
+        700
+      ],
+      "htmlZoom": 1.4,
+      "chromeZoomPercent": 80,
+      "version": "snapshot29",
+      "synthetic": true,
+      "result": "BOUNDED_PASS",
+      "caption": "29單欄歷史清單＋右側詳情，並非兩筆歷史卡並排。",
+      "transformation": "none; original bytes copied with correct JPEG filename extension"
+    },
+    {
+      "id": "G05",
+      "file": "screenshots/snapshot29/39-care390-saved-top-0.jpg",
+      "originalName": "39-care390-saved-top-0.png",
+      "sha256": "2abbb2b21930418f7bdeca037d656e5dd0a27b9b763254dd11cd8e214016e216",
+      "bytes": 135345,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        390,
+        700
+      ],
+      "htmlZoom": 1.2,
+      "chromeZoomPercent": 80,
+      "version": "snapshot29",
+      "synthetic": true,
+      "result": "BOUNDED_PASS",
+      "caption": "29已保存事件正文優先、metadata次級；已保存底線位置正確。",
+      "transformation": "none; original bytes copied with correct JPEG filename extension"
+    },
+    {
+      "id": "G06",
+      "file": "screenshots/snapshot29/48-care-empty-native-return-0.jpg",
+      "originalName": "48-care-empty-native-return-0.png",
+      "sha256": "a35ca66c9aca8e2f33e6ed50b4305cb8fce6dcc01d95c517677eab9c45da02bf",
+      "bytes": 136418,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "htmlZoom": 1.4,
+      "chromeZoomPercent": 80,
+      "version": "snapshot29",
+      "synthetic": true,
+      "result": "BOUNDED_PASS",
+      "caption": "29已確認空snapshot自然focus返回後保留0與空卡。",
+      "transformation": "none; original bytes copied with correct JPEG filename extension"
+    },
+    {
+      "id": "G07",
+      "file": "screenshots/snapshot29/61-model-review-native-return-0.jpg",
+      "originalName": "61-model-review-native-return-0.png",
+      "sha256": "217a07dc5c9c4e6db8ec4b8e911bb880395a24fd7f35089760ab4e62fe70c10f",
+      "bytes": 152866,
+      "actualFormat": "JPEG",
+      "nativePixels": [
+        1364,
+        1024
+      ],
+      "cssViewport": [
+        1024,
+        600
+      ],
+      "htmlZoom": 1.4,
+      "chromeZoomPercent": 80,
+      "version": "snapshot29",
+      "synthetic": true,
+      "result": "BOUNDED_PASS",
+      "caption": "29合成模型設定審閱窗自然focus後保留；確認未勾選，流程以取消結束。",
+      "transformation": "none; original bytes copied with correct JPEG filename extension"
+    }
+  ],
+  "completeOriginalIndex": "original-images-index.json",
+  "notAttached": "Remaining images are indexed by original name/hash only; no claim that all originals are attached.",
+  "frozenAt": "2026-10-23T03:26:54.907614+00:00"
+}

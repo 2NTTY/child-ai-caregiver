@@ -1,0 +1,37 @@
+{
+  "stage": "snapshot27a baseline only",
+  "bundleSha256": "abf3e8dc7d012a87db73ac5732721cc10429c68454144b2fbfff8c3aba4dbcf2",
+  "fixtureSha256": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d",
+  "synthetic": true,
+  "cssViewport": [
+    1024,
+    600
+  ],
+  "htmlZoom": 1.4,
+  "originalPixels": [
+    1364,
+    1024
+  ],
+  "focusObservation": {
+    "gapMs": 58,
+    "countDisappearedAt": 1792721471163,
+    "countReturnedAt": 1792721471221,
+    "pendingCardNodeStable": true,
+    "pageAndGateNodesStable": true,
+    "scope": "Sampled DOM identity and natural focus return; not proof that every descendant stayed mounted or no subframe flash."
+  },
+  "underlineObservation": {
+    "selectedTabX": 484.3125,
+    "selectedTabWidth": 81.15625,
+    "markerX": 433.984375,
+    "markerWidth": 81.1875,
+    "leftErrorPx": 50.328125,
+    "htmlZoomComputed": 1.4,
+    "settledAfterMoreThanSeconds": 10
+  },
+  "limitations": [
+    "Old27a only; not snapshot29 acceptance.",
+    "Still images cannot independently prove a 58 ms transient.",
+    "Chrome code9 and tool timeouts occurred; root cause unknown."
+  ]
+}

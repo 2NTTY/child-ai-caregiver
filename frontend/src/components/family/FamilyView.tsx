@@ -21,7 +21,7 @@ const invitationSchema = z.object({
   role: z.enum(["caregiver", "viewer"]),
 });
 const invitationStatusLabels = { pending: "待接受", accepted: "已接受", revoked: "已撤銷", expired: "已過期" } as const;
-function expiryLabel(value: string) { return new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", hour12: false }); }
+function expiryLabel(value: string) { return new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }); }
 
 function ScopeCheck({ checked, disabled, onChange }: { checked: boolean; disabled: boolean; onChange: (checked: boolean) => void }) {
   return <AppCheckbox label="我已核對目標及共享範圍" checked={checked} disabled={disabled} onChange={onChange} />;
@@ -65,7 +65,7 @@ function IncomingComposer({ model, actions, production }: { model: FamilyViewMod
     {model.incoming ? <View style={styles.review}>
       <Text style={styles.reviewTitle}>{model.incoming.ownerName}的家庭</Text>
       <Text style={styles.body}>加入後角色：{familyRoleLabels[model.incoming.role]}</Text>
-      <Text style={styles.meta}>{production ? "到期時間" : "合成到期時間"}：{expiryLabel(model.incoming.expiresAt)}（香港時間）</Text>
+      <Text style={styles.meta}>{production ? "到期時間" : "合成到期時間"}：{expiryLabel(model.incoming.expiresAt)}</Text>
       <Text style={styles.body}>{familyScopeText}</Text>
       <Text style={styles.meta}>預覽邀請不會披露孩子或照顧記錄正文；正式接受須登入指定收件人的帳號及持有有效碼。</Text>
       <AppButton label="核對加入範圍" onPress={actions.stageAccept} disabled={!model.canStartAction || production && (model.incoming.status !== "pending" || Date.parse(model.incoming.expiresAt) <= Date.now())} />

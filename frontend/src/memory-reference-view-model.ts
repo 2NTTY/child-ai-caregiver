@@ -123,7 +123,7 @@ export function visibleKnowledgeReferences(read: MemoryReadProjection<KnowledgeR
 export function memoryDateLabel(value: string | null | undefined): string {
   if (!value) return "未提供";
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value) || !Number.isFinite(Date.parse(value))) return value;
-  return `${new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", hour12: false })}（香港時間）`;
+  return `${new Date(value).toLocaleString("zh-HK", { timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })}`;
 }
 export function memoryClarificationQuestion(childName: string, fact: Readonly<MemoryFactView>): string {
   return `我想核對${childName}的記憶「${fact.key}」：${fact.content}\n請先與我釐清疑問，並對照原來源及版本 ${fact.version}；不要直接更改記憶。`;

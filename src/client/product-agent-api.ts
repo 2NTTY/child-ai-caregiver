@@ -137,6 +137,7 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
       const input = parsed.data;
       if (pending && (!pending.reviewed || !sameScope(pending, childId, runId, userId) || pending.proposalId !== proposalId
         || JSON.stringify(pending.input) !== JSON.stringify(input))) throw new ProductAgentApiError(0, "check_original_run");
+      const previous = pending;
       const attempt: PendingDecision = { childId, runId, userId, proposalId, input, reviewed: false, freshConfirmation: false };
       pending = attempt;
       try {
@@ -147,7 +148,11 @@ export function createProductAgentApi(baseUrl = "", fetcher: typeof fetch = fetc
         pending = null;
         return proposal.data;
       } catch (error) {
-        if (error instanceof ProductAgentApiError) attempt.freshConfirmation = requiresFreshAgentConfirmation(error);
+        if (error instanceof ProductAgentApiError) {
+          attempt.freshConfirmation = requiresFreshAgentConfirmation(error);
+          // HTTP method rejection precedes mutation. It cannot resolve an older unknown attempt.
+          if (error.status === 405 && pending === attempt) pending = previous ? { ...previous, reviewed: false } : null;
+        }
         throw error;
       }
     },

@@ -69,8 +69,8 @@ const opaque = style => assert.equal(style.opacity ?? 1, 1, 'enabled press must 
 const formerFadeStyles = {
   'src/components/AppCheckbox.tsx': ['pressed'], 'src/components/AppShell.tsx': ['pressed'],
   'src/components/ChildPicker.tsx': ['homePressed'], 'src/components/HomeAgentImportant.tsx': ['pressed'],
-  'src/components/HomeDashboard.tsx': ['pressed'], 'src/components/HomeOverviewItems.tsx': ['pressed'],
-  'src/components/HomeQuickActions.tsx': ['pressed'], 'src/components/RightRailContent.tsx': ['pressed'],
+  'src/components/HomeOverviewItems.tsx': ['pressed'],
+  'src/components/HomeQuickActions.tsx': ['pressed'],
   'src/components/agent/AgentComposer.tsx': ['pressed'], 'src/components/agent/AgentConversationPreview.tsx': ['pressed'],
   'src/components/care/CareReviewHistoryView.tsx': ['pressed'], 'src/components/chat/AnswerSources.tsx': ['pressed'],
   'src/components/chat/ChatMessage.tsx': ['pressed'], 'src/components/contact/contact-styles.ts': ['pressed'],
@@ -81,7 +81,7 @@ const formerFadeStyles = {
   'src/screens/guideScreen.tsx': ['pressed'], 'src/screens/loginScreen.tsx': ['pressed'],
   'src/screens/profileScreen.tsx': ['pressed'], 'src/screens/settingsScreen.tsx': ['pressed'],
 };
-test('all 27 former enabled press fades retain opacity and provide local surface feedback', () => {
+test('all 25 remaining former enabled press fades retain opacity and provide local surface feedback', () => {
   let count = 0;
   for (const [file, keys] of Object.entries(formerFadeStyles)) {
     const sf = source(file);
@@ -93,7 +93,7 @@ test('all 27 former enabled press fades retain opacity and provide local surface
       assert.equal(value.borderWidth, undefined, 'feedback must not add a frame'); count++;
     }
   }
-  assert.equal(count, 27);
+  assert.equal(count, 25);
 });
 test('selection fields, options, tabs and lightweight links keep distinct resting roles', () => {
   const file = 'src/components/ui.tsx', shared = styles(file);

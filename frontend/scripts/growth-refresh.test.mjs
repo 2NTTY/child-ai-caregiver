@@ -35,6 +35,7 @@ function harness(entry, symbol, initialArgs, injectedWorkspace = () => null) {
       }
     },
   };
+  react.useLayoutEffect = react.useEffect;
   const jsx = (type, props, key) => ({ type, props, key });
   function load(filename) {
     if (cache.has(filename)) return cache.get(filename);
@@ -46,17 +47,22 @@ function harness(entry, symbol, initialArgs, injectedWorkspace = () => null) {
       if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx, Fragment: 'Fragment' };
       if (name === 'react-native') return { View: 'View', Text: 'Text', Pressable: 'Pressable', StyleSheet: { create: value => value }, useWindowDimensions: () => ({ width: 1200 }) };
       if (name === 'react-native-paper') return { Text: 'Text', Button: 'PaperButton' };
-      if (name.endsWith('/theme')) return { colors: {}, radius: {}, spacing: { xs: 4, sm: 8, md: 12, lg: 16 }, mobileLayout: { breakpoint: 650, touchTarget: 48 } };
+      if (name.endsWith('/theme')) return { colors: {}, radius: {}, readingType: {}, spacing: { xs: 4, sm: 8, md: 12, lg: 16 }, mobileLayout: { breakpoint: 650, touchTarget: 48 } };
+      if (name.endsWith('/motion')) return { MotionFeedback: 'MotionFeedback', MotionReveal: 'MotionReveal' };
       if (name.endsWith('/useInteractionDensity')) return { useInteractionDensity: () => false };
       if (name.endsWith('/useContainerWidth')) return { useContainerWidth: () => ({ width: 1200, ref: null, onLayout() {} }) };
       if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewLeaveGuard: (...values) => guards.push(values) };
       if (name.endsWith('/workspaces/GrowthWorkspace')) return { useGrowthWorkspace: injectedWorkspace };
       if (name.endsWith('/AppDialog')) return { AppDialog: Object.assign(function Dialog() {}, { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions' }) };
       if (name === './growth-styles') return { growthStyles: {} };
-      if (name === './GrowthArchive') return { GrowthArchive: 'GrowthArchive' };
+      if (name.endsWith('/PreparationWorkspace')) return { PreparationWorkspace: 'PreparationWorkspace' };
+      if (name.endsWith('/SummaryDisclosure')) return { SummaryDisclosure: 'SummaryDisclosure' };
+      if (name.endsWith('/GrowthConcernActions')) return { GrowthConcernActions: 'GrowthConcernActions' };
+      if (name.endsWith('/BackgroundSurface')) return { BackgroundSurface: 'BackgroundSurface' };
+      if (name === './GrowthArchiveConcernButton') return { GrowthArchiveConcernButton: 'GrowthArchiveConcernButton' };
       if (name === './GrowthConcernManualFallback') return { GrowthConcernManualFallback: 'GrowthConcernManualFallback' };
       if (name === './GrowthConcernTimeline') return { GrowthConcernIndex: 'GrowthConcernIndex', GrowthConcernTimeline: 'GrowthConcernTimeline' };
-      if (name.endsWith('/ui')) return Object.fromEntries(['AppButton', 'AppSelect', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'UnderlineTabs'].map(value => [value, value]));
+      if (name.endsWith('/ui')) return Object.fromEntries(['AppButton', 'AppSelect', 'AppTabPanel', 'SectionCard', 'SectionHeader', 'TabToolbar', 'UnderlineTabs'].map(value => [value, value]));
       for (const component of ['AppCheckbox', 'PageFrame', 'StatusAnnouncement', 'ReadStateNotice', 'EmptyListCard', 'AppIcon', 'AppStatusBadge']) {
         if (name.endsWith(`/${component}`)) return { [component]: component };
       }
@@ -86,7 +92,7 @@ function nodes(tree, predicate, prefix = []) {
   if (!tree || typeof tree !== 'object') return [];
   if (Array.isArray(tree)) return tree.flatMap((value, index) => nodes(value, predicate, [...prefix, index]));
   const pureChild = typeof tree.type === 'function' && ['GrowthOperationRecovery', 'GrowthOriginalRequest', 'GrowthConcernChangeNotice'].includes(tree.type.name) ? tree.type(tree.props) : null;
-  return [...(predicate(tree) ? [{ node: tree, path: prefix }] : []), ...nodes(pureChild, predicate, [...prefix, 'render']), ...nodes(tree.props?.headerActions, predicate, [...prefix, 'headerActions']), ...nodes(tree.props?.children, predicate, [...prefix, 'children'])];
+  return [...(predicate(tree) ? [{ node: tree, path: prefix }] : []), ...nodes(pureChild, predicate, [...prefix, 'render']), ...nodes(tree.props?.headerActions, predicate, [...prefix, 'headerActions']), ...nodes(tree.props?.actions, predicate, [...prefix, 'actions']), ...nodes(tree.props?.children, predicate, [...prefix, 'children'])];
 }
 const byType = (tree, type) => nodes(tree, node => node.type === type).map(value => value.node);
 const byId = (tree, id) => nodes(tree, node => node.props?.testID === id).map(value => value.node);
@@ -98,9 +104,13 @@ test('ordinary refresh keeps content stable without a toolbar reload or loading/
   const o = owner(); let state = o.render(); const v = view(state.model, state.actions);
   let tree = v.render(); const pageBefore = state.model.page;
   assert.equal(refreshNodes(tree).length, 0);
-  assert.equal(tree.props.headerActions.props.testID, 'growth-refresh-toolbar');
+  assert.equal(tree.props.headerActions, undefined);
+  const toolbar = byId(tree, 'growth-tabs-toolbar')[0];
+  assert.equal(toolbar.type, 'TabToolbar');
+  assert.equal(toolbar.props.actions.props.testID, 'growth-refresh-toolbar');
+  assert.equal(byType(toolbar, 'UnderlineTabs')[0].props.id, 'growth-workspace');
   assert.equal(tree.props.description, undefined);
-  const headerButtons = byType(tree.props.headerActions, 'AppButton');
+  const headerButtons = byType(toolbar.props.actions, 'AppButton');
   assert.deepEqual(headerButtons.map(button => button.props.label), ['查看關注歷史']);
   state.actions.refresh(); state.actions.refresh();
   assert.equal(o.timers.size, 1, 'Repeated requests cannot start a second read');
@@ -129,7 +139,8 @@ test('selection, tab and newer reading position are not reset by refresh complet
   assert.ok(choices.length > 1);
   byType(tree, 'GrowthConcernIndex')[0].props.onSelect(choices[1].id);
   tree = v.render();
-  const viewport = { scrollTop: 280, scrollTo() { assert.fail('Refresh must not restore a stale scroll snapshot'); } };
+  const scrolls = [];
+  const viewport = { scrollTop: 280, scrollTo(value) { scrolls.push(value); } };
   tree.props.scrollRef.current = viewport;
   state.actions.refresh(); state = o.render(); tree = v.render([{ model: withSecondConcern(state.model), actions: state.actions }]);
   assert.equal(byType(tree, 'GrowthConcernTimeline')[0].props.concern.id, choices[1].id);
@@ -137,10 +148,13 @@ test('selection, tab and newer reading position are not reset by refresh complet
   o.tick(); state = o.render(); tree = v.render([{ model: withSecondConcern(state.model), actions: state.actions }]);
   assert.equal(viewport.scrollTop, 420);
   assert.equal(byType(tree, 'GrowthConcernTimeline')[0].props.concern.id, choices[1].id);
-  byType(tree, 'UnderlineTabs')[0].props.onChange('archive'); tree = v.render();
-  state.actions.refresh(); state = o.render(); v.render([{ model: withSecondConcern(state.model), actions: state.actions }]);
-  o.tick(); state = o.render(); tree = v.render([{ model: withSecondConcern(state.model), actions: state.actions }]);
-  assert.equal(byType(tree, 'UnderlineTabs')[0].props.value, 'archive');
+  assert.deepEqual(scrolls, [], 'Refresh must not restore a stale scroll snapshot');
+  tree = v.render([{ model: withSecondConcern(state.model), actions: state.actions, tab: 'preparation' }]);
+  assert.deepEqual(scrolls, [{ y: 0, animated: false }]); scrolls.length = 0;
+  state.actions.refresh(); state = o.render(); v.render([{ model: withSecondConcern(state.model), actions: state.actions, tab: 'preparation' }]);
+  o.tick(); state = o.render(); tree = v.render([{ model: withSecondConcern(state.model), actions: state.actions, tab: 'preparation' }]);
+  assert.equal(byType(tree, 'UnderlineTabs')[0].props.value, 'preparation');
+  assert.deepEqual(scrolls, []);
   assert.equal(viewport.scrollTop, 420);
 });
 
@@ -180,7 +194,7 @@ test('dirty and unknown original operations retain their frozen body and guard t
 
 test('lost access cancels in-flight reads and clears private data without restoring stale selection', () => {
   const o = owner(); let state = o.render(); const v = view(state.model, state.actions);
-  let tree = v.render(); byType(tree, 'UnderlineTabs')[0].props.onChange('archive'); v.render();
+  let tree = v.render();
   const oldRefresh = state.actions.refresh;
   oldRefresh(); state = o.render(); state.changeCondition('lost'); state = o.render();
   oldRefresh(); o.tick(); state = o.render(); tree = v.render([{ model: state.model, actions: state.actions }]);
@@ -251,7 +265,7 @@ test('archive, History, return and refresh share one closed chain without changi
   const o = owner(); let state = o.render(), concern = state.model.page.concerns.items[0];
   const before = structuredClone({ items: state.model.page.items, topics: state.model.page.topics });
   const v = view(state.model, state.actions); let tree = v.render();
-  const archive = byType(tree, 'GrowthConcernTimeline')[0].props.onArchive;
+  const archive = byType(tree, 'GrowthArchiveConcernButton')[0].props.onConfirm;
   assert.equal(typeof archive, 'function');
   archive(); archive(); assert.equal(o.timers.size, 1);
   o.render(); o.tick(); state = o.render(); concern = state.model.page.concerns.items[0];
@@ -332,12 +346,12 @@ test('Growth and History consume the same injected owner and mismatched scopes a
   assert.match(connected, /<MemoryReferenceWorkspaceProvider scopeKey=\{env\.scopeKey\} value=\{current\?\.memory\.value \?\? null\}>/);
 });
 
-test('ending a concern uses a filled control and frozen confirmation; cancel and dismissal never write', () => {
+test('ending a concern uses a quiet management entry and frozen confirmation; cancel and dismissal never write', () => {
   const state = owner().render(), concern = state.model.page.concerns.items[0]; let writes = 0;
   const props = { concern, scopeKey: state.model.scopeKey, authorityVersion: state.model.page.authorityVersion, disabled: false, onConfirm: () => writes++ };
   const h = harness('src/components/growth/GrowthArchiveConcernButton.tsx', 'GrowthArchiveConcernButton', [props]);
   let tree = h.render(); const trigger = () => byType(tree, 'AppButton').find(button => button.props.label === '結束關注');
-  assert.equal(trigger().props.variant, 'danger'); assert.equal(trigger().props.style.borderWidth, 0);
+  assert.equal(trigger().props.variant, 'quiet'); assert.equal(trigger().props.style.borderWidth, 0);
   trigger().props.onPress(); tree = h.render();
   let dialog = byId(tree, 'growth-archive-confirmation')[0];
   assert.equal(dialog.props.visible, true); assert.ok(dialog.props.accessibilityLabel.includes(concern.title)); assert.equal(writes, 0);
@@ -388,7 +402,8 @@ test('History restores through the same owner and provides recovery locally for 
   state.actions.archiveConcern(concern.id, concern.version, state.model.page.authorityVersion); o.render(); o.tick(); state = o.render();
   state.setOutcome('unknown'); state = o.render();
   const history = harness('src/components/growth/GrowthHistoryView.tsx', 'GrowthHistoryView', [{ searchText: '', dateRange: { from: null, to: null }, onTask() {} }], () => ({ scopeKey: state.model.scopeKey, model: state.model, actions: state.actions }));
-  let tree = history.render(); byType(tree, 'PaperButton').find(button => button.props.accessibilityLabel === `恢復關注：${concern.title}`).props.onPress({ stopPropagation() {} });
+  let tree = history.render(); byType(tree, 'Pressable').find(button => button.props.accessibilityLabel === `查看已結束關注：${concern.title}`).props.onPress();
+  tree = history.render(); byType(tree, 'PaperButton').find(button => button.props.accessibilityLabel === `恢復關注：${concern.title}`).props.onPress({ stopPropagation() {} });
   o.render(); o.tick(); state = o.render(); tree = history.render();
   assert.equal(state.model.pending.attempt.input.action, 'restore'); const frozen = structuredClone(state.model.pending.attempt);
   assert.equal(state.model.page.concerns.items[0].status, 'closed'); assert.equal(byId(tree, 'growth-pending').length, 1);

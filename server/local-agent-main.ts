@@ -7,18 +7,14 @@ import { createLocalAgentWorker } from './local-agent-worker.ts';
 import { createLocalAgentDelivery } from './local-agent-delivery.ts';
 import { openFirebaseRuntime } from './firebase-runtime.ts';
 import { createFirebaseNodeHandler } from './firebase-http.ts';
-import { createGeminiKeyProviders } from './gemini-key-provider.ts';
-import { readAiConfig } from './ai-config.ts';
+import { readLocalAgentModel } from './local-agent-model.ts';
 import { FirestoreAuthorityError } from './firestore-authority.ts';
 import type { AgentDiagnostic } from './agent-observer.ts';
 
 const config = assertLocalAgentEnvironment(process.env);
 const state = JSON.parse(await readFile(process.env.LOCAL_AGENT_STATE_FILE!, 'utf8'));
 if (state.projectId !== config.projectId || state.storageKey !== process.env.YUBAN_FIREBASE_STORAGE_KEY) throw Error('Local state binding mismatch');
-const provider = process.env.LOCAL_MODEL_PROVIDER;
-if (provider !== 'gemini' && provider !== 'vertex' && provider !== 'vertex-adc') throw Error('Unknown local model provider');
-if (process.env.AI_ENABLED === 'true' && (provider === 'vertex-adc' ? !process.env.LOCAL_MODEL_PROJECT : !process.env.LOCAL_MODEL_API_KEY)) throw Error('Local model credentials missing');
-const modelConfig = readAiConfig({ ...process.env, GCP_PROJECT_ID: provider === 'vertex-adc' ? process.env.LOCAL_MODEL_PROJECT : config.projectId });
+const { provider, modelConfig, providers, embeddingConfigured } = readLocalAgentModel(process.env);
 const events: AgentDiagnostic[] = [];
 let delivery: ReturnType<typeof createLocalAgentDelivery>;
 const runtime = await openFirebaseRuntime(process.env, { worker: true, local: {
@@ -33,7 +29,7 @@ const runtime = await openFirebaseRuntime(process.env, { worker: true, local: {
       return (await auth.createUser({ email: state.email, password: state.password, emailVerified: true, displayName: '本地開發帳號' })).uid;
     }
   },
-  ...(provider !== 'vertex-adc' && modelConfig.enabled ? { providers: selected => createGeminiKeyProviders(selected, process.env.LOCAL_MODEL_API_KEY!, provider) } : {}),
+  ...(providers ? { providers } : {}),
   diagnostics(event) { events.push(event); if (events.length > 200) events.shift(); },
 } });
 try { await runtime.authority.readControl(); }
@@ -47,7 +43,7 @@ const git = (args: string[]) => { try { return execFileSync('git', args, { encod
 const manifest = JSON.parse(await readFile(new URL('../prompts/manifest.json', import.meta.url), 'utf8'));
 const status = { mode: 'local-development', project: config.projectId, branch: git(['branch', '--show-current']), sha: git(['rev-parse', '--short', 'HEAD']),
   dirty: Boolean(git(['status', '--porcelain', '--untracked-files=no'])),
-  model: modelConfig.model, provider, promptPack: manifest.version, enabled: modelConfig.enabled,
+  model: modelConfig.localModelOverride ?? modelConfig.model, provider, embeddingConfigured, promptPack: manifest.version, enabled: modelConfig.enabled,
   roles: { chat: 'production-runtime', review: 'production-runtime', compose: 'production-family-document-patch', knowledgeMaintenance: 'explicit-local-maintenance-command' },
   externalDelivery: 'local-inbox-not-sent', email: 'emulator-inbox-not-sent',
   knowledge: 'published-reviewed-sources-after-explicit-preparation-or-maintenance', snapshots: 'periodic-and-graceful-stop' };

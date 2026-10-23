@@ -588,24 +588,26 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 <a id="personal-model-http"></a>
 ## S06-W05 本人模型設定
 
-所有路由需登入；GET／POST 均帶 `x-expected-user-id`，身份不符回 403。POST 沿用 Origin／JSON 檢查及有界正文。新版共用 client 使用 `Accept: application/vnd.yuyoufang.model-settings.v2+json`；設定不進通用 online 重送佇列，key 正文不持久保存到 client。部署須先更新相容 Server，再發布共用 Web／Android client。
+所有路由需登入；GET／POST 均帶 `x-expected-user-id`，身份不符回 403。POST 沿用 Origin／JSON 檢查及有界正文。新版共用 client 使用 `Accept: application/vnd.yuyoufang.model-settings.v3+json`；v2 為舊 Google client 保留。設定不進通用 online 重送佇列，key 正文不持久保存到 client。部署須先更新相容 Server，再發布共用 Web／Android client。
 
 | 路由 | 輸入／結果 |
 |---|---|
 | `GET /api/ai/settings` | 本人無密鑰設定、版本、可用狀態、平台／個人分開用量；v2 另回 `effective` 生效限制、管理政策版本及被上限收窄的欄位 |
-| `POST /api/ai/settings` | v2 帶原 `opId`、expectedVersion、mode、provider／model、可選 apiKey／removeKey、背景同意、每日／每輪限制及 consent；回同一設定的新版本 |
+| `POST /api/ai/settings` | 帶原 `opId`、expectedVersion、mode、provider／model、可選 apiKey／removeKey、背景同意、每日／每輪限制及 consent；v3 另接受 baseUrl、embeddingApiKey／removeEmbeddingKey，回無密鑰設定及新版本 |
 | `GET /api/ai/settings/operations/:opId` | v2 只查本人原操作，回無密鑰的保存收據或 null；不回傳原請求、密鑰或指紋 |
-| `GET /api/ai/settings/models` | v2 回模型參考選項、目前設定版本及已知能力；可帶唯一的 `provider=gemini` 或 `provider=vertex` 查閱尚未保存的服務選項，不改設定、不使用 key 或出網，不表示本人 key 已可用 |
+| `GET /api/ai/settings/models` | 回模型參考選項、目前設定版本及已知能力；可帶唯一的 `provider=gemini`、`provider=vertex`，v3 亦接受 `provider=openai-compatible`。不改設定、不使用 key 或出網；相容服務沒有目錄仍可直接填模型 ID |
 | `POST /api/ai/settings/models` | v2 帶 expectedVersion；使用已保存 key，最多兩頁各100項模型 metadata，取支援 generateContent 的合法 Gemini ID，去重後最多回20項；明示 truncated，不生成內容，也不以本地清單刪去新型號 |
 | `POST /api/ai/settings/check` | expectedVersion；Gemini key 查選定模型 metadata；Vertex Express 未提供對應方法時回 metadata_unsupported，不發試用生成 |
 
-精確型別見 [model-settings.ts](../src/shared/model-settings.ts)。`platform / personal / disabled` 需明確選擇；personal 須同意費用及資料外送，背景另行 opt-in。key 不讀回。刪除必須 removeKey=true、mode=disabled，不可同時傳新 key；停用與刪除後不自動使用平台。
+精確型別見 [model-settings.ts](../src/shared/model-settings.ts)。`platform / personal / disabled` 需明確選擇；personal 須同意費用及所選模型／向量服務的資料外送，背景另行 opt-in。兩份 key 均不讀回，v3 只回 `embeddingKeyConfigured`。刪除全部密鑰必須 removeKey=true、mode=disabled，不可同時傳新 key；停用與刪除後不自動使用平台。只刪獨立向量 key 使用 `removeEmbeddingKey:true`，不可同時替換它。
 
-v2 保存先核原 opId／請求指紋，再核版本；原操作重播返回原收據，換內容回 operation_conflict，舊版本回 version_conflict。失聯先以原 opId 查回，不自動重送 key；查無收據亦不宣稱一定未提交。client 錯誤只攜帶無密鑰的 operationId，身份切換後不能查另一人的操作。輸入框仍須在送出／失敗／斷線／身份或 Server 變更時清除。模型查核與目錄刷新共用每帳號每分鐘一次／全站四槽保護；逾限429，不重設模型用量。
+v2／v3 保存先核原 opId／請求指紋，再核版本；原操作重播返回原收據，換內容回 operation_conflict，舊版本回 version_conflict。失聯先以原 opId 查回，不自動重送 key；查無收據亦不宣稱一定未提交。client 錯誤只攜帶無密鑰的 operationId，身份切換後不能查另一人的操作。兩份密鑰輸入在送出／失敗／斷線／身份或 Server 變更、換服務／模式／地址、離頁及 App 進背景時清除；Android 保留頁面也須接入路由失焦。模型查核與目錄刷新共用每帳號每分鐘一次／全站四槽保護；逾限429，不重設模型用量。一般 metadata 查核失敗不撤銷已讀設定或禁止保存；身份、權限、版本或客戶端不相容仍須重讀／拒絕。
 
-provider 為 gemini 或 vertex；更換供應商須提供相應新 key，不能沿用舊 key 猜測認證模式。模型目錄只提供參考，不能作為保存或生成的白名單；Web／Android可直接輸入符合既有格式的Gemini ID，不需先通過逐型號驗收。Server只校驗ID格式，不接受任意URL／headers；相容性及存取失敗沿原供應商錯誤處理，不換模型或付款來源。已知型號保留必要參數適配，其他型號省略可選thinking設定，使用供應商預設。capabilities中的true是已有能力資料，false表示未確認，不以此禁止選擇；metadata不等於生成／embedding／配額或帳單。目錄POST只檢查已保存的供應商及key，不接受provider query；GET明確選另一服務也不會改用已保存key。錯誤只回穩定原因，不透出原始供應商正文。Vertex Express沒有已核對的embedding方法，明示混合檢索不可用，不借平台額度。
+provider 為 gemini、vertex 或 openai-compatible；更換供應商或相容 API 地址須提供相應新聊天 key，不能轉送舊憑證。模型目錄只供參考，不作保存或生成的白名單；Web／Android 可直接填模型 ID。相容服務的 baseUrl 須公開 HTTPS，禁止內網、metadata、重新導向及任意 headers；模型 ID 不是 URL。供應商拒絕工具、媒體或存取時回報受控原因，不換模型或付款來源。已知 Google 型號保留必要參數適配，其他型號省略可選 thinking 設定。capabilities 的 false 表示未確認，不禁止選擇；metadata 不等於生成、向量、配額或帳單。目錄 POST 只檢查已保存供應商及 key，不接受 provider query；GET 不改用已保存 key。錯誤不透出可能含密鑰或私人正文的原始供應商回應。
 
-舊 JSON client 保留原欄位；當選定供應商／型號不能由舊契約表示時，回 client_update_required，不偽稱仍是預設模型。舊保存保留已存在的新欄位；v2 首次明確保存才採 `limitPolicyVersion:2`，不默改舊設定的生成／查詢限額。
+查詢向量保持 `gemini-embedding-001`／1024 維及既有索引。Gemini 沒有獨立向量 key 時沿用本人聊天 key；Vertex／相容服務可另填本人 Gemini 向量 key。缺少它不阻擋保存或普通聊天，需要向量時回 `embedding_not_configured`，不借平台額度、不把其他 embedding 空間套入舊索引。獨立 key 的新增、替換及刪除沿同一版本、交易及原操作收據。
+
+舊 JSON／v2 client 保留原欄位；新設定不能由其契約表示時回 client_update_required，不偽稱仍是預設模型，並在保存交易內核對。舊保存保留能安全表達的新欄位；v2／v3 明確保存採 `limitPolicyVersion:2`，不默改歷史配額或授權。
 
 個人每日1–1000、生成1–12、查詢 embedding 1–6、工具1–16、整輪15–300秒、單次等待5–180秒、額外重試0–3。精確預設與範圍沿 [shared 限制](../src/shared/agent-run-limits.ts)；新進階欄位缺省繼承當前管理政策。v2 每輪生效值為本人要求與管理上限中較小者；本人每日與平台每日分開，仍受共用 personal 全站上限。設定 view、互動、媒體、轉錄及背景均使用同一解析器；每輪固定快照，重試計入原run及每日用量，不重做工具。互動上下文仍沿 AI_AGENT_MAX_INPUT_CHARACTERS（32,000–64,000邏輯字元），輸出仍受原Server上限；不因換模型提高。後續呼叫重核設定版本及授權，撤回不代表供應商已接受的請求可免收費。
 
@@ -898,6 +900,20 @@ F04 接以下文件／照片／退出契約；F06 接背景執行及對外提醒
 文件原操作收據保留 operationId／documentId／savedVersion；內部 contentState 區分 building／ready／invalidated，並提供目前版本及已有處理數量。building 表示整理工作已提交，正文未完成；不等於來源失效或需要建立另一文件。真正來源失效仍遮蔽正文，收據暫時查不到仍是 unknown，不換 opId 重做。頁面沿同一文件的 report.phase／readState 顯示進度。
 
 `GET /api/account/export?section=notification_deliveries` 保留既有前端 owner 契約，回傳本人的 Push／Telegram 投遞及聯絡 attempts metadata；含 id、channel、status、created_at、attempted_at、finished_at、acknowledged_at，聯絡項另有 request_id。沒有真 attempt 的聯絡請求不投影成送達；不新增假電郵、私密正文、渠道地址或 binding。按原請求建立時間倒序有界合併三來源，每頁最多掃十筆來源列，游標各自保存進度，空頁仍須沿 nextCursor 續讀。此分頁不是穩定歷史快照；新投遞／回執由重新讀取更新，身份或資料範圍變更使旧游標失效。
+
+
+#### 本人已保存的外發消息內容
+
+`GET /api/account/messages?scopeVersion=&cursor=` 與投遞診斷匯出分開；完整歷史與鈴鐺最近消息讀同一接口。必須是目前 Firebase session，並帶相符 `x-expected-user-id`；回應 `private, no-store`，返回前重核 session、本人權限及每項孩子存取。只涵蓋本人收件的 Web Push／Android FCM／Telegram 渠道測試與既有 contact 通知，不新增外發、主動 Agent、排程或渠道授權。
+
+- Wire 由 `src/shared/notification-messages.ts` 定義：`schemaVersion:1`、`userId`、`scopeVersion`、`asOf`、`items`、`nextCursor`、`complete`、`coverage`。`scopeVersion` 是本人／workspace／storage epoch／權限版本（含只在孩子刪除屏障同交易遞增的 `childAccessVersion`；舊 workspace 缺欄位在權限計算按 0 讀取、重序列化仍保留缺省而不插入新欄位），不以一般 `changeSeq` 把日常新消息視作撤權。真正範圍失效回 `409 messages_scope_changed`；不合法或跨身份游標回 `400 invalid_message_cursor`；provider 未組裝回 `503 message_history_unavailable`。尚未部署此路由的舊 Server 可能回 404，亦可能回 `503 firebase_domain_not_ready`；client 僅對此新路由將這兩種已知缺接線回應窄映射為未接通，其他 503 仍是一般錯誤，不能冒作其他歷史的撤權。
+- 分兩階段 rollout（[部署及回退步驟](NOTIFICATION_MESSAGE_HISTORY_ROLLOUT.md)）：`FIREBASE_MESSAGE_HISTORY_ENABLED` 預設／`false` 只提供兼容 reader，消息 API 回 `503 message_history_unavailable`、不查新索引、不首次保存快照或權限欄；`true` 才啟用新 capture／API。部署者須先確認全部 API、worker、維護／restore reader 都在本兼容版本以上且四個索引 ready，再設定此旗標；本輪不執行部署。回退 floor 是這個兼容版本，不能退回 pre-bridge strict reader。首次啟用的本人消息讀取先在原生 authority transaction 寫 `childAccessVersion:0` 作持久 activation marker，commit 後才可返回任何頁／游標，不改普通 `changeSeq`。所有兼容實例之後即使旗標關閉，只要 workspace 已有 marker，孩子刪除同一交易仍必遞增；未啟用 workspace 則保留缺欄。初始化與刪除讀寫同一 workspace，依原生 transaction 衝突重試排序；本地串行合成測試不是雲端並發驗證。普通寫入、還原保留已有欄，還原以來源／live 較高 revision 保留 marker，且仍換 epoch；關閉旗標不能取消已建立的權限屏障。
+- 每項 `messageId` 是真來源及 ID：三種渠道測試用原 delivery ID，contact 用原 request ID；不按相同標題／時間猜去重。`contentVersion:1`、`scope`（帳戶，或目前可讀孩子的 ID／名稱）、`sentAt`、`contents[]`。每渠道保存當次實際 title／body／contentVersion／sentAt；Telegram 沒有獨立標題，故 `title:null`。同一 contact 的渠道正文可不同，不捏造共同正文。現有通知沒有來源引用，接口不假造 sources 或事項連結。
+- `sentAt` 是 gateway 在唯一實際 provider request 發起邊界取得的時間，**不是** worker 預先 `attemptedAt`，也不是裝置收到／已讀時間。gateway 用同一當次 payload／text 產生快照，只在核實 provider 接受後返回；worker 將快照與原投遞終態放在同一原有加密 envelope／交易。Web Push 新 payload 攜固定、無家庭敏感資料的版本化內容，SW 顯示該內容；舊 SW 可繼續顯示原固定文案，但不以 API 接受當成已驗證裝置顯示。FCM 快照取本次 `notification`，Telegram 取本次 `sendMessage.text`。不從讀取時的模板補寫過去內容。
+- 非 accepted、未真正發出、legacy 無快照的資料不投影為已保存消息。provider 接受後交易失敗仍沿原 `sending → unknown` 防重，不能為補歷史另發一次；重跑已終結原工作不新增消息。原診斷台帳及未知狀態仍供既有維護渠道使用，不加用戶端技術診斷入口。
+- `coverage.kind=recorded_provider_acceptances`、`historical=unknown`、`excluded=[authentication_email,unconfirmed_or_unsaved_sends]` 明確表示**已保存且可證實對外提交的當次內容**，不承諾全系統歷史完整。舊正文沒有保存，不能還原；provider 回應不明或回應未能保存亦可能缺漏。Firebase 驗證／重設郵件不在此歷史，不能保存或透露其秘密連結。空頁不能解讀為系統從未發過消息，亦沒有未讀／已讀計數。
+- 四個來源各按已驗證加密快照對應的 `messageSentAt DESC`＋真 entity ID 排序，有界合併，每頁最多掃 20 來源行；非本人或已失去孩子權限項目不披露。正文不放 plaintext 索引或日誌；唯一新增排序欄是時間。游標加密綁本人／範圍、首頁 `asOf` 及四個來源位置，後續頁維持同 `asOf`。`coverage.pagination=live`：這是 time-bounded live pagination，不是隔離資料庫 snapshot；晚接受／晚保存者可能要下一次完整靜默 refresh 才出現。`complete` 只表示本次讀取已窮盡，不表示所有渠道／歷史完整。client 按穩定 ID 合併，保留空頁續讀、循環游標防護及靜默多頁刷新。
+- 快照沿原 Push／FCM／Telegram delivery、child-scoped contact envelope 加密保存；本人下載的各原來源 section 同時包含已保存快照。孩子／帳戶清理沿原集合；還原 codec 從加密快照重建排序 metadata，不產生新的外發工作。新增四個查詢索引的 manifest 已列出，**不等於已部署**；既有 ADK events index helper 限制沒有在此包順手修改。合成記憶資料庫不驗證雲端索引或真並發，公開預覽亦不等於 GCP provider／真渠道驗收。 新 reader 可讀缺少快照／childAccessVersion 的舊資料，不代表雙向回退相容；寫入新增欄位後，舊 strict schema 的 API／worker 會拒讀，不能直接退回不支援這些欄位的 binary。
 
 
 <a id="web-admin"></a>

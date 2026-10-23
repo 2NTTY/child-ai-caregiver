@@ -1,0 +1,49 @@
+{
+  "sourceHead": "2fdb8aa31a59fe4b01be8b7470da91740a793bae",
+  "bundle": {
+    "path": "_expo/static/js/web/index-e4c1983306f1570e664f1153f6e87921.js",
+    "sha256": "6f3e3bc65a6201f666d8bf96c0d5933ac64133b724ef579874adfcaaa257c8e5",
+    "bytes": 5623464
+  },
+  "fixtureSha256": "461064eb151bff716b67a93ecc8b9305fdc2c0c05bdbf42eaa599fc2af00ef6d",
+  "rawArtifactCount": 65,
+  "rawHtmlCount": 36,
+  "packagedArtifactCount": 72,
+  "productInputs": 553,
+  "scopeFiles": 45,
+  "scopeRoles": {
+    "product": 28,
+    "test": 16,
+    "design-document": 1
+  },
+  "buildManifestSha256": "7c71a7de8a277ed4edb77fd25c4d438d569db7eebe8910d32f0a4e40ef53a68d",
+  "productManifestSha256": "1b76101594e0061a20b024fe53baa3fd135cfbccc9afa7bec62bcad40b726058",
+  "validatorSha256": "52d16f10c2152406926133e83bdd535dafe806ba1767777bed561601738c3676",
+  "scopeManifestSha256": "45b207682f2e4947609c1ab91c62ba13776c2986c35a0b6e925715d675e4d87c",
+  "inputManifestSha256": "e065abe8ad726c71b0718297028218a5a17c9311a6619e08374c5793b96bbe50",
+  "staticValidator": "PASS",
+  "browserAcceptance": "BOUNDED_PASS_WITH_DEFERRED_CASES; see browser-checks.json",
+  "publication": "NOT_PERFORMED",
+  "status": "STATIC_VALIDATED_FROZEN_SNAPSHOT29_READY_FOR_BROWSER_QA_NOT_PUBLISHED",
+  "build": {
+    "NODE_OPTIONS": "--max-old-space-size=384",
+    "CI": "1",
+    "EXPO_NO_TELEMETRY": "1",
+    "exit": 0,
+    "startUtc": "2026-10-23T02:50:34.986201+00:00",
+    "endUtc": "2026-10-23T02:53:08.581259+00:00",
+    "seconds": 153.595,
+    "maxChildRssKiB": 662012,
+    "logSha256": "931af94677fca79c50250462ba9664f8fb349b19819bf022f096d3280be2db0a",
+    "inputsUnchanged": true,
+    "scopeUnchanged": true,
+    "command": "npm run build:web -- --clear --max-workers 1 --output-dir <frozen-export-directory>"
+  },
+  "archive": {
+    "filename": "frontend-site-preview-snapshot29.tar.gz",
+    "bytes": 4804553,
+    "sha256": "745df5e5fcc68dc2feca130d40a6dc418f2b674c5047e10b92ca87144ce976dc"
+  },
+  "verification": "Evidence pack preparation rechecked bundle, archive and build log bytes; before/after source and scope manifests equal. No build or test rerun.",
+  "safety": "Synthetic preview only; CSP connect-src none and existing write/network/model guards retained. No real household data or credentials."
+}

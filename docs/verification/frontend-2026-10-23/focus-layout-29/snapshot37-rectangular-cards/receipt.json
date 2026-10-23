@@ -1,0 +1,242 @@
+{
+  "status": "SOURCE_AND_ARTIFACT_PASS_BOUNDED_GUI_PARTIAL",
+  "scope": {
+    "baseCommit": "4f6cfb5927f8063c0aed2a7ef13f76f59be48bcf",
+    "baseTree": "ccf056837c758f6145ff4e1d1f62142eeaead98c",
+    "changedSourceFiles": [
+      {
+        "path": "frontend/scripts/care-agent-pending-composition.test.mjs",
+        "mode": "100644",
+        "baseSha": "022a2479e147015f0ca78d614df0cc45156573e3",
+        "sha": "ea67c265992523017b9269ae9689df04d43bdd35",
+        "sha256": "6cbeb535ba585c113d15fded5abb802d07b7abb0325df537da0b031f78f73a8e",
+        "bytes": 24392
+      },
+      {
+        "path": "frontend/scripts/care-conversation-review.test.mjs",
+        "mode": "100644",
+        "baseSha": "a661ac2f47801b9e62192bd015fc8a10bdf1cb0a",
+        "sha": "2b92281c59896967563d5f528aa97a0fc34826e9",
+        "sha256": "d0c352770d1bcdc73f97b2b8954977de4125ce967f37b2166de60b4d95ad375d",
+        "bytes": 29540
+      },
+      {
+        "path": "frontend/src/components/care/CareReviewHistoryView.tsx",
+        "mode": "100644",
+        "baseSha": "027295476428aab75aad961b8d8e2ddc1ab03b65",
+        "sha": "c90f87c4e0df1318b1fc4b26a42e4c2ee5caf65f",
+        "sha256": "ec3b4a9eb3fed056db3371d576162f7899cdf4ff0d7ec1c429cf07379f52183b",
+        "bytes": 30801
+      },
+      {
+        "path": "frontend/src/screens/careScreen.tsx",
+        "mode": "100644",
+        "baseSha": "8295a6775065157a3d07e542c10b48dc05a92f0d",
+        "sha": "d37671288f120908916233dcaf0a77552ff194cf",
+        "sha256": "834b8794d86e5de446f26460cff9dc89e600d7361a164febf8b922411167b0f0",
+        "bytes": 17912
+      }
+    ],
+    "preservedComponents": [
+      {
+        "path": "frontend/src/components/history/HistoryCards.tsx",
+        "bytes": 3691,
+        "sha256": "5d4e48a737e96bcb2afa2dc88de4a59efeb2316d0fc1496357c54f637f6b86c7"
+      },
+      {
+        "path": "frontend/src/components/care/CareSavedRecordsView.tsx",
+        "bytes": 11754,
+        "sha256": "4ce72ae6187c5e1a2ff7e435121e1000d609ed1b628db67cb61f45c3a705ea9d"
+      }
+    ],
+    "patchSha256": "ccfacdc1282118f607fa9f0bf22ec0ffbed4d2fe6df927521a57ac4f0c9192c0",
+    "productFiles": 2,
+    "testFiles": 2,
+    "description": "Review-only full-row rectangular pending/history cards; original owners, guards, callbacks, tabs and generic/saved history cards remain."
+  },
+  "targetedTests": {
+    "status": "PASS",
+    "results": [
+      {
+        "script": "frontend/scripts/care-agent-pending-composition.test.mjs",
+        "sha256": "6cbeb535ba585c113d15fded5abb802d07b7abb0325df537da0b031f78f73a8e",
+        "exit": 0,
+        "seconds": 4.198,
+        "tests": 12,
+        "pass": 12,
+        "fail": 0,
+        "logSha256": "06194f7fa56b2d7bf7d62e3765c643a08ad6ea4c7a8f9cea7160d057fe32ef4b"
+      },
+      {
+        "script": "frontend/scripts/care-conversation-review.test.mjs",
+        "sha256": "d0c352770d1bcdc73f97b2b8954977de4125ce967f37b2166de60b4d95ad375d",
+        "exit": 0,
+        "seconds": 2.679,
+        "tests": 18,
+        "pass": 18,
+        "fail": 0,
+        "logSha256": "21eee07000127be4b63d75b890de5758d77d2287409ae8ba890eb4f420b85c74"
+      }
+    ],
+    "totals": {
+      "tests": 30,
+      "pass": 30,
+      "fail": 0
+    }
+  },
+  "testBoundary": "Existing exact-source 30/30; other author/reviewer results remain separate and are not summed. Delivery agent did not rerun tests.",
+  "buildAttempts": [
+    {
+      "attempt": "cloud",
+      "startUtc": "2026-10-23T12:21:53.282757+00:00",
+      "endUtc": "2026-10-23T12:22:01.427973+00:00",
+      "exit": 137,
+      "seconds": 8.145,
+      "sourceInputCount": 559,
+      "scopeCount": 4,
+      "inputsUnchanged": true,
+      "scopeUnchanged": true,
+      "rawFileCount": 0,
+      "logSha256": "52b0ee7df09e906bf43ef6845ce8681acd38fb902d4902a0d921e85e24c2e02f"
+    },
+    {
+      "attempt": "cloud-retry1",
+      "startUtc": "2026-10-23T12:27:47.272126+00:00",
+      "endUtc": "2026-10-23T12:27:53.407212+00:00",
+      "exit": 137,
+      "seconds": 6.135,
+      "sourceInputCount": 559,
+      "scopeCount": 4,
+      "inputsUnchanged": true,
+      "scopeUnchanged": true,
+      "rawFileCount": 0,
+      "logSha256": "27cdbcd8640c4c8da9a2fe32f5d3b35ff1e4db6cec15283840f3468ba94dd663"
+    },
+    {
+      "attempt": "cloud-low256",
+      "startUtc": "2026-10-23T12:30:49.541377+00:00",
+      "endUtc": "2026-10-23T12:30:56.641350+00:00",
+      "exit": 0,
+      "seconds": 7.099,
+      "sourceInputCount": 559,
+      "scopeCount": 4,
+      "inputsUnchanged": true,
+      "scopeUnchanged": true,
+      "rawFileCount": 66,
+      "logSha256": "98a813bb718c0f886dee4c250312c2376043588d645b3f3051ce6cedb2559620"
+    }
+  ],
+  "buildFailureBoundary": "Both earlier exports exited 137 with no raw files. The cause remains unestablished, not a confirmed OOM. Exact-source direct Expo CLI low256 export succeeded; no product/config mutation.",
+  "provenance": {
+    "status": "PASS_SOURCE_TO_ARTIFACT",
+    "frozenInputs": 559,
+    "inputsUnchanged": true,
+    "emittedFirstPartyTextSources": 417,
+    "pngSourceRegistryOutputByteChain": "PASS",
+    "changedCareModules": [
+      {
+        "path": "frontend/src/components/care/CareReviewHistoryView.tsx",
+        "sourceSha256": "ec3b4a9eb3fed056db3371d576162f7899cdf4ff0d7ec1c429cf07379f52183b",
+        "compiledModuleSha256": "3c04bfeae1cb9503ad9ff5d26cab166dad5bbb30b9cb5a0bee98b63b586afed6",
+        "allChecksPass": true
+      },
+      {
+        "path": "frontend/src/screens/careScreen.tsx",
+        "sourceSha256": "834b8794d86e5de446f26460cff9dc89e600d7361a164febf8b922411167b0f0",
+        "compiledModuleSha256": "fab1d68e036e3f505021fc129a0f9c247dfd2219ece96484941a3a884bf8dba7",
+        "allChecksPass": true
+      }
+    ],
+    "preparationModuleSha256": "1be4be0bf28af1e29d50de94a031e25fdf029e2850385c1833fff43b166381a8",
+    "contextGate": "PASS_ISOLATED_CONTEXT_ONLY37",
+    "priorGate": {
+      "status": "FAIL_SOURCE_TO_ARTIFACT",
+      "reason": "Direct Unicode substring matching did not decode compiled literal escapes. v3 parses exact literal/template values without evaluating JavaScript; source and bundle identities remain identical.",
+      "v2ReceiptSha256": "972aea0777422f3a0f92c7bf317ba5a224d86c667b47d46f582cc755f7208a72",
+      "v3ReceiptSha256": "e1d60e21cb089ae8484db4755dee5ce0411e162316e7544e0ca3092b1f1d7195",
+      "verifierCorrectionSha256": "6f274d5a75f4818f8ab58850e7e7572665dc50b9257f315e78a59dbc392bdf7a"
+    },
+    "limitation": "Checks every emitted first-party text source plus the binary PNG chain, not every unused build input as an emitted module."
+  },
+  "artifact": {
+    "bundle": {
+      "path": "_expo/static/js/web/index-215cbd071aa397b9fa337f044b2219ef.js",
+      "sha256": "7acdbab6289ae91eab469543fa1ee2599d3b8a3c32b0d07b09e11a5283da63f2",
+      "bytes": 5666994
+    },
+    "fixtureSha256": "9d507a2d46b1da27f5ec64e242e53cab2d5748c2bf6f4e054e77c9b4f6c59e6f",
+    "buildManifestSha256": "4cd3203330e9df984b25e0d902d1c4d5d375c4b78dccfa7cd3f7ef5bf9c6c618",
+    "productManifestSha256": "5257b1faca2f3f916d22d3c1f747d94e42c0540a95db40c559b52787564a0602",
+    "validatorSha256": "79c6d1f9f3e1525e52a4552ce5e8caa0cdbbe9444d56aca0bcaf3807a9226375",
+    "packagedDistFiles": 72,
+    "staticValidator": "PASS",
+    "archiveBytes": 4794672,
+    "archiveSha256": "23ce4df79a531a173c829a351a00c23759a5f67888421f07125090abccc07988",
+    "archiveFiles": 96,
+    "rawPublicWholeBundleByteEqual": false,
+    "bundleSanitization": {
+      "status": "PASS_EXACT_ONE_TRAILING_SOURCE_MAP_COMMENT_REMOVED",
+      "rawBundleSha256": "3640db7ac360a1105acfdae06e1d1a12813b002e233c8941a9b492cac16d4d53",
+      "publicBundleSha256": "7acdbab6289ae91eab469543fa1ee2599d3b8a3c32b0d07b09e11a5283da63f2",
+      "removedLine": "//# sourceMappingURL=/_expo/static/js/web/index-215cbd071aa397b9fa337f044b2219ef.js.map\n",
+      "offset": 5666946,
+      "removedBytes": 88,
+      "inverseRestoresRaw": true,
+      "modules": [
+        {
+          "marker": ".PreparationWorkspace=",
+          "rawAndPublicByteEqual": true,
+          "moduleSha256": "1be4be0bf28af1e29d50de94a031e25fdf029e2850385c1833fff43b166381a8"
+        },
+        {
+          "marker": ".CareReviewWorkspace=",
+          "rawAndPublicByteEqual": true,
+          "moduleSha256": "3c04bfeae1cb9503ad9ff5d26cab166dad5bbb30b9cb5a0bee98b63b586afed6"
+        },
+        {
+          "marker": ".AgentPendingReview=",
+          "rawAndPublicByteEqual": true,
+          "moduleSha256": "fab1d68e036e3f505021fc129a0f9c247dfd2219ece96484941a3a884bf8dba7"
+        }
+      ],
+      "allOtherRawFilesByteUnchanged": true,
+      "sourceMapsPrivate": {
+        "_expo/static/js/web/index-215cbd071aa397b9fa337f044b2219ef.js.map": "f1284bba160b26b238695e7f9dbe39612a67ca8ecfb0edc3d89de36bf00b7ac4"
+      }
+    }
+  },
+  "gui": {
+    "status": "PARTIAL_NOT_FULL_ACCEPTANCE",
+    "desktopPendingCards": {
+      "status": "PASS",
+      "basis": "Parent reports QA execution and parent visual review of original synthetic desktop image.",
+      "originalImageBasename": "01-pending-desktop-0.jpg",
+      "originalImageSha256": "ab73e6235f78d59b0bf438c608d3d3da9ed69a80be3f0c390aae1df303fe1678",
+      "includedInPublicIncrement": false
+    },
+    "remainingGui": "PENDING at source upload preparation; mobile/history/Saved and other remaining checks are not claimed passed.",
+    "originalSyntheticImages": []
+  },
+  "fullTypecheck": {
+    "status": "NOT_PASS",
+    "reason": "Historical exit137; cause undiagnosed; no rerun."
+  },
+  "limits": [
+    "No Android/native runtime acceptance",
+    "No full screen-reader or all-size matrix",
+    "No live API/model/family-data acceptance",
+    "No GCP or OTA deployment",
+    "GitHub CI is independent and not assumed green",
+    "Preview publication is separate and awaits the parent delivery record"
+  ],
+  "publicationAtPreparation": "Preview publication is separate; no claim of publication in this source receipt.",
+  "evidenceSourceHashes": {
+    "qa-transfer.json": "7b24a850b6a291c1e4aa4ab827eb5233a41e3818b2018a4b4bf084a4957e5ff7",
+    "targeted-tests-result.json": "0cbfcea3055fd8a20c2462d1813d867af78880c64c38cc7381bfcf6c2858da7f",
+    "integration.json": "7d7ec7c4d899065db171c60553fd5d5858cda274286e9edb935d652d7c3150bb",
+    "final-freeze.json": "8ee4134b06f6eb4b9e92811a6f1440b42d47019018ea811070e8c25615a305b4",
+    "isolated-context-gate.json": "3ac488262a75709f04ea433346c8b59f6a9c389a69523b84fb4a5426d62b49b3",
+    "bundle-sanitization.json": "19ed4778b45484ccc59eb0e1b9513b7b9d1c9b12c618d20fbc253c7478756e61"
+  },
+  "evidenceTiming": "User requested uploading the PR before the remaining GUI/site work. Desktop pending-card evidence is carried; remaining checks stay pending, not waived as passed."
+}

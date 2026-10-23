@@ -3,6 +3,19 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## 頁面專屬歷史與安靜讀取（2026-10-23；source36／artifactfix1 本地交付）
+
+沿用 `dot/frontend-simplify-20261021`／[PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)，本輪以 `5a39776f703bc436528b858f393621bcf8030b03` 為基底，PR 仍 draft／未合併；此為交付時已知狀態，未另查 CI。新版尚未更新公開站點；最後已記錄的公開版本仍為04:59:33.978 UTC的Site87／snapshot31（Sites source `b1fb6db5cd7820cd2183a732f866d8673973bb10`），不把本地結果當新公開驗收。
+
+- **精確來源：**相對 source31 共89檔＝45產品＋44測試；頁面專屬歷史卡／閱讀彈窗、概況四區、記憶入口／本地分頁、確認作用域、唯讀關閉及安靜讀取。server訊息歷史完整性只交源碼，不代表後端部署。需求文件、avatar及附件增量不在本包。
+- **安靜讀取：**同scope保留舊內容／控制／焦點；settled refresh_failed 保留已顯示的checkbox為disabled。identity／scope／撤權仍清除敏感資料，沒有放寬寫入或原確認guard。
+- **來源到產物：**559inputs無漂移；417個實際輸出的第一方文字來源hash＋1PNG來源／registry／輸出鏈通過，Router只指本版。原36共享cache帶入35舊模組的artifact已撤回；artifactfix1隔離cache重新產出並核來源，不改產品。公開bundle僅移除唯一末尾map註解，逆轉及模組bytes均已核，maps不公開。
+- **分層證據：**source36兩個必要scripts 30／30；32–35各版184／66／79／16不相加、不當36重跑。fresh安全validator與archive逐檔readback通過。10:38:21 UTC封存的36-artifactfix1 GUI只針對同owner503 settled、disabled原生pointer／Space／Enter及聚焦後再讀，結果PASS_BOUNDED；1023×600 iframe，不是全站／手機驗收。原錯誤提示增加高度與scroll有明列，不宣稱整頁零位移。
+- **未過門檻：**完整TypeScript歷史兩環境exit137、原因未確診，仍未通過；CI未新查。自然OS app-switch、Android、完整讀屏／四尺寸、真API與全站回歸未完成。源碼／export／有界GUI不能抵銷這些界線。
+- **交付：**[精簡工程收據與三張合成原圖](../docs/verification/frontend-2026-10-23/focus-layout-29/snapshot36-artifactfix1/README.md)列精確89path、artifact身份、分版本紅綠與公開摘要hash；本階段僅本地source及文件，遠端PR／公開預覽狀態另按實際交付記錄，未合併。只用合成資料，沒有真家庭資料、真模型、正式刪除、GCP或OTA。
+
+下方是較早批次的完整歷史；其「當前／待交付」不代表本輪狀態，亦不重用舊 browser 或 Sites 證據作本候選通過。
+
 ## QA：七修補 v70 定向驗收與 Family 可見回焦收尾（原 20 檔，v71 已發布、有界 browser 已核、20檔待交付）
 
 2026-10-11 UTC。固定 master `d96e34bef19d34911ce3bcc285e0b1c3d21935d6`；最後獲提供的 GitHub 觀察為 07:18 UTC、open PR 0，不當持續即時狀態。本包仍為 10 產品＋7 測試＋原 3 文件共 20 檔。相對原 Settings freeze，只替換 FamilyView 及既有 Family test；另 15 份碼測逐 byte 不變。所有原 55 checks 整值、PLAN 及英文 PR 歷史與原紅保留，不新增權威或 GitHub 待辦文件。

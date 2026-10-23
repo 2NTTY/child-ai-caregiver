@@ -1,3 +1,4 @@
+import type { NotificationMessageContent } from '../src/shared/notification-messages.ts';
 import type { PoolClient } from "pg";
 import type { WebPushSubscription, PushPayload, PushDelivery } from "../src/shared/web-push.ts";
 
@@ -10,6 +11,7 @@ export interface PushSendResult {
   status: "accepted" | "rejected" | "unknown" | "stopped";
   reason: PushDelivery["reason"];
   providerStatus: number | null;
+  message?: NotificationMessageContent;
 }
 export interface WebPushGateway {
   publicKey: string | null;

@@ -66,19 +66,20 @@ test("scoped personal reads reject late results and retain bounded scan and orig
   };
   const runtime = compile("../src/production/task-knowledge-runtime.ts", name => {
     if (name === "react") return h.react;
+    if (name === "../../../src/client/online-refresh-events") return { subscribeOnlineRefresh: () => () => {} };
     assert.fail("Unexpected runtime dependency " + name);
   });
   const ownerModule = compile("../src/production/usePersonalHistory.ts", name => {
     if (name === "react") return h.react;
     if (name === "../../../src/client/product-agent-api") return { createProductAgentApi: () => api };
-    if (name === "../../../src/client/account-api") return { createAccountApi: () => ({ setIdentity() {}, async exportPage() { throw new Error("not requested"); } }) };
+    if (name === "./notification-messages-api") return { createNotificationMessagesApi: () => ({ setIdentity() {}, async page() { throw new Error("not requested"); } }) };
     if (name === "../history-view-model") return projection;
     if (name === "./task-knowledge-runtime") return runtime;
     assert.fail("Unexpected owner dependency " + name);
   });
   const queryClient = { setQueryDefaults() {}, cancelQueries() {}, removeQueries() {},
     fetchQuery: ({ queryFn }) => { const controller = new AbortController(); requests.push(controller); return queryFn({ signal: controller.signal }); } };
-  const env = { scopeKey, childId, childName: "Synthetic child", userId, online: true, apiBaseUrl: "", queryClient,
+  const env = { owner: { fetcher: fetch }, identityKey: userId, scopeKey, childId, childName: "Synthetic child", userId, online: true, apiBaseUrl: "", queryClient,
     current: () => live, accessError() {} };
   let owner = h.mount(() => ownerModule.usePersonalHistory(env)); owner = await h.settle();
   assert.equal(owner.shortTerm.data.works[0], work); assert.equal(owner.shortTerm.data.hasMoreWorks, true);
@@ -94,7 +95,7 @@ test("scoped personal reads reject late results and retain bounded scan and orig
   historyRequests[1].resolve({ matches: [], scanned: 30, scanLimit: 100, nextCursor: null, complete: true }); owner = await h.settle();
   assert.equal(owner.history.data.scanned, 130); assert.equal(owner.history.data.complete, true);
   owner.actions.readMessage(messageId); h.render();
-  const segment = (offset, size, nextOffset) => ({ id: messageId, childId, role: "user", version: 1, createdAt: time,
+  const segment = (offset, size, nextOffset) => ({ id: messageId, childId, role: "user", version: 1, createdAt: time, contentVersion: "a".repeat(64),
     text: "A".repeat(size), offset, nextOffset, totalCharacters: 9000 });
   messageRequests[0].resolve(segment(0, 4000, 4000)); owner = await h.settle();
   assert.equal(owner.message.data.nextOffset, 4000); owner.actions.moreMessage(); h.render();

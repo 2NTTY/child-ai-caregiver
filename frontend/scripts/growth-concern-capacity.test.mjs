@@ -30,13 +30,16 @@ function harness(component, initialProps, workspace = null) {
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
       if (name === "react-native") return { View: "View", Pressable: "Pressable", StyleSheet: { create: value => value }, useWindowDimensions: () => ({ width: 390 }) };
       if (name === "react-native-paper") return { Text: "Text", Button: "Button" };
+      if (name.endsWith("/FormDialog")) return { FormDialog: "FormDialog" };
+      if (name.endsWith("/HistoryCards")) return { HistoryCardGrid: "HistoryCardGrid" };
       if (name.endsWith("/growth-styles")) return { growthStyles: {} };
-      if (name.endsWith("/theme")) return { chineseFont: "", colors: {}, mobileLayout: { breakpoint: 650, touchTarget: 44 }, radius: {}, spacing: {} };
+      if (name.endsWith("/theme")) return { chineseFont: "", colors: {}, mobileLayout: { breakpoint: 650, touchTarget: 44 }, radius: {}, spacing: {}, readingType: {} };
       if (name.endsWith("/AppDialog")) return { AppDialog };
+      if (name.endsWith("/BackgroundSurface")) return { BackgroundSurface: "BackgroundSurface" };
       if (name.endsWith("/ui")) return { AppButton: "AppButton" };
       if (name.endsWith("/GrowthWorkspace")) return { useGrowthWorkspace: () => workspace };
       if (name.endsWith("/useInteractionDensity")) return { useInteractionDensity: () => false };
-      for (const leaf of ["AppIcon", "GrowthConcernTimeline", "GrowthOperationRecovery", "StatusAnnouncement"])
+      for (const leaf of ["AppIcon", "GrowthConcernTimeline", "GrowthOperationRecovery", "StatusAnnouncement", "ReadStateNotice", "EmptyListCard"])
         if (name.endsWith("/" + leaf)) return { [leaf]: leaf };
       if (!name.startsWith(".")) return require(name);
       const location = path.resolve(path.dirname(filename), name);
@@ -69,7 +72,7 @@ const model = item => ({ scopeKey: "synthetic-scope", childId: item.childId, acc
   page: { authorityVersion: "synthetic-authority", canManage: true, items: [], concerns: { state: "ready", items: [item] } },
   lastConcernChange: { action: "archive", scopeKey: "synthetic-scope", authorityVersion: "synthetic-authority", id: item.id, version: item.version } });
 
-test("archive confirmation preserves normal undo copy at 198 and warns at 199 and 200", () => {
+test("archive confirmation uses one normal explanation at 198 and preserves capacity warnings at 199 and 200", () => {
   for (const count of [198, 199, 200]) {
     let writes = 0;
     const props = { concern: concern(count), scopeKey: "synthetic-scope", authorityVersion: "synthetic-authority", disabled: false, onConfirm: () => writes++ };
@@ -77,8 +80,14 @@ test("archive confirmation preserves normal undo copy at 198 and warns at 199 an
     button(tree, "結束關注").props.onPress(); tree = h.render();
     assert.equal(writes, 0);
     assert.equal(text(tree).includes("此關注結束後將無法恢復繼續記錄，完整歷史仍會保留。"), count >= 199);
-    assert.equal(text(tree).includes("誤按後可以撤銷"), count === 198);
-    assert.equal(text(tree).includes("也可稍後在歷史恢復關注"), count === 198);
+    assert.equal(text(tree).includes("內容會保留在歷史，可撤銷或恢復；不影響已連結的任務。"), count === 198);
+    assert.equal(text(tree).includes("不會刪除記錄，也不會完成或取消已連結的任務。"), count >= 199);
+    assert.equal(text(tree).includes("誤按後可以撤銷"), false);
+    assert.equal(text(tree).includes("也可稍後在歷史恢復關注"), false);
+    assert.equal(nodes(tree).find(node => node.type === "Dialog.Title").props.children, "結束這條關注？");
+    assert.equal(nodes(tree).find(node => node.type === "Dialog.Title").props.danger, true);
+    assert.equal(button(tree, "確認結束關注").props.variant, "danger");
+    assert.equal(text(tree).includes(props.concern.title), true);
     button(tree, "取消").props.onPress(); h.render(); assert.equal(writes, 0);
   }
 });
@@ -99,8 +108,7 @@ test("history list and detail retain reading but explain capacity-blocked restor
     const h = harness("GrowthHistoryView", { searchText: "", dateRange: { from: null, to: null }, onTask() {} }, workspace);
     let tree = h.render();
     const restore = tree => nodes(tree).find(node => node.type === "Button" && node.props.accessibilityLabel === "恢復關注：合成關注");
-    assert.equal(restore(tree).props.disabled, count >= 200);
-    assert.equal(text(tree).includes("已達歷史容量限制"), count >= 200);
+    assert.equal(restore(tree), undefined, "Restore is not a nested card action");
     assert.equal(text(tree).includes("未取得原狀態"), false);
     nodes(tree).find(node => node.type === "Pressable" && node.props.accessibilityLabel === "查看已結束關注：合成關注").props.onPress();
     tree = h.render();

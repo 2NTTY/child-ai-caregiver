@@ -147,7 +147,7 @@ export async function verifyDatesAndIsolation(browser, failures, directory) {
   await page.getByRole("textbox", { name: "安排時間時間", exact: true }).fill("09:00");
   await page.getByRole("button", { name: "選擇安排時間日期", exact: true }).click();
   await assertFits(page, "mature date picker 320");
-  await page.getByRole("button", { name: "選用日期", exact: true }).click();
+  await page.getByRole("button", { name: "確認日期", exact: true }).click();
   assert.equal(await page.getByRole("textbox", { name: "安排時間日期", exact: true }).inputValue(), "2026-10-01");
   await page.getByRole("button", { name: "選擇安排時間時間", exact: true }).click();
   await assertFits(page, "nested compact time picker 320");

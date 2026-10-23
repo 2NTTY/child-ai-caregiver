@@ -38,7 +38,13 @@ const paper = {
 };
 const empty = () => null;
 const view = React.forwardRef(({ children, preset, triggerKey, scopeKey, enabled, ...props }, ref) => React.createElement(rn.View, { ...props, ref }, children));
-const modal = Object.assign(empty, { Title: empty, Content: empty, Actions: empty, ScrollArea: empty });
+// Preserve the actual RN Web modal/focus trap; only the dialog appearance is a host port.
+const modal = Object.assign(function Dialog({ visible, onDismiss, onClosed, children, accessibilityLabel, testID }) {
+  return React.createElement(rn.Modal, { visible, transparent: true, animationType: 'none', onRequestClose: onDismiss, onDismiss: onClosed, 'aria-label': accessibilityLabel },
+    React.createElement('section', { 'data-testid': testID }, children));
+}, Object.fromEntries(['Title', 'Content', 'Actions', 'ScrollArea'].map(key => [key, ({ children }) => React.createElement('div', null, children)])));
+// JSDOM has no layout; connected/visible geometry is a bounded host measurement port.
+Object.defineProperty(HTMLElement.prototype, 'getClientRects', { configurable: true, value() { return this.isConnected && !this.closest('[aria-hidden="true"]') ? [{}] : []; } });
 const Workspace = React.createContext(null);
 const cache = new Map(), loaded = [], observations = [];
 let networkCalls = 0, writes = 0, ownerCalls = [];
@@ -127,7 +133,7 @@ async function click(label) {
 async function start() { await React.act(async () => root.render(null)); await React.act(async () => root.render(React.createElement(Host))); }
 function inspect(stage) {
   const active = document.activeElement;
-  const observation = { stage, activeTag: active?.tagName, activeTestId: active?.getAttribute('data-testid'), activeLabel: active?.getAttribute('aria-label'), connected: active?.isConnected, logicalTarget: !!active && active !== document.body && active !== document.documentElement && document.getElementById('root').contains(active), detailMounted: !!byLabel('返回記錄'), draftMounted: !!byLabel('取消草稿'), savedRecordAvailable: !!byLabel('查看Synthetic saved record'), networkCalls, writes };
+  const observation = { stage, activeTag: active?.tagName, activeTestId: active?.getAttribute('data-testid'), activeLabel: active?.getAttribute('aria-label'), connected: active?.isConnected, logicalTarget: !!active && active !== document.body && active !== document.documentElement && document.getElementById('root').contains(active), detailMounted: !!byLabel('返回記錄'), draftMounted: !!byLabel('關閉記錄資料'), savedRecordAvailable: !!byLabel('查看Synthetic saved record'), networkCalls, writes };
   observations.push(observation); console.log(JSON.stringify(observation)); return observation;
 }
 const sentinel = document.createElement('button'); sentinel.textContent = 'Synthetic unrelated control'; sentinel.id = 'focus-sentinel'; document.body.appendChild(sentinel);
@@ -138,7 +144,8 @@ async function activateWithoutTestFocus(label) {
   const target = byLabel(label); assert.ok(target); await React.act(async () => target.focus());
   programmaticFocus = []; captureFocus = true; await React.act(async () => target.click());
 }
-async function moveToSentinel() { captureFocus = false; await React.act(async () => sentinel.focus()); programmaticFocus = []; captureFocus = true; }
+async function moveToDraftAnchor() { captureFocus = false; await React.act(async () => byLabel('資料來源草稿').focus()); programmaticFocus = []; captureFocus = true; }
+const productFocus = () => programmaticFocus.filter(item => item.options?.preventScroll === true);
 async function update(transform) { await React.act(async () => publishModel(transform)); }
 let stopped = false;
 function register(name, body) {
@@ -148,51 +155,78 @@ function register(name, body) {
     try { await body(); } catch (error) { stopped = true; throw error; }
   });
 }
+register('the route exposes the saved tab and counted pending label beside the original manual-create trigger', async () => {
+  await start();
+  const bar = document.querySelector('[data-testid="care-review-tabs-bar"]');
+  assert.ok(bar);
+  const tabs = [...bar.querySelectorAll('[role="tab"]')];
+  assert.deepEqual(tabs.map(tab => tab.getAttribute('aria-label')), ['待確認 0', '已保存']);
+  assert.equal(tabs[0].textContent, '待確認0');
+  assert.equal(tabs[0].querySelector('[aria-hidden="true"]').textContent, '0');
+  const trigger = byLabel('手動新增共享記錄');
+  assert.equal(trigger.textContent, '手動新增');
+  assert.ok(bar.contains(trigger));
+  assert.equal([...document.querySelectorAll('[aria-label="手動新增共享記錄"]')].length, 1);
+  assert.equal(byLabel('查看Synthetic saved record'), null);
+  const panelId = tabs[1].getAttribute('aria-controls');
+  await click('已保存');
+  assert.equal(byLabel('已保存').getAttribute('aria-selected'), 'true');
+  assert.ok(document.getElementById(panelId));
+  assert.equal([...document.querySelectorAll('[aria-label="查看Synthetic saved record"]')].length, 1);
+  assert.equal([...document.querySelectorAll('[aria-label="搜尋已保存記錄"]')].length, 1);
+  assert.equal(document.body.textContent.includes('查找已保存記錄'), false);
+  assert.equal(networkCalls, 0); assert.equal(writes, 0);
+});
 for (const scenario of ['detail', 'draft']) register(`layout-published owner: outer control and inner ${scenario} return focus`, async () => {
-  await start(); await click('查看Synthetic saved record');
-  assert.ok(byLabel('返回記錄')); assert.equal(byLabel('查看Synthetic saved record'), null, 'The real /care route unmounts saved records while the workspace renders detail');
+  await start(); await click('已保存'); await click('查看Synthetic saved record');
+  assert.ok(byLabel('返回記錄')); assert.ok(byLabel('查看Synthetic saved record'), 'The single saved list stays mounted beside desktop detail');
   await click('收起內容');
   const control = inspect('outer-control'); assert.equal(control.logicalTarget, true, 'The outer control demonstrates actual RN Web focus support');
   assert.equal(control.activeTestId, 'care-review-list'); assert.equal(control.savedRecordAvailable, true);
   await start();
-  if (scenario === 'draft') { await click('手動新增共享記錄'); assert.equal(byLabel('記錄原文草稿').value, ''); await click('取消草稿'); }
-  else { await click('查看Synthetic saved record'); await click('返回記錄'); }
+  if (scenario === 'draft') { await click('手動新增共享記錄'); assert.equal(byLabel('記錄原文草稿').value, ''); await click('關閉記錄資料'); }
+  else { await click('已保存'); await click('查看Synthetic saved record'); await click('返回記錄'); }
   const observed = inspect(`inner-${scenario}`);
-  assert.equal(observed.detailMounted, false); assert.equal(observed.draftMounted, false); assert.equal(observed.savedRecordAvailable, true);
+  assert.equal(observed.detailMounted, false); assert.equal(observed.draftMounted, false); assert.equal(observed.savedRecordAvailable, scenario === 'detail');
   assert.equal(networkCalls, 0); assert.equal(writes, 0);
   assert.equal(observed.logicalTarget, true, 'An explicit inline close should restore connected, non-BODY active UI focus; no exact list/trigger target or Tab sequence is prescribed');
+  if (scenario === 'draft') { assert.equal(document.activeElement, byLabel('手動新增共享記錄')); await click('已保存'); assert.ok(byLabel('查看Synthetic saved record')); }
 });
 
-for (const scenario of ['refusal-pending', 'refusal-saved', 'scope', 'capture']) register(`close-focus guard: ${scenario}`, async () => {
+for (const scenario of ['refusal-pending', 'refusal-unknown', 'refusal-saved', 'scope', 'capture']) register(`close-focus guard: ${scenario}`, async () => {
   await start();
   if (scenario === 'capture') {
     const capture = { id: 'capture-focus', version: 1, writeState: 'not_saved', reviewRequirement: 'prewrite', reviewState: 'pending', childId: 'child-focus', title: 'Synthetic capture', createdAtLabel: 'Synthetic date', originalText: 'Synthetic original', sourceLabel: 'Synthetic source', sourceId: 'source-focus', sourceVersion: '1', sourceScope: 'private', sourceState: 'ready', proposedValues: { ...formValues(), text: 'Synthetic capture content', source: 'Synthetic source' }, target: { kind: 'create', scope: 'family' }, uncertainties: [] };
     await update(previous => ({ ...previous, review: { ...previous.review, items: [capture], capabilities: { create: true, update: true, skip: true } } }));
     const row = document.querySelector('[data-testid="care-review-row"]'); assert.ok(row); await React.act(async () => { row.focus(); row.click(); });
-    await click('先調整內容'); assert.ok(byLabel('取消草稿'));
+    await click('先調整內容'); assert.ok(byLabel('關閉記錄資料'));
     const panel = document.querySelector('[data-testid="care-review-detail-panel"]'); assert.ok(panel);
-    await activateWithoutTestFocus('取消草稿');
-    assert.equal(byLabel('取消草稿'), null); assert.ok(document.querySelector('[data-testid="care-capture-detail"]'));
+    await activateWithoutTestFocus('關閉記錄資料');
+    assert.equal(byLabel('關閉記錄資料'), null); assert.ok(document.querySelector('[data-testid="care-capture-detail"]'));
     assert.equal(document.querySelector('[data-testid="care-review-detail-panel"]'), panel, 'The selected panel remains mounted');
     assert.equal(document.querySelector('[data-testid="care-review-row"]').getAttribute('aria-expanded'), 'true');
-    assert.equal(document.activeElement, panel, 'A capture draft returns to the same selected panel');
-    assert.equal(programmaticFocus.filter(item => item.testId === 'care-review-detail-panel').length, 1);
+    assert.equal(document.activeElement?.getAttribute('data-testid'), 'care-review-detail-panel', 'A capture draft returns to the selected panel');
+    assert.ok(document.activeElement === panel, 'The same selected panel owns focus');
+    assert.equal(productFocus().filter(item => item.testId === 'care-review-detail-panel').length, 1, `One explicit product return, separate from RN Modal restoration: ${JSON.stringify(programmaticFocus)}`);
   } else {
     await click('手動新增共享記錄'); refuseClose = true;
-    await activateWithoutTestFocus('取消草稿');
+    await activateWithoutTestFocus('關閉記錄資料');
     assert.equal(programmaticFocus.length, 0, 'An owner refusal cannot add a programmatic focus');
-    await moveToSentinel();
+    await moveToDraftAnchor();
     if (scenario === 'scope') {
       await update(previous => ({ ...previous, scopeKey: 'synthetic:other-child', child: { id: 'other-child', name: 'Other synthetic child' }, detail: null, draft: null, deletion: null, review: { ...previous.review, scopeKey: 'synthetic:other-child', items: [] }, operation: { state: 'none', message: '' } }));
     } else if (scenario === 'refusal-saved') {
       await update(previous => ({ ...previous, detail: null, draft: null, deletion: null, operation: { state: 'saved', message: 'Synthetic operation completed' } }));
     } else {
-      await update(previous => ({ ...previous, operation: { state: 'saving', message: 'Synthetic operation pending' } }));
-      assert.ok(byLabel('取消草稿'), 'The first new projection remains occupied');
+      await update(previous => ({ ...previous, operation: { state: scenario === 'refusal-unknown' ? 'unknown' : 'saving', message: 'Synthetic operation pending' } }));
+      assert.ok(byLabel('關閉記錄資料'), 'The first new projection remains occupied');
     }
-    assert.equal(document.activeElement, sentinel); assert.equal(programmaticFocus.length, 0, 'The first ineligible or changed-scope projection drops the intent');
+    assert.equal(productFocus().length, 0, 'The first ineligible or changed-scope projection drops the explicit close-focus intent');
+    if (scenario === 'refusal-pending' || scenario === 'refusal-unknown') assert.ok(byLabel('關閉記錄資料'), 'Unknown/in-flight owner state keeps the draft modal open');
+    else { captureFocus = false; await React.act(async () => sentinel.focus()); programmaticFocus = []; captureFocus = true; }
     await update(previous => ({ ...previous, detail: null, draft: null, deletion: null, operation: { state: 'none', message: '' } }));
-    assert.equal(document.activeElement, sentinel); assert.equal(programmaticFocus.length, 0, 'A later empty/none projection cannot revive the close focus request');
+    assert.equal(productFocus().length, 0, 'A later empty/none projection cannot revive the explicit close focus request');
+    if (scenario !== 'refusal-pending' && scenario !== 'refusal-unknown') assert.equal(document.activeElement, sentinel);
   }
   observations.push({ scenario, activeTag: document.activeElement.tagName, activeTestId: document.activeElement.getAttribute('data-testid'), activeId: document.activeElement.id, programmaticFocus, networkCalls, writes });
   console.log(JSON.stringify(observations[observations.length - 1]));

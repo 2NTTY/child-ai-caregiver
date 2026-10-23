@@ -13,5 +13,5 @@ export default function SourcesPage() {
   if (pathname !== "/sources") return null;
   return child ? <ProductionSourcesWorkspace onPhotos={() => actions.open("photos")}
     onRecord={id => leave(() => router.push({ pathname: "/care", params: { recordId: id } }))} /> :
-    <PageFrame density="compact" title="資料來源"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="來源"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

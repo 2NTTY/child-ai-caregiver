@@ -34,12 +34,12 @@ export function GrowthArchiveConcernButton({ concern, scopeKey, authorityVersion
     reviewRef.current = null; setReview(null); review.confirm();
   }
   return <>
-    <AppButton label="結束關注" accessibilityLabel={`結束關注：${concern.title}`} variant="danger" style={a.action} disabled={disabled} onPress={open} />
+    <AppButton label="結束關注" accessibilityLabel={`結束關注：${concern.title}`} variant="quiet" style={a.managementAction} disabled={disabled} onPress={open} />
     <AppDialog visible={valid} onDismiss={cancel} danger accessibilityLabel={`確認結束關注：${review?.title ?? concern.title}`} testID="growth-archive-confirmation">
       <AppDialog.Title danger>結束這條關注？</AppDialog.Title>
       <AppDialog.Content><Text style={s.title}>「{review?.title ?? concern.title}」</Text>
-        <Text style={s.body}>{growthConcernArchiveReachesCapacity(concern) ? "此關注結束後將無法恢復繼續記錄，完整歷史仍會保留。" : "結束後會移到歷史，原有內容全部保留。誤按後可以撤銷，也可稍後在歷史恢復關注。"}</Text>
-        <Text style={s.meta}>不會刪除記錄，也不會完成或取消已連結的任務。</Text>
+        <Text style={s.body}>{growthConcernArchiveReachesCapacity(concern) ? "此關注結束後將無法恢復繼續記錄，完整歷史仍會保留。" : "內容會保留在歷史，可撤銷或恢復；不影響已連結的任務。"}</Text>
+        {growthConcernArchiveReachesCapacity(concern) ? <Text style={s.meta}>不會刪除記錄，也不會完成或取消已連結的任務。</Text> : null}
       </AppDialog.Content>
       <AppDialog.Actions>
         <AppButton label="取消" variant="quiet" onPress={cancel} />
@@ -49,4 +49,4 @@ export function GrowthArchiveConcernButton({ concern, scopeKey, authorityVersion
   </>;
 }
 
-const a = StyleSheet.create({ action: { alignSelf: "flex-start", borderWidth: 0 } });
+const a = StyleSheet.create({ managementAction: { alignSelf: "flex-start", borderWidth: 0 }, action: { alignSelf: "flex-start", borderWidth: 0 } });

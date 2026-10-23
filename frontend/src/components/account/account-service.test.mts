@@ -92,7 +92,7 @@ test("A07 bounded download continues original pages and unknown erasure keeps it
       return Response.json({ section, items, nextCursor, complete: !nextCursor, scopeVersion, notices: [] });
     }
     return Response.json(status(id, true));
-  });
+  }, { reauthenticate: async () => { /* Synthetic identity port; no provider call. */ } });
   const owner = new AccountServiceOwner("/api", true, () => { completed++; }, () => {}, { api });
   const files: { part: number; complete: boolean; pages: { section: string; items: { position?: number }[] }[] }[] = [];
   try {
@@ -106,7 +106,7 @@ test("A07 bounded download continues original pages and unknown erasure keeps it
     const positions = files.flatMap(file => file.pages.filter(page => page.section === "account").flatMap(page => page.items.map(item => item.position)));
     assert.deepEqual(positions, Array.from({ length: 45 }, (_, index) => index)); assert.equal(files[0].complete, false); assert.equal(files[1].complete, true);
     assert.ok(!JSON.stringify(owner.getSnapshot()).includes("synthetic exported body"));
-    await owner.prepareDeletion(); await owner.executeDeletion("Synthetic password", "永久刪除我的帳戶");
+    await owner.prepareDeletion(); await owner.verifyDeletionIdentity("Synthetic password"); await owner.executeDeletion("永久刪除我的帳戶");
     assert.equal(owner.getSnapshot().deletion.phase, "unknown"); assert.equal(completed, 0);
     await owner.prepareDeletion(); await owner.cancelPreparedDeletion(); assert.equal(deleteCalls, 1);
     owner.syncContext(null, true, null); await owner.checkDeletion(); assert.equal(owner.getSnapshot().deletion.phase, "unknown");
@@ -114,7 +114,7 @@ test("A07 bounded download continues original pages and unknown erasure keeps it
     const before = checks; await owner.checkDeletion(); assert.equal(checks, before);
     owner.syncContext(userA.id, true, "a:2"); await turn(); assert.equal(owner.getSnapshot().deletion.phase, "unknown");
     await owner.checkDeletion(); assert.equal(owner.getSnapshot().deletion.phase, "prepared"); assert.equal(owner.getSnapshot().deletion.childCount, 1);
-    await owner.executeDeletion("Synthetic password", "永久刪除我的帳戶"); assert.equal(completed, 1); assert.equal(owner.getSnapshot().deletion.phase, "completed");
+    await owner.verifyDeletionIdentity("Synthetic password"); await owner.executeDeletion("永久刪除我的帳戶"); assert.equal(completed, 1); assert.equal(owner.getSnapshot().deletion.phase, "completed");
     assert.ok(!JSON.stringify(owner.getSnapshot()).includes(token)); assert.ok(!JSON.stringify(owner.getSnapshot()).includes("Synthetic password"));
   } finally { owner.dispose(); }
 });

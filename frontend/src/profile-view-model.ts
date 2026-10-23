@@ -70,6 +70,7 @@ export interface ProfileActions {
   reviewDraft(values: ProfileFormValues): void;
   editDraft(): void;
   cancelReview(): void;
+  discardDraft?(): void;
   submitReviewed(): void;
   reviewDeletion(): void;
   useLatestVersion(): void;

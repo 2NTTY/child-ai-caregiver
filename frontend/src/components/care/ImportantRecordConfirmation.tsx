@@ -30,7 +30,7 @@ export function ImportantRecordConfirmation({ model, actions, event, currentConv
       {capture ? <><CareReviewBadges capture={capture} /><Text style={s.label}>{capture.title}</Text>
         <Text style={s.label}>你的原話</Text>{capture.sourceState === "ready" ? <Text selectable style={s.body}>{capture.originalText}</Text> : <Text style={s.warning}>原始來源已變更或不可用，不能確認舊內容。</Text>}
         <Text style={s.label}>目前已保存的內容</Text>{saved ? <CareValueSummary values={saved.current.values} /> : <Text style={s.warning}>未讀到目前記錄，不能確認。</Text>}
-        <Text style={s.body}>已保存不代表你已確認內容。若有誤解，先修改；關閉此視窗不會清除記錄頁的黃色待確認提示。</Text>
+        <Text style={s.body}>已保存不代表你已確認內容。若有誤解，先修改；關閉此視窗不會清除核對頁的黃色待確認提示。</Text>
         <Text style={s.meta}>這次確認只核對記錄，不會通知他人、預約或執行醫療行動。</Text>
         {ready && !ready.allowed && capture.reviewState !== "confirmed" ? <Text style={s.warning}>{ready.reason}</Text> : null}</> : null}
       <CareWriteNotice model={model} actions={actions} />

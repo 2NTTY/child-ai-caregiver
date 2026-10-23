@@ -81,7 +81,7 @@ test("model settings commands require own allowlisted fields and bounded printab
   for (const invalid of [
     null, [], { ...command(), userId: "forged" }, { ...command(), endpoint: "https://elsewhere" },
     Object.create(command()), { ...command(), [Symbol("secret")]: "value" },
-    command({ apiKey: "a".repeat(19) }), command({ apiKey: "a".repeat(513) }), command({ apiKey: key + " " }),
+    command({ apiKey: "" }), command({ apiKey: "a".repeat(513) }), command({ apiKey: key + " " }),
     command({ apiKey: "\n" + key }), command({ apiKey: key + "\n" }), command({ apiKey: key + "\r" }), command({ apiKey: "synthetic-non-ascii-香港" }),
     command({ expectedVersion: -1 }), command({ expectedVersion: 0.5 }), command({ expectedVersion: 2147483647 }),
     command({ dailyLimit: 0 }), command({ dailyLimit: 1001 }), command({ dailyLimit: 1.5 }), command({ maxModelCalls: 0 }), command({ maxModelCalls: 13 }), command({ maxQueryEmbeddings: 0 }), command({ maxQueryEmbeddings: 7 }),

@@ -19,7 +19,19 @@ $env:LOCAL_AGENT_CONFIG = 'C:\Users\你的帳號\.config\yuyoufang-local.json'
 npm run agent:local
 ```
 
-亦可自行在目前 shell 設定 `GEMINI_API_KEY`，但不要把實際 key 寫入共享命令、聊天、Git 或 `EXPO_PUBLIC_*`。前端不會收到模型憑證。Vertex Express API key 例如使用 `{"provider":"vertex","apiKey":"本人的 Vertex key","model":"gemini-2.5-flash"}`，須選該服務已接線的型號，不能直接沿用Developer預設；此為配置例子，不自動替換已保存模型。環境變數則明確選 `LOCAL_MODEL_PROVIDER=vertex`、`VERTEX_API_KEY` 及相應模型。Vertex沿正式個人模型 adapter；不拿Gemini key默認代替另一供應方式。Vertex key 的 embedding 接點仍未支援，不能以它初始化知識向量或假稱完整混合檢索可用；需要完整檢索時明確選擇本人可用的 Gemini key 或 ADC，不借平台額度。
+亦可自行在目前 shell 設定 `GEMINI_API_KEY`，但不要把實際 key 寫入共享命令、聊天、Git 或 `EXPO_PUBLIC_*`。前端不會收到模型憑證。Vertex Express API key 例如使用 `{"provider":"vertex","apiKey":"本人的 Vertex key","model":"gemini-2.5-flash"}`；模型 ID 由開發者指定，供應商是否接受以實際請求為準，沒有逐型號驗收前置。環境變數則明確選 `LOCAL_MODEL_PROVIDER=vertex`、`VERTEX_API_KEY` 及 `LOCAL_MODEL`。Vertex沿正式個人模型 adapter；不拿Gemini key默認代替另一供應方式。
+
+OpenAI 相容服務使用同一個工程外 JSON：
+
+```json
+{"provider":"openai-compatible","baseUrl":"https://供應商的公開API地址/v1","apiKey":"本人的聊天key","model":"供應商的模型ID","embeddingApiKey":"本人的Gemini向量key"}
+```
+
+仍然執行同一條 `npm run agent:local`，不需部署 GCP。相容服務的地址和模型須明確填寫；地址沿正式服務的公開 HTTPS、禁止內網及重新導向規則。若用環境變數，對應為 `LOCAL_MODEL_PROVIDER=openai-compatible`、`LOCAL_MODEL_API_KEY`、`LOCAL_MODEL_BASE_URL`、`LOCAL_MODEL`，另可設 `LOCAL_MODEL_EMBEDDING_API_KEY`。
+
+`embeddingApiKey` 可省略；缺少時仍能啟動聊天，但知識查詢會明示向量未配置。需要現有混合檢索、知識初始化或背景發布時，Vertex key／相容服務另提供本人 Gemini 向量 key，保留目前 1024 維索引。Gemini 未另填時沿用其本人 key；ADC 維持原 ADC 向量路徑，不混用 key 或借平台額度。兩種 key 只進本機 Server，不進 Web bundle、狀態頁或公開日誌。
+
+本地聊天、編製、審核及獨立知識維護均使用正式 provider factory。`/__local/status` 顯示實際模型及向量是否配置；模型選擇以本機 JSON 為準，`/admin` 仍控制共同用量、期限與重試。若本地帳號已保存個人模式，該帳號的本人設定優先；切回平台模式才使用開發配置。修改工程外憑證檔後重啟入口，不能在運行途中換 key 接續同一個未知工作。更換 API 地址或向量付款憑證會改變背景工作的綁定，不自動接續舊外呼。
 
 提供本人key後可直接使用；正式設定的「核對」只查metadata，屬可選診斷，不是保存或生成的前置。產品不按用戶所在地或本機一次失敗封鎖；若實際請求回 `region_unavailable`，只表示供應商拒絕該次請求，不能推論Vertex或其他用戶同樣不可用。可按[Google支援地區](https://ai.google.dev/gemini-api/docs/available-regions)及所用服務核對，或明確選用下方本人ADC路徑，不自動切換身份。key建立／保存不保證所有模型、權限及配額可用。Google新授權key不一定沿用舊前綴，應完整按原字串保存；不根據前綴猜測供應商。[官方key類型](https://ai.google.dev/gemini-api/docs/api-key)
 

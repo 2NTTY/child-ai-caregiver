@@ -12,7 +12,7 @@ import { PhotosView } from "../components/photos/PhotosView";
 import { photoConfirmationProjection, photoDraftSchema } from "../components/photos/photo-form";
 import { SourcesView } from "../components/shared-inputs/SourcesView";
 import { AppButton, SectionCard, SectionHeader } from "../components/ui";
-import { emptyPhotoDraft, samePhotoOriginal, type PhotoDraftFields, type PhotoItem, type PhotoOperation, type PhotoOriginal, type PhotoReplacement, type PhotosActions, type PhotosViewModel } from "../photo-view-model";
+import { photoTime, emptyPhotoDraft, samePhotoOriginal, type PhotoDraftFields, type PhotoItem, type PhotoOperation, type PhotoOriginal, type PhotoReplacement, type PhotosActions, type PhotosViewModel } from "../photo-view-model";
 import { useDomainEnvironment, useDomainWriteGuard } from "./useDomainEnvironment";
 import { useProduction } from "./ProductionProvider";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
@@ -256,7 +256,9 @@ function useProductionPhotos() {
     return () => { active = false; unsubscribe(); };
   }, [env.owner, pathname, state.busy, state.pending, state.direct, state.original, state.selected]);
   const pending = state.busy || !!state.pending || !!state.direct;
-  const leaveGuardId = useDomainWriteGuard(!!state.original && state.selected?.state !== "ready" || !!state.draft.text && !state.selected?.recordId || !!state.replacement, pending);
+  // Keep busy guards for local resource changes; only writes block scope departure.
+  const writePending = state.operation.state === "saving" || !!state.pending || !!state.direct;
+  const leaveGuardId = useDomainWriteGuard(!!state.original && state.selected?.state !== "ready" || !!state.draft.text && !state.selected?.recordId || !!state.replacement, writePending);
 
   async function sendContent(photo: PhotoAttachment, original: PhotoOriginal, signal: AbortSignal) {
     if (!original.readBase64 || !samePhotoOriginal(photo, original)) throw new PhotoApiError(400, "invalid_input");
@@ -319,7 +321,7 @@ function useProductionPhotos() {
     });
   }
   const item = (photo: PhotoAttachment): PhotoItem => ({ ...photo, isUploader: photo.ownerUserId === env.userId, ownerLabel: photo.ownerUserId === env.userId ? "本人" : "家庭成員",
-    createdAtLabel: photo.createdAt, imageSource: photo.id === state.selected?.id && state.preview?.uri ? { uri: state.preview?.uri } : null,
+    createdAtLabel: photoTime(photo.createdAt), imageSource: photo.id === state.selected?.id && state.preview?.uri ? { uri: state.preview?.uri } : null,
     extraction: { state: photo.extraction.state, candidate: photo.extraction.draft ? { ...photoDraft(photo), uncertainties: photo.extraction.draft.uncertainties } : null } });
   const isFresh = fresh(), managed = privatePhoto(state.selected, env.userId) && editable();
   const manual = !state.direct || state.direct.kind === "extract" && state.direct.checked && state.selected?.extraction.state !== "running";
@@ -338,6 +340,7 @@ function useProductionPhotos() {
   };
   const actions: PhotosActions = {
     pickOriginal: chooseOriginal, reportFileError: message => update({ notice: message }), openPhoto,
+    discardRecordDraft: () => { const value = ref.current; if (current() && !value.pending && !value.direct && value.operation.state !== "saving") update({ draft: emptyPhotoDraft(), reviewed: null, sharedConsent: false, formKey: value.formKey + 1 }); },
     clearEditor: () => { if (!ref.current.busy && !ref.current.pending && !ref.current.direct) { releaseEditor(); update({ operation: noOperation() }); } },
     confirmReplacement: () => { const replacement = ref.current.replacement; if (!replacement || pending) return;
       update({ replacement: null }); releaseEditor(); if (replacement.kind === "original") acceptOriginal(replacement.original); else if (replacement.kind === "item") openPhoto(replacement.item); },

@@ -147,6 +147,19 @@ export class ProductionOwner {
     const raw = this.controller.getSnapshot();
     return raw.selectedChildId && this.deniedChildren.has(raw.selectedChildId) ? null : productionScopeKey(this.apiBaseUrl, raw, this.generation);
   }
+  /** Confirmation may edit while ordinary child reads/writes stay behind the deletion barrier. */
+  childDeletionConfirmationKey = (): string | null => {
+    const raw = this.controller.getSnapshot(), deletion = raw.deletion;
+    const child = raw.children.find(item => item.id === deletion?.childId);
+    if (!this.identity || this.identity !== productionIdentityKey(this.apiBaseUrl, raw, this.generation)
+      || !deletion || !["confirm", "checked"].includes(deletion.phase) || !child || child.accessRole !== "owner"
+      || child.id !== raw.selectedChildId || this.deniedChildren.has(child.id) || !raw.online || raw.busy || raw.childrenLoading
+      || !this.canStartDomainWrite()) return null;
+    // The deletion barrier clears chat selection, not the original target's unknown write.
+    const draft = this.chatController.getSnapshot().drafts[child.id];
+    if (draft?.phase === "saving" || draft?.phase === "replying" || draft?.phase === "save_unknown" || draft?.phase === "checked") return null;
+    return JSON.stringify([this.identity, child.id, child.accessRole, child.displayName]);
+  };
   private project(): ProductionSnapshot {
     const raw = this.controller.getSnapshot(), scopeKey = this.scopeKey(), userId = confirmedUserId(raw);
     const records = userId && this.accountOwner.isReady() ? raw : { ...raw, user: userId ? raw.user : null, children: [], selectedChildId: null,
@@ -190,7 +203,7 @@ export class ProductionOwner {
   private denySelectedChild() {
     const childId = this.controller.getSnapshot().selectedChildId;
     if (!childId) return;
-    this.deniedChildren.add(childId); this.sync();
+    this.deniedChildren.add(childId); this.agentOwner.forgetChild(childId); this.sync();
   }
   private sync() {
     const raw = this.controller.getSnapshot(), userId = confirmedUserId(raw);
@@ -229,8 +242,13 @@ export class ProductionOwner {
       this.fileOwner.syncContext(nextScope && userId && raw.selectedChildId ? {key:nextScope,userId,childId:raw.selectedChildId}:null,raw.online);
       this.draftOwner.retainScope(nextScope);
       this.chatController.syncContext(userId, raw.online, nextScope ? raw.selectedChildId : null);
+      const allowedAgentScopes = raw.childrenLoadedAt && !raw.childrenLoading && !raw.childrenError
+        ? raw.children.filter(child => !this.deniedChildren.has(child.id)).map(child =>
+          productionScopeKey(this.apiBaseUrl, { ...raw, selectedChildId: child.id }, this.generation)).filter((key): key is string => key !== null)
+        : undefined;
       this.agentOwner.syncContext(nextScope && userId && raw.selectedChildId
-        ? { key: nextScope, userId, childId: raw.selectedChildId } : null, raw.online);
+        ? { key: nextScope, userId, childId: raw.selectedChildId } : null, raw.online,
+        { identityKey: this.identity, allowedScopeKeys: allowedAgentScopes });
       this.authorizationOwner.syncContext(nextScope && userId && raw.selectedChildId ? { key: nextScope, userId, childId: raw.selectedChildId } : null, raw.online);
       this.syncMutationLocks();
     } finally { this.syncingChat = false; }
@@ -245,7 +263,7 @@ export class ProductionOwner {
     this.authorizationOwner?.invalidateReceipts();
     const authorization = this.authorizationOwner?.getSnapshot();
     // New chat proposals must be discoverable even before the list has ever been opened.
-    if (scope && refreshPending) void this.agentOwner?.readPending();
+    if (scope && refreshPending) void this.agentOwner?.readPending(false, true);
     if (authorization?.notesState === "ready" && !authorization.busy && !authorization.pending) void this.authorizationOwner.readNotes(false, true);
     if (emitEvent) publishOnlineRefresh();
   };

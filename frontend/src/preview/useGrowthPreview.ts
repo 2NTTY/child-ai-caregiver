@@ -136,6 +136,7 @@ export function useGrowthPreview(child:HomeChild,online:boolean,identity:string,
     locked:busy||!online||load!=="ready"||access!=="editable"||!!pending||!page?.canManage,pending,originalConsent,operation,notice,dirty,discardAsked,epoch,resetCounts,refreshPending,missingTargets,lastConcernChange};
   return {model,condition,outcome,readScenario,changeCondition,setOutcome,setReadScenario,actions:{
     refresh,markDirty(key:string){dirtyKeys.current.add(key);setDirty(true);setDiscardAsked(false);},askDiscard(){setDiscardAsked(true);},
+    discardLocalDraft(key:string){if(access==="lost"||pendingRef.current&&`${pendingRef.current.attempt.kind}:${pendingRef.current.attempt.id}`===key)return;dirtyKeys.current.delete(key);setDirty(dirtyKeys.current.size>0);},
     discardDrafts(){if(!discardAsked||busy||!online||access==="lost")return;dirtyKeys.current.clear();setDirty(false);setDiscardAsked(false);setEpoch(value=>value+1);setOriginalConsent(false);refresh();},
     setOriginalConsent(value:boolean){originalConsentRef.current=value;setOriginalConsent(value);},retryOriginal(){if(pendingRef.current)submit(pendingRef.current.attempt,true);},
     archiveConcern(id:string,expectedVersion:number,authorityVersion:string){

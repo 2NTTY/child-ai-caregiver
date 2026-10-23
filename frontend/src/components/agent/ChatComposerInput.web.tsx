@@ -16,7 +16,7 @@ function fitInput(input: HTMLTextAreaElement) {
 export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatComposerInputProps>(function ChatComposerInput(props, ref) {
   const input = useRef<HTMLTextAreaElement>(null);
   const composing = useRef(false);
-  useImperativeHandle(ref, () => ({ focus: () => input.current?.focus(), blur: () => input.current?.blur() }), []);
+  useImperativeHandle(ref, () => ({ focus: options => input.current?.focus(options), blur: () => input.current?.blur() }), []);
   useLayoutEffect(() => { if (input.current) fitInput(input.current); }, [props.value]);
   useLayoutEffect(() => {
     const node = input.current;

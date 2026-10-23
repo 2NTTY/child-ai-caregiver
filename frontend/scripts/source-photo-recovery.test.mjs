@@ -9,6 +9,11 @@ function compile(file, resolve, suffix = '') {
   const code = ts.transpileModule(fs.readFileSync(path.join(root, file), 'utf8'), {compilerOptions: {module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX}}).outputText;
   const exports = {}; new Function('require', 'exports', code + suffix)(resolve, exports); return exports;
 }
+const photoDisplay = compile('frontend/src/photo-view-model.ts', name => name === 'luxon' ? require(name) : assert.fail(name));
+const blobBytes = compile('src/client/blob-bytes.ts', name => assert.fail(name));
+const photoBytes = compile('frontend/src/platform/photo-bytes.ts', name => name.endsWith('/blob-bytes') ? blobBytes : assert.fail(name));
+const originalBytes = compile('frontend/src/production/photo-original.ts', name => name === 'base64-js' ? require(name)
+  : name.endsWith('/shared/photos') ? require('../../src/shared/photos.ts') : name.endsWith('/platform/photo-bytes') ? photoBytes : assert.fail(name));
 function hooks() {
   const slots = []; let cursor = 0, effects = [];
   const slot = create => { const i = cursor++; if (!(i in slots)) slots[i] = create(); return i; };
@@ -41,6 +46,10 @@ function fixture(kind, targetPatch = {}) {
     current: () => current, currentIdentity: () => current, canStartWrite: () => true, invalidate() {}, accessError(error) {denied.push(error);},
     queryClient: {fetchQuery: ({queryFn}) => queryFn()}};
   const resolve = name => {
+    if (name.includes('/online-refresh-events')) return {subscribeOnlineRefresh: () => () => {}};
+    if (name.includes('/blob-bytes')) return blobBytes;
+    if (name.includes('/platform/photo-bytes')) return photoBytes;
+    if (name === './photo-original') return originalBytes;
     if (name === 'react') return h.react;
     if (name === 'react/jsx-runtime') return {jsx: () => null, jsxs: () => null};
     if (name === 'react-native') return {Platform: {OS: 'web'}};
@@ -48,7 +57,7 @@ function fixture(kind, targetPatch = {}) {
     if (name.includes('/photo-api')) return {createPhotoApi: () => api, PhotoApiError: ApiError};
     if (name.includes('/shared-input-api')) return {createSharedInputApi: () => api, SharedInputApiError: ApiError};
     if (name.includes('/use-online-updates')) return {ONLINE_REFRESH_EVENT: 'refresh'};
-    if (name.includes('/photo-view-model')) return {emptyPhotoDraft, samePhotoOriginal: () => true};
+    if (name.includes('/photo-view-model')) return {emptyPhotoDraft, samePhotoOriginal: () => true, photoTime: photoDisplay.photoTime};
     if (name === './useDomainEnvironment') return {useDomainEnvironment: () => env, useDomainWriteGuard(dirty, pending) {guard = {dirty: !!dirty, pending, scope: 'child'};}};
     if (name.includes('/PreviewNavigationGuard')) return {usePreviewNavigation: () => action => action()};
     if (name === './ProductionProvider') return {useProduction: () => ({})};
@@ -77,22 +86,22 @@ for (const kind of ['sources', 'photos']) {
   });
 }
 
-function navigation(onLeave, getGuard) {
+function navigation(onLeave, getGuard, intent = 'navigation') {
   const h = hooks(), jsx = (type, props) => ({type, props});
   const Dialog = Object.assign(() => null, {Title: 'Title', Content: 'Content', Actions: 'Actions'});
   const {PreviewNavigationGuard} = compile('frontend/src/preview/PreviewNavigationGuard.tsx', name =>
     name === 'react' ? h.react : name === 'react/jsx-runtime' ? {jsx, jsxs: jsx} : name === 'react-native' ? {Platform: {OS: 'web'}, StyleSheet: {create: x => x}} :
     name === 'react-native-paper' ? {Text: 'Text'} : name.includes('/AppDialog') ? {AppDialog: Dialog} : name.includes('/ui') ? {AppButton: 'Button'} :
-    name.includes('/theme') ? {colors: {}, typeScale: {}} : name.startsWith('expo-router') || name.includes('browser-history-guard') ? {} : assert.fail(name));
+    name.includes('/theme') ? {colors: {}, typeScale: {}} : name === '../production/routes' ? compile('frontend/src/production/routes.ts', () => assert.fail('Unexpected routes import')) : name.startsWith('expo-router') || name.includes('browser-history-guard') ? {} : assert.fail(name));
   const render = () => {h.reset(); return PreviewNavigationGuard({children: null});};
   const all = value => !value || typeof value !== 'object' ? [] : [value, ...(Array.isArray(value) ? value : [value.props?.children]).flatMap(all)];
-  let tree = render(); tree.props.value.register('workspace', getGuard()); tree.props.value.request(onLeave); tree = render();
-  return {confirm() {tree.props.value.register('workspace', getGuard()); all(tree).find(node => node.props?.label === '捨棄草稿並離開').props.onPress();},
+  let tree = render(); tree.props.value.register('workspace', {...getGuard(), retainedInWorkspace: true}); tree.props.value.request(onLeave, intent); tree = render();
+  return {tree, buttons: all(tree).filter(node => node.type === 'Button').map(node => node.props.label), confirm() {tree.props.value.register('workspace', {...getGuard(), retainedInWorkspace: true}); all(tree).find(node => node.props?.label === '捨棄草稿並離開').props.onPress();},
     cancel() {all(tree).find(node => node.props?.label === '繼續編輯').props.onPress();}};
 }
 for (const kind of ['sources', 'photos']) {
   test(kind + ': approved route departure discards only ordinary drafts', async () => {
-    const f = fixture(kind); let v = await f.open();
+    const f = fixture(kind); let v = await f.open(); const saved = structuredClone(f.target);
     if (kind === 'sources') v.actions.management.edit({intention: 'Synthetic unsaved purpose'});
     else v.actions.editDraft({text: 'Synthetic unsaved photo record'});
     v = f.render(); assert.equal(f.guard.dirty, true);
@@ -102,6 +111,8 @@ for (const kind of ['sources', 'photos']) {
     navigation(() => {f.pathname = '/tasks';}, () => f.guard).confirm(); f.render(); v = f.render();
     assert.equal(f.guard.dirty, false); assert.equal(v.model.selected, null); assert.equal(v.model.draft.text, '');
     if (kind === 'sources') assert.equal(v.model.managementDraft, null);
+    assert.deepEqual(f.target, saved, 'discarding local form content must not delete saved data');
+    assert.ok(v.model.items.some(item => item.id === saved.id));
     f.unmount();
   });
   test(kind + ': resource 404 rechecks child access and revocation stays fail-closed', async () => {
@@ -244,7 +255,7 @@ test('photos: same-child late A content cannot race a B selection past the busy 
   f.api.photo = async (_childId, id) => {reads.push(id); return id === 'photo-b' ? b : photo;};
   f.api.content = target => target.id === 'photo-a' ? new Promise(resolve => {releaseA = resolve;}) : Promise.reject(new ApiError(503));
   let v = await f.ready(); v.actions.openPhoto(v.model.items[0]); await settle(); v = f.render();
-  v.actions.openPhoto(v.model.items[1]); assert.deepEqual(reads, ['photo-a']); assert.equal(f.guard.pending, true);
+  v.actions.openPhoto(v.model.items[1]); assert.deepEqual(reads, ['photo-a']); assert.equal(f.guard.pending, false); assert.equal(v.model.busy, true);
   releaseA(new Blob(['A'])); await settle(); v = f.render(); assert.equal(v.model.selected.id, 'photo-a');
   v.actions.openPhoto(v.model.items.find(item => item.id === 'photo-b')); await settle(); v = f.render();
   assert.deepEqual(reads, ['photo-a', 'photo-b']); assert.equal(v.model.selected, null);
@@ -299,7 +310,7 @@ test('navigation: retaining exact handoff drafts never exempts pending, unrelate
   const {PreviewNavigationGuard} = compile('frontend/src/preview/PreviewNavigationGuard.tsx', name =>
     name === 'react' ? h.react : name === 'react/jsx-runtime' ? {jsx, jsxs: jsx} : name === 'react-native' ? {Platform: {OS: 'web'}, StyleSheet: {create: x => x}} :
     name === 'react-native-paper' ? {Text: 'Text'} : name.includes('/AppDialog') ? {AppDialog: Dialog} : name.includes('/ui') ? {AppButton: 'Button'} :
-    name.includes('/theme') ? {colors: {}, typeScale: {}} : name.startsWith('expo-router') || name.includes('browser-history-guard') ? {} : assert.fail(name));
+    name.includes('/theme') ? {colors: {}, typeScale: {}} : name === '../production/routes' ? compile('frontend/src/production/routes.ts', () => assert.fail('Unexpected routes import')) : name.startsWith('expo-router') || name.includes('browser-history-guard') ? {} : assert.fail(name));
   const render = () => {h.reset(); return PreviewNavigationGuard({children: null});};
   const all = value => !value || typeof value !== 'object' ? [] : [value, ...(Array.isArray(value) ? value : [value.props?.children]).flatMap(all)];
   let tree = render(), routes = 0; const guard = tree.props.value, go = () => routes++;
@@ -383,7 +394,7 @@ test('navigation recovery error stays visible and explicit leave still checks di
   const {PreviewNavigationGuard} = compile('frontend/src/preview/PreviewNavigationGuard.tsx', name =>
     name === 'react' ? h.react : name === 'react/jsx-runtime' ? {jsx, jsxs: jsx} : name === 'react-native' ? {Platform: {OS: 'web'}, View: 'View', StyleSheet: {create: x => x}} :
     name === 'react-native-paper' ? {Text: 'Text'} : name.includes('/AppDialog') ? {AppDialog: Dialog} : name.includes('/ui') ? {AppButton: 'Button'} :
-    name.includes('/theme') ? {colors: {}, typeScale: {}} : name.includes('browser-history-guard') ? {guardBrowserHistory: (_target, _block, _request, report) => {reportError = report;}} : name.startsWith('expo-router') ? {} : assert.fail(name));
+    name.includes('/theme') ? {colors: {}, typeScale: {}} : name === '../production/routes' ? compile('frontend/src/production/routes.ts', () => assert.fail('Unexpected routes import')) : name.includes('browser-history-guard') ? {guardBrowserHistory: (_target, _block, _request, report) => {reportError = report;}} : name.startsWith('expo-router') ? {} : assert.fail(name));
   const originalWindow = globalThis.window; globalThis.window = {};
   const render = () => {h.reset(); const tree = PreviewNavigationGuard({children: null}); h.flush(); return tree;};
   const all = value => !value || typeof value !== 'object' ? [] : [value, ...(Array.isArray(value) ? value : [value.props?.children]).flatMap(all)];
@@ -403,4 +414,65 @@ test('navigation recovery error stays visible and explicit leave still checks di
     all(tree).find(n => n.props?.label === '確認離開目前頁面').props.onPress(); tree = render();
     all(tree).find(n => n.props?.label === '捨棄草稿並離開').props.onPress(); assert.equal(leaves, 1);
   } finally {globalThis.window = originalWindow; h.unmount();}
+});
+
+for (const kind of ['sources', 'photos']) {
+  test(kind + ': delayed background reads and read failures do not block navigation or child switching', async () => {
+    const f = fixture(kind); f.pathname = '/tasks'; let release;
+    f.blockRead = new Promise(resolve => {release = resolve;});
+    f.render(); let v = f.render();
+    assert.equal(v.model.busy, true); assert.equal(v.pending, true, 'local picker and transfer controls stay locked');
+    assert.equal(v.model.operation.state, 'none'); assert.equal(f.guard.dirty, false); assert.equal(f.guard.pending, false);
+    for (const intent of ['navigation', 'workspace', 'child']) {
+      let moved = false; navigation(() => {moved = true;}, () => f.guard, intent); assert.equal(moved, true);
+    }
+    f.listError = new ApiError(503); release(); await settle(); v = f.render();
+    assert.equal(v.model.load, 'error'); assert.equal(v.model.operation.state, 'none'); assert.equal(f.guard.pending, false);
+    f.unmount();
+  });
+  test(kind + ': reading existing unknown work retains its run across workspace navigation but protects scope departure', async () => {
+    const f = fixture(kind, {extraction: {state: 'unknown', runId: 'original-run', draft: null}});
+    let v = await f.open(), writes = 0;
+    f.api.extract = async () => {writes++; assert.fail('Read-only navigation cannot extract');};
+    assert.equal(f.guard.pending, true); assert.equal(f.guard.dirty, false);
+    navigation(() => {f.pathname = '/tasks';}, () => f.guard, 'workspace'); f.render(); v = f.render();
+    assert.equal(v.model.selected.id, f.target.id); if (kind === 'sources') assert.equal(v.model.selected.extraction.runId, 'original-run');
+    assert.equal(v.model.operation.state, 'unknown'); assert.equal(f.resets, 0); assert.equal(writes, 0);
+    for (const intent of ['child', 'navigation']) {
+      let moved = false; const prompt = navigation(() => {moved = true;}, () => f.guard, intent);
+      assert.equal(moved, false); assert.deepEqual(prompt.buttons, ['留在此頁查核']);
+    }
+    f.pathname = '/' + kind; f.render(); v = f.render();
+    assert.equal(v.model.selected.id, f.target.id); assert.equal(f.resets, 0);
+    // A later unrelated run must conflict with the original retained basis, not replace it.
+    f.api[kind === 'photos' ? 'photo' : 'input'] = async () => ({...f.target, extraction: {...f.target.extraction, runId: 'different-run'}});
+    v.actions.checkOriginal(); await settle(); v = f.render();
+    assert.equal(v.model.operation.state, 'conflict'); assert.equal(writes, 0); assert.equal(f.resets, 0); f.unmount();
+  });
+}
+
+for (const kind of ['sources', 'photos']) {
+  test(kind + ': modal discard clears only the record draft and retains the saved selection and original attachment', async () => {
+    const f = fixture(kind); let v = await f.open(); const saved = structuredClone(f.target);
+    v.actions.editDraft({text: 'Synthetic unsaved modal record'}); v = f.render();
+    assert.equal(v.model.draft.text, 'Synthetic unsaved modal record');
+    if (kind === 'sources') v.actions.discardDraft('record'); else v.actions.discardRecordDraft();
+    v = f.render(); assert.equal(v.model.draft.text, ''); assert.equal(v.model.reviewed, null);
+    assert.equal(v.model.selected.id, saved.id); assert.deepEqual(f.target, saved); assert.equal(f.resets, 0);
+    f.unmount();
+  });
+  test(kind + ': modal discard never clears an unresolved original operation', async () => {
+    const f = fixture(kind, {extraction: {state: 'unknown', runId: 'original-run', draft: null}}); let v = await f.open();
+    const operation = structuredClone(v.model.operation), selectedId = v.model.selected.id;
+    if (kind === 'sources') for (const type of ['composer', 'record', 'management']) v.actions.discardDraft(type);
+    else v.actions.discardRecordDraft();
+    v = f.render(); assert.deepEqual(v.model.operation, operation); assert.equal(v.model.selected.id, selectedId);
+    assert.equal(f.guard.pending, true); assert.equal(f.resets, 0); f.unmount();
+  });
+}
+test('sources: management modal discard restores the saved settings without changing the selected resource or its history', async () => {
+  const f = fixture('sources'); let v = await f.open(); const before = structuredClone(v.model.managementDraft), selectedId = v.model.selected.id;
+  v.actions.management.edit({intention: 'Synthetic changed intention'}); v = f.render(); assert.equal(v.model.managementDraft.dirty, true);
+  v.actions.discardDraft('management'); v = f.render(); assert.deepEqual(v.model.managementDraft, before);
+  assert.equal(v.model.selected.id, selectedId); assert.equal(v.model.intake.selected.stage, 'awaiting_read'); assert.equal(f.resets, 0); f.unmount();
 });

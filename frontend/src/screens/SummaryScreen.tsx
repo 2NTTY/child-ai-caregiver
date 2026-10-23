@@ -1,81 +1,90 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
+import { ChildOverviewConcerns } from "../components/child-overview/ChildOverviewConcerns";
 import { ChildOverviewContent } from "../components/child-overview/ChildOverviewContent";
-import { PreparationWorkspace } from "../components/preparations/PreparationWorkspace";
+import { GrowthArchive } from "../components/growth/GrowthArchive";
+import { useContainerWidth } from "../components/useContainerWidth";
+import { ReadStateNotice } from "../components/ReadStateNotice";
+import { FamilyReportControls } from "../production/FamilyReportControls";
+import { useProductionFamilyDocuments } from "../production/TaskKnowledgeDomains";
+import { useGrowthWorkspace } from "../workspaces/GrowthWorkspace";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTabPanel, UnderlineTabs } from "../components/ui";
 import { useProduction } from "../production/ProductionProvider";
 import { TaskKnowledgeSummaryContent } from "../production/TaskKnowledgeSummaryContent";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { useProfileWorkspace } from "../workspaces/ProfileWorkspace";
-import { usePreparationWorkspace } from "../workspaces/PreparationWorkspace";
 import { chineseFont, colors, readingType, spacing } from "../theme";
 
-export type SummaryTab = "overview" | "preparation";
-export type SummaryRouteTab = SummaryTab | "legacy-preparation";
+export type SummaryTab = "overview" | "archive";
+export type SummaryRouteTab = SummaryTab | "preparation" | "legacy-preparation";
 export function normalizeSummaryTab(value: string | string[] | undefined): SummaryRouteTab {
   const candidate = Array.isArray(value) ? value[0] : value;
-  return candidate === "legacy-preparation" ? "legacy-preparation" : candidate === "preparation" ? "preparation" : "overview";
+  return candidate === "legacy-preparation" || candidate === "preparation" || candidate === "archive" ? candidate : "overview";
 }
 
 export function SummaryScreen() {
-  const { model, actions, scopeKey: productionScope } = useProduction(), profile = useProfileWorkspace(), preparations = usePreparationWorkspace();
+  const { model, actions, scopeKey: productionScope } = useProduction(), profile = useProfileWorkspace();
+  const growth = useGrowthWorkspace(), documents = useProductionFamilyDocuments(), layout = useContainerWidth();
   const router = useRouter(), navigate = usePreviewNavigation(), pathname = usePathname();
   const { tab: requestedTab } = useLocalSearchParams<{ tab?: string | string[] }>();
   const tab = normalizeSummaryTab(requestedTab);
   const child = model.children.find(item => item.id === model.selectedChildId);
   const scopeKey = productionScope ?? "";
-  const scrollRef = useRef<ScrollView>(null), scrollPosition = useRef(0);
+  const scrollRef = useRef<ScrollView>(null);
   const current = useRef({ scopeKey, pathname, tab, mounted: true });
   current.current = { scopeKey, pathname, tab, mounted: true };
   useEffect(() => { current.current.mounted = true; return () => { current.current.mounted = false; }; }, []);
   useLayoutEffect(() => {
-    scrollPosition.current = 0;
     scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [scopeKey, tab]);
 
   // Delayed guard confirmation must never apply an old child's or old route's intent.
-  function guarded(action: () => void) {
+  function guarded(action: () => void, intent: "navigation" | "workspace" = "workspace") {
     navigate(() => {
       const live = current.current;
       if (!live.mounted || live.scopeKey !== scopeKey || live.pathname !== pathname || live.tab !== tab) return;
       action();
-    });
+    }, intent);
   }
   function changeTab(next: SummaryRouteTab) {
     if (next === tab) return;
     guarded(() => {
-      preparations?.actions.closeDocument();
       router.setParams({ tab: next });
-    });
+    }, "navigation");
   }
   function openProfileHistory() {
     guarded(() => {
-      profile?.actions.showHistory();
-      router.push("/profile");
+      router.push("/history?category=profile");
     });
   }
   if (pathname !== "/summary") return null;
-  return <PageFrame density="compact" title="孩子概況與準備" description="查看孩子目前的資料、已確認照顧摘要及家庭共享準備文件。"
-    scrollRef={scrollRef} scrollTestID="child-preparation-scroll" onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
-    <View key={scopeKey} style={styles.workspace}>
-      <UnderlineTabs<SummaryTab> id="child-preparation-tabs" label="孩子概況與準備" items={[{ key: "overview", label: "孩子概況" }, { key: "preparation", label: "準備單" }]} value={tab === "legacy-preparation" ? "overview" : tab} onChange={changeTab} />
+  if (tab === "preparation") return <Redirect href="/growth?tab=preparation" />;
+  return <PageFrame density="compact" title="概況" scrollRef={scrollRef} scrollTestID="child-growth-scroll">
+    <View key={scopeKey} ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
+      <UnderlineTabs<SummaryTab> id="child-growth-tabs" label="概況與成長檔案" items={[{ key: "overview", label: "概況" }, { key: "archive", label: "成長檔案" }]} value={tab === "legacy-preparation" ? "overview" : tab} onChange={changeTab} />
       {!child ? <View style={styles.empty}><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" variant="secondary" onPress={() => guarded(() => router.push("/profile"))} /></View> : <>
-        <AppTabPanel tabsId="child-preparation-tabs" tabKey="overview" active={tab === "overview"}>
+        <AppTabPanel tabsId="child-growth-tabs" tabKey="overview" active={tab === "overview"}>
           {tab === "overview" ? <><ChildOverviewContent onOpenProfile={() => guarded(() => router.push("/profile"))} onOpenProfileHistory={openProfileHistory}
             measurements={profile?.measurements} profileSource={profile?.profileSource}
+            companion={<ChildOverviewConcerns model={growth?.model ?? null} scopeKey={scopeKey} childId={child.id} onOpen={() => guarded(() => router.push("/growth?tab=concerns"))} />}
             onOpenMeasurement={recordId => guarded(() => router.push({ pathname: "/care", params: { record: recordId } }))} />
-            <TaskKnowledgeSummaryContent onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={() => guarded(() => router.push("/tasks"))} />
+            <TaskKnowledgeSummaryContent presentation="overview" scopeKey={scopeKey} childId={child.id} onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} />
           </> : null}
         </AppTabPanel>
-        <AppTabPanel tabsId="child-preparation-tabs" tabKey="preparation" active={tab === "preparation"}>
-          {tab === "preparation" ? <PreparationWorkspace onPrepareQuestion={actions.prepareQuestion} onHistory={() => guarded(() => router.push({ pathname: "/history", params: { category: "preparations" } }))}
-            scrollRef={scrollRef} getScrollPosition={() => scrollPosition.current} /> : null}
+        <AppTabPanel tabsId="child-growth-tabs" tabKey="archive" active={tab === "archive"}>
+          {tab === "archive" ? growth ? <>
+            <GrowthArchive key={growth.scopeKey} model={growth.model} wide={layout.width >= 880} scrollRef={scrollRef} active
+              onRecord={id => guarded(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))}
+              onExportReport={documents && typeof document !== "undefined" ? documents.exportReport : undefined} exportBusy={documents?.exportBusy}
+              footerActions={<AppButton label="前往原始記錄" variant="secondary" density="compact" onPress={() => guarded(() => router.push("/care"))} />} />
+            <FamilyReportControls scopeKey={growth.scopeKey} online={growth.model.online} onRefresh={growth.actions.refresh} />
+          </> : <ReadStateNotice state="loading" scopeKey={scopeKey} message="正在讀取成長檔案…" /> : null}
         </AppTabPanel>
         {tab === "legacy-preparation" ? <TaskKnowledgeSummaryContent preparation onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))}
-          onTask={() => guarded(() => router.push("/tasks"))} onAgent={() => actions.prepareQuestion("想核對這份到診準備的問題與來源：")} /> : null}
+          onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} onAgent={() => actions.prepareQuestion("想核對這份到診準備的問題與來源：")} /> : null}
       </>}
     </View>
   </PageFrame>;

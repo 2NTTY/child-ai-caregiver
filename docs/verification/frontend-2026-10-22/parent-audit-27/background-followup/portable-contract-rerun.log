@@ -1,0 +1,13 @@
+PASS exact 4 MiB and 16,000,000 pixels accepted; one URL release after transfer
+PASS 4 MiB + 1 byte rejected before decoding and selection
+PASS >16M pixels rejected; transient URL released; no selection delegate
+PASS unmounted picker rejects late decode and releases URL; network calls 0
+✔ Web picker exact bounds, rejected image ownership and late unmount completion (91.726005ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 440.502096

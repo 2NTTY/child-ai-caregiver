@@ -29,10 +29,13 @@ export function readChildProfile(model: ProfileViewModel | null, scopeKey: strin
   if (!model) return empty("loading", "正在讀取檔案");
   if (model.access === "lost") return empty("access_lost", "孩子權限已失效", "舊檔案及來源已清除，請重新核對家庭權限。");
   if (!model.child) return empty("no_child", "尚未有孩子", "可到原子女檔案加入孩子及核對基本資料。");
-  if (model.reading) return empty("loading", "正在讀取檔案");
+  // Keep a same-scope confirmed revision during revalidation; source and access
+  // checks below still reject unavailable or invalidated authority immediately.
+  if (model.reading && !model.current) return empty("loading", "正在讀取檔案");
   if (source && (source.scopeKey !== scopeKey || source.childId !== model.child.id || source.state === "unavailable")) return empty("source_unavailable", "來源暫不可讀", "未能核對這位孩子的原來源，暫不顯示舊資料。");
   if (source?.state === "invalidated") return empty("source_invalidated", "原來源已失效", "這份檔案需要重新核對，舊來源內容不再作為目前資料。");
   if (model.operation.resultUnavailable) return empty("source_unavailable", "原操作已確認，結果不可讀", "請返回原檔案核對；不以舊內容代替目前結果。");
+  if (model.reading && (!source || !model.online || model.needsRefresh)) return empty("loading", "正在讀取檔案");
   const data = model.current?.data ?? null;
   if (!data) return empty("missing", "尚未有已確認檔案");
   const validUntil = data.validUntil;
@@ -42,10 +45,25 @@ export function readChildProfile(model: ProfileViewModel | null, scopeKey: strin
   return { state: "confirmed", data, statusLabel: "已確認檔案", message: null };
 }
 
-export function childProfileAgeLabel(data: ProfileDataView | null): string {
+export function childProfileAgeLabel(data: ProfileDataView | null, today?: string): string {
   const age = data?.age;
   if (!age || age.kind === "unknown") return "年齡未知";
-  if (age.kind === "birth_date") return `出生日期 ${age.date}`;
+  if (age.kind === "birth_date") {
+    if (!today) return `出生日期 ${age.date}`;
+    const calendarDate = (value: string) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+      const date = new Date(`${value}T00:00:00Z`);
+      return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value ? date : null;
+    };
+    const birth = calendarDate(age.date), current = calendarDate(today);
+    if (!birth || !current || birth > current) return "出生日期待核對";
+    let months = (current.getUTCFullYear() - birth.getUTCFullYear()) * 12 + current.getUTCMonth() - birth.getUTCMonth();
+    const anniversaryDay = Math.min(birth.getUTCDate(), new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 0)).getUTCDate());
+    if (current.getUTCDate() < anniversaryDay) months--;
+    if (months < 1) return `${Math.floor((current.getTime() - birth.getTime()) / 86400000)} 日`;
+    if (months < 12) return `${months} 個月`;
+    return `${Math.floor(months / 12)} 歲${months % 12 ? ` ${months % 12} 個月` : ""}`;
+  }
   return `約 ${age.rawValue} ${profileAgeUnitOptions.find(item => item.value === age.unit)?.label ?? age.unit}（截至 ${age.asOf}）`;
 }
 

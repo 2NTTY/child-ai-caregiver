@@ -11,14 +11,14 @@ import { chineseFont, colors, mobileLayout, radius, spacing, typeScale } from ".
 
 const homeAvatarSize = 48, homeArrowSize = 20;
 
-export function ChildPicker({ children, selectedId, onSelect, compact = false, tiny = false, switchOnly = false, shortSwitchLabel = false, homeIdentity = false, loading = false, onOpenChange }: {
+export function ChildPicker({ children, selectedId, onSelect, compact = false, tiny = false, switchOnly = false, shortSwitchLabel = false, homeIdentity = false, onOpenChange }: {
   children: HomeChild[]; selectedId: string | null; onSelect: (id: string) => void; compact?: boolean; tiny?: boolean; switchOnly?: boolean; shortSwitchLabel?: boolean;
   homeIdentity?: boolean; loading?: boolean; onOpenChange?: (open: boolean) => void;
 }) {
   const [visible, setVisible] = useState(false);
   const mobile = useWindowDimensions().width < mobileLayout.breakpoint;
   const selected = children.find(child => child.id === selectedId);
-  const copy = <><Text numberOfLines={1} style={[styles.name, homeIdentity && styles.homeName]}>{selected?.displayName ?? "尚未有孩子"}</Text>{!compact && selected ? <Text numberOfLines={homeIdentity ? undefined : 1} style={[styles.age, homeIdentity && styles.homeAge]}>{loading ? "正在讀取…" : homeIdentity ? selected.ageSummaryLabel ?? selected.ageLabel : selected.ageLabel}</Text> : null}</>;
+  const copy = <Text numberOfLines={1} style={[styles.name, homeIdentity && styles.homeName]}>{selected?.displayName ?? "尚未有孩子"}</Text>;
   function setOpen(open: boolean) { setVisible(open); onOpenChange?.(open); }
   return <><Pressable accessibilityRole="button" accessibilityLabel={`選擇孩子，目前${selected?.displayName ?? "尚未有孩子"}`} accessibilityState={{ expanded: visible, disabled: children.length === 0 }} aria-expanded={visible} aria-disabled={children.length === 0} disabled={children.length === 0}
     onPress={() => setOpen(true)} style={({ pressed }) => [styles.picker, compact && styles.compact, tiny && styles.tiny, switchOnly && styles.switchOnly, shortSwitchLabel && styles.shortSwitch, mobile && styles.mobile, mobile && compact && styles.mobileCompact, homeIdentity && styles.homeIdentity, visible && !homeIdentity && styles.open, children.length === 0 && styles.disabled, pressed && children.length > 0 && (homeIdentity ? styles.homePressed : styles.pressed)]}>
@@ -28,7 +28,7 @@ export function ChildPicker({ children, selectedId, onSelect, compact = false, t
       <AppIcon name="chevron-down" size={homeIdentity ? homeArrowSize : 18} color={visible ? colors.teal : colors.muted} />
     </>}
   </Pressable><Portal><Dialog visible={visible} onDismiss={() => setOpen(false)}><Dialog.Title>選擇孩子</Dialog.Title><Dialog.ScrollArea><ScrollView style={{ maxHeight: 360 }}>
-    {children.map(child => <AppRadioItem key={child.id} label={`${child.displayName} · ${child.ageLabel}`} value={child.id} checked={child.id === selectedId} labelStyle={styles.optionLabel} style={[styles.option, child.id === selectedId && styles.optionSelected]} onPress={() => { setOpen(false); onSelect(child.id); }} />)}
+    {children.map(child => <AppRadioItem key={child.id} label={child.displayName} value={child.id} checked={child.id === selectedId} labelStyle={styles.optionLabel} style={[styles.option, child.id === selectedId && styles.optionSelected]} onPress={() => { setOpen(false); onSelect(child.id); }} />)}
   </ScrollView></Dialog.ScrollArea><Dialog.Actions><AppButton label="關閉" variant="quiet" onPress={() => setOpen(false)} /></Dialog.Actions></Dialog></Portal></>;
 }
 const styles = StyleSheet.create({
@@ -50,10 +50,8 @@ const styles = StyleSheet.create({
   homeAvatar: { width: homeAvatarSize, height: homeAvatarSize },
   homeInitial: { fontSize: 18 },
   homeName: { fontSize: 18, lineHeight: 24 },
-  homeAge: { fontSize: 14, lineHeight: 22 },
   initial: { color: colors.deepTeal, fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "700" },
   copy: { flex: 1, minWidth: 0, gap: 2 }, name: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "700" },
-  age: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 18 },
   option: { borderRadius: radius.small, marginVertical: spacing.xs }, optionSelected: { backgroundColor: colors.paleTeal },
   optionLabel: { color: colors.ink, fontFamily: chineseFont, fontSize: typeScale.small, lineHeight: 22 },
 });

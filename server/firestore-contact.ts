@@ -1,6 +1,8 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { DocumentSnapshot, Query } from '@google-cloud/firestore';
 import { z } from 'zod';
+import type { NotificationMessageContent } from '../src/shared/notification-messages.ts';
+import { acceptedMessage, contactMessageEvidenceSchema, messageSortMetadata } from './notification-message-content.ts';
 import { contactBindingSchema, contactConsentInput, contactGrantInput, contactAcknowledgeInput,
   type ContactConsent, type ContactGrant, type ContactRequest, type ContactPage, type ContactAttempt, type ContactBinding } from '../src/shared/contact.ts';
 import { DEFAULT_NOTIFICATION_PREFERENCES } from '../src/shared/family.ts';
@@ -33,7 +35,7 @@ const requestSchema = z.object({ id: uuid, taskId: uuid, taskVersion: version, o
   state: z.enum(['pending', 'accepted', 'rejected', 'unknown', 'stopped', 'coalesced']), reason: z.string().nullable(), nextAt: time,
   groupedTo: uuid.nullable(), createdAt: time, attempts: z.array(attemptSchema).max(3) }).strict();
 export const firestoreContactRequestSchema = z.object({ request: requestSchema, grant: firestoreContactGrantSchema,
-  generation: uuid, authorizationVersion: z.string(), runId: uuid, reminderId: uuid, batchId: uuid, callbackHash: z.string().nullable() }).strict();
+  generation: uuid, authorizationVersion: z.string(), runId: uuid, reminderId: uuid, batchId: uuid, callbackHash: z.string().nullable(), messages: z.array(contactMessageEvidenceSchema).max(3).optional() }).strict();
 const pointerSchema = z.object({ scope: workRecoveryScopeSchema, requestId: uuid, attemptId: uuid, binding: contactBindingSchema, botId: z.string() }).strict();
 const dailySchema = z.object({ requestId: uuid, day: z.string(), at: time }).strict();
 const updateSchema = z.object({ updateId: z.number().int().nonnegative(), attemptId: uuid }).strict();
@@ -82,7 +84,7 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
   }
   function write(b: Pick<Binding, 'scope' | 'transaction'>, value: Saved) {
     b.transaction.set(data.ref('contact_requests', 'contact-request', value.request.id), envelope(b, 'contact-request', value.request.id, firestoreContactRequestSchema, value, 1,
-      { requestId: value.request.id, runId: value.runId, taskId: value.request.taskId, createdAt: value.request.createdAt, attemptIds: value.request.attempts.map(a => a.id),
+      { ...messageSortMetadata((value.messages ?? []).map(message => message.content)), requestId: value.request.id, runId: value.runId, taskId: value.request.taskId, createdAt: value.request.createdAt, attemptIds: value.request.attempts.map(a => a.id),
         unresolved: value.request.attempts.some(a => (a.status === 'sending' || a.status === 'unknown') && !a.acknowledgedAt) }));
   }
   async function activeBinding(b: Binding, link: ContactBinding) {
@@ -299,7 +301,7 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
         return !!valid && a?.status === 'sending' && !!active && reminderDecision(valid.task, await preferences(b), evidence, new Date().toISOString()) === 'initial';
       }); } catch (error) { if (error && typeof error === 'object' && 'status' in error && [403, 404, 409].includes(Number(error.status))) return false; throw error; }
     };
-    let result: { status: 'accepted' | 'rejected' | 'unknown' | 'stopped'; reason: string | null; providerStatus: number | null; messageId?: number | null };
+    let result: { status: 'accepted' | 'rejected' | 'unknown' | 'stopped'; reason: string | null; providerStatus: number | null; messageId?: number | null; message?: NotificationMessageContent };
     if (!started.active) result = { status: 'rejected', reason: 'binding_unavailable', providerStatus: null };
     else try {
       result = started.active.channel === 'web_push' ? await options.pushGateway.send(started.active.subscription,
@@ -322,7 +324,11 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
         : result.reason === 'blocked' && link.channel === 'telegram' ? await options.telegram.prepareInvalidation(personal(b), link.bindingId, link.bindingVersion) : null;
       const change = await authority.prepareReceiptChange(tx, scope, randomUUID(), 'tasks');
       if (a.acknowledgedAt && (result.status === 'rejected' || result.status === 'stopped')) result = { ...result, status: 'unknown', reason: 'receipt_without_provider_confirmation' };
-      Object.assign(a, result, { messageId: a.messageId ?? result.messageId ?? null, finishedAt: new Date().toISOString() });
+      const { message: capturedMessage, ...deliveryResult } = result;
+      const message = options.messageHistoryEnabled === true ? acceptedMessage({ ...deliveryResult, message: capturedMessage }, a.channel) : undefined;
+      if (message) current.messages = [...(current.messages ?? []).filter(saved => saved.attemptId !== a.id),
+        { attemptId: a.id, recipientUserId: a.recipientUserId, content: message }];
+      Object.assign(a, deliveryResult, { messageId: a.messageId ?? result.messageId ?? null, finishedAt: new Date().toISOString() });
       const fallback = result.status === 'rejected' && current.grant.value.allowFallback && current.request.attempts.length < current.grant.bindings.length;
       current.request.state = fallback ? 'pending' : result.status; current.request.reason = result.reason;
       change?.commit(); invalidation?.commit();

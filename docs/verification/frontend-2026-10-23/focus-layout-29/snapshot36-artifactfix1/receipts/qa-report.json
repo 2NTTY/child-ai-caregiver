@@ -1,0 +1,244 @@
+{
+  "representation": "公開摘要／摘錄；非原始私有收據逐 byte 副本",
+  "originalReceiptSha256": "0915ce99b8cd333837cbc631bf2682a2005fff807242ac9a3fd726b02d868a37",
+  "version": "snapshot36-artifactfix1",
+  "outcome": "PASS_BOUNDED_SETTLED503_TARGET",
+  "sealedAtUTC": "2026-10-23T10:38:21.288010+00:00",
+  "scope": "Only PreparationWorkspace ready5checkbox→same-owner documents503 settled; disabled activation; focused subsequent same-owner503 GET. No all-site rerun.",
+  "viewport": {
+    "nominalIframeCSS": [
+      1024,
+      600
+    ],
+    "actualCSS": [
+      1023,
+      600
+    ],
+    "nativeOriginalPixels": [
+      1364,
+      1024
+    ],
+    "cssZoom": "not separately measured; no inline zoom nodes observed",
+    "browserZoom": "not remeasured; do not infer from native image"
+  },
+  "cases": [
+    {
+      "name": "ready_to_settled503",
+      "outcome": "PASS",
+      "transport": "GET active documents200→503; no mutation",
+      "originalNodeIds": [
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "allObservedAfterReadyRowsPreserveFiveNodes": true,
+      "boundedRows": 57,
+      "checkedBefore": [
+        "true",
+        "true",
+        "false",
+        "false",
+        "false"
+      ],
+      "checkedSettled": [
+        "true",
+        "true",
+        "false",
+        "false",
+        "false"
+      ],
+      "settledAriaDisabled": [
+        "true",
+        "true",
+        "true",
+        "true",
+        "true"
+      ],
+      "eachCheckboxHeightBeforeAndAfter": 61.58203125,
+      "oldProseRetained": true,
+      "staleAndRetryVisible": true,
+      "geometry": {
+        "workspaceHeightBefore": 1280.25390625,
+        "workspaceHeightAfter": 1349.94140625,
+        "scrollBefore": 213.39285278320312,
+        "scrollAfter": 250.89285278320312,
+        "checkboxYDelta": 0.68359375,
+        "interpretation": "Error/retry UI legitimately adds69.6875 CSSpx workspace height; scroll+37.5. Not zero-workspace-shift claim; individual checkbox dimensions unchanged."
+      },
+      "focusLimit": "Visible fault button intentionally takes focus; this first transition does not demonstrate preservation of originally focused checkbox."
+    },
+    {
+      "name": "settled_disabled_native_pointer_space_enter",
+      "outcome": "PASS",
+      "activeNode": 8,
+      "nativeInput": "One native pointer click on the second disabled checkbox, then Space and Enter once each; no locator auto-wait.",
+      "beforeAfter": [
+        {
+          "key": "space",
+          "before": {
+            "active": {
+              "disabled": "true",
+              "label": "在交接紙上列出孩子想一起閱讀的書名：合成《小船去旅行》。",
+              "role": "checkbox"
+            },
+            "at": 1792751707568,
+            "checked": [
+              "true",
+              "true",
+              "false",
+              "false",
+              "false"
+            ]
+          },
+          "after": {
+            "active": {
+              "disabled": "true",
+              "label": "在交接紙上列出孩子想一起閱讀的書名：合成《小船去旅行》。",
+              "role": "checkbox"
+            },
+            "at": 1792751707661,
+            "checked": [
+              "true",
+              "true",
+              "false",
+              "false",
+              "false"
+            ]
+          }
+        },
+        {
+          "key": "Return",
+          "before": {
+            "active": {
+              "disabled": "true",
+              "label": "在交接紙上列出孩子想一起閱讀的書名：合成《小船去旅行》。",
+              "role": "checkbox"
+            },
+            "at": 1792751707682,
+            "checked": [
+              "true",
+              "true",
+              "false",
+              "false",
+              "false"
+            ]
+          },
+          "after": {
+            "active": {
+              "disabled": "true",
+              "label": "在交接紙上列出孩子想一起閱讀的書名：合成《小船去旅行》。",
+              "role": "checkbox"
+            },
+            "at": 1792751707827,
+            "checked": [
+              "true",
+              "true",
+              "false",
+              "false",
+              "false"
+            ]
+          }
+        }
+      ],
+      "trustedKeyPairs": 2,
+      "checkedUnchanged": true,
+      "mutationRequests": 0
+    },
+    {
+      "name": "focused_same_error_read",
+      "outcome": "PASS_BOUNDED",
+      "mechanism": "Delayed same-owner synthetic refresh, plus real iframe re-focus read observed separately; not OS app-switch claim",
+      "evidence": {
+        "before": {
+          "active": {
+            "disabled": "true",
+            "label": "在交接紙上列出孩子想一起閱讀的書名：合成《小船去旅行》。",
+            "role": "checkbox"
+          },
+          "at": 1792751729571,
+          "scrollTop": 250.89285278320312,
+          "workspaceHeight": 1349.94140625
+        },
+        "after": {
+          "active": {
+            "disabled": "true",
+            "label": "在交接紙上列出孩子想一起閱讀的書名：合成《小船去旅行》。",
+            "role": "checkbox"
+          },
+          "at": 1792751749956,
+          "checks": [
+            {
+              "checked": "true",
+              "disabled": "true",
+              "h": 61.58203125,
+              "label": "把書包、水樽和外套放在同一位置。"
+            },
+            {
+              "checked": "true",
+              "disabled": "true",
+              "h": 61.58203125,
+              "label": "在交接紙上列出孩子想一起閱讀的書名：合成《小船去旅行》。"
+            },
+            {
+              "checked": "false",
+              "disabled": "true",
+              "h": 61.58203125,
+              "label": "核對合成接手角色「家人甲」和「家人乙」各自要帶走的物品。"
+            },
+            {
+              "checked": "false",
+              "disabled": "true",
+              "h": 61.58203125,
+              "label": "向接手的人指出下面的合成原記錄，分清已記下的事與仍待詢問的事。"
+            },
+            {
+              "checked": "false",
+              "disabled": "true",
+              "h": 61.58203125,
+              "label": "交接結束前再看看是否有遺留物；本頁不會發送交接訊息。"
+            }
+          ],
+          "scrollTop": 250.89285278320312,
+          "stale": true,
+          "workspaceHeight": 1349.94140625
+        }
+      },
+      "sampledActiveNode": 8,
+      "sameNodes": [
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "scrollUnchanged": 250.89285278320312,
+      "workspaceHeightUnchanged": 1349.94140625,
+      "documents503ConfirmedAt": [
+        1792751729922,
+        1792751732291
+      ],
+      "iframeNativeFocusAt": 1792751729511,
+      "qaRefreshAt": 1792751732294
+    }
+  ],
+  "limits": [
+    "100ms DOM mutation snapshots / 6s burst /60 budget and100ring: no per-frame absolute-no-flash claim.",
+    "Natural OS AltTab/app-switch not rerun; real iframe blur/focus events and GET were observed, distinguished from explicit harness refresh.",
+    "New scope/unknown/offline/revocation full matrix NOT_RUN; existing reviewed20DOM retained as source evidence, not fresh GUI.",
+    "35 normal/slow/catalog and34 child/narrow-screen remain their original versioned bounded results, not rerun as36artifactfix1.",
+    "Full TypeScript still NOT_PASS from historical137; no new TS run.",
+    "Original bb0fd8 artifact36 withdrawn; its old UI result is not source36 fix evidence."
+  ],
+  "safety": {
+    "mutationRequests": 0,
+    "readonlyCareSearchPOST": 5,
+    "transportControlRowsAreNotNetworkWrites": true,
+    "trueDelete": false,
+    "modelInvoked": false,
+    "publicArtifactOrScopeChanged": false
+  },
+  "imageCount": 3,
+  "cleanup": "Owned test page closed normally after the passive observer ended; no active export remains. No real delete/model/API changes."
+}

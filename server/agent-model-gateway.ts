@@ -12,6 +12,7 @@ import { decodePhoto } from "./photo-files.ts";
 import { AGENT_LIMITS, AGENT_TOOL_RESPONSE_RESERVE, AgentBudget, AgentStopped, agentBudgetFingerprint } from "./agent-budget.ts";
 import { logVertexFailure } from "./vertex-diagnostics.ts";
 import { modelProviderStopReason } from "../src/shared/agent-stop-message.ts";
+import { PersonalProviderError } from './personal-provider-error.ts';
 import type { InitialConversationSummary } from "./memory-summary.ts";
 import type { DurableAiUsage, DurableAiUsageRequest } from "./durable-ai-usage.ts";
 import type { RootBudgetContext } from "./durable-root-budget.ts";
@@ -239,6 +240,7 @@ export class AgentGatewayModel extends BaseLlm {
           return provider.generate(outgoing, budget.signal).catch(error => { providerFailure = error; throw error; });
         });
         tokens = readUsage(response);
+        if (response.finishReason === 'MAX_TOKENS') throw new AgentStopped('model_output_limit');
         if (response.errorCode || response.interrupted || response.partial || response.finishReason !== "STOP"
           || response.content?.role !== "model" || !response.content.parts?.length) throw new AgentStopped("invalid_response");
         if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
@@ -272,13 +274,14 @@ export class AgentGatewayModel extends BaseLlm {
             : error.reason === "invalid_response" ? "invalid_response" : "unavailable";
           throw error;
         }
-        const status = error instanceof ApiError ? error.status : null;
+        const status = error instanceof PersonalProviderError ? error.diagnostic.httpStatus : error instanceof ApiError ? error.status : null;
         outcome = status === 429 ? "rate_limited" : status === 408 || status === 504 ? "timeout" : "unavailable";
-        const stopped = new AgentStopped(status === null ? "unavailable" : modelProviderStopReason(status));
+        const stopped = new AgentStopped(error instanceof PersonalProviderError ? error.diagnostic.reason
+          : status === null ? "unavailable" : modelProviderStopReason(status));
         const backoff = 1000 * 2 ** retry;
         // Only an explicit transient provider response is retryable. Transport unknown,
         // cancellation, validation, permission and tool results never enter this path.
-        if (error !== providerFailure || status === null || ![408, 429, 500, 502, 503, 504].includes(status)
+        if (error !== providerFailure || stopped.reason === 'model_provider_quota' || status === null || ![408, 429, 500, 502, 503, 504].includes(status)
           || retry >= retries || budget.remainingModelCalls < 1 || budget.deadlineAtMs - Date.now() <= backoff + 1000) throw stopped;
         retryDelay = backoff;
       } finally {

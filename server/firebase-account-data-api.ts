@@ -19,6 +19,13 @@ export async function handleFirebaseAccountData(request: Request, auth: Firebase
   const user = (await auth.getSession({ headers: request.headers }))?.user;
   if (!user) domainReject('unauthorized', 401);
   if (request.headers.get('x-expected-user-id') !== user.id) domainReject('identity_changed');
+  if (request.method === 'GET' && path === '/api/account/messages') {
+    if ([...url.searchParams.keys()].some(key => !['scopeVersion', 'cursor'].includes(key) || url.searchParams.getAll(key).length !== 1)) domainReject('invalid_input', 400);
+    if (!services.exporter.messages) domainReject('message_history_unavailable', 503);
+    const result = await services.exporter.messages(user.id, Object.fromEntries(url.searchParams));
+    if ((await auth.getSession({ headers: request.headers }))?.user.id !== user.id) domainReject('identity_changed');
+    return json(result);
+  }
   if (request.method === 'GET' && path === '/api/account/export') {
     if ([...url.searchParams.keys()].some(key => !['section', 'childId', 'scopeVersion', 'cursor'].includes(key) || url.searchParams.getAll(key).length !== 1)) domainReject('invalid_export_scope', 400);
     const result = await services.exporter.page(user.id, Object.fromEntries(url.searchParams));

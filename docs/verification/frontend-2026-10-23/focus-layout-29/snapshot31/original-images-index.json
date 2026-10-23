@@ -1,0 +1,369 @@
+{
+  "snapshot": 31,
+  "bundleSha256": "9ce151e4f0313d609b088e007e915d03f59e7ce9631dd83a10627a70ce851b4c",
+  "completedAt": "2026-10-23T04:28:53.122963+00:00",
+  "imageCount": 20,
+  "images": [
+    {
+      "file": "00-native-new-candidate-0.jpg",
+      "sha256": "939a6a1120079cc2e0f5a1fc3b0757237e47875993b91b94f91fd29f3d8d1dd2",
+      "bytes": 110598,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 100,
+      "role": "setup-positioning-or-cleanup",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "01-summary-zoom80-0.jpg",
+      "sha256": "801d3391349ccf431fe514033ee648dcff33d4b40bc532206d77fdb0608261a7",
+      "bytes": 150463,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "setup-positioning-or-cleanup",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "02-summary-report-position-0.jpg",
+      "sha256": "72959c8dcd1d83802c5f35a13749c8d385b31e391711bcd36a58c68cc89fd0f9",
+      "bytes": 153066,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "setup-positioning-or-cleanup",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "03-summary-period-position-0.jpg",
+      "sha256": "1008d95773a8d522e0176a899c71fb9e902b739ff4b4035ec6c611deabf646d3",
+      "bytes": 151439,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "setup-positioning-or-cleanup",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "04-summary-period-expanded-0.jpg",
+      "sha256": "0672b82498de630e185ce11744c89b314e62ccc6f21608ed51f84ec09c501f6d",
+      "bytes": 152409,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "setup-positioning-or-cleanup",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "05-summary-disclosure-open-0.jpg",
+      "sha256": "8c2583b36a1743bc7b6b5b47a1d10816652483d9e22f996843d3729568e0bab3",
+      "bytes": 148449,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "animation-intermediate",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "06-summary-fields-position-0.jpg",
+      "sha256": "d3713970cc2d00f33b8d3a32fa373628c73b15ab02084efa89cf208194f337a7",
+      "bytes": 153837,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "setup-positioning-or-cleanup",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "07-summary-controls-position-0.jpg",
+      "sha256": "368c89fc2dd986ce98d39e6c422fd95bf2ec2ec79a0bf8c453e7c908a1024830",
+      "bytes": 154891,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "setup-positioning-or-cleanup",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "08-summary-controls-settled-0.jpg",
+      "sha256": "f5dbc50e0073d059c530889ed977cd7b706b69a03e5ff695d8ed3853c1f5da52",
+      "bytes": 152057,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "09-period-options-0.jpg",
+      "sha256": "4b987af286f2edfba3a68161f2a06b026eb78226bb7f5d6263b598e4a5b5b787",
+      "bytes": 149840,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "animation-intermediate",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "10-period-options-settled-0.jpg",
+      "sha256": "6212cb2033ab18a08fd0a86e894d2e6f7eb12d19efc56afedc021d863c612296",
+      "bytes": 137229,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "11-unapplied-day-0.jpg",
+      "sha256": "35f78afa923c6a1adcd14b8e7462fb65f004e77ce6b819a745655a53a116c7c2",
+      "bytes": 147964,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "animation-intermediate",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "12-summary-before-native-focus-0.jpg",
+      "sha256": "b9928e5068655c0370f0e8c1c4054181b81350121e913f56da8d7c106087fef1",
+      "bytes": 151354,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": true
+    },
+    {
+      "file": "13-summary-native-away-0.jpg",
+      "sha256": "99d37c9ccc8ea8d48d46f801c2d1c0040824b81a1c3eb99a01c27eb4d69de226",
+      "bytes": 298952,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "native-app-away",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "14-summary-native-return-0.jpg",
+      "sha256": "2234da9206fcbb13d070e4826cb1b6bbe7658a06df95bd135850e83849f0b78f",
+      "bytes": 151219,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": true
+    },
+    {
+      "file": "16-enter-opens-period-0.jpg",
+      "sha256": "19b5cf2166f58ae51f1e64a38f4080c41db0e9488af53c7a232e1419a4d72155",
+      "bytes": 138045,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "18-date-focused-before-harness-0.jpg",
+      "sha256": "7a985dfecba2b8c1b197b6b34aaa6e55f8f3a8f9423b9564705aa4a04e5618af",
+      "bytes": 153447,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": true
+    },
+    {
+      "file": "20-date-after-read-0.jpg",
+      "sha256": "2042ba978c7322f7c889eab45a80d4f8d0d5a7ef7bb1a68c7f3a2a6ffdd2de2b",
+      "bytes": 159114,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        1024,
+        600
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    },
+    {
+      "file": "21-memory-private-label390-0.jpg",
+      "sha256": "ca94b40bd7cb7594c07e9588bade882281af5307ad3cc8cfdbab05a5c67bd7f9",
+      "bytes": 134347,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "chromeZoomPercent": 80,
+      "role": "result",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": true
+    },
+    {
+      "file": "22-cleanup-zoom100-0.jpg",
+      "sha256": "9aa651c2e0cfbc392fcf26c3b2028113c3147fcaac2103b8cf6ab0edc326c3d7",
+      "bytes": 144803,
+      "format": "JPEG",
+      "native_pixel_size": [
+        1364,
+        1024
+      ],
+      "css_iframe_viewport": [
+        390,
+        700
+      ],
+      "chromeZoomPercent": 100,
+      "role": "setup-positioning-or-cleanup",
+      "note": "Raw native screenshot bytes, not resized/cropped. CSS iframe viewport is distinct from native pixel size.",
+      "attached": false
+    }
+  ],
+  "note": "20 originals retained locally; only4 attached. Setup/intermediate-animation/cleanup frames are not final visual acceptance."
+}

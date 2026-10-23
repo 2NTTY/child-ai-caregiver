@@ -1,3 +1,4 @@
+import { readLoadedIdWindow } from "./task-knowledge-read-window";
 import type { PersonalHistoryOwner } from "./usePersonalHistory";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createMemoryApi, MemoryApiError } from "../../../src/client/memory-api";
@@ -12,11 +13,12 @@ export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHi
   const runtime = useTaskKnowledgeRuntime(env, "memory");
   const [facts, setFacts] = useState<MemoryFactView[]>([]), [summary, setSummary] = useState<MemorySummaryView | null>(null);
   const [topics, setTopics] = useState<MemoryTopicView[]>([]), [topicCursor, setTopicCursor] = useState<string | null>(null);
-  const [topicHistories, setTopicHistories] = useState<Record<string, { items: MemoryTopicView[]; cursor: number | null }>>({});
+  const [topicHistories, setTopicHistories] = useState<Record<string, { topicVersion: number; items: MemoryTopicView[]; cursor: number | null }>>({});
   const managementRef = useRef<{ busy: boolean; pending: unknown; conflict: unknown; check(): void } | null>(null);
   const [cursor, setCursor] = useState<string | null>(null), [loaded, setLoaded] = useState(false), [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false), [asOf, setAsOf] = useState<string | null>(null);
   const [histories, setHistories] = useState<LongTermMemoryView["histories"]>({});
+  const readThrough = useRef({ facts: null as string | null, topics: null as string | null });
   const historyCursors = useRef<Record<string, number | null>>({}), inFlight = useRef(false);
   useEffect(() => () => { inFlight.current = false; }, []);
   const topicView = (value: MemoryTopic): MemoryTopicView => ({ ...value, authorSelf: value.updatedBy === env.userId });
@@ -29,28 +31,41 @@ export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHi
   };
   const clearAccess = (error: unknown) => {
     if (!runtime.accessError(error)) return false;
-    setFacts([]); setTopics([]); setTopicHistories({}); setSummary(null); setHistories({}); historyCursors.current = {}; setLoaded(false); setCursor(null); return true;
+    setFacts([]); setTopics([]); setTopicHistories({}); setSummary(null); setHistories({}); historyCursors.current = {}; setLoaded(false); setCursor(null); setTopicCursor(null); readThrough.current = { facts: null, topics: null }; return true;
   };
-  const loadAll = async (signal: AbortSignal, current: () => boolean) => {
-    const [value, topicPage, summaryValue] = await Promise.all([
-      runtime.read(["facts", null], next => verified(inner => api.facts(env.childId!, null, inner), next), signal),
-      runtime.read(["topics", null], next => verified(inner => api.topics(env.childId!, null, inner), next), signal),
-      runtime.read(["summary"], next => verified(inner => api.summary(env.childId!, inner), next), signal),
+  const loadAll = async (signal: AbortSignal, current: () => boolean, preserveReading = false) => {
+    // A later denial must still revoke this read set if another parallel read
+    // already rejected with a transient failure.
+    const checkedRead = <T,>(read: Promise<T>) => read.catch(error => { if (current()) clearAccess(error); throw error; });
+    const [factPages, topicPages, summaryValue] = await Promise.all([
+      checkedRead(readLoadedIdWindow(preserveReading ? readThrough.current.facts : null, current,
+        after => runtime.read(["facts", after], next => verified(inner => api.facts(env.childId!, after, inner), next), signal))),
+      checkedRead(readLoadedIdWindow(preserveReading ? readThrough.current.topics : null, current,
+        after => runtime.read(["topics", after], next => verified(inner => api.topics(env.childId!, after, inner), next), signal))),
+      checkedRead(runtime.read(["summary"], next => verified(inner => api.summary(env.childId!, inner), next), signal)),
     ]);
     if (!current()) return;
-    setFacts(value.items.map(factView)); setCursor(value.nextAfterId); setTopics(topicPage.items.map(topicView)); setTopicCursor(topicPage.nextAfterId); setSummary(summaryValue);
-    setHistories({}); historyCursors.current = {}; setTopicHistories({}); setLoaded(true); setFailed(false); setAsOf(new Date().toISOString());
+    const nextFacts = factPages.flatMap(page => page.items.map(factView)), nextTopics = topicPages.flatMap(page => page.items.map(topicView));
+    const factVersions = new Map(nextFacts.map(item => [item.id, item.version])), topicVersions = new Map(nextTopics.map(item => [item.id, item.version]));
+    const nextHistories = preserveReading ? Object.fromEntries(Object.entries(histories).filter(([id, history]) => factVersions.get(id) === history.factVersion)) : {};
+    setHistories(nextHistories);
+    historyCursors.current = Object.fromEntries(Object.entries(historyCursors.current).filter(([id]) => id in nextHistories));
+    setTopicHistories(previous => preserveReading ? Object.fromEntries(Object.entries(previous).filter(([id, history]) => topicVersions.get(id) === history.topicVersion)) : {});
+    readThrough.current = { facts: nextFacts.at(-1)?.id ?? null, topics: nextTopics.at(-1)?.id ?? null };
+    setFacts(nextFacts); setCursor(factPages.at(-1)!.nextAfterId); setTopics(nextTopics); setTopicCursor(topicPages.at(-1)!.nextAfterId); setSummary(summaryValue);
+    setLoaded(true); setFailed(false); setAsOf(new Date().toISOString());
   };
-  const refresh = (after: string | null = null) => {
+  const refresh = (after: string | null = null, preserveReading = false) => {
     if (inFlight.current || managementRef.current?.busy || !env.online || !runtime.live()) return;
     if (after === null && (managementRef.current?.pending || managementRef.current?.conflict)) { managementRef.current.check(); return; }
     inFlight.current = true; setBusy(true);
     void runtime.request(async (signal, current) => {
       try {
-        if (after === null) await loadAll(signal, current);
+        if (after === null) await loadAll(signal, current, preserveReading);
         else {
           const value = await runtime.read(["facts", after], next => verified(inner => api.facts(env.childId!, after, inner), next), signal);
           if (!current()) return;
+          readThrough.current.facts = value.items.at(-1)?.id ?? readThrough.current.facts;
           setFacts(before => mergeById(before, value.items.map(factView))); setCursor(value.nextAfterId); setFailed(false); setAsOf(new Date().toISOString());
         }
       } catch (error) { if (current() && !clearAccess(error)) setFailed(true); }
@@ -101,7 +116,7 @@ export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHi
     },
   });
   managementRef.current = management;
-  useTaskKnowledgeRefresh(() => refresh(), env.online && !!env.childId && !runtime.lost, busy || management.busy);
+  useTaskKnowledgeRefresh(() => refresh(null, true), env.online && !!env.childId && !runtime.lost, busy || management.busy);
   const moreTopics = () => {
     const after = topicCursor;
     if (!after || inFlight.current || management.busy || !runtime.live() || !env.online) return;
@@ -109,7 +124,7 @@ export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHi
     void runtime.request(async (signal, current) => {
       try {
         const value = await runtime.read(["topics", after], next => verified(inner => api.topics(env.childId!, after, inner), next), signal);
-        if (current()) { setTopics(before => mergeById(before, value.items.map(topicView))); setTopicCursor(value.nextAfterId); }
+        if (current()) { readThrough.current.topics = value.items.at(-1)?.id ?? readThrough.current.topics; setTopics(before => mergeById(before, value.items.map(topicView))); setTopicCursor(value.nextAfterId); }
       } catch (error) { if (current() && !clearAccess(error)) setFailed(true); }
       finally { if (current()) { inFlight.current = false; setBusy(false); } }
     });
@@ -121,7 +136,7 @@ export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHi
     void runtime.request(async (signal, current) => {
       try {
         const value = await runtime.read(["topic-history", id, before], next => verified(inner => api.topicHistory(env.childId!, id, before ?? null, inner), next), signal);
-        if (current()) setTopicHistories(previous => ({ ...previous, [id]: { items: older ? [...(previous[id]?.items ?? []), ...value.revisions.filter(item => !previous[id]?.items.some(old => old.version === item.version)).map(topicView)] : value.revisions.map(topicView), cursor: value.nextBeforeVersion } }));
+        if (current()) setTopicHistories(previous => ({ ...previous, [id]: { topicVersion: expectedVersion, items: older ? [...(previous[id]?.items ?? []), ...value.revisions.filter(item => !previous[id]?.items.some(old => old.version === item.version)).map(topicView)] : value.revisions.map(topicView), cursor: value.nextBeforeVersion } }));
       } catch (error) { if (current() && !clearAccess(error)) setFailed(true); }
       finally { if (current()) { inFlight.current = false; setBusy(false); } }
     });

@@ -5,7 +5,7 @@ import { motionPreferenceStorageKey, readStoredReducedMotion, resolveReducedMoti
 
 export type MotionPreferenceStorage = "loading" | "browser" | "session";
 export interface MotionPreferences {
-  reducedMotion: boolean; enabled: boolean; epoch: number;
+  reducedMotion: boolean; enabled: boolean; active: boolean; epoch: number;
   systemReducedMotion: boolean | null;
   manualReducedMotion: boolean;
   preferenceReady: boolean;
@@ -13,7 +13,7 @@ export interface MotionPreferences {
   setManualReducedMotion: (value: boolean) => void;
 }
 const MotionContext = createContext<MotionPreferences>({
-  reducedMotion: true, enabled: false, epoch: 0, systemReducedMotion: null,
+  reducedMotion: true, enabled: false, active: false, epoch: 0, systemReducedMotion: null,
   manualReducedMotion: false, preferenceReady: false, preferenceStorage: "loading", setManualReducedMotion: () => {},
 });
 
@@ -22,7 +22,9 @@ export function MotionProvider({ children }: { children: ReactNode }) {
   const [systemPreferenceReady, setSystemPreferenceReady] = useState(false);
   const [manualReducedMotion, setManualState] = useState(false);
   const [preferenceStorage, setPreferenceStorage] = useState<MotionPreferenceStorage>("loading");
-  const [active, setActive] = useState(true);
+  const [active, setActive] = useState(() => Platform.OS === "web"
+    ? typeof document !== "undefined" && !document.hidden
+    : AppState.currentState === "active");
   const [epoch, setEpoch] = useState(0);
   const { width, height } = useWindowDimensions();
   const dimensions = useRef({ width, height });
@@ -82,7 +84,7 @@ export function MotionProvider({ children }: { children: ReactNode }) {
   }, []);
   const reducedMotion = resolveReducedMotion(systemReducedMotion, manualReducedMotion);
   const preferenceReady = systemPreferenceReady && preferenceStorage !== "loading";
-  return <MotionContext.Provider value={{ reducedMotion, enabled: active && preferenceReady && !reducedMotion, epoch,
+  return <MotionContext.Provider value={{ reducedMotion, active, enabled: active && preferenceReady && !reducedMotion, epoch,
     systemReducedMotion, manualReducedMotion, preferenceReady, preferenceStorage, setManualReducedMotion }}>{children}</MotionContext.Provider>;
 }
 

@@ -95,11 +95,13 @@ function owner(items = [item(a), item(b)]) {
     if (body.change.action === 'check_item') next.current.sections[0].items[0].checked = body.change.checked;
     page.items = page.items.map(value => value.id === id ? next : value); return response({ item: next });
   };
+  env.owner = { fetcher };
   const api = apiModule.createFamilyDocumentsApi('/api', fetcher);
   const { useFamilyDocuments } = compile('frontend/src/production/useFamilyDocuments.ts', name => {
     if (name === 'react') return h.react;
     if (name.endsWith('/family-documents-api')) return { ...apiModule, createFamilyDocumentsApi: () => api };
     if (name.endsWith('/family-documents')) return schemas;
+    if (name === '../platform/file-export') return compile('frontend/src/platform/file-export.ts');
     if (name === './useDomainEnvironment') return { useDomainWriteGuard() {} };
     if (name === './task-knowledge-runtime') return { useTaskKnowledgeRuntime: () => runtime, useTaskKnowledgeRefresh() {} };
     if (name === './family-document-archive') return archiveProjection;
@@ -132,6 +134,7 @@ function view(symbol, owner, props = {}) {
     if (name.endsWith('/useContainerWidth')) return { useContainerWidth: () => ({ width: 1024 }) };
     if (name.endsWith('/theme')) return { colors: {}, radius: {}, readingType: {}, spacing: {} };
     if (name.endsWith('/ui')) return { AppButton: 'AppButton', AppSelect: 'AppSelect' };
+    if (name.endsWith('/FormDialog')) return {ManualFormDialog: 'ManualFormDialog'};
     const components = ['EmptyListCard', 'WriteRecoveryNotice', 'AppCheckbox', 'AppStatusBadge', 'SummaryDisclosure', 'DocumentCreateForm'];
     const component = components.find(value => name.endsWith('/' + value));
     if (component) return { [component]: component };
@@ -147,7 +150,7 @@ function form(owner) {
   const h = hooks(); let fields = {}, resets = 0;
   const reset = value => { fields = { ...value }; resets++; };
   const rhf = { Controller: 'Controller', useForm() { return { control: {}, handleSubmit: callback => () => callback(fields), reset,
-    setError() {}, setFocus() {}, formState: { errors: {} } }; } };
+    setError() {}, setFocus() {}, watch: name => fields[name], formState: { errors: {} } }; } };
   const { DocumentCreateForm } = compile('frontend/src/components/preparations/DocumentCreateForm.tsx', name => {
     if (name === 'react') return h.react;
     if (name === 'react-hook-form') return rhf;
@@ -160,6 +163,7 @@ function form(owner) {
     if (name.endsWith('/ui')) return { AppButton: 'AppButton', AppSelect: 'AppSelect', AppTextField: 'AppTextField' };
     if (name.endsWith('/FormErrorSummary')) return { FormErrorSummary: 'FormErrorSummary', FormFieldMessage: 'FormFieldMessage' };
     if (name.endsWith('/DateTimeFields')) return { AppDateField: 'AppDateField' };
+    if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewLeaveGuard() {} };
     if (name.endsWith('/AppCheckbox')) return { AppCheckbox: 'AppCheckbox' };
     throw new Error('Unmocked form dependency: ' + name);
   });
@@ -362,7 +366,7 @@ test('report export keeps exact document, scope, authority and version guards pl
 });
 
 const exportFailure = 'PDF 未能取得，沒有改用其他版本。請重新讀取並核對來源後再試。';
-const exportReady = '已準備所選版本的 PDF 並交給瀏覽器下載；Web 與 PDF 使用同一份正文。';
+const exportReady = '已交給瀏覽器下載，請核對下載結果。';
 const report = () => ({ ...item(b), kind: 'growth_report', purpose: 'handoff' });
 const reportRequest = h => ({ scopeKey: h.env.scopeKey, childId: child, authorityVersion: 'auth:1', snapshotId: snapshot(b).id,
   snapshotVersion: 1, periodId: snapshot(b).id + ':1', purpose: 'family', includeSources: true, includeRevision: false });
@@ -541,4 +545,25 @@ test('living selection and annual or quarterly completed coverage survive strict
   await h.settle(); assert.equal(h.calls.length, 0, 'Existing living reports and matching fixed periods remain deduplicated');
   h.render().createDocument({ ...request, period: { from: '2025-01-01', to: '2025-12-31' }, reportMode: 'fixed' });
   await h.settle(); assert.equal(h.calls.length, 1); assert.equal(h.calls[0].body.request.reportMode, 'fixed');
+});
+
+test('the document owner retains only the accepted create form token without adding it to the wire payload', async () => {
+  const h = owner(); await h.load(); h.render().markDraft(); h.failWrite(0);
+  h.render().createDocument(request, 'synthetic-draft-a'); await h.settle();
+  assert.equal(h.render().retainedDraftId, 'synthetic-draft-a');
+  assert.equal(h.render().preparation.model.retainedDraftId, 'synthetic-draft-a');
+  assert.equal(h.render().operation.state, 'unknown');
+  assert.equal(JSON.stringify(h.calls).includes('synthetic-draft-a'), false);
+  const epoch = h.render().epoch; h.render().discardDraft(); assert.equal(h.render().epoch, epoch); assert.equal(h.render().dirty, true);
+  const reference = h.render().operation.reference; await h.load(); h.render().recovery.retryOriginalOperation(); await h.settle();
+  assert.equal(h.render().retainedDraftId, 'synthetic-draft-a'); assert.equal(h.render().operation.reference, reference);
+});
+
+test('discarding an unrelated local document draft never clears or replays an unknown change', async () => {
+  const h = owner(); await h.load(); h.render().markDraft(); h.failWrite(0); check(h); await h.settle();
+  assert.equal(h.render().retainedDraftId, null); assert.equal(h.render().operation.state, 'unknown');
+  const original = structuredClone(h.calls), reference = h.render().operation.reference, epoch = h.render().epoch;
+  h.render().discardDraft(); assert.equal(h.render().dirty, false); assert.equal(h.render().epoch, epoch + 1);
+  assert.equal(h.render().operation.state, 'unknown'); assert.equal(h.render().operation.reference, reference);
+  assert.deepEqual(h.calls, original); assert.equal(h.render().locked, true);
 });

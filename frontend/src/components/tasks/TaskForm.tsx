@@ -51,8 +51,7 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
   }
   const canRebase = !!model.latest && draft.mode !== "create" && taskChangeAllowed(model.latest, draft.mode);
   const confirmationLabel = "我已核對內容、負責人、時間及版本，確認這次家庭共享安排";
-  return <SectionCard><SectionHeader density="compact" title={taskActionLabels[draft.mode]} subtitle={draft.basis ? `以版本 ${draft.basis.version} 作基準；草稿尚未保存。` : "先填寫，再核對家庭共享範圍。"}
-    action={<AppButton label="放棄草稿" variant="quiet" disabled={busy} onPress={actions.closePanel} />} />
+  return <SectionCard surface="plain"><SectionHeader density="compact" title={taskActionLabels[draft.mode]} subtitle={draft.basis ? `以版本 ${draft.basis.version} 作基準；草稿尚未保存。` : "先填寫，再核對家庭共享範圍。"} />
     <FormErrorSummary entries={errorEntries} onFocus={name => {
       const target = visibleFields.find(item => item.name === name);
       if (target) setFocus(target.name);

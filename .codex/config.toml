@@ -11,5 +11,5 @@ description = "Luna Max for location-only file discovery, reading-heavy investig
 config_file = "agents/explorer.toml"
 
 [agents.worker]
-description = "GPT-6.1 Sol as the preferred executor for well-guided, bounded work, including difficult implementation and authorized validation; routine high, complex xhigh, max only when needed; project fallback xhigh."
+description = "GPT-6.1 Sol for bounded simple and medium-complexity work with proportionate guidance. Difficult tasks stay with the Astra primary agent; routine high, medium xhigh as needed, max only when justified; project fallback xhigh."
 config_file = "agents/worker.toml"

@@ -16,9 +16,11 @@ const nodes = tree => !tree || typeof tree !== 'object' ? [] : Array.isArray(tre
 const content = tree => tree === null || tree === undefined || tree === false ? '' : Array.isArray(tree) ? tree.map(content).join(' ')
   : typeof tree === 'object' ? content(tree.props?.children) : String(tree);
 const metadata = (tree, label) => nodes(tree).filter(item => item.props?.label === label).map(item => content(item.props.children));
-const button = (tree, label) => nodes(tree).find(item => item.type === 'AppButton' && item.props.label === label);
+const button = (tree, label) => nodes(tree).find(item => item.type === 'AppButton' && item.props.label === label
+  || item.type === 'Pressable' && item.props.accessibilityLabel?.startsWith(`${label}：`));
 const deepFreeze = value => { if (value && typeof value === 'object') { Object.values(value).forEach(deepFreeze); Object.freeze(value); } return value; };
 let current, production, family, workspace;
+let openedURLs = [], linkReject = false;
 const hooks = {
   useState(initial) {
     const instance = current, index = instance.cursor++;
@@ -31,12 +33,14 @@ function load(relative) {
   const source = readFileSync(path.join(root, relative), 'utf8');
   const module = { exports: {} };
   const imports = {
+    'expo-router': { useRouter: () => ({ push: noop }) },
     react: hooks, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
-    'react-native': { StyleSheet: { create: value => value }, View: 'View' }, 'react-native-paper': { Text: 'Text' },
+    'react-native': { StyleSheet: { create: value => value }, View: 'View', Pressable: 'Pressable', Linking: { openURL: url => { openedURLs.push(url); return linkReject ? Promise.reject(new Error('Synthetic unavailable source')) : Promise.resolve(); } } }, 'react-native-paper': { Text: 'Text' },
   };
   const require = name => imports[name]
     ?? (name.endsWith('/memory-reference-view-model') ? references : undefined)
     ?? (name.endsWith('/memory-view-model') ? memory : undefined)
+    ?? (name.endsWith('/PreviewNavigationGuard') ? { usePreviewNavigation: () => action => action() } : undefined)
     ?? (name.endsWith('/MemoryReferenceWorkspace') ? { useMemoryReferenceWorkspace: () => workspace } : undefined)
     ?? (name.endsWith('/ProductionProvider') ? { useProduction: () => production } : undefined)
     ?? (name.endsWith('/SettingsDomains') ? { useProductionSettingsDomains: () => ({ family }) } : undefined)
@@ -77,8 +81,12 @@ function factCard(confirmerDisplay = display) {
   const outer = render(MemoryReferenceView, { confirmerDisplay }).tree;
   const scoped = render(outer.type, outer.props).tree;
   const card = nodes(scoped).find(item => item.type?.name === 'FactCard');
+  assert.ok(card, 'The actual fact renderer must exist; empty trees cannot pass');
   const instance = render(card.type, card.props);
-  button(instance.tree, '查看來源').props.onPress(); rerender(instance);
+  const sourceButton = button(instance.tree, '查看來源');
+  assert.ok(sourceButton, 'The actual source disclosure callback must be rendered');
+  sourceButton.props.onPress(); rerender(instance);
+  assert.equal(button(instance.tree, '收起來源').props['aria-expanded'], true);
   return instance;
 }
 function setPage() {
@@ -157,7 +165,7 @@ test('private-chat sources preserve kind and description without raw message UUI
   assert.doesNotMatch(content(view.tree), /cc2440f0|user-self|暫未支援/);
   assert.deepEqual(metadata(view.tree, '原訊息'), []);
   assert.equal(nodes(view.tree).some(item => item.props?.href || item.props?.accessibilityRole === 'link' || /Link/.test(item.type?.name ?? item.type)), false);
-  assert.deepEqual(nodes(view.tree).filter(item => item.type === 'AppButton').map(item => item.props.label), ['收起來源', '收起版本記錄']);
+  assert.deepEqual(nodes(view.tree).filter(item => item.type === 'AppButton').map(item => item.props.label), ['收起版本記錄']);
 });
 
 test('empty source descriptions reuse the existing short placeholder and care-record information stays intact', () => {
@@ -168,4 +176,80 @@ test('empty source descriptions reuse the existing short placeholder and care-re
   assert.match(content(view.tree), /照顧記錄：合成照顧描述 · 來源版本 4/);
   assert.match(metadata(view.tree, '原記錄')[0], /care-record-a.*版本.*4/);
   assert.equal(value.source.recordId, 'care-record-a');
+});
+
+test('fact content is primary while the typed source opens only the existing full provenance disclosure', () => {
+  for (const [kind, source, icon, label] of [
+    ['private_chat', { kind: 'private_chat', description: 'Exact private-chat provenance', messageId: 'never-linked-id' }, 'message-text-outline', '私人聊天'],
+    ['care_record', { kind: 'care_record', description: 'Exact care provenance', recordId: 'care-a', version: 3 }, 'notebook-outline', '照顧記錄'],
+    ['manual', { kind: 'manual', description: 'Exact manual provenance' }, 'pencil-outline', '手動描述'],
+  ]) {
+    const value = fact({ source }); setWorkspace(value);
+    const snapshot = structuredClone(workspace), view = factCard();
+    const trigger = button(view.tree, '收起來源');
+    assert.equal(trigger.type, 'Pressable'); assert.equal(trigger.props.accessibilityRole, 'button');
+    assert.equal(trigger.props.accessibilityLabel, `收起來源：${label}`);
+    assert.ok(nodes(trigger).some(node => node.type === 'AppIcon' && node.props.name === icon), kind);
+    assert.equal(nodes(view.tree).find(node => node.type === 'Text' && node.props.children === value.content).props.style.fontSize, 18);
+    assert.deepEqual(metadata(view.tree, '來源'), [memory.factSourceLabel(source)]);
+    trigger.props.onPress(); rerender(view);
+    assert.equal(button(view.tree, '查看來源').props['aria-expanded'], false);
+    assert.deepEqual(metadata(view.tree, '來源'), []);
+    assert.equal(nodes(view.tree).some(node => node.props?.href || node.props?.accessibilityRole === 'link'), false);
+    assert.ok(nodes(view.tree).some(node => node.type === 'AppIcon' && node.props.name === 'lock-outline'));
+    assert.equal(content(nodes(view.tree).find(node => node.type === 'Text' && node.props.accessibilityLabel === '可見範圍：本人')), '本人');
+    assert.deepEqual(workspace, snapshot);
+  }
+});
+
+test('optional fact validity is omitted without hiding required missing confirmation or changed-source warnings', () => {
+  setWorkspace(fact({ confirmedBy: null, confirmedAt: null, validUntil: null, sourceState: 'changed', applicable: false }));
+  const view = factCard();
+  assert.deepEqual(metadata(view.tree, '有效至'), []);
+  assert.deepEqual(metadata(view.tree, '確認者'), ['尚未確認']);
+  assert.match(content(view.tree), /來源已更改/);
+  setWorkspace(fact({ visibility: 'family', validUntil: '2099-01-01T00:00:00Z' }));
+  const dated = factCard();
+  assert.equal(metadata(dated.tree, '有效至').length, 1);
+  assert.ok(nodes(dated.tree).some(node => node.type === 'AppIcon' && node.props.name === 'account-group-outline'));
+  assert.equal(content(nodes(dated.tree).find(node => node.type === 'Text' && node.props.accessibilityLabel === '可見範圍：家庭共享')), '家庭共享');
+});
+
+function referenceCard(source) {
+  setWorkspace(fact());
+  workspace = deepFreeze({ ...workspace, model: { ...workspace.model, references: { ...workspace.model.references, data: { audience: 'internal', items: [source], hasMore: false } } } });
+  const outer = render(MemoryReferenceView).tree, scoped = render(outer.type, outer.props).tree;
+  const sectionNode = nodes(scoped).find(node => node.type?.name === 'ReferenceSection'); assert.ok(sectionNode);
+  const section = render(sectionNode.type, sectionNode.props).tree;
+  const card = nodes(section).find(node => node.type?.name === 'ReferenceCard'); assert.ok(card);
+  return render(card.type, card.props);
+}
+
+test('reference links use the exact existing URL and reveal the real URL after open failure', async () => {
+  const source = { sourceId: 'source-a', versionId: 'version-a', chunkId: 'chunk-a', versionHash: 'version-hash', contentHash: 'content-hash',
+    title: 'Synthetic guidance', publisher: 'Synthetic publisher', url: 'https://example.test/actual-source', classification: 'official_guidance', section: '',
+    sourceExcerpt: 'Exact reference excerpt', sourcePublishedAt: null, sourceUpdatedAt: null, checkedAt: '2026-10-23T01:00:00Z', fetchedAt: '2026-10-23T01:00:00Z',
+    reviewState: 'reviewed', usageScope: 'internal_noncommercial', applicability: { region: '', ageBasis: 'any', minAgeMonths: null, maxAgeMonths: null, topics: [], conditions: ['Exact applicability condition'] } };
+  openedURLs = []; linkReject = true;
+  const view = referenceCard(source);
+  assert.ok(content(view.tree).includes(source.sourceExcerpt)); assert.deepEqual(metadata(view.tree, '來源日期'), []);
+  const link = button(view.tree, '閱讀來源'); assert.ok(link); link.props.onPress(); await Promise.resolve(); rerender(view);
+  assert.deepEqual(openedURLs, [source.url]); assert.match(content(view.tree), /暫未能開啟來源/);
+  assert.deepEqual(metadata(view.tree, '原文網址'), [source.url]);
+  assert.match(content(view.tree), /限內部非商業參考/); assert.match(content(view.tree), /Exact applicability condition/);
+  linkReject = false;
+  const absent = referenceCard({ ...source, url: '' });
+  assert.equal(button(absent.tree, '閱讀來源'), undefined);
+  for (const url of ['javascript:alert(1)', 'data:text/html,<script>alert(1)</script>', 'caregiver://private', 'http://example.test/source',
+    'not a URL', 'https://', 'https://user:password@example.test/source', ' https://example.test/source', 'https:\\example.test\\source',
+    'https://example.test/line\nbreak', 'https://example.test/path with spaces']) {
+    openedURLs = [];
+    const blocked = referenceCard({ ...source, url });
+    assert.equal(button(blocked.tree, '閱讀來源'), undefined, `${url}: no launch callback`);
+    assert.match(content(blocked.tree), /來源網址未能安全開啟/);
+    const disclosure = button(blocked.tree, '查看來源資料'); assert.ok(disclosure);
+    disclosure.props.onPress(); rerender(blocked);
+    assert.deepEqual(metadata(blocked.tree, '原文網址'), [url], 'Untrusted URL remains readable verbatim, not executable');
+    assert.deepEqual(openedURLs, [], `${url}: provenance disclosure never opens an invalid URL`);
+  }
 });

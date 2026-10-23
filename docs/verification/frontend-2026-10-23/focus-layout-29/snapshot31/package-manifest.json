@@ -1,0 +1,111 @@
+{
+  "snapshot": 31,
+  "status": "FROZEN_BOUNDED_BROWSER_PASS_FULL_TS_NOT_PASSED",
+  "frozenAt": "2026-10-23T04:33:31.261124+00:00",
+  "fileCountExcludingManifest": 20,
+  "files": [
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/DELIVERY.md",
+      "bytes": 2168,
+      "sha256": "24f95b4b1abe9de9c72758cd00e9934516a73bfa10bab766a07e52e296e529fb"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/README.md",
+      "bytes": 3478,
+      "sha256": "aef7b4831c87bbd14d56a478e9276b9fb6ac68ad36f05ac6573a03ea876ec696"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/all-changes.md",
+      "bytes": 5267,
+      "sha256": "48f2deab70c7208b9bca7f9b86d17a6219aef5fbd2a8470e8317d162ad3dd02b"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/browser-evidence.md",
+      "bytes": 3767,
+      "sha256": "46544e6ccbd1d2c385a1ac1554fde4de5fe7635d28058a5ebcd92a3417b09dcf"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/evidence-index.json",
+      "bytes": 3134,
+      "sha256": "ccb3097c7b59ed255bbd4455d1e92aa9a85bf7050d7f263f8265027166503004"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/original-images-index.json",
+      "bytes": 11056,
+      "sha256": "0d816f8eb59bb5813e82669b8b97676dae30cbfd1c50b10ea6f771cc7a361743"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/receipts/author-focused-history.json",
+      "bytes": 3725,
+      "sha256": "de02d3f433706368a0c91f1a294f3028d1e931d21de371f4c74191bb9e54026f"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/receipts/browser-checks.json",
+      "bytes": 4208,
+      "sha256": "2fa9cfed10a54c10ad8512b4e1f0139a0b344ffcc55133427dbe66519cdebeea"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/receipts/browser-focus-observations.json",
+      "bytes": 55350,
+      "sha256": "655b1f9ea00544ff25353b5d133478b8e1757311ff98fd83398ada6742afd913"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/receipts/checks.json",
+      "bytes": 8395,
+      "sha256": "7257df2cfe3635a5674c54d377254aa91c19736c92c8f4bc38cf61645531d247"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/receipts/delta-from30.json",
+      "bytes": 2591,
+      "sha256": "b53d45b862e1f1734acf7dcf86bb92ac6ebed943612778b081ab59fdaa5e1671"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/receipts/export-identity.json",
+      "bytes": 1480,
+      "sha256": "87a45859e855c45252b48d983fefdc0ee8da5870554f3d37b8de5aaeb54f17f8"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/receipts/source-carry-forward.json",
+      "bytes": 66253,
+      "sha256": "765d68fc4ff69b33bfd3a8ca82eef64efc41c1fd935bb628e43d96cd50c4abad"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/receipts/source-scope63.json",
+      "bytes": 18342,
+      "sha256": "6a533b50b50da59303dd0b6f7579ac5f6221eda388bb6881d6f3928297c4505e"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/route-coverage.json",
+      "bytes": 11796,
+      "sha256": "990ec32df8d16bb4330e14430864f1144c85169b0a6130ec939beb3f04e966ff"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/route-coverage.md",
+      "bytes": 7175,
+      "sha256": "eccc98d721509557241638f5e9cb838014f6970f5498424dd07d667ed8f93eba"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/screenshots/12-summary-before-native-focus-0.jpg",
+      "bytes": 151354,
+      "sha256": "b9928e5068655c0370f0e8c1c4054181b81350121e913f56da8d7c106087fef1"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/screenshots/14-summary-native-return-0.jpg",
+      "bytes": 151219,
+      "sha256": "2234da9206fcbb13d070e4826cb1b6bbe7658a06df95bd135850e83849f0b78f"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/screenshots/18-date-focused-before-harness-0.jpg",
+      "bytes": 153447,
+      "sha256": "7a985dfecba2b8c1b197b6b34aaa6e55f8f3a8f9423b9564705aa4a04e5618af"
+    },
+    {
+      "file": "docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/screenshots/21-memory-private-label390-0.jpg",
+      "bytes": 134347,
+      "sha256": "ca94b40bd7cb7594c07e9588bade882281af5307ad3cc8cfdbab05a5c67bd7f9"
+    }
+  ],
+  "validation": "JSON parse, links against separate frozen29/30 trees, original20 image hashes, actualbundle/archive/tests source hashes, public-field scan; no product rerun.",
+  "publicationNotImplied": true,
+  "sourceCommitAndCurrentStatusDocsSeparate": true
+}
