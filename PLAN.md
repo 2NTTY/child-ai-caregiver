@@ -79,7 +79,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="model-self03"></a>
 ### MODEL-SELF03 自行試用相容模型接口
 
-- 後端及本地入口已由#255／#256合併，原恢復與失敗證據保留。本次從#253合併基線`339c707`開`codex/personal-compatible-ui`，A單作者；只接現有Web／Android表單、owner及client，未部署或真供應商試用。使用者本輪特許Astra子代理承接獨立範圍，主模型負責契約、整合與review。
+- 後端及本地入口已由#255／#256合併，原恢復與失敗證據保留。本次從#253合併基線`339c707`開`codex/personal-compatible-ui`，交付見[#260](https://github.com/2NTTY/child-ai-caregiver/pull/260)，A單作者；只接現有Web／Android表單、owner及client，未部署或真供應商試用。使用者本輪特許Astra子代理承接獨立範圍，主模型負責契約、整合與review。
 - 沿同一Web／Android設定、加密保存、原opId、配額及ADK Agent，新增相容API base URL、key與直接輸入模型ID。普通Chat Completions、工具往返及可轉換媒體接薄adapter；不另造Agent、不換模型、不新增自動重試或逐模型測試。供應商不接受某請求時回報錯誤，不把未知能力當作禁止選用。
 - 自訂地址限公開HTTPS，不把憑證送到內網／metadata服務或重新導向；不開任意headers。必要資料外送說明改為用戶所選服務，私人內容與key不入日誌。
 - 向量保留`gemini-embedding-001`／1024維／現有索引。提供可分開保存的本人Gemini向量key，聊天可用另一供應商；舊Gemini設定維持同key行為。未配置相容查詢憑證時如實回報，不借平台ADC／額度，不拿其他模型的向量查舊索引。其他向量模型及索引重建留後續，不以本包宣稱通用向量已完成。
