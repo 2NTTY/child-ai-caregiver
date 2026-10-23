@@ -20,9 +20,10 @@ interface ChannelSettingsBase {
 export interface PushBindingView {
   id: string; version: number; label: string; status: "active" | "revoked" | "expired";
   providerLabel: string; expiresAt: string | null;
+  available?: boolean;
 }
 export interface PushSettingsModel extends ChannelSettingsBase {
-  platform?: "web" | "android";
+  platform?: "web" | "android" | "ios";
   available: boolean; browserSupported: boolean; permission: ChannelPermission;
   currentBindingId: string | null; bindings: PushBindingView[];
   deliveries: PushDeliveryView[]; testsRemaining: number; nextTestAt: string | null;
@@ -62,7 +63,7 @@ export function pushTestAllowed(
   status: Pick<PushSettingsModel, "available" | "workerEnabled" | "testsRemaining" | "nextTestAt">,
   binding: PushBindingView | null, now = Date.now(),
 ): boolean {
-  return status.available && status.workerEnabled && status.testsRemaining > 0
+  return (binding?.available ?? status.available) && status.workerEnabled && status.testsRemaining > 0
     && (status.nextTestAt === null || Date.parse(status.nextTestAt) <= now)
     && binding?.status === "active";
 }

@@ -210,6 +210,8 @@ TestFlight build 最長有效 90 天；OTA 只更新相容 JS／資產，不能�
 
 本機模式只寫明示「未實際發送」的收件箱，不讀取 APNs 私鑰或聯絡 Apple。沒有 Apple 團隊、憑證及真機證據時，只能交付程式，不宣稱已支援實際 iPhone 推送。
 
+共用通知 owner 在 iOS 使用 v2、Android 保留 v1；iOS 卡片依 `availablePlatforms.ios` 決定能否登記，其他本人訂閱保留實際 provider 與服務狀態。權限讀取不彈窗，只有明確啟用才要求系統授權／token；iOS provisional／ephemeral 是可取得 token 的授權，不保證橫幅或聲音。輪換只保存系統回傳的 token，不在回調再次取 token。點擊沿原 `open` 核權及身份清理，不自動標記任務完成。
+
 ### Android FCM 建置與部署接點
 
 共用設定卡在 Android 使用原生通知 owner，在 Web 沿原 Web Push。`expo-notifications` 的 `defaultChannel` 固定為 `yuyoufang-reminders`；包含本套件／plugin 的版本需要新 APK，不能只發 OTA。

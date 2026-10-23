@@ -3537,3 +3537,10 @@
 - 接續 master `405f3ed`，C 後端包補 APNs 與 v2 原生通知接口；舊 Android v1 嚴格回應及原收據保持。iOS 綁定含 Server 固定 topic／環境，照護與測試共用原授權、終態及投遞台帳；配置不符停止、unknown 不重送。還原撤銷 token 並保留平台 metadata，匯出不披露 token／session。
 - 主模型親寫契約、adapter 與組裝並 review；Sol 只補有界的合成 transport 檢查。APNs 一項、正式 API／store／worker 一項、既有 Android 兩項及 adapter 窄型別通過。新測試先誤讀不同孩子範圍，再誤假設 scopeTag，均停批後查清並改用實際四個 tag；沒有放寬產品隔離。保留兩次失敗與成功證據，不宣稱原生 Firestore 競爭或 Apple 已通過。[證據](artifacts/verification/S13_IOS_SERVER_20261024.json)。
 - 沒有真模型、通知、部署、Apple 憑證、全量測試或 Computer Use。B 的 iOS 設定接線在本後端合併後進行；簽署、真機及 TestFlight 繼續待辦。APNs 預設關閉，新資料發布後僅允許理解該 schema 的相容 Server 回退。
+
+<a id="log-20261024-s13-ios-client"></a>
+## LOG-20261024-S13-IOS-CLIENT
+
+- B 接續 C 已合併 #275／`b4dfd5a`，沿同一通知 client、owner 及卡片接 iOS；Android 保留 v1。iOS 使用 v2 原收據與平台可用狀態，混合本人訂閱保留真實 provider；APNs hex token、provisional 權限及輪換按 Expo 57.0.21 接入，點擊仍走 Server 核權，不自動完成照護事項或發測試。
+- Sol 完成範圍內六個產品檔及一份檢查；主模型核完整 diff、測試、SDK enum及原導航，親寫契約與交付。Sol 首次使用 Node24.11、兩項通過，但低於工程 engine；主模型只以指定24.19補跑同檔2/2通過，另核 client及native adapter／view model窄型別。[證據](artifacts/verification/S13_IOS_CLIENT_20261024.json)。不把重跑合計成四項，沒有全量型別／suite。
+- 沒有部署、Apple憑證、真模型、通知或iPhone畫面；完成來源合併後接共用發布工具，最終export集中核一次，TestFlight及真人授權保持待辦。原前端設計、協作者Agent及Android未驗項不改寫。
