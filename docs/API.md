@@ -548,6 +548,8 @@ Agent 的唯讀 `read_care_summary` 復用同一服務、身份與運行預算�
 | POST `/:id/confirm`（online 收據） | `{expectedVersion,confirmShared:true,values:CareValues}`；家長核對文字、種類、約數／單位／模糊時間後，在同交易建立照護記錄及共享原圖；source 由 Server 綁 ID／hash／上傳時間／原來源，不接受偽造來源 |
 | POST `/:id/delete`（online 收據） | `{expectedVersion,confirmDelete:true}`；私人原圖由上傳者管理，共享原圖由 owner／caregiver 管理；同時刪相關照護記錄／修訂及附件 metadata，原檔進持久刪除清單，回 cleanupPending，不謊稱磁碟已即時清除 |
 
+原檔／hash 指實際提交的 JPEG／PNG bytes。iOS 選取 HEIC 等圖片時，可先由系統 ImagePicker 產生 JPEG 相容副本；副本須使用相符檔名、MIME、大小及 hash，仍限 4 MiB，不聲稱保存了原始 HEIC，也不修改手機原圖。Server 保存提交版本、不再轉碼，原操作重傳不能換成另一個版本；這不擴大 Server 接受的格式。
+
 AI 候選不是事實，原圖共享也不自動公開上傳者的私人提取候選；確認畫面明確說明原圖及已核對記錄會共享。提取受同一 Agent／模型配額控制，最多四次生成、八次工具及 90 秒；單張二進位大小另限；照片提取屬 interactive，全部文字、schema 及協定 metadata 使用同一 AI_AGENT_MAX_INPUT_CHARACTERS 上限（32,000–64,000，預設 64,000），不因此提高圖片二進位上限。模型只能交候選，不能建立任務或外發。
 
 上傳／提取回應遺失先 GET 原 ID；確認／刪除查原 opId。未知結果不改新識別重做。未提交檔案及文字只留本頁，斷線保留，換孩子／帳號／Server、撤權或登出清理；重開不保證草稿恢復。原圖缺失／hash 錯誤不得宣稱成功。大小及 MIME 簽名檢查不是完整影像解碼或辨識品質證據。

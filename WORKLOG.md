@@ -3523,3 +3523,10 @@
 - 本輪restore helper7例、強化後真building-token ABA單例、真operator provenance單例及真avatar跨頁中斷／恢復單例均有合成PASS；首個E2E因40sessions共用control未跨2頁而紅，僅改80sessions試件後PASS，原紅保留。新前端真client4、remove owner3、bounded DOM3及8-root strict有證據；後端codec6-root strictPASS。不把窄root／合成bucket當完整typecheck或原生Firestore。
 - domain strict384MiB明確V8OOM；歷史完整server兩次signal9及256MiBOOM未通，既有56PASS／10exact-baselineFAIL不豁免。unknown／不可讀copy或source/Auth/journal/provenance變更、legacy無marker partialplan仍停住保責任，`NOT_FULLY_RECOVERABLE`／`AVATAR_LIFECYCLE_RELEASE_READY=false`不變。沒有真家庭照、真模型、GCP／OTA、帳戶或正式資料變更。
 - 本包只準備草稿程式，不開功能或宣稱上線；下一步與部署門檻見[AVATAR-01](PLAN.md#avatar-01)。精簡版本、測試、原紅及未驗見[合成核對收據](artifacts/verification/AVATAR_DRAFT_20261023.json)，原長logs留本地不重複提交。
+
+<a id="log-20261024-s12-ios-media"></a>
+## LOG-20261024-S12-IOS-MEDIA
+
+- 接續已合併 #272／`9f500a5`，以 `codex/s12-ios-media` 補 iPhone 照片相容。ImagePicker iOS 原 bytes 仍可能是 HEIC，故只在實際 bytes 非 JPEG／PNG 時使用官方 JPEG base64 副本；原件與副本各限4 MiB，decode 前後核對，清除 picker 額外編碼參照。hash、metadata、加密上傳及 Server 格式沿原契約，Android 原行為不變。
+- Astra 子代理只實作 adapter 及一份定向檢查；主模型核原碼／SDK型別／完整測試，親寫照片契約與技術採用說明。3項離線檢查通過，沿真 metadata／hash／preview，只替換系統 ports。主模型另核固定 SDK 的 iOS AAC/M4A、選檔副本及 Sharing 接線，無須另寫服務；不重複跑已通過檢查。[證據](artifacts/verification/S12_IOS_MEDIA_20261024.json)。
+- 沒有新增依賴、全量型別／build、模型、通知、部署或真機。原生 HEIC、iPhone權限／鍵盤／錄音聽感／檔案分享仍待簽署後驗收，不把合成bytes當成真圖片或設備通過。下一包為相容原生通知契約與 APNs；簽署團隊未定時先做獨立程式。

@@ -196,6 +196,7 @@ iOS 與 Android 使用同一原生 transport、SecureStore、AppState、畫面�
 - 組織會員可以正式邀請使用者並授予必要簽署權限；個人會員的 App Store Connect 邀請不授予 Developer Program 憑證權限。使用原擁有人的授權操作，不傳密碼。TestFlight-only App 不承諾可直接轉戶，依 [Apple 轉移條件](https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria/) 處理。
 - 私有 `.p8`、`.p12`、描述檔及其他簽署憑據留工程外；`.easignore` 亦排除它們。APNs Server 私鑰不進 App 或 EAS 前端封包；上傳前核對實際 archive，不能只以 ignore 存在當作已檢查。
 - Keychain 沿 `WHEN_UNLOCKED_THIS_DEVICE_ONLY` 保存 Server session，沒有業務資料副本；卸載可能保留項目，因此重開仍核 Server，明確登出／撤權才清理，不宣稱卸載已撤權。
+- iPhone 照片入口沿同一服務：JPEG／PNG 保留選取 bytes，HEIC 等由系統 ImagePicker 產生 JPEG 相容副本後核對 4 MiB／hash，手機原圖不變；附件下載所見是實際上傳的副本。錄音、一般選檔及 PDF 分享共用原生 adapter，不新增 iOS 後端；實機選取／取消／播放仍列 S12 待驗。
 - 雲端 build／submit 由固定發佈入口的 iOS 擴充承接；在該包未完成前，不用既有 Android-only `mobile:release` 指令發布 iOS。EAS 可以從 Windows 操作；最終安裝、相機／鍵盤及通知仍須 iPhone 核對。
 
 TestFlight build 最長有效 90 天；OTA 只更新相容 JS／資產，不能延長二進位 build 有效期。本人內測及外部 Beta Review 分開，不因上傳成功而宣稱已可安裝或全部驗收完成。[EAS iOS](https://docs.expo.dev/submit/ios/)／[TestFlight](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)
