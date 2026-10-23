@@ -3477,3 +3477,11 @@
 - 主模型修正共用表單inactive時只清密鑰的缺口：按權威快照重設全部本機草稿，保留owner的原操作及unknown狀態；背景只清密鑰的行為不變。不改UI設計、Server或Agent。原代理另作局部唯讀review。
 - Node24.19／既有React、RHF及jsdom，只跑兩項受影響檢查。密鑰／背景／離頁還原首輪通過；新增原操作檢查的斷言漏計使用者已觸發的selectProvider回調，修正為核對離頁沒有額外回調後，只補該項通過。未跑全量、瀏覽器、真key或模型；手機修正回歸及發布仍待完成。[證據](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)。
 - 使用者另指出Android關注圖標與Web不同；局部核對為native tab仍寫死`chart-bar`。已改讀Web同一`navigationItems.growth`的圖標／標籤，不改版面或新增測試；發布產物使用此最終來源。獨立表單review未發現阻塞問題。
+
+<a id="log-20261023-model-draft-delivery"></a>
+## LOG-20261023-MODEL-DRAFT-DELIVERY
+
+- A合併#267為`53d8f38`，產品來源`4bfdf98`；本分支只記錄已完成的Web／OTA交付。原匯出代理尚未開始build，使用者要求主模型接手後正式中止，核對沒有匯出程序，再由主模型完成，沒有另開代理或重複建置。
+- Node24.19沿原公開配置各匯出Web／Android一次，runtime與APK v2相同。Android build成功，末端資產核對因Windows反斜線與已正規化路徑比較而誤報缺檔；保留原失敗記錄，只正規化比較及核對既有31檔，沒有重跑export或改產品。共用表單兩項檢查沿用#267，不增全量測試。
+- 固定VM身份／IP及11月6日期限已核對；Web封包及hash經IAP傳送至指定0700目錄，無密鑰、ADC或家庭資料。候選網絡隔離建置／首頁hash通過，保存0600 Compose副本後只更新Web。15:39 UTC Web healthy、公開HTML一致、API health200，API／worker映像及配置不動；約10.62GiB可用，未清理舊SQL或備份。
+- 同來源Android preview OTA `df51a917-ee74-4e03-8fbc-db472314007d`已發布，不新建APK、不購買方案、不強制重載手機。草稿捨棄／關注圖標的最新真機補核仍待驗；此前舊UI→一次重開→新版欄位可見的證據不能代替此版本驗收。真key及DEV02末段審核缺口亦保留。[交付證據](artifacts/verification/MODEL_SELF03_DRAFT_DELIVERY_20261023.json)。零模型／通知、業務資料寫入、配額修改及新索引。

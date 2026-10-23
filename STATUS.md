@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **MODEL-SELF03 已發布，收束草稿清理修正。**手機一次重開後已見新導航、相容服務、獨立向量key及七項限制；真機發現「捨棄」仍保留非秘密草稿。修正已通過兩項針對性React檢查，尚未發布／真機補核；真key保存與呼叫未驗，見 [MODEL03](PLAN.md#model-self03)。#254／#259及#262～#265仍由協作者處理。
+- **MODEL-SELF03 及局部修正已發布。**#267的`4bfdf98`已更新Web及Android OTA，修正草稿捨棄及共用關注圖標；兩項針對性React檢查通過。手機先前已見相容服務、獨立向量key及七項限制；最新修正版真機補核、真key保存／呼叫未驗，見 [MODEL03](PLAN.md#model-self03)。#254／#259及#262～#265仍由協作者處理。
 - **本地開發入口可用：**`npm run agent:local` 使用目前分支的正式 Web／API／四角色接點及隔離持久資料，不需部署 GCP。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；新增相容模型與獨立向量 key 路由只有合成證據。方法見[本地入口](docs/AGENT_LOCAL.md)。
 - **角色未完成項：**2026-10-23新隔離環境的官方 PDF 第3頁已真整理、獨立審核及發布；最後聊天讀文件及搜尋成功，但引用修正耗盡當輪額度，停於 `delivery_review_incomplete`，沒有重送。原快照缺失與本次失敗分開記錄，先接協作者審核／預算修正再補一條聊天；長來源／圖片多模態仍欠角色能力。證據及下一步只見 [DEV02](PLAN.md#dev-agent02)。
 - **個人模型：**由用戶提供憑證與模型 ID 自行嘗試，沒有地域或 metadata 預驗門檻。聊天可用 Google 或相容接口；向量維持現有 Gemini／1024維索引，可另填本人 key，不借平台額度。其他向量模型及 Vertex Express 直接向量接線不宣稱已完成。
@@ -14,11 +14,11 @@
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-23 14:00 UTC 原站：**API／worker 為 `model-ui-1282e09`（映像 `b9c358c`），均 healthy；Web 同 tag（映像 `e9dd4c8`）運行，公開首頁 hash 與產物一致，API health 為200。四個訊息歷史索引 READY，API／worker 一致啟用歷史接線；沒有業務 backfill、模型／通知驗收或配額變更。詳見[交付證據](artifacts/verification/MODEL_SELF03_DELIVERY_20261023.json)。
+**2026-10-23 15:39 UTC 原站：**Web已更新為`model-draft-4bfdf98`（映像`241ffa8`），healthy，公開首頁hash與產物一致，API health為200。API／worker仍是`model-ui-1282e09`（映像`b9c358c`），沒有重啟或改設定；既有四個歷史索引結果沿用，不重建。零模型、通知、資料遷移及配額修改，見[本次交付](artifacts/verification/MODEL_SELF03_DRAFT_DELIVERY_20261023.json)。
 
-**Android，2026-10-23 15:08 UTC：**13:59發布的preview OTA群組`b18efe75-f8ed-4ced-9f66-a5e3b4d961ff`沿APK v2相容runtime；手機起初仍見舊導航，重開一次後新導航及MODEL03欄位可見，登入保留，精確裝置OTA ID未核實。只核未保存表單，沒有輸入key或呼叫模型；草稿捨棄失敗及清理見[補核證據](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)。上一版保存／讀回證據不代替新版真key驗收。
+**Android，2026-10-23 15:39 UTC：**`4bfdf98`相容preview OTA群組`df51a917-ee74-4e03-8fbc-db472314007d`已發布，runtime仍為`33699576537bf6f4081bddfb9c8807cd6bdef3ee`，毋須新APK。15:08的手機核對證明前次新版欄位可見並發現草稿問題；最新修正版尚未真機補核，不假定已套用。原失敗及清理見[補核證據](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)，沒有真key／模型驗收。
 
-**回退、備份與容量：**切換前已保存0600配置副本，保留舊映像；新 runtime 已啟動，不能直接退回不認識新資料欄位的舊 API／worker。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。原生備份最新核對為2026-10-22 22:44 UTC READY、保留至11月5日；只讀 metadata，未還原。部署後可用空間約10.66 GiB，沒有擴容或刪除資料／備份。
+**回退、備份與容量：**本次另存0600 Web配置副本並保留前版Web映像；API／worker相容reader不變，不退回更舊runtime。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。原生備份最新核對仍為2026-10-22 22:44 UTC READY、保留至11月5日；未還原。本次部署後可用空間約10.62 GiB，沒有擴容或刪除資料／備份。
 
 **主機期限，2026-10-23 核對：**原 e2-small VM 仍運行，自動停止時間維持 **2026-11-06 13:33:50 香港時間**；本次沒有續期或修改規格。舊 SQL 容器為停止狀態，正式 API／worker 使用 Firestore。
 
