@@ -9,7 +9,7 @@ Sxx 是穩定範圍標識，不代表數字執行順序。原條款被新決策�
 ## 閱讀次序
 
 1. 先讀 [STATUS](STATUS.md) 與[當前工作](#active)，再只讀對應包。
-2. [P3／P4／P5](#later-phases)保留後續目標、前置及完成門檻；目前先交付本地 Agent 開發入口，Android 未驗項保留。
+2. [P3／P4／P5](#later-phases)保留後續目標、前置及完成門檻；目前開始 [iOS 接線](#p3-ios)，本地 Agent 聯合補驗與 Android 未驗項保留。
 3. 舊包只透過[歷史索引](_archive/README.md#plan-p1-p2-20261018)按需查閱；日常不讀 P1／P2 歷史正文。
 4. 工作狀態與最低驗收規則仍見[狀態](#states)、[證據層級](#verification)及[按包驗收](#p2-deferred-acceptance)。
 
@@ -56,20 +56,20 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**另行接續：[ATTACHMENT-READ01](#attachment-read01) 附件回看已整合獨立來源候選，型別／GUI／部署未過門檻；不追加已合併的 #253。**
+**當前：[S04-W02 iOS 基礎](#s04-w02)。**2026-10-24 使用者批准現在開始 iOS，以 TestFlight 交付 iPhone App，取代「Android 全部驗收完成後才開始」的次序；Android 未驗不改成通過。開工 master `560f051`，交付整合 `a84f349`，活動分支 `codex/s04-w02-ios-bootstrap`；配置及共用入口已接，本機 iOS JS／Hermes export 通過，尚無簽署 build／發布。Apple 付費團隊未定只阻塞首次 App 註冊／簽署及真投遞。完整範圍與順序見 [iOS 計劃](#p3-ios)。本輪只用 Astra 主模型及按需要的 Astra xhigh 子代理；不接管協作者角色及前端增補。
 
-**當前：MODEL-SELF03 已發布，手機草稿捨棄補核通過；收束共用導航接線。**#267的`4bfdf98`已更新原站Web及Android preview OTA；手機載入新關注圖標後，未保存模式／供應商草稿捨棄、離頁及返回已通過，精確裝置OTA ID未讀取。`codex/shared-native-navigation`再把其餘原生底欄圖標／標籤接回Web同一`navigationItems`；兩項現有定向檢查通過，這批接線尚未發布。真key保存／呼叫未驗；#254、#259及#262～#265／#269維持協作者處理。詳見[MODEL03](#model-self03)。
+**另行接續：[ATTACHMENT-READ01](#attachment-read01) 附件回看已整合獨立來源候選，型別／GUI／部署未過門檻；不追加已合併的 #253。**
 
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
-**下一步：**[MODEL-SELF03](#model-self03)已可由用戶在Web／Android自行填寫憑證及模型試用；不再為逐模型預驗阻擋入口。只在取得真實錯誤或有效驗收條件時補受影響項，不重跑已通過檢查。依使用者2026-10-24指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗延後，等待四個Agent真正完成且協作者先自行檢查，之後再安排；不因個別PR可合併或環境可啟動便提前重跑、接管角色修改。既有角色缺口及Android未驗項保留。
+**保留的前批交付：**[MODEL-SELF03](#model-self03)可由用戶在 Web／Android 自行填寫憑證與模型試用；#270 共用導航及 #271 延後聯合補驗已合併，導航接線尚未另發布。依使用者指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗等待四個 Agent 真正完成且協作者先自行檢查，不提前重跑或接管。iOS 不以新模型驗收取代這些缺口。
 
 <a id="attachment-read01"></a>
 ### ATTACHMENT-READ01：附件回看與私人清單（source review，未完成）
 
-- 基線 `339c707`，獨立分支 `dot/attachment-media-followup-20261023`；26 個 source/test 檔＝22 產品＋4 測試。原照片 owner 保留；語音／影片／文件走[唯讀清單契約](docs/API.md#private-attachment-lists)，必要來源／時間改用可關閉詳情彈窗，媒體操作獨立，不展示技術版本字串。
+- #259 已於 2026-10-24 合併；來源基線 `339c707`，分支 `dot/attachment-media-followup-20261023`；26 個 source/test 檔＝22 產品＋4 測試。原照片 owner 保留；語音／影片／文件走[唯讀清單契約](docs/API.md#private-attachment-lists)，必要來源／時間改用可關閉詳情彈窗，媒體操作獨立，不展示技術版本字串。
 - 定向結果分列：跨層 10/10（包含既有後端 8 項）、附件 focused 16/16、真 RN Web Modal 的有界 DOM 2/2。首 DOM 0/2 是 jsdom 沒有原生按鈕 Enter／Space default click 的測試方法錯誤，已保留並修正方法；真瀏覽器鍵盤仍未驗。8-root strict 512 MiB 檢查 exit137／無 diagnostics，原因未確定；不是完整或局部型別通過。精確版本、原紅及限制見[來源證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)。
-- `voice_assets`／`chat_file_assets` 各新增一個 `scopeTag ASC,state ASC,createdAt DESC,assetId DESC` composite index **源碼**；未部署索引、服務、GCP或OTA。來源 review 已通過；後續建立獨立草稿 PR，再排 build／四尺寸 GUI／原圖與原音、下載及正式 API／索引驗收；合成預覽不代替正式接通，不自動 merge。
+- `voice_assets`／`chat_file_assets` 各新增一個 `scopeTag ASC,state ASC,createdAt DESC,assetId DESC` composite index **源碼**；未部署索引、服務、GCP或OTA。來源 review 已通過及合併；原型別、build／GUI、原圖與原音、下載及正式 API／索引門檻繼續保留，不因合併改為通過。
 
 ### 保留的 Android 交付狀態
 
@@ -207,7 +207,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **最小閱讀與修改接點：**先讀本節及 #214 合併後的正式審核契約，再讀 [ModelGateway](server/model-gateway.ts)、[ADK adapter](server/agent-model-gateway.ts)、[Runner](server/agent-runtime.ts)；傳輸復用 [SSE](server/agent-feedback-stream.ts)、[事件契約](src/shared/agent-feedback.ts)、[客戶端 reader](src/client/agent-feedback-reader.ts) 與 [ChatController](src/client/chat-controller.ts)，畫面沿 [ChatTimeline](frontend/src/components/chat/ChatTimeline.tsx)。按相依符號局部追讀，不重新盤點全倉。
 - **恢復次序：**審核接口穩定且合併 → 核對成果／來源版本與審核、保存結果的綁定 → 用同一收尾生成輸出真正文字增量 → 接灰稿／核准替換／拒絕移除 → 只補本節必要驗收。不要以現有引用 ID 校驗代替語義審核，也不要提前展示工具參數、內部思考或自行提高預算。
 - **已有證據及限制：**復用 [交付 EV](artifacts/verification/P2_OPT_DELIVERY_20261015.json) 與 [交付 LOG](WORKLOG.md#log-20261015-p2-opt-delivery)。兩次真生成已核持久摘要及公開 SSE／聊天讀回；不重跑已通過項目。灰稿、語義審核交接與真正正文增量仍未驗；原生備份還原仍按原決定延後。回滾與部署限制只見 [正式部署](docs/PRODUCTION_FRONTEND.md#firestore-deployment) 及 STATUS。
-- **目前替代工作線：**使用者已批准 [Web／Android 共用產品](#p3-mobile)，從 S04-W01 開始，iOS 等 Android 成品完成後才啟動。STR01 的範圍、前置與證據不取消；備份真還原仍須使用者另行恢復，協作者角色與 P4 家庭功能不納入 Android 開發。
+- **目前替代工作線：**沿 [共用手機產品](#p3-mobile) 推進；2026-10-24 再批准 [iOS 接線](#p3-ios) 即時開始。STR01 的範圍、前置與證據不取消；備份真還原仍須使用者另行恢復，協作者角色與 P4 家庭功能不納入手機接線。
 
 <a id="p2-backup-followup"></a>
 #### 延後驗收：原生每日備份還原
@@ -271,7 +271,7 @@ P2 只留最小角色配置／契約；此處明確承接內部實作與原 AC-P
 <a id="p3-mobile"></a>
 ### P3 Web／Android 共用產品與 Android 成品交付
 
-**目標：**Web 與 Android 是同一產品的兩個入口，共用功能、資料及業務規則；Android 完成後才開始 iOS。交付正式簽署、可直接安裝及更新的 APK，採 Expo EAS Build／Update，暫不包含 Google Play 上架。本節於 2026-10-15 取代原 Android／iOS 同步交付次序及「Web 只讀取／播放語音」的範圍；原包錨點及有效證據保留。
+**目標：**Web／Android／iOS 是同一產品的不同入口，共用功能、資料及業務規則。Android 沿本節的 APK／EAS 交付，iOS 沿 [TestFlight 計劃](#p3-ios)；不包含 Google Play 或公開 App Store 上架。本節保留 2026-10-15 的共用功能及有效證據，2026-10-24 的 iOS 計劃取代「Android 成品後才開始 iOS」次序。
 
 開工核對 master `21e848b`（#227），#214／#215／#216 仍由協作者處理。沿用現有 Expo 前端、Server、Firebase、ADK、Prompt Pack、原網站及 [DESIGN_SYSTEM](frontend/DESIGN_SYSTEM.md)，不重做設計、不另建手機後端或資料副本。STR01 灰色正文保留原前置，手機先接已交付的真進度 SSE／正式完整回答。只有本計劃相關接點可改，不接管三角色。
 
@@ -344,7 +344,7 @@ P2 只留最小角色配置／契約；此處明確承接內部實作與原 AC-P
 
 **S04-W01 → S05-W03 → S07-W01 → S09-W03 → S12-W01 → S13-W02 Android → S04-W03 Android → S16-W03／S17-W03 Android 里程碑。** 每包獨立分支、必要驗收、review、PR／合併後才開依賴包；同一批資料隨包累積證據，不到最後才接後端。
 
-S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已驗與 iOS 待驗，不能將 Android 交付寫成整個 P3 完成；三角色另依原 M01～M03 及協作者前置，與本里程碑分開。
+S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 Android 尚欠真機驗收阻塞程式接線。共用包分列兩平台結果，不能將 Android 交付寫成整個 P3 完成；三角色仍依原 M01～M03 及協作者前置，與手機里程碑分開。
 
 **最少三條連貫情景：**
 
@@ -458,10 +458,62 @@ S04-W02 iOS 只在 Android 成品完成後開工。共用包分列 Android 已�
 <a id="s04-w02"></a>
 #### S04-W02 iOS 接線與可安裝首版
 
-- 階段／狀態：P3；未開始，明確排在 Android 成品之後。
-- 前置：S17-W03 的 Android 里程碑（不是完整 P3，避免循環依賴）。
-- 交付：同一 Expo 應用啟用 iOS、bundle ID／簽署、Keychain、回跳及 TestFlight／受控安裝；共用能力沿 Android，補 iOS 錄音／檔案／通知／更新差異，不重畫頁面。
-- gate：iPhone 核心／平台流程及共用包 iOS 子範圍；帳號、簽署、真機未就緒標待驗，Web／simulator 不代填。公開 App Store 另按授權與審核結果處理。
+- 階段／狀態：P3；2026-10-24 基線 `560f051`，分支 `codex/s04-w02-ios-bootstrap`。iPhone 配置、獨立 `ios-preview` store profile／channel、原品牌不透明圖標及 Apple 憑據封包排除已實作；共用身份／聊天／同步入口沿現有 native adapter，沒有重建第二套頁面。
+- 必要驗證：3 項配置檢查及靜態 review 通過，Android descriptor gate 保留。首次 iOS export 因 Windows sandbox TEMP 拒絕 Hermes 寫入失敗；只把暫存移至本 worktree 後，既定同一 export 通過。這只證明 JS／平台解析及 Hermes 產物，不是 IPA、Keychain／鍵盤或 iPhone 驗收。[證據](artifacts/verification/S04_W02_IOS_BOOTSTRAP_20261024.json)。
+- 前置：已合併的共用原生身份／transport／owner／同步程式；解除原 S17-W03 Android 全部驗收的開工前置，但保留其未驗項。
+- 交付：同一 Expo 應用啟用 iOS、固定候選 bundle ID、獨立 TestFlight profile、Keychain 及共用登入／聊天；照片等差異與通知／發佈沿下列包，不重畫頁面。
+- gate：本機程式核對已達先合併條件；Apple 團隊、首次封包核對／簽署、TestFlight 及 iPhone 人工流程仍待辦，不宣稱已有可安裝 iOS 成品。合併後先接 S12 iOS 媒體差異；不以人工條件阻塞獨立實作。
+
+<a id="p3-ios"></a>
+### P3 共用前端與 iOS TestFlight 交付（2026-10-24）
+
+**完成目標：**iPhone 經 TestFlight 安裝育有方，與 Web／Android 共用帳號、功能、權威資料及既有 Agent；可接續工作、處理附件、接收本人通知。修改共用畫面只改一份程式，固定工具分流 Web、兩平台 OTA 或新二進位版本。本輪先做 iPhone，不包含完整 iPad、公開 App Store、四 Agent 增補或 STR01；Android 未驗及 DEV02 延後安排保留。
+
+#### 帳號與發佈前置
+
+- 使用者有 iPhone、普通 Apple ID，選擇 TestFlight；尚無已確認的付費簽署團隊。先完成程式／配置，不自動購買會員、註冊 Bundle ID、取得簽署或建立 App Store Connect App。
+- 導師／學校的組織會員可正式邀請使用者並授予必要團隊權限；個人會員的邀請只提供 App Store Connect 權限，憑證／描述檔仍需會員本人處理。不共用密碼，不猜 Team ID。
+- 首次註冊前確認團隊、App 歸屬及 `org.yuyoufang.app` 可用性；之後固定 Bundle ID。Apple 現行轉移要求至少一個 App Store 已發布版本，不能承諾 TestFlight-only App 日後直接轉戶。
+- 沿現有 Expo `@2ntty/yuyoufang`，從 Windows 使用 EAS 雲端建置；不因此要求購買 Mac。首次私有封包上傳核對範圍與額度，遇付費要求停止，不自動購買方案。
+- 本人先作 TestFlight 測試；普通外部測試者依 Beta Review，不為測試授予管理權限。build 最長 90 天有效，OTA 不能代替新 build 續期。
+
+#### 共用原生接線
+
+- 保留 Expo 57／現有 React Native、頁面、導航 metadata、美術、正式 owner 及 Server，不升整套 SDK。新增 iPhone 配置及 iOS TestFlight profile／channel，Android preview 不變。
+- 身份沿 Firebase 原生 session 交換、SecureStore／Keychain、同一受控 transport。重開核 Server 會話，登出／撤權／切孩子清理舊資料；不把卸載當登出。已提交工作查回原 run，不因 App 關閉重送。
+- 安全區、鍵盤、返回與權限只補必要平台差異，不破壞 Android 已修行為；共用 AppState／網絡及 changes cursor 保持跨端同版，背景不持續輪詢。
+- 相機／相簿、錄音、附件、PDF／分享沿現有服務。HEIC 利用現有 ImagePicker 的 JPEG 輸出轉成相容副本，再核真 bytes／容量／hash；原圖不變，副本不假稱原始 HEIC。只讀一張、有界記憶體及既有暫存清理，超限不裁切或截斷。
+- 錄音、轉錄與檔案保存沿既有規則，不新增解析／背景錄音。系統選取完成／取消返回 App；不承諾原生相機內一定有相簿入口。
+
+#### 通知與接口相容
+
+- Android 保留 FCM；iOS Expo native token 接 APNs，不能送到 FCM。新增薄 Server HTTP/2 adapter，沿現有授權、工作／投遞台帳、防重、安靜時段、終態及 unknown；不另建通知佇列。
+- 用 Node 原生 HTTP/2 提供涵蓋整次請求的期限／取消及單次發送；不加入隱藏自動重送。已研究 APNs 客戶端有內建重試或逐請求取消／總期限缺口，採用理由及固定來源存 TECH_REUSE。
+- 綁定增加平台／provider，缺欄位舊資料按 Android／FCM；新 DTO 以版本協商保留舊 APK 嚴格 schema，不向舊客戶端回傳不認識欄位或誤標 iOS 設備。
+- APNs Team／Key ID、Bundle ID、環境及私鑰由受保護 Server 配置控制；TestFlight 用 production APNs，拒絕時不切 sandbox 重送。憑證不入 App／Git／EAS 前端封包。
+- token 輪替、撤銷、權限拒絕及投遞未知如實回報；點擊只帶最小關聯，重新核權讀資料，不直接確認／完成事項。
+
+#### 固定更新及順序
+
+擴充現有 `mobile:release`，增加平台選擇及獨立 runtime／fingerprint／build baseline／回退，保留既有 Android 命令相容。`--plan` 不登入或上傳，列出受影響平台與未滿足前置；共用 UI 改動需 Web 與相容 Android／iOS OTA，平台檔只影響該端，API 相容後端改動不要求 App 更新。原生套件／權限變更建立該端新 build；不手填 runtime、不在操作中強制 reload，不把部分平台發布當全部完成。
+
+| 次序／原錨點 | 本輪交付與依賴 |
+|---|---|
+| [S04-W02](#s04-w02) | 先配置、身份／共用畫面及簽署準備；簽署待團隊確認 |
+| [S05-W03](#s05-w03)／[S07-W01](#s07-w01)／[S09-W03](#s09-w03)／[S12-W01](#s12-w01) iOS | S04 程式接點合併後，補平台差異／跨端接續及媒體；沿既有服務，不重做四包功能 |
+| [S13-W02](#s13-w02) iOS | APNs、本人設定及點擊；真投遞依簽署／Server 憑證 |
+| [S04-W03](#s04-w03) iOS | 三端固定更新工具、TestFlight 提交及相容 OTA／回退 |
+| [S16-W03](#s16-w03)／[S17-W03](#s17-w03) iOS | 只補整合缺口、iPhone 驗收及可安裝成品；不代結整個 P3 |
+
+每包獨立分支、必要 review／驗證及 PR／合併。主模型親寫契約與計劃、整合共享配置；本輪特許只用 Astra xhigh 子代理處理有收益且不重疊部分。提交帳號按實際主責及本機協作指引核對，單作者，不把權重當共同署名。
+
+#### 最低必要驗收
+
+只用一部 iPhone 與既有 Web，累積三條連貫情景：①登入／鍵盤／提交後關閉與重開、跨端同結果及一次身份清理；②相機／HEIC、短錄音、附件及 PDF 系統接點；③一則已明確授權 APNs、點擊核權及一次 OTA／相容回退。復用後端／Android 證據；機械接線只補取消／unknown、舊 APK 契約及發布平台判斷。真模型最多先安排一條代表聊天，未批准具體費用不自動啟動。
+
+不全量、不壓測、不機型矩陣、不 Computer Use；人工安裝／登入／系統權限保留本人操作，等待期間繼續獨立工作。真機、簽署、發佈、程式及本機檢查分開記錄；原備份還原、Android 未驗與四 Agent 最後補驗不因 iOS 合併而消失。
+
+官方依據（2026-10-24 文件核對，非實測）：[Apple 團隊權限](https://developer.apple.com/help/account/access/roles/)／[轉移條件](https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria/)／[TestFlight](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)／[EAS iOS](https://docs.expo.dev/submit/ios/)／[Expo 原生通知](https://docs.expo.dev/push-notifications/sending-notifications-custom/)／[SDK 57 ImagePicker](https://docs.expo.dev/versions/v57.0.0/sdk/imagepicker/)。
 
 ### P4 工作包
 

@@ -174,7 +174,7 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 - 在 `frontend/` 使用固定 `eas-cli@24.14.0`；`app.json` 固定 Android `org.yuyoufang.app`、scheme `yuyoufang` 及 runtime fingerprint，`eas.json` 保留 development／preview／production channel。固定 Node 24.19.0、npm 11.8.0。
 - Expo 帳號由本人登入，不把密碼／token 放入專案；公開 project ID 固定於 `app.json`，可由 `EAS_PROJECT_ID` 覆蓋；現行專案為 `@2ntty/yuyoufang`。沒有 project ID 不允許雲端 build；本機無連結時 Updates 關閉，不假稱 OTA 已配置。
-- `EXPO_PUBLIC_AUTH_PROVIDER=firebase`、API base 使用原站 HTTPS `/api`；Firebase project／authDomain／appId 沿同一專案，缺任何公開設定便停止雲端 build。Android 必須使用相容原生 JS SDK 的專用 Firebase Auth 公開 key，API allowlist 只需 `identitytoolkit.googleapis.com`／`securetoken.googleapis.com`；不可直接沿用限定 HTTP referrer 的 Web key、移除其限制或偽造 Referer。SDK 未提供 Android package／cert headers，不把原生 SDK 的 application restriction 設定當已相容。公開 key 不授予 Firestore、Storage、模型或 Admin 權限；產品准入與 Server 權限仍逐次核對，配額不提高。原生 key 已建立並配置至 Expo preview，尚待 APK 真登入；production 設定不因 preview 完成而自動就緒。
+- `EXPO_PUBLIC_AUTH_PROVIDER=firebase`、API base 使用原站 HTTPS `/api`；Firebase project／authDomain／appId 沿同一專案，缺任何公開設定便停止雲端 build。原生必須使用相容 JS SDK 的 Firebase Auth 公開 key，API allowlist 只需 `identitytoolkit.googleapis.com`／`securetoken.googleapis.com`；不可直接沿用限定 HTTP referrer 的 Web key、移除其限制或偽造 Referer。SDK 未提供原生 package／cert／bundle headers，不把平台 application restriction 設定當已相容。公開 key 不授予 Firestore、Storage、模型或 Admin 權限；產品准入與 Server 權限仍逐次核對，配額不提高。公開配置沿 Firebase JS 的 Web app ID，不因 iOS 而改傳原生 Firebase app ID 或加入另一 SDK；各環境實際登入結果只見根 PLAN，preview 不代表 production 已就緒。
 - 公開 config 會進入 bundle，不應標為秘密來誤以為客戶端不可讀；ADC、私鑰與服務端 secret 不傳至 Expo。
 - `.easignore` 限定上載共用前端、client／shared、資產及依賴／授權。首次雲端建置前必須核對實際 archive，排除 Server、prompt、測試資料、私人協作文件及憑據。`eas build:inspect --platform android --stage archive --profile preview --output <new-local-directory>` 只準備本機 archive，但 CLI 仍需要 Expo 登入。EAS 會先以不含尾斜線的目錄名判斷是否遍歷；allowlist 須放行目錄本身，不能只以 `!/frontend/` 等模式假定子檔已納入。
 - `npm run build:android-ui --workspace frontend` 只驗 JS／Hermes bundle，不會產生可安裝 APK。EAS preview／production 使用 APK；簽署、真機登入、OTA 與更新證據另列，不因 bundle 成功當成品。
@@ -183,6 +183,22 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 `mobile:release` 的本機工具見下節；語音／FCM、完整跨端前景同步及更新交付按根 PLAN 的實作／部署／真機門檻分開，不以工具存在宣稱已發布。
 
 Windows 執行 EAS 前，在實體 dependency installation 的完整建置副本執行 `npm run mobile:prepare`；不要用指向另一 worktree 的 `node_modules` junction。此命令只針對固定 `@expo/fingerprint` 0.20.13 loader 補 glob 比對前的 POSIX 路徑正規化，版本或原文改變即停止；Linux 不修改。保留原生內容 fingerprint 與雲端相等檢查，不使用忽略全部 native 檔案或硬填 runtime 的替代。後續 `mobile:release` 應調用同一入口。
+
+<a id="ios-foundation"></a>
+### iOS 共用入口與 TestFlight 配置
+
+iOS 與 Android 使用同一原生 transport、SecureStore、AppState、畫面及 owner；產品及交付門檻只見 [iOS 計劃](../PLAN.md#p3-ios)。`frontend/app.json` 的候選 Bundle ID 為 `org.yuyoufang.app`、只宣告 iPhone 支援，scheme 與品牌不變。這些本機值不代表已向 Apple 註冊。
+
+- `ios-preview` 是獨立 EAS store distribution profile，channel 為 `ios-preview`，使用 `preview` 公開環境；不是 Android 的 internal APK profile，也不是直接公開 App Store。仍採 fingerprint runtime 及遞增 build number，不手填舊 runtime。
+- 建置 iOS 必須明確選 `--platform ios --profile ios-preview`；Firebase JS 公開設定、HTTPS API、Expo project 仍必須齊備。iOS 不要求或讀取 Android `google-services.json`；Firebase Auth 用現有 JS SDK，不因 APNs 另加原生 Firebase Messaging。
+- `npm run build:ios-ui --workspace frontend` 只匯出 iOS JS／Hermes 與資產，不能安裝到 iPhone，也不代表簽署或 TestFlight 已完成；此本機檢查不需要 Apple 團隊或付費會員。
+- 實際註冊 App、首次簽署及提交前，確認有權使用的付費 Apple Developer 團隊、Bundle ID 可用性、App Store Connect App 身份及 Apple 要求的出口合規資料。沒有團隊不猜 Team ID，不用普通 Apple ID 假稱可發布 TestFlight；不自動購買會員。
+- 組織會員可以正式邀請使用者並授予必要簽署權限；個人會員的 App Store Connect 邀請不授予 Developer Program 憑證權限。使用原擁有人的授權操作，不傳密碼。TestFlight-only App 不承諾可直接轉戶，依 [Apple 轉移條件](https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria/) 處理。
+- 私有 `.p8`、`.p12`、描述檔及其他簽署憑據留工程外；`.easignore` 亦排除它們。APNs Server 私鑰不進 App 或 EAS 前端封包；上傳前核對實際 archive，不能只以 ignore 存在當作已檢查。
+- Keychain 沿 `WHEN_UNLOCKED_THIS_DEVICE_ONLY` 保存 Server session，沒有業務資料副本；卸載可能保留項目，因此重開仍核 Server，明確登出／撤權才清理，不宣稱卸載已撤權。
+- 雲端 build／submit 由固定發佈入口的 iOS 擴充承接；在該包未完成前，不用既有 Android-only `mobile:release` 指令發布 iOS。EAS 可以從 Windows 操作；最終安裝、相機／鍵盤及通知仍須 iPhone 核對。
+
+TestFlight build 最長有效 90 天；OTA 只更新相容 JS／資產，不能延長二進位 build 有效期。本人內測及外部 Beta Review 分開，不因上傳成功而宣稱已可安裝或全部驗收完成。[EAS iOS](https://docs.expo.dev/submit/ios/)／[TestFlight](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)
 
 
 ### Android FCM 建置與部署接點

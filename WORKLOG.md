@@ -3505,3 +3505,11 @@
 - 接續原附件前後端候選，將26個source/test檔整合到`339c707`的獨立分支；不改已合併#253或頭像候選。只新增唯讀本人聊天附件清單及薄前端呈現，原照片／播放／下載授權與unknown邊界保留；詳情移至既有local dialog，權限短標為「本人」。
 - 跨層10/10、focused16/16及RN Web Modal DOM2/2分開記錄；首DOM0/2由jsdom不執行native-button default click造成，修正測試方法而非新增產品鍵盤handler。8-root strict 512 MiB檢查exit137、沒有diagnostics，原因未知；未重試或當作型別通過。[證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)保留完整來源hash、原紅及驗證界線。
 - 兩個Firestore composite index僅源碼，未部署。build／四尺寸GUI、真瀏覽器Enter／Space、原音／下載、實際API與雲端索引仍待驗；只有合成資料，沒有真模型／家庭媒體、GCP、OTA或正式資料操作。獨立草稿來源交付與驗收／發布／合併分開。
+
+<a id="log-20261024-s04-w02-ios-bootstrap"></a>
+## LOG-20261024-S04-W02-IOS-BOOTSTRAP
+
+- 使用者批准 iOS TestFlight 計劃；先更新根 PLAN，再從 master `560f051` 開 `codex/s04-w02-ios-bootstrap`。沿現有 Expo 57、原生身份／transport／owner／同步及畫面，啟用 iPhone 配置與獨立 store profile／channel；Android 配置及入口不重建，Apple 團隊未定。
+- iOS 不再誤讀 Android descriptor，仍保留 Firebase 公開設定／HTTPS gate。原品牌 SVG 轉成 1024 不透明 iOS 圖標，沒有改美術或加入產品依賴；EAS 封包另排除 Apple 私鑰／描述檔。主模型核對共用入口及 diff，Astra 子代理完成限定配置實作與獨立靜態 review，沒有 blocking finding。
+- 3 項必要配置檢查通過。首次 iOS JS／Hermes export 因 Windows sandbox TEMP 拒絕寫入失敗，保留現場；只調整本命令 TEMP／TMP 至 worktree cache，補同一 export 後通過。這不是 IPA、簽署或真機驗收；沒有重跑 Web／Android、全量測試、模型、通知或 Computer Use。[本包證據](artifacts/verification/S04_W02_IOS_BOOTSTRAP_20261024.json)。
+- 未上傳 EAS、建立 Apple App 或購買會員。首次封包、團隊／簽署、TestFlight、iPhone 與後續媒體／APNs／更新仍待辦；不把 Android 未驗或協作者四 Agent 最後補驗改為完成。交付前發現 master 新合併 #269／#259，按原成果整合，不接管其待驗工作。

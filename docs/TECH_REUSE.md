@@ -277,6 +277,14 @@ Firebase JS 13.0.0 的 React Native `_getAdditionalHeaders` 沒有 Android packa
 S04-W01 固定 `@expo/fingerprint` 0.20.13 的 Windows config loader 以反斜線作 glob 比對，與 Linux 的預設排除結果不同；按[官方 loader 路徑正規化](https://github.com/expo/expo/blob/main/packages/@expo/fingerprint/src/ExpoConfigLoader.ts)局部回補 `toPosixPath`，不升整套 SDK、不放寬 runtime 核對。`mobile:prepare` 有版本／原文／實體依賴路徑 guard；僅本機指紋一致已驗，修後 APK 另驗。
 
 
+### S04-W02：iOS 共用配置與身份（2026-10-24）
+
+沿 Expo 57.0.24／Router 57.0.22／React Native 0.86.3、SecureStore 57.0.4、Firebase JS 13.0.0、EAS CLI 24.14.0；既有套件及 license 不變，沒有新增依賴或升級。採 [EAS iOS build／submit](https://docs.expo.dev/submit/ios/) 和同一 Expo 原生入口，增加獨立 TestFlight profile，不新增 iOS 業務層或認證供應商。
+
+[SDK 57 SecureStore](https://docs.expo.dev/versions/v57.0.0/sdk/securestore/) 的 iOS Keychain 可能跨卸載保留；沿既有 Server session 驗證／撤銷，不能以卸載推斷登出。Firebase JS 的既有原生身份 port 使用 Web app ID／公開 API key，不等同 Apple 登入或 Firebase 原生 Messaging 配置。Apple 團隊／簽署、iPhone 登入及系統行為仍各自待驗，配置可解析不代表可安裝成品。
+
+iOS 圖標由既有 `assets/brand/app-icon-source.svg` 以本機工具匯出 1024×1024、無 alpha PNG，保留原色／形狀及背景，不新增或重畫品牌。只設定 `ios.icon`，不改 Android 既有圖標或增加產品套件。
+
 ### S07-W01：共用變更游標及原生生命週期
 
 2026-10-16：復用現有 changes cursor、owner／Query 失效及身份 transport，沒有另一份同步資料庫。採 Expo SDK 57 配套 `expo-network` 57.0.2（MIT；固定 npm 原碼／license 已保存），只用 [getNetworkStateAsync／addNetworkStateListener](https://docs.expo.dev/versions/latest/sdk/network/) 配合 React Native AppState。網絡未知不冒稱離線；訂閱優先於遲到的初讀，初讀失敗不產生未處理 promise。沒有讀取 IP 或使用 Web 的外部 IP 服務。正式依賴變更需新 native runtime／APK，原生事件仍待真機；共用游標邏輯及型別已核。
