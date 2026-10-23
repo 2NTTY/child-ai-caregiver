@@ -1,6 +1,6 @@
 import { z } from "zod";
 import {
-  MODEL_SETTINGS_MEDIA_TYPE,
+  MODEL_SETTINGS_V3_MEDIA_TYPE,
   type ModelKeyCheck, type ModelSettings, type ModelSettingsCommand, type ModelSettingsView, type ModelSettingsOperation, type PersonalModelCatalog, type PersonalModelProvider,
 } from "../shared/model-settings.ts";
 import { publicModelSettingsSchema as settingsSchema, effectiveModelLimitsSchema, modelCheckReasonSchema,
@@ -70,7 +70,7 @@ export function createModelSettingsApi(baseUrl = "", fetcher: typeof fetch = fet
       const response = await fetcher(`${apiUrl}/ai/settings${path}`, {
         method: body === undefined ? "GET" : "POST", body,
         credentials: "include", cache: "no-store", signal: controller.signal,
-        headers: { Accept: MODEL_SETTINGS_MEDIA_TYPE, "x-expected-user-id": userId,
+        headers: { Accept: MODEL_SETTINGS_V3_MEDIA_TYPE, "x-expected-user-id": userId,
           ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
       });
       if (controller.signal.aborted) throw new ModelSettingsApiError();
@@ -111,7 +111,9 @@ export function createModelSettingsApi(baseUrl = "", fetcher: typeof fetch = fet
         maxQueryEmbeddings: command.maxQueryEmbeddings, consent: command.consent,
         ...(command.apiKey === undefined ? {} : { apiKey: command.apiKey }),
         ...(command.removeKey === undefined ? {} : { removeKey: command.removeKey }),
-        ...Object.fromEntries((['provider', 'model', 'maxToolCalls', 'maxRunSeconds', 'modelRequestSeconds', 'maxModelRetries'] as const)
+        ...(command.embeddingApiKey === undefined ? {} : { embeddingApiKey: command.embeddingApiKey }),
+        ...(command.removeEmbeddingKey === undefined ? {} : { removeEmbeddingKey: command.removeEmbeddingKey }),
+        ...Object.fromEntries((['provider', 'model', 'baseUrl', 'maxToolCalls', 'maxRunSeconds', 'modelRequestSeconds', 'maxModelRetries'] as const)
           .filter(key => command[key] !== undefined).map(key => [key, command[key]])),
       });
       return request("", body, signal, userId).then(value => {
@@ -130,7 +132,7 @@ export function createModelSettingsApi(baseUrl = "", fetcher: typeof fetch = fet
       return parsed.data;
     },
     async catalog(expectedVersion, refresh, signal, userId, provider) {
-      if (provider !== undefined && (refresh || !['gemini', 'vertex'].includes(provider)))
+      if (provider !== undefined && (refresh || !['gemini', 'vertex', 'openai-compatible'].includes(provider)))
         throw new ModelSettingsApiError(400, 'invalid_input', false);
       const path = '/models' + (provider ? '?provider=' + encodeURIComponent(provider) : '');
       const parsed = personalModelCatalogSchema.safeParse(await request(path, refresh ? JSON.stringify({ expectedVersion }) : undefined, signal, userId));

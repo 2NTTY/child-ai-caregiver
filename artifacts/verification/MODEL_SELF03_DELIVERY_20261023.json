@@ -1,0 +1,156 @@
+{
+  "workPackage": "MODEL-SELF03",
+  "source": "1282e0978fab9c6aa6740635af2d83e85ac8a00d",
+  "implementationPr": 260,
+  "implementationMerged": true,
+  "deliveryState": "vm_deployed_android_ota_published",
+  "approval": "The user explicitly approved the 1282e09 private release upload, four existing index definitions, original VM deployment and one compatible preview OTA on 2026-10-23.",
+  "destination": {
+    "project": "ai-caregivers-for-children",
+    "zone": "asia-east2-a",
+    "vm": "yuban-p1",
+    "vmId": "2846984358678394356",
+    "ip": "35.241.127.20",
+    "directory": "/home/2NTTY/model-ui-1282e09-upload",
+    "directoryMode": "0700",
+    "expiresAt": "2026-11-06T05:33:50.732Z",
+    "expoProject": "@2ntty/yuyoufang",
+    "channel": "preview"
+  },
+  "payload": {
+    "uploadBytes": 14501458,
+    "code": {
+      "files": 457,
+      "bytes": 9715131,
+      "sha256": "e1f27b7b7ac52d1b1c83b2dc6c8a37b13f84b2734802e6020cf61ddd7e51746c"
+    },
+    "web": {
+      "files": 135,
+      "bytes": 4702899,
+      "sha256": "598c4257a60a9e99aebeec23697c2b1d1eed27089d2402624f5c87289826a3a6"
+    },
+    "manifestSha256": "80f3063b406f71ca22b4ff374cf312a111ebda57ea3e97b598d9e11eceb701c4",
+    "stageScriptSha256": "535b17073ab2c418469b3560d55d62f6a6902374f3bb394097fd7332f418a5f7",
+    "activationScriptSha256": "6b92949c87494fb5e1dbff1724f1e6dbb0c473a11f17d3ca7edc9fdce46c4c49",
+    "credentialsOrFamilyDataIncluded": false,
+    "vmHashVerification": "passed"
+  },
+  "baseline": {
+    "tag": "model-d53c203",
+    "apiImage": "sha256:93ebfdcc300bd419a018bfee5bb8e8f892aa65eee70ebbd90b06f80c05251915",
+    "webImage": "sha256:209c0e1f60b898fb38687ddbe2ff05da829840d236847558e79a3647242bd555",
+    "androidUpdateGroup": "cfe20c62-9816-4d8e-8b5c-06bcf74ab266",
+    "nativeBackup": {
+      "id": "76a3c4ce-1013-4bbc-b3d3-1fd7240e1f4b",
+      "state": "READY",
+      "snapshotTime": "2026-10-22T22:44:02.975594Z",
+      "expireTime": "2026-11-05T22:44:02.975594Z",
+      "restored": false
+    }
+  },
+  "candidate": {
+    "apiImage": "sha256:b9c358cbcd68c3a800758a1e2922f0d63c61be880cb78f52cc412bfc9d0702c5",
+    "webImage": "sha256:e9dd4c83138108b06a4aaee7d48aef649dc2dcee5d4103c7864a4f8aa41495b9",
+    "importAndV3SchemaCheck": "passed",
+    "network": "none",
+    "modelCalls": 0,
+    "dataWrites": 0,
+    "diskFreeBytesAfterStage": 11451424768
+  },
+  "indexes": {
+    "count": 4,
+    "field": "messageSentAt",
+    "state": "READY",
+    "source": "deploy/firebase/firestore.indexes.json",
+    "businessBackfill": false,
+    "readyObservedAt": "2026-10-23T13:56:22.224Z",
+    "names": [
+      "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_push_deliveries/indexes/CICAgOi36pgK",
+      "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_native_push_deliveries/indexes/CICAgLjyrJEK",
+      "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_telegram_deliveries/indexes/CICAgLiT6IEK",
+      "projects/ai-caregivers-for-children/databases/yuban-firebase-20261011/collectionGroups/yuban_authority_contact_requests/indexes/CICAgLiIjZIK"
+    ]
+  },
+  "android": {
+    "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "apkVersionCode": 2,
+    "newApkRequired": false,
+    "files": 31,
+    "bytes": 13557478,
+    "bundleSha256": "34ff63095659f6be4806ee58607a7d2bef431b374b1bedc011524211df7fb0b2",
+    "publication": "published",
+    "deviceAcceptance": "not_run",
+    "updateGroup": "b18efe75-f8ed-4ced-9f66-a5e3b4d961ff",
+    "updateId": "01a1690e-e980-79de-a0cf-f770b9dd97c8",
+    "publishedAt": "2026-10-23T13:59:07.392Z",
+    "source": "1282e0978fab9c6aa6740635af2d83e85ac8a00d"
+  },
+  "limits": {
+    "modelCalls": 0,
+    "notificationsSentByAcceptance": 0,
+    "quotasChanged": false,
+    "privateProviderGenerationVerified": false,
+    "computerUse": false,
+    "fullRegression": false
+  },
+  "recovery": {
+    "protectedConfigurationBackups": {
+      "compose.env.before-model-ui-1282e09": "0o600",
+      "compose.yaml.before-model-ui-1282e09": "0o600",
+      "firebase.env.before-model-ui-1282e09": "0o600"
+    },
+    "rollbackBoundary": "Old API/worker may only be restored before starting the new runtime. After that, retain a reader compatible with new childAccessVersion/message-history metadata; old Web remains compatible.",
+    "retention": "Current deployment and previous images retained; no backup, volume or credential deletion."
+  },
+  "preparationFindings": [
+    "The initial archive audit stopped on a byte mismatch. 420 files differed only by CRLF due to core.autocrlf; the final Linux code archive uses exact Git blob bytes from the merged source. Web bytes match the successful export unchanged.",
+    "The first private upload was blocked by automatic approval review before execution; the exact payload was uploaded only after the user's explicit approval.",
+    "An unsupported list page-size parameter returned INVALID_ARGUMENT before any mutation; the existing bounded index list request succeeded.",
+    "IAP CLI invocation was recovered using the existing Python runtime and an ASCII portable SDK path; no project architecture change was needed."
+  ],
+  "unverified": [
+    "A user's real compatible-provider credential and separate embedding credential.",
+    "The newly published personal-mode form on an Android device.",
+    "Previously deferred native backup restore and four-role quality gaps remain tracked in PLAN; this deployment does not complete them."
+  ],
+  "observedAt": "2026-10-23T14:00:09.954377+00:00",
+  "deployment": {
+    "source": "1282e0978fab9c6aa6740635af2d83e85ac8a00d",
+    "state": "deployed",
+    "apiImage": "sha256:b9c358cbcd68c3a800758a1e2922f0d63c61be880cb78f52cc412bfc9d0702c5",
+    "webImage": "sha256:e9dd4c83138108b06a4aaee7d48aef649dc2dcee5d4103c7864a4f8aa41495b9",
+    "htmlHash": "bf6ec3eafa197dc4e5d11ae07b1ca69668659f58096257765fdcbdd0de85525d",
+    "modelCalls": 0,
+    "notificationsSentByAcceptance": 0,
+    "quotaChanged": false,
+    "rollback": "Old runtime only before starting new containers; retain compatible reader after runtime start",
+    "messageHistoryEnabled": true,
+    "phoneSettingsVerified": false,
+    "personalKeyGenerationVerified": false,
+    "services": {
+      "api": {
+        "image": "sha256:b9c358cbcd68c3a800758a1e2922f0d63c61be880cb78f52cc412bfc9d0702c5",
+        "state": "running",
+        "health": "healthy"
+      },
+      "worker": {
+        "image": "sha256:b9c358cbcd68c3a800758a1e2922f0d63c61be880cb78f52cc412bfc9d0702c5",
+        "state": "running",
+        "health": "healthy"
+      },
+      "web": {
+        "image": "sha256:e9dd4c83138108b06a4aaee7d48aef649dc2dcee5d4103c7864a4f8aa41495b9",
+        "state": "running",
+        "health": null
+      },
+      "postgres": {
+        "image": "sha256:932c5117c1b8dd483600a6caf5680d3d0f0538617720127e99d4699662018743",
+        "state": "exited",
+        "health": "unhealthy"
+      }
+    },
+    "publicHtmlVerified": true,
+    "publicHealthStatus": 200,
+    "diskFreeBytes": 11451363328
+  }
+}

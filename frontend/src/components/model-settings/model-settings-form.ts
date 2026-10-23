@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { personalLimits, type ModelSettings, type ModelSettingsCommand } from "../../model-settings-view-model.ts";
 import type { EffectiveModelLimits, PersonalModelCatalog, PersonalModelProvider } from "../../../../src/shared/model-settings.ts";
-import { personalModelIdSchema, personalProviderSchema } from "../../../../src/shared/model-settings-schema.ts";
+import { personalBaseUrlSchema, personalModelIdSchema, personalProviderSchema } from "../../../../src/shared/model-settings-schema.ts";
 
 /** Only project the server's selected-provider catalog; never substitute a model. */
 export function modelCatalogSelection(catalog: PersonalModelCatalog | null | undefined, provider: PersonalModelProvider, selected: string) {
@@ -23,7 +23,8 @@ export const modelLimitFields = [
   ["retriesText", "最多額外重試", personalLimits.modelRetries, "次"],
 ] as const;
 export function modelSettingsDraft(settings: ModelSettings, effective?: EffectiveModelLimits) {
-  return { mode: settings.mode, provider: settings.provider, model: settings.model, keyText: "", consent: false, backgroundEnabled: settings.backgroundEnabled,
+  return { mode: settings.mode, provider: settings.provider, model: settings.model, baseUrl: settings.baseUrl ?? "",
+    keyText: "", embeddingKeyText: "", removeEmbeddingKey: false, consent: false, backgroundEnabled: settings.backgroundEnabled,
     dailyText: String(settings.dailyLimit), modelCallsText: String(settings.maxModelCalls), queryEmbeddingsText: String(settings.maxQueryEmbeddings),
     toolCallsText: String(settings.maxToolCalls ?? effective?.maxToolCalls ?? personalLimits.toolCalls.default),
     runSecondsText: String(settings.maxRunSeconds ?? effective?.maxRunSeconds ?? personalLimits.deadlineSeconds.default),
@@ -31,21 +32,32 @@ export function modelSettingsDraft(settings: ModelSettings, effective?: Effectiv
     retriesText: String(settings.maxModelRetries ?? effective?.maxModelRetries ?? personalLimits.modelRetries.default) };
 }
 export type ModelSettingsDraft = ReturnType<typeof modelSettingsDraft>;
-export function modelSettingsSchema(keyConfigured: boolean, savedProvider: ModelSettings["provider"] = "gemini") {
+export function modelSettingsSchema(keyConfigured: boolean, savedProvider: ModelSettings["provider"] = "gemini", savedBaseUrl?: string) {
   return z.object({ mode: z.enum(["platform", "personal", "disabled"]), provider: personalProviderSchema, model: z.string().max(128),
-    keyText: z.string().max(512, "密鑰最多 512 個字元。"), consent: z.boolean(), backgroundEnabled: z.boolean(),
+    baseUrl: z.string().max(512, "API 地址最多 512 個字元。"),
+    keyText: z.string().max(512, "密鑰最多 512 個字元。"), embeddingKeyText: z.string().max(512, "密鑰最多 512 個字元。"),
+    removeEmbeddingKey: z.boolean(), consent: z.boolean(), backgroundEnabled: z.boolean(),
     dailyText: z.string(), modelCallsText: z.string(), queryEmbeddingsText: z.string(), toolCallsText: z.string(),
     runSecondsText: z.string(), requestSecondsText: z.string(), retriesText: z.string(),
   }).superRefine((draft, context) => {
     if (draft.mode !== "personal") return;
-    if (!personalModelIdSchema.safeParse(draft.model).success)
-      context.addIssue({ code: "custom", path: ["model"], message: "請輸入 Gemini 模型 ID，例如 gemini-3.1-flash-lite；不需填寫網址。" });
+    if (!personalModelIdSchema.safeParse(draft.model).success || /^[a-z][a-z\d+.-]*:\/\//iu.test(draft.model))
+      context.addIssue({ code: "custom", path: ["model"], message: "請輸入供應商提供的模型 ID，不是 API 網址。" });
+    const endpoint = draft.provider === "openai-compatible" ? personalBaseUrlSchema.safeParse(draft.baseUrl) : null;
+    if (endpoint && !endpoint.success)
+      context.addIssue({ code: "custom", path: ["baseUrl"], message: "請輸入公開 HTTPS API 基底地址，不含帳密、查詢參數或其他連接埠。" });
+    const endpointChanged = endpoint?.success && endpoint.data !== savedBaseUrl?.replace(/\/+$/u, "");
     if (!draft.consent) context.addIssue({ code: "custom", path: ["consent"], message: "請確認費用及資料外送安排。" });
     if (!draft.keyText.trim()) {
-      if (!keyConfigured || draft.provider !== savedProvider) context.addIssue({ code: "custom", path: ["keyText"], message: "請輸入此供應商的個人 API 密鑰。" });
-    } else if (draft.keyText.length < 20 || /[^\x21-\x7e]/u.test(draft.keyText)) {
-      context.addIssue({ code: "custom", path: ["keyText"], message: "密鑰須為 20–512 個可列印 ASCII 字元，不能包含空格。" });
+      if (!keyConfigured || draft.provider !== savedProvider || endpointChanged)
+        context.addIssue({ code: "custom", path: ["keyText"], message: "新增或更換供應商／API 地址時，請重新輸入相應密鑰。" });
+    } else if (/[^\x21-\x7e]/u.test(draft.keyText)) {
+      context.addIssue({ code: "custom", path: ["keyText"], message: "密鑰須為 1–512 個可列印 ASCII 字元，不能包含空格。" });
     }
+    if (draft.embeddingKeyText && /[^\x21-\x7e]/u.test(draft.embeddingKeyText))
+      context.addIssue({ code: "custom", path: ["embeddingKeyText"], message: "密鑰須為 1–512 個可列印 ASCII 字元，不能包含空格。" });
+    if (draft.removeEmbeddingKey && draft.embeddingKeyText)
+      context.addIssue({ code: "custom", path: ["embeddingKeyText"], message: "請選擇替換或刪除向量密鑰，不可同時進行。" });
     for (const [path, , range] of modelLimitFields) {
       const number = Number(draft[path]);
       if (!/^\d+$/u.test(draft[path]) || !Number.isInteger(number) || number < range.min || number > range.max)
@@ -63,6 +75,9 @@ export function modelCommandFromDraft(draft: ModelSettingsDraft, settings: Model
     ...(personal ? { provider: draft.provider, model: draft.model, maxToolCalls: Number(draft.toolCallsText), maxRunSeconds: Number(draft.runSecondsText),
       modelRequestSeconds: Number(draft.requestSecondsText), maxModelRetries: Number(draft.retriesText) } : {}),
     ...(personal && draft.keyText.trim() ? { apiKey: draft.keyText } : {}),
+    ...(personal && draft.provider === "openai-compatible" ? { baseUrl: personalBaseUrlSchema.parse(draft.baseUrl) } : {}),
+    ...(personal && draft.embeddingKeyText ? { embeddingApiKey: draft.embeddingKeyText } : {}),
+    ...(personal && draft.removeEmbeddingKey ? { removeEmbeddingKey: true } : {}),
   };
 }
 export function removeModelKeyCommand(settings: ModelSettings): ModelSettingsCommand {
