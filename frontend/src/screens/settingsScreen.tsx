@@ -3,7 +3,7 @@ import { AdminEntry } from '../production/AdminEntry';
 import { EmptyListCard } from "../components/EmptyListCard";
 import { useContainerWidth } from "../components/useContainerWidth";
 import { useEffect, useId, useState } from "react";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, usePathname } from "expo-router";
 import { useProductionVisibleSettingsSection } from "../production/ProductionFirstScreenGate";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -34,6 +34,7 @@ function LabeledValue({ label, value }: { label: string; value: string }) {
 }
 
 export default function SettingsPage() {
+  const pathname = usePathname();
   const leave = usePreviewNavigation();
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
@@ -93,7 +94,7 @@ export default function SettingsPage() {
     <AppTabPanel tabsId={tabsId} tabKey="assistant" active={tab === "assistant"}>
       {scopeKey ? <AgentAuthorization key={scopeKey} /> : <SectionCard><Text style={styles.body}>先選擇孩子。</Text></SectionCard>}
     </AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsView model={modelSettings.model} actions={modelSettings.actions} active={tab === "model"} /></AppTabPanel>
+    <AppTabPanel tabsId={tabsId} tabKey="model" active={tab === "model"}><ModelSettingsView model={modelSettings.model} actions={modelSettings.actions} active={pathname === "/settings" && tab === "model"} /></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="privacy" active={tab === "privacy"} style={styles.sections}>
       <View style={styles.sectionGroup}><SectionCard><SectionHeader density="compact" title="私隱" />
         <LabeledValue label="私人聊天" value="只對本人可見" /><LabeledValue label="共享資料" value="按孩子及家庭角色授權" />

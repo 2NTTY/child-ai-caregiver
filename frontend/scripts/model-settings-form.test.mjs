@@ -44,7 +44,8 @@ test("new and replacement keys match the server boundary without changing the ty
     assert.equal(schema.safeParse({ ...draft, keyText: "k".repeat(20) }).success, true);
     assert.equal(schema.safeParse({ ...draft, keyText: "k".repeat(512) }).success, true);
     assert.equal(schema.safeParse({ ...draft, keyText: "!" + "~".repeat(19) }).success, true);
-    for (const keyText of ["k".repeat(19), "k".repeat(513), " " + "k".repeat(20), "k".repeat(20) + " ", "k".repeat(10) + " " + "k".repeat(10), "k".repeat(19) + "中", "k".repeat(19) + "\n", "k".repeat(19) + "\x7f"]) {
+    assert.equal(schema.safeParse({ ...draft, keyText: "k" }).success, true);
+    for (const keyText of ["k".repeat(513), " " + "k".repeat(20), "k".repeat(20) + " ", "k".repeat(10) + " " + "k".repeat(10), "k".repeat(19) + "中", "k".repeat(19) + "\n", "k".repeat(19) + "\x7f"]) {
       assert.equal(schema.safeParse({ ...draft, keyText }).success, false);
     }
   }
@@ -57,6 +58,29 @@ test("new and replacement keys match the server boundary without changing the ty
   assert.equal(replacement.keyText, entered);
   assert.equal("apiKey" in modelCommandFromDraft(draft, settings), false);
   assert.equal("apiKey" in modelCommandFromDraft({ ...draft, keyText: "   " }, settings), false);
+});
+test("compatible settings keep explicit endpoints and independent embedding credentials without a metadata gate", () => {
+  const draft = { ...modelSettingsDraft(settings), provider: "openai-compatible", baseUrl: "https://provider.example/v1/",
+    model: "vendor/model-v2", keyText: "synthetic-chat", embeddingKeyText: "synthetic-embedding", consent: true };
+  const schema = modelSettingsSchema(true, "gemini");
+  assert.equal(schema.safeParse(draft).success, true);
+  const command = modelCommandFromDraft(draft, settings);
+  assert.equal(command.baseUrl, "https://provider.example/v1");
+  assert.equal(command.apiKey, draft.keyText); assert.equal(command.embeddingApiKey, draft.embeddingKeyText);
+  const saved = { ...settings, provider: draft.provider, model: draft.model, baseUrl: command.baseUrl, embeddingKeyConfigured: true };
+  const reloaded = { ...modelSettingsDraft(saved), consent: true };
+  assert.equal(reloaded.keyText, ""); assert.equal(reloaded.embeddingKeyText, "");
+  const update = modelSettingsSchema(true, saved.provider, saved.baseUrl);
+  assert.equal(update.safeParse(reloaded).success, true);
+  assert.equal(update.safeParse({ ...reloaded, baseUrl: "https://different.example/v1" }).success, false);
+  assert.equal(update.safeParse({ ...reloaded, baseUrl: "https://different.example/v1", keyText: "new-key" }).success, true);
+  assert.equal(update.safeParse({ ...reloaded, baseUrl: "http://provider.example/v1", keyText: "new-key" }).success, false);
+  assert.equal(update.safeParse({ ...reloaded, removeEmbeddingKey: true, embeddingKeyText: "new-key" }).success, false);
+  const removed = modelCommandFromDraft({ ...reloaded, removeEmbeddingKey: true }, saved);
+  assert.equal(removed.removeEmbeddingKey, true); assert.equal("embeddingApiKey" in removed, false);
+  assert.equal("apiKey" in removed, false);
+  const platform = modelCommandFromDraft({ ...draft, mode: "platform" }, saved);
+  assert.equal("baseUrl" in platform, false); assert.equal("embeddingApiKey" in platform, false);
 });
 test("nonpersonal mode omits entered keys and retains saved limits instead of invalid hidden draft values", () => {
   const command = modelCommandFromDraft({ ...modelSettingsDraft(settings), mode: "platform", keyText: "synthetic-key-not-for-network", consent: true,

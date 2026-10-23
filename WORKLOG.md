@@ -3441,3 +3441,12 @@
 - 發現本地模型會被平台固定型號覆蓋，改為僅受信任本地組裝能設定的模型選擇，實際run／用量使用同一型號；每日與每輪限制仍沿管理政策。保留原Gemini／ADC工作綁定及個人模式優先，未改角色工具／提示詞或協作者分支。
 - 補回前包最後清理import後遺留的PlatformProviderFactory型別引用。最初錯用tsx而未執行測試；改用倉庫Node原生入口後，SDK payload斷言層級錯誤造成一項合成失敗，修正requests[0]後兩項通過。限定型別及腳本語法通過，沒有反覆重跑全量；詳見[證據](artifacts/verification/LOCAL_COMPATIBLE_MODEL_20261023.json)。
 - 零真模型／embedding／通知、未啟動雲端資源或部署。#253／#254仍由原協作者處理；新模型畫面及真服務驗證維持未完成。操作方法直接更新既有docs/AGENT_LOCAL.md。
+
+<a id="log-20261023-compatible-model-ui"></a>
+## LOG-20261023-COMPATIBLE-MODEL-UI
+
+- #253已合併為`339c707`，本包從此基線接續#255／#256，分支`codex/personal-compatible-ui`，A單作者。共用Web／Android表單沿原設計新增相容API地址、模型ID、聊天key及獨立Gemini向量key，client採v3；保留七項限制、版本、原opId查回及不重播密鑰。模型目錄／metadata可省略，不作保存前置。
+- 兩份密鑰在保存、失敗、換服務／模式／地址、離頁、身份失效及App進背景時清除；Android保留tab按真路由失焦，隱藏表單不阻擋其他頁面。照片同意文字改為目前選用的模型服務；不修改Agent行為或前端版面。原client子代理於恢復後可用性與新代理分開核對，後續返修與匯出沿現有代理follow-up，沒有重複派單。
+- client六項、form六項、三項受影響React接線及限定型別通過。原unknown斷言誤中新的向量說明，收窄至正式狀態標籤後只補該項。Web最終匯出及靜態附檔完成；Android首次Hermes遭本機暫存權限拒絕，保留失敗後只改TEMP／TMP至workspace補跑成功，runtime相容APK v2。初期檢查Node24.11低於專案要求，最終型別及建置改用24.19；沒有全量測試或真機驗收。
+- 新出現的附件#259及Agent #254保持協作者分支不動；#259未改本包照片同意句。部署review確認#253訊息歷史須四個索引READY及共同開關，首次讀取會增加權限fence，回退不能使用不認識新欄位的舊reader。只更新部署交接／配置範例，尚未動雲端。
+- [本機證據](artifacts/verification/MODEL_SELF03_UI_20261023.json)區分實作、建置、失敗及未驗。零真模型／embedding／通知／業務寫入／配額調整，未上傳或發布VM／OTA；真供應商、裝置及其他既有待驗不改稱通過。

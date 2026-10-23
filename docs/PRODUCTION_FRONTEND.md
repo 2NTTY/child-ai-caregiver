@@ -30,9 +30,11 @@
 
 ### 本人模型設定
 
-相容 Server／客戶端更新後，在「設定 → 本人模型」選個人模式、Google 服務及模型，填入 key、調整限制及背景授權，再保存。Web／Android 使用同一帳戶設定；key 送出後清空且不讀回。右方顯示 Server 的實際生效值，保存不清零用量。這是操作方法，實際發布狀態仍以 STATUS 為準。
+相容 Server／客戶端更新後，在「設定 → 本人模型」選個人模式、Google 或 OpenAI 相容服務；相容服務填公開 HTTPS API 基底地址，再填聊天 key、模型 ID、限制及背景授權。Web／Android 使用同一帳戶設定，保存不清零用量。模型目錄只是參考，可直接保存後試用；錯誤沿實際請求回報。這是操作方法，實際發布狀態仍以 STATUS 為準。
 
-「檢查已保存密鑰」及模型目錄只讀 metadata，不執行生成；遇版本衝突先重讀，結果未知用「查回原操作及目前設定」，不重送 key。Vertex Express 尚未接 metadata／embedding，頁面會說明限制；不能把已保存 key 當成知識檢索已可用。本機 ADC 只在[開發入口](AGENT_LOCAL.md)配置，不上傳到此表單。
+知識搜尋沿既有 Google 向量索引，可另填本人 Gemini 向量 key；Gemini 聊天未另填時沿用本人聊天 key，其他服務未填時，向量搜尋會明示缺少配置，不借平台憑證。兩份 key 均不讀回，送出、離頁或 App 進背景後清空；更換 API 地址須重新輸入聊天 key。
+
+「檢查已保存密鑰」及模型目錄只讀 metadata，不執行生成；未提供這項能力的服務直接使用模型 ID。版本衝突先重讀，結果未知用「查回原操作及目前設定」，不重送 key。本機 ADC 只在[開發入口](AGENT_LOCAL.md)配置，不上傳到此表單。
 
 ## 部署及回復（以下保留 INT-W07 歷史版本）
 
@@ -89,6 +91,7 @@ docker compose --project-name yuban-p1 \
 - Tasks／Scheduler 呼叫 VM 的受驗證工作入口，應用核 OIDC、固定 audience 及服務身份；保留 lease／generation、收據及 unknown 不重發。不能僅暴露一條公開 worker URL 便視為安全。
 - 互動沿現有請求、進度、取消及結果接口；不為 Hosting 60 秒限制強制改協議。需要排程的工作先持久受理；私有回應 no-store，身份切換清除快取及遲到回應。
 - 依 [ADR-025](DECISIONS.md#adr-025)，F02～F07 先完成原 VM 資料接點及全部正式 SQL 退出，保留既有 API／頁面相容性；F08 再驗收受邀用戶並更新原站。不逐資料包切站或重跑完整用戶流程。未遷移功能明示，不用假成功或空資料掩蓋；不維持兩套產品網站。
+- 新版訊息歷史先核四個 `messageSentAt` 複合索引 READY，再於 API／worker 一致啟用 `FIREBASE_MESSAGE_HISTORY_ENABLED=true`；未啟用時 API 明確回 503，不假裝沒有歷史。只呈現已保存的接受證據，舊紀錄不補造正文或重發通知。第一次歷史讀取就會保存 `workspace.childAccessVersion`，其後回退亦須支援此欄位及新通知／模型格式；關回開關不會撤回這些資料變更。
 - 每次部署核對 VM 實況／期限、相容配置、資料與備份及 in-flight 工作，允許短暫維護；只有一套主寫與排程。已有新寫入只能回退相容 Firebase 應用版本或隔離還原，不能切回 SQL 舊快照；新刪除／撤銷／收據不可倒退。已寫入語音訊息、轉錄或原生通知綁定後，回退的 API／worker 仍須識別這些 schema 及清理義務；舊 Web／APK 可保留相容使用，不代表可以盲退不識別新資料的 Server。
 
 F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外 Hosting 站點與 Cloud Run API／worker 已按用途核對後清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**；不以名稱相似整批刪除。實際版本與尚未完成項見根 PLAN／STATUS，A09／F02 舊失敗保留，不以基建切片代替產品成果。

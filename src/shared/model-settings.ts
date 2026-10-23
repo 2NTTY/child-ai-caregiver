@@ -4,7 +4,7 @@ export type ModelBillingSource = "platform" | "personal";
 export type ModelMode = ModelBillingSource | "disabled";
 export type PersonalModelProvider = "gemini" | "vertex" | "openai-compatible";
 export const PERSONAL_MODEL = "gemini-3.1-flash-lite";
-// Keep shipped clients on v2 until their new credential controls are integrated.
+// Retain v2 for older clients; the shared credential form uses v3.
 export const MODEL_SETTINGS_MEDIA_TYPE = 'application/vnd.yuyoufang.model-settings.v2+json';
 export const MODEL_SETTINGS_V3_MEDIA_TYPE = 'application/vnd.yuyoufang.model-settings.v3+json';
 export const PERSONAL_DAILY_LIMIT = { default: 100, min: 1, max: 1000 } as const;
