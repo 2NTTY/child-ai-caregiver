@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo } from "react";
-import { usePreviewLeaveGuard, type LeaveScope } from "../preview/PreviewNavigationGuard";
+import { usePreviewLeaveGuard, type LeavePendingKind, type LeaveScope } from "../preview/PreviewNavigationGuard";
 import { useProduction, useProductionOwner } from "./ProductionProvider";
 
 /** One Server identity/scope for domain owners; never creates another business store. */
@@ -19,10 +19,10 @@ export function useDomainEnvironment() {
 }
 
 /** Preserve unknown operations across navigation and block logout while outcome is unresolved. */
-export function useDomainWriteGuard(dirty: boolean, pending: boolean, scope: LeaveScope = "child", retainedInWorkspace = true) {
+export function useDomainWriteGuard(dirty: boolean, pending: boolean, scope: LeaveScope = "child", retainedInWorkspace = true, pendingKind?: LeavePendingKind) {
   const owner = useProductionOwner();
   const id = useId();
-  const leaveGuardId = usePreviewLeaveGuard(dirty, pending, scope, undefined, retainedInWorkspace);
+  const leaveGuardId = usePreviewLeaveGuard(dirty, pending, scope, undefined, retainedInWorkspace, pendingKind);
   useEffect(() => { owner.setDomainPending(id, pending); return () => owner.setDomainPending(id, false); }, [owner, id, pending]);
   return leaveGuardId;
 }

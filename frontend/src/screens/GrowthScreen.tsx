@@ -38,7 +38,7 @@ export function GrowthScreen() {
     <AppButton label="查看子女檔案" onPress={() => actions.open("profile")} />
   </SectionCard></PageFrame>;
   return <GrowthView key={workspace.scopeKey} model={workspace.model} actions={workspace.actions} tab={tab}
-    onTabChange={next => { if (next !== tab) guarded(() => { preparations?.actions.closeDocument(); router.setParams({ tab: next }); }, "navigation"); }}
+    onTabChange={next => { if (next !== tab) guarded(() => { preparations?.actions.closeDocument(); router.setParams({ tab: next }); }, "workspace"); }}
     onTask={openTask}
     onRecord={id => guarded(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))}
     onHistory={() => guarded(() => router.push("/history?category=growth"))}

@@ -96,7 +96,7 @@ function navigation(onLeave, getGuard, intent = 'navigation') {
   const render = () => {h.reset(); return PreviewNavigationGuard({children: null});};
   const all = value => !value || typeof value !== 'object' ? [] : [value, ...(Array.isArray(value) ? value : [value.props?.children]).flatMap(all)];
   let tree = render(); tree.props.value.register('workspace', {...getGuard(), retainedInWorkspace: true}); tree.props.value.request(onLeave, intent); tree = render();
-  return {tree, buttons: all(tree).filter(node => node.type === 'Button').map(node => node.props.label), confirm() {tree.props.value.register('workspace', {...getGuard(), retainedInWorkspace: true}); all(tree).find(node => node.props?.label === '捨棄草稿並離開').props.onPress();},
+  return {tree, buttons: all(tree).filter(node => node.type === 'Button').map(node => node.props.label), confirm() {tree.props.value.register('workspace', {...getGuard(), retainedInWorkspace: true}); all(tree).find(node => node.props?.label === '捨棄並離開').props.onPress();},
     cancel() {all(tree).find(node => node.props?.label === '繼續編輯').props.onPress();}};
 }
 for (const kind of ['sources', 'photos']) {
@@ -319,9 +319,9 @@ test('navigation: retaining exact handoff drafts never exempts pending, unrelate
   guard.request(go, 'navigation', ['composer', 'photos']); assert.equal(routes, 1);
   guard.request(go); assert.equal(routes, 1, 'ordinary navigation still guards the same drafts');
   guard.register('photos', {...ordinary, pending: true}); guard.request(go, 'navigation', ['composer', 'photos']);
-  tree = render(); assert.ok(all(tree).some(n => n.props?.children === '先處理原操作')); assert.equal(routes, 1);
+  tree = render(); assert.ok(all(tree).some(n => n.props?.children === '尚有變更待確認')); assert.equal(routes, 1);
   guard.register('photos', ordinary); guard.register('source', ordinary); guard.request(go, 'navigation', ['composer', 'photos']);
-  tree = render(); assert.ok(all(tree).some(n => n.props?.label === '捨棄草稿並離開')); assert.equal(routes, 1);
+  tree = render(); assert.ok(all(tree).some(n => n.props?.label === '捨棄並離開')); assert.equal(routes, 1);
   all(tree).find(n => n.props?.label === '繼續編輯').props.onPress(); assert.equal(routes, 1);
   guard.remove('source'); guard.request(go, 'child', ['composer', 'photos']); assert.equal(routes, 1);
 });
@@ -406,13 +406,13 @@ test('navigation recovery error stays visible and explicit leave still checks di
     all(tree).find(n => n.props?.label === '重試返回原頁').props.onPress(); assert.equal(retries, 1);
     guard.register('photo', {dirty: true, pending: true, scope: 'child'});
     all(tree).find(n => n.props?.label === '確認離開目前頁面').props.onPress(); tree = render();
-    assert.ok(all(tree).some(n => n.props?.children === '先處理原操作')); assert.equal(leaves, 0);
+    assert.ok(all(tree).some(n => n.props?.children === '尚有變更待確認')); assert.equal(leaves, 0);
     guard.register('photo', {dirty: true, pending: false, scope: 'child'});
     all(tree).find(n => n.props?.label === '確認離開目前頁面').props.onPress(); tree = render();
     all(tree).find(n => n.props?.label === '繼續編輯').props.onPress(); tree = render();
     assert.equal(leaves, 0); assert.ok(all(tree).some(n => n.props?.testID === 'history-recovery-error'));
     all(tree).find(n => n.props?.label === '確認離開目前頁面').props.onPress(); tree = render();
-    all(tree).find(n => n.props?.label === '捨棄草稿並離開').props.onPress(); assert.equal(leaves, 1);
+    all(tree).find(n => n.props?.label === '捨棄並離開').props.onPress(); assert.equal(leaves, 1);
   } finally {globalThis.window = originalWindow; h.unmount();}
 });
 
@@ -440,7 +440,7 @@ for (const kind of ['sources', 'photos']) {
     assert.equal(v.model.operation.state, 'unknown'); assert.equal(f.resets, 0); assert.equal(writes, 0);
     for (const intent of ['child', 'navigation']) {
       let moved = false; const prompt = navigation(() => {moved = true;}, () => f.guard, intent);
-      assert.equal(moved, false); assert.deepEqual(prompt.buttons, ['留在此頁查核']);
+      assert.equal(moved, false); assert.deepEqual(prompt.buttons, ['留在此頁']);
     }
     f.pathname = '/' + kind; f.render(); v = f.render();
     assert.equal(v.model.selected.id, f.target.id); assert.equal(f.resets, 0);

@@ -74,22 +74,22 @@ function scenario(kind) {
 }
 for (const kind of ['manual', 'topic', 'attention']) {
   test(`${kind} draft requires explicit leave approval and unrelated unknown cannot impersonate its frozen payload`, () => {
-    const s = scenario(kind); s.edit(); s.request(); assert.equal(s.counts().navigations, 0); assert.ok(s.button('捨棄草稿並離開'));
+    const s = scenario(kind); s.edit(); s.request(); assert.equal(s.counts().navigations, 0); assert.ok(s.button('捨棄並離開'));
     s.button('繼續編輯').props.onPress(); s.render(); assert.equal(s.model.dirty, true);
     s.model.pending = { attempt: { kind: 'item', id: 'unrelated', body: 'original-body', input: { authorityVersion: 'authority-a' } } }; s.model.operation = 'unknown'; s.render();
     const original = s.model.pending; s.request(); assert.equal(s.counts().navigations, 0);
-    s.button('捨棄草稿並離開').props.onPress(); s.render(); assert.equal(s.counts().navigations, 1); assert.equal(s.model.pending, original); assert.equal(s.discarded.length, 1); assert.equal(s.dirtyKeys.size, 0);
+    s.button('捨棄並離開').props.onPress(); s.render(); assert.equal(s.counts().navigations, 1); assert.equal(s.model.pending, original); assert.equal(s.discarded.length, 1); assert.equal(s.dirtyKeys.size, 0);
   });
   test(`${kind} exact submitted payload survives workspace navigation but still protects child changes`, () => {
     const s = scenario(kind); s.edit(); s.submit(); assert.equal(s.counts().submitted, 1); const original = s.model.pending;
-    s.request('child'); assert.equal(s.counts().navigations, 0); assert.equal(s.button('捨棄草稿並離開'), undefined);
-    s.button('留在此頁查核').props.onPress(); s.render(); s.request(); assert.equal(s.counts().navigations, 1); assert.equal(s.model.pending, original); assert.deepEqual(s.discarded, []);
+    s.request('child'); assert.equal(s.counts().navigations, 0); assert.equal(s.button('捨棄並離開'), undefined);
+    s.button('留在此頁').props.onPress(); s.render(); s.request(); assert.equal(s.counts().navigations, 1); assert.equal(s.model.pending, original); assert.deepEqual(s.discarded, []);
   });
 }
 test('topic enable operation does not consume independently selected context values in the same form', () => {
   const s = scenario('topic'); s.edit(); s.checkbox('我明確同意永久停用').props.onChange(true); s.render();
   s.button('確認永久停用主題').props.onPress(); s.render(); assert.equal(s.model.pending.attempt.input.action, 'set_enabled');
-  s.request(); assert.equal(s.counts().navigations, 0); assert.ok(s.button('捨棄草稿並離開'));
+  s.request(); assert.equal(s.counts().navigations, 0); assert.ok(s.button('捨棄並離開'));
 });
 
 test('manual concern text fields expose the same accessible names as their visible labels', () => {

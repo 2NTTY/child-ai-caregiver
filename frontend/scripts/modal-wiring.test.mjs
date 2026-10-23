@@ -95,7 +95,7 @@ test('GET loading can close without a write warning, while an original pending d
   s.patch({agentModel: {...s.model.agentModel, busy: null}}); s.open();
   s.patch({agentModel: {...s.model.agentModel, pendingDecision: {runId: 'run-a', proposalId: 'proposal-a', input: {expectedVersion: 1, decision: 'accept', confirmShared: true}, reviewed: false, reconfirm: false}, run: {id: 'run-a', childId: 'child-a', status: 'unknown', proposals: []}}});
   s.dialog().props.onDismiss(); s.render(); assert.equal(s.dialog().props.visible, false);
-  assert.equal(s.button('留在此頁查核'), undefined); assert.equal(s.button('捨棄草稿並離開'), undefined);
+  assert.equal(s.button('留在此頁'), undefined); assert.equal(s.button('捨棄並離開'), undefined);
   s.patch({agentPending: {state: 'ready', entries: [], hasSnapshot: true, nextCursor: null}});
   s.button('查核原決定').props.onPress(); s.render(); assert.equal(s.dialog().props.visible, true);
   s.h.hosts().find(n => n.type === 'AgentRunView').props.actions.checkOriginal(); assert.equal(s.counts().checks, 1);
@@ -116,10 +116,10 @@ test('read-only result modal preserves pending decisions while allowing closure 
   const pendingDecision = {runId: 'run-a', proposalId: 'proposal-a', input: {expectedVersion: 1, decision: 'accept', confirmShared: true}, reviewed: false, reconfirm: false};
   s.patch({agentModel: {...s.model.agentModel, pendingDecision}});
   let navigated = 0; s.navigate(() => navigated++, 'workspace'); assert.equal(navigated, 1);
-  assert.equal(s.button('留在此頁查核'), undefined); assert.equal(s.model.agentModel.pendingDecision, pendingDecision);
-  s.navigate(() => navigated++, 'child'); assert.equal(navigated, 2); assert.equal(s.button('留在此頁查核'), undefined);
+  assert.equal(s.button('留在此頁'), undefined); assert.equal(s.model.agentModel.pendingDecision, pendingDecision);
+  s.navigate(() => navigated++, 'child'); assert.equal(navigated, 2); assert.equal(s.button('留在此頁'), undefined);
   assert.equal(s.model.agentModel.pendingDecision, pendingDecision);
-  assert.equal(s.button('捨棄草稿並離開'), undefined);
+  assert.equal(s.button('捨棄並離開'), undefined);
 });
 test('denied and idle selected runs never claim an active read or expose another run body', () => {
   const s = resultScenario(); s.open();
