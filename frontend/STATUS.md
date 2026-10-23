@@ -1,8 +1,8 @@
 # 育伴港前端現況
 
-2026-10-23 本輪來源已正常推送至遠端 `58080880e3ebbe9e3d323efef7d9b5666f324e20`，63個blobs／tree／ref已核；04:39:31 UTC兩路讀回確認 [PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253) head一致，仍open／draft／未合併。公開合成預覽仍為Site86／snapshot27a；本輪未發布，Sites更新及所需憑證待當次批准。
+2026-10-23 已核來源 `58080880e3ebbe9e3d323efef7d9b5666f324e20`及驗收文件 commit `fe60f4d6c4699539a26952790fa905e2f2b24c93`均在遠端及 [PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)，仍open／draft／未合併。[既有公開合成預覽](https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site)已於04:59:33.978 UTC發布Site87／snapshot31（Sites source `b1fb6db5cd7820cd2183a732f866d8673973bb10`）。05:08完成live有界smoke，public DOM的bundle檔名對應31，導航／核對／記憶／Summary前後狀態及390樣式通過；沒有逐毫秒全程穩定或live bytes hash的結論。
 
-snapshot31已核63檔scope／553inputs、11個必要scripts／80項通過、穩定export及靜態安全validator；04:28:53 UTC的四組有界browser通過，原Summary自然focus紅項在本次未復現，真Paper日期blur與「本人」短名已核。30的metadata／分頁不當成31重跑，原紅保留。30完整TypeScript兩環境均exit137且原因未知，31未重跑，門檻仍未通過；04:40 UTC GitHub無CI結果、combined pending，不是綠燈。不宣稱全站、真機或正式服務全綠。只用合成資料，不合併、不做GCP／OTA。唯一下一步、門檻及分版證據見 [PLAN#active](PLAN.md#active)。
+snapshot31已核63檔scope／553inputs、11個必要scripts／80項通過、穩定export及靜態安全validator；04:28:53 UTC的四組有界browser通過，原Summary自然focus紅項在本次未復現，真Paper日期blur與「本人」短名已核。30的metadata／分頁不當成31重跑，原紅保留。30完整TypeScript兩環境均exit137且原因未知，31未重跑，門檻仍未通過；04:40 UTC GitHub無CI結果、combined pending，不是綠燈。不宣稱全站、真機或正式服務全綠。只用合成資料，不合併、不做GCP／OTA。後續交接、未過門檻及分版證據見 [PLAN#active](PLAN.md#active)。
 
 ## 2026-10-11 歷史快照（不是本候選結果）
 

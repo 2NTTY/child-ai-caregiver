@@ -3,16 +3,18 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## 前端頁型、讀取穩定性與 metadata（2026-10-23；snapshot31 有界驗收通過，交付收尾）
+## 前端頁型、讀取穩定性與 metadata（2026-10-23；snapshot31 已發布合成預覽，保留未過門檻）
 
-沿用分支 `dot/frontend-simplify-20261021`。本輪來源已正常推送至遠端 commit `58080880e3ebbe9e3d323efef7d9b5666f324e20`，63個 blobs、tree及分支ref已核一致；2026-10-23 04:39:31 UTC 的兩路PR讀回確認 [PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253) head同為該commit，仍 open／draft／未合併。公開合成預覽仍為 Site86／snapshot27a，未發布本輪；Sites更新及所需憑證的當次批准待回。
+沿用分支 `dot/frontend-simplify-20261021`；來源 commit `58080880e3ebbe9e3d323efef7d9b5666f324e20`及驗收文件 commit `fe60f4d6c4699539a26952790fa905e2f2b24c93`均已核遠端與 [PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)，仍 open／draft／未合併。[既有公開合成預覽](https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site)已於2026-10-23 04:59:33.978 UTC發布 Site87／snapshot31；Sites source `b1fb6db5cd7820cd2183a732f866d8673973bb10`，deployment `appgdep_6adae9ac9e308191adaad1d5d4ef47a5`為 succeeded，公開範圍不變。
+
+05:08 UTC完成同站有界smoke：public DOM載入31的 `index-31bd1794b883237095fb089582d30780.js`，導航、核對、記憶、Summary離開前／返回後狀態及390樣式通過。這不是live檔案bytes的SHA核對，Summary前後證據亦不宣稱逐毫秒全程穩定；完整TypeScript與CI未過門檻不變。
 
 - **本輪範圍：**歷史待辦單欄、已保存核對正文優先、重新讀取時的內容／焦點穩定、Tabs／導航、metadata 圖標與短值，以及既有 Contact 渠道 schema 修補。保留各 owner、權限、草稿、確認版本及原操作恢復；不以共用元件統一所有頁型。
 - **定稿候選：**snapshot31 補修 Summary 自然 focus／位移及概況同範圍重驗內容保留，記憶私人短標籤改為「本人」。來源範圍 **63 檔＝37 產品＋25 測試＋1 設計文件、553 build inputs**；此為產品候選 scope，不包含另附的交付報告及本次 PLAN／STATUS 更新。
 - **分版本證據：**[snapshot29](../docs/verification/frontend-2026-10-23/focus-layout-29/README.md) 的限定場景通過；[snapshot30](../docs/verification/frontend-2026-10-23/focus-layout-29/snapshot30/README.md) 的 metadata／分頁等代表結果與 Summary 紅項均已凍結，Tasks 1440 自然 focus 仍未知。30結果不冒稱31重跑，後版修好不回寫前版為綠，也不把版本或作者測試相加。
 - **31已核：**11個 unique 必要 scripts／80項通過；唯一export exit0（133.295秒）、靜態安全validator通過，63檔scope／553inputs前後一致。04:28:53 UTC的[31有界browser報告](../docs/verification/frontend-2026-10-23/focus-layout-29/snapshot31/README.md)確認1024自然focus未再出現原Summary失焦／位移，ready-state鍵盤、真Paper日期blur及390「本人」短名通過；不是全站重跑或真機驗收。
 - **未過門檻：**snapshot30 完整 TypeScript 在兩個環境均 exit137、未完成且原因未知；31 未重跑，不以定向測試、export或有界browser抵銷。04:40 UTC 的GitHub觀察為0 runs／checks／statuses、combined pending，亦不是CI綠燈。
-- **唯一下一步：**完成驗收文檔及現況更新的正常交付與遠端讀回；既有Sites更新及所需憑證待當次批准，不預填發布。維持同一draft PR，不 ready、不 merge、不 auto-merge。
+- **後續：**本輪來源、驗收文件及合成預覽已交付；保留完整TypeScript／CI未過門檻及原未驗項作後續交接。維持同一draft PR，不 ready、不 merge、不 auto-merge。
 - **界線：**產品修改限 `frontend/**`，只用合成資料；沒有真家庭資料、真模型、API／帳戶權限變更、GCP或OTA。原未接接口仍見 [接口提案](ATTENTION_API_HANDOFF.md)。
 
 下方是較早批次的完整歷史；其「當前／待交付」不代表本輪狀態，亦不重用舊 browser 或 Sites 證據作本候選通過。
