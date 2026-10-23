@@ -1,0 +1,89 @@
+{
+  "package": "DEV-AGENT02",
+  "date": "2026-10-23",
+  "sourceCommit": "4fb210c26645ef4f6ec2cf8511de5bfc0c449bf3",
+  "branch": "codex/dev-agent02-continuity-closeout",
+  "promptPack": "0.1.54",
+  "environment": {
+    "kind": "isolated-local-emulators",
+    "projectId": "demo-yuyf-d95740b8",
+    "modelProvider": "vertex-adc",
+    "model": "gemini-3.1-flash-lite",
+    "productionDataWrites": 0,
+    "notifications": 0,
+    "deployments": 0,
+    "originalSnapshotAvailable": false,
+    "newSyntheticDataset": true,
+    "originalDatasetContinuityClaimed": false
+  },
+  "preparation": {
+    "childrenCreated": 1,
+    "documentsCreated": 1,
+    "modelCalls": 0,
+    "failures": [
+      "Initial local fetch failed before any business write; the same Node endpoint returned 200 outside the restricted network sandbox. Original preparation IDs were retained.",
+      "The initial no-model environment retained a disabled administrator policy. Maintenance returned background_knowledge_disabled without a model call; the local policy was explicitly enabled with unchanged daily caps and zero retries.",
+      "A read-only metadata helper used state instead of reviewState and the wrong observationHash path. It was corrected to the existing schema; no knowledge data was changed."
+    ]
+  },
+  "knowledgeMaintenance": {
+    "operationFingerprint": "55497140273b870a1162a9508b8d5208ce51b98c5f14360c4a047d0f1fa6f8a8",
+    "sourceMode": "allowlisted-website",
+    "watchId": "fhs-feeding-booklet-en",
+    "scope": "Registered PDF page 3 only",
+    "observationHash": "e6e868b6a0f1288812172aa7551552e0a45e2f336263e91d4ca332a112f0606e",
+    "versionId": "6c6e1325-b240-562c-bd17-b10a90e14072",
+    "status": "published",
+    "independentModelReview": true,
+    "modelCalls": 2,
+    "embeddingCalls": 1,
+    "automaticRetries": 0,
+    "wholeBookOrImageCapabilityClaimed": false
+  },
+  "chatContinuity": {
+    "runId": "6582159b-71d4-4e4c-a905-30c795291ae2",
+    "messageId": "e4a561d2-3f4c-407a-aedb-bbf196d28997",
+    "status": "stopped",
+    "reason": "delivery_review_incomplete",
+    "businessHttpCalls": 15,
+    "modelCalls": 8,
+    "queryEmbeddings": 1,
+    "toolCalls": 8,
+    "countsKnown": true,
+    "automaticResubmissions": 0,
+    "sequence": [
+      { "tool": "load_capabilities", "status": "rejected", "code": "invalid_parameters" },
+      { "tool": "load_capabilities", "status": "succeeded" },
+      { "tool": "read_family_documents", "status": "succeeded" },
+      { "tool": "search_knowledge", "status": "succeeded" },
+      { "tool": "present_answer", "status": "rejected", "code": "use_citation_ids" },
+      { "tool": "present_answer", "status": "rejected", "code": "invalid_citation" },
+      { "tool": "present_answer", "status": "rejected", "code": "invalid_citation" },
+      { "tool": "present_answer", "status": "succeeded" }
+    ],
+    "finalReviewedAnswerPassed": false,
+    "newConversationDocumentRecallPassed": false,
+    "formalToolTraceLimitation": "The public run view records tool names and status, not the document ID/version read by each tool. No finer trace is claimed."
+  },
+  "cleanup": {
+    "originalPolicyRestored": true,
+    "restoredPolicyVersion": 3,
+    "dailyUserAttempts": 20,
+    "dailyGlobalAttempts": 100,
+    "originalEnabled": false,
+    "usageReset": false,
+    "finalLocalPlatformAttempts": 12,
+    "reportedInputTokens": 121188,
+    "reportedOutputTokens": 2018,
+    "unknownUsageAttempts": 10,
+    "reportedUsageIsNotCompleteCost": true,
+    "gracefulSnapshotSaved": true,
+    "failedRunAndPreparedScriptsRetainedLocally": true
+  },
+  "next": "Preserve this failure. Review collaborator changes to delivery-review diagnostics/budget and citation handling before another bounded chat attempt; do not rerun maintenance or composition merely to repeat this check.",
+  "unchangedGates": [
+    "Long-source batching and image/multimodal knowledge maintenance",
+    "Composition outside the currently connected document domain",
+    "Production cloud scheduling and native-backup restore"
+  ]
+}
