@@ -118,6 +118,8 @@ npm run agent:local -- --inspect-knowledge
 
 命令結束保存 emulator 快照；重新執行 `npm run agent:local`，聊天按同一份已核准維護來源清單檢索本地已發布資料，包括已發布的 PDF，毋須重新初始化種子或向量。候選仍經原發布／有效性閘隔離。尚未核對的內容不發布；真網站、多模態及長資料分批的未驗項不因樣本成功而自動通過。這個本地入口不部署或啟用正式雲端排程。
 
+若首次以 `--no-model` 啟動後保存了關閉的管理政策，之後提供憑證不會自行取消該政策。先在同一本機 `/admin` 明確啟用平台 AI，再執行維護；`background_knowledge_disabled` 是開關阻止執行，不代表 key 或模型不支援。不要重設資料或清零用量來排除此情況。
+
 ## 保存、停止與重設
 
 輸入 `stop` 或按 Ctrl+C：停止本機 API／worker，完成 emulator 配對匯出後退出。每分鐘另做一次 checkpoint。正常重開會匯入最後完整快照；突然斷電／強殺可能丟失最近一個 checkpoint 之後的本地修改，不宣稱 emulator 等同正式資料庫的崩潰持久性。
