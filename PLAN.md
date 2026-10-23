@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：[S04-W03 iOS 發佈準備](#s04-w03)。**#272 基礎、#274 媒體、#275／#276 通知前後端已合併。發佈工具從 master `6871bab` 補齊平台／runtime、TestFlight 提交及相容回退，本機檢查與整合 iOS 匯出通過。下一步是確認付費 Apple 團隊及 App 身份、配置簽署／APNs，再按具體上傳範圍建置及真機驗收；目前沒有 IPA、部署或真通知。完整順序見 [iOS 計劃](#p3-ios)，子代理沿根 AGENTS 預設；協作者角色工作與 Android 未驗項保持獨立。
+**當前：[S04-W03 iOS 發佈準備](#s04-w03)，等待 Apple 前置。**#272 基礎、#274 媒體、#275／#276 通知及 #277 發佈工具已合併至 `83a4241`，本機檢查與整合iOS匯出通過；[S13](#s13-w02)按需私鑰掛載亦已補齊並核對。下一步是確認付費 Apple 團隊及 App 身份、配置簽署／APNs，再按具體上傳範圍建置及真機驗收；目前沒有 IPA、部署或真通知。完整順序見 [iOS 計劃](#p3-ios)，協作者角色工作與 Android 未驗項保持獨立。
 
 **另行接續：[ATTACHMENT-READ01](#attachment-read01) 附件回看已整合獨立來源候選，型別／GUI／部署未過門檻；不追加已合併的 #253。**
 
@@ -432,6 +432,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 #### S13-W02 原生本人通知
 
 - iOS 設定子包：#276 已合併至 `6871bab`；同一 client／owner 依平台使用 v1 Android 或 v2 iOS，沿原收據恢復及點擊核權。原共用卡片保留設計，增加 iOS 文案及各訂閱實際 provider；APNs token／provisional 權限及輪換接既有 Expo，不自動登記或發測試。指定 Node 24.19 的兩項必要檢查及 client／native adapter 窄型別通過；[原證據](artifacts/verification/S13_IOS_CLIENT_20261024.json)不回寫。其後整合 iOS 匯出見 S04-W03；簽署、部署與真機仍待。
+- 部署補接：基線 `83a4241`補原VM的`compose.firestore.apns.yaml`，按需掛同一私鑰到API／worker，不自動開啟渠道。一次合成Compose合併核對確認storage／原渠道秘密仍在、Web不獲APNs私鑰；沒有容器啟動、真key或部署。Linux實際UID／mode及Apple投遞仍待憑證就緒後核對。[證據](artifacts/verification/S13_IOS_COMPOSE_20261024.json)。
 - iOS 後端子包：C 於 `405f3ed` 接續 #274，已接 APNs 與 `/api/native-push/v2`，保留 v1 Android 收據／嚴格回應；已由 C 合併為 #275／`b4dfd5a`；B 接續共用設定頁。測試與照護提醒共用原台帳，配置不符或投遞未知不改環境重發。APNs adapter、真 API／收據／worker 合成流程、舊 Android 兩項及 adapter 窄型別通過；測試首次誤讀孩子範圍的失敗保留。[證據](artifacts/verification/S13_IOS_SERVER_20261024.json)。沒有 Apple 憑證、真 APNs／Firestore、部署或 iPhone 驗收。
 
 - 階段／狀態：P3；PR #238 已在 #237 後合併。FCM adapter、索引與原站 API／worker 已啟用，APK v2已安裝。使用者親自允許通知；一則指定測試已保存投遞收據、渠道接受並在手機顯示，點擊可返回App。照護目標核權導航／完成停止仍待核，iOS 待後續。

@@ -206,6 +206,10 @@ TestFlight build 最長有效 90 天；OTA 只更新相容 JS／資產，不能�
 
 `IOS_PUSH_ENABLED` 預設關閉，與 Android 開關獨立。開啟時 API／worker 必須共用 `APNS_TEAM_ID`、`APNS_KEY_ID`、`APNS_BUNDLE_ID`、`APNS_ENVIRONMENT` 及 `APNS_PRIVATE_KEY_FILE`；私鑰以工程外受保護檔案唯讀掛載，Linux 檔案不可向 group／other 開放。設定缺漏或不是 P-256 私鑰便拒絕啟動，不靜默降級。TestFlight 使用 `production`，開發簽署才用 `sandbox`；不自動換環境重發。
 
+原 VM 需要 APNs 時，在現有 Compose 檔之後疊加 `deploy/p1/compose.firestore.apns.yaml`，並把 `P1_APNS_KEY_FILE` 設為工程外私鑰的絕對路徑。只掛 API／worker 的 `/run/secrets/apns_key`，Web、build context及 EAS封包不取得私鑰；既有 storage／Telegram／Web Push秘密沿Compose合併保留。不使用APNs便不加此override，原站不要求有Apple檔案。
+
+先按候選映像實際 `USER node` 的 UID／GID設定宿主檔案所有者及 `0600`，核對容器能讀而其他身份不能讀；Compose file-secret不會替bind來源修正所有者或mode。不能以放寬為`0644`處理權限錯誤。Team／Key／Bundle／環境及開關仍只在同一受保護`firebase.env`，掛載不會開啟通知。新增key或輪換只重啟相容API／worker，不重建前端；真正投遞另沿本人授權。
+
 先部署相容 Server reader，再開啟 iOS 登記。iOS 裝置用 `/api/native-push/v2`，舊 Android 繼續 v1；兩者共用授權及原收據。已保存 iOS 綁定後，回退 API／worker 亦須理解 `apns`／平台欄位，不能退回本包之前的嚴格 reader。停用 APNs 只停止新增投遞，不刪收據或解除業務義務；恢復仍須重新核對原綁定環境。
 
 本機模式只寫明示「未實際發送」的收件箱，不讀取 APNs 私鑰或聯絡 Apple。沒有 Apple 團隊、憑證及真機證據時，只能交付程式，不宣稱已支援實際 iPhone 推送。

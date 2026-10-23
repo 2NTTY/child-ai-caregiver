@@ -3551,3 +3551,9 @@
 - 接續 #276／`6871bab`，擴充原 `mobile:release`，不另造發布服務。預設Android保持；iOS獨立profile、官方fingerprint、STORE／非simulator基線及相容OTA／回退。指定build提交TestFlight，不使用latest、不自動建測試群組／邀請，不把EAS排隊當Apple已完成。原操作未知不自動重發，舊Android記錄仍受保護。
 - 主模型親寫CLI、交付指引及review；Sol只做可界定的policy與既有定向檢查。Node24.19的一條policy／CLI檢查、合成公開設定iOS runtime及整合JS／Hermes匯出通過。第一次匯出命令錯指未hoist路徑，尚未進入bundling便失敗；核實安裝位置後只補同一匯出，沒有改產品或反覆重建。[證據](artifacts/verification/S04_IOS_RELEASE_20261024.json)。
 - 沒有全量、Web／Android重建、模型、通知、部署或雲端上傳。Apple團隊及App身份未定，submit profile留空，不填假身份或購買會員；IPA、APNs配置、真機、OTA與TestFlight繼續待辦。Android與協作者未驗項保留，不因本機工具合併而結案。
+
+<a id="log-20261024-s13-ios-compose"></a>
+## LOG-20261024-S13-IOS-COMPOSE
+
+- 從已合併 #277／`83a4241`核對正式部署，發現APNs程式所需私鑰尚未有Compose掛載。補獨立按需override，僅API／worker取得同一key；原渠道與storage掛載保留，Web不取得，配置本身不開啟外發。沿既有GCP／Compose Skill，不改雲端架構或目前服務。
+- 主模型完成小範圍實作及review，C單作者交付；一份合成`docker compose config`合併核對與diff檢查通過。[證據](artifacts/verification/S13_IOS_COMPOSE_20261024.json)。沒有啟動容器、使用真key、通知、模型或部署；實際Linux所有者／mode與投遞留待Apple前置完成，不以YAML通過當可用通知。
