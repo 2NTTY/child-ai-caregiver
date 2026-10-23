@@ -245,6 +245,7 @@ export function createProductAgent(options: {
               confirmationPendingFallbackUsed = true;
             }
           }
+          publish("reviewing");
           return acceptReviewedDelivery(tools!, rendered, review, result, _context);
         },
       });

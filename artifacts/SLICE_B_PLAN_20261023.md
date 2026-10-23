@@ -2,45 +2,30 @@
 
 - Date: 2026-10-23 (Asia/Hong_Kong)
 - Backlog: docs/REQUIREMENTS_BACKLOG.md **v0.9.1**
-- Scope: Slice B only. HOLD REQ-003 / 004–006 / propose-widen / memory free-pass / Android / product-tools widen.
+- Scope: Slice B only. HOLD REQ-003 / 004-06 / propose-widen / memory free-pass / Android / product-tools widen.
 - REQ-007: layered memory planning-only; not a Slice B blocker.
-- Prior readonly inventory gaps: thin official corpus; 4-call budget vs review reserve; coarse progress; no greeting early-path on master; weak failure taxonomy / cite UI.
 
 ## Tickets
 
-| ID | Title | Why first / next | Status |
-|---|---|---|---|
-| **B0** | Greeting / small-talk early-path | Smallest safe UX bite from inventory. | **PR #262** (`cursor/slice-b-greeting-early-path` @ `bc5f78c`) |
-| **B1** | Failure taxonomy + cite UI | Map delivery-review / no-source / budget stops to clearer user copy + detail hint in activity UI; keep fail-closed. | **Local branch** `cursor/slice-b-failure-taxonomy` (not in #262) |
-| B2 | True progress + review-aware call budget | REQ-002 event-driven progress; reserve review/revision within root budget (4-call tension). | After B1 |
+| ID | Title | Status |
+|---|---|---|
+| **B0** | Greeting early-path | **PR #262** |
+| **B1** | Failure taxonomy + stop detail hints | **PR #263** (`cursor/slice-b-failure-taxonomy` @ `e2e36c3`) |
+| **B2** | True progress + review-aware call budget | **Local commit** on `cursor/slice-b-progress-budget` (based on B1); PR not opened yet |
 
-## B0 definition
+## B2 definition (this branch)
 
-1. Add `isPureGreetingOrSmallTalk` with positive greeting markers.
-2. Skip delivery review only when greeting matches and care-domain / advisory patterns do not.
-3. Model `kind` alone must not force review on trusted greeting shapes.
-4. Unknown citation-free wording still fails closed into review.
-5. Do **not** reintroduce `serverVerifiedMemoryGrounding` free-pass.
+1. `planningSnapshot(..., { reserveDeliveryReview: true })` for `product-interactive`: soft guidance only — `reserveForFinish.modelCalls` becomes 1+reviewReserve and `reserveForDeliveryReview.modelCalls` is 1; **hard finish lock stays at the last model call** (avoids forcing terminal tools one call too early).
+2. Emit real progress phase `reviewing` ("正在獨立核對回覆") before delivery review on interactive finalize.
+3. Keep fail-closed if review still has no remaining call (`delivery_review_budget`).
+4. No daily quota raise; no raise of hard `AGENT_LIMITS.modelCalls` default of 4.
 
-## B1 definition (this branch)
+## Tests (local)
 
-1. Split opaque `delivery_review_incomplete` into:
-   - `delivery_review_rejected` — independent review did not pass / insufficient evidence
-   - `delivery_review_no_sources` — pass would need supporting excerpts but draft has none
-   - `delivery_review_budget` — no remaining model calls for review / repair+re-review
-   - keep `delivery_review_incomplete` for parse / hash / live retract / provenance gaps
-2. Parent-facing labels via `agentStopMessage`; optional next-step hint via `agentStopDetailHint`.
-3. Activity / run details surface the detail hint under the stop label (`stopReasonDetail`).
-4. Durable chat body text stays the shared incomplete copy (does not leak unreviewed claims).
-5. Fail-closed unchanged: unreviewed care wording still never becomes a formal reply.
+- New: `planningSnapshot reserves delivery review...` and `reviewing phase is a real progress event...` pass.
+- Pre-existing (unrelated): agent-budget deadline `90001` assert; chat-delivery-review `unavailable`; agent-feedback formal HTTP `calls===2` (actual 3).
 
 ## Out of scope
 
-- Opening B1 PR until tip ready and supervisor asks
-- Merging #254 / labels strip
-- Corpus ingestion, Android, assistant modes
-
-## Follow-ups
-
-- Open B1 PR when tests green and supervisor asks
-- B2 after B1
+- Opening B2 PR until supervisor asks
+- Corpus / Android / #254 / labels strip

@@ -347,7 +347,7 @@ export function createAgentRuntime(options: {
           const renderInstruction = async (ids: readonly string[] = capabilitySelection?.loadedIds() ?? []) => {
             const currentPrompt = await budget.wait(() => getPrompt(ids));
             budget.check();
-            const planning = budget.planningSnapshot(terminalToolNames.size > 0);
+            const planning = budget.planningSnapshot(terminalToolNames.size > 0, { reserveDeliveryReview: input.recipeId === "product-interactive" });
             const finishing = terminalToolNames.size > 0 && planning.phase === "finish";
             const visible = capabilitySelection ? [...capabilitySelection.visibleToolNames(ids)] : tools.map(tool => tool.name);
             return `${currentPrompt.text}\n\nServer runtime metadata:\n${JSON.stringify({ runId, scope, trigger: input.trigger,
@@ -402,7 +402,7 @@ export function createAgentRuntime(options: {
               if (durable) modelAnchors.set(request, modelAttemptKey(context, scope, runId, durable.context.binding.trigger));
               // Leave the model free to plan ordinary steps. The final available
               // generation must deliver a validated result, not start another effect.
-              if (terminalToolNames.size && budget.planningSnapshot(true).phase === "finish") {
+              if (terminalToolNames.size && budget.planningSnapshot(true, { reserveDeliveryReview: input.recipeId === "product-interactive" }).phase === "finish") {
                 const declarations = (request.config?.tools ?? []).flatMap(tool =>
                   "functionDeclarations" in tool ? tool.functionDeclarations ?? [] : [])
                   .filter(declaration => declaration.name && terminalToolNames.has(declaration.name));
