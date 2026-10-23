@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：MODEL-SELF03 共用個人模型設定已合併及發布。**#260合併版本`1282e09`已更新原站API／worker／Web及相容Android preview OTA；保留#253設計，提供相容API地址、key、模型ID及獨立Gemini向量key。最低接線／建置及部署核對已有證據，真key與新表單真機操作仍待驗。#254、#259仍由協作者處理；範圍及未驗見[MODEL03](#model-self03)，不把已發布當成全部角色品質已通過。
+**當前：MODEL-SELF03 共用個人模型設定已發布，收束真機發現的草稿清理修正。**`1282e09`已更新原站及Android preview OTA；手機一次重開後已見新導航、相容服務、獨立向量key及七項限制，精確裝置OTA ID未核實。「捨棄草稿」仍保留非秘密選項的問題已局部修正並通過針對性檢查，尚未發布；真key保存／呼叫未驗。#254、#259及#262～#265維持協作者處理；詳見[MODEL03](#model-self03)。
 
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
@@ -79,6 +79,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="model-self03"></a>
 ### MODEL-SELF03 自行試用相容模型接口
 
+- 2026-10-23手機補核：一次正常重開後出現新導航及相容設定；沒有輸入key、保存、模型或通知。發現保留掛載的設定頁只清密鑰，沒有清除已捨棄的模式／供應商／限額草稿。`codex/model-self03-discard-draft`改為離頁時從權威快照重設本機表單，不清原unknown操作；兩項針對性React檢查通過，保留初次斷言失敗。另按使用者回報，把Android仍寫死的柱狀圖改為讀取Web同一份關注圖標／標籤，不改版面。原手機已手動回復平台模式；修正尚未發布，裝置回歸待驗。[補核與修正證據](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)。
 - 後端／本地入口#255、#256及共用畫面[#260](https://github.com/2NTTY/child-ai-caregiver/pull/260)已合併。A單作者；#260合併版本`1282e09`於2026-10-23更新原站與相容Android preview OTA，沒有改#254／#259。主模型統籌契約、整合及review，本輪特許的原Astra子代理接續獨立核對；[交付證據](artifacts/verification/MODEL_SELF03_DELIVERY_20261023.json)分開已發布、未驗及回退邊界。
 - 沿同一Web／Android設定、加密保存、原opId、配額及ADK Agent，新增相容API base URL、key與直接輸入模型ID。普通Chat Completions、工具往返及可轉換媒體接薄adapter；不另造Agent、不換模型、不新增自動重試或逐模型測試。供應商不接受某請求時回報錯誤，不把未知能力當作禁止選用。
 - 自訂地址限公開HTTPS，不把憑證送到內網／metadata服務或重新導向；不開任意headers。必要資料外送說明改為用戶所選服務，私人內容與key不入日誌。

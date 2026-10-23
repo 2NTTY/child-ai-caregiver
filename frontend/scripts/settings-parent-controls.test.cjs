@@ -201,15 +201,43 @@ test('compatible model form submits both credentials once and clears them on sav
   assert.equal(field('Gemini 向量密鑰').value, '');
   await change('個人 API 密鑰', 'unsent-chat-key');
   await change('Gemini 向量密鑰', 'unsent-vector-key');
-  await f.render(false); assert.equal(guards.at(-1).dirty, false); await f.render(true);
-  assert.equal(field('個人 API 密鑰').value, '');
-  assert.equal(field('Gemini 向量密鑰').value, '');
-  await change('個人 API 密鑰', 'unsent-chat-key');
-  await change('Gemini 向量密鑰', 'unsent-vector-key');
   await act(async () => { for (const listener of appStateListeners) listener('background'); });
   assert.equal(field('個人 API 密鑰').value, '');
   assert.equal(field('Gemini 向量密鑰').value, '');
+  assert.equal(field('模型服務').value, 'openai-compatible');
+  await change('個人 API 密鑰', 'unsent-chat-key');
+  await change('Gemini 向量密鑰', 'unsent-vector-key');
+  await change('個人每日呼叫上限', '80');
+  await f.render(false); assert.equal(guards.at(-1).dirty, false); await f.render(true);
+  assert.equal(field('模型服務').value, 'vertex');
+  assert.equal(field('個人每日呼叫上限').value, '100');
+  assert.equal(field('個人 API 密鑰').value, '');
+  assert.equal(field('Gemini 向量密鑰').value, '');
+  assert.equal(field('我同意個人服務的費用及資料外送').checked, false);
+  assert.equal(guards.at(-1).dirty, false);
   assert.equal(f.calls.filter(call => call[0] === 'save').length, 1);
+  assert.equal(network, 0);
+});
+
+test('retained model tab discards local choices without clearing an unknown original operation', async () => {
+  await clear(); const f = model();
+  f.state.snapshot.settings = { ...f.state.snapshot.settings, mode: 'platform', provider: 'gemini', keyConfigured: false };
+  await f.render();
+  await change('模型模式', 'personal');
+  await change('模型服務', 'openai-compatible');
+  await change('API 基底地址', 'https://api.synthetic.invalid/v1');
+  await change('聊天模型 ID', 'unsaved-model');
+  await change('個人每日呼叫上限', '80');
+  assert.equal(guards.at(-1).dirty, true);
+  const callsBeforeLeave = structuredClone(f.calls);
+  f.state.operation = 'unknown'; f.state.needsRead = true; f.state.originalOperationId = 'synthetic-original';
+  await f.render(false); await f.render(true);
+  assert.equal(field('模型模式').value, 'platform');
+  assert.equal(guards.at(-1).dirty, false); assert.equal(f.editing.at(-1), false);
+  assert.equal(f.state.originalOperationId, 'synthetic-original'); assert.equal(f.state.operation, 'unknown');
+  assert.equal(button('保存模型設定').disabled, true);
+  assert.deepEqual(f.calls, callsBeforeLeave);
+  await click('查回原操作及目前設定'); assert.deepEqual(f.calls, [...callsBeforeLeave, ['refresh']]);
   assert.equal(network, 0);
 });
 
