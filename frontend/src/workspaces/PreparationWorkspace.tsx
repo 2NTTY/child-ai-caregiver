@@ -3,6 +3,8 @@ import type { PreparationCondition, PreparationDocumentView, PreparationScope, F
 import type { HomeChild, WriteOperationView, WriteRecoveryActions } from "../view-model";
 import type { DocumentRequest } from "../../../src/shared/family-documents";
 
+export type DocumentCreateDraft = { id: string; request: DocumentRequest; authorityVersion: string };
+
 // Presentation injection only. The external domain controller owns reads, writes and authorization.
 export interface PreparationWorkspaceValue {
   scopeKey: string;
@@ -18,7 +20,7 @@ export interface PreparationWorkspaceValue {
     justArchivedId: string | null;
     dataLabel?: string;
     archiveNotice?: string;
-    operation?: WriteOperationView; retainedDraftId?: string | null;
+    operation?: WriteOperationView; retainedDraftId?: string | null; createDraft?: DocumentCreateDraft | null; editingLocked?: boolean;
     capabilities?: { archive: boolean; checkItem: boolean; restore?: boolean; refresh?: boolean; create?: boolean };
     busy?: boolean; locked?: boolean; dirty?: boolean; epoch?: number; authorityVersion?: string;
   };

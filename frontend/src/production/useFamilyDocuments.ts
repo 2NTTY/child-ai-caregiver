@@ -6,7 +6,7 @@ import { documentChangeSchema, documentRequestSchema, type DocumentChange, type 
 import type { GrowthArchiveProjection } from "../growth-view-model";
 import type { GrowthReportExportRequest, GrowthReportExportResult } from "../components/growth/growth-archive-view";
 import type { FamilyDocumentReadingPort, PreparationDocumentView, PreparationPurpose } from "../preparation-view-model";
-import type { PreparationWorkspaceValue } from "../workspaces/PreparationWorkspace";
+import type { DocumentCreateDraft, PreparationWorkspaceValue } from "../workspaces/PreparationWorkspace";
 import type { WriteOperationView, WriteRecoveryActions } from "../view-model";
 import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { useTaskKnowledgeRefresh, useTaskKnowledgeRuntime, type TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
@@ -38,6 +38,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const [pageReadGeneration, setPageReadGeneration] = useState(-1);
   const [busy, setBusy] = useState(false), [exportBusy, setExportBusy] = useState(false), [pending, setPending] = useState<Pending | null>(null);
   const [operation, setOperation] = useState<WriteOperationView>({ state: "none", message: "", reference: null });
+  const [createDraft, setCreateDraft] = useState<DocumentCreateDraft | null>(null);
   const [notice, setNotice] = useState(""), [dirty, setDirty] = useState(false), [epoch, setEpoch] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null), [justArchivedId, setJustArchivedId] = useState<string | null>(null);
   const [refreshQueued, setRefreshQueued] = useState(false);
@@ -72,11 +73,13 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   };
   latest.current = { page, load, dirty };
   const canManage = env.role === "owner" || env.role === "caregiver";
-  useDomainWriteGuard(!runtime.lost && dirty, !runtime.lost && !!pending);
+  // A definite rejection needs a fresh read before resubmission, not an unresolved-write exit lock.
+  useDomainWriteGuard(!runtime.lost && dirty, !runtime.lost && !!pending && !pending.reconfirm, "child", true,
+    operation.state === "saving" ? "saving" : "unknown");
   useEffect(() => () => { api.reset(); inFlight.current = false; exporting.current = null; }, [api]);
   const clearAccess = (error: unknown) => {
     if (!runtime.accessError(error)) return false;
-    api.reset(); original.current = null; setPending(null); setPage(null); setDirty(false); setSelectedId(null); setJustArchivedId(null);
+    api.reset(); original.current = null; setPending(null); setPage(null); setDirty(false); setCreateDraft(null); setSelectedId(null); setJustArchivedId(null);
     clearReading(); setPageError(false); readingNeedsRecheck.current = false;
     selection.current = { id: null, generation: selection.current.generation + 1 };
     setOperation({ state: "none", message: "", reference: null }); setEpoch(value => value + 1); return true;
@@ -159,19 +162,25 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         if (manual && readingNeedsRecheck.current) setOperation(before => before.state === "saved" && before.message === savedAwaitingSelectionRead
           ? { ...before, message: "先前文件的保存已確認。" } : before);
         readingNeedsRecheck.current = false; setRefreshQueued(false);
-        if (entry?.reconfirm) {
+        if (entry?.reconfirm && original.current === entry) {
           original.current = null; setPending(null);
-          setOperation({ state: "conflict", reference: null, message: "原提交未獲接納；已讀取目前版本，請重新核對後明確提交。" });
-        } else if (entry) {
+          setOperation({ state: "conflict", reference: null, message: latest.current.dirty ? "已載入已儲存的內容，草稿仍然保留。" : "已載入已儲存的內容。" });
+        } else if (entry && original.current === entry) {
           const next = { ...entry, checked: true }; original.current = next; setPending(next);
           setOperation({ state: "unknown", reference: api.pendingReference(), recovery: "retry",
-            message: "已核對目前孩子及權限；結果仍未知。明確重試只沿原 opId、內容及版本。" });
+            message: "暫時未能確認是否儲存成功。你的內容已保留，可再試一次。" });
         }
         setNotice(value.hasMore ? "已讀取目前取得的文件；清單並非完整歷史。" : "已重新讀取文件；沒有生成新版本。");
       } catch (error) {
         if (!current() || clearAccess(error) || error === authorityChanged) return;
-        setLoad("error"); setNotice("文件未能讀取；保留原草稿及操作，暫停新提交。");
-        if (entry) { entry.checked = false; setPending({ ...entry }); setOperation({ state: "unknown", reference: api.pendingReference(), recovery: "check", message: "原操作仍待核對，沒有重送。" }); }
+        setLoad("error"); setNotice("未能載入已儲存的內容，請再試一次。");
+        if (entry && original.current === entry) {
+          entry.checked = false; setPending({ ...entry });
+          setOperation(before => ({ state: entry.reconfirm ? before.state === "conflict" ? "conflict" : "failed" : "unknown",
+            reference: api.pendingReference(), recovery: "check", message: entry.reconfirm
+              ? latest.current.dirty ? "未能儲存，草稿已保留。" : "未能儲存，請重新載入。"
+              : "暫時未能確認是否儲存成功，內容已保留。" }));
+        }
       } finally { if (current()) { inFlight.current = false; setBusy(false); } }
     });
   };
@@ -182,7 +191,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
       || !retry && (original.current || !env.canStartWrite())) return;
     const entry: Pending = { attempt, checked: false, reconfirm: false, draftId: retry ? original.current?.draftId : draftId,
       selectionGeneration: retry && original.current ? original.current.selectionGeneration : selection.current.generation };
-    inFlight.current = true; original.current = entry; setPending(entry); setBusy(true);
+    inFlight.current = true; original.current = entry; setPending(entry); setBusy(true); setNotice("");
+    if (attempt.kind === "create" && !retry && draftId) setCreateDraft({ id: draftId, request: structuredClone(attempt.input), authorityVersion: actual.authorityVersion });
     setOperation({ state: "saving", reference: null, message: "正在保存家庭共享文件。" });
     void runtime.request(async (signal, current) => {
       try {
@@ -194,7 +204,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         reads.current.versions = Object.fromEntries(Object.entries(reads.current.versions).filter(([id]) => id !== item.id));
         setVersionReads(reads.current.versions);
         if (reads.current.content?.documentId === item.id) clearContent();
-        if (attempt.kind === "create") { setDirty(false); setEpoch(value => value + 1); }
+        if (attempt.kind === "create") { setDirty(false); setCreateDraft(null); setEpoch(value => value + 1); }
         setPage(before => before ? { ...before, items: before.items.some(old => old.id === item.id)
           ? before.items.map(old => old.id === item.id ? item : old) : [item, ...before.items] } : null);
         setOperation({ state: "saved", reference: null, message: "文件已獲 Server 確認保存。" });
@@ -236,7 +246,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         entry.reconfirm = requiresFreshDocumentConfirmation(failure) && !api.hasUnknownOriginal(); original.current = entry; setPending({ ...entry });
         setOperation({ state: entry.reconfirm ? failure.status === 409 ? "conflict" : "failed" : "unknown",
           reference: api.pendingReference(), recovery: "check", message: entry.reconfirm
-            ? "這次提交未獲接納；請重新讀取並核對原版本，草稿保留。" : "結果未知；原操作識別、內容及版本保留，請先查核，不會自動重送。" });
+            ? latest.current.dirty ? "未能儲存，草稿已保留。" : "未能儲存，請重新載入。"
+            : "暫時未能確認是否儲存成功，內容已保留。" });
       } finally { if (current()) { inFlight.current = false; setBusy(false); } }
     });
   };
@@ -322,6 +333,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   };
   const visible = runtime.lost ? null : page;
   const locked = busy || exportBusy || !!pending || runtime.lost || !env.online || load !== "ready" || !canManage || !visible?.canManage;
+  const editingLocked = pending?.reconfirm
+    ? busy || exportBusy || runtime.lost || !env.online || !canManage || !visible?.canManage : locked;
   const change = (id: string, expectedVersion: number, action: DocumentChange["action"], extra = {}) => {
     const actual = latest.current.page?.items.find(item => item.id === id && item.childId === env.childId);
     if (locked || !runtime.live() || !actual || actual.version !== expectedVersion || action === "archive" && (actual.status !== "active" || actual.readState === "invalidated" || !actual.current)
@@ -372,7 +385,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     reading, documents: preparationDocuments, selected: selectedPreparation, condition,
     online: env.online, notice, justArchivedId, dataLabel: "Server 家庭共享多用途文件；依據來源及版本整理。", archiveNotice: "只歸檔文件，原來源及任務保留。",
     operation: runtime.lost ? undefined : operation, capabilities: { archive: !locked, checkItem: !locked, restore: !locked, refresh: !locked, create: !locked },
-    busy, locked, dirty, epoch, retainedDraftId: pending?.attempt.kind === "create" ? pending.draftId ?? null : null, authorityVersion: visible?.authorityVersion ?? "" }, actions: {
+    busy, locked, editingLocked, createDraft: runtime.lost ? null : createDraft, dirty, epoch, retainedDraftId: pending?.attempt.kind === "create" && !pending.reconfirm ? pending.draftId ?? null : null, authorityVersion: visible?.authorityVersion ?? "" }, actions: {
     selectDocument(id) { if (runtime.live() && preparationDocuments.some(item => item.id === id)) {
       selection.current = { id, generation: selection.current.generation + 1 }; clearContent(); setSelectedId(id); setJustArchivedId(null);
     } },
@@ -383,8 +396,17 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     restoreDocument(id, expectedVersion) { change(id, expectedVersion, "restore"); },
     refreshDocument(id, expectedVersion) { change(id, expectedVersion, "refresh"); },
     checkItem(id, expectedVersion, sectionId, itemId, checked) { change(id, expectedVersion, "check_item", { sectionId, itemId, checked }); },
-    createDocument, refresh() { refresh(); }, markDraft() { if (!locked && runtime.live()) setDirty(true); },
-    discardDraft() { if (original.current?.attempt.kind !== "create" && runtime.live()) { setDirty(false); setEpoch(value => value + 1); if (refreshQueued) refresh(); } },
+    createDocument, refresh() { refresh(); }, markDraft() { if (!editingLocked && runtime.live()) setDirty(true); },
+    discardDraft() {
+      const entry = original.current;
+      if (!runtime.live() || entry?.attempt.kind === "create" && !entry.reconfirm) return;
+      // Only a definitely rejected request may be forgotten. Unknown writes keep their exact original.
+      if (entry?.reconfirm) {
+        api.reset(); original.current = null; setPending(null);
+        setOperation({ state: "none", message: "", reference: null }); setNotice("");
+      }
+      setDirty(false); setCreateDraft(null); setEpoch(value => value + 1); if (refreshQueued) refresh();
+    },
   }, recovery };
   const { standard, reportDocumentIds, archive: projectedArchive } = projectFamilyDocumentArchive({ page, load, lost: runtime.lost, scopeKey: env.scopeKey, childId: env.childId! });
   const archive: GrowthArchiveProjection = { ...projectedArchive, reading: { ...reading,
@@ -428,8 +450,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
       }
     });
   };
-  return { readState: load, preparation, archive, operation, recovery, busy, exportBusy, locked, dirty, epoch, notice, standard,
-    authorityVersion: visible?.authorityVersion ?? "", retainedDraftId: pending?.attempt.kind === "create" ? pending.draftId ?? null : null, createDocument, exportReport,
+  return { readState: load, preparation, archive, operation, recovery, busy, exportBusy, locked, editingLocked, createDraft: runtime.lost ? null : createDraft, dirty, epoch, notice, standard,
+    authorityVersion: visible?.authorityVersion ?? "", retainedDraftId: pending?.attempt.kind === "create" && !pending.reconfirm ? pending.draftId ?? null : null, createDocument, exportReport,
     refreshReport() { if (standard) change(standard.id, standard.version, "refresh"); },
     refresh() { refresh(); }, markDraft: preparation.actions.markDraft!, discardDraft: preparation.actions.discardDraft! };
 }

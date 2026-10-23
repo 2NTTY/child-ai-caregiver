@@ -105,15 +105,15 @@ test('dirty confirmation is mounted above an already-open form; staying retains 
   await click('關閉'); assertTopDialog('繼續編輯');
   await React.act(async () => document.dispatchEvent(new window.KeyboardEvent('keyup', {key: 'Escape', bubbles: true})));
   assert.equal(document.querySelector('input'), input); assert.ok(document.querySelector('[role="dialog"]').contains(document.activeElement));
-  await click('關閉'); assertTopDialog('捨棄草稿並離開'); await click('捨棄草稿並離開');
+  await click('關閉'); assertTopDialog('捨棄並離開'); await click('捨棄並離開');
   assert.equal(document.querySelector('input'), null); assert.equal(unmounts, 1);
   assert.equal(document.querySelectorAll('[role="dialog"]').length, 0); assert.equal(document.activeElement, button('Manual entry'));
 });
 test('pending warning also sits above the form, never offers discard, and leaves original recovery reachable', async () => {
   dirty = false; await click('Manual entry'); pending = true; await render();
   await React.act(async () => document.dispatchEvent(new window.KeyboardEvent('keyup', {key: 'Escape', bubbles: true})));
-  assertTopDialog('留在此頁查核'); assert.equal([...document.querySelectorAll('button')].some(n => n.textContent === '捨棄草稿並離開'), false);
-  await click('留在此頁查核'); await click('Check original'); assert.equal(checks, 1); assert.ok(document.querySelector('input'));
+  assertTopDialog('留在此頁'); assert.equal([...document.querySelectorAll('button')].some(n => n.textContent === '捨棄並離開'), false);
+  await click('留在此頁'); await click('Check original'); assert.equal(checks, 1); assert.ok(document.querySelector('input'));
   pending = false; await render(); await click('關閉');
 });
 
@@ -129,7 +129,7 @@ test('controlled form explicitly returns to its previously disabled trigger afte
   }
   await React.act(async () => renderer.render(paper(e(ControlledPage))));
   dirty = true; await click('Controlled create'); assert.equal(button('Controlled create').disabled, true);
-  await click('關閉'); assertTopDialog('捨棄草稿並離開'); await click('捨棄草稿並離開');
+  await click('關閉'); assertTopDialog('捨棄並離開'); await click('捨棄並離開');
   assert.equal(discarded, 1); assert.equal(button('Controlled create').disabled, false);
   assert.equal(document.querySelectorAll('[role="dialog"]').length, 0);
   assert.equal(document.activeElement, button('Controlled create'));
@@ -164,10 +164,10 @@ test('real source composer local RHF draft survives stay and preserves productio
   });
   await click('關閉'); assertTopDialog('繼續編輯'); await click('繼續編輯');
   assert.equal(closes, 0); assert.equal(input.value, 'Synthetic unsent source');
-  model.operation = {state: 'unknown'}; await renderSource(); await click('關閉'); assertTopDialog('留在此頁查核');
-  assert.equal([...document.querySelectorAll('button')].some(n => n.textContent === '捨棄草稿並離開'), false);
-  await click('留在此頁查核'); await click('Lookup source original'); assert.equal(lookups, 1); assert.equal(input.value, 'Synthetic unsent source');
-  model.operation = {state: 'none'}; await renderSource(); await click('關閉'); await click('捨棄草稿並離開');
+  model.operation = {state: 'unknown'}; await renderSource(); await click('關閉'); assertTopDialog('留在此頁');
+  assert.equal([...document.querySelectorAll('button')].some(n => n.textContent === '捨棄並離開'), false);
+  await click('留在此頁'); await click('Lookup source original'); assert.equal(lookups, 1); assert.equal(input.value, 'Synthetic unsent source');
+  model.operation = {state: 'none'}; await renderSource(); await click('關閉'); await click('捨棄並離開');
   assert.equal(closes, 1); assert.equal(document.querySelector('textarea'), null); assert.equal(document.activeElement, button('Open source'));
   await click('Open source'); assert.equal(document.querySelector('textarea[aria-label="來源原文"]').value, '');
   await React.act(async () => renderer.render(null));
@@ -182,7 +182,7 @@ test('real TasksView returns once to its stable named region across a read begin
   function TaskPage() {usePreviewLeaveGuard(!!model.draft); return e(TasksView, {model, actions, onAgent() {}, onHistory() {}});}
   async function draw() {await React.act(async () => renderer.render(paper(e(PreviewNavigationGuard, null, e(TaskPage)))));}
   dirty = false; await draw(); await click('手動新增'); assert.equal(button('手動新增').disabled, true);
-  await click('關閉'); assertTopDialog('捨棄草稿並離開'); await click('捨棄草稿並離開');
+  await click('關閉'); assertTopDialog('捨棄並離開'); await click('捨棄並離開');
   assert.equal(model.draft, null); assert.equal(button('手動新增').disabled, false);
   assert.equal(document.querySelectorAll('[role="dialog"]').length, 0);
   // Chrome blurs a focused button when a later read disables it; JSDOM needs this transition port.
@@ -197,9 +197,9 @@ test('real TasksView returns once to its stable named region across a read begin
   model.reading = false; await draw(); assert.equal(document.activeElement, stableHeading);
   button('手動新增').focus(); model.reading = true; await draw(); model.reading = false; await draw();
   assert.notEqual(document.activeElement, stableHeading, 'later reads must never replay the close focus after the user moves it');
-  await click('手動新增'); await click('關閉'); await click('捨棄草稿並離開');
+  await click('手動新增'); await click('關閉'); await click('捨棄並離開');
   assert.equal(document.activeElement, stableHeading, 'a stable-page close uses the same logical return point');
-  await click('手動新增'); model.reading = true; await draw(); await click('關閉'); await click('捨棄草稿並離開');
+  await click('手動新增'); model.reading = true; await draw(); await click('關閉'); await click('捨棄並離開');
   assert.equal(button('手動新增').disabled, true);
   assert.equal(document.activeElement.getAttribute('aria-label'), '待辦', 'an in-flight read must use the stable page heading, not BODY or a disabled button');
   const heading = document.activeElement; model.reading = false; await draw(); assert.equal(document.activeElement, heading, 'settling a later read must not steal focus again');
@@ -218,7 +218,7 @@ test('a retained narrow detail uses its visible fallback instead of the hidden l
         onClose() {open = false; draw();}}, e(Form)));
   }
   async function draw() {await React.act(async () => renderer.render(paper(e(DetailPage))));}
-  dirty = true; await draw(); await click('Edit selected record'); await click('關閉'); await click('捨棄草稿並離開');
+  dirty = true; await draw(); await click('Edit selected record'); await click('關閉'); await click('捨棄並離開');
   assert.equal(document.activeElement.getAttribute('aria-label'), 'Selected record');
   const source = fs.readFileSync(path.join(root, 'src/components/care/CareReviewHistoryView.tsx'), 'utf8');
   assert.match(source, /fallbackFocusRef=\{showPanel \? panelRef : listRef\}/);
@@ -239,7 +239,7 @@ test('an owner-backed close survives same-projection renders after dirty stay an
   dirty = true; pending = false; await draw(); await click('Owner create');
   await click('關閉'); await click('繼續編輯'); assert.equal(closes, 0); assert.ok(document.querySelector('input'));
   await click('關閉'); projection = {...projection}; await draw();
-  await click('捨棄草稿並離開'); assert.equal(closes, 1);
+  await click('捨棄並離開'); assert.equal(closes, 1);
   await draw(); assert.ok(document.querySelector('input'), 'Unchanged owner projection does not erase or accept the pending close');
   projection = {...projection, open: false}; await draw();
   assert.equal(document.querySelector('input'), null); assert.equal(document.activeElement, button('Owner create'));
@@ -255,12 +255,12 @@ for (const transition of ['form', 'scope', 'reopen', 'unmount']) test(`an approv
         onClose() {closes++;}}, e(Form)) : null);
   }
   async function draw() {await React.act(async () => renderer.render(paper(e(ChangingPage))));}
-  dirty = true; pending = false; await draw(); await click('關閉'); assertTopDialog('捨棄草稿並離開');
+  dirty = true; pending = false; await draw(); await click('關閉'); assertTopDialog('捨棄並離開');
   if (transition === 'form') key = 'form-b';
   if (transition === 'scope') scope = 'child-b';
   if (transition === 'unmount') mounted = false;
   if (transition === 'reopen') {open = false; await draw(); open = true;}
-  await draw(); await click('捨棄草稿並離開');
+  await draw(); await click('捨棄並離開');
   assert.equal(closes, 0, 'A stale guard callback cannot close the replacement or unmounted form');
   assert.equal(!!document.querySelector('input'), mounted);
   await React.act(async () => renderer.render(null));
@@ -277,7 +277,7 @@ test('a create trigger remounted after closing remains the explicit return targe
   }
   async function draw() {await React.act(async () => renderer.render(paper(e(RemountedPage))));}
   dirty = true; await draw(); await click('Create shared record'); assert.equal([...document.querySelectorAll('button')].some(n => n.textContent === 'Create shared record'), false);
-  await click('關閉'); await click('捨棄草稿並離開'); assert.equal(document.activeElement, button('Create shared record'));
+  await click('關閉'); await click('捨棄並離開'); assert.equal(document.activeElement, button('Create shared record'));
   const screen = fs.readFileSync(path.join(root, 'src/screens/careScreen.tsx'), 'utf8');
   const page = fs.readFileSync(path.join(root, 'src/components/care/CareRecordsView.tsx'), 'utf8');
   const view = fs.readFileSync(path.join(root, 'src/components/care/CareReviewHistoryView.tsx'), 'utf8');

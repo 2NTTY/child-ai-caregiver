@@ -153,8 +153,8 @@ for (const state of ['clean', 'dirty', 'pending', 'unknown']) test(`actual filte
     button('Synthetic navigation').props.onPress(); h.render();
     assert.equal(h.navigation(), state === 'clean' ? 1 : 0);
     assert.equal(!!h.node('leave-preview-dialog'), state !== 'clean');
-    assert.equal(!!button('捨棄草稿並離開'), state === 'dirty');
-    assert.equal(!!button('留在此頁查核'), state === 'pending' || state === 'unknown');
+    assert.equal(!!button('捨棄並離開'), state === 'dirty');
+    assert.equal(!!button('留在此頁'), state === 'pending' || state === 'unknown');
     assert.deepEqual(retained, before);
   }
 });
