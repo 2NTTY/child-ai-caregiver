@@ -16,9 +16,9 @@ const savedSchema = z.object({
   maxModelCalls: z.number().int().min(PERSONAL_RUN_LIMITS.modelCalls.min).max(PERSONAL_RUN_LIMITS.modelCalls.max),
   maxQueryEmbeddings: z.number().int().min(PERSONAL_RUN_LIMITS.queryEmbeddings.min).max(PERSONAL_RUN_LIMITS.queryEmbeddings.max),
   provider: personalProviderSchema.optional(), model: personalModelIdSchema.optional(), ...personalAdvancedShape,
-  apiKey: z.string().min(20).max(512).regex(/^[\x21-\x7e]+$/u).nullable(),
+  apiKey: z.string().min(1).max(512).regex(/^[\x21-\x7e]+$/u).nullable(),
   baseUrl: personalBaseUrlSchema.optional(),
-  embeddingApiKey: z.string().min(20).max(512).regex(/^[\x21-\x7e]+$/u).nullable().optional(),
+  embeddingApiKey: z.string().min(1).max(512).regex(/^[\x21-\x7e]+$/u).nullable().optional(),
   updatedAt: z.iso.datetime({ offset: true }),
 }).strict();
 type Saved = z.infer<typeof savedSchema>;
@@ -67,7 +67,7 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
         return result ? { opId: result.opId, settings: result.settings } : null;
       });
     },
-    async save(userId, raw) {
+    async save(userId, raw, client) {
       const command = parseModelSettingsCommand(raw), operationId = command.opId ?? randomUUID();
       const fingerprint = firestoreDomainHash(command);
       return authority.runTransaction(userId, null, async binding => {
@@ -77,9 +77,13 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
           return original.settings;
         }
         const current = await read(binding);
+        // Check in the same write transaction; an extra pre-read would consume a lost-response recovery attempt.
+        if (client?.maxSettingsVersion === 2 && (current?.provider === 'openai-compatible' || current?.baseUrl || current?.embeddingApiKey))
+          throw new ModelSettingsError('client_update_required', 409);
         if ((current?.version ?? 0) !== command.expectedVersion) throw new ModelSettingsError('version_conflict', 409);
         const apiKey = command.removeKey ? null : command.apiKey ?? current?.apiKey ?? null;
         const provider = command.provider ?? current?.provider ?? 'gemini', model = command.model ?? current?.model ?? PERSONAL_MODEL;
+        if (command.baseUrl !== undefined && provider !== 'openai-compatible') throw new ModelSettingsError('invalid_input');
         const baseUrl = provider === 'openai-compatible' ? command.baseUrl ?? current?.baseUrl ?? 'https://api.openai.com/v1' : undefined;
         if (provider !== (current?.provider ?? 'gemini') && apiKey && !command.apiKey) throw new ModelSettingsError('key_required');
         if (baseUrl !== current?.baseUrl && provider === 'openai-compatible' && apiKey && !command.apiKey)

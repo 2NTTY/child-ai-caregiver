@@ -10,10 +10,10 @@ import { personalAdvancedShape, personalModelIdSchema, personalProviderSchema, p
 const extraFields = ['opId', 'provider', 'model', 'baseUrl', 'embeddingApiKey', 'removeEmbeddingKey', ...Object.keys(personalAdvancedShape)];
 const fields = new Set(["expectedVersion", "mode", "apiKey", "removeKey", "backgroundEnabled", "dailyLimit", "maxModelCalls", "maxQueryEmbeddings", "consent", ...extraFields]);
 const extensionsSchema = z.object({ opId: z.uuid().optional(), provider: personalProviderSchema.optional(), model: personalModelIdSchema.optional(),
-  baseUrl: personalBaseUrlSchema.optional(), embeddingApiKey: z.string().min(20).max(512).regex(/^[\x21-\x7e]+$/u).optional(),
+  baseUrl: personalBaseUrlSchema.optional(), embeddingApiKey: z.string().min(1).max(512).regex(/^[\x21-\x7e]+$/u).optional(),
   removeEmbeddingKey: z.boolean().optional(), ...personalAdvancedShape }).strict();
 const requiredFields = ["expectedVersion", "mode", "backgroundEnabled", "dailyLimit", "maxModelCalls", "maxQueryEmbeddings", "consent"];
-const validKey = (value: unknown): value is string => typeof value === "string" && value.length >= 20 && value.length <= 512 && !/[^\x21-\x7e]/u.test(value);
+const validKey = (value: unknown): value is string => typeof value === "string" && value.length >= 1 && value.length <= 512 && !/[^\x21-\x7e]/u.test(value);
 const unavailable = () => new ModelSettingsError("unavailable", 503);
 
 export function parseModelSettingsCommand(input: unknown): ModelSettingsCommand {
@@ -93,7 +93,7 @@ export function createModelSettingsStore(pool: Pool, cipher: StorageCipher): Mod
     async save(userId, input) {
       const command = parseModelSettingsCommand(input);
       // The retired SQL adapter cannot represent the new personal settings contract.
-      if (['opId', 'provider', 'model', ...Object.keys(personalAdvancedShape)].some(key => Object.hasOwn(command, key))) throw new ModelSettingsError('unavailable', 503);
+      if (extraFields.some(key => Object.hasOwn(command, key))) throw new ModelSettingsError('unavailable', 503);
       let client: PoolClient | undefined;
       let failed = false;
       try {

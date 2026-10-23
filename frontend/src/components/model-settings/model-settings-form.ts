@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { personalLimits, type ModelSettings, type ModelSettingsCommand } from "../../model-settings-view-model.ts";
 import type { EffectiveModelLimits, PersonalModelCatalog, PersonalModelProvider } from "../../../../src/shared/model-settings.ts";
-import { personalModelIdSchema } from "../../../../src/shared/model-settings-schema.ts";
+import { personalModelIdSchema, personalProviderSchema } from "../../../../src/shared/model-settings-schema.ts";
 
 /** Only project the server's selected-provider catalog; never substitute a model. */
 export function modelCatalogSelection(catalog: PersonalModelCatalog | null | undefined, provider: PersonalModelProvider, selected: string) {
@@ -32,7 +32,7 @@ export function modelSettingsDraft(settings: ModelSettings, effective?: Effectiv
 }
 export type ModelSettingsDraft = ReturnType<typeof modelSettingsDraft>;
 export function modelSettingsSchema(keyConfigured: boolean, savedProvider: ModelSettings["provider"] = "gemini") {
-  return z.object({ mode: z.enum(["platform", "personal", "disabled"]), provider: z.enum(["gemini", "vertex"]), model: z.string().max(128),
+  return z.object({ mode: z.enum(["platform", "personal", "disabled"]), provider: personalProviderSchema, model: z.string().max(128),
     keyText: z.string().max(512, "密鑰最多 512 個字元。"), consent: z.boolean(), backgroundEnabled: z.boolean(),
     dailyText: z.string(), modelCallsText: z.string(), queryEmbeddingsText: z.string(), toolCallsText: z.string(),
     runSecondsText: z.string(), requestSecondsText: z.string(), retriesText: z.string(),

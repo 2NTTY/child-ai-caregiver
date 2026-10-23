@@ -1,0 +1,36 @@
+{
+  "package": "MODEL-SELF03",
+  "date": "2026-10-23",
+  "baseline": "7b828dc",
+  "recoveredSnapshot": "9fccfce",
+  "scope": "Compatible personal model backend; UI integration deferred while PR 253 owns the settings view",
+  "preservedBranches": {
+    "253": "2fdb8aa31a59fe4b01be8b7470da91740a793bae",
+    "254": "85cd19435ae43a708ee0ad94742052540f481b72"
+  },
+  "environment": { "node": "24.11.0", "provider": "scripted", "database": "existing in-memory Firestore transaction fixture" },
+  "checks": [
+    { "name": "compatible tools, settings, provider errors and existing settings regressions", "result": "passed", "tests": 10 },
+    { "name": "v2 media restoration and lost-response recovery", "result": "failed", "passed": 9, "failed": 1,
+      "cause": "A new pre-save read consumed the fixture's lost-response fault before the write; moved protocol eligibility into the existing write transaction" },
+    { "name": "affected compatibility, provider and recovery checks after repair", "result": "passed", "tests": 6 },
+    { "name": "broad tsconfig.server.json", "result": "not_clean", "note": "Includes diagnostics in unchanged frontend imports and older tests; no unrelated edits made" },
+    { "name": "scoped provider, routing, API and changed tests TypeScript", "result": "passed" },
+    { "name": "existing model settings view and its imports TypeScript", "result": "passed" }
+  ],
+  "verified": [
+    "Structured tool IDs and results survive the two-call adapter cycle; unknown usage remains unknown",
+    "Missing embedding credentials are explicit; separate Gemini embedding credential is used without chat-key or platform fallback",
+    "HTTP key/model/quota/rate/tool errors remain distinct; quota failure passes through the real Agent gateway with one metered attempt and no retry",
+    "Encrypted settings preserve operation receipts, endpoint/key ownership, removal and account isolation",
+    "Legacy/v2 clients retain prior Google semantics and cannot overwrite v3-only settings",
+    "HTTP and private IP targets are rejected before sending a credential"
+  ],
+  "notVerified": [
+    "Real compatible provider generation or media support",
+    "Full ADK run with a real compatible model",
+    "Live GCP Firestore, deployment and Android/Web form integration",
+    "Other embedding models or replacement vector spaces"
+  ],
+  "cost": { "realModelCalls": 0, "embeddingCalls": 0, "notifications": 0, "cloudDeployment": false }
+}
