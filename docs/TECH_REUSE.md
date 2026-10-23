@@ -326,6 +326,8 @@ S12 音訊模型接線（2026-10-16）：沿既有 ADK 2.1.0／GenAI 2.24.0／Ge
 
 2026-10-18：沿 EAS CLI 24.14.0／Expo Updates 57.0.23／fingerprint 0.20.13，不新增發布平台。核對固定 CLI：`fingerprint:generate` 會上傳 fingerprint，故零發布 plan 使用本機 `resolveRuntimeVersionAsync`；`build:view`／`update:view`／有界 `update:list` 查正式身份及 runtime，`update:republish` 作相容回退。依 [runtime](https://docs.expo.dev/eas-update/runtime-versions/)／[rollback](https://docs.expo.dev/eas-update/rollbacks/) 保留原生與 JS 相容邊界；工具 JSON 只保存 ID／版本等白名單欄位。固定 SDK 方法及本機守門已核對，真雲端發布／回退與裝置升級仍待驗；採用與否不靠模型猜測套件是否含原生改動。
 
+2026-10-24 iOS增補：復用同一工具，不加發佈依賴。固定 [24.14.0 submit](https://github.com/expo/eas-cli/blob/v24.14.0/packages/eas-cli/src/commands/submit.ts) 沒有 `--json`；使用 `--id`、`--no-wait`及`--no-auto-testflight-setup`，只提取輸出的提交 ID，不聲稱 Apple 已處理完成。固定 [IosSubmitCommand](https://github.com/expo/eas-cli/blob/v24.14.0/packages/eas-cli/src/submit/ios/IosSubmitCommand.ts) 在非互動模式要求既有 `ascAppId`；[Build fragment](https://github.com/expo/eas-cli/blob/v24.14.0/packages/eas-cli/src/graphql/types/Build.ts) 提供 distribution及simulator欄位供基線核對，但沒有證書／Team證明，首次實際簽署仍須另核。離線平台／相容與回退檢查及整合iOS匯出已有證據，實際EAS／Apple提交與OTA仍待團隊及授權。
+
 
 ### S12-W05 有界檔案讀取（2026-10-18）
 

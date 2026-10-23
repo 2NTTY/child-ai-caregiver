@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：[S13-W02 iOS 通知設定](#s13-w02)。**#272 基礎、#274 媒體及 C 的 #275 APNs 後端已合併；B 活動分支 `codex/s13-ios-notification-client` 從 master `b4dfd5a` 接設定、權限與點擊接續，保留 Web／Android 設計及原收據。付費 Apple 團隊、簽署及真機仍待辦，不阻塞獨立實作。完整順序見 [iOS 計劃](#p3-ios)，子代理沿根 AGENTS 預設；協作者角色工作與 Android 未驗項保持獨立。
+**當前：[S04-W03 iOS 發佈準備](#s04-w03)。**#272 基礎、#274 媒體、#275／#276 通知前後端已合併。發佈工具從 master `6871bab` 補齊平台／runtime、TestFlight 提交及相容回退，本機檢查與整合 iOS 匯出通過。下一步是確認付費 Apple 團隊及 App 身份、配置簽署／APNs，再按具體上傳範圍建置及真機驗收；目前沒有 IPA、部署或真通知。完整順序見 [iOS 計劃](#p3-ios)，子代理沿根 AGENTS 預設；協作者角色工作與 Android 未驗項保持獨立。
 
 **另行接續：[ATTACHMENT-READ01](#attachment-read01) 附件回看已整合獨立來源候選，型別／GUI／部署未過門檻；不追加已合併的 #253。**
 
@@ -431,7 +431,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s13-w02"></a>
 #### S13-W02 原生本人通知
 
-- iOS 設定子包：B 接續 #275／`b4dfd5a`，同一 client／owner 依平台使用 v1 Android 或 v2 iOS，沿原收據恢復及點擊核權；原共用卡片增加 iOS 文案及各訂閱實際 provider。APNs token／provisional 權限及輪換接既有 Expo，不自動登記或發測試。指定 Node 24.19 的兩項必要檢查及 client／native adapter 窄型別通過；未跑全量、build／GUI或真通知。[證據](artifacts/verification/S13_IOS_CLIENT_20261024.json)。合併後接 S04-W03 iOS 發布工具，簽署與真機仍待。
+- iOS 設定子包：#276 已合併至 `6871bab`；同一 client／owner 依平台使用 v1 Android 或 v2 iOS，沿原收據恢復及點擊核權。原共用卡片保留設計，增加 iOS 文案及各訂閱實際 provider；APNs token／provisional 權限及輪換接既有 Expo，不自動登記或發測試。指定 Node 24.19 的兩項必要檢查及 client／native adapter 窄型別通過；[原證據](artifacts/verification/S13_IOS_CLIENT_20261024.json)不回寫。其後整合 iOS 匯出見 S04-W03；簽署、部署與真機仍待。
 - iOS 後端子包：C 於 `405f3ed` 接續 #274，已接 APNs 與 `/api/native-push/v2`，保留 v1 Android 收據／嚴格回應；已由 C 合併為 #275／`b4dfd5a`；B 接續共用設定頁。測試與照護提醒共用原台帳，配置不符或投遞未知不改環境重發。APNs adapter、真 API／收據／worker 合成流程、舊 Android 兩項及 adapter 窄型別通過；測試首次誤讀孩子範圍的失敗保留。[證據](artifacts/verification/S13_IOS_SERVER_20261024.json)。沒有 Apple 憑證、真 APNs／Firestore、部署或 iPhone 驗收。
 
 - 階段／狀態：P3；PR #238 已在 #237 後合併。FCM adapter、索引與原站 API／worker 已啟用，APK v2已安裝。使用者親自允許通知；一則指定測試已保存投遞收據、渠道接受並在手機顯示，點擊可返回App。照護目標核權導航／完成停止仍待核，iOS 待後續。
@@ -443,9 +443,11 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - gate：一則明確批准通知、點擊重新核權及完成停止；不重發 Web Push／Telegram。iOS APNs 是另一平台子範圍，不能拿 FCM token 代替 APNs。
 
 <a id="s04-w03"></a>
-#### S04-W03 固定發佈入口、App 更新與 Android 交付
+#### S04-W03 固定發佈入口與 App 更新交付
 
 - 階段／狀態：P3；PR #239 已在 #238 後合併；固定入口、相容Web／OTA發布及同簽署APK升級已有結果；剩餘真機及OTA回退驗收保留，未宣稱 Android 全部完成。
+- iOS 子包：接續 #276／`6871bab`，已補平台判定、官方 runtime、同平台 STORE／非 simulator build與回退，以及指定 build 的 TestFlight 提交。保留 Android預設及舊操作記錄，submit不自動邀請／建群組，結果與Apple處理／可安裝狀態分開。共同 UI 的另一端交付明列待辦，沒有一端成功當三端完成。
+- 必要本機結果：一條 release policy／CLI 檢查、合成公開設定的 iOS fingerprint、整合 iOS JS／Hermes匯出通過；首次匯出因命令錯指未 hoist 的 Expo 路徑停止，修正命令後只補同一次匯出，沒有改產品。[證據](artifacts/verification/S04_IOS_RELEASE_20261024.json)。付費團隊、App Store Connect 身份、簽署、實際上傳、OTA／回退及 iPhone驗收仍未完成；不購買會員、不宣稱已有TestFlight成品。
 - 本包範圍：離線發布判斷、官方 fingerprint 核對、固定 EAS CLI／channels、相容 OTA 回退及有界 manifest；Web 沿原 VM 產物／部署，不改產品設計或自動購買／上傳。
 - 結果：固定入口及短交接、離線判斷與兩端正式 bundle 已通過；`bf47c47` Web／API／worker 已部署。一次 preview APK `82cb911e` 已完成（versionCode 2），固定發布工具已記錄相符的 runtime／fingerprint 基線；兩個實際 APK 的官方簽署驗證、同 applicationId／證書及遞增 versionCode 已核對。使用者於2026-10-18確認覆蓋安裝後能正常開啟、原資料仍在；ADB亦核對versionCode 2。鍵盤遮擋及站內導航誤擋已局部修正並交付同版Web／相容OTA，一條真機輸入／清除／鍵盤開合有結果；動畫細節、回退及其餘功能仍待驗。[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)／[固定入口](docs/PRODUCTION_FRONTEND.md#mobile-release)。
 - 前置（Android）：S12-W01 Android、S13-W02 Android；iOS 待 S04-W02 後補同平台結果。
