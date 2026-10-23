@@ -5,6 +5,7 @@ import { createServer } from 'node:net';
 import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { M03_INITIAL_WATCH_IDS } from '../src/shared/background-knowledge-maintenance.ts';
+import { readLocalAgentModel } from '../server/local-agent-model.ts';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const directory = join(root, '.cache', 'agent-local'), statePath = join(directory, 'state.json');
@@ -61,16 +62,18 @@ const configured = !inspection && process.env.LOCAL_AGENT_CONFIG ? JSON.parse(aw
 const provider = inspection ? 'gemini' : configured.provider ?? process.env.LOCAL_MODEL_PROVIDER ?? 'gemini';
 const model = {
   provider,
-  apiKey: inspection ? undefined : configured.apiKey ?? (provider === 'gemini' ? process.env.GEMINI_API_KEY : provider === 'vertex' ? process.env.VERTEX_API_KEY : undefined),
+  apiKey: inspection ? undefined : configured.apiKey ?? (provider === 'gemini' ? process.env.GEMINI_API_KEY : provider === 'vertex' ? process.env.VERTEX_API_KEY : provider === 'openai-compatible' ? process.env.LOCAL_MODEL_API_KEY : undefined),
+  baseUrl: inspection ? undefined : configured.baseUrl ?? process.env.LOCAL_MODEL_BASE_URL,
+  embeddingApiKey: inspection ? undefined : configured.embeddingApiKey ?? process.env.LOCAL_MODEL_EMBEDDING_API_KEY,
   project: configured.project ?? process.env.LOCAL_MODEL_PROJECT,
   location: configured.location ?? process.env.LOCAL_MODEL_LOCATION ?? 'global',
-  model: configured.model ?? process.env.LOCAL_MODEL ?? 'gemini-3.1-flash-lite',
+  model: configured.model ?? process.env.LOCAL_MODEL ?? (provider === 'openai-compatible' ? undefined : 'gemini-3.1-flash-lite'),
   adcPath: configured.adcPath ?? process.env.GOOGLE_APPLICATION_CREDENTIALS,
 };
-if (!['gemini', 'vertex', 'vertex-adc'].includes(model.provider)) throw Error('Unsupported local model provider');
+if (!['gemini', 'vertex', 'vertex-adc', 'openai-compatible'].includes(model.provider)) throw Error('Unsupported local model provider');
 const enabled = !inspection && !args.has('--no-model');
 if (!enabled && (args.has('--prepare-knowledge') || args.has('--maintain-knowledge'))) throw Error('Knowledge preparation/maintenance requires your explicit model credentials');
-if (enabled && (model.provider === 'vertex-adc' ? !model.project : !model.apiKey)) throw Error('Set the selected provider credential in LOCAL_AGENT_CONFIG (or GEMINI_API_KEY / VERTEX_API_KEY); use --no-model only for data/UI development');
+if (enabled && (model.provider === 'vertex-adc' ? !model.project : !model.apiKey)) throw Error('Set the selected provider credential in LOCAL_AGENT_CONFIG; use --no-model only for data/UI development');
 if (enabled && model.provider === 'vertex-adc' && model.adcPath && !await exists(model.adcPath))
   throw Error('The explicitly configured ADC file does not exist. Fix adcPath / GOOGLE_APPLICATION_CREDENTIALS; no model call was made.');
 
@@ -100,6 +103,8 @@ const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', 
   YUBAN_FIREBASE_STORAGE_KEY: saved.storageKey, LOCAL_AGENT_STATE_FILE: statePath, LOCAL_WEB_PORT: String(basePort + 1),
   LOCAL_MODEL_PROVIDER: model.provider, LOCAL_MODEL_PROJECT: model.project ?? '', VERTEX_LOCATION: model.location,
   GEMINI_MODEL: model.model, AI_ENABLED: String(enabled), ...(model.apiKey ? { LOCAL_MODEL_API_KEY: model.apiKey } : {}),
+  ...(model.baseUrl !== undefined ? { LOCAL_MODEL_BASE_URL: model.baseUrl } : {}),
+  ...(model.embeddingApiKey !== undefined ? { LOCAL_MODEL_EMBEDDING_API_KEY: model.embeddingApiKey } : {}),
   ...(inspection ? { LOCAL_KNOWLEDGE_INSPECT_OPERATION: inspectionArgs[0].split('=')[1] ?? '' } : {}),
   ...(args.has('--maintain-knowledge') ? {
     LOCAL_KNOWLEDGE_WATCH: [...args].find(arg => arg.startsWith('--knowledge-watch='))?.split('=')[1] ?? 'fhs-solid-food',
@@ -107,6 +112,9 @@ const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', 
   } : {}),
 };
 if (model.provider === 'vertex-adc' && model.adcPath) env.GOOGLE_APPLICATION_CREDENTIALS = resolve(model.adcPath);
+const localModel = readLocalAgentModel(env);
+if ((args.has('--prepare-knowledge') || args.has('--maintain-knowledge')) && !localModel.embeddingConfigured)
+  throw Error('Knowledge work needs a compatible embedding credential; set embeddingApiKey to your Gemini key. No platform fallback.');
 const publicEnv = { ...baseEnv, NODE_ENV: 'development', EXPO_PUBLIC_AUTH_PROVIDER: 'firebase',
   EXPO_PUBLIC_FIREBASE_PROJECT_ID: saved.projectId, EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: '127.0.0.1',
   EXPO_PUBLIC_FIREBASE_APP_ID: '1:123456789:web:abcdef0123456789', EXPO_PUBLIC_FIREBASE_API_KEY: 'local-emulator-public-key-only',

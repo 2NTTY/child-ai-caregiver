@@ -66,7 +66,7 @@ export function createFirestoreKnowledgeMaintenance(options: FirestoreDomainOpti
       // Respect a lower administrator ceiling. No retry can silently spend more.
       const limits = { modelCalls: Math.min(2, current.maxModelCalls), toolCalls: 8, queryEmbeddings: 1,
         deadlineMs: Math.min(300_000, current.maxRunSeconds * 1000) };
-      const config: AiConfig = { ...base, model: current.model, dailyUserAttempts: current.dailyUserAttempts,
+      const config: AiConfig = { ...base, model: base.localModelOverride ?? current.model, dailyUserAttempts: current.dailyUserAttempts,
         dailyGlobalAttempts: current.dailyGlobalAttempts, timeoutMs: Math.min(base.timeoutMs, current.modelRequestSeconds * 1000),
         maxAttempts: 1, agentMaxRetries: 0 };
       const configHash = knowledgeReviewHash({ config, limits, policyVersion: current.version,

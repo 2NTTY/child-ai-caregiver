@@ -6,11 +6,11 @@ import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts'
 import { createFirestoreKnowledgeRefresh } from '../server/firestore-knowledge-refresh.ts';
 import { SOURCE_WATCHES } from '../server/knowledge-source-catalog.ts';
 import { parseKnowledgeSource, sourceVersionHash } from '../server/knowledge-inputs.ts';
-import { readAiConfig } from '../server/ai-config.ts';
+import { readLocalAgentModel } from '../server/local-agent-model.ts';
 import { createEmbeddingGateway } from '../server/embedding-gateway.ts';
 import { createFirestoreOperatorEmbeddingUsage } from '../server/firestore-embedding-usage.ts';
 import { createVertexEmbeddingProvider } from '../server/vertex-embedding.ts';
-import { createGeminiKeyProviders } from '../server/gemini-key-provider.ts';
+import { AgentStopped } from '../server/agent-budget.ts';
 
 // Explicit operator action only. Normal startup never fetches or embeds a corpus.
 const config = assertLocalAgentEnvironment(process.env);
@@ -18,10 +18,9 @@ const manifest = JSON.parse(await readFile(new URL('../knowledge/local-developme
 const sources = JSON.parse(await readFile(new URL('../knowledge/hk-official-seed.json', import.meta.url), 'utf8'));
 const source = parseKnowledgeSource(sources.find(value => value.sourceId === manifest.sourceId));
 if (sourceVersionHash(source) !== manifest.versionHash || source.chunks.length !== 1) throw Error('Local source changed; a new meaning review is required');
-const provider = process.env.LOCAL_MODEL_PROVIDER;
-if (!['gemini', 'vertex', 'vertex-adc'].includes(provider) || process.env.AI_ENABLED !== 'true') throw Error('Explicit local model configuration required');
-if (provider === 'vertex') throw Error('Vertex API key embedding is not connected; use your own supported Gemini key or Vertex ADC explicitly. No platform fallback.');
-const ai = readAiConfig({ ...process.env, GCP_PROJECT_ID: provider === 'vertex-adc' ? process.env.LOCAL_MODEL_PROJECT : config.projectId });
+const localModel = readLocalAgentModel(process.env, { documentEmbeddings: true });
+if (!localModel.embeddingConfigured) throw Error('Knowledge preparation needs an explicit compatible embedding credential; no platform fallback');
+const ai = localModel.modelConfig;
 let persistence;
 try {
   persistence = await openFirebasePersistence(process.env);
@@ -45,9 +44,7 @@ try {
   const pending = await store.missingDocuments(imported.versionId);
   if (pending.length > 1) throw Error('Local seed exceeds its one-embedding limit');
   const deadline = Date.now() + 120_000;
-  const embedding = provider === 'gemini'
-    ? createGeminiKeyProviders(ai, process.env.LOCAL_MODEL_API_KEY, 'gemini', { documentEmbeddings: true }).embedding
-    : createVertexEmbeddingProvider(ai);
+  const embedding = localModel.providers ? localModel.providers(ai).embedding : createVertexEmbeddingProvider(ai);
   const gateway = createEmbeddingGateway({ config: ai, provider: embedding, usage: createFirestoreOperatorEmbeddingUsage(domain, deadline) });
   let generated = 0;
   for (const document of pending) {
@@ -60,7 +57,7 @@ try {
     result, embeddingCalls: generated, reviewedOn: manifest.reviewedOn, coverage: 'one-curated-official-section' }));
 } catch (error) {
   // Provider errors may contain request details. Emit only known bounded codes.
-  console.error(JSON.stringify({ event: 'local_knowledge_preparation_failed', code: typeof error?.code === 'string' && /^[a-z_]{1,80}$/.test(error.code)
+  console.error(JSON.stringify({ event: 'local_knowledge_preparation_failed', code: error instanceof AgentStopped ? error.reason : typeof error?.code === 'string' && /^[a-z_]{1,80}$/.test(error.code)
     ? error.code : 'preparation_failed', recovery: 'Inspect local version and original embedding receipt; do not reset and blindly retry.' }));
   process.exitCode = 1;
 } finally { await persistence?.close(); }

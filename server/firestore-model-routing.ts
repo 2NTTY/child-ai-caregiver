@@ -25,7 +25,7 @@ const checkScope = { ownerUserId: 'system:model-key-check', workspaceId: '000000
 export const requireDurableUsage = Object.freeze({ async reserve(): Promise<never> { throw new AgentStopped('unavailable'); },
   async record(): Promise<never> { throw new AgentStopped('unavailable'); } });
 
-export type PlatformProviderFactory = (config: AiConfig) => Pick<ReturnType<typeof createGeminiKeyProviders>, 'agent' | 'model' | 'embedding'>;
+export type PlatformProviderFactory = (config: AiConfig) => Pick<ReturnType<typeof createPersonalModelProviders>, 'agent' | 'model' | 'embedding'>;
 
 export function createFirestoreModelRouting(options: FirestoreDomainOptions, config: AiConfig, platformProviders?: PlatformProviderFactory) {
   const settings = createFirestoreModelSettings(options), authority = createFirestoreAuthority(options), data = new FirestoreDomainData(options);
@@ -91,7 +91,7 @@ export function createFirestoreModelRouting(options: FirestoreDomainOptions, con
       const limits = resolvePersonalModelLimits(state, current);
       const enabled = config.enabled && state.mode !== 'disabled' && (personal
         ? Boolean(snapshot.apiKey) && (trigger !== 'worker' || state.backgroundEnabled) : current.enabled && Boolean(config.project));
-      const selectedConfig: AiConfig = { ...config, enabled, model: current.model,
+      const selectedConfig: AiConfig = { ...config, enabled, model: config.localModelOverride ?? current.model,
         timeoutMs: limits.modelRequestSeconds * 1000, agentMaxRetries: limits.maxModelRetries,
         dailyUserAttempts: limits.dailyLimit, dailyGlobalAttempts: limits.dailyGlobalLimit,
         ...(personal ? { maxAttempts: 1, model: state.model } : {}) };

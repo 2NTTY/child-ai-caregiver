@@ -9,6 +9,8 @@ export interface AiConfig {
   project: string;
   location: string;
   model: string;
+  /** Trusted local composition only; production env parsing never sets this field. Quotas remain in the shared policy. */
+  localModelOverride?: string;
   dailyUserAttempts: number;
   dailyGlobalAttempts: number;
   personalDailyGlobalAttempts?: number;

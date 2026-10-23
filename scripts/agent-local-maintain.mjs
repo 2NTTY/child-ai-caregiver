@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { assertLocalAgentEnvironment } from '../server/local-agent-config.ts';
 import { openFirebasePersistence } from '../server/firebase-persistence.ts';
 import { createFirestoreKnowledgeStore } from '../server/firestore-knowledge.ts';
@@ -11,19 +11,18 @@ import { backgroundKnowledgeOperationFingerprint } from '../server/background-kn
 import { SOURCE_WATCHES } from '../server/knowledge-source-catalog.ts';
 import { fetchKnowledgeSource } from '../server/knowledge-source-fetch.ts';
 import { parseKnowledgeSource, sourceVersionHash } from '../server/knowledge-inputs.ts';
-import { readAiConfig } from '../server/ai-config.ts';
-import { createGeminiKeyProviders } from '../server/gemini-key-provider.ts';
+import { readLocalAgentModel } from '../server/local-agent-model.ts';
+import { AgentStopped } from '../server/agent-budget.ts';
 
 // Explicit operator command; no public HTTP bypass or second Agent implementation.
 const config = assertLocalAgentEnvironment(process.env);
 const state = JSON.parse(await readFile(process.env.LOCAL_AGENT_STATE_FILE, 'utf8'));
 if (state.projectId !== config.projectId || state.storageKey !== process.env.YUBAN_FIREBASE_STORAGE_KEY) throw Error('Local state binding mismatch');
 const watchId = process.env.LOCAL_KNOWLEDGE_WATCH, live = process.env.LOCAL_KNOWLEDGE_LIVE_SOURCE === 'true';
-const provider = process.env.LOCAL_MODEL_PROVIDER;
+const localModel = readLocalAgentModel(process.env, { documentEmbeddings: true });
 if (!M03_INITIAL_WATCH_IDS.includes(watchId)) throw Error('Watch outside the current reviewed scope');
-if (!['gemini', 'vertex-adc'].includes(provider) || process.env.AI_ENABLED !== 'true')
-  throw Error('Knowledge maintenance needs a configured Gemini key or Vertex ADC including embedding; no platform fallback');
-const base = readAiConfig({ ...process.env, GCP_PROJECT_ID: provider === 'vertex-adc' ? process.env.LOCAL_MODEL_PROJECT : config.projectId });
+if (!localModel.embeddingConfigured) throw Error('Knowledge maintenance needs an explicit compatible embedding credential; no platform fallback');
+const base = localModel.modelConfig;
 const directory = dirname(process.env.LOCAL_AGENT_STATE_FILE), workPath = join(directory, 'maintenance-work.json');
 const resultPath = join(directory, 'maintenance-result.json');
 let persistence;
@@ -66,10 +65,8 @@ try {
   const maintenance = createFirestoreKnowledgeMaintenance({ ...domain, knowledge, refresh,
     config: { ...base, backgroundKnowledgeMaintenanceEnabled: true, backgroundKnowledgeLiveFetch: live, backgroundKnowledgeLivePublish: true },
     // A credential change cannot silently continue a different payer's work.
-    credentialBinding: createHash('sha256').update(JSON.stringify([provider, base.project,
-      provider === 'gemini' ? process.env.LOCAL_MODEL_API_KEY : process.env.GOOGLE_APPLICATION_CREDENTIALS ?? 'local-adc'])).digest('hex'),
-    ...(provider === 'gemini' ? { providers: selected => createGeminiKeyProviders(selected, process.env.LOCAL_MODEL_API_KEY,
-      'gemini', { documentEmbeddings: true }) } : {}),
+    credentialBinding: localModel.credentialBinding,
+    ...(localModel.providers ? { providers: localModel.providers } : {}),
     readControl: tx => authority.readControl(tx), fetch: fetchKnowledgeSource,
     ...(fixture ? { fixtureFetch: async () => ({ status: 'ok', items: [fixture] }), isolatedFixturePublish: true } : {}),
   });
@@ -81,7 +78,7 @@ try {
   if (!result.published && result.status !== 'unchanged' && !(result.status === 'already_recorded' && result.code === 'unchanged')) process.exitCode = 1;
 } catch (error) {
   console.error(JSON.stringify({ event: 'local_knowledge_maintenance_failed',
-    code: typeof error?.code === 'string' && /^[a-z_]{1,80}$/.test(error.code) ? error.code : 'maintenance_failed',
+    code: error instanceof AgentStopped ? error.reason : typeof error?.code === 'string' && /^[a-z_]{1,80}$/.test(error.code) ? error.code : 'maintenance_failed',
     recovery: 'Original work and usage retained. Inspect the same work; do not reset or automatically retry.' }));
   process.exitCode = 1;
 } finally { await persistence?.close(); }
