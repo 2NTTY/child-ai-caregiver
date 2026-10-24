@@ -3,7 +3,7 @@ import { useContainerWidth } from "../useContainerWidth";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Image, View } from "react-native";
 import { Portal, Text } from "react-native-paper";
-import type { PhotosActions, PhotosViewModel } from "../../photo-view-model";
+import type { PhotoItem, PhotosActions, PhotosViewModel } from "../../photo-view-model";
 import { photoExtractionLabels } from "../../photo-view-model";
 import { colors, mobileLayout } from "../../theme";
 import { AppDialog, AppDialog as Dialog } from "../AppDialog";
@@ -25,7 +25,7 @@ import { useContentDeletionFocus } from "../shared-inputs/useContentDeletionFocu
 import { PhotoGallery, OriginalMediaLibrary, type AttachmentReviewCollections } from "./AttachmentLibrary";
 
 const operationLabels: Record<PhotosViewModel["operation"]["state"], string> = { none: "", saving: "處理中 · 尚未確認", saved: "已確認（合成預覽）", failed: "失敗 · 原輸入保留", unknown: "結果未知 · 先查核", unconfirmed: "查核尚無確認結果", conflict: "版本衝突 · 尚未保存", confirmed_unavailable: "原操作已確認 · 結果不可讀" };
-export function PhotosView({ model, actions: sourceActions, onCare, previewControls, selectOriginal, capturePreferred, captureOriginal, scopeKey, production = false, attachments, onChat }: { model: PhotosViewModel; actions: PhotosActions; onCare: () => void; previewControls?: ReactNode; selectOriginal?: PhotoFilePickerProps["selectOriginal"]; capturePreferred?: boolean; captureOriginal?: PhotoFilePickerProps["captureOriginal"]; scopeKey?: string; production?: boolean; attachments?: AttachmentReviewCollections; onChat?: () => void }) {
+export function PhotosView({ model, actions: sourceActions, onCare, previewControls, selectOriginal, capturePreferred, captureOriginal, scopeKey, production = false, attachments, onChat, onChatPhoto }: { model: PhotosViewModel; actions: PhotosActions; onCare: () => void; previewControls?: ReactNode; selectOriginal?: PhotoFilePickerProps["selectOriginal"]; capturePreferred?: boolean; captureOriginal?: PhotoFilePickerProps["captureOriginal"]; scopeKey?: string; production?: boolean; attachments?: AttachmentReviewCollections; onChat?: () => void; onChatPhoto?: (photo: PhotoItem) => void }) {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
   const [adding, setAdding] = useState(!!capturePreferred);
@@ -121,6 +121,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
             {model.original || selected ? <><Text style={s.title}>{model.original?.fileName ?? selected?.fileName}</Text><Text style={s.meta}>{((model.original?.bytes ?? selected?.bytes ?? 0) / (1024 * 1024)).toFixed(2)} MiB · {selected?.state === "ready" ? production ? "原檔已保存" : "原檔已模擬保存" : "本次原檔尚未完整保存"}</Text></> : null}
             {selected ? <View style={s.related}><MotionFeedback scopeKey={candidateScope} active={model.operation.state === 'saved' && model.operation.phase === 'confirm' && !!selected.recordId} triggerKey={model.operation.state === 'saved' && model.operation.phase === 'confirm' ? model.operation.reference : null} testID="photo-confirmation-feedback"><AppStatusBadge label={selected.visibility === "private" ? "私人，只有上傳者可讀取" : "已確認家庭共享"} tone={selected.visibility === "private" ? "neutral" : "success"} /></MotionFeedback><AppStatusBadge label={photoExtractionLabels[selected.extraction.state]} tone={selected.extraction.state === "failed" ? "error" : selected.extraction.state === "unknown" || selected.extraction.state === "available" ? "warning" : selected.extraction.state === "running" ? "info" : "neutral"} />{selected.recordId ? <Text style={s.body}>已連結確認記錄，不能再次提取或確認。</Text> : null}
               <Text style={s.meta}>來源：{selected.source}；上傳者：{selected.ownerLabel}；版本 {selected.version}</Text></View> : null}
+            {selected?.state === 'ready' && onChatPhoto ? <AppButton label="加入聊天" variant="secondary" disabled={locked || !model.online || !model.fresh} onPress={() => onChatPhoto(selected)} /> : null}
             {model.capacityReached ? <Text style={s.warning}>{production ? "已達到新增容量限制。" : "已模擬達到新增容量限制。"}可核對現有附件，不能再新增照片。</Text> : null}
             {model.reservationUnidentified ? <Text style={s.warning}>已確認操作的附件結果未能識別。保留原檔，不會再次建立；請逐項核對清單或明確清除本頁。</Text> : null}
             {(!selected || selected.state === "reserved") && model.access === "editable" ? <>

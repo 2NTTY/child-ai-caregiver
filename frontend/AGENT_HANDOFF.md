@@ -5,7 +5,7 @@
 <a id="交付與預覽"></a>
 ## 聊天與共用輸入接點
 
-家長交代後由 Agent 整理，家長查看及必要時確認；正式畫面沿 ProductionProvider／chat controller 共用權威資料，合成預覽才不會正式送出或呼叫模型。未送出附件仍是本機草稿；附件上傳不等於已確認照護事實。照片直接隨聊天送出的缺口見根 [CHAT-PHOTO01](../PLAN.md#chat-photo01)。
+家長交代後由 Agent 整理，家長查看及必要時確認；正式畫面沿 ProductionProvider／chat controller 共用權威資料，合成預覽才不會正式送出或呼叫模型。未送出附件仍是本機草稿；附件上傳不等於已確認照護事實。照片沿 `ChatPhotoUploadController` 私人保存原圖，然後由同一 chat controller 保存照片引用及要求回覆；不必先提取或進核對頁。附件庫「加入聊天」重用原圖 ID，不重新上傳；原圖刪除後不能再讀。舊人工照片提取只作備援，交付及未驗項見根 [CHAT-PHOTO01](../PLAN.md#chat-photo01)。
 
 | 接點 | 目前介面與正式整合邊界 |
 |---|---|
