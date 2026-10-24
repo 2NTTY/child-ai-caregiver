@@ -3594,3 +3594,13 @@
 - 接續 `5ec3958`，主模型接共用 owner 的可續點草稿、停手三秒及離頁 flush；一個原操作可在背景完成，收據更新同源文件，不重讀全列表。Sol 在限定兩個 store 與一項測試中加入相容 `check_items`，主模型 review；沒有 Server 草稿副本。
 - 128 項有界批次共用版本與交易，無效目標不部分保存。unknown 只查／重送原操作；衝突先讀回再明確套用，斷線不自動排隊重送，身份清理保留。按鈕不因正常保存換成文字或鎖住其他勾選。
 - [定向證據](artifacts/verification/PREPARATION_BACKGROUND_SAVE_20261024.json)保留兩次 fixture 等待缺口及 tsc 參數更正；owner 連貫情景與 Firestore 合成批次各一條通過，窄型別通過。沒有全量、真模型、雲端寫入、通知或真機；尚未部署。
+
+
+<a id="log-20261024-four-fixes"></a>
+## LOG-20261024-FOUR-FIXES
+
+- 2026-10-24 UTC，依使用者指定第 1–4 項修補，dot 原生整合代理在獨立 cloud checkout 接續 `382d2174`，只整合已獨立 review 的照片兩提交、PDF 及 APNs 候選。15 碼測檔無 #282 路徑重疊；照片 49/49、APNs 10/10 通過。PDF 相關兩份舊 scripts 全檔執行較原定定向範圍闊，整批 44/54，10 FAIL 均為 preparation fixture 缺 `HistoryCards` mock；master 同一 import／harness 已靜態核實，不修旁支或掩蓋原紅。
+- 原候選 `57277f5`／tree `88dea03e` 經主對話覆核後準備草稿 PR。shell push 因無 Username／TTY 失敗；connector 已建 18 個與原本地 SHA 相符的 blob，WORKLOG blob 返回 catalog changed 拒絕。未建立 tree／commit／branch／PR；批准卡狀態未定，不重試或改道，原候選及已準備內容不變。
+- 等待期間 master 合併 #283／#284 至 `015deb8e`。唯讀 merge preview 只有 PLAN／STATUS／WORKLOG 衝突，但共享文件 owner 新增 preparation buffer；因此依主對話限定授權另開 `codex/four-verified-fixes-20261024-latest`，保留最新部署及背景保存文件，不覆舊狀態。8 個產品檔逐 byte 沿已批准來源；只補原 PDF fixture 載入真 buffer，以及 React 無 deps effect 的每次 render 語意，未弱化斷言或改產品。
+- Node 24.19.0、沿用依賴及合成 ports，最新候選只串行補 PDF owner 3/3、archive 組裝 1/1、新 native 檢查 5/5。未重跑照片／APNs、全檔 lifecycle、完整型別／build／GUI／真機或外部服務；原 PDF timer 1/3、照片 red、APNs care fixture red 及較闊批次 10 FAIL 均在[同一精簡收據](artifacts/verification/FOUR_FIXES_20261024.json)保留，按各自版本引用。
+- 新候選 fixture／文件交主對話覆核；外部交付仍等明確批准狀態，不新增上傳、合併、GCP／OTA／Sites、模型或真家庭資料操作。協作者 PR、頭像 gate、照片聊天及附件交付原責任不變，沒有真人驗收或猜測人員署名。

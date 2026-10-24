@@ -4,10 +4,14 @@ import { ANDROID_PUSH_CHANNEL, ANDROID_PUSH_PACKAGE, nativePushContent, nativePu
 import type { PushSendResult } from "./web-push-types.ts";
 import { z } from "zod";
 
+/** Internal receipt metadata, not part of the persisted/public delivery schema. */
+export interface NativePushSendResult extends PushSendResult { apnsInvalidatedAt?: number; }
+export const apnsInvalidationTimestampSchema = z.number().int().nonnegative().max(8_640_000_000_000_000);
+
 export interface NativePushSender {
   readonly available: boolean;
   send(token: string, reference: NativePushReference, signal: AbortSignal,
-    stillAuthorized: () => Promise<boolean>): Promise<PushSendResult>;
+    stillAuthorized: () => Promise<boolean>): Promise<NativePushSendResult>;
 }
 export const apnsBindingSchema = z.object({
   topic: z.string().min(3).max(255).regex(/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/u),
