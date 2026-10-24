@@ -1,0 +1,370 @@
+{
+  "package": "FIX-FOUR01",
+  "recorded_at_utc": "2026-10-24T13:37:40.868186+00:00",
+  "scope": "僅四項指定修補；沒有照片聊天、頭像、附件交付或協作者 Agent 增量。",
+  "stage": "local integration on #284; revised fixture/docs pending parent review; no new upload while approval is unresolved",
+  "environment": {
+    "executor": "native dot cloud; isolated checkout",
+    "node": "24.19.0",
+    "dependencies": "existing shared node_modules reused; no install",
+    "data": "synthetic only; no external services"
+  },
+  "revision": {
+    "base": "015deb8e2d7663387b091fbd50d4ddbc79e38de6",
+    "branch": "codex/four-verified-fixes-20261024-latest",
+    "code_commit": "65c12157916d98935d46bfbfc78c7e5f50b5d069",
+    "code_tree": "4f8986c808eebd87601bea78e2ead623ddf775fe",
+    "source_commits": [
+      "9c8ee1d05b55ebe9f9d27a038ad3cc3cbe3a8695",
+      "cce846e16817bb29b67e17c1bd28274495685766",
+      "e5acd43a2a56ee50a7446929aefdffc55faeb7d5",
+      "6c000e01b2b8d766317676658b7cebdc14117fcd"
+    ],
+    "integrated_commits": [
+      "c9e2464cd11f13f8fbad64170c0fafe6f94393fa",
+      "90630d56257491bb2f17246217d156324d2e052e",
+      "cea5d313484b0cd14f844ee90763a016bbe33856",
+      "c9209e749105937d433bf35fd6b2a12656720dc5",
+      "65c12157916d98935d46bfbfc78c7e5f50b5d069"
+    ]
+  },
+  "source_checks": {
+    "result": "PASS",
+    "source_files": 15,
+    "product_files": 8,
+    "test_files": 7,
+    "exact_approved_source_bytes_preserved": false,
+    "no_source_path_overlap_with_282": true,
+    "detail": {
+      "photo": {
+        "source_commit": "cce846e16817bb29b67e17c1bd28274495685766",
+        "files": [
+          "frontend/scripts/source-photo-recovery.test.mjs",
+          "frontend/src/production/PhotoInputDomains.tsx"
+        ],
+        "exact_source_bytes_preserved": true
+      },
+      "pdf": {
+        "source_commit": "e5acd43a2a56ee50a7446929aefdffc55faeb7d5",
+        "files": [
+          "frontend/scripts/family-document-lifecycle.test.mjs",
+          "frontend/scripts/native-report-export.test.mjs",
+          "frontend/scripts/summary-composition.test.mjs",
+          "frontend/src/platform/file-export.native.ts",
+          "frontend/src/platform/file-export.ts",
+          "frontend/src/screens/SummaryScreen.tsx"
+        ],
+        "exact_source_bytes_preserved": false,
+        "exception": "frontend/scripts/family-document-lifecycle.test.mjs: two scoped fixture wiring changes after #284."
+      },
+      "apns": {
+        "source_commit": "6c000e01b2b8d766317676658b7cebdc14117fcd",
+        "files": [
+          "server/apns-push-gateway.ts",
+          "server/firestore-contact.ts",
+          "server/firestore-native-push.ts",
+          "server/native-push-gateway.ts",
+          "tests/apns-push-gateway.test.ts",
+          "tests/firestore-native-push-expiration.test.ts",
+          "tests/helpers/firestore-domain-memory.ts"
+        ],
+        "exact_source_bytes_preserved": true
+      }
+    },
+    "product_files_exact_approved_bytes_preserved": true,
+    "unchanged_candidate_files": 14,
+    "necessary_fixture_delta": "family-document-lifecycle: load real preparation-check-buffer; execute no-deps effects on every render. Assertions and product code unchanged."
+  },
+  "prior_evidence_not_rerun": {
+    "photo": {
+      "initial_red": {
+        "passed": 0,
+        "failed": 2,
+        "log": {
+          "local_path": "/tmp/photo-recovery-20261024/baseline-red.log",
+          "bytes": 1872,
+          "sha256": "0726e2e3e7e036fa62ef9164bd0e0dd02adeb104238024a18d31c9137d6f94b3"
+        }
+      },
+      "deferred_discard_red": {
+        "passed": 0,
+        "failed": 2,
+        "log": {
+          "local_path": "/tmp/photo-recovery-20261024/async-discard-baseline-red.log",
+          "bytes": 2341,
+          "sha256": "cc6a721dff45329e7b0021d66df152132531bf9211f18d95b56aa80b460a94be"
+        }
+      },
+      "final_candidate": {
+        "passed": 49,
+        "failed": 0,
+        "log": {
+          "local_path": "/tmp/photo-recovery-20261024/async-discard-candidate.log",
+          "bytes": 4993,
+          "sha256": "2e84a6256a3fb4ba9df1ecc994f671a4895f00129b4c13164e72acd2881e5997"
+        }
+      }
+    },
+    "apns": {
+      "initial_care_fixture_failure": {
+        "passed": 5,
+        "failed": 3,
+        "reason": "Care fixture omitted generation; fixture corrected without relaxing assertions.",
+        "log": {
+          "local_path": "/tmp/apns-race-focused-20261024.log",
+          "bytes": 4861,
+          "sha256": "475bafb8fb2364ec1e446632c855b616d5941f85b05048a9c062890636c75e29"
+        }
+      },
+      "final_focused": {
+        "passed": 13,
+        "failed": 0,
+        "log": {
+          "local_path": "/tmp/apns-race-final-focused-20261024.log",
+          "bytes": 1490,
+          "sha256": "9f92e78a790a8337fc4d4ba62cf52d72088f9200d9afe69ddd1fb931990fe9ea"
+        }
+      },
+      "gateway_types": {
+        "reported_result": "PASS; two gateway strict roots only",
+        "log": {
+          "local_path": "/tmp/apns-race-gateway-types-20261024.log",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "qualification": "Exit success attested by author and reviewed by parent; empty stdout alone is not an exit-status receipt."
+      }
+    },
+    "pdf": {
+      "author_report": {
+        "source_baseline": "ee0b7b1759b6a2c4edb890a34081c34ac5c9caad",
+        "original_owner_checks": {
+          "passed": 1,
+          "failed": 2
+        },
+        "corrected_owner_checks": {
+          "passed": 3,
+          "failed": 0
+        },
+        "new_native_checks": {
+          "passed": 5,
+          "failed": 0
+        },
+        "archive_composition": {
+          "passed": 1,
+          "failed": 0
+        },
+        "bounded_types": "two platform adapters passed; not full typecheck",
+        "raw_logs": "Not saved; no filesystem log or hash claimed.",
+        "tool_receipts": {
+          "baseline": "99cbf4",
+          "candidate": "5094d2",
+          "archive_and_bounded_types": "2606a0"
+        }
+      },
+      "fixture_reason": "Wait for existing setTimeout URL revoke and drain before restoring globals; no product change or assertion weakening.",
+      "independent_review": "Parent confirmed APPROVE; new native checks independently rerun 5/5."
+    }
+  },
+  "remote_observation": {
+    "method": "git ls-remote origin refs/heads/master and collaborator PR heads; GitHub open-PR search",
+    "refs": {
+      "refs/heads/master": "382d2174daf887837718189ef2004b89c8ccb95d",
+      "refs/pull/254/head": "66392ddb637d00bd6cede97f7021f7d69ed5e400",
+      "refs/pull/262/head": "bc5f78cd530cb6c7c1966e097588fa53ac224d0e",
+      "refs/pull/263/head": "e2e36c391ba4b7255d7462984447f4d8273aca1c",
+      "refs/pull/265/head": "4e8b34e501b3e4db7d6f550778f2c349203174d7",
+      "refs/pull/273/head": "4d4c9202a398fef421bf105af155e3ffbc8a0606"
+    },
+    "log": {
+      "local_path": "/workspace/scratch/c112a98a8be9/four-fixes-integration-evidence-20261024/remote-refs.txt",
+      "bytes": 359,
+      "sha256": "f60a2e1a1a93dd82220cf42e4f813616d872ba821755c46040efda9e3a633b18"
+    },
+    "actions": "Read-only; collaborator branches unchanged.",
+    "qualification": "Original observation before #283/#284; later read-only fetch confirmed 015deb8e. No new remote writes after the unresolved approval/call rejection."
+  },
+  "review": {
+    "candidate_reviews": "Parent confirmed all three groups APPROVE, including photo increment cce846e.",
+    "integration_review": "Earlier candidate approved; new #284 fixture/document integration pending parent review."
+  },
+  "not_run": [
+    "Photo/APNs rerun or broad lifecycle/summary rerun on #284",
+    "Full typecheck/lint/build/test suite",
+    "Browser or Android/iOS device acceptance",
+    "Live APNs, native Firestore concurrency, real model, real family data",
+    "New remote upload, branch/PR creation, merge, GCP/OTA/Sites publication"
+  ],
+  "next": "Parent reviews exact fixture/doc delta and resolves external approval state. Do not retry upload, change old pending payload, publish, or merge without that direction.",
+  "previous_local_candidate": {
+    "base": "382d2174daf887837718189ef2004b89c8ccb95d",
+    "commit": "57277f588733d31f77632119fea14326c3ae9c76",
+    "tree": "88dea03ef0d9af5dfdf60f1e91c42a6d43b0336c",
+    "preserved": true,
+    "publication": "Shell push lacked credentials; 18 matching blobs created; WORKLOG blob rejected after catalog change. No tree, commit, branch or PR created. No retry."
+  },
+  "previous_baseline_tests": {
+    "base": "382d2174daf887837718189ef2004b89c8ccb95d",
+    "checks": [
+      {
+        "command": "node --test --test-concurrency=1 frontend/scripts/source-photo-recovery.test.mjs",
+        "exit_code": 0,
+        "passed": 49,
+        "failed": 0,
+        "log": {
+          "local_path": "/workspace/scratch/c112a98a8be9/four-fixes-integration-evidence-20261024/photo.tap",
+          "bytes": 4983,
+          "sha256": "ad038c91a8c37eac8ac5a465493621c5df824e48cb5774f927166b7c3cd540cc"
+        },
+        "boundary": "Deterministic hooks/API ports; not React scheduling, browser or device."
+      },
+      {
+        "command": "node --test --test-concurrency=1 frontend/scripts/native-report-export.test.mjs frontend/scripts/family-document-lifecycle.test.mjs frontend/scripts/summary-composition.test.mjs",
+        "exit_code": 1,
+        "passed": 44,
+        "failed": 10,
+        "breakdown": {
+          "native_report_export": {
+            "passed": 5,
+            "failed": 0
+          },
+          "family_document_lifecycle": {
+            "passed": 26,
+            "failed": 10
+          },
+          "summary_composition": {
+            "passed": 13,
+            "failed": 0
+          }
+        },
+        "log": {
+          "local_path": "/workspace/scratch/c112a98a8be9/four-fixes-integration-evidence-20261024/pdf.tap",
+          "bytes": 18000,
+          "sha256": "8fdf7e47981d77f128d77da570314bbaa42836629dffc010f9a161868f39bc45"
+        },
+        "boundary": "Existing scripts were executed more broadly than intended 3+1 focused checks. Required PDF/summary cases passed individually in this output; not rerun or counted twice. The combined run is not a pass."
+      },
+      {
+        "command": "node --experimental-test-module-mocks --test --test-concurrency=1 tests/apns-push-gateway.test.ts tests/firestore-native-push-expiration.test.ts",
+        "exit_code": 0,
+        "passed": 10,
+        "failed": 0,
+        "log": {
+          "local_path": "/workspace/scratch/c112a98a8be9/four-fixes-integration-evidence-20261024/apns.tap",
+          "bytes": 1143,
+          "sha256": "66b3a98c4b4bd7ee51aeed55673b56a9ef4866fbf74b4fbe188b3960040493a0"
+        },
+        "boundary": "Synthetic APNs transport and Firestore memory transaction fixture; not live APNs/Firestore concurrency."
+      }
+    ],
+    "failures": {
+      "baseline_commit": "382d2174daf887837718189ef2004b89c8ccb95d",
+      "preparation_file_unchanged": "frontend/src/components/preparations/PreparationWorkspace.tsx",
+      "fixture_render_harness_unchanged": "frontend/scripts/family-document-lifecycle.test.mjs",
+      "missing_mock": "../history/HistoryCards",
+      "failures": [
+        "check completion preserves newer close and updates only the target document",
+        "check completion preserves newer select-b and updates only the target document",
+        "refresh completion preserves newer close and updates only the target document",
+        "refresh completion preserves newer select-b and updates only the target document",
+        "archive completion preserves newer close and updates only the target document",
+        "archive completion preserves newer select-b and updates only the target document",
+        "quiet cached refresh keeps selection/data and exposes a compact failure in preparations and history until success",
+        "failed refresh has one concise warning across empty, filtered, selected and nonempty list/history views",
+        "409 recheck preserves the rejection, reloads authoritative version, and restores usable checklist/archive actions without replay",
+        "unknown original stays locked after read or later 409 and explicit retry preserves its exact opId and input"
+      ],
+      "baseline_execution": "not rerun; static byte comparison only"
+    },
+    "qualification": "Historical results only; no claim these full scripts reran on #284."
+  },
+  "integrated_tests": [
+    {
+      "command": "node --test --test-concurrency=1 --test-name-pattern='report export keeps exact document|report export returns precise failure|report export failed browser handoff|summary defaults to overview while archive consumes' frontend/scripts/family-document-lifecycle.test.mjs frontend/scripts/summary-composition.test.mjs",
+      "exit_code": 0,
+      "passed": 4,
+      "failed": 0,
+      "breakdown": {
+        "pdf_owner": 3,
+        "archive_composition": 1
+      },
+      "log": {
+        "local_path": "/workspace/scratch/c112a98a8be9/four-fixes-latest-evidence-20261024/pdf-owner-archive.log",
+        "bytes": 585,
+        "sha256": "255d1826e12078c976233010834a846ea24f5783fab6dcc1a6dfea271933918d"
+      }
+    },
+    {
+      "command": "node --test --test-concurrency=1 frontend/scripts/native-report-export.test.mjs",
+      "exit_code": 0,
+      "passed": 5,
+      "failed": 0,
+      "log": {
+        "local_path": "/workspace/scratch/c112a98a8be9/four-fixes-latest-evidence-20261024/pdf-native.log",
+        "bytes": 728,
+        "sha256": "77073b28d5994c2c73ba2f58ab6c2fa3ae69564dd8b1967e85715f2e89f0457c"
+      }
+    }
+  ],
+  "integration_delta": {
+    "new_master": "015deb8e2d7663387b091fbd50d4ddbc79e38de6",
+    "master_changes": "#283 deployment receipt; #284 preparation background checks and shared document owner",
+    "direct_product_file_overlap": false,
+    "old_candidate_merge_preview_conflicts": [
+      "PLAN.md",
+      "STATUS.md",
+      "WORKLOG.md"
+    ],
+    "resolution": "Fresh branch from latest master; all current collaborator/deployment documentation preserved; only new FIX-FOUR01 entries and append-only log added.",
+    "changed_shared_dependencies": [
+      "frontend/src/production/useFamilyDocuments.ts",
+      "frontend/src/production/useDomainEnvironment.ts"
+    ],
+    "photo_guard": "useDomainWriteGuard implementation/signature unchanged; environment adds writeReady.",
+    "latest_scope": "Only PDF owner 3 + archive 1 + native 5 rerun; photo/APNs evidence reused from previous baseline, not presented as new execution."
+  },
+  "final_merge_compatibility": {
+    "observed_at_utc": "2026-10-24T14:44:15.199503+00:00",
+    "prior_pr_head": "d9157a7fdd852fb9613ad5d2c3ac34578877d010",
+    "master": "98f56a34bf6326c2f892ee3ebd8cb2a2f8176d86",
+    "authorization": "User explicitly requested normal PR #286 merge; no deployment or protection bypass.",
+    "product_intersection": "PhotoInputDomains.tsx: master adds attachSavedPhoto/onChatPhoto workspace callback; original four-fix core retained. No manual product or fixture edits.",
+    "tests": [
+      {
+        "command": "node --test --test-concurrency=1 frontend/scripts/source-photo-recovery.test.mjs",
+        "pass": 49,
+        "fail": 0,
+        "exit_code": 0,
+        "log": {
+          "local_path": "/workspace/scratch/c112a98a8be9/four-fixes-final-merge-evidence-20261024/photo-recovery.log",
+          "bytes": 4991,
+          "sha256": "64099ec1ed669b402bcde0534bb7033568f280bb1bfdacbff44a0e519fda5ec7"
+        }
+      },
+      {
+        "command": "node --experimental-test-module-mocks --test --test-concurrency=1 tests/chat-photo-client.test.ts",
+        "pass": 1,
+        "fail": 0,
+        "exit_code": 0,
+        "log": {
+          "local_path": "/workspace/scratch/c112a98a8be9/four-fixes-final-merge-evidence-20261024/chat-photo-client.log",
+          "bytes": 233,
+          "sha256": "37fcf9661df6665f2d2f9971d2192d2a00fa9c7e80e065eab930e095de8a3ea5"
+        }
+      }
+    ],
+    "not_rerun": [
+      "Unchanged APNs/PDF checks",
+      "Full suite/typecheck/build",
+      "Browser/device/live model/notification/deployment"
+    ],
+    "review": "Independent compatibility review pending before external update or merge.",
+    "protection_observation": {
+      "rulesets": "Active named-account update restriction; deletion and non-fast-forward prohibited. No required-status-check rule observed.",
+      "prior_head_statuses": 0,
+      "prior_head_check_runs": 0,
+      "prior_head_pr_workflows": 0,
+      "qualification": "Not CI pass; exact final head must be checked before merge."
+    }
+  }
+}

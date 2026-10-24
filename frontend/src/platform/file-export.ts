@@ -1,3 +1,7 @@
+export function useFileExportAvailable(): boolean {
+  return typeof document !== "undefined";
+}
+
 export async function exportBlob(blob: Blob, filename: string, isCurrent: () => boolean = () => true): Promise<string> {
   if (!isCurrent()) throw new Error("Export scope changed");
   const url = URL.createObjectURL(blob), link = document.createElement("a");

@@ -395,5 +395,10 @@
     "Native Firestore contention/indexes, private Storage and journal lifecycle",
     "Isolated restore/export/erasure deployment exercise",
     "Web/Android media behavior; no device result inferred from code checks"
-  ]
+  ],
+  "integration": {
+    "master": "e4a25b4e51e94ba2a60810b9ff9e888c14fcefe1",
+    "pullRequest": 286,
+    "sourceChanges": "No avatar source overlap; shared fixture only adds QuerySnapshot.empty. Existing verification is retained without a duplicate run."
+  }
 }

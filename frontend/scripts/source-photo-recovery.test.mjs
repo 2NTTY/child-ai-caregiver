@@ -21,7 +21,7 @@ function hooks() {
     effects.push(() => { old?.cleanup?.(); slots[i] = {deps, cleanup: fn()}; }); } };
   return {reset() {cursor = 0; effects = [];}, flush() {for (const effect of effects) effect();}, unmount() {for (const s of slots) s?.cleanup?.();},
     react: {useState(v) {const i = slot(() => typeof v === 'function' ? v() : v); return [slots[i], n => {slots[i] = typeof n === 'function' ? n(slots[i]) : n;}];},
-      useRef(v) {return slots[slot(() => ({current: v}))];}, useMemo(fn) {return slots[slot(fn)];}, useEffect: effect, useLayoutEffect: effect,
+      useRef(v) {return slots[slot(() => ({current: v}))];}, useMemo(fn) {return slots[slot(fn)];}, useId: () => String(slot(() => null)), useEffect: effect, useLayoutEffect: effect,
       createContext: () => ({Provider: 'Provider'}), memo: v => v, useContext: () => null, useCallback: fn => fn}};
 }
 class ApiError extends Error {constructor(status = 0, onlineCode = null, confirmed = false) {super('Synthetic request failure'); Object.assign(this, {status, onlineCode, confirmed});}}
@@ -42,9 +42,14 @@ function fixture(kind, targetPatch = {}) {
     async content() {return new Blob(['x']);}};
   let attachments = []; const draftListeners = new Set();
   const draftOwner = {getSnapshot: () => ({scope: 'child-a', attachments}), subscribe: listener => {draftListeners.add(listener); return () => draftListeners.delete(listener);}};
-  const env = {owner: {draftOwner}, apiBaseUrl: '/api', scopeKey: 'child-a', childId: 'child-a', childName: 'A', userId: 'synthetic-parent', role: 'owner', online: true,
+  const env = {owner: {draftOwner, setDomainPending() {}}, apiBaseUrl: '/api', scopeKey: 'child-a', childId: 'child-a', childName: 'A', userId: 'synthetic-parent', role: 'owner', online: true,
     current: () => current, currentIdentity: () => current, canStartWrite: () => true, invalidate() {}, accessError(error) {denied.push(error);},
     queryClient: {fetchQuery: ({queryFn}) => queryFn()}};
+  const {useDomainWriteGuard} = compile('frontend/src/production/useDomainEnvironment.ts', name => name === 'react' ? h.react
+    : name === './ProductionProvider' ? {useProductionOwner: () => env.owner}
+      : name.includes('/PreviewNavigationGuard') ? {usePreviewLeaveGuard(dirty, pending, scope, _copy, retainedInWorkspace, pendingKind) {
+        guard = {dirty: !!dirty, pending, scope, retainedInWorkspace, pendingKind}; return 'domain-guard';
+      }} : assert.fail(name));
   const resolve = name => {
     if (name.includes('/online-refresh-events')) return {subscribeOnlineRefresh: () => () => {}};
     if (name.includes('/blob-bytes')) return blobBytes;
@@ -58,10 +63,10 @@ function fixture(kind, targetPatch = {}) {
     if (name.includes('/shared-input-api')) return {createSharedInputApi: () => api, SharedInputApiError: ApiError};
     if (name.includes('/use-online-updates')) return {ONLINE_REFRESH_EVENT: 'refresh'};
     if (name.includes('/photo-view-model')) return {emptyPhotoDraft, samePhotoOriginal: () => true, photoTime: photoDisplay.photoTime};
-    if (name === './useDomainEnvironment') return {useDomainEnvironment: () => env, useDomainWriteGuard(dirty, pending) {guard = {dirty: !!dirty, pending, scope: 'child'};}};
+    if (name === './useDomainEnvironment') return {useDomainEnvironment: () => env, useDomainWriteGuard};
     if (name.includes('/PreviewNavigationGuard')) return {usePreviewNavigation: () => action => action()};
     if (name === './ProductionProvider') return {useProduction: () => ({})};
-    if (name === './usePhotoInputSources') return {};
+    if (name === './usePhotoInputSources' || name === './useAttachmentReview') return {};
     if (name.includes('/photo-form')) return {photoDraftSchema: {safeParse: () => ({success: true})}};
     if (name.endsWith('/shared/shared-inputs')) return {sharedInputCreateSchema: {safeParse: () => ({success: true})}};
     if (name.endsWith('/shared/photos')) return {photoMetadataSchema: {safeParse: value => ({success: true, data: value})}};
@@ -70,7 +75,7 @@ function fixture(kind, targetPatch = {}) {
   };
   const load = kind === 'photos' ? compile('frontend/src/production/PhotoInputDomains.tsx', resolve, '\nexports.useProductionPhotos = useProductionPhotos;').useProductionPhotos
     : compile('frontend/src/production/usePhotoInputSources.ts', resolve).usePhotoInputSources;
-  const render = () => {h.reset(); const v = load(); h.flush(); return v;};
+  const render = beforeEffects => {h.reset(); const v = load(); beforeEffects?.(v); h.flush(); return v;};
   return {api, render, env, target, attach(original) {attachments = original ? [{photo: original}] : []; draftListeners.forEach(fn => fn());}, get guard() {return guard;}, get listReads() {return listReads;}, get resets() {return resets;}, get denied() {return denied;},
     set pathname(v) {pathname = v;}, set view(v) {view = v;}, set deleted(v) {deleted = v;}, set listError(v) {listError = v;}, set resourceError(v) {resourceError = v;},
     set current(v) {current = v;}, set blockRead(v) {blockRead = v;}, unmount: h.unmount,
@@ -86,7 +91,7 @@ for (const kind of ['sources', 'photos']) {
   });
 }
 
-function navigation(onLeave, getGuard, intent = 'navigation') {
+function navigation(onLeave, getGuard, intent = 'navigation', retained = []) {
   const h = hooks(), jsx = (type, props) => ({type, props});
   const Dialog = Object.assign(() => null, {Title: 'Title', Content: 'Content', Actions: 'Actions'});
   const {PreviewNavigationGuard} = compile('frontend/src/preview/PreviewNavigationGuard.tsx', name =>
@@ -95,10 +100,89 @@ function navigation(onLeave, getGuard, intent = 'navigation') {
     name.includes('/theme') ? {colors: {}, typeScale: {}} : name === '../production/routes' ? compile('frontend/src/production/routes.ts', () => assert.fail('Unexpected routes import')) : name.startsWith('expo-router') || name.includes('browser-history-guard') ? {} : assert.fail(name));
   const render = () => {h.reset(); return PreviewNavigationGuard({children: null});};
   const all = value => !value || typeof value !== 'object' ? [] : [value, ...(Array.isArray(value) ? value : [value.props?.children]).flatMap(all)];
-  let tree = render(); tree.props.value.register('workspace', {...getGuard(), retainedInWorkspace: true}); tree.props.value.request(onLeave, intent); tree = render();
-  return {tree, buttons: all(tree).filter(node => node.type === 'Button').map(node => node.props.label), confirm() {tree.props.value.register('workspace', {...getGuard(), retainedInWorkspace: true}); all(tree).find(node => node.props?.label === '捨棄並離開').props.onPress();},
+  let tree = render(); tree.props.value.register('domain-guard', getGuard()); tree.props.value.request(onLeave, intent, retained); tree = render();
+  return {tree, buttons: all(tree).filter(node => node.type === 'Button').map(node => node.props.label), confirm() {tree.props.value.register('domain-guard', getGuard()); all(tree).find(node => node.props?.label === '捨棄並離開').props.onPress();},
     cancel() {all(tree).find(node => node.props?.label === '繼續編輯').props.onPress();}};
 }
+test('photos: workspace departure guards an unsaved original until explicit discard', async () => {
+  const f = fixture('photos'); await f.ready(); let routes = 0, disposals = 0;
+  const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1, sha256: 'a'.repeat(64),
+    imageSource: {uri: 'synthetic'}, readBase64: async () => 'AQ==', dispose() {disposals++;}};
+  f.render().actions.pickOriginal(original); f.render();
+  const leave = () => {routes++; f.pathname = '/tasks';};
+  const prompt = navigation(leave, () => f.guard, 'workspace');
+  assert.equal(routes, 0, 'workspace navigation must wait for the discard decision');
+  assert.deepEqual(prompt.buttons, ['繼續編輯', '捨棄並離開']);
+  prompt.cancel(); assert.equal(f.render().model.original, original); assert.equal(disposals, 0);
+  navigation(leave, () => f.guard, 'workspace').confirm(); f.render();
+  assert.equal(routes, 1); assert.equal(f.render().model.original, null); assert.equal(disposals, 1); f.unmount();
+});
+for (const readFails of [false, true]) {
+  test('photos: approved workspace discard waits for an active read and cleans up after ' + (readFails ? 'failure' : 'success'), async () => {
+    const f = fixture('photos'); await f.ready(); let release, disposals = 0;
+    const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1, sha256: 'a'.repeat(64),
+      imageSource: {uri: 'synthetic'}, dispose() {disposals++;}};
+    f.render().actions.pickOriginal(original); f.render();
+    f.blockRead = new Promise(resolve => {release = resolve;}); f.render().actions.refresh();
+    assert.equal(f.render().model.busy, true); assert.equal(f.guard.pending, false);
+    navigation(() => {f.pathname = '/tasks';}, () => f.guard, 'workspace').confirm(); f.render();
+    assert.equal(f.render().model.original, original); assert.equal(disposals, 0);
+    if (readFails) f.listError = new ApiError(503);
+    release(); await settle(); f.render(); const next = f.render();
+    assert.equal(next.model.original, null); assert.equal(next.model.draft.text, ''); assert.equal(disposals, 1);
+    assert.equal(f.guard.dirty, false); assert.equal(f.guard.pending, false); f.unmount(); assert.equal(disposals, 1);
+  });
+}
+test('photos: returning to Photos cancels a deferred departure cleanup', async () => {
+  const f = fixture('photos'); await f.ready(); let release, disposals = 0;
+  const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1, sha256: 'a'.repeat(64),
+    imageSource: {uri: 'synthetic'}, dispose() {disposals++;}};
+  f.render().actions.pickOriginal(original); f.render();
+  f.blockRead = new Promise(resolve => {release = resolve;}); f.render().actions.refresh(); f.render();
+  navigation(() => {f.pathname = '/tasks';}, () => f.guard, 'workspace').confirm(); f.render();
+  f.pathname = '/photos'; f.render(); release(); await settle(); f.render();
+  assert.equal(f.render().model.original, original); assert.equal(disposals, 0); f.unmount();
+});
+test('photos: deferred departure cleanup cannot erase a newer editor change', async () => {
+  const f = fixture('photos'); await f.ready(); let release, disposals = 0;
+  const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1, sha256: 'a'.repeat(64),
+    imageSource: {uri: 'synthetic'}, dispose() {disposals++;}};
+  f.render().actions.pickOriginal(original); f.render();
+  f.blockRead = new Promise(resolve => {release = resolve;}); f.render().actions.refresh(); f.render();
+  navigation(() => {f.pathname = '/tasks';}, () => f.guard, 'workspace').confirm(); f.render();
+  release(); await settle();
+  const draft = {text: 'Synthetic newer edit after the read settled'};
+  f.render(v => v.actions.editDraft(draft)); const next = f.render();
+  assert.deepEqual(next.model.draft, draft); assert.equal(next.model.original, original); assert.equal(disposals, 0); f.unmount();
+});
+test('photos: a successful retry clears only the stale list read error', async () => {
+  const f = fixture('photos'); f.listError = new ApiError(503); let v = await f.ready();
+  assert.equal(v.model.load, 'error'); assert.match(v.model.notice, /讀取未能確認/); assert.equal(v.model.fresh, false);
+  f.listError = null; v.actions.refresh(); await settle(); v = f.render();
+  assert.equal(v.model.load, 'ready'); assert.equal(v.model.notice, ''); assert.equal(v.model.fresh, true); assert.equal(v.model.canPick, true);
+  f.unmount();
+});
+test('photos: read error clears only after list and selected photo both recover without losing the draft', async () => {
+  const f = fixture('photos'); let v = await f.open();
+  const draft = {text: 'Synthetic unsaved recovery draft'}; v.actions.editDraft(draft);
+  f.listError = new ApiError(503); f.render().actions.refresh(); await settle(); v = f.render();
+  const readError = v.model.notice; assert.match(readError, /讀取未能確認/);
+  f.listError = null; f.resourceError = new ApiError(503); v.actions.refresh(); await settle(); v = f.render();
+  assert.equal(v.model.load, 'error'); assert.equal(v.model.notice, readError); assert.deepEqual(v.model.draft, draft);
+  f.resourceError = null; v.actions.refresh(); await settle(); v = f.render();
+  assert.equal(v.model.load, 'ready'); assert.equal(v.model.notice, ''); assert.deepEqual(v.model.draft, draft);
+  assert.equal(v.model.selected.id, f.target.id); f.unmount();
+});
+test('photos: successful reads preserve original and newer picker notices', async () => {
+  const f = fixture('photos'); await f.ready();
+  const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1, sha256: 'a'.repeat(64), imageSource: {uri: 'synthetic'}};
+  f.render().actions.pickOriginal(original); let v = f.render(); const originalNotice = v.model.notice;
+  assert.ok(originalNotice); v.actions.refresh(); await settle(); v = f.render(); assert.equal(v.model.notice, originalNotice);
+  f.listError = new ApiError(503); v.actions.refresh(); await settle(); v = f.render(); assert.match(v.model.notice, /讀取未能確認/);
+  f.listError = null; let release; f.blockRead = new Promise(resolve => {release = resolve;});
+  v.actions.refresh(); f.render().actions.reportFileError('Synthetic newer picker error'); release(); await settle(); v = f.render();
+  assert.equal(v.model.load, 'ready'); assert.equal(v.model.notice, 'Synthetic newer picker error'); assert.equal(v.model.original, original); f.unmount();
+});
 for (const kind of ['sources', 'photos']) {
   test(kind + ': approved route departure discards only ordinary drafts', async () => {
     const f = fixture(kind); let v = await f.open(); const saved = structuredClone(f.target);
@@ -107,8 +191,9 @@ for (const kind of ['sources', 'photos']) {
     v = f.render(); assert.equal(f.guard.dirty, true);
     const dirty = () => kind === 'sources' ? f.render().model.managementDraft?.dirty : !!f.render().model.draft.text;
     assert.equal(dirty(), true, 'ordinary rerenders retain the draft');
-    navigation(() => {f.pathname = '/tasks';}, () => f.guard).cancel(); assert.equal(dirty(), true, 'cancel retains the draft');
-    navigation(() => {f.pathname = '/tasks';}, () => f.guard).confirm(); f.render(); v = f.render();
+    const intent = kind === 'photos' ? 'workspace' : 'navigation';
+    navigation(() => {f.pathname = '/tasks';}, () => f.guard, intent).cancel(); assert.equal(dirty(), true, 'cancel retains the draft');
+    navigation(() => {f.pathname = '/tasks';}, () => f.guard, intent).confirm(); f.render(); v = f.render();
     assert.equal(f.guard.dirty, false); assert.equal(v.model.selected, null); assert.equal(v.model.draft.text, '');
     if (kind === 'sources') assert.equal(v.model.managementDraft, null);
     assert.deepEqual(f.target, saved, 'discarding local form content must not delete saved data');
@@ -155,15 +240,16 @@ test('photos: original ownership survives chat-to-Photos entry and releases on a
   const original = {fileName: 'synthetic.png', mimeType: 'image/png', bytes: 1, sha256, imageSource: {uri: 'synthetic'}, readBase64: async () => encoded};
   f.attach(original);
   assert.equal(await f.render().receiveComposerOriginal(original), true); const owned = f.render().model.original;
-  f.pathname = '/photos'; f.render(); assert.equal(f.render().model.original, owned); assert.equal(await owned.readBase64(), encoded);
-  navigation(() => {f.pathname = '/tasks';}, () => f.guard).confirm(); f.render(); assert.equal(f.render().model.original, null);
+  const transfer = navigation(() => {f.pathname = '/photos';}, () => f.guard, 'navigation', ['domain-guard']);
+  assert.deepEqual(transfer.buttons, []); f.render(); assert.equal(f.render().model.original, owned); assert.equal(await owned.readBase64(), encoded);
+  navigation(() => {f.pathname = '/tasks';}, () => f.guard, 'workspace').confirm(); f.render(); assert.equal(f.render().model.original, null);
   await assert.rejects(owned.readBase64(), /Original released/); f.unmount();
 });
 
 test('photos: leaving the legacy Care photo view clears its ordinary draft', async () => {
   const f = fixture('photos'); f.pathname = '/care'; f.view = 'photos'; const v = await f.open();
   v.actions.editDraft({text: 'Synthetic draft in legacy photo route'}); f.render(); assert.equal(f.guard.dirty, true);
-  navigation(() => {f.view = undefined;}, () => f.guard).confirm(); f.render(); assert.equal(f.render().model.draft.text, ''); assert.equal(f.guard.dirty, false); f.unmount();
+  navigation(() => {f.view = undefined;}, () => f.guard, 'workspace').confirm(); f.render(); assert.equal(f.render().model.draft.text, ''); assert.equal(f.guard.dirty, false); f.unmount();
 });
 test('sources: retained stack screens unmount local forms outside the active route', () => {
   let pathname = '/sources';
@@ -187,9 +273,15 @@ for (const kind of ['sources', 'photos']) {
       f.render().actions.upload();
     }
     f.render(); assert.equal(f.guard.pending, true); const originalPayload = submitted;
-    f.pathname = '/tasks'; f.render(); assert.equal(f.guard.pending, true);
+    let childChanges = 0;
+    const childPrompt = navigation(() => {childChanges++;}, () => f.guard, 'child');
+    assert.deepEqual(childPrompt.buttons, ['留在此頁']); assert.equal(childChanges, 0);
+    let workspaceChanges = 0;
+    const workspace = navigation(() => {workspaceChanges++; f.pathname = '/tasks';}, () => f.guard, 'workspace');
+    assert.deepEqual(workspace.buttons, []); assert.equal(workspaceChanges, 1); f.render(); assert.equal(f.guard.pending, true);
     release(); await settle(); const next = f.render();
     assert.equal(next.model.operation.state, 'unknown'); assert.equal(f.guard.pending, true); assert.equal(calls, 1); assert.equal(submitted, originalPayload); assert.equal(f.resets, 0);
+    assert.deepEqual(navigation(() => {childChanges++;}, () => f.guard, 'child').buttons, ['留在此頁']); assert.equal(childChanges, 0);
     if (kind === 'photos') assert.equal(next.model.original.fileName, 'synthetic.png');
     f.unmount();
   });

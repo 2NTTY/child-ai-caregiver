@@ -23,6 +23,7 @@ type PendingPhoto = ({ kind: "reserve"; metadata: PhotoMetadata } | { kind: "con
   & { checked: boolean; confirmed: boolean };
 type DirectPhoto = { kind: "upload" | "extract"; photo: PhotoAttachment; checked: boolean };
 const noOperation = (): PhotoOperation => ({ state: "none", phase: null, reference: null, message: "", checked: false });
+const readFailureNotice = "讀取未能確認，原檔及草稿保留。請手動重新讀取。";
 const privatePhoto = (photo: PhotoAttachment | null, userId: string | null): photo is PhotoAttachment =>
   !!photo && photo.canManage && photo.ownerUserId === userId && photo.visibility === "private" && !photo.recordId;
 const photoDraft = (photo: PhotoAttachment): PhotoDraftFields => photo.extraction.draft ? {
@@ -118,7 +119,7 @@ function useProductionPhotos() {
       } else {
         update({ pending: null, direct: null, ...(phase ? {} : { load: "error" as const }), ...(failure.onlineCode === "photo_capacity" ? { canCreate: false } : {}) });
         if (phase) op(phase, "failed", failure.onlineCode === "photo_capacity" || failure.status === 413 ? "容量不足或原檔超出限制；原檔及草稿保留。" : "提交未被確認，原檔及草稿保留。請重新讀取並核對。");
-        else update({ notice: "讀取未能確認，原檔及草稿保留。請手動重新讀取。" });
+        else update({ notice: readFailureNotice });
       }
     } finally {
       if (request.current === controller) request.current = null;
@@ -203,6 +204,8 @@ function useProductionPhotos() {
       update({ pending: { ...ref.current.pending, checked: true } });
       op(ref.current.pending!.kind, "confirmed_unavailable", "原操作已確認，清單已重讀，結果仍不可讀。不會重送；可明確結束本次查核。", true);
     }
+    // Only a complete refresh retires this read error, not newer draft or operation notices.
+    if (ref.current.notice === readFailureNotice) update({ notice: "" });
   }
   const refresh = () => {
     if (ref.current.busy) { refreshRequested.current = true; return; }
@@ -235,12 +238,26 @@ function useProductionPhotos() {
   };
   const photoRoute = pathname === "/photos" || pathname === "/care" && requestedView === "photos";
   const routeKey = `${pathname}:${photoRoute}`, previousRoute = useRef(routeKey);
+  const deferredRouteRelease = useRef<{ routeKey: string; editor: typeof state } | null>(null);
   useEffect(() => {
     const previous = previousRoute.current; previousRoute.current = routeKey;
+    const s = ref.current;
     // Entering either photo route deliberately preserves a chat-to-Photos transfer.
-    if (previous === routeKey || photoRoute || ref.current.busy || ref.current.pending || ref.current.direct) return;
+    if (previous !== routeKey) deferredRouteRelease.current = photoRoute ? null : { routeKey, editor: s };
+    const departure = deferredRouteRelease.current;
+    if (!departure) return;
+    const basis = departure.editor;
+    // A read may finish after the approved departure. Retire only that editor,
+    // never newer input, a returning photo route, or an unresolved write owner.
+    if (photoRoute || departure.routeKey !== routeKey || s.pending || s.direct || s.operation.state === "saving"
+      || basis.formKey !== s.formKey || basis.original !== s.original || basis.draft !== s.draft
+      || basis.source !== s.source || basis.replacement !== s.replacement) {
+      deferredRouteRelease.current = null; return;
+    }
+    if (s.busy) return;
+    deferredRouteRelease.current = null;
     releaseEditor(); update({ operation: noOperation(), notice: "", resourceUnavailable: false });
-  }, [routeKey, photoRoute]);
+  }, [routeKey, photoRoute, state.busy, state.pending, state.direct, state.operation.state, state.formKey, state.original, state.draft, state.source, state.replacement]);
   useEffect(() => {
     if (pathname !== "/chat") return;
     let active = true;
@@ -259,7 +276,8 @@ function useProductionPhotos() {
   const pending = state.busy || !!state.pending || !!state.direct;
   // Keep busy guards for local resource changes; only writes block scope departure.
   const writePending = state.operation.state === "saving" || !!state.pending || !!state.direct;
-  const leaveGuardId = useDomainWriteGuard(!!state.original && state.selected?.state !== "ready" || !!state.draft.text && !state.selected?.recordId || !!state.replacement, writePending);
+  // Pending operations outlive workspace routes; ordinary drafts are released on departure.
+  const leaveGuardId = useDomainWriteGuard(!!state.original && state.selected?.state !== "ready" || !!state.draft.text && !state.selected?.recordId || !!state.replacement, writePending, "child", writePending);
 
   async function sendContent(photo: PhotoAttachment, original: PhotoOriginal, signal: AbortSignal) {
     if (!original.readBase64 || !samePhotoOriginal(photo, original)) throw new PhotoApiError(400, "invalid_input");

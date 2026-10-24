@@ -3595,12 +3595,30 @@
 - 128 項有界批次共用版本與交易，無效目標不部分保存。unknown 只查／重送原操作；衝突先讀回再明確套用，斷線不自動排隊重送，身份清理保留。按鈕不因正常保存換成文字或鎖住其他勾選。
 - [定向證據](artifacts/verification/PREPARATION_BACKGROUND_SAVE_20261024.json)保留兩次 fixture 等待缺口及 tsc 參數更正；owner 連貫情景與 Firestore 合成批次各一條通過，窄型別通過。沒有全量、真模型、雲端寫入、通知或真機；尚未部署。
 
+
+<a id="log-20261024-four-fixes"></a>
+## LOG-20261024-FOUR-FIXES
+
+- 2026-10-24 UTC，依使用者指定第 1–4 項修補，dot 原生整合代理在獨立 cloud checkout 接續 `382d2174`，只整合已獨立 review 的照片兩提交、PDF 及 APNs 候選。15 碼測檔無 #282 路徑重疊；照片 49/49、APNs 10/10 通過。PDF 相關兩份舊 scripts 全檔執行較原定定向範圍闊，整批 44/54，10 FAIL 均為 preparation fixture 缺 `HistoryCards` mock；master 同一 import／harness 已靜態核實，不修旁支或掩蓋原紅。
+- 原候選 `57277f5`／tree `88dea03e` 經主對話覆核後準備草稿 PR。shell push 因無 Username／TTY 失敗；connector 已建 18 個與原本地 SHA 相符的 blob，WORKLOG blob 返回 catalog changed 拒絕。未建立 tree／commit／branch／PR；批准卡狀態未定，不重試或改道，原候選及已準備內容不變。
+- 等待期間 master 合併 #283／#284 至 `015deb8e`。唯讀 merge preview 只有 PLAN／STATUS／WORKLOG 衝突，但共享文件 owner 新增 preparation buffer；因此依主對話限定授權另開 `codex/four-verified-fixes-20261024-latest`，保留最新部署及背景保存文件，不覆舊狀態。8 個產品檔逐 byte 沿已批准來源；只補原 PDF fixture 載入真 buffer，以及 React 無 deps effect 的每次 render 語意，未弱化斷言或改產品。
+- Node 24.19.0、沿用依賴及合成 ports，最新候選只串行補 PDF owner 3/3、archive 組裝 1/1、新 native 檢查 5/5。未重跑照片／APNs、全檔 lifecycle、完整型別／build／GUI／真機或外部服務；原 PDF timer 1/3、照片 red、APNs care fixture red 及較闊批次 10 FAIL 均在[同一精簡收據](artifacts/verification/FOUR_FIXES_20261024.json)保留，按各自版本引用。
+- 新候選 fixture／文件交主對話覆核；外部交付仍等明確批准狀態，不新增上傳、合併、GCP／OTA／Sites、模型或真家庭資料操作。協作者 PR、頭像 gate、照片聊天及附件交付原責任不變，沒有真人驗收或猜測人員署名。
+
 <a id="log-20261024-preparation-background-delivery"></a>
 ## LOG-20261024-PREPARATION-BACKGROUND-DELIVERY
 
 - 已合併 #284／`015deb8` 沿原 VM 完成相容 API／worker／Web 更新；候選僅做離線 import／schema 與 hash 核對，發布前確認沒有活動 Agent lease。公開首頁 hash、API health 與映像身份通過，保留原映像及兩份 0600 配置回退；無資料遷移、模型、通知或配額改動。
 - Android 首次發布遇 EAS 資產處理 180 秒逾時。查回 preview 仍為上一組，固定 CLI 原碼確認尚未到 publish mutation；同一份已核 hash 產物只補送一次，成功發布 group `a46b49b0-a5ef-4ead-8d24-6a61236a85b9`。與已安裝 v3 相容，不另建 APK，不把發布當真機驗收。
 - [交付證據](artifacts/verification/PREPARATION_BACKGROUND_DELIVERY_20261024.json)保存版本、原失敗、回退及未驗項。照片聊天正式 Agent 接點與協作者未合併修改重疊，保留其工作；先處理不重疊的附件接點，頭像與下一 APK 品牌圖仍待後續包。
+
+
+<a id="log-20261024-four-fixes-draft-delivery"></a>
+## LOG-20261024-FOUR-FIXES-DRAFT-DELIVERY
+
+- 使用者明確批准四項修補、測試及記錄公開上傳後，於 2026-10-24 13:45 UTC 建立草稿 PR #286；遠端 `125657d177eb52347194556b543ffe7497b51d80` 的 tree `951b9e482ed2616bbfe497d8ec61a39b7b0825ae` fetch 回核與批准本地候選完全相同，19 檔集合相符。當時沒有觀察到 commit statuses／PR workflow runs，不當 CI 通過；未合併或部署。
+- #285 部署文件已在上傳期間合併至 `60b42c1`，只有 PLAN／STATUS／WORKLOG 衝突，產品無交集。使用者其後要求處理；本次由 dot 原生代理在隔離 worktree 正常 merge，保留 master 最新正文、兩邊 WORKLOG 追加記錄及原部署收據，並將四項修補的現況改為已交草稿 PR，未改原驗證收據或掩蓋失敗。
+- 本輪只核文件連結／錨點／衝突標記、append-only 保留及 15 個碼測檔 bytes；產品與測試完全不變，沒有重跑產品測試、模型、服務、GCP／OTA／Sites。交主對話覆核後只更新同一草稿 PR，不另開 PR、不強推、不合併 PR 或部署；原生／正式未驗門檻保持。
 
 <a id="log-20261024-chat-photo-backend"></a>
 ## LOG-20261024-CHAT-PHOTO-BACKEND
@@ -3623,6 +3641,14 @@
 - #287／#288已分別由C／B提交及合併；本次正式交付由C承接。原站先健康核對API／worker再更新Web，Android發布相容OTA group `327ad4ca-66f5-412b-bf8a-ee46d7493198`，不用新APK。
 - 首次候選把完整firebase-runtime覆蓋到部分部署基線，缺avatar-release而停止；修正為現網runtime只加兩項已review照片注入，未帶入頭像／APNs。首次修補Docker FROM使用image ID格式失敗，改成核hash的本機標籤後通過正式assembly import、13檔hash及Web hash；原失敗不抹除。
 - 公開首頁／API health均200，保留原映像和配置回退。零模型／通知／資料遷移；[精確交付證據](artifacts/verification/CHAT_PHOTO_DELIVERY_20261024.json)分列產物及限制。手機連線但鎖屏，未強停或改草稿，提示延遲修正及照片體驗仍待真機；接續頭像，不接管#286或協作者Agent。
+
+
+<a id="log-20261024-four-fixes-merge-compatibility"></a>
+## LOG-20261024-FOUR-FIXES-MERGE-COMPATIBILITY
+
+- 使用者明確要求合併 #286 後，末核 master 已前進至 #288／#289、`98f56a3`；同一 PhotoInputDomains 新增 workspace 的保存照片→聊天接線，不能只憑先前無衝突狀態直接合併。本輪先暫停外部寫入，再按主對話限定範圍正常整合；原照片修補核心與新 wrapper 各自保留，沒有另改產品或 fixture。
+- Node 24.19.0、既有依賴及合成 ports，照片恢復 49/49、聊天照片 client 原操作／同 ID 重用／身份隔離 1/1 通過。未將舊 APNs／PDF 數字算成本輪重跑，也未重做全量、build、真機或模型；原紅及未驗保持，最新兩份 log hash 追加於[既有收據](artifacts/verification/FOUR_FIXES_20261024.json)。
+- 本輪由獨立 reviewer 唯讀核對新照片 owner/API 與 draft／deferred discard／read-error 的相容性，不重複跑測試。保留 master PLAN／STATUS、兩邊 WORKLOG 與協作者最新部署證據；通過後只依精確 head 及 GitHub 保護規則正常合併同一 PR，不新增部署或合併其他協作者 PR。
 
 <a id="log-20261024-avatar-lifecycle-fix"></a>
 ## LOG-20261024-AVATAR-LIFECYCLE-FIX

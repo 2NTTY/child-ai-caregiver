@@ -76,6 +76,7 @@ test("APNs signs and sends one Expo reference, preserves unknown outcomes and bo
     const reference = { v: 1 as const, kind: "test" as const, bindingId: "00000000-0000-4000-8000-000000000001",
       bindingVersion: 2, deliveryId: "00000000-0000-4000-8000-000000000002" };
     const signal = new AbortController().signal;
+    const invalidatedAt = Date.now() - 1000;
     let mode = "accepted", authorityChecks = 0, authorityChecksAtPost = 0;
     const transport = fakeTransport(stream => {
       authorityChecksAtPost = authorityChecks;
@@ -84,7 +85,7 @@ test("APNs signs and sends one Expo reference, preserves unknown outcomes and bo
         stream.emit("response", { ":status": 200, "apns-id": reference.deliveryId });
         stream.emit("close");
       } else if (mode === "wrong-id") stream.respond(200, "00000000-0000-4000-8000-000000000099");
-      else if (mode === "expired") stream.respond(410, reference.deliveryId, JSON.stringify({ reason: "Unregistered" }));
+      else if (mode === "expired") stream.respond(410, reference.deliveryId, JSON.stringify({ reason: "Unregistered", timestamp: invalidatedAt }));
       else if (mode === "rejected") stream.respond(400, reference.deliveryId, JSON.stringify({ reason: "BadDeviceToken" }));
       else stream.respond(200, reference.deliveryId);
       });
@@ -133,7 +134,7 @@ test("APNs signs and sends one Expo reference, preserves unknown outcomes and bo
     assert.equal(transport.requests().length, 3);
     mode = "expired";
     assert.deepEqual(await gateway.send(token, reference, signal, allowed),
-      { status: "rejected", reason: "subscription_expired", providerStatus: 410 });
+      { status: "rejected", reason: "subscription_expired", providerStatus: 410, apnsInvalidatedAt: invalidatedAt });
     assert.equal(transport.requests().length, 4);
     mode = "rejected";
     assert.deepEqual(await gateway.send(token, reference, signal, allowed),
@@ -172,4 +173,20 @@ test("APNs signs and sends one Expo reference, preserves unknown outcomes and bo
     assert.equal(hangingAuthority.calls.length, 1); assert.equal(hangingAuthority.requests().length, 0);
     assert.equal(hangingAuthority.calls[0].session.destroyCalls, 1);
   } finally { await unlink(keyFile).catch(() => {}); await rmdir(directory); }
+});
+
+test('APNs rejects malformed 410 timestamps without treating the token as invalid or the send as accepted', async () => {
+  const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+  const config = { topic: 'org.yuyoufang.app', environment: 'sandbox' as const,
+    teamId: 'TEAM000001', keyId: 'KEY0000001', privateKey };
+  const reference = { v: 1 as const, kind: 'test' as const, bindingId: '00000000-0000-4000-8000-000000000001',
+    bindingVersion: 1, deliveryId: '00000000-0000-4000-8000-000000000002' };
+  for (const timestamp of [undefined, null, '1234567890000', -1, 1.5, 8_640_000_000_000_001, Infinity]) {
+    const transport = fakeTransport(stream => queueMicrotask(() => stream.respond(410, reference.deliveryId,
+      JSON.stringify({ reason: 'Unregistered', timestamp }))));
+    const result = await createApnsPushGateway(config, { connect: transport.port })
+      .send('ab'.repeat(32), reference, new AbortController().signal, async () => true);
+    assert.deepEqual(result, { status: 'rejected', reason: 'provider_rejected', providerStatus: 410 });
+    assert.equal(transport.requests().length, 1);
+  }
 });

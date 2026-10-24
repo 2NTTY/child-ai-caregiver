@@ -101,7 +101,7 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
         const s = await options.nativePush.readBinding(p, link.bindingId);
         return nativePushSender(options.nativePushGateway, s.apns).available && s.token && s.binding.status === 'active'
           && s.binding.version === link.bindingVersion && await options.nativePush.sessionActiveIn(p, s)
-          ? { channel: 'native_push' as const, token: s.token, tokenHash: s.tokenHash, label: s.binding.label, apns: s.apns } : null;
+          ? { channel: 'native_push' as const, token: s.token, tokenHash: s.tokenHash, tokenRevision: s.binding.tokenRevision, label: s.binding.label, apns: s.apns } : null;
       }
       const s = await options.telegram.readBinding(p, link.bindingId);
       return s.target && s.binding.status === 'active' && s.binding.version === link.bindingVersion && s.botId === options.telegramBotId
@@ -299,11 +299,12 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
       try { return await authority.runTransaction(scope.ownerUserId, scope.childId, async b => {
         const current = await readRequest(b, saved.request.id); if (!current || current.request.state !== 'pending') return false;
         const valid = await validRequest(b, current), a = current.request.attempts.find(a => a.id === attempt.id), active = await activeBinding(b, link);
-        if (started.active?.channel === 'native_push' && (active?.channel !== 'native_push' || active.tokenHash !== started.active.tokenHash)) return false;
+        if (started.active?.channel === 'native_push' && (active?.channel !== 'native_push' || active.tokenHash !== started.active.tokenHash
+          || active.tokenRevision !== started.active.tokenRevision)) return false;
         return !!valid && a?.status === 'sending' && !!active && reminderDecision(valid.task, await preferences(b), evidence, new Date().toISOString()) === 'initial';
       }); } catch (error) { if (error && typeof error === 'object' && 'status' in error && [403, 404, 409].includes(Number(error.status))) return false; throw error; }
     };
-    let result: { status: 'accepted' | 'rejected' | 'unknown' | 'stopped'; reason: string | null; providerStatus: number | null; messageId?: number | null; message?: NotificationMessageContent };
+    let result: { status: 'accepted' | 'rejected' | 'unknown' | 'stopped'; reason: string | null; providerStatus: number | null; messageId?: number | null; message?: NotificationMessageContent; apnsInvalidatedAt?: number };
     if (!started.active) result = { status: 'rejected', reason: 'binding_unavailable', providerStatus: null };
     else try {
       result = started.active.channel === 'web_push' ? await options.pushGateway.send(started.active.subscription,
@@ -321,12 +322,13 @@ export function createFirestoreContact(options: FirestoreDomainOptions & {
       const notice = noticeRow.exists ? decode(b, noticeRow, 'task-notification-outbox', current.reminderId, firestoreTaskNotificationOutboxSchema) : null;
       const invalidation = result.reason === 'subscription_expired' && link.channel === 'web_push'
         ? await options.push.prepareInvalidation(personal(b), link.bindingId, link.bindingVersion)
-        : result.reason === 'subscription_expired' && link.channel === 'native_push' && started.active?.channel === 'native_push'
-          ? await options.nativePush!.prepareInvalidation(personal(b), link.bindingId, link.bindingVersion, 'expired', started.active.tokenHash!)
+        : result.status === 'rejected' && result.reason === 'subscription_expired' && link.channel === 'native_push' && started.active?.channel === 'native_push'
+          ? await options.nativePush!.prepareInvalidation(personal(b), link.bindingId, link.bindingVersion, 'expired', {
+            tokenHash: started.active.tokenHash!, tokenRevision: started.active.tokenRevision, apnsInvalidatedAt: result.apnsInvalidatedAt })
         : result.reason === 'blocked' && link.channel === 'telegram' ? await options.telegram.prepareInvalidation(personal(b), link.bindingId, link.bindingVersion) : null;
       const change = await authority.prepareReceiptChange(tx, scope, randomUUID(), 'tasks');
       if (a.acknowledgedAt && (result.status === 'rejected' || result.status === 'stopped')) result = { ...result, status: 'unknown', reason: 'receipt_without_provider_confirmation' };
-      const { message: capturedMessage, ...deliveryResult } = result;
+      const { message: capturedMessage, apnsInvalidatedAt: _apnsInvalidatedAt, ...deliveryResult } = result;
       const message = options.messageHistoryEnabled === true ? acceptedMessage({ ...deliveryResult, message: capturedMessage }, a.channel) : undefined;
       if (message) current.messages = [...(current.messages ?? []).filter(saved => saved.attemptId !== a.id),
         { attemptId: a.id, recipientUserId: a.recipientUserId, content: message }];
