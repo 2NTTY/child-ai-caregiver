@@ -1,0 +1,64 @@
+{
+  "source": "382d2174daf887837718189ef2004b89c8ccb95d",
+  "date": "2026-10-24",
+  "authorization": "User explicitly approved this Web package and one compatible Android OTA after upload approval review required payload-specific consent.",
+  "web": {
+    "bytes": 4729934,
+    "sha256": "51948967cbebf5e01da35deb6857412931967df009573785d1e00cfe7c2777ad",
+    "files": 135,
+    "source": "382d2174daf887837718189ef2004b89c8ccb95d",
+    "state": "deployed",
+    "webImage": "sha256:6d4bff9a8a1dda021e9538721367bf0f42063d52c2764a5f4fc30a640c079dd0",
+    "rollbackImage": "sha256:241ffa8aae4a90c0c9bcb7a2904a75e940efe862d63eae9a98b230f6c4927af0",
+    "configBackup": "/etc/yuban-p1/firestore/compose.yaml.before-shared-382d217",
+    "apiWorkerChanged": false,
+    "publicCheck": {
+      "source": "382d2174daf887837718189ef2004b89c8ccb95d",
+      "checkedAt": "2026-10-24T12:55:00.050Z",
+      "webStatus": 200,
+      "indexHash": "18c84df4250754542fe0d187d2657da6b3a264de09b64152b9920d422ba72530",
+      "apiStatus": 200
+    }
+  },
+  "android": {
+    "source": "382d2174daf887837718189ef2004b89c8ccb95d",
+    "runtime": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+    "channel": "preview",
+    "startedAt": "2026-10-24T12:55:13.324Z",
+    "state": "published",
+    "finishedAt": "2026-10-24T12:58:10.933Z",
+    "exitCode": 0,
+    "updates": [
+      {
+        "id": "01a16dfd-7b50-749b-a5ee-e4402c0c55d9",
+        "createdAt": "2026-10-24T12:58:11.152Z",
+        "group": "148449b2-41f9-4239-88b0-79578d7bc240",
+        "branch": "preview",
+        "message": "Shared reading and navigation 382d217",
+        "runtimeVersion": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+        "platform": "android",
+        "manifestPermalink": "https://u.expo.dev/update/01a16dfd-7b50-749b-a5ee-e4402c0c55d9",
+        "isRollBackToEmbedded": false,
+        "gitCommitHash": "382d2174daf887837718189ef2004b89c8ccb95d"
+      }
+    ],
+    "files": 31,
+    "bytes": 13684295,
+    "deviceApplication": "not verified; no forced restart with potentially unsent drafts"
+  },
+  "boundaries": {
+    "apiWorkerChanged": false,
+    "migration": false,
+    "models": 0,
+    "notifications": 0,
+    "quotaChanged": false,
+    "newApk": false,
+    "avatarEnabled": false
+  },
+  "pending": [
+    "Preparation checklist background batching",
+    "Photos sent through chat",
+    "Avatar lifecycle release gate",
+    "Device verification of published UI"
+  ]
+}
