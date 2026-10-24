@@ -54,7 +54,9 @@ docker compose --project-name yuban-p1 \
 
 升級前備份 `/var/backups/yuban-p1/int-w07-before-028.ybak` 必須連同 `.ybak.attachments` 目錄保存，密鑰保持分開。原 `/opt/yuban-p2-43ab10c` 與原映像保留；原 pilot 設定備份在 `/var/backups/yuban-p1/int-w07/pilot-before.env`。回復不得 `down -v`、清庫或覆蓋正在使用的資料庫；先停止寫入、核對是否已有新資料，再决定沿舊映像讀取相容 schema 或還原至新的空目標，不能默默丟棄新資料。
 
-## 明確保留的限制
+## INT-W07 當時的限制（歷史）
+
+以下只記錄該歷史版本的範圍，不是目前功能開關。現行語音、附件、Android 與個人模型接點以上方操作說明及 [PLAN](../PLAN.md#active) 為準；是否已部署／真機通過看 [STATUS](../STATUS.md#deployment)。
 
 - 語音、其他文件輸入、第三方／電話登入及 Android 真機仍未支援；孩子刪除保留。沒有假成功入口。
 - PDF 是共享文字資料整理，不包含私人聊天或照片，也不是醫療／發展評估；完整選材匯出、遷移及大規模知識管理仍按後續階段。

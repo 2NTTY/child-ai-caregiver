@@ -3557,3 +3557,11 @@
 
 - 從已合併 #277／`83a4241`核對正式部署，發現APNs程式所需私鑰尚未有Compose掛載。補獨立按需override，僅API／worker取得同一key；原渠道與storage掛載保留，Web不取得，配置本身不開啟外發。沿既有GCP／Compose Skill，不改雲端架構或目前服務。
 - 主模型完成小範圍實作及review，C單作者交付；一份合成`docker compose config`合併核對與diff檢查通過。[證據](artifacts/verification/S13_IOS_COMPOSE_20261024.json)。沒有啟動容器、使用真key、通知、模型或部署；實際Linux所有者／mode與投遞留待Apple前置完成，不以YAML通過當可用通知。
+
+<a id="log-20261024-android-model-closeout"></a>
+## LOG-20261024-ANDROID-MODEL-CLOSEOUT
+
+- 接續 `c58459a`，B 收 Android／個人設定交付；遠端新增 `d7ef061` 只有 README。實際手機沿原登入保存同一平台設定一次，Firestore metadata 為版本2，重開讀回成功；沒有輸入私人key、修改配額、呼叫模型或通知。原真key生成及四角色補驗仍待原條件。
+- 本機 Android 匯出通過；用戶批准的唯一免費 EAS build `c678d433` 已完成APK v3，主模型與Sol核對實際package／runtime／SHA256及原簽署相同。新runtime不能向APK v2強推OTA；手機最後鎖定，提供覆蓋安裝連結，未代填人工通過。
+- 附件清單採已合併 `a84f349` 的11檔相容patch。單一既有client→handler→store合成流程及VM import通過；兩索引READY後，只更新原API／worker，健康及真SDK有界查詢通過，Web不變、頭像停用。保留原API與配置回退；不遷資料、不跑全量。原Docker FROM錯誤停在候選階段，核tag／image後局部修正；索引核對器補collection身份，沒有重建同一索引。
+- [精簡證據](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)區分已部署API、尚欠Web畫面／APK安裝、實際與未驗項。使用者新增兩功能正式可用及來源索引標示；本批收束後補共用畫面與頭像生命週期。私人來源目前是授權摘錄讀取，沒有自動向量索引；不以已保存冒稱已索引。協作者開放PR不改動。
