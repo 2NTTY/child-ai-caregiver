@@ -143,7 +143,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     const push = createFirestoreWebPush({ ...domain, gateway: pushGateway, enabled: !!localDelivery || !!pushConfig, currentAuth });
     const telegram = createFirestoreTelegram({ ...domain, config: telegramConfig, gateway: telegramGateway, currentAuth,
       ...(localDelivery ? { startUrl: localDelivery.telegramStartUrl } : {}) });
-    const chat = createFirestoreChatStore({ ...domain, voice: voices, files }), care = createFirestoreCareStore(domain);
+    const chat = createFirestoreChatStore({ ...domain, voice: voices, files, photos }), care = createFirestoreCareStore(domain);
     const sources = createFirestoreSharedInputStore(domain), concerns = createFirestoreConcernStore(domain);
     const memory = createFirestoreMemoryStore({ ...domain, chat, care });
     const summary = createFirestoreCareSummary(domain, care);
@@ -160,7 +160,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     mutations.push(contact.mutation);
     const library = knowledge ? createFirestorePersonalLibrary({ authority, knowledge, cipher, projectId: config.projectId, namespace: config.namespace }) : undefined;
     const aiConfig = composition.local?.modelConfig ?? readAiConfig(env);
-    product = await createFirestoreProductAgent({ ...domain, config: aiConfig, platformProviders: composition.local?.providers, diagnostics: composition.local?.diagnostics, voices, files, chat, care, summary, memory, online, documents, knowledge, sources, concerns, growth, contact,
+    product = await createFirestoreProductAgent({ ...domain, config: aiConfig, platformProviders: composition.local?.providers, diagnostics: composition.local?.diagnostics, voices, files, photos, chat, care, summary, memory, online, documents, knowledge, sources, concerns, growth, contact,
       authorizeWorker: composition.worker ? async (b, reference, recipeId) => {
         if (!config.taskWorkerEnabled || !(await authority.readControl(b.transaction)).enabled) return false;
         const job = await readFirestoreBackgroundClaim(new FirestoreDomainData(domain), b, reference); if (!job) return false;
