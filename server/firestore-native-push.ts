@@ -12,8 +12,7 @@ import { workRecoveryScopeSchema } from './firestore-work-continuation-recovery.
 import { openRecoveryEnvelope } from './firestore-recovery-envelope.ts';
 import { DeviceSessionError, type FirestoreDeviceSessions, type DeviceSessionKey } from './firestore-device-sessions.ts';
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
-import { apnsBindingSchema, nativePushSender, type ApnsBinding, type NativePushGateway } from './native-push-gateway.ts';
-import type { PushSendResult } from './web-push-types.ts';
+import { apnsBindingSchema, apnsInvalidationTimestampSchema, nativePushSender, type ApnsBinding, type NativePushGateway, type NativePushSendResult } from './native-push-gateway.ts';
 
 const uuid = z.uuid(), NIL = '00000000-0000-0000-0000-000000000000';
 export const firestoreNativeBindingSchema = z.object({ binding: nativePushBindingSchema,
@@ -129,9 +128,16 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
         { scope: b.scope, bindingId: saved.binding.id, tokenHash: hash }) });
     } };
   }
-  async function prepareInvalidation(b: Pick<Binding, 'scope' | 'transaction'>, id: string, version: number, status: 'expired' | 'revoked' = 'expired', tokenHash?: string) {
+  async function prepareInvalidation(b: Pick<Binding, 'scope' | 'transaction'>, id: string, version: number, status: 'expired' | 'revoked' = 'expired',
+    expected?: { tokenHash: string; tokenRevision: number; apnsInvalidatedAt?: number }) {
     const saved = await binding(b, id);
-    if (saved.binding.version !== version || saved.binding.status !== 'active' || tokenHash !== undefined && saved.tokenHash !== tokenHash) return { binding: saved.binding, apns: saved.apns, commit() {} };
+    // Consent version survives token refreshes; hash alone cannot fence a same-token registration.
+    // Active bindings already record their latest revision-bearing registration in updatedAt.
+    const timestamp = apnsInvalidationTimestampSchema.safeParse(expected?.apnsInvalidatedAt);
+    if (saved.binding.version !== version || saved.binding.status !== 'active'
+      || expected && (saved.tokenHash !== expected.tokenHash || saved.binding.tokenRevision !== expected.tokenRevision)
+      || status === 'expired' && (!expected || saved.apns && (!timestamp.success || timestamp.data < Date.parse(saved.binding.updatedAt))))
+      return { binding: saved.binding, apns: saved.apns, commit() {} };
     const hash = saved.tokenHash, occupied = hash ? await pointer(b, hash) : null;
     saved.token = null; saved.tokenHash = null;
     saved.binding = { ...saved.binding, status, version: version + 1, updatedAt: new Date().toISOString() };
@@ -234,10 +240,11 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
         const subscribed = await binding(b, current.delivery.bindingId);
         return b.generation === job.generation && b.authorizationVersion === job.authorizationVersion && (await authority.readControl(b.transaction)).enabled
           && current.delivery.status === 'sending' && current.attempt === original.saved.attempt && subscribed.binding.status === 'active'
-          && subscribed.binding.version === current.bindingVersion && subscribed.tokenHash === original.subscribed.tokenHash && await sessionActiveIn(b, subscribed);
+          && subscribed.binding.version === current.bindingVersion && subscribed.tokenHash === original.subscribed.tokenHash
+          && subscribed.binding.tokenRevision === original.subscribed.binding.tokenRevision && await sessionActiveIn(b, subscribed);
       }); } catch (error) { if (error && typeof error === 'object' && 'status' in error && [401, 403, 404, 409].includes(Number(error.status))) return false; throw error; }
     };
-    let result: PushSendResult;
+    let result: NativePushSendResult;
     try { result = await nativePushSender(options.gateway, original.subscribed.apns).send(original.subscribed.token!, { v: 1, kind: 'test', bindingId: original.saved.delivery.bindingId,
       bindingVersion: original.saved.bindingVersion, deliveryId: id }, signal, authorized); }
     catch { result = { status: 'unknown', reason: 'transport_unknown', providerStatus: null }; }
@@ -247,11 +254,12 @@ export function createFirestoreNativePush(options: FirestoreDomainOptions & {
       if (saved.attempt !== original.saved.attempt || saved.delivery.status !== 'sending') return;
       const subscriptionRow = await tx.get(data.ref('native_push_bindings', 'native-push-binding', saved.delivery.bindingId));
       const subscribed = subscriptionRow.exists ? decode(b, subscriptionRow, 'native-push-binding', saved.delivery.bindingId, firestoreNativeBindingSchema) : null;
-      const expired = result.reason === 'subscription_expired' && subscribed?.tokenHash === original.subscribed.tokenHash
-        ? await prepareInvalidation(b, saved.delivery.bindingId, saved.bindingVersion) : null;
+      const expired = result.status === 'rejected' && result.reason === 'subscription_expired' && subscribed
+        ? await prepareInvalidation(b, saved.delivery.bindingId, saved.bindingVersion, 'expired', {
+          tokenHash: original.subscribed.tokenHash!, tokenRevision: original.subscribed.binding.tokenRevision, apnsInvalidatedAt: result.apnsInvalidatedAt }) : null;
       const change = await authority.prepareReceiptChange(tx, scope, randomUUID(), 'preferences');
       change?.commit(); expired?.commit();
-      const { message: capturedMessage, ...deliveryResult } = result;
+      const { message: capturedMessage, apnsInvalidatedAt: _apnsInvalidatedAt, ...deliveryResult } = result;
       const message = options.messageHistoryEnabled === true ? acceptedMessage({ ...deliveryResult, message: capturedMessage }, 'native_push') : undefined;
       if (message) saved.message = message;
       saved.delivery = { ...saved.delivery, ...deliveryResult, finishedAt: new Date().toISOString() }; tx.set(ref, deliveryEnvelope(b, saved));

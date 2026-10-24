@@ -11,6 +11,7 @@ import { useContainerWidth } from "../components/useContainerWidth";
 import { ReadStateNotice } from "../components/ReadStateNotice";
 import { FamilyReportControls } from "../production/FamilyReportControls";
 import { useProductionFamilyDocuments } from "../production/TaskKnowledgeDomains";
+import { useFileExportAvailable } from "../platform/file-export";
 import { useGrowthWorkspace } from "../workspaces/GrowthWorkspace";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTabPanel, UnderlineTabs } from "../components/ui";
@@ -31,6 +32,7 @@ export function SummaryScreen() {
   const avatar = useProductionAvatar('child');
   const { model, actions, scopeKey: productionScope } = useProduction(), profile = useProfileWorkspace();
   const growth = useGrowthWorkspace(), documents = useProductionFamilyDocuments(), layout = useContainerWidth();
+  const fileExportAvailable = useFileExportAvailable();
   const router = useRouter(), navigate = usePreviewNavigation(), pathname = usePathname();
   const { tab: requestedTab } = useLocalSearchParams<{ tab?: string | string[] }>();
   const tab = normalizeSummaryTab(requestedTab);
@@ -82,7 +84,7 @@ export function SummaryScreen() {
           {tab === "archive" ? growth ? <>
             <GrowthArchive key={growth.scopeKey} model={growth.model} wide={layout.width >= 880} scrollRef={scrollRef} active
               onRecord={id => guarded(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))}
-              onExportReport={documents && typeof document !== "undefined" ? documents.exportReport : undefined} exportBusy={documents?.exportBusy}
+              onExportReport={fileExportAvailable ? documents?.exportReport : undefined} exportBusy={documents?.exportBusy}
               footerActions={<AppButton label="前往原始記錄" variant="secondary" density="compact" onPress={() => guarded(() => router.push("/care"))} />} />
             <FamilyReportControls scopeKey={growth.scopeKey} online={growth.model.online} onRefresh={growth.actions.refresh} />
           </> : <ReadStateNotice state="loading" scopeKey={scopeKey} message="正在讀取成長檔案…" /> : null}

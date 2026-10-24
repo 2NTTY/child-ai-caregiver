@@ -36,7 +36,7 @@ export function firestoreDomainFixture() {
         }
       })).sort((a, b) => compare(target.orders.map(([key]) => a.get(key)), target.orders.map(([key]) => b.get(key)), target.orders))
       .filter(doc => !target.cursor || compare(target.orders.map(([key]) => doc.get(key)), target.cursor, target.orders) > 0).slice(0, target.count);
-    return { docs, size: docs.length };
+    return { docs, size: docs.length, empty: docs.length === 0 };
   };
   let tail = Promise.resolve(), discard = false, lost = false, abortCommit = false, afterDiscard: (() => Promise<void>) | undefined;
   const attempt = async (callback: (tx: any) => Promise<any>, rollback: boolean) => {

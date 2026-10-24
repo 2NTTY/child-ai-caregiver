@@ -3,7 +3,7 @@ import { open } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 import { connect, constants, type ClientHttp2Session, type ClientHttp2Stream } from 'node:http2';
 import { apnsPushTokenSchema, nativePushContent, nativePushReferenceSchema } from '../src/shared/native-push.ts';
-import { apnsBindingSchema, type ApnsBinding, type NativeApnsGateway } from './native-push-gateway.ts';
+import { apnsBindingSchema, apnsInvalidationTimestampSchema, type ApnsBinding, type NativeApnsGateway, type NativePushSendResult } from './native-push-gateway.ts';
 import type { PushSendResult } from './web-push-types.ts';
 
 export interface ApnsPushConfig extends ApnsBinding { teamId: string; keyId: string; privateKey: KeyObject; }
@@ -73,8 +73,12 @@ export function createApnsPushGateway(config: ApnsPushConfig, ports: {
           signal.addEventListener('abort', listener, { once: true }); if (signal.aborted) listener();
         })]); } finally { signal.removeEventListener('abort', listener); }
       };
-      const rejection = (reason?: string): PushSendResult => ({ status: 'rejected',
-        reason: status === 410 && reason === 'Unregistered' ? 'subscription_expired' : status === 429 ? 'rate_limited' : 'provider_rejected', providerStatus: status });
+      const rejection = (reason?: string, timestamp?: unknown): NativePushSendResult => {
+        const invalidatedAt = apnsInvalidationTimestampSchema.safeParse(timestamp);
+        const expired = status === 410 && reason === 'Unregistered' && invalidatedAt.success;
+        return { status: 'rejected', reason: expired ? 'subscription_expired' : status === 429 ? 'rate_limited' : 'provider_rejected',
+          providerStatus: status, ...(expired ? { apnsInvalidatedAt: invalidatedAt.data } : {}) };
+      };
       try {
         if (signal.aborted) return stopped('worker_interrupted');
         const jwt = credential();
@@ -116,9 +120,15 @@ export function createApnsPushGateway(config: ApnsPushConfig, ports: {
           ? { status: 'accepted', reason: null, providerStatus: 200,
             message: { ...content, channel: 'native_push', contentVersion: 'native-push-generic-v1', sentAt } } : unknown();
         if (status >= 400 && status <= 599) {
-          let reason: string | undefined;
-          try { const parsed: unknown = JSON.parse(response.body); if (parsed && typeof parsed === 'object' && 'reason' in parsed && typeof parsed.reason === 'string') reason = parsed.reason; } catch {}
-          return rejection(reason);
+          let reason: string | undefined, timestamp: unknown;
+          try {
+            const parsed: unknown = JSON.parse(response.body);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              if ('reason' in parsed && typeof parsed.reason === 'string') reason = parsed.reason;
+              if ('timestamp' in parsed) timestamp = parsed.timestamp;
+            }
+          } catch {}
+          return rejection(reason, timestamp);
         }
         return unknown();
       } catch {
