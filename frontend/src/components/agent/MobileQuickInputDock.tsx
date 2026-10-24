@@ -11,6 +11,8 @@ import { DirectionalPressable } from "../navigation/DirectionalPressable";
 import { quickInputDirection, type QuickInputKind } from "../navigation/quick-input-gesture";
 import { AssistantInputDialog } from "./AssistantInputDialog";
 import { CornerCaptureSurface } from "./CornerCaptureSurface";
+import { VoiceCapture } from "./VoiceCapture";
+import type { VoiceCaptureHandle } from "./VoiceRecordingTimer";
 
 const choices: { key: QuickInputKind; label: string; icon: AppIconName }[] = [
   { key: "file", label: "文件", icon: "file-document-outline" },
@@ -26,8 +28,10 @@ export function MobileQuickInputDock({ supportedKinds = ["file", "voice", "text"
   const scopeKey = `${agentDraftScope}:${pathname}`;
   const host = useRef<View>(null);
   const [expanded, setExpanded] = useState(false), [selected, setSelected] = useState<QuickInputKind | null>(null);
-  const [dialog, setDialog] = useState<"file" | "voice" | null>(null), [error, setError] = useState<string | null>(null);
-  useEffect(() => { setExpanded(false); setSelected(null); setDialog(null); setError(null); }, [agentDraftScope, pathname]);
+  const [dialog, setDialog] = useState<"file" | null>(null), [error, setError] = useState<string | null>(null);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const voiceCapture = useRef<VoiceCaptureHandle>(null);
+  useEffect(() => { setExpanded(false); setSelected(null); setDialog(null); setVoiceOpen(false); setError(null); }, [agentDraftScope, pathname]);
   useEffect(() => {
     if (!error) return;
     const timer = setTimeout(() => setError(null), 8000);
@@ -60,11 +64,13 @@ export function MobileQuickInputDock({ supportedKinds = ["file", "voice", "text"
     cancelGesture(); setError(null);
     if (!enabled) return;
     if (!supportedKinds.includes(kind)) { setError(`${kind === "voice" ? "語音" : "文件"}功能正在接線；你可以先用文字或照片草稿。`); return; }
-    if (kind === "text") openAgentDraft(true); else setDialog(kind);
+    if (kind === "text") openAgentDraft(true);
+    else if (kind === "voice") { if (!voiceOpen) { setDialog(null); setVoiceOpen(true); voiceCapture.current?.start(); } }
+    else setDialog(kind);
   }
   const pending = agentAttachments.length > 0 || !!chatDraft.trim();
   return <View ref={host} testID="mobile-quick-input-dock" pointerEvents="box-none" style={[styles.dock, expanded && styles.dockExpanded]}>
-    <PhotoFilePicker disabled={!enabled} capturePreferred onPick={actions.openAgentPhoto} onError={setError}
+    <PhotoFilePicker disabled={!enabled || voiceOpen} capturePreferred onPick={actions.openAgentPhoto} onError={setError}
       renderTrigger={trigger => <>
         <DirectionalPressable testID="mobile-quick-camera" label={`拍照；長按選擇其他輸入；拖向上方文件、右上語音或右方文字${pending ? "；有未送出草稿" : ""}`}
           hint={enabled ? "長按放手後可點選；拖曳放手只開啟輸入，不會送出；方向鍵上展開，Tab 選擇，Escape 取消" : "請先選擇孩子"}
@@ -90,13 +96,19 @@ export function MobileQuickInputDock({ supportedKinds = ["file", "voice", "text"
         <AppIcon name={item.icon} size={20} /><Text style={styles.choiceLabel}>{item.label}</Text>{!supportedKinds.includes(item.key) ? <Text style={styles.choiceLabel}>正在接線</Text> : null}
       </Pressable>)}
     </MotionEntrance> : null}
-    <AssistantInputDialog kind={dialog} enabled={enabled} onDismiss={() => setDialog(null)} onUseText={() => { setDialog(null); openAgentDraft(true); }}
+    {enabled ? <View pointerEvents={voiceOpen ? "auto" : "none"} style={voiceOpen ? styles.voicePanel : undefined}>
+      <VoiceCapture key={scopeKey} ref={voiceCapture} visible={voiceOpen} onDismiss={() => setVoiceOpen(false)}
+        onPick={attachment => { if (addAgentAttachment(attachment)) openAgentDraft(); }} />
+    </View> : null}
+    <AssistantInputDialog kind={dialog} enabled={enabled} onDismiss={() => setDialog(null)}
       onPick={attachment => { if (addAgentAttachment(attachment)) { setDialog(null); openAgentDraft(); } }} />
   </View>;
 }
 const styles = StyleSheet.create({
   dock: { position: "absolute", left: 0, bottom: 0, width: 56, height: 56, zIndex: 4, overflow: "visible" },
   dockExpanded: { width: 180, height: 184 },
+  voicePanel: { position: "absolute", left: spacing.sm, bottom: 68, width: 280, borderRadius: radius.medium,
+    backgroundColor: colors.white, padding: spacing.md, borderWidth: 1, borderColor: colors.softLine, elevation: 3 },
   camera: { position: "absolute", left: 0, bottom: 0, width: 56, height: 56, borderRadius: 28,
     backgroundColor: "transparent", overflow: "visible", alignItems: "center", justifyContent: "center" },
   status: { position: "absolute", left: 0, bottom: 68, width: 248, borderRadius: radius.small, backgroundColor: colors.white,

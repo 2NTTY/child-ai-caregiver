@@ -1,8 +1,9 @@
 import { usePathname, Slot, Tabs } from "expo-router";
 import type { ReactNode } from "react";
-import { Platform } from "react-native";
+import { Platform, Pressable } from "react-native";
 import { RecordsNavButton } from "../../src/components/navigation/RecordsNavButton";
 import { navigationItems } from "../../src/components/navigation/app-navigation";
+import { MobileNavSelection } from "../../src/components/navigation/MobileNavSelection";
 import { MobileQuickInputDock } from "../../src/components/agent/MobileQuickInputDock";
 import { AppIcon } from "../../src/components/AppIcon";
 import { AppBackdrop } from "../../src/components/appearance/AppBackdrop";
@@ -44,7 +45,8 @@ function NativeDashboardTabs() {
     {pathname === "/" ? <MobileQuickInputDock key={scopeKey} supportedKinds={["voice", "text"]} /> : null}
   </MotionScopeBoundary></NativeKeyboardPane>} screenListeners={({ navigation, route }) => ({ tabPress: event => {
     event.preventDefault(); leave(() => navigation.navigate(route.name), "workspace");
-  } })} screenOptions={{ sceneStyle: { backgroundColor: "transparent" }, headerShown: false, tabBarActiveTintColor: colors.teal, tabBarActiveBackgroundColor: colors.selectedNav, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line, minHeight: mobileLayout.tabMinHeight + insets.bottom }, tabBarItemStyle: { minHeight: mobileLayout.touchTarget }, tabBarLabelStyle: mobileType.caption, tabBarHideOnKeyboard: false }}>
+  } })} screenOptions={{ sceneStyle: { backgroundColor: "transparent" }, headerShown: false, tabBarActiveTintColor: colors.teal, tabBarActiveBackgroundColor: colors.selectedNav, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line, minHeight: mobileLayout.tabMinHeight + insets.bottom }, tabBarItemStyle: { minHeight: mobileLayout.touchTarget }, tabBarLabelStyle: mobileType.caption, tabBarHideOnKeyboard: false,
+    tabBarButton: props => <Pressable {...props}>{props["aria-selected"] ? <MobileNavSelection /> : null}{props.children}</Pressable> }}>
     <Tabs.Screen name="index" options={{ title: navigationItems.home.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.home.icon} color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="chat" options={{ title: navigationItems.chat.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.chat.icon} color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="tasks" options={{ title: navigationItems.tasks.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.tasks.icon} color={color} size={mobileIcons.navigation} /> }} />

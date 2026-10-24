@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **來源狀態已實作，接續共用畫面及頭像。**2026-10-24 基線 `eef3768`；[來源狀態](PLAN.md#source-readiness01)已通過一項投影檢查，尚未發布。使用者已安裝 APK v3，ADB 核實版本及 App 前景；新功能及資料保留未因此全數驗收。接着修[準備單連點／手機佈局、鈴鐺首幀及聊天頂部分頁](PLAN.md#shared-interaction01)，隨前端交付附件庫，再續[頭像](PLAN.md#avatar-01)。
+- **共用介面首批已實作，待發布。**2026-10-24 基線 `ee0b7b1`；[來源狀態](PLAN.md#source-readiness01)已由 #281 合併。[共用互動](PLAN.md#shared-interaction01)已修列表頭、鈴鐺首幀、聊天頂部分頁／位置、直接錄音及原生選中短線，局部檢查與 Web／Android 匯出通過；正式畫面尚未更新。接着交付這批與附件庫，再補準備單合併保存、[照片聊天](PLAN.md#chat-photo01)及[頭像](PLAN.md#avatar-01)。APK v3 已安裝，不據此補填其餘真機驗收。
 - **iOS 本機接線與發佈工具已合併，TestFlight 等待 Apple 前置。**#272及#274～#278已合併；本機檢查、整合iOS匯出及APNs掛載配置核對通過。尚須Apple團隊／簽署／APNs配置、IPA與真機驗收；未部署或啟用通知。範圍保留於[iOS計劃](PLAN.md#p3-ios)，不因此重跑測試。
 - **附件庫 API 已上線，畫面交付待接續：**`a84f349` 的 11 檔清單接線已部署原 API／worker，兩索引 READY，候選與有界 SDK 查詢／health 通過。Web 仍是舊畫面包；APK v3 含新畫面、已安裝，清單仍未驗。原失敗及 GUI／型別限制保留，見 [ATTACHMENT-READ01](PLAN.md#attachment-read01)。私人來源沒有自動向量索引作業，標示分清已保存及可供 Agent 讀取，不造假索引完成。
 
