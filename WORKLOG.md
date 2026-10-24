@@ -3608,3 +3608,10 @@
 - 按使用者新增範圍授權，從 `60b42c1` 接照片專用訊息／runtime／審核入口；沒有修改或合併協作者分支。原照片與 Storage 不另複製，訊息原交易核版本及收據，同圖可重用；照片上傳不再需要先提取成記錄。
 - 原圖由 Server 核權後暫時送模型，附件庫可有界列出／重讀，審核取得相同原圖且 hash 綁定 metadata。原圖不進 ADK 事件或工具回覆；刪除、撤權與官方引用規則保留。Sol 只承接兩個 store 及其定向測試，主模型負責契約、runtime、工具、審核接點及 review。
 - [必要證據](artifacts/verification/CHAT_PHOTO_BACKEND_20261024.json)：兩條新連貫合成情景通過，最終只補原照片 transport 與新 runtime 情景，窄 strict 型別通過。初次型別命令 TS5112 已按實際修正；零真模型／通知／雲端寫入。前端傳送、手機欄位修正及部署接續，不當作完整照片體驗已完成。
+
+<a id="log-20261024-chat-photo-frontend"></a>
+## LOG-20261024-CHAT-PHOTO-FRONTEND
+
+- 沿已合併 #287 接共用 Web／Android 原圖上傳、聊天保存、原操作查回與附件庫同 ID 重用；聊天不再要求先送到核對。照片 API 補接既有 recoveryPending 欄位，未結清還原仍不可讀；移除草稿不刪已有原圖。
+- 手機空單行欄位先用原生提示，focus／有內容才轉回 Paper 浮動標籤；Web／flat／多行保持原呈現。使用者已回報彈窗初開延遲，未有本修正的真機結論。
+- [定向證據](artifacts/verification/CHAT_PHOTO_FRONTEND_20261024.json)：一條真 client／合成 transport 流程、三項輸入元件檢查、13 roots strict 型別及兩端匯出通過。首輪 TS2345 的 optional photo 窄化問題已修；review 補刪除後可解除引用，不再卡 unknown。零模型／通知／雲端寫入，部署及真機待接續；#286 照片恢復區塊未改動。

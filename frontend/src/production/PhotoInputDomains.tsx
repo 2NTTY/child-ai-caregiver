@@ -445,8 +445,10 @@ export function ProductionPhotoInputDomains({ children }: { children: ReactNode 
 }
 export function ProductionPhotosWorkspace({ onCare, capturePreferred = false }: { onCare: () => void; capturePreferred?: boolean }) {
   const domain = useContext(PhotoInputContext)?.photos;
-  const attachments = useAttachmentReview(), { actions } = useProduction();
-  return domain ? <PhotosView production model={domain.model} actions={domain.actions} onCare={onCare} onChat={() => actions.open("chat")} attachments={attachments} capturePreferred={capturePreferred} scopeKey={domain.scopeKey} /> : null;
+  const attachments = useAttachmentReview(), { actions, attachSavedPhoto } = useProduction();
+  return domain ? <PhotosView production model={domain.model} actions={domain.actions} onCare={onCare} onChat={() => actions.open("chat")}
+    onChatPhoto={photo => attachSavedPhoto({id:photo.id,version:photo.version,fileName:photo.fileName,mimeType:photo.mimeType,bytes:photo.bytes,sha256:photo.sha256,source:photo.source})}
+    attachments={attachments} capturePreferred={capturePreferred} scopeKey={domain.scopeKey} /> : null;
 }
 export function ProductionSourcesWorkspace({ onPhotos, onRecord }: { onPhotos: () => void; onRecord: (id: string) => void }) {
   const domain = useContext(PhotoInputContext)?.sources;

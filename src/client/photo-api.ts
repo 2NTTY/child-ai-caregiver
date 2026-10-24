@@ -38,7 +38,7 @@ const version = z.number().int().positive().max(2147483647);
 const photoSchema = photoMetadataSchema.extend({
   id: z.uuid(), childId: z.uuid(), ownerUserId: user, createdAt: z.iso.datetime({ offset: true }), version,
   state: z.enum(["reserved", "ready"]), visibility: z.enum(["private", "shared"]), canManage: z.boolean(),
-  recordId: z.uuid().nullable(),
+  recordId: z.uuid().nullable(), recoveryPending: z.boolean().optional(),
   extraction: z.object({
     state: z.enum(["not_requested", "running", "available", "failed", "unknown"]), runId: z.uuid().nullable(),
     draft: photoDraftSchema.nullable(), stopReason: z.string().max(200).nullable(),
