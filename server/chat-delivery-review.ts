@@ -110,15 +110,18 @@ export function isPureClarifyingQuestion(text: string): boolean {
   return true;
 }
 
-/** Greeting / short courtesy opener. Positive markers required; care-domain or advisory wording never skips. */
-const GREETING_PATTERN = /(?:^[\s，,。.!！？?]?)(?:你好|您好|哈囉|哈啰|嗨|早安|午安|晚安|早上好|下午好|晚上好)|(?:^|[\s，,])(?:你好|您好|哈囉|哈啰|嗨)\b|^(?:hi|hello|hey)\b|\bgood\s+(?:morning|afternoon|evening)\b|有什麼可以幫|有什么可以帮|需要什麼協助|需要什么协助|點樣幫到你|怎样帮到你|how\s+can\s+i\s+help|what\s+can\s+i\s+(?:do|help)/iu;
+/**
+ * Whole-utterance pure greeting / short courtesy templates only.
+ * A greeting substring never grants a skip for mixed advice or operation claims.
+ * Care-domain or advisory wording never skips (defense in depth; not the sole gate).
+ */
+const PURE_GREETING_UTTERANCE = /^(?:(?:你好|您好|哈囉|哈啰|嗨|早安|午安|晚安|早上好|下午好|晚上好)(?:[\s，,。.!！？?]*(?:有什麼可以幫你|有什么可以帮你|需要什麼協助|需要什么协助|點樣幫到你|怎样帮到你)[？?]?)?|(?:hi|hello|hey|good\s+(?:morning|afternoon|evening))(?:[\s,]*(?:how\s+can\s+i\s+help(?:\s+you)?|what\s+can\s+i\s+(?:do|help)(?:\s+for\s+you)?)[?]?)?)[\s。.!！？?]*$/iu;
 
 export function isPureGreetingOrSmallTalk(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 80) return false;
-  if (!GREETING_PATTERN.test(trimmed)) return false;
   if (CARE_DOMAIN_PATTERN.test(trimmed) || CARE_ADVISORY_PATTERN.test(trimmed)) return false;
-  return true;
+  return PURE_GREETING_UTTERANCE.test(trimmed);
 }
 
 export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): boolean {
