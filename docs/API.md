@@ -634,7 +634,9 @@ provider 為 gemini、vertex 或 openai-compatible；更換供應商或相容 AP
 <a id="int-family-documents"></a>
 ## INT：家庭文件及同版 PDF
 
-`/api/children/:childId/documents` 是多份準備文件及成長報告的唯一業務入口，與舊單份 VisitPreparation 分開。每次重查本人、目前家庭角色、孩子及 authorityVersion；owner／caregiver 可整理，viewer 唯讀。GET 清單／單項不呼叫模型或自動建立文件。POST 建立及 `/:id/actions` 帶原 opId；refresh／archive／restore／check_item 帶 expectedVersion。網絡未知只重查／重送相同原操作，不換 opId 或版本猜成功。
+`/api/children/:childId/documents` 是多份準備文件及成長報告的唯一業務入口，與舊單份 VisitPreparation 分開。每次重查本人、目前家庭角色、孩子及 authorityVersion；owner／caregiver 可整理，viewer 唯讀。GET 清單／單項不呼叫模型或自動建立文件。POST 建立及 `/:id/actions` 帶原 opId；refresh／archive／restore／check_item／check_items 帶 expectedVersion。網絡未知只重查／重送相同原操作，不換 opId 或版本猜成功。
+
+`check_items` 接受同文件最多 128 個不重複的 `{sectionId,itemId,checked}`，全部項目、目前來源、權限及版本在同一交易核對；任一不合法便不修改。成功只建立一個文件版本及原操作收據，回傳權威文件；保留舊 `check_item` 相容。共用 owner 可先顯示未保存勾選、停手約三秒合併最後狀態，或在同孩子離頁時立即背景送出；不是 Server 暫存資料庫。保存中可繼續勾選，成功後以回傳版本整理下一批；衝突／unknown 停止自動提交，保留意圖並沿原收據恢復。身份切換、登出及撤權仍沿現有隔離規則，未保存值不當成已保存正文或匯出依據。
 
 文件只整理已可家庭共享的 profile、記錄、有效確認事實、任務及關注；私人聊天／私人記憶／私人來源不自動進入。Server 按來源原 ID／版本組成內容，未記錄保持未知，未知事件時間不改成建立日期。有限範圍列 coverageNote，不將記錄整理當成診斷、能力判定或完整發展評估。四種準備用途保留；歸檔／重開及勾選文件項目不更動照護任務終態。
 
