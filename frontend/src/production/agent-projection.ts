@@ -1,4 +1,4 @@
-import { agentStopMessage } from "../../../src/shared/agent-stop-message.ts";
+import { agentStopDetailHint, agentStopMessage } from "../../../src/shared/agent-stop-message.ts";
 import type { AgentProposal, ProductAgentResult } from "../../../src/shared/product-agent.ts";
 import type { DocumentEdit } from "../../../src/shared/family-documents.ts";
 import type { KnowledgeEvidence } from "../../../src/shared/knowledge.ts";
@@ -128,6 +128,7 @@ export function projectAgentProposal(proposal: AgentProposal): AgentProposalView
 export function projectAgentRun(result: ProductAgentResult, childId: string, createdAt: string | null): AgentRunView {
   return { id: result.runId, childId, status: result.status, createdAt, text: result.outcome === "no_action" ? "已核對，這次沒有需要新增的回饋或行動。" : result.text,
     stopReasonLabel: agentStopMessage(result.stopReason),
+    stopReasonDetail: agentStopDetailHint(result.stopReason),
     counts: result.countsKnown === false ? null : result.counts, retrievalMode: result.retrievalMode,
     tools: result.tools.map((tool, index) => ({ id: `${result.runId}:${index}`, nameLabel: toolNames[tool.name] ?? "其他工具",
       status: tool.status, savesCandidate: ["propose_task", "propose_task_change", "propose_fact","propose_private_source","propose_private_source_change","propose_concern","propose_concern_change"].includes(tool.name) })),

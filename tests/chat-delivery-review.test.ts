@@ -13,7 +13,7 @@ import { readAiConfig } from "../server/ai-config.ts";
 import { loadAgentPrompt } from "../server/agent-prompt.ts";
 import {
   chatDeliveryDraftHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewAllows,
-  chatDeliveryReviewSourceExcerpt, draftLooksLikeSubstantiveCareAdvice, isPureClarifyingQuestion,
+  chatDeliveryReviewSourceExcerpt, draftLooksLikeSubstantiveCareAdvice, isPureClarifyingQuestion, isPureGreetingOrSmallTalk,
   requiresChatDeliveryReview, SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS,
   type ChatDeliveryDraft,
 } from "../server/chat-delivery-review.ts";
@@ -146,6 +146,31 @@ test("classmate F1: citation-free care fails closed even when keywords miss", ()
   }), false);
 });
 
+
+test("pure greetings skip delivery review without cites", () => {
+  for (const text of ["你好", "你好！", "你好，有什麼可以幫你？", "您好。", "Hello!", "Hi", "Good morning"]) {
+    assert.equal(isPureGreetingOrSmallTalk(text), true, text);
+    assert.equal(requiresChatDeliveryReview({
+      ...draft(), kind: "clarification", sources: [], paragraphs: [{ text, citationIds: [] }],
+    }), false, text);
+    // Model kind alone must not force review when the text is a trusted greeting shape.
+    assert.equal(requiresChatDeliveryReview({
+      ...draft(), kind: "caregiving", sources: [], paragraphs: [{ text, citationIds: [] }],
+    }), false, `caregiving:${text}`);
+  }
+  // Care-shaped text that opens with a greeting still fails closed into review.
+  for (const text of ["你好，BB不要吃蜂蜜", "Hello, newborns should not have honey."]) {
+    assert.equal(isPureGreetingOrSmallTalk(text), false, text);
+    assert.equal(requiresChatDeliveryReview({
+      ...draft(), kind: "clarification", sources: [], paragraphs: [{ text, citationIds: [] }],
+    }), true, text);
+  }
+  // Unknown citation-free wording without a greeting marker still fails closed.
+  assert.equal(isPureGreetingOrSmallTalk("沒有引用的說明"), false);
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "clarification", sources: [], paragraphs: [{ text: "沒有引用的說明", citationIds: [] }],
+  }), true);
+});
 test("classmate F2: multi-question clarifies and saved receipts with domain nouns", () => {
   for (const text of [
     "寶寶幾個月大？ 有沒有發燒？",
@@ -300,7 +325,7 @@ test("a real citation whose excerpt does not support the claim is not a formal r
     return model([{ functionCall: step }]);
   } });
   assert.equal(result?.status, "stopped");
-  assert.equal(result?.stopReason, "delivery_review_incomplete");
+  assert.equal(result?.stopReason, "delivery_review_budget");
   assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
   assert.equal(result?.text.includes(claim), false);
   assert.deepEqual(result?.citations, []);
@@ -325,7 +350,7 @@ test("an unreviewed draft that has used every model call is not formal success",
     return model([{ functionCall: step }]);
   } });
   assert.equal(result?.status, "stopped");
-  assert.equal(result?.stopReason, "delivery_review_incomplete");
+  assert.equal(result?.stopReason, "delivery_review_budget");
   assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
   assert.equal(result?.text.includes(claim), false);
   assert.equal(result?.counts.modelCalls, 4);
@@ -350,7 +375,7 @@ test("a bound limit of four is not raised by the six-call proposal", async () =>
     return model([{ functionCall: step }]);
   } }, { bound: true, reviewCalls: 6 });
   assert.equal(result?.status, "stopped", JSON.stringify(result));
-  assert.equal(result?.stopReason, "delivery_review_incomplete");
+  assert.equal(result?.stopReason, "delivery_review_budget");
   assert.equal(calls, 4);
   const config = readAiConfig({ AI_CHAT_DELIVERY_REVIEW_MODEL_CALLS: "6" });
   assert.equal(config.chatDeliveryReviewModelCalls, 6);
@@ -410,7 +435,7 @@ test("one repair can pass inside the proposal ceiling, and insufficient evidence
       assert.equal(result?.counts.modelCalls, 5);
     } else {
       assert.equal(result?.status, "stopped");
-      assert.equal(result?.stopReason, "delivery_review_incomplete");
+      assert.equal(result?.stopReason, "delivery_review_rejected");
       assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
       assert.equal(reviews, 1);
       assert.equal(repairs, 0);
@@ -437,7 +462,7 @@ test("a repair that relabels the draft out of review does not become formal succ
   } }, { reviewCalls: 6 });
   assert.equal(repairs, 1);
   assert.equal(result?.status, "stopped");
-  assert.equal(result?.stopReason, "delivery_review_incomplete");
+  assert.equal(result?.stopReason, "delivery_review_rejected");
   assert.equal(result?.text.includes(claim), false);
   assert.equal(result?.text.includes("請補充年齡"), false);
 });
@@ -456,7 +481,7 @@ test("care advice labelled operation without cites cannot complete with zero rev
   } });
   assert.ok(reviews >= 1, "server gate must schedule delivery review");
   assert.equal(result?.status, "stopped");
-  assert.equal(result?.stopReason, "delivery_review_incomplete");
+  assert.equal(result?.stopReason, "delivery_review_no_sources");
   assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
   assert.equal(result?.text.includes("加鹽"), false);
   assert.equal(result?.deliveryReview, undefined);
@@ -507,7 +532,7 @@ test("english and yue care labelled operation without cites cannot complete with
     } });
     assert.ok(reviews >= 1, `server gate must schedule delivery review for: ${text}`);
     assert.equal(result?.status, "stopped", text);
-    assert.equal(result?.stopReason, "delivery_review_incomplete");
+    assert.equal(result?.stopReason, "delivery_review_no_sources");
     assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
     assert.equal(result?.deliveryReview, undefined);
   }

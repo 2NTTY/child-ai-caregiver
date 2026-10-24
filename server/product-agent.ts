@@ -21,7 +21,10 @@ import { PRODUCT_AGENT_TOOL_CATALOG, WORK_CONTINUATION_TOOL_CATALOG } from "./pr
 import type { FirestoreWorkContinuationStore, ClaimedWorkContinuation } from "./firestore-work-continuation-store.ts";
 
 function unfinishedDeliveryText(stopReason: string | null | undefined): string {
-  if (stopReason === "delivery_review_incomplete") return CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT;
+  if (stopReason === "delivery_review_incomplete" || stopReason === "delivery_review_rejected"
+    || stopReason === "delivery_review_no_sources" || stopReason === "delivery_review_budget") {
+    return CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT;
+  }
   if (stopReason === "compose_review_incomplete") return DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT;
   return "";
 }

@@ -43,7 +43,7 @@ export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
 
 export type AgentStopReason = ModelProviderStopReason | "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
   | "input_limit" | "unauthorized" | "quota_exceeded" | "busy" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown"
-  | "delivery_review_incomplete" | "compose_review_incomplete";
+  | "delivery_review_incomplete" | "delivery_review_rejected" | "delivery_review_no_sources" | "delivery_review_budget" | "compose_review_incomplete";
 export class AgentStopped extends Error {
   readonly reason: AgentStopReason;
   constructor(reason: AgentStopReason) { super(reason); this.reason = reason; }
