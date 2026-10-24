@@ -12,7 +12,7 @@ import type { AgentPresentation, ProductAgentResult } from "../src/shared/produc
 import { CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT, type ChatDeliveryReviewBinding } from "../src/shared/chat-delivery-review.ts";
 import { DATA_COMPOSE_REVIEW_INCOMPLETE_TEXT } from "../src/shared/data-compose.ts";
 import { AgentStopped } from "./agent-budget.ts";
-import { enforceChatDeliveryReview, type ChatDeliverySurface } from "./chat-delivery-review.ts";
+import { enforceChatDeliveryReview, type ChatDeliverySurface, requiresChatDeliveryReview } from "./chat-delivery-review.ts";
 import type { AgentRunContext, AgentRunResult } from "./agent-runtime.ts";
 import { agentActionToolNames } from "../src/shared/agent-actions.ts";
 import { AGENT_CONFIRMATION_PENDING_TEXT, AGENT_CONFIRMATION_SAVED_TEXT } from "./agent-work-tool-descriptions.ts";
@@ -245,7 +245,10 @@ export function createProductAgent(options: {
               confirmationPendingFallbackUsed = true;
             }
           }
-          publish("reviewing");
+          // Only publish reviewing when independent review will actually start.
+          // Pure greetings / trusted skips return review:null and must not show 「正在獨立核對回覆」.
+          const deliveryDraft = tools!.deliveryDraft();
+          if (deliveryDraft && requiresChatDeliveryReview(deliveryDraft)) publish("reviewing");
           return acceptReviewedDelivery(tools!, rendered, review, result, _context);
         },
       });
