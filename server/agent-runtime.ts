@@ -8,6 +8,7 @@ import type { AiUsageStore } from "./ai-usage.ts";
 import { AGENT_LIMITS, AGENT_INTERACTIVE_INPUT, AgentBudget, AgentStopped, agentBudgetFingerprint, freezeAgentRunLimits } from "./agent-budget.ts";
 import type { AgentStopReason, AgentDurableBudget, AgentRunLimits } from "./agent-budget.ts";
 import { checkedAgentAudio, agentAudioMarker, type AgentAudioInput } from './agent-audio.ts';
+import { createAgentImages, type AgentImages, type AuthorizedAgentImage } from './agent-images.ts';
 import { AgentGatewayModel } from "./agent-model-gateway.ts";
 import type { AgentRunClaim } from "./product-agent-store.ts";
 import type { RootBudgetLimits } from "./durable-root-budget.ts";
@@ -101,13 +102,16 @@ export interface AgentTool {
   execute: (args: Record<string, unknown>, context: { scope: Readonly<AgentScope>; runId: string; callId: string; signal: AbortSignal; queryEmbeddingAttemptKey?: string }) => Promise<AgentToolResult>;
 }
 export interface AgentRunContext { scope: Readonly<AgentScope>; runId: string; budget: AgentBudget;
+  images?: AgentImages;
   /** Server-selected model for this run, including personal routing. */
   model?: string;
   authorize?: () => Promise<boolean>; embeddings?: import("./embedding-gateway.ts").EmbeddingGateway;
   /** Tool-free call on this root budget. Chat delivery review uses it; the generator cannot invoke it. */
-  completeText?: (input: { system: string; user: string; attemptKey: string }) => Promise<string>; }
+  completeText?: (input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[] }) => Promise<string>; }
 export interface AgentRuntimePort { run(input: AgentRunInput): Promise<AgentRunResult> }
 export interface AgentRunInput {
+  /** Fetch only a Server-bound original; no binary is persisted in ADK events. */
+  loadImage?: (signal: AbortSignal) => Promise<AuthorizedAgentImage>;
   /** Trusted observation only; no control authority and no raw model/tool payloads. */
   onDiagnostic?: (event: AgentDiagnostic) => void | Promise<void>;
   /** Trusted persisted identity; never accepted directly from an HTTP body. */
@@ -271,10 +275,14 @@ export function createAgentRuntime(options: {
           budget.check();
           if (!input.messages.length || input.messages.at(-1)?.role !== "user"
             || input.messages.some(message => !message.text.trim() || /[\u0000\uD800-\uDFFF]/u.test(message.text))) throw new AgentStopped("invalid_response");
-          if (input.image && input.loadAudio) throw new AgentStopped("input_limit");
+          if (input.image && (input.loadAudio || input.loadImage)) throw new AgentStopped("input_limit");
           const audio = input.loadAudio ? checkedAgentAudio(await budget.wait(() => input.loadAudio!(budget.signal))) : undefined;
+          const images = createAgentImages();
+          if (input.loadImage) images.add(await budget.wait(() => input.loadImage!(budget.signal)));
+          const scopeAuthorize = authorize;
+          authorize = async () => await scopeAuthorize() && await images.authorize();
           if (!await budget.wait(authorize)) throw new AgentStopped("unauthorized");
-          const runContext: AgentRunContext = { scope, runId, budget, authorize, model: selected.config.model,
+          const runContext: AgentRunContext = { scope, runId, budget, authorize, images, model: selected.config.model,
             embeddings: "embeddings" in selected ? selected.embeddings : undefined };
           const configuredTools = [...(typeof input.tools === "function" ? input.tools(runContext) : input.tools)];
           const capabilitySelection = input.toolCatalog ? new AgentCapabilitySelection(configuredTools, input.toolCatalog) : undefined;
@@ -358,7 +366,7 @@ export function createAgentRuntime(options: {
           };
           let currentInstruction = "";
           const modelAnchors = new WeakMap<LlmRequest, string>();
-          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames, audio,
+          const model = new AgentGatewayModel({ ...selected, budget, userId: scope.userId, childId: scope.childId, authorize, terminalToolNames, audio, images: ids => images.inputs(ids),
             ...(durable ? { modelAttemptKey: (request: LlmRequest) => modelAnchors.get(request) } : {}),
             ...(durable?.dailyUsage ? { durableDailyUsage: { adapter: durable.dailyUsage, context: durable.context } } : {}),
             ...(input.trigger.kind === "interactive" && input.recipeId === "product-interactive" ? { initialConversationSummary: input.initialConversationSummary, readConversationSummary: input.readConversationSummary } : {}),

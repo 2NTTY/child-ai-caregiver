@@ -536,6 +536,12 @@ Agent 的唯讀 `read_care_summary` 復用同一服務、身份與運行預算�
 <a id="p2-photos"></a>
 ## P2 照片（S12-W03）
 
+**CHAT-PHOTO01 直接聊天：**POST `/api/children/:childId/messages` 可帶 `photo:{id,expectedVersion}`；文字可空，與 voice／file 互斥。Server 在原訊息／收據交易內核對本人、孩子、ready 及精確版本，保存 `message.photo` 的穩定 ID、版本與原圖 metadata。同圖可關聯多則訊息，連結不修改圖檔或增加照片版本，不要求先 extract／confirm。
+
+聊天以目前授權的原圖多模態輸入處理；`list_chat_photos` 每頁最多十筆、回續讀游標，`read_chat_photo` 按 ID／版本重讀附件庫。單輪最多四張不同原圖，各沿原 4 MiB 限制；相同 ID 復用，不按照片文字擴權。圖片 bytes 只在當輪記憶體與模型請求，不進 ADK 事件、工具結果或聊天正文。模型前及呈現前重新核對原圖狀態與身份；提取令版本增加而原圖 metadata／hash 未變時，舊訊息仍可讀同一原圖，刪除／撤權則拒絕。
+
+照片描述可用 `private_reference` 及空 `citationIds`；Server 將已讀原圖送到既有獨立審核，審核 hash 綁定圖片 ID／hash／版本及原輸出範圍。照片不是官方引用；育兒／安全建議仍要求官方依據，重要事實、共享及副作用沿原授權／確認。保留下面舊的人工提取及核對入口作備援，不能把它作為直接聊天的前置。
+
 所有路徑在 `/api/children/:childId/photos` 下，須登入及 `x-expected-user-id`。先透過原 opId 收據建立 metadata，再獨立傳原檔；原檔確認與家庭記錄確認分開。
 
 | 操作 | 請求及結果 |

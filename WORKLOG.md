@@ -3619,3 +3619,10 @@
 - 使用者明確批准四項修補、測試及記錄公開上傳後，於 2026-10-24 13:45 UTC 建立草稿 PR #286；遠端 `125657d177eb52347194556b543ffe7497b51d80` 的 tree `951b9e482ed2616bbfe497d8ec61a39b7b0825ae` fetch 回核與批准本地候選完全相同，19 檔集合相符。當時沒有觀察到 commit statuses／PR workflow runs，不當 CI 通過；未合併或部署。
 - #285 部署文件已在上傳期間合併至 `60b42c1`，只有 PLAN／STATUS／WORKLOG 衝突，產品無交集。使用者其後要求處理；本次由 dot 原生代理在隔離 worktree 正常 merge，保留 master 最新正文、兩邊 WORKLOG 追加記錄及原部署收據，並將四項修補的現況改為已交草稿 PR，未改原驗證收據或掩蓋失敗。
 - 本輪只核文件連結／錨點／衝突標記、append-only 保留及 15 個碼測檔 bytes；產品與測試完全不變，沒有重跑產品測試、模型、服務、GCP／OTA／Sites。交主對話覆核後只更新同一草稿 PR，不另開 PR、不強推、不合併 PR 或部署；原生／正式未驗門檻保持。
+
+<a id="log-20261024-chat-photo-backend"></a>
+## LOG-20261024-CHAT-PHOTO-BACKEND
+
+- 按使用者新增範圍授權，從 `60b42c1` 接照片專用訊息／runtime／審核入口；沒有修改或合併協作者分支。原照片與 Storage 不另複製，訊息原交易核版本及收據，同圖可重用；照片上傳不再需要先提取成記錄。
+- 原圖由 Server 核權後暫時送模型，附件庫可有界列出／重讀，審核取得相同原圖且 hash 綁定 metadata。原圖不進 ADK 事件或工具回覆；刪除、撤權與官方引用規則保留。Sol 只承接兩個 store 及其定向測試，主模型負責契約、runtime、工具、審核接點及 review。
+- [必要證據](artifacts/verification/CHAT_PHOTO_BACKEND_20261024.json)：兩條新連貫合成情景通過，最終只補原照片 transport 與新 runtime 情景，窄 strict 型別通過。初次型別命令 TS5112 已按實際修正；零真模型／通知／雲端寫入。前端傳送、手機欄位修正及部署接續，不當作完整照片體驗已完成。
