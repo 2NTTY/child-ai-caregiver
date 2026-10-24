@@ -265,7 +265,7 @@ export function AgentRunView({ model, actions: sourceActions, onLocateSource, ac
       {model.busy !== "write" ? <OriginalDecision model={model} actions={actions} /> : null}
     </> : null}
     {run ? <View style={[styles.runContents, !ready && styles.hidden]} aria-hidden={!ready} accessibilityElementsHidden={!ready} importantForAccessibility={ready ? "auto" : "no-hide-descendants"} pointerEvents={ready ? "auto" : "none"}>
-      {run.stopReasonLabel && (!proposalOnly || run.status !== "completed") ? <StateNote tone="warning">{run.stopReasonLabel}</StateNote> : null}
+      {run.stopReasonLabel && (!proposalOnly || run.status !== "completed") ? <StateNote tone="warning">{run.stopReasonLabel}{run.stopReasonDetail ? (" " + run.stopReasonDetail) : ""}</StateNote> : null}
       {run.status === "running" ? <StateNote>仍在處理；可稍後更新查看結果。</StateNote> : null}
       {run.status === "unknown" ? <StateNote tone="warning">本次運行結果未知，請讀取原運行核對；未知不能當作已成功或已完成。</StateNote> : null}
       {!proposalOnly && problems.length ? <View testID="agent-run-problems" style={styles.problems}>

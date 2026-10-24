@@ -36,3 +36,23 @@ test("one deadline bounds model and tool waits and cannot exceed the production 
     assert.throws(() => budget.take("toolCalls"), { reason: "deadline" });
   } finally { budget.close(); }
 });
+
+test("planningSnapshot reserves delivery review for interactive finish guidance", () => {
+  const budget = new AgentBudget();
+  try {
+    budget.take("modelCalls", 2);
+    const plain = budget.planningSnapshot(true);
+    assert.equal(plain.phase, "work");
+    assert.equal(plain.reserveForFinish.modelCalls, 1);
+    assert.equal(plain.reserveForDeliveryReview.modelCalls, 0);
+    const reserved = budget.planningSnapshot(true, { reserveDeliveryReview: true });
+    assert.equal(reserved.phase, "work");
+    assert.equal(reserved.reserveForFinish.modelCalls, 2);
+    assert.equal(reserved.reserveForDeliveryReview.modelCalls, 1);
+    assert.equal(reserved.remaining.modelCallsIncludingThisCall, 2);
+    budget.take("modelCalls", 1);
+    const last = budget.planningSnapshot(true, { reserveDeliveryReview: true });
+    assert.equal(last.phase, "finish");
+    assert.equal(last.reserveForFinish.modelCalls, 2);
+  } finally { budget.close(); }
+});

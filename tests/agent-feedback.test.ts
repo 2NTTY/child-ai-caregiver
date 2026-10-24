@@ -20,6 +20,7 @@ import {handleChatRequest} from '../server/chat-api.ts';
 import {createChatApi} from '../src/client/chat-api.ts';
 import {readAiConfig} from '../server/ai-config.ts';
 import {SERVICE_POLICY_VERSION} from '../src/shared/account-service.ts';
+import { AGENT_PROGRESS_LABELS, agentProgressSchema } from '../src/shared/agent-feedback.ts';
 
 function deferred<T>() { let resolve!: (value:T)=>void; const promise=new Promise<T>(r=>{resolve=r;});return {promise,resolve}; }
 
@@ -141,4 +142,11 @@ test('expired execution saves its real result without reviving work or overwriti
   clock=Date.parse(cancelled.expiresAt)+1;
   assert.equal(await runs.finish(cancelled.scope,{...result,runId:cancelled.runId}),false);
   assert.equal((await runs.result('owner',child.id,cancelled.runId,projection))!.stopReason,'cancelled');
+});
+
+test('reviewing phase is a real progress event with a parent-facing label', () => {
+  const runId = randomUUID(), messageId = randomUUID();
+  const parsed = agentProgressSchema.parse({ runId, messageId, phase: 'reviewing' });
+  assert.equal(parsed.phase, 'reviewing');
+  assert.equal(AGENT_PROGRESS_LABELS.reviewing, '正在獨立核對回覆');
 });

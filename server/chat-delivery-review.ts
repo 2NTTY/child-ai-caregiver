@@ -110,6 +110,17 @@ export function isPureClarifyingQuestion(text: string): boolean {
   return true;
 }
 
+/** Greeting / short courtesy opener. Positive markers required; care-domain or advisory wording never skips. */
+const GREETING_PATTERN = /(?:^[\s，,。.!！？?]?)(?:你好|您好|哈囉|哈啰|嗨|早安|午安|晚安|早上好|下午好|晚上好)|(?:^|[\s，,])(?:你好|您好|哈囉|哈啰|嗨)\b|^(?:hi|hello|hey)\b|\bgood\s+(?:morning|afternoon|evening)\b|有什麼可以幫|有什么可以帮|需要什麼協助|需要什么协助|點樣幫到你|怎样帮到你|how\s+can\s+i\s+help|what\s+can\s+i\s+(?:do|help)/iu;
+
+export function isPureGreetingOrSmallTalk(text: string): boolean {
+  const trimmed = text.trim();
+  if (!trimmed || trimmed.length > 80) return false;
+  if (!GREETING_PATTERN.test(trimmed)) return false;
+  if (CARE_DOMAIN_PATTERN.test(trimmed) || CARE_ADVISORY_PATTERN.test(trimmed)) return false;
+  return true;
+}
+
 export function draftLooksLikeSubstantiveCareAdvice(draft: ChatDeliveryDraft): boolean {
   const text = joinedDraftText(draft);
   if (!text) return false;
@@ -130,17 +141,19 @@ export function chatDeliveryPassNeedsSources(draft: ChatDeliveryDraft): boolean 
  * The generating model's kind alone never grants a skip: caregiving labels force review,
  * and citation-free wording that still looks like care advice also forces review.
  * Only trusted server exemptions may skip: exact allowlisted UI text, pure clarifying
- * questions, and Server-substituted operation receipts. Unknown wording fails closed into review;
- * a keyword miss must not grant an exemption.
+ * questions, pure greetings / short courtesy openers, and Server-substituted operation
+ * receipts. Unknown wording fails closed into review; a keyword miss must not grant an exemption.
  */
 export function requiresChatDeliveryReview(draft: ChatDeliveryDraft): boolean {
   if (draft.serverSubstitutedSourceText || draft.serverSubstitutedReceiptText) return false;
   if (draft.sources.length > 0) return true;
-  if (draft.kind === "caregiving" || draft.kind === "safety_help" || draft.kind === "private_reference") return true;
   const text = joinedDraftText(draft);
   if (SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS.has(text)) return false;
   // Model-written receipt-like wording is not proof of a saved operation.
   if (isPureClarifyingQuestion(text)) return false;
+  // Pure greetings need no cites; care-shaped text never matches.
+  if (isPureGreetingOrSmallTalk(text)) return false;
+  if (draft.kind === "caregiving" || draft.kind === "safety_help" || draft.kind === "private_reference") return true;
   if (draftLooksLikeSubstantiveCareAdvice(draft)) return true;
   // Fail closed: unknown citation-free wording needs review unless a trusted exemption matched.
   return true;
@@ -184,11 +197,11 @@ function reviewPayload(draft: ChatDeliveryDraft, draftHash: string) {
 
 async function spendText(context: AgentRunContext, attemptKey: string, system: string, user: string): Promise<string> {
   if (!context.completeText) throw new AgentStopped("unavailable");
-  if (context.budget.remainingModelCalls < 1) throw new AgentStopped("delivery_review_incomplete");
+  if (context.budget.remainingModelCalls < 1) throw new AgentStopped("delivery_review_budget");
   try {
     return await context.completeText({ system, user, attemptKey });
   } catch (error) {
-    if (error instanceof AgentStopped && ["cancelled", "deadline", "unauthorized", "quota_exceeded", "input_limit"].includes(error.reason)) throw error;
+    if (error instanceof AgentStopped && ["cancelled", "deadline", "unauthorized", "quota_exceeded", "input_limit", "delivery_review_budget"].includes(error.reason)) throw error;
     throw new AgentStopped("delivery_review_incomplete");
   }
 }
@@ -256,8 +269,8 @@ export async function enforceChatDeliveryReview(input: {
     judgedOutcome: { decision: { decision: string }; draftHash: string },
     _presentationHint: AgentPresentation,
   ) => {
-    if (judgedOutcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_incomplete");
-    if (chatDeliveryPassNeedsSources(judged)) throw new AgentStopped("delivery_review_incomplete");
+    if (judgedOutcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_rejected");
+    if (chatDeliveryPassNeedsSources(judged)) throw new AgentStopped("delivery_review_no_sources");
     // Re-check live source retract / version change before binding a pass or keeping the wording.
     let livePresentation: AgentPresentation | null = null;
     try {
@@ -272,7 +285,7 @@ export async function enforceChatDeliveryReview(input: {
     if (liveHash !== judgedOutcome.draftHash) throw new AgentStopped("delivery_review_incomplete");
     const review = bindingFor(liveDraft, liveHash, input.provenance!.model, prompt.packVersion);
     if (!chatDeliveryReviewAllows(review, liveDraft, prompt.packVersion)) throw new AgentStopped("delivery_review_incomplete");
-    if (chatDeliveryPassNeedsSources(liveDraft)) throw new AgentStopped("delivery_review_incomplete");
+    if (chatDeliveryPassNeedsSources(liveDraft)) throw new AgentStopped("delivery_review_no_sources");
     // Prefer the freshly revalidated presentation; fall back only if identical draft stayed put.
     return { presentation: livePresentation, review };
   };
@@ -301,6 +314,7 @@ export async function enforceChatDeliveryReview(input: {
     outcome = await judge(current, "rereview");
     return acceptLivePass(current, outcome, nextPresentation);
   }
-  if (outcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_incomplete");
+  if (outcome.decision.decision === "revise") throw new AgentStopped("delivery_review_budget");
+  if (outcome.decision.decision !== "pass") throw new AgentStopped("delivery_review_rejected");
   return acceptLivePass(current, outcome, input.presentation);
 }

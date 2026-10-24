@@ -43,7 +43,7 @@ export function freezeAgentRunLimits(limits: AgentRunLimits): AgentRunLimits {
 
 export type AgentStopReason = ModelProviderStopReason | "cancelled" | "deadline" | "model_limit" | "tool_limit" | "embedding_limit"
   | "input_limit" | "unauthorized" | "quota_exceeded" | "busy" | "unavailable" | "invalid_response" | "invalid_tool" | "tool_unknown"
-  | "delivery_review_incomplete" | "compose_review_incomplete";
+  | "delivery_review_incomplete" | "delivery_review_rejected" | "delivery_review_no_sources" | "delivery_review_budget" | "compose_review_incomplete";
 export class AgentStopped extends Error {
   readonly reason: AgentStopReason;
   constructor(reason: AgentStopReason) { super(reason); this.reason = reason; }
@@ -149,8 +149,12 @@ export class AgentBudget {
     }
   }
   /** Request-local guidance; includes the upcoming generation, before its reservation. */
-  planningSnapshot(hasTerminalTool: boolean) {
+  planningSnapshot(hasTerminalTool: boolean, options?: { reserveDeliveryReview?: boolean }) {
     this.check();
+    const reviewReserve = options?.reserveDeliveryReview ? 1 : 0;
+    // Hard finish lock stays on the last model call; review reserve is soft guidance only.
+    const hardFinishReserve = 1;
+    const guidedFinishReserve = hardFinishReserve + reviewReserve;
     const remaining = {
       modelCallsIncludingThisCall: this.remainingModelCalls,
       toolCalls: this.selectedLimits.toolCalls - this.used.toolCalls,
@@ -158,9 +162,10 @@ export class AgentBudget {
       timeMs: Math.max(0, this.expiresAt - Date.now()),
     };
     return { usedBeforeThisCall: this.counts, remaining,
-      phase: remaining.modelCallsIncludingThisCall <= 1 || remaining.timeMs <= 15000
+      phase: remaining.modelCallsIncludingThisCall <= hardFinishReserve || remaining.timeMs <= 15000
         || hasTerminalTool && remaining.toolCalls <= 1 ? "finish" as const : "work" as const,
-      reserveForFinish: { modelCalls: 1, toolCalls: hasTerminalTool ? 1 : 0 },
+      reserveForFinish: { modelCalls: guidedFinishReserve, toolCalls: hasTerminalTool ? 1 : 0 },
+      reserveForDeliveryReview: { modelCalls: reviewReserve },
       nonTerminalToolCallsAvailable: Math.max(0, remaining.toolCalls - (hasTerminalTool ? 1 : 0)),
     };
   }
