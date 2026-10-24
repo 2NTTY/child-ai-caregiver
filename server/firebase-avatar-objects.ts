@@ -19,7 +19,7 @@ export class AvatarObjectError extends Error {
   readonly code: 'avatar_integrity_failed' | 'avatar_unavailable';
   constructor(code: AvatarObjectError['code']) { super('Avatar object could not be verified'); this.name = 'AvatarObjectError'; this.code = code; }
 }
-const fail = (code: AvatarObjectError['code'] = 'avatar_integrity_failed'): never => { throw new AvatarObjectError(code); };
+function fail(code: AvatarObjectError['code'] = 'avatar_integrity_failed'): never { throw new AvatarObjectError(code); }
 const digest = (value: string | Buffer) => createHash('sha256').update(value).digest('hex');
 const absent = (error: unknown) => error !== null && typeof error === 'object' && 'code' in error && Number(error.code) === 404;
 export function avatarObjectAddress(configInput: FirebasePhotoObjectsConfig, bindingInput: AvatarBinding, assetId: string) {

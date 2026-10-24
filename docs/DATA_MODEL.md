@@ -800,5 +800,7 @@ iOS 綁定的密文增加 `apns: {topic, environment}`，平台／provider 由�
 
 Restore新normalized copy先在既有 `_restore_operations` 建立加密intent：綁restore identity／provenance、原inventory digest、source evidence、target bucket與新epoch及完整未來cleanup。完整set以固定count/digest header綁定，每row immutable payload／單調CAS；只有確認贏得prepared→writing的原調用可Storage I/O。最終cleanup取持久intent全集聯集，不能只從尚有head的子集推導。逐批exact final document hash handoff後，activation marker與current同交易提交；之後逐批刪intent及推cursor，最後才移marker。任何一步不確定保留原責任；此開發候選的未完整恢復界線見[交付gate](DECISIONS.md#avatar-codec-decision)。
 
+Claim 回應丟失時，只准尚未呼叫 Storage 的同一次 invocation 作一次交易查回；完整 set／payload、copying phase 及本次 fresh token 均相符，才算確認贏得原 claim。查回失敗、另一 token、服務重啟或已開始物件寫入不沿用這項權限；保留原 intent 並依原地址查核，不重做未知外部寫入。
+
 
 含已知 avatar copy set 的 final plan 先在同一 reserved collection 寫入加密 `avatar-plan-stage`：固定 attempt token、完整 header／page hashes／final envelope，以及 copy setHash／recordsHash／原 business inventory hash。頁面 create-only，同交易核 token、building phase、無 progress/current；不使用 blind set。重啟只接受 marker 列出的精確頁 ID，並重核原 target inventory、source/Auth/journal 與 native provenance；完整頁集原樣移交 progress，缺頁則先 CAS discarding fence，逐頁驗 hash 後有界刪除，再清 marker。這段 rollback 不改 business rows、不刪 copy intents；舊 attempt 被 token 擋住，重新規劃不能重寫已 known 的 Storage copy。legacy 無 marker 的 partial pages 仍拒絕，沒有 avatar port 也不能藉新 checkpoint ids 放行。

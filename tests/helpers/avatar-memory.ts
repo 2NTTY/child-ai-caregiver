@@ -75,7 +75,7 @@ export async function avatarDomainFixture(injected: { codec?: Pick<AvatarCodec, 
     return { path: (selected.kind === 'self' ? '/api/me/avatar' : '/api/children/' + selected.childId + '/avatar') + '/' + action, payload,
       operation: { opId: randomUUID(), deviceId, workspaceId: scope.workspaceId, storageEpoch: scope.storageEpoch } };
   }
-  const reserve = (expectedVersion = 0, selected = target) => submission('uploads', { expectedVersion, policyId: config.policy.policyId,
+  const reserve = (expectedVersion = 0, selected: AvatarTarget = target) => submission('uploads', { expectedVersion, policyId: config.policy.policyId,
     mimeType: 'image/png', bytes: input.length, sha256: createHash('sha256').update(input).digest('hex'), crop: { centerX: .5, centerY: .5, zoom: 1 } }, selected);
   async function upload(uploadId: string, selected: AvatarTarget = target) {
     const admitted = await avatars.uploadAdmission(owner, selected, uploadId);

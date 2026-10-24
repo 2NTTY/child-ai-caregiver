@@ -3649,3 +3649,10 @@
 - 使用者明確要求合併 #286 後，末核 master 已前進至 #288／#289、`98f56a3`；同一 PhotoInputDomains 新增 workspace 的保存照片→聊天接線，不能只憑先前無衝突狀態直接合併。本輪先暫停外部寫入，再按主對話限定範圍正常整合；原照片修補核心與新 wrapper 各自保留，沒有另改產品或 fixture。
 - Node 24.19.0、既有依賴及合成 ports，照片恢復 49/49、聊天照片 client 原操作／同 ID 重用／身份隔離 1/1 通過。未將舊 APNs／PDF 數字算成本輪重跑，也未重做全量、build、真機或模型；原紅及未驗保持，最新兩份 log hash 追加於[既有收據](artifacts/verification/FOUR_FIXES_20261024.json)。
 - 本輪由獨立 reviewer 唯讀核對新照片 owner/API 與 draft／deferred discard／read-error 的相容性，不重複跑測試。保留 master PLAN／STATUS、兩邊 WORKLOG 與協作者最新部署證據；通過後只依精確 head 及 GitHub 保護規則正常合併同一 PR，不新增部署或合併其他協作者 PR。
+
+<a id="log-20261024-avatar-lifecycle-fix"></a>
+## LOG-20261024-AVATAR-LIFECYCLE-FIX
+
+- 同一 invocation 的 avatar restore claim 回應丟失可沿持久 token 查回；只恢復尚未執行的首次寫入，不接管另一 invocation 或重送 unknown Storage。修正 object metadata 的 never 控制流型別，以及 account export 不應把 content-only port 傳作 chat mutation port 的組裝。
+- [必要證據](artifacts/verification/AVATAR_LIFECYCLE_FIX_20261024.json)：兩項 lost-claim／lost-object 恢復與一項目前頭像匯出／版本 fence 檢查通過。窄域及全部正式 Server／共用契約 strict 通過；完整含測試編譯的失敗另保留，不改寫為通過。clean lock 只在隔離 Windows 目錄安裝，沒有改 lockfile，也不代表 Linux 容器已驗。
+- 主模型實作與契約核對，Sol 僅局部唯讀 review；未發現 actionable finding。無模型、通知、雲端寫入、部署或 gate 變更。未知／變更來源恢復、原生雲端生命週期與裝置效果仍待接續，頭像不冒稱已可用。
