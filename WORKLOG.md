@@ -3671,3 +3671,11 @@
 - 主模型補隔離頭像還原的 inspect／abandon 命令、activation fence 及 generation-CAS 永久無圖片 marker；來源／Auth／journal 改變不再只能留下無明確出口的已認證副本。清理不讀來源正文、不接管 live target、不重新 copy；legacy 不明盤點仍拒絕。
 - 一條版本化 Storage／Firestore 合成流程覆蓋失去回應、遲到寫入、重建 adapter 後重入、原 source 不變及 activated 拒絕；受影響 strict 型別／命令語法通過。最初 Buffer／Uint8Array fixture 比對與 fixture metadata 型別錯誤保留，修正沒有放寬產品斷言；最後補核明確的 adapter 重建及 abandoned 結果。獨立 Sol 唯讀 review 無 actionable finding，主模型覆核原文及結果。
 - [完整證據](artifacts/verification/AVATAR_RESTORE_ABORT_20261024.json)。零雲端資料、模型、通知、真機及部署；此為 source 實作，沒有實際執行放棄任何 GCP 還原。原生資料層／恢復及設備 gate 仍未通，不啟用頭像。
+
+
+<a id="log-20261024-avatar-native"></a>
+## LOG-20261024-AVATAR-NATIVE
+
+- 沿既有合成恢復庫及私人 bucket，以全新 namespace、653 bytes 合成 JPEG 執行一次原生資料接點核對。兩個獨立 SDK client 競爭只產生一次原 copy；其中一個交易得到預期 ABORTED，查回同一結果，沒有換操作重做。
+- 重建 client 後沿原 identity 放棄及重入，永久 marker 保留、舊 pinned generation 不可讀、遲到 create-if-absent 被拒；原圖不變並於最後按計劃清理。[證據](artifacts/verification/AVATAR_NATIVE_20261024.json)保存範圍、呼叫數與 hash，受保護本機 key 不入倉庫。
+- 這是同一程序的兩個 SDK、合成 provenance，並非完整 backup／Auth／journal 還原或 API 跨副本驗收。沒有操作原站控制、用戶資料、模型、通知、新資源或部署；頭像 gate 保持關閉，剩餘門檻按 PLAN 接續。
