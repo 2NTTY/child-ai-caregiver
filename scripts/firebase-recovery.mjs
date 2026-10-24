@@ -1,4 +1,5 @@
 import { createCloudStorageAvatarObjects } from '../server/firebase-avatar-objects.ts';
+import { createAvatarRestoreAborter } from '../server/firebase-avatar-restore-abort.ts';
 import { createFirebaseAvatarRecovery, AVATAR_BACKUP_MAX_CIPHER_BYTES } from '../server/firebase-avatar-recovery.ts';
 import { createFirebaseManagedAvatarReader } from '../server/firebase-managed-avatar-recovery.ts';
 import { readAvatarRecoveryBatchConfig } from '../server/avatar-config.ts';
@@ -28,7 +29,7 @@ let persistence,target,app;
 try {
   const command=process.argv[2];
   if(!['pause','start-export','find-export','finish-backup','start-import','find-import','apply-restore',
-    'start-managed-restore','get-managed-restore','apply-managed-restore'].includes(command))throw new Error('command');
+    'start-managed-restore','get-managed-restore','apply-managed-restore','inspect-avatar-copies','abandon-avatar-copies'].includes(command))throw new Error('command');
   const chunks=[];let bytes=0;
   for await(const chunk of process.stdin){bytes+=chunk.length;if(bytes>16384)throw new Error('input');chunks.push(chunk);}
   const input=JSON.parse(Buffer.concat(chunks).toString('utf8'));
@@ -63,6 +64,8 @@ try {
     const readAvatar=(binding,descriptor,version)=>createFirebaseManagedAvatarReader({bucket:storage.bucket(config.photoBucket),journalBucket,journal,
       objects:avatarObjects,authority:persistence.authority,sourceGeneration:input.sourceGeneration??input.generation,batches:avatarBatches})(binding,descriptor,version);
     const avatars={bucketName:config.photoBucket,objects:avatarObjects,readNormalized:readAvatar,batches:avatarBatches,
+      abortCopy:createAvatarRestoreAborter({config:{projectId:config.projectId,namespace:config.namespace,bucketName:config.photoBucket},
+        cipher,bucket:createFirebasePhotoBucketPort(storage.bucket(config.photoBucket)),objects:avatarObjects}),
       recovery:createFirebaseAvatarRecovery({config:{projectId:config.projectId,namespace:config.namespace,backupBucketName:config.erasureBucket},
         cipher,backupBucket:createFirebasePhotoBucketPort(journalBucket,AVATAR_BACKUP_MAX_CIPHER_BYTES),objects:avatarObjects,readNormalized:readAvatar})};
     const native=createFirebaseNativeRecovery({projectId:config.projectId,sourceDatabaseId:config.databaseId,targetDatabaseId,backupBucketName:config.erasureBucket});
@@ -76,7 +79,9 @@ try {
     if(command==='apply-managed-restore') chatFiles.objects={...chatFileObjects,read:createFirebaseManagedChatFileReader({
       bucket:storage.bucket(config.photoBucket),journalBucket,journal,objects:chatFileObjects,authority:persistence.authority,sourceGeneration:input.sourceGeneration})};
     const operator=createFirebaseRecoveryOperator({...domain,targetDatabase:target,backupBucketName:config.erasureBucket,journalBucket,journal,photos,voices,chatFiles,avatars,sourceObjects,artifacts,native,managed,auth:getAuth(app),keyVersionRef:process.env.FIREBASE_STORAGE_KEY_VERSION_REF});
-    if(command==='start-managed-restore')result=await managed.start(input.backupName);
+    if(command==='inspect-avatar-copies')result=await operator.inspectAvatarCopies();
+    else if(command==='abandon-avatar-copies')result=await operator.abandonAvatarCopies(input);
+    else if(command==='start-managed-restore')result=await managed.start(input.backupName);
     else if(command==='get-managed-restore')result=await managed.inspect(input.backupName,input.operationName);
     else if(command==='apply-managed-restore'){
       if(!input.backupName||input.descriptor||input.backupId)throw new Error('managed_input');

@@ -802,5 +802,9 @@ Restore新normalized copy先在既有 `_restore_operations` 建立加密intent�
 
 Claim 回應丟失時，只准尚未呼叫 Storage 的同一次 invocation 作一次交易查回；完整 set／payload、copying phase 及本次 fresh token 均相符，才算確認贏得原 claim。查回失敗、另一 token、服務重啟或已開始物件寫入不沿用這項權限；保留原 intent 並依原地址查核，不重做未知外部寫入。
 
+已具完整、經認證 copy set 的隔離還原可由操作員明確放棄：先在與 activation 相同交易邊界核對沒有 `current`，把 index 固定為 `aborting`；不可再 claim、markKnown 或啟用該計劃。逐項只處理經 set／payload 驗證的目標新 epoch，在原目標物件地址以 generation CAS 寫入不含圖片的永久 marker（`yuyoufang-avatar-restore-abort/v1`），再刪除原已核實 generation。marker 加密 proof 綁原 identity、payload hash、地址及舊 generation；既有物件或遲到 create-if-absent 只能有一方通過 CAS，後者不能在 marker 存在時重建副本。回應丟失只查原 marker，讀回失敗保留 `aborting`；再次明確執行沿原身份完成清理，不能重做 copy。全部確認後為 `aborted`，原 intents、staging pages 與 marker 保留，不自動刪庫或重新啟用。
+
+放棄不讀來源正文、不要求已失效的來源／Auth／journal 繼續批准原 copy，也不修改來源、Auth、獨立刪除日誌或備份。只返回 `abandoned`，不宣稱 target 控制資料已改為 paused；隔離及停止 target 服務仍由部署流程保證。未知 inventory、缺 header／legacy partial plan、已存在 `current` 均拒絕，保留現場供核對；不憑任意物件 prefix 刪除。永久 marker 不得納入一般暫存清理；soft-delete／舊備份保留期仍按原契約，不宣稱即時物理抹除。[Cloud Storage generation preconditions](https://docs.cloud.google.com/storage/docs/request-preconditions)、[soft delete](https://docs.cloud.google.com/storage/docs/soft-delete)（2026-10-24 核對）。
+
 
 含已知 avatar copy set 的 final plan 先在同一 reserved collection 寫入加密 `avatar-plan-stage`：固定 attempt token、完整 header／page hashes／final envelope，以及 copy setHash／recordsHash／原 business inventory hash。頁面 create-only，同交易核 token、building phase、無 progress/current；不使用 blind set。重啟只接受 marker 列出的精確頁 ID，並重核原 target inventory、source/Auth/journal 與 native provenance；完整頁集原樣移交 progress，缺頁則先 CAS discarding fence，逐頁驗 hash 後有界刪除，再清 marker。這段 rollback 不改 business rows、不刪 copy intents；舊 attempt 被 token 擋住，重新規劃不能重寫已 known 的 Storage copy。legacy 無 marker 的 partial pages 仍拒絕，沒有 avatar port 也不能藉新 checkpoint ids 放行。

@@ -3663,3 +3663,11 @@
 
 - Linux x64／Node 24.19 隔離容器按原 lock clean install，使用正式 avatar codec 完成一條 JPEG EXIF／metadata、透明 PNG 及取消 child-close 的連貫檢查；一次通過，沒有重跑產品全量。實裝 sharp 0.35.5／libvips 8.18.7，LICENSE／README／package metadata 的 hash 與容器、來源 hash 保存在[證據](artifacts/verification/AVATAR_PLATFORM_20261024.json)。
 - 主模型覆核測試、實際 TAP、來源及隔離 Docker 定義；此包無產品行為修改。沒有雲端資料、模型、通知或部署，不改寫原失敗；unknown 恢復、原生資料層及設備門檻仍待完成，寫入 gate 保持關閉。
+
+
+<a id="log-20261024-avatar-restore-abort"></a>
+## LOG-20261024-AVATAR-RESTORE-ABORT
+
+- 主模型補隔離頭像還原的 inspect／abandon 命令、activation fence 及 generation-CAS 永久無圖片 marker；來源／Auth／journal 改變不再只能留下無明確出口的已認證副本。清理不讀來源正文、不接管 live target、不重新 copy；legacy 不明盤點仍拒絕。
+- 一條版本化 Storage／Firestore 合成流程覆蓋失去回應、遲到寫入、重建 adapter 後重入、原 source 不變及 activated 拒絕；受影響 strict 型別／命令語法通過。最初 Buffer／Uint8Array fixture 比對與 fixture metadata 型別錯誤保留，修正沒有放寬產品斷言；最後補核明確的 adapter 重建及 abandoned 結果。獨立 Sol 唯讀 review 無 actionable finding，主模型覆核原文及結果。
+- [完整證據](artifacts/verification/AVATAR_RESTORE_ABORT_20261024.json)。零雲端資料、模型、通知、真機及部署；此為 source 實作，沒有實際執行放棄任何 GCP 還原。原生資料層／恢復及設備 gate 仍未通，不啟用頭像。
