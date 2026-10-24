@@ -303,10 +303,41 @@ test("a real citation whose excerpt does not support the claim is not a formal r
   assert.equal(result?.stopReason, "delivery_review_incomplete");
   assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
   assert.equal(result?.text.includes(claim), false);
-  assert.deepEqual(result?.citations, []);
+  // Retrieved official sources stay visible as non-approved evidence (REQ-002 source layer).
+  assert.equal(result?.citations.length, 1);
+  assert.equal(result?.citations[0]?.chunkId, chunk.chunkId);
+  assert.equal(result?.retrievalMode, "vector_keyword");
   assert.equal(result?.deliveryReview, undefined);
   assert.equal(result?.counts.modelCalls, 3);
   assert.equal(calls, 3);
+});
+
+test("review failure keeps retrieved sources without elevating the unreviewed draft", async () => {
+  let calls = 0;
+  const result = await product({ calls, generate: async request => {
+    const { user, body } = payloadFrom(request);
+    calls++;
+    if (user.includes("chat-delivery-review")) {
+      assert.equal(Object.keys(request.toolsDict).length, 0);
+      assert.equal(body.paragraphs?.[0]?.text, claim);
+      return model([{ text: reviewJson(body.draftHash ?? "", "insufficient_evidence") }]);
+    }
+    const step = calls === 1
+      ? { id: "search", name: "search_knowledge", args: { query: "合成照護主題", classification: "official_guidance" } }
+      : calls === 2 ? { id: "answer", name: "present_answer", args: { kind: "caregiving", paragraphs: [{ text: claim, citationIds: [chunk.chunkId] }] } }
+      : null;
+    assert.ok(step);
+    return model([{ functionCall: step }]);
+  } });
+  assert.equal(result?.status, "stopped");
+  assert.equal(result?.stopReason, "delivery_review_incomplete");
+  assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
+  assert.equal(result?.text.includes(claim), false);
+  assert.equal(result?.citations.length, 1);
+  assert.equal(result?.citations[0]?.chunkId, chunk.chunkId);
+  assert.equal(result?.citations[0]?.text, chunk.text);
+  assert.equal(result?.retrievalMode, "vector_keyword");
+  assert.equal(result?.deliveryReview, undefined);
 });
 
 test("an unreviewed draft that has used every model call is not formal success", async () => {
@@ -328,6 +359,9 @@ test("an unreviewed draft that has used every model call is not formal success",
   assert.equal(result?.stopReason, "delivery_review_incomplete");
   assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
   assert.equal(result?.text.includes(claim), false);
+  assert.equal(result?.citations.length, 1);
+  assert.equal(result?.citations[0]?.chunkId, chunk.chunkId);
+  assert.equal(result?.deliveryReview, undefined);
   assert.equal(result?.counts.modelCalls, 4);
   assert.equal(calls, 4);
   assert.equal(AGENT_LIMITS.modelCalls, 4);
@@ -412,6 +446,10 @@ test("one repair can pass inside the proposal ceiling, and insufficient evidence
       assert.equal(result?.status, "stopped");
       assert.equal(result?.stopReason, "delivery_review_incomplete");
       assert.equal(result?.text, CHAT_DELIVERY_REVIEW_INCOMPLETE_TEXT);
+      assert.equal(result?.text.includes(claim), false);
+      assert.equal(result?.citations.length, 1);
+      assert.equal(result?.citations[0]?.chunkId, chunk.chunkId);
+      assert.equal(result?.deliveryReview, undefined);
       assert.equal(reviews, 1);
       assert.equal(repairs, 0);
     }
@@ -638,5 +676,7 @@ test("source retract after a review pass does not keep the old answer", async ()
   assert.equal(result?.status, "stopped");
   assert.equal(result?.stopReason, "delivery_review_incomplete");
   assert.equal(result?.text.includes(chunk.text), false);
+  // Retracted sources must not be retained after live revalidation fails.
+  assert.deepEqual(result?.citations, []);
   assert.equal(result?.deliveryReview, undefined);
 });
