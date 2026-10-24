@@ -3615,3 +3615,11 @@
 - 沿已合併 #287 接共用 Web／Android 原圖上傳、聊天保存、原操作查回與附件庫同 ID 重用；聊天不再要求先送到核對。照片 API 補接既有 recoveryPending 欄位，未結清還原仍不可讀；移除草稿不刪已有原圖。
 - 手機空單行欄位先用原生提示，focus／有內容才轉回 Paper 浮動標籤；Web／flat／多行保持原呈現。使用者已回報彈窗初開延遲，未有本修正的真機結論。
 - [定向證據](artifacts/verification/CHAT_PHOTO_FRONTEND_20261024.json)：一條真 client／合成 transport 流程、三項輸入元件檢查、13 roots strict 型別及兩端匯出通過。首輪 TS2345 的 optional photo 窄化問題已修；review 補刪除後可解除引用，不再卡 unknown。零模型／通知／雲端寫入，部署及真機待接續；#286 照片恢復區塊未改動。
+
+
+<a id="log-20261024-chat-photo-delivery"></a>
+## LOG-20261024-CHAT-PHOTO-DELIVERY
+
+- #287／#288已分別由C／B提交及合併；本次正式交付由C承接。原站先健康核對API／worker再更新Web，Android發布相容OTA group `327ad4ca-66f5-412b-bf8a-ee46d7493198`，不用新APK。
+- 首次候選把完整firebase-runtime覆蓋到部分部署基線，缺avatar-release而停止；修正為現網runtime只加兩項已review照片注入，未帶入頭像／APNs。首次修補Docker FROM使用image ID格式失敗，改成核hash的本機標籤後通過正式assembly import、13檔hash及Web hash；原失敗不抹除。
+- 公開首頁／API health均200，保留原映像和配置回退。零模型／通知／資料遷移；[精確交付證據](artifacts/verification/CHAT_PHOTO_DELIVERY_20261024.json)分列產物及限制。手機連線但鎖屏，未強停或改草稿，提示延遲修正及照片體驗仍待真機；接續頭像，不接管#286或協作者Agent。
