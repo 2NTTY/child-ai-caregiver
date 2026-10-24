@@ -3656,3 +3656,10 @@
 - 同一 invocation 的 avatar restore claim 回應丟失可沿持久 token 查回；只恢復尚未執行的首次寫入，不接管另一 invocation 或重送 unknown Storage。修正 object metadata 的 never 控制流型別，以及 account export 不應把 content-only port 傳作 chat mutation port 的組裝。
 - [必要證據](artifacts/verification/AVATAR_LIFECYCLE_FIX_20261024.json)：兩項 lost-claim／lost-object 恢復與一項目前頭像匯出／版本 fence 檢查通過。窄域及全部正式 Server／共用契約 strict 通過；完整含測試編譯的失敗另保留，不改寫為通過。clean lock 只在隔離 Windows 目錄安裝，沒有改 lockfile，也不代表 Linux 容器已驗。
 - 主模型實作與契約核對，Sol 僅局部唯讀 review；未發現 actionable finding。無模型、通知、雲端寫入、部署或 gate 變更。未知／變更來源恢復、原生雲端生命週期與裝置效果仍待接續，頭像不冒稱已可用。
+
+
+<a id="log-20261024-avatar-platform"></a>
+## LOG-20261024-AVATAR-PLATFORM
+
+- Linux x64／Node 24.19 隔離容器按原 lock clean install，使用正式 avatar codec 完成一條 JPEG EXIF／metadata、透明 PNG 及取消 child-close 的連貫檢查；一次通過，沒有重跑產品全量。實裝 sharp 0.35.5／libvips 8.18.7，LICENSE／README／package metadata 的 hash 與容器、來源 hash 保存在[證據](artifacts/verification/AVATAR_PLATFORM_20261024.json)。
+- 主模型覆核測試、實際 TAP、來源及隔離 Docker 定義；此包無產品行為修改。沒有雲端資料、模型、通知或部署，不改寫原失敗；unknown 恢復、原生資料層及設備門檻仍待完成，寫入 gate 保持關閉。
