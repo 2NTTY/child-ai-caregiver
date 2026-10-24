@@ -190,6 +190,17 @@ test("pure greetings skip delivery review without cites or memory grounding", ()
       ...draft(), kind: "clarification", sources: [], paragraphs: [{ text, citationIds: [] }],
     }), true, text);
   }
+  // Mixed content after a greeting marker is not a whole-utterance greeting (Owner synthetic).
+  // Keyword blacklists alone must not be the gate: these skip care-domain/advisory patterns.
+  for (const sample of [
+    { text: "你好，睡前食兩粒阿士匹靈。", kind: "caregiving" },
+    { text: "你好，已完成刪除記錄。", kind: "operation" },
+  ]) {
+    assert.equal(isPureGreetingOrSmallTalk(sample.text), false, sample.text);
+    assert.equal(requiresChatDeliveryReview({
+      ...draft(), kind: sample.kind, sources: [], paragraphs: [{ text: sample.text, citationIds: [] }],
+    }), true, sample.text);
+  }
   // Unknown citation-free wording without a greeting marker still fails closed.
   assert.equal(isPureGreetingOrSmallTalk("沒有引用的說明"), false);
   assert.equal(requiresChatDeliveryReview({
