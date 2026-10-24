@@ -24,6 +24,12 @@ import type { OnlineSubmission } from '../src/shared/online.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
 import { recoveryOperatorAvatar } from './helpers/recovery-operator-avatar.ts';
 import { avatarHeadRecordSchema, avatarCleanupRecordSchema } from '../server/avatar-data.ts';
+import { createFirebaseErasureJournal } from '../server/firebase-erasure-journal.ts';
+import { createFirestoreAvatarStore } from '../server/firestore-avatars.ts';
+import { createFirestoreAvatarCleanup } from '../server/firestore-avatar-cleanup.ts';
+import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
+import { readAvatarConfig } from '../server/avatar-config.ts';
+import { avatarMemoryBucket } from './helpers/avatar-memory.ts';
 
 const OWNER = 'synthetic-operator-owner', EMAIL = 'synthetic-operator@example.test';
 const PROJECT = 'synthetic-operator-project', NAMESPACE = 'unit_recovery_operator';
@@ -406,4 +412,58 @@ void test('avatar applyRestore recovers a partial final plan without recopying o
   const activation = f.target.attempts.findIndex(attempt => attempt.acknowledged && attempt.writes.some(row => row.action === 'create' && row.path === checkpoint + 'current'));
   const retirement = f.target.attempts.findIndex(attempt => attempt.writes.some(row => row.action === 'delete' && row.path.startsWith(checkpoint + 'avatar-copy-')));
   assert.ok(activation >= 0 && retirement > activation);
+});
+
+void test('avatar restore replays a later deletion journal before copy, export and durable cleanup', async () => {
+  const f = await fixture(true); assert.ok(f.avatar);
+  const journalBucket = avatarMemoryBucket('synthetic-operator-journal');
+  const journal = createFirebaseErasureJournal({ config: { projectId: PROJECT, namespace: NAMESPACE,
+    bucketName: 'synthetic-operator-journal' }, cipher: f.options.cipher, bucket: journalBucket.port });
+  f.ports.journal = journal;
+  f.ports.journalBucket = { async request() {
+    f.calls.journal++;
+    return [{ items: [...journalBucket.records].map(([name, row]) => ({ name, generation: row.metadata.generation })) }, { statusCode: 200 }];
+  } } as unknown as Bucket;
+  const config = readAvatarConfig({ AVATAR_WRITES_ENABLED: 'true' });
+  const codec = { async normalize(): Promise<never> { throw new Error('Restore must not decode a new upload'); } };
+  const avatars = createFirestoreAvatarStore({ ...f.options, config, codec, objects: f.avatar.ports.objects, journal });
+  const online = createFirestoreOnlineStore({ ...f.options, avatars });
+  await f.switchControl(true);
+  const path = '/api/children/' + f.binding.scope.childId + '/avatar/remove';
+  const payload = { expectedVersion: 1, confirmRemove: true };
+  const command: OnlineSubmission = { path, payload, operation: { ...await online.context(OWNER, { path, payload }),
+    opId: randomUUID(), deviceId: randomUUID() } };
+  const removed = await online.submit(OWNER, command);
+  assert.equal(z.object({ avatar: z.object({ version: z.literal(2), asset: z.null() }) }).safeParse(removed.result).success, true);
+  assert.equal(journalBucket.records.size, 1);
+  assert.deepEqual((await online.submit(OWNER, command)).operation, removed.operation);
+  assert.equal(journalBucket.writes(), 1);
+  await f.switchControl(false);
+  const sourceBefore = structuredClone([...f.source.records]);
+  await f.operator.startRestoreImport(f.importInput);
+  const restored = await f.operator.applyRestore(f.applyInput());
+  assert.equal(restored.state, 'applied-paused');
+  assert.equal(f.avatar.bucket.writes(), 1, 'A deleted image must not be copied from its retained backup');
+  assert.equal(f.avatar.bucket.removes(), 0, 'Restoring must preserve pending object cleanup until its consumer runs');
+  assert.deepEqual([...f.source.records], sourceBefore);
+  const records = f.target.documents().filter(row => !row.path.startsWith(NAMESPACE + '_restore_operations/')).map(row => f.codec.decode(row));
+  const head = avatarHeadRecordSchema.parse(records.find(row => row.context.kind === 'avatar-head')!.value);
+  assert.equal(head.descriptor, null); assert.ok(head.erasedThroughVersion! >= 1);
+  const obligations = records.filter(row => row.context.kind === 'avatar-cleanup').map(row => avatarCleanupRecordSchema.parse(row.value));
+  assert.equal(obligations.length, 1);
+  assert.equal(obligations[0].objectBinding.scope.storageEpoch, f.avatar.binding.scope.storageEpoch);
+  assert.equal(obligations[0].descriptor!.generation, f.avatar.descriptor.generation);
+  assert.equal((await createFirebaseRecoveryOperator(f.ports).applyRestore(f.applyInput())).replayed, true);
+  const targetOptions = { ...f.options, database: f.target.database };
+  await setFirebaseBackupControl(targetOptions, { expectedGeneration: restored.generation, generation: randomUUID(), enabled: true });
+  const targetAvatars = createFirestoreAvatarStore({ ...targetOptions, config, codec, objects: f.avatar.ports.objects, journal });
+  const exporter = createFirestoreAccountExport({ ...targetOptions, avatars: targetAvatars,
+    photos: { async content(): Promise<never> { throw new Error('Not a photo export'); } } });
+  assert.deepEqual((await exporter.page(OWNER, { section: 'child_avatar_content', childId: f.binding.scope.childId })).items, []);
+  const cleanup = createFirestoreAvatarCleanup({ ...targetOptions, objects: f.avatar.ports.objects, journal });
+  assert.equal((await cleanup.process(obligations[0].binding, obligations[0].assetId)).state, 'complete');
+  assert.equal((await cleanup.process(obligations[0].binding, obligations[0].assetId)).state, 'complete');
+  assert.equal(f.avatar.bucket.removes(), 1);
+  assert.equal(await f.avatar.ports.objects.inspect(f.avatar.binding, f.avatar.descriptor.asset.id, f.avatar.descriptor.asset), null);
+  assert.equal(journalBucket.records.size, 1, 'The independent deletion journal must survive cleanup');
 });

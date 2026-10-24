@@ -3694,3 +3694,10 @@
 - 既有合成恢復庫以全新 namespace 執行一次真 SDK 連貫流程；兩個 client 使用正式 authority、avatar store、online service、codec、加密物件及 maintenance／queue consumer。共用准入、持久 lease、原收據、權限拒絕、更換、舊圖清理及重建 client 讀回通過。
 - [證據](artifacts/verification/AVATAR_ADMISSION_NATIVE_20261025.json)保存索引、範圍、44 次交易／兩次寫圖及四個預期拒絕。腳本先經主模型及獨立唯讀 review，補齊 barrier 失敗處理、現場識別及 namespace 檢查後只執行一次；沒有重跑模型或通知。
 - 測試圖片按 generation 清除，測試產品存取已撤銷；密文台帳保留，受保護 key 不入倉庫。外部 Tasks 喚醒使用本地 inbox，沒有真 OIDC／HTTP／兩個 API 部署副本、刪除 journal 或完整恢復證據。source gate 保持 false，原站未改動，不能把本次資料層通過當正式頭像已開放。
+
+<a id="log-20261025-avatar-journal-restore"></a>
+## LOG-20261025-AVATAR-JOURNAL-RESTORE
+
+- 主模型沿既有 recovery operator fixture 補一條備份後明確刪除的接續檢查，使用正式移除服務、獨立加密 journal、還原規劃／套用、帳戶匯出及清理 consumer。刪除前備份仍有圖，但還原不 copy、不披露，原物件清理責任及永久日誌保留；重入不重刪。
+- 一次定向流程通過，單一入口 strict 型別零診斷；獨立唯讀 review 無 finding，主模型核對斷言與實際結果。[證據](artifacts/verification/AVATAR_JOURNAL_RESTORE_20261025.json)。不重跑此前通過情景，零雲端寫入、模型、通知或部署。
+- 只讀資源盤點確認現有恢復庫已有合成證據，journal bucket 與原站共用；沒有清空舊資料或建立新資源。合成基礎設施不等於真 GCP 配對還原，該門檻及設備／正式組裝仍保留；本包不解除頭像 gate。
