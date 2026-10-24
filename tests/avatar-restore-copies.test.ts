@@ -14,9 +14,23 @@ test('avatar copy set spans more than 200 entries using bounded scan pages, with
   assert.equal(f.objects.size, 0); assert.equal(f.inspections(), 0);
 });
 
-test('lost prepared-to-writing acknowledgement never grants write authority and original intent survives', async () => {
+test('lost claim reply permits only a confirmed same-invocation write; unreadable or later claims retain the original intent', async () => {
+  const confirmed = avatarRestoreFixture(), confirmedValue = confirmed.value(), descriptor = confirmed.stored(confirmedValue);
+  await confirmed.copies.stage([confirmedValue]); let confirmedWrites = 0;
+  const write = async () => { confirmedWrites++; confirmed.objects.set(descriptor.objectName, descriptor); return descriptor; };
+  confirmed.fake.loseReply();
+  assert.deepEqual(await confirmed.copies.execute(confirmedValue, write), descriptor);
+  assert.deepEqual(await confirmed.copies.execute(confirmedValue, write), descriptor);
+  assert.equal(confirmedWrites, 1); assert.equal((await confirmed.copies.freeze(confirmed.identity)).rows.length, 1);
+
   const f = avatarRestoreFixture(), value = f.value(); await f.copies.stage([value]); let writes = 0;
+  const run = f.database.runTransaction.bind(f.database); let transactions = 0;
+  f.database.runTransaction = (callback, options) => {
+    if (++transactions === 2) return Promise.reject(new Error('Synthetic claim readback unavailable'));
+    return run(callback, options);
+  };
   f.fake.loseReply(); await assert.rejects(f.copies.execute(value, async () => { writes++; return f.stored(value); }));
+  f.database.runTransaction = run;
   assert.equal(writes, 0);
   await assert.rejects(f.copies.execute(value, async () => { writes++; return f.stored(value); }), code('recovery_avatar_copy_unknown'));
   assert.equal(writes, 0); assert.equal((await f.copies.inventory(f.identity, { phase: 'none', ids: new Set() }, () => {})).payloads.length, 1);

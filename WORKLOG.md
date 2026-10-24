@@ -3623,3 +3623,10 @@
 - #287／#288已分別由C／B提交及合併；本次正式交付由C承接。原站先健康核對API／worker再更新Web，Android發布相容OTA group `327ad4ca-66f5-412b-bf8a-ee46d7493198`，不用新APK。
 - 首次候選把完整firebase-runtime覆蓋到部分部署基線，缺avatar-release而停止；修正為現網runtime只加兩項已review照片注入，未帶入頭像／APNs。首次修補Docker FROM使用image ID格式失敗，改成核hash的本機標籤後通過正式assembly import、13檔hash及Web hash；原失敗不抹除。
 - 公開首頁／API health均200，保留原映像和配置回退。零模型／通知／資料遷移；[精確交付證據](artifacts/verification/CHAT_PHOTO_DELIVERY_20261024.json)分列產物及限制。手機連線但鎖屏，未強停或改草稿，提示延遲修正及照片體驗仍待真機；接續頭像，不接管#286或協作者Agent。
+
+<a id="log-20261024-avatar-lifecycle-fix"></a>
+## LOG-20261024-AVATAR-LIFECYCLE-FIX
+
+- 同一 invocation 的 avatar restore claim 回應丟失可沿持久 token 查回；只恢復尚未執行的首次寫入，不接管另一 invocation 或重送 unknown Storage。修正 object metadata 的 never 控制流型別，以及 account export 不應把 content-only port 傳作 chat mutation port 的組裝。
+- [必要證據](artifacts/verification/AVATAR_LIFECYCLE_FIX_20261024.json)：兩項 lost-claim／lost-object 恢復與一項目前頭像匯出／版本 fence 檢查通過。窄域及全部正式 Server／共用契約 strict 通過；完整含測試編譯的失敗另保留，不改寫為通過。clean lock 只在隔離 Windows 目錄安裝，沒有改 lockfile，也不代表 Linux 容器已驗。
+- 主模型實作與契約核對，Sol 僅局部唯讀 review；未發現 actionable finding。無模型、通知、雲端寫入、部署或 gate 變更。未知／變更來源恢復、原生雲端生命週期與裝置效果仍待接續，頭像不冒稱已可用。

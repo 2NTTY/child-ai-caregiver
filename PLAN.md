@@ -109,7 +109,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **範圍：**本人及有既有寫入權限的孩子可選圖、裁切、更換、明確移除；獨立私人資源，不進照片分析、模型或分享。沿已凍結[API](docs/API.md#avatar-api)及[data lifecycle](docs/DATA_MODEL.md#avatars)。
 - **狀態：**以 master `339c707` 整合原後端 freeze04 與新版前端差異，保留已合併 #253 內容；本包未部署，`AVATAR_LIFECYCLE_RELEASE_READY=false`，環境變數不能繞過，不當成完整可用。
 - **本輪證據：**真 client／owner 定向及 server codec 窄 roots 型別有證據；restore05 新增 authenticated staging marker／token fence、partial rollback與完整頁 promote。合成真 operator 跨頁中斷→重啟已核原 inventory、provenance、責任保留、不重 copy、current 後才 retire；不是原生 Firestore 演練。
-- **尚缺：**unknown／不可讀 copy、source/Auth/journal/provenance 改變或 legacy 未索引 partial plan 仍保留責任停住，`NOT_FULLY_RECOVERABLE`。domain／完整 server TS 未通（明確 heap OOM及原 signal9 收據保留）；既有 56 PASS／10 exact-baseline FAIL 不改成全過。原生 concurrency/index、clean lock 安裝、Web／Android EXIF一致及隔離恢復部署證據另待完成。
+- **恢復修正（2026-10-24）：**同一 invocation 遺失 claim 回應後，可有界查回原 token／payload／copying phase；只有確認贏得且尚未呼叫 Storage 的原工作可繼續首次寫入。重啟或 unknown 物件仍只查原地址。修正匯出組裝與 nullable 型別；兩項恢復及一項匯出定向檢查通過。全部 `server/**`／`src/shared/**` 加頭像 helper 的 strict 型別通過，clean lock 在隔離 Windows 目錄安裝成功；[精確證據](artifacts/verification/AVATAR_LIFECYCLE_FIX_20261024.json)。
+- **尚缺：**unknown／不可讀 copy、source/Auth/journal/provenance 改變或 legacy 未索引 partial plan 仍保留責任停住，`NOT_FULLY_RECOVERABLE`。完整 `tsconfig.server`（含所有測試及其前端依賴）仍有未修錯誤；舊 OOM／signal9、56 PASS／10 exact-baseline FAIL 保留，不改成全過。原生 concurrency/index、Linux clean lock／codec、Web／Android EXIF一致及隔離恢復部署證據另待完成。
 - **完成門檻／次序：**只補受影響窄驗證與未解恢復路徑，獨立 review 後先交草稿；部署／解除 gate 依[頭像部署門檻](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)，不因本機codec或前端預覽綠直接開寫入。
 - **新指示（2026-10-24）：**使用者要求接續至正式可用；附件清單及當前 Android 交付收束後進本包，先修具體恢復／清理缺口，沿同一前端與雲端權威。原 gate 與失敗證據仍有效，尚未啟用或部署。
 

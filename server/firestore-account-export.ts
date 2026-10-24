@@ -188,7 +188,9 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
               await createFirestoreSharedInputStore(options).read(binding, id); items.push(value);
             }
           } else if (section === 'summary_history') {
-            const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore({ ...options, files: undefined }) });
+            const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore({
+              database: options.database, cipher: options.cipher, projectId: options.projectId, namespace: options.namespace,
+            }) });
             const summary = await memory.readSummaryRevision(binding, value);
             if (summary) items.push(summary);
           } else if (section === 'native_push_bindings') {
@@ -226,10 +228,11 @@ export function createFirestoreAccountExport(options: FirestoreAuthorityOptions 
       if(content.attachment.version!==file.version)domainReject('export_scope_changed');
       result.items.push({fileId:file.id,version:file.version,base64:content.base64,mimeType:content.descriptor.mimeType});
     }
-    if (result.avatar?.descriptor && section.endsWith('_content')) {
+    const avatar = result.avatar;
+    if (avatar?.descriptor && section.endsWith('_content')) {
       if (!options.avatars) domainReject('avatar_export_unavailable', 503);
-      const head = result.avatar, content = await options.avatars.content(owner, head.binding.target, head.descriptor.asset.id, head.version);
-      try { result.items.push({ target: head.binding.target, version: head.version, asset: head.descriptor.asset,
+      const descriptor = avatar.descriptor, content = await options.avatars.content(owner, avatar.binding.target, descriptor.asset.id, avatar.version);
+      try { result.items.push({ target: avatar.binding.target, version: avatar.version, asset: descriptor.asset,
         base64: content.buffer.toString('base64'), mimeType: 'image/jpeg' }); } finally { content.buffer.fill(0); }
     }
     // Storage IO or a long snapshot page cannot disclose under an identity/version that changed mid-request.

@@ -197,14 +197,23 @@ export function createFirebaseAvatarRestoreCopies(options: FirestoreDomainOption
     },
     async execute(raw: AvatarCopyPayload, writeOriginal: () => Promise<AvatarObjectDescriptor>) {
       const value = payload(raw), id = idFor(value), token = randomUUID();
-      // Unknown claim acknowledgement grants no authority: only the confirmed winner performs the original write.
+      // Confirm the claim before any Storage I/O. A lost acknowledgement can be read back only by this invocation's fresh token.
       const claim = await database.runTransaction(async tx => {
         const index = await requireIndex(value.identity, tx), ref = collection.doc(id), row = await tx.get(ref);
         check(index.phase === 'copying' && row.exists, 'recovery_avatar_copy_stage_closed');
         const prior = record(id, row.data()); member(index, prior); check(same(prior.payload, value));
         if (prior.state !== 'prepared') return { won: false, prior };
         tx.set(ref, seal(id, { ...prior, state: 'writing', token })); return { won: true, prior };
-      }, { maxAttempts: 1 });
+      }, { maxAttempts: 1 }).catch(async error => {
+        const recovered = await database.runTransaction(async tx => {
+          const index = await requireIndex(value.identity, tx), row = await tx.get(collection.doc(id));
+          check(index.phase === 'copying' && row.exists, 'recovery_avatar_copy_stage_closed');
+          const prior = record(id, row.data()); member(index, prior); check(same(prior.payload, value));
+          return prior.state === 'writing' && prior.token === token ? { won: true, prior } : null;
+        }, { maxAttempts: 1 }).catch(() => null);
+        if (!recovered) throw error;
+        return recovered;
+      });
       if (claim.won) {
         try { return await markKnown(value, await writeOriginal()); }
         catch {
