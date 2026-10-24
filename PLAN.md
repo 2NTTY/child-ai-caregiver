@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：[準備單背景合併保存](#shared-interaction01)已發布，接續[照片聊天](#chat-photo01)與頭像。**2026-10-24 master `015deb8`（#284）的相容 API／worker、Web 及 APK v3 OTA 已交付；連點合併保存有定向證據，實際手機效果待核。#281／#282 的來源狀態、列表佈局、鈴鐺首幀、聊天位置、直接錄音及導航短線保留。個人模型未驗項沿 [MODEL03](#model-self03)，需要本人前置時繼續獨立工作；不把 OTA 發布當真機通過。
+**當前：[照片聊天及原生欄位提示](#chat-photo01)已發布，接續[頭像](#avatar-01)生命週期修正。**#287／#288 已合併；2026-10-24 原站 API／worker／Web 與 APK v3 相容 OTA 已交付。手機鎖屏，尚未強制重啟或核對新效果；真模型照片理解亦未驗。準備單合併保存與前批共用介面保留；個人模型未驗項沿 [MODEL03](#model-self03)，不把發布當真機通過。
 
 **iOS 保留：[S04-W03 發佈準備](#s04-w03)等待 Apple 前置。**#272、#274～#278 已合併，本機接線／匯出／APNs掛載配置有證據；尚無 IPA、部署或真通知。免費真機需可用 Mac，TestFlight 需已授權 Apple 團隊及簽署；不為等待條件重跑測試或購買會員。完整範圍見 [iOS 計劃](#p3-ios)。
 
@@ -100,7 +100,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 本包接通 composer 的照片傳送、聊天引用、正式模型多模態及原圖重讀。原 `AgentPhotoInput` 提取／核對通路退出聊天；既有人工提取備援保留。照片不是不支援讀取的通用文件。
 - 復用既有私有 Storage／Firestore、hash／版本、原操作及刪除生命週期；新訊息及附件共用同一權威。清楚低風險指令沿原授權，重要事實／共享寫入仍在對話內確認，不把上傳附件當成已確認事實。保留舊記錄／提取證據，不接管協作者 Agent PR。
 - 獨立核對一條照片附加→送出→模型可讀→附件庫／新對話重讀，機械接點先用合成資料；不重跑照片品質或各模型矩陣。完成相容 Server 接線後才啟用前端送出，不能在後端未支援時提供假成功。
-- 2026-10-24 使用者明確允許在獨立分支加入照片專用 Agent 接線，保留協作者審核工作、不代合併其 PR。`codex/chat-photo-backend` 由 `60b42c1` 開包；新增 #286 的 PhotoInputDomains 修復也須保留，前端整合前核對。後端訊息引用／原圖讀取、原生多模態及審核證據接點已實作；兩條合成連貫情景與定向 strict 型別通過。後端已合併 #287；[後端證據](artifacts/verification/CHAT_PHOTO_BACKEND_20261024.json)。共用前端已接原圖保存／原操作查回、聊天送出、照片查看及附件庫同 ID 重用；[前端證據](artifacts/verification/CHAT_PHOTO_FRONTEND_20261024.json)包含單一連貫 client 情景、窄型別及 Web／Android 匯出。待相容部署；真模型照片理解及手機效果未驗，不代替角色品質驗收。
+- 2026-10-24 使用者明確允許在獨立分支加入照片專用 Agent 接線，保留協作者審核工作、不代合併其 PR。`codex/chat-photo-backend` 由 `60b42c1` 開包；新增 #286 的 PhotoInputDomains 修復也須保留，前端整合前核對。後端訊息引用／原圖讀取、原生多模態及審核證據接點已實作；兩條合成連貫情景與定向 strict 型別通過。後端已合併 #287；[後端證據](artifacts/verification/CHAT_PHOTO_BACKEND_20261024.json)。共用前端已接原圖保存／原操作查回、聊天送出、照片查看及附件庫同 ID 重用；[前端證據](artifacts/verification/CHAT_PHOTO_FRONTEND_20261024.json)包含單一連貫 client 情景、窄型別及 Web／Android 匯出。已合併 #288，原站與 Android OTA 發布完成；[交付證據](artifacts/verification/CHAT_PHOTO_DELIVERY_20261024.json)保留封包失敗／相容修正及回退。實際 runtime 只把兩項照片注入接回現網組裝，不帶入未發布頭像／APNs。真模型照片理解及手機效果未驗，不代替角色品質驗收。
 - 手機輸入框說明文字延遲：使用者回報彈窗初開先空白、等一會或 focus 後才顯示。共用 Paper 原生 label 有量度前 opacity gate，根因未經真機確認；原生單行 outlined 空欄位改用原生 placeholder，focus／有值時恢復浮動標籤，不改 Web、flat 或多行。三項共用元件檢查通過；實機結果另列，不承諾零延遲。
 
 <a id="avatar-01"></a>
