@@ -315,12 +315,18 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
         } else if (input.action === 'patch') {
           if (row.status !== 'active' || !values.current) reject('document_changed'); snapshot = applyFamilyDocumentPatch(values.current, input, loaded, row.version, seed);
           if (row.progress?.blocked) row.progress.blocked = false;
-        } else if (input.action === 'check_item') {
+        } else if (input.action === 'check_item' || input.action === 'check_items') {
           if (row.status !== 'active' || !values.current || !documentSnapshotValid(values.current, loaded)
             || !values.current.reportCoverage && values.current.sourceBasis !== documentSourceBasis(loaded, row.request)) reject('source_changed');
-          snapshot = structuredClone(values.current); const section = snapshot.sections.find(value => value.id === input.sectionId && value.kind === 'checklist');
-          const item = section?.items.find(value => value.id === input.itemId); if (!item) reject('invalid_input', 400);
-          item.checked = input.checked; snapshot.id = seed.id; snapshot.version = row.version; snapshot.generatedAt = seed.generatedAt;
+          snapshot = structuredClone(values.current);
+          const checks = input.action === 'check_item' ? [input] : input.checks;
+          const updates = checks.map(check => {
+            const section = snapshot!.sections.find(value => value.id === check.sectionId && value.kind === 'checklist');
+            const item = section?.items.find(value => value.id === check.itemId); if (!item) reject('invalid_input', 400);
+            return { item, checked: check.checked };
+          });
+          for (const { item, checked } of updates) item.checked = checked;
+          snapshot.id = seed.id; snapshot.version = row.version; snapshot.generatedAt = seed.generatedAt;
           snapshot.changes = ['家長更新準備清單的完成標記。'];
         } else {
           if (input.action === 'archive' && row.status !== 'active' || input.action === 'restore' && row.status !== 'archived') reject('document_changed');

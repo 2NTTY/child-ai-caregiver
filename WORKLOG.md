@@ -3587,3 +3587,10 @@
 - 使用者明確批准 `382d217` 的私有 Web 包與一次相容 OTA 後，原 VM 只更新 Web；候選核對、公開首頁 hash 與 API health 通過，API／worker、資料、配額及頭像 gate 不變。舊映像與 0600 配置備份可回退。
 - Android preview 發布 group `148449b2-41f9-4239-88b0-79578d7bc240`，runtime 與已安裝 APK v3 相同，毋須重裝。沒有強制重啟 App，不把發布視為手機畫面驗收；零模型／通知。精確產物、結果及待驗見[交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)。
 - 接續準備單連點合併與離頁背景保存；照片直接聊天、頭像及下次 APK 品牌圖仍保留各自門檻。
+
+<a id="log-20261024-preparation-background-save"></a>
+## LOG-20261024-PREPARATION-BACKGROUND-SAVE
+
+- 接續 `5ec3958`，主模型接共用 owner 的可續點草稿、停手三秒及離頁 flush；一個原操作可在背景完成，收據更新同源文件，不重讀全列表。Sol 在限定兩個 store 與一項測試中加入相容 `check_items`，主模型 review；沒有 Server 草稿副本。
+- 128 項有界批次共用版本與交易，無效目標不部分保存。unknown 只查／重送原操作；衝突先讀回再明確套用，斷線不自動排隊重送，身份清理保留。按鈕不因正常保存換成文字或鎖住其他勾選。
+- [定向證據](artifacts/verification/PREPARATION_BACKGROUND_SAVE_20261024.json)保留兩次 fixture 等待缺口及 tsc 參數更正；owner 連貫情景與 Firestore 合成批次各一條通過，窄型別通過。沒有全量、真模型、雲端寫入、通知或真機；尚未部署。

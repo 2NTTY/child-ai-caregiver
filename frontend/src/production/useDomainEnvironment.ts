@@ -6,16 +6,17 @@ import { useProduction, useProductionOwner } from "./ProductionProvider";
 export function useDomainEnvironment() {
   const { owner, scopeKey, identityKey, userId, selectedChildId, online, recordsState, apiBaseUrl, queryClient } = useProduction();
   const child = recordsState.children.find(item => item.id === selectedChildId);
+  const writeReady = owner.canStartDomainWrite();
   return useMemo(() => ({
     owner, scopeKey: scopeKey ?? "", identityKey: identityKey ?? "", userId,
     childId: scopeKey ? selectedChildId : null, childName: child?.displayName ?? "", role: child?.accessRole ?? null,
     online, apiBaseUrl, queryClient,
     current: () => !!scopeKey && owner.getSnapshot().scopeKey === scopeKey,
     currentIdentity: () => !!identityKey && owner.getSnapshot().identityKey === identityKey,
-    canStartWrite: owner.canStartDomainWrite,
+    canStartWrite: owner.canStartDomainWrite, writeReady,
     invalidate: owner.invalidatePrivateReads,
     accessError: owner.handleDomainAccessError,
-  }), [owner, scopeKey, identityKey, userId, selectedChildId, child?.displayName, child?.accessRole, online, apiBaseUrl, queryClient]);
+  }), [owner, scopeKey, identityKey, userId, selectedChildId, child?.displayName, child?.accessRole, online, apiBaseUrl, queryClient, writeReady]);
 }
 
 /** Preserve unknown operations across navigation and block logout while outcome is unresolved. */

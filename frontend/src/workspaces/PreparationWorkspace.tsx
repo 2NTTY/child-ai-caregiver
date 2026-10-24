@@ -23,6 +23,8 @@ export interface PreparationWorkspaceValue {
     operation?: WriteOperationView; retainedDraftId?: string | null; createDraft?: DocumentCreateDraft | null; editingLocked?: boolean;
     capabilities?: { archive: boolean; checkItem: boolean; restore?: boolean; refresh?: boolean; create?: boolean };
     busy?: boolean; locked?: boolean; dirty?: boolean; epoch?: number; authorityVersion?: string;
+    checkSave?: "queued" | "saving" | "conflict" | "unknown";
+    canReapplyChecks?: boolean;
   };
   actions: {
     selectDocument(id: string): void;
@@ -33,6 +35,7 @@ export interface PreparationWorkspaceValue {
     refreshDocument?(id: string, expectedVersion: number): void;
     createDocument?(request: DocumentRequest, draftId?: string): void;
     refresh?(): void; markDraft?(): void; discardDraft?(): void;
+    reapplyChecks?(): void; discardChecks?(): void;
   };
   recovery?: WriteRecoveryActions;
 }

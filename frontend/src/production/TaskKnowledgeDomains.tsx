@@ -1,4 +1,4 @@
-import { createContext, memo, useCallback, useContext, useLayoutEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, memo, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { TasksWorkspaceProvider, type TasksWorkspaceValue } from "../workspaces/TasksWorkspace";
 import { PreparationWorkspaceProvider } from "../workspaces/PreparationWorkspace";
 import { GrowthWorkspaceProvider, type GrowthWorkspaceValue } from "../workspaces/GrowthWorkspace";
@@ -11,6 +11,7 @@ import { useTaskKnowledgeGrowth } from "./task-knowledge-growth";
 import { useFamilyDocuments } from "./useFamilyDocuments";
 import { usePersonalHistory, PersonalHistoryProvider, type PersonalHistoryOwner } from "./usePersonalHistory";
 import type { TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
+import { usePathname } from "expo-router";
 
 type MemoryOwner = ReturnType<typeof useTaskKnowledgeMemory>;
 type DocumentOwner = ReturnType<typeof useFamilyDocuments>;
@@ -51,6 +52,7 @@ const AccountHistoryBridge = memo(function AccountHistoryBridge({ env, publish }
 
 export function ProductionTaskKnowledgeDomains({ children }: { children: ReactNode }) {
   const env = useDomainEnvironment();
+  const pathname = usePathname();
   const historyScope = env.scopeKey || (env.identityKey && env.userId ? JSON.stringify(["account-messages", env.identityKey]) : "");
   const accountEnv = useMemo(() => ({ ...env, scopeKey: historyScope,
     current: () => env.currentIdentity() && !env.owner.getSnapshot().scopeKey }), [env, historyScope]);
@@ -60,6 +62,11 @@ export function ProductionTaskKnowledgeDomains({ children }: { children: ReactNo
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const publish = useCallback((value: Snapshot) => setSnapshot(value), []);
   const current = snapshot && env.scopeKey && snapshot.scopeKey === env.scopeKey ? snapshot : null;
+  const flushOnLeave = useRef(current?.documents.flushChecks);
+  flushOnLeave.current = current?.documents.flushChecks;
+  // The persistent owner finishes saves after navigation. Do not wake every
+  // domain hook just because a route changed.
+  useEffect(() => { flushOnLeave.current?.(); }, [pathname, env.scopeKey]);
   const currentHistory = env.scopeKey ? current?.history ?? null
     : accountHistory?.scopeKey === historyScope ? accountHistory : null;
   return <>
