@@ -13,14 +13,16 @@ try{
  for(const width of (process.env.FRONTEND_CHAT_WIDTHS?.split(',').map(Number)??[1440,1024,390,320])){
   const page=await openPreview(browser,'/chat',width,width>=1024?992:width===390?844:720,failures),scroll=page.getByTestId('chat-timeline-scroll');
   await bottom(scroll);assert.equal(await page.getByTestId('chat-timeline-entry').count(),6);
-  await page.getByRole('button',{name:'查看較早記錄（8 則）',exact:true}).waitFor();
+  assert.equal(await page.getByRole('button',{name:/^查看較早記錄/}).count(),0);
   const input=page.getByRole('textbox',{name:'撰寫對話問題',exact:true});await input.fill(`新問題 ${width}`);await page.getByRole('button',{name:'預覽輸入',exact:true}).click();
   await page.getByTestId('chat-timeline-entry').last().getByText(`新問題 ${width}`,{exact:true}).waitFor();await bottom(scroll);assert.equal(await page.getByTestId('chat-timeline-entry').count(),6);
-  const older=page.getByRole('button',{name:'查看較早記錄（9 則）',exact:true});await older.scrollIntoViewIfNeeded();
+  // Programmatic positioning alone must not request history; the reader's
+  // next upward gesture expands it while preserving this visible message.
+  await scroll.evaluate(el=>{el.scrollTop=0;});await page.waitForTimeout(80);
   const oldFirst=page.getByTestId('chat-timeline-entry').first(),oldId=await oldFirst.getAttribute('id'),oldY=(await oldFirst.boundingBox()).y;
-  await older.click();await page.waitForFunction(()=>document.querySelectorAll('[data-testid="chat-timeline-entry"]').length===12);
+  let scrollBox=await scroll.boundingBox();await page.mouse.move(scrollBox.x+5,scrollBox.y+80);await page.mouse.wheel(0,-40);await page.waitForFunction(()=>document.querySelectorAll('[data-testid="chat-timeline-entry"]').length===12);
   const same=page.locator(`[id="${oldId}"]`);await page.waitForTimeout(80);const anchorShift=(await same.boundingBox()).y-oldY;assert.ok(Math.abs(anchorShift)<=2,`History prepend moved reading anchor ${anchorShift}px`);
-  await page.getByRole('button',{name:'查看較早記錄（3 則）',exact:true}).click();assert.equal(await page.getByTestId('chat-timeline-entry').count(),15);assert.equal(await page.getByTestId('chat-history-start').count(),1);
+  await scroll.evaluate(el=>{el.scrollTop=0;});await page.waitForTimeout(80);await page.mouse.wheel(0,-40);await page.waitForFunction(()=>document.querySelectorAll('[data-testid="chat-timeline-entry"]').length===15);assert.equal(await page.getByTestId('chat-history-start').count(),1);
   await scroll.evaluate(el=>el.scrollTop=0);await page.screenshot({path:resolve(directory,`history-${width}.png`)});
   await page.getByRole('button',{name:'回到最新',exact:true}).click();await bottom(scroll);assert.equal(await page.getByTestId('chat-timeline-entry').count(),6);
   await input.fill('保留串流時的草稿');await tools(page,scroll);await page.getByRole('button',{name:'加入回覆狀態示例',exact:true}).click();

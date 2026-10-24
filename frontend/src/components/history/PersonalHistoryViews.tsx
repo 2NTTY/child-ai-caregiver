@@ -1,7 +1,7 @@
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Text } from "react-native-paper";
+import { ActivityIndicator, Text } from "react-native-paper";
 import { historyMessageQuestion, messageChannelLabel, visiblePersonalHistory, visiblePersonalMessages, type HistoryDateRange } from "../../history-view-model";
 import { memoryDateLabel } from "../../memory-reference-view-model";
 import { usePersonalHistoryWorkspace, type PersonalHistoryOwner } from "../../production/usePersonalHistory";
@@ -13,6 +13,7 @@ import { VoiceMessage } from "../../production/VoiceMessage";
 import { FormDialog } from "../FormDialog";
 import { HistoryCardGrid, HistoryEntryCard } from "./HistoryCards";
 import { HistoryMessageDetail } from "./HistoryMessageDetail";
+import { useMotionPreferences } from "../../motion/preferences";
 
 export function PersonalConversationHistoryView({ searchText, dateRange, onPrepareQuestion }: {
   searchText: string; dateRange: HistoryDateRange; onPrepareQuestion(question: string): void;
@@ -90,6 +91,7 @@ export function PersonalNotificationHistoryView({ searchText, dateRange }: { sea
 export function PersonalNotificationContent({ owner, searchText = "", dateRange = { from: null, to: null }, recent = false }: {
   owner: PersonalHistoryOwner | null; searchText?: string; dateRange?: HistoryDateRange; recent?: boolean;
 }) {
+  const motion = useMotionPreferences();
   const current = useRef(owner); current.current = owner;
   const scope = owner?.scopeKey;
   const filterKey = JSON.stringify([searchText, dateRange.from, dateRange.to]);
@@ -108,7 +110,10 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
   const matches = visiblePersonalMessages(read.data?.items ?? [], searchText, dateRange), items = recent ? matches.slice(0, 5) : matches;
   const retry = <AppButton label="重新讀取消息" variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} />;
   return <View ref={listRef} tabIndex={recent ? undefined : -1} accessibilityLabel={recent ? undefined : "消息歷史"} style={styles.list}>
-    {read.state === "loading" ? <ReadStateNotice state="loading" title="正在讀取消息…" scopeKey={scope} />
+    {read.state === "loading" ? recent ? <View testID="recent-notification-loading" style={styles.row}>
+      {motion.enabled ? <ActivityIndicator color={colors.teal} /> : <View testID="read-loading-static" accessible={false} aria-hidden style={styles.staticIndicator} />}
+      <Text style={styles.meta}>正在讀取消息…</Text>
+    </View> : <ReadStateNotice state="loading" title="正在讀取消息…" scopeKey={scope} />
       : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到消息">{retry}</ReadStateNotice>
       : read.state === "unavailable" ? <ReadStateNotice state="unavailable" title={owner.notificationUnavailable ? "消息內容暫未提供" : owner.online ? "正在準備消息…" : "連線後才可讀取消息"}>{owner.notificationUnavailable ? retry : null}</ReadStateNotice>
       : <>
@@ -168,6 +173,7 @@ function notificationTime(value: string | null) {
     hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value));
 }
 const styles = StyleSheet.create({
+  staticIndicator: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: colors.teal },
   channelDetail: { gap: spacing.sm, minWidth: 0, paddingTop: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine },
   channel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700" },
   messageContent: { gap: spacing.xs, minWidth: 0 },

@@ -58,6 +58,7 @@ function harness({ pathname = '/', width = 390, enabled = true, platform = 'web'
         '/NotificationBell': ['NotificationBell'], '/ToolbarIconButton': ['ToolbarIconButton'],
         '/PhotoFilePicker': ['PhotoFilePicker'], '/DirectionalPressable': ['DirectionalPressable'],
         '/AssistantInputDialog': ['AssistantInputDialog'],
+        '/VoiceCapture': ['VoiceCapture'],
       };
       const exports = Object.entries(components).find(([suffix]) => name.endsWith(suffix))?.[1];
       assert.ok(exports, `Unmocked navigation dependency: ${name}`);

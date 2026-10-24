@@ -140,9 +140,8 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
     </BackgroundSurface>
     <BackgroundSurface frosted testID="chat-reading-panel" onLayout={onPaneLayout} style={styles.readingPanel} activeStyle={styles.boundedReadingPanel}>
     <ChatTimeline items={child ? chat.messages : []} recentLimit={6} compact={compact} presentation="conversation" emptyState={empty}
-      header={child && chat.nextCursor ? <BackgroundSurface style={styles.earlier}><ChatAction label={chat.loadingOlder ? "正在讀取…" : "較早對話"} compact={compact}
-        disabled={busy || chat.loading || chat.loadingOlder || !chat.online}
-        onPress={() => { timelineRef.current?.holdReadingPosition(); void chatController.loadOlderMessages(); }} /></BackgroundSurface> : undefined}
+      history={{ cursor: child ? chat.nextCursor : null, loading: chat.loadingOlder,
+        enabled: !!child && !busy && !chat.loading && chat.online, load: () => chatController.loadOlderMessages() }}
       footer={feedback} scrollRef={scrollRef} controlsRef={timelineRef} followRequest={followRequest} newReplyId={newReplyId} renderItem={message => {
         const run = message.agentRunId ? agentRuns[message.agentRunId] : undefined;
         const sourcesMatch = run?.text === message.text || !!run?.text && !!run.stopReasonLabel

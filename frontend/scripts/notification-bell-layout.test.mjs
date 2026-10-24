@@ -10,7 +10,7 @@ const elements = new Proxy({}, { get: (_target, key) => String(key) });
 const nodes = value => !value || typeof value !== 'object' ? [] : Array.isArray(value) ? value.flatMap(nodes) : [value, ...nodes(value.props?.children)];
 const text = value => !value ? '' : typeof value === 'string' ? value : Array.isArray(value) ? value.map(text).join(' ') : typeof value === 'object' ? text(value.props?.children) : '';
 const dialog = Object.assign('Dialog', { Title: 'Title', Content: 'Content', Actions: 'Actions' });
-function load(file, owner) {
+function load(file, owner, motionEnabled = true) {
   const output = ts.transpileModule(readFileSync(new URL('../src/' + file, import.meta.url), 'utf8'), {
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
   }).outputText;
@@ -19,7 +19,8 @@ function load(file, owner) {
     if (name === 'react/jsx-runtime') return { jsx, jsxs: jsx, Fragment: 'Fragment' };
     if (name === 'react') return { useState: () => [true, () => {}], useRef: current => ({ current }), useEffect() {} };
     if (name === 'react-native') return { View: 'View', StyleSheet: { create: value => value } };
-    if (name === 'react-native-paper') return { Portal: 'Portal', Text: 'Text' };
+    if (name === 'react-native-paper') return { Portal: 'Portal', Text: 'Text', ActivityIndicator: 'ActivityIndicator' };
+    if (name.endsWith('/motion/preferences')) return { useMotionPreferences: () => ({ enabled: motionEnabled }) };
     if (name === './AppDialog') return { AppDialog: dialog };
     if (name === 'expo-router') return { useRouter: () => ({ push() {} }) };
     if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewNavigation: () => action => action() };
@@ -61,5 +62,33 @@ test('empty, partial-empty, loading, error and unavailable views do not force th
   for (const recent of [true, false]) for (const state of ['ready', 'loading', 'error', 'unavailable']) for (const complete of [true, false]) {
     const empty = { ...owner, notifications: { state, data: state === 'ready' ? { items: [], complete, nextCursor: complete ? null : 'synthetic-cursor' } : null } };
     assert.equal(text(PersonalNotificationContent({ owner: empty, recent })).includes('只顯示已保存的通知內容'), false);
+  }
+});
+
+test('opening a cold bell starts the read and renders its indicator before content effects run', () => {
+  let requests = 0;
+  const cold = { ...owner, notifications: { state: 'unavailable', data: null }, actions: { loadNotifications() {
+    requests++; cold.notifications = { state: 'loading', data: null };
+  } } };
+  const { NotificationBell } = load('components/NotificationBell.tsx', cold);
+  nodes(NotificationBell()).find(node => node.type === 'ToolbarIconButton').props.onPress();
+  assert.equal(requests, 1);
+  const { PersonalNotificationContent } = load('components/history/PersonalHistoryViews.tsx', cold);
+  const tree = PersonalNotificationContent({ owner: cold, recent: true });
+  assert.ok(nodes(tree).some(node => node.type === 'ActivityIndicator'));
+  assert.ok(text(tree).includes('正在讀取消息…'));
+  assert.equal(nodes(tree).some(node => node.type === 'ReadStateNotice'), false, 'recent reads bypass the delayed shared notice');
+  const reduced = load('components/history/PersonalHistoryViews.tsx', cold, false).PersonalNotificationContent({ owner: cold, recent: true });
+  assert.ok(nodes(reduced).some(node => node.props?.testID === 'read-loading-static'));
+  assert.ok(text(reduced).includes('正在讀取消息…'));
+  for (const patch of [
+    { notifications: owner.notifications },
+    { notifications: { state: 'error', data: null } },
+    { online: false }, { access: 'revoked' }, { notificationUnavailable: true },
+  ]) {
+    const existing = { ...cold, notifications: { state: 'unavailable', data: null }, ...patch };
+    const bell = load('components/NotificationBell.tsx', existing).NotificationBell();
+    nodes(bell).find(node => node.type === 'ToolbarIconButton').props.onPress();
+    assert.equal(requests, 1, 'opening preserves existing data, errors and unavailable boundaries');
   }
 });

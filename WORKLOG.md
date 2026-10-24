@@ -3572,3 +3572,11 @@
 - 接續 `eef3768`，共用 Sources 列表／詳情分清正文取得、本人授權可讀及向量索引。現行私人來源沒有向量索引作業；包括公共網址的私人副本，不以保存成功假稱已索引。Sol 實作三個呈現檔與一項檢查；主模型核 Server 摘錄資格、完整 diff 及現行契約，沒有新增另一套索引狀態或模型工作。
 - Node24.19 一項投影檢查、12 個資料情況通過；沒有全量／模型／部署。[證據](artifacts/verification/SOURCE_READINESS_20261024.json)。Web／Android 畫面留共用交付，不宣稱已發布。
 - 用戶已回覆 APK v3 安裝，ADB 核實 versionCode 3／App 前景；未據此補填完整清單或資料保留驗收。已接下準備單連點／手機列表頭、鈴鐺首幀及聊天頂部分頁要求；下次 APK 沿品牌素材處理 icon／splash，不為此再建一版。
+
+<a id="log-20261024-shared-reading-interactions"></a>
+## LOG-20261024-SHARED-READING-INTERACTIONS
+
+- 接續 #281／ee0b7b1，B 單作者收束共用介面。主模型修聊天原訊息錨點、滾頂分頁與原生導航；Sol 沿原派單處理鈴鐺首幀、準備單列表頭及直接錄音，主模型核關鍵 diff 與結果。照片現時只走舊提取入口，另記 CHAT-PHOTO01，不以刪除提示文案冒稱接通。
+- 聊天分開本機已載入視窗及 Server 游標，正常不需按鈕；Web 以可見訊息相對位置補償，原生沿 RN 可見位置保留。失敗只提供明確重試，不自動重發。四個原生分頁採 Expo Router 實際 aria-selected 狀態與 Web 共用短線；核對手勢不變。
+- 語音按一次啟動原錄音 adapter，停止後試聽及加入草稿；普通掛載不錄音，背景／取消／離頁沿原清理。移除文件「改用文字」。[必要檢查與匯出證據](artifacts/verification/SHARED_READING_INTERACTIONS_20261024.json)分列已通項目、fixture 失敗／局部修正及裝置未驗，不重跑全量。
+- 未發布 Web／OTA，沒有模型、通知或雲端資料修改。準備單合併保存、照片直接聊天及頭像仍待獨立業務接線；下一 APK 品牌圖標與 splash 保留待辦。

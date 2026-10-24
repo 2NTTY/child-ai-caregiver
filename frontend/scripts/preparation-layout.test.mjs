@@ -68,6 +68,9 @@ test('compact assistant actions precede documents while secondary tools and manu
   const purposeField = nodes(footer).find(node => node.props?.children === label(footer, '用途'));
   assert.equal(purposeField.props.style.flexGrow, undefined);
   assert.equal(purposeField.props.style.minWidth, undefined);
+  assert.equal(purposeField.props.style.width, 220, 'give the native flex label a bounded width before measuring its text');
+  assert.equal(purposeField.props.style.maxWidth, '100%');
+  assert.equal(purposeField.props.style.flexShrink, 0, 'wrap the complete control instead of collapsing its label beside the assistant action');
   assert.equal(footer.props.style.flexDirection, 'row');
   assert.equal(footer.props.style.flexWrap, 'wrap');
   assert.equal(footer.props.style.minHeight, undefined);
