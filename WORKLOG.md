@@ -3687,3 +3687,10 @@
 - Android 原配置未指定 launcher／splash；本次復用既有品牌 raster 與 Expo 57 官方 splash plugin，沒有重畫品牌或修改正式共用頁面。下一次必要新 APK 才交付，現有 v3 runtime 不強制覆寫。
 - [必要證據](artifacts/verification/ANDROID_BRAND_STARTUP_20261024.json)：config 正確解析、官方生成器輸出 native resources，主模型核對 launcher／splash 像素。保留安裝 engine 警告、config 參數、fixture cwd 及 sandbox EPERM；修正核對入口後成功，未新增產品測試或跑全量。
 - 沒有 EAS 上傳／建置／OTA、真機、模型或通知。本機資源不是新 APK／手機啟動已驗；品牌 runtime 改變由既有發佈工具攔截，不手填舊版本。
+
+<a id="log-20261025-avatar-admission-native"></a>
+## LOG-20261025-AVATAR-ADMISSION-NATIVE
+
+- 既有合成恢復庫以全新 namespace 執行一次真 SDK 連貫流程；兩個 client 使用正式 authority、avatar store、online service、codec、加密物件及 maintenance／queue consumer。共用准入、持久 lease、原收據、權限拒絕、更換、舊圖清理及重建 client 讀回通過。
+- [證據](artifacts/verification/AVATAR_ADMISSION_NATIVE_20261025.json)保存索引、範圍、44 次交易／兩次寫圖及四個預期拒絕。腳本先經主模型及獨立唯讀 review，補齊 barrier 失敗處理、現場識別及 namespace 檢查後只執行一次；沒有重跑模型或通知。
+- 測試圖片按 generation 清除，測試產品存取已撤銷；密文台帳保留，受保護 key 不入倉庫。外部 Tasks 喚醒使用本地 inbox，沒有真 OIDC／HTTP／兩個 API 部署副本、刪除 journal 或完整恢復證據。source gate 保持 false，原站未改動，不能把本次資料層通過當正式頭像已開放。
