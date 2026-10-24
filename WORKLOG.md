@@ -3604,3 +3604,18 @@
 - 等待期間 master 合併 #283／#284 至 `015deb8e`。唯讀 merge preview 只有 PLAN／STATUS／WORKLOG 衝突，但共享文件 owner 新增 preparation buffer；因此依主對話限定授權另開 `codex/four-verified-fixes-20261024-latest`，保留最新部署及背景保存文件，不覆舊狀態。8 個產品檔逐 byte 沿已批准來源；只補原 PDF fixture 載入真 buffer，以及 React 無 deps effect 的每次 render 語意，未弱化斷言或改產品。
 - Node 24.19.0、沿用依賴及合成 ports，最新候選只串行補 PDF owner 3/3、archive 組裝 1/1、新 native 檢查 5/5。未重跑照片／APNs、全檔 lifecycle、完整型別／build／GUI／真機或外部服務；原 PDF timer 1/3、照片 red、APNs care fixture red 及較闊批次 10 FAIL 均在[同一精簡收據](artifacts/verification/FOUR_FIXES_20261024.json)保留，按各自版本引用。
 - 新候選 fixture／文件交主對話覆核；外部交付仍等明確批准狀態，不新增上傳、合併、GCP／OTA／Sites、模型或真家庭資料操作。協作者 PR、頭像 gate、照片聊天及附件交付原責任不變，沒有真人驗收或猜測人員署名。
+
+<a id="log-20261024-preparation-background-delivery"></a>
+## LOG-20261024-PREPARATION-BACKGROUND-DELIVERY
+
+- 已合併 #284／`015deb8` 沿原 VM 完成相容 API／worker／Web 更新；候選僅做離線 import／schema 與 hash 核對，發布前確認沒有活動 Agent lease。公開首頁 hash、API health 與映像身份通過，保留原映像及兩份 0600 配置回退；無資料遷移、模型、通知或配額改動。
+- Android 首次發布遇 EAS 資產處理 180 秒逾時。查回 preview 仍為上一組，固定 CLI 原碼確認尚未到 publish mutation；同一份已核 hash 產物只補送一次，成功發布 group `a46b49b0-a5ef-4ead-8d24-6a61236a85b9`。與已安裝 v3 相容，不另建 APK，不把發布當真機驗收。
+- [交付證據](artifacts/verification/PREPARATION_BACKGROUND_DELIVERY_20261024.json)保存版本、原失敗、回退及未驗項。照片聊天正式 Agent 接點與協作者未合併修改重疊，保留其工作；先處理不重疊的附件接點，頭像與下一 APK 品牌圖仍待後續包。
+
+
+<a id="log-20261024-four-fixes-draft-delivery"></a>
+## LOG-20261024-FOUR-FIXES-DRAFT-DELIVERY
+
+- 使用者明確批准四項修補、測試及記錄公開上傳後，於 2026-10-24 13:45 UTC 建立草稿 PR #286；遠端 `125657d177eb52347194556b543ffe7497b51d80` 的 tree `951b9e482ed2616bbfe497d8ec61a39b7b0825ae` fetch 回核與批准本地候選完全相同，19 檔集合相符。當時沒有觀察到 commit statuses／PR workflow runs，不當 CI 通過；未合併或部署。
+- #285 部署文件已在上傳期間合併至 `60b42c1`，只有 PLAN／STATUS／WORKLOG 衝突，產品無交集。使用者其後要求處理；本次由 dot 原生代理在隔離 worktree 正常 merge，保留 master 最新正文、兩邊 WORKLOG 追加記錄及原部署收據，並將四項修補的現況改為已交草稿 PR，未改原驗證收據或掩蓋失敗。
+- 本輪只核文件連結／錨點／衝突標記、append-only 保留及 15 個碼測檔 bytes；產品與測試完全不變，沒有重跑產品測試、模型、服務、GCP／OTA／Sites。交主對話覆核後只更新同一草稿 PR，不另開 PR、不強推、不合併 PR 或部署；原生／正式未驗門檻保持。

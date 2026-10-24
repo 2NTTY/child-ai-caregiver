@@ -56,9 +56,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**並行修補：[FIX-FOUR01](#four-fix01)。**四項指定修補已接續 #284／`015deb8e`，目前為獨立本地候選；保留下列準備單背景保存及最新部署紀錄，不接管協作者 Agent、照片聊天或頭像交付。
+**並行修補：[FIX-FOUR01](#four-fix01)。**四項指定修補已建立[草稿 PR #286](https://github.com/2NTTY/child-ai-caregiver/pull/286)；本次只同步 #285 的文件，保留準備單背景保存與最新部署紀錄，不改產品／測試或接管協作者 Agent、照片聊天及頭像交付。
 
-**當前：[準備單背景合併保存](#shared-interaction01)收尾交付。**2026-10-24 基線 master `382d217`；#281／#282 的來源狀態、列表佈局、鈴鐺首幀、聊天位置、直接錄音及導航短線已發布 Web／APK v3 相容 OTA，真機效果待核。先補準備單非阻斷保存，再接[照片聊天](#chat-photo01)與頭像。APK v3 已安裝，不據此宣稱全部功能或資料保留已驗。個人模型未驗項沿 [MODEL03](#model-self03)，需要本人前置時繼續獨立工作。
+**當前：[準備單背景合併保存](#shared-interaction01)已發布，接續[照片聊天](#chat-photo01)與頭像。**2026-10-24 master `015deb8`（#284）的相容 API／worker、Web 及 APK v3 OTA 已交付；連點合併保存有定向證據，實際手機效果待核。#281／#282 的來源狀態、列表佈局、鈴鐺首幀、聊天位置、直接錄音及導航短線保留。個人模型未驗項沿 [MODEL03](#model-self03)，需要本人前置時繼續獨立工作；不把 OTA 發布當真機通過。
 
 **iOS 保留：[S04-W03 發佈準備](#s04-w03)等待 Apple 前置。**#272、#274～#278 已合併，本機接線／匯出／APNs掛載配置有證據；尚無 IPA、部署或真通知。免費真機需可用 Mac，TestFlight 需已授權 Apple 團隊及簽署；不為等待條件重跑測試或購買會員。完整範圍見 [iOS 計劃](#p3-ios)。
 
@@ -73,7 +73,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 - **範圍／基線：**依使用者指定第 1–4 項修補，接續 `015deb8e`（#284）於 `codex/four-verified-fixes-20261024-latest` 整合照片普通草稿離頁守衛／已批准捨棄、成功重讀清精確舊錯誤、APNs 過時 410 的登記 revision／時間核對，以及原生 PDF 實際分享能力 gate。原操作／unknown、身份及版本守衛保留；8 個產品檔維持已獨立 review 版本。
 - **分層證據：**原 `382d2174` 整合照片 49/49、APNs 10/10；PDF 相關較闊批次 44/54，10 項 preparation fixture `HistoryCards` 缺口保留，未修或重跑全檔。#284 改共享文件 owner，故只補該 fixture 載入真 preparation buffer 及無 deps effect 語意，再驗 PDF owner 3/3、archive 1/1、新 native 檢查 5/5；不把舊整合數字當新基線重跑。[收據](artifacts/verification/FOUR_FIXES_20261024.json)保留原紅、精確版本及未驗。
-- **下一步／門檻：**新 fixture 與整合文件待 dot 主對話覆核；外部交付批准狀態未釐清前不重試上傳、不改原待批內容。尚無本包 PR／部署，暫不合併；真機照片捨棄、原生分享、Apple APNs／原生 Firestore 競爭及正式驗收仍待補。沒有全量型別／build／E2E，不代表照片聊天、頭像、附件庫或 iOS 整包完成。
+- **交付／門檻：**原碼、#284 fixture 及整合文件已由 dot 主對話覆核，使用者另明確批准公開上傳；已建立[草稿 PR #286](https://github.com/2NTTY/child-ai-caregiver/pull/286)，首次遠端 head `125657d1` 與批准候選的完整 tree 相同。依使用者要求正常合入 #285 的三份衝突文件，保留兩邊記錄，產品、測試與原驗證收據不變；維持草稿，不合併 PR 或部署。真機照片捨棄、原生分享、Apple APNs／原生 Firestore 競爭及正式驗收仍待補，不能把沒有 CI 狀態當通過；沒有重跑全量型別／build／E2E，不代表照片聊天、頭像、附件庫或 iOS 整包完成。
 
 <a id="attachment-read01"></a>
 ### ATTACHMENT-READ01：附件回看與私人清單（API／畫面已發布，實際清單待驗）
@@ -99,7 +99,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 同批新增：移除文件／語音彈窗「改用文字」冗餘入口；語音按鈕直接啟動本機錄音，原位顯示計時／停止／取消，試聽後才由本人送出。普通頁面掛載不要求咪權限或自動錄音；選取已有音訊仍保留。手機原生四個普通 Tabs 共用 Web 的選中短線，核對手勢保留。
 - **首批 #282 已合併並發布：**列表頭、鈴鐺、聊天錨點、直接錄音及導航短線沿同一共用前端。定向檢查及兩端匯出通過；[實作證據](artifacts/verification/SHARED_READING_INTERACTIONS_20261024.json)保留 fixture 失敗及未驗範圍，[交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)記 Web 首頁 hash、API health、原映像回退與相容 Android OTA。未強制重啟手機，不把發布當真機通過。
 - **剩餘保存要求（2026-10-24）：**保持原勾選按鈕，不因背景寫入換成文字、轉圈或鎖住其他項目。最後一次點擊後約 3 秒合併同文件的最後狀態；反覆改回原值不送無效寫入。在同一孩子工作區離頁／關閉閱讀／轉選文件時立即 flush，請求由共用 owner 接續，不等待完成才導航。保存中可繼續累積下一批；版本衝突或未知結果保留待處理狀態，先查原操作，不盲重做。身份／孩子切換及登出仍保留必要隔離與未決操作保障。照片聊天與頭像不在這份介面交付冒稱完成。
-- **背景保存已實作、待部署：**`codex/preparation-background-checks` 接續 `5ec3958`，共用 owner 保留未保存意圖及 3 秒合併；`check_items` 在同一交易提交最多 128 項，保存中可繼續點，原收據恢復及衝突仍保留。正常保存不再重讀全列表，離頁不等待請求。定向證據見[背景保存](artifacts/verification/PREPARATION_BACKGROUND_SAVE_20261024.json)；不是 Server 暫存或離線主庫，突然關閉程序前尚未送出的修改仍可能遺失。先相容更新 API，再交付 Web／Android OTA；尚未發布或真機驗收。
+- **背景保存已合併並發布：**#284／`015deb8` 共用 owner 保留未保存意圖及 3 秒合併；`check_items` 在同一交易提交最多 128 項，保存中可繼續點，原收據恢復及衝突仍保留。正常保存不再重讀全列表，離頁不等待請求。[定向證據](artifacts/verification/PREPARATION_BACKGROUND_SAVE_20261024.json)及[交付證據](artifacts/verification/PREPARATION_BACKGROUND_DELIVERY_20261024.json)分列實作與公開核對：API／worker／Web 已更新，Android preview group `a46b49b0` 與 v3 相容，首次 Expo 資產處理逾時經查明未發布後沿同產物補送一次成功。零模型／通知，未做真機確認；突然關閉程序前尚未送出的修改仍可能遺失，不是 Server 暫存或離線主庫。
 - 下次需要新 APK 時，沿既有品牌圖更新 Android launcher icon／splash，移除瞬間靶子圖；先保留 v3 相容 OTA，不為圖標另開免費建置。
 
 <a id="chat-photo01"></a>
@@ -109,6 +109,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 現況缺口：composer 可暫存照片，但正式 send 僅接文字／voice／file；`AgentPhotoInput` 導向舊的提取／核對通路。須接原照片內容、聊天訊息關聯、正式模型多模態及按需重讀，不只刪文案或把照片假當不支援讀取的通用文件。
 - 復用既有私有 Storage／Firestore、hash／版本、原操作及刪除生命週期；新訊息及附件共用同一權威。清楚低風險指令沿原授權，重要事實／共享寫入仍在對話內確認，不把上傳附件當成已確認事實。保留舊記錄／提取證據，不接管協作者 Agent PR。
 - 獨立核對一條照片附加→送出→模型可讀→附件庫／新對話重讀，機械接點先用合成資料；不重跑照片品質或各模型矩陣。完成相容 Server 接線後才啟用前端送出，不能在後端未支援時提供假成功。
+- 2026-10-24 開工定位發現 `product-agent.ts`／`agent-runtime.ts`／產品工具與協作者 #273／#265／#254 的未合併修改重疊，head 與前次核對相同。保留這些檔案及其審核工作，先處理可獨立的附件契約／資料接點；正式 Agent 整合前須重新核對其合併或範圍授權，不以普通文件入口假裝照片已接通。
 
 <a id="avatar-01"></a>
 ### AVATAR-01 本人／孩子頭像（並行開發候選）
