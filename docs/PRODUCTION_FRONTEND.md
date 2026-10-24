@@ -281,3 +281,13 @@ Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走原生配置
 - 隔離合成備份→還原→最新刪除日誌重放→匯出／清理演練，包含 source evidence 改變、unknown與中斷查回；不接正式流量，不上傳家庭照或呼叫模型。GCP／部署由既有責任人依有效授權處理，本包未執行。
 
 首次新 avatar schema／journal 寫入後，不可回退至不認識它們的舊 reader／worker；關寫入仍需保留相容清理、匯出、備份與恢復接點。marker partial-staging 的本機合成 PASS 不是原生 restore 全完成；資料與 codec/license細節見[資料契約](DATA_MODEL.md#avatars)及[決策](DECISIONS.md#avatar-codec-decision)。
+
+### 放棄未啟用的隔離頭像還原
+
+只供還原操作員，不能對原站或已啟用 target 執行。先停止該 target 的還原程序，確認它未掛 API／worker／流量；保留原備份與來源。沿同一 `FIREBASE_RESTORE_DATABASE_ID` 及受保護 key：
+
+1. `node scripts/firebase-recovery.mjs inspect-avatar-copies`，stdin `{}`。只返回 copy identity、phase、數量及 target ID，不輸出正文。
+2. 決定放棄後，`node scripts/firebase-recovery.mjs abandon-avatar-copies`，stdin `{"identity":"<上一步固定identity>","confirmTargetDatabaseId":"<同一隔離庫>","isolated":true}`。沒有 `current` 且完整認證集合吻合才 fence／清理目標副本；來源變更不會被當成繼續恢復的同意。
+3. 回應未知或中斷，保留相同參數及現場；修復連線後重新執行同一命令，查回原 marker，不能換 ID 重做原 copy。成功只表示該副本集合已放棄，**不表示完成還原或允許開站**。
+
+已放棄計劃不能恢復，重新還原另用經核對的來源及乾淨隔離 target。不要刪除永久 marker、checkpoint／intent 或 legacy 不明頁面來強行重試；marker 防止舊程序的遲到寫入。若 header／inventory 無法核實或已有 `current`，此入口拒絕，保留人工調查；沒有自動移除資料庫或擴大刪除範圍。

@@ -64,7 +64,8 @@ export interface FirebaseRecoveryOperatorOptions extends FirebaseBackupOptions {
   sourceObjects?:Pick<FirebasePhotoObjects,'inspect'> & Partial<Pick<FirebasePhotoObjects,'read'|'write'|'recover'>>;
   voices?:{bucketName:string;objects:VoiceObjects;recovery:FirebaseVoiceRecovery};
   chatFiles?:{bucketName:string;objects:ChatFileObjects;recovery:FirebaseChatFileRecovery};
-  avatars?:{bucketName:string;objects:AvatarObjects;readNormalized:ManagedAvatarRead;recovery:FirebaseAvatarRecovery;batches?:AvatarRecoveryBatch};
+  avatars?:{bucketName:string;objects:AvatarObjects;readNormalized:ManagedAvatarRead;recovery:FirebaseAvatarRecovery;batches?:AvatarRecoveryBatch;
+    abortCopy?:(value:AvatarCopyPayload)=>Promise<void>};
   managed?:ReturnType<typeof createFirebaseManagedBackup>;
   native:ReturnType<typeof createFirebaseNativeRecovery>;auth:Pick<Auth,'getUser'>;
 }
@@ -78,7 +79,8 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
   const checkpointRef=target.collection(checkpointCollection).doc('current');
   const staged=createFirebaseRestoreApply({database:target,cipher,projectId,namespace});
   const avatarCopies = options.avatars ? createFirebaseAvatarRestoreCopies({ database: target, cipher, projectId, namespace,
-    targetBucket: options.avatars.bucketName, objects: options.avatars.objects, batches: options.avatars.batches }) : null;
+    targetBucket: options.avatars.bucketName, objects: options.avatars.objects, batches: options.avatars.batches,
+    abortCopy: options.avatars.abortCopy }) : null;
   const sessionPath=namespace+'_sessions/';
   const prefix=(backupId:string)=>{uuid.parse(backupId);return 'gs://'+options.backupBucketName+'/firebase-backups/v1/'+backupId+'/firestore';};
   const decode=(docs:FirebaseBackupDocument[])=>docs.filter(row=>!isRestoreProtocolOrUsage(namespace,row.path)).map(row=>codec.decode(row));
@@ -184,6 +186,15 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
     assertFirebaseBackupInventory(result.inventory,await readAll(target,true));return result;
   }
   return {
+    async inspectAvatarCopies() {
+      requireValue(avatarCopies !== null, 'recovery_avatar_port_missing');
+      return avatarCopies.inspectAbandonment();
+    },
+    async abandonAvatarCopies(raw: unknown) {
+      const input = z.object({ identity: hash, confirmTargetDatabaseId: z.string(), isolated: z.literal(true) }).strict().parse(raw);
+      requireValue(avatarCopies !== null && input.confirmTargetDatabaseId === target.databaseId, 'recovery_configuration');
+      return avatarCopies.abandon(input.identity);
+    },
     async startBackup(input:{backupId:string;snapshotTime:string;generation:string}){
       await assertPaused(input.generation);const snapshot=await inspectFirebaseBackupSnapshot(options,{snapshotTime:input.snapshotTime,generation:input.generation});
       const records=decode(snapshot.documents);assertFirebaseRestoreAuthority(records);assertFirestoreRestoreContent(records);assertRestoredVoiceRelations(records);assertRestoredChatFileRelations(records);assertRestoredAvatarRelations(records);

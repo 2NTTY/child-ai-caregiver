@@ -413,3 +413,8 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 當前開發候選 `AVATAR_LIFECYCLE_RELEASE_READY=false`，不是功能完成；環境 `AVATAR_WRITES_ENABLED=true` 不能繞過，未提供的 public avatar API／online command 明示503。cleanup、帳戶匯出及operator的相容schema source仍獨立接線，不因關寫入便遺棄已存在的責任。解除須同版 API／worker／recovery、必要定向tests＋TS、獨立review、平台codec與index／private Storage／獨立journal部署讀回及實際隔離restore演練全部有證據；本機codec或client單項綠不足。
 
 Restore copy只在既有 reserved checkpoint collection 記錄metadata：固定大小完整set count/digest header先處於preparing，所有immutable prepared intents核齊後才能claim一次原copy；每批驗精確final cleanup path+document SHA及完整binding/generation，current同TX啟用handoff marker後才分批retire intents。每批掃描／handoff大小集中可調，不加200總copy或終身數量上限；Firestore的500 field transformations限制不是500 document writes的證據。已認證 avatar staging marker 的 partial pages 可在原 target inventory、copy set 及 source/provenance/evidence 不變時，先 fence 原 attempt、逐頁驗證並撤回未套用頁，再重建；完整頁集則以原 header/final 原子建立 progress。此分支已有真 operator→跨頁中斷→重啟的本機合成證據，未做原生 Firestore／部署演練。legacy 無 marker 的 partial pages、未確定copy或source/Auth/journal變更仍安全停住保留責任，明示 `NOT_FULLY_RECOVERABLE`，不能當已可完整還原。既有平台restore資料量／Auth／plan界線另列部署限制，不能悄悄轉為新頭像資料上限。source reader只讀可核pinned generation或備份，缺失／soft-deleted source不發undelete POST。
+
+
+### AVATAR-01 補充：明確放棄隔離副本（2026-10-24）
+
+保留來源改變／unknown 時不得重做原 copy 的規則，補上操作員可明確放棄完整認證集合的出口。以 Firestore aborting phase 阻止 activation，及 GCS 原地址 generation CAS 的永久無圖片 marker 阻止遲到 create-if-absent；只清已核實 target generation，保留來源、原 intents 及現場。這比放寬 unknown 重試或刪掉 checkpoint 重來更能保留原防重界線；不處理無法認證的 legacy 集合，不宣稱完成原生雲端恢復。契約見[資料生命週期](DATA_MODEL.md#avatars)，命令見[部署門檻](PRODUCTION_FRONTEND.md#avatar-deployment-gate)，實際狀態只見[PLAN](../PLAN.md#avatar-01)。

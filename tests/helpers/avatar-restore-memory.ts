@@ -10,7 +10,7 @@ import { FirestoreDomainData } from '../../server/firestore-domain-data.ts';
 import { firestoreDomainFixture } from './firestore-domain-memory.ts';
 
 /** Synthetic serial transactions + document-id pagination, not native concurrency or cloud index evidence. */
-export function avatarRestoreFixture() {
+export function avatarRestoreFixture(injected: { abortCopy?: (value: AvatarCopyPayload) => Promise<void> } = {}) {
   const fake = firestoreDomainFixture();
   type Ref = { path: string; get(): Promise<any>; set(value: unknown): Promise<void> };
   type Query = { path: string; avatarQuery: true; size: number; cursor?: string; doc(id: string): Ref;
@@ -44,7 +44,7 @@ export function avatarRestoreFixture() {
   const options = { database, cipher: createStorageCipher(Buffer.alloc(32, 57)), projectId: 'synthetic-avatar-project', namespace: 'synthetic_avatar_restore' };
   const data = new FirestoreDomainData(options), targetBucket = 'synthetic-avatar-private', objects = new Map<string, AvatarObjectDescriptor>();
   let inspections = 0, unavailable = false;
-  const copies = createFirebaseAvatarRestoreCopies({ ...options, targetBucket,
+  const copies = createFirebaseAvatarRestoreCopies({ ...options, targetBucket, abortCopy: injected.abortCopy,
     batches: { scanPageSize: 2, handoffBatchSize: 2, handoffBatchBytes: 32 * 1024 },
     objects: { async inspect(binding, assetId) { inspections++; if (unavailable) throw new Error('Synthetic inspect unavailable');
       return objects.get(avatarObjectAddress({ projectId: options.projectId, namespace: options.namespace, bucketName: targetBucket }, binding, assetId).objectName) ?? null; } } });

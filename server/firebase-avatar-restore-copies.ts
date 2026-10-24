@@ -29,9 +29,9 @@ const recordSchema = z.object({ setHash: hash, payload: avatarCopyPayloadSchema,
   .refine(value => (value.state === 'prepared') === (value.token === null) && (value.state === 'known') === (value.descriptor !== null));
 const setSchema = z.object({ identity: hash, contextHash: hash, count: count.positive(), entriesHash: hash }).strict();
 const handoffSchema = z.object({ recordsHash: hash, finalHash: hash, count, cursor: intentId.nullable(), digest: hash }).strict();
-const indexSchema = z.object({ set: setSchema, phase: z.enum(['preparing', 'copying', 'handoff', 'activated']),
+const indexSchema = z.object({ set: setSchema, phase: z.enum(['preparing', 'copying', 'handoff', 'activated', 'aborting', 'aborted']),
   handoff: handoffSchema.nullable(), retired: z.object({ count, cursor: intentId.nullable() }).strict().nullable() }).strict()
-  .refine(v => (v.phase === 'preparing' || v.phase === 'copying') === (v.handoff === null)
+  .refine(v => ['preparing', 'copying', 'aborting', 'aborted'].includes(v.phase) === (v.handoff === null)
     && (v.phase === 'activated') === (v.retired !== null)
     && (!v.handoff || v.handoff.count <= v.set.count) && (!v.retired || v.retired.count <= v.set.count));
 export interface AvatarCopyFrozen { identity: string; setHash: string; recordsHash: string;
@@ -47,6 +47,7 @@ const EMPTY_DIGEST = digest([]);
 /** Avatar-only checkpoint metadata. Batches bound requests, never total copy population. No product activation gate is implied. */
 export function createFirebaseAvatarRestoreCopies(options: FirestoreDomainOptions & {
   targetBucket: string; objects: Pick<AvatarObjects, 'inspect'>; batches?: AvatarRecoveryBatch;
+  abortCopy?: (value: AvatarCopyPayload) => Promise<void>;
 }) {
   const { database, cipher, projectId, namespace } = options, data = new FirestoreDomainData(options);
   const batches = avatarRecoveryBatchSchema.parse(options.batches ?? readAvatarRecoveryBatchConfig({}));
@@ -64,6 +65,7 @@ export function createFirebaseAvatarRestoreCopies(options: FirestoreDomainOption
       && cleanup.assetId === source.descriptor.asset.id && cleanup.expectedVersion + 1 === source.version
       && cleanup.committedVersion === source.version && cleanup.reason === 'staging' && cleanup.state === 'writing'
       && cleanup.writeLease === null && cleanup.descriptor === null && same(cleanup.preparedAsset, source.descriptor.asset)
+      && sameAvatarBinding(cleanup.binding, cleanup.objectBinding)
       && cleanup.binding.scope.storageEpoch === firebaseRestoreEpoch(projectId, database.databaseId, value.restoreId, source.binding.scope.workspaceId)
       && cleanup.binding.scope.storageEpoch !== source.binding.scope.storageEpoch
       && sameAvatarBinding({ ...source.binding, scope: { ...source.binding.scope, storageEpoch: cleanup.binding.scope.storageEpoch } }, cleanup.binding));
@@ -134,11 +136,37 @@ export function createFirebaseAvatarRestoreCopies(options: FirestoreDomainOption
     return result;
   }
   const api = {
+    /** Metadata only. Available even when source/Auth/journal changed; never authorizes activation. */
+    async inspectAbandonment() {
+      const snapshot = await indexRef.get(); check(snapshot.exists, 'recovery_avatar_copy_header_missing');
+      const index = indexSchema.parse(open(INDEX, snapshot.data()));
+      return { identity: index.set.identity, phase: index.phase, count: index.set.count, targetDatabaseId: database.databaseId };
+    },
+    /** Explicit isolated-target abandonment, not a retry of the restore or a live-resource deletion API. */
+    async abandon(identity: string) {
+      hash.parse(identity); check(options.abortCopy, 'recovery_avatar_abort_port_missing');
+      await database.runTransaction(async tx => {
+        const index = await requireIndex(identity, tx), current = await tx.get(collection.doc('current'));
+        check(!current.exists && ['copying', 'handoff', 'aborting', 'aborted'].includes(index.phase), 'recovery_avatar_abort_stage');
+        // This conflicts with activation in the same transaction boundary. In-flight Storage is fenced below.
+        if (index.phase !== 'aborted') tx.set(indexRef, seal(INDEX, { ...index, phase: 'aborting', handoff: null, retired: null }));
+      }, { maxAttempts: 1 });
+      const index = await requireIndex(identity), rows = await allRecords(index);
+      for (const row of rows) await options.abortCopy!(row.value.payload);
+      await database.runTransaction(async tx => {
+        const currentIndex = await requireIndex(identity, tx), current = await tx.get(collection.doc('current'));
+        check(!current.exists && ['aborting', 'aborted'].includes(currentIndex.phase)
+          && same(currentIndex.set, index.set), 'recovery_avatar_abort_stage');
+        if (currentIndex.phase !== 'aborted') tx.set(indexRef, seal(INDEX, { ...currentIndex, phase: 'aborted', handoff: null, retired: null }));
+      }, { maxAttempts: 1 });
+      return { state: 'abandoned' as const, count: rows.length, targetDatabaseId: database.databaseId };
+    },
     /** Must run before either final/progress fast path. Unsupported unindexed page-* remains fail-closed. */
     async inventory(identity: string, plan: FirebaseRestoreCheckpointState, validateContext: (value: AvatarCopyPayload) => void) {
       const found = await scan(), indexSnapshot = found.find(row => row.id === INDEX);
       const index = indexSnapshot ? indexSchema.parse(open(INDEX, indexSnapshot.data())) : null;
       if (index) check(index.set.identity === identity);
+      check(index?.phase !== 'aborting' && index?.phase !== 'aborted', 'recovery_avatar_copy_abandoned');
       const records = [];
       for (const row of found) {
         if (row.id === INDEX) continue;
