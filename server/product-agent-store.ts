@@ -14,6 +14,7 @@ import { documentRequestSchema, documentChangeSchema, type DocumentRequest, type
 import { createConcernStore } from "./concern-store.ts";
 import { summarySaveSchema } from "./memory-validation.ts";
 import { createMemoryStore } from "./memory.ts";
+import { preserveMemoryFactUserWording } from "./memory-policy.ts";
 import { createTaskStore, type TaskScheduling } from "./tasks.ts";
 import type { StorageCipher } from "./storage-crypto.ts";
 import { documentPatchIsStructural } from "./family-document-edits.ts";
@@ -431,13 +432,30 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
             AND (created_at,id)<=(SELECT created_at,id FROM chat_messages WHERE id=$4 AND owner_user_id=$2 AND child_id=$3) FOR SHARE`,
             [value.sourceMessageId, scope.userId, scope.childId, run.source_message_id])).rowCount) throw new FamilyError(409, "source_changed");
         }
+        let proposalValue = value;
+        if (value.kind === "memory_fact_revise") {
+          const sourceRow = (await client.query<{ text_encrypted: string }>(
+            "SELECT text_encrypted FROM chat_messages WHERE id=$1 AND owner_user_id=$2 AND author_user_id=$2 AND child_id=$3 AND role='user' FOR SHARE",
+            [value.sourceMessageId, scope.userId, scope.childId])).rows[0];
+          if (!sourceRow) throw new FamilyError(409, "source_changed");
+          const sourceText = cipher.decrypt(sourceRow.text_encrypted,
+            `chat_messages:${value.sourceMessageId}:${scope.childId}:${scope.userId}:user::text`);
+          proposalValue = { ...value, content: preserveMemoryFactUserWording(sourceText, value.content) };
+        }
         if (value.kind === "memory_fact") {
           const sourceId = value.sourceMessageId ?? run.source_message_id;
           if (!sourceId || !(await client.query(`SELECT 1 FROM chat_messages WHERE id=$1 AND owner_user_id=$2 AND author_user_id=$2 AND child_id=$3 AND role='user'
             AND (created_at,id)<=(SELECT created_at,id FROM chat_messages WHERE id=$4 AND owner_user_id=$2 AND child_id=$3) FOR SHARE`, [sourceId, scope.userId, scope.childId, run.source_message_id])).rowCount) throw new FamilyError(409, "source_changed");
+          const sourceRow = (await client.query<{ text_encrypted: string }>(
+            "SELECT text_encrypted FROM chat_messages WHERE id=$1 AND owner_user_id=$2 AND author_user_id=$2 AND child_id=$3 AND role='user' FOR SHARE",
+            [sourceId, scope.userId, scope.childId])).rows[0];
+          if (!sourceRow) throw new FamilyError(409, "source_changed");
+          const sourceText = cipher.decrypt(sourceRow.text_encrypted,
+            `chat_messages:${sourceId}:${scope.childId}:${scope.userId}:user::text`);
+          proposalValue = { ...value, content: preserveMemoryFactUserWording(sourceText, value.content) };
         }
         const previous = (await client.query<ProposalRow>("SELECT * FROM agent_proposals WHERE run_id=$1", [runId])).rows;
-        const encoded = canonicalJson(value);
+        const encoded = canonicalJson(proposalValue);
         for (const row of previous) {
           const decoded = decodeProposal(run, row), same = canonicalJson(decoded.value) === encoded;
           if (row.call_id === callId && !same) throw new FamilyError(409, "operation_conflict");
@@ -446,7 +464,7 @@ export function createProductAgentStore(pool: Pool, cipher: StorageCipher, sched
         if (previous.length >= 8) throw new FamilyError(409, "agent_proposal_limit");
         const id = randomUUID();
         const row = (await client.query<ProposalRow>("INSERT INTO agent_proposals(id,run_id,call_id,payload_encrypted) VALUES($1,$2,$3,$4) RETURNING *",
-          [id, runId, callId, cipher.encrypt(JSON.stringify({ value, result: null, targetLabel, ...(targetVisibility ? { targetVisibility } : {}), ...(documentSourceBasis ? { documentSourceBasis } : {}), ...(composeReview ? { composeReview } : {}) }), proposalAad(run, { id, version: 1 }))])).rows[0];
+          [id, runId, callId, cipher.encrypt(JSON.stringify({ value: proposalValue, result: null, targetLabel, ...(targetVisibility ? { targetVisibility } : {}), ...(documentSourceBasis ? { documentSourceBasis } : {}), ...(composeReview ? { composeReview } : {}) }), proposalAad(run, { id, version: 1 }))])).rows[0];
         return decodeProposal(run, row);
       });
     },

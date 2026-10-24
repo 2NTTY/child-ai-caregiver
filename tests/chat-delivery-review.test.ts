@@ -13,7 +13,7 @@ import { readAiConfig } from "../server/ai-config.ts";
 import { loadAgentPrompt } from "../server/agent-prompt.ts";
 import {
   chatDeliveryDraftHash, chatDeliveryExcerpt, chatDeliveryPassNeedsSources, chatDeliveryReviewAllows,
-  chatDeliveryReviewSourceExcerpt, draftLooksLikeSubstantiveCareAdvice, isPureClarifyingQuestion,
+  chatDeliveryReviewSourceExcerpt, draftLooksLikeSubstantiveCareAdvice, draftLooksLikeDirectiveCareAdvice, isPureClarifyingQuestion, isPureGreetingOrSmallTalk,
   requiresChatDeliveryReview, SERVER_SKIP_CHAT_DELIVERY_REVIEW_TEXTS,
   type ChatDeliveryDraft,
 } from "../server/chat-delivery-review.ts";
@@ -170,6 +170,78 @@ test("classmate F2: multi-question clarifies and saved receipts with domain noun
     ...draft(), kind: "operation", sources: [],
     paragraphs: [{ text: "Put your child to sleep on their stomach.", citationIds: [] }],
   }), true);
+});
+
+test("pure greetings skip delivery review without cites or memory grounding", () => {
+  for (const text of ["你好", "你好！", "你好，有什麼可以幫你？", "您好！", "Hello!", "Hi", "Good morning"]) {
+    assert.equal(isPureGreetingOrSmallTalk(text), true, text);
+    assert.equal(requiresChatDeliveryReview({
+      ...draft(), kind: "clarification", sources: [], paragraphs: [{ text, citationIds: [] }],
+    }), false, text);
+    // Model kind alone must not force review when the text is a trusted greeting shape.
+    assert.equal(requiresChatDeliveryReview({
+      ...draft(), kind: "caregiving", sources: [], paragraphs: [{ text, citationIds: [] }],
+    }), false, `caregiving:${text}`);
+  }
+  // Care-shaped text that opens with a greeting still fails closed into review.
+  for (const text of ["你好，BB不要吃蜂蜜", "Hello, newborns should not have honey."]) {
+    assert.equal(isPureGreetingOrSmallTalk(text), false, text);
+    assert.equal(requiresChatDeliveryReview({
+      ...draft(), kind: "clarification", sources: [], paragraphs: [{ text, citationIds: [] }],
+    }), true, text);
+  }
+  // Unknown citation-free wording without a greeting marker still fails closed.
+  assert.equal(isPureGreetingOrSmallTalk("沒有引用的說明"), false);
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "clarification", sources: [], paragraphs: [{ text: "沒有引用的說明", citationIds: [] }],
+  }), true);
+});
+test("confirmed memory sources are review evidence, never a delivery-review free pass", () => {
+  const memorySource = {
+    citationId: "memory-fact:synthetic", version: "3", contentHash: hashA,
+    classification: "private" as const, excerpt: "BB 對雞蛋過敏", excerptComplete: true,
+  };
+  for (const text of [
+    "已確認記憶：BB 對雞蛋過敏。",
+    "BB 對雞蛋並不過敏。",
+    "已確認記憶：BB 喜歡藍色。",
+  ]) {
+    const memoryRestatement = {
+      ...draft(), kind: "record_restatement" as const, sources: [memorySource],
+      paragraphs: [{ text, citationIds: [] }],
+    };
+    assert.equal(requiresChatDeliveryReview(memoryRestatement), true, text);
+    assert.equal(chatDeliveryPassNeedsSources(memoryRestatement), false);
+  }
+  // Deprecated flag must not skip review either.
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "record_restatement", sources: [{
+      citationId: "memory-fact:synthetic", version: "3", contentHash: hashA,
+      classification: "private", excerpt: "BB 對雞蛋過敏", excerptComplete: true,
+    }],
+    paragraphs: [{ text: "BB 對雞蛋並不過敏。", citationIds: [] }],
+    serverVerifiedMemoryGrounding: true,
+  }), true);
+  // Citation-free restatement without sources still fails closed into review.
+  assert.equal(requiresChatDeliveryReview({
+    ...draft(), kind: "record_restatement", sources: [],
+    paragraphs: [{ text: "已確認記憶：BB 對雞蛋過敏。", citationIds: [] }],
+  }), true);
+});
+
+test("memory exemption gate ignores domain-only BB wording but blocks directive advice", () => {
+  const domainOnly = {
+    ...draft(), kind: "record_restatement" as const, sources: [],
+    paragraphs: [{ text: "已確認記憶：BB 對花生過敏。", citationIds: [] }],
+  };
+  const directive = {
+    ...draft(), kind: "operation" as const, sources: [],
+    paragraphs: [{ text: "BB未滿一歲唔好食蜜糖。", citationIds: [] }],
+  };
+  assert.equal(draftLooksLikeSubstantiveCareAdvice(domainOnly), true);
+  assert.equal(draftLooksLikeDirectiveCareAdvice(domainOnly), false);
+  assert.equal(draftLooksLikeDirectiveCareAdvice(directive), true);
+  assert.equal(draftLooksLikeSubstantiveCareAdvice(directive), true);
 });
 
 test("classmate F3: reviewer source excerpt keeps support after the first 800 characters", () => {
@@ -639,4 +711,200 @@ test("source retract after a review pass does not keep the old answer", async ()
   assert.equal(result?.stopReason, "delivery_review_incomplete");
   assert.equal(result?.text.includes(chunk.text), false);
   assert.equal(result?.deliveryReview, undefined);
+});
+
+test("citation-free memory restatement hydrates grounding without prior read_memory_facts", async () => {
+  const budget = new AgentBudget();
+  const fact = {
+    id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", childId, key: "過敏", content: "BB 對雞蛋過敏",
+    source: { kind: "manual" as const, description: "家長確認" }, validUntil: null,
+    visibility: "private" as const, intendedVisibility: "private" as const, status: "confirmed" as const,
+    version: 2, createdBy: userId, confirmedBy: userId, confirmedAt: "2026-10-18T00:00:00.000Z",
+    reason: "已確認", applicable: true, sourceState: "current" as const,
+  };
+  const surface = createProductAgentTools({
+    run: { scope, runId, budget }, authorize: async () => true,
+    memory: {
+      getFact: async () => fact,
+      facts: async () => ({ items: [fact], nextAfterId: null }),
+      recall: async () => ({ facts: [fact], topics: [], missingKeys: [] }),
+      context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+        facts: [fact], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
+        truncated: { facts: false, topics: false, messages: false } }),
+    },
+    tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+    store: {},
+    knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [] }) }) },
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  try {
+    const presented = await present.execute({
+      kind: "record_restatement",
+      paragraphs: [{ text: "已確認記憶：BB 對雞蛋過敏。", citationIds: [] }],
+    }, { scope, runId, callId: "present-memory-hydrate", signal: budget.signal });
+    assert.equal(presented.status, "succeeded");
+    const draft = surface.deliveryDraft()!;
+    assert.equal(draft.serverVerifiedMemoryGrounding, undefined);
+    assert.equal(requiresChatDeliveryReview(draft), true);
+    assert.ok(draft.sources.some(source => source.citationId.startsWith("memory-fact:")));
+  } finally { budget.close(); }
+});
+
+test("unused search_knowledge still requires review for confirmed memory restatement", async () => {
+  const budget = new AgentBudget();
+  const fact = {
+    id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", childId, key: "過敏", content: "BB 對雞蛋過敏",
+    source: { kind: "manual" as const, description: "家長確認" }, validUntil: null,
+    visibility: "private" as const, intendedVisibility: "private" as const, status: "confirmed" as const,
+    version: 2, createdBy: userId, confirmedBy: userId, confirmedAt: "2026-10-18T00:00:00.000Z",
+    reason: "已確認", applicable: true, sourceState: "current" as const,
+  };
+  const surface = createProductAgentTools({
+    run: { scope, runId, budget }, authorize: async () => true,
+    memory: {
+      getFact: async () => fact,
+      facts: async () => ({ items: [fact], nextAfterId: null }),
+      recall: async () => ({ facts: [fact], topics: [], missingKeys: [] }),
+      context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+        facts: [fact], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
+        truncated: { facts: false, topics: false, messages: false } }),
+    },
+    tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+    store: {},
+    knowledge: { createRun: () => ({
+      search: async () => ({ mode: "vector_keyword", chunks: [chunk] }),
+      revalidateCitations: async () => true, readReviewedCitations: async () => [],
+    }) },
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const search = surface.tools.find(tool => tool.name === "search_knowledge")!;
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  try {
+    const found = await search.execute({ query: "嬰兒食物過敏一般資訊", classification: "official_guidance" },
+      { scope, runId, callId: "search-unused", signal: budget.signal, queryEmbeddingAttemptKey: "q1" });
+    assert.equal(found.status, "succeeded");
+    const presented = await present.execute({
+      kind: "record_restatement",
+      paragraphs: [{ text: "已確認記憶：BB 對雞蛋過敏。", citationIds: [] }],
+    }, { scope, runId, callId: "present-after-search", signal: budget.signal });
+    assert.equal(presented.status, "succeeded");
+    const draft = surface.deliveryDraft()!;
+    assert.equal(draft.serverVerifiedMemoryGrounding, undefined);
+    assert.equal(requiresChatDeliveryReview(draft), true);
+    assert.equal(draft.sources.some(source => source.citationId.startsWith("memory-fact:")), true);
+  } finally { budget.close(); }
+});
+
+test("confirmed memory fact read attaches evidence but still requires delivery review", async () => {
+  const budget = new AgentBudget();
+  const fact = {
+    id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", childId, key: "過敏", content: "對花生過敏",
+    source: { kind: "manual" as const, description: "家長確認" }, validUntil: null,
+    visibility: "private" as const, intendedVisibility: "private" as const, status: "confirmed" as const,
+    version: 2, createdBy: userId, confirmedBy: userId, confirmedAt: "2026-10-18T00:00:00.000Z",
+    reason: "已確認", applicable: true, sourceState: "current" as const,
+  };
+  const surface = createProductAgentTools({
+    run: { scope, runId, budget }, authorize: async () => true,
+    memory: {
+      getFact: async () => fact,
+      facts: async () => ({ items: [fact], nextAfterId: null }),
+      recall: async () => ({ facts: [fact], topics: [], missingKeys: [] }),
+      context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+        facts: [fact], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
+        truncated: { facts: false, topics: false, messages: false } }),
+    },
+    tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+    store: {},
+    knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [] }) }) },
+  } as unknown as Parameters<typeof createProductAgentTools>[0]);
+  const readFacts = surface.tools.find(tool => tool.name === "read_memory_facts")!;
+  const present = surface.tools.find(tool => tool.name === "present_answer")!;
+  try {
+    const read = await readFacts.execute({ factId: fact.id, afterId: null },
+      { scope, runId, callId: "read-facts", signal: budget.signal });
+    assert.equal(read.status, "succeeded");
+    await present.execute({
+      kind: "record_restatement",
+      paragraphs: [{ text: "已確認記憶：BB 對花生過敏。", citationIds: [] }],
+    }, { scope, runId, callId: "present-memory", signal: budget.signal });
+    const draft = surface.deliveryDraft()!;
+    assert.equal(draft.serverVerifiedMemoryGrounding, undefined);
+    assert.equal(requiresChatDeliveryReview(draft), true);
+    assert.ok(draft.sources.some(source => source.citationId.startsWith("memory-fact:")));
+    // Knowledge-bound caregiving still requires review even after a memory read.
+    await present.execute({
+      kind: "caregiving",
+      paragraphs: [{ text: chunk.text, citationIds: [chunk.chunkId] }],
+    }, { scope, runId, callId: "present-care", signal: budget.signal });
+    await present.execute({
+      kind: "operation",
+      paragraphs: [{ text: "BB未滿一歲唔好食蜜糖。", citationIds: [] }],
+    }, { scope, runId, callId: "present-advice", signal: budget.signal });
+    const advice = surface.deliveryDraft()!;
+    assert.equal(advice.serverVerifiedMemoryGrounding, undefined);
+    assert.equal(requiresChatDeliveryReview(advice), true);
+  } finally { budget.close(); }
+});
+
+test("opposite and unrelated memory restatements with empty citations never bypass review", async () => {
+  const makeSurface = (factContent: string, visibility: "private" | "family", background: boolean) => {
+    const budget = new AgentBudget();
+    const fact = {
+      id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", childId, key: "記憶", content: factContent,
+      source: { kind: "manual" as const, description: "家長確認" }, validUntil: null,
+      visibility: visibility === "family" ? "family" as const : "private" as const,
+      intendedVisibility: visibility === "family" ? "family" as const : "private" as const,
+      status: "confirmed" as const,
+      version: 2, createdBy: userId, confirmedBy: userId, confirmedAt: "2026-10-18T00:00:00.000Z",
+      reason: "已確認", applicable: true, sourceState: "current" as const,
+    };
+    const surface = createProductAgentTools({
+      run: { scope, runId, budget }, authorize: async () => true,
+      visibility, background,
+      memory: {
+        getFact: async () => fact,
+        facts: async () => ({ items: [fact], nextAfterId: null }),
+        recall: async () => ({ facts: [fact], topics: [], missingKeys: [] }),
+        context: async () => ({ profile: { childId, version: 0, data: null }, profileApplicable: false,
+          facts: [fact], topics: [], summary: null, recentMessages: [], conflictingKeys: [], unavailableFactKeys: [],
+          truncated: { facts: false, topics: false, messages: false } }),
+      },
+      tasks: { list: async () => ({ items: [], eligibleAssignees: [], nextAfterId: null }) },
+      store: {},
+      knowledge: { createRun: () => ({ search: async () => ({ mode: "vector_keyword", chunks: [] }) }) },
+    } as unknown as Parameters<typeof createProductAgentTools>[0]);
+    return { budget, surface, fact };
+  };
+  const cases: Array<{ fact: string; answer: string; visibility: "private" | "family"; background: boolean }> = [
+    { fact: "BB 對雞蛋過敏", answer: "已確認記憶：BB 對雞蛋過敏。", visibility: "private", background: false },
+    { fact: "BB 對雞蛋過敏", answer: "BB 對雞蛋並不過敏。", visibility: "private", background: false },
+    { fact: "BB 喜歡藍色", answer: "BB 對雞蛋並不過敏。", visibility: "private", background: false },
+    { fact: "BB 對雞蛋過敏", answer: "BB 對雞蛋並不過敏。", visibility: "family", background: true },
+    { fact: "BB 喜歡藍色", answer: "BB 對雞蛋並不過敏。", visibility: "family", background: true },
+  ];
+  for (const item of cases) {
+    const { budget, surface, fact } = makeSurface(item.fact, item.visibility, item.background);
+    try {
+      // Private interactive path can read memory into draft sources; family tools omit read_memory_facts.
+      const readFacts = surface.tools.find(tool => tool.name === "read_memory_facts");
+      if (readFacts) {
+        const read = await readFacts.execute({ factId: fact.id, afterId: null },
+          { scope, runId, callId: "read-regression", signal: budget.signal });
+        assert.equal(read.status, "succeeded", item.answer);
+      }
+      const present = surface.tools.find(tool => tool.name === "present_answer")!;
+      const presented = await present.execute(
+        { kind: "record_restatement", paragraphs: [{ text: item.answer, citationIds: [] }] },
+        { scope, runId, callId: "present-regression", signal: budget.signal },
+      );
+      assert.equal(presented.status, "succeeded", item.answer);
+      const draft = surface.deliveryDraft()!;
+      assert.equal(draft.serverVerifiedMemoryGrounding, undefined, item.answer);
+      // Model-written substance must go through review; confirmed memory never grants a free pass.
+      assert.equal(requiresChatDeliveryReview(draft), true, item.answer);
+      if (item.visibility === "private") {
+        assert.ok(draft.sources.some(source => source.citationId.startsWith("memory-fact:")), item.answer);
+      }
+    } finally { budget.close(); }
+  }
 });

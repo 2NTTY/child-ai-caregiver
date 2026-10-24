@@ -231,18 +231,41 @@ export function createProductAgent(options: {
           rendered.value = await tools!.presentation();
           // Shared 4-call budget: after load_capabilities → compose_family_data → compose → review,
           // Server finishes confirmation text on model_limit without a fifth present_answer call.
+          const pendingFallbackTools = ["request_confirmation", "propose_family_document_change", "compose_family_data",
+            "propose_fact", "propose_fact_revision", "propose_fact_deactivation"];
+          const lastTool = result.tools.at(-1)?.name ?? "";
+          const hasSucceededMemoryPropose = result.tools.some(tool =>
+            ["propose_fact", "propose_fact_revision", "propose_fact_deactivation"].includes(tool.name) && tool.status === "succeeded");
           if (!rendered.value && reason === "model_limit" && result.tools.length > 0
             && result.tools.every(tool => tool.status === "succeeded")
-            && ["request_confirmation", "propose_family_document_change", "compose_family_data"].includes(result.tools.at(-1)?.name ?? "")) {
+            && pendingFallbackTools.includes(lastTool)) {
             if (!await authorize()) throw new AgentStopped("unauthorized");
             const questions = await options.store.confirmationQuestions?.(userId, childId, claim.runId) ?? [];
             if (!await authorize()) throw new AgentStopped("unauthorized");
-            if (questions.length === 1 && typeof questions[0] === "string" && questions[0].trim()) {
+            if ((questions.length === 1 && typeof questions[0] === "string" && questions[0].trim())
+              || (hasSucceededMemoryPropose && ["propose_fact", "propose_fact_revision", "propose_fact_deactivation"].includes(lastTool))) {
               rendered.value = { text: AGENT_CONFIRMATION_PENDING_TEXT, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
               confirmationPendingFallbackUsed = true;
             }
           }
-          return acceptReviewedDelivery(tools!, rendered, review, result, _context);
+          try {
+            return await acceptReviewedDelivery(tools!, rendered, review, result, _context);
+          } catch (error) {
+            // Pending memory candidates are already durable receipts. Do not let citation-free
+            // delivery review wipe the chat close-out after propose_fact succeeded.
+            if (!(error instanceof AgentStopped) || error.reason !== "delivery_review_incomplete") throw error;
+            if (!await authorize()) throw error;
+            const questions = await options.store.confirmationQuestions?.(userId, childId, claim.runId) ?? [];
+            if (!await authorize()) throw error;
+            const canRecover = (questions.length === 1 && typeof questions[0] === "string" && questions[0].trim())
+              || hasSucceededMemoryPropose;
+            if (!canRecover) throw error;
+            rendered.value = { text: AGENT_CONFIRMATION_PENDING_TEXT, citations: [], privateSourceCitations: [], retrievalMode: "not_used" };
+            review.value = null;
+            review.text = AGENT_CONFIRMATION_PENDING_TEXT;
+            confirmationPendingFallbackUsed = true;
+            return AGENT_CONFIRMATION_PENDING_TEXT;
+          }
         },
       });
       if(result.status==="stopped" && options.contact && await isCurrentUser()){

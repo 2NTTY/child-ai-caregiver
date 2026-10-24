@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { randomUUID } from "node:crypto";
-import { factIsApplicable, normalizedFactKey, profileIsApplicable, requireTopicTransition, topicMayAsk } from "../server/memory-policy.ts";
+import { factIsApplicable, looksLikeDurableMemoryFactQuestion, looksLikeDurableMemoryFactStatement, normalizedFactKey, preserveMemoryFactUserWording, profileIsApplicable, requireTopicTransition, sanitizeDurableMemoryFactValidUntil, topicMayAsk } from "../server/memory-policy.ts";
 import { factValuesSchema, summarySaveSchema } from "../server/memory-validation.ts";
 import { handleMemoryRequest } from "../server/memory-api.ts";
 import type { MemoryStore } from "../server/memory.ts";
@@ -96,4 +96,70 @@ test("deactivating shared memory hides another author's private message identifi
   assert.deepEqual(result?.source, { kind: "private_chat", description: "主動分享" });
   assert.deepEqual(change, [workspace, "8", "memory", child, null, false, false]);
   assert.ok(!JSON.stringify(change).includes(messageId));
+});
+test("memory fact content keeps the user child nickname from the source message", () => {
+  assert.equal(preserveMemoryFactUserWording("BB 對雞蛋過敏", "寶寶對雞蛋過敏"), "BB對雞蛋過敏");
+  assert.equal(preserveMemoryFactUserWording("BB對花生過敏", "寶寶對花生過敏"), "BB對花生過敏");
+  assert.equal(preserveMemoryFactUserWording("寶寶對雞蛋過敏", "BB對雞蛋過敏"), "寶寶對雞蛋過敏");
+  assert.equal(preserveMemoryFactUserWording("記低：bb 對蛋過敏", "寶寶對蛋過敏"), "bb對蛋過敏");
+  assert.equal(preserveMemoryFactUserWording("今日天氣好好", "寶寶對雞蛋過敏"), "寶寶對雞蛋過敏");
+  assert.equal(preserveMemoryFactUserWording("", "寶寶對雞蛋過敏"), "寶寶對雞蛋過敏");
+  assert.equal(preserveMemoryFactUserWording("BB 對雞蛋過敏", "BB 對雞蛋過敏"), "BB 對雞蛋過敏");
+});
+
+
+test("durable memory fact statements are distinguished from allergy questions", () => {
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 對雞蛋過敏"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("寶寶對花生過敏"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇對雞蛋過敏？"), false);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇花生過敏"), false);
+  assert.equal(looksLikeDurableMemoryFactStatement("確認"), false);
+});
+
+test("lasting preference statements require propose_fact; preference questions do not", () => {
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 鍾意香蕉"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 喜歡蘋果"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 唔鍾意西蘭花"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB likes bananas"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 鍾唔鍾意香蕉"), false);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 鍾意香蕉嗎"), false);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 有冇鍾意香蕉？"), false);
+});
+
+test("allergy questions are not durable statements and are classified as questions", () => {
+  assert.equal(looksLikeDurableMemoryFactStatement("Esther\u5c0d\u829d\u9ebb\u904e\u654f"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("Esther\u5c0d\u829d\u9ebb\u904e\u654f\u55ce\uff1f"), false);
+  assert.equal(looksLikeDurableMemoryFactQuestion("Esther\u5c0d\u829d\u9ebb\u904e\u654f\u55ce\uff1f"), true);
+  assert.equal(looksLikeDurableMemoryFactQuestion("Esther\u5c0d\u829d\u9ebb\u904e\u654f\uff1f"), true);
+  assert.equal(looksLikeDurableMemoryFactQuestion("Esther\u5c0d\u829d\u9ebb\u904e\u654f"), false);
+  assert.equal(looksLikeDurableMemoryFactQuestion("BB \u5c0d\u96de\u86cb\u904e\u654f\u55ce\uff1f"), true);
+});
+
+test("short validUntil on allergy proposals is coerced to null", () => {
+  const now = Date.parse("2026-10-22T01:53:52.706Z");
+  assert.equal(sanitizeDurableMemoryFactValidUntil("Esther\u5c0d\u829d\u9ebb\u904e\u654f", "2026-10-22T02:00:00.000Z", now), null);
+  assert.equal(sanitizeDurableMemoryFactValidUntil("Esther\u5c0d\u829d\u9ebb\u904e\u654f", null, now), null);
+  const long = "2099-12-31T23:59:00.000Z";
+  assert.equal(sanitizeDurableMemoryFactValidUntil("Esther\u5c0d\u829d\u9ebb\u904e\u654f", long, now), long);
+  assert.equal(sanitizeDurableMemoryFactValidUntil("\u666e\u901a\u5099\u8a3b", "2026-10-22T02:00:00.000Z", now), "2026-10-22T02:00:00.000Z");
+});
+
+test("explicit short-lived preference keeps short validUntil; durable preference still clamps", () => {
+  const now = Date.parse("2026-10-22T12:00:00.000Z");
+  const sixHours = "2026-10-22T18:00:00.000Z";
+  assert.equal(
+    sanitizeDurableMemoryFactValidUntil("BB 只係今日偏好飲暖水，今晚後不適用", sixHours, now),
+    sixHours,
+  );
+  assert.equal(sanitizeDurableMemoryFactValidUntil("BB 偏好飲暖水", sixHours, now), null);
+  // Allergy without short-lived wording still clamps.
+  assert.equal(sanitizeDurableMemoryFactValidUntil("BB 對雞蛋過敏", sixHours, now), null);
+});
+
+test("mixed remember + question is a statement, not a pure question", () => {
+  const mixed = "請記住：BB 對雞蛋過敏。明天要帶甚麼？";
+  assert.equal(looksLikeDurableMemoryFactQuestion(mixed), false);
+  assert.equal(looksLikeDurableMemoryFactStatement(mixed), true);
+  assert.equal(looksLikeDurableMemoryFactQuestion("BB 對雞蛋過敏嗎？"), true);
+  assert.equal(looksLikeDurableMemoryFactStatement("BB 對雞蛋過敏嗎？"), false);
 });
