@@ -11,7 +11,8 @@
     "android": {
       "package": "org.yuyoufang.app",
       "softwareKeyboardLayoutMode": "resize",
-      "versionCode": 1
+      "versionCode": 1,
+      "icon": "./assets/brand/app-icon-ios.png"
     },
     "ios": {
       "bundleIdentifier": "org.yuyoufang.app",
@@ -46,6 +47,15 @@
         "expo-notifications",
         {
           "defaultChannel": "yuyoufang-reminders"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/brand/favicon.png",
+          "imageWidth": 128,
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
         }
       ]
     ],
