@@ -3580,3 +3580,10 @@
 - 聊天分開本機已載入視窗及 Server 游標，正常不需按鈕；Web 以可見訊息相對位置補償，原生沿 RN 可見位置保留。失敗只提供明確重試，不自動重發。四個原生分頁採 Expo Router 實際 aria-selected 狀態與 Web 共用短線；核對手勢不變。
 - 語音按一次啟動原錄音 adapter，停止後試聽及加入草稿；普通掛載不錄音，背景／取消／離頁沿原清理。移除文件「改用文字」。[必要檢查與匯出證據](artifacts/verification/SHARED_READING_INTERACTIONS_20261024.json)分列已通項目、fixture 失敗／局部修正及裝置未驗，不重跑全量。
 - 未發布 Web／OTA，沒有模型、通知或雲端資料修改。準備單合併保存、照片直接聊天及頭像仍待獨立業務接線；下一 APK 品牌圖標與 splash 保留待辦。
+
+<a id="log-20261024-shared-reading-delivery"></a>
+## LOG-20261024-SHARED-READING-DELIVERY
+
+- 使用者明確批准 `382d217` 的私有 Web 包與一次相容 OTA 後，原 VM 只更新 Web；候選核對、公開首頁 hash 與 API health 通過，API／worker、資料、配額及頭像 gate 不變。舊映像與 0600 配置備份可回退。
+- Android preview 發布 group `148449b2-41f9-4239-88b0-79578d7bc240`，runtime 與已安裝 APK v3 相同，毋須重裝。沒有強制重啟 App，不把發布視為手機畫面驗收；零模型／通知。精確產物、結果及待驗見[交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)。
+- 接續準備單連點合併與離頁背景保存；照片直接聊天、頭像及下次 APK 品牌圖仍保留各自門檻。

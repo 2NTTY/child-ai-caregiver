@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前：[共用畫面及讀取互動](#shared-interaction01)。**2026-10-24 基線 master `ee0b7b1`，活動分支 `codex/shared-reading-interactions`；來源狀態已由 #281 合併，尚未發布。先交準備單列表佈局、鈴鐺首幀、聊天頂部分頁／錨點及直接錄音；其後補準備單合併保存與[照片聊天](#chat-photo01)的業務接線，再續頭像。APK v3 使用者已回覆「已安裝」，ADB 核實 versionCode 3 及 App 前景；不據此宣稱全部功能或資料保留已驗。個人模型未驗項沿 [MODEL03](#model-self03)，需要本人前置時繼續獨立工作。
+**當前：[準備單背景合併保存](#shared-interaction01)。**2026-10-24 基線 master `382d217`；#281／#282 的來源狀態、列表佈局、鈴鐺首幀、聊天位置、直接錄音及導航短線已發布 Web／APK v3 相容 OTA，真機效果待核。先補準備單非阻斷保存，再接[照片聊天](#chat-photo01)與頭像。APK v3 已安裝，不據此宣稱全部功能或資料保留已驗。個人模型未驗項沿 [MODEL03](#model-self03)，需要本人前置時繼續獨立工作。
 
 **iOS 保留：[S04-W03 發佈準備](#s04-w03)等待 Apple 前置。**#272、#274～#278 已合併，本機接線／匯出／APNs掛載配置有證據；尚無 IPA、部署或真通知。免費真機需可用 Mac，TestFlight 需已授權 Apple 團隊及簽署；不為等待條件重跑測試或購買會員。完整範圍見 [iOS 計劃](#p3-ios)。
 
@@ -64,22 +64,22 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **本批整合：**#244 已收束 review 過的角色、本地環境及個人模型接點；程式基線 `00aa6ad`，合併批次沿用原驗證，部署另見MODEL02。[DEV-AGENT01](#dev-agent01) 已可供協作者在分支改完即本地試用，方法見[本地開發入口](docs/AGENT_LOCAL.md)。環境交付與角色品質／功能增補分開；不因長來源或多模態尚缺能力而另造測試 Agent、阻止使用現有環境。
 
-**保留的前批交付：**[MODEL-SELF03](#model-self03)可由用戶在 Web／Android 自行填寫憑證與模型試用；#270 共用導航及 #271 延後聯合補驗已合併，導航接線尚未另發布。依使用者指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗等待四個 Agent 真正完成且協作者先自行檢查，不提前重跑或接管。iOS 不以新模型驗收取代這些缺口。
+**保留的前批交付：**[MODEL-SELF03](#model-self03)可由用戶在 Web／Android 自行填寫憑證與模型試用；#270 共用導航及 #271 延後聯合補驗已合併，導航接線已隨 `382d217` Web／Android OTA 發布，真機效果待核。依使用者指示，[DEV02](#dev-agent02)最後引用／審核及聯合補驗等待四個 Agent 真正完成且協作者先自行檢查，不提前重跑或接管。iOS 不以新模型驗收取代這些缺口。
 
 <a id="attachment-read01"></a>
-### ATTACHMENT-READ01：附件回看與私人清單（API 已部署，畫面交付待完成）
+### ATTACHMENT-READ01：附件回看與私人清單（API／畫面已發布，實際清單待驗）
 
 - #259 已於 2026-10-24 合併；來源基線 `339c707`，分支 `dot/attachment-media-followup-20261023`；26 個 source/test 檔＝22 產品＋4 測試。原照片 owner 保留；語音／影片／文件走[唯讀清單契約](docs/API.md#private-attachment-lists)，必要來源／時間改用可關閉詳情彈窗，媒體操作獨立，不展示技術版本字串。
 - 定向結果分列：跨層 10/10（包含既有後端 8 項）、附件 focused 16/16、真 RN Web Modal 的有界 DOM 2/2。首 DOM 0/2 是 jsdom 沒有原生按鈕 Enter／Space default click 的測試方法錯誤，已保留並修正方法；真瀏覽器鍵盤仍未驗。8-root strict 512 MiB 檢查 exit137／無 diagnostics，原因未確定；不是完整或局部型別通過。精確版本、原紅及限制見[來源證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)。
 - 原來源交付只包含 `voice_assets`／`chat_file_assets` 各一個 `scopeTag ASC,state ASC,createdAt DESC,assetId DESC` composite index 定義，當時未部署；原型別與 GUI 限制仍見來源證據，不因合併改成通過。
-- 2026-10-24 原站 API／worker 已更新為 `attachment-a84f349`：11 檔唯讀接線保留模型／通知／資料格式，頭像仍停用。單一 client→handler→store 合成流程、VM 候選 import、兩個 READY 索引的真 SDK 有界查詢及公開 health 通過。Web 沿 `4bfdf98`、尚欠附件庫新畫面；APK v3 已建置且簽署／runtime 核對通過，安裝及實際清單待驗。首次候選失敗與索引核對器修正均保留於[交付證據](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)，不重跑原套測試。
+- 2026-10-24 原站 API／worker 已更新為 `attachment-a84f349`：11 檔唯讀接線保留模型／通知／資料格式，頭像仍停用。單一 client→handler→store 合成流程、VM 候選 import、兩個 READY 索引的真 SDK 有界查詢及公開 health 通過。Web 及 APK v3 相容 OTA 已隨 `382d217` 更新；使用者已安裝 v3，實際附件清單待驗。首次候選失敗與索引核對器修正均保留於[交付證據](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)，不重跑原套測試。
 
 <a id="source-readiness01"></a>
 ### SOURCE-READINESS01：來源索引與可用狀態
 
 - 使用者於 2026-10-24 要求顯示已索引／未索引，避免把匯入連結當作 RAG 可用。先沿現行來源 owner／Server 真狀態投影，保留設計，不新增另一份索引狀態權威。
 - 已查明私人來源目前沒有向量索引作業；Agent 依來源啟用、正文及本人授權摘錄直接讀取。畫面須分清「未建立向量索引」與「可讀取已授權內容／尚欠正文或授權」，不能用 `fetchState=ready` 假稱已索引或顯示不存在的排程。公共知識若呈現已索引，必須使用真正發布／檢索證據，不能只看網址名冊。
-- 已實作共用列表／詳情標示，按正文、授權摘錄、完整性及目前讀取資格顯示可讀、待取得、待授權、失敗或待核對；私人來源一律如實標示未建立向量索引。單一投影檢查通過，保留公共網址私人副本的區別；[證據](artifacts/verification/SOURCE_READINESS_20261024.json)。尚未部署 Web／OTA，隨共用畫面交付帶入附件庫；不在此包擴大私人向量化、抓取或模型工作。
+- 已實作共用列表／詳情標示，按正文、授權摘錄、完整性及目前讀取資格顯示可讀、待取得、待授權、失敗或待核對；私人來源一律如實標示未建立向量索引。單一投影檢查通過，保留公共網址私人副本的區別；[證據](artifacts/verification/SOURCE_READINESS_20261024.json)。已隨 `382d217` 發布 Web／相容 OTA，裝置效果待核；不在此包擴大私人向量化、抓取或模型工作。
 
 <a id="shared-interaction01"></a>
 ### SHARED-INTERACTION01：準備單及讀取互動
@@ -88,7 +88,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 手機已截圖確認列表頭下拉箭嘴被拉成直條，修局部佈局；鈴鐺打開首幀顯示真載入狀態；聊天滾到頂部自動讀取較早記錄並維持原閱讀錨點，處理原按鈕載入會跳動的問題。保留錯誤重試，不無限自動翻頁或重試。
 - 主模型處理 owner／契約及聊天錨點；Sol 承接不重疊的鈴鐺及列表頭呈現。只補連點／防重／衝突與分頁位置等必要檢查，不全量或呼叫模型。共用 Web／Android 來源，發布後再核受影響畫面。
 - 同批新增：移除文件／語音彈窗「改用文字」冗餘入口；語音按鈕直接啟動本機錄音，原位顯示計時／停止／取消，試聽後才由本人送出。普通頁面掛載不要求咪權限或自動錄音；選取已有音訊仍保留。手機原生四個普通 Tabs 共用 Web 的選中短線，核對手勢保留。
-- **首批已實作、發布待辦：**上述列表頭、鈴鐺、聊天錨點、直接錄音及導航短線已接同一共用前端。定向檢查及 Web／Android 匯出通過，[證據](artifacts/verification/SHARED_READING_INTERACTIONS_20261024.json)分列測試 fixture 修正、原生／Web 錨點及未驗範圍。正式勾選仍逐項保存；合併保存、照片聊天與頭像不在這份介面交付冒稱完成。發布後只核必要畫面與操作，不發模型或通知。
+- **首批 #282 已合併並發布：**列表頭、鈴鐺、聊天錨點、直接錄音及導航短線沿同一共用前端。定向檢查及兩端匯出通過；[實作證據](artifacts/verification/SHARED_READING_INTERACTIONS_20261024.json)保留 fixture 失敗及未驗範圍，[交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)記 Web 首頁 hash、API health、原映像回退與相容 Android OTA。未強制重啟手機，不把發布當真機通過。
+- **剩餘保存要求（2026-10-24）：**保持原勾選按鈕，不因背景寫入換成文字、轉圈或鎖住其他項目。最後一次點擊後約 3 秒合併同文件的最後狀態；反覆改回原值不送無效寫入。在同一孩子工作區離頁／關閉閱讀／轉選文件時立即 flush，請求由共用 owner 接續，不等待完成才導航。保存中可繼續累積下一批；版本衝突或未知結果保留待處理狀態，先查原操作，不盲重做。身份／孩子切換及登出仍保留必要隔離與未決操作保障。照片聊天與頭像不在這份介面交付冒稱完成。
 - 下次需要新 APK 時，沿既有品牌圖更新 Android launcher icon／splash，移除瞬間靶子圖；先保留 v3 相容 OTA，不為圖標另開免費建置。
 
 <a id="chat-photo01"></a>

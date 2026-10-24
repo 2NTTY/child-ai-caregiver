@@ -4,11 +4,11 @@
 
 ## 目前與接手
 
-- **共用介面首批已實作，待發布。**2026-10-24 基線 `ee0b7b1`；[來源狀態](PLAN.md#source-readiness01)已由 #281 合併。[共用互動](PLAN.md#shared-interaction01)已修列表頭、鈴鐺首幀、聊天頂部分頁／位置、直接錄音及原生選中短線，局部檢查與 Web／Android 匯出通過；正式畫面尚未更新。接着交付這批與附件庫，再補準備單合併保存、[照片聊天](PLAN.md#chat-photo01)及[頭像](PLAN.md#avatar-01)。APK v3 已安裝，不據此補填其餘真機驗收。
+- **共用介面首批已發布，接續準備單背景保存。**2026-10-24 master `382d217`（#282）；來源狀態、附件庫畫面、列表頭、鈴鐺首幀、聊天頂部分頁／位置、直接錄音及原生短線已更新 Web／Android OTA。局部檢查與匯出通過，真機效果待核。使用者新增連點不鎖、約 3 秒合併及離頁立即背景保存，詳見[共用互動](PLAN.md#shared-interaction01)；之後接[照片聊天](PLAN.md#chat-photo01)及[頭像](PLAN.md#avatar-01)。
 - **iOS 本機接線與發佈工具已合併，TestFlight 等待 Apple 前置。**#272及#274～#278已合併；本機檢查、整合iOS匯出及APNs掛載配置核對通過。尚須Apple團隊／簽署／APNs配置、IPA與真機驗收；未部署或啟用通知。範圍保留於[iOS計劃](PLAN.md#p3-ios)，不因此重跑測試。
-- **附件庫 API 已上線，畫面交付待接續：**`a84f349` 的 11 檔清單接線已部署原 API／worker，兩索引 READY，候選與有界 SDK 查詢／health 通過。Web 仍是舊畫面包；APK v3 含新畫面、已安裝，清單仍未驗。原失敗及 GUI／型別限制保留，見 [ATTACHMENT-READ01](PLAN.md#attachment-read01)。私人來源沒有自動向量索引作業，標示分清已保存及可供 Agent 讀取，不造假索引完成。
+- **附件庫 API 及畫面已交付，實際清單待驗：**`a84f349` 清單 API／兩索引沿原部署，Web／APK v3 相容 OTA 已含新畫面。原失敗及 GUI／型別限制保留，見 [ATTACHMENT-READ01](PLAN.md#attachment-read01)。私人來源沒有自動向量索引作業，畫面分清保存、可讀及未建立向量索引。
 
-- **MODEL-SELF03 已發布，手機草稿捨棄補核通過。**新關注圖標出現後，捨棄模式／供應商草稿、離頁及返回恢復平台模式，零key輸入／保存／模型。精確裝置OTA ID與真key流程未驗。另將其餘原生底欄接回Web同一導航metadata，保留版面／手勢；兩項定向檢查通過，這批接線尚未發布，見 [MODEL03](PLAN.md#model-self03)。#269 準備單退出修正及 #259 附件回看已合併；#264 頭像來源亦已合併但維持停用；#254／#262／#263／#265／#273 仍由協作者處理。
+- **MODEL-SELF03 已發布，手機草稿捨棄補核通過。**新關注圖標出現後，捨棄模式／供應商草稿、離頁及返回恢復平台模式，零key輸入／保存／模型。精確裝置OTA ID與真key流程未驗。另將其餘原生底欄接回Web同一導航metadata，保留版面／手勢；兩項定向檢查通過，這批接線已隨 `382d217` 發布、裝置效果待核，見 [MODEL03](PLAN.md#model-self03)。#269 準備單退出修正及 #259 附件回看已合併；#264 頭像來源亦已合併但維持停用；#254／#262／#263／#265／#273 仍由協作者處理。
 
 - **頭像並行候選：**AVATAR-01 已按契約整合本人／孩子 UI 與 server source；本機真 operator 的 avatar partial-staging 中斷／恢復有合成證據。仍 `release=false`／`NOT_FULLY_RECOVERABLE`，domain／完整 TS、unknown recovery及原生部署門檻未通，未上線；精確接續見[AVATAR-01](PLAN.md#avatar-01)。
 
@@ -21,9 +21,9 @@
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-24 12:10 UTC 原站：**API／worker已更新為`attachment-a84f349`（映像`c75454d`），healthy，公開health HTTP200／Firestore；兩個附件索引READY並通過真SDK有界查詢。Web仍為`model-draft-4bfdf98`（映像`241ffa8`），沒有更新畫面。零模型、通知、資料遷移及配額修改，頭像仍停用，見[本次交付](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)。
+**2026-10-24 12:55 UTC 原站：**Web 已切至`shared-382d217`（映像`6d4bff9`），公開首頁 hash 與交付包相同，首頁／API health HTTP200。API／worker維持`attachment-a84f349`（`c75454d`）；沒有模型、通知、資料／配額修改，頭像仍停用。[本次交付](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)保留舊 Web／配置回退；[附件 API 證據](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)不改寫。
 
-**Android，2026-10-24：**原 APK v2 的`4bfdf98`設定保存／重開已補核；新 APK v3（build `c678d433`、source `c58459a`）於12:07 UTC完成並核同簽署及runtime。使用者回覆已安裝，ADB 核實版本3與 App 前景；不把安裝當全部畫面／模型通過。下次 APK 處理品牌 icon／splash，現有 v3 只接相容 OTA。原[草稿與導航證據](artifacts/verification/SHARED_NATIVE_NAVIGATION_20261024.json)保留。
+**Android，2026-10-24 12:58 UTC：**APK v3（build `c678d433`）已安裝，新增`382d217`相容 OTA group `148449b2`發布至preview；runtime與v3相同，毋須重裝。未強制重啟手機，實際套用及新畫面效果未驗。下次 APK 處理品牌 icon／splash，原[草稿與導航證據](artifacts/verification/SHARED_NATIVE_NAVIGATION_20261024.json)保留。
 
 **回退、備份與容量：**保留原API映像`b9c358c`及0600的`compose.env.before-attachment-a84f349`；此清單包不改保存格式。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。最新原生備份為2026-10-23 22:53 UTC READY、保留至11月6日；未還原。部署前可用空間約10.6 GiB，沒有擴容或刪除資料／備份。
 
