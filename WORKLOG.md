@@ -3594,3 +3594,10 @@
 - 接續 `5ec3958`，主模型接共用 owner 的可續點草稿、停手三秒及離頁 flush；一個原操作可在背景完成，收據更新同源文件，不重讀全列表。Sol 在限定兩個 store 與一項測試中加入相容 `check_items`，主模型 review；沒有 Server 草稿副本。
 - 128 項有界批次共用版本與交易，無效目標不部分保存。unknown 只查／重送原操作；衝突先讀回再明確套用，斷線不自動排隊重送，身份清理保留。按鈕不因正常保存換成文字或鎖住其他勾選。
 - [定向證據](artifacts/verification/PREPARATION_BACKGROUND_SAVE_20261024.json)保留兩次 fixture 等待缺口及 tsc 參數更正；owner 連貫情景與 Firestore 合成批次各一條通過，窄型別通過。沒有全量、真模型、雲端寫入、通知或真機；尚未部署。
+
+<a id="log-20261024-preparation-background-delivery"></a>
+## LOG-20261024-PREPARATION-BACKGROUND-DELIVERY
+
+- 已合併 #284／`015deb8` 沿原 VM 完成相容 API／worker／Web 更新；候選僅做離線 import／schema 與 hash 核對，發布前確認沒有活動 Agent lease。公開首頁 hash、API health 與映像身份通過，保留原映像及兩份 0600 配置回退；無資料遷移、模型、通知或配額改動。
+- Android 首次發布遇 EAS 資產處理 180 秒逾時。查回 preview 仍為上一組，固定 CLI 原碼確認尚未到 publish mutation；同一份已核 hash 產物只補送一次，成功發布 group `a46b49b0-a5ef-4ead-8d24-6a61236a85b9`。與已安裝 v3 相容，不另建 APK，不把發布當真機驗收。
+- [交付證據](artifacts/verification/PREPARATION_BACKGROUND_DELIVERY_20261024.json)保存版本、原失敗、回退及未驗項。照片聊天正式 Agent 接點與協作者未合併修改重疊，保留其工作；先處理不重疊的附件接點，頭像與下一 APK 品牌圖仍待後續包。
