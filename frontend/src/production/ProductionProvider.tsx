@@ -7,6 +7,7 @@ import { usePathname, useRouter, type Href } from "expo-router";
 import { Linking, Platform } from "react-native";
 import { Text } from "react-native-paper";
 import type { AuthMode, Credentials } from "../../../src/client/records-api";
+import type { PhotoMessageReference } from "../../../src/shared/photos";
 import { emptyAssistantDraft, photoAttachment, type AssistantAttachment } from "../assistant-draft";
 import { AppDialog } from "../components/AppDialog";
 import { DeleteChildDialog } from "../components/DeleteChildDialog";
@@ -29,6 +30,7 @@ function useProductionValue(owner: ProductionOwner) {
   const authorization = useSyncExternalStore(owner.authorizationOwner.subscribe, owner.authorizationOwner.getSnapshot, owner.authorizationOwner.getSnapshot);
   const voiceUpload = useSyncExternalStore(owner.voiceOwner.subscribe,owner.voiceOwner.getSnapshot,owner.voiceOwner.getSnapshot);
   const fileUpload = useSyncExternalStore(owner.fileOwner.subscribe,owner.fileOwner.getSnapshot,owner.fileOwner.getSnapshot);
+  const photoUpload = useSyncExternalStore(owner.photoOwner.subscribe,owner.photoOwner.getSnapshot,owner.photoOwner.getSnapshot);
   const pathname = usePathname();
   const router = useRouter();
   const leave = usePreviewNavigation();
@@ -49,6 +51,12 @@ function useProductionValue(owner: ProductionOwner) {
     const message=pending.file?snapshot.chat.messages.find(item=>item.file?.id===pending.file!.id):null;
     if(message&&snapshot.scopeKey&&pending.localId){owner.draftOwner.remove(snapshot.scopeKey,pending.localId);owner.fileOwner.linked(message.id,message.file!.id);}
   },[owner,snapshot.chat.messages,snapshot.scopeKey,fileUpload.file?.id]);
+  useEffect(() => {
+    const pending = owner.photoOwner.getSnapshot();
+    const draft = snapshot.chat.selectedChildId ? snapshot.chat.drafts[snapshot.chat.selectedChildId] : undefined;
+    const message = draft?.savedUserMessageId ? snapshot.chat.messages.find(item => item.id === draft.savedUserMessageId && item.photo?.id === pending.photo?.id) : null;
+    if (message && snapshot.scopeKey && pending.localId) { owner.draftOwner.remove(snapshot.scopeKey,pending.localId); owner.photoOwner.linked(message.id,message.photo!.id); }
+  }, [owner,snapshot.chat.messages,snapshot.chat.drafts,snapshot.scopeKey,photoUpload.photo?.id]);
   useNativePushNavigation(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null, target => {
     const identity = snapshot.identityKey;
     leave(() => { void (async () => {
@@ -63,7 +71,7 @@ function useProductionValue(owner: ProductionOwner) {
 
   useLayoutEffect(() => {
     if ((!["/", "/chat"].includes(pathname) || previousPath.current === "/chat" && pathname !== "/chat")
-      && !owner.voiceOwner.getSnapshot().localId && !owner.fileOwner.getSnapshot().localId && !owner.draftOwner.getSnapshot().attachments.some(item => item.kind === "file")) owner.draftOwner.clearAttachments(snapshot.scopeKey);
+      && !owner.voiceOwner.getSnapshot().localId && !owner.fileOwner.getSnapshot().localId && !owner.photoOwner.getSnapshot().localId && !owner.draftOwner.getSnapshot().attachments.some(item => item.kind === "file")) owner.draftOwner.clearAttachments(snapshot.scopeKey);
     previousPath.current = pathname;
   }, [owner, pathname, snapshot.scopeKey]);
   useEffect(() => { setLocalNotice(null); setDismissedNotice(null); setLogoutConfirmation(false); }, [snapshot.identityKey]);
@@ -98,8 +106,8 @@ function useProductionValue(owner: ProductionOwner) {
       attachment.dispose?.(); setLocalNotice("目前無法加入附件；內容尚未送出。"); return false;
     }
     const currentAttachments=owner.draftOwner.getSnapshot().attachments;
-    if(owner.voiceOwner.getSnapshot().localId || owner.fileOwner.getSnapshot().localId || (attachment.kind!=='photo' ? currentAttachments.some(v=>v.id!==replaceId) : currentAttachments.some(v=>v.kind!=='photo'))) {
-      attachment.dispose?.();setLocalNotice('每則可傳送一段錄音或一份檔案；照片另行保存及提取。請先送出或移除目前附件。');return false;
+    if(owner.voiceOwner.getSnapshot().localId || owner.fileOwner.getSnapshot().localId || owner.photoOwner.getSnapshot().localId || currentAttachments.some(v=>v.id!==replaceId)) {
+      attachment.dispose?.();setLocalNotice('每則可傳送一張照片、一段錄音或一份檔案。請先送出或移除目前附件。');return false;
     }
     return owner.draftOwner.add(snapshot.scopeKey, attachment, replaceId);
   };
@@ -162,16 +170,31 @@ function useProductionValue(owner: ProductionOwner) {
     sendChat: async () => {
       if(!currentScope()||!owner.chatWritesAllowed())return;
       const attachments=owner.draftOwner.getSnapshot().attachments;
-      if(attachments.length&&(attachments.length!==1||!['voice','file'].includes(attachments[0].kind)))return;
+      if(attachments.length&&(attachments.length!==1||!['voice','file','photo'].includes(attachments[0].kind)))return;
       const known=new Set(owner.chatController.getSnapshot().messages.map(item=>item.id));
       const attachment=attachments[0];
       const voice=attachment?.kind==='voice'?await owner.voiceOwner.prepare(attachment):null;
       const file=attachment?.kind==='file'?await owner.fileOwner.prepare(attachment):null;
-      if(!currentScope()||attachments.length&&!voice&&!file||!owner.chatWritesAllowed())return;
-      await owner.chatController.send(voice?{id:voice.id,version:voice.version}:undefined,file?{id:file.id,version:file.version}:undefined);
+      const photo=attachment?.kind==='photo'?(attachment.photoReference
+        ?await owner.photoOwner.prepareReference(attachment.photoReference,attachment.id):attachment.photo?await owner.photoOwner.prepare({id:attachment.id,photo:attachment.photo}):null):null;
+      if(!currentScope()||attachments.length&&!voice&&!file&&!photo||!owner.chatWritesAllowed())return;
+      await owner.chatController.send(voice?{id:voice.id,version:voice.version}:undefined,file?{id:file.id,version:file.version}:undefined,photo?{id:photo.id,version:photo.version}:undefined);
+      if(currentScope()&&photo){const saved=owner.chatController.getSnapshot().messages.find(item=>!known.has(item.id)&&item.photo?.id===photo.id);
+        if(saved){owner.draftOwner.remove(snapshot.scopeKey,attachment.id);owner.photoOwner.linked(saved.id,photo.id);}}
       if(currentScope()&&owner.chatController.getSnapshot().messages.some(item=>!known.has(item.id)))owner.invalidatePrivateReads();
     },
     fileUpload, checkFileUpload: () => {if(currentScope())void owner.fileOwner.check();},
+    photoUpload, checkPhotoUpload: () => {if(currentScope())void owner.photoOwner.check();},
+    attachSavedPhoto: (photo: PhotoMessageReference) => {
+      if(!currentScope())return;
+      leave(() => {
+        if(!currentScope()||!owner.chatWritesAllowed()||owner.draftOwner.getSnapshot().attachments.length){setLocalNotice('請先送出或移除目前聊天附件。');return;}
+        const chat=owner.chatController.getSnapshot(), draft=chat.selectedChildId?chat.drafts[chat.selectedChildId]:undefined;
+        if(chat.busy||draft&&draft.phase!=='draft'){setLocalNotice('請先處理目前訊息的保存結果。');return;}
+        owner.draftOwner.add(snapshot.scopeKey,{id:`saved-photo-${photo.id}`,kind:'photo',fileName:photo.fileName,mimeType:photo.mimeType,bytes:photo.bytes,photoReference:photo});
+        router.push('/chat');
+      },'workspace');
+    },
     voiceUpload, checkVoiceUpload: () => {if(currentScope())void owner.voiceOwner.check();},
     requestChatReply: async (id: string) => { if (!currentScope() || !owner.chatWritesAllowed()) return; const known = new Set(owner.chatController.getSnapshot().messages.map(item => item.id)); await owner.chatController.requestReply(id); if (currentScope() && owner.chatController.getSnapshot().messages.some(item => !known.has(item.id))) owner.invalidatePrivateReads(); },
     agentModel: agent.model, agentInbox: agent.inbox, agentRuns: agent.runs, agentPending: agent.pending,
@@ -208,6 +231,9 @@ function useProductionValue(owner: ProductionOwner) {
       }else if(owner.fileOwner.getSnapshot().localId===id){
         if(!owner.chatController.clearUnsentFile())return;
         void owner.fileOwner.discard().then(removed=>{if(removed&&currentScope())owner.draftOwner.remove(snapshot.scopeKey,id);});
+      }else if(owner.photoOwner.getSnapshot().localId===id){
+        if(!owner.chatController.clearUnsentPhoto())return;
+        void owner.photoOwner.discard().then(removed=>{if(removed&&currentScope())owner.draftOwner.remove(snapshot.scopeKey,id);});
       }else owner.draftOwner.remove(snapshot.scopeKey,id);
     },
     clearAgentDraft: () => { if (currentScope() && !owner.hasDomainPending()) {
@@ -217,6 +243,9 @@ function useProductionValue(owner: ProductionOwner) {
       } else if (owner.fileOwner.getSnapshot().localId) {
         if (!owner.chatController.clearUnsentFile()) return;
         void owner.fileOwner.discard().then(removed=>{if(removed&&currentScope()){owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}});
+      } else if (owner.photoOwner.getSnapshot().localId) {
+        if (!owner.chatController.clearUnsentPhoto()) return;
+        void owner.photoOwner.discard().then(removed=>{if(removed&&currentScope()){owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}});
       } else {owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}
     } },
     agentDraftScope: snapshot.scopeKey, composerFocusRequest, openAgentDraft,

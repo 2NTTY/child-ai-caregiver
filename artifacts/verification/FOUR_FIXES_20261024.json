@@ -322,5 +322,49 @@
     ],
     "photo_guard": "useDomainWriteGuard implementation/signature unchanged; environment adds writeReady.",
     "latest_scope": "Only PDF owner 3 + archive 1 + native 5 rerun; photo/APNs evidence reused from previous baseline, not presented as new execution."
+  },
+  "final_merge_compatibility": {
+    "observed_at_utc": "2026-10-24T14:44:15.199503+00:00",
+    "prior_pr_head": "d9157a7fdd852fb9613ad5d2c3ac34578877d010",
+    "master": "98f56a34bf6326c2f892ee3ebd8cb2a2f8176d86",
+    "authorization": "User explicitly requested normal PR #286 merge; no deployment or protection bypass.",
+    "product_intersection": "PhotoInputDomains.tsx: master adds attachSavedPhoto/onChatPhoto workspace callback; original four-fix core retained. No manual product or fixture edits.",
+    "tests": [
+      {
+        "command": "node --test --test-concurrency=1 frontend/scripts/source-photo-recovery.test.mjs",
+        "pass": 49,
+        "fail": 0,
+        "exit_code": 0,
+        "log": {
+          "local_path": "/workspace/scratch/c112a98a8be9/four-fixes-final-merge-evidence-20261024/photo-recovery.log",
+          "bytes": 4991,
+          "sha256": "64099ec1ed669b402bcde0534bb7033568f280bb1bfdacbff44a0e519fda5ec7"
+        }
+      },
+      {
+        "command": "node --experimental-test-module-mocks --test --test-concurrency=1 tests/chat-photo-client.test.ts",
+        "pass": 1,
+        "fail": 0,
+        "exit_code": 0,
+        "log": {
+          "local_path": "/workspace/scratch/c112a98a8be9/four-fixes-final-merge-evidence-20261024/chat-photo-client.log",
+          "bytes": 233,
+          "sha256": "37fcf9661df6665f2d2f9971d2192d2a00fa9c7e80e065eab930e095de8a3ea5"
+        }
+      }
+    ],
+    "not_rerun": [
+      "Unchanged APNs/PDF checks",
+      "Full suite/typecheck/build",
+      "Browser/device/live model/notification/deployment"
+    ],
+    "review": "Independent compatibility review pending before external update or merge.",
+    "protection_observation": {
+      "rulesets": "Active named-account update restriction; deletion and non-fast-forward prohibited. No required-status-check rule observed.",
+      "prior_head_statuses": 0,
+      "prior_head_check_runs": 0,
+      "prior_head_pr_workflows": 0,
+      "qualification": "Not CI pass; exact final head must be checked before merge."
+    }
   }
 }

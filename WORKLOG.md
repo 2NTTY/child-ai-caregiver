@@ -3626,3 +3626,26 @@
 - 按使用者新增範圍授權，從 `60b42c1` 接照片專用訊息／runtime／審核入口；沒有修改或合併協作者分支。原照片與 Storage 不另複製，訊息原交易核版本及收據，同圖可重用；照片上傳不再需要先提取成記錄。
 - 原圖由 Server 核權後暫時送模型，附件庫可有界列出／重讀，審核取得相同原圖且 hash 綁定 metadata。原圖不進 ADK 事件或工具回覆；刪除、撤權與官方引用規則保留。Sol 只承接兩個 store 及其定向測試，主模型負責契約、runtime、工具、審核接點及 review。
 - [必要證據](artifacts/verification/CHAT_PHOTO_BACKEND_20261024.json)：兩條新連貫合成情景通過，最終只補原照片 transport 與新 runtime 情景，窄 strict 型別通過。初次型別命令 TS5112 已按實際修正；零真模型／通知／雲端寫入。前端傳送、手機欄位修正及部署接續，不當作完整照片體驗已完成。
+
+<a id="log-20261024-chat-photo-frontend"></a>
+## LOG-20261024-CHAT-PHOTO-FRONTEND
+
+- 沿已合併 #287 接共用 Web／Android 原圖上傳、聊天保存、原操作查回與附件庫同 ID 重用；聊天不再要求先送到核對。照片 API 補接既有 recoveryPending 欄位，未結清還原仍不可讀；移除草稿不刪已有原圖。
+- 手機空單行欄位先用原生提示，focus／有內容才轉回 Paper 浮動標籤；Web／flat／多行保持原呈現。使用者已回報彈窗初開延遲，未有本修正的真機結論。
+- [定向證據](artifacts/verification/CHAT_PHOTO_FRONTEND_20261024.json)：一條真 client／合成 transport 流程、三項輸入元件檢查、13 roots strict 型別及兩端匯出通過。首輪 TS2345 的 optional photo 窄化問題已修；review 補刪除後可解除引用，不再卡 unknown。零模型／通知／雲端寫入，部署及真機待接續；#286 照片恢復區塊未改動。
+
+
+<a id="log-20261024-chat-photo-delivery"></a>
+## LOG-20261024-CHAT-PHOTO-DELIVERY
+
+- #287／#288已分別由C／B提交及合併；本次正式交付由C承接。原站先健康核對API／worker再更新Web，Android發布相容OTA group `327ad4ca-66f5-412b-bf8a-ee46d7493198`，不用新APK。
+- 首次候選把完整firebase-runtime覆蓋到部分部署基線，缺avatar-release而停止；修正為現網runtime只加兩項已review照片注入，未帶入頭像／APNs。首次修補Docker FROM使用image ID格式失敗，改成核hash的本機標籤後通過正式assembly import、13檔hash及Web hash；原失敗不抹除。
+- 公開首頁／API health均200，保留原映像和配置回退。零模型／通知／資料遷移；[精確交付證據](artifacts/verification/CHAT_PHOTO_DELIVERY_20261024.json)分列產物及限制。手機連線但鎖屏，未強停或改草稿，提示延遲修正及照片體驗仍待真機；接續頭像，不接管#286或協作者Agent。
+
+
+<a id="log-20261024-four-fixes-merge-compatibility"></a>
+## LOG-20261024-FOUR-FIXES-MERGE-COMPATIBILITY
+
+- 使用者明確要求合併 #286 後，末核 master 已前進至 #288／#289、`98f56a3`；同一 PhotoInputDomains 新增 workspace 的保存照片→聊天接線，不能只憑先前無衝突狀態直接合併。本輪先暫停外部寫入，再按主對話限定範圍正常整合；原照片修補核心與新 wrapper 各自保留，沒有另改產品或 fixture。
+- Node 24.19.0、既有依賴及合成 ports，照片恢復 49/49、聊天照片 client 原操作／同 ID 重用／身份隔離 1/1 通過。未將舊 APNs／PDF 數字算成本輪重跑，也未重做全量、build、真機或模型；原紅及未驗保持，最新兩份 log hash 追加於[既有收據](artifacts/verification/FOUR_FIXES_20261024.json)。
+- 本輪由獨立 reviewer 唯讀核對新照片 owner/API 與 draft／deferred discard／read-error 的相容性，不重複跑測試。保留 master PLAN／STATUS、兩邊 WORKLOG 與協作者最新部署證據；通過後只依精確 head 及 GitHub 保護規則正常合併同一 PR，不新增部署或合併其他協作者 PR。

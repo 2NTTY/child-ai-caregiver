@@ -2,6 +2,8 @@ import { createAvatarApi } from '../../../src/client/avatars-api.ts';
 import { AvatarOwner } from './AvatarOwner';
 import { createChatFileApi, type ChatFileApi } from '../../../src/client/chat-file-api.ts';
 import { ChatFileUploadController } from './ChatFileUploadController';
+import { createPhotoApi, type PhotoApi } from '../../../src/client/photo-api.ts';
+import { ChatPhotoUploadController } from './ChatPhotoUploadController';
 import { createVoiceApi, type VoiceApi } from '../../../src/client/voice-api.ts';
 import { VoiceUploadController } from './VoiceUploadController';
 import { photoSha256 } from '../platform/photo-bytes';
@@ -45,6 +47,9 @@ export class ProductionOwner {
   readonly chatController: ChatController;
   readonly fileApi: ChatFileApi;
   readonly fileOwner: ChatFileUploadController;
+  readonly chatPhotoApi: PhotoApi;
+  readonly photoOwner: ChatPhotoUploadController;
+  private unsubscribePhoto: (()=>void)|null=null;
   private unsubscribeFile: (()=>void)|null=null;
   readonly voiceApi: VoiceApi;
   readonly voiceOwner: VoiceUploadController;
@@ -58,7 +63,7 @@ export class ProductionOwner {
     if (pending) this.domainPending.add(key); else this.domainPending.delete(key);
     this.syncMutationLocks(); this.snapshot = this.project(); this.emit();
   };
-  hasDomainPending = () => !!this.avatarOwner?.hasPending() || this.domainPending.size > 0 || Boolean(this.accountOwner?.hasPending()) || !!this.voiceOwner?.getSnapshot().busy || !!this.voiceOwner?.getSnapshot().unknown || !!this.fileOwner?.getSnapshot().busy || !!this.fileOwner?.getSnapshot().unknown;
+  hasDomainPending = () => !!this.avatarOwner?.hasPending() || this.domainPending.size > 0 || Boolean(this.accountOwner?.hasPending()) || !!this.voiceOwner?.getSnapshot().busy || !!this.voiceOwner?.getSnapshot().unknown || !!this.fileOwner?.getSnapshot().busy || !!this.fileOwner?.getSnapshot().unknown || !!this.photoOwner?.getSnapshot().busy || !!this.photoOwner?.getSnapshot().unknown;
   handleDomainAccessError = (error: { status?: number; code?: string | null }) => {
     if (error.status === 401 || error.code === "session_changed" || error.code === "unauthorized") void this.controller.restoreSession();
     else if (error.status === 403 || error.code === "access_denied") this.denySelectedChild();
@@ -117,6 +122,8 @@ export class ProductionOwner {
     }, this.fetcher), online);
     this.fileApi = createChatFileApi(this.fetcher,this.apiBaseUrl,photoSha256);
     this.fileOwner = new ChatFileUploadController(this.fileApi,photoSha256,this.handleDomainAccessError);
+    this.chatPhotoApi = createPhotoApi(this.apiBaseUrl,this.fetcher,photoSha256);
+    this.photoOwner = new ChatPhotoUploadController(this.chatPhotoApi,photoSha256,this.handleDomainAccessError);
     this.voiceApi = createVoiceApi(this.fetcher,this.apiBaseUrl,photoSha256);
     this.voiceOwner = new VoiceUploadController(this.voiceApi,photoSha256,this.handleDomainAccessError);
     const queries = withRecordsQueries(recordsApi, this.queryClient, () => ({ identityKey: this.identity,
@@ -148,6 +155,7 @@ export class ProductionOwner {
     this.unsubscribeAuthorization = this.authorizationOwner.subscribe(() => this.syncMutationLocks());
     this.unsubscribeVoice = this.voiceOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
     this.unsubscribeFile = this.fileOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
+    this.unsubscribePhoto = this.photoOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
     this.unsubscribe = this.controller.subscribe(() => this.sync());
     this.unsubscribeChat = this.chatController.subscribe(() => this.chatChanged());
   }
@@ -254,6 +262,7 @@ export class ProductionOwner {
         nextScope && raw.selectedChildId ? { key: nextScope, childId: raw.selectedChildId } : null, raw.online);
       this.voiceOwner.syncContext(nextScope && userId && raw.selectedChildId ? {key:nextScope,userId,childId:raw.selectedChildId}:null,raw.online);
       this.fileOwner.syncContext(nextScope && userId && raw.selectedChildId ? {key:nextScope,userId,childId:raw.selectedChildId}:null,raw.online);
+      this.photoOwner.syncContext(nextScope && userId && raw.selectedChildId ? {key:nextScope,userId,childId:raw.selectedChildId}:null,raw.online);
       this.draftOwner.retainScope(nextScope);
       this.chatController.syncContext(userId, raw.online, nextScope ? raw.selectedChildId : null);
       const allowedAgentScopes = raw.childrenLoadedAt && !raw.childrenLoading && !raw.childrenError
@@ -310,6 +319,7 @@ export class ProductionOwner {
     if (this.unsubscribe) return;
     this.unsubscribeVoice = this.voiceOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
     this.unsubscribeFile = this.fileOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
+    this.unsubscribePhoto = this.photoOwner.subscribe(() => { this.syncMutationLocks(); this.snapshot=this.project(); this.emit(); });
     this.unsubscribe = this.controller.subscribe(() => this.sync());
     this.unsubscribeChat = this.chatController.subscribe(() => this.chatChanged());
     this.unsubscribeAccount = this.accountOwner.subscribe(this.accountChanged);
@@ -321,6 +331,7 @@ export class ProductionOwner {
     this.unsubscribeAgent?.(); this.unsubscribeAgent = null; this.unsubscribeAuthorization?.(); this.unsubscribeAuthorization = null;
     this.unsubscribeAccount?.(); this.unsubscribeAccount = null;
     this.unsubscribeFile?.(); this.unsubscribeFile=null; this.fileOwner.dispose();
+    this.unsubscribePhoto?.(); this.unsubscribePhoto=null; this.photoOwner.dispose();
     this.unsubscribeVoice?.(); this.unsubscribeVoice=null; this.voiceOwner.dispose();
     this.avatarOwner.dispose();
     this.adminOwner.dispose(); this.accountOwner.dispose(); this.controller.dispose(); this.chatController.dispose(); this.agentOwner.dispose(); this.authorizationOwner.dispose(); this.draftOwner.dispose();

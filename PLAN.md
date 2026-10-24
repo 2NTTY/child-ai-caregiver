@@ -56,9 +56,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**並行修補：[FIX-FOUR01](#four-fix01)。**四項指定修補已建立[草稿 PR #286](https://github.com/2NTTY/child-ai-caregiver/pull/286)；本次正常合入 master #285／#287，保留最新部署及照片後端原碼／記錄；本修補 15 個碼測檔不改，不代驗 #287 或接管協作者後續交付。
+**四項修補來源交付：[FIX-FOUR01](#four-fix01)。**[PR #286](https://github.com/2NTTY/child-ai-caregiver/pull/286) 已獲使用者指示正常合併；本輪接續 #288／#289，保留照片聊天接線與部署記錄，僅補受影響照片恢復／client 契約核對。正常合併仍須獨立覆核及遠端必要檢查，不代表部署或真機驗收。
 
-**當前：[準備單背景合併保存](#shared-interaction01)已發布，接續[照片聊天](#chat-photo01)與頭像。**2026-10-24 master `015deb8`（#284）的相容 API／worker、Web 及 APK v3 OTA 已交付；連點合併保存有定向證據，實際手機效果待核。#281／#282 的來源狀態、列表佈局、鈴鐺首幀、聊天位置、直接錄音及導航短線保留。個人模型未驗項沿 [MODEL03](#model-self03)，需要本人前置時繼續獨立工作；不把 OTA 發布當真機通過。
+**當前：[照片聊天及原生欄位提示](#chat-photo01)已發布，接續[頭像](#avatar-01)生命週期修正。**#287／#288 已合併；2026-10-24 原站 API／worker／Web 與 APK v3 相容 OTA 已交付。手機鎖屏，尚未強制重啟或核對新效果；真模型照片理解亦未驗。準備單合併保存與前批共用介面保留；個人模型未驗項沿 [MODEL03](#model-self03)，不把發布當真機通過。
 
 **iOS 保留：[S04-W03 發佈準備](#s04-w03)等待 Apple 前置。**#272、#274～#278 已合併，本機接線／匯出／APNs掛載配置有證據；尚無 IPA、部署或真通知。免費真機需可用 Mac，TestFlight 需已授權 Apple 團隊及簽署；不為等待條件重跑測試或購買會員。完整範圍見 [iOS 計劃](#p3-ios)。
 
@@ -71,9 +71,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="four-fix01"></a>
 ### FIX-FOUR01：照片恢復、通知登記競態與原生 PDF（待驗收）
 
-- **範圍／基線：**依使用者指定第 1–4 項修補，接續 `015deb8e`（#284）於 `codex/four-verified-fixes-20261024-latest` 整合照片普通草稿離頁守衛／已批准捨棄、成功重讀清精確舊錯誤、APNs 過時 410 的登記 revision／時間核對，以及原生 PDF 實際分享能力 gate。原操作／unknown、身份及版本守衛保留；8 個產品檔維持已獨立 review 版本。
-- **分層證據：**原 `382d2174` 整合照片 49/49、APNs 10/10；PDF 相關較闊批次 44/54，10 項 preparation fixture `HistoryCards` 缺口保留，未修或重跑全檔。#284 改共享文件 owner，故只補該 fixture 載入真 preparation buffer 及無 deps effect 語意，再驗 PDF owner 3/3、archive 1/1、新 native 檢查 5/5；不把舊整合數字當新基線重跑。[收據](artifacts/verification/FOUR_FIXES_20261024.json)保留原紅、精確版本及未驗。
-- **交付／門檻：**原碼、#284 fixture 及整合文件已由 dot 主對話覆核，使用者另明確批准公開上傳；已建立[草稿 PR #286](https://github.com/2NTTY/child-ai-caregiver/pull/286)，首次遠端 head `125657d1` 與批准候選的完整 tree 相同。依使用者要求正常合入 #285／#287，保留兩邊追加記錄與 #287 原碼；本修補產品、測試與原驗證收據不變，#287 僅按既有照片 owner 接點作唯讀相容核對、沒有重跑產品驗收；維持草稿，不合併 PR 或部署。真機照片捨棄、原生分享、Apple APNs／原生 Firestore 競爭及正式驗收仍待補，不能把沒有 CI 狀態當通過；沒有重跑全量型別／build／E2E，不代表照片聊天、頭像、附件庫或 iOS 整包完成。
+- **範圍／接續：**依使用者指定第 1–4 項修補，照片普通草稿離頁守衛／已批准捨棄、成功重讀清精確舊錯誤、APNs 過時 410 的登記 revision／時間核對，以及原生 PDF 實際分享能力 gate 均已實作。原操作／unknown、身份及版本守衛保留；#286 接續最新 `98f56a3`（#288／#289），照片 workspace 保留協作者新增的 `attachSavedPhoto`／`onChatPhoto` 接線，不回退已發布功能。
+- **分層證據：**原 `382d2174` 整合照片 49/49、APNs 10/10；較闊 PDF 批次 44/54，10 項既有 `HistoryCards` fixture 失敗保留。#284 的 PDF owner 3/3、archive 1/1、新 native 5/5 沿既有來源；本輪 #288／#289 產品交集只在照片 workspace wrapper，合成照片恢復 49/49 及新聊天照片 client 契約 1/1 通過，沒有重跑無關 APNs／PDF、全量型別或 build。[同一收據](artifacts/verification/FOUR_FIXES_20261024.json)按基線保存原紅、最新補驗及限制。
+- **合併／後續門檻：**使用者於 2026-10-24 明確要求合併 #286；本輪整合須經獨立相容覆核，再核精確 head、分支保護及必要檢查，以正常 merge commit 合併，不強推或繞過規則。真機照片捨棄、原生分享、Apple APNs／原生 Firestore 競爭及正式驗收仍待補，空 CI 狀態不當通過。來源合併不含本包部署，不代表照片聊天模型品質、頭像、附件庫或 iOS 整包完成。
 
 <a id="attachment-read01"></a>
 ### ATTACHMENT-READ01：附件回看與私人清單（API／畫面已發布，實際清單待驗）
@@ -106,11 +106,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 ### CHAT-PHOTO01：照片隨聊天送出與附件重讀
 
 - 使用者於2026-10-24重申：照片像一般聊天附件，拍攝／選圖後附加至訊息，送出交給 Agent；不先轉核對頁、強制執行照片提取或確認成記錄。附件庫查看 Server 已保存、可供 Agent 重讀的附件；核對頁檢視 Agent 已整理保存的資料，兩者不可混淆。
-- 現況缺口：composer 可暫存照片，但正式 send 僅接文字／voice／file；`AgentPhotoInput` 導向舊的提取／核對通路。須接原照片內容、聊天訊息關聯、正式模型多模態及按需重讀，不只刪文案或把照片假當不支援讀取的通用文件。
+- 本包接通 composer 的照片傳送、聊天引用、正式模型多模態及原圖重讀。原 `AgentPhotoInput` 提取／核對通路退出聊天；既有人工提取備援保留。照片不是不支援讀取的通用文件。
 - 復用既有私有 Storage／Firestore、hash／版本、原操作及刪除生命週期；新訊息及附件共用同一權威。清楚低風險指令沿原授權，重要事實／共享寫入仍在對話內確認，不把上傳附件當成已確認事實。保留舊記錄／提取證據，不接管協作者 Agent PR。
 - 獨立核對一條照片附加→送出→模型可讀→附件庫／新對話重讀，機械接點先用合成資料；不重跑照片品質或各模型矩陣。完成相容 Server 接線後才啟用前端送出，不能在後端未支援時提供假成功。
-- 2026-10-24 使用者明確允許在獨立分支加入照片專用 Agent 接線，保留協作者審核工作、不代合併其 PR。`codex/chat-photo-backend` 由 `60b42c1` 開包；新增 #286 的 PhotoInputDomains 修復也須保留，前端整合前核對。後端訊息引用／原圖讀取、原生多模態及審核證據接點已實作；兩條合成連貫情景與定向 strict 型別通過。前端傳送／附件庫重用及部署尚未完成，不能宣稱用戶照片流程已可用；[本包證據](artifacts/verification/CHAT_PHOTO_BACKEND_20261024.json)。
-- 手機輸入框說明文字延遲：使用者回報彈窗初開先空白、等一會或 focus 後才顯示。共用 Paper 原生 label 有量度前 opacity gate，根因未經真機確認；前端包補原生空欄位提示，不改 Web 設計，實機結果另列。
+- 2026-10-24 使用者明確允許在獨立分支加入照片專用 Agent 接線，保留協作者審核工作、不代合併其 PR。`codex/chat-photo-backend` 由 `60b42c1` 開包；新增 #286 的 PhotoInputDomains 修復也須保留，前端整合前核對。後端訊息引用／原圖讀取、原生多模態及審核證據接點已實作；兩條合成連貫情景與定向 strict 型別通過。後端已合併 #287；[後端證據](artifacts/verification/CHAT_PHOTO_BACKEND_20261024.json)。共用前端已接原圖保存／原操作查回、聊天送出、照片查看及附件庫同 ID 重用；[前端證據](artifacts/verification/CHAT_PHOTO_FRONTEND_20261024.json)包含單一連貫 client 情景、窄型別及 Web／Android 匯出。已合併 #288，原站與 Android OTA 發布完成；[交付證據](artifacts/verification/CHAT_PHOTO_DELIVERY_20261024.json)保留封包失敗／相容修正及回退。實際 runtime 只把兩項照片注入接回現網組裝，不帶入未發布頭像／APNs。真模型照片理解及手機效果未驗，不代替角色品質驗收。
+- 手機輸入框說明文字延遲：使用者回報彈窗初開先空白、等一會或 focus 後才顯示。共用 Paper 原生 label 有量度前 opacity gate，根因未經真機確認；原生單行 outlined 空欄位改用原生 placeholder，focus／有值時恢復浮動標籤，不改 Web、flat 或多行。三項共用元件檢查通過；實機結果另列，不承諾零延遲。
 
 <a id="avatar-01"></a>
 ### AVATAR-01 本人／孩子頭像（並行開發候選）
