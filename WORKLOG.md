@@ -3565,3 +3565,10 @@
 - 本機 Android 匯出通過；用戶批准的唯一免費 EAS build `c678d433` 已完成APK v3，主模型與Sol核對實際package／runtime／SHA256及原簽署相同。新runtime不能向APK v2強推OTA；手機最後鎖定，提供覆蓋安裝連結，未代填人工通過。
 - 附件清單採已合併 `a84f349` 的11檔相容patch。單一既有client→handler→store合成流程及VM import通過；兩索引READY後，只更新原API／worker，健康及真SDK有界查詢通過，Web不變、頭像停用。保留原API與配置回退；不遷資料、不跑全量。原Docker FROM錯誤停在候選階段，核tag／image後局部修正；索引核對器補collection身份，沒有重建同一索引。
 - [精簡證據](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)區分已部署API、尚欠Web畫面／APK安裝、實際與未驗項。使用者新增兩功能正式可用及來源索引標示；本批收束後補共用畫面與頭像生命週期。私人來源目前是授權摘錄讀取，沒有自動向量索引；不以已保存冒稱已索引。協作者開放PR不改動。
+
+<a id="log-20261024-source-readiness"></a>
+## LOG-20261024-SOURCE-READINESS
+
+- 接續 `eef3768`，共用 Sources 列表／詳情分清正文取得、本人授權可讀及向量索引。現行私人來源沒有向量索引作業；包括公共網址的私人副本，不以保存成功假稱已索引。Sol 實作三個呈現檔與一項檢查；主模型核 Server 摘錄資格、完整 diff 及現行契約，沒有新增另一套索引狀態或模型工作。
+- Node24.19 一項投影檢查、12 個資料情況通過；沒有全量／模型／部署。[證據](artifacts/verification/SOURCE_READINESS_20261024.json)。Web／Android 畫面留共用交付，不宣稱已發布。
+- 用戶已回覆 APK v3 安裝，ADB 核實 versionCode 3／App 前景；未據此補填完整清單或資料保留驗收。已接下準備單連點／手機列表頭、鈴鐺首幀及聊天頂部分頁要求；下次 APK 沿品牌素材處理 icon／splash，不為此再建一版。

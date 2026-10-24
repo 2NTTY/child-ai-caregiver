@@ -1,0 +1,10 @@
+{
+  "package": "SOURCE-READINESS01",
+  "date": "2026-10-24",
+  "base": "eef37686fe51200b729e868b3421b279678d583f",
+  "scope": "Shared Web/Android source list and detail projections; no storage or indexing changes",
+  "checks": [{"kind": "focused projection", "command": "node --test frontend/scripts/source-readiness.test.mjs", "node": "24.19.0", "result": "PASS", "tests": 1, "cases": 12}],
+  "review": "Primary reviewed shared projection and both render paths against agent-source-tools read eligibility. A private copy of a public URL is not a published vector index.",
+  "notVerified": ["Web deployment", "Android OTA", "new UI on device"],
+  "externalEffects": "No model, indexing, notifications or business writes"
+}
