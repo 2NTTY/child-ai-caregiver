@@ -26,7 +26,7 @@
 
 **2026-10-24 14:32 UTC 原站：**API／worker／Web 已切至 `chat-photo-9012933`（API映像`e23de93`、Web映像`c09400c`）；正式組裝及公開首頁hash／API health通過。照片 runtime 以現網組裝加兩項注入，頭像／APNs保持原來未啟用狀態；首次候選缺依賴及 Dockerfile 修正均保留於[交付證據](artifacts/verification/CHAT_PHOTO_DELIVERY_20261024.json)。零模型／通知／資料遷移／配額修改。
 
-**Android，2026-10-24 14:35 UTC：**相容 OTA group `327ad4ca` 已一次發布至preview，runtime沿APK v3，毋須重裝。手機連線但鎖屏，沒有強制重啟或改草稿，實際套用與提示文字時序未驗。下次新APK仍須更新品牌icon／splash。
+**Android，2026-10-24 14:35 UTC：**相容 OTA group `327ad4ca` 已一次發布至preview，runtime沿APK v3，毋須重裝。手機連線但鎖屏，沒有強制重啟或改草稿，實際套用與提示文字時序未驗。下次新APK的品牌icon／splash配置已備妥並本機核對；尚未建置，v3不會靠OTA改變原生圖標。
 
 **回退、備份與容量：**保留API映像`f83cb54`、Web映像`4c665eb`及兩份0600的`before-chat-photo-9012933`配置；前端變更依賴相容照片API，回退須成套處理。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。最近核對原生備份仍為2026-10-23 22:53 UTC READY、保留至11月6日，未還原；部署前磁碟約11 GiB可用，未擴容或刪資料／備份。
 

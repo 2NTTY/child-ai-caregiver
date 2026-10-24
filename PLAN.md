@@ -100,7 +100,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **首批 #282 已合併並發布：**列表頭、鈴鐺、聊天錨點、直接錄音及導航短線沿同一共用前端。定向檢查及兩端匯出通過；[實作證據](artifacts/verification/SHARED_READING_INTERACTIONS_20261024.json)保留 fixture 失敗及未驗範圍，[交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)記 Web 首頁 hash、API health、原映像回退與相容 Android OTA。未強制重啟手機，不把發布當真機通過。
 - **剩餘保存要求（2026-10-24）：**保持原勾選按鈕，不因背景寫入換成文字、轉圈或鎖住其他項目。最後一次點擊後約 3 秒合併同文件的最後狀態；反覆改回原值不送無效寫入。在同一孩子工作區離頁／關閉閱讀／轉選文件時立即 flush，請求由共用 owner 接續，不等待完成才導航。保存中可繼續累積下一批；版本衝突或未知結果保留待處理狀態，先查原操作，不盲重做。身份／孩子切換及登出仍保留必要隔離與未決操作保障。照片聊天與頭像不在這份介面交付冒稱完成。
 - **背景保存已合併並發布：**#284／`015deb8` 共用 owner 保留未保存意圖及 3 秒合併；`check_items` 在同一交易提交最多 128 項，保存中可繼續點，原收據恢復及衝突仍保留。正常保存不再重讀全列表，離頁不等待請求。[定向證據](artifacts/verification/PREPARATION_BACKGROUND_SAVE_20261024.json)及[交付證據](artifacts/verification/PREPARATION_BACKGROUND_DELIVERY_20261024.json)分列實作與公開核對：API／worker／Web 已更新，Android preview group `a46b49b0` 與 v3 相容，首次 Expo 資產處理逾時經查明未發布後沿同產物補送一次成功。零模型／通知，未做真機確認；突然關閉程序前尚未送出的修改仍可能遺失，不是 Server 暫存或離線主庫。
-- 下次需要新 APK 時，沿既有品牌圖更新 Android launcher icon／splash，移除瞬間靶子圖；先保留 v3 相容 OTA，不為圖標另開免費建置。
+- **下一版 APK 品牌已準備（2026-10-24）：**Android launcher 指向既有品牌 icon，Expo 57 對應 splash plugin 使用既有透明標記及白底；必要 config／原生資源生成與圖片核對通過，[證據](artifacts/verification/ANDROID_BRAND_STARTUP_20261024.json)。未建置／上傳，新 native 配置會改 fingerprint，待下一次必要 APK 一起交付，不能向 v3 強推 OTA；現有 v3 及其 runtime 保留。
 
 <a id="chat-photo01"></a>
 ### CHAT-PHOTO01：照片隨聊天送出與附件重讀

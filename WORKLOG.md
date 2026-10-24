@@ -3679,3 +3679,11 @@
 - 沿既有合成恢復庫及私人 bucket，以全新 namespace、653 bytes 合成 JPEG 執行一次原生資料接點核對。兩個獨立 SDK client 競爭只產生一次原 copy；其中一個交易得到預期 ABORTED，查回同一結果，沒有換操作重做。
 - 重建 client 後沿原 identity 放棄及重入，永久 marker 保留、舊 pinned generation 不可讀、遲到 create-if-absent 被拒；原圖不變並於最後按計劃清理。[證據](artifacts/verification/AVATAR_NATIVE_20261024.json)保存範圍、呼叫數與 hash，受保護本機 key 不入倉庫。
 - 這是同一程序的兩個 SDK、合成 provenance，並非完整 backup／Auth／journal 還原或 API 跨副本驗收。沒有操作原站控制、用戶資料、模型、通知、新資源或部署；頭像 gate 保持關閉，剩餘門檻按 PLAN 接續。
+
+
+<a id="log-20261024-android-brand-startup"></a>
+## LOG-20261024-ANDROID-BRAND-STARTUP
+
+- Android 原配置未指定 launcher／splash；本次復用既有品牌 raster 與 Expo 57 官方 splash plugin，沒有重畫品牌或修改正式共用頁面。下一次必要新 APK 才交付，現有 v3 runtime 不強制覆寫。
+- [必要證據](artifacts/verification/ANDROID_BRAND_STARTUP_20261024.json)：config 正確解析、官方生成器輸出 native resources，主模型核對 launcher／splash 像素。保留安裝 engine 警告、config 參數、fixture cwd 及 sandbox EPERM；修正核對入口後成功，未新增產品測試或跑全量。
+- 沒有 EAS 上傳／建置／OTA、真機、模型或通知。本機資源不是新 APK／手機啟動已驗；品牌 runtime 改變由既有發佈工具攔截，不手填舊版本。
