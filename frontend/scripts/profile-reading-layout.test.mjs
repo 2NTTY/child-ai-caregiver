@@ -26,6 +26,10 @@ function scenario(width = 1024) {
     './AppDialog': { AppDialog: dialog }, '../components/AppDialog': { AppDialog: dialog }, './AppScrollView': { AppScrollView: 'ScrollView' },
     'expo-router/react-navigation': { useNavigation: () => ({}), usePreventRemove() {} },
     'expo-router': { usePathname: () => '/profile', useRouter: () => ({}), Link: 'Link' },
+    // Avatar transport is outside this bounded profile workflow harness.
+    '../production/useProductionAvatar': { useProductionAvatar: () => ({ lane: {}, state: { uri: null } }) },
+    '../components/avatar/AvatarView': { AvatarView: 'AvatarView' },
+    '../components/avatar/AvatarEditor': { AvatarEditor: 'AvatarEditor' },
     '../production/CareProfileDomains': { useProductionCareProfile: () => ({ pending }) },
     '../production/useDomainEnvironment': { useDomainWriteGuard() {} },
     '../workspaces/ProfileWorkspace': { useProfileWorkspace: () => ({ model: profile, actions }) },
@@ -69,12 +73,12 @@ function scenario(width = 1024) {
 test('reading first shows child identity, two solid grouped cards, and compact truthful unknown fields at all target widths', () => {
   for (const width of [1440, 1024, 390, 320]) {
     const s = scenario(width), text = s.copy();
-    for (const value of ['合成小明', '基本資料', '健康與照顧', '約 3 歲（截至 2026-10-07）', '合成香港', '合成廣東話', '未知：預產期、出生孕週原文', '未知：過敏資料、特別需要、照顧偏好']) assert.ok(text.includes(value), value);
+    for (const value of ['合成小明', '基本資料', '健康與照顧', '約 3 歲（截至 2026-10-07）', '合成香港', '合成廣東話', '仍待補充', '預產期', '出生孕週原文', '過敏資料', '特別需要', '照顧偏好']) assert.ok(text.includes(value), value);
     assert.doesNotMatch(text, /合成檔案來源|合成更正原因|沒有過敏|沒有特別需要/);
     assert.equal(s.h.hosts().filter(x => x.type === 'Card').length, 2);
-    assert.equal(flatten(s.h.node('profile-reading-groups').props.style).flexDirection, width < 640 ? 'column' : 'row');
+    assert.equal(flatten(s.h.node('profile-reading-groups').props.style).flexDirection, width < 1200 ? 'column' : 'row');
     assert.ok(s.h.hosts().filter(x => x.type === 'Card').every(x => x.props.surface === undefined));
-    if (width < 640) for (const card of s.h.hosts().filter(x => x.type === 'Card')) {
+    if (width < 1200) for (const card of s.h.hosts().filter(x => x.type === 'Card')) {
       const style = flatten(card.props.style);
       assert.equal(style.flexBasis, 'auto');
       assert.equal(style.flexGrow, 0); assert.equal(style.flexShrink, 0);
@@ -146,10 +150,11 @@ test('child deletion stays secondary and forwards only to the original owner wit
   s.patch({ access: 'lost' }); assert.doesNotMatch(s.copy(), /合成檔案來源|基本資料|健康與照顧/);
 });
 
-test('only the requested dynamic History description is removed; category descriptions remain owned by their category', () => {
+test('history keeps its filters and route state while orientation is owned by the shared workspace', () => {
   const source = readFileSync(new URL('../src/screens/historyScreen.tsx', import.meta.url), 'utf8');
   assert.ok(!source.includes('分類回看${childName}的過往資料，從原始來源查看詳情。'));
   assert.match(source, /<PageFrame density="compact" title="歷史" scrollRef=/);
-  assert.match(source, /current\.description/);
-  assert.match(source, /description="按分類查閱過往資料。"/);
+  assert.match(source, /normalizeHistoryCategory/);
+  assert.match(source, /history-filter-toolbar/);
+  assert.match(source, /router\.setParams/);
 });

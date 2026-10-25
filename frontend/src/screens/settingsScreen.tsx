@@ -26,11 +26,13 @@ import { SettingsSection as SectionCard } from "../components/settings/SettingsS
 import { chineseFont, colors, readingType, spacing, typeScale } from "../theme";
 
 type SettingsTab = "account" | "children" | "family" | "preferences" | "notifications" | "model" | "assistant" | "privacy";
-const tabs: { key: SettingsTab; label: string }[] = [
-  { key: "account", label: "帳戶" }, { key: "children", label: "孩子" },
-  { key: "family", label: "家庭" }, { key: "preferences", label: "外觀" }, { key: "notifications", label: "通知" },
-  { key: "assistant", label: "助手" }, { key: "model", label: "模型" }, { key: "privacy", label: "私隱" },
+const tabs: { key: SettingsTab; label: string; group?: string }[] = [
+  { key: "account", label: "帳戶", group: "身份與資料" }, { key: "children", label: "孩子" },
+  { key: "family", label: "家庭" }, { key: "preferences", label: "外觀", group: "使用體驗" }, { key: "notifications", label: "通知" },
+  { key: "assistant", label: "助手", group: "授權與控制" }, { key: "model", label: "模型" }, { key: "privacy", label: "私隱" },
 ];
+
+const sectionDescriptions: Record<SettingsTab, string> = { account: "個人資料、登入身份與會話安全", children: "選擇孩子，查看及補充檔案", family: "協作開放狀態與本人可用功能", preferences: "選擇背景與適合自己的動態效果", notifications: "接收方式、安靜時段與通知渠道", assistant: "按孩子設定助手可以代辦的範圍", model: "選用的模型服務與本人憑據", privacy: "資料可見範圍、匯出與帳戶控制" };
 
 function LabeledValue({ label, value }: { label: string; value: string }) {
   return <View style={styles.valueRow}><Text style={styles.valueLabel}>{label}</Text><Text style={styles.valueText}>{value}</Text></View>;
@@ -58,7 +60,7 @@ export default function SettingsPage() {
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.workspace, compactNavigation && styles.workspaceStack]}>
     <SettingsNavigation id={tabsId} items={tabs} value={tab} onChange={setTab} compact={compactNavigation} />
     <View style={styles.settingsContent}>
-    <BackgroundSurface padded style={styles.scopeNote}><Text style={styles.muted}>{tab === "children" ? "可存取的孩子" : tab === "assistant" ? "目前孩子" : "本人設定"}</Text></BackgroundSurface>
+    <View style={styles.sectionHeading}><Text accessibilityRole="header" style={styles.sectionTitle}>{tabs.find(item => item.key === tab)?.label}</Text><Text style={styles.body}>{sectionDescriptions[tab]}</Text></View>
     <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
       <View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="個人資料" />
@@ -120,6 +122,7 @@ export default function SettingsPage() {
 }
 
 const styles = StyleSheet.create({
+  sectionHeading: { gap: spacing.sm, paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.line }, sectionTitle: { fontFamily: chineseFont, fontSize: 24, lineHeight: 34, fontWeight: "700", color: colors.ink },
   workspace: { width: "100%", minWidth: 0, flexDirection: "row", alignItems: "flex-start", gap: spacing.xxl },
   workspaceStack: { flexDirection: "column", gap: spacing.lg },
   settingsContent: { flex: 1, flexBasis: "auto", width: "100%", minWidth: 0, gap: spacing.xl, maxWidth: 800 },

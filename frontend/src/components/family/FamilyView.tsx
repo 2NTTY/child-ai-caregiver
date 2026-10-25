@@ -244,7 +244,7 @@ export function FamilyView({ model, actions, writeNotice, previewControls, onTas
 
 const styles = StyleSheet.create({
   list: { gap: 0 },
-  familyHeading: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.softLine },
+  familyHeading: { backgroundColor: colors.quietSurface, padding: spacing.lg, borderRadius: radius.small, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   familyTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, fontWeight: "800" },
   peopleColumn: { flex: 1.45 }, boundaryColumn: { flex: 1 }, section: { gap: spacing.md, minWidth: 0 },
   boundary: { backgroundColor: colors.quietSurface }, boundaryLabel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, fontWeight: "700" },
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   warningText: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, lineHeight: 22 },
   error: { fontFamily: chineseFont, color: colors.errorInk, fontSize: typeScale.small, lineHeight: 21 },
-  form: { gap: spacing.sm, minWidth: 0 }, member: { paddingVertical: spacing.lg, gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine },
+  form: { gap: spacing.sm, minWidth: 0 }, member: { padding: spacing.lg, gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   memberIdentity: { flexDirection: "row", alignItems: "center", gap: spacing.md }, flexCopy: { flex: 1, minWidth: 0 },
   avatar: { width: 48, height: 48, borderRadius: 24, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
   avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, fontWeight: "800" },

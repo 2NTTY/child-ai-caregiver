@@ -15,6 +15,8 @@ async function scenario(width = 1024, empty = false) {
     '../components/ui': ui, './ui': ui,
     '../theme': { colors: { ink: '#272343' }, spacing: {}, radius: {}, typeScale: { small: 14 }, readingType: {}, workspaceType: {} },
     '../components/PageFrame': { PageFrame: 'PageFrame' }, '../components/AppIcon': { AppIcon: 'Icon' },
+    // This harness exercises direct creation controls, not the separate operation-reveal store.
+    '../operation-reveal': { useOperationReveal: () => undefined },
     '../components/EmptyListCard': { EmptyListCard: 'EmptyList' },
     '../components/useContainerWidth': { useContainerWidth: () => ({ width, ref: {}, onLayout() {} }) },
     './AppDialog': { AppDialog: dialog }, '../components/AppDialog': { AppDialog: dialog },
@@ -129,10 +131,10 @@ test('unknown creation cannot close or change its name; check and retry are reac
 
 test('refresh, visible error retry and offline gates retain their real owner callbacks', async () => {
   const s = await scenario(320, true); assert.ok(s.h.hosts().find(x => x.type === 'EmptyList'));
-  s.failRead(true); s.click('重新整理'); await s.settle(); assert.ok(s.state().childrenError); assert.ok(s.button('重試讀取孩子'));
+  s.failRead(true); await s.controller.reloadChildren(); await s.settle(); assert.ok(s.state().childrenError); assert.ok(s.button('重試讀取孩子'));
   assert.equal(s.h.hosts().find(x => x.type === 'EmptyList'), undefined);
-  s.failRead(false); s.click('重試讀取孩子'); await s.settle(); assert.equal(s.state().childrenError, null); assert.equal(s.counts().refreshCount, 2);
-  s.offline(); assert.equal(s.button('重新整理').props.disabled, true); assert.equal(s.button('登出').props.disabled, true);
+  s.failRead(false); s.click('重試讀取孩子'); await s.settle(); assert.equal(s.state().childrenError, null); assert.equal(s.counts().refreshCount, 1);
+  s.offline(); assert.equal(s.button('重新整理'), undefined); assert.equal(s.button('登出').props.disabled, true);
   s.click('新增孩子'); s.enter('合成離線草稿'); assert.equal(s.button('建立孩子').props.disabled, true); assert.equal(s.counts().creates.length, 0);
 });
 

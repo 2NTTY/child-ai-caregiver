@@ -3,6 +3,10 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## 實驗分支二：Care Workspace（2026-10-25，未採納至 master）
+
+本分支按使用者要求由 UI UX Pro Max 主導全站重構，解除舊視覺與資訊密度約束；功能、安全及權限不放寬。固定 base `0b9f5d6`，共同修復另記；技能固定來源、全路由功能對照與分層驗收見 [實驗說明](EXPERIMENT_UIUX_REBUILD.md)。目前程式及合成測試已建立，Web export／有序 browser 檢查與獨立 review 待完成；不自動合併或發布。下方既有記錄只作原分支歷史，不代表本實驗設計要求。
+
 ## 頁面專屬歷史與安靜讀取（2026-10-23；source36／artifactfix1 本地交付）
 
 沿用 `dot/frontend-simplify-20261021`／[PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)，本輪以 `5a39776f703bc436528b858f393621bcf8030b03` 為基底，PR 仍 draft／未合併；此為交付時已知狀態，未另查 CI。新版尚未更新公開站點；最後已記錄的公開版本仍為04:59:33.978 UTC的Site87／snapshot31（Sites source `b1fb6db5cd7820cd2183a732f866d8673973bb10`），不把本地結果當新公開驗收。

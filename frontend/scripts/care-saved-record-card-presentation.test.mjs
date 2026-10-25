@@ -7,7 +7,7 @@ import { harness } from './scope-transition-harness.mjs';
 function setup() {
   const h = harness({
     'react-native': {View: 'View', Pressable: 'Pressable', Platform: {OS: 'android'}, StyleSheet: {create: value => value}},
-    '../../theme': {colors: {line: '#CAC9D4', ink: '#272343', muted: '#2D334A', controlSurface: '#FFFFFE'}, radius: {small: 10, medium: 16}, spacing: {sm: 8, md: 12}, readingType: {body: {fontSize: 16, lineHeight: 26}, tool: {fontSize: 14, lineHeight: 22}, meta: {fontSize: 12, lineHeight: 18}}},
+    '../../theme': {colors: {line: '#CAC9D4', ink: '#272343', muted: '#2D334A', controlSurface: '#FFFFFE'}, radius: {small: 10, medium: 16}, spacing: {sm: 8, md: 12, lg: 24}, readingType: {body: {fontSize: 16, lineHeight: 26}, tool: {fontSize: 14, lineHeight: 22}, meta: {fontSize: 12, lineHeight: 18}}},
     '../ui': {AppButton: 'AppButton', AppSelect: 'AppSelect', AppTextField: 'AppTextField'},
     '../AppIcon': {AppIcon: 'AppIcon'},
     '../AppStatusBadge': {AppStatusBadge: 'AppStatusBadge'},
@@ -52,19 +52,19 @@ test('the active saved list gives original event text three readable lines and a
     const preview = content.find(node => node.props.children === item.current.values.text);
     assert.ok(kind.props.style.fontSize < preview.props.style.fontSize);
     assert.equal(preview.props.numberOfLines, 3);
-    assert.ok(descendants(card).some(node => node.type === 'AppIcon' && node.props.name === 'clock-outline'));
-    assert.ok(content.some(node => node.props.accessibilityLabel === `確認時間：${item.current.confirmedAtLabel}`));
+    assert.ok(descendants(card).some(node => node.type === 'AppIcon' && node.props.name === 'arrow-right'));
+    assert.ok(content.some(node => node.props.children === '開啟記錄與來源'));
     assert.equal(preview.props.style.fontSize, 16);
     assert.equal(preview.props.style.lineHeight, 26);
-    assert.ok(content.some(node => node.props.children === `確認於 ${item.current.confirmedAtLabel}`));
+    assert.equal(content.some(node => node.props.children === `確認於 ${item.current.confirmedAtLabel}`), false, 'Precise confirmation metadata remains in the original reader, not every card');
     assert.equal(content.some(node => node.props.children === item.current.values.eventTimeRaw || node.props.children === item.createdAtLabel), false);
     assert.equal(card.props.accessibilityRole, 'button');
     assert.ok(card.props.accessibilityLabel.includes(item.current.values.text));
     assert.equal(card.props.style.width, undefined);
     assert.equal(card.props.style.height, undefined);
     assert.equal(card.props.style.aspectRatio, undefined);
-    assert.deepEqual(card.props.style, {padding: 12, borderWidth: 1, borderColor: '#CAC9D4', backgroundColor: '#FFFFFE', gap: 8},
-      'Use the original straight-edged thin frame without changing card width, height or parent layout');
+    assert.equal(card.props.style.flexBasis, 280); assert.equal(card.props.style.flexGrow, 1); assert.equal(card.props.style.minWidth, 0);
+    assert.equal(card.props.style.borderWidth, 1); assert.equal(card.props.style.padding, 24);
     const labels = descendants(card).find(node => node.type === 'View');
     assert.equal(labels.props.style.flexWrap, 'wrap');
     card.props.onPress();
@@ -78,7 +78,7 @@ test('missing event text retains the original title without inventing a summary 
     const item = record(); item.current.values.text = missing; item.current.confirmedAtLabel = null;
     h.renderList(model([item]));
     const card = h.node(`care-saved-card-${item.id}`), content = texts(card).map(node => node.props.children);
-    assert.deepEqual(content, [item.title, '確認時間未知']);
+    assert.deepEqual(content, [item.title, '開啟記錄與來源']);
     assert.equal(card.props.accessibilityLabel, `查看${item.title}`);
   }
 });

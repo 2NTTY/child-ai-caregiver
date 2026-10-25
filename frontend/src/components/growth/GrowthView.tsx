@@ -6,6 +6,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import type { GrowthActions,GrowthViewModel } from "../../growth-view-model";
+import { WorkspaceSwitch } from "../workspace/WorkspaceSwitch";
+import { Workspace } from "../workspace/Workspace";
 import { PageFrame } from "../PageFrame";
 import { EmptyListCard } from "../EmptyListCard";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
@@ -73,19 +75,20 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
         {refreshButton}
         {onHistory ? <AppButton label={compact ? "歷史" : "查看關注歷史"} accessibilityLabel="查看關注歷史" variant="secondary" density="compact" onPress={onHistory} /> : null}
       </View> : undefined}>
-        <UnderlineTabs id="growth-workspace" label="關注與準備" items={[{key: "concerns", label: "關注鏈"}, {key: "preparation", label: "準備單"}]} value={tab} onChange={onTabChange} />
+        <WorkspaceSwitch id="growth-workspace" label="關注與準備" items={[{key: "concerns", label: "持續關注", description: "追蹤同一主題的變化與跟進"}, {key: "preparation", label: "行前準備", description: "把問題、物品與步驟整理成清單"}]} value={tab} onChange={onTabChange} />
       </TabToolbar>
       <AppTabPanel tabsId="growth-workspace" tabKey="concerns" active={tab === "concerns"} style={s.stack}>
         {tab === "concerns" ? <>
         <GrowthConcernChangeNotice model={model} actions={actions} />
         {evaluationFailed ? <BackgroundSurface padded><Text style={s.warning}>成長建議暫停更新。</Text></BackgroundSurface> : null}
         {page ? <>
-          <View style={wide ? s.columns : s.stack}>
-            {listedConcerns.length ? <BackgroundSurface padded style={wide ? s.indexAside : s.full} testID="growth-index-surface">
+          <View style={s.stack}>
+            {listedConcerns.length ? <BackgroundSurface padded style={s.watchlist} testID="growth-index-surface">
+              <Text accessibilityRole="header" style={s.title}>追蹤中的主題</Text>
               {wide ? <GrowthConcernIndex items={listedConcerns} selectedId={concern?.id ?? null} onSelect={setSelectedConcern} />
                 : listedConcerns.length ? <AppSelect label="選擇關注" showLabel={false} value={concern?.id ?? ""} options={listedConcerns.map(item => ({value: item.id, label: item.title}))} onChange={setSelectedConcern} /> : null}
             </BackgroundSurface> : null}
-            <BackgroundSurface padded style={wide && listedConcerns.length ? s.main : s.full} testID="growth-detail-surface">
+            <BackgroundSurface padded style={s.readingWorkspace} testID="growth-detail-surface">
               {sourceNotice ? <Text style={s.warning}>{sourceNotice}</Text> : null}
               <GrowthConcernActions scopeKey={model.scopeKey} hasManagement={!!managementTools || !!(concern && page.canManage)}
                 primary={<>
@@ -104,7 +107,7 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
             </BackgroundSurface>
           </View>
         </> : !showLoading && model.access !== "lost" && model.load !== "error" ? <BackgroundSurface padded style={s.archiveEmpty}><Text style={s.body}>目前未能取得關注資料。</Text></BackgroundSurface> : null}
-        {previewTools}
+        {previewTools ? <Workspace.Section title="可接續的成長建議" detail="先核對來源與適用情況，再選擇要跟進的內容。">{previewTools}</Workspace.Section> : null}
         </> : null}
       </AppTabPanel>
       <AppTabPanel tabsId="growth-workspace" tabKey="preparation" active={tab === "preparation"} style={s.stack}>

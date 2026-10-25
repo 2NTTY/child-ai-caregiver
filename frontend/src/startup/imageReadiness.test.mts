@@ -3,7 +3,9 @@ import test from "node:test";
 import { firstScreenImagesSettled, requiredFirstScreenImages, settleFirstScreenImage } from "./imageReadiness.ts";
 
 test("only visible first-screen artwork blocks startup", () => {
-  assert.deepEqual(requiredFirstScreenImages("/", 390), ["home-hero"]);
+  assert.deepEqual(requiredFirstScreenImages("/", 390), []);
+  assert.deepEqual(requiredFirstScreenImages("/", 1440), []);
+  assert.equal(firstScreenImagesSettled(requiredFirstScreenImages("/", 390), {}), true);
   assert.deepEqual(requiredFirstScreenImages("/login", 1440), ["login-hero"]);
   assert.deepEqual(requiredFirstScreenImages("/login", 390), []);
   assert.deepEqual(requiredFirstScreenImages("/chat", 1440), []);

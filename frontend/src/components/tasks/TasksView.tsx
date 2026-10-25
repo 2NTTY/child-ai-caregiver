@@ -1,3 +1,5 @@
+import { WorkspaceSwitch } from "../workspace/WorkspaceSwitch";
+import { Workspace } from "../workspace/Workspace";
 import { BackgroundSurface, useCustomBackground } from "../appearance/BackgroundSurface";
 import { useContainerWidth } from "../useContainerWidth";
 import { useEffect, useLayoutEffect, useRef, useState, useId, type ReactNode } from "react";
@@ -132,6 +134,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
   </>;
   return <View ref={pageLayout.ref} onLayout={pageLayout.onLayout} style={styles.pageContainer}><ScrollView ref={scrollRef} testID="tasks-page-scroll" style={[styles.pageScroll, customBackground && styles.transparent]} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={event => { if (listVisible) scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <BackgroundSurface padded frosted testID="tasks-reading-panel" ref={node => { containerLayout.ref.current = node; pageHeading.current = node; }} role="region" accessibilityLabel="待辦" tabIndex={-1} {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})} onLayout={containerLayout.onLayout} style={styles.stack}>
+      <Workspace.Root title="待辦與預約"><Workspace.Header><Workspace.Heading eyebrow="行動安排" description="下一步、負責人與時間，清楚放在一起。" />{model.access !== "lost" ? <Workspace.Actions><View testID="tasks-page-actions" style={styles.headerActions}>{pageActions}</View></Workspace.Actions> : null}</Workspace.Header></Workspace.Root>
       <StatusAnnouncement key={model.child.id} eventKey={model.access} urgent={model.access === "lost"} message={model.access === "lost" ? "孩子權限已失效。任務、提醒、歷史、草稿及待查核原操作已清除。" : model.access === "read_only" ? "目前為唯讀：可以查看共享事項及歷史，不能新增或更改。" : model.access === "editable" ? "已恢復共享事項的編輯權限。" : ""} />
       {model.access === "read_only" ? <BackgroundSurface padded><Text style={styles.notice}>目前為唯讀：可以查看共享事項及歷史，不能新增或更改。</Text></BackgroundSurface> : null}
       {model.access === "lost" ? <SectionCard><Text style={styles.notice}>孩子權限已失效。任務、提醒、歷史、草稿及待查核原操作已清除；重新取得權限後才可讀取。</Text></SectionCard> : <>
@@ -139,8 +142,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
         <View testID="tasks-workspace" style={[styles.workspace, wide && showAside && styles.workspaceWide]}>
           <MotionDetail activeKey={showPanel ? "panel" : "list"} scopeKey={scopeKey} direction="back" compact={!wide && !showPanel} style={[styles.column, wide && showAside && styles.listColumn, !listVisible && styles.hidden]}>
             <BackgroundSurface padded ref={listRef} tabIndex={-1} testID="tasks-list" style={styles.listSurface} pointerEvents={listVisible ? "auto" : "none"} aria-hidden={!listVisible} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
-              <TabToolbar testID="tasks-tab-toolbar" actions={compact ? <AppButton label="操作" accessibilityLabel="待辦操作" variant="quiet" density="compact" expanded={actionMenuOpen} disabled={occupied} onPress={() => setActionMenu({ scope: scopeKey, open: !actionMenuOpen })} /> : pageActions}><UnderlineTabs id={tabsId} label="事項分類" items={[{ key: "pending", label: "待處理", count: readUnavailable ? undefined : `${openCount}${model.hasMoreTasks ? "+" : ""}` }, { key: "completed", label: "已完成" }]} value={tab} onChange={next => { if (occupied) return; actions.closePanel(); setTab(next); setFilter("near"); setQuery(""); setPage(0); setSelectedDay(null); anchor.current = null; }} /></TabToolbar>
-              {compact ? <MotionDisclosure expanded={actionMenuOpen} scopeKey={scopeKey}><View testID="tasks-page-actions" style={styles.headerActions}>{pageActions}</View></MotionDisclosure> : null}
+              <View testID="tasks-tab-toolbar"><WorkspaceSwitch id={tabsId} label="事項分類" items={[{ key: "pending", label: "待處理", description: "近期安排、預約與待回報事項", count: readUnavailable ? undefined : `${openCount}${model.hasMoreTasks ? "+" : ""}` }, { key: "completed", label: "已完成", description: "回看最近完成的安排" }]} value={tab} onChange={next => { if (occupied) return; actions.closePanel(); setTab(next); setFilter("near"); setQuery(""); setPage(0); setSelectedDay(null); anchor.current = null; }} /></View>
               {!readUnavailable && reviewCount > 0 ? <Pressable testID="tasks-review-shortcut" accessibilityRole="button" accessibilityLabel={`查看已載入的 ${reviewCount} 項待覆核安排，已停止催辦`} disabled={occupied} accessibilityState={{ disabled: occupied }} aria-disabled={occupied} onPress={() => { if (occupied) return; setTab("pending"); setQuery(""); changeFilter(tab === "pending" && filter === "review" ? "near" : "review"); }} style={({ pressed }) => [styles.reviewShortcut, pressed && !occupied && styles.reviewPressed]}><View style={styles.reviewCopy}><Text style={styles.reviewTitle}>{reviewCount} 項待覆核{model.hasMoreTasks ? "（已載入）" : ""}</Text><Text style={styles.reviewNote}>{filter === "review" && tab === "pending" ? "返回近期安排" : "完成或取消仍未確定 · 已停催"}</Text></View><AppIcon name={filter === "review" && tab === "pending" ? "chevron-left" : "chevron-right"} size={18} color={colors.warningInk} /></Pressable> : null}
               {tab === "completed" && !readUnavailable && completed.length > 0 ? <Text style={styles.meta}>{model.hasMoreTasks ? "目前只按已載入資料顯示最近 10 項，載入更多後會重新排序。" : "只顯示最近 10 項；較早及已取消的安排可到事項歷史查看。"}</Text> : null}
               <AppTabPanel tabsId={tabsId} tabKey={tab} active>
@@ -208,13 +210,13 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
 const styles = StyleSheet.create({
   transparent: { backgroundColor: "transparent" },
   pageContainer: { flex: 1, minWidth: 0, minHeight: 0 }, pageScroll: { flex: 1, backgroundColor: colors.canvas },
-  page: { width: "100%", maxWidth: 1260, alignSelf: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xl, gap: spacing.lg },
+  page: { width: "100%", maxWidth: 1320, alignSelf: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xl, gap: spacing.lg },
   mobilePage: { paddingHorizontal: mobileLayout.pageInset, paddingVertical: mobileLayout.pageInset },
   headerActions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" },
   hidden: { display: "none" }, stack: { gap: spacing.lg, minWidth: 0 },
   workspace: { gap: spacing.lg, minWidth: 0 }, workspaceWide: { flexDirection: "row", alignItems: "flex-start" },
   column: { minWidth: 0, width: "100%" }, listColumn: { flex: 1.05, width: undefined }, detailColumn: { flex: 1, width: undefined },
-  listSurface: { gap: spacing.md, minWidth: 0 },
+  listSurface: { gap: spacing.lg, minWidth: 0, backgroundColor: colors.white, padding: spacing.lg, borderWidth: 1, borderColor: colors.line, borderRadius: 12 },
   emptyCard: { minHeight: 176, padding: spacing.xl, justifyContent: "center" },
   scheduleList: { minWidth: 0, gap: spacing.sm }, mobileCalendar: { marginBottom: spacing.md },
   backlogToolbar: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, minWidth: 0 },

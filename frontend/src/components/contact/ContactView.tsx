@@ -20,7 +20,8 @@ import {contactStyles as s} from './contact-styles';
 
 export function ContactView({model, actions, onSettings, onTask, previewTools}: {model: ContactViewModel; actions: ContactActions; onSettings: () => void; onTask: (id: string) => void; previewTools?: React.ReactNode; production?: boolean}) {
   const containerLayout = useContainerWidth();
-  const wide = containerLayout.width >= 800;
+  const wide = containerLayout.width >= 1000;
+  const splitTasks = containerLayout.width >= 1240;
   const [selection, setSelection] = useState<{epoch: number; id: string} | null>(null);
   const taskPanel = useRef<View>(null);
   const taskRows = useRef(new Map<string, View>());
@@ -65,12 +66,12 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
           <View style={s.checkpoint}><Text style={s.step}>02 · 本人渠道</Text><AppStatusBadge label={page.availableBindings.length ? `${page.availableBindings.length} 個可選綁定` : '尚無可選綁定'} tone={page.availableBindings.length ? 'info' : 'neutral'} /><Text style={s.meta}>{page.availableBindings.map(binding => contactChannelLabels[binding.channel]).join(' · ') || '到設定管理綁定；不會自動取得權限'}</Text></View>
           <View style={s.checkpoint}><Text style={s.step}>03 · 背景執行</Text><AppStatusBadge label={page.workerEnabled ? '開關已啟用' : '目前未啟用'} tone={page.workerEnabled ? 'info' : 'neutral'} /><Text style={s.meta}>{page.workerEnabled ? '不代表服務在線、已投遞或已讀' : '保存授權不會啟動投遞'}</Text></View>
         </View>
-        <ContactConsentCard key={`${model.scopeKey}:${model.userId}`} model={model} actions={actions} onSettings={onSettings} />
+        <View style={[s.authorizationWorkspace, !wide && s.authorizationStack]}><View style={s.authorizationMain}>
         <View style={s.section}><SectionHeader density="compact" title="任務聯絡授權" subtitle="選一項安排，核對主要接收者及授權期限。" />
           <Text style={s.meta}>{page.tasksHaveMore ? '僅顯示最多 50 個任務內已載入的清單，並非全部任務。' : '顯示本次已載入的任務。'}主要接收者依任務負責人，後備須本人另行同意。</Text>
           {!tasks.length && model.load === "ready" && model.online && model.access !== "lost" ? <EmptyListCard title="已載入資料中暫無任務" detail={page.tasksHaveMore ? "任務清單未完整載入；不能據此判斷所有授權已失效。" : "不能據此判斷已有授權全部失效。"} /> : null}
-          <View style={wide && selectedId ? s.columns : s.stack}>
-            <View style={wide && selectedId ? s.taskIndex : s.full} testID="contact-task-index">{tasks.map(task => {
+          <View style={splitTasks && selectedId ? s.columns : s.stack}>
+            <View style={splitTasks && selectedId ? s.taskIndex : s.full} testID="contact-task-index">{tasks.map(task => {
               const grant = page.grants.find(item => item.taskId === task.id);
               const primary = page.recipients.find(item => item.userId === task.assigneeUserId);
               return <Pressable key={task.id} ref={node => { if (node) taskRows.current.set(task.id, node); else taskRows.current.delete(task.id); }} accessibilityRole="button" accessibilityLabel={`核對${task.title}的聯絡授權`} aria-current={selectedId === task.id ? 'true' : undefined} accessibilityState={{disabled: model.busy || !!model.pending, selected: selectedId === task.id}} aria-disabled={model.busy || !!model.pending} disabled={model.busy || !!model.pending} onPress={() => setSelection({epoch: model.epoch, id: task.id})} style={({pressed}) => [s.taskRow, selectedId === task.id && s.selectedTask, pressed && !(model.busy || model.pending) && (selectedId === task.id ? s.selectedPressed : s.pressed)]}>
@@ -78,13 +79,14 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
                   <AppStatusBadge {...contactGrantStatus(grant, task.version)} /></View><AppIcon name="chevron-right" size={18} />
               </Pressable>;
             })}</View>
-            <View ref={taskPanel} tabIndex={-1} testID="contact-task-detail" style={[wide && selectedId ? s.taskDetail : s.full, !selectedId && s.hidden]}>
+            <View ref={taskPanel} tabIndex={-1} testID="contact-task-detail" style={[splitTasks && selectedId ? s.taskDetail : s.full, !selectedId && s.hidden]}>
               {selectedId ? <AppButton expanded label="收起任務授權詳情" density="compact" variant="quiet" onPress={() => setSelection(null)} disabled={model.busy || !!model.pending} /> : null}
               {tasks.map(task => <View key={`${model.scopeKey}:${task.id}`} style={selectedId !== task.id ? s.hidden : undefined} pointerEvents={selectedId === task.id ? 'auto' : 'none'} aria-hidden={selectedId !== task.id} accessibilityElementsHidden={selectedId !== task.id} importantForAccessibility={selectedId === task.id ? 'auto' : 'no-hide-descendants'}><ContactTaskCard task={task} missing={!page.tasks.some(item => item.id === task.id)} model={model} actions={actions} onTask={onTask} /></View>)}
             </View>
           </View>
         </View>
-        <ContactHistory model={model} actions={actions} onTask={onTask} />
+        </View><View style={[s.consentAside, !wide && s.consentAsideFull]}><Text accessibilityRole="header" style={s.title}>我的接收設定</Text><Text style={s.meta}>一般提示與後備接收的本人同意，和每項任務授權分開管理。</Text><ContactConsentCard key={`${model.scopeKey}:${model.userId}`} model={model} actions={actions} onSettings={onSettings} /></View></View>
+        <View style={s.historyWorkspace}><Text accessibilityRole="header" style={s.title}>聯絡紀錄</Text><ContactHistory model={model} actions={actions} onTask={onTask} /></View>
       </> : null}{previewTools}
     </View>
   </PageFrame>;

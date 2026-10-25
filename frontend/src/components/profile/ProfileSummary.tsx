@@ -59,12 +59,12 @@ export function ProfileReadingSummary({ data, compact }: { data: ProfileDataView
       { label: "過敏資料", value: data.allergies }, { label: "特別需要", value: data.specialNeeds }, { label: "照顧偏好", value: data.preferences },
     ] },
   ];
-  return <View testID="profile-reading-groups" style={[styles.groups, compact && styles.groupsStacked]}>{groups.map(group => {
+  return <View testID="profile-reading-groups" style={[styles.groups, compact && styles.groupsStacked]}>{[groups[1], groups[0]].map(group => {
     const known = group.rows.filter(row => row.value !== null), unknown = group.rows.filter(row => row.value === null);
     return <SectionCard key={group.title} style={[styles.group, compact && styles.groupFull]}>
       <SectionHeader density="compact" title={group.title} />
       {known.map(row => <View key={row.label} style={styles.readingFact}><Text style={styles.readingLabel}>{row.label}</Text><Text style={styles.body}>{row.value}</Text></View>)}
-      {unknown.length ? <Text style={[styles.meta, known.length > 0 && styles.unknownDivider]}>未知：{unknown.map(row => row.label).join("、")}</Text> : null}
+      {unknown.length ? <View style={styles.unknownDivider}><Text style={styles.readingLabel}>仍待補充</Text>{unknown.map(row => <Text key={row.label} style={styles.meta}>{row.label} · 未知</Text>)}</View> : null}
     </SectionCard>;
   })}</View>;
 }

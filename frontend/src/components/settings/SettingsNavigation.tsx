@@ -1,12 +1,12 @@
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
-import { useRef } from "react";
+import { Fragment, useRef } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { UnderlineTabs } from "../ui";
 import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
 
 export function SettingsNavigation<T extends string>({ id, items, value, onChange, compact }: {
-  id: string; items: { key: T; label: string }[]; value: T; onChange: (value: T) => void; compact: boolean;
+  id: string; items: { key: T; label: string; group?: string }[]; value: T; onChange: (value: T) => void; compact: boolean;
 }) {
   const controls = useRef(new Map<T, View>());
   if (compact) return <View style={styles.compact}><UnderlineTabs id={id} label="設定分類" items={items} value={value} onChange={onChange} /></View>;
@@ -20,21 +20,21 @@ export function SettingsNavigation<T extends string>({ id, items, value, onChang
   return <BackgroundSurface frosted activeStyle={{ paddingVertical: spacing.md }} style={styles.navigation}>
     <Text style={styles.eyebrow}>設定分類</Text>
     <View accessibilityRole="tablist" accessibilityLabel="設定分類" aria-orientation="vertical" style={styles.items}>
-      {items.map((item, index) => <Pressable key={item.key} nativeID={`${id}-tab-${encodeURIComponent(item.key)}`}
+      {items.map((item, index) => <Fragment key={item.key}>{item.group ? <Text style={styles.groupLabel}>{item.group}</Text> : null}<Pressable nativeID={`${id}-tab-${encodeURIComponent(item.key)}`}
         ref={node => { if (node) controls.current.set(item.key, node); else controls.current.delete(item.key); }}
         accessibilityRole="tab" accessibilityLabel={item.label} accessibilityState={{ selected: value === item.key }} aria-selected={value === item.key}
         aria-controls={`${id}-panel-${encodeURIComponent(item.key)}`} tabIndex={value === item.key ? 0 : -1} onPress={() => onChange(item.key)}
         {...(Platform.OS === "web" ? { onKeyDown: (event: { key?: string; nativeEvent?: { key?: string }; preventDefault(): void }) => move(event, index) } : {})}
         style={({ pressed }) => [styles.item, value === item.key && styles.selected, pressed && (value === item.key ? styles.selectedPressed : styles.pressed)]}>
         <Text style={[styles.label, value === item.key && styles.selectedLabel]}>{item.label}</Text>
-      </Pressable>)}
+      </Pressable></Fragment>)}
     </View>
-    <Text style={styles.note}>孩子與家庭的共享權限，仍以目前身份核定</Text>
   </BackgroundSurface>;
 }
 
 const styles = StyleSheet.create({
-  navigation: { width: 176, flexShrink: 0, gap: spacing.md }, compact: { width: "100%", minWidth: 0 },
+  groupLabel: { fontFamily: chineseFont, fontSize: 12, lineHeight: 18, fontWeight: "700", color: colors.deepTeal, paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.sm },
+  navigation: { width: 196, flexShrink: 0, gap: spacing.md, padding: 12, backgroundColor: colors.white, borderRadius: 12, borderWidth: 1, borderColor: colors.line }, compact: { width: "100%", minWidth: 0 },
   eyebrow: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, paddingHorizontal: spacing.md },
   items: { gap: spacing.xs }, item: { minHeight: 48, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.small, borderLeftWidth: 2, borderLeftColor: "transparent" },
   selected: { backgroundColor: colors.paleTeal, borderLeftColor: colors.ink }, label: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },

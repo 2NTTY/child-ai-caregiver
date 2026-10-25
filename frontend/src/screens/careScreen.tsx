@@ -10,7 +10,7 @@ import { PageFrame } from "../components/PageFrame";
 import { CareRecordsView } from "../components/care/CareRecordsView";
 import { AppDialog } from "../components/AppDialog";
 import { AppScrollView } from "../components/AppScrollView";
-import { agentTime, proposalExpired, type AgentProposalView } from "../agent-view-model";
+import { proposalExpired, type AgentProposalView } from "../agent-view-model";
 import type { AgentPendingDiscovery } from "../production/ProductAgentOwner";
 import { AppIcon } from "../components/AppIcon";
 import { AppStatusBadge } from "../components/AppStatusBadge";
@@ -50,7 +50,7 @@ function PendingCard({ runId, proposal, disabled, quietRefresh, onPress, cardRef
     style={({ pressed }) => [styles.proposalCard, hovered && !disabled && styles.cardHighlighted, focused && styles.cardFocused, pressed && !disabled && styles.cardHighlighted, disabled && !readFocus.preserveWebFocus && styles.cardDisabled]}>
     <View style={styles.cardLabels}><Text style={[styles.meta, styles.cardKind]}>{proposalContextLabel(proposal)}</Text><AppStatusBadge label={status} tone="warning" /></View>
     <Text numberOfLines={3} style={styles.cardContent}>{proposalPrimaryText(proposal)}</Text>
-    <View style={styles.cardMeta}><AppIcon name="clock-outline" size={14} /><Text style={[styles.meta, styles.cardTime]}>{Number.isFinite(Date.parse(proposal.createdAt)) ? `提出於 ${agentTime(proposal.createdAt)}` : "提出時間未知"} · {proposal.scope === "family" ? "家庭共享" : "本人"}</Text></View>
+    <View style={styles.cardMeta}><AppIcon name={proposal.scope === "family" ? "account-group-outline" : "lock-outline"} size={14} /><Text style={[styles.meta, styles.cardTime]}>{proposal.scope === "family" ? "家庭共享" : "本人"} · 開啟原提案核對</Text><AppIcon name="arrow-right" size={16} /></View>
   </Pressable>;
 }
 
@@ -170,8 +170,8 @@ const styles = StyleSheet.create({
   manualCreate: { minHeight: 48, minWidth: 64, paddingHorizontal: spacing.xs, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small },
   manualCreateLabel: { fontFamily: chineseFont, fontSize: 14, lineHeight: 20, fontWeight: "700", color: colors.ink }, manualCreateFocused: { borderColor: colors.ink },
   resultDialog: { maxWidth: 860 }, resultScroll: { paddingHorizontal: 0, flexShrink: 1 }, resultContent: { padding: spacing.lg, gap: spacing.md },
-  pendingList: { gap: spacing.md, minWidth: 0 }, cardGrid: { gap: spacing.md, minWidth: 0 },
-  proposalCard: { minWidth: 0, gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 0, backgroundColor: colors.controlSurface },
+  pendingList: { gap: spacing.md, minWidth: 0 }, cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, minWidth: 0 },
+  proposalCard: { flexGrow: 1, flexBasis: 300, minWidth: 0, gap: spacing.sm, padding: spacing.lg, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.white },
   cardLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }, cardKind: { flex: 1, minWidth: 0 },
   cardContent: { fontFamily: chineseFont, ...readingType.body, color: colors.ink, minWidth: 0 },
   cardMeta: { flexDirection: "row", gap: spacing.sm, alignItems: "center" }, cardTime: { flex: 1 }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, minWidth: 0, flexShrink: 1 },

@@ -19,16 +19,17 @@ export function TaskListRow({ task, time, assignee, warning, selected, disabled,
     accessibilityState={{ selected, disabled }} aria-current={selected ? "true" : undefined} aria-disabled={disabled}
     disabled={disabled} onPress={onPress} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
     style={({ pressed }) => [styles.row, history && styles.historyRow, review && styles.review, (selected || hovered || focused) && styles.highlight, focused && styles.focused, pressed && !disabled && (selected || hovered || focused ? styles.selectedPressed : styles.pressed)]}>
-    <View accessible={false} aria-hidden style={styles.leading}><AppIcon name={task.kind === "appointment" ? "calendar-clock-outline" : task.occurrence.state === "completed" ? "checkbox-marked" : "checkbox-blank-outline"} size={21} color={review ? colors.warningInk : colors.muted} /></View>
+    <View style={styles.timeBlock}><AppIcon name={task.kind === "appointment" ? "calendar-clock-outline" : task.occurrence.state === "completed" ? "checkbox-marked" : "clock-outline"} size={18} color={review ? colors.warningInk : colors.deepTeal} /><Text style={styles.time}>{time}</Text></View>
     <View style={styles.copy}><Text numberOfLines={history ? 2 : undefined} style={styles.title}>{task.title}</Text>{history && task.details ? <Text numberOfLines={3} style={styles.summary}>{task.details}</Text> : null}<View style={styles.metadata}>
-      <Text style={styles.time}>{time}</Text><Text style={styles.assignee}>{assignee}</Text>
+      <Text style={styles.assignee}>負責人 · {assignee}</Text>
       <AppStatusBadge label={status} tone={review ? "warning" : task.occurrence.state === "completed" ? "success" : task.occurrence.state === "cancelled" ? "neutral" : "info"} />
     </View>{warning ? <Text style={styles.warning}>{warning}</Text> : null}</View>
     <AppIcon name={selected ? "chevron-left" : "chevron-right"} size={18} color={colors.muted} />
   </Pressable>;
 }
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 3, borderLeftColor: "transparent", paddingHorizontal: spacing.sm, paddingVertical: spacing.lg, minHeight: 80, minWidth: 0 },
+  timeBlock: { width: 86, flexShrink: 0, gap: spacing.sm, alignItems: "flex-start" },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small, marginBottom: spacing.sm, backgroundColor: colors.white, borderLeftWidth: 3, borderLeftColor: "transparent", paddingHorizontal: spacing.md, paddingVertical: spacing.lg, minHeight: 80, minWidth: 0 },
   historyRow: { alignItems: "flex-start", paddingVertical: spacing.md, minHeight: 48 },
   summary: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
   leading: { alignSelf: "flex-start", paddingTop: 2 }, copy: { flex: 1, minWidth: 0, gap: spacing.xs },

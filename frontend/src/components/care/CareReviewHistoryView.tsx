@@ -4,6 +4,7 @@ import { Text } from "react-native-paper";
 import { authorizedCareCaptureReview, careKindOptions, careReviewChronological, careReviewPrioritize, careReviewSourceGroups, careReviewSourceKey, careReviewMatchesQuery, careReviewIsImportantPending, careReviewDomainLabel, careReviewUsesCareOwner, careReviewMatchesTab, careReviewContentSummary, careCaptureReadiness, careImportantReviewReadiness, careReviewPageSize, careReviewPage, careReviewWindow, type CareReviewTab, type CareCaptureReview, type CareRecordsActions, type CareRecordsViewModel } from "../../care-view-model";
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
 import { AppButton, AppSelect, AppTabPanel, AppTextField, UnderlineTabs } from "../ui";
+import { WorkspaceSwitch } from "../workspace/WorkspaceSwitch";
 import { AppIcon } from "../AppIcon";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { OperationNotice } from "../OperationNotice";
@@ -140,8 +141,8 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
     </ReadStateNotice> : null}
     {(history || !pendingReview || tab !== "pending") && review.state === "ready" && review.notice ? <BackgroundSurface padded><Text accessibilityLiveRegion="polite" style={s.notice}>{review.notice}</Text></BackgroundSurface> : null}
     {history ? <BackgroundSurface padded style={s.heading}><Text accessibilityRole="header" style={s.title}>{olderOnly ? "較早的核對記錄" : "核對記錄"}</Text><Text style={s.meta}>寫入結果與核對狀態會保留；移到歷史不會清除待確認事項。</Text></BackgroundSurface>
-      : <BackgroundSurface padded style={[s.tabsBar, compactToolbar && s.compactTabsBar, compactToolbar && customBackground && s.edgeTabsBar]} testID="care-review-tabs-bar"><View style={s.tabs}><UnderlineTabs id={tabsId} label="記錄分類" items={[{ key: "pending", label: "待確認", count: pendingReview ? pendingReview.loadedCount : review.state === "ready" ? window.pendingCount : undefined }, { key: "recorded", label: "已保存" }]} value={tab} onChange={changeTab} /></View>
-        {manualCreateAction ? <View style={s.tabAction}>{manualCreateAction}</View> : null}</BackgroundSurface>}
+      : <BackgroundSurface padded style={[s.tabsBar, compactToolbar && s.compactTabsBar, compactToolbar && customBackground && s.edgeTabsBar]} testID="care-review-tabs-bar"><View style={s.tabs}><WorkspaceSwitch id={tabsId} label="記錄分類" items={[{ key: "pending", label: "待確認", description: "先對照原文，再決定是否保存", count: pendingReview ? pendingReview.loadedCount : review.state === "ready" ? window.pendingCount : undefined }, { key: "recorded", label: "已保存", description: "閱讀已確認內容，需要時更正" }]} value={tab} onChange={changeTab} /></View>
+        {manualCreateAction ? <View style={s.tabAction}><Text style={s.meta}>直接記下已知內容</Text>{manualCreateAction}</View> : null}</BackgroundSurface>}
     {!history && !pendingReview && tab === "recorded" && window.importantPendingCount > 0 ? <BackgroundSurface padded style={s.importantReminder}><AppIcon name="clock-outline" size={15} color={colors.warningInk} /><Text style={s.warning}>重要內容仍待確認</Text></BackgroundSurface> : null}
     <ReviewContent history={history} tabsId={tabsId} tab={tab}>
     <View style={[s.columns, !history && wide && showPanel && s.split]}>

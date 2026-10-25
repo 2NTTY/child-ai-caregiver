@@ -40,8 +40,8 @@ export function ReadStateNotice({ state, title, message = "", children, refreshi
 }
 const styles = StyleSheet.create({
   staticIndicator: { width: 16, height: 16, marginTop: 2, borderRadius: 8, borderWidth: 2, borderColor: colors.teal },
-  notice: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, paddingVertical: spacing.sm },
-  error: { borderLeftWidth: 2, borderLeftColor: colors.errorInk, paddingLeft: spacing.md },
+  notice: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.quietSurface, borderRadius: 8 },
+  error: { backgroundColor: colors.paleCoral, borderLeftWidth: 3, borderLeftColor: colors.errorInk, paddingLeft: spacing.md },
   copy: { flex: 1, minWidth: 0, gap: spacing.sm },
   title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },

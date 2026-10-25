@@ -1,14 +1,11 @@
+import { Workspace } from "./workspace/Workspace";
+import { HomeWorkspace } from "./workspace/HomeWorkspace";
 import { Platform, StyleSheet } from "react-native";
 import { AppScrollView as ScrollView } from "./AppScrollView";
 import { Text } from "react-native-paper";
 import type { HomeActions, HomeViewModel } from "../view-model";
-import { homeAgentScope } from "../home-agent-entry";
 import { chineseFont, colors, mobileLayout, mobileType } from "../theme";
 import { AppButton, SectionCard } from "./ui";
-import { HomeAgentImportant } from "./HomeAgentImportant";
-import { HomeOngoing } from "./HomeOngoing";
-import { HomeActionSummary } from "./HomeFocus";
-import { HomeWelcome } from "./HomeWelcome";
 import { BackgroundSurface } from "./appearance/BackgroundSurface";
 import { HomeGuideCallout } from "./HomeGuideCallout";
 
@@ -17,7 +14,8 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
 }) {
   const knownNoChildren = model.profileLoad === "ready" && model.children.length === 0;
   return <ScrollView testID="mobile-home-scroll" style={styles.scroll} contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
-    <HomeWelcome compact introductionPending={introductionPending} onIntroductionPresented={onIntroductionPresented} scopeKey={homeAgentScope(model) ?? model.caregiverName} />
+    <HomeWorkspace.Provider model={model} actions={actions} introductionPending={introductionPending} onIntroductionPresented={onIntroductionPresented}>
+    <Workspace.Root title="照顧工作台"><Workspace.Header><Workspace.Heading eyebrow="今天" /></Workspace.Header><Workspace.Body>
     <BackgroundSurface padded frosted testID="home-reading-panel" style={styles.content} role="region" accessibilityLabel="今日" tabIndex={-1}
       {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
       <HomeGuideCallout status={model.guideStatus} onOpenGuide={() => actions.open("guide")} onOpenSettings={() => actions.open("settings")} />
@@ -26,10 +24,12 @@ export function MobileHomeDashboard({ model, actions, introductionPending = fals
         <Text style={styles.body}>只填已知資料；未知及約數都可以如實保留。</Text>
         <AppButton label="查看子女檔案" onPress={() => actions.open("profile")} />
       </SectionCard> : null}
-      <HomeAgentImportant model={model} actions={actions} />
-      <HomeOngoing model={model} actions={actions} />
-      <HomeActionSummary model={model} actions={actions} />
+      <HomeWorkspace.Signals />
+      <HomeWorkspace.Start />
+      <HomeWorkspace.Ongoing />
+      <HomeWorkspace.Agenda />
     </BackgroundSurface>
+    </Workspace.Body></Workspace.Root></HomeWorkspace.Provider>
   </ScrollView>;
 }
 

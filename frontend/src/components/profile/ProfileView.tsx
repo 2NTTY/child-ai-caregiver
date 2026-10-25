@@ -96,9 +96,10 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
           {model.operation.state === "failed" && model.intent === "delete" ? <AppButton label="返回檔案草稿" variant="secondary" onPress={actions.cancelReview} /> : null}
         </View></ManualFormDialog> : null}
       </View>
+      <View style={[styles.profileColumns, width < 900 && styles.profileStack]}><View style={styles.profileMain}>
       {model.child ? <>
         {model.reading ? <Text style={styles.meta}>正在讀取檔案…</Text> : null}
-        <MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown?.data ? <ProfileReadingSummary data={shown.data} compact={width < 640} /> : !model.reading ? <SectionCard><Text style={styles.body}>{shown ? "沒有已確認檔案。" : "尚未取得可顯示的檔案。"}</Text></SectionCard> : null}</MotionReveal>
+        <MotionReveal value={model.current} contentKey={JSON.stringify(model.current)} scopeKey={scopeKey} regionKey="profile-current" triggerKey={revealTrigger} eligible={revealEligible} testID="profile-current-motion">{shown => shown?.data ? <ProfileReadingSummary data={shown.data} compact={width < 1200} /> : !model.reading ? <SectionCard><Text style={styles.body}>{shown ? "沒有已確認檔案。" : "尚未取得可顯示的檔案。"}</Text></SectionCard> : null}</MotionReveal>
         {model.access === "read_only" ? <Text style={styles.notice}>目前為唯讀，可查看檔案及歷史。</Text> : null}
         <View style={styles.readingActions}>
           <AppButton label="檔案詳情" accessibilityLabel="檔案詳情" variant="quiet" density="compact" expanded={detailsOpen} onPress={() => setDetailsOpen(value => !value)} />
@@ -110,23 +111,25 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
           </SectionCard>
         </MotionDisclosure>
       </> : <SectionCard><Text style={styles.body}>新增孩子後，可以在這裏核對檔案。</Text></SectionCard>}
-      <View style={styles.management}>{childPicker}</View>
+      </View><View style={[styles.management, width < 900 && styles.managementFull]}><Text accessibilityRole="header" style={styles.managementTitle}>孩子與頭像</Text><Text style={styles.meta}>管理孩子身份及個人化外觀。檔案更正則在上方編輯。</Text>{childPicker}</View></View>
       {previewControls}
     </View>
   </>);
 }
 const styles = StyleSheet.create({
-  identityRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.md, minWidth: 0 },
+  identityRow: { padding: spacing.xl, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.md, minWidth: 0 },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.md, flexGrow: 1, flexShrink: 1, minWidth: 0 },
   avatar: { width: 48, height: 48, flexShrink: 0, borderRadius: radius.medium, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
   avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "700" },
   identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs, alignItems: "flex-start" },
   childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 30, fontWeight: "700", flexShrink: 1 },
   editor: { gap: spacing.md },
-  reading: { width: "100%", maxWidth: 960, gap: spacing.lg, minWidth: 0 },
+  reading: { width: "100%", maxWidth: 1120, gap: spacing.lg, minWidth: 0 },
   readingActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.md, rowGap: spacing.sm, minWidth: 0 },
   details: { gap: spacing.lg },
-  management: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
+  profileColumns: { flexDirection: "row", gap: spacing.xl, minWidth: 0 }, profileStack: { flexDirection: "column" }, profileMain: { flex: 1, minWidth: 0, gap: spacing.lg },
+  management: { width: 270, minWidth: 0, padding: spacing.lg, gap: spacing.md, backgroundColor: colors.canvas, borderRadius: radius.medium, borderWidth: 1, borderColor: colors.line }, managementFull: { width: "100%" },
+  managementTitle: { fontFamily: chineseFont, fontSize: 18, lineHeight: 27, fontWeight: "700", color: colors.ink },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flexShrink: 1 },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   notice: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool },

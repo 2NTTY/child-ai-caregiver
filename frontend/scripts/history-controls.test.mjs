@@ -45,6 +45,7 @@ function harness(width = 1024, initialCategory = 'growth') {
     '../components/FormDialog': {FormDialog: 'FormDialog'},
     '../components/appearance/BackgroundSurface': { BackgroundSurface: 'View' },
     './appearance/BackgroundSurface': { BackgroundSurface: 'View', useCustomBackground: () => false },
+    '../components/workspace/WorkspaceSwitch': {WorkspaceSwitch: 'WorkspaceSwitch'},
     '../components/PageFrame': {PageFrame: 'PageFrame'},
     '../components/ui': {AppButton: 'AppButton', AppSelect: 'AppSelect', AppTabPanel: 'AppTabPanel', AppTextField: 'AppTextField', UnderlineTabs: 'UnderlineTabs'},
     '../components/tasks/TaskHistoryView': {TaskHistoryView: 'TaskHistoryView'},
@@ -88,13 +89,13 @@ function harness(width = 1024, initialCategory = 'growth') {
   };
 }
 
-test('all eight categories keep one category control without duplicate source headings or inline dates', () => {
+test('all eight categories keep one category control, an orientation heading and modal-only dates', () => {
   for (const width of [1440, 1024, 390, 320]) for (const category of historyFilters.historyCategories) {
     const tree = harness(width, category.key).render();
-    const picker = nodes(tree).find(node => node.type === (width < 680 ? 'AppSelect' : 'UnderlineTabs'));
+    const picker = nodes(tree).find(node => node.type === (width < 680 ? 'AppSelect' : 'WorkspaceSwitch'));
     assert.equal(picker.props.value, category.key);
     assert.equal((picker.props.options ?? picker.props.items).length, 8);
-    assert.equal(nodes(tree).some(node => node.props?.accessibilityRole === 'header' && node.props.children === category.label), false);
+    assert.equal(nodes(tree).some(node => node.props?.accessibilityRole === 'header' && node.props.children === category.label), true);
     assert.equal(nodes(tree).some(node => node.type === 'AppDateField'), false);
     assert.equal(nodes(tree).some(node => node.type === 'Text' && JSON.stringify(node.props.children).includes('來源：')), false);
     assert.equal(!!labelled(tree, '日期篩選'), !['review', 'care', 'profile'].includes(category.key));
@@ -204,11 +205,11 @@ test('unsupported categories do not claim hidden dates are applied or lose origi
   labelled(tree, '日期篩選').props.onPress(); tree = h.render(); labelled(tree, '結束日期（可不填）').props.onChange('2026-09-30'); tree = h.render();
   labelled(tree, '套用日期').props.onPress(); tree = h.render();
   for (const [category, view] of [['review', 'CareReviewHistoryView'], ['care', 'CareSavedRecordsView'], ['profile', 'ProfileHistoryView']]) {
-    nodes(tree).find(node => node.type === 'UnderlineTabs').props.onChange(category); tree = h.render();
+    nodes(tree).find(node => node.type === 'WorkspaceSwitch').props.onChange(category); tree = h.render();
     assert.ok(result(tree, view)); assert.equal(labelled(tree, '日期篩選'), undefined); assert.equal(labelled(tree, '日期已篩選'), undefined);
     assert.equal(appliedDates(tree), undefined); assert.equal(dateDialog(tree).props.visible, false);
   }
-  nodes(tree).find(node => node.type === 'UnderlineTabs').props.onChange('growth'); tree = h.render();
+  nodes(tree).find(node => node.type === 'WorkspaceSwitch').props.onChange('growth'); tree = h.render();
   assert.deepEqual(result(tree).props.dateRange, {from: null, to: '2026-09-30'});
 });
 
@@ -329,7 +330,7 @@ test('success is concise while unknown and failure messages remain explicit and 
     assert.ok(texts.includes(h.workspace.model.notice));
   }
   const screen = readFileSync(path.join(root, 'src/screens/historyScreen.tsx'), 'utf8');
-  assert.equal(nodes(harness().render()).some(node => node.props?.accessibilityRole === 'header' && node.props.children === '關注與成長'), false);
+  assert.equal(nodes(harness().render()).some(node => node.props?.accessibilityRole === 'header' && node.props.children === '關注與成長'), true);
   assert.ok(!screen.includes('日期按結束關注的時間篩選'));
 });
 
@@ -339,26 +340,27 @@ test('profile history category renders the same scoped reader on desktop and mob
     const h = harness(width, 'profile'), tree = h.render();
     assert.ok(nodes(tree).some(node => node.type === 'ProfileHistoryView'));
     assert.equal(nodes(tree).some(node => node.props?.testID === 'history-filter-toolbar'), false);
-    const picker = nodes(tree).find(node => node.type === (width < 680 ? 'AppSelect' : 'UnderlineTabs'));
+    const picker = nodes(tree).find(node => node.type === (width < 680 ? 'AppSelect' : 'WorkspaceSwitch'));
     assert.equal(picker.props.value, 'profile');
     assert.ok((picker.props.options ?? picker.props.items).some(item => (item.value ?? item.key) === 'profile' && item.label === '檔案修改'));
     assert.equal(h.events.includes('profile-history-read'), false);
-    assert.equal(labelled(tree, '查看檔案'), undefined);
+    assert.ok(labelled(tree, '查看檔案'));
     assert.deepEqual(h.events, []);
   }
 });
 
 
-test('all history categories omit redundant return shortcuts and empty toolbars while preserving the reader', () => {
-  const shortcuts = ['開啟待辦', '開啟準備單', '開啟核對', '查看檔案', '查看持續關注', '查看年度與季度檔案'];
+test('history gives exactly one relevant source shortcut and no empty filter surface', () => {
   for (const width of [1440, 1024, 390, 320]) for (const category of historyFilters.historyCategories) {
     const h = harness(width, category.key), tree = h.render();
-    for (const shortcut of shortcuts) assert.equal(labelled(tree, shortcut), undefined, `${category.key}: ${shortcut}`);
+    assert.equal(!!labelled(tree, category.sourceAction), category.key !== 'notifications');
     assert.equal(tree.props.title, '歷史');
-    const toolbar = tree.props.children.props.children[1];
-    if (['care', 'profile'].includes(category.key)) assert.equal(toolbar, null, 'Do not leave an empty surface or spacing row');
-    else assert.equal(toolbar.props.testID, 'history-filter-toolbar');
+    assert.equal(nodes(tree).some(node => node.props?.testID === 'history-filter-toolbar'), !['care', 'profile'].includes(category.key));
     assert.ok(nodes(tree).some(node => node.type === 'AppTabPanel' && node.props.tabKey === category.key));
     assert.deepEqual(h.events, []);
+    if (category.key !== 'notifications') {
+      labelled(tree, category.sourceAction).props.onPress();
+      assert.deepEqual(h.events, ['guard', ['push', category.sourcePath]]);
+    }
   }
 });

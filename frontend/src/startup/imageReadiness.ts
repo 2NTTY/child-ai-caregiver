@@ -6,7 +6,7 @@ export type ImageOutcomes = Partial<Record<FirstScreenImage, ImageOutcome>>;
 export const firstScreenImageFallbackMs = 15_000;
 
 export function requiredFirstScreenImages(pathname: string, width: number): readonly FirstScreenImage[] {
-  if (pathname === "/") return ["home-hero"];
+  // Care Workspace has no first-screen home artwork; data/auth readiness still gates it.
   if (pathname === "/login" && width >= 900) return ["login-hero"];
   return [];
 }

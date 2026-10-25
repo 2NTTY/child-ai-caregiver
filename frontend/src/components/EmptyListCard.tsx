@@ -19,8 +19,8 @@ export function EmptyListCard({ title, detail, icon, children, testID, style }: 
 }
 
 const styles = StyleSheet.create({
-  card: { minWidth: 0, alignSelf: "stretch", gap: spacing.sm, padding: spacing.lg,
-    backgroundColor: colors.neutralSurface, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.medium },
+  card: { minWidth: 0, alignSelf: "stretch", gap: spacing.sm, padding: spacing.xl,
+    backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderStyle: "dashed", borderRadius: radius.medium },
   heading: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
   title: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "600" },
   detail: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },

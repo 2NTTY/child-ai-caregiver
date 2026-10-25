@@ -34,7 +34,7 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
   const candidateTrigger = !model.busy && !candidateEligible ? null : resultTrigger;
   const textTrigger = !model.busy && !textEligible ? null : resultTrigger;
   return <>
-    <SectionCard surface="plain" style={s.workflowSection} testID="source-details"><SectionHeader density="compact" title={selected.sourceLabel} subtitle={`本人私人來源 · 版本 ${selected.version}`} icon="link-variant" />
+    <SectionCard surface="plain" style={s.workflowSection} testID="source-details"><SectionHeader density="compact" title={selected.sourceLabel} subtitle="本人私人來源" icon="link-variant" />
       <Text style={s.body}>來源日期原文：{selected.sourceDateText || "未提供"}</Text>
       {selected.sourceUrl ? <Text selectable style={s.body}>網址：{selected.sourceUrl}</Text> : <Text style={s.meta}>沒有來源網址。</Text>}
       {selected.sourceNotes ? <Text selectable style={s.body}>私人備註：{selected.sourceNotes}</Text> : null}
@@ -54,7 +54,7 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
         <MotionReveal value={selected.text} contentKey={selected.text} scopeKey={scopeKey} regionKey="source-original-text" triggerKey={textTrigger} eligible={textEligible} testID="source-original-motion">{shown => <ScrollView nestedScrollEnabled style={s.original} contentContainerStyle={s.originalContent}><Text selectable testID="source-full-text" style={s.reading}>{shown}</Text></ScrollView>}</MotionReveal>
       </MotionDisclosure>
       <View style={s.group}><AppButton expanded={showTechnical} label={showTechnical ? "收起來源技術資料" : "顯示來源技術資料"} variant="quiet" density="compact" onPress={() => setShowTechnical(value => !value)} />
-        <MotionDisclosure expanded={showTechnical} scopeKey={scopeKey} style={s.stack}><Text style={s.meta}>本站保存：{sourceTime(selected.createdAt)}</Text>
+        <MotionDisclosure expanded={showTechnical} scopeKey={scopeKey} style={s.stack}><Text style={s.meta}>資料版本：{selected.version}</Text><Text style={s.meta}>本站保存：{sourceTime(selected.createdAt)}</Text>
           <Text style={s.meta}>取得正文：{sourceTime(selected.retrievedAt)}</Text>
           <Text selectable style={s.meta}>正文 SHA-256：{selected.sha256 || "尚未有正文完整性資料"}</Text></MotionDisclosure>
       </View>

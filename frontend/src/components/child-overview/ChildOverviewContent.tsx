@@ -50,15 +50,17 @@ export function ChildOverviewContent({ avatar, companion, measurements, profileS
     {pending ? <View style={styles.notice}><AppStatusBadge label={model?.operation.state === "unknown" ? "檔案操作結果未知" : "檔案正在保存"} tone="warning" /><Text style={styles.noticeText}>畫面只顯示最後確認內容，請在原檔案查核同一操作。</Text><AppButton label="返回原檔案查核" variant="secondary" density="compact" onPress={onOpenProfile} /></View> : null}
     <View style={[styles.sections, wide && styles.sectionsWide]}>
       <View style={[styles.personal, wide && styles.interests]} testID="overview-personal">
-        <View style={styles.heading}><Text style={styles.meta}>日常相處的小線索</Text><Text accessibilityRole="header" style={styles.cardTitle}>和{model?.child?.name ?? "孩子"}相處</Text></View>
+        <View style={styles.heading}><Text style={styles.meta}>已確認的孩子檔案</Text><Text accessibilityRole="header" style={styles.cardTitle}>日常照顧要點</Text></View>
         {lastKnown && data ? <Text style={styles.meta}>最後確認的資料</Text> : null}
-        {data?.preferences ? <Text selectable numberOfLines={4} style={styles.preference}>{data.preferences}</Text>
-          : <Text style={styles.body}>{reading.state === "loading" ? "正在讀取生活偏好…" : inaccessible || reading.state === "source_invalidated" || reading.state === "source_unavailable" ? "生活偏好來源暫不可讀。" : "還未記下生活偏好。可在孩子檔案留下喜歡的事物與相處方式。"}</Text>}
         {data ? <View style={styles.careNote}><Text style={styles.factLabel}>照顧時留意</Text><Text style={styles.body}>{data.allergies ? `過敏資料：${data.allergies}` : "過敏資料尚未確認。"}</Text>{data.specialNeeds ? <Text style={styles.body}>{data.specialNeeds}</Text> : null}</View> : null}
+        <View style={styles.careNote}><Text style={styles.factLabel}>生活與相處偏好</Text>{data?.preferences ? <Text selectable style={styles.preference}>{data.preferences}</Text>
+          : <Text style={styles.body}>{reading.state === "loading" ? "正在讀取生活偏好…" : inaccessible || reading.state === "source_invalidated" || reading.state === "source_unavailable" ? "生活偏好來源暫不可讀。" : "尚未記下生活偏好，可到孩子檔案補充。"}</Text>}</View>
         <View style={styles.cardFooter}><Text style={styles.meta}>{data ? "來自孩子檔案，由家人確認。" : "生活偏好與照顧資料，以孩子檔案為準。"}</Text><AppButton label="查看照顧資料與來源" variant="quiet" density="compact" onPress={() => setDetails(true)} disabled={!model?.child || inaccessible} /></View>
       </View>
       {companion ? <View style={[styles.companion, wide && styles.careFacts]}>{companion}</View> : null}
     </View>
+    <View style={styles.measurements}><MeasurementCard label="身高" fact={projection?.height ?? null} state={projection?.state ?? "unavailable"} onOpen={onOpenMeasurement} />
+      <MeasurementCard label="體重" fact={projection?.weight ?? null} state={projection?.state ?? "unavailable"} onOpen={onOpenMeasurement} /></View>
     <AppDialog visible={details && !!model?.child && !inaccessible} onDismiss={() => setDetails(false)} accessibilityLabel="照顧資料與來源" style={styles.details}>
       <AppDialog.Title>照顧資料與來源</AppDialog.Title>
       <AppDialog.ScrollArea><AppScrollView contentContainerStyle={styles.detailsContent}>
@@ -72,8 +74,6 @@ export function ChildOverviewContent({ avatar, companion, measurements, profileS
         <Fact label="語言" value={profileValue(data?.language)} /><Fact label="地區" value={profileValue(data?.region)} />
         {data?.dueDate ? <Fact label="預產期" value={data.dueDate} /> : null}
         {data?.gestationalWeeksRaw ? <Fact label="出生孕週原文" value={data.gestationalWeeksRaw} /> : null}
-        <View style={styles.measurements}><MeasurementCard label="身高" fact={projection?.height ?? null} state={projection?.state ?? "unavailable"} onOpen={onOpenMeasurement} />
-          <MeasurementCard label="體重" fact={projection?.weight ?? null} state={projection?.state ?? "unavailable"} onOpen={onOpenMeasurement} /></View>
         {data ? <View style={styles.sourceText}><Text selectable style={styles.meta}>檔案來源：{data.source || "未提供"}</Text><Text style={styles.meta}>最後確認：{model?.current?.confirmedAtLabel ?? "未知"}{data.validUntil ? ` · 有效至 ${data.validUntil}` : ""}</Text></View> : null}
         <AppButton label="查看檔案更正歷史" variant="quiet" density="compact" onPress={onOpenProfileHistory} disabled={!model?.online || model.reading || pending} />
       </AppScrollView></AppDialog.ScrollArea>
@@ -102,7 +102,7 @@ function MeasurementCard({ label, fact, state, onOpen }: { label: string; fact: 
 
 const styles = StyleSheet.create({
   content: { gap: spacing.lg, minWidth: 0 },
-  identity: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md },
+  identity: { padding: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.line, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md },
   identityText: { flex: 1, minWidth: 150, gap: spacing.sm },
   avatar: { width: 64, height: 64, borderRadius: radius.pill, backgroundColor: colors.paleTeal, borderWidth: 1, borderColor: colors.sage, alignItems: "center", justifyContent: "center" },
   avatarText: { fontFamily: chineseFont, fontSize: typeScale.heading, lineHeight: 36, fontWeight: "700", color: colors.ink },
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   measurementEmpty: { borderWidth: 0, backgroundColor: "transparent", paddingHorizontal: 0, paddingVertical: spacing.sm },
   measurementValue: { fontFamily: chineseFont, fontSize: typeScale.title, lineHeight: 32, fontWeight: "700", color: colors.ink },
   sections: { gap: spacing.xl }, sectionsWide: { flexDirection: "row", alignItems: "stretch" },
-  personal: { minWidth: 0, gap: spacing.lg, padding: spacing.xl, borderRadius: radius.large, backgroundColor: colors.paleTeal },
+  personal: { minWidth: 0, gap: spacing.lg, padding: spacing.xl, borderRadius: radius.large, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line },
   companion: { minWidth: 0 }, heading: { gap: spacing.xs },
   cardTitle: { fontFamily: chineseFont, fontSize: typeScale.title, lineHeight: 28, fontWeight: "700", color: colors.ink },
   cardFooter: { marginTop: "auto", gap: spacing.sm, alignItems: "flex-start", borderTopWidth: 1, borderTopColor: colors.sage, paddingTop: spacing.md },

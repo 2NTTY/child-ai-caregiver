@@ -61,6 +61,7 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
     if (name === '../AppStatusBadge') return { AppStatusBadge: ({ label }) => React.createElement('span', null, label) };
     if (name === '../ReadStateNotice') return { ReadStateNotice: ({ title, message }) => React.createElement('aside', null, title, message) };
     if (name === '../EmptyListCard') return { EmptyListCard: ({ title, detail }) => React.createElement('aside', { 'data-empty': 'true' }, title, detail) };
+    if (name === '../workspace/WorkspaceSwitch') return { WorkspaceSwitch: ui.UnderlineTabs };
     if (name === '../ui') return ui;
     if (name === '../useContainerWidth') return { useContainerWidth: () => ({ width, ref: null, onLayout() {} }) };
     assert.fail(`Unexpected view dependency ${name}`);
@@ -68,13 +69,13 @@ function renderView(workspace, { tab = 'long', expanded = false, onPrepareQuesti
   return { html: renderToStaticMarkup(React.createElement(api.MemoryReferenceView, { onPrepareQuestion, tabActions })), buttons, panels, tabLists, toolbars };
 }
 
-test('only narrow Memory toolbars stack actions after the full-width tabs without changing their semantics', () => {
+test('memory task choices precede the independent management row at every width', () => {
   const value = freeze(snapshot()), action = React.createElement('button', null, '管理記憶');
   for (const width of [320, 390, 480, 1024]) {
     const { html, panels, tabLists, toolbars } = renderView(value, { width, tabActions: action });
-    assert.equal(toolbars.length, 1); assert.equal(toolbars[0].stacked, width < 480); assert.equal(toolbars[0].actions, action);
-    assert.ok(html.indexOf('短期脈絡') < html.indexOf('管理記憶'));
-    assert.deepEqual(tabLists[0].items.map(item => item.key), ['short', 'long', 'references']);
+    assert.equal(toolbars.length, 0); assert.match(html, /<button>管理記憶<\/button>/);
+    assert.ok(html.indexOf('接續目前工作') < html.indexOf('管理記憶'));
+    assert.deepEqual(tabLists[0].items.map(item => item.key), ['long', 'short', 'references']);
     assert.deepEqual(panels.filter(panel => panel.active).map(panel => panel.tabKey), ['long']);
     assert.ok(panels.every(panel => panel.tabsId === tabLists[0].id));
   }
@@ -88,11 +89,11 @@ test('memory tabs replace duplicate introductions but keep real content headings
   for (const tab of ['short', 'long', 'references']) {
     const { html, panels, tabLists } = renderView(freeze(value), { tab, tabActions: React.createElement('button', null, '重讀') });
     assert.doesNotMatch(html, /Test child的記憶與參考|查看已保存記憶及來源|Agent 已保存的工作、待答問題及相關訊息|已保存的事實、來源及對話摘要|查看目前可查閱的公共來源目錄|查看資料出處、日期及適用範圍/);
-    assert.equal((html.match(/長期記憶/g) ?? []).length, 1);
+    assert.equal((html.match(/孩子的已知資料/g) ?? []).length, 1);
     assert.equal((html.match(/參考資料/g) ?? []).length, 1);
     assert.match(html, /<button>重讀<\/button>/);
     assert.equal(tabLists.length, 1); assert.equal(tabLists[0].label, '記憶與參考分類');
-    assert.deepEqual(tabLists[0].items.map(item => item.key), ['short', 'long', 'references']);
+    assert.deepEqual(tabLists[0].items.map(item => item.key), ['long', 'short', 'references']);
     assert.deepEqual(panels.filter(panel => panel.active).map(panel => panel.tabKey), [tab]);
     assert.ok(panels.every(panel => panel.tabsId === tabLists[0].id));
     if (tab === 'long') {
@@ -159,7 +160,7 @@ test('public knowledge is fail-closed for internal or missing use scope and neve
 test('all long-term disclosures remain read-only and clarification only hands an unsent question to the existing draft route', () => {
   const value = freeze(snapshot()), before = JSON.stringify(value), questions = [];
   const { html, buttons } = renderView(value, { expanded: true, onPrepareQuestion: question => questions.push(question) });
-  assert.match(html, /長期記憶/); assert.match(html, /睡前觀察/); assert.match(html, /對話摘要/);
+  assert.match(html, /孩子的已知資料/); assert.match(html, /睡前觀察/); assert.match(html, /對話摘要/);
   assert.match(html, /確認者/); assert.match(html, /確認時間/); assert.match(html, /版本 1/);
   assert.doesNotMatch(html, /對話話題|核對及管理/);
   assert.doesNotMatch(html, /<button>(新增候選|更正內容|核對及確認|刪除話題|停用|刪除)<\/button>/);

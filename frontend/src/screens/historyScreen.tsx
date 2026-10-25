@@ -5,6 +5,7 @@ import { StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { AppDateField } from "../components/DateTimeFields";
 import { FormDialog } from "../components/FormDialog";
+import { WorkspaceSwitch } from "../components/workspace/WorkspaceSwitch";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppSelect, AppTabPanel, AppTextField, UnderlineTabs } from "../components/ui";
 import { useContainerWidth } from "../components/useContainerWidth";
@@ -109,7 +110,9 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
     onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
       {compact ? <AppSelect<HistoryCategory> label="歷史分類" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))} onChange={category} />
-        : <UnderlineTabs<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
+        : <WorkspaceSwitch<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
+      <View style={styles.resultHeading}><View style={styles.resultCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text><Text style={styles.body}>{current.description}</Text></View>
+        {!notificationCategory ? <AppButton label={current.sourceAction} variant="secondary" onPress={() => navigate(() => router.push(current.sourcePath), "workspace")} /> : null}</View>
       {showSearch ? <BackgroundSurface padded testID="history-filter-toolbar" style={styles.toolbar}>
         <View style={styles.controlRow}>
           {showSearch ? <View style={styles.searchField}><AppTextField label={`搜尋${current.label}`} accessibilityLabel={`搜尋${current.label}`} value={filters.searchText} maxLength={200} disabled={filterDisabled} onChangeText={value => filter({ type: "search", value })} /></View> : null}
@@ -157,8 +160,10 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
+  resultHeading: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md, paddingTop: spacing.lg, borderTopWidth: 1, borderTopColor: colors.line },
+  resultCopy: { flex: 1, flexBasis: 220, minWidth: 0, gap: spacing.xs },
   workspace: { gap: spacing.lg, minWidth: 0 },
-  toolbar: { gap: spacing.sm },
+  toolbar: { gap: spacing.sm, padding: spacing.lg, backgroundColor: colors.white, borderRadius: 12, borderWidth: 1, borderColor: colors.line },
   controlRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },
   searchField: { flexGrow: 1, flexShrink: 1, flexBasis: 240, minWidth: 0, maxWidth: "100%" },
   toolbarActions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, maxWidth: "100%" },

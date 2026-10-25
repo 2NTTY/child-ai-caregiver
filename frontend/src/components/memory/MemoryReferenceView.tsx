@@ -1,3 +1,4 @@
+import { WorkspaceSwitch } from "../workspace/WorkspaceSwitch";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { EmptyListCard } from "../EmptyListCard";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -21,8 +22,8 @@ import { AppButton, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
 
 type Tab = "short" | "long" | "references";
-const tabs: { key: Tab; label: string }[] = [
-  { key: "short", label: "短期脈絡" }, { key: "long", label: "長期記憶" }, { key: "references", label: "參考資料" },
+const tabs: { key: Tab; label: string; description: string }[] = [
+  { key: "long", label: "孩子的已知資料", description: "已確認事實、來源與更正版本" }, { key: "short", label: "接續目前工作", description: "回看原對話與未完的事情" }, { key: "references", label: "參考資料庫", description: "官方指引與近期資訊" },
 ];
 function ReadNotice({ read, unavailable, empty, emptyTitle = "暫無可顯示的資料", online = true, children }: {
   read: MemoryReadProjection<unknown>; unavailable: string; empty?: boolean; emptyTitle?: string; online?: boolean; children?: ReactNode;
@@ -197,11 +198,12 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
     onPrepareQuestion(memoryClarificationQuestion(model.childName, fact));
   } : undefined;
   function renderFact(fact: Readonly<MemoryFactView>) {
-    return <View key={`${fact.id}:${fact.version}`} style={[styles.factSlot, container.width < 760 && styles.fullWidth]}>
+    return <View key={`${fact.id}:${fact.version}`} style={[styles.factSlot, container.width < 1200 && styles.fullWidth]}>
       <FactCard fact={fact} model={model} workspace={workspace} confirmerDisplay={confirmerDisplay} onQuestion={onQuestion} /></View>;
   }
   return <View ref={container.ref} onLayout={container.onLayout} style={styles.root}>
-    <TabToolbar actions={tabActions} stacked={container.width < 480}><UnderlineTabs id={tabsId} label="記憶與參考分類" items={tabs} value={tab} onChange={setTab} /></TabToolbar>
+    <WorkspaceSwitch<Tab> id={tabsId} label="記憶與參考分類" items={tabs} value={tab} onChange={setTab} />
+    {tabActions ? <View style={styles.managementBar}><Text style={styles.meta}>目前孩子：{model.childName}</Text><View style={styles.actions}>{tabActions}</View></View> : null}
     <AppTabPanel tabsId={tabsId} tabKey="short" active={tab === "short"}><View style={styles.section}>
       <ReadNotice read={model.shortTerm} unavailable="目前工作脈絡暫未提供" online={model.online} emptyTitle="目前暫無可顯示的工作脈絡" empty={model.shortTerm.data?.works ? model.shortTerm.data.works.length === 0 && model.shortTerm.data.messages.length === 0 : model.shortTerm.data?.messages.length === 0}>
         {model.shortTerm.data?.works ? <PersistentWorkCards items={model.shortTerm.data.works} online={model.online} busy={workspace.reads?.messageBusy}
@@ -226,14 +228,15 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="long" active={tab === "long"}><View style={styles.section}>
       <ReadNotice read={model.longTerm} unavailable="記憶資料暫未提供">
+        <View style={[styles.knowledgeLayout, container.width < 960 && styles.knowledgeStack]}><View style={styles.knowledgeMain}>
         <View style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" style={styles.sectionTitle}>已確認事實</Text></BackgroundSurface>
           {confirmed.length ? <View style={styles.factGrid}>{confirmed.map(renderFact)}</View> : model.longTerm.state === "ready" && model.online ? <EmptyListCard title="已載入資料中沒有已確認事實" detail={model.longTerm.data.hasMoreFacts ? "仍有記憶未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>已確認事實尚未重新核對</Text></BackgroundSurface>}
         </View>
         {model.longTerm.data?.hasMoreFacts ? workspace.reads?.loadMoreFacts ? <AppButton label="載入更多記憶" variant="quiet" disabled={!model.online} onPress={workspace.reads.loadMoreFacts} />
           : <BackgroundSurface padded><Text style={styles.meta}>仍有記憶未載入</Text></BackgroundSurface> : null}
-        <SummaryCard key={`${model.longTerm.data?.summary?.id}:${model.longTerm.data?.summary?.version}`} summary={model.longTerm.data?.summary ?? null} emptyReady={model.longTerm.state === "ready" && model.online} />
         {other.length ? <View style={styles.section}><AppButton label={otherOpen ? "收起待核對與停用資料" : `待核對與停用資料（已載入 ${other.length} 項）`} expanded={otherOpen} variant="quiet" onPress={() => setOtherOpen(value => !value)} />
           {otherOpen ? <View style={styles.factGrid}>{other.map(renderFact)}</View> : null}</View> : null}
+        </View><View style={[styles.knowledgeAside, container.width < 960 && styles.knowledgeAsideFull]}><Text accessibilityRole="header" style={styles.sectionTitle}>對話中的整理</Text><Text style={styles.meta}>摘要不是已確認事實；需要時回到原訊息核對。</Text><SummaryCard key={`${model.longTerm.data?.summary?.id}:${model.longTerm.data?.summary?.version}`} summary={model.longTerm.data?.summary ?? null} emptyReady={model.longTerm.state === "ready" && model.online} /></View></View>
       </ReadNotice>
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="references" active={tab === "references"}><ReferenceSection model={model} workspace={workspace} /></AppTabPanel>
@@ -246,19 +249,22 @@ export function MemoryReferenceView({ confirmerDisplay, onPrepareQuestion, tabAc
     : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。">{tabActions}</ReadStateNotice>;
 }
 const styles = StyleSheet.create({
+  managementBar: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.md },
+  knowledgeLayout: { flexDirection: "row", gap: spacing.xl, minWidth: 0 }, knowledgeStack: { flexDirection: "column" },
+  knowledgeMain: { flex: 1, gap: spacing.md, minWidth: 0 }, knowledgeAside: { width: 300, minWidth: 0, gap: spacing.md }, knowledgeAsideFull: { width: "100%" },
   root: { width: "100%", minWidth: 0, gap: spacing.lg },
   section: { gap: spacing.md, minWidth: 0 },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section },
   factGrid: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: spacing.md, minWidth: 0 },
   factSlot: { flexGrow: 1, flexBasis: "47%", minWidth: 0 }, fullWidth: { flexBasis: "100%" },
-  card: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radius.medium, padding: spacing.lg, gap: spacing.sm, minWidth: 0 },
+  card: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radius.medium, padding: spacing.xl, gap: spacing.md, minWidth: 0 },
   titleRow: { flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
   cardTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, flexShrink: 1 },
   factTopic: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flex: 1, minWidth: 0 },
   factContent: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "600", flexShrink: 1 },
   factContext: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
   metadataLine: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minWidth: 0, flexShrink: 1 },
-  sourceTrigger: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minHeight: 36, paddingHorizontal: spacing.xs, borderRadius: radius.small, minWidth: 0, flexShrink: 1 },
+  sourceTrigger: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minHeight: 44, paddingHorizontal: spacing.xs, borderRadius: radius.small, minWidth: 0, flexShrink: 1 },
   sourceLabel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, flexShrink: 1 },
   sourcePressed: { backgroundColor: colors.paleTeal },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, flexShrink: 1 },

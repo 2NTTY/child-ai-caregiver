@@ -66,8 +66,8 @@ export function ChatMessage({ message, children, header, footer, testID, embedde
 
 const styles = StyleSheet.create({
   row: { width: "100%", minWidth: 0, gap: 4 }, userRow: { alignItems: "flex-end" },
-  content: { minWidth: 0, gap: chatLayout.paragraphGap }, assistant: { width: "100%" },
-  user: { maxWidth: "82%", backgroundColor: chatColors.userBubble, borderRadius: 20, paddingVertical: 12, paddingHorizontal: 16 }, embedded: { padding: 0, borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
+  content: { minWidth: 0, gap: chatLayout.paragraphGap }, assistant: { width: "100%", borderLeftWidth: 3, borderLeftColor: colors.teal, paddingLeft: 18, paddingVertical: 4 },
+  user: { maxWidth: "82%", backgroundColor: chatColors.userBubble, borderRadius: 12, paddingVertical: 16, paddingHorizontal: 16 }, embedded: { padding: 0, borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
   body: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body, minWidth: 0, flexShrink: 1 },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, minWidth: 0, flexShrink: 1 }, userNote: { textAlign: "right" },
   statusRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },

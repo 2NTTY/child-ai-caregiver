@@ -13,6 +13,8 @@ import { FamilyReportControls } from "../production/FamilyReportControls";
 import { useProductionFamilyDocuments } from "../production/TaskKnowledgeDomains";
 import { useFileExportAvailable } from "../platform/file-export";
 import { useGrowthWorkspace } from "../workspaces/GrowthWorkspace";
+import { WorkspaceSwitch } from "../components/workspace/WorkspaceSwitch";
+import { Workspace } from "../components/workspace/Workspace";
 import { PageFrame } from "../components/PageFrame";
 import { AppButton, AppTabPanel, UnderlineTabs } from "../components/ui";
 import { useProduction } from "../production/ProductionProvider";
@@ -69,7 +71,7 @@ export function SummaryScreen() {
   if (tab === "preparation") return <Redirect href="/growth?tab=preparation" />;
   return <PageFrame density="compact" title="概況" scrollRef={scrollRef} scrollTestID="child-growth-scroll">
     <View key={scopeKey} ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
-      <UnderlineTabs<SummaryTab> id="child-growth-tabs" label="概況與成長檔案" items={[{ key: "overview", label: "概況" }, { key: "archive", label: "成長檔案" }]} value={tab === "legacy-preparation" ? "overview" : tab} onChange={changeTab} />
+      <WorkspaceSwitch<SummaryTab> id="child-growth-tabs" label="概況與成長檔案" items={[{ key: "overview", label: "目前照顧概況", description: "孩子的已知資料與最近安排" }, { key: "archive", label: "成長檔案與報告", description: "按期間整理記錄，保留可追溯來源" }]} value={tab === "legacy-preparation" ? "overview" : tab} onChange={changeTab} />
       {!child ? <View style={styles.empty}><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" variant="secondary" onPress={() => guarded(() => router.push("/profile"))} /></View> : <>
         <AppTabPanel tabsId="child-growth-tabs" tabKey="overview" active={tab === "overview"}>
           {tab === "overview" ? <><ChildOverviewContent onOpenProfile={() => guarded(() => router.push("/profile"))} onOpenProfileHistory={openProfileHistory}
@@ -77,7 +79,7 @@ export function SummaryScreen() {
             measurements={profile?.measurements} profileSource={profile?.profileSource}
             companion={<ChildOverviewConcerns model={growth?.model ?? null} scopeKey={scopeKey} childId={child.id} onOpen={() => guarded(() => router.push("/growth?tab=concerns"))} />}
             onOpenMeasurement={recordId => guarded(() => router.push({ pathname: "/care", params: { record: recordId } }))} />
-            <TaskKnowledgeSummaryContent presentation="overview" scopeKey={scopeKey} childId={child.id} onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} />
+            <Workspace.Section title="最近的照顧與安排"><TaskKnowledgeSummaryContent presentation="overview" scopeKey={scopeKey} childId={child.id} onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} /></Workspace.Section>
           </> : null}
         </AppTabPanel>
         <AppTabPanel tabsId="child-growth-tabs" tabKey="archive" active={tab === "archive"}>
@@ -86,7 +88,7 @@ export function SummaryScreen() {
               onRecord={id => guarded(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))}
               onExportReport={fileExportAvailable ? documents?.exportReport : undefined} exportBusy={documents?.exportBusy}
               footerActions={<AppButton label="前往原始記錄" variant="secondary" density="compact" onPress={() => guarded(() => router.push("/care"))} />} />
-            <FamilyReportControls scopeKey={growth.scopeKey} online={growth.model.online} onRefresh={growth.actions.refresh} />
+            <Workspace.Section title="報告管理" detail="查看產生狀態，或以已確認的資料重新整理。"><FamilyReportControls scopeKey={growth.scopeKey} online={growth.model.online} onRefresh={growth.actions.refresh} /></Workspace.Section>
           </> : <ReadStateNotice state="loading" scopeKey={scopeKey} message="正在讀取成長檔案…" /> : null}
         </AppTabPanel>
         {tab === "legacy-preparation" ? <TaskKnowledgeSummaryContent preparation onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))}

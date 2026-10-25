@@ -2,10 +2,11 @@ import { StyleSheet } from "react-native";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 
 export const photoStyles = StyleSheet.create({
-  hidden: {display: "none"}, library: {gap: spacing.md}, thumbnail: {width: 64, height: 64, backgroundColor: colors.canvas, borderRadius: radius.small},
+  hidden: {display: "none"}, library: {gap: spacing.lg, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, padding: spacing.lg}, thumbnail: {width: 64, height: 64, backgroundColor: colors.canvas, borderRadius: radius.small},
   stack: { gap: spacing.md }, row: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" },
   columns: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg }, single: { flexDirection: "column" },
-  list: { width: 280, minWidth: 0 }, full: { width: "100%", minWidth: 0 }, editor: { flex: 1, minWidth: 0, gap: spacing.lg },
+  management: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.lg, gap: spacing.sm },
+  list: { flex: 1, minWidth: 0 }, full: { width: "100%", minWidth: 0, flex: undefined }, editor: { flex: 1.4, minWidth: 0, gap: spacing.lg },
   context: { gap: spacing.sm, flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
   original: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },

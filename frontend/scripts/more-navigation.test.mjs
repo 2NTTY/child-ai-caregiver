@@ -37,7 +37,7 @@ function harness(width, pathname = '/more', platform = 'web') {
     records: () => load('../src/components/navigation/RecordsNavButton.tsx').RecordsNavButton({ active: true, scopeKey: 'parent:child' }) };
 }
 
-test('More keeps mobile lists and desktop links without a redundant return-to-records button', () => {
+test('More keeps all guarded link destinations at mobile and desktop sizes', () => {
   for (const platform of ['web', 'android']) for (const width of [320, 390, 768, 1024, 1440]) {
     const h = harness(width, '/more', platform), tree = h.more(), all = nodes(tree), desktop = platform === 'web' && width >= 900;
     assert.equal(tree.props.title, '全部功能');
@@ -45,9 +45,9 @@ test('More keeps mobile lists and desktop links without a redundant return-to-re
     assert.deepEqual(all.filter(node => node.props?.accessibilityRole === 'header').map(node => node.props.children), navigation.moreNavigationGroups.map(group => group.title));
     assert.equal(all.some(node => ['返回記錄', '返回核對'].includes(node.props?.label)), false);
     assert.ok(all.some(node => node.props?.testID === (desktop ? 'more-desktop-catalogue' : 'more-mobile-list')));
-    assert.equal(all.filter(node => node.type === 'AppMenuList').length, desktop ? 0 : navigation.moreNavigationGroups.length);
+    assert.equal(all.filter(node => node.type === 'AppMenuList').length, 0);
     const expectedLinks = navigation.moreNavigationGroups.flatMap(group => group.items).length;
-    assert.equal(all.filter(node => node.type === 'PreviewLink').length, desktop ? expectedLinks : 0);
+    assert.equal(all.filter(node => node.type === 'PreviewLink').length, expectedLinks);
     assert.deepEqual(h.events, []);
   }
 });
@@ -69,19 +69,10 @@ test('All features uses one destination name and includes every existing ordinar
   assert.deepEqual([...keys].sort(), Object.keys(navigation.navigationItems).filter(key => key !== 'more').sort());
   for (const width of [320, 390, 768, 1024, 1440]) {
     const h = harness(width), tree = h.more(), all = nodes(tree);
-    if (width >= 900) {
-      const links = all.filter(node => node.type === 'PreviewLink');
-      for (const [index, key] of keys.entries()) {
-        assert.deepEqual(links[index].props.href, key === 'photos' ? { pathname: '/care', params: { view: 'photos' } } : navigation.navigationItems[key].href);
-        assert.equal(links[index].props.children.props.accessibilityLabel, navigation.navigationItems[key].short);
-      }
-    } else {
-      const items = all.filter(node => node.type === 'AppMenuList').flatMap(node => node.props.items);
-      for (const [index, key] of keys.entries()) assert.equal(items[index].label, navigation.navigationItems[key].short);
-      items.find(item => item.key === 'photos').onPress(); assert.equal(h.events.at(-1), 'guard'); h.approve();
-      assert.deepEqual(h.events.at(-1), ['push', { pathname: '/care', params: { view: 'photos' } }]);
-      items.find(item => item.key === 'home').onPress(); h.approve(); assert.deepEqual(h.events.at(-1), ['push', '/']);
-      items.find(item => item.key === 'summary').onPress(); assert.deepEqual(h.events.at(-1), ['open', 'summary']);
+    const links = all.filter(node => node.type === 'PreviewLink');
+    for (const [index, key] of keys.entries()) {
+      assert.deepEqual(links[index].props.href, key === 'photos' ? { pathname: '/care', params: { view: 'photos' } } : navigation.navigationItems[key].href);
+      assert.equal(links[index].props.children.props.accessibilityLabel, navigation.navigationItems[key].label);
     }
     const recordButton = h.records();
     assert.ok(recordButton.props.label.includes('全部功能')); assert.ok(recordButton.props.hint.includes('全部功能'));
