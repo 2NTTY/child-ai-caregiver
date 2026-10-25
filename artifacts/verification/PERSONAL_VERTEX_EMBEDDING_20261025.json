@@ -115,7 +115,23 @@
       "bytes": 13730502,
       "state": "published",
       "newApk": false,
-      "exactUpdateOnDevice": "not_observed"
+      "exactUpdateOnDevice": "not_observed",
+      "manualFormObservation": {
+        "reportedOn": "2026-10-25",
+        "timezone": "Asia/Hong_Kong",
+        "state": "passed",
+        "method": "User reopened the installed app and checked the personal embedding service options.",
+        "userFeedback": "已有 Vertex AI 選項",
+        "scope": "Vertex AI option visible in the shared Android model-settings form only.",
+        "settingsSaved": false,
+        "keyEntered": false,
+        "modelCalls": 0,
+        "retainedEarlierObservation": "Earlier assistant inspection still displayed the previous Gemini-only form; publication alone did not prove device activation.",
+        "limits": [
+          "Exact device update ID was not extracted.",
+          "Saved personal settings through a complete Agent/RAG result remain unverified."
+        ]
+      }
     },
     "modelCalls": 0,
     "notifications": 0,
@@ -123,7 +139,7 @@
     "quotaChanged": false,
     "indexRebuilt": false,
     "pending": [
-      "New shared form on Android with saved personal Vertex embedding settings and full Agent/RAG result.",
+      "Saved personal Vertex embedding settings through a full Agent/RAG result; the Android option is now user-confirmed visible.",
       "Deferred collaborator Agent acceptance is unchanged."
     ]
   }

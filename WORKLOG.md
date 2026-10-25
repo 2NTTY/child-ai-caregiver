@@ -3861,3 +3861,10 @@
 - 10 個 Server／shared 檔共 15,124 bytes 的壓縮包經 IAP 傳至限定 0700 目錄；候選以原正式組裝核對 API／worker 及 v4 契約。無活動 run 才短暫維護並切至 `9d490d0`，健康通過；Web 65 檔壓縮 4,680,173 bytes 切至 `e813692`，公開 hash／health 通過。保留 0600 配置及前版映像，但新設定保存後只能回退有 v4 reader 的後端，不能盲退舊資料格式。
 - Android 31 檔／13,730,502 bytes 沿既有官方限定 host 單次上傳，HTTP 204／EXISTS；preview OTA group `33a2e0a3-2472-4d1f-9d2d-1da5e7c9a3b4`／update `01a1739b-bb0d-79b8-9457-38b658668111` 已發布，同 v4 runtime，毋須新 APK。沒有模型／通知／資料遷移／索引重建或配額改動。
 - [證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)追加本次實際交付；新表單真機保存與完整個人設定→Agent／引用仍未驗，四 Agent 流程按使用者安排等協作者。只更新受影響 PLAN／STATUS 與回退契約，原失敗不回寫。
+
+
+<a id="log-20261025-vertex-option-device"></a>
+## LOG-20261025-VERTEX-OPTION-DEVICE
+
+- 使用者重開已安裝的 Android App 後回覆「已有 Vertex AI 選項」。只核個人向量服務選項出現，沒有填 key、保存設定或呼叫模型；先前仍顯示舊表單的觀察保留，不把發布時間當成裝置載入證據。
+- B 記錄本次手機人工結果至[原證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)，同步 PLAN／STATUS。精確裝置 update ID、保存設定至完整 Agent／引用流程仍未驗；四 Agent 聯合補驗繼續等協作者，不重跑已通過項目。本次只核文件 diff／JSON，沒有產品測試、部署或手機操作。
