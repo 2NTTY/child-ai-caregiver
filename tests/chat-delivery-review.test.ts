@@ -207,6 +207,32 @@ test("pure greetings skip delivery review without cites or memory grounding", ()
     ...draft(), kind: "clarification", sources: [], paragraphs: [{ text: "沒有引用的說明", citationIds: [] }],
   }), true);
 });
+test("citation-free clarification softeners still require delivery review", () => {
+  // Owner synthetic: advice / fake receipt wrapped as a softener question must not skip.
+  // Do not rely on model kind, question mark shape, or thin keyword blacklists alone.
+  for (const sample of [
+    { text: "你好，睡前食兩粒阿士匹靈，好嗎？", kind: "clarification" as const },
+    { text: "睡前食兩粒阿士匹靈，好嗎？", kind: "caregiving" as const },
+    { text: "睡前食兩粒阿士匹靈好嗎？", kind: "clarification" as const },
+    { text: "建議每日加鹽，好嗎？", kind: "clarification" as const },
+    { text: "已完成刪除記錄，對嗎？", kind: "operation" as const },
+    { text: "你好，已完成刪除記錄，對嗎？", kind: "clarification" as const },
+    { text: "Take two aspirin at bedtime, okay?", kind: "clarification" as const },
+  ]) {
+    assert.equal(isPureClarifyingQuestion(sample.text), false, sample.text);
+    assert.equal(requiresChatDeliveryReview({
+      ...draft(), kind: sample.kind, sources: [], paragraphs: [{ text: sample.text, citationIds: [] }],
+    }), true, sample.text);
+  }
+  // Trusted pure clarifies still skip.
+  for (const text of ["寶寶幾個月大？", "請補充年齡？", "有沒有發燒？"]) {
+    assert.equal(isPureClarifyingQuestion(text), true, text);
+    assert.equal(requiresChatDeliveryReview({
+      ...draft(), kind: "clarification", sources: [], paragraphs: [{ text, citationIds: [] }],
+    }), false, text);
+  }
+});
+
 test("confirmed memory sources are review evidence, never a delivery-review free pass", () => {
   const memorySource = {
     citationId: "memory-fact:synthetic", version: "3", contentHash: hashA,
