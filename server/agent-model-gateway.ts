@@ -1,6 +1,7 @@
 import { setTimeout as delay } from 'node:timers/promises';
 import { AGENT_RUN_LIMITS } from '../src/shared/agent-run-limits.ts';
 import { agentAudioMarker, type AgentAudioInput } from './agent-audio.ts';
+import type { VoiceMessageReference } from '../src/shared/voice.ts';
 import { AGENT_IMAGE_LIMIT, type AgentImageInput } from './agent-images.ts';
 import { BaseLlm } from "@google/adk";
 import type { LlmRequest, LlmResponse } from "@google/adk";
@@ -97,6 +98,8 @@ export class AgentGatewayModel extends BaseLlm {
     config: AiConfig; provider: AgentModelProvider; usage: Pick<AiUsageStore, "reserve" | "record">;
     budget: AgentBudget; userId: string; childId: string; authorize: () => Promise<boolean>;
     audio?: AgentAudioInput;
+    voice?: Readonly<VoiceMessageReference>;
+    reloadAudio?: () => Promise<AgentAudioInput>;
     images?: (ids?: readonly string[]) => readonly AgentImageInput[];
     terminalToolNames?: ReadonlySet<string>;
     modelAttemptKey?: (request: LlmRequest) => string | undefined;
@@ -108,10 +111,18 @@ export class AgentGatewayModel extends BaseLlm {
   constructor(options: AgentGatewayModel["options"]) { super({ model: options.config.model }); this.options = options; }
   async connect(): Promise<never> { throw new AgentStopped("unavailable"); }
   /** Shared gateway path for a tool-free Server call. Counts one root model call and grants no tools. */
-  async completeText(input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[] }): Promise<string> {
+  async completeText(input: { system: string; user: string; attemptKey: string; imageIds?: readonly string[]; voice?: Readonly<VoiceMessageReference> }): Promise<string> {
+    let audio: AgentAudioInput | undefined;
+    if (input.voice) {
+      if (!this.options.voice || !this.options.reloadAudio
+        || agentBudgetFingerprint(input.voice) !== agentBudgetFingerprint(this.options.voice)) throw new AgentStopped('unauthorized');
+      audio = await this.options.reloadAudio();
+      if (Object.entries(audio.metadata).some(([key, value]) => input.voice![key as keyof VoiceMessageReference] !== value))
+        throw new AgentStopped('unauthorized');
+    }
     const planning = this.options.budget.planningSnapshot(false);
     const request: LlmRequest = {
-      contents: [{ role: "user", parts: [{ text: input.user }] }],
+      contents: [{ role: "user", parts: [{ text: input.user }, ...(audio ? [{ text: agentAudioMarker(audio) }] : [])] }],
       config: { systemInstruction: input.system
         + "\n\nThis role shares the original run budget. The remaining model count includes this call; it is a ceiling, not a target. "
         + "Complete only this role's output contract, without inventing tools or relaxing evidence checks to finish.\nServer role budget:\n"
@@ -122,7 +133,7 @@ export class AgentGatewayModel extends BaseLlm {
     // Share accounting and authority, never the generator's summary or tool context.
     const { config, provider, usage, budget, userId, childId, authorize, durableDailyUsage } = this.options;
     const reviewer = new AgentGatewayModel({ config, provider, usage, budget, userId, childId, authorize,
-      durableDailyUsage, modelAttemptKey: () => input.attemptKey,
+      durableDailyUsage, audio, modelAttemptKey: () => input.attemptKey,
       ...(input.imageIds?.length ? { images: () => {
         if (!this.options.images) throw new AgentStopped('unauthorized');
         return this.options.images(input.imageIds);

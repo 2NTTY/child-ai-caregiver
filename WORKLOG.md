@@ -3875,3 +3875,12 @@
 
 - C 收尾核對保存設定到正式檢索路由：原欄位傳遞沒有發現缺漏；將既有 personal Vertex 情景的成功呼叫改經新建的正式 routing、embedding gateway 及持久用量服務，沿原 in-memory Firestore fixture／固定 SDK／合成 HTTP，不另造 Agent。
 - 只執行該一項，通過設定重讀、本人 key／專案／地區、1024 維、本人用量一次／平台零次及原 root／attempt 重送拒絕；零真模型／雲端／手機／通知／部署。產品程式不變，[原證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)追加本次範圍，不宣稱真 Firestore 競爭或完整 Agent／引用通過；協作者驗收仍按原安排延後。
+
+
+<a id="log-20261026-web-voice-review"></a>
+## LOG-20261026-WEB-VOICE-REVIEW
+
+- 使用者要求集中 Web 真模型核對，並授權其後模型測試合計滾動 12 小時不超 US$5、毋須逐次詢問。正式失敗 run 僅讀 metadata；用本機自製錄音重現，沒有讀取或重送私人原錄音。
+- 原音訊補接獨立審核，保留原訊息／版本／hash、重讀核權及共同預算；實測亦發現普通補問被誤判及拒絕結果缺 draftHash，遂補真正輸出 schema 與精確提示。沒有略過審核或放寬官方照護引用。
+- 定向正式組裝、撤權與原結果、並發變更後可讀收據、限定型別及實際 prompt assembler 通過；完整 Web HTTP／共用 client 的真 Vertex 流程以 2 次生成完成錄音理解、審核、保存與原 run 讀回。曾失敗的各批及較闊檢查保留於[證據](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)，不重跑全量或手機。
+- 本機臨時限額及開關已恢復原值，帳目／失敗現場保留。已知 tokens 保守估約 US$0.16，整批預留 US$1 包含遲到背景工作，並非實際帳單。舊孩子的招呼受歷史干擾、背景資料變動可中止回覆仍列缺口；不以本次通過代結四 Agent／P3。尚待 review／合併及原站 Server 交付，前端／APK 不變。
