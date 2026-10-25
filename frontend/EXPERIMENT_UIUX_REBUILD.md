@@ -112,3 +112,5 @@
 - 原 Agent activity 23/23；共享 preparation background save 2/2；第二輪全 frontend TypeScript 通過。
 - 額外 Profile history recovery 18 項中 17 通過，另 1「重新讀取檔案」舊按鈕斷言在固定 base 亦同樣失敗，未改產品以遷就舊 harness。既有 source-photo／photo-route harness 的 RN Flow import 及 empty-card 的未 mock 依賴仍不是已過證據。
 - Browser、實際幾何／觸控、全讀屏、正式後端與真模型未驗；不以上述合成測試取代。checkpoint export 35 routes 成功；新來源凍結後重新 export 並逐 source-map 核來源。
+
+- 第二次獨立 review 以真 RN Web 找到 Space 未啟動 tab；前述 4/4 只證明 host-adapter 事件交接，不能取代 PressResponder。現已補 keydown 防捲動、keyup 單次啟動、blur 取消，Enter 保留 RN Web 原處理；新增真 RN Web 0.21.2／React／jsdom 1/1，涵蓋 repeat、拒絕 guard、blur、Enter、pointer、fetch 0。jsdom 無 ResizeObserver 的提醒保留；此測試不宣稱版面幾何通過。
