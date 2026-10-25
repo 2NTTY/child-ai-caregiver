@@ -3,6 +3,18 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## Harbour Desk 全面升級實驗（2026-10-25）
+
+固定 master `0b9f5d60`，活動分支 `experiment/frontend-design-upgrade-20261025`；設計與完整18入口功能對等矩陣見 [實驗說明](experiments/harbour-desk/README.md)。實作保留正式 domain owners，採四項官方 skills 及 Composition Patterns；不以舊前端顯示配方作限制。
+
+- 已實作：全功能側導航、可組合頁面／首頁、穩定首頁方向面板、頁首與資訊層級、聊天和待辦工作區、共用 controls／empty/error、功能目錄搜尋、技術 metadata 漸進顯示、移除強制 CSS zoom。
+- 共同基線修補：準備單 `ce4b90c`、聊天 `874eca3` 已按父任務核准精確 cherry-pick；另 `2667e061` 三項最小型別接點修正供另一實驗共用。
+- 下一步：完整 frontend typecheck／export、受影響離線檢查、合成 HTTP 全站預覽與四尺寸自查、獨立 review。實測結果只記 [本候選驗證目錄](verification/harbour-desk-20261025/)。
+- 未完成：browser／鍵盤／modal／全部 route parity 的實際驗收及獨立 review；不以 build 成功或原 owner 存在當驗收。
+- 不含：真模型／家庭資料、GCP、正式部署、公開預覽發布、PR 或 master 自動合併。
+
+以下為歷史包，不是本實驗的活動任務。
+
 ## 頁面專屬歷史與安靜讀取（2026-10-23；source36／artifactfix1 本地交付）
 
 沿用 `dot/frontend-simplify-20261021`／[PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)，本輪以 `5a39776f703bc436528b858f393621bcf8030b03` 為基底，PR 仍 draft／未合併；此為交付時已知狀態，未另查 CI。新版尚未更新公開站點；最後已記錄的公開版本仍為04:59:33.978 UTC的Site87／snapshot31（Sites source `b1fb6db5cd7820cd2183a732f866d8673973bb10`），不把本地結果當新公開驗收。

@@ -15,7 +15,7 @@ import { chineseFont, colors, radius, readingType, spacing, workspaceType } from
 import type { HomeDestination } from "../view-model";
 
 const steps: { title: string; description: string; action: string; destination: HomeDestination; points: { title: string; body: string }[] }[] = [
-  { title: "先跟助手說", description: "選擇孩子，直接交代你的問題或要做的事。", action: "與 Agent 對話", destination: "chat", points: [
+  { title: "先跟助手說", description: "選擇孩子，直接交代你的問題或要做的事。", action: "開啟育兒助手", destination: "chat", points: [
     { title: "只需孩子稱呼便可開始", body: "不必建立家庭、邀請成員或填寫模型 key。生日等資料可以按需要再補；半歲等約數不會變成精確生日。" },
     { title: "普通交代，按授權保存", body: "在助手設定開啟本人普通記錄授權後，可直接交代日常照護情況；重要資料及超出授權的操作仍會清楚詢問。" },
     { title: "只補影響辦事的資料", body: "助手可根據前文補問。推測與未知不當作事實；回答的重要建議應有實際支持的官方來源。" },
@@ -60,7 +60,7 @@ export default function GuideScreen() {
   const step = steps[currentStep];
   const narrow = layout.width < 720;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
-  return <PageFrame density="compact" title="說明">
+  return <PageFrame density="compact" title="使用引導">
     <View style={styles.intro}>
       <Text style={styles.introTitle}>{needsGuide ? "從你需要的一步開始" : "隨時重看使用方法"}</Text>
       <View style={styles.accountRow} testID="guide-account-actions" accessibilityLabel="目前帳戶">
@@ -115,16 +115,15 @@ export default function GuideScreen() {
           <View style={styles.stepCopy}><Text style={styles.stepTitle}>{item.title}</Text>{index === currentStep ? <Text style={styles.meta}>目前閱讀</Text> : null}</View>
           <AppIcon name="chevron-right" size={18} />
         </Pressable>)}
-        <Text style={styles.meta}>數字表示閱讀次序，不是完成百分比</Text>
       </View>
       <View style={styles.reading} testID="guide-current-step">
         <Text style={styles.eyebrow}>第 {currentStep + 1} 步，共 {steps.length} 步</Text>
         <Text accessibilityRole="header" style={styles.readingTitle}>{step.title}</Text>
         <Text style={styles.lead}>{step.description}</Text>
+        <View style={styles.actions}><AppButton label={step.action} onPress={() => actions.open(step.destination)} /></View>
         <View style={styles.checklist}>{step.points.map((point, index) => <View key={point.title} style={styles.point}>
           <Text style={styles.pointNumber}>{String(index + 1).padStart(2, "0")}</Text><View style={styles.pointCopy}><Text style={styles.pointTitle}>{point.title}</Text><Text style={styles.body}>{point.body}</Text></View>
         </View>)}</View>
-        <View style={styles.actions}><AppButton label={step.action} onPress={() => actions.open(step.destination)} /></View>
         <View style={styles.stepControls}>
           <AppButton label="上一步" variant="quiet" disabled={currentStep === 0} onPress={() => setCurrentStep(value => value - 1)} />
           <AppButton label="下一步" variant="secondary" disabled={currentStep === steps.length - 1} onPress={() => setCurrentStep(value => value + 1)} />
@@ -158,7 +157,7 @@ const styles = StyleSheet.create({
   stepNumber: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" },
   stepNumberActive: { backgroundColor: colors.ink, borderColor: colors.ink }, stepNumberText: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" }, stepNumberTextActive: { color: colors.white },
   stepTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
-  reading: { flex: 1, flexBasis: "auto", width: "100%", minWidth: 0, maxWidth: 720, gap: spacing.md },
+  reading: { backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, padding: spacing.lg, flex: 1, flexBasis: "auto", width: "100%", minWidth: 0, maxWidth: 720, gap: spacing.md },
   readingTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.title }, lead: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
   checklist: { marginVertical: spacing.md }, point: { flexDirection: "row", gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingVertical: spacing.lg },
   pointNumber: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, paddingTop: spacing.xs }, pointCopy: { flex: 1, minWidth: 0, gap: spacing.sm },

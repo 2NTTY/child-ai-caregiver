@@ -48,7 +48,7 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
     : unavailableAdvice && page?.notices.includes("首批關注只適用香港；沒有把香港時程套用至其他地區。") ? "這項建議只適用於香港地區。"
     : unavailableAdvice && page?.notices.includes("需要有效的出生日期才可套用本批年齡規則；約數年齡會保留，沒有推算精準提醒窗口。") ? "年齡建議未能核對，請核對孩子出生日期。" : null;
   const evaluationFailed = page?.notices.includes("背景評估已達有限重試上限，需核查故障；沒有假稱已完成。");
-  return <PageFrame scrollRef={scrollRef} scrollTestID="growth-scroll" density="compact" title="關注" onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
+  return <PageFrame scrollRef={scrollRef} scrollTestID="growth-scroll" density="compact" title="關注鏈與準備單" onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     {tab === "concerns" ? <>
     <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={refreshed ? "" : model.notice} urgent={model.operation === "failed"} />
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
@@ -85,7 +85,7 @@ export function GrowthView({model,actions,onTask,onRecord,onHistory,onChat,onPre
               {wide ? <GrowthConcernIndex items={listedConcerns} selectedId={concern?.id ?? null} onSelect={setSelectedConcern} />
                 : listedConcerns.length ? <AppSelect label="選擇關注" showLabel={false} value={concern?.id ?? ""} options={listedConcerns.map(item => ({value: item.id, label: item.title}))} onChange={setSelectedConcern} /> : null}
             </BackgroundSurface> : null}
-            <BackgroundSurface padded style={wide && listedConcerns.length ? s.main : s.full} testID="growth-detail-surface">
+            <BackgroundSurface padded style={[wide && listedConcerns.length ? s.main : s.full, s.detailPaper]} testID="growth-detail-surface">
               {sourceNotice ? <Text style={s.warning}>{sourceNotice}</Text> : null}
               <GrowthConcernActions scopeKey={model.scopeKey} hasManagement={!!managementTools || !!(concern && page.canManage)}
                 primary={<>

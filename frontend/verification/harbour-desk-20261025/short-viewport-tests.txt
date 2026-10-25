@@ -1,0 +1,41 @@
+✔ Enter sends once; Shift+Enter, composition and disabled states never send (74.869661ms)
+✔ autosize retains the same textarea, clamps and shrinks synchronously without taking unrelated focus (10.183346ms)
+✔ short viewport caps multiline input at 72 without remounting, shrinking fonts, losing draft or changing IME behavior (7.161875ms)
+✔ desktop primary entry restores both lines and the original guarded link, icon, chevron and focus treatment (371.997371ms)
+✔ the initial prompt requires a confirmed empty selected-child history, not a loading/error/older-page gap (101.583888ms)
+✔ child changes wait for that child read; timestamps do not reset established history or draft/focus props (137.606304ms)
+✔ an empty page with an older cursor keeps the existing pagination callback rather than offering a first conversation (117.379652ms)
+✔ the chat toolbar keeps activity but no duplicate memory shortcut at compact and desktop widths (393.675998ms)
+✔ short-height reflow retains the same timeline refs, draft/actions and visible privacy access across zoom sizes (103.3205ms)
+✔ history reveals locally, requests one remote page, and retries only explicitly after failure (154.683328ms)
+✔ web history anchors the same message before paint, independently of footer height (19.680029ms)
+✔ web history converts scaled rectangles to fractional scroll units for each prepend (70.519074ms)
+✔ web history respects browser anchoring, recaptured reader position, cancellation and detached rows (6.428131ms)
+✔ the dock separates attachments from voice/send and preserves 320–1440 control budgets (943.630208ms)
+✔ suggestions disappear in an established conversation; file/voice cancel preserve the draft (139.131181ms)
+✔ attachment removal uses the original callback and unknown locks all input controls (102.4083ms)
+✔ an explicit focus request is consumed once rather than repeated after busy becomes enabled (113.453745ms)
+✔ ordinary status is a quiet row while failure, unknown and original recovery remain reachable (105.408308ms)
+✔ message actions are outside the user bubble and reduced motion uses a stationary status (75.298722ms)
+"shadow*" style props are deprecated. Use "boxShadow".
+props.pointerEvents is deprecated. Use style.pointerEvents
+✔ keyboard textarea/send activation returns focus once after the real submit promise settles (160.445906ms)
+Cannot record touch move without a touch start.
+ Touch Move: {"identifier":0,"timestamp":1792961346518}
+ Touch Bank: []
+✔ reading, blank pointer, keyboard navigation and another control cancel the return (129.406761ms)
+✔ unknown, hidden document and old scope cannot restore later (59.373809ms)
+✔ pointer send never arms focus and a newer explicit request takes precedence (74.864117ms)
+✔ composer remains a restrained two-layer panel with the existing input limits (3.601133ms)
+✔ send circle is unoutlined yellow and hover or press affects only its own surface (7.566435ms)
+✔ four tools stay transparent at rest with unchanged 40 or 48 pixel hit targets (3.860084ms)
+✔ input keeps its autosize and IME guards on a stable textarea (0.51773ms)
+✔ short viewport keeps every control, draft, attachment and hint in a wrapping bounded layout (1.41428ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1927.911699

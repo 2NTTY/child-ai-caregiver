@@ -220,8 +220,8 @@ const s = StyleSheet.create({
   detailColumn: { minWidth: 0, gap: spacing.sm }, detailDivider: { flexBasis: 0, flexGrow: 1, flexShrink: 1, borderLeftWidth: 1, borderLeftColor: colors.softLine, paddingLeft: spacing.lg }, hidden: { display: "none" },
   filterBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }, filterContext: { flex: 1, minWidth: 0, fontFamily: chineseFont, ...readingType.meta, color: colors.muted }, filters: { gap: spacing.sm },
   older: { gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine }, importantReminder: { flexDirection: "row", gap: spacing.xs, alignItems: "center" },
-  sectionLabel: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted }, groupSection: { gap: spacing.xs }, list: { gap: spacing.md },
-  row: { minWidth: 0, gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 0, backgroundColor: colors.controlSurface },
+  sectionLabel: { fontFamily: chineseFont, ...readingType.tool, color: colors.ink, fontWeight: "700", borderLeftWidth: 3, borderLeftColor: colors.teal, paddingLeft: spacing.sm }, groupSection: { gap: spacing.md }, list: { gap: spacing.md },
+  row: { minWidth: 0, gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 12, backgroundColor: colors.paper },
   rowLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }, rowKind: { flex: 1, minWidth: 0 },
   rowContent: { fontFamily: chineseFont, ...readingType.body, color: colors.ink }, rowMeta: { flexDirection: "row", gap: spacing.sm, alignItems: "center" }, rowTime: { flex: 1 }, selected: { backgroundColor: colors.paleTeal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
 });

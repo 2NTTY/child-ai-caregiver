@@ -1,3 +1,4 @@
+import { SummaryDisclosure } from "../summary/SummaryDisclosure";
 import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { contactGrantStatus } from "./contact-status";
@@ -38,7 +39,7 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
     if (selectedId) (taskPanel.current as unknown as HTMLElement | null)?.focus({preventScroll: true});
     else if (previous?.epoch === model.epoch) (taskRows.current.get(previous.id) as unknown as HTMLElement | undefined)?.focus({preventScroll: true});
   }, [selectedId, model.epoch]);
-  return <PageFrame density="compact" title="聯絡" description={`為${model.childName}核對誰可以接收、透過甚麼渠道，以及哪項安排已獲授權。`}>
+  return <PageFrame density="compact" title="聯絡授權" description={`為${model.childName}核對誰可以接收、透過甚麼渠道，以及哪項安排已獲授權。`}>
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={s.pageStack}>
       <StatusAnnouncement eventKey={`${model.operation}:${model.notice}`} message={model.notice} urgent={model.operation === "failed"} />
       <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權存取；舊資料及未提交內容已清除。" : ""} urgent={model.access === "lost"} />
@@ -63,7 +64,7 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
         <View testID="contact-reachability" style={[s.reachability, !wide && s.reachabilityStack]}>
           <View style={s.checkpoint}><Text style={s.step}>01 · 本人同意</Text><AppStatusBadge label={page.consent.enabled ? '已允許一般提示' : '尚未允許接收'} tone={page.consent.enabled ? 'success' : 'neutral'} /><Text style={s.meta}>{page.consent.allowBackup ? '亦已同意作後備接收者' : '沒有後備接收同意'}</Text></View>
           <View style={s.checkpoint}><Text style={s.step}>02 · 本人渠道</Text><AppStatusBadge label={page.availableBindings.length ? `${page.availableBindings.length} 個可選綁定` : '尚無可選綁定'} tone={page.availableBindings.length ? 'info' : 'neutral'} /><Text style={s.meta}>{page.availableBindings.map(binding => contactChannelLabels[binding.channel]).join(' · ') || '到設定管理綁定；不會自動取得權限'}</Text></View>
-          <View style={s.checkpoint}><Text style={s.step}>03 · 背景執行</Text><AppStatusBadge label={page.workerEnabled ? '開關已啟用' : '目前未啟用'} tone={page.workerEnabled ? 'info' : 'neutral'} /><Text style={s.meta}>{page.workerEnabled ? '不代表服務在線、已投遞或已讀' : '保存授權不會啟動投遞'}</Text></View>
+          <View style={s.checkpoint}><Text style={s.step}>送達與執行</Text><Text style={s.meta}>授權不等於已送出；送達結果在下方歷史查看。</Text><SummaryDisclosure label="查看背景執行狀態" scopeKey={model.scopeKey}><AppStatusBadge label={page.workerEnabled ? '開關已啟用' : '目前未啟用'} tone={page.workerEnabled ? 'info' : 'neutral'} /><Text style={s.meta}>{page.workerEnabled ? '不代表服務在線、已投遞或已讀' : '保存授權不會啟動投遞'}</Text></SummaryDisclosure></View>
         </View>
         <ContactConsentCard key={`${model.scopeKey}:${model.userId}`} model={model} actions={actions} onSettings={onSettings} />
         <View style={s.section}><SectionHeader density="compact" title="任務聯絡授權" subtitle="選一項安排，核對主要接收者及授權期限。" />

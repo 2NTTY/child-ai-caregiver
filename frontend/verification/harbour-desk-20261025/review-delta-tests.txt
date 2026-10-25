@@ -1,0 +1,33 @@
+✔ empty and single-entry timelines have no dangling connector (29.312248ms)
+✔ mixed events start below the first dot and stop above the last dot (4.362543ms)
+✔ connector styles stop at dot edges and follow each row natural height (0.520132ms)
+✔ multiline descriptions remain intrinsic without fixed row or connector heights (1.174717ms)
+✔ reading timeline identifies the selected concern and never embeds a destructive trigger (0.389666ms)
+✔ concern explanation has its own heading and emphasis without truncating the full description (0.650609ms)
+✔ unknown event times remain explicitly unknown with the existing clock metadata icon (0.539251ms)
+✔ concern heading stays neutral for proposed, following and closed history (0.463478ms)
+✔ workspace compound parts share presentation metadata and retain arbitrary action/content slots (153.367712ms)
+✔ home composition passes the exact original model and actions to every domain projection (113.554817ms)
+✔ home setup is derived from confirmed empty children, not loading or error snapshots (38.204316ms)
+✔ catalogue search preserves every feature and treats input as plain metadata text (2.029103ms)
+✔ normal navigation retains all eighteen route entry files, redirects and production owners (1.051412ms)
+✔ web shell adds keyboard escape route to content without forcing display zoom (0.621405ms)
+✔ history category rail exposes eight real choices and compact selector keeps the exact category callback (45.868951ms)
+✔ family remains honestly unavailable and only routes to existing personal controls (10.282699ms)
+✔ admin return is a guarded web link and profile management never promises destructive actions are harmless (0.453302ms)
+✔ reading first shows child identity, two solid grouped cards, and compact truthful unknown fields at all target widths (1410.33435ms)
+✔ all known health/care values remain exact; no null is converted into an absence claim (196.081522ms)
+✔ profile details retain metadata but no history entry, reset on child change (262.623775ms)
+✔ profile editing keeps original confirmation, discard guard, and post-close exact trigger focus (224.094145ms)
+✔ unknown blocks close and writes, but preserves existing recovery and non-mutating details (118.0232ms)
+✔ normal profile reading has no persistent refresh, while freshness recovery keeps its original callback and lock (158.511142ms)
+✔ child deletion stays secondary and forwards only to the original owner with every existing gate (154.216912ms)
+✔ only the requested dynamic History description is removed; category descriptions remain owned by their category (0.536477ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3421.141683

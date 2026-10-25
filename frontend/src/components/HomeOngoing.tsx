@@ -21,4 +21,4 @@ export function HomeOngoing({ model, actions }: { model: HomeViewModel; actions:
     {["ready", "stale", "loading"].includes(section.state) ? <HomeOverviewItems items={section.items.slice(0, 3)} actions={actions} compact /> : null}
   </BackgroundSurface>;
 }
-const styles = StyleSheet.create({ section: { gap: spacing.sm, minWidth: 0, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.lg }, heading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }, title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });
+const styles = StyleSheet.create({ section: { gap: spacing.md, minWidth: 0, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.softLine, borderRadius: 14, padding: spacing.xl }, heading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }, title: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta } });

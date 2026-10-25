@@ -26,10 +26,9 @@ export const navigationItems = {
 } as const satisfies Record<NavigationKey, NavigationItem>;
 
 export const desktopNavigationGroups = [
-  { label: "常用", keys: ["home"] },
-  { label: "行動", keys: ["tasks", "growth"] },
-  { label: "回顧", keys: ["summary", "history"] },
-  { label: "管理", keys: ["care", "memory", "profile", "more"] },
+  { label: "照顧工作台", keys: ["home", "tasks", "growth", "care"] },
+  { label: "孩子與資料", keys: ["summary", "profile", "photos", "memory", "sources", "history"] },
+  { label: "協作與支援", keys: ["family", "contact", "guide", "more"] },
 ] as const;
 
 // Catalogue labels derive from navigationItems so the same destination has one visible name.
@@ -63,4 +62,14 @@ export function moreCatalogueColumns(availableWidth: number): 1 | 2 | 3 {
   if (availableWidth >= 900) return 3;
   if (availableWidth >= 432) return 2;
   return 1;
+}
+
+/** Search only public navigation metadata, never private family content. */
+export function searchNavigationCatalogue(query: string) {
+  const terms = query.trim().toLocaleLowerCase("zh-HK").split(/\s+/).filter(Boolean);
+  return moreNavigationGroups.map(group => ({ ...group, items: group.items.filter(item => {
+    const route = navigationItems[item.key];
+    const text = `${group.title} ${route.label} ${route.short} ${item.detail}`.toLocaleLowerCase("zh-HK");
+    return terms.every(term => text.includes(term));
+  }) })).filter(group => group.items.length > 0);
 }

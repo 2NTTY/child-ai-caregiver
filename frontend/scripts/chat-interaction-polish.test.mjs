@@ -52,7 +52,7 @@ function production() {
     chatController: { cancelReply: action('cancel'), reloadMessages: action('reload'), confirmFoundMessage: action('confirm'), unlockCheckedSave: action('unlock'), startNewMessage: action('new') },
     chatDraft: '', setChatDraft: action('draft'), agentAttachments: [], addAgentAttachment: action('attachment'), removeAgentAttachment: action('remove'), composerFocusRequest: 0, sendChat: action('send'), requestChatReply: action('reply'),
     agentRuns: {}, agentModel: { readState: 'ready', run: null, busy: null, pendingDecision: null }, agentPending: { state: 'ready', entries: [] }, readAgentPending: action('readPending'),
-    voiceUpload: {}, fileUpload: {}, checkVoiceUpload: action('voiceCheck'), checkFileUpload: action('fileCheck'), authorization: {}, chatWritesAllowed: true, selectAgentRun: action('selectRun'), openAgentSource: action('source') };
+    voiceUpload: {}, fileUpload: {}, photoUpload: {}, checkPhotoUpload: action('photoCheck'), checkVoiceUpload: action('voiceCheck'), checkFileUpload: action('fileCheck'), authorization: {}, chatWritesAllowed: true, selectAgentRun: action('selectRun'), openAgentSource: action('source') };
 }
 
 test('the dock separates attachments from voice/send and preserves 320–1440 control budgets', () => {

@@ -53,6 +53,7 @@ function harness(entry, symbol, args = [], overrides = {}) {
       if (name === "react-native-paper") return { Text: "Text", ActivityIndicator: "ActivityIndicator" };
       if (name.endsWith("/theme")) return { colors: {}, radius: {}, readingType: {}, workspaceType: {}, spacing: {}, typeScale: {} };
       if (name.endsWith("/ui")) return Object.fromEntries(["AppButton", "SectionHeader", "SectionCard", "TextLink"].map(value => [value, value]));
+      if (name.endsWith("/SummaryDisclosure")) return { SummaryDisclosure: "SummaryDisclosure" };
       if (name.endsWith("/AppStatusBadge")) return { AppStatusBadge: "AppStatusBadge" };
       if (name.endsWith("/AppIcon")) return { AppIcon: "AppIcon" };
       if (name.endsWith("/HomeOverviewItems")) return { HomeOverviewItems: "HomeOverviewItems" };

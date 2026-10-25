@@ -20,10 +20,11 @@ export function GrowthConcernTimeline({concern, page, onRecord, onTask}: {concer
   const followUpLabel = growthConcernFollowUpLabel(concern);
   return <View style={s.timelinePanel} testID="growth-concern-timeline" accessibilityLabel={`關注：${concern.title}`}>
     <View style={s.concernHeading} testID="growth-concern-summary">
-      <View style={s.row}><Text accessibilityRole="header" style={s.eyebrow}>關注說明</Text><AppStatusBadge label={concernLabels[concern.status]} tone={concern.status === "proposed" ? "warning" : concern.status === "following" ? "info" : "neutral"} /></View>
+      <View style={s.row}><Text style={s.eyebrow}>關注主題</Text><AppStatusBadge label={concernLabels[concern.status]} tone={concern.status === "proposed" ? "warning" : concern.status === "following" ? "info" : "neutral"} /></View>
+      <Text accessibilityRole="header" aria-level={2} style={s.concernTitle}>{concern.title}</Text>
       <Text style={s.concernSummary}>{concern.reason}</Text>
     </View>
-    {followUpLabel ? <Text style={s.meta}>{followUpLabel}</Text> : null}
+    {followUpLabel ? <View style={s.nextFollowUp} testID="growth-next-followup"><AppIcon name="calendar-outline" size={20} /><Text style={[s.body, { flex: 1 }]}>{followUpLabel}</Text></View> : null}
     <SectionHeader density="compact" title="跟進記錄" />
     <View style={s.timeline}>{entries.map((entry, index) => {
       const marker = <>

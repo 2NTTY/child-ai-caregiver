@@ -1,3 +1,4 @@
+import { SummaryDisclosure } from "../summary/SummaryDisclosure";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -46,7 +47,8 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
   const selectedRead = owner.message.scopeKey === scope && (!owner.message.data || owner.message.data.id === selection?.id);
   const close = () => { opened.current = null; setSelection(null); owner.actions.closeMessage(); };
   return <View ref={listRef} tabIndex={-1} accessibilityLabel="助手對話歷史" style={styles.list}>
-    <BackgroundSurface padded><Text style={styles.meta}>只查閱你與這位孩子的對話。每次最多掃 100 則，返回最多 10 個命中；日期篩選只包括已掃過的結果。</Text></BackgroundSurface>
+    <Text style={styles.meta}>搜尋你與這位孩子的私人對話；日期只篩目前已搜尋的範圍。</Text>
+    <SummaryDisclosure label="搜尋範圍說明" scopeKey={scope ?? ""}><Text style={styles.meta}>每次最多掃 100 則，返回最多 10 個命中。較早內容可繼續搜尋。</Text></SummaryDisclosure>
     {read.state === "loading" ? <ReadStateNotice state="loading" title="正在搜尋對話…" />
       : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到對話歷史"><AppButton label="重新搜尋" variant="secondary" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /></ReadStateNotice>
       : read.state === "unavailable" ? <ReadStateNotice state="unavailable" title={owner.online ? "正在準備對話搜尋…" : "連線後才可讀取對話歷史"} />

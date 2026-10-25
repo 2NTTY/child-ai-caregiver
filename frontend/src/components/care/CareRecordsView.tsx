@@ -11,7 +11,7 @@ export function CareRecordsView({ model, actions, pendingReview, onReviewHistory
   model: CareRecordsViewModel; actions: CareRecordsActions; pendingReview?: { content: ReactNode; loadedCount?: string };
   onReviewHistory?: () => void; onOlderPending?: () => void; initialRecordId?: string; manualCreateFocusRef?: RefObject<View | null>; manualCreateAction?: ReactNode;
 }) {
-  return <PageFrame title="核對" density="compact" scrollTestID="care-page-scroll">
+  return <PageFrame title="核對與照顧記錄" description="先讀內容與來源，再確認重要事項；已保存的記錄可在同一處查閱。" density="compact" scrollTestID="care-page-scroll">
     {!model.online || model.access === "read_only" ? <BackgroundSurface padded style={{ gap: spacing.sm }}>
       {!model.online ? <Text style={styles.warning}>目前離線，不能確認提交；已載入資料及草稿保留。</Text> : null}
       {model.access === "read_only" ? <Text style={styles.warning}>你可閱讀及對照內容；確認寫入或更正須由擁有人或照顧者處理。</Text> : null}

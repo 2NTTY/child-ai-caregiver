@@ -85,7 +85,7 @@ function ProfileContent() {
 
 export default function ProfilePage() {
   const { identityKey } = useProduction();
-  return <PageFrame density="compact" title="檔案"><ProfileContent key={identityKey ?? "no-identity"} /></PageFrame>;
+  return <PageFrame density="compact" title="子女檔案"><ProfileContent key={identityKey ?? "no-identity"} /></PageFrame>;
 }
 const styles = StyleSheet.create({
   management: { gap: spacing.md, minWidth: 0 },

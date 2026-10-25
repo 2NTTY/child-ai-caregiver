@@ -21,7 +21,8 @@ function load(relative) {
     if (name === 'react-native') return native;
     if (name === 'react-native-paper') return { Text: native.Text, ActivityIndicator: native.ActivityIndicator };
     if (name === '../theme') return { chineseFont: 'sans-serif', colors: { neutralSurface: '#F7FCFC', softLine: '#E6E6EA', ink: '#272343', muted: '#2D334A', errorInk: '#954026' },
-      spacing: { sm: 8, md: 12, lg: 16 }, radius: { medium: 16 }, readingType: { body: { fontSize: 16, lineHeight: 26 }, tool: { fontSize: 14, lineHeight: 22 } } };
+      spacing: { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 }, radius: { medium: 16 }, readingType: { body: { fontSize: 16, lineHeight: 26 }, tool: { fontSize: 14, lineHeight: 22 } } };
+    if (name === './appearance/BackgroundSurface') return { BackgroundSurface: native.View };
     if (name === './AppIcon') return { AppIcon: ({ name }) => React.createElement('span', { 'data-icon': name, 'aria-hidden': true }) };
     if (name === '../motion/preferences') return { useMotionPreferences: () => ({ enabled: false }) };
     if (name === './StatusAnnouncement') return { StatusAnnouncement: props => { announcements.push(props); return null; } };
@@ -47,14 +48,14 @@ test('successful empty results render a light card with a readable title and exi
   assert.match(html, /data-testid="read-state-empty"/);
   const card = EmptyListCard({ title: '暫無已保存記錄' });
   const cardStyle = native.StyleSheet.flatten(card.props.style);
-  assert.equal(cardStyle.padding, 16); assert.equal(cardStyle.borderWidth, 1);
+  assert.equal(cardStyle.padding, 24); assert.equal(cardStyle.borderWidth, 1);
   assert.equal(cardStyle.backgroundColor, '#F7FCFC');
-  assert.equal(native.StyleSheet.flatten(card.props.children[0].props.children[1].props.style).fontSize, 16);
+  assert.equal(native.StyleSheet.flatten(card.props.children[0].props.children[1].props.children[0].props.style).fontSize, 16);
   assert.match(html, />暫無已保存記錄<\/div>/);
   assert.doesNotMatch(html, /role="heading"|<h[1-6]\b/);
   assert.match(html, /可先記下想留意的事情。/);
   assert.match(html, /<button type="button">前往記錄<\/button>/);
-  assert.doesNotMatch(html, /role="alert"|aria-disabled|aria-hidden/);
+  assert.doesNotMatch(html, /role="alert"|aria-disabled/);
   assert.deepEqual(announcements, [{ eventKey: 'empty:暫無已保存記錄。可先記下想留意的事情。', message: '暫無已保存記錄。可先記下想留意的事情。', urgent: false }]);
 });
 

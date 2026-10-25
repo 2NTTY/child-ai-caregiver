@@ -110,13 +110,13 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
           </SectionCard>
         </MotionDisclosure>
       </> : <SectionCard><Text style={styles.body}>新增孩子後，可以在這裏核對檔案。</Text></SectionCard>}
-      <View style={styles.management}>{childPicker}</View>
+      <View style={styles.management}><SectionHeader density="compact" title="孩子與頭像管理" subtitle="新增孩子、調整頭像與管理目前孩子；刪除前會另外核對資料範圍。" />{childPicker}</View>
       {previewControls}
     </View>
   </>);
 }
 const styles = StyleSheet.create({
-  identityRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.md, minWidth: 0 },
+  identityRow: { paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.line, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.md, minWidth: 0 },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.md, flexGrow: 1, flexShrink: 1, minWidth: 0 },
   avatar: { width: 48, height: 48, flexShrink: 0, borderRadius: radius.medium, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
   avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "700" },

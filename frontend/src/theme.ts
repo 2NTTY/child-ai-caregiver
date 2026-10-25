@@ -1,56 +1,53 @@
 import { Platform } from "react-native";
 import { MD3LightTheme, configureFonts } from "react-native-paper";
 
+// Harbour Desk: cool paper, evergreen ink and a restrained amber action signal.
+// Semantic roles remain stable for all existing domain views and native adapters.
 export const colors = {
-  // Happy Hues 14 anchors; legacy role names are aliases, not additional green seeds.
-  ink: "#272343",
-  teal: "#272343",
-  deepTeal: "#272343",
-  paper: "#FFFFFE",
-  canvas: "#F7FCFC",
-  sage: "#BAE8E8",
-  paleTeal: "#E3F6F5",
-  accent: "#FFD803",
-  onAccent: "#272343",
-  amber: "#A38B19",
-  paleAmber: "#FFF7D8",
-  // Destructive actions and errors share a vivid red, separate from the brand palette.
-  coral: "#D61F26",
-  paleCoral: "#FEF2F2",
-  errorInk: "#D61F26",
-  white: "#FFFFFE",
-  muted: "#2D334A",
-  line: "#CAC9D4",
-  softLine: "#E6E6EA",
-  controlOutline: "#737284",
-  // Aqua navigation frames white cards and controls. Inset content uses a quieter tint.
-  controlSurface: "#FFFFFE",
-  neutralSurface: "#F7FCFC",
-  sidebar: "#E3F6F5",
-  selectedNav: "#BAE8E8",
-  quietSurface: "#EDFAF9",
-  mintSurface: "#E3F6F5",
-  previewSurface: "#F7FCFC",
-  // Temporary interaction shades; content and borders keep their full opacity.
-  pressedOverlay: "rgba(39, 35, 67, 0.08)",
-  accentPressed: "#E5C20B",
-  inkPressed: "#221F3B",
-  selectedPressed: "#A8D0D4",
-  warningPressed: "#F2EAC8",
-  // Dark filled actions deepen on hover/press without a white wash.
+  ink: "#233A35",
+  teal: "#245C50",
+  deepTeal: "#16483D",
+  paper: "#FFFFFF",
+  canvas: "#F3F6F4",
+  sage: "#D3E5DC",
+  paleTeal: "#E8F1EC",
+  accent: "#EBC483",
+  onAccent: "#3D301A",
+  amber: "#90631F",
+  paleAmber: "#FFF5DF",
+  coral: "#BE343D",
+  paleCoral: "#FFF0F0",
+  errorInk: "#AB2631",
+  white: "#FFFFFF",
+  muted: "#52655F",
+  line: "#CAD5CF",
+  softLine: "#E0E8E3",
+  controlOutline: "#7D9087",
+  controlSurface: "#FFFFFF",
+  neutralSurface: "#F2F6F3",
+  sidebar: "#F9FBF9",
+  selectedNav: "#DCEBE3",
+  quietSurface: "#F0F6F2",
+  mintSurface: "#E8F1EC",
+  previewSurface: "#F3F6F4",
+  pressedOverlay: "rgba(35, 58, 53, 0.08)",
+  accentPressed: "#D8AE69",
+  inkPressed: "#16483D",
+  selectedPressed: "#C8DDD0",
+  warningPressed: "#F3E5C5",
   darkActionRipple: "rgba(0, 0, 0, 0.12)",
-  statusWarm: "#FFF7D8",
-  statusUnknown: "#FFF7D8",
-  statusWarmLine: "#A38B19",
-  statusUnknownLine: "#A38B19",
-  statusFailedLine: "#D61F26",
-  warningInk: "#5E4F0C",
-  overlay: "rgba(39, 35, 67, 0.24)",
+  statusWarm: "#FFF5DF",
+  statusUnknown: "#FFF5DF",
+  statusWarmLine: "#90631F",
+  statusUnknownLine: "#90631F",
+  statusFailedLine: "#BE343D",
+  warningInk: "#704C13",
+  overlay: "rgba(26, 48, 40, 0.28)",
 } as const;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, hero: 40 } as const;
-export const radius = { small: 10, medium: 16, large: 22, pill: 999 } as const;
-export const typeScale = { caption: 12, small: 14, body: 16, title: 20, heading: 28, hero: 34 } as const;
+export const radius = { small: 8, medium: 14, large: 20, pill: 999 } as const;
+export const typeScale = { caption: 12, small: 14, body: 16, title: 20, heading: 30, hero: 38 } as const;
 export const readingLayout = { maxWidth: 880, compactInset: 16, wideInset: 24 } as const;
 export const readingType = {
   body: { fontSize: 16, lineHeight: 26 },
@@ -66,7 +63,7 @@ export const workspaceType = {
 export const iconTokens = { strokeWidth: 1.8, small: 18, navigation: 22, feature: 28 } as const;
 // Mobile sizes are logical units. Text retains the platform's font scaling and intrinsic height.
 export const mobileLayout = {
-  breakpoint: 650, pageInset: 16, sectionGap: 16, cardInset: 16, cardRadius: 16,
+  breakpoint: 650, pageInset: 16, sectionGap: 16, cardInset: 16, cardRadius: 14,
   touchTarget: 48, headerMinHeight: 64, tabMinHeight: 64,
   childAvatar: 40, askMinHeight: 56, quickTileMinHeight: 88,
 } as const;
@@ -80,12 +77,12 @@ export const mobileType = {
   label: { fontSize: 12, lineHeight: 16 },
   caption: { fontSize: 12, lineHeight: 16 },
 } as const;
-export const chineseFont = Platform.select({ web: "'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif", default: undefined });
+export const chineseFont = Platform.select({ web: "'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif", default: undefined });
 
 export const paperTheme = {
   ...MD3LightTheme,
   // MD3 components multiply this unit; it is not a pixel radius.
-  roundness: 4,
+  roundness: 3,
   fonts: Platform.OS === "web" && chineseFont
     ? configureFonts({ config: { fontFamily: chineseFont } })
     : MD3LightTheme.fonts,
@@ -115,8 +112,8 @@ export const paperTheme = {
     onError: colors.white,
     errorContainer: colors.paleCoral,
     onErrorContainer: colors.errorInk,
-    surfaceDisabled: "rgba(39, 35, 67, 0.12)",
-    onSurfaceDisabled: "rgba(39, 35, 67, 0.38)",
+    surfaceDisabled: "rgba(35, 58, 53, 0.12)",
+    onSurfaceDisabled: "rgba(35, 58, 53, 0.38)",
     inverseSurface: colors.ink,
     inverseOnSurface: colors.white,
     inversePrimary: colors.sage,

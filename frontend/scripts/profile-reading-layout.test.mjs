@@ -22,6 +22,9 @@ function scenario(width = 1024) {
     '../useContainerWidth': { useContainerWidth: () => ({ width, ref: { current: { getBoundingClientRect: () => ({ width }) } }, onLayout() {} }) },
     '../AppStatusBadge': { AppStatusBadge: 'Badge' }, '../StatusAnnouncement': { StatusAnnouncement: 'Announcement' },
     '../appearance/BackgroundSurface': { BackgroundSurface: 'View' }, '../components/PageFrame': { PageFrame: 'PageFrame' },
+    // Avatar is a separate owner; this test exercises real profile/guard flows without media I/O.
+    '../production/useProductionAvatar': { useProductionAvatar: () => ({state: {uri: null}, lane: null}) },
+    '../components/avatar/AvatarView': {AvatarView: 'AvatarView'}, '../components/avatar/AvatarEditor': {AvatarEditor: 'AvatarEditor'},
     '../components/OperationNotice': { OperationNotice: 'Notice' }, './ProfileForm': { ProfileForm: 'ProfileForm' },
     './AppDialog': { AppDialog: dialog }, '../components/AppDialog': { AppDialog: dialog }, './AppScrollView': { AppScrollView: 'ScrollView' },
     'expo-router/react-navigation': { useNavigation: () => ({}), usePreventRemove() {} },
@@ -83,7 +86,7 @@ test('reading first shows child identity, two solid grouped cards, and compact t
     assert.equal(s.h.hosts().filter(x => x.type === 'ProfileForm').length, 0);
     assert.equal(s.button('刪除目前孩子'), undefined); assert.equal(s.button('確認及更正歷史'), undefined);
     assert.equal(s.h.hosts().filter(x => x.type === 'Button' && x.props.label === '編輯檔案').length, 1);
-    assert.equal(s.h.hosts().find(x => x.type === 'PageFrame').props.title, '檔案');
+    assert.equal(s.h.hosts().find(x => x.type === 'PageFrame').props.title, '子女檔案');
   }
 });
 
@@ -149,7 +152,7 @@ test('child deletion stays secondary and forwards only to the original owner wit
 test('only the requested dynamic History description is removed; category descriptions remain owned by their category', () => {
   const source = readFileSync(new URL('../src/screens/historyScreen.tsx', import.meta.url), 'utf8');
   assert.ok(!source.includes('分類回看${childName}的過往資料，從原始來源查看詳情。'));
-  assert.match(source, /<PageFrame density="compact" title="歷史" scrollRef=/);
+  assert.match(source, /<PageFrame density="compact" title="歷史資料庫" description=/);
   assert.match(source, /current\.description/);
   assert.match(source, /description="按分類查閱過往資料。"/);
 });

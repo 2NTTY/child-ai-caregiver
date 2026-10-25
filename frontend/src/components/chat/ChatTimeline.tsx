@@ -17,8 +17,8 @@ import { ChatProgressIndicator } from "./ChatMessage";
 export interface ChatTimelineControls { followLatest(): void; holdReadingPosition(): void }
 
 // Items are already-authorized display rows in chronological order; this component does not fetch or persist messages.
-export function ChatTimeline<T extends { id: string }>({ items, renderItem, header, footer, emptyState, presentation = "standard", compact = false, recentLimit = 20, scrollRef, controlsRef, followRequest, newReplyId, history }: {
-  items: readonly T[]; renderItem: (item: T) => ReactNode; header?: ReactNode; footer?: ReactNode; emptyState?: ReactNode; presentation?: "standard" | "conversation"; compact?: boolean; recentLimit?: number;
+export function ChatTimeline<T extends { id: string }>({ items, renderItem, header, footer, emptyState, presentation = "standard", viewportLayout = "standard", compact = false, recentLimit = 20, scrollRef, controlsRef, followRequest, newReplyId, history }: {
+  items: readonly T[]; renderItem: (item: T) => ReactNode; header?: ReactNode; footer?: ReactNode; emptyState?: ReactNode; presentation?: "standard" | "conversation"; viewportLayout?: "standard" | "short"; compact?: boolean; recentLimit?: number;
   scrollRef?: MutableRefObject<ScrollView | null>; controlsRef?: MutableRefObject<ChatTimelineControls | null>; followRequest?: string;
   // Set with an appended assistant reply, never for initial/history reads or token updates.
   newReplyId?: string;
@@ -131,7 +131,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
   return <View testID="chat-timeline" style={styles.root}>
     <AppScrollView testID="chat-timeline-scroll" ref={node => { ownScroll.current = node; if (scrollRef) scrollRef.current = node; }} style={styles.scroll}
       maintainVisibleContentPosition={readingAnchor.maintainVisibleContentPosition}
-      contentContainerStyle={[styles.content, compact && styles.compact, presentation === "conversation" && styles.conversation, !items.length && !!emptyState && styles.empty]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16}
+      contentContainerStyle={[styles.content, compact && styles.compact, viewportLayout === "short" && styles.shortContent, presentation === "conversation" && styles.conversation, !items.length && !!emptyState && styles.empty]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16}
       onScroll={onScroll} onScrollBeginDrag={readerIntent} onContentSizeChange={contentChanged} onLayout={event => { metrics.current.viewport = event.nativeEvent.layout.height; if (following.current) queueBottom(); else updateLatestVisibility(); }}>
       <View testID="chat-history-entry" collapsable={false} style={styles.history}>
         {header}
@@ -144,7 +144,7 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
       {items.slice(start).map(item => <TimelineEntry key={item.id} id={item.id} scopeKey={motionScope} arriving={arrivingId === item.id}>{renderItem(item)}</TimelineEntry>)}
       {footer}
     </AppScrollView>
-    {!atLatest ? <View testID="chat-return-latest" pointerEvents="box-none" style={styles.returnOverlay}>
+    {!atLatest ? <View testID="chat-return-latest" pointerEvents="box-none" style={[styles.returnOverlay, viewportLayout === "short" && styles.shortReturnOverlay]}>
       <Pressable accessibilityRole="button" accessibilityLabel="回到最新" onPress={followLatest}
         style={({ pressed }) => [styles.returnButton, touchControls && styles.compactReturnButton, pressed && styles.returnPressed]}>
         <AppIcon name="arrow-down" size={20} color={chatColors.ink} />
@@ -165,6 +165,8 @@ const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, position: "relative" }, scroll: { flex: 1 },
   // Match the composer's normal-flow overlap so the last message and scroll range stay clear of its panel.
   content: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: chatLayout.wideInset, paddingVertical: chatLayout.turnGap, paddingBottom: chatLayout.turnGap + chatLayout.composerOverlap, gap: chatLayout.turnGap },
+  shortContent: { paddingVertical: 12, paddingBottom: 12, gap: 12 },
+  shortReturnOverlay: { bottom: 8 },
   conversation: { justifyContent: "flex-start" }, empty: { justifyContent: "center" },
   compact: { paddingHorizontal: chatLayout.compactInset, paddingVertical: chatLayout.compactTurnGap, paddingBottom: chatLayout.compactTurnGap + chatLayout.composerOverlap, gap: chatLayout.compactTurnGap }, item: { minWidth: 0 },
   history: { alignItems: "center", justifyContent: "center", minWidth: 0, height: 56 }, hint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },

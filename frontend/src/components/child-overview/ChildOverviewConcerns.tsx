@@ -10,7 +10,7 @@ export function ChildOverviewConcerns({ model, scopeKey, childId, onOpen }: { mo
   const reading = overviewConcerns(model, scopeKey, childId, Date.now());
   const readable = reading.state === "ready" || reading.state === "stale";
   return <View style={styles.card} testID="overview-concerns">
-    <View style={styles.heading}><Text style={styles.eyebrow}>一起慢慢了解</Text><Text accessibilityRole="header" style={styles.title}>最近在留意</Text></View>
+    <View style={styles.heading}><Text accessibilityRole="header" aria-level={2} style={styles.title}>持續關注</Text><Text style={styles.eyebrow}>近期觀察與跟進</Text></View>
     {reading.state === "stale" ? <Text style={styles.warning}>以下為已載入的關注內容，尚未重新核對。</Text> : null}
     {readable ? reading.items.length ? <View style={styles.items}>{reading.items.map(({ concern, observation }) => <View key={concern.id} style={styles.item}>
       <View style={styles.marker} /><View style={styles.copy}><Text style={styles.itemTitle} numberOfLines={2}>{concern.title}</Text>
@@ -24,7 +24,7 @@ export function ChildOverviewConcerns({ model, scopeKey, childId, onOpen }: { mo
 }
 
 const styles = StyleSheet.create({
-  card: { flexGrow: 1, minWidth: 0, padding: spacing.xl, borderRadius: radius.large, borderWidth: 1, borderColor: colors.softLine, backgroundColor: colors.white, gap: spacing.lg },
+  card: { flexGrow: 1, minWidth: 0, padding: spacing.lg, borderRadius: radius.medium, borderWidth: 1, borderColor: colors.softLine, backgroundColor: colors.white, gap: spacing.lg },
   heading: { gap: spacing.xs }, eyebrow: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted },
   title: { fontFamily: chineseFont, fontSize: typeScale.title, lineHeight: 28, fontWeight: "700", color: colors.ink },
   items: { gap: spacing.lg }, item: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md, minWidth: 0 },

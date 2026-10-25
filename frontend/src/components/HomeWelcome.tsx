@@ -1,114 +1,36 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import { usePathname } from "expo-router";
+import { useEffect, useRef } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import Animated, { cancelAnimation, ReduceMotion, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
-import { motionTokens, useMotionPreferences } from "../motion";
 import { useFirstScreenReady } from "../startup/FirstScreenGate";
-import { chineseFont, colors, radius, readingType, spacing } from "../theme";
+import { chineseFont, colors, radius, spacing } from "../theme";
 import { HomeBackground } from "./appearance/HomeBackground";
-import { backgroundSurfaceProps } from "./appearance/background-surface-style";
-import { homeWelcomeArtworkProps } from "./appearance/home-welcome-glass-style";
 
-// The existing session owner consumes the intro. Routes and child changes never reset it.
-export function HomeWelcome({ introductionPending, onIntroductionPresented, scopeKey, compact = false }: {
+// A stable orientation panel replaces the timed, collapsing greeting. The existing
+// startup image gate and introduction acknowledgement are retained without motion.
+export function HomeWelcome({ introductionPending, onIntroductionPresented, compact = false }: {
   introductionPending: boolean; onIntroductionPresented?: () => void; scopeKey: string; compact?: boolean;
 }) {
-  const pathname = usePathname();
-  const preferences = useMotionPreferences();
-  const firstScreenReady = useFirstScreenReady();
-  const date = new Date().toLocaleDateString("zh-HK", { timeZone: "Asia/Hong_Kong", month: "long", day: "numeric" });
-  const play = useRef(introductionPending).current;
-  const initiallyClosed = !play || (preferences.preferenceReady && preferences.reducedMotion);
-  const [closed, setClosed] = useState(initiallyClosed);
-  const [closing, setClosing] = useState(false);
-  const [presented, setPresented] = useState(false);
-  const [height, setHeight] = useState(compact ? 152 : 176);
-  const progress = useSharedValue(initiallyClosed ? 1 : 0);
-  const alive = useRef(true);
-  const generation = useRef(0);
-  const consumed = useRef(false);
-  const callback = useRef(onIntroductionPresented);
-  callback.current = onIntroductionPresented;
-  const previous = useRef({ scopeKey, epoch: preferences.epoch });
-  const consume = useCallback(() => {
-    if (!play || consumed.current) return;
-    consumed.current = true;
-    callback.current?.();
-  }, [play]);
-  const finish = useCallback((token: number) => {
-    if (!alive.current || token !== generation.current) return;
-    setClosed(true); setClosing(false);
-  }, []);
-
-  useLayoutEffect(() => {
-    alive.current = true;
-    return () => { alive.current = false; generation.current += 1; cancelAnimation(progress); };
-  }, [progress]);
-  useLayoutEffect(() => {
-    const old = previous.current;
-    previous.current = { scopeKey, epoch: preferences.epoch };
-    const token = ++generation.current;
-    cancelAnimation(progress);
-    const interrupted = old.scopeKey !== scopeKey || old.epoch !== preferences.epoch || pathname !== "/";
-    if (consumed.current && (interrupted || !preferences.enabled)) {
-      progress.value = 1; finish(token); return;
-    }
-    // Initial child-scope resolution and background/layout changes are not a presentation.
-    if (!play || consumed.current || pathname !== "/" || !firstScreenReady || !preferences.preferenceReady || !preferences.active) return;
-    if (preferences.reducedMotion) { consume(); progress.value = 1; finish(token); return; }
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let frame = requestAnimationFrame(() => {
-      // Allow the ready, visible tree to paint before starting its reading time.
-      frame = requestAnimationFrame(() => {
-        if (!alive.current || token !== generation.current) return;
-        consume(); setPresented(true);
-        timer = setTimeout(() => {
-          if (!alive.current || token !== generation.current) return;
-          setClosing(true);
-          progress.value = withTiming(1, { duration: 360, easing: motionTokens.coverEase, reduceMotion: ReduceMotion.System },
-            finished => { if (finished) runOnJS(finish)(token); });
-        }, 3000);
-      });
-    });
-    return () => { cancelAnimationFrame(frame); if (timer !== undefined) clearTimeout(timer); cancelAnimation(progress); };
-  }, [scopeKey, pathname, preferences.epoch, preferences.enabled, preferences.active, preferences.reducedMotion, preferences.preferenceReady, firstScreenReady, play, consume, finish, progress]);
-
-  // Height, spacing and upward travel share one progress, including the final zero-height seam.
-  const frameStyle = useAnimatedStyle(() => ({ height: (height + spacing.lg) * (1 - progress.value) }));
-  const cardStyle = useAnimatedStyle(() => ({ transform: [{ translateY: -(height + spacing.lg) * progress.value }] }));
-  const fadeStart = compact ? 0.48 : 0.64, fadeEnd = compact ? 0.68 : 0.88;
-  const artwork = homeWelcomeArtworkProps(fadeStart, fadeEnd);
-  // Keep the initial decorative image mounted until its load/fallback settles the startup gate.
-  if (closed && firstScreenReady) return null;
-  return <Animated.View testID="home-welcome" style={[styles.clip, frameStyle]} pointerEvents="none"
-    aria-hidden={closed || closing} accessibilityElementsHidden={closed || closing} importantForAccessibility={closed || closing ? "no-hide-descendants" : "auto"}
-    {...{ dataSet: { introPhase: closed ? "settled" : closing ? "collapsing" : presented ? "reading" : "waiting" } }}>
-    <Animated.View testID={compact ? "mobile-home-greeting" : "desktop-home-banner"}
-      onLayout={event => setHeight(event.nativeEvent.layout.height)} style={[styles.card, compact && styles.compactCard, cardStyle]}>
-      <View testID="home-welcome-glass" aria-hidden importantForAccessibility="no-hide-descendants" pointerEvents="none"
-        {...backgroundSurfaceProps(true)} style={[StyleSheet.absoluteFill, styles.surface]} />
-      <View testID="home-welcome-artwork" aria-hidden importantForAccessibility="no-hide-descendants" pointerEvents="none"
-        {...artwork} style={[StyleSheet.absoluteFill, artwork.style]}>
-        <HomeBackground useCustomImage={false} surface={colors.paper} containIllustration webCssFade
-          fadeStart={fadeStart} fadeEnd={fadeEnd} />
-      </View>
-      <View style={[styles.copy, compact && styles.compactCopy]}>
-        <Text accessibilityRole="header" style={[styles.greeting, compact && styles.compactGreeting]}>你好</Text>
-        <Text style={styles.subline}>{date} · 先看重要的，再繼續日常</Text>
-      </View>
-    </Animated.View>
-  </Animated.View>;
+  const ready = useFirstScreenReady();
+  const acknowledged = useRef(false);
+  useEffect(() => {
+    if (!ready || !introductionPending || acknowledged.current) return;
+    acknowledged.current = true;
+    onIntroductionPresented?.();
+  }, [ready, introductionPending, onIntroductionPresented]);
+  return <View testID="home-welcome" style={[styles.card, compact && styles.compact]}>
+    <View aria-hidden importantForAccessibility="no-hide-descendants" pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <HomeBackground useCustomImage={false} surface={colors.paper} containIllustration webCssFade fadeStart={compact ? 0.50 : 0.48} fadeEnd={0.91} />
+    </View>
+    <View style={styles.copy}>
+      <Text accessibilityRole="header" aria-level={1} style={[styles.title, compact && styles.compactTitle]}>今日照顧</Text>
+      <Text style={styles.detail}>先看重點，再安排下一步。</Text>
+    </View>
+  </View>;
 }
-
 const styles = StyleSheet.create({
-  clip: { overflow: "hidden", flexShrink: 0 },
-  card: { width: "100%", maxWidth: 800, alignSelf: "center", minHeight: 176, borderRadius: radius.medium, overflow: "hidden", justifyContent: "center" },
-  surface: { backgroundColor: colors.paper },
-  compactCard: { minHeight: 152, maxWidth: undefined },
-  copy: { width: "56%", minWidth: 0, gap: spacing.sm, paddingVertical: spacing.xl, paddingHorizontal: 32 },
-  compactCopy: { width: "60%", paddingVertical: spacing.lg, paddingHorizontal: spacing.lg },
-  greeting: { fontFamily: chineseFont, color: colors.ink, fontSize: 30, lineHeight: 38, fontWeight: "800" },
-  compactGreeting: { fontSize: 26, lineHeight: 34 },
-  subline: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
+  card: { minHeight: 156, borderRadius: radius.large, overflow: "hidden", backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.softLine, justifyContent: "center" },
+  compact: { minHeight: 124 }, copy: { width: "70%", gap: spacing.sm, padding: spacing.xl },
+  title: { fontFamily: chineseFont, color: colors.ink, fontSize: 34, lineHeight: 44, fontWeight: "700", letterSpacing: -0.6 },
+  compactTitle: { fontSize: 26, lineHeight: 36 },
+  detail: { fontFamily: chineseFont, color: colors.muted, fontSize: 14, lineHeight: 23 },
 });

@@ -59,7 +59,7 @@ export function NativeKeyboardPane({ children }: { children: ReactNode }) {
 }
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { height: mobileLayout.headerMinHeight, flexShrink: 0, backgroundColor: colors.sidebar, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  header: { height: mobileLayout.headerMinHeight, flexShrink: 0, backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   brand: { flexShrink: 1, minWidth: 0, justifyContent: "center", minHeight: 48 },
   logo: { width: 124, height: 44 },
   actions: { flexShrink: 0, flexDirection: "row", alignItems: "center", gap: spacing.sm },

@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   manualCreateLabel: { fontFamily: chineseFont, fontSize: 14, lineHeight: 20, fontWeight: "700", color: colors.ink }, manualCreateFocused: { borderColor: colors.ink },
   resultDialog: { maxWidth: 860 }, resultScroll: { paddingHorizontal: 0, flexShrink: 1 }, resultContent: { padding: spacing.lg, gap: spacing.md },
   pendingList: { gap: spacing.md, minWidth: 0 }, cardGrid: { gap: spacing.md, minWidth: 0 },
-  proposalCard: { minWidth: 0, gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 0, backgroundColor: colors.controlSurface },
+  proposalCard: { minWidth: 0, gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, backgroundColor: colors.paper },
   cardLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }, cardKind: { flex: 1, minWidth: 0 },
   cardContent: { fontFamily: chineseFont, ...readingType.body, color: colors.ink, minWidth: 0 },
   cardMeta: { flexDirection: "row", gap: spacing.sm, alignItems: "center" }, cardTime: { flex: 1 }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, minWidth: 0, flexShrink: 1 },

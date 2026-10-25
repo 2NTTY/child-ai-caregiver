@@ -38,8 +38,8 @@ function NavItem({ item, active, compact = false }: { item: NavigationItem; acti
     style={StyleSheet.flatten([compact ? styles.bottomNavItem : styles.navItem, active && !compact && styles.navActive, pressed && styles.navPressed])}
   >
     {compact && active ? <MobileNavSelection /> : null}
-    <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 21} color={active ? colors.deepTeal : colors.muted} />
-    <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{item.short}</Text>
+    <AppIcon name={item.icon} size={compact ? mobileIcons.navigation : 20} importantForAccessibility="no" color={active ? colors.deepTeal : colors.muted} />
+    <Text numberOfLines={1} style={[compact ? styles.bottomLabel : styles.navLabel, active && styles.navActiveText]}>{compact ? item.short : item.label}</Text>
   </Pressable></PreviewLink>;
 }
 
@@ -106,20 +106,20 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => { setRailModal(false); }, [motionScope]);
 
   return <View ref={shell} style={styles.root}>
-    {!compact ? <View testID="web-sidebar" style={styles.sidebar}>
+    {Platform.OS === "web" ? <Pressable testID="workspace-skip-link" accessibilityRole="button" accessibilityLabel="跳到主要內容"
+      onPress={() => { const node = routeSurface.current as unknown as HTMLElement | null; const target = node?.querySelector<HTMLElement>('[data-page-surface="true"]') ?? node; if (target) { target.tabIndex = -1; target.focus(); } }} style={styles.skipLink}><Text style={styles.skipText}>跳到主要內容</Text></Pressable> : null}
+    {!compact ? <View testID="web-sidebar" role="navigation" accessibilityLabel="主要功能" style={styles.sidebar}>
       <PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel={brand.homeLabel} style={styles.brandLink}>
         <BrandLogo style={styles.logo} decorative />
-        <Text style={styles.brandLine}>用資料 · 陪伴成長</Text>
+        <Text style={styles.brandLine}>照顧資料與行動，一處整理</Text>
       </Pressable></PreviewLink>
+      <View style={styles.assistantEntry}><AgentEntryButton active={active("/chat")} /></View>
       <ScrollView testID="sidebar-navigation" style={styles.navScroll} contentContainerStyle={styles.navList}>
         {desktopNavigationGroups.map(group => <View key={group.label} style={styles.navGroup}>
           <Text style={styles.navGroupLabel}>{group.label}</Text>
           {group.keys.map(key => navigationItems[key]).map(item => <NavItem key={item.href} item={item} active={active(item.href)} />)}
         </View>)}
       </ScrollView>
-      <View style={styles.sidebarBottom}>
-        <AgentEntryButton active={active("/chat")} />
-      </View>
       <NavItem item={navigationItems.settings} active={active("/settings")} />
     </View> : null}
     <View style={styles.stage}>
@@ -160,24 +160,27 @@ export function AppShell({ children }: { children: ReactNode }) {
 }
 
 const styles = StyleSheet.create({
+  assistantEntry: { paddingBottom: spacing.lg },
+  skipLink: { position: "absolute", left: 16, right: 16, zIndex: 1000, backgroundColor: colors.deepTeal, padding: spacing.md, borderRadius: radius.small },
+  skipText: { color: colors.white, fontFamily: chineseFont, fontWeight: "700" },
   root: { flex: 1, flexDirection: "row", minHeight: 0 },
   pressed: { backgroundColor: colors.paleTeal }, scenarioPressed: { backgroundColor: colors.inkPressed },
-  sidebar: { width: 216, minHeight: 0, backgroundColor: colors.sidebar, borderRightColor: colors.line, borderRightWidth: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.xs },
-  brandLink: { width: "100%", minHeight: 93, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
-  logo: { width: 164, height: 53 },
+  sidebar: { width: 248, minHeight: 0, backgroundColor: colors.sidebar, borderRightColor: colors.line, borderRightWidth: 1, paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.md, gap: spacing.xs },
+  brandLink: { width: "100%", minHeight: 88, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
+  logo: { width: 174, height: 56 },
   brandLine: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.caption, textAlign: "center" },
-  navScroll: { flex: 1, minHeight: 0, marginRight: -spacing.sm }, navList: { gap: spacing.md, paddingBottom: spacing.md, paddingRight: spacing.sm },
+  navScroll: { flex: 1, minHeight: 0, marginRight: -spacing.sm }, navList: { gap: spacing.xl, paddingBottom: spacing.md, paddingRight: spacing.sm },
   navGroup: { gap: spacing.xs }, navGroupLabel: { fontFamily: chineseFont, color: colors.muted, fontSize: 12, lineHeight: 18, paddingHorizontal: spacing.md },
-  navItem: { minHeight: 46, borderRadius: radius.small, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
+  navItem: { minHeight: 44, borderRadius: radius.small, paddingHorizontal: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
   navActive: { backgroundColor: colors.selectedNav, borderLeftColor: colors.teal, borderLeftWidth: 3 },
   navPressed: { backgroundColor: colors.selectedNav },
-  navLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "600", color: colors.ink },
+  navLabel: { fontFamily: chineseFont, fontSize: 13, fontWeight: "600", color: colors.ink },
   navActiveText: { color: colors.deepTeal, fontWeight: "800" },
   sidebarBottom: { paddingBottom: spacing.sm },
   stage: { flex: 1, minWidth: 0, minHeight: 0 },
   scopePane: { flex: 1, minWidth: 0, minHeight: 0 }, drawerContent: { flex: 1 },
-  topbar: { height: 70, flexShrink: 0, backgroundColor: colors.sidebar, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
-  topbarCompact: { height: 64, paddingHorizontal: spacing.md, gap: spacing.sm },
+  topbar: { minHeight: 76, flexShrink: 0, backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingHorizontal: spacing.xl, flexDirection: "row", alignItems: "center", gap: spacing.lg },
+  topbarCompact: { minHeight: 64, paddingHorizontal: spacing.md, gap: spacing.sm },
   topbarTiny: { paddingHorizontal: spacing.sm, gap: spacing.xs },
   topBrandLink: { width: 124, height: 44, alignItems: "center", justifyContent: "center", marginRight: "auto" },
   topBrandLinkTiny: { width: 114 },

@@ -74,8 +74,8 @@ export default function LoginPage() {
       <View testID="login-story-content" style={[styles.storyContent, styles.storyReadingWidth]}>
         <BlurView testID="login-story-panel" intensity={32} tint="light" style={styles.storyPanel}>
         <BrandLogo style={styles.storyLogo} />
-        <Text style={styles.storyEyebrow}>用資料 · 陪伴成長</Text>
-        <Text accessibilityRole="header" style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>用 AI，{narrow ? "" : "\n"}更輕鬆做好育兒大小事。</Text>
+        <Text style={styles.storyEyebrow}>照顧資料與行動，一處整理</Text>
+        <Text accessibilityRole="header" style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>讓日常照顧，{narrow ? "" : "\n"}更有條理。</Text>
         <Text style={styles.storyLead}>結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。</Text>
         <View style={styles.features}>
           <View style={styles.featureRow}><AppIcon name="message-text-outline" /><Text style={styles.feature}>隨時整理照顧問題與記錄</Text></View>
@@ -87,7 +87,7 @@ export default function LoginPage() {
       </View>
     </View> : null}
     <View testID="login-form-column" style={[styles.formSide, narrow ? styles.formCompact : styles.formDesktop]}>
-      <View style={styles.formHeader}><BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text></View>
+      <View style={styles.formHeader}><BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>你的育兒工作台</Text></View>
       <View style={styles.formCard}>
 
         <Text accessibilityRole="header" style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
@@ -132,7 +132,7 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
-  storyPanel: { padding: spacing.xl, gap: spacing.md, borderRadius: radius.medium, overflow: "hidden" },
+  storyPanel: { padding: spacing.xxl, gap: spacing.lg, borderRadius: radius.medium, overflow: "hidden" },
   formCompact: { minHeight: 0, paddingVertical: spacing.xl, paddingHorizontal: spacing.lg },
   storyDesktop: { width: "56%", minWidth: 0, flexShrink: 1 },
   storyReadingWidth: { width: "100%", minWidth: 0, maxWidth: 600 },
@@ -140,6 +140,6 @@ const styles = StyleSheet.create({
   featureRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   scroll: { flex: 1, backgroundColor: colors.white }, root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { backgroundColor: colors.pressedOverlay },
   story: { width: "52%", minHeight: 760, backgroundColor: colors.paper, overflow: "hidden" },  storyImage: { position: "absolute", width: "100%", height: "100%", opacity: 0.55 }, storyContent: { flex: 1, paddingHorizontal: spacing.hero, paddingVertical: spacing.xxl, justifyContent: "center", gap: spacing.md }, storyLogo: { width: 190, height: 60, alignSelf: "flex-start" }, storyEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.small, fontWeight: "800" }, storyTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.hero, lineHeight: 48, fontWeight: "800", maxWidth: 600 }, storyTitleCompact: { fontSize: typeScale.heading, lineHeight: 38 }, storyLead: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, lineHeight: 26, maxWidth: 570 }, features: { marginTop: spacing.lg, gap: spacing.lg }, feature: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "600" },
-  formSide: { flex: 1, minWidth: 0, minHeight: 760, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formHeader: { width: "100%", maxWidth: 440, alignItems: "flex-start", gap: spacing.xs }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small }, formCard: { width: "100%", maxWidth: 440, gap: spacing.md }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
+  formSide: { backgroundColor: colors.canvas, flex: 1, minWidth: 0, minHeight: 760, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formHeader: { width: "100%", maxWidth: 440, alignItems: "flex-start", gap: spacing.xs }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small }, formCard: { width: "100%", maxWidth: 460, gap: spacing.lg, padding: spacing.xl, borderRadius: radius.large, borderWidth: 1, borderColor: colors.softLine, backgroundColor: colors.white }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
   modeTabs: { flexDirection: "row", borderRadius: radius.small, backgroundColor: colors.neutralSurface, padding: spacing.xs, gap: spacing.xs }, modeTab: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radius.small }, modeActive: { backgroundColor: colors.white }, modeInitialMarker: { borderBottomWidth: 2, borderBottomColor: colors.teal }, modeText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" }, modeTextActive: { color: colors.deepTeal }, recoveryRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", columnGap: spacing.md }, recoveryLink: { minHeight: 44, paddingHorizontal: spacing.xs, justifyContent: "center", borderRadius: radius.small }, recoveryText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, textDecorationLine: "underline" }, result: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.paleTeal, borderRadius: radius.small, padding: spacing.md, fontSize: typeScale.small, lineHeight: 22 }, formNote: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 },
 });

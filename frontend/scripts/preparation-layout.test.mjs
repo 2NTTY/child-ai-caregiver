@@ -60,7 +60,7 @@ test('compact assistant actions precede documents while secondary tools and manu
   assert.ok(ordered.indexOf(footer) < ordered.indexOf(h.props.previewControls));
   assert.equal(label(footer, '查看已歸檔'), undefined);
   assert.ok(ordered.indexOf(content) < ordered.indexOf(label(tree, '查看已歸檔')));
-  assert.equal(label(tree, '重新讀取準備單'), undefined);
+  assert.equal(label(tree, '重新載入'), undefined);
   assert.equal(label(tree, '查看已歸檔').props.variant, 'quiet');
   assert.ok(label(footer, '用途'));
   assert.equal(label(footer, '到助手準備下一份').props.variant, 'secondary');
@@ -128,12 +128,12 @@ test('normal ready, empty and read-only pages have no persistent refresh during 
     h.workspace.model.documents = documents;
     for (const condition of ['ready', 'empty', 'read_only']) {
       h.workspace.model.condition = condition; h.workspace.model.busy = false;
-      assert.equal(label(h.render(), '重新讀取準備單'), undefined);
+      assert.equal(label(h.render(), '重新載入'), undefined);
       h.workspace.model.busy = true;
-      assert.equal(label(h.render(), '重新讀取準備單'), undefined); assert.equal(label(h.render(), '正在處理文件…'), undefined);
+      assert.equal(label(h.render(), '重新載入'), undefined); assert.equal(label(h.render(), '正在處理文件…'), undefined);
       assert.deepEqual(reader(h.render()).props.documents, documents);
       h.workspace.model.busy = false;
-      assert.equal(label(h.render(), '重新讀取準備單'), undefined);
+      assert.equal(label(h.render(), '重新載入'), undefined);
     }
   }
 });
@@ -147,7 +147,7 @@ test('failed reads and original-operation checks keep contextual recovery withou
     h.workspace.model.condition = condition;
     const busy = label(h.render(), '正在處理文件…'); assert.ok(busy); assert.equal(busy.props.disabled, true); assert.equal(busy.props.preserveFocusWhenDisabled, false);
     h.workspace.model.busy = false;
-    const retry = label(h.render(), '重新讀取準備單'); assert.equal(retry.props.disabled, false); assert.equal(retry.props.onPress, h.workspace.actions.refresh);
+    const retry = label(h.render(), '重新載入'); assert.equal(retry.props.disabled, false); assert.equal(retry.props.onPress, h.workspace.actions.refresh);
     h.workspace.model.busy = true;
   }
   h.workspace.model.condition = 'ready';

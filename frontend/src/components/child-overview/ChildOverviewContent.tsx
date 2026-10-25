@@ -48,9 +48,14 @@ export function ChildOverviewContent({ avatar, companion, measurements, profileS
     {reading.message ? <View style={styles.notice}><Text style={styles.noticeText}>{reading.message}</Text></View> : null}
     {model && (!model.online || model.needsRefresh) ? <View style={styles.notice}><Text style={styles.noticeText}>{!model.online ? "目前離線，以下已載入內容尚未重新核對。" : "連線已恢復，檔案尚待重新讀取及核對。"}</Text>{model.online && !inaccessible ? <AppButton label="重新讀取檔案" variant="secondary" density="compact" onPress={workspace!.actions.refresh} disabled={model.reading || pending} /> : null}</View> : null}
     {pending ? <View style={styles.notice}><AppStatusBadge label={model?.operation.state === "unknown" ? "檔案操作結果未知" : "檔案正在保存"} tone="warning" /><Text style={styles.noticeText}>畫面只顯示最後確認內容，請在原檔案查核同一操作。</Text><AppButton label="返回原檔案查核" variant="secondary" density="compact" onPress={onOpenProfile} /></View> : null}
+    <View style={styles.measurementSection} testID="overview-measurement-band">
+      <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>最近確認的量度</Text>
+      <View style={styles.measurements}><MeasurementCard label="身高" fact={projection?.height ?? null} state={projection?.state ?? "unavailable"} onOpen={onOpenMeasurement} />
+        <MeasurementCard label="體重" fact={projection?.weight ?? null} state={projection?.state ?? "unavailable"} onOpen={onOpenMeasurement} /></View>
+    </View>
     <View style={[styles.sections, wide && styles.sectionsWide]}>
       <View style={[styles.personal, wide && styles.interests]} testID="overview-personal">
-        <View style={styles.heading}><Text style={styles.meta}>日常相處的小線索</Text><Text accessibilityRole="header" style={styles.cardTitle}>和{model?.child?.name ?? "孩子"}相處</Text></View>
+        <View style={styles.heading}><Text accessibilityRole="header" aria-level={2} style={styles.cardTitle}>日常照顧要點</Text><Text style={styles.meta}>偏好、過敏與特別需要</Text></View>
         {lastKnown && data ? <Text style={styles.meta}>最後確認的資料</Text> : null}
         {data?.preferences ? <Text selectable numberOfLines={4} style={styles.preference}>{data.preferences}</Text>
           : <Text style={styles.body}>{reading.state === "loading" ? "正在讀取生活偏好…" : inaccessible || reading.state === "source_invalidated" || reading.state === "source_unavailable" ? "生活偏好來源暫不可讀。" : "還未記下生活偏好。可在孩子檔案留下喜歡的事物與相處方式。"}</Text>}
@@ -72,8 +77,6 @@ export function ChildOverviewContent({ avatar, companion, measurements, profileS
         <Fact label="語言" value={profileValue(data?.language)} /><Fact label="地區" value={profileValue(data?.region)} />
         {data?.dueDate ? <Fact label="預產期" value={data.dueDate} /> : null}
         {data?.gestationalWeeksRaw ? <Fact label="出生孕週原文" value={data.gestationalWeeksRaw} /> : null}
-        <View style={styles.measurements}><MeasurementCard label="身高" fact={projection?.height ?? null} state={projection?.state ?? "unavailable"} onOpen={onOpenMeasurement} />
-          <MeasurementCard label="體重" fact={projection?.weight ?? null} state={projection?.state ?? "unavailable"} onOpen={onOpenMeasurement} /></View>
         {data ? <View style={styles.sourceText}><Text selectable style={styles.meta}>檔案來源：{data.source || "未提供"}</Text><Text style={styles.meta}>最後確認：{model?.current?.confirmedAtLabel ?? "未知"}{data.validUntil ? ` · 有效至 ${data.validUntil}` : ""}</Text></View> : null}
         <AppButton label="查看檔案更正歷史" variant="quiet" density="compact" onPress={onOpenProfileHistory} disabled={!model?.online || model.reading || pending} />
       </AppScrollView></AppDialog.ScrollArea>
@@ -102,7 +105,7 @@ function MeasurementCard({ label, fact, state, onOpen }: { label: string; fact: 
 
 const styles = StyleSheet.create({
   content: { gap: spacing.lg, minWidth: 0 },
-  identity: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md },
+  identity: { paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.line, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md },
   identityText: { flex: 1, minWidth: 150, gap: spacing.sm },
   avatar: { width: 64, height: 64, borderRadius: radius.pill, backgroundColor: colors.paleTeal, borderWidth: 1, borderColor: colors.sage, alignItems: "center", justifyContent: "center" },
   avatarText: { fontFamily: chineseFont, fontSize: typeScale.heading, lineHeight: 36, fontWeight: "700", color: colors.ink },
@@ -111,16 +114,17 @@ const styles = StyleSheet.create({
   age: { fontFamily: chineseFont, ...readingType.tool, color: colors.ink },
   notice: { backgroundColor: colors.paleAmber, borderRadius: radius.small, padding: spacing.md, gap: spacing.sm },
   noticeText: { fontFamily: chineseFont, ...readingType.tool, color: colors.warningInk },
+  measurementSection: { gap: spacing.md },
   measurements: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
   measurement: { flex: 1, flexBasis: 140, minWidth: 0, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, padding: spacing.md, gap: spacing.sm, backgroundColor: colors.white },
   measurementEmpty: { borderWidth: 0, backgroundColor: "transparent", paddingHorizontal: 0, paddingVertical: spacing.sm },
   measurementValue: { fontFamily: chineseFont, fontSize: typeScale.title, lineHeight: 32, fontWeight: "700", color: colors.ink },
   sections: { gap: spacing.xl }, sectionsWide: { flexDirection: "row", alignItems: "stretch" },
-  personal: { minWidth: 0, gap: spacing.lg, padding: spacing.xl, borderRadius: radius.large, backgroundColor: colors.paleTeal },
+  personal: { minWidth: 0, gap: spacing.lg, padding: spacing.lg, borderRadius: radius.medium, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line },
   companion: { minWidth: 0 }, heading: { gap: spacing.xs },
   cardTitle: { fontFamily: chineseFont, fontSize: typeScale.title, lineHeight: 28, fontWeight: "700", color: colors.ink },
   cardFooter: { marginTop: "auto", gap: spacing.sm, alignItems: "flex-start", borderTopWidth: 1, borderTopColor: colors.sage, paddingTop: spacing.md },
-  careNote: { gap: spacing.sm, padding: spacing.md, borderRadius: radius.small, backgroundColor: colors.white },
+  careNote: { gap: spacing.sm, padding: spacing.md, borderLeftWidth: 3, borderLeftColor: colors.teal, backgroundColor: colors.paleTeal },
   details: { maxWidth: 720 }, detailsContent: { paddingVertical: spacing.lg, gap: spacing.lg, minWidth: 0 },
   interests: { flex: 1.2 }, careFacts: { flex: 1 },
   sectionTitle: { fontFamily: chineseFont, fontSize: typeScale.body, lineHeight: 26, fontWeight: "700", color: colors.ink },

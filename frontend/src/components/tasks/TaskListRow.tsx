@@ -28,10 +28,10 @@ export function TaskListRow({ task, time, assignee, warning, selected, disabled,
   </Pressable>;
 }
 const styles = StyleSheet.create({
-  row: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 3, borderLeftColor: "transparent", paddingHorizontal: spacing.sm, paddingVertical: spacing.lg, minHeight: 80, minWidth: 0 },
+  row: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 3, borderLeftColor: "transparent", paddingHorizontal: spacing.sm, paddingVertical: spacing.lg, minHeight: 80, minWidth: 0 },
   historyRow: { alignItems: "flex-start", paddingVertical: spacing.md, minHeight: 48 },
   summary: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },
-  leading: { alignSelf: "flex-start", paddingTop: 2 }, copy: { flex: 1, minWidth: 0, gap: spacing.xs },
+  leading: { width: 36, height: 36, alignItems: "center", justifyContent: "center", borderRadius: radius.small, backgroundColor: colors.quietSurface }, copy: { flex: 1, minWidth: 0, gap: spacing.xs },
   metadata: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.sm, rowGap: spacing.xs, minWidth: 0 },
   title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
   time: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, flexShrink: 1 },

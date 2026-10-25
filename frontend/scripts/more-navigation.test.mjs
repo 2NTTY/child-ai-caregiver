@@ -13,7 +13,7 @@ function harness(width, pathname = '/more', platform = 'web') {
   const dependencies = {
     react: { useState: value => [value, () => {}] },
     'react/jsx-runtime': require('react/jsx-runtime'),
-    'expo-router': { usePathname: () => pathname, useRouter: () => ({ push: target => events.push(['push', target]) }) },
+    'expo-router': { useLocalSearchParams: () => ({}), usePathname: () => pathname, useRouter: () => ({ push: target => events.push(['push', target]) }) },
     'react-native': { Platform: { OS: platform }, View: 'View', Pressable: 'Pressable', StyleSheet: { create: value => value, flatten: value => value }, useWindowDimensions: () => ({ width }) },
     'react-native-paper': { Text: 'Text' },
   };
@@ -73,7 +73,7 @@ test('All features uses one destination name and includes every existing ordinar
       const links = all.filter(node => node.type === 'PreviewLink');
       for (const [index, key] of keys.entries()) {
         assert.deepEqual(links[index].props.href, key === 'photos' ? { pathname: '/care', params: { view: 'photos' } } : navigation.navigationItems[key].href);
-        assert.equal(links[index].props.children.props.accessibilityLabel, navigation.navigationItems[key].short);
+        assert.equal(links[index].props.children.props.accessibilityLabel, navigation.navigationItems[key].label);
       }
     } else {
       const items = all.filter(node => node.type === 'AppMenuList').flatMap(node => node.props.items);
@@ -92,12 +92,12 @@ test('All features uses one destination name and includes every existing ordinar
 });
 
 
-test('Desktop management puts Profile below Memory while keeping Review naming and mobile entry order', () => {
+test('Desktop catalogue exposes every functional group while retaining mobile entry order', () => {
   assert.deepEqual(navigation.navigationItems.care, { href: '/care', label: '核對', short: '核對', icon: 'notebook-outline' });
   const desktopKeys = navigation.desktopNavigationGroups.flatMap(group => group.keys);
   assert.equal(desktopKeys.filter(key => key === 'care').length, 1);
-  assert.equal(desktopKeys[desktopKeys.indexOf('memory') - 1], 'care');
-  assert.deepEqual(navigation.desktopNavigationGroups.find(group => group.label === '管理').keys, ['care', 'memory', 'profile', 'more']);
+  assert.deepEqual(navigation.desktopNavigationGroups.find(group => group.label === '照顧工作台').keys, ['home', 'tasks', 'growth', 'care']);
+  assert.deepEqual([...desktopKeys].sort(), Object.keys(navigation.navigationItems).filter(key => !['chat', 'settings'].includes(key)).sort());
   const layout = readFileSync(new URL('../app/(dashboard)/_layout.tsx', import.meta.url), 'utf8');
   assert.deepEqual([...layout.matchAll(/<Tabs\.Screen name="([^"]+)"/g)].map(match => match[1]), ['index', 'chat', 'tasks', 'growth', 'care']);
   const screen = readFileSync(new URL('../src/screens/careScreen.tsx', import.meta.url), 'utf8');

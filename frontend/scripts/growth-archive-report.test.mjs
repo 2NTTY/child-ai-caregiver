@@ -100,7 +100,7 @@ test('same-period history cards show their actual versions and Hong Kong prepara
   assert.equal(cards.length, 5);
   assert.equal(new Set(cards.map(card => card.props.accessibilityLabel)).size, 5);
   for (const [index, card] of cards.entries()) {
-    const version = 5 - index, time = `1/10/2026\u200910:00:0${version}`;
+    const version = 5 - index, time = new Date(`2026-10-01T02:00:0${version}Z`).toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false });
     assert.ok(text(card).includes(`版本 ${version} · 整理於 ${time}`));
     assert.equal(card.props.accessibilityLabel, `閱讀R1，版本 ${version} · 整理於 ${time}，部分內容`);
     assert.equal(card.props.accessibilityState.selected, index === 0);
@@ -139,7 +139,7 @@ test('history cards use truthful fallbacks for absent or invalid metadata instea
   const value = samePeriodVersions(); value.page.archive.snapshot.generatedAt = '';
   assert.ok(text(byId(openHistory(harness(props(value))), 'growth-archive-card-report-a-v5')).includes('版本 5 · 整理時間未提供'));
   delete value.page.archive.history[0].version; delete value.page.archive.periods[1].snapshotVersion;
-  assert.ok(text(byId(openHistory(harness(props(value))), 'growth-archive-card-report-a-v4')).includes('版本未提供 · 整理於 1/10/2026\u200910:00:04'));
+  assert.ok(text(byId(openHistory(harness(props(value))), 'growth-archive-card-report-a-v4')).includes(`版本未提供 · 整理於 ${new Date('2026-10-01T02:00:04Z').toLocaleString('zh-HK', { timeZone: 'Asia/Hong_Kong', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false })}`));
 });
 
 test('history metadata retains natural wrapping styles at narrow and wide presentation widths', () => {

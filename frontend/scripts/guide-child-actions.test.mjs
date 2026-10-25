@@ -22,7 +22,8 @@ async function scenario(width = 1024, empty = false) {
     'expo-router/react-navigation': { useNavigation: () => ({}), usePreventRemove() {} },
   };
   const h = harness(mocks); let id = 0;
-  mocks.react = { ...h.react, useId: () => h.react.useRef(`guide-${++id}`).current };
+  mocks.react = { ...h.react, useId: () => h.react.useRef(`guide-${++id}`).current,
+    useSyncExternalStore(subscribe, getSnapshot) { const [, changed] = h.react.useState(0); h.react.useEffect(() => subscribe(() => changed(value => value + 1)), [subscribe]); return getSnapshot(); } };
   const { RecordsController } = h.load('../src/client/records-controller.ts');
   let user = { id: 'parent-a', name: '合成家長', email: 'qa-parent@example.invalid' };
   let children = empty ? [] : ['合成小明', '合成小晴'].map((displayName, index) => ({ id: `child-${index}`, displayName, workspaceId: 'workspace-a', accessRole: 'owner', createdAt: '2026-10-22T06:00:00Z' }));
@@ -129,10 +130,11 @@ test('unknown creation cannot close or change its name; check and retry are reac
 
 test('refresh, visible error retry and offline gates retain their real owner callbacks', async () => {
   const s = await scenario(320, true); assert.ok(s.h.hosts().find(x => x.type === 'EmptyList'));
-  s.failRead(true); s.click('重新整理'); await s.settle(); assert.ok(s.state().childrenError); assert.ok(s.button('重試讀取孩子'));
+  assert.equal(s.button('重新整理'), undefined);
+  s.failRead(true); await s.controller.reloadChildren(); s.render(); assert.ok(s.state().childrenError); assert.ok(s.button('重試讀取孩子'));
   assert.equal(s.h.hosts().find(x => x.type === 'EmptyList'), undefined);
-  s.failRead(false); s.click('重試讀取孩子'); await s.settle(); assert.equal(s.state().childrenError, null); assert.equal(s.counts().refreshCount, 2);
-  s.offline(); assert.equal(s.button('重新整理').props.disabled, true); assert.equal(s.button('登出').props.disabled, true);
+  s.failRead(false); s.click('重試讀取孩子'); await s.settle(); assert.equal(s.state().childrenError, null); assert.equal(s.counts().refreshCount, 1);
+  s.offline(); assert.equal(s.button('重新整理'), undefined); assert.equal(s.button('登出').props.disabled, true);
   s.click('新增孩子'); s.enter('合成離線草稿'); assert.equal(s.button('建立孩子').props.disabled, true); assert.equal(s.counts().creates.length, 0);
 });
 

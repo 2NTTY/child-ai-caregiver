@@ -1,3 +1,5 @@
+import { Workspace } from "../components/workspace/Workspace";
+import { HistoryCategoryNavigation } from "../components/history/HistoryCategoryNavigation";
 import { BackgroundSurface } from "../components/appearance/BackgroundSurface";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
@@ -6,7 +8,7 @@ import { Text } from "react-native-paper";
 import { AppDateField } from "../components/DateTimeFields";
 import { FormDialog } from "../components/FormDialog";
 import { PageFrame } from "../components/PageFrame";
-import { AppButton, AppSelect, AppTabPanel, AppTextField, UnderlineTabs } from "../components/ui";
+import { AppButton, AppTextField } from "../components/ui";
 import { useContainerWidth } from "../components/useContainerWidth";
 import { TaskHistoryView } from "../components/tasks/TaskHistoryView";
 import { CareReviewHistoryView, type CareReviewStatusFilter } from "../components/care/CareReviewHistoryView";
@@ -38,7 +40,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
   const [filters, dispatch] = useReducer(historyFilterReducer, undefined, () => createHistoryFilters(scope, initialCategory));
   const [dateDraft, setDateDraft] = useState<{ scope: string; category: HistoryCategory; from: string; to: string } | null>(null);
   const dateTrigger = useRef<View>(null);
-  const layout = useContainerWidth(), compact = layout.width < 680;
+  const layout = useContainerWidth(), compact = layout.width < 880;
   const scrollRef = useRef<ScrollView>(null), scrollPosition = useRef(0);
   const current = historyCategories.find(item => item.key === filters.category)!;
   const dateRange = historyDateRange(filters.from, filters.to);
@@ -105,11 +107,13 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
     </View>;
 
   const resultSurface = <View style={styles.results}>{results}</View>;
-  return <PageFrame density="compact" title="歷史" scrollRef={scrollRef} scrollTestID="history-scroll"
+  return <PageFrame density="compact" title="歷史資料庫" description="按分類找回原文、已完成安排與過往修改；每一項仍連回原資料。" scrollRef={scrollRef} scrollTestID="history-scroll"
     onScroll={event => { scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
     <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
-      {compact ? <AppSelect<HistoryCategory> label="歷史分類" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))} onChange={category} />
-        : <UnderlineTabs<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
+      <Workspace.Provider title="歷史資料庫" compact={compact}><Workspace.Split>
+        <Workspace.Aside style={!compact ? styles.categoryRail : undefined}><HistoryCategoryNavigation value={filters.category} compact={compact} onChange={category} /></Workspace.Aside>
+        <Workspace.Main>
+          <View style={styles.categoryHeading}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{current.label}</Text><Text style={styles.meta}>{current.description}</Text></View>
       {showSearch ? <BackgroundSurface padded testID="history-filter-toolbar" style={styles.toolbar}>
         <View style={styles.controlRow}>
           {showSearch ? <View style={styles.searchField}><AppTextField label={`搜尋${current.label}`} accessibilityLabel={`搜尋${current.label}`} value={filters.searchText} maxLength={200} disabled={filterDisabled} onChangeText={value => filter({ type: "search", value })} /></View> : null}
@@ -124,8 +128,8 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
         {notificationCategory ? <Text style={styles.meta}>本人消息，涵蓋帳戶及其他孩子</Text> : null}
         {reviewCategory ? <Text style={styles.meta}>按內容及處理狀態搜尋；暫不支援日期篩選。</Text> : null}
       </BackgroundSurface> : null}
-      {/* Keep reader identity across responsive control changes; compact uses a select, not tabs. */}
-      <AppTabPanel tabsId="history-categories" tabKey={filters.category} active hasTabList={!compact} style={styles.results}>{resultSurface}</AppTabPanel>
+      {/* Category controls change presentation only; the same reader stays mounted across widths. */}
+      <View testID="history-current-results" role="region" accessibilityLabel={current.label} style={styles.results}>{resultSurface}</View>
       <FormDialog visible={dateDialogVisible} dismissMode="local" scopeKey={scope} formKey={filters.category} title="日期篩選" returnFocusRef={dateTrigger} onClose={() => setDateDraft(null)}>
         {dateDialogVisible && dateDraft ? <>
           <AppDateField label="開始日期（可不填）" value={dateDraft.from} error={dateErrors.from} disabled={filterDisabled} onChange={from => setDateDraft({ ...dateDraft, from })} />
@@ -140,6 +144,8 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
           </View>
         </> : null}
       </FormDialog>
+        </Workspace.Main>
+      </Workspace.Split></Workspace.Provider>
     </View>
   </PageFrame>;
 }
@@ -157,6 +163,7 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
+  categoryRail: { width: 208 }, categoryHeading: { gap: spacing.xs },
   workspace: { gap: spacing.lg, minWidth: 0 },
   toolbar: { gap: spacing.sm },
   controlRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },

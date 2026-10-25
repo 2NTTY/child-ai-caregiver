@@ -6,9 +6,10 @@ import { harness } from './scope-transition-harness.mjs';
 // establish browser geometry, real API pagination, IME or native focus behavior.
 const text = node => !node ? '' : Array.isArray(node) ? node.map(text).join('') : typeof node === 'object' ? text(node.props?.children) : String(node);
 const flatten = value => Array.isArray(value) ? Object.assign({}, ...value.filter(Boolean).map(flatten)) : value || {};
-function setup(width = 1440) {
+function setup(width = 1440, height = 900) {
+  const dimensions = { width, height };
   const native = { Platform: { OS: 'web', select: value => value.web ?? value.default }, StyleSheet: { create: value => value, flatten },
-    View: 'View', Pressable: 'Pressable', useWindowDimensions: () => ({ width }) };
+    View: 'View', Pressable: 'Pressable', useWindowDimensions: () => dimensions };
   const surface = { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false };
   const dialog = Object.assign(() => null, { Title: 'DialogTitle', Content: 'DialogContent', Actions: 'DialogActions' });
   const mocks = {
@@ -41,21 +42,21 @@ function setup(width = 1440) {
     chatDraft: '保留草稿', setChatDraft: action('draft'), agentAttachments: [], addAgentAttachment: action('attach'), removeAgentAttachment: action('remove'),
     composerFocusRequest: 7, sendChat: action('send'), requestChatReply: action('reply'), agentRuns: {},
     agentModel: { readState: 'ready', run: null, pendingDecision: null }, agentPending: { state: 'ready', entries: [] }, readAgentPending: action('pending'),
-    voiceUpload: {}, fileUpload: {}, authorization: {}, chatWritesAllowed: true, selectAgentRun: action('run'), openAgentSource: action('source') };
+    voiceUpload: {}, fileUpload: {}, photoUpload: {}, authorization: {}, chatWritesAllowed: true, selectAgentRun: action('run'), openAgentSource: action('source') };
   const render = () => { h.production(owner); h.render(h.jsx(ChatPage, {})); return h.hosts().find(node => node.type === 'ChatTimeline'); };
   const composer = () => h.hosts().find(node => node.type === 'AgentComposer');
-  return { h, theme, owner, calls, render, composer, AgentEntryButton, navigationItems, desktopNavigationGroups, moreNavigationGroups };
+  return { h, theme, owner, dimensions, calls, render, composer, AgentEntryButton, navigationItems, desktopNavigationGroups, moreNavigationGroups };
 }
 
 test('desktop primary entry restores both lines and the original guarded link, icon, chevron and focus treatment', () => {
   const s = setup(); s.h.render(s.h.jsx(s.AgentEntryButton, { active: false }));
   const link = s.h.hosts().find(node => node.type === 'PreviewLink'), entry = s.h.node('agent-entry');
   assert.equal(link.props.href, '/chat'); assert.equal(entry.props.accessibilityRole, 'link');
-  assert.equal(entry.props.accessibilityLabel, '與 Agent 對話');
-  assert.equal(text(entry), '與 Agent 對話提問・整理・規劃');
+  assert.equal(entry.props.accessibilityLabel, '開啟育兒助手');
+  assert.equal(text(entry), '開啟育兒助手提問、記錄與規劃');
   assert.deepEqual(s.h.hosts().filter(node => node.type === 'AppIcon').map(node => node.props.name), ['star-four-points', 'chevron-right']);
   assert.equal(entry.props.style.backgroundColor, s.theme.colors.accent);
-  assert.equal(entry.props.style.borderRadius, s.theme.radius.medium); assert.equal(entry.props.style.borderWidth, 2);
+  assert.equal(entry.props.style.borderRadius, s.theme.radius.medium); assert.equal(entry.props.style.borderWidth, 1);
   entry.props.onFocus(); s.h.render(); assert.equal(s.h.node('agent-entry').props.style.outlineWidth, 2);
   s.h.render(s.h.jsx(s.AgentEntryButton, { active: true })); assert.equal(s.h.node('agent-entry').props['aria-current'], 'page');
   assert.equal(s.navigationItems.chat.short, '助手'); assert.equal(s.navigationItems.chat.href, '/chat');
@@ -63,17 +64,17 @@ test('desktop primary entry restores both lines and the original guarded link, i
 
 test('the initial prompt requires a confirmed empty selected-child history, not a loading/error/older-page gap', () => {
   const s = setup(), state = s.owner.chatState;
-  assert.equal(text(s.render().props.emptyState), '想先聊聊什麼？'); assert.equal(s.composer().props.suggestionsAvailable, true);
+  assert.equal(text(s.render().props.emptyState), '今天需要處理甚麼？'); assert.equal(s.composer().props.suggestionsAvailable, true);
   for (const patch of [{ loadedAt: null }, { loading: true, loadedAt: null }, { error: '合成讀取失敗' }, { loadingOlder: true }, { nextCursor: 'older-page' },
     { selectedChildId: 'child-b' }, { messages: [{ id: 'existing', role: 'user', text: '已保存訊息' }] }]) {
     const previous = { ...state }; Object.assign(state, patch);
-    assert.doesNotMatch(text(s.render().props.emptyState), /想先聊聊/); assert.equal(s.composer().props.suggestionsAvailable, false);
+    assert.doesNotMatch(text(s.render().props.emptyState), /今天需要處理/); assert.equal(s.composer().props.suggestionsAvailable, false);
     Object.assign(state, previous);
   }
   for (const patch of [{ busy: 'save' }, { drafts: { 'child-a': { phase: 'save_unknown' } } }]) {
-    const previous = { ...state }; Object.assign(state, patch); assert.doesNotMatch(text(s.render().props.emptyState), /想先聊聊/); Object.assign(state, previous);
+    const previous = { ...state }; Object.assign(state, patch); assert.doesNotMatch(text(s.render().props.emptyState), /今天需要處理/); Object.assign(state, previous);
   }
-  s.owner.agentAttachments = [{ id: 'pending-file', kind: 'file' }]; assert.doesNotMatch(text(s.render().props.emptyState), /想先聊聊/);
+  s.owner.agentAttachments = [{ id: 'pending-file', kind: 'file' }]; assert.doesNotMatch(text(s.render().props.emptyState), /今天需要處理/);
 });
 
 test('child changes wait for that child read; timestamps do not reset established history or draft/focus props', () => {
@@ -88,7 +89,7 @@ test('child changes wait for that child read; timestamps do not reset establishe
   state.selectedChildId = 'child-b'; state.messages = []; state.loadedAt = null; state.loading = true;
   assert.match(text(s.render().props.emptyState), /正在讀取聊天/);
   state.loading = false; state.loadedAt = '2026-10-22T00:01:00Z';
-  assert.equal(text(s.render().props.emptyState), '想先聊聊什麼？');
+  assert.equal(text(s.render().props.emptyState), '今天需要處理甚麼？');
   s.owner.model.selectedChildId = 'child-a'; s.owner.scopeKey = 'user:child-a';
   Object.assign(state, { selectedChildId: 'child-a', messages, loadedAt: '2026-10-22T00:02:00Z' });
   assert.equal(s.render().props.items, messages); assert.equal(s.render().props.emptyState, null);
@@ -96,8 +97,8 @@ test('child changes wait for that child read; timestamps do not reset establishe
 
 test('an empty page with an older cursor keeps the existing pagination callback rather than offering a first conversation', () => {
   const s = setup(); s.owner.chatState.nextCursor = 'older-page'; const timeline = s.render();
-  assert.equal(timeline.props.emptyState, null); assert.equal(timeline.props.header.props.children.props.label, '較早對話');
-  timeline.props.header.props.children.props.onPress(); assert.deepEqual(s.calls.at(-1), ['older']);
+  assert.equal(timeline.props.emptyState, null); assert.equal(timeline.props.history.cursor, 'older-page');
+  assert.equal(timeline.props.history.enabled, true); timeline.props.history.load(); assert.deepEqual(s.calls.at(-1), ['older']);
   assert.equal(s.composer().props.onChangeDraft, s.owner.setChatDraft);
 });
 
@@ -106,7 +107,7 @@ test('the chat toolbar keeps activity but no duplicate memory shortcut at compac
   for (const width of [320, 390, 1024, 1440]) {
     const s = setup(width); s.render();
     const toolbar = () => s.h.node('chat-top-toolbar');
-    const activity = () => toolbar().props.children[1].props.children;
+    const activity = () => toolbar().props.children[1].props.children.filter(Boolean).find(node => node.props.label.startsWith("活動"));
     assert.equal(activity().props.label, '活動');
     assert.equal(activity().props.compact, width < s.theme.mobileLayout.breakpoint);
     assert.doesNotMatch(text(toolbar()), /記憶與參考/);
@@ -122,5 +123,22 @@ test('the chat toolbar keeps activity but no duplicate memory shortcut at compac
     assert.equal(s.navigationItems.memory.label, '記憶與參考');
     assert.ok(s.desktopNavigationGroups.some(group => group.keys.includes('memory')));
     assert.ok(s.moreNavigationGroups.some(group => group.items.some(item => item.key === 'memory')));
+  }
+});
+
+
+test('short-height reflow retains the same timeline refs, draft/actions and visible privacy access across zoom sizes', () => {
+  const s = setup(590, 378), first = s.render(), scroll = first.props.scrollRef, controls = first.props.controlsRef;
+  const toolbar = () => s.h.node('chat-top-toolbar');
+  assert.equal(flatten(toolbar().props.style).minHeight, 48);
+  assert.equal(first.props.viewportLayout, 'short'); assert.equal(s.composer().props.viewportLayout, 'short');
+  assert.equal(s.composer().props.draft, s.owner.chatDraft); assert.equal(s.composer().props.onChangeDraft, s.owner.setChatDraft);
+  assert.ok(s.h.hosts().some(node => node.props.accessibilityLabel === '查看 AI 資料處理說明'));
+  assert.match(text(toolbar()), /育兒助手/); assert.match(text(s.h.hosts().find(node => node.props.accessibilityLabel === '查看 AI 資料處理說明')), /資料使用/);
+  for (const [width, height] of [[320, 378], [1180, 757], [590, 378]]) {
+    Object.assign(s.dimensions, {width, height}); const next = s.render();
+    assert.equal(next.props.scrollRef, scroll); assert.equal(next.props.controlsRef, controls);
+    assert.equal(next.props.viewportLayout, height < 500 ? 'short' : 'standard');
+    assert.equal(s.composer().props.draft, '保留草稿'); assert.equal(s.composer().props.onPreview instanceof Function, true);
   }
 });

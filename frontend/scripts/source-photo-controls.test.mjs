@@ -54,6 +54,7 @@ function harness(entry, symbol, args = [], overrides = {}) {
       if (name === "react-native-paper") return { Text: "Text", Portal: "Portal", ActivityIndicator: "ActivityIndicator" };
       if (name.endsWith("/theme")) return { colors: {}, radius: {}, readingType: {}, workspaceType: {}, spacing: {}, typeScale: {}, mobileLayout: {breakpoint: 600} };
       if (name.endsWith("/ui")) return Object.fromEntries(["AppButton", "AppTextField", "SectionHeader", "SectionCard", "TextLink"].map(value => [value, value]));
+      if (name.endsWith("/useAttachmentReview")) return {useAttachmentReview: () => null};
       if (name.endsWith("/AppStatusBadge")) return { AppStatusBadge: "AppStatusBadge" };
       if (name.endsWith("/AppIcon")) return { AppIcon: "AppIcon" };
       if (name.endsWith("/HomeOverviewItems")) return { HomeOverviewItems: "HomeOverviewItems" };
@@ -70,7 +71,7 @@ function harness(entry, symbol, args = [], overrides = {}) {
       if (name.endsWith("/motion")) return Object.fromEntries(["MotionList", "MotionFeedback", "MotionReveal", "MotionDisclosure"].map(v=>[v,v]));
       const leaf = name.split("/").at(-1);
       if (["SourcesView","PhotosView","PageFrame","AppScrollView","AppCheckbox","ReadStateNotice","StatusAnnouncement","PhotoFilePicker","PhotoRecordForm","SourceComposer","SourceDetails","SourceRecordForm","SourceIntakeConversation"].includes(leaf)) return {[leaf]: leaf, sourceTime: x=>x};
-      if (!name.startsWith(".")) return require(name);
+      if (!name.startsWith(".")) { try { return require(name); } catch (error) { throw new Error(`Unmocked native dependency ${name} from ${filename}`, {cause: error}); } }
       const file = path.resolve(path.dirname(filename), name);
       return load(existsSync(file) ? file : existsSync(`${file}.ts`) ? `${file}.ts` : `${file}.tsx`);
     };
@@ -97,6 +98,7 @@ const input = {id:'9f8d68d0-acb5-44aa-86f9-b293084bad52',childId,ownerUserId:'sy
 function envFor(role = "owner") {
   const counters = { invalidations: 0, accessErrors: [], guard: [], active: true };
   const env = {
+    owner: {fetcher() { assert.fail("Unexpected transport outside the synthetic API port"); }, draftOwner: {getSnapshot: () => ({scope: "synthetic-scope", attachments: []}), subscribe: () => () => {}}},
     apiBaseUrl: "https://synthetic.invalid", userId: "synthetic-user", childId, childName: "Synthetic child",
     role, scopeKey: "synthetic-scope", online: true, current: () => counters.active,
     canStartWrite: () => true, accessError: error => counters.accessErrors.push(error),
@@ -154,7 +156,7 @@ test("viewer opens their listed private source while every write capability rema
   assert.equal(value.model.selected.id, input.id); assert.equal(value.model.selected.text, input.text); assert.equal(f.state.reads, 1);
   for (const key of ["canChoose", "canCreate", "canFetch", "canExtract", "canConfirm", "canDelete"]) assert.equal(value.model[key], false, key);
   assert.equal(value.model.formLocked, true);
-  assert.equal(byType(sourceView(value), "AppButton").find(node => node.props.label === "清除草稿並新增來源").props.disabled, true);
+  assert.equal(byType(sourceView(value), "AppButton").find(node => node.props.label === "新增來源").props.disabled, true);
   const originalDraft = value.model.managementDraft;
   value.actions.management.edit({intention: "blocked"}); value.actions.intake.confirmProposal(); value.actions.fetchContent(); value.actions.extract(); value.actions.confirm(); value.actions.remove();
   value.actions.create({kind: "personal_source", sourceLabel: "blocked", sourceUrl: null, sourceDateText: null, sourceNotes: "", text: "synthetic"}); value.actions.newInput();
@@ -218,6 +220,7 @@ function photoOwner(kind = "reserve") {
   const owner = harness("src/production/PhotoInputDomains.tsx", "useProductionPhotos", [], {
     "../../../src/client/photo-api": {createPhotoApi: () => api, PhotoApiError: ApiError},
     "./useDomainEnvironment": {useDomainEnvironment: () => env, useDomainWriteGuard: (...value) => counters.guard.push(value)},
+    "./ProductionProvider": {useProduction: () => ({})},
     "./usePhotoInputSources": {usePhotoInputSources: () => ({})}, __path: () => "/photos",
   });
   return {owner, state, api, env, counters};

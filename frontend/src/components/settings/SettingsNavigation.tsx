@@ -34,7 +34,7 @@ export function SettingsNavigation<T extends string>({ id, items, value, onChang
 }
 
 const styles = StyleSheet.create({
-  navigation: { width: 176, flexShrink: 0, gap: spacing.md }, compact: { width: "100%", minWidth: 0 },
+  navigation: { width: 192, flexShrink: 0, gap: spacing.md, paddingVertical: spacing.md, borderRadius: radius.medium, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.softLine }, compact: { width: "100%", minWidth: 0 },
   eyebrow: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, paddingHorizontal: spacing.md },
   items: { gap: spacing.xs }, item: { minHeight: 48, justifyContent: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.small, borderLeftWidth: 2, borderLeftColor: "transparent" },
   selected: { backgroundColor: colors.paleTeal, borderLeftColor: colors.ink }, label: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },

@@ -1,0 +1,26 @@
+✔ workspace compound parts share presentation metadata and retain arbitrary action/content slots (70.838239ms)
+✔ home composition passes the exact original model and actions to every domain projection (46.004626ms)
+✔ home setup is derived from confirmed empty children, not loading or error snapshots (30.778002ms)
+✔ catalogue search preserves every feature and treats input as plain metadata text (1.95354ms)
+✔ normal navigation retains all eighteen route entry files, redirects and production owners (0.999053ms)
+✔ web shell adds keyboard escape route to content without forcing display zoom (0.386872ms)
+✔ history category rail exposes eight real choices and compact selector keeps the exact category callback (43.361536ms)
+✔ family remains honestly unavailable and only routes to existing personal controls (16.24941ms)
+✔ admin return is a guarded web link and profile management never promises destructive actions are harmless (0.839579ms)
+✔ actual shortcut style survives the installed Expo Slot/RNW merge boundary (31.244243ms)
+✔ actual routeLink style survives the installed Expo Slot/RNW merge boundary (7.147385ms)
+✔ actual returnLink style survives the installed Expo Slot/RNW merge boundary (16.799077ms)
+✔ actual RNWeb skip control stays out of the shell row when RN styles are emitted after custom CSS (10.748209ms)
+✔ the same SSR oracle catches the original relative-position regression (2.155485ms)
+✔ More keeps mobile lists and desktop links without a redundant return-to-records button (267.745228ms)
+✔ the existing Records control returns from More through the guard without state-reset actions (15.521015ms)
+✔ All features uses one destination name and includes every existing ordinary feature without admin or duplicate destinations (81.622868ms)
+✔ Desktop catalogue exposes every functional group while retaining mobile entry order (17.529998ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 774.626187

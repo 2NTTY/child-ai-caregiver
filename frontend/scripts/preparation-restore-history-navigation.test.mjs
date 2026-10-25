@@ -50,6 +50,8 @@ function scenario(width = 1024) {
     '../components/DateTimeFields': { AppDateField: 'DateField' },
     '../components/FormDialog': { FormDialog: 'FormDialog' },
     '../components/PageFrame': { PageFrame: 'PageFrame' },
+    '../components/workspace/Workspace': {Workspace: {Provider: 'WorkspaceProvider', Split: 'WorkspaceSplit', Main: 'WorkspaceMain', Aside: 'WorkspaceAside'}},
+    '../components/history/HistoryCategoryNavigation': {HistoryCategoryNavigation: 'HistoryCategoryNavigation'},
     '../components/ui': { AppButton: 'Button', AppSelect: 'Select', AppTabPanel: 'TabPanel', AppTextField: 'TextField', UnderlineTabs: 'Tabs' },
     '../components/useContainerWidth': { useContainerWidth: () => ({ width }) },
     '../components/tasks/TaskHistoryView': { TaskHistoryView: 'TaskHistory' },
@@ -81,7 +83,7 @@ function scenario(width = 1024) {
   }
   const tree = h.jsx(guard.PreviewNavigationGuard, { children: [h.jsx(PersistentDocuments, {}, 'owner'), h.jsx(Page, {}, 'page')] });
   const render = () => h.render(tree);
-  const picker = () => h.hosts().find(node => node.type === (width < 680 ? 'Select' : 'Tabs'));
+  const picker = () => h.hosts().find(node => node.type === 'HistoryCategoryNavigation');
   const button = label => h.hosts().find(node => node.type === 'Button' && node.props.label === label);
   const s = { calls, leases, render, button, picker, get documents() { return documents; }, get pathname() { return pathname; },
     async settle() { while (jobs.length) await jobs.shift(); render(); },

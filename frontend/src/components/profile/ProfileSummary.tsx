@@ -51,18 +51,18 @@ export function ProfileReadingSummary({ data, compact }: { data: ProfileDataView
   const ageLabel = age.kind === "unknown" ? null : age.kind === "birth_date" ? `出生日期 ${age.date}`
     : `約 ${age.rawValue} ${profileAgeUnitOptions.find(item => item.value === age.unit)?.label ?? age.unit}（截至 ${age.asOf}）`;
   const groups = [
+    { title: "健康與照顧", rows: [
+      { label: "過敏資料", value: data.allergies }, { label: "特別需要", value: data.specialNeeds }, { label: "照顧偏好", value: data.preferences },
+    ] },
     { title: "基本資料", rows: [
       { label: "年齡資料", value: ageLabel }, { label: "地區", value: data.region }, { label: "語言", value: data.language },
       { label: "預產期", value: data.dueDate }, { label: "出生孕週原文", value: data.gestationalWeeksRaw },
     ] },
-    { title: "健康與照顧", rows: [
-      { label: "過敏資料", value: data.allergies }, { label: "特別需要", value: data.specialNeeds }, { label: "照顧偏好", value: data.preferences },
-    ] },
   ];
   return <View testID="profile-reading-groups" style={[styles.groups, compact && styles.groupsStacked]}>{groups.map(group => {
     const known = group.rows.filter(row => row.value !== null), unknown = group.rows.filter(row => row.value === null);
-    return <SectionCard key={group.title} style={[styles.group, compact && styles.groupFull]}>
-      <SectionHeader density="compact" title={group.title} />
+    return <SectionCard key={group.title} style={[styles.group, group.title === "健康與照顧" && styles.careGroup, compact && styles.groupFull]}>
+      <SectionHeader density="compact" title={group.title} icon={group.title === "健康與照顧" ? "shield-check-outline" : "account-child-outline"} />
       {known.map(row => <View key={row.label} style={styles.readingFact}><Text style={styles.readingLabel}>{row.label}</Text><Text style={styles.body}>{row.value}</Text></View>)}
       {unknown.length ? <Text style={[styles.meta, known.length > 0 && styles.unknownDivider]}>未知：{unknown.map(row => row.label).join("、")}</Text> : null}
     </SectionCard>;
@@ -83,6 +83,7 @@ export function ProfileRevisionDetails({ revision }: { revision: ProfileRevision
 const styles = StyleSheet.create({
   groups: { flexDirection: "row", alignItems: "stretch", gap: spacing.lg, minWidth: 0 },
   groupsStacked: { flexDirection: "column" },
+  careGroup: { borderTopWidth: 3, borderTopColor: colors.teal },
   group: { flex: 1, minWidth: 0, gap: spacing.md },
   groupFull: { flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto", width: "100%" },
   readingFact: { gap: spacing.xs, minWidth: 0 },

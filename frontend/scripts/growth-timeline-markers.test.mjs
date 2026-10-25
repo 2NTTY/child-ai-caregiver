@@ -91,10 +91,10 @@ test('multiline descriptions remain intrinsic without fixed row or connector hei
   assert.equal(flatten(trailing.props.style).height, undefined);
 });
 
-test('reading timeline no longer duplicates the selected title or embeds a destructive trigger', () => {
+test('reading timeline identifies the selected concern and never embeds a destructive trigger', () => {
   const tree = render([event(0)]);
   assert.equal(nodes(tree, node => node.type === 'GrowthArchiveConcernButton').length, 0);
-  assert.equal(nodes(tree, node => node.type === 'Text' && node.props.children === 'Concern').length, 0);
+  assert.equal(nodes(tree, node => node.type === 'Text' && node.props.children === 'Concern').length, 1);
   assert.equal(tree.props.accessibilityLabel, '關注：Concern');
   assert.equal(nodes(tree, node => node.type === 'SectionHeader')[0].props.title, '跟進記錄');
 });
@@ -103,13 +103,13 @@ test('concern explanation has its own heading and emphasis without truncating th
   const reason = 'Synthetic concern explanation.\n'.repeat(30);
   const tree = render([event(0)], {concern: {id: 'concern', title: 'Concern', status: 'following', reason, historyComplete: true}});
   const summary = nodes(tree, node => node.props?.testID === 'growth-concern-summary')[0];
-  const heading = nodes(summary, node => node.type === 'Text' && node.props.children === '關注說明')[0];
+  const heading = nodes(summary, node => node.type === 'Text' && node.props.children === 'Concern')[0];
   const description = nodes(summary, node => node.type === 'Text' && node.props.children === reason)[0];
   assert.equal(heading.props.accessibilityRole, 'header');
   assert.equal(description.props.style, styles.concernSummary);
   assert.equal(description.props.numberOfLines, undefined);
-  assert.ok(styles.concernSummary.fontSize > styles.reading.fontSize);
-  assert.equal(styles.concernSummary.fontWeight, '600');
+  assert.equal(heading.props['aria-level'], 2);
+  assert.equal(styles.concernSummary.fontSize, styles.reading.fontSize);
   assert.equal(styles.concernHeading.borderBottomWidth, 1);
   assert.equal(styles.concernHeading.height, undefined);
   assert.equal(styles.concernSummary.maxHeight, undefined);
@@ -125,4 +125,15 @@ test('unknown event times remain explicitly unknown with the existing clock meta
   assert.ok(time);
   assert.equal(nodes(time, node => node.type === 'AppIcon')[0].props.name, 'clock-outline');
   assert.equal(nodes(time, node => node.type === 'Text')[0].props.children, '時間未提供');
+});
+
+
+test('concern heading stays neutral for proposed, following and closed history', () => {
+  for (const [status, label] of [['proposed', '待家長核對'], ['following', '持續關注'], ['closed', '已結束']]) {
+    const tree = render([], {concern: {id: 'concern', title: 'Concern', status, reason: 'Reason', historyComplete: true}});
+    const summary = nodes(tree, node => node.props?.testID === 'growth-concern-summary')[0];
+    const texts = nodes(summary, node => node.type === 'Text').map(node => node.props.children);
+    assert.ok(texts.includes('關注主題')); assert.ok(!texts.includes('正在跟進'));
+    assert.equal(nodes(summary, node => node.type === 'AppStatusBadge')[0].props.label, label);
+  }
 });

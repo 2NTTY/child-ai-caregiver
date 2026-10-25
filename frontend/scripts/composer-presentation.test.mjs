@@ -37,8 +37,8 @@ test('composer remains a restrained two-layer panel with the existing input limi
   const panel = nodes(AgentComposer(baseProps)).find(node => node.props?.testID === 'chat-composer-panel');
   const style = flatten(panel.props.style);
   assert.equal(style.borderWidth, 1);
-  assert.equal(style.borderColor, theme.colors.line);
-  assert.equal(style.borderRadius, 24);
+  assert.equal(style.borderColor, theme.colors.controlOutline);
+  assert.equal(style.borderRadius, 18);
   assert.equal(style.paddingHorizontal, 8);
   assert.equal(style.paddingVertical, 4);
   assert.equal(style.backgroundColor, theme.colors.controlSurface);
@@ -97,8 +97,24 @@ test('four tools stay transparent at rest with unchanged 40 or 48 pixel hit targ
 
 test('input keeps its autosize and IME guards on a stable textarea', () => {
   const web = source('src/components/agent/ChatComposerInput.web.tsx');
-  assert.match(web, /useLayoutEffect\(\(\) => \{ if \(input.current\) fitInput\(input.current\); \}, \[props.value\]\)/);
+  assert.match(web, /useLayoutEffect\(\(\) => \{ if \(input.current\) fitInput\(input.current, maxHeight\); \}, \[props.value, maxHeight\]\)/);
   assert.match(web, /event.shiftKey \|\| composing.current \|\| event.nativeEvent.isComposing \|\| event.nativeEvent.keyCode === 229/);
   assert.match(web, /if \(!props.disabled && \(props.canSubmit \?\? !!props.value.trim\(\)\)\) props.onSubmit\(\)/);
   assert.doesNotMatch(web, /<textarea[^>]*\bkey=/);
+});
+
+
+test('short viewport keeps every control, draft, attachment and hint in a wrapping bounded layout', () => {
+  const attachments = [{id: 'synthetic-file', kind: 'file', fileName: '公園清單.txt', bytes: 80, mimeType: 'text/plain'}];
+  const onChangeDraft = () => {}, onRemoveAttachment = () => {};
+  const tree = AgentComposer({...baseProps, viewportLayout: 'short', compact: true, draft: 'Synthetic multiline\n'.repeat(12), attachments, inputHint: '按送出會保存原檔，並交給已選模型。', onChangeDraft, onRemoveAttachment});
+  const all = nodes(tree), root = all.find(n => n.props?.testID === 'chat-composer'), entry = all.find(n => n.props?.testID === 'composer-entry-layout');
+  assert.equal(flatten(root.props.style).marginTop, 0);
+  assert.equal(flatten(entry.props.style).flexDirection, 'row'); assert.equal(flatten(entry.props.style).flexWrap, 'wrap');
+  const input = all.find(n => n.type === 'ChatComposerInput'); assert.equal(input.props.maxHeight, 72); assert.equal(input.props.onChangeText, onChangeDraft);
+  const preview = all.find(n => n.type === 'AssistantAttachmentPreview'); assert.equal(preview.props.attachments, attachments); assert.equal(preview.props.onRemove, onRemoveAttachment);
+  const context = all.find(n => n.props?.testID === 'composer-attachment-context'); assert.equal(context.type, 'AppScrollView'); assert.equal(flatten(context.props.style).maxHeight, 64); assert.equal(context.props.keyboardShouldPersistTaps, 'handled');
+  assert.ok(nodes(context).some(n => n.type === 'Text' && n.props.children === '按送出會保存原檔，並交給已選模型。'));
+  assert.ok(all.some(n => n.type === 'AgentInputToolbar')); assert.ok(all.some(n => n.type === 'AgentVoiceControl'));
+  const send = all.find(n => n.props?.accessibilityLabel === '預覽輸入'); assert.equal(idle(send).width, 48); assert.equal(idle(send).height, 48);
 });

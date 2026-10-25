@@ -5,6 +5,7 @@ import { currentTaskMetadata, taskStateLabels, taskWorkLabels, type TaskAssignee
 import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { StatusAnnouncement } from "../StatusAnnouncement";
 import { AppStatusBadge } from "../AppStatusBadge";
+import { SummaryDisclosure } from "../summary/SummaryDisclosure";
 import { AppIcon, type AppIconName } from "../AppIcon";
 import { MotionFeedback, MotionReveal } from "../../motion";
 
@@ -25,7 +26,7 @@ export function TaskSnapshot({ task, assignees, showTitle = true, announceEligib
   const due = DateTime.fromISO(task.occurrence.dueAt, { setZone: true }).setZone(task.occurrence.timeZone);
   const dueLabel = due.isValid ? due.toFormat("yyyy年M月d日 HH:mm") : "時間待核對";
   const arrangement = {assignee: taskAssigneeLabel(task.assigneeUserId, assignees), dueAt: dueLabel};
-  const status = <View style={styles.statusLine}><TaskMetadata icon={task.kind === "ordinary" ? "clipboard-check-outline" : "calendar-clock-outline"} label="種類" value={task.kind === "ordinary" ? "待辦事項" : "預約"} />{!compact ? <Text style={styles.meta}>版本 {task.version}</Text> : null}<AppStatusBadge label={taskStateLabels[task.occurrence.state]} tone={task.occurrence.state === "needs_review" ? "warning" : task.occurrence.state === "completed" ? "success" : task.occurrence.state === "cancelled" ? "neutral" : "info"} /></View>;
+  const status = <View style={styles.statusLine}><TaskMetadata icon={task.kind === "ordinary" ? "clipboard-check-outline" : "calendar-clock-outline"} label="種類" value={task.kind === "ordinary" ? "待辦事項" : "預約"} /><AppStatusBadge label={taskStateLabels[task.occurrence.state]} tone={task.occurrence.state === "needs_review" ? "warning" : task.occurrence.state === "completed" ? "success" : task.occurrence.state === "cancelled" ? "neutral" : "info"} /></View>;
   const eligibilityWarning = !eligible ? <Text style={styles.warning}>{task.occurrence.state === "scheduled" ? "原負責人已不具執行資格，請重新指派；不能視為仍可聯絡。" : "這是歷史指派，不代表現時有權執行或可聯絡。"}</Text> : null;
   const arrangementContent = (shown: typeof arrangement) => <>
     <TaskMetadata icon="account-outline" label="負責人" value={shown.assignee} />
@@ -42,10 +43,11 @@ export function TaskSnapshot({ task, assignees, showTitle = true, announceEligib
   </View>;
 }
 export function TaskSnapshotMetadata({ task }: { task: TaskView }) {
-  return <View style={styles.metadata}>
+  return <SummaryDisclosure label="查看記錄詳情" scopeKey={`${task.id}:${task.version}`}><View style={styles.metadata}>
+    <Text style={styles.meta}>版本 {task.version}</Text>
     <TaskMetadata icon="clock-outline" label="加入時間" value={`加入 ${taskDisplayTime(task.createdAt, task.occurrence.timeZone)}`} />
     <TaskMetadata icon="history" label="最後更新" value={`更新 ${taskDisplayTime(task.updatedAt, task.occurrence.timeZone)}`} />
-  </View>;
+  </View></SummaryDisclosure>;
 }
 export function TaskWorkerMetadata({ task, model, announce = true }: { task: TaskView; model: TasksViewModel; announce?: boolean }) {
   const metadata = currentTaskMetadata(task, model.eligibleAssignees, model.work, model.reminders);

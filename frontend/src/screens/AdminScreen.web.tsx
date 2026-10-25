@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { Redirect, useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { Redirect } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Switch, Text } from 'react-native-paper';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { AGENT_RUN_LIMITS } from '../../../src/shared/agent-run-limits';
 import { platformPolicyValuesSchema, type AdminCommand, type AdminInvitation, type AdminReceipt } from '../../../src/shared/admin';
+import { SummaryDisclosure } from '../components/summary/SummaryDisclosure';
+import { AppStatusBadge } from '../components/AppStatusBadge';
 import { PageFrame } from '../components/PageFrame';
 import { AppButton, AppTextField, SectionHeader } from '../components/ui';
+import { PreviewLink } from '../preview/PreviewNavigationGuard';
 import { useProduction } from '../production/ProductionProvider';
-import { colors, spacing } from '../theme';
+import { chineseFont, colors, radius, readingType, spacing } from '../theme';
 
 const fields = [
   ['dailyUserAttempts', '每人每日平台呼叫', 1000], ['dailyGlobalAttempts', '全站每日平台呼叫', 10000],
@@ -27,7 +30,7 @@ const stateLabel = (item: AdminInvitation) => item.state === 'consumed' ? '已�
 function AuditItem({ item }: { item: AdminReceipt }) {
   return <View style={styles.row}>
     <Text>{when(item.at)} · {item.command.kind === 'policy' ? '修改平台設定' : item.command.kind === 'invite' ? '發出／續期邀請' : '撤銷未使用邀請'}</Text>
-    <Text selectable style={styles.note}>操作：{item.opId} · 管理員：{item.actorId}</Text>
+    <SummaryDisclosure label="管理操作識別" scopeKey={item.opId}><Text selectable style={styles.note}>操作：{item.opId} · 管理員：{item.actorId}</Text></SummaryDisclosure>
     {item.command.kind === 'policy' && 'version' in item.result ? <>
       <Text>平台 AI：{item.before && 'enabled' in item.before ? item.before.enabled ? '啟用' : '暫停' : '未設定'} → {item.result.enabled ? '啟用' : '暫停'}；版本 {item.result.version}</Text>
       {fields.map(([key, label]) => <Text key={key} style={styles.note}>{label}：{item.before && key in item.before ? String((item.before as Values)[key]) : '—'} → {String((item.result as Values)[key])}</Text>)}
@@ -35,10 +38,11 @@ function AuditItem({ item }: { item: AdminReceipt }) {
   </View>;
 }
 export default function AdminScreen() {
-  const { owner, userId, auth, user, online, refresh } = useProduction(), admin = owner.adminOwner, router = useRouter();
+  const { owner, userId, auth, user, online, refresh } = useProduction(), admin = owner.adminOwner;
   const state = useSyncExternalStore(admin.subscribe, admin.getSnapshot, admin.getSnapshot);
   const visible = auth === 'signedIn' && state.userId === userId && state.access === 'allowed';
   const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
+  const [returnPressed, setReturnPressed] = useState(false);
   const [search, setSearch] = useState(''), [password, setPassword] = useState(''), [localNotice, setLocalNotice] = useState<string | null>(null);
   const [reauthBusy, setReauthBusy] = useState(false), [revoke, setRevoke] = useState<AdminInvitation | null>(null);
   const currentUser = useRef(userId); currentUser.current = userId;
@@ -70,8 +74,8 @@ export default function AdminScreen() {
   };
   if (!userId && auth === 'signedOut') return <Redirect href="/login" />;
   return <PageFrame title="網站管理" description="邀請資格、平台 AI 設定及實際用量。此頁不讀取家長私人資料。"
-    headerActions={<AppButton label="返回育有方" variant="quiet" onPress={() => router.replace('/')} />}>
-    {!visible ? <View style={styles.card}><Text>{state.access === 'denied' ? '此帳號沒有網站管理權限。' : '正在核對網站管理身份。'}</Text>
+    headerActions={<PreviewLink href="/"><Pressable accessibilityRole="link" accessibilityLabel="返回工作台" onPressIn={() => setReturnPressed(true)} onPressOut={() => setReturnPressed(false)} style={StyleSheet.flatten([styles.returnLink, returnPressed && styles.returnPressed])}><Text style={styles.returnLabel}>返回工作台</Text></Pressable></PreviewLink>}>
+    {!visible ? <View style={styles.card}><AppStatusBadge label={state.access === 'denied' ? '僅限網站管理員' : '身份核對中'} tone={state.access === 'denied' ? 'neutral' : 'info'} /><SectionHeader title={state.access === 'denied' ? '這個帳號沒有管理權限' : '正在核對網站管理身份'} subtitle="一般照顧功能不需要管理權限，可返回工作台繼續。" />
       {state.notice ? <Text>{state.notice}</Text> : null}
       <AppButton label="重新核對登入及權限" disabled={!online || state.access === 'loading'} onPress={() => { void refresh(); if (userId) void admin.checkAccess(); }} /></View>
     : <>
@@ -118,10 +122,10 @@ export default function AdminScreen() {
           </View> : null}
           {!state.overview.serverEnabled || !state.overview.platformConfigured ? <Text>部署層 AI 或憑據尚未就緒；後台開關不能越過部署限制。</Text> : null}
           <Controller control={policyForm.control} name="enabled" render={({ field }) => <View style={styles.actions}><Text>平台 AI：{field.value ? '啟用' : '暫停'}</Text><Switch accessibilityLabel="平台 AI" value={field.value ?? false} onValueChange={field.onChange} disabled={locked} /></View>} />
-          {fields.map(([key, label, max]) => <Controller key={key} control={policyForm.control} name={key} render={({ field, fieldState }) => <View>
+          <View style={styles.policyFields}>{fields.map(([key, label, max]) => <Controller key={key} control={policyForm.control} name={key} render={({ field, fieldState }) => <View style={styles.policyField}>
             <AppTextField label={`${label}（${key === 'maxRunSeconds' ? AGENT_RUN_LIMITS.deadlineSeconds.min : key === 'modelRequestSeconds' ? AGENT_RUN_LIMITS.modelRequestSeconds.min : key === 'maxModelRetries' ? 0 : 1}–${max}）`} value={field.value === undefined ? '' : String(field.value)} onChangeText={value => field.onChange(value === '' ? NaN : Number(value))} keyboardType="number-pad" disabled={locked} error={!!fieldState.error} />
             {fieldState.error ? <Text>請填允許範圍內的整數。</Text> : null}
-          </View>} />)}
+          </View>} />)}</View>
           <Text style={styles.note}>目前每輪：{state.overview.toolCalls} 次工具、{state.overview.deadlineMs / 1000} 秒。固定輸出容量：每次最多 {state.overview.outputTokens} tokens；互動文字最多 {state.overview.inputCharacters} 字元。</Text>
           <Text>每天按模型生成及查詢 embedding 嘗試計數，不是聊天句數。香港時間早上 8 時換日；調高限額可能增加費用。這不是 GCP 帳單或硬性停費保證。</Text>
           <Text style={styles.note}>重試只處理模型暫時性錯誤，沿同一運行計入生成及每日額度；不重做已完成操作。單次等待仍受整輪剩餘時間限制；照片、轉錄及背景工作亦受原工作期限限制。</Text>
@@ -140,6 +144,8 @@ export default function AdminScreen() {
     </>}
   </PageFrame>;
 }
-const styles = StyleSheet.create({ card: { padding: spacing.lg, gap: spacing.md, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.softLine },
+const styles = StyleSheet.create({
+  returnLink: { minHeight: 44, justifyContent: 'center', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.small, borderWidth: 1, borderColor: colors.line }, returnPressed: { backgroundColor: colors.paleTeal }, returnLabel: { fontFamily: chineseFont, ...readingType.tool, color: colors.deepTeal, fontWeight: '600' },
+  policyFields: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }, policyField: { flexGrow: 1, flexBasis: 280, minWidth: 0, maxWidth: '100%' }, card: { padding: spacing.lg, gap: spacing.md, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.softLine },
   row: { gap: spacing.sm, paddingVertical: spacing.md, borderTopWidth: 1, borderColor: colors.softLine },
   actions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.md }, note: { color: colors.muted }, notice: { color: colors.ink } });

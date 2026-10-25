@@ -10,18 +10,21 @@ export function EmptyListCard({ title, detail, icon, children, testID, style }: 
 }) {
   return <View testID={testID ?? "empty-list-card"} style={[styles.card, style]}>
     <View style={styles.heading}>
-      {icon ? <AppIcon name={icon} size={22} color={colors.muted} /> : null}
-      <Text style={styles.title}>{title}</Text>
+      <View style={styles.icon}><AppIcon name={icon ?? "notebook-outline"} size={22} color={colors.teal} importantForAccessibility="no" /></View>
+      <View style={styles.copy}><Text style={styles.title}>{title}</Text>
+      {detail && detail !== title ? <Text style={styles.detail}>{detail}</Text> : null}</View>
     </View>
-    {detail && detail !== title ? <Text style={styles.detail}>{detail}</Text> : null}
-    {children}
+    {children ? <View style={styles.actions}>{children}</View> : null}
   </View>;
 }
 
 const styles = StyleSheet.create({
-  card: { minWidth: 0, alignSelf: "stretch", gap: spacing.sm, padding: spacing.lg,
+  card: { minWidth: 0, alignSelf: "stretch", gap: spacing.sm, padding: spacing.xl,
     backgroundColor: colors.neutralSurface, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.medium },
-  heading: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
-  title: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "600" },
+  heading: { flexDirection: "row", alignItems: "flex-start", gap: spacing.lg },
+  icon: { width: 44, height: 44, flexShrink: 0, backgroundColor: colors.white, borderRadius: radius.small, alignItems: "center", justifyContent: "center" },
+  copy: { flex: 1, minWidth: 0, gap: spacing.xs },
+  actions: { alignItems: "flex-start", gap: spacing.sm },
+  title: { minWidth: 0, fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "600" },
   detail: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
 });

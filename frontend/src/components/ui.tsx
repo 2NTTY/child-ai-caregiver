@@ -171,7 +171,7 @@ export function SectionHeader({ title, subtitle, action, icon, count, density = 
   if (compact) return <View style={styles.mobileHeader}>
     <View style={styles.mobileHeaderRow}><View style={styles.mobileHeaderTitle}>
       {icon ? <AppIcon name={icon} size={mobileIcons.content} color={colors.teal} importantForAccessibility="no" /> : null}
-      <Text accessibilityRole="header" style={[styles.sectionTitle, mobileType.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>
+      <Text accessibilityRole="header" aria-level={2} style={[styles.sectionTitle, mobileType.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>
       {count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}
     </View>{action ? <View style={styles.mobileHeaderAction}>{action}</View> : null}</View>
     {subtitle ? <Text style={[styles.sectionSubtitle, mobileType.caption]}>{subtitle}</Text> : null}
@@ -179,7 +179,7 @@ export function SectionHeader({ title, subtitle, action, icon, count, density = 
   return (
     <View style={styles.sectionHeader}>
       <View style={styles.headerText}>
-        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" style={[styles.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>{count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}</View>
+        <View style={styles.sectionTitleRow}>{icon ? <AppIcon name={icon} size={24} color={colors.teal} importantForAccessibility="no" /> : null}<Text accessibilityRole="header" aria-level={2} style={[styles.sectionTitle, density === "compact" && workspaceType.section]}>{title}</Text>{count !== undefined ? <View style={styles.count}><Text accessibilityLabel={`${count} 項`} style={styles.countText}>{count}</Text></View> : null}</View>
         {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
       </View>
       {action}
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   compactButtonContent: { minHeight: 40 },
   buttonLabel: { fontFamily: chineseFont, fontSize: typeScale.small, fontWeight: "700" },
   outlineButton: { borderColor: colors.controlOutline },
-  quietButton: { alignSelf: "flex-start" },
+  quietButton: { alignSelf: "flex-start", borderColor: "transparent" },
   secondaryDangerButton: { alignSelf: "flex-start", borderColor: colors.errorInk },
   disabledFilledButton: { backgroundColor: colors.softLine },
   disabledOutlineButton: { backgroundColor: "transparent", borderColor: colors.line },
@@ -316,13 +316,13 @@ const styles = StyleSheet.create({
   disclosureLabel: { color: colors.ink, lineHeight: 22, flexShrink: 1 },
   focusedButton: { borderColor: colors.ink },
   buttonPressed: { backgroundColor: colors.pressedOverlay },
-  tabToolbar: { flexDirection: "row", alignItems: "center", minWidth: 0, width: "100%", gap: spacing.sm },
+  tabToolbar: { flexDirection: "row", alignItems: "center", minWidth: 0, width: "100%", gap: spacing.md, paddingBottom: spacing.sm },
   tabToolbarStacked: { flexDirection: "column", alignItems: "stretch" },
   tabToolbarTabs: { flex: 1, minWidth: 0 },
   tabToolbarFullTabs: { flex: undefined, width: "100%" },
   tabToolbarActions: { flexDirection: "row", alignItems: "center", flexShrink: 0, gap: spacing.sm },
   tabToolbarWrappedActions: { flexWrap: "wrap", alignSelf: "flex-end", maxWidth: "100%" },
-  card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.lg, gap: spacing.md },
+  card: { backgroundColor: colors.white, borderColor: colors.softLine, borderWidth: 1, borderRadius: radius.large, padding: spacing.xl, gap: spacing.lg },
   mobileCard: { borderRadius: mobileLayout.cardRadius, padding: mobileLayout.cardInset },
   insetCard: { borderWidth: 0, borderRadius: radius.small, backgroundColor: colors.quietSurface, padding: spacing.md },
   plainCard: { borderWidth: 0, borderRadius: 0, backgroundColor: "transparent", padding: 0 },
@@ -354,10 +354,10 @@ const styles = StyleSheet.create({
   optionPressed: { backgroundColor: colors.paleTeal },
   tabPressed: { backgroundColor: colors.paleTeal },
   linkText: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 21, fontWeight: "700", textDecorationLine: "underline" },
-  tabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.line },
+  tabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.line, backgroundColor: colors.white, borderTopLeftRadius: radius.small, borderTopRightRadius: radius.small },
   tabs: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   hiddenPanel: { display: "none" },
-  tab: { minHeight: 46, paddingHorizontal: spacing.sm, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
+  tab: { minHeight: 52, paddingHorizontal: spacing.lg, justifyContent: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
   countedTab: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   tabActive: { borderBottomColor: colors.teal },
   tabText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" },

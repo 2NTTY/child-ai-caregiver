@@ -1,0 +1,19 @@
+✔ workspace compound parts share presentation metadata and retain arbitrary action/content slots (61.623293ms)
+✔ home composition passes the exact original model and actions to every domain projection (30.639502ms)
+✔ home setup is derived from confirmed empty children, not loading or error snapshots (20.423775ms)
+✔ catalogue search preserves every feature and treats input as plain metadata text (1.30919ms)
+✔ normal navigation retains all eighteen route entry files, redirects and production owners (0.798882ms)
+✔ web shell adds keyboard escape route to content without forcing display zoom (0.262375ms)
+✔ history category rail exposes eight real choices and compact selector keeps the exact category callback (29.708181ms)
+✔ family remains honestly unavailable and only routes to existing personal controls (10.603571ms)
+✔ admin return is a guarded web link and profile management never promises destructive actions are harmless (0.559872ms)
+✔ actual RNWeb skip control stays out of the shell row when RN styles are emitted after custom CSS (10.811404ms)
+✔ the same SSR oracle catches the original relative-position regression (1.511594ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 475.063657

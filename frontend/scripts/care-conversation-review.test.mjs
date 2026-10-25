@@ -28,7 +28,7 @@ function renderer(relative, name, width = 1024, expandComponents = false) {
   const dependencies = {
     'react': react, 'react/jsx-runtime': require('react/jsx-runtime'),
     'react-native': { View: 'View', Pressable: 'Pressable', Platform: { OS: 'web' }, StyleSheet: { create: value => value } }, 'react-native-paper': { Text: 'Text' },
-    '../../care-view-model': values, '../../theme': { colors: {}, readingType: {}, workspaceType: {}, spacing: { xs: 4, sm: 8, md: 12, lg: 16 }, radius: {} },
+    '../../care-view-model': values, '../../theme': { colors: {}, readingType: {}, workspaceType: {}, spacing: { xs: 4, sm: 8, md: 12, lg: 16 }, radius: { medium: 12 } },
     '../appearance/BackgroundSurface': { BackgroundSurface: 'BackgroundSurface', useCustomBackground: () => false },
     '../useContainerWidth': { useContainerWidth: () => ({ width, ref: null, onLayout() {} }) },
   };
@@ -321,7 +321,7 @@ test('older pending remains in the same total and has an explicit route beyond t
 test('the Records page removes entry-hub buttons without removing its correction workspace', () => {
   const render = renderer('../src/components/care/CareRecordsView.tsx', 'CareRecordsView');
   const tree = render({ model: { child: { name: 'Test child' }, access: 'editable', online: true, operation: { state: 'none' } }, actions: {}, onReviewHistory() {}, onPhotos() {}, onMore() {}, onHistory() {} });
-  assert.equal(tree.props.title, '核對');
+  assert.equal(tree.props.title, '核對與照顧記錄');
   assert.equal(component(tree, 'AppButton'), undefined); assert.ok(component(tree, 'CareReviewWorkspace'));
 });
 
@@ -356,13 +356,13 @@ test('multi-chat unrelated domains and missing source dates cannot inherit Care 
 });
 
 
-test('review-only history and fallback pending cards use one full-width straight frame and preserve their reader', () => {
+test('review-only history and fallback pending cards use one full-width reading frame and preserve their reader', () => {
   for (const width of [1440, 1024, 390, 320]) {
     for (const history of [true, false]) {
       const h = workspace(undefined, width, { history }), tree = h.render();
       for (const row of rows(tree)) {
         const style = flatten(row.props.style({ pressed: false }));
-        assert.equal(style.borderWidth, 1); assert.equal(style.borderRadius, 0); assert.equal(style.padding, 12);
+        assert.equal(style.borderWidth, 1); assert.equal(style.borderRadius, 12); assert.equal(style.padding, 12);
         for (const key of ['maxWidth', 'width', 'height', 'minHeight', 'flexBasis', 'aspectRatio', 'flexDirection']) assert.equal(style[key], undefined, key);
         const [header, body, source, footer] = row.props.children;
         assert.equal(header.props.style.justifyContent, 'space-between');

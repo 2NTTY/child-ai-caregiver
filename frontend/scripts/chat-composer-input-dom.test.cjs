@@ -23,8 +23,8 @@ const theme = load('src/theme.ts', () => { throw new Error('Unexpected theme imp
 const presentation = load('src/components/chat/chat-presentation.ts', () => theme);
 const { ChatComposerInput } = load('src/components/agent/ChatComposerInput.web.tsx', () => presentation);
 const renderer = createRoot(document.getElementById('root'));
-let value = 'Synthetic draft', disabled = false, canSubmit = true, submitted = 0;
-const render = async () => { await React.act(async () => renderer.render(React.createElement(ChatComposerInput, { value, disabled, canSubmit, onChangeText: next => { value = next; }, onSubmit: () => submitted++, onFocus() {}, onBlur() {} }))); };
+let value = 'Synthetic draft', disabled = false, canSubmit = true, submitted = 0, maxHeight;
+const render = async () => { await React.act(async () => renderer.render(React.createElement(ChatComposerInput, { value, disabled, canSubmit, maxHeight, onChangeText: next => { value = next; }, onSubmit: () => submitted++, onFocus() {}, onBlur() {} }))); };
 const input = () => document.querySelector('textarea');
 async function key(options = {}) {
   const event = new window.KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter', ...options });
@@ -63,5 +63,17 @@ test('autosize retains the same textarea, clamps and shrinks synchronously witho
     assert.equal(original.style.height, '72px'); assert.equal(input(), original);
     assert.equal(document.activeElement, document.getElementById('other'));
   }
+});
+test('short viewport caps multiline input at 72 without remounting, shrinking fonts, losing draft or changing IME behavior', async () => {
+  await render(); const original = input();
+  Object.defineProperty(original, 'scrollHeight', {configurable: true, get: () => 360});
+  maxHeight = 72; value = 'Synthetic multiline draft\n'.repeat(12); await render();
+  assert.equal(input(), original); assert.equal(original.value, value);
+  assert.equal(original.style.height, '72px'); assert.equal(original.style.maxHeight, '72px'); assert.equal(original.style.overflowY, 'auto');
+  assert.equal(original.style.fontSize, '16px'); assert.equal(original.style.lineHeight, '24px');
+  const before = submitted; assert.equal((await key({shiftKey: true})).defaultPrevented, false); assert.equal(submitted, before);
+  assert.equal((await key({isComposing: true})).defaultPrevented, false); assert.equal(submitted, before);
+  await key(); assert.equal(submitted, before + 1);
+  maxHeight = undefined; await render(); assert.equal(input(), original); assert.equal(original.style.height, '168px'); assert.equal(original.value, value);
 });
 test.after(async () => { await React.act(async () => renderer.unmount()); dom.window.close(); });

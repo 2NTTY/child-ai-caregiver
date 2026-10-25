@@ -63,7 +63,7 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
       </Pressable>
     </View>
     {!available ? <Text style={styles.warning}>{factUnavailableReason(fact)}</Text> : null}
-    {onQuestion ? <View style={styles.actions}><AppButton label="請 Agent 核對" variant="quiet" density="compact" onPress={() => onQuestion(fact)} /></View> : null}
+    {onQuestion ? <View style={styles.actions}><AppButton label="請助手協助核對" variant="quiet" density="compact" onPress={() => onQuestion(fact)} /></View> : null}
     {details ? <View style={styles.details}>
       <Metadata label="來源">{factSourceLabel(fact.source)}</Metadata>
       <Metadata label="記憶版本">{fact.version}</Metadata>
@@ -202,6 +202,7 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
   }
   return <View ref={container.ref} onLayout={container.onLayout} style={styles.root}>
     <TabToolbar actions={tabActions} stacked={container.width < 480}><UnderlineTabs id={tabsId} label="記憶與參考分類" items={tabs} value={tab} onChange={setTab} /></TabToolbar>
+    <View style={styles.sectionIntro} testID="memory-section-purpose"><AppIcon name={tab === "long" ? "book-open-page-variant-outline" : tab === "short" ? "message-text-outline" : "book-open-variant"} size={22} color={colors.teal} /><Text style={[styles.meta, { flex: 1 }]}>{tab === "long" ? "先看已確認的資料；有疑問時，帶同原來源請助手核對。" : tab === "short" ? "接續進行中的工作，或回到原對話查看上下文。" : "查閱指引與資訊來源；是否適用，仍要按孩子情況判斷。"}</Text></View>
     <AppTabPanel tabsId={tabsId} tabKey="short" active={tab === "short"}><View style={styles.section}>
       <ReadNotice read={model.shortTerm} unavailable="目前工作脈絡暫未提供" online={model.online} emptyTitle="目前暫無可顯示的工作脈絡" empty={model.shortTerm.data?.works ? model.shortTerm.data.works.length === 0 && model.shortTerm.data.messages.length === 0 : model.shortTerm.data?.messages.length === 0}>
         {model.shortTerm.data?.works ? <PersistentWorkCards items={model.shortTerm.data.works} online={model.online} busy={workspace.reads?.messageBusy}
@@ -246,6 +247,7 @@ export function MemoryReferenceView({ confirmerDisplay, onPrepareQuestion, tabAc
     : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。">{tabActions}</ReadStateNotice>;
 }
 const styles = StyleSheet.create({
+  sectionIntro: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderLeftWidth: 3, borderLeftColor: colors.teal, backgroundColor: colors.paleTeal },
   root: { width: "100%", minWidth: 0, gap: spacing.lg },
   section: { gap: spacing.md, minWidth: 0 },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section },
@@ -258,7 +260,7 @@ const styles = StyleSheet.create({
   factContent: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "600", flexShrink: 1 },
   factContext: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
   metadataLine: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minWidth: 0, flexShrink: 1 },
-  sourceTrigger: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minHeight: 36, paddingHorizontal: spacing.xs, borderRadius: radius.small, minWidth: 0, flexShrink: 1 },
+  sourceTrigger: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minHeight: 44, paddingHorizontal: spacing.xs, borderRadius: radius.small, minWidth: 0, flexShrink: 1 },
   sourceLabel: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.meta, flexShrink: 1 },
   sourcePressed: { backgroundColor: colors.paleTeal },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, flexShrink: 1 },

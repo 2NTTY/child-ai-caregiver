@@ -1,0 +1,624 @@
+{
+  "note": "Raw failing logs retained in /tmp paths during execution. Isolated base af97c845 includes approved common bug/type fixes and no experiment UI. Tests updated only for deliberate display contracts and explicit missing test ports; security/data/guard assertions retained. Final aggregate 254/254 passes.",
+  "runs": [
+    {
+      "run": "first-expanded",
+      "baseline": null,
+      "logSha256": "477784b329fb03915f57cbd0af7474865f67d9abf883a56eef25f7009f86e876",
+      "counts": {
+        "tests": 221,
+        "pass": 147,
+        "fail": 74
+      },
+      "failures": [
+        {
+          "test": "frontend/scripts/care-agent-pending-composition.test.mjs:218:1",
+          "name": "care removes the duplicate introductory row while retaining its accessible page identity and pending workspace (254.589985ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:  '核對與照顧記錄' !== '核對' "
+        },
+        {
+          "test": "frontend/scripts/care-agent-pending-composition.test.mjs:229:1",
+          "name": "pending cards use only the review full-row straight frame with category/status above content and a truthful time below (278.445507ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:  undefined !== 0 "
+        },
+        {
+          "test": "frontend/scripts/care-conversation-review.test.mjs:321:1",
+          "name": "the Records page removes entry-hub buttons without removing its correction workspace (5.695196ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:  '核對與照顧記錄' !== '核對' "
+        },
+        {
+          "test": "frontend/scripts/care-conversation-review.test.mjs:359:1",
+          "name": "review-only history and fallback pending cards use one full-width straight frame and preserve their reader (104.858012ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:  12 !== 0 "
+        },
+        {
+          "test": "frontend/scripts/growth-archive-report.test.mjs:97:1",
+          "name": "same-period history cards show their actual versions and Hong Kong preparation times in text and accessible names (507.47464ms)",
+          "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:  assert.ok(text(card).includes(`版本 ${version} · 整理於 ${time}`)) "
+        },
+        {
+          "test": "frontend/scripts/growth-archive-report.test.mjs:130:1",
+          "name": "history cards use truthful fallbacks for absent or invalid metadata instead of positions or the current clock (630.584941ms)",
+          "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:  assert.ok(text(byId(openHistory(harness(props(value))), 'growth-archive-card-report-a-v4')).includes('版本未提供 · 整理於 1/10/2026\\u200910:00:04')) "
+        },
+        {
+          "test": "frontend/scripts/growth-timeline-markers.test.mjs:94:1",
+          "name": "reading timeline no longer duplicates the selected title or embeds a destructive trigger (1.853888ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:  1 !== 0 "
+        },
+        {
+          "test": "frontend/scripts/growth-timeline-markers.test.mjs:102:1",
+          "name": "concern explanation has its own heading and emphasis without truncating the full description (1.146875ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'props')"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:83:1",
+          "name": "children form one left-aligned wrapping group; form is absent and account actions are separate at all target widths (620.814678ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:99:1",
+          "name": "new-child input uses the existing modal and actual controller; success clears only the confirmed name (233.60434ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:110:1",
+          "name": "dirty close and Escape share the original guard; discard returns focus only after modal close (208.348556ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:119:1",
+          "name": "unknown creation cannot close or change its name; check and retry are reachable inside the modal and preserve original input (174.924622ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:130:1",
+          "name": "refresh, visible error retry and offline gates retain their real owner callbacks (128.650799ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:139:1",
+          "name": "approved route leave clears the draft without resurrecting the modal on return; identity changes hide old input (191.253808ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:146:1",
+          "name": "independent account sign-out and unchanged three-step guide retain their callbacks (183.475243ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/history-controls.test.mjs:91:1",
+          "name": "all eight categories keep one category control without duplicate source headings or inline dates (190.421837ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Unmocked History dependency: ../components/workspace/Workspace"
+        },
+        {
+          "test": "frontend/scripts/history-controls.test.mjs:108:1",
+          "name": "task and preparation modal selection keeps the complete history filter toolbar at every width (94.630368ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Unmocked History dependency: ../components/workspace/Workspace"
+        },
+        {
+          "test": "frontend/scripts/history-controls.test.mjs:129:1",
+          "name": "history date controls keep a wrapping toolbar and touch-safe AppButton sizing without return shortcuts (61.182448ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Unmocked History dependency: ../components/workspace/Workspace"
+        },
+        {
+          "test": "frontend/scripts/history-controls.test.mjs:151:1",
+          "name": "date drafts do not filter, close readers or show applied state before atomic apply (41.621756ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Unmocked History dependency: ../components/workspace/Workspace"
+        },
+        {
+          "test": "frontend/scripts/history-controls.test.mjs:168:1",
+          "name": "cancel, invalid drafts and draft clear leave results intact; reopen uses applied dates (53.574163ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Unmocked History dependency: ../components/workspace/Workspace"
+        },
+        {
+          "test": "frontend/scripts/history-controls.test.mjs:191:1",
+          "name": "original locks block search and apply without trapping disposable filter drafts (26.575242ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Unmocked History dependency: ../components/workspace/Workspace"
+        },
+        {
+          "test": "frontend/scripts/history-controls.test.mjs:202:1",
+          "name": "unsupported categories do not claim hidden dates are applied or lose original owners (51.326578ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Unmocked History dependency: ../components/workspace/Workspace"
+        },
+        {
+          "test": "frontend/scripts/history-controls.test.mjs:321:1",
+          "name": "success is concise while unknown and failure messages remain explicit and list copy has no permanent caveats (99.123937ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Unmocked History dependency: ../components/workspace/Workspace"
+        },
+        {
+          "test": "frontend/scripts/history-controls.test.mjs:337:1",
+          "name": "profile history category renders the same scoped reader on desktop and mobile without fake search or eager reads (47.314257ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Unmocked History dependency: ../components/workspace/Workspace"
+        },
+        {
+          "test": "frontend/scripts/history-controls.test.mjs:352:1",
+          "name": "all history categories omit redundant return shortcuts and empty toolbars while preserving the reader (27.335316ms)",
+          "error": "AssertionError [ERR_ASSERTION]: Unmocked History dependency: ../components/workspace/Workspace"
+        },
+        {
+          "test": "frontend/scripts/history-responsive-reader.test.mjs:72:60",
+          "name": "notifications reader survives both responsive directions without closing or re-reading; scope/filter still clear selection (407.787631ms)",
+          "error": "Error: EISDIR: illegal operation on a directory, read"
+        },
+        {
+          "test": "frontend/scripts/history-responsive-reader.test.mjs:72:60",
+          "name": "conversations reader survives both responsive directions without closing or re-reading; scope/filter still clear selection (211.607848ms)",
+          "error": "Error: EISDIR: illegal operation on a directory, read"
+        },
+        {
+          "test": "frontend/scripts/history-responsive-reader.test.mjs:101:1",
+          "name": "AppTabPanel retains its default tab semantics and inactive protection for other callers (179.757191ms)",
+          "error": "Error: EISDIR: illegal operation on a directory, read"
+        },
+        {
+          "test": "frontend/scripts/history-responsive-reader.test.mjs:110:1",
+          "name": "date filter drafts survive responsive changes but are discarded on scope changes without reads (169.739923ms)",
+          "error": "Error: EISDIR: illegal operation on a directory, read"
+        },
+        {
+          "test": "frontend/scripts/history-responsive-reader.test.mjs:133:63",
+          "name": "actual filter dialog dismisses locally with a clean retained owner; navigation remains guarded (250.448762ms)",
+          "error": "Error: EISDIR: illegal operation on a directory, read"
+        },
+        {
+          "test": "frontend/scripts/history-responsive-reader.test.mjs:133:63",
+          "name": "actual filter dialog dismisses locally with a dirty retained owner; navigation remains guarded (184.877348ms)",
+          "error": "Error: EISDIR: illegal operation on a directory, read"
+        },
+        {
+          "test": "frontend/scripts/history-responsive-reader.test.mjs:133:63",
+          "name": "actual filter dialog dismisses locally with a pending retained owner; navigation remains guarded (265.035141ms)",
+          "error": "Error: EISDIR: illegal operation on a directory, read"
+        },
+        {
+          "test": "frontend/scripts/history-responsive-reader.test.mjs:133:63",
+          "name": "actual filter dialog dismisses locally with a unknown retained owner; navigation remains guarded (141.028768ms)",
+          "error": "Error: EISDIR: illegal operation on a directory, read"
+        },
+        {
+          "test": "frontend/scripts/memory-reference.test.mjs:159:1",
+          "name": "all long-term disclosures remain read-only and clarification only hands an unsent question to the existing draft route (145.565381ms)",
+          "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:  assert.ok(clarify) "
+        },
+        {
+          "test": "frontend/scripts/preparation-layout.test.mjs:141:1",
+          "name": "failed reads and original-operation checks keep contextual recovery without a cold or revoked refresh control (131.045857ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'props')"
+        },
+        {
+          "test": "frontend/scripts/preparation-restore-history-navigation.test.mjs:99:1",
+          "name": "first restore 405 remains a rejection while History tabs remain read-only navigable (838.890883ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'medium')"
+        },
+        {
+          "test": "frontend/scripts/preparation-restore-history-navigation.test.mjs:119:1",
+          "name": "unknown restore followed by 405 retains the exact original and scope guards without trapping History (396.788432ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'medium')"
+        },
+        {
+          "test": "frontend/scripts/preparation-restore-history-navigation.test.mjs:136:1",
+          "name": "retained in-flight restore survives read navigation and still cannot be submitted twice (299.043096ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'medium')"
+        },
+        {
+          "test": "frontend/scripts/preparation-restore-history-navigation.test.mjs:147:1",
+          "name": "History workspace navigation still protects local dirty drafts and non-retained in-flight writes (148.947761ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'medium')"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:69:1",
+          "name": "reading first shows child identity, two solid grouped cards, and compact truthful unknown fields at all target widths (366.727076ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:90:1",
+          "name": "all known health/care values remain exact; no null is converted into an absence claim (276.697272ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:98:1",
+          "name": "profile details retain metadata but no history entry, reset on child change (155.763486ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:109:1",
+          "name": "profile editing keeps original confirmation, discard guard, and post-close exact trigger focus (147.189396ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:120:1",
+          "name": "unknown blocks close and writes, but preserves existing recovery and non-mutating details (116.14256ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:128:1",
+          "name": "normal profile reading has no persistent refresh, while freshness recovery keeps its original callback and lock (164.617443ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:135:1",
+          "name": "child deletion stays secondary and forwards only to the original owner with every existing gate (130.422177ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:149:1",
+          "name": "only the requested dynamic History description is removed; category descriptions remain owned by their category (2.43959ms)",
+          "error": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<PageFrame density=\"compact\" title=\"歷史\" scrollRef=/. Input:  'import { Workspace } from \"../components/workspace/Workspace\";\\n' + 'import { HistoryCategoryNavigation } from \"../components/history/HistoryCategoryNavigation\";\\n' + 'import { BackgroundSurface } from \"../components/appearance/BackgroundSurface\";\\n' + 'import { useEffect, useReducer, useRef, useState } from \"react\";\\n' + 'import { useLocalSearchParams, usePathname, useRouter } from \"expo-router\";\\n' + 'import { StyleSheet, View, type ScrollView } from \"react-native\";\\n' + 'import { Text } from \"react-native-paper\";\\n' + 'import { AppDateField } from \""
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:149:1",
+          "name": "viewer opens their listed private source while every write capability remains blocked (564.553114ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:163:1",
+          "name": "selecting the current source preserves both dirty drafts, form key, and editor without a new read (146.677354ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:172:1",
+          "name": "switching sources uses the real dirty guard: cancel preserves drafts, approved discard alone replaces them (94.569521ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:180:1",
+          "name": "late source-switch approval cannot read after current child or identity is invalidated (94.541834ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:185:1",
+          "name": "source unknown processing stays locked and cannot switch to another row (79.052883ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:190:1",
+          "name": "stale source read is not published after the old owner is invalidated and unmounted (56.977104ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:195:1",
+          "name": "source 403 clears the private list and editor (61.728792ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:245:3",
+          "name": "photo reserve: only a checked original receipt becomes retryable; retry preserves exact payload (726.881888ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:245:3",
+          "name": "photo confirm: only a checked original receipt becomes retryable; retry preserves exact payload (562.415652ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:245:3",
+          "name": "photo delete: only a checked original receipt becomes retryable; retry preserves exact payload (504.243636ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:264:1",
+          "name": "photo receipt retry remains blocked offline, while busy, read-only, revoked, or unconfirmed check is absent (471.680364ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo reserve (null): rendered page checks confirmed-unavailable before finishing without retry (415.127631ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo confirm (null): rendered page checks confirmed-unavailable before finishing without retry (455.597238ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo delete (null): rendered page checks confirmed-unavailable before finishing without retry (488.508572ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo reserve (confirmed): rendered page checks confirmed-unavailable before finishing without retry (479.2158ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo confirm (confirmed): rendered page checks confirmed-unavailable before finishing without retry (473.576168ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo delete (confirmed): rendered page checks confirmed-unavailable before finishing without retry (483.511236ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo delete (confirmed): rendered delete modal checks confirmed-unavailable before finishing without retry (417.632622ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:347:1",
+          "name": "photo null receipt: real API/transport retires opId while owner keeps recovery and never posts twice (427.465289ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:379:3",
+          "name": "photo null receipt: failed reread (0) cannot unlock or restore private data (426.677296ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:379:3",
+          "name": "photo null receipt: failed reread (403) cannot unlock or restore private data (430.812851ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:398:1",
+          "name": "photo unknown then confirmed-null lookup keeps local recovery until explicit finish (446.924985ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:425:1",
+          "name": "photo resume copy: retained original offers continuation without claiming uploaded bytes (456.407589ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:433:1",
+          "name": "photo resume copy: absent original asks to reselect and preserves disabled upload (432.409669ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:440:1",
+          "name": "photo resume copy: ready attachment has no resume or reselect prompt (431.548324ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:447:1",
+          "name": "photo resume copy: read-only or revoked access exposes no upload guidance (731.618017ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:455:1",
+          "name": "photo resume copy: retained originals never override pending or unreadable capability guards (694.991824ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        }
+      ]
+    },
+    {
+      "run": "isolated-baseline",
+      "baseline": "af97c845",
+      "logSha256": "6fcaffcc75927a2174a86ddaca406d7c78faa22414a2ab67a6fc6da61b7c3a5e",
+      "counts": {
+        "tests": 71,
+        "pass": 26,
+        "fail": 45
+      },
+      "failures": [
+        {
+          "test": "frontend/scripts/growth-archive-report.test.mjs:97:1",
+          "name": "same-period history cards show their actual versions and Hong Kong preparation times in text and accessible names (377.998799ms)",
+          "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:  assert.ok(text(card).includes(`版本 ${version} · 整理於 ${time}`)) "
+        },
+        {
+          "test": "frontend/scripts/growth-archive-report.test.mjs:130:1",
+          "name": "history cards use truthful fallbacks for absent or invalid metadata instead of positions or the current clock (487.876899ms)",
+          "error": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:  assert.ok(text(byId(openHistory(harness(props(value))), 'growth-archive-card-report-a-v4')).includes('版本未提供 · 整理於 1/10/2026\\u200910:00:04')) "
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:83:1",
+          "name": "children form one left-aligned wrapping group; form is absent and account actions are separate at all target widths (441.085436ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:99:1",
+          "name": "new-child input uses the existing modal and actual controller; success clears only the confirmed name (252.72472ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:110:1",
+          "name": "dirty close and Escape share the original guard; discard returns focus only after modal close (145.652452ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:119:1",
+          "name": "unknown creation cannot close or change its name; check and retry are reachable inside the modal and preserve original input (145.684959ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:130:1",
+          "name": "refresh, visible error retry and offline gates retain their real owner callbacks (121.729574ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:139:1",
+          "name": "approved route leave clears the draft without resurrecting the modal on return; identity changes hide old input (144.897771ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/guide-child-actions.test.mjs:146:1",
+          "name": "independent account sign-out and unchanged three-step guide retain their callbacks (121.092385ms)",
+          "error": "TypeError [Error]: (0 , react_1.useSyncExternalStore) is not a function"
+        },
+        {
+          "test": "frontend/scripts/preparation-layout.test.mjs:141:1",
+          "name": "failed reads and original-operation checks keep contextual recovery without a cold or revoked refresh control (49.448806ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'props')"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:69:1",
+          "name": "reading first shows child identity, two solid grouped cards, and compact truthful unknown fields at all target widths (536.379179ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:90:1",
+          "name": "all known health/care values remain exact; no null is converted into an absence claim (191.826756ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:98:1",
+          "name": "profile details retain metadata but no history entry, reset on child change (146.689231ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:109:1",
+          "name": "profile editing keeps original confirmation, discard guard, and post-close exact trigger focus (123.511545ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:120:1",
+          "name": "unknown blocks close and writes, but preserves existing recovery and non-mutating details (101.480204ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:128:1",
+          "name": "normal profile reading has no persistent refresh, while freshness recovery keeps its original callback and lock (122.535938ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:135:1",
+          "name": "child deletion stays secondary and forwards only to the original owner with every existing gate (86.211957ms)",
+          "error": "TypeError [Error]: (0 , ProductionProvider_1.useProductionOwner) is not a function"
+        },
+        {
+          "test": "frontend/scripts/profile-reading-layout.test.mjs:149:1",
+          "name": "only the requested dynamic History description is removed; category descriptions remain owned by their category (1.501119ms)",
+          "error": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /current\\.description/. Input:  'import { BackgroundSurface } from \"../components/appearance/BackgroundSurface\";\\n' + 'import { useEffect, useReducer, useRef, useState } from \"react\";\\n' + 'import { useLocalSearchParams, usePathname, useRouter } from \"expo-router\";\\n' + 'import { StyleSheet, View, type ScrollView } from \"react-native\";\\n' + 'import { Text } from \"react-native-paper\";\\n' + 'import { AppDateField } from \"../components/DateTimeFields\";\\n' + 'import { FormDialog } from \"../components/FormDialog\";\\n' + 'import { PageFrame } from \"../components/PageFrame\";\\n' + 'import { AppButton, AppSelect, AppTabPane"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:149:1",
+          "name": "viewer opens their listed private source while every write capability remains blocked (569.848391ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:163:1",
+          "name": "selecting the current source preserves both dirty drafts, form key, and editor without a new read (177.716337ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:172:1",
+          "name": "switching sources uses the real dirty guard: cancel preserves drafts, approved discard alone replaces them (130.674211ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:180:1",
+          "name": "late source-switch approval cannot read after current child or identity is invalidated (102.279772ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:185:1",
+          "name": "source unknown processing stays locked and cannot switch to another row (102.005579ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:190:1",
+          "name": "stale source read is not published after the old owner is invalidated and unmounted (87.154966ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:195:1",
+          "name": "source 403 clears the private list and editor (104.190231ms)",
+          "error": "TypeError [Error]: Cannot read properties of undefined (reading 'fetcher')"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:245:3",
+          "name": "photo reserve: only a checked original receipt becomes retryable; retry preserves exact payload (797.395148ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:245:3",
+          "name": "photo confirm: only a checked original receipt becomes retryable; retry preserves exact payload (620.369651ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:245:3",
+          "name": "photo delete: only a checked original receipt becomes retryable; retry preserves exact payload (524.591139ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:264:1",
+          "name": "photo receipt retry remains blocked offline, while busy, read-only, revoked, or unconfirmed check is absent (587.480464ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo reserve (null): rendered page checks confirmed-unavailable before finishing without retry (503.551876ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo confirm (null): rendered page checks confirmed-unavailable before finishing without retry (463.85364ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo delete (null): rendered page checks confirmed-unavailable before finishing without retry (490.790895ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo reserve (confirmed): rendered page checks confirmed-unavailable before finishing without retry (511.690806ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo confirm (confirmed): rendered page checks confirmed-unavailable before finishing without retry (471.60889ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo delete (confirmed): rendered page checks confirmed-unavailable before finishing without retry (466.216044ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:282:3",
+          "name": "photo delete (confirmed): rendered delete modal checks confirmed-unavailable before finishing without retry (576.410754ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:347:1",
+          "name": "photo null receipt: real API/transport retires opId while owner keeps recovery and never posts twice (645.492925ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:379:3",
+          "name": "photo null receipt: failed reread (0) cannot unlock or restore private data (448.848689ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:379:3",
+          "name": "photo null receipt: failed reread (403) cannot unlock or restore private data (433.451837ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:398:1",
+          "name": "photo unknown then confirmed-null lookup keeps local recovery until explicit finish (405.549521ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:425:1",
+          "name": "photo resume copy: retained original offers continuation without claiming uploaded bytes (393.435353ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:433:1",
+          "name": "photo resume copy: absent original asks to reselect and preserves disabled upload (413.68676ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:440:1",
+          "name": "photo resume copy: ready attachment has no resume or reselect prompt (487.191625ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:447:1",
+          "name": "photo resume copy: read-only or revoked access exposes no upload guidance (486.872329ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        },
+        {
+          "test": "frontend/scripts/source-photo-controls.test.mjs:455:1",
+          "name": "photo resume copy: retained originals never override pending or unreadable capability guards (477.39854ms)",
+          "error": "SyntaxError [Error]: Unexpected token 'typeof'"
+        }
+      ]
+    }
+  ]
+}

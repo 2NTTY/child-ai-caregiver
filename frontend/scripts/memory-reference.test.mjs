@@ -165,7 +165,7 @@ test('all long-term disclosures remain read-only and clarification only hands an
   assert.doesNotMatch(html, /<button>(新增候選|更正內容|核對及確認|刪除話題|停用|刪除)<\/button>/);
   assert.ok(buttons.every(button => !/^(新增|更正|停用|刪除|確認|重新核對及確認)/.test(button.label)));
   assert.equal(questions.length, 0);
-  const clarify = buttons.find(button => button.label === '請 Agent 核對'); assert.ok(clarify); clarify.onPress();
+  const clarify = buttons.find(button => button.label === '請助手協助核對'); assert.ok(clarify); clarify.onPress();
   assert.equal(questions.length, 1); assert.match(questions[0], /先與我釐清疑問/); assert.match(questions[0], /不要直接更改記憶/);
   assert.equal(JSON.stringify(value), before);
   const screen = fs.readFileSync(new URL('../src/screens/memoryScreen.tsx', import.meta.url), 'utf8');

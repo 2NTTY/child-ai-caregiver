@@ -44,6 +44,8 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   compact: boolean; externalActivity?: boolean; onPaneLayout?(event: LayoutChangeEvent): void;
 }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
+  const viewport = useWindowDimensions();
+  const shortViewport = Platform.OS === "web" && viewport.height < 500;
   const { model, actions, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
     addAgentAttachment, removeAgentAttachment, composerFocusRequest, sendChat, requestChatReply, agentRuns, agentModel,
     voiceUpload, checkVoiceUpload, fileUpload, checkFileUpload, photoUpload, checkPhotoUpload, agentPending, readAgentPending, authorization, chatWritesAllowed, selectAgentRun, openAgentSource } = useProduction();
@@ -130,18 +132,19 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
   const empty = !child ? <SectionCard><Text style={styles.body}>先選擇孩子。</Text><AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>
     : chat.loading && !chat.loadedAt ? <BackgroundSurface padded frosted style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></BackgroundSurface>
       : confirmedEmptyChat && !busy && !agentAttachments.length && phase === "draft" ? <BackgroundSurface padded frosted testID="chat-empty-prompt" style={styles.emptyState}>
-        <Text accessibilityRole="header" style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>想先聊聊什麼？</Text></BackgroundSurface> : null;
+        <Text accessibilityRole="header" style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>今天需要處理甚麼？</Text></BackgroundSurface> : null;
   return <>
     <StatusAnnouncement eventKey={chat.loading && !!chat.loadedAt ? "refreshing" : "settled"} message={chat.loading && !!chat.loadedAt ? "正在重新核對聊天。" : ""} />
-    <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn, externalActivity && styles.externalToolbar]}>
-      <Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.screenReaderTitle}>助手</Text>
+    <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn, shortViewport && styles.shortToolbar]}>
+      <View style={styles.toolbarTitle}><Text testID="chat-screen-reader-heading" accessibilityRole="header" aria-level={1} style={styles.pageTitle}>育兒助手</Text>{!compact ? <Text style={styles.meta}>提問、整理資料、安排下一步</Text> : null}</View>
       <View style={styles.toolbarActions}>
+        {shortViewport ? <ChatAction label="資料使用" accessibilityLabel="查看 AI 資料處理說明" onPress={() => setPrivacyOpen(true)} compact={compact} /> : null}
         <ChatAction label={agentModel.pendingDecision ? "活動 · 待查核" : needsDecision ? "活動 · 待確認" : pendingReadLabel ? `活動 · ${pendingReadLabel}` : "活動"}
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"} onPress={() => setDetailsOpen(true)} compact={compact} disabled={!child} />
       </View>
     </BackgroundSurface>
     <BackgroundSurface frosted testID="chat-reading-panel" onLayout={onPaneLayout} style={styles.readingPanel} activeStyle={styles.boundedReadingPanel}>
-    <ChatTimeline items={child ? chat.messages : []} recentLimit={6} compact={compact} presentation="conversation" emptyState={empty}
+    <ChatTimeline items={child ? chat.messages : []} recentLimit={6} compact={compact} presentation="conversation" viewportLayout={shortViewport ? "short" : "standard"} emptyState={empty}
       history={{ cursor: child ? chat.nextCursor : null, loading: chat.loadingOlder,
         enabled: !!child && !busy && !chat.loading && chat.online, load: () => chatController.loadOlderMessages() }}
       footer={feedback} scrollRef={scrollRef} controlsRef={timelineRef} followRequest={followRequest} newReplyId={newReplyId} renderItem={message => {
@@ -172,12 +175,12 @@ function ChatContents({ compact, externalActivity = false, onPaneLayout }: {
               onPress={() => { void requestChatReply(message.id); }} /> : null}
           </> : undefined} />;
       }} />
-    <AgentComposer enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft"} compact={compact} draft={chatDraft}
+    <AgentComposer viewportLayout={shortViewport ? "short" : "standard"} enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft"} compact={compact} draft={chatDraft}
       attachments={agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
       suggestionLabel="建議問題" suggestionsAvailable={confirmedEmptyChat} inputHint={agentAttachments.some(v=>v.kind==="voice") ? "按送出會保存錄音並交 AI 理解；背景補上的轉錄不會再次執行指令。" : agentAttachments.some(v=>v.kind==="file") ? "按送出會保存原檔，並讓助手按你的要求讀取及處理。" : agentAttachments.length ? "按送出會保存照片，並交給目前選用的模型按你的要求處理。" : undefined}
       onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
-    <BackgroundSurface style={styles.privacyFooter}><ChatAction label="AI 處理 · 僅使用獲授權資料" accessibilityLabel="查看 AI 資料處理說明"
-      onPress={() => setPrivacyOpen(true)} subtle /></BackgroundSurface>
+    {!shortViewport ? <BackgroundSurface style={styles.privacyFooter}><ChatAction label="AI 處理 · 僅使用獲授權資料" accessibilityLabel="查看 AI 資料處理說明"
+      onPress={() => setPrivacyOpen(true)} subtle /></BackgroundSurface> : null}
     </BackgroundSurface>
     <AgentConversation visible={detailsOpen} onClosed={restoreDetailsFocus} onDismiss={() => setDetailsOpen(false)} onOpenSettings={openSettings}
       onReloadChat={() => { void chatController.reloadMessages(); }} reloadDisabled={busy || chat.loading || !chat.online} />
@@ -204,10 +207,12 @@ const styles = StyleSheet.create({
   boundedReadingPanel: { maxWidth: chatLayout.maxWidth, alignSelf: "center" },
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas },
   toolbar: { width: "100%", flexShrink: 0, paddingHorizontal: chatLayout.wideInset,
-    minHeight: 52, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 8 },
+    minHeight: 78, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, borderBottomWidth: 1, borderBottomColor: chatColors.line, backgroundColor: chatColors.surface },
+  shortToolbar: { minHeight: 48 },
   externalToolbar: { position: "absolute", top: 0, right: activityRail.inset, width: activityRail.width, paddingHorizontal: 8, zIndex: 1 },
   compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 1 },
-  screenReaderTitle: { position: "absolute", width: 1, height: 1, overflow: "hidden", opacity: 0 },
+  toolbarTitle: { flex: 1, minWidth: 0, gap: 2 },
+  pageTitle: { fontFamily: chatFont, fontSize: 21, lineHeight: 30, fontWeight: "700", color: chatColors.ink },
   body: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.body },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta },
   warning: { fontFamily: chatFont, color: colors.warningInk, ...chatType.tool },
@@ -217,7 +222,7 @@ const styles = StyleSheet.create({
   progressCopy: { flexDirection: "row", alignItems: "center", gap: 8, minWidth: 0, flexShrink: 1 },
   progressLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool, flexShrink: 1 },
   earlier: { alignItems: "center" }, emptyState: { alignItems: "center", gap: 12, paddingVertical: 28 },
-  emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "500", textAlign: "center" },
+  emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "600", textAlign: "center" },
   compactEmptyTitle: { fontSize: 24, lineHeight: 34 },
   action: { alignSelf: "flex-start", minHeight: 40, paddingHorizontal: 8, justifyContent: "center", borderRadius: 10 },
   compactAction: { minHeight: 48 }, subtleAction: { minHeight: 32, alignSelf: "center" },

@@ -26,6 +26,7 @@ function setup(category, initialWidth = 1440, retainedState) {
     '../components/FormDialog': {FormDialog: 'FormDialog'}, '../components/DateTimeFields': {AppDateField: 'AppDateField'}, '../components/PageFrame': {PageFrame: 'PageFrame'},
     '../components/useContainerWidth': {useContainerWidth: () => ({width, ref: null, onLayout: noop})},
     '../production/usePersonalHistory': {usePersonalHistoryWorkspace: () => owner}, '../../production/usePersonalHistory': {usePersonalHistoryWorkspace: () => owner},
+    '../summary/SummaryDisclosure': {SummaryDisclosure: 'SummaryDisclosure'},
     '../FormDialog': {FormDialog: 'FormDialog'}, '../EmptyListCard': {EmptyListCard: 'EmptyListCard'}, '../ReadStateNotice': {ReadStateNotice: 'ReadStateNotice'},
     '../../production/VoiceMessage': {VoiceMessage: 'VoiceMessage'}, './HistoryMessageDetail': {HistoryMessageDetail: 'HistoryMessageDetail'},
     './HistoryCards': {HistoryCardGrid: 'HistoryCardGrid', HistoryEntryCard: 'HistoryEntryCard'},
@@ -51,6 +52,7 @@ function setup(category, initialWidth = 1440, retainedState) {
   h.react.useReducer = (reducer, arg, init) => { const [state, setState] = h.react.useState(() => init ? init(arg) : arg); return [state, action => setState(current => reducer(current, action))]; };
   const {AppTabPanel} = h.load('src/components/ui.tsx');
   mocks['../components/ui'] = {AppButton: 'Button', AppSelect: 'AppSelect', AppTextField: 'AppTextField', UnderlineTabs: 'UnderlineTabs', AppTabPanel};
+  mocks['../ui'] = mocks['../components/ui'];
   const syncProduction = () => h.production({model: {children: [{id: 'child-a'}], selectedChildId: 'child-a'}, actions: {}, scopeKey: owner.scopeKey});
   syncProduction();
   const {default: HistoryScreen} = h.load('src/screens/historyScreen.tsx');
@@ -73,7 +75,7 @@ for (const category of ['notifications', 'conversations']) test(`${category} rea
   for (const initialWidth of [1440, 390]) {
     const h = setup(category, initialWidth);
     const dialog = () => h.hosts().find(node => node.type === 'FormDialog');
-    const panel = () => h.hosts().find(node => node.type === 'MotionEntrance');
+    const panel = () => h.node('history-current-results');
     const card = () => h.node(category === 'notifications' ? 'personal-notification-entry' : 'history-message-message-a');
     h.renderScreen(); card().props.onPress(); h.render(); assert.equal(dialog().props.visible, true);
     const openedRead = h.owner().message.data;
@@ -82,12 +84,10 @@ for (const category of ['notifications', 'conversations']) test(`${category} rea
       assert.equal(dialog().props.visible, true, `Reader remains open at ${width}`);
       assert.equal(h.owner().message.data, openedRead, 'Width-only change does not clear or substitute the selected original');
       assert.deepEqual(h.calls, {read: category === 'conversations' ? 1 : 0, close: 0, search: 0, notifications: 0});
-      assert.equal(panel().props.nativeID, `history-categories-panel-${category}`);
-      assert.equal(panel().props.role, width < 680 ? undefined : 'tabpanel');
-      assert.equal(panel().props['aria-labelledby'], width < 680 ? undefined : `history-categories-tab-${category}`);
-      assert.equal(panel().props.tabIndex, width < 680 ? undefined : 0);
-      assert.equal(h.hosts().some(node => node.type === 'UnderlineTabs'), width >= 680);
-      assert.equal(h.hosts().some(node => node.type === 'AppSelect'), width < 680);
+      assert.equal(panel().props.role, 'region');
+      assert.equal(panel().props.accessibilityLabel, category === 'notifications' ? '消息歷史' : '助手對話');
+      assert.equal(h.hosts().some(node => node.props.testID === 'history-category-rail'), width >= 880);
+      assert.equal(h.hosts().some(node => node.type === 'AppSelect'), width < 880);
     }
     const search = () => h.hosts().find(node => node.type === 'AppTextField');
     search().props.onChangeText('no-match'); h.render(); assert.equal(dialog().props.visible, false, 'Changing filters still dismisses the original');

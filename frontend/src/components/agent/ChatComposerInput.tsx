@@ -6,6 +6,7 @@ import { AppTextField } from "../ui";
 
 export type ChatComposerInputHandle = { focus(options?: { preventScroll?: boolean }): void; blur(): void };
 export type ChatComposerInputProps = {
+  maxHeight?: number;
   value: string; disabled: boolean; canSubmit?: boolean; onChangeText(value: string): void; onSubmit(): void;
   onFocus(): void; onBlur(): void;
 };
@@ -21,7 +22,7 @@ export const ChatComposerInput = forwardRef<ChatComposerInputHandle, ChatCompose
     value={props.value} onChangeText={props.onChangeText} onFocus={props.onFocus} onBlur={props.onBlur}
     underlineColor="transparent" activeUnderlineColor="transparent" underlineStyle={styles.underline}
     onContentSizeChange={event => setHeight(!props.value ? chatLayout.inputMinHeight
-      : Math.max(chatLayout.inputMinHeight, Math.min(chatLayout.inputMaxHeight, event.nativeEvent.contentSize.height)))}
+      : Math.max(chatLayout.inputMinHeight, Math.min(props.maxHeight ?? chatLayout.inputMaxHeight, event.nativeEvent.contentSize.height)))}
     style={[styles.input, { height }]} contentStyle={styles.content} />;
 });
 

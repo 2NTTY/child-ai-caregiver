@@ -38,7 +38,7 @@ function setup(initial = [proposal()], { width = 1024, customBackground = false 
   owner.syncContext({ key: 'scope-a', childId: 'child-a', userId: 'synthetic-parent' }, true, { identityKey: 'synthetic-parent' });
   let id = 0; mocks.react = { ...h.react, useId: () => h.react.useRef(`care-${++id}`).current };
   mocks['react-native'] = { View: 'View', Pressable: 'Pressable', Platform: { OS: 'web' }, StyleSheet: { create: x => x } };
-  for (const name of ['../theme', '../../theme']) mocks[name] = { colors: {}, spacing: { xs: 4, sm: 8, md: 12, lg: 16 }, radius: {}, readingType: {}, workspaceType: {} };
+  for (const name of ['../theme', '../../theme']) mocks[name] = { colors: {}, spacing: { xs: 4, sm: 8, md: 12, lg: 16 }, radius: { medium: 12 }, readingType: {}, workspaceType: {} };
   for (const prefix of ['./', '../', '../components/']) for (const name of ['AppIcon', 'AppStatusBadge', 'AppCheckbox', 'StatusAnnouncement']) mocks[prefix + name] = { [name]: name };
   const ui = { AppButton: 'Button', SectionCard: 'SectionCard', AppTabPanel: 'TabPanel', UnderlineTabs: 'Tabs', AppSelect: 'Select', AppTextField: 'Field' };
   mocks['../ui'] = ui; mocks['../components/ui'] = ui;
@@ -218,22 +218,22 @@ test('narrow Care toolbar alone reclaims the custom-background inset and keeps t
 test('care removes the duplicate introductory row while retaining its accessible page identity and pending workspace', async () => {
   const s = setup(); await s.ready();
   const frame = s.h.hosts().find(node => node.type === 'PageFrame');
-  assert.ok(frame); assert.equal(frame.props.title, '核對');
-  assert.equal(frame.props.description, undefined);
+  assert.ok(frame); assert.equal(frame.props.title, '核對與照顧記錄');
+  assert.match(frame.props.description, /先讀內容與來源/);
   assert.ok(s.card());
   assert.doesNotMatch(s.text(), /核對助手記下的內容，有誤時更正/);
   s.end();
 });
 
 
-test('pending cards use only the review full-row straight frame with category/status above content and a truthful time below', async () => {
+test('pending cards use only the review full-row reading frame with category/status above content and a truthful time below', async () => {
   for (const width of [1440, 1024, 390, 320]) {
     const s = setup([proposal('a'), proposal('b')], { width }); await s.ready();
     const grid = s.h.node('care-pending-grid');
     assert.equal(grid.props.style.flexDirection, undefined); assert.equal(grid.props.style.flexWrap, undefined);
     for (const id of ['a', 'b']) {
       const card = s.card(id), style = card.props.style({ pressed: false })[0];
-      assert.equal(style.borderWidth, 1); assert.equal(style.borderRadius, 0); assert.equal(style.padding, 12);
+      assert.equal(style.borderWidth, 1); assert.equal(style.borderRadius, 12); assert.equal(style.padding, 12);
       for (const key of ['maxWidth', 'width', 'height', 'minHeight', 'flexBasis', 'aspectRatio']) assert.equal(style[key], undefined, key);
       const [header, content, footer] = card.props.children;
       assert.equal(header.props.style.justifyContent, 'space-between');

@@ -1,5 +1,7 @@
 # 育有方 Web／手機設計規則
 
+> **2026-10-25 實驗分支覆蓋：**此分支採用 [Harbour Desk 實驗設計](experiments/harbour-desk/README.md)。使用者明確要求按新選四項官方 skills 重選呈現，不被以下歷史風格、短名、秒級時間、常駐 metadata、固定 zoom 或問候動效配方綁定。覆蓋僅屬本分支的前端呈現；資料、授權、原操作、業務及驗收規範不變。下文保留作歷史／原產品比較，不等同此實驗採用。
+
 <a id="user-first-principles"></a>
 ## 產品目的與設計取捨
 
