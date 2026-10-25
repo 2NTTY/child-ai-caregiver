@@ -3810,3 +3810,11 @@
 - 使用者另行明確批准修訂批次：同一測試身份／兩項最小權限，建立第二個臨時 Vertex key，等待 180 秒後僅生成一次。原香港 VM 的正式 `createPersonalModelProviders` 返回成功，5 input＋1 output tokens，沒有平台憑證回退、embedding、重試或產品設定／配額修改。
 - 同批 finally 已刪臨時 key、移除本次新增角色綁定，未動原權限。首批 403 與原 Gemini 地區拒絕保留；成功與 IAM 生效延遲相符，但不宣稱已證實首批錯誤根因。Google IAM 官方文件指出政策傳播通常兩分鐘、也可能七分鐘或更久；本次三分鐘不是普遍保證。
 - [實測證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)新增獨立結果，PLAN／STATUS 只解除個人 Vertex provider 成功待驗；設定→Agent／個人向量檢索的完整流程仍未通過。僅核文件 diff／JSON，不重跑其他產品測試、協作者四 Agent 或通知。
+
+<a id="log-20261025-android-picker-delivered"></a>
+## LOG-20261025-ANDROID-PICKER-DELIVERED
+
+- 沿 #308 已核 hash 的同一 31 檔匯出繼續查明發布阻塞。公開無憑證連線與 EAS SDK 核對後，僅向 Expo 回傳並已確認的 GCS host 直接 TLS 上傳原 9,048,132-byte HBC 一次，HTTP 204／資產 EXISTS；不帶 proxy、不跟 redirect、不重試。初次 host guard 不符已在上傳前停止；原兩次 EAS 逾時保留，不把直接路徑成功等同完整證明舊 proxy 的內部故障。
+- 相容 preview OTA 已於 13:23 UTC 發布，group `39974363-7397-418f-adf6-40e853786ca1`、update `01a1733b-70d1-7fcc-a5af-a830658b7b1c`、v4 runtime `0c5c868…`。產品來源 `35ad214`，發布 Git `cffa337` 只多文件；沒有 Web／API 更新、新 APK 或向舊 runtime 強推。
+- 已解鎖手機重開後選取 68-byte 合成 TXT，未送出草稿正確顯示原檔名；品牌 splash 同時可見。中文輸入法改寫首次搜尋後只改用數字檔名定位同一合成檔，沒有開其他私人附件。隨即丟棄草稿、刪測試檔並返回原首頁；零上傳／聊天／模型／通知，不重跑頭像及已通過的保存／下載。
+- [交付及設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)保留各批失敗／限制；裝置未另讀 update ID，僅按可見行為驗證修正。PLAN／STATUS 原位解除檔名發布與設備阻塞，個人向量完整流程及 Android 其餘門檻仍保留。只核 diff／JSON／既有證據完整性，協作者 PR 不動。
