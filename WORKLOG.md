@@ -3917,3 +3917,11 @@
 
 - PR #324／`14e0f60` 已合併。只把一個工具說明檔（壓縮 1,233 bytes）及 hash／腳本傳至既有原 VM；初次腳本因 Windows 編碼在執行前停止，改存 UTF-8 後同一候選正式組裝通過，未擴測。
 - 無活動 run 後 API／worker 已更新至 `sha256:663125df9f51c666c878b7b6bcb8ef77fc6f9a55f20a8f4cbc82c88e5b87ca70`，服務及公開健康通過；Web／Android／配額／資料不變，零模型或通知。保留 `d5be355` 前版與 0600 配置；[原包證據](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)保存精確版本、原失敗與回退。
+
+
+<a id="log-20261026-personal-key-complete"></a>
+## LOG-20261026-PERSONAL-KEY-COMPLETE
+
+- 在 `226a848` 的正式共用 Web HTTP/client、ADK 及隔離 Firebase 資料上，用既有測試身份的一個臨時 Vertex key 完成設定保存／原收據／新登入會話讀回；同時配置本人聊天及獨立向量路由。平台全程停用。
+- 正常 8／4 每輪設定、不重試；實際 3 次生成、2 次工具、1 次向量完成官方引用、獨立審核、保存及原 run `f37b5216-3e17-4f04-b7bb-74123e0a5622` 讀回。本人帳目 5→9，平台 40→40；27,527 input／286 output tokens，已知生成估約 US$0.0142，非帳單。本批預留 US$0.50，12 小時預留合計 US$2.51，未超 US$5。
+- finally 已刪臨時 key／移除本次新增兩項最小權限，本地沿 disabled 正式操作清 key，再恢復原停用平台模式及個人限額；原帳目保留。[完整證據](artifacts/verification/PERSONAL_MODEL_COMPLETE_20261026.json)。沒有改產品程式、部署或通知，也沒有重跑全量。舊 embedding_limit 失敗保留，不因新批成功推定原因；手機本人 key 輸入／跨端畫面、四 Agent 聯合品質仍按原範圍待驗。
