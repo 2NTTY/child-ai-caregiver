@@ -353,3 +353,11 @@ MODEL-SELF03補充（2026-10-23）：沿ADK 2.1.0的現有`AgentModelProvider`�
 Gemini目錄使用原生`models.list`的Pager，最多兩頁各100項，取支援generateContent的合法Gemini ID，去重後最多回20項並明示截斷；不讀完整列表或自動試用每個模型。目錄只作參考，用戶亦可直接指定模型ID。已知Gemini2.5採thinkingBudget（Pro動態、Flash／Lite關閉可選thinking），既有Gemini3保留thinkingLevel；其餘型號省略可選thinking參數，避免錯套另一型號設定。這是參數相容選擇，不宣稱品質／速度已實測；metadata也不等於生成或embedding可用。[模型目錄](https://ai.google.dev/api/models)／[thinking配置](https://ai.google.dev/gemini-api/docs/thinking)。SDK／HTTP重試維持一次，由正式gateway統一有限重試與計量。合成接線及真服務未驗邊界見[MODEL01 EV](../artifacts/verification/MODEL_SELF01_SETTINGS_20261018.json)。
 
 2026-10-20依使用者澄清，取消「未有本地profile便禁止使用」的門檻；未逐型號驗收不等於不支援。Express保留保守參考選項，實際可用型號依[官方服務範圍](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/start/express-mode/overview)及本人憑證，不保證Developer模式可用的全部型號在Express亦可用。新型號可經相同SDK及Agent工具協定直接指定，不增加逐模型試呼叫。[API key認證](https://docs.cloud.google.com/docs/authentication/api-keys)另指出非Gemini專用的授權key受組織政策限制；不能把普通Gemini key當作Vertex key，或為驗收任意改組織政策。
+
+
+<a id="avatar-crop-reuse"></a>
+### 頭像裁切的成熟能力復用（2026-10-25）
+
+原生沿既有 MIT 的 Expo ImagePicker 57.0.19：啟用 allowsEditing、Android 方形 aspect，iOS 原生本已固定方形；Android 使用套件內建 CanHub cropper，無須新增原生套件。選回裁切副本後只預覽／保存，不再顯示自製 PanResponder 與方向按鈕。官方 [ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/) 及安裝版 types／CropImageContract 已核對；實際裝置裁切／EXIF／取消仍須分開驗證。
+
+Web 的 ImagePicker 不提供原生裁切，採固定 react-easy-crop 6.2.4（MIT，唯一 runtime 依賴 normalize-wheel 1.0.1／BSD-3-Clause），其 React peer 範圍涵蓋現有 React 19。沿 [原專案](https://github.com/ValentinH/react-easy-crop) 的拖曳、雙指／滾輪縮放、方向鍵與百分比選區，只以薄映射接原 Server 裁切契約；不新增 canvas 輸出或另一套手勢。元件只讀本機 object URL，不上傳圖片。對話框只作淡入／平移，避免官方所列縮放動畫量度問題；另在裁切容器抵消原網站 CSS zoom，讓套件 layout／pointer 座標一致；桌面大圖以可見選區與保存契約量度核對。套件原 license 不修改。採用不代表所有瀏覽器或真機均已驗，結果及限制見 [AVATAR-01](../PLAN.md#avatar-01)。

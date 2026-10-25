@@ -1093,7 +1093,7 @@ OAuth 取得憑據與訊息 POST 分開；每次有授權的投遞只送一次 P
 <a id="avatar-api"></a>
 ## 本人／孩子頭像（AVATAR-01）
 
-**目前為開發草稿，未啟用：**`AVATAR_LIFECYCLE_RELEASE_READY=false`，未提供的 avatar API／online command 回受控 unavailable；前端合成預覽及本機個別綠項不代表此 API 已上線。解除門檻見[AVATAR-01](../PLAN.md#avatar-01)。
+頭像寫入須同時通過 source release gate 及 runtime 寫入開關；未提供的 avatar API／online command 回受控 unavailable。目前交付與啟用狀態只見 [AVATAR-01](../PLAN.md#avatar-01)／[部署觀察](../STATUS.md#deployment)，不由本契約或前端預覽推定已上線。
 
 頭像為獨立資源；不增加 Child／SessionUser／Firebase Auth photoURL 欄位。令 `B` 為 `/api/me/avatar` 或 `/api/children/:childId/avatar`。本人由 Server 取目前身份的 personal workspace／epoch，無孩子亦可使用；孩子沿既有 READ_ROLES／WRITE_ROLES，每次重核目前授權。本人固定 private；暫存 upload 僅建立者讀寫，commit 後孩子 current 才沿既有讀取範圍披露。沒有任意 user ID、公開或簽名 URL、分享設定、照片分析或模型接點。
 

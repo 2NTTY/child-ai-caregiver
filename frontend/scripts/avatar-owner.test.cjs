@@ -17,8 +17,15 @@ function compile(file) {
 }
 const { AvatarOwner } = compile('frontend/src/production/AvatarOwner.ts');
 const { AvatarApiError } = compile('src/client/avatars-api.ts');
-const { avatarCropRect, avatarImageHeader, boundedAvatarCrop } = compile('frontend/src/avatar-image.ts');
+const { avatarCropRect, avatarCropFromArea, avatarImageHeader, boundedAvatarCrop } = compile('frontend/src/avatar-image.ts');
 const policy = { policyId: 'synthetic-v1', acceptedMimeTypes: ['image/jpeg','image/png'], maxInputBytes: 1024, maxInputPixels: 1e6, maxInputDimension: 2000, outputSize: 256, maxOutputBytes: 1024, maxCropZoom: 8 };
+test('cropper percentage selection preserves the Server square on wide and tall images', () => {
+  for (const [width, height, area, expected] of [
+    [400, 200, { x: 37.5, y: 25, width: 25, height: 50 }, { left: 150, top: 50, size: 100 }],
+    [200, 400, { x: 0, y: 50, width: 100, height: 50 }, { left: 0, top: 200, size: 200 }],
+    [400, 200, { x: 75, y: 0, width: 25, height: 50 }, { left: 300, top: 0, size: 100 }],
+  ]) assert.deepEqual(avatarCropRect(width, height, avatarCropFromArea(width, height, area, 8)), expected);
+});
 const target = { kind: 'self' }, child = { kind: 'child', childId: '11111111-1111-4111-8111-111111111111' };
 const asset = id => ({ id, mimeType: 'image/jpeg', bytes: 3, sha256: 'a'.repeat(64), width: 256, height: 256 });
 const avatar = (target, version = 0) => ({ target, version, asset: version ? asset('asset-' + version) : null, canManage: true, updatedAt: version ? '2026-10-23T00:00:00Z' : null });
