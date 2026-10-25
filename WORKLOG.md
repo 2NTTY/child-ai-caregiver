@@ -3774,3 +3774,10 @@
 - 使用者回覆「已開啓并覆蓋安裝」；ADB 核對 package versionCode 4，原登入及孩子資料仍可讀。以一張本次合成 EXIF-6 JPEG 核對系統選圖、拖動正方裁切、App 圓形預覽及取消；未保存至本人孩子，原頭像保持不變。
 - 附件庫列表及孩子切換清理可見；使用者要求減少額度消耗後停止追加，未完成下載／分享，不以空清單當通過。已關閉選取器並清理本次合成圖片及 UI dump；零模型、通知、雲端寫入或新建置。
 - [設備證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)；私人畫面不入 Git。成功個人 key、其餘媒體／通知終態／OTA 回退維持待驗，協作者四 Agent PR 不動。
+
+<a id="log-20261025-android-picker-filename"></a>
+## LOG-20261025-ANDROID-PICKER-FILENAME
+
+- 使用者要求直接續驗剩餘流程；v4 用一份 108 bytes、無私人資料的 TXT 選檔時，草稿顯示 Android `msf:` ID 而非原名稱，於送出前停批，沒有模型／通知或雲端寫入。原因是 SDK 的 JS `File.name` 使用 URI basename；已有原生 copy 能取得 provider display name。
+- 文件與已錄音訊改用同一薄接點，沿 expo-file-system 57.0.7 複製至本機私有暫存後保留真正檔名，再交原草稿處理；保留大小、數量、過期清理及取消，不新增套件或原生配置。單一針對性檢查及三入口型別通過；真機修正後續驗尚待相容 OTA，不以替身當通過。
+- [證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。不動協作者四 Agent PR，不重跑頭像或已通過 Web 附件下載；個人 Gemini key 原有供應商地區拒絕不反覆重試。

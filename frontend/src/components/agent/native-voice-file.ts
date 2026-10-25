@@ -1,6 +1,7 @@
 import { Directory, File, Paths } from "expo-file-system";
 import { VOICE_LIMITS, normalizeVoiceMimeType } from "../../../../src/shared/voice";
 import { localVoiceAttachment } from "./voice-attachment";
+import { withNativePickedFile } from "./native-picked-file";
 
 /** Own only our copy; never delete a file chosen from the user's library. */
 export async function copyNativeVoice(file: File, declaredMime: string, fileName: string) {
@@ -26,5 +27,5 @@ export async function pickNativeVoice() {
   const chosen = await File.pickFileAsync({ mimeTypes: "audio/*", multipleFiles: false });
   if (chosen.canceled) return null;
   const file = chosen.result;
-  return copyNativeVoice(file, file.type, file.name);
+  return withNativePickedFile(file, VOICE_LIMITS.bytes, copyNativeVoice);
 }
