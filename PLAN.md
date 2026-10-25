@@ -507,6 +507,9 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s16-w03"></a>
 #### S16-W03 P3 必要整體驗收
 
+- **Web 語音審核修正（2026-10-26）：**使用者回報錄音後 `delivery_review_incomplete`，本包從 master `3ee5df9` 的獨立 `codex/voice-review-evidence` 處理。原錄音現按同一 ID／版本／hash 送交獨立審核，每次重讀核權；審核與修正提供完整輸出 schema，普通招呼／真正補問不再被當成需要逐字來源的事實。順帶修正資料版本變動時的未完成收據不能解密讀回。正式 Web HTTP／共用 client＋真 Vertex 模型已完成錄音理解、獨立審核、保存及原 run 讀回（2 次生成）；定向機械檢查及限定型別通過。尚待本包 review／合併及原站 Server 交付，毋須 APK；[證據](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)保留初次失敗、背景資料變動中止及歷史情境干擾招呼的另項缺口，不宣稱四角色或瀏覽器播放全部通過，不動協作者 PR。
+- **模型驗收授權（2026-10-26）：**本聊天後續必要真模型測試毋須逐次詢問，所有測試及其自動轉錄／摘要合計採滾動 12 小時最多 US$5；先記已知用量及保守預留，計費未知不能當作零。沒有必要不重測，不提高正式產品配額、不自動重送未知副作用；此授權不自動涵蓋新身份／雲端資源／外發通知。
+
 - 2026-10-25 v4 真機補核：登入／孩子資料、系統選圖、EXIF-6、裁切／預覽及取消沿[原證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)。108-byte TXT 正式保存、聊天／附件庫下載至系統分享、重開讀回、原檔名及品牌 splash 已核；其後真機回退至內置版本再恢復修正版，以及手機建立待辦→Web 完成→手機原頁自動顯示完成／提醒停止均通過。[續驗](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)保留原失敗及各層限制。個人 Vertex provider 短生成另已通過；仍欠可用個人向量憑證下的完整流程、跨端 Agent／確認接續、另一身份的真機隔離及照護通知目標核權。四 Agent 仍等協作者，不以這批結果宣稱 Android 或整個 P3 全部完成。
 
 - 階段／狀態：P3；Android／頭像／附件庫／個人模型收尾中，完整 P3 未完成。最新 #305／`1f07fab` 成熟裁切已合併及更新 Web；新 APK 交付見[本批記錄](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。不修改協作者未合併 Agent PR、不提前恢復 DEV02 聯合補驗。

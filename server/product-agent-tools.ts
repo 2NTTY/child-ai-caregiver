@@ -139,7 +139,7 @@ export function createProductAgentTools(options: {
       if (error instanceof z.ZodError) return { status: "rejected", data: { code: "invalid_input" } };
       if (error instanceof FamilyError && error.code === "invalid_citation") return { status: "rejected", data: { code: error.code, nextAction: "search_knowledge", citationField: "chunks[].chunkId", message: "引用只能取本次 search_knowledge 結果的原始 chunkId；背景來源 metadata 不是已登記引用。不要猜測、拼接或重送同一無效 ID。" } };
       if (error instanceof FamilyError && error.code === "use_citation_ids") return { status: "rejected", data: { code: error.code, nextAction: "Remove URLs from paragraph text. Put exact retrieved chunkId values in citationIds; the UI renders source links." } };
-      if (error instanceof FamilyError && error.code === "citation_required") return { status: "rejected", data: { code: error.code, nextAction: "Use the already available search_knowledge tool if relevant evidence is missing and the remaining budget allows retrieval, presentation and review. Each caregiving or safety paragraph needs supporting official citationIds; private_reference needs a retrieved private-source citation or a Server-loaded photo original. Otherwise state the evidence limitation without unsupported advice. Report operation receipts separately; do not invent citations or relabel advice to bypass checks." } };
+      if (error instanceof FamilyError && error.code === "citation_required") return { status: "rejected", data: { code: error.code, nextAction: "Use the already available search_knowledge tool if relevant evidence is missing and the remaining budget allows retrieval, presentation and review. Each caregiving or safety paragraph needs supporting official citationIds; private_reference needs a retrieved private-source citation or a Server-loaded photo or current voice original. Otherwise state the evidence limitation without unsupported advice. Report operation receipts separately; do not invent citations or relabel advice to bypass checks." } };
       if (error instanceof FamilyError || error instanceof FirestoreDomainError) return { status: error.status === 409 ? "conflict" : error.status >= 500 ? "failed" : "rejected", data: { code: error.code } };
       throw error;
     }
@@ -151,7 +151,7 @@ export function createProductAgentTools(options: {
       const kind = paragraph.kind ?? parsed.kind;
       const official = options.reviewedGrowthPresentation || kind === "caregiving" || kind === "safety_help";
       if ((kind === "caregiving" || kind === "safety_help") && !paragraph.citationIds.some(id => evidence.get(id)?.chunk.classification === "official_guidance")) throw new FamilyError(400, "citation_required");
-      if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id)) && !run.images?.references().length) throw new FamilyError(400, "citation_required");
+      if (kind === "private_reference" && !paragraph.citationIds.some(id => privateSources?.evidence.has(id)) && !run.images?.references().length && !run.voice) throw new FamilyError(400, "citation_required");
       for (const id of paragraph.citationIds) {
         if (privateSources?.evidence.has(id) && !options.reviewedGrowthPresentation) continue;
         const item = evidence.get(id);
@@ -309,7 +309,7 @@ export function createProductAgentTools(options: {
         summaryText = args.text as string;
         return { staged: true, saved: false };
       }) },
-{ name: "present_answer", description: "提交顯示文字；每段可用 kind 指明用途，整體 kind=mixed 時每段必填 kind；未填沿舊整體 kind。citationIds 用本 run search_knowledge／read_knowledge_context 的 chunkId，或 read_private_source.citationId。私人材料回述用 private_reference，已載入原圖的描述可不帶文字引用，不能冒充官方；每項育兒／安全建議仍須支持的官方片段。純澄清、操作或記錄回述可無公共引用。不執行其他操作，不稱未完成事項成功。acceptedForValidation 只代表程式接受待核對；不能自報 approved、skipReview 或免審。實質育兒／安全內容由 Server 另排獨立模型審核。" + (options.background ? " 沒有新的有用回饋且未執行聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
+{ name: "present_answer", description: "提交顯示文字；每段可用 kind 指明用途，整體 kind=mixed 時每段必填 kind；未填沿舊整體 kind。citationIds 用本 run search_knowledge／read_knowledge_context 的 chunkId，或 read_private_source.citationId。私人材料回述用 private_reference，已載入原圖或當前原錄音的忠實回述可不帶文字引用，不能冒充官方；每項育兒／安全建議仍須支持的官方片段。純澄清、操作或記錄回述可無公共引用。不執行其他操作，不稱未完成事項成功。acceptedForValidation 只代表程式接受待核對；不能自報 approved、skipReview 或免審。實質育兒／安全內容由 Server 另排獨立模型審核。" + (options.background ? " 沒有新的有用回饋且未執行聯絡時，用 kind=no_action、paragraphs=[] 安靜結束。" : "") + (options.reviewedGrowthPresentation
         ? " 本次是成長關注：選取支持此關注的官方 chunkId；Server 只呈現片段的已核對正文，不使用你改寫的 text。沒有可用片段時呈現固定限制說明。" : ""),
       parameterErrorHints: () => [{ path: "paragraphs", reason: "invalid_parameters", expected: 'Use {kind, paragraphs:[{kind?, text, citationIds:[]}]}; kind is caregiving, safety_help, clarification, operation, record_restatement or private_reference; mixed requires a kind on each paragraph. Use actual chunkId values for advice, never URLs or source IDs. No extra fields.' }],
       parameters: options.background ? agentBackgroundAnswerSchema : agentAnswerSchema, authorize: permitted, terminal: true,
@@ -459,7 +459,8 @@ export function createProductAgentTools(options: {
         serverSubstitutedReceiptText: serverReceiptText !== null,
         paragraphs: serverReceiptText ? [{ text: serverReceiptText, citationIds: [] }]
           : answer.paragraphs.map(paragraph => ({ ...paragraph, citationIds: [...paragraph.citationIds] })),
-        sources, scope, ...(run.images?.references().length ? { images: run.images.references() } : {}) };
+        sources, scope, ...(run.images?.references().length ? { images: run.images.references() } : {}),
+        ...(run.voice ? { voice: run.voice } : {}) };
     },
     replaceDeliveryAnswer(next: unknown) {
       const parsed = agentAnswerSchema.parse(next);

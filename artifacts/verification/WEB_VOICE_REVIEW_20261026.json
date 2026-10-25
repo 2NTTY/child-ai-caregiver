@@ -1,0 +1,203 @@
+{
+  "date": "2026-10-26",
+  "base": "3ee5df9750ae95a20bdb0425dce1618d82036b59",
+  "branch": "codex/voice-review-evidence",
+  "promptPack": "0.1.55",
+  "scope": "Web HTTP and shared client through official local API/ADK/stores, Firebase emulators and real Vertex Gemini 3.1 Flash-Lite; self-created audio only.",
+  "productionObservation": {
+    "runId": "891c47fa-597c-4879-b8eb-be9e80859943",
+    "status": "stopped",
+    "reason": "delivery_review_incomplete",
+    "counts": {
+      "modelCalls": 2,
+      "toolCalls": 1,
+      "queryEmbeddings": 0
+    },
+    "privateContentRead": false
+  },
+  "rootCauses": [
+    "Generator received original audio but independent reviewer did not.",
+    "Review prompt treated a polite follow-up question as an unsupported factual claim; rejected result omitted required draftHash because the actual schema was not supplied.",
+    "Concurrent data-version change constructed an explicit undefined outcome and produced unreadable encrypted JSON."
+  ],
+  "checks": [
+    {
+      "name": "chat-voice-review",
+      "result": "passed",
+      "scope": "Shared budget, original audio identity/reload, revocation, hash binding, original result, no media in ADK events."
+    },
+    {
+      "name": "stale delivery ledger",
+      "result": "passed",
+      "scope": "Only new targeted case; original run remains readable after a concurrent change."
+    },
+    {
+      "name": "targeted TypeScript",
+      "result": "passed"
+    },
+    {
+      "name": "production prompt assembler",
+      "result": "passed",
+      "packVersion": "0.1.55"
+    }
+  ],
+  "realRuns": [
+    {
+      "case": "greeting",
+      "at": "2026-10-25T16:02:39.719Z",
+      "runId": "440a1f24-306b-4c1a-ad84-7944c2d2bbe1",
+      "status": "completed",
+      "stopReason": null,
+      "counts": {
+        "modelCalls": 4,
+        "toolCalls": 4,
+        "queryEmbeddings": 1
+      },
+      "review": "pass"
+    },
+    {
+      "case": "voice",
+      "at": "2026-10-25T16:04:35.615Z",
+      "runId": "10a20428-7081-4ee3-8377-fb42550dc932",
+      "status": "completed",
+      "stopReason": null,
+      "counts": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "review": null
+    },
+    {
+      "case": "voice-detail",
+      "at": "2026-10-25T16:06:54.723Z",
+      "runId": "78dacd63-4a9b-413b-8c30-f37158004134",
+      "status": "stopped",
+      "stopReason": "delivery_review_incomplete",
+      "counts": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "review": null
+    },
+    {
+      "case": "voice-fixed",
+      "at": "2026-10-25T16:13:10.682Z",
+      "runId": "c1f78dfb-6925-4be7-8715-c82d7d32dac1",
+      "status": "stopped",
+      "stopReason": "delivery_review_incomplete",
+      "counts": {
+        "modelCalls": 6,
+        "toolCalls": 4,
+        "queryEmbeddings": 0
+      },
+      "review": null
+    },
+    {
+      "case": "voice-trace",
+      "at": "2026-10-25T16:19:25.641Z",
+      "runId": "e6cee4f4-9d91-4534-bf6a-fa8f1f4904a1",
+      "status": "stopped",
+      "stopReason": "delivery_review_incomplete",
+      "counts": {
+        "modelCalls": 4,
+        "toolCalls": 3,
+        "queryEmbeddings": 0
+      },
+      "review": null
+    },
+    {
+      "case": "voice-verified",
+      "at": "2026-10-25T16:22:11.271Z",
+      "runId": "917cda45-37d9-4f38-bfc7-cb4e4231ad27",
+      "status": "stopped",
+      "stopReason": "delivery_review_incomplete",
+      "counts": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "review": null
+    },
+    {
+      "case": "voice-final",
+      "at": "2026-10-25T16:25:52.068Z",
+      "runId": "b86a6a2f-19c8-49c9-a0a8-be13d2da058d",
+      "status": "lookup_failed",
+      "stopReason": null,
+      "counts": null,
+      "error": {
+        "name": "ChatApiError",
+        "code": null,
+        "status": 500,
+        "message": "Chat request could not be confirmed"
+      },
+      "review": null
+    },
+    {
+      "case": "voice-delivery",
+      "at": "2026-10-25T16:34:56.190Z",
+      "runId": "6c311953-fffe-4ae4-99f4-4889f34935ab",
+      "status": "completed",
+      "stopReason": null,
+      "counts": {
+        "modelCalls": 2,
+        "toolCalls": 1,
+        "queryEmbeddings": 0
+      },
+      "review": "pass"
+    }
+  ],
+  "reviewDiagnostic": {
+    "modelCalls": 1,
+    "inputTokens": 4808,
+    "outputTokens": 67,
+    "result": "pass; isolated reviewer only"
+  },
+  "success": {
+    "runId": "6c311953-fffe-4ae4-99f4-4889f34935ab",
+    "counts": {
+      "modelCalls": 2,
+      "toolCalls": 1,
+      "queryEmbeddings": 0
+    },
+    "review": "pass",
+    "originalResult": "completed",
+    "faithfulRestatement": true
+  },
+  "budget": {
+    "authorization": "No further model-test approval; aggregate rolling 12 hours <= USD 5, including automatic transcription and summaries.",
+    "lastCompletedSnapshot": {
+      "day": "2026-10-25",
+      "attempts": 34,
+      "inputTokens": 281138,
+      "outputTokens": 2667,
+      "cachedTokens": 0,
+      "unknownUsageAttempts": 33,
+      "billingSource": "platform"
+    },
+    "attemptsAtShutdown": 36,
+    "localPolicyRestored": true,
+    "estimateUsd": 0.16,
+    "conservativeReservationUsd": 1,
+    "method": "Known token snapshot priced conservatively at $0.50/M input and $1.50/M output, plus isolated reviewer. Reserve USD1 for this entire batch including late background calls; this is not a billing statement. unknownUsageAttempts also counts missing cached-token metadata.",
+    "priceSource": "https://cloud.google.com/gemini-enterprise-agent-platform/generative-ai/pricing"
+  },
+  "retainedFailures": [
+    "Broad server tsconfig includes unrelated frontend/tests and failed; not rerun.",
+    "Legacy prompt review returned passed:false for existing section/fixture/version drift; not counted as pass.",
+    "Existing unrelated ledger case lacks continuation.prepare fixture; only new targeted regression passed.",
+    "A greeting on an older local child answered earlier solids/preparation context: separate unresolved context-selection issue.",
+    "Background data changes can still invalidate a run; only readable stopped receipt fixed, not concurrency policy."
+  ],
+  "limits": [
+    "No browser pixel/playback or phone acceptance in this batch.",
+    "No four-Agent joint acceptance; collaborator PRs untouched.",
+    "No private production recording sent to a test.",
+    "Old failed runs are retained and never automatically rerun."
+  ],
+  "deployment": {
+    "status": "not_deployed"
+  }
+}
