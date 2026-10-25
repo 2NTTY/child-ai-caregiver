@@ -21,7 +21,7 @@ export default function RootLayout() {
         <title>{brand.name}</title>
         <style id="care-workspace-accessibility">{`html { color-scheme: light; }
 :focus-visible { outline: 3px solid ${colors.teal} !important; outline-offset: 3px; }
-[data-testid="workspace-skip-link"] { position: absolute; left: 16px; top: -100px; z-index: 100; }
+[data-testid="workspace-skip-link"] { top: -100px; }
 [data-testid="workspace-skip-link"]:focus { top: 12px; }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }`}</style>
       </Head>

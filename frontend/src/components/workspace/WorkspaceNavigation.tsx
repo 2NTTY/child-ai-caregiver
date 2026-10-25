@@ -1,7 +1,7 @@
 import { createContext, use, useMemo } from "react";
-import { Pressable, StyleSheet, View, type PressableStateCallbackType } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { PreviewLink } from "../../preview/PreviewNavigationGuard";
+import { WorkspaceLink } from "./WorkspaceLink";
 import { AppIcon } from "../AppIcon";
 import { AppScrollView } from "../AppScrollView";
 import { navigationItems } from "../navigation/app-navigation";
@@ -20,12 +20,11 @@ function Primary() {
   return <View role="navigation" accessibilityLabel="主要工作區" style={styles.primary}>{workspaceGroups.map(group => {
     const selected = group.key === meta.group.key;
     const item = navigationItems[group.home];
-    return <PreviewLink key={group.key} href={item.href}><Pressable accessibilityRole="link" accessibilityLabel={group.title}
-      aria-current={selected ? "true" : undefined} accessibilityState={{ selected }}
-      style={({ pressed, hovered }: PressableStateCallbackType & { hovered?: boolean }) => [styles.primaryLink, selected && styles.primarySelected, (pressed || hovered) && styles.primaryHover]}>
+    return <WorkspaceLink key={group.key} href={item.href} label={group.title}
+      current={selected ? "true" : undefined} style={[styles.primaryLink, selected && styles.primarySelected]} feedbackStyle={styles.primaryHover}>
       <AppIcon name={item.icon} color={selected ? colors.white : colors.ink} size={19} importantForAccessibility="no" />
       <Text style={[styles.primaryLabel, selected && styles.selectedLabel]}>{group.title}</Text>
-    </Pressable></PreviewLink>;
+    </WorkspaceLink>;
   })}</View>;
 }
 function Local() {
@@ -33,11 +32,10 @@ function Local() {
   return <AppScrollView horizontal style={styles.localScroll} contentContainerStyle={styles.local} showsHorizontalScrollIndicator={false}
     role="navigation" accessibilityLabel={`${meta.group.title}功能`}>
     {meta.group.items.map(key => { const item = navigationItems[key]; const selected = state.pathname === item.href;
-      return <PreviewLink key={key} href={item.href}><Pressable accessibilityRole="link" accessibilityLabel={item.label}
-        aria-current={selected ? "page" : undefined} accessibilityState={{ selected }}
-        style={({ pressed }) => [styles.localLink, selected && styles.localSelected, pressed && styles.localPressed]}>
+      return <WorkspaceLink key={key} href={item.href} label={item.label}
+        current={selected ? "page" : undefined} style={[styles.localLink, selected && styles.localSelected]} feedbackStyle={styles.localPressed}>
         <Text style={[styles.localLabel, selected && styles.localSelectedLabel]}>{item.label}</Text>
-      </Pressable></PreviewLink>;
+      </WorkspaceLink>;
     })}
   </AppScrollView>;
 }

@@ -47,7 +47,7 @@ test('More keeps all guarded link destinations at mobile and desktop sizes', () 
     assert.ok(all.some(node => node.props?.testID === (desktop ? 'more-desktop-catalogue' : 'more-mobile-list')));
     assert.equal(all.filter(node => node.type === 'AppMenuList').length, 0);
     const expectedLinks = navigation.moreNavigationGroups.flatMap(group => group.items).length;
-    assert.equal(all.filter(node => node.type === 'PreviewLink').length, expectedLinks);
+    assert.equal(all.filter(node => node.type === 'WorkspaceLink').length, expectedLinks);
     assert.deepEqual(h.events, []);
   }
 });
@@ -69,10 +69,10 @@ test('All features uses one destination name and includes every existing ordinar
   assert.deepEqual([...keys].sort(), Object.keys(navigation.navigationItems).filter(key => key !== 'more').sort());
   for (const width of [320, 390, 768, 1024, 1440]) {
     const h = harness(width), tree = h.more(), all = nodes(tree);
-    const links = all.filter(node => node.type === 'PreviewLink');
+    const links = all.filter(node => node.type === 'WorkspaceLink');
     for (const [index, key] of keys.entries()) {
       assert.deepEqual(links[index].props.href, key === 'photos' ? { pathname: '/care', params: { view: 'photos' } } : navigation.navigationItems[key].href);
-      assert.equal(links[index].props.children.props.accessibilityLabel, navigation.navigationItems[key].label);
+      assert.equal(links[index].props.label, navigation.navigationItems[key].label);
     }
     const recordButton = h.records();
     assert.ok(recordButton.props.label.includes('全部功能')); assert.ok(recordButton.props.hint.includes('全部功能'));

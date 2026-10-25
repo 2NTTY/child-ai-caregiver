@@ -114,3 +114,11 @@
 - Browser、實際幾何／觸控、全讀屏、正式後端與真模型未驗；不以上述合成測試取代。checkpoint export 35 routes 成功；新來源凍結後重新 export 並逐 source-map 核來源。
 
 - 第二次獨立 review 以真 RN Web 找到 Space 未啟動 tab；前述 4/4 只證明 host-adapter 事件交接，不能取代 PressResponder。現已補 keydown 防捲動、keyup 單次啟動、blur 取消，Enter 保留 RN Web 原處理；新增真 RN Web 0.21.2／React／jsdom 1/1，涵蓋 repeat、拒絕 guard、blur、Enter、pointer、fetch 0。jsdom 無 ResizeObserver 的提醒保留；此測試不宣稱版面幾何通過。
+
+### 真 browser 導航樣式修正
+
+獨立 browser 在 1180px 發現選中水平導航白字但背景透明，並指出功能目錄失去 padding。根因是 Expo Router `asChild` 的 RN／Radix Slot 將 direct-child 的 `style` callback 合併為空 object；token 對比測試無法發現這種整合問題。新增純呈現 `WorkspaceLink`，把本地 pressed／hovered 狀態先解析為 flattened style object，再交給原 `PreviewLink`，只替換主要／局部導航與功能目錄三個新用法；href、照片相容入口、導航 guard 不變。
+
+`uiux-navigation.web.test.cjs` 使用真 Expo BaseExpoRouterLink、RN Slot、Radix Slot、RN Web Pressable 與實際 PreviewLink，僅隔離 router 的導航狀態 hook。修前 2/2 紅：背景透明及目錄 minHeight=0；修後 2/2 綠，逐六工作區檢查 DOM computed background／文字色／padding／minHeight／局部底線、15 個目錄 anchor 及原導航 callback，fetch 0。相關 10/10 與 frontend TypeScript 通過。這不是瀏覽器幾何替代；固定新 export 後仍由唯一 owner 回驗。
+
+同輪真 browser 另確認 skip-link 的 `position:absolute` 被稍後 RN base class 蓋為 relative：佔用 44px 空位、left=16px 加全寬而令 dashboard 外界多出 16px。將 absolute／left／right／zIndex 移至 RN 元件 style，兩側各 16px；原 CSS 只保留隱藏 top 與 focus 顯示位置，跳轉焦點 handler 不變。新增直接抽取真 AppShell skip JSX／stylesheet 的 RNW leaf 測試，按觀察到的後載 RN stylesheet 順序重現 relative 紅，再驗 absolute、左右界、focus CSS 與真 handler 聚焦頁面綠；合計 3/3。jsdom pseudo-state style cache 以重解析相同 CSS 處理，沒有宣稱幾何已通過，仍待真 browser 複驗。

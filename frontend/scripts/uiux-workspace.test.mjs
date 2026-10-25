@@ -21,8 +21,9 @@ const native = { Platform: { OS: 'web', select: x => x.web ?? x.default }, Style
 function load(file) {
   const absolute = path.resolve(root, file);
   if (cache.has(absolute)) return cache.get(absolute).exports;
+  const source = readFileSync(absolute, 'utf8');
   const mod = { exports: {} }; cache.set(absolute, mod);
-  const output = ts.transpileModule(readFileSync(absolute, 'utf8'), { fileName: absolute, compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX }, reportDiagnostics: true });
+  const output = ts.transpileModule(source, { fileName: absolute, compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX }, reportDiagnostics: true });
   assert.equal(output.diagnostics.filter(item => item.category === ts.DiagnosticCategory.Error).length, 0, file);
   new Function('require', 'module', 'exports', output.outputText)(name => {
     if (name === 'react' || name === 'react/jsx-runtime') return require(name);

@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { Platform, StyleSheet, View, useWindowDimensions } from "react-native";
 import { Text } from "react-native-paper";
 import { AppIcon } from "../components/AppIcon";
 import { PageFrame } from "../components/PageFrame";
 import { AppTextField } from "../components/ui";
 import { EmptyListCard } from "../components/EmptyListCard";
 import { moreNavigationGroups as groups, navigationItems } from "../components/navigation/app-navigation";
-import { PreviewLink } from "../preview/PreviewNavigationGuard";
+import { WorkspaceLink } from "../components/workspace/WorkspaceLink";
 import { chineseFont, colors, radius, spacing } from "../theme";
 
 export function filterFeatureGroups(query: string) {
@@ -24,14 +24,12 @@ export default function MoreScreen() {
     <View testID={desktop ? "more-desktop-catalogue" : "more-mobile-list"} style={styles.groups}>
       {visible.map((group, index) => <View key={group.title} style={[styles.group, desktop && styles.groupWide]}>
         <View style={styles.heading}><Text style={styles.index}>{String(index + 1).padStart(2, "0")}</Text><View style={styles.headingCopy}><Text accessibilityRole="header" style={styles.title}>{group.title}</Text><Text style={styles.detail}>{group.detail}</Text></View></View>
-        <View style={styles.links}>{group.items.map(item => <PreviewLink key={item.key} href={item.key === "photos" ? { pathname: "/care", params: { view: "photos" } } : navigationItems[item.key].href}>
-          <Pressable accessibilityRole="link" accessibilityLabel={navigationItems[item.key].label}
-            style={({ pressed }) => [styles.link, pressed && styles.pressed]}>
+        <View style={styles.links}>{group.items.map(item => <WorkspaceLink key={item.key} href={item.key === "photos" ? { pathname: "/care", params: { view: "photos" } } : navigationItems[item.key].href}
+          label={navigationItems[item.key].label} style={styles.link} feedbackStyle={styles.pressed}>
             <View style={styles.icon}><AppIcon name={navigationItems[item.key].icon} size={22} color={colors.teal} importantForAccessibility="no" /></View>
             <View style={styles.linkCopy}><Text style={styles.linkTitle}>{navigationItems[item.key].label}</Text><Text style={styles.linkDetail}>{item.detail}</Text></View>
             <AppIcon name="arrow-right" size={18} color={colors.muted} importantForAccessibility="no" />
-          </Pressable>
-        </PreviewLink>)}</View>
+        </WorkspaceLink>)}</View>
       </View>)}
     </View>
     {!visible.length ? <EmptyListCard title="找不到相符功能" detail="試試其他名稱，例如「待辦」或「照片」。" /> : null}

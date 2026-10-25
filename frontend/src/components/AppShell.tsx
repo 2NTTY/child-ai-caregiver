@@ -161,7 +161,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1, minHeight: 0, minWidth: 0, backgroundColor: colors.canvas },
-  skipLink: { backgroundColor: colors.ink, padding: 12, borderRadius: 8 }, skipLabel: { color: colors.white, fontFamily: chineseFont, fontWeight: "700" },
+  skipLink: { position: "absolute", left: 16, right: 16, zIndex: 100, backgroundColor: colors.ink, padding: 12, borderRadius: 8 }, skipLabel: { color: colors.white, fontFamily: chineseFont, fontWeight: "700" },
   globalHeader: { minHeight: 80, paddingHorizontal: 24, paddingVertical: 12, flexDirection: "row", alignItems: "center", gap: 20, backgroundColor: colors.white, borderBottomWidth: 1, borderBottomColor: colors.softLine },
   workspaceBrand: { width: 145, minHeight: 48, justifyContent: "center" }, workspaceLogo: { width: 145, height: 47 },
   settingsLink: { width: 44, height: 44, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.line, borderRadius: 8 },
