@@ -76,6 +76,23 @@ test('successful save only replaces committed image after reserve/content/commit
     assert.equal(f.lane.getSnapshot().avatar.version,2); assert.equal(f.lane.getSnapshot().unknown,false); assert.equal(f.lane.getSnapshot().selected,null); assert.equal(image.disposed,1);
   } finally {f.owner.dispose();}
 });
+
+test('save replaces an in-flight refresh without losing its lock or accepting late read state', async () => {
+  const f=fixture(); try {
+    await f.lane.load(); f.select(f.lane);
+    const read=f.api.read, delayed=deferred(); let readSignal;
+    f.api.read=async (target,signal,userId) => { readSignal=signal; return delayed.promise; };
+    const refresh=f.lane.load(); f.api.read=read;
+    f.data.uploadWait=deferred(); const saving=f.lane.save();
+    await Promise.race([f.data.uploadStarted.promise,saving.then(()=>{throw Error('Save was dropped during refresh');})]);
+    assert.equal(readSignal.aborted,true); assert.equal(f.lane.getSnapshot().busy,true);
+    delayed.resolve({avatar:avatar(target,99),policy}); await refresh;
+    assert.equal(f.lane.getSnapshot().busy,true); assert.equal(f.lane.getSnapshot().avatar.version,1);
+    await f.lane.save(); assert.equal(f.calls.filter(x=>x[0]==='reserve').length,1);
+    f.data.uploadWait.resolve({id:'upload-1',target,expectedVersion:1,policyId:policy.policyId,state:'ready',normalized:asset('new'),expiresAt:'2026-10-23T01:00:00Z',errorCode:null});
+    await saving; assert.equal(f.lane.getSnapshot().avatar.version,2); assert.equal(f.lane.getSnapshot().busy,false);
+  } finally {f.owner.dispose();}
+});
 test('unknown reserve blocks new writes and retry retains exact original reserve body', async () => {
   const f=fixture(); try {await f.lane.load(); f.select(f.lane); f.data.reserveFailure=new AvatarApiError(); await f.lane.save();
     assert.equal(f.lane.getSnapshot().unknown,true); const body=f.calls.find(x=>x[0]==='reserve')[1]; await f.lane.save(); assert.equal(f.calls.filter(x=>x[0]==='reserve').length,1);
