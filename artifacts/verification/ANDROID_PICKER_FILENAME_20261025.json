@@ -6,5 +6,38 @@
   "reuse": {"package": "expo-file-system@57.0.7", "official": "https://docs.expo.dev/versions/latest/sdk/filesystem/", "evidence": ["File.ts name getter uses URI basename", "Android CopyMoveStrategy uses provider fileName for a directory destination", "ContentProviderFile reads OpenableColumns.DISPLAY_NAME"], "newNativeDependencies": false},
   "checks": {"targetedTest": "frontend/scripts/native-picked-file.test.cjs: 1 passed", "typecheck": "native-picked-file, native-chat-file and native-voice-file: 0 diagnostics", "deviceAfterFix": "pending compatible OTA"},
   "limits": ["Synthetic adapter check does not prove device copy behavior", "No avatar retest, notification, model generation or unrelated attachment access", "Personal Gemini key successful generation remains blocked by the observed provider region rejection"],
-  "delivery": "pending"
+  "delivery": {
+    "source": "35ad2143b417911bbdb951dac93bf8ef0ad389b8",
+    "pr": 308,
+    "androidExport": "passed",
+    "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+    "files": 31,
+    "bytes": 13725060,
+    "attempts": 2,
+    "state": "blocked_before_publication",
+    "reason": "EAS asset processing timed out for the same Hermes bundle on both attempts; no further retry",
+    "readbackLatestGroup": "327ad4ca-66f5-412b-bf8a-ee46d7493198",
+    "productionBackendChanged": false,
+    "newApkBuilds": 0
+  },
+  "deviceContinuation": {
+    "state": "waiting_for_unlock",
+    "systemFileSelected": true,
+    "ownUnsentDraftRemoved": true,
+    "uploaded": false,
+    "downloadAndShare": "not verified",
+    "testFile": "One 108-byte non-private TXT staged in the device Download folder; no existing attachment modified",
+    "screenshots": "ignored local cache only"
+  },
+  "personalKeyProductionCheck": {
+    "environment": "existing Hong Kong production VM; deployed personal provider factory",
+    "generationAttempts": 1,
+    "embeddingAttempts": 0,
+    "result": "model_region_unavailable",
+    "platformFallback": false,
+    "settingsOrQuotaChanged": false,
+    "credentialPersistedOrLogged": false,
+    "scope": "One existing restricted Gemini key; does not declare all user keys or providers unavailable",
+    "transportFailuresBeforeModel": "Three local harness failures before provider invocation: Windows gcloud PuTTY stdin replacement and an unusable dry-run command. Resolved using subprocess-only CLOUDSDK_SSH_PUTTY_FORCE_CONNECT=false and normal host-key checks. No model retry."
+  }
 }
