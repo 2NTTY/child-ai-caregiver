@@ -142,7 +142,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="model-self03"></a>
 ### MODEL-SELF03 自行試用相容模型接口
 
-- 2026-10-25 收尾：沿既有受限 Gemini key 經正式個人 provider 僅嘗試一次短生成，供應商回 `model_region_unavailable`，立即停止，未再 embedding／重試／改配額。保留既有設定、共用表單及無平台回退證據；成功真 key 流程仍待可用憑證／環境，不把本機拒絕推論成其他用戶或 Vertex 不可用。[本次證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。
+- 2026-10-25 收尾補核：原香港 VM 的正式 Vertex ADC adapter 已完成一次短生成（6 tokens）及一次 1024 維向量（2 input tokens）。另依明確批准，用臨時受限 Vertex key 經正式個人 provider 僅呼叫一次，返回 `model_http_403`；key 及本次新增的兩權限角色綁定已撤銷，未重試、未改網站設定／配額。原 Gemini key 的地區拒絕保留，不推論 Vertex 或其他用戶不可用。成功個人 key 流程仍未通過；下一步需定位 403 的具體授權／端點原因，不能以 ADC 成功替代。[實測證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。個人 Vertex／相容模式仍需另填本人 Gemini 向量 key；ADC 的向量成功不代表這條個人路由已接 Vertex embedding。
 
 - 2026-10-24 Android 補核：使用已登入帳號只保存同一平台模式／模型設定一次，Firestore metadata 確認版本 2；關閉及重開 App 後登入保留並讀回相同設定。沒有輸入 key、呼叫模型、發通知或修改配額。此為真機保存／重開證據，不代表本人 key 真生成或完整跨端流程通過；證據合併至當前 S16 收尾。
 - 2026-10-23手機補核發現捨棄後殘留草稿；#267已修正並發布`4bfdf98`，保留原失敗及兩項React檢查。2026-10-24補核先觀察到手機仍載入舊圖標／舊表單，停止該批；新圖標出現後，只補同一流程，確認未保存個人模式／相容服務草稿可捨棄，實際離頁再返回會恢復平台模式且不再dirty。沒有輸入key、保存設定或呼叫模型，精確OTA ID未讀取，真key仍未驗。[原修正](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)／[發布](artifacts/verification/MODEL_SELF03_DRAFT_DELIVERY_20261023.json)／[本次補核](artifacts/verification/SHARED_NATIVE_NAVIGATION_20261024.json)。

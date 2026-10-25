@@ -3796,3 +3796,10 @@
 - 使用者解鎖後續驗同一份 108-byte 無私人資料 TXT，只提交一次。正式聊天保存、聊天及附件庫下載至 Android 系統分享選單均通過；關閉程序後可讀回同一附件及原回覆「OK」。沒有重送、通知或四 Agent 品質驗收；原始模型呼叫數未另查，不把單次提交當成只呼叫一次模型。
 - 真機仍為 embedded v4／`1f07fab`，因此原文件 ID 檔名問題保留；#308 的修正未因其他流程通過而冒稱已發布。12:50 UTC 只查一次 EAS，資產仍未完成，沒有第三次上傳／發布或新 APK。取消分享後的快速導航曾開啟既有瀏覽器，未驗收任何收件端保存；誤用 agent deep link 已恢復，不當成產品缺陷。
 - 已清手機本次下載目錄 fixture、恢復原孩子／首頁；保留一份無私人資料的雲端測試附件及訊息作追溯，沒有改既有內容。更新 [設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)、PLAN／STATUS，只解除已通過的附件待驗；個人 key 成功、檔名發布及其他未驗項仍保留。
+
+<a id="log-20261025-vertex-closeout"></a>
+## LOG-20261025-VERTEX-CLOSEOUT
+
+- 使用者要求驗可用的 Vertex 路線；原香港 VM 使用既有附加身份、正式 Vertex provider，完成一次 `gemini-3.1-flash-lite` 短生成（5 input＋1 output tokens）及一次正式 1024 維向量（2 input tokens）。這是 ADC 證據，不是個人 key 成功。
+- 依使用者明確批准，為既有合成測試身份建立只限 Vertex API 的臨時 key，臨時沿既有兩權限角色；經正式 personal-provider factory 的單次短生成返回 `model_http_403` 後停止。相同流程已撤銷 key、移除本次新增綁定；未改原權限、產品設定／配額／部署，沒有通知或私人資料。最多三筆的唯讀錯誤 metadata 查詢未找到 Vertex 紀錄，具體原因尚未確定，不據此推論所有 Vertex key 不可用。
+- [分層證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)保存結果與限制；PLAN／STATUS 區分平台 ADC 已通、個人 key 未通，保留先前 Gemini 拒絕及其他未驗項。個人 Vertex／相容模式仍使用另填的本人 Gemini 向量 key，不因本輪成功而宣稱已擴充個人向量路由。只核文件 diff／JSON，不重跑產品測試或協作者四 Agent。
