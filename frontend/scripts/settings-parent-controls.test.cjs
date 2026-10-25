@@ -151,7 +151,7 @@ test('model copy prioritizes personal choices while preserving advanced limits, 
   await clear(); const f = model(); await f.render();
   assert.doesNotMatch(copy(), /ADC|本地開發|接線|metadata|最後讀到的版本|管理政策版本/);
   assert.match(copy(), /上次讀取：我的個人密鑰/); assert.match(copy(), /連接服務：\/api/);
-  assert.match(copy(), /知識搜尋可另填下方 Gemini 向量密鑰/); assert.match(copy(), /不會借用平台額度/);
+  assert.match(copy(), /知識搜尋可另選下方的向量服務/); assert.match(copy(), /不會借用平台額度/);
   assert.doesNotMatch(copy(), /Vertex Express key 目前不支援/);
   assert.match(copy(), /不接受服務帳戶 JSON/); assert.match(copy(), /不會自動替換模型/); assert.match(copy(), /回覆也不一定會逐字顯示/);
   assert.match(copy(), /並加密儲存/); assert.match(copy(), /Google/); assert.match(copy(), /必要對話/);
