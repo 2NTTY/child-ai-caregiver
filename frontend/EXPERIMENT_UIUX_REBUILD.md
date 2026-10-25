@@ -122,3 +122,11 @@
 `uiux-navigation.web.test.cjs` 使用真 Expo BaseExpoRouterLink、RN Slot、Radix Slot、RN Web Pressable 與實際 PreviewLink，僅隔離 router 的導航狀態 hook。修前 2/2 紅：背景透明及目錄 minHeight=0；修後 2/2 綠，逐六工作區檢查 DOM computed background／文字色／padding／minHeight／局部底線、15 個目錄 anchor 及原導航 callback，fetch 0。相關 10/10 與 frontend TypeScript 通過。這不是瀏覽器幾何替代；固定新 export 後仍由唯一 owner 回驗。
 
 同輪真 browser 另確認 skip-link 的 `position:absolute` 被稍後 RN base class 蓋為 relative：佔用 44px 空位、left=16px 加全寬而令 dashboard 外界多出 16px。將 absolute／left／right／zIndex 移至 RN 元件 style，兩側各 16px；原 CSS 只保留隱藏 top 與 focus 顯示位置，跳轉焦點 handler 不變。新增直接抽取真 AppShell skip JSX／stylesheet 的 RNW leaf 測試，按觀察到的後載 RN stylesheet 順序重現 relative 紅，再驗 absolute、左右界、focus CSS 與真 handler 聚焦頁面綠；合計 3/3。jsdom pseudo-state style cache 以重解析相同 CSS 處理，沒有宣稱幾何已通過，仍待真 browser 複驗。
+
+### 短高度／200% 縮放的聊天 reflow
+
+v6 真 browser 已確認導航、目錄、skip-link、來源小記與正常高度聊天修復，但 Chrome 真 200% 縮放（CSS 590×378）令原固定 composer 與工具列耗盡閱讀高度，只有 5.5px 未被覆蓋，訊息不可見。此為真產品失敗，保留原證據，不以單元測試抵銷。
+
+短於 600px 的 Web viewport 現採明確 `reflow` 呈現：原工作區容器可垂直捲動並可鍵盤聚焦，原 ChatTimeline 置於 260px 閱讀窗，原 composer 以 `placement="flow"` 取消負 margin。所有文字大小、輸入、附件、活動、私隱、錯誤／未知狀態與確認仍可達，不隱藏控制、不禁止縮放。容器型別與孩子 scope key 不變；縮放不卸載 ChatContents、Timeline 或 textarea，也不改原 scrollRef／controlsRef、history controller、讀取 anchor 或跟隨策略。正常高度與 native 仍為原 bounded 呈現。
+
+新增真 React／RNW viewport＋真 ChatTimeline／web textarea 測試，跨 378／599／600／757 高度保留 DOM 節點、草稿、焦點與明示 offset port；另以真 AgentComposer 驗 flow/overlap 不 remount、不縮字、不移除原按鈕、不送出。既有 IME／Enter／autosize／send-focus 測試一併執行。jsdom 無版面引擎，這些不代表 nested wheel、實際 prepend 像素、Tab 自動捲到輸入或 200% 幾何已通過；固定新 export 後由唯一 browser owner 回驗，並返回 100% 核閱讀意圖與草稿。

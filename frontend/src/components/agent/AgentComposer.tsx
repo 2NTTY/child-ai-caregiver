@@ -24,11 +24,12 @@ type ControlInteraction = PressableStateCallbackType & { hovered?: boolean; focu
 type SendFocusTicket = { serial: number; document: Document; dispose(): void };
 
 // Mount this private subtree with the current identity/child scope key.
-export function AgentComposer({ enabled, compact, draft, attachments, onChangeDraft, onPreview, onSources, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0, submitEnabled, submitLabel = "預覽輸入", inputHint, filesUnavailableReason, voiceUnavailableReason, suggestionLabel = "本地示例", suggestionsAvailable = true }: {
+export function AgentComposer({ enabled, compact, draft, attachments, onChangeDraft, onPreview, onSources, onAddAttachment, onRemoveAttachment, captureOriginal, focusRequest = 0, submitEnabled, submitLabel = "預覽輸入", inputHint, filesUnavailableReason, voiceUnavailableReason, suggestionLabel = "本地示例", suggestionsAvailable = true, placement = "overlap" }: {
   enabled: boolean; compact: boolean; draft: string; attachments: readonly AssistantAttachment[]; onChangeDraft: (value: string) => void; onPreview: () => void | Promise<void>;
   onSources: () => void; onAddAttachment(attachment: AssistantAttachment, replaceId?: string): boolean; onRemoveAttachment(id: string): void;
   captureOriginal?: PhotoFilePickerProps["captureOriginal"]; focusRequest?: number;
   submitEnabled?: boolean; submitLabel?: string; inputHint?: string; filesUnavailableReason?: string; voiceUnavailableReason?: string; suggestionLabel?: string; suggestionsAvailable?: boolean;
+  placement?: "overlap" | "flow";
 }) {
   const input = useRef<ChatComposerInputHandle>(null);
   const composer = useRef<View>(null), sendControl = useRef<View>(null);
@@ -144,7 +145,7 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
     setSuggestionsExpanded(false);
     requestAnimationFrame(() => input.current?.focus());
   }
-  return <View ref={composer} testID="chat-composer" pointerEvents="box-none" style={[styles.composer, compact && styles.mobileComposer]}>
+  return <View ref={composer} testID="chat-composer" pointerEvents="box-none" style={[styles.composer, compact && styles.mobileComposer, placement === "flow" && styles.flowComposer]}>
     <View pointerEvents="box-none" style={[styles.composerContent, compact && styles.mobileComposerContent]}>
     <View testID="chat-composer-panel" style={[styles.panel, inputFocused && styles.panelFocused]}>
     <AssistantAttachmentPreview attachments={attachments} enabled={enabled && !voiceOpen} onRemove={onRemoveAttachment} onReplace={replaceAttachment} />
@@ -191,6 +192,7 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
 
 const styles = StyleSheet.create({
   composer: { flexShrink: 0, zIndex: 1, marginTop: -chatLayout.composerOverlap, backgroundColor: "transparent", paddingTop: 12, paddingBottom: 12 },
+  flowComposer: { marginTop: 0 },
   mobileComposer: { paddingTop: 8, paddingBottom: 8 },
   composerContent: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", paddingHorizontal: chatLayout.wideInset, gap: 6 },
   mobileComposerContent: { paddingHorizontal: chatLayout.compactInset },

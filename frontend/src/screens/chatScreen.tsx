@@ -13,6 +13,7 @@ import { StatusAnnouncement } from "../components/StatusAnnouncement";
 import { AgentComposer } from "../components/agent/AgentComposer";
 import { ChatMessage, ChatProgressIndicator } from "../components/chat/ChatMessage";
 import { ChatTimeline, type ChatTimelineControls } from "../components/chat/ChatTimeline";
+import { ChatViewport, ChatTimelineFrame, chatViewportLayout, type ChatViewportLayout } from "../components/chat/ChatViewport";
 import { locateCitationSource } from "../components/chat/locateCitationSource";
 import { chatColors, chatFont, chatLayout, chatType } from "../components/chat/chat-presentation";
 import { useProduction } from "../production/ProductionProvider";
@@ -29,17 +30,18 @@ const runPhases = { running: "thinking", completed: "complete", stopped: "stoppe
 export default function ChatPage() {
   const { scopeKey } = useProduction();
   const customBackground = useCustomBackground();
-  const viewportWidth = useWindowDimensions().width;
+  const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
+  const viewportLayout = chatViewportLayout(Platform.OS, viewportHeight);
   const [paneWidth, setPaneWidth] = useState(0);
   return <View style={[styles.root, customBackground && styles.customRoot]} role="region" accessibilityLabel="助手" tabIndex={-1} {...(Platform.OS === "web" ? { dataSet: { pageSurface: "true" } } : {})}>
-    <View testID="chat-page-layout" style={styles.pageLayout}>
+    <ChatViewport layout={viewportLayout}>
       <ChatContents key={scopeKey ?? "no-authorized-child"} compact={(paneWidth || viewportWidth) < mobileLayout.breakpoint}
-        onPaneLayout={event => setPaneWidth(event.nativeEvent.layout.width)} />
-    </View>
+        viewportLayout={viewportLayout} onPaneLayout={event => setPaneWidth(event.nativeEvent.layout.width)} />
+    </ChatViewport>
   </View>;
 }
-function ChatContents({ compact, onPaneLayout }: {
-  compact: boolean; onPaneLayout?(event: LayoutChangeEvent): void;
+function ChatContents({ compact, viewportLayout, onPaneLayout }: {
+  compact: boolean; viewportLayout: ChatViewportLayout; onPaneLayout?(event: LayoutChangeEvent): void;
 }) {
   const pathname = usePathname(), router = useRouter(), navigate = usePreviewNavigation();
   const { model, actions, scopeKey, chatState: chat, chatController, chatDraft, setChatDraft, agentAttachments,
@@ -139,7 +141,8 @@ function ChatContents({ compact, onPaneLayout }: {
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"} onPress={() => setDetailsOpen(true)} compact={compact} disabled={!child} />
       </View>
     </BackgroundSurface>
-    <BackgroundSurface frosted testID="chat-reading-panel" onLayout={onPaneLayout} style={styles.readingPanel} activeStyle={styles.boundedReadingPanel}>
+    <BackgroundSurface frosted testID="chat-reading-panel" onLayout={onPaneLayout} style={viewportLayout === "reflow" ? styles.flowReadingPanel : styles.readingPanel} activeStyle={styles.boundedReadingPanel}>
+    <ChatTimelineFrame layout={viewportLayout}>
     <ChatTimeline items={child ? chat.messages : []} recentLimit={6} compact={compact} presentation="conversation" emptyState={empty}
       history={{ cursor: child ? chat.nextCursor : null, loading: chat.loadingOlder,
         enabled: !!child && !busy && !chat.loading && chat.online, load: () => chatController.loadOlderMessages() }}
@@ -171,7 +174,8 @@ function ChatContents({ compact, onPaneLayout }: {
               onPress={() => { void requestChatReply(message.id); }} /> : null}
           </> : undefined} />;
       }} />
-    <AgentComposer enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft"} compact={compact} draft={chatDraft}
+    </ChatTimelineFrame>
+    <AgentComposer placement={viewportLayout === "reflow" ? "flow" : "overlap"} enabled={!!child && pathname === "/chat" && !busy && !voiceUpload.busy && !voiceUpload.unknown && !fileUpload.busy && !fileUpload.unknown && !photoUpload.busy && !photoUpload.unknown && phase === "draft"} compact={compact} draft={chatDraft}
       attachments={agentAttachments} onChangeDraft={setChatDraft} onPreview={send} submitEnabled={canSend} submitLabel="送出"
       suggestionLabel="建議問題" suggestionsAvailable={confirmedEmptyChat} inputHint={agentAttachments.some(v=>v.kind==="voice") ? "按送出會保存錄音並交 AI 理解；背景補上的轉錄不會再次執行指令。" : agentAttachments.some(v=>v.kind==="file") ? "按送出會保存原檔，並讓助手按你的要求讀取及處理。" : agentAttachments.length ? "按送出會保存照片，並交給目前選用的模型按你的要求處理。" : undefined}
       onSources={() => actions.open("sources")} onAddAttachment={addAgentAttachment} onRemoveAttachment={removeAgentAttachment} focusRequest={composerFocusRequest} />
@@ -198,8 +202,8 @@ function ChatAction({ label, accessibilityLabel = label, onPress, disabled = fal
 }
 const styles = StyleSheet.create({
   customRoot: { backgroundColor: "transparent", padding: 12 },
-  pageLayout: { flex: 1, minHeight: 0, minWidth: 0, position: "relative" },
   readingPanel: { flex: 1, minHeight: 0, minWidth: 0, width: "100%" },
+  flowReadingPanel: { flexShrink: 0, minWidth: 0, width: "100%" },
   boundedReadingPanel: { maxWidth: chatLayout.maxWidth, alignSelf: "center" },
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas },
   toolbar: { width: "100%", flexShrink: 0, paddingHorizontal: chatLayout.wideInset,

@@ -49,8 +49,9 @@ let serial = 0, networkCalls = 0;
 global.fetch = () => { networkCalls++; throw new Error('Network forbidden'); };
 function ComposerOwner({ scenario }) {
   const [enabled, setEnabled] = React.useState(true), [draft, setDraft] = React.useState('合成送出'), [focusRequest, setFocusRequest] = React.useState(0);
-  scenario.controls = { setEnabled, setDraft, setFocusRequest };
-  return React.createElement(AgentComposer, { enabled, compact: true, draft, focusRequest, attachments: [], suggestionsAvailable: false,
+  const [placement, setPlacement] = React.useState('overlap');
+  scenario.controls = { setEnabled, setDraft, setFocusRequest, setPlacement };
+  return React.createElement(AgentComposer, { enabled, compact: true, placement, draft, focusRequest, attachments: [], suggestionsAvailable: false,
     onChangeDraft: setDraft, onPreview() { scenario.submissions++; setEnabled(false); return scenario.promise; }, onSources() {}, onAddAttachment() { return false; }, onRemoveAttachment() {} });
 }
 async function scenario() {
@@ -120,6 +121,20 @@ test('pointer send never arms focus and a newer explicit request takes precedenc
   s = await scenario(); await start(s); await React.act(async () => s.controls.setFocusRequest(1)); await finish(s);
   await React.act(async () => new Promise(resolve => setTimeout(resolve, 40)));
   assert.deepEqual(focusCalls, [undefined], 'only the newer explicit request focuses, without a submit-ticket call');
+  assert.equal(networkCalls, 0);
+});
+test('flow placement removes overlap without remounting input, hiding controls, changing font size or submitting', async () => {
+  const s = await scenario(), original = input(), composer = document.querySelector('[data-testid="chat-composer"]');
+  const controls = ['拍照', '加入文件', '語音輸入', '預覽輸入'].map(label => document.querySelector(`[aria-label="${label}"]`));
+  assert.ok(controls.every(Boolean)); await React.act(async () => original.focus()); focusCalls.length = 0;
+  for (const placement of ['flow', 'overlap', 'flow']) {
+    await React.act(async () => s.controls.setPlacement(placement));
+    assert.equal(input(), original); assert.equal(original.value, '合成送出'); assert.equal(document.activeElement, original);
+    assert.equal(getComputedStyle(composer).marginTop, placement === 'flow' ? '0px' : '-32px');
+    assert.equal(getComputedStyle(original).fontSize, '16px');
+    for (const control of controls) assert.ok(control.isConnected);
+    assert.equal(s.submissions, 0); assert.deepEqual(focusCalls, []);
+  }
   assert.equal(networkCalls, 0);
 });
 test.after(async () => { await React.act(async () => renderer.unmount()); window.HTMLTextAreaElement.prototype.focus = originalFocus; dom.window.close(); });
