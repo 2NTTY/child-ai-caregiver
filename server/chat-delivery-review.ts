@@ -93,7 +93,22 @@ function joinedDraftText(draft: ChatDeliveryDraft): string {
   return draft.paragraphs.map(paragraph => paragraph.text).join("\n").trim();
 }
 
-/** Clarifying question with no advisory / directive care content. Domain words alone do not count. */
+/**
+ * Clarifying question with no advisory / directive care content and no mixed claims.
+ * Domain words alone do not count. A trailing question mark never grants a skip for
+ * advice, operation claims, or confirmation softeners (好嗎／對嗎／okay?) after a claim.
+ * Chinese commas and other clause separators disqualify: mixed statement + softener
+ * questions fail closed into review. CARE_ADVISORY is defense in depth, not the sole gate.
+ */
+function bodyHasClaimPlusConfirmSoftener(body: string): boolean {
+  // 「…好嗎／對嗎／是嗎／可以嗎」after non-empty claim text — not a pure clarify.
+  const zh = body.match(/^(.*)((?:好|對|是|可以|行|得)嗎)$/u);
+  if (zh && zh[1]!.trim().length > 0) return true;
+  const en = body.match(/^(.*)(?:right|ok|okay|correct)$/iu);
+  if (en && en[1]!.trim().length > 0) return true;
+  return false;
+}
+
 export function isPureClarifyingQuestion(text: string): boolean {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 120) return false;
@@ -102,10 +117,12 @@ export function isPureClarifyingQuestion(text: string): boolean {
   const segments = trimmed.split(/(?<=[？?])(?:\s+|\n+)*/u).map(part => part.trim()).filter(Boolean);
   if (segments.length < 1 || segments.some(part => !/[？?]$/u.test(part))) return false;
   if (CARE_ADVISORY_PATTERN.test(trimmed)) return false;
-  // Inner question marks between segments are expected; only statement punctuation disqualifies a segment.
+  // Inner question marks between segments are expected. Clause separators (incl. Chinese
+  // commas) or claim+softener shapes mean mixed content, not a pure clarify.
   for (const segment of segments) {
     const body = segment.replace(/[？?]+$/u, "").trim();
-    if (/[。．.!！；;]/u.test(body)) return false;
+    if (/[，、。．.!！；;]/u.test(body)) return false;
+    if (bodyHasClaimPlusConfirmSoftener(body)) return false;
   }
   return true;
 }
