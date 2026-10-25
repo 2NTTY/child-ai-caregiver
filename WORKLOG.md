@@ -3759,3 +3759,11 @@
 - 按使用者反覆指出的頭像操作落差，復用既有 Expo ImagePicker 原生裁切及固定 react-easy-crop 6.2.4 Web 元件，移除自製 PanResponder／方向按鈕；保留共用 owner、原 Server 及權限／收據。薄平台接線不另建資料服務，兩份 license 原文已保存。
 - 原生 adapter 合成檢查及選區契約各一項通過；受影響型別無 diagnostics。真 Web 拖曳／縮放／鍵盤、保存／讀回／移除與選區一致通過；Desktop CSS zoom 曾令大圖裁切框超界，已以局部座標邊界修正及量度。兩次 harness selector／responsive modal 停批與後續只補剩餘項均保留；沒有重跑模型、通知、附件庫或後端恢復。
 - Android 匯出初次 Hermes sandbox 寫入被拒，同來源在可寫環境匯出通過；Web 裁切修改後的最後匯出另記。依賴安裝的舊 system npm engine 警告保留，檢查／建置使用 Node24.19，lock 只保留所需兩依賴、不改無關版本。[證據](artifacts/verification/AVATAR_CROP_REUSE_20261025.json)。尚未把真機、APK、部署或個人模型成功寫成通過；協作者四 Agent PR 不動。
+
+<a id="log-20261025-avatar-crop-delivery"></a>
+## LOG-20261025-AVATAR-CROP-DELIVERY
+
+- #305／`1f07fab` 的 Web 靜態產物已經原 IAP／Compose 流程更新；候選 index、公開 hash／health 與 API／worker 不變核對通過。保留前版 Web 映像及 0600 Compose 回退，主機期限仍為 2026-11-06 13:33:50 香港時間，未續期。
+- 一次免費 EAS preview build `9f43f925-acc1-44e4-915b-ae63dcb46b70` 完成 APK v4；與 v3 同簽署，package／runtime 及原生新圖標／splash 資源核對通過。下載入口在 PLAN／STATUS；沒有向不同 runtime 的 v3 發 OTA，真機安裝／裁切未代填。
+- Python 下載 403 改用已安裝 EAS 官方下載函式；舊 Java 核對無輸出後只停該程序，Java21 通過；aapt 中文絕對路徑失敗只改相對路徑續核資源。原失敗保留，沒有重建或重跑產品。局部測試環境退出時 emulator export 500，保留上一快照，未宣稱恢復通過。
+- [交付證據](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)分列實作／Web／APK與待驗。零模型／通知／遷移／配額修改；手機設備出口、成功個人 key 及已延後的四 Agent／備份項仍保留，不動協作者 PR。
