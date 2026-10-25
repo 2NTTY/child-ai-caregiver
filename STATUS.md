@@ -19,18 +19,18 @@
 
 - **本地開發入口可用：**`npm run agent:local` 使用目前分支的正式 Web／API／四角色接點及隔離持久資料，不需部署 GCP。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；新增相容模型與獨立向量 key 路由只有合成證據。方法見[本地入口](docs/AGENT_LOCAL.md)。
 - **角色聯合補驗依使用者指示延後：**等待四個Agent真正完成且協作者先自行檢查，再安排最後引用／審核及接續流程。本聊天不提前重跑或接管修改；`delivery_review_incomplete`失敗現場、單頁PDF已通過證據及長來源／多模態缺口保留。本地入口仍可供協作者使用，恢復條件及證據只見 [DEV02](PLAN.md#dev-agent02)。
-- **個人模型 Vertex 向量補接待交付：**使用者批准最小增補；共用 v4 設定可選本人 Vertex key／專案／地區，沿原模型及 1024 維索引，沒有平台回退。限定設定／SDK／表單檢查及 Web／Android 匯出通過；一次真 key 向量返回 1024 維／2 input tokens，臨時 key／新增權限已清理。先前 Gemini 向量地區拒絕保留，不泛化為所有用戶限制。正式網站仍用前版，四 Agent 完整流程繼續延後。[證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
+- **個人模型 Vertex 向量補接已發布：**使用者批准最小增補；共用 v4 設定可選本人 Vertex key／專案／地區，沿原模型及 1024 維索引，沒有平台回退。限定設定／SDK／表單檢查及 Web／Android 匯出通過；一次真 key 向量返回 1024 維／2 input tokens，臨時 key／新增權限已清理。先前 Gemini 向量地區拒絕保留，不泛化為所有用戶限制。PR #317／`34f80a9` 已更新 API／worker／Web 及同 runtime Android OTA；新表單真機保存與完整 Agent／RAG 流程待驗，四 Agent 聯合驗收繼續延後。[證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
 - **Android 未全數驗收：**APK v4 覆蓋安裝、原登入／資料保留、附件、相容 OTA 回退／恢復及一項跨端待辦已有證據；一則指定 FCM 沿原結果，終態不重發復用既有 Firestore 核對。其餘精確未驗項只見 [S16](PLAN.md#s16-w03)，不重跑已通過流程，不以合併或發布當真機通過。
 - **其他邊界：**正式資料使用 Firestore；家庭多人留 P4。OPT／LAY 成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)未完成；Android 尚欠驗收不阻塞 iOS 開工。只補必要驗證，不全量、Computer Use 或重做設計。
 
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-25 14:30 UTC 原站觀察：**Web 已更新 `notification-target-f987b0b`（映像 `ccd2eca`），「重設密碼」文案及通知目標接線同版交付，公開 index hash／API health 通過；API／worker 維持 `avatar-enable-0ebfbfa`（`c3b149c`），頭像已啟用，APNs 未啟用。[本批交付](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。零模型／通知／資料遷移／配額修改，保留前版 Web `0da4e1f` 回退。
+**2026-10-25 15:09 UTC 原站觀察：**`34f80a9` 的個人 Vertex 向量接線已部署；API／worker `9d490d0`、Web `e813692`，候選正式組裝、公開 index hash／health 通過。頭像開關保持啟用，APNs 未啟用；零模型／通知／資料遷移／索引重建／配額修改。[交付證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
 
-**Android，2026-10-25 14:30 UTC 觀察：**APK v4、runtime `0c5c868…` 保持；本次 `f987b0b` 的 preview OTA group `aea3c202`／update `01a17377` 已發布，31 檔約 13.09 MiB，毋須重裝，未另核裝置載入此精確 update。先前回退／恢復、附件原檔名及跨端待辦已有[設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)；本次新通知目標仍待真機點擊，不以發布當通過。[交付](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
+**Android，2026-10-25 15:09 UTC 觀察：**同 APK v4 runtime `0c5c868…`，`34f80a9` 已發布 preview OTA group `33a2e0a3`／update `01a1739b`，31 檔約 13.09 MiB，毋須重裝。最新表單實機保存及此精確 update 載入未核；原回退／恢復、附件、待辦同步及撤權證據保留，不重測。
 
-**回退、備份與容量：**本次保留相容 API／worker `4159605` 及 0600 的 `compose.env.before-avatar-enable-0ebfbfa`。關寫入仍保留頭像 reader／cleanup；已開放新 schema／journal，不能回退至 `e23de93` 等舊讀取器。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)。最近原生備份觀察仍為 2026-10-23 READY，未還原；前批部署前約 10.5 GiB 可用，未擴容／清正式資料。
+**回退、備份與容量：**保留前版 Web `ccd2eca` 及 0600 的 Compose 配置。新 v4 Vertex 設定一旦保存，回退必須保留相容的 API／worker reader；不能直接退至 `c3b149c` 或用舊資料覆蓋新設定／收據。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。最近原生備份觀察仍為 2026-10-23 READY、未還原；本批部署前約 10.30 GiB 可用，未擴容／清正式資料。
 
 **主機期限，2026-10-25 核對：**原 e2-small VM 仍運行，自動停止時間維持 **2026-11-06 13:33:50 香港時間**；本次沒有續期或修改規格。舊 SQL 容器為停止狀態，正式 API／worker 使用 Firestore。
 

@@ -67,5 +67,64 @@
     "The settings-to-provider route was verified synthetically; a saved personal-setting-to-Agent conversation remains unverified and does not replace deferred collaborator Agent acceptance.",
     "Web and Android exports do not prove device interaction. Publication is recorded separately.",
     "No production resource/data changes, notifications or paid build. Temporary test key and added permissions were removed."
-  ]
+  ],
+  "delivery": {
+    "source": "34f80a996ca1ab8a44eaa569f04880ee7f59b70b",
+    "pullRequest": 317,
+    "observedAt": "2026-10-25T15:09:08.237Z",
+    "vm": {
+      "id": "2846984358678394356",
+      "scheduling": {
+        "terminationTime": "2026-11-06T05:33:50.732Z"
+      },
+      "status": "RUNNING"
+    },
+    "freeBytesBefore": 11058130944,
+    "apiWorker": {
+      "source": "34f80a996ca1ab8a44eaa569f04880ee7f59b70b",
+      "state": "deployed",
+      "at": "2026-10-25T15:06:56.560974+00:00",
+      "apiImage": "sha256:9d490d090a096971ef6e07a2fd0cb2ca1188edf441e6453f162e83ee6dd88306",
+      "webImage": "sha256:ccd2eca575f06e7fa11acbdf5ee1ac8e429f76e277cfc49f7b06eef7a17b06f2",
+      "writesEnabled": true,
+      "sourceReleaseReady": true,
+      "rollbackApi": "sha256:c3b149c97e22accb6b2da1fff982e6339e98d06eb11cc115d8eacab0a6cbbb61",
+      "configurationBackup": "/etc/yuban-p1/firestore/compose.env.before-personal-vector-34f80a9",
+      "models": 0,
+      "notifications": 0,
+      "rollbackConstraint": "After saving v4 Vertex settings keep a v4-compatible API and worker; older images cannot read those records."
+    },
+    "web": {
+      "source": "34f80a996ca1ab8a44eaa569f04880ee7f59b70b",
+      "state": "deployed",
+      "webImage": "sha256:e813692c9b396ab6d9fe0fa78fb0f6580ca321cf41013224de3922005161462b",
+      "rollbackImage": "sha256:ccd2eca575f06e7fa11acbdf5ee1ac8e429f76e277cfc49f7b06eef7a17b06f2",
+      "configBackup": "/etc/yuban-p1/firestore/compose.yaml.before-personal-vector-34f80a9",
+      "apiWorkerChanged": false,
+      "archiveBytes": 4680173,
+      "files": 65,
+      "indexHash": "ef54a1e34098763b0eb50c9ea88643d0b8681df426583cfd0d898bba2c6b18a9",
+      "publicHashAndHealth": "passed"
+    },
+    "android": {
+      "group": "33a2e0a3-2472-4d1f-9d2d-1da5e7c9a3b4",
+      "updateId": "01a1739b-bb0d-79b8-9457-38b658668111",
+      "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+      "channel": "preview",
+      "files": 31,
+      "bytes": 13730502,
+      "state": "published",
+      "newApk": false,
+      "exactUpdateOnDevice": "not_observed"
+    },
+    "modelCalls": 0,
+    "notifications": 0,
+    "dataMigration": false,
+    "quotaChanged": false,
+    "indexRebuilt": false,
+    "pending": [
+      "New shared form on Android with saved personal Vertex embedding settings and full Agent/RAG result.",
+      "Deferred collaborator Agent acceptance is unchanged."
+    ]
+  }
 }

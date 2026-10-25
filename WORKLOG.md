@@ -3852,3 +3852,12 @@
 - 新增 v4 共用設定及交易內舊版保護，沿加密、版本、原 opId、權限及共同預算。Web／Android 同一表單與本地入口接入獨立向量設定；切路由須重填 key，沒有平台 ADC 或聊天 key 後備。
 - 新設定／SDK 和本地綁定兩項、原 v3／Vertex 邊界、14 項 form/client、限定型別及兩端匯出通過。初次兩項合成失敗為錯誤分類斷言與漏填 demo 專案，查根因後只補該兩項；不重跑已通過批次。
 - 沿必要驗收授權，以既有測試身份的臨時 Vertex key 等待 IAM 生效後，只呼叫一次查詢向量，得到 1024 維、2 input tokens；零生成／重試／通知／正式資料，finally 刪 key 並移除本次兩項權限綁定。正式部署及真機新欄位尚未驗；保存設定至完整 Agent 流程不由 provider 核對代替。[分層證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
+
+
+<a id="log-20261025-personal-vector-delivery"></a>
+## LOG-20261025-PERSONAL-VECTOR-DELIVERY
+
+- PR #317／`34f80a9` 已合併，後端與共用畫面分別維持 C／B 單作者；本批按已授權原站交付更新 API／worker、Web 及 Android OTA，不修改協作者 PR。原 VM 身份／期限核對不變，部署前約 10.30 GiB 可用。
+- 10 個 Server／shared 檔共 15,124 bytes 的壓縮包經 IAP 傳至限定 0700 目錄；候選以原正式組裝核對 API／worker 及 v4 契約。無活動 run 才短暫維護並切至 `9d490d0`，健康通過；Web 65 檔壓縮 4,680,173 bytes 切至 `e813692`，公開 hash／health 通過。保留 0600 配置及前版映像，但新設定保存後只能回退有 v4 reader 的後端，不能盲退舊資料格式。
+- Android 31 檔／13,730,502 bytes 沿既有官方限定 host 單次上傳，HTTP 204／EXISTS；preview OTA group `33a2e0a3-2472-4d1f-9d2d-1da5e7c9a3b4`／update `01a1739b-bb0d-79b8-9457-38b658668111` 已發布，同 v4 runtime，毋須新 APK。沒有模型／通知／資料遷移／索引重建或配額改動。
+- [證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)追加本次實際交付；新表單真機保存與完整個人設定→Agent／引用仍未驗，四 Agent 流程按使用者安排等協作者。只更新受影響 PLAN／STATUS 與回退契約，原失敗不回寫。
