@@ -29,7 +29,9 @@ OpenAI 相容服務使用同一個工程外 JSON：
 
 仍然執行同一條 `npm run agent:local`，不需部署 GCP。相容服務的地址和模型須明確填寫；地址沿正式服務的公開 HTTPS、禁止內網及重新導向規則。若用環境變數，對應為 `LOCAL_MODEL_PROVIDER=openai-compatible`、`LOCAL_MODEL_API_KEY`、`LOCAL_MODEL_BASE_URL`、`LOCAL_MODEL`，另可設 `LOCAL_MODEL_EMBEDDING_API_KEY`。
 
-`embeddingApiKey` 可省略；缺少時仍能啟動聊天，但知識查詢會明示向量未配置。需要現有混合檢索、知識初始化或背景發布時，Vertex key／相容服務另提供本人 Gemini 向量 key，保留目前 1024 維索引。Gemini 未另填時沿用其本人 key；ADC 維持原 ADC 向量路徑，不混用 key 或借平台額度。兩種 key 只進本機 Server，不進 Web bundle、狀態頁或公開日誌。
+`embeddingApiKey` 可省略；缺少時仍能啟動聊天，但知識查詢會明示向量未配置。需要混合檢索、知識初始化或背景發布時，可另提供本人 Gemini 向量 key，或在受保護 JSON 加上 `embeddingProvider:"vertex"`、`embeddingProject:"本人的專案ID"`、`embeddingLocation:"global"` 及本人 Vertex `embeddingApiKey`；保留目前模型與 1024 維索引。環境變數對應 `LOCAL_MODEL_EMBEDDING_PROVIDER`、`LOCAL_MODEL_EMBEDDING_PROJECT`、`LOCAL_MODEL_EMBEDDING_LOCATION`、`LOCAL_MODEL_EMBEDDING_API_KEY`。使用 Vertex 向量時，key 須獲准存取填寫的專案；不沿用聊天 key 或平台 ADC。
+
+Gemini 未另填時沿用其本人 key；ADC 模式維持原 ADC 向量路徑，不混用 key。兩種 key 只進本機 Server，不進 Web bundle、狀態頁或公開日誌。更換向量付款身份／專案／地區會改變本地工作綁定；重新啟動不自動重跑舊工作或初始化全部語料。
 
 本地聊天、編製、審核及獨立知識維護均使用正式 provider factory。`/__local/status` 顯示實際模型及向量是否配置；模型選擇以本機 JSON 為準，`/admin` 仍控制共同用量、期限與重試。若本地帳號已保存個人模式，該帳號的本人設定優先；切回平台模式才使用開發配置。修改工程外憑證檔後重啟入口，不能在運行途中換 key 接續同一個未知工作。更換 API 地址或向量付款憑證會改變背景工作的綁定，不自動接續舊外呼。
 

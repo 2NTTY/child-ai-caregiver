@@ -3843,3 +3843,12 @@
 - B 已合併 #315／`2fc4aa3`；產品 source `f987b0b` 的 Web 靜態包 4,681,109 bytes 經 IAP 傳至原 VM 的限定 0700 目錄。候選 hash、映像及公開 index／health 核對通過，僅 Web 切至 `ccd2eca`，API／worker、資料與配額不變；保留 `0da4e1f` 及 0600 的 Compose 回退。VM 身份／期限未變，部署前約 10.32 GiB 可用。
 - 同 runtime Android 31 檔／13,725,127 bytes 發布一次 preview OTA，group `aea3c202-d8ac-4577-8367-be0ea066b614`、update `01a17377-be21-78ef-9f4d-15913fbfb87f`。復用已驗官方限定 host 的直接 TLS 單次 bundle 上傳，HTTP 204／EXISTS，沒有先重跑已知會卡住的 proxy 上傳。沒有新 APK、模型、郵件或通知；兩端共用「重設密碼」及通知指定待辦接線。
 - [S13 交付證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)分開發布與尚未觀察的實際 care 通知點擊；舊設備、失敗與撤權結果保留。PLAN／STATUS 只更新本次實質狀態；不改協作者 PR，不以 OTA 代表全 P3 完成。
+
+
+<a id="log-20261025-personal-vertex-embedding"></a>
+## LOG-20261025-PERSONAL-VERTEX-EMBEDDING
+
+- 原香港 VM 的 Gemini 單次查詢向量返回 embedding_region_unavailable，沒有重試。使用者明確批准補最小 Vertex 本人 key／專案／地區；復用固定 Google SDK、原 embedding 模型／1024 維及索引，沒有改協作者 Agent 或全量重算。
+- 新增 v4 共用設定及交易內舊版保護，沿加密、版本、原 opId、權限及共同預算。Web／Android 同一表單與本地入口接入獨立向量設定；切路由須重填 key，沒有平台 ADC 或聊天 key 後備。
+- 新設定／SDK 和本地綁定兩項、原 v3／Vertex 邊界、14 項 form/client、限定型別及兩端匯出通過。初次兩項合成失敗為錯誤分類斷言與漏填 demo 專案，查根因後只補該兩項；不重跑已通過批次。
+- 沿必要驗收授權，以既有測試身份的臨時 Vertex key 等待 IAM 生效後，只呼叫一次查詢向量，得到 1024 維、2 input tokens；零生成／重試／通知／正式資料，finally 刪 key 並移除本次兩項權限綁定。正式部署及真機新欄位尚未驗；保存設定至完整 Agent 流程不由 provider 核對代替。[分層證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
