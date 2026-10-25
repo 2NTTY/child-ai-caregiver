@@ -78,7 +78,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="attachment-read01"></a>
 ### ATTACHMENT-READ01：附件回看與私人清單（Web 清單／下載已驗，Android 出口待驗）
 
-- 2026-10-25 續驗 v4 發現 Android 選檔把文件 ID 當成檔名，未上傳便停批。修正已合併 #308／`35ad214`，沿現有 Expo 原生複製取得名稱，不新增套件；單一檢查、三入口型別、Android 匯出及 v4 runtime 相容已核。EAS 兩次均在同一 bundle 的資產處理逾時，唯讀查回確認未發布，停止重試；手機其後自動鎖屏，已請本人解鎖。下一步是恢復相同封包發布及續驗同一測試檔的上傳／下載／分享，不重跑頭像。[實際結果與阻塞](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
+- 2026-10-25 v4 附件保存／重開讀回／下載接線已真機通過：只送一份 108-byte 無私人資料 TXT，聊天與附件庫均能開啟系統分享，重開後原聊天亦讀回完成結果；沒有重送或測四 Agent 品質。選檔名稱仍是原 v4 的文件 ID；修正已合併 #308／`35ad214`，必要檢查及相容匯出通過，但 EAS 兩次資產處理逾時、12:50 UTC 唯讀仍未完成，未重試或重建 APK。只欠相同封包發布後核真正檔名；不重跑已通過流程。[實際結果與阻塞](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
 
 - #259 已於 2026-10-24 合併；來源基線 `339c707`，分支 `dot/attachment-media-followup-20261023`；26 個 source/test 檔＝22 產品＋4 測試。原照片 owner 保留；語音／影片／文件走[唯讀清單契約](docs/API.md#private-attachment-lists)，必要來源／時間改用可關閉詳情彈窗，媒體操作獨立，不展示技術版本字串。
 - 定向結果分列：跨層 10/10（包含既有後端 8 項）、附件 focused 16/16、真 RN Web Modal 的有界 DOM 2/2。首 DOM 0/2 是 jsdom 沒有原生按鈕 Enter／Space default click 的測試方法錯誤，已保留並修正方法；真瀏覽器鍵盤仍未驗。8-root strict 512 MiB 檢查 exit137／無 diagnostics，原因未確定；不是完整或局部型別通過。精確版本、原紅及限制見[來源證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)。
@@ -506,7 +506,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s16-w03"></a>
 #### S16-W03 P3 必要整體驗收
 
-- 2026-10-25 v4 真機補核：已安裝／開啟，登入及孩子資料仍可讀；系統選圖、EXIF-6、拖動裁切、圓形預覽及取消通過。附件庫列表／切換孩子清理已核；使用者要求節省額度後停止追加，未上傳、下載或分享附件。零模型／通知／雲端寫入。[本批證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)；剩餘項維持待驗，不宣稱全部收尾。
+- 2026-10-25 v4 真機補核：登入／孩子資料、系統選圖、EXIF-6、裁切／預覽及取消沿[原證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)。本人解鎖後只續驗一份 108-byte TXT，正式保存、聊天／附件庫下載至系統分享、關閉 App 後讀回同一附件及完成回覆均通過；沒有重送、通知或修改既有資料。[續驗](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)保留尚未發布的檔名修正、個人 key 供應商拒絕及其他未驗項，不宣稱全部收尾。
 
 - 階段／狀態：P3；Android／頭像／附件庫／個人模型收尾中，完整 P3 未完成。最新 #305／`1f07fab` 成熟裁切已合併及更新 Web；新 APK 交付見[本批記錄](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。不修改協作者未合併 Agent PR、不提前恢復 DEV02 聯合補驗。
 - 2026-10-25 接續：以 `2fb8865`／`codex/android-final-closeout` 收 Android、已啟用頭像、附件庫及個人模型。先對照既有證據與正式接點，再只補確實欠缺的保存／讀回／設備或模型路由核對；不逐頁或逐模型測試，不重驗四 Agent。手機未連線、需登入／系統權限等本人操作及不可取得的本人憑證如實待驗；不因此停止其他可做工作。下一版原生圖標與 splash 沿既有配置，沒有必要的新 APK 不單為此重建。原失敗及已核準延後的備份／角色驗收保留。

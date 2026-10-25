@@ -2,10 +2,34 @@
   "date": "2026-10-25",
   "baseline": "1a8b85a090f9e3533b1a68ae0d2f9055b80a1ec4",
   "scope": "Android v4 attachment continuation; native filename correction only",
-  "observedFailure": {"stage": "selected-unsent-draft", "actualName": "content-provider document ID", "expectedName": "yuyoufang-download-check-20261025.txt", "syntheticBytes": 108, "uploaded": false, "modelCalls": 0},
-  "reuse": {"package": "expo-file-system@57.0.7", "official": "https://docs.expo.dev/versions/latest/sdk/filesystem/", "evidence": ["File.ts name getter uses URI basename", "Android CopyMoveStrategy uses provider fileName for a directory destination", "ContentProviderFile reads OpenableColumns.DISPLAY_NAME"], "newNativeDependencies": false},
-  "checks": {"targetedTest": "frontend/scripts/native-picked-file.test.cjs: 1 passed", "typecheck": "native-picked-file, native-chat-file and native-voice-file: 0 diagnostics", "deviceAfterFix": "pending compatible OTA"},
-  "limits": ["Synthetic adapter check does not prove device copy behavior", "No avatar retest, notification, model generation or unrelated attachment access", "Personal Gemini key successful generation remains blocked by the observed provider region rejection"],
+  "observedFailure": {
+    "stage": "selected-unsent-draft",
+    "actualName": "content-provider document ID",
+    "expectedName": "yuyoufang-download-check-20261025.txt",
+    "syntheticBytes": 108,
+    "uploaded": false,
+    "modelCalls": 0
+  },
+  "reuse": {
+    "package": "expo-file-system@57.0.7",
+    "official": "https://docs.expo.dev/versions/latest/sdk/filesystem/",
+    "evidence": [
+      "File.ts name getter uses URI basename",
+      "Android CopyMoveStrategy uses provider fileName for a directory destination",
+      "ContentProviderFile reads OpenableColumns.DISPLAY_NAME"
+    ],
+    "newNativeDependencies": false
+  },
+  "checks": {
+    "targetedTest": "frontend/scripts/native-picked-file.test.cjs: 1 passed",
+    "typecheck": "native-picked-file, native-chat-file and native-voice-file: 0 diagnostics",
+    "deviceAfterFix": "pending compatible OTA"
+  },
+  "limits": [
+    "Synthetic adapter check does not prove device copy behavior",
+    "No avatar retest, notification, model generation or unrelated attachment access",
+    "Personal Gemini key successful generation remains blocked by the observed provider region rejection"
+  ],
   "delivery": {
     "source": "35ad2143b417911bbdb951dac93bf8ef0ad389b8",
     "pr": 308,
@@ -18,7 +42,14 @@
     "reason": "EAS asset processing timed out for the same Hermes bundle on both attempts; no further retry",
     "readbackLatestGroup": "327ad4ca-66f5-412b-bf8a-ee46d7493198",
     "productionBackendChanged": false,
-    "newApkBuilds": 0
+    "newApkBuilds": 0,
+    "assetReadback": {
+      "checkedAt": "2026-10-25T12:50:49.085Z",
+      "status": "DOES_NOT_EXIST",
+      "uploads": 0,
+      "publications": 0,
+      "additionalRetries": 0
+    }
   },
   "deviceContinuation": {
     "state": "waiting_for_unlock",
@@ -39,5 +70,36 @@
     "credentialPersistedOrLogged": false,
     "scope": "One existing restricted Gemini key; does not declare all user keys or providers unavailable",
     "transportFailuresBeforeModel": "Three local harness failures before provider invocation: Windows gcloud PuTTY stdin replacement and an unusable dry-run command. Resolved using subprocess-only CLOUDSDK_SSH_PUTTY_FORCE_CONNECT=false and normal host-key checks. No model retry."
+  },
+  "deviceAcceptance": {
+    "checkedAt": "2026-10-25T12:50:00Z",
+    "deviceVersionCode": 4,
+    "installedSource": "1f07fab5a32633dd733110700e850c7c06c781ee",
+    "authorization": "User unlocked the connected device and requested continuation of the same attachment acceptance",
+    "fixture": {
+      "bytes": 108,
+      "content": "Synthetic attachment check without private child data",
+      "submittedFiles": 1,
+      "submittedChatRuns": 1,
+      "resubmissions": 0
+    },
+    "results": {
+      "savedMessageAndAttachment": "passed",
+      "chatDownloadToAndroidChooser": "passed",
+      "processRestartThenLibraryReadback": "passed",
+      "libraryDownloadToAndroidChooser": "passed",
+      "originalReplyReadback": "passed: OK",
+      "draftClearedAfterOriginalCompletion": "observed"
+    },
+    "integrityBoundary": "Both download entry points use the production content client, which checks content type, expected size and SHA-256 before native export; opening the chooser confirms that path completed. No recipient save is claimed.",
+    "filenameFix": "not on device: the embedded v4 still displays a provider document ID; #308 remains pending EAS publication",
+    "cleanup": "Removed only the staged device Download fixture; restored the original child selection and Home. One harmless cloud test attachment/message remains for traceability; existing user content was not changed.",
+    "limits": [
+      "Actual provider call count was not queried; one user submission only",
+      "No notification sent and no four-Agent quality acceptance",
+      "Cancelling the second chooser and immediately tapping navigation opened an existing browser; no recipient delivery was verified",
+      "A guessed agent deep link produced Unmatched Route; returned through the known photos route. This was a harness navigation error, not an application route regression",
+      "Screenshots remain in ignored local cache only"
+    ]
   }
 }

@@ -3789,3 +3789,10 @@
 - 已移除本次尚未送出的測試草稿；保存／下載續驗前手機自行鎖屏，已請本人解鎖。沒有送出測試聊天或改已有附件；108-byte 測試 TXT 仍暫存在手機 Download 供續驗，私人畫面不入 Git。
 - 為區分本機與正式環境，僅補既有受限 Gemini key 在原香港 VM 的正式 personal-provider factory 一次短生成，仍返回 `model_region_unavailable`；因此沒有呼叫 embedding，無平台回退／設定／配額修改。Windows gcloud 在前置傳輸注入 y、及 dry-run 命令啟動失敗均未到模型；沿 SDK 原始碼以 subprocess-only 設定保留正常主機核對後完成原定單次核查，key 不落盤或進日誌。
 - [本次證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。成功個人 key、附件設備出口、通知終態及 OTA 回退保留未驗；四 Agent PR 及延期 DEV02 不動。
+
+<a id="log-20261025-android-attachment-device"></a>
+## LOG-20261025-ANDROID-ATTACHMENT-DEVICE
+
+- 使用者解鎖後續驗同一份 108-byte 無私人資料 TXT，只提交一次。正式聊天保存、聊天及附件庫下載至 Android 系統分享選單均通過；關閉程序後可讀回同一附件及原回覆「OK」。沒有重送、通知或四 Agent 品質驗收；原始模型呼叫數未另查，不把單次提交當成只呼叫一次模型。
+- 真機仍為 embedded v4／`1f07fab`，因此原文件 ID 檔名問題保留；#308 的修正未因其他流程通過而冒稱已發布。12:50 UTC 只查一次 EAS，資產仍未完成，沒有第三次上傳／發布或新 APK。取消分享後的快速導航曾開啟既有瀏覽器，未驗收任何收件端保存；誤用 agent deep link 已恢復，不當成產品缺陷。
+- 已清手機本次下載目錄 fixture、恢復原孩子／首頁；保留一份無私人資料的雲端測試附件及訊息作追溯，沒有改既有內容。更新 [設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)、PLAN／STATUS，只解除已通過的附件待驗；個人 key 成功、檔名發布及其他未驗項仍保留。
