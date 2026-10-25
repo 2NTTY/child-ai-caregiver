@@ -3835,3 +3835,11 @@
 - 使用者在 Web 回覆已撤銷其他裝置；Android 解鎖後回到登入畫面，一次冷啟動仍未恢復舊會話／孩子頁，零憑證抽取、模型或通知。保留另一身份登入隔離待驗；結果追加至[同一設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
 - B 單作者局部修正正式通知 callback：Server 已核對的 taskId 原先被丟棄，現在在原孩子選擇及身份／離頁守衛後交給既有待辦詳情路由。另依使用者截圖要求把共用設定的「要求重設密碼指引」改成「重設密碼」，沒有改動寄信行為或代按。協作者 PR 檔案核對無重疊。
 - 產品 source `f987b0b`：一項受控 production callback 檢查通過（指定待辦、選孩子等待、身份切換拒遲到、測試通知仍開設定），Web／Android 各一次匯出通過；Android runtime 與 v4 相同，毋須新 APK。[S13 證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)區分程式／匯出與尚未發布、未驗照護通知點擊，不重跑原 FCM／終態或全量產品測試。
+
+
+<a id="log-20261025-native-target-delivery"></a>
+## LOG-20261025-NATIVE-TARGET-DELIVERY
+
+- B 已合併 #315／`2fc4aa3`；產品 source `f987b0b` 的 Web 靜態包 4,681,109 bytes 經 IAP 傳至原 VM 的限定 0700 目錄。候選 hash、映像及公開 index／health 核對通過，僅 Web 切至 `ccd2eca`，API／worker、資料與配額不變；保留 `0da4e1f` 及 0600 的 Compose 回退。VM 身份／期限未變，部署前約 10.32 GiB 可用。
+- 同 runtime Android 31 檔／13,725,127 bytes 發布一次 preview OTA，group `aea3c202-d8ac-4577-8367-be0ea066b614`、update `01a17377-be21-78ef-9f4d-15913fbfb87f`。復用已驗官方限定 host 的直接 TLS 單次 bundle 上傳，HTTP 204／EXISTS，沒有先重跑已知會卡住的 proxy 上傳。沒有新 APK、模型、郵件或通知；兩端共用「重設密碼」及通知指定待辦接線。
+- [S13 交付證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)分開發布與尚未觀察的實際 care 通知點擊；舊設備、失敗與撤權結果保留。PLAN／STATUS 只更新本次實質狀態；不改協作者 PR，不以 OTA 代表全 P3 完成。

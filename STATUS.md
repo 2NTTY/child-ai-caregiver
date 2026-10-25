@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **當前收 Android／頭像／附件庫／個人模型：**[S16 收尾](PLAN.md#s16-w03)的頭像、附件保存／下載／重開、原檔名及個人 Vertex key 短生成已有證據。2026-10-25 新增 v4 真機 OTA 回退／恢復，以及手機建待辦→Web 完成→手機原頁自動顯示完成／提醒停止。Web 撤銷後手機回到登入頁、重開不復活亦已核。通知遺漏指定待辦 ID 已局部修正，共用按鈕改為「重設密碼」；單項檢查及兩端匯出通過，正交付。仍欠個人向量完整流程、跨端 Agent／確認接續、另一身份的真機隔離及照護通知目標核權；四 Agent／協作者 PR 不動。
+- **當前收 Android／頭像／附件庫／個人模型：**[S16 收尾](PLAN.md#s16-w03)的頭像、附件保存／下載／重開、原檔名及個人 Vertex key 短生成已有證據。2026-10-25 新增 v4 真機 OTA 回退／恢復，以及手機建待辦→Web 完成→手機原頁自動顯示完成／提醒停止。Web 撤銷後手機回到登入頁、重開不復活亦已核。通知遺漏指定待辦 ID 已局部修正，共用按鈕改為「重設密碼」；單項檢查及兩端匯出通過，已交付原 Web／相容 OTA。仍欠個人向量完整流程、跨端 Agent／確認接續、另一身份的真機隔離及照護通知目標核權；四 Agent／協作者 PR 不動。
 
 - **四項指定修補已獲准正常合併，真機驗收仍待補。**PR #286 已保留 #288／#289 照片聊天接線及最新交付記錄；受影響照片恢復／client 契約補驗通過，沿獨立覆核及遠端保護規則完成來源合併，不部署、不把空 CI 或合併當真機通過。精確版本與保留失敗見 [FIX-FOUR01](PLAN.md#four-fix01)。
 
@@ -26,9 +26,9 @@
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-25 10:23 UTC 原站：**Web 已更新 `avatar-crop-1f07fab`（映像 `0da4e1f`），公開 index hash／API health 通過；API／worker 維持 `avatar-enable-0ebfbfa`（`c3b149c`），頭像已啟用，APNs 未啟用。[本批交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。零模型／通知／資料遷移／配額修改，保留前版 Web 回退。
+**2026-10-25 14:30 UTC 原站觀察：**Web 已更新 `notification-target-f987b0b`（映像 `ccd2eca`），「重設密碼」文案及通知目標接線同版交付，公開 index hash／API health 通過；API／worker 維持 `avatar-enable-0ebfbfa`（`c3b149c`），頭像已啟用，APNs 未啟用。[本批交付](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。零模型／通知／資料遷移／配額修改，保留前版 Web `0da4e1f` 回退。
 
-**Android，2026-10-25 13:54 UTC 觀察：**APK v4 已覆蓋安裝（build `9f43f925`，source `1f07fab`）；同簽署、runtime `0c5c868…`、登入／孩子資料及原生裁切已核。[APK](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)。檔名修正 `35ad214` 的同一資產完成回退／恢復驗收，最後 preview group `44dca896`／update `01a17357`；沒有新封包上傳或 APK。手機已由內置舊檔名行為恢復原檔名，登入／資料保留；未抽取裝置 update ID，按可見差異核對，沒有向 v3 強推。詳見[設備證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)及[回退／跨端結果](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
+**Android，2026-10-25 14:30 UTC 觀察：**APK v4、runtime `0c5c868…` 保持；本次 `f987b0b` 的 preview OTA group `aea3c202`／update `01a17377` 已發布，31 檔約 13.09 MiB，毋須重裝，未另核裝置載入此精確 update。先前回退／恢復、附件原檔名及跨端待辦已有[設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)；本次新通知目標仍待真機點擊，不以發布當通過。[交付](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
 
 **回退、備份與容量：**本次保留相容 API／worker `4159605` 及 0600 的 `compose.env.before-avatar-enable-0ebfbfa`。關寫入仍保留頭像 reader／cleanup；已開放新 schema／journal，不能回退至 `e23de93` 等舊讀取器。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)。最近原生備份觀察仍為 2026-10-23 READY，未還原；前批部署前約 10.5 GiB 可用，未擴容／清正式資料。
 

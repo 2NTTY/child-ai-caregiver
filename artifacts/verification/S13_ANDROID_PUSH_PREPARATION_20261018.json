@@ -170,5 +170,36 @@
       "This controlled production-callback check is not a real care-notification tap",
       "Existing FCM receipt and task-terminal evidence reused; no resend"
     ]
+  },
+  "targetRoutingDelivery": {
+    "observedAt": "2026-10-25T14:30:02Z",
+    "source": "f987b0b68a61a9e0208f7fefa74925475c469ba3",
+    "pullRequest": 315,
+    "web": {
+      "image": "sha256:ccd2eca575f06e7fa11acbdf5ee1ac8e429f76e277cfc49f7b06eef7a17b06f2",
+      "indexHash": "723657639c08c3240e8de650a5a9bd3a3dc447cabf3a54fe6acb8e53d17ed131",
+      "archiveBytes": 4681109,
+      "publicIndexAndApiHealth": "passed",
+      "rollbackImage": "sha256:0da4e1f28727e6387d251a23642c9c4af41977476b9a233e2b3ea403a0fbdcb7",
+      "apiWorkerChanged": false
+    },
+    "android": {
+      "group": "aea3c202-d8ac-4577-8367-be0ea066b614",
+      "updateId": "01a17377-be21-78ef-9f4d-15913fbfb87f",
+      "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+      "files": 31,
+      "bytes": 13725127,
+      "newBuild": false,
+      "bundleSha256": "da0c4579824af12fce4880d5ea36ed1f828cc88175cc8e2d3b55e79ec806dc8b",
+      "directUploadHttpStatus": 204,
+      "assetState": "EXISTS",
+      "publications": 1
+    },
+    "scope": "Authorized shared frontend updates; no credentials, family data, model calls, notifications or quota changes",
+    "limits": [
+      "Actual care-notification tap remains unverified",
+      "No claim that the phone has already loaded this exact update",
+      "Earlier revocation observation and historical notification evidence remain unchanged"
+    ]
   }
 }
