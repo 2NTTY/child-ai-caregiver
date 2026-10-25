@@ -3910,3 +3910,10 @@
 - 正式本地 Web HTTP／共用 client／ADK 以現有 ADC 及正常 8 次生成／4 次向量設定，只用 3 次生成、1 次搜尋便完成引用／獨立審核／保存及原 run 讀回。與先前個人 key 的 6／2 設定不同，不能以本次成功聲稱原失敗已修復。診斷只記公共查詢與來源 ID，未記思考、密鑰或私人正文。
 - 搜尋工具描述仍寫死「最多兩個查詢」，與管理員可調設定矛盾；局部改為讀當輪實際剩餘額度，零餘額沿已有上下文續讀或明示限制。沒有改 runtime、硬上限、審核或協作者分支。文字匯入與 diff 核對通過，不跑全量、建置或額外模型。
 - 本批另預留 US$0.51，滾動 12 小時預留合計 US$2.01，低於使用者 US$5 上限；新增已知生成約 27,509 input／289 output tokens，估約 US$0.0142，非帳單。為單輪診斷明確暫增本地每日餘額，原帳目保留，finally 恢復停用及原限額；正式設定不動。[限定證據](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)。
+
+
+<a id="log-20261026-knowledge-guidance-delivery"></a>
+## LOG-20261026-KNOWLEDGE-GUIDANCE-DELIVERY
+
+- PR #324／`14e0f60` 已合併。只把一個工具說明檔（壓縮 1,233 bytes）及 hash／腳本傳至既有原 VM；初次腳本因 Windows 編碼在執行前停止，改存 UTF-8 後同一候選正式組裝通過，未擴測。
+- 無活動 run 後 API／worker 已更新至 `sha256:663125df9f51c666c878b7b6bcb8ef77fc6f9a55f20a8f4cbc82c88e5b87ca70`，服務及公開健康通過；Web／Android／配額／資料不變，零模型或通知。保留 `d5be355` 前版與 0600 配置；[原包證據](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)保存精確版本、原失敗與回退。

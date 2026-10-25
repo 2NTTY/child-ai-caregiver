@@ -152,5 +152,33 @@
     "Only one reviewed local official chunk; this is not full-corpus quality or complete clinical guidance validation.",
     "No coordinator/reviewer budget behavior, provider eligibility, production quota or collaborator PR was modified.",
     "No extra model call just to test the wording change; successful model run used baseline instructions."
-  ]
+  ],
+  "delivery": {
+    "source": "14e0f608bef46f00cb5de9fbecd9bda525c83b4d",
+    "state": "deployed",
+    "at": "2026-10-25T17:23:54.639774+00:00",
+    "apiImage": "sha256:663125df9f51c666c878b7b6bcb8ef77fc6f9a55f20a8f4cbc82c88e5b87ca70",
+    "webImage": "sha256:e813692c9b396ab6d9fe0fa78fb0f6580ca321cf41013224de3922005161462b",
+    "writesEnabled": true,
+    "sourceReleaseReady": true,
+    "rollbackApi": "sha256:d5be3558f45771fdcab001fcebda4df5a1aead88d66c2363097f1b3f477a210d",
+    "configurationBackup": "/etc/yuban-p1/firestore/compose.env.before-knowledge-guidance-14e0f60",
+    "models": 0,
+    "notifications": 0,
+    "rollbackConstraint": "After saving v4 Vertex settings keep a v4-compatible API and worker; older images cannot read those records.",
+    "codeBytes": 1233,
+    "files": [
+      "server/agent-knowledge-tool-descriptions.ts"
+    ],
+    "candidateAndHealth": "passed",
+    "activeWorkBeforeSwitch": 0,
+    "apkOrOTA": false,
+    "initialScriptFailure": {
+      "stage": "before_execution",
+      "error": "Python source written using Windows locale instead of UTF-8",
+      "serviceChanged": false,
+      "oldStageHash": "cc3c2fae319ba61a9b9631a6034d5adfef4b8c9802422a9b694797fe830c3278"
+    },
+    "failureResolution": "Stage script saved as UTF-8; exact same candidate check resumed. No services had changed before the syntax error."
+  }
 }
