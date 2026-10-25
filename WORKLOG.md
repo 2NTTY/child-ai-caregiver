@@ -3716,3 +3716,10 @@
 - 由正式 openFirebaseRuntime／HTTP／online／worker 組裝入口核對頭像服務，沿受控資料及外部 port，證明同一服務、身份拒絕、原操作查回、unknown 不內部重試及關 gate 後匯出／清理保留。新 fixture 的 FirestoreDomainError 參數順序先失敗，修正後一次補驗通過；產品程式未因此修改。[證據](artifacts/verification/AVATAR_RUNTIME_20261025.json)。
 - Node 24.19 定向 1 PASS；沿 Server 設定單一 test root strict 型別零診斷。沒有重跑整套、雲端、模型或通知，不把 controlled ports 當正式派送或真機證據。
 - 新增同 VM 頭像 Compose 配置，寫入預設 false。現網缺少頭像及 sharp 依賴，後續候選須完整補齊，維持同版 API／worker 及可回退；source gate 尚未解除，未部署。
+
+<a id="log-20261025-avatar-runtime-deployment"></a>
+## LOG-20261025-AVATAR-RUNTIME-DEPLOYMENT
+
+- `652edad` 正式 API／worker 同版候選已在原 VM 開啟及關閉核對，補四個已驗 Linux 原生套件及完整已合併程式，保留 license；沒有另做 npm 安裝、真模型或還原重跑。補一個 composite、cleanup 欄位索引及三個私密欄位排除，全部 READY 後才部署。
+- 原站兩服務健康、Web 映像未改，公開 health 及部署後 Scheduler 自動喚醒通過；source gate／寫入均 false。獨立 review 指出的 maintenance 恢復範圍及公開 probe 回退缺口在上傳前已修。[部署證據](artifacts/verification/AVATAR_DEPLOYMENT_20261025.json)保留核對器的舊 ADC／Web 無 Docker healthcheck 錯誤，沒有因此重跑部署。
+- 自動批准審查兩次拒絕解除 source gate；第二次已有部署讀回，仍要求明確授權解除持久啟用閘。未繞過或開寫入，已提出限定啟用確認；必要測試依使用者新授權不逐次詢問。手機未連線，設備裁切／EXIF 留待驗，原生每日備份還原仍延後。

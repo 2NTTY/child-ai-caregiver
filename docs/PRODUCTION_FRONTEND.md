@@ -274,13 +274,15 @@ Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走原生配置
 <a id="avatar-deployment-gate"></a>
 ## AVATAR-01 部署／啟用門檻
 
-本包是未啟用的開發候選，不在此指示切流量或開啟寫入。`server/avatar-release.ts` 的 source gate 固定 false；`AVATAR_WRITES_ENABLED=true` 不能替代驗收，也不能把 unavailable 改成假成功。工作狀態只見[PLAN](../PLAN.md#avatar-01)。
+頭像先以 source gate 及新寫入均關閉的候選部署，取得同版讀回後才處理明確的啟用審查。`AVATAR_WRITES_ENABLED=true` 不能繞過 `server/avatar-release.ts`，亦不能把 unavailable 改成假成功。工作狀態及實際 flag 版本只見[PLAN](../PLAN.md#avatar-01)。
+
+原 VM 的 Compose 沿既有主檔／渠道檔，加入 `deploy/p1/compose.firestore.avatars.yaml`；API／worker 共用 `compose.env` 的 `AVATAR_WRITES_ENABLED`，預設 false。候選核對不得觸發模型／通知或重跑業務。公開 health 及恢復原 Caddy 入口納入部署失敗回退範圍；預先保留受保護配置與精確映像。
 
 正式部署責任人須先取得以下同版證據，才另行審核解除 gate：
 - 完整必要型別／定向回歸與獨立 review；unknown copy／來源證據改變、legacy partial plan 的恢復／清理責任有可驗處理。保留歷次真紅，不以窄 roots PASS 取代完整 server。
 - clean lockfile 安裝及部署平台的 `sharp@0.35.5` 專用子程序、小合成 decode／方向／metadata去除／hard-kill-close 資源收斂；server optional binary 與實際 LGPL／Apache／第三方 notices及來源資訊完整，不進 Web／Android bundle。
 - 同版 API、worker、export、backup/restore、獨立 erasure journal reader/writer、private encrypted Storage及精確索引；原生 Firestore 跨實例 admission／lease／CAS 與 cleanup scheduler 有實際讀回證據。
-- 隔離合成備份→還原→最新刪除日誌重放→匯出／清理演練，包含 source evidence 改變、unknown與中斷查回；不接正式流量，不上傳家庭照或呼叫模型。GCP／部署由既有責任人依有效授權處理，本包未執行。
+- 隔離合成備份→還原→最新刪除日誌重放→匯出／清理演練，包含 source evidence 改變、unknown與中斷查回；不接正式流量，不上傳家庭照或呼叫模型。GCP／部署由既有責任人依有效授權處理；配對快照證據不替代原生每日備份或 Secret Manager 災備驗收。
 
 首次新 avatar schema／journal 寫入後，不可回退至不認識它們的舊 reader／worker；關寫入仍需保留相容清理、匯出、備份與恢復接點。marker partial-staging 的本機合成 PASS 不是原生 restore 全完成；資料與 codec/license細節見[資料契約](DATA_MODEL.md#avatars)及[決策](DECISIONS.md#avatar-codec-decision)。
 
