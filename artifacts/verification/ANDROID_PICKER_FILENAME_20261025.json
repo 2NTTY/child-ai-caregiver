@@ -102,5 +102,52 @@
       "A guessed agent deep link produced Unmatched Route; returned through the known photos route. This was a harness navigation error, not an application route regression",
       "Screenshots remain in ignored local cache only"
     ]
+  },
+  "deliveryRecovery": {
+    "checkedAt": "2026-10-25T13:23:57.777Z",
+    "source": "35ad2143b417911bbdb951dac93bf8ef0ad389b8",
+    "publishedGit": "cffa3376de8906c7c020850b01d2d3c02101c12b",
+    "publishedGitDifference": "Only documentation since the reviewed product source",
+    "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+    "files": 31,
+    "bytes": 13725060,
+    "diagnosis": "The same bundle was absent after the earlier CLI timeouts. A verified direct TLS upload completed; the exact cause inside the previous proxy path is not proven.",
+    "additionalAssetUploads": 1,
+    "assetBytes": 9048132,
+    "assetSha256": "d8a2548f5c6d3c295aee88979b49956ee0c4accd7491295422ca0593a040c7c6",
+    "destinationHost": "update-assets-upload-production.storage.googleapis.com",
+    "transport": "Direct HTTPS, exact official destination, redirects and retries disabled",
+    "uploadHttpStatus": 204,
+    "uploadMs": 3096,
+    "assetReadback": "EXISTS",
+    "preflightStop": "Initial guard expected storage.googleapis.com and stopped before upload. Official metadata established the exact Expo upload host before the single upload.",
+    "publication": "passed",
+    "group": "39974363-7397-418f-adf6-40e853786ca1",
+    "updateId": "01a1733b-70d1-7fcc-a5af-a830658b7b1c",
+    "channel": "preview",
+    "newApkBuilds": 0,
+    "webOrBackendChanged": false,
+    "modelCalls": 0,
+    "notifications": 0,
+    "priorFailures": "Both earlier EAS timeouts and their readback remain unchanged above"
+  },
+  "deviceFilenameAfterUpdate": {
+    "checkedAt": "2026-10-25T13:33:00Z",
+    "versionCode": 4,
+    "result": "passed: original synthetic filename 202610252133.txt displayed in the unsent attachment draft",
+    "fixtureBytes": 68,
+    "fileUploads": 0,
+    "messagesSent": 0,
+    "modelCalls": 0,
+    "notifications": 0,
+    "appRestart": "Restarted existing app to receive the compatible update; branded splash observed",
+    "exactDeviceUpdateId": "not read; behavior verified without claiming exact installed update identity",
+    "cleanup": "Removed only this unsent attachment draft and the staged Download fixture; returned to the original Home and child selection",
+    "harnessCorrection": "Chinese IME transformed the first ASCII search. Used a numeric filename for the same synthetic file; no unrelated attachment opened.",
+    "screenshots": "Ignored local cache only; private screen content not committed",
+    "limits": [
+      "No repeat of avatar or already-passed attachment save/download flow",
+      "No OTA rollback, cross-device media, notification completion or four-Agent acceptance in this batch"
+    ]
   }
 }
