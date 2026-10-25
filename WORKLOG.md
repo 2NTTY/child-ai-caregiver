@@ -3752,3 +3752,10 @@
 - #302 已按對應身份合併；`15fdb50` 的 Web-only 封包約 4.46 MiB，以現網 Caddy/Web 映像為底建立候選。2026-10-25 09:50 UTC 啟用 `d6f2a8b`，公開 index hash 與 API health 通過；API／worker、資料及配額均不改，保留 `c09400c` 和配置回退。[交付證據](artifacts/verification/AVATAR_SAVE_DELIVERY_20261025.json)。
 - 原 VM 身份與執行狀態已核，期限仍為 2026-11-06 13:33 香港時間，部署前約 10.4 GiB 可用空間；未續期、未新增資源、未發通知或模型。發佈工具的唯讀 plan 判定當前 runtime `0c5c868…` 不同於 APK v3 `5fd1446…`，沒有強推 OTA 或重建 APK；與後續裁切接點一併交付，設備項保持待驗。
 - 本地核對後關閉環境時，launcher 曾報 checkpoint HTTP 500 並保留前份 snapshot；emulator 尾部另有其後成功 export。沒有把此批核對宣稱為冷重啟／備份恢復驗收，未擴測。#303 已另合併成熟能力優先的工作規則，裁切體驗不能因保存已通過就視為完成。
+
+<a id="log-20261025-avatar-crop-reuse"></a>
+## LOG-20261025-AVATAR-CROP-REUSE
+
+- 按使用者反覆指出的頭像操作落差，復用既有 Expo ImagePicker 原生裁切及固定 react-easy-crop 6.2.4 Web 元件，移除自製 PanResponder／方向按鈕；保留共用 owner、原 Server 及權限／收據。薄平台接線不另建資料服務，兩份 license 原文已保存。
+- 原生 adapter 合成檢查及選區契約各一項通過；受影響型別無 diagnostics。真 Web 拖曳／縮放／鍵盤、保存／讀回／移除與選區一致通過；Desktop CSS zoom 曾令大圖裁切框超界，已以局部座標邊界修正及量度。兩次 harness selector／responsive modal 停批與後續只補剩餘項均保留；沒有重跑模型、通知、附件庫或後端恢復。
+- Android 匯出初次 Hermes sandbox 寫入被拒，同來源在可寫環境匯出通過；Web 裁切修改後的最後匯出另記。依賴安裝的舊 system npm engine 警告保留，檢查／建置使用 Node24.19，lock 只保留所需兩依賴、不改無關版本。[證據](artifacts/verification/AVATAR_CROP_REUSE_20261025.json)。尚未把真機、APK、部署或個人模型成功寫成通過；協作者四 Agent PR 不動。

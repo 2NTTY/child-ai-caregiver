@@ -7,7 +7,7 @@ import { photoPreview } from './photo-bytes';
 
 export async function pickAvatarImage(policy: AvatarPolicy, signal: AbortSignal): Promise<AvatarImage | null> {
   if (signal.aborted) return null;
-  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: false, allowsMultipleSelection: false, base64: false, exif: false, quality: 1 });
+  const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], shape: 'rectangle', allowsMultipleSelection: false, base64: false, exif: false, quality: 1 });
   if (signal.aborted || result.canceled) return null;
   const asset = result.assets[0];
   if (!asset?.uri.startsWith('file://')) throw new Error('avatar_picker_unavailable');
@@ -21,7 +21,7 @@ export async function pickAvatarImage(policy: AvatarPolicy, signal: AbortSignal)
     if (signal.aborted) return null;
     if (size.width !== header.width || size.height !== header.height) throw new Error('avatar_orientation_unavailable');
     const preview = photoPreview(bytes, header.mimeType);
-    // Short-lived memory only; do not delete or persist the system picker source.
+    // Short-lived memory only; do not delete or persist the system picker result.
     return { ...header, ...preview, bytes, dispose() { preview.dispose(); bytes.fill(0); } };
   } catch (error) { bytes.fill(0); throw error; } finally { signal.removeEventListener('abort', abort); }
 }

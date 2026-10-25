@@ -16,6 +16,11 @@ export function boundedAvatarCrop(crop: AvatarCrop, maxZoom: number): AvatarCrop
   return { centerX: Math.max(0, Math.min(1, finite(crop.centerX, .5))), centerY: Math.max(0, Math.min(1, finite(crop.centerY, .5))),
     zoom: Math.max(1, Math.min(maxZoom, finite(crop.zoom, 1))) };
 }
+/** Map the cropper's oriented percentage area into the existing Server crop contract. */
+export function avatarCropFromArea(width: number, height: number, area: { x: number; y: number; width: number; height: number }, maxZoom: number): AvatarCrop {
+  return boundedAvatarCrop({ centerX: (area.x + area.width / 2) / 100, centerY: (area.y + area.height / 2) / 100,
+    zoom: Math.min(width, height) / (width * area.width / 100) }, maxZoom);
+}
 /** Header admission before browser/native decode; Server still verifies and normalizes every byte. */
 export function avatarImageHeader(bytes: Uint8Array<ArrayBuffer>, policy: AvatarPolicy) {
   if (!bytes.length || bytes.length > policy.maxInputBytes) throw new Error('avatar_input_too_large');
