@@ -1,0 +1,27 @@
+{
+  "sourceCommit": "0ebfbfab0f54ef081723cdddf882cab0965bec8b",
+  "pullRequest": 300,
+  "state": "enabled-device-acceptance-pending",
+  "deployedAt": "2026-10-25T09:08:54.103640Z",
+  "host": {"project": "ai-caregivers-for-children", "zone": "asia-east2-a", "vm": "yuban-p1", "id": "2846984358678394356"},
+  "apiAndWorkerImage": "sha256:c3b149c97e22accb6b2da1fff982e6339e98d06eb11cc115d8eacab0a6cbbb61",
+  "unchangedWebImage": "sha256:c09400c5a8c3ca6c78d8cf1cbe4f5eeb6129054bfcd5ff2e82e82a90bec5f9e8",
+  "sourceReleaseReady": true,
+  "writesEnabled": true,
+  "rollbackApiAndWorker": "sha256:415960595554f1902660d8b16bb22cd13797ce4a937299332656b2a21b3a2d4c",
+  "configurationBackup": "/etc/yuban-p1/firestore/compose.env.before-avatar-enable-0ebfbfa",
+  "payload": {
+    "directory": "/home/2NTTY/avatar-enable-0ebfbfa-upload",
+    "sourceFiles": ["server/avatar-release.ts"],
+    "codeArchiveBytes": 378,
+    "codeArchiveSha256": "1b405dd454a23340865daed90c1ed74fd60c0f78a8cee1c71ab2fd16ffda734e",
+    "activationScriptSha256": "7b4c7f04da7b34186a55cec57e8c35fd46d1783965938324feb55387aaa30f4b",
+    "secretsOrFamilyData": false
+  },
+  "candidate": {"formalApiAndWorkerOpenedAndClosed": true, "node": "24.19.0", "sharp": "0.35.5", "libvips": "8.18.7", "releaseReady": true, "writesEnabled": true},
+  "checks": {"payloadHashes": true, "exactBaseAndCandidateImages": true, "activeAgentLeasesBeforeSwitch": 0, "apiHealthy": true, "workerHealthy": true, "bothWriteFlagsReadBack": true, "publicHealth": true, "webImageUnchanged": true, "deploymentReceiptReadBack": true},
+  "review": "Main and reused independent reviewer found no issue in the one-file release flag change. Activation retained maintenance/public-health rollback protection and the avatar-aware disabled fallback.",
+  "reusedEvidence": ["AVATAR_RUNTIME_20261025.json", "AVATAR_DEPLOYMENT_20261025.json", "AVATAR_ADMISSION_NATIVE_20261025.json", "AVATAR_PAIRED_NATIVE_RESTORE_20261025.json"],
+  "costAndSideEffects": {"models": 0, "testNotifications": 0, "businessDataMigration": false, "quotaChanged": false, "newCloudResources": 0, "newIndexes": 0, "vmRenewed": false, "webOrAndroidPublished": false},
+  "limitations": ["No end-user selection/crop/EXIF device acceptance in this batch", "Existing Scheduler/OIDC and native cleanup evidence reused; no new synthetic task or upload", "Native daily backup restore and Secret Manager disaster recovery remain pending", "Fallback must retain avatar-aware readers, journal and cleanup; pre-avatar images are not an acceptable rollback"]
+}
