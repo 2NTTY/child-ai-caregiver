@@ -52,6 +52,7 @@
     }
   },
   "deviceContinuation": {
+    "phase": "Earlier stopped batch, before the subsequent deviceAcceptance below",
     "state": "waiting_for_unlock",
     "systemFileSelected": true,
     "ownUnsentDraftRemoved": true,
