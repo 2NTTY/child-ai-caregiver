@@ -126,6 +126,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **最新刪除日誌接續（2026-10-25）：**沿既有正式 operator 補一條備份後刪除→日誌重放→空內容匯出→原 generation 清理流程，一次合成驗證及單一入口 strict 型別通過；獨立 review 無 finding。[證據](artifacts/verification/AVATAR_JOURNAL_RESTORE_20261025.json)。其後的原生證據見下一項；既有共用恢復庫／journal 及舊證據均沒有清空。
 - **原生配對還原（2026-10-25）：**獲准的兩個臨時香港資料庫及專用 bucket，以一個真合成 Auth 帳號、一個孩子及兩張小圖完成正式 export／import、備份後刪除、最新 journal 重放、匯出遮蔽、epoch 更新及原 generation 清理；82 次交易，零模型／通知／正式資料。兩次 PITR 前置拒絕已停止並核對沒有操作，最後只啟動一個 export／import；[證據](artifacts/verification/AVATAR_PAIRED_NATIVE_RESTORE_20261025.json)保留失敗、review 修正及限制。測試帳號、兩庫、專用 bucket 及圖片已清理並讀回確認；實際帳單未知，批准增量上限 US$1。這是配對快照還原，不替代仍延後的原生每日備份驗收；本機測試 key 不宣稱已驗 Secret Manager 災備。
 - **尚缺／下一步：**同版正式 API／worker 組裝及 cleanup 派送、Web／Android 裁切／EXIF 一致和交付仍待核，source gate 保持 false。來源／Auth／journal／provenance 改變仍不得繼續原還原；已認證集合可明確放棄，無 header／legacy partial plan 保留現場，不猜刪除範圍。完整 `tsconfig.server`（含所有測試及其前端依賴）仍有未修錯誤；舊 OOM／signal9、56 PASS／10 exact-baseline FAIL 保留。
+- **正式組裝核對（2026-10-25）：**HTTP／online 共用頭像服務，worker 連到同一 cleanup，關 gate 後匯出／清理保留；一次 fixture 修正後定向檢查及 strict 型別通過，[證據](artifacts/verification/AVATAR_RUNTIME_20261025.json)。這是 controlled ports 接線證據，未當成雲端派送。新增同 VM Compose 頭像配置，預設關寫入；先補完整候選及原生依賴，部署讀回後再處理啟用，不部署未合併協作者成果。
 - **完成門檻／次序：**只補受影響窄驗證與未解恢復路徑，獨立 review 後先交草稿；部署／解除 gate 依[頭像部署門檻](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)，不因本機codec或前端預覽綠直接開寫入。
 - **新指示（2026-10-24）：**使用者要求接續至正式可用；附件清單及當前 Android 交付收束後進本包，先修具體恢復／清理缺口，沿同一前端與雲端權威。原 gate 與失敗證據仍有效，尚未啟用或部署。
 

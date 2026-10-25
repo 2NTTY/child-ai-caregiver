@@ -1,0 +1,23 @@
+{
+  "sourceCommit": "72cbc78ba38c432cc63f45e8c14876a61d2855a7",
+  "scope": "Production avatar composition, controlled domain ports; not cloud or device acceptance",
+  "test": "tests/avatar-runtime.test.ts",
+  "command": "node --experimental-test-module-mocks --test tests/avatar-runtime.test.ts",
+  "node": "24.19.0",
+  "attempts": [
+    {"result": "failed", "passed": 0, "failed": 1, "seconds": 2.55, "cause": "New fixture reversed FirestoreDomainError(status, code) arguments; no product change"},
+    {"result": "passed", "passed": 1, "failed": 0, "skipped": 0, "seconds": 1.742}
+  ],
+  "typecheck": {"typescript": "6.0.3", "root": "tests/avatar-runtime.test.ts", "options": "tsconfig.server.json", "ownDiagnostics": 0, "dependencyDiagnostics": 0, "seconds": 10.687},
+  "assertions": [
+    "Formal HTTP and online submission share the same avatar service and preserve identity checks",
+    "Unknown domain outcome is not retried internally; caller replay retains the original operation",
+    "Export and erasure retain avatar store/cleanup even with the public source gate closed",
+    "Actual worker composition routes avatar-cleanup to maintenance and preserves unknown",
+    "Closed release gate rejects writes-enabled startup before persistence; close is idempotent"
+  ],
+  "sourceReleaseReady": false,
+  "controlledPorts": ["domain", "Auth", "Storage", "codec", "unrelated product factories"],
+  "externalCalls": {"cloud": 0, "models": 0, "notifications": 0},
+  "limitations": ["Mocked release gate proves wiring only", "No live scheduler/OIDC, deployment, device crop or EXIF evidence from this test", "Earlier full production typecheck and native lifecycle/restore evidence remain separate"]
+}

@@ -3709,3 +3709,10 @@
 - 一次實際 export／import、82 次交易；前兩次 export 請求因 PITR 前置被拒，停批查回相同操作及限定錯誤 metadata，確認未啟動後才接續。只為臨時來源啟用 PITR；設定可讀與匯出端接受有時間差，等待後成功，不把該時間當服務保證。獨立腳本 review 的交易重試覆蓋、journal 範圍及 generation 精度問題在執行前已修；沒有改產品規則來通過測試。
 - 清理三個精確圖片版本、合成 Auth 帳號、專用 bucket 及兩個臨時庫，讀回確認不存在；既有 bucket 的 soft-delete 政策及共用恢復庫不變。受保護本機 key／恢復資料不入 Git。零模型／通知／正式資料／部署；增量批准上限 US$1，實際帳單尚未知。
 - 這是正式資料／operator／物件服務的真雲端核對，不是 HTTP／登入畫面、兩個 API 部署副本或原生每日備份驗收。後者依使用者原指示繼續延後；同版組裝／派送及設備門檻保留，頭像 gate 不解除。
+
+<a id="log-20261025-avatar-runtime"></a>
+## LOG-20261025-AVATAR-RUNTIME
+
+- 由正式 openFirebaseRuntime／HTTP／online／worker 組裝入口核對頭像服務，沿受控資料及外部 port，證明同一服務、身份拒絕、原操作查回、unknown 不內部重試及關 gate 後匯出／清理保留。新 fixture 的 FirestoreDomainError 參數順序先失敗，修正後一次補驗通過；產品程式未因此修改。[證據](artifacts/verification/AVATAR_RUNTIME_20261025.json)。
+- Node 24.19 定向 1 PASS；沿 Server 設定單一 test root strict 型別零診斷。沒有重跑整套、雲端、模型或通知，不把 controlled ports 當正式派送或真機證據。
+- 新增同 VM 頭像 Compose 配置，寫入預設 false。現網缺少頭像及 sharp 依賴，後續候選須完整補齊，維持同版 API／worker 及可回退；source gate 尚未解除，未部署。
