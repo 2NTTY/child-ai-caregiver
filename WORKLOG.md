@@ -3723,3 +3723,9 @@
 - `652edad` 正式 API／worker 同版候選已在原 VM 開啟及關閉核對，補四個已驗 Linux 原生套件及完整已合併程式，保留 license；沒有另做 npm 安裝、真模型或還原重跑。補一個 composite、cleanup 欄位索引及三個私密欄位排除，全部 READY 後才部署。
 - 原站兩服務健康、Web 映像未改，公開 health 及部署後 Scheduler 自動喚醒通過；source gate／寫入均 false。獨立 review 指出的 maintenance 恢復範圍及公開 probe 回退缺口在上傳前已修。[部署證據](artifacts/verification/AVATAR_DEPLOYMENT_20261025.json)保留核對器的舊 ADC／Web 無 Docker healthcheck 錯誤，沒有因此重跑部署。
 - 自動批准審查兩次拒絕解除 source gate；第二次已有部署讀回，仍要求明確授權解除持久啟用閘。未繞過或開寫入，已提出限定啟用確認；必要測試依使用者新授權不逐次詢問。手機未連線，設備裁切／EXIF 留待驗，原生每日備份還原仍延後。
+
+<a id="log-20261025-avatar-enable-approved"></a>
+## LOG-20261025-AVATAR-ENABLE-APPROVED
+
+- 使用者明確批准解除頭像 source gate，review／合併後開啟原站同版 API／worker 寫入。既有 lifecycle、原生配對還原、runtime、索引與正式停寫部署證據已具備；本次只改 release 常數，不改權限、確認、防重、刪除或模型設定。
+- 復用已驗 candidate-gate 路徑及正式組裝檢查，靜態核對差異，不重跑整套測試。部署仍需精確候選、健康及寫入配置讀回；設備選圖／裁切／EXIF 未驗保留，不以啟用或真人批准替代。
