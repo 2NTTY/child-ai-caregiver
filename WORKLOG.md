@@ -3736,3 +3736,12 @@
 - #300／`0ebfbfa` 的單檔 release flag 修正經主模型及獨立覆核後合併；使用者已明確批准原站開放。候選沿已核對的 `652edad` 映像，只替換該檔；正式 API／worker 同版開啟／關閉、sharp／libvips 及兩項 true 配置核對通過，未重跑業務／還原測試。
 - 2026-10-25 09:08:54 UTC 原站 API／worker 啟用 `c3b149c`，兩服務健康、公開 health、寫入配置及部署收據讀回通過；Web 映像保持 `c09400c`，沒有 Android OTA 或新 APK。[啟用證據](artifacts/verification/AVATAR_ENABLE_20261025.json)。
 - 保留相容停寫映像 `4159605` 及受保護配置，回退仍能讀取／清理頭像；不能退至不認識新 schema／journal 的舊映像。零模型／測試通知／新增資源／資料遷移／配額修改；既有索引與排程證據復用。手機選圖／裁切／EXIF、原生每日備份與 Secret Manager 災備仍待驗，沒有代填人工通過。
+
+<a id="log-20261025-closeout-web"></a>
+## LOG-20261025-CLOSEOUT-WEB
+
+- 收尾 Android、頭像、附件庫及個人模型，保持五個協作者 Agent PR head 未改。實際 Web 流程發現頭像 Save 在背景 read 尚未結束時被略過；owner 只允許寫入取代唯讀刷新，舊回應／finally 不再更新新 request。既有版本、防重、unknown 與身份清理保持，21 項定向檢查通過。
+- 本地入口原本不轉送頭像寫入旗標，補明確 opt-in，預設 false。沿原 Firebase demo emulators、正式 Web／API／client，選圖、方形裁切、保存、內容 hash／MIME、重新開啟與明確移除通過；附件沿正式訊息連結，在實際清單下載原檔並核 bytes，之後刪除該合成附件。
+- 第一批頭像保存失敗及修正後驗收器呼叫上限、附件下載等待超時均保留；後續只補原已保存資料的待驗步驟，不重新上傳／提交。Web 匯出通過。必要測試沒有呼叫產品 Agent／通知，不代填 Android 真機。
+- 個人模型沿既有受限 Gemini key及正式 provider factory 僅一次短生成，供應商回 model_region_unavailable，立即停止，零 embedding／重試／配額修改。成功個人 key 仍待驗，不把此結果當其他用戶或 Vertex 的限制。[證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。
+- 使用者另指出自製頭像裁切體驗偏離成熟產品；資料層驗證不等於體驗完成，保留現成能力優先的後續接點。手機／原生裁切／跨端媒體與 OTA 回退、四角色聯合及原生備份真還原未驗仍保留。

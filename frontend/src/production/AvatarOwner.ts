@@ -40,12 +40,17 @@ export class AvatarLane {
     } else if (online !== this.state.online) { this.update({ online }); if (!online) this.request?.abort(); }
   }
   private begin(write: boolean) {
-    if (!this.context || !this.state.online || this.request) return null;
+    if (!this.context || !this.state.online) return null;
+    if (this.request) {
+      if (!write || this.hasPending()) return null;
+      // An explicit write may replace a read refresh, never an unresolved write.
+      this.request.abort();
+    }
     const context = this.context, generation = this.generation, controller = new AbortController(); this.request = controller;
-    this.update(write ? { busy: true, notice: null, retryAvailable: false } : { loading: true });
-    return { context, signal: controller.signal, current: () => this.generation === generation && !controller.signal.aborted,
-      same: () => this.generation === generation, finish: () => { if (this.request === controller) this.request = null;
-        if (this.generation === generation) this.update({ loading: false, busy: false }); } };
+    this.update(write ? { busy: true, loading: false, notice: null, retryAvailable: false } : { loading: true });
+    const same = () => this.generation === generation && this.request === controller;
+    return { context, signal: controller.signal, current: () => same() && !controller.signal.aborted,
+      same, finish: () => { if (!same()) return; this.request = null; this.update({ loading: false, busy: false }); } };
   }
   private failure(error: unknown, write: boolean) {
     const known = error instanceof AvatarApiError ? error : null;
