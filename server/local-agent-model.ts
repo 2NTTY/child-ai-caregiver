@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { personalBaseUrlSchema, personalModelIdSchema } from '../src/shared/model-settings-schema.ts';
+import { personalBaseUrlSchema, personalEmbeddingShape, personalModelIdSchema } from '../src/shared/model-settings-schema.ts';
 import { readAiConfig, type AiConfig } from './ai-config.ts';
 import { createPersonalModelProviders } from './personal-model-providers.ts';
 import { resolveModelThinkingLevel } from './model-thinking.ts';
@@ -22,9 +22,18 @@ export function readLocalAgentModel(env: Environment, options: { documentEmbeddi
   };
   const apiKey = readKey(env.LOCAL_MODEL_API_KEY, 'local model credential');
   const embeddingApiKey = readKey(env.LOCAL_MODEL_EMBEDDING_API_KEY, 'local embedding credential');
+  const embedding = z.object(personalEmbeddingShape).parse({
+    embeddingProvider: env.LOCAL_MODEL_EMBEDDING_PROVIDER,
+    embeddingProject: env.LOCAL_MODEL_EMBEDDING_PROJECT,
+    embeddingLocation: env.LOCAL_MODEL_EMBEDDING_LOCATION,
+  });
+  if (embedding.embeddingProvider === 'vertex') {
+    if (!embeddingApiKey || !embedding.embeddingProject || !embedding.embeddingLocation)
+      throw Error('Vertex query embedding requires its own key, project and location');
+  } else if (embedding.embeddingProject || embedding.embeddingLocation) throw Error('Embedding project and location require Vertex');
   if (enabled && (provider === 'vertex-adc' ? !env.LOCAL_MODEL_PROJECT : !apiKey))
     throw Error('Local model credentials missing; no platform fallback');
-  if (provider === 'vertex-adc' && (apiKey || embeddingApiKey))
+  if (provider === 'vertex-adc' && (apiKey || embeddingApiKey || embedding.embeddingProvider))
     throw Error('ADC mode cannot also select API keys; choose an explicit credential mode');
   let baseUrl: string | undefined;
   if (provider === 'openai-compatible') {
@@ -44,12 +53,13 @@ export function readLocalAgentModel(env: Environment, options: { documentEmbeddi
   if (selectedModel !== modelConfig.model) modelConfig.localModelOverride = selectedModel;
   modelConfig.agentThinkingLevel = resolveModelThinkingLevel(selectedModel!, env.AI_AGENT_THINKING_LEVEL);
   const providers = provider !== 'vertex-adc' && enabled
-    ? (selected: AiConfig) => createPersonalModelProviders(selected, apiKey!, provider, { baseUrl, embeddingApiKey, ...options })
+    ? (selected: AiConfig) => createPersonalModelProviders(selected, apiKey!, provider, { baseUrl, embeddingApiKey, ...embedding, ...options })
     : undefined;
   // Preserve existing unchanged Gemini/ADC work bindings; changes of endpoint or embedding payer invalidate reuse.
   const binding: unknown[] = [provider, modelConfig.project,
     provider === 'vertex-adc' ? env.GOOGLE_APPLICATION_CREDENTIALS ?? 'local-adc' : apiKey];
   if (baseUrl || embeddingApiKey) binding.push(baseUrl ?? null, embeddingApiKey ?? null);
+  if (embedding.embeddingProvider) binding.push(embedding.embeddingProvider, embedding.embeddingProject ?? null, embedding.embeddingLocation ?? null);
   return { provider, modelConfig, providers,
     embeddingConfigured: enabled && (provider === 'gemini' || provider === 'vertex-adc' || Boolean(embeddingApiKey)),
     credentialBinding: createHash('sha256').update(JSON.stringify(binding)).digest('hex') };

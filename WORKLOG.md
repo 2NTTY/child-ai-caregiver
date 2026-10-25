@@ -3781,3 +3781,154 @@
 - 使用者要求直接續驗剩餘流程；v4 用一份 108 bytes、無私人資料的 TXT 選檔時，草稿顯示 Android `msf:` ID 而非原名稱，於送出前停批，沒有模型／通知或雲端寫入。原因是 SDK 的 JS `File.name` 使用 URI basename；已有原生 copy 能取得 provider display name。
 - 文件與已錄音訊改用同一薄接點，沿 expo-file-system 57.0.7 複製至本機私有暫存後保留真正檔名，再交原草稿處理；保留大小、數量、過期清理及取消，不新增套件或原生配置。單一針對性檢查及三入口型別通過；真機修正後續驗尚待相容 OTA，不以替身當通過。
 - [證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。不動協作者四 Agent PR，不重跑頭像或已通過 Web 附件下載；個人 Gemini key 原有供應商地區拒絕不反覆重試。
+
+<a id="log-20261025-android-picker-acceptance"></a>
+## LOG-20261025-ANDROID-PICKER-ACCEPTANCE
+
+- #308 已合併 `35ad214`；Android 匯出及 v4 runtime 相容核對通過。31 個 JS／資產共 13,725,060 bytes 的 EAS 更新在 asset processing 逾時，查回沒有新群組後只補同封包一次，仍同樣失敗；未再重試、未建 APK、未改原站服務。最後 preview 仍為 `327ad4ca`，手機維持 embedded v4，不能宣稱檔名修正已到設備。
+- 已移除本次尚未送出的測試草稿；保存／下載續驗前手機自行鎖屏，已請本人解鎖。沒有送出測試聊天或改已有附件；108-byte 測試 TXT 仍暫存在手機 Download 供續驗，私人畫面不入 Git。
+- 為區分本機與正式環境，僅補既有受限 Gemini key 在原香港 VM 的正式 personal-provider factory 一次短生成，仍返回 `model_region_unavailable`；因此沒有呼叫 embedding，無平台回退／設定／配額修改。Windows gcloud 在前置傳輸注入 y、及 dry-run 命令啟動失敗均未到模型；沿 SDK 原始碼以 subprocess-only 設定保留正常主機核對後完成原定單次核查，key 不落盤或進日誌。
+- [本次證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。成功個人 key、附件設備出口、通知終態及 OTA 回退保留未驗；四 Agent PR 及延期 DEV02 不動。
+
+<a id="log-20261025-android-attachment-device"></a>
+## LOG-20261025-ANDROID-ATTACHMENT-DEVICE
+
+- 使用者解鎖後續驗同一份 108-byte 無私人資料 TXT，只提交一次。正式聊天保存、聊天及附件庫下載至 Android 系統分享選單均通過；關閉程序後可讀回同一附件及原回覆「OK」。沒有重送、通知或四 Agent 品質驗收；原始模型呼叫數未另查，不把單次提交當成只呼叫一次模型。
+- 真機仍為 embedded v4／`1f07fab`，因此原文件 ID 檔名問題保留；#308 的修正未因其他流程通過而冒稱已發布。12:50 UTC 只查一次 EAS，資產仍未完成，沒有第三次上傳／發布或新 APK。取消分享後的快速導航曾開啟既有瀏覽器，未驗收任何收件端保存；誤用 agent deep link 已恢復，不當成產品缺陷。
+- 已清手機本次下載目錄 fixture、恢復原孩子／首頁；保留一份無私人資料的雲端測試附件及訊息作追溯，沒有改既有內容。更新 [設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)、PLAN／STATUS，只解除已通過的附件待驗；個人 key 成功、檔名發布及其他未驗項仍保留。
+
+<a id="log-20261025-vertex-closeout"></a>
+## LOG-20261025-VERTEX-CLOSEOUT
+
+- 使用者要求驗可用的 Vertex 路線；原香港 VM 使用既有附加身份、正式 Vertex provider，完成一次 `gemini-3.1-flash-lite` 短生成（5 input＋1 output tokens）及一次正式 1024 維向量（2 input tokens）。這是 ADC 證據，不是個人 key 成功。
+- 依使用者明確批准，為既有合成測試身份建立只限 Vertex API 的臨時 key，臨時沿既有兩權限角色；經正式 personal-provider factory 的單次短生成返回 `model_http_403` 後停止。相同流程已撤銷 key、移除本次新增綁定；未改原權限、產品設定／配額／部署，沒有通知或私人資料。最多三筆的唯讀錯誤 metadata 查詢未找到 Vertex 紀錄，具體原因尚未確定，不據此推論所有 Vertex key 不可用。
+- [分層證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)保存結果與限制；PLAN／STATUS 區分平台 ADC 已通、個人 key 未通，保留先前 Gemini 拒絕及其他未驗項。個人 Vertex／相容模式仍使用另填的本人 Gemini 向量 key，不因本輪成功而宣稱已擴充個人向量路由。只核文件 diff／JSON，不重跑產品測試或協作者四 Agent。
+
+<a id="log-20261025-personal-vertex-stabilized"></a>
+## LOG-20261025-PERSONAL-VERTEX-STABILIZED
+
+- 使用者另行明確批准修訂批次：同一測試身份／兩項最小權限，建立第二個臨時 Vertex key，等待 180 秒後僅生成一次。原香港 VM 的正式 `createPersonalModelProviders` 返回成功，5 input＋1 output tokens，沒有平台憑證回退、embedding、重試或產品設定／配額修改。
+- 同批 finally 已刪臨時 key、移除本次新增角色綁定，未動原權限。首批 403 與原 Gemini 地區拒絕保留；成功與 IAM 生效延遲相符，但不宣稱已證實首批錯誤根因。Google IAM 官方文件指出政策傳播通常兩分鐘、也可能七分鐘或更久；本次三分鐘不是普遍保證。
+- [實測證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)新增獨立結果，PLAN／STATUS 只解除個人 Vertex provider 成功待驗；設定→Agent／個人向量檢索的完整流程仍未通過。僅核文件 diff／JSON，不重跑其他產品測試、協作者四 Agent 或通知。
+
+<a id="log-20261025-android-picker-delivered"></a>
+## LOG-20261025-ANDROID-PICKER-DELIVERED
+
+- 沿 #308 已核 hash 的同一 31 檔匯出繼續查明發布阻塞。公開無憑證連線與 EAS SDK 核對後，僅向 Expo 回傳並已確認的 GCS host 直接 TLS 上傳原 9,048,132-byte HBC 一次，HTTP 204／資產 EXISTS；不帶 proxy、不跟 redirect、不重試。初次 host guard 不符已在上傳前停止；原兩次 EAS 逾時保留，不把直接路徑成功等同完整證明舊 proxy 的內部故障。
+- 相容 preview OTA 已於 13:23 UTC 發布，group `39974363-7397-418f-adf6-40e853786ca1`、update `01a1733b-70d1-7fcc-a5af-a830658b7b1c`、v4 runtime `0c5c868…`。產品來源 `35ad214`，發布 Git `cffa337` 只多文件；沒有 Web／API 更新、新 APK 或向舊 runtime 強推。
+- 已解鎖手機重開後選取 68-byte 合成 TXT，未送出草稿正確顯示原檔名；品牌 splash 同時可見。中文輸入法改寫首次搜尋後只改用數字檔名定位同一合成檔，沒有開其他私人附件。隨即丟棄草稿、刪測試檔並返回原首頁；零上傳／聊天／模型／通知，不重跑頭像及已通過的保存／下載。
+- [交付及設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)保留各批失敗／限制；裝置未另讀 update ID，僅按可見行為驗證修正。PLAN／STATUS 原位解除檔名發布與設備阻塞，個人向量完整流程及 Android 其餘門檻仍保留。只核 diff／JSON／既有證據完整性，協作者 PR 不動。
+
+
+<a id="log-20261025-android-rollback-sync"></a>
+## LOG-20261025-ANDROID-ROLLBACK-SYNC
+
+- 接續 master `c9989c5`，由 B 收 Android 更新／跨端驗收。EAS CLI 24.14.0 僅在 v4 preview 的相同 runtime 回退至內置版本，再 republish 已核修正版；零新資產上傳／APK／模型／通知／部署。第一次手機鎖屏，立即恢復，不當通過；解鎖續驗時，同一未送出 TXT 分別顯示內置 provider ID 與恢復後原檔名，原登入／資料保留。最後 group `44dca896-6861-43c5-a24b-cc4fbdea5102`，13:54 UTC 已恢復；沒有抽取裝置 update ID，只按實際行為確認。初次 whoami 輸出 guard 在變更前停止亦保留。
+- 手機只保存一項明示 TEST 的本人待辦，日期為 10 月 31 日 09:00；使用者登入同帳號 Web 並回覆「已完成」。手機保持同一詳情頁、不刷新／重送，沿正常背景讀取顯示「已完成，提醒已停止」。原輸入／日期修正均發生於保存前；只留一筆已完成測試待辦作追溯，未發到期通知。清除未送出附件及其手機 fixture，返回首頁。
+- [同一設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)新增回退及跨端區段，舊結果／失敗不改；提醒終態不重發沿 [F06](artifacts/verification/F06_FIRESTORE_BACKGROUND_20261013.json) 原 Firestore＋合成 transport 證據復用，不重跑。未證明跨端 Agent／確認接續、真機撤權或照護通知點擊目標；個人向量完整流程及四 Agent 等待條件繼續保留。
+- PLAN／STATUS 原位解除已通過項，部署交接補首次 OTA 的官方內置回退方法。本次只有文件及 evidence JSON，核 diff、JSON、連結及原 evidence／WORKLOG 保留；不跑產品測試或修改協作者 PR。
+
+
+<a id="log-20261025-native-target-revocation"></a>
+## LOG-20261025-NATIVE-TARGET-REVOCATION
+
+- 使用者在 Web 回覆已撤銷其他裝置；Android 解鎖後回到登入畫面，一次冷啟動仍未恢復舊會話／孩子頁，零憑證抽取、模型或通知。保留另一身份登入隔離待驗；結果追加至[同一設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
+- B 單作者局部修正正式通知 callback：Server 已核對的 taskId 原先被丟棄，現在在原孩子選擇及身份／離頁守衛後交給既有待辦詳情路由。另依使用者截圖要求把共用設定的「要求重設密碼指引」改成「重設密碼」，沒有改動寄信行為或代按。協作者 PR 檔案核對無重疊。
+- 產品 source `f987b0b`：一項受控 production callback 檢查通過（指定待辦、選孩子等待、身份切換拒遲到、測試通知仍開設定），Web／Android 各一次匯出通過；Android runtime 與 v4 相同，毋須新 APK。[S13 證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)區分程式／匯出與尚未發布、未驗照護通知點擊，不重跑原 FCM／終態或全量產品測試。
+
+
+<a id="log-20261025-native-target-delivery"></a>
+## LOG-20261025-NATIVE-TARGET-DELIVERY
+
+- B 已合併 #315／`2fc4aa3`；產品 source `f987b0b` 的 Web 靜態包 4,681,109 bytes 經 IAP 傳至原 VM 的限定 0700 目錄。候選 hash、映像及公開 index／health 核對通過，僅 Web 切至 `ccd2eca`，API／worker、資料與配額不變；保留 `0da4e1f` 及 0600 的 Compose 回退。VM 身份／期限未變，部署前約 10.32 GiB 可用。
+- 同 runtime Android 31 檔／13,725,127 bytes 發布一次 preview OTA，group `aea3c202-d8ac-4577-8367-be0ea066b614`、update `01a17377-be21-78ef-9f4d-15913fbfb87f`。復用已驗官方限定 host 的直接 TLS 單次 bundle 上傳，HTTP 204／EXISTS，沒有先重跑已知會卡住的 proxy 上傳。沒有新 APK、模型、郵件或通知；兩端共用「重設密碼」及通知指定待辦接線。
+- [S13 交付證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)分開發布與尚未觀察的實際 care 通知點擊；舊設備、失敗與撤權結果保留。PLAN／STATUS 只更新本次實質狀態；不改協作者 PR，不以 OTA 代表全 P3 完成。
+
+
+<a id="log-20261025-personal-vertex-embedding"></a>
+## LOG-20261025-PERSONAL-VERTEX-EMBEDDING
+
+- 原香港 VM 的 Gemini 單次查詢向量返回 embedding_region_unavailable，沒有重試。使用者明確批准補最小 Vertex 本人 key／專案／地區；復用固定 Google SDK、原 embedding 模型／1024 維及索引，沒有改協作者 Agent 或全量重算。
+- 新增 v4 共用設定及交易內舊版保護，沿加密、版本、原 opId、權限及共同預算。Web／Android 同一表單與本地入口接入獨立向量設定；切路由須重填 key，沒有平台 ADC 或聊天 key 後備。
+- 新設定／SDK 和本地綁定兩項、原 v3／Vertex 邊界、14 項 form/client、限定型別及兩端匯出通過。初次兩項合成失敗為錯誤分類斷言與漏填 demo 專案，查根因後只補該兩項；不重跑已通過批次。
+- 沿必要驗收授權，以既有測試身份的臨時 Vertex key 等待 IAM 生效後，只呼叫一次查詢向量，得到 1024 維、2 input tokens；零生成／重試／通知／正式資料，finally 刪 key 並移除本次兩項權限綁定。正式部署及真機新欄位尚未驗；保存設定至完整 Agent 流程不由 provider 核對代替。[分層證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
+
+
+<a id="log-20261025-personal-vector-delivery"></a>
+## LOG-20261025-PERSONAL-VECTOR-DELIVERY
+
+- PR #317／`34f80a9` 已合併，後端與共用畫面分別維持 C／B 單作者；本批按已授權原站交付更新 API／worker、Web 及 Android OTA，不修改協作者 PR。原 VM 身份／期限核對不變，部署前約 10.30 GiB 可用。
+- 10 個 Server／shared 檔共 15,124 bytes 的壓縮包經 IAP 傳至限定 0700 目錄；候選以原正式組裝核對 API／worker 及 v4 契約。無活動 run 才短暫維護並切至 `9d490d0`，健康通過；Web 65 檔壓縮 4,680,173 bytes 切至 `e813692`，公開 hash／health 通過。保留 0600 配置及前版映像，但新設定保存後只能回退有 v4 reader 的後端，不能盲退舊資料格式。
+- Android 31 檔／13,730,502 bytes 沿既有官方限定 host 單次上傳，HTTP 204／EXISTS；preview OTA group `33a2e0a3-2472-4d1f-9d2d-1da5e7c9a3b4`／update `01a1739b-bb0d-79b8-9457-38b658668111` 已發布，同 v4 runtime，毋須新 APK。沒有模型／通知／資料遷移／索引重建或配額改動。
+- [證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)追加本次實際交付；新表單真機保存與完整個人設定→Agent／引用仍未驗，四 Agent 流程按使用者安排等協作者。只更新受影響 PLAN／STATUS 與回退契約，原失敗不回寫。
+
+
+<a id="log-20261025-vertex-option-device"></a>
+## LOG-20261025-VERTEX-OPTION-DEVICE
+
+- 使用者重開已安裝的 Android App 後回覆「已有 Vertex AI 選項」。只核個人向量服務選項出現，沒有填 key、保存設定或呼叫模型；先前仍顯示舊表單的觀察保留，不把發布時間當成裝置載入證據。
+- B 記錄本次手機人工結果至[原證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)，同步 PLAN／STATUS。精確裝置 update ID、保存設定至完整 Agent／引用流程仍未驗；四 Agent 聯合補驗繼續等協作者，不重跑已通過項目。本次只核文件 diff／JSON，沒有產品測試、部署或手機操作。
+
+
+<a id="log-20261025-personal-vector-routing"></a>
+## LOG-20261025-PERSONAL-VECTOR-ROUTING
+
+- C 收尾核對保存設定到正式檢索路由：原欄位傳遞沒有發現缺漏；將既有 personal Vertex 情景的成功呼叫改經新建的正式 routing、embedding gateway 及持久用量服務，沿原 in-memory Firestore fixture／固定 SDK／合成 HTTP，不另造 Agent。
+- 只執行該一項，通過設定重讀、本人 key／專案／地區、1024 維、本人用量一次／平台零次及原 root／attempt 重送拒絕；零真模型／雲端／手機／通知／部署。產品程式不變，[原證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)追加本次範圍，不宣稱真 Firestore 競爭或完整 Agent／引用通過；協作者驗收仍按原安排延後。
+
+
+<a id="log-20261026-web-voice-review"></a>
+## LOG-20261026-WEB-VOICE-REVIEW
+
+- 使用者要求集中 Web 真模型核對，並授權其後模型測試合計滾動 12 小時不超 US$5、毋須逐次詢問。正式失敗 run 僅讀 metadata；用本機自製錄音重現，沒有讀取或重送私人原錄音。
+- 原音訊補接獨立審核，保留原訊息／版本／hash、重讀核權及共同預算；實測亦發現普通補問被誤判及拒絕結果缺 draftHash，遂補真正輸出 schema 與精確提示。沒有略過審核或放寬官方照護引用。
+- 定向正式組裝、撤權與原結果、並發變更後可讀收據、限定型別及實際 prompt assembler 通過；完整 Web HTTP／共用 client 的真 Vertex 流程以 2 次生成完成錄音理解、審核、保存與原 run 讀回。曾失敗的各批及較闊檢查保留於[證據](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)，不重跑全量或手機。
+- 本機臨時限額及開關已恢復原值，帳目／失敗現場保留。已知 tokens 保守估約 US$0.16，整批預留 US$1 包含遲到背景工作，並非實際帳單。舊孩子的招呼受歷史干擾、背景資料變動可中止回覆仍列缺口；不以本次通過代結四 Agent／P3。尚待 review／合併及原站 Server 交付，前端／APK 不變。
+
+
+<a id="log-20261026-web-voice-delivery"></a>
+## LOG-20261026-WEB-VOICE-DELIVERY
+
+- #321／`85356d6` 已由原包單作者合併，協作者 PR head 未變。9 個 Server／prompt 檔、56,880 bytes 壓縮包經 IAP 傳至既有原 VM 的限定 0700 目錄，hash 逐項通過；未傳密鑰、家庭資料或本地測試庫。
+- 候選原正式 API／worker 組裝及 Prompt Pack 0.1.55／voice authorizeAudio 通過；無活動 run 後短暫維護切換 API／worker 至 `sha256:d5be3558f45771fdcab001fcebda4df5a1aead88d66c2363097f1b3f477a210d`，健康／公開入口通過，Web 映像保持原版。保留前版映像及 0600 配置，沒有遷移、配額／期限改動、模型或通知；Android 毋須更新。
+- [同包證據](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)保存真模型與交付層次。舊失敗訊息不自動重跑；未核瀏覽器播放／跨端語音、歷史情境干擾與背景變動中止仍保留，不代結四 Agent／P3。
+
+
+<a id="log-20261026-personal-model-flow"></a>
+## LOG-20261026-PERSONAL-MODEL-FLOW
+
+- 使用者的必要模型測試 US$5／滾動 12 小時授權內，為既有測試身份臨時建立只限 Vertex 的 key 及原有兩項最小權限；等權限生效後只跑一次正式本地 Web／API 流程，另預留 US$0.50，連前批預留合計 US$1.50。沒有改正式產品設定、開新角色或接管協作者 PR。
+- 共用設定 client 保存本人聊天／向量憑證、原操作查回及新登入會話讀回通過。正式 Agent 的 3 次生成／2 次向量均記本人，平台用量增加 0；約 34,537 input／105 output tokens，保守已知費用估約 US$0.018，並非帳單。
+- 原 run `b5a70937-8008-44e9-815b-8d9bebfb7a55` 因第三次搜尋觸及 embedding_limit 停止，沒有完成引用／審核／回答；首次失敗停批，保留帳目／收據，不加額度重跑。唯讀核對確認本地只有一段已發布語料；缺原工具輸出，不猜反覆搜尋根因。
+- key 與本次新增 IAM 綁定已刪除。本地清理首次因 removeKey 要求 disabled 模式被拒，依正式契約先停用移除，再恢復停用中的平台模式，密鑰清理及原 5 次帳目讀回通過。詳見[限定證據](artifacts/verification/PERSONAL_MODEL_FLOW_20261026.json)。沒有產品程式變動，不跑型別／build 或其他模型測試；完整個人 Agent／四角色品質仍按原責任待驗。
+
+
+<a id="log-20261026-knowledge-retrieval-check"></a>
+## LOG-20261026-KNOWLEDGE-RETRIEVAL-CHECK
+
+- 在 `2332950` 上補有限診斷：英文關鍵詞、既有向量及約數年齡篩選均接通；中文關鍵詞不能匹配唯一英文片段，但一次真中文向量成功命中（距離 0.2796，既有門檻 0.4）。沒有改索引／語料或放寬門檻。
+- 正式本地 Web HTTP／共用 client／ADK 以現有 ADC 及正常 8 次生成／4 次向量設定，只用 3 次生成、1 次搜尋便完成引用／獨立審核／保存及原 run 讀回。與先前個人 key 的 6／2 設定不同，不能以本次成功聲稱原失敗已修復。診斷只記公共查詢與來源 ID，未記思考、密鑰或私人正文。
+- 搜尋工具描述仍寫死「最多兩個查詢」，與管理員可調設定矛盾；局部改為讀當輪實際剩餘額度，零餘額沿已有上下文續讀或明示限制。沒有改 runtime、硬上限、審核或協作者分支。文字匯入與 diff 核對通過，不跑全量、建置或額外模型。
+- 本批另預留 US$0.51，滾動 12 小時預留合計 US$2.01，低於使用者 US$5 上限；新增已知生成約 27,509 input／289 output tokens，估約 US$0.0142，非帳單。為單輪診斷明確暫增本地每日餘額，原帳目保留，finally 恢復停用及原限額；正式設定不動。[限定證據](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)。
+
+
+<a id="log-20261026-knowledge-guidance-delivery"></a>
+## LOG-20261026-KNOWLEDGE-GUIDANCE-DELIVERY
+
+- PR #324／`14e0f60` 已合併。只把一個工具說明檔（壓縮 1,233 bytes）及 hash／腳本傳至既有原 VM；初次腳本因 Windows 編碼在執行前停止，改存 UTF-8 後同一候選正式組裝通過，未擴測。
+- 無活動 run 後 API／worker 已更新至 `sha256:663125df9f51c666c878b7b6bcb8ef77fc6f9a55f20a8f4cbc82c88e5b87ca70`，服務及公開健康通過；Web／Android／配額／資料不變，零模型或通知。保留 `d5be355` 前版與 0600 配置；[原包證據](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)保存精確版本、原失敗與回退。
+
+
+<a id="log-20261026-personal-key-complete"></a>
+## LOG-20261026-PERSONAL-KEY-COMPLETE
+
+- 在 `226a848` 的正式共用 Web HTTP/client、ADK 及隔離 Firebase 資料上，用既有測試身份的一個臨時 Vertex key 完成設定保存／原收據／新登入會話讀回；同時配置本人聊天及獨立向量路由。平台全程停用。
+- 正常 8／4 每輪設定、不重試；實際 3 次生成、2 次工具、1 次向量完成官方引用、獨立審核、保存及原 run `f37b5216-3e17-4f04-b7bb-74123e0a5622` 讀回。本人帳目 5→9，平台 40→40；27,527 input／286 output tokens，已知生成估約 US$0.0142，非帳單。本批預留 US$0.50，12 小時預留合計 US$2.51，未超 US$5。
+- finally 已刪臨時 key／移除本次新增兩項最小權限，本地沿 disabled 正式操作清 key，再恢復原停用平台模式及個人限額；原帳目保留。[完整證據](artifacts/verification/PERSONAL_MODEL_COMPLETE_20261026.json)。沒有改產品程式、部署或通知，也沒有重跑全量。舊 embedding_limit 失敗保留，不因新批成功推定原因；手機本人 key 輸入／跨端畫面、四 Agent 聯合品質仍按原範圍待驗。
+
+
+<a id="log-20261026-voice-acceptance-deferred"></a>
+## LOG-20261026-VOICE-ACCEPTANCE-DEFERRED
+
+- 使用者在原站語音修正後回報「仍有問題」，其後明確表示「算了不驗收了，畢竟 agent 還沒做好」。依此暫緩語音排查及驗收，等待四角色完成與協作者自查，不再要求人工重試或啟動模型補驗。
+- 新症狀及根因未核實；原後端成功與失敗證據保留，未標完整通過。PLAN／STATUS 已同步；本次只有文件修訂與 diff 核對，沒有模型、設備、服務或部署操作。

@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **四項修補來源交付：[FIX-FOUR01](#four-fix01)。**[PR #286](https://github.com/2NTTY/child-ai-caregiver/pull/286) 已獲使用者指示正常合併；本輪接續 #288／#289，保留照片聊天接線與部署記錄，僅補受影響照片恢復／client 契約核對。正常合併仍須獨立覆核及遠端必要檢查，不代表部署或真機驗收。
 
-**當前：[S16 Android／頭像／附件庫／個人模型收尾](#s16-w03)。**頭像成熟裁切已由 #305 合併，`1f07fab` 更新原 Web，公開 hash／health 通過。必要映射、adapter、局部型別／匯出、Web 保存及桌面縮放已核；[實作證據](artifacts/verification/AVATAR_CROP_REUSE_20261025.json)／[交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。Android v4 已一次免費建置並核對同簽署、runtime 與品牌資源，[覆蓋安裝](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)；使用者已覆蓋安裝；v4、登入／孩子資料、系統裁切／EXIF／預覽及取消已核，沒有向 v3 強推 OTA。成功個人 key 仍待驗；四 Agent／DEV02 等協作者自查、不改其 PR。
+**當前：[S16 Android／頭像／附件庫／個人模型收尾](#s16-w03)。**頭像成熟裁切已由 #305 合併，`1f07fab` 更新原 Web，公開 hash／health 通過。必要映射、adapter、局部型別／匯出、Web 保存及桌面縮放已核；[實作證據](artifacts/verification/AVATAR_CROP_REUSE_20261025.json)／[交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。Android v4 已一次免費建置並核對同簽署、runtime 與品牌資源，[覆蓋安裝](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)；使用者已覆蓋安裝；v4、登入／孩子資料、系統裁切／EXIF／預覽及取消已核，沒有向 v3 強推 OTA。個人 Vertex key 短生成、附件檔名、v4 真機 OTA 回退／恢復及 Web 完成待辦後手機自動同步已通過；本人 Vertex 完整 Web/API 流程已核（見下方 MODEL03）；手機本人 key 輸入、跨端 Agent／確認接續、另一身份的真機隔離及照護通知目標核權仍待驗。四 Agent／DEV02 等協作者自查、不改其 PR。
 
 **iOS 保留：[S04-W03 發佈準備](#s04-w03)等待 Apple 前置。**#272、#274～#278 已合併，本機接線／匯出／APNs掛載配置有證據；尚無 IPA、部署或真通知。免費真機需可用 Mac，TestFlight 需已授權 Apple 團隊及簽署；不為等待條件重跑測試或購買會員。完整範圍見 [iOS 計劃](#p3-ios)。
 
@@ -76,9 +76,9 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **合併／後續門檻：**使用者於 2026-10-24 明確要求合併 #286；本輪整合須經獨立相容覆核，再核精確 head、分支保護及必要檢查，以正常 merge commit 合併，不強推或繞過規則。真機照片捨棄、原生分享、Apple APNs／原生 Firestore 競爭及正式驗收仍待補，空 CI 狀態不當通過。來源合併不含本包部署，不代表照片聊天模型品質、頭像、附件庫或 iOS 整包完成。
 
 <a id="attachment-read01"></a>
-### ATTACHMENT-READ01：附件回看與私人清單（Web 清單／下載已驗，Android 出口待驗）
+### ATTACHMENT-READ01：附件回看與私人清單（Web／Android 文件下載及原生檔名已驗）
 
-- 2026-10-25 續驗 v4 發現 Android 系統選檔把 `content://` 文件 ID 當成檔名，尚未上傳便停批。沿 Expo FileSystem 57.0.7 原生目錄複製取得供應商檔名，文件／已錄音訊共用薄接點；保留大小、私有草稿及清理限制，不新增原生套件。單一針對性檢查與三入口型別通過，待相容 OTA 後只續驗原檔案的上傳／下載／分享；不重跑頭像。證據見 [Android 檔名修正](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
+- 2026-10-25 v4 附件保存／重開讀回／下載接線已真機通過：只送一份 108-byte 無私人資料 TXT，聊天與附件庫均能開啟系統分享，重開後原聊天亦讀回完成結果。#308／`35ad214` 檔名修正於 13:23 UTC 發布相容 OTA（group `39974363`）；沿已核 hash 的同一資產，改用已確認的 Expo/GCS 直接 TLS 路徑上傳一次成功，保留先前兩次逾時及 host guard 停止記錄。手機重開後選取一份 68-byte 未送出 TXT，原檔名正確；隨即丟棄草稿、刪測試檔並返回首頁，零模型／上傳／通知，沒有重跑保存或建 APK。[交付及設備結果](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
 
 - #259 已於 2026-10-24 合併；來源基線 `339c707`，分支 `dot/attachment-media-followup-20261023`；26 個 source/test 檔＝22 產品＋4 測試。原照片 owner 保留；語音／影片／文件走[唯讀清單契約](docs/API.md#private-attachment-lists)，必要來源／時間改用可關閉詳情彈窗，媒體操作獨立，不展示技術版本字串。
 - 定向結果分列：跨層 10/10（包含既有後端 8 項）、附件 focused 16/16、真 RN Web Modal 的有界 DOM 2/2。首 DOM 0/2 是 jsdom 沒有原生按鈕 Enter／Space default click 的測試方法錯誤，已保留並修正方法；真瀏覽器鍵盤仍未驗。8-root strict 512 MiB 檢查 exit137／無 diagnostics，原因未確定；不是完整或局部型別通過。精確版本、原紅及限制見[來源證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)。
@@ -140,9 +140,12 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 ## 四 Agent 本地開發環境與個人模型設定
 
 <a id="model-self03"></a>
+**2026-10-25 最小 Vertex 向量增補（已合併及發布）：**原香港 VM 以既有本人 Gemini key 單次查詢向量返回 `embedding_region_unavailable`，沒有重試或平台回退。補獨立向量供應商及本人 Vertex key／專案 ID／地區，復用固定 SDK 與 `gemini-embedding-001`／1024 維索引；不重算語料、不改四 Agent。新設定沿版本、原操作、加密及共同配額，舊客戶端不得覆蓋新路由；Web／Android 共用表單。只補設定／路由／SDK 請求的定向檢查及一條可行的本人憑證代表流程，不重跑已驗 Android／頭像／附件。 v4 設定／原收據／舊客戶端保護、SDK 真請求結構、共用表單／client、限定型別及兩端匯出通過；本人 Vertex key 單次向量成功（1024 維、2 input tokens），臨時 key／新增權限已清理。PR #317／`34f80a9` 已相容更新原 API／worker、Web 及 Android preview OTA（group `33a2e0a3`，同 v4 runtime，毋須新 APK），公開 hash／health 通過；使用者其後回覆「已有 Vertex AI 選項」，手機新選項顯示已核；原有一條離線檢查再接入正式 routing／embedding gateway，重讀保存設定、本人持久用量及原嘗試不重送通過，零真模型；本人 Vertex 完整 Agent／RAG 的後續真模型結果見下方 MODEL03；手機 key 輸入仍待人工，不把 provider 或畫面通過當成四 Agent 完整驗收。[證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
 ### MODEL-SELF03 自行試用相容模型接口
 
-- 2026-10-25 收尾：沿既有受限 Gemini key 經正式個人 provider 僅嘗試一次短生成，供應商回 `model_region_unavailable`，立即停止，未再 embedding／重試／改配額。保留既有設定、共用表單及無平台回退證據；成功真 key 流程仍待可用憑證／環境，不把本機拒絕推論成其他用戶或 Vertex 不可用。[本次證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。
+- **2026-10-26 本人 Vertex 完整流程已核：**在 `226a848` 的隔離本地 Web/API，沿正式共用設定／聊天 client 保存本人聊天及向量 key，原操作、新登入會話讀回通過。平台停用下，3 次生成／1 次向量完成官方引用、獨立審核、保存及原 run 讀回；全部 4 次記本人，平台增加 0。臨時 key、IAM 及本地 key 已清理，原帳目保留；[完整證據](artifacts/verification/PERSONAL_MODEL_COMPLETE_20261026.json)。這補齊本人設定至 Agent 的代表流程，Android 本人 key 實際輸入／跨端畫面仍待人工；四角色聯合品質仍等協作者。先前 6／2 限額的 [embedding_limit 失敗](artifacts/verification/PERSONAL_MODEL_FLOW_20261026.json)保留，不倒推原反覆搜尋原因；之後 ADC [診斷](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)及工具額度指引修正已隨 #324／`14e0f60` 更新原站。
+
+- 2026-10-25 收尾補核：原香港 VM 的正式 Vertex ADC 文字及 1024 維向量已通過；首個臨時個人 Vertex key 返回 403，失敗與清理證據保留。使用者另批准修訂批次後，同一身份／兩項最小權限等待 180 秒，經正式個人 provider 一次短生成成功（5 input＋1 output tokens），無平台回退；臨時 key 及新增權限已清理，沒有改網站設定／配額。這證明個人 Vertex key 生成接線可用，不倒推首個 403 的確切原因。[實測證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。該日未驗的「保存設定→Agent／知識檢索」完整流程已由上方 2026-10-26 本人 Vertex 批補核；原批個人 Vertex／相容模式只接本人 Gemini 向量 key；本節上述 #317 已補本人 Vertex 向量路由，沿同一索引，真請求與後續完整 Agent 證據分開保存。原 Gemini 地區拒絕不推廣為用戶限制。
 
 - 2026-10-24 Android 補核：使用已登入帳號只保存同一平台模式／模型設定一次，Firestore metadata 確認版本 2；關閉及重開 App 後登入保留並讀回相同設定。沒有輸入 key、呼叫模型、發通知或修改配額。此為真機保存／重開證據，不代表本人 key 真生成或完整跨端流程通過；證據合併至當前 S16 收尾。
 - 2026-10-23手機補核發現捨棄後殘留草稿；#267已修正並發布`4bfdf98`，保留原失敗及兩項React檢查。2026-10-24補核先觀察到手機仍載入舊圖標／舊表單，停止該批；新圖標出現後，只補同一流程，確認未保存個人模式／相容服務草稿可捨棄，實際離頁再返回會恢復平台模式且不再dirty。沒有輸入key、保存設定或呼叫模型，精確OTA ID未讀取，真key仍未驗。[原修正](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)／[發布](artifacts/verification/MODEL_SELF03_DRAFT_DELIVERY_20261023.json)／[本次補核](artifacts/verification/SHARED_NATIVE_NAVIGATION_20261024.json)。
@@ -150,7 +153,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 後端／本地入口#255、#256及共用畫面[#260](https://github.com/2NTTY/child-ai-caregiver/pull/260)已合併。A單作者；#260合併版本`1282e09`於2026-10-23更新原站與相容Android preview OTA，沒有改#254／#259。主模型統籌契約、整合及review，本輪特許的原Astra子代理接續獨立核對；[交付證據](artifacts/verification/MODEL_SELF03_DELIVERY_20261023.json)分開已發布、未驗及回退邊界。
 - 沿同一Web／Android設定、加密保存、原opId、配額及ADK Agent，新增相容API base URL、key與直接輸入模型ID。普通Chat Completions、工具往返及可轉換媒體接薄adapter；不另造Agent、不換模型、不新增自動重試或逐模型測試。供應商不接受某請求時回報錯誤，不把未知能力當作禁止選用。
 - 自訂地址限公開HTTPS，不把憑證送到內網／metadata服務或重新導向；不開任意headers。必要資料外送說明改為用戶所選服務，私人內容與key不入日誌。
-- 向量保留`gemini-embedding-001`／1024維／現有索引。提供可分開保存的本人Gemini向量key，聊天可用另一供應商；舊Gemini設定維持同key行為。未配置相容查詢憑證時如實回報，不借平台ADC／額度，不拿其他模型的向量查舊索引。其他向量模型及索引重建留後續，不以本包宣稱通用向量已完成。
+- 向量保留`gemini-embedding-001`／1024維／現有索引。提供可分開保存的本人 Gemini 或 Vertex 向量 key（後者另填專案／地區），聊天可用另一供應商；舊Gemini設定維持同key行為。未配置相容查詢憑證時如實回報，不借平台ADC／額度，不拿其他模型的向量查舊索引。其他向量模型及索引重建留後續，不以本包宣稱通用向量已完成。
 - 最少驗證：一條合成工具往返與用量轉換；共用設定保存／原操作及密鑰遮蔽；地址拒絕及舊契約相容。只跑受影響檢查及必要型別，零真模型／通知／全量。部署及私有封包傳送另依有效範圍，不把本機接線當已上線。
 - 已接：`server/personal-model-providers.ts`復用同一ADK gateway；Chat Completions文字／工具、圖片及WAV／MP3轉換；其他媒體明示不支援。Gemini／Vertex舊路由保留；另填Gemini向量key，不配置時明確回報`embedding_not_configured`。密鑰、模型不存在、餘額不足、限流、工具／媒體、連線及HTTP拒絕分開回報；只輸出受控分類，不把可能夾有key或私人正文的供應商原始錯誤放到聊天。
 - 設定契約：`Accept: application/vnd.yuyoufang.model-settings.v3+json`沿既有`/api/ai/settings`及operations接口；新增`provider: openai-compatible`、`baseUrl`、`embeddingApiKey`／`removeEmbeddingKey`，只讀回`embeddingKeyConfigured`。地址改變須重新提供聊天key，避免轉送原憑證；舊v2保持既有Google設定，遇新設定回`client_update_required`，其保存資格在同一交易內核對，保留原opId恢復。
@@ -214,7 +217,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 地區、憑證、模型、配額、逾時回傳安全且可分辨原因。embedding路由與聊天模型分開，維持原向量空間；本人憑證缺embedding時明示混合檢索不可用，不借平台額度／偽造引用。
 - 可調每日、每輪生成／工具／embedding、整輪期限、單次等待、重試及背景授權；共同解析器計算個人設定與管理員保護的實際值。模型知道可用預算，硬上限防失控而非要求用盡。
 - run固定模型／預算快照，重試沿原run計數、不重做成功工具／未知副作用；舊設定缺欄位維持舊行為。聊天／編製／審核／媒體／轉錄／背景用同一解析器；公共知識維護不用家長key，本地用開發者明確設定的維護憑證。
-- 版本邊界：v2明確保存才採共同管理上限；舊設定不默改。Vertex AI本身支援向量，現有個人`vertex` adapter只接Express生成，embedding／metadata尚未接通；這是接入路徑缺口，不能概括為Vertex不支援。平台／本機ADC向量路徑已有實作，但不借其付款身份補個人請求。保留該缺口及[官方向量接口](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings)，不為本輪另建認證平台或改組織政策。新收據含備份／還原與帳戶清理接點，未跑真雲端還原；角色及Android待驗不變。
+- 版本邊界：v2明確保存才採共同管理上限；舊設定不默改。Vertex AI本身支援向量，原 MODEL-SELF01 的個人 `vertex` adapter 只接 Express 生成；MODEL-SELF03／#317 已補獨立 key／專案／地區的 embedding，metadata 仍非通用目錄；這是接入路徑缺口，不能概括為Vertex不支援。平台／本機ADC向量路徑已有實作，但不借其付款身份補個人請求。保留該缺口及[官方向量接口](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings)，不為本輪另建認證平台或改組織政策。新收據含備份／還原與帳戶清理接點，未跑真雲端還原；角色及Android待驗不變。
 - 2026-10-20 已按使用者要求建立僅限Gemini API的受限授權key，工程外保存。正式本地設定服務可保存，唯一metadata核對回 `region_unavailable`；已移除業務設定中的key並恢復原模式，用量不變。這只代表該次Developer API請求被拒，不是生成／embedding通過，也不能推論所有香港用戶、GCP／Vertex或其他key不可用；ADC本地流程維持可用。真key結果保留未驗，不再把取得另一把key列為入口交付前置。
 
 <a id="model-self02"></a>
@@ -430,7 +433,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s05-w03"></a>
 #### S05-W03 原生憑據、生命週期與清理
 
-- 階段／狀態：P3；兩處會話修正及最低必要本機檢查已完成，相容客戶端已交付；使用者已確認重開保留登入及資料，跨身份／撤銷真機仍待驗；PR #234 已在 #229 後合併；原未驗項按本批安排繼續追蹤。
+- 階段／狀態：P3；兩處會話修正及最低必要本機檢查已完成，相容客戶端已交付；使用者已確認重開保留登入及資料；2026-10-25 使用者在 Web 撤銷其他裝置後，Android 回到登入頁，冷啟動亦未恢復舊會話／孩子畫面。撤權／重開已核，跨身份真機隔離仍待驗；PR #234 已在 #229 後合併；原未驗項按本批安排繼續追蹤。
 - 前置：S04-W01。
 - 交付：SecureStore／裝置會話重開、到期、撤銷／退出及近期重認證，暫存與備份排除、身份切換拒遲到回應。基本安全登入已屬 S04-W01；未發送草稿仍本機，不形成業務主庫。
 - 本輪修正：無效／到期本機憑據清理後可正常登入；新會話交換令舊請求失效。沿既有 Server 撤銷與近期驗證，不把 Firebase SDK 的暫時清理誤當網站登出。鍵盤過渡仍需真機定位，保留已證實可見的避讓，不盲目撤回。
@@ -440,7 +443,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s07-w01"></a>
 #### S07-W01 App／Web 在線同步
 
-- 階段／狀態：P3；程式及最低本機檢查已完成，新版APK已安裝，跨端真機仍待驗；PR #235 已在 #234 後合併；原未驗項按本批安排繼續追蹤。
+- 階段／狀態：P3；程式及最低本機檢查已完成，PR #235 已合併。2026-10-25 已用 v4 及原 Web 核對同帳號待辦：手機建立、使用者在 Web 完成、手機原頁自動讀到完成／提醒停止；未重新整理或重送。[同次設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。跨端運行接續、撤銷及其他未驗邊界仍按原包保留，不將一項待辦當全端驗收。
 - 前置：S05-W03、S07-W03、P2-F08。
 - 交付：AppState／網絡 adapter 接 Query、changes cursor；背景停輪詢／前景核對，跨端同版本、原操作恢復及身份清理，不建離線重送。
 - 本輪接點：共用 metadata observer 接 Web 可見事件及 Android AppState／expo-network；前景五秒核對，背景／離線停止，恢復以同一權威服務讀回。原生取消使用可清理的 AbortController／timeout，不假定有瀏覽器 AbortSignal.any／timeout。只取消讀取，不重送業務操作。
@@ -487,18 +490,18 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - 前置（Android）：S12-W01 Android、S07-W01、S13-W07；iOS 另依 S04-W02。
 - 本機結果：固定 Expo Notifications 57.0.21；FCM 單次 adapter、Firestore 加密綁定／原收據、同裝置 token 輪換／會話撤銷、提醒／通知歷史／匯出及還原、正式 API／worker、共用設定及核權點擊已接線。新增一條本機合成流程通過，受影響型別及配置語法通過；不把替身當真 Firestore 競爭或真 FCM。證據見 [S13 準備](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
 - 雲端配置（2026-10-18）：同專案 Android package、專用受限 key、原 VM 最小 FCM IAM 及 Expo preview secret file 已配置。10 個共用語音／通知索引、6 項欄位設定均 READY；`mobile-bf47c47` 已部署並啟用原生通知 adapter。部署當時只有啟動／資料查詢與公開入口證據；其後同機註冊及唯一一次真FCM結果見[S13 EV](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)，[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
-- 下一步／未驗：APK正常開啟、原資料保留、本人授權及一則指定FCM顯示已有證據；只欠照護目標核權導航／完成停止，不重發一般測試。
+- 下一步／未驗：APK正常開啟、原資料保留、本人授權及一則指定FCM顯示已有證據；2026-10-25 Web 完成後手機自動顯示「已完成，提醒已停止」。真正終態／不重發沿 [F06 原生 Firestore 證據](artifacts/verification/F06_FIRESTORE_BACKGROUND_20261013.json)復用，不重跑。收尾發現前端遺漏 Server 已核對的 `taskId`，只開待辦列表；已合併 #315／`f987b0b` 局部接回既有指定項目路由，保留孩子／身份及離頁守衛。另依使用者要求將共用設定按鈕改名「重設密碼」。單一 production callback 核對及 Web／Android 匯出通過，runtime 相容；14:30 UTC 已交付原 Web／preview OTA group `aea3c202`，API／worker 不變。照護通知真機目標核權仍待補，不重發一般測試。
 - 交付：Expo Notifications／Android FCM token 註冊、輪換／撤銷與薄投遞 adapter，沿既有 Tasks／授權／偏好／安靜時段／終態／unknown；Web與App各設備授權、同一任務。
 - gate：一則明確批准通知、點擊重新核權及完成停止；不重發 Web Push／Telegram。iOS APNs 是另一平台子範圍，不能拿 FCM token 代替 APNs。
 
 <a id="s04-w03"></a>
 #### S04-W03 固定發佈入口與 App 更新交付
 
-- 階段／狀態：P3；PR #239 已在 #238 後合併；固定入口、相容Web／OTA發布及同簽署APK升級已有結果；剩餘真機及OTA回退驗收保留，未宣稱 Android 全部完成。
+- 階段／狀態：P3；PR #239 已合併；固定入口、相容 Web／OTA 發布及同簽署 APK 升級已有結果。2026-10-25 v4 真機亦完成回退至內置版本、再恢復同 runtime 修正版：同一未送出測試檔的舊／新檔名行為均可見，登入及原資料保留。首批鎖屏未能觀察、立即恢復的結果原樣保留；最後 preview group `44dca896`。[回退證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。iOS 與 Android 其餘 gate 分開追蹤。
 - iOS 子包：接續 #276／`6871bab`，已補平台判定、官方 runtime、同平台 STORE／非 simulator build與回退，以及指定 build 的 TestFlight 提交。保留 Android預設及舊操作記錄，submit不自動邀請／建群組，結果與Apple處理／可安裝狀態分開。共同 UI 的另一端交付明列待辦，沒有一端成功當三端完成。
 - 必要本機結果：一條 release policy／CLI 檢查、合成公開設定的 iOS fingerprint、整合 iOS JS／Hermes匯出通過；首次匯出因命令錯指未 hoist 的 Expo 路徑停止，修正命令後只補同一次匯出，沒有改產品。[證據](artifacts/verification/S04_IOS_RELEASE_20261024.json)。付費團隊、App Store Connect 身份、簽署、實際上傳、OTA／回退及 iPhone驗收仍未完成；不購買會員、不宣稱已有TestFlight成品。
 - 本包範圍：離線發布判斷、官方 fingerprint 核對、固定 EAS CLI／channels、相容 OTA 回退及有界 manifest；Web 沿原 VM 產物／部署，不改產品設計或自動購買／上傳。
-- 結果：固定入口及短交接、離線判斷與兩端正式 bundle 已通過；`bf47c47` Web／API／worker 已部署。一次 preview APK `82cb911e` 已完成（versionCode 2），固定發布工具已記錄相符的 runtime／fingerprint 基線；兩個實際 APK 的官方簽署驗證、同 applicationId／證書及遞增 versionCode 已核對。使用者於2026-10-18確認覆蓋安裝後能正常開啟、原資料仍在；ADB亦核對versionCode 2。鍵盤遮擋及站內導航誤擋已局部修正並交付同版Web／相容OTA，一條真機輸入／清除／鍵盤開合有結果；動畫細節、回退及其餘功能仍待驗。[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)／[固定入口](docs/PRODUCTION_FRONTEND.md#mobile-release)。
+- 結果：固定入口及短交接、離線判斷與兩端正式 bundle 已通過；`bf47c47` Web／API／worker 已部署。一次 preview APK `82cb911e` 已完成（versionCode 2），固定發布工具已記錄相符的 runtime／fingerprint 基線；兩個實際 APK 的官方簽署驗證、同 applicationId／證書及遞增 versionCode 已核對。使用者於2026-10-18確認覆蓋安裝後能正常開啟、原資料仍在；ADB亦核對versionCode 2。鍵盤遮擋及站內導航誤擋已局部修正並交付同版Web／相容OTA，一條真機輸入／清除／鍵盤開合有結果；動畫細節及其餘功能仍待驗，回退沿上述 v4 結果。[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)／[固定入口](docs/PRODUCTION_FRONTEND.md#mobile-release)。
 - 前置（Android）：S12-W01 Android、S13-W02 Android；iOS 待 S04-W02 後補同平台結果。
 - 交付：本節 `mobile:release --plan`／preview／production／OTA rollback，fingerprint、固定身份與 channels、release manifest／短交接。Web及Android共用修改沿同入口交付，新原生 runtime 出 APK、相容 JS 出 OTA。
 - gate：一次共用修改 Web＋OTA、相容回退及正式同簽署 APK 升級；不為每個判斷分支另做雲端 build，不在未完成工作／unknown 中強制 reload。
@@ -506,11 +509,15 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s16-w03"></a>
 #### S16-W03 P3 必要整體驗收
 
-- 2026-10-25 v4 真機補核：已安裝／開啟，登入及孩子資料仍可讀；系統選圖、EXIF-6、拖動裁切、圓形預覽及取消通過。附件庫列表／切換孩子清理已核；使用者要求節省額度後停止追加，未上傳、下載或分享附件。零模型／通知／雲端寫入。[本批證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)；剩餘項維持待驗，不宣稱全部收尾。
+- **語音驗收暫緩（2026-10-26）：**修正上線後，使用者回報「仍有問題」，其後因 Agent 尚未完成，決定「算了不驗收了」。本輪停止這項排查、模型重跑及人工重試要求，待四個 Agent 完成且協作者先自查後，再按 DEV02 一併安排剩餘必要驗收。新問題的具體症狀／根因尚未核實；保留已取得的後端證據與失敗回報，不標為 Web 語音完整通過。以下 US$5 授權仍是成本上限，不構成恢復本項驗收的指令。
+- **Web 語音審核修正（2026-10-26）：**使用者回報錄音後 `delivery_review_incomplete`，本包從 master `3ee5df9` 的獨立 `codex/voice-review-evidence` 處理。原錄音現按同一 ID／版本／hash 送交獨立審核，每次重讀核權；審核與修正提供完整輸出 schema，普通招呼／真正補問不再被當成需要逐字來源的事實。順帶修正資料版本變動時的未完成收據不能解密讀回。正式 Web HTTP／共用 client＋真 Vertex 模型已完成錄音理解、獨立審核、保存及原 run 讀回（2 次生成）；定向機械檢查及限定型別通過。本包 #321／`85356d6` 已合併並更新原站 API／worker，候選組裝及公開健康核對通過，毋須 APK；[證據](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)保留初次失敗、背景資料變動中止及歷史情境干擾招呼的另項缺口，不宣稱四角色或瀏覽器播放全部通過，不動協作者 PR。
+- **模型驗收授權（2026-10-26）：**本聊天後續必要真模型測試毋須逐次詢問，所有測試及其自動轉錄／摘要合計採滾動 12 小時最多 US$5；先記已知用量及保守預留，計費未知不能當作零。沒有必要不重測，不提高正式產品配額、不自動重送未知副作用；此授權不自動涵蓋新身份／雲端資源／外發通知。
+
+- 2026-10-25 v4 真機補核：登入／孩子資料、系統選圖、EXIF-6、裁切／預覽及取消沿[原證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)。108-byte TXT 正式保存、聊天／附件庫下載至系統分享、重開讀回、原檔名及品牌 splash 已核；其後真機回退至內置版本再恢復修正版，以及手機建立待辦→Web 完成→手機原頁自動顯示完成／提醒停止均通過。[續驗](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)保留原失敗及各層限制。個人 Vertex provider 短生成另已通過；本人 Vertex 完整 Web/API 流程已由 MODEL03 補核；仍欠手機本人 key 輸入、跨端 Agent／確認接續、另一身份的真機隔離及照護通知目標核權。四 Agent 仍等協作者，不以這批結果宣稱 Android 或整個 P3 全部完成。
 
 - 階段／狀態：P3；Android／頭像／附件庫／個人模型收尾中，完整 P3 未完成。最新 #305／`1f07fab` 成熟裁切已合併及更新 Web；新 APK 交付見[本批記錄](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。不修改協作者未合併 Agent PR、不提前恢復 DEV02 聯合補驗。
 - 2026-10-25 接續：以 `2fb8865`／`codex/android-final-closeout` 收 Android、已啟用頭像、附件庫及個人模型。先對照既有證據與正式接點，再只補確實欠缺的保存／讀回／設備或模型路由核對；不逐頁或逐模型測試，不重驗四 Agent。手機未連線、需登入／系統權限等本人操作及不可取得的本人憑證如實待驗；不因此停止其他可做工作。下一版原生圖標與 splash 沿既有配置，沒有必要的新 APK 不單為此重建。原失敗及已核準延後的備份／角色驗收保留。
-- 本批結果：頭像 owner 的刷新／保存競態修正及 21 項定向檢查通過；本機正式 Web 保存／重開／移除、附件庫列出同一已提交文件及下載 hash 核對通過，合成附件已刪除。本地入口可明確啟用頭像，預設仍停寫。個人 key 一次供應商地域拒絕後停批，沒有四 Agent 或額度變更；[結果與保留失敗](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。頭像裁切體驗改進已由 #305 接成熟能力；Android 真機、成功個人 key 及 OTA 真機回退仍未完成。
+- 本批結果：頭像 owner 的刷新／保存競態修正及 21 項定向檢查通過；本機正式 Web 保存／重開／移除、附件庫列出同一已提交文件及下載 hash 核對通過，合成附件已刪除。本地入口可明確啟用頭像，預設仍停寫。個人 Gemini 地域拒絕保留，後續個人 Vertex 短生成通過，沒有四 Agent 或額度變更；[結果與保留失敗](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。頭像成熟裁切與 Android 補驗沿上述最新證據，未驗項不重複另列。
 - 最新交付：#305／`1f07fab` 已更新 Web；唯一免費 APK v4 的同簽署、package、runtime 及新品牌資源核對通過，[下載](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)。不用重跑模型，使用者已覆蓋安裝；版本、登入／孩子資料保留、原生裁切／EXIF／取消已核；餘下設備流程待驗；[交付證據](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)保留下載／工具問題及本地 emulator 關閉快照失敗，後者保留上一快照、沒有宣稱還原通過。
 - 本批順序：先核部署／手機及可復用證據；把個人設定保存與跨端同版、既有成果讀回／附件出口串成最少流程，再處理原通知終態與相容更新／回退缺口。保留本人首條聊天的驗收安排；不自動發新通知、重跑已通過音訊模型或擴配額。未具備有效憑證／設備便如實保留該項，不以合成結果代填真機或真模型通過。
 - 本批進展：設定同值保存／重開及本機 Android 匯出通過。`c58459a` 的唯一免費 build `c678d433-3410-4d78-b831-011ac4f5a70a` 已成功，APK v3 的 package、同簽署及實際 runtime `5fd1446…` 已核，不能向 APK v2 `3369957…` 強推 OTA。使用者已回覆安裝 v3；資料保留及附件庫完整設備流程未補驗。現接續 v4，沒有新增模型／通知。[交付證據](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)分列 API 已部署、Web 畫面待更新及個人 key 真生成未驗。

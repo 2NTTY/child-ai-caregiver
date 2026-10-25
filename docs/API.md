@@ -596,7 +596,7 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 <a id="personal-model-http"></a>
 ## S06-W05 本人模型設定
 
-所有路由需登入；GET／POST 均帶 `x-expected-user-id`，身份不符回 403。POST 沿用 Origin／JSON 檢查及有界正文。新版共用 client 使用 `Accept: application/vnd.yuyoufang.model-settings.v3+json`；v2 為舊 Google client 保留。設定不進通用 online 重送佇列，key 正文不持久保存到 client。部署須先更新相容 Server，再發布共用 Web／Android client。
+所有路由需登入；GET／POST 均帶 `x-expected-user-id`，身份不符回 403。POST 沿用 Origin／JSON 檢查及有界正文。新版共用 client 使用 `Accept: application/vnd.yuyoufang.model-settings.v4+json`；v2／v3 為舊 client 保留。設定不進通用 online 重送佇列，key 正文不持久保存到 client。部署須先更新相容 Server，再發布共用 Web／Android client。
 
 | 路由 | 輸入／結果 |
 |---|---|
@@ -613,7 +613,9 @@ v2／v3 保存先核原 opId／請求指紋，再核版本；原操作重播返�
 
 provider 為 gemini、vertex 或 openai-compatible；更換供應商或相容 API 地址須提供相應新聊天 key，不能轉送舊憑證。模型目錄只供參考，不作保存或生成的白名單；Web／Android 可直接填模型 ID。相容服務的 baseUrl 須公開 HTTPS，禁止內網、metadata、重新導向及任意 headers；模型 ID 不是 URL。供應商拒絕工具、媒體或存取時回報受控原因，不換模型或付款來源。已知 Google 型號保留必要參數適配，其他型號省略可選 thinking 設定。capabilities 的 false 表示未確認，不禁止選擇；metadata 不等於生成、向量、配額或帳單。目錄 POST 只檢查已保存供應商及 key，不接受 provider query；GET 不改用已保存 key。錯誤不透出可能含密鑰或私人正文的原始供應商回應。
 
-查詢向量保持 `gemini-embedding-001`／1024 維及既有索引。Gemini 沒有獨立向量 key 時沿用本人聊天 key；Vertex／相容服務可另填本人 Gemini 向量 key。缺少它不阻擋保存或普通聊天，需要向量時回 `embedding_not_configured`，不借平台額度、不把其他 embedding 空間套入舊索引。獨立 key 的新增、替換及刪除沿同一版本、交易及原操作收據。
+查詢向量保持 `gemini-embedding-001`／1024 維及既有索引。v4 可選 `embeddingProvider: gemini | vertex`，缺省沿舊 Gemini 路由。Gemini 沒有獨立向量 key 時沿用本人的 Gemini 聊天 key；其他聊天服務不自動提供向量憑證。Vertex 另須 `embeddingProject`、`embeddingLocation` 及本人 `embeddingApiKey`，由固定 Google SDK 請求本人專案的標準 Vertex 端點；不從平台設定補專案、地區或 ADC，亦不自動使用聊天 key。服務、專案或地區改變時須重新提供向量 key 及同意；明確移除向量 key 可保留路由但不能呼叫。兩種向量路由均不改每日用量及原 run 配額，也不重建索引。
+
+向量 key 缺失時仍可普通聊天，需向量時回 `embedding_not_configured`；供應商拒絕則沿既有受控錯誤分類回報，不猜測所有用戶的地域資格、不自動換付款來源。獨立 key 的新增、替換及刪除沿同一版本、交易及原操作收據。v3／更舊 client 讀取或修改 Vertex 向量設定回 `client_update_required`，保存的交易內亦核對；可表達的 Gemini 設定只投影舊欄位，不能令舊 client 靜默覆蓋新路由。
 
 舊 JSON／v2 client 保留原欄位；新設定不能由其契約表示時回 client_update_required，不偽稱仍是預設模型，並在保存交易內核對。舊保存保留能安全表達的新欄位；v2／v3 明確保存採 `limitPolicyVersion:2`，不默改歷史配額或授權。
 
@@ -800,6 +802,7 @@ online 操作的 expectedVersion、accessVersion、storageEpoch、opId／fingerp
 - **委派：**Server 將根 run／原操作、允許角色、身份／範圍、用途 schema、來源參照、版本及剩餘預算傳給子執行；模型只能提交受限任務參數，不能傳任意工具、prompt 路徑、服務身份或權限。輸出沿父子關聯回原流程，子角色不可再委派；子模型、委派／子工具及失敗均計根上限。
 - **編製：**接收授權資料參照及新增／局部修改意圖，返回符合目標領域 schema 的 draft／patch、缺項、來源／coverage 及所需確認；正文／段落／項目按穩定 ID 修改。直接普通操作沿原 API，不必呼叫編製；任務、記憶及文件的保存仍呼叫其既有服務，不由聊天文字或 actionRequests 二次執行。
 - **審核：**Server 提供草稿與原始證據，唯讀 Agent 返回 pass／revise／insufficient_evidence 及有界問題／支持依據。程式先驗 schema、來源身份／有效性與 scope，回傳後再驗審核綁定；生成者不能提交可採信的 approved／免審標記。使用者確認及審核是兩個獨立條件；必審內容須同時符合審核、當前授權及業務 gate 才正式呈現／提交。
+- **當前錄音證據：**Server 綁定原訊息的 voice ID／版本／hash／格式／長度，納入 draftHash；審核與有限修正取得重新核權的原錄音，不只讀生成者的描述，也不等待轉錄。忠實私人回述可沒有公共引用；照護建議仍須官方證據。普通禮貌回應及真正補問本身不是來源事實，問句中的不實前提亦不能略過。每次審核明示輸出 schema，所有結果均須返回同一 draftHash、decision、issues；語音、審核及修正共用原 run 預算。原音訊不寫入 ADK 事件，刪除／撤權或資料版本失效時不得正式交付；中止收據必須仍可按原 run 讀回。
 - **提交與恢復：**帶原 opId／fingerprint、目標 ID／expectedVersion、草稿 hash、來源與授權版本及 Server 審核參照；交易重核後回真資源版本／收據。衝突返回現行版本及重新核對需要；回應丟失先查原收據，不換 opId。逾時、取消、審核失敗或待確認分開回報，草稿不冒稱正式保存；已成功操作的真收據可獨立回報。
 - **待確認狀態回覆：**互動回合只回報操作、沒有引用時，Server 可查回該本人／孩子／run 的唯一有效確認問題，用固定「已準備待確認、尚未執行」取代模型措辭，再由原 API 附上權威問題。這句確定性狀態毋須再呼叫審核模型；沒有有效問題、來源建議或模型自稱已準備，均不能藉此免審。編製內容的原審核、接受時的版本與授權檢查維持。
 - **獨立知識維護：**受信管理／排程入口傳已核准來源 ID／scope 版本及持久工作關聯，沒有家長聊天或私人 key。站內查閱／取得工具逐次校驗 URL、redirect、路徑、附件及批次上限，返回原檔／章節頁碼、抽取方式、完整度和續讀位置；未核內容不經一般聊天搜尋返回。發布工具重核內容／來源版本、語義審核及規則影響資格後原子更新；疑義保持候選，不讓 Agent 自行批准擴大來源或醫療規則。

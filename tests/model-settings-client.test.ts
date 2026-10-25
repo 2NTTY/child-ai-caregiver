@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createModelSettingsApi, ModelSettingsApiError, readModelSettingsRecovery } from "../src/client/model-settings-api.ts";
-import { MODEL_SETTINGS_V3_MEDIA_TYPE, PERSONAL_MODEL, type ModelSettingsCommand } from "../src/shared/model-settings.ts";
+import { MODEL_SETTINGS_V4_MEDIA_TYPE, PERSONAL_MODEL, type ModelSettingsCommand } from "../src/shared/model-settings.ts";
 
 const settings = { version: 2, mode: "personal", provider: "gemini", model: PERSONAL_MODEL,
   keyConfigured: true, backgroundEnabled: false, dailyLimit: 100, maxModelCalls: 8, maxQueryEmbeddings: 4, updatedAt: "2026-09-30T00:00:00.000Z" };
@@ -23,7 +23,7 @@ test("model settings use direct account-bound requests and allowlist secret-free
     assert.equal(url.includes("synthetic-private-key"), false);
     assert.equal(init?.credentials, "include");
     assert.equal(init?.cache, "no-store");
-    assert.equal(new Headers(init?.headers).get("Accept"), MODEL_SETTINGS_V3_MEDIA_TYPE);
+    assert.equal(new Headers(init?.headers).get("Accept"), MODEL_SETTINGS_V4_MEDIA_TYPE);
     assert.equal(new Headers(init?.headers).get("x-expected-user-id"), "alice");
     if (init?.method === "GET") { assert.equal(init.body, undefined); return Response.json(view); }
     const body = JSON.parse(String(init?.body));
@@ -46,14 +46,14 @@ test("model settings use direct account-bound requests and allowlist secret-free
   }
 });
 
-test("v3 compatible settings send both keys once and serialize independent key removal", async () => {
+test("v4 compatible settings send both keys once and serialize independent key removal", async () => {
   const opId = "84069425-f130-4cf5-9ee9-0d290b1a9bb2";
   const removeOpId = "fca94bb1-a8e7-4b5c-9402-b7fe1ce7630a";
   let saves = 0;
   const api = createModelSettingsApi("/api", async (input, init) => {
     assert.equal(String(input), "/api/ai/settings");
     const headers = new Headers(init?.headers);
-    assert.equal(headers.get("Accept"), MODEL_SETTINGS_V3_MEDIA_TYPE);
+    assert.equal(headers.get("Accept"), MODEL_SETTINGS_V4_MEDIA_TYPE);
     assert.equal(headers.get("x-expected-user-id"), "alice");
     assert.equal(JSON.stringify([...headers]).includes("synthetic-"), false);
     assert.equal(init?.credentials, "include");
@@ -83,7 +83,7 @@ test("compatible local catalogs and unsupported metadata do not prevent direct m
     truncated: false, models: [], embedding: { model: "gemini-embedding-001", dimensions: 1024, status: "not_checked" } };
   const api = createModelSettingsApi("/api", async (input, init) => {
     const url = String(input); paths.push(url);
-    assert.equal(new Headers(init?.headers).get("Accept"), MODEL_SETTINGS_V3_MEDIA_TYPE);
+    assert.equal(new Headers(init?.headers).get("Accept"), MODEL_SETTINGS_V4_MEDIA_TYPE);
     if (url.endsWith("/models?provider=openai-compatible")) {
       assert.equal(init?.method, "GET");
       assert.equal(init?.body, undefined);
@@ -136,17 +136,20 @@ test("model settings errors expose only known codes and aborted late responses c
   await assert.rejects(saving, error => error instanceof ModelSettingsApiError && error.unknownResult);
 });
 
-test("v3 settings recovery keeps the original operation and never resends either key", async () => {
+test("v4 settings recovery keeps the original operation and never resends either key", async () => {
+  const vertexSettings = { ...compatibleSettings, embeddingProvider: "vertex", embeddingProject: "synthetic-project", embeddingLocation: "asia-east1" };
+  const vertexCommand = { ...compatibleCommand(), embeddingProvider: "vertex", embeddingProject: "synthetic-project", embeddingLocation: "asia-east1" } as ModelSettingsCommand;
   let original: { opId: string; expectedVersion: number } | null = null;
   let phase = "pending", posts = 0;
   const api = createModelSettingsApi("/api", async (input, init) => {
     assert.equal(new Headers(init?.headers).get("x-expected-user-id"), "alice");
-    assert.equal(new Headers(init?.headers).get("Accept"), MODEL_SETTINGS_V3_MEDIA_TYPE);
+    assert.equal(new Headers(init?.headers).get("Accept"), MODEL_SETTINGS_V4_MEDIA_TYPE);
     if (init?.method === "POST") {
       posts++;
       const body = JSON.parse(String(init.body));
       assert.equal(body.apiKey, compatibleCommand().apiKey);
       assert.equal(body.embeddingApiKey, compatibleCommand().embeddingApiKey);
+      assert.deepEqual([body.embeddingProvider, body.embeddingProject, body.embeddingLocation], ["vertex", "synthetic-project", "asia-east1"]);
       original = { opId: body.opId, expectedVersion: body.expectedVersion };
       throw new Error("synthetic lost response");
     }
@@ -154,11 +157,11 @@ test("v3 settings recovery keeps the original operation and never resends either
     assert.equal(String(input).includes("synthetic-"), false);
     if (String(input).includes("/operations/")) {
       assert.equal(String(input).endsWith(original!.opId), true);
-      return Response.json(phase === "confirmed" ? { opId: original!.opId, settings: compatibleSettings } : null);
+      return Response.json(phase === "confirmed" ? { opId: original!.opId, settings: vertexSettings } : null);
     }
-    return Response.json({ ...view, settings: { ...compatibleSettings, version: phase === "pending" ? 1 : 2 } });
+    return Response.json({ ...view, settings: { ...vertexSettings, version: phase === "pending" ? 1 : 2 } });
   });
-  await assert.rejects(api.save(compatibleCommand(), signal(), "alice"), error => error instanceof ModelSettingsApiError
+  await assert.rejects(api.save(vertexCommand, signal(), "alice"), error => error instanceof ModelSettingsApiError
     && error.operationId === original?.opId && error.unknownResult);
   assert.ok(original);
   assert.equal((await readModelSettingsRecovery(api, original, signal(), "alice")).outcome, "unknown");
@@ -166,7 +169,7 @@ test("v3 settings recovery keeps the original operation and never resends either
   const recovered = await readModelSettingsRecovery(api, original, signal(), "alice");
   assert.equal(recovered.outcome, "confirmed");
   assert.equal(recovered.snapshot.settings.version, 2);
-  assert.deepEqual(recovered.snapshot.settings, compatibleSettings);
+  assert.deepEqual(recovered.snapshot.settings, vertexSettings);
   assert.equal(JSON.stringify(recovered).includes(compatibleCommand().apiKey!), false);
   assert.equal(JSON.stringify(recovered).includes(compatibleCommand().embeddingApiKey!), false);
   phase = "superseded";

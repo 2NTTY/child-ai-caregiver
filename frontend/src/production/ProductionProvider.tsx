@@ -62,7 +62,7 @@ function useProductionValue(owner: ProductionOwner) {
     leave(() => { void (async () => {
       if (!identity || owner.getSnapshot().identityKey !== identity) return;
       if (target.childId) await owner.controller.selectChild(target.childId);
-      if (owner.getSnapshot().identityKey === identity) router.push(target.kind === "test" ? "/settings" : "/tasks");
+      if (owner.getSnapshot().identityKey === identity) router.push(target.kind === "test" ? "/settings" : { pathname: "/tasks", params: { taskId: target.taskId! } });
     })().catch(() => { if (owner.getSnapshot().identityKey === identity) setLocalNotice("通知事項未能開啟，請在待辦重新讀取。"); }); }, target.childId ? "child" : undefined);
   }, setLocalNotice);
   const visibleDraft = draft.scope === snapshot.scopeKey ? draft : emptyAssistantDraft;

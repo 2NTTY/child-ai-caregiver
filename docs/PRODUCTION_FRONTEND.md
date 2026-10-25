@@ -94,6 +94,7 @@ docker compose --project-name yuban-p1 \
 - 互動沿現有請求、進度、取消及結果接口；不為 Hosting 60 秒限制強制改協議。需要排程的工作先持久受理；私有回應 no-store，身份切換清除快取及遲到回應。
 - 依 [ADR-025](DECISIONS.md#adr-025)，F02～F07 先完成原 VM 資料接點及全部正式 SQL 退出，保留既有 API／頁面相容性；F08 再驗收受邀用戶並更新原站。不逐資料包切站或重跑完整用戶流程。未遷移功能明示，不用假成功或空資料掩蓋；不維持兩套產品網站。
 - 新版訊息歷史先核四個 `messageSentAt` 複合索引 READY，再於 API／worker 一致啟用 `FIREBASE_MESSAGE_HISTORY_ENABLED=true`；未啟用時 API 明確回 503，不假裝沒有歷史。只呈現已保存的接受證據，舊紀錄不補造正文或重發通知。第一次歷史讀取就會保存 `workspace.childAccessVersion`，其後回退亦須支援此欄位及新通知／模型格式；關回開關不會撤回這些資料變更。
+- 個人向量 v4 設定須先部署相容 API／worker，再發布共用表單。本人 Vertex key／專案／地區保存後，回退仍須保留可讀取這些欄位的 Server；可獨立回退相容 Web／OTA，但舊客戶端遇新路由回 `client_update_required`，不得覆蓋設定。不得回退至只支援 v3 的後端，或以平台 ADC 補上本人向量請求；沿原 1024 維索引，無須重算語料。
 - 每次部署核對 VM 實況／期限、相容配置、資料與備份及 in-flight 工作，允許短暫維護；只有一套主寫與排程。已有新寫入只能回退相容 Firebase 應用版本或隔離還原，不能切回 SQL 舊快照；新刪除／撤銷／收據不可倒退。已寫入語音訊息、轉錄或原生通知綁定後，回退的 API／worker 仍須識別這些 schema 及清理義務；舊 Web／APK 可保留相容使用，不代表可以盲退不識別新資料的 Server。
 
 F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外 Hosting 站點與 Cloud Run API／worker 已按用途核對後清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**；不以名稱相似整批刪除。實際版本與尚未完成項見根 PLAN／STATUS，A09／F02 舊失敗保留，不以基建切片代替產品成果。
@@ -264,6 +265,7 @@ Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走原生配置
 
 - production 必須同時指定 `--channel production --confirm-production`，不沿 preview 默認發布。兩個環境都使用固定 EAS 專案／application ID／channel；EAS 審批、額度及私有封包上傳授權不由這個旗標代替，不購買方案、不每次 commit 建置。
 - 相容回退：`npm run mobile:release -- --execute --action rollback --channel preview --build-id <已安裝build-ID> --rollback-group <原update-group-ID>`。先查同專案 branch 的最近最多 50 組，核對 Android／同 runtime，再沿原生 `update:republish`。找不到便停，不搜尋全部歷史或強制跨 runtime。回退只改客戶端，不還原業務資料。
+- 若是該 runtime 的首次 OTA、沒有較早相容 group，先核對已安裝 binary 的內置版本仍相容，再使用固定 EAS CLI 的官方 `update:roll-back-to-embedded`，指定原 channel／platform／runtime；不拿其他 runtime 的 group 代替。演練前保存目前修正版 group，設定有界恢復，完成觀察或受阻即以 `update:republish` 恢復該 group，復用已上傳資產。重新啟動前仍須沒有未完成提交；回退指令成功不等於裝置已套用。[官方回退說明](https://docs.expo.dev/eas-update/rollbacks/)
 - 每次結果在 `.cache/mobile-releases/<Git-SHA-platform-channel-action>/release.json`：保留 SHA、platform、build／update ID、runtime、App版本、Web產物與待部署狀態。舊 Android 記錄仍可讀且阻止同一操作重送；iOS submit 按同一 build ID 保存獨立記錄，不因 Git SHA 改變重複提交。日誌只在同一 ignored 目錄，先看末段；manifest 不保存 key、環境正文、signed URL 或完整雲端日誌。
 - 雲端呼叫前保存 submitted。回應丟失／失敗時保留 unknown，**不自動重新發布**；先在原 EAS 專案按 ID／SHA 查原結果。同一提交／channel／action 不自動建立第二次操作。
 - OTA 沿現有 ON_LOAD／下次安全啟動套用；工具不呼叫 App reload，不在聊天、確認或 unknown 期間強制重載。

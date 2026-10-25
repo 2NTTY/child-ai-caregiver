@@ -303,7 +303,7 @@
     {
       "id": "module.chat-delivery-review",
       "path": "modules/chat-delivery-review.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.identity-and-trust",
         "core.output",

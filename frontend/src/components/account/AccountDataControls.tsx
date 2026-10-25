@@ -13,7 +13,7 @@ export function AccountSecurityControls() {
   const { account, accountActions, user, online } = useProduction();
   return <View style={styles.group}>
     <AppButton label="登出其他裝置" variant="secondary" disabled={!online || !!account.busy || account.deletion.phase !== "idle"} onPress={() => { void accountActions.revokeOtherSessions(); }} />
-    <AppButton label="要求重設密碼指引" variant="quiet" disabled={!online || !!account.busy || !account.status?.mailConfigured} onPress={() => { if (user?.email) void accountActions.requestEmail("reset", user.email); }} />
+    <AppButton label="重設密碼" variant="quiet" disabled={!online || !!account.busy || !account.status?.mailConfigured} onPress={() => { if (user?.email) void accountActions.requestEmail("reset", user.email); }} />
     {account.notice ? <Text accessibilityLiveRegion="polite" style={styles.body}>{account.notice}</Text> : null}
   </View>;
 }

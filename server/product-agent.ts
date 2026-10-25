@@ -64,7 +64,7 @@ function withDeliveryReview(
 export function createProductAgent(options: {
   photos?: Pick<import('./firestore-photos.ts').FirestorePhotoStore, 'get' | 'list' | 'agentImage' | 'authorizeImage'>;
   readChatFile?: import("./chat-file-agent.ts").ChatFileAgentReader;
-  voices?: Pick<import("./firestore-voice.ts").FirestoreVoiceStore, "agentAudio">;
+  voices?: Pick<import("./firestore-voice.ts").FirestoreVoiceStore, "agentAudio" | "authorizeAudio">;
   workContinuationAuthority?: FirestoreWorkContinuationStore;
   documents?: import("./family-document-store.ts").FamilyDocumentStore;
   concerns?: Pick<import("./concern-store.ts").ConcernStore, "list" | "get">;
@@ -184,7 +184,8 @@ export function createProductAgent(options: {
       const cancellation = new AbortController(), key = replyKey(userId, childId, messageId);
       activeReplies.set(key, cancellation);
       try {
-      const authorize = async () => await isCurrentUser() && await options.store.authorize(claim.scope,claim.runId);
+      const authorize = async () => await isCurrentUser() && await options.store.authorize(claim.scope,claim.runId)
+        && (!page.messages[index].voice || Boolean(options.voices && await options.voices.authorizeAudio(userId, childId, messageId, page.messages[index].voice!)));
       let tools: ReturnType<typeof createProductAgentTools> | undefined;
       const rendered: { value: AgentPresentation | null } = { value: null };
       const review: { value: ChatDeliveryReviewBinding | null; text: string | null } = { value: null, text: null };
@@ -203,7 +204,7 @@ export function createProductAgent(options: {
           if (!await authorize()) throw new AgentStopped("unauthorized");
           return current;
         } } : {}),
-        ...(page.messages[index].voice ? { loadAudio: async () => {
+        ...(page.messages[index].voice ? { voice: page.messages[index].voice, loadAudio: async () => {
           if (!options.voices) throw new AgentStopped('unavailable');
           return options.voices.agentAudio(userId, childId, messageId, page.messages[index].voice!);
         } } : {}),
