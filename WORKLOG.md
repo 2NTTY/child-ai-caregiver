@@ -3884,3 +3884,11 @@
 - 原音訊補接獨立審核，保留原訊息／版本／hash、重讀核權及共同預算；實測亦發現普通補問被誤判及拒絕結果缺 draftHash，遂補真正輸出 schema 與精確提示。沒有略過審核或放寬官方照護引用。
 - 定向正式組裝、撤權與原結果、並發變更後可讀收據、限定型別及實際 prompt assembler 通過；完整 Web HTTP／共用 client 的真 Vertex 流程以 2 次生成完成錄音理解、審核、保存與原 run 讀回。曾失敗的各批及較闊檢查保留於[證據](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)，不重跑全量或手機。
 - 本機臨時限額及開關已恢復原值，帳目／失敗現場保留。已知 tokens 保守估約 US$0.16，整批預留 US$1 包含遲到背景工作，並非實際帳單。舊孩子的招呼受歷史干擾、背景資料變動可中止回覆仍列缺口；不以本次通過代結四 Agent／P3。尚待 review／合併及原站 Server 交付，前端／APK 不變。
+
+
+<a id="log-20261026-web-voice-delivery"></a>
+## LOG-20261026-WEB-VOICE-DELIVERY
+
+- #321／`85356d6` 已由原包單作者合併，協作者 PR head 未變。9 個 Server／prompt 檔、56,880 bytes 壓縮包經 IAP 傳至既有原 VM 的限定 0700 目錄，hash 逐項通過；未傳密鑰、家庭資料或本地測試庫。
+- 候選原正式 API／worker 組裝及 Prompt Pack 0.1.55／voice authorizeAudio 通過；無活動 run 後短暫維護切換 API／worker 至 `sha256:d5be3558f45771fdcab001fcebda4df5a1aead88d66c2363097f1b3f477a210d`，健康／公開入口通過，Web 映像保持原版。保留前版映像及 0600 配置，沒有遷移、配額／期限改動、模型或通知；Android 毋須更新。
+- [同包證據](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)保存真模型與交付層次。舊失敗訊息不自動重跑；未核瀏覽器播放／跨端語音、歷史情境干擾與背景變動中止仍保留，不代結四 Agent／P3。

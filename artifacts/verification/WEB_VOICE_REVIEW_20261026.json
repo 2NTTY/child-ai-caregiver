@@ -198,6 +198,22 @@
     "Old failed runs are retained and never automatically rerun."
   ],
   "deployment": {
-    "status": "not_deployed"
+    "source": "85356d6d67fc25e8e53db034e7499943310e04c9",
+    "state": "deployed",
+    "at": "2026-10-25T16:46:08.986964+00:00",
+    "apiImage": "sha256:d5be3558f45771fdcab001fcebda4df5a1aead88d66c2363097f1b3f477a210d",
+    "webImage": "sha256:e813692c9b396ab6d9fe0fa78fb0f6580ca321cf41013224de3922005161462b",
+    "writesEnabled": true,
+    "sourceReleaseReady": true,
+    "rollbackApi": "sha256:9d490d090a096971ef6e07a2fd0cb2ca1188edf441e6453f162e83ee6dd88306",
+    "configurationBackup": "/etc/yuban-p1/firestore/compose.env.before-voice-review-85356d6",
+    "models": 0,
+    "notifications": 0,
+    "rollbackConstraint": "After saving v4 Vertex settings keep a v4-compatible API and worker; older images cannot read those records.",
+    "pr": 321,
+    "codeBytes": 56880,
+    "files": 9,
+    "webChanged": false,
+    "apkChanged": false
   }
 }
