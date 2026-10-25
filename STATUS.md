@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **當前收 Android／頭像／附件庫／個人模型：**[S16 收尾](PLAN.md#s16-w03)的頭像保存競態修正已合併 #302、更新原 Web，本機保存／重開／移除及附件庫下載通過，原失敗保留。既有原生裁切及 Web 成熟元件已接通，取代自製裁切手勢／方向按鈕，必要合成、Web 保存及局部型別／匯出通過；待合併及發布，Android 因 runtime 不同須新 APK，與本次改動一起交付。手機操作待驗，個人 key 成功流程因供應商地域拒絕仍待驗。四 Agent／協作者 PR 不動。
+- **當前收 Android／頭像／附件庫／個人模型：**[S16 收尾](PLAN.md#s16-w03)的頭像成熟裁切已合併 #305、更新原 Web；保存／重開／移除及附件庫下載沿已有證據。包含原生裁切、圖標及 splash 修正的 APK v4 已一次建置並核對同簽署；需要覆蓋安裝，沒有向 v3 強推 OTA。手機操作待驗，個人 key 成功流程因供應商拒絕仍待可用憑證／環境。四 Agent／協作者 PR 不動。
 
 - **四項指定修補已獲准正常合併，真機驗收仍待補。**PR #286 已保留 #288／#289 照片聊天接線及最新交付記錄；受影響照片恢復／client 契約補驗通過，沿獨立覆核及遠端保護規則完成來源合併，不部署、不把空 CI 或合併當真機通過。精確版本與保留失敗見 [FIX-FOUR01](PLAN.md#four-fix01)。
 
@@ -26,9 +26,9 @@
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-25 09:50 UTC 原站：**Web 已更新 `avatar-save-15fdb50`（映像 `d6f2a8b`），公開 index hash／API health 通過；API／worker 維持 `avatar-enable-0ebfbfa`（`c3b149c`），頭像 source gate／寫入沿已確認 true，APNs 未啟用。[本次 Web 交付](artifacts/verification/AVATAR_SAVE_DELIVERY_20261025.json)／[頭像啟用](artifacts/verification/AVATAR_ENABLE_20261025.json)。本次部署零模型／通知／資料遷移／配額修改，保留原 Web 回退；Android 未發布。
+**2026-10-25 10:23 UTC 原站：**Web 已更新 `avatar-crop-1f07fab`（映像 `0da4e1f`），公開 index hash／API health 通過；API／worker 維持 `avatar-enable-0ebfbfa`（`c3b149c`），頭像已啟用，APNs 未啟用。[本批交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。零模型／通知／資料遷移／配額修改，保留前版 Web 回退。
 
-**Android，2026-10-24 14:35 UTC：**相容 OTA group `327ad4ca` 已一次發布至preview，runtime沿APK v3，毋須重裝。手機連線但鎖屏，沒有強制重啟或改草稿，實際套用與提示文字時序未驗。下次新APK的品牌icon／splash配置已備妥並本機核對；尚未建置，v3不會靠OTA改變原生圖標。
+**Android，2026-10-25：**APK v4 已完成（build `9f43f925`，source `1f07fab`）；同簽署、package、runtime `0c5c868…` 與新圖標／splash 資源已核，[覆蓋安裝](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)。本次沒有 OTA；v3 的 `5fd1446…` runtime 不同，需新 APK。實際安裝、裁切及啟動畫面效果待驗，詳見[本批交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。
 
 **回退、備份與容量：**本次保留相容 API／worker `4159605` 及 0600 的 `compose.env.before-avatar-enable-0ebfbfa`。關寫入仍保留頭像 reader／cleanup；已開放新 schema／journal，不能回退至 `e23de93` 等舊讀取器。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)。最近原生備份觀察仍為 2026-10-23 READY，未還原；前批部署前約 10.5 GiB 可用，未擴容／清正式資料。
 
