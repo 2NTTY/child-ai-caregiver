@@ -19,7 +19,7 @@
 
 - **本地開發入口可用：**`npm run agent:local` 使用目前分支的正式 Web／API／四角色接點及隔離持久資料，不需部署 GCP。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；新增相容模型與獨立向量 key 路由只有合成證據。方法見[本地入口](docs/AGENT_LOCAL.md)。
 - **角色聯合補驗依使用者指示延後：**等待四個Agent真正完成且協作者先自行檢查，再安排最後引用／審核及接續流程。本聊天不提前重跑或接管修改；`delivery_review_incomplete`失敗現場、單頁PDF已通過證據及長來源／多模態缺口保留。本地入口仍可供協作者使用，恢復條件及證據只見 [DEV02](PLAN.md#dev-agent02)。
-- **個人模型：**用戶可自行填 key／模型，沒有地域或 metadata 預驗門檻；Vertex／相容聊天需另填 Gemini 向量 key，不借平台額度。2026-10-25 原香港 VM 的 Vertex ADC 文字及 1024 維向量已真測成功；獲准的臨時個人 Vertex key 一次生成返回 403，已撤銷 key 及新增權限，具體原因未定位。原 Gemini key 地區拒絕保留；個人 key 成功流程仍未通過，不把 ADC 成功或單一 key 失敗推廣至所有用戶。[分層結果](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。
+- **個人模型：**用戶可自行填 key／模型，沒有地域或 metadata 預驗門檻；Vertex／相容聊天需另填 Gemini 向量 key，不借平台額度。2026-10-25 原香港 VM 的 Vertex ADC 文字／1024 維向量及正式個人 Vertex key 短生成已通過；修訂批次等待 IAM 生效後只生成一次，臨時 key／新增權限已清理。原 403 及 Gemini 地區拒絕保留，不推廣為用戶限制。仍欠可用個人向量憑證下的設定→Agent／知識檢索完整流程。[分層結果](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。
 - **Android 未全數驗收：**APK v2 覆蓋安裝、原登入／資料保留及一則指定 FCM 已有證據；跨端、媒體／附件、照護通知完成停止、OTA 回退及各包餘下真機項按 [S04～S17](PLAN.md#s04-w01) 追蹤。使用者已允許先合併、未驗項後續追蹤，不以合併或 OTA 發布當真機通過。
 - **其他邊界：**正式資料使用 Firestore；家庭多人留 P4。OPT／LAY 成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)未完成；Android 尚欠驗收不阻塞 iOS 開工。只補必要驗證，不全量、Computer Use 或重做設計。
 

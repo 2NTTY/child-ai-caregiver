@@ -3803,3 +3803,10 @@
 - 使用者要求驗可用的 Vertex 路線；原香港 VM 使用既有附加身份、正式 Vertex provider，完成一次 `gemini-3.1-flash-lite` 短生成（5 input＋1 output tokens）及一次正式 1024 維向量（2 input tokens）。這是 ADC 證據，不是個人 key 成功。
 - 依使用者明確批准，為既有合成測試身份建立只限 Vertex API 的臨時 key，臨時沿既有兩權限角色；經正式 personal-provider factory 的單次短生成返回 `model_http_403` 後停止。相同流程已撤銷 key、移除本次新增綁定；未改原權限、產品設定／配額／部署，沒有通知或私人資料。最多三筆的唯讀錯誤 metadata 查詢未找到 Vertex 紀錄，具體原因尚未確定，不據此推論所有 Vertex key 不可用。
 - [分層證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)保存結果與限制；PLAN／STATUS 區分平台 ADC 已通、個人 key 未通，保留先前 Gemini 拒絕及其他未驗項。個人 Vertex／相容模式仍使用另填的本人 Gemini 向量 key，不因本輪成功而宣稱已擴充個人向量路由。只核文件 diff／JSON，不重跑產品測試或協作者四 Agent。
+
+<a id="log-20261025-personal-vertex-stabilized"></a>
+## LOG-20261025-PERSONAL-VERTEX-STABILIZED
+
+- 使用者另行明確批准修訂批次：同一測試身份／兩項最小權限，建立第二個臨時 Vertex key，等待 180 秒後僅生成一次。原香港 VM 的正式 `createPersonalModelProviders` 返回成功，5 input＋1 output tokens，沒有平台憑證回退、embedding、重試或產品設定／配額修改。
+- 同批 finally 已刪臨時 key、移除本次新增角色綁定，未動原權限。首批 403 與原 Gemini 地區拒絕保留；成功與 IAM 生效延遲相符，但不宣稱已證實首批錯誤根因。Google IAM 官方文件指出政策傳播通常兩分鐘、也可能七分鐘或更久；本次三分鐘不是普遍保證。
+- [實測證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)新增獨立結果，PLAN／STATUS 只解除個人 Vertex provider 成功待驗；設定→Agent／個人向量檢索的完整流程仍未通過。僅核文件 diff／JSON，不重跑其他產品測試、協作者四 Agent 或通知。

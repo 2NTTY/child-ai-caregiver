@@ -62,6 +62,30 @@
       "Earlier Gemini region failures and pending Android/Expo evidence remain unchanged."
     ]
   },
+  "personalVertexStabilized": {
+    "startedAt": "2026-10-25T13:26:51.660Z",
+    "reviewedMaster": "cffa3376de8906c7c020850b01d2d3c02101c12b",
+    "authorization": "Explicit approval for a new temporary key, the same two permissions, a 180-second IAM wait and one generation without retry",
+    "environment": "Existing Hong Kong VM; deployed createPersonalModelProviders with provider vertex",
+    "model": "gemini-3.1-flash-lite",
+    "state": "passed",
+    "generationAttempts": 1,
+    "embeddingAttempts": 0,
+    "inputTokens": 5,
+    "outputTokens": 1,
+    "iamWaitSeconds": 180,
+    "noPlatformFallback": true,
+    "settingsOrQuotaChanged": false,
+    "temporaryKeyDeleted": true,
+    "newRoleBindingRemoved": true,
+    "temporaryPermissions": ["aiplatform.endpoints.predict", "serviceusage.services.use"],
+    "retainedFailure": "The earlier 403 remains recorded above. Success after waiting does not prove its exact cause.",
+    "limits": [
+      "This proves the deployed personal Vertex generation provider, not a saved personal-setting-to-Agent knowledge flow.",
+      "No personal embedding or OpenAI-compatible live request was made; personal Vertex currently still requires a separate Gemini embedding key.",
+      "No notification, deployment, collaborator Agent change or family data access was performed."
+    ]
+  },
   "limitations": [
     "Real Android device was not attached; native crop/EXIF, cross-device media, notification completion and OTA rollback remain pending.",
     "Personal-key success and embedding remain unverified after the provider rejected this local request. This does not establish a geographic restriction for other users or Vertex.",
