@@ -113,22 +113,13 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 手機輸入框說明文字延遲：使用者回報彈窗初開先空白、等一會或 focus 後才顯示。共用 Paper 原生 label 有量度前 opacity gate，根因未經真機確認；原生單行 outlined 空欄位改用原生 placeholder，focus／有值時恢復浮動標籤，不改 Web、flat 或多行。三項共用元件檢查通過；實機結果另列，不承諾零延遲。
 
 <a id="avatar-01"></a>
-### AVATAR-01 本人／孩子頭像（並行開發候選）
+### AVATAR-01 本人／孩子頭像
 
-- **範圍：**本人及有既有寫入權限的孩子可選圖、裁切、更換、明確移除；獨立私人資源，不進照片分析、模型或分享。沿已凍結[API](docs/API.md#avatar-api)及[data lifecycle](docs/DATA_MODEL.md#avatars)。
-- **狀態：**以 master `339c707` 整合原後端 freeze04 與新版前端差異，保留已合併 #253 內容；本包未部署，`AVATAR_LIFECYCLE_RELEASE_READY=false`，環境變數不能繞過，不當成完整可用。
-- **本輪證據：**真 client／owner 定向及 server codec 窄 roots 型別有證據；restore05 新增 authenticated staging marker／token fence、partial rollback與完整頁 promote。合成真 operator 跨頁中斷→重啟已核原 inventory、provenance、責任保留、不重 copy、current 後才 retire；不是原生 Firestore 演練。
-- **恢復修正（2026-10-24）：**同一 invocation 遺失 claim 回應後，可有界查回原 token／payload／copying phase；只有確認贏得且尚未呼叫 Storage 的原工作可繼續首次寫入。重啟或 unknown 物件仍只查原地址。修正匯出組裝與 nullable 型別；兩項恢復及一項匯出定向檢查通過。全部 `server/**`／`src/shared/**` 加頭像 helper 的 strict 型別通過，clean lock 在隔離 Windows 目錄安裝成功；[精確證據](artifacts/verification/AVATAR_LIFECYCLE_FIX_20261024.json)。
-- **部署平台已核對（2026-10-24）：**隔離 Linux x64／Node 24.19 容器沿原 lock clean install，實裝 sharp 0.35.5／libvips 8.18.7。一次正式 codec 流程核對 EXIF 方向、metadata 去除、透明背景及取消後 child-close／slot 釋放；保存實裝 license／來源資訊 hash，[精確證據](artifacts/verification/AVATAR_PLATFORM_20261024.json)。只在本機容器執行，不代表已部署或手機已驗。
-- **中斷副本處置：**完整認證 copy set 增加操作員 inspect／abandon 入口；先交易 fence activation，再以原地址 generation CAS 保留無圖片 marker，清理原 target generation。未知回應可沿原 identity 重入；不重做 copy、不修改來源，也不自動開放 target。連貫合成檢查及受影響 strict 型別通過，[證據](artifacts/verification/AVATAR_RESTORE_ABORT_20261024.json)保留原 fixture／型別失敗；尚非原生雲端演練。
-- **原生副本核對（2026-10-24）：**既有隔離庫／私人 bucket、全新合成 namespace，一次真 Firestore／Storage 流程證明競爭只 copy 一次、重建 SDK 後放棄、重入不新增 marker、遲到寫入被擋及原 generation 不可讀；[精確證據](artifacts/verification/AVATAR_NATIVE_20261024.json)。兩個 SDK client 同一程序，不宣稱兩個 API 副本；來源證據為合成值，不能替代完整備份／journal 還原。零模型／通知／新資源／部署。
-- **原生產品資料核對（2026-10-25）：**既有隔離庫補兩個 composite 與 cleanup 欄位索引後，一次正式 store／online／maintenance 流程通過共用准入、持久 lease、原收據、更換、舊圖清理及重建 SDK 讀回；44 次交易、兩張合成圖，已清理圖片及撤銷測試存取。[精確證據](artifacts/verification/AVATAR_ADMISSION_NATIVE_20261025.json)。外部 Tasks 只用本地喚醒替身，並非兩個部署副本／完整恢復／HTTP 驗收；沒有模型、通知或正式資料修改。
-- **最新刪除日誌接續（2026-10-25）：**沿既有正式 operator 補一條備份後刪除→日誌重放→空內容匯出→原 generation 清理流程，一次合成驗證及單一入口 strict 型別通過；獨立 review 無 finding。[證據](artifacts/verification/AVATAR_JOURNAL_RESTORE_20261025.json)。其後的原生證據見下一項；既有共用恢復庫／journal 及舊證據均沒有清空。
-- **原生配對還原（2026-10-25）：**獲准的兩個臨時香港資料庫及專用 bucket，以一個真合成 Auth 帳號、一個孩子及兩張小圖完成正式 export／import、備份後刪除、最新 journal 重放、匯出遮蔽、epoch 更新及原 generation 清理；82 次交易，零模型／通知／正式資料。兩次 PITR 前置拒絕已停止並核對沒有操作，最後只啟動一個 export／import；[證據](artifacts/verification/AVATAR_PAIRED_NATIVE_RESTORE_20261025.json)保留失敗、review 修正及限制。測試帳號、兩庫、專用 bucket 及圖片已清理並讀回確認；實際帳單未知，批准增量上限 US$1。這是配對快照還原，不替代仍延後的原生每日備份驗收；本機測試 key 不宣稱已驗 Secret Manager 災備。
-- **尚缺／下一步：**同版正式 API／worker 組裝及 cleanup 派送、Web／Android 裁切／EXIF 一致和交付仍待核，source gate 保持 false。來源／Auth／journal／provenance 改變仍不得繼續原還原；已認證集合可明確放棄，無 header／legacy partial plan 保留現場，不猜刪除範圍。完整 `tsconfig.server`（含所有測試及其前端依賴）仍有未修錯誤；舊 OOM／signal9、56 PASS／10 exact-baseline FAIL 保留。
-- **正式組裝核對（2026-10-25）：**HTTP／online 共用頭像服務，worker 連到同一 cleanup，關 gate 後匯出／清理保留；一次 fixture 修正後定向檢查及 strict 型別通過，[證據](artifacts/verification/AVATAR_RUNTIME_20261025.json)。這是 controlled ports 接線證據，未當成雲端派送。新增同 VM Compose 頭像配置，預設關寫入；先補完整候選及原生依賴，部署讀回後再處理啟用，不部署未合併協作者成果。
-- **完成門檻／次序：**只補受影響窄驗證與未解恢復路徑，獨立 review 後先交草稿；部署／解除 gate 依[頭像部署門檻](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)，不因本機codec或前端預覽綠直接開寫入。
-- **新指示（2026-10-24）：**使用者要求接續至正式可用；附件清單及當前 Android 交付收束後進本包，先修具體恢復／清理缺口，沿同一前端與雲端權威。原 gate 與失敗證據仍有效，尚未啟用或部署。
+- **目標及範圍：**本人及有既有寫入權限的孩子可選圖、裁切、更換、明確移除；獨立私人資源，不進照片分析、模型或分享。沿[API](docs/API.md#avatar-api)及[資料生命週期](docs/DATA_MODEL.md#avatars)，復用共用 Web／Android 畫面。
+- **已實作／部署：**#264 來源與後續生命週期修正、#298 正式 runtime 接線已合併。2026-10-25 `652edad` 已同版更新原 VM API／worker，補齊 sharp、還原與清理依賴；Web／Android 不變。索引 READY、候選正式組裝、兩服務健康、公開 health 及部署後 Scheduler 喚醒通過；[部署證據](artifacts/verification/AVATAR_DEPLOYMENT_20261025.json)。
+- **尚未啟用：**source gate 及 `AVATAR_WRITES_ENABLED` 仍 false。自動批准審查在部署核對後仍要求明確批准解除持久啟用閘，已向使用者提出這一項正式啟用確認；不是缺少必要測試批准。下一步：獲准後只改 release flag、review／合併及部署，保留相容停寫回退；不可回到不認識頭像 schema／journal 的舊 reader。
+- **已有必要證據：**[正式 Server 型別及恢復修正](artifacts/verification/AVATAR_LIFECYCLE_FIX_20261024.json)、[Linux codec／license](artifacts/verification/AVATAR_PLATFORM_20261024.json)、[中斷副本放棄](artifacts/verification/AVATAR_RESTORE_ABORT_20261024.json)、[原生副本 CAS](artifacts/verification/AVATAR_NATIVE_20261024.json)、[原生准入／更換／清理](artifacts/verification/AVATAR_ADMISSION_NATIVE_20261025.json)、[journal 接續](artifacts/verification/AVATAR_JOURNAL_RESTORE_20261025.json)、[原生配對還原](artifacts/verification/AVATAR_PAIRED_NATIVE_RESTORE_20261025.json)、[正式 runtime 接線](artifacts/verification/AVATAR_RUNTIME_20261025.json)。沿證據復用，不重跑整批；臨時帳號、兩庫及專用 bucket 已清理。
+- **保留限制／門檻：**手機未連線，Web／Android 真正選圖、裁切及 EXIF 顯示仍待驗；原生每日備份／Secret Manager 災備未因配對快照核對而完成。真 Tasks 新增頭像工作沒有另發一輪，沿既有 OIDC 喚醒、正式路由及原生 cleanup 證據。來源／Auth／journal／provenance 改變與 unknown 不盲重做；歷次 fixture／PITR／OOM／舊測試失敗均保留於原證據。啟用方法見[部署門檻](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)。
 
 ### 保留的 Android 交付狀態
 
