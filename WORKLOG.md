@@ -3767,3 +3767,10 @@
 - 一次免費 EAS preview build `9f43f925-acc1-44e4-915b-ae63dcb46b70` 完成 APK v4；與 v3 同簽署，package／runtime 及原生新圖標／splash 資源核對通過。下載入口在 PLAN／STATUS；沒有向不同 runtime 的 v3 發 OTA，真機安裝／裁切未代填。
 - Python 下載 403 改用已安裝 EAS 官方下載函式；舊 Java 核對無輸出後只停該程序，Java21 通過；aapt 中文絕對路徑失敗只改相對路徑續核資源。原失敗保留，沒有重建或重跑產品。局部測試環境退出時 emulator export 500，保留上一快照，未宣稱恢復通過。
 - [交付證據](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)分列實作／Web／APK與待驗。零模型／通知／遷移／配額修改；手機設備出口、成功個人 key 及已延後的四 Agent／備份項仍保留，不動協作者 PR。
+
+<a id="log-20261025-android-v4-device"></a>
+## LOG-20261025-ANDROID-V4-DEVICE
+
+- 使用者回覆「已開啓并覆蓋安裝」；ADB 核對 package versionCode 4，原登入及孩子資料仍可讀。以一張本次合成 EXIF-6 JPEG 核對系統選圖、拖動正方裁切、App 圓形預覽及取消；未保存至本人孩子，原頭像保持不變。
+- 附件庫列表及孩子切換清理可見；使用者要求減少額度消耗後停止追加，未完成下載／分享，不以空清單當通過。已關閉選取器並清理本次合成圖片及 UI dump；零模型、通知、雲端寫入或新建置。
+- [設備證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)；私人畫面不入 Git。成功個人 key、其餘媒體／通知終態／OTA 回退維持待驗，協作者四 Agent PR 不動。

@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **四項修補來源交付：[FIX-FOUR01](#four-fix01)。**[PR #286](https://github.com/2NTTY/child-ai-caregiver/pull/286) 已獲使用者指示正常合併；本輪接續 #288／#289，保留照片聊天接線與部署記錄，僅補受影響照片恢復／client 契約核對。正常合併仍須獨立覆核及遠端必要檢查，不代表部署或真機驗收。
 
-**當前：[S16 Android／頭像／附件庫／個人模型收尾](#s16-w03)。**頭像成熟裁切已由 #305 合併，`1f07fab` 更新原 Web，公開 hash／health 通過。必要映射、adapter、局部型別／匯出、Web 保存及桌面縮放已核；[實作證據](artifacts/verification/AVATAR_CROP_REUSE_20261025.json)／[交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。Android v4 已一次免費建置並核對同簽署、runtime 與品牌資源，[覆蓋安裝](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)；實際安裝／手機操作待驗，沒有向 v3 強推 OTA。成功個人 key 仍待驗；四 Agent／DEV02 等協作者自查、不改其 PR。
+**當前：[S16 Android／頭像／附件庫／個人模型收尾](#s16-w03)。**頭像成熟裁切已由 #305 合併，`1f07fab` 更新原 Web，公開 hash／health 通過。必要映射、adapter、局部型別／匯出、Web 保存及桌面縮放已核；[實作證據](artifacts/verification/AVATAR_CROP_REUSE_20261025.json)／[交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。Android v4 已一次免費建置並核對同簽署、runtime 與品牌資源，[覆蓋安裝](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)；使用者已覆蓋安裝；v4、登入／孩子資料、系統裁切／EXIF／預覽及取消已核，沒有向 v3 強推 OTA。成功個人 key 仍待驗；四 Agent／DEV02 等協作者自查、不改其 PR。
 
 **iOS 保留：[S04-W03 發佈準備](#s04-w03)等待 Apple 前置。**#272、#274～#278 已合併，本機接線／匯出／APNs掛載配置有證據；尚無 IPA、部署或真通知。免費真機需可用 Mac，TestFlight 需已授權 Apple 團隊及簽署；不為等待條件重跑測試或購買會員。完整範圍見 [iOS 計劃](#p3-ios)。
 
@@ -121,7 +121,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - **已啟用：**使用者明確批准後，#300／`0ebfbfa` 只更改 source release flag，於 2026-10-25 09:08 UTC 在原站同版 API／worker 開啟 `AVATAR_WRITES_ENABLED=true`。候選正式組裝、健康、公開入口及配置讀回通過；Web／Android 沿已發布畫面，無需重裝。[啟用證據](artifacts/verification/AVATAR_ENABLE_20261025.json)。停寫回退保留相容 `avatar-runtime-652edad` reader／cleanup，不能退回不認識頭像 schema／journal 的舊版本；權限、防重、刪除及配額均不改。
 - **本次收尾：**本機真 Web 選圖／裁切發現刷新期間保存會被略過，已修正為寫入取代唯讀刷新，保留原操作與版本。保存／內容讀回／重開／明確移除及附件庫下載已通過，[證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)保留原失敗。#302 已合併，`15fdb50` 原 Web 已更新及公開 hash／health 讀回；API／worker／資料不變，[交付](artifacts/verification/AVATAR_SAVE_DELIVERY_20261025.json)。Android v4 交付見上方增量；手機裁切／EXIF 待驗。裁切體驗已按上方增量改用成熟能力，接續同批 Web／APK 交付，不以保存通過代替原生操作品質。
 - **已有必要證據：**[正式 Server 型別及恢復修正](artifacts/verification/AVATAR_LIFECYCLE_FIX_20261024.json)、[Linux codec／license](artifacts/verification/AVATAR_PLATFORM_20261024.json)、[中斷副本放棄](artifacts/verification/AVATAR_RESTORE_ABORT_20261024.json)、[原生副本 CAS](artifacts/verification/AVATAR_NATIVE_20261024.json)、[原生准入／更換／清理](artifacts/verification/AVATAR_ADMISSION_NATIVE_20261025.json)、[journal 接續](artifacts/verification/AVATAR_JOURNAL_RESTORE_20261025.json)、[原生配對還原](artifacts/verification/AVATAR_PAIRED_NATIVE_RESTORE_20261025.json)、[正式 runtime 接線](artifacts/verification/AVATAR_RUNTIME_20261025.json)。沿證據復用，不重跑整批；臨時帳號、兩庫及專用 bucket 已清理。
-- **保留限制／門檻：**手機未連線，Android 真正選圖、裁切及 EXIF 顯示仍待驗；Web 合成圖片流程見上方增量證據。原生每日備份／Secret Manager 災備未因配對快照核對而完成。真 Tasks 新增頭像工作沒有另發一輪，沿既有 OIDC 喚醒、正式路由及原生 cleanup 證據。來源／Auth／journal／provenance 改變與 unknown 不盲重做；歷次 fixture／PITR／OOM／舊測試失敗均保留於原證據。啟用方法見[部署門檻](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)。
+- **保留限制／門檻：**Android v4 的真選圖、EXIF-6 方向、裁切拖動、App 預覽及取消已核；未在本人孩子上保存合成頭像，保存生命週期沿既有 Web／Server 證據。Web 合成圖片流程見上方增量證據。原生每日備份／Secret Manager 災備未因配對快照核對而完成。真 Tasks 新增頭像工作沒有另發一輪，沿既有 OIDC 喚醒、正式路由及原生 cleanup 證據。來源／Auth／journal／provenance 改變與 unknown 不盲重做；歷次 fixture／PITR／OOM／舊測試失敗均保留於原證據。啟用方法見[部署門檻](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)。
 
 ### 保留的 Android 交付狀態
 
@@ -504,10 +504,12 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s16-w03"></a>
 #### S16-W03 P3 必要整體驗收
 
+- 2026-10-25 v4 真機補核：已安裝／開啟，登入及孩子資料仍可讀；系統選圖、EXIF-6、拖動裁切、圓形預覽及取消通過。附件庫列表／切換孩子清理已核；使用者要求節省額度後停止追加，未上傳、下載或分享附件。零模型／通知／雲端寫入。[本批證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)；剩餘項維持待驗，不宣稱全部收尾。
+
 - 階段／狀態：P3；Android／頭像／附件庫／個人模型收尾中，完整 P3 未完成。最新 #305／`1f07fab` 成熟裁切已合併及更新 Web；新 APK 交付見[本批記錄](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。不修改協作者未合併 Agent PR、不提前恢復 DEV02 聯合補驗。
 - 2026-10-25 接續：以 `2fb8865`／`codex/android-final-closeout` 收 Android、已啟用頭像、附件庫及個人模型。先對照既有證據與正式接點，再只補確實欠缺的保存／讀回／設備或模型路由核對；不逐頁或逐模型測試，不重驗四 Agent。手機未連線、需登入／系統權限等本人操作及不可取得的本人憑證如實待驗；不因此停止其他可做工作。下一版原生圖標與 splash 沿既有配置，沒有必要的新 APK 不單為此重建。原失敗及已核準延後的備份／角色驗收保留。
 - 本批結果：頭像 owner 的刷新／保存競態修正及 21 項定向檢查通過；本機正式 Web 保存／重開／移除、附件庫列出同一已提交文件及下載 hash 核對通過，合成附件已刪除。本地入口可明確啟用頭像，預設仍停寫。個人 key 一次供應商地域拒絕後停批，沒有四 Agent 或額度變更；[結果與保留失敗](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。頭像裁切體驗改進已由 #305 接成熟能力；Android 真機、成功個人 key 及 OTA 真機回退仍未完成。
-- 最新交付：#305／`1f07fab` 已更新 Web；唯一免費 APK v4 的同簽署、package、runtime 及新品牌資源核對通過，[下載](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)。不用重跑模型，實際安裝／裁切與餘下手機流程留待本人；[交付證據](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)保留下載／工具問題及本地 emulator 關閉快照失敗，後者保留上一快照、沒有宣稱還原通過。
+- 最新交付：#305／`1f07fab` 已更新 Web；唯一免費 APK v4 的同簽署、package、runtime 及新品牌資源核對通過，[下載](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)。不用重跑模型，使用者已覆蓋安裝；版本、登入／孩子資料保留、原生裁切／EXIF／取消已核；餘下設備流程待驗；[交付證據](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)保留下載／工具問題及本地 emulator 關閉快照失敗，後者保留上一快照、沒有宣稱還原通過。
 - 本批順序：先核部署／手機及可復用證據；把個人設定保存與跨端同版、既有成果讀回／附件出口串成最少流程，再處理原通知終態與相容更新／回退缺口。保留本人首條聊天的驗收安排；不自動發新通知、重跑已通過音訊模型或擴配額。未具備有效憑證／設備便如實保留該項，不以合成結果代填真機或真模型通過。
 - 本批進展：設定同值保存／重開及本機 Android 匯出通過。`c58459a` 的唯一免費 build `c678d433-3410-4d78-b831-011ac4f5a70a` 已成功，APK v3 的 package、同簽署及實際 runtime `5fd1446…` 已核，不能向 APK v2 `3369957…` 強推 OTA。使用者已回覆安裝 v3；資料保留及附件庫完整設備流程未補驗。現接續 v4，沒有新增模型／通知。[交付證據](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)分列 API 已部署、Web 畫面待更新及個人 key 真生成未驗。
 - 前置（Android）：S04-W01、S05-W03、S07-W01、S09-W03、S12-W01 Android、S13-W02 Android、S04-W03 Android。
