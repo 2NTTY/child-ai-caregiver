@@ -3892,3 +3892,12 @@
 - #321／`85356d6` 已由原包單作者合併，協作者 PR head 未變。9 個 Server／prompt 檔、56,880 bytes 壓縮包經 IAP 傳至既有原 VM 的限定 0700 目錄，hash 逐項通過；未傳密鑰、家庭資料或本地測試庫。
 - 候選原正式 API／worker 組裝及 Prompt Pack 0.1.55／voice authorizeAudio 通過；無活動 run 後短暫維護切換 API／worker 至 `sha256:d5be3558f45771fdcab001fcebda4df5a1aead88d66c2363097f1b3f477a210d`，健康／公開入口通過，Web 映像保持原版。保留前版映像及 0600 配置，沒有遷移、配額／期限改動、模型或通知；Android 毋須更新。
 - [同包證據](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)保存真模型與交付層次。舊失敗訊息不自動重跑；未核瀏覽器播放／跨端語音、歷史情境干擾與背景變動中止仍保留，不代結四 Agent／P3。
+
+
+<a id="log-20261026-personal-model-flow"></a>
+## LOG-20261026-PERSONAL-MODEL-FLOW
+
+- 使用者的必要模型測試 US$5／滾動 12 小時授權內，為既有測試身份臨時建立只限 Vertex 的 key 及原有兩項最小權限；等權限生效後只跑一次正式本地 Web／API 流程，另預留 US$0.50，連前批預留合計 US$1.50。沒有改正式產品設定、開新角色或接管協作者 PR。
+- 共用設定 client 保存本人聊天／向量憑證、原操作查回及新登入會話讀回通過。正式 Agent 的 3 次生成／2 次向量均記本人，平台用量增加 0；約 34,537 input／105 output tokens，保守已知費用估約 US$0.018，並非帳單。
+- 原 run `b5a70937-8008-44e9-815b-8d9bebfb7a55` 因第三次搜尋觸及 embedding_limit 停止，沒有完成引用／審核／回答；首次失敗停批，保留帳目／收據，不加額度重跑。唯讀核對確認本地只有一段已發布語料；缺原工具輸出，不猜反覆搜尋根因。
+- key 與本次新增 IAM 綁定已刪除。本地清理首次因 removeKey 要求 disabled 模式被拒，依正式契約先停用移除，再恢復停用中的平台模式，密鑰清理及原 5 次帳目讀回通過。詳見[限定證據](artifacts/verification/PERSONAL_MODEL_FLOW_20261026.json)。沒有產品程式變動，不跑型別／build 或其他模型測試；完整個人 Agent／四角色品質仍按原責任待驗。
