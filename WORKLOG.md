@@ -3818,3 +3818,12 @@
 - 相容 preview OTA 已於 13:23 UTC 發布，group `39974363-7397-418f-adf6-40e853786ca1`、update `01a1733b-70d1-7fcc-a5af-a830658b7b1c`、v4 runtime `0c5c868…`。產品來源 `35ad214`，發布 Git `cffa337` 只多文件；沒有 Web／API 更新、新 APK 或向舊 runtime 強推。
 - 已解鎖手機重開後選取 68-byte 合成 TXT，未送出草稿正確顯示原檔名；品牌 splash 同時可見。中文輸入法改寫首次搜尋後只改用數字檔名定位同一合成檔，沒有開其他私人附件。隨即丟棄草稿、刪測試檔並返回原首頁；零上傳／聊天／模型／通知，不重跑頭像及已通過的保存／下載。
 - [交付及設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)保留各批失敗／限制；裝置未另讀 update ID，僅按可見行為驗證修正。PLAN／STATUS 原位解除檔名發布與設備阻塞，個人向量完整流程及 Android 其餘門檻仍保留。只核 diff／JSON／既有證據完整性，協作者 PR 不動。
+
+
+<a id="log-20261025-android-rollback-sync"></a>
+## LOG-20261025-ANDROID-ROLLBACK-SYNC
+
+- 接續 master `c9989c5`，由 B 收 Android 更新／跨端驗收。EAS CLI 24.14.0 僅在 v4 preview 的相同 runtime 回退至內置版本，再 republish 已核修正版；零新資產上傳／APK／模型／通知／部署。第一次手機鎖屏，立即恢復，不當通過；解鎖續驗時，同一未送出 TXT 分別顯示內置 provider ID 與恢復後原檔名，原登入／資料保留。最後 group `44dca896-6861-43c5-a24b-cc4fbdea5102`，13:54 UTC 已恢復；沒有抽取裝置 update ID，只按實際行為確認。初次 whoami 輸出 guard 在變更前停止亦保留。
+- 手機只保存一項明示 TEST 的本人待辦，日期為 10 月 31 日 09:00；使用者登入同帳號 Web 並回覆「已完成」。手機保持同一詳情頁、不刷新／重送，沿正常背景讀取顯示「已完成，提醒已停止」。原輸入／日期修正均發生於保存前；只留一筆已完成測試待辦作追溯，未發到期通知。清除未送出附件及其手機 fixture，返回首頁。
+- [同一設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)新增回退及跨端區段，舊結果／失敗不改；提醒終態不重發沿 [F06](artifacts/verification/F06_FIRESTORE_BACKGROUND_20261013.json) 原 Firestore＋合成 transport 證據復用，不重跑。未證明跨端 Agent／確認接續、真機撤權或照護通知點擊目標；個人向量完整流程及四 Agent 等待條件繼續保留。
+- PLAN／STATUS 原位解除已通過項，部署交接補首次 OTA 的官方內置回退方法。本次只有文件及 evidence JSON，核 diff、JSON、連結及原 evidence／WORKLOG 保留；不跑產品測試或修改協作者 PR。
