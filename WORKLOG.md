@@ -3868,3 +3868,10 @@
 
 - 使用者重開已安裝的 Android App 後回覆「已有 Vertex AI 選項」。只核個人向量服務選項出現，沒有填 key、保存設定或呼叫模型；先前仍顯示舊表單的觀察保留，不把發布時間當成裝置載入證據。
 - B 記錄本次手機人工結果至[原證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)，同步 PLAN／STATUS。精確裝置 update ID、保存設定至完整 Agent／引用流程仍未驗；四 Agent 聯合補驗繼續等協作者，不重跑已通過項目。本次只核文件 diff／JSON，沒有產品測試、部署或手機操作。
+
+
+<a id="log-20261025-personal-vector-routing"></a>
+## LOG-20261025-PERSONAL-VECTOR-ROUTING
+
+- C 收尾核對保存設定到正式檢索路由：原欄位傳遞沒有發現缺漏；將既有 personal Vertex 情景的成功呼叫改經新建的正式 routing、embedding gateway 及持久用量服務，沿原 in-memory Firestore fixture／固定 SDK／合成 HTTP，不另造 Agent。
+- 只執行該一項，通過設定重讀、本人 key／專案／地區、1024 維、本人用量一次／平台零次及原 root／attempt 重送拒絕；零真模型／雲端／手機／通知／部署。產品程式不變，[原證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)追加本次範圍，不宣稱真 Firestore 競爭或完整 Agent／引用通過；協作者驗收仍按原安排延後。

@@ -19,7 +19,7 @@
 
 - **本地開發入口可用：**`npm run agent:local` 使用目前分支的正式 Web／API／四角色接點及隔離持久資料，不需部署 GCP。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；新增相容模型與獨立向量 key 路由只有合成證據。方法見[本地入口](docs/AGENT_LOCAL.md)。
 - **角色聯合補驗依使用者指示延後：**等待四個Agent真正完成且協作者先自行檢查，再安排最後引用／審核及接續流程。本聊天不提前重跑或接管修改；`delivery_review_incomplete`失敗現場、單頁PDF已通過證據及長來源／多模態缺口保留。本地入口仍可供協作者使用，恢復條件及證據只見 [DEV02](PLAN.md#dev-agent02)。
-- **個人模型 Vertex 向量補接已發布：**使用者批准最小增補；共用 v4 設定可選本人 Vertex key／專案／地區，沿原模型及 1024 維索引，沒有平台回退。限定設定／SDK／表單檢查及 Web／Android 匯出通過；一次真 key 向量返回 1024 維／2 input tokens，臨時 key／新增權限已清理。先前 Gemini 向量地區拒絕保留，不泛化為所有用戶限制。PR #317／`34f80a9` 已更新 API／worker／Web 及同 runtime Android OTA；使用者已確認手機出現 Vertex AI 選項；真機保存與完整 Agent／RAG 流程待驗，四 Agent 聯合驗收繼續延後。[證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
+- **個人模型 Vertex 向量補接已發布：**使用者批准最小增補；共用 v4 設定可選本人 Vertex key／專案／地區，沿原模型及 1024 維索引，沒有平台回退。限定設定／SDK／表單檢查及 Web／Android 匯出通過；一次真 key 向量返回 1024 維／2 input tokens，臨時 key／新增權限已清理。先前 Gemini 向量地區拒絕保留，不泛化為所有用戶限制。PR #317／`34f80a9` 已更新 API／worker／Web 及同 runtime Android OTA；使用者已確認手機出現 Vertex AI 選項；一條正式 routing／gateway 離線核對亦確認設定重讀、本人用量及原嘗試不重送；真機保存與完整 Agent／RAG 流程待驗，四 Agent 聯合驗收繼續延後。[證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
 - **Android 未全數驗收：**APK v4 覆蓋安裝、原登入／資料保留、附件、相容 OTA 回退／恢復及一項跨端待辦已有證據；一則指定 FCM 沿原結果，終態不重發復用既有 Firestore 核對。其餘精確未驗項只見 [S16](PLAN.md#s16-w03)，不重跑已通過流程，不以合併或發布當真機通過。
 - **其他邊界：**正式資料使用 Firestore；家庭多人留 P4。OPT／LAY 成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)未完成；Android 尚欠驗收不阻塞 iOS 開工。只補必要驗證，不全量、Computer Use 或重做設計。
 
