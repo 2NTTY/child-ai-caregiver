@@ -3781,3 +3781,11 @@
 - 使用者要求直接續驗剩餘流程；v4 用一份 108 bytes、無私人資料的 TXT 選檔時，草稿顯示 Android `msf:` ID 而非原名稱，於送出前停批，沒有模型／通知或雲端寫入。原因是 SDK 的 JS `File.name` 使用 URI basename；已有原生 copy 能取得 provider display name。
 - 文件與已錄音訊改用同一薄接點，沿 expo-file-system 57.0.7 複製至本機私有暫存後保留真正檔名，再交原草稿處理；保留大小、數量、過期清理及取消，不新增套件或原生配置。單一針對性檢查及三入口型別通過；真機修正後續驗尚待相容 OTA，不以替身當通過。
 - [證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。不動協作者四 Agent PR，不重跑頭像或已通過 Web 附件下載；個人 Gemini key 原有供應商地區拒絕不反覆重試。
+
+<a id="log-20261025-android-picker-acceptance"></a>
+## LOG-20261025-ANDROID-PICKER-ACCEPTANCE
+
+- #308 已合併 `35ad214`；Android 匯出及 v4 runtime 相容核對通過。31 個 JS／資產共 13,725,060 bytes 的 EAS 更新在 asset processing 逾時，查回沒有新群組後只補同封包一次，仍同樣失敗；未再重試、未建 APK、未改原站服務。最後 preview 仍為 `327ad4ca`，手機維持 embedded v4，不能宣稱檔名修正已到設備。
+- 已移除本次尚未送出的測試草稿；保存／下載續驗前手機自行鎖屏，已請本人解鎖。沒有送出測試聊天或改已有附件；108-byte 測試 TXT 仍暫存在手機 Download 供續驗，私人畫面不入 Git。
+- 為區分本機與正式環境，僅補既有受限 Gemini key 在原香港 VM 的正式 personal-provider factory 一次短生成，仍返回 `model_region_unavailable`；因此沒有呼叫 embedding，無平台回退／設定／配額修改。Windows gcloud 在前置傳輸注入 y、及 dry-run 命令啟動失敗均未到模型；沿 SDK 原始碼以 subprocess-only 設定保留正常主機核對後完成原定單次核查，key 不落盤或進日誌。
+- [本次證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。成功個人 key、附件設備出口、通知終態及 OTA 回退保留未驗；四 Agent PR 及延期 DEV02 不動。

@@ -10,7 +10,7 @@
 
 - **共用介面及準備單背景保存已發布。**2026-10-24 master `015deb8`（#284）已相容更新 API／worker／Web 及 Android OTA。連點不鎖、約 3 秒合併及離頁背景保存有定向證據；來源狀態、附件庫畫面、聊天分頁及直接錄音等前批成果保留。手機實際效果待核，詳見[共用互動](PLAN.md#shared-interaction01)。照片聊天已隨下述批次交付；接續[頭像](PLAN.md#avatar-01)，保留協作者未合併 Agent 修改。
 - **iOS 本機接線與發佈工具已合併，TestFlight 等待 Apple 前置。**#272及#274～#278已合併；本機檢查、整合iOS匯出及APNs掛載配置核對通過。尚須Apple團隊／簽署／APNs配置、IPA與真機驗收；未部署或啟用通知。範圍保留於[iOS計劃](PLAN.md#p3-ios)，不因此重跑測試。
-- **附件庫 Android 續驗發現檔名問題，正在局部修正：**v4 的系統選檔把文件 ID 當成檔名，尚未上傳便停止；沿既有 SDK 取得原名稱，必要檢查已過，待相容 OTA 後續驗下載／分享。Web 清單及下載 bytes 的已有證據保留，見 [ATTACHMENT-READ01](PLAN.md#attachment-read01)。私人來源仍如實標示未建立向量索引。
+- **附件庫 Android 檔名修正已合併，發布受阻：**#308／`35ad214` 沿既有 SDK 保留選取檔名；必要檢查、匯出及 v4 runtime 相容通過。EAS 兩次資產處理逾時，查回確認未發布，停止重試；手機已鎖屏，下載／分享仍待解鎖續驗。Web 原證據保留，見 [ATTACHMENT-READ01](PLAN.md#attachment-read01)。
 
 - **MODEL-SELF03 已發布，手機草稿捨棄補核通過。**新關注圖標出現後，捨棄模式／供應商草稿、離頁及返回恢復平台模式，零key輸入／保存／模型。精確裝置OTA ID與真key流程未驗。另將其餘原生底欄接回Web同一導航metadata，保留版面／手勢；兩項定向檢查通過，這批接線已隨 `382d217` 發布、裝置效果待核，見 [MODEL03](PLAN.md#model-self03)。#269 準備單退出修正及 #259 附件回看已合併；頭像啟用狀態見下項；#254／#262／#263／#265／#273 仍由協作者處理。
 
@@ -19,7 +19,7 @@
 
 - **本地開發入口可用：**`npm run agent:local` 使用目前分支的正式 Web／API／四角色接點及隔離持久資料，不需部署 GCP。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；新增相容模型與獨立向量 key 路由只有合成證據。方法見[本地入口](docs/AGENT_LOCAL.md)。
 - **角色聯合補驗依使用者指示延後：**等待四個Agent真正完成且協作者先自行檢查，再安排最後引用／審核及接續流程。本聊天不提前重跑或接管修改；`delivery_review_incomplete`失敗現場、單頁PDF已通過證據及長來源／多模態缺口保留。本地入口仍可供協作者使用，恢復條件及證據只見 [DEV02](PLAN.md#dev-agent02)。
-- **個人模型：**由用戶提供憑證與模型 ID 自行嘗試，沒有地域或 metadata 預驗門檻。聊天可用 Google 或相容接口；向量維持現有 Gemini／1024維索引，可另填本人 key，不借平台額度。其他向量模型及 Vertex Express 直接向量接線不宣稱已完成。
+- **個人模型：**由用戶提供憑證與模型 ID 自行嘗試，沒有地域或 metadata 預驗門檻。聊天可用 Google 或相容接口；向量維持 Gemini／1024維索引，可另填本人 key，不借平台額度。2026-10-25 對既有測試 key 補正式香港 VM 核對，仍返回 `model_region_unavailable`，未呼叫 embedding 或改設定；成功流程仍待可用憑證／環境，不推論所有用戶 key 均不可用。[本次結果](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
 - **Android 未全數驗收：**APK v2 覆蓋安裝、原登入／資料保留及一則指定 FCM 已有證據；跨端、媒體／附件、照護通知完成停止、OTA 回退及各包餘下真機項按 [S04～S17](PLAN.md#s04-w01) 追蹤。使用者已允許先合併、未驗項後續追蹤，不以合併或 OTA 發布當真機通過。
 - **其他邊界：**正式資料使用 Firestore；家庭多人留 P4。OPT／LAY 成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)未完成；Android 尚欠驗收不阻塞 iOS 開工。只補必要驗證，不全量、Computer Use 或重做設計。
 
@@ -28,7 +28,7 @@
 
 **2026-10-25 10:23 UTC 原站：**Web 已更新 `avatar-crop-1f07fab`（映像 `0da4e1f`），公開 index hash／API health 通過；API／worker 維持 `avatar-enable-0ebfbfa`（`c3b149c`），頭像已啟用，APNs 未啟用。[本批交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。零模型／通知／資料遷移／配額修改，保留前版 Web 回退。
 
-**Android，2026-10-25：**APK v4 已完成（build `9f43f925`，source `1f07fab`）；同簽署、package、runtime `0c5c868…` 與新圖標／splash 資源已核，[覆蓋安裝](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)。本次沒有 OTA；v3 的 `5fd1446…` runtime 不同，需新 APK。實際安裝、裁切及啟動畫面效果待驗，詳見[本批交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。
+**Android，2026-10-25：**APK v4 已覆蓋安裝（build `9f43f925`，source `1f07fab`）；同簽署、runtime `0c5c868…`、登入／孩子資料及原生裁切已核，新圖標／splash 資源有靜態證據，實際啟動畫面效果未另驗。[APK](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)。檔名修正 `35ad214` 的相容 OTA 尚未發布成功，現場仍為原 v4；v3 runtime 不同，沒有強推更新。詳見[設備證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)及[本次阻塞](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
 
 **回退、備份與容量：**本次保留相容 API／worker `4159605` 及 0600 的 `compose.env.before-avatar-enable-0ebfbfa`。關寫入仍保留頭像 reader／cleanup；已開放新 schema／journal，不能回退至 `e23de93` 等舊讀取器。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)。最近原生備份觀察仍為 2026-10-23 READY，未還原；前批部署前約 10.5 GiB 可用，未擴容／清正式資料。
 
