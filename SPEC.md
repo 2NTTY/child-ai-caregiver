@@ -676,3 +676,11 @@ embedding 不可用時，可用經相同適用性與有效性過濾的關鍵詞�
 | <a id="ac-opt-04"></a>AC-OPT-04 | 正式 HTTP 真進度早於完整回覆；斷線原 run 查回無重做；適用官方卡即時、普通聊天不反覆顯示。 |
 | <a id="ac-lay-01"></a>AC-LAY-01 | 不開網站可直接驗主要域的規則／必要協調，正式 API／owner 使用同一接口，UI 設計及權威資料不變。 |
 | <a id="ac-str-01"></a>AC-STR-01 | 真模型增量灰稿→審核保存→同回覆正式替換；受控拒絕／取消與一次中斷查回不遺留假成功或造成重做。 |
+
+
+<a id="avatar-requirement"></a>
+## 本人／孩子可調整頭像（AVATAR-01）
+
+用戶可選取、更換、方形裁切及明確移除自己的頭像和有寫入權限的孩子頭像。無頭像時保留名字首字fallback；載入或保存失敗須可理解且不可假保存、不可刪原有效圖。本人不依賴建立／選中孩子，固定private；孩子只沿現有讀寫權限，不增加分享他人真人頭像或模型用途。
+
+驗收：選圖／取消／crop／Save／remove皆可鍵盤與讀屏操作，拖曳／pinch之外提供可聚焦放大、縮小、重設；不以檔名作alt。Web／Android使用相同crop語義，native allowsEditing不被當Web能力。更換失敗保留old head；衝突須重新確認，pending/unknown查原操作，不重送新ID。換身份／Server／epoch或孩子清相應記憶體內容及短命URL，晚到結果不串target。Server須完整decode／校正方向／重新編碼／去metadata，並完成移除、account/child erasure、export及backup/restore防復活。舊server或未啟用明示功能未提供，沒有本機假保存。精確契約見[API](docs/API.md#avatar-api)／[資料](docs/DATA_MODEL.md#avatars)。

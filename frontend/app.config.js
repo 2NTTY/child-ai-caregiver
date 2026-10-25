@@ -14,8 +14,11 @@ export default ({ config }) => {
       throw new Error("Cloud builds require the approved HTTPS API endpoint");
     }
   }
-  // File-type EAS environment value; keep the native Firebase descriptor outside Git.
-  const googleServicesFile = process.env.ANDROID_GOOGLE_SERVICES_FILE?.trim();
+  // The profile also identifies local EAS config evaluation before the build platform is set.
+  const isIos = process.env.EAS_BUILD_PLATFORM === "ios"
+    || !process.env.EAS_BUILD_PLATFORM && process.env.EAS_BUILD_PROFILE === "ios-preview";
+  // iOS uses Firebase JS authentication and must not read the Android-only descriptor.
+  const googleServicesFile = isIos ? undefined : process.env.ANDROID_GOOGLE_SERVICES_FILE?.trim();
   if (googleServicesFile) {
     let service;
     try { service = JSON.parse(readFileSync(googleServicesFile, "utf8")); }
@@ -25,7 +28,7 @@ export default ({ config }) => {
       throw new Error("Android Firebase descriptor does not match the approved project and application");
     }
   }
-  if (process.env.EAS_BUILD_PROFILE && process.env.EAS_BUILD_PLATFORM !== "ios" && !googleServicesFile)
+  if (process.env.EAS_BUILD_PROFILE && !isIos && !googleServicesFile)
     throw new Error("Configure the approved Android Firebase descriptor before building native notifications");
   return { ...config, android: { ...config.android, ...(googleServicesFile ? { googleServicesFile } : {}) }, owner: "2ntty",
     extra: { ...config.extra, ...(projectId ? { eas: { projectId } } : {}) },

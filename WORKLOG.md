@@ -3450,3 +3450,334 @@
 - client六項、form六項、三項受影響React接線及限定型別通過。原unknown斷言誤中新的向量說明，收窄至正式狀態標籤後只補該項。Web最終匯出及靜態附檔完成；Android首次Hermes遭本機暫存權限拒絕，保留失敗後只改TEMP／TMP至workspace補跑成功，runtime相容APK v2。初期檢查Node24.11低於專案要求，最終型別及建置改用24.19；沒有全量測試或真機驗收。
 - 新出現的附件#259及Agent #254保持協作者分支不動；#259未改本包照片同意句。部署review確認#253訊息歷史須四個索引READY及共同開關，首次讀取會增加權限fence，回退不能使用不認識新欄位的舊reader。只更新部署交接／配置範例，尚未動雲端。
 - [本機證據](artifacts/verification/MODEL_SELF03_UI_20261023.json)區分實作、建置、失敗及未驗。零真模型／embedding／通知／業務寫入／配額調整，未上傳或發布VM／OTA；真供應商、裝置及其他既有待驗不改稱通過。
+
+<a id="log-20261023-compatible-model-delivery"></a>
+## LOG-20261023-COMPATIBLE-MODEL-DELIVERY
+
+- #260由A合併為`1282e09`，本次交付記錄使用獨立分支`codex/model-self03-delivery`及A單作者。#254／#259仍由協作者處理，沒有修改或合併；最低本機檢查沿用[UI證據](artifacts/verification/MODEL_SELF03_UI_20261023.json)，不重跑產品測試。
+- 自動批准審查先拒絕新私有封包上傳；收到使用者對具體VM、payload、四索引及一次OTA的明確批准後才上傳。封包只含固定來源程式／Web／hash及review腳本，不含憑證或家庭資料。初次archive核對發現CRLF，已按Git原始blob重打Linux封包；Web產物未變，原失敗保留於[交付證據](artifacts/verification/MODEL_SELF03_DELIVERY_20261023.json)。
+- 四個messageSentAt索引READY後，候選在network none下通過正式runtime import／v3 schema核對。短暫維護先檢查活動Agent數為0，備份配置，再更新原VM API／worker／Web；公開HTML hash及health通過。新runtime開始後維持相容reader，不自動退回舊API。沒有資料回填、模型／通知呼叫、配額修改或主機續期。
+- 13:59 UTC發布同版Android preview OTA `b18efe75-f8ed-4ced-9f66-a5e3b4d961ff`，runtime與APK v2一致，沒有新APK、重新bundle或強制重載手機。14:00 UTC API／worker健康、Web運行、磁碟約10.66 GiB可用；最新原生備份metadata為READY，未執行還原。
+- 此次只證明部署與OTA發布；用戶真key、獨立向量key及新表單真機操作仍未驗，既有角色品質／長來源／多模態及Android待驗仍按PLAN承接。兩位原Astra子代理復用於封包及腳本唯讀核對，主模型親自作部署、相容性裁決與文件；不以部署完成代替整體目標完成。
+
+<a id="log-20261023-local-continuity-followup"></a>
+## LOG-20261023-LOCAL-CONTINUITY-FOLLOWUP
+
+- 從遠端 `4fb210c` 開獨立分支 `codex/dev-agent02-continuity-closeout`，A單作者；保留協作者 #254／#259 及新 #262～#265，不修改或合併其程式。復用原子代理作手機核對、工具準備及唯讀文件review；主模型負責實際本地驗收、裁決及文件，沒有重做四角色或前端。
+- 原 worktree 的本地快照缺失，原因未確定；新建隔離合成資料，不宣稱恢復原文件／原失敗run。補齊工程外／ignored工具依賴，使用Node24.19、Java21及既有Firebase emulator；僅從目前分支正式API建立一個孩子、一份準備單。準備時沙盒連線失敗、關閉的本地管理政策及metadata輔助腳本欄位錯誤，與產品模型結果分開保留。
+- 官方PDF登記第3頁沿原工作完成2次真生成、1次向量及獨立審核／本地發布。後續一條自然聊天讀文件、搜尋成功，但能力載入和引用參數修正用完8次生成／1次查詢，終態 `delivery_review_incomplete`；沒有完整已審核答案，沒有自動重送或加額。原run／訊息、片段版本及腳本保留在受保護本地目錄；去識別化結果見[本次證據](artifacts/verification/DEV_AGENT02_CONTINUITY_20261023.json)。
+- 本地日配額20／100未提高；驗收暫時啟用模型、限制零重試，結束後恢復原關閉政策及設定，保留12次用量並正常保存快照。帳目仍有10次用量未完整回報，不能從已知tokens宣稱完整費用。零正式業務資料寫入、通知或部署，不重跑編製／雲端／全量測試。
+- PLAN修正過時的P3角色、Android開工盤點及備份狀態，未把已發布或單頁成功當整包完成；STATUS只投影本次實質結果。本地使用說明補管理政策關閉的排除方法。下一步先核對協作者的審核／預算與引用修正，再補同一資料的一條聊天；原備份還原及角色長來源／多模態缺口不改寫為通過。
+
+<a id="log-20261023-model-draft-reset"></a>
+## LOG-20261023-MODEL-DRAFT-RESET
+
+- 從最新master `216d87e`開獨立分支`codex/model-self03-discard-draft`，沿使用者明確授權由A單作者交付；本機協作文件缺失，不另猜人員分工。協作者#254／#259及#262～#265未改。
+- 原真機代理取得設備後只作未保存設定核對：最初仍是舊導航／兩個Google選項，正常重開一次後出現關注／核對、新相容服務、獨立向量key及七項上限，登入保留。未取得精確OTA ID，不把預期版本當實測。沒有輸入密鑰、保存、模型或通知；草稿捨棄失敗後停止，手動回復原平台模式並返首頁，已解除ADB佔用。
+- 主模型修正共用表單inactive時只清密鑰的缺口：按權威快照重設全部本機草稿，保留owner的原操作及unknown狀態；背景只清密鑰的行為不變。不改UI設計、Server或Agent。原代理另作局部唯讀review。
+- Node24.19／既有React、RHF及jsdom，只跑兩項受影響檢查。密鑰／背景／離頁還原首輪通過；新增原操作檢查的斷言漏計使用者已觸發的selectProvider回調，修正為核對離頁沒有額外回調後，只補該項通過。未跑全量、瀏覽器、真key或模型；手機修正回歸及發布仍待完成。[證據](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)。
+- 使用者另指出Android關注圖標與Web不同；局部核對為native tab仍寫死`chart-bar`。已改讀Web同一`navigationItems.growth`的圖標／標籤，不改版面或新增測試；發布產物使用此最終來源。獨立表單review未發現阻塞問題。
+
+<a id="log-20261023-model-draft-delivery"></a>
+## LOG-20261023-MODEL-DRAFT-DELIVERY
+
+- A合併#267為`53d8f38`，產品來源`4bfdf98`；本分支只記錄已完成的Web／OTA交付。原匯出代理尚未開始build，使用者要求主模型接手後正式中止，核對沒有匯出程序，再由主模型完成，沒有另開代理或重複建置。
+- Node24.19沿原公開配置各匯出Web／Android一次，runtime與APK v2相同。Android build成功，末端資產核對因Windows反斜線與已正規化路徑比較而誤報缺檔；保留原失敗記錄，只正規化比較及核對既有31檔，沒有重跑export或改產品。共用表單兩項檢查沿用#267，不增全量測試。
+- 固定VM身份／IP及11月6日期限已核對；Web封包及hash經IAP傳送至指定0700目錄，無密鑰、ADC或家庭資料。候選網絡隔離建置／首頁hash通過，保存0600 Compose副本後只更新Web。15:39 UTC Web healthy、公開HTML一致、API health200，API／worker映像及配置不動；約10.62GiB可用，未清理舊SQL或備份。
+- 同來源Android preview OTA `df51a917-ee74-4e03-8fbc-db472314007d`已發布，不新建APK、不購買方案、不強制重載手機。草稿捨棄／關注圖標的最新真機補核仍待驗；此前舊UI→一次重開→新版欄位可見的證據不能代替此版本驗收。真key及DEV02末段審核缺口亦保留。[交付證據](artifacts/verification/MODEL_SELF03_DRAFT_DELIVERY_20261023.json)。零模型／通知、業務資料寫入、配額修改及新索引。
+
+<a id="log-20261024-shared-native-navigation"></a>
+## LOG-20261024-SHARED-NATIVE-NAVIGATION
+
+- 使用者要求原生導航不再寫死、修改Web共用來源即可更新App。以master `65c094c`開`codex/shared-native-navigation`；Sol 6.1 high只改兩個指定產品檔案，主模型親自核對diff及既有檢查。五個Tabs圖標／標籤及核對／更多路由沿同一navigationItems，不搬Web版式或改手勢／權限；A單作者交付，沒有修改協作者#254／#259／#262～#265／#269。
+- 兩項既有定向導航檢查通過，diff check通過；沒有新增測試、全量型別／build、模型或通知。現有顯示值相同，本次不重新匯出或發OTA，來源接線留下一次相容Android發布帶入；不宣稱已安裝App會因Web發布自動更新。
+- 主模型沿原授權補手機草稿一次：首先仍見舊柱狀圖及捨棄後殘留，停止該批；原步驟亦未等待離頁便深連結返回。另一次重開後XML idle失敗，舊檔不作證據；新截圖顯示共用關注圖標。只補同範圍流程並確認已實際離頁，平台模式／非dirty狀態成功還原。原觀察與失敗保留，未讀精確裝置OTA ID、不輸入key、不保存設定、不驗真模型；已返回今日。[本次證據](artifacts/verification/SHARED_NATIVE_NAVIGATION_20261024.json)。
+
+<a id="log-20261024-defer-dev02-joint-acceptance"></a>
+## LOG-20261024-DEFER-DEV02-JOINT-ACCEPTANCE
+
+- 使用者明確把本地最後引用／審核補驗延後，先等四個Agent真正完成及協作者自行檢查。PLAN／STATUS已改為此恢復條件，不以個別PR合併或環境啟動取代角色自查；本聊天不提前整合／重跑或接管協作者修改。
+- 先前只唯讀核對#263／#265固定head及相關程式差異，沒有建立角色整合分支、修改角色、啟動本地服務或呼叫模型。原失敗、快照與有效證據保留；這次只改文件、核對diff及既有連結，不跑產品測試。
+
+<a id="log-20261023-attachment-media-source"></a>
+## LOG-20261023-ATTACHMENT-MEDIA-SOURCE
+
+- 接續原附件前後端候選，將26個source/test檔整合到`339c707`的獨立分支；不改已合併#253或頭像候選。只新增唯讀本人聊天附件清單及薄前端呈現，原照片／播放／下載授權與unknown邊界保留；詳情移至既有local dialog，權限短標為「本人」。
+- 跨層10/10、focused16/16及RN Web Modal DOM2/2分開記錄；首DOM0/2由jsdom不執行native-button default click造成，修正測試方法而非新增產品鍵盤handler。8-root strict 512 MiB檢查exit137、沒有diagnostics，原因未知；未重試或當作型別通過。[證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)保留完整來源hash、原紅及驗證界線。
+- 兩個Firestore composite index僅源碼，未部署。build／四尺寸GUI、真瀏覽器Enter／Space、原音／下載、實際API與雲端索引仍待驗；只有合成資料，沒有真模型／家庭媒體、GCP、OTA或正式資料操作。獨立草稿來源交付與驗收／發布／合併分開。
+
+<a id="log-20261024-s04-w02-ios-bootstrap"></a>
+## LOG-20261024-S04-W02-IOS-BOOTSTRAP
+
+- 使用者批准 iOS TestFlight 計劃；先更新根 PLAN，再從 master `560f051` 開 `codex/s04-w02-ios-bootstrap`。沿現有 Expo 57、原生身份／transport／owner／同步及畫面，啟用 iPhone 配置與獨立 store profile／channel；Android 配置及入口不重建，Apple 團隊未定。
+- iOS 不再誤讀 Android descriptor，仍保留 Firebase 公開設定／HTTPS gate。原品牌 SVG 轉成 1024 不透明 iOS 圖標，沒有改美術或加入產品依賴；EAS 封包另排除 Apple 私鑰／描述檔。主模型核對共用入口及 diff，Astra 子代理完成限定配置實作與獨立靜態 review，沒有 blocking finding。
+- 3 項必要配置檢查通過。首次 iOS JS／Hermes export 因 Windows sandbox TEMP 拒絕寫入失敗，保留現場；只調整本命令 TEMP／TMP 至 worktree cache，補同一 export 後通過。這不是 IPA、簽署或真機驗收；沒有重跑 Web／Android、全量測試、模型、通知或 Computer Use。[本包證據](artifacts/verification/S04_W02_IOS_BOOTSTRAP_20261024.json)。
+- 未上傳 EAS、建立 Apple App 或購買會員。首次封包、團隊／簽署、TestFlight、iPhone 與後續媒體／APNs／更新仍待辦；不把 Android 未驗或協作者四 Agent 最後補驗改為完成。交付前發現 master 新合併 #269／#259，按原成果整合，不接管其待驗工作。
+
+
+<a id="log-20261023-avatar-draft"></a>
+## LOG-20261023-AVATAR-DRAFT
+
+- 依使用者本人／孩子可調整頭像及按接口契約做後端的要求，在 master `339c707` 上整合獨立候選；原 freeze04／較早前端及失敗證據保留。只套頭像差異，restore-codec交集合併保留master既有修復，不覆舊docs或PR253整包。dot原生代理依特別指派分別寫後端／前端，獨立只讀review核source與receipt；沒有真人驗收或部署。
+- 沿既有online收據、身份／epoch、private加密Storage及獨立erasure journal；不新增公開URL、模型用途或operation ledger。sharp固定server-only，原圖不持久。補avatar-only未prepared lease fence及scheduler閉環；本輪另補authenticated final-plan staging marker／attempt fence、partial rollback／完整頁promote，以及每頁／handoff前後native provenance再核。
+- 本輪restore helper7例、強化後真building-token ABA單例、真operator provenance單例及真avatar跨頁中斷／恢復單例均有合成PASS；首個E2E因40sessions共用control未跨2頁而紅，僅改80sessions試件後PASS，原紅保留。新前端真client4、remove owner3、bounded DOM3及8-root strict有證據；後端codec6-root strictPASS。不把窄root／合成bucket當完整typecheck或原生Firestore。
+- domain strict384MiB明確V8OOM；歷史完整server兩次signal9及256MiBOOM未通，既有56PASS／10exact-baselineFAIL不豁免。unknown／不可讀copy或source/Auth/journal/provenance變更、legacy無marker partialplan仍停住保責任，`NOT_FULLY_RECOVERABLE`／`AVATAR_LIFECYCLE_RELEASE_READY=false`不變。沒有真家庭照、真模型、GCP／OTA、帳戶或正式資料變更。
+- 本包只準備草稿程式，不開功能或宣稱上線；下一步與部署門檻見[AVATAR-01](PLAN.md#avatar-01)。精簡版本、測試、原紅及未驗見[合成核對收據](artifacts/verification/AVATAR_DRAFT_20261023.json)，原長logs留本地不重複提交。
+
+<a id="log-20261024-s12-ios-media"></a>
+## LOG-20261024-S12-IOS-MEDIA
+
+- 接續已合併 #272／`9f500a5`，以 `codex/s12-ios-media` 補 iPhone 照片相容。ImagePicker iOS 原 bytes 仍可能是 HEIC，故只在實際 bytes 非 JPEG／PNG 時使用官方 JPEG base64 副本；原件與副本各限4 MiB，decode 前後核對，清除 picker 額外編碼參照。hash、metadata、加密上傳及 Server 格式沿原契約，Android 原行為不變。
+- Astra 子代理只實作 adapter 及一份定向檢查；主模型核原碼／SDK型別／完整測試，親寫照片契約與技術採用說明。3項離線檢查通過，沿真 metadata／hash／preview，只替換系統 ports。主模型另核固定 SDK 的 iOS AAC/M4A、選檔副本及 Sharing 接線，無須另寫服務；不重複跑已通過檢查。[證據](artifacts/verification/S12_IOS_MEDIA_20261024.json)。
+- 沒有新增依賴、全量型別／build、模型、通知、部署或真機。原生 HEIC、iPhone權限／鍵盤／錄音聽感／檔案分享仍待簽署後驗收，不把合成bytes當成真圖片或設備通過。下一包為相容原生通知契約與 APNs；簽署團隊未定時先做獨立程式。
+
+<a id="log-20261024-s13-ios-server"></a>
+## LOG-20261024-S13-IOS-SERVER
+
+- 接續 master `405f3ed`，C 後端包補 APNs 與 v2 原生通知接口；舊 Android v1 嚴格回應及原收據保持。iOS 綁定含 Server 固定 topic／環境，照護與測試共用原授權、終態及投遞台帳；配置不符停止、unknown 不重送。還原撤銷 token 並保留平台 metadata，匯出不披露 token／session。
+- 主模型親寫契約、adapter 與組裝並 review；Sol 只補有界的合成 transport 檢查。APNs 一項、正式 API／store／worker 一項、既有 Android 兩項及 adapter 窄型別通過。新測試先誤讀不同孩子範圍，再誤假設 scopeTag，均停批後查清並改用實際四個 tag；沒有放寬產品隔離。保留兩次失敗與成功證據，不宣稱原生 Firestore 競爭或 Apple 已通過。[證據](artifacts/verification/S13_IOS_SERVER_20261024.json)。
+- 沒有真模型、通知、部署、Apple 憑證、全量測試或 Computer Use。B 的 iOS 設定接線在本後端合併後進行；簽署、真機及 TestFlight 繼續待辦。APNs 預設關閉，新資料發布後僅允許理解該 schema 的相容 Server 回退。
+
+<a id="log-20261024-s13-ios-client"></a>
+## LOG-20261024-S13-IOS-CLIENT
+
+- B 接續 C 已合併 #275／`b4dfd5a`，沿同一通知 client、owner 及卡片接 iOS；Android 保留 v1。iOS 使用 v2 原收據與平台可用狀態，混合本人訂閱保留真實 provider；APNs hex token、provisional 權限及輪換按 Expo 57.0.21 接入，點擊仍走 Server 核權，不自動完成照護事項或發測試。
+- Sol 完成範圍內六個產品檔及一份檢查；主模型核完整 diff、測試、SDK enum及原導航，親寫契約與交付。Sol 首次使用 Node24.11、兩項通過，但低於工程 engine；主模型只以指定24.19補跑同檔2/2通過，另核 client及native adapter／view model窄型別。[證據](artifacts/verification/S13_IOS_CLIENT_20261024.json)。不把重跑合計成四項，沒有全量型別／suite。
+- 沒有部署、Apple憑證、真模型、通知或iPhone畫面；完成來源合併後接共用發布工具，最終export集中核一次，TestFlight及真人授權保持待辦。原前端設計、協作者Agent及Android未驗項不改寫。
+
+<a id="log-20261024-s04-ios-release"></a>
+## LOG-20261024-S04-IOS-RELEASE
+
+- 接續 #276／`6871bab`，擴充原 `mobile:release`，不另造發布服務。預設Android保持；iOS獨立profile、官方fingerprint、STORE／非simulator基線及相容OTA／回退。指定build提交TestFlight，不使用latest、不自動建測試群組／邀請，不把EAS排隊當Apple已完成。原操作未知不自動重發，舊Android記錄仍受保護。
+- 主模型親寫CLI、交付指引及review；Sol只做可界定的policy與既有定向檢查。Node24.19的一條policy／CLI檢查、合成公開設定iOS runtime及整合JS／Hermes匯出通過。第一次匯出命令錯指未hoist路徑，尚未進入bundling便失敗；核實安裝位置後只補同一匯出，沒有改產品或反覆重建。[證據](artifacts/verification/S04_IOS_RELEASE_20261024.json)。
+- 沒有全量、Web／Android重建、模型、通知、部署或雲端上傳。Apple團隊及App身份未定，submit profile留空，不填假身份或購買會員；IPA、APNs配置、真機、OTA與TestFlight繼續待辦。Android與協作者未驗項保留，不因本機工具合併而結案。
+
+<a id="log-20261024-s13-ios-compose"></a>
+## LOG-20261024-S13-IOS-COMPOSE
+
+- 從已合併 #277／`83a4241`核對正式部署，發現APNs程式所需私鑰尚未有Compose掛載。補獨立按需override，僅API／worker取得同一key；原渠道與storage掛載保留，Web不取得，配置本身不開啟外發。沿既有GCP／Compose Skill，不改雲端架構或目前服務。
+- 主模型完成小範圍實作及review，C單作者交付；一份合成`docker compose config`合併核對與diff檢查通過。[證據](artifacts/verification/S13_IOS_COMPOSE_20261024.json)。沒有啟動容器、使用真key、通知、模型或部署；實際Linux所有者／mode與投遞留待Apple前置完成，不以YAML通過當可用通知。
+
+<a id="log-20261024-android-model-closeout"></a>
+## LOG-20261024-ANDROID-MODEL-CLOSEOUT
+
+- 接續 `c58459a`，B 收 Android／個人設定交付；遠端新增 `d7ef061` 只有 README。實際手機沿原登入保存同一平台設定一次，Firestore metadata 為版本2，重開讀回成功；沒有輸入私人key、修改配額、呼叫模型或通知。原真key生成及四角色補驗仍待原條件。
+- 本機 Android 匯出通過；用戶批准的唯一免費 EAS build `c678d433` 已完成APK v3，主模型與Sol核對實際package／runtime／SHA256及原簽署相同。新runtime不能向APK v2強推OTA；手機最後鎖定，提供覆蓋安裝連結，未代填人工通過。
+- 附件清單採已合併 `a84f349` 的11檔相容patch。單一既有client→handler→store合成流程及VM import通過；兩索引READY後，只更新原API／worker，健康及真SDK有界查詢通過，Web不變、頭像停用。保留原API與配置回退；不遷資料、不跑全量。原Docker FROM錯誤停在候選階段，核tag／image後局部修正；索引核對器補collection身份，沒有重建同一索引。
+- [精簡證據](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)區分已部署API、尚欠Web畫面／APK安裝、實際與未驗項。使用者新增兩功能正式可用及來源索引標示；本批收束後補共用畫面與頭像生命週期。私人來源目前是授權摘錄讀取，沒有自動向量索引；不以已保存冒稱已索引。協作者開放PR不改動。
+
+<a id="log-20261024-source-readiness"></a>
+## LOG-20261024-SOURCE-READINESS
+
+- 接續 `eef3768`，共用 Sources 列表／詳情分清正文取得、本人授權可讀及向量索引。現行私人來源沒有向量索引作業；包括公共網址的私人副本，不以保存成功假稱已索引。Sol 實作三個呈現檔與一項檢查；主模型核 Server 摘錄資格、完整 diff 及現行契約，沒有新增另一套索引狀態或模型工作。
+- Node24.19 一項投影檢查、12 個資料情況通過；沒有全量／模型／部署。[證據](artifacts/verification/SOURCE_READINESS_20261024.json)。Web／Android 畫面留共用交付，不宣稱已發布。
+- 用戶已回覆 APK v3 安裝，ADB 核實 versionCode 3／App 前景；未據此補填完整清單或資料保留驗收。已接下準備單連點／手機列表頭、鈴鐺首幀及聊天頂部分頁要求；下次 APK 沿品牌素材處理 icon／splash，不為此再建一版。
+
+<a id="log-20261024-shared-reading-interactions"></a>
+## LOG-20261024-SHARED-READING-INTERACTIONS
+
+- 接續 #281／ee0b7b1，B 單作者收束共用介面。主模型修聊天原訊息錨點、滾頂分頁與原生導航；Sol 沿原派單處理鈴鐺首幀、準備單列表頭及直接錄音，主模型核關鍵 diff 與結果。照片現時只走舊提取入口，另記 CHAT-PHOTO01，不以刪除提示文案冒稱接通。
+- 聊天分開本機已載入視窗及 Server 游標，正常不需按鈕；Web 以可見訊息相對位置補償，原生沿 RN 可見位置保留。失敗只提供明確重試，不自動重發。四個原生分頁採 Expo Router 實際 aria-selected 狀態與 Web 共用短線；核對手勢不變。
+- 語音按一次啟動原錄音 adapter，停止後試聽及加入草稿；普通掛載不錄音，背景／取消／離頁沿原清理。移除文件「改用文字」。[必要檢查與匯出證據](artifacts/verification/SHARED_READING_INTERACTIONS_20261024.json)分列已通項目、fixture 失敗／局部修正及裝置未驗，不重跑全量。
+- 未發布 Web／OTA，沒有模型、通知或雲端資料修改。準備單合併保存、照片直接聊天及頭像仍待獨立業務接線；下一 APK 品牌圖標與 splash 保留待辦。
+
+<a id="log-20261024-shared-reading-delivery"></a>
+## LOG-20261024-SHARED-READING-DELIVERY
+
+- 使用者明確批准 `382d217` 的私有 Web 包與一次相容 OTA 後，原 VM 只更新 Web；候選核對、公開首頁 hash 與 API health 通過，API／worker、資料、配額及頭像 gate 不變。舊映像與 0600 配置備份可回退。
+- Android preview 發布 group `148449b2-41f9-4239-88b0-79578d7bc240`，runtime 與已安裝 APK v3 相同，毋須重裝。沒有強制重啟 App，不把發布視為手機畫面驗收；零模型／通知。精確產物、結果及待驗見[交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)。
+- 接續準備單連點合併與離頁背景保存；照片直接聊天、頭像及下次 APK 品牌圖仍保留各自門檻。
+
+<a id="log-20261024-preparation-background-save"></a>
+## LOG-20261024-PREPARATION-BACKGROUND-SAVE
+
+- 接續 `5ec3958`，主模型接共用 owner 的可續點草稿、停手三秒及離頁 flush；一個原操作可在背景完成，收據更新同源文件，不重讀全列表。Sol 在限定兩個 store 與一項測試中加入相容 `check_items`，主模型 review；沒有 Server 草稿副本。
+- 128 項有界批次共用版本與交易，無效目標不部分保存。unknown 只查／重送原操作；衝突先讀回再明確套用，斷線不自動排隊重送，身份清理保留。按鈕不因正常保存換成文字或鎖住其他勾選。
+- [定向證據](artifacts/verification/PREPARATION_BACKGROUND_SAVE_20261024.json)保留兩次 fixture 等待缺口及 tsc 參數更正；owner 連貫情景與 Firestore 合成批次各一條通過，窄型別通過。沒有全量、真模型、雲端寫入、通知或真機；尚未部署。
+
+
+<a id="log-20261024-four-fixes"></a>
+## LOG-20261024-FOUR-FIXES
+
+- 2026-10-24 UTC，依使用者指定第 1–4 項修補，dot 原生整合代理在獨立 cloud checkout 接續 `382d2174`，只整合已獨立 review 的照片兩提交、PDF 及 APNs 候選。15 碼測檔無 #282 路徑重疊；照片 49/49、APNs 10/10 通過。PDF 相關兩份舊 scripts 全檔執行較原定定向範圍闊，整批 44/54，10 FAIL 均為 preparation fixture 缺 `HistoryCards` mock；master 同一 import／harness 已靜態核實，不修旁支或掩蓋原紅。
+- 原候選 `57277f5`／tree `88dea03e` 經主對話覆核後準備草稿 PR。shell push 因無 Username／TTY 失敗；connector 已建 18 個與原本地 SHA 相符的 blob，WORKLOG blob 返回 catalog changed 拒絕。未建立 tree／commit／branch／PR；批准卡狀態未定，不重試或改道，原候選及已準備內容不變。
+- 等待期間 master 合併 #283／#284 至 `015deb8e`。唯讀 merge preview 只有 PLAN／STATUS／WORKLOG 衝突，但共享文件 owner 新增 preparation buffer；因此依主對話限定授權另開 `codex/four-verified-fixes-20261024-latest`，保留最新部署及背景保存文件，不覆舊狀態。8 個產品檔逐 byte 沿已批准來源；只補原 PDF fixture 載入真 buffer，以及 React 無 deps effect 的每次 render 語意，未弱化斷言或改產品。
+- Node 24.19.0、沿用依賴及合成 ports，最新候選只串行補 PDF owner 3/3、archive 組裝 1/1、新 native 檢查 5/5。未重跑照片／APNs、全檔 lifecycle、完整型別／build／GUI／真機或外部服務；原 PDF timer 1/3、照片 red、APNs care fixture red 及較闊批次 10 FAIL 均在[同一精簡收據](artifacts/verification/FOUR_FIXES_20261024.json)保留，按各自版本引用。
+- 新候選 fixture／文件交主對話覆核；外部交付仍等明確批准狀態，不新增上傳、合併、GCP／OTA／Sites、模型或真家庭資料操作。協作者 PR、頭像 gate、照片聊天及附件交付原責任不變，沒有真人驗收或猜測人員署名。
+
+<a id="log-20261024-preparation-background-delivery"></a>
+## LOG-20261024-PREPARATION-BACKGROUND-DELIVERY
+
+- 已合併 #284／`015deb8` 沿原 VM 完成相容 API／worker／Web 更新；候選僅做離線 import／schema 與 hash 核對，發布前確認沒有活動 Agent lease。公開首頁 hash、API health 與映像身份通過，保留原映像及兩份 0600 配置回退；無資料遷移、模型、通知或配額改動。
+- Android 首次發布遇 EAS 資產處理 180 秒逾時。查回 preview 仍為上一組，固定 CLI 原碼確認尚未到 publish mutation；同一份已核 hash 產物只補送一次，成功發布 group `a46b49b0-a5ef-4ead-8d24-6a61236a85b9`。與已安裝 v3 相容，不另建 APK，不把發布當真機驗收。
+- [交付證據](artifacts/verification/PREPARATION_BACKGROUND_DELIVERY_20261024.json)保存版本、原失敗、回退及未驗項。照片聊天正式 Agent 接點與協作者未合併修改重疊，保留其工作；先處理不重疊的附件接點，頭像與下一 APK 品牌圖仍待後續包。
+
+
+<a id="log-20261024-four-fixes-draft-delivery"></a>
+## LOG-20261024-FOUR-FIXES-DRAFT-DELIVERY
+
+- 使用者明確批准四項修補、測試及記錄公開上傳後，於 2026-10-24 13:45 UTC 建立草稿 PR #286；遠端 `125657d177eb52347194556b543ffe7497b51d80` 的 tree `951b9e482ed2616bbfe497d8ec61a39b7b0825ae` fetch 回核與批准本地候選完全相同，19 檔集合相符。當時沒有觀察到 commit statuses／PR workflow runs，不當 CI 通過；未合併或部署。
+- #285 部署文件已在上傳期間合併至 `60b42c1`，只有 PLAN／STATUS／WORKLOG 衝突，產品無交集。使用者其後要求處理；本次由 dot 原生代理在隔離 worktree 正常 merge，保留 master 最新正文、兩邊 WORKLOG 追加記錄及原部署收據，並將四項修補的現況改為已交草稿 PR，未改原驗證收據或掩蓋失敗。
+- 本輪只核文件連結／錨點／衝突標記、append-only 保留及 15 個碼測檔 bytes；產品與測試完全不變，沒有重跑產品測試、模型、服務、GCP／OTA／Sites。交主對話覆核後只更新同一草稿 PR，不另開 PR、不強推、不合併 PR 或部署；原生／正式未驗門檻保持。
+
+<a id="log-20261024-chat-photo-backend"></a>
+## LOG-20261024-CHAT-PHOTO-BACKEND
+
+- 按使用者新增範圍授權，從 `60b42c1` 接照片專用訊息／runtime／審核入口；沒有修改或合併協作者分支。原照片與 Storage 不另複製，訊息原交易核版本及收據，同圖可重用；照片上傳不再需要先提取成記錄。
+- 原圖由 Server 核權後暫時送模型，附件庫可有界列出／重讀，審核取得相同原圖且 hash 綁定 metadata。原圖不進 ADK 事件或工具回覆；刪除、撤權與官方引用規則保留。Sol 只承接兩個 store 及其定向測試，主模型負責契約、runtime、工具、審核接點及 review。
+- [必要證據](artifacts/verification/CHAT_PHOTO_BACKEND_20261024.json)：兩條新連貫合成情景通過，最終只補原照片 transport 與新 runtime 情景，窄 strict 型別通過。初次型別命令 TS5112 已按實際修正；零真模型／通知／雲端寫入。前端傳送、手機欄位修正及部署接續，不當作完整照片體驗已完成。
+
+<a id="log-20261024-chat-photo-frontend"></a>
+## LOG-20261024-CHAT-PHOTO-FRONTEND
+
+- 沿已合併 #287 接共用 Web／Android 原圖上傳、聊天保存、原操作查回與附件庫同 ID 重用；聊天不再要求先送到核對。照片 API 補接既有 recoveryPending 欄位，未結清還原仍不可讀；移除草稿不刪已有原圖。
+- 手機空單行欄位先用原生提示，focus／有內容才轉回 Paper 浮動標籤；Web／flat／多行保持原呈現。使用者已回報彈窗初開延遲，未有本修正的真機結論。
+- [定向證據](artifacts/verification/CHAT_PHOTO_FRONTEND_20261024.json)：一條真 client／合成 transport 流程、三項輸入元件檢查、13 roots strict 型別及兩端匯出通過。首輪 TS2345 的 optional photo 窄化問題已修；review 補刪除後可解除引用，不再卡 unknown。零模型／通知／雲端寫入，部署及真機待接續；#286 照片恢復區塊未改動。
+
+
+<a id="log-20261024-chat-photo-delivery"></a>
+## LOG-20261024-CHAT-PHOTO-DELIVERY
+
+- #287／#288已分別由C／B提交及合併；本次正式交付由C承接。原站先健康核對API／worker再更新Web，Android發布相容OTA group `327ad4ca-66f5-412b-bf8a-ee46d7493198`，不用新APK。
+- 首次候選把完整firebase-runtime覆蓋到部分部署基線，缺avatar-release而停止；修正為現網runtime只加兩項已review照片注入，未帶入頭像／APNs。首次修補Docker FROM使用image ID格式失敗，改成核hash的本機標籤後通過正式assembly import、13檔hash及Web hash；原失敗不抹除。
+- 公開首頁／API health均200，保留原映像和配置回退。零模型／通知／資料遷移；[精確交付證據](artifacts/verification/CHAT_PHOTO_DELIVERY_20261024.json)分列產物及限制。手機連線但鎖屏，未強停或改草稿，提示延遲修正及照片體驗仍待真機；接續頭像，不接管#286或協作者Agent。
+
+
+<a id="log-20261024-four-fixes-merge-compatibility"></a>
+## LOG-20261024-FOUR-FIXES-MERGE-COMPATIBILITY
+
+- 使用者明確要求合併 #286 後，末核 master 已前進至 #288／#289、`98f56a3`；同一 PhotoInputDomains 新增 workspace 的保存照片→聊天接線，不能只憑先前無衝突狀態直接合併。本輪先暫停外部寫入，再按主對話限定範圍正常整合；原照片修補核心與新 wrapper 各自保留，沒有另改產品或 fixture。
+- Node 24.19.0、既有依賴及合成 ports，照片恢復 49/49、聊天照片 client 原操作／同 ID 重用／身份隔離 1/1 通過。未將舊 APNs／PDF 數字算成本輪重跑，也未重做全量、build、真機或模型；原紅及未驗保持，最新兩份 log hash 追加於[既有收據](artifacts/verification/FOUR_FIXES_20261024.json)。
+- 本輪由獨立 reviewer 唯讀核對新照片 owner/API 與 draft／deferred discard／read-error 的相容性，不重複跑測試。保留 master PLAN／STATUS、兩邊 WORKLOG 與協作者最新部署證據；通過後只依精確 head 及 GitHub 保護規則正常合併同一 PR，不新增部署或合併其他協作者 PR。
+
+<a id="log-20261024-avatar-lifecycle-fix"></a>
+## LOG-20261024-AVATAR-LIFECYCLE-FIX
+
+- 同一 invocation 的 avatar restore claim 回應丟失可沿持久 token 查回；只恢復尚未執行的首次寫入，不接管另一 invocation 或重送 unknown Storage。修正 object metadata 的 never 控制流型別，以及 account export 不應把 content-only port 傳作 chat mutation port 的組裝。
+- [必要證據](artifacts/verification/AVATAR_LIFECYCLE_FIX_20261024.json)：兩項 lost-claim／lost-object 恢復與一項目前頭像匯出／版本 fence 檢查通過。窄域及全部正式 Server／共用契約 strict 通過；完整含測試編譯的失敗另保留，不改寫為通過。clean lock 只在隔離 Windows 目錄安裝，沒有改 lockfile，也不代表 Linux 容器已驗。
+- 主模型實作與契約核對，Sol 僅局部唯讀 review；未發現 actionable finding。無模型、通知、雲端寫入、部署或 gate 變更。未知／變更來源恢復、原生雲端生命週期與裝置效果仍待接續，頭像不冒稱已可用。
+
+
+<a id="log-20261024-avatar-platform"></a>
+## LOG-20261024-AVATAR-PLATFORM
+
+- Linux x64／Node 24.19 隔離容器按原 lock clean install，使用正式 avatar codec 完成一條 JPEG EXIF／metadata、透明 PNG 及取消 child-close 的連貫檢查；一次通過，沒有重跑產品全量。實裝 sharp 0.35.5／libvips 8.18.7，LICENSE／README／package metadata 的 hash 與容器、來源 hash 保存在[證據](artifacts/verification/AVATAR_PLATFORM_20261024.json)。
+- 主模型覆核測試、實際 TAP、來源及隔離 Docker 定義；此包無產品行為修改。沒有雲端資料、模型、通知或部署，不改寫原失敗；unknown 恢復、原生資料層及設備門檻仍待完成，寫入 gate 保持關閉。
+
+
+<a id="log-20261024-avatar-restore-abort"></a>
+## LOG-20261024-AVATAR-RESTORE-ABORT
+
+- 主模型補隔離頭像還原的 inspect／abandon 命令、activation fence 及 generation-CAS 永久無圖片 marker；來源／Auth／journal 改變不再只能留下無明確出口的已認證副本。清理不讀來源正文、不接管 live target、不重新 copy；legacy 不明盤點仍拒絕。
+- 一條版本化 Storage／Firestore 合成流程覆蓋失去回應、遲到寫入、重建 adapter 後重入、原 source 不變及 activated 拒絕；受影響 strict 型別／命令語法通過。最初 Buffer／Uint8Array fixture 比對與 fixture metadata 型別錯誤保留，修正沒有放寬產品斷言；最後補核明確的 adapter 重建及 abandoned 結果。獨立 Sol 唯讀 review 無 actionable finding，主模型覆核原文及結果。
+- [完整證據](artifacts/verification/AVATAR_RESTORE_ABORT_20261024.json)。零雲端資料、模型、通知、真機及部署；此為 source 實作，沒有實際執行放棄任何 GCP 還原。原生資料層／恢復及設備 gate 仍未通，不啟用頭像。
+
+
+<a id="log-20261024-avatar-native"></a>
+## LOG-20261024-AVATAR-NATIVE
+
+- 沿既有合成恢復庫及私人 bucket，以全新 namespace、653 bytes 合成 JPEG 執行一次原生資料接點核對。兩個獨立 SDK client 競爭只產生一次原 copy；其中一個交易得到預期 ABORTED，查回同一結果，沒有換操作重做。
+- 重建 client 後沿原 identity 放棄及重入，永久 marker 保留、舊 pinned generation 不可讀、遲到 create-if-absent 被拒；原圖不變並於最後按計劃清理。[證據](artifacts/verification/AVATAR_NATIVE_20261024.json)保存範圍、呼叫數與 hash，受保護本機 key 不入倉庫。
+- 這是同一程序的兩個 SDK、合成 provenance，並非完整 backup／Auth／journal 還原或 API 跨副本驗收。沒有操作原站控制、用戶資料、模型、通知、新資源或部署；頭像 gate 保持關閉，剩餘門檻按 PLAN 接續。
+
+
+<a id="log-20261024-android-brand-startup"></a>
+## LOG-20261024-ANDROID-BRAND-STARTUP
+
+- Android 原配置未指定 launcher／splash；本次復用既有品牌 raster 與 Expo 57 官方 splash plugin，沒有重畫品牌或修改正式共用頁面。下一次必要新 APK 才交付，現有 v3 runtime 不強制覆寫。
+- [必要證據](artifacts/verification/ANDROID_BRAND_STARTUP_20261024.json)：config 正確解析、官方生成器輸出 native resources，主模型核對 launcher／splash 像素。保留安裝 engine 警告、config 參數、fixture cwd 及 sandbox EPERM；修正核對入口後成功，未新增產品測試或跑全量。
+- 沒有 EAS 上傳／建置／OTA、真機、模型或通知。本機資源不是新 APK／手機啟動已驗；品牌 runtime 改變由既有發佈工具攔截，不手填舊版本。
+
+<a id="log-20261025-avatar-admission-native"></a>
+## LOG-20261025-AVATAR-ADMISSION-NATIVE
+
+- 既有合成恢復庫以全新 namespace 執行一次真 SDK 連貫流程；兩個 client 使用正式 authority、avatar store、online service、codec、加密物件及 maintenance／queue consumer。共用准入、持久 lease、原收據、權限拒絕、更換、舊圖清理及重建 client 讀回通過。
+- [證據](artifacts/verification/AVATAR_ADMISSION_NATIVE_20261025.json)保存索引、範圍、44 次交易／兩次寫圖及四個預期拒絕。腳本先經主模型及獨立唯讀 review，補齊 barrier 失敗處理、現場識別及 namespace 檢查後只執行一次；沒有重跑模型或通知。
+- 測試圖片按 generation 清除，測試產品存取已撤銷；密文台帳保留，受保護 key 不入倉庫。外部 Tasks 喚醒使用本地 inbox，沒有真 OIDC／HTTP／兩個 API 部署副本、刪除 journal 或完整恢復證據。source gate 保持 false，原站未改動，不能把本次資料層通過當正式頭像已開放。
+
+<a id="log-20261025-avatar-journal-restore"></a>
+## LOG-20261025-AVATAR-JOURNAL-RESTORE
+
+- 主模型沿既有 recovery operator fixture 補一條備份後明確刪除的接續檢查，使用正式移除服務、獨立加密 journal、還原規劃／套用、帳戶匯出及清理 consumer。刪除前備份仍有圖，但還原不 copy、不披露，原物件清理責任及永久日誌保留；重入不重刪。
+- 一次定向流程通過，單一入口 strict 型別零診斷；獨立唯讀 review 無 finding，主模型核對斷言與實際結果。[證據](artifacts/verification/AVATAR_JOURNAL_RESTORE_20261025.json)。不重跑此前通過情景，零雲端寫入、模型、通知或部署。
+- 只讀資源盤點確認現有恢復庫已有合成證據，journal bucket 與原站共用；沒有清空舊資料或建立新資源。合成基礎設施不等於真 GCP 配對還原，該門檻及設備／正式組裝仍保留；本包不解除頭像 gate。
+
+<a id="log-20261025-avatar-paired-native-restore"></a>
+## LOG-20261025-AVATAR-PAIRED-NATIVE-RESTORE
+
+- 依使用者明確批准，建立兩個臨時香港 Firestore 庫及專用私人 bucket，只授權既有 Firestore service agent 該 bucket 的物件管理。正式服務以一個合成 Auth 帳號、一個孩子及兩張小圖完成配對備份、備份後刪除、原生匯入、最新刪除日誌重放及隔離讀回；保留頭像可讀，已刪頭像不復活／不匯出，原 generation 清理及 storage epoch 更新通過。[精確證據](artifacts/verification/AVATAR_PAIRED_NATIVE_RESTORE_20261025.json)。
+- 一次實際 export／import、82 次交易；前兩次 export 請求因 PITR 前置被拒，停批查回相同操作及限定錯誤 metadata，確認未啟動後才接續。只為臨時來源啟用 PITR；設定可讀與匯出端接受有時間差，等待後成功，不把該時間當服務保證。獨立腳本 review 的交易重試覆蓋、journal 範圍及 generation 精度問題在執行前已修；沒有改產品規則來通過測試。
+- 清理三個精確圖片版本、合成 Auth 帳號、專用 bucket 及兩個臨時庫，讀回確認不存在；既有 bucket 的 soft-delete 政策及共用恢復庫不變。受保護本機 key／恢復資料不入 Git。零模型／通知／正式資料／部署；增量批准上限 US$1，實際帳單尚未知。
+- 這是正式資料／operator／物件服務的真雲端核對，不是 HTTP／登入畫面、兩個 API 部署副本或原生每日備份驗收。後者依使用者原指示繼續延後；同版組裝／派送及設備門檻保留，頭像 gate 不解除。
+
+<a id="log-20261025-avatar-runtime"></a>
+## LOG-20261025-AVATAR-RUNTIME
+
+- 由正式 openFirebaseRuntime／HTTP／online／worker 組裝入口核對頭像服務，沿受控資料及外部 port，證明同一服務、身份拒絕、原操作查回、unknown 不內部重試及關 gate 後匯出／清理保留。新 fixture 的 FirestoreDomainError 參數順序先失敗，修正後一次補驗通過；產品程式未因此修改。[證據](artifacts/verification/AVATAR_RUNTIME_20261025.json)。
+- Node 24.19 定向 1 PASS；沿 Server 設定單一 test root strict 型別零診斷。沒有重跑整套、雲端、模型或通知，不把 controlled ports 當正式派送或真機證據。
+- 新增同 VM 頭像 Compose 配置，寫入預設 false。現網缺少頭像及 sharp 依賴，後續候選須完整補齊，維持同版 API／worker 及可回退；source gate 尚未解除，未部署。
+
+<a id="log-20261025-avatar-runtime-deployment"></a>
+## LOG-20261025-AVATAR-RUNTIME-DEPLOYMENT
+
+- `652edad` 正式 API／worker 同版候選已在原 VM 開啟及關閉核對，補四個已驗 Linux 原生套件及完整已合併程式，保留 license；沒有另做 npm 安裝、真模型或還原重跑。補一個 composite、cleanup 欄位索引及三個私密欄位排除，全部 READY 後才部署。
+- 原站兩服務健康、Web 映像未改，公開 health 及部署後 Scheduler 自動喚醒通過；source gate／寫入均 false。獨立 review 指出的 maintenance 恢復範圍及公開 probe 回退缺口在上傳前已修。[部署證據](artifacts/verification/AVATAR_DEPLOYMENT_20261025.json)保留核對器的舊 ADC／Web 無 Docker healthcheck 錯誤，沒有因此重跑部署。
+- 自動批准審查兩次拒絕解除 source gate；第二次已有部署讀回，仍要求明確授權解除持久啟用閘。未繞過或開寫入，已提出限定啟用確認；必要測試依使用者新授權不逐次詢問。手機未連線，設備裁切／EXIF 留待驗，原生每日備份還原仍延後。
+
+<a id="log-20261025-avatar-enable-approved"></a>
+## LOG-20261025-AVATAR-ENABLE-APPROVED
+
+- 使用者明確批准解除頭像 source gate，review／合併後開啟原站同版 API／worker 寫入。既有 lifecycle、原生配對還原、runtime、索引與正式停寫部署證據已具備；本次只改 release 常數，不改權限、確認、防重、刪除或模型設定。
+- 復用已驗 candidate-gate 路徑及正式組裝檢查，靜態核對差異，不重跑整套測試。部署仍需精確候選、健康及寫入配置讀回；設備選圖／裁切／EXIF 未驗保留，不以啟用或真人批准替代。
+
+<a id="log-20261025-avatar-enabled"></a>
+## LOG-20261025-AVATAR-ENABLED
+
+- #300／`0ebfbfa` 的單檔 release flag 修正經主模型及獨立覆核後合併；使用者已明確批准原站開放。候選沿已核對的 `652edad` 映像，只替換該檔；正式 API／worker 同版開啟／關閉、sharp／libvips 及兩項 true 配置核對通過，未重跑業務／還原測試。
+- 2026-10-25 09:08:54 UTC 原站 API／worker 啟用 `c3b149c`，兩服務健康、公開 health、寫入配置及部署收據讀回通過；Web 映像保持 `c09400c`，沒有 Android OTA 或新 APK。[啟用證據](artifacts/verification/AVATAR_ENABLE_20261025.json)。
+- 保留相容停寫映像 `4159605` 及受保護配置，回退仍能讀取／清理頭像；不能退至不認識新 schema／journal 的舊映像。零模型／測試通知／新增資源／資料遷移／配額修改；既有索引與排程證據復用。手機選圖／裁切／EXIF、原生每日備份與 Secret Manager 災備仍待驗，沒有代填人工通過。
+
+<a id="log-20261025-closeout-web"></a>
+## LOG-20261025-CLOSEOUT-WEB
+
+- 收尾 Android、頭像、附件庫及個人模型，保持五個協作者 Agent PR head 未改。實際 Web 流程發現頭像 Save 在背景 read 尚未結束時被略過；owner 只允許寫入取代唯讀刷新，舊回應／finally 不再更新新 request。既有版本、防重、unknown 與身份清理保持，21 項定向檢查通過。
+- 本地入口原本不轉送頭像寫入旗標，補明確 opt-in，預設 false。沿原 Firebase demo emulators、正式 Web／API／client，選圖、方形裁切、保存、內容 hash／MIME、重新開啟與明確移除通過；附件沿正式訊息連結，在實際清單下載原檔並核 bytes，之後刪除該合成附件。
+- 第一批頭像保存失敗及修正後驗收器呼叫上限、附件下載等待超時均保留；後續只補原已保存資料的待驗步驟，不重新上傳／提交。Web 匯出通過。必要測試沒有呼叫產品 Agent／通知，不代填 Android 真機。
+- 個人模型沿既有受限 Gemini key及正式 provider factory 僅一次短生成，供應商回 model_region_unavailable，立即停止，零 embedding／重試／配額修改。成功個人 key 仍待驗，不把此結果當其他用戶或 Vertex 的限制。[證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。
+- 使用者另指出自製頭像裁切體驗偏離成熟產品；資料層驗證不等於體驗完成，保留現成能力優先的後續接點。手機／原生裁切／跨端媒體與 OTA 回退、四角色聯合及原生備份真還原未驗仍保留。
+
+<a id="log-20261025-avatar-save-delivery"></a>
+## LOG-20261025-AVATAR-SAVE-DELIVERY
+
+- #302 已按對應身份合併；`15fdb50` 的 Web-only 封包約 4.46 MiB，以現網 Caddy/Web 映像為底建立候選。2026-10-25 09:50 UTC 啟用 `d6f2a8b`，公開 index hash 與 API health 通過；API／worker、資料及配額均不改，保留 `c09400c` 和配置回退。[交付證據](artifacts/verification/AVATAR_SAVE_DELIVERY_20261025.json)。
+- 原 VM 身份與執行狀態已核，期限仍為 2026-11-06 13:33 香港時間，部署前約 10.4 GiB 可用空間；未續期、未新增資源、未發通知或模型。發佈工具的唯讀 plan 判定當前 runtime `0c5c868…` 不同於 APK v3 `5fd1446…`，沒有強推 OTA 或重建 APK；與後續裁切接點一併交付，設備項保持待驗。
+- 本地核對後關閉環境時，launcher 曾報 checkpoint HTTP 500 並保留前份 snapshot；emulator 尾部另有其後成功 export。沒有把此批核對宣稱為冷重啟／備份恢復驗收，未擴測。#303 已另合併成熟能力優先的工作規則，裁切體驗不能因保存已通過就視為完成。
+
+<a id="log-20261025-avatar-crop-reuse"></a>
+## LOG-20261025-AVATAR-CROP-REUSE
+
+- 按使用者反覆指出的頭像操作落差，復用既有 Expo ImagePicker 原生裁切及固定 react-easy-crop 6.2.4 Web 元件，移除自製 PanResponder／方向按鈕；保留共用 owner、原 Server 及權限／收據。薄平台接線不另建資料服務，兩份 license 原文已保存。
+- 原生 adapter 合成檢查及選區契約各一項通過；受影響型別無 diagnostics。真 Web 拖曳／縮放／鍵盤、保存／讀回／移除與選區一致通過；Desktop CSS zoom 曾令大圖裁切框超界，已以局部座標邊界修正及量度。兩次 harness selector／responsive modal 停批與後續只補剩餘項均保留；沒有重跑模型、通知、附件庫或後端恢復。
+- Android 匯出初次 Hermes sandbox 寫入被拒，同來源在可寫環境匯出通過；Web 裁切修改後的最後匯出另記。依賴安裝的舊 system npm engine 警告保留，檢查／建置使用 Node24.19，lock 只保留所需兩依賴、不改無關版本。[證據](artifacts/verification/AVATAR_CROP_REUSE_20261025.json)。尚未把真機、APK、部署或個人模型成功寫成通過；協作者四 Agent PR 不動。
+
+<a id="log-20261025-avatar-crop-delivery"></a>
+## LOG-20261025-AVATAR-CROP-DELIVERY
+
+- #305／`1f07fab` 的 Web 靜態產物已經原 IAP／Compose 流程更新；候選 index、公開 hash／health 與 API／worker 不變核對通過。保留前版 Web 映像及 0600 Compose 回退，主機期限仍為 2026-11-06 13:33:50 香港時間，未續期。
+- 一次免費 EAS preview build `9f43f925-acc1-44e4-915b-ae63dcb46b70` 完成 APK v4；與 v3 同簽署，package／runtime 及原生新圖標／splash 資源核對通過。下載入口在 PLAN／STATUS；沒有向不同 runtime 的 v3 發 OTA，真機安裝／裁切未代填。
+- Python 下載 403 改用已安裝 EAS 官方下載函式；舊 Java 核對無輸出後只停該程序，Java21 通過；aapt 中文絕對路徑失敗只改相對路徑續核資源。原失敗保留，沒有重建或重跑產品。局部測試環境退出時 emulator export 500，保留上一快照，未宣稱恢復通過。
+- [交付證據](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)分列實作／Web／APK與待驗。零模型／通知／遷移／配額修改；手機設備出口、成功個人 key 及已延後的四 Agent／備份項仍保留，不動協作者 PR。
+
+<a id="log-20261025-android-v4-device"></a>
+## LOG-20261025-ANDROID-V4-DEVICE
+
+- 使用者回覆「已開啓并覆蓋安裝」；ADB 核對 package versionCode 4，原登入及孩子資料仍可讀。以一張本次合成 EXIF-6 JPEG 核對系統選圖、拖動正方裁切、App 圓形預覽及取消；未保存至本人孩子，原頭像保持不變。
+- 附件庫列表及孩子切換清理可見；使用者要求減少額度消耗後停止追加，未完成下載／分享，不以空清單當通過。已關閉選取器並清理本次合成圖片及 UI dump；零模型、通知、雲端寫入或新建置。
+- [設備證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)；私人畫面不入 Git。成功個人 key、其餘媒體／通知終態／OTA 回退維持待驗，協作者四 Agent PR 不動。
+
+<a id="log-20261025-android-picker-filename"></a>
+## LOG-20261025-ANDROID-PICKER-FILENAME
+
+- 使用者要求直接續驗剩餘流程；v4 用一份 108 bytes、無私人資料的 TXT 選檔時，草稿顯示 Android `msf:` ID 而非原名稱，於送出前停批，沒有模型／通知或雲端寫入。原因是 SDK 的 JS `File.name` 使用 URI basename；已有原生 copy 能取得 provider display name。
+- 文件與已錄音訊改用同一薄接點，沿 expo-file-system 57.0.7 複製至本機私有暫存後保留真正檔名，再交原草稿處理；保留大小、數量、過期清理及取消，不新增套件或原生配置。單一針對性檢查及三入口型別通過；真機修正後續驗尚待相容 OTA，不以替身當通過。
+- [證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。不動協作者四 Agent PR，不重跑頭像或已通過 Web 附件下載；個人 Gemini key 原有供應商地區拒絕不反覆重試。

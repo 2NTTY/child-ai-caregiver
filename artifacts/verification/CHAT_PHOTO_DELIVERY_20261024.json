@@ -1,0 +1,98 @@
+{
+  "package": "CHAT-PHOTO01 deployment and native input hints",
+  "source": "90129336d594e77a0458dfc4ea7cb3811dbe2964",
+  "mergedPrs": [
+    287,
+    288
+  ],
+  "vm": {
+    "source": "90129336d594e77a0458dfc4ea7cb3811dbe2964",
+    "state": "deployed",
+    "at": "2026-10-24T14:32:14.556526+00:00",
+    "apiImage": "sha256:e23de9398331db599f12094491469980d98770dc22abc7f93a6dffdfe8354bb7",
+    "webImage": "sha256:c09400c5a8c3ca6c78d8cf1cbe4f5eeb6129054bfcd5ff2e82e82a90bec5f9e8",
+    "rollbackApi": "sha256:f83cb541824103c79ce6630d8cb6d11fc6bd8db202f89ce21568f2b0a74cf862",
+    "rollbackWeb": "sha256:4c665eb4aec162c547e3e504b062cea299f6877b75c1c13a2d6c1998d80ad980",
+    "configurationBackups": [
+      "/etc/yuban-p1/firestore/compose.env.before-chat-photo-9012933",
+      "/etc/yuban-p1/firestore/compose.yaml.before-chat-photo-9012933"
+    ],
+    "avatarRelease": false,
+    "modelCalls": 0,
+    "notificationsSentByAcceptance": 0,
+    "dataMigration": false
+  },
+  "staging": {
+    "source": "90129336d594e77a0458dfc4ea7cb3811dbe2964",
+    "state": "staged",
+    "apiImage": "sha256:e23de9398331db599f12094491469980d98770dc22abc7f93a6dffdfe8354bb7",
+    "webImage": "sha256:c09400c5a8c3ca6c78d8cf1cbe4f5eeb6129054bfcd5ff2e82e82a90bec5f9e8",
+    "runtimeCompatibility": {
+      "source": "90129336d594e77a0458dfc4ea7cb3811dbe2964",
+      "baseRuntimeSha256": "6fb7020fb5b455339c568517cb11fe8f03e01829e73573b0c88239cfe8a8725b",
+      "runtimeSha256": "c6bd1e1ab8038a9084d2b6af0ca06c2570189132f860a3d98cd45a06c05f94db",
+      "archiveSha256": "cf51a6caae6395d3b5a3df8ae3d7f894ffc556c24746cff9397b39c4c8cd6d30",
+      "reason": "Apply only the two reviewed photo assembly injections to the deployed runtime; preserve deferred avatar and APNs assembly. Initial full-source overlay failed before activation."
+    }
+  },
+  "public": {
+    "source": "90129336d594e77a0458dfc4ea7cb3811dbe2964",
+    "at": "2026-10-24T14:32:48.946Z",
+    "homeStatus": 200,
+    "indexSha256": "afaf3eecd70c46c35fa2f48e8425eb1b36d162e587aaee3e1d5e7aa08522fd5e",
+    "apiHealthStatus": 200
+  },
+  "android": {
+    "source": "90129336d594e77a0458dfc4ea7cb3811dbe2964",
+    "runtime": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+    "channel": "preview",
+    "startedAt": "2026-10-24T14:32:49.103Z",
+    "state": "published",
+    "finishedAt": "2026-10-24T14:35:56.748Z",
+    "exitCode": 0,
+    "updates": [
+      {
+        "id": "01a16e56-fcb0-7b65-8aca-2cee175df202",
+        "createdAt": "2026-10-24T14:35:56.976Z",
+        "group": "327ad4ca-66f5-412b-bf8a-ee46d7493198",
+        "branch": "preview",
+        "message": "Photo chat and native field hints 9012933",
+        "runtimeVersion": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+        "platform": "android",
+        "manifestPermalink": "https://u.expo.dev/update/01a16e56-fcb0-7b65-8aca-2cee175df202",
+        "isRollBackToEmbedded": false,
+        "gitCommitHash": "90129336d594e77a0458dfc4ea7cb3811dbe2964"
+      }
+    ]
+  },
+  "retainedFailures": [
+    "Initial candidate import failed: full-source firebase-runtime referenced avatar-release.ts absent from the deployed base. Stopped before activation. Compatibility repair applies only the two reviewed photo injections to the exact deployed runtime; deferred avatar/APNs assembly remains absent.",
+    "First repair Dockerfile used FROM sha256:<image-id>, interpreted as a repository. No runtime change. Repaired using a locally tagged image with verified ID; formal assembly import and 13 file hashes then passed."
+  ],
+  "verification": {
+    "formalAssemblyImport": "passed in network-disabled candidate",
+    "publicIndexHash": "matches exported Web",
+    "apiHealth": 200,
+    "modelCalls": 0,
+    "notificationsSentByAcceptance": 0,
+    "dataMigration": false,
+    "newApk": false
+  },
+  "phone": {
+    "deviceConnected": true,
+    "state": "locked / Dozing; no force-stop or draft change",
+    "visualResult": "not_verified",
+    "observedDate": "2026-10-24"
+  },
+  "notVerified": [
+    "Physical Android field/modal timing and exact OTA application",
+    "Real-model photo understanding and delivery-review quality",
+    "Avatar lifecycle and activation",
+    "Deferred native backup restore"
+  ],
+  "collaborator": {
+    "pr": 286,
+    "head": "d9157a7fdd852fb9613ad5d2c3ac34578877d010",
+    "state": "open; recovery hunks not changed or merged"
+  }
+}

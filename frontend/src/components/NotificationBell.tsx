@@ -20,7 +20,10 @@ export function NotificationBell() {
   useEffect(() => { setOpen(false); }, [scope]);
   return <>
     <View style={styles.anchor}>
-      <ToolbarIconButton icon="bell-outline" label="開啟最近消息" onPress={() => setOpen(true)} />
+      <ToolbarIconButton icon="bell-outline" label="開啟最近消息" onPress={() => {
+        if (owner?.online && owner.access !== "revoked" && owner.notifications.state === "unavailable" && !owner.notificationUnavailable) owner.actions.loadNotifications();
+        setOpen(true);
+      }} />
     </View>
     <Portal><Dialog visible={open} onDismiss={() => setOpen(false)} style={styles.dialog}>
       <Dialog.Title style={styles.title}>最近消息</Dialog.Title>

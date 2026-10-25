@@ -1,3 +1,5 @@
+import { avatarRestoreSchemas, isAvatarRestoreKind, assertAvatarRestoreBinding, transformAvatarRestore } from './firestore-restore-avatar-codec.ts';
+import type { AvatarObjectDescriptor } from './avatar-data.ts';
 import { firestoreChatFileRowSchema } from './firestore-chat-files.ts';
 import { chatFileObjectAddress, chatFileObjectDescriptorSchema, type ChatFileObjectDescriptor } from './firebase-chat-file-objects.ts';
 import { firestoreVoiceRowSchema } from './firestore-voice.ts';
@@ -48,6 +50,7 @@ const authoritySchemas = { control: authority.control, account: authority.accoun
   'authority-owner': authority.owner, 'authority-operation': authority.operation, 'authority-child-detail': authority.childDetail,
   work: workRecoverySchemas.work, followup: workRecoverySchemas.followup, 'authority-work-detail': authority.workDetail } as const;
 const domainSchemas = {
+  ...avatarRestoreSchemas,
   'platform-policy': { suffix: 'admin_policy', schema: platformPolicySchema },
   'admin-invitation': { suffix: 'admin_invitations', schema: adminDirectorySchema },
   'admin-receipt': { suffix: 'admin_operations', schema: adminReceiptSchema },
@@ -97,6 +100,7 @@ export interface FirestoreRestoreTransform {
   newEpochByWorkspace: ReadonlyMap<string, string>; generation: string;
   newAuthorizationVersionByWorkspace?: ReadonlyMap<string, string>;
   photoDescriptors: ReadonlyMap<string, FirebasePhotoObjectDescriptor>;
+  avatarDescriptors?: ReadonlyMap<string, AvatarObjectDescriptor>; avatarObjectBucketName?: string;
   voiceDescriptors?: ReadonlyMap<string, VoiceObjectDescriptor>; voiceObjectBucketName?: string;
   chatFileDescriptors?: ReadonlyMap<string, ChatFileObjectDescriptor>; chatFileObjectBucketName?: string;
 }
@@ -148,7 +152,7 @@ const authorityEnvelopeSchema = z.object({ format: z.literal('yuban-work-recover
 const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domain'), version: z.literal(1), recordVersion: positive,
   ciphertext: z.string().min(1), recovery: z.unknown() }).strict();
 // messageSentAt is untrusted query metadata; operation restores rebuild it from authenticated content.
-const privateMetadata = new Set(['messageSentAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
+const privateMetadata = new Set(['messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
   'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
   'live', 'state', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
@@ -234,6 +238,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     }
   }
   function domainBinding(context: FirestoreRecoveryContext & { kind: FirestoreRestoreDomainKind }, raw: FirestoreRestoreValue): void {
+    if (isAvatarRestoreKind(context.kind)) { assertAvatarRestoreBinding(data, context, raw); return; }
     if (isCoreRestoreKind(context.kind) || isAgentRestoreKind(context.kind) || isOperationRestoreKind(context.kind)) return; // Checked with the authenticated ordering projection below.
     const { kind, id, scope, recordVersion } = context;
     requireBinding(context.envelopeVersion === 1 && recordVersion !== undefined);
@@ -395,6 +400,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       if (!key(domainSchemas, kind)) reject('unsupported_restore_domain');
       const context = { ...opened.context, kind }, value = parse<FirestoreRestoreValue>(domainSchemas[kind].schema, opened.value);
       domainBinding(context, value); result = { path: record.path, context, value };
+      if (isAvatarRestoreKind(kind)) assertAvatarRestoreBinding(data, context, value, raw);
       // Earlier snapshots lack this query projection; the authenticated document remains authoritative.
       if (kind === 'family-document' && raw.autoRefresh !== undefined)
         requireBinding(raw.autoRefresh === parse(documents.metadata, value).autoRefresh);
@@ -421,6 +427,7 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       }
       return { oldPath: decoded.path, path: decoded.path, data: object(value) };
     }
+    if (context.family === 'domain' && isAvatarRestoreKind(context.kind)) return transformAvatarRestore(data, decoded, input);
     if (context.family === 'domain' && ['platform-policy', 'admin-invitation', 'admin-receipt'].includes(context.kind)) {
       domainBinding(context as Extract<FirestoreRestoreDecoded['context'], { family: 'domain' }>, decoded.value);
       const original = originalEnvelopes.get(decoded); if (!original) reject('restore_admin_origin_missing');

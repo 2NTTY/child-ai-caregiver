@@ -753,11 +753,13 @@ API／worker 從同一政策建立新 run 快照，舊 run 保留模型／預算
 聊天的 optional `officialHelp` 最多兩個固定版本 ID，由同一 run 已成功選取的工具引用導出，與 model message 交易保存。沿原 message／runId／inReplyTo，不新增可獨立寫入的提示資料庫；舊訊息沒有此欄位仍可讀。卡片的正文、官方 URL、核對日期由版本化共用登記提供，含義變更建立新 ID。進度事件只供當次連線顯示，不持久化、不是保存收據，也不作記憶來源。
 
 
-### Android 原生通知資料
+### Android／iOS 原生通知資料
 
 `native_push_bindings` 保存同一裝置授權的 ID／version、token revision及密文 token／session hash；可查 metadata 僅供授權索引與有界列表，不把 token 放入收據、匯出或產品日誌。`native_push_tokens` 是確定 hash 的唯一佔位，必須驗證原身份／世代和會話狀態後才可轉移。`native_push_deliveries` 保存一般測試的單次嘗試及真實結果；照護提醒仍使用既有 `contact_requests`，不新增另一份任務。
 
 收據、版本、變更與 outbox 沿 Firestore 同一交易。裝置會話讀取參與登記／發送前的交易；外發仍在交易外。備份／刪除 collection 清單只追加，保持原清理 cursor；隔離還原保留投遞歷史，撤銷綁定、清除 token、捨棄唯一佔位，不復活舊裝置資格或通知。
+
+iOS 綁定的密文增加 `apns: {topic, environment}`，平台／provider 由其導出；缺欄位明確屬舊 Android／FCM。APNs token 唯一指紋包含 provider、topic、環境及規範化 token；舊 FCM 指紋不重算。平台或 APNs 配置改變不能沿原綁定輪換，避免舊授權轉移至不同目的地。測試投遞另存平台快照供 v1 過濾，照護提醒仍使用原聯絡台帳。新增欄位仍在加密及恢復 schema 內，還原保留 metadata 但撤銷 token；回退至少須支援這個相容 reader，不能退至不認識 iOS 記錄的版本。
 
 
 <a id="chat-file-data"></a>
@@ -766,3 +768,43 @@ API／worker 從同一政策建立新 run 快照，舊 run 保留模型／預算
 `chat_file_assets` 與既有語音採相同私人儲存邊界，使用獨立的 `chat-file-asset` 加密kind、不可變 `chat-file/v1` 物件地址及generation／hash。每筆保存本人、孩子、儲存世代、原預留操作指紋、版本、上載claim、唯一messageId及刪除義務；檔名及內容metadata留在密文內。列表索引只保存必要scope與處理狀態，不把私人正文加入公共索引。
 
 檔案原件保存與可閱讀性分開；正文不進聊天document。聊天只引用原件ID／版本／hash。未知上載只查原地址，禁止換ID重送；刪除立即遮蔽metadata，先記錄獨立 `file-delete` intent，再清理固定generation。孩子／帳戶刪除、配對備份、匯出及隔離還原須同樣承接該義務；恢復時先重放獨立刪除日誌，再綁定新儲存世代；已刪附件只保留無正文的清理義務。未結清上傳保持unknown並保留舊物件查核／清理義務，不冒認可讀。配對manifest可選 `chatFiles` 以相容舊備份；新備份固定generation及hash並保存獨立附件副本。
+
+
+<a id="avatars"></a>
+### AVATAR-01 獨立頭像資源
+
+頭像不寫入 Child／SessionUser／care profile或Auth photoURL。新增 encrypted domain collections：`_avatar_heads`保存顯式target binding、單調version、current descriptor/null tombstone及updatedAt；`_avatar_uploads`保存upload/asset UUID、scope/actor/basis、原bytes/hash/MIME、crop、不可變recipe快照、expiresAt、state/lease/normalized及committedVersion；`_avatar_cleanup`保存scope/asset/pinned generation、原因及可續行清理階段／attempt/nextAttemptAt。此處 `_` 為現有namespace collection後綴表示，不新增裸公開下載路徑。head ID沿具domain prefix的hash；不保存原圖、檔名、GPS。原hash只作內部 immutable傳送檢查。沿`_online_operations`，沒有`_avatar_ops`；披露收據須重核現權限及目前是否仍可披露，已失效result可為null。
+
+物件為`avatars/v1/<boundScopeHash>/<assetUUID>`、format `yuyoufang-avatar-object/v1`；AES envelope/AAD綁project、namespace、顯式target kind/ID、owner、workspace、child/NIL、storageEpoch、asset。本人NIL不代表任意孩子。只保存重編碼normalized JPEG；descriptor固定generation、cipher hash、plain hash、bytes/MIME/尺寸。重用immutable encrypted bucket port而非photos配額／分析／分享狀態機。先持久記錄清理責任才可寫物件。
+
+跨實例准入只保障同actor/target未完成upload數量及同upload唯一lease，不新增全cluster codec吞吐配額：reserve同交易以targetTag＋actorTag＋pending projection有界query，並讀寫該head的內部reservationNonce作串行sentinel，不改public version/asset。commit/過期/拒絕更新pending；未確定lease不能靠TTL刪掉再重decode。restore讓未完成upload不可commit，重建pending projection及barrier，不恢復decodelease。每程序decode/queue上限仍由集中配置掌管。
+
+| 生命週期 | 必需行為 |
+|---|---|
+| 匯出 | account allowlist加`self_avatar`／`self_avatar_content`（無childId）、`child_avatar`／`child_avatar_content`（按目前scope）；只目前normalized內容／版本，不含pending/raw/op／內部descriptor。 |
+| 配對／原生備份 | collections與avatar object generations同snapshot；舊manifest無avatar可讀，新manifest聲稱含avatar卻缺object必須fail closed。Firestore native backup不含Storage，必須納入原media backup/managed retention。 |
+| 還原 | 更新codec、locator/AAD、allowlist、object rebind及epoch rotation；只恢復committed normalized head，未完成upload轉expired/rejected，不再可commit。舊epoch操作不可重送，cleanup及journal安全續行。 |
+| 明確移除 | 新`avatar-delete` intent綁target kind/ID及throughVersion；獨立append-only journal durable後才可確認邏輯移除，涵蓋被移除及更早版本，阻擋舊備份／soft-delete復活。在途工作被barrier阻擋，unknown不假完成。 |
+| 更換 | 新head交易成功才清舊object；superseded非永久erasure，原snapshot可保留舊版，但後來explicit remove的throughVersion或帳戶／孩子erasure仍覆蓋。 |
+| 孩子刪除 | 原child barrier阻擋所有avatar讀寫，清current／staged／cleanup／收據及物件；不刪本人頭像。 |
+| 帳戶刪除 | 沿原ownership清本人及本人擁有scope的孩子，撤銷本人未commit uploads；不因曾上傳別人的shared child而刪他人current。 |
+| orphan cleanup | expiry、拒絕、衝突、撤權、刪除及寫後崩潰皆可續行；清前核scope/lease/generation且head未引用，不TTL刪row留下object，不盲prefix bulk delete。 |
+| erasure recovery | strict新增intent變體及erasureCoversAvatar；photo/voice/file/content語義不變。restore前後重核最新獨立journal，舊reader不認識新kind不能繼續當相容。 |
+
+查詢索引只按實際uploads/cleanup有界query建立最少composite；ciphertext/crop/hash不查正文免索引，缺index不得全庫scan。讀持久head不以日後調低的admission值判舊資料損壞。無Child／SessionUser backfill，missing head為初始資源。
+
+首次新collection/journal寫入後，API／worker／recovery不可回退至不識別新schema版本；可回UI或相容server hotfix，不能清真資料解鎖回退。正式啟用前同版writer/reader、cleanup、erasure、export、backup/restore及索引須齊；關寫入不停止相容read/erase/cleanup/backup。部署及實際原生備份演練由既有GCP負責人完成，本機stub不是雲端驗收。
+
+頭像 cleanup 的內部 responsibility key 為 `hash(["avatar-cleanup", explicit AvatarBinding, assetId])`，包含完整 owner/workspace/child/storageEpoch/target discriminator；不是單一 assetId。每個 immutable object address 保留獨立責任與 pinned generation，restore 不覆蓋或以有限陣列截斷舊 epoch 責任。`expectedVersion` 保留 staging 的 remove throughVersion 覆蓋依據；`objectBinding` 必須等於該責任 binding。current 保護比較完整 binding 與 descriptor（含 generation/hash），不是只比 assetId。已還原 current 的新 epoch 責任與所有原 epoch 責任同包交接，孩子 erasure 對 avatar cleanup 跨 epoch 覆蓋；不擴其他 domain 的既有刪除匹配語義。
+
+
+Restore新normalized copy先在既有 `_restore_operations` 建立加密intent：綁restore identity／provenance、原inventory digest、source evidence、target bucket與新epoch及完整未來cleanup。完整set以固定count/digest header綁定，每row immutable payload／單調CAS；只有確認贏得prepared→writing的原調用可Storage I/O。最終cleanup取持久intent全集聯集，不能只從尚有head的子集推導。逐批exact final document hash handoff後，activation marker與current同交易提交；之後逐批刪intent及推cursor，最後才移marker。任何一步不確定保留原責任；此開發候選的未完整恢復界線見[交付gate](DECISIONS.md#avatar-codec-decision)。
+
+Claim 回應丟失時，只准尚未呼叫 Storage 的同一次 invocation 作一次交易查回；完整 set／payload、copying phase 及本次 fresh token 均相符，才算確認贏得原 claim。查回失敗、另一 token、服務重啟或已開始物件寫入不沿用這項權限；保留原 intent 並依原地址查核，不重做未知外部寫入。
+
+已具完整、經認證 copy set 的隔離還原可由操作員明確放棄：先在與 activation 相同交易邊界核對沒有 `current`，把 index 固定為 `aborting`；不可再 claim、markKnown 或啟用該計劃。逐項只處理經 set／payload 驗證的目標新 epoch，在原目標物件地址以 generation CAS 寫入不含圖片的永久 marker（`yuyoufang-avatar-restore-abort/v1`），再刪除原已核實 generation。marker 加密 proof 綁原 identity、payload hash、地址及舊 generation；既有物件或遲到 create-if-absent 只能有一方通過 CAS，後者不能在 marker 存在時重建副本。回應丟失只查原 marker，讀回失敗保留 `aborting`；再次明確執行沿原身份完成清理，不能重做 copy。全部確認後為 `aborted`，原 intents、staging pages 與 marker 保留，不自動刪庫或重新啟用。
+
+放棄不讀來源正文、不要求已失效的來源／Auth／journal 繼續批准原 copy，也不修改來源、Auth、獨立刪除日誌或備份。只返回 `abandoned`，不宣稱 target 控制資料已改為 paused；隔離及停止 target 服務仍由部署流程保證。未知 inventory、缺 header／legacy partial plan、已存在 `current` 均拒絕，保留現場供核對；不憑任意物件 prefix 刪除。永久 marker 不得納入一般暫存清理；soft-delete／舊備份保留期仍按原契約，不宣稱即時物理抹除。[Cloud Storage generation preconditions](https://docs.cloud.google.com/storage/docs/request-preconditions)、[soft delete](https://docs.cloud.google.com/storage/docs/soft-delete)（2026-10-24 核對）。
+
+
+含已知 avatar copy set 的 final plan 先在同一 reserved collection 寫入加密 `avatar-plan-stage`：固定 attempt token、完整 header／page hashes／final envelope，以及 copy setHash／recordsHash／原 business inventory hash。頁面 create-only，同交易核 token、building phase、無 progress/current；不使用 blind set。重啟只接受 marker 列出的精確頁 ID，並重核原 target inventory、source/Auth/journal 與 native provenance；完整頁集原樣移交 progress，缺頁則先 CAS discarding fence，逐頁驗 hash 後有界刪除，再清 marker。這段 rollback 不改 business rows、不刪 copy intents；舊 attempt 被 token 擋住，重新規劃不能重寫已 known 的 Storage copy。legacy 無 marker 的 partial pages 仍拒絕，沒有 avatar port 也不能藉新 checkpoint ids 放行。

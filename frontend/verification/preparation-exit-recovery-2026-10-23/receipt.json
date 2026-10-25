@@ -1,0 +1,266 @@
+{
+  "recordedAt": "2026-10-23T15:41:45.798101+00:00",
+  "status": "SOURCE_REVIEWED_AND_BOUNDED_SYNTHETIC_GUI_PASS_WITH_LIMITATIONS",
+  "baselineCommit": "4fb210c26645ef4f6ec2cf8511de5bfc0c449bf3",
+  "branch": "dot/preparation-exit-recovery-20261023",
+  "scope": {
+    "productFiles": 8,
+    "testFiles": 16,
+    "evidenceFiles": 1,
+    "summary": "Definite document rejection releases the unresolved-write exit lock, preserves editable drafts, enables explicit discard, and retains exact unknown-operation guards. Simplifies recovery and leave-prompt language.",
+    "excluded": [
+      "No backend/API/wire changes",
+      "No avatar or attachment implementation changes",
+      "No icons/artwork changes",
+      "No animation fix",
+      "No real-family data, credentials, model calls or production deployment"
+    ]
+  },
+  "frozenInputs": {
+    "manifestSha256": "03a443a84b7013271e0d30e6ef2620c6c5a6f13470a91ea09b9f38c251fc5f68",
+    "patchSha256": "56657131d1c51908a5756ae1e18e69e2ac3a8b7a6d56667aab6cc9d43c9d4f06",
+    "files": [
+      {
+        "path": "frontend/scripts/agent-decision-recovery.test.mjs",
+        "sha256": "888150f0d5ebdc69625ba34a299193492bbed5d89e6f40a104e7dcc0dc2d57a2",
+        "bytes": 33677
+      },
+      {
+        "path": "frontend/scripts/document-draft-navigation.test.mjs",
+        "sha256": "2b2f7c136163ca96e955bd5fcf99bebd6aa709205b8d8ab97a9c5982572c1481",
+        "bytes": 5878
+      },
+      {
+        "path": "frontend/scripts/form-dialog.test.mjs",
+        "sha256": "b04f238d8529407235bb1af38f00a895ff1942ada0676bdc2c340bfb53d6a640",
+        "bytes": 9230
+      },
+      {
+        "path": "frontend/scripts/growth-draft-navigation.test.mjs",
+        "sha256": "56b89fbb087a62620f8d6a89739283511965f720c957408a022139cd59678343",
+        "bytes": 10135
+      },
+      {
+        "path": "frontend/scripts/guide-child-actions.test.mjs",
+        "sha256": "91f4870e69a9bb173635f529490ae55edf62e363da706f0ec9b20eb67b43be36",
+        "bytes": 12683
+      },
+      {
+        "path": "frontend/scripts/header-operation-guard.test.mjs",
+        "sha256": "dbab9f908ad7df0c4dce3dfa177fb4e9f831771fdaf36865a70be921b2a4c7b8",
+        "bytes": 3483
+      },
+      {
+        "path": "frontend/scripts/history-responsive-reader.test.mjs",
+        "sha256": "45538213a0593f9e6af98a36faf0fe057499a9c9bc51c6169de36363728dcbbc",
+        "bytes": 13267
+      },
+      {
+        "path": "frontend/scripts/memory-management-modal-dom.test.cjs",
+        "sha256": "21c27c75d4ab468dfdb698c40f9876cd572a29c361389e086981f39c22153312",
+        "bytes": 21420
+      },
+      {
+        "path": "frontend/scripts/modal-layering-dom.test.cjs",
+        "sha256": "4d81c056cd33c05910c4bb82120cefa36b07aa082f566b21d411f7557af80e09",
+        "bytes": 24049
+      },
+      {
+        "path": "frontend/scripts/modal-wiring.test.mjs",
+        "sha256": "6a2b33193db8fa9b340684e04a93d119c1a5f22ac7f95b6d07ecaceca5d0a566",
+        "bytes": 13794
+      },
+      {
+        "path": "frontend/scripts/preparation-restore-history-navigation.test.mjs",
+        "sha256": "3177a7f36018c4f30b1df850fa99b0931342247675dac824e97406c2b5a01fed",
+        "bytes": 12270
+      },
+      {
+        "path": "frontend/scripts/profile-reading-layout.test.mjs",
+        "sha256": "1c8acbd5c07ee0416202ab5b0e73a9ea8b85aada54c21bb091b6016cdea7ab35",
+        "bytes": 13745
+      },
+      {
+        "path": "frontend/scripts/readonly-history-dismiss.test.cjs",
+        "sha256": "a71532ed088d0d292ed999cbd330fe519913df31270702d5c70f398310ce5b97",
+        "bytes": 11935
+      },
+      {
+        "path": "frontend/scripts/source-photo-controls.test.mjs",
+        "sha256": "f3b742eabeb6055aaa54f0b9e1f4d03df9c62f8ad5f7efe6db9302aeb6bfe130",
+        "bytes": 37604
+      },
+      {
+        "path": "frontend/scripts/source-photo-recovery.test.mjs",
+        "sha256": "7995bcb4b5709aa66388efbe3f70e6d713c76eb86f0386c15ed48e59a9e0192c",
+        "bytes": 42267
+      },
+      {
+        "path": "frontend/src/components/WriteRecoveryNotice.tsx",
+        "sha256": "886f74c4a699b04674b751b73d7d58b0be0f5211d4db5564ab96e19e58c8f78c",
+        "bytes": 2296
+      },
+      {
+        "path": "frontend/src/components/preparations/DocumentCreateForm.tsx",
+        "sha256": "902ec7cb9edbc77c93eba8428d838cee8365660233bbec0a52dcce6b6ba25503",
+        "bytes": 8613
+      },
+      {
+        "path": "frontend/src/components/preparations/PreparationWorkspace.tsx",
+        "sha256": "d95b2a1e4c7a3da4ee1a026b6ce358e7c6153f06148b50a676a28d1d9307e8a4",
+        "bytes": 37296
+      },
+      {
+        "path": "frontend/src/preview/PreviewNavigationGuard.tsx",
+        "sha256": "dd11ca746453ea10a80c65fa2782820e5568c90c3ddac59808fca70d8cc5873e",
+        "bytes": 8630
+      },
+      {
+        "path": "frontend/src/production/useDomainEnvironment.ts",
+        "sha256": "f58d21d02ee380d4e9863b3937a3534dab64b063afffb0cd5c76d1bcbec18a20",
+        "bytes": 1879
+      },
+      {
+        "path": "frontend/src/production/useFamilyDocuments.ts",
+        "sha256": "a1503be6874a8203b5c6d99e91e02fb52434a73cb864c445bef2d86f361011d2",
+        "bytes": 39751
+      },
+      {
+        "path": "frontend/src/screens/GrowthScreen.tsx",
+        "sha256": "ed52e4a0852fdaf9192d30b5f5c02e610bdf6a63fc66aa52fcc01e189ceec3d9",
+        "bytes": 3527
+      },
+      {
+        "path": "frontend/src/workspaces/PreparationWorkspace.tsx",
+        "sha256": "5c84f1eba3ffc4ab8ac77b538ee2e17c77f83463f08e5a43466fd0a9ce68d0ea",
+        "bytes": 2599
+      },
+      {
+        "path": "frontend/scripts/preparation-exit-recovery.test.mjs",
+        "sha256": "b1dd4678dda316af08b02e2ca0a59e0e695e9318a20ccacbb065cd1320af2fbd",
+        "bytes": 19462
+      }
+    ]
+  },
+  "sourceReview": {
+    "result": "No unresolved P1/P2 reported after repairs and reviewer revalidation",
+    "retainedHistory": "Initial late-405 remount and continue-editing defects were reproduced and repaired before this freeze."
+  },
+  "checks": {
+    "focused": {
+      "passed": 37,
+      "failed": 0,
+      "scope": "actual Documents API/parser/owner/guard/Growth callback and form lifecycle with synthetic hook/RHF/host/transport ports; not browser, native-device, React scheduler or live service"
+    },
+    "changedRootTypes": {
+      "roots": 8,
+      "diagnostics": 0,
+      "typescript": "6.0.3",
+      "linkedFiles": 1420,
+      "limit": "Diagnostics requested only for changed product roots; not a full-project typecheck."
+    },
+    "sharedTitleAssertions": {
+      "passed": 2,
+      "failed": 0,
+      "limit": "Targeted renamed-title assertions only; not a complete consumer regression."
+    },
+    "fullFrontendTypecheck": {
+      "result": "NOT_PASS",
+      "exitCode": 137,
+      "compilerDiagnostics": "none produced",
+      "cause": "not established"
+    },
+    "broaderConsumers": {
+      "result": "NOT_PASS",
+      "retainedFailures": "Legacy Guide useSyncExternalStore mock, SourcePhoto environment/RN Flow loading and History source assertions. Representative Guide, SourcePhoto owner.fetcher and History failures reproduced at exact baseline; not every failing case or RN Flow error was independently proven baseline."
+    },
+    "diffCheck": "PASS"
+  },
+  "syntheticGui": {
+    "snapshot": 40,
+    "result": "PASS_BOUNDED_WITH_EXPLICIT_LIMITATIONS",
+    "reportSha256": "0ec464e288c283d411a9f47317b0159c4934ae167425cb2660238a5c6ee8956b",
+    "cssViewports": [
+      [
+        1024,
+        700
+      ],
+      [
+        390,
+        700
+      ]
+    ],
+    "bundleSha256": "786f8608718d34dc7b005a9f1c088febd195bd98712ac682a7930a1f4e8a3a27",
+    "archiveSha256": "401417bd912e62c6099b06027b6a01f7b37b2e2f001c9cef7ca22ab0e031355c",
+    "buildManifestSha256": "14f49e496b3ce8f7fe72614ec22f60db476fa800e569e0626b898c4448901399",
+    "artifactScope": "Combined synthetic preview carrying existing reviewed avatar/attachment composition with only these eight changed product paths overlaid; not an isolated full build of this PR.",
+    "observations": [
+      "1024px checkbox POST405 removes the stale success notice; Growth tabs remain navigable and read-only recovery is available.",
+      "1024px real create form POST405 retains editable fields. Continue editing preserves content and input focus; explicit discard closes and restores the original trigger; reopening is empty.",
+      "390px POST503 keeps the exact unknown operation: fields read-only, submit/discard disabled, stay-only close guard and no resend.",
+      "390px checkbox workspace navigation succeeds while a privately delayed POST405 is still pending; return preserves the failure without an extra POST. Recovery GET does not create a new version."
+    ],
+    "limitations": [
+      "Form in-flight workspace navigation was not GUI-tested because the modal blocks background links; source/DOM coverage only.",
+      "Create-form interactions observed directly; no separate raw image for that case.",
+      "Unknown remains deliberately stay-only; not all operation states permit leaving.",
+      "No full-site, native-device, full accessibility, live-service or frame-by-frame animation acceptance.",
+      "Snapshot38/39 media and downloaded-file limitations remain unchanged."
+    ],
+    "safety": {
+      "syntheticPosts": 4,
+      "statuses": [
+        405,
+        405,
+        503,
+        405
+      ],
+      "trueWritesOrModels": 0,
+      "oldOperationResends": 0,
+      "privateDelayHelperIncludedInPublicArtifact": false
+    }
+  },
+  "publicationCheckpoint": {
+    "site": {
+      "version": 91,
+      "status": "succeeded",
+      "sourceCommit": "620adf35ec372ed9bf0120c07ea7e2a78c33fd94",
+      "deploymentId": "appgdep_6adb7f6833948191b9c3b7f9ccd3af6d",
+      "publishedAt": "2026-10-23T15:38:27.949131+00:00",
+      "url": "https://yuyoufang-fe37-private-qa.ec002se.chatgpt.site",
+      "scope": "8-file preparation exit/rejection/draft copy fix; source39 remaining565inputs retained; no new icons or animation fixes",
+      "limit": "Source40 excludes the later PR267 runtime changes; this is not a full latest-master runtime export. No publication is performed by this Git delivery."
+    },
+    "hostedSmoke": {
+      "result": "PASS_BOUNDED_LIVE_SMOKE",
+      "reportSha256": "a64f61d189b1b84c868ae3738264d373f1d68d8e7c3374fc1333d7612b825137",
+      "scriptFilename": "index-bd76e37195c959192eab162f36438f50.js",
+      "actions": {
+        "newCheckboxSpaceActivations": 1,
+        "additionalSubmitOrRetry": 0,
+        "result": "Known rejection UI, new error copy and inline reload visible",
+        "oldSuccessNoticeCount": [
+          1,
+          0
+        ],
+        "concernsEnterAccepted": true,
+        "preparationEnterAccepted": true,
+        "oldBlockingDialogObserved": false
+      },
+      "identityLimit": "DOM script filename verified; no direct live HTTP download/bytehash claim. Candidate SHA and hosted deployment provenance are separate root evidence.",
+      "wireStatusLimit": "Expected405 from unchanged synthetic fixture; live wire status/opId not independently instrumented. One real UI activation and rejected UI directly observed.",
+      "cssViewport": [
+        1180,
+        757
+      ],
+      "notRepeated": [
+        "private40 fullmatrix",
+        "unknown/inflight/draft matrix",
+        "manual empty form (unnecessary optional check)",
+        "mobile sizes",
+        "download/media/model"
+      ]
+    },
+    "frozenEvidencePolicy": "Earlier source manifest and private GUI report retain their preparation-time statuses; this record separates their results from later Site publication and hosted smoke."
+  }
+}

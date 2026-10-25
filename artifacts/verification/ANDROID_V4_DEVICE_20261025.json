@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-25",
+  "baseline": "b55cc1866ab0a38b31c13bcbdb3183d2d9123a5c",
+  "apkSource": "1f07fab5a32633dd733110700e850c7c06c781ee",
+  "versionCode": 4,
+  "userFeedback": "已開啓并覆蓋安裝",
+  "checks": [
+    {
+      "name": "installed package, foreground app and existing signed-in child data",
+      "result": "passed"
+    },
+    {
+      "name": "native image picker, EXIF orientation 6, square crop drag and matching circular App preview",
+      "result": "passed",
+      "input": "one synthetic 900x600 JPEG",
+      "savedToServer": false
+    },
+    {
+      "name": "cancel crop draft and leave editor",
+      "result": "passed",
+      "existingAvatarUnchanged": true
+    },
+    {
+      "name": "attachment library existing photo metadata and child-scope clearing",
+      "result": "passed",
+      "downloadOrShare": "not tested"
+    }
+  ],
+  "stop": "User requested no further quota expenditure; stopped the additional attachment path before selection/upload. Closed picker and removed only the staged synthetic image and temporary UI dump.",
+  "cost": {
+    "modelCalls": 0,
+    "notifications": 0,
+    "cloudWrites": 0,
+    "newBuilds": 0
+  },
+  "pending": [
+    "Android attachment download/system share and remaining cross-device media",
+    "Notification completion and device OTA rollback",
+    "Successful personal-key generation/embedding with a usable credential/environment"
+  ],
+  "scopeExcluded": [
+    "Collaborator four-Agent PRs and postponed DEV02",
+    "iOS and postponed native backup restore"
+  ]
+}

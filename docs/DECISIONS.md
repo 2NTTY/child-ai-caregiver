@@ -383,3 +383,38 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 - 日期／決定：2026-10-13，使用者批准 P2-R01～R04 先修刪除披露、清理恢復、Agent 正式組裝、成果狀態與通知歷史；有效 Firestore／零 SQL 里程碑及原證據保留，不等於所有 P2 功能接線完整。
 - 家庭多人：現行 Firestore 只接本人空間，完整家庭邀請／成員／共享管理安排 P4-FAMILY。正式入口明示未開放，不發必敗請求、不回假成功；本人通知、帳戶與孩子隔離仍為目前要求。這取代將完整家庭功能作 P2／P3 必達的現行階段要求，保留原歷史契約與驗收。
 - 次序／限制：P3 手機等 R04 合併；三個 Agent 角色仍依既定 P3 包。新修正只作必要定向驗證，不以此重跑已延後的真原生備份還原。唯一進度見 [PLAN](../PLAN.md#p2-review-repair)。
+
+
+<a id="avatar-codec-decision"></a>
+## AVATAR-01：獨立頭像與 server-only 正規化（2026-10-23）
+
+本人及孩子各一個可更換／移除的頭像，以獨立resource為權威，不擴充strict Child／SessionUser、不借Auth photoURL。本人固定private，孩子只沿既有roles；不進照片分析、附件、模型、記憶、通知或分享。API／data定義分別見[頭像API](API.md#avatar-api)、[資料生命週期](DATA_MODEL.md#avatars)。
+
+既有photo helper只有magic/bytes/hash，不能安全decode/resize/去metadata；Expo picker亦非安全邊界。採server-only精確`sharp@0.35.5`及官方npm lockfile integrity，不進Web／Expo bundle、不另下載binary或回退magic-only。官方固定版本Node>=20.9.0，native 0.35.5/libvips 1.3.4；現有Node24／Debian bookworm文件相容不當容器實測。[固定package](https://raw.githubusercontent.com/lovell/sharp/v0.35.5/package.json)、[安裝](https://sharp.pixelplumbing.com/install/)、[發布](https://sharp.pixelplumbing.com/changelog/v0.35.5/)。Sharp本身為Apache-2.0；本次實裝Linux libvips binary package標示LGPL-3.0-or-later（精確包與來源見下），按實際bundle保留notices／license／來源資訊，不泛稱全Apache或LGPL2.1。
+
+`server/avatar-config.ts`集中admission、queue/deadline與recipe設定及安全policy projection。初始目標：input8MiB、20M pixels、單邊12000、output256方形JPEG/256KiB、zoom<=8、decode10秒／總20秒、decode在途1／queue4、upload30分鐘、actor/target未完成2。屬有界工作量非終身頭像配額；實測調整在同一配置，不複製PHOTO_LIMITS。policyId固定codec精確版本、輸出recipe及options；既有預留按快照完成，不偷換配方。安全修訂可明示終止舊upload。
+
+處理順序：只收JPEG/PNG Buffer且MIME/magic/decoder一致，禁URL、path、SVG/GIF/HEIF/PDF、多頁／動畫／不完整檔案；專用codec域只允許JPEG/PNG Buffer loaders。`failOn:'warning'`、pixel/channel限制及`unlimited:false`，核安全維度／pixels／decoded bytes；metadata限制不被當完整解壓炸彈防護。EXIF正向旋轉／鏡像後，以W/H及crop計算`S=max(1,floor(min(W,H)/zoom))`，`left=clamp(round(centerX*W-S/2),0,W-S)`、top同理。預設center=.5／zoom=1，Web/Android同義。
+
+透明PNG先固定白底flatten，resize square、轉sRGB、JPEG quality85，可放大小圖但不宣稱增加細節。不使用keep/withMetadata、Exif、Xmp或gain-map保留；去GPS/EXIF/XMP/IPTC/原ICC/comment/thumbnail。輸出再核format、尺寸、bytes、無metadata並算SHA-256，只有此buffer加密保存。raw／pixels只在受保護短命記憶體，finally釋放；清buffer不等於證明native記憶體全部抹除。[constructor](https://sharp.pixelplumbing.com/api-constructor/)、[loaders](https://sharp.pixelplumbing.com/api-utility/#block)、[autoOrient](https://sharp.pixelplumbing.com/api-operation/#autoorient)、[metadata預設剝除](https://sharp.pixelplumbing.com/api-output/#keepmetadata)。
+
+需每身份／跨實例admission、有界queue、整請求deadline及hard cancellation。Sharp timeout不含libuv排隊，Promise.race不停止native工作，未確認停止不得釋放slot；採固定命令的本機專用child process作hard-timeout/kill邊界：codec程式不作網絡操作，清除傳入憑證環境，只經stdin接JPEG/PNG Buffer，禁URL/path及其他loaders。這不是OS級網絡／檔案隔離，亦不宣稱完整sandbox；OS隔離在本機不可驗，部署可另加限制但本包不改系統設定。須等子程序close確認native工作停止才釋放slot；不能證實停止則executor fail closed。不建立新雲服務。[timeout](https://sharp.pixelplumbing.com/api-output/#timeout)。完整lifecycle與合成codec viability為開feature前置，不先發布缺backup/delete版本。
+
+#### AVATAR-01 依賴封裝與來源紀錄
+
+固定 `sharp 0.35.5` 及官方 registry lock/integrity，只由 server codec child process 載入；不由 Web／Android shared/client import，未驗證平台不因 npm lock 含 optional entries 而自稱可用。本機 Linux glibc x64 小合成 probe 已驗可行；不是 Android picker／瀏覽器 EXIF 一致性驗收。Server build 要保留平台匹配的官方 optional packages及原license/notice，不把預先編譯依賴併入前端 bundle；安裝條件參考 [Sharp 官方 installation](https://sharp.pixelplumbing.com/install/)。
+
+實際 Linux 依賴為 `@img/sharp-linux-x64 0.35.5`（Apache-2.0）及 `@img/sharp-libvips-linux-x64 1.3.4`（**LGPL-3.0-or-later**）；不能統稱全Apache或只寫LGPL2.1。後者官方README列出libvips、glib、libexif等LGPLv3，以及MPL/BSD/MIT等第三方條款。部署依賴封裝須保存每個實裝package的LICENSE／README第三方清單、package metadata與版本清單；不要以刪除非JPEG/PNG的loader入口作為刪除binary第三方notice的理由。[官方第三方清單](https://github.com/lovell/sharp-libvips/blob/main/THIRD-PARTY-NOTICES.md)。
+
+來源取得方式：Sharp來源由[官方倉庫](https://github.com/lovell/sharp)對應`v0.35.5`取得；prebuilt包的對應來源／版本及打包腳本由[sharp-libvips v1.3.4 release](https://github.com/lovell/sharp-libvips/releases/tag/v1.3.4)與其tag的`build/posix.sh`、`versions.properties`取得。該release列libvips8.18.7等實際依賴版本；腳本記錄上游source archive位置。交付環境若分發server image／binary，須同時核對相應license/source交付條件，不以本機probe或package.json一個license欄位取代；本包不自行作法律承諾或改部署權限。
+
+
+#### AVATAR-01 未解除的交付 gate
+當前開發候選 `AVATAR_LIFECYCLE_RELEASE_READY=false`，不是功能完成；環境 `AVATAR_WRITES_ENABLED=true` 不能繞過，未提供的 public avatar API／online command 明示503。cleanup、帳戶匯出及operator的相容schema source仍獨立接線，不因關寫入便遺棄已存在的責任。解除須同版 API／worker／recovery、必要定向tests＋TS、獨立review、平台codec與index／private Storage／獨立journal部署讀回及實際隔離restore演練全部有證據；本機codec或client單項綠不足。
+
+Restore copy只在既有 reserved checkpoint collection 記錄metadata：固定大小完整set count/digest header先處於preparing，所有immutable prepared intents核齊後才能claim一次原copy；每批驗精確final cleanup path+document SHA及完整binding/generation，current同TX啟用handoff marker後才分批retire intents。每批掃描／handoff大小集中可調，不加200總copy或終身數量上限；Firestore的500 field transformations限制不是500 document writes的證據。已認證 avatar staging marker 的 partial pages 可在原 target inventory、copy set 及 source/provenance/evidence 不變時，先 fence 原 attempt、逐頁驗證並撤回未套用頁，再重建；完整頁集則以原 header/final 原子建立 progress。此分支已有真 operator→跨頁中斷→重啟的本機合成證據，未做原生 Firestore／部署演練。legacy 無 marker 的 partial pages、未確定copy或source/Auth/journal變更仍安全停住保留責任，明示 `NOT_FULLY_RECOVERABLE`，不能當已可完整還原。既有平台restore資料量／Auth／plan界線另列部署限制，不能悄悄轉為新頭像資料上限。source reader只讀可核pinned generation或備份，缺失／soft-deleted source不發undelete POST。
+
+
+### AVATAR-01 補充：明確放棄隔離副本（2026-10-24）
+
+保留來源改變／unknown 時不得重做原 copy 的規則，補上操作員可明確放棄完整認證集合的出口。以 Firestore aborting phase 阻止 activation，及 GCS 原地址 generation CAS 的永久無圖片 marker 阻止遲到 create-if-absent；只清已核實 target generation，保留來源、原 intents 及現場。這比放寬 unknown 重試或刪掉 checkpoint 重來更能保留原防重界線；不處理無法認證的 legacy 集合，不宣稱完成原生雲端恢復。契約見[資料生命週期](DATA_MODEL.md#avatars)，命令見[部署門檻](PRODUCTION_FRONTEND.md#avatar-deployment-gate)，實際狀態只見[PLAN](../PLAN.md#avatar-01)。

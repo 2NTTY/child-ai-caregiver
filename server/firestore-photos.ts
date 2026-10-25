@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { Firestore, DocumentSnapshot } from "@google-cloud/firestore";
 import { z } from "zod";
-import { PHOTO_LIMITS, photoMetadataSchema, photoDraftSchema, type PhotoDraft, type PhotoAttachment, type PhotoMetadata } from "../src/shared/photos.ts";
+import { PHOTO_LIMITS, photoMetadataSchema, photoDraftSchema, photoMessageReferenceSchema, type PhotoDraft, type PhotoAttachment, type PhotoMetadata, type PhotoMessageReference } from "../src/shared/photos.ts";
+import type { AgentImageInput } from './agent-images.ts';
 import type { AgentScope } from './agent-runtime.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { careValuesSchema } from './care-validation.ts';
@@ -116,6 +117,11 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         runId: row.extraction.runId, draft: row.extraction.draft, stopReason: row.extraction.stopReason,
         processedAt: row.extraction.processedAt, model: row.extraction.model }
         : { state: "not_requested", runId: null, draft: null, stopReason: null, processedAt: null, model: null } };
+  }
+  function matchesReference(photo: PhotoAttachment, reference: PhotoMessageReference): boolean {
+    return photo.id === reference.id && photo.state === 'ready' && photo.version >= reference.version
+      && photo.sha256 === reference.sha256 && photo.bytes === reference.bytes && photo.mimeType === reference.mimeType
+      && photo.fileName === reference.fileName && photo.source === reference.source;
   }
   async function operation(binding: FirestoreAuthorityTransaction, operationId: string, action: "reserve" | "delete", fingerprint: string) {
     const snapshot = await binding.transaction.get(opRef(operationId)); if (!snapshot.exists) return null;
@@ -335,6 +341,34 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
     },
     async get(userId: string, childId: string, id: string): Promise<PhotoAttachment> {
       ids(userId, childId, id); return guard(() => authority.runTransaction(userId, childId, async binding => view(await readRow(binding, id))));
+    },
+    async prepareLink(binding: FirestoreAuthorityTransaction, id: string, expectedVersion: number): Promise<PhotoMessageReference> {
+      parse(uuid, id, true); parse(version, expectedVersion, true);
+      return guard(async () => {
+        if (!await binding.readChild(binding.scope.childId)) fail('not_found', 404);
+        const row = await readRow(binding, id); active(row);
+        if (row.state !== 'ready' || !row.descriptor) fail('not_found', 404);
+        if (row.version !== expectedVersion) fail('version_conflict');
+        return { ...row.metadata, id: row.id, version: row.version };
+      });
+    },
+    async agentImage(userId: string, childId: string, raw: PhotoMessageReference): Promise<AgentImageInput> {
+      const reference = parse(photoMessageReferenceSchema, raw, true);
+      const before = await service.get(userId, childId, reference.id);
+      if (!matchesReference(before, reference)) fail('version_conflict');
+      const content = await service.content(userId, childId, reference.id);
+      const after = await service.get(userId, childId, reference.id);
+      if (!matchesReference(after, reference) || content.mimeType !== reference.mimeType
+        || content.bytes.length !== reference.bytes || photoHash(content.bytes) !== reference.sha256) fail('version_conflict');
+      return { data: content.base64, mimeType: reference.mimeType, reference };
+    },
+    async authorizeImage(userId: string, childId: string, raw: PhotoMessageReference): Promise<boolean> {
+      const reference = parse(photoMessageReferenceSchema, raw, true);
+      try { return matchesReference(await service.get(userId, childId, reference.id), reference); }
+      catch (error) {
+        if ((error instanceof FirestoreAuthorityError || error instanceof FirestoreDomainError) && error.status < 500) return false;
+        throw error;
+      }
     },
     async list(userId: string, childId: string, input: { limit?: number; cursor?: FirestorePhotoCursor | null } = {}) {
       ids(userId, childId); const checked = parse(z.object({ limit: integer.min(1).max(100).optional(), cursor: cursorSchema.nullable().optional() }).strict(), input, true);

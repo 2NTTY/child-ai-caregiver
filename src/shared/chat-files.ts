@@ -1,3 +1,4 @@
+import { ATTACHMENT_LIST_BOUNDS, attachmentListPageFields, consistentAttachmentPage } from './attachment-list.ts';
 import { z } from 'zod';
 
 export const CHAT_FILE_LIMITS = Object.freeze({ bytes: 20 * 1024 * 1024, filesPerMessage: 1 });
@@ -27,3 +28,11 @@ export type ChatFileAttachment = z.infer<typeof chatFileAttachmentSchema>;
 export const chatFileMessageReferenceSchema = chatFileMetadataSchema.extend({ id: z.uuid(), version: z.number().int().positive() }).strict();
 export type ChatFileMessageReference = z.infer<typeof chatFileMessageReferenceSchema>;
 export const chatFileLinkInputSchema = z.object({ id: z.uuid(), expectedVersion: z.number().int().positive() }).strict();
+
+/** Metadata only; opaque videos remain files, not a new media capability. */
+export const chatFileAttachmentPageSchema = z.object({
+  items: z.array(chatFileAttachmentSchema.refine(value => value.state === 'ready' && value.messageId !== null
+    && value.fileName !== null && value.mimeType !== null && value.bytes !== null && value.sha256 !== null))
+    .max(ATTACHMENT_LIST_BOUNDS.maxLimit), ...attachmentListPageFields,
+}).strict().refine(consistentAttachmentPage);
+export type ChatFileAttachmentPage = z.infer<typeof chatFileAttachmentPageSchema>;

@@ -310,14 +310,18 @@ export function createFamilyDocumentStore(pool: Pool, cipher: StorageCipher) {
             stored.currentId = snapshot.id;
             const state = progress(row);
             if (state?.blocked) { state.blocked = false; row.progress_encrypted = cipher.encrypt(JSON.stringify(state), context(row) + ":progress"); }
-          } else if (change.action === "check_item") {
+          } else if (change.action === "check_item" || change.action === "check_items") {
             if (stored.status !== "active" || !prior.current || !documentSnapshotValid(prior.current, loaded)
               || !prior.current.reportCoverage && prior.current.sourceBasis !== documentSourceBasis(loaded, stored.request)) throw new FamilyError(409, "source_changed");
             snapshot = structuredClone(prior.current);
-            const section = snapshot.sections.find(section => section.id === change.sectionId && section.kind === "checklist");
-            const item = section?.items.find(item => item.id === change.itemId);
-            if (!item) throw new FamilyError(400, "invalid_input");
-            item.checked = change.checked;
+            const checks = change.action === "check_item" ? [change] : change.checks;
+            const updates = checks.map(check => {
+              const section = snapshot!.sections.find(section => section.id === check.sectionId && section.kind === "checklist");
+              const item = section?.items.find(item => item.id === check.itemId);
+              if (!item) throw new FamilyError(400, "invalid_input");
+              return { item, checked: check.checked };
+            });
+            for (const { item, checked } of updates) item.checked = checked;
             snapshot.id = randomUUID(); snapshot.version = row.version; snapshot.generatedAt = new Date().toISOString();
             snapshot.changes = ["家長更新準備清單的完成標記。"];
             stored.currentId = snapshot.id;

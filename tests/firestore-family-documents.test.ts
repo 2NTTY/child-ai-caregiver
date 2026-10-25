@@ -70,6 +70,45 @@ test('canonical task-backed preparation document supports reads, typed patches, 
   for (const raw of f.fake.records.values()) assert.equal(JSON.stringify(raw).includes('Private source body'), false);
 });
 
+test('batch checklist updates validate atomically and retain a single replayable version after a lost reply', async () => {
+  const f = fixture(); await f.initialize(); const child = await f.identity(); await f.task(child.id);
+  const first = (await f.store.create('synthetic-owner', child.id, request, randomUUID()))!;
+  const input: DocumentChange = { action: 'check_items', expectedVersion: first.version, authorityVersion: await f.version(first), checks: [
+    { sectionId: 'checklist', itemId: 'template-0', checked: true },
+    { sectionId: 'checklist', itemId: 'template-1', checked: true },
+  ] };
+  const before = [...f.fake.records], invalidOp = randomUUID();
+  await assert.rejects(f.store.change('synthetic-owner', child.id, first.id, { ...input,
+    checks: [input.checks[0], { sectionId: 'checklist', itemId: 'missing-item', checked: true }] }, invalidOp), rejects('invalid_input', 400));
+  assert.deepEqual([...f.fake.records], before);
+  assert.equal(await f.store.operationReceipt('synthetic-owner', child.id, invalidOp), null);
+  assert.deepEqual(await f.store.get('synthetic-owner', child.id, first.id), first);
+
+  const opId = randomUUID(); f.fake.loseReply();
+  await assert.rejects(f.store.change('synthetic-owner', child.id, first.id, input, opId), /Synthetic lost commit acknowledgement/u);
+  const saved = (await f.store.get('synthetic-owner', child.id, first.id))!;
+  assert.equal(saved.version, first.version + 1); assert.equal(saved.current!.version, saved.version);
+  assert.notEqual(saved.current!.id, first.current!.id);
+  assert.deepEqual(saved.current!.sections.find(section => section.id === 'checklist')!.items.map(item => item.checked), [true, true, false]);
+  assert.equal(saved.history.length, 1); assert.equal(saved.history[0].id, first.current!.id);
+  assert.deepEqual(await f.store.operationReceipt('synthetic-owner', child.id, opId), {
+    operationId: opId, documentId: first.id, savedVersion: saved.version, contentState: 'ready', currentVersion: saved.version,
+  });
+  for (const suffix of ['document_snapshots', 'document_operations']) {
+    const prefix = `${f.options.namespace}_${suffix}/`;
+    assert.equal([...f.fake.records.keys()].filter(path => path.startsWith(prefix)).length,
+      before.filter(([path]) => path.startsWith(prefix)).length + 1);
+  }
+  const committed = [...f.fake.records];
+  assert.deepEqual(await f.store.change('synthetic-owner', child.id, first.id, input, opId), saved);
+  assert.deepEqual([...f.fake.records], committed);
+  await assert.rejects(f.store.change('synthetic-owner', child.id, first.id, input, randomUUID()), rejects('document_changed', 409));
+  assert.deepEqual([...f.fake.records], committed);
+  const single = (await f.change(saved, 'check_item', { sectionId: 'checklist', itemId: 'template-0', checked: false })).item;
+  assert.equal(single.version, saved.version + 1);
+  assert.deepEqual(single.current!.sections.find(section => section.id === 'checklist')!.items.map(item => item.checked), [false, true, false]);
+});
+
 test('document operation identity binds the complete action/payload/child per owner before any changed target reads', async () => {
   const f = fixture(); await f.initialize(); const child = await f.identity(), opId = randomUUID();
   const item = (await f.store.create('synthetic-owner', child.id, request, opId))!, committed = [...f.fake.records];

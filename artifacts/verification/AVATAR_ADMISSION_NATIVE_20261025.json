@@ -1,0 +1,48 @@
+{
+  "scope": "Native Firestore avatar admission, upload lease, original receipt, replacement and maintenance cleanup; not a full restore or HTTP deployment",
+  "sourceCommit": "ded49685a89e2cd1adf8e79425d80fcfdfda6b62",
+  "executionCount": 1,
+  "environment": {
+    "node": "v24.19.0",
+    "projectId": "ai-caregivers-for-children",
+    "databaseId": "yuban-firebase-restore-20261011",
+    "namespace": "synthetic_avatar_admission_20261024",
+    "bucket": "ai-caregivers-for-children-firebase-private",
+    "clients": "Two independent Firestore SDK clients in one process, then a reconstructed client",
+    "syntheticOnly": true
+  },
+  "interval": {"startedAt": "2026-10-24T16:03:44.678Z", "finishedAt": "2026-10-24T16:06:38.759Z"},
+  "result": "passed",
+  "calls": {"transactions": 44, "transactionAttempts": 44, "objectWrites": 2, "metadata": 13, "reads": 5, "removes": 2, "decodes": 2},
+  "indexes": {
+    "source": "deploy/firebase/firestore.indexes.json",
+    "changes": "Two existing composite definitions under the isolated namespace, private field exclusions, and cleanup.complete ascending index",
+    "stateBeforeExecution": "All three required indexes READY"
+  },
+  "assertions": [
+    "Concurrent reservations share the pending cap; third reservation rejected and original opId returns the same reservation",
+    "Persisted processing lease prevents a second store admitting the same in-flight upload",
+    "Formal online submission commits version 1 once; receipt replay returns the same asset",
+    "An unknown user cannot read the image",
+    "Replacement commits version 2 and invalidates old content access",
+    "Formal maintenance, background queue and cleanup consumer remove superseded content",
+    "Duplicate worker delivery returns completed without another object removal",
+    "A reconstructed SDK client reads the same current head and encrypted content"
+  ],
+  "expectedRejections": ["avatar_busy", "avatar_upload_not_ready", "not_found", "avatar_version_conflict"],
+  "transport": "External Cloud Tasks enqueue replaced by a local inbox; one wake passed to the real queue and maintenance consumer",
+  "cleanup": "Both written synthetic images removed at pinned generations and synthetic product account revoked. Encrypted authority, receipts and cleanup rows retained. No Firebase Auth account or deletion journal entry created.",
+  "evidenceFiles": {
+    "script": {"path": ".cache/avatar-admission-native.mjs", "sha256": "16941821ef4f8c678ba059ea70ad3a5420312fddf802bdc8cd96fe7ef7426356"},
+    "receipt": {"path": ".cache/avatar-admission-native-20261024/receipt.json", "sha256": "57de74c0c4f4b04ffaf5a41fc40f7275aba5785e578f9c818fdc3a5146e1e699"}
+  },
+  "review": "Main-model source review plus independent read-only harness review. Fixed barrier failure handling, cleanup handles and full namespace absence checks before the single execution.",
+  "costs": {"models": 0, "notifications": 0, "newDatabasesOrBuckets": 0, "actualBill": "Not measured; bounded SDK calls on existing synthetic resources"},
+  "limitations": [
+    "Same-process SDK clients are not two deployed API replicas",
+    "No Cloud Tasks/OIDC dispatch, HTTP routing or production deployment verification",
+    "No explicit avatar removal journal, account export, paired backup or full isolated restore",
+    "No device crop/EXIF verification; release gate remains false",
+    "Storage soft-delete policy unchanged; absence of a live generation does not prove immediate physical erasure"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "package": "S13-W02 iOS deployment mount",
+  "date": "2026-10-24",
+  "baseline": "83a4241014ed6e69b56b1585e434b4b06789ae63",
+  "branch": "codex/s13-ios-deployment-mount",
+  "finding": "The APNs gateway required a protected key file, but the existing VM composition did not mount one.",
+  "change": "Add an optional APNs-only secret override for API and worker; leave channel activation and Apple identifiers in the protected shared runtime environment.",
+  "checks": [
+    { "name": "Compose 5.1.2 configuration merge", "result": "passed", "inputs": ["compose.firestore.yaml", "compose.firestore.channels.yaml", "compose.firestore.apns.yaml"], "assertions": ["API and worker retain storage_key, web_push_vapid and telegram_config alongside apns_key", "APNS_PRIVATE_KEY_FILE points to the same secret mount", "IOS_PUSH_ENABLED remains false", "Web receives no APNs secret"], "localResult": ".cache/ios-apns-compose/merged.json" },
+    { "name": "git diff --check and static mount review", "result": "passed" }
+  ],
+  "notPerformed": ["Container startup", "Real private-key access", "Production deployment", "Apple calls", "Notifications", "Model calls", "Full test suite"],
+  "pending": ["Authorized Apple team and key", "Actual Linux file owner/mode and runtime read access", "One authorized APNs delivery on iPhone"],
+  "conclusion": "Deployment configuration is prepared; configuration parsing does not prove real secret access or Apple delivery."
+}

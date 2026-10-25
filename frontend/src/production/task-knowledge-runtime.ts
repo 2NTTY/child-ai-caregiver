@@ -60,8 +60,8 @@ export function useTaskKnowledgeRuntime(env: TaskKnowledgeEnvironment, domain: s
   return { lost, live, request, read, accessError };
 }
 
-export function useTaskKnowledgeRefresh(refresh: () => void, enabled: boolean, busy = false) {
-  const latest = useRef({ refresh, enabled, busy }); latest.current = { refresh, enabled, busy };
+export function useTaskKnowledgeRefresh(refresh: () => void, enabled: boolean, busy = false, ignoreEvent?: () => boolean) {
+  const latest = useRef({ refresh, enabled, busy, ignoreEvent }); latest.current = { refresh, enabled, busy, ignoreEvent };
   const queued = useRef(false);
   useEffect(() => {
     if (!enabled) return;
@@ -74,6 +74,8 @@ export function useTaskKnowledgeRefresh(refresh: () => void, enabled: boolean, b
   useEffect(() => {
     const updated = () => {
       const current = latest.current;
+      // A writer can already hold the authoritative receipt while notifying other owners.
+      if (current.ignoreEvent?.()) return;
       if (!current.enabled) { queued.current = true; return; }
       if (current.busy) queued.current = true;
       else current.refresh();

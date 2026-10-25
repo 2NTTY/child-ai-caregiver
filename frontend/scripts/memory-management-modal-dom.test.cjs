@@ -166,10 +166,10 @@ test('only a compact entry is on the page; nested editor Escape returns to the e
 test('dirty editor stay/Escape preserve original RHF fields; explicit discard returns to list and scope change removes stale modal', async () => {
   await reset(); await click('管理記憶'); await click('人工新增候選事實');
   await input('內容（最多 4,000 字）', 'Synthetic unsaved draft'); const draft = field('內容（最多 4,000 字）');
-  await escape(); assert.match(activeDialog().textContent, /捨棄草稿並離開/); await click('繼續編輯');
+  await escape(); assert.match(activeDialog().textContent, /捨棄並離開/); await click('繼續編輯');
   assert.equal(field('內容（最多 4,000 字）'), draft); assert.equal(draft.value, 'Synthetic unsaved draft');
   await click('返回記憶管理'); await escape(); assert.equal(field('內容（最多 4,000 字）'), draft); activeDialog();
-  await click('返回記憶管理'); await click('捨棄草稿並離開');
+  await click('返回記憶管理'); await click('捨棄並離開');
   assert.equal(document.querySelector('textarea'), null); assert.equal(document.activeElement, button('人工新增候選事實')); assert.equal(owner.management.dirty, false);
   await click('關閉'); assert.equal(document.activeElement, button('管理記憶'));
   await click('管理記憶'); await click('人工新增候選事實'); assert.equal(field('內容（最多 4,000 字）').value, '');
@@ -181,8 +181,8 @@ test('original unknown operation blocks dismissal and preserves payload for rece
   await reset(); await click('管理記憶'); await click('人工確認／更正／停用／刪除');
   await check(confirmation); mode = 'unknown'; await click('確認提交這次人工操作');
   assert.equal(owner.management.operation, 'unknown'); assert.equal(calls.length, 1); const original = calls[0];
-  await escape(); assert.match(activeDialog().textContent, /先處理原操作/); assert.equal(buttons('捨棄草稿並離開').length, 0);
-  await click('留在此頁查核'); assert.equal(owner.management.pending.intent.input.expectedVersion, 4);
+  await escape(); assert.match(activeDialog().textContent, /尚有變更待確認/); assert.equal(buttons('捨棄並離開').length, 0);
+  await click('留在此頁'); assert.equal(owner.management.pending.intent.input.expectedVersion, 4);
   await click('查原收據並讀取目前清單'); assert.equal(calls.filter(value => value.method === 'reconcile').length, 1); assert.equal(owner.management.pending.checked, true);
   assert.equal(button('明確重試原記憶操作').disabled, true);
   await check('我已核對，明確同意沿原識別及內容重試'); mode = 'saved'; await click('明確重試原記憶操作');

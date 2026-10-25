@@ -1,3 +1,4 @@
+import { handleFirebaseAvatarRequest, type FirebaseAvatarApiPort } from './firebase-avatar-api.ts';
 import { handleFirebaseChatFileRequest, type FirebaseChatFileApiPort } from './firebase-chat-files-api.ts';
 import { handleFirebaseVoiceRequest, type FirebaseVoiceApiPort } from './firebase-voice-api.ts';
 import { requestOriginAllowed } from "./request-auth-transport.ts";
@@ -70,6 +71,7 @@ export interface FirebaseRequestHandlerOptions {
   online?: FirestoreOnlineStore;
   documents?: FamilyDocumentStore;
   photos?: FirebasePhotoApiPort;
+  avatars?: FirebaseAvatarApiPort;
   voice?: FirebaseVoiceApiPort;
   files?: FirebaseChatFileApiPort;
   photoAgent?: PhotoAgent;
@@ -167,12 +169,12 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if ((await auth.nativeSessionProof?.(request.headers))?.sessionHash !== session.sessionHash) throw new RequestError('session_changed', 409);
         return json(result);
       }
-      if (request.method === 'GET' && (path === '/api/native-push' && options.nativePush || path === '/api/web-push' && options.push || path === '/api/telegram' && options.telegram)) {
+      if (request.method === 'GET' && ((path === '/api/native-push' || path === '/api/native-push/v2') && options.nativePush || path === '/api/web-push' && options.push || path === '/api/telegram' && options.telegram)) {
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const expected = request.headers.get('x-expected-user-id');
         if (!expected || expected !== userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required', expected ? 409 : 428);
-        const result = path === '/api/native-push' ? await options.nativePush!.status(userId, await auth.nativeSessionProof?.(request.headers) ?? null) : path === '/api/web-push' ? await options.push!.status(userId) : await options.telegram!.store.status(userId);
+        const result = path.startsWith('/api/native-push') ? await options.nativePush!.status(userId, await auth.nativeSessionProof?.(request.headers) ?? null, path.endsWith('/v2') ? 2 : 1) : path === '/api/web-push' ? await options.push!.status(userId) : await options.telegram!.store.status(userId);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);
         return json(result);
       }
@@ -201,6 +203,13 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         await authority.acknowledge({ userId, operationId: parsed.data.operationId, policyVersion: parsed.data.policyVersion });
         // Return the existing complete status shape. A failed read is an unknown outcome, never false success.
         return json(await accountStatus(userId));
+      }
+      if (/^\/api\/(?:me|children\/[^/]+)\/avatar(?:\/|$)/u.test(path)) {
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
+        return uncached(await handleFirebaseAvatarRequest(request, userId, options.avatars, isCurrentUser));
       }
       if (documents && /^\/api\/children\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/documents(?:\/|$)/iu.test(path)) {
         if (request.method !== "GET" && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError("origin_rejected", 403);
@@ -376,7 +385,12 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         ? errorResponse("firebase_domain_not_ready", 503) : errorResponse("not_found", 404);
     } catch (error) {
       if (error instanceof RequestError) return errorResponse(error.code, error.status);
-      if (error instanceof FirestoreDomainError) return errorResponse(error.code, error.status);
+      if (error instanceof FirestoreDomainError) {
+        const response = errorResponse(error.code, error.status), retry = options.avatars?.retryAfterSeconds;
+        if (error.code === 'avatar_busy' && error.status === 429 && Number.isInteger(retry) && retry! >= 1 && retry! <= 60)
+          response.headers.set('Retry-After', String(retry));
+        return response;
+      }
       if (error instanceof FamilyError) return errorResponse(error.code, error.status);
       if (error instanceof FirestoreAuthorityError && authorityErrors.get(error.code) === error.status) return errorResponse(error.code, error.status);
       if (error instanceof FirebaseAuthError && authenticationErrors.get(error.code) === error.status) return errorResponse(error.code, error.status);

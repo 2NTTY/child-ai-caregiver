@@ -45,6 +45,8 @@ ADC 留在本機。若全局 `GOOGLE_APPLICATION_CREDENTIALS` 指向舊檔案，
 
 ## 開啟及修改
 
+測試頭像選圖／裁切／保存時，可在目前 shell 設 `AVATAR_WRITES_ENABLED=true`；預設仍關閉寫入，Server 的生命週期 release gate 保持有效。它只傳至本機 Server，不會改正式站設定；可配合 `--no-model` 核對頭像及附件，不呼叫模型。
+
 - 開啟終端列出的 `http://127.0.0.1:<port>`；不要另開 Expo 的直接端口。原 Web 和 API 經同一個本機 origin。
 - 本地帳號為 `developer@local.yuyoufang.test`，隨機密碼保存在終端列出的 `.cache/agent-local/state.json`；這是本機合成帳號，不是正式網站密碼。正常登入、產品條款及資料同意仍經正式流程。
 - 同一個明確初始化的本地帳號可開 `/admin` 查看及調整本地限額。開始付費核對前先看當日用量；每日上限和每輪上限分開，生成與查詢 embedding 都計次數。本地沿 Server 初始政策或已保存的本地修改，不會複製正式網站的 200／400 設定；重啟不清零，不授予正式網站權限，也不改正式配額。
@@ -117,6 +119,8 @@ npm run agent:local -- --inspect-knowledge
 真網站模式明確加 `--live-source`；目前來源可選 `--knowledge-watch=fhs-solid-food` 或 `--knowledge-watch=fhs-feeding-booklet-en`。PDF 沿正式解析及已登記頁面範圍；超出單批的長資料會保留未完成，不宣稱已讀完。第一次改模式／來源須加 `--new-knowledge-work`，不能改寫原工作。網站與用途仍受現有 catalog 範圍限制。
 
 命令結束保存 emulator 快照；重新執行 `npm run agent:local`，聊天按同一份已核准維護來源清單檢索本地已發布資料，包括已發布的 PDF，毋須重新初始化種子或向量。候選仍經原發布／有效性閘隔離。尚未核對的內容不發布；真網站、多模態及長資料分批的未驗項不因樣本成功而自動通過。這個本地入口不部署或啟用正式雲端排程。
+
+若首次以 `--no-model` 啟動後保存了關閉的管理政策，之後提供憑證不會自行取消該政策。先在同一本機 `/admin` 明確啟用平台 AI，再執行維護；`background_knowledge_disabled` 是開關阻止執行，不代表 key 或模型不支援。不要重設資料或清零用量來排除此情況。
 
 ## 保存、停止與重設
 

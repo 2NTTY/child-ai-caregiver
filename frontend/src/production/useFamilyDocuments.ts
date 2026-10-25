@@ -6,11 +6,12 @@ import { documentChangeSchema, documentRequestSchema, type DocumentChange, type 
 import type { GrowthArchiveProjection } from "../growth-view-model";
 import type { GrowthReportExportRequest, GrowthReportExportResult } from "../components/growth/growth-archive-view";
 import type { FamilyDocumentReadingPort, PreparationDocumentView, PreparationPurpose } from "../preparation-view-model";
-import type { PreparationWorkspaceValue } from "../workspaces/PreparationWorkspace";
+import type { DocumentCreateDraft, PreparationWorkspaceValue } from "../workspaces/PreparationWorkspace";
 import type { WriteOperationView, WriteRecoveryActions } from "../view-model";
 import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { useTaskKnowledgeRefresh, useTaskKnowledgeRuntime, type TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
 import { projectFamilyDocumentArchive } from "./family-document-archive";
+import { createPreparationCheckBuffer } from "./preparation-check-buffer";
 
 type Attempt = { kind: "create"; input: DocumentRequest } | { kind: "change"; id: string; input: DocumentChange };
 type Pending = { attempt: Attempt; checked: boolean; reconfirm: boolean; selectionGeneration: number; draftId?: string };
@@ -33,11 +34,17 @@ const preparationView = (item: FamilyDocument): PreparationDocumentView => {
 /** One shared Server document projection for preparation, history and report consumers. */
 export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const api = useMemo(() => createFamilyDocumentsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
+  const checks = useMemo(createPreparationCheckBuffer, [api]);
+  const publishingChecks = useRef(false);
+  const [, updateChecks] = useState(0);
+  const notifyChecks = () => updateChecks(value => value + 1);
+  const flushChecks = () => { if (checks.dirty) { checks.flush(); notifyChecks(); } };
   const runtime = useTaskKnowledgeRuntime(env, "documents");
   const [page, setPage] = useState<DocumentPage | null>(null), [load, setLoad] = useState<"loading" | "ready" | "error">("loading");
   const [pageReadGeneration, setPageReadGeneration] = useState(-1);
   const [busy, setBusy] = useState(false), [exportBusy, setExportBusy] = useState(false), [pending, setPending] = useState<Pending | null>(null);
   const [operation, setOperation] = useState<WriteOperationView>({ state: "none", message: "", reference: null });
+  const [createDraft, setCreateDraft] = useState<DocumentCreateDraft | null>(null);
   const [notice, setNotice] = useState(""), [dirty, setDirty] = useState(false), [epoch, setEpoch] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null), [justArchivedId, setJustArchivedId] = useState<string | null>(null);
   const [refreshQueued, setRefreshQueued] = useState(false);
@@ -67,16 +74,25 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
       const selected = reads.current.content;
       if (selected && !unchanged(selected.documentId, selected.documentVersion)) clearContent();
     }
+    latest.current.page = value;
     setPage(value); setPageReadGeneration(reads.current.generation); setLoad("ready"); setPageError(false);
     setListPages(refreshedLists ?? { active: { cursor: value.nextCursor ?? null, more: value.hasMore, count: 1 }, archived: { started: false, ready: false, cursor: null, more: false, count: 0 } });
   };
   latest.current = { page, load, dirty };
   const canManage = env.role === "owner" || env.role === "caregiver";
-  useDomainWriteGuard(!runtime.lost && dirty, !runtime.lost && !!pending);
-  useEffect(() => () => { api.reset(); inFlight.current = false; exporting.current = null; }, [api]);
+  // A definite rejection needs a fresh read before resubmission, not an unresolved-write exit lock.
+  useDomainWriteGuard(!runtime.lost && (dirty || checks.dirty), !runtime.lost && !!pending && !pending.reconfirm, "child", true,
+    operation.state === "saving" || checks.flight && !checks.paused ? "saving" : "unknown");
+  useEffect(() => () => { api.reset(); checks.clear(); inFlight.current = false; exporting.current = null; }, [api, checks]);
+  useEffect(() => {
+    if (!env.online && checks.dirty && !checks.flight) {
+      checks.failed(false); setLoad("error"); notifyChecks();
+      setOperation({ state: "failed", reference: null, recovery: "check", message: "連線中斷；未送出的勾選已保留，重新核對後再保存。" });
+    }
+  }, [env.online, checks]);
   const clearAccess = (error: unknown) => {
     if (!runtime.accessError(error)) return false;
-    api.reset(); original.current = null; setPending(null); setPage(null); setDirty(false); setSelectedId(null); setJustArchivedId(null);
+    api.reset(); checks.clear(); original.current = null; setPending(null); setPage(null); setDirty(false); setCreateDraft(null); setSelectedId(null); setJustArchivedId(null);
     clearReading(); setPageError(false); readingNeedsRecheck.current = false;
     selection.current = { id: null, generation: selection.current.generation + 1 };
     setOperation({ state: "none", message: "", reference: null }); setEpoch(value => value + 1); return true;
@@ -84,7 +100,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   const read = (signal: AbortSignal) => runtime.read(["page", "active", null], next => api.getPage(env.childId!, next, env.userId!, { status: "active", limit: 20 }), signal);
   const refresh = (manual = true) => {
     if (!runtime.live() || !env.online) return;
-    if (inFlight.current || !manual && (latest.current.dirty || original.current)) { setRefreshQueued(true); return; }
+    if (inFlight.current || !manual && (latest.current.dirty || original.current || checks.dirty)) { setRefreshQueued(true); return; }
     inFlight.current = true; setBusy(true);
     const entry = original.current;
     void runtime.request(async (signal, current) => {
@@ -159,31 +175,39 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         if (manual && readingNeedsRecheck.current) setOperation(before => before.state === "saved" && before.message === savedAwaitingSelectionRead
           ? { ...before, message: "先前文件的保存已確認。" } : before);
         readingNeedsRecheck.current = false; setRefreshQueued(false);
-        if (entry?.reconfirm) {
+        if (entry?.reconfirm && original.current === entry) {
           original.current = null; setPending(null);
-          setOperation({ state: "conflict", reference: null, message: "原提交未獲接納；已讀取目前版本，請重新核對後明確提交。" });
-        } else if (entry) {
+          setOperation({ state: "conflict", reference: null, message: latest.current.dirty ? "已載入已儲存的內容，草稿仍然保留。" : "已載入已儲存的內容。" });
+        } else if (entry && original.current === entry) {
           const next = { ...entry, checked: true }; original.current = next; setPending(next);
           setOperation({ state: "unknown", reference: api.pendingReference(), recovery: "retry",
-            message: "已核對目前孩子及權限；結果仍未知。明確重試只沿原 opId、內容及版本。" });
+            message: "暫時未能確認是否儲存成功。你的內容已保留，可再試一次。" });
         }
         setNotice(value.hasMore ? "已讀取目前取得的文件；清單並非完整歷史。" : "已重新讀取文件；沒有生成新版本。");
       } catch (error) {
         if (!current() || clearAccess(error) || error === authorityChanged) return;
-        setLoad("error"); setNotice("文件未能讀取；保留原草稿及操作，暫停新提交。");
-        if (entry) { entry.checked = false; setPending({ ...entry }); setOperation({ state: "unknown", reference: api.pendingReference(), recovery: "check", message: "原操作仍待核對，沒有重送。" }); }
+        setLoad("error"); setNotice("未能載入已儲存的內容，請再試一次。");
+        if (entry && original.current === entry) {
+          entry.checked = false; setPending({ ...entry });
+          setOperation(before => ({ state: entry.reconfirm ? before.state === "conflict" ? "conflict" : "failed" : "unknown",
+            reference: api.pendingReference(), recovery: "check", message: entry.reconfirm
+              ? latest.current.dirty ? "未能儲存，草稿已保留。" : "未能儲存，請重新載入。"
+              : "暫時未能確認是否儲存成功，內容已保留。" }));
+        }
       } finally { if (current()) { inFlight.current = false; setBusy(false); } }
     });
   };
-  useTaskKnowledgeRefresh(() => refresh(false), env.online && !!env.childId && !runtime.lost, busy || exportBusy || dirty || !!pending);
+  useTaskKnowledgeRefresh(() => refresh(false), env.online && !!env.childId && !runtime.lost, busy || exportBusy || dirty || !!pending || checks.dirty, () => publishingChecks.current);
   const write = (attempt: Attempt, retry = false, draftId?: string) => {
     const actual = latest.current.page;
     if (inFlight.current || !runtime.live() || !env.online || !canManage || !actual?.canManage || latest.current.load !== "ready"
       || !retry && (original.current || !env.canStartWrite())) return;
     const entry: Pending = { attempt, checked: false, reconfirm: false, draftId: retry ? original.current?.draftId : draftId,
       selectionGeneration: retry && original.current ? original.current.selectionGeneration : selection.current.generation };
-    inFlight.current = true; original.current = entry; setPending(entry); setBusy(true);
-    setOperation({ state: "saving", reference: null, message: "正在保存家庭共享文件。" });
+    const checking = attempt.kind === "change" && attempt.input.action === "check_items";
+    inFlight.current = true; original.current = entry; setPending(entry); if (!checking) { setBusy(true); setNotice(""); }
+    if (attempt.kind === "create" && !retry && draftId) setCreateDraft({ id: draftId, request: structuredClone(attempt.input), authorityVersion: actual.authorityVersion });
+    if (!checking) setOperation({ state: "saving", reference: null, message: "正在保存家庭共享文件。" });
     void runtime.request(async (signal, current) => {
       try {
         const item = attempt.kind === "create" ? await api.create(env.childId!, attempt.input, signal, env.userId!)
@@ -194,9 +218,20 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         reads.current.versions = Object.fromEntries(Object.entries(reads.current.versions).filter(([id]) => id !== item.id));
         setVersionReads(reads.current.versions);
         if (reads.current.content?.documentId === item.id) clearContent();
-        if (attempt.kind === "create") { setDirty(false); setEpoch(value => value + 1); }
-        setPage(before => before ? { ...before, items: before.items.some(old => old.id === item.id)
-          ? before.items.map(old => old.id === item.id ? item : old) : [item, ...before.items] } : null);
+        if (attempt.kind === "create") { setDirty(false); setCreateDraft(null); setEpoch(value => value + 1); }
+        const before = latest.current.page;
+        const updated = before ? { ...before, items: before.items.some(old => old.id === item.id)
+          ? before.items.map(old => old.id === item.id && old.version <= item.version ? item : old) : [item, ...before.items] } : null;
+        latest.current.page = updated; setPage(updated);
+        if (checking) {
+          checks.saved(item); notifyChecks();
+          setOperation({ state: "none", message: "", reference: null });
+          // The receipt includes the authoritative document. Do not block the next
+          // click on another full-page read; shared invalidation can refresh later.
+          publishingChecks.current = true;
+          try { env.invalidate(); } finally { publishingChecks.current = false; }
+          return;
+        }
         setOperation({ state: "saved", reference: null, message: "文件已獲 Server 確認保存。" });
         if (selection.current.generation === entry.selectionGeneration) {
           if (attempt.kind === "change" && attempt.input.action === "archive" && selection.current.id === item.id) {
@@ -234,12 +269,28 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
         if (!current() || clearAccess(error)) return;
         const failure = error instanceof FamilyDocumentApiError ? error : new FamilyDocumentApiError();
         entry.reconfirm = requiresFreshDocumentConfirmation(failure) && !api.hasUnknownOriginal(); original.current = entry; setPending({ ...entry });
+        if (checking) { checks.failed(!entry.reconfirm); notifyChecks(); }
         setOperation({ state: entry.reconfirm ? failure.status === 409 ? "conflict" : "failed" : "unknown",
           reference: api.pendingReference(), recovery: "check", message: entry.reconfirm
-            ? "這次提交未獲接納；請重新讀取並核對原版本，草稿保留。" : "結果未知；原操作識別、內容及版本保留，請先查核，不會自動重送。" });
-      } finally { if (current()) { inFlight.current = false; setBusy(false); } }
+            ? latest.current.dirty ? "未能儲存，草稿已保留。" : "未能儲存，請重新載入。"
+            : "暫時未能確認是否儲存成功，內容已保留。" });
+      } finally { if (current()) { inFlight.current = false; setBusy(false); if (checking) notifyChecks(); } }
     });
   };
+  // One timer and one original API operation for this scope. More clicks only
+  // update intent; they never launch concurrent writes or implicit retries.
+  useEffect(() => {
+    if (!runtime.live() || !env.online || !canManage || !page?.canManage || load !== "ready" || inFlight.current
+      || original.current || dirty || exportBusy || !env.canStartWrite()) return;
+    const delay = checks.delay(Date.now());
+    if (delay === null) return;
+    const timer = setTimeout(() => {
+      if (!runtime.live() || inFlight.current || original.current || !env.canStartWrite() || !latest.current.page) return;
+      const batch = checks.take(latest.current.page, Date.now()); notifyChecks();
+      if (batch) write({ kind: "change", ...batch });
+    }, delay);
+    return () => clearTimeout(timer);
+  });
   const loadMoreDocuments = (status: "active" | "archived") => {
     const before = latest.current.page, state = listState.current[status], cursor = state.cursor;
     const first = status === "archived" && !listState.current.archived.started;
@@ -321,7 +372,11 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     if (snapshot) { reads.current.content = target; setContent(target); } else readVersionChunk(target);
   };
   const visible = runtime.lost ? null : page;
-  const locked = busy || exportBusy || !!pending || runtime.lost || !env.online || load !== "ready" || !canManage || !visible?.canManage;
+  const checkSaving = pending?.attempt.kind === "change" && pending.attempt.input.action === "check_items" && !checks.paused;
+  const checkLocked = busy || exportBusy || !!pending && !checkSaving || !!checks.paused || dirty || runtime.lost || !env.online || load !== "ready" || !canManage || !visible?.canManage;
+  const locked = busy || exportBusy || !!pending || checks.dirty || runtime.lost || !env.online || load !== "ready" || !canManage || !visible?.canManage;
+  const editingLocked = pending?.reconfirm
+    ? busy || exportBusy || runtime.lost || !env.online || !canManage || !visible?.canManage : locked;
   const change = (id: string, expectedVersion: number, action: DocumentChange["action"], extra = {}) => {
     const actual = latest.current.page?.items.find(item => item.id === id && item.childId === env.childId);
     if (locked || !runtime.live() || !actual || actual.version !== expectedVersion || action === "archive" && (actual.status !== "active" || actual.readState === "invalidated" || !actual.current)
@@ -336,12 +391,12 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
   };
   const recovery: WriteRecoveryActions = { checkOriginalOperation: () => refresh(), reloadCurrent: () => refresh(),
     retryOriginalOperation() { const entry = original.current; if (entry?.checked && !entry.reconfirm && !inFlight.current) write(entry.attempt, true); } };
-  const preparationDocuments = visible?.items.filter(item => item.kind === "preparation").map(preparationView) ?? [];
+  const preparationDocuments = visible?.items.filter(item => item.kind === "preparation").map(item => preparationView(checks.project(item, visible.authorityVersion))) ?? [];
   const selectedPreparation = visible?.items.filter(item => item.kind === "preparation" && item.id === selectedId).map(item => {
     const historical = content?.documentId === item.id && content.snapshot && content.snapshot.id !== item.current?.id && item.readState !== "invalidated";
     if (historical) return { ...preparationView({ ...item, current: content.snapshot! }), historical: true };
     if (content?.documentId === item.id && !content.complete && content.snapshotId !== item.current?.id) return { ...preparationView(item), revision: null, sources: [], historical: true };
-    return preparationView(item);
+    return preparationView(checks.project(item, visible.authorityVersion));
   })[0] ?? null;
   const reading: FamilyDocumentReadingPort = { online: env.online && !runtime.lost, activeHasMore: listPages.active.more,
     archiveStarted: listPages.archived.started, archiveReady: listPages.archived.ready, archiveHasMore: listPages.archived.more, pageBusy: busy, pageError,
@@ -354,7 +409,7 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     continueVersion() { const value = reads.current.content; if (runtime.live() && env.online && value && !value.busy && !value.complete && !value.invalidated) readVersionChunk(value); },
     closeVersion: clearContent };
   const condition = runtime.lost ? "lost" : !visible ? busy ? "loading" : load === "error" ? "unavailable" : "empty"
-    : load === "error" ? "refresh_failed" : pending ? "unknown" : !canManage || !visible.canManage ? "read_only" : "ready";
+    : load === "error" ? "refresh_failed" : pending && !checkSaving ? "unknown" : !canManage || !visible.canManage ? "read_only" : "ready";
   const createDocument = (input: DocumentRequest, draftId?: string) => {
     const parsed = documentRequestSchema.safeParse(input);
     if (parsed.success && parsed.data.kind === "growth_report" && parsed.data.purpose === "family"
@@ -371,20 +426,43 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     scope: { authorityKey: env.scopeKey, childId: env.childId!, role: env.role ?? undefined, online: env.online, condition },
     reading, documents: preparationDocuments, selected: selectedPreparation, condition,
     online: env.online, notice, justArchivedId, dataLabel: "Server 家庭共享多用途文件；依據來源及版本整理。", archiveNotice: "只歸檔文件，原來源及任務保留。",
-    operation: runtime.lost ? undefined : operation, capabilities: { archive: !locked, checkItem: !locked, restore: !locked, refresh: !locked, create: !locked },
-    busy, locked, dirty, epoch, retainedDraftId: pending?.attempt.kind === "create" ? pending.draftId ?? null : null, authorityVersion: visible?.authorityVersion ?? "" }, actions: {
+    checkSave: runtime.lost || !checks.dirty ? undefined : checks.paused ?? (checkSaving ? "saving" : "queued"),
+    canReapplyChecks: checks.paused === "conflict" && !pending && !busy && load === "ready" && env.online && !!visible?.canManage,
+    operation: runtime.lost ? undefined : operation, capabilities: { archive: !locked, checkItem: !checkLocked, restore: !locked, refresh: !locked, create: !locked },
+    busy, locked, editingLocked, createDraft: runtime.lost ? null : createDraft, dirty, epoch, retainedDraftId: pending?.attempt.kind === "create" && !pending.reconfirm ? pending.draftId ?? null : null, authorityVersion: visible?.authorityVersion ?? "" }, actions: {
     selectDocument(id) { if (runtime.live() && preparationDocuments.some(item => item.id === id)) {
+      if (selection.current.id !== id) flushChecks();
       selection.current = { id, generation: selection.current.generation + 1 }; clearContent(); setSelectedId(id); setJustArchivedId(null);
     } },
     closeDocument() { if (runtime.live()) {
+      flushChecks();
       selection.current = { id: null, generation: selection.current.generation + 1 }; clearContent(); setSelectedId(null); setJustArchivedId(null);
     } },
     archiveDocument(id, expectedVersion) { change(id, expectedVersion, "archive"); },
     restoreDocument(id, expectedVersion) { change(id, expectedVersion, "restore"); },
     refreshDocument(id, expectedVersion) { change(id, expectedVersion, "refresh"); },
-    checkItem(id, expectedVersion, sectionId, itemId, checked) { change(id, expectedVersion, "check_item", { sectionId, itemId, checked }); },
-    createDocument, refresh() { refresh(); }, markDraft() { if (!locked && runtime.live()) setDirty(true); },
-    discardDraft() { if (original.current?.attempt.kind !== "create" && runtime.live()) { setDirty(false); setEpoch(value => value + 1); if (refreshQueued) refresh(); } },
+    checkItem(id, expectedVersion, sectionId, itemId, checked) {
+      const current = latest.current.page, doc = current?.items.find(item => item.id === id && item.childId === env.childId);
+      if (checkLocked || !runtime.live() || !doc || doc.version !== expectedVersion || !current) return;
+      checks.edit(doc, current.authorityVersion, { sectionId, itemId, checked }, Date.now()); notifyChecks();
+    },
+    reapplyChecks() {
+      if (pending || busy || !runtime.live() || !env.online || load !== "ready" || !latest.current.page) return;
+      if (checks.reapply(latest.current.page)) { setOperation({ state: "none", message: "", reference: null }); notifyChecks(); }
+      else setNotice("清單項目已改變；請核對目前文件，或捨棄未保存的勾選。");
+    },
+    discardChecks() { if (!pending && runtime.live() && checks.discard()) { setOperation({ state: "none", message: "", reference: null }); notifyChecks(); } },
+    createDocument, refresh() { refresh(); }, markDraft() { if (!editingLocked && runtime.live()) setDirty(true); },
+    discardDraft() {
+      const entry = original.current;
+      if (!runtime.live() || entry?.attempt.kind === "create" && !entry.reconfirm) return;
+      // Only a definitely rejected request may be forgotten. Unknown writes keep their exact original.
+      if (entry?.reconfirm) {
+        api.reset(); original.current = null; setPending(null);
+        setOperation({ state: "none", message: "", reference: null }); setNotice("");
+      }
+      setDirty(false); setCreateDraft(null); setEpoch(value => value + 1); if (refreshQueued) refresh();
+    },
   }, recovery };
   const { standard, reportDocumentIds, archive: projectedArchive } = projectFamilyDocumentArchive({ page, load, lost: runtime.lost, scopeKey: env.scopeKey, childId: env.childId! });
   const archive: GrowthArchiveProjection = { ...projectedArchive, reading: { ...reading,
@@ -428,8 +506,8 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
       }
     });
   };
-  return { readState: load, preparation, archive, operation, recovery, busy, exportBusy, locked, dirty, epoch, notice, standard,
-    authorityVersion: visible?.authorityVersion ?? "", retainedDraftId: pending?.attempt.kind === "create" ? pending.draftId ?? null : null, createDocument, exportReport,
+  return { readState: load, preparation, archive, operation, recovery, busy, exportBusy, locked, editingLocked, createDraft: runtime.lost ? null : createDraft, dirty, epoch, notice, standard, flushChecks,
+    authorityVersion: visible?.authorityVersion ?? "", retainedDraftId: pending?.attempt.kind === "create" && !pending.reconfirm ? pending.draftId ?? null : null, createDocument, exportReport,
     refreshReport() { if (standard) change(standard.id, standard.version, "refresh"); },
     refresh() { refresh(); }, markDraft: preparation.actions.markDraft!, discardDraft: preparation.actions.discardDraft! };
 }

@@ -1,0 +1,19 @@
+{
+  "package": "S04-W03 iOS",
+  "date": "2026-10-24",
+  "baseline": "6871bab1b1cc0046ce0fa0679fe847b4e91b6c89",
+  "branch": "codex/s04-ios-release-tooling",
+  "scope": "Extend the existing release entry with iOS planning, store-build baselines, exact-build submission and scoped OTA rollback",
+  "environment": { "os": "Windows", "node": "24.19.0", "easCliContract": "24.14.0", "expo": "57" },
+  "review": "Primary reviewed the complete tool and policy diff, pinned EAS submit/build contracts and unchanged Android defaults. Sol implemented only bounded policy/test changes; primary implemented orchestration and documentation.",
+  "checks": [
+    { "name": "Shared release policy and offline CLI plans", "command": "node --test tests/mobile-release.test.mjs", "passed": 1, "failed": 0, "localLog": ".cache/ios-release-check.log" },
+    { "name": "Official local iOS fingerprint resolver", "result": "passed", "configuration": "Synthetic public Firebase settings with an intentionally absent Android descriptor; not a release runtime", "runtime": "cf084d805d2cd912408a499be98e5f09fa1dd09c", "uploads": 0, "publications": 0, "localResult": ".cache/ios-release-runtime-plan.json" },
+    { "name": "First integration export command", "result": "failed before bundling", "reason": "The command selected frontend/node_modules/expo, but the dependency is hoisted at root node_modules/expo", "exitCode": 1, "localLog": ".cache/ios-release-export.log" },
+    { "name": "Integration export after command-path correction", "result": "passed", "command": "expo export --platform ios --output-dir ../.cache/ios-release-export --max-workers 1", "exitCode": 0, "adjustment": "Use the installed root Expo entry; keep TEMP/TMP inside the worktree as established in S04-W02", "localLog": ".cache/ios-release-export-02.log", "bundle": "_expo/static/js/ios/index-245d5d32b6988085ce4a7f68c0654249.hbc", "sha256": "2cee5d170bad63b49fad260c863f152e36c254da1a58e3067c912e25b43d0b07" },
+    { "name": "git diff --check", "result": "passed" }
+  ],
+  "notPerformed": ["Full test suite or full typecheck", "Web or Android rebuild", "Computer Use", "Cloud upload or paid build", "Apple account registration or credentials creation", "IPA signing", "TestFlight submission", "Real OTA or rollback", "iPhone acceptance", "Model calls", "Notifications", "Production deployment"],
+  "pending": ["Authorized paid Apple team, bundle availability and existing App Store Connect app", "Protected signing and submission credentials", "First upload archive and actual signing verification", "APNs deployment and one authorized real notification", "iPhone login, keyboard, cross-device continuation and media", "TestFlight installation, compatible OTA and rollback"],
+  "conclusion": "Source tooling and local integration checks passed; no installable iOS build or TestFlight delivery is claimed. Existing Android pending checks remain unchanged."
+}

@@ -4,31 +4,39 @@
 
 ## 目前與接手
 
-- **目前：MODEL-SELF03共用個人模型設定已完成本機接線，正收束交付。**從#253合併基線`339c707`接續#255／#256後端及本地入口；v3表單、密鑰清理與供應商說明保留新設計，最低檢查及Web／Android匯出通過。#254及附件#259仍由協作者處理。正式部署、OTA及新接口真服務尚未完成，詳見[MODEL03](PLAN.md#model-self03)。
+- **當前收 Android／頭像／附件庫／個人模型：**[S16 收尾](PLAN.md#s16-w03)的頭像成熟裁切已合併 #305、更新原 Web；保存／重開／移除及附件庫下載沿已有證據。包含原生裁切、圖標及 splash 修正的 APK v4 已一次建置並核對同簽署；使用者已覆蓋安裝；v4 登入／孩子資料、原生裁切／EXIF／預覽及取消已核，沒有向 v3 強推 OTA。附件下載／分享及其餘設備流程仍待驗，個人 key 成功流程因供應商拒絕仍待可用憑證／環境。四 Agent／協作者 PR 不動。
 
-- **PR 收束：**#229／#234～#239 由原 Android 主責帳號合併，#241／#242／#244 由本地／模型工作主責帳號交付。使用者於 2026-10-20 明確批准先合併、剩餘手機／真模型驗收改為後續追蹤；原作者、失敗及未驗證據保留。該合併批次沒有新增測試，後續部署見下方。現行次序見 [PLAN](PLAN.md#active)。
-- **本地開發入口可用：**`npm run agent:local` 啟動目前分支的正式 Web／API／四角色接點及隔離持久資料。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；已補相容模型與獨立向量key的本地配置接線，這條新增路由只有合成證據。方法見[本地入口](docs/AGENT_LOCAL.md)。本地環境交付與角色完整品質分開，不需先部署 GCP。
-- **角色未完成項：**官方 PDF 第3頁已整理、審核及本地發布；最終聊天引用新版的單次補驗因 `model_limit` 停止，原用量和失敗保留。長來源／圖片多模態仍欠角色能力，不能以單頁 PDF 當全部通過；見 [DEV02](PLAN.md#dev-agent02)。
-- **個人模型共用入口及直接選型已交付。**#246 的 `d53c203` 已更新原站及Android OTA；Android原平台設定保存／重開讀回已有證據，個人模式及真key仍待驗。依最新要求由用戶提供憑證，沒有地域或metadata前置閘，不再為取得驗收key或逐模型試用阻擋入口。單次Developer API的`region_unavailable`不代表其他用戶或Vertex不可用；Vertex本身支援向量，現有個人Express adapter的向量仍是接線缺口，不能標為完成。後續及證據只見 [MODEL-SELF01／02](PLAN.md#model-self01)。
-- **Android 已合併，未全數驗收：**APK v2 覆蓋安裝、原登入／資料保留及一則指定 FCM 有證據；正常有來源聊天／重開、撤銷／切身份、跨端與媒體／附件完整流程、照護通知完成停止及 OTA 回退仍按 [S04～S17](PLAN.md#s04-w01) 追蹤，不以合併當成品完成。
-- **其他邊界：**正式資料已使用 Firestore；家庭多人留 P4、iOS 暫緩。OPT／LAY 既有成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)仍未完成。只補最低必要驗證，不全量、Computer Use 或重做前端設計。
+- **四項指定修補已獲准正常合併，真機驗收仍待補。**PR #286 已保留 #288／#289 照片聊天接線及最新交付記錄；受影響照片恢復／client 契約補驗通過，沿獨立覆核及遠端保護規則完成來源合併，不部署、不把空 CI 或合併當真機通過。精確版本與保留失敗見 [FIX-FOUR01](PLAN.md#four-fix01)。
+
+- **共用介面及準備單背景保存已發布。**2026-10-24 master `015deb8`（#284）已相容更新 API／worker／Web 及 Android OTA。連點不鎖、約 3 秒合併及離頁背景保存有定向證據；來源狀態、附件庫畫面、聊天分頁及直接錄音等前批成果保留。手機實際效果待核，詳見[共用互動](PLAN.md#shared-interaction01)。照片聊天已隨下述批次交付；接續[頭像](PLAN.md#avatar-01)，保留協作者未合併 Agent 修改。
+- **iOS 本機接線與發佈工具已合併，TestFlight 等待 Apple 前置。**#272及#274～#278已合併；本機檢查、整合iOS匯出及APNs掛載配置核對通過。尚須Apple團隊／簽署／APNs配置、IPA與真機驗收；未部署或啟用通知。範圍保留於[iOS計劃](PLAN.md#p3-ios)，不因此重跑測試。
+- **附件庫 Android 續驗發現檔名問題，正在局部修正：**v4 的系統選檔把文件 ID 當成檔名，尚未上傳便停止；沿既有 SDK 取得原名稱，必要檢查已過，待相容 OTA 後續驗下載／分享。Web 清單及下載 bytes 的已有證據保留，見 [ATTACHMENT-READ01](PLAN.md#attachment-read01)。私人來源仍如實標示未建立向量索引。
+
+- **MODEL-SELF03 已發布，手機草稿捨棄補核通過。**新關注圖標出現後，捨棄模式／供應商草稿、離頁及返回恢復平台模式，零key輸入／保存／模型。精確裝置OTA ID與真key流程未驗。另將其餘原生底欄接回Web同一導航metadata，保留版面／手勢；兩項定向檢查通過，這批接線已隨 `382d217` 發布、裝置效果待核，見 [MODEL03](PLAN.md#model-self03)。#269 準備單退出修正及 #259 附件回看已合併；頭像啟用狀態見下項；#254／#262／#263／#265／#273 仍由協作者處理。
+
+- **照片聊天及欄位提示已發布：**#287／#288 接通照片直接送出、原圖重讀及附件庫同 ID 重用；原生單行空欄位改用 placeholder，減少等待浮動標籤量度。原站與 Android OTA 已發布，真機效果／真模型照片品質未驗；其後 #286 的已合併 Server 恢復修正已隨 `652edad` 同版組裝部署，前端真機結論仍未補。詳見[CHAT-PHOTO01](PLAN.md#chat-photo01)。
+- **頭像已在原站啟用：**#300／`0ebfbfa` 的 API／worker 同版部署、release flag／寫入 true 及健康讀回通過。Web 保存／重開／移除、Android v4 選圖／裁切／EXIF／取消已有證據；未向真孩子保存測試頭像。已有還原／清理證據復用，見[AVATAR-01](PLAN.md#avatar-01)。
+
+- **本地開發入口可用：**`npm run agent:local` 使用目前分支的正式 Web／API／四角色接點及隔離持久資料，不需部署 GCP。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；新增相容模型與獨立向量 key 路由只有合成證據。方法見[本地入口](docs/AGENT_LOCAL.md)。
+- **角色聯合補驗依使用者指示延後：**等待四個Agent真正完成且協作者先自行檢查，再安排最後引用／審核及接續流程。本聊天不提前重跑或接管修改；`delivery_review_incomplete`失敗現場、單頁PDF已通過證據及長來源／多模態缺口保留。本地入口仍可供協作者使用，恢復條件及證據只見 [DEV02](PLAN.md#dev-agent02)。
+- **個人模型：**由用戶提供憑證與模型 ID 自行嘗試，沒有地域或 metadata 預驗門檻。聊天可用 Google 或相容接口；向量維持現有 Gemini／1024維索引，可另填本人 key，不借平台額度。其他向量模型及 Vertex Express 直接向量接線不宣稱已完成。
+- **Android 未全數驗收：**APK v2 覆蓋安裝、原登入／資料保留及一則指定 FCM 已有證據；跨端、媒體／附件、照護通知完成停止、OTA 回退及各包餘下真機項按 [S04～S17](PLAN.md#s04-w01) 追蹤。使用者已允許先合併、未驗項後續追蹤，不以合併或 OTA 發布當真機通過。
+- **其他邊界：**正式資料使用 Firestore；家庭多人留 P4。OPT／LAY 成果保留，STR01 及[原生備份真還原](PLAN.md#p2-backup-followup)未完成；Android 尚欠驗收不阻塞 iOS 開工。只補必要驗證，不全量、Computer Use 或重做設計。
 
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-20 14:07 UTC 原站：**API／worker為`model-d53c203`（映像`93ebfdc`），Web同tag（映像`209c0e1`）；服務健康，公開HTML hash與同版產物一致。未改業務資料、配額、用量或索引，沒有模型／通知驗收。原站更新及回退邊界見[交付證據](artifacts/verification/MODEL_SELF02_DELIVERY_20261020.json)。
+**2026-10-25 10:23 UTC 原站：**Web 已更新 `avatar-crop-1f07fab`（映像 `0da4e1f`），公開 index hash／API health 通過；API／worker 維持 `avatar-enable-0ebfbfa`（`c3b149c`），頭像已啟用，APNs 未啟用。[本批交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。零模型／通知／資料遷移／配額修改，保留前版 Web 回退。
 
-**2026-10-20 14:22 UTC 磁碟：**歷次未淘汰的映像及上傳包令可用空間降至約417 MiB；已清除61個過時映像（69個標籤）及9個舊安裝包，可用空間增至約10.81 GiB，釋放約10.40 GiB。保留現行及兩組回退候選映像、全部資料卷／備份／密鑰，沒有重啟或擴容；容器未變、首頁及API健康均200。後續交付沿[有界保留](docs/PRODUCTION_FRONTEND.md#firestore-deployment)，回退仍須核對資料相容；實際清單及結果留同份交付證據。
+**Android，2026-10-25：**APK v4 已完成（build `9f43f925`，source `1f07fab`）；同簽署、package、runtime `0c5c868…` 與新圖標／splash 資源已核，[覆蓋安裝](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)。本次沒有 OTA；v3 的 `5fd1446…` runtime 不同，需新 APK。實際安裝、裁切及啟動畫面效果待驗，詳見[本批交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。
 
-**Android，2026-10-20 14:38 UTC觀察：**14:11發布的`d53c203` preview OTA群組`cfe20c62-9816-4d8e-8b5c-06bcf74ab266`之新模型ID欄位已在手機顯示；APK v0.1.0／versionCode 2及runtime `33699576537bf6f4081bddfb9c8807cd6bdef3ee`不變，毋須覆蓋安裝。原平台設定只保存一次，版本0→1，完全重開後仍登入並讀到同版；沒有key輸入、限額修改、模型或通知呼叫。真key／Android個人模式及限制保存仍待驗，首次匯出漏身份配置的失敗保留於交付證據。
+**回退、備份與容量：**本次保留相容 API／worker `4159605` 及 0600 的 `compose.env.before-avatar-enable-0ebfbfa`。關寫入仍保留頭像 reader／cleanup；已開放新 schema／journal，不能回退至 `e23de93` 等舊讀取器。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)。最近原生備份觀察仍為 2026-10-23 READY，未還原；前批部署前約 10.5 GiB 可用，未擴容／清正式資料。
 
-回退保留既有映像及受保護Compose副本；新政策、附件、語音與通知資料寫入後，必須使用相容reader／worker，不能直接退回不認識新欄位的舊API。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。備份只讀metadata，未還原，舊失敗證據不改寫。
-
-**2026-10-20 12:55 UTC 續期觀察：**依使用者要求在原期限增加14天，VM維持e2-small，自動停止期限改為 **2026-11-06 13:33:50 香港時間**。依GCP要求短暫停止後已重新啟動，首頁與API健康入口均返回200；首次開機連線未就緒的結果保留。未變更映像、規格、資料或配額，未取得新帳單，不宣稱免費。最近核對的READY原生備份為2026-10-19 22:25 UTC，保留至11月2日；只讀metadata，沒有還原。
+**主機期限，2026-10-25 核對：**原 e2-small VM 仍運行，自動停止時間維持 **2026-11-06 13:33:50 香港時間**；本次沒有續期或修改規格。舊 SQL 容器為停止狀態，正式 API／worker 使用 Firestore。
 
 <a id="preview-history"></a>
 ## 按需追溯
 
-[歷史索引](_archive/README.md#recent-history) → 指定LOG／EV；前端入口為[frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN](frontend/PLAN.md#active)。master、draft與部署版本分開，舊批准不當成尚未使用額度。
+[歷史索引](_archive/README.md#recent-history) → 指定 LOG／EV；前端入口為[frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN](frontend/PLAN.md#active)。master、draft與部署版本分開，舊批准不當成尚未使用額度。
 
 Codex額度：使用者於2026-10-23回報剩餘90%，當時距重置不到五小時；未自行推算目前餘額或重置狀態。

@@ -36,6 +36,12 @@ P／A／架分別表示需要調整 PLAN／AGENTS／架構；本次已落實文�
 S13-W01 的業務任務台帳、S13-W07／W08 的授權／關注規則、S14-W01 的統計與來源關係，以及 S13-W03／S15 的單主切換仍由項目控制；通用庫沒有理由取代這些領域規則。已完成工作包只復用成果，不因本表選型返工。
 
 <a id="worker"></a>
+### S13-W02 iOS APNs（2026-10-24）
+
+沿 Expo Notifications 57.0.21（MIT）取得 APNs token；已核固定版 iOS `NotificationRecords.swift` 由 `userInfo.body` 提取產品 data，故保留原五欄 reference。Server 採 Node 24.19 原生 HTTP/2／crypto，無新增套件。已比較 apns2 與 @parse/node-apn 的重試／總期限接點，不能直接保持本項目的單次投遞及取消語義，故只寫薄 APNs adapter，授權／防重仍復用原服務。
+
+按 [Apple HTTP/2 請求](https://developer.apple.com/documentation/usernotifications/sending-notification-requests-to-apns)及[token 認證](https://developer.apple.com/documentation/usernotifications/establishing-a-token-based-connection-to-apns)核對 ES256、Team／Key／topic／環境、JWT 有效期、apns-id 及固定 payload。JWT 有界復用，單次請求涵蓋連線、授權查核及完整回應的期限；unknown 不重送。目前低用量每次關閉連線，不宣稱高流量連線池能力。adapter 與正式 API／worker 的合成結果見[S13 證據](../artifacts/verification/S13_IOS_SERVER_20261024.json)，不等同 Apple 真簽署／推送通過。
+
 ## S13-W04：框架與業務台帳的分界
 
 2026-09-28 接入補充：已固定安裝 pg-boss 12.34.0／schema 42，原 MIT 許可及 tarball integrity 已入 [清單](../licenses/manifest.json)；Node 24／pg 8.23 的型別接線通過，真 PostgreSQL 採用閘已獲批准並通過分段驗收，hard-kill 恢復 68.895 秒，詳見 [證據](../artifacts/verification/S13_W04_CHECKS.json)。主模型已核對安裝套件的 createJob、constructor／stop、schema check、heartbeat／重試及 keep_until SQL；固定來源與可復用約束見 [worker Skill](../.agents/skills/postgres-durable-worker/SKILL.md)。使用既有交易 client 的 send、框架原生領取／heartbeat／dead letter，業務僅保存授權及唯一效果。原生 transactional work 適合短 SQL handler，但本包已有 workspace／opId 交易與可重領台帳，不另建第二套互不協調的交易。產品操作見 [P2_WORKER](P2_WORKER.md)。
@@ -277,6 +283,14 @@ Firebase JS 13.0.0 的 React Native `_getAdditionalHeaders` 沒有 Android packa
 S04-W01 固定 `@expo/fingerprint` 0.20.13 的 Windows config loader 以反斜線作 glob 比對，與 Linux 的預設排除結果不同；按[官方 loader 路徑正規化](https://github.com/expo/expo/blob/main/packages/@expo/fingerprint/src/ExpoConfigLoader.ts)局部回補 `toPosixPath`，不升整套 SDK、不放寬 runtime 核對。`mobile:prepare` 有版本／原文／實體依賴路徑 guard；僅本機指紋一致已驗，修後 APK 另驗。
 
 
+### S04-W02：iOS 共用配置與身份（2026-10-24）
+
+沿 Expo 57.0.24／Router 57.0.22／React Native 0.86.3、SecureStore 57.0.4、Firebase JS 13.0.0、EAS CLI 24.14.0；既有套件及 license 不變，沒有新增依賴或升級。採 [EAS iOS build／submit](https://docs.expo.dev/submit/ios/) 和同一 Expo 原生入口，增加獨立 TestFlight profile，不新增 iOS 業務層或認證供應商。
+
+[SDK 57 SecureStore](https://docs.expo.dev/versions/v57.0.0/sdk/securestore/) 的 iOS Keychain 可能跨卸載保留；沿既有 Server session 驗證／撤銷，不能以卸載推斷登出。Firebase JS 的既有原生身份 port 使用 Web app ID／公開 API key，不等同 Apple 登入或 Firebase 原生 Messaging 配置。Apple 團隊／簽署、iPhone 登入及系統行為仍各自待驗，配置可解析不代表可安裝成品。
+
+iOS 圖標由既有 `assets/brand/app-icon-source.svg` 以本機工具匯出 1024×1024、無 alpha PNG，保留原色／形狀及背景，不新增或重畫品牌。只設定 `ios.icon`，不改 Android 既有圖標或增加產品套件。
+
 ### S07-W01：共用變更游標及原生生命週期
 
 2026-10-16：復用現有 changes cursor、owner／Query 失效及身份 transport，沒有另一份同步資料庫。採 Expo SDK 57 配套 `expo-network` 57.0.2（MIT；固定 npm 原碼／license 已保存），只用 [getNetworkStateAsync／addNetworkStateListener](https://docs.expo.dev/versions/latest/sdk/network/) 配合 React Native AppState。網絡未知不冒稱離線；訂閱優先於遲到的初讀，初讀失敗不產生未處理 promise。沒有讀取 IP 或使用 Web 的外部 IP 服務。正式依賴變更需新 native runtime／APK，原生事件仍待真機；共用游標邏輯及型別已核。
@@ -289,6 +303,10 @@ S04-W01 固定 `@expo/fingerprint` 0.20.13 的 Windows config loader 以反斜�
 2026-10-16：沿 Expo 57 固定 ImagePicker 57.0.19、FileSystem 57.0.7、Sharing 57.0.21，以及已使用的 expo-crypto 57.0.3；base64-js 1.5.1 顯式列為直接依賴，不自寫編碼器。均 MIT，原 license 及 lockfile 保存。沿官方 [ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/)、[FileSystem](https://docs.expo.dev/versions/latest/sdk/filesystem/) 與 [Sharing](https://docs.expo.dev/versions/latest/sdk/sharing/)，核固定 npm 原碼／型別；不引入第二套媒體後端。
 
 Expo fetch 57.0.24 在未裝 expo-blob 時返回 React Native Blob；RN 0.86.3 Blob 沒有 arrayBuffer，但 FileReader.readAsArrayBuffer 有原生實作。共用讀取保留此後備，SHA-256 由原生 expo-crypto 薄 port 提供；不偽造整套 Web Crypto。相簿／相機只在明確點按開啟，按實際 bytes／JPEG／PNG／4 MiB 核對，使用同一照片 API、收據及授權。私人來源原 owner 可共用，不另造手機版。
+
+2026-10-24 iOS 補充：固定 ImagePicker 57.0.19 的 `MediaHandler.swift`／`ImageUtils.swift` 顯示 `.current` 可直接複製 HEIC，而 `.compatible` 仍不能保證檔案已變 JPEG；其 `base64` 輸出則經 `readJpegBase64From` 產生 JPEG，符合 [SDK 57 契約](https://docs.expo.dev/versions/v57.0.0/sdk/imagepicker/)。因此只在 iOS 要求相容表示及 JPEG base64，原 bytes 已為 JPEG／PNG 時保持原件，其餘使用有界副本；不新增轉檔套件、不降低 quality 或裁切。JS 接收後先限制編碼大小、格式再 decode／核真 bytes；單張選取仍不等於保證系統解碼大照片的記憶體峰值，iPhone 原生轉檔與返回仍待真機。
+
+iOS 其餘媒體沿既有 adapter：FileSystem 57.0.7 的 `FilePickingUtils.swift` 以 `UIDocumentPickerViewController(..., asCopy: true)` 選檔；Audio 57.0.5 的 HIGH_QUALITY 在 iOS 使用 AAC／M4A；Sharing 57.0.21 開系統分享。現有兩分鐘／5 MiB、本人草稿 cache、scope 核對及清理不變，不因跨端另建上傳或解析服務；此為固定原碼接線核對，不當成 iPhone 聽感／權限／保存已驗。
 
 PDF 與資料下載只替換出口：Web 原下載；Android 私有 cache＋系統 shareAsync，開啟前重核當前 scope。固定 Android Sharing 在 chooser 的 activity result 返回，不能證明接收應用已保存；不即刻刪檔令接收方讀不到。暫存最多 16 份、每份最多 16 MiB，下次匯出清理超過 24 小時項目，不宣稱嚴格定時清理；取消亦不當保存成功。檔案是本人明確要求的匯出副本，不是可寫業務主庫。SDK 原生套件須新 APK/runtime；型別及原生 Blob 合成接點已驗，裝置權限／選圖／PDF 分享仍待真機。
 
@@ -307,6 +325,8 @@ S12 音訊模型接線（2026-10-16）：沿既有 ADK 2.1.0／GenAI 2.24.0／Ge
 ### S04-W03 固定發布入口
 
 2026-10-18：沿 EAS CLI 24.14.0／Expo Updates 57.0.23／fingerprint 0.20.13，不新增發布平台。核對固定 CLI：`fingerprint:generate` 會上傳 fingerprint，故零發布 plan 使用本機 `resolveRuntimeVersionAsync`；`build:view`／`update:view`／有界 `update:list` 查正式身份及 runtime，`update:republish` 作相容回退。依 [runtime](https://docs.expo.dev/eas-update/runtime-versions/)／[rollback](https://docs.expo.dev/eas-update/rollbacks/) 保留原生與 JS 相容邊界；工具 JSON 只保存 ID／版本等白名單欄位。固定 SDK 方法及本機守門已核對，真雲端發布／回退與裝置升級仍待驗；採用與否不靠模型猜測套件是否含原生改動。
+
+2026-10-24 iOS增補：復用同一工具，不加發佈依賴。固定 [24.14.0 submit](https://github.com/expo/eas-cli/blob/v24.14.0/packages/eas-cli/src/commands/submit.ts) 沒有 `--json`；使用 `--id`、`--no-wait`及`--no-auto-testflight-setup`，只提取輸出的提交 ID，不聲稱 Apple 已處理完成。固定 [IosSubmitCommand](https://github.com/expo/eas-cli/blob/v24.14.0/packages/eas-cli/src/submit/ios/IosSubmitCommand.ts) 在非互動模式要求既有 `ascAppId`；[Build fragment](https://github.com/expo/eas-cli/blob/v24.14.0/packages/eas-cli/src/graphql/types/Build.ts) 提供 distribution及simulator欄位供基線核對，但沒有證書／Team證明，首次實際簽署仍須另核。離線平台／相容與回退檢查及整合iOS匯出已有證據，實際EAS／Apple提交與OTA仍待團隊及授權。
 
 
 ### S12-W05 有界檔案讀取（2026-10-18）
@@ -333,3 +353,11 @@ MODEL-SELF03補充（2026-10-23）：沿ADK 2.1.0的現有`AgentModelProvider`�
 Gemini目錄使用原生`models.list`的Pager，最多兩頁各100項，取支援generateContent的合法Gemini ID，去重後最多回20項並明示截斷；不讀完整列表或自動試用每個模型。目錄只作參考，用戶亦可直接指定模型ID。已知Gemini2.5採thinkingBudget（Pro動態、Flash／Lite關閉可選thinking），既有Gemini3保留thinkingLevel；其餘型號省略可選thinking參數，避免錯套另一型號設定。這是參數相容選擇，不宣稱品質／速度已實測；metadata也不等於生成或embedding可用。[模型目錄](https://ai.google.dev/api/models)／[thinking配置](https://ai.google.dev/gemini-api/docs/thinking)。SDK／HTTP重試維持一次，由正式gateway統一有限重試與計量。合成接線及真服務未驗邊界見[MODEL01 EV](../artifacts/verification/MODEL_SELF01_SETTINGS_20261018.json)。
 
 2026-10-20依使用者澄清，取消「未有本地profile便禁止使用」的門檻；未逐型號驗收不等於不支援。Express保留保守參考選項，實際可用型號依[官方服務範圍](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/start/express-mode/overview)及本人憑證，不保證Developer模式可用的全部型號在Express亦可用。新型號可經相同SDK及Agent工具協定直接指定，不增加逐模型試呼叫。[API key認證](https://docs.cloud.google.com/docs/authentication/api-keys)另指出非Gemini專用的授權key受組織政策限制；不能把普通Gemini key當作Vertex key，或為驗收任意改組織政策。
+
+
+<a id="avatar-crop-reuse"></a>
+### 頭像裁切的成熟能力復用（2026-10-25）
+
+原生沿既有 MIT 的 Expo ImagePicker 57.0.19：啟用 allowsEditing、Android 方形 aspect，iOS 原生本已固定方形；Android 使用套件內建 CanHub cropper，無須新增原生套件。選回裁切副本後只預覽／保存，不再顯示自製 PanResponder 與方向按鈕。官方 [ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/) 及安裝版 types／CropImageContract 已核對；實際裝置裁切／EXIF／取消仍須分開驗證。
+
+Web 的 ImagePicker 不提供原生裁切，採固定 react-easy-crop 6.2.4（MIT，唯一 runtime 依賴 normalize-wheel 1.0.1／BSD-3-Clause），其 React peer 範圍涵蓋現有 React 19。沿 [原專案](https://github.com/ValentinH/react-easy-crop) 的拖曳、雙指／滾輪縮放、方向鍵與百分比選區，只以薄映射接原 Server 裁切契約；不新增 canvas 輸出或另一套手勢。元件只讀本機 object URL，不上傳圖片。對話框只作淡入／平移，避免官方所列縮放動畫量度問題；另在裁切容器抵消原網站 CSS zoom，讓套件 layout／pointer 座標一致；桌面大圖以可見選區與保存契約量度核對。套件原 license 不修改。採用不代表所有瀏覽器或真機均已驗，結果及限制見 [AVATAR-01](../PLAN.md#avatar-01)。

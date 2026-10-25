@@ -1,3 +1,4 @@
+import { AVATAR_ERROR_CODES } from "../shared/avatars.ts";
 import type { OnlineCommand, OnlineContext, OnlineIdentity, OnlineReceipt, OnlineSubmission } from "../shared/online.ts";
 
 export class OnlineTransportError extends Error {
@@ -22,8 +23,9 @@ export interface OnlineTransport {
 
 interface PendingOperation { userId: string; command: OnlineCommand; canonical: string; operation: OnlineIdentity }
 const safeCodes = new Set([
+  ...AVATAR_ERROR_CODES, "operation_conflict", "operation_erased",
   "inputs_capacity", "input_processing",
-  "operation_mismatch", "storage_epoch_changed", "session_changed", "version_conflict",
+  "operation_mismatch", "storage_epoch_changed", "session_changed", "identity_changed", "version_conflict",
   "not_found", "forbidden", "invalid_input", "validation_error", "operation_result_unavailable",
   "unauthorized", "account_precondition_required", "unsupported_media_type", "invalid_json",
   "invitation_unavailable", "already_member", "invitation_conflict", "owner_immutable",
@@ -66,7 +68,8 @@ function validUnconfirmed(value: unknown): value is { state: "unconfirmed" } {
   return object(value) && value.state === "unconfirmed" && Object.keys(value).length === 1;
 }
 
-export function createOnlineTransport(apiUrl: string, fetcher: typeof fetch = fetch): OnlineTransport {
+export function createOnlineTransport(apiUrl: string, fetcher: typeof fetch = fetch,
+  options: { preserveAmbiguousLookup404?: boolean; resetOnIdentityChanged?: boolean } = {}): OnlineTransport {
   const base = apiUrl.replace(/\/$/, "");
   const deviceId = crypto.randomUUID();
   let pending: PendingOperation | null = null;
@@ -78,7 +81,9 @@ export function createOnlineTransport(apiUrl: string, fetcher: typeof fetch = fe
     if (generation !== generationAtStart) throw new OnlineTransportError();
   }
   function clearOnTerminal(error: OnlineTransportError): void {
-    if (error.status === 401 || error.status === 404 || error.code === "session_changed") reset();
+    // A missing lookup route does not prove that the original command never committed.
+    if (error.status === 401 || error.status === 404 && !options.preserveAmbiguousLookup404 || error.code === "session_changed"
+      || error.code === "identity_changed" && options.resetOnIdentityChanged) reset();
   }
   async function request(path: string, signal: AbortSignal, userId: string, body?: unknown): Promise<unknown> {
     try {

@@ -1,3 +1,5 @@
+import { createPrivateAttachmentList } from './firestore-attachment-list.ts';
+import type { AttachmentListPolicy } from '../src/shared/attachment-list.ts';
 import { createFirestoreOnlineReceipts } from './firestore-online-receipts.ts';
 import { firestoreVoiceTranscriptSchema } from './firestore-voice-transcripts.ts';
 import { prepareVoiceTranscription } from './firestore-voice-transcripts.ts';
@@ -30,7 +32,7 @@ export const firestoreVoiceRowSchema = z.object({
   && (v.state !== "ready" || v.descriptor !== null)
   && (!v.deletion || erasureCoversVoice(v.deletion.intent, v.objectScope, v.id)));
 export type FirestoreVoiceRow = z.infer<typeof firestoreVoiceRowSchema>;
-export interface FirestoreVoiceOptions extends FirestoreDomainOptions { objects: VoiceObjects; journal: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>; serverClock?: () => number; eraseTranscriptionRun?: (userId: string, runId: string) => Promise<void> }
+export interface FirestoreVoiceOptions extends FirestoreDomainOptions { attachmentListPolicy?: AttachmentListPolicy; objects: VoiceObjects; journal: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>; serverClock?: () => number; eraseTranscriptionRun?: (userId: string, runId: string) => Promise<void> }
 /** Private voice authority. Upload and object reads occur outside retried Firestore callbacks. */
 export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), clock = options.serverClock ?? Date.now;
@@ -319,7 +321,8 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     });
     return { ...value, attachment: view(row) };
   }
-  return { reserve, upload, reconcile, content, prepareLink, agentAudio, readEvidence, delete: deleteVoice, cleanupDeleted, expireUnlinked, eraseForScope,
+  const list = createPrivateAttachmentList({ data, authority, source: 'voices', policy: options.attachmentListPolicy, scopeTag, open, view });
+  return { list, reserve, upload, reconcile, content, prepareLink, agentAudio, readEvidence, delete: deleteVoice, cleanupDeleted, expireUnlinked, eraseForScope,
     readMetadata: async (b: FirestoreAuthorityTransaction, id: string) => view(await read(b,id)),
     get(userId: string, childId: string, id: string) { return authority.runTransaction(userId, childId, async b => view(await read(b, id))); } };
 }

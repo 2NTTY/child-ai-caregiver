@@ -54,7 +54,9 @@ docker compose --project-name yuban-p1 \
 
 升級前備份 `/var/backups/yuban-p1/int-w07-before-028.ybak` 必須連同 `.ybak.attachments` 目錄保存，密鑰保持分開。原 `/opt/yuban-p2-43ab10c` 與原映像保留；原 pilot 設定備份在 `/var/backups/yuban-p1/int-w07/pilot-before.env`。回復不得 `down -v`、清庫或覆蓋正在使用的資料庫；先停止寫入、核對是否已有新資料，再决定沿舊映像讀取相容 schema 或還原至新的空目標，不能默默丟棄新資料。
 
-## 明確保留的限制
+## INT-W07 當時的限制（歷史）
+
+以下只記錄該歷史版本的範圍，不是目前功能開關。現行語音、附件、Android 與個人模型接點以上方操作說明及 [PLAN](../PLAN.md#active) 為準；是否已部署／真機通過看 [STATUS](../STATUS.md#deployment)。
 
 - 語音、其他文件輸入、第三方／電話登入及 Android 真機仍未支援；孩子刪除保留。沒有假成功入口。
 - PDF 是共享文字資料整理，不包含私人聊天或照片，也不是醫療／發展評估；完整選材匯出、遷移及大規模知識管理仍按後續階段。
@@ -174,7 +176,7 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 - 在 `frontend/` 使用固定 `eas-cli@24.14.0`；`app.json` 固定 Android `org.yuyoufang.app`、scheme `yuyoufang` 及 runtime fingerprint，`eas.json` 保留 development／preview／production channel。固定 Node 24.19.0、npm 11.8.0。
 - Expo 帳號由本人登入，不把密碼／token 放入專案；公開 project ID 固定於 `app.json`，可由 `EAS_PROJECT_ID` 覆蓋；現行專案為 `@2ntty/yuyoufang`。沒有 project ID 不允許雲端 build；本機無連結時 Updates 關閉，不假稱 OTA 已配置。
-- `EXPO_PUBLIC_AUTH_PROVIDER=firebase`、API base 使用原站 HTTPS `/api`；Firebase project／authDomain／appId 沿同一專案，缺任何公開設定便停止雲端 build。Android 必須使用相容原生 JS SDK 的專用 Firebase Auth 公開 key，API allowlist 只需 `identitytoolkit.googleapis.com`／`securetoken.googleapis.com`；不可直接沿用限定 HTTP referrer 的 Web key、移除其限制或偽造 Referer。SDK 未提供 Android package／cert headers，不把原生 SDK 的 application restriction 設定當已相容。公開 key 不授予 Firestore、Storage、模型或 Admin 權限；產品准入與 Server 權限仍逐次核對，配額不提高。原生 key 已建立並配置至 Expo preview，尚待 APK 真登入；production 設定不因 preview 完成而自動就緒。
+- `EXPO_PUBLIC_AUTH_PROVIDER=firebase`、API base 使用原站 HTTPS `/api`；Firebase project／authDomain／appId 沿同一專案，缺任何公開設定便停止雲端 build。原生必須使用相容 JS SDK 的 Firebase Auth 公開 key，API allowlist 只需 `identitytoolkit.googleapis.com`／`securetoken.googleapis.com`；不可直接沿用限定 HTTP referrer 的 Web key、移除其限制或偽造 Referer。SDK 未提供原生 package／cert／bundle headers，不把平台 application restriction 設定當已相容。公開 key 不授予 Firestore、Storage、模型或 Admin 權限；產品准入與 Server 權限仍逐次核對，配額不提高。公開配置沿 Firebase JS 的 Web app ID，不因 iOS 而改傳原生 Firebase app ID 或加入另一 SDK；各環境實際登入結果只見根 PLAN，preview 不代表 production 已就緒。
 - 公開 config 會進入 bundle，不應標為秘密來誤以為客戶端不可讀；ADC、私鑰與服務端 secret 不傳至 Expo。
 - `.easignore` 限定上載共用前端、client／shared、資產及依賴／授權。首次雲端建置前必須核對實際 archive，排除 Server、prompt、測試資料、私人協作文件及憑據。`eas build:inspect --platform android --stage archive --profile preview --output <new-local-directory>` 只準備本機 archive，但 CLI 仍需要 Expo 登入。EAS 會先以不含尾斜線的目錄名判斷是否遍歷；allowlist 須放行目錄本身，不能只以 `!/frontend/` 等模式假定子檔已納入。
 - `npm run build:android-ui --workspace frontend` 只驗 JS／Hermes bundle，不會產生可安裝 APK。EAS preview／production 使用 APK；簽署、真機登入、OTA 與更新證據另列，不因 bundle 成功當成品。
@@ -182,8 +184,41 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 `mobile:release` 的本機工具見下節；語音／FCM、完整跨端前景同步及更新交付按根 PLAN 的實作／部署／真機門檻分開，不以工具存在宣稱已發布。
 
+Android launcher 使用既有 `assets/brand/app-icon-ios.png` 品牌圖；共用原生啟動畫面由 Expo SDK 57 對應的 `expo-splash-screen@57.0.9`（MIT）plugin 設定，使用 `favicon.png` 透明標記與白底。沿[官方配置](https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/)及已安裝版本核對；這些設定進入下一個新 binary，不能用 OTA 更新舊版的 launcher／原生 splash，也不能手填舊 fingerprint。JS 首屏仍沿現有 FirstScreenGate，不新增啟動等待或重做畫面。
+
 Windows 執行 EAS 前，在實體 dependency installation 的完整建置副本執行 `npm run mobile:prepare`；不要用指向另一 worktree 的 `node_modules` junction。此命令只針對固定 `@expo/fingerprint` 0.20.13 loader 補 glob 比對前的 POSIX 路徑正規化，版本或原文改變即停止；Linux 不修改。保留原生內容 fingerprint 與雲端相等檢查，不使用忽略全部 native 檔案或硬填 runtime 的替代。後續 `mobile:release` 應調用同一入口。
 
+<a id="ios-foundation"></a>
+### iOS 共用入口與 TestFlight 配置
+
+iOS 與 Android 使用同一原生 transport、SecureStore、AppState、畫面及 owner；產品及交付門檻只見 [iOS 計劃](../PLAN.md#p3-ios)。`frontend/app.json` 的候選 Bundle ID 為 `org.yuyoufang.app`、只宣告 iPhone 支援，scheme 與品牌不變。這些本機值不代表已向 Apple 註冊。
+
+- `ios-preview` 是獨立 EAS store distribution profile，channel 為 `ios-preview`，使用 `preview` 公開環境；不是 Android 的 internal APK profile，也不是直接公開 App Store。仍採 fingerprint runtime 及遞增 build number，不手填舊 runtime。
+- 建置 iOS 必須明確選 `--platform ios --profile ios-preview`；Firebase JS 公開設定、HTTPS API、Expo project 仍必須齊備。iOS 不要求或讀取 Android `google-services.json`；Firebase Auth 用現有 JS SDK，不因 APNs 另加原生 Firebase Messaging。
+- `npm run build:ios-ui --workspace frontend` 只匯出 iOS JS／Hermes 與資產，不能安裝到 iPhone，也不代表簽署或 TestFlight 已完成；此本機檢查不需要 Apple 團隊或付費會員。
+- 實際註冊 App、首次簽署及提交前，確認有權使用的付費 Apple Developer 團隊、Bundle ID 可用性、App Store Connect App 身份及 Apple 要求的出口合規資料。沒有團隊不猜 Team ID，不用普通 Apple ID 假稱可發布 TestFlight；不自動購買會員。
+- 組織會員可以正式邀請使用者並授予必要簽署權限；個人會員的 App Store Connect 邀請不授予 Developer Program 憑證權限。使用原擁有人的授權操作，不傳密碼。TestFlight-only App 不承諾可直接轉戶，依 [Apple 轉移條件](https://developer.apple.com/help/app-store-connect/transfer-an-app/app-transfer-criteria/) 處理。
+- 私有 `.p8`、`.p12`、描述檔及其他簽署憑據留工程外；`.easignore` 亦排除它們。APNs Server 私鑰不進 App 或 EAS 前端封包；上傳前核對實際 archive，不能只以 ignore 存在當作已檢查。
+- Keychain 沿 `WHEN_UNLOCKED_THIS_DEVICE_ONLY` 保存 Server session，沒有業務資料副本；卸載可能保留項目，因此重開仍核 Server，明確登出／撤權才清理，不宣稱卸載已撤權。
+- iPhone 照片入口沿同一服務：JPEG／PNG 保留選取 bytes，HEIC 等由系統 ImagePicker 產生 JPEG 相容副本後核對 4 MiB／hash，手機原圖不變；附件下載所見是實際上傳的副本。錄音、一般選檔及 PDF 分享共用原生 adapter，不新增 iOS 後端；實機選取／取消／播放仍列 S12 待驗。
+- 雲端 build／submit 由下方固定發佈入口承接，明確指定 `--platform ios`。EAS 可以從 Windows 操作；最終安裝、相機／鍵盤及通知仍須 iPhone 核對。
+
+TestFlight build 最長有效 90 天；OTA 只更新相容 JS／資產，不能延長二進位 build 有效期。本人內測及外部 Beta Review 分開，不因上傳成功而宣稱已可安裝或全部驗收完成。[EAS iOS](https://docs.expo.dev/submit/ios/)／[TestFlight](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/)
+
+
+### iOS APNs Server 接點
+
+`IOS_PUSH_ENABLED` 預設關閉，與 Android 開關獨立。開啟時 API／worker 必須共用 `APNS_TEAM_ID`、`APNS_KEY_ID`、`APNS_BUNDLE_ID`、`APNS_ENVIRONMENT` 及 `APNS_PRIVATE_KEY_FILE`；私鑰以工程外受保護檔案唯讀掛載，Linux 檔案不可向 group／other 開放。設定缺漏或不是 P-256 私鑰便拒絕啟動，不靜默降級。TestFlight 使用 `production`，開發簽署才用 `sandbox`；不自動換環境重發。
+
+原 VM 需要 APNs 時，在現有 Compose 檔之後疊加 `deploy/p1/compose.firestore.apns.yaml`，並把 `P1_APNS_KEY_FILE` 設為工程外私鑰的絕對路徑。只掛 API／worker 的 `/run/secrets/apns_key`，Web、build context及 EAS封包不取得私鑰；既有 storage／Telegram／Web Push秘密沿Compose合併保留。不使用APNs便不加此override，原站不要求有Apple檔案。
+
+先按候選映像實際 `USER node` 的 UID／GID設定宿主檔案所有者及 `0600`，核對容器能讀而其他身份不能讀；Compose file-secret不會替bind來源修正所有者或mode。不能以放寬為`0644`處理權限錯誤。Team／Key／Bundle／環境及開關仍只在同一受保護`firebase.env`，掛載不會開啟通知。新增key或輪換只重啟相容API／worker，不重建前端；真正投遞另沿本人授權。
+
+先部署相容 Server reader，再開啟 iOS 登記。iOS 裝置用 `/api/native-push/v2`，舊 Android 繼續 v1；兩者共用授權及原收據。已保存 iOS 綁定後，回退 API／worker 亦須理解 `apns`／平台欄位，不能退回本包之前的嚴格 reader。停用 APNs 只停止新增投遞，不刪收據或解除業務義務；恢復仍須重新核對原綁定環境。
+
+本機模式只寫明示「未實際發送」的收件箱，不讀取 APNs 私鑰或聯絡 Apple。沒有 Apple 團隊、憑證及真機證據時，只能交付程式，不宣稱已支援實際 iPhone 推送。
+
+共用通知 owner 在 iOS 使用 v2、Android 保留 v1；iOS 卡片依 `availablePlatforms.ios` 決定能否登記，其他本人訂閱保留實際 provider 與服務狀態。權限讀取不彈窗，只有明確啟用才要求系統授權／token；iOS provisional／ephemeral 是可取得 token 的授權，不保證橫幅或聲音。輪換只保存系統回傳的 token，不在回調再次取 token。點擊沿原 `open` 核權及身份清理，不自動標記任務完成。
 
 ### Android FCM 建置與部署接點
 
@@ -197,29 +232,66 @@ Server `ANDROID_PUSH_ENABLED` 預設關閉；準備同一 GCP project 的 FCM HT
 
 
 <a id="mobile-release"></a>
-## 共用 Web／Android 的固定發布入口
+## 共用 Web／Android／iOS 的固定發布入口
 
-從根目錄執行 `npm run mobile:release -- --plan`。預設 preview，純本機：讀 Git 差異、現有 app／EAS 配置及可用的官方 runtime，不登入、不上傳、不建置、不發布。未知路徑明列待 review；缺本機依賴或 Android Firebase 描述檔時，不能聲稱 OTA 相容。文件改動不觸發建置，Server 改動不要求重發 App；`src/shared` 的相容契約改動須先交付 Server。
+從根目錄執行 `npm run mobile:release -- --plan`。預設 Android preview；加入 `--platform ios` 使用獨立 `ios-preview` profile／channel及 `preview` environment。純 plan 只讀 Git、配置及可用的官方 runtime，不登入、不上傳、不雲端建置或發布；`--record-build` 是另外的唯讀雲端查詢，不能與 `--plan` 混用。缺依賴或該平台設定不能宣稱 OTA 相容。文件不觸發 build，API 相容的 Server 修改不用更新 App。
+
+共用程式會列出 Web、Android、iOS 三端影響；`.native` 影響兩個 App，`.ios`／`.android` 只影響所屬平台。一次執行只發布選定平台，`otherMobileDelivery` 保留另一端待交付；不能把一端成功當作三端完成。沒有 iOS build 時，不阻止既有 Android 發布。
 
 ### 每次修改後的短流程
 
-1. 在目前分支完成所需修改及 review，保留單一共用畫面／owner；不另外重畫 Android。只跑本次必要檢查。
+1. 在目前分支完成所需修改及 review，保留單一共用畫面／owner，不重畫另一端。只跑本次必要檢查。
 2. 執行 `npm run mobile:release -- --plan --since <上一交付的Git-SHA>`。已有正式 build 記錄時可加 `--baseline <build-記錄路徑>`，會核對專案、profile、channel、package、已完成狀態及 fingerprint。
 3. 正式執行要求乾淨提交、實體 dependency installation（不能指向另一 worktree 的 junction）、固定 Node／npm／EAS，及工程外 Web Firebase 環境檔。Android 的 `ANDROID_GOOGLE_SERVICES_FILE` 是已核對的同專案描述檔，不能進 Git／上傳原始碼封包。`mobile:prepare` 沿固定 Windows fingerprint 修正，不能手填舊 runtime。
 4. 共用修改用同一入口準備 Web 及 Android；例如 `npm run mobile:release -- --execute --channel preview --build-id <目前APK的EAS-build-ID> --web-env-file <工程外Web環境檔>`。它先產生 Web 產物，再核對官方 runtime：相同才 OTA，不同便 APK；沒有 baseline 不能猜 OTA。用 `--action update` 可要求不相容即停；`--action build` 明確要求新 APK。
 5. Web 使用 `frontend/dist`，沿本文件原 VM／Caddy 部署及回滾接點傳送；工具目前只把 Web 標為 **prepared-deployment-pending**，不會冒稱網站已更新。部署私人產物、API 相容修正、新索引及雲端費用依有效授權處理。
 6. build 使用固定簽署（`--freeze-credentials`）、遠端遞增 versionCode、`--no-wait`；排入 EAS 不等於 APK 成功。完成後執行 `npm run mobile:release -- --record-build <ID> --channel preview`，只讀 EAS 結果並保存供下次 plan 使用的精簡記錄。首次新 APK 升級交付核對實際產物的 applicationId、遞增 versionCode 及原證書，以 Android 官方 `apksigner verify --verbose --print-certs` 驗證簽署；不只相信 build metadata。覆蓋安裝及裝置結果仍須實測。
 
-Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走 Android 配置，避免兩端公開 Firebase key 混用。Android 執行才讀指定 EAS environment；不輸出其內容。`--plan` 不使用 `eas fingerprint:generate`，因固定 CLI 的該命令會上傳 fingerprint；沿 `expo-updates` 的本機 resolver 取得與 runtime 相同的判斷。
+Web 環境檔只讀 `EXPO_PUBLIC_*`；工具在獨立程序先清走原生配置，避免公開 Firebase key 混用。原生執行才讀指定 EAS environment，不輸出其內容。`--plan` 不使用會上傳 fingerprint 的 `eas fingerprint:generate`，而用 `expo-updates` 本機 resolver。iOS runtime 不要求 Android descriptor，也不能拿 Android build 的 runtime 作基線。
 
-Android 匯出亦須合併 `frontend/eas.json` 的 `build.base.env`，包含正式身份供應商與 API 地址，並設定相應的 `EAS_BUILD_PROFILE`／`EAS_BUILD_PLATFORM` 讓 `app.config.js` 驗證完整配置。`mobile:release` 已執行此步；單獨 `eas env:pull` 的檔案不包含全部 profile 值。若因已有產物使用 `--skip-bundler`，須先核對原匯出沿用同一配置合併與驗證，不能只憑 runtime 相容便發布。
+兩端匯出均須合併 `frontend/eas.json` 的 base及選定profile環境，包含正式身份供應商與 API 地址，並設定 `EAS_BUILD_PROFILE`／`EAS_BUILD_PLATFORM`。`mobile:release` 已執行；單獨 `eas env:pull` 不含全部 profile 值。已有產物若用 `--skip-bundler`，仍核對同一配置，不能只憑 runtime 相容發布。
+
+### iOS 首次及後續交付
+
+1. 先由本人確認付費 Apple 團隊、候選 Bundle ID 可用性及 App Store Connect 的既有 App。確認後才填 `frontend/app.json` 的 `expo.ios.appleTeamId`；`frontend/eas.json` 的 `submit.ios-preview.ios` 填同一 `appleTeamId` 及數字 `ascAppId`。目前空設定是待辦，不能填假的團隊或 App ID。
+2. 經授權在 EAS 準備同團隊的 distribution certificate／provisioning profile，以及指定 App 的提交憑證。工具 build 使用 `--freeze-credentials`，不自行改簽署。私鑰留工程外；若用 `ascApiKeyPath`，須為工程外絕對路徑，連同 key ID／issuer按官方設定；亦可用已在 EAS 設定的憑證。首次封包及實際簽署仍需核對，單靠 metadata 不能證明證書身份。
+3. `npm run mobile:release -- --platform ios --plan --since <上一交付SHA>` 列出缺項。獲准後以 `--execute --action build` 建 store build；若含共用畫面改動，另傳 `--web-env-file <工程外Web設定>`。沒有 baseline 只建新 binary，不猜 OTA；不自動提交 Apple。
+4. EAS 完成後：`npm run mobile:release -- --platform ios --record-build <ID>` 保存精簡基線。核對同專案／bundle／profile／channel、STORE、非 simulator及 fingerprint；IPA 與 iPhone 安裝仍待實核。
+5. 提交已核對的同一 build：`npm run mobile:release -- --platform ios --execute --action submit --build-id <ID>`。固定 CLI 使用明確 ID、非互動、`--no-wait --no-auto-testflight-setup`，不選 latest、不自動新增測試群組或邀請。提交回應只表示排入處理，待 App Store Connect 處理、出口合規及必要 Beta Review 完成，才可稱 TestFlight 可安裝。
+6. 後續相容更新沿原入口：`--platform ios --execute --action update --build-id <已安裝build-ID> --web-env-file <工程外Web設定>`；不相容即停止，另建 binary。回退沿下節指令加 `--platform ios --channel ios-preview`，仍只限同 runtime。OTA 不延長 TestFlight 90天期限，不改原資料或在工作中強制重載。
 
 ### 正式發布、回退及失回應
 
 - production 必須同時指定 `--channel production --confirm-production`，不沿 preview 默認發布。兩個環境都使用固定 EAS 專案／application ID／channel；EAS 審批、額度及私有封包上傳授權不由這個旗標代替，不購買方案、不每次 commit 建置。
 - 相容回退：`npm run mobile:release -- --execute --action rollback --channel preview --build-id <已安裝build-ID> --rollback-group <原update-group-ID>`。先查同專案 branch 的最近最多 50 組，核對 Android／同 runtime，再沿原生 `update:republish`。找不到便停，不搜尋全部歷史或強制跨 runtime。回退只改客戶端，不還原業務資料。
-- 每次結果在 `.cache/mobile-releases/<Git-SHA-channel-action>/release.json`：保留 SHA、build／update ID、runtime、App版本、Web產物與待部署狀態。日誌只在同一 ignored 目錄，診斷先看末段；manifest 不保存 key、環境正文、signed URL 或完整雲端日誌。
+- 每次結果在 `.cache/mobile-releases/<Git-SHA-platform-channel-action>/release.json`：保留 SHA、platform、build／update ID、runtime、App版本、Web產物與待部署狀態。舊 Android 記錄仍可讀且阻止同一操作重送；iOS submit 按同一 build ID 保存獨立記錄，不因 Git SHA 改變重複提交。日誌只在同一 ignored 目錄，先看末段；manifest 不保存 key、環境正文、signed URL 或完整雲端日誌。
 - 雲端呼叫前保存 submitted。回應丟失／失敗時保留 unknown，**不自動重新發布**；先在原 EAS 專案按 ID／SHA 查原結果。同一提交／channel／action 不自動建立第二次操作。
 - OTA 沿現有 ON_LOAD／下次安全啟動套用；工具不呼叫 App reload，不在聊天、確認或 unknown 期間強制重載。
 
 本文件只定義固定交付方法；實際 EAS／部署／真機／OTA 狀態與證據以[根 PLAN](../PLAN.md#s04-w03)為準。APK 檢查使用[Android 官方工具](https://developer.android.com/tools/apksigner)，不修改或重新簽署已交付的 APK；Windows `aapt` 若不接受中文絕對路徑，從專案目錄傳入相對路徑。
+
+
+<a id="avatar-deployment-gate"></a>
+## AVATAR-01 部署／啟用門檻
+
+頭像先以 source gate 及新寫入均關閉的候選部署，取得同版讀回後才處理明確的啟用審查。`AVATAR_WRITES_ENABLED=true` 不能繞過 `server/avatar-release.ts`，亦不能把 unavailable 改成假成功。工作狀態及實際 flag 版本只見[PLAN](../PLAN.md#avatar-01)。
+
+原 VM 的 Compose 沿既有主檔／渠道檔，加入 `deploy/p1/compose.firestore.avatars.yaml`；API／worker 共用 `compose.env` 的 `AVATAR_WRITES_ENABLED`，預設 false。候選核對不得觸發模型／通知或重跑業務。公開 health 及恢復原 Caddy 入口納入部署失敗回退範圍；預先保留受保護配置與精確映像。
+
+正式部署責任人須先取得以下同版證據，才另行審核解除 gate：
+- 完整必要型別／定向回歸與獨立 review；unknown copy／來源證據改變、legacy partial plan 的恢復／清理責任有可驗處理。保留歷次真紅，不以窄 roots PASS 取代完整 server。
+- clean lockfile 安裝及部署平台的 `sharp@0.35.5` 專用子程序、小合成 decode／方向／metadata去除／hard-kill-close 資源收斂；server optional binary 與實際 LGPL／Apache／第三方 notices及來源資訊完整，不進 Web／Android bundle。
+- 同版 API、worker、export、backup/restore、獨立 erasure journal reader/writer、private encrypted Storage及精確索引；原生 Firestore 跨實例 admission／lease／CAS 與 cleanup scheduler 有實際讀回證據。
+- 隔離合成備份→還原→最新刪除日誌重放→匯出／清理演練，包含 source evidence 改變、unknown與中斷查回；不接正式流量，不上傳家庭照或呼叫模型。GCP／部署由既有責任人依有效授權處理；配對快照證據不替代原生每日備份或 Secret Manager 災備驗收。
+
+首次新 avatar schema／journal 寫入後，不可回退至不認識它們的舊 reader／worker；關寫入仍需保留相容清理、匯出、備份與恢復接點。marker partial-staging 的本機合成 PASS 不是原生 restore 全完成；資料與 codec/license細節見[資料契約](DATA_MODEL.md#avatars)及[決策](DECISIONS.md#avatar-codec-decision)。
+
+### 放棄未啟用的隔離頭像還原
+
+只供還原操作員，不能對原站或已啟用 target 執行。先停止該 target 的還原程序，確認它未掛 API／worker／流量；保留原備份與來源。沿同一 `FIREBASE_RESTORE_DATABASE_ID` 及受保護 key：
+
+1. `node scripts/firebase-recovery.mjs inspect-avatar-copies`，stdin `{}`。只返回 copy identity、phase、數量及 target ID，不輸出正文。
+2. 決定放棄後，`node scripts/firebase-recovery.mjs abandon-avatar-copies`，stdin `{"identity":"<上一步固定identity>","confirmTargetDatabaseId":"<同一隔離庫>","isolated":true}`。沒有 `current` 且完整認證集合吻合才 fence／清理目標副本；來源變更不會被當成繼續恢復的同意。
+3. 回應未知或中斷，保留相同參數及現場；修復連線後重新執行同一命令，查回原 marker，不能換 ID 重做原 copy。成功只表示該副本集合已放棄，**不表示完成還原或允許開站**。
+
+已放棄計劃不能恢復，重新還原另用經核對的來源及乾淨隔離 target。不要刪除永久 marker、checkpoint／intent 或 legacy 不明頁面來強行重試；marker 防止舊程序的遲到寫入。若 header／inventory 無法核實或已有 `current`，此入口拒絕，保留人工調查；沒有自動移除資料庫或擴大刪除範圍。
