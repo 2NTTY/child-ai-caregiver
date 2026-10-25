@@ -78,6 +78,8 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="attachment-read01"></a>
 ### ATTACHMENT-READ01：附件回看與私人清單（Web 清單／下載已驗，Android 出口待驗）
 
+- 2026-10-25 續驗 v4 發現 Android 系統選檔把 `content://` 文件 ID 當成檔名，尚未上傳便停批。沿 Expo FileSystem 57.0.7 原生目錄複製取得供應商檔名，文件／已錄音訊共用薄接點；保留大小、私有草稿及清理限制，不新增原生套件。單一針對性檢查與三入口型別通過，待相容 OTA 後只續驗原檔案的上傳／下載／分享；不重跑頭像。證據見 [Android 檔名修正](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
+
 - #259 已於 2026-10-24 合併；來源基線 `339c707`，分支 `dot/attachment-media-followup-20261023`；26 個 source/test 檔＝22 產品＋4 測試。原照片 owner 保留；語音／影片／文件走[唯讀清單契約](docs/API.md#private-attachment-lists)，必要來源／時間改用可關閉詳情彈窗，媒體操作獨立，不展示技術版本字串。
 - 定向結果分列：跨層 10/10（包含既有後端 8 項）、附件 focused 16/16、真 RN Web Modal 的有界 DOM 2/2。首 DOM 0/2 是 jsdom 沒有原生按鈕 Enter／Space default click 的測試方法錯誤，已保留並修正方法；真瀏覽器鍵盤仍未驗。8-root strict 512 MiB 檢查 exit137／無 diagnostics，原因未確定；不是完整或局部型別通過。精確版本、原紅及限制見[來源證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)。
 - 原來源交付只包含 `voice_assets`／`chat_file_assets` 各一個 `scopeTag ASC,state ASC,createdAt DESC,assetId DESC` composite index 定義，當時未部署；原型別與 GUI 限制仍見來源證據，不因合併改成通過。

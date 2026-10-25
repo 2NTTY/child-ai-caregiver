@@ -1,0 +1,10 @@
+{
+  "date": "2026-10-25",
+  "baseline": "1a8b85a090f9e3533b1a68ae0d2f9055b80a1ec4",
+  "scope": "Android v4 attachment continuation; native filename correction only",
+  "observedFailure": {"stage": "selected-unsent-draft", "actualName": "content-provider document ID", "expectedName": "yuyoufang-download-check-20261025.txt", "syntheticBytes": 108, "uploaded": false, "modelCalls": 0},
+  "reuse": {"package": "expo-file-system@57.0.7", "official": "https://docs.expo.dev/versions/latest/sdk/filesystem/", "evidence": ["File.ts name getter uses URI basename", "Android CopyMoveStrategy uses provider fileName for a directory destination", "ContentProviderFile reads OpenableColumns.DISPLAY_NAME"], "newNativeDependencies": false},
+  "checks": {"targetedTest": "frontend/scripts/native-picked-file.test.cjs: 1 passed", "typecheck": "native-picked-file, native-chat-file and native-voice-file: 0 diagnostics", "deviceAfterFix": "pending compatible OTA"},
+  "limits": ["Synthetic adapter check does not prove device copy behavior", "No avatar retest, notification, model generation or unrelated attachment access", "Personal Gemini key successful generation remains blocked by the observed provider region rejection"],
+  "delivery": "pending"
+}
