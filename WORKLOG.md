@@ -3745,3 +3745,10 @@
 - 第一批頭像保存失敗及修正後驗收器呼叫上限、附件下載等待超時均保留；後續只補原已保存資料的待驗步驟，不重新上傳／提交。Web 匯出通過。必要測試沒有呼叫產品 Agent／通知，不代填 Android 真機。
 - 個人模型沿既有受限 Gemini key及正式 provider factory 僅一次短生成，供應商回 model_region_unavailable，立即停止，零 embedding／重試／配額修改。成功個人 key 仍待驗，不把此結果當其他用戶或 Vertex 的限制。[證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。
 - 使用者另指出自製頭像裁切體驗偏離成熟產品；資料層驗證不等於體驗完成，保留現成能力優先的後續接點。手機／原生裁切／跨端媒體與 OTA 回退、四角色聯合及原生備份真還原未驗仍保留。
+
+<a id="log-20261025-avatar-save-delivery"></a>
+## LOG-20261025-AVATAR-SAVE-DELIVERY
+
+- #302 已按對應身份合併；`15fdb50` 的 Web-only 封包約 4.46 MiB，以現網 Caddy/Web 映像為底建立候選。2026-10-25 09:50 UTC 啟用 `d6f2a8b`，公開 index hash 與 API health 通過；API／worker、資料及配額均不改，保留 `c09400c` 和配置回退。[交付證據](artifacts/verification/AVATAR_SAVE_DELIVERY_20261025.json)。
+- 原 VM 身份與執行狀態已核，期限仍為 2026-11-06 13:33 香港時間，部署前約 10.4 GiB 可用空間；未續期、未新增資源、未發通知或模型。發佈工具的唯讀 plan 判定當前 runtime `0c5c868…` 不同於 APK v3 `5fd1446…`，沒有強推 OTA 或重建 APK；與後續裁切接點一併交付，設備項保持待驗。
+- 本地核對後關閉環境時，launcher 曾報 checkpoint HTTP 500 並保留前份 snapshot；emulator 尾部另有其後成功 export。沒有把此批核對宣稱為冷重啟／備份恢復驗收，未擴測。#303 已另合併成熟能力優先的工作規則，裁切體驗不能因保存已通過就視為完成。

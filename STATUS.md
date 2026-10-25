@@ -4,7 +4,7 @@
 
 ## 目前與接手
 
-- **當前收 Android／頭像／附件庫／個人模型：**[S16 收尾](PLAN.md#s16-w03)已修頭像刷新期間保存被略過，本機 Web 保存／重開／移除及附件庫下載通過；修正待交付，原失敗保留。手機未連線；個人 key 一次真請求被供應商以地域拒絕後停止，成功流程仍待驗。四 Agent 及協作者五個 PR 不動；裁切體驗改進先按使用者要求核對成熟能力，不能以資料保存通過代結。
+- **當前收 Android／頭像／附件庫／個人模型：**[S16 收尾](PLAN.md#s16-w03)的頭像保存競態修正已合併 #302、更新原 Web，本機保存／重開／移除及附件庫下載通過，原失敗保留。Android 因原生 runtime 不同須新 APK，先與裁切體驗復用一併收束；手機未連線，操作待驗。個人 key 一次真請求被供應商以地域拒絕後停止，成功流程仍待驗。四 Agent／協作者 PR 不動；#303 的成熟能力優先規則已合併。
 
 - **四項指定修補已獲准正常合併，真機驗收仍待補。**PR #286 已保留 #288／#289 照片聊天接線及最新交付記錄；受影響照片恢復／client 契約補驗通過，沿獨立覆核及遠端保護規則完成來源合併，不部署、不把空 CI 或合併當真機通過。精確版本與保留失敗見 [FIX-FOUR01](PLAN.md#four-fix01)。
 
@@ -26,7 +26,7 @@
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-25 09:08 UTC 原站：**API／worker 同版 `avatar-enable-0ebfbfa`（映像 `c3b149c`）健康，公開 health 通過；頭像 source gate／寫入均 true。Web 沿 `chat-photo-9012933`（`c09400c`），APNs 未啟用。[啟用證據](artifacts/verification/AVATAR_ENABLE_20261025.json)；既有索引／Scheduler 證據沿[前批部署](artifacts/verification/AVATAR_DEPLOYMENT_20261025.json)，本次零模型／測試通知／資料遷移／配額修改。
+**2026-10-25 09:50 UTC 原站：**Web 已更新 `avatar-save-15fdb50`（映像 `d6f2a8b`），公開 index hash／API health 通過；API／worker 維持 `avatar-enable-0ebfbfa`（`c3b149c`），頭像 source gate／寫入沿已確認 true，APNs 未啟用。[本次 Web 交付](artifacts/verification/AVATAR_SAVE_DELIVERY_20261025.json)／[頭像啟用](artifacts/verification/AVATAR_ENABLE_20261025.json)。本次部署零模型／通知／資料遷移／配額修改，保留原 Web 回退；Android 未發布。
 
 **Android，2026-10-24 14:35 UTC：**相容 OTA group `327ad4ca` 已一次發布至preview，runtime沿APK v3，毋須重裝。手機連線但鎖屏，沒有強制重啟或改草稿，實際套用與提示文字時序未驗。下次新APK的品牌icon／splash配置已備妥並本機核對；尚未建置，v3不會靠OTA改變原生圖標。
 

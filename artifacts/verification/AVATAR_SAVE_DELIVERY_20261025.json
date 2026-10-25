@@ -1,0 +1,44 @@
+{
+  "date": "2026-10-25",
+  "deployedAtUtc": "2026-10-25T09:50:00Z",
+  "source": "15fdb50c54183019918363bf863b40d6ecb30b9c",
+  "web": {
+    "source": "15fdb50c54183019918363bf863b40d6ecb30b9c",
+    "state": "deployed",
+    "webImage": "sha256:d6f2a8b31fcd5599bcf97a544b63881aa3b44e87ff565ac07876aa1d170b7887",
+    "rollbackImage": "sha256:c09400c5a8c3ca6c78d8cf1cbe4f5eeb6129054bfcd5ff2e82e82a90bec5f9e8",
+    "configBackup": "/etc/yuban-p1/firestore/compose.yaml.before-avatar-save-15fdb50",
+    "apiWorkerChanged": false
+  },
+  "publicChecks": {
+    "indexHash": "4ce29c89832d870de0fffa039c5a2093796a683718df80bbf1dbe368ae465e2f",
+    "apiHealth": "passed",
+    "probeFailureRollsBack": true
+  },
+  "vm": {
+    "id": "2846984358678394356",
+    "scheduling": {
+      "terminationTime": "2026-11-06T05:33:50.732Z"
+    },
+    "status": "RUNNING"
+  },
+  "freeBytesBefore": 11177766912,
+  "payloadBytes": 4672557,
+  "models": 0,
+  "notifications": 0,
+  "dataMigration": false,
+  "android": {
+    "published": false,
+    "decision": "build",
+    "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+    "installedRuntime": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+    "reason": "Native configuration differs; no forced OTA or new build. Bundle with remaining native-crop UX work before another APK."
+  },
+  "pending": [
+    "Android native crop/EXIF and device closeout",
+    "Successful personal-key generation/embedding after local provider region rejection",
+    "Mature crop interaction reuse review; storage correctness does not close UX",
+    "Collaborator Agent and deferred backup acceptance remain separate"
+  ],
+  "localCheckpointWarning": "Launcher reported a checkpoint HTTP 500 and retained the previous snapshot; emulator logs also contain later successful exports. No claim of a successful cold restart of this test data."
+}
