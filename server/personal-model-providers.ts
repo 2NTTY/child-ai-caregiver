@@ -1,6 +1,8 @@
 import type { AiConfig } from './ai-config.ts';
 import { ApiError } from '@google/genai';
-import type { PersonalModelProvider } from '../src/shared/model-settings.ts';
+import type { PersonalModelProvider, PersonalEmbeddingSettings } from '../src/shared/model-settings.ts';
+import { personalEmbeddingShape } from '../src/shared/model-settings-schema.ts';
+import { createVertexEmbeddingProvider } from './vertex-embedding.ts';
 import { KNOWLEDGE_EMBEDDING } from '../src/shared/knowledge.ts';
 import { AgentStopped } from './agent-budget.ts';
 import { createGeminiKeyProviders } from './gemini-key-provider.ts';
@@ -9,10 +11,17 @@ import { PersonalProviderError, personalProviderHttpError } from './personal-pro
 
 /** Both production and local development use this factory; credentials never fall back to platform ADC. */
 export function createPersonalModelProviders(config: AiConfig, apiKey: string, provider: PersonalModelProvider,
-  options: { baseUrl?: string; embeddingApiKey?: string | null; documentEmbeddings?: boolean } = {}): ReturnType<typeof createGeminiKeyProviders> {
+  options: PersonalEmbeddingSettings & { baseUrl?: string; embeddingApiKey?: string | null; documentEmbeddings?: boolean } = {}): ReturnType<typeof createGeminiKeyProviders> {
   const google = provider === 'openai-compatible' ? null : createGeminiKeyProviders(config, apiKey, provider, options);
   const model = google ?? createCompatibleProviders(config, apiKey, options.baseUrl ?? 'https://api.openai.com/v1');
-  const embedding = options.embeddingApiKey
+  const vertexEmbedding = options.embeddingProvider === 'vertex';
+  const targetValid = options.embeddingProject !== undefined && options.embeddingLocation !== undefined
+    && personalEmbeddingShape.embeddingProject.safeParse(options.embeddingProject).success
+    && personalEmbeddingShape.embeddingLocation.safeParse(options.embeddingLocation).success;
+  const embedding = vertexEmbedding ? options.embeddingApiKey && targetValid
+    ? createVertexEmbeddingProvider({ ...config, project: options.embeddingProject!, location: options.embeddingLocation! },
+      { apiKey: options.embeddingApiKey, documentEmbeddings: options.documentEmbeddings }) : null
+    : options.embeddingApiKey
     ? createGeminiKeyProviders(config, options.embeddingApiKey, 'gemini', options).embedding
     : provider === 'gemini' ? google!.embedding : null;
   const unsupportedMetadata = async () => ({ status: 'unavailable' as const, reason: 'metadata_unsupported' as const });

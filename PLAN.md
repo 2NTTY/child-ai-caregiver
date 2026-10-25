@@ -140,6 +140,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 ## 四 Agent 本地開發環境與個人模型設定
 
 <a id="model-self03"></a>
+**2026-10-25 最小 Vertex 向量增補（已實作及必要核對，待交付）：**原香港 VM 以既有本人 Gemini key 單次查詢向量返回 `embedding_region_unavailable`，沒有重試或平台回退。補獨立向量供應商及本人 Vertex key／專案 ID／地區，復用固定 SDK 與 `gemini-embedding-001`／1024 維索引；不重算語料、不改四 Agent。新設定沿版本、原操作、加密及共同配額，舊客戶端不得覆蓋新路由；Web／Android 共用表單。只補設定／路由／SDK 請求的定向檢查及一條可行的本人憑證代表流程，不重跑已驗 Android／頭像／附件。 v4 設定／原收據／舊客戶端保護、SDK 真請求結構、共用表單／client、限定型別及兩端匯出通過；本人 Vertex key 單次向量成功（1024 維、2 input tokens），臨時 key／新增權限已清理。尚未發布，不把 provider 通過當成四 Agent 完整驗收。[證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
 ### MODEL-SELF03 自行試用相容模型接口
 
 - 2026-10-25 收尾補核：原香港 VM 的正式 Vertex ADC 文字及 1024 維向量已通過；首個臨時個人 Vertex key 返回 403，失敗與清理證據保留。使用者另批准修訂批次後，同一身份／兩項最小權限等待 180 秒，經正式個人 provider 一次短生成成功（5 input＋1 output tokens），無平台回退；臨時 key 及新增權限已清理，沒有改網站設定／配額。這證明個人 Vertex key 生成接線可用，不倒推首個 403 的確切原因。[實測證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。仍欠可用個人向量憑證下的「保存設定→Agent／知識檢索」完整成功流程；個人 Vertex／相容模式目前需另填本人 Gemini 向量 key，ADC 向量成功不代表已接個人 Vertex embedding。原 Gemini 地區拒絕不推廣為用戶限制。

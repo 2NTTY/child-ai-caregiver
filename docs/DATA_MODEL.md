@@ -492,6 +492,8 @@ Firestore `model_settings` 以本人穩定ID保存；本人授權、預期版本
 
 `model_settings_operations` 的確定ID綁 `[userId,opId]`，交易內保存無密鑰的結果設定及加密請求指紋；不保存可重播的原key正文。原opId查回仍須當前帳號權限。新collection加入備份／還原schema及帳戶清理列表；與其他credential／protocol資料一樣不進家長資料匯出。欄位索引預設排除；不為收據新增公開查詢或第二套設定權威。
 
+獨立向量路由的 `embeddingProvider`、`embeddingProject`、`embeddingLocation` 與 `embeddingApiKey` 在同一密文及版本保存；舊記錄缺省為 Gemini。公開設定及操作收據只保存非密鑰路由與 `embeddingKeyConfigured`。Vertex 專案／地區必須完整，修改路由不可沿用先前 key；刪除 key 不把其值留入操作收據。沿既有 recovery schema、帳戶清理及索引排除，毋須新增集合或搬遷語料。
+
 Firestore用量／root budget沿Server指定的billingSource及原run／attempt保存，platform與personal分帳，不清零。公共語料維護不使用家長key。key不進工作、Agent session、prompt、候選、公開收據或日誌；每輪只在Server記憶體持有憑證，持久綁定只記設定／政策版本與預算。背景沿受信帳號檢查opt-in，不因停用或憑證失效改借平台。
 
 

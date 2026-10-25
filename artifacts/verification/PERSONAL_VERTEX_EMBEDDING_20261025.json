@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-25",
+  "baseline": "825e002712bb29faa2b1816db55fe9843b64e6a3",
+  "scope": "Independent personal Vertex query embedding with unchanged gemini-embedding-001 / 1024D index",
+  "implementation": [
+    "v4 shared settings and encrypted Firestore route; original operation and old-client write protection",
+    "Pinned Google SDK with explicit personal key/project/location; no ADC or chat-key fallback",
+    "Shared Web/Android form and local development configuration"
+  ],
+  "checks": {
+    "newSettingsAndSdkFlow": "passed",
+    "localBinding": "passed",
+    "existingV3AndVertexBoundaries": "passed",
+    "formAndClient": {
+      "passed": 14
+    },
+    "focusedServerAndFormTypes": "passed",
+    "webExport": "passed",
+    "androidExport": "passed"
+  },
+  "retainedFailures": [
+    "First new synthetic assertion expected generic embedding_http_403; existing classifier correctly returned embedding_permission_denied. Corrected the assertion, not the product error.",
+    "Local synthetic fixture omitted the required isolated GCP_PROJECT_ID. Added demo-local; reran only the two new checks."
+  ],
+  "previousGeminiAttempt": {
+    "checkedAt": "2026-10-25T14:35:45.908Z",
+    "scope": "one formal personal Gemini query embedding",
+    "environment": "existing Hong Kong VM",
+    "models": 0,
+    "embeddings": 1,
+    "settingsChanged": false,
+    "noPlatformFallback": true,
+    "result": "stopped",
+    "failure": {
+      "type": "Error",
+      "reason": "embedding_region_unavailable"
+    }
+  },
+  "liveVertex": {
+    "checkedAt": "2026-10-25T14:53:40.033Z",
+    "state": "passed",
+    "generationAttempts": 0,
+    "embeddingAttempts": 1,
+    "settingsChanged": false,
+    "keyResource": "projects/1064034424208/locations/global/keys/yuyoufang-vector-check-20261025",
+    "temporaryRole": "projects/ai-caregivers-for-children/roles/ciModelGenerate",
+    "cleanup": {
+      "keyDeletedOrAbsent": true,
+      "addedBindingRemoved": true
+    },
+    "preexistingRole": false,
+    "iamWaitSeconds": 180,
+    "providerResult": {
+      "state": "passed",
+      "dimensions": 1024,
+      "inputTokens": 2,
+      "generationAttempts": 0,
+      "embeddingAttempts": 1,
+      "noPlatformFallback": true,
+      "location": "global",
+      "factory": "createPersonalModelProviders",
+      "model": "gemini-embedding-001"
+    }
+  },
+  "limits": [
+    "Live validation was one 2-token query embedding through the current branch factory; no chat generation, index rebuild, product settings or provider retry.",
+    "The settings-to-provider route was verified synthetically; a saved personal-setting-to-Agent conversation remains unverified and does not replace deferred collaborator Agent acceptance.",
+    "Web and Android exports do not prove device interaction. Publication is recorded separately.",
+    "No production resource/data changes, notifications or paid build. Temporary test key and added permissions were removed."
+  ]
+}

@@ -596,7 +596,7 @@ owner／caregiver 可保存／提取／確認自己的輸入；viewer 只能讀�
 <a id="personal-model-http"></a>
 ## S06-W05 本人模型設定
 
-所有路由需登入；GET／POST 均帶 `x-expected-user-id`，身份不符回 403。POST 沿用 Origin／JSON 檢查及有界正文。新版共用 client 使用 `Accept: application/vnd.yuyoufang.model-settings.v3+json`；v2 為舊 Google client 保留。設定不進通用 online 重送佇列，key 正文不持久保存到 client。部署須先更新相容 Server，再發布共用 Web／Android client。
+所有路由需登入；GET／POST 均帶 `x-expected-user-id`，身份不符回 403。POST 沿用 Origin／JSON 檢查及有界正文。新版共用 client 使用 `Accept: application/vnd.yuyoufang.model-settings.v4+json`；v2／v3 為舊 client 保留。設定不進通用 online 重送佇列，key 正文不持久保存到 client。部署須先更新相容 Server，再發布共用 Web／Android client。
 
 | 路由 | 輸入／結果 |
 |---|---|
@@ -613,7 +613,9 @@ v2／v3 保存先核原 opId／請求指紋，再核版本；原操作重播返�
 
 provider 為 gemini、vertex 或 openai-compatible；更換供應商或相容 API 地址須提供相應新聊天 key，不能轉送舊憑證。模型目錄只供參考，不作保存或生成的白名單；Web／Android 可直接填模型 ID。相容服務的 baseUrl 須公開 HTTPS，禁止內網、metadata、重新導向及任意 headers；模型 ID 不是 URL。供應商拒絕工具、媒體或存取時回報受控原因，不換模型或付款來源。已知 Google 型號保留必要參數適配，其他型號省略可選 thinking 設定。capabilities 的 false 表示未確認，不禁止選擇；metadata 不等於生成、向量、配額或帳單。目錄 POST 只檢查已保存供應商及 key，不接受 provider query；GET 不改用已保存 key。錯誤不透出可能含密鑰或私人正文的原始供應商回應。
 
-查詢向量保持 `gemini-embedding-001`／1024 維及既有索引。Gemini 沒有獨立向量 key 時沿用本人聊天 key；Vertex／相容服務可另填本人 Gemini 向量 key。缺少它不阻擋保存或普通聊天，需要向量時回 `embedding_not_configured`，不借平台額度、不把其他 embedding 空間套入舊索引。獨立 key 的新增、替換及刪除沿同一版本、交易及原操作收據。
+查詢向量保持 `gemini-embedding-001`／1024 維及既有索引。v4 可選 `embeddingProvider: gemini | vertex`，缺省沿舊 Gemini 路由。Gemini 沒有獨立向量 key 時沿用本人的 Gemini 聊天 key；其他聊天服務不自動提供向量憑證。Vertex 另須 `embeddingProject`、`embeddingLocation` 及本人 `embeddingApiKey`，由固定 Google SDK 請求本人專案的標準 Vertex 端點；不從平台設定補專案、地區或 ADC，亦不自動使用聊天 key。服務、專案或地區改變時須重新提供向量 key 及同意；明確移除向量 key 可保留路由但不能呼叫。兩種向量路由均不改每日用量及原 run 配額，也不重建索引。
+
+向量 key 缺失時仍可普通聊天，需向量時回 `embedding_not_configured`；供應商拒絕則沿既有受控錯誤分類回報，不猜測所有用戶的地域資格、不自動換付款來源。獨立 key 的新增、替換及刪除沿同一版本、交易及原操作收據。v3／更舊 client 讀取或修改 Vertex 向量設定回 `client_update_required`，保存的交易內亦核對；可表達的 Gemini 設定只投影舊欄位，不能令舊 client 靜默覆蓋新路由。
 
 舊 JSON／v2 client 保留原欄位；新設定不能由其契約表示時回 client_update_required，不偽稱仍是預設模型，並在保存交易內核對。舊保存保留能安全表達的新欄位；v2／v3 明確保存採 `limitPolicyVersion:2`，不默改歷史配額或授權。
 
