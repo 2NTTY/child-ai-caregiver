@@ -1,0 +1,156 @@
+{
+  "checkedOn": "2026-10-26",
+  "baseline": "2332950",
+  "state": "web_model_flow_passed_personal_end_to_end_pending",
+  "scope": "Existing local Web HTTP and shared clients, production ADK/stores and real Vertex ADC; no browser pixels, phone, notification or production data writes.",
+  "readOnly": {
+    "checkedAt": "2026-10-25T17:11:40.390Z",
+    "method": "Read-only local store; existing document vector used as a plumbing control, not a query embedding or semantic-quality proof.",
+    "modelCalls": 0,
+    "results": [
+      {
+        "case": "english-keyword",
+        "returned": 1,
+        "rows": [
+          {
+            "sourceId": "fhs-feeding-booklet-en",
+            "chunkId": "b1109f71-a87d-5062-afba-f021e3411646",
+            "distance": null,
+            "applicabilityStatus": "requires_clarification"
+          }
+        ]
+      },
+      {
+        "case": "chinese-keyword",
+        "returned": 0,
+        "rows": []
+      },
+      {
+        "case": "same-vector-unknown-age",
+        "returned": 1,
+        "rows": [
+          {
+            "sourceId": "fhs-feeding-booklet-en",
+            "chunkId": "b1109f71-a87d-5062-afba-f021e3411646",
+            "distance": 0,
+            "applicabilityStatus": "requires_clarification"
+          }
+        ]
+      },
+      {
+        "case": "same-vector-approximate-age",
+        "returned": 1,
+        "rows": [
+          {
+            "sourceId": "fhs-feeding-booklet-en",
+            "chunkId": "b1109f71-a87d-5062-afba-f021e3411646",
+            "distance": 0,
+            "applicabilityStatus": "conditional"
+          }
+        ]
+      }
+    ]
+  },
+  "queryEmbedding": {
+    "attempts": 1,
+    "query": "寶寶約六個月開始加固，香港家庭健康服務官方建議",
+    "inputTokens": 14,
+    "billableCharacters": 23,
+    "cosineDistance": 0.2795544217188042,
+    "returned": 1,
+    "threshold": 0.4
+  },
+  "live": {
+    "runId": "184fd27f-01c2-41ce-904c-04258bbf12d0",
+    "sourceMessageId": "e70651a1-0776-4faa-89f5-fb9cbf11cbc8",
+    "counts": {
+      "modelCalls": 3,
+      "toolCalls": 2,
+      "queryEmbeddings": 1
+    },
+    "status": "completed",
+    "review": "pass",
+    "originalRunReadback": true,
+    "citations": [
+      {
+        "sourceId": "fhs-feeding-booklet-en",
+        "versionId": "6c6e1325-b240-562c-bd17-b10a90e14072",
+        "chunkId": "b1109f71-a87d-5062-afba-f021e3411646",
+        "contentHash": "a0a0702e078e97f14a5ed4dca7320fc60467bc8389c198c966239f35638d1267",
+        "url": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+        "pageStart": 3,
+        "pageEnd": 3
+      }
+    ],
+    "events": [
+      {
+        "phase": "search",
+        "query": "嬰兒 加固 建議 香港 家庭健康服務",
+        "filter": {
+          "region": "HK",
+          "classification": "official_guidance",
+          "age": null,
+          "topics": [],
+          "ageMatch": "unknown"
+        },
+        "remaining": {
+          "modelCallsIncludingThisCall": 7,
+          "toolCalls": 15,
+          "queryEmbeddings": 4,
+          "timeMs": 286751
+        }
+      },
+      {
+        "phase": "result",
+        "query": "嬰兒 加固 建議 香港 家庭健康服務",
+        "returned": 1,
+        "chunks": [
+          {
+            "chunkId": "b1109f71-a87d-5062-afba-f021e3411646",
+            "sourceId": "fhs-feeding-booklet-en",
+            "versionId": "6c6e1325-b240-562c-bd17-b10a90e14072",
+            "applicabilityStatus": "requires_clarification"
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "attempts": 4,
+      "inputTokens": 27509,
+      "outputTokens": 289,
+      "unknownUsageAttempts": 3
+    },
+    "limits": {
+      "modelCalls": 8,
+      "queryEmbeddings": 4,
+      "toolCalls": 16,
+      "deadlineSeconds": 300,
+      "retries": 0
+    },
+    "localDailyAllowance": "Explicit diagnostic reservation: existing daily usage 36 retained; local user allowance temporarily 48, restored to 20. Existing global 100 and normal per-run 8/4 unchanged. Production untouched.",
+    "policyRestored": true
+  },
+  "change": {
+    "file": "server/agent-knowledge-tool-descriptions.ts",
+    "description": "Replace hardcoded two query embeddings with current Server budget.remaining.queryEmbeddings; use existing context expansion or report limits when no new query remains.",
+    "checks": [
+      "Static import of both descriptions passed",
+      "git diff --check passed"
+    ],
+    "realModelAfterGuidanceChange": false
+  },
+  "costs": {
+    "thisBatchReservedUSD": 0.51,
+    "rolling12hReservedUSD": 2.01,
+    "rolling12hCapUSD": 5,
+    "knownGenerationEstimateUSD": 0.0142,
+    "estimateNotBill": true,
+    "unknownUsageNotZero": true
+  },
+  "limitations": [
+    "Failed personal-key run preserved separately; successful ADC run has different credential and limits, so does not close personal-key end-to-end acceptance or prove the earlier failure cause.",
+    "Only one reviewed local official chunk; this is not full-corpus quality or complete clinical guidance validation.",
+    "No coordinator/reviewer budget behavior, provider eligibility, production quota or collaborator PR was modified.",
+    "No extra model call just to test the wording change; successful model run used baseline instructions."
+  ]
+}
