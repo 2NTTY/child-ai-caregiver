@@ -3701,3 +3701,11 @@
 - 主模型沿既有 recovery operator fixture 補一條備份後明確刪除的接續檢查，使用正式移除服務、獨立加密 journal、還原規劃／套用、帳戶匯出及清理 consumer。刪除前備份仍有圖，但還原不 copy、不披露，原物件清理責任及永久日誌保留；重入不重刪。
 - 一次定向流程通過，單一入口 strict 型別零診斷；獨立唯讀 review 無 finding，主模型核對斷言與實際結果。[證據](artifacts/verification/AVATAR_JOURNAL_RESTORE_20261025.json)。不重跑此前通過情景，零雲端寫入、模型、通知或部署。
 - 只讀資源盤點確認現有恢復庫已有合成證據，journal bucket 與原站共用；沒有清空舊資料或建立新資源。合成基礎設施不等於真 GCP 配對還原，該門檻及設備／正式組裝仍保留；本包不解除頭像 gate。
+
+<a id="log-20261025-avatar-paired-native-restore"></a>
+## LOG-20261025-AVATAR-PAIRED-NATIVE-RESTORE
+
+- 依使用者明確批准，建立兩個臨時香港 Firestore 庫及專用私人 bucket，只授權既有 Firestore service agent 該 bucket 的物件管理。正式服務以一個合成 Auth 帳號、一個孩子及兩張小圖完成配對備份、備份後刪除、原生匯入、最新刪除日誌重放及隔離讀回；保留頭像可讀，已刪頭像不復活／不匯出，原 generation 清理及 storage epoch 更新通過。[精確證據](artifacts/verification/AVATAR_PAIRED_NATIVE_RESTORE_20261025.json)。
+- 一次實際 export／import、82 次交易；前兩次 export 請求因 PITR 前置被拒，停批查回相同操作及限定錯誤 metadata，確認未啟動後才接續。只為臨時來源啟用 PITR；設定可讀與匯出端接受有時間差，等待後成功，不把該時間當服務保證。獨立腳本 review 的交易重試覆蓋、journal 範圍及 generation 精度問題在執行前已修；沒有改產品規則來通過測試。
+- 清理三個精確圖片版本、合成 Auth 帳號、專用 bucket 及兩個臨時庫，讀回確認不存在；既有 bucket 的 soft-delete 政策及共用恢復庫不變。受保護本機 key／恢復資料不入 Git。零模型／通知／正式資料／部署；增量批准上限 US$1，實際帳單尚未知。
+- 這是正式資料／operator／物件服務的真雲端核對，不是 HTTP／登入畫面、兩個 API 部署副本或原生每日備份驗收。後者依使用者原指示繼續延後；同版組裝／派送及設備門檻保留，頭像 gate 不解除。
