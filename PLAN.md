@@ -140,10 +140,10 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 ## 四 Agent 本地開發環境與個人模型設定
 
 <a id="model-self03"></a>
-**2026-10-25 最小 Vertex 向量增補（已實作及必要核對，待交付）：**原香港 VM 以既有本人 Gemini key 單次查詢向量返回 `embedding_region_unavailable`，沒有重試或平台回退。補獨立向量供應商及本人 Vertex key／專案 ID／地區，復用固定 SDK 與 `gemini-embedding-001`／1024 維索引；不重算語料、不改四 Agent。新設定沿版本、原操作、加密及共同配額，舊客戶端不得覆蓋新路由；Web／Android 共用表單。只補設定／路由／SDK 請求的定向檢查及一條可行的本人憑證代表流程，不重跑已驗 Android／頭像／附件。 v4 設定／原收據／舊客戶端保護、SDK 真請求結構、共用表單／client、限定型別及兩端匯出通過；本人 Vertex key 單次向量成功（1024 維、2 input tokens），臨時 key／新增權限已清理。尚未發布，不把 provider 通過當成四 Agent 完整驗收。[證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
+**2026-10-25 最小 Vertex 向量增補（已合併及發布）：**原香港 VM 以既有本人 Gemini key 單次查詢向量返回 `embedding_region_unavailable`，沒有重試或平台回退。補獨立向量供應商及本人 Vertex key／專案 ID／地區，復用固定 SDK 與 `gemini-embedding-001`／1024 維索引；不重算語料、不改四 Agent。新設定沿版本、原操作、加密及共同配額，舊客戶端不得覆蓋新路由；Web／Android 共用表單。只補設定／路由／SDK 請求的定向檢查及一條可行的本人憑證代表流程，不重跑已驗 Android／頭像／附件。 v4 設定／原收據／舊客戶端保護、SDK 真請求結構、共用表單／client、限定型別及兩端匯出通過；本人 Vertex key 單次向量成功（1024 維、2 input tokens），臨時 key／新增權限已清理。PR #317／`34f80a9` 已相容更新原 API／worker、Web 及 Android preview OTA（group `33a2e0a3`，同 v4 runtime，毋須新 APK），公開 hash／health 通過；最新表單真機保存及完整 Agent／RAG 流程仍待驗，不把 provider 通過當成四 Agent 完整驗收。[證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
 ### MODEL-SELF03 自行試用相容模型接口
 
-- 2026-10-25 收尾補核：原香港 VM 的正式 Vertex ADC 文字及 1024 維向量已通過；首個臨時個人 Vertex key 返回 403，失敗與清理證據保留。使用者另批准修訂批次後，同一身份／兩項最小權限等待 180 秒，經正式個人 provider 一次短生成成功（5 input＋1 output tokens），無平台回退；臨時 key 及新增權限已清理，沒有改網站設定／配額。這證明個人 Vertex key 生成接線可用，不倒推首個 403 的確切原因。[實測證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。仍欠可用個人向量憑證下的「保存設定→Agent／知識檢索」完整成功流程；個人 Vertex／相容模式目前需另填本人 Gemini 向量 key，ADC 向量成功不代表已接個人 Vertex embedding。原 Gemini 地區拒絕不推廣為用戶限制。
+- 2026-10-25 收尾補核：原香港 VM 的正式 Vertex ADC 文字及 1024 維向量已通過；首個臨時個人 Vertex key 返回 403，失敗與清理證據保留。使用者另批准修訂批次後，同一身份／兩項最小權限等待 180 秒，經正式個人 provider 一次短生成成功（5 input＋1 output tokens），無平台回退；臨時 key 及新增權限已清理，沒有改網站設定／配額。這證明個人 Vertex key 生成接線可用，不倒推首個 403 的確切原因。[實測證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。仍欠可用個人向量憑證下的「保存設定→Agent／知識檢索」完整成功流程；原批個人 Vertex／相容模式只接本人 Gemini 向量 key；本節上述 #317 已補本人 Vertex 向量路由，沿同一索引，真請求證據與完整 Agent 待驗分開。原 Gemini 地區拒絕不推廣為用戶限制。
 
 - 2026-10-24 Android 補核：使用已登入帳號只保存同一平台模式／模型設定一次，Firestore metadata 確認版本 2；關閉及重開 App 後登入保留並讀回相同設定。沒有輸入 key、呼叫模型、發通知或修改配額。此為真機保存／重開證據，不代表本人 key 真生成或完整跨端流程通過；證據合併至當前 S16 收尾。
 - 2026-10-23手機補核發現捨棄後殘留草稿；#267已修正並發布`4bfdf98`，保留原失敗及兩項React檢查。2026-10-24補核先觀察到手機仍載入舊圖標／舊表單，停止該批；新圖標出現後，只補同一流程，確認未保存個人模式／相容服務草稿可捨棄，實際離頁再返回會恢復平台模式且不再dirty。沒有輸入key、保存設定或呼叫模型，精確OTA ID未讀取，真key仍未驗。[原修正](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)／[發布](artifacts/verification/MODEL_SELF03_DRAFT_DELIVERY_20261023.json)／[本次補核](artifacts/verification/SHARED_NATIVE_NAVIGATION_20261024.json)。
@@ -151,7 +151,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 後端／本地入口#255、#256及共用畫面[#260](https://github.com/2NTTY/child-ai-caregiver/pull/260)已合併。A單作者；#260合併版本`1282e09`於2026-10-23更新原站與相容Android preview OTA，沒有改#254／#259。主模型統籌契約、整合及review，本輪特許的原Astra子代理接續獨立核對；[交付證據](artifacts/verification/MODEL_SELF03_DELIVERY_20261023.json)分開已發布、未驗及回退邊界。
 - 沿同一Web／Android設定、加密保存、原opId、配額及ADK Agent，新增相容API base URL、key與直接輸入模型ID。普通Chat Completions、工具往返及可轉換媒體接薄adapter；不另造Agent、不換模型、不新增自動重試或逐模型測試。供應商不接受某請求時回報錯誤，不把未知能力當作禁止選用。
 - 自訂地址限公開HTTPS，不把憑證送到內網／metadata服務或重新導向；不開任意headers。必要資料外送說明改為用戶所選服務，私人內容與key不入日誌。
-- 向量保留`gemini-embedding-001`／1024維／現有索引。提供可分開保存的本人Gemini向量key，聊天可用另一供應商；舊Gemini設定維持同key行為。未配置相容查詢憑證時如實回報，不借平台ADC／額度，不拿其他模型的向量查舊索引。其他向量模型及索引重建留後續，不以本包宣稱通用向量已完成。
+- 向量保留`gemini-embedding-001`／1024維／現有索引。提供可分開保存的本人 Gemini 或 Vertex 向量 key（後者另填專案／地區），聊天可用另一供應商；舊Gemini設定維持同key行為。未配置相容查詢憑證時如實回報，不借平台ADC／額度，不拿其他模型的向量查舊索引。其他向量模型及索引重建留後續，不以本包宣稱通用向量已完成。
 - 最少驗證：一條合成工具往返與用量轉換；共用設定保存／原操作及密鑰遮蔽；地址拒絕及舊契約相容。只跑受影響檢查及必要型別，零真模型／通知／全量。部署及私有封包傳送另依有效範圍，不把本機接線當已上線。
 - 已接：`server/personal-model-providers.ts`復用同一ADK gateway；Chat Completions文字／工具、圖片及WAV／MP3轉換；其他媒體明示不支援。Gemini／Vertex舊路由保留；另填Gemini向量key，不配置時明確回報`embedding_not_configured`。密鑰、模型不存在、餘額不足、限流、工具／媒體、連線及HTTP拒絕分開回報；只輸出受控分類，不把可能夾有key或私人正文的供應商原始錯誤放到聊天。
 - 設定契約：`Accept: application/vnd.yuyoufang.model-settings.v3+json`沿既有`/api/ai/settings`及operations接口；新增`provider: openai-compatible`、`baseUrl`、`embeddingApiKey`／`removeEmbeddingKey`，只讀回`embeddingKeyConfigured`。地址改變須重新提供聊天key，避免轉送原憑證；舊v2保持既有Google設定，遇新設定回`client_update_required`，其保存資格在同一交易內核對，保留原opId恢復。
@@ -215,7 +215,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 - 地區、憑證、模型、配額、逾時回傳安全且可分辨原因。embedding路由與聊天模型分開，維持原向量空間；本人憑證缺embedding時明示混合檢索不可用，不借平台額度／偽造引用。
 - 可調每日、每輪生成／工具／embedding、整輪期限、單次等待、重試及背景授權；共同解析器計算個人設定與管理員保護的實際值。模型知道可用預算，硬上限防失控而非要求用盡。
 - run固定模型／預算快照，重試沿原run計數、不重做成功工具／未知副作用；舊設定缺欄位維持舊行為。聊天／編製／審核／媒體／轉錄／背景用同一解析器；公共知識維護不用家長key，本地用開發者明確設定的維護憑證。
-- 版本邊界：v2明確保存才採共同管理上限；舊設定不默改。Vertex AI本身支援向量，現有個人`vertex` adapter只接Express生成，embedding／metadata尚未接通；這是接入路徑缺口，不能概括為Vertex不支援。平台／本機ADC向量路徑已有實作，但不借其付款身份補個人請求。保留該缺口及[官方向量接口](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings)，不為本輪另建認證平台或改組織政策。新收據含備份／還原與帳戶清理接點，未跑真雲端還原；角色及Android待驗不變。
+- 版本邊界：v2明確保存才採共同管理上限；舊設定不默改。Vertex AI本身支援向量，原 MODEL-SELF01 的個人 `vertex` adapter 只接 Express 生成；MODEL-SELF03／#317 已補獨立 key／專案／地區的 embedding，metadata 仍非通用目錄；這是接入路徑缺口，不能概括為Vertex不支援。平台／本機ADC向量路徑已有實作，但不借其付款身份補個人請求。保留該缺口及[官方向量接口](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings)，不為本輪另建認證平台或改組織政策。新收據含備份／還原與帳戶清理接點，未跑真雲端還原；角色及Android待驗不變。
 - 2026-10-20 已按使用者要求建立僅限Gemini API的受限授權key，工程外保存。正式本地設定服務可保存，唯一metadata核對回 `region_unavailable`；已移除業務設定中的key並恢復原模式，用量不變。這只代表該次Developer API請求被拒，不是生成／embedding通過，也不能推論所有香港用戶、GCP／Vertex或其他key不可用；ADC本地流程維持可用。真key結果保留未驗，不再把取得另一把key列為入口交付前置。
 
 <a id="model-self02"></a>

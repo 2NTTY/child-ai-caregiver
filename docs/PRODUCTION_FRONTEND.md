@@ -94,6 +94,7 @@ docker compose --project-name yuban-p1 \
 - 互動沿現有請求、進度、取消及結果接口；不為 Hosting 60 秒限制強制改協議。需要排程的工作先持久受理；私有回應 no-store，身份切換清除快取及遲到回應。
 - 依 [ADR-025](DECISIONS.md#adr-025)，F02～F07 先完成原 VM 資料接點及全部正式 SQL 退出，保留既有 API／頁面相容性；F08 再驗收受邀用戶並更新原站。不逐資料包切站或重跑完整用戶流程。未遷移功能明示，不用假成功或空資料掩蓋；不維持兩套產品網站。
 - 新版訊息歷史先核四個 `messageSentAt` 複合索引 READY，再於 API／worker 一致啟用 `FIREBASE_MESSAGE_HISTORY_ENABLED=true`；未啟用時 API 明確回 503，不假裝沒有歷史。只呈現已保存的接受證據，舊紀錄不補造正文或重發通知。第一次歷史讀取就會保存 `workspace.childAccessVersion`，其後回退亦須支援此欄位及新通知／模型格式；關回開關不會撤回這些資料變更。
+- 個人向量 v4 設定須先部署相容 API／worker，再發布共用表單。本人 Vertex key／專案／地區保存後，回退仍須保留可讀取這些欄位的 Server；可獨立回退相容 Web／OTA，但舊客戶端遇新路由回 `client_update_required`，不得覆蓋設定。不得回退至只支援 v3 的後端，或以平台 ADC 補上本人向量請求；沿原 1024 維索引，無須重算語料。
 - 每次部署核對 VM 實況／期限、相容配置、資料與備份及 in-flight 工作，允許短暫維護；只有一套主寫與排程。已有新寫入只能回退相容 Firebase 應用版本或隔離還原，不能切回 SQL 舊快照；新刪除／撤銷／收據不可倒退。已寫入語音訊息、轉錄或原生通知綁定後，回退的 API／worker 仍須識別這些 schema 及清理義務；舊 Web／APK 可保留相容使用，不代表可以盲退不識別新資料的 Server。
 
 F07 的資料及 SQL 退出證據已交付；F08 原站使用 Firestore，額外 Hosting 站點與 Cloud Run API／worker 已按用途核對後清理。**保留原 VM／磁碟／IP、Firebase Auth 所需函式、有效 Firestore／Storage／Tasks、刪除日誌及備份**；不以名稱相似整批刪除。實際版本與尚未完成項見根 PLAN／STATUS，A09／F02 舊失敗保留，不以基建切片代替產品成果。
