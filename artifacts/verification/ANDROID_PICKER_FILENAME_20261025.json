@@ -149,5 +149,76 @@
       "No repeat of avatar or already-passed attachment save/download flow",
       "No OTA rollback, cross-device media, notification completion or four-Agent acceptance in this batch"
     ]
+  },
+  "otaRollbackAcceptance": {
+    "date": "2026-10-25",
+    "reviewedMaster": "c9989c5fabb247dddde1206fc3f52b3e4be7a3eb",
+    "channel": "preview",
+    "platform": "android",
+    "versionCode": 4,
+    "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+    "method": "EAS CLI 24.14.0 rollback-to-embedded, then republish the already-verified group; no new bundle upload",
+    "firstAttempt": {
+      "startedAt": "2026-10-25T13:44:17.181Z",
+      "restoredAt": "2026-10-25T13:46:52.853Z",
+      "rollbackGroup": "52c12d5b-07d8-4649-b4e1-21cd022902aa",
+      "restoredGroup": "176824e2-011d-4573-a855-b8601479dcb0",
+      "restoredUpdateId": "01a17350-6a0e-702e-a4ea-e1cd69284460",
+      "restoredLaunchAsset": "CXuOJPbk4zw4G-yhuILnOUBFmCQB3pdUXxtr7IuUHiA",
+      "deviceResult": "not established: phone locked; restored immediately without claiming success"
+    },
+    "unlockedContinuation": {
+      "startedAt": "2026-10-25T13:52:15.495Z",
+      "restoredAt": "2026-10-25T13:54:32.241Z",
+      "rollbackGroup": "a7d319eb-e76b-48c9-a7f0-d0a00f3206d4",
+      "restoredGroup": "44dca896-6861-43c5-a24b-cc4fbdea5102",
+      "restoredUpdateId": "01a17357-6c34-74a8-8170-32a45c00836b",
+      "restoredLaunchAsset": "CXuOJPbk4zw4G-yhuILnOUBFmCQB3pdUXxtr7IuUHiA",
+      "deviceResult": "passed",
+      "embeddedObservation": "Same unsent synthetic TXT displayed provider ID msf:1000049735 after app restart",
+      "restoredObservation": "Same TXT displayed its original filename 202610252150.txt after restoring and restarting",
+      "sessionAndData": "Original signed-in child and existing saved content remained visible",
+      "exactDeviceUpdateId": "Not extracted; behavior verified against the known embedded/fixed difference"
+    },
+    "safety": {
+      "automaticRestoreDeadlineSeconds": 300,
+      "restoredBeforeDeadline": true,
+      "newAssetUploads": 0,
+      "newBuilds": 0,
+      "modelCalls": 0,
+      "notifications": 0,
+      "unsentFixtureUploaded": false,
+      "fixtureBytes": 68,
+      "cleanup": "Discarded the exact synthetic draft, removed its staged Download file, returned Home"
+    },
+    "retainedPreflight": "Initial whoami guard expected the entire output to equal the username. Stopped before mutation; corrected to the exact first-line username and verified owner.",
+    "limits": [
+      "Only v4 preview runtime; no cross-runtime or iOS acceptance",
+      "No reload during an active user operation; no data rollback",
+      "Screenshots and raw CLI metadata remain ignored locally; no private screen content or signed URLs committed"
+    ]
+  },
+  "crossDeviceTaskAcceptance": {
+    "date": "2026-10-25",
+    "windowHongKong": "22:03–22:05",
+    "android": "v4 with restored compatible filename update",
+    "web": "Existing production site, same account; operated by the user",
+    "result": "passed for one task creation/completion synchronization",
+    "fixture": "One clearly labelled TEST—20261025—2200 task, assigned to self, due 2026-10-31 09:00 Asia/Hong_Kong",
+    "steps": [
+      "Android saved exactly one future task using the normal preview and confirmation flow",
+      "User confirmed finding the same item on Web and completing it",
+      "Android stayed on the same detail view without refresh, navigation or another write; after normal background reading it displayed completed and reminders stopped",
+      "Returned Android Home; synthetic task remains completed for traceability, no pending reminder"
+    ],
+    "models": 0,
+    "notificationsSent": 0,
+    "inputCorrections": "No-date draft was rejected before saving. ADB/IME malformed date/time text was replaced with the existing pickers; only the reviewed future date was submitted.",
+    "reusedTerminalEvidence": "F06_FIRESTORE_BACKGROUND_20261013.json native-data-scene: completion plus original contact-job replay made no additional scripted send; not rerun",
+    "limits": [
+      "Web observation is the user’s explicit report; no browser automation or session extraction",
+      "Does not prove cross-device in-flight Agent/confirmation recovery, session revocation or care-notification destination handling",
+      "No exact synchronization latency claimed; one intermediate loading observation preceded the completed view"
+    ]
   }
 }

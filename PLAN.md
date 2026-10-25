@@ -58,7 +58,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 
 **四項修補來源交付：[FIX-FOUR01](#four-fix01)。**[PR #286](https://github.com/2NTTY/child-ai-caregiver/pull/286) 已獲使用者指示正常合併；本輪接續 #288／#289，保留照片聊天接線與部署記錄，僅補受影響照片恢復／client 契約核對。正常合併仍須獨立覆核及遠端必要檢查，不代表部署或真機驗收。
 
-**當前：[S16 Android／頭像／附件庫／個人模型收尾](#s16-w03)。**頭像成熟裁切已由 #305 合併，`1f07fab` 更新原 Web，公開 hash／health 通過。必要映射、adapter、局部型別／匯出、Web 保存及桌面縮放已核；[實作證據](artifacts/verification/AVATAR_CROP_REUSE_20261025.json)／[交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。Android v4 已一次免費建置並核對同簽署、runtime 與品牌資源，[覆蓋安裝](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)；使用者已覆蓋安裝；v4、登入／孩子資料、系統裁切／EXIF／預覽及取消已核，沒有向 v3 強推 OTA。個人 Vertex key 短生成及附件檔名 OTA／真機補核已通過；完整個人向量流程與其餘 Android 門檻仍待驗。四 Agent／DEV02 等協作者自查、不改其 PR。
+**當前：[S16 Android／頭像／附件庫／個人模型收尾](#s16-w03)。**頭像成熟裁切已由 #305 合併，`1f07fab` 更新原 Web，公開 hash／health 通過。必要映射、adapter、局部型別／匯出、Web 保存及桌面縮放已核；[實作證據](artifacts/verification/AVATAR_CROP_REUSE_20261025.json)／[交付](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。Android v4 已一次免費建置並核對同簽署、runtime 與品牌資源，[覆蓋安裝](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)；使用者已覆蓋安裝；v4、登入／孩子資料、系統裁切／EXIF／預覽及取消已核，沒有向 v3 強推 OTA。個人 Vertex key 短生成、附件檔名、v4 真機 OTA 回退／恢復及 Web 完成待辦後手機自動同步已通過；完整個人向量流程、跨端 Agent／確認接續、真機撤權及照護通知目標核權仍待驗。四 Agent／DEV02 等協作者自查、不改其 PR。
 
 **iOS 保留：[S04-W03 發佈準備](#s04-w03)等待 Apple 前置。**#272、#274～#278 已合併，本機接線／匯出／APNs掛載配置有證據；尚無 IPA、部署或真通知。免費真機需可用 Mac，TestFlight 需已授權 Apple 團隊及簽署；不為等待條件重跑測試或購買會員。完整範圍見 [iOS 計劃](#p3-ios)。
 
@@ -440,7 +440,7 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s07-w01"></a>
 #### S07-W01 App／Web 在線同步
 
-- 階段／狀態：P3；程式及最低本機檢查已完成，新版APK已安裝，跨端真機仍待驗；PR #235 已在 #234 後合併；原未驗項按本批安排繼續追蹤。
+- 階段／狀態：P3；程式及最低本機檢查已完成，PR #235 已合併。2026-10-25 已用 v4 及原 Web 核對同帳號待辦：手機建立、使用者在 Web 完成、手機原頁自動讀到完成／提醒停止；未重新整理或重送。[同次設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。跨端運行接續、撤銷及其他未驗邊界仍按原包保留，不將一項待辦當全端驗收。
 - 前置：S05-W03、S07-W03、P2-F08。
 - 交付：AppState／網絡 adapter 接 Query、changes cursor；背景停輪詢／前景核對，跨端同版本、原操作恢復及身份清理，不建離線重送。
 - 本輪接點：共用 metadata observer 接 Web 可見事件及 Android AppState／expo-network；前景五秒核對，背景／離線停止，恢復以同一權威服務讀回。原生取消使用可清理的 AbortController／timeout，不假定有瀏覽器 AbortSignal.any／timeout。只取消讀取，不重送業務操作。
@@ -487,18 +487,18 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 - 前置（Android）：S12-W01 Android、S07-W01、S13-W07；iOS 另依 S04-W02。
 - 本機結果：固定 Expo Notifications 57.0.21；FCM 單次 adapter、Firestore 加密綁定／原收據、同裝置 token 輪換／會話撤銷、提醒／通知歷史／匯出及還原、正式 API／worker、共用設定及核權點擊已接線。新增一條本機合成流程通過，受影響型別及配置語法通過；不把替身當真 Firestore 競爭或真 FCM。證據見 [S13 準備](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)。
 - 雲端配置（2026-10-18）：同專案 Android package、專用受限 key、原 VM 最小 FCM IAM 及 Expo preview secret file 已配置。10 個共用語音／通知索引、6 項欄位設定均 READY；`mobile-bf47c47` 已部署並啟用原生通知 adapter。部署當時只有啟動／資料查詢與公開入口證據；其後同機註冊及唯一一次真FCM結果見[S13 EV](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)，[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)。
-- 下一步／未驗：APK正常開啟、原資料保留、本人授權及一則指定FCM顯示已有證據；只欠照護目標核權導航／完成停止，不重發一般測試。
+- 下一步／未驗：APK正常開啟、原資料保留、本人授權及一則指定FCM顯示已有證據；2026-10-25 Web 完成後手機自動顯示「已完成，提醒已停止」。真正終態／不重發沿 [F06 原生 Firestore 證據](artifacts/verification/F06_FIRESTORE_BACKGROUND_20261013.json)復用，不重跑；仍欠從照護通知點擊至正確目標的真機核權，不重發一般測試。
 - 交付：Expo Notifications／Android FCM token 註冊、輪換／撤銷與薄投遞 adapter，沿既有 Tasks／授權／偏好／安靜時段／終態／unknown；Web與App各設備授權、同一任務。
 - gate：一則明確批准通知、點擊重新核權及完成停止；不重發 Web Push／Telegram。iOS APNs 是另一平台子範圍，不能拿 FCM token 代替 APNs。
 
 <a id="s04-w03"></a>
 #### S04-W03 固定發佈入口與 App 更新交付
 
-- 階段／狀態：P3；PR #239 已在 #238 後合併；固定入口、相容Web／OTA發布及同簽署APK升級已有結果；剩餘真機及OTA回退驗收保留，未宣稱 Android 全部完成。
+- 階段／狀態：P3；PR #239 已合併；固定入口、相容 Web／OTA 發布及同簽署 APK 升級已有結果。2026-10-25 v4 真機亦完成回退至內置版本、再恢復同 runtime 修正版：同一未送出測試檔的舊／新檔名行為均可見，登入及原資料保留。首批鎖屏未能觀察、立即恢復的結果原樣保留；最後 preview group `44dca896`。[回退證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。iOS 與 Android 其餘 gate 分開追蹤。
 - iOS 子包：接續 #276／`6871bab`，已補平台判定、官方 runtime、同平台 STORE／非 simulator build與回退，以及指定 build 的 TestFlight 提交。保留 Android預設及舊操作記錄，submit不自動邀請／建群組，結果與Apple處理／可安裝狀態分開。共同 UI 的另一端交付明列待辦，沒有一端成功當三端完成。
 - 必要本機結果：一條 release policy／CLI 檢查、合成公開設定的 iOS fingerprint、整合 iOS JS／Hermes匯出通過；首次匯出因命令錯指未 hoist 的 Expo 路徑停止，修正命令後只補同一次匯出，沒有改產品。[證據](artifacts/verification/S04_IOS_RELEASE_20261024.json)。付費團隊、App Store Connect 身份、簽署、實際上傳、OTA／回退及 iPhone驗收仍未完成；不購買會員、不宣稱已有TestFlight成品。
 - 本包範圍：離線發布判斷、官方 fingerprint 核對、固定 EAS CLI／channels、相容 OTA 回退及有界 manifest；Web 沿原 VM 產物／部署，不改產品設計或自動購買／上傳。
-- 結果：固定入口及短交接、離線判斷與兩端正式 bundle 已通過；`bf47c47` Web／API／worker 已部署。一次 preview APK `82cb911e` 已完成（versionCode 2），固定發布工具已記錄相符的 runtime／fingerprint 基線；兩個實際 APK 的官方簽署驗證、同 applicationId／證書及遞增 versionCode 已核對。使用者於2026-10-18確認覆蓋安裝後能正常開啟、原資料仍在；ADB亦核對versionCode 2。鍵盤遮擋及站內導航誤擋已局部修正並交付同版Web／相容OTA，一條真機輸入／清除／鍵盤開合有結果；動畫細節、回退及其餘功能仍待驗。[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)／[固定入口](docs/PRODUCTION_FRONTEND.md#mobile-release)。
+- 結果：固定入口及短交接、離線判斷與兩端正式 bundle 已通過；`bf47c47` Web／API／worker 已部署。一次 preview APK `82cb911e` 已完成（versionCode 2），固定發布工具已記錄相符的 runtime／fingerprint 基線；兩個實際 APK 的官方簽署驗證、同 applicationId／證書及遞增 versionCode 已核對。使用者於2026-10-18確認覆蓋安裝後能正常開啟、原資料仍在；ADB亦核對versionCode 2。鍵盤遮擋及站內導航誤擋已局部修正並交付同版Web／相容OTA，一條真機輸入／清除／鍵盤開合有結果；動畫細節及其餘功能仍待驗，回退沿上述 v4 結果。[交付 EV](artifacts/verification/S04_MOBILE_RELEASE_20261018.json)／[固定入口](docs/PRODUCTION_FRONTEND.md#mobile-release)。
 - 前置（Android）：S12-W01 Android、S13-W02 Android；iOS 待 S04-W02 後補同平台結果。
 - 交付：本節 `mobile:release --plan`／preview／production／OTA rollback，fingerprint、固定身份與 channels、release manifest／短交接。Web及Android共用修改沿同入口交付，新原生 runtime 出 APK、相容 JS 出 OTA。
 - gate：一次共用修改 Web＋OTA、相容回退及正式同簽署 APK 升級；不為每個判斷分支另做雲端 build，不在未完成工作／unknown 中強制 reload。
@@ -506,11 +506,11 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 <a id="s16-w03"></a>
 #### S16-W03 P3 必要整體驗收
 
-- 2026-10-25 v4 真機補核：登入／孩子資料、系統選圖、EXIF-6、裁切／預覽及取消沿[原證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)。108-byte TXT 正式保存、聊天／附件庫下載至系統分享、重開後同一附件及完成回覆已通過；#308 相容 OTA 發布後，未送出附件亦保留原檔名，品牌 splash 已觀察。[續驗](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)保留原失敗，不重跑保存／頭像。個人 Vertex provider 短生成另已通過；個人向量完整流程、跨端／通知終態／OTA 回退仍待驗，不宣稱 Android 或整個 P3 全部完成。
+- 2026-10-25 v4 真機補核：登入／孩子資料、系統選圖、EXIF-6、裁切／預覽及取消沿[原證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)。108-byte TXT 正式保存、聊天／附件庫下載至系統分享、重開讀回、原檔名及品牌 splash 已核；其後真機回退至內置版本再恢復修正版，以及手機建立待辦→Web 完成→手機原頁自動顯示完成／提醒停止均通過。[續驗](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)保留原失敗及各層限制。個人 Vertex provider 短生成另已通過；仍欠可用個人向量憑證下的完整流程、跨端 Agent／確認接續、真機撤權及照護通知目標核權。四 Agent 仍等協作者，不以這批結果宣稱 Android 或整個 P3 全部完成。
 
 - 階段／狀態：P3；Android／頭像／附件庫／個人模型收尾中，完整 P3 未完成。最新 #305／`1f07fab` 成熟裁切已合併及更新 Web；新 APK 交付見[本批記錄](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)。不修改協作者未合併 Agent PR、不提前恢復 DEV02 聯合補驗。
 - 2026-10-25 接續：以 `2fb8865`／`codex/android-final-closeout` 收 Android、已啟用頭像、附件庫及個人模型。先對照既有證據與正式接點，再只補確實欠缺的保存／讀回／設備或模型路由核對；不逐頁或逐模型測試，不重驗四 Agent。手機未連線、需登入／系統權限等本人操作及不可取得的本人憑證如實待驗；不因此停止其他可做工作。下一版原生圖標與 splash 沿既有配置，沒有必要的新 APK 不單為此重建。原失敗及已核準延後的備份／角色驗收保留。
-- 本批結果：頭像 owner 的刷新／保存競態修正及 21 項定向檢查通過；本機正式 Web 保存／重開／移除、附件庫列出同一已提交文件及下載 hash 核對通過，合成附件已刪除。本地入口可明確啟用頭像，預設仍停寫。個人 key 一次供應商地域拒絕後停批，沒有四 Agent 或額度變更；[結果與保留失敗](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。頭像裁切體驗改進已由 #305 接成熟能力；Android 真機、成功個人 key 及 OTA 真機回退仍未完成。
+- 本批結果：頭像 owner 的刷新／保存競態修正及 21 項定向檢查通過；本機正式 Web 保存／重開／移除、附件庫列出同一已提交文件及下載 hash 核對通過，合成附件已刪除。本地入口可明確啟用頭像，預設仍停寫。個人 Gemini 地域拒絕保留，後續個人 Vertex 短生成通過，沒有四 Agent 或額度變更；[結果與保留失敗](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。頭像成熟裁切與 Android 補驗沿上述最新證據，未驗項不重複另列。
 - 最新交付：#305／`1f07fab` 已更新 Web；唯一免費 APK v4 的同簽署、package、runtime 及新品牌資源核對通過，[下載](https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk)。不用重跑模型，使用者已覆蓋安裝；版本、登入／孩子資料保留、原生裁切／EXIF／取消已核；餘下設備流程待驗；[交付證據](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)保留下載／工具問題及本地 emulator 關閉快照失敗，後者保留上一快照、沒有宣稱還原通過。
 - 本批順序：先核部署／手機及可復用證據；把個人設定保存與跨端同版、既有成果讀回／附件出口串成最少流程，再處理原通知終態與相容更新／回退缺口。保留本人首條聊天的驗收安排；不自動發新通知、重跑已通過音訊模型或擴配額。未具備有效憑證／設備便如實保留該項，不以合成結果代填真機或真模型通過。
 - 本批進展：設定同值保存／重開及本機 Android 匯出通過。`c58459a` 的唯一免費 build `c678d433-3410-4d78-b831-011ac4f5a70a` 已成功，APK v3 的 package、同簽署及實際 runtime `5fd1446…` 已核，不能向 APK v2 `3369957…` 強推 OTA。使用者已回覆安裝 v3；資料保留及附件庫完整設備流程未補驗。現接續 v4，沒有新增模型／通知。[交付證據](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)分列 API 已部署、Web 畫面待更新及個人 key 真生成未驗。
