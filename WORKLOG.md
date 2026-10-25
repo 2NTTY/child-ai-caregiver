@@ -3729,3 +3729,10 @@
 
 - 使用者明確批准解除頭像 source gate，review／合併後開啟原站同版 API／worker 寫入。既有 lifecycle、原生配對還原、runtime、索引與正式停寫部署證據已具備；本次只改 release 常數，不改權限、確認、防重、刪除或模型設定。
 - 復用已驗 candidate-gate 路徑及正式組裝檢查，靜態核對差異，不重跑整套測試。部署仍需精確候選、健康及寫入配置讀回；設備選圖／裁切／EXIF 未驗保留，不以啟用或真人批准替代。
+
+<a id="log-20261025-avatar-enabled"></a>
+## LOG-20261025-AVATAR-ENABLED
+
+- #300／`0ebfbfa` 的單檔 release flag 修正經主模型及獨立覆核後合併；使用者已明確批准原站開放。候選沿已核對的 `652edad` 映像，只替換該檔；正式 API／worker 同版開啟／關閉、sharp／libvips 及兩項 true 配置核對通過，未重跑業務／還原測試。
+- 2026-10-25 09:08:54 UTC 原站 API／worker 啟用 `c3b149c`，兩服務健康、公開 health、寫入配置及部署收據讀回通過；Web 映像保持 `c09400c`，沒有 Android OTA 或新 APK。[啟用證據](artifacts/verification/AVATAR_ENABLE_20261025.json)。
+- 保留相容停寫映像 `4159605` 及受保護配置，回退仍能讀取／清理頭像；不能退至不認識新 schema／journal 的舊映像。零模型／測試通知／新增資源／資料遷移／配額修改；既有索引與排程證據復用。手機選圖／裁切／EXIF、原生每日備份與 Secret Manager 災備仍待驗，沒有代填人工通過。

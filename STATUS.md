@@ -10,10 +10,10 @@
 - **iOS 本機接線與發佈工具已合併，TestFlight 等待 Apple 前置。**#272及#274～#278已合併；本機檢查、整合iOS匯出及APNs掛載配置核對通過。尚須Apple團隊／簽署／APNs配置、IPA與真機驗收；未部署或啟用通知。範圍保留於[iOS計劃](PLAN.md#p3-ios)，不因此重跑測試。
 - **附件庫 API 及畫面已交付，實際清單待驗：**`a84f349` 清單 API／兩索引沿原部署，Web／APK v3 相容 OTA 已含新畫面。原失敗及 GUI／型別限制保留，見 [ATTACHMENT-READ01](PLAN.md#attachment-read01)。私人來源沒有自動向量索引作業，畫面分清保存、可讀及未建立向量索引。
 
-- **MODEL-SELF03 已發布，手機草稿捨棄補核通過。**新關注圖標出現後，捨棄模式／供應商草稿、離頁及返回恢復平台模式，零key輸入／保存／模型。精確裝置OTA ID與真key流程未驗。另將其餘原生底欄接回Web同一導航metadata，保留版面／手勢；兩項定向檢查通過，這批接線已隨 `382d217` 發布、裝置效果待核，見 [MODEL03](PLAN.md#model-self03)。#269 準備單退出修正及 #259 附件回看已合併；#264 頭像來源亦已合併但維持停用；#254／#262／#263／#265／#273 仍由協作者處理。
+- **MODEL-SELF03 已發布，手機草稿捨棄補核通過。**新關注圖標出現後，捨棄模式／供應商草稿、離頁及返回恢復平台模式，零key輸入／保存／模型。精確裝置OTA ID與真key流程未驗。另將其餘原生底欄接回Web同一導航metadata，保留版面／手勢；兩項定向檢查通過，這批接線已隨 `382d217` 發布、裝置效果待核，見 [MODEL03](PLAN.md#model-self03)。#269 準備單退出修正及 #259 附件回看已合併；頭像啟用狀態見下項；#254／#262／#263／#265／#273 仍由協作者處理。
 
 - **照片聊天及欄位提示已發布：**#287／#288 接通照片直接送出、原圖重讀及附件庫同 ID 重用；原生單行空欄位改用 placeholder，減少等待浮動標籤量度。原站與 Android OTA 已發布，真機效果／真模型照片品質未驗；其後 #286 的已合併 Server 恢復修正已隨 `652edad` 同版組裝部署，前端真機結論仍未補。詳見[CHAT-PHOTO01](PLAN.md#chat-photo01)。
-- **頭像啟用已獲明確批准：**`652edad` 的 API／worker、原生依賴、索引及排程讀回通過；正 review／合併 release flag，再開啟原站同版寫入。部署前原站仍停用；手機裁切／EXIF 待驗。Web／Android 共用原畫面，已有還原／清理證據不重跑，見[AVATAR-01](PLAN.md#avatar-01)。
+- **頭像已在原站啟用：**#300／`0ebfbfa` 的 API／worker 同版部署、release flag／寫入 true 及健康讀回通過。本人／孩子沿共用畫面操作，不需新 APK；手機選圖／裁切／EXIF 仍待驗，不以啟用取代。已有還原／清理證據復用，見[AVATAR-01](PLAN.md#avatar-01)。
 
 - **本地開發入口可用：**`npm run agent:local` 使用目前分支的正式 Web／API／四角色接點及隔離持久資料，不需部署 GCP。真聊天／引用、編製／獨立審核／同文件保存及重啟讀回已有證據；新增相容模型與獨立向量 key 路由只有合成證據。方法見[本地入口](docs/AGENT_LOCAL.md)。
 - **角色聯合補驗依使用者指示延後：**等待四個Agent真正完成且協作者先自行檢查，再安排最後引用／審核及接續流程。本聊天不提前重跑或接管修改；`delivery_review_incomplete`失敗現場、單頁PDF已通過證據及長來源／多模態缺口保留。本地入口仍可供協作者使用，恢復條件及證據只見 [DEV02](PLAN.md#dev-agent02)。
@@ -24,11 +24,11 @@
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-25 08:38 UTC 原站：**API／worker 同版 `avatar-runtime-652edad`（映像 `4159605`）健康，公開 health 及部署後 Scheduler 喚醒成功；頭像 source gate／寫入仍 false。Web 沿 `chat-photo-9012933`（`c09400c`），APNs 未啟用。[部署證據](artifacts/verification/AVATAR_DEPLOYMENT_20261025.json)；零模型／測試通知／資料遷移／配額修改。
+**2026-10-25 09:08 UTC 原站：**API／worker 同版 `avatar-enable-0ebfbfa`（映像 `c3b149c`）健康，公開 health 通過；頭像 source gate／寫入均 true。Web 沿 `chat-photo-9012933`（`c09400c`），APNs 未啟用。[啟用證據](artifacts/verification/AVATAR_ENABLE_20261025.json)；既有索引／Scheduler 證據沿[前批部署](artifacts/verification/AVATAR_DEPLOYMENT_20261025.json)，本次零模型／測試通知／資料遷移／配額修改。
 
 **Android，2026-10-24 14:35 UTC：**相容 OTA group `327ad4ca` 已一次發布至preview，runtime沿APK v3，毋須重裝。手機連線但鎖屏，沒有強制重啟或改草稿，實際套用與提示文字時序未驗。下次新APK的品牌icon／splash配置已備妥並本機核對；尚未建置，v3不會靠OTA改變原生圖標。
 
-**回退、備份與容量：**此次保留 API `e23de93` 與 0600 的 `compose.env.before-avatar-runtime-652edad`；仍未開放頭像寫入。首次頭像寫入後，回退須保留懂得新 schema／journal 的版本及 cleanup，不能退回舊讀取器。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)。最近原生備份觀察仍為 2026-10-23 READY，未還原；本次部署前約 10.5 GiB 可用，未擴容／清正式資料。
+**回退、備份與容量：**本次保留相容 API／worker `4159605` 及 0600 的 `compose.env.before-avatar-enable-0ebfbfa`。關寫入仍保留頭像 reader／cleanup；已開放新 schema／journal，不能回退至 `e23de93` 等舊讀取器。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#avatar-deployment-gate)。最近原生備份觀察仍為 2026-10-23 READY，未還原；前批部署前約 10.5 GiB 可用，未擴容／清正式資料。
 
 **主機期限，2026-10-25 核對：**原 e2-small VM 仍運行，自動停止時間維持 **2026-11-06 13:33:50 香港時間**；本次沒有續期或修改規格。舊 SQL 容器為停止狀態，正式 API／worker 使用 Firestore。
 
