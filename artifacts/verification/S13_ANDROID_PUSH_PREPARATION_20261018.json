@@ -147,5 +147,28 @@
       "Remaining shared-media, cross-device and compatible OTA rollback gates"
     ],
     "evidenceBoundary": "Earlier zero-send fields describe their original local/configuration phases and are preserved"
+  },
+  "targetRoutingCloseout": {
+    "date": "2026-10-25",
+    "source": "f987b0b68a61a9e0208f7fefa74925475c469ba3",
+    "finding": "Production callback discarded the authorized taskId and opened only the tasks list",
+    "fix": "Forward the server-authorized taskId to the existing task route after child selection; preserve leave and identity guards",
+    "userRequestedLabel": "Shared account button renamed to 重設密碼 without sending an email or changing its action",
+    "validation": {
+      "targetedTest": "native-push-target.test.mjs: 1 passed, covering exact care target, selection wait, stale identity suppression and channel-test settings destination",
+      "webExport": "passed",
+      "androidExport": "passed",
+      "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+      "newBinaryRequired": false
+    },
+    "cloudCalls": {
+      "models": 0,
+      "notifications": 0
+    },
+    "delivery": "prepared, not yet published",
+    "limits": [
+      "This controlled production-callback check is not a real care-notification tap",
+      "Existing FCM receipt and task-terminal evidence reused; no resend"
+    ]
   }
 }

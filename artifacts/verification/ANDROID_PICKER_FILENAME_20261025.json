@@ -220,5 +220,24 @@
       "Does not prove cross-device in-flight Agent/confirmation recovery, session revocation or care-notification destination handling",
       "No exact synchronization latency claimed; one intermediate loading observation preceded the completed view"
     ]
+  },
+  "deviceRevocationAcceptance": {
+    "date": "2026-10-25",
+    "source": "Android v4, restored compatible filename update",
+    "webAction": "User explicitly confirmed using Sign out other devices in the same-account Web session",
+    "observations": [
+      "After unlocking, Android displayed the login form with no child or business page visible",
+      "One cold restart remained at the login form; the revoked session did not resume"
+    ],
+    "calls": {
+      "models": 0,
+      "notifications": 0,
+      "credentialExtraction": 0
+    },
+    "limits": [
+      "No second-account login or cross-identity device acceptance claimed",
+      "Device left logged out; user informed they can sign in again",
+      "Screenshots remain ignored locally"
+    ]
   }
 }

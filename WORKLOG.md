@@ -3827,3 +3827,11 @@
 - 手機只保存一項明示 TEST 的本人待辦，日期為 10 月 31 日 09:00；使用者登入同帳號 Web 並回覆「已完成」。手機保持同一詳情頁、不刷新／重送，沿正常背景讀取顯示「已完成，提醒已停止」。原輸入／日期修正均發生於保存前；只留一筆已完成測試待辦作追溯，未發到期通知。清除未送出附件及其手機 fixture，返回首頁。
 - [同一設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)新增回退及跨端區段，舊結果／失敗不改；提醒終態不重發沿 [F06](artifacts/verification/F06_FIRESTORE_BACKGROUND_20261013.json) 原 Firestore＋合成 transport 證據復用，不重跑。未證明跨端 Agent／確認接續、真機撤權或照護通知點擊目標；個人向量完整流程及四 Agent 等待條件繼續保留。
 - PLAN／STATUS 原位解除已通過項，部署交接補首次 OTA 的官方內置回退方法。本次只有文件及 evidence JSON，核 diff、JSON、連結及原 evidence／WORKLOG 保留；不跑產品測試或修改協作者 PR。
+
+
+<a id="log-20261025-native-target-revocation"></a>
+## LOG-20261025-NATIVE-TARGET-REVOCATION
+
+- 使用者在 Web 回覆已撤銷其他裝置；Android 解鎖後回到登入畫面，一次冷啟動仍未恢復舊會話／孩子頁，零憑證抽取、模型或通知。保留另一身份登入隔離待驗；結果追加至[同一設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
+- B 單作者局部修正正式通知 callback：Server 已核對的 taskId 原先被丟棄，現在在原孩子選擇及身份／離頁守衛後交給既有待辦詳情路由。另依使用者截圖要求把共用設定的「要求重設密碼指引」改成「重設密碼」，沒有改動寄信行為或代按。協作者 PR 檔案核對無重疊。
+- 產品 source `f987b0b`：一項受控 production callback 檢查通過（指定待辦、選孩子等待、身份切換拒遲到、測試通知仍開設定），Web／Android 各一次匯出通過；Android runtime 與 v4 相同，毋須新 APK。[S13 證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)區分程式／匯出與尚未發布、未驗照護通知點擊，不重跑原 FCM／終態或全量產品測試。
