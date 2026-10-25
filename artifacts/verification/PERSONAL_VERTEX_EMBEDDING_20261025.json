@@ -142,5 +142,24 @@
       "Saved personal Vertex embedding settings through a full Agent/RAG result; the Android option is now user-confirmed visible.",
       "Deferred collaborator Agent acceptance is unchanged."
     ]
+  },
+  "productionRoutingCloseout": {
+    "checkedOn": "2026-10-25",
+    "basis": "a6c9af5a5c9b3d9d211c268fc58fe2cd1930e42b",
+    "state": "passed",
+    "tests": 1,
+    "realProviderCalls": 0,
+    "deviceOperations": 0,
+    "entry": "createFirestoreModelRouting.resolve -> selected.embeddings -> createEmbeddingGateway -> Vertex SDK",
+    "method": "Reuse the existing saved-settings scenario; reconstruct the production router against the same in-memory Firestore fixture, keep the real SDK and replace only its HTTP response.",
+    "assertions": [
+      "Reopened encrypted settings retain the explicit personal key, project and region.",
+      "One query reserves and settles personal durable usage; platform usage stays zero.",
+      "Repeating the same root/attempt is refused without another provider dispatch or quota increment."
+    ],
+    "limits": [
+      "No real Firestore transaction race, user-settings save on device or complete Agent/RAG conversation was exercised.",
+      "Earlier live provider result is separate; collaborator acceptance remains deferred."
+    ]
   }
 }

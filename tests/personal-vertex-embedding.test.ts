@@ -63,9 +63,28 @@ test('personal Vertex embedding saves once, protects older clients and uses only
   });
   const provider = createPersonalModelProviders(config, snapshot.apiKey!, snapshot.settings.provider,
     { ...snapshot.settings, embeddingApiKey: snapshot.embeddingApiKey });
-  const reply = await provider.embedding.embed({ task: 'RETRIEVAL_QUERY', text: 'child care' }, new AbortController().signal);
-  assert.equal(reply.values.length, 1024);
-  assert.equal(reply.inputTokens, 2);
+  // Reopen the saved settings through the production router, including its personal usage ledger.
+  const reopened = createFirestoreModelRouting(options, config);
+  const selected = await reopened.resolve('owner', 'interactive');
+  assert.equal(selected.billingSource, 'personal');
+  const rootRunId = randomUUID();
+  const input = { task: 'RETRIEVAL_QUERY' as const, text: 'child care' };
+  const actor = { kind: 'query_embedding' as const, actorId: 'owner', operationId: rootRunId };
+  const durable = { adapter: selected.dailyUsage, attemptKey: 'embedding:knowledge-search:1',
+    context: { generation: 1, binding: { rootRunId, ownerId: 'owner', workspaceId: randomUUID(), childId: randomUUID(),
+      authorizationVersion: '1', storageEpoch: 'synthetic-epoch', trigger: { kind: 'interactive', reference: randomUUID() },
+      workflowVersion: 'synthetic-routing-v1', promptPackVersion: 'synthetic', settingsVersion: selected.settingsVersion,
+      billingVersion: 'personal:v1', limits: { modelCalls: 4, toolCalls: 8, queryEmbeddings: 2 }, deadlineAtMs: Date.now() + 60000 } },
+    revalidate: async () => { assert.equal(await selected.authorize(), true); } };
+  const embed = () => selected.embeddings.embed(input, actor, new AbortController().signal, async () => true, durable);
+  assert.equal((await embed()).length, 1024);
+  const usage = (await reopened.view('owner')).usage;
+  assert.equal(usage.personal.attempts, 1);
+  assert.equal(usage.personal.inputTokens, 2);
+  assert.equal(usage.personal.unknownUsageAttempts, 0);
+  assert.equal(usage.platform.attempts, 0);
+  await assert.rejects(embed(), { reason: 'unavailable' });
+  assert.equal((await reopened.view('owner')).usage.personal.attempts, 1, 'original attempt cannot reserve or dispatch again');
   assert.equal(calls.length, 1);
   assert.equal(calls[0].url, 'https://us-central1-aiplatform.googleapis.com/v1/projects/personal-project/locations/us-central1/publishers/google/models/gemini-embedding-001:predict');
   assert.equal(calls[0].headers.get('x-goog-api-key'), 'synthetic-vector-key');
