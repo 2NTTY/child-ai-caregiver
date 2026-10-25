@@ -28,7 +28,7 @@
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-26 00:46 香港時間：**語音修正 `85356d6` 已更新 API／worker 至 `d5be355`，候選正式組裝含 Prompt Pack 0.1.55／原錄音核權，公開 health 通過。Web、Android、頭像開關及配額保持原值；沒有模型／通知／資料遷移。保留前版 API／worker `9d490d0` 及 0600 配置供相容回退；[精確交付](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)。下方前批 Web／Android 及期限觀察仍適用。
+**2026-10-26 01:23 香港時間：**`14e0f60` 已更新 API／worker 至 `663125d`，只將搜尋工具固定額度說明改為當輪實際餘額；保留前批語音修正／Prompt Pack 0.1.55。候選正式組裝及公開 health 通過。Web、Android、頭像開關及配額保持原值；零模型／通知／資料遷移。前版 `d5be355` 與 0600 配置供回退；[精確交付及腳本編碼失敗](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)。下方前批 Web／Android 及期限觀察仍適用。
 
 **2026-10-25 15:09 UTC 原站觀察：**`34f80a9` 的個人 Vertex 向量接線已部署；API／worker `9d490d0`、Web `e813692`，候選正式組裝、公開 index hash／health 通過。頭像開關保持啟用，APNs 未啟用；零模型／通知／資料遷移／索引重建／配額修改。[交付證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
 
