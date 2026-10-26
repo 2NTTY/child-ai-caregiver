@@ -9,11 +9,11 @@ import { useProduction } from "./ProductionProvider";
 import { AccountAccessPanel, AccountDeletionRecoveryPanel } from "../components/account/AccountCallbackGate";
 
 export function ProductionGate({ children }: { children: ReactNode }) {
-  const { identityKey, auth, recordsState, refresh, online, account } = useProduction();
+  const { identityKey, auth, recordsState, refresh, online, account,sharedChild } = useProduction();
   if (!identityKey && account.deletion.phase === "unknown") return <AccountDeletionRecoveryPanel />;
   if (identityKey) {
     if (account.gate !== "ready") return <AccountAccessPanel />;
-    if (recordsState.childrenError && recordsState.childrenLoadedAt === null) return <View style={styles.gate} testID="production-children-error">
+    if (!sharedChild.target && recordsState.childrenError && recordsState.childrenLoadedAt === null) return <View style={styles.gate} testID="production-children-error">
       <BrandLogo style={styles.logo} />
       <Text accessibilityLiveRegion="polite">{recordsState.childrenError}</Text>
       <AppButton label="重新讀取孩子" disabled={!online || recordsState.childrenLoading} onPress={() => { void refresh(); }} />

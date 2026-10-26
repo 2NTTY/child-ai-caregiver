@@ -263,3 +263,29 @@ test("selected shared observer advances opaque cursors, resets invalid reads and
     assert.equal(requested.length, 6); assert.deepEqual(reasons, ["forced", "changed", "unavailable"]);
   } finally { observer.dispose(); }
 });
+
+test("shared observer tracks visible modules separately without falling back to private changes", async () => {
+  const target = { spaceId: "00000000-0000-4000-8000-000000000001", childId: "00000000-0000-4000-8000-000000000002" };
+  const requests: URL[] = [], reasons: string[] = [];
+  let round = 0;
+  const selections = (["tasks", "documents"] as const).map(module => ({ ...target, module }));
+  const observer = createOnlineChangeObserver("https://service.invalid/api", "carer", async reason => { reasons.push(reason); }, async input => {
+    const url = new URL(String(input)); requests.push(url);
+    assert.equal(url.pathname, "/api/online/shared-changes");
+    const module = url.searchParams.get("module")!;
+    if (round === 2 && module === "documents") return Response.json({ error: "revoked" }, { status: 403 });
+    return Response.json({ ...target, module, cursor: `${module}-${round}`, changed: round === 1 && module === "documents", hasMore: false });
+  }, selections);
+  try {
+    await observer.check(true);
+    round = 1; await observer.check();
+    assert.equal(requests[2].searchParams.get("cursor"), "tasks-0");
+    assert.equal(requests[3].searchParams.get("cursor"), "documents-0");
+    round = 2; await observer.check();
+    round = 3; await observer.check();
+    assert.equal(requests[6].searchParams.has("cursor"), false);
+    assert.equal(requests[7].searchParams.has("cursor"), false);
+    assert.deepEqual(reasons, ["forced", "changed", "unavailable"]);
+    assert.throws(() => createOnlineChangeObserver("/api", "carer", async () => {}, fetch, [selections[0], selections[0]]), /selection/);
+  } finally { observer.dispose(); }
+});

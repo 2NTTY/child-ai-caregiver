@@ -33,8 +33,8 @@ export function ProductionCareProfileDomains({ children }: { children: ReactNode
   const scoped = projection?.scopeKey === env.scopeKey && !!env.scopeKey ? projection : null;
   useLayoutEffect(() => { publish(previous => previous?.scopeKey === env.scopeKey && !!env.scopeKey ? previous : null); }, [env.scopeKey]);
   return <RecoveryContext.Provider value={scoped?.recovery ?? null}>
-    <CareWorkspaceProvider scopeKey={env.scopeKey} value={scoped?.care ?? null}>
-      <ProfileWorkspaceProvider scopeKey={env.scopeKey} value={scoped?.profile ?? null}>
+    <CareWorkspaceProvider scopeKey={env.scopeKey} value={env.allows('care')?scoped?.care ?? null:null}>
+      <ProfileWorkspaceProvider scopeKey={env.scopeKey} value={env.allows('profile')?scoped?.profile ?? null:null}>
         {env.scopeKey && env.userId && env.childId ? <CareProfileOwner key={env.scopeKey} env={env} publish={publish} /> : null}
         {children}
       </ProfileWorkspaceProvider>
@@ -49,8 +49,8 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     // This mounted owner retains its cache across routes; the host's default gcTime is zero.
     env.queryClient.setQueryDefaults(["production", env.scopeKey, "care"], { gcTime: Infinity });
     env.queryClient.setQueryDefaults(["production", env.scopeKey, "profile"], { gcTime: Infinity });
-    return createCareApi(env.apiBaseUrl, env.owner.fetcher);
-  }, [env.apiBaseUrl, env.owner.fetcher, env.queryClient, env.scopeKey]);
+    return createCareApi(env.apiBaseUrl, env.owner.fetcher,env.sharing);
+  }, [env.apiBaseUrl, env.owner.fetcher, env.queryClient, env.scopeKey,env.sharing]);
   const editable = env.role === "owner" || env.role === "caregiver";
   const careKey = ["production", env.scopeKey, "care"] as const;
   const profileKey = ["production", env.scopeKey, "profile"] as const;
@@ -85,7 +85,9 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
       historyGeneration, openGeneration, pageCursors, pageIndex, nextCursor, careHistoryCursor },
     current, online: () => envRef.current.online, controller, released, onAccessError: error => envRef.current.accessError(error),
     setCare, careRecordView, careRevisionView, savedRecordReview, careOperation });
-  const { verify, accessError, read, rawRecord, publishRecord, removeRecord, loadCare, refreshCare, latestCare, careHistory } = careReads;
+  const { verify, accessError, read, rawRecord, publishRecord, removeRecord, latestCare, careHistory } = careReads;
+  const loadCare=(...args:Parameters<typeof careReads.loadCare>)=>envRef.current.allows('care')?careReads.loadCare(...args):Promise.resolve(false);
+  const refreshCare=()=>envRef.current.allows('care')?careReads.refreshCare():Promise.resolve(false);
   function publishProfile(value: ChildProfile, reset: boolean) {
     // A routine current-profile refresh does not invalidate an already-read history.
     // Compare raw canonical data, not formatted labels; this ref is scoped with the owner.
@@ -103,7 +105,7 @@ const CareProfileOwner = memo(function CareProfileOwner({ env, publish }: { env:
     if (reset) setProfileDirty(false);
   }
   async function loadProfile(recovery = false): Promise<boolean> {
-    if (!current() || !envRef.current.online || writing.current || attempt.current && !recovery) return false;
+    if (!envRef.current.allows('profile') || !current() || !envRef.current.online || writing.current || attempt.current && !recovery) return false;
     profileRead.current?.abort(); const control = controller(); profileRead.current = control; const generation = ++profileGeneration.current;
     setProfile(previous => ({ ...previous, reading: true, notice: profileHistoryNotice.current }));
     try {

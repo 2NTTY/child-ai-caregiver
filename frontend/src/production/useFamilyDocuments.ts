@@ -33,7 +33,7 @@ const preparationView = (item: FamilyDocument): PreparationDocumentView => {
 
 /** One shared Server document projection for preparation, history and report consumers. */
 export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
-  const api = useMemo(() => createFamilyDocumentsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
+  const api = useMemo(() => createFamilyDocumentsApi(env.apiBaseUrl, env.owner.fetcher, env.sharing), [env.apiBaseUrl, env.owner.fetcher, env.sharing]);
   const checks = useMemo(createPreparationCheckBuffer, [api]);
   const publishingChecks = useRef(false);
   const [, updateChecks] = useState(0);

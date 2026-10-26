@@ -1,5 +1,6 @@
 import type { CarePage, CareRecord, CareRevision, CareSearch, CareValues, ChildProfile, ChildProfileData, HistoryPage } from "../shared/care.ts";
 import type { OnlineReceipt } from "../shared/online.ts";
+import type { SharedSelection } from "../shared/sharing.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export class CareApiError extends Error {
@@ -51,7 +52,7 @@ function page<T>(value: unknown, guard: (value: unknown) => value is T): History
   return { revisions: value.revisions, nextBeforeVersion: value.nextBeforeVersion as number | null };
 }
 
-export function createCareApi(baseUrl = "", fetcher: typeof fetch = fetch, selection?: { spaceId: string }): CareApi {
+export function createCareApi(baseUrl = "", fetcher: typeof fetch = fetch, selection?: SharedSelection): CareApi {
   const base = baseUrl.replace(/\/$/, "");
   const apiUrl = base.endsWith("/api") ? base : `${base}/api`;
   const online = createOnlineTransport(apiUrl, fetcher);
@@ -72,7 +73,7 @@ export function createCareApi(baseUrl = "", fetcher: typeof fetch = fetch, selec
   }
   const mutate = (path: string, payload: unknown, signal: AbortSignal, userId: string) =>
     onlineCall(signal, outerSignal => online.submit({ path: `/api${path}`, payload,
-      ...(selection ? { sharing: { spaceId: selection.spaceId } } : {}) }, outerSignal, userId));
+      ...(selection ? { sharing: selection } : {}) }, outerSignal, userId));
   async function request(path: string, signal: AbortSignal, body?: unknown, userId?: string): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();

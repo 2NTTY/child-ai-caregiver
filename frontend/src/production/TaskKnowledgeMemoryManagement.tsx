@@ -40,9 +40,9 @@ export function TaskKnowledgeMemoryManagement() {
     <FormDialog visible={open} scopeKey={owner.value.scopeKey} title="管理記憶" returnFocusRef={trigger}
       onClose={() => { management.discard(); setEditor(null); setOpen(false); }}>
       <View style={s.stack}>
-      <Text style={s.meta}>手動核對事實及話題。候選未確認前只供本人；話題狀態不代表任務完成。</Text>
+      <Text style={s.meta}>{owner.sharedMode ? "手動核對共享事實及話題；新增事實須明確確認內容、來源及共享範圍。話題狀態不代表任務完成。" : "手動核對事實及話題。候選未確認前只供本人；話題狀態不代表任務完成。"}</Text>
       <MemoryRecovery owner={owner} onLatest={value => setEditor(value)} />
-      <View style={s.compactActions}><AppButton label="人工新增候選事實" variant="secondary" disabled={owner.busy || management.locked} onPress={() => edit({ kind: "fact", item: null })} />
+      <View style={s.compactActions}><AppButton label={owner.sharedMode ? "新增共享事實" : "人工新增候選事實"} variant="secondary" disabled={owner.busy || management.locked} onPress={() => edit({ kind: "fact", item: null })} />
         <AppButton label="人工新增話題" variant="secondary" disabled={owner.busy || management.locked} onPress={() => edit({ kind: "topic", item: null })} />
         {owner.failed && !management.pending && !management.conflict ? <AppButton label="重試讀取記憶" variant="quiet" disabled={owner.busy || !owner.value.model.online} onPress={owner.refresh} /> : null}</View>
       <Text style={s.title}>已取得的事實</Text>
@@ -57,7 +57,7 @@ export function TaskKnowledgeMemoryManagement() {
         {canManageMemory(role, item) ? <AppButton label="人工更新／按原因重開／刪除" variant="quiet" density="compact" disabled={owner.busy || management.locked} onPress={() => edit({ kind: "topic", item: structuredClone(item) })} /> : null}
       </View>)}
       {owner.hasMoreTopics ? <AppButton label="載入更多話題" variant="quiet" disabled={owner.busy || !!management.pending} onPress={owner.moreTopics} /> : null}
-      <Text style={s.meta}>分頁只是已取得的視窗。私人資料沿本人權限讀取，不由模型填入已確認事實。</Text>
+      <Text style={s.meta}>{owner.sharedMode ? "分頁只是已取得的共享視窗；未加入共享的私人資料不在這裏顯示。" : "分頁只是已取得的視窗。私人資料沿本人權限讀取，不由模型填入已確認事實。"}</Text>
       </View>
     </FormDialog>
     <AppDialog visible={!!editor} onDismiss={close} accessibilityLabel={editor?.kind === "fact" ? "人工核對事實" : "人工處理話題"}>
@@ -95,9 +95,9 @@ function FactEditor({ owner, basis }: { owner: Owner; basis: MemoryFactView | nu
   const [confirmed, setConfirmed] = useState(false), [shared, setShared] = useState(false), [error, setError] = useState("");
   const { control, watch, handleSubmit } = useForm<FactFields>({ defaultValues: { key: basis?.key ?? "", content: basis?.content ?? "", sourceKind: basis?.source.kind ?? "manual",
     sourceDescription: basis?.source.description ?? "", recordId: basis?.source.kind === "care_record" ? basis.source.recordId : "", sourceVersion: basis?.source.kind === "care_record" ? String(basis.source.version) : "",
-    messageId: basis?.source.kind === "private_chat" ? basis.source.messageId ?? "" : "", validUntil: basis?.validUntil ?? "", intendedVisibility: basis?.intendedVisibility ?? "private", reason: "" } });
+    messageId: basis?.source.kind === "private_chat" ? basis.source.messageId ?? "" : "", validUntil: basis?.validUntil ?? "", intendedVisibility: basis?.intendedVisibility ?? (owner.sharedMode ? "family" : "private"), reason: "" } });
   const draft = watch(), management = owner.management, disabled = owner.busy || management.locked, editingValues = !disabled && (mode === "create" || mode === "revise");
-  const needsShared = !!basis && (mode === "confirm" ? basis.intendedVisibility === "family" : mode === "revise" && basis.visibility === "family");
+  const needsShared = !basis ? owner.sharedMode : mode === "confirm" ? basis.intendedVisibility === "family" : mode === "revise" && basis.visibility === "family";
   useEffect(() => { setConfirmed(false); setShared(false); }, [basis?.version]);
   function edited() { management.markDirty(); setConfirmed(false); setShared(false); setError(""); }
   function values(value: FactFields): FactValues {
@@ -111,7 +111,13 @@ function FactEditor({ owner, basis }: { owner: Owner; basis: MemoryFactView | nu
     const payload = values(value), parsed = valuesSchema.safeParse(payload);
     if (["create", "revise", "confirm"].includes(mode) && !parsed.success) { setError("請核對欄目、內容、來源描述、來源識別／版本及含時區有效期；不會截短原文。"); return; }
     if ((mode === "revise" || mode === "deactivate") && !text(500).safeParse(value.reason).success) { setError("請填寫 1 至 500 字的原因。"); return; }
-    if (!basis) { management.submit({ kind: "create_fact", input: { values: payload, intendedVisibility: value.intendedVisibility } }); return; }
+    if (!basis) {
+      if (owner.sharedMode) {
+        if (value.sourceKind === "private_chat" || value.intendedVisibility !== "family" || !shared || owner.role === "viewer") return;
+        management.submit({ kind: "create_confirmed_fact", input: { values: payload, intendedVisibility: "family", confirm: true, confirmShared: true } });
+      } else management.submit({ kind: "create_fact", input: { values: payload, intendedVisibility: value.intendedVisibility } });
+      return;
+    }
     if (mode === "confirm" || mode === "deactivate") {
       const same = payload.key === basis.key && payload.content === basis.content && payload.validUntil === basis.validUntil && sameFactSource(payload.source, basis.source);
       if (!same) { setError("原內容已修改；請先使用更正，確認及停用不會悄悄保存草稿。"); return; }
@@ -128,19 +134,19 @@ function FactEditor({ owner, basis }: { owner: Owner; basis: MemoryFactView | nu
   }
   const history = basis ? owner.value.model.longTerm.data?.histories[basis.id] : null;
   return <View style={s.stack}>
-    <Text style={s.meta}>{basis ? `${visibilityLabels[basis.visibility]} · ${factStatusLabels[basis.status]} · 原版本 ${basis.version}` : "新增會先成為只供本人查看的候選，沒有由 AI 寫入已確認事實。"}</Text>
+    <Text style={s.meta}>{basis ? `${visibilityLabels[basis.visibility]} · ${factStatusLabels[basis.status]} · 原版本 ${basis.version}` : owner.sharedMode ? "新增共享事實會由你核對內容及來源，再明確確認與有權家庭成員共享。" : "新增會先成為只供本人查看的候選，沒有由 AI 寫入已確認事實。"}</Text>
     {basis ? <AppSelect label="這次人工操作" value={mode} options={[{ value: "confirm", label: "確認候選／重新確認停用事實" }, { value: "revise", label: "更正內容及來源" }, { value: "deactivate", label: "標記停用" }, { value: "delete", label: "永久刪除及全部歷史" }]} disabled={disabled} onChange={value => { edited(); setMode(value); }} /> : null}
     {field("key", "記憶欄目（最多 100 字）")}{field("content", "內容（最多 4,000 字）", true)}
-    <Controller name="sourceKind" control={control} render={({ field }) => <AppSelect label="來源類型" value={field.value} options={[{ value: "manual", label: "人工描述" }, { value: "care_record", label: "已保存照顧記錄" }, { value: "private_chat", label: "本人私人聊天" }]} disabled={!editingValues} onChange={value => { edited(); field.onChange(value); }} />} />
+    <Controller name="sourceKind" control={control} render={({ field }) => <AppSelect label="來源類型" value={field.value} options={[{ value: "manual", label: "人工描述" }, { value: "care_record", label: "已保存照顧記錄" }, ...(!owner.sharedMode || basis ? [{ value: "private_chat", label: "本人私人聊天" }] : [])]} disabled={!editingValues} onChange={value => { edited(); field.onChange(value); }} />} />
     {field("sourceDescription", "原來源描述（最多 500 字）", true)}
     {draft.sourceKind === "care_record" ? <>{field("recordId", "原照顧記錄識別")}{field("sourceVersion", "原照顧記錄版本")}</> : draft.sourceKind === "private_chat" ? field("messageId", "原私人聊天訊息識別（不可猜測）") : null}
     {basis?.source.kind === "private_chat" && !basis.source.messageId ? <Text style={s.warning}>私人訊息識別已隱藏；不能猜測補回。如需更正，請明確改用人工來源描述。</Text> : null}
     <Controller name="validUntil" control={control} render={({ field }) => <AppDateTimeField label="有效至（可留空，香港時間）" value={field.value} timeZone="Asia/Hong_Kong" optional disabled={!editingValues} onChange={value => { edited(); field.onChange(value); }} />} />
-    {!basis ? <Controller name="intendedVisibility" control={control} render={({ field }) => <AppSelect label="確認後的預期可見範圍" value={field.value} options={[{ value: "private", label: "只供本人" }, { value: "family", label: "確認後與家庭共享" }]} disabled={disabled || owner.role === "viewer"} onChange={value => { edited(); field.onChange(value); }} />} /> : null}
+    {!basis ? <Controller name="intendedVisibility" control={control} render={({ field }) => <AppSelect label="確認後的預期可見範圍" value={field.value} options={[...(!owner.sharedMode ? [{ value: "private", label: "只供本人" }] : []), { value: "family", label: "確認後與家庭共享" }]} disabled={disabled || owner.role === "viewer"} onChange={value => { edited(); field.onChange(value); }} />} /> : null}
     {mode === "revise" || mode === "deactivate" ? field("reason", "更正／停用原因（最多 500 字）", true) : null}
     {needsShared ? <AppCheckbox label="我已核對內容及來源，明確同意這次家庭共享" checked={shared} disabled={disabled || owner.role === "viewer"} onChange={value => { management.markDirty(); setShared(value); setConfirmed(false); }} /> : null}
     <AppCheckbox label={mode === "delete" ? "我明確同意永久刪除這項事實及全部歷史，無法復原" : "我已核對原內容、來源、可見範圍及版本，明確確認這次操作"} checked={confirmed} disabled={disabled} onChange={value => { management.markDirty(); setConfirmed(value); }} />
-    <AppButton label={mode === "create" ? "確認建立私人候選" : mode === "delete" ? "確認永久刪除事實與全部歷史" : "確認提交這次人工操作"} variant={mode === "delete" ? "danger" : "primary"} disabled={disabled || !confirmed || needsShared && !shared} onPress={submit} />
+    <AppButton label={mode === "create" ? owner.sharedMode ? "確認新增共享事實" : "確認建立私人候選" : mode === "delete" ? "確認永久刪除事實與全部歷史" : "確認提交這次人工操作"} variant={mode === "delete" ? "danger" : "primary"} disabled={disabled || !confirmed || needsShared && !shared} onPress={submit} />
     {error ? <Text accessibilityRole="alert" style={s.warning}>{error}</Text> : null}
     {basis ? <><AppButton label="讀取這項事實的版本歷史" variant="quiet" disabled={owner.busy} onPress={() => owner.value.reads?.readFactHistory?.(basis.id, basis.version)} />
       {history?.items.map(item => <Text key={item.version} selectable style={s.meta}>版本 {item.version} · {factStatusLabels[item.status]} · {item.content} · {item.reason}</Text>)}
@@ -152,7 +158,7 @@ function TopicEditor({ owner, basis }: { owner: Owner; basis: MemoryTopicView | 
   const terminal = !!basis && ["answered", "resolved"].includes(basis.status);
   const [mode, setMode] = useState<"create" | "change" | "reopen" | "delete">(basis ? terminal ? "reopen" : "change" : "create");
   const [confirmed, setConfirmed] = useState(false), [shared, setShared] = useState(false), [error, setError] = useState("");
-  const { control, watch, handleSubmit } = useForm<TopicFields>({ defaultValues: { title: basis?.title ?? "", note: basis?.note ?? "", visibility: basis?.visibility ?? "private",
+  const { control, watch, handleSubmit } = useForm<TopicFields>({ defaultValues: { title: basis?.title ?? "", note: basis?.note ?? "", visibility: basis?.visibility ?? (owner.sharedMode ? "family" : "private"),
     status: basis?.status ?? "pending", resumeAfter: basis?.resumeAfter ?? "", reason: "" } });
   const draft = watch(), management = owner.management, disabled = owner.busy || management.locked;
   useEffect(() => { setConfirmed(false); setShared(false); }, [basis?.version]);
@@ -161,6 +167,7 @@ function TopicEditor({ owner, basis }: { owner: Owner; basis: MemoryTopicView | 
     if (disabled || !confirmed) return;
     if (!raw(2000).safeParse(value.note).success || !basis && !text(200).safeParse(value.title).success) { setError("請核對話題標題與備註的字數及原文。"); return; }
     if (!basis) {
+      if (owner.sharedMode && value.visibility !== "family") return;
       if (value.visibility === "family" && (!shared || owner.role === "viewer")) return;
       management.submit({ kind: "create_topic", input: { title: value.title, note: value.note, visibility: value.visibility, confirmShared: value.visibility === "family" && shared } });
     } else if (mode === "delete") management.submit({ kind: "delete_topic", basis, input: { expectedVersion: basis.version, confirmDelete: true } });
@@ -179,7 +186,7 @@ function TopicEditor({ owner, basis }: { owner: Owner; basis: MemoryTopicView | 
     {basis ? <AppSelect label="這次人工操作" value={mode} options={[...(terminal ? [{ value: "reopen" as const, label: "按原因建立新待處理話題" }] : [{ value: "change" as const, label: "更新原話題狀態" }]), { value: "delete", label: "永久刪除及全部歷史" }]} disabled={disabled} onChange={value => { edited(); setMode(value); }} /> : null}
     <Controller name="title" control={control} render={({ field }) => <AppTextField label="話題標題（最多 200 字）" value={field.value} disabled={disabled || !!basis} onChangeText={value => { edited(); field.onChange(value); }} />} />
     <Controller name="note" control={control} render={({ field }) => <AppTextField label="備註（最多 2,000 字）" value={field.value} multiline disabled={disabled || mode === "delete" || mode === "reopen"} onChangeText={value => { edited(); field.onChange(value); }} />} />
-    {!basis ? <Controller name="visibility" control={control} render={({ field }) => <AppSelect label="可見範圍" value={field.value} options={[{ value: "private", label: "只供本人" }, { value: "family", label: "家庭共享" }]} disabled={disabled || owner.role === "viewer"} onChange={value => { edited(); field.onChange(value); }} />} /> : null}
+    {!basis ? <Controller name="visibility" control={control} render={({ field }) => <AppSelect label="可見範圍" value={field.value} options={[...(!owner.sharedMode ? [{ value: "private", label: "只供本人" }] : []), { value: "family", label: "家庭共享" }]} disabled={disabled || owner.role === "viewer"} onChange={value => { edited(); field.onChange(value); }} />} /> : null}
     {basis && mode === "change" ? <><Controller name="status" control={control} render={({ field }) => <AppSelect label="話題狀態" value={field.value} options={[{ value: "pending", label: "待處理" }, { value: "answered", label: "已回答" }, { value: "snoozed", label: "暫緩" }, { value: "resolved", label: "已解決" }]} disabled={disabled} onChange={value => { edited(); field.onChange(value); }} />} />
       {draft.status === "snoozed" ? <Controller name="resumeAfter" control={control} render={({ field }) => <AppDateTimeField label="暫緩至（香港時間）" value={field.value} timeZone="Asia/Hong_Kong" disabled={disabled} onChange={value => { edited(); field.onChange(value); }} />} /> : null}
     </> : null}
@@ -200,10 +207,10 @@ function sameFactSource(left: FactSource, right: FactSource) {
   return true;
 }
 function MemoryOriginalIntent({ intent }: { intent: MemoryManagementIntent }) {
-  const labels: Record<MemoryManagementIntent["kind"], string> = { create_fact: "新增私人候選", confirm_fact: "確認事實", revise_fact: "更正事實", deactivate_fact: "停用事實", delete_fact: "永久刪除事實及全部歷史", create_topic: "新增話題", change_topic: "更新話題狀態", reopen_topic: "按原因重開話題", delete_topic: "永久刪除話題及全部歷史" };
+  const labels: Record<MemoryManagementIntent["kind"], string> = { create_fact: "新增私人候選", create_confirmed_fact: "新增已人工確認的共享事實", confirm_fact: "確認事實", revise_fact: "更正事實", deactivate_fact: "停用事實", delete_fact: "永久刪除事實及全部歷史", create_topic: "新增話題", change_topic: "更新話題狀態", reopen_topic: "按原因重開話題", delete_topic: "永久刪除話題及全部歷史" };
   return <View style={s.smallStack}><Text style={s.title}>原決定：{labels[intent.kind]}</Text>
     {"basis" in intent ? <Text style={s.meta}>原版本 {intent.basis.version} · {visibilityLabels[intent.basis.visibility]}</Text> : null}
-    {intent.kind === "create_fact" || intent.kind === "revise_fact" ? <><Text selectable style={s.body}>{intent.input.values.key}：{intent.input.values.content}</Text><Text selectable style={s.meta}>來源：{intent.input.values.source.description} · 有效至 {intent.input.values.validUntil ?? "未設定"}</Text></> : null}
+    {intent.kind === "create_fact" || intent.kind === "create_confirmed_fact" || intent.kind === "revise_fact" ? <><Text selectable style={s.body}>{intent.input.values.key}：{intent.input.values.content}</Text><Text selectable style={s.meta}>來源：{intent.input.values.source.description} · 有效至 {intent.input.values.validUntil ?? "未設定"}</Text></> : null}
     {intent.kind === "create_topic" ? <><Text style={s.body}>{intent.input.title}</Text><Text selectable style={s.body}>{intent.input.note}</Text><Text style={s.meta}>{visibilityLabels[intent.input.visibility]}</Text></> : null}
     {intent.kind === "change_topic" ? <><Text style={s.body}>{topicStatusLabels[intent.input.status]} · 暫緩至 {intent.input.resumeAfter ?? "未設定"}</Text><Text selectable style={s.body}>{intent.input.note}</Text></> : null}
     {"reason" in intent.input ? <Text selectable style={s.body}>原原因：{intent.input.reason}</Text> : null}

@@ -18,7 +18,7 @@ export function useProductionHome() {
   const currentTasks = tasks?.scopeKey === scope ? tasks.model : null;
   const currentGrowth = growth?.scopeKey === scope ? growth.model : null;
   const concerns = currentGrowth?.access !== "lost" && currentGrowth?.page?.concerns?.state === "ready"
-    ? currentGrowth.page.concerns.items.filter(item => item.childId === base.selectedChildId && item.status !== "closed") : null;
+    ? currentGrowth.page.concerns.items.filter(item => item.childId === production.selectedChildId && item.status !== "closed") : null;
   const ongoingState: HomeOverviewSection["state"] = !currentGrowth || currentGrowth.access === "lost" ? "unavailable"
     : currentGrowth.load === "loading" && !currentGrowth.page || currentGrowth.page?.concerns?.state === "loading" ? "loading" : concerns && (currentGrowth.load === "error" || !currentGrowth.online) ? "stale"
       : currentGrowth.load === "error" || currentGrowth.page?.concerns?.state === "error" ? "error" : concerns ? "ready" : "unavailable";
@@ -29,7 +29,7 @@ export function useProductionHome() {
     : ongoingState === "error" || ongoingState === "unavailable" ? "暫時無法顯示持續關注" : undefined };
   const profileData = currentProfile && currentProfile.access !== "lost" && !currentProfile.needsRefresh ? currentProfile.current?.data : null;
   const tasksAvailable = !!currentTasks && currentTasks.access !== "lost";
-  const pending = tasksAvailable ? currentTasks.items.filter(item => item.childId === base.selectedChildId && (item.occurrence.state === "scheduled" || item.occurrence.state === "needs_review")) : [];
+  const pending = tasksAvailable ? currentTasks.items.filter(item => item.childId === production.selectedChildId && (item.occurrence.state === "scheduled" || item.occurrence.state === "needs_review")) : [];
   const taskReadState = currentTasks?.readState ?? (currentTasks?.reading ? "loading" : "ready");
   const attentionState: HomeOverviewSection["state"] = !tasksAvailable ? "unavailable"
     : taskReadState === "ready" && !currentTasks.online ? "stale" : taskReadState;

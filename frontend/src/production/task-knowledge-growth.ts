@@ -10,8 +10,8 @@ import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { useTaskKnowledgeRefresh, useTaskKnowledgeRuntime, type TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
 
 export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWorkspaceValue {
-  const api = useMemo(() => createGrowthApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
-  const concernsApi = useMemo(() => createConcernsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
+  const api = useMemo(() => createGrowthApi(env.apiBaseUrl, env.owner.fetcher, env.sharing), [env.apiBaseUrl, env.owner.fetcher, env.sharing]);
+  const concernsApi = useMemo(() => createConcernsApi(env.apiBaseUrl, env.owner.fetcher, env.sharing), [env.apiBaseUrl, env.owner.fetcher, env.sharing]);
   const runtime = useTaskKnowledgeRuntime(env, "growth");
   const [page, setPage] = useState<GrowthPage | null>(null), [load, setLoad] = useState<GrowthViewModel["load"]>("loading");
   const [busy, setBusy] = useState(false), [pending, setPending] = useState<GrowthPending | null>(null), [originalConsent, setOriginalConsent] = useState(false);
@@ -25,16 +25,22 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
   useDomainWriteGuard(!runtime.lost && dirty, !runtime.lost && (operation === "saving" || !!pending));
   const readPage = async (signal: AbortSignal): Promise<GrowthPage> => {
     const [growth, concerns] = await readGrowthPages(
-      () => runtime.read(["page"], next => api.getPage(env.childId!, next, env.userId!), signal),
-      () => runtime.read(["concerns"], next => concernsApi.getPage(env.childId!, next, env.userId!), signal), signal, undefined, runtime.live,
+      env.allows('growth') ? () => runtime.read(["page"], next => api.getPage(env.childId!, next, env.userId!), signal) : null,
+      env.allows('concerns') ? () => runtime.read(["concerns"], next => concernsApi.getPage(env.childId!, next, env.userId!), signal) : null, signal, undefined, runtime.live,
     );
     return projected(growth, concerns);
   };
-  const projected = (value: GrowthPage, concerns: ConcernPage): GrowthPage => ({ ...value,
-    concerns: { state: "ready", items: concerns.items, label: "持續關注及已載入的跟進記錄。" },
-    archive: { scopeKey: env.scopeKey, childId: env.childId!, authorityVersion: value.authorityVersion, state: "unavailable", snapshot: null,
-      label: "年度／季度成長檔案及報告尚未接通。" },
-  });
+  const projected = (growth: GrowthPage | null, concerns: ConcernPage | null): GrowthPage => {
+    if (!growth && !concerns) throw new GrowthApiError(403, 'module_not_shared');
+    const value: GrowthPage = growth ?? { authorityVersion: concerns!.authorityVersion, items: [], topics: [], historyHasMore: false,
+      notices: ['成長建議未加入此共享範圍。'], eligibleAssignees: [], canManage: false };
+    return { ...value, canManage: growth && concerns ? value.canManage : false,
+      concerns: concerns ? { state: "ready", items: concerns.items, label: "持續關注及已載入的跟進記錄。" }
+        : { state: "unavailable", items: [], label: "持續關注未加入此共享範圍。" },
+      archive: { scopeKey: env.scopeKey, childId: env.childId!, authorityVersion: value.authorityVersion, state: "unavailable", snapshot: null,
+        label: "年度／季度成長檔案及報告尚未接通。" },
+    };
+  };
   const savePage = (value: GrowthPage, settledKey?: string) => {
     const oldItems = page?.items.filter(item => dirtyKeys.includes(`item:${item.id}`) && `item:${item.id}` !== settledKey && !value.items.some(latest => latest.id === item.id)) ?? [];
     const oldTopics = page?.topics.filter(topic => dirtyKeys.includes(`topic:${topic.id}`) && `topic:${topic.id}` !== settledKey && !value.topics.some(latest => latest.id === topic.id)) ?? [];
@@ -69,7 +75,8 @@ export function useTaskKnowledgeGrowth(env: TaskKnowledgeEnvironment): GrowthWor
           if (!present) setMissingTargets(previous => Array.from(new Set([...previous, `${entry.attempt.kind}:${entry.attempt.id}`])));
           setNotice(entry.attempt.kind === "concern_create" ? "已核對目前孩子及權限；建立結果仍未知。查回只沿原操作及內容，不另建關注。"
             : present ? "已讀取目前原對象；結果仍未知。重試只沿原內容、原版本明確提交。" : "目前頁面沒有原對象；原未知請求仍保留，不能推定成功或另建操作。");
-        } else setNotice(growthRefreshNotice);
+        } else setNotice(!env.allows('growth') ? "成長建議未加入此共享範圍。"
+          : !env.allows('concerns') ? "持續關注未加入此共享範圍。" : growthRefreshNotice);
       } catch (error) {
         if (!current() || clearAccess(error)) return;
         setLoad("error"); setNotice(entry ? "未能核對原操作；原草稿及操作保留，請重新讀取。" : page ? "未能更新，仍顯示上次讀取的關注。" : "未能讀取關注，請重試。");

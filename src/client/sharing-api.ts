@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sharedSpaceViewSchema, sharedSpacePageSchema, sharedMemberPageSchema, sharedGrantPageSchema, sharedInvitePageSchema,
+import { sharedSpaceViewSchema, sharedSpacePageSchema, sharedMemberPageSchema, sharedGrantPageSchema, sharedInvitePageSchema, sharedChildViewSchema,
   sharingCommandSchema, sharingOperationSchema, type SharingCommand, type SharingOperation } from "../shared/sharing-control.ts";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
 
@@ -47,6 +47,11 @@ export function createSharingApi(baseUrl = "", fetcher: typeof fetch = fetch) {
     async space(spaceId: string, userId: string, signal: AbortSignal) {
       const space = checked(sharedSpaceViewSchema, await request("/" + identifier(spaceId), userId, signal));
       if (space.id !== spaceId) throw new SharingApiError(0, "sharing_response_invalid"); return space;
+    },
+    async child(spaceId: string, childId: string, userId: string, signal: AbortSignal) {
+      const child = checked(sharedChildViewSchema, await request('/' + identifier(spaceId) + '/children/' + identifier(childId), userId, signal));
+      if (child.spaceId !== spaceId || child.childId !== childId) throw new SharingApiError(0, 'sharing_response_invalid');
+      return child;
     },
     members: (spaceId: string, userId: string, signal: AbortSignal, cursor?: string) => page(sharedMemberPageSchema, "/" + identifier(spaceId) + "/members", userId, signal, cursor),
     shares: (spaceId: string, userId: string, signal: AbortSignal, cursor?: string) => page(sharedGrantPageSchema, "/" + identifier(spaceId) + "/shares", userId, signal, cursor),

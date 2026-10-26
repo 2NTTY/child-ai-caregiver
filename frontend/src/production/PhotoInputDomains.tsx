@@ -458,7 +458,7 @@ export function ProductionPhotoInputDomains({ children }: { children: ReactNode 
   useLayoutEffect(() => { if (!env.scopeKey) setPublished(null); }, [env.scopeKey]);
   const value = published?.scopeKey === env.scopeKey ? published : null;
   return <PhotoInputContext.Provider value={value}>{children}
-    {env.scopeKey ? <ScopedPhotoInputBridge key={env.scopeKey} scopeKey={env.scopeKey} publish={setPublished} /> : null}
+    {env.scopeKey && !env.sharedMode ? <ScopedPhotoInputBridge key={env.scopeKey} scopeKey={env.scopeKey} publish={setPublished} /> : null}
   </PhotoInputContext.Provider>;
 }
 export function ProductionPhotosWorkspace({ onCare, capturePreferred = false }: { onCare: () => void; capturePreferred?: boolean }) {

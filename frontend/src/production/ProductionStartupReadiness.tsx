@@ -12,6 +12,7 @@ import { useProduction } from "./ProductionProvider";
 import { useProductionFamilyDocuments, useProductionTaskKnowledgeSummary, useProductionTaskKnowledgeMemory } from "./TaskKnowledgeDomains";
 import { useProductionPhotoInputDomains } from "./PhotoInputDomains";
 import { useProductionContactDomain, useProductionSettingsDomains } from "./SettingsDomains";
+import { sharedRouteMessage, sharedStartupReads } from './shared-route-access';
 
 const first = (value: string | string[] | undefined) => Array.isArray(value) ? value[0] : value;
 
@@ -19,7 +20,7 @@ const first = (value: string | string[] | undefined) => Array.isArray(value) ? v
 export function ProductionStartupReadiness() {
   const pathname = usePathname(), params = useGlobalSearchParams<{ tab?: string | string[]; category?: string | string[]; section?: string | string[]; view?: string | string[]; taskId?: string | string[]; recordId?: string | string[]; record?: string | string[] }>();
   const visibleSection = useProductionVisibleSettingsSection();
-  const { scopeKey, chatState, chatController, agentModel, agentActions, agentPending, readAgentPending } = useProduction();
+  const { scopeKey, chatState, chatController, agentModel, agentActions, agentPending, readAgentPending,sharedChild } = useProduction();
   const recoveringDecision = !!agentModel?.pendingDecision;
   const care = useCareWorkspace(), profile = useProfileWorkspace(), tasks = useTasksWorkspace(), growth = useGrowthWorkspace();
   const memoryOwner = useProductionTaskKnowledgeMemory(), personalHistory = usePersonalHistoryWorkspace();
@@ -44,7 +45,7 @@ export function ProductionStartupReadiness() {
     family: family.actions.refresh, contact: contact.actions.refresh, model: modelSettings.actions.refresh,
     push: push.actions.refresh, telegram: telegram.actions.refresh, preferences: preferences.refresh,
   };
-  useProductionStartupReadiness(routeStartupReadiness(pathname, routeParams, {
+  useProductionStartupReadiness(sharedRouteMessage(sharedChild,pathname,routeParams)?'ready':routeStartupReadiness(pathname, routeParams, sharedStartupReads(sharedChild,{
     care: readState(care?.scopeKey === scopeKey ? care.model.list.state : undefined),
     careDetail: !currentCare ? "loading" : currentCare.access === "lost" || !currentCare.online ? "error" : targetStartupReadiness(routeParams.recordId, currentCare.detail?.record.id, currentCare.detailRead),
     profile: !currentProfile ? "loading" : currentProfile.needsRefresh ? "error" : currentProfile.reading ? "loading" : currentProfile.current ? "ready" : "error",
@@ -71,7 +72,7 @@ export function ProductionStartupReadiness() {
     model: modelSettings.model.busy === "read" ? "loading" : modelSettings.model.snapshot ? "ready" : modelSettings.model.notice ? "error" : "loading",
     push: readState(push.model.readState), telegram: readState(telegram.model.readState),
     preferences: preferences.preferences ? "ready" : !preferences.busy && preferences.notice ? "error" : "loading",
-  }, !!scopeKey, true), (additional = []) => {
+  }), !!scopeKey, true), (additional = []) => {
     // Retry only the current shell and route through their existing guarded owners.
     for (const name of new Set([...routeStartupRequirements(pathname, routeParams, !!scopeKey, true), ...additional])) retries[name]?.();
   });
