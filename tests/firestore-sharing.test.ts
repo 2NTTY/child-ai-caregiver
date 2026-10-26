@@ -29,6 +29,11 @@ import { createOnlineTransport } from '../src/client/online-transport.ts';
 import type { FirebaseAuthPort } from '../server/firebase-auth.ts';
 import { createCareApi } from '../src/client/care-api.ts';
 import { createTaskApi } from '../src/client/task-api.ts';
+import { createGrowthApi } from '../src/client/growth-api.ts';
+import { createConcernsApi } from '../src/client/concerns-api.ts';
+import { createFirestoreGrowthStore, firestoreGrowthSchema } from '../server/firestore-growth.ts';
+import { createFirestoreConcernStore } from '../server/firestore-concerns.ts';
+import { firestoreDocumentConcernEventSchema } from '../server/firestore-document-sources.ts';
 import { createMemoryApi } from '../src/client/memory-api.ts';
 import { createFirestoreMemoryStore, firestoreFactStorageSchema } from '../server/firestore-memory.ts';
 import { createFirestoreChatStore } from '../server/firestore-chat.ts';
@@ -85,6 +90,90 @@ async function fixture() {
   return { fake, options, authority, sharing, child, space, control, documents };
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
+
+test('shared growth and concerns read original resources without widening live input or private run access', async () => {
+  const f = await fixture(), childId = f.child.child.id, data = new FirestoreDomainData(f.options);
+  const care = createFirestoreCareStore(f.options), chat = createFirestoreChatStore(f.options);
+  const memory = createFirestoreMemoryStore({ ...f.options, care, chat });
+  const online = createFirestoreOnlineStore(f.options);
+  const growth = createFirestoreGrowthStore({ ...f.options, care, memory, online });
+  const concerns = createFirestoreConcernStore(f.options);
+  await care.saveProfile('parent', childId, { age:{ kind:'unknown' }, dueDate:null, gestationalWeeksRaw:null,
+    region:'PRIVATE-REGION', language:null, allergies:null, specialNeeds:null, preferences:null,
+    source:'Private profile', validUntil:null }, 0, 'Initial profile');
+  await f.authority.runTransaction('parent', childId, async binding => {
+    const prepared = await memory.prepareConfirmedFact(binding, { intendedVisibility:'family', values:{ key:'growth.solid_food',
+      content:'started', source:{ kind:'manual', description:'Not shared to this space' }, validUntil:null } }, true, randomUUID());
+    prepared.commit();
+  });
+  const id = randomUUID(), at = new Date().toISOString(), taskId = randomUUID();
+  const saved = firestoreGrowthSchema.parse({ lastRequest:null, item:{ id, childId, topicId:'solid_food', version:1,
+    state:'proposed', title:'Saved growth content', kind:'observe', whyNow:'Saved basis', advice:'Saved advice', limits:'Saved limit',
+    basis:{ stage:'Saved stage', ruleRevision:'test', sourceHash:'a'.repeat(64), values:{} }, evidence:{ profileVersion:1, facts:[] },
+    source:{ sourceId:'synthetic', versionId:randomUUID(), chunkId:randomUUID(), contentHash:'a'.repeat(64),
+      url:'https://example.test/source', title:'Saved source', section:'1', checkedAt:at, excerpt:'Saved excerpt' },
+    sourceAvailable:true, createdAt:at, updatedAt:at, snoozeUntil:null, previousId:null, newReason:'', taskId,
+    taskState:'scheduled', lastAction:'proposed', actorUserId:null, note:'' } });
+  await f.options.database.runTransaction(async tx => {
+    tx.create(data.ref('growth_attention', 'growth-attention', id), { ...data.tags(f.child.scope), attentionId:id, createdAt:at,
+      ...data.seal('growth-attention', id, f.child.scope, firestoreGrowthSchema, saved, 1) });
+  });
+  const values = { title:'Shared observation', reason:'Selected concern content', observation:'Saved observation',
+    observedAt:at, links:{ recordId:null, taskId:null, attentionId:id }, followUpAt:null };
+  const concern = await concerns.create('parent', childId, values, randomUUID());
+  const runId = randomUUID(), eventId = concern.events[0].id;
+  await f.options.database.runTransaction(async tx => {
+    const ref = data.ref('concern_events', 'concern-event', eventId), row = await tx.get(ref);
+    const value = data.open('concern-event', eventId, f.child.scope, firestoreDocumentConcernEventSchema, row);
+    tx.set(ref, { ...row.data(), ...data.seal('concern-event', eventId, f.child.scope, firestoreDocumentConcernEventSchema, { ...value, runId }) });
+  });
+  let space = await f.sharing.share('parent', { spaceId:f.space.id, childId, modules:['growth','concerns'],
+    expectedVersion:f.space.version, operationId:randomUUID() });
+  let actor = 'carer'; const origin = 'https://app.example.test';
+  const auth = { async getSession(options: { returnHeaders?:boolean }) {
+    const session = { user:{ id:actor } }; return options.returnHeaders ? { response:session, headers:new Headers() } : session;
+  }, async assertRecentReauthentication() { return { user:{ id:actor } }; },
+  async handler() { return new Response(null, { status:404 }); }, fromNodeHeaders() { return new Headers(); } } as FirebaseAuthPort;
+  const handler = createFirebaseRequestHandler({ authority:f.authority, auth, publicOrigin:origin, mailConfigured:true, growth, concerns });
+  const fetcher: typeof fetch = async (input, init) => {
+    const headers = new Headers(init?.headers); headers.set('origin', origin);
+    return handler(new Request(input, { ...init, headers }));
+  };
+  const signal = new AbortController().signal;
+  const read = async (path:string) => fetcher(`${origin}/api/children/${childId}/${path}`, { headers:{ 'x-expected-user-id':actor } });
+  const first = await read(`growth?spaceId=${space.id}`); assert.equal(first.status, 200);
+  assert.match(first.headers.get('cache-control')!, /no-store/);
+  const growthClient = createGrowthApi(origin, fetcher, { spaceId:space.id });
+  const concernClient = createConcernsApi(origin, fetcher, { spaceId:space.id });
+  const page = await growthClient.getPage(childId, signal, actor);
+  assert.equal(page.items[0].id, id); assert.equal(page.items[0].sourceAvailable, false);
+  assert.equal(page.items[0].taskId, null); assert.deepEqual(page.eligibleAssignees, []);
+  assert.equal(page.canManage, false); assert.equal(JSON.stringify(page).includes('PRIVATE-REGION'), false);
+  assert.ok(page.topics.every(topic => topic.inputs.every(input => input.value === null && input.factRefs.length === 0)));
+  const concernPage = await concernClient.getPage(childId, signal, actor);
+  assert.equal(concernPage.items[0].id, concern.id); assert.equal(concernPage.canManage, false);
+  assert.equal(concernPage.items[0].events[0].attentionId, id);
+  assert.equal(concernPage.items[0].events[0].runId, undefined);
+  assert.equal((await concerns.get('parent', childId, concern.id))!.events[0].runId, runId);
+  assert.equal((await growth.list('parent', childId)).topics[0].inputs[0].value, 'started');
+  assert.equal((await read(`growth?spaceId=${space.id}&spaceId=${space.id}`)).status, 400);
+  assert.equal((await read('growth?spaceId=')).status, 400);
+  assert.equal((await read('growth')).status, 403, 'a shared reader has no private child endpoint');
+  const before = f.documents();
+  await assert.rejects(concernClient.create(childId, values, signal, actor), code('shared_domain_read_only'));
+  assert.deepEqual(f.documents(), before, 'unconnected shared writes never touch private data');
+  space = await f.sharing.share('parent', { spaceId:space.id, childId, modules:['concerns'],
+    expectedVersion:space.version, operationId:randomUUID() });
+  const restricted = await concernClient.getPage(childId, signal, actor);
+  assert.deepEqual(restricted.items[0].attentionIds, []);
+  assert.equal(restricted.items[0].events[0].attentionId, undefined);
+  await assert.rejects(growthClient.getPage(childId, signal, actor), code('module_not_shared'));
+  actor = 'viewer'; assert.equal((await concernClient.getPage(childId, signal, actor)).items[0].id, concern.id);
+  await f.sharing.updateMember('parent', { spaceId:space.id, expectedVersion:space.version,
+    operationId:randomUUID(), targetUserId:'viewer', role:null });
+  await assert.rejects(concernClient.getPage(childId, signal, actor), code('space_access_denied'));
+  assert.equal((await concerns.get('parent', childId, concern.id))!.events[0].attentionId, id);
+});
 
 test('shared space control lists are bounded and preserve original operations across transfer and revocation', async () => {
   const f = await fixture();

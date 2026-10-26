@@ -1139,6 +1139,8 @@ Account export可直接驗讀空head／null內容，不因未裝avatar內容port
 
 FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口；Agent 及正式孩子範圍切換仍按後續接線。`withResource` 在同一 Firestore 交易核對目前操作者准入、空間／成員、選定模組、來源成員世代及原孩子狀態，提供分開的 `actorUserId`／原儲存 `scope`，以及空間、成員、分享和雙方授權版本 basis。領域 adapter 必須明確消費此 binding 並排除私人項目；不能把 binding 當成整個孩子的通行證。舊未指定共享的業務方法維持本人範圍。
 
+**成長／持續關注讀取接點：**既有 `GET /api/children/:childId/growth`、`concerns` 可帶一個 `spaceId`；兩端沿同一共用 client，未提供參數維持本人服務。空值、重複、非法參數拒絕，不靜默回退本人資料。Server 在原交易核對當前成員／模組，保留身份前後核對及 no-store。已保存的卡片／關注正文屬明確選入模組的內容；成長來源檢查只在內部取既有 profile／family facts，不因此提供原始資料讀權，未共享 memory 不回即時近況與 factRefs，未共享 tasks 不回 taskId／taskState。持續關注不回私人 runId，未共享 care／tasks／growth 的關聯 ID 亦遮蔽；原資料不被改寫。共享 `authorityVersion` 綁儲存世代及目前共享 basis。這段先接讀取；`canManage=false` 且共享 POST 明確回 `shared_domain_read_only`，不開另一條本人寫入。完整寫入／背景及全局選擇按 FAMILY-A／B 接續，不當已交付。
+
 **家庭管理接口：**`GET /api/shared-spaces` 讀本人活動空間；`GET /:spaceId` 讀目前角色及空間版本，`GET /:spaceId/{members|shares|invitations}` 分頁讀控制資料，邀請列表僅限管理員。每次最多檢查 20 筆，`nextCursor` 不透明並綁本人／儲存世代及列表種類；空間子列表亦綁空間版本，變更後重新讀取。不返回內部儲存 scope、密文、私人聊天或邀請 token；分享列表只含仍有效的孩子稱呼、模組及撤回資格。稱呼是辨識已分享孩子的必要標籤，不授予其餘 profile 內容。
 
 `POST /api/shared-spaces/commands` 使用共用 `SharingCommand`：建立家庭、發出／接受／撤回邀請、設定／撤回模組、角色／撤權、提出／接受轉交、退出及解散。沿原服務交易核對角色、版本及原 `operationId`，不複製權限或另建身份系統；教師空間建立留 CLASS01。邀請 token 只在原發出操作的回應／有權查回中提供，由管理員自行傳送，不自動寄信。`GET /api/shared-spaces/operations/:operationId` 回 `{operation}`，不存在為 null；逾時先查原操作，仍不存在才可重送同一指令／ID，不能換 ID。查回再核目前成員資格，邀請 token 另核目前管理員；撤權／解散後只返回原操作身份、動作及 `redacted=true`，不回舊空間內容或 token，效果已提交而不重做。退出／解散只保留無正文終態收據。提交成功後的結果查回失敗仍屬 unknown，不能按 HTTP 4xx 一概斷言從未提交。
