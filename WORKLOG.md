@@ -3932,3 +3932,11 @@
 
 - 使用者在原站語音修正後回報「仍有問題」，其後明確表示「算了不驗收了，畢竟 agent 還沒做好」。依此暫緩語音排查及驗收，等待四角色完成與協作者自查，不再要求人工重試或啟動模型補驗。
 - 新症狀及根因未核實；原後端成功與失敗證據保留，未標完整通過。PLAN／STATUS 已同步；本次只有文件修訂與 diff 核對，沒有模型、設備、服務或部署操作。
+
+
+<a id="log-20261026-shared-web-closeout"></a>
+## LOG-20261026-SHARED-WEB-CLOSEOUT
+
+- 按使用者指定，B（CherylNg-2526）覆核並合併 #328／#329，master 程式版 `330a905`。局部修正準備單新勾選後的舊保存提示，以及 Web 縮放下聊天 prepend 錨點；沿用兩 PR 的定向／RN Web 證據，不重跑功能測試或將既有型別錯誤寫成通過。協作者 Agent PR 未修改。
+- 只產生必要發布包。首 Web 匯出在 sandbox 編譯後 mkdir EPERM，保留失敗；同一輸入取得所需檔案權限後 Web／Android 匯出成功。Web 包 4,744,027 bytes 經 IAP 傳至原 VM，候選 hash 及原版守衛通過後只更新 Web `27a5c90`；公開 index hash／health 通過，API／worker 維持 `663125d`，保留 `e813692` 及 0600 配置供回退。
+- Android 31 檔、13,730,604 bytes，沿既有直接 TLS 上傳一次成功；preview OTA group `4f3f95a3-a779-4363-904c-224302098bf1`／update `01a176d6-3f6b-789c-b601-04e882beec80` 已發布，與 APK v4 runtime 相容，毋須重裝。零模型／通知／資料遷移／配額改動；沒有重驗設備或續期主機。原失敗、精確版本、界線及回退附於[既有交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)的 `closeout20261026`。
