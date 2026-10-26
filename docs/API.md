@@ -1147,6 +1147,10 @@ FAMILY-A 首段已有內部 `createFirestoreSharingStore`；空間／成員管�
 
 文件選擇沿相同 `spaceId`，保留既有 documents 路由、`opId`、版本及 `authorityVersion`；共享 authorityVersion 同時綁空間／成員／分享 basis。documents 授權已保存快照及其中摘錄，並非所有原始來源的讀權。建立／刷新以已共享來源模組取材，未知或未選資料不補造；固定版讀取及 PDF 仍核引用的目前有效性。未選來源模組的內部核對只可復用已保存且仍相符的摘錄，不把未披露新版提供給 patch／刷新重新綁定。共享背景整理須保留原操作者及取材授權，不切成 owner 身份擴大取材。
 
+附件讀取沿既有 photos／voices／files 的 GET 路徑，明確以單一 `spaceId` 選擇 attachments 模組；同源身份及預期用戶 header 照常核對。不接受用戶指定資料擁有人。檔案／錄音清單只含已連結訊息且 ready 的項目；照片只回已完成上傳的原檔。共享 DTO 帶 `sharedSpaceId`，file／voice／轉錄的私人 `messageId` 為 null；轉錄儲存仍保留原始訊息綁定。照片標示 shared／不可管理，隱去私人抽取草稿、run ID 及原記錄關聯。附件共享不授予讀取來源聊天。
+
+共享游標及原檔讀取前後同時綁操作者、來源、孩子、儲存世代及共享 basis；撤權、換模組或撤權後重新授權均不能承接舊讀取。Cloud Storage 原物件及應用層加密保持，無額外副本或公開 URL。三種共用 client 的第四個可選參數接 `SharedSelection`，Web／Android 沿同一 transport；舊未選空間的 DTO／游標仍可讀。此段只開放共享讀取：選空間後的 POST／online 附件寫入明確回 `shared_attachment_write_unavailable`，不靜默改成本人操作；新增、刪除、Agent 重用及家庭畫面由 FAMILY-A／B 接續。共享照片分頁可有空中間頁，但游標必須前進且查詢有界。
+
 同一交易核對操作者及來源，保留原資源 ID／儲存位置，作者／確認者記實際操作者；原擁有人收到領域變更，操作者收到不含別人私人資料的共享變更。收據仍屬操作者，保存來源內容指標；重試及查回沿目前共享權限／刪除屏障讀取，撤權後保留成功身份而遮蔽結果。共享交易不可讀寫來源擁有人的私人工作、聊天或帳戶設定。家庭入口及其餘模組未接通前，不宣稱整包完成。
 
 管理變更使用 `operationId`／`expectedVersion`，收據與變更一起提交；原操作查回仍重核目前空間存取，退出／解散只留最小終態結果。轉交僅接收成員本人可接受。退出或被移除後，新邀請形成新成員世代，不復活原分享；舊未使用邀請不能繞過後來撤權。帳戶刪除前若仍管理活動空間，回 `space_transfer_or_dissolve_required`，由同一產品流程解決。

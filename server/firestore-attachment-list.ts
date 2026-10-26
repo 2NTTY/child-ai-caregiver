@@ -1,3 +1,4 @@
+import { attachmentReadFence } from './firestore-attachment-access.ts';
 import type { DocumentSnapshot } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { attachmentListPolicySchema, attachmentListQuerySchema, attachmentListCursorSchema,
@@ -9,7 +10,7 @@ import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-wor
 const SOURCE_VERSION = 'private-chat-linked-v1', SORT = 'createdAt_desc_id_desc', FILTER = 'ready_linked';
 const decimal = z.string().regex(/^(0|[1-9][0-9]{0,18})$/u);
 const fenceSchema = z.object({ scope: workRecoveryScopeSchema, authorizationVersion: decimal,
-  childAccessVersion: decimal, generation: z.uuid() }).strict();
+  childAccessVersion: decimal, generation: z.uuid(), sharedFence: z.string().regex(/^[a-f0-9]{64}$/u).optional() }).strict();
 const cursorSchema = z.object({ version: z.literal(1), sourceVersion: z.string().max(80),
   source: z.enum(['voices', 'files']), sort: z.string().max(80), filter: z.string().max(80), fence: fenceSchema,
   after: z.object({ createdAt: z.iso.datetime({ offset: true }), id: z.uuid() }).strict(),
@@ -17,7 +18,7 @@ const cursorSchema = z.object({ version: z.literal(1), sourceVersion: z.string()
 type Source = 'voices' | 'files';
 type Cursor = z.infer<typeof cursorSchema>;
 const fence = (b: FirestoreAuthorityTransaction): z.infer<typeof fenceSchema> => ({ scope: { ...b.scope },
-  authorizationVersion: b.authorizationVersion, childAccessVersion: b.childAccessVersion, generation: b.generation });
+  authorizationVersion: b.authorizationVersion, childAccessVersion: b.childAccessVersion, generation: b.generation, ...(b.sharedAccess ? {sharedFence: attachmentReadFence(b)} : {}) });
 const same = (a: unknown, b: unknown) => firestoreDomainHash(a) === firestoreDomainHash(b);
 const changed = (): never => domainReject('attachment_scope_changed', 409);
 
@@ -25,7 +26,7 @@ const changed = (): never => domainReject('attachment_scope_changed', 409);
 export function createPrivateAttachmentList<Row extends { id: string; createdAt: string; state: string; messageId: string | null }, Item>(options: {
   data: FirestoreDomainData; authority: Pick<FirestoreAuthority, 'runTransaction'>; source: Source;
   policy?: AttachmentListPolicy; scopeTag(scope: WorkRecoveryScope): string;
-  open(snapshot: DocumentSnapshot, scope: WorkRecoveryScope, id: string): Row; view(row: Row): Item;
+  open(snapshot: DocumentSnapshot, scope: WorkRecoveryScope, id: string): Row; view(row: Row, binding: FirestoreAuthorityTransaction): Item;
 }) {
   const { data, authority, source } = options;
   const policy = domainParse(attachmentListPolicySchema, options.policy ?? DEFAULT_ATTACHMENT_LIST_POLICY, 'attachment_list_configuration', 500);
@@ -66,7 +67,7 @@ export function createPrivateAttachmentList<Row extends { id: string; createdAt:
         if (row.state !== 'ready' || doc.get('state') !== row.state || doc.get('createdAt') !== row.createdAt || doc.get('assetId') !== row.id)
           domainReject('attachment_list_integrity', 503);
         scanned++; after = { createdAt: row.createdAt, id: row.id };
-        if (row.messageId !== null) items.push(options.view(row));
+        if (row.messageId !== null) items.push(options.view(row, b));
       }
       const complete = snapshot.docs.length <= scanned;
       const nextCursor = complete ? null : encode({ version: 1, sourceVersion: SOURCE_VERSION, source, sort: SORT,

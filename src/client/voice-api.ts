@@ -1,18 +1,26 @@
 import { voiceAttachmentPageSchema, type VoiceAttachmentPage } from '../shared/voice.ts';
 import { attachmentListQuerySchema, type AttachmentListQuery } from '../shared/attachment-list.ts';
 import { z } from 'zod';
-import { voiceTranscriptSchema } from '../shared/voice-transcript.ts';
+import { voiceTranscriptSchema, voiceTranscriptViewSchema } from '../shared/voice-transcript.ts';
 import { VOICE_LIMITS, voiceAttachmentSchema, voiceReservationSchema, type VoiceAttachment, type VoiceReservation } from '../shared/voice.ts';
 import { readBlobBytes, sha256Bytes } from './blob-bytes.ts';
+import { sharedSelectionSchema, type SharedSelection } from '../shared/sharing.ts';
 
 export class VoiceApiError extends Error {
   readonly status: number; readonly code: string;
   constructor(status: number, code: string) { super('Voice operation could not be confirmed'); this.name = 'VoiceApiError'; this.status = status; this.code = code; }
 }
-export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof sha256Bytes = sha256Bytes) {
+export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof sha256Bytes = sha256Bytes, selection?: SharedSelection) {
+  const sharing = selection === undefined ? undefined : sharedSelectionSchema.parse(selection);
   const apiRoot=origin.replace(/\/$/u,'').replace(/\/api$/u,'')+'/api';
   const base = (childId: string, id?: string) => apiRoot + '/children/' + z.uuid().parse(childId) + '/voices' + (id ? '/' + z.uuid().parse(id) : '');
+  const matchesSelection = (voice: VoiceAttachment) => sharing
+    ? voice.sharedSpaceId === sharing.spaceId && voice.messageId === null
+    : voice.sharedSpaceId === undefined;
+  const writable = () => { if (sharing) throw new VoiceApiError(403, 'shared_attachment_write_unavailable'); };
   async function request(url: string, userId: string, signal: AbortSignal, payload?: unknown) {
+    if (payload !== undefined) writable();
+    else if (sharing) url += (url.includes('?') ? '&' : '?') + new URLSearchParams({ spaceId: sharing.spaceId });
     if (!userId || signal.aborted) throw new VoiceApiError(0, 'identity_changed');
     let response: Response;
     try { response = await fetcher(url, { method: payload === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store', signal,
@@ -31,7 +39,8 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
     let raw: unknown; try { raw = await response.json(); } catch { throw new VoiceApiError(0, 'voice_operation_unknown'); }
     const parsed = z.object({ voice: voiceAttachmentSchema }).strict().safeParse(raw);
     if (signal.aborted) throw new VoiceApiError(0, 'identity_changed');
-    if (!parsed.success || parsed.data.voice.id !== id || parsed.data.voice.childId !== childId) throw new VoiceApiError(0, 'voice_response_invalid');
+    if (!parsed.success || parsed.data.voice.id !== id || parsed.data.voice.childId !== childId
+      || !matchesSelection(parsed.data.voice)) throw new VoiceApiError(0, 'voice_response_invalid');
     return parsed.data.voice;
   }
   return {
@@ -43,13 +52,14 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
       let raw: unknown; try { raw = await response.json(); } catch { throw new VoiceApiError(0, 'voice_response_invalid'); }
       if (signal.aborted) throw new VoiceApiError(0, 'identity_changed');
       const page = voiceAttachmentPageSchema.safeParse(raw);
-      if (!page.success || page.data.items.some(item => item.childId !== childId)
+      if (!page.success || page.data.items.some(item => item.childId !== childId || !matchesSelection(item))
         || input.limit !== undefined && page.data.items.length > input.limit
         || input.cursor != null && page.data.nextCursor === input.cursor) throw new VoiceApiError(0, 'voice_response_invalid');
       return page.data;
     },
     // The owner retains opId across unknown submissions. Never generate a replacement ID here.
     async reserve(childId: string, input: VoiceReservation, signal: AbortSignal, userId: string) {
+      writable();
       const payload = voiceReservationSchema.parse(input);
       return checked(await request(base(childId), userId, signal, payload), childId, payload.opId, signal);
     },
@@ -57,12 +67,15 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
       return checked(await request(base(childId, id), userId, signal), childId, id, signal);
     },
     async upload(voice: VoiceAttachment, base64: string, signal: AbortSignal, userId: string) {
+      writable();
       return checked(await request(base(voice.childId, voice.id) + '/content', userId, signal, { expectedVersion: voice.version, base64 }), voice.childId, voice.id, signal);
     },
     async resolve(childId: string, id: string, signal: AbortSignal, userId: string) {
+      writable();
       return checked(await request(base(childId, id) + '/resolve', userId, signal, {}), childId, id, signal);
     },
     async delete(voice: VoiceAttachment, opId: string, signal: AbortSignal, userId: string) {
+      writable();
       const response = await request(base(voice.childId, voice.id) + '/delete', userId, signal, { opId: z.uuid().parse(opId), expectedVersion: voice.version });
       const result = z.object({ operationId: z.uuid(), deleted: z.literal(true), cleanupPending: z.boolean() }).strict().safeParse(await response.json());
       if (signal.aborted || !result.success || result.data.operationId !== opId) throw new VoiceApiError(0, 'voice_operation_unknown');
@@ -70,12 +83,15 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
     },
     async transcript(childId: string, id: string, signal: AbortSignal, userId: string) {
       const response = await request(base(childId, id) + '/transcript', userId, signal);
-      const parsed = z.object({ transcript: voiceTranscriptSchema }).strict().safeParse(await response.json());
+      const parsed = z.object({ transcript: sharing ? voiceTranscriptViewSchema : voiceTranscriptSchema }).strict().safeParse(await response.json());
       if (signal.aborted) throw new VoiceApiError(0, 'identity_changed');
-      if (!parsed.success || parsed.data.transcript.voice.id !== id) throw new VoiceApiError(0, 'voice_response_invalid');
+      if (!parsed.success || parsed.data.transcript.voice.id !== id
+        || (sharing && (!('sharedSpaceId' in parsed.data.transcript) || parsed.data.transcript.sharedSpaceId !== sharing.spaceId
+          || parsed.data.transcript.messageId !== null))) throw new VoiceApiError(0, 'voice_response_invalid');
       return parsed.data.transcript;
     },
     async content(voice: VoiceAttachment, signal: AbortSignal, userId: string) {
+      if (!matchesSelection(voice)) throw new VoiceApiError(0, 'voice_response_invalid');
       if (voice.state !== 'ready' || !voice.bytes || !voice.sha256 || !voice.mimeType) throw new VoiceApiError(409, 'voice_not_available');
       const response = await request(base(voice.childId, voice.id) + '/content', userId, signal);
       if (response.headers.get('content-type') !== voice.mimeType || response.headers.get('x-content-sha256') !== voice.sha256

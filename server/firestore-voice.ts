@@ -1,3 +1,6 @@
+import { sharedAttachmentReads, attachmentReadFence } from './firestore-attachment-access.ts';
+import type { SharedSelection } from '../src/shared/sharing.ts';
+import type { FirestoreAuthority } from './firestore-authority.ts';
 import { createPrivateAttachmentList } from './firestore-attachment-list.ts';
 import type { AttachmentListPolicy } from '../src/shared/attachment-list.ts';
 import { createFirestoreOnlineReceipts } from './firestore-online-receipts.ts';
@@ -65,11 +68,12 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
     if (descriptor.objectName !== options.objects.address(row.objectScope, row.id) || !meta || meta.sha256 !== descriptor.sha256 || meta.bytes !== descriptor.bytes || meta.mimeType !== descriptor.mimeType) domainReject("voice_integrity", 503);
     return descriptor;
   }
-  function view(row: FirestoreVoiceRow): VoiceAttachment {
+  function view(row: FirestoreVoiceRow, b?: FirestoreAuthorityTransaction): VoiceAttachment {
+    if (b?.sharedAccess && (row.state !== 'ready' || !row.messageId)) domainReject('not_found', 404);
     return { id: row.id, childId: row.scope.childId, version: row.version, createdAt: row.createdAt,
       state: row.state === "reserved" && row.upload ? row.upload.unknown ? "unknown" : "uploading" : row.state,
       fileName: row.metadata?.fileName ?? null, mimeType: row.metadata?.mimeType ?? null, bytes: row.metadata?.bytes ?? null, sha256: row.metadata?.sha256 ?? null,
-      durationMs: row.state === "ready" ? row.descriptor?.durationMs ?? null : null, messageId: row.messageId };
+      durationMs: row.state === "ready" ? row.descriptor?.durationMs ?? null : null, messageId: b?.sharedAccess ? null : row.messageId, ...(b?.sharedAccess ? { sharedSpaceId: b.sharedAccess.spaceId } : {}) };
   }
   async function operation(b: FirestoreAuthorityTransaction, opId: string, path: string, payload: unknown) {
     const prior = await receipts.read(b, opId);
@@ -318,19 +322,29 @@ export function createFirestoreVoiceStore(options: FirestoreVoiceOptions) {
       throw error;
     }
   }
-  async function content(userId: string, childId: string, id: string) {
-    const row = await authority.runTransaction(userId, childId, async b => { const found = await read(b, id); current(found);
-      if (found.state !== "ready" || !found.descriptor) domainReject("voice_not_available"); return found; });
-    const value = await options.objects.read(row.objectScope, id, row.descriptor!);
-    await authority.runTransaction(userId, childId, async b => {
-      const fresh = await read(b, id); current(fresh);
-      if (fresh.version !== row.version || firestoreDomainHash(fresh.descriptor) !== firestoreDomainHash(row.descriptor)) domainReject("voice_changed");
-    });
-    return { ...value, attachment: view(row) };
+  function readers(readAuthority: Pick<FirestoreAuthority, 'runTransaction'>) {
+    async function content(userId: string, childId: string, id: string) {
+      const first = await readAuthority.runTransaction(userId, childId, async b => {
+        const row = await read(b, id); current(row);
+        if (row.state !== 'ready' || !row.descriptor) domainReject('voice_not_available');
+        return { row, attachment: view(row, b), fence: attachmentReadFence(b) };
+      });
+      const value = await options.objects.read(first.row.objectScope, id, first.row.descriptor!);
+      await readAuthority.runTransaction(userId, childId, async b => {
+        const fresh = await read(b, id); current(fresh);
+        if (attachmentReadFence(b) !== first.fence || fresh.version !== first.row.version
+          || firestoreDomainHash(fresh.descriptor) !== firestoreDomainHash(first.row.descriptor)
+          || fresh.messageId !== first.row.messageId) domainReject('voice_changed');
+        view(fresh, b);
+      });
+      return { ...value, attachment: first.attachment };
+    }
+    return { content, list: createPrivateAttachmentList({ data, authority: readAuthority, source: 'voices', policy: options.attachmentListPolicy, scopeTag, open, view }),
+      get(userId: string, childId: string, id: string) { return readAuthority.runTransaction(userId, childId, async b => view(await read(b, id), b)); } };
   }
-  const list = createPrivateAttachmentList({ data, authority, source: 'voices', policy: options.attachmentListPolicy, scopeTag, open, view });
-  return { list, reserve, upload, reconcile, content, prepareLink, agentAudio, authorizeAudio, readEvidence, delete: deleteVoice, cleanupDeleted, expireUnlinked, eraseForScope,
-    readMetadata: async (b: FirestoreAuthorityTransaction, id: string) => view(await read(b,id)),
-    get(userId: string, childId: string, id: string) { return authority.runTransaction(userId, childId, async b => view(await read(b, id))); } };
+  const { content, list, get } = readers(authority);
+
+  return { list, get, forSharedSpace: (selection: SharedSelection) => readers(sharedAttachmentReads(options, selection)), reserve, upload, reconcile, content, prepareLink, agentAudio, authorizeAudio, readEvidence, delete: deleteVoice, cleanupDeleted, expireUnlinked, eraseForScope,
+    readMetadata: async (b: FirestoreAuthorityTransaction, id: string) => view(await read(b,id), b) };
 }
 export type FirestoreVoiceStore = ReturnType<typeof createFirestoreVoiceStore>;

@@ -4029,3 +4029,13 @@
 - 兩條新連貫流程及兩條舊本人文件檢查通過，限定型別與差異核對通過。沿 requesting-code-review 使用同一 Sol 唯讀覆核，發現未分享新版來源可藉 patch 重綁洩露；先以新增斷言重現，再限制內部核對只回存已披露且仍匹配的摘錄，覆核未見剩餘 blocker。沒有全量或模型驗收。[證據](artifacts/verification/P4_SHARED_DOCUMENTS_20261027.json)。
 - 其他原失敗保留：測試方法 get／describe／revise 不符、替身缺 reference.id，以及未共享 profile 使報告無法完成；前兩項修測試接點，後者保存未知概況不補讀私人資料。正向新來源檢查另修正既有時間未知字尾斷言及 literal 型別，沒有放寬產品授權。
 - 未部署；家庭／班級畫面、附件、其他背景與共享同步繼續接線。FAMILY-A／P4 尚未完成，真 Firestore 競爭／還原、P3 未驗與 D 的責任保持原狀。
+
+
+<a id="log-20261027-p4-shared-attachments"></a>
+### LOG-20261027-P4-SHARED-ATTACHMENTS
+
+- 基線 `8f5ec19`，分支 `codex/p4-shared-attachments`。共享附件沿原件、原加密及同一權威服務，接通照片／錄音／一般檔案清單、下載及已保存轉錄的正式 HTTP／共用 client；未新增套件、索引或資料庫。
+- 讀取前後與續頁保存操作者、來源、世代及分享 basis；撤權後重新授權亦不能沿舊讀取發出內容。私人訊息／抽取草稿及未完成附件不披露；共享寫入尚待下一段，明確拒絕而不回退私人操作。
+- 一條新連貫流程、三條舊本人分頁／client 相容檢查、受影響 TypeScript 依賴圖及 diff 核對通過。獨立 Sol review 未報 blocker，主模型覆核關鍵變更；零模型、通知、雲端、手機及部署。[證據](artifacts/verification/P4_SHARED_ATTACHMENTS_20261027.json)。
+- 原失敗保留：缺共享方法先 red；合成查詢替身缺倒序多欄位 cursor，按真契約修正；正式 transcript HTTP 曾仍走私人 reader，403 重現後接回共享 reader。替身物件／Auth 型別缺項另補，不改產品限制或放寬斷言。
+- FAMILY-A／P4 未完成：繼續共享寫入、Agent／背景、同步與家庭／班級畫面；不改 D PR，P3／P5 及真機未驗保持。

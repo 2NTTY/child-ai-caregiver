@@ -1,3 +1,12 @@
+import { createChatFileApi } from '../src/client/chat-file-api.ts';
+import { createVoiceApi } from '../src/client/voice-api.ts';
+import { createPhotoApi } from '../src/client/photo-api.ts';
+import { createFirestorePhotoStore, firestorePhotoSchemas } from '../server/firestore-photos.ts';
+import { createHash } from 'node:crypto';
+import { createFirestoreChatFilesStore, firestoreChatFileRowSchema } from '../server/firestore-chat-files.ts';
+import { createFirestoreVoiceStore, firestoreVoiceRowSchema } from '../server/firestore-voice.ts';
+import { createFirestoreVoiceTranscripts, prepareVoiceTranscription } from '../server/firestore-voice-transcripts.ts';
+import { firestoreDomainHash } from '../server/firestore-domain-data.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
@@ -510,4 +519,107 @@ test('an unused invitation cannot revive when management returns to the original
     space = await f.sharing.acceptTransfer(to!, { spaceId: space.id, expectedVersion: space.version, operationId: randomUUID() });
   }
   await assert.rejects(f.sharing.acceptInvitation('viewer', { token: invitation.token, operationId: randomUUID() }), code('invitation_revoked'));
+});
+
+
+test('shared attachment reads preserve objects, hide private chat links and stop after access changes', async () => {
+  const f = await fixture(), childId = f.child.child.id, data = new FirestoreDomainData(f.options);
+  const scope = await f.authority.runTransaction('parent', childId, async b => b.scope);
+  const bytes = Buffer.from('test'); let afterRead: (() => Promise<void>) | undefined;
+  const objects = { address: () => 'unused', write: async () => { throw Error('No write'); }, inspect: async () => null,
+    remove: async () => { throw Error('No object delete'); }, read: async (_scope: unknown, _id: string, descriptor: any) => {
+      assert.deepEqual(_scope, scope); await afterRead?.(); return {buffer: bytes, base64: bytes.toString('base64'), descriptor};
+    } };
+  const journal = { writeOnce: async () => { throw Error('No journal writes'); }, read: async () => { throw Error('No journal reads'); } };
+  const files = createFirestoreChatFilesStore({...f.options, objects, journal}), voices = createFirestoreVoiceStore({...f.options, objects, journal});
+  const transcripts = createFirestoreVoiceTranscripts({...f.options, voices});
+  const seed = (source: 'file' | 'voice', linked: boolean) => {
+    const id = randomUUID(), messageId = linked ? randomUUID() : null, at = '2026-10-27T04:00:00.000Z';
+    const kind = source === 'file' ? 'chat-file-asset' : 'voice-asset', collection = source === 'file' ? 'chat_file_assets' : 'voice_assets';
+    const schema = source === 'file' ? firestoreChatFileRowSchema : firestoreVoiceRowSchema;
+    const descriptor = {objectName: (source === 'file' ? 'chat-file' : 'voice')+'/v1/'+'a'.repeat(64)+'/'+id,
+      generation:'1', cipherSha256:'c'.repeat(64),sha256:createHash('sha256').update(bytes).digest('hex'),bytes:4,mimeType:source==='file'?'text/plain':'audio/wav',...(source==='voice'?{durationMs:1000}:{})};
+    const row = {id,scope,objectScope:scope,version:3,createdAt:at,updatedAt:at,fingerprint:'b'.repeat(64),
+      metadata:{fileName:source+'.test',mimeType:descriptor.mimeType,bytes:4,sha256:createHash('sha256').update(bytes).digest('hex')},state:'ready',upload:null,descriptor,messageId,deletion:null};
+    f.fake.records.set(data.ref(collection,kind,id).path,{...data.tags(scope),scopeTag:firestoreDomainHash([source==='file'?'chat-file-scope':'voice-scope',scope]),
+      assetId:id,createdAt:at,updatedAt:at,state:'ready',messageId,...data.seal(kind,id,scope,schema as any,row,3)});
+    return {id,row};
+  };
+  const file = seed('file',true), file2 = seed('file',true), draft = seed('file',false), voice = seed('voice',true);
+  const reference = {id:voice.id,version:3,mimeType:'audio/wav' as const,bytes:4,sha256:createHash('sha256').update(bytes).digest('hex'),durationMs:1000};
+  await f.authority.runTransaction('parent',childId,async b => { const commit=await prepareVoiceTranscription(data,b,reference,voice.row.messageId!);commit(); });
+  await f.sharing.share('parent',{spaceId:f.space.id,childId,modules:['attachments'],expectedVersion:f.space.version,operationId:randomUUID()});
+  const png=Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),Buffer.alloc(4),Buffer.from('IHDR'),Buffer.alloc(8)]),photoId=randomUUID();
+  const photoMeta={fileName:'photo.png',source:'camera',mimeType:'image/png' as const,bytes:png.length,sha256:createHash('sha256').update(png).digest('hex')};
+  const photoRow={id:photoId,scope,reservationOperationId:randomUUID(),createdAt:'2026-10-27T03:00:00.000Z',version:1,state:'ready',metadata:photoMeta,
+    descriptor:{objectName:'photos/v1/'+photoId,generation:'1',cipherSha256:'c'.repeat(64),sha256:photoMeta.sha256,bytes:png.length,mimeType:'image/png'},upload:null,deletion:null,
+    recordId:randomUUID(),extraction:{state:'available',runId:randomUUID(),draft:{text:'Private extracted draft',kind:'note',rawValue:null,unit:null,approximate:false,timeRaw:'',uncertainties:[]},
+      stopReason:null,processedAt:'2026-10-27T03:00:00.000Z',model:'synthetic',expiresAt:null,authorizationVersion:'1',generation:randomUUID()}};
+  f.fake.records.set(data.ref('photos','photo',photoId).path,{assetId:photoId,scopeTag:firestoreDomainHash([f.options.projectId,f.options.namespace,'photo-scope',scope]),
+    sortKey:photoRow.createdAt+'/'+photoId,live:true,...data.seal('photo',photoId,scope,firestorePhotoSchemas.photo,photoRow as any,1)});
+  const photos=createFirestorePhotoStore({...f.options,journal,objects:{write:async()=>{throw Error('No write');},recover:async()=>{throw Error('No recovery');},
+    read:async(_scope,id,descriptor)=>{assert.deepEqual(_scope,scope);assert.equal(id,photoId);await afterRead?.();return {buffer:png,base64:png.toString('base64'),mimeType:descriptor.mimeType,descriptor};}}});
+  const selection = {spaceId:f.space.id}, sharedFiles=files.forSharedSpace(selection),sharedVoices=voices.forSharedSpace(selection);
+  const reservedId=randomUUID(), reservedPhoto={...photoRow,id:reservedId,state:'reserved',descriptor:null,createdAt:'2026-10-27T02:00:00.000Z'};
+  f.fake.records.set(data.ref('photos','photo',reservedId).path,{assetId:reservedId,scopeTag:firestoreDomainHash([f.options.projectId,f.options.namespace,'photo-scope',scope]),
+    sortKey:reservedPhoto.createdAt+'/'+reservedId,live:true,...data.seal('photo',reservedId,scope,firestorePhotoSchemas.photo,reservedPhoto as any,1)});
+  const sharedPhotos=photos.forSharedSpace(selection),photoPage=await sharedPhotos.list('viewer',childId);
+  assert.equal(photoPage.canCreate,false);assert.equal(photoPage.photos[0].canManage,false);
+  assert.equal(photoPage.photos[0].recordId,null);assert.equal(photoPage.photos[0].extraction.draft,null);
+  assert.deepEqual((await sharedPhotos.content('viewer',childId,photoId)).bytes,png);
+  assert.ok((await photos.get('parent',childId,photoId)).extraction.draft);
+  const emptyPhotoPage=await sharedPhotos.list('viewer',childId,{limit:1});
+  assert.equal(emptyPhotoPage.photos.length,0);assert.equal(emptyPhotoPage.complete,false);assert.ok(emptyPhotoPage.nextCursor);
+  assert.equal((await sharedPhotos.list('viewer',childId,{cursor:emptyPhotoPage.nextCursor})).photos.length,1);
+  await assert.rejects(sharedPhotos.get('viewer',childId,reservedId),code('not_found'));
+  const page=await sharedFiles.list('viewer',childId,{limit:1});
+  assert.equal(page.items.length,1);assert.equal(page.items[0].messageId,null);assert.equal(page.items[0].sharedSpaceId,f.space.id);
+  assert.ok(page.nextCursor);await assert.rejects(sharedFiles.list('carer',childId,{cursor:page.nextCursor}),code('attachment_scope_changed'));assert.equal((await sharedFiles.list('viewer',childId,{cursor:page.nextCursor})).items.length,1);
+  assert.equal((await sharedFiles.get('carer',childId,file.id)).messageId,null);
+  await assert.rejects(sharedFiles.get('carer',childId,draft.id),code('not_found'));
+  assert.equal((await sharedFiles.content('viewer',childId,file.id)).buffer.toString(),'test');
+  assert.equal((await sharedVoices.content('viewer',childId,voice.id)).attachment.messageId,null);
+  assert.equal((await transcripts.forSharedSpace(selection).get('viewer',childId,voice.id)).messageId,null);
+  assert.equal((await files.get('parent',childId,file.id)).messageId,file.row.messageId);
+  await assert.rejects(files.get('carer',childId,file.id));
+  let actor='viewer';
+  const auth={async getSession(options:{returnHeaders?:boolean}){const session={user:{id:actor,email:actor+'@example.test'}};return options.returnHeaders?{response:session,headers:new Headers()}:session;},
+    async handler(){return new Response(null,{status:404});},async assertRecentReauthentication(){return {user:{id:actor,email:actor+'@example.test'}};},fromNodeHeaders(){return new Headers();}} as FirebaseAuthPort;
+  const handler=createFirebaseRequestHandler({authority:f.authority,auth,publicOrigin:'https://app.example.test',mailConfigured:false,files,voice:{...voices,transcripts},photos});
+  const fetcher:typeof fetch=async(input,init)=>{const url=new URL(String(input));
+    if(url.pathname.endsWith('/photos'))url.searchParams.set('limit','1');
+    return handler(new Request(url,init));},signal=new AbortController().signal;
+  const fileClient=createChatFileApi(fetcher,'https://app.example.test',undefined,selection),voiceClient=createVoiceApi(fetcher,'https://app.example.test',undefined,selection);
+  const photoClient=createPhotoApi('https://app.example.test',fetcher,undefined,selection);
+  const fileView=await fileClient.get(childId,file.id,signal,actor);
+  assert.equal(fileView.sharedSpaceId,f.space.id);assert.equal(fileView.messageId,null);
+  assert.equal((await fileClient.content(fileView,signal,actor)).bytes.length,4);
+  assert.equal((await fileClient.list(childId,{limit:1},signal,actor)).items.length,1);
+  const voiceView=await voiceClient.get(childId,voice.id,signal,actor);
+  assert.equal((await voiceClient.content(voiceView,signal,actor)).bytes.length,4);
+  assert.equal((await voiceClient.transcript(childId,voice.id,signal,actor)).messageId,null);
+  const photoView=await photoClient.photo(childId,photoId,signal,actor);
+  assert.equal((await photoClient.content(photoView,signal,actor)).size,png.length);
+  assert.equal((await photoClient.photos(childId,signal,actor)).photos.length,1);
+  await assert.rejects(fileClient.delete(fileView,randomUUID(),signal,actor),code('shared_attachment_write_unavailable'));
+  const denied=await handler(new Request('https://app.example.test/api/children/'+childId+'/files/'+file.id+'/delete?spaceId='+f.space.id,
+    {method:'POST',headers:{'x-expected-user-id':actor,Origin:'https://app.example.test'}}));
+  assert.equal(denied.status,409);
+  // Grant generation is part of the fence even if access is revoked and re-granted during object I/O.
+  const replaceShare=async(modules:('attachments'|'care')[])=>{
+    const current=await f.sharing.get('parent',f.space.id);
+    await f.sharing.share('parent',{spaceId:f.space.id,childId,modules,expectedVersion:current.version,operationId:randomUUID()});
+  };
+  afterRead=async()=>{await replaceShare(['care']);await replaceShare(['attachments']);};
+  await assert.rejects(sharedFiles.content('viewer',childId,file.id),code('chat_file_changed'));
+  await assert.rejects(sharedPhotos.content('viewer',childId,photoId),code('version_conflict'));
+  afterRead=undefined;
+  await assert.rejects(sharedFiles.list('viewer',childId,{cursor:page.nextCursor}),code('attachment_scope_changed'));
+  afterRead=async()=>{
+    const current=await f.sharing.get('parent',f.space.id);
+    await f.sharing.share('parent',{spaceId:f.space.id,childId,modules:['care'],expectedVersion:current.version,operationId:randomUUID()});
+  };
+  await assert.rejects(sharedFiles.content('viewer',childId,file2.id));afterRead=undefined;
+  await assert.rejects(sharedFiles.list('viewer',childId,{cursor:page.nextCursor}));
+  await assert.rejects(transcripts.forSharedSpace(selection).get('viewer',childId,voice.id));
 });
