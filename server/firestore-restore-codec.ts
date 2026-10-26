@@ -30,9 +30,10 @@ import { firestoreFamilyDocumentSnapshotSchemas as snapshots } from './firestore
 import { firestorePhotoSchemas as photos, photoObjectScope } from './firestore-photos.ts';
 import { firestoreKnowledgeSchemas as knowledge } from './firestore-knowledge.ts';
 import { firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema } from './firestore-online-receipts.ts';
-import { FirestoreDomainData, firestoreDomainHash, firestoreChildSchema, firestoreChangeSchema, firestoreTaskSchema,
-  firestoreTaskRevisionSchema, firestoreReminderOutboxSchema, sealFirestoreReminderOutbox, FIRESTORE_TASK_DISPATCH_SCOPE,
+import { FirestoreDomainData, firestoreDomainHash, firestoreChildSchema, firestoreChangeSchema, firestoreTaskStorageSchema as firestoreTaskSchema,
+  firestoreTaskRevisionStorageSchema as firestoreTaskRevisionSchema, firestoreReminderOutboxSchema, sealFirestoreReminderOutbox, FIRESTORE_TASK_DISPATCH_SCOPE,
   type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { validTaskAttribution, validTaskRevisionAttribution } from './firestore-task-records.ts';
 import { firestoreTaskReminderSchema, firestoreTaskReminderBatchSchema, firestoreNotificationPreferencesSchema,
   firestoreTaskNotificationOutboxSchema, firestoreTaskReminderId, firestoreTaskReminderBatchId } from './firestore-task-worker.ts';
 import { firestoreTaskDispatchScanSchema, firestoreTaskDispatchObservationSchema } from './firestore-task-dispatcher.ts';
@@ -246,10 +247,10 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     parse(workRecoveryScopeSchema, scope);
     if (!['photo-global-quota', 'task-dispatch-scan', 'platform-policy', 'admin-invitation', 'admin-receipt'].includes(kind)) requireBinding(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
     const versionMatches = (value: number) => requireBinding(recordVersion === value);
-    const taskBinding = (row: z.infer<typeof firestoreTaskSchema>) => requireBinding(row.childId === scope.childId
-      && row.createdBy === scope.ownerUserId && row.assigneeUserId === scope.ownerUserId && scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
+    const taskBinding = (row: z.infer<typeof firestoreTaskSchema>) => requireBinding(validTaskAttribution(row, scope)
+      && scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
     if (kind === 'task') { const row = parse(firestoreTaskSchema, raw); requireBinding(row.id === id); taskBinding(row); versionMatches(row.version); }
-    else if (kind === 'task-revision') { const row = parse(firestoreTaskRevisionSchema, raw); taskBinding(row.task); requireBinding(row.actorUserId === scope.ownerUserId); idEquals(id, [row.task.id, row.task.version]); versionMatches(row.task.version); }
+    else if (kind === 'task-revision') { const row = parse(firestoreTaskRevisionSchema, raw); taskBinding(row.task); requireBinding(validTaskRevisionAttribution(row, scope)); idEquals(id, [row.task.id, row.task.version]); versionMatches(row.task.version); }
     else if (kind === 'child-projection') { const row = parse(firestoreChildSchema, raw); requireBinding(row.id === id && id === scope.childId && row.workspaceId === scope.workspaceId); versionMatches(1); }
     else if (kind === 'change-projection') { const row = parse(firestoreChangeSchema, raw); requireBinding(row.childId === (scope.childId === NIL ? null : scope.childId)); idEquals(id, [scope.workspaceId, scope.storageEpoch, row.changeSeq]); versionMatches(1); }
     else if (kind === 'task-reminder-outbox') {

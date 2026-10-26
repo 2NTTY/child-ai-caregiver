@@ -2,6 +2,7 @@ import { handleFirebaseAvatarRequest, type FirebaseAvatarApiPort } from './fireb
 import { handleFirebaseChatFileRequest, type FirebaseChatFileApiPort } from './firebase-chat-files-api.ts';
 import { handleFirebaseVoiceRequest, type FirebaseVoiceApiPort } from './firebase-voice-api.ts';
 import { requestOriginAllowed } from "./request-auth-transport.ts";
+import { z } from 'zod';
 import { handleAdminRequest } from './admin-api.ts';
 import type { FirestoreAdmin } from './firestore-admin.ts';
 import { accountAcknowledgementSchema } from "../src/shared/account-service.ts";
@@ -308,12 +309,16 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
           if ([...url.searchParams.keys()].some(key => key !== "cursor") || url.searchParams.getAll("cursor").length > 1) throw new RequestError("invalid_input", 400);
           response = json(await online.children.list(userId, url.searchParams.get("cursor")));
         } else {
+          const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
+          if (url.searchParams.getAll('spaceId').length > 1 || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
+          const tasks = spaceId ? online.tasks.forSharedSpace?.(spaceId) : online.tasks;
+          if (!tasks) throw new RequestError('shared_domain_unavailable', 409);
           const detail = /^\/api\/children\/([^/]+)\/tasks\/([^/]+)$/u.exec(path);
-          if (request.method === "GET" && detail && online.tasks.detail) {
-            if (new URL(request.url).search) throw new RequestError("invalid_input", 400);
-            const result = await online.tasks.detail(userId, detail[1].toLowerCase(), detail[2].toLowerCase());
+          if (request.method === "GET" && detail && tasks.detail) {
+            if ([...url.searchParams.keys()].some(key => key !== 'spaceId')) throw new RequestError("invalid_input", 400);
+            const result = await tasks.detail(userId, detail[1].toLowerCase(), detail[2].toLowerCase());
             response = result ? json(result) : errorResponse("not_found", 404);
-          } else response = await handleTaskRequest(request, userId, online.tasks);
+          } else response = await handleTaskRequest(request, userId, tasks);
         }
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
