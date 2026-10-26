@@ -4068,3 +4068,12 @@
 - 首讀及新共享 basis 刷新當前資料，續讀每頁至多 100 筆，其他孩子在查詢時排除；撤權拒絕，另一身份不能借用游標。共同 observer／hook 同步接線，無 selector 保留本人舊流程；家庭畫面真實 selector 待 FAMILY-B。
 - 正式 HTTP 一條流程、client 新舊 observer 兩項及受影響型別通過。獨立 review 找到 documents／memory 跨來源失效漏刷，定向重現後補依賴訊號，補驗與增量覆核通過；原 404／client 讀錯入口 red 保留。[證據](artifacts/verification/P4_SHARED_SYNC_20261027.json)。
 - 新增一項 changes 子女複合索引定義，尚未建雲端索引或部署；零模型、通知、設備及付費操作。FAMILY-A／B、P3／P5 及 D PR 的未完成界線保持。
+
+
+<a id="log-20261027-p4-auth-provider"></a>
+### LOG-20261027-P4-AUTH-PROVIDER
+
+- 基線 `89808f1`，分支 `codex/p4-auth-provider-session`。沿既有 Firebase 13.0.0／Admin 14.5.0／Functions 7.4.0、session、准入及裝置台帳，接本人 provider 讀取、同 UID 重新驗證、Web 原生 popup／明確 linking 與共用 owner／表單；零新增依賴。
+- 連結先以原方式驗證，再以另一手勢明確同意，暫存 SDK 身份最多兩分鐘。provider-only 不要求密碼；取消拒絕遲到 session 交換，供應商已完成的連結以目前方法讀回核對。已知 SDK 拒絕顯示固定原因，真正 unknown 仍先讀回。
+- 定向 provider／舊密碼相容、原生真 HTTP transport、共用 owner、局部型別及 Web 匯出通過；未跑全量／真人／模型。獨立 review 發現取消後過早讀回舊 providers，定向 red→green 修正為等待原 SDK 清理；原生讀回及相關 client 檢查通過。保留初始缺接點、fixture 型別、前端型別及錯誤提示的失敗記錄。[證據](artifacts/verification/P4_AUTH_PROVIDER_20261027.json)。
+- Web provider 配置預設空，沒有改雲端設定或部署。Firebase 自動連結／duplicate-email 的 profile 取捨須先核定，不能只打開按鈕；原生 provider、Apple 邀請接續及真人配置仍待處理，AUTH01／P4 未完成。P3／P5 及 D PR 不變。

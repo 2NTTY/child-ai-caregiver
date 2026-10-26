@@ -1176,3 +1176,15 @@ FAMILY-A 首段已有內部 `createFirestoreSharingStore`；空間／成員管�
 - 保存、業務結果、收據、change cursor 及 outbox 沿同一 Firestore 交易邊界；大包使用可恢復的有界批次，不承諾整包單交易。部分成功不當全成功；模型／通知等外部呼叫在交易外。
 - provider 連結在同流程取得必要同意，配置 Apple private relay 合法郵件來源；Google／Apple-only 重新驗證用其 provider，不要求密碼。註冊准入與家庭／教師空間資格分開。
 - P5 Server 能力／地址核對與憑據隔離另隨 S06-W04 擴充；資料副本匯入不會切換權威 Server、搬移執行授權或恢復舊投遞。普通登入及裝置撤銷不依賴已取消的配對端點。
+
+
+<a id="p4-auth-providers"></a>
+### P4-AUTH01：同 UID 登入方式（實作中，尚未部署）
+
+`GET /api/auth/providers` 沿現有 Cookie／原生 session，並要求 `x-expected-user-id` 與目前身份相同；只返回 `{userId, providers, currentProvider}`。providers 由 Admin SDK 的目前 providerData 投影為 password／google.com／apple.com，currentProvider 取已驗 session claims；不回第三方身份、token、電郵或 provider 原始資料，不由前端聲稱連結狀態。回應沿私人 no-store。
+
+共用 Firebase client 增加 provider 登入、本人登入方式讀取、以原方式重新驗證，以及先核對原 UID 後連結新 provider。身份 token 仍只經原 `/api/auth/session` 或 `/api/auth/native-session` 交換；沒有新增業務憑據格式。原密碼重新驗證字串保持相容，provider-only 使用 `{provider}`。連結先以原方式重新驗證，暫存 SDK 身份最多兩分鐘，再由另一個明確同意手勢呼叫原生 linking，避免連續 popup 被阻擋。SDK 成功但交換結果未知時先讀回目前方法，不自動重做連結；這個公開讀回須等待原 SDK 操作及取消清理完成，不能用未定局的舊列表解除 unknown。內部重新驗證的唯讀核對不等待自身 queue。取消／切換身份拒絕遲到交換，清理暫存 provider 身份；不推定已取消 provider 端已完成的連結。
+
+註冊 blocking handler 僅接受 Firebase 驗證的 password／google.com／apple.com beforeCreate 事件，第三方必須有已驗證電郵，仍讀取原邀請資格，正式准入交易才消耗。Apple relay 地址不匹配原邀請時不猜地址或改 UID；另由原邀請地址驗證後連結同 UID 的接續流程承接（尚待實作）。平台 adapter 只列實際配置的方式；原生 Google／Apple SDK、供應商配置、隱藏電郵及真人流程未完成不得宣稱已支援。
+
+正式啟用須另核 Firebase 目前的同電郵帳號設定：官方 Google provider 在部分情況會自動連結，而 allowDuplicateEmails 會改變 profile／email 回傳。不能以空按鈕配置以外的假設當成已符合明確連結，也不直接變更現有 UID／電郵准入規則；限制及來源見 [TECH_REUSE](TECH_REUSE.md#p4-auth-providers)。
