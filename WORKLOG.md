@@ -3950,3 +3950,10 @@
 - 依賴核對中 Git Bash 在受限 shell 被 Windows sandbox 拒絕，相同命令於獲授權 shell 成功，沒有更改政策。首次安裝紀錄生成因 Python 預設 GBK 讀 UTF-8 JSON 失敗；改為明確 UTF-8 後生成成功，未影響原版來源或重跑已通過的 runtime 核對。
 - 上游 regex 範例與本 host 子代理參數差異另列，未暗改原文。已驗安裝、完整資源、發現及 MCP 啟動；完整掃描、視覺輔助器及子代理工作流未執行，當前桌面舊上下文刷新亦不冒稱已驗。
 - 主模型完成相容 diff、完整資源、相對連結、24 個專案檔案 hash 及修改範圍核對；相容修改與紀錄的 `git diff --check` 通過。全包另有五處上游原版行尾空白，與來源一致並原樣保留，不將全包 whitespace 檢查宣稱為通過。
+
+<a id="log-20261026-agents-entry-clarity"></a>
+## LOG-20261026-AGENTS-ENTRY-CLARITY
+
+- 使用者在 agents-md-improver 品質報告後明確要求沿 revise-agents-md 更新規範。根 AGENTS 補既有本地／建置／單檔檢查入口；前端補正式 Provider／owner 位置，四尺寸依改動影響選取。主模型精簡重複研究／派單／狀態說明，保留模型分工、困難任務親做、dot 例外、權限、首次失敗停批及必要驗收；未改 Skill、配置或產品。
+- 兩份 AGENTS 原共 34,385 bytes，現已低於預設 32 KiB 合併容量；只核靜態 bytes、原錨點、相對連結、package scripts 及 diff，不以此宣稱新會話載入已實測。沒有跑產品、模型或設備驗收。先前報告指出的 frontend/PLAN #253 歷史現況另留原域處理，本包不改寫歷史證據或新增進度清單。
+- 一次獨立唯讀 review 未發現重大規則遺漏，指出 `src/preview/` 仍含正式使用的 guard／provider；主模型對照兩個正式 layout 後修正文案，只排除合成 fixture／預覽 owner 作正式資料來源，不誤導刪除共用元件。
