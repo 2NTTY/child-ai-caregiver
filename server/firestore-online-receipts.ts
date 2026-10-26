@@ -29,7 +29,7 @@ const storedRecordSchema = z.union([firestoreOnlineRecordSchema, firestoreOnline
 const privateInputPointerSchema = z.object({ format: z.literal('private-input-receipt:1'), id: z.uuid(), version: z.number().int().positive(),
   recordId: z.uuid().optional() }).strict();
 const sharedResultSchema = z.object({ format: z.literal('shared-domain-receipt:1'), spaceId: z.uuid(), childId: z.uuid(),
-  module: z.enum(['care', 'profile', 'tasks']), result: z.union([contentPointerSchema, sharedTaskPointerSchema, z.object({ deleted: z.literal(true) }).strict()]) }).strict();
+  module: z.enum(['care', 'profile', 'tasks', 'memory']), result: z.union([contentPointerSchema, sharedTaskPointerSchema, z.object({ deleted: z.literal(true) }).strict()]) }).strict();
 export type FirestoreOnlineConfirmed = z.infer<typeof firestoreOnlineConfirmedSchema>;
 export type FirestoreOnlinePending = z.infer<typeof firestoreOnlinePendingSchema>;
 export type FirestoreOnlineRecord = z.infer<typeof firestoreOnlineRecordSchema>;
@@ -87,9 +87,16 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
       try {
         result = await createFirestoreSharingStore(options).inResourceTransaction(binding,
           { spaceId: pointer.spaceId, childId: pointer.childId, module: pointer.module, mode: 'read' },
-          async access => 'deleted' in pointer.result ? pointer.result
-            : pointer.result.format === 'shared-task-result:1' ? readSharedTaskResult(data, access.binding, pointer.result)
-              : readContentPointer(data, access.binding, pointer.result));
+          async access => {
+            if ('deleted' in pointer.result) return pointer.result;
+            if (pointer.result.format === 'shared-task-result:1') return readSharedTaskResult(data, access.binding, pointer.result);
+            const body = await readContentPointer(data, access.binding, pointer.result);
+            if (pointer.module !== 'memory' || body === null) return body;
+            const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore(options) });
+            const value = pointer.result.kind === 'fact' ? await memory.readFact(access.binding, pointer.result.id)
+              : pointer.result.kind === 'topic' ? await memory.readTopic(access.binding, pointer.result.id) : null;
+            return value ? { [pointer.result.key]: value } : null;
+          });
       } catch (error) {
         if (!(error && typeof error === 'object' && 'code' in error &&
           (['space_access_denied', 'space_inactive', 'module_not_shared', 'account_inactive', 'account_not_ready', 'not_found', 'scope_changed'].includes(String(error.code))

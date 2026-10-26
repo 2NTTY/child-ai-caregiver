@@ -821,6 +821,8 @@ Claim 回應丟失時，只准尚未呼叫 Storage 的同一次 invocation 作�
 
 FAMILY-A 首段新增 namespace 下 `shared_spaces`、`shared_memberships`、`resource_shares`、`shared_invitations`、`shared_operations`。前四者是加密的共享控制資料，不含孩子正文，以穩定系統 routing scope 保存；空間自己的儲存身份為 `space:<spaceId>`／同一 workspace ID，與現任管理員分開，班級業務寫入仍待後包接通。分享只指向原資料 scope 及選定模組，不移動、複製或重新加密原資料；操作收據仍綁操作者個人 scope。
 
+記憶沿原 `memory_facts`／`memory_topics` 及其修訂保存，共享查詢與歷史只讀 family 範圍，不公開原私人候選版本。非 owner 的建立、確認及最新變更證據分別保存於密文，公開投影移除；停用不偽造重新確認，建立證據仍指第一版。還原逐項核對資源／來源／版本與署名，舊 owner-only 資料保持原要求。私人聊天來源的 ID 只向原資料帳戶披露，其他有權成員讀已確認描述及目前有效性；summary 仍為本人私有。修訂分頁新增 visibility composite indexes，正式啟用前須建立。
+
 記錄／概況的共享寫入仍保留原 scope／ID，作者及確認者記實際操作者。非擁有人寫入另在同份密文保存 Server 產生的空間、來源擁有人、資源／版本及權限 basis 證據；公開 DTO 移除內部證據。還原保留舊資料的 owner 校驗，只允許有相符證據的共享署名，不要求歷史作者目前仍是成員。概況刪除屏障重放須使用儲存 schema，保留屏障之後合法新寫入的證據。
 
 待辦沿 `tasks`／`task_revisions`，非 owner 的建立／修訂分別保存 `createdViaShare`／`changedViaShare`，公開任務與歷史 DTO 移除內部證據。建立證據保留原作者及第一版，修訂證據綁當版操作者；未附證據的舊資料仍要求 owner 署名。提醒 outbox 保留原 scope、接收者、版本及世代，沒有把共享操作者的身份當付款或渠道授權。共享收據以 `shared-task-result:1` 指向原版本修訂，重新核權後讀取，不能將後來完成狀態當原建立結果。
