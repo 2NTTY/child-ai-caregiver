@@ -92,6 +92,11 @@ export function sharedSourceOperationId(actorUserId: string, operationId: string
   const hex = digest(['shared-change', actorUserId, operationId, ...(effect ? [effect] : [])]);
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
+/** Common read fence for projections composed across domains; private versions stay compatible. */
+export function resourceAuthorityVersion(binding:FirestoreAuthorityTransaction):string {
+  return binding.sharedAccess ? digest(['shared-read',binding.scope.storageEpoch,binding.authorizationVersion,
+    binding.sharedAccess.spaceId,binding.sharedAccess.basis]) : `${binding.scope.storageEpoch}:${binding.authorizationVersion}`;
+}
 const same = (left: unknown, right: unknown) => canonical(left) === canonical(right);
 const ownerScope = (ownerUserId: string, workspaceId = NIL, storageEpoch = NIL, childId = NIL): WorkRecoveryScope =>
   ({ ownerUserId, workspaceId, childId, storageEpoch });

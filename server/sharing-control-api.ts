@@ -4,7 +4,7 @@ import type { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { apiError, jsonResponse } from './workspace-api.ts';
 
 export type SharingControl = Pick<ReturnType<typeof createFirestoreSharingStore>, 'spacesPage' | 'spaceView' | 'membersPage'
-  | 'sharesPage' | 'invitationsPage' | 'executeCommand' | 'controlOperation'>;
+  | 'sharesPage' | 'invitationsPage' | 'executeCommand' | 'controlOperation' | 'childView'>;
 
 export async function handleSharingControlRequest(request: Request, userId: string, store: SharingControl,
   isCurrentUser: (userId: string) => Promise<boolean>, readJson: (request: Request) => Promise<unknown>): Promise<Response> {
@@ -24,6 +24,9 @@ export async function handleSharingControlRequest(request: Request, userId: stri
       value = await store.executeCommand(userId, input);
     } else if (request.method === 'GET' && /^\/operations\/[^/]+$/u.test(path) && !cursor) {
       value = { operation:await store.controlOperation(userId, z.uuid().parse(path.split('/')[2])) };
+    } else if (request.method === 'GET' && /^\/[^/]+\/children\/[^/]+$/u.test(path) && !cursor) {
+      const parts = path.split('/');
+      value = await store.childView(userId, z.uuid().parse(parts[1]), z.uuid().parse(parts[3]));
     } else {
       const match = /^\/([^/]+)(?:\/(members|shares|invitations))?$/u.exec(path);
       if (!match || request.method !== 'GET' || !match[2] && cursor) return apiError('not_found', '找不到資料。', 404);

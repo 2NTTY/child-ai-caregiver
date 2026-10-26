@@ -28,6 +28,7 @@ import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
 import { createOnlineTransport } from '../src/client/online-transport.ts';
 import type { FirebaseAuthPort } from '../server/firebase-auth.ts';
 import { createCareApi } from '../src/client/care-api.ts';
+import { handleFamilyDocumentRequest } from '../server/family-document-api.ts';
 import { createTaskApi } from '../src/client/task-api.ts';
 import { createGrowthApi } from '../src/client/growth-api.ts';
 import { createConcernsApi } from '../src/client/concerns-api.ts';
@@ -127,7 +128,7 @@ test('shared growth and concerns read original resources without widening live i
     const value = data.open('concern-event', eventId, f.child.scope, firestoreDocumentConcernEventSchema, row);
     tx.set(ref, { ...row.data(), ...data.seal('concern-event', eventId, f.child.scope, firestoreDocumentConcernEventSchema, { ...value, runId }) });
   });
-  let space = await f.sharing.share('parent', { spaceId:f.space.id, childId, modules:['growth','concerns'],
+  let space = await f.sharing.share('parent', { spaceId:f.space.id, childId, modules:['growth','concerns','documents'],
     expectedVersion:f.space.version, operationId:randomUUID() });
   let actor = 'carer'; const origin = 'https://app.example.test';
   const auth = { async getSession(options: { returnHeaders?:boolean }) {
@@ -151,6 +152,10 @@ test('shared growth and concerns read original resources without widening live i
   assert.equal(page.canManage, false); assert.equal(JSON.stringify(page).includes('PRIVATE-REGION'), false);
   assert.ok(page.topics.every(topic => topic.inputs.every(input => input.value === null && input.factRefs.length === 0)));
   const concernPage = await concernClient.getPage(childId, signal, actor);
+  const documentPage = await createFirestoreFamilyDocumentStore(f.options).forSharedSpace({spaceId:space.id}).list(actor,childId);
+  assert.ok(documentPage);
+  assert.equal(page.authorityVersion,documentPage.authorityVersion,'shared growth and its document archive must use the same authority fence');
+  assert.equal(concernPage.authorityVersion,documentPage.authorityVersion);
   assert.equal(concernPage.items[0].id, concern.id); assert.equal(concernPage.canManage, false);
   assert.equal(concernPage.items[0].events[0].attentionId, id);
   assert.equal(concernPage.items[0].events[0].runId, undefined);
@@ -218,6 +223,16 @@ test('shared space control lists are bounded and preserve original operations ac
   assert.deepEqual(await f.sharing.executeCommand('parent', input), result);
   const shared = await f.sharing.sharesPage('viewer', f.space.id);
   assert.deepEqual(shared.items[0]?.modules, ['tasks']);
+  actor = 'carer';
+  const childContext = await http(`/${f.space.id}/children/${f.child.child.id}`);
+  assert.equal(childContext.status, 200);
+  const selected = await childContext.json();
+  assert.equal(selected.spaceId, f.space.id); assert.equal(selected.childId, f.child.child.id);
+  assert.equal(selected.role, 'caregiver'); assert.deepEqual(selected.modules, ['tasks']);
+  assert.equal('scope' in selected, false); assert.equal('workspaceId' in selected, false);
+  assert.deepEqual(await client.child(f.space.id, f.child.child.id, 'carer', new AbortController().signal), selected);
+  assert.equal((await http(`/${f.space.id}/children/${randomUUID()}`)).status, 403);
+  actor = 'parent';
   assert.equal(shared.items[0]?.childName, 'Test child');
   assert.equal(shared.items[0]?.canWithdraw, false);
   const proposed = await f.sharing.executeCommand('parent', { action: 'proposeTransfer', operationId: randomUUID(),
@@ -527,6 +542,22 @@ test('shared documents retain the original snapshot, bounded source selection an
   await assert.rejects(client.getItem(childId, original.id, signal, 'viewer'), { status: 403, code: 'module_not_shared' });
 });
 
+test('shared document create retains the form authority basis through the real HTTP client', async () => {
+  const f=await fixture(),childId=f.child.child.id,documents=createFirestoreFamilyDocumentStore(f.options);
+  await f.sharing.share('parent',{spaceId:f.space.id,childId,modules:['documents'],expectedVersion:f.space.version,operationId:randomUUID()});
+  const view=await f.sharing.childView('carer',f.space.id,childId);
+  const fetcher:typeof fetch=async(input,init)=>handleFamilyDocumentRequest(new Request(input,init),'carer',documents,async()=>true);
+  const client=createFamilyDocumentsApi('https://app.example.test',fetcher,{spaceId:f.space.id,expectedBasis:view.basis});
+  await f.sharing.share('parent',{spaceId:f.space.id,childId,modules:['documents','care'],expectedVersion:view.basis.spaceVersion,operationId:randomUUID()});
+  const request={kind:'preparation' as const,purpose:'appointment' as const,title:'Form prepared before the grant changed',
+    period:{from:'2026-01-01',to:'2026-12-31'},eventDate:null};
+  await assert.rejects(client.create(childId,request,new AbortController().signal,'carer'),{status:409,code:'sharing_scope_changed'});
+  assert.equal((await documents.list('parent',childId))!.items.length,0);
+  const fresh=await f.sharing.childView('carer',f.space.id,childId);
+  const current=createFamilyDocumentsApi('https://app.example.test',fetcher,{spaceId:f.space.id,expectedBasis:fresh.basis});
+  assert.equal((await current.create(childId,request,new AbortController().signal,'carer')).current!.title,request.title);
+});
+
 test('shared document maintenance retains the original source selection and stops after revocation', async () => {
   const f = await fixture(), childId = f.child.child.id, data = new FirestoreDomainData(f.options);
   const care = createFirestoreCareStore(f.options), online = createFirestoreOnlineStore({ ...f.options, mutations: [care.mutation] });
@@ -761,6 +792,14 @@ test('shared care uses the original domain, actor receipts, current grants and d
   const sharedVersion = await f.sharing.get('parent', f.space.id);
   await f.sharing.share('parent', { spaceId: f.space.id, childId, modules: ['care', 'profile'],
     expectedVersion: sharedVersion.version, operationId: randomUUID() });
+  const selectedContext = await f.sharing.childView('carer', f.space.id, childId);
+  const frozenSelection = { spaceId: f.space.id, expectedBasis: selectedContext.basis };
+  const staleCareClient = createCareApi('https://app.example.test', fetcher, frozenSelection);
+  await f.sharing.share('parent', { spaceId:f.space.id,childId,modules:['care','profile'],
+    expectedVersion:selectedContext.basis.spaceVersion,operationId:randomUUID() });
+  await assert.rejects(staleCareClient.saveProfile(childId, { age:{kind:'unknown'},dueDate:null,gestationalWeeksRaw:null,
+    region:null,language:null,allergies:null,specialNeeds:null,preferences:null,source:'Stale form',validUntil:null },
+    0,'Stale shared selection',new AbortController().signal,'carer'),(error:any)=>error.onlineCode==='sharing_scope_changed');
   const careClient = createCareApi('https://app.example.test', fetcher, { spaceId: f.space.id });
   const profile = await careClient.saveProfile(childId, { age: { kind: 'unknown' }, dueDate: null, gestationalWeeksRaw: null,
     region: null, language: null, allergies: null, specialNeeds: null, preferences: null, source: 'Shared statement', validUntil: null },
