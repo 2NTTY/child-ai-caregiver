@@ -771,6 +771,8 @@ iOS 綁定的密文增加 `apns: {topic, environment}`，平台／provider 由�
 
 `chat_file_assets` 與既有語音採相同私人儲存邊界，使用獨立的 `chat-file-asset` 加密kind、不可變 `chat-file/v1` 物件地址及generation／hash。每筆保存本人、孩子、儲存世代、原預留操作指紋、版本、上載claim、唯一messageId及刪除義務；檔名及內容metadata留在密文內。列表索引只保存必要scope與處理狀態，不把私人正文加入公共索引。
 
+文件／錄音共享刪除保留原資源 scope／objectScope；操作者根 scope 的收據與來源刪除屏障在同一交易提交，無正文收據只證明受理。新刪除保存實際 actorUserId；共享刪除另存原 actorOperationId，日誌 operationId 復用共同來源操作映射，schema 同時核對映射；非來源 owner 另附密文共享署名，綁來源／孩子／資源及 expectedVersion＋1 的接受版本。journal／清理後續增版不改此署名，恢復使用同一 schema 核對；舊無署名記錄按來源本人／既有系統清理解讀。原獨立日誌與 worker 負責完成已受理義務，撤權不撤回刪除，也不讓新請求繼續沿舊權限操作。原 change feed 沿附件既有 chat／care 種類失效，不另加舊客戶端無法解析的種類。
+
 檔案原件保存與可閱讀性分開；正文不進聊天document。聊天只引用原件ID／版本／hash。未知上載只查原地址，禁止換ID重送；刪除立即遮蔽metadata，先記錄獨立 `file-delete` intent，再清理固定generation。孩子／帳戶刪除、配對備份、匯出及隔離還原須同樣承接該義務；恢復時先重放獨立刪除日誌，再綁定新儲存世代；已刪附件只保留無正文的清理義務。未結清上傳保持unknown並保留舊物件查核／清理義務，不冒認可讀。配對manifest可選 `chatFiles` 以相容舊備份；新備份固定generation及hash並保存獨立附件副本。
 
 

@@ -18,9 +18,9 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
     ? voice.sharedSpaceId === sharing.spaceId && voice.messageId === null
     : voice.sharedSpaceId === undefined;
   const writable = () => { if (sharing) throw new VoiceApiError(403, 'shared_attachment_write_unavailable'); };
-  async function request(url: string, userId: string, signal: AbortSignal, payload?: unknown) {
-    if (payload !== undefined) writable();
-    else if (sharing) url += (url.includes('?') ? '&' : '?') + new URLSearchParams({ spaceId: sharing.spaceId });
+  async function request(url: string, userId: string, signal: AbortSignal, payload?: unknown, sharedDelete = false) {
+    if (payload !== undefined && !sharedDelete) writable();
+    if (sharing) url += (url.includes('?') ? '&' : '?') + new URLSearchParams({ spaceId: sharing.spaceId });
     if (!userId || signal.aborted) throw new VoiceApiError(0, 'identity_changed');
     let response: Response;
     try { response = await fetcher(url, { method: payload === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store', signal,
@@ -75,8 +75,8 @@ export function createVoiceApi(fetcher: typeof fetch, origin = '', hash: typeof 
       return checked(await request(base(childId, id) + '/resolve', userId, signal, {}), childId, id, signal);
     },
     async delete(voice: VoiceAttachment, opId: string, signal: AbortSignal, userId: string) {
-      writable();
-      const response = await request(base(voice.childId, voice.id) + '/delete', userId, signal, { opId: z.uuid().parse(opId), expectedVersion: voice.version });
+      if (!matchesSelection(voice)) throw new VoiceApiError(0, 'voice_response_invalid');
+      const response = await request(base(voice.childId, voice.id) + '/delete', userId, signal, { opId: z.uuid().parse(opId), expectedVersion: voice.version }, true);
       const result = z.object({ operationId: z.uuid(), deleted: z.literal(true), cleanupPending: z.boolean() }).strict().safeParse(await response.json());
       if (signal.aborted || !result.success || result.data.operationId !== opId) throw new VoiceApiError(0, 'voice_operation_unknown');
       return result.data;

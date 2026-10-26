@@ -37,6 +37,8 @@ import { prepareFirestoreBackgroundWork, firestoreBackgroundWorkSchema } from '.
 import { createFirestoreTaskWorker } from '../server/firestore-task-worker.ts';
 import { replayContentErasures } from '../server/firestore-restore-content-erasure.ts';
 import type { FirebaseErasureIntent } from '../server/firebase-erasure-journal.ts';
+import { firebaseErasureIntentHash } from '../server/firebase-erasure-journal.ts';
+import { createFirestoreOnlineReceipts } from '../server/firestore-online-receipts.ts';
 
 async function fixture() {
   const fake = serialFirestoreFixture(), now = Date.parse('2026-10-27T04:00:00Z');
@@ -80,6 +82,87 @@ async function fixture() {
   return { fake, options, authority, sharing, child, space, control, documents };
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
+
+test('shared file and voice deletion retain actor receipts and resume the original cleanup after revocation', async () => {
+  const f = await fixture(), childId = f.child.child.id, data = new FirestoreDomainData(f.options);
+  const scope = await f.authority.runTransaction('parent', childId, async b => b.scope);
+  await f.sharing.share('parent', {spaceId:f.space.id, childId, modules:['attachments'], expectedVersion:f.space.version, operationId:randomUUID()});
+  const selection = {spaceId:f.space.id}, receipts = createFirestoreOnlineReceipts(f.options), bytes = Buffer.from('test');
+  let failJournal = true, removed = 0;
+  const intents = new Map<string,FirebaseErasureIntent>();
+  const journalKey = (intent:FirebaseErasureIntent) => JSON.stringify([intent.scope.ownerUserId,intent.operationId]);
+  const journal = { async writeOnce(intent:FirebaseErasureIntent) {
+    if (failJournal) throw Object.assign(Error('Journal unavailable'), {code:'journal_unavailable'});
+    const hash=firebaseErasureIntentHash(intent), key=journalKey(intent), existing=intents.get(key);
+    if (existing && firebaseErasureIntentHash(existing)!==hash) throw Object.assign(Error('Journal binding'),{code:'journal_binding'});
+    intents.set(key,intent);
+    return {objectName:'erasures/v1/'+hash,generation:'1',cipherSha256:'c'.repeat(64),intentSha256:hash,bytes:1,format:'yuban-erasure-journal/v1' as const};
+  },async read(intent:FirebaseErasureIntent,proof:{intentSha256:string}) { assert.deepEqual(intents.get(journalKey(intent)),intent);assert.equal(proof.intentSha256,firebaseErasureIntentHash(intent)); return intent; } };
+  for (const kind of ['file','voice'] as const) {
+    const id=randomUUID(), draftId=randomUUID(), opId=randomUUID(), at='2026-10-27T04:00:00.000Z';
+    const objectName=(assetId:string)=>(kind==='file'?'chat-file':'voice')+'/v1/'+'a'.repeat(64)+'/'+assetId;
+    const descriptor={objectName:objectName(id),generation:'1',cipherSha256:'c'.repeat(64),sha256:createHash('sha256').update(bytes).digest('hex'),bytes:4,
+      mimeType:kind==='file'?'text/plain':'audio/wav',...(kind==='voice'?{durationMs:1000}:{})};
+    const schema=kind==='file'?firestoreChatFileRowSchema:firestoreVoiceRowSchema;
+    const collection=kind==='file'?'chat_file_assets':'voice_assets', tag=kind==='file'?'chat-file-asset':'voice-asset';
+    const row={id,scope,objectScope:scope,version:3,createdAt:at,updatedAt:at,fingerprint:'b'.repeat(64),
+      metadata:{fileName:kind+'.test',mimeType:descriptor.mimeType,bytes:4,sha256:descriptor.sha256},state:'ready',upload:null,descriptor,messageId:randomUUID(),deletion:null};
+    for (const source of [row,{...row,id:draftId,messageId:null,descriptor:{...descriptor,objectName:objectName(draftId)}}]) {
+      f.fake.records.set(data.ref(collection,tag,source.id).path,{...data.tags(scope),scopeTag:firestoreDomainHash([kind==='file'?'chat-file-scope':'voice-scope',scope]),
+        assetId:source.id,createdAt:at,updatedAt:at,state:'ready',messageId:source.messageId,...data.seal(tag,source.id,scope,schema as any,source,3)});
+    }
+    const objects={address:(_scope:unknown,assetId:string)=>objectName(assetId),write:async()=>{throw Error('No upload');},read:async()=>{throw Error('No download');},
+      inspect:async()=>null,remove:async(actualScope:unknown,assetId:string,actual:unknown)=>{assert.deepEqual(actualScope,scope);assert.equal(assetId,id);assert.deepEqual(actual,descriptor);removed++;}};
+    const files=createFirestoreChatFilesStore({...f.options,objects,journal}), voices=createFirestoreVoiceStore({...f.options,objects,journal});
+    const store=kind==='file'?files:voices;
+    const shared=store.forSharedSpace(selection);
+    const view=await shared.get('carer',childId,id);
+    assert.equal(typeof shared.delete,'function','the shared port exposes the original deletion workflow');
+    await assert.rejects(shared.delete('viewer',childId,id,3,randomUUID()),code('read_only'));
+    await assert.rejects(shared.delete('carer',childId,draftId,3,randomUUID()),code('not_found'));
+    await assert.rejects(shared.delete('carer',childId,id,2,randomUUID()),code('version_conflict'));
+    failJournal=true;
+    await assert.rejects(shared.delete('carer',childId,id,3,opId),code('journal_unavailable'));
+    const receipt=await f.authority.runTransaction('carer',null,b=>receipts.read(b,opId));
+    assert.equal(receipt?.ownerUserId,'carer');assert.equal(receipt?.childId,null);
+    assert.equal((receipt as any).result.accepted,true);assert.equal((receipt as any).result.deleted,undefined);
+    assert.equal(await f.authority.runTransaction('parent',null,b=>receipts.read(b,opId)),null,'no receipt is filed under the source owner');
+    const stored=()=>data.open(tag,id,scope,schema as any,{exists:true,get:()=>undefined,data:()=>f.fake.records.get(data.ref(collection,tag,id).path)} as any) as any;
+    const deleting=stored();assert.equal(deleting.state,'deleting');assert.equal(deleting.deletion.actorUserId,'carer');
+    assert.equal(deleting.deletion.attribution.resourceVersion,4);assert.equal(deleting.metadata,null);
+    assert.equal(schema.safeParse({...deleting,deletion:{...deleting.deletion,actorUserId:'viewer'}}).success,false);
+    await assert.rejects(shared.delete('parent',childId,id,3,opId),code('operation_conflict'));
+    await assert.rejects(shared.get('viewer',childId,id),code('not_found'));
+    let space=await f.sharing.get('parent',f.space.id);
+    await f.sharing.share('parent',{spaceId:space.id,childId,modules:['care'],expectedVersion:space.version,operationId:randomUUID()});
+    const lookup=await createFirestoreOnlineStore(f.options).lookup('carer',opId);
+    assert.equal(lookup.state,'confirmed');assert.equal((lookup as any).result.accepted,true);
+    assert.equal((lookup as any).result.deleted,undefined,'a receipt only confirms the durable deletion intent');
+    failJournal=false;
+    // The real journal key uses source owner + operation ID, not the intent hash.
+    await journal.writeOnce({type:kind==='file'?'file-delete':'voice-delete',scope,assetId:randomUUID(),operationId:opId,at});
+    assert.deepEqual(await store.cleanupDeleted(scope,id),{state:'complete'});
+    assert.equal(stored().deletion.attribution.actorUserId,'carer');
+    await assert.rejects(shared.delete('carer',childId,id,3,opId));
+    space=await f.sharing.get('parent',f.space.id);
+    await f.sharing.share('parent',{spaceId:space.id,childId,modules:['attachments'],expectedVersion:space.version,operationId:randomUUID()});
+    assert.deepEqual(await shared.delete('carer',childId,id,3,opId),{operationId:opId,deleted:true,cleanupPending:false});
+    await assert.rejects(shared.delete('carer',childId,id,4,opId),code('operation_conflict'));
+    assert.deepEqual(await store.cleanupDeleted(scope,id),{state:'complete'});
+    const auth={async getSession(options:{returnHeaders?:boolean}){const session={user:{id:'carer',email:'carer@example.test'}};
+      return options.returnHeaders?{response:session,headers:new Headers()}:session;},async handler(){return new Response(null,{status:404});},
+      async assertRecentReauthentication(){return {user:{id:'carer',email:'carer@example.test'}};},fromNodeHeaders(){return new Headers();}} as FirebaseAuthPort;
+    const handler=createFirebaseRequestHandler({authority:f.authority,auth,publicOrigin:'https://app.example.test',mailConfigured:false,files,voice:voices});
+    const fetcher:typeof fetch=async(input,init)=>{const headers=new Headers(init?.headers);headers.set('Origin','https://app.example.test');
+      return handler(new Request(input,{...init,headers}));};
+    const signal=new AbortController().signal;
+    const clientResult=kind==='file'
+      ? await createChatFileApi(fetcher,'https://app.example.test',undefined,selection).delete(view as any,opId,signal,'carer')
+      : await createVoiceApi(fetcher,'https://app.example.test',undefined,selection).delete(view as any,opId,signal,'carer');
+    assert.deepEqual(clientResult,{operationId:opId,deleted:true,cleanupPending:false},'the common client reaches the same deletion receipt through the real API');
+  }
+  assert.equal(removed,2,'one physical removal for each original asset');assert.equal(intents.size,4);
+});
 
 test('shared documents retain the original snapshot, bounded source selection and actor receipts', async () => {
   const f = await fixture(), childId = f.child.child.id;
@@ -601,10 +684,10 @@ test('shared attachment reads preserve objects, hide private chat links and stop
   const photoView=await photoClient.photo(childId,photoId,signal,actor);
   assert.equal((await photoClient.content(photoView,signal,actor)).size,png.length);
   assert.equal((await photoClient.photos(childId,signal,actor)).photos.length,1);
-  await assert.rejects(fileClient.delete(fileView,randomUUID(),signal,actor),code('shared_attachment_write_unavailable'));
+  // The viewer may read but cannot enter the newly connected shared deletion workflow.
   const denied=await handler(new Request('https://app.example.test/api/children/'+childId+'/files/'+file.id+'/delete?spaceId='+f.space.id,
-    {method:'POST',headers:{'x-expected-user-id':actor,Origin:'https://app.example.test'}}));
-  assert.equal(denied.status,409);
+    {method:'POST',headers:{'x-expected-user-id':actor,Origin:'https://app.example.test','Content-Type':'application/json'},body:JSON.stringify({expectedVersion:3,opId:randomUUID()})}));
+  assert.equal(denied.status,403);assert.equal((await denied.json()).error.code,'read_only');
   // Grant generation is part of the fence even if access is revoked and re-granted during object I/O.
   const replaceShare=async(modules:('attachments'|'care')[])=>{
     const current=await f.sharing.get('parent',f.space.id);

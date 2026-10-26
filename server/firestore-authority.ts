@@ -86,6 +86,12 @@ function parse<T>(schema: z.ZodType<T>, value: unknown, code = 'invalid_input', 
   const result = schema.safeParse(value); if (!result.success) fail(code, status); return result.data;
 }
 const digest = (value: unknown) => createHash('sha256').update(canonical(value)).digest('hex');
+
+/** Preserve caller-local operation IDs while namespacing effects in another owner's storage. */
+export function sharedSourceOperationId(actorUserId: string, operationId: string): string {
+  const hex = digest(['shared-change', actorUserId, operationId]);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
 const same = (left: unknown, right: unknown) => canonical(left) === canonical(right);
 const ownerScope = (ownerUserId: string, workspaceId = NIL, storageEpoch = NIL, childId = NIL): WorkRecoveryScope =>
   ({ ownerUserId, workspaceId, childId, storageEpoch });
@@ -387,12 +393,13 @@ export class FirestoreAuthority {
       prepareChange: async (operationId: string, kind: OnlineChange['kind'], deleted: boolean, childId?: string) => {
         check(); parse(uuid, operationId); parse(z.boolean(), deleted);
         if (access.mode !== 'write' || access.role === 'viewer') fail('read_only', 403);
-        if (kind !== access.module || childId !== undefined && childId !== source.childId) fail('shared_module_scope', 403);
+        // Attachment consumers already invalidate chat/care; retain the old change-feed wire kinds.
+        const allowedKind = access.module === 'attachments' ? kind === 'chat' || kind === 'care' : kind === access.module;
+        if (!allowedKind || childId !== undefined && childId !== source.childId) fail('shared_module_scope', 403);
         if (prepared) fail('transaction_change_conflict'); prepared = true;
         if (actor.actorUserId === source.ownerUserId) return actor.prepareChange(operationId, kind, deleted, source.childId);
         // Source changes must not collide when two different actors use the same caller-local opId.
-        const hex = digest(['shared-change', actor.actorUserId, operationId]);
-        const sourceOperationId = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+        const sourceOperationId = sharedSourceOperationId(actor.actorUserId, operationId);
         const original = await this.change(tx, source, current.workspace, sourceOperationId, kind, deleted);
         const caller = await actor.prepareChange(operationId, 'family', false); check();
         return { changeSeq: caller.changeSeq, commit() {
