@@ -132,7 +132,7 @@
         },
         {
           "path": "UPSTREAM.patch",
-          "sha256": "421ed1723430f8d953b07c35963728338bfedb71a0cc41b06071aac09a4aa924"
+          "sha256": "082833e0e6c9feb7285c519106564ac2fe08e0d7d3992dbfdbe516e94f9f349e"
         },
         {
           "path": "condition-based-waiting.md",
@@ -140,11 +140,11 @@
         },
         {
           "path": "defense-in-depth.md",
-          "sha256": "86fe9b1b387bdd15e7daf16cf147ca144f90b647ef69d901fccb1f6c399e8805"
+          "sha256": "aff0d6172f63e9e5aa13d4feb113da726f1c329efab359d4c58095c99063f81b"
         },
         {
           "path": "root-cause-tracing.md",
-          "sha256": "bdf443e985b7b577c5d00efe5b716c671ad00e5493718c39b5a3fb877f5055cc"
+          "sha256": "182cb508ff409a308f7004b45946a58e3278e0c3e131f96bb7eaf2ecdda8fe80"
         },
         {
           "path": "upstream/SKILL.md.txt",

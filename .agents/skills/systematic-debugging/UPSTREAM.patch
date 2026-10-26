@@ -115,12 +115,45 @@
 +**Core principle:** Enforce the invariant at the necessary trust/ownership boundaries.
 +Use defense in depth where evidence shows a bypass; do not duplicate every check
 +or claim that finite tests make a bug impossible.
-@@ -93,2 +99,2 @@
+@@ -12 +18 @@
+-Multiple layers: "We made the bug impossible"
++Multiple layers: "We covered a demonstrated bypass at another necessary boundary"
+@@ -55,16 +61,6 @@
+-```typescript
+-async function gitInit(directory: string) {
+-  // In tests, refuse git init outside temp directories
+-  if (process.env.NODE_ENV === 'test') {
+-    const normalized = normalize(resolve(directory));
+-    const tmpDir = normalize(resolve(tmpdir()));
+-
+-    if (!normalized.startsWith(tmpDir)) {
+-      throw new Error(
+-        `Refusing git init outside temp dir during tests: ${directory}`
+-      );
+-    }
+-  }
+-  // ... proceed
+-}
+-```
++Use an existing, verified workspace-isolation or path-containment facility;
++do not treat a lexical string prefix such as `path.startsWith(tmpDir)` as a
++security boundary. Similar sibling names and symlinks can escape that assumption.
++This reference does not supply a safe filesystem guard. If the target cannot be
++shown to stay in the authorized disposable workspace, do not run a mutating
++operation there. Prefer source inspection and an already isolated synthetic test.
+@@ -93,2 +89,2 @@
 -3. **Add validation at each layer** - Entry, business, environment, debug
 -4. **Test each layer** - Try to bypass layer 1, verify layer 2 catches it
 +3. **Add necessary validation** - Keep the authoritative check; add a boundary guard only for a demonstrated bypass
 +4. **Verify the relevant boundary** - Use the minimum necessary authorized synthetic checks
-@@ -122 +128,2 @@
+@@ -112 +108,2 @@
+-**Result:** All 1847 tests passed, bug impossible to reproduce
++**Upstream-reported result:** 1847 tests passed in that historical example.
++That is not this repository's evidence and does not prove the bug impossible.
+@@ -116 +113 @@
+-All four layers were necessary. During testing, each layer caught bugs the others missed:
++In the upstream example, multiple layers addressed distinct observed paths:
+@@ -122 +119,2 @@
 -**Don't stop at one validation point.** Add checks at every layer.
 +The upstream example needed multiple checks; select only the layers necessary
 +for this repository's actual invariant and authorization boundary.
@@ -130,6 +163,12 @@
 +
 +> Adapted 2026-10-26: illustrative upstream example, not project evidence.
 +> Use synthetic/redacted metadata and only authorized focused checks.
+@@ -17 +20 @@
+-    "BETTER: Also add defense-in-depth" [shape=box];
++    "Consider necessary boundary guards" [shape=box];
+@@ -22 +25 @@
+-    "Trace to original trigger" -> "BETTER: Also add defense-in-depth";
++    "Trace to original trigger" -> "Consider necessary boundary guards";
 @@ -89 +92 @@
 -npm test 2>&1 | grep 'DEBUG git init'
 +<authorized-focused-test-command>  # inspect the complete result and exit code
@@ -145,6 +184,16 @@
 +suspected polluted path and runs tests repeatedly. First inspect existing
 +failure evidence and narrow the test order. A bounded reproduction must use
 +an isolated synthetic workspace and the normal repository test authorization.
+@@ -139,2 +139,2 @@
+-    "Add validation at each layer" [shape=box];
+-    "Bug impossible" [shape=doublecircle];
++    "Guard necessary boundaries" [shape=box];
++    "Risk reduced; verify" [shape=doublecircle];
+@@ -149,2 +149,2 @@
+-    "Fix at source" -> "Add validation at each layer";
+-    "Add validation at each layer" -> "Bug impossible";
++    "Fix at source" -> "Guard necessary boundaries";
++    "Guard necessary boundaries" -> "Risk reduced; verify";
 @@ -160 +160 @@
 -**Include context:** Directory, cwd, environment variables, timestamps
 +**Include context:** Only necessary allowlisted/redacted metadata; never dump environment variables, keys or private content

@@ -15,7 +15,7 @@ or claim that finite tests make a bug impossible.
 ## Why Multiple Layers
 
 Single validation: "We fixed the bug"
-Multiple layers: "We made the bug impossible"
+Multiple layers: "We covered a demonstrated bypass at another necessary boundary"
 
 Different layers catch different cases:
 - Entry validation catches most bugs
@@ -58,22 +58,12 @@ function initializeWorkspace(projectDir: string, sessionId: string) {
 ### Layer 3: Environment Guards
 **Purpose:** Prevent dangerous operations in specific contexts
 
-```typescript
-async function gitInit(directory: string) {
-  // In tests, refuse git init outside temp directories
-  if (process.env.NODE_ENV === 'test') {
-    const normalized = normalize(resolve(directory));
-    const tmpDir = normalize(resolve(tmpdir()));
-
-    if (!normalized.startsWith(tmpDir)) {
-      throw new Error(
-        `Refusing git init outside temp dir during tests: ${directory}`
-      );
-    }
-  }
-  // ... proceed
-}
-```
+Use an existing, verified workspace-isolation or path-containment facility;
+do not treat a lexical string prefix such as `path.startsWith(tmpDir)` as a
+security boundary. Similar sibling names and symlinks can escape that assumption.
+This reference does not supply a safe filesystem guard. If the target cannot be
+shown to stay in the authorized disposable workspace, do not run a mutating
+operation there. Prefer source inspection and an already isolated synthetic test.
 
 ### Layer 4: Debug Instrumentation
 **Purpose:** Capture context for forensics
@@ -115,11 +105,12 @@ Bug: Empty `projectDir` caused `git init` in source code
 - Layer 3: `WorktreeManager` refuses git init outside tmpdir in tests
 - Layer 4: Stack trace logging before git init
 
-**Result:** All 1847 tests passed, bug impossible to reproduce
+**Upstream-reported result:** 1847 tests passed in that historical example.
+That is not this repository's evidence and does not prove the bug impossible.
 
 ## Key Insight
 
-All four layers were necessary. During testing, each layer caught bugs the others missed:
+In the upstream example, multiple layers addressed distinct observed paths:
 - Different code paths bypassed entry validation
 - Mocks bypassed business logic checks
 - Edge cases on different platforms needed environment guards
