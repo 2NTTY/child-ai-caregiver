@@ -36,7 +36,7 @@ test('attachment projection consumes both formal endpoints and preserves server 
   const owner = { voiceApi: createVoiceApi(fetcher, 'https://example.test'), fileApi: createChatFileApi(fetcher, 'https://example.test') };
   const h = harness({
     '../../../src/client/online-refresh-events': { subscribeOnlineRefresh: listener => { listeners.add(listener); return () => listeners.delete(listener); } },
-    './useDomainEnvironment': { useDomainEnvironment: () => ({ owner, scopeKey: 'synthetic-scope', userId: 'synthetic-parent', childId, online: true, current: () => true, accessError: error => errors.push(error) }) },
+    './useDomainEnvironment': { forSharedModule:env=>env,useDomainWriteGuard(){},useDomainEnvironment: () => ({ owner, scopeKey: 'synthetic-scope', userId: 'synthetic-parent', childId, online: true, current: () => true, accessError: error => errors.push(error) }) },
     '../photo-view-model': { photoTime: date => date }, './VoiceMessage': { VoiceMessage: 'VoiceMessage' }, './ChatFileMessage': { ChatFileMessage: 'ChatFileMessage' },
   });
   const { useAttachmentReview } = h.load('src/production/useAttachmentReview.tsx');

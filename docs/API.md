@@ -1161,6 +1161,8 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 附件讀取沿既有 photos／voices／files 的 GET 路徑，明確以單一 `spaceId` 選擇 attachments 模組；同源身份及預期用戶 header 照常核對。不接受用戶指定資料擁有人。檔案／錄音清單只含已連結訊息且 ready 的項目；照片只回已完成上傳的原檔。共享 DTO 帶 `sharedSpaceId`，file／voice／轉錄的私人 `messageId` 為 null；轉錄儲存仍保留原始訊息綁定。照片標示 shared，canManage 依目前角色表示可刪除；隱去私人抽取草稿、run ID 及原記錄關聯。附件共享不授予讀取來源聊天。
 
+共用附件頁面已接這些 client；媒體元件在共享模式須顯式取得共享 API，並核空間、孩子、ID、版本、hash 及 null 訊息綁定，不能退回原 owner 的私人 API。共享上載／提取／聊天重用未接時不提供可執行入口。文件／錄音刪除回覆遺失後，先以 `GET /api/online/operations/:opId` 核對同一操作及路徑；confirmed 的受理收據不當日誌完成。已有受理證據才接續原刪除端點；unconfirmed 由使用者明確重試原 opId，無新 ID 或自動循環。恢復原操作不被自己的頁面 pending 鎖擋住，仍重核目前身份／權限；清單刷新不清掉待查操作。
+
 共享游標及原檔讀取前後同時綁操作者、來源、孩子、儲存世代及共享 basis；撤權、換模組或撤權後重新授權均不能承接舊讀取。Cloud Storage 原物件及應用層加密保持，無額外副本或公開 URL。三種共用 client 的第四個可選參數接 `SharedSelection`，Web／Android 沿同一 transport；舊未選空間的 DTO／游標仍可讀。文件／錄音可沿原 `/delete?spaceId=…` POST，仍帶原 `expectedVersion`／`opId`；Server 核當前 write 角色及已提交原件，viewer／未連結草稿不得刪除。受理收據只含原件 ID／action／accepted，歸操作者，不代表 journal 已完成；只有 journal 核實後才回 `deleted:true`，物件清理狀態另列。原操作重試不換 ID，不同操作者不能認領他人的刪除。共享日誌使用操作者＋原 opId 的穩定來源操作 ID，避免不同成員在來源 owner 的日誌空間撞鍵；對外及收據仍保留原 opId。共享照片刪除沿既有 online context／submit，帶 `sharing.spaceId`／`expectedBasis`、`expectedVersion`／`confirmDelete` 及原 `opId`。當前角色／版本、來源配額及已綁定的照片記錄一併核對；受理後建立原清理工作，日誌未核實時查回仍為 unconfirmed，不能顯示刪除成功。完成後沿舊 `{deleted:true,cleanupPending:true}` 結果；其他共享 POST／online 附件寫入仍回 `shared_attachment_write_unavailable`，不靜默改成本人操作。新增、Agent 重用及家庭畫面由 FAMILY-A／B 接續。共享照片分頁可有空中間頁，但游標必須前進且查詢有界。
 
 同一交易核對操作者及來源，保留原資源 ID／儲存位置，作者／確認者記實際操作者；原擁有人收到領域變更，操作者收到不含別人私人資料的共享變更。收據仍屬操作者，保存來源內容指標；重試及查回沿目前共享權限／刪除屏障讀取，撤權後保留成功身份而遮蔽結果。共享交易不可讀寫來源擁有人的私人工作、聊天或帳戶設定。家庭入口及其餘模組未接通前，不宣稱整包完成。

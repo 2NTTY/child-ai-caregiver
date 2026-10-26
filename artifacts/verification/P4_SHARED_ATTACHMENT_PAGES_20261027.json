@@ -1,0 +1,31 @@
+{
+  "package": "P4-FAMILY-B shared attachment pages",
+  "date": "2026-10-27",
+  "base": "8fd664973c15dcfaf81f917811af9e9dc3b2f9ad",
+  "branch": "codex/p4-shared-attachment-pages",
+  "status": "implemented, targeted verification and review; not deployed",
+  "environment": "Windows; Node 24.19.0; existing React hook host harness and synthetic HTTP ports",
+  "reuse": "Existing photo/file/voice clients, shared authority, original storage, deletion services, media export/playback and online receipts. No new dependency.",
+  "checks": [
+    {"command":"node --test frontend/scripts/shared-photo-pages.test.mjs","result":"5 passed by bounded Sol implementer; scope selection, missing grant/private source suppression, role deletion, private compatibility and route/view wiring. Main reviewed affected code."},
+    {"command":"node --test frontend/scripts/shared-attachment-media.test.mjs","result":"5 passed by separate bounded Sol implementer; explicit shared APIs/null message, mismatched space, private compatibility and late bytes disposal. Scoped media TypeScript program had zero diagnostics. Main reviewed affected code."},
+    {"command":"node --test frontend/scripts/shared-attachment-library.test.mjs frontend/scripts/attachment-contract-integration.test.mjs","result":"3 passed; real shared clients and existing private HTTP projection; original deletion workflow. Subsequent recovery fixes rechecked below."},
+    {"command":"node --test --test-name-pattern='unknown attachment|attachment deletion recovery' frontend/scripts/shared-attachment-library.test.mjs tests/attachment-delete-receipt.test.ts","result":"Latest 2 passed. Actual domain-pending lock blocks new operations but permits original retry after receipt lookup. Accepted receipt still resumes the same delete until endpoint confirms journal; intermediate failure stays unknown. Different receipt operation/path rejected."},
+    {"command":"node node_modules/typescript/bin/tsc -p frontend/tsconfig.json --noEmit --pretty false","result":"Latest exit2, only four pre-existing diagnostics: dashboard ref; PreparationWorkspace optional callbacks twice; task-knowledge-read-window previous inference. Own accessError unknown-type diagnostic corrected. Not a full typecheck pass."},
+    {"command":"node --test --test-name-pattern='viewer opens|photos-first array alias retains|initial 503' frontend/scripts/source-photo-controls.test.mjs frontend/scripts/photo-route-retention.test.mjs frontend/scripts/source-read-recovery.test.cjs","result":"Attempt stopped: two legacy harnesses require unavailable jsdom; other legacy fixture lacks owner.fetcher. No product pass claimed, dependency not installed, no rerun. Private compatibility is separately covered by the focused photo/media and HTTP checks above."},
+    {"method":"Independent Sol read-only diff review","result":"One actionable pending-lock finding, reproduced and fixed. Main additionally checked acceptance versus erasure completion against actual Firestore receipt/deletion code. No duplicate full review."}
+  ],
+  "retainedFailures": [
+    "New receipt helper initially absent; first implementation used a Node strip-only unsupported parameter property, corrected without changing behavior.",
+    "Deletion harness initially called nonexistent h.find; corrected to existing hosts accessor.",
+    "Review regression reproduced one POST instead of two after original receipt lookup, due to self pending lock.",
+    "Receipt helper initially classified accepted record as completed; corrected distinction and endpoint completion check.",
+    "Media override test helper initially replaced explicit undefined with default override; fixed fixture without loosening product guard.",
+    "Legacy DOM harness and fixture failures remain as described above."
+  ],
+  "notVerifiedOrDelivered": [
+    "No build, deployment, cloud indexes, live Firestore concurrency, browser/device or model/notification calls.",
+    "Shared uploads, Agent reuse and remaining P4 scope are pending; original backend evidence is reused, not rerun.",
+    "P3/P5 boundaries and collaborator Agent PRs are unchanged."
+  ]
+}

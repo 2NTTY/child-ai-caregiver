@@ -8,7 +8,7 @@ import { sourceConfirmationProjection, sourceRecordSchema, validSourceExcerpt } 
 import { emptyPhotoDraft, type PhotoDraftFields } from "../photo-view-model";
 import type { SourceInput, SourceOperation, SourcesActions, SourcesViewModel, SourceManagementDraft, SourceManagementHistory } from "../shared-input-view-model";
 import { validSourceIntakeProposal, validSourceIntakeText, type SourceIntake } from "../source-intake";
-import { useDomainEnvironment, useDomainWriteGuard } from "./useDomainEnvironment";
+import { useDomainEnvironment, useDomainWriteGuard, forSharedModule } from "./useDomainEnvironment";
 import { useProduction } from "./ProductionProvider";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 
@@ -31,7 +31,7 @@ const intakeProjection = (draft: SourceManagementDraft, stage: SourceIntake["sta
 /** Existing shared-input HTTP actions, projected into the approved manual source UI. */
 export function usePhotoInputSources() {
   const navigate = usePreviewNavigation();
-  const env = useDomainEnvironment(), envRef = useRef(env); envRef.current = env;
+  const env = forSharedModule(useDomainEnvironment(), 'private'), envRef = useRef(env); envRef.current = env;
   const production = useProduction(), productionRef = useRef(production); productionRef.current = production;
   const api = useMemo(() => createSharedInputApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
   const [state, setState] = useState(() => ({

@@ -13,7 +13,7 @@ function reader() {
   let scope = 'synthetic-a', result; const calls = [], errors = [], requests = [], refreshListeners = new Set();
   const env = () => { const key = scope; return {scopeKey: key, userId: 'synthetic-user', childId: 'synthetic-child', online: true, current: () => scope === key, accessError: error => errors.push(error)}; };
   const api = {list(childId, query, signal, userId) {const value = pending(); calls.push({childId, query, signal, userId}); requests.push(value); return value.promise;}};
-  const h = harness({'../../../src/client/online-refresh-events': {subscribeOnlineRefresh: listener => {refreshListeners.add(listener); return () => refreshListeners.delete(listener);}}, './useDomainEnvironment': {useDomainEnvironment: env}, '../photo-view-model': {photoTime: value => value}, './VoiceMessage': {VoiceMessage: 'VoiceMessage'}, './ChatFileMessage': {ChatFileMessage: 'ChatFileMessage'}});
+  const h = harness({'../../../src/client/online-refresh-events': {subscribeOnlineRefresh: listener => {refreshListeners.add(listener); return () => refreshListeners.delete(listener);}}, './useDomainEnvironment': {useDomainEnvironment: env,forSharedModule:env=>env,useDomainWriteGuard(){}}, '../photo-view-model': {photoTime: value => value}, './VoiceMessage': {VoiceMessage: 'VoiceMessage'}, './ChatFileMessage': {ChatFileMessage: 'ChatFileMessage'}});
   const {useAttachmentList} = h.load('src/production/useAttachmentReview.tsx');
   function Host() {result = useAttachmentList(api); return h.jsx('ReadHost', {});}
   h.render(h.jsx(Host, {}));
