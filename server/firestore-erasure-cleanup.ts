@@ -1,4 +1,5 @@
 import { avatarHeadId, avatarCleanupId, avatarHeadRecordSchema, avatarUploadRecordSchema, avatarCleanupRecordSchema } from './avatar-data.ts';
+import { sharingErasedBy } from './firestore-sharing-records.ts';
 import type { FirestoreAvatarCleanup } from './firestore-avatar-cleanup.ts';
 import { firestoreChatFileRowSchema, type FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
@@ -53,6 +54,7 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
   }
   function matches(job: FirestoreScopeErasure, row: OpenedRecoveryEnvelope) {
     const scope = job.intent.scope, candidate = row.context.scope;
+    if (sharingErasedBy(row.context.kind, row.value, scope, job.intent.type === 'account-delete')) return true;
     if (job.intent.type === 'account-delete' && row.context.kind === 'authority-invitation')
       return (row.value as { consumedBy?: string }).consumedBy === scope.ownerUserId;
     if (scope.ownerUserId !== candidate.ownerUserId) return false;

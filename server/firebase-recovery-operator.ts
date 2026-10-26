@@ -1,4 +1,5 @@
 import { createFirebaseAvatarRestoreCopies, type AvatarCopyPayload } from './firebase-avatar-restore-copies.ts';
+import { isSharingAuthorityPath } from './firestore-sharing-records.ts';
 import { avatarObjectAddress } from './firebase-avatar-objects.ts';
 import type { AvatarRecoveryBatch } from './avatar-config.ts';
 import { erasureCoversAvatar } from './firebase-erasure-journal.ts';
@@ -143,7 +144,7 @@ export function createFirebaseRecoveryOperator(options:FirebaseRecoveryOperatorO
   function evidence(live:FirebaseBackupDocument[],users:FirebaseRestoreAuthUser[],erasures:FirebaseErasureIntent[]){
     return {journalHash:digest(erasures.map(firebaseErasureIntentHash).sort()),
       authHash:digest([...users].sort((a,b)=>a.userId.localeCompare(b.userId))),
-      authorityHash:digest(live.filter(row=>row.path.startsWith(namespace+'/')).map(row=>({path:row.path,...firebaseBackupDocumentDigest(row)})).sort((a,b)=>a.path.localeCompare(b.path)))};
+      authorityHash:digest(live.filter(row=>row.path.startsWith(namespace+'/') || isSharingAuthorityPath(namespace, row.path)).map(row=>({path:row.path,...firebaseBackupDocumentDigest(row)})).sort((a,b)=>a.path.localeCompare(b.path)))};
   }
   function checkpointAad(){return canonical(['yuban-firebase-restore',1,projectId,target.databaseId,namespace,'current']);}
   const applyIdentity=(input:{backupId:string;restoreId:string;descriptor:Pick<FirebaseBackupManifestDescriptor,'cipherSha256'>})=>digest([input.backupId,input.restoreId,input.descriptor.cipherSha256]);

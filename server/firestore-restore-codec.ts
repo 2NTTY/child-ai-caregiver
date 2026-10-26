@@ -1,4 +1,5 @@
 import { avatarRestoreSchemas, isAvatarRestoreKind, assertAvatarRestoreBinding, transformAvatarRestore } from './firestore-restore-avatar-codec.ts';
+import { isSharingKind, transformSharingRecord, sharingMetadata } from './firestore-sharing-records.ts';
 import type { AvatarObjectDescriptor } from './avatar-data.ts';
 import { firestoreChatFileRowSchema } from './firestore-chat-files.ts';
 import { chatFileObjectAddress, chatFileObjectDescriptorSchema, type ChatFileObjectDescriptor } from './firebase-chat-file-objects.ts';
@@ -152,7 +153,7 @@ const authorityEnvelopeSchema = z.object({ format: z.literal('yuban-work-recover
 const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domain'), version: z.literal(1), recordVersion: positive,
   ciphertext: z.string().min(1), recovery: z.unknown() }).strict();
 // messageSentAt is untrusted query metadata; operation restores rebuild it from authenticated content.
-const privateMetadata = new Set(['messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
+const privateMetadata = new Set(['entryId', 'managerTag', 'memberTag', 'sourceUserTag', 'active', 'spaceId', 'messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
   'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
   'live', 'state', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
@@ -513,8 +514,10 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     if (isCoreRestoreKind(context.kind)) {
       const schema = coreRestoreSchemas[context.kind].schema;
       const saved = coreMetadata.get(decoded); if (!saved) reject('restore_core_origin_missing');
-      const value = context.kind === 'chat-reply-leases' ? { leases: [] } : schema.parse(decoded.value);
-      const metadata = context.kind === 'chat-reply-leases' ? {} : { ...data.tags(scope), ...saved };
+      const value = isSharingKind(context.kind) ? transformSharingRecord(context.kind, decoded.value, input.newEpochByWorkspace)
+        : context.kind === 'chat-reply-leases' ? { leases: [] } : schema.parse(decoded.value);
+      const metadata = isSharingKind(context.kind) ? { ...data.tags(scope), ...sharingMetadata(context.kind, value) }
+        : context.kind === 'chat-reply-leases' ? {} : { ...data.tags(scope), ...saved };
       const envelope = data.seal<FirestoreRestoreValue>(context.kind, context.id, scope, schema, value, context.recordVersion);
       return { oldPath: decoded.path, path: pathFor({ ...context, scope }, decoded.path), data: { ...metadata, ...envelope } };
     }

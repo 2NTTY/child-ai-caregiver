@@ -1,4 +1,5 @@
 import { contentErasureSchema } from './firestore-content-erasure.ts';
+import { sharingRestoreSchemas, sharingRestoreMetadata, isSharingKind } from './firestore-sharing-records.ts';
 import { materialRestoreSchemas, isMaterialRestoreKind, materialRestoreMetadata } from './firestore-restore-material-records.ts';
 import { firestorePreparationSchema } from './firestore-care-summary.ts';
 import { z } from 'zod';
@@ -11,6 +12,7 @@ import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts'
 const NIL = '00000000-0000-0000-0000-000000000000';
 const FAR_FUTURE = '9999-12-31T23:59:59.999Z';
 export const coreRestoreSchemas = {
+  ...sharingRestoreSchemas,
   ...materialRestoreSchemas,
   'content-erasure': { suffix: 'content_erasures', schema: contentErasureSchema },
   'visit-preparation': { suffix: 'visit_preparations', schema: firestorePreparationSchema },
@@ -60,6 +62,7 @@ export function coreRestoreAddress(kind: CoreRestoreKind, id: string, collection
 export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: CoreRestoreKind }, raw: CoreRestoreValue,
   original: Readonly<Record<string, unknown>>): Record<string, unknown> {
   const { kind, id, scope, recordVersion } = context;
+  if (isSharingKind(kind)) return sharingRestoreMetadata({ ...context, kind }, raw);
   if (isMaterialRestoreKind(kind)) return materialRestoreMetadata({ ...context, kind }, materialRestoreSchemas[kind].schema.parse(raw), original);
   requireValue(context.family === 'domain' && context.envelopeVersion === 1 && recordVersion !== undefined);
   if (kind === 'chat-reply-leases') {
