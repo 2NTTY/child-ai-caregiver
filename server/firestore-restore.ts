@@ -16,7 +16,7 @@ import { createFirestoreRestoreCodec, type FirestoreRestoreDecoded } from './fir
 import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts';
 import { FirestoreDomainData, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { firestorePhotoSchemas as photos } from './firestore-photos.ts';
-import { firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema } from './firestore-online-receipts.ts';
+import { firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema, firestoreSharedResultSchema } from './firestore-online-receipts.ts';
 import { firebaseErasureIntentHash, firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, type FirebaseErasureIntent, type FirebaseErasureDescriptor } from './firebase-erasure-journal.ts';
 import type { FirebasePhotoObjectDescriptor } from './firebase-photo-objects.ts';
 import { firebaseBackupDocumentDigest, type FirebaseBackupDocument } from './firestore-backup.ts';
@@ -213,10 +213,23 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   for(const row of rows(live,'photo-cleanup',photos.cleanup)) {
     if(erasedByScope(row.value.scope.ownerUserId,row.value.scope.workspaceId,row.value.scope.childId))continue;
     const intent=intentByAsset.get(row.value.photoId);
-    requireValue(Boolean(intent&&row.value.journal.intentSha256===firebaseErasureIntentHash(intent)
+    requireValue(Boolean(intent&&(!row.value.journal||row.value.journal.intentSha256===firebaseErasureIntentHash(intent))
       &&canonical(intent.scope)===canonical(row.value.scope)&&intent.operationId===row.value.operationId),'restore_erasure_missing');
     const old=cleanup.get(row.value.photoId);if(old)removed.add(old.record.path);
     decoded.push(row.record);cleanup.set(row.value.photoId,row);
+  }
+  // The independent journal may be durable even when its reply never reached the shared writer.
+  for (const [id, row] of cleanup) {
+    if (row.value.journal) continue;
+    const intent = intentByAsset.get(id);
+    requireValue(Boolean(intent && canonical(intent.scope) === canonical(row.value.scope)
+      && intent.operationId === row.value.operationId), 'restore_erasure_missing');
+    const proof = firebaseErasureDescriptorSchema.parse(input.erasureDescriptors.get(firebaseErasureIntentHash(intent!)));
+    requireValue(proof.intentSha256 === firebaseErasureIntentHash(intent!), 'restore_erasure_binding');
+    const value = photos.cleanup.parse({...row.value, journal: proof});
+    const record = codec.decode({path: row.record.path, data: {scopeTag: firestoreDomainHash([options.projectId,options.namespace,'photo-scope',value.scope]),
+      state:value.state, ...data.seal('photo-cleanup',id,value.scope,photos.cleanup,value)}});
+    removed.add(row.record.path); decoded.push(record); cleanup.set(id,{record,value});
   }
   const backupPhotos=unique(rows(decoded,'photo',photos.photo),row=>row.value.id);
   const currentPhotos=unique(rows(live,'photo',photos.photo),row=>row.value.id);
@@ -249,13 +262,13 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   const cleanupTombstones = new Map<string, FirestoreRestoreDecoded>();
   for (const {value: job} of cleanup.values()) {
     const intent = intentByAsset.get(job.photoId)!;
-    requireValue(Boolean(intent && job.journal.intentSha256 === firebaseErasureIntentHash(intent)), 'restore_erasure_missing');
+    requireValue(Boolean(intent && job.journal?.intentSha256 === firebaseErasureIntentHash(intent)), 'restore_erasure_missing');
     const prior = currentPhotos.get(job.photoId)?.value ?? backupPhotos.get(job.photoId)?.value;
     requireValue(Boolean(prior), 'restore_cleanup_evidence_missing');
     const tombstone = photos.photo.parse({ id: job.photoId, scope: job.scope, reservationOperationId: prior!.reservationOperationId,
       createdAt: prior!.createdAt, version: prior!.version, state: 'deleted', metadata: null, descriptor: null, upload: job.upload,
       ...(job.objectScope ? {objectScope: job.objectScope} : {}),
-      deletion: {intent, expectedVersion: prior!.deletion?.expectedVersion ?? prior!.version,
+      deletion: {...prior!.deletion, intent, expectedVersion: prior!.deletion?.expectedVersion ?? prior!.version,
         fingerprint: prior!.deletion?.fingerprint ?? firestoreDomainHash(['delete', job.photoId, prior!.version]), journal: job.journal} });
     const record = codec.decode({path: data.ref('photos','photo',job.photoId).path, data: {
       assetId:job.photoId,scopeTag:firestoreDomainHash([options.projectId,options.namespace,'photo-scope',job.scope]),
@@ -266,6 +279,13 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   const outputExtras:FirebaseBackupDocument[]=restoreFirestoreUsage(options,input.documents,input.liveDocuments,
     [...decoded,...live].filter(v=>v.context.kind==='agent-run').map(v=>v.context.id));
   for(const {record,value}of rows(decoded,'online-receipt',z.union([firestoreOnlineRecordSchema,firestoreOnlineErasureBarrierSchema]))) {
+    if (!('state' in value)) {
+      const pointer = firestoreSharedResultSchema.safeParse(value.result);
+      if (pointer.success && 'format' in pointer.data.result && pointer.data.result.format === 'shared-photo-deletion:1') {
+        const intent = intentByAsset.get(pointer.data.result.id);
+        if (intent) record.value = {...value, result:null};
+      }
+    }
     if('operation'in value && erasedReservations.has(canonical([value.ownerUserId,value.operation.opId]))) {
       requireValue(!('state'in value),'restore_erasure_receipt');record.value={...value,result:null};
     }
@@ -302,7 +322,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   const allCleanup=rows(keep,'photo-cleanup',photos.cleanup),global=rows(keep,'photo-global-quota',photos.globalQuota);
   for(const row of allCleanup){const intent=intentByAsset.get(row.value.photoId);requireValue(Boolean(intent
     &&canonical(intent.scope)===canonical(row.value.scope)&&intent.operationId===row.value.operationId
-    &&row.value.journal.intentSha256===firebaseErasureIntentHash(intent)),'restore_erasure_missing');}
+    &&row.value.journal?.intentSha256===firebaseErasureIntentHash(intent)),'restore_erasure_missing');}
   if(!global.length&&allCleanup.length){const currentGlobal=rows(live,'photo-global-quota',photos.globalQuota);
     requireValue(currentGlobal.length===1,'restore_quota_missing');global.push(currentGlobal[0]!);keep.push(currentGlobal[0]!.record);}
   if(livePhotos.length||allCleanup.length)requireValue(global.length===1,'restore_quota_missing');

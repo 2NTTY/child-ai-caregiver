@@ -1,6 +1,6 @@
 import { createChatFileApi } from '../src/client/chat-file-api.ts';
 import { createVoiceApi } from '../src/client/voice-api.ts';
-import { createPhotoApi } from '../src/client/photo-api.ts';
+import { createPhotoApi, PhotoApiError } from '../src/client/photo-api.ts';
 import { createFirestorePhotoStore, firestorePhotoSchemas } from '../server/firestore-photos.ts';
 import { createHash } from 'node:crypto';
 import { createFirestoreChatFilesStore, firestoreChatFileRowSchema } from '../server/firestore-chat-files.ts';
@@ -39,6 +39,8 @@ import { replayContentErasures } from '../server/firestore-restore-content-erasu
 import type { FirebaseErasureIntent } from '../server/firebase-erasure-journal.ts';
 import { firebaseErasureIntentHash } from '../server/firebase-erasure-journal.ts';
 import { createFirestoreOnlineReceipts } from '../server/firestore-online-receipts.ts';
+import { createFirestoreContentErasure } from '../server/firestore-content-erasure.ts';
+import type { OnlineSubmission } from '../src/shared/online.ts';
 
 async function fixture() {
   const fake = serialFirestoreFixture(), now = Date.parse('2026-10-27T04:00:00Z');
@@ -82,6 +84,96 @@ async function fixture() {
   return { fake, options, authority, sharing, child, space, control, documents };
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
+
+test('shared photo deletion keeps source quotas and completes its journal after revocation', async () => {
+  const f=await fixture(), childId=f.child.child.id, data=new FirestoreDomainData(f.options);
+  const scope=await f.authority.runTransaction('parent',childId,async b=>b.scope);
+  let journalUnavailable=true, removed=0;
+  const intents=new Map<string,FirebaseErasureIntent>();
+  const journal={async writeOnce(intent:FirebaseErasureIntent){
+    if(journalUnavailable) throw Error('Journal unavailable');
+    const key=JSON.stringify([intent.scope.ownerUserId,intent.operationId]), previous=intents.get(key);
+    if(previous)assert.deepEqual(previous,intent,'each distinct erasure keeps a unique source operation');
+    intents.set(key,intent);
+    return {objectName:'erasures/v1/'+firebaseErasureIntentHash(intent),generation:'1',cipherSha256:'d'.repeat(64),intentSha256:firebaseErasureIntentHash(intent),bytes:1,format:'yuban-erasure-journal/v1' as const};
+  },async read(intent:FirebaseErasureIntent,proof:{intentSha256:string}){assert.equal(proof.intentSha256,firebaseErasureIntentHash(intent));return intent;}};
+  const photos=createFirestorePhotoStore({...f.options,journal,objects:{write:async()=>{throw Error('No upload');},recover:async()=>{throw Error('No upload');},
+    read:async()=>{throw Error('No download');},remove:async(actualScope,id)=>{assert.deepEqual(actualScope,scope);assert.equal(id,photo.id);removed++;}}});
+  const metadata={fileName:'shared.png',source:'camera' as const,mimeType:'image/png' as const,bytes:24,sha256:'a'.repeat(64)};
+  const photo=await photos.reserve('parent',childId,randomUUID(),metadata);
+  const ref=data.ref('photos','photo',photo.id), snapshot=await ref.get();
+  const row=data.open('photo',photo.id,scope,firestorePhotoSchemas.photo,snapshot);
+  const objectName='photos/v1/'+createHash('sha256').update(JSON.stringify(['yuban-photo-object',1,f.options.projectId,f.options.namespace,scope])).digest('hex')+'/'+photo.id;
+  const care=createFirestoreCareStore(f.options), parentOnline=createFirestoreOnlineStore({...f.options,mutations:[care.mutation]});
+  const recordCommand={path:'/api/children/'+childId+'/records',payload:{text:'Extracted photo note'}};
+  const parentContext=await parentOnline.context('parent',recordCommand);
+  const {record}=(await parentOnline.submit('parent',{...recordCommand,operation:{...parentContext,opId:randomUUID(),deviceId:randomUUID()}})).result as {record:{id:string}};
+  const ready={...row,version:2,state:'ready',recordId:record.id,descriptor:{objectName,generation:'1',cipherSha256:'c'.repeat(64),...metadata}};
+  const descriptor={objectName,generation:'1',cipherSha256:'c'.repeat(64),sha256:metadata.sha256,bytes:24,mimeType:'image/png'};
+  f.fake.records.set(ref.path,{...snapshot.data(),...data.seal('photo',photo.id,scope,firestorePhotoSchemas.photo,{...ready,descriptor} as any,2)});
+  await f.sharing.share('parent',{spaceId:f.space.id,childId,modules:['attachments'],expectedVersion:f.space.version,operationId:randomUUID()});
+  const online=createFirestoreOnlineStore({...f.options,photos}), command={path:'/api/children/'+childId+'/photos/'+photo.id+'/delete',payload:{expectedVersion:2,confirmDelete:true},sharing:{spaceId:f.space.id}};
+  const context=await online.context('carer',command);
+  await assert.rejects(online.submit('carer',{...command,payload:{...command.payload,expectedVersion:1},sharing:{...command.sharing,expectedBasis:context.sharingBasis!},
+    operation:{workspaceId:context.workspaceId,storageEpoch:context.storageEpoch,opId:randomUUID(),deviceId:randomUUID()}}),code('version_conflict'));
+  await assert.rejects(online.context('viewer',command),code('read_only'));
+  const auth={async getSession(options:{returnHeaders?:boolean}){const session={user:{id:'carer',email:'carer@example.test'}};
+    return options.returnHeaders?{response:session,headers:new Headers()}:session;},async handler(){return new Response(null,{status:404});},
+    async assertRecentReauthentication(){return {user:{id:'carer',email:'carer@example.test'}};},fromNodeHeaders(){return new Headers();}} as FirebaseAuthPort;
+  const handler=createFirebaseRequestHandler({authority:f.authority,auth,publicOrigin:'https://app.example.test',mailConfigured:false,online,photos});
+  let submitted:OnlineSubmission|undefined;
+  const client=createPhotoApi('https://app.example.test',async(input,init)=>{
+    if(String(input).endsWith('/online/submit'))submitted=JSON.parse(String(init?.body)) as OnlineSubmission;
+    const headers=new Headers(init?.headers);headers.set('Origin','https://app.example.test');return handler(new Request(input,{...init,headers}));
+  },undefined,{spaceId:f.space.id});
+  const signal=new AbortController().signal, view=(await client.photos(childId,signal,'carer')).photos[0];
+  assert.equal(view.canManage,true);assert.equal(view.recordId,null);
+  await assert.rejects(client.delete(view,signal,'carer'),(error:unknown)=>error instanceof PhotoApiError&&error.status===503);
+  assert.ok(submitted);const submission=submitted,opId=submission.operation.opId;
+  assert.deepEqual(await online.lookup('carer',opId),{state:'unconfirmed'});
+  assert.equal(await care.get('parent',childId,record.id),null,'deletion immediately invalidates the original extracted record');
+  const pending=data.open('photo',photo.id,scope,firestorePhotoSchemas.photo,await ref.get());
+  assert.equal(pending.state,'deleting');assert.equal(pending.deletion!.actorUserId,'carer');
+  assert.notEqual(pending.deletion!.intent.operationId,opId);
+  const cleanupRef=data.ref('photo_cleanup','photo-cleanup',photo.id);
+  assert.ok((await cleanupRef.get()).exists,'the existing maintenance scan can discover accepted cleanup before the journal returns');
+  const quota=()=>firestorePhotoSchemas.globalQuota.parse(createFirestoreRestoreCodec(f.options).decode(
+    f.documents().find(row=>row.path===data.ref('photo_quota','photo-global-quota','global').path)!).value);
+  assert.deepEqual(quota(),{activeBytes:0,activeCount:0,cleanupBytes:24,cleanupCount:1});
+  journalUnavailable=false;
+  const erasures=createFirestoreContentErasure({...f.options,journal});
+  const erasureSnapshot=await f.options.database.runTransaction(tx=>tx.get(data.collection('content_erasures').limit(1)));
+  const erasure=erasureSnapshot.docs[0];
+  await erasures.advance(erasure);
+  const sourceGeneration=await f.control(false), pendingDocuments=f.documents();
+  const proof=await journal.writeOnce(pending.deletion!.intent);
+  const restored=prepareFirebaseRestore(f.options,{restoreId:randomUUID(),targetDatabaseId:'synthetic-target',sourceGeneration,
+    documents:pendingDocuments,liveDocuments:pendingDocuments,erasures:[...intents.values()],
+    erasureDescriptors:new Map([[proof.intentSha256,proof]]),photoDescriptors:new Map(),
+    authUsers:['parent','carer','viewer'].map(userId=>({userId,email:userId+'@example.test',emailVerified:true,disabled:false}))});
+  const codec=createFirestoreRestoreCodec(f.options), restoredPhoto=restored.records.map(row=>codec.decode(row)).find(row=>row.context.kind==='photo'&&row.context.id===photo.id)!;
+  assert.equal(firestorePhotoSchemas.photo.parse(restoredPhoto.value).deletion!.actorUserId,'carer');
+  await f.control(true);
+  let space=await f.sharing.get('parent',f.space.id);
+  await f.sharing.share('parent',{spaceId:space.id,childId,modules:['care'],expectedVersion:space.version,operationId:randomUUID()});
+  journalUnavailable=false;
+  assert.deepEqual(await photos.cleanupDeleted(scope,photo.id,pending.deletion!.intent.operationId),{state:'complete'});
+  assert.equal(removed,1);assert.equal((await cleanupRef.get()).exists,false);
+  assert.deepEqual(quota(),{activeBytes:0,activeCount:0,cleanupBytes:0,cleanupCount:0});
+  const result=await online.lookup('carer',opId);assert.equal(result.state,'confirmed');assert.equal((result as any).result,null,'revoked callers get no source details');
+  space=await f.sharing.get('parent',f.space.id);
+  await f.sharing.share('parent',{spaceId:space.id,childId,modules:['attachments'],expectedVersion:space.version,operationId:randomUUID()});
+  assert.deepEqual((await online.submit('carer',submission) as any).result,{deleted:true,cleanupPending:true});
+  assert.equal((await client.reconcilePending(signal,'carer'))?.state,'confirmed','the real client recovers the same accepted operation');
+  assert.deepEqual(await photos.cleanupDeleted(scope,photo.id,pending.deletion!.intent.operationId),{state:'complete'});
+  assert.equal(removed,1);
+  const replacement=await photos.reserve('parent',childId,randomUUID(),metadata);assert.ok(replacement.id,'source quota remains usable');
+  f.fake.records.clear();for(const row of restored.records)f.fake.records.set(row.path,row.data);
+  assert.deepEqual(await photos.cleanupDeleted(scope,photo.id,pending.deletion!.intent.operationId),{state:'complete'},'restored pending cleanup reaches the real consumer');
+  await setFirebaseBackupControl(f.options,{expectedGeneration:restored.generation,generation:randomUUID(),enabled:true});
+  const restoredReceipt=await online.lookup('carer',opId);
+  assert.equal(restoredReceipt.state,'confirmed');assert.equal((restoredReceipt as any).result,null,'restored receipt does not try to disclose the old storage epoch');
+});
 
 test('shared file and voice deletion retain actor receipts and resume the original cleanup after revocation', async () => {
   const f = await fixture(), childId = f.child.child.id, data = new FirestoreDomainData(f.options);

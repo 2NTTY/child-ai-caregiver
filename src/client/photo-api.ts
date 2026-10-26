@@ -68,7 +68,7 @@ const sameMetadata = (left: PhotoMetadata, right: PhotoMetadata) =>
 
 function matchesSelection(photo: PhotoAttachment & { sharedSpaceId?: string }, selection?: SharedSelection): boolean {
   if (!selection) return photo.sharedSpaceId === undefined;
-  return photo.sharedSpaceId === selection.spaceId && photo.visibility === "shared" && !photo.canManage && photo.recordId === null
+  return photo.sharedSpaceId === selection.spaceId && photo.visibility === "shared" && photo.recordId === null
     && photo.extraction.state === "not_requested" && photo.extraction.runId === null && photo.extraction.draft === null
     && photo.extraction.stopReason === null && photo.extraction.processedAt === null && photo.extraction.model === null;
 }
@@ -161,12 +161,12 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
   const request = (path: string, signal: AbortSignal, userId: string, body?: unknown, timeoutMs = 20_000) =>
     call(signal, async innerSignal => (await response(path, innerSignal, userId, body)).json() as Promise<unknown>, timeoutMs);
   async function mutate(path: string, payload: unknown, target: Target, signal: AbortSignal): Promise<PhotoWriteResult> {
-    writable();
+    if (target.kind !== "delete") writable();
     if (!online.hasPending()) pendingTarget = target;
     let confirmed = false;
     try {
       const value = await call(signal, async innerSignal => {
-        const result = await online.submit({ path: "/api" + path, payload }, innerSignal, target.userId);
+        const result = await online.submit({ path: "/api" + path, payload, ...(sharing ? { sharing } : {}) }, innerSignal, target.userId);
         confirmed = true;
         return result;
       });
@@ -184,7 +184,6 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
     hasPendingOnline: () => online.hasPending(),
     resetOnline() { generation++; pendingTarget = null; online.reset(); },
     async reconcilePending(signal, userId) {
-      if (sharing) return null;
       const target = pendingTarget;
       let confirmed = false;
       try {
@@ -287,7 +286,7 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
         { kind: "confirm", childId: photo.childId, userId, photoId: photo.id, expectedVersion: photo.version }, signal);
     },
     async delete(photo, signal, userId) {
-      writable();
+      if (!matchesSelection(photo, sharing)) throw new PhotoApiError();
       identity(photo.childId, userId, photo.id);
       return mutate(entity(photo.childId, photo.id) + "/delete", { expectedVersion: photo.version, confirmDelete: true },
         { kind: "delete", childId: photo.childId, userId, photoId: photo.id }, signal);

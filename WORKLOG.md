@@ -4049,3 +4049,13 @@
 - 新連貫流程涵蓋正式 HTTP／共用 client、版本／撤權／原操作／清理；另核受影響共享讀取、一條共用 client 檢查及舊本人文件／錄音各一條，限定 TypeScript 與 diff 通過。未跑全量、模型或設備驗收。[證據](artifacts/verification/P4_SHARED_ATTACHMENT_DELETION_20261027.json)。
 - 獨立 Sol review 找到 journal 以來源 owner＋opId 唯一鍵造成跨操作者衝突；先改合成 transport 對應正式鍵並重現，再復用 authority 原有穩定來源操作映射，另存 actorOperationId，補驗通過。原缺方法／client 阻擋 red、CRLF 替換語法、error.code 測試路徑及 voice import 遺漏均保留在證據，不放寬產品限制。
 - 照片刪除配額／照護記錄、共享上載／私聊關聯、Agent／其餘背景、同步與家庭畫面仍待接；未部署，FAMILY-A／P4 未完成，P3／P5 及 D PR 保持。
+
+
+<a id="log-20261027-p4-shared-photo-deletion"></a>
+### LOG-20261027-P4-SHARED-PHOTO-DELETION
+
+- 基線 `713b74e`，分支 `codex/p4-shared-photo-deletion`。共享照片刪除接原 online／共用 client、來源配額、照護記錄失效、獨立日誌及 cleanup；不新增套件或索引。
+- 當前角色／basis／版本與來源刪除、配額轉移及操作者收據一併受理；日誌未知不回刪除成功。原清理可在撤權後接續，關聯記錄只經原 photo.recordId 處理，不開一般 care 權限；兩項刪除義務使用各自穩定日誌 ID。
+- 一條正式 HTTP／client 合成流程兼核版本、journal 失敗、撤權、原操作、配額及還原後的 cleanup consumer；共用 client 一條恢復檢查、舊本人照片／清理／還原三項及局部型別通過。獨立 Sol review 未報 blocker，主模型覆核關鍵 diff。[證據](artifacts/verification/P4_SHARED_PHOTO_DELETION_20261027.json)。
+- 保留原失敗：缺共享 route、測試 record wrapper、依賴記錄 module guard、nullable journal 型別與缺內容獨立日誌的 restore 拒絕；修正接點／測試設定，不移除權限或日誌要求。
+- 零雲端、模型、通知或部署；共享新增／聊天關聯、其餘背景、同步及家庭畫面仍待接，FAMILY-A／P4 未完成，P3／P5 及 D PR 保持。

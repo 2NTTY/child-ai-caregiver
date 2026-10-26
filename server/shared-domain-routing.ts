@@ -3,6 +3,9 @@ import { domainReject } from './firestore-domain-data.ts';
 
 /** Only domains with shared transaction and disclosure support may accept this selector. */
 export function sharedDomainRoute(path: string) {
+  const photo = /^\/api\/children\/([0-9a-f-]{36})\/photos\/([0-9a-f-]{36})\/delete$/iu.exec(path);
+  if (photo && z.uuid().safeParse(photo[1]).success && z.uuid().safeParse(photo[2]).success)
+    return {childId:photo[1].toLowerCase(), module:'attachments' as const};
   const match = /^\/api\/children\/([0-9a-f-]{36})\/(records|care(?:\/[0-9a-f-]{36}\/(?:revise|delete))?|profile(?:\/delete)?|tasks(?:\/[0-9a-f-]{36}\/change)?|memory\/(?:facts(?:\/confirmed|\/[0-9a-f-]{36}\/(?:confirm|revise|deactivate|delete))?|topics(?:\/[0-9a-f-]{36}\/(?:change|reopen|delete))?))$/iu.exec(path);
   if (!match || !z.uuid().safeParse(match[1]).success) domainReject('shared_domain_unavailable', 409);
   return { childId: match[1].toLowerCase(), module: match[2].startsWith('profile') ? 'profile' as const
