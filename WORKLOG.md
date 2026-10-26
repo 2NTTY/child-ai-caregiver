@@ -3956,3 +3956,4 @@
 
 - 使用者在 agents-md-improver 品質報告後明確要求沿 revise-agents-md 更新規範。根 AGENTS 補既有本地／建置／單檔檢查入口；前端補正式 Provider／owner 位置，四尺寸依改動影響選取。主模型精簡重複研究／派單／狀態說明，保留模型分工、困難任務親做、dot 例外、權限、首次失敗停批及必要驗收；未改 Skill、配置或產品。
 - 兩份 AGENTS 原共 34,385 bytes，現已低於預設 32 KiB 合併容量；只核靜態 bytes、原錨點、相對連結、package scripts 及 diff，不以此宣稱新會話載入已實測。沒有跑產品、模型或設備驗收。先前報告指出的 frontend/PLAN #253 歷史現況另留原域處理，本包不改寫歷史證據或新增進度清單。
+- 一次獨立唯讀 review 未發現重大規則遺漏，指出 `src/preview/` 仍含正式使用的 guard／provider；主模型對照兩個正式 layout 後修正文案，只排除合成 fixture／預覽 owner 作正式資料來源，不誤導刪除共用元件。
