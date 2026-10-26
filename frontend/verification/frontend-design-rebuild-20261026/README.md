@@ -1,14 +1,14 @@
 # Family Journal: public verification summary
 
-Status: independent experimental source snapshot, pending final browser QA.
+Status: independent experimental snapshot with a bounded synthetic preview pass.
 Saving this source is not production deployment, merge approval, or full acceptance.
 
 ## Source identity and publication boundary
 
-- Reviewed source candidate: `e0a8fb1a153a4b379a87dae246bf5aef3878ce82`.
-- Original tree: `0046765c64ca1258143fea070ee38c5f499e9b80`.
+- Reviewed source candidate: `5fa35b6fba7244bf528517a009eb92ad3c95e90a`.
+- Original tree: `3a7a223aea4b33e35bb46232cce549521f6a4e98`.
 - Common comparison baseline: `0b9f5d60e73eb395ea8a2898864fa1e591e27938`.
-- The preceding source candidate was `979219fa97532059afe0878c70433f06c23ffa7a`.
+- An earlier source candidate was `979219fa97532059afe0878c70433f06c23ffa7a`.
   Its chat-layout failure is not hidden by the later correction.
 - Newly added verification documentation/run evidence is summarized or excluded
   for public distribution. In addition, `frontend/STATUS.md` retains its already-
@@ -23,9 +23,30 @@ The [18-route design](../../EXPERIMENT_FRONTEND_DESIGN_REBUILD.md) and retained
 official upstream skill snapshots are unchanged. They record design provenance,
 not private execution output or a claim that all routes passed browser QA.
 
-## Completed checks and their scope
+## Current bounded follow-up
 
-- The latest chat-layout candidate passed **78/78 focused tests across 15
+The final source corrects heading semantics without replacing the existing
+owners or chat-layout correction. The original title-level regression was
+reproduced before correction; focused DOM checks passed 8/8 and existing status
+cases 3/3. Full frontend TypeScript and the fresh Web export passed, and exact
+final source-map correspondence was checked. The earlier 78-test combination
+below is prior-stage evidence, not a new rerun or an additive test count.
+
+A bounded synthetic preview pass covered **18 route entries** for this candidate,
+including representative viewport/state checks and the affected final semantics.
+Previously checked unchanged behavior was reused within the agreed finite scope;
+this is not a fresh exhaustive route-by-viewport-by-state matrix. No known
+blocking findings remained within that bounded scope.
+
+Not covered: real backend writes, unknown-commit recovery, outages or permission
+revocation; populated photo inspection, uploads, media capture/playback,
+extraction or model calls; authentication, real notifications, multi-child or
+real-household data; native keyboard/IME/touch and OS screen-readers; or every
+route x viewport x state combination. No deployment or merge is implied.
+
+## Earlier source-stage checks and scope (e0a8fb1)
+
+- The prior chat-layout candidate passed **78/78 focused tests across 15
   scripts** and the full frontend TypeScript check. Earlier 62-test and
   74-test combinations are historical, overlapping subsets, not extra passes
   to add to 78.
@@ -64,7 +85,7 @@ not private execution output or a claim that all routes passed browser QA.
 
 The broader four-size layout, complete keyboard/screen-reader, gestures, native
 devices, production backend, real model/PDF and persistent-save matrix remains
-unaccepted. Source/DOM tests cannot substitute for those checks. Any later
-heading-worker changes are outside this fixed source snapshot. Only synthetic
+unaccepted. Source/DOM tests cannot substitute for those checks. Further changes
+after this source snapshot are outside its bounded acceptance. Only synthetic
 data was used; no real-family data or credentials are distributed, and no site
 publication, PR, merge or account-permission change is implied.

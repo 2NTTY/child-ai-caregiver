@@ -1,5 +1,8 @@
 # Bounded chat layout correction: public summary
 
+This is the retained prior-stage chat correction record. Current source identity
+and bounded preview status are in the [main summary](../README.md).
+
 Source: `e0a8fb1a153a4b379a87dae246bf5aef3878ce82`.
 Prior candidate: `979219fa97532059afe0878c70433f06c23ffa7a`.
 

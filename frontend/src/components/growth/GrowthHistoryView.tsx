@@ -49,7 +49,7 @@ export function GrowthHistoryView({ searchText, dateRange, onRecord, onTask }: {
     {!model.online ? <Text style={s.warning}>目前離線，內容可能未更新。</Text> : null}
     {model.load === "error" ? <Text style={s.warning}>未能更新關注歷史，請稍後重試。</Text> : null}
       {!archived.length && model.online && model.load === "ready" ? <EmptyListCard testID="growth-history-empty" title={searchText || dateRange.from || dateRange.to ? "沒有符合篩選的關注" : "暫無已結束關注"} /> : null}
-      {!archived.length && model.online && model.load === "loading" ? <ReadStateNotice state="loading" title="正在讀取關注歷史…" /> : null}
+      {!archived.length && model.online && model.load === "loading" ? <ReadStateNotice headingLevel={3} state="loading" title="正在讀取關注歷史…" /> : null}
       <HistoryCardGrid testID="growth-history-cards">{archived.map(concern => <Pressable key={concern.id} testID={`growth-history-${concern.id}`}
         ref={node => { if (node) cards.current.set(concern.id, node); else cards.current.delete(concern.id); }}
         accessibilityRole="button" accessibilityLabel={`查看已結束關注：${concern.title}`}

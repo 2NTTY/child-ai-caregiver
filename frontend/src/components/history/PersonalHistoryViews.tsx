@@ -40,18 +40,18 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
     }, 300);
     return () => clearTimeout(timer);
   }, [scope, searchText, owner?.online]);
-  if (!owner) return <ReadStateNotice state="unavailable" title="對話歷史暫未提供" />;
+  if (!owner) return <ReadStateNotice headingLevel={3} state="unavailable" title="對話歷史暫未提供" />;
   const read = owner.history, matches = visiblePersonalHistory(read, dateRange);
   const visible = owner.access !== "revoked" && selection && selection.scope === scope && selection.filterKey === filterKey;
   const selectedRead = owner.message.scopeKey === scope && (!owner.message.data || owner.message.data.id === selection?.id);
   const close = () => { opened.current = null; setSelection(null); owner.actions.closeMessage(); };
   return <View ref={listRef} tabIndex={-1} accessibilityLabel="助手對話歷史" style={styles.list}>
     <BackgroundSurface padded><Text style={styles.meta}>只查閱你與這位孩子的對話。每次最多掃 100 則，返回最多 10 個命中；日期篩選只包括已掃過的結果。</Text></BackgroundSurface>
-    {read.state === "loading" ? <ReadStateNotice state="loading" title="正在搜尋對話…" />
-      : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到對話歷史"><AppButton label="重新搜尋" variant="secondary" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /></ReadStateNotice>
-      : read.state === "unavailable" ? <ReadStateNotice state="unavailable" title={owner.online ? "正在準備對話搜尋…" : "連線後才可讀取對話歷史"} />
+    {read.state === "loading" ? <ReadStateNotice headingLevel={3} state="loading" title="正在搜尋對話…" />
+      : read.state === "error" ? <ReadStateNotice headingLevel={3} state="error" title="暫時讀不到對話歷史"><AppButton label="重新搜尋" variant="secondary" disabled={!owner.online || owner.busy.history} onPress={() => owner.actions.searchHistory(searchText)} /></ReadStateNotice>
+      : read.state === "unavailable" ? <ReadStateNotice headingLevel={3} state="unavailable" title={owner.online ? "正在準備對話搜尋…" : "連線後才可讀取對話歷史"} />
       : <>
-        {read.state === "stale" || !owner.online ? <ReadStateNotice state="stale" title="最新歷史尚未核對" message="目前保留已載入結果。" /> : null}
+        {read.state === "stale" || !owner.online ? <ReadStateNotice headingLevel={3} state="stale" title="最新歷史尚未核對" message="目前保留已載入結果。" /> : null}
         {read.data?.query !== searchText ? <BackgroundSurface padded><Text style={styles.meta}>正在套用新搜尋條件；以下是先前的結果。</Text></BackgroundSurface> : null}
         <HistoryCardGrid testID="conversation-history-cards">{matches.map(match => <HistoryEntryCard key={match.id} testID={`history-message-${match.id}`}
           cardRef={node => { if (node) cards.current.set(match.id, node); else cards.current.delete(match.id); }}
@@ -77,7 +77,7 @@ export function PersonalConversationHistoryView({ searchText, dateRange, onPrepa
         {owner.message.data?.voice ? <VoiceMessage key={scope + owner.message.data.id} messageId={owner.message.data.id} voice={owner.message.data.voice} /> : null}
         <HistoryMessageDetail embedded read={owner.message} busy={owner.busy.message} online={owner.online} onMore={owner.actions.moreMessage}
           onPrepareQuestion={message => { if (current.current?.scopeKey === scope && current.current.message.data === message && message.id === selection?.id) onPrepareQuestion(historyMessageQuestion(owner.childName, message)); }} />
-      </> : visible ? <ReadStateNotice state="loading" title="正在讀取原文…" /> : null}
+      </> : visible ? <ReadStateNotice headingLevel={3} state="loading" title="正在讀取原文…" /> : null}
     </FormDialog>
   </View>;
 }
@@ -105,7 +105,7 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
     const latest = current.current;
     if (scope && latest?.online && latest.notifications.state === "unavailable" && !latest.notificationUnavailable) latest.actions.loadNotifications();
   }, [scope, owner?.online]);
-  if (!owner) return <ReadStateNotice state="unavailable" title="本人消息暫未提供" />;
+  if (!owner) return <ReadStateNotice headingLevel={3} state="unavailable" title="本人消息暫未提供" />;
   const read = owner.notifications;
   const matches = visiblePersonalMessages(read.data?.items ?? [], searchText, dateRange), items = recent ? matches.slice(0, 5) : matches;
   const retry = <AppButton label="重新讀取消息" variant="secondary" disabled={!owner.online || owner.busy.notifications} onPress={owner.actions.loadNotifications} />;
@@ -113,11 +113,11 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
     {read.state === "loading" ? recent ? <View testID="recent-notification-loading" style={styles.row}>
       {motion.enabled ? <ActivityIndicator color={colors.teal} /> : <View testID="read-loading-static" accessible={false} aria-hidden style={styles.staticIndicator} />}
       <Text style={styles.meta}>正在讀取消息…</Text>
-    </View> : <ReadStateNotice state="loading" title="正在讀取消息…" scopeKey={scope} />
-      : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到消息">{retry}</ReadStateNotice>
-      : read.state === "unavailable" ? <ReadStateNotice state="unavailable" title={owner.notificationUnavailable ? "消息內容暫未提供" : owner.online ? "正在準備消息…" : "連線後才可讀取消息"}>{owner.notificationUnavailable ? retry : null}</ReadStateNotice>
+    </View> : <ReadStateNotice headingLevel={3} state="loading" title="正在讀取消息…" scopeKey={scope} />
+      : read.state === "error" ? <ReadStateNotice headingLevel={3} state="error" title="暫時讀不到消息">{retry}</ReadStateNotice>
+      : read.state === "unavailable" ? <ReadStateNotice headingLevel={3} state="unavailable" title={owner.notificationUnavailable ? "消息內容暫未提供" : owner.online ? "正在準備消息…" : "連線後才可讀取消息"}>{owner.notificationUnavailable ? retry : null}</ReadStateNotice>
       : <>
-        {read.state === "stale" || !owner.online ? <ReadStateNotice state="stale" title="目前顯示較早的消息" /> : null}
+        {read.state === "stale" || !owner.online ? <ReadStateNotice headingLevel={3} state="stale" title="目前顯示較早的消息" /> : null}
         {!recent ? <Text style={styles.meta}>搜尋與日期只篩已載入消息。</Text> : null}
         {recent ? items.map(item => <BackgroundSurface padded key={item.id} style={styles.entry} testID="personal-notification-entry">
           <Text style={styles.meta}>{notificationTime(item.sentAt)} · {item.scope.kind === "child" ? item.scope.childName : "本人帳戶"}</Text>
@@ -143,7 +143,7 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
         })}</HistoryCardGrid>}
         {!items.length && read.state === "ready" && owner.online && owner.access !== "revoked" ? read.data?.complete
           ? <EmptyListCard testID="notification-history-empty" title={searchText || dateRange.from || dateRange.to ? "已載入消息沒有符合篩選的內容" : "暫未有可展示的消息內容"} />
-          : recent ? <ReadStateNotice state="unavailable" title="已載入部分未有符合的消息" message="仍有記錄未讀取。" />
+          : recent ? <ReadStateNotice headingLevel={3} state="unavailable" title="已載入部分未有符合的消息" message="仍有記錄未讀取。" />
             : <EmptyListCard testID="notification-history-empty" title="已載入部分未有符合的消息" detail="仍有記錄未讀取，可繼續載入。" /> : null}
         {items.length ? <Text style={styles.meta}>只顯示已保存的通知內容；較早記錄可能不齊，不包括帳戶驗證電郵。</Text> : null}
         {!recent && read.data ? <Text style={styles.meta}>已載入 {read.data.items.length} 則{read.data.complete ? "" : " · 尚有記錄未載入"}</Text> : null}

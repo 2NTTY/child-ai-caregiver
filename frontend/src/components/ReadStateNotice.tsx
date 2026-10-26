@@ -10,9 +10,11 @@ import { useMotionPreferences } from "../motion/preferences";
 export const READ_NOTICE_DELAY_MS = 500;
 
 // Presentation only; the owner decides whether a same-scope snapshot is still safe to show.
-export function ReadStateNotice({ state, title, message = "", children, refreshing = false, scopeKey }: {
+export function ReadStateNotice({ state, title, message = "", children, refreshing = false, scopeKey, headingLevel = 2 }: {
   state: "ready" | "loading" | "empty" | "error" | "stale" | "unavailable";
   title?: string; message?: string; children?: ReactNode; refreshing?: boolean; scopeKey?: string;
+  /** Titled notices are secondary headings unless their containing section needs a deeper level. Empty results remain plain copy. */
+  headingLevel?: 2 | 3 | 4 | 5 | 6;
 }) {
   const motion = useMotionPreferences();
   const [delayedScope, setDelayedScope] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export function ReadStateNotice({ state, title, message = "", children, refreshi
     {visible ? state === "empty" ? <EmptyListCard testID="read-state-empty" title={heading} detail={detail}>{children}</EmptyListCard> : <BackgroundSurface padded testID={`read-state-${state}`} style={[styles.notice, state === "error" && styles.error]}>
       {state === "loading" ? motion.enabled ? <ActivityIndicator color={colors.teal} /> : <View testID="read-loading-static" accessible={false} aria-hidden style={styles.staticIndicator} /> : null}
       <View style={styles.copy}>
-        <Text accessibilityRole={title ? "header" : "text"} style={title ? styles.title : styles.body}>{heading}</Text>
+        <Text accessibilityRole={title ? "header" : "text"} aria-level={title ? headingLevel : undefined} style={title ? styles.title : styles.body}>{heading}</Text>
         {detail ? <Text style={styles.body}>{detail}</Text> : null}{children}
       </View>
     </BackgroundSurface> : null}</>;

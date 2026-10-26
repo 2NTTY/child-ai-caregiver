@@ -35,17 +35,17 @@ export function ProfileHistoryView({ model, actions, scopeKey }: { model: Profil
     requested.current = { scope, current: model.current };
     actions.showHistory();
   }, [scopeKey, scope, model.access, model.child, locked, currentReady, neverConfirmed, model.historyOpen, model.notice, model.current, actions]);
-  if (model.access === "lost") return <ReadStateNotice state="unavailable" title="孩子權限已失效" message="檔案及修改歷史已隱藏。" />;
-  if (!model.child) return <ReadStateNotice state="unavailable" title="先選擇有權查看的孩子" />;
+  if (model.access === "lost") return <ReadStateNotice headingLevel={3} state="unavailable" title="孩子權限已失效" message="檔案及修改歷史已隱藏。" />;
+  if (!model.child) return <ReadStateNotice headingLevel={3} state="unavailable" title="先選擇有權查看的孩子" />;
   const emptyReady = model.online && !model.reading && !pending && !model.notice && currentReady
     && (neverConfirmed || model.historyOpen && !model.history.length);
   return <View ref={listRef} tabIndex={-1} accessibilityLabel="檔案修改記錄" style={styles.list} testID="profile-history">
     {model.current && model.current.version > 0 ? <Text style={styles.meta}>目前版本 {model.current.version}</Text> : null}
     {model.access === "read_only" ? <Text style={styles.meta}>目前為唯讀，可查看檔案修改記錄。</Text> : null}
-    {!model.online ? <ReadStateNotice state="stale" title="目前離線" message="已載入版本保留，最新修改歷史尚未核對。" /> : null}
-    {model.notice ? <ReadStateNotice state="unavailable" title={model.notice} /> : null}
-    {pending ? <ReadStateNotice state="unavailable" title="檔案有未完成操作" message="請先在檔案頁查核原操作；這裏不會另建或重送操作。" /> : null}
-    {model.reading ? <ReadStateNotice state="loading" title="正在讀取檔案資料…" /> : null}
+    {!model.online ? <ReadStateNotice headingLevel={3} state="stale" title="目前離線" message="已載入版本保留，最新修改歷史尚未核對。" /> : null}
+    {model.notice ? <ReadStateNotice headingLevel={3} state="unavailable" title={model.notice} /> : null}
+    {pending ? <ReadStateNotice headingLevel={3} state="unavailable" title="檔案有未完成操作" message="請先在檔案頁查核原操作；這裏不會另建或重送操作。" /> : null}
+    {model.reading ? <ReadStateNotice headingLevel={3} state="loading" title="正在讀取檔案資料…" /> : null}
     {!currentReady && !model.reading ? <View style={styles.list}>
       <Text style={styles.meta}>目前檔案尚未核對，不能據此判斷沒有修改記錄。</Text>
       <AppButton label="重新讀取檔案" variant="secondary" onPress={actions.refresh} disabled={locked} />
