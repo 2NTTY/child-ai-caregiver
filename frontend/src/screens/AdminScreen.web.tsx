@@ -11,6 +11,8 @@ import { PageFrame } from '../components/PageFrame';
 import { AppButton, AppTextField, SectionHeader } from '../components/ui';
 import { useProduction } from '../production/ProductionProvider';
 import { colors, spacing } from '../theme';
+import { AuthenticationProofControl } from '../components/account/AuthenticationProofControl';
+import type { ReauthenticationInput } from '../../../src/shared/auth-providers';
 
 const fields = [
   ['dailyUserAttempts', '每人每日平台呼叫', 1000], ['dailyGlobalAttempts', '全站每日平台呼叫', 10000],
@@ -35,18 +37,18 @@ function AuditItem({ item }: { item: AdminReceipt }) {
   </View>;
 }
 export default function AdminScreen() {
-  const { owner, userId, auth, user, online, refresh } = useProduction(), admin = owner.adminOwner, router = useRouter();
+  const { owner, userId, auth, user, online, refresh, account, identityKey, socialProviders } = useProduction(), admin = owner.adminOwner, router = useRouter();
   const state = useSyncExternalStore(admin.subscribe, admin.getSnapshot, admin.getSnapshot);
   const visible = auth === 'signedIn' && state.userId === userId && state.access === 'allowed';
   const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
-  const [search, setSearch] = useState(''), [password, setPassword] = useState(''), [localNotice, setLocalNotice] = useState<string | null>(null);
+  const [search, setSearch] = useState(''), [localNotice, setLocalNotice] = useState<string | null>(null);
   const [reauthBusy, setReauthBusy] = useState(false), [revoke, setRevoke] = useState<AdminInvitation | null>(null);
   const currentUser = useRef(userId); currentUser.current = userId;
   const credentialRequest = useRef<AbortController | null>(null);
   const policyForm = useForm<Values>({ resolver: zodResolver(platformPolicyValuesSchema), mode: 'onSubmit', reValidateMode: 'onChange' });
   const invitationForm = useForm<z.infer<typeof inviteForm>>({ resolver: zodResolver(inviteForm), defaultValues: { email: '', days: 7 } });
   useEffect(() => {
-    setReauthBusy(false); setPassword(''); setSearch(''); setLocalNotice(null); setRevoke(null); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
+    setReauthBusy(false); setSearch(''); setLocalNotice(null); setRevoke(null); policyForm.reset(); invitationForm.reset({ email: '', days: 7 });
     if (userId && auth === 'signedIn') { admin.setUser(userId); void admin.checkAccess(); } else admin.setUser(null);
     return () => { credentialRequest.current?.abort(); };
   }, [admin, userId, auth]);
@@ -59,13 +61,12 @@ export default function AdminScreen() {
   useEffect(() => { if (visible && state.overview) { const { version, updatedAt, ...values } = state.overview.policy; policyForm.reset(values); } }, [visible, state.overview?.policy.version]);
   const locked = !online || state.busy || !!state.pending || reauthBusy;
   const submit = (command: AdminCommand) => { setLocalNotice(null); void admin.submit(command); };
-  const reauthenticate = async () => {
+  const reauthenticate = async (proof: ReauthenticationInput) => {
     if (!userId || reauthBusy) return;
     const identity = userId, controller = new AbortController(); credentialRequest.current = controller; setReauthBusy(true);
-    const secret = password; setPassword('');
-    try { await owner.reauthenticateAdmin(secret, AbortSignal.any([controller.signal, AbortSignal.timeout(20000)]));
+    try { await owner.reauthenticateAdmin(proof, AbortSignal.any([controller.signal, AbortSignal.timeout(typeof proof === "string" ? 20000 : 90000)]));
       if (identity === currentUser.current) setLocalNotice('登入已重新驗證，請核對後提交操作。');
-    } catch { if (identity === currentUser.current) setLocalNotice('未能重新驗證，請核對密碼及連線；未提交管理操作。'); }
+    } catch { if (identity === currentUser.current) setLocalNotice('未能重新驗證，請核對已連結登入方式及連線；未提交管理操作。'); }
     finally { if (identity === currentUser.current) setReauthBusy(false); }
   };
   if (!userId && auth === 'signedOut') return <Redirect href="/login" />;
@@ -77,9 +78,10 @@ export default function AdminScreen() {
     : <>
       <Text>目前管理員：{user?.email}。所有管理寫入需在最近五分鐘內驗證登入。</Text>
       <View style={styles.card}><SectionHeader title="重新驗證登入" />
-        <AppTextField label="本人登入密碼" accessibilityLabel="本人登入密碼" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" disabled={locked} />
-        <AppButton label="重新驗證" disabled={!password || !online || state.busy || reauthBusy} loading={reauthBusy} onPress={() => { void reauthenticate(); }} />
-        <Text style={styles.note}>密碼只交現有 Firebase 登入流程，不加入管理紀錄或模型內容。</Text>
+        <AuthenticationProofControl methods={account.authenticationMethods} socialProviders={socialProviders} identityKey={identityKey} online={online}
+          disabled={!online || state.busy || !!state.pending} busy={reauthBusy} onSubmit={reauthenticate} />
+        <AppButton label="重新讀取登入方式" variant="quiet" disabled={locked || !!account.busy} onPress={() => { void owner.accountOwner.loadAuthenticationMethods(); }} />
+        <Text style={styles.note}>憑證只交現有 Firebase 登入流程，不加入管理紀錄或模型內容。</Text>
       </View>
       {state.notice || localNotice ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{localNotice ?? state.notice}</Text> : null}
       {state.pending ? <View style={styles.card}><Text>有一項結果未明的操作：{state.pending.opId}。其他寫入暫時鎖定。</Text>

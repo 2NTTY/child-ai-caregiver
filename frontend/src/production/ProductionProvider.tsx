@@ -7,6 +7,7 @@ import { usePathname, useRouter, type Href } from "expo-router";
 import { Linking, Platform } from "react-native";
 import { Text } from "react-native-paper";
 import type { AuthMode, Credentials } from "../../../src/client/records-api";
+import type { ReauthenticationInput, SocialAuthProvider } from "../../../src/shared/auth-providers";
 import type { PhotoMessageReference } from "../../../src/shared/photos";
 import { emptyAssistantDraft, photoAttachment, type AssistantAttachment } from "../assistant-draft";
 import { AppDialog } from "../components/AppDialog";
@@ -78,6 +79,7 @@ function useProductionValue(owner: ProductionOwner) {
 
   const refresh = useCallback(() => owner.refresh(), [owner]);
   const authenticate = useCallback((mode: AuthMode, input: Credentials) => owner.authenticate(mode, input), [owner]);
+  const authenticateProvider = useCallback((provider: SocialAuthProvider) => owner.authenticateProvider(provider), [owner]);
   const signOut = useCallback(async (discardConfirmed = false) => {
     if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey) return;
     if (owner.hasDomainPending()) { setLocalNotice("請先等候或查核原操作結果，再登出。"); return; }
@@ -146,7 +148,7 @@ function useProductionValue(owner: ProductionOwner) {
     queryClient: owner.queryClient, user: snapshot.records.user, userId: snapshot.records.user?.id ?? null,
     selectedChildId: model.selectedChildId, scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey,
     sessionGeneration: snapshot.sessionGeneration, auth: snapshot.records.auth, online: snapshot.records.online,
-    authenticate, signOut, refresh, model, actions, notice,
+    authenticate, authenticateProvider, socialProviders: owner.socialProviders, signOut, refresh, model, actions, notice,
     account: snapshot.account,
     canPrepareAccountDeletion: owner.canStartDomainWrite() && !snapshot.records.busy && snapshot.records.childOutcome === "draft" && !snapshot.records.deletion
       && Object.values(snapshot.records.drafts).every(item => item.outcome === "draft") && !owner.chatController.hasUnsavedInput() && !visibleDraft.attachments.length,
@@ -156,7 +158,7 @@ function useProductionValue(owner: ProductionOwner) {
       prepareDeletion: () => { const raw = owner.controller.getSnapshot();
         if (current.current.identityKey === snapshot.identityKey && owner.canStartDomainWrite() && !raw.busy && raw.childOutcome === "draft" && !raw.deletion
           && Object.values(raw.drafts).every(item => item.outcome === "draft") && !owner.chatController.hasUnsavedInput() && !owner.draftOwner.getSnapshot().attachments.length) return owner.accountOwner.prepareDeletion(); },
-      verifyDeletionIdentity: (password: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.verifyDeletionIdentity(password); },
+      verifyDeletionIdentity: (proof: ReauthenticationInput) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.verifyDeletionIdentity(proof); },
       executeDeletion: (confirmation: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.executeDeletion(confirmation); },
       cancelPreparedDeletion: () => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.cancelPreparedDeletion(); },
       checkDeletion: () => owner.accountOwner.checkDeletion(),

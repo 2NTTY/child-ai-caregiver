@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-27）：[P4-FAMILY-A](#p4-family-a)。**執行契約及共享記錄／概況／待辦／記憶／文件／附件讀取已隨 #337～#344 合併；文件／錄音共享刪除、實際操作者收據及原清理接續亦已核。照片刪除已隨 #345 合併；現於 `codex/p4-shared-sync` 接選定孩子／模組的共用 changes cursor 刷新，沿原授權／前景輪詢，只發失效訊號，不提供私人活動歷史；共享上載／聊天關聯、其餘背景與正式畫面仍待接。目標為完整 P4 功能、必要驗證及原站／App 交付；使用現有架構及成熟套件。P3／P5 邊界保留，不改或代合併 D 的 PR；只有實際依賴的接口／本人操作才阻擋相應項目，其餘繼續。產品規則見 [SPEC](SPEC.md#p4-p5-product)，決定見 [ADR-029](docs/DECISIONS.md#adr-029)。
+**當前入口（2026-10-27）：[P4-AUTH01](#p4-auth01)，並保留 [FAMILY-A](#p4-family-a) 未接項。**#337～#346 已合併共享授權、記錄／概況／待辦／記憶／文件／附件讀取與刪除，以及有界共享同步接點，均未部署或開放家庭入口。現於 `codex/p4-auth-provider-session`（基線 `89808f1`）接 Google／Apple 的正式登入、同 UID 連結及 provider 重新驗證；復用 Firebase SDK、原 session／裝置台帳，不建立新身份系統。共享上載／聊天關聯、其餘背景及 FAMILY-B 畫面仍待接。完整 P4 目標不變；P3／P5 邊界保留，不改或代合併 D 的 PR。需要本人登入或 Apple 團隊設定的項目留待驗，繼續其餘接線。
 
 **P3 保留待驗：**下列收尾、語音、四 Agent／DEV02、串流與 iOS 原有未完成項維持原狀態；按使用者安排等待相關 Agent 本地自查或本人／平台條件，不重跑已有證據。下列「當前收尾」是原包入口，不取代本次文件範圍。
 
@@ -631,6 +631,8 @@ S04-W02 按 2026-10-24 批准的 [iOS 計劃](#p3-ios) 現在開始，不以 And
 | <a id="p4-class01"></a>**P4-CLASS01** | 獨立班級、名冊／搜尋／分頁、匯入目標、加入／移出教師空間 | FAMILY-A；不等家庭 UI |
 | <a id="p4-handover01"></a>**P4-HANDOVER01** | 統一匯入、交接／備份格式、完整性、紀錄、去重、衝突及差異還原；匯入待辦與普通建立一致 | FAMILY-A／B、CLASS01 的範圍／目標接口及現有匯出／附件；不必等其所有 UI |
 | <a id="p4-class02"></a>**P4-CLASS02** | 多孩／班級助手、混合聊天範圍、有界召回、批次結果／恢復 | CLASS01、HANDOVER01 範圍／來源契約及相關 D 工具／審核接口 |
+
+**AUTH01 共用 provider／session 首段（已實作、未開放）：**沿 Firebase 13.0.0／Admin 14.5.0、原 session／裝置台帳，接本人登入方式讀取、Google／Apple Web adapter、同 UID 重新驗證及明確連結。連結分為驗原身份、再親自按連結兩個手勢，避免串接 popup 被瀏覽器阻擋；取消後等不可取消的 SDK 結束並清理，才讀回連結結果。舊密碼、原生會話、共用 owner／刪帳／管理員重新驗證保持相容。定向機械檢查、局部型別及獨立 review 的競態修正已有[證據](artifacts/verification/P4_AUTH_PROVIDER_20261027.json)，不代替真人登入。Web `EXPO_PUBLIC_AUTH_PROVIDERS` 預設空，原生 adapter 尚未啟用；未改雲端 provider／郵件／帳號設定。**下一步：**核定 Firebase 自動連結／duplicate-email 配置與目前電郵准入的相容性，再接原生 Google／Apple SDK、Apple relay 原邀請地址驗證及實際配置；詳見[採用限制](docs/TECH_REUSE.md#p4-auth-providers)。不可只打開按鈕便宣稱完整 AUTH01。Apple 團隊／本人操作只阻擋相關項，FAMILY-A／B 可獨立繼續。
 
 <a id="p4-family"></a>
 **P4-FAMILY 父包（進行中）：**由 FAMILY-A／B 承接原家庭 UI／API、成員邀請、owner／caregiver／viewer 及跨域共享；不以隱藏入口當完成。先共用契約，再開家庭／班級入口，P3 本人功能不以此為前置。

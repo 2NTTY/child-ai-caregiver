@@ -361,3 +361,10 @@ Gemini目錄使用原生`models.list`的Pager，最多兩頁各100項，取支�
 原生沿既有 MIT 的 Expo ImagePicker 57.0.19：啟用 allowsEditing、Android 方形 aspect，iOS 原生本已固定方形；Android 使用套件內建 CanHub cropper，無須新增原生套件。選回裁切副本後只預覽／保存，不再顯示自製 PanResponder 與方向按鈕。官方 [ImagePicker](https://docs.expo.dev/versions/latest/sdk/imagepicker/) 及安裝版 types／CropImageContract 已核對；實際裝置裁切／EXIF／取消仍須分開驗證。
 
 Web 的 ImagePicker 不提供原生裁切，採固定 react-easy-crop 6.2.4（MIT，唯一 runtime 依賴 normalize-wheel 1.0.1／BSD-3-Clause），其 React peer 範圍涵蓋現有 React 19。沿 [原專案](https://github.com/ValentinH/react-easy-crop) 的拖曳、雙指／滾輪縮放、方向鍵與百分比選區，只以薄映射接原 Server 裁切契約；不新增 canvas 輸出或另一套手勢。元件只讀本機 object URL，不上傳圖片。對話框只作淡入／平移，避免官方所列縮放動畫量度問題；另在裁切容器抵消原網站 CSS zoom，讓套件 layout／pointer 座標一致；桌面大圖以可見選區與保存契約量度核對。套件原 license 不修改。採用不代表所有瀏覽器或真機均已驗，結果及限制見 [AVATAR-01](../PLAN.md#avatar-01)。
+
+<a id="p4-auth-providers"></a>
+## P4-AUTH01：復用 Firebase provider／session（2026-10-27）
+
+沿已安裝 Firebase JS 13.0.0、Admin 14.5.0、Functions 7.4.0，零新增依賴；Web 用官方 `signInWithPopup`／`linkWithPopup` 及明確 `browserPopupRedirectResolver`，共用 SDK 維持 in-memory persistence，Server 沿原 session／准入／撤銷。兩個明確手勢處理原身份驗證與新 provider 連結；provider-only 不索取不存在的密碼。原生套件、Apple 隱藏電郵邀請及真人配置仍屬後段。
+
+**啟用前限制：**官方 [Google 登入](https://firebase.google.com/docs/auth/web/google-signin#handling-account-exists-with-different-credential-errors) 指出 Google 對其管理的電郵可能自動連結；[允許同電郵多帳號](https://support.google.com/firebase/answer/9134820?hl=en) 則影響 profile／email 取得。不能只切設定便假定既有 `user.email`／邀請條件相容，也不能把相同電郵當 UID 合併依據。這批只交共用接線，`EXPO_PUBLIC_AUTH_PROVIDERS` 預設空，未改雲端設定；須先以相關官方流程核定配置及准入，再開放。原生 [帳號連結](https://firebase.google.com/docs/auth/web/account-linking) 與 [Apple 同意／private relay](https://firebase.google.com/docs/auth/web/apple) 沿原方法，沒有自建身份提供者。機械證據見 [AUTH01](../artifacts/verification/P4_AUTH_PROVIDER_20261027.json)，不宣稱真 Google／Apple 通過。

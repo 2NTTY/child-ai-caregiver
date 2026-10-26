@@ -3,11 +3,13 @@ import { AccountApiError, createAccountApi, type PreparedAccountDeletion } from 
 import { createAccountAuthApi } from "../../../src/client/account-auth-api.ts";
 import { ClientApiError } from "../../../src/client/records-api.ts";
 import { SERVICE_POLICY_VERSION, type AccountServiceStatus, type AccountExportPage, type AccountEraseReceipt } from "../../../src/shared/account-service.ts";
+import type { AccountAuthMethods, ReauthenticationInput, SocialAuthProvider } from "../../../src/shared/auth-providers.ts";
 
 export type AccountGateState = "checking" | "error" | "verification" | "consent" | "ready";
 export interface AccountServiceSnapshot {
   userId: string | null; online: boolean; gate: AccountGateState; status: AccountServiceStatus | null;
-  busy: "status" | "consent" | "mail" | "reset" | "sessions" | "download" | "prepare" | "verify" | "delete" | "check" | null;
+  busy: "status" | "consent" | "mail" | "reset" | "sessions" | "download" | "prepare" | "verify" | "delete" | "check" | "providers" | "provider-prepare" | "provider-link" | null;
+  authenticationMethods: AccountAuthMethods | null; providerLinkExpiresAtMs: number | null; providerLinkNeedsCheck: boolean;
   notice: string | null;
   deletionVerification: { available: boolean; expiresAtMs: number | null };
   callback: null | { kind: "verified" | "reset" | "invalid"; phase: "form" | "done"; message: string };
@@ -15,7 +17,14 @@ export interface AccountServiceSnapshot {
   deletion: { phase: "idle" | "prepared" | "unknown" | "completed"; childCount: number | null; attachmentsPending: boolean; message: string | null };
 }
 export interface AccountServiceDependencies { api?: ReturnType<typeof createAccountApi>; authApi?: ReturnType<typeof createAccountAuthApi>; legacyTrial?: boolean;
-  reauthentication?: { reauthenticate(userId: string, password: string, signal: AbortSignal): Promise<void> } }
+  reauthentication?: {
+    reauthenticate(userId: string, proof: ReauthenticationInput, signal: AbortSignal): Promise<void>;
+    authenticationMethods?(userId: string, signal: AbortSignal): Promise<AccountAuthMethods>;
+    prepareProviderLink?(userId: string, proof: ReauthenticationInput, signal: AbortSignal): Promise<void>;
+    linkProvider?(userId: string, provider: SocialAuthProvider, consent: boolean, signal: AbortSignal): Promise<void>;
+    cancelProviderLink?(): void | Promise<void>;
+    readonly socialProviders?: readonly SocialAuthProvider[];
+  } }
 export interface ParsedAccountCallback { kind: "verified" | "reset" | "invalid"; token: string | null; cleanUrl: string }
 /** Only the callback marker and opaque token are consumed; remote error text is never displayed. */
 export function parseAccountCallback(value: string): ParsedAccountCallback | null {
@@ -36,7 +45,7 @@ interface DownloadContinuation {
 }
 const emptyDownload = (): AccountServiceSnapshot["download"] => ({ phase: "idle", parts: 0, message: null });
 const emptyDeletion = (): AccountServiceSnapshot["deletion"] => ({ phase: "idle", childCount: null, attachmentsPending: false, message: null });
-function initial(online: boolean, verificationAvailable = false): AccountServiceSnapshot { return { deletionVerification: { available: verificationAvailable, expiresAtMs: null }, userId: null, online, gate: "checking", status: null, busy: null, notice: null, callback: null, download: emptyDownload(), deletion: emptyDeletion() }; }
+function initial(online: boolean, verificationAvailable = false): AccountServiceSnapshot { return { authenticationMethods: null, providerLinkExpiresAtMs: null, providerLinkNeedsCheck: false, deletionVerification: { available: verificationAvailable, expiresAtMs: null }, userId: null, online, gate: "checking", status: null, busy: null, notice: null, callback: null, download: emptyDownload(), deletion: emptyDeletion() }; }
 function gateFor(status: AccountServiceStatus, userId: string | null): AccountGateState {
   if (!userId) return "checking";
   if (!status.enabled) return "ready";
@@ -48,7 +57,7 @@ function errorMessage(error: unknown): string {
   if (error instanceof ClientApiError && error.onlineCode === "firebase_reauthentication_required") return "請先登出並重新登入，再明確要求電郵驗證指引。重新載入頁面後，原登入資料不會保留。";
   if (error instanceof ClientApiError && error.onlineCode === "auth_provider_unavailable") return "身份服務設定未完整，暫時不能處理登入或電郵指引。";
   if (code === "shared_workspace_requires_resolution") return "這個帳戶仍與其他成員共享資料。請先處理共享家庭的責任及成員，再重新核對退出範圍。";
-  if (code === "recent_reauthentication_required") return "身份驗證已失效。請重新驗證目前密碼，再確認原退出操作；尚未刪除帳戶。";
+  if (code === "recent_reauthentication_required") return "身份驗證已失效。請以已連結方式重新驗證，再確認原退出操作；尚未刪除帳戶。";
   if (code === "reauthentication_unavailable") return "目前登入方式尚未接通安全的重新驗證，暫時不能刪除帳戶。";
   if (code === "password_verification_failed") return "未能確認密碼。請重新輸入；尚未刪除帳戶。";
   if (code === "erasure_receipt_expired" || code === "account_scope_changed") return "退出範圍或確認期限已改變。請查核原操作，再重新核對範圍。";
@@ -60,6 +69,7 @@ function errorMessage(error: unknown): string {
 /** Account admission and data exit have one owner; secrets and download pages stay only in memory. */
 export class AccountServiceOwner {
   private readonly api; private readonly authApi; private readonly legacyTrial;
+  private readonly identity;
   private readonly onDeleted: () => void; private readonly onAccessLost: () => void;
   private snapshot: AccountServiceSnapshot; private context: string | null | undefined; private epoch = 0;
   private request: AbortController | null = null; private resetToken: string | null = null; private callbackUserId: string | null = null;
@@ -70,6 +80,7 @@ export class AccountServiceOwner {
   private readonly listeners = new Set<() => void>();
   constructor(baseUrl: string, online: boolean, onDeleted: () => void, onAccessLost: () => void, dependencies: AccountServiceDependencies = {}) {
     this.onDeleted = onDeleted; this.onAccessLost = onAccessLost;
+    this.identity = dependencies.reauthentication;
     this.api = dependencies.api ?? createAccountApi(baseUrl, fetch, dependencies.reauthentication); this.authApi = dependencies.authApi ?? createAccountAuthApi(baseUrl);
     this.legacyTrial = dependencies.legacyTrial === true; this.snapshot = initial(online, this.api.canVerifyDeletionIdentity());
   }
@@ -80,6 +91,7 @@ export class AccountServiceOwner {
   hasPending = () => this.snapshot.deletion.phase === "prepared" || this.snapshot.deletion.phase === "unknown" || !!this.snapshot.busy && this.snapshot.busy !== "status";
   syncContext(userId: string | null, online: boolean, identityKey: string | null) {
     if (identityKey !== this.context) {
+      this.cancelProviderLink();
       const callbackChanged = !!userId && !!this.callbackUserId && userId !== this.callbackUserId;
       if (callbackChanged) { this.resetToken = null; this.callbackUserId = null; }
       else if (userId && this.snapshot.callback) this.callbackUserId = userId;
@@ -94,7 +106,7 @@ export class AccountServiceOwner {
         deletion: retainUnknown ? this.snapshot.deletion : recovery?.receiptToken ? { ...emptyDeletion(), phase: "unknown", message: "請先查核這個帳戶原來的退出結果。" } : emptyDeletion() });
       if (online && !retainUnknown) void this.loadStatus();
     } else if (online !== this.snapshot.online) {
-      if (!online) { this.request?.abort(); this.request = null; this.epoch++; this.clearDeletionVerification(); }
+      if (!online) { this.cancelProviderLink(); this.request?.abort(); this.request = null; this.epoch++; this.clearDeletionVerification(); }
       this.update({ online, ...(!online ? { busy: null } : {}) });
       if (online && !this.snapshot.status && this.snapshot.deletion.phase !== "unknown") void this.loadStatus();
     }
@@ -116,10 +128,64 @@ export class AccountServiceOwner {
         status = { enabled: false, registration: "trial", mailConfigured: false, policyVersion: "legacy-trial", notice: "目前為舊版合成資料試用服務。", user: null };
       }
       if (this.current(ticket)) this.update({ status, gate: gateFor(status, ticket.userId) });
+      if (ticket.userId && this.identity?.authenticationMethods) {
+        try { await this.readAuthenticationMethods(ticket); }
+        catch { if (this.current(ticket)) this.update({ authenticationMethods: null, notice: "未能讀取本人登入方式，請重新讀取後再驗證或連結。" }); }
+      }
     } catch (error) {
       if (this.current(ticket)) { this.update({ status: null, gate: "error", notice: "未能確認帳戶服務；私人內容已隱藏。請重新檢查。" });
         if (error instanceof AccountApiError && (error.status === 401 || error.code === "session_changed")) this.onAccessLost(); }
     } finally { this.finish(ticket); }
+  }
+  private async readAuthenticationMethods(ticket: { epoch: number; userId: string | null; controller: AbortController }) {
+    if (!ticket.userId || !this.identity?.authenticationMethods) return;
+    const methods = await this.identity.authenticationMethods(ticket.userId, ticket.controller.signal);
+    if (methods.userId !== ticket.userId) throw new Error("Authentication identity changed");
+    if (this.current(ticket)) this.update({ authenticationMethods: methods, providerLinkNeedsCheck: false });
+    return methods;
+  }
+  async loadAuthenticationMethods() {
+    if (!this.snapshot.userId || !this.identity?.authenticationMethods) return;
+    const ticket = this.begin("providers"); if (!ticket?.userId) return;
+    try { await this.readAuthenticationMethods(ticket); }
+    catch { if (this.current(ticket)) this.update({ authenticationMethods: null, notice: "未能確認登入方式，請檢查連線後重新讀取；不要重送連結。" }); }
+    finally { this.finish(ticket); }
+  }
+  async prepareProviderLink(proof: ReauthenticationInput) {
+    if (!this.isReady() || this.snapshot.deletion.phase !== "idle" || this.snapshot.providerLinkNeedsCheck || !this.identity?.prepareProviderLink) return;
+    const ticket = this.begin("provider-prepare"); if (!ticket?.userId) return;
+    this.update({ providerLinkExpiresAtMs: null });
+    try {
+      await this.identity.prepareProviderLink(ticket.userId, proof, ticket.controller.signal);
+      if (this.current(ticket)) this.update({ providerLinkExpiresAtMs: Date.now() + 120_000, notice: "本人身份已驗證。請核對目標登入方式，再親自確認連結。" });
+    } catch { if (this.current(ticket)) this.update({ notice: "未能重新驗證本人身份，尚未要求連結。請核對所選方式及連線。" }); }
+    finally { this.finish(ticket); }
+  }
+  cancelProviderLink = () => {
+    if (this.snapshot.providerLinkExpiresAtMs === null && this.snapshot.busy !== "provider-prepare" && this.snapshot.busy !== "provider-link") return;
+    const linking = this.snapshot.busy === "provider-link";
+    if (this.snapshot.busy === "provider-prepare" || this.snapshot.busy === "provider-link") {
+      this.request?.abort(); this.request = null; this.epoch++; this.update({ busy: null });
+    }
+    this.update({ providerLinkExpiresAtMs: null, ...(linking ? { providerLinkNeedsCheck: true,
+      notice: "連結結果未能確認。請先重新讀取本人登入方式，不要重送連結。" } : {}) });
+    void Promise.resolve(this.identity?.cancelProviderLink?.()).catch(() => {});
+  };
+  async linkProvider(provider: SocialAuthProvider, consent: boolean) {
+    if (!this.isReady() || this.snapshot.deletion.phase !== "idle" || !consent || this.snapshot.providerLinkNeedsCheck
+      || !this.identity?.socialProviders?.includes(provider) || !this.identity.linkProvider) return;
+    if (!this.snapshot.providerLinkExpiresAtMs || Date.now() >= this.snapshot.providerLinkExpiresAtMs) {
+      this.cancelProviderLink(); this.update({ notice: "連結準備已失效，請先重新驗證本人身份。" }); return;
+    }
+    const ticket = this.begin("provider-link"); if (!ticket?.userId) return;
+    this.update({ providerLinkExpiresAtMs: null });
+    try {
+      await this.identity.linkProvider(ticket.userId, provider, true, ticket.controller.signal);
+      const methods = await this.readAuthenticationMethods(ticket);
+      if (!methods?.providers.includes(provider)) throw new Error("Provider link not confirmed");
+      if (this.current(ticket)) this.update({ notice: "登入方式已連結，已重新讀取本人帳戶。" });
+    } catch { if (this.current(ticket)) this.update({ providerLinkNeedsCheck: true, notice: "連結結果未能確認。請先重新讀取本人登入方式，不要重送連結。" }); }
+    finally { this.finish(ticket); }
   }
   async acknowledge() {
     if (!this.snapshot.userId || this.snapshot.gate !== "consent") return;
@@ -192,18 +258,18 @@ export class AccountServiceOwner {
     this.verificationTimer = setTimeout(() => {
       if (this.current(ticket) && this.receipt === receipt) {
         this.clearDeletionVerification();
-        if (this.snapshot.deletion.phase === "prepared") this.update({ deletion: { ...this.snapshot.deletion, message: "身份驗證已過期。請重新輸入目前密碼驗證；尚未提交刪除。" } });
+        if (this.snapshot.deletion.phase === "prepared") this.update({ deletion: { ...this.snapshot.deletion, message: "身份驗證已過期。請以已連結方式重新驗證；尚未提交刪除。" } });
       }
     }, Math.max(0, expiresAtMs - Date.now()));
   }
-  async verifyDeletionIdentity(password: string) {
+  async verifyDeletionIdentity(proof: ReauthenticationInput) {
     if (!this.isReady() || this.snapshot.deletion.phase !== "prepared" || !this.receipt || this.deletionUserId !== this.snapshot.userId
-      || !password || password.length > 128) return;
+      || typeof proof === "string" && (!proof || proof.length > 128)) return;
     const ticket = this.begin("verify"); if (!ticket?.userId) return;
     this.clearDeletionVerification();
     const receipt = this.receipt;
     try {
-      const verified = await this.api.verifyDeletionIdentity(ticket.userId, password, ticket.controller.signal);
+      const verified = await this.api.verifyDeletionIdentity(ticket.userId, proof, ticket.controller.signal);
       if (!this.current(ticket) || this.receipt !== receipt || this.snapshot.deletion.phase !== "prepared") return;
       this.update({ deletionVerification: { ...this.snapshot.deletionVerification, expiresAtMs: verified.expiresAtMs },
         deletion: { ...this.snapshot.deletion, message: "身份已重新驗證。請核對刪除範圍及確認文字，再親自確認永久刪除。" } });
@@ -216,7 +282,7 @@ export class AccountServiceOwner {
     if (this.snapshot.busy || !this.isReady() || this.snapshot.deletion.phase !== "prepared" || !this.receipt || this.deletionUserId !== this.snapshot.userId || confirmation !== "永久刪除我的帳戶") return;
     if (!this.api.deletionVerification()) {
       this.clearDeletionVerification();
-      this.update({ deletion: { ...this.snapshot.deletion, message: "請先重新驗證目前密碼，才能永久刪除帳戶。" } }); return;
+      this.update({ deletion: { ...this.snapshot.deletion, message: "請先以已連結方式重新驗證本人身份，才能永久刪除帳戶。" } }); return;
     }
     const ticket = this.begin("delete"); if (!ticket?.userId) return;
     if (this.verificationTimer) clearTimeout(this.verificationTimer); this.verificationTimer = null;
@@ -304,5 +370,5 @@ export class AccountServiceOwner {
         this.update({ download: { ...this.snapshot.download, parts: this.continuation ? this.snapshot.download.parts : 0, phase: "error", message: errorMessage(error) } }); }
     } finally { this.finish(ticket); }
   }
-  dispose() { this.clearDeletionVerification(); this.request?.abort(); this.epoch++; this.resetToken = null; this.receipt = null; this.continuation = null; this.api.setIdentity(null); this.listeners.clear(); }
+  dispose() { this.cancelProviderLink(); this.clearDeletionVerification(); this.request?.abort(); this.epoch++; this.resetToken = null; this.receipt = null; this.continuation = null; this.api.setIdentity(null); this.listeners.clear(); }
 }
