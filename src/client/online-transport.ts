@@ -1,4 +1,5 @@
 import { AVATAR_ERROR_CODES } from "../shared/avatars.ts";
+import { sharedAccessBasisSchema } from '../shared/sharing.ts';
 import type { OnlineCommand, OnlineContext, OnlineIdentity, OnlineReceipt, OnlineSubmission } from "../shared/online.ts";
 
 export class OnlineTransportError extends Error {
@@ -29,6 +30,7 @@ const safeCodes = new Set([
   "not_found", "forbidden", "invalid_input", "validation_error", "operation_result_unavailable",
   "unauthorized", "account_precondition_required", "unsupported_media_type", "invalid_json",
   "invitation_unavailable", "already_member", "invitation_conflict", "owner_immutable",
+  "sharing_scope_changed", "sharing_precondition_required", "module_not_shared", "space_access_denied", "read_only", "shared_domain_unavailable",
 ]);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -165,9 +167,16 @@ export function createOnlineTransport(apiUrl: string, fetcher: typeof fetch = fe
         catch (error) { current(started); throw error; }
         current(started);
         if (!validContext(context)) throw new OnlineTransportError();
+        let resolvedCommand = input.command;
+        if (input.command.sharing) {
+          const basis = sharedAccessBasisSchema.safeParse(context.sharingBasis);
+          if (!basis.success) throw new OnlineTransportError();
+          resolvedCommand = { ...input.command, sharing: { ...input.command.sharing,
+            expectedBasis: input.command.sharing.expectedBasis ?? basis.data } };
+        }
         const operation: OnlineIdentity = { workspaceId: context.workspaceId, storageEpoch: context.storageEpoch,
           opId: crypto.randomUUID(), deviceId };
-        pending = { userId, command: input.command, canonical: input.canonical, operation };
+        pending = { userId, command: resolvedCommand, canonical: input.canonical, operation };
         return await post(pending, signal, userId, started);
       } finally { busy = false; }
     },
