@@ -52,7 +52,7 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
   const available = factIsApplicable(fact);
   const source = factSources[fact.source.kind];
   return <View testID={`memory-reference-fact-${fact.id}`} style={styles.card}>
-    <View style={styles.titleRow}><Text accessibilityRole="header" style={styles.factTopic}>{fact.key}</Text>
+    <View style={styles.titleRow}><Text accessibilityRole="header" aria-level={3} style={styles.factTopic}>{fact.key}</Text>
       <AppStatusBadge label={factStatusLabels[fact.status]} tone={fact.status === "confirmed" && available ? "success" : fact.status === "candidate" ? "warning" : "neutral"} /></View>
     <Text selectable style={styles.factContent}>{fact.content}</Text>
     <View style={styles.factContext}>
@@ -99,7 +99,7 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
 }
 function SummaryCard({ summary, emptyReady }: { emptyReady: boolean; summary: Readonly<MemorySummaryView> | null }) {
   const [details, setDetails] = useState(false);
-  return <View style={styles.card}><View style={styles.titleRow}><Text accessibilityRole="header" style={styles.cardTitle}>對話摘要</Text><AppStatusBadge label="私人 · 整理內容" /></View>
+  return <View style={styles.card}><View style={styles.titleRow}><Text accessibilityRole="header" aria-level={2} style={styles.cardTitle}>對話摘要</Text><AppStatusBadge label="私人 · 整理內容" /></View>
     {summary ? <><Text selectable style={styles.body}>{summary.text}</Text><Text style={styles.meta}>整理自你的對話，供延續脈絡時參考</Text>
       <AppButton label={details ? "收起摘要來源" : "查看摘要來源"} expanded={details} variant="quiet" density="compact" onPress={() => setDetails(value => !value)} />
       {details ? <View style={styles.details}><Metadata label="建立時間">{memoryDateLabel(summary.createdAt)}</Metadata><Metadata label="摘要版本">{summary.version}</Metadata>
@@ -227,7 +227,7 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="long" active={tab === "long"}><View style={styles.section}>
       <ReadNotice read={model.longTerm} unavailable="記憶資料暫未提供">
-        <View style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" style={styles.sectionTitle}>已確認事實</Text></BackgroundSurface>
+        <View style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>已確認事實</Text></BackgroundSurface>
           {confirmed.length ? <View style={styles.factGrid}>{confirmed.map(renderFact)}</View> : model.longTerm.state === "ready" && model.online ? <EmptyListCard title="已載入資料中沒有已確認事實" detail={model.longTerm.data.hasMoreFacts ? "仍有記憶未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>已確認事實尚未重新核對</Text></BackgroundSurface>}
         </View>
         {model.longTerm.data?.hasMoreFacts ? workspace.reads?.loadMoreFacts ? <AppButton label="載入更多記憶" variant="quiet" disabled={!model.online} onPress={workspace.reads.loadMoreFacts} />

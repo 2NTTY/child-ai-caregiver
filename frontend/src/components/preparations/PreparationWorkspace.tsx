@@ -41,7 +41,7 @@ function PreparationEmptyState({ workspace, history = false }: { workspace: Prep
     : condition === "lost" ? "孩子權限已失效" : "準備單最新狀態尚未核對";
   const detail = condition === "loading" ? "" : condition === "unavailable" ? "請重新讀取。"
     : condition === "lost" ? "準備單及歷史內容已隱藏，請先確認孩子的存取權。" : "請連線後重新讀取，不能據此判斷沒有準備單。";
-  return <View testID="preparation-empty" style={styles.empty}><Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.meta}>{detail}</Text> : null}</View>;
+  return <View testID="preparation-empty" style={styles.empty}><Text accessibilityRole="header" aria-level={3} style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.meta}>{detail}</Text> : null}</View>;
 }
 
 function PreparationMetadata({ icon, label, value }: { icon: AppIconName; label: string; value: string }) {
@@ -50,12 +50,12 @@ function PreparationMetadata({ icon, label, value }: { icon: AppIconName; label:
   </View>;
 }
 
-function PreparationRow({ document, selected, onPress, rowRef, history = false }: { document: PreparationDocumentView; selected: boolean; history?: boolean; onPress(): void; rowRef(node: View | null): void }) {
+function PreparationRow({ document, selected, onPress, rowRef, history = false, headingLevel = 3 }: { document: PreparationDocumentView; selected: boolean; history?: boolean; headingLevel?: 2 | 3; onPress(): void; rowRef(node: View | null): void }) {
   const state = stateLabels[document.readState], revision = document.revision;
   return <Pressable ref={rowRef} testID={`preparation-row-${document.id}`} accessibilityRole="button"
     accessibilityLabel={`開啟${revision?.title ?? "暫不能查看的準備單"}`} accessibilityState={{ selected }} aria-selected={selected}
     onPress={onPress} style={({ pressed }) => [styles.documentRow, history && styles.historyCard, selected && (history ? styles.selectedHistoryRow : styles.selectedRow), pressed && (selected ? styles.selectedPressedRow : styles.pressedRow)]}>
-    <Text numberOfLines={history ? 2 : undefined} accessibilityRole="header" style={styles.rowTitle}>{revision?.title ?? "暫不能查看的準備單"}</Text>
+    <Text numberOfLines={history ? 2 : undefined} accessibilityRole="header" aria-level={headingLevel} style={styles.rowTitle}>{revision?.title ?? "暫不能查看的準備單"}</Text>
     <Text numberOfLines={history ? 3 : undefined} style={styles.body}>{revision?.summary ?? state.detail}</Text>
     <View style={styles.row}><PreparationMetadata icon="preparation-outline" label="用途" value={preparationPurposeLabel(document.purpose)} /><AppStatusBadge label={document.status === "archived" && document.readState === "ready" ? "已歸檔" : state.label} tone={document.status === "archived" && document.readState === "ready" ? "neutral" : state.tone} /></View>
     {document.status === "archived" || revision?.eventDate || !history ? <View style={styles.row}>
@@ -101,7 +101,7 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
   return <View testID="preparation-document-detail" style={styles.document}>
     {!hideReturnAction ? <AppButton label={archived ? "返回歸檔清單" : "返回準備單清單"} variant="secondary" density="compact" onPress={onClose} /> : null}
     <View style={styles.documentHeader}>
-      <Text accessibilityRole="header" style={styles.documentTitle}>{revision?.title ?? "暫不能查看這份準備"}</Text>
+      <Text accessibilityRole="header" aria-level={2} style={styles.documentTitle}>{revision?.title ?? "暫不能查看這份準備"}</Text>
       {revision ? <Text style={styles.body}>{revision.summary}</Text> : null}
       <View style={styles.row}><PreparationMetadata icon="preparation-outline" label="用途" value={preparationPurposeLabel(document.purpose)} />
         <PreparationMetadata icon="account-child-outline" label="孩子" value={workspace.model.child.displayName} />
@@ -121,7 +121,7 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
     </View> : null}
     {document.historical ? <View style={styles.row}><AppStatusBadge label="較早修訂，唯讀" tone="info" /><AppButton label="回到目前正文" variant="quiet" onPress={() => reading?.closeVersion()} /></View> : null}
     {revision?.sections.map(section => <View key={section.id} style={styles.section}>
-      <View style={styles.row}><Text accessibilityRole="header" style={styles.sectionTitle}>{section.title}</Text>{section.kind === "checklist" ? <Text style={styles.meta}>{section.items.filter(item => item.checked).length}／{section.items.length} 項</Text> : null}</View>
+      <View style={styles.row}><Text accessibilityRole="header" aria-level={3} style={styles.sectionTitle}>{section.title}</Text>{section.kind === "checklist" ? <Text style={styles.meta}>{section.items.filter(item => item.checked).length}／{section.items.length} 項</Text> : null}</View>
       {section.items.map((item, index) => section.kind === "checklist"
         ? archived || !canCheck && !(keepReadControls || keepFailedReadControls || keepCheckingControl && (!!workspace.model.checkSave || checkingItem?.sectionId === section.id && checkingItem.itemId === item.id)) ? <View key={item.id} style={styles.textRow}><Text style={styles.checkMark}>{item.checked ? "☑" : "☐"}</Text><Text style={styles.reading}>{item.text}</Text></View>
           : <AppCheckbox key={item.id} label={item.text} checked={!!item.checked} disabled={!canCheck} onChange={value => {
@@ -237,7 +237,7 @@ function PreparationReader({ workspace, documents, history = false, onHistory, o
     </View> : null}
     <View style={[styles.stack, !history && wide && selected && styles.split]}>
       {history || !selected || wide ? <View ref={listRef} tabIndex={-1} accessibilityLabel={history ? "已歸檔準備單清單" : "準備單清單"} testID="preparation-document-list" style={[styles.list, !history && wide && selected && styles.listColumn]}>
-        {documents.length ? <PreparationListGrid history={history}>{documents.map(document => <PreparationRow history={history} key={document.id} document={document} selected={selected?.id === document.id}
+        {documents.length ? <PreparationListGrid history={history}>{documents.map(document => <PreparationRow history={history} headingLevel={!history && selected ? 2 : 3} key={document.id} document={document} selected={selected?.id === document.id}
           rowRef={node => { if (node) rowRefs.current.set(document.id, node); else rowRefs.current.delete(document.id); }}
           onPress={() => { returnFocus.current = rowRefs.current.get(document.id) ?? null; if (!history) anchor.current = { id: document.id, y: getScrollPosition?.() ?? 0, scope: workspace.scopeKey }; workspace.actions.selectDocument(document.id); }} />)}</PreparationListGrid>
           : <PreparationEmptyState workspace={workspace} history={history} />}

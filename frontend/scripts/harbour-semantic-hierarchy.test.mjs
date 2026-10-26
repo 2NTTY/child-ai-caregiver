@@ -17,6 +17,8 @@ for (const [file, expected] of [
   ['HomeWelcome.tsx', 1], ['AppShell.tsx', 2], ['HomeAgentImportant.tsx', 2], ['HomeFocus.tsx', 2],
   ['HomeOngoing.tsx', 2], ['HomeQuickActions.tsx', 2], ['HomeGuideCallout.tsx', 2],
   ['workspace/HomeWorkspace.tsx', 2], ['HomeOverviewItems.tsx', 3],
+  ['child-overview/ChildOverviewContent.tsx', 2], ['child-overview/ChildOverviewRecentRecords.tsx', 2],
+  ['tasks/TasksView.tsx', 2], ['profile/ProfileView.tsx', 2], ['../screens/guideScreen.tsx', 2],
 ]) test(`actual RNWeb renders the shipped ${file} heading hierarchy`, () => {
   const source = readFileSync(new URL(`../src/components/${file}`, import.meta.url), 'utf8');
   const tree = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
@@ -38,6 +40,32 @@ for (const [file, expected] of [
     ts.forEachChild(node, visit);
   }
   visit(tree); assert.ok(headings.length, `No product headings found in ${file}`);
+});
+
+test('observed preparation and memory stacks use section and nested-card levels instead of implicit h1', () => {
+  const cases = [
+    ['preparations/PreparationWorkspace.tsx', 'styles.documentTitle', '', [2]],
+    ['preparations/PreparationWorkspace.tsx', 'styles.sectionTitle', '', [3, 3, 2]],
+    ['memory/MemoryReferenceView.tsx', 'styles.factTopic', '', [3]],
+    ['memory/MemoryReferenceView.tsx', 'styles.cardTitle', '對話摘要', [2]],
+    ['memory/MemoryReferenceView.tsx', 'styles.sectionTitle', '已確認事實', [2]],
+  ];
+  for (const [file, style, text, expected] of cases) {
+    const source = readFileSync(new URL(`../src/components/${file}`, import.meta.url), 'utf8');
+    const tree = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX), actual = [];
+    function visit(node) {
+      if (ts.isJsxOpeningElement(node)) {
+        const attributes = Object.fromEntries(node.attributes.properties.filter(ts.isJsxAttribute).map(attr => [attr.name.getText(tree), attr.initializer]));
+        if (attributes.accessibilityRole?.text === 'header' && attributes.style?.expression?.getText(tree) === style && (!text || node.parent.children.some(child => ts.isJsxText(child) && child.text === text))) {
+          const level = Number(attributes['aria-level']?.expression?.getText(tree));
+          const html = renderToStaticMarkup(React.createElement(RNW.Text, {accessibilityRole: 'header', 'aria-level': level}, 'Synthetic heading'));
+          assert.match(html, new RegExp(`^<h${level}\\b`)); actual.push(level);
+        }
+      }
+      ts.forEachChild(node, visit);
+    }
+    visit(tree); assert.deepEqual(actual, expected, `${file}: ${style} ${text}`);
+  }
 });
 
 test('actual RNWeb reproduces the missing-level H1 regression', () => {

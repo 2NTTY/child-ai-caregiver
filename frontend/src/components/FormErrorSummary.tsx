@@ -8,13 +8,14 @@ export function FormFieldMessage({ id, error, help }: { id: string; error?: stri
   return error || help ? <HelperText nativeID={id} type={error ? "error" : "info"} visible>{error ?? help}</HelperText> : null;
 }
 
-export function FormErrorSummary({ entries, onFocus }: {
+export function FormErrorSummary({ entries, onFocus, headingLevel }: {
+  headingLevel?: 2 | 3 | 4;
   entries: readonly { field: string; label: string; message: string }[]; onFocus: (field: string) => void;
 }) {
   const message = entries.length ? `有 ${entries.length} 項資料需要修正。${entries.map(item => `${item.label}：${item.message}`).join(" ")}` : "";
   return <><StatusAnnouncement eventKey={message} message={message} urgent />
     {entries.length ? <View testID="form-error-summary" style={styles.summary}>
-      <Text accessibilityRole="header" style={styles.heading}>請修正以下資料</Text>
+      <Text accessibilityRole="header" aria-level={headingLevel} style={styles.heading}>請修正以下資料</Text>
       {entries.map(item => <AppButton key={item.field} label={`${item.label}：${item.message}`} accessibilityLabel={`修正${item.label}`} variant="quiet" density="compact" onPress={() => onFocus(item.field)} />)}
     </View> : null}</>;
 }

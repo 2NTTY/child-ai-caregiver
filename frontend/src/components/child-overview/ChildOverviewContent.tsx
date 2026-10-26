@@ -40,7 +40,7 @@ export function ChildOverviewContent({ avatar, companion, measurements, profileS
       {!inaccessible && avatar ? avatar : <View style={styles.avatar} accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><Text style={styles.avatarText}>{Array.from(model?.child?.name?.trim() ?? "")[0] ?? "子"}</Text></View>}
       <View style={styles.identityText}>
         <View style={styles.row}><AppStatusBadge label={reading.statusLabel} tone={tone} />{model?.access === "read_only" ? <AppStatusBadge label="唯讀" /> : null}</View>
-        <Text accessibilityRole="header" style={styles.childName}>{model?.child?.name ?? "孩子概況"}</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.childName}>{model?.child?.name ?? "孩子概況"}</Text>
         <Text style={styles.age}>{reading.state === "loading" ? "正在讀取年齡資料" : reading.state === "source_invalidated" || reading.state === "source_unavailable" || inaccessible ? "年齡資料暫不可讀" : childProfileAgeLabel(data, DateTime.now().setZone("Asia/Hong_Kong").toISODate()!)}{data?.language ? ` · ${data.language}` : ""}</Text>
       </View>
       {!inaccessible ? <AppButton label={model?.child ? "查看孩子檔案" : "新增孩子及檔案"} variant="secondary" density="compact" onPress={onOpenProfile} disabled={!model} /> : null}
@@ -69,9 +69,9 @@ export function ChildOverviewContent({ avatar, companion, measurements, profileS
       <AppDialog.ScrollArea><AppScrollView contentContainerStyle={styles.detailsContent}>
         {reading.message ? <Text style={styles.noticeText}>{reading.message}</Text> : null}
         {lastKnown ? <Text style={styles.noticeText}>以下為最後確認內容，尚待核對是否仍然適用。</Text> : null}
-        <Text accessibilityRole="header" style={styles.sectionTitle}>興趣與生活偏好</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>興趣與生活偏好</Text>
         <Text selectable style={styles.body}>{data?.preferences ?? profileValue(null)}</Text>
-        <Text accessibilityRole="header" style={styles.sectionTitle}>日常照顧要點</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>日常照顧要點</Text>
         <Fact label="過敏資料" value={profileValue(data?.allergies)} /><Fact label="特別需要" value={profileValue(data?.specialNeeds)} />
         {data?.age.kind === "birth_date" ? <Fact label="出生日期" value={data.age.date} /> : null}
         <Fact label="語言" value={profileValue(data?.language)} /><Fact label="地區" value={profileValue(data?.region)} />

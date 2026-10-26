@@ -1,12 +1,12 @@
 # Harbour Desk: public verification summary
 
-Status: experimental source snapshot, pending final browser QA. This is not a
+Status: bounded synthetic preview pass; production/native acceptance is not claimed. This is not a
 production release, deployment approval, or a claim that the whole UI is accepted.
 
 ## Source identity and publication boundary
 
-- Reviewed source commit: `062c4679f8d70125f9272ce6e00cc9a8e7a127fe`.
-- Original source tree: `6d319a913822737ee906667a85951f0639fed6fc`.
+- Reviewed source commit: `1facfec21cd4e4ef52aaf283a44cec62d72310e5`.
+- Original source tree: `6d99127e2e3d7eee9c5a6e13b9206c4e331714ea`.
 - Previous comparison candidate: `f8ce34a0e5dfbd1d57bdd704e324ae098b0b901c`.
 - The public snapshot changes verification documentation only. Product code,
   tests, configuration, dependencies, and existing baseline documents retain
@@ -15,7 +15,29 @@ production release, deployment approval, or a claim that the whole UI is accepte
   screenshots, and private execution locations are not distributed here.
   Earlier failures are summarized below rather than relabelled as passes.
 
-## Completed checks for this source candidate
+## Current bounded follow-up
+
+The final source includes the heading hierarchy correction and the two wide
+preparation/calendar heading fixes. The wide-heading regression passed 4/4 after
+its original 2/4 result; combined semantic SSR passed 23/23, and full frontend
+TypeScript and the fresh Web export passed. These counts overlap earlier checks
+and must not be added together. Source-map correspondence was checked against
+the exact final source. The current portable freeze covers 570 relative inputs,
+including three focused test files; earlier counts below describe the prior stage.
+
+A bounded synthetic preview pass covered **18 route entries** for this candidate,
+including representative viewport/state checks and the affected final semantics.
+Previously checked unchanged behavior was reused within the agreed finite scope;
+this is not a fresh exhaustive route-by-viewport-by-state matrix. No known
+blocking findings remained within that bounded scope.
+
+Not covered: real backend writes, unknown-commit recovery, outages or permission
+revocation; populated photo inspection, uploads, media capture/playback,
+extraction or model calls; authentication, real notifications, multi-child or
+real-household data; native keyboard/IME/touch and OS screen-readers; or every
+route x viewport x state combination. No deployment or merge is implied.
+
+## Earlier source-stage checks (062c4679)
 
 - Focused synthetic tests: **145/145**, no skipped tests, across 17 test files.
   Coverage includes navigation and guarded links, active categories, confirmed
@@ -54,8 +76,8 @@ production release, deployment approval, or a claim that the whole UI is accepte
 
 ## Reusable inputs and remaining limits
 
-`product-source-freeze.json` is retained unchanged: it contains only repository-
-relative source paths and SHA-256 digests. The unchanged `verify-export.py` and
+`product-source-freeze.json` is updated for the current source: 570 repository-
+relative input paths and SHA-256 digests, including three focused test inputs. The unchanged `verify-export.py` and
 `package-safe.py` are verification tooling, not stored private build artifacts.
 The former regenerates an artifact receipt from a newly supplied export before
 the latter consumes it. Such generated receipts are not part of this public
@@ -63,7 +85,7 @@ summary, and the build environment and fixture inputs must be supplied separatel
 
 Source, SSR, synthetic tests and source-map checks do not establish real layout,
 visible focus, natural scrolling, Back/Forward behavior, native tabs, or complete
-screen-reader coverage. The current browser matrix remains pending. Earlier
-candidate browser results do not count as acceptance of this source snapshot.
+screen-reader coverage. The broader matrix remains untested; the bounded pass above does not establish it. Earlier
+candidate browser results alone do not establish acceptance of this source snapshot.
 No real family data, model calls, production backend writes, permission changes,
 site publication, PR, or merge is represented by these checks.
