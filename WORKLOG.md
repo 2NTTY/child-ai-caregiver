@@ -4103,3 +4103,12 @@
 - **證據：**定向流程先重現 403（忽略共享選擇），修正後同一流程通過；補非空近況與私人 run 斷言後仍通過。局部型別、diff check 及獨立唯讀 review 通過；見 [P4_SHARED_GROWTH_CONCERNS](artifacts/verification/P4_SHARED_GROWTH_CONCERNS_20261027.json)。沒有全量、畫面、模型、通知或雲端驗收。
 - **協作／限制：**主模型實作／契約與整合，Sol 唯讀 review；不代填人工結果，不改 D 的 PR。後端／契約與共用 client 按責任以單作者提交。沒有新資料格式、索引、依賴或部署。
 - **下一步：**全局共享孩子／owner 接線；成長／關注寫入的原操作者收據與背景授權仍須補齊，不能把此讀取前置當作家庭功能完成。
+
+<a id="log-20261027-p4-shared-child-context"></a>
+### 2026-10-27：P4 全局共享孩子與頁面接線
+
+- 由 `d63b2a7` 接既有家庭管理、共用 owner 及領域 client；孩子標籤／角色／模組／basis 交易讀取，不搬資料、不新增套件。選單組合 ID 與業務 childId 分開，未共享／未接範圍不借本人資料，切換／撤權清舊快取。
+- 共享成長／關注與文件 authority 格式不同，重現後統一短 digest；首次沿文件長格式超出 client 上限亦保留。帳號暫時失敗保留共享目標、隱藏內容，恢復不誤選私人同 ID 孩子。
+- 獨立 review 的五項問題已定向修正：care/profile basis、共享記憶新增、首頁 selector、可見 header／側欄同步、新增文件交易核對原 basis。沿現有確認／收據／重試，私人候選及舊文件呼叫保持相容。
+- 局部 Server 型別、定向流程及最終 Web 匯出通過；前端仍有四項原型別診斷，不稱全數通過。初次 npx 因 sandbox proxy 失敗，改用既有同版本離線快取完成建置。失敗與未驗細節見[證據](artifacts/verification/P4_SHARED_CHILD_CONTEXT_20261027.json)，零模型／通知／雲端／部署／手機驗收。
+- 主模型負責契約與高耦合 owner；Sol 限定 hook／記憶接點，另一位獨立 review。不改 D PR。共享附件頁面、新增與聊天關聯、成長／關注寫入及其餘 P4 仍須接續，不標整體完成。

@@ -1137,9 +1137,13 @@ Account export可直接驗讀空head／null內容，不因未裝avatar內容port
 
 本節只定語義，路由／DTO 在相應包實作時沿既有接口擴充並保持舊 App 相容，不聲稱目前已有新端點。[SPEC REQ-P4](../SPEC.md#p4-p5-product) 是產品權威，[PLAN](../PLAN.md#p4-packages) 管依賴／狀態，六項已確認行為依 [ADR-029](DECISIONS.md#adr-029)，不以目標接口當已實作。
 
-FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口；Agent 及正式孩子範圍切換仍按後續接線。`withResource` 在同一 Firestore 交易核對目前操作者准入、空間／成員、選定模組、來源成員世代及原孩子狀態，提供分開的 `actorUserId`／原儲存 `scope`，以及空間、成員、分享和雙方授權版本 basis。領域 adapter 必須明確消費此 binding 並排除私人項目；不能把 binding 當成整個孩子的通行證。舊未指定共享的業務方法維持本人範圍。
+FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共享孩子選擇；Agent 仍按後續接線。`withResource` 在同一 Firestore 交易核對目前操作者准入、空間／成員、選定模組、來源成員世代及原孩子狀態，提供分開的 `actorUserId`／原儲存 `scope`，以及空間、成員、分享和雙方授權版本 basis。領域 adapter 必須明確消費此 binding 並排除私人項目；不能把 binding 當成整個孩子的通行證。舊未指定共享的業務方法維持本人範圍。
 
 **成長／持續關注讀取接點：**既有 `GET /api/children/:childId/growth`、`concerns` 可帶一個 `spaceId`；兩端沿同一共用 client，未提供參數維持本人服務。空值、重複、非法參數拒絕，不靜默回退本人資料。Server 在原交易核對當前成員／模組，保留身份前後核對及 no-store。已保存的卡片／關注正文屬明確選入模組的內容；成長來源檢查只在內部取既有 profile／family facts，不因此提供原始資料讀權，未共享 memory 不回即時近況與 factRefs，未共享 tasks 不回 taskId／taskState。持續關注不回私人 runId，未共享 care／tasks／growth 的關聯 ID 亦遮蔽；原資料不被改寫。共享 `authorityVersion` 綁儲存世代及目前共享 basis。這段先接讀取；`canManage=false` 且共享 POST 明確回 `shared_domain_read_only`，不開另一條本人寫入。完整寫入／背景及全局選擇按 FAMILY-A／B 接續，不當已交付。
+
+**共享孩子選擇：**`GET /api/shared-spaces/:spaceId/children/:childId` 交易內核對成員、分享模組及原孩子狀態，返回空間／孩子標籤、角色、模組及目前 basis，不回儲存擁有人、原工作區或私人內容。Web／Android 同一 ProductionOwner 選定空間＋孩子，快取 key 包含角色／模組／basis；選單組合 ID 只供呈現，業務仍用真 childId。失敗或撤權保留目標並隱藏內容，不回退同 ID 的私人孩子；身份改變清除選擇。每個領域仍由 Server 重新核權，選擇 DTO 不是授權憑證。
+
+已接頁面重用 care／profile、tasks、memory、documents 及唯讀 growth／concerns client。未選模組不發請求；私人聊天、摘要、私人來源、聯絡設定及未接共享上載不借本人入口執行。共享記憶新增使用已核對的 family fact，保留原人工內容／共享確認，不把私人候選自動當事實。共享文件／成長／關注使用同一短 authorityVersion，綁儲存世代及 basis，本人格式保持。
 
 **家庭管理接口：**`GET /api/shared-spaces` 讀本人活動空間；`GET /:spaceId` 讀目前角色及空間版本，`GET /:spaceId/{members|shares|invitations}` 分頁讀控制資料，邀請列表僅限管理員。每次最多檢查 20 筆，`nextCursor` 不透明並綁本人／儲存世代及列表種類；空間子列表亦綁空間版本，變更後重新讀取。不返回內部儲存 scope、密文、私人聊天或邀請 token；分享列表只含仍有效的孩子稱呼、模組及撤回資格。稱呼是辨識已分享孩子的必要標籤，不授予其餘 profile 內容。
 
@@ -1153,7 +1157,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口；Age
 
 記憶共享讀取只投影 `visibility=family` 的事實／主題及相同範圍修訂，不含先前私人候選。私聊原文／訊息 ID 及私人摘要不因共享模組而披露；來源存活及版本的內部核查只返回有效性。新增手動共享事實的 online 路徑為 `memory/facts/confirmed`，須 `intendedVisibility=family`、`confirm=true`、`confirmShared=true`，復用既有 confirmed-fact 提交方法；未確認的個人 candidate 路徑不自動轉為這個操作。模型工具仍沿既有 Server 確認綁定，不能藉新增 HTTP 路徑自創同意。
 
-文件選擇沿相同 `spaceId`，保留既有 documents 路由、`opId`、版本及 `authorityVersion`；共享 authorityVersion 同時綁空間／成員／分享 basis。documents 授權已保存快照及其中摘錄，並非所有原始來源的讀權。建立／刷新以已共享來源模組取材，未知或未選資料不補造；固定版讀取及 PDF 仍核引用的目前有效性。未選來源模組的內部核對只可復用已保存且仍相符的摘錄，不把未披露新版提供給 patch／刷新重新綁定。共享背景整理須保留原操作者及取材授權，不切成 owner 身份擴大取材。
+文件選擇沿相同 `spaceId`，保留既有 documents 路由、`opId`、版本及 `authorityVersion`；共享 authorityVersion 同時綁空間／成員／分享 basis。documents 授權已保存快照及其中摘錄，並非所有原始來源的讀權。共享新增 JSON 可帶 `expectedBasis`，共用頁面將選擇時 basis 與原 opId 固定保存並送到交易核對；填表期間範圍變更回 `sharing_scope_changed`，不採新範圍取材。舊不帶 basis 呼叫保持相容，更新／PDF 仍用原 authorityVersion。建立／刷新以已共享來源模組取材，未知或未選資料不補造；固定版讀取及 PDF 仍核引用的目前有效性。未選來源模組的內部核對只可復用已保存且仍相符的摘錄，不把未披露新版提供給 patch／刷新重新綁定。共享背景整理須保留原操作者及取材授權，不切成 owner 身份擴大取材。
 
 附件讀取沿既有 photos／voices／files 的 GET 路徑，明確以單一 `spaceId` 選擇 attachments 模組；同源身份及預期用戶 header 照常核對。不接受用戶指定資料擁有人。檔案／錄音清單只含已連結訊息且 ready 的項目；照片只回已完成上傳的原檔。共享 DTO 帶 `sharedSpaceId`，file／voice／轉錄的私人 `messageId` 為 null；轉錄儲存仍保留原始訊息綁定。照片標示 shared，canManage 依目前角色表示可刪除；隱去私人抽取草稿、run ID 及原記錄關聯。附件共享不授予讀取來源聊天。
 
@@ -1163,7 +1167,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口；Age
 
 共享前景同步使用 `GET /api/online/shared-changes?spaceId=…&childId=…&module=…&cursor=…`，cursor 首次可省略。Server 先核目前模組授權，沿同一來源 change projection 讀取選定孩子，每頁最多處理 100 筆；回覆只含原 selector、opaque cursor、changed 及 hasMore，不回來源工作區／序號、事件種類、資源 ID 或私人活動正文。首讀或共享 basis 改變時刷新當前資料，不回放舊共享歷史；撤權拒絕，另一身份或範圍不得挪用游標。附件沿既有 chat／care 失效訊號，可能保守多刷新一次，不把訊號當新聊天或新附件。記憶、文件、成長及關注亦因來源模組變更而重新核對有效性，僅提供失效訊號，不授予原來源讀權。
 
-共用 observer／useOnlineUpdates 可帶選定空間、孩子及模組；有選擇只讀該共享範圍，沒有選擇仍沿原本人工作區同步。沿既有前景／5 秒節奏，hasMore 留下一輪，失敗清共享游標並要求權威重讀，dispose 丟棄遲到回應，不重送業務操作。FAMILY-B 的正式空間選擇及畫面尚須接入此參數；本接點完成不表示家庭入口已開放。
+共用 observer／useOnlineUpdates 已接全局選擇；按頁面、概況標頭及展開側欄取得已授權模組，每模組獨立游標，最多八個；沒有選擇仍沿本人工作區同步。沿前景／5 秒節奏，hasMore 留下一輪；任一選定模組失敗清共享游標並要求權威重讀，dispose 丟棄遲到回應，不重送操作。帳號暫時核對失敗保留共享目標、清可讀快照，恢復後仍核原目標。接線不等於已部署或全家庭功能開放。
 
 管理變更使用 `operationId`／`expectedVersion`，收據與變更一起提交；原操作查回仍重核目前空間存取，退出／解散只留最小終態結果。轉交僅接收成員本人可接受。退出或被移除後，新邀請形成新成員世代，不復活原分享；舊未使用邀請不能繞過後來撤權。帳戶刪除前若仍管理活動空間，回 `space_transfer_or_dissolve_required`，由同一產品流程解決。
 

@@ -3,7 +3,7 @@ import type { Query } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { concernValuesSchema, concernChangeSchema, CONCERN_EVENT_LIMIT, CONCERN_STORED_EVENT_LIMIT,
   type Concern, type ConcernEvent, type ConcernValues, type ConcernChange } from '../src/shared/concerns.ts';
-import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
+import { createFirestoreAuthority, resourceAuthorityVersion, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema,
   type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
@@ -27,9 +27,7 @@ const receiptSchema = z.object({ fingerprint: z.string().length(64), id: uuid, v
 const followupClaimSchema = z.object({ id: uuid, concernId: uuid, concernVersion: version, jobId: z.string().length(64),
   reference: uuid, generation: uuid, authorizationVersion: z.string() }).strict();
 type Prepared = { value: Concern; changeSeq: string; commit(): void };
-const authorityVersion = (b: Binding) => b.sharedAccess
-  ? firestoreDomainHash({ epoch:b.scope.storageEpoch, basis:b.sharedAccess.basis })
-  : b.scope.storageEpoch + ':' + b.authorizationVersion;
+const authorityVersion = resourceAuthorityVersion;
 const openFollowup = (head: Head) => head.followUp && ['pending', 'queued'].includes(head.followUp.state);
 function future(at: string | null) {
   if (at !== null && (Date.parse(at) <= Date.now() || Date.parse(at) >= Date.UTC(2101, 0, 1))) domainReject('invalid_input', 400);

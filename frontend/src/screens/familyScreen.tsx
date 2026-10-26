@@ -1,4 +1,5 @@
 import { useLayoutEffect, useState } from "react";
+import { useRouter } from 'expo-router';
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
@@ -25,7 +26,8 @@ const roleLabel = (role: string) => role === "owner" ? "管理員" : role === "c
 type Confirmation = { title: string; description: string; command: SharingCommand };
 
 export default function FamilyPage() {
-  const { actions, recordsState, userId } = useProduction();
+  const { actions, recordsState, userId, owner:productionOwner,identityKey } = useProduction();
+  const router=useRouter();
   const { controller, state } = useProductionSharing();
   const leave = usePreviewNavigation();
   const [childId, setChildId] = useState(""), [modules, setModules] = useState<SharedModule[]>([]), [confirmation, setConfirmation] = useState<Confirmation | null>(null);
@@ -101,6 +103,11 @@ export default function FamilyPage() {
           {!state.shares.items.length ? <Text style={styles.body}>目前沒有已分享的孩子模組。</Text> : null}
           {state.shares.items.map(grant => <View key={grant.childId} style={styles.group}>
             <Text style={styles.body}>{grant.childName}：{grant.modules.map(module => moduleLabel[module]).join("、")}</Text>
+            <AppButton label={`開啟${grant.childName}的共享資料`} variant="secondary" disabled={locked} onPress={()=>leave(()=>{void (async()=>{
+              if(!identityKey||productionOwner.getSnapshot().identityKey!==identityKey)return;
+              await productionOwner.selectSharedChild(selected.id,grant.childId);
+              if(productionOwner.getSnapshot().identityKey===identityKey&&productionOwner.getSnapshot().sharedChild.target?.spaceId===selected.id)router.push('/');
+            })();},'child')} />
             {editable && grant.canWithdraw ? <View style={styles.row}>
               {grant.sharedBy === userId && ownChildren.some(child => child.id === grant.childId) ? <AppButton label={`修改${grant.childName}的分享模組`} variant="quiet" disabled={locked} onPress={() => changeChild(grant.childId)} /> : null}
               <AppButton label={`撤回${grant.childName}的分享`} variant="danger-secondary" disabled={locked} onPress={() => confirm("撤回分享？", `其他家庭成員將不能再讀取${grant.childName}的已選模組；原件保留於來源帳戶。`, { action: "unshare", operationId: crypto.randomUUID(), ...basis, childId: grant.childId })} />

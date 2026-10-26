@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { sharedModuleSchema } from './sharing.ts';
+import { sharedModuleSchema, sharedAccessBasisSchema } from './sharing.ts';
 
 const userId = z.string().min(1).max(256);
 const version = z.number().int().positive().max(2147483647);
@@ -14,6 +14,9 @@ export const sharedMemberViewSchema = z.object({ userId, label: z.string().min(1
   role: z.enum(['owner', 'caregiver', 'viewer']), version, joinedAt: date }).strict();
 export const sharedGrantViewSchema = z.object({ childId: z.uuid(), childName: z.string().min(1).max(160),
   modules: z.array(sharedModuleSchema).min(1).max(8), sharedBy: userId, version, canWithdraw: z.boolean() }).strict();
+export const sharedChildViewSchema = z.object({ spaceId:z.uuid(), spaceName:z.string().min(1).max(160),
+  childId:z.uuid(), childName:z.string().min(1).max(160), role:z.enum(['owner','caregiver','viewer']),
+  modules:z.array(sharedModuleSchema).min(1).max(8), basis:sharedAccessBasisSchema }).strict();
 export const sharedInviteViewSchema = z.object({ id: z.string().regex(/^[a-f0-9]{64}$/u), email: z.email(),
   role: z.enum(['caregiver', 'viewer']), expiresAt: date, state: z.enum(['issued', 'expired']) }).strict();
 const page = <T extends z.ZodType>(schema: T) => z.object({ items: z.array(schema).max(20), nextCursor: z.string().max(8192).nullable() }).strict();
@@ -47,5 +50,6 @@ export type SharingOperation = z.infer<typeof sharingOperationSchema>;
 export type SharedSpaceView = z.infer<typeof sharedSpaceViewSchema>;
 export type SharedMemberView = z.infer<typeof sharedMemberViewSchema>;
 export type SharedGrantView = z.infer<typeof sharedGrantViewSchema>;
+export type SharedChildView = z.infer<typeof sharedChildViewSchema>;
 export type SharedInviteView = z.infer<typeof sharedInviteViewSchema>;
 export type SharedPage<T> = { items: T[]; nextCursor: string | null };

@@ -7,11 +7,13 @@ const object = (value: unknown): value is Record<string, unknown> => value !== n
 
 /** One identity's metadata cursor. Platform visibility owns start/stop; this never writes or repeats an operation. */
 export function createOnlineChangeObserver(apiBaseUrl: string, userId: string,
-  refresh: (reason: OnlineRefreshReason) => Promise<void>, fetcher: typeof fetch = fetch, selection?: SharedRefreshSelection) {
-  const sharing = selection === undefined ? undefined : sharedRefreshSelectionSchema.parse(selection);
+  refresh: (reason: OnlineRefreshReason) => Promise<void>, fetcher: typeof fetch = fetch, selection?: SharedRefreshSelection | readonly SharedRefreshSelection[]) {
+  const sharing = selection === undefined ? undefined : (Array.isArray(selection)?selection:[selection]).map(value=>sharedRefreshSelectionSchema.parse(value));
+  if(sharing&&(!sharing.length||sharing.length>8||new Set(sharing.map(value=>value.module)).size!==sharing.length
+    ||sharing.some(value=>value.spaceId!==sharing[0].spaceId||value.childId!==sharing[0].childId)))throw new Error('Invalid shared change selection');
   const base = apiBaseUrl.replace(/\/$/u, ""), api = base.endsWith("/api") ? base : `${base}/api`;
   const cursors = new Map<string, { epoch: string; cursor: string; accessVersion: number | null }>();
-  let sharedCursor: string | undefined;
+  const sharedCursors=new Map<string,string>();
   let busy = false, stopped = false;
   const abort = new AbortController();
   async function read(path: string) {
@@ -40,14 +42,17 @@ export function createOnlineChangeObserver(apiBaseUrl: string, userId: string,
     busy = true;
     try {
       if (sharing) {
-        const query = new URLSearchParams({ spaceId: sharing.spaceId, childId: sharing.childId, module: sharing.module });
-        if (sharedCursor !== undefined) query.set("cursor", sharedCursor);
-        const page = sharedChangesPageSchema.safeParse(await read(`/online/shared-changes?${query}`));
-        if (!page.success || page.data.spaceId !== sharing.spaceId || page.data.childId !== sharing.childId
-          || page.data.module !== sharing.module) throw new Error("Invalid shared change page");
-        sharedCursor = page.data.cursor;
+        const pages=await Promise.all(sharing.map(async selected=>{
+          const query = new URLSearchParams({ spaceId: selected.spaceId, childId: selected.childId, module: selected.module });
+          const cursor=sharedCursors.get(selected.module);if(cursor!==undefined)query.set('cursor',cursor);
+          const page=sharedChangesPageSchema.parse(await read(`/online/shared-changes?${query}`));
+          if(page.spaceId!==selected.spaceId||page.childId!==selected.childId||page.module!==selected.module)throw new Error('Invalid shared change page');
+          return page;
+        }));
+        for(const page of pages)sharedCursors.set(page.module,page.cursor);
+        const changed=pages.some(page=>page.changed);
         // Even when hasMore is true, leave the continuation to the next foreground check.
-        if (page.data.changed || force) await notify(page.data.changed ? "changed" : "forced");
+        if (changed || force) await notify(changed ? "changed" : "forced");
         return;
       }
       const body = await read("/online/spaces");
@@ -70,7 +75,7 @@ export function createOnlineChangeObserver(apiBaseUrl: string, userId: string,
       for (const id of cursors.keys()) if (!seen.has(id)) { cursors.delete(id); changed = true; }
       if (changed || force) await notify(changed ? "changed" : "forced");
     } catch {
-      sharedCursor = undefined;
+      sharedCursors.clear();
       // A failed incremental read cannot confirm logout, deletion or successful writes.
       // Fresh normal reads still check identity and clear genuinely revoked scopes.
       if (!stopped) await notify("unavailable").catch(() => {});

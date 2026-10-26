@@ -13,7 +13,7 @@ const StartupContext = createContext<StartupContextValue | null>(null);
 
 export function ProductionFirstScreenGate({ width, launch, children }: { width: number; launch: ReactNode; children: ReactNode }) {
   const pathname = usePathname(), { tab, category, section, view, taskId, recordId, record } = useGlobalSearchParams();
-  const { identityKey, scopeKey, recordsState, controller } = useProduction();
+  const { identityKey, scopeKey, recordsState, controller,sharedChild,account } = useProduction();
   const visibilityKey = JSON.stringify([identityKey, scopeKey, pathname, tab ?? null, category ?? null, section ?? null, view ?? null, taskId ?? null, recordId ?? null, record ?? null]);
   const currentVisibilityKey = useRef(visibilityKey); currentVisibilityKey.current = visibilityKey;
   const [visibleSection, setVisibleSection] = useState<{ key: string; section: string } | null>(null);
@@ -32,6 +32,7 @@ export function ProductionFirstScreenGate({ width, launch, children }: { width: 
     if (value.key === currentKey.current) setReadiness(current => current?.key === value.key && current.state === value.state ? current : value);
   }, []);
   const state = pathname === "/admin" ? (recordsState.auth === "checking" ? "loading" : "ready")
+    : sharedChild.target && account.gate==='ready' ? readiness?.key===key?readiness.state:'loading'
     : productionStartupReadiness(recordsState, scopeKey, readiness?.key === key && (!settingsActive || activeSection) ? readiness.state : "loading");
   const retryRef = useRef<{ key: string; retry(additional?: readonly string[]): void } | null>(null);
   const [retryKey, setRetryKey] = useState<string | null>(null);

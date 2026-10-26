@@ -5,7 +5,7 @@ import { documentRequestSchema, documentChangeSchema, documentPatchSchema, docum
 import type { FamilyDocumentStore } from './family-document-store.ts';
 import { FamilyError } from './family-access.ts';
 import { canonicalJson } from './online-routing.ts';
-import { createFirestoreAuthority, FirestoreAuthorityError, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
+import { createFirestoreAuthority, FirestoreAuthorityError, resourceAuthorityVersion, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, FirestoreDomainError, domainParse, domainReject, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { FirestoreFamilyDocumentSnapshots } from './firestore-family-document-snapshots.ts';
@@ -76,8 +76,7 @@ export function createFirestoreFamilyDocumentStore(options: FirestoreDomainOptio
     }
   }
   const scoped = (binding: FirestoreAuthorityTransaction, childId: string): WorkRecoveryScope => ({ ...binding.scope, childId });
-  const authorityVersion = (binding: FirestoreAuthorityTransaction) => `${binding.scope.storageEpoch}:${binding.authorizationVersion}`
-    + (binding.sharedAccess ? ':' + fingerprint({ spaceId: binding.sharedAccess.spaceId, basis: binding.sharedAccess.basis }) : '');
+  const authorityVersion = resourceAuthorityVersion;
   const operationId = (ownerUserId: string, opId: string) => JSON.stringify([ownerUserId, opId]);
   function checkTags(raw: any, scope: WorkRecoveryScope) {
     if (Object.entries(data.tags(scope)).some(([key, value]) => raw?.[key] !== value)) domainReject('document_binding', 500);

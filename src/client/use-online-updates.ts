@@ -7,9 +7,10 @@ export { ONLINE_REFRESH_EVENT } from "./online-refresh-events.ts";
 /** Same metadata protocol on both platforms; native activity is supplied by its device adapter. */
 export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, online: boolean,
   refresh: (reason: OnlineRefreshReason) => Promise<void>, fetcher: typeof fetch = fetch, nativeActive?: boolean,
-  checkCurrentWork?: () => Promise<void>, selection?: SharedRefreshSelection) {
+  checkCurrentWork?: () => Promise<void>, selection?: SharedRefreshSelection | readonly SharedRefreshSelection[]) {
   const latestWork = useRef(checkCurrentWork); latestWork.current = checkCurrentWork;
   const latestRefresh = useRef(refresh); latestRefresh.current = refresh;
+  const selectionKey=JSON.stringify(selection??null);
   useEffect(() => {
     const browser = nativeActive === undefined;
     if (!userId || !online || nativeActive === false
@@ -29,5 +30,5 @@ export function useOnlineUpdates(apiBaseUrl: string, userId: string | null, onli
       clearInterval(timer); observer.dispose();
       if (browser) { window.removeEventListener("focus", event); document.removeEventListener("visibilitychange", event); }
     };
-  }, [apiBaseUrl, userId, online, fetcher, nativeActive, selection?.spaceId, selection?.childId, selection?.module]);
+  }, [apiBaseUrl, userId, online, fetcher, nativeActive, selectionKey]);
 }

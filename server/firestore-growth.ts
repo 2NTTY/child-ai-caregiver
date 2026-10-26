@@ -5,7 +5,7 @@ import { growthActionSchema, growthTopicActionSchema, growthTopicSchema, GROWTH_
   type GrowthAction, type GrowthAttention, type GrowthPage, type GrowthTopicAction, type GrowthTopicId } from '../src/shared/growth.ts';
 import type { MemoryContext } from '../src/shared/memory.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
-import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
+import { createFirestoreAuthority, resourceAuthorityVersion, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import type { FirestoreMemoryStore } from './firestore-memory.ts';
 import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineStore } from './firestore-online.ts';
@@ -38,9 +38,7 @@ const checkSchema = z.object({ childId: uuid, catalog: text(100), at: time, next
 type Saved = z.infer<typeof firestoreGrowthSchema>;
 type Topic = z.infer<typeof firestoreGrowthTopicSchema>;
 const same = (a: unknown, b: unknown) => firestoreDomainHash(a) === firestoreDomainHash(b);
-const currentAuthority = (b: Binding) => b.sharedAccess
-  ? firestoreDomainHash({ epoch:b.scope.storageEpoch, basis:b.sharedAccess.basis })
-  : b.scope.storageEpoch + ':' + b.authorizationVersion;
+const currentAuthority = resourceAuthorityVersion;
 const active = (item: GrowthAttention) => ['proposed', 'snoozed'].includes(item.state);
 
 /** Reuses the reviewed four-rule catalogue. No model determines medical eligibility or topic suppression. */

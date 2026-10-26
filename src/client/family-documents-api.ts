@@ -104,7 +104,8 @@ export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = f
         throw new FamilyDocumentApiError(0, "check_original_document");
       pending.reviewed = false; return pending;
     }
-    const opId = crypto.randomUUID(), body = JSON.stringify({ opId, [kind === "create" ? "request" : "change"]: input });
+    const opId = crypto.randomUUID(), body = JSON.stringify({ opId, [kind === "create" ? "request" : "change"]: input,
+      ...(kind==='create'&&sharing?.expectedBasis?{expectedBasis:sharing.expectedBasis}:{}) });
     return pending = { kind, childId, id, userId, payload, body, opId, reviewed: false, reconfirm: false, everUnknown: false };
   }
   async function write(kind: PendingWrite["kind"], childId: string, id: string, userId: string, input: DocumentRequest | DocumentChange, signal: AbortSignal) {

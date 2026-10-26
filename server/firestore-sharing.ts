@@ -8,7 +8,7 @@ import { SHARING_SCOPE, sharedSpaceSchema, sharedMembershipSchema, resourceShare
   sharedOperationSchema, sharedAccessBasisSchema, sharedModuleSchema, sharingRestoreSchemas, sharingMetadata,
   type SharingKind } from './firestore-sharing-records.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
-import { sharingCommandSchema, sharingOperationSchema, sharedSpaceViewSchema, type SharingCommand, type SharingOperation,
+import { sharingCommandSchema, sharingOperationSchema, sharedSpaceViewSchema, sharedChildViewSchema, type SharingCommand, type SharingOperation,
   type SharedSpaceView, type SharedMemberView, type SharedGrantView, type SharedInviteView, type SharedPage } from '../src/shared/sharing-control.ts';
 import { sharingUserTag } from './firestore-sharing-records.ts';
 
@@ -428,6 +428,20 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
     },
     withResource<T>(userId: string, raw: z.infer<typeof resourceRequest>, use: (access: SharedResourceAccess) => Promise<T>): Promise<T> {
       return authority.runTransaction(userId, null, b => inResourceTransaction(b, raw, use));
+    },
+    childView(userId: string, spaceId: string, childId: string) {
+      domainParse(z.uuid(), spaceId); domainParse(z.uuid(), childId);
+      return authority.runTransaction(userId, null, async b => {
+        const s = await space(b.transaction, spaceId); await member(b.transaction, spaceId, userId);
+        const grant = await read(b.transaction, 'resource-share', key(spaceId, childId), resourceShareSchema, true);
+        if (!grant || grant.state !== 'active' || !grant.modules.length) domainReject('module_not_shared', 403);
+        return inResourceTransaction(b, { spaceId, childId, module:grant.modules[0], mode:'read' }, async access => {
+          const child = await access.binding.readChild(childId);
+          if (!child) domainReject('shared_resource_unavailable', 404);
+          return sharedChildViewSchema.parse({ spaceId, spaceName:s.name, childId, childName:child.displayName,
+            role:access.role, modules:grant.modules, basis:access.basis });
+        });
+      });
     },
   };
   return api;
