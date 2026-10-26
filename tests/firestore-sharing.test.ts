@@ -12,12 +12,14 @@ import { prepareFirebaseRestore } from '../server/firestore-restore.ts';
 import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
 import { sharedSpaceSchema, resourceShareSchema, sharedMembershipSchema, sharingErasedBy } from '../server/firestore-sharing-records.ts';
 import { createFirestoreCareStore, firestoreCareStorageSchema } from '../server/firestore-care.ts';
-import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
+import { FirestoreDomainData, firestoreTaskStorageSchema } from '../server/firestore-domain-data.ts';
 import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
 import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
 import { createOnlineTransport } from '../src/client/online-transport.ts';
 import type { FirebaseAuthPort } from '../server/firebase-auth.ts';
 import { createCareApi } from '../src/client/care-api.ts';
+import { createTaskApi } from '../src/client/task-api.ts';
+import { createFirestoreTaskWorker } from '../server/firestore-task-worker.ts';
 import { replayContentErasures } from '../server/firestore-restore-content-erasure.ts';
 import type { FirebaseErasureIntent } from '../server/firebase-erasure-journal.ts';
 
@@ -63,6 +65,69 @@ async function fixture() {
   return { fake, options, authority, sharing, child, space, control, documents };
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
+
+test('shared tasks keep one original, attributed revisions, owner reminder authority and revocable receipts', async () => {
+  const f = await fixture(), childId = f.child.child.id, shared = { spaceId: f.space.id };
+  await f.sharing.share('parent', { ...shared, childId, modules: ['tasks'], expectedVersion: f.space.version, operationId: randomUUID() });
+  const worker = createFirestoreTaskWorker({ ...f.options, enabled: true,
+    async currentAuth(userId) { return { userId, email: userId + '@example.test', disabled: false, emailVerified: true }; } });
+  const online = createFirestoreOnlineStore({ ...f.options, reminders: worker });
+  const command = { path: `/api/children/${childId}/tasks`, sharing: shared, payload: { confirm: true, values: {
+    title: 'Shared appointment', details: '', kind: 'appointment', assigneeUserId: 'parent',
+    dueAt: '2026-10-27T03:00:00Z', timeZone: 'Asia/Hong_Kong' } } };
+  const context = await online.context('carer', command);
+  const submitted = { ...command, sharing: { ...shared, expectedBasis: context.sharingBasis },
+    operation: { workspaceId: context.workspaceId, storageEpoch: context.storageEpoch, opId: randomUUID(), deviceId: randomUUID() } };
+  const receipt = await online.submit('carer', submitted), task = (receipt.result as any).task;
+  assert.equal(task.createdBy, 'carer'); assert.equal(task.assigneeUserId, 'parent');
+  assert.equal('createdViaShare' in task, false);
+  assert.deepEqual(await online.lookup('carer', submitted.operation.opId), receipt);
+  assert.deepEqual(await online.submit('carer', submitted), receipt);
+  assert.equal((await online.tasks.get('parent', childId, task.id))?.id, task.id);
+  await assert.rejects(online.tasks.get('carer', childId, task.id), code('binding'));
+  await assert.rejects(online.context('viewer', command), code('read_only'));
+  const selected = online.tasks.forSharedSpace!(f.space.id);
+  assert.equal((await selected.list('viewer', childId)).items[0].id, task.id);
+  assert.deepEqual((await selected.list('carer', childId)).eligibleAssignees.map(value => value.userId), ['parent']);
+  const [job] = await worker.due('parent', childId);
+  const claim = await worker.claim(job); assert.equal(claim.state, 'claimed');
+
+  const session = { user: { id: 'carer' } };
+  const auth = { async handler() { return new Response(null, { status: 404 }); },
+    async getSession(options: { returnHeaders?: boolean }) { return options.returnHeaders ? { response: session, headers: new Headers() } : session; },
+    async assertRecentReauthentication() { return session; }, fromNodeHeaders() { return new Headers(); } } as FirebaseAuthPort;
+  const handler = createFirebaseRequestHandler({ authority: f.authority, auth, publicOrigin: 'https://app.example.test', mailConfigured: false, online });
+  const fetcher: typeof fetch = async (input, init) => {
+    const headers = new Headers(init?.headers); headers.set('Origin', 'https://app.example.test');
+    return handler(new Request(input, { ...init, headers }));
+  };
+  const client = createTaskApi('https://app.example.test', fetcher, shared), signal = new AbortController().signal;
+  assert.equal((await client.tasks(childId, null, signal)).items[0].id, task.id);
+  assert.equal((await client.task(childId, task.id, signal)).version, 1);
+  const done = await client.changeTask(childId, task.id, { action: 'complete', expectedVersion: 1, confirm: true, note: '' }, signal, 'carer');
+  assert.equal(done.occurrence.state, 'completed');
+  assert.equal((await client.history(childId, task.id, null, signal)).revisions[0].actorUserId, 'carer');
+  if (claim.state !== 'claimed') throw new Error('Expected an original reminder lease');
+  assert.equal((await worker.complete(job, claim.lease)).state, 'stopped');
+  assert.equal(f.documents().some(row => row.path.includes('_notification_outbox/')), false);
+  assert.equal((await online.lookup('carer', submitted.operation.opId) as any).result.task.version, 1, 'original receipt does not claim the newer outcome');
+  const codec = createFirestoreRestoreCodec(f.options);
+  for (const row of f.documents().filter(value => /_(tasks|task_revisions)\//u.test(value.path))) {
+    const decoded = codec.decode(row);
+    assert.equal((decoded.value as any).task?.createdBy ?? (decoded.value as any).createdBy, 'carer');
+  }
+  const taskRow = f.documents().find(row => row.path.includes('_tasks/'))!, savedTask = codec.decode(taskRow).value as any;
+  const withoutProof = { ...savedTask }; delete withoutProof.createdViaShare;
+  const data = new FirestoreDomainData(f.options);
+  assert.throws(() => codec.decode({ path: taskRow.path, data: { ...taskRow.data,
+    ...data.seal('task', task.id, f.child.scope, firestoreTaskStorageSchema, withoutProof, savedTask.version) } }), code('restore_binding'));
+  const current = await f.sharing.get('parent', f.space.id);
+  await f.sharing.unshare('parent', { ...shared, childId, expectedVersion: current.version, operationId: randomUUID() });
+  assert.equal((await online.lookup('carer', submitted.operation.opId) as any).result, null);
+  assert.equal((await online.submit('carer', submitted)).result, null);
+  await assert.rejects(selected.get('carer', childId, task.id), code('module_not_shared'));
+  assert.equal((await online.tasks.get('parent', childId, task.id))?.occurrence.state, 'completed');
+});
 
 test('shared care uses the original domain, actor receipts, current grants and deletion barriers', async () => {
   const f = await fixture(), childId = f.child.child.id;

@@ -1,6 +1,7 @@
 import { discloseAvatarReceipt } from './avatar-receipt-disclosure.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { sharedDomainRoute } from './shared-domain-routing.ts';
+import { sharedTaskPointerSchema, readSharedTaskResult } from './firestore-task-records.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
@@ -28,7 +29,7 @@ const storedRecordSchema = z.union([firestoreOnlineRecordSchema, firestoreOnline
 const privateInputPointerSchema = z.object({ format: z.literal('private-input-receipt:1'), id: z.uuid(), version: z.number().int().positive(),
   recordId: z.uuid().optional() }).strict();
 const sharedResultSchema = z.object({ format: z.literal('shared-domain-receipt:1'), spaceId: z.uuid(), childId: z.uuid(),
-  module: z.enum(['care', 'profile']), result: z.union([contentPointerSchema, z.object({ deleted: z.literal(true) }).strict()]) }).strict();
+  module: z.enum(['care', 'profile', 'tasks']), result: z.union([contentPointerSchema, sharedTaskPointerSchema, z.object({ deleted: z.literal(true) }).strict()]) }).strict();
 export type FirestoreOnlineConfirmed = z.infer<typeof firestoreOnlineConfirmedSchema>;
 export type FirestoreOnlinePending = z.infer<typeof firestoreOnlinePendingSchema>;
 export type FirestoreOnlineRecord = z.infer<typeof firestoreOnlineRecordSchema>;
@@ -86,7 +87,9 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
       try {
         result = await createFirestoreSharingStore(options).inResourceTransaction(binding,
           { spaceId: pointer.spaceId, childId: pointer.childId, module: pointer.module, mode: 'read' },
-          async access => 'deleted' in pointer.result ? pointer.result : readContentPointer(data, access.binding, pointer.result));
+          async access => 'deleted' in pointer.result ? pointer.result
+            : pointer.result.format === 'shared-task-result:1' ? readSharedTaskResult(data, access.binding, pointer.result)
+              : readContentPointer(data, access.binding, pointer.result));
       } catch (error) {
         if (!(error && typeof error === 'object' && 'code' in error &&
           (['space_access_denied', 'space_inactive', 'module_not_shared', 'account_inactive', 'account_not_ready', 'not_found', 'scope_changed'].includes(String(error.code))
@@ -170,8 +173,9 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
     if (submission.sharing) {
       const route = sharedDomainRoute(record.path);
       if (value.childId !== null) domainReject('receipt_binding', 500);
+      const task = route.module === 'tasks' ? domainParse(z.object({ task: z.object({ id: z.uuid(), version: z.number().int().positive() }) }), value.result).task : null;
       saved = { ...record, result: sharedResultSchema.parse({ format: 'shared-domain-receipt:1', ...route,
-        spaceId: submission.sharing.spaceId, result: pointer ?? value.result }) };
+        spaceId: submission.sharing.spaceId, result: task ? { format: 'shared-task-result:1', id: task.id, version: task.version } : pointer ?? value.result }) };
     }
     if (/^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(record.path) && value.result && typeof value.result === 'object' && 'input' in value.result) {
       const result = value.result as { input: { id: string; version: number }; recordId?: string };

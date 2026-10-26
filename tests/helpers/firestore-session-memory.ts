@@ -31,6 +31,8 @@ export function serialFirestoreFixture() {
         if (op === '==') return row.get(key) === value;
         if (op === '>=') return row.get(key) >= (value as number);
         if (op === '>') return row.get(key) > (value as number);
+        if (op === '<') return row.get(key) < (value as number);
+        if (op === '<=') return row.get(key) <= (value as number);
         throw new Error('Unsupported synthetic query');
       })).sort((a, b) => { for (const [key, direction] of target.orders) {
         const x = a.get(key), y = b.get(key), delta = x < y ? -1 : x > y ? 1 : 0;
