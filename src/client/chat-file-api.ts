@@ -17,9 +17,9 @@ export function createChatFileApi(fetcher: typeof fetch, origin = '', hash: type
     ? file.sharedSpaceId === sharing.spaceId && file.messageId === null
     : file.sharedSpaceId === undefined;
   const writable = () => { if (sharing) throw new ChatFileApiError(403, 'shared_attachment_write_unavailable'); };
-  async function request(url: string, userId: string, signal: AbortSignal, payload?: unknown) {
-    if (payload !== undefined) writable();
-    else if (sharing) url += (url.includes('?') ? '&' : '?') + new URLSearchParams({ spaceId: sharing.spaceId });
+  async function request(url: string, userId: string, signal: AbortSignal, payload?: unknown, sharedDelete = false) {
+    if (payload !== undefined && !sharedDelete) writable();
+    if (sharing) url += (url.includes('?') ? '&' : '?') + new URLSearchParams({ spaceId: sharing.spaceId });
     if (!userId || signal.aborted) throw new ChatFileApiError(0, 'identity_changed');
     let response: Response;
     try { response = await fetcher(url, { method: payload === undefined ? 'GET' : 'POST', credentials: 'include', cache: 'no-store', signal,
@@ -74,8 +74,8 @@ export function createChatFileApi(fetcher: typeof fetch, origin = '', hash: type
       return checked(await request(base(childId, id) + '/resolve', userId, signal, {}), childId, id, signal);
     },
     async delete(file: ChatFileAttachment, opId: string, signal: AbortSignal, userId: string) {
-      writable();
-      const response = await request(base(file.childId, file.id) + '/delete', userId, signal, { opId: z.uuid().parse(opId), expectedVersion: file.version });
+      if (!matchesSelection(file)) throw new ChatFileApiError(0, 'file_response_invalid');
+      const response = await request(base(file.childId, file.id) + '/delete', userId, signal, { opId: z.uuid().parse(opId), expectedVersion: file.version }, true);
       const result = z.object({ operationId: z.uuid(), deleted: z.literal(true), cleanupPending: z.boolean() }).strict().safeParse(await response.json());
       if (signal.aborted || !result.success || result.data.operationId !== opId) throw new ChatFileApiError(0, 'file_operation_unknown');
       return result.data;

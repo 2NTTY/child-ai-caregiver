@@ -248,6 +248,42 @@ test('clients use formal list routes and reject cross-child, raw leakage, repeat
   }
 });
 
+test('shared attachment clients delete the selected original with its retained operation and reject other writes', async () => {
+  const selection = { spaceId: id(70) }, opId = id(71), signal = new AbortController().signal;
+  for (const source of ['voices', 'files'] as const) {
+    const attachment = { ...item(), messageId: null, sharedSpaceId: selection.spaceId };
+    const receipt = { operationId: opId, deleted: true as const, cleanupPending: true };
+    let calls = 0, loseReply = true, wrongReceipt = false;
+    const fetcher: typeof fetch = async (url, init) => {
+      calls++;
+      assert.equal(String(url), 'https://example.test/api/children/' + attachment.childId + '/' + source + '/' + attachment.id + '/delete?spaceId=' + selection.spaceId);
+      assert.equal(init?.method, 'POST'); assert.equal(init?.credentials, 'include'); assert.equal(init?.cache, 'no-store');
+      assert.equal(init?.signal, signal); assert.equal(new Headers(init?.headers).get('x-expected-user-id'), 'carer');
+      assert.deepEqual(JSON.parse(String(init?.body)), { opId, expectedVersion: attachment.version });
+      if (loseReply) { loseReply = false; throw new Error('Lost delete response'); }
+      return Response.json(wrongReceipt ? { ...receipt, operationId: id(72) } : receipt);
+    };
+    const api = source === 'voices' ? createVoiceApi(fetcher, 'https://example.test', undefined, selection)
+      : createChatFileApi(fetcher, 'https://example.test', undefined, selection);
+    const invalid = code(source === 'voices' ? 'voice_response_invalid' : 'file_response_invalid');
+    const unknown = code(source === 'voices' ? 'voice_operation_unknown' : 'file_operation_unknown');
+    await assert.rejects(api.delete(attachment, opId, signal, 'carer'), unknown);
+    assert.deepEqual(await api.delete(attachment, opId, signal, 'carer'), receipt);
+    assert.equal(calls, 2);
+    for (const bad of [{ ...attachment, sharedSpaceId: id(73) }, { ...attachment, sharedSpaceId: undefined },
+      { ...attachment, messageId: id(74) }]) await assert.rejects(api.delete(bad, opId, signal, 'carer'), invalid);
+    await assert.rejects(api.reserve(attachment.childId, { opId, fileName: 'synthetic.wav', bytes: 4, sha256: attachment.sha256, mimeType: 'audio/wav' }, signal, 'carer'), code('shared_attachment_write_unavailable'));
+    await assert.rejects(api.upload(attachment, 'AAAA', signal, 'carer'), code('shared_attachment_write_unavailable'));
+    await assert.rejects(api.resolve(attachment.childId, attachment.id, signal, 'carer'), code('shared_attachment_write_unavailable'));
+    await assert.rejects(api.delete(attachment, opId, signal, ''), code('identity_changed'));
+    await assert.rejects(api.delete(attachment, opId, AbortSignal.abort(), 'carer'), code('identity_changed'));
+    assert.equal(calls, 2);
+    wrongReceipt = true;
+    await assert.rejects(api.delete(attachment, opId, signal, 'carer'), unknown);
+    assert.equal(calls, 3);
+  }
+});
+
 test('real clients and handlers traverse sealed stores without reading originals or writing records', async () => {
   const f = await realStoreFixture();
   for (const source of ['voice', 'file'] as const) {
