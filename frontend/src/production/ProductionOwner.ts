@@ -7,6 +7,8 @@ import { ChatPhotoUploadController } from './ChatPhotoUploadController';
 import { createVoiceApi, type VoiceApi } from '../../../src/client/voice-api.ts';
 import { VoiceUploadController } from './VoiceUploadController';
 import { photoSha256 } from '../platform/photo-bytes';
+import { firebaseSocialFactory } from '../platform/firebase-social-auth';
+import type { ReauthenticationInput, SocialAuthProvider } from '../../../src/shared/auth-providers.ts';
 import { publishOnlineRefresh } from "../../../src/client/online-refresh-events.ts";
 import type { ProductionTransport } from "./production-transport";
 import { createAccountApi } from "../../../src/client/account-api";
@@ -40,7 +42,8 @@ export class ProductionOwner {
   readonly fetcher: typeof fetch;
   private readonly native: boolean;
   readonly adminOwner: AdminOwner;
-  readonly reauthenticateAdmin: (password: string, signal: AbortSignal) => Promise<void>;
+  readonly reauthenticateAdmin: (proof: ReauthenticationInput, signal: AbortSignal) => Promise<void>;
+  readonly socialProviders: readonly SocialAuthProvider[];
   readonly queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 0, gcTime: 0 } } });
   readonly draftOwner = createAssistantDraftOwner();
   readonly controller: RecordsController;
@@ -99,15 +102,17 @@ export class ProductionOwner {
         try {
           const publicOrigin = transport?.publicOrigin ?? (typeof window === "undefined" ? "" : window.location.origin);
           if (provider !== "firebase" || !publicOrigin) throw new Error("Authentication provider unavailable");
-          firebaseIdentity = createFirebaseAuthApi({ baseUrl: this.apiBaseUrl, publicOrigin, config, fetcher: this.fetcher, nativeSession: transport?.nativeSession });
+          firebaseIdentity = createFirebaseAuthApi({ baseUrl: this.apiBaseUrl, publicOrigin, config, fetcher: this.fetcher,
+            nativeSession: transport?.nativeSession, socialFactory: this.native ? undefined : firebaseSocialFactory });
         } catch { firebaseIdentity = createUnavailableFirebaseAuthApi(); }
       }
     }
+    this.socialProviders = firebaseIdentity?.socialProviders ?? accountDependencies?.reauthentication?.socialProviders ?? [];
     this.adminOwner = new AdminOwner(this.apiBaseUrl, this.fetcher);
-    this.reauthenticateAdmin = async (password, signal) => {
+    this.reauthenticateAdmin = async (proof, signal) => {
       const userId = this.controller.getSnapshot().user?.id;
       if (!userId || !firebaseIdentity) throw new Error('Reauthentication unavailable');
-      await firebaseIdentity.reauthenticate(userId, password, signal);
+      await firebaseIdentity.reauthenticate(userId, proof, signal);
       if (this.controller.getSnapshot().user?.id !== userId) throw new Error('Identity changed');
     };
     const recordsApi = api ?? createRecordsApi(this.apiBaseUrl, this.fetcher, firebaseIdentity);
@@ -309,6 +314,12 @@ export class ProductionOwner {
     const before = this.controller.getSnapshot();
     if (before.busy || before.auth === "checking" || before.auth === "signedIn" || !before.online) return;
     this.newLogin = true; await this.controller.authenticate(mode, input);
+    if (this.controller.getSnapshot().auth === "signedOut") this.newLogin = false;
+  }
+  async authenticateProvider(provider: SocialAuthProvider) {
+    const before = this.controller.getSnapshot();
+    if (!this.socialProviders.includes(provider) || before.busy || before.auth === "checking" || before.auth === "signedIn" || !before.online) return;
+    this.newLogin = true; await this.controller.authenticateProvider(provider);
     if (this.controller.getSnapshot().auth === "signedOut") this.newLogin = false;
   }
   markHomeIntroductionPresented = () => {
