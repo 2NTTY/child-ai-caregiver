@@ -14,6 +14,7 @@ import { sealRecoveryLocator } from './firestore-recovery-envelope.ts';
 import { workRecoveryAad, workRecoveryDocumentId, workRecoverySchemas as schemas,
   workRecoveryScopeSchema, type WorkRecoveryKind, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { prepareFirestoreBackgroundWork } from './firestore-background-work.ts';
+import { assertNoManagedSharedSpaces } from './firestore-sharing-records.ts';
 
 const FORMAT = 'yuban-work-recovery', MAX_BYTES = 192 * 1024;
 const NIL = '00000000-0000-0000-0000-000000000000';
@@ -52,6 +53,7 @@ export interface FirestoreAuthorityPreparedChange { readonly changeSeq: string; 
 export interface FirestoreAuthorityPreparedChild extends FirestoreAuthorityPreparedChange { readonly result: FirestoreChildCreation }
 export interface FirestoreAuthorityTransaction {
   readonly transaction: Transaction;
+  readonly actorUserId: string;
   readonly scope: Readonly<WorkRecoveryScope>;
   readonly authorizationVersion: string;
   readonly childAccessVersion: string;
@@ -280,7 +282,7 @@ export class FirestoreAuthority {
         const { workspace, control, owner, identity } = await this.account(tx, userId);
         const scope = Object.freeze(ownerScope(userId, workspace.id, workspace.storageEpoch, childId ?? NIL));
         if (childId !== null) await this.canonicalChild(tx, scope);
-        const binding: FirestoreAuthorityTransaction = Object.freeze({ transaction: tx, scope,
+        const binding: FirestoreAuthorityTransaction = Object.freeze({ transaction: tx, scope, actorUserId: userId,
           authorizationVersion: workspace.accessVersion, childAccessVersion: workspace.childAccessVersion ?? '0', changeSeq: workspace.changeSeq, generation: control.generation, identityEmail: identity.email, workspaceCreatedAt: owner.workspaceCreatedAt ?? null,
           readChild: async (requestedChildId: string) => {
             assertActive(); parse(uuid, requestedChildId);
@@ -312,6 +314,7 @@ export class FirestoreAuthority {
           prepareErasure: async (operationId: string, type: 'child' | 'account', requestedChildId?: string) => {
             parse(uuid, operationId); parse(z.enum(['child', 'account']), type); reserve();
             if (childId !== null) fail('transaction_child_scope');
+            if (type === 'account') await assertNoManagedSharedSpaces(this.domain, tx, userId);
             const targetScope = type === 'child' ? ownerScope(userId, workspace.id, workspace.storageEpoch, parse(uuid, requestedChildId)) : scope;
             if (type === 'child') await this.canonicalChild(tx, targetScope);
             const account = type === 'account' ? await this.read(tx, 'account', userId, ownerScope(userId), schemas.account) : null;
@@ -595,6 +598,15 @@ export class FirestoreAuthority {
       await this.canonicalChild(tx, scope);
       return { scope, authorizationVersion: workspace.accessVersion };
     }, { readOnly: true });
+  }
+  /** Server-only source revalidation inside an already authenticated sharing transaction; this does not grant actor access. */
+  async assertPersonalSource(tx: Transaction, raw: WorkRecoveryScope): Promise<FirestoreAuthorityBinding> {
+    const scope = parse(workRecoveryScopeSchema, raw);
+    if (scope.childId === NIL) fail('binding', 403);
+    const { workspace } = await this.account(tx, scope.ownerUserId);
+    if (workspace.id !== scope.workspaceId || workspace.storageEpoch !== scope.storageEpoch) fail('scope_changed');
+    await this.canonicalChild(tx, scope);
+    return { scope, authorizationVersion: workspace.accessVersion };
   }
   /** Internal erasure finalizer, after journal-backed cleanup. It cannot reactivate or delete active resources. */
   async finishErasure(scope: WorkRecoveryScope, type: 'child' | 'account'): Promise<void> {

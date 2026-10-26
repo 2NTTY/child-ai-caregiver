@@ -1,4 +1,6 @@
 import { replayAvatarLifecycle, assertRestoredAvatarRelations, restoredAvatarCleanupRecords, mergeAvatarCopyResponsibilities } from './firestore-restore-avatars.ts';
+import { isSharingAuthorityPath, sharingErasedBy } from './firestore-sharing-records.ts';
+import { replaySharingAuthority } from './firestore-restore-sharing.ts';
 import type { AvatarObjectDescriptor, AvatarCleanupRecord } from './avatar-data.ts';
 import { replayChatFileErasures, assertRestoredChatFileRelations } from './firestore-restore-chat-files.ts';
 import { firestoreChatFileRowSchema } from './firestore-chat-files.ts';
@@ -116,6 +118,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   const live=input.liveDocuments.filter(row=>!isSession(row)).map(row=>codec.decode(row));
   unique(decoded,row=>row.path); unique(live,row=>row.path);
   assertFirebaseRestoreAuthority(decoded); assertFirebaseRestoreAuthority(live);
+  replaySharingAuthority(codec, decoded, live, input.liveDocuments);
   const oldControl=rows(decoded,'control',authority.control)[0]!.value,liveControl=rows(live,'control',authority.control)[0]!.value;
   requireValue(!oldControl.enabled&&!liveControl.enabled&&liveControl.generation===input.sourceGeneration,'restore_source_not_paused');
   const authUsers=unique(input.authUsers.map(value=>authSchema.parse(value)),value=>value.userId);
@@ -179,6 +182,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     const accountErased=scopeJournal.some(v=>v.type==='account-delete'&&v.scope.ownerUserId===scope.ownerUserId);
     const body=record.value as Record<string,any>;
     const matches=accountErased||erasedByScope(scope.ownerUserId,scope.workspaceId,scope.childId)
+      || scopeJournal.some(intent => sharingErasedBy(kind, body, intent.scope, intent.type === 'account-delete'))
       || ['online-receipt','authority-operation','document-operation','change-projection','change'].includes(kind)
         && erasedByScope(scope.ownerUserId,body.result?.scope?.workspaceId??body.result?.child?.workspaceId??scope.workspaceId,
           body.childId??body.result?.child?.id??body.result?.childId??body.result?.scope?.childId??NIL)
@@ -323,5 +327,5 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   assertFirebaseRestoreAuthority(restored);assertFirestoreRestoreContent(restored);assertRestoredVoiceRelations(restored);assertRestoredChatFileRelations(restored);assertRestoredAvatarRelations(restored,true);
   return {records,removePaths,generation,newEpochByWorkspace,journalHash:digest(journal.map(firebaseErasureIntentHash).sort()),
     authHash:digest([...authUsers.values()].sort((a,b)=>a.userId.localeCompare(b.userId))),
-    authorityHash:digest(input.liveDocuments.filter(row=>row.path.startsWith(options.namespace+'/')).map(row=>({path:row.path,...firebaseBackupDocumentDigest(row)})).sort((a,b)=>a.path.localeCompare(b.path)))};
+    authorityHash:digest(input.liveDocuments.filter(row=>row.path.startsWith(options.namespace+'/') || isSharingAuthorityPath(options.namespace, row.path)).map(row=>({path:row.path,...firebaseBackupDocumentDigest(row)})).sort((a,b)=>a.path.localeCompare(b.path)))};
 }

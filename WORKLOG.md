@@ -3983,3 +3983,13 @@
 - 一次既有 Sol reviewer 的唯讀覆核指出管理權轉交與個人原件刪帳結果需明確區分；主模型同步 SPEC／API／資料／ADR：已轉交空間自有資料保留，個人原件仍按本人刪帳規則並撤共享引用，不自動轉移或複製。沒有擴大共享授權或回寫舊 ADR。
 - 文件核對：原有明示錨點保留、新本地連結可解析、六項決定與 REQ／AC 相符；ADR 歷史不變、WORKLOG 只追加，git diff --check 通過。一次命令層停用 autocrlf 令 CRLF 被誤當全檔差異，恢復既有 Git 行尾正規化後核對通過，沒有因此改動歷史正文。只做文件檢查，未安裝新套件或宣稱其相容已實測。
 - 下一步：文件 review／合併後開始 P4-FAMILY-A，以現有 Firestore 權威層拆清操作者與穩定儲存身份；不全庫搬移／重加密。僅相應 D 接口、本人或平台前置阻擋相關項，繼續其他已授權工作。
+
+<a id="log-20261027-p4-family-authority-foundation"></a>
+## LOG-20261027-P4-FAMILY-AUTHORITY-FOUNDATION
+
+- 基線 `5c564f9`／#337，分支 `codex/p4-family-authority`。主模型實作 FAMILY-A 首段：現有加密／Firestore 交易上的空間、角色、邀請、選定模組分享、撤權、管理權轉交及原操作收據；分清操作者與原資料儲存身份，舊個人路徑仍不讀其他人資料。沒有新套件、SQL、模型、雲端資源、部署或 D PR 修改；這不是公開家庭功能交付。
+- 補既有備份／清理／恢復識別：目前共享權限及原操作收據優先於舊備份；新管理員／活動成員的必要身份圖可接回，不帶私人業務副本；來源 epoch 重綁、刪除重放、authority hash 納入共享控制資料。新增集合維持備份清單 append-only，索引與私密欄位排除先保存為部署定義，尚未上雲。
+- 兩次同一 Sol 的唯讀 review 找出撤權後原收據披露、管理員轉回後舊邀請復活、還原遺失較新 create 收據；主模型分別以目前權限／最小終態收據、管理任期世代及現行收據恢復修正，補入同一批合成流程。
+- 必要證據：4 條新增共享／轉交／恢復／邀請流程通過；既有 authority 的 20 項檢查及一條舊孩子刪除恢復通過；受影響 Server 與新增檢查的限定型別核對、diff 空白核對通過。完整 Server 型別入口包含多個既有測試檔錯誤，本包沒有擴大修改；不聲稱全倉型別或全量測試通過。
+- 失敗保留：最初加密讀取接線將 schema／snapshot 次序寫反，已按原函式修正；合成恢復 fixture 缺 `DocumentReference.get` 及 Timestamp，補原有測試方式後，再補恢復 metadata allowlist，定向核對通過。另一條既有恢復測試 `restore applies current revocation and journal erasure without restoring sessions or post-backup child authority` 在第 250 行仍報照片數量 `3 !== 1`；用基線 `5c564f9` 原程式載入同一測試也重現，未改斷言或抹除失敗。[本包證據](artifacts/verification/P4_FAMILY_AUTHORITY_FOUNDATION_20261027.json)。
+- 下一步：FAMILY-A 尚欠各領域共享讀寫、附件／背景及變更同步，Family-B／Class01 再接公開 API／薄 UI。真 Firestore 競爭、新共享資料正式恢復及跨端結果尚未驗，不把內部服務、合成通過或合併當整包完成。

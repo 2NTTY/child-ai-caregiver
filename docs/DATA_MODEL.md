@@ -815,9 +815,13 @@ Claim 回應丟失時，只准尚未呼叫 Storage 的同一次 invocation 作�
 
 
 <a id="p4-p5-data"></a>
-## P4／P5 目標資料模型（未實作）
+## P4／P5 目標資料模型與實作邊界
 
-沿現有 Firestore store、固定資源 ID、版本、密文、來源、原操作／收據與索引分頁擴充，不建立 SQL 模擬層或第二權威。[REQ-P4-01～10](../SPEC.md#p4-p5-product) 管產品含義，PD-01～06 已由 [ADR-029](DECISIONS.md#adr-029) 確認；以下是必要資料責任，不是已新增 collections。
+沿現有 Firestore store、固定資源 ID、版本、密文、來源、原操作／收據與索引分頁擴充，不建立 SQL 模擬層或第二權威。[REQ-P4-01～10](../SPEC.md#p4-p5-product) 管產品含義，PD-01～06 已由 [ADR-029](DECISIONS.md#adr-029) 確認；下表仍是完整目標，不能把首段資料服務當全部完成。
+
+FAMILY-A 首段新增 namespace 下 `shared_spaces`、`shared_memberships`、`resource_shares`、`shared_invitations`、`shared_operations`。前四者是加密的共享控制資料，不含孩子正文，以穩定系統 routing scope 保存；空間自己的儲存身份為 `space:<spaceId>`／同一 workspace ID，與現任管理員分開，班級業務寫入仍待後包接通。分享只指向原資料 scope 及選定模組，不移動、複製或重新加密原資料；操作收據仍綁操作者個人 scope。
+
+成員保留 membership ID／版本，分享綁來源成員世代；撤回、離開、移除、轉交及邀請變更均有版本和原操作。帳戶／孩子刪除清除相關成員或原件分享引用，不刪已轉交的空間控制資料。備份集合清單以 append-only 加入上述五項；恢復使用目前共享權限，更新來源 epoch，刪除日誌同樣處理共享引用，authority hash 包含共享控制資料。備份之後加入的現任管理員／活動成員只補必要身份／准入圖，仍核目前 Auth，不因此帶入私人業務內容或 session。這是合成恢復接點，正式新資料的完整配對恢復仍屬 S15／P4 門檻。
 
 | 資料責任 | 必要關聯／生命週期 |
 |---|---|

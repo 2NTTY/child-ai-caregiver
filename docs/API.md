@@ -1133,9 +1133,13 @@ Account export可直接驗讀空head／null內容，不因未裝avatar內容port
 
 
 <a id="p4-p5-contract"></a>
-## P4／P5 目標接口（未實作）
+## P4／P5 目標接口與實作邊界
 
 本節只定語義，路由／DTO 在相應包實作時沿既有接口擴充並保持舊 App 相容，不聲稱目前已有新端點。[SPEC REQ-P4](../SPEC.md#p4-p5-product) 是產品權威，[PLAN](../PLAN.md#p4-packages) 管依賴／狀態，六項已確認行為依 [ADR-029](DECISIONS.md#adr-029)，不以目標接口當已實作。
+
+FAMILY-A 首段已有內部 `createFirestoreSharingStore`；尚未接公開 HTTP、Agent 或畫面。`withResource` 在同一 Firestore 交易核對目前操作者准入、空間／成員、選定模組、來源成員世代及原孩子狀態，提供分開的 `actorUserId`／原儲存 `scope`，以及空間、成員、分享和雙方授權版本 basis。領域 adapter 必須明確消費此 binding 並排除私人項目；不能把 binding 當成整個孩子的通行證。舊未指定共享的業務方法維持本人範圍。
+
+管理變更使用 `operationId`／`expectedVersion`，收據與變更一起提交；原操作查回仍重核目前空間存取，退出／解散只留最小終態結果。轉交僅接收成員本人可接受。退出或被移除後，新邀請形成新成員世代，不復活原分享；舊未使用邀請不能繞過後來撤權。帳戶刪除前若仍管理活動空間，回 `space_transfer_or_dissolve_required`，由同一產品流程解決。
 
 | 功能邊界 | 輸入／核對 | 結果及恢復 |
 |---|---|---|
