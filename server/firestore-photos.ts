@@ -1,4 +1,6 @@
 import { sharedAttachmentReads, attachmentReadFence } from './firestore-attachment-access.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
+import { sharedWriteAttributionSchema, sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
 import type { FirestoreAuthority } from './firestore-authority.ts';
 import { randomUUID } from "node:crypto";
@@ -9,7 +11,7 @@ import type { AgentImageInput } from './agent-images.ts';
 import type { AgentScope } from './agent-runtime.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { careValuesSchema } from './care-validation.ts';
-import { createFirestoreAuthority, FirestoreAuthorityError, type FirestoreAuthorityTransaction, type FirestoreAuthorityOptions } from "./firestore-authority.ts";
+import { createFirestoreAuthority, sharedSourceOperationId, FirestoreAuthorityError, type FirestoreAuthorityTransaction, type FirestoreAuthorityOptions } from "./firestore-authority.ts";
 import { FirestoreDomainData, FirestoreDomainError, firestoreDomainHash } from "./firestore-domain-data.ts";
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
 import { canonical } from "./firestore-session-codec.ts";
@@ -28,6 +30,7 @@ const uuid = z.uuid(), hash = z.string().regex(/^[a-f0-9]{64}$/u), at = z.iso.da
 const uploadSchema = z.object({ id: uuid, reservationOperationId: uuid, sha256: hash, bytes: integer.min(1).max(PHOTO_LIMITS.bytes),
   mimeType: z.enum(["image/png", "image/jpeg"]), authorizationVersion: z.string(), generation: uuid, startedAt: at }).strict();
 const deletionSchema = z.object({ intent: firebaseErasureIntentSchema, fingerprint: hash, expectedVersion: version,
+  actorUserId:z.string().min(1).max(256).optional(), actorOperationId:uuid.optional(), attribution:sharedWriteAttributionSchema.optional(),
   journal: firebaseErasureDescriptorSchema.nullable() }).strict();
 const extractionSchema = z.object({ state: z.enum(['not_requested', 'running', 'available', 'failed', 'unknown']),
   runId: uuid.nullable(), draft: photoDraftSchema.nullable(), stopReason: z.string().max(128).nullable(),
@@ -41,7 +44,10 @@ const rowSchema = z.object({ id: uuid, scope: workRecoveryScopeSchema, reservati
   visibility: z.enum(['private', 'shared']).optional(), recordId: uuid.nullable().optional(), extraction: extractionSchema.optional() }).strict()
   .refine(row => (row.state === "deleted") === (row.metadata === null)
     && (row.state !== "ready" || row.descriptor !== null)
-    && ((row.state === "deleting" || row.state === "deleted") === (row.deletion !== null)));
+    && ((row.state === "deleting" || row.state === "deleted") === (row.deletion !== null))
+    && (!row.deletion || validSharedAttribution(row.deletion.attribution,row.scope,row.id,row.deletion.expectedVersion+1,row.deletion.actorUserId??row.scope.ownerUserId))
+    && (!row.deletion?.attribution || !!row.deletion.actorOperationId)
+    && (!row.deletion?.actorOperationId || row.deletion.intent.operationId===sharedSourceOperationId(row.deletion.actorUserId??row.scope.ownerUserId,row.deletion.actorOperationId)));
 type Row = z.infer<typeof rowSchema>;
 const operationSchema = z.object({ scope: workRecoveryScopeSchema, operationId: uuid, action: z.enum(["reserve", "delete"]), fingerprint: hash,
   photoId: uuid, state: z.enum(["pending", "confirmed"]), result: z.object({ deleted: z.literal(true), cleanupPending: z.literal(true) }).strict().nullable() }).strict();
@@ -53,7 +59,7 @@ export const firestorePhotoCleanupSchema = z.object({ scope: workRecoveryScopeSc
   objectScope: workRecoveryScopeSchema.optional(),
   state: z.enum(["known", "unresolved"]), uploadStarted: z.boolean(), upload: uploadSchema.nullable(),
   sha256: hash, bytes: integer.min(1).max(PHOTO_LIMITS.bytes), mimeType: z.enum(["image/png", "image/jpeg"]),
-  descriptor: firebasePhotoObjectDescriptorSchema.nullable(), journal: firebaseErasureDescriptorSchema }).strict()
+  descriptor: firebasePhotoObjectDescriptorSchema.nullable(), journal: firebaseErasureDescriptorSchema.nullable() }).strict()
   .refine(value => (value.state === "known") === (value.descriptor !== null) && value.uploadStarted === (value.upload !== null));
 export type FirestorePhotoCleanup = z.infer<typeof firestorePhotoCleanupSchema>;
 const cursorSchema = z.object({ scopeTag: hash, sortKey: z.string().min(1).max(80), sharedFence: hash.optional() }).strict();
@@ -116,7 +122,7 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
     if (binding?.sharedAccess && row.state !== "ready") fail("not_found", 404);
     active(row);
     return { ...row.metadata, id: row.id, childId: row.scope.childId, ownerUserId: row.scope.ownerUserId, createdAt: row.createdAt,
-      version: row.version, state: row.state as "reserved" | "ready", recoveryPending: row.state === "reserved" && !!row.objectScope, visibility: binding?.sharedAccess ? 'shared' : row.visibility ?? 'private', canManage: !binding?.sharedAccess, recordId: binding?.sharedAccess ? null : row.recordId ?? null,
+      version: row.version, state: row.state as "reserved" | "ready", recoveryPending: row.state === "reserved" && !!row.objectScope, visibility: binding?.sharedAccess ? 'shared' : row.visibility ?? 'private', canManage: !binding?.sharedAccess || binding.sharedAccess.role !== 'viewer', recordId: binding?.sharedAccess ? null : row.recordId ?? null,
       ...(binding?.sharedAccess ? {sharedSpaceId: binding.sharedAccess.spaceId} : {}),
       extraction: row.extraction && !binding?.sharedAccess ? { state: row.extraction.state === 'running' && Date.parse(row.extraction.expiresAt!) <= Date.parse(now()) ? 'unknown' : row.extraction.state,
         runId: row.extraction.runId, draft: row.extraction.draft, stopReason: row.extraction.stopReason,
@@ -296,6 +302,84 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
       });
     });
   }
+  /** Complete only an already accepted source deletion; current membership cannot cancel its cleanup. */
+  async function finishSharedDeletion(scope: WorkRecoveryScope, id: string, operationId: string) {
+    const first=await options.database.runTransaction(async tx=>checkedRow(await tx.get(rowRef(id)),scope,id));
+    if (!first.deletion?.actorOperationId) return;
+    if (first.deletion.intent.operationId!==operationId) fail('photo_cleanup_binding');
+    if (first.state==='deleted' && first.deletion.journal) return;
+    if (first.state!=='deleting' || !journal.read) fail('photo_cleanup_unavailable',503);
+    const proof=parse(firebaseErasureDescriptorSchema,await journal.writeOnce(first.deletion.intent));
+    if (proof.intentSha256!==firebaseErasureIntentHash(first.deletion.intent)
+      || !same(await journal.read(first.deletion.intent,proof),first.deletion.intent)) fail('photo_integrity',503);
+    await options.database.runTransaction(async tx=>{
+      const b={scope,transaction:tx} as FirestoreAuthorityTransaction;
+      const row=checkedRow(await tx.get(rowRef(id)),scope,id), cleanupSnapshot=await tx.get(cleanupRef(id));
+      if (!row.deletion || !same(row.deletion.intent,first.deletion!.intent)) fail('photo_cleanup_binding');
+      if (row.state==='deleted' && row.deletion.journal) return;
+      const cleanup=data.open('photo-cleanup',id,scope,firestorePhotoCleanupSchema,cleanupSnapshot);
+      const prior=await operation(b,operationId,'delete',row.deletion.fingerprint);
+      if (row.state!=='deleting' || !prior || prior.photoId!==id || prior.state!=='pending'
+        || cleanup.photoId!==id || cleanup.operationId!==operationId || !same(cleanup.scope,scope) || cleanup.journal) fail('photo_integrity',503);
+      row.state='deleted';row.version++;row.metadata=null;row.descriptor=null;row.deletion.journal=proof;
+      writeRow(b,row);writeOperation(b,{...prior,state:'confirmed',result:{deleted:true,cleanupPending:true}});
+      tx.set(cleanupRef(id),{scopeTag:tag(scope),state:cleanup.state,...seal('photo-cleanup',id,scope,firestorePhotoCleanupSchema,{...cleanup,journal:proof})});
+    });
+  }
+  async function deleteShared(userId:string, childId:string,id:string,expectedVersion:number,submission:OnlineSubmission):Promise<OnlineReceipt> {
+    const selection=submission.sharing!;
+    if(!selection.expectedBasis) fail('sharing_precondition_required',428);
+    if(!journal.read) fail('photo_cleanup_unavailable',503);
+    const opId=submission.operation.opId, sourceOpId=sharedSourceOperationId(userId,opId);
+    const fingerprint=firestoreDomainHash(['delete',id,expectedVersion]), timestamp=now();
+    return guard(async()=>{
+      const first=await authority.runTransaction(userId,null,async actor=>{
+        const previous=await onlinePrior(actor,submission,opId);
+        if(previous){
+          const receipt=await receipts.disclose(actor,previous);
+          if(receipt.state==='confirmed')return {receipt,scope:null};
+        }
+        return createFirestoreSharingStore(options).inResourceTransaction(actor,{spaceId:selection.spaceId,childId,module:'attachments',mode:'write',
+          ...(!previous?{expectedBasis:selection.expectedBasis}:{})},async access=>{
+          const b=access.binding,row=await readRow(b,id);
+          if(previous){
+            if(row.deletion?.actorUserId!==userId || row.deletion.actorOperationId!==opId || row.deletion.fingerprint!==fingerprint)fail('operation_conflict');
+            return {receipt:null,scope:row.scope};
+          }
+          if(row.state!=='ready')fail('not_found',404);
+          if(row.version!==expectedVersion)fail('version_conflict');
+          if(await operation(b,sourceOpId,'delete',fingerprint))fail('operation_conflict');
+          const quota=await quotas(b);occupied(row,quota);
+          if((await b.transaction.get(cleanupRef(id))).exists)fail('photo_integrity',503);
+          const reservation=await receipts.read(b,row.reservationOperationId);
+          if(reservation && (isFirestoreOnlinePending(reservation)||reservation.childId!==childId
+            ||reservation.path.toLowerCase()!=='/api/children/'+childId+'/photos'))fail('photo_integrity',503);
+          const redact=reservation&&!isFirestoreOnlinePending(reservation)?receipts.prepareRedaction(b,reservation):null;
+          const linkedDeletion=await care.preparePhotoDeletion(b,id,opId);
+          const change=linkedDeletion??await b.prepareChange(opId,'care',true);
+          const metadata=row.metadata!,intent:FirebaseErasureIntent={type:'photo-delete',scope:row.scope,assetId:id,operationId:sourceOpId,at:timestamp};
+          row.state='deleting';row.version++;delete row.extraction;
+          row.deletion={intent,fingerprint,expectedVersion,journal:null,actorUserId:userId,actorOperationId:opId,
+            ...(sharedWriteAttribution(b,id,row.version)?{attribution:sharedWriteAttribution(b,id,row.version)}:{})};
+          const cleanup:FirestorePhotoCleanup={scope:row.scope,...(row.objectScope?{objectScope:row.objectScope}:{}),photoId:id,operationId:sourceOpId,
+            state:'known',uploadStarted:row.upload!==null,upload:row.upload,sha256:metadata.sha256,bytes:metadata.bytes,mimeType:metadata.mimeType,descriptor:row.descriptor,journal:null};
+          const saved=receipts.prepareConfirmed(actor,submission,{childId:null,changeSeq:change.changeSeq,statusCode:200,
+            result:{format:'shared-photo-deletion:1',id,version:row.version}});
+          b.transaction.create(cleanupRef(id),{scopeTag:tag(row.scope),state:'known',...seal('photo-cleanup',id,row.scope,firestorePhotoCleanupSchema,cleanup)});
+          writeRow(b,row);writeOperation(b,{scope:row.scope,operationId:sourceOpId,action:'delete',fingerprint,photoId:id,state:'pending',result:null});
+          quota.child.bytes-=metadata.bytes;quota.child.count--;quota.global.activeBytes-=metadata.bytes;quota.global.activeCount--;
+          quota.global.cleanupBytes+=metadata.bytes;quota.global.cleanupCount++;
+          writeQuotas(b,quota);redact?.();saved.commit();change.commit();return {receipt:null,scope:row.scope};
+        });
+      });
+      if(first.receipt)return first.receipt;
+      await finishSharedDeletion(first.scope!,id,sourceOpId);
+      return authority.runTransaction(userId,null,async actor=>{
+        const saved=await onlinePrior(actor,submission,opId);if(!saved)fail('photo_integrity',503);
+        const receipt=await receipts.disclose(actor,saved);if(receipt.state!=='confirmed')fail('photo_deleting');return receipt;
+      });
+    });
+  }
   async function confirmOperation(userId: string, childId: string, id: string, submission: OnlineSubmission): Promise<OnlineReceipt> {
     const input = parse(z.object({ expectedVersion: version, confirmShared: z.literal(true), values: careValuesSchema }).strict(), submission.payload, true);
     const first = await authority.runTransaction(userId, childId, async b => {
@@ -385,6 +469,11 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
       const match = /^\/api\/children\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/photos(?:\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(delete|confirm))?$/iu.exec(submission.path);
       if (!match) fail("firebase_domain_not_ready", 503);
       const childId = match[1].toLowerCase(), photoId = match[2]?.toLowerCase();
+      if(submission.sharing){
+        if(!photoId || match[3]!=='delete')fail('shared_attachment_write_unavailable');
+        const payload=parse(z.object({expectedVersion:version,confirmDelete:z.literal(true)}).strict(),submission.payload,true);
+        return deleteShared(userId,childId,photoId,payload.expectedVersion,submission);
+      }
       if (!photoId) return reserveOperation(userId, childId, submission.operation.opId,
         parse(photoMetadataSchema, submission.payload, true), submission) as Promise<OnlineReceipt>;
       if (match[3] === 'confirm') return confirmOperation(userId, childId, photoId, submission);
@@ -490,15 +579,16 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
           || !same(row.deletion.intent.scope, scope)) fail("photo_cleanup_binding", 409);
         if (!cleanupSnapshot.exists) return null;
         const cleanup = data.open("photo-cleanup", id, scope, firestorePhotoCleanupSchema, cleanupSnapshot);
-        if (cleanup.photoId !== id || cleanup.operationId !== operationId || !same(cleanup.scope, scope)
+        if (!cleanup.journal || cleanup.photoId !== id || cleanup.operationId !== operationId || !same(cleanup.scope, scope)
           || !same(cleanup.journal, row.deletion.journal)
           || cleanup.journal.intentSha256 !== firebaseErasureIntentHash(row.deletion.intent)) fail("photo_integrity", 503);
         const global = data.open("photo-global-quota", "global", SYSTEM, globalQuotaSchema, quotaSnapshot);
         if (global.cleanupCount < 1 || global.cleanupBytes < cleanup.bytes) fail("photo_quota_unavailable", 503);
         if (cleanup.descriptor) descriptor(photoObjectScope(cleanup), id, cleanup.descriptor, cleanup);
-        return { cleanup, global, intent: row.deletion.intent };
+        return { cleanup: { ...cleanup, journal: cleanup.journal }, global, intent: row.deletion.intent };
       };
       return guard(async () => {
+        await finishSharedDeletion(scope,id,operationId);
         const first = await options.database.runTransaction(inspect);
         if (!first) return { state: "complete" };
         if (first.cleanup.state !== "known" || !first.cleanup.descriptor) {

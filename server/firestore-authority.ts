@@ -88,8 +88,8 @@ function parse<T>(schema: z.ZodType<T>, value: unknown, code = 'invalid_input', 
 const digest = (value: unknown) => createHash('sha256').update(canonical(value)).digest('hex');
 
 /** Preserve caller-local operation IDs while namespacing effects in another owner's storage. */
-export function sharedSourceOperationId(actorUserId: string, operationId: string): string {
-  const hex = digest(['shared-change', actorUserId, operationId]);
+export function sharedSourceOperationId(actorUserId: string, operationId: string, effect?: 'photo-record'): string {
+  const hex = digest(['shared-change', actorUserId, operationId, ...(effect ? [effect] : [])]);
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 const same = (left: unknown, right: unknown) => canonical(left) === canonical(right);

@@ -8,12 +8,13 @@ import { emptyCareDetails } from '../src/shared/care.ts';
 import { careValuesSchema, profileDataSchema, careCreateSchema, careReviseSchema, careSearchSchema,
   deleteCareSchema, profileSaveSchema } from './care-validation.ts';
 import { validateCreateTextRecord } from '../src/shared/inputs.ts';
-import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
+import { createFirestoreAuthority, sharedSourceOperationId, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { sharedWriteAttributionSchema, sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
+import { firestorePhotoSchemas } from './firestore-photos.ts';
 
 const uuid = z.uuid(), version = z.number().int().min(0).max(2147483646), time = z.iso.datetime({ offset: true });
 const user = z.string().min(1).max(256);
@@ -38,6 +39,7 @@ export interface FirestoreCareStore extends CareStore {
   readProfile(binding: Binding): Promise<ChildProfile>;
   readReportSource(binding: Binding): Promise<{ profile: ChildProfile; records: CareRecord[] }>;
   prepareDeletion(binding: Binding, id: string, expectedVersion: number, operationId: string): Promise<Prepared<boolean>>;
+  preparePhotoDeletion(binding: Binding, photoId: string, operationId: string): Promise<Prepared<boolean> | null>;
   prepareRecord(binding: Binding, operationId: string, values: CareValues, options?: {
     id?: string; expectedVersion?: number; reason?: string; basis?: 'explicit' | 'preauthorized_user_statement';
   }): Promise<Prepared<CareRecord>>;
@@ -47,7 +49,7 @@ export interface FirestoreCareStore extends CareStore {
 export function createFirestoreCareStore(options: FirestoreDomainOptions): FirestoreCareStore {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const sharing = createFirestoreSharingStore(options);
-  function requireModule(binding: Binding, module: 'care' | 'profile') {
+  function requireModule(binding: Binding, module: 'care' | 'profile' | 'attachments') {
     if (binding.sharedAccess && binding.sharedAccess.module !== module) domainReject('shared_module_scope', 403);
   }
   function scoped(binding: Binding, suffix: string): Query {
@@ -72,8 +74,8 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
     return data.open(kind, id, binding.scope, schema, row);
   }
   const recordRef = (id: string) => data.ref('care_records', 'care-record', id);
-  async function readStoredRecord(binding: Binding, id: string): Promise<z.infer<typeof firestoreCareStorageSchema> | null> {
-    requireModule(binding, 'care');
+  async function readStoredRecord(binding: Binding, id: string, module: 'care' | 'attachments' = 'care'): Promise<z.infer<typeof firestoreCareStorageSchema> | null> {
+    requireModule(binding, module);
     domainParse(uuid, id);
     const row = await binding.transaction.get(recordRef(id)); if (!row.exists) return null;
     if (row.get('live') === false) {
@@ -130,12 +132,16 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
   async function prepareDelete(binding: Binding, id: string, expectedVersion: number, operationId: string): Promise<Prepared<boolean>> {
     const current = await readRecord(binding, id); if (!current) domainReject('not_found', 404);
     if (current.version !== expectedVersion) domainReject('version_conflict');
-    const value = { id, childId: binding.scope.childId, version: expectedVersion + 1, operationId, deletedAt: new Date().toISOString() };
+    return prepareRecordDeletion(binding, current, operationId);
+  }
+  async function prepareRecordDeletion(binding: Binding, current: CareRecord, operationId: string, erasureOperationId = operationId): Promise<Prepared<boolean>> {
+    const id = current.id, expectedVersion = current.version;
+    const value = { id, childId: binding.scope.childId, version: expectedVersion + 1, operationId: erasureOperationId, deletedAt: new Date().toISOString() };
     const contextChange = await prepareContextChange(data, binding);
     const change = await binding.prepareChange(operationId, 'care', true);
     const envelope = { ...data.tags(binding.scope), entityId: id, entityVersion: value.version, createdAt: current.createdAt, live: false,
       ...data.seal('care-tombstone', id, binding.scope, tombstoneSchema, value, value.version) };
-    const erase = prepareContentErasure(data, binding, 'care', id, expectedVersion, operationId);
+    const erase = prepareContentErasure(data, binding, 'care', id, expectedVersion, erasureOperationId);
     return { value: true, changeSeq: change.changeSeq, commit() { erase(); change.commit(); contextChange(); binding.transaction.set(recordRef(id), envelope); } };
   }
   async function prepareProfile(binding: Binding, raw: ChildProfile['data'], expectedVersion: number, reason: string | null,
@@ -242,6 +248,19 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
       });
     },
     mutation, readRecord, readProfile, prepareRecord,
+    async preparePhotoDeletion(binding, photoId, operationId) {
+      requireModule(binding, 'attachments');
+      domainParse(uuid, photoId); domainParse(uuid, operationId);
+      // Only the persisted photo-to-record link authorizes this dependent erasure. It does not grant care reads or arbitrary record writes.
+      const snapshot = await binding.transaction.get(data.ref('photos', 'photo', photoId));
+      const photo = data.open('photo', photoId, binding.scope, firestorePhotoSchemas.photo, snapshot);
+      if (photo.id !== photoId || photo.state !== 'ready'
+        || Object.entries(binding.scope).some(([key, value]) => photo.scope[key as keyof typeof photo.scope] !== value))
+        domainReject('photo_binding', 409);
+      if (!photo.recordId) return null;
+      const current = await readStoredRecord(binding, photo.recordId, 'attachments');
+      return current ? prepareRecordDeletion(binding, current, operationId, sharedSourceOperationId(binding.actorUserId, operationId, 'photo-record')) : null;
+    },
     async search(userId, childId, raw) {
       const input = domainParse(careSearchSchema, raw);
       return read(userId, childId, 'care', async binding => {

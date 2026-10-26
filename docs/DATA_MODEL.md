@@ -773,6 +773,8 @@ iOS 綁定的密文增加 `apns: {topic, environment}`，平台／provider 由�
 
 文件／錄音共享刪除保留原資源 scope／objectScope；操作者根 scope 的收據與來源刪除屏障在同一交易提交，無正文收據只證明受理。新刪除保存實際 actorUserId；共享刪除另存原 actorOperationId，日誌 operationId 復用共同來源操作映射，schema 同時核對映射；非來源 owner 另附密文共享署名，綁來源／孩子／資源及 expectedVersion＋1 的接受版本。journal／清理後續增版不改此署名，恢復使用同一 schema 核對；舊無署名記錄按來源本人／既有系統清理解讀。原獨立日誌與 worker 負責完成已受理義務，撤權不撤回刪除，也不讓新請求繼續沿舊權限操作。原 change feed 沿附件既有 chat／care 種類失效，不另加舊客戶端無法解析的種類。
 
+共享照片刪除沿相同來源／操作者分離：來源交易同時標 deleting、保存接受版本署名、移轉原 active 配額至 cleanup、建立原 photo_cleanup 及操作者收據。cleanup 的 journal 可暫為 null，原 consumer 先補獨立日誌並核實，再完成 tombstone 及物件清理；清理確認前不釋放 cleanup 配額。關聯照護記錄僅由已保存 photo.recordId 取得並失效，不授予 attachments 呼叫者其他記錄讀寫權。照片與關聯記錄的日誌用不同穩定來源操作 ID，保留各自清理義務。還原可由獨立日誌補本地遺失的 proof，保留原 scope／操作者署名及實體清理；舊世代照片刪除收據保留身份並遮蔽結果。缺獨立日誌仍不得開放還原資料。
+
 檔案原件保存與可閱讀性分開；正文不進聊天document。聊天只引用原件ID／版本／hash。未知上載只查原地址，禁止換ID重送；刪除立即遮蔽metadata，先記錄獨立 `file-delete` intent，再清理固定generation。孩子／帳戶刪除、配對備份、匯出及隔離還原須同樣承接該義務；恢復時先重放獨立刪除日誌，再綁定新儲存世代；已刪附件只保留無正文的清理義務。未結清上傳保持unknown並保留舊物件查核／清理義務，不冒認可讀。配對manifest可選 `chatFiles` 以相容舊備份；新備份固定generation及hash並保存獨立附件副本。
 
 
