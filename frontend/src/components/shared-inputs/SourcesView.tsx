@@ -93,7 +93,7 @@ export function SourcesView({ model, actions: sourceActions, onPhotos, onRecord,
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[s.columns, !columns && s.single]}>
       <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="我的私人來源清單" style={[s.aside, !columns && s.full]}><SectionCard surface="plain" testID="source-list"><SectionHeader density="compact" title="我的私人來源" count={listResultAvailable && readFresh ? model.items.length : undefined} subtitle="完整原文、網址、備註及候選只有本人可讀取。" icon="lock-outline" />
         {listResultAvailable && readFresh && model.items.length === 0 ? <EmptyListCard title="暫時沒有私人來源" detail="可先說明用途，或手動加入你有權提供的資料。" /> : null}
-        {model.items.length > 0 || query ? <AppTextField label="尋找已載入來源" value={query} onChangeText={setQuery} maxLength={200} /> : null}
+        {model.items.length > 0 || query ? <AppTextField label="尋找已載入來源" accessibilityLabel="尋找已載入來源" value={query} onChangeText={setQuery} maxLength={200} /> : null}
         {query && !visibleItems.length ? <EmptyListCard title="沒有符合的來源" detail="試試其他名稱，或清除搜尋查看已載入清單。"><AppButton label="清除搜尋" variant="quiet" onPress={() => setQuery("")} /></EmptyListCard> : null}
         <MotionList items={visibleItems} keyExtractor={input => input.id} scopeKey={listScope} regionKey="source-list" eligible={listMotion} testID="source-list-motion" renderItem={(input, row) => {
           const readiness = sourceReadiness(input, model);

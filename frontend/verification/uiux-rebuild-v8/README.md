@@ -1,13 +1,13 @@
 # Care Workspace: public verification summary
 
-Status: experimental source snapshot, pending final browser QA. This summary does
+Status: bounded synthetic preview pass; production/native acceptance is not claimed. This summary does
 not approve a production release or claim completion of the full UI matrix.
 
 ## Source and documentation boundary
 
-- Reviewed source commit: `87b05e371c415ad71d9c78e610e25968a2b51ba0`.
-- Original source tree: `e97096fad599f98f265f19bf631b95ca1858ac2d`.
-- Previous candidate: `8b512f6`; common product baseline: `0b9f5d6`.
+- Reviewed source commit: `7a1e973f76083ee77daca1e606ce8e8e37746852`.
+- Original source tree: `9486b32188326ff2ae8faa0d059f095063f7a4d6`.
+- Earlier comparison candidate: `8b512f6`; common product baseline: `0b9f5d6`.
 - Product code, tests, configuration and dependencies retain the reviewed source
   bytes. This public verification summary is rewritten, and `frontend/STATUS.md`
   deliberately retains its already-public parent version without republishing the
@@ -24,9 +24,31 @@ The existing [requirements disposition](requirements-disposition.md) and
 `heading-level-plan.json` is likewise unchanged because the actual heading test
 loads it as an input, rather than treating it as a discarded run receipt.
 
-## Completed bounded checks
+## Current bounded follow-up
 
-- Latest corrected combination: **93/93 focused tests**, covering home states,
+The final source corrects heading semantics and the source-search accessible
+name. Focused DOM checks passed 8/8, existing status cases 3/3, and the targeted
+source-search check 1/1; full frontend TypeScript and the fresh Web export passed.
+These are separate bounded sets, not an expanded all-suite pass. The broader
+search runner had an unrelated missing task-harness port; only the source-specific
+result above is claimed. Exact final source-map correspondence was checked.
+The earlier 93-test combination below is prior-stage evidence, not a new rerun.
+
+A bounded synthetic preview pass covered **18 route entries** for this candidate,
+including representative viewport/state checks and the affected final semantics.
+Previously checked unchanged behavior was reused within the agreed finite scope;
+this is not a fresh exhaustive route-by-viewport-by-state matrix. No known
+blocking findings remained within that bounded scope.
+
+Not covered: real backend writes, unknown-commit recovery, outages or permission
+revocation; populated photo inspection, uploads, media capture/playback,
+extraction or model calls; authentication, real notifications, multi-child or
+real-household data; native keyboard/IME/touch and OS screen-readers; or every
+route x viewport x state combination. No deployment or merge is implied.
+
+## Earlier source-stage checks (87b05e3)
+
+- Prior corrected combination: **93/93 focused tests**, covering home states,
   tasks/records, reports/profile, attachments/sources, chat viewport/composer/
   focus, installed Expo links, navigation, shared read states, preparation saving,
   the Guide's real RecordsController, mounted Summary, and heading SSR.
@@ -64,7 +86,7 @@ They are not 93 browser journeys, native tests, or backend acceptance cases.
 
 ## Still pending
 
-Final browser acceptance remains separate from the source/artifact review.
+The bounded browser pass above remains separate from broader production/native acceptance.
 Four-size geometry, actual 200% zoom, full keyboard/screen-reader coverage,
 deep links and browser history, long-data/empty/error visual states, native
 devices and real API/model/PDF behavior are not all established by these tests.

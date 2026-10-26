@@ -71,6 +71,28 @@ function assertNamedInput(field, label, value) {
   assert.equal(inputs[0].getAttribute('value'), value);
 }
 
+test('source search keeps its shipped accessible name before typing, after typing and after clearing', () => {
+  const source = readFileSync(new URL('../src/components/shared-inputs/SourcesView.tsx', import.meta.url), 'utf8');
+  const tree = ts.createSourceFile('SourcesView.tsx', source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  let search;
+  function visit(node) {
+    if (ts.isJsxSelfClosingElement(node) && node.tagName.getText(tree) === 'AppTextField' && node.attributes.properties.some(attribute => ts.isJsxAttribute(attribute) && attribute.name.getText(tree) === 'label' && attribute.initializer?.text === '尋找已載入來源')) search = node;
+    ts.forEachChild(node, visit);
+  }
+  visit(tree); assert.ok(search, 'Use the actual source-list search control, not a replacement input.');
+  const code = ts.transpileModule(`exports.renderSearch = (query, setQuery) => (${search.getText(tree)});`, {compilerOptions: {module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX}}).outputText;
+  const module = {exports: {}};
+  new Function('require', 'module', 'exports', 'AppTextField', code)(require, module, module.exports, AppTextField);
+  let query = '';
+  const setQuery = value => {query = value;};
+  let field = module.exports.renderSearch(query, setQuery);
+  assertNamedInput(field, '尋找已載入來源', '');
+  field.props.onChangeText('Synthetic source'); field = module.exports.renderSearch(query, setQuery);
+  assertNamedInput(field, '尋找已載入來源', 'Synthetic source');
+  field.props.onChangeText(''); field = module.exports.renderSearch(query, setQuery);
+  assertNamedInput(field, '尋找已載入來源', '');
+});
+
 test('task search keeps its accessible name before typing, after typing and after clearing', () => {
   const render = renderer('components/tasks/TasksView.tsx', 'TasksView');
   const fixture = createTaskFixture('search-child', 'normal'); let closed = 0;

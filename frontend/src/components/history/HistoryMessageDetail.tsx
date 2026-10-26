@@ -16,10 +16,10 @@ export function HistoryMessageDetail({ read, busy, online, onMore, onClose, onPr
   return <View style={embedded ? styles.content : styles.detail} testID="history-message-detail">
     {!embedded ? <View style={styles.row}><Text accessibilityRole="header" aria-level={2} style={styles.title}>訊息原文</Text>
       {onClose ? <AppButton label="關閉原文" variant="quiet" density="compact" onPress={onClose} /> : null}</View> : null}
-    {read.state === "loading" ? <ReadStateNotice state="loading" title="正在讀取原文…" />
-      : read.state === "error" ? <ReadStateNotice state="error" title="暫時讀不到原文" message="請從原訊息重新讀取。" />
+    {read.state === "loading" ? <ReadStateNotice headingLevel={embedded ? 2 : 3} state="loading" title="正在讀取原文…" />
+      : read.state === "error" ? <ReadStateNotice headingLevel={embedded ? 2 : 3} state="error" title="暫時讀不到原文" message="請從原訊息重新讀取。" />
       : message ? <>
-        {read.state === "stale" ? <ReadStateNotice state="stale" title="最新一段未能讀取" message="目前保留已讀部分，可連線後繼續。" /> : null}
+        {read.state === "stale" ? <ReadStateNotice headingLevel={embedded ? 2 : 3} state="stale" title="最新一段未能讀取" message="目前保留已讀部分，可連線後繼續。" /> : null}
         <Text style={styles.meta}>{message.role === "user" ? "你的訊息" : "助手回覆"} · {memoryDateLabel(message.createdAt)}</Text>
         <Text selectable style={styles.body}>{message.text}</Text>
         <Text style={styles.meta}>{message.nextOffset === null ? "這則原文已完整讀取" : `已讀取 ${message.text.length}／${message.totalCharacters} 字，仍有原文未讀取`}</Text>
