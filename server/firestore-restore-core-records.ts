@@ -3,7 +3,8 @@ import { sharingRestoreSchemas, sharingRestoreMetadata, isSharingKind } from './
 import { materialRestoreSchemas, isMaterialRestoreKind, materialRestoreMetadata } from './firestore-restore-material-records.ts';
 import { firestorePreparationSchema } from './firestore-care-summary.ts';
 import { z } from 'zod';
-import { firestoreCareSchema, firestoreProfileSchema, firestoreCareRecoverySchemas } from './firestore-care.ts';
+import { firestoreCareStorageSchema as firestoreCareSchema, firestoreProfileStorageSchema as firestoreProfileSchema, firestoreCareRecoverySchemas } from './firestore-care.ts';
+import { validSharedAttribution } from './shared-write-attribution.ts';
 import { firestoreFactSchema, firestoreTopicSchema, firestoreMemoryRecoverySchemas } from './firestore-memory.ts';
 import { firestoreChatMessageSchema, firestoreChatRecoverySchemas } from './firestore-chat.ts';
 import { firestoreContextRecoverySchema } from './firestore-context-basis.ts';
@@ -91,7 +92,9 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   }
   if (kind === 'care-record' || kind === 'care-revision') {
     const value = firestoreCareSchema.parse(raw), metadata = entity(value, kind === 'care-revision');
-    requireValue(value.authorUserId === scope.ownerUserId && value.confirmedBy === scope.ownerUserId);
+    // Legacy records retain owner-only attribution. Shared actors require authenticated, resource-bound evidence.
+    requireValue(validSharedAttribution(value.createdViaShare, scope, value.id, value.version, value.authorUserId, true)
+      && validSharedAttribution(value.confirmedViaShare, scope, value.id, value.version, value.confirmedBy));
     return kind === 'care-record' ? { ...metadata, createdAt: value.createdAt, live: true } : metadata;
   }
   if (kind === 'care-tombstone' || kind === 'memory-tombstone') {
@@ -101,7 +104,9 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   }
   if (kind === 'child-profile' || kind === 'profile-revision') {
     const value = firestoreProfileSchema.parse(raw);
-    requireValue(value.childId === scope.childId && value.version === recordVersion && (value.confirmedBy === null || value.confirmedBy === scope.ownerUserId));
+    requireValue(value.childId === scope.childId && value.version === recordVersion
+      && (value.confirmedBy === null ? value.confirmedViaShare === undefined
+        : validSharedAttribution(value.confirmedViaShare, scope, value.childId, value.version, value.confirmedBy)));
     if (kind === 'profile-revision') { equalId(id, [value.childId, value.version]); return { entityId: value.childId, entityVersion: value.version }; }
     requireValue(id === value.childId);
     return { historyFloor: z.number().int().min(1).max(value.version).parse(original.historyFloor) };

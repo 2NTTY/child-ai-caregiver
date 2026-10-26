@@ -15,6 +15,7 @@ import { workRecoveryAad, workRecoveryDocumentId, workRecoverySchemas as schemas
   workRecoveryScopeSchema, type WorkRecoveryKind, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { prepareFirestoreBackgroundWork } from './firestore-background-work.ts';
 import { assertNoManagedSharedSpaces } from './firestore-sharing-records.ts';
+import type { SharedAccessBasis } from '../src/shared/sharing.ts';
 
 const FORMAT = 'yuban-work-recovery', MAX_BYTES = 192 * 1024;
 const NIL = '00000000-0000-0000-0000-000000000000';
@@ -54,6 +55,7 @@ export interface FirestoreAuthorityPreparedChild extends FirestoreAuthorityPrepa
 export interface FirestoreAuthorityTransaction {
   readonly transaction: Transaction;
   readonly actorUserId: string;
+  readonly sharedAccess?: Readonly<{ spaceId: string; basis: Readonly<SharedAccessBasis>; module: string; role: 'owner' | 'caregiver' | 'viewer'; mode: 'read' | 'write' }>;
   readonly scope: Readonly<WorkRecoveryScope>;
   readonly authorizationVersion: string;
   readonly childAccessVersion: string;
@@ -361,6 +363,46 @@ export class FirestoreAuthority {
         return await operation(binding);
       } finally { active = false; }
     });
+  }
+  /** Internal domain port. The sharing store verifies the grant in this same actor transaction first. */
+  async withSharedSource<T>(actor: FirestoreAuthorityTransaction, source: WorkRecoveryScope,
+    access: NonNullable<FirestoreAuthorityTransaction['sharedAccess']>, operation: (binding: FirestoreAuthorityTransaction) => Promise<T>): Promise<T> {
+    const tx = actor.transaction, current = await this.account(tx, source.ownerUserId);
+    if (actor.sharedAccess || actor.scope.childId !== NIL || current.workspace.id !== source.workspaceId
+      || current.workspace.storageEpoch !== source.storageEpoch) fail('scope_changed');
+    await this.canonicalChild(tx, source);
+    let active = true, prepared = false, committed = false;
+    const check = () => { if (!active) fail('transaction_closed'); };
+    const denied = async (): Promise<never> => { check(); fail('shared_private_scope', 403); };
+    const binding: FirestoreAuthorityTransaction = Object.freeze({ ...actor, scope: Object.freeze({ ...source }),
+      sharedAccess: Object.freeze({ ...access }), authorizationVersion: current.workspace.accessVersion,
+      childAccessVersion: current.workspace.childAccessVersion ?? '0', changeSeq: current.workspace.changeSeq,
+      workspaceCreatedAt: current.owner.workspaceCreatedAt ?? null,
+      readChild: async (id: string) => {
+        check(); if (id !== source.childId) fail('transaction_child_scope');
+        const detail = await this.read(tx, 'authority-child-detail', id, source, childDetailSchema); check();
+        if (detail.id !== id || detail.workspaceId !== source.workspaceId) fail('binding', 403);
+        return { ...detail, accessRole: access.role };
+      },
+      prepareChange: async (operationId: string, kind: OnlineChange['kind'], deleted: boolean, childId?: string) => {
+        check(); parse(uuid, operationId); parse(z.boolean(), deleted);
+        if (access.mode !== 'write' || access.role === 'viewer') fail('read_only', 403);
+        if (kind !== access.module || childId !== undefined && childId !== source.childId) fail('shared_module_scope', 403);
+        if (prepared) fail('transaction_change_conflict'); prepared = true;
+        if (actor.actorUserId === source.ownerUserId) return actor.prepareChange(operationId, kind, deleted, source.childId);
+        // Source changes must not collide when two different actors use the same caller-local opId.
+        const hex = digest(['shared-change', actor.actorUserId, operationId]);
+        const sourceOperationId = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+        const original = await this.change(tx, source, current.workspace, sourceOperationId, kind, deleted);
+        const caller = await actor.prepareChange(operationId, 'family', false); check();
+        return { changeSeq: caller.changeSeq, commit() {
+          check(); if (committed) fail('transaction_change_conflict'); committed = true;
+          original.commit(); caller.commit();
+        } };
+      },
+      prepareChildCreation: denied, prepareErasure: denied, readWork: denied, prepareWork: denied,
+    });
+    try { return await operation(binding); } finally { active = false; }
   }
   async initializeControl(raw: { generation: string; enabled: boolean }): Promise<{ generation: string; enabled: boolean }> {
     const input = parse(schemas.control, raw), scope = ownerScope('control');

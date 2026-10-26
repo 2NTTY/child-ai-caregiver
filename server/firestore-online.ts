@@ -18,6 +18,8 @@ import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, fi
 
 import { createFirestoreOnlineReceipts, isFirestoreOnlinePending } from './firestore-online-receipts.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
+import { sharedDomainRoute } from './shared-domain-routing.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const decimal = firestoreChangeSchema.shape.changeSeq, uuid = z.uuid();
@@ -68,6 +70,7 @@ export interface FirestoreOnlineOptions extends FirestoreDomainOptions {
 }
 export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): FirestoreOnlineStore {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options), receipts = createFirestoreOnlineReceipts(options);
+  const sharing = createFirestoreSharingStore(options);
   const scopeFor = (binding: FirestoreAuthorityTransaction, childId: string): WorkRecoveryScope => ({ ...binding.scope, childId });
   const taskId = (id: string, taskVersion: number) => JSON.stringify([id, taskVersion]);
   function matchesTags(raw: any, scope: WorkRecoveryScope) {
@@ -268,6 +271,8 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     async context(userId, raw) {
       const command = domainParse(onlineCommandSchema, raw), route = onlineRoute(command);
       return authority.runTransaction(userId, null, async binding => {
+        if (command.sharing) return sharing.inResourceTransaction(binding, { ...sharedDomainRoute(command.path),
+          spaceId: command.sharing.spaceId, mode: 'write' }, async access => ({ ...currentContext(binding), sharingBasis: access.basis }));
         if (route.scope === 'child') await requireChild(binding, route.targetId!);
         if ((route.scope === 'workspace' || route.scope === 'invitation') && route.targetId !== binding.scope.workspaceId) domainReject('not_found', 404);
         return currentContext(binding);
@@ -281,6 +286,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     },
     async submit(userId, raw, context) {
       const submission = domainParse(onlineSubmissionSchema, raw);
+      if (submission.sharing) sharedDomainRoute(submission.path);
       if (/^\/api\/(?:me|children\/[0-9a-f-]{36})\/avatar\/(?:uploads|commit|remove)$/iu.test(submission.path)) {
         if (!options.avatars) domainReject('avatar_unavailable', 503);
         return options.avatars.submitOnline(userId, submission);
@@ -298,6 +304,16 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
           return receipts.disclose(binding, prior) as Promise<OnlineReceipt>;
         }
         if (submission.operation.workspaceId !== binding.scope.workspaceId || submission.operation.storageEpoch !== binding.scope.storageEpoch) domainReject('storage_epoch_changed');
+        if (submission.sharing) {
+          if (!submission.sharing.expectedBasis) domainReject('sharing_precondition_required', 428);
+          const mutation = options.mutations?.find(domain => domain.supports(submission.path));
+          if (!mutation) domainReject('shared_domain_unavailable', 409);
+          return sharing.inResourceTransaction(binding, { ...sharedDomainRoute(submission.path), ...submission.sharing, mode: 'write' }, async access => {
+            const prepared = await mutation.prepare(access.binding, submission, context);
+            const receipt = receipts.prepareConfirmed(binding, submission, { ...prepared, childId: null });
+            prepared.commit(); receipt.commit(); return receipt.receipt;
+          });
+        }
         let changeSeq: string, result: unknown, statusCode: 200 | 201, receiptChildId: string | null;
         let commitDomain: () => void;
         const mutation = options.mutations?.find(domain => domain.supports(submission.path));

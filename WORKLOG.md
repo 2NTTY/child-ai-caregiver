@@ -3993,3 +3993,13 @@
 - 必要證據：4 條新增共享／轉交／恢復／邀請流程通過；既有 authority 的 20 項檢查及一條舊孩子刪除恢復通過；受影響 Server 與新增檢查的限定型別核對、diff 空白核對通過。完整 Server 型別入口包含多個既有測試檔錯誤，本包沒有擴大修改；不聲稱全倉型別或全量測試通過。
 - 失敗保留：最初加密讀取接線將 schema／snapshot 次序寫反，已按原函式修正；合成恢復 fixture 缺 `DocumentReference.get` 及 Timestamp，補原有測試方式後，再補恢復 metadata allowlist，定向核對通過。另一條既有恢復測試 `restore applies current revocation and journal erasure without restoring sessions or post-backup child authority` 在第 250 行仍報照片數量 `3 !== 1`；用基線 `5c564f9` 原程式載入同一測試也重現，未改斷言或抹除失敗。[本包證據](artifacts/verification/P4_FAMILY_AUTHORITY_FOUNDATION_20261027.json)。
 - 下一步：FAMILY-A 尚欠各領域共享讀寫、附件／背景及變更同步，Family-B／Class01 再接公開 API／薄 UI。真 Firestore 競爭、新共享資料正式恢復及跨端結果尚未驗，不把內部服務、合成通過或合併當整包完成。
+
+<a id="log-20261027-p4-shared-care"></a>
+## LOG-20261027-P4-SHARED-CARE
+
+- 基線 `a2c8cc4`／#338，分支 `codex/p4-shared-domain-access`。沿現有共享授權、CareStore、online 收據與正式 Firebase HTTP 接記錄／概況，沒有新資料權威、套件、模型、雲端資源或部署，也未修改 D 的 Agent 程式／PR。
+- 同一交易使用操作者身份及原資源 scope；作者／確認者記實際操作者，原件修改、來源變更、操作者變更及收據一併提交。共享只准相應模組，不授予私人工作／聊天／帳戶操作。共用 client 選空間、保存版本 basis，未知結果仍沿原 opId 查回；撤權或空間解散只遮蔽收據結果，不丟失已成功身份。
+- 保留原 owner-only 恢復核對；共享署名須有同份密文內的 Server 空間／來源／資源／版本證據。自動批准審查拒絕過直接移除舊署名檢查的方案，未套用該方案；改為有界相容判斷後核對無證據的非 owner 記錄仍被拒絕。第一次新收據讀回曾漏移除內部署名證據，已統一公開投影，原失敗未改成通過。
+- 同一 Sol 唯讀 review 發現刪除後共享重建概況的恢復 schema 丟失證據，以及空間解散後收據仍回錯誤；已改用儲存 schema 與原成功空結果，於同一流程補核。後續覆核未見新增具體 blocker。
+- 證據：5 條共享檢查通過，其中新增一條包含正式 HTTP／共用 client、版本前置、原收據、角色／模組、私人工作拒絕、概況刪除再建及刪除重放；兩個舊收據相容檢查與限定型別核對通過。只補受影響檢查，不跑全量、雲端、模型或設備測試。[證據](artifacts/verification/P4_SHARED_CARE_20261027.json)。
+- 下一步：待辦／記憶、文件／附件、背景授權及其他成員的變更同步仍未接完；Family-B／Class01 才開放空間選擇與共用畫面。父包 FAMILY-A／P4 不因此完成，先前備份待驗與基線恢復斷言失敗保留。

@@ -1137,7 +1137,11 @@ Account export可直接驗讀空head／null內容，不因未裝avatar內容port
 
 本節只定語義，路由／DTO 在相應包實作時沿既有接口擴充並保持舊 App 相容，不聲稱目前已有新端點。[SPEC REQ-P4](../SPEC.md#p4-p5-product) 是產品權威，[PLAN](../PLAN.md#p4-packages) 管依賴／狀態，六項已確認行為依 [ADR-029](DECISIONS.md#adr-029)，不以目標接口當已實作。
 
-FAMILY-A 首段已有內部 `createFirestoreSharingStore`；尚未接公開 HTTP、Agent 或畫面。`withResource` 在同一 Firestore 交易核對目前操作者准入、空間／成員、選定模組、來源成員世代及原孩子狀態，提供分開的 `actorUserId`／原儲存 `scope`，以及空間、成員、分享和雙方授權版本 basis。領域 adapter 必須明確消費此 binding 並排除私人項目；不能把 binding 當成整個孩子的通行證。舊未指定共享的業務方法維持本人範圍。
+FAMILY-A 首段已有內部 `createFirestoreSharingStore`；空間／成員管理尚未接公開 HTTP、Agent 或畫面。`withResource` 在同一 Firestore 交易核對目前操作者准入、空間／成員、選定模組、來源成員世代及原孩子狀態，提供分開的 `actorUserId`／原儲存 `scope`，以及空間、成員、分享和雙方授權版本 basis。領域 adapter 必須明確消費此 binding 並排除私人項目；不能把 binding 當成整個孩子的通行證。舊未指定共享的業務方法維持本人範圍。
+
+記錄／概況已接原 API 的 `spaceId` 讀取及 online command 的可選 `sharing: {spaceId, expectedBasis?}` 寫入。context 回傳操作者自己的 workspace／epoch 及目前 `sharingBasis`；共用 transport 保存該 basis，再與原 `opId`／指紋提交，重試不重新取 basis。Server 從路由決定所需模組，不接受客戶端指定擁有人或任意權限。其他尚未接共享的路由明確拒絕，不默默改成本人操作。`createCareApi` 的可選空間參數供後續同一 owner 選取，未新增另一組畫面／副本。
+
+同一交易核對操作者及來源，保留原資源 ID／儲存位置，作者／確認者記實際操作者；原擁有人收到領域變更，操作者收到不含別人私人資料的共享變更。收據仍屬操作者，保存來源內容指標；重試及查回沿目前共享權限／刪除屏障讀取，撤權後保留成功身份而遮蔽結果。共享交易不可讀寫來源擁有人的私人工作、聊天或帳戶設定。家庭入口及其餘模組未接通前，不宣稱整包完成。
 
 管理變更使用 `operationId`／`expectedVersion`，收據與變更一起提交；原操作查回仍重核目前空間存取，退出／解散只留最小終態結果。轉交僅接收成員本人可接受。退出或被移除後，新邀請形成新成員世代，不復活原分享；舊未使用邀請不能繞過後來撤權。帳戶刪除前若仍管理活動空間，回 `space_transfer_or_dissolve_required`，由同一產品流程解決。
 

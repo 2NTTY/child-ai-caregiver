@@ -11,6 +11,15 @@ import { setFirebaseBackupControl } from '../server/firestore-backup.ts';
 import { prepareFirebaseRestore } from '../server/firestore-restore.ts';
 import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.ts';
 import { sharedSpaceSchema, resourceShareSchema, sharedMembershipSchema, sharingErasedBy } from '../server/firestore-sharing-records.ts';
+import { createFirestoreCareStore, firestoreCareStorageSchema } from '../server/firestore-care.ts';
+import { FirestoreDomainData } from '../server/firestore-domain-data.ts';
+import { createFirestoreOnlineStore } from '../server/firestore-online.ts';
+import { createFirebaseRequestHandler } from '../server/firebase-app.ts';
+import { createOnlineTransport } from '../src/client/online-transport.ts';
+import type { FirebaseAuthPort } from '../server/firebase-auth.ts';
+import { createCareApi } from '../src/client/care-api.ts';
+import { replayContentErasures } from '../server/firestore-restore-content-erasure.ts';
+import type { FirebaseErasureIntent } from '../server/firebase-erasure-journal.ts';
 
 async function fixture() {
   const fake = serialFirestoreFixture(), now = Date.parse('2026-10-27T04:00:00Z');
@@ -54,6 +63,93 @@ async function fixture() {
   return { fake, options, authority, sharing, child, space, control, documents };
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
+
+test('shared care uses the original domain, actor receipts, current grants and deletion barriers', async () => {
+  const f = await fixture(), childId = f.child.child.id;
+  await f.sharing.share('parent', { spaceId: f.space.id, childId, modules: ['care'],
+    expectedVersion: f.space.version, operationId: randomUUID() });
+  const care = createFirestoreCareStore(f.options), online = createFirestoreOnlineStore({ ...f.options, mutations: [care.mutation] });
+  const command = { path: `/api/children/${childId}/records`, payload: { text: 'Shared original record' }, sharing: { spaceId: f.space.id } };
+  const context = await online.context('carer', command);
+  assert.ok(context.sharingBasis);
+  const submission = { ...command, sharing: { ...command.sharing, expectedBasis: context.sharingBasis }, operation: {
+    workspaceId: context.workspaceId, storageEpoch: context.storageEpoch, opId: randomUUID(), deviceId: randomUUID() } };
+  const receipt = await online.submit('carer', submission), value = (receipt.result as any).record;
+  assert.equal(value.authorUserId, 'carer'); assert.equal(value.confirmedBy, 'carer');
+  assert.equal((await care.get('parent', childId, value.id))?.id, value.id);
+  assert.deepEqual(await online.submit('carer', submission), receipt);
+  assert.deepEqual(await online.lookup('carer', submission.operation.opId), receipt);
+  const codec = createFirestoreRestoreCodec(f.options);
+  const backupRows = f.documents().filter(row => /_(care_records|care_revisions)\//u.test(row.path));
+  assert.equal(backupRows.length, 2);
+  for (const row of backupRows) assert.equal((codec.decode(row).value as any).authorUserId, 'carer');
+  const original = backupRows.find(row => row.path.includes('_care_records/'))!, decoded = codec.decode(original);
+  const unsafe = { ...decoded.value as any }; delete unsafe.confirmedViaShare;
+  const data = new FirestoreDomainData(f.options);
+  assert.throws(() => codec.decode({ path: original.path, data: { ...original.data,
+    ...data.seal('care-record', value.id, f.child.scope, firestoreCareStorageSchema, unsafe, 1) } }), code('restore_binding'),
+    'non-owner attribution without a bound sharing proof still fails restore');
+  assert.equal('createdViaShare' in value, false, 'internal attribution is not sent to clients');
+  assert.equal((await care.forSharedSpace(f.space.id).listRecords('viewer', childId)).records[0].id, value.id);
+  await assert.rejects(care.get('carer', childId, value.id), code('binding'));
+  await assert.rejects(care.forSharedSpace(f.space.id).profile('carer', childId), code('module_not_shared'));
+  await assert.rejects(online.context('viewer', command), code('read_only'));
+  await assert.rejects(online.submit('carer', { ...submission, sharing: undefined }), code('operation_conflict'));
+  await assert.rejects(online.submit('carer', { ...submission, operation: { ...submission.operation, opId: randomUUID() },
+    sharing: { spaceId: f.space.id } }), code('sharing_precondition_required'));
+  await assert.rejects(online.submit('carer', { ...submission, operation: { ...submission.operation, opId: randomUUID() },
+    sharing: { ...submission.sharing, expectedBasis: { ...context.sharingBasis!, shareVersion: 100 } } }), code('sharing_scope_changed'));
+  await f.sharing.withResource('carer', { spaceId: f.space.id, childId, module: 'care', mode: 'read' }, async access => {
+    await assert.rejects(access.binding.readWork(randomUUID()), code('shared_private_scope'));
+    await assert.rejects(access.binding.prepareChange(randomUUID(), 'care', false), code('read_only'));
+  });
+  // Shared Web/Android transport goes through production HTTP composition, not a custom test endpoint.
+  const session = { user: { id: 'carer' } };
+  const auth = { async handler() { return new Response(null, { status: 404 }); },
+    async getSession(options: { returnHeaders?: boolean }) { return options.returnHeaders ? { response: session, headers: new Headers() } : session; },
+    async assertRecentReauthentication() { return session; },
+    fromNodeHeaders() { return new Headers(); } } as FirebaseAuthPort;
+  const handler = createFirebaseRequestHandler({ authority: f.authority, auth, publicOrigin: 'https://app.example.test',
+    mailConfigured: false, online, care });
+  const fetcher: typeof fetch = async (input, init) => {
+    const headers = new Headers(init?.headers); headers.set('Origin', 'https://app.example.test');
+    return handler(new Request(input, { ...init, headers }));
+  };
+  const transport = createOnlineTransport('https://app.example.test/api', fetcher);
+  const viaClient = await transport.submit({ ...command, payload: { text: 'Written through the shared client' } }, new AbortController().signal, 'carer') as any;
+  const response = await fetcher(`https://app.example.test/api/children/${childId}/records?spaceId=${f.space.id}`);
+  assert.equal(response.status, 200); assert.equal(response.headers.get('cache-control')?.includes('no-store'), true);
+  assert.ok((await response.json()).records.some((r: any) => r.id === viaClient.record.id));
+  const sharedVersion = await f.sharing.get('parent', f.space.id);
+  await f.sharing.share('parent', { spaceId: f.space.id, childId, modules: ['care', 'profile'],
+    expectedVersion: sharedVersion.version, operationId: randomUUID() });
+  const careClient = createCareApi('https://app.example.test', fetcher, { spaceId: f.space.id });
+  const profile = await careClient.saveProfile(childId, { age: { kind: 'unknown' }, dueDate: null, gestationalWeeksRaw: null,
+    region: null, language: null, allergies: null, specialNeeds: null, preferences: null, source: 'Shared statement', validUntil: null },
+    0, 'Initial shared profile', new AbortController().signal, 'carer');
+  assert.equal(profile.confirmedBy, 'carer');
+  assert.deepEqual(await careClient.getProfile(childId, new AbortController().signal), profile);
+  await careClient.deleteProfile(childId, 1, new AbortController().signal, 'carer');
+  await careClient.saveProfile(childId, profile.data!, 2, 'New profile after erasure', new AbortController().signal, 'carer');
+  const profileBackup = f.documents().filter(row => /_(child_profiles|profile_revisions|content_erasures)\//u.test(row.path));
+  const decodedProfiles = profileBackup.map(row => codec.decode(row));
+  const journal = decodedProfiles.filter(row => row.context.kind === 'content-erasure').map(row => (row.value as { intent: FirebaseErasureIntent }).intent);
+  const removed = replayContentErasures(data, codec, decodedProfiles, decodedProfiles, journal, new Map(profileBackup.map(row => [row.path, row.data])));
+  assert.equal(removed.size, 1);
+  const restoredProfile = decodedProfiles.find(row => row.context.kind === 'child-profile')!.value as any;
+  assert.equal(restoredProfile.version, 3); assert.equal(restoredProfile.confirmedViaShare.actorUserId, 'carer');
+  const parentContext = await online.context('parent', { path: `/api/children/${childId}/care/${value.id}/delete`, payload: {} });
+  await online.submit('parent', { path: `/api/children/${childId}/care/${value.id}/delete`, payload: { expectedVersion: 1, confirmDelete: true },
+    operation: { ...parentContext, opId: randomUUID(), deviceId: randomUUID() } });
+  assert.equal((await online.lookup('carer', submission.operation.opId) as any).result, null);
+  const current = await f.sharing.get('parent', f.space.id);
+  await f.sharing.unshare('parent', { spaceId: f.space.id, childId, expectedVersion: current.version, operationId: randomUUID() });
+  assert.equal((await online.submit('carer', submission)).result, null);
+  await assert.rejects(care.forSharedSpace(f.space.id).listRecords('carer', childId), code('module_not_shared'));
+  const beforeDissolve = await f.sharing.get('parent', f.space.id);
+  await f.sharing.dissolve('parent', { spaceId: f.space.id, expectedVersion: beforeDissolve.version, operationId: randomUUID() });
+  assert.equal((await online.lookup('carer', submission.operation.opId) as any).result, null, 'dissolution settles the original receipt without disclosing content');
+});
 
 test('sharing preserves original storage, restricts modules/roles, and rechecks revoked access in the same transaction', async () => {
   const f = await fixture();

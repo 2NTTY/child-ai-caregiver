@@ -51,7 +51,7 @@ function page<T>(value: unknown, guard: (value: unknown) => value is T): History
   return { revisions: value.revisions, nextBeforeVersion: value.nextBeforeVersion as number | null };
 }
 
-export function createCareApi(baseUrl = "", fetcher: typeof fetch = fetch): CareApi {
+export function createCareApi(baseUrl = "", fetcher: typeof fetch = fetch, selection?: { spaceId: string }): CareApi {
   const base = baseUrl.replace(/\/$/, "");
   const apiUrl = base.endsWith("/api") ? base : `${base}/api`;
   const online = createOnlineTransport(apiUrl, fetcher);
@@ -71,7 +71,8 @@ export function createCareApi(baseUrl = "", fetcher: typeof fetch = fetch): Care
     }
   }
   const mutate = (path: string, payload: unknown, signal: AbortSignal, userId: string) =>
-    onlineCall(signal, outerSignal => online.submit({ path: `/api${path}`, payload }, outerSignal, userId));
+    onlineCall(signal, outerSignal => online.submit({ path: `/api${path}`, payload,
+      ...(selection ? { sharing: { spaceId: selection.spaceId } } : {}) }, outerSignal, userId));
   async function request(path: string, signal: AbortSignal, body?: unknown, userId?: string): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -79,7 +80,9 @@ export function createCareApi(baseUrl = "", fetcher: typeof fetch = fetch): Care
     if (signal.aborted) controller.abort();
     const timeout = setTimeout(abort, 20_000);
     try {
-      const response = await fetcher(`${apiUrl}${path}`, {
+      const scopeQuery = selection && path.startsWith('/children/')
+        ? `${path.includes('?') ? '&' : '?'}spaceId=${encodeURIComponent(selection.spaceId)}` : '';
+      const response = await fetcher(`${apiUrl}${path}${scopeQuery}`, {
         method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store",
         headers: { Accept: "application/json", ...(body === undefined ? {} : { "Content-Type": "application/json", "x-expected-user-id": userId ?? "" }) },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: controller.signal,
@@ -88,7 +91,8 @@ export function createCareApi(baseUrl = "", fetcher: typeof fetch = fetch): Care
         let onlineCode: string | null = null;
         try {
           const value: unknown = await response.json();
-          if (object(value) && object(value.error) && value.error.code === "cursor_stale") onlineCode = "cursor_stale";
+          if (object(value) && object(value.error) && typeof value.error.code === 'string'
+            && ['cursor_stale', 'module_not_shared', 'space_access_denied', 'read_only', 'shared_domain_unavailable'].includes(value.error.code)) onlineCode = value.error.code;
         } catch { /* Ignore remote error bodies. */ }
         throw new CareApiError(response.status, onlineCode);
       }

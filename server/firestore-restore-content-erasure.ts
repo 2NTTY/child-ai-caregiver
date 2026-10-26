@@ -4,7 +4,7 @@ import { firebaseErasureIntentHash } from './firebase-erasure-journal.ts';
 import { FirestoreDomainData, domainReject } from './firestore-domain-data.ts';
 import { contentErasureSchema, contentHistory } from './firestore-content-erasure.ts';
 import { contentPointerSchema, contentResult } from './firestore-disclosure.ts';
-import { firestoreCareRecoverySchemas, firestoreProfileSchema } from './firestore-care.ts';
+import { firestoreCareRecoverySchemas, firestoreProfileStorageSchema as firestoreProfileSchema } from './firestore-care.ts';
 import { firestoreOnlineRecordSchema, isFirestoreOnlinePending } from './firestore-online-receipts.ts';
 import type { createFirestoreRestoreCodec, FirestoreRestoreDecoded } from './firestore-restore-codec.ts';
 

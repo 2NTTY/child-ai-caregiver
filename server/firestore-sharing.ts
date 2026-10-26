@@ -25,6 +25,7 @@ export interface SharedResourceAccess {
   readonly module: z.infer<typeof sharedModuleSchema>;
   readonly includePrivate: false;
   readonly basis: Readonly<Basis>;
+  readonly binding: FirestoreAuthorityTransaction;
 }
 
 /** Persistent space authority. No copy of the shared child's facts or credentials is created. */
@@ -93,7 +94,26 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
     const s = await space(b.transaction, input.spaceId), m = await member(b.transaction, s.id, b.actorUserId);
     basisVersion(s, input.expectedVersion); return { s, m };
   }
+  async function inResourceTransaction<T>(b: FirestoreAuthorityTransaction, raw: z.infer<typeof resourceRequest>, use: (access: SharedResourceAccess) => Promise<T>): Promise<T> {
+    const input = domainParse(resourceRequest, raw), userId = b.actorUserId;
+    const s = await space(b.transaction, input.spaceId), m = await member(b.transaction, s.id, userId);
+    if (input.mode === 'write' && m.role === 'viewer') domainReject('read_only', 403);
+    const grant = await read(b.transaction, 'resource-share', key(s.id, input.childId), resourceShareSchema, true);
+    if (!grant || grant.state !== 'active' || !grant.modules.includes(input.module)) domainReject('module_not_shared', 403);
+    if (grant.spaceId !== s.id || grant.childId !== input.childId || grant.source.childId !== input.childId || grant.sharedBy !== grant.source.ownerUserId)
+      domainReject('sharing_binding', 500);
+    const sourceMember = await member(b.transaction, s.id, grant.sharedBy);
+    if (sourceMember.membershipId !== grant.sourceMembershipId) domainReject('module_not_shared', 403);
+    const source = await authority.assertPersonalSource(b.transaction, grant.source);
+    const basis: Basis = { spaceVersion: s.version, membershipVersion: m.version, shareVersion: grant.version,
+      actorAuthorizationVersion: b.authorizationVersion, sourceAuthorizationVersion: source.authorizationVersion };
+    if (input.expectedBasis && firestoreDomainHash(input.expectedBasis) !== firestoreDomainHash(basis)) domainReject('sharing_scope_changed');
+    return authority.withSharedSource(b, grant.source, { spaceId: s.id, basis: Object.freeze(basis), role: m.role, module: input.module, mode: input.mode }, binding =>
+      use(Object.freeze({ transaction: b.transaction, actorUserId: userId, scope: binding.scope, binding,
+        role: m.role, module: input.module, includePrivate: false as const, basis: Object.freeze(basis) })));
+  }
   return {
+    inResourceTransaction,
     create(userId: string, raw: { operationId: string; name: string; kind: 'family' | 'teachers' }): Promise<Space> {
       const input = domainParse(operation.extend({ name: sharedSpaceSchema.shape.name, kind: sharedSpaceSchema.shape.kind }).strict(), raw), id = randomUUID();
       return mutate(userId, 'create-space', input, async b => {
@@ -234,23 +254,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
       });
     },
     withResource<T>(userId: string, raw: z.infer<typeof resourceRequest>, use: (access: SharedResourceAccess) => Promise<T>): Promise<T> {
-      const input = domainParse(resourceRequest, raw);
-      return authority.runTransaction(userId, null, async b => {
-        const s = await space(b.transaction, input.spaceId), m = await member(b.transaction, s.id, userId);
-        if (input.mode === 'write' && m.role === 'viewer') domainReject('read_only', 403);
-        const grant = await read(b.transaction, 'resource-share', key(s.id, input.childId), resourceShareSchema, true);
-        if (!grant || grant.state !== 'active' || !grant.modules.includes(input.module)) domainReject('module_not_shared', 403);
-        if (grant.spaceId !== s.id || grant.childId !== input.childId || grant.source.childId !== input.childId || grant.sharedBy !== grant.source.ownerUserId)
-          domainReject('sharing_binding', 500);
-        const sourceMember = await member(b.transaction, s.id, grant.sharedBy);
-        if (sourceMember.membershipId !== grant.sourceMembershipId) domainReject('module_not_shared', 403);
-        const source = await authority.assertPersonalSource(b.transaction, grant.source);
-        const basis: Basis = { spaceVersion: s.version, membershipVersion: m.version, shareVersion: grant.version,
-          actorAuthorizationVersion: b.authorizationVersion, sourceAuthorizationVersion: source.authorizationVersion };
-        if (input.expectedBasis && firestoreDomainHash(input.expectedBasis) !== firestoreDomainHash(basis)) domainReject('sharing_scope_changed');
-        return use(Object.freeze({ transaction: b.transaction, actorUserId: userId, scope: Object.freeze({ ...grant.source }),
-          role: m.role, module: input.module, includePrivate: false as const, basis: Object.freeze(basis) }));
-      });
+      return authority.runTransaction(userId, null, b => inResourceTransaction(b, raw, use));
     },
   };
 }

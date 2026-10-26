@@ -1,4 +1,6 @@
 import { discloseAvatarReceipt } from './avatar-receipt-disclosure.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
+import { sharedDomainRoute } from './shared-domain-routing.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
@@ -25,12 +27,15 @@ export const firestoreOnlineErasureBarrierSchema = z.object({ state: z.literal("
 const storedRecordSchema = z.union([firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema]);
 const privateInputPointerSchema = z.object({ format: z.literal('private-input-receipt:1'), id: z.uuid(), version: z.number().int().positive(),
   recordId: z.uuid().optional() }).strict();
+const sharedResultSchema = z.object({ format: z.literal('shared-domain-receipt:1'), spaceId: z.uuid(), childId: z.uuid(),
+  module: z.enum(['care', 'profile']), result: z.union([contentPointerSchema, z.object({ deleted: z.literal(true) }).strict()]) }).strict();
 export type FirestoreOnlineConfirmed = z.infer<typeof firestoreOnlineConfirmedSchema>;
 export type FirestoreOnlinePending = z.infer<typeof firestoreOnlinePendingSchema>;
 export type FirestoreOnlineRecord = z.infer<typeof firestoreOnlineRecordSchema>;
 export const isFirestoreOnlinePending = (record: FirestoreOnlineRecord): record is FirestoreOnlinePending => "state" in record;
 export const firestoreOnlineFingerprint = (submission: OnlineSubmission) =>
-  firestoreDomainHash({ path: submission.path, payload: submission.payload, operation: submission.operation });
+  firestoreDomainHash({ path: submission.path, payload: submission.payload, operation: submission.operation,
+    ...(submission.sharing ? { sharing: submission.sharing } : {}) });
 
 /** Shared owner-wide original-operation ledger; callers supply only canonical transaction bindings. */
 export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
@@ -73,6 +78,24 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
     return record;
   }
   async function disclose(binding: FirestoreAuthorityTransaction, record: FirestoreOnlineRecord): Promise<OnlineReceipt | { state: "unconfirmed" }> {
+    const shared = !isFirestoreOnlinePending(record) ? sharedResultSchema.safeParse(record.result) : null;
+    if (shared?.success) {
+      const pointer = shared.data, route = sharedDomainRoute(record.path);
+      if (record.childId !== null || route.childId !== pointer.childId || route.module !== pointer.module) domainReject('receipt_binding', 500);
+      let result: unknown = null;
+      try {
+        result = await createFirestoreSharingStore(options).inResourceTransaction(binding,
+          { spaceId: pointer.spaceId, childId: pointer.childId, module: pointer.module, mode: 'read' },
+          async access => 'deleted' in pointer.result ? pointer.result : readContentPointer(data, access.binding, pointer.result));
+      } catch (error) {
+        if (!(error && typeof error === 'object' && 'code' in error &&
+          (['space_access_denied', 'space_inactive', 'module_not_shared', 'account_inactive', 'account_not_ready', 'not_found', 'scope_changed'].includes(String(error.code))
+            || error.code === 'binding' && 'status' in error && error.status === 403))) throw error;
+      }
+      const confirmed = record as FirestoreOnlineConfirmed;
+      return { state: 'confirmed', path: record.path, operation: record.operation, changeSeq: confirmed.changeSeq,
+        statusCode: confirmed.statusCode, result };
+    }
     let visible = record.childId === null || await binding.readChild(record.childId) !== null;
     if (isFirestoreOnlinePending(record)) return { state: "unconfirmed" };
     let result = record.result;
@@ -144,6 +167,12 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
       changeSeq: record.changeSeq, statusCode: record.statusCode, result: record.result };
     const pointer = contentResult(record.path, value.result);
     let saved = pointer ? { ...record, result: pointer } : record;
+    if (submission.sharing) {
+      const route = sharedDomainRoute(record.path);
+      if (value.childId !== null) domainReject('receipt_binding', 500);
+      saved = { ...record, result: sharedResultSchema.parse({ format: 'shared-domain-receipt:1', ...route,
+        spaceId: submission.sharing.spaceId, result: pointer ?? value.result }) };
+    }
     if (/^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(record.path) && value.result && typeof value.result === 'object' && 'input' in value.result) {
       const result = value.result as { input: { id: string; version: number }; recordId?: string };
       saved = { ...record, result: privateInputPointerSchema.parse({ format: 'private-input-receipt:1', id: result.input.id,
