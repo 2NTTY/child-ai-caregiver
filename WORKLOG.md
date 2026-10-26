@@ -4112,3 +4112,11 @@
 - 獨立 review 的五項問題已定向修正：care/profile basis、共享記憶新增、首頁 selector、可見 header／側欄同步、新增文件交易核對原 basis。沿現有確認／收據／重試，私人候選及舊文件呼叫保持相容。
 - 局部 Server 型別、定向流程及最終 Web 匯出通過；前端仍有四項原型別診斷，不稱全數通過。初次 npx 因 sandbox proxy 失敗，改用既有同版本離線快取完成建置。失敗與未驗細節見[證據](artifacts/verification/P4_SHARED_CHILD_CONTEXT_20261027.json)，零模型／通知／雲端／部署／手機驗收。
 - 主模型負責契約與高耦合 owner；Sol 限定 hook／記憶接點，另一位獨立 review。不改 D PR。共享附件頁面、新增與聊天關聯、成長／關注寫入及其餘 P4 仍須接續，不標整體完成。
+
+<a id="log-20261027-p4-shared-attachment-pages"></a>
+### 2026-10-27：P4 共用附件頁面
+
+- 由 #351／`8fd6649` 接既有共享附件 API、照片 owner、檔案下載與語音播放／轉錄；保留同一原件，沒有新增套件、資料庫或私人聊天副本。未共享模組及私人來源不自動讀取，viewer 不可刪除。
+- 主模型處理原收據恢復、清單投影及契約；兩個限定 Sol 分別接照片與媒體元件，另一位 Sol 獨立唯讀 review。review 發現 pending 鎖擋原刪除重試，定向 RED→GREEN；另核實受理收據不是日誌完成，查回後沿原 opId 接續端點，不假報刪除完成。
+- 新增及既有 client／HTTP 投影檢查通過；型別只剩四項既存診斷。額外三個舊檢查受 jsdom 缺失及舊 fixture 缺 owner 阻擋，不安裝新依賴或重跑整批；失敗照存。精確範圍見[證據](artifacts/verification/P4_SHARED_ATTACHMENT_PAGES_20261027.json)。
+- 沒有 Web 建置、部署、雲端、模型、通知或設備驗收；共享上載／Agent、AUTH01 與完整 P4 尚未完成。D PR、P3 未驗項及 P5 保留。

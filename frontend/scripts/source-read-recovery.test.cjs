@@ -76,7 +76,7 @@ function fixture() {
     new Function('require', 'module', 'exports', js)(name => {
       if (name === 'react-native') return { Platform: { OS: 'web' } };
       if (name === 'expo-router') return { usePathname: () => '/sources' };
-      if (name.endsWith('/useDomainEnvironment')) return { useDomainEnvironment: () => env,
+      if (name.endsWith('/useDomainEnvironment')) return { forSharedModule:env=>env,useDomainEnvironment: () => env,
         useDomainWriteGuard: (dirty, pending) => dirtySignals.push({ dirty, pending }) };
       if (name.endsWith('/ProductionProvider')) return { useProduction: () => ({ chatDraft: '', setChatDraft() {}, openAgentDraft() {} }) };
       if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewNavigation: () => action => action() };

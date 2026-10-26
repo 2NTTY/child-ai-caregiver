@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createVoiceApi } from '../../../src/client/voice-api';
+import { createChatFileApi } from '../../../src/client/chat-file-api';
 import { subscribeOnlineRefresh } from '../../../src/client/online-refresh-events';
 import type { AttachmentListQuery } from '../../../src/shared/attachment-list';
 import type { VoiceAttachment, VoiceAttachmentPage } from '../../../src/shared/voice';
 import type { ChatFileAttachment, ChatFileAttachmentPage } from '../../../src/shared/chat-files';
 import { photoTime } from '../photo-view-model';
 import type { AttachmentReviewCollections, AttachmentReviewPage } from '../components/photos/AttachmentLibrary';
-import { useDomainEnvironment } from './useDomainEnvironment';
+import { forSharedModule, useDomainEnvironment } from './useDomainEnvironment';
+import { useAttachmentDeletion } from './useAttachmentDeletion';
 import { VoiceMessage } from './VoiceMessage';
 import { ChatFileMessage } from './ChatFileMessage';
 
@@ -15,8 +18,8 @@ type ListApi<T> = { list(childId: string, query: AttachmentListQuery, signal: Ab
 type ReadState<T> = { scope: string; items: T[]; cursor: string | null; depth: number; state: AttachmentReviewPage['state']; busy: boolean; refreshing: boolean; message: string };
 
 /** One ephemeral read projection per source. No upload owner, persisted copies or global attachment totals. */
-export function useAttachmentList<T extends Original>(api: ListApi<T>) {
-  const env = useDomainEnvironment(), latestEnv = useRef(env); latestEnv.current = env;
+export function useAttachmentList<T extends Original>(api: ListApi<T>,selectedEnv?:ReturnType<typeof useDomainEnvironment>) {
+  const inherited=useDomainEnvironment(),env=selectedEnv??inherited, latestEnv = useRef(env); latestEnv.current = env;
   const empty = (scope: string): ReadState<T> => ({ scope, items: [], cursor: null, depth: 0, state: 'loading', busy: false, refreshing: false, message: '' });
   const [state, setState] = useState<ReadState<T>>(() => empty(env.scopeKey));
   const snapshot = useRef(state), request = useRef<AbortController | null>(null), live = useRef(false), refreshRequested = useRef(false);
@@ -55,7 +58,7 @@ export function useAttachmentList<T extends Original>(api: ListApi<T>) {
       if (changed || denied || unavailable) refreshRequested.current = false;
       update({ ...previous, ...(changed || denied || unavailable ? { items: [], cursor: null, depth: 0 } : {}), state: unavailable ? 'unavailable' : 'error', busy: false, refreshing: false,
         message: changed ? '存取範圍已改變，舊清單已清除。請重新讀取。' : unavailable ? '附件清單暫不可用；服務可能尚未接通，請返回原聊天查看。'
-          : denied ? '目前無法讀取這些私人附件，請重新核對身份及孩子權限。' : previous.items.length ? '未能更新附件，以下是較早讀取的清單。可重新讀取。' : '未能讀取附件，請重試。' });
+          : denied ? '目前無法讀取這些附件，請重新核對身份及孩子權限。' : previous.items.length ? '未能更新附件，以下是較早讀取的清單。可重新讀取。' : '未能讀取附件，請重試。' });
       if ([401, 403].includes(failure.status ?? 0) || failure.code === 'session_changed') e.accessError(failure);
     } finally {
       if (request.current === controller) request.current = null;
@@ -77,15 +80,22 @@ export function useAttachmentList<T extends Original>(api: ListApi<T>) {
 
 function sizeLabel(bytes: number) { return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`; }
 export function useAttachmentReview(): AttachmentReviewCollections {
-  const env = useDomainEnvironment();
-  const voices = useAttachmentList<VoiceAttachmentPage['items'][number]>(env.owner.voiceApi);
-  const files = useAttachmentList<ChatFileAttachmentPage['items'][number]>(env.owner.fileApi);
+  const env = forSharedModule(useDomainEnvironment(),'attachments');
+  const voiceApi=useMemo(()=>env.sharedMode?createVoiceApi(env.owner.fetcher,env.apiBaseUrl,undefined,env.sharing):env.owner.voiceApi,[env.owner,env.apiBaseUrl,env.sharedMode,env.sharing]);
+  const fileApi=useMemo(()=>env.sharedMode?createChatFileApi(env.owner.fetcher,env.apiBaseUrl,undefined,env.sharing):env.owner.fileApi,[env.owner,env.apiBaseUrl,env.sharedMode,env.sharing]);
+  const voices = useAttachmentList<VoiceAttachmentPage['items'][number]>(voiceApi,env);
+  const files = useAttachmentList<ChatFileAttachmentPage['items'][number]>(fileApi,env);
+  const voiceDeletion=useAttachmentDeletion(env,voiceApi,'voices',voices.refresh);
+  const fileDeletion=useAttachmentDeletion(env,fileApi,'files',files.refresh);
+  const sourceLabel=env.sharedMode?'家庭共享原附件':'本人私人聊天';
   return {
-    voices: { ...voices, items: voices.items.map(item => ({ id: item.id, kind: 'voice', title: item.fileName!, createdAtLabel: photoTime(item.createdAt),
-      sizeLabel: `${Math.ceil(item.durationMs! / 1000)} 秒 · ${sizeLabel(item.bytes!)}`, sourceLabel: '本人私人聊天', version: item.version,
-      content: <VoiceMessage key={`${env.scopeKey}:${item.id}:${item.version}`} messageId={item.messageId!} voice={{ id: item.id, version: item.version, mimeType: item.mimeType!, bytes: item.bytes!, durationMs: item.durationMs!, sha256: item.sha256! }} /> })) },
-    files: { ...files, items: files.items.map(item => ({ id: item.id, kind: item.mimeType!.startsWith('video/') ? 'video' : 'file', title: item.fileName!, createdAtLabel: photoTime(item.createdAt),
-      sizeLabel: sizeLabel(item.bytes!), sourceLabel: '本人私人聊天', version: item.version,
-      content: <ChatFileMessage key={`${env.scopeKey}:${item.id}:${item.version}`} compact messageId={item.messageId!} file={{ id: item.id, version: item.version, mimeType: item.mimeType!, bytes: item.bytes!, sha256: item.sha256! }} /> })) },
+    voices: { ...voices,shared:env.sharedMode,controls:voiceDeletion.controls,items: voices.items.map(item => ({ id: item.id, kind: 'voice', title: item.fileName!, createdAtLabel: photoTime(item.createdAt),
+      sizeLabel: `${Math.ceil(item.durationMs! / 1000)} 秒 · ${sizeLabel(item.bytes!)}`, sourceLabel, version: item.version,
+      remove:voiceDeletion.canDelete?()=>voiceDeletion.remove(item):undefined,
+      content: <VoiceMessage key={`${env.scopeKey}:${item.id}:${item.version}`} api={env.sharedMode?voiceApi:undefined} messageId={item.messageId} voice={{ id: item.id, version: item.version, mimeType: item.mimeType!, bytes: item.bytes!, durationMs: item.durationMs!, sha256: item.sha256! }} /> })) },
+    files: { ...files,shared:env.sharedMode,controls:fileDeletion.controls,items: files.items.map(item => ({ id: item.id, kind: item.mimeType!.startsWith('video/') ? 'video' : 'file', title: item.fileName!, createdAtLabel: photoTime(item.createdAt),
+      sizeLabel: sizeLabel(item.bytes!), sourceLabel, version: item.version,
+      remove:fileDeletion.canDelete?()=>fileDeletion.remove(item):undefined,
+      content: <ChatFileMessage key={`${env.scopeKey}:${item.id}:${item.version}`} api={env.sharedMode?fileApi:undefined} compact messageId={item.messageId} file={{ id: item.id, version: item.version, mimeType: item.mimeType!, bytes: item.bytes!, sha256: item.sha256! }} /> })) },
   };
 }

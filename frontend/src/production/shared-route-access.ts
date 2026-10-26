@@ -23,17 +23,16 @@ export function sharedRouteMessage(state:SharedChildState,path:string,params:Par
   const modules=sharedRouteModules(path,params);
   if(modules?.length&&!modules.some(module=>state.view!.modules.includes(module)))return '這個家庭沒有共享此頁面的資料。可選擇其他已共享模組，或切回本人的孩子。';
   if(modules?.length===0)return '此功能尚未接通家庭共享範圍。你可以切回本人的孩子使用；私人聊天不會因加入家庭而公開。';
-  if(path==='/photos'||path==='/care'&&params.view==='photos')return '共享附件的頁面接線仍在處理，暫未開放；已保存附件及授權保持不變。';
   return null;
 }
 export function sharedStartupReads(state:SharedChildState,reads:Record<string,'loading'|'ready'|'error'>){
   if(!state.target)return reads;
   const modules=state.view?.modules??[];
   const scoped:Record<string,readonly SharedModule[]>={profile:['profile'],care:['care'],careDetail:['care'],tasks:['tasks'],taskDetail:['tasks'],
-    memory:['memory'],documents:['documents'],growth:['growth','concerns']};
+    memory:['memory'],documents:['documents'],growth:['growth','concerns'],photos:['attachments']};
   const next={...reads};
   for(const [key,required] of Object.entries(scoped))if(!required.some(module=>modules.includes(module)))next[key]='ready';
-  for(const key of ['agentPending','chat','conversations','notifications','summary','photos','sources','contact','family'])next[key]='ready';
+  for(const key of ['agentPending','chat','conversations','notifications','summary','sources','contact','family'])next[key]='ready';
   return next;
 }
 export function sharedRefreshSelections(state:SharedChildState,path:string,params:Params={},railVisible=false):SharedRefreshSelection[]|undefined{

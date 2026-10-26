@@ -25,11 +25,11 @@ import { useContentDeletionFocus } from "../shared-inputs/useContentDeletionFocu
 import { PhotoGallery, OriginalMediaLibrary, type AttachmentReviewCollections } from "./AttachmentLibrary";
 
 const operationLabels: Record<PhotosViewModel["operation"]["state"], string> = { none: "", saving: "處理中 · 尚未確認", saved: "已確認（合成預覽）", failed: "失敗 · 原輸入保留", unknown: "結果未知 · 先查核", unconfirmed: "查核尚無確認結果", conflict: "版本衝突 · 尚未保存", confirmed_unavailable: "原操作已確認 · 結果不可讀" };
-export function PhotosView({ model, actions: sourceActions, onCare, previewControls, selectOriginal, capturePreferred, captureOriginal, scopeKey, production = false, attachments, onChat, onChatPhoto }: { model: PhotosViewModel; actions: PhotosActions; onCare: () => void; previewControls?: ReactNode; selectOriginal?: PhotoFilePickerProps["selectOriginal"]; capturePreferred?: boolean; captureOriginal?: PhotoFilePickerProps["captureOriginal"]; scopeKey?: string; production?: boolean; attachments?: AttachmentReviewCollections; onChat?: () => void; onChatPhoto?: (photo: PhotoItem) => void }) {
+export function PhotosView({ model, actions: sourceActions, onCare, previewControls, selectOriginal, capturePreferred, captureOriginal, scopeKey, production = false, sharedScope = false, attachments, onChat, onChatPhoto }: { model: PhotosViewModel; actions: PhotosActions; onCare?: () => void; previewControls?: ReactNode; selectOriginal?: PhotoFilePickerProps["selectOriginal"]; capturePreferred?: boolean; captureOriginal?: PhotoFilePickerProps["captureOriginal"]; scopeKey?: string; production?: boolean; sharedScope?: boolean; attachments?: AttachmentReviewCollections; onChat?: () => void; onChatPhoto?: (photo: PhotoItem) => void }) {
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
-  const [adding, setAdding] = useState(!!capturePreferred);
-  const [inspecting, setInspecting] = useState(!!capturePreferred);
+  const [adding, setAdding] = useState(!sharedScope && !!capturePreferred);
+  const [inspecting, setInspecting] = useState(!sharedScope && !!capturePreferred);
   const [candidateTrigger, setCandidateTrigger] = useState<number | null>(null);
   const requestSerial = useRef(0);
   const listSerial = useRef(0);
@@ -55,7 +55,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
   const editorVisible = activeTab === "photos" && inspecting && (adding || !!selected || !!model.original);
   useEffect(() => {if (model.original || selected) setInspecting(true);}, [model.original, selected?.id]);
   const image = model.original?.imageSource ?? selected?.imageSource;
-  const editable = model.access === "editable" && (!selected || selected.visibility === "private" && selected.isUploader && selected.canManage && !selected.recordId);
+  const editable = !sharedScope && model.access === "editable" && (!selected || selected.visibility === "private" && selected.isUploader && selected.canManage && !selected.recordId);
   const candidate = selected?.extraction.candidate;
   const candidateScope = JSON.stringify([scopeKey ?? selected?.childId ?? 'no-child', selected?.id ?? 'no-photo', model.access]);
   const revealEligible = model.online && model.load === 'ready' && !model.busy && selected?.extraction.state === 'available'
@@ -77,7 +77,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
   const receiptRetry = production && ["reserve", "confirm", "delete"].includes(model.operation.phase ?? "");
   const retryBlocked = receiptRetry ? !model.online || model.busy || model.load !== "ready" || model.access !== "editable" : !model.fresh;
   const listReadState = model.load === "loading" ? "loading" : model.load === "error" ? "error" : !model.online ? "stale" : model.items.length ? "ready" : "empty";
-  const readMessage = model.load === "loading" ? model.items.length ? "正在重新讀取照片；已載入清單及草稿保留。" : "正在讀取照片…" : model.load === "error" ? model.notice || "未能讀取照片，請重試。" : !model.online ? "已載入清單可能不是最新；重連後先重新讀取。" : listReadState === "empty" ? "目前沒有可讀取的照片。選擇原照片後，可先私人保存。" : "";
+  const readMessage = model.load === "loading" ? model.items.length ? "正在重新讀取照片；已載入清單及草稿保留。" : "正在讀取照片…" : model.load === "error" ? model.notice || "未能讀取照片，請重試。" : !model.online ? "已載入清單可能不是最新；重連後先重新讀取。" : listReadState === "empty" ? sharedScope ? "目前沒有可讀取的共享照片。" : "目前沒有可讀取的照片。選擇原照片後，可先私人保存。" : "";
   const extractionState = selected?.extraction.state;
   const extractionMessage = extractionState && extractionState !== "not_requested" && !(model.operation.phase === "extract" && model.operation.state !== "none") ? `照片提取：${photoExtractionLabels[extractionState]}。` : "";
   const operationNotice = model.operation.state !== "none" ? <View style={[s.status, model.operation.state === "failed" && s.statusError]} testID="photo-operation"><AppStatusBadge label={operationLabel} tone={model.operation.state === "failed" ? "error" : model.operation.state === "saved" && model.operation.phase !== "extract" ? "success" : model.operation.state === "saving" ? "info" : "warning"} /><Text style={s.body}>{model.operation.message}</Text>
@@ -94,25 +94,26 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
     <StatusAnnouncement key={selected?.id ?? "no-selected-photo"} eventKey={extractionState ?? "not_requested"} message={extractionMessage} urgent={extractionState === "failed"} />
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權查看這個孩子。照片、原檔、候選及草稿已清除。" : ""} urgent={model.access === "lost"} />
     <StatusAnnouncement eventKey={model.sourceError} message={model.sourceError} urgent />
-    <View style={s.context}><Text style={s.title}>{model.childName}的附件</Text><View style={s.row}>{model.operation.state === "conflict" ? <AppButton label="重新核對照片版本" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /> : null}<AppButton label="返回核對" accessibilityLabel="返回核對" variant="quiet" onPress={onCare} disabled={locked} /></View></View>
+    <View style={s.context}><Text style={s.title}>{model.childName}的附件</Text><View style={s.row}>{model.operation.state === "conflict" ? <AppButton label="重新核對照片版本" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /> : null}{onCare ? <AppButton label="返回核對" accessibilityLabel="返回核對" variant="quiet" onPress={onCare} disabled={locked} /> : null}</View></View>
+    {sharedScope ? <Text style={s.meta}>這裏顯示已分享的原附件，資料與來源空間相同。刪除會影響原附件及其他有權成員的讀取。</Text> : null}
     <UnderlineTabs id={tabsId} label="附件類型" items={[{key: "photos", label: "照片"}, {key: "voices", label: "語音"}, {key: "files", label: "影片與文件"}]} value={activeTab} onChange={value => setTabSelection({scope: scopeKey, value})} />
-    {editorVisible ? <View style={s.steps}>{["選擇原照片", "私人保存", "核對草稿", "家庭共享"].map((label, index) => <View key={label} style={s.step}><Text style={s.stepNumber}>{index + 1}</Text><Text style={s.meta}>{label}</Text></View>)}</View> : null}
+    {editorVisible && !sharedScope ? <View style={s.steps}>{["選擇原照片", "私人保存", "核對草稿", "家庭共享"].map((label, index) => <View key={label} style={s.step}><Text style={s.stepNumber}>{index + 1}</Text><Text style={s.meta}>{label}</Text></View>)}</View> : null}
     {!model.online ? <View style={s.notice}><Text style={s.warning}>目前離線，已選原照片及草稿保留。重連後先核對最新狀態，不會自動重送。</Text></View> : null}
     {model.notice && model.load !== "error" ? <Text style={s.body}>{model.notice}</Text> : null}
     {operationNotice}
     {model.access === "lost" ? <SectionCard><SectionHeader density="compact" title="已無權查看這個孩子" /><Text style={s.body}>照片、原檔、候選及草稿已清除。請改選有權存取的孩子或重新核對身份。</Text></SectionCard> :
       <View style={[s.columns, !split && s.single]} ref={containerLayout.ref} onLayout={containerLayout.onLayout}>
-        <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="附件清單" style={[s.list, (!split || !editorVisible) && s.full, !split && editorVisible && s.hidden]}><View style={s.library} testID="photo-list"><AppTabPanel tabsId={tabsId} tabKey="photos" active={activeTab === "photos"}><View style={s.library}><SectionHeader density="compact" title="照片" icon="image-outline" action={<AppButton label={selected || model.original ? "繼續核對本頁" : "加入原照片"} variant="quiet" disabled={locked || !selected && !model.original && !model.canPick} onPress={() => {setAdding(!selected && !model.original); setInspecting(true);}} />} />
-          {model.access === "read_only" ? <Text style={s.meta}>你目前可查看家庭共享照片及本人既有的私人照片；不能上傳、提取、確認或刪除。</Text> : null}
+        <View ref={deletionFocus.listRef} tabIndex={-1} accessibilityLabel="附件清單" style={[s.list, (!split || !editorVisible) && s.full, !split && editorVisible && s.hidden]}><View style={s.library} testID="photo-list"><AppTabPanel tabsId={tabsId} tabKey="photos" active={activeTab === "photos"}><View style={s.library}><SectionHeader density="compact" title="照片" icon="image-outline" action={!sharedScope ? <AppButton label={selected || model.original ? "繼續核對本頁" : "加入原照片"} variant="quiet" disabled={locked || !selected && !model.original && !model.canPick} onPress={() => {setAdding(!selected && !model.original); setInspecting(true);}} /> : undefined} />
+          {model.access === "read_only" ? <Text style={s.meta}>{sharedScope ? "你目前可查看已分享的照片；不能刪除原附件。" : "你目前可查看家庭共享照片及本人既有的私人照片；不能上傳、提取、確認或刪除。"}</Text> : null}
           <ReadStateNotice state={listReadState} message={readMessage}>
             {model.load === "error" || !model.online ? <AppButton label="重新讀取照片" variant="quiet" disabled={!model.online || model.busy} onPress={actions.refresh} /> : null}
           </ReadStateNotice>
           <PhotoGallery key={listScope} items={model.items} scopeKey={listScope} disabled={locked || model.load !== "ready"} selectedId={selected?.id}
             openPhoto={actions.openPhoto} readThumbnail={activeTab === "photos" && model.online ? actions.readThumbnail : undefined} rowRef={deletionFocus.rowRef} motionEligible={listMotion} />
-          <Text style={s.meta}>照片先私人保存，確認後才與家庭共享。</Text>
+          {!sharedScope ? <Text style={s.meta}>照片先私人保存，確認後才與家庭共享。</Text> : null}
           </View></AppTabPanel>
-          <AppTabPanel tabsId={tabsId} tabKey="voices" active={activeTab === "voices"}>{activeTab === "voices" ? <OriginalMediaLibrary key={listScope} page={attachments?.voices} kind="voice" onChat={onChat} /> : null}</AppTabPanel>
-          <AppTabPanel tabsId={tabsId} tabKey="files" active={activeTab === "files"}>{activeTab === "files" ? <OriginalMediaLibrary key={listScope} page={attachments?.files} kind="file" onChat={onChat} /> : null}</AppTabPanel>
+          <AppTabPanel tabsId={tabsId} tabKey="voices" active={activeTab === "voices"}>{activeTab === "voices" ? <OriginalMediaLibrary key={listScope} page={attachments?.voices} kind="voice" onChat={sharedScope ? undefined : onChat} /> : null}</AppTabPanel>
+          <AppTabPanel tabsId={tabsId} tabKey="files" active={activeTab === "files"}>{activeTab === "files" ? <OriginalMediaLibrary key={listScope} page={attachments?.files} kind="file" onChat={sharedScope ? undefined : onChat} /> : null}</AppTabPanel>
         </View></View>
         <View style={[s.editor, !split && s.full, !editorVisible && s.hidden]} accessibilityElementsHidden={!editorVisible} importantForAccessibility={editorVisible ? "auto" : "no-hide-descendants"} aria-hidden={!editorVisible}>
           {!split ? <AppButton label="返回附件清單（保留本頁草稿）" variant="quiet" disabled={locked} onPress={() => setInspecting(false)} /> : null}
@@ -121,10 +122,10 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
             {model.original || selected ? <><Text style={s.title}>{model.original?.fileName ?? selected?.fileName}</Text><Text style={s.meta}>{((model.original?.bytes ?? selected?.bytes ?? 0) / (1024 * 1024)).toFixed(2)} MiB · {selected?.state === "ready" ? production ? "原檔已保存" : "原檔已模擬保存" : "本次原檔尚未完整保存"}</Text></> : null}
             {selected ? <View style={s.related}><MotionFeedback scopeKey={candidateScope} active={model.operation.state === 'saved' && model.operation.phase === 'confirm' && !!selected.recordId} triggerKey={model.operation.state === 'saved' && model.operation.phase === 'confirm' ? model.operation.reference : null} testID="photo-confirmation-feedback"><AppStatusBadge label={selected.visibility === "private" ? "私人，只有上傳者可讀取" : "已確認家庭共享"} tone={selected.visibility === "private" ? "neutral" : "success"} /></MotionFeedback><AppStatusBadge label={photoExtractionLabels[selected.extraction.state]} tone={selected.extraction.state === "failed" ? "error" : selected.extraction.state === "unknown" || selected.extraction.state === "available" ? "warning" : selected.extraction.state === "running" ? "info" : "neutral"} />{selected.recordId ? <Text style={s.body}>已連結確認記錄，不能再次提取或確認。</Text> : null}
               <Text style={s.meta}>來源：{selected.source}；上傳者：{selected.ownerLabel}；版本 {selected.version}</Text></View> : null}
-            {selected?.state === 'ready' && onChatPhoto ? <AppButton label="加入聊天" variant="secondary" disabled={locked || !model.online || !model.fresh} onPress={() => onChatPhoto(selected)} /> : null}
-            {model.capacityReached ? <Text style={s.warning}>{production ? "已達到新增容量限制。" : "已模擬達到新增容量限制。"}可核對現有附件，不能再新增照片。</Text> : null}
+            {!sharedScope && selected?.state === 'ready' && onChatPhoto ? <AppButton label="加入聊天" variant="secondary" disabled={locked || !model.online || !model.fresh} onPress={() => onChatPhoto(selected)} /> : null}
+            {!sharedScope && model.capacityReached ? <Text style={s.warning}>{production ? "已達到新增容量限制。" : "已模擬達到新增容量限制。"}可核對現有附件，不能再新增照片。</Text> : null}
             {model.reservationUnidentified ? <Text style={s.warning}>已確認操作的附件結果未能識別。保留原檔，不會再次建立；請逐項核對清單或明確清除本頁。</Text> : null}
-            {(!selected || selected.state === "reserved") && model.access === "editable" ? <>
+            {!sharedScope && (!selected || selected.state === "reserved") && model.access === "editable" ? <>
               <PhotoFilePicker disabled={!model.canPick} onPick={actions.pickOriginal} onError={actions.reportFileError} selectOriginal={selectOriginal} capturePreferred={capturePreferred} captureOriginal={captureOriginal} />
               {!selected ? <View><AppTextField nativeID={sourceId} label="照片來源" accessibilityLabel="照片來源" value={model.source} disabled={model.formLocked} onChangeText={actions.editSource} error={!!model.sourceError} aria-invalid={!!model.sourceError} aria-describedby={`${sourceId}-message`} /><FormFieldMessage id={`${sourceId}-message`} error={model.sourceError || undefined} help="保留原文字；私人保存後沿用原來源。" /></View> : <Text style={s.meta}>{model.original ? "原檔已保留，可繼續上傳同一原檔。" : "請重新選取同一張原照片。"}</Text>}
               <AppButton label={selected ? "繼續上傳同一原檔" : "私人保存原照片"} disabled={!model.canUpload} onPress={actions.upload} />
@@ -151,7 +152,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
     </AppDialog>
       <AppDialog danger visible={model.deletion} onDismiss={actions.closeDeletion} onClosed={deletionFocus.onClosed}>
         <Dialog.Title danger>刪除照片及連結記錄</Dialog.Title><Dialog.Content><View style={s.stack}><Text style={s.body}>{selected?.fileName} · 版本 {selected?.version}</Text>
-          <Text style={s.body}>{selected?.recordId ? "這會移除原照片及已連結的家庭確認記錄，家庭成員將不能再讀取。" : "這會移除這份附件及原照片；它尚未連結家庭確認記錄。"}</Text>
+          <Text style={s.body}>{sharedScope ? "這會刪除來源空間的原附件及其連結記錄，其他有權成員亦不能再讀取。" : selected?.recordId ? "這會移除原照片及已連結的家庭確認記錄，家庭成員將不能再讀取。" : "這會移除這份附件及原照片；它尚未連結家庭確認記錄。"}</Text>
           <AppCheckbox label="我已核對照片與連結記錄的刪除範圍" checked={model.deleteScope} disabled={locked} onChange={actions.setDeleteScope} />
           <AppCheckbox label="我確認要刪除這份照片及連結記錄" checked={model.deleteFinal} disabled={locked} onChange={actions.setDeleteFinal} />
           <Text style={s.meta}>刪除確認不等於實體檔案及備份即時清理完成。結果未知時先查核原操作。</Text>
