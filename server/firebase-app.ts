@@ -368,8 +368,10 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         const records = /^\/api\/children\/([0-9a-f-]{36})\/records$/iu.exec(path);
-        const response = records ? json(await options.care.listRecords(userId, records[1].toLowerCase()))
-          : await handleCareRequest(request, userId, options.care);
+        const sharedSpaceId = new URL(request.url).searchParams.get('spaceId');
+        const care = sharedSpaceId !== null ? options.care.forSharedSpace(sharedSpaceId) : options.care;
+        const response = records ? json(await care.listRecords(userId, records[1].toLowerCase()))
+          : await handleCareRequest(request, userId, care);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }

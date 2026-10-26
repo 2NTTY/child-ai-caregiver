@@ -3,6 +3,7 @@ import type { Transaction } from '@google-cloud/firestore';
 import { FirestoreDomainData, firestoreDomainHash, domainReject } from './firestore-domain-data.ts';
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
+export { sharedAccessBasisSchema } from '../src/shared/sharing.ts';
 
 const nil = '00000000-0000-0000-0000-000000000000';
 const user = z.string().min(1).max(256), version = z.number().int().positive().max(2147483647);
@@ -24,8 +25,6 @@ export const sharedInvitationSchema = z.object({ id: z.string().regex(/^[a-f0-9]
   state: z.enum(['issued', 'consumed', 'revoked']), consumedBy: user.nullable(), issuedBy: user }).strict();
 export const sharedOperationSchema = z.object({ actorUserId: user, operationId: z.uuid(), action: z.string().min(1).max(64),
   fingerprint: z.string().regex(/^[a-f0-9]{64}$/u), result: z.unknown(), at }).strict();
-export const sharedAccessBasisSchema = z.object({ spaceVersion: version, membershipVersion: version, shareVersion: version,
-  actorAuthorizationVersion: z.string().regex(/^\d+$/u), sourceAuthorizationVersion: z.string().regex(/^\d+$/u) }).strict();
 export const sharingRestoreSchemas = {
   'shared-space': { suffix: 'shared_spaces', schema: sharedSpaceSchema },
   'shared-membership': { suffix: 'shared_memberships', schema: sharedMembershipSchema },

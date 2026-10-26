@@ -34,5 +34,10 @@ export async function readContentPointer(data: FirestoreDomainData, binding: Fir
   pointer: z.infer<typeof contentPointerSchema>): Promise<unknown> {
   if (!await contentVisible(data, binding, pointer.kind, pointer.id, pointer.version, true)) return null;
   const [suffix, kind] = parents[pointer.kind], row = await binding.transaction.get(data.ref(suffix, kind, pointer.id));
-  return { [pointer.key]: data.open(kind, pointer.id, binding.scope, z.unknown(), row) };
+  const raw = data.open(kind, pointer.id, binding.scope, z.record(z.string(), z.unknown()), row);
+  if (pointer.kind === 'care' || pointer.kind === 'profile') {
+    const { createdViaShare, confirmedViaShare, ...value } = raw;
+    return { [pointer.key]: value };
+  }
+  return { [pointer.key]: raw };
 }
