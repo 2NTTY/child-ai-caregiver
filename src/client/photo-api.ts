@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { PhotoAttachment, PhotoConfirmation, PhotoMetadata } from "../shared/photos.ts";
 import { PHOTO_LIMITS, photoDraftSchema, photoMetadataSchema } from "../shared/photos.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
+import { sharedSelectionSchema, type SharedSelection } from "../shared/sharing.ts";
 
 export class PhotoApiError extends Error {
   readonly status: number;
@@ -38,7 +39,7 @@ const version = z.number().int().positive().max(2147483647);
 const photoSchema = photoMetadataSchema.extend({
   id: z.uuid(), childId: z.uuid(), ownerUserId: user, createdAt: z.iso.datetime({ offset: true }), version,
   state: z.enum(["reserved", "ready"]), visibility: z.enum(["private", "shared"]), canManage: z.boolean(),
-  recordId: z.uuid().nullable(), recoveryPending: z.boolean().optional(),
+  recordId: z.uuid().nullable(), recoveryPending: z.boolean().optional(), sharedSpaceId: z.uuid().optional(),
   extraction: z.object({
     state: z.enum(["not_requested", "running", "available", "failed", "unknown"]), runId: z.uuid().nullable(),
     draft: photoDraftSchema.nullable(), stopReason: z.string().max(200).nullable(),
@@ -65,10 +66,18 @@ const sameMetadata = (left: PhotoMetadata, right: PhotoMetadata) =>
   left.fileName === right.fileName && left.mimeType === right.mimeType && left.bytes === right.bytes
   && left.sha256 === right.sha256 && left.source === right.source;
 
-function checkedPhoto(value: unknown, childId: string, userId: string, photoId?: string, confirmed = false): PhotoAttachment {
+function matchesSelection(photo: PhotoAttachment & { sharedSpaceId?: string }, selection?: SharedSelection): boolean {
+  if (!selection) return photo.sharedSpaceId === undefined;
+  return photo.sharedSpaceId === selection.spaceId && photo.visibility === "shared" && !photo.canManage && photo.recordId === null
+    && photo.extraction.state === "not_requested" && photo.extraction.runId === null && photo.extraction.draft === null
+    && photo.extraction.stopReason === null && photo.extraction.processedAt === null && photo.extraction.model === null;
+}
+
+function checkedPhoto(value: unknown, childId: string, userId: string, photoId?: string, confirmed = false, selection?: SharedSelection): PhotoAttachment {
   const parsed = resultSchema.safeParse(value);
   if (!parsed.success || parsed.data.photo.childId !== childId || (photoId !== undefined && parsed.data.photo.id !== photoId)
-    || (parsed.data.photo.visibility === "private" && parsed.data.photo.ownerUserId !== userId)) {
+    || (parsed.data.photo.visibility === "private" && parsed.data.photo.ownerUserId !== userId)
+    || !matchesSelection(parsed.data.photo, selection)) {
     throw new PhotoApiError(0, null, confirmed);
   }
   return parsed.data.photo;
@@ -94,7 +103,8 @@ function checkedWrite(value: unknown, target: Target): PhotoWriteResult {
   return { photo };
 }
 
-export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hashBytes = sha256Bytes): PhotoApi {
+export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hashBytes = sha256Bytes, selection?: SharedSelection): PhotoApi {
+  const sharing = selection === undefined ? undefined : sharedSelectionSchema.parse(selection);
   const base = baseUrl.replace(/\/$/u, "");
   const apiUrl = base.endsWith("/api") ? base : base + "/api";
   const online = createOnlineTransport(apiUrl, fetcher);
@@ -102,6 +112,7 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
   let pendingTarget: Target | null = null;
   const collection = (childId: string) => "/children/" + encodeURIComponent(childId) + "/photos";
   const entity = (childId: string, photoId: string) => collection(childId) + "/" + encodeURIComponent(photoId);
+  const writable = () => { if (sharing) throw new PhotoApiError(403, "shared_attachment_write_unavailable"); };
   const identity = (childId: string, userId: string, photoId?: string) => {
     if (!z.uuid().safeParse(childId).success || !user.safeParse(userId).success
       || (photoId !== undefined && !z.uuid().safeParse(photoId).success)) throw new PhotoApiError(400, "invalid_input");
@@ -129,6 +140,8 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
     }
   }
   async function response(path: string, signal: AbortSignal, userId: string, body?: unknown): Promise<Response> {
+    if (body !== undefined) writable();
+    else if (sharing) path += (path.includes("?") ? "&" : "?") + new URLSearchParams({ spaceId: sharing.spaceId });
     const result = await fetcher(apiUrl + path, {
       method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store", signal,
       headers: { Accept: "application/json", "x-expected-user-id": userId,
@@ -148,6 +161,7 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
   const request = (path: string, signal: AbortSignal, userId: string, body?: unknown, timeoutMs = 20_000) =>
     call(signal, async innerSignal => (await response(path, innerSignal, userId, body)).json() as Promise<unknown>, timeoutMs);
   async function mutate(path: string, payload: unknown, target: Target, signal: AbortSignal): Promise<PhotoWriteResult> {
+    writable();
     if (!online.hasPending()) pendingTarget = target;
     let confirmed = false;
     try {
@@ -170,6 +184,7 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
     hasPendingOnline: () => online.hasPending(),
     resetOnline() { generation++; pendingTarget = null; online.reset(); },
     async reconcilePending(signal, userId) {
+      if (sharing) return null;
       const target = pendingTarget;
       let confirmed = false;
       try {
@@ -206,10 +221,12 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
           const parsed = photoListingSchema.safeParse(value);
           if (!parsed.success) throw new PhotoApiError();
           const page = parsed.data, paginated = "complete" in page;
-          if (cursor !== null && !paginated || paginated && !page.complete && page.photos.length === 0) throw new PhotoApiError();
+          if (cursor !== null && !paginated || paginated && !page.complete && page.photos.length === 0 && !sharing
+            || sharing && page.canCreate) throw new PhotoApiError();
           for (const photo of page.photos) {
             const id = photo.id.toLowerCase();
-            if (photo.childId !== childId || photo.visibility === "private" && photo.ownerUserId !== userId || ids.has(id)) throw new PhotoApiError();
+            if (photo.childId !== childId || photo.visibility === "private" && photo.ownerUserId !== userId || ids.has(id)
+              || !matchesSelection(photo, sharing)) throw new PhotoApiError();
             ids.add(id); photos.push(photo);
           }
           if (photos.length > PHOTO_LIMITS.count) throw new PhotoApiError();
@@ -223,9 +240,10 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
     },
     async photo(childId, photoId, signal, userId) {
       identity(childId, userId, photoId);
-      return checkedPhoto(await request(entity(childId, photoId), signal, userId), childId, userId, photoId);
+      return checkedPhoto(await request(entity(childId, photoId), signal, userId), childId, userId, photoId, false, sharing);
     },
     async content(photo, signal, userId) {
+      if (!matchesSelection(photo, sharing)) throw new PhotoApiError();
       identity(photo.childId, userId, photo.id);
       return call(signal, async innerSignal => {
         const result = await response(entity(photo.childId, photo.id) + "/content", innerSignal, userId);
@@ -238,12 +256,14 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
       });
     },
     async reserve(childId, metadata, signal, userId) {
+      writable();
       identity(childId, userId);
       const parsed = photoMetadataSchema.safeParse(metadata);
       if (!parsed.success || !parsed.data.source.trim()) throw new PhotoApiError(400, "invalid_input");
       return mutate(collection(childId), parsed.data, { kind: "reserve", childId, userId, metadata: parsed.data }, signal);
     },
     async upload(photo, base64, signal, userId) {
+      writable();
       identity(photo.childId, userId, photo.id);
       const value = await request(entity(photo.childId, photo.id) + "/content", signal, userId, { base64 });
       const next = checkedPhoto(value, photo.childId, userId, photo.id);
@@ -251,6 +271,7 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
       return next;
     },
     async extract(photo, signal, userId) {
+      writable();
       identity(photo.childId, userId, photo.id);
       const value = await request(entity(photo.childId, photo.id) + "/extract", signal, userId,
         { expectedVersion: photo.version, confirmModel: true }, 90_000);
@@ -259,12 +280,14 @@ export function createPhotoApi(baseUrl = "", fetcher: typeof fetch = fetch, hash
       return next;
     },
     async confirm(photo, input, signal, userId) {
+      writable();
       identity(photo.childId, userId, photo.id);
       if (input.expectedVersion !== photo.version || input.confirmShared !== true) throw new PhotoApiError(400, "invalid_input");
       return mutate(entity(photo.childId, photo.id) + "/confirm", input,
         { kind: "confirm", childId: photo.childId, userId, photoId: photo.id, expectedVersion: photo.version }, signal);
     },
     async delete(photo, signal, userId) {
+      writable();
       identity(photo.childId, userId, photo.id);
       return mutate(entity(photo.childId, photo.id) + "/delete", { expectedVersion: photo.version, confirmDelete: true },
         { kind: "delete", childId: photo.childId, userId, photoId: photo.id }, signal);
