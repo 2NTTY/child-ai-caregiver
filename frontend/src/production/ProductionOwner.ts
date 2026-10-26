@@ -103,7 +103,7 @@ export class ProductionOwner {
           const publicOrigin = transport?.publicOrigin ?? (typeof window === "undefined" ? "" : window.location.origin);
           if (provider !== "firebase" || !publicOrigin) throw new Error("Authentication provider unavailable");
           firebaseIdentity = createFirebaseAuthApi({ baseUrl: this.apiBaseUrl, publicOrigin, config, fetcher: this.fetcher,
-            nativeSession: transport?.nativeSession, socialFactory: this.native ? undefined : firebaseSocialFactory });
+            nativeSession: transport?.nativeSession, socialFactory: firebaseSocialFactory });
         } catch { firebaseIdentity = createUnavailableFirebaseAuthApi(); }
       }
     }

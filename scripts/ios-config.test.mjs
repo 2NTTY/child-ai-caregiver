@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { getConfig } from "@expo/config";
+import appConfig from '../frontend/app.config.js';
 
 const frontend = fileURLToPath(new URL("../frontend/", import.meta.url));
 const eas = JSON.parse(readFileSync(join(frontend, "eas.json"), "utf8"));
@@ -16,9 +17,11 @@ const publicEnvironment = {
   EXPO_PUBLIC_FIREBASE_APP_ID: "1:123456789:web:abcdef123456",
 };
 const environmentKeys = [...Object.keys(publicEnvironment), "EAS_PROJECT_ID", "EAS_BUILD_PROFILE",
-  "EAS_BUILD_PLATFORM", "ANDROID_GOOGLE_SERVICES_FILE"];
+  "EAS_BUILD_PLATFORM", "ANDROID_GOOGLE_SERVICES_FILE", "EXPO_PUBLIC_AUTH_PROVIDERS",
+  "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID", "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID",
+  "EXPO_PUBLIC_APPLE_SERVICE_ID", "EXPO_PUBLIC_APPLE_REDIRECT_URI"];
 
-function resolveConfig(environment = {}) {
+function resolveConfig(environment = {}, raw = false) {
   const previous = new Map(environmentKeys.map(key => [key, process.env[key]]));
   try {
     for (const key of environmentKeys) delete process.env[key];
@@ -26,7 +29,8 @@ function resolveConfig(environment = {}) {
       if (value !== undefined) process.env[key] = value;
     }
     // Resolve the real static and dynamic config without running native plugins or a build.
-    return getConfig(frontend, { skipPlugins: true }).exp;
+    return raw ? appConfig({ config: JSON.parse(readFileSync(join(frontend, 'app.json'), 'utf8')).expo })
+      : getConfig(frontend, { skipPlugins: true }).exp;
   } finally {
     for (const [key, value] of previous) {
       if (value === undefined) delete process.env[key];
@@ -48,6 +52,29 @@ test("iPhone store profile resolves without the Android Firebase descriptor", ()
   const explicitIos = resolveConfig({ EAS_BUILD_PLATFORM: "ios",
     ANDROID_GOOGLE_SERVICES_FILE: join(frontend, "missing-android-descriptor-for-ios-test.json") });
   assert.equal(explicitIos.android.googleServicesFile, undefined);
+});
+
+test("native providers require explicit platform configuration and derive official iOS capability settings", () => {
+  const plugin = '@react-native-google-signin/google-signin';
+  const disabled = resolveConfig({}, true);
+  assert.equal(disabled.plugins.some(value => (Array.isArray(value) ? value[0] : value) === plugin), false);
+  assert.equal(disabled.ios.entitlements?.['com.apple.developer.applesignin'], undefined);
+  const configured = { EXPO_PUBLIC_AUTH_PROVIDERS: 'google.com,apple.com',
+    EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: '123-web.apps.googleusercontent.com',
+    EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: '123-ios.apps.googleusercontent.com' };
+  const ios = resolveConfig(configured, true);
+  assert.deepEqual(ios.plugins.find(value => Array.isArray(value) && value[0] === plugin),
+    [plugin, { iosUrlScheme: 'com.googleusercontent.apps.123-ios' }]);
+  assert.deepEqual(ios.ios.entitlements['com.apple.developer.applesignin'], ['Default']);
+  assert.throws(() => resolveConfig({ ...configured, EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: undefined }), /Google iOS client/);
+  assert.throws(() => resolveConfig({ ...configured, EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: 'invalid' }), /Google Web client/);
+  const android = { EAS_BUILD_PROFILE: undefined, EAS_BUILD_PLATFORM: 'android', EXPO_PUBLIC_AUTH_PROVIDERS: 'apple.com',
+    EXPO_PUBLIC_APPLE_SERVICE_ID: 'org.yuyoufang.signin', EXPO_PUBLIC_APPLE_REDIRECT_URI: 'https://app.example.invalid/auth/apple' };
+  const androidConfig = resolveConfig(android);
+  assert.equal(androidConfig.ios.entitlements?.['com.apple.developer.applesignin'], undefined);
+  assert.throws(() => resolveConfig({ ...android, EXPO_PUBLIC_APPLE_REDIRECT_URI: 'http://localhost/auth/apple' }), /Apple Android redirect/);
+  assert.throws(() => resolveConfig({ ...android, EXPO_PUBLIC_APPLE_SERVICE_ID: undefined }), /Apple Services ID/);
+  assert.throws(() => resolveConfig({ EXPO_PUBLIC_AUTH_PROVIDERS: 'unknown' }), /authentication provider/);
 });
 
 test("iOS keeps the Firebase public configuration and HTTPS endpoint gates", () => {
