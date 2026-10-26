@@ -3940,3 +3940,13 @@
 - 按使用者指定，B（CherylNg-2526）覆核並合併 #328／#329，master 程式版 `330a905`。局部修正準備單新勾選後的舊保存提示，以及 Web 縮放下聊天 prepend 錨點；沿用兩 PR 的定向／RN Web 證據，不重跑功能測試或將既有型別錯誤寫成通過。協作者 Agent PR 未修改。
 - 只產生必要發布包。首 Web 匯出在 sandbox 編譯後 mkdir EPERM，保留失敗；同一輸入取得所需檔案權限後 Web／Android 匯出成功。Web 包 4,744,027 bytes 經 IAP 傳至原 VM，候選 hash 及原版守衛通過後只更新 Web `27a5c90`；公開 index hash／health 通過，API／worker 維持 `663125d`，保留 `e813692` 及 0600 配置供回退。
 - Android 31 檔、13,730,604 bytes，沿既有直接 TLS 上傳一次成功；preview OTA group `4f3f95a3-a779-4363-904c-224302098bf1`／update `01a176d6-3f6b-789c-b601-04e882beec80` 已發布，與 APK v4 runtime 相容，毋須重裝。零模型／通知／資料遷移／配額改動；沒有重驗設備或續期主機。原失敗、精確版本、界線及回退附於[既有交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)的 `closeout20261026`。
+
+<a id="log-20261026-original-nonfrontend-skills"></a>
+## LOG-20261026-ORIGINAL-NONFRONTEND-SKILLS
+
+- 按使用者要求，先以 A 帳號精準撤回 #331，#332 合併為 `dac2914`；回退的索引樹與 #331 第一父提交完全一致。之後才在新分支重新安裝，不沿用 dot 的適配方法或驗證結果，沒有修改產品、AGENTS 規則、前端實驗分支或協作者 Agent PR。
+- 官方 Codex 插件管理已安裝並啟用 Superpowers 7.0.1 及 Codex Security 0.1.32；官方 skill-installer 安裝 Anthropic improver 及原版安全編碼庫至專案。主模型只為 Anthropic 作 Codex 名稱／工具／路徑相容，保留完整評分、模板、流程，並包裝原 session 修訂命令。精確來源、差異與 hash 見 [安裝紀錄](docs/SKILLS_INSTALLED.md)／[manifest](docs/SKILLS_INSTALLED.json)。
+- 新核原作者 Superpowers 84 檔及安全編碼庫 13 檔完全一致；Security 分發 142 檔均存在，140 檔逐檔一致，兩項官方目錄 metadata 差異如實記錄，未改插件。Codex app-server 已發現兩插件各 15 項技能及 3 個 repo 技能，無解析錯誤；原版 Windows Security MCP 握手／工具清單通過，取得 47 個工具。沒有業務工具呼叫、掃描、額外模型、帳戶連接、權限變更或產品測試。
+- 依賴核對中 Git Bash 在受限 shell 被 Windows sandbox 拒絕，相同命令於獲授權 shell 成功，沒有更改政策。首次安裝紀錄生成因 Python 預設 GBK 讀 UTF-8 JSON 失敗；改為明確 UTF-8 後生成成功，未影響原版來源或重跑已通過的 runtime 核對。
+- 上游 regex 範例與本 host 子代理參數差異另列，未暗改原文。已驗安裝、完整資源、發現及 MCP 啟動；完整掃描、視覺輔助器及子代理工作流未執行，當前桌面舊上下文刷新亦不冒稱已驗。
+- 主模型完成相容 diff、完整資源、相對連結、24 個專案檔案 hash 及修改範圍核對；相容修改與紀錄的 `git diff --check` 通過。全包另有五處上游原版行尾空白，與來源一致並原樣保留，不將全包 whitespace 檢查宣稱為通過。
