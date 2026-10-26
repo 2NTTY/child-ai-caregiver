@@ -55,7 +55,7 @@ export interface FirestoreAuthorityPreparedChild extends FirestoreAuthorityPrepa
 export interface FirestoreAuthorityTransaction {
   readonly transaction: Transaction;
   readonly actorUserId: string;
-  readonly sharedAccess?: Readonly<{ spaceId: string; basis: Readonly<SharedAccessBasis>; module: string; role: 'owner' | 'caregiver' | 'viewer'; mode: 'read' | 'write' }>;
+  readonly sharedAccess?: Readonly<{ spaceId: string; basis: Readonly<SharedAccessBasis>; module: string; modules?: readonly string[]; role: 'owner' | 'caregiver' | 'viewer'; mode: 'read' | 'write' }>;
   readonly scope: Readonly<WorkRecoveryScope>;
   readonly authorizationVersion: string;
   readonly childAccessVersion: string;

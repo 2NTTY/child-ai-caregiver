@@ -4020,3 +4020,12 @@
 - family 讀取與修訂分頁排除原私人候選；私人摘要不共享，私聊 ID 只向來源帳戶披露。共享成員可以保留原私聊來源描述修改已確認事實，不能用新私聊 ID 調閱別人的內容。手動新增須明確確認，不把私人 candidate 自動公開；署名證據保留於密文，公共投影移除，還原仍拒絕無證據的非 owner 作者。
 - 一條連貫檢查涵蓋正式 client／HTTP、新增／修改、原操作重試、終態、歷史、來源隱私、刪除／撤權及還原證據；兩條舊記憶／摘要相容檢查通過，限定型別與 diff 通過。初次預期 red 為共享 store 未接通；原失敗保留。同一 Sol 唯讀 review 未見具體 blocker。[證據](artifacts/verification/P4_SHARED_MEMORY_20261027.json)。
 - 只定義兩個 shared-history 索引，未部署；家庭／班級選擇 UI、跨成員同步、文件／附件與背景仍待接線，FAMILY-A／P4 未完成。先前原生備份還原待驗及基線恢復斷言失敗不改寫。
+
+<a id="log-20261027-p4-shared-documents"></a>
+## LOG-20261027-P4-SHARED-DOCUMENTS
+
+- 基線 `70b2899`／#341，分支 `codex/p4-shared-documents`。沿用既有文件、固定版快照、分段讀取、PDF、操作收據及報告 worker；共用 Web／Android client 與正式 HTTP 接空間選擇。文件仍保存在來源原件，實際操作者另存密文署名證據，不新增套件、雲端或 D PR 修改。
+- 已存摘錄可以閱讀；新整理只取獲共享模組。背景報告持久保留發起者／空間／授權 basis，撤權或版本過期停止，不改用 owner 權限。來源失效遮蔽正文但保留操作狀態；viewer 不可改，舊本人資料與恢復 owner-only 檢查保留。
+- 兩條新連貫流程及兩條舊本人文件檢查通過，限定型別與差異核對通過。沿 requesting-code-review 使用同一 Sol 唯讀覆核，發現未分享新版來源可藉 patch 重綁洩露；先以新增斷言重現，再限制內部核對只回存已披露且仍匹配的摘錄，覆核未見剩餘 blocker。沒有全量或模型驗收。[證據](artifacts/verification/P4_SHARED_DOCUMENTS_20261027.json)。
+- 其他原失敗保留：測試方法 get／describe／revise 不符、替身缺 reference.id，以及未共享 profile 使報告無法完成；前兩項修測試接點，後者保存未知概況不補讀私人資料。正向新來源檢查另修正既有時間未知字尾斷言及 literal 型別，沒有放寬產品授權。
+- 未部署；家庭／班級畫面、附件、其他背景與共享同步繼續接線。FAMILY-A／P4 尚未完成，真 Firestore 競爭／還原、P3 未驗與 D 的責任保持原狀。

@@ -1145,6 +1145,8 @@ FAMILY-A 首段已有內部 `createFirestoreSharingStore`；空間／成員管�
 
 記憶共享讀取只投影 `visibility=family` 的事實／主題及相同範圍修訂，不含先前私人候選。私聊原文／訊息 ID 及私人摘要不因共享模組而披露；來源存活及版本的內部核查只返回有效性。新增手動共享事實的 online 路徑為 `memory/facts/confirmed`，須 `intendedVisibility=family`、`confirm=true`、`confirmShared=true`，復用既有 confirmed-fact 提交方法；未確認的個人 candidate 路徑不自動轉為這個操作。模型工具仍沿既有 Server 確認綁定，不能藉新增 HTTP 路徑自創同意。
 
+文件選擇沿相同 `spaceId`，保留既有 documents 路由、`opId`、版本及 `authorityVersion`；共享 authorityVersion 同時綁空間／成員／分享 basis。documents 授權已保存快照及其中摘錄，並非所有原始來源的讀權。建立／刷新以已共享來源模組取材，未知或未選資料不補造；固定版讀取及 PDF 仍核引用的目前有效性。未選來源模組的內部核對只可復用已保存且仍相符的摘錄，不把未披露新版提供給 patch／刷新重新綁定。共享背景整理須保留原操作者及取材授權，不切成 owner 身份擴大取材。
+
 同一交易核對操作者及來源，保留原資源 ID／儲存位置，作者／確認者記實際操作者；原擁有人收到領域變更，操作者收到不含別人私人資料的共享變更。收據仍屬操作者，保存來源內容指標；重試及查回沿目前共享權限／刪除屏障讀取，撤權後保留成功身份而遮蔽結果。共享交易不可讀寫來源擁有人的私人工作、聊天或帳戶設定。家庭入口及其餘模組未接通前，不宣稱整包完成。
 
 管理變更使用 `operationId`／`expectedVersion`，收據與變更一起提交；原操作查回仍重核目前空間存取，退出／解散只留最小終態結果。轉交僅接收成員本人可接受。退出或被移除後，新邀請形成新成員世代，不復活原分享；舊未使用邀請不能繞過後來撤權。帳戶刪除前若仍管理活動空間，回 `space_transfer_or_dissolve_required`，由同一產品流程解決。

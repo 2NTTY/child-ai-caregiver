@@ -25,7 +25,7 @@ import { canonical } from './firestore-session-codec.ts';
 import { openRecoveryEnvelope, sealRecoveryLocator, type FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
 import { workRecoveryAad, workRecoverySchemas, workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts';
-import { firestoreFamilyDocumentSchemas as documents } from './firestore-family-documents.ts';
+import { firestoreFamilyDocumentSchemas as documents, validDocumentOperationAttribution } from './firestore-family-documents.ts';
 import { firestoreFamilyDocumentSnapshotSchemas as snapshots } from './firestore-family-document-snapshots.ts';
 import { firestorePhotoSchemas as photos, photoObjectScope } from './firestore-photos.ts';
 import { firestoreKnowledgeSchemas as knowledge } from './firestore-knowledge.ts';
@@ -276,8 +276,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     } else if (kind === 'family-document') {
       const row = parse(documents.metadata, raw); requireBinding(row.id === id && row.ownerUserId === scope.ownerUserId && row.childId === scope.childId); versionMatches(row.version);
     } else if (kind === 'document-operation') {
-      const row = parse(documents.operation, raw); requireBinding(row.ownerUserId === scope.ownerUserId && scope.childId === NIL && row.storageEpoch === scope.storageEpoch
-        && row.document.ownerUserId === row.ownerUserId && row.document.childId === row.childId); idEquals(id, [row.ownerUserId, row.operationId]); versionMatches(1);
+      const row = parse(documents.operation, raw); requireBinding(validDocumentOperationAttribution(row, scope));
+      idEquals(id, [row.ownerUserId, row.operationId]); versionMatches(1);
     } else if (kind === 'document-snapshot') {
       const row = parse(snapshots.manifest, raw); requireBinding(row.snapshotId === id && row.childId === scope.childId); versionMatches(row.snapshotVersion);
     } else if (kind === 'document-snapshot-chunk') { const row = parse(snapshots.chunk, raw), parts = arrayId(id); requireBinding(parts.length === 2 && uuid.safeParse(parts[0]).success && parts[1] === row.index && Buffer.byteLength(row.text) <= 48 * 1024); }
