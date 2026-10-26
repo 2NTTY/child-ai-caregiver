@@ -49,7 +49,7 @@ export function onlineRoute(command: OnlineCommand): OnlineRoute {
       scope: "child", targetId: child[1].toLowerCase(), roles: section === "delete" ? ["owner"] : section === "messages" ? READ_ROLES : WRITE_ROLES,
       privateResult: section === "messages", deleted: section === "delete" || section.endsWith("/delete") };
   }
-  const memory = new RegExp(`^/api/children/(${uuid})/memory/(?:facts(?:/${uuid}/(?:confirm|revise|deactivate|delete))?|topics(?:/${uuid}/(?:change|reopen|delete))?)$`, "i").exec(path);
+  const memory = new RegExp(`^/api/children/(${uuid})/memory/(?:facts(?:/confirmed|/${uuid}/(?:confirm|revise|deactivate|delete))?|topics(?:/${uuid}/(?:change|reopen|delete))?)$`, "i").exec(path);
   if (memory) return { kind: "memory", scope: "child", targetId: memory[1].toLowerCase(), roles: READ_ROLES,
     privateResult: true, deleted: path.endsWith("/delete") };
   const sharedInput = new RegExp("^/api/children/("+uuid+")/inputs(?:/"+uuid+"/(?:confirm|delete|manage))?$","i").exec(path);

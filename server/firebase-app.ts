@@ -81,7 +81,7 @@ export interface FirebaseRequestHandlerOptions {
   chat?: ChatStore;
   care?: FirestoreCareStore;
   summary?: FirestoreCareSummary;
-  memory?: MemoryStore;
+  memory?: MemoryStore & { forSharedSpace?(spaceId: string): MemoryStore };
   sources?: SharedInputStore;
   concerns?: FirestoreConcernStore;
   growth?: FirestoreGrowthStore;
@@ -351,7 +351,11 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
-        const response = await handleMemoryRequest(request, userId, options.memory);
+        const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
+        if (url.searchParams.getAll('spaceId').length > 1 || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
+        const memory = spaceId ? options.memory.forSharedSpace?.(spaceId) : options.memory;
+        if (!memory) throw new RequestError('shared_domain_unavailable', 409);
+        const response = await handleMemoryRequest(request, userId, memory);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }

@@ -5,7 +5,7 @@ import { firestorePreparationSchema } from './firestore-care-summary.ts';
 import { z } from 'zod';
 import { firestoreCareStorageSchema as firestoreCareSchema, firestoreProfileStorageSchema as firestoreProfileSchema, firestoreCareRecoverySchemas } from './firestore-care.ts';
 import { validSharedAttribution } from './shared-write-attribution.ts';
-import { firestoreFactSchema, firestoreTopicSchema, firestoreMemoryRecoverySchemas } from './firestore-memory.ts';
+import { firestoreFactStorageSchema as firestoreFactSchema, firestoreTopicStorageSchema as firestoreTopicSchema, firestoreMemoryRecoverySchemas, validMemoryFactAttribution } from './firestore-memory.ts';
 import { firestoreChatMessageSchema, firestoreChatRecoverySchemas } from './firestore-chat.ts';
 import { firestoreContextRecoverySchema } from './firestore-context-basis.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
@@ -123,13 +123,13 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   }
   if (kind === 'memory-fact' || kind === 'memory-fact-revision') {
     const value = firestoreFactSchema.parse(raw), metadata = entity(value, kind.endsWith('-revision'));
-    requireValue(value.createdBy === scope.ownerUserId && (value.confirmedBy === null || value.confirmedBy === scope.ownerUserId));
+    requireValue(validMemoryFactAttribution(value, scope));
     return { ...metadata, live: true, visibility: value.visibility, status: value.status, createdAt: value.createdAt,
       validUntil: value.validUntil === null ? FAR_FUTURE : new Date(value.validUntil).toISOString() };
   }
   if (kind === 'memory-topic' || kind === 'memory-topic-revision') {
     const value = firestoreTopicSchema.parse(raw), metadata = entity(value, kind.endsWith('-revision'));
-    requireValue(value.updatedBy === scope.ownerUserId);
+    requireValue(validSharedAttribution(value.changedViaShare, scope, value.id, value.version, value.updatedBy));
     return { ...metadata, live: true, visibility: value.visibility, status: value.status, validUntil: FAR_FUTURE };
   }
   if (kind === 'memory-key') {

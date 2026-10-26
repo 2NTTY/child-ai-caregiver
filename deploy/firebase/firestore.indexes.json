@@ -3680,6 +3680,74 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "yuban_authority_memory_fact_revisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entityId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "visibility",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entityVersion",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_memory_topic_revisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "workspaceTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "epochTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "userTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "childTag",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entityId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "visibility",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entityVersion",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

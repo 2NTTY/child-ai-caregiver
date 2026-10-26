@@ -19,6 +19,9 @@ import { createOnlineTransport } from '../src/client/online-transport.ts';
 import type { FirebaseAuthPort } from '../server/firebase-auth.ts';
 import { createCareApi } from '../src/client/care-api.ts';
 import { createTaskApi } from '../src/client/task-api.ts';
+import { createMemoryApi } from '../src/client/memory-api.ts';
+import { createFirestoreMemoryStore, firestoreFactStorageSchema } from '../server/firestore-memory.ts';
+import { createFirestoreChatStore } from '../server/firestore-chat.ts';
 import { createFirestoreTaskWorker } from '../server/firestore-task-worker.ts';
 import { replayContentErasures } from '../server/firestore-restore-content-erasure.ts';
 import type { FirebaseErasureIntent } from '../server/firebase-erasure-journal.ts';
@@ -65,6 +68,78 @@ async function fixture() {
   return { fake, options, authority, sharing, child, space, control, documents };
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
+
+test('shared memory keeps private candidates and source messages private across reads, writes, receipts and history', async () => {
+  const f = await fixture(), childId = f.child.child.id;
+  const care = createFirestoreCareStore(f.options), chat = createFirestoreChatStore(f.options);
+  const memory = createFirestoreMemoryStore({ ...f.options, care, chat });
+  const online = createFirestoreOnlineStore({ ...f.options, mutations: [chat.mutation, care.mutation, memory.mutation] });
+  async function own(path: string, payload: Record<string, unknown>) {
+    const context = await online.context('parent', { path, payload });
+    return online.submit('parent', { path, payload, operation: { ...context, opId: randomUUID(), deviceId: randomUUID() } });
+  }
+  const message = (await own(`/api/children/${childId}/messages`, { text: 'Private original text' })).result as any;
+  const input = { intendedVisibility: 'family' as const, values: { key: 'Food preference', content: 'Original shared fact', validUntil: null,
+    source: { kind: 'private_chat' as const, description: 'Confirmed statement', messageId: message.message.id } } };
+  const candidate = await memory.createFact('parent', childId, input); assert.ok(candidate);
+  await memory.confirmFact('parent', childId, candidate.id, { expectedVersion: 1, confirm: true, confirmShared: true });
+  const hidden = await memory.createFact('parent', childId, { ...input, values: { ...input.values, key: 'Private candidate' } }); assert.ok(hidden);
+  await f.sharing.share('parent', { spaceId: f.space.id, childId, modules: ['memory'], expectedVersion: f.space.version, operationId: randomUUID() });
+  const selected = memory.forSharedSpace(f.space.id);
+  const facts = await selected.facts('carer', childId); assert.ok(facts);
+  assert.equal(facts.items.length, 1); assert.equal('messageId' in facts.items[0].source, false);
+  assert.equal((await selected.history('carer', childId, 'facts', candidate.id))?.revisions.length, 1);
+  await assert.rejects(selected.reviseFact('carer', childId, candidate.id, { ...input, values: input.values, expectedVersion: 2, confirm: true, confirmShared: true, reason: 'Direct route' }), code('sharing_receipt_required'));
+  const session = { user: { id: 'carer' } };
+  const auth = { async handler() { return new Response(null, { status: 404 }); },
+    async getSession(options: { returnHeaders?: boolean }) { return options.returnHeaders ? { response: session, headers: new Headers() } : session; },
+    async assertRecentReauthentication() { return session; }, fromNodeHeaders() { return new Headers(); } } as FirebaseAuthPort;
+  const handler = createFirebaseRequestHandler({ authority: f.authority, auth, publicOrigin: 'https://app.example.test', mailConfigured: false, online, memory });
+  const submissions: any[] = [];
+  const fetcher: typeof fetch = async (input, init) => { const headers = new Headers(init?.headers); headers.set('Origin', 'https://app.example.test');
+    if (String(input).endsWith('/online/submit')) submissions.push(JSON.parse(String(init?.body)));
+    return handler(new Request(input, { ...init, headers })); };
+  const client = createMemoryApi('https://app.example.test', fetcher, { spaceId: f.space.id }), signal = new AbortController().signal;
+  const revised = await client.reviseFact(childId, candidate.id, { expectedVersion: 2, confirm: true, confirmShared: true, reason: 'Shared correction',
+    values: { ...input.values, content: 'Corrected shared fact', source: facts.items[0].source } }, signal, 'carer');
+  assert.equal(revised.confirmedBy, 'carer'); assert.equal('messageId' in revised.source, false);
+  assert.equal('confirmedViaShare' in revised, false);
+  assert.equal((await memory.getFact('parent', childId, candidate.id))?.source.kind, 'private_chat');
+  assert.equal((await client.factHistory(childId, candidate.id, null, signal)).revisions.length, 2);
+  const manual = await client.createConfirmedFact!(childId, { intendedVisibility: 'family', confirm: true, confirmShared: true,
+    values: { key: 'Shared manual', content: 'Explicit shared statement', validUntil: null, source: { kind: 'manual', description: 'Carer statement' } } }, signal, 'carer');
+  assert.equal(manual.createdBy, 'carer');
+  const originalSubmission = submissions.at(-1);
+  assert.deepEqual((await online.lookup('carer', originalSubmission.operation.opId) as any).result, { fact: manual });
+  assert.deepEqual((await online.submit('carer', originalSubmission)).result, { fact: manual });
+  // A later owner correction may introduce a private source, even when a caregiver created the fact.
+  await memory.reviseFact('parent', childId, manual.id, { expectedVersion: 1, confirm: true, confirmShared: true, reason: 'Owner source correction',
+    values: { ...input.values, key: manual.key, content: manual.content } });
+  assert.equal('messageId' in (await selected.getFact('carer', childId, manual.id))!.source, false);
+  const topic = await client.createTopic(childId, { title: 'Shared follow-up', note: '', visibility: 'family', confirmShared: true }, signal, 'carer');
+  const done = await client.changeTopic(childId, topic.id, { expectedVersion: 1, status: 'resolved', note: '', resumeAfter: null }, signal, 'carer');
+  const doneSubmission = submissions.at(-1);
+  assert.equal(done.mayAsk, false); assert.equal(done.updatedBy, 'carer');
+  assert.deepEqual((await online.lookup('carer', doneSubmission.operation.opId) as any).result, { topic: done });
+  assert.equal((await client.summary(childId, signal)), null);
+  assert.equal((await client.facts(childId, null, signal)).items.some(fact => fact.id === hidden.id), false);
+  const codec = createFirestoreRestoreCodec(f.options);
+  for (const row of f.documents().filter(row => /_memory_(facts|fact_revisions|topics|topic_revisions)\//u.test(row.path))) codec.decode(row);
+  const data = new FirestoreDomainData(f.options);
+  const original = f.documents().find(row => row.path === data.ref('memory_facts', 'memory-fact', manual.id).path)!;
+  const decoded = codec.decode(original), unsafe = { ...decoded.value as any }; delete unsafe.createdViaShare;
+  assert.throws(() => codec.decode({ ...original, data: { ...original.data,
+    ...data.seal('memory-fact', manual.id, f.child.scope, firestoreFactStorageSchema, unsafe, unsafe.version) } }), code('restore_binding'));
+  await client.deleteFact(childId, manual.id, { expectedVersion: 2, confirmDelete: true }, signal, 'carer');
+  assert.equal((await online.lookup('carer', originalSubmission.operation.opId) as any).result, null);
+  assert.equal(await selected.history('carer', childId, 'facts', manual.id), null);
+  const current = await f.sharing.get('parent', f.space.id);
+  await f.sharing.unshare('parent', { spaceId: f.space.id, childId, expectedVersion: current.version, operationId: randomUUID() });
+  assert.equal((await online.lookup('carer', doneSubmission.operation.opId) as any).result, null);
+  assert.equal((await online.submit('carer', doneSubmission)).result, null);
+  await assert.rejects(client.facts(childId, null, signal), { status: 403 });
+  assert.equal((await memory.getFact('parent', childId, candidate.id))?.version, 3);
+});
 
 test('shared tasks keep one original, attributed revisions, owner reminder authority and revocable receipts', async () => {
   const f = await fixture(), childId = f.child.child.id, shared = { spaceId: f.space.id };

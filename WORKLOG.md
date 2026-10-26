@@ -4012,3 +4012,11 @@
 - 一條共享流程涵蓋正式 client／HTTP、角色、原件、版本、收據、終態及撤權；三條受影響的既有本人／提醒檢查通過，限定型別與 diff 核對通過。同一 Sol 完成唯讀 review，未見剩餘具體 blocker。只補必要檢查，不跑全量。[證據](artifacts/verification/P4_SHARED_TASKS_20261027.json)。
 - 失敗保留：新測試先因共享 task 路由尚未接通而失敗；接線後測試替身缺 `<`／`<=` 比較，已補最小查詢語義；HTTP 漏匯入 z 已修正。舊本人檢查另找出 optional proof 以 undefined 傳入既有 canonical JSON 而無法讀回，改為沒有證據便不加入欄位，同三項檢查通過。
 - 下一步接記憶、文件／附件、背景與共享同步。多接收者指派、家庭／班級公開畫面、真雲端競爭及正式恢復仍未交付，FAMILY-A／P4 不作完成；P3、D 工作及原恢復失敗不改寫。
+
+<a id="log-20261027-p4-shared-memory"></a>
+## LOG-20261027-P4-SHARED-MEMORY
+
+- 基線 `7393d8d`／#340，分支 `codex/p4-shared-memory`。復用原記憶服務、權限、confirmed-fact、online 收據、正式 HTTP 及共用 client；共享原事實／主題，沒有新權威、套件、模型、雲端操作或 D PR 改動。
+- family 讀取與修訂分頁排除原私人候選；私人摘要不共享，私聊 ID 只向來源帳戶披露。共享成員可以保留原私聊來源描述修改已確認事實，不能用新私聊 ID 調閱別人的內容。手動新增須明確確認，不把私人 candidate 自動公開；署名證據保留於密文，公共投影移除，還原仍拒絕無證據的非 owner 作者。
+- 一條連貫檢查涵蓋正式 client／HTTP、新增／修改、原操作重試、終態、歷史、來源隱私、刪除／撤權及還原證據；兩條舊記憶／摘要相容檢查通過，限定型別與 diff 通過。初次預期 red 為共享 store 未接通；原失敗保留。同一 Sol 唯讀 review 未見具體 blocker。[證據](artifacts/verification/P4_SHARED_MEMORY_20261027.json)。
+- 只定義兩個 shared-history 索引，未部署；家庭／班級選擇 UI、跨成員同步、文件／附件與背景仍待接線，FAMILY-A／P4 未完成。先前原生備份還原待驗及基線恢復斷言失敗不改寫。
