@@ -85,6 +85,52 @@ async function fixture() {
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
 
+test('shared change cursors observe other members without exposing private history and reset on new authority', async () => {
+  const f=await fixture(),childId=f.child.child.id,care=createFirestoreCareStore(f.options);
+  let actor='viewer';
+  await f.sharing.share('parent',{spaceId:f.space.id,childId,modules:['care','documents','memory'],expectedVersion:f.space.version,operationId:randomUUID()});
+  const online=createFirestoreOnlineStore({...f.options,mutations:[care.mutation]});
+  const auth={async getSession(options:{returnHeaders?:boolean}){const session={user:{id:actor,email:actor+'@example.test'}};
+    return options.returnHeaders?{response:session,headers:new Headers()}:session;},async handler(){return new Response(null,{status:404});},
+    async assertRecentReauthentication(){return {user:{id:actor,email:actor+'@example.test'}};},fromNodeHeaders(){return new Headers();}} as FirebaseAuthPort;
+  const handler=createFirebaseRequestHandler({authority:f.authority,auth,publicOrigin:'https://app.example.test',mailConfigured:false,online});
+  const selection={spaceId:f.space.id,childId,module:'care'};
+  const read=async(cursor?:string,module='care')=>handler(new Request('https://app.example.test/api/online/shared-changes?'+new URLSearchParams({...selection,module,...(cursor?{cursor}:{})}),
+    {headers:{'x-expected-user-id':actor}}));
+  const first=await read();assert.equal(first.status,200);
+  let page=await first.json();assert.equal(page.changed,true);assert.equal(page.hasMore,false);
+  assert.deepEqual(Object.keys(page).sort(),['changed','childId','cursor','hasMore','module','spaceId']);
+  const initialCursor=page.cursor;
+  const documentCursor=(await(await read(undefined,'documents')).json()).cursor;
+  const memoryCursor=(await(await read(undefined,'memory')).json()).cursor;
+  const save=async(userId:string,text:string,sharing?:{spaceId:string})=>{
+    const command={path:'/api/children/'+childId+'/records',payload:{text},...(sharing?{sharing}:{})},context=await online.context(userId,command);
+    return online.submit(userId,{...command,...(sharing?{sharing:{...sharing,expectedBasis:context.sharingBasis!}}:{}),
+      operation:{workspaceId:context.workspaceId,storageEpoch:context.storageEpoch,opId:randomUUID(),deviceId:randomUUID()}});
+  };
+  await save('parent','Source record');
+  assert.equal((await(await read(documentCursor,'documents')).json()).changed,true,'document source changes invalidate an already read snapshot');
+  assert.equal((await(await read(memoryCursor,'memory')).json()).changed,true,'source record changes invalidate dependent memory');
+  page=await (await read(page.cursor)).json();assert.equal(page.changed,true,'source owner updates invalidate a viewer without changing the viewer workspace');
+  await save('carer','Shared carer record',{spaceId:f.space.id});
+  page=await (await read(page.cursor)).json();assert.equal(page.changed,true,'another member uses the same source feed');
+  await f.authority.runTransaction('parent',childId,async b=>(await b.prepareChange(randomUUID(),'chat',false)).commit());
+  page=await (await read(page.cursor)).json();assert.equal(page.changed,false,'an unshared private chat change is not a care event');
+  const other=await f.authority.createChild({userId:'parent',displayName:'Other private child',operationId:randomUUID()});
+  await f.authority.runTransaction('parent',other.child.id,async b=>(await b.prepareChange(randomUUID(),'care',false)).commit());
+  page=await (await read(page.cursor)).json();assert.equal(page.changed,false,'another child is excluded at query time');
+  for(let i=0;i<101;i++)await f.authority.runTransaction('parent',childId,async b=>(await b.prepareChange(randomUUID(),'care',false)).commit());
+  page=await (await read(page.cursor)).json();assert.equal(page.changed,true);assert.equal(page.hasMore,true);
+  page=await (await read(page.cursor)).json();assert.equal(page.changed,true);assert.equal(page.hasMore,false);
+  page=await (await read(page.cursor)).json();assert.equal(page.changed,false);
+  actor='carer';assert.equal((await read(initialCursor)).status,400,'another actor cannot reuse the cursor');actor='viewer';
+  let space=await f.sharing.get('parent',f.space.id);
+  space=await f.sharing.unshare('parent',{spaceId:space.id,childId,expectedVersion:space.version,operationId:randomUUID()});
+  assert.equal((await read(page.cursor)).status,403);
+  await f.sharing.share('parent',{spaceId:space.id,childId,modules:['care'],expectedVersion:space.version,operationId:randomUUID()});
+  page=await (await read(page.cursor)).json();assert.equal(page.changed,true,'a new sharing basis resets the old cursor');assert.equal(page.hasMore,false);
+});
+
 test('shared photo deletion keeps source quotas and completes its journal after revocation', async () => {
   const f=await fixture(), childId=f.child.child.id, data=new FirestoreDomainData(f.options);
   const scope=await f.authority.runTransaction('parent',childId,async b=>b.scope);

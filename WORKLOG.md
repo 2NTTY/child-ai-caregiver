@@ -4059,3 +4059,12 @@
 - 一條正式 HTTP／client 合成流程兼核版本、journal 失敗、撤權、原操作、配額及還原後的 cleanup consumer；共用 client 一條恢復檢查、舊本人照片／清理／還原三項及局部型別通過。獨立 Sol review 未報 blocker，主模型覆核關鍵 diff。[證據](artifacts/verification/P4_SHARED_PHOTO_DELETION_20261027.json)。
 - 保留原失敗：缺共享 route、測試 record wrapper、依賴記錄 module guard、nullable journal 型別與缺內容獨立日誌的 restore 拒絕；修正接點／測試設定，不移除權限或日誌要求。
 - 零雲端、模型、通知或部署；共享新增／聊天關聯、其餘背景、同步及家庭畫面仍待接，FAMILY-A／P4 未完成，P3／P5 及 D PR 保持。
+
+
+<a id="log-20261027-p4-shared-sync"></a>
+### LOG-20261027-P4-SHARED-SYNC
+
+- 基線 `d594f1b`，分支 `codex/p4-shared-sync`。新增選定空間／孩子／模組的共用刷新接點；復用來源 changes、現有授權與前景輪詢，回覆只有 opaque cursor／失效訊號，不回來源私人活動歷史。
+- 首讀及新共享 basis 刷新當前資料，續讀每頁至多 100 筆，其他孩子在查詢時排除；撤權拒絕，另一身份不能借用游標。共同 observer／hook 同步接線，無 selector 保留本人舊流程；家庭畫面真實 selector 待 FAMILY-B。
+- 正式 HTTP 一條流程、client 新舊 observer 兩項及受影響型別通過。獨立 review 找到 documents／memory 跨來源失效漏刷，定向重現後補依賴訊號，補驗與增量覆核通過；原 404／client 讀錯入口 red 保留。[證據](artifacts/verification/P4_SHARED_SYNC_20261027.json)。
+- 新增一項 changes 子女複合索引定義，尚未建雲端索引或部署；零模型、通知、設備及付費操作。FAMILY-A／B、P3／P5 及 D PR 的未完成界線保持。
