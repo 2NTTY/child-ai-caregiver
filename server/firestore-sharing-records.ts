@@ -4,13 +4,13 @@ import { FirestoreDomainData, firestoreDomainHash, domainReject } from './firest
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
 export { sharedAccessBasisSchema } from '../src/shared/sharing.ts';
+import { sharedModuleSchema } from '../src/shared/sharing.ts';
+export { sharedModuleSchema, type SharedModule } from '../src/shared/sharing.ts';
 
 const nil = '00000000-0000-0000-0000-000000000000';
 const user = z.string().min(1).max(256), version = z.number().int().positive().max(2147483647);
 const at = z.iso.datetime({ offset: true });
 export const SHARING_SCOPE: WorkRecoveryScope = Object.freeze({ ownerUserId: 'system:sharing', workspaceId: nil, childId: nil, storageEpoch: nil });
-export const sharedModuleSchema = z.enum(['profile', 'care', 'memory', 'tasks', 'documents', 'growth', 'concerns', 'attachments']);
-export type SharedModule = z.infer<typeof sharedModuleSchema>;
 export const sharedSpaceSchema = z.object({ id: z.uuid(), kind: z.enum(['family', 'teachers']), name: z.string().trim().min(1).max(160),
   version, state: z.enum(['active', 'dissolved']), managerUserId: user, managerGeneration: z.uuid(),
   storageIdentity: z.object({ ownerUserId: user, workspaceId: z.uuid() }).strict(),

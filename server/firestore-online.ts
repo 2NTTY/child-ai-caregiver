@@ -1,4 +1,5 @@
 import type { NativeRequestContext } from './native-push-context.ts';
+import type { SharedChangesQuery, SharedChangesPage } from '../src/shared/sharing.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationPreferences } from '../src/shared/family.ts';
@@ -47,6 +48,7 @@ export interface FirestoreOnlineStore {
   submit(userId: string, submission: OnlineSubmission, context?: NativeRequestContext): Promise<OnlineReceipt>;
   lookup(userId: string, opId: string): Promise<OnlineReceipt | { state: 'unconfirmed' }>;
   changes(userId: string, workspaceId: string, epoch: string, cursor: string): Promise<OnlineChanges>;
+  sharedChanges(userId:string,query:SharedChangesQuery):Promise<SharedChangesPage>;
   readonly children: FirestoreChildrenQuery;
   readonly tasks: FirestoreTasksQuery;
   /** Shared transaction primitive for online commands and authorized Agent operations. */
@@ -374,6 +376,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
         return receipt.receipt;
       });
     },
+    sharedChanges: sharing.changes,
     async changes(userId, workspaceId, epoch, rawCursor) {
       domainParse(uuid, workspaceId); domainParse(uuid, epoch); const cursor = domainParse(decimal, rawCursor);
       return authority.runTransaction(userId, null, async binding => {

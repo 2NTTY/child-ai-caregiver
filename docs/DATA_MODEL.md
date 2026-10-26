@@ -775,6 +775,8 @@ iOS 綁定的密文增加 `apns: {topic, environment}`，平台／provider 由�
 
 共享照片刪除沿相同來源／操作者分離：來源交易同時標 deleting、保存接受版本署名、移轉原 active 配額至 cleanup、建立原 photo_cleanup 及操作者收據。cleanup 的 journal 可暫為 null，原 consumer 先補獨立日誌並核實，再完成 tombstone 及物件清理；清理確認前不釋放 cleanup 配額。關聯照護記錄僅由已保存 photo.recordId 取得並失效，不授予 attachments 呼叫者其他記錄讀寫權。照片與關聯記錄的日誌用不同穩定來源操作 ID，保留各自清理義務。還原可由獨立日誌補本地遺失的 proof，保留原 scope／操作者署名及實體清理；舊世代照片刪除收據保留身份並遮蔽結果。缺獨立日誌仍不得開放還原資料。
 
+共享同步不新增業務資料副本或常駐服務。復用 changes 的加密 projection，補 workspaceTag／epochTag／userTag／childTag／sortKey 複合索引。cursor 只回傳客戶端，不寫 Firestore；沿原加密 envelope 綁目前操作者根 scope、空間／孩子／模組，內含來源授權 fence 及掃描位置。來源／操作者授權、世代或共享 basis 改變後重新取當前資料，不能沿舊游標繼續披露歷史。
+
 檔案原件保存與可閱讀性分開；正文不進聊天document。聊天只引用原件ID／版本／hash。未知上載只查原地址，禁止換ID重送；刪除立即遮蔽metadata，先記錄獨立 `file-delete` intent，再清理固定generation。孩子／帳戶刪除、配對備份、匯出及隔離還原須同樣承接該義務；恢復時先重放獨立刪除日誌，再綁定新儲存世代；已刪附件只保留無正文的清理義務。未結清上傳保持unknown並保留舊物件查核／清理義務，不冒認可讀。配對manifest可選 `chatFiles` 以相容舊備份；新備份固定generation及hash並保存獨立附件副本。
 
 

@@ -2,7 +2,8 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import type { Transaction } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { createFirestoreAuthority, type FirestoreAuthorityOptions, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
-import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash } from './firestore-domain-data.ts';
+import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreChangeSchema } from './firestore-domain-data.ts';
+import { sharedChangesQuerySchema, type SharedChangesQuery, type SharedChangesPage } from '../src/shared/sharing.ts';
 import { SHARING_SCOPE, sharedSpaceSchema, sharedMembershipSchema, resourceShareSchema, sharedInvitationSchema,
   sharedOperationSchema, sharedAccessBasisSchema, sharedModuleSchema, sharingRestoreSchemas, sharingMetadata,
   type SharingKind } from './firestore-sharing-records.ts';
@@ -17,6 +18,7 @@ const operation = z.object({ operationId: z.uuid() });
 const change = operation.extend({ spaceId: z.uuid(), expectedVersion: z.number().int().positive().max(2147483647) });
 const resourceRequest = z.object({ spaceId: z.uuid(), childId: z.uuid(), module: sharedModuleSchema,
   mode: z.enum(['read', 'write']), expectedBasis: sharedAccessBasisSchema.optional() }).strict();
+const changeCursorSchema = z.object({fence:z.string().regex(/^[a-f0-9]{64}$/u),after:firestoreChangeSchema.shape.changeSeq}).strict();
 export interface SharedResourceAccess {
   readonly transaction: Transaction;
   readonly actorUserId: string;
@@ -115,6 +117,48 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
   }
   return {
     inResourceTransaction,
+    changes(userId:string, raw:SharedChangesQuery):Promise<SharedChangesPage> {
+      const input=domainParse(sharedChangesQuerySchema,raw),{cursor,...selection}=input;
+      return authority.runTransaction(userId,null,b=>inResourceTransaction(b,{...selection,mode:'read'},async access=>{
+        const source=access.binding, id=JSON.stringify([input.spaceId,input.childId,input.module]);
+        const fence=firestoreDomainHash([b.actorUserId,access.scope,b.generation,access.basis,source.childAccessVersion]);
+        let previous:z.infer<typeof changeCursorSchema>|null=null;
+        if(cursor) {
+          try {previous=data.open('shared-change-cursor',id,b.scope,changeCursorSchema,
+            {exists:true,data:()=>JSON.parse(Buffer.from(cursor,'base64url').toString('utf8'))} as any);}
+          catch {domainReject('invalid_cursor',400);}
+        }
+        const page=(after:string,changed:boolean,hasMore=false):SharedChangesPage=>({...selection,changed,hasMore,
+          cursor:Buffer.from(JSON.stringify(data.seal('shared-change-cursor',id,b.scope,changeCursorSchema,{fence,after}))).toString('base64url')});
+        // A first read or new grant refreshes current resources, not another member's event history.
+        if(!previous || previous.fence!==fence)return page(source.changeSeq,true);
+        if(BigInt(previous.after)>BigInt(source.changeSeq))domainReject('invalid_cursor',400);
+        if(previous.after===source.changeSeq)return page(source.changeSeq,false);
+        const tags=data.tags(source.scope),query=data.collection('changes')
+          .where('workspaceTag','==',tags.workspaceTag).where('epochTag','==',tags.epochTag).where('userTag','==',tags.userTag)
+          .where('childTag','==',tags.childTag).where('sortKey','>',data.sortKey(previous.after)).where('sortKey','<=',data.sortKey(source.changeSeq))
+          .orderBy('sortKey','asc').limit(101);
+        const rows=await b.transaction.get(query);let changed=false,after=previous.after;
+        for(const row of rows.docs.slice(0,100)) {
+          const sequence=BigInt(row.get('sortKey')).toString();
+          if(BigInt(sequence)<=BigInt(after)||BigInt(sequence)>BigInt(source.changeSeq)
+            ||Object.entries(tags).some(([key,value])=>row.get(key)!==value))domainReject('projection_binding',500);
+          const projectionId=JSON.stringify([source.scope.workspaceId,source.scope.storageEpoch,sequence]);
+          const value=data.open('change-projection',projectionId,source.scope,firestoreChangeSchema,row);
+          if(row.ref.path!==data.ref('changes','change-projection',projectionId).path || value.changeSeq!==sequence
+            ||value.childId!==input.childId ||row.get('childId')!==input.childId)domainReject('projection_binding',500);
+          changed ||= value.kind==='children'||value.kind===input.module
+            ||input.module==='concerns'&&value.kind==='growth'
+            ||input.module==='attachments'&&(value.kind==='chat'||value.kind==='care')
+            // Derived views must recheck source validity even when the changed source module is not itself shared.
+            ||['memory','documents','growth','concerns'].includes(input.module)
+              &&['care','profile','memory','tasks','chat','growth','documents'].includes(value.kind);
+          after=sequence;
+        }
+        const hasMore=rows.docs.length>100;
+        return page(hasMore?after:source.changeSeq,changed,hasMore);
+      }));
+    },
     create(userId: string, raw: { operationId: string; name: string; kind: 'family' | 'teachers' }): Promise<Space> {
       const input = domainParse(operation.extend({ name: sharedSpaceSchema.shape.name, kind: sharedSpaceSchema.shape.kind }).strict(), raw), id = randomUUID();
       return mutate(userId, 'create-space', input, async b => {
