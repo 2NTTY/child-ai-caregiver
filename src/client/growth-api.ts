@@ -1,14 +1,17 @@
 import type { ReadFailureDiagnostic } from "./read-failure.ts";
 import { z } from "zod";
+import type { SharedSelection } from '../shared/sharing.ts';
 import { growthActionSchema, growthTopicActionSchema, growthTopicSchema,
   type GrowthAction, type GrowthAttention, type GrowthPage, type GrowthTopicAction, type GrowthTopicId } from "../shared/growth.ts";
 
 export type GrowthErrorCode = "invalid_input" | "unauthorized" | "not_found" | "session_changed"
   | "account_precondition_required" | "version_conflict" | "source_changed" | "source_unavailable"
-  | "sharing_confirmation_required" | "topic_disabled" | "check_original_growth" | "growth_changed" | "growth_fact_requires_review" | "growth_history_requires_review" | "growth_existing_task_requires_review";
+  | "sharing_confirmation_required" | "topic_disabled" | "check_original_growth" | "growth_changed" | "growth_fact_requires_review" | "growth_history_requires_review" | "growth_existing_task_requires_review"
+  | "space_access_denied" | "module_not_shared" | "space_inactive" | "shared_domain_read_only";
 const knownCodes = new Set<GrowthErrorCode>(["invalid_input", "unauthorized", "not_found", "session_changed",
   "account_precondition_required", "version_conflict", "source_changed", "source_unavailable",
-  "sharing_confirmation_required", "topic_disabled", "check_original_growth", "growth_changed", "growth_fact_requires_review", "growth_history_requires_review", "growth_existing_task_requires_review"]);
+  "sharing_confirmation_required", "topic_disabled", "check_original_growth", "growth_changed", "growth_fact_requires_review", "growth_history_requires_review", "growth_existing_task_requires_review",
+  "space_access_denied", "module_not_shared", "space_inactive", "shared_domain_read_only"]);
 const knownStatuses = new Set([400, 401, 403, 404, 405, 409, 415, 422, 428, 429, 500, 502, 503, 504]);
 
 export class GrowthApiError extends Error {
@@ -71,9 +74,10 @@ interface PendingWrite {
   kind: "item" | "topic"; childId: string; targetId: string; userId: string; body: string; reviewed: boolean; reconfirm: boolean;
 }
 
-export function createGrowthApi(baseUrl = "", fetcher: typeof fetch = fetch): GrowthApi {
+export function createGrowthApi(baseUrl = "", fetcher: typeof fetch = fetch, selection?: Pick<SharedSelection, 'spaceId'>): GrowthApi {
   const base = baseUrl.replace(/\/$/, "");
   const apiUrl = base.endsWith("/api") ? base : base + "/api";
+  const spaceId = selection ? uuid.parse(selection.spaceId) : null;
   let pending: PendingWrite | null = null;
   function checkScope(childId: string, userId: string) {
     if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success) throw new GrowthApiError(400, "invalid_input");
@@ -87,7 +91,8 @@ export function createGrowthApi(baseUrl = "", fetcher: typeof fetch = fetch): Gr
     const timeout = setTimeout(abort, body === undefined ? 15_000 : 20_000);
     try {
       if (controller.signal.aborted) throw new GrowthApiError();
-      const response = await fetcher(apiUrl + url, {
+      const selectedUrl = spaceId ? url + (url.includes('?') ? '&' : '?') + 'spaceId=' + encodeURIComponent(spaceId) : url;
+      const response = await fetcher(apiUrl + selectedUrl, {
         method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store",
         headers: { Accept: "application/json", "x-expected-user-id": userId,
           ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
