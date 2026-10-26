@@ -21,20 +21,20 @@ export function CareCaptureDetail({ capture, wide = false, readiness, confirmLab
   const recordOnly = !!saved && capture.id === `record:${saved.id}` && capture.sourceId === saved.id;
   const savedMatches = !!saved && (Object.keys(capture.proposedValues) as (keyof typeof capture.proposedValues)[]).every(key => capture.proposedValues[key] === saved.current.values[key]);
   return <View style={s.detail} testID="care-capture-detail">
-    <View style={s.heading}><Text accessibilityRole="header" style={s.title}>{capture.title}</Text>
+    <View style={s.heading}><Text accessibilityRole="header" aria-level={2} style={s.title}>{capture.title}</Text>
       <CareReviewBadges capture={capture} />
       <Text style={s.meta}>{recordOnly ? `已保存照護記錄 · ${capture.createdAtLabel}` : `${capture.sourceContext?.conversationLabel ?? "未提供對話名稱"} · ${capture.sourceContext?.dateLabel ?? "未提供對話日期"}`}</Text>
     </View>
     {!careDomain ? <Text style={s.warning}>{careReviewDomainLabel(capture)}暫不能保存或確認。</Text> : null}
     {capture.operationValidity?.state === "expired" ? <Text style={s.warning}>原操作已過期{capture.operationValidity.expiresAtLabel ? `（${capture.operationValidity.expiresAtLabel}）` : ""}。待處理事項仍保留，目前不能提交。</Text> : null}
     <View style={[s.comparison, wide && s.sideBySide]} testID="care-capture-comparison">
-      <View style={[s.column, wide && s.wideColumn]} testID="care-capture-original-column"><Text accessibilityRole="header" style={s.label}>{recordOnly ? "記錄原文與來源" : "你的原話與來源"}</Text>
+      <View style={[s.column, wide && s.wideColumn]} testID="care-capture-original-column"><Text accessibilityRole="header" aria-level={3} style={s.label}>{recordOnly ? "記錄原文與來源" : "你的原話與來源"}</Text>
         <View style={s.original}><AppStatusBadge label={capture.sourceScope === "private" ? "私人原文" : "家庭共享來源"} />
           {capture.sourceState === "unavailable" ? <Text style={s.warning}>來源暫不可用，原文不在這裏顯示。</Text> : <Text selectable style={s.reading}>{capture.originalText}</Text>}
           <Text style={s.meta}>{capture.sourceLabel}</Text>{capture.photo ? <Text style={s.meta}>{capture.photo.label} · 原圖暫不可檢視</Text> : null}</View>
         {update ? <View style={s.section}><Text style={s.label}>{pending ? "準備更新的已有記錄" : "這次更新之前"}</Text>{pending && capture.basis ? <CareValueSummary values={capture.basis.current.values} /> : before ? <CareValueSummary values={before.values} /> : <Text style={s.warning}>未讀到原有版本，不能推定更新前的內容。</Text>}{capture.duplicateHint ? <Text style={s.meta}>{capture.duplicateHint}</Text> : null}</View> : capture.duplicateHint ? <Text style={s.meta}>{capture.duplicateHint}</Text> : null}
       </View>
-      <View style={[s.column, wide && s.wideColumn]} testID="care-capture-interpretation-column"><Text accessibilityRole="header" style={s.label}>{recordOnly ? "已保存的結構資料" : "Agent 的理解"}</Text>{pending ? <Text style={s.meta}>{update ? "建議更新為，尚未寫入" : "建議新增，尚未寫入"}</Text> : null}{careDomain ? <CareValueSummary values={capture.proposedValues} /> : <Text selectable style={s.reading}>{capture.proposedValues.text}</Text>}
+      <View style={[s.column, wide && s.wideColumn]} testID="care-capture-interpretation-column"><Text accessibilityRole="header" aria-level={3} style={s.label}>{recordOnly ? "已保存的結構資料" : "Agent 的理解"}</Text>{pending ? <Text style={s.meta}>{update ? "建議更新為，尚未寫入" : "建議新增，尚未寫入"}</Text> : null}{careDomain ? <CareValueSummary values={capture.proposedValues} /> : <Text selectable style={s.reading}>{capture.proposedValues.text}</Text>}
         {capture.purpose ? <View style={s.section}><Text style={s.label}>為甚麼建議保留</Text><Text style={s.tool}>{capture.purpose}</Text></View> : null}
         <View style={s.scope}><Text style={s.label}>寫入目的地：{!careDomain ? `${careReviewDomainLabel(capture)}（暫不可寫入）` : capture.target.scope === "family" ? "這個孩子的家庭共享記錄" : "私人記錄（暫不可寫入）"}</Text>
           <Text style={s.tool}>{pending ? "只有你明確確認後才會提交。" : "處理結果已保留供追溯。"}私人原始對話不會自動跟隨共享。</Text></View>

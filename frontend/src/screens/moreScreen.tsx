@@ -23,7 +23,7 @@ export default function MoreScreen() {
     <View style={styles.search}><AppTextField label="尋找功能" accessibilityLabel="尋找功能" placeholder="例如：準備單、記憶、通知" value={query} onChangeText={setQuery} /></View>
     <View testID={desktop ? "more-desktop-catalogue" : "more-mobile-list"} style={styles.groups}>
       {visible.map((group, index) => <View key={group.title} style={[styles.group, desktop && styles.groupWide]}>
-        <View style={styles.heading}><Text style={styles.index}>{String(index + 1).padStart(2, "0")}</Text><View style={styles.headingCopy}><Text accessibilityRole="header" style={styles.title}>{group.title}</Text><Text style={styles.detail}>{group.detail}</Text></View></View>
+        <View style={styles.heading}><Text style={styles.index}>{String(index + 1).padStart(2, "0")}</Text><View style={styles.headingCopy}><Text accessibilityRole="header" aria-level={2} style={styles.title}>{group.title}</Text><Text style={styles.detail}>{group.detail}</Text></View></View>
         <View style={styles.links}>{group.items.map(item => <WorkspaceLink key={item.key} href={item.key === "photos" ? { pathname: "/care", params: { view: "photos" } } : navigationItems[item.key].href}
           label={navigationItems[item.key].label} style={styles.link} feedbackStyle={styles.pressed}>
             <View style={styles.icon}><AppIcon name={navigationItems[item.key].icon} size={22} color={colors.teal} importantForAccessibility="no" /></View>

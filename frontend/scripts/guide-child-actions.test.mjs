@@ -7,7 +7,7 @@ import { harness } from './scope-transition-harness.mjs';
 const flatten = value => Array.isArray(value) ? Object.assign({}, ...value.filter(Boolean).map(flatten)) : value || {};
 const descendants = node => !node || typeof node !== 'object' ? [] : Array.isArray(node)
   ? node.flatMap(descendants) : [node, ...descendants(node.props?.children)];
-async function scenario(width = 1024, empty = false) {
+async function scenario(width = 1024, empty = true) {
   const dialog = Object.assign('Dialog', { Title: 'Title', Content: 'Content', ScrollArea: 'ScrollArea', Actions: 'Actions' });
   const ui = { AppButton: 'Button', AppTextField: 'Field' };
   const mocks = {
@@ -82,19 +82,16 @@ async function scenario(width = 1024, empty = false) {
   };
 }
 
-test('children form one left-aligned wrapping group; form is absent and account actions are separate at all target widths', async () => {
+test('help removes duplicate account and child navigation; topics are independently reachable at every width', async () => {
   for (const width of [320, 390, 1024, 1440]) {
-    const s = await scenario(width);
+    const s = await scenario(width, false);
     assert.equal(s.field(), undefined); assert.equal(s.modal(), undefined);
-    const options = flatten(s.h.node('guide-child-options').props.style), toolbar = flatten(s.h.node('guide-child-toolbar').props.style);
-    assert.equal(options.flexWrap, 'wrap'); assert.notEqual(options.justifyContent, 'space-between'); assert.notEqual(toolbar.justifyContent, 'space-between');
-    assert.ok(s.button('登出', s.h.node('guide-account-actions'))); assert.equal(s.button('登出', s.h.node('production-child-setup')), undefined);
-    assert.equal(s.child('合成小明').props['aria-pressed'], true); assert.equal(s.child('合成小晴').props['aria-pressed'], false);
-    assert.equal(flatten(s.child('合成小明').props.style({ pressed: false })).minHeight, 44);
-    assert.deepEqual(descendants(s.child('合成小明')).filter(x => x.type === 'Text').map(x => x.props.children), ['合成小明']);
-    s.child('合成小晴').props.onPress(); await s.settle();
-    assert.deepEqual(s.counts().selected, ['child-1']); assert.equal(s.state().selectedChildId, 'child-1');
-    assert.equal(s.child('合成小晴').props['aria-pressed'], true);
+    assert.equal(s.h.node('guide-child-options'), undefined); assert.equal(s.h.node('guide-account-actions'), undefined);
+    assert.equal(s.h.node('production-child-setup'), undefined); assert.equal(s.button('登出'), undefined);
+    assert.equal(s.button('下一步'), undefined); assert.equal(s.button('上一步'), undefined);
+    const topic = s.h.hosts().find(x => x.type === 'Pressable' && x.props.accessibilityLabel === '按需要開啟提醒');
+    assert.ok(topic); topic.props.onPress(); s.render(); assert.ok(s.button('前往設定'));
+    assert.deepEqual(s.counts().selected, []); assert.equal(s.counts().signOutCount, 0);
   }
 });
 
@@ -104,9 +101,9 @@ test('new-child input uses the existing modal and actual controller; success cle
   assert.equal(s.h.hosts().find(x => x.type === 'ScrollView').props.keyboardShouldPersistTaps, 'handled');
   assert.equal(s.button('建立孩子').props.disabled, true);
   s.enter('合成新孩子'); s.click('建立孩子');
-  assert.equal(s.button('建立孩子').props.loading, true); assert.equal(s.child('合成小晴').props.disabled, true);
+  assert.equal(s.button('建立孩子').props.loading, true); assert.equal(s.field().props.disabled, true);
   await s.settle(); assert.deepEqual(s.counts().creates, [{ displayName: '合成新孩子', expectedUserId: 'parent-a' }]);
-  assert.equal(s.state().childName, ''); assert.equal(s.state().selectedChildId, 'created-1'); assert.ok(s.child('合成新孩子'));
+  assert.equal(s.state().childName, ''); assert.equal(s.state().selectedChildId, 'created-1'); assert.ok(s.state().children.some(child => child.displayName === '合成新孩子'));
 });
 
 test('dirty close and Escape share the original guard; discard returns focus only after modal close', async () => {
@@ -120,7 +117,7 @@ test('dirty close and Escape share the original guard; discard returns focus onl
 
 test('unknown creation cannot close or change its name; check and retry are reachable inside the modal and preserve original input', async () => {
   const s = await scenario(); s.failCreate(true); s.click('新增孩子'); s.enter('合成原稱呼'); s.click('建立孩子'); await s.settle();
-  assert.equal(s.state().childOutcome, 'unknown'); assert.equal(s.field().props.disabled, true); assert.equal(s.child('合成小晴').props.disabled, true);
+  assert.equal(s.state().childOutcome, 'unknown'); assert.equal(s.field().props.disabled, true); assert.equal(s.field().props.disabled, true);
   s.click('關閉'); assert.ok(s.button('留在此頁')); assert.equal(s.button('捨棄並離開'), undefined); s.click('留在此頁');
   assert.ok(s.button('查核原建立操作', s.modal())); s.click('查核原建立操作', s.modal()); await s.settle();
   assert.equal(s.state().childOutcome, 'checked'); assert.equal(s.state().childName, '合成原稱呼'); assert.equal(s.counts().creates.length, 1);
@@ -134,7 +131,7 @@ test('refresh, visible error retry and offline gates retain their real owner cal
   s.failRead(true); await s.controller.reloadChildren(); await s.settle(); assert.ok(s.state().childrenError); assert.ok(s.button('重試讀取孩子'));
   assert.equal(s.h.hosts().find(x => x.type === 'EmptyList'), undefined);
   s.failRead(false); s.click('重試讀取孩子'); await s.settle(); assert.equal(s.state().childrenError, null); assert.equal(s.counts().refreshCount, 1);
-  s.offline(); assert.equal(s.button('重新整理'), undefined); assert.equal(s.button('登出').props.disabled, true);
+  s.offline(); assert.equal(s.button('重新整理'), undefined); assert.equal(s.button('登出'), undefined);
   s.click('新增孩子'); s.enter('合成離線草稿'); assert.equal(s.button('建立孩子').props.disabled, true); assert.equal(s.counts().creates.length, 0);
 });
 
@@ -145,8 +142,11 @@ test('approved route leave clears the draft without resurrecting the modal on re
   s.click('新增孩子'); s.enter('合成舊身份'); await s.identity(); assert.equal(s.field(), undefined); assert.equal(s.state().childName, '');
 });
 
-test('independent account sign-out and unchanged three-step guide retain their callbacks', async () => {
-  const s = await scenario(); s.click('下一步'); assert.ok(s.button('開啟核對')); s.click('下一步'); assert.ok(s.button('前往設定'));
-  assert.equal(s.button('下一步').props.disabled, true); s.click('上一步'); assert.ok(s.button('開啟核對'));
-  s.click('登出'); await s.settle(); assert.equal(s.counts().signOutCount, 1); assert.equal(s.state().auth, 'signedOut');
+test('topic actions retain their guarded destinations without mandatory ordering', async () => {
+  const s = await scenario(1024, false);
+  for (const [title, label, destination] of [['查看及接續結果', '開啟核對', 'care'], ['按需要開啟提醒', '前往設定', 'settings']]) {
+    const topic = s.h.hosts().find(x => x.type === 'Pressable' && x.props.accessibilityLabel?.startsWith(title));
+    topic.props.onPress(); s.render(); s.click(label); assert.equal(s.counts().navigated.at(-1), destination); s.route('/guide');
+  }
+  assert.equal(s.button('登出'), undefined); assert.equal(s.counts().signOutCount, 0);
 });

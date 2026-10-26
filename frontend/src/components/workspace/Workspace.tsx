@@ -33,7 +33,7 @@ function Heading({ eyebrow, description }: { eyebrow?: string; description?: str
 function Actions({ children }: { children: ReactNode }) { return <View style={styles.actions}>{children}</View>; }
 function Body({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) { return <View style={[styles.body, style]}>{children}</View>; }
 function Section({ title, detail, children }: { title: string; detail?: string; children: ReactNode }) {
-  return <View style={styles.section}><View style={styles.sectionHeading}><Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.description}>{detail}</Text> : null}</View>{children}</View>;
+  return <View style={styles.section}><View style={styles.sectionHeading}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.description}>{detail}</Text> : null}</View>{children}</View>;
 }
 export const Workspace = { Root, Header, Heading, Actions, Body, Section };
 const styles = StyleSheet.create({
@@ -44,8 +44,8 @@ const styles = StyleSheet.create({
   eyebrow: { color: colors.teal, fontFamily: chineseFont, fontSize: 12, lineHeight: 18, fontWeight: "700", letterSpacing: 1.4 },
   title: { color: colors.ink, fontFamily: chineseFont, fontSize: 30, lineHeight: 40, fontWeight: "700", letterSpacing: -.5 },
   compactTitle: { fontSize: 25, lineHeight: 34 },
-  description: { color: colors.muted, fontFamily: chineseFont, fontSize: 14, lineHeight: 23, maxWidth: 680 },
+  description: { color: colors.muted, fontFamily: chineseFont, fontSize: 16, lineHeight: 25, maxWidth: 700 },
   actions: { minWidth: 0, maxWidth: "100%", flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   body: { minWidth: 0, gap: spacing.xl }, section: { gap: spacing.lg, minWidth: 0 }, sectionHeading: { gap: spacing.xs },
-  sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 27, fontWeight: "700" },
+  sectionTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 20, lineHeight: 30, fontWeight: "700" },
 });

@@ -1,3 +1,4 @@
+import { mobileNavigationKeyForPath } from "./workspace/workspace-navigation";
 import { WorkspaceNavigation } from "./workspace/WorkspaceNavigation";
 import { useHeaderOperationHints } from "../production/useHeaderOperationHints";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -12,9 +13,8 @@ import { BrandLogo } from "./BrandLogo";
 import { Text } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
 import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
-import { RecordsNavButton } from "./navigation/RecordsNavButton";
 import { MobileNavSelection } from "./navigation/MobileNavSelection";
-import { navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
+import { navigationItems, type NavigationItem } from "./navigation/app-navigation";
 import { RightRailContent } from "./RightRailContent";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
@@ -33,7 +33,7 @@ import type { HomeActions, HomeViewModel } from "../view-model";
 function MobileNavigationLink({ item, active }: { item: NavigationItem; active: boolean }) {
   const [pressed, setPressed] = useState(false);
   return <PreviewLink href={item.href}><Pressable
-    accessibilityRole="link" accessibilityLabel={item.label} accessibilityState={{ selected: active }} aria-current={active ? "page" : undefined}
+    accessibilityRole="link" accessibilityLabel={item.label} accessibilityState={{ selected: active }} aria-current={active ? "true" : undefined}
     onPressIn={() => setPressed(true)} onPressOut={() => setPressed(false)}
     style={StyleSheet.flatten([styles.bottomNavItem, pressed && styles.navPressed])}
   >
@@ -52,7 +52,7 @@ export function RightRail({ model, actions, contextPath = "/", overlay = false, 
 }) {
   return <View testID="context-rail" style={[styles.rail, overlay && styles.railFill]}>
     <View style={styles.railHeader}>
-      <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>照顧資訊</Text></View>
+      <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" aria-level={2} style={styles.railTitle}>照顧資訊</Text></View>
       {onClose ? <ToolbarIconButton icon="close" label="關閉資訊側欄" onPress={onClose} /> : null}
     </View>
     <RightRailContent model={model} actions={actions} contextPath={contextPath} />
@@ -91,7 +91,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   function closeRail() {
     setRailModal(false);
   }
-  const active = (path: AppPath) => pathname === path;
+  const mobileDestination = mobileNavigationKeyForPath(pathname);
   const selectedChild = model.children.find(item => item.id === model.selectedChildId);
   const motionScope = scopeKey ?? identityKey ?? "signed-out";
   const sameRailContext = railContext.current.path === pathname && railContext.current.scope === motionScope;
@@ -116,9 +116,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <BrandLogo style={styles.workspaceLogo} decorative />
       </Pressable></PreviewLink>
       <WorkspaceNavigation.Root pathname={pathname}><WorkspaceNavigation.Primary /></WorkspaceNavigation.Root>
-      <PreviewLink href="/settings"><Pressable accessibilityRole="link" accessibilityLabel="設定" style={styles.settingsLink}>
-        <AppIcon name="cog-outline" size={22} color={colors.ink} />
-      </Pressable></PreviewLink>
     </View> : null}
     <View style={styles.stage}>
       <MotionScopeBoundary scopeKey={motionScope} resetKey={identityKey ?? "signed-out"} readiness={screenReadiness} readinessKey={screenReadinessKey} onRetry={switchReadiness.retry ? () => switchReadiness.retry?.(railRequirements) : undefined} onReturn={actions.selectChild} canReturn={id => model.children.some(child => child.id === id)} childKey={model.selectedChildId} eligible={model.selectedChildId !== null} style={styles.scopePane}>
@@ -147,8 +144,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </View>
       </MotionScopeBoundary>
       {compact ? <View testID="mobile-bottom-navigation" style={[styles.bottomNav, { paddingBottom: insets.bottom }]}>
-        {(["home", "chat", "tasks", "growth"] as const).map(key => navigationItems[key]).map(item => <MobileNavigationLink key={item.href} item={item} active={active(item.href)} />)}
-        <RecordsNavButton active={active("/care") || active("/photos") || active("/more") || active("/history")} scopeKey={motionScope} />
+        {(["home", "chat", "tasks", "care", "more"] as const).map(key => <MobileNavigationLink key={key} item={navigationItems[key]} active={mobileDestination === key} />)}
       </View> : null}
       <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}:${wide ? "dock" : "overlay"}`} label="照顧資訊側欄" onRequestClose={closeRail}
         backgroundRef={shell} returnFocusRef={railAnchor} restoreFocusOnClose={sameRailContext}>

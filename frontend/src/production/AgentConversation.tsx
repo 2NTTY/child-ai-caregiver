@@ -32,7 +32,7 @@ function ActivityDetails({ label, scopeKey, children }: { label: string; scopeKe
 
 function Receipt({ item }: { item: AgentActionReceipt }) {
   return <View testID="agent-direct-receipt" style={styles.row}>
-    <View style={styles.rowHeading}><Text accessibilityRole="header" style={styles.rowTitle}>{receiptKinds[item.kind]}</Text><AppStatusBadge label={receiptStates[item.state]} tone="neutral" /></View>
+    <View style={styles.rowHeading}><Text accessibilityRole="header" aria-level={3} style={styles.rowTitle}>{receiptKinds[item.kind]}</Text><AppStatusBadge label={receiptStates[item.state]} tone="neutral" /></View>
     <Text style={styles.label}>{resourceKinds[item.resource.kind]} · {item.resource.kind === "private_note" ? "只供本人查看" : "按原資料權限查看"}</Text>
     <Text style={styles.label}>{item.notification === "authorized_for_due_event" ? `已授權到期提示（${item.channels.map(channel => channel === "telegram" ? "Telegram" : "瀏覽器推送").join("、")}）；不表示已發送或送達。` : "沒有授權外部到期提示。"}</Text>
     <ActivityDetails label="查看保存詳情" scopeKey={item.id}>
@@ -71,7 +71,7 @@ function BackgroundRuns({ model, actions, onSelect, cardRef }: { model: AgentInb
   const loading = model.state === "loading", denied = model.state === "denied", ready = model.state === "ready";
   const hasSnapshot = !denied && !!model.loadedAt;
   return <View testID="agent-activity-background" style={styles.section}>
-      <Text accessibilityRole="header" style={styles.heading}>其他活動</Text>
+      <Text accessibilityRole="header" aria-level={2} style={styles.heading}>其他活動</Text>
       <Text style={styles.label}>只限你本人查看，最多展示 20 項。</Text>
       {model.state === "idle" ? <Text style={styles.label}>尚未載入其他活動。</Text> : null}
       {loading ? <ReadStateNotice state="loading" refreshing={hasSnapshot} message="正在載入其他活動…" /> : null}
@@ -186,7 +186,7 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
     </Text>
   </View>;
   const pendingContent = showPending ? <View testID="agent-other-pending" style={styles.section}>
-        <Text accessibilityRole="header" style={styles.heading}>{run ? "其他待確認" : "待你確認"}</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.heading}>{run ? "其他待確認" : "待你確認"}</Text>
         {agentPending.state === "failed" ? <AppButton label="重新讀取待確認候選" variant="quiet" density="compact" disabled={!agentModel.online || !!agentModel.busy || !!agentModel.pendingDecision || !!agentModel.writesBlocked || agentModel.readState === "denied"} onPress={() => readAgentPending()} style={styles.inlineButton} /> : null}
         {agentPending.state === "idle" ? <Text style={styles.label}>{agentModel.online ? "待確認事項尚未讀取；等候目前操作完成後會自動讀取。" : "目前離線，待確認事項尚未核對。"}</Text> : null}
         {agentPending.state === "loading" ? <ReadStateNotice state="loading" refreshing={!!agentPending.hasSnapshot} message="正在讀取待確認事項…" /> : null}
@@ -217,14 +217,14 @@ export function AgentConversation({ visible, onDismiss, onClosed }: { visible: b
         <BackgroundRuns key={scopeKey} model={agentInbox} actions={agentInboxActions} onSelect={openBackground} cardRef={cardRef} />
       </View> : null}
       {showDetails && !selected?.target && showReceipts && run && (!selected || selected.runId === run.id) ? <View testID="agent-operation-receipts" style={styles.section}>
-        <View style={styles.rowHeading}><Text accessibilityRole="header" style={styles.heading}>操作結果</Text>
+        <View style={styles.rowHeading}><Text accessibilityRole="header" aria-level={2} style={styles.heading}>操作結果</Text>
           <AppButton label="重新檢查" accessibilityLabel="重新檢查本次操作是否已保存" variant="quiet" density="compact" disabled={!authorization.online || receipt?.state === "loading"} onPress={() => authorizationActions.readReceipts(run.id, true)} style={styles.inlineButton} /></View>
         {receipt?.state === "ready" ? receipt.items.length ? receipt.items.map(item => <Receipt key={`${run.id}:${item.id}`} item={item} />)
           : <Text style={styles.warning}>目前離線，操作收據尚未重新核對。</Text>
           : <Text style={receipt?.state === "failed" ? styles.error : styles.label}>{receipt?.state === "loading" ? "正在檢查是否已保存…" : receipt?.state === "denied" ? "沒有權限查看操作結果。" : "暫時無法確認是否已保存"}</Text>}
       </View> : null}
       {showDetails && !selected?.target && (!selected || selected.runId === run?.id) && run?.privateSourceCitations?.length ? <View style={styles.section}>
-        <Text accessibilityRole="header" style={styles.heading}>私人參考</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.heading}>私人參考</Text>
         <Text style={styles.label}>回答當時獲授權的原文快照；不是已核對的官方育兒來源，停用或更正後不供新回答使用。</Text>
         {run.privateSourceCitations.map((source, index) => <ActivityDetails key={`${run.id}:${source.citationId}`} label={`私人來源 ${index + 1} · ${source.label}`} scopeKey={`${run.id}:${source.citationId}`}>
           <Text style={styles.label}>版本 {source.version}</Text><Text selectable style={styles.label}>{source.excerpt}</Text>

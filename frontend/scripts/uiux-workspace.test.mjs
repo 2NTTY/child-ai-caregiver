@@ -95,3 +95,13 @@ test('tokens meet normal-text contrast and do not depend on forced page zoom or 
   assert.equal(/zoom:\s*1\.[24]/.test(layout), false); assert.ok(layout.includes(':focus-visible'));
   assert.equal(/fonts.googleapis.com/.test(readFileSync(path.join(root, 'src/theme.ts'), 'utf8')), false);
 });
+
+test('purpose navigation removes hidden upward gesture and duplicate settings entry on web and native', () => {
+  assert.equal(workspaceGroups.length, 5);
+  const shell = readFileSync(path.join(root, 'src/components/AppShell.tsx'), 'utf8');
+  const native = readFileSync(path.join(root, 'app/(dashboard)/_layout.tsx'), 'utf8');
+  assert.match(shell, /\["home", "chat", "tasks", "care", "more"\]/);
+  assert.doesNotMatch(shell, /RecordsNavButton|<PreviewLink href="\/settings"/);
+  assert.doesNotMatch(native, /RecordsNavButton/);
+  assert.match(native, /<Tabs.Screen name="more" options=\{\{ title: navigationItems.more.short/);
+});

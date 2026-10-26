@@ -49,13 +49,13 @@ function harness(entry, symbol, args = [], overrides = {}) {
       if (name.endsWith("/appearance/BackgroundSurface")) return { BackgroundSurface: "View", useCustomBackground: () => false };
       if (name.endsWith("/motion/preferences")) return { useMotionPreferences: () => ({ enabled: true, reducedMotion: false, preferenceReady: true }) };
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
-      if (name === "react-native") return { View: "View", Pressable: "Pressable", StyleSheet: { create: value => value } };
+      if (name === "react-native") return { Platform: { OS: "web" }, View: "View", Pressable: "Pressable", StyleSheet: { create: value => value } };
       if (name === "react-native-paper") return { Text: "Text", ActivityIndicator: "ActivityIndicator" };
       if (name.endsWith("/theme")) return { colors: {}, radius: {}, readingType: {}, workspaceType: {}, spacing: {}, typeScale: {} };
       if (name.endsWith("/ui")) return Object.fromEntries(["AppButton", "SectionHeader", "SectionCard", "TextLink"].map(value => [value, value]));
       if (name.endsWith("/AppStatusBadge")) return { AppStatusBadge: "AppStatusBadge" };
       if (name.endsWith("/AppIcon")) return { AppIcon: "AppIcon" };
-      if (name.endsWith("/HomeOverviewItems")) return { HomeOverviewItems: "HomeOverviewItems" };
+      if (name.endsWith("/HomeOverviewItems")) return { HomeOverviewItems: "HomeOverviewItems", HomeOverviewRows: "HomeOverviewRows" };
       if (!name.startsWith(".")) return require(name);
       const file = path.resolve(path.dirname(filename), name);
       return load(existsSync(file) ? file : existsSync(`${file}.ts`) ? `${file}.ts` : `${file}.tsx`);
@@ -191,7 +191,7 @@ test("Home task summary uses all supplied items with natural height and keeps it
   const model = { ...home, overview: { ...home.overview, attention: { state: "ready", items } } };
   const view = harness("src/components/HomeFocus.tsx", "HomeActionSummary", [{ model, actions }]);
   const tree = view.render();
-  assert.equal(byType(tree, "HomeOverviewItems")[0].props.items, items);
+  assert.equal(byType(tree, "HomeOverviewRows")[0].props.items, items);
   assert.equal(tree.props.style.height, undefined);
   assert.equal(tree.props.style.maxHeight, undefined);
   byType(tree, "TextLink")[0].props.onPress(); assert.deepEqual(opened, ["tasks"]);
@@ -203,11 +203,11 @@ test("partial and stale Home tasks stay explicit, and unavailable assistant remi
   const actions = { refresh() {}, open() {} };
   const partial = { ...home, overview: { ...home.overview, attention: { state: "ready", items: [homeItem], detail: "尚有未載入的事項" } } };
   const view = harness("src/components/HomeFocus.tsx", "HomeActionSummary", [{ model: partial, actions }]);
-  let tree = view.render(); assert.equal(byType(tree, "HomeOverviewItems")[0].props.items.length, 1);
+  let tree = view.render(); assert.equal(byType(tree, "HomeOverviewRows")[0].props.items.length, 1);
   assert.equal(byType(tree, "Text").find(node => node.props.children === "尚有未載入的事項").props.accessibilityLiveRegion, "polite");
   const stale = { ...partial, overview: { ...partial.overview, attention: { ...partial.overview.attention, state: "stale", detail: "顯示較早的待辦" } } };
   tree = view.render([{ model: stale, actions }]); assert.equal(byType(tree, "ReadStateNotice")[0].props.state, "stale");
-  assert.equal(byType(tree, "HomeOverviewItems")[0].props.items.length, 1);
+  assert.equal(byType(tree, "HomeOverviewRows")[0].props.items.length, 1);
   assert.equal(byType(tree, "AppButton")[0].props.onPress, actions.refresh);
   const assistant = harness("src/components/HomeAgentImportant.tsx", "HomeAgentImportant", [{ model: home, actions }]).render();
   const unavailable = byType(assistant, "ReadStateNotice")[0];

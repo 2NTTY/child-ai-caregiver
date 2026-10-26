@@ -91,6 +91,14 @@ export function PreviewLink({ href, children }: { href: Href; children: ReactNod
   const pathname = usePathname();
   const leave = usePreviewNavigation();
   return <Link href={href} asChild onPress={event => {
+    // New-tab/window gestures do not leave this workspace, so keep browser link semantics.
+    if (Platform.OS === "web") {
+      const click = event as unknown as React.MouseEvent<HTMLElement>;
+      const input = click.nativeEvent ?? click;
+      const target = click.currentTarget?.getAttribute?.("target");
+      if (click.defaultPrevented || input.defaultPrevented || input.metaKey || input.ctrlKey || input.shiftKey || input.altKey
+        || input.button !== undefined && input.button !== 0 || target && target !== "_self" || click.currentTarget?.hasAttribute?.("download")) return;
+    }
     event.preventDefault();
     if (href === pathname) return;
     leave(() => router.push(href), staysInDashboard(pathname, href) ? "workspace" : "navigation");

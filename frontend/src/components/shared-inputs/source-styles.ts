@@ -1,6 +1,10 @@
 import { StyleSheet } from "react-native";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 export const sourceStyles = StyleSheet.create({
+  sourceManagement: { gap: spacing.md, paddingTop: spacing.xl, borderTopWidth: 1, borderTopColor: colors.line },
+  intakeSection: { gap: spacing.lg, padding: spacing.lg, borderRadius: radius.small, backgroundColor: colors.quietSurface },
+  formSection: { gap: spacing.lg, paddingVertical: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.softLine },
+  formEyebrow: { fontFamily: chineseFont, fontSize: 12, lineHeight: 20, color: colors.teal, fontWeight: "700" },
   selectionGuide: { minWidth: 0, minHeight: 260, justifyContent: "center", padding: spacing.lg, gap: spacing.xl },
   stack: { gap: spacing.md }, row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   toolbar: { gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.lg },
@@ -16,14 +20,14 @@ export const sourceStyles = StyleSheet.create({
   itemSelected: { backgroundColor: colors.paleTeal, borderLeftColor: colors.ink },
   columns: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xl }, single: { flexDirection: "column" },
   main: { flex: 1, minWidth: 0, gap: spacing.lg }, aside: { flexBasis: 320, flexShrink: 0, minWidth: 0, gap: spacing.lg, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, borderRadius: radius.medium, padding: spacing.lg }, full: { flex: undefined, width: "100%", flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
-  body: { fontFamily: chineseFont, ...readingType.tool, color: colors.ink, flexShrink: 1 },
+  body: { fontFamily: chineseFont, ...readingType.body, color: colors.ink, flexShrink: 1 },
   reading: { fontFamily: chineseFont, ...readingType.body, color: colors.ink },
   meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, flexShrink: 1 },
   title: { fontFamily: chineseFont, ...workspaceType.section, color: colors.ink, flexShrink: 1 },
   warning: { fontFamily: chineseFont, ...readingType.tool, color: colors.warningInk },
   error: { fontFamily: chineseFont, ...readingType.meta, color: colors.errorInk },
   section: { gap: spacing.sm }, review: { paddingVertical: spacing.md, paddingLeft: spacing.md, borderLeftWidth: 2, borderColor: colors.line, gap: spacing.sm },
-  original: { maxHeight: 320, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small }, originalContent: { padding: spacing.md },
+  original: { maxHeight: 460, borderLeftWidth: 3, borderLeftColor: colors.teal, backgroundColor: colors.quietSurface }, originalContent: { padding: spacing.lg },
    item: { borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 2, borderLeftColor: "transparent", padding: spacing.md, gap: spacing.xs },
   group: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm },
 });

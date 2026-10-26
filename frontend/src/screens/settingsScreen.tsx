@@ -60,28 +60,28 @@ export default function SettingsPage() {
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.workspace, compactNavigation && styles.workspaceStack]}>
     <SettingsNavigation id={tabsId} items={tabs} value={tab} onChange={setTab} compact={compactNavigation} />
     <View style={styles.settingsContent}>
-    <View style={styles.sectionHeading}><Text accessibilityRole="header" style={styles.sectionTitle}>{tabs.find(item => item.key === tab)?.label}</Text><Text style={styles.body}>{sectionDescriptions[tab]}</Text></View>
+    <View style={styles.sectionHeading}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{tabs.find(item => item.key === tab)?.label}</Text><Text style={styles.body}>{sectionDescriptions[tab]}</Text></View>
     <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
-      <View style={styles.sectionGroup}>
-        <SectionCard><SectionHeader density="compact" title="個人資料" />
+      <View style={styles.accountGrid}><View style={styles.accountIdentity}>
+        <SectionCard surface="plain"><SectionHeader title="你的身份" subtitle="這是登入與私人資料使用的帳戶。" />
           <View style={styles.identity}><AvatarView name={accountName} uri={avatar.state.uri} size={55} /><View style={styles.identityText}><Text style={styles.identityName}>{accountName || "未命名"}</Text><Text style={styles.muted}>{user?.email ?? "尚未讀取電郵"}</Text></View></View>
           <AvatarEditor lane={avatar.lane} state={avatar.state} name={accountName} kind="self" />
           <Divider style={styles.divider} />
           <LabeledValue label="登入方式" value="電郵與密碼" />
         </SectionCard>
         <SectionCard><SectionHeader density="compact" title="語言與地區" />
-          <LabeledValue label="介面語言" value="繁體中文（香港）" /><LabeledValue label="地區" value="香港" /><LabeledValue label="時間顯示" value="24 小時制" />
+          <LabeledValue label="介面語言" value="繁體中文（香港）" /><LabeledValue label="地區" value="香港" />
         </SectionCard>
       </View>
-      <View style={styles.sectionGroup}>
-        <SectionCard testID="account-settings"><SectionHeader density="compact" title="登入與安全" />
+      <View style={styles.accountSecurity}>
+        <SectionCard surface="plain" testID="account-settings"><SectionHeader title="登入與安全" subtitle="管理本人會話與登入憑證。" />
 
           <AppButton label="登出本人帳戶" variant="secondary" onPress={() => leave(() => { void signOut(); })} />
           <AccountSecurityControls />
           <AdminEntry />
 
         </SectionCard>
-      </View>
+      </View></View>
     </AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="children" active={tab === "children"}><SectionCard>
       {model.children.length === 0 ? recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && online ? <EmptyListCard title="目前沒有孩子檔案" /> : <Text style={styles.body}>{recordsState.childrenLoading ? "正在讀取孩子列表…" : recordsState.childrenError ? "孩子列表未能讀取，請重新核對。" : "孩子列表尚未核對。"}</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => leave(() => { actions.selectChild(child.id); actions.open("profile"); })} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
@@ -122,6 +122,9 @@ export default function SettingsPage() {
 }
 
 const styles = StyleSheet.create({
+  accountGrid: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-start", gap: spacing.xxl, minWidth: 0 },
+  accountIdentity: { flexGrow: 1, flexBasis: 320, minWidth: 0, maxWidth: "100%", gap: spacing.xl },
+  accountSecurity: { flexGrow: 1, flexBasis: 260, minWidth: 0, maxWidth: "100%", padding: spacing.lg, borderRadius: 12, backgroundColor: colors.quietSurface },
   sectionHeading: { gap: spacing.sm, paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.line }, sectionTitle: { fontFamily: chineseFont, fontSize: 24, lineHeight: 34, fontWeight: "700", color: colors.ink },
   workspace: { width: "100%", minWidth: 0, flexDirection: "row", alignItems: "flex-start", gap: spacing.xxl },
   workspaceStack: { flexDirection: "column", gap: spacing.lg },

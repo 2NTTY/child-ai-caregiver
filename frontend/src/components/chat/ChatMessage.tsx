@@ -35,6 +35,7 @@ export function ChatMessage({ message, children, header, footer, testID, embedde
     ? <CitationText style={styles.body}>{message.text}</CitationText>
     : <Text selectable style={styles.body}>{message.text}</Text> : null);
   return <View testID={testID ?? "chat-message"} nativeID={`chat-message-${message.id}`} style={[styles.row, !assistant && styles.userRow]}>
+    {!embedded ? <View style={[styles.author, !assistant && styles.userAuthor]}><View style={[styles.authorMark, !assistant && styles.userMark]} accessible={false} aria-hidden><AppIcon name={assistant ? "star-four-points" : "account-outline"} size={16} color={assistant ? colors.teal : colors.muted} importantForAccessibility="no" /></View><Text style={styles.authorName}>{assistant ? "育兒助手" : "你"}</Text></View> : null}
     <View style={[styles.content, assistant ? styles.assistant : styles.user, embedded && styles.embedded]}>
       {assistant ? <StatusAnnouncement eventKey={`${message.id}:${message.phase ?? "complete"}`}
         message={phaseLabel ?? phaseLabels[message.phase ?? "complete"]} urgent={message.phase === "failed"} /> : null}
@@ -65,9 +66,12 @@ export function ChatMessage({ message, children, header, footer, testID, embedde
 }
 
 const styles = StyleSheet.create({
-  row: { width: "100%", minWidth: 0, gap: 4 }, userRow: { alignItems: "flex-end" },
-  content: { minWidth: 0, gap: chatLayout.paragraphGap }, assistant: { width: "100%", borderLeftWidth: 3, borderLeftColor: colors.teal, paddingLeft: 18, paddingVertical: 4 },
-  user: { maxWidth: "82%", backgroundColor: chatColors.userBubble, borderRadius: 12, paddingVertical: 16, paddingHorizontal: 16 }, embedded: { padding: 0, borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
+  author: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 }, userAuthor: { justifyContent: "flex-end" },
+  authorMark: { width: 28, height: 28, borderRadius: 8, alignItems: "center", justifyContent: "center", backgroundColor: colors.paleTeal }, userMark: { backgroundColor: colors.canvas },
+  authorName: { fontFamily: chatFont, fontSize: 13, lineHeight: 20, color: colors.muted, fontWeight: "700" },
+  row: { width: "100%", minWidth: 0, gap: 10 }, userRow: { alignItems: "flex-end" },
+  content: { minWidth: 0, gap: chatLayout.paragraphGap }, assistant: { width: "100%", paddingVertical: 4, paddingHorizontal: 2 },
+  user: { maxWidth: "92%", backgroundColor: chatColors.userBubble, borderRadius: 12, paddingVertical: 16, paddingHorizontal: 16 }, embedded: { padding: 0, borderWidth: 0, borderRadius: 0, backgroundColor: "transparent" },
   body: { fontFamily: chatFont, color: chatColors.ink, ...chatType.body, minWidth: 0, flexShrink: 1 },
   meta: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, minWidth: 0, flexShrink: 1 }, userNote: { textAlign: "right" },
   statusRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },

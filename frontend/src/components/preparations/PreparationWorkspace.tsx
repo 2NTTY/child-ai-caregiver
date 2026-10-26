@@ -41,7 +41,7 @@ function PreparationEmptyState({ workspace, history = false }: { workspace: Prep
     : condition === "lost" ? "孩子權限已失效" : "準備單最新狀態尚未核對";
   const detail = condition === "loading" ? "" : condition === "unavailable" ? "請重新讀取。"
     : condition === "lost" ? "準備單及歷史內容已隱藏，請先確認孩子的存取權。" : "請連線後重新讀取，不能據此判斷沒有準備單。";
-  return <View testID="preparation-empty" style={styles.empty}><Text accessibilityRole="header" style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.meta}>{detail}</Text> : null}</View>;
+  return <View testID="preparation-empty" style={styles.empty}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{title}</Text>{detail ? <Text style={styles.meta}>{detail}</Text> : null}</View>;
 }
 
 function PreparationMetadata({ icon, label, value }: { icon: AppIconName; label: string; value: string }) {
@@ -55,7 +55,7 @@ function PreparationRow({ document, selected, onPress, rowRef, history = false }
   return <Pressable ref={rowRef} testID={`preparation-row-${document.id}`} accessibilityRole="button"
     accessibilityLabel={`開啟${revision?.title ?? "暫不能查看的準備單"}`} accessibilityState={{ selected }} aria-selected={selected}
     onPress={onPress} style={({ pressed }) => [styles.documentRow, history && styles.historyCard, selected && (history ? styles.selectedHistoryRow : styles.selectedRow), pressed && (selected ? styles.selectedPressedRow : styles.pressedRow)]}>
-    <Text numberOfLines={history ? 2 : undefined} accessibilityRole="header" style={styles.rowTitle}>{revision?.title ?? "暫不能查看的準備單"}</Text>
+    <Text numberOfLines={history ? 2 : undefined} accessibilityRole="header" aria-level={3} style={styles.rowTitle}>{revision?.title ?? "暫不能查看的準備單"}</Text>
     <Text numberOfLines={history ? 3 : undefined} style={styles.body}>{revision?.summary ?? state.detail}</Text>
     <View style={styles.row}><PreparationMetadata icon="preparation-outline" label="用途" value={preparationPurposeLabel(document.purpose)} /><AppStatusBadge label={document.status === "archived" && document.readState === "ready" ? "已歸檔" : state.label} tone={document.status === "archived" && document.readState === "ready" ? "neutral" : state.tone} /></View>
     {document.status === "archived" || revision?.eventDate || !history ? <View style={styles.row}>
@@ -101,7 +101,7 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
   return <View testID="preparation-document-detail" style={styles.document}>
     {!hideReturnAction ? <AppButton label={archived ? "返回歸檔清單" : "返回準備單清單"} variant="secondary" density="compact" onPress={onClose} /> : null}
     <View style={styles.documentHeader}>
-      <Text accessibilityRole="header" style={styles.documentTitle}>{revision?.title ?? "暫不能查看這份準備"}</Text>
+      <Text accessibilityRole="header" aria-level={2} style={styles.documentTitle}>{revision?.title ?? "暫不能查看這份準備"}</Text>
       {revision ? <Text style={styles.body}>{revision.summary}</Text> : null}
       <View style={styles.row}><PreparationMetadata icon="preparation-outline" label="用途" value={preparationPurposeLabel(document.purpose)} />
         <PreparationMetadata icon="account-child-outline" label="孩子" value={workspace.model.child.displayName} />
@@ -122,7 +122,7 @@ function PreparationDocumentDetail({ document, workspace, onClose, onHistory, on
     </View> : null}
     {document.historical ? <View style={styles.row}><AppStatusBadge label="較早修訂，唯讀" tone="info" /><AppButton label="回到目前正文" variant="quiet" onPress={() => reading?.closeVersion()} /></View> : null}
     {revision?.sections.map(section => <View key={section.id} style={styles.section}>
-      <View style={styles.row}><Text accessibilityRole="header" style={styles.sectionTitle}>{section.title}</Text>{section.kind === "checklist" ? <Text style={styles.meta}>{checked.filter(item => item.checked).length}／{checked.length} 項已核對</Text> : null}</View>
+      <View style={styles.row}><Text accessibilityRole="header" aria-level={3} style={styles.sectionTitle}>{section.title}</Text>{section.kind === "checklist" ? <Text style={styles.meta}>{checked.filter(item => item.checked).length}／{checked.length} 項已核對</Text> : null}</View>
       {section.items.map((item, index) => section.kind === "checklist"
         ? archived || !canCheck && !(keepReadControls || keepFailedReadControls || keepCheckingControl && (!!workspace.model.checkSave || checkingItem?.sectionId === section.id && checkingItem.itemId === item.id)) ? <View key={item.id} style={styles.textRow}><Text style={styles.checkMark}>{item.checked ? "☑" : "☐"}</Text><Text style={styles.reading}>{item.text}</Text></View>
           : <AppCheckbox key={item.id} label={item.text} checked={!!item.checked} disabled={!canCheck} onChange={value => {
@@ -275,9 +275,9 @@ export function PreparationWorkspace({ onHistory, onPrepareQuestion, previewCont
     </View> : null}
     {workspace.model.operation ? <WriteRecoveryNotice plainLanguage showReference={false} operation={workspace.model.operation} recovery={workspace.recovery} online={workspace.model.online} /> : null}
     {workspace.model.condition === "refresh_failed" ? <Text testID="preparation-refresh-error" accessibilityRole="alert" style={styles.warningText}>{active.length ? "更新失敗，顯示上次內容" : "準備單更新失敗"}</Text> : null}
-    {!selected ? <Text accessibilityRole="header" style={styles.sectionTitle}>待用準備單{!workspace.model.online || !["ready", "empty", "read_only"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
+    {!selected ? <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>待用準備單{!workspace.model.online || !["ready", "empty", "read_only"].includes(workspace.model.condition) ? "" : ` · ${active.length} 份`}</Text> : null}
     {!selected ? <View testID="preparation-list-actions" style={styles.planningDesk}>
-      <View style={styles.planningCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>準備下一次出發</Text><Text style={styles.meta}>選好用途，請助手把安排整理成可使用的清單。</Text></View>
+      <View style={styles.planningCopy}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>準備下一次出發</Text><Text style={styles.meta}>選好用途，請助手把安排整理成可使用的清單。</Text></View>
       <View style={styles.purposeField}><AppSelect label="用途" value={purpose} options={preparationPurposes.map(item => ({ value: item.key, label: item.label }))} onChange={setPurpose} /></View>
       <AppButton label="到助手準備下一份" variant="secondary" density="compact" disabled={!workspace.model.online || workspace.model.condition === "lost" || !onPrepareQuestion} onPress={() => onPrepareQuestion?.(`請幫我為${workspace.model.child.displayName}整理一份${preparationPurposeLabel(purpose)}。先和我確認用途、日期、已知安排及仍未確定的資料。`)} />
     </View> : null}

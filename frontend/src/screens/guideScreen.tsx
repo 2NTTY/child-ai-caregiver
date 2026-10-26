@@ -15,7 +15,7 @@ import { chineseFont, colors, radius, readingType, spacing, workspaceType } from
 import type { HomeDestination } from "../view-model";
 
 const steps: { title: string; description: string; action: string; destination: HomeDestination; points: { title: string; body: string }[] }[] = [
-  { title: "先跟助手說", description: "選擇孩子，直接交代你的問題或要做的事。", action: "與 Agent 對話", destination: "chat", points: [
+  { title: "先跟助手說", description: "選擇孩子，直接交代你的問題或要做的事。", action: "開啟助手", destination: "chat", points: [
     { title: "只需孩子稱呼便可開始", body: "不必建立家庭、邀請成員或填寫模型 key。生日等資料可以按需要再補；半歲等約數不會變成精確生日。" },
     { title: "普通交代，按授權保存", body: "在助手設定開啟本人普通記錄授權後，可直接交代日常照護情況；重要資料及超出授權的操作仍會清楚詢問。" },
     { title: "只補影響辦事的資料", body: "助手可根據前文補問。推測與未知不當作事實；回答的重要建議應有實際支持的官方來源。" },
@@ -34,9 +34,8 @@ const steps: { title: string; description: string; action: string; destination: 
 
 export default function GuideScreen() {
   const layout = useContainerWidth();
-  const { model, actions, controller, recordsState, refresh, signOut, user, online, identityKey } = useProduction();
+  const { model, actions, controller, recordsState, refresh, online, identityKey } = useProduction();
   const [currentStep, setCurrentStep] = useState(0);
-  const [focusedChild, setFocusedChild] = useState<string | null>(null);
   const pathname = usePathname(), lastPath = useRef(pathname);
   const openChildRequest = useOperationReveal(identityKey ?? "no-identity", "create-child");
   const creating = recordsState.busy === "createChild";
@@ -63,29 +62,13 @@ export default function GuideScreen() {
   return <PageFrame density="compact" title="說明">
     <View style={styles.intro}>
       <Text style={styles.introTitle}>{needsGuide ? "從你需要的一步開始" : "隨時重看使用方法"}</Text>
-      <View style={styles.accountRow} testID="guide-account-actions" accessibilityLabel="目前帳戶">
-        <Text style={[styles.body, styles.accountCopy]}>{user?.name} · {user?.email}</Text>
-        <AppButton label="登出" variant="quiet" density="compact" disabled={!recordsState.online || !!recordsState.busy} onPress={() => { void signOut(); }} />
-      </View>
-      <View style={styles.childSetup} testID="production-child-setup">
-        <Text accessibilityRole="header" style={styles.pointTitle}>你的孩子</Text>
+      <Text style={styles.body}>選擇與目前需要相關的主題即可，不必依次完成設定。</Text>
+      {!model.children.length || recordsState.childrenError || creating || createUnknown || !!recordsState.childName || !!recordsState.childMessage || !!openChildRequest ? <View style={styles.childSetup} testID="production-child-setup">
+        <Text accessibilityRole="header" aria-level={2} style={styles.pointTitle}>你的孩子</Text>
         {recordsState.childrenLoading ? <Text style={styles.body}>正在讀取孩子列表…</Text> : null}
         {recordsState.childrenError ? <Text accessibilityLiveRegion="polite" style={styles.body}>{recordsState.childrenError}</Text> : null}
         {online && recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && model.children.length === 0 ? <EmptyListCard title="目前沒有可存取的孩子" detail="可以先建立第一位孩子。" /> : null}
         <View style={styles.childToolbar} testID="guide-child-toolbar">
-          {model.children.length ? <View style={styles.childOptions} testID="guide-child-options" accessibilityLabel="選擇孩子">
-            {model.children.map(child => {
-              const selected = child.id === model.selectedChildId;
-              return <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`${child.displayName}${selected ? "，目前孩子" : ""}`}
-                accessibilityState={{ selected, disabled: lockedChild }} aria-pressed={selected} aria-disabled={lockedChild} disabled={lockedChild}
-                onPress={() => actions.selectChild(child.id)} onFocus={() => setFocusedChild(child.id)} onBlur={() => setFocusedChild(null)}
-                style={({ pressed }) => [styles.childOption, selected && styles.childOptionSelected, focusedChild === child.id && styles.childOptionFocused,
-                  lockedChild && styles.childOptionDisabled, pressed && !lockedChild && (selected ? styles.selectedPressed : styles.pressed)]}>
-                {selected ? <AppIcon name="check" size={16} importantForAccessibility="no" /> : null}
-                <Text style={styles.childName}>{child.displayName}</Text>
-              </Pressable>;
-            })}
-          </View> : null}
           <View style={styles.childActions} testID="guide-child-actions">
             <ManualFormDialog key={`${identityKey}:${pathname}`} label={createUnknown ? "查看原建立操作" : "新增孩子"} title="新增孩子" openRequest={openChildRequest}
               scopeKey={identityKey ?? "no-identity"} disabled={!!recordsState.deletion}
@@ -103,30 +86,27 @@ export default function GuideScreen() {
           </View>
         </View>
         {childRecovery}
-      </View>
+      </View> : null}
     </View>
     <View ref={layout.ref} onLayout={layout.onLayout} style={[styles.workspace, narrow && styles.workspaceNarrow]}>
-      <View style={[styles.steps, narrow && styles.stepsNarrow]} accessibilityLabel="使用引導步驟">
-        <Text accessibilityRole="header" style={styles.stepsHeading}>選擇你現在想做的事</Text>
-        {steps.map((item, index) => <Pressable key={item.title} accessibilityRole="button" accessibilityLabel={`第 ${index + 1} 步：${item.title}${index === currentStep ? "，目前閱讀" : ""}`}
+      <View style={[styles.steps, narrow && styles.stepsNarrow]} accessibilityLabel="使用說明主題">
+        <Text accessibilityRole="header" aria-level={2} style={styles.stepsHeading}>選擇你現在想做的事</Text>
+        {steps.map((item, index) => <Pressable key={item.title} accessibilityRole="button" accessibilityLabel={`${item.title}${index === currentStep ? "，目前閱讀" : ""}`}
           accessibilityState={{ selected: index === currentStep }} onPress={() => setCurrentStep(index)}
           style={({ pressed }) => [styles.step, index === currentStep && styles.stepActive, pressed && (index === currentStep ? styles.selectedPressed : styles.pressed)]}>
-          <View style={[styles.stepNumber, index === currentStep && styles.stepNumberActive]}><Text style={[styles.stepNumberText, index === currentStep && styles.stepNumberTextActive]}>{index + 1}</Text></View>
+
           <View style={styles.stepCopy}><Text style={styles.stepTitle}>{item.title}</Text><Text style={styles.meta}>{item.description}</Text></View>
           <AppIcon name="chevron-right" size={18} />
         </Pressable>)}
       </View>
       <View style={styles.reading} testID="guide-current-step">
-        <Text style={styles.eyebrow}>第 {currentStep + 1} 步，共 {steps.length} 步</Text>
-        <View style={styles.readingHeading}><Text accessibilityRole="header" style={styles.readingTitle}>{step.title}</Text><AppButton label={step.action} onPress={() => actions.open(step.destination)} /></View>
+        <Text style={styles.eyebrow}>使用說明</Text>
+        <View style={styles.readingHeading}><Text accessibilityRole="header" aria-level={2} style={styles.readingTitle}>{step.title}</Text><AppButton label={step.action} onPress={() => actions.open(step.destination)} /></View>
         <Text style={styles.lead}>{step.description}</Text>
         <View style={styles.checklist}>{step.points.map((point, index) => <View key={point.title} style={styles.point}>
           <Text style={styles.pointNumber}>{String(index + 1).padStart(2, "0")}</Text><View style={styles.pointCopy}><Text style={styles.pointTitle}>{point.title}</Text><Text style={styles.body}>{point.body}</Text></View>
         </View>)}</View>
-        <View style={styles.stepControls}>
-          <AppButton label="上一步" variant="quiet" disabled={currentStep === 0} onPress={() => setCurrentStep(value => value - 1)} />
-          <AppButton label="下一步" variant="secondary" disabled={currentStep === steps.length - 1} onPress={() => setCurrentStep(value => value + 1)} />
-        </View>
+
       </View>
     </View>
 
@@ -162,7 +142,7 @@ const styles = StyleSheet.create({
   readingTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.title }, lead: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
   checklist: { marginVertical: spacing.md, flexDirection: "row", flexWrap: "wrap", gap: spacing.lg }, point: { flexGrow: 1, flexBasis: 240, minWidth: 0, flexDirection: "row", gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingVertical: spacing.lg },
   pointNumber: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, paddingTop: spacing.xs }, pointCopy: { flex: 1, minWidth: 0, gap: spacing.sm },
-  pointTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section }, body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+  pointTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section }, body: { fontFamily: chineseFont, color: colors.muted, ...readingType.body }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   actions: { alignItems: "flex-start" }, stepControls: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   start: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.lg, backgroundColor: colors.paleTeal, padding: spacing.lg, borderRadius: radius.medium }, startCopy: { flex: 1, flexBasis: 260, minWidth: 0, gap: spacing.sm },
   previewFooter: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm, alignItems: "flex-start" }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },

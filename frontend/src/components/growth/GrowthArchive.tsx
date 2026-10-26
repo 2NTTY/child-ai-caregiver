@@ -4,7 +4,7 @@ import { AppCheckbox } from "../AppCheckbox";
 import { AppDialog } from "../AppDialog";
 import { AppScrollView } from "../AppScrollView";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type ScrollView } from "react-native";
+import { Platform, Pressable, StyleSheet, View, useWindowDimensions, type ScrollView, type PressableStateCallbackType } from "react-native";
 import { Text } from "react-native-paper";
 import type { GrowthArchiveEntry, GrowthArchiveProjection, GrowthArchiveSource, GrowthViewModel } from "../../growth-view-model";
 import { growthTime } from "../../growth-view-model";
@@ -30,13 +30,32 @@ const entryLabels: Record<GrowthArchiveEntry["status"], string> = {
   confirmed_record: "家長已確認的記錄", agent_summary: "Agent 整理", source_summary: "共享來源整理", unverified: "尚待核對",
 };
 
+const reportVersionLabel = (version: number) => Number.isInteger(version) && version > 0 ? `版本 ${version}` : "版本未提供";
+const reportDateLabel = (value: string) => typeof value === "string" && Number.isFinite(Date.parse(value)) ? growthTime(value) : "整理時間未提供";
+
 function SourceDisclosure({sources, onRecord}: {sources: GrowthArchiveSource[]; onRecord?: (source: GrowthArchiveSource) => void}) {
   return <View style={s.archiveSources}>{sources.map(source => <View key={source.id} style={s.smallStack}>
     <Text style={s.title}>{source.label}</Text>
-    <Text selectable style={s.body}>{source.excerpt}</Text>
+    <Text selectable style={a.reading}>{source.excerpt}</Text>
     <Text style={s.meta}>{source.timeLabel} · 來源版本 {source.version}</Text>
     {source.recordId && onRecord ? <AppButton label={`查看原始${source.label}`} variant="quiet" onPress={() => onRecord(source)} /> : null}
   </View>)}</View>;
+}
+
+// Presentation slots receive the existing archive selection and guarded actions.
+// They never read, fetch or maintain a second report.
+function ReportContents({children}: {children: ReactNode}) {
+  return <View style={a.contentsRail} testID="growth-report-contents">
+    <Text accessibilityRole="header" aria-level={3} style={a.contentsTitle}>這份報告</Text>
+    <Text style={a.supporting}>按欄目閱讀，或沿下方記錄慢慢回看。</Text>
+    <View style={a.contentsLinks}>{children}</View>
+  </View>;
+}
+function ReportChapter({number, title, children}: {number: string; title: string; children: ReactNode}) {
+  return <View style={a.chapter}>
+    <View style={a.chapterHeading}><Text style={a.chapterNumber}>{number}</Text><Text accessibilityRole="header" aria-level={3} style={a.reportSectionTitle}>{title}</Text></View>
+    <View style={a.chapterBody}>{children}</View>
+  </View>;
 }
 
 export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport, exportBusy, active = true, footerActions, footerDetails}: {
@@ -175,19 +194,19 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
             <Text style={[a.filterText, filter === option.key && a.filterTextSelected]}>{option.label}</Text>
           </Pressable>)}
       </View>
-      <View style={wide ? a.archiveGrid : s.stack}>
+      <View style={a.archiveLedger}>
         {visibleItems.map(item => {
-          const version = Number.isInteger(item.snapshot.version) && item.snapshot.version > 0 ? `版本 ${item.snapshot.version}` : "版本未提供";
+          const version = reportVersionLabel(item.snapshot.version);
           const generatedAt = typeof item.snapshot.generatedAt === "string" && Number.isFinite(Date.parse(item.snapshot.generatedAt))
-            ? `整理於 ${growthTime(item.snapshot.generatedAt)}` : "整理時間未提供";
+            ? `整理於 ${reportDateLabel(item.snapshot.generatedAt)}` : "整理時間未提供";
           const metadata = `${version} · ${generatedAt}`;
           return <Pressable key={item.key} accessibilityRole="button" accessibilityLabel={`閱讀${item.period?.label ?? item.snapshot.periodLabel}，${metadata}${item.period?.coverage === "partial" ? "，部分內容" : ""}`}
           accessibilityState={{selected: selected?.key === item.key}} aria-pressed={selected?.key === item.key} onPress={() => selectArchive(item)}
-          testID={`growth-archive-card-${item.key}`} style={[a.archiveCard, wide && a.archiveCardWide, selected?.key === item.key && a.archiveCardSelected]}>
-          <AppIcon name="book-open-variant" size={22} />
+          testID={`growth-archive-card-${item.key}`} style={[a.archiveCard, selected?.key === item.key && a.archiveCardSelected]}>
+          <View style={a.archiveMarker} aria-hidden importantForAccessibility="no-hide-descendants"><AppIcon name="book-open-variant" size={20} /></View>
           <View style={a.cardCopy}><Text style={s.title}>{item.period?.label ?? "成長報告"}</Text><Text style={s.meta}>{item.snapshot.periodLabel}{item.period?.coverage === "partial" ? " · 部分內容" : ""}</Text>
             <Text style={s.meta}>{metadata}</Text></View>
-          <AppIcon name="chevron-right" size={18} />
+          <View aria-hidden importantForAccessibility="no-hide-descendants"><AppIcon name="chevron-right" size={18} /></View>
         </Pressable>;
         })}
       </View>
@@ -228,7 +247,7 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
     {footerDetails}
   </View>;
   if (!archive) return <View style={s.stack}>{periods}<View style={s.archiveEmpty} testID="growth-archive-unavailable">
-    <Text accessibilityRole="header" style={s.concernTitle}>{state === "ready" ? "暫時沒有可閱讀的成長報告" : stateCopy[state].title}</Text>
+    <Text accessibilityRole="header" aria-level={2} style={s.concernTitle}>{state === "ready" ? "暫時沒有可閱讀的成長報告" : stateCopy[state].title}</Text>
     <Text style={s.body}>{state === "ready" ? rangePeriods ? "可翻閱其他已取得的期間與版本。" : "可翻閱其他已取得的年度與季度。" : stateCopy[state].detail}</Text>
   </View>{footerActions || footerDetails ? footer : null}</View>;
   const sections = standardGrowthReportSections(model, archive);
@@ -240,22 +259,29 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
       <View style={a.headerRow}>
         <View style={a.headerCopy}>
           <Text style={a.kicker}>{selected?.period?.kind === "range" ? "成長報告" : selected?.key === current?.key ? "標準成長報告" : selected?.period?.label ?? "成長報告"}</Text>
-          <Text accessibilityRole="header" style={a.reportTitle}>{archive.title ?? `${model.childName}的成長報告`}</Text>
+          <Text accessibilityRole="header" aria-level={2} style={a.reportTitle}>{archive.title ?? `${model.childName}的成長報告`}</Text>
         </View>
-        <AppButton label="導出報告" variant="accent" onPress={() => {clearExportFeedback(); setExportKey(selected?.key ?? null); setExportOpen(true);}} />
+        <AppButton label="導出報告" variant="primary" onPress={() => {clearExportFeedback(); setExportKey(selected?.key ?? null); setExportOpen(true);}} />
       </View>
-      <View style={s.row}><Text style={s.meta}>{archive.periodLabel}</Text>{selected?.period?.coverage === "partial" ? <AppStatusBadge label="部分內容" tone="warning" /> : null}</View>
-      <Text style={s.meta}>最近整理：{growthTime(archive.generatedAt)}</Text>
+      <View style={a.reportDateline}><Text style={a.periodLabel}>{archive.periodLabel}</Text>{selected?.period?.coverage === "partial" ? <AppStatusBadge label="部分內容" tone="warning" /> : null}</View>
+      <Text style={a.supporting}>最近整理：{reportDateLabel(archive.generatedAt)} · {reportVersionLabel(archive.version)}</Text>
+      <Text style={a.reading}>從已有記錄回看孩子的日常、變化與需要；每段整理都可查看原始依據。</Text>
     </View>
     {periods}
     {state !== "ready" ? <View style={s.archiveUpdate} accessibilityRole="summary"><Text style={s.title}>{stateCopy[state].title}</Text><Text style={s.body}>{stateCopy[state].detail}</Text></View> : null}
     <View style={[a.reportDocument, wide && a.reportDocumentWide]} testID="growth-standard-report">
+      {wide && sections.length > 1 ? <ReportContents>{sections.map((section, index) => <Pressable key={section.id} accessibilityRole="button" accessibilityLabel={`跳到${section.title}`}
+        accessibilityState={{selected: chapter === section.id}} aria-pressed={chapter === section.id} testID={`growth-report-chapter-${section.id}`} onPress={() => goTo(section.id)}
+        style={({pressed, hovered, focused}: PressableStateCallbackType & {hovered?: boolean; focused?: boolean}) => [a.chapterLink, chapter === section.id && a.chapterLinkSelected, (pressed || hovered || focused) && a.chapterLinkActive]}>
+        <Text style={a.chapterLinkNumber}>{String(index + 1).padStart(2, "0")}</Text><Text style={a.chapterLinkLabel}>{section.title}</Text>
+      </Pressable>)}</ReportContents> : null}
+      <View style={a.reportNarrative} testID="growth-report-narrative">
       {!wide && sections.length > 1 ? <AppSelect key={JSON.stringify([model.scopeKey, model.childId, model.page?.authorityVersion, archive.id, archive.version, selected?.key])}
         label="跳到欄目" value={chapter} options={sections.map(section => ({value: section.id, label: section.title}))}
         onChange={Platform.OS === "web" ? setChapter : goTo} onSelectionClosed={Platform.OS === "web" ? goTo : undefined} /> : null}
       {sections.map((section, index) => <View key={section.id} ref={node => {if (node) sectionRefs.current.set(section.id, node); else sectionRefs.current.delete(section.id);}} tabIndex={-1}
         style={[a.reportSection, index > 0 && a.reportSectionDivider]} testID={`growth-report-${section.id}`}>
-        <Text accessibilityRole="header" style={a.reportSectionTitle}>{section.title}</Text>
+        <ReportChapter number={String(index + 1).padStart(2, "0")} title={section.title}>
         {section.id === "profile" ? <View style={a.profileFacts} testID="growth-report-profile-facts">
           <View style={a.profileFact}><Text style={s.meta}>孩子</Text><Text style={s.title}>{model.childName}</Text></View>
           <View style={a.profileFact}><Text style={s.meta}>年齡</Text><Text style={s.body}>{archive.ageLabel || "未提供"}</Text></View>
@@ -266,9 +292,9 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
           const readable = archiveEntryReadable(model, archive, entry);
           const disclosed = !contextChanged && opened.includes(entry.id);
           const fieldLabel = entry.title ?? (section.id === "profile" ? "近況摘要" : "已記錄的觀察");
-          return <View key={entry.id} style={[a.reportEntry, wide && a.reportEntryWide]} testID={`growth-report-entry-${entry.id}`}>
+          return <View key={entry.id} style={a.reportEntry} testID={`growth-report-entry-${entry.id}`}>
             {readable ? <>
-              <View style={[a.reportField, wide && a.reportFieldWide]}>
+              <View style={a.reportField}>
                 <Text style={s.title}>{fieldLabel}</Text>
                 {entry.timeLabel ? <Text style={s.meta}>{entry.timeLabel}</Text> : null}
               </View>
@@ -284,7 +310,9 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
             </> : <Text style={s.warning}>這項內容的來源已改變或未能核對，暫不顯示。</Text>}
           </View>;
         })}
+        </ReportChapter>
       </View>)}
+      </View>
     </View>
     {footer}
     <AppDialog visible={exportOpen && active && authorized && !contextChanged} onDismiss={closeExport} testID="growth-report-export">
@@ -338,23 +366,38 @@ export function GrowthArchive({model, wide, scrollRef, onRecord, onExportReport,
 
 const a = StyleSheet.create({
   exportFeedback: {paddingHorizontal: spacing.lg, paddingTop: spacing.md},
-  reportHeader: {gap: spacing.sm, minWidth: 0, paddingVertical: spacing.sm},
+  reportHeader: {gap: spacing.md, minWidth: 0, paddingVertical: spacing.xl, borderTopWidth: 3, borderTopColor: colors.ink, borderBottomWidth: 1, borderBottomColor: colors.line},
   headerRow: {flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.md},
   headerCopy: {gap: spacing.xs, minWidth: 0, flexShrink: 1},
   reportTitle: {fontFamily: chineseFont, color: colors.ink, fontSize: 24, lineHeight: 34, fontWeight: "700"},
   kicker: {fontFamily: chineseFont, ...readingType.meta, color: colors.muted, fontWeight: "600"},
-  reportDocument: {backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small, padding: spacing.lg, gap: spacing.md, minWidth: 0, maxWidth: 1040},
-  reportDocumentWide: {paddingHorizontal: spacing.xl, paddingVertical: spacing.lg},
+  reportDocument: {gap: spacing.xl, minWidth: 0, width: "100%", maxWidth: 1120},
+  reportDocumentWide: {flexDirection: "row", alignItems: "flex-start", gap: spacing.xxl},
+  reportNarrative: {flexGrow: 1, flexShrink: 1, flexBasis: "auto", minWidth: 0, gap: spacing.xl},
+  contentsRail: {width: 200, flexShrink: 0, minWidth: 0, gap: spacing.md, paddingRight: spacing.lg, borderRightWidth: 1, borderRightColor: colors.line},
+  contentsTitle: {fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "700"},
+  contentsLinks: {gap: spacing.sm, minWidth: 0},
+  chapterLink: {minHeight: 44, alignSelf: "stretch", flexDirection: "row", alignItems: "flex-start", gap: spacing.sm, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, borderLeftWidth: 2, borderLeftColor: "transparent"},
+  chapterLinkSelected: {backgroundColor: colors.paleTeal, borderLeftColor: colors.teal},
+  chapterLinkActive: {backgroundColor: colors.selectedNav, borderLeftColor: colors.teal},
+  chapterLinkNumber: {fontFamily: chineseFont, color: colors.teal, ...readingType.tool, minWidth: 22},
+  chapterLinkLabel: {fontFamily: chineseFont, color: colors.ink, ...readingType.tool, flex: 1, minWidth: 0},
+  chapter: {gap: spacing.lg, minWidth: 0},
+  chapterHeading: {flexDirection: "row", alignItems: "flex-start", gap: spacing.md, minWidth: 0},
+  chapterNumber: {fontFamily: chineseFont, color: colors.teal, ...readingType.tool, fontWeight: "700", minWidth: 24, paddingTop: 3},
+  chapterBody: {gap: spacing.lg, minWidth: 0},
+  reportDateline: {flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md, minWidth: 0},
+  periodLabel: {fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "600"},
+  reading: {fontFamily: chineseFont, color: colors.ink, ...readingType.body, maxWidth: 760},
+  supporting: {fontFamily: chineseFont, color: colors.muted, ...readingType.tool},
   reportSection: {gap: spacing.md, paddingVertical: spacing.sm, minWidth: 0},
   reportSectionDivider: {borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.lg},
-  reportSectionTitle: {fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "700"},
-  profileFacts: {flexDirection: "row", flexWrap: "wrap", gap: spacing.md, minWidth: 0},
+  reportSectionTitle: {fontFamily: chineseFont, color: colors.ink, fontSize: 20, lineHeight: 28, fontWeight: "700", flexShrink: 1},
+  profileFacts: {flexDirection: "row", flexWrap: "wrap", gap: spacing.lg, minWidth: 0, paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.softLine},
   profileFact: {flexBasis: 120, flexGrow: 1, minWidth: 0, gap: spacing.xs},
   profilePeriod: {flexBasis: 240, flexShrink: 1},
-  reportEntry: {gap: spacing.sm, paddingVertical: spacing.sm, minWidth: 0},
-  reportEntryWide: {flexDirection: "row", alignItems: "flex-start", gap: spacing.xl},
-  reportField: {gap: spacing.xs, minWidth: 0},
-  reportFieldWide: {width: 152, flexShrink: 0},
+  reportEntry: {gap: spacing.md, paddingVertical: spacing.sm, paddingLeft: spacing.lg, borderLeftWidth: 2, borderLeftColor: colors.line, minWidth: 0},
+  reportField: {flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", gap: spacing.sm, minWidth: 0},
   reportEntryCopy: {flexGrow: 1, flexShrink: 1, flexBasis: "auto", minWidth: 0, gap: spacing.sm},
   history: {gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line},
   filters: {flexDirection: "row", flexWrap: "wrap", gap: spacing.sm},
@@ -362,15 +405,15 @@ const a = StyleSheet.create({
   filterSelected: {backgroundColor: colors.ink, borderColor: colors.ink},
   filterText: {fontFamily: chineseFont, ...readingType.tool, color: colors.ink, fontWeight: "600"},
   filterTextSelected: {color: colors.white},
-  archiveGrid: {flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: spacing.md},
-  archiveCard: {minWidth: 0, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small, padding: spacing.md,
+  archiveLedger: {minWidth: 0, borderTopWidth: 1, borderTopColor: colors.line},
+  archiveMarker: {width: 24, alignItems: "center"},
+  archiveCard: {minWidth: 0, minHeight: 64, borderBottomWidth: 1, borderBottomColor: colors.line, padding: spacing.md,
     flexDirection: "row", alignItems: "center", gap: spacing.md},
-  archiveCardWide: {width: "48%", flexGrow: 1, maxWidth: "100%"},
-  archiveCardSelected: {borderColor: "transparent", backgroundColor: colors.sage},
+  archiveCardSelected: {backgroundColor: colors.paleTeal},
   cardCopy: {flex: 1, minWidth: 0, gap: spacing.xs},
   entryMeta: {flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0},
   entryStatus: {alignSelf: "center", justifyContent: "center", minWidth: 0, maxWidth: "100%"},
-  compactDisclosure: {minHeight: 32, paddingVertical: spacing.xs, paddingHorizontal: spacing.sm},
+  compactDisclosure: {minHeight: 44, paddingVertical: spacing.xs, paddingHorizontal: spacing.sm},
   footer: {maxWidth: 1040, minWidth: 0, gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.md},
   footerActions: {flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0},
   reportDetails: {gap: spacing.sm, paddingVertical: spacing.sm, minWidth: 0},

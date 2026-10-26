@@ -74,7 +74,7 @@ export default function LoginPage() {
         <View testID="login-story-panel" style={styles.storyPanel}>
         <BrandLogo style={styles.storyLogo} />
         <Text style={styles.storyEyebrow}>CARE WORKSPACE</Text>
-        <Text accessibilityRole="header" style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>照顧有依據，{narrow ? "" : "\n"}安排有方向。</Text>
+        <Text style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>照顧有依據，{narrow ? "" : "\n"}安排有方向。</Text>
         <Text style={styles.storyLead}>結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。</Text>
         <View style={styles.features}>
           <View style={styles.featureRow}><AppIcon name="message-text-outline" /><Text style={styles.feature}>隨時整理照顧問題與記錄</Text></View>
@@ -89,7 +89,7 @@ export default function LoginPage() {
       <View style={styles.formHeader}><BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>你的育兒資料與行動工作台</Text></View>
       <View style={styles.formCard}>
 
-        <Text accessibilityRole="header" style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
+        <Text accessibilityRole="header" aria-level={1} style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
         <Text style={styles.formIntro}>{mode === "signIn" ? "登入後，繼續整理孩子的照顧資料。" : "先建立自己的帳戶，再新增孩子的資料。"}</Text>
         {mode === "signUp" && account.status?.registration === "invite" ? <Text style={styles.formNote}>目前只接受獲邀電郵註冊；完成電郵驗證及資料使用確認後，即可新增孩子。</Text> : account.status?.registration === "trial" ? <Text style={styles.formNote}>目前為試用模式，請依服務說明使用合成資料。</Text> : null}
         <View accessibilityRole="tablist" accessibilityLabel="登入方式" style={styles.modeTabs}>

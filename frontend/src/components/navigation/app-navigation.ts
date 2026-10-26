@@ -21,7 +21,7 @@ export const navigationItems = {
   memory: { href: "/memory", label: "記憶與參考", short: "記憶", icon: "book-open-variant" },
   settings: { href: "/settings", label: "設定", short: "設定", icon: "cog-outline" },
   guide: { href: "/guide", label: "使用引導", short: "說明", icon: "compass-outline" },
-  more: { href: "/more", label: "全部功能", short: "全部功能", icon: "dots-horizontal" },
+  more: { href: "/more", label: "全部功能", short: "更多", icon: "dots-horizontal" },
   history: { href: "/history", label: "歷史", short: "歷史", icon: "history" },
 } as const satisfies Record<NavigationKey, NavigationItem>;
 
@@ -47,9 +47,9 @@ export const moreNavigationGroups = [
     { key: "photos", detail: "回看照片、語音、影片與文件原檔" },
     { key: "profile", detail: "查看及更正孩子的基本資料" },
   ] },
-  { title: "助手與家庭", detail: "對話背景、家庭協作與聯絡安排", items: [
+  { title: "助手與聯絡", detail: "對話背景、本人聯絡與協作狀態", items: [
     { key: "memory", detail: "查閱對話脈絡、記憶及來源" },
-    { key: "family", detail: "查看家庭成員、角色與分工" },
+    { key: "family", detail: "查看協作開放狀態及可用設定" },
     { key: "contact", detail: "管理聯絡渠道及授權範圍" },
   ] },
   { title: "設定與協助", detail: "本人偏好、私人來源及使用說明", items: [

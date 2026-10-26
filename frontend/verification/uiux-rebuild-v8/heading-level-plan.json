@@ -1,0 +1,218 @@
+{
+  "principle": "Page h1; reading/management section h2; details/forms/rows under a section h3; quoted source subsection h4. Standalone account gates/route errors retain h1. Login marketing copy is not a heading. Common SectionHeader defaults to h2 with explicit nested override.",
+  "explicitLevels": {
+    "components/account/AccountCallbackGate.tsx": [
+      1,
+      1,
+      1
+    ],
+    "components/AppShell.tsx": [
+      2
+    ],
+    "components/FormErrorSummary.tsx": [
+      3
+    ],
+    "components/notifications/ChannelCards.tsx": [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "components/OperationNotice.tsx": [
+      3
+    ],
+    "components/HomeOverviewItems.tsx": [
+      3
+    ],
+    "components/history/PersonalHistoryViews.tsx": [
+      3
+    ],
+    "components/history/HistoryMessageDetail.tsx": [
+      2
+    ],
+    "components/workspace/Workspace.tsx": [
+      2
+    ],
+    "components/photos/PhotosView.tsx": [
+      2,
+      3
+    ],
+    "components/shared-inputs/SourcesView.tsx": [
+      2,
+      2
+    ],
+    "components/shared-inputs/SourceComposer.tsx": [
+      3,
+      3,
+      3
+    ],
+    "components/shared-inputs/SourceRecordForm.tsx": [
+      3,
+      3,
+      3
+    ],
+    "components/care/CareReviewHistoryView.tsx": [
+      2,
+      3
+    ],
+    "components/care/CareCaptureDetail.tsx": [
+      2,
+      3,
+      3
+    ],
+    "components/care/CareRecordDetail.tsx": [
+      2,
+      3,
+      3
+    ],
+    "components/care/CareRecordForm.tsx": [
+      3
+    ],
+    "components/agent/AgentRunView.tsx": [
+      3,
+      2,
+      2
+    ],
+    "components/chat/AnswerSources.tsx": [
+      2,
+      3,
+      4,
+      3
+    ],
+    "screens/chatScreen.tsx": [
+      2,
+      1
+    ],
+    "production/AgentConversation.tsx": [
+      3,
+      2,
+      2,
+      2,
+      2
+    ],
+    "components/RouteFeedback.tsx": [
+      1
+    ],
+    "components/contact/ContactView.tsx": [
+      2,
+      2
+    ],
+    "screens/familyScreen.tsx": [
+      2,
+      2,
+      2
+    ],
+    "components/growth/GrowthView.tsx": [
+      2,
+      2
+    ],
+    "components/growth/GrowthConcernTimeline.tsx": [
+      3
+    ],
+    "components/preparations/PreparationWorkspace.tsx": [
+      2,
+      3,
+      2,
+      3,
+      2,
+      2
+    ],
+    "screens/guideScreen.tsx": [
+      2,
+      2,
+      2
+    ],
+    "screens/historyScreen.tsx": [
+      2,
+      2
+    ],
+    "components/tasks/TaskDetail.tsx": [
+      2
+    ],
+    "components/tasks/TaskWorkspaceParts.tsx": [
+      3,
+      3
+    ],
+    "components/growth/GrowthHistoryView.tsx": [
+      2
+    ],
+    "components/workspace/HomeWorkspace.tsx": [
+      2,
+      2
+    ],
+    "components/HomeAgentImportant.tsx": [
+      2
+    ],
+    "components/HomeQuickActions.tsx": [
+      2
+    ],
+    "components/memory/MemoryReferenceView.tsx": [
+      3,
+      3,
+      3,
+      3,
+      2,
+      2,
+      2
+    ],
+    "components/history/PersistentWorkCards.tsx": [
+      3
+    ],
+    "screens/moreScreen.tsx": [
+      2
+    ],
+    "components/profile/ProfileView.tsx": [
+      2,
+      2,
+      2
+    ],
+    "components/profile/ProfileForm.tsx": [
+      3,
+      2
+    ],
+    "screens/settingsScreen.tsx": [
+      2
+    ],
+    "components/model-settings/ModelSettingsView.tsx": [
+      3,
+      3
+    ],
+    "components/child-overview/ChildOverviewConcerns.tsx": [
+      2
+    ],
+    "components/child-overview/ChildOverviewContent.tsx": [
+      2,
+      2,
+      3,
+      3
+    ],
+    "components/growth/GrowthArchive.tsx": [
+      3,
+      3,
+      2,
+      2
+    ],
+    "production/TaskKnowledgeSummaryContent.tsx": [
+      2
+    ],
+    "components/summary/PreparationSheet.tsx": [
+      2,
+      3,
+      3,
+      3
+    ],
+    "components/child-overview/ChildOverviewRecentRecords.tsx": [
+      2
+    ],
+    "components/summary/SummaryRecords.tsx": [
+      3
+    ],
+    "components/tasks/TasksView.tsx": [
+      2
+    ],
+    "components/tasks/TasksCalendar.tsx": [
+      2
+    ]
+  }
+}

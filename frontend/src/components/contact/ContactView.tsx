@@ -85,8 +85,8 @@ export function ContactView({model, actions, onSettings, onTask, previewTools}: 
             </View>
           </View>
         </View>
-        </View><View style={[s.consentAside, !wide && s.consentAsideFull]}><Text accessibilityRole="header" style={s.title}>我的接收設定</Text><Text style={s.meta}>一般提示與後備接收的本人同意，和每項任務授權分開管理。</Text><ContactConsentCard key={`${model.scopeKey}:${model.userId}`} model={model} actions={actions} onSettings={onSettings} /></View></View>
-        <View style={s.historyWorkspace}><Text accessibilityRole="header" style={s.title}>聯絡紀錄</Text><ContactHistory model={model} actions={actions} onTask={onTask} /></View>
+        </View><View style={[s.consentAside, !wide && s.consentAsideFull]}><Text accessibilityRole="header" aria-level={2} style={s.title}>我的接收設定</Text><Text style={s.meta}>一般提示與後備接收的本人同意，和每項任務授權分開管理。</Text><ContactConsentCard key={`${model.scopeKey}:${model.userId}`} model={model} actions={actions} onSettings={onSettings} /></View></View>
+        <View style={s.historyWorkspace}><Text accessibilityRole="header" aria-level={2} style={s.title}>聯絡紀錄</Text><ContactHistory model={model} actions={actions} onTask={onTask} /></View>
       </> : null}{previewTools}
     </View>
   </PageFrame>;

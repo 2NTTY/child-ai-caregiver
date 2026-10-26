@@ -8,7 +8,7 @@ import { Text, TextInput } from "react-native-paper";
 import { DateTime } from "luxon";
 import { currentTaskMetadata, pendingTasks, recentCompletedTasks, taskCompletionLabel, taskScheduleSections, taskScheduleTime, type TasksActions, type TasksViewModel } from "../../task-view-model";
 import type { WriteRecoveryActions } from "../../view-model";
-import { chineseFont, colors, mobileLayout, mobileType, readingType, spacing, workspaceType } from "../../theme";
+import { chineseFont, colors, mobileLayout, readingType, spacing } from "../../theme";
 import { MotionDetail, MotionDisclosure, MotionList } from "../../motion";
 import { AppIcon } from "../AppIcon";
 import { AppScrollView as ScrollView } from "../AppScrollView";
@@ -16,7 +16,7 @@ import { WriteRecoveryNotice } from "../WriteRecoveryNotice";
 import { ReadStateNotice } from "../ReadStateNotice";
 import { EmptyListCard } from "../EmptyListCard";
 import { StatusAnnouncement } from "../StatusAnnouncement";
-import { AppButton, AppSelect, AppSelectionTrigger, AppTextField, SectionCard, UnderlineTabs, AppTabPanel, TabToolbar } from "../ui";
+import { AppButton, AppSelect, AppSelectionTrigger, AppTextField, SectionCard, AppTabPanel } from "../ui";
 import { TaskListRow } from "./TaskListRow";
 import { TaskDetail } from "./TaskDetail";
 import { FormDialog } from "../FormDialog";
@@ -128,8 +128,8 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
   const readState = listReadState === "loading" ? "loading" : listReadState === "error" ? "error" : listReadState === "stale" || !model.online ? "stale" : visible.length ? "ready" : "empty";
   const readMessage = listReadState === "loading" ? "正在讀取事項…" : listReadState === "error" ? "未能讀取事項，請重試。" : !model.online ? "目前離線，已載入內容只供參考；恢復連線後才可提交。" : listReadState === "stale" ? "未能更新，現正顯示上次讀取的事項。" : visible.length ? "" : tab === "pending" ? noPendingTasks ? "暫無待辦" : openCount === 0 && model.hasMoreTasks ? "已載入的事項中暫無待辦" : "沒有符合篩選的事項" : model.hasMoreTasks ? "已載入的事項中暫無已完成的事項" : "暫無已完成的事項";
   const pageActions = <>
-    {model.access === "editable" ? <><AppButton label="請助手安排" density="compact" disabled={occupied} onPress={() => { setActionMenu({ scope: scopeKey, open: false }); onAgent(); }} />
-      <AppButton label="手動新增" accessibilityLabel="手動新增共享事項" density="compact" variant="secondary" disabled={occupied} onPress={() => { setActionMenu({ scope: scopeKey, open: false }); rememberList(null); actions.startCreate(); }} /></> : null}
+    {model.access === "editable" ? <><AppButton label="請助手安排" density="compact" variant="secondary" disabled={occupied} onPress={() => { setActionMenu({ scope: scopeKey, open: false }); onAgent(); }} />
+      <AppButton label="手動新增" accessibilityLabel="手動新增共享事項" density="compact" disabled={occupied} onPress={() => { setActionMenu({ scope: scopeKey, open: false }); rememberList(null); actions.startCreate(); }} /></> : null}
     <AppButton label="歷史" accessibilityLabel="事項歷史" variant="quiet" density="compact" disabled={occupied} onPress={() => { setActionMenu({ scope: scopeKey, open: false }); onHistory(); }} />
   </>;
   return <View ref={pageLayout.ref} onLayout={pageLayout.onLayout} style={styles.pageContainer}><ScrollView ref={scrollRef} testID="tasks-page-scroll" style={[styles.pageScroll, customBackground && styles.transparent]} contentContainerStyle={[styles.page, compact && styles.mobilePage]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16} onScroll={event => { if (listVisible) scrollPosition.current = event.nativeEvent.contentOffset.y; }}>
@@ -147,7 +147,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
               {tab === "completed" && !readUnavailable && completed.length > 0 ? <Text style={styles.meta}>{model.hasMoreTasks ? "目前只按已載入資料顯示最近 10 項，載入更多後會重新排序。" : "只顯示最近 10 項；較早及已取消的安排可到事項歷史查看。"}</Text> : null}
               <AppTabPanel tabsId={tabsId} tabKey={tab} active>
               {tab === "pending" && !readUnavailable && !noPendingTasks ? <View style={styles.backlogToolbar}>
-                <View style={styles.searchField}><AppTextField dense label="搜尋已載入事項" accessibilityLabel="搜尋已載入事項" placeholder="標題、內容或負責人" value={query} disabled={occupied} right={query ? <TextInput.Icon icon="close" accessibilityLabel="清除搜尋" disabled={occupied} onPress={() => { if (!occupied) { anchor.current = null; actions.closePanel(); setQuery(""); setPage(0); } }} /> : undefined} onChangeText={value => { if (occupied) return; anchor.current = null; actions.closePanel(); setQuery(value); setPage(0); }} /></View>
+                <View style={styles.searchField}><AppTextField dense label="搜尋已載入事項" accessibilityLabel="搜尋已載入事項" placeholder="標題、內容或負責人…" value={query} disabled={occupied} right={query ? <TextInput.Icon icon="close" accessibilityLabel="清除搜尋" disabled={occupied} onPress={() => { if (!occupied) { anchor.current = null; actions.closePanel(); setQuery(""); setPage(0); } }} /> : undefined} onChangeText={value => { if (occupied) return; anchor.current = null; actions.closePanel(); setQuery(value); setPage(0); }} /></View>
                 <AppSelect<TaskBacklogFilter | "day"> label="範圍" value={selectedDay ? "day" : filter} options={[
                   ...(selectedDay ? [{ value: "day" as const, label: DateTime.fromISO(selectedDay).toFormat("M月d日") }] : []),
                   ...backlogFilters.filter(item => item.key !== "unconfirmed" || backlog.counts.unconfirmed > 0 || filter === item.key).map(item => ({ value: item.key, label: item.label, count: backlog.counts[item.key] })),
@@ -168,7 +168,7 @@ export function TasksView({ model, actions, recovery, previewControls, onAgent, 
                 {(readState === "error" || readState === "stale") && recovery?.reloadCurrent ? <AppButton label="重新讀取事項" variant="secondary" density="compact" disabled={!model.online || model.reading || locked || !!model.draft} onPress={recovery.reloadCurrent} /> : null}
               </ReadStateNotice>}
               {!readUnavailable && sections.filter(section => section.items.length > 0).map(section => <View key={section.id} testID={`task-time-group-${section.id}`} style={styles.timeGroup}>
-                <View style={styles.groupHeading}><Text accessibilityRole="header" style={styles.groupTitle}>{section.label}</Text><Text style={styles.meta}>{section.items.length} 項</Text></View>
+                <View style={styles.groupHeading}><Text accessibilityRole="header" aria-level={2} style={styles.groupTitle}>{section.label}</Text><Text style={styles.meta}>{section.items.length} 項</Text></View>
                 <MotionList items={section.items} keyExtractor={task => task.id} scopeKey={`${scopeKey}:${tab}`} regionKey={`tasks:${section.id}`} eligible={model.operation.state === "saved" && !loading && !previousLoading.current && listVisible} renderItem={(task, { exiting }) => {
                   const work = currentTaskMetadata(task, model.eligibleAssignees, model.work, model.reminders).work;
                   const assigneeMissing = task.occurrence.state === "scheduled" && !model.eligibleAssignees.some(person => person.userId === task.assigneeUserId);
@@ -215,22 +215,22 @@ const styles = StyleSheet.create({
   headerActions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" },
   hidden: { display: "none" }, stack: { gap: spacing.lg, minWidth: 0 },
   workspace: { gap: spacing.lg, minWidth: 0 }, workspaceWide: { flexDirection: "row", alignItems: "flex-start" },
-  column: { minWidth: 0, width: "100%" }, listColumn: { flex: 1.05, width: undefined }, detailColumn: { flex: 1, width: undefined },
-  listSurface: { gap: spacing.lg, minWidth: 0, backgroundColor: colors.white, padding: spacing.lg, borderWidth: 1, borderColor: colors.line, borderRadius: 12 },
+  column: { minWidth: 0, width: "100%" }, listColumn: { flex: 1.25, width: undefined }, detailColumn: { flex: 1, width: undefined },
+  listSurface: { gap: spacing.lg, minWidth: 0, backgroundColor: colors.white, padding: spacing.lg },
   emptyCard: { minHeight: 176, padding: spacing.xl, justifyContent: "center" },
   scheduleList: { minWidth: 0, gap: spacing.sm }, mobileCalendar: { marginBottom: spacing.md },
   backlogToolbar: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, marginBottom: spacing.md, minWidth: 0 },
   searchField: { flexGrow: 1, flexShrink: 1, flexBasis: 180, minWidth: 160 },
   listContext: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.sm, rowGap: spacing.xs },
-  contextLink: { paddingVertical: spacing.xs }, contextLinkText: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, textDecorationLine: "underline" },
+  contextLink: { minHeight: 44, justifyContent: "center", paddingVertical: spacing.sm }, contextLinkText: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, textDecorationLine: "underline" },
   pagination: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, paddingTop: spacing.sm }, loadMore: { gap: spacing.sm, alignItems: "flex-start" },
   reviewShortcut: { flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 48, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderLeftWidth: 3, borderLeftColor: colors.statusWarmLine, backgroundColor: colors.paleAmber },
   reviewCopy: { flex: 1, minWidth: 0, flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", columnGap: spacing.md, rowGap: spacing.xs },
   reviewTitle: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool, fontWeight: "700" },
   reviewNote: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.meta },
-  timeGroup: { minWidth: 0 }, groupHeading: { flexDirection: "row", gap: spacing.sm, alignItems: "baseline", paddingBottom: spacing.sm },
-  groupTitle: { fontFamily: chineseFont, color: colors.teal, ...readingType.tool, fontWeight: "700" },
+  timeGroup: { minWidth: 0, paddingTop: spacing.lg }, groupHeading: { flexDirection: "row", gap: spacing.sm, alignItems: "baseline", paddingBottom: spacing.sm },
+  groupTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.body, fontWeight: "700" },
   pressed: { backgroundColor: colors.pressedOverlay }, reviewPressed: { backgroundColor: colors.warningPressed },
-  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
+  meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
   notice: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool }, breadcrumb: { fontFamily: chineseFont, color: colors.teal, ...readingType.meta, fontWeight: "700" },
 });

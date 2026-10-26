@@ -130,12 +130,12 @@ function ChatContents({ compact, viewportLayout, onPaneLayout }: {
   const empty = !child ? <SectionCard><Text style={styles.body}>先選擇孩子。</Text><AppButton label="重新讀取子女檔案" onPress={actions.refresh} /></SectionCard>
     : chat.loading && !chat.loadedAt ? <BackgroundSurface padded frosted style={styles.emptyState}><ChatProgressIndicator /><Text accessibilityLiveRegion="polite" style={styles.meta}>正在讀取聊天…</Text></BackgroundSurface>
       : confirmedEmptyChat && !busy && !agentAttachments.length && phase === "draft" ? <BackgroundSurface padded frosted testID="chat-empty-prompt" style={styles.emptyState}>
-        <Text accessibilityRole="header" style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>今天想整理甚麼？</Text><Text style={styles.emptyDetail}>問一個照顧問題，或交代要整理的記錄與安排。</Text></BackgroundSurface> : null;
+        <Text accessibilityRole="header" aria-level={2} style={[styles.emptyTitle, compact && styles.compactEmptyTitle]}>今天想整理甚麼？</Text><Text style={styles.emptyDetail}>問一個照顧問題，或交代要整理的記錄與安排。</Text></BackgroundSurface> : null;
   return <>
     <StatusAnnouncement eventKey={chat.loading && !!chat.loadedAt ? "refreshing" : "settled"} message={chat.loading && !!chat.loadedAt ? "正在重新核對聊天。" : ""} />
     <BackgroundSurface frosted testID="chat-top-toolbar" style={[styles.toolbar, compact && styles.compactColumn]}>
-      <View style={styles.chatHeading}><Text testID="chat-screen-reader-heading" accessibilityRole="header" style={styles.chatTitle}>育兒助手</Text>
-        {!compact ? <Text style={styles.meta}>討論問題 · 整理資料 · 接續行動</Text> : null}</View>
+      <View style={styles.chatHeading}><Text testID="chat-screen-reader-heading" accessibilityRole="header" aria-level={1} style={styles.chatTitle}>育兒助手</Text>
+        {!compact ? <Text style={styles.meta}>{child ? `${child.displayName}的私人照顧對話` : "選擇孩子，再開始討論"}</Text> : null}</View>
       <View style={styles.toolbarActions}>
         <ChatAction label={agentModel.pendingDecision ? "活動 · 待查核" : needsDecision ? "活動 · 待確認" : pendingReadLabel ? `活動 · ${pendingReadLabel}` : "活動"}
           accessibilityLabel={agentModel.pendingDecision ? "對話詳情與活動，原決定待查核" : needsDecision ? "對話詳情與活動，有事項待確認" : pendingReadLabel ? `對話詳情與活動，待確認事項${pendingReadLabel}` : "對話詳情與活動"} onPress={() => setDetailsOpen(true)} compact={compact} disabled={!child} />
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   boundedReadingPanel: { maxWidth: chatLayout.maxWidth, alignSelf: "center" },
   root: { flex: 1, minHeight: 0, backgroundColor: chatColors.canvas },
   toolbar: { width: "100%", flexShrink: 0, paddingHorizontal: chatLayout.wideInset,
-    minHeight: 86, paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.line, backgroundColor: colors.white, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 },
+    minHeight: 76, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line, backgroundColor: colors.white, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 },
   compactColumn: { paddingHorizontal: chatLayout.compactInset }, toolbarActions: { flexDirection: "row", alignItems: "center", gap: 4, flexShrink: 1 },
   chatHeading: { minWidth: 0, flex: 1, gap: 4 }, chatTitle: { fontFamily: chatFont, color: colors.ink, fontSize: 22, lineHeight: 30, fontWeight: "700" },
   emptyDetail: { fontFamily: chatFont, color: colors.muted, fontSize: 14, lineHeight: 23, textAlign: "center", maxWidth: 420 },
@@ -223,8 +223,8 @@ const styles = StyleSheet.create({
   earlier: { alignItems: "center" }, emptyState: { alignItems: "center", gap: 12, paddingVertical: 28 },
   emptyTitle: { fontFamily: chatFont, color: chatColors.ink, fontSize: 28, lineHeight: 38, fontWeight: "500", textAlign: "center" },
   compactEmptyTitle: { fontSize: 24, lineHeight: 34 },
-  action: { alignSelf: "flex-start", minHeight: 40, paddingHorizontal: 8, justifyContent: "center", borderRadius: 10 },
-  compactAction: { minHeight: 48 }, subtleAction: { minHeight: 32, alignSelf: "center" },
+  action: { alignSelf: "flex-start", minHeight: 44, paddingHorizontal: 8, justifyContent: "center", borderRadius: 10 },
+  compactAction: { minHeight: 48 }, subtleAction: { minHeight: 44, alignSelf: "center" },
   actionLabel: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.tool },
   actionActive: { backgroundColor: chatColors.hover }, actionFocused: { outlineColor: chatColors.focus, outlineWidth: 2, outlineStyle: "solid" },
   disabled: { opacity: .45 }, privacyFooter: { flexShrink: 0, paddingHorizontal: 8, paddingBottom: 4, marginTop: -8 },

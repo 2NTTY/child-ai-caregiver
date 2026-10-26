@@ -15,13 +15,13 @@ export default function FamilyPage() {
     <View style={styles.availability}>
       <View style={styles.icon}><AppIcon name="account-group-outline" size={30} color={colors.deepTeal} /></View>
       <View style={styles.copy}><AppStatusBadge label="家庭協作尚未開放" />
-        <Text accessibilityRole="header" style={styles.title}>先把自己的照顧安排理順</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.title}>先把自己的照顧安排理順</Text>
         <Text style={styles.body}>目前可使用助手、孩子檔案與本人聯絡設定。邀請家庭成員及協作管理尚不可用。</Text>
       </View>
     </View>
     <View style={styles.cards}>
-      <View style={styles.card}><Text accessibilityRole="header" style={styles.cardTitle}>本人聯絡與提醒</Text><Text style={styles.body}>核對接收同意、渠道及事項授權；不需先建立家庭。</Text><AppButton label="聯絡" onPress={() => actions.open("contact")} /></View>
-      <View style={styles.card}><Text accessibilityRole="header" style={styles.cardTitle}>帳戶與通知設定</Text><Text style={styles.body}>管理自己的通知、外觀與資料控制。</Text><AppButton label="前往設定" variant="secondary" onPress={() => actions.open("settings")} /></View>
+      <View style={styles.card}><Text accessibilityRole="header" aria-level={2} style={styles.cardTitle}>本人聯絡與提醒</Text><Text style={styles.body}>核對接收同意、渠道及事項授權；不需先建立家庭。</Text><AppButton label="聯絡" onPress={() => actions.open("contact")} /></View>
+      <View style={styles.card}><Text accessibilityRole="header" aria-level={2} style={styles.cardTitle}>帳戶與通知設定</Text><Text style={styles.body}>管理自己的通知、外觀與資料控制。</Text><AppButton label="前往設定" variant="secondary" onPress={() => actions.open("settings")} /></View>
     </View>
   </PageFrame>;
 }

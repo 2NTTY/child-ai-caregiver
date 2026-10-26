@@ -63,10 +63,10 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
       <View style={styles.identityRow}>
         {model.child ? <View style={styles.identity}>
           <View style={styles.avatar} importantForAccessibility="no-hide-descendants"><Text style={styles.avatarText}>{model.child.name.slice(0, 1)}</Text></View>
-          <View style={styles.identityCopy}><Text accessibilityRole="header" style={styles.childName}>{model.child.name}</Text>
+          <View style={styles.identityCopy}><Text accessibilityRole="header" aria-level={2} style={styles.childName}>{model.child.name}</Text>
             <AppStatusBadge label={model.current?.data ? "已確認檔案" : model.reading ? "正在讀取檔案" : "尚未確認檔案"} tone={model.current?.data ? "success" : model.reading ? "info" : "warning"} />
           </View>
-        </View> : <Text accessibilityRole="header" style={styles.childName}>尚未有孩子</Text>}
+        </View> : <Text accessibilityRole="header" aria-level={2} style={styles.childName}>尚未有孩子</Text>}
         {model.access === "editable" ? <ManualFormDialog openRequest={openRequest ? { ...openRequest, scopeKey } : undefined} formKey={model.formKey} label={model.child ? "編輯檔案" : "填寫檔案"} title="編輯孩子檔案" scopeKey={scopeKey} disabled={childDeletionActive} onClose={actions.discardDraft} recovery={writeNotice}><View style={styles.editor}><SectionHeader density="compact" title={model.child ? "核對檔案草稿" : "本地檔案草稿"}
           subtitle={model.child ? `修改基準：版本 ${model.basis?.version ?? 0}；更正會新增版本。` : "僅作前端草稿，不建立真孩子或家庭共享資料。"} />
           <ProfileForm key={model.formKey} initialValues={model.initialValues} editable={editable}
@@ -111,7 +111,7 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
           </SectionCard>
         </MotionDisclosure>
       </> : <SectionCard><Text style={styles.body}>新增孩子後，可以在這裏核對檔案。</Text></SectionCard>}
-      </View><View style={[styles.management, width < 900 && styles.managementFull]}><Text accessibilityRole="header" style={styles.managementTitle}>孩子與頭像</Text><Text style={styles.meta}>管理孩子身份及個人化外觀。檔案更正則在上方編輯。</Text>{childPicker}</View></View>
+      </View><View style={[styles.management, width < 900 && styles.managementFull]}><Text accessibilityRole="header" aria-level={2} style={styles.managementTitle}>孩子與頭像</Text><Text style={styles.meta}>管理孩子身份及個人化外觀。檔案更正則在上方編輯。</Text>{childPicker}</View></View>
       {previewControls}
     </View>
   </>);

@@ -3,9 +3,15 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## 實驗分支二：Care Workspace（2026-10-25，未採納至 master）
+## 實驗分支二：Care Workspace（2026-10-26，未採納至 master）
 
-本分支按使用者要求由 UI UX Pro Max 主導全站重構，解除舊視覺與資訊密度約束；功能、安全及權限不放寬。固定 base `0b9f5d6`，共同修復另記；技能固定來源、全路由功能對照與分層驗收見 [實驗說明](EXPERIMENT_UIUX_REBUILD.md)。目前程式及合成測試已建立，Web export／有序 browser 檢查與獨立 review 待完成；不自動合併或發布。下方既有記錄只作原分支歷史，不代表本實驗設計要求。
+本線已按使用者「完全按 skills 重構並改進／刪除不必要需求」的澄清，從 v7／本地 `8b512f6` 加深頁內真正工作內容：每日簡報、任務詳情／編輯核對／窄屏日曆、記錄證據／人工表單、照顧簡報／成長報告／檔案編輯，以及來源閱讀優先與附件聚焦核對。導航已精簡為五個目的群組，移除隱藏上拉、冗餘時間／刷新及強制式引導，不再把導航或 wrappers 當全站完成依據。完整逐路由判準與 fixed skills 見 [實驗說明](EXPERIMENT_UIUX_REBUILD.md)。
+
+- 固定共同 base `0b9f5d6`，沿既有共享修補；production/controller、權限、資料 owner、原 opId、unknown／確認及聊天短高 reflow 不變。
+- 本輪三個 Astra xhigh 平行 UI slices＋主整合；修後 93/93 focused tests／完整 frontend TypeScript 已通過；mounted Summary、必要read recovery、群組current、tab panel、modified links與明示heading已補，最後來源固定後正常 Web export、source-map 核對及獨立 review／browser 待完成。舊 test harness 的資料／元件假設失敗保留，不稱全 suite 通過。
+- 不發布、不合併、不接真 API／模型／資料；舊 v7 artifact 不覆寫。新 artifact 只有沿既有 HTTP fixture v4 安裝後才交唯一 browser owner。遠端分支／公開 v92／原版均不變。
+
+下方是原分支歷史，不代表本實驗當前設計或驗收狀態。
 
 ## 頁面專屬歷史與安靜讀取（2026-10-23；source36／artifactfix1 本地交付）
 

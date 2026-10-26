@@ -27,7 +27,7 @@ export function AccountAccessPanel() {
   </View>;
   return <AppScrollView contentContainerStyle={styles.gate} testID="production-account-gate"><View style={styles.panel}>
     <BrandLogo style={styles.logo} />
-    <Text accessibilityRole="header" style={styles.title}>{account.gate === "consent" ? "開始前，了解資料的使用方式" : account.gate === "verification" ? "請先完成電郵驗證" : "確認帳戶服務"}</Text>
+    <Text accessibilityRole="header" aria-level={1} style={styles.title}>{account.gate === "consent" ? "開始前，了解資料的使用方式" : account.gate === "verification" ? "請先完成電郵驗證" : "確認帳戶服務"}</Text>
     {account.gate === "consent" ? <>
       <Text style={styles.body}>{account.status?.notice}</Text>
       <AppCheckbox label="我已閱讀並同意以上資料使用說明" checked={accepted} disabled={!!account.busy || !online} onChange={setAccepted} />
@@ -50,7 +50,7 @@ export function AccountDeletionRecoveryPanel() {
   const { account, owner, online } = useProduction();
   const router = useRouter();
   return <AppScrollView contentContainerStyle={styles.gate}><View style={styles.panel}>
-    <BrandLogo style={styles.logo} /><Text accessibilityRole="header" style={styles.title}>查核原帳戶退出結果</Text>
+    <BrandLogo style={styles.logo} /><Text accessibilityRole="header" aria-level={1} style={styles.title}>查核原帳戶退出結果</Text>
     <Text style={styles.body}>退出結果仍未確認。原收據只保留在這個頁面的記憶中，請保留此頁並查核原操作。</Text>
     <Text accessibilityLiveRegion="polite" style={styles.body}>{account.deletion.message}</Text>
     <AppButton label="查核原退出結果" disabled={!online} loading={account.busy === "check"} onPress={() => { void owner.accountOwner.checkDeletion(); }} />
@@ -69,7 +69,7 @@ function CallbackPanel() {
   const reset = callback.kind === "reset" && callback.phase === "form";
   const submit = form.handleSubmit(async input => { form.reset(); await owner.accountOwner.resetPassword(input.password); });
   return <AppScrollView contentContainerStyle={styles.gate}><View style={styles.panel}>
-    <BrandLogo style={styles.logo} /><Text accessibilityRole="header" style={styles.title}>{reset ? "重設密碼" : callback.kind === "verified" ? "電郵驗證" : "帳戶連結"}</Text>
+    <BrandLogo style={styles.logo} /><Text accessibilityRole="header" aria-level={1} style={styles.title}>{reset ? "重設密碼" : callback.kind === "verified" ? "電郵驗證" : "帳戶連結"}</Text>
     <Text accessibilityLiveRegion="polite" style={styles.body}>{callback.message}</Text>
     {reset ? <>
       <Controller control={form.control} name="password" render={({ field, fieldState }) => <AppTextField label="新密碼" accessibilityLabel="新密碼" value={field.value} onChangeText={field.onChange} ref={field.ref} error={!!fieldState.error} secureTextEntry autoCapitalize="none" autoCorrect={false} autoComplete="off" disabled={!online || !!account.busy} />} />

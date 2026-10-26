@@ -1,0 +1,45 @@
+## UI Pro Max Stack Guidelines
+**Stack:** react-native | **Query:** responsive accessible forms
+**Source:** stacks/react-native.csv | **Found:** 3 results
+
+### Result 1
+- **Category:** Styling
+- **Guideline:** Use responsive dimensions
+- **Description:** Scale for different screens
+- **Do:** Dimensions or useWindowDimensions
+- **Don't:** Fixed pixel values
+- **Code Good:** useWindowDimensions()
+- **Code Bad:** width: 375
+- **Severity:** Medium
+- **Docs URL:**
+- **Applies To:** react-native 0.86.x (official active line)
+- **Status:** active
+- **Verified At:** 2026-08-13
+
+### Result 2
+- **Category:** Forms
+- **Guideline:** Handle keyboard
+- **Description:** Manage keyboard visibility
+- **Do:** KeyboardAvoidingView
+- **Don't:** Content hidden by keyboard
+- **Code Good:** <KeyboardAvoidingView behavior="padding">
+- **Code Bad:** No keyboard handling
+- **Severity:** High
+- **Docs URL:** https://reactnative.dev/docs/keyboardavoidingview
+- **Applies To:** react-native 0.86.x (official active line)
+- **Status:** active
+- **Verified At:** 2026-08-13
+
+### Result 3
+- **Category:** Forms
+- **Guideline:** Use controlled inputs
+- **Description:** State-controlled form fields
+- **Do:** value + onChangeText
+- **Don't:** Uncontrolled inputs
+- **Code Good:** <TextInput value={text} onChangeText={setText} />
+- **Code Bad:** <TextInput defaultValue={text} />
+- **Severity:** Medium
+- **Docs URL:**
+- **Applies To:** react-native 0.86.x (official active line)
+- **Status:** active
+- **Verified At:** 2026-08-13

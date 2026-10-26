@@ -101,7 +101,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
       : <PersonalNotificationHistoryView searchText={filters.searchText} dateRange={dateRange} />
       : <Text accessibilityRole="alert" style={styles.error}>請先修正日期範圍，再查看結果。</Text>
     : <View testID={`history-unavailable-${filters.category}`}  style={styles.unavailable}>
-      <Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
+      <Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{current.label}暫未可在這裏查閱</Text>
       <Text style={styles.body}>{current.unavailable}</Text>
     </View>;
 
@@ -111,7 +111,7 @@ function HistoryWorkspace({ scope, initialCategory, initialReviewStatus, olderOn
     <View ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
       {compact ? <AppSelect<HistoryCategory> label="歷史分類" value={filters.category} options={historyCategories.map(item => ({ value: item.key, label: item.label }))} onChange={category} />
         : <WorkspaceSwitch<HistoryCategory> id="history-categories" label="歷史分類" items={historyCategories} value={filters.category} onChange={category} />}
-      <View style={styles.resultHeading}><View style={styles.resultCopy}><Text accessibilityRole="header" style={styles.sectionTitle}>{current.label}</Text><Text style={styles.body}>{current.description}</Text></View>
+      <View style={styles.resultHeading}><View style={styles.resultCopy}><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{current.label}</Text><Text style={styles.body}>{current.description}</Text></View>
         {!notificationCategory ? <AppButton label={current.sourceAction} variant="secondary" onPress={() => navigate(() => router.push(current.sourcePath), "workspace")} /> : null}</View>
       {showSearch ? <BackgroundSurface padded testID="history-filter-toolbar" style={styles.toolbar}>
         <View style={styles.controlRow}>

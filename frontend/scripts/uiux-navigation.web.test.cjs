@@ -15,6 +15,7 @@ global.requestAnimationFrame = dom.window.requestAnimationFrame.bind(dom.window)
 let fetchCount = 0; global.fetch = () => { fetchCount++; throw new Error('Network forbidden'); };
 const React = req('react'), { createRoot } = req('react-dom/client'), rn = req('react-native-web'), ts = req('typescript');
 const cache = new Map(), pushes = []; let pathname = '/growth';
+const MockDialog=Object.assign(({children,visible})=>visible?React.createElement(rn.View,{accessibilityRole:'dialog'},children):null,{Title:rn.View,Content:rn.View,Actions:rn.View});
 const expoRoot = path.dirname(req.resolve('expo-router/package.json'));
 // Real Expo BaseLink -> RN Slot -> Radix Slot -> RN Web Pressable. Only the
 // router's navigation-state hook is isolated; no replacement anchor/Slot exists.
@@ -45,8 +46,8 @@ function load(file) {
     if (name.endsWith('/AppIcon')) return { AppIcon: ({ color }) => React.createElement('svg', { stroke: color }) };
     if (name.endsWith('/AppScrollView')) return { AppScrollView: rn.ScrollView };
     if (name.endsWith('/PageFrame')) return { PageFrame: ({ children }) => React.createElement(rn.View, null, children) };
-    if (name.endsWith('/AppDialog')) return { AppDialog: () => null };
-    if (name.endsWith('/ui')) return { AppButton: () => null, AppTextField: () => null };
+    if (name.endsWith('/AppDialog')) return { AppDialog: MockDialog };
+    if (name.endsWith('/ui')) return { AppButton: ({label,onPress,disabled}) => React.createElement('button',{disabled,onClick:onPress},label), AppTextField: () => null };
     if (name.endsWith('/EmptyListCard')) return { EmptyListCard: () => null };
     if (!name.startsWith('.')) return req(name);
     const target = path.resolve(path.dirname(absolute), name);
@@ -54,15 +55,16 @@ function load(file) {
   }, mod, mod.exports); return mod.exports;
 }
 const { WorkspaceNavigation } = load('src/components/workspace/WorkspaceNavigation.tsx');
-const { workspaceGroups } = load('src/components/workspace/workspace-navigation.ts');
+const { workspaceGroups, mobileNavigationKeyForPath } = load('src/components/workspace/workspace-navigation.ts');
 const { navigationItems } = load('src/components/navigation/app-navigation.ts');
 const More = load('src/screens/moreScreen.tsx').default;
 // Exercise the exact AppShell skip JSX and stylesheet without substituting its
 // Pressable or focus handler; domain/provider mounting is outside this leaf test.
 const shellSource = fs.readFileSync(path.join(root, 'src/components/AppShell.tsx'), 'utf8');
 const shellTree = ts.createSourceFile('AppShell.tsx', shellSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
-let skipNode, styleExpression;
+let skipNode, styleExpression, mobileFunction;
 function visit(node) {
+  if(ts.isFunctionDeclaration(node)&&node.name?.text==='MobileNavigationLink')mobileFunction=node;
   if (ts.isJsxElement(node) && node.openingElement.attributes.properties.some(p => p.name?.getText(shellTree) === 'testID' && p.initializer?.text === 'workspace-skip-link')) skipNode = node;
   if (ts.isVariableDeclaration(node) && node.name.getText(shellTree) === 'styles') styleExpression = node.initializer;
   ts.forEachChild(node, visit);
@@ -73,6 +75,10 @@ const probeModule = { exports: {} };
 const probeCode = `const styles = ${styleExpression.getText(shellTree)}; export function SkipProbe({routeSurface}) { return ${skipNode.getText(shellTree)}; }`;
 new Function('require', 'module', 'exports', 'Pressable', 'Text', 'Platform', 'StyleSheet', ...Object.keys(theme), ts.transpileModule(probeCode, { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText)(req, probeModule, probeModule.exports, rn.Pressable, rn.Text, rn.Platform, rn.StyleSheet, ...Object.values(theme));
 const { SkipProbe } = probeModule.exports;
+const navigation=load('src/preview/PreviewNavigationGuard.tsx'),mobileModule={exports:{}};
+const mobileCode=`const styles=${styleExpression.getText(shellTree)}; ${mobileFunction.getText(shellTree)}; export {MobileNavigationLink};`;
+new Function('require','module','exports','useState','PreviewLink','Pressable','Text','StyleSheet','AppIcon','MobileNavSelection',...Object.keys(theme),ts.transpileModule(mobileCode,{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS}}).outputText)(req,mobileModule,mobileModule.exports,React.useState,navigation.PreviewLink,rn.Pressable,rn.Text,rn.StyleSheet,()=>null,()=>null,...Object.values(theme));
+
 const app = createRoot(document.getElementById('root'));
 const render = async child => { await React.act(async () => app.render(null)); await React.act(async () => app.render(child)); };
 test('real Expo Slot retains primary/local anchor backgrounds and hit-area styles across all workspace groups', async () => {
@@ -100,6 +106,29 @@ test('feature directory keeps actual anchor card padding and guarded photos comp
   const photos = links.find(link => link.getAttribute('href') === '/care?view=photos'); assert.ok(photos);
   await React.act(async () => photos.click()); assert.deepEqual(pushes.at(-1), { pathname: '/care', params: { view: 'photos' } });
   assert.equal(fetchCount, 0);
+});
+test('actual mobile link leaf keeps one current purpose for every deep dashboard route',async()=>{
+ const keys=['home','chat','tasks','care','more'];
+ for(const item of Object.values(navigationItems)){
+  pathname=item.href;const current=mobileNavigationKeyForPath(pathname);
+  await render(React.createElement(rn.View,null,keys.map(key=>React.createElement(mobileModule.exports.MobileNavigationLink,{key,item:navigationItems[key],active:current===key}))));
+  const selected=[...document.querySelectorAll('a[aria-current=true]')];assert.equal(selected.length,1);assert.equal(selected[0].getAttribute('href'),navigationItems[current].href);
+ }
+ assert.equal(mobileNavigationKeyForPath('/photos'),'care');assert.equal(mobileNavigationKeyForPath('/history'),'care');assert.equal(mobileNavigationKeyForPath('/growth'),'tasks');
+ const native=fs.readFileSync(path.join(root,'app/(dashboard)/_layout.tsx'),'utf8');assert.match(native,/mobileDestination = mobileNavigationKeyForPath\(pathname\)/);assert.match(native,/accessibilityState=\{\{ \.\.\.props.accessibilityState, selected \}\}/);
+});
+test('real Expo link preserves modified/new-window intent and guards plain dirty navigation',async()=>{
+ pathname='/chat';
+ function DirtyLink(){navigation.usePreviewLeaveGuard(true);return React.createElement(navigation.PreviewLink,{href:'/tasks'},React.createElement(rn.Pressable,{accessibilityRole:'link',accessibilityLabel:'安排'},React.createElement(rn.Text,null,'安排')));}
+ await render(React.createElement(navigation.PreviewNavigationGuard,null,React.createElement(DirtyLink)));
+ const link=document.querySelector('a[aria-label="安排"]');
+ for(const modifier of [{ctrlKey:true},{metaKey:true},{shiftKey:true},{altKey:true},{button:1}]){
+  const before=pushes.length,event=new window.MouseEvent('click',{bubbles:true,cancelable:true,...modifier});await React.act(async()=>link.dispatchEvent(event));
+  assert.equal(event.defaultPrevented,false);assert.equal(pushes.length,before);assert.equal(document.querySelector('[role=dialog]'),null);
+ }
+ const before=pushes.length,event=new window.MouseEvent('click',{bubbles:true,cancelable:true});await React.act(async()=>link.dispatchEvent(event));assert.equal(event.defaultPrevented,true);assert.equal(pushes.length,before);
+ const approve=[...document.querySelectorAll('button')].find(node=>node.textContent==='捨棄並離開');assert.ok(approve);await React.act(async()=>approve.click());assert.equal(pushes.at(-1),'/tasks');assert.equal(pushes.length,before+1);
+ assert.equal(fetchCount,0);
 });
 test('actual AppShell skip link stays out of flex flow, fits both insets, and focuses main content', async () => {
   function Harness() { const routeSurface = React.useRef(null); return React.createElement(rn.View, null,

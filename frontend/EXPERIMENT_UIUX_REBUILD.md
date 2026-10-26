@@ -1,5 +1,47 @@
 # Care Workspace：UI UX Pro Max 全站重構實驗
 
+## 第二階段：按技能重建核心旅程（2026-10-26，候選未驗）
+
+使用者最新澄清：升級線是改進原前端；本線須完全按 skills 重構，不受舊 UI 要求或改造成本限制，並提取、改進及刪除不必要需求。保留使用目的與安全，不是凍結每個舊功能。
+
+完整 [retain／improve／remove 需求裁決](verification/uiux-rebuild-v8/requirements-disposition.md) 是本輪設計依據。`8b512f6` 是上一版已交付基線，不把既有導航改組當作全站重構已完成。
+
+**設計決策。**本次實際執行固定 UI UX Pro Max `--design-system` 與 React Native stack 搜尋，原輸出保存在 `verification/uiux-rebuild-v8/`。首次 `family care productivity calm` 得 Accessible & Ethical，重試 `productivity dashboard` 得 Flat Design；兩次 landing pattern 都偏向 marketing，與已登入照顧工具不符，故明確不採 hero／銷售／social proof。採其共同可用的 accessibility、flat content hierarchy、4/8 spacing、16px 閱讀字、44px 操作、低動效及 mobile-first；延續已核對比的 ink/blue 語意 tokens，不為換色聲稱重構。繁中用本機系統 fallback，無外部字型、無新套件。
+
+**產品 IA。**從「同一排 tabs 加多層卡片」轉為按任務選用的場景：每日簡報、對話閱讀、安排工作台、關注時間線、照顧報告、證據核對、媒體庫、來源閱讀、身份編輯、活動檢索及設定表單。五個目的群組取代原六組與重複設定入口；手機直接可達更多，不要求隱藏上拉手勢；不限制每頁內部結構；頁面不必強迫用相同網格／卡片／時間欄。精細時間只在行動排程、明確紀錄或查核需要時顯示，不常駐時區標記。
+
+**Composition / React。**資料 owner、授權、原操作識別與防重由現有 production/controller 持有；呈現以 children slots、明確變體與注入 state/actions 分解。首屏不新增 fetch、輪詢或獨立副本；可派生內容於 render 計算。維持 scope key、草稿／讀取錨點、取消與 focus 邊界，尤其既有聊天短高度 reflow 不因 UI 改組卸載輸入。
+
+### 路由覆蓋與改組判準
+
+| 路由 | 本候選結構目標 | 保留的使用目的／安全邊界 |
+| --- | --- | --- |
+| `/` | 每日簡報→需決定事項→待辦與持續關注→直接輸入；重寫舊四卡內容，不只是 HomeWorkspace wrapper | 原 Home model/actions、提醒／續辦／capture／真讀取與空態；移除正常狀態時間／刷新及強制式引導 |
+| `/chat` | 閱讀優先的對話頁；精簡工作列、作者語意與來源／活動層次、直接 composer | 同 timeline/composer owner、歷史分頁、附件／語音、停止／查核、確認及短高度 reflow |
+| `/tasks` | 安排總覽＋聚焦詳情／表單／月曆，重新組合真正工作內容 | 搜尋／篩選／日曆、RHF 驗證、排程、歷史、原 unknown 與 guard |
+| `/growth` | 關注選擇後完整時間線／準備空間，而非窄欄壓縮閱讀 | 關注鏈、建議／歸檔、準備單背景保存、原 action callbacks |
+| `/summary` | 正常頁直接閱讀四段照顧簡報，不需先開完整回顧彈窗；成長檔案章節閱讀 | 期間／來源、匯出授權、歷史與原資料模型 |
+| `/care` | 待核對佇列與已存證據庫；詳情／更正用原文與解讀分層 | 候選、原文、人工新增／更正、刪除／共享確認 |
+| `/photos` | 原檔媒體庫；選擇後聚焦原圖與核對，不將處理狀態當相片內容 | 原檔讀取／下載、上傳、候選、授權及刪除 |
+| `/sources` | 可查找私人參考庫→來源閱讀→明示的取得／提取／整理 | 原文、來源用途、讀取同意、shared confirmation、原操作查核 |
+| `/history` | 任務分類＋搜尋／日期查找＋獨立閱讀，不再混在各資料管理頁 | 原分類／分頁／日期套用／返回位置 |
+| `/memory` | 事實主欄、對話脈絡副欄、來源入口；清楚區分事實與摘要 | 原 scope／版本／狀態、管理與讀取 |
+| `/profile` | 身份摘要、照顧資訊、孩子管理；編輯改成明確資料分組 | 未知／約數、頭像、版本衝突、孩子建立與刪除確認 |
+| `/family` | 真實未開放狀態與目前可用聯絡／設定入口 | 不掛載未開放邀請或假成員 |
+| `/contact` | 聯絡任務授權主欄、本人接收設定副欄、歷史閱讀 | 渠道／同意、發送確認、原權限 |
+| `/settings` | 分區目錄＋當前設定工作區，帳戶身份／安全分開 | 帳戶／孩子／家庭／外觀／通知／助手／模型／私隱 |
+| `/guide` | 自選主題、主要動作先於說明；無編號前後步或重複帳戶／孩子 chooser | 必要建立與原操作恢復仍可達；登入後不強制引導 |
+| `/more` | 用途搜尋的功能目錄，不再是桌面側欄複本 | 15 原目的地、真正 links、leave guard |
+| `/login` | 表單先行、清楚驗證／復原路徑及次要產品說明 | 原登入／註冊／邀請／密碼／復原與 gate |
+| `/admin` | 明確 gate→身份重驗→邀請／限額／用量稽核 | 管理員驗證及所有既有權限，不調整付費設定 |
+
+上述已完成 source 實作；結果分 source／focused tests／TypeScript／export／獨立 review／browser 記錄。沒有真家庭資料、真 API、真模型或部署；舊 v7 artifact 不改。
+
+
+## v7 及更早歷史（以下不是 v8 當前需求）
+
+以下保留舊設計與驗證原文。舊文「所有功能保留」「六組」「原手勢」「沒有執行搜尋」等僅描述當時，已由上方本輪設計與需求裁決取代，不代表 v8。
+
 ## 範圍與基線
 
 2026-10-25；分支 `experiment/uiux-pro-max-rebuild-20261025`，固定共同基線 `0b9f5d60e73eb395ea8a2898864fa1e591e27938`。這是使用者明確要求的第二條實驗線，不是 master 的已採納設計、不會自行合併或發布。

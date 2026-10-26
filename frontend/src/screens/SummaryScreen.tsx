@@ -79,7 +79,7 @@ export function SummaryScreen() {
             measurements={profile?.measurements} profileSource={profile?.profileSource}
             companion={<ChildOverviewConcerns model={growth?.model ?? null} scopeKey={scopeKey} childId={child.id} onOpen={() => guarded(() => router.push("/growth?tab=concerns"))} />}
             onOpenMeasurement={recordId => guarded(() => router.push({ pathname: "/care", params: { record: recordId } }))} />
-            <Workspace.Section title="最近的照顧與安排"><TaskKnowledgeSummaryContent presentation="overview" scopeKey={scopeKey} childId={child.id} onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} /></Workspace.Section>
+            <TaskKnowledgeSummaryContent presentation="overview" scopeKey={scopeKey} childId={child.id} onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))} onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} />
           </> : null}
         </AppTabPanel>
         <AppTabPanel tabsId="child-growth-tabs" tabKey="archive" active={tab === "archive"}>
