@@ -4077,3 +4077,12 @@
 - 連結先以原方式驗證，再以另一手勢明確同意，暫存 SDK 身份最多兩分鐘。provider-only 不要求密碼；取消拒絕遲到 session 交換，供應商已完成的連結以目前方法讀回核對。已知 SDK 拒絕顯示固定原因，真正 unknown 仍先讀回。
 - 定向 provider／舊密碼相容、原生真 HTTP transport、共用 owner、局部型別及 Web 匯出通過；未跑全量／真人／模型。獨立 review 發現取消後過早讀回舊 providers，定向 red→green 修正為等待原 SDK 清理；原生讀回及相關 client 檢查通過。保留初始缺接點、fixture 型別、前端型別及錯誤提示的失敗記錄。[證據](artifacts/verification/P4_AUTH_PROVIDER_20261027.json)。
 - Web provider 配置預設空，沒有改雲端設定或部署。Firebase 自動連結／duplicate-email 的 profile 取捨須先核定，不能只打開按鈕；原生 provider、Apple 邀請接續及真人配置仍待處理，AUTH01／P4 未完成。P3／P5 及 D PR 不變。
+
+
+<a id="log-20261027-p4-auth-native"></a>
+### LOG-20261027-P4-AUTH-NATIVE
+
+- 基線 `181865b`，分支 `codex/p4-auth-native-providers`。固定採 Google Sign-In 16.1.5／Apple Authentication 2.5.1，沿現有 expo-crypto 及 Firebase JS／共用 owner，沒有新增身份權威、升級其他套件或改雲端設定。
+- 原生 credential 回原 session／明確 linking；Google 清本機選擇、Apple 每次 nonce／state，取消／錯 state 不進 Firebase。新增公開配置、官方 iOS callback plugin／Apple entitlement，保持 Android 通知 descriptor 及舊平台入口。
+- 一條原生 adapter red→green、三項配置／原平台相容、局部型別、官方 iOS plugin introspection 及 Android Hermes 匯出通過；獨立 review 未報重要 blocker。保留測試 skipPlugins 設定、credential fixture 型別及首輪 Hermes 暫存權限失敗；僅改驗證暫存位置後成功。[證據](artifacts/verification/P4_AUTH_NATIVE_20261027.json)。
+- 原生套件需要新 binary，未雲端建置、部署、發 OTA 或真人登入。provider 預設空；Google 免費 Original 底層棄用限制、Firebase 自動連結／電郵准入、Apple 邀請／團隊及真機接續仍明列，AUTH01／P4 未完成。

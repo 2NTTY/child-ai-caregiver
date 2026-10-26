@@ -1188,3 +1188,5 @@ FAMILY-A 首段已有內部 `createFirestoreSharingStore`；空間／成員管�
 註冊 blocking handler 僅接受 Firebase 驗證的 password／google.com／apple.com beforeCreate 事件，第三方必須有已驗證電郵，仍讀取原邀請資格，正式准入交易才消耗。Apple relay 地址不匹配原邀請時不猜地址或改 UID；另由原邀請地址驗證後連結同 UID 的接續流程承接（尚待實作）。平台 adapter 只列實際配置的方式；原生 Google／Apple SDK、供應商配置、隱藏電郵及真人流程未完成不得宣稱已支援。
 
 正式啟用須另核 Firebase 目前的同電郵帳號設定：官方 Google provider 在部分情況會自動連結，而 allowDuplicateEmails 會改變 profile／email 回傳。不能以空按鈕配置以外的假設當成已符合明確連結，也不直接變更現有 UID／電郵准入規則；限制及來源見 [TECH_REUSE](TECH_REUSE.md#p4-auth-providers)。
+
+**AUTH01 原生 provider adapter（已實作、未開放）：**Google／Apple 原生 SDK 只取得供應商 credential，再交 Firebase JS 的 `signInWithCredential`／`linkWithCredential`；業務登入仍經同一 session exchange。平台 adapter 不自建 session、不自行寫 Firebase 用戶 email 或合併 UID。Google 要求實際 Web OAuth client ID，iOS 另需 iOS client ID／URL scheme；Apple 每次產生新 nonce／state，供應商回覆及 Firebase credential 驗證後才回中央流程。缺平台配置不暴露可用方式；新原生依賴須新 binary，不能強推舊 runtime OTA。仍不啟用雲端 provider；自動連結與邀請 gate 沿上文。
