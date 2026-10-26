@@ -10,7 +10,7 @@
 
 - **四項指定修補已獲准正常合併，真機驗收仍待補。**PR #286 已保留 #288／#289 照片聊天接線及最新交付記錄；受影響照片恢復／client 契約補驗通過，沿獨立覆核及遠端保護規則完成來源合併，不部署、不把空 CI 或合併當真機通過。精確版本與保留失敗見 [FIX-FOUR01](PLAN.md#four-fix01)。
 
-- **共用介面及準備單背景保存已發布。**2026-10-24 master `015deb8`（#284）已相容更新 API／worker／Web 及 Android OTA。連點不鎖、約 3 秒合併及離頁背景保存有定向證據；來源狀態、附件庫畫面、聊天分頁及直接錄音等前批成果保留。手機實際效果待核，詳見[共用互動](PLAN.md#shared-interaction01)。照片聊天已隨下述批次交付；接續[頭像](PLAN.md#avatar-01)，保留協作者未合併 Agent 修改。
+- **共用互動修正已收束發布。**2026-10-26，B 已合併 #328／#329；`330a905` 修正準備單舊保存提示及 Web 聊天縮放下的閱讀錨點，Web／v4 相容 Android OTA 已更新。沿用原 PR 驗證，不重跑功能／設備測試；3 秒合併保存及其他既有成果保留，詳見[共用互動](PLAN.md#shared-interaction01)。API／worker 及協作者 Agent PR 未改動。
 - **iOS 本機接線與發佈工具已合併，TestFlight 等待 Apple 前置。**#272及#274～#278已合併；本機檢查、整合iOS匯出及APNs掛載配置核對通過。尚須Apple團隊／簽署／APNs配置、IPA與真機驗收；未部署或啟用通知。範圍保留於[iOS計劃](PLAN.md#p3-ios)，不因此重跑測試。
 - **附件庫 Android 檔名修正已交付：**#308／`35ad214` 的同一匯出資產經確認的直接 TLS 上傳完成，preview OTA group `39974363` 已發布；手機選檔保留原檔名通過，未送出測試草稿已清理。先前 EAS 兩次逾時保留，不重跑已驗保存／下載；Web 原證據保留，見 [ATTACHMENT-READ01](PLAN.md#attachment-read01)。
 
@@ -28,15 +28,15 @@
 <a id="deployment"></a>
 ## 最近部署觀察
 
-**2026-10-26 01:23 香港時間：**`14e0f60` 已更新 API／worker 至 `663125d`，只將搜尋工具固定額度說明改為當輪實際餘額；保留前批語音修正／Prompt Pack 0.1.55。候選正式組裝及公開 health 通過。Web、Android、頭像開關及配額保持原值；零模型／通知／資料遷移。前版 `d5be355` 與 0600 配置供回退；[精確交付及腳本編碼失敗](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)。下方前批 Web／Android 及期限觀察仍適用。
+**2026-10-26 01:23 香港時間：**`14e0f60` 已更新 API／worker 至 `663125d`，只將搜尋工具固定額度說明改為當輪實際餘額；保留前批語音修正／Prompt Pack 0.1.55。候選正式組裝及公開 health 通過。該批 Web、Android、頭像開關及配額保持原值；零模型／通知／資料遷移。前版 `d5be355` 與 0600 配置供回退；[精確交付及腳本編碼失敗](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)。Web／Android 最新觀察見下項。
 
-**2026-10-25 15:09 UTC 原站觀察：**`34f80a9` 的個人 Vertex 向量接線已部署；API／worker `9d490d0`、Web `e813692`，候選正式組裝、公開 index hash／health 通過。頭像開關保持啟用，APNs 未啟用；零模型／通知／資料遷移／索引重建／配額修改。[交付證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
+**2026-10-26 14:12 香港時間，Web／Android：**`330a905` 的 #328／#329 已交付；Web `27a5c90` 公開 index hash／health 通過，API／worker 保持上項 `663125d`。Android preview OTA group `4f3f95a3`／update `01a176d6` 已發布，31 檔約 13.09 MiB，沿 APK v4 runtime `0c5c868…`，毋須重裝。發布未代驗設備效果；[同一交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)保存原批及本批結果。
 
-**Android，2026-10-25 15:09 UTC 觀察：**同 APK v4 runtime `0c5c868…`，`34f80a9` 已發布 preview OTA group `33a2e0a3`／update `01a1739b`，31 檔約 13.09 MiB，毋須重裝。其後使用者回覆「已有 Vertex AI 選項」，新表單選項顯示已核；未抽取裝置的精確 update ID，保存／完整模型流程仍未驗。原回退／恢復、附件、待辦同步及撤權證據保留，不重測。
+**已有 Android 證據保留：**使用者已確認個人模型表單有 Vertex AI 選項；v4 回退／恢復、附件、跨端待辦及撤權已核，不重測。本人 key 輸入／跨端表單及其餘未驗項仍見 [S16](PLAN.md#s16-w03)，不因本次 OTA 改寫為通過。
 
-**回退、備份與容量：**保留前版 Web `ccd2eca` 及 0600 的 Compose 配置。新 v4 Vertex 設定一旦保存，回退必須保留相容的 API／worker reader；不能直接退至 `c3b149c` 或用舊資料覆蓋新設定／收據。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。最近原生備份觀察仍為 2026-10-23 READY、未還原；本批部署前約 10.30 GiB 可用，未擴容／清正式資料。
+**回退、備份與容量：**本次保留前版 Web `e813692` 及 0600 的 Compose 配置。API／worker 沒有更換，回退仍須保留 v4 個人設定 reader，不能用舊資料覆蓋新設定／收據。方法見[部署交接](docs/PRODUCTION_FRONTEND.md#firestore-deployment)。原生備份最近觀察仍為 2026-10-23 READY、未還原；本批部署前約 10.28 GiB 可用，未擴容／清正式資料。
 
-**主機期限，2026-10-25 核對：**原 e2-small VM 仍運行，自動停止時間維持 **2026-11-06 13:33:50 香港時間**；本次沒有續期或修改規格。舊 SQL 容器為停止狀態，正式 API／worker 使用 Firestore。
+**主機期限，2026-10-26 核對：**原 e2-small VM 仍運行，自動停止時間維持 **2026-11-06 13:33:50 香港時間**；本次沒有續期或修改規格。舊 SQL 容器為停止狀態，正式 API／worker 使用 Firestore。
 
 <a id="preview-history"></a>
 ## 按需追溯
