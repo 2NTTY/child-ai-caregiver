@@ -15,7 +15,7 @@ export const sharedSpaceSchema = z.object({ id: z.uuid(), kind: z.enum(['family'
   version, state: z.enum(['active', 'dissolved']), managerUserId: user, managerGeneration: z.uuid(),
   storageIdentity: z.object({ ownerUserId: user, workspaceId: z.uuid() }).strict(),
   transferTargetUserId: user.nullable(), createdAt: at, updatedAt: at }).strict();
-export const sharedMembershipSchema = z.object({ spaceId: z.uuid(), userId: user, membershipId: z.uuid(), version, stateVersion: version,
+export const sharedMembershipSchema = z.object({ spaceId: z.uuid(), userId: user, label:z.string().min(1).max(320).optional(), membershipId: z.uuid(), version, stateVersion: version,
   role: z.enum(['owner', 'caregiver', 'viewer']), state: z.enum(['active', 'revoked']), joinedAt: at }).strict();
 export const resourceShareSchema = z.object({ spaceId: z.uuid(), childId: z.uuid(), source: workRecoveryScopeSchema,
   modules: z.array(sharedModuleSchema).min(1).max(8), version, state: z.enum(['active', 'revoked']), sharedBy: user,

@@ -827,6 +827,8 @@ Claim 回應丟失時，只准尚未呼叫 Storage 的同一次 invocation 作�
 
 FAMILY-A 首段新增 namespace 下 `shared_spaces`、`shared_memberships`、`resource_shares`、`shared_invitations`、`shared_operations`。前四者是加密的共享控制資料，不含孩子正文，以穩定系統 routing scope 保存；空間自己的儲存身份為 `space:<spaceId>`／同一 workspace ID，與現任管理員分開，班級業務寫入仍待後包接通。分享只指向原資料 scope 及選定模組，不移動、複製或重新加密原資料；操作收據仍綁操作者個人 scope。
 
+FAMILY-B 管理列表復用上述五類資料，沒有新增成員／孩子副本。新成員密文保存由准入身份提供的 `label`（目前為已驗證電郵），舊記錄缺值時顯示原 UID，不猜姓名；不在可查詢 metadata 加電郵。本人空間依 memberTag／active／spaceId，空間成員、分享及邀請依 spaceId／active／entryId 有界分頁；新增四項複合索引定義，部署前另建立。游標以本人 scope 加密，子列表保存空間版本；被撤權的來源成員及已刪原件不再出現在分享列表。原 `shared_operations` 提供公開控制收據投影，不公開內部 storageIdentity／managerGeneration 或完整來源 scope。
+
 記憶沿原 `memory_facts`／`memory_topics` 及其修訂保存，共享查詢與歷史只讀 family 範圍，不公開原私人候選版本。非 owner 的建立、確認及最新變更證據分別保存於密文，公開投影移除；停用不偽造重新確認，建立證據仍指第一版。還原逐項核對資源／來源／版本與署名，舊 owner-only 資料保持原要求。私人聊天來源的 ID 只向原資料帳戶披露，其他有權成員讀已確認描述及目前有效性；summary 仍為本人私有。修訂分頁新增 visibility composite indexes，正式啟用前須建立。
 
 記錄／概況的共享寫入仍保留原 scope／ID，作者及確認者記實際操作者。非擁有人寫入另在同份密文保存 Server 產生的空間、來源擁有人、資源／版本及權限 basis 證據；公開 DTO 移除內部證據。還原保留舊資料的 owner 校驗，只允許有相符證據的共享署名，不要求歷史作者目前仍是成員。概況刪除屏障重放須使用儲存 schema，保留屏障之後合法新寫入的證據。

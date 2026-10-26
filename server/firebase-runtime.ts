@@ -21,6 +21,7 @@ import { createFirestoreNativePush } from './firestore-native-push.ts';
 import { createNativePushGateway, readNativePushConfig } from './native-push-gateway.ts';
 import { createApnsPushGateway, readApnsPushConfig } from './apns-push-gateway.ts';
 import { createFirebaseRequestHandler } from './firebase-app.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { createFirestoreOnlineStore } from './firestore-online.ts';
 import { createFirestoreFamilyDocumentStore } from './firestore-family-documents.ts';
 import { createCloudStoragePhotoObjects, createFirebasePhotoObjects, type FirebasePhotoBucketPort } from './firebase-photo-objects.ts';
@@ -179,7 +180,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
     const photoAgent = createPhotoAgent(photos, product.runtime);
     const admin = createFirestoreAdmin(domain, aiConfig);
-    const handler = createFirebaseRequestHandler({ admin, adminUid: localAdminUid ?? (composition.worker ? null : readAdminUid(env)), authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
+    const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore(domain), admin, adminUid: localAdminUid ?? (composition.worker ? null : readAdminUid(env)), authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;

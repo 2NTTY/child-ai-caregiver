@@ -3774,7 +3774,11 @@
           "order": "ASCENDING"
         }
       ]
-    }
+    },
+    {"collectionGroup":"yuban_authority_shared_memberships","queryScope":"COLLECTION","fields":[{"fieldPath":"memberTag","order":"ASCENDING"},{"fieldPath":"active","order":"ASCENDING"},{"fieldPath":"spaceId","order":"ASCENDING"}]},
+    {"collectionGroup":"yuban_authority_shared_memberships","queryScope":"COLLECTION","fields":[{"fieldPath":"spaceId","order":"ASCENDING"},{"fieldPath":"active","order":"ASCENDING"},{"fieldPath":"entryId","order":"ASCENDING"}]},
+    {"collectionGroup":"yuban_authority_resource_shares","queryScope":"COLLECTION","fields":[{"fieldPath":"spaceId","order":"ASCENDING"},{"fieldPath":"active","order":"ASCENDING"},{"fieldPath":"entryId","order":"ASCENDING"}]},
+    {"collectionGroup":"yuban_authority_shared_invitations","queryScope":"COLLECTION","fields":[{"fieldPath":"spaceId","order":"ASCENDING"},{"fieldPath":"active","order":"ASCENDING"},{"fieldPath":"entryId","order":"ASCENDING"}]}
   ],
   "fieldOverrides": [
     {

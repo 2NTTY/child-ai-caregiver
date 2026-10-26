@@ -1,6 +1,7 @@
 import { createChatFileApi } from '../src/client/chat-file-api.ts';
 import { createVoiceApi } from '../src/client/voice-api.ts';
 import { createPhotoApi, PhotoApiError } from '../src/client/photo-api.ts';
+import { createSharingApi } from '../src/client/sharing-api.ts';
 import { createFirestorePhotoStore, firestorePhotoSchemas } from '../server/firestore-photos.ts';
 import { createHash } from 'node:crypto';
 import { createFirestoreChatFilesStore, firestoreChatFileRowSchema } from '../server/firestore-chat-files.ts';
@@ -84,6 +85,72 @@ async function fixture() {
   return { fake, options, authority, sharing, child, space, control, documents };
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
+
+test('shared space control lists are bounded and preserve original operations across transfer and revocation', async () => {
+  const f = await fixture();
+  let actor: string | null = 'parent';
+  const origin = 'https://app.example.test';
+  const auth = { async getSession(options: { returnHeaders?: boolean }) {
+    const session = actor ? { user:{ id:actor, email:actor + '@example.test' } } : null;
+    return options.returnHeaders ? { response:session, headers:new Headers() } : session;
+  },
+    async assertRecentReauthentication() { return { user:{ id:actor!, email:actor + '@example.test' } }; },
+    async handler() { return new Response(null, { status:404 }); }, fromNodeHeaders() { return new Headers(); } } as FirebaseAuthPort;
+  const handler = createFirebaseRequestHandler({ authority:f.authority, auth, publicOrigin:origin, mailConfigured:true, sharing:f.sharing });
+  const client = createSharingApi(origin, async (input, init) => {
+    const headers = new Headers(init?.headers); headers.set('origin', origin);
+    return handler(new Request(input, { ...init, headers }));
+  });
+  const http = (path: string, body?: unknown, expected = actor ?? '', requestOrigin = origin) => handler(new Request(origin + '/api/shared-spaces' + path,
+    { method:body === undefined ? 'GET' : 'POST', headers:{ 'x-expected-user-id':expected, origin:requestOrigin, 'content-type':'application/json' },
+      ...(body === undefined ? {} : { body:JSON.stringify(body) }) }));
+  assert.equal((await http('', undefined, 'viewer')).status, 409);
+  actor = null; assert.equal((await http('')).status, 401); actor = 'parent';
+  const invalidCreate = { action:'create', operationId:randomUUID(), kind:'family', name:'Other family' };
+  assert.equal((await http('/commands', invalidCreate, 'parent', 'https://other.example.test')).status, 403);
+  assert.equal((await http('/commands', { ...invalidCreate, surprise:true })).status, 400);
+  const httpPage = await http(''); assert.equal(httpPage.status, 200);
+  assert.match(httpPage.headers.get('cache-control')!, /no-store/);
+  assert.equal((await httpPage.json()).items[0]?.id, f.space.id);
+  const first = await f.sharing.spacesPage('parent');
+  assert.equal(first.items[0]?.id, f.space.id);
+  assert.equal(first.items[0]?.role, 'owner');
+  assert.equal('storageIdentity' in first.items[0], false);
+  assert.equal((await f.sharing.membersPage('viewer', f.space.id)).items.length, 3);
+  await assert.rejects(f.sharing.invitationsPage('viewer', f.space.id), code('space_manager_required'));
+  const input = { action: 'share' as const, operationId: randomUUID(), spaceId: f.space.id,
+    expectedVersion: f.space.version, childId: f.child.child.id, modules: ['tasks' as const] };
+  const result = await f.sharing.executeCommand('parent', input);
+  const receipt = await http('/operations/' + input.operationId);
+  assert.equal(receipt.status, 200); assert.deepEqual((await receipt.json()).operation, result);
+  assert.deepEqual(await client.submit(input, 'parent', new AbortController().signal), result);
+  assert.equal((await http('/commands', { ...input, operationId:randomUUID() })).status, 409);
+  assert.deepEqual(await f.sharing.controlOperation('parent', input.operationId), result);
+  assert.deepEqual(await f.sharing.executeCommand('parent', input), result);
+  const shared = await f.sharing.sharesPage('viewer', f.space.id);
+  assert.deepEqual(shared.items[0]?.modules, ['tasks']);
+  assert.equal(shared.items[0]?.childName, 'Test child');
+  assert.equal(shared.items[0]?.canWithdraw, false);
+  const proposed = await f.sharing.executeCommand('parent', { action: 'proposeTransfer', operationId: randomUUID(),
+    spaceId: f.space.id, expectedVersion: result.space!.version, targetUserId: 'carer' });
+  const accepted = await f.sharing.executeCommand('carer', { action: 'acceptTransfer', operationId: randomUUID(),
+    spaceId: f.space.id, expectedVersion: proposed.space!.version });
+  await f.sharing.executeCommand('carer', { action: 'updateMember', operationId: randomUUID(), spaceId: f.space.id,
+    expectedVersion: accepted.space!.version, targetUserId: 'parent', role: null });
+  assert.equal((await f.sharing.spacesPage('parent')).items.length, 0);
+  assert.equal((await f.sharing.sharesPage('viewer', f.space.id)).items.length, 0, 'revoked source member no longer shares');
+  assert.deepEqual(await f.sharing.controlOperation('parent', input.operationId),
+    { operationId:input.operationId, action:'share', space:null, redacted:true }, 'revocation redacts a committed receipt rather than inviting a duplicate operation');
+  assert.deepEqual(await client.operation(input.operationId, 'parent', new AbortController().signal),
+    { operationId:input.operationId, action:'share', space:null, redacted:true });
+  for (let i = 0; i < 21; i++) await f.sharing.create('parent', { operationId: randomUUID(), name: `Family ${i}`, kind: 'family' });
+  const page = await f.sharing.spacesPage('parent');
+  assert.equal(page.items.length, 20); assert.ok(page.nextCursor);
+  const next = await f.sharing.spacesPage('parent', page.nextCursor!);
+  assert.equal(next.items.length, 1); assert.equal(next.nextCursor, null);
+  assert.equal(new Set([...page.items, ...next.items].map(item => item.id)).size, 21);
+  await assert.rejects(f.sharing.spacesPage('viewer', page.nextCursor!), code('invalid_cursor'));
+});
 
 test('shared change cursors observe other members without exposing private history and reset on new authority', async () => {
   const f=await fixture(),childId=f.child.child.id,care=createFirestoreCareStore(f.options);

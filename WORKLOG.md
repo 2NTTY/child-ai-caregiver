@@ -4086,3 +4086,11 @@
 - 原生 credential 回原 session／明確 linking；Google 清本機選擇、Apple 每次 nonce／state，取消／錯 state 不進 Firebase。新增公開配置、官方 iOS callback plugin／Apple entitlement，保持 Android 通知 descriptor 及舊平台入口。
 - 一條原生 adapter red→green、三項配置／原平台相容、局部型別、官方 iOS plugin introspection 及 Android Hermes 匯出通過；獨立 review 未報重要 blocker。保留測試 skipPlugins 設定、credential fixture 型別及首輪 Hermes 暫存權限失敗；僅改驗證暫存位置後成功。[證據](artifacts/verification/P4_AUTH_NATIVE_20261027.json)。
 - 原生套件需要新 binary，未雲端建置、部署、發 OTA 或真人登入。provider 預設空；Google 免費 Original 底層棄用限制、Firebase 自動連結／電郵准入、Apple 邀請／團隊及真機接續仍明列，AUTH01／P4 未完成。
+
+<a id="log-20261027-p4-family-control"></a>
+### LOG-20261027-P4-FAMILY-CONTROL
+
+- 基線 `aeab7d6`，分支 `codex/p4-family-shared-entry`。沿原 Firestore 共享交易接家庭管理 HTTP／共用 client、建立／邀請／接受、角色及模組、轉交與退出；同一原件與身份，不新增套件、SQL 或另一份孩子資料。
+- 列表有界並核目前權限；控制收據只公開必要結果，撤權後回無正文 metadata，避免重做已提交操作。Web／Android 共用身份級 controller／畫面，沒有孩子亦可建／加入家庭；舊設定入口接回管理頁，未知操作跨頁保留，身份切換清理。
+- 正式 HTTP／client 控制流程、原共享還原、控制器一組情景、局部前後端型別及一次 Web 匯出通過。獨立 review 的 unknown→原版本衝突鎖死已 red→green 修正；其餘未知拒絕不放寬。初次 fixture overload、Node strip-only 語法及 Node types 問題保留於[證據](artifacts/verification/P4_FAMILY_CONTROL_20261027.json)。沒有全量測試、模型、通知、雲端資源或部署。
+- 四項索引尚未建立；未做 GUI／手機驗收。全局共享孩子選擇、各頁 owner、共享上載／聊天、其餘背景及完整 P4 未完成；D PR、P3／P5 未改。
