@@ -30,7 +30,7 @@
 这些接口用于隔离差异，不建设复杂插件平台。
 
 <a id="api-3-3-10"></a>
-介面按實際流程落碼：P1 `DataStore`／`ModelGateway`；P2 `AgentRuntime`／`AttachmentStore`／`KnowledgeRetriever`／`TaskExecutor`／`NotificationGateway` 及在線一致性所需 `SyncEngine`；P3 只增加 Android 平台 adapter，P4 補相容 Server 切換。共享核心隔離平台、資料庫與渠道；選人、任務及升級／fallback 規則不進渠道 adapter。
+介面按實際流程落碼：P1 `DataStore`／`ModelGateway`；P2 `AgentRuntime`／`AttachmentStore`／`KnowledgeRetriever`／`TaskExecutor`／`NotificationGateway` 及在線一致性所需 `SyncEngine`；P3 只增加 Android 平台 adapter，P5 補相容 Server 切換。共享核心隔離平台、資料庫與渠道；選人、任務及升級／fallback 規則不進渠道 adapter。
 
 <a id="api-3-3-11"></a>
 P1 `ModelGateway` 由已登入且通過資源權限檢查的 Server 請求呼叫真 Gemini／簡單 prompt。瀏覽器不接收 provider credential；Server 驗證輸入及模型結果，套用配額、總開關及有限重試，日誌不保存憑據或家庭正文。模型只回傳回答或草稿，不能繞過權威寫入及授權規則。
@@ -192,13 +192,13 @@ S02 的 [共享輸入](../src/shared/inputs.ts) 只建立首條縱向流程必�
 
 驗證接受 `unknown`，回傳 `ok/value` 或帶欄位及固定錯誤碼／繁體中文訊息的 `issues`；錯誤不回顯被拒絕的正文。`workspaceId`、作者、確認狀態及額外欄位不從這些輸入採信，由 S06／S03 的 Server 邊界取得身份及建立權威欄位。未包含的孩子詳細資料、修訂及事件欄位依後續工作包增加。
 
-部署設定 `EXPO_PUBLIC_API_BASE_URL` 預設 `/api`，可指向 HTTPS API，或只在本機開發使用 localhost／loopback HTTP；拒絕內嵌憑據、query、fragment 及不支援路徑。它是建置時公開配置，不放 provider key，也不是 P4 使用者切換 Server 功能。
+部署設定 `EXPO_PUBLIC_API_BASE_URL` 預設 `/api`，可指向 HTTPS API，或只在本機開發使用 localhost／loopback HTTP；拒絕內嵌憑據、query、fragment 及不支援路徑。它是建置時公開配置，不放 provider key，也不是 P5 使用者切換 Server 功能。
 
 <a id="section-3-4"></a>
 ## 3.4 身份和权限
 
 <a id="api-3-4-01"></a>
-P1 起使用自部署 Better Auth 與 PostgreSQL，先落實登入、帳號及資料隔離；P2 加入家庭邀請、成員角色及私人聊天邊界。Better Auth 管理會話，業務 API 逐次檢查資源權限。[PostgreSQL 支持](https://better-auth.com/docs/adapters/postgresql) · [Expo 整合](https://better-auth.com/docs/integrations/expo)
+P1 歷史使用 Better Auth／PostgreSQL；現行身份沿 Firebase Authentication 與 Server session、Firestore 業務授權。每次 API 重新核對資源範圍；P4 目標擴充見[身份與共享契約](#p4-p5-contract)，不因保留舊 API 錨點重新引入 SQL。
 
 <a id="api-3-4-02"></a>
 区分：
@@ -206,7 +206,7 @@ P1 起使用自部署 Better Auth 與 PostgreSQL，先落實登入、帳號及�
 - <a id="api-3-4-03"></a>用户身份；
 - <a id="api-3-4-04"></a>家庭成员身份；
 - <a id="api-3-4-05"></a>设备凭据；
-- <a id="api-3-4-06"></a>配对会话；
+- <a id="api-3-4-06"></a>配對會話已取消，保留識別供追溯；正常獨立裝置 session 不取消；
 - <a id="api-3-4-07"></a>模型及通知服务凭据。
 
 <a id="api-3-4-08"></a>
@@ -218,7 +218,7 @@ Web／App 均先連接 Server 並登入；資料空間明確綁定帳號及授�
 <a id="p2-family-permissions"></a>
 ### P2 家庭操作權限
 
-以下為業務角色契約，S06-W02 開始落實家庭 API；Better Auth 會話不能代替每次資源及操作授權。
+以下保留業務角色契約及 S06-W02 歷史入口；目前 Firestore 家庭實作狀態看 PLAN。P4 按實際加入模組及權威歸屬套用，session 不能代替逐次授權，不能把家庭 owner 解讀為所有私人孩子資料的 owner。
 
 | 操作 | owner | caregiver | viewer |
 |---|---|---|---|
@@ -226,7 +226,7 @@ Web／App 均先連接 Server 並登入；資料空間明確綁定帳號及授�
 | 提交／更正共享記錄、確認／更正共享事實及按權限刪除個別共享資料 | 可 | 可 | 不可 |
 | 接受／暫緩／關閉共享關注，停用／重新啟用孩子的關注主題 | 可 | 可 | 不可 |
 | 安排／指派家庭事項，改期／完成／取消共享任務 | 可 | 可 | 不可 |
-| 邀請、變更角色及撤銷成員權限，刪除整個孩子 | 可 | 不可 | 不可 |
+| 邀請、變更角色及撤銷成員權限；刪除具權威管理權的孩子／資源（部分模組共享不授予整孩刪除權） | 可 | 不可 | 不可 |
 | 管理自己的通知偏好、訂閱及撤銷自己的裝置／渠道綁定 | 可 | 可 | 可 |
 
 <a id="api-family-01"></a>
@@ -339,13 +339,13 @@ Server 復用完整 [P1 prompt](../prompts/p1/childcare-chat.txt)，只組合已
 草稿只存本頁、按孩子區分；換帳號／登出清除，離線或 AI 失敗保留輸入。原文保存未知時先重讀及人工核對，不自動重送；AI 回覆可用原 message ID 手動再取，已有結果不再呼叫模型。關頁／登出前提示未提交內容，沒有瀏覽器資料主庫或 outbox。介面告知要求回覆會將孩子稱呼及近期聊天送到 Google，P1 試玩只使用合成資料。
 
 <a id="section-4-1"></a>
-## 4.1 配对码与二维码
+## 4.1 正常登入與裝置會話（原配對契約取消）
 
 <a id="api-4-1-01"></a>
-配对码只用于临时设备授权，不是 API key、账号密码或永久访问密钥。
+QR／短碼配對及臨時裝置會話依 ADR-028 取消；不新增或要求配對 API，歷史識別保留，不標完成。
 
 <a id="api-4-1-14"></a>
-配对码默认五分钟有效、单次使用，并限制尝试次数。二维码不包含儿童资料或模型密钥。涉及新的服务器地址时，先展示地址供确认。
+正常登入仍建立各端獨立、可撤銷的 Server session，保留目前 Web／原生 transport 防護及重新驗證。P5 自選 Server 時另核地址／能力及憑據隔離，不依賴配對。
 
 <a id="sync-contract"></a>
 ## 在線寫入及更新契約
@@ -498,9 +498,9 @@ S13-W05 [共享契約](../src/shared/web-push.ts) 只管理本人訂閱及明確
 <a id="errors-compatibility"></a>
 ## 错误、兼容和未确定的实现细节
 
-契約要求區分未授權／已撤權、配對過期或重放、舊世代、版本衝突、校驗失敗、網絡失敗、結果未知及附件未完成；界面映射到 [SPEC 確認狀態](../SPEC.md#section-4-7)，失敗或未知不能顯示成功。以上是業務條件，未固定 HTTP 狀態碼或錯誤字串。
+契約要求區分未授權／已撤權、登入 session 過期、舊世代、版本衝突、校驗失敗、網絡失敗、結果未知及附件未完成；界面映射到 [SPEC 確認狀態](../SPEC.md#section-4-7)，失敗或未知不能顯示成功。以上是業務條件，未固定 HTTP 狀態碼或錯誤字串。
 
-HTTP 路徑、完整封裝、裝置憑據格式、批次限制、衝突內容及相容協商仍由 [D-API-001](DECISIONS.md#d-api-001) 追蹤：P1 S06-W03 定最小登入／資料介面，S06-W01／S11-W01 定安全 AI 入口；P2 S07-W03 定在線一致性，S13-W04 至 W07 定 worker／通知／授權 fallback；P4 S06-W04／S08-W01 定 Server 選擇及裝置授權。僅實作所需部分，寫回本文件。遷移格式及恢復要求依 [DATA_MODEL](DATA_MODEL.md#section-6-2) 與 [ARCHITECTURE](ARCHITECTURE.md#section-6-5)，不虛構已運行路由或指令。
+HTTP 路徑、完整封裝、裝置憑據格式、批次限制、衝突內容及相容協商仍由 [D-API-001](DECISIONS.md#d-api-001) 追蹤：P1 S06-W03 定最小登入／資料介面，S06-W01／S11-W01 定安全 AI 入口；P2 S07-W03 定在線一致性，S13-W04 至 W07 定 worker／通知／授權 fallback；P5 S06-W04 定 Server 選擇，S08-W01 配對取消，正常裝置授權沿現有身份與 P4-AUTH01。僅實作所需部分，寫回本文件。遷移格式及恢復要求依 [DATA_MODEL](DATA_MODEL.md#section-6-2) 與 [ARCHITECTURE](ARCHITECTURE.md#section-6-5)，不虛構已運行路由或指令。
 
 <a id="telegram-http"></a>
 ## P2 Telegram 本人渠道
@@ -1130,3 +1130,26 @@ client本人key沿既有serverIdentity＋userId＋identity generation；孩子�
 
 
 Account export可直接驗讀空head／null內容，不因未裝avatar內容port而令舊有空帳戶匯出失敗；若確有current normalized object但內容port缺失，該content section明示503，不省略真內容假稱完整。public avatar服務未開仍是unavailable，不由這項匯出相容行為推斷功能可用。
+
+
+<a id="p4-p5-contract"></a>
+## P4／P5 目標接口（未實作）
+
+本節只定語義，路由／DTO 在相應包實作時沿既有接口擴充並保持舊 App 相容，不聲稱目前已有新端點。[SPEC REQ-P4](../SPEC.md#p4-p5-product) 是產品權威，[PLAN](../PLAN.md#p4-packages) 管依賴／狀態，六項待決不由接口文字先行定案。
+
+| 功能邊界 | 輸入／核對 | 結果及恢復 |
+|---|---|---|
+| 登入／provider 連結 | 既有 Firebase 身份證據、邀請資格、provider 適用重新驗證；先驗原帳號再連結 | 保留同 UID、獨立裝置 session／撤銷。Apple relay 與原邀請地址可不同：驗證原收件地址後把資格綁至 UID，不按名稱／email 猜合併 |
+| 個人／家庭模組加入 | 目標空間、選定資源／模組、來源及目標權限、預期資源／授權版本、原 opId | 僅選定範圍生效；未選資料／憑證不外露。共享／複製／搬移依 PD-01，不能現在承諾某一資料動作 |
+| 班級與教師空間 | 獨立班級可建／查／匯入；加入空間核目前角色，名冊有界搜尋／分頁 | 保留同一權威資料與穩定班級身份；移出結果依 PD-02，不建立逐班複雜 ACL 管理平台 |
+| 管理權轉交 | 原管理員提出、已加入成員接受；綁空間／接收者／版本／原操作 | 接受時交易提交轉交及收據；原管理員退出不刪已轉交資料。未轉交退出／刪帳依 PD-05 |
+| 文檔包匯出 | 用途（交接／本人備份）、有權孩子／班級、模組、期間、附件；混合聊天範圍明確 | 返回版本化包、manifest／可信完整性證明、可讀摘要及完整度；權限仍在讀取／下載時核對，不把自行附 hash 當可信證明 |
+| 文檔包匯入 | 原 opId／指紋、包／版本／來源、目標、選定模組、可信完整性與格式／相容檢查；可選內容檢查 | 通過可直接正常使用，無強制待採納／逐條確認。持久批次／逐項結果及 log；來源／版本映射去重，衝突明示不按同名覆蓋；缺證明／失敗、提醒、本人還原依 PD-03／04／06 |
+| 多孩工具批次 | Server 核定目標集合、各項版本、共同授權／必要一次確認、原 run／批次／操作 | 完成／失敗／略過／尚未執行／取消逐項呈現及收據；續未完成項，unknown 查原結果，不重做成功項，不換 run 繞限 |
+
+- 身份由 Server session 取用，客戶端或 Agent 的目標／角色欄位只供核對；目前角色、選定模組、來源及附件可見性在 UI、工具、背景、搜尋、報告、匯出／下載一致套用。
+- 混合聊天屬發起帳戶，讀取／搜尋按目前子範圍授權；單孩匯出無法可靠分離時明示，完整混合對話須有權並明確選入全部範圍，不藉匯出擴權。
+- 匯入各狀態均提供有界紀錄查回：操作者／時間、包與版本／內容識別、完整性結果、目標／選擇、來源鏈、操作／批次及逐項資源／版本／原因、接續結果。格式錯誤無包 ID 時記未知與原因，亦非無紀錄失敗。
+- 保存、業務結果、收據、change cursor 及 outbox 沿同一 Firestore 交易邊界；大包使用可恢復的有界批次，不承諾整包單交易。部分成功不當全成功；模型／通知等外部呼叫在交易外。
+- provider 連結在同流程取得必要同意，配置 Apple private relay 合法郵件來源；Google／Apple-only 重新驗證用其 provider，不要求密碼。註冊准入與家庭／教師空間資格分開。
+- P5 Server 能力／地址核對與憑據隔離另隨 S06-W04 擴充；資料副本匯入不會切換權威 Server、搬移執行授權或恢復舊投遞。普通登入及裝置撤銷不依賴已取消的配對端點。

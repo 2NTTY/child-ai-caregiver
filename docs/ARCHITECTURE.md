@@ -28,7 +28,7 @@
 模型不直接控制数据库和通知系统。所有写入及工具执行通过应用程序检查。
 
 <a id="rule-3-1-10"></a>
-六層按 P1 至 P4 的實際流程落實；P1 須具備最小 Server、PostgreSQL 及身份隔離。Web／Android 共用 TypeScript domain、validation 與協議；權威業務校驗、AI orchestration、記憶及 tasks 在 Server 執行，不能放在 UI component 或資料庫／平台／渠道 adapter。
+六層按 P1 至 P5 的實際流程落實；P1 須具備最小 Server、PostgreSQL 及身份隔離。Web／Android 共用 TypeScript domain、validation 與協議；權威業務校驗、AI orchestration、記憶及 tasks 在 Server 執行，不能放在 UI component 或資料庫／平台／渠道 adapter。
 
 <a id="rule-3-1-11"></a>
 共享核心保持平台、資料庫及渠道解耦；育有方是唯一實作領域，將領域模型、prompt、來源及受限 skills／任務流程集中管理。只在相關功能使用邊界，不建通用實體模型、動態插件平台、registry 或第二主題。日後可從來源碼層替換領域或 adapter，不預建平台。
@@ -106,7 +106,7 @@ Web 的可見事件及 Android 的 AppState／網絡 adapter 驅動同一 metada
 Server 業務儲存須加密，備份獨立加密及核驗恢復；實際加密機制按工作包細化。Android 憑據使用平台安全儲存，Web 會話遵守安全會話設定。密鑰、密碼及恢復資料不寫入程式碼、日誌或一般導出。
 
 <a id="rule-3-2-11"></a>
-P1 最小 Server／PostgreSQL／Better Auth 先支援合成資料可玩流程，之後完成 Server 儲存加密及最小加密備份／還原；P2 加入家庭邀請、私人隔離、附件、持續 worker、ADK 及最小 pgvector RAG；P3 Android 重用 Server；P4 擴充既有 RAG 管理／規模及維運，完成 Server 選擇、Windows 部署、完整遷移及災備。
+P1 最小 Server／PostgreSQL／Better Auth 先支援合成資料可玩流程，之後完成 Server 儲存加密及最小加密備份／還原；P2 加入家庭邀請、私人隔離、附件、持續 worker、ADK 及最小 pgvector RAG；P3 Android 重用 Server；P4 擴充集中服務的共享／班級、知識管理、分享／分析及災難恢復；P5 完成 Server 選擇、Windows 自部署與完整跨 Server 遷移。P1／P2 的 SQL 名稱只記歷史，現行組裝沿 Firestore。
 
 <a id="p2-family-access"></a>
 ### S06-W02 家庭授權
@@ -130,7 +130,7 @@ P1 備份以 pg_dump custom snapshot 及獨立 key 加密；原 archive 只在�
 
 - <a id="rule-3-5-02"></a>Android 是在線客戶端，不安排權威任務；
 - <a id="rule-3-5-03"></a>Web 是在線客戶端，分頁及瀏覽器不持有任務執行權；
-- <a id="rule-3-5-04"></a>當前指定 Server 確認寫入並執行 Agent／任務；P4 遷移才切換該權威。
+- <a id="rule-3-5-04"></a>當前指定 Server 確認寫入並執行 Agent／任務；P5 跨 Server 遷移才切換該權威。
 
 <a id="rule-3-5-05"></a>
 主节点负责：
@@ -167,7 +167,7 @@ Worker 以持久台帳、穩定邏輯鍵／occurrenceId、有限租約及冪等�
 - <a id="rule-3-6-09"></a>不把数据库直接暴露到公网；远程连接使用 HTTPS／WSS。
 
 - <a id="rule-3-6-10"></a>首次 Server／模型請求起便有登入及資源權限檢查、憑據隔離、應用配額、總開關及有限重試。供應商憑據只留 Server；日誌不記錄憑據、家庭正文或私人附件。
-- <a id="rule-3-6-11"></a>P1 交付最小 Server／PostgreSQL／Better Auth、Web 記錄聊天與 Gemini 簡單 prompt，階段結案時提供真 URL。P2 以 ADK 接通完整當前 orchestration、最小向量 RAG、持續 worker、家庭權限、Web 附件、主動任務、Web Push／Telegram 及公共更新。P3 Android 重用同一 Server，P4 補完整部署／遷移／災備及 RAG 維運擴充；不因使用框架而提前建立未需平台。
+- <a id="rule-3-6-11"></a>P1 交付最小 Server／PostgreSQL／Better Auth、Web 記錄聊天與 Gemini 簡單 prompt，階段結案時提供真 URL。P2 以 ADK 接通完整當前 orchestration、最小向量 RAG、持續 worker、家庭權限、Web 附件、主動任務、Web Push／Telegram 及公共更新。P3 Android 重用同一 Server，P4 補集中服務協作、災備及 RAG 維運，P5 補自部署／跨 Server 遷移；不因使用框架而提前建立未需平台。
 
 <a id="portable-core"></a>
 以下是原自部署路線及現有 Compose 的能力邊界；ADR-019 已採 GCP 代管服務為本輪前置，不能再承諾 Firestore 目標無 GCP 依賴。現有資料、任務、附件、權限及確定性規則由 Node／PostgreSQL／pgvector／worker／Compose 承載。平台 Gemini 維持 Vertex，可使用 GCP 以外 ADC；個人 key 接入見 [S06-W05](#personal-model-routing)。自部署不代表離線 Gemini。S17-W05 須驗證沒有 GCP 附加身份、關閉 AI 時核心資料與確定性任務仍可用，模型及外部通知另按憑據／授權驗證。
@@ -239,13 +239,13 @@ S11-W02 優先以 BasePlugin 及 ADK 原生 spans 接最小 metadata 診斷，�
 ## 4.2 裝置授權與 Server 連接
 
 <a id="rule-4-2-01"></a>
-QR／短碼只授予裝置連接 Server 的權限：
+QR／短碼配對與臨時裝置會話依 ADR-028 取消。下列錨點改記目前正常登入／撤銷邊界，不代表新增實作：
 
-- <a id="rule-4-2-02"></a>新裝置向 Server 建立短期授權會話；
-- <a id="rule-4-2-03"></a>既有獲授權裝置核對 Server 地址及權限並確認；
-- <a id="rule-4-2-04"></a>Server 簽發獨立可撤銷憑據，QR／短碼及日誌不含家庭正文、附件或模型密鑰；
+- <a id="rule-4-2-02"></a>新裝置沿正常 Firebase 登入及 Server session，不開配對會話；
+- <a id="rule-4-2-03"></a>不再需要另一裝置批准；P5 自選 Server 另核地址／能力／身份；
+- <a id="rule-4-2-04"></a>Server 保留各端獨立可撤銷 session，憑據與私人正文不進一般日誌；
 - <a id="rule-4-2-05"></a>授權後新裝置直接連接 Server；手機斷線不影響其已授權連線；
-- <a id="rule-4-2-06"></a>臨時會話按期限／登出失效並清理頁面資料，不提供持久離線副本。
+- <a id="rule-4-2-06"></a>臨時裝置會話取消；正常登出／撤權清理頁面資料，不提供持久離線業務副本。
 
 <a id="rule-4-2-07"></a>
 連線使用 TLS；此流程不是手機資料中繼，不建 WSS 中繼、WebRTC、STUN／TURN 或自製端對端加密協議。替代映射見 [ADR-008](DECISIONS.md#adr-008)。
@@ -329,7 +329,7 @@ S13-W04 以獨立 Node worker 及固定 pg-boss 12.34.0 接上手動任務。API
 **登记来源 → 获取正文 → 清洗 → 分段 → 保存版本 → 生成向量 → 审核发布 → 检索引用 → 检查更新。**
 
 <a id="rule-5-6-09"></a>
-知識分三層交付：S10-W01／P2 直接建立小型官方 pgvector RAG 核心，含 embedding、版本、核對發布、停用及必要恢復；S10-W02／P2 接共用 worker 作公共來源排程及受影響片段更新；S10-W03／P4 擴充完整管理頁、大規模導入、批量重建管理、效能及完整遷移。三者沿用同一份知識／向量／引用，不建另一套過渡核心。P2 可用可重複執行的匯入、核對及發布指令，不提前建管理平台。
+知識分三層交付：S10-W01／P2 直接建立小型官方 pgvector RAG 核心，含 embedding、版本、核對發布、停用及必要恢復；S10-W02／P2 接共用 worker 作公共來源排程及受影響片段更新；S10-W03／P4 擴充完整管理頁、大規模導入、批量重建管理、效能及知識資料遷移；跨 Server 權威切換屬 P5。三者沿用同一份知識／向量／引用，不建另一套過渡核心。P2 可用可重複執行的匯入、核對及發布指令，不提前建管理平台。
 
 <a id="rule-5-6-10"></a>
 P2 問答 orchestration 必須取得適用的已發布官方片段及引用識別，限制模型只引用提供的證據；Server 校驗引用存在、版本／適用條件及來源啟用狀態，缺失時拒絕無依據的具體建議並呈現限制。每項重要說法是否真正獲片段支持仍須在內容 review 及驗收中核對，不把 metadata 校驗當成語義正確性保證。 背景成長關注採較窄的呈現方式：Agent 檢索並選取本次已登記的官方片段，Server 重查有效性後直接組裝已核對正文與引用，不使用模型改寫的照護建議；無片段時只呈現固定限制說明。此策略由 Server 事件決定，不受模型的答案分類影響；當下原因及家長操作仍以關注卡片為準。互動問答維持原契約，不能把此局部限制視為其語義品質已全面驗證。純澄清／操作確認／家庭資料回述不硬配公共引用；近期資訊保留分類邊界。
@@ -857,3 +857,17 @@ P3 四角色提案沿共同 [運行配置](#p2-agent-budgets)，所有角色合�
 ADK plugin 將事件投影為固定 metadata，按 runId 回查原訊息／操作台帳；只含 phase、layer、已登記工具、耗時及既有允許的狀態／錯誤碼。`model` 是模型接線觀察點、`tool` 是工具邊界、`authorization` 是明確拒絕、`business` 是已知業務結果；未知外部失敗不猜成資料庫根因。API 身份與傳輸仍用現有 API 錯誤碼；不把 SDK run_end 當成業務保存完成。
 
 受信任的每次 `onDiagnostic` 與營運 logger 各收到獨立 metadata 副本，非阻塞且失敗隔離；不接收原始 args、模型正文、思考或 stack，不新增 Firestore 逐事件日誌。此端口供即時回饋取材，並不授權外發或改變取消／期限／提交；對客戶端的事件仍須經正式 HTTP 身份與產品投影。
+
+
+<a id="p4-p5-architecture"></a>
+## P4／P5 目標邊界（文件定案，未實作）
+
+本次沿用原網站、共用 Expo 畫面／owner、VM／Compose、Firestore、Firebase Authentication、Storage、ADK／Prompt Pack 與同一業務服務，不另建教師 Agent、多人資料副本或 SQL 層。現有各包完成證據與本節未實作目標分開；[ADR-028](DECISIONS.md#adr-028)／[PLAN](../PLAN.md#p4-integrated) 管替代與階段。
+
+1. **個人／班級優先：**身份、穩定資料歸屬及目前管理員分開。家庭只接選定模組，教師空間只接加入的班級；組內同源。所有領域讀寫與背景、檔案、報告、匯出走共用授權，UI 不決定資料權限。加入方式與移出／退出策略依待決，不在架構先固定搬移或刪除。
+2. **共用助手：**Server 固定多孩／班級目標與版本，提供有界名冊／相關召回及批次工具，保存逐項結果及收據。私人混合聊天與孩子／班級業務成果分開；不用全班歷史填上下文，不逐孩重跑 Agent，不換 run 繞預算。需 D 接口才等待相應角色，不擴其開發範圍。
+3. **資料可攜：**交接／本人備份復用同一版本化包、附件及下載／分享服務。匯入前做可信完整性、格式／相容及目標權限檢查；通過可直接使用，AI／人工內容檢查可選。跨人是獨立副本，組內仍是共享權威。可追溯的批次／映射／紀錄與衝突處理沿原交易／收據模式，不借 importer 執行原提醒或移走憑證。
+4. **身份：**沿 Firebase provider linking 及原 Web／原生 session；Google／Apple 以對應方式重新驗證。Apple 邀請接續驗原收件地址並綁 UID，不猜合併；郵件來源／relay 配置與准入交易按 AUTH01 完成。
+5. **營運與 P5：**P4 保留完整知識管理／批量、分享／分析、集中跨端可靠性及災備。P5 才交自選 Server、Windows 自部署、跨 Server 搬遷／任務交接與通用回退。兩階段 S16／S17 分項驗收／交付，不以整個 P3 作所有 P4 前置；取消配對不取消裝置撤銷。
+
+[API 目標](API.md#p4-p5-contract)／[資料責任](DATA_MODEL.md#p4-p5-data)承接接口與持久化；[SPEC](../SPEC.md#p4-p5-product)為產品／AC 唯一正文。UI 保持薄層、前後端同包接通，必要驗證復用有效證據，不為階段重編號重跑全部功能。
