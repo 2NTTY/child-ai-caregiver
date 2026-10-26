@@ -1,0 +1,689 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-10-26",
+  "base_commit": "89bf5ff0f39ca1120aff4210f2ebf817129cbef3",
+  "installation_scope": ".agents/skills (repository only)",
+  "skills": [
+    {
+      "name": "brainstorming",
+      "path": ".agents/skills/brainstorming",
+      "upstream_repository": "obra/superpowers",
+      "upstream_commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "upstream_path": "skills/brainstorming",
+      "license": "MIT",
+      "upstream_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "61a7ef918652108c76a3fd01e02dd92d39996c6b46d4cb2819cbd03f6c45e46a",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/brainstorming/SKILL.md",
+          "git_blob_sha": "7f5eef02f894c4f24cea313660c0465ce9c084ed"
+        },
+        {
+          "path": "builder-check-prompt.md",
+          "sha256": "36d51a4723d6f0a3ce5811a0ea3b3a8424f07533947e1355f5d8cb8cce40c55e",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/brainstorming/builder-check-prompt.md",
+          "git_blob_sha": "136e9c1d516ee1852abc5e556e76ce1b085d3827"
+        }
+      ],
+      "omitted_upstream_files": [
+        "scripts/frame-template.html",
+        "scripts/helper.js",
+        "scripts/server.cjs",
+        "scripts/start-server.sh",
+        "scripts/stop-server.sh",
+        "visual-companion.md"
+      ],
+      "upstream_license": {
+        "path": "LICENSE",
+        "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
+        "git_blob_sha": "abf0390320aa14406af7a520b9b0739fdda9bf08"
+      },
+      "installed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "c0a91e415a25efe315aa7552de6c252dd722041938e03faad0e4c20238b29bea"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "sha256": "bbf26b4586c029a13f16bc0dc2c883c55f6df29adf3fb8b66bde8a1f82cc5b65"
+        },
+        {
+          "path": "UPSTREAM.patch",
+          "sha256": "2da2b0d3b0179036042465769894cc8cab7771ce6511d00d92b26f95a2a68a4b"
+        },
+        {
+          "path": "builder-check-prompt.md",
+          "sha256": "a2691a33d2581a681ec2c2cef610add6e4a06844b3afa3321e76ca5eecbc3a9a"
+        },
+        {
+          "path": "upstream/SKILL.md.txt",
+          "sha256": "61a7ef918652108c76a3fd01e02dd92d39996c6b46d4cb2819cbd03f6c45e46a"
+        },
+        {
+          "path": "upstream/builder-check-prompt.md.txt",
+          "sha256": "36d51a4723d6f0a3ce5811a0ea3b3a8424f07533947e1355f5d8cb8cce40c55e"
+        }
+      ],
+      "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch"
+    },
+    {
+      "name": "systematic-debugging",
+      "path": ".agents/skills/systematic-debugging",
+      "upstream_repository": "obra/superpowers",
+      "upstream_commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "upstream_path": "skills/systematic-debugging",
+      "license": "MIT",
+      "upstream_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "51c6435d98c83c42c96ba7c35725a0b2c376cd487fb1a4e6bd0ddbe7e33ef202",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/systematic-debugging/SKILL.md",
+          "git_blob_sha": "62fc752aaef59a8bbed5d305f4cadc60f8ae07ed"
+        },
+        {
+          "path": "condition-based-waiting.md",
+          "sha256": "e89fec8400d6cd50f43407cec9fab50976ba4d55d0ec2eb51c0bd68036b54c26",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/systematic-debugging/condition-based-waiting.md",
+          "git_blob_sha": "70994f777c586f7d4c43033aac34c7cf0da6688b"
+        },
+        {
+          "path": "defense-in-depth.md",
+          "sha256": "1e175fb86fc357e58c6aebf5441e481e1b7868b4380c0456b63a17eefbd18ba7",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/systematic-debugging/defense-in-depth.md",
+          "git_blob_sha": "e2483354dc2b62478a2624e34ca18bc0efe887b2"
+        },
+        {
+          "path": "root-cause-tracing.md",
+          "sha256": "75b933b6a8c40bdb2031b10f21654395b56ec6ab6bc7b018c18d3fe57aeb7fb8",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/systematic-debugging/root-cause-tracing.md",
+          "git_blob_sha": "0e72e8f9566b7ef85e814633d1feacad9d0c5868"
+        }
+      ],
+      "omitted_upstream_files": [
+        "CREATION-LOG.md",
+        "condition-based-waiting-example.ts",
+        "find-polluter.sh",
+        "test-academic.md",
+        "test-pressure-1.md",
+        "test-pressure-2.md",
+        "test-pressure-3.md"
+      ],
+      "upstream_license": {
+        "path": "LICENSE",
+        "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
+        "git_blob_sha": "abf0390320aa14406af7a520b9b0739fdda9bf08"
+      },
+      "installed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "dc94945a1e0d7abf3afc4944819dd34170c9338e0ba4cdc38865eb5c67f57abd"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "sha256": "2a12c6dbdc2dbe53a89e0d424c1e91208b9ee3ee886a3af26fba4560892f00b1"
+        },
+        {
+          "path": "UPSTREAM.patch",
+          "sha256": "082833e0e6c9feb7285c519106564ac2fe08e0d7d3992dbfdbe516e94f9f349e"
+        },
+        {
+          "path": "condition-based-waiting.md",
+          "sha256": "63d9297441798a92c85f99463d25f19b6fc9e63745b9b5da55be4f2cd4877bae"
+        },
+        {
+          "path": "defense-in-depth.md",
+          "sha256": "aff0d6172f63e9e5aa13d4feb113da726f1c329efab359d4c58095c99063f81b"
+        },
+        {
+          "path": "root-cause-tracing.md",
+          "sha256": "182cb508ff409a308f7004b45946a58e3278e0c3e131f96bb7eaf2ecdda8fe80"
+        },
+        {
+          "path": "upstream/SKILL.md.txt",
+          "sha256": "51c6435d98c83c42c96ba7c35725a0b2c376cd487fb1a4e6bd0ddbe7e33ef202"
+        },
+        {
+          "path": "upstream/condition-based-waiting.md.txt",
+          "sha256": "e89fec8400d6cd50f43407cec9fab50976ba4d55d0ec2eb51c0bd68036b54c26"
+        },
+        {
+          "path": "upstream/defense-in-depth.md.txt",
+          "sha256": "1e175fb86fc357e58c6aebf5441e481e1b7868b4380c0456b63a17eefbd18ba7"
+        },
+        {
+          "path": "upstream/root-cause-tracing.md.txt",
+          "sha256": "75b933b6a8c40bdb2031b10f21654395b56ec6ab6bc7b018c18d3fe57aeb7fb8"
+        }
+      ],
+      "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch"
+    },
+    {
+      "name": "test-driven-development",
+      "path": ".agents/skills/test-driven-development",
+      "upstream_repository": "obra/superpowers",
+      "upstream_commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "upstream_path": "skills/test-driven-development",
+      "license": "MIT",
+      "upstream_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "64b03fce4aee5a97a93160cea8111f3ba13a17b7c001db4bd5836d67fd10705d",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/test-driven-development/SKILL.md",
+          "git_blob_sha": "46838cc9e893c06259e3bdad0fc2425b36242f15"
+        },
+        {
+          "path": "writing-good-tests.md",
+          "sha256": "51471c853306ff92ca8bb41dcaea05f31c0e46b03651f8f3c99754b7172f4ae1",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/test-driven-development/writing-good-tests.md",
+          "git_blob_sha": "d3c4482fd30b4f9084bb61545fe73939a7502c28"
+        }
+      ],
+      "omitted_upstream_files": [],
+      "upstream_license": {
+        "path": "LICENSE",
+        "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
+        "git_blob_sha": "abf0390320aa14406af7a520b9b0739fdda9bf08"
+      },
+      "installed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "9f67dfe5dc4ebb4a069d50851f8a11406cbdd63e0a9212b05235937ced9a2cac"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "sha256": "8243b10d68ae69b3928ca331814f321ff068692353d5299faf3b570e5aafd9b3"
+        },
+        {
+          "path": "UPSTREAM.patch",
+          "sha256": "bae3acb4cece140094a3e85cc61bec124786e59a444e5edc89036952219bf08d"
+        },
+        {
+          "path": "upstream/SKILL.md.txt",
+          "sha256": "64b03fce4aee5a97a93160cea8111f3ba13a17b7c001db4bd5836d67fd10705d"
+        },
+        {
+          "path": "upstream/writing-good-tests.md.txt",
+          "sha256": "51471c853306ff92ca8bb41dcaea05f31c0e46b03651f8f3c99754b7172f4ae1"
+        },
+        {
+          "path": "writing-good-tests.md",
+          "sha256": "d5b212dd00ad1f8406f5164c8ae33e7daa69c6aa7e55dfd1f2292b9a0414c79d"
+        }
+      ],
+      "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch"
+    },
+    {
+      "name": "verification-before-completion",
+      "path": ".agents/skills/verification-before-completion",
+      "upstream_repository": "obra/superpowers",
+      "upstream_commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "upstream_path": "skills/verification-before-completion",
+      "license": "MIT",
+      "upstream_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "2befe7fc55bcadaa3d97dd9e8efeb633d2561c0ebe74c5a8b17c4d9e7e4520b3",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/verification-before-completion/SKILL.md",
+          "git_blob_sha": "7d45333cc4a49c57a80df6c1fe2fa777a207afbc"
+        }
+      ],
+      "omitted_upstream_files": [],
+      "upstream_license": {
+        "path": "LICENSE",
+        "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
+        "git_blob_sha": "abf0390320aa14406af7a520b9b0739fdda9bf08"
+      },
+      "installed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "c718c61e87a550a06ce36191bd37eb764f43a6b59c9e1faef4344f021c065675"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "sha256": "b8ab146131c907f46aa860f0ef4981c8b509489963b1fd218773431ff1c89637"
+        },
+        {
+          "path": "UPSTREAM.patch",
+          "sha256": "ad936babf95d7165d1e5660044a3c6b9df9f6528f8f94ff51b61454129829b23"
+        },
+        {
+          "path": "upstream/SKILL.md.txt",
+          "sha256": "2befe7fc55bcadaa3d97dd9e8efeb633d2561c0ebe74c5a8b17c4d9e7e4520b3"
+        }
+      ],
+      "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch"
+    },
+    {
+      "name": "requesting-code-review",
+      "path": ".agents/skills/requesting-code-review",
+      "upstream_repository": "obra/superpowers",
+      "upstream_commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "upstream_path": "skills/requesting-code-review",
+      "license": "MIT",
+      "upstream_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "2180e14a448e9410bec88e6646a2d1f0ce7fdd58de27388c1e052e929679d2bc",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/requesting-code-review/SKILL.md",
+          "git_blob_sha": "68d338a58ecdd8b77bfbb519b781ef223dbbb842"
+        },
+        {
+          "path": "code-reviewer.md",
+          "sha256": "82e370be6b3447523816286195571e4216ba56ba1ad6ad0e87862294c4c78dcb",
+          "url": "https://github.com/obra/superpowers/blob/2ce8aa15d05bd57213e6f746f953aafb7ded7a8b/skills/requesting-code-review/code-reviewer.md",
+          "git_blob_sha": "6d358b5d7d450c83cacbe450b7dbd4e673b694ad"
+        }
+      ],
+      "omitted_upstream_files": [],
+      "upstream_license": {
+        "path": "LICENSE",
+        "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
+        "git_blob_sha": "abf0390320aa14406af7a520b9b0739fdda9bf08"
+      },
+      "installed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "b98ded993f97c73bbf48b1e6a68bbf99edb81c21c8660c7f09a8416409fe6438"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "sha256": "518c0bc0e78b63b569e7c22db755f5aa21a5ef35499c94edd2f3cc8c663d9d72"
+        },
+        {
+          "path": "UPSTREAM.patch",
+          "sha256": "720f863863d15e6528bdd07416fe9678bb3ad5db3d37b59af17a7b95b1129342"
+        },
+        {
+          "path": "code-reviewer.md",
+          "sha256": "acd0d2d9b3480d074dc8bee1fd100dffefa8408440ca6848219ba39af916e4e7"
+        },
+        {
+          "path": "upstream/SKILL.md.txt",
+          "sha256": "2180e14a448e9410bec88e6646a2d1f0ce7fdd58de27388c1e052e929679d2bc"
+        },
+        {
+          "path": "upstream/code-reviewer.md.txt",
+          "sha256": "82e370be6b3447523816286195571e4216ba56ba1ad6ad0e87862294c4c78dcb"
+        }
+      ],
+      "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch"
+    },
+    {
+      "name": "agents-md-improver",
+      "path": ".agents/skills/agents-md-improver",
+      "upstream_repository": "anthropics/claude-plugins-official",
+      "upstream_commit": "58267944f92187b7d6a1c822165c96c81c864806",
+      "upstream_path": "plugins/claude-md-management/skills/claude-md-improver",
+      "license": "Apache-2.0",
+      "upstream_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "b06c7420be08ca1c7f6d75f7f4709fdb787624a2d363e2f8052216d8c780f85b",
+          "url": "https://github.com/anthropics/claude-plugins-official/blob/58267944f92187b7d6a1c822165c96c81c864806/plugins/claude-md-management/skills/claude-md-improver/SKILL.md",
+          "git_blob_sha": "744444e4df385e9b9160e23fba02321062dfba9a"
+        },
+        {
+          "path": "references/quality-criteria.md",
+          "sha256": "383def16b05dca948297dd1acb33f007cb1b1b2c368454d424c5634348a8bab1",
+          "url": "https://github.com/anthropics/claude-plugins-official/blob/58267944f92187b7d6a1c822165c96c81c864806/plugins/claude-md-management/skills/claude-md-improver/references/quality-criteria.md",
+          "git_blob_sha": "0853bb0f6640b0fa9d2e75901eb041a0192d36ae"
+        },
+        {
+          "path": "references/templates.md",
+          "sha256": "de0aa3ac30120a0c77f9cd82738a75ed8326864f98feb89356a253f2deaf3ab0",
+          "url": "https://github.com/anthropics/claude-plugins-official/blob/58267944f92187b7d6a1c822165c96c81c864806/plugins/claude-md-management/skills/claude-md-improver/references/templates.md",
+          "git_blob_sha": "35e613942e7818301f24892fc249e7117ea79a6e"
+        },
+        {
+          "path": "references/update-guidelines.md",
+          "sha256": "02a158d6ca41a0ab702a67a213e92205f09c073cea53796633251bc62fd7ec55",
+          "url": "https://github.com/anthropics/claude-plugins-official/blob/58267944f92187b7d6a1c822165c96c81c864806/plugins/claude-md-management/skills/claude-md-improver/references/update-guidelines.md",
+          "git_blob_sha": "04e7f8ea0bb1d398db8d8b6aecdc6e329d3c7563"
+        }
+      ],
+      "omitted_upstream_files": [],
+      "upstream_license": {
+        "path": "plugins/claude-md-management/LICENSE",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+        "git_blob_sha": "d645695673349e3947e8e5ae42332d0ac3164cd7"
+      },
+      "installed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "7d5b588ba03ea0fb660f6e41c8fbc745ab4c00f8f859d11f74da0ff163bd921b"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "sha256": "107b78c39da0efd3ed6ad602b059995adf48b1474e27b035138d08c3af2be522"
+        },
+        {
+          "path": "UPSTREAM.patch",
+          "sha256": "5361a86893f434f955c641ada41092e8e2959e2443e39861ac66feca56ccf31d"
+        },
+        {
+          "path": "references/quality-criteria.md",
+          "sha256": "c98e64294fc110b8fedfd207afbbf015a9186baf406217741df76038c28c94f7"
+        },
+        {
+          "path": "references/templates.md",
+          "sha256": "22602f96d039ef0e0e35edfd100e9198853a1ce6f72304aebd2c675b277a9d90"
+        },
+        {
+          "path": "references/update-guidelines.md",
+          "sha256": "8335e16a6a051591c095248622cb385bdaa6b61506777b243f3eaab79609ce1f"
+        },
+        {
+          "path": "upstream/SKILL.md.txt",
+          "sha256": "b06c7420be08ca1c7f6d75f7f4709fdb787624a2d363e2f8052216d8c780f85b"
+        },
+        {
+          "path": "upstream/references/quality-criteria.md.txt",
+          "sha256": "383def16b05dca948297dd1acb33f007cb1b1b2c368454d424c5634348a8bab1"
+        },
+        {
+          "path": "upstream/references/templates.md.txt",
+          "sha256": "de0aa3ac30120a0c77f9cd82738a75ed8326864f98feb89356a253f2deaf3ab0"
+        },
+        {
+          "path": "upstream/references/update-guidelines.md.txt",
+          "sha256": "02a158d6ca41a0ab702a67a213e92205f09c073cea53796633251bc62fd7ec55"
+        }
+      ],
+      "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch"
+    },
+    {
+      "name": "security-best-practices",
+      "path": ".agents/skills/security-best-practices",
+      "upstream_repository": "openai/skills",
+      "upstream_commit": "49f948faa9258a0c61caceaf225e179651397431",
+      "upstream_path": "skills/.curated/security-best-practices",
+      "license": "Apache-2.0",
+      "upstream_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "7b3dae1ffc5434d890f3c65c8f552af52d0307fab3b35dec13013c9ca3844c4f",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/SKILL.md",
+          "git_blob_sha": "45ccbd8d671c4c4cc3e7e0645a16a3f80ec50de7"
+        },
+        {
+          "path": "references/golang-general-backend-security.md",
+          "sha256": "a73c47c34497b120672d48411fe51dc90d426a571801a0b3f649e2ce4ec658b4",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/golang-general-backend-security.md",
+          "git_blob_sha": "85e9c6a1669e0d04af56c9a0bce113dd35e0248d"
+        },
+        {
+          "path": "references/javascript-express-web-server-security.md",
+          "sha256": "427835cbb5be7ba96172ea6ca9af80ddd4419c833e9ebf870996740c80d8406c",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-express-web-server-security.md",
+          "git_blob_sha": "98d79067ffb784ce426394193e744ddc7f3c93be"
+        },
+        {
+          "path": "references/javascript-general-web-frontend-security.md",
+          "sha256": "3a7bc7b3f6e7ff043db9dbaa8933894d7a19d987d0607e4ddae5d70184a63d63",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-general-web-frontend-security.md",
+          "git_blob_sha": "d8b696f363ea54661791c048ba19a57933d20825"
+        },
+        {
+          "path": "references/javascript-jquery-web-frontend-security.md",
+          "sha256": "bcbad2fa6c2a02709e47e889e70102c76886bf36bc798624d27db570eccf40da",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-jquery-web-frontend-security.md",
+          "git_blob_sha": "3fd00db430ed55fafe50112b8d8b751fe82deec1"
+        },
+        {
+          "path": "references/javascript-typescript-nextjs-web-server-security.md",
+          "sha256": "71c773f7a97ce60c853adfa100b3d88b3b7bc4c6b8acaef1432ffabd923ee182",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-typescript-nextjs-web-server-security.md",
+          "git_blob_sha": "44cc8213b11feda2eac8283dfd6a11fe93a68965"
+        },
+        {
+          "path": "references/javascript-typescript-react-web-frontend-security.md",
+          "sha256": "d3030c0f24bddb56b9bbb91bbec1ee49eb7778bce4d3e0297b2641b2fc6b0d9c",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-typescript-react-web-frontend-security.md",
+          "git_blob_sha": "33fb693282a40754a081a499cda3d471aa23da28"
+        },
+        {
+          "path": "references/javascript-typescript-vue-web-frontend-security.md",
+          "sha256": "77c6a747f9f17e3df03aad0fcb20d99ac7898001b81aef8b80908e45ac14a688",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-typescript-vue-web-frontend-security.md",
+          "git_blob_sha": "be326548bf953b6d1918727d228449ab4cb5110d"
+        },
+        {
+          "path": "references/python-django-web-server-security.md",
+          "sha256": "4fb69b5d45f10e588d1a8c35cdc5f59e18910f6b46a93e2d342d90f286f8dfd2",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/python-django-web-server-security.md",
+          "git_blob_sha": "0b9a89a73e0ff3a88ccb7837b56ad1a5f15259e0"
+        },
+        {
+          "path": "references/python-fastapi-web-server-security.md",
+          "sha256": "7383c7f4fc271190b05e562ada7e825982a2c76b6c79a9f95a1da7687b65a616",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/python-fastapi-web-server-security.md",
+          "git_blob_sha": "d394a55bb86b3b2e5c2b73e65cb115a2a0ce1c05"
+        },
+        {
+          "path": "references/python-flask-web-server-security.md",
+          "sha256": "9606d69190c04c167fdeac57e61297547a57b0542fd89dede36f355970446929",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/python-flask-web-server-security.md",
+          "git_blob_sha": "adbc599aad8688a3446f5b595a1f4f0c1eac942f"
+        }
+      ],
+      "omitted_upstream_files": [
+        "agents/openai.yaml"
+      ],
+      "upstream_license": {
+        "path": "skills/.curated/security-best-practices/LICENSE.txt",
+        "sha256": "4dd13869245e356246a5b770723247bbb80a8f07a181d1d3d873a1734297cdb9",
+        "git_blob_sha": "13e25df86ce06eb6488e6a6bc5c5847f5dedc352"
+      },
+      "installed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "4dd13869245e356246a5b770723247bbb80a8f07a181d1d3d873a1734297cdb9"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "46e7679771621673340dbd1044fdf8aeb7d04538539f7d70861d5f677f237f55"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "sha256": "717b6dda404a787c6ec6616243e80685e60ef2724fb0caa750475c54f648e45a"
+        },
+        {
+          "path": "UPSTREAM.patch",
+          "sha256": "990e2a4cd70eb227908417a76f736026649bf6bd21fdcb7e45863865d308fabd"
+        },
+        {
+          "path": "references/golang-general-backend-security.md",
+          "sha256": "0b6d9f51de91f9eec29c21f03f0f762a54b09b272621a9d6cc06df0cb4ed6b4f"
+        },
+        {
+          "path": "references/javascript-express-web-server-security.md",
+          "sha256": "c3ebc0d7a7a4c15d39e554558f5e88eae978e1c8c6a2fd4a7877e40139c489c9"
+        },
+        {
+          "path": "references/javascript-general-web-frontend-security.md",
+          "sha256": "94b2c5729d0cf73f8b1be75c441f8a65db596257e7f7c7ed300287fcda3752df"
+        },
+        {
+          "path": "references/javascript-jquery-web-frontend-security.md",
+          "sha256": "e2be22ee3190502a7313e728538528055183e6908848ec9ca19652610063fb7e"
+        },
+        {
+          "path": "references/javascript-typescript-nextjs-web-server-security.md",
+          "sha256": "7aee035a0bfc8df3a4042078e6e9775e0b67b630e256512d03891362df89265a"
+        },
+        {
+          "path": "references/javascript-typescript-react-web-frontend-security.md",
+          "sha256": "d0135c6fc10b09c1bfb9dfb8f83bce4031d395070f2488dc3816501423219a35"
+        },
+        {
+          "path": "references/javascript-typescript-vue-web-frontend-security.md",
+          "sha256": "fa80f56e53614ea110e49a1aa7060a0fd7446a37eccc7236457589bdc47804fc"
+        },
+        {
+          "path": "references/python-django-web-server-security.md",
+          "sha256": "654a8abf979281be1236def89068859b6e950c86f62e5600accedac3bcd2ea4e"
+        },
+        {
+          "path": "references/python-fastapi-web-server-security.md",
+          "sha256": "c91a6698ed6fd2892b23cfba36952b45c8f01c8a409e10fc9f2d313078f8ed48"
+        },
+        {
+          "path": "references/python-flask-web-server-security.md",
+          "sha256": "771cc8106fec167511f23810c57c4197a377bed57563f419cfd972c8ef60dc45"
+        },
+        {
+          "path": "upstream/SKILL.md.txt",
+          "sha256": "7b3dae1ffc5434d890f3c65c8f552af52d0307fab3b35dec13013c9ca3844c4f"
+        },
+        {
+          "path": "upstream/references/golang-general-backend-security.md.txt",
+          "sha256": "a73c47c34497b120672d48411fe51dc90d426a571801a0b3f649e2ce4ec658b4"
+        },
+        {
+          "path": "upstream/references/javascript-express-web-server-security.md.txt",
+          "sha256": "427835cbb5be7ba96172ea6ca9af80ddd4419c833e9ebf870996740c80d8406c"
+        },
+        {
+          "path": "upstream/references/javascript-general-web-frontend-security.md.txt",
+          "sha256": "3a7bc7b3f6e7ff043db9dbaa8933894d7a19d987d0607e4ddae5d70184a63d63"
+        },
+        {
+          "path": "upstream/references/javascript-jquery-web-frontend-security.md.txt",
+          "sha256": "bcbad2fa6c2a02709e47e889e70102c76886bf36bc798624d27db570eccf40da"
+        },
+        {
+          "path": "upstream/references/javascript-typescript-nextjs-web-server-security.md.txt",
+          "sha256": "71c773f7a97ce60c853adfa100b3d88b3b7bc4c6b8acaef1432ffabd923ee182"
+        },
+        {
+          "path": "upstream/references/javascript-typescript-react-web-frontend-security.md.txt",
+          "sha256": "d3030c0f24bddb56b9bbb91bbec1ee49eb7778bce4d3e0297b2641b2fc6b0d9c"
+        },
+        {
+          "path": "upstream/references/javascript-typescript-vue-web-frontend-security.md.txt",
+          "sha256": "77c6a747f9f17e3df03aad0fcb20d99ac7898001b81aef8b80908e45ac14a688"
+        },
+        {
+          "path": "upstream/references/python-django-web-server-security.md.txt",
+          "sha256": "4fb69b5d45f10e588d1a8c35cdc5f59e18910f6b46a93e2d342d90f286f8dfd2"
+        },
+        {
+          "path": "upstream/references/python-fastapi-web-server-security.md.txt",
+          "sha256": "7383c7f4fc271190b05e562ada7e825982a2c76b6c79a9f95a1da7687b65a616"
+        },
+        {
+          "path": "upstream/references/python-flask-web-server-security.md.txt",
+          "sha256": "9606d69190c04c167fdeac57e61297547a57b0542fd89dede36f355970446929"
+        }
+      ],
+      "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch"
+    },
+    {
+      "name": "security-threat-model",
+      "path": ".agents/skills/security-threat-model",
+      "upstream_repository": "openai/codex-security",
+      "upstream_commit": "8ed8d9dffc766343c8534601286dc5980afcb1c8",
+      "upstream_path": "plugins/codex-security",
+      "license": "Apache-2.0",
+      "upstream_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "79a1b6282f80804227a28f9a1fae71bbfcd6928c1de5d2c84ab0ebf9c1f49226",
+          "url": "https://github.com/openai/codex-security/blob/8ed8d9dffc766343c8534601286dc5980afcb1c8/plugins/codex-security/skills/threat-model/SKILL.md",
+          "git_blob_sha": "7d40076528c951424a9a0070fb34ab16594fed9b",
+          "upstream_relative_path": "skills/threat-model/SKILL.md"
+        },
+        {
+          "path": "references/threat-model.md",
+          "sha256": "30b70121ab8a41283117f03ae17ee3ba20dc766bb17f557a2f488a80fc63d2cc",
+          "url": "https://github.com/openai/codex-security/blob/8ed8d9dffc766343c8534601286dc5980afcb1c8/plugins/codex-security/references/threat-model.md",
+          "git_blob_sha": "f4b94897960515a126968823e8cc08a6a755f726"
+        }
+      ],
+      "omitted_upstream_files": [
+        "skills/threat-model/agents/openai.yaml",
+        "references/artifact-storage.md",
+        "references/scan-artifacts.md",
+        "references/security-guidance.md"
+      ],
+      "upstream_license": {
+        "path": "LICENSE",
+        "sha256": "d17f227e4df5da1600391338865ce0f3055211760a36688f816941d58232d8dc",
+        "git_blob_sha": "4606e72e042564097e8780d66c1d4dcb611869bd"
+      },
+      "installed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "d17f227e4df5da1600391338865ce0f3055211760a36688f816941d58232d8dc"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "0668f5e06e62705c09a6cfc0b3e8fb194b819cbf9c5b03fdd30266840df23329"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "sha256": "b756ccce42095ffa1f6b9ebf901c9730f930ff38a61abb4cdd564cae493e1cac"
+        },
+        {
+          "path": "UPSTREAM.patch",
+          "sha256": "7a57a0ffa43c9ee7b9576db030ced9cc0a0726c8dd0248211fd8f9e316529bcd"
+        },
+        {
+          "path": "references/threat-model.md",
+          "sha256": "8381857ccf7b7796031d4c23914e6515ef7614742a7f5eb76aaff9bd89a378ae"
+        },
+        {
+          "path": "upstream/SKILL.md.txt",
+          "sha256": "79a1b6282f80804227a28f9a1fae71bbfcd6928c1de5d2c84ab0ebf9c1f49226"
+        },
+        {
+          "path": "upstream/references/threat-model.md.txt",
+          "sha256": "30b70121ab8a41283117f03ae17ee3ba20dc766bb17f557a2f488a80fc63d2cc"
+        }
+      ],
+      "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch",
+      "excluded_workflows": "All plugin infrastructure, scanner/daemon/worker scripts and binaries, artifact storage/cache workflows, MCP, auth/network/model settings; only two selected Markdown source files adapted."
+    }
+  ],
+  "not_installed": {
+    "frontend": "No frontend/design skill added; DOT-only choice retained. Existing security coding library includes browser/React security references, not design skills.",
+    "optional": [
+      "ADK",
+      "Firebase",
+      "GCP",
+      "QA",
+      "CI"
+    ],
+    "framework": "No using-superpowers, writing-plans, executing-plans, hooks, plugin manifest, MCP, auto-updater or global settings added.",
+    "security_runtime": "No full Codex Security plugin, scanners, services, daemon/model-worker pool, artifact MCP/cache workflow, auth, network or model settings installed."
+  },
+  "security_update_base": {
+    "remote_commit": "be9946bcba21540fe7bd9947491ceb8609b1ad3a",
+    "tree": "a880e6943ecb872bc809929d5e6ee7621f77f6c6",
+    "existing_six_skills": "byte-for-byte unchanged"
+  }
+}

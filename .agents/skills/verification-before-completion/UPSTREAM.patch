@@ -1,0 +1,162 @@
+--- upstream/SKILL.md
++++ installed/SKILL.md
+@@ -3 +3 @@
+-description: Use when about to claim work is complete, fixed, or passing, before committing or creating PRs - requires running verification commands and confirming output before making any success claims; evidence before assertions always
++description: Use before claiming a change is fixed, verified, complete, or ready for a PR/merge. Match each claim to observed evidence for the relevant final version, without automatically rerunning unrelated or costly checks.
+@@ -8 +8,2 @@
+-## Overview
++> Adapted 2026-10-26 from obra/superpowers v7.0.1; see [UPSTREAM.md](UPSTREAM.md).
++> Keeps evidence-before-claims while respecting existing valid evidence and bounded verification.
+@@ -10 +11 @@
+-**Core principle:** Evidence before claims, always.
++## Repository scope and authority
+@@ -12 +13,6 @@
+-**Violating the letter of this rule is violating the spirit of this rule.**
++This is an adapted, optional method for this repository, not a new authority layer.
++Follow the applicable [AGENTS.md](../../../AGENTS.md), current user instructions,
++SPEC/PLAN/contracts, assigned role/model and cost/verification limits. Do not
++install additional skills, spawn extra agents, run broader tests, change permissions,
++use real family data or call real models merely because this skill mentions them.
++Use the smallest relevant evidence; preserve unrelated work and existing approvals.
+@@ -14 +20 @@
+-## The Iron Law
++## Core principle
+@@ -16,3 +22,2 @@
+-```
+-NO COMPLETION CLAIMS WITHOUT FRESH VERIFICATION EVIDENCE
+-```
++Evidence before claims. A plausible implementation, a previous version's pass,
++or an agent's summary alone does not establish that the final change works.
+@@ -20 +25 @@
+-If you haven't run the verification command in this message, you cannot claim it passes.
++## Gate
+@@ -22 +27,15 @@
+-## The Gate Function
++1. **Identify the claim and scope.** What behavior, revision and environment are
++   you about to describe? What evidence is sufficient for that claim?
++2. **Check existing evidence.** Reuse it only when the relevant code, inputs and
++   environment have not invalidated it. Name that evidence and its limits; do not
++   relabel an old run as a new run.
++3. **Run only missing necessary authorized checks.** Use the repository's focused
++   command and approval rules. A linter cannot substitute for a behavioral test,
++   and a browser preview cannot substitute for real-device acceptance.
++4. **Read the actual result.** Inspect exit status and relevant output; distinguish
++   pass, failure, blocked, never run and manual acceptance still pending.
++5. **Review the final diff.** Verify the claimed files/revision and required
++   requirements directly. Delegated work still needs the coordinating model's
++   review; a summary is not a substitute for the important diff and evidence.
++6. **State only what follows.** A narrow check proves only its stated scope.
++   If a required stage is missing, say so instead of marking the task complete.
+@@ -24,2 +43 @@
+-```
+-BEFORE claiming any status or expressing satisfaction:
++## Examples of adequate claims
+@@ -27,7 +45,4 @@
+-1. IDENTIFY: What command proves this claim?
+-2. RUN: Execute the FULL command (fresh, complete)
+-3. READ: Full output, check exit code, count failures
+-4. VERIFY: Does output confirm the claim?
+-   - If NO: State actual status with evidence
+-   - If YES: State claim WITH evidence
+-5. ONLY THEN: Make the claim
++- "The focused parser regression passed on commit X; the full suite was not run."
++- "The existing export evidence remains applicable; this edit changes prose only."
++- "The patch is implemented, but the required device test is still pending."
++- "The local check passed; remote CI and merge eligibility are not yet established."
+@@ -35,2 +50 @@
+-Skip any step = lying, not verifying
+-```
++## Never infer
+@@ -38 +52,6 @@
+-## Common Failures
++- Green lint → build passes.
++- One passing test → every requirement passed.
++- A successful local commit → remote branch updated.
++- Empty CI/status output → required checks passed.
++- A merged PR or deployed preview → product/user acceptance passed.
++- Missing credentials, unavailable tools or an old result → permission to bypass a gate.
+@@ -40,81 +59,3 @@
+-| Claim | Requires | Not Sufficient |
+-|-------|----------|----------------|
+-| Tests pass | Test command output: 0 failures | Previous run, "should pass" |
+-| Linter clean | Linter output: 0 errors | Partial check, extrapolation |
+-| Build succeeds | Build command: exit 0 | Linter passing, logs look good |
+-| Bug fixed | Test original symptom: passes | Code changed, assumed fixed |
+-| Regression test works | Red-green cycle verified | Test passes once |
+-| Agent completed | VCS diff shows changes | Agent reports "success" |
+-| Requirements met | Line-by-line checklist | Tests passing |
+-
+-## Red Flags - STOP
+-
+-- Using "should", "probably", "seems to"
+-- Expressing satisfaction before verification ("Great!", "Perfect!", "Done!", etc.)
+-- About to commit/push/PR without verification
+-- Trusting agent success reports
+-- Relying on partial verification
+-- Thinking "just this once"
+-- Tired and wanting work over
+-- **ANY wording implying success without having run verification**
+-
+-## Rationalization Prevention
+-
+-| Excuse | Reality |
+-|--------|---------|
+-| "Should work now" | RUN the verification |
+-| "I'm confident" | Confidence ≠ evidence |
+-| "Just this once" | No exceptions |
+-| "Linter passed" | Linter ≠ compiler |
+-| "Agent said success" | Verify independently |
+-| "I'm tired" | Exhaustion ≠ excuse |
+-| "Partial check is enough" | Partial proves nothing |
+-| "Different words so rule doesn't apply" | Spirit over letter |
+-
+-## Key Patterns
+-
+-**Tests:**
+-```
+-✅ [Run test command] [See: 34/34 pass] "All tests pass"
+-❌ "Should pass now" / "Looks correct"
+-```
+-
+-**Regression tests (TDD Red-Green):**
+-```
+-✅ Write → Run (pass) → Revert fix → Run (MUST FAIL) → Restore → Run (pass)
+-❌ "I've written a regression test" (without red-green verification)
+-```
+-
+-**Build:**
+-```
+-✅ [Run build] [See: exit 0] "Build passes"
+-❌ "Linter passed" (linter doesn't check compilation)
+-```
+-
+-**Requirements:**
+-```
+-✅ Re-read plan → Create checklist → Verify each → Report gaps or completion
+-❌ "Tests pass, phase complete"
+-```
+-
+-**Agent delegation:**
+-```
+-✅ Agent reports success → Check VCS diff → Verify changes → Report actual state
+-❌ Trust agent report
+-```
+-
+-## When To Apply
+-
+-**ALWAYS before:**
+-- ANY variation of success/completion claims
+-- ANY expression of satisfaction
+-- ANY positive statement about work state
+-- Committing, PR creation, task completion
+-- Moving to next task
+-- Delegating to agents
+-
+-**Rule applies to:**
+-- Exact phrases
+-- Paraphrases and synonyms
+-- Implications of success
+-- ANY communication suggesting completion/correctness
++Before publication or merge, verify the exact remote revision and applicable
++required checks through the normal repository workflow. This skill grants no
++merge/deployment authority and creates no forced recurring test loop.
