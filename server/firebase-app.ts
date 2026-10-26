@@ -236,7 +236,11 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
-        const response = await handleGrowthRequest(request, userId, options.growth, isCurrentUser);
+        const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
+        if ([...url.searchParams.keys()].some(key => key !== 'spaceId') || url.searchParams.getAll('spaceId').length > 1
+          || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
+        const growth = spaceId ? options.growth.forSharedSpace(spaceId) : options.growth;
+        const response = await handleGrowthRequest(request, userId, growth, isCurrentUser);
         if (!await isCurrentUser(userId)) throw new RequestError('identity_changed', 409);
         return uncached(response);
       }
@@ -253,7 +257,11 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
-        const response = await handleConcernRequest(request, userId, options.concerns, isCurrentUser);
+        const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
+        if ([...url.searchParams.keys()].some(key => key !== 'spaceId') || url.searchParams.getAll('spaceId').length > 1
+          || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
+        const concerns = spaceId ? options.concerns.forSharedSpace(spaceId) : options.concerns;
+        const response = await handleConcernRequest(request, userId, concerns, isCurrentUser);
         if (!await isCurrentUser(userId)) throw new RequestError('identity_changed', 409);
         return uncached(response);
       }

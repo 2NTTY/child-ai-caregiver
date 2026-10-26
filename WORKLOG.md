@@ -4094,3 +4094,12 @@
 - 列表有界並核目前權限；控制收據只公開必要結果，撤權後回無正文 metadata，避免重做已提交操作。Web／Android 共用身份級 controller／畫面，沒有孩子亦可建／加入家庭；舊設定入口接回管理頁，未知操作跨頁保留，身份切換清理。
 - 正式 HTTP／client 控制流程、原共享還原、控制器一組情景、局部前後端型別及一次 Web 匯出通過。獨立 review 的 unknown→原版本衝突鎖死已 red→green 修正；其餘未知拒絕不放寬。初次 fixture overload、Node strip-only 語法及 Node types 問題保留於[證據](artifacts/verification/P4_FAMILY_CONTROL_20261027.json)。沒有全量測試、模型、通知、雲端資源或部署。
 - 四項索引尚未建立；未做 GUI／手機驗收。全局共享孩子選擇、各頁 owner、共享上載／聊天、其餘背景及完整 P4 未完成；D PR、P3／P5 未改。
+
+<a id="log-20261027-p4-shared-growth-concerns"></a>
+### 2026-10-27：P4 成長／持續關注共享讀取前置
+
+- **目標／基線：**由 `59befbb` 補 FAMILY-B 全局共享選擇之前缺少的兩個讀取接點；完整 P4 仍未完成。
+- **實作：**復用原 Firestore authority／domain 及 client，加選定空間的 HTTP 讀取；同交易核權。保存的派生內容與未共享即時資料分開，私人 run／未共享關聯遮蔽，原件不修改；未接共享寫入明確拒絕。
+- **證據：**定向流程先重現 403（忽略共享選擇），修正後同一流程通過；補非空近況與私人 run 斷言後仍通過。局部型別、diff check 及獨立唯讀 review 通過；見 [P4_SHARED_GROWTH_CONCERNS](artifacts/verification/P4_SHARED_GROWTH_CONCERNS_20261027.json)。沒有全量、畫面、模型、通知或雲端驗收。
+- **協作／限制：**主模型實作／契約與整合，Sol 唯讀 review；不代填人工結果，不改 D 的 PR。後端／契約與共用 client 按責任以單作者提交。沒有新資料格式、索引、依賴或部署。
+- **下一步：**全局共享孩子／owner 接線；成長／關注寫入的原操作者收據與背景授權仍須補齊，不能把此讀取前置當作家庭功能完成。
