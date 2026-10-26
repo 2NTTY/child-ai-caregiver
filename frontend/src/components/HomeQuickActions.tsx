@@ -26,7 +26,7 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
   const [opening, setOpening] = useState(false);
   const available = !!child && active && (model.scopeKey !== undefined ? !!model.scopeKey : model.profileLoad === "ready");
   return <BackgroundSurface padded frosted testID="home-quick-actions" style={[styles.section, docked && styles.docked]}>
-    <Text accessibilityRole="header" style={styles.heading}>有新情況，直接交代</Text>
+
     <View style={styles.captureRow}><PhotoFilePicker disabled={!available || opening} capturePreferred captureOriginal={captureOriginal}
       onPick={original => { setError(null); setOpening(true); actions.openAgentPhoto(original); }} onError={setError}
       renderTrigger={trigger => <Pressable testID="home-agent-camera" accessibilityRole="button" accessibilityLabel="拍照給助手"
@@ -42,10 +42,7 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
         disabled={!available || opening} onPress={() => actions.open("chat")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && available && !opening && styles.pressed]}>
         <AppIcon name="message-text-outline" size={mobileIcons.content} /><Text style={styles.label}>用文字說</Text>
       </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel="查看記錄及補改資料" accessibilityState={{ disabled: !available || opening }} aria-disabled={!available || opening}
-        disabled={!available || opening} onPress={() => actions.open("care")} style={({ pressed }) => [styles.secondary, (!available || opening) && styles.disabled, pressed && available && !opening && styles.pressed]}>
-        <AppIcon name="notebook-outline" size={mobileIcons.content} /><Text style={styles.label}>補改資料</Text>
-      </Pressable>
+
     </View></View>
     {Platform.OS !== "web" && !captureOriginal ? <Text style={styles.note}>相機暫不可用，可先用文字輸入。</Text> : null}
     {error ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.error}>{error}</Text> : null}
@@ -53,7 +50,7 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
 }
 
 const styles = StyleSheet.create({
-  section: { gap: spacing.md, borderTopColor: colors.softLine, borderTopWidth: 1, paddingTop: spacing.lg },
+  section: { gap: spacing.md, paddingTop: spacing.md },
   docked: { flexShrink: 0, borderRadius: 0, borderWidth: 0, borderTopWidth: 1, paddingVertical: spacing.sm },
   heading: { fontFamily: chineseFont, color: colors.ink, ...mobileType.itemTitle, fontWeight: "700" },
   captureRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },

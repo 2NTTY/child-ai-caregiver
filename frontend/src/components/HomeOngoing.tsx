@@ -13,7 +13,7 @@ export function HomeOngoing({ model, actions }: { model: HomeViewModel; actions:
   if (!overview) return null;
   const section = overview.ongoing;
   return <BackgroundSurface padded frosted testID="home-ongoing" style={styles.section}>
-    <View style={styles.heading}><Text accessibilityRole="header" style={styles.title}>持續關注</Text><TextLink label="查看全部" onPress={() => actions.open("growth")} /></View>
+    <View style={styles.heading}><Text accessibilityRole="header" aria-level={2} style={styles.title}>持續關注</Text><TextLink label="查看全部" onPress={() => actions.open("growth")} /></View>
     <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
       message={section.detail ?? (section.state === "ready" && !section.items.length ? "目前沒有持續關注" : undefined)}>
       {["error", "stale", "unavailable"].includes(section.state) ? <AppButton label="重新讀取關注" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}

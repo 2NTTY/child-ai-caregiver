@@ -6,18 +6,20 @@ import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { PageFrame } from "../PageFrame";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { CareReviewWorkspace, CareWriteNotice } from "./CareReviewHistoryView";
+import { AppButton } from "../ui";
 
 export function CareRecordsView({ model, actions, pendingReview, onReviewHistory, onOlderPending, initialRecordId, manualCreateFocusRef, manualCreateAction }: {
   model: CareRecordsViewModel; actions: CareRecordsActions; pendingReview?: { content: ReactNode; loadedCount?: string };
   onReviewHistory?: () => void; onOlderPending?: () => void; initialRecordId?: string; manualCreateFocusRef?: RefObject<View | null>; manualCreateAction?: ReactNode;
 }) {
-  return <PageFrame title="核對" density="compact" scrollTestID="care-page-scroll">
+  return <PageFrame title="核對與記錄" description="先對照原話與整理內容，確認後才成為家庭記錄。" density="compact" scrollTestID="care-page-scroll"
+    headerActions={model.access === "lost" ? undefined : <>{manualCreateAction}{onReviewHistory ? <AppButton label="核對歷史" variant="quiet" onPress={onReviewHistory} /> : null}</>}>
     {!model.online || model.access === "read_only" ? <BackgroundSurface padded style={{ gap: spacing.sm }}>
       {!model.online ? <Text style={styles.warning}>目前離線，不能確認提交；已載入資料及草稿保留。</Text> : null}
       {model.access === "read_only" ? <Text style={styles.warning}>你可閱讀及對照內容；確認寫入或更正須由擁有人或照顧者處理。</Text> : null}
     </BackgroundSurface> : null}
     <CareWriteNotice model={model} actions={actions} />
-    {model.access === "lost" ? <BackgroundSurface padded><Text style={styles.warning}>已無權查看這個孩子；原文、提案、記錄與草稿已隱藏。</Text></BackgroundSurface> : <CareReviewWorkspace pendingReview={pendingReview} manualCreateFocusRef={manualCreateFocusRef} manualCreateAction={manualCreateAction} model={model} actions={actions} initialRecordId={initialRecordId} onOlderPending={onOlderPending} onHistory={onReviewHistory} />}
+    {model.access === "lost" ? <BackgroundSurface padded><Text style={styles.warning}>已無權查看這個孩子；原文、提案、記錄與草稿已隱藏。</Text></BackgroundSurface> : <CareReviewWorkspace pendingReview={pendingReview} manualCreateFocusRef={manualCreateFocusRef} model={model} actions={actions} initialRecordId={initialRecordId} onOlderPending={onOlderPending} onHistory={onReviewHistory} />}
   </PageFrame>;
 }
 const styles = StyleSheet.create({ warning: { fontFamily: chineseFont, ...readingType.tool, color: colors.warningInk } });

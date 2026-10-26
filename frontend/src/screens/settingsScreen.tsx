@@ -1,7 +1,6 @@
 import { AvatarView } from '../components/avatar/AvatarView';
 import { AvatarEditor } from '../components/avatar/AvatarEditor';
 import { useProductionAvatar } from '../production/useProductionAvatar';
-import { BackgroundSurface } from "../components/appearance/BackgroundSurface";
 import { AdminEntry } from '../production/AdminEntry';
 import { EmptyListCard } from "../components/EmptyListCard";
 import { useContainerWidth } from "../components/useContainerWidth";
@@ -26,10 +25,11 @@ import { SettingsSection as SectionCard } from "../components/settings/SettingsS
 import { chineseFont, colors, readingType, spacing, typeScale } from "../theme";
 
 type SettingsTab = "account" | "children" | "family" | "preferences" | "notifications" | "model" | "assistant" | "privacy";
-const tabs: { key: SettingsTab; label: string }[] = [
-  { key: "account", label: "帳戶" }, { key: "children", label: "孩子" },
-  { key: "family", label: "家庭" }, { key: "preferences", label: "外觀" }, { key: "notifications", label: "通知" },
-  { key: "assistant", label: "助手" }, { key: "model", label: "模型" }, { key: "privacy", label: "私隱" },
+const tabs: { key: SettingsTab; label: string; description: string }[] = [
+  { key: "account", label: "帳戶", description: "個人資料與登入安全" }, { key: "children", label: "孩子", description: "可存取的孩子檔案" },
+  { key: "family", label: "家庭", description: "協作與聯絡入口" }, { key: "preferences", label: "外觀", description: "閱讀背景與動態效果" },
+  { key: "notifications", label: "通知", description: "提醒偏好與接收渠道" }, { key: "assistant", label: "助手", description: "目前孩子的使用授權" },
+  { key: "model", label: "模型", description: "服務、密鑰與用量" }, { key: "privacy", label: "私隱", description: "來源與帳戶資料操作" },
 ];
 
 function LabeledValue({ label, value }: { label: string; value: string }) {
@@ -54,15 +54,16 @@ export default function SettingsPage() {
   const tabsId = useId();
   const accountName = user?.name ?? "";
   const compactNavigation = width < 720;
-  return <PageFrame density="compact" title="設定">
+  return <PageFrame density="compact" title="設定手冊" description="選擇一個章節處理。本人設定沿用於所有孩子；孩子授權仍按目前對象核對。">
     <View ref={containerLayout.ref} onLayout={containerLayout.onLayout} style={[styles.workspace, compactNavigation && styles.workspaceStack]}>
+    <View style={styles.accountContext}><AvatarView name={accountName} uri={avatar.state.uri} size={44} /><View style={styles.identityText}><Text style={styles.identityName}>{accountName || "未命名"}</Text><Text style={styles.muted}>{user?.email ?? "尚未讀取電郵"}</Text></View></View>
     <SettingsNavigation id={tabsId} items={tabs} value={tab} onChange={setTab} compact={compactNavigation} />
     <View style={styles.settingsContent}>
-    <BackgroundSurface padded style={styles.scopeNote}><Text style={styles.muted}>{tab === "children" ? "可存取的孩子" : tab === "assistant" ? "目前孩子" : "本人設定"}</Text></BackgroundSurface>
+    <View style={styles.chapterHeading}><Text accessibilityRole="header" aria-level={2} style={styles.chapterTitle}>{tabs.find(item => item.key === tab)?.label}</Text><Text style={styles.muted}>{tabs.find(item => item.key === tab)?.description}。{tab === "children" ? "只列出目前可存取的孩子。" : tab === "assistant" ? "此章適用於目前孩子。" : "此章適用於本人。"}</Text></View>
     <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
       <View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="個人資料" />
-          <View style={styles.identity}><AvatarView name={accountName} uri={avatar.state.uri} size={55} /><View style={styles.identityText}><Text style={styles.identityName}>{accountName || "未命名"}</Text><Text style={styles.muted}>{user?.email ?? "尚未讀取電郵"}</Text></View></View>
+          <Text style={styles.body}>更新本人頭像。電郵與登入身份見上方帳戶資料。</Text>
           <AvatarEditor lane={avatar.lane} state={avatar.state} name={accountName} kind="self" />
           <Divider style={styles.divider} />
           <LabeledValue label="登入方式" value="電郵與密碼" />
@@ -120,9 +121,12 @@ export default function SettingsPage() {
 }
 
 const styles = StyleSheet.create({
-  workspace: { width: "100%", minWidth: 0, flexDirection: "row", alignItems: "flex-start", gap: spacing.xxl },
+  workspace: { width: "100%", minWidth: 0, gap: spacing.xl },
   workspaceStack: { flexDirection: "column", gap: spacing.lg },
-  settingsContent: { flex: 1, flexBasis: "auto", width: "100%", minWidth: 0, gap: spacing.xl, maxWidth: 800 },
+  settingsContent: { width: "100%", minWidth: 0, gap: spacing.lg, paddingTop: spacing.md },
+  accountContext: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.lg, backgroundColor: colors.paleTeal, minWidth: 0 },
+  chapterHeading: { gap: spacing.xs, minWidth: 0 },
+  chapterTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 24, lineHeight: 34, fontWeight: "700" },
   scopeNote: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.md },
   pressed: { backgroundColor: colors.pressedOverlay },
   sections: { gap: spacing.xl, width: "100%", minWidth: 0 },

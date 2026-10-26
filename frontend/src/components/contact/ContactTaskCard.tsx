@@ -1,3 +1,4 @@
+import { JournalSection } from "../journal/JournalLayout";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { contactGrantStatus } from "./contact-status";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
@@ -52,11 +53,12 @@ function ContactTaskForm({task, missing, model, actions, onTask}: ContactTaskPro
       <Text style={s.meta}>未提交選項基準：任務 {basis.current.taskVersion} · 授權 {basis.current.grantVersion}</Text>
       <Text style={s.body}>只在任務到期時發送一般提示；不包含孩子原文或任意訊息，不會立即發送。</Text>
       {!eligible ? <Text style={s.warning}>只有已排期且負責人已同意可用渠道的任務可開啟授權。已有授權仍可撤回。</Text> : null}
-      <Controller name="allowFollowUp" control={control} render={({field}) => <AppCheckbox label="允許最多一次到期後跟進" checked={field.value} disabled={!editable} onChange={value => {field.onChange(value); edit();}} />} />
+      <JournalSection title="接收者與跟進範圍"><Controller name="allowFollowUp" control={control} render={({field}) => <AppCheckbox label="允許最多一次到期後跟進" checked={field.value} disabled={!editable} onChange={value => {field.onChange(value); edit();}} />} />
       <Controller name="allowFallback" control={control} render={({field}) => <AppCheckbox label="只在明確投遞失敗時允許渠道及後備切換" checked={field.value} disabled={!editable} onChange={value => {field.onChange(value); if (!value) setValue('backupUserId', '', {shouldDirty: true}); edit();}} />} />
       <Controller name="backupUserId" control={control} render={({field}) => <AppSelect label="後備接收者" value={field.value} options={backupOptions} disabled={!editable || !values.allowFallback} onChange={value => {field.onChange(value); edit();}} />} />
-      <Controller name="timeZone" control={control} render={({field}) => <AppTimeZoneSelect value={field.value} disabled={!editable} onChange={value => {field.onChange(value); edit();}} />} />
+      </JournalSection><JournalSection title="授權期限"><Controller name="timeZone" control={control} render={({field}) => <AppTimeZoneSelect value={field.value} disabled={!editable} onChange={value => {field.onChange(value); edit();}} />} />
       <Controller name="validUntil" control={control} render={({field}) => <AppDateTimeField label="聯絡授權期限" timeZone={values.timeZone} value={field.value} disabled={!editable} onChange={value => {field.onChange(value); edit();}} />} />
+      </JournalSection>
       {!parsed.success ? <HelperText type="error">{parsed.error.issues[0]?.message}</HelperText> : null}
       <Text style={s.meta}>期限須明確且不超過 365 日。投遞結果未知或仍處理中時，不會按已知失敗規則切換。</Text>
       {stale ? <View style={s.box}><Text style={s.warning}>任務或授權版本已改變；原選項保留，請核對最新負責人、期限及同意。</Text><AppCheckbox label="我已核對這個任務與授權的最新版本" checked={adopt} disabled={!editable} onChange={setAdopt} /><AppButton label="保留選項並採用最新任務授權版本" variant="secondary" disabled={!editable || !adopt} onPress={() => {basis.current = {taskVersion: task.version, grantVersion: grant?.version ?? 0}; edit();}} /></View> : null}

@@ -5,11 +5,12 @@ import { Text } from "react-native-paper";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { careKindOptions, type CareFormValues, type CareRecordsActions, type CareRecordsViewModel } from "../../care-view-model";
-import { chineseFont, colors, radius, spacing, typeScale } from "../../theme";
-import { AppButton, AppSelect, AppTextField, SectionCard, SectionHeader } from "../ui";
+import { chineseFont, colors, spacing, typeScale } from "../../theme";
+import { AppButton, AppSelect, AppTextField, SectionHeader } from "../ui";
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { careFormSchema } from "./care-form";
 import { CareRevisionContent, CareValueSummary } from "./CareRecordDetail";
+import { JournalSection } from "../journal/JournalLayout";
 
 const formFields = [
   { name: "kind", label: "記錄種類" },
@@ -49,7 +50,7 @@ export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel
       <FormFieldMessage id={`${fieldId(name)}-message`} error={fieldState.error?.message} help={help} />
     </View>} />;
   }
-  return <SectionCard surface="plain"><SectionHeader density="compact" title={draft.captureSnapshot ? "調整待確認提案" : draft.mode === "create" ? "新增共享記錄" : "更正記錄"}
+  return <View style={styles.form}><SectionHeader density="compact" title={draft.captureSnapshot ? "調整待確認提案" : draft.mode === "create" ? "新增共享記錄" : "更正記錄"}
     subtitle={draft.basis ? `以版本 ${draft.basis.current.version} 作基準；草稿尚未保存。` : "填寫後先核對內容及家庭共享範圍。"} />
     {draft.captureSnapshot ? <View style={styles.review}><Text style={styles.label}>原始輸入（保留不改寫）</Text>
       {model.review?.items.find(item => item.id === draft.captureId)?.sourceState === "ready" ? <Text selectable style={styles.meta}>{draft.captureSnapshot.originalText}</Text> : <Text style={styles.noticeTitle}>原始來源已變更或不可用，舊原文暫不顯示；請重新核對提案。</Text>}
@@ -58,14 +59,15 @@ export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel
       const target = visibleFields.find(item => item.name === name);
       if (target) setFocus(target.name);
     }} />
-    <Controller name="kind" control={control} render={({ field: input, fieldState }) => <View>
+    <JournalSection level={3} title="記低發生的事" description="保留你知道的內容，不確定的地方可以留空。" style={styles.formSection}><Controller name="kind" control={control} render={({ field: input, fieldState }) => <View>
       <AppSelect ref={input.ref} id={fieldId("kind")} label="記錄種類" value={input.value} options={careKindOptions} disabled={locked} onBlur={input.onBlur}
         invalid={!!fieldState.error?.message} describedBy={fieldState.error?.message ? `${fieldId("kind")}-message` : undefined}
         onChange={value => { input.onChange(value); actions.editDraft(); }} />
       <FormFieldMessage id={`${fieldId("kind")}-message`} error={fieldState.error?.message} />
     </View>} />
     {field("text", "記錄原文", "記錄原文草稿", undefined, true)}
-    {field("source", "資料來源", "資料來源草稿", "例如由我觀察；共享記錄不會公開私人聊天。")}
+    {field("source", "資料來源", "資料來源草稿", "例如由我觀察；共享記錄不會公開私人聊天。")}</JournalSection>
+    <JournalSection level={3} title="數量與時間" description="有原值就照原樣填寫，不需要推算。" style={styles.formSection}>
     <View style={styles.quantity}><View style={styles.quantityField}>{field("quantityRaw", "數量原文（可留空）", "數量原文草稿")}</View>
       <View style={styles.quantityField}>{field("quantityUnit", "單位（與數量一起填寫）", "數量單位草稿")}</View></View>
     <Controller name="quantityPrecision" control={control} render={({ field: input, fieldState }) => <View>
@@ -76,7 +78,8 @@ export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel
     </View>} />
     {field("eventTimeRaw", "事件時間原文（可留空）", "事件時間草稿", "保留原時間說法。更改文字不會自動推算精準時間；留空表示未知。")}
     <Text style={styles.meta}>目前這個表單只保存時間原文。未確認實際事件日期／時間的記錄，不會納入按期間計算的照顧摘要；加入日期不能代替事件時間。</Text>
-    {draft.mode === "revise" ? field("reason", "更正原因", "更正原因草稿") : null}
+    </JournalSection>
+    {draft.mode === "revise" ? <JournalSection level={3} title="說明這次更正" style={styles.formSection}>{field("reason", "更正原因", "更正原因草稿")}</JournalSection> : null}
     <Text style={styles.meta}>離線時可整理本次表單；關閉、重新載入或切換孩子會清除草稿。</Text>
     <AppButton label="預覽共享內容" disabled={locked} onPress={handleSubmit(actions.reviewDraft, invalidFields => {
       const first = visibleFields.find(item => invalidFields[item.name]?.message);
@@ -95,12 +98,13 @@ export function CareRecordForm({ model, actions }: { model: CareRecordsViewModel
       <Text style={styles.meta}>只有你明確選擇才會換基準；之後仍須重新預覽及確認。</Text>
     </View> : null}
     {model.operation.state === "unknown" ? <Text style={styles.meta}>表單已鎖定。查核原操作後才可知道是否已保存；請勿另建一次提交。</Text> : null}
-  </SectionCard>;
+  </View>;
 }
 
 const styles = StyleSheet.create({
   quantity: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md }, quantityField: { flexGrow: 1, flexBasis: 180, minWidth: 0 },
-  review: { gap: spacing.md, backgroundColor: colors.paleAmber, borderRadius: radius.small, padding: spacing.md },
+  form: { gap: spacing.lg, minWidth: 0 }, formSection: { paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.line },
+  review: { gap: spacing.md, backgroundColor: colors.paleTeal, borderLeftWidth: 3, borderLeftColor: colors.teal, padding: spacing.lg },
   noticeTitle: { fontFamily: chineseFont, color: colors.warningInk, fontSize: typeScale.small, fontWeight: "700", lineHeight: 22 },
   label: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, fontWeight: "700" },
   meta: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 20 },

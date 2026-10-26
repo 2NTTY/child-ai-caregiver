@@ -2,9 +2,9 @@ import { StyleSheet } from "react-native";
 import { chineseFont, colors, radius, readingType, spacing, workspaceType } from "../../theme";
 export const sourceStyles = StyleSheet.create({
   stack: { gap: spacing.md }, row: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
-  toolbar: { gap: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.lg },
+  toolbar: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: spacing.md, padding: spacing.lg, backgroundColor: colors.paleTeal },
   scope: { gap: spacing.xs },
-  editorSurface: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.medium, padding: spacing.lg },
+  editorSurface: { backgroundColor: colors.white, borderTopWidth: 3, borderTopColor: colors.deepTeal, padding: spacing.lg },
   workflowSection: { borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingBottom: spacing.lg },
   detailHeading: { gap: spacing.xs, paddingBottom: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line },
   detailTitle: { fontFamily: chineseFont, ...workspaceType.title, color: colors.ink },
@@ -14,7 +14,7 @@ export const sourceStyles = StyleSheet.create({
   intakeStepCurrent: { borderBottomColor: colors.ink }, stepActiveText: { fontFamily: chineseFont, ...readingType.meta, color: colors.ink, fontWeight: "700" },
   itemSelected: { backgroundColor: colors.paleTeal, borderLeftColor: colors.ink },
   columns: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xl }, single: { flexDirection: "column" },
-  main: { flex: 1, minWidth: 0, gap: spacing.lg }, aside: { flexBasis: 248, flexShrink: 0, minWidth: 0, gap: spacing.lg }, full: { flex: undefined, width: "100%", flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
+  main: { flex: 1, minWidth: 0, gap: spacing.lg }, aside: { flexBasis: 300, flexShrink: 0, minWidth: 0, gap: spacing.lg }, full: { flex: undefined, width: "100%", flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   body: { fontFamily: chineseFont, ...readingType.tool, color: colors.ink, flexShrink: 1 },
   reading: { fontFamily: chineseFont, ...readingType.body, color: colors.ink },
   meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, flexShrink: 1 },
@@ -22,7 +22,7 @@ export const sourceStyles = StyleSheet.create({
   warning: { fontFamily: chineseFont, ...readingType.tool, color: colors.warningInk },
   error: { fontFamily: chineseFont, ...readingType.meta, color: colors.errorInk },
   section: { gap: spacing.sm }, review: { paddingVertical: spacing.md, paddingLeft: spacing.md, borderLeftWidth: 2, borderColor: colors.line, gap: spacing.sm },
-  original: { maxHeight: 320, borderWidth: 1, borderColor: colors.line, borderRadius: radius.small }, originalContent: { padding: spacing.md },
+  original: { maxHeight: 440, borderLeftWidth: 3, borderColor: colors.line, backgroundColor: colors.canvas }, originalContent: { padding: spacing.md },
    item: { borderBottomWidth: 1, borderBottomColor: colors.softLine, borderLeftWidth: 2, borderLeftColor: "transparent", padding: spacing.md, gap: spacing.xs },
   group: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm },
 });

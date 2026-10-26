@@ -37,7 +37,7 @@ export function TasksCalendar({ items, context, selectedDay, month, disabled, on
   }
   return <View testID="tasks-calendar" style={styles.calendar}>
     <View style={styles.header}>
-      <Text accessibilityRole="header" accessibilityLiveRegion="polite" style={styles.month}>{calendar.label}</Text>
+      <Text accessibilityRole="header" aria-level={2} accessibilityLiveRegion="polite" style={styles.month}>{calendar.label}</Text>
       <View style={styles.monthActions}>
         <Pressable accessibilityRole="button" accessibilityLabel="上一個月" disabled={disabled || !calendar.month} aria-disabled={disabled || !calendar.month}
           accessibilityState={{ disabled: disabled || !calendar.month }} onPress={() => moveMonth(-1)} style={({ pressed }) => [styles.monthButton, pressed && !disabled && !!calendar.month && styles.pressed]}><AppIcon name="chevron-left" size={20} color={colors.ink} /></Pressable>
@@ -64,7 +64,7 @@ export function TasksCalendar({ items, context, selectedDay, month, disabled, on
 }
 
 const styles = StyleSheet.create({
-  calendar: { width: "100%", maxWidth: 360, minWidth: 0, alignSelf: "flex-start", padding: spacing.md, gap: spacing.sm, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.medium },
+  calendar: { width: "100%", maxWidth: 360, minWidth: 0, alignSelf: "flex-start", paddingVertical: spacing.md, gap: spacing.sm, backgroundColor: "transparent", borderTopWidth: 1, borderTopColor: colors.line },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.xs },
   month: { fontFamily: chineseFont, color: colors.ink, fontSize: 16, lineHeight: 24, fontWeight: "700", flexShrink: 1 },
   monthActions: { flexDirection: "row" }, monthButton: { width: 40, minHeight: 44, alignItems: "center", justifyContent: "center", borderRadius: radius.small },

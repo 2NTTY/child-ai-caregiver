@@ -1,3 +1,4 @@
+import { JournalSection } from "../journal/JournalLayout";
 import { EmptyListCard } from "../EmptyListCard";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useState } from "react";
@@ -34,7 +35,7 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
   const candidateTrigger = !model.busy && !candidateEligible ? null : resultTrigger;
   const textTrigger = !model.busy && !textEligible ? null : resultTrigger;
   return <>
-    <SectionCard surface="plain" style={s.workflowSection} testID="source-details"><SectionHeader density="compact" title={selected.sourceLabel} subtitle={`本人私人來源 · 版本 ${selected.version}`} icon="link-variant" />
+    <JournalSection style={s.workflowSection} testID="source-details" title="原文與出處" description="完整原文、日期與私人備註只對本人可見。">
       <Text style={s.body}>來源日期原文：{selected.sourceDateText || "未提供"}</Text>
       {selected.sourceUrl ? <Text selectable style={s.body}>網址：{selected.sourceUrl}</Text> : <Text style={s.meta}>沒有來源網址。</Text>}
       {selected.sourceNotes ? <Text selectable style={s.body}>私人備註：{selected.sourceNotes}</Text> : null}
@@ -82,8 +83,7 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
           {model.managementHistory.hasMore ? <Text style={s.meta}>目前顯示最近 20 次修訂，還有較早記錄。</Text> : null}
         </View> : null}</MotionDisclosure>
       </View> : null}
-      <AppButton label="刪除私人來源" variant="danger-secondary" disabled={!model.canDelete} onPress={actions.openDeletion} />
-    </SectionCard>
+    </JournalSection>
     {showTools && canManage && !selected.recordId && (!hasText || selected.kind === "public_source") && selected.sourceUrl && selected.kind !== "paste" ? <SectionCard surface="plain" style={s.workflowSection}><SectionHeader density="compact" title="取得網頁正文" subtitle="只按你明確選定的來源取得，不會背景訂閱。" />
       <AppCheckbox label="我同意取得此來源的公開正文並私人保存" checked={model.fetchConsent} disabled={!canConsent || direct?.kind === "extract"} onChange={actions.setFetchConsent} />
       <AppButton label={selected.fetchState === "failed" ? "明確重新取得正文" : "取得此網頁內容"} disabled={!model.canFetch || !model.fetchConsent} onPress={actions.fetchContent} />
@@ -109,5 +109,8 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
       </SectionCard> : null}</MotionReveal>
       {candidate ? <AppButton label="採用候選作草稿" variant="secondary" disabled={model.formLocked} onPress={actions.adoptCandidate} /> : null}
     </View> : null}
+    <JournalSection title="來源管理"><Text style={s.meta}>刪除會另行列出原文及已連結記錄的範圍，確認後才執行。</Text>
+<AppButton label="刪除私人來源" variant="danger-secondary" disabled={!model.canDelete} onPress={actions.openDeletion} />
+    </JournalSection>
   </>;
 }

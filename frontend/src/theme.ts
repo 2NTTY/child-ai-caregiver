@@ -2,40 +2,40 @@ import { Platform } from "react-native";
 import { MD3LightTheme, configureFonts } from "react-native-paper";
 
 export const colors = {
-  // Happy Hues 14 anchors; legacy role names are aliases, not additional green seeds.
-  ink: "#272343",
-  teal: "#272343",
-  deepTeal: "#272343",
-  paper: "#FFFFFE",
-  canvas: "#F7FCFC",
-  sage: "#BAE8E8",
-  paleTeal: "#E3F6F5",
-  accent: "#FFD803",
-  onAccent: "#272343",
+  // Harbour journal palette. Legacy role names keep existing domain components compatible.
+  ink: "#183747",
+  teal: "#176A80",
+  deepTeal: "#14556B",
+  paper: "#FFFFFF",
+  canvas: "#EDF4F6",
+  sage: "#D5E9E6",
+  paleTeal: "#E4F0F1",
+  accent: "#F2C45A",
+  onAccent: "#183747",
   amber: "#A38B19",
   paleAmber: "#FFF7D8",
   // Destructive actions and errors share a vivid red, separate from the brand palette.
   coral: "#D61F26",
   paleCoral: "#FEF2F2",
   errorInk: "#D61F26",
-  white: "#FFFFFE",
-  muted: "#2D334A",
-  line: "#CAC9D4",
-  softLine: "#E6E6EA",
-  controlOutline: "#737284",
+  white: "#FFFFFF",
+  muted: "#506571",
+  line: "#B9CCD2",
+  softLine: "#DCE7EB",
+  controlOutline: "#657F8A",
   // Aqua navigation frames white cards and controls. Inset content uses a quieter tint.
-  controlSurface: "#FFFFFE",
-  neutralSurface: "#F7FCFC",
-  sidebar: "#E3F6F5",
-  selectedNav: "#BAE8E8",
-  quietSurface: "#EDFAF9",
-  mintSurface: "#E3F6F5",
-  previewSurface: "#F7FCFC",
+  controlSurface: "#FFFFFF",
+  neutralSurface: "#EDF4F6",
+  sidebar: "#E4F0F1",
+  selectedNav: "#D5E9E6",
+  quietSurface: "#F2F7F8",
+  mintSurface: "#E4F0F1",
+  previewSurface: "#EDF4F6",
   // Temporary interaction shades; content and borders keep their full opacity.
-  pressedOverlay: "rgba(39, 35, 67, 0.08)",
-  accentPressed: "#E5C20B",
-  inkPressed: "#221F3B",
-  selectedPressed: "#A8D0D4",
+  pressedOverlay: "rgba(24, 55, 71, 0.08)",
+  accentPressed: "#E1B34A",
+  inkPressed: "#102A38",
+  selectedPressed: "#BBDAD8",
   warningPressed: "#F2EAC8",
   // Dark filled actions deepen on hover/press without a white wash.
   darkActionRipple: "rgba(0, 0, 0, 0.12)",
@@ -45,12 +45,12 @@ export const colors = {
   statusUnknownLine: "#A38B19",
   statusFailedLine: "#D61F26",
   warningInk: "#5E4F0C",
-  overlay: "rgba(39, 35, 67, 0.24)",
+  overlay: "rgba(24, 55, 71, 0.24)",
 } as const;
 
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, hero: 40 } as const;
-export const radius = { small: 10, medium: 16, large: 22, pill: 999 } as const;
-export const typeScale = { caption: 12, small: 14, body: 16, title: 20, heading: 28, hero: 34 } as const;
+export const radius = { small: 8, medium: 12, large: 18, pill: 999 } as const;
+export const typeScale = { caption: 12, small: 14, body: 16, title: 20, heading: 32, hero: 40 } as const;
 export const readingLayout = { maxWidth: 880, compactInset: 16, wideInset: 24 } as const;
 export const readingType = {
   body: { fontSize: 16, lineHeight: 26 },
@@ -66,7 +66,7 @@ export const workspaceType = {
 export const iconTokens = { strokeWidth: 1.8, small: 18, navigation: 22, feature: 28 } as const;
 // Mobile sizes are logical units. Text retains the platform's font scaling and intrinsic height.
 export const mobileLayout = {
-  breakpoint: 650, pageInset: 16, sectionGap: 16, cardInset: 16, cardRadius: 16,
+  breakpoint: 650, pageInset: 16, sectionGap: 16, cardInset: 16, cardRadius: 12,
   touchTarget: 48, headerMinHeight: 64, tabMinHeight: 64,
   childAvatar: 40, askMinHeight: 56, quickTileMinHeight: 88,
 } as const;
@@ -80,7 +80,7 @@ export const mobileType = {
   label: { fontSize: 12, lineHeight: 16 },
   caption: { fontSize: 12, lineHeight: 16 },
 } as const;
-export const chineseFont = Platform.select({ web: "'Noto Sans TC', 'Microsoft JhengHei', 'PingFang TC', sans-serif", default: undefined });
+export const chineseFont = Platform.select({ web: "'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', sans-serif", default: undefined });
 
 export const paperTheme = {
   ...MD3LightTheme,
@@ -115,8 +115,8 @@ export const paperTheme = {
     onError: colors.white,
     errorContainer: colors.paleCoral,
     onErrorContainer: colors.errorInk,
-    surfaceDisabled: "rgba(39, 35, 67, 0.12)",
-    onSurfaceDisabled: "rgba(39, 35, 67, 0.38)",
+    surfaceDisabled: "rgba(24, 55, 71, 0.12)",
+    onSurfaceDisabled: "rgba(24, 55, 71, 0.38)",
     inverseSurface: colors.ink,
     inverseOnSurface: colors.white,
     inversePrimary: colors.sage,

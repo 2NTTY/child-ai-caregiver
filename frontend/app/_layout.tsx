@@ -20,10 +20,15 @@ export default function RootLayout() {
     <SafeAreaProvider><MotionProvider><MotionPaperProvider>
       <Head>
         <title>{brand.name}</title>
-        <style id="app-default-scale">{pathname === "/login" ? "html { zoom: 1; }" : `html { zoom: 1.4; }
-@media (width < 900px) {
-  html { zoom: 1.2; }
-}`}</style>
+        <meta name="theme-color" content="#EDF4F6" />
+        <style id="journal-web-foundations">{`
+html { color-scheme: light; scroll-padding-top: 12px; }
+*:focus-visible { outline: 3px solid #176A80; outline-offset: 3px; }
+[role="button"], button, a { touch-action: manipulation; -webkit-tap-highlight-color: rgba(23,106,128,.15); }
+[role="heading"], h1, h2 { scroll-margin-top: 16px; text-wrap: balance; }
+[role="dialog"] { overscroll-behavior: contain; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+`}</style>
       </Head>
       <PreviewNavigationGuard><ProductionProvider><ProductionFirstScreenGate width={width} launch={<View style={styles.launch}>
           <BrandLogo style={styles.logo} decorative />

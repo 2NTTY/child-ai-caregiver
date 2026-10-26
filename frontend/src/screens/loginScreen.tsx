@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import { BlurView } from "expo-blur";
+
 import { BrandLogo } from "../components/BrandLogo";
 import { useIsFocused, useRouter } from "expo-router";
 import { Image, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
@@ -17,8 +17,6 @@ import { useProduction } from "../production/ProductionProvider";
 
 const harbourArt = require("../../assets/images/harbour-family-hero.png");
 const harbourSourceSize = { width: 1672, height: 941 };
-// Keep the fingertip inside the frame and the sun beyond its fixed right crop.
-const harbourRightEdge = 1552;
 type Mode = "signIn" | "signUp";
 
 export default function LoginPage() {
@@ -30,9 +28,7 @@ export default function LoginPage() {
   const { width } = useWindowDimensions();
   const narrow = width < 900;
   const { ref: storyRef, size: storySize, onLayout: onStoryLayout } = useContainerSize(!narrow);
-  const artworkScale = Math.max(storySize.width / harbourRightEdge, storySize.height / harbourSourceSize.height);
-  const artworkWidth = harbourSourceSize.width * artworkScale;
-  const artworkHeight = harbourSourceSize.height * artworkScale;
+  const artworkScale = Math.min(storySize.width / harbourSourceSize.width, storySize.height / harbourSourceSize.height);
   const startupImage = useFirstScreenImage("login-hero", artworkScale > 0);
   const [mode, setMode] = useState<Mode>("signIn");
   const modeScope = useId();
@@ -70,27 +66,22 @@ export default function LoginPage() {
 
   return <KeyboardAvoidingView style={styles.scroll} behavior={Platform.OS === "ios" ? "padding" : undefined}><ScrollView style={styles.scroll} contentContainerStyle={[styles.root, narrow && styles.rootStack, { paddingTop: insets.top, paddingBottom: insets.bottom }]} keyboardShouldPersistTaps="handled">
     {!narrow ? <View ref={storyRef} testID="login-story-column" style={[styles.story, styles.storyDesktop]} onLayout={onStoryLayout}>
-      {!startupImage.fallback ? <Image testID="login-background-image" source={harbourArt} resizeMode="cover" onLoad={startupImage.onLoad} onError={startupImage.onError} accessibilityLabel="香港海旁照顧者與孩子插畫" style={[styles.storyImage, { opacity: artworkScale > 0 ? 0.55 : 0, width: artworkWidth, height: artworkHeight, right: (harbourRightEdge - harbourSourceSize.width) * artworkScale, top: (storySize.height - artworkHeight) / 2 }]} /> : null}
-      <View testID="login-story-content" style={[styles.storyContent, styles.storyReadingWidth]}>
-        <BlurView testID="login-story-panel" intensity={32} tint="light" style={styles.storyPanel}>
+      <View testID="login-story-content" style={styles.storyContent}>
         <BrandLogo style={styles.storyLogo} />
-        <Text style={styles.storyEyebrow}>用資料 · 陪伴成長</Text>
-        <Text accessibilityRole="header" style={[styles.storyTitle, narrow && styles.storyTitleCompact]}>用 AI，{narrow ? "" : "\n"}更輕鬆做好育兒大小事。</Text>
-        <Text style={styles.storyLead}>結合孩子的已確認資料與可靠來源，幫你記錄、討論及看清下一步。</Text>
-        <View style={styles.features}>
-          <View style={styles.featureRow}><AppIcon name="message-text-outline" /><Text style={styles.feature}>隨時整理照顧問題與記錄</Text></View>
-          <View style={styles.featureRow}><AppIcon name="file-document-outline" /><Text style={styles.feature}>清楚區分候選與已確認資料</Text></View>
-          <View style={styles.featureRow}><AppIcon name="account-group-outline" /><Text style={styles.feature}>按權限與家人協調</Text></View>
-          <View style={styles.featureRow}><AppIcon name="shield-check-outline" /><Text style={styles.feature}>保留原文、時間及資料來源</Text></View>
+        <Text accessibilityRole="header" aria-level={1} style={styles.storyTitle}>每一天的照顧，
+都有跡可尋。</Text>
+        <Text style={styles.storyLead}>把零碎的觀察記低，把重要的事情核對清楚。孩子的照顧手冊，由這裏開始。</Text>
+        <View style={styles.storyIllustration}>
+          {!startupImage.fallback ? <Image testID="login-background-image" source={harbourArt} resizeMode="contain" onLoad={startupImage.onLoad} onError={startupImage.onError} accessibilityLabel="香港海旁照顧者與孩子插畫" style={styles.journalArt} /> : null}
         </View>
-        </BlurView>
+        <View style={styles.storyPromise}><AppIcon name="shield-check-outline" size={22} /><Text style={styles.feature}>私人聊天與共享記錄分開，資料由你掌握。</Text></View>
       </View>
     </View> : null}
     <View testID="login-form-column" style={[styles.formSide, narrow ? styles.formCompact : styles.formDesktop]}>
-      <View style={styles.formHeader}><BrandLogo style={styles.formLogo} /><Text style={styles.formTagline}>實用 · 可靠 · 與你同行</Text></View>
+      <View style={styles.formHeader}>{narrow ? <BrandLogo style={styles.formLogo} /> : null}<Text style={styles.formTagline}>你的家庭照顧手冊</Text></View>
       <View style={styles.formCard}>
 
-        <Text accessibilityRole="header" style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
+        <Text accessibilityRole="header" aria-level={narrow ? 1 : 2} style={styles.formTitle}>{mode === "signIn" ? "歡迎回來" : "建立帳戶"}</Text>
         <Text style={styles.formIntro}>{mode === "signIn" ? "登入後，繼續整理孩子的照顧資料。" : "先建立自己的帳戶，再新增孩子的資料。"}</Text>
         {mode === "signUp" && account.status?.registration === "invite" ? <Text style={styles.formNote}>目前只接受獲邀電郵註冊；完成電郵驗證及資料使用確認後，即可新增孩子。</Text> : account.status?.registration === "trial" ? <Text style={styles.formNote}>目前為試用模式，請依服務說明使用合成資料。</Text> : null}
         <View accessibilityRole="tablist" accessibilityLabel="登入方式" style={styles.modeTabs}>
@@ -132,14 +123,14 @@ export default function LoginPage() {
 }
 
 const styles = StyleSheet.create({
-  storyPanel: { padding: spacing.xl, gap: spacing.md, borderRadius: radius.medium, overflow: "hidden" },
+  storyIllustration: { width: "100%", aspectRatio: 1672 / 941, marginVertical: spacing.xl },
+  journalArt: { width: "100%", height: "100%" },
+  storyPromise: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: spacing.xl },
   formCompact: { minHeight: 0, paddingVertical: spacing.xl, paddingHorizontal: spacing.lg },
-  storyDesktop: { width: "56%", minWidth: 0, flexShrink: 1 },
-  storyReadingWidth: { width: "100%", minWidth: 0, maxWidth: 600 },
-  formDesktop: { flexGrow: 0, flexShrink: 0, flexBasis: "44%", minWidth: 400, paddingHorizontal: spacing.xxl },
-  featureRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+  storyDesktop: { width: "52%", minWidth: 0, flexShrink: 1 },
+  formDesktop: { flexGrow: 0, flexShrink: 0, flexBasis: "48%", minWidth: 400, paddingHorizontal: spacing.xxl },
   scroll: { flex: 1, backgroundColor: colors.white }, root: { flexGrow: 1, minHeight: "100%", flexDirection: "row" }, rootStack: { flexDirection: "column" }, pressed: { backgroundColor: colors.pressedOverlay },
-  story: { width: "52%", minHeight: 760, backgroundColor: colors.paper, overflow: "hidden" },  storyImage: { position: "absolute", width: "100%", height: "100%", opacity: 0.55 }, storyContent: { flex: 1, paddingHorizontal: spacing.hero, paddingVertical: spacing.xxl, justifyContent: "center", gap: spacing.md }, storyLogo: { width: 190, height: 60, alignSelf: "flex-start" }, storyEyebrow: { fontFamily: chineseFont, color: colors.teal, fontSize: typeScale.small, fontWeight: "800" }, storyTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.hero, lineHeight: 48, fontWeight: "800", maxWidth: 600 }, storyTitleCompact: { fontSize: typeScale.heading, lineHeight: 38 }, storyLead: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, lineHeight: 26, maxWidth: 570 }, features: { marginTop: spacing.lg, gap: spacing.lg }, feature: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "600" },
-  formSide: { flex: 1, minWidth: 0, minHeight: 760, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formHeader: { width: "100%", maxWidth: 440, alignItems: "flex-start", gap: spacing.xs }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small }, formCard: { width: "100%", maxWidth: 440, gap: spacing.md }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
+  story: { width: "52%", minHeight: 620, backgroundColor: colors.canvas, overflow: "hidden" }, storyContent: { flex: 1, paddingHorizontal: 56, paddingVertical: 48, justifyContent: "center", gap: spacing.lg }, storyLogo: { width: 190, height: 60, alignSelf: "flex-start" }, storyTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: 44, lineHeight: 59, fontWeight: "700", maxWidth: 520 }, storyLead: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.body, lineHeight: 26, maxWidth: 570 }, feature: { flex: 1, minWidth: 0, fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.small, lineHeight: 23, fontWeight: "600" },
+  formSide: { flex: 1, minWidth: 0, minHeight: 620, justifyContent: "center", alignItems: "center", paddingHorizontal: spacing.xl, paddingVertical: spacing.xxl, gap: spacing.xl }, formHeader: { width: "100%", maxWidth: 440, alignItems: "flex-start", gap: spacing.xs }, formLogo: { width: 180, height: 58 }, formTagline: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small }, formCard: { width: "100%", maxWidth: 440, gap: spacing.md }, formTitle: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.heading, fontWeight: "800" }, formIntro: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, lineHeight: 22 },
   modeTabs: { flexDirection: "row", borderRadius: radius.small, backgroundColor: colors.neutralSurface, padding: spacing.xs, gap: spacing.xs }, modeTab: { flex: 1, minHeight: 48, alignItems: "center", justifyContent: "center", borderRadius: radius.small }, modeActive: { backgroundColor: colors.white }, modeInitialMarker: { borderBottomWidth: 2, borderBottomColor: colors.teal }, modeText: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.small, fontWeight: "700" }, modeTextActive: { color: colors.deepTeal }, recoveryRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", columnGap: spacing.md }, recoveryLink: { minHeight: 44, paddingHorizontal: spacing.xs, justifyContent: "center", borderRadius: radius.small }, recoveryText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.small, textDecorationLine: "underline" }, result: { fontFamily: chineseFont, color: colors.deepTeal, backgroundColor: colors.paleTeal, borderRadius: radius.small, padding: spacing.md, fontSize: typeScale.small, lineHeight: 22 }, formNote: { fontFamily: chineseFont, color: colors.muted, fontSize: typeScale.caption, lineHeight: 19 },
 });

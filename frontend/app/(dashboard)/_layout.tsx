@@ -1,10 +1,8 @@
 import { usePathname, Slot, Tabs } from "expo-router";
-import type { ReactNode } from "react";
-import { Platform, Pressable } from "react-native";
-import { RecordsNavButton } from "../../src/components/navigation/RecordsNavButton";
+import type { ReactNode, Ref } from "react";
+import { Platform, Pressable, type View } from "react-native";
 import { navigationItems } from "../../src/components/navigation/app-navigation";
 import { MobileNavSelection } from "../../src/components/navigation/MobileNavSelection";
-import { MobileQuickInputDock } from "../../src/components/agent/MobileQuickInputDock";
 import { AppIcon } from "../../src/components/AppIcon";
 import { AppBackdrop } from "../../src/components/appearance/AppBackdrop";
 import { AppShell } from "../../src/components/AppShell";
@@ -42,16 +40,15 @@ function NativeDashboardTabs() {
   const scopeKey = childScope ?? identityKey ?? "signed-out";
   return <Tabs screenLayout={({ children }) => <NativeKeyboardPane><MotionScopeBoundary scopeKey={scopeKey} resetKey={identityKey ?? "signed-out"} readiness={switchReadiness.state} readinessKey={switchReadiness.key} onRetry={switchReadiness.retry} onReturn={actions.selectChild} canReturn={id => model.children.some(child => child.id === id)} childKey={selectedChildId} eligible={!!childScope} style={{ flex: 1 }}>
     <MotionEntrance preset="route" triggerKey={pathname} scopeKey={scopeKey} style={{ flex: 1 }} testID="motion-route"><ConnectedRoute>{children}</ConnectedRoute></MotionEntrance>
-    {pathname === "/" ? <MobileQuickInputDock key={scopeKey} supportedKinds={["voice", "text"]} /> : null}
   </MotionScopeBoundary></NativeKeyboardPane>} screenListeners={({ navigation, route }) => ({ tabPress: event => {
     event.preventDefault(); leave(() => navigation.navigate(route.name), "workspace");
   } })} screenOptions={{ sceneStyle: { backgroundColor: "transparent" }, headerShown: false, tabBarActiveTintColor: colors.teal, tabBarActiveBackgroundColor: colors.selectedNav, tabBarInactiveTintColor: colors.muted, tabBarStyle: { backgroundColor: colors.white, borderTopColor: colors.line, minHeight: mobileLayout.tabMinHeight + insets.bottom }, tabBarItemStyle: { minHeight: mobileLayout.touchTarget }, tabBarLabelStyle: mobileType.caption, tabBarHideOnKeyboard: false,
-    tabBarButton: props => <Pressable {...props}>{props["aria-selected"] ? <MobileNavSelection /> : null}{props.children}</Pressable> }}>
+    tabBarButton: props => <Pressable {...props} ref={props.ref as Ref<View>}>{props["aria-selected"] ? <MobileNavSelection /> : null}{props.children}</Pressable> }}>
     <Tabs.Screen name="index" options={{ title: navigationItems.home.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.home.icon} color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="chat" options={{ title: navigationItems.chat.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.chat.icon} color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="tasks" options={{ title: navigationItems.tasks.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.tasks.icon} color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="growth" options={{ title: navigationItems.growth.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.growth.icon} color={color} size={mobileIcons.navigation} /> }} />
-    <Tabs.Screen name="care" options={{ title: navigationItems.care.short, tabBarButton: () => <RecordsNavButton active={pathname === navigationItems.care.href || pathname === navigationItems.more.href || pathname === navigationItems.photos.href || pathname === navigationItems.history.href} scopeKey={scopeKey} /> }} />
-    {["more", "history", "memory", "photos", "sources", "summary", "contact", "profile", "family", "settings", "guide"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
+    <Tabs.Screen name="more" options={{ title: navigationItems.more.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.more.icon} color={color} size={mobileIcons.navigation} /> }} />
+    {["care", "history", "memory", "photos", "sources", "summary", "contact", "profile", "family", "settings", "guide"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
   </Tabs>;
 }

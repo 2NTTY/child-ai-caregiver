@@ -1,3 +1,4 @@
+import { JournalAside, JournalColumns, JournalMain, JournalSection } from "../journal/JournalLayout";
 import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { EmptyListCard } from "../EmptyListCard";
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -17,7 +18,7 @@ import { chineseFont, colors, radius, readingType, spacing, workspaceType } from
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppIcon, type AppIconName } from "../AppIcon";
 import { ReadStateNotice } from "../ReadStateNotice";
-import { AppButton, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
+import { AppButton, AppSelect, AppTabPanel, UnderlineTabs, TabToolbar } from "../ui";
 import { useContainerWidth } from "../useContainerWidth";
 
 type Tab = "short" | "long" | "references";
@@ -52,7 +53,7 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
   const available = factIsApplicable(fact);
   const source = factSources[fact.source.kind];
   return <View testID={`memory-reference-fact-${fact.id}`} style={styles.card}>
-    <View style={styles.titleRow}><Text accessibilityRole="header" style={styles.factTopic}>{fact.key}</Text>
+    <View style={styles.titleRow}><Text accessibilityRole="header" aria-level={3} style={styles.factTopic}>{fact.key}</Text>
       <AppStatusBadge label={factStatusLabels[fact.status]} tone={fact.status === "confirmed" && available ? "success" : fact.status === "candidate" ? "warning" : "neutral"} /></View>
     <Text selectable style={styles.factContent}>{fact.content}</Text>
     <View style={styles.factContext}>
@@ -97,9 +98,34 @@ function FactCard({ fact, model, workspace, confirmerDisplay, onQuestion }: {
     </View> : null}
   </View>;
 }
+/** A local reading selection, not a writable copy of any memory fact. */
+function MemoryFactReader({ facts, model, workspace, confirmerDisplay, onQuestion, width }: {
+  facts: Readonly<MemoryFactView>[]; model: MemoryReferenceModel; workspace: MemoryReferenceWorkspaceValue;
+  confirmerDisplay?: MemoryConfirmerDisplay; onQuestion?: (fact: Readonly<MemoryFactView>) => void; width: number;
+}) {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = facts.find(fact => fact.id === selectedId) ?? facts[0];
+  if (!selected) return null;
+  return <JournalColumns style={styles.factWorkspace}>
+    <JournalAside style={styles.topicIndex}>
+      {width < 720 ? <AppSelect label="記憶主題" value={selected.id} options={facts.map(fact => ({ value: fact.id, label: fact.key }))} onChange={setSelectedId} />
+        : <View accessibilityLabel="已確認記憶主題" style={styles.topicList}>{facts.map(fact => <Pressable key={fact.id}
+          accessibilityRole="button" accessibilityLabel={`閱讀記憶：${fact.key}`} aria-current={selected.id === fact.id ? "true" : undefined}
+          onPress={() => setSelectedId(fact.id)} style={({ pressed }) => [styles.topicLink, selected.id === fact.id && styles.topicSelected, pressed && styles.sourcePressed]}>
+          <Text style={styles.topicTitle}>{fact.key}</Text><Text numberOfLines={2} style={styles.meta}>{fact.content}</Text>
+        </Pressable>)}</View>}
+    </JournalAside>
+    <JournalMain style={styles.factReader}>
+      {facts.map(fact => <View key={`${fact.id}:${fact.version}`} style={selected.id !== fact.id ? styles.hidden : undefined}
+        aria-hidden={selected.id !== fact.id} accessibilityElementsHidden={selected.id !== fact.id} importantForAccessibility={selected.id === fact.id ? "auto" : "no-hide-descendants"}>
+        <FactCard fact={fact} model={model} workspace={workspace} confirmerDisplay={confirmerDisplay} onQuestion={onQuestion} />
+      </View>)}
+    </JournalMain>
+  </JournalColumns>;
+}
 function SummaryCard({ summary, emptyReady }: { emptyReady: boolean; summary: Readonly<MemorySummaryView> | null }) {
   const [details, setDetails] = useState(false);
-  return <View style={styles.card}><View style={styles.titleRow}><Text accessibilityRole="header" style={styles.cardTitle}>對話摘要</Text><AppStatusBadge label="私人 · 整理內容" /></View>
+  return <View style={styles.card}><View style={styles.titleRow}><Text accessibilityRole="header" aria-level={2} style={styles.cardTitle}>對話摘要</Text><AppStatusBadge label="私人 · 整理內容" /></View>
     {summary ? <><Text selectable style={styles.body}>{summary.text}</Text><Text style={styles.meta}>整理自你的對話，供延續脈絡時參考</Text>
       <AppButton label={details ? "收起摘要來源" : "查看摘要來源"} expanded={details} variant="quiet" density="compact" onPress={() => setDetails(value => !value)} />
       {details ? <View style={styles.details}><Metadata label="建立時間">{memoryDateLabel(summary.createdAt)}</Metadata><Metadata label="摘要版本">{summary.version}</Metadata>
@@ -121,7 +147,7 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
   const [details, setDetails] = useState(false), [technical, setTechnical] = useState(false), [linkFailed, setLinkFailed] = useState(false);
   const sourceUrl = readableReferenceUrl(source.url);
   return <View testID={`memory-reference-source-${source.sourceId}-${source.chunkId}`} style={styles.card}>
-    <Text accessibilityRole="header" style={styles.cardTitle}>{source.title}</Text>
+    <Text accessibilityRole="header" aria-level={3} style={styles.cardTitle}>{source.title}</Text>
     <Text style={styles.meta}>{source.publisher}</Text>
     {source.section ? <Text style={styles.meta}>{source.section}</Text> : null}
     <Text selectable style={styles.body}>{source.sourceExcerpt}</Text>
@@ -149,7 +175,7 @@ function ReferenceCard({ source }: { source: KnowledgeReferenceView }) {
 function CatalogCard({ source }: { source: PersonalLibraryItem }) {
   const [details, setDetails] = useState(false), [linkFailed, setLinkFailed] = useState(false);
   return <View style={styles.card} testID={`memory-catalog-source-${source.sourceId}`}>
-    <Text accessibilityRole="header" style={styles.cardTitle}>{source.title}</Text><Text style={styles.meta}>{source.publisher}</Text>
+    <Text accessibilityRole="header" aria-level={3} style={styles.cardTitle}>{source.title}</Text><Text style={styles.meta}>{source.publisher}</Text>
     <Text style={styles.meta}>覆核於 {memoryDateLabel(source.checkedAt)}</Text>
     <View style={styles.actions}><AppButton label="閱讀來源" variant="quiet" density="compact" onPress={() => { setLinkFailed(false); void Linking.openURL(source.url).catch(() => setLinkFailed(true)); }} />
       <AppButton label={details ? "收起來源資料" : "查看來源資料"} expanded={details} variant="quiet" density="compact" onPress={() => setDetails(value => !value)} /></View>
@@ -167,7 +193,7 @@ function ReferenceSection({ model, workspace }: { model: MemoryReferenceModel; w
     {!["loading", "error", "unavailable"].includes(model.references.state) ? groups.map(group => {
       const entries = sources.filter(source => source.classification === group.key);
       const catalogEntries = catalog?.filter(source => source.classification === group.key);
-      return <View key={group.key} style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" style={styles.sectionTitle}>{group.title}</Text><Text style={styles.meta}>{group.detail}</Text></BackgroundSurface>
+      return <View key={group.key} style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" aria-level={2} style={styles.sectionTitle}>{group.title}</Text><Text style={styles.meta}>{group.detail}</Text></BackgroundSurface>
         {catalogEntries ? catalogEntries.length ? catalogEntries.map(source => <CatalogCard key={`${source.sourceId}:${source.versionId}`} source={source} />) : model.references.state === "ready" && model.online ? <EmptyListCard title={`已載入資料中暫無${group.title}`} detail={model.references.data.hasMore ? "仍有來源未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>最新來源尚未核對</Text></BackgroundSurface> : entries.length ? entries.map(source => <ReferenceCard key={`${source.sourceId}:${source.versionId}:${source.chunkId}`} source={source} />)
           : model.references.state === "ready" && model.online ? <EmptyListCard title={`已載入資料中暫無${group.title}`} detail={model.references.data.hasMore ? "仍有來源未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>最新來源尚未核對</Text></BackgroundSurface>}
       </View>;
@@ -226,9 +252,9 @@ function ScopedMemoryReferenceView({ workspace, confirmerDisplay, onPrepareQuest
     </View></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="long" active={tab === "long"}><View style={styles.section}>
       <ReadNotice read={model.longTerm} unavailable="記憶資料暫未提供">
-        <View style={styles.section}><BackgroundSurface padded><Text accessibilityRole="header" style={styles.sectionTitle}>已確認事實</Text></BackgroundSurface>
-          {confirmed.length ? <View style={styles.factGrid}>{confirmed.map(renderFact)}</View> : model.longTerm.state === "ready" && model.online ? <EmptyListCard title="已載入資料中沒有已確認事實" detail={model.longTerm.data.hasMoreFacts ? "仍有記憶未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>已確認事實尚未重新核對</Text></BackgroundSurface>}
-        </View>
+        <JournalSection title="已確認事實" description="選一個主題閱讀原文；來源、適用狀態及歷史版本隨內容一起保留。">
+          {confirmed.length ? <MemoryFactReader facts={confirmed} model={model} workspace={workspace} confirmerDisplay={confirmerDisplay} onQuestion={onQuestion} width={container.width} /> : model.longTerm.state === "ready" && model.online ? <EmptyListCard title="已載入資料中沒有已確認事實" detail={model.longTerm.data.hasMoreFacts ? "仍有記憶未載入，可繼續讀取。" : undefined} /> : <BackgroundSurface padded><Text style={styles.meta}>已確認事實尚未重新核對</Text></BackgroundSurface>}
+        </JournalSection>
         {model.longTerm.data?.hasMoreFacts ? workspace.reads?.loadMoreFacts ? <AppButton label="載入更多記憶" variant="quiet" disabled={!model.online} onPress={workspace.reads.loadMoreFacts} />
           : <BackgroundSurface padded><Text style={styles.meta}>仍有記憶未載入</Text></BackgroundSurface> : null}
         <SummaryCard key={`${model.longTerm.data?.summary?.id}:${model.longTerm.data?.summary?.version}`} summary={model.longTerm.data?.summary ?? null} emptyReady={model.longTerm.state === "ready" && model.online} />
@@ -246,15 +272,22 @@ export function MemoryReferenceView({ confirmerDisplay, onPrepareQuestion, tabAc
     : <ReadStateNotice state="unavailable" title="暫不能查看記憶與參考" message="請先選擇有權查看的孩子。">{tabActions}</ReadStateNotice>;
 }
 const styles = StyleSheet.create({
+  hidden: { display: "none" },
+  factWorkspace: { gap: spacing.xl },
+  topicIndex: { flexBasis: 220, flexGrow: 1 }, factReader: { flexBasis: 460, flexGrow: 3, paddingHorizontal: spacing.lg, backgroundColor: colors.white },
+  topicList: { gap: 0, minWidth: 0 },
+  topicLink: { gap: spacing.xs, paddingVertical: spacing.md, paddingHorizontal: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, borderLeftWidth: 3, borderLeftColor: "transparent" },
+  topicSelected: { backgroundColor: colors.paleTeal, borderLeftColor: colors.deepTeal },
+  topicTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
   root: { width: "100%", minWidth: 0, gap: spacing.lg },
   section: { gap: spacing.md, minWidth: 0 },
   sectionTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section },
-  factGrid: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", gap: spacing.md, minWidth: 0 },
-  factSlot: { flexGrow: 1, flexBasis: "47%", minWidth: 0 }, fullWidth: { flexBasis: "100%" },
-  card: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radius.medium, padding: spacing.lg, gap: spacing.sm, minWidth: 0 },
+  factGrid: { gap: 0, minWidth: 0 },
+  factSlot: { width: "100%", minWidth: 0 }, fullWidth: { flexBasis: "100%" },
+  card: { borderBottomWidth: 1, borderColor: colors.line, paddingVertical: spacing.lg, gap: spacing.md, minWidth: 0 },
   titleRow: { flexDirection: "row", alignItems: "flex-start", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 },
   cardTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section, flexShrink: 1 },
-  factTopic: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, flex: 1, minWidth: 0 },
+  factTopic: { fontFamily: chineseFont, color: colors.deepTeal, ...readingType.tool, fontWeight: "700", flex: 1, minWidth: 0 },
   factContent: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 28, fontWeight: "600", flexShrink: 1 },
   factContext: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
   metadataLine: { flexDirection: "row", alignItems: "center", gap: spacing.xs, minWidth: 0, flexShrink: 1 },

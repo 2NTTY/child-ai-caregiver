@@ -1,6 +1,6 @@
+import { JournalSection } from "../journal/JournalLayout";
 import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
-import { SectionCard, SectionHeader } from "../ui";
 import { profileAgeUnitOptions, type ProfileDataView, type ProfileRevisionView } from "../../profile-view-model";
 import { chineseFont, colors, spacing, typeScale , readingType } from "../../theme";
 
@@ -61,11 +61,10 @@ export function ProfileReadingSummary({ data, compact }: { data: ProfileDataView
   ];
   return <View testID="profile-reading-groups" style={[styles.groups, compact && styles.groupsStacked]}>{groups.map(group => {
     const known = group.rows.filter(row => row.value !== null), unknown = group.rows.filter(row => row.value === null);
-    return <SectionCard key={group.title} style={[styles.group, compact && styles.groupFull]}>
-      <SectionHeader density="compact" title={group.title} />
+    return <JournalSection key={group.title} title={group.title} style={[styles.group, compact && styles.groupFull]}>
       {known.map(row => <View key={row.label} style={styles.readingFact}><Text style={styles.readingLabel}>{row.label}</Text><Text style={styles.body}>{row.value}</Text></View>)}
       {unknown.length ? <Text style={[styles.meta, known.length > 0 && styles.unknownDivider]}>未知：{unknown.map(row => row.label).join("、")}</Text> : null}
-    </SectionCard>;
+    </JournalSection>;
   })}</View>;
 }
 
@@ -81,11 +80,11 @@ export function ProfileRevisionDetails({ revision }: { revision: ProfileRevision
   </View>)}</View>;
 }
 const styles = StyleSheet.create({
-  groups: { flexDirection: "row", alignItems: "stretch", gap: spacing.lg, minWidth: 0 },
+  groups: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xxl, minWidth: 0 },
   groupsStacked: { flexDirection: "column" },
   group: { flex: 1, minWidth: 0, gap: spacing.md },
   groupFull: { flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto", width: "100%" },
-  readingFact: { gap: spacing.xs, minWidth: 0 },
+  readingFact: { gap: spacing.xs, minWidth: 0, borderBottomWidth: 1, borderBottomColor: colors.softLine, paddingBottom: spacing.md },
   readingLabel: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
   unknownDivider: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
   keyFacts: { flexDirection: "row", flexWrap: "wrap", gap: spacing.lg },

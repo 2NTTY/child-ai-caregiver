@@ -1,3 +1,4 @@
+import { JournalSection } from "../journal/JournalLayout";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { useContainerWidth } from "../useContainerWidth";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -89,14 +90,13 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
       {model.operation.state === "conflict" ? <><Text style={s.meta}>本頁基準：版本 {selected?.version ?? "未確定"}；目前版本：{model.latest?.version ?? "尚待重新讀取"}。原文草稿不會被最新資料覆蓋。</Text>
         {model.latest ? <AppButton label="使用目前版本並保留草稿" disabled={!model.online} onPress={actions.useLatest} /> : null}</> : null}
     </View> : null;
-  return <PageFrame density="compact" title="附件回看" description="回看照片、語音，以及聊天中的影片和文件原檔。">
+  return <PageFrame density="compact" title="附件工作台" description="從清單回看照片、語音與文件原檔，再選擇重用、核對或管理。">
     <StatusAnnouncement eventKey={`${model.operation.reference}:${model.operation.phase}:${model.operation.state}:${model.operation.message}`} message={model.operation.state === "none" ? "" : `${operationLabel}。${model.operation.message}`} urgent={model.operation.state === "failed"} />
     <StatusAnnouncement key={selected?.id ?? "no-selected-photo"} eventKey={extractionState ?? "not_requested"} message={extractionMessage} urgent={extractionState === "failed"} />
     <StatusAnnouncement eventKey={model.access} message={model.access === "lost" ? "已無權查看這個孩子。照片、原檔、候選及草稿已清除。" : ""} urgent={model.access === "lost"} />
     <StatusAnnouncement eventKey={model.sourceError} message={model.sourceError} urgent />
     <View style={s.context}><Text style={s.title}>{model.childName}的附件</Text><View style={s.row}>{model.operation.state === "conflict" ? <AppButton label="重新核對照片版本" variant="secondary" disabled={!model.online || model.busy || model.access === "lost"} onPress={actions.refresh} /> : null}<AppButton label="返回核對" accessibilityLabel="返回核對" variant="quiet" onPress={onCare} disabled={locked} /></View></View>
     <UnderlineTabs id={tabsId} label="附件類型" items={[{key: "photos", label: "照片"}, {key: "voices", label: "語音"}, {key: "files", label: "影片與文件"}]} value={activeTab} onChange={value => setTabSelection({scope: scopeKey, value})} />
-    {editorVisible ? <View style={s.steps}>{["選擇原照片", "私人保存", "核對草稿", "家庭共享"].map((label, index) => <View key={label} style={s.step}><Text style={s.stepNumber}>{index + 1}</Text><Text style={s.meta}>{label}</Text></View>)}</View> : null}
     {!model.online ? <View style={s.notice}><Text style={s.warning}>目前離線，已選原照片及草稿保留。重連後先核對最新狀態，不會自動重送。</Text></View> : null}
     {model.notice && model.load !== "error" ? <Text style={s.body}>{model.notice}</Text> : null}
     {operationNotice}
@@ -116,7 +116,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
         </View></View>
         <View style={[s.editor, !split && s.full, !editorVisible && s.hidden]} accessibilityElementsHidden={!editorVisible} importantForAccessibility={editorVisible ? "auto" : "no-hide-descendants"} aria-hidden={!editorVisible}>
           {!split ? <AppButton label="返回附件清單（保留本頁草稿）" variant="quiet" disabled={locked} onPress={() => setInspecting(false)} /> : null}
-          <SectionCard testID="photo-original"><SectionHeader density="compact" title={selected ? "原照片" : "選擇原照片"} icon="image-outline" action={selected || model.original ? <AppButton label="清除本頁" variant="quiet" disabled={locked} onPress={actions.clearEditor} /> : undefined} />
+          <JournalSection testID="photo-original" title={selected ? "原照片" : "選擇原照片"} description="原檔、來源與保存狀態一起核對。" action={selected || model.original ? <AppButton label="清除本頁" variant="quiet" disabled={locked} onPress={actions.clearEditor} /> : undefined}>
             {image ? <Image source={image} resizeMode="contain" accessibilityLabel="原照片預覽" style={[s.image, compact && s.mobileImage]} /> : <View style={s.placeholder}><AppIcon name="image-outline" size={24} color={colors.teal} /><Text style={s.meta}>保留照片原檔，確認後才共享</Text></View>}
             {model.original || selected ? <><Text style={s.title}>{model.original?.fileName ?? selected?.fileName}</Text><Text style={s.meta}>{((model.original?.bytes ?? selected?.bytes ?? 0) / (1024 * 1024)).toFixed(2)} MiB · {selected?.state === "ready" ? production ? "原檔已保存" : "原檔已模擬保存" : "本次原檔尚未完整保存"}</Text></> : null}
             {selected ? <View style={s.related}><MotionFeedback scopeKey={candidateScope} active={model.operation.state === 'saved' && model.operation.phase === 'confirm' && !!selected.recordId} triggerKey={model.operation.state === 'saved' && model.operation.phase === 'confirm' ? model.operation.reference : null} testID="photo-confirmation-feedback"><AppStatusBadge label={selected.visibility === "private" ? "私人，只有上傳者可讀取" : "已確認家庭共享"} tone={selected.visibility === "private" ? "neutral" : "success"} /></MotionFeedback><AppStatusBadge label={photoExtractionLabels[selected.extraction.state]} tone={selected.extraction.state === "failed" ? "error" : selected.extraction.state === "unknown" || selected.extraction.state === "available" ? "warning" : selected.extraction.state === "running" ? "info" : "neutral"} />{selected.recordId ? <Text style={s.body}>已連結確認記錄，不能再次提取或確認。</Text> : null}
@@ -129,8 +129,8 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
               {!selected ? <View><AppTextField nativeID={sourceId} label="照片來源" accessibilityLabel="照片來源" value={model.source} disabled={model.formLocked} onChangeText={actions.editSource} error={!!model.sourceError} aria-invalid={!!model.sourceError} aria-describedby={`${sourceId}-message`} /><FormFieldMessage id={`${sourceId}-message`} error={model.sourceError || undefined} help="保留原文字；私人保存後沿用原來源。" /></View> : <Text style={s.meta}>{model.original ? "原檔已保留，可繼續上傳同一原檔。" : "請重新選取同一張原照片。"}</Text>}
               <AppButton label={selected ? "繼續上傳同一原檔" : "私人保存原照片"} disabled={!model.canUpload} onPress={actions.upload} />
             </> : null}
-            {selected?.state === "ready" && editable ? <View style={s.related}><AppCheckbox label="我同意把原照片交由目前選用的模型服務提取；候選仍需核對" checked={model.modelConsent} disabled={!model.canExtract} onChange={actions.setModelConsent} />
-              <AppButton label={selected.extraction.state === "failed" ? "重新提取照片內容" : "提取照片內容"} variant="secondary" disabled={!model.canExtract || !model.modelConsent} onPress={actions.extract} /></View> : null}
+            {selected?.state === "ready" && editable ? <JournalSection title="提取照片內容" description="只有你明確同意後，才把原照片交給目前選用的模型。" style={s.related}><AppCheckbox label="我同意把原照片交由目前選用的模型服務提取；候選仍需核對" checked={model.modelConsent} disabled={!model.canExtract} onChange={actions.setModelConsent} />
+              <AppButton label={selected.extraction.state === "failed" ? "重新提取照片內容" : "提取照片內容"} variant="secondary" disabled={!model.canExtract || !model.modelConsent} onPress={actions.extract} /></JournalSection> : null}
             {selected && editable ? <View style={candidate ? s.candidate : undefined} testID="photo-candidate">
               <MotionReveal value={candidate ?? null} contentKey={JSON.stringify(candidate ?? null)} scopeKey={candidateScope} regionKey="photo-candidate" triggerKey={revealTrigger} eligible={!!revealEligible} style={s.stack} testID="photo-candidate-motion">{shown => shown ? <>
                 <Text style={s.title}>提取候選 · 尚未確認</Text><Text style={s.original}>{shown.text || "未提取到文字"}</Text><Text style={s.body}>數值：{shown.rawValue || "未有"}；單位：{shown.unit || "未有"}；時間：{shown.timeRaw || "未知"}</Text>
@@ -139,7 +139,7 @@ export function PhotosView({ model, actions: sourceActions, onCare, previewContr
               {candidate ? <><Text style={s.meta}>採用候選會取代本頁手動草稿。</Text><AppButton label="採用候選" accessibilityLabel="採用候選並取代本頁草稿" variant="secondary" disabled={model.formLocked} onPress={actions.adoptCandidate} /></> : null}
             </View> : null}
             {selected?.canManage ? <AppButton label="刪除照片及連結記錄" variant="danger-secondary" disabled={!model.canDelete} onPress={actions.openDeletion} /> : null}
-          </SectionCard>
+          </JournalSection>
           {editable && (model.original || selected) ? <ManualFormDialog formKey={model.formKey} label="人工核對照片記錄" scopeKey={candidateScope} recovery={operationNotice} onClose={actions.discardRecordDraft}><PhotoRecordForm key={model.formKey} model={model} actions={actions} /></ManualFormDialog> : null}
         </View>
 

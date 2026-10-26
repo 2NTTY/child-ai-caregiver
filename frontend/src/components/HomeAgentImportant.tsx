@@ -22,7 +22,7 @@ function ImportantLead({ item, actions, synthetic, loadedAt }: { item: HomeAgent
   const sourceId = `home-agent-reason-${useId()}`;
   const createdAt = timeLabel(item.source.createdAt);
   return <View testID={`home-agent-important-item-${item.id}`} style={styles.item}>
-    <Text accessibilityRole="header" style={styles.title}>{item.title}</Text>
+    <Text accessibilityRole="header" aria-level={3} style={styles.title}>{item.title}</Text>
     <Text style={styles.body}>{item.whyNow ?? item.detail}</Text>
     <Pressable accessibilityRole="button" accessibilityLabel="為甚麼提醒我？" accessibilityState={{ expanded }} aria-expanded={expanded} aria-controls={sourceId}
       onPress={() => setExpanded(value => !value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
@@ -52,20 +52,19 @@ export function HomeAgentImportant({ model, actions }: { model: HomeViewModel; a
   const lead = section.state === "ready" ? section.items[0] : undefined;
   const remaining = section.state === "ready" ? section.items.slice(1, 3) : [];
   return <View style={styles.stack}>
-    <View testID="home-agent-important" style={styles.important}>
+    {section.state !== "unavailable" ? <View testID="home-agent-important" style={styles.important}>
       <View style={styles.heading}><AppIcon name="star-four-points" size={18} /><Text style={styles.eyebrow}>助手提醒你</Text>
         {lead ? <AppStatusBadge label={lead.source.status === "unknown" ? "結果未知" : lead.statusLabel} tone={lead.source.status === "unknown" || lead.proposal?.status === "pending" ? "warning" : lead.proposal?.status === "accepted" ? "success" : "info"} /> : null}
         {lead && section.synthetic ? <Text style={styles.meta}>合成示例</Text> : null}
       </View>
       <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
-        message={section.state === "unavailable" ? "暫時無法顯示助手提醒" : section.state === "loading" ? "正在讀取助手提醒…"
+        message={section.state === "loading" ? "正在讀取助手提醒…"
           : section.state === "error" ? "暫時無法讀取助手提醒" : section.items.length ? undefined : "目前沒有助手提醒"}>
         {section.state === "error" ? <AppButton label="重新讀取" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
-        {section.state === "unavailable" ? <TextLink label="前往助手" onPress={() => actions.open("chat")} /> : null}
       </ReadStateNotice>
       {lead ? <ImportantLead key={lead.id} item={lead} actions={actions} synthetic={section.synthetic} loadedAt={loadedAt} /> : null}
       {model.connection !== "online" && lead ? <Text style={styles.meta}>目前離線，顯示較早的提醒</Text> : null}
-    </View>
+    </View> : null}
     {remaining.map(item => <Pressable key={item.id} testID={`home-agent-important-item-${item.id}`} accessibilityRole="button"
       accessibilityLabel={`${item.title}，${item.action.label}`} accessibilityHint={[item.detail, item.sourceLabel].filter(Boolean).join("；")}
       onPress={() => actions.open(item.action.destination)} style={({ pressed }) => [styles.additional, pressed && styles.pressed]}>
@@ -85,7 +84,7 @@ const styles = StyleSheet.create({
   stack: { gap: spacing.sm }, important: { backgroundColor: colors.paper, borderLeftWidth: 4, borderLeftColor: colors.accent, borderBottomWidth: 1, borderBottomColor: colors.softLine, borderTopRightRadius: radius.small, borderBottomRightRadius: radius.small, padding: spacing.lg, gap: spacing.sm },
   heading: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   eyebrow: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, fontWeight: "700" },
-  item: { gap: spacing.sm }, 
+  item: { gap: spacing.sm },
   title: { fontFamily: chineseFont, color: colors.ink, fontSize: 18, lineHeight: 26, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool }, detail: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },

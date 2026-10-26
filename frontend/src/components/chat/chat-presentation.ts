@@ -1,11 +1,7 @@
-import { Platform } from "react-native";
-import { colors } from "../../theme";
+import { chineseFont, colors } from "../../theme";
 
 // Shared chat reading and control proportions; brand tokens stay owned by the theme.
-export const chatFont = Platform.select({
-  web: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', 'PingFang TC', sans-serif",
-  default: undefined,
-});
+export const chatFont = chineseFont;
 export const chatColors = {
   canvas: colors.canvas, surface: colors.controlSurface, ink: colors.ink, secondary: colors.muted,
   userBubble: colors.quietSurface, line: colors.softLine, outline: colors.controlOutline, hover: colors.quietSurface,

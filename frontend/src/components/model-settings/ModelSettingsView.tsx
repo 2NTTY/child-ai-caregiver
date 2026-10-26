@@ -1,3 +1,4 @@
+import { JournalAside, JournalColumns, JournalMain, JournalSection } from "../journal/JournalLayout";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { SettingsSection as SectionCard } from "../settings/SettingsSection";
 import { useContainerWidth } from "../useContainerWidth";
@@ -46,7 +47,6 @@ export function ModelSettingsView(props: ModelSettingsViewProps) {
 }
 function ModelSettingsForm({ model, actions: sourceActions, active = true }: ModelSettingsViewProps) {
   const containerLayout = useContainerWidth();
-  const width = containerLayout.width;
   const [deleteReview, setDeleteReview] = useState<{ basis: string; settings: ModelSettings } | null>(null);
   const [deleteNotice, setDeleteNotice] = useState("");
   const deleteOpen = !!deleteReview;
@@ -138,7 +138,6 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
     clearSecret(); setValue("mode", value, { shouldDirty: true });
     if (value !== "personal") setValue("backgroundEnabled", false);
   }
-  const narrow = width < 820;
   const statusMessage = model.notice || (model.busy === "read" ? "正在讀取模型設定…" : model.busy === "check" ? "正在讀取已保存密鑰的模型資料…"
     : model.busy === "catalog" ? "正在查核模型目錄…" : model.busy === "save" ? "正在保存模型設定…" : !model.authorized ? "本人身份或權限已改變，請重新登入。"
       : !model.online ? "目前離線，密鑰輸入已清除；恢復連線後先重讀設定。" : snapshot ? "模型設定已讀取；密鑰不會讀回。" : "");
@@ -158,8 +157,8 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
       {!model.authorized ? <Text style={styles.error}>本人身份或權限已改變，請重新登入。</Text> : null}
       {model.originalOperationId ? <AppButton label="查回原操作及目前設定" variant="secondary" disabled={!model.online || !model.authorized || !!model.busy} onPress={actions.refresh} /> : null}
     </SectionCard>
-    {snapshot && model.authorized ? <View style={[styles.columns, narrow && styles.stacked]}>
-      <View style={[styles.column, narrow && styles.fullColumn]}>
+    {snapshot && model.authorized ? <JournalColumns>
+      <JournalMain>
         <SectionCard><MotionFeedback active={saved} triggerKey={saved ? saveIntent?.serial ?? null : null} scopeKey={model.scopeKey} testID="model-settings-feedback">
           <MotionReveal value={metadata} contentKey={JSON.stringify([metadata.version, metadata.mode])} scopeKey={model.scopeKey} regionKey="model-settings-metadata" triggerKey={readTrigger} eligible={readEligible}>
             {shown => <SectionHeader density="compact" title="使用方式" subtitle={`上次讀取：${modeLabels[shown.mode]}`} />}
@@ -179,6 +178,7 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
           <Text style={styles.meta}>已保存的個人模型：{settings.model}</Text>
           <AppStatusBadge label={settings.keyConfigured ? "個人密鑰已保存" : "尚未保存個人密鑰"} tone={settings.keyConfigured ? "success" : "neutral"} /><Text style={styles.meta}>密鑰原文不會顯示。</Text>
           {mode === "personal" ? <View style={styles.group}>
+            <JournalSection level={3} title="聊天服務與密鑰" description="先核對服務與模型，再填寫相應密鑰。">
             <Controller control={control} name="provider" render={({ field }) => <AppSelect ref={field.ref} id={fieldId("provider")} label="模型服務" value={field.value} disabled={locked}
               options={[{ value: "gemini", label: "Gemini Developer API" }, { value: "vertex", label: "Vertex AI Express API key" }, { value: "openai-compatible", label: "OpenAI 相容服務" }]}
               onChange={value => { clearSecret(); field.onChange(value); actions.selectProvider?.(value); }} onBlur={field.onBlur} />} />
@@ -208,8 +208,8 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
               importantForAutofill="no" nativeID={fieldId("keyText")} aria-invalid={!!errors.keyText} aria-describedby={`${fieldId("keyText")}-message`} maxLength={512} value={active && model.online && model.authorized ? field.value : ""} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors.keyText} />} />
             <FormFieldMessage id={`${fieldId("keyText")}-message`} error={errors.keyText?.message}
               help={`${settings.keyConfigured && provider === settings.provider && (provider !== "openai-compatible" || baseUrl.replace(/\/+$/u, "") === settings.baseUrl) ? "留空會保留已保存聊天密鑰。" : "請輸入所選服務及地址對應的聊天密鑰。"}密鑰只在保存時送出；送出、失敗或離開頁面後清空，不會讀回。`} />
-            <View style={styles.group}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>知識搜尋用向量服務（可選）</Text>
+            </JournalSection>
+            <JournalSection level={3} title="知識搜尋用向量服務" description="可選設定；聊天服務與搜尋向量分開核對。">
               <Text style={styles.meta}>知識搜尋使用 Google 的 gemini-embedding-001（1024 維）。未配置時仍可試用聊天，需向量的搜尋會顯示缺少配置，不會借用平台額度。</Text>
               <Controller control={control} name="embeddingProvider" render={({ field, fieldState }) => <AppSelect ref={field.ref} id={fieldId("embeddingProvider")}
                 label="向量服務" value={field.value} disabled={locked || !available} onBlur={field.onBlur}
@@ -248,18 +248,20 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
                 label="保存時刪除獨立向量密鑰" checked={field.value} disabled={locked || !available}
                 onChange={value => { setValue("embeddingKeyText", ""); field.onChange(value); }}
                 description={embeddingProvider === "gemini" && provider === "gemini" ? "刪除後，知識搜尋會沿用本人的 Gemini 聊天密鑰。" : "刪除後，需要向量的知識搜尋將無法使用；不會改用平台。"} />} /> : null}
-            </View>
+            </JournalSection>
+            <JournalSection level={3} title="資料外送與背景使用">
             <Text style={styles.body}>保存時，密鑰會送到目前連接的{brand.name}服務（{model.serverLabel}）並加密儲存，只用於你授權的所選模型及向量服務；密鑰原文不會讀回。</Text>
             <Controller control={control} name="consent" render={({ field }) => <AppCheckbox ref={field.ref} id={fieldId("consent")} invalid={!!errors.consent} describedBy={errors.consent ? `${fieldId("consent")}-message` : undefined} onBlur={field.onBlur} checked={field.value} onChange={value => setValue("consent", value, { shouldValidate: true })} disabled={locked || !available}
               label="我同意個人服務的費用及資料外送" description={`必要對話、孩子資料及附件會送到${provider === "openai-compatible" ? "你填寫的 API 服務" : "所選 Google 服務"}；啟用知識搜尋時，必要搜尋文字亦會送到 Google 向量服務。費用按各服務帳戶計算。`} />} />
             <FormFieldMessage id={`${fieldId("consent")}-message`} error={errors.consent?.message} />
             <Controller control={control} name="backgroundEnabled" render={({ field }) => <AppCheckbox checked={field.value} onChange={field.onChange} disabled={locked || !available}
               label="另行允許背景任務使用此密鑰" description="背景處理亦會使用供應商服務及計入用量；不會因加入密鑰而自動啟用。" />} />
-            <View style={styles.limitFields}><Text accessibilityRole="header" style={styles.groupTitle}>個人呼叫上限</Text>{modelLimitFields.map(([name, label, range, unit]) => <View key={name} style={styles.limitField}>
+            </JournalSection>
+            <JournalSection level={3} title="個人呼叫上限" style={styles.limitFields}>{modelLimitFields.map(([name, label, range, unit]) => <View key={name} style={styles.limitField}>
               <Controller control={control} name={name} render={({ field }) => <AppTextField accessibilityLabel={label} label={label} keyboardType="number-pad" inputMode="numeric"
                 nativeID={fieldId(name)} aria-invalid={!!errors[name]} aria-describedby={`${fieldId(name)}-message`} value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} ref={field.ref} disabled={locked || !available} error={!!errors[name]} />} />
               <FormFieldMessage id={`${fieldId(name)}-message`} error={errors[name]?.message} help={`${range.min}–${range.max} ${unit} · 整數`} />
-            </View>)}</View>
+            </View>)}</JournalSection>
             <Text style={styles.meta}>保存後按本人設定及管理員共用保護計算。模型按需要使用預算，不必用盡；重試亦計入原運行及每日次數。</Text>
           </View> : <Text style={styles.meta}>{mode === "platform" ? "平台模型及限額由管理員統一設定，實際值見「用量與安全上限」。" : "保存停用後不會自行切回平台；已有密鑰會保留，刪除須另行確認。"}</Text>}
           <View style={[styles.actions, styles.group]}><AppButton label="保存模型設定" disabled={!canSave} loading={model.busy === "save"} onPress={() => void submit()} />
@@ -279,8 +281,8 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
           {model.catalog?.truncated ? <Text style={styles.meta}>供應商目錄只讀取了有界部分；未列出不代表模型不存在。</Text> : null}
           <Text style={styles.meta}>查核與目錄共用每帳戶每分鐘一次限制，不呼叫生成；遇到 429 請稍後手動重試。</Text></>}
         </SectionCard> : null}
-      </View>
-      <View style={[styles.column, narrow && styles.fullColumn]}>
+      </JournalMain>
+      <JournalAside style={styles.usageAside}>
         <UsageCard label="平台服務用量" usage={snapshot.usage.platform} /><UsageCard label="個人服務用量" usage={snapshot.usage.personal} />
         <SectionCard><SectionHeader density="compact" title="用量與安全上限" />
           <Text style={styles.body}>已保存的個人每日上限：{settings.dailyLimit} 次</Text>
@@ -297,8 +299,8 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
           <Text style={styles.meta}>連接服務：{model.serverLabel}</Text>
           <Text style={styles.meta}>停用或刪除不會撤回供應商已接受的呼叫。</Text>
         </SectionCard>
-      </View>
-    </View> : null}
+      </JournalAside>
+    </JournalColumns> : null}
     {deleteNotice ? <Text accessibilityLiveRegion="polite" style={styles.warning}>{deleteNotice}</Text> : null}
     <Dialog danger visible={deleteOpen} onDismiss={() => setDeleteReview(null)}>
       <Dialog.Title danger>刪除個人密鑰並停用 AI</Dialog.Title><Dialog.Content>
@@ -311,6 +313,7 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
   </View>;
 }
 const styles = StyleSheet.create({
+  usageAside: { backgroundColor: colors.paleTeal, paddingHorizontal: spacing.lg },
   root: { gap: spacing.lg }, columns: { flexDirection: "row", gap: spacing.lg, alignItems: "flex-start" }, stacked: { flexDirection: "column" },
   column: { flex: 1, minWidth: 0, width: "100%", gap: spacing.lg }, fullColumn: { flex: undefined, flexGrow: 0, flexShrink: 0, flexBasis: "auto" },
   statusRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },

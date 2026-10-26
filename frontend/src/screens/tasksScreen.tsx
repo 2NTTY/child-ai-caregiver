@@ -28,5 +28,5 @@ export default function TasksPage() {
   return workspace ? <TasksView key={workspace.scopeKey} model={workspace.model} actions={workspace.actions} recovery={workspace.recovery}
     onAgent={() => { if (!chatDraft.trim()) setChatDraft("想請你幫我記低一項安排："); openAgentDraft(true); }}
     onHistory={() => navigate(() => router.push("/history?category=tasks"), "workspace")} /> :
-    <PageFrame density="compact" title="待辦"><SectionCard><Text>{model.selectedChildId ? "正在讀取事項…" : "先選擇孩子。"}</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    <PageFrame density="compact" title="待辦與安排"><SectionCard><Text>{model.selectedChildId ? "正在讀取事項…" : "先選擇孩子。"}</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }

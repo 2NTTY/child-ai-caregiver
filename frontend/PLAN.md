@@ -3,6 +3,18 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
+## 第三線：frontend-design 主導全面重構（2026-10-26）
+
+獨立本地分支 `experiment/frontend-design-rebuild-20261026`，共同原始基線 `0b9f5d60e73eb395ea8a2898864fa1e591e27938`；只納入 PR328／329 正確性修復和三項基線 type 修復，不沿用第一／第二線 UI。18 路由原結構→新結構與完整 retain／improve／remove 判斷見 [設計與需求處置](EXPERIMENT_FRONTEND_DESIGN_REBUILD.md)。主導技能 frontend-design，輔助 React Best Practices、Web Design Guidelines、Composition Patterns；兩個分區由原生 Astra xhigh 並行、共享 shell 由本線整合。
+
+- **已實作：**橫向四章與清楚手機目錄、照顧手冊首頁、行程／關注／記錄／歷史工作區、參考資料閱讀面、八章設定、登入與管理層次；刪除重複側欄、浮動快捷、強制歡迎／教學、錯誤引導共享、無用日曆與裝飾等待。保留正確 owner、scope、dirty／pending／unknown、原 opId 和所有資料權限。
+- **機器檢查：**完整 frontend tsc exit 0；整合與獨立 review 增量後 74/74 定向 source／合成 React／DOM 測試通過；共用 fixture 真 client 契約 30/30。這些不等於 18 頁 browser 或真 API 驗收。
+- **原紅與限度：**舊 source-photo-controls 27/27 在 harness fetcher／RN Flow 載入失敗，未得產品互動結論。首次整合命令誤選 browser script，4 cases 因 msedge 缺失在 launch 失敗、實際未開頁；已停止、不安裝或重試，改回原 hook 合成測試。兩次紀錄分列，不覆蓋原紅。
+- **遠端觀察：**06:31 UTC GitHub master 已為 `89bf5ff`（PR330 文件），PR328／329 已合併；本實驗仍按使用者指定基線獨立比較，不追蹤混入 master 或其他 UI 分支。
+- **唯一下一步：**凍結 summary inline／modifier links／heading 修後 exact source → fresh cache／single worker export → 來源/產物逐檔核對 → 共用安全 fixture → 父代理 browser queue 與獨立 review。未發布、推送、開 PR 或合併實驗。
+
+證據位於 `verification/frontend-design-rebuild-20261026/`。下方歷史計劃不代表本線或公開站點現況。
+
 ## 頁面專屬歷史與安靜讀取（2026-10-23；source36／artifactfix1 本地交付）
 
 沿用 `dot/frontend-simplify-20261021`／[PR #253](https://github.com/2NTTY/child-ai-caregiver/pull/253)，本輪以 `5a39776f703bc436528b858f393621bcf8030b03` 為基底，PR 仍 draft／未合併；此為交付時已知狀態，未另查 CI。新版尚未更新公開站點；最後已記錄的公開版本仍為04:59:33.978 UTC的Site87／snapshot31（Sites source `b1fb6db5cd7820cd2183a732f866d8673973bb10`），不把本地結果當新公開驗收。

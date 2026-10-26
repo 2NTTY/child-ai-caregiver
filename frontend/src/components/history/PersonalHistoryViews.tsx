@@ -155,7 +155,7 @@ export function PersonalNotificationContent({ owner, searchText = "", dateRange 
       {selected ? <View style={styles.list} testID="notification-history-detail">
         <Text style={styles.meta}>{notificationTime(selected.sentAt)} · {selected.scope.kind === "child" ? selected.scope.childName : "本人帳戶"}</Text>
         {selected.contents.map(content => <View key={content.channel} style={styles.channelDetail}>
-          <Text accessibilityRole="header" style={styles.channel}>{messageChannelLabel(content.channel)}</Text>
+          <Text accessibilityRole="header" aria-level={3} style={styles.channel}>{messageChannelLabel(content.channel)}</Text>
           {content.title ? <Text selectable style={styles.title}>{content.title}</Text> : null}
           <Text selectable style={styles.body}>{content.body}</Text>
           <Text style={styles.meta}>{notificationTime(content.sentAt)}</Text>

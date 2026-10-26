@@ -34,8 +34,8 @@ function CareCreateButton({ buttonRef, disabled, onPress }: { buttonRef: Ref<Vie
   return <Pressable ref={buttonRef} testID="care-manual-create" accessibilityRole="button" accessibilityLabel="手動新增共享記錄"
     accessibilityState={{ disabled }} aria-disabled={disabled} disabled={disabled} onPress={onPress}
     onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
-    style={({ pressed }) => [styles.manualCreate, focused && styles.manualCreateFocused, (hovered || pressed) && !disabled && styles.cardHighlighted, disabled && styles.cardDisabled]}>
-    <Text style={styles.manualCreateLabel}>手動新增</Text>
+    style={({ pressed }) => [styles.manualCreate, focused && styles.manualCreateFocused, (hovered || pressed) && !disabled && styles.manualCreateFocused, disabled && styles.cardDisabled]}>
+    <Text style={styles.manualCreateLabel}>新增記錄</Text>
   </Pressable>;
 }
 
@@ -48,9 +48,10 @@ function PendingCard({ runId, proposal, disabled, quietRefresh, onPress, cardRef
     accessibilityState={{ disabled }} aria-disabled={disabled} disabled={readFocus.nativeDisabled} onPress={() => { if (!disabled) onPress(); }}
     onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} onHoverIn={() => setHovered(true)} onHoverOut={() => setHovered(false)}
     style={({ pressed }) => [styles.proposalCard, hovered && !disabled && styles.cardHighlighted, focused && styles.cardFocused, pressed && !disabled && styles.cardHighlighted, disabled && !readFocus.preserveWebFocus && styles.cardDisabled]}>
-    <View style={styles.cardLabels}><Text style={[styles.meta, styles.cardKind]}>{proposalContextLabel(proposal)}</Text><AppStatusBadge label={status} tone="warning" /></View>
-    <Text numberOfLines={3} style={styles.cardContent}>{proposalPrimaryText(proposal)}</Text>
-    <View style={styles.cardMeta}><AppIcon name="clock-outline" size={14} /><Text style={[styles.meta, styles.cardTime]}>{Number.isFinite(Date.parse(proposal.createdAt)) ? `提出於 ${agentTime(proposal.createdAt)}` : "提出時間未知"} · {proposal.scope === "family" ? "家庭共享" : "本人"}</Text></View>
+    <View style={styles.proposalCopy}><View style={styles.cardLabels}><Text style={[styles.meta, styles.cardKind]}>{proposalContextLabel(proposal)}</Text><AppStatusBadge label={status} tone="warning" /></View>
+      <Text numberOfLines={3} style={styles.cardContent}>{proposalPrimaryText(proposal)}</Text>
+      <View style={styles.cardMeta}><AppIcon name="clock-outline" size={14} /><Text style={[styles.meta, styles.cardTime]}>{Number.isFinite(Date.parse(proposal.createdAt)) ? `提出於 ${agentTime(proposal.createdAt)}` : "提出時間未知"} · {proposal.scope === "family" ? "家庭共享" : "本人"}</Text></View>
+    </View><AppIcon name="chevron-right" size={20} color={colors.teal} />
   </Pressable>;
 }
 
@@ -143,7 +144,7 @@ function CareWorkspace({ initialKind, initialRecordId }: { initialKind?: CareKin
     if (initialRecordId) workspace.actions.openRecord(initialRecordId);
     else if (initialKind) workspace.actions.startCreate(initialKind);
   }, [workspace?.scopeKey, workspace?.model.list.state, workspace?.model.online, workspace?.model.access, recovery?.pending, externalLocked, initialKind, initialRecordId]);
-  if (!workspace) return <PageFrame title="核對" density="compact"><ReadStateNotice state="loading" message="正在讀取記錄…" /></PageFrame>;
+  if (!workspace) return <PageFrame title="核對與記錄" density="compact"><ReadStateNotice state="loading" message="正在讀取記錄…" /></PageFrame>;
   const { model, actions } = workspace, panelOpen = !!model.detail || !!model.draft || !!model.deletion;
   return <CareRecordsView manualCreateFocusRef={manualCreateTrigger} model={model} actions={actions} initialRecordId={model.detail?.record.id ?? initialRecordId}
     manualCreateAction={!panelOpen && model.access === "editable" ? <CareCreateButton buttonRef={manualCreateTrigger} disabled={!model.online || !!recovery?.pending || externalLocked} onPress={() => actions.startCreate()} /> : undefined}
@@ -163,17 +164,18 @@ export default function CarePage() {
   if (child && requestedView === "photos") return <PhotoWorkspace key={scopeKey ?? "no-child"} capturePreferred={false} onCare={() => navigate(() => router.push("/care"))} />;
   const initialRecordId = typeof recordId === "string" ? recordId : typeof record === "string" ? record : undefined;
   return child && scopeKey ? <CareWorkspace key={scopeKey} initialKind={initialKind} initialRecordId={initialRecordId} />
-    : <PageFrame density="compact" title="核對" description="選擇有權查看的孩子，再核對 Agent 整理的內容。"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
+    : <PageFrame density="compact" title="核對與記錄" description="選擇有權查看的孩子，再核對 Agent 整理的內容。"><SectionCard><Text>先選擇孩子。</Text><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></SectionCard></PageFrame>;
 }
 
 const styles = StyleSheet.create({
-  manualCreate: { minHeight: 48, minWidth: 64, paddingHorizontal: spacing.xs, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small },
-  manualCreateLabel: { fontFamily: chineseFont, fontSize: 14, lineHeight: 20, fontWeight: "700", color: colors.ink }, manualCreateFocused: { borderColor: colors.ink },
+  manualCreate: { minHeight: 48, minWidth: 112, paddingHorizontal: spacing.md, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: colors.ink, borderRadius: radius.small, backgroundColor: colors.ink },
+  manualCreateLabel: { fontFamily: chineseFont, fontSize: 14, lineHeight: 20, fontWeight: "700", color: colors.paper }, manualCreateFocused: { borderColor: colors.teal, backgroundColor: colors.teal },
   resultDialog: { maxWidth: 860 }, resultScroll: { paddingHorizontal: 0, flexShrink: 1 }, resultContent: { padding: spacing.lg, gap: spacing.md },
-  pendingList: { gap: spacing.md, minWidth: 0 }, cardGrid: { gap: spacing.md, minWidth: 0 },
-  proposalCard: { minWidth: 0, gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 0, backgroundColor: colors.controlSurface },
+  pendingList: { gap: spacing.md, minWidth: 0 }, cardGrid: { minWidth: 0, borderTopWidth: 1, borderTopColor: colors.line },
+  proposalCard: { minWidth: 0, flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.lg, paddingHorizontal: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, borderLeftWidth: 3, borderLeftColor: "transparent", backgroundColor: colors.paper },
+  proposalCopy: { flex: 1, minWidth: 0, gap: spacing.sm },
   cardLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }, cardKind: { flex: 1, minWidth: 0 },
   cardContent: { fontFamily: chineseFont, ...readingType.body, color: colors.ink, minWidth: 0 },
   cardMeta: { flexDirection: "row", gap: spacing.sm, alignItems: "center" }, cardTime: { flex: 1 }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, minWidth: 0, flexShrink: 1 },
-  cardHighlighted: { backgroundColor: colors.paleTeal }, cardFocused: { borderColor: colors.ink, borderWidth: 2 }, cardDisabled: { opacity: 0.6 },
+  cardHighlighted: { backgroundColor: colors.paleTeal }, cardFocused: { borderLeftColor: colors.teal }, cardDisabled: { opacity: 0.6 },
 });

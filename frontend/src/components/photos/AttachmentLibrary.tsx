@@ -64,7 +64,7 @@ export function PhotoGallery({ items, scopeKey, disabled, selectedId, openPhoto,
         selected={item.id === selectedId} preserveFocusWhenDisabled disabled={disabled || row.exiting} onPress={() => {if (!row.exiting) openPhoto(item);}}
         accessibilityLabel={`開啟照片：${item.visibility === 'private' ? '私人' : '共享'} · ${item.fileName}`}>
         <PhotoThumbnail key={`${scopeKey}:${item.id}:${item.version}:${item.sha256}`} item={item} scopeKey={scopeKey} readThumbnail={row.exiting ? undefined : readThumbnail} />
-        <View style={styles.photoCopy}><Text style={styles.title} numberOfLines={2}>{item.fileName}</Text>
+        <View style={styles.photoCopy}><Text style={styles.title}>{item.fileName}</Text>
           <Text style={styles.meta}>{item.createdAtLabel}</Text>
           <AppStatusBadge label={item.visibility === 'private' ? '私人' : '家庭共享'} tone="neutral" />
         </View>
@@ -119,13 +119,13 @@ export function OriginalMediaLibrary({ page, kind, onChat }: { page?: Attachment
 }
 
 const styles = StyleSheet.create({
-  stack: { gap: spacing.md, minWidth: 0 }, gallery: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  photoCell: { flexBasis: 200, flexGrow: 1, minWidth: 0, maxWidth: '100%' }, photoCard: { padding: 0, overflow: 'hidden', gap: 0 },
-  thumbnail: { width: '100%', aspectRatio: 4 / 3, backgroundColor: colors.canvas }, image: { width: '100%', height: '100%' },
+  stack: { gap: spacing.md, minWidth: 0 }, gallery: { gap: 0, minWidth: 0 },
+  photoCell: { width: '100%', minWidth: 0 }, photoCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md, paddingHorizontal: spacing.sm, gap: spacing.md, borderWidth: 0, borderBottomWidth: 1, borderBottomColor: colors.line, borderRadius: 0 },
+  thumbnail: { width: 76, height: 76, flexShrink: 0, backgroundColor: colors.canvas, borderRadius: radius.small, overflow: 'hidden' }, image: { width: '100%', height: '100%' },
   placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.sm },
-  photoCopy: { padding: spacing.md, gap: spacing.xs }, pager: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignItems: 'center', justifyContent: 'space-between' },
+  photoCopy: { flex: 1, minWidth: 0, gap: spacing.xs }, pager: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, alignItems: 'center', justifyContent: 'space-between' },
   title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: '700' }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
-  mediaCard: { minWidth: 0, gap: spacing.sm, padding: spacing.lg, borderWidth: 1, borderColor: colors.softLine, borderRadius: radius.medium, backgroundColor: colors.controlSurface },
+  mediaCard: { minWidth: 0, gap: spacing.md, paddingVertical: spacing.lg, borderBottomWidth: 1, borderColor: colors.line },
   mediaHeader: { flexDirection: 'row', gap: spacing.md, alignItems: 'center', flexGrow: 0, padding: spacing.xs, margin: -spacing.xs, borderColor: 'transparent' }, mediaCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
   mediaIcon: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: radius.small, backgroundColor: colors.canvas },
   voiceIcon: { borderRadius: 24, backgroundColor: colors.paleTeal },

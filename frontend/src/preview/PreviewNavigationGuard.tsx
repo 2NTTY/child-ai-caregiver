@@ -91,6 +91,12 @@ export function PreviewLink({ href, children }: { href: Href; children: ReactNod
   const pathname = usePathname();
   const leave = usePreviewNavigation();
   return <Link href={href} asChild onPress={event => {
+    if (Platform.OS === "web") {
+      // Modified/middle clicks open another browsing context and do not leave this draft.
+      type WebClick = { defaultPrevented?: boolean; button?: number; metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean; altKey?: boolean };
+      const click = event as unknown as WebClick & { nativeEvent?: WebClick };
+      if ([click, click.nativeEvent].some(value => value && (value.defaultPrevented || value.metaKey || value.ctrlKey || value.shiftKey || value.altKey || value.button !== undefined && value.button !== 0))) return;
+    }
     event.preventDefault();
     if (href === pathname) return;
     leave(() => router.push(href), staysInDashboard(pathname, href) ? "workspace" : "navigation");

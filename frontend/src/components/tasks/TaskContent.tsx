@@ -53,12 +53,12 @@ export function TaskWorkerMetadata({ task, model, announce = true }: { task: Tas
     {announce ? <StatusAnnouncement key={task.id} eventKey={metadata.work?.status ?? "none"} message={metadata.work ? `背景處理：${taskWorkLabels[metadata.work.status]}。` : ""} urgent={metadata.work?.status === "failed"} /> : null}
     <Text style={styles.label}>站內背景處理</Text>
     {metadata.work ? <>
-      <Text style={styles.body}>{taskWorkLabels[metadata.work.status]}（{metadata.work.status}）· 版本 {metadata.work.taskVersion}</Text>
+      <Text style={styles.body}>{taskWorkLabels[metadata.work.status]} · 版本 {metadata.work.taskVersion}</Text>
       <Text style={styles.meta}>排定檢查：{taskDisplayTime(metadata.work.nextAt, task.occurrence.timeZone)}；失敗次數：{metadata.work.failures}</Text>
       {metadata.work.status === "unknown" ? <Text style={styles.warning}>處理結果未知，不能自動重做。任務仍須另行回報完成。</Text> : null}
       {metadata.work.status === "processed" ? <Text style={styles.meta}>已處理不代表外部通知送達、已讀或照護完成。</Text> : null}
     </> : <Text style={styles.meta}>未提供這個版本的背景處理紀錄。</Text>}
-    {metadata.reminders.map(item => <Text key={item.id} style={styles.meta}>本人站內提醒 · {item.phase === "initial" ? "初次（initial）" : "一次跟進（follow_up）"}：{taskDisplayTime(item.createdAt, task.occurrence.timeZone)}</Text>)}
+    {metadata.reminders.map(item => <Text key={item.id} style={styles.meta}>本人站內提醒 · {item.phase === "initial" ? "初次" : "一次跟進"}：{taskDisplayTime(item.createdAt, task.occurrence.timeZone)}</Text>)}
     {metadata.reminders.length === 0 ? <Text style={styles.meta}>這個版本沒有可見的本人站內提醒。</Text> : null}
   </View>;
 }

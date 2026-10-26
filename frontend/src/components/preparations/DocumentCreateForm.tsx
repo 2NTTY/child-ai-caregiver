@@ -12,6 +12,7 @@ import { AppCheckbox } from "../AppCheckbox";
 import { AppButton, AppSelect, AppTextField } from "../ui";
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { chineseFont, colors, readingType, spacing } from "../../theme";
+import { JournalSection } from "../journal/JournalLayout";
 
 type Fields = { title: string; purpose: DocumentRequest["purpose"]; from: string; to: string; eventDate: string; reportMode: "fixed" | "living" };
 export type DocumentFormOwner = {
@@ -58,7 +59,7 @@ export function DocumentCreateForm({ owner, kind, purpose = "appointment", allow
     <Text style={s.meta}>需要時可直接按已共享的孩子資料整理文件。這裏不會使用私人對話正文，亦不會把整理結果當成新事實。</Text>
     {stale ? <Text style={s.warning}>授權基準已改變，原草稿保留；請放棄這份未提交草稿後重新核對。</Text> : null}
     <FormErrorSummary entries={(Object.keys(errors) as (keyof Fields)[]).map(field => ({ field, label: labels[field], message: errors[field]?.message ?? "請核對此項。" }))} onFocus={field => setFocus(field as keyof Fields)} />
-    <Controller name="title" control={control} rules={{ required: "請填寫文件名稱。", maxLength: { value: 160, message: "最多 160 字。" } }}
+    <JournalSection level={3} title="這份文件的用途" style={s.formSection}><Controller name="title" control={control} rules={{ required: "請填寫文件名稱。", maxLength: { value: 160, message: "最多 160 字。" } }}
       render={({ field }) => <View><AppTextField ref={field.ref} nativeID={`${id}-title`} label={labels.title} accessibilityLabel={labels.title} value={field.value} disabled={disabled}
         error={!!errors.title} aria-invalid={!!errors.title} aria-describedby={errors.title ? `${id}-title-error` : undefined} onBlur={field.onBlur} onChangeText={value => { edited(); field.onChange(value); }} />
         <FormFieldMessage id={`${id}-title-error`} error={errors.title?.message} /></View>} />
@@ -67,16 +68,19 @@ export function DocumentCreateForm({ owner, kind, purpose = "appointment", allow
     {kind === "growth_report" ? <Controller name="reportMode" control={control} render={({ field }) => <AppSelect label={labels.reportMode}
       value={field.value} options={[{ value: "fixed", label: "指定期間（可選完整年度／季度）" }, { value: "living", label: "日常檔案（延展至當日，持續更新）" }]} disabled={disabled}
       onChange={value => { edited(); field.onChange(value); }} />} /> : null}
-    {living ? <Text style={s.meta}>結束日由 Server 按香港當日延展，來源變更後沿同一份檔案整理。</Text> : null}
+    {living ? <Text style={s.meta}>結束日由 Server 按香港當日延展，來源變更後沿同一份檔案整理。</Text> : null}</JournalSection>
+    <JournalSection level={3} title="採用哪段時間的資料" description="來源期間決定整理範圍；使用日期可以另外指定。" style={s.formSection}>
     {(["from", "to", "eventDate"] as const).filter(name => !living || name !== "to").map(name => <Controller key={name} name={name} control={control}
       rules={name === "eventDate" ? {} : { required: "請選擇來源期間。" }} render={({ field }) => <AppDateField ref={field.ref} id={`${id}-${name}`} label={labels[name]}
-        value={field.value} disabled={disabled} error={errors[name]?.message} onBlur={field.onBlur} onChange={value => { edited(); field.onChange(value); }} />} />)}
+        value={field.value} disabled={disabled} error={errors[name]?.message} onBlur={field.onBlur} onChange={value => { edited(); field.onChange(value); }} />} />)}</JournalSection>
+    <View style={s.confirmation}>
     <AppCheckbox label="我已核對用途及期間，同意建立家庭共享文件" checked={shared} disabled={disabled}
       onChange={value => { if (!basis) setBasis(owner.authorityVersion); owner.markDraft(); setShared(value); }} />
     {owner.locked && !disabled && owner.operation?.recovery === "check" ? <Text style={s.meta}>可以繼續編輯。再次儲存前，請先按「重新載入」。</Text> : null}
     <View style={s.actions}><AppButton label={kind === "preparation" ? "整理這份準備單" : "整理這份成長報告"} disabled={owner.locked || disabled || !shared} onPress={submit} />
-      {owner.dirty ? <AppButton label="放棄未提交草稿" variant="quiet" disabled={owner.operation?.state === "saving" || owner.operation?.state === "unknown" && retained} onPress={owner.discardDraft} /> : null}</View>
+      {owner.dirty ? <AppButton label="放棄未提交草稿" variant="quiet" disabled={owner.operation?.state === "saving" || owner.operation?.state === "unknown" && retained} onPress={owner.discardDraft} /> : null}</View></View>
   </View>;
 }
-const s = StyleSheet.create({ stack: { gap: spacing.md }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+const s = StyleSheet.create({ stack: { gap: spacing.md, minWidth: 0 }, formSection: { paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.line },
+  confirmation: { gap: spacing.md, backgroundColor: colors.paleTeal, padding: spacing.md, borderLeftWidth: 3, borderLeftColor: colors.teal }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted }, warning: { fontFamily: chineseFont, ...readingType.tool, color: colors.warningInk } });

@@ -1,3 +1,4 @@
+import { JournalAside, JournalColumns, JournalMain, JournalSection } from "../journal/JournalLayout";
 import { AppStatusBadge } from "../AppStatusBadge";
 import type {ReactNode} from 'react';
 import {View} from 'react-native';
@@ -75,14 +76,23 @@ function MetricResult({metric, records, onRecord, scopeKey}: {metric: SummaryPag
 export function SummaryRecords({page, onRecord, onTask, motion, emptyReady = false}: {page: SummaryPage; onRecord: (id: string) => void; onTask: (id: string) => void; motion: SummaryMotion; emptyReady?: boolean}) {
   const availableKinds = careKindOptions.filter(kind => page.counts[kind.value] > 0);
   return <>
+    <JournalColumns>
+      <JournalMain><JournalSection level={3} title="期間記錄" description={`已載入 ${page.records.length} 筆；逐筆閱讀，隨時回到原始依據與更正歷史。`}>
+    <View style={s.reportSection}>
+        {page.records.length ? page.records.map(record => <RecordSource key={record.id} record={record} onRecord={onRecord} motion={motion} />) : emptyReady ? <EmptyListCard title="本期間已載入的記錄清單為空" detail="沒有記錄不等於沒有發生。" icon="notebook-outline" testID="summary-records-empty" /> : null}
+    </View>
+      </JournalSection></JournalMain>
+      <JournalAside>
     <View testID="summary-counts" style={s.reportSection}>
-      <SectionHeader density="compact" title="已記錄的情況" />
+      <SummaryDisclosure label="記錄分類與數值統計" scopeKey={motion.scopeKey}>
       <View style={s.row}>{availableKinds.map(kind => <Text key={kind.value} style={s.count}>{kind.label} {page.counts[kind.value]} 筆</Text>)}</View>
       <Text style={s.meta}>只納入事件時間在上述期間內的已確認記錄；以下數值只代表已記錄樣本，並非完整期間的總量。</Text>
       {page.metrics.length ? <View style={s.metrics}>{page.metrics.map(metric => <MetricResult key={`${metric.kind}:${metric.unit}`} metric={metric} records={page.records} onRecord={onRecord} scopeKey={`${motion.scopeKey}:${metric.kind}:${metric.unit}`} />)}</View> : emptyReady ? <EmptyListCard title="已載入的記錄沒有數值統計" detail="只代表本期間已取得的記錄，並非完整期間的總量。" icon="chart-bar" testID="summary-metrics-empty" /> : null}
+      </SummaryDisclosure>
     </View>
+
     <View style={[s.reportSection, s.chapterSection]}>
-      <SectionHeader density="compact" title="閱讀時要留意" />
+      <SectionHeader level={3} density="compact" title="閱讀時要留意" />
       {emptyReady && !page.missing.unknownEventTime && !page.missing.invalidQuantities && !page.missing.emptyKinds.length && !page.conflicts.length ? <Text style={s.meta}>本次摘要沒有列出的缺項或待覆核安排，仍只代表已取得的記錄。</Text> : null}
       {page.missing.unknownEventTime > 0 ? <Text style={s.warning}>有 {page.missing.unknownEventTime} 筆記錄的事件時間未知，未能歸入本期間。</Text> : null}
       {page.missing.unknownEventTime > 0 ? <Text style={s.meta}>此數量來自整個孩子已掃描的記錄，並非本日／本週缺漏數。</Text> : null}
@@ -90,13 +100,10 @@ export function SummaryRecords({page, onRecord, onTask, motion, emptyReady = fal
       {page.missing.emptyKinds.length ? <Text style={s.body}>已載入的記錄未列出：{page.missing.emptyKinds.map(kindLabel).join('、')}。沒有記錄不等於沒有發生。</Text> : null}
       {page.conflicts.length ? <View style={s.attention}><Text style={s.title}>{page.conflicts.length} 項安排待覆核</Text>{page.conflicts.map(task => <TaskSource key={task.id} task={task} onTask={onTask} motion={motion} group="conflict" />)}</View> : null}
     </View>
-    <View style={[s.reportSection, s.chapterSection]}>
-      <SummaryDisclosure label={`期間記錄與原始依據 · ${page.records.length} 筆`} scopeKey={motion.scopeKey}>
-        {page.records.length ? page.records.map(record => <RecordSource key={record.id} record={record} onRecord={onRecord} motion={motion} />) : emptyReady ? <EmptyListCard title="本期間已載入的記錄清單為空" detail="沒有記錄不等於沒有發生。" icon="notebook-outline" testID="summary-records-empty" /> : null}
-      </SummaryDisclosure>
-    </View>
-    <View style={[s.reportSection, s.chapterSection]}><SectionHeader density="compact" title="預約與跟進" count={page.appointments.length} icon="calendar-outline" /><Text style={s.meta}>家庭台帳中的安排不代表機構已確認預約。</Text>
+    <View style={[s.reportSection, s.chapterSection]}><SectionHeader level={3} density="compact" title="預約與跟進" count={page.appointments.length} icon="calendar-outline" /><Text style={s.meta}>家庭台帳中的安排不代表機構已確認預約。</Text>
       {page.appointments.length ? page.appointments.map(task => <TaskSource key={task.id} task={task} onTask={onTask} motion={motion} group="appointment" />) : emptyReady ? <EmptyListCard title="已載入的待處理預約清單為空" detail="只代表目前取得的家庭安排。" icon="calendar-outline" testID="summary-appointments-empty" /> : null}
     </View>
+      </JournalAside>
+    </JournalColumns>
   </>;
 }

@@ -1,14 +1,10 @@
-import { Children, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { Platform, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native";
-import { colors, radius, spacing } from "../../theme";
-import { useContainerWidth } from "../useContainerWidth";
+import { colors, spacing } from "../../theme";
 
-/** Layout only: each domain keeps its own card content and read owner. */
+/** A continuous archive list; each domain retains its own entry content and owner. */
 export function HistoryCardGrid({ children, testID }: { children: ReactNode; testID?: string }) {
-  const layout = useContainerWidth();
-  return <View ref={layout.ref} onLayout={layout.onLayout} style={styles.container} testID={testID}>
-    <View style={styles.grid}>{Children.toArray(children).map(child => <View key={(child as { key?: string }).key} style={[styles.cell, layout.width >= 720 ? styles.half : styles.full]}>{child}</View>)}</View>
-  </View>;
+  return <View style={styles.container} testID={testID}>{children}</View>;
 }
 
 /** A read-only entry, not a second data store or a container around another card. */
@@ -41,11 +37,8 @@ export function HistoryEntryCard({ children, onPress, accessibilityLabel, disabl
 }
 
 const styles = StyleSheet.create({
-  container: { minWidth: 0 },
-  grid: { flexDirection: "row", flexWrap: "wrap", alignItems: "stretch", marginHorizontal: -spacing.sm },
-  cell: { minWidth: 0, flexGrow: 0, flexShrink: 0, paddingHorizontal: spacing.sm, paddingBottom: spacing.md },
-  half: { width: "50%" }, full: { width: "100%" },
-  card: { flexGrow: 1, minWidth: 0, gap: spacing.sm, padding: spacing.lg, borderWidth: 1, borderColor: colors.line,
-    borderRadius: radius.medium, backgroundColor: colors.controlSurface },
-  highlight: { backgroundColor: colors.quietSurface }, focused: { borderColor: colors.ink }, pressed: { backgroundColor: colors.paleTeal },
+  container: { minWidth: 0, borderTopWidth: 1, borderTopColor: colors.line },
+  card: { minWidth: 0, gap: spacing.sm, paddingVertical: spacing.lg, paddingHorizontal: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line,
+    borderLeftWidth: 3, borderLeftColor: "transparent", backgroundColor: colors.paper },
+  highlight: { backgroundColor: colors.paleTeal }, focused: { borderLeftColor: colors.teal }, pressed: { backgroundColor: colors.paleTeal },
 });

@@ -60,7 +60,7 @@ export default function GuideScreen() {
   const step = steps[currentStep];
   const narrow = layout.width < 720;
   const needsGuide = model.guideStatus === "first_login" || model.guideStatus === "incomplete";
-  return <PageFrame density="compact" title="說明">
+  return <PageFrame density="compact" title="開始使用照顧手冊" description="先選擇孩子，再按自己的步伐認識記錄、核對與提醒。">
     <View style={styles.intro}>
       <Text style={styles.introTitle}>{needsGuide ? "從你需要的一步開始" : "隨時重看使用方法"}</Text>
       <View style={styles.accountRow} testID="guide-account-actions" accessibilityLabel="目前帳戶">
@@ -68,7 +68,7 @@ export default function GuideScreen() {
         <AppButton label="登出" variant="quiet" density="compact" disabled={!recordsState.online || !!recordsState.busy} onPress={() => { void signOut(); }} />
       </View>
       <View style={styles.childSetup} testID="production-child-setup">
-        <Text accessibilityRole="header" style={styles.pointTitle}>你的孩子</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.pointTitle}>你的孩子</Text>
         {recordsState.childrenLoading ? <Text style={styles.body}>正在讀取孩子列表…</Text> : null}
         {recordsState.childrenError ? <Text accessibilityLiveRegion="polite" style={styles.body}>{recordsState.childrenError}</Text> : null}
         {online && recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && model.children.length === 0 ? <EmptyListCard title="目前沒有可存取的孩子" detail="可以先建立第一位孩子。" /> : null}
@@ -107,22 +107,21 @@ export default function GuideScreen() {
     </View>
     <View ref={layout.ref} onLayout={layout.onLayout} style={[styles.workspace, narrow && styles.workspaceNarrow]}>
       <View style={[styles.steps, narrow && styles.stepsNarrow]} accessibilityLabel="使用引導步驟">
-        <Text style={styles.eyebrow}>使用路徑 · 3 步</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.eyebrow}>三步認識照顧手冊</Text><View style={styles.stepIndex}>
         {steps.map((item, index) => <Pressable key={item.title} accessibilityRole="button" accessibilityLabel={`第 ${index + 1} 步：${item.title}${index === currentStep ? "，目前閱讀" : ""}`}
           accessibilityState={{ selected: index === currentStep }} onPress={() => setCurrentStep(index)}
           style={({ pressed }) => [styles.step, index === currentStep && styles.stepActive, pressed && (index === currentStep ? styles.selectedPressed : styles.pressed)]}>
           <View style={[styles.stepNumber, index === currentStep && styles.stepNumberActive]}><Text style={[styles.stepNumberText, index === currentStep && styles.stepNumberTextActive]}>{index + 1}</Text></View>
           <View style={styles.stepCopy}><Text style={styles.stepTitle}>{item.title}</Text>{index === currentStep ? <Text style={styles.meta}>目前閱讀</Text> : null}</View>
           <AppIcon name="chevron-right" size={18} />
-        </Pressable>)}
-        <Text style={styles.meta}>數字表示閱讀次序，不是完成百分比</Text>
+        </Pressable>)}</View>
       </View>
       <View style={styles.reading} testID="guide-current-step">
         <Text style={styles.eyebrow}>第 {currentStep + 1} 步，共 {steps.length} 步</Text>
-        <Text accessibilityRole="header" style={styles.readingTitle}>{step.title}</Text>
+        <Text accessibilityRole="header" aria-level={2} style={styles.readingTitle}>{step.title}</Text>
         <Text style={styles.lead}>{step.description}</Text>
         <View style={styles.checklist}>{step.points.map((point, index) => <View key={point.title} style={styles.point}>
-          <Text style={styles.pointNumber}>{String(index + 1).padStart(2, "0")}</Text><View style={styles.pointCopy}><Text style={styles.pointTitle}>{point.title}</Text><Text style={styles.body}>{point.body}</Text></View>
+          <AppIcon name="check" size={20} color={colors.teal} /><View style={styles.pointCopy}><Text style={styles.pointTitle}>{point.title}</Text><Text style={styles.body}>{point.body}</Text></View>
         </View>)}</View>
         <View style={styles.actions}><AppButton label={step.action} onPress={() => actions.open(step.destination)} /></View>
         <View style={styles.stepControls}>
@@ -136,7 +135,7 @@ export default function GuideScreen() {
 }
 
 const styles = StyleSheet.create({
-  intro: { gap: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, paddingBottom: spacing.lg },
+  intro: { gap: spacing.sm, borderLeftWidth: 4, borderLeftColor: colors.teal, backgroundColor: colors.white, padding: spacing.lg },
   accountRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm, minWidth: 0 },
   accountCopy: { flexShrink: 1, maxWidth: "100%" },
   childSetup: { gap: spacing.sm, paddingTop: spacing.md, paddingBottom: spacing.sm, minWidth: 0 },
@@ -150,20 +149,17 @@ const styles = StyleSheet.create({
   childName: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700", flexShrink: 1 },
   childRecovery: { gap: spacing.sm, alignItems: "flex-start", minWidth: 0 },
   introTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section },
-  workspace: { flexDirection: "row", gap: spacing.xxl, alignItems: "flex-start", width: "100%", minWidth: 0 }, workspaceNarrow: { flexDirection: "column", gap: spacing.xl },
-  steps: { width: 248, flexShrink: 0, gap: spacing.sm }, stepsNarrow: { width: "100%" },
+  workspace: { gap: spacing.xl, width: "100%", minWidth: 0 }, workspaceNarrow: { flexDirection: "column", gap: spacing.xl },
+  steps: { width: "100%", gap: spacing.md }, stepIndex: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, minWidth: 0 }, stepsNarrow: { width: "100%" },
   eyebrow: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, fontWeight: "700" },
-  step: { minHeight: 64, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.controlSurface },
-  stepActive: { backgroundColor: colors.paleTeal, borderColor: colors.line }, stepCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
+  step: { flexGrow: 1, flexBasis: 240, minWidth: 0, maxWidth: "100%", minHeight: 76, flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md, borderRadius: radius.small, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.controlSurface },
+  stepActive: { backgroundColor: colors.paleTeal, borderColor: colors.teal, borderBottomWidth: 3 }, stepCopy: { flex: 1, minWidth: 0, gap: spacing.xs },
   stepNumber: { width: 32, height: 32, borderRadius: radius.pill, backgroundColor: colors.white, borderWidth: 1, borderColor: colors.line, alignItems: "center", justifyContent: "center" },
   stepNumberActive: { backgroundColor: colors.ink, borderColor: colors.ink }, stepNumberText: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" }, stepNumberTextActive: { color: colors.white },
   stepTitle: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
-  reading: { flex: 1, flexBasis: "auto", width: "100%", minWidth: 0, maxWidth: 720, gap: spacing.md },
+  reading: { width: "100%", minWidth: 0, maxWidth: 960, gap: spacing.lg, backgroundColor: colors.white, padding: spacing.xl, borderRadius: 12 },
   readingTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.title }, lead: { fontFamily: chineseFont, color: colors.ink, ...readingType.body },
-  checklist: { marginVertical: spacing.md }, point: { flexDirection: "row", gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingVertical: spacing.lg },
-  pointNumber: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta, paddingTop: spacing.xs }, pointCopy: { flex: 1, minWidth: 0, gap: spacing.sm },
+  checklist: { marginVertical: spacing.md }, point: { flexDirection: "row", gap: spacing.md, borderTopWidth: 1, borderTopColor: colors.softLine, paddingVertical: spacing.lg }, pointCopy: { flex: 1, minWidth: 0, gap: spacing.sm },
   pointTitle: { fontFamily: chineseFont, color: colors.ink, ...workspaceType.section }, body: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool }, meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
-  actions: { alignItems: "flex-start" }, stepControls: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },
-  start: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.lg, backgroundColor: colors.paleTeal, padding: spacing.lg, borderRadius: radius.medium }, startCopy: { flex: 1, flexBasis: 260, minWidth: 0, gap: spacing.sm },
-  previewFooter: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md, gap: spacing.sm, alignItems: "flex-start" }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
+  actions: { alignItems: "flex-start" }, stepControls: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", gap: spacing.sm, borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
 });

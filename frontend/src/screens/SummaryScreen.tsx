@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import { Redirect, useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { StyleSheet, View, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
+import { JournalSection } from "../components/journal/JournalLayout";
 import { ChildOverviewConcerns } from "../components/child-overview/ChildOverviewConcerns";
 import { ChildOverviewContent } from "../components/child-overview/ChildOverviewContent";
 import { GrowthArchive } from "../components/growth/GrowthArchive";
@@ -67,7 +68,7 @@ export function SummaryScreen() {
   }
   if (pathname !== "/summary") return null;
   if (tab === "preparation") return <Redirect href="/growth?tab=preparation" />;
-  return <PageFrame density="compact" title="概況" scrollRef={scrollRef} scrollTestID="child-growth-scroll">
+  return <PageFrame density="compact" title="孩子手冊" description="先看孩子的生活脈絡，再回看近期記錄、持續關注和已整理的文件。" scrollRef={scrollRef} scrollTestID="child-growth-scroll">
     <View key={scopeKey} ref={layout.ref} onLayout={layout.onLayout} style={styles.workspace}>
       <UnderlineTabs<SummaryTab> id="child-growth-tabs" label="概況與成長檔案" items={[{ key: "overview", label: "概況" }, { key: "archive", label: "成長檔案" }]} value={tab === "legacy-preparation" ? "overview" : tab} onChange={changeTab} />
       {!child ? <View style={styles.empty}><Text style={styles.body}>先選擇孩子。</Text><AppButton label="查看子女檔案" variant="secondary" onPress={() => guarded(() => router.push("/profile"))} /></View> : <>
@@ -81,13 +82,13 @@ export function SummaryScreen() {
           </> : null}
         </AppTabPanel>
         <AppTabPanel tabsId="child-growth-tabs" tabKey="archive" active={tab === "archive"}>
-          {tab === "archive" ? growth ? <>
+          {tab === "archive" ? growth ? <JournalSection title="成長文件目錄" description="閱讀已整理的文件、核對版本，或回到原始記錄。" action={<AppButton label="開啟到診準備" variant="secondary" onPress={() => guarded(() => router.push("/growth?tab=preparation"))} />}>
             <GrowthArchive key={growth.scopeKey} model={growth.model} wide={layout.width >= 880} scrollRef={scrollRef} active
               onRecord={id => guarded(() => router.push(id ? `/care?record=${encodeURIComponent(id)}` : "/care"))}
               onExportReport={fileExportAvailable ? documents?.exportReport : undefined} exportBusy={documents?.exportBusy}
               footerActions={<AppButton label="前往原始記錄" variant="secondary" density="compact" onPress={() => guarded(() => router.push("/care"))} />} />
             <FamilyReportControls scopeKey={growth.scopeKey} online={growth.model.online} onRefresh={growth.actions.refresh} />
-          </> : <ReadStateNotice state="loading" scopeKey={scopeKey} message="正在讀取成長檔案…" /> : null}
+          </JournalSection> : <ReadStateNotice state="loading" scopeKey={scopeKey} message="正在讀取成長檔案…" /> : null}
         </AppTabPanel>
         {tab === "legacy-preparation" ? <TaskKnowledgeSummaryContent preparation onRecord={id => guarded(() => router.push(`/care?record=${encodeURIComponent(id)}`))}
           onTask={id => guarded(() => router.push(`/tasks?taskId=${encodeURIComponent(id)}`))} onAgent={() => actions.prepareQuestion("想核對這份到診準備的問題與來源：")} /> : null}

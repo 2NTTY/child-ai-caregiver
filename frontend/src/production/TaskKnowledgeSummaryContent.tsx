@@ -8,7 +8,6 @@ import { ReadStateNotice } from "../components/ReadStateNotice";
 import { AppDateField, AppTimeZoneSelect } from "../components/DateTimeFields";
 import { AppButton, AppSelect, SectionCard, SectionHeader } from "../components/ui";
 import { PreparationCard } from "../components/summary/PreparationCard";
-import { ChildOverviewRecentRecords } from "../components/child-overview/ChildOverviewRecentRecords";
 import { SummaryRecords } from "../components/summary/SummaryRecords";
 import { SummaryDisclosure } from "../components/summary/SummaryDisclosure";
 import { summaryPeriodSchema } from "../components/summary/summary-form";
@@ -22,24 +21,19 @@ export function TaskKnowledgeSummaryContent({ preparation = false, presentation 
 }) {
   const owner = useProductionTaskKnowledgeSummary();
   const [open, setOpen] = useState(false), navigate = usePreviewNavigation();
-  const [reviewScope, setReviewScope] = useState<string | null>(null);
-  useEffect(() => { setReviewScope(null); }, [owner?.model.scopeKey, owner?.model.access === "lost", scopeKey, childId]);
   const latest = useRef(owner); latest.current = owner;
   useEffect(() => () => { const value = latest.current; if (value?.model.dirty && !value.model.pending && !value.model.busy) value.actions.discard(); }, []);
   if (!owner) return <ReadStateNotice state="loading" message="正在讀取摘要…" />;
   const { model, actions } = owner, page = model.page;
   const compact = presentation === "overview" && !preparation;
   if (compact && (!scopeKey || !childId || model.scopeKey !== scopeKey || page && page.childId !== childId)) return <Text style={s.body}>正在核對這位孩子的生活記錄來源…</Text>;
-  if (compact && model.access === "lost") return <ChildOverviewRecentRecords model={model} scopeKey={scopeKey!} childId={childId!} onRecord={onRecord} onReview={() => {}} />;
-  const reviewVisible = compact && reviewScope === model.scopeKey && model.access !== "lost";
-  // Closing a read-only sheet retains the mounted owner and its original operation.
-  const closeReview = () => navigate(() => { if (latest.current?.model.scopeKey === model.scopeKey) setReviewScope(null); }, "workspace");
+  if (compact && model.access === "lost") return <Text accessibilityRole="alert" style={s.body}>已無權讀取這位孩子的生活記錄。</Text>;
   const emptyReady = !!page && model.online && !model.readFailed && !model.pending && model.access !== "lost"
     && (model.operation === "none" || model.operation === "saved");
   const canRetry = model.online && !model.busy && !model.readFailed && model.access === "editable" && !!page?.canManage && !!model.pending?.checked && !model.pending.confirmed;
   const locked = model.busy || !!model.pending || model.access === "lost";
   const quietRead = model.busy && emptyReady;
-  const summaryContent = <SectionCard><SectionHeader density="compact" title={preparation ? "單一到診準備" : "已確認照顧摘要"} subtitle={model.dataLabel}
+  const summaryContent = <SectionCard><SectionHeader density="compact" title={preparation ? "單一到診準備" : "近期記錄與安排"} subtitle={model.dataLabel}
       action={model.readFailed || model.pending ? <AppButton label={model.pending ? "查原收據及更新摘要" : "重新讀取摘要"} variant="secondary" density="compact" disabled={!model.online || model.busy || model.access === "lost" || !summaryPeriodSchema.safeParse(model.query).success} onPress={actions.refresh} /> : undefined} />
       <SummaryDisclosure label="選擇摘要期間" scopeKey={model.scopeKey}>
         <AppDateField label="摘要開始日" value={model.query.startDay} disabled={locked} preserveFocusWhenDisabled={quietRead} onChange={startDay => actions.updateQuery({ ...model.query, startDay })} />
@@ -68,13 +62,8 @@ export function TaskKnowledgeSummaryContent({ preparation = false, presentation 
         <AppButton label="明確重試原到診準備保存" disabled={!canRetry || !model.originalConsent} onPress={actions.retryOriginal} /></> : null}
     </SectionCard> : null;
   return <View style={s.stack}>
-    {compact ? <ChildOverviewRecentRecords model={model} scopeKey={scopeKey!} childId={childId!} onRecord={onRecord} onReview={() => setReviewScope(model.scopeKey)} /> : summaryContent}
-    {!reviewVisible ? pendingContent : null}
-    {compact ? <AppDialog visible={reviewVisible} onDismiss={closeReview} accessibilityLabel="完整回顧" style={{ maxWidth: 880 }}>
-      <AppDialog.Title>完整回顧</AppDialog.Title>
-      <AppDialog.ScrollArea><AppScrollView contentContainerStyle={s.stack}>{summaryContent}{pendingContent}</AppScrollView></AppDialog.ScrollArea>
-      <AppDialog.Actions><AppButton label="關閉完整回顧" variant="quiet" onPress={closeReview} /></AppDialog.Actions>
-    </AppDialog> : null}
+    {summaryContent}
+    {pendingContent}
     <AppDialog visible={open && !!page && model.access !== "lost"} onDismiss={() => navigate(() => { actions.discard(); setOpen(false); })} accessibilityLabel="家庭共享到診準備">
       <AppDialog.Title>家庭共享到診準備</AppDialog.Title>
       <AppDialog.ScrollArea><AppScrollView>

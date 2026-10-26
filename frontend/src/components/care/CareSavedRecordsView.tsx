@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { careKindOptions, type CareFilter, type CareRecordsActions, type CareRecordsViewModel } from "../../care-view-model";
-import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
+import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { AppButton, AppSelect, AppTextField } from "../ui";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppIcon } from "../AppIcon";
@@ -41,9 +41,9 @@ function CareSavedRecordsBody({ model, actions, inlineDetail = true, history = f
   if (!history && inlineDetail && model.deletion) return <CareRecordDelete model={model} actions={actions} />;
   if (!history && inlineDetail && model.detail) return <CareRecordDetail detail={model.detail} actions={actions} canEdit={model.access === "editable"} online={model.online} />;
   return <><View ref={history ? listRef : undefined} tabIndex={history ? -1 : undefined} accessibilityLabel={history ? "已保存照顧記錄清單" : undefined} testID={history ? "care-history-list" : undefined} style={s.workspace}>
-    {showSearch ? <><AppTextField label="搜尋已保存記錄" accessibilityLabel="搜尋已保存記錄" value={query} onChangeText={setQuery} maxLength={200} disabled={occupied} />
+    {showSearch ? <View style={s.searchToolbar}><View style={s.searchField}><AppTextField label="搜尋已保存記錄" accessibilityLabel="搜尋已保存記錄" placeholder="記錄內容或來源…" value={query} onChangeText={setQuery} maxLength={200} disabled={occupied} /></View>
     <View style={s.controls}><View style={s.filter}><AppSelect<CareFilter> label="種類" value={kind} options={[{ value: "all", label: "全部" }, ...careKindOptions]} onChange={setKind} disabled={occupied} /></View>
-      <AppButton label="搜尋" density="compact" disabled={occupied || loading || !model.online} onPress={() => actions.search(query, kind)} /></View></> : null}
+      <AppButton label="搜尋" density="compact" disabled={occupied || loading || !model.online} onPress={() => actions.search(query, kind)} /></View></View> : null}
     <ReadStateNotice state={readState} message={readMessage}>
       {(model.list.state === "error" || model.list.state === "stale") ? <AppButton label="重新讀取記錄" density="compact" variant="quiet" disabled={occupied || loading || !model.online} onPress={() => actions.search(model.list.activeQuery, model.list.activeKind)} /> : null}
       {empty && filtered ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied || loading || !model.online} onPress={() => { if (occupied || loading || !model.online) return; setQuery(""); setKind("all"); actions.search("", "all"); }} /> : null}
@@ -69,9 +69,21 @@ function CareSavedRecordsBody({ model, actions, inlineDetail = true, history = f
 }
 function SavedRecordCard({ id, label, disabled, quietRefresh, onPress, children }: { id: string; label: string; disabled: boolean; quietRefresh: boolean; onPress(): void; children: ReactNode }) {
   const readFocus = useQuietReadFocus(disabled, quietRefresh);
+  const [focused, setFocused] = useState(false);
   return <Pressable ref={readFocus.host} testID={`care-saved-card-${id}`} accessibilityRole="button" accessibilityLabel={label}
-    accessibilityState={{ disabled }} aria-disabled={disabled} disabled={readFocus.nativeDisabled} onPress={() => { if (!disabled) onPress(); }} style={s.row}>{children}</Pressable>;
+    accessibilityState={{ disabled }} aria-disabled={disabled} disabled={readFocus.nativeDisabled} onPress={() => { if (!disabled) onPress(); }}
+    onFocus={() => setFocused(true)} onBlur={() => setFocused(false)} style={({ pressed }) => [s.row, focused && s.focused, pressed && !disabled && s.pressed]}>{children}</Pressable>;
 }
 function savedRecordAccessibilityLabel(text: string) { const characters = Array.from(text); return `查看${characters.slice(0, 100).join("")}${characters.length > 100 ? "…" : ""}`; }
 function SavedRecordsGrid({ history, children }: { history: boolean; children: ReactNode }) { return history ? <HistoryCardGrid testID="care-history-cards">{children}</HistoryCardGrid> : <>{children}</>; }
-const s = StyleSheet.create({ historyCard: { padding: spacing.md, borderRadius: radius.medium }, workspace: { gap: spacing.md }, controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center" }, filter: { flexGrow: 1, minWidth: 0 }, row: { padding: spacing.md, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.controlSurface, gap: spacing.sm }, recordLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }, recordKind: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, flexShrink: 1 }, recordText: { fontFamily: chineseFont, ...readingType.body, color: colors.ink }, title: { fontFamily: chineseFont, ...readingType.tool, fontWeight: "700", color: colors.ink }, body: { fontFamily: chineseFont, ...readingType.tool, color: colors.ink }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted } });
+const s = StyleSheet.create({
+  historyCard: { paddingVertical: spacing.lg }, workspace: { gap: spacing.md, minWidth: 0 },
+  searchToolbar: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.line },
+  searchField: { flexGrow: 1, flexBasis: 240, minWidth: 0, maxWidth: "100%" },
+  controls: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, alignItems: "center", maxWidth: "100%" }, filter: { flexGrow: 1, minWidth: 0 },
+  row: { paddingVertical: spacing.lg, paddingHorizontal: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, borderLeftWidth: 3, borderLeftColor: "transparent", backgroundColor: colors.paper, gap: spacing.sm },
+  focused: { borderLeftColor: colors.teal, backgroundColor: colors.paleTeal }, pressed: { backgroundColor: colors.paleTeal },
+  recordLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
+  recordKind: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted, flexShrink: 1 }, recordText: { fontFamily: chineseFont, ...readingType.body, color: colors.ink },
+  title: { fontFamily: chineseFont, ...readingType.tool, fontWeight: "700", color: colors.ink }, body: { fontFamily: chineseFont, ...readingType.tool, color: colors.ink }, meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted },
+});

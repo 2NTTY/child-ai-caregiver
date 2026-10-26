@@ -5,6 +5,7 @@ import { useContainerWidth } from "../useContainerWidth";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
+import { JournalSection } from "../journal/JournalLayout";
 import { AppButton, SectionCard, SectionHeader, TextLink } from "../ui";
 import { profileDataFromForm, type ProfileActions, type ProfileViewModel } from "../../profile-view-model";
 import { chineseFont, colors, radius, spacing, typeScale , readingType } from "../../theme";
@@ -63,10 +64,10 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
       <View style={styles.identityRow}>
         {model.child ? <View style={styles.identity}>
           <View style={styles.avatar} importantForAccessibility="no-hide-descendants"><Text style={styles.avatarText}>{model.child.name.slice(0, 1)}</Text></View>
-          <View style={styles.identityCopy}><Text accessibilityRole="header" style={styles.childName}>{model.child.name}</Text>
+          <View style={styles.identityCopy}><Text accessibilityRole="header" aria-level={2} style={styles.childName}>{model.child.name}</Text>
             <AppStatusBadge label={model.current?.data ? "已確認檔案" : model.reading ? "正在讀取檔案" : "尚未確認檔案"} tone={model.current?.data ? "success" : model.reading ? "info" : "warning"} />
           </View>
-        </View> : <Text accessibilityRole="header" style={styles.childName}>尚未有孩子</Text>}
+        </View> : <Text accessibilityRole="header" aria-level={2} style={styles.childName}>尚未有孩子</Text>}
         {model.access === "editable" ? <ManualFormDialog openRequest={openRequest ? { ...openRequest, scopeKey } : undefined} formKey={model.formKey} label={model.child ? "編輯檔案" : "填寫檔案"} title="編輯孩子檔案" scopeKey={scopeKey} disabled={childDeletionActive} onClose={actions.discardDraft} recovery={writeNotice}><View style={styles.editor}><SectionHeader density="compact" title={model.child ? "核對檔案草稿" : "本地檔案草稿"}
           subtitle={model.child ? `修改基準：版本 ${model.basis?.version ?? 0}；更正會新增版本。` : "僅作前端草稿，不建立真孩子或家庭共享資料。"} />
           <ProfileForm key={model.formKey} initialValues={model.initialValues} editable={editable}
@@ -105,25 +106,25 @@ export function ProfileView({ model, actions: sourceActions, childPicker, writeN
           <TextLink label="開啟核對" onPress={onOpenCare} />
         </View>
         <MotionDisclosure expanded={detailsOpen} scopeKey={scopeKey} testID="profile-details-disclosure">
-          <SectionCard style={styles.details}>
+          <JournalSection title="資料來源與版本" style={styles.details}>
             {model.current ? <ProfileRevisionDetails revision={model.current} /> : <Text style={styles.meta}>尚未取得可顯示的檔案詳情。</Text>}
-          </SectionCard>
+          </JournalSection>
         </MotionDisclosure>
       </> : <SectionCard><Text style={styles.body}>新增孩子後，可以在這裏核對檔案。</Text></SectionCard>}
-      <View style={styles.management}>{childPicker}</View>
+      <JournalSection title="孩子與檔案管理" description="頭像、建立孩子及管理操作在這裏處理；不改動上方已確認的檔案。" style={styles.management}>{childPicker}</JournalSection>
       {previewControls}
     </View>
   </>);
 }
 const styles = StyleSheet.create({
-  identityRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.md, minWidth: 0 },
+  identityRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: spacing.lg, minWidth: 0, padding: spacing.lg, backgroundColor: colors.paleTeal, borderRadius: radius.small },
   identity: { flexDirection: "row", alignItems: "center", gap: spacing.md, flexGrow: 1, flexShrink: 1, minWidth: 0 },
   avatar: { width: 48, height: 48, flexShrink: 0, borderRadius: radius.medium, backgroundColor: colors.paleTeal, alignItems: "center", justifyContent: "center" },
   avatarText: { fontFamily: chineseFont, color: colors.deepTeal, fontSize: typeScale.title, fontWeight: "700" },
   identityCopy: { flex: 1, minWidth: 0, gap: spacing.xs, alignItems: "flex-start" },
   childName: { fontFamily: chineseFont, color: colors.ink, fontSize: typeScale.title, lineHeight: 30, fontWeight: "700", flexShrink: 1 },
   editor: { gap: spacing.md },
-  reading: { width: "100%", maxWidth: 960, gap: spacing.lg, minWidth: 0 },
+  reading: { width: "100%", gap: spacing.lg, minWidth: 0 },
   readingActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", columnGap: spacing.md, rowGap: spacing.sm, minWidth: 0 },
   details: { gap: spacing.lg },
   management: { borderTopWidth: 1, borderTopColor: colors.softLine, paddingTop: spacing.md },

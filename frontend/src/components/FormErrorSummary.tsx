@@ -14,7 +14,7 @@ export function FormErrorSummary({ entries, onFocus }: {
   const message = entries.length ? `有 ${entries.length} 項資料需要修正。${entries.map(item => `${item.label}：${item.message}`).join(" ")}` : "";
   return <><StatusAnnouncement eventKey={message} message={message} urgent />
     {entries.length ? <View testID="form-error-summary" style={styles.summary}>
-      <Text accessibilityRole="header" style={styles.heading}>請修正以下資料</Text>
+      <Text accessibilityRole="header" aria-level={2} style={styles.heading}>請修正以下資料</Text>
       {entries.map(item => <AppButton key={item.field} label={`${item.label}：${item.message}`} accessibilityLabel={`修正${item.label}`} variant="quiet" density="compact" onPress={() => onFocus(item.field)} />)}
     </View> : null}</>;
 }

@@ -7,7 +7,7 @@ import { Dialog as PaperDialog } from "react-native-paper";
 import { chineseFont, colors, radius, spacing, typeScale } from "../theme";
 
 function Title({ danger = false, style, ...props }: ComponentProps<typeof PaperDialog.Title> & { danger?: boolean }) {
-  return <PaperDialog.Title {...props} style={[styles.title, danger && styles.dangerTitle, style]} />;
+  return <PaperDialog.Title aria-level={2} {...props} style={[styles.title, danger && styles.dangerTitle, style]} />;
 }
 
 function Actions({ style, ...props }: ComponentProps<typeof PaperDialog.Actions>) {

@@ -1,3 +1,4 @@
+import { JournalSection } from "../journal/JournalLayout";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import {useEffect, useLayoutEffect, useRef, useState} from 'react';
@@ -83,7 +84,7 @@ function ContactConsentForm({model, actions, onSettings}: ContactConsentProps) {
     {!page.availableBindings.length ? <Text style={s.meta}>目前沒有可選的本人綁定；先到設定綁定渠道。仍可撤回已有同意。</Text> : null}
     <AppCheckbox label="允許透過以下本人渠道接收一般任務提示" checked={values.enabled} disabled={!editable} onChange={value => {setValue('enabled', value, {shouldDirty: true}); edit();}} />
     <AppCheckbox label="我也同意具備這個孩子的後備接收資格" checked={values.allowBackup} disabled={!editable || !values.enabled} onChange={value => {setValue('allowBackup', value, {shouldDirty: true}); edit();}} />
-    <Text style={s.title}>已綁定渠道 · 每種最多一個</Text>
+    <JournalSection title="選擇接收渠道" description="每種渠道最多一個；下方次序只用於已明確授權的失敗切換。">
     {page.availableBindings.map(binding => <AppCheckbox key={`${binding.channel}:${binding.bindingId}`} ref={node => {const id = `${binding.channel}:${binding.bindingId}`; if (node) choiceRefs.current.set(id, node); else choiceRefs.current.delete(id);}} label={`${contactChannelLabels[binding.channel]} · ${binding.label}`} checked={values.bindings.some(item => sameContactBinding(item, binding))} disabled={!editable || !values.enabled} onChange={value => choose(binding, value)} />)}
     <View ref={listFocusRef} tabIndex={-1}><MotionList items={values.bindings.map((binding, index) => ({...binding, index}))} keyExtractor={binding => `${binding.channel}:${binding.bindingId}`} scopeKey={listScope} regionKey="contact-consent-bindings" eligible={editable} style={s.stack} onBeforeExitFocus={removed => !!bindingFocus.current && bindingFocus.current.kind === 'remove' && bindingFocus.current.scope === listScope && removed.includes(bindingFocus.current.sourceId)} renderItem={(binding, {exiting}) => {
       const index = values.bindings.findIndex(item => sameContactBinding(item, binding));
@@ -91,11 +92,13 @@ function ContactConsentForm({model, actions, onSettings}: ContactConsentProps) {
         <View style={s.row}><AppButton label={`向前移動${contactChannelLabels[binding.channel]}`} variant="quiet" disabled={!editable || !values.enabled || index <= 0 || exiting} onPress={() => moveForward(binding)} />
           <AppButton ref={node => {const id = `${binding.channel}:${binding.bindingId}`; if (node) removeRefs.current.set(id, node); else removeRefs.current.delete(id);}} label={`移除${contactChannelLabels[binding.channel]}接收選項`} variant="quiet" disabled={!editable || !values.enabled || index < 0 || exiting} onPress={() => choose(binding, false)} /></View></View>;
     }} /></View>
+    </JournalSection>
     <Text style={s.meta}>只在渠道明確拒絕、且任務已授權切換時，才按上述次序嘗試下一個；處理中或結果未知不盲目重送。</Text>
     {!values.enabled ? <Text style={s.body}>保存撤回時，後備同意及接收次序會一併清除；不會刪除設定中的渠道綁定。</Text> : null}
     {!parsed.success ? <HelperText type="error">{parsed.error.issues[0]?.message}</HelperText> : null}
     {stale ? <View style={s.box}><Text style={s.warning}>本人同意版本已改變。原選項保留，請核對上方最新狀態及目前渠道。</Text><AppCheckbox label="我已核對本人同意的最新版本與渠道" checked={adopt} disabled={!editable} onChange={setAdopt} /><AppButton label="保留選項並採用最新同意版本" variant="secondary" disabled={!editable || !adopt} onPress={() => {basis.current = page.consent.version; edit();}} /></View> : null}
-    <AppCheckbox label="我確認保存以上本人接收及後備同意" checked={confirm} disabled={!editable || stale || !parsed.success} onChange={setConfirm} />
+    <JournalSection title="確認這次同意" description="選項保存後才生效；不會在此發送通知。"><AppCheckbox label="我確認保存以上本人接收及後備同意" checked={confirm} disabled={!editable || stale || !parsed.success} onChange={setConfirm} />
     <AppButton label="確認保存本人接收同意" disabled={!editable || stale || !parsed.success || !confirm} onPress={handleSubmit(value => {actions.markDirty('consent'); const input = contactConsentProjection(value, basis.current); actions.save({kind: 'consent', input}, [input.enabled ? '允許本人接收一般提示' : '撤回本人接收同意', input.allowBackup ? '同意後備資格' : '沒有後備資格', `渠道次序：${input.bindings.map(item => contactChannelLabels[item.channel]).join(' → ') || '沒有'}`]);})} />
+    </JournalSection>
   </>;
 }

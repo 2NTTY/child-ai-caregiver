@@ -11,7 +11,7 @@ import { spacing } from "../../theme";
 const eventLabels = {agent_proposal: "助手提議", observation: "原始觀察", pending_record: "待核對記錄", confirmed_action: "已確認操作"};
 const concernLabels = {proposed: "待家長核對", following: "持續關注", closed: "已結束"};
 export function GrowthConcernIndex({items, selectedId, onSelect}: {items: GrowthConcern[]; selectedId: string | null; onSelect: (id: string) => void}) {
-  return <View style={s.concernIndex}><Text style={s.eyebrow}>關注索引</Text>{items.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`查看關注：${item.title}`} aria-current={selectedId === item.id ? "true" : undefined} onPress={() => onSelect(item.id)} style={({pressed}) => [s.concernRow, selectedId === item.id && s.concernSelected, pressed && (selectedId === item.id ? s.selectedPressed : s.pressed)]}>
+  return <View style={s.concernIndex}>{items.map(item => <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`查看關注：${item.title}`} accessibilityState={{ selected: selectedId === item.id }} aria-current={selectedId === item.id ? "true" : undefined} onPress={() => onSelect(item.id)} style={({pressed}) => [s.concernRow, selectedId === item.id && s.concernSelected, pressed && (selectedId === item.id ? s.selectedPressed : s.pressed)]}>
     <View style={s.row}><Text style={[s.title, {flex: 1}]}>{item.title}</Text><AppIcon name="chevron-right" size={16} /></View><AppStatusBadge label={concernLabels[item.status]} tone={item.status === "proposed" ? "warning" : item.status === "following" ? "info" : "neutral"} />{selectedId === item.id ? <Text style={s.meta}>正在查看</Text> : null}
   </Pressable>)}</View>;
 }
@@ -20,7 +20,8 @@ export function GrowthConcernTimeline({concern, page, onRecord, onTask}: {concer
   const followUpLabel = growthConcernFollowUpLabel(concern);
   return <View style={s.timelinePanel} testID="growth-concern-timeline" accessibilityLabel={`關注：${concern.title}`}>
     <View style={s.concernHeading} testID="growth-concern-summary">
-      <View style={s.row}><Text accessibilityRole="header" style={s.eyebrow}>關注說明</Text><AppStatusBadge label={concernLabels[concern.status]} tone={concern.status === "proposed" ? "warning" : concern.status === "following" ? "info" : "neutral"} /></View>
+      <View style={s.row}><AppStatusBadge label={concernLabels[concern.status]} tone={concern.status === "proposed" ? "warning" : concern.status === "following" ? "info" : "neutral"} /></View>
+      <Text accessibilityRole="header" aria-level={2} style={s.concernTitle}>{concern.title}</Text>
       <Text style={s.concernSummary}>{concern.reason}</Text>
     </View>
     {followUpLabel ? <Text style={s.meta}>{followUpLabel}</Text> : null}

@@ -10,6 +10,7 @@ import { platformPolicyValuesSchema, type AdminCommand, type AdminInvitation, ty
 import { PageFrame } from '../components/PageFrame';
 import { AppButton, AppTextField, SectionHeader } from '../components/ui';
 import { useProduction } from '../production/ProductionProvider';
+import { JournalColumns, JournalMain, JournalAside } from '../components/journal/JournalLayout';
 import { colors, spacing } from '../theme';
 
 const fields = [
@@ -75,7 +76,7 @@ export default function AdminScreen() {
       {state.notice ? <Text>{state.notice}</Text> : null}
       <AppButton label="重新核對登入及權限" disabled={!online || state.access === 'loading'} onPress={() => { void refresh(); if (userId) void admin.checkAccess(); }} /></View>
     : <>
-      <Text>目前管理員：{user?.email}。所有管理寫入需在最近五分鐘內驗證登入。</Text>
+      <View style={styles.identity}><Text>目前管理員：{user?.email}</Text><Text style={styles.note}>管理寫入前，先以本人密碼重新驗證。驗證有效期為五分鐘。</Text></View>
       <View style={styles.card}><SectionHeader title="重新驗證登入" />
         <AppTextField label="本人登入密碼" accessibilityLabel="本人登入密碼" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" disabled={locked} />
         <AppButton label="重新驗證" disabled={!password || !online || state.busy || reauthBusy} loading={reauthBusy} onPress={() => { void reauthenticate(); }} />
@@ -86,7 +87,7 @@ export default function AdminScreen() {
         <AppButton label="查回原操作" disabled={state.busy || !online} onPress={() => { void admin.recover(); }} />
         <AppButton label="以同一 ID 重送原操作" variant="secondary" disabled={state.busy || !online} onPress={() => { void admin.retryOriginal(); }} />
       </View> : null}
-      <View style={styles.card}><SectionHeader title="邀請資格" subtitle="預設七天；對方仍需使用相同電郵註冊及驗證。" />
+      <JournalColumns><JournalMain><View style={styles.card} testID="admin-invitations-workspace"><SectionHeader title="邀請資格" subtitle="預設七天；對方仍需使用相同電郵註冊及驗證。" />
         <Controller control={invitationForm.control} name="email" render={({ field, fieldState }) => <><AppTextField label="受邀電郵" value={field.value} onChangeText={field.onChange} onBlur={field.onBlur} autoCapitalize="none" keyboardType="email-address" disabled={locked} error={!!fieldState.error} />{fieldState.error ? <Text>請填有效電郵。</Text> : null}</>} />
         <Controller control={invitationForm.control} name="days" render={({ field, fieldState }) => <><AppTextField label="有效天數（1–90）" value={String(field.value ?? '')} onChangeText={value => field.onChange(value === '' ? NaN : Number(value))} keyboardType="number-pad" disabled={locked} error={!!fieldState.error} />{fieldState.error ? <Text>請填 1 至 90 的整數。</Text> : null}</>} />
         <AppButton label="確認發出／續期邀請" disabled={locked} onPress={invitationForm.handleSubmit(value => submit({ kind: 'invite', opId: crypto.randomUUID(), email: value.email.trim().toLowerCase(), expiresAt: new Date(Date.now() + value.days * 86400000).toISOString() }))} />
@@ -109,7 +110,7 @@ export default function AdminScreen() {
           <AppButton label="確認撤銷此邀請" variant="danger" disabled={locked} onPress={() => { submit({ kind: 'revoke', email: revoke.email, opId: crypto.randomUUID() }); setRevoke(null); }} />
           <AppButton label="保留邀請" variant="quiet" onPress={() => setRevoke(null)} /></View> : null}
       </View>
-      <View style={styles.card}><SectionHeader title="平台 AI 與限額" />
+      </JournalMain><JournalAside><View style={styles.card} testID="admin-policy-workspace"><SectionHeader title="平台 AI 與限額" />
         {state.overview ? <>
           <Text>生效版本 {state.overview.policy.version} · 模型 {state.overview.policy.model}</Text>
           {policyForm.formState.isDirty ? <View style={styles.row}>
@@ -129,7 +130,7 @@ export default function AdminScreen() {
           <AppButton label="確認並保存全站設定" disabled={locked || !policyForm.formState.isDirty} onPress={policyForm.handleSubmit(values => submit({ kind: 'policy', opId: crypto.randomUUID(), expectedVersion: state.overview!.policy.version, values }))} />
         </> : <Text>尚未取得設定；不能保存。</Text>}
       </View>
-      <View style={styles.card}><SectionHeader title="實際用量與管理紀錄" />
+      </JournalAside></JournalColumns><View style={styles.card} testID="admin-usage-workspace"><SectionHeader title="實際用量與管理紀錄" />
         <AppTextField label="用量日期（UTC，YYYY-MM-DD）" value={day} onChangeText={setDay} disabled={state.busy} />
         <AppButton label="重新讀取設定、列表及用量" variant="secondary" disabled={state.busy || !online} onPress={() => { void admin.load(day); }} />
         {state.usage ? (['platform', 'personal'] as const).map(source => <View key={source} style={styles.row}><Text>{source === 'platform' ? '平台' : '本人 key 共用'} · {state.usage![source].day}（UTC）</Text>
@@ -140,6 +141,6 @@ export default function AdminScreen() {
     </>}
   </PageFrame>;
 }
-const styles = StyleSheet.create({ card: { padding: spacing.lg, gap: spacing.md, backgroundColor: colors.white, borderRadius: 16, borderWidth: 1, borderColor: colors.softLine },
+const styles = StyleSheet.create({ identity: { backgroundColor: colors.paleTeal, padding: spacing.lg, gap: spacing.sm, borderLeftWidth: 4, borderLeftColor: colors.teal }, card: { padding: spacing.xl, gap: spacing.lg, backgroundColor: colors.white, borderRadius: 12, borderWidth: 1, borderColor: colors.softLine },
   row: { gap: spacing.sm, paddingVertical: spacing.md, borderTopWidth: 1, borderColor: colors.softLine },
   actions: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: spacing.md }, note: { color: colors.muted }, notice: { color: colors.ink } });

@@ -21,7 +21,7 @@ export default function MemoryPage() {
   } : undefined;
   const tabActions = child ? <><TaskKnowledgeMemoryManagement key={memory?.value.scopeKey ?? "no-memory-scope"} />
     {memory?.failed ? <AppButton label={memory.busy ? "讀取中…" : "重試讀取"} accessibilityLabel={memory.busy ? "正在讀取記憶" : "重新讀取記憶"} variant="secondary" density="compact" disabled={!online || memory.busy || memory.lost} onPress={memory.refresh} /> : null}</> : undefined;
-  return <PageFrame density="compact" title="記憶">
+  return <PageFrame density="compact" title="參考手冊" description="按主題閱讀已確認的記憶，保留原來源與適用範圍；對話摘要和公開參考分開查看。">
     {child ? <><MemoryReferenceView tabActions={tabActions} confirmerDisplay={confirmerDisplay} onPrepareQuestion={actions.prepareQuestion} />
       {memory?.lost ? <BackgroundSurface padded><Text>孩子存取已失效，舊記憶及私人摘要已清除。</Text></BackgroundSurface> : memory?.failed ? <BackgroundSurface padded><Text>最新記憶未能核對；已載入內容可能過時。</Text></BackgroundSurface> : null}
     </> : <ReadStateNotice state="empty" title="先選擇孩子" message="選擇孩子後才可查看對應記憶與參考。"><AppButton label="查看子女檔案" onPress={() => actions.open("profile")} /></ReadStateNotice>}

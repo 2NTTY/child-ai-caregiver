@@ -16,7 +16,7 @@ import { CareRecordDetail } from "./CareRecordDetail";
 import { CareRecordDelete } from "./CareRecordDelete";
 import { CareSavedRecordsList } from "./CareSavedRecordsView";
 import { CareReviewPagination } from "./CareReviewPagination";
-import { BackgroundSurface, useCustomBackground } from "../appearance/BackgroundSurface";
+import { BackgroundSurface } from "../appearance/BackgroundSurface";
 
 export type CareReviewStatusFilter = "all" | "written" | "important_pending" | CareCaptureReview["reviewState"];
 type Props = { pendingReview?: { content: ReactNode; loadedCount?: string }; model: CareRecordsViewModel; actions: CareRecordsActions; searchText?: string; initialStatus?: CareReviewStatusFilter; olderOnly?: boolean; initialRecordId?: string; onOlderPending?: () => void; onHistory?: () => void; manualCreateFocusRef?: RefObject<View | null>; manualCreateAction?: ReactNode };
@@ -41,7 +41,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [recordOpen, setRecordOpen] = useState(false);
   const tabsId = useId(), layout = useContainerWidth(), wide = layout.width >= 760;
-  const customBackground = useCustomBackground(), compactToolbar = !!manualCreateAction && layout.width < 360;
+  const compactToolbar = !!manualCreateAction && layout.width < 360;
   const returnToCreate = useRef(false);
   if (model.draft) returnToCreate.current = model.draft.mode === "create" && !model.draft.captureSnapshot;
   const panelRef = useRef<View>(null), listRef = useRef<View>(null), focusRequested = useRef(false);
@@ -139,13 +139,14 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
       <AppButton label="重新讀取記錄" density="compact" variant="quiet" disabled={occupied || !model.online} onPress={() => actions.search(model.list.activeQuery, model.list.activeKind)} />
     </ReadStateNotice> : null}
     {(history || !pendingReview || tab !== "pending") && review.state === "ready" && review.notice ? <BackgroundSurface padded><Text accessibilityLiveRegion="polite" style={s.notice}>{review.notice}</Text></BackgroundSurface> : null}
-    {history ? <BackgroundSurface padded style={s.heading}><Text accessibilityRole="header" style={s.title}>{olderOnly ? "較早的核對記錄" : "核對記錄"}</Text><Text style={s.meta}>寫入結果與核對狀態會保留；移到歷史不會清除待確認事項。</Text></BackgroundSurface>
-      : <BackgroundSurface padded style={[s.tabsBar, compactToolbar && s.compactTabsBar, compactToolbar && customBackground && s.edgeTabsBar]} testID="care-review-tabs-bar"><View style={s.tabs}><UnderlineTabs id={tabsId} label="記錄分類" items={[{ key: "pending", label: "待確認", count: pendingReview ? pendingReview.loadedCount : review.state === "ready" ? window.pendingCount : undefined }, { key: "recorded", label: "已保存" }]} value={tab} onChange={changeTab} /></View>
-        {manualCreateAction ? <View style={s.tabAction}>{manualCreateAction}</View> : null}</BackgroundSurface>}
+    {history ? <View style={s.heading}><Text accessibilityRole="header" aria-level={2} style={s.title}>{olderOnly ? "較早的核對記錄" : "核對記錄"}</Text><Text style={s.meta}>寫入結果與核對狀態會保留；移到歷史不會清除待確認事項。</Text></View>
+      : <View style={s.chapterBar}><View style={[s.tabsBar, compactToolbar && s.compactTabsBar]} testID="care-review-tabs-bar"><View style={s.tabs}><UnderlineTabs id={tabsId} label="記錄分類" items={[{ key: "pending", label: "待確認", count: pendingReview ? pendingReview.loadedCount : review.state === "ready" ? window.pendingCount : undefined }, { key: "recorded", label: "已保存" }]} value={tab} onChange={changeTab} /></View>
+        {manualCreateAction ? <View style={s.tabAction}>{manualCreateAction}</View> : null}</View>
+        <Text style={s.chapterDescription}>{tab === "pending" ? "逐項查看助手提出的內容。打開或關閉詳情，都不會代你確認。" : "已確認的照顧記錄。有需要時可更正內容，舊版本仍會保留。"}</Text></View>}
     {!history && !pendingReview && tab === "recorded" && window.importantPendingCount > 0 ? <BackgroundSurface padded style={s.importantReminder}><AppIcon name="clock-outline" size={15} color={colors.warningInk} /><Text style={s.warning}>重要內容仍待確認</Text></BackgroundSurface> : null}
     <ReviewContent history={history} tabsId={tabsId} tab={tab}>
     <View style={[s.columns, !history && wide && showPanel && s.split]}>
-      <BackgroundSurface padded enabled={!history} ref={listRef} tabIndex={-1} style={[s.listColumn, !history && wide && showPanel && s.narrowList, !listVisible && s.hidden]} testID="care-review-list" pointerEvents={listVisible ? "auto" : "none"} aria-hidden={!listVisible} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
+      <View ref={listRef} tabIndex={-1} style={[s.listColumn, !history && wide && showPanel && s.narrowList, !listVisible && s.hidden]} testID="care-review-list" pointerEvents={listVisible ? "auto" : "none"} aria-hidden={!listVisible} accessibilityElementsHidden={!listVisible} importantForAccessibility={listVisible ? "auto" : "no-hide-descendants"}>
         {!history && tab === "recorded" ? <CareSavedRecordsList model={model} actions={{ ...actions, openRecord }} /> : !history && pendingReview ? pendingReview.content : <>
         {showFilters ? <View style={s.filterBar}><Text style={s.filterContext}>{sourceKey === "all" ? history ? "所有已載入對話" : tab === "pending" ? "重要內容優先" : "已保存，有誤時可更正" : sourceGroups.find(group => group.key === sourceKey)?.label ?? "所選對話"}{query ? " · 已搜尋" : ""}</Text>
           <AppButton label={filtersOpen ? "收起篩選" : "篩選"} expanded={filtersOpen} density="compact" variant="quiet" disabled={occupied} onPress={() => { if (!occupied) setFiltersOpen(value => !value); }} />
@@ -164,7 +165,7 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
           {filtered && searchText === undefined ? <AppButton label="清除篩選" variant="quiet" density="compact" disabled={occupied} onPress={() => { if (occupied) return; setLocalQuery(""); setSourceKey("all"); setStatus("all"); }} /> : null}
         </ReadStateNotice> : <View style={s.list}>
           {sections.filter(section => section.items.length).map(section => <View key={section.key} style={s.groupSection}>
-            {section.label ? <Text accessibilityRole="header" style={s.sectionLabel}>{section.label}</Text> : null}
+            {section.label ? <Text accessibilityRole="header" aria-level={2} style={s.sectionLabel}>{section.label}</Text> : null}
             <ReviewCards history={history}>{section.items.map(item => {
               const important = careReviewIsImportantPending(item), selectedRow = selected?.id === item.id;
               const kind = item.writeState === "saved" && item.savedRecord ? item.savedRecord.current.values.kind : item.proposedValues.kind;
@@ -185,11 +186,11 @@ export function CareReviewWorkspace({ model, actions, searchText, initialStatus 
           onPageChange={next => { if (occupied) return; setPage(next); setSelectedId(null); setRecordOpen(false); }} />
         {review.hasMore ? <Text style={s.warning}>仍有核對記錄未載入。</Text> : null}
         </>}
-      </BackgroundSurface>
-      {!history && showPanel ? <BackgroundSurface padded ref={panelRef} tabIndex={-1} style={[s.detailColumn, wide && s.detailDivider]} testID="care-review-detail-panel">
+      </View>
+      {!history && showPanel ? <View ref={panelRef} tabIndex={-1} style={[s.detailColumn, wide && s.detailDivider]} testID="care-review-detail-panel">
         {!model.draft && !model.deletion ? <AppButton label={wide ? "收起內容" : "返回記錄清單"} variant="quiet" density="compact" disabled={occupied} onPress={closeSelection} /> : null}
         {detailContent}
-      </BackgroundSurface> : null}
+      </View> : null}
     </View>
     </ReviewContent>
     {history ? <FormDialog key={readerKey.current} dismissMode={model.draft || model.deletion ? "guarded" : "local"} formKey={model.draft?.key ?? readerKey.current ?? undefined} visible={model.access !== "lost" && !historyClosingToList && (showPanel || !!model.draft)} scopeKey={model.scopeKey ?? model.child.id}
@@ -210,18 +211,20 @@ function ReviewContent({ history, tabsId, tab, children }: { history: boolean; t
 }
 const s = StyleSheet.create({
   workspace: { gap: spacing.md, minWidth: 0 }, heading: { gap: spacing.xs }, title: { fontFamily: chineseFont, ...workspaceType.section, color: colors.ink, fontWeight: "700" },
+  chapterBar: { gap: spacing.md, paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.line },
+  chapterDescription: { fontFamily: chineseFont, color: colors.muted, ...readingType.tool, maxWidth: 720 },
   tabsBar: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minWidth: 0 }, tabs: { flex: 1, minWidth: 0 }, tabAction: { flexShrink: 0 },
   compactTabsBar: { gap: spacing.xs },
   // Only the toolbar borrows the enclosing reading panel's inset; card text keeps its original width.
   edgeTabsBar: { marginHorizontal: -spacing.lg },
   meta: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted }, warning: { fontFamily: chineseFont, ...readingType.meta, color: colors.warningInk }, notice: { fontFamily: chineseFont, ...readingType.tool, color: colors.deepTeal },
   columns: { minWidth: 0, gap: spacing.lg }, split: { flexDirection: "row", alignItems: "flex-start" },
-  listColumn: { minWidth: 0, gap: spacing.md }, narrowList: { flexBasis: "32%", flexGrow: 0, flexShrink: 0 },
-  detailColumn: { minWidth: 0, gap: spacing.sm }, detailDivider: { flexBasis: 0, flexGrow: 1, flexShrink: 1, borderLeftWidth: 1, borderLeftColor: colors.softLine, paddingLeft: spacing.lg }, hidden: { display: "none" },
+  listColumn: { minWidth: 0, gap: spacing.md, backgroundColor: colors.paper, paddingHorizontal: spacing.md, paddingVertical: spacing.sm }, narrowList: { flexBasis: "32%", flexGrow: 0, flexShrink: 0 },
+  detailColumn: { minWidth: 0, gap: spacing.sm, backgroundColor: colors.paper, padding: spacing.md, borderTopWidth: 3, borderTopColor: colors.teal }, detailDivider: { flexBasis: 0, flexGrow: 1, flexShrink: 1 }, hidden: { display: "none" },
   filterBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.sm }, filterContext: { flex: 1, minWidth: 0, fontFamily: chineseFont, ...readingType.meta, color: colors.muted }, filters: { gap: spacing.sm },
   older: { gap: spacing.sm, paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.softLine }, importantReminder: { flexDirection: "row", gap: spacing.xs, alignItems: "center" },
-  sectionLabel: { fontFamily: chineseFont, ...readingType.meta, color: colors.muted }, groupSection: { gap: spacing.xs }, list: { gap: spacing.md },
-  row: { minWidth: 0, gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.line, borderRadius: 0, backgroundColor: colors.controlSurface },
+  sectionLabel: { fontFamily: chineseFont, ...readingType.tool, color: colors.ink, fontWeight: "700", paddingVertical: spacing.sm }, groupSection: { gap: spacing.xs }, list: { gap: 0 },
+  row: { minWidth: 0, gap: spacing.sm, paddingVertical: spacing.lg, paddingHorizontal: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.line, borderLeftWidth: 3, borderLeftColor: "transparent", backgroundColor: colors.paper },
   rowLabels: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: spacing.sm }, rowKind: { flex: 1, minWidth: 0 },
   rowContent: { fontFamily: chineseFont, ...readingType.body, color: colors.ink }, rowMeta: { flexDirection: "row", gap: spacing.sm, alignItems: "center" }, rowTime: { flex: 1 }, selected: { backgroundColor: colors.paleTeal }, pressed: { backgroundColor: colors.paleTeal }, selectedPressed: { backgroundColor: colors.selectedNav },
 });

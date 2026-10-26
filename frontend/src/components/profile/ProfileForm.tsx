@@ -5,6 +5,7 @@ import { StyleSheet, View } from "react-native";
 import { Controller, useForm, useWatch, useFormState } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Text } from "react-native-paper";
+import { JournalSection } from "../journal/JournalLayout";
 import { AppButton, AppSelect, AppTextField } from "../ui";
 import { AppDateField } from "../DateTimeFields";
 import { profileAgeOptions, profileAgeUnitOptions, type ProfileFormValues } from "../../profile-view-model";
@@ -42,7 +43,8 @@ export function ProfileForm({ initialValues, editable, canReview, draftOnly, onE
   </View>;
   return <View style={styles.form} ref={containerLayout.ref} onLayout={containerLayout.onLayout}>
     <FormErrorSummary entries={errorEntries} onFocus={name => setFocus(name as keyof ProfileFormValues)} />
-    <View style={styles.group}><Text accessibilityRole="header" style={styles.groupTitle}>年齡與出生資料</Text>
+    <JournalSection level={3} title="基本資料" description="語言、地區與年齡提供相處脈絡。有生日便填生日；只有約數便保留原文。" style={styles.group}>
+    {pair(field("region", "地區（可空）"), field("language", "語言（可空）"))}
     <Controller control={control} name="ageKind" render={({ field: input }) => <AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("ageKind")} label="年齡資料" value={input.value} options={profileAgeOptions}
       disabled={!editable} onChange={value => { onEdit(); input.onChange(value); }} />} />
     {ageKind === "birth_date" ? field("birthDate", "出生日期（YYYY-MM-DD）", false, "例如 2023-02-14") : null}
@@ -55,18 +57,19 @@ export function ProfileForm({ initialValues, editable, canReview, draftOnly, onE
     {ageKind === "unknown" ? <Text style={styles.hint}>年齡未知，不會推算生日或精確年齡。</Text> : null}
     {pair(field("dueDate", "預產期（可空，YYYY-MM-DD）"), field("gestationalWeeksRaw", "出生孕週原文（可空）", false, "例如約 35 週"))}
     <Text style={styles.hint}>早產資料只保留原文；不會自動計算矯正年齡。未知欄位請留空。</Text>
-    </View>
-    <View style={styles.group}><Text accessibilityRole="header" style={styles.groupTitle}>日常照顧</Text><Text style={styles.hint}>只填已知資料；留空代表未知，並不代表沒有過敏或特別需要。</Text>
-    {pair(field("region", "地區（可空）"), field("language", "語言（可空）"))}
+    </JournalSection>
+    <JournalSection level={3} title="健康與照顧要點" description="只填已知資料；留空代表未知，並不代表沒有過敏或特別需要。" style={styles.group}>
     {field("allergies", "過敏資料（可空）", true)}
     {field("specialNeeds", "特別需要（可空）", true)}
+    </JournalSection>
+    <JournalSection level={3} title="生活偏好" description="記下喜歡的事物、習慣和讓相處更順利的方法。" style={styles.group}>
     {field("preferences", "照顧偏好（可空）", true)}
-    </View>
-    <View style={styles.group}><Text accessibilityRole="header" style={styles.groupTitle}>來源與這次更正</Text>
+    </JournalSection>
+    <JournalSection level={3} title="來源與這次更正" description="讓之後閱讀的人知道資料從哪裏來，以及為何更改。" style={styles.group}>
     {field("source", "資料來源（由你描述）", true, "例如家長提供；不自動引用私人聊天")}
     {field("validUntil", "資料有效至（可空，YYYY-MM-DD）")}
     {field("reason", "確認或更正原因", true)}
-    </View>
+    </JournalSection>
     <View style={styles.saveBoundary}><Text style={styles.saveStatus}>{isDirty ? "有未保存的檔案草稿" : "先核對資料，再預覽共享內容"}</Text><Text style={styles.hint}>下一步先顯示核對內容；不會直接保存或家庭共享。</Text>
     <AppButton label={draftOnly ? "預覽本地檔案草稿" : "預覽家庭共享內容"} onPress={() => { void handleSubmit(onReview, invalid => {
       const first = visibleFields.find(item => invalid[item.field]?.message); if (first) setFocus(first.field);

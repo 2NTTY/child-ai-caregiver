@@ -5,13 +5,14 @@ import { Text } from "react-native-paper";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { taskActionLabels, taskChangeAllowed, type TaskFormValues, type TasksActions, type TasksViewModel } from "../../task-view-model";
-import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
+import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { AppCheckbox } from "../AppCheckbox";
-import { AppButton, AppSelect, AppTextField, SectionCard, SectionHeader } from "../ui";
+import { AppButton, AppSelect, AppTextField, SectionHeader } from "../ui";
 import { AppDateTimeField, AppTimeZoneSelect } from "../DateTimeFields";
 import { FormErrorSummary, FormFieldMessage } from "../FormErrorSummary";
 import { TaskDraftSummary, TaskSnapshot } from "./TaskContent";
 import { taskFormSchema } from "./task-form";
+import { JournalSection } from "../journal/JournalLayout";
 
 export function TaskForm({ model, actions }: { model: TasksViewModel; actions: TasksActions }) {
   const draft = model.draft!;
@@ -51,20 +52,20 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
   }
   const canRebase = !!model.latest && draft.mode !== "create" && taskChangeAllowed(model.latest, draft.mode);
   const confirmationLabel = "我已核對內容、負責人、時間及版本，確認這次家庭共享安排";
-  return <SectionCard surface="plain"><SectionHeader density="compact" title={taskActionLabels[draft.mode]} subtitle={draft.basis ? `以版本 ${draft.basis.version} 作基準；草稿尚未保存。` : "先填寫，再核對家庭共享範圍。"} />
+  return <View style={styles.form}><SectionHeader density="compact" title={taskActionLabels[draft.mode]} subtitle={draft.basis ? `以版本 ${draft.basis.version} 作基準；草稿尚未保存。` : "先填寫，再核對家庭共享範圍。"} />
     <FormErrorSummary entries={errorEntries} onFocus={name => {
       const target = visibleFields.find(item => item.name === name);
       if (target) setFocus(target.name);
     }} />
     {draft.basis ? <TaskSnapshot task={draft.basis} assignees={model.eligibleAssignees} /> : null}
-    {draft.mode === "create" ? <>
+    {draft.mode === "create" ? <JournalSection level={3} title="要安排甚麼" style={styles.formSection}>
       {field("title", "事項標題")}{field("details", "詳細內容（可選）", undefined, true)}
       <Controller name="kind" control={control} render={({ field: input, fieldState }) => <View><AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("kind")} label="事項種類" value={input.value}
         invalid={!!fieldState.error} describedBy={fieldState.error?.message ? `${fieldId("kind")}-message` : undefined}
         options={[{ value: "ordinary", label: "普通任務" }, { value: "appointment", label: "預約" }]} disabled={locked} onChange={value => { input.onChange(value); edited(); }} />
         <FormFieldMessage id={`${fieldId("kind")}-message`} error={fieldState.error?.message} /></View>} />
-    </> : null}
-    {draft.mode === "create" || draft.mode === "reschedule" ? <>
+    </JournalSection> : null}
+    {draft.mode === "create" || draft.mode === "reschedule" ? <JournalSection level={3} title="時間與負責人" description="按照顧者所在時區，核對這次安排。" style={styles.formSection}>
       <Controller name="assigneeUserId" control={control} render={({ field: input, fieldState }) => <View>
         <AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("assigneeUserId")} label="負責人" value={model.eligibleAssignees.some(item => item.userId === input.value) ? input.value : ""}
           invalid={!!fieldState.error} describedBy={`${fieldId("assigneeUserId")}-message`}
@@ -80,18 +81,18 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
       <Controller name="dueAt" control={control} render={({ field: input, fieldState }) => <AppDateTimeField
         ref={input.ref} onBlur={input.onBlur} id={fieldId("dueAt")} errorId={`${fieldId("dueAt")}-message`} label={draft.mode === "reschedule" ? "新安排時間" : "安排時間"} value={input.value} timeZone={timeZone} disabled={locked}
         error={fieldState.error?.message} onChange={value => { input.onChange(value); edited(); }} />} />
-    </> : null}
+    </JournalSection> : null}
     {draft.mode === "resolve" ? <Controller name="outcome" control={control} render={({ field: input, fieldState }) => <View>
       <AppSelect ref={input.ref} onBlur={input.onBlur} id={fieldId("outcome")} invalid={!!fieldState.error} describedBy={`${fieldId("outcome")}-message`} label="明確終態" value={input.value} options={[{ value: "", label: "請選擇終態" }, { value: "completed", label: "覆核為已完成" }, { value: "cancelled", label: "覆核為已取消" }]}
         disabled={locked} onChange={value => { input.onChange(value); edited(); }} />
       <FormFieldMessage id={`${fieldId("outcome")}-message`} error={fieldState.error?.message} help="覆核只選終態，不會重新排程或重新催辦。" />
     </View>} /> : null}
     {draft.mode !== "create" ? field("note", draft.mode === "complete" ? "完成備註（可選）" : "原因（必填）", undefined, true) : null}
-    <Text style={styles.meta}>離線時可整理本次草稿；關閉、重新載入、切換孩子或撤權會清除。沒有跨關閉草稿保存。</Text>
+    <View style={styles.submitSection}><Text style={styles.meta}>離線時可整理本次草稿；關閉、重新載入、切換孩子或撤權會清除。沒有跨關閉草稿保存。</Text>
     <AppButton label="預覽家庭共享內容" disabled={locked} onPress={handleSubmit(values => { setConfirmed(false); actions.reviewDraft(values); }, invalidFields => {
       const first = visibleFields.find(item => invalidFields[item.name]?.message);
       if (first) setFocus(first.name);
-    })} />
+    })} /></View>
     {draft.reviewedValues ? <View style={styles.review}>
       <Text style={styles.label}>預覽內容 · 尚未保存</Text><TaskDraftSummary mode={draft.mode} values={draft.reviewedValues} assignees={model.eligibleAssignees} />
       <Text style={styles.meta}>只確認孩子所屬家庭的共享安排。建立事項不代表機構確認預約，也不代表已通知照顧者。</Text>
@@ -108,10 +109,12 @@ export function TaskForm({ model, actions }: { model: TasksViewModel; actions: T
       <Text style={styles.meta}>{canRebase ? "只有明確選擇才換基準；草稿保留，之後仍須重新預覽及確認。" : "最新狀態已不接受這項操作。請放棄草稿，再按最新狀態選擇適用操作；不能重開已結束事項。"}</Text>
     </View> : null}
     {model.operation.state === "unknown" ? <Text style={styles.meta}>原操作內容已鎖定，先查核同一參考。查核不會再提交一次事項。</Text> : null}
-  </SectionCard>;
+  </View>;
 }
 const styles = StyleSheet.create({
-  review: { padding: spacing.md, backgroundColor: colors.paleAmber, borderRadius: radius.small, gap: spacing.md, minWidth: 0 },
+  form: { gap: spacing.lg, minWidth: 0 }, formSection: { paddingVertical: spacing.md, borderTopWidth: 1, borderTopColor: colors.line },
+  submitSection: { gap: spacing.md, alignItems: "flex-start" },
+  review: { padding: spacing.lg, backgroundColor: colors.paleTeal, borderLeftWidth: 3, borderLeftColor: colors.teal, gap: spacing.md, minWidth: 0 },
   label: { fontFamily: chineseFont, color: colors.warningInk, ...readingType.tool, fontWeight: "700" },
   meta: { fontFamily: chineseFont, color: colors.muted, ...readingType.meta },
 });

@@ -3,7 +3,7 @@ import { Text } from "react-native-paper";
 import type { AgentWork } from "../../../../src/shared/agent-work";
 import { followUpStatusLabels, personalWorkStatusLabels, workResourceDestination } from "../../history-view-model";
 import { memoryDateLabel } from "../../memory-reference-view-model";
-import { chineseFont, colors, radius, readingType, spacing } from "../../theme";
+import { chineseFont, colors, readingType, spacing } from "../../theme";
 import { AppStatusBadge } from "../AppStatusBadge";
 import { AppButton } from "../ui";
 
@@ -12,7 +12,7 @@ export function PersistentWorkCards({ items, online, busy, onMessage, onResource
   onMessage?: (id: string) => void; onResource?: (path: string) => void; onContinue?: (work: AgentWork) => void;
 }) {
   return <View style={styles.list}>{items.map(work => <View key={work.id} style={styles.card} testID={`personal-work-${work.id}`}>
-    <View style={styles.row}><Text accessibilityRole="header" style={styles.title}>{work.goal}</Text><AppStatusBadge label={personalWorkStatusLabels[work.status]} /></View>
+    <View style={styles.row}><Text accessibilityRole="header" aria-level={3} style={styles.title}>{work.goal}</Text><AppStatusBadge label={personalWorkStatusLabels[work.status]} /></View>
     <Text style={styles.meta}>Agent 整理 · 供接續工作核對</Text>
     {work.focus ? <Text selectable style={styles.body}>{work.focus}</Text> : null}
     {work.questions.length ? <View style={styles.list}><Text style={styles.label}>待答問題</Text>{work.questions.map((question, index) => <Text selectable key={index} style={styles.body}>{index + 1}. {question}</Text>)}</View> : null}
@@ -35,7 +35,7 @@ export function PersistentWorkCards({ items, online, busy, onMessage, onResource
 }
 const styles = StyleSheet.create({
   list: { gap: spacing.sm, minWidth: 0 },
-  card: { backgroundColor: colors.paper, borderColor: colors.line, borderWidth: 1, borderRadius: radius.medium, padding: spacing.lg, gap: spacing.sm, minWidth: 0 },
+  card: { backgroundColor: colors.paper, borderBottomColor: colors.line, borderBottomWidth: 1, borderLeftColor: colors.teal, borderLeftWidth: 3, padding: spacing.lg, gap: spacing.md, minWidth: 0 },
   row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.sm },
   title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700", flexGrow: 1, flexShrink: 1 },
   label: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, fontWeight: "700" },

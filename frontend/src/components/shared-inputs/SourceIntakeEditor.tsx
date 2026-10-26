@@ -1,3 +1,4 @@
+import { JournalSection } from "../journal/JournalLayout";
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
@@ -89,30 +90,31 @@ function ProductionSourceIntakeEditor({ model, actions }: { model: SourcesViewMo
     <Text style={s.body}>目前狀態：{source.management?.enabled === false ? "已停用" : "可使用"} · {source.management?.modelExcerpt ? "已授權所選摘錄供聊天模型使用" : "沒有聊天模型摘錄授權"}</Text>
     {!editing ? <AppButton ref={editTrigger} label="編輯來源設定" variant="quiet" disabled={locked} onPress={actions.intake.editManually} /> : null}
     <FormDialog formKey={model.formKey} visible={editing} scopeKey={`${model.scopeKey}:${source.id}`} title="編輯來源設定" returnFocusRef={editTrigger} fallbackFocusRef={reading} onClose={() => actions.discardDraft?.("management")} recovery={<SourceStatus model={model} actions={actions} production />}><View style={s.stack}>
-      <AppTextField label="這份資料想用來做甚麼？" accessibilityLabel="這份資料想用來做甚麼" multiline value={management.intention} disabled={locked} onChangeText={actions.intake.setIntention} />
+      <JournalSection level={3} title="用途與適用範圍" description="這裏記下你的說明，不把來源性質當成核實結果。"><AppTextField label="這份資料想用來做甚麼？" accessibilityLabel="這份資料想用來做甚麼" multiline value={management.intention} disabled={locked} onChangeText={actions.intake.setIntention} />
       <AppSelect label="來源用途" value={management.purpose} options={sourcePurposeOptions} disabled={locked} onChange={purpose => adapter.edit({ purpose })} />
       <AppSelect label="來源性質（不代表已核實）" value={management.nature} options={sourceNatureOptions} disabled={locked} onChange={nature => adapter.edit({ nature })} />
       <AppSelect label="資料時效" value={management.timeScope} options={sourceTimeOptions} disabled={locked} onChange={timeScope => adapter.edit({ timeScope })} />
       {management.timeScope === "specific_period" ? <AppTextField label="適用期間或失效條件" accessibilityLabel="適用期間或失效條件" value={management.validityText} disabled={locked} multiline onChangeText={validityText => adapter.edit({ validityText })} error={!validSourceIntakeProposal(intake.proposal)} /> : null}
       <AppCheckbox label="啟用這份私人來源" checked={management.enabled} disabled={locked} onChange={enabled => adapter.edit({ enabled })} />
+      </JournalSection>
       {source.kind === "personal_source" ? <>
         {source.recordId ? <Text style={s.meta}>已連結家庭記錄，只可更改用途設定或停用；不能改寫原來源內容。</Text> : <AppButton label={content ? "取消原來源內容修改" : "原地編輯來源名稱、連結或原文"} variant="quiet" disabled={locked || source.management?.enabled === false} onPress={content ? adapter.cancelContentEdit : adapter.beginContentEdit} />}
-        {content ? <View style={s.stack}>
+        {content ? <JournalSection level={3} title="修改來源原文">
           {contentField("sourceLabel", "來源名稱")}{contentField("sourceUrl", "來源連結")}{contentField("text", "來源原文")}
           {contentField("sourceDateText", "來源日期原文")}{contentField("sourceNotes", "私人來源備註")}
           <Text style={s.warning}>更改來源內容會撤銷舊模型摘錄授權。先保存原文，再另行選取摘錄授權；連結和備註不會交模型。</Text>
-        </View> : null}
+        </JournalSection> : null}
       </> : null}
-      {management.enabled && source.management?.enabled !== false && !content && !!source.text.trim() ? <View style={s.stack}>
+      {management.enabled && source.management?.enabled !== false && !content && !!source.text.trim() ? <JournalSection level={3} title="聊天模型可用的摘錄" description="只授權你選中的確切原文，不包含連結與私人備註。">
         <AppTextField label="容許聊天模型使用的原文摘錄" accessibilityLabel="容許聊天模型使用的原文摘錄" multiline value={draft.modelExcerpt} disabled={locked} onChangeText={adapter.setModelExcerpt} />
         <Text style={excerptValid ? s.meta : s.error}>{excerptValid ? "摘錄與保存原文完全相符。" : "請選取 1–6,000 字、與保存原文完全相符的連續摘錄。"}</Text>
         <AppCheckbox label="保存這次設定時，我同意聊天模型使用以上確切原文摘錄" checked={draft.modelPermission} disabled={locked || !excerptValid} onChange={adapter.setModelPermission} />
-      </View> : <Text style={s.meta}>{source.management?.enabled === false && management.enabled ? "先保存啟用設定，之後才可讀取原文、編輯內容或授權摘錄。" : management.enabled ? "保存正文後才可選取摘錄授權。" : "停用後不能讀取或提取，並會撤銷模型摘錄授權。"}</Text>}
+      </JournalSection> : <Text style={s.meta}>{source.management?.enabled === false && management.enabled ? "先保存啟用設定，之後才可讀取原文、編輯內容或授權摘錄。" : management.enabled ? "保存正文後才可選取摘錄授權。" : "停用後不能讀取或提取，並會撤銷模型摘錄授權。"}</Text>}
       <Text style={s.meta}>保存設定不會呼叫模型。不勾選摘錄授權會保存為沒有聊天模型存取權；網址及私人備註不在授權範圍。</Text>
-      <AppTextField label="這次修改原因" accessibilityLabel="這次修改原因" multiline value={draft.reason} disabled={locked} onChangeText={adapter.setReason} />
+      <JournalSection level={3} title="記下修改原因並保存"><AppTextField label="這次修改原因" accessibilityLabel="這次修改原因" multiline value={draft.reason} disabled={locked} onChangeText={adapter.setReason} />
       <Text style={reasonValid ? s.meta : s.error}>請填寫原因，最多 500 字；用途最多 1,000 字，適用條件最多 300 字。</Text>
       <AppButton label="保存來源設定" disabled={locked || !valid} onPress={actions.intake.confirmProposal} />
-      <Text style={s.meta}>記錄用途不會建立孩子事實或家庭記錄；持續關注意向不會建立任務、提醒或外發。</Text>
+      <Text style={s.meta}>記錄用途不會建立孩子事實或家庭記錄；持續關注意向不會建立任務、提醒或外發。</Text></JournalSection>
     </View></FormDialog>
   </View>;
 }

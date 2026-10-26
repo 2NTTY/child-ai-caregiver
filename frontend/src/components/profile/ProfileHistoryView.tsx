@@ -50,7 +50,7 @@ export function ProfileHistoryView({ model, actions, scopeKey }: { model: Profil
       <Text style={styles.meta}>目前檔案尚未核對，不能據此判斷沒有修改記錄。</Text>
       <AppButton label="重新讀取檔案" variant="secondary" onPress={actions.refresh} disabled={locked} />
     </View> : currentReady && !neverConfirmed && !model.reading && model.notice && !model.historyOpen ? <AppButton label="重試讀取修改歷史" variant="secondary" onPress={actions.showHistory} disabled={locked} /> : null}
-    <HistoryCardGrid testID="profile-history-cards">{model.history.map(revision => <HistoryEntryCard key={revision.version} testID={`profile-history-version-${revision.version}`}
+    <View testID="profile-history-cards" style={styles.revisions}>{model.history.map(revision => <HistoryEntryCard style={styles.revision} key={revision.version} testID={`profile-history-version-${revision.version}`}
       cardRef={node => { if (node) cards.current.set(revision.version, node); else cards.current.delete(revision.version); }}
       accessibilityLabel={`查看檔案版本 ${revision.version}：${revision.reason ?? "確認記錄"}`}
       onPress={() => { returnFocus.current = cards.current.get(revision.version) ?? null; setSelection({ scope, version: revision.version }); }}>
@@ -58,7 +58,7 @@ export function ProfileHistoryView({ model, actions, scopeKey }: { model: Profil
       <Text numberOfLines={2} style={styles.body}>{revision.data?.source ?? "資料來源未知"}</Text>
       <Text style={styles.meta}>版本 {revision.version} · {revision.confirmedAtLabel ?? "確認時間未知"}</Text>
       <Text numberOfLines={1} style={styles.meta}>確認人：{revision.confirmedByLabel ?? "未知"}</Text>
-    </HistoryEntryCard>)}</HistoryCardGrid>
+    </HistoryEntryCard>)}</View>
     <FormDialog visible={!!selected} scopeKey={scope} formKey={selected?.version} title={`檔案版本 ${selected?.version ?? ""}`}
       dismissMode="local" returnFocusRef={returnFocus} fallbackFocusRef={listRef} onClose={() => setSelection(null)}>
       {selected ? <ProfileRevisionSummary revision={selected} /> : null}
@@ -69,6 +69,8 @@ export function ProfileHistoryView({ model, actions, scopeKey }: { model: Profil
   </View>;
 }
 const styles = StyleSheet.create({
+  revisions: { gap: 0, minWidth: 0 },
+  revision: { borderRadius: 0, borderWidth: 0, borderBottomWidth: 1, borderBottomColor: colors.line, paddingVertical: spacing.lg, paddingHorizontal: spacing.sm, width: "100%" },
   list: { gap: spacing.md, minWidth: 0 },
   title: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool, fontWeight: "700" },
   body: { fontFamily: chineseFont, color: colors.ink, ...readingType.tool },

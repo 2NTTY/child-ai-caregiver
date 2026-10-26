@@ -1,3 +1,4 @@
+import { JournalSection } from "../journal/JournalLayout";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
 import { View } from "react-native";
 import { Text } from "react-native-paper";
@@ -26,14 +27,14 @@ export function PhotoRecordForm({ model, actions }: { model: PhotosViewModel; ac
       const target = recordDraftFieldOrder.find(field => field === name);
       if (target) setFocus(target);
     }} />
-    <RecordDraftFields control={control} locked={model.formLocked} prefix="照片" onFieldChange={change} />
+    <JournalSection level={3} title="記錄草稿"><RecordDraftFields control={control} locked={model.formLocked} prefix="照片" onFieldChange={change} /></JournalSection>
     <Text style={s.meta}>資料來源：{model.selected?.source ?? model.source}。更改草稿後須重新預覽及勾選共享範圍。</Text>
     <Text style={s.meta}>離開這頁、切換孩子或重新載入會清除本次原檔及草稿；沒有離線寫入隊列。</Text>
     <AppButton density="compact" label="預覽共享" accessibilityLabel="預覽照片共享內容" disabled={model.formLocked || !model.fresh} onPress={handleSubmit(actions.reviewDraft, invalidFields => {
       const first = recordDraftFieldOrder.find(name => invalidFields[name]?.message);
       if (first) setFocus(first);
     })} />
-    {model.reviewed ? <View style={s.review} testID="photo-shared-review"><Text style={s.title}>待確認 · 尚未家庭共享</Text>
+    {model.reviewed ? <JournalSection level={3} style={s.review} testID="photo-shared-review" title="核對照片與共享範圍" description="以下內容尚未共享，原照片與記錄一併確認。">
       <Text style={s.original}>{model.reviewed.text}</Text>
       <Text style={s.body}>種類：{careKindOptions.find(item => item.value === model.reviewed?.kind)?.label}；數值：{model.reviewed.rawValue || "未填寫"}；單位：{model.reviewed.unit || "未填寫"}</Text>
       <Text style={s.body}>時間原文：{model.reviewed.timeRaw || "未知"}；{model.reviewed.approximate ? "包含約數／約略時間" : "未標記約數"}</Text>
@@ -41,6 +42,6 @@ export function PhotoRecordForm({ model, actions }: { model: PhotosViewModel; ac
       {model.selected?.state !== "ready" ? <Text style={s.meta}>先私人保存完整原照片，再確認家庭共享。</Text> : null}
       <AppButton density="compact" label="確認家庭共享" accessibilityLabel="確認照片及記錄家庭共享" disabled={!model.canConfirm} onPress={actions.confirmShared} />
       <Text style={s.meta}>不會共享私人聊天，也不代表已通知照顧者。未查明寫入結果時，查核原操作後才繼續。</Text>
-    </View> : null}
+    </JournalSection> : null}
   </SectionCard>;
 }

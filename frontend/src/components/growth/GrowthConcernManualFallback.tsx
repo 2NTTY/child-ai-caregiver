@@ -12,6 +12,7 @@ import { AppButton, AppSelect, AppTextField } from "../ui";
 import { ManualFormDialog } from "../FormDialog";
 import { GrowthOperationRecovery } from "./GrowthOperationRecovery";
 import { growthStyles as s } from "./growth-styles";
+import { JournalSection } from "../journal/JournalLayout";
 
 type Mode = "create" | "append" | "followup";
 type Fields = { title: string; reason: string; observation: string; observedAt: string; followUpAt: string };
@@ -22,7 +23,7 @@ const labels: Record<keyof Fields, string> = { title: "關注名稱", reason: "�
 
 export function GrowthConcernManualFallback({ model, actions, concern }: { model: GrowthViewModel; actions: GrowthActions; concern: GrowthConcern | null }) {
   if (!actions.createConcern || !actions.updateConcern || model.access !== "editable" || !model.page) return null;
-  return <ManualFormDialog label="手動" title={concern ? "新增／跟進關注" : "新增關注"} scopeKey={model.scopeKey} recovery={<GrowthOperationRecovery model={model} actions={actions} includeRefresh />}>
+  return <ManualFormDialog label={concern ? "新增／補充觀察" : "新增關注"} title={concern ? "新增／跟進關注" : "新增關注"} scopeKey={model.scopeKey} recovery={<GrowthOperationRecovery model={model} actions={actions} includeRefresh />}>
     <ManualForm model={model} actions={actions} concern={concern} />
   </ManualFormDialog>;
 }
@@ -99,9 +100,9 @@ function ManualForm({ model, actions, concern }: { model: GrowthViewModel; actio
     {mode !== "create" ? <Text style={s.body}>對象：{target?.title ?? "尚未選擇關注"}</Text> : null}
     {stale ? <Text style={s.warning}>原草稿及版本保留；關注或授權基準已變。請回到原關注，或明確放棄草稿後重新核對。</Text> : null}
     <FormErrorSummary entries={entries} onFocus={field => setFocus(field as keyof Fields)} />
-    {mode === "create" ? <>{textField("title", 160)}{textField("reason", 2000)}</> : null}
-    {mode !== "followup" ? <>{textField("observation", 2000)}{timeField("observedAt")}</> : null}
-    {mode !== "append" ? timeField("followUpAt") : null}
+    {mode === "create" ? <JournalSection title="想持續留意甚麼" style={s.divider}>{textField("title", 160)}{textField("reason", 2000)}</JournalSection> : null}
+    {mode !== "followup" ? <JournalSection title="這次觀察" description="寫下實際觀察到的內容及時間。" style={s.divider}>{textField("observation", 2000)}{timeField("observedAt")}</JournalSection> : null}
+    {mode !== "append" ? <JournalSection title="之後何時再看" style={s.divider}>{timeField("followUpAt")}</JournalSection> : null}
     {mode === "followup" ? <Text style={s.meta}>選擇時間會保存一次站內跟進；留空會撤回這次安排。只更改站內跟進，不更改觀察或連結任務。</Text> : null}
     <AppCheckbox label={mode === "followup" ? "我已核對對象及這次站內跟進／撤回，明確同意保存為家庭共享安排" : "我已核對對象、內容及觀察時間，明確同意保存為家庭共享關注"}
       checked={shared} disabled={disabled} onChange={value => { markDraft(); setShared(value); }} />

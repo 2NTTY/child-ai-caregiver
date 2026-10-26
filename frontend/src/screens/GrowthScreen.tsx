@@ -33,7 +33,7 @@ export function GrowthScreen() {
   if (pathname !== "/growth") return null;
   // Compatibility routes reuse the same dashboard owners; no data or operation is migrated.
   if (requested === "archive") return <Redirect href="/summary?tab=archive" />;
-  if (!child || !workspace) return <PageFrame density="compact" title="關注"><SectionCard>
+  if (!child || !workspace) return <PageFrame density="compact" title="關注手冊"><SectionCard>
     <Text>{child ? "正在讀取關注…" : "先選擇孩子。"}</Text>
     <AppButton label="查看子女檔案" onPress={() => actions.open("profile")} />
   </SectionCard></PageFrame>;

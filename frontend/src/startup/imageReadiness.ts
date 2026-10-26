@@ -6,7 +6,7 @@ export type ImageOutcomes = Partial<Record<FirstScreenImage, ImageOutcome>>;
 export const firstScreenImageFallbackMs = 15_000;
 
 export function requiredFirstScreenImages(pathname: string, width: number): readonly FirstScreenImage[] {
-  if (pathname === "/") return ["home-hero"];
+  // The journal home has no decorative loading gate or timed introduction.
   if (pathname === "/login" && width >= 900) return ["login-hero"];
   return [];
 }
