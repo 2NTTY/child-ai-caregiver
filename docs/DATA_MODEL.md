@@ -30,6 +30,8 @@ S06-W03 的 Better Auth user／session／account／verification schema 由固定
 <a id="p2-family-data"></a>
 ### S06-W02 家庭延伸
 
+本小節保存已交付 SQL 版本的歷史 schema，並非現行 Firestore 或 P4 新歸屬模型。P4 選定模組、穩定儲存身份／管理權分離及刪帳契約見 [目標模型](#p4-p5-data)，不沿歷史 owner 外鍵級聯刪除已轉交資料。
+
 新增 `006-family-access`，不改寫 P1 migration 或重建資料。`workspaces.owner_user_id` 保留唯一 owner 及原孩子加密歸屬，新增 `access_version`；`family_members(workspace_id,user_id)` 唯一保存 caregiver／viewer。撤權刪除資格，不刪該成員的私人聊天；失去孩子存取權後不能再讀寫，其他成員亦不能取得其私聊。
 
 `family_invitations` 保存 UUID、workspace、token SHA-256、加密收件電郵、角色、建立者／時間、到期、接受者／時間及撤銷時間。只在建立回應提供 32-byte 隨機碼，原碼不落 DB／URL／日誌；已接受與已撤銷互斥，終態不還原成 pending。電郵密文 AAD 綁 workspace／invitation，接受及角色修改在 workspace 排他鎖內核對。owner 管理邀請與成員時更新權限版本；接受的原終態保留，以防舊碼恢復撤權。
@@ -102,7 +104,7 @@ owner 刪除孩子時，現有外鍵連帶刪除照護記錄、聊天及該孩�
 <a id="online-storage"></a>
 ### S07-W03 持久操作與變更
 
-`010-online-operations` 加入 workspace `change_seq`（bigint，HTTP 用十進位字串避免精度流失）、`online_operations` 及 `online_changes`。識別及版本契約見 [API](API.md#online-http)。Web 的 deviceId 是本頁傳輸實例識別，不是授權憑據或 P4 裝置登記。
+`010-online-operations` 加入 workspace `change_seq`（bigint，HTTP 用十進位字串避免精度流失）、`online_operations` 及 `online_changes`。識別及版本契約見 [API](API.md#online-http)。Web 的 deviceId 是本頁傳輸實例識別，不是授權憑據；P4 不新增配對裝置登記。
 
 - 操作以 `(user_id, op_id)` 唯一，保存 device／workspace／epoch、路徑、孩子關聯、業務狀態及 changeSeq。正規化請求 hash 及結果使用既有 cipher 加密；不另存明文業務 payload，AAD 綁本人／opId／欄位。原記錄原文不因 hash 正規化而修改。
 - 變更以 `(workspace_id, change_seq)` 唯一；僅記種類、孩子識別、刪除旗標及可見範圍。查詢在目前授權下過濾，游標可越過本人無權讀取的序號；空頁不代表整個家庭沒有私人活動，不回傳其內容。
@@ -152,7 +154,7 @@ S09-W02 的 `011-memory-online` 擴充既有台帳的 `memory` 種類，沿用�
 
 - <a id="data-age-01"></a>出生日期可選；約數年齡保存原始值、單位、精度及對應日期，不推造出生日期。衍生年齡保存可追溯的計算依據，不能反過來升格為更精確的已確認資料；缺資料不阻止一般問答。
 - <a id="data-age-02"></a>預產期／早產資料按需要確認，實際年齡與矯正年齡分開；每條關注規則明示採用何種年齡及官方依據，未知時不假定可用矯正年齡。地區預設香港但可核對；語言、過敏、特殊需要及家庭偏好只保存必要且已確認的內容、來源及適用範圍，不以語言推斷地區或醫療條件。
-- <a id="data-age-03"></a>可見範圍與確認狀態分開；家庭背景判斷不能使用未獲准共享的私人資料。新增持久資料及更正／刪除關係納入既有加密、刪除及備份；完整匯出／遷移隨 P4 交付，不能遺漏新增類型。
+- <a id="data-age-03"></a>可見範圍與確認狀態分開；家庭背景判斷不能使用未獲准共享的私人資料。新增持久資料及更正／刪除關係納入既有加密、刪除及備份；P4 文檔包／備份及 P5 跨 Server 遷移均須承接新增類型。
 
 <a id="section-5-3"></a>
 ## 5.3 已确认事实
@@ -342,7 +344,7 @@ P2 任務及外發須保存以下必要語義；實際表名、欄名及枚舉�
 - <a id="data-kv-02"></a>核對、發布、停用及向量準備狀態分開；核對且所需向量完成才發布新版，不把生成失敗當作空向量成功。保留已發布版本與歷史引用關係；已知失效即停止檢索，不能為等待新版而繼續使用。
 - <a id="data-kv-03"></a>正文未變且模型／維度／處理版本相同才可復用向量，變更只更新受影響片段；不混用不相容向量。同次查詢復用保持當前 run 及適用條件，不讓私人查詢流入跨家庭共享資料。
 - <a id="data-kv-04"></a>檢索結果關聯片段／來源版本及實際檢索模式、降級／不可用原因；向量距離或排名不等於建議支持證據。正文仍須可逐項引用，模型不能產生不存在的片段識別。
-- <a id="data-kv-05"></a>P2 記錄相容 PostgreSQL／pgvector 版本及必要恢復前置，空目標先具備相容擴展，不能缺擴展仍宣稱還原完成。P4 的管理／批量維運及完整遷移沿用這些資料，不建立第二套向量／引用事實來源。
+- <a id="data-kv-05"></a>P2 記錄相容 PostgreSQL／pgvector 版本及必要恢復前置，空目標先具備相容擴展，不能缺擴展仍宣稱還原完成。P4 管理／批量維運與知識資料移轉及 P5 跨 Server 遷移沿用相同版本／來源資料；現行 Firestore 不依賴本歷史 SQL 擴展，不建立第二套向量／引用事實來源。
 
 S10-W01 的 [009 migration](../server/migrations/009-public-knowledge.sql) 已通過必要真 DB／embedding／還原驗收：`knowledge_sources` 保存啟用狀態／活躍版本；`knowledge_versions` 保存不可變內容、核對／發布及日期語義；`knowledge_chunks` 保存短原文、核對轉述、適用性及 hash；`knowledge_vectors` 以真正 embedding 輸入 hash＋模型／維度／pipeline 重用。`embedding_attempts` 分 query／maintenance，公共文件可記 document hash，私人查詢不保存正文或 hash。停用標 withdrawn 且保留舊正文／核對依據；重新發布先重核。這些公共資料不替換原私人加密表；備份還原須涵蓋 vector extension 及全部表。
 
@@ -810,3 +812,28 @@ Claim 回應丟失時，只准尚未呼叫 Storage 的同一次 invocation 作�
 
 
 含已知 avatar copy set 的 final plan 先在同一 reserved collection 寫入加密 `avatar-plan-stage`：固定 attempt token、完整 header／page hashes／final envelope，以及 copy setHash／recordsHash／原 business inventory hash。頁面 create-only，同交易核 token、building phase、無 progress/current；不使用 blind set。重啟只接受 marker 列出的精確頁 ID，並重核原 target inventory、source/Auth/journal 與 native provenance；完整頁集原樣移交 progress，缺頁則先 CAS discarding fence，逐頁驗 hash 後有界刪除，再清 marker。這段 rollback 不改 business rows、不刪 copy intents；舊 attempt 被 token 擋住，重新規劃不能重寫已 known 的 Storage copy。legacy 無 marker 的 partial pages 仍拒絕，沒有 avatar port 也不能藉新 checkpoint ids 放行。
+
+
+<a id="p4-p5-data"></a>
+## P4／P5 目標資料模型（未實作）
+
+沿現有 Firestore store、固定資源 ID、版本、密文、來源、原操作／收據與索引分頁擴充，不建立 SQL 模擬層或第二權威。[REQ-P4-01～10](../SPEC.md#p4-p5-product) 管產品含義，PD-01～06 的策略仍待決；以下是必要資料責任，不是已新增 collections。
+
+| 資料責任 | 必要關聯／生命週期 |
+|---|---|
+| 身份／准入 | Firebase UID 不因 provider 連結改變；保存已驗邀請接續與 UID 關係，不由姓名／relay email 推算身份。裝置 session、空間資格及付款授權各自獨立 |
+| 穩定儲存歸屬 | 資料空間／資源身份與現任管理員分離，轉交保留資源 ID、版本及來源。現有加密 AAD／owner 綁定須由 adapter 相容承接，不能因改管理員使密文不可讀或刪帳級聯移除已轉交資料 |
+| 選定模組／共享範圍 | 記明來源資源、模組與目標空間、適用版本及權限版本；範圍以外資料不因家庭成員身份公開。PD-01 決定實際共享／複製／搬移模型，不預設資料一定改 owner |
+| 班級／教師空間 | 班級可獨立存在，名冊可查詢／搜尋／分頁；加入空間後同一權威資料供成員按角色讀寫，不複製給每人。班級移出及未轉交退出依 PD-02／05 |
+| 混合對話 | 發起帳戶、對話目標集合及訊息／工具結果的孩子／班級關聯可追溯。私人對話與業務資源分開；分享資源不分享聊天。範圍分離不足須明示，不以全對話塞進單孩匯出 |
+| 多孩批次 | 原 run／批次／opId、固定目標及各項預期版本、必要確認與授權版本；逐項結果、收據、unknown、進度及恢復位置持久化，不逐孩另開預算 |
+| 文檔包 | 穩定包 ID／版本／內容識別、格式與資料 schema 版本、用途、範圍／完整度、來源鏈與原確認者、事實／推測標記、資源版本、附件 manifest／hash、可信完整性證明及可讀摘要 |
+| 匯入映射／紀錄 | 來源身份／資源 ID／版本到目標資源的映射、原操作指紋、包／批次、操作者／時間／目標／所選範圍、完整性結果、逐項建立／更新／略過／衝突與原因、取消／中斷／恢復；不按同名去重，不另存不必要私人全文 |
+
+跨人匯入建立獨立副本，保留來源標識與映射，不覆寫對方修改或自動跟隨更新；組內分享仍共用權威資料。本人備份可含有權備份的私人聊天、記憶、來源及附件，與交接包的範圍可不同。憑證、session、key、付款／執行授權及投遞工作不放入普通資料包；待辦內容與新提醒資格分開。
+
+完整性須有可信來源簽章或等效驗證，結合 manifest／附件 hash；包自報 hash 只供內容校驗，不能獨立證明未篡改。通過技術／權限檢查可直接成為正常資料，保留其原來源、確認者和不確定性，不強制先變成待採納項。AI／人工檢查的可選結果與完整性結果分開；無法驗證／驗證失敗依 PD-03。
+
+沿現有交易提交必要業務、版本、收據、變更及 outbox；長文、名冊、匯入項及紀錄有界分頁，不把整班／整包塞一份 document。中斷接續保留原操作及成功項，交易回調不呼叫模型或通知。可重建投影不成為新權威。
+
+用戶備份／還原與伺服器災難恢復分開：後者仍隔離還原、重放持久刪除日誌、核對 Auth／撤權與附件 generation、更新 epoch、停止舊工作。PD-06 尚待決定手動差異還原遇修改／刪除的規則，不因此放寬自動恢復的防復活。P5 才搬遷完整 Server 權威及工作，沿單主／不丟新寫入回退；P4 匯入不轉移舊執行權。
