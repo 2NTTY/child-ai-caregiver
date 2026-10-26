@@ -3957,3 +3957,10 @@
 - 使用者在 agents-md-improver 品質報告後明確要求沿 revise-agents-md 更新規範。根 AGENTS 補既有本地／建置／單檔檢查入口；前端補正式 Provider／owner 位置，四尺寸依改動影響選取。主模型精簡重複研究／派單／狀態說明，保留模型分工、困難任務親做、dot 例外、權限、首次失敗停批及必要驗收；未改 Skill、配置或產品。
 - 兩份 AGENTS 原共 34,385 bytes，現已低於預設 32 KiB 合併容量；只核靜態 bytes、原錨點、相對連結、package scripts 及 diff，不以此宣稱新會話載入已實測。沒有跑產品、模型或設備驗收。先前報告指出的 frontend/PLAN #253 歷史現況另留原域處理，本包不改寫歷史證據或新增進度清單。
 - 一次獨立唯讀 review 未發現重大規則遺漏，指出 `src/preview/` 仍含正式使用的 guard／provider；主模型對照兩個正式 layout 後修正文案，只排除合成 fixture／預覽 owner 作正式資料來源，不誤導刪除共用元件。
+
+<a id="log-20261026-agents-concise-guidance"></a>
+## LOG-20261026-AGENTS-CONCISE-GUIDANCE
+
+- 使用者要求縮短根 AGENTS、刪減過度保守及重複敘述。主模型合併研究、派單／等待、文件與交付規則，移除過時日期；明示已有授權內的必要工作直接推進、本人步驟只阻塞相關項，不概括授權新增費用、外發、權限變更或不可逆操作。
+- 以 Git 的 UTF-8／LF 正文計，根文件由 28,967 減至 17,030 bytes（約 41.2%）；前端 AGENTS、產品、Skills 及 runtime 配置不變。保留既定模型／effort、角色上限、dot 例外、指導親寫、隔離／確認／防重、首次驗收失敗停批及歷史證據規則。
+- 12 個原有錨點與兩份 AGENTS 本地連結核對通過，diff whitespace 核對通過；獨立唯讀 review 比較 `d9b4282..a9ae03f` 未發現重大遺漏或擴大授權，主模型覆核關鍵條款後採納。沒有產品、模型、設備測試或部署，不宣稱新會話載入已實測。
