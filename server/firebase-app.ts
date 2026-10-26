@@ -1,4 +1,5 @@
 import { handleFirebaseAvatarRequest, type FirebaseAvatarApiPort } from './firebase-avatar-api.ts';
+import { handleSharingControlRequest, type SharingControl } from './sharing-control-api.ts';
 import { handleFirebaseChatFileRequest, type FirebaseChatFileApiPort } from './firebase-chat-files-api.ts';
 import { handleFirebaseVoiceRequest, type FirebaseVoiceApiPort } from './firebase-voice-api.ts';
 import { requestOriginAllowed } from "./request-auth-transport.ts";
@@ -70,6 +71,7 @@ export interface FirebaseRequestHandlerOptions {
   admin?: FirestoreAdmin;
   adminUid?: string | null;
   online?: FirestoreOnlineStore;
+  sharing?: SharingControl;
   documents?: FamilyDocumentStore & { forSharedSpace?(selection: import('../src/shared/sharing.ts').SharedSelection): FamilyDocumentStore };
   photos?: FirebasePhotoApiPort;
   avatars?: FirebaseAvatarApiPort;
@@ -204,6 +206,14 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         await authority.acknowledge({ userId, operationId: parsed.data.operationId, policyVersion: parsed.data.policyVersion });
         // Return the existing complete status shape. A failed read is an unknown outcome, never false success.
         return json(await accountStatus(userId));
+      }
+      if (path === '/api/shared-spaces' || path.startsWith('/api/shared-spaces/')) {
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers:request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        if (!options.sharing) throw new RequestError('sharing_unavailable', 503);
+        const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers:request.headers }))?.user.id === expectedUserId;
+        return uncached(await handleSharingControlRequest(request, userId, options.sharing, isCurrentUser, readJson));
       }
       if (/^\/api\/(?:me|children\/[^/]+)\/avatar(?:\/|$)/u.test(path)) {
         if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
