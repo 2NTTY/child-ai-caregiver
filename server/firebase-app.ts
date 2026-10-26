@@ -70,7 +70,7 @@ export interface FirebaseRequestHandlerOptions {
   admin?: FirestoreAdmin;
   adminUid?: string | null;
   online?: FirestoreOnlineStore;
-  documents?: FamilyDocumentStore;
+  documents?: FamilyDocumentStore & { forSharedSpace?(selection: import('../src/shared/sharing.ts').SharedSelection): FamilyDocumentStore };
   photos?: FirebasePhotoApiPort;
   avatars?: FirebaseAvatarApiPort;
   voice?: FirebaseVoiceApiPort;

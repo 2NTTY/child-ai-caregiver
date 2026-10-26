@@ -22,6 +22,9 @@ import { createTaskApi } from '../src/client/task-api.ts';
 import { createMemoryApi } from '../src/client/memory-api.ts';
 import { createFirestoreMemoryStore, firestoreFactStorageSchema } from '../server/firestore-memory.ts';
 import { createFirestoreChatStore } from '../server/firestore-chat.ts';
+import { createFirestoreFamilyDocumentStore, firestoreFamilyDocumentSchemas } from '../server/firestore-family-documents.ts';
+import { createFamilyDocumentsApi } from '../src/client/family-documents-api.ts';
+import { prepareFirestoreBackgroundWork, firestoreBackgroundWorkSchema } from '../server/firestore-background-work.ts';
 import { createFirestoreTaskWorker } from '../server/firestore-task-worker.ts';
 import { replayContentErasures } from '../server/firestore-restore-content-erasure.ts';
 import type { FirebaseErasureIntent } from '../server/firebase-erasure-journal.ts';
@@ -32,7 +35,7 @@ async function fixture() {
     const collection = fake.database.collection(path);
     return { ...collection, doc(id: string) {
       const ref = collection.doc(id);
-      return { ...ref, async get() {
+      return { ...ref, id, async get() {
         const snapshot = await fake.database.runTransaction(tx => tx.get(ref), { readOnly: true });
         return { ...snapshot, updateTime: Timestamp.fromMillis(now) };
       } };
@@ -68,6 +71,115 @@ async function fixture() {
   return { fake, options, authority, sharing, child, space, control, documents };
 }
 const code = (expected: string) => (error: unknown) => (error as { code?: string }).code === expected;
+
+test('shared documents retain the original snapshot, bounded source selection and actor receipts', async () => {
+  const f = await fixture(), childId = f.child.child.id;
+  const care = createFirestoreCareStore(f.options), online = createFirestoreOnlineStore({ ...f.options, mutations: [care.mutation] });
+  const cmd = { path: `/api/children/${childId}/records`, payload: { text: 'Owner record included only in the saved preparation' } };
+  const ctx = await online.context('parent', cmd);
+  const record = (await online.submit('parent', { ...cmd, operation: { ...ctx, deviceId: randomUUID(), opId: randomUUID() } })).result as any;
+  const documents = createFirestoreFamilyDocumentStore(f.options);
+  const request = { kind: 'preparation' as const, purpose: 'appointment' as const, title: 'Shared preparation',
+    period: { from: '2026-01-01', to: '2026-12-31' }, eventDate: null };
+  const original = (await documents.create('parent', childId, request, randomUUID()))!;
+  await f.sharing.share('parent', { spaceId: f.space.id, childId, modules: ['documents'], expectedVersion: f.space.version, operationId: randomUUID() });
+  const selected = documents.forSharedSpace({ spaceId: f.space.id });
+  const view = (await selected.describe('carer', childId, original.id))!;
+  assert.equal(view.item.current!.sources.some(s => s.resourceId === record.record.id), true);
+  let actor = 'carer';
+  const auth = { async getSession(options: { returnHeaders?: boolean }) { const session = { user: { id: actor, email: actor + '@example.test' } };
+    return options.returnHeaders ? { response: session, headers: new Headers() } : session; },
+    async handler() { return new Response(null, { status: 404 }); },
+    async assertRecentReauthentication() { return { user: { id: actor, email: actor + '@example.test' } }; },
+    fromNodeHeaders() { return new Headers(); } } as FirebaseAuthPort;
+  const handler = createFirebaseRequestHandler({ authority: f.authority, auth, publicOrigin: 'https://app.example.test', mailConfigured: false, documents });
+  const fetcher: typeof fetch = async (input, init) => { const headers = new Headers(init?.headers); headers.set('Origin', 'https://app.example.test');
+    return handler(new Request(input, { ...init, headers })); };
+  const client = createFamilyDocumentsApi('https://app.example.test', fetcher, { spaceId: f.space.id }), signal = new AbortController().signal;
+  const ownNew = await client.create(childId, { ...request, title: 'Scoped preparation' }, signal, 'carer');
+  assert.equal(ownNew.current!.sources.some(s => s.resourceId === record.record.id), false);
+  assert.equal((await documents.get('parent', childId, ownNew.id))!.readState, 'ready');
+  const opId = randomUUID(), change = { action: 'check_item' as const, expectedVersion: original.version, authorityVersion: view.authorityVersion,
+    sectionId: 'checklist', itemId: 'template-0', checked: true };
+  const updated = (await selected.change('carer', childId, original.id, change, opId))!;
+  assert.equal(updated.current!.sections.find(s => s.id === 'checklist')!.items[0].checked, true);
+  assert.deepEqual(await selected.change('carer', childId, original.id, change, opId), updated);
+  assert.equal((await selected.operationReceipt!('carer', childId, opId))!.savedVersion, 2);
+  assert.equal((await documents.get('parent', childId, original.id))!.version, 2);
+  actor = 'viewer';
+  assert.equal((await client.getPage(childId, signal, actor)).canManage, false);
+  assert.equal((await client.readContent(childId, original.id, { snapshotId: updated.current!.id, snapshotVersion: 2, offset: 0 }, signal, actor)).snapshotVersion, 2);
+  await assert.rejects(client.change(childId, original.id, { ...change, expectedVersion: 2 }, signal, actor), { status: 403, code: 'read_only' });
+  await assert.rejects(selected.change('viewer', childId, original.id, { ...change, expectedVersion: 2 }, randomUUID()), code('read_only'));
+  const codec = createFirestoreRestoreCodec(f.options);
+  for (const row of f.documents().filter(row => /_(documents|document_operations|document_snapshots|document_snapshot_chunks)\//u.test(row.path))) codec.decode(row);
+  const data = new FirestoreDomainData(f.options), receiptId = JSON.stringify(['carer', opId]);
+  const receipt = f.documents().find(row => row.path === data.ref('document_operations', 'document-operation', receiptId).path)!;
+  const forged = { ...codec.decode(receipt).value as any }; delete forged.changedViaShare;
+  assert.throws(() => codec.decode({ ...receipt, data: { ...receipt.data,
+    ...data.seal('document-operation', receiptId, f.child.scope, firestoreFamilyDocumentSchemas.operation, forged) } }), code('restore_binding'));
+  await care.revise('parent', childId, record.record.id, { text: 'Corrected source', details: record.record.details, source: record.record.source }, 1, 'Correction');
+  const rebind = updated.current!.sections.flatMap(section => section.items.filter(item => item.sourceIds.includes('record:' + record.record.id))
+    .map(item => ({ op: 'upsert_item' as const, sectionId: section.id, itemId: item.id, text: 'Replacement wording', sourceIds: item.sourceIds })));
+  assert.ok(rebind.length > 0);
+  await assert.rejects(selected.change('carer', childId, original.id, { action: 'patch', expectedVersion: 2,
+    authorityVersion: view.authorityVersion, confirmShared: true, edits: rebind }, randomUUID()), code('source_changed'));
+  assert.equal((await selected.get('carer', childId, original.id))!.current, null);
+  const redacted = (await selected.readContent('carer', childId, original.id, { snapshotId: updated.current!.id, snapshotVersion: 2, offset: 0 }))!;
+  assert.equal(redacted.invalidated, true); assert.equal(redacted.text.includes(cmd.payload.text), false);
+  assert.equal((await selected.operationReceipt!('carer', childId, opId))!.contentState, 'invalidated');
+  const grant = await f.sharing.get('parent', f.space.id);
+  await f.sharing.share('parent', { spaceId: f.space.id, childId, modules: ['documents', 'care'], expectedVersion: grant.version, operationId: randomUUID() });
+  const patch = { action: 'patch' as const, expectedVersion: 2, authorityVersion: view.authorityVersion, confirmShared: true as const, edits: rebind };
+  await assert.rejects(selected.change('carer', childId, original.id, patch, randomUUID()), code('document_changed'));
+  patch.authorityVersion = (await selected.describe('carer', childId, original.id))!.authorityVersion;
+  const rebound = (await selected.change('carer', childId, original.id, patch, randomUUID()))!;
+  assert.equal(rebound.current!.sources.find(source => source.resourceId === record.record.id)!.text, 'Corrected source（發生時間未確認）');
+  const current = await f.sharing.get('parent', f.space.id);
+  await f.sharing.unshare('parent', { spaceId: f.space.id, childId, expectedVersion: current.version, operationId: randomUUID() });
+  await assert.rejects(selected.get('carer', childId, original.id), code('module_not_shared'));
+  await assert.rejects(client.getItem(childId, original.id, signal, 'viewer'), { status: 403, code: 'module_not_shared' });
+});
+
+test('shared document maintenance retains the original source selection and stops after revocation', async () => {
+  const f = await fixture(), childId = f.child.child.id, data = new FirestoreDomainData(f.options);
+  const care = createFirestoreCareStore(f.options), online = createFirestoreOnlineStore({ ...f.options, mutations: [care.mutation] });
+  const command = { path: `/api/children/${childId}/records`, payload: { text: 'Do not include this unshared record' } };
+  const context = await online.context('parent', command);
+  await online.submit('parent', { ...command, operation: { ...context, opId: randomUUID(), deviceId: randomUUID() } });
+  await f.sharing.share('parent', { spaceId: f.space.id, childId, modules: ['documents'], expectedVersion: f.space.version, operationId: randomUUID() });
+  const documents = createFirestoreFamilyDocumentStore(f.options), selected = documents.forSharedSpace({ spaceId: f.space.id });
+  const created = (await selected.create('carer', childId, { kind: 'growth_report', purpose: 'family', title: 'Bounded report',
+    period: { from: '2026-01-01', to: '2026-12-31' }, eventDate: null }, randomUUID()))!;
+  async function job() {
+    const row = (await documents.get('parent', childId, created.id))!;
+    const id = await f.authority.runTransaction('parent', childId, async b => {
+      const work = await prepareFirestoreBackgroundWork(data, b.transaction, { kind: 'document-refresh', scope: b.scope,
+        resourceId: row.id, basis: 'version:' + row.version, generation: b.generation, authorizationVersion: b.authorizationVersion }, new Date().toISOString());
+      work.commit(); return work.id;
+    });
+    return f.authority.runTransaction('parent', childId, async b => data.open('background-work', id, b.scope, firestoreBackgroundWorkSchema,
+      await b.transaction.get(data.ref('background_work', 'background-work', id))));
+  }
+  const firstJob = await job();
+  assert.equal((await documents.processRefresh(firstJob)).state, 'completed');
+  const afterFirst = (await documents.get('parent', childId, created.id))!;
+  assert.equal((await documents.processRefresh(firstJob)).state, 'completed');
+  assert.equal((await documents.get('parent', childId, created.id))!.version, afterFirst.version);
+  for (let n = 0; n < 5 && (await documents.get('parent', childId, created.id))!.report?.phase === 'building'; n++)
+    assert.equal((await documents.processRefresh(await job())).state, 'completed');
+  const complete = (await selected.get('carer', childId, created.id))!;
+  assert.equal(complete.report!.phase, 'complete');
+  assert.equal(complete.current!.sources.some(source => source.kind === 'record'), false);
+  assert.match(complete.current!.coverageNote, /未選模組/u);
+  const codec = createFirestoreRestoreCodec(f.options);
+  for (const row of f.documents().filter(row => /_(documents|document_operations)\//u.test(row.path))) codec.decode(row);
+  const lastJob = await job(), space = await f.sharing.get('parent', f.space.id);
+  await f.sharing.unshare('parent', { spaceId: f.space.id, childId, expectedVersion: space.version, operationId: randomUUID() });
+  const before = f.documents();
+  assert.equal((await documents.processRefresh(lastJob)).state, 'stopped');
+  assert.deepEqual(f.documents(), before);
+});
 
 test('shared memory keeps private candidates and source messages private across reads, writes, receipts and history', async () => {
   const f = await fixture(), childId = f.child.child.id;
