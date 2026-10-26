@@ -4039,3 +4039,13 @@
 - 一條新連貫流程、三條舊本人分頁／client 相容檢查、受影響 TypeScript 依賴圖及 diff 核對通過。獨立 Sol review 未報 blocker，主模型覆核關鍵變更；零模型、通知、雲端、手機及部署。[證據](artifacts/verification/P4_SHARED_ATTACHMENTS_20261027.json)。
 - 原失敗保留：缺共享方法先 red；合成查詢替身缺倒序多欄位 cursor，按真契約修正；正式 transcript HTTP 曾仍走私人 reader，403 重現後接回共享 reader。替身物件／Auth 型別缺項另補，不改產品限制或放寬斷言。
 - FAMILY-A／P4 未完成：繼續共享寫入、Agent／背景、同步與家庭／班級畫面；不改 D PR，P3／P5 及真機未驗保持。
+
+
+<a id="log-20261027-p4-shared-attachment-deletion"></a>
+### LOG-20261027-P4-SHARED-ATTACHMENT-DELETION
+
+- 基線 `dbf491f`，分支 `codex/p4-shared-attachment-writes`。文件／錄音共享刪除接原 HTTP／共用 Web／Android client、權威服務、獨立 journal 與 cleanup worker；無新增套件、索引、雲端、模型或部署。
+- 來源原件刪除屏障及實際操作者收據同交易提交；受理不等於日誌完成，日誌未知時不回永久刪除。撤權停止新操作，但原清理義務可繼續；未連結私人草稿／viewer 不可刪除。原 opId、版本及署名綁定保留，恢復沿同一 schema 核對。
+- 新連貫流程涵蓋正式 HTTP／共用 client、版本／撤權／原操作／清理；另核受影響共享讀取、一條共用 client 檢查及舊本人文件／錄音各一條，限定 TypeScript 與 diff 通過。未跑全量、模型或設備驗收。[證據](artifacts/verification/P4_SHARED_ATTACHMENT_DELETION_20261027.json)。
+- 獨立 Sol review 找到 journal 以來源 owner＋opId 唯一鍵造成跨操作者衝突；先改合成 transport 對應正式鍵並重現，再復用 authority 原有穩定來源操作映射，另存 actorOperationId，補驗通過。原缺方法／client 阻擋 red、CRLF 替換語法、error.code 測試路徑及 voice import 遺漏均保留在證據，不放寬產品限制。
+- 照片刪除配額／照護記錄、共享上載／私聊關聯、Agent／其餘背景、同步與家庭畫面仍待接；未部署，FAMILY-A／P4 未完成，P3／P5 及 D PR 保持。

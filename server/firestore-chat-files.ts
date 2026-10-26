@@ -1,4 +1,5 @@
-import { sharedAttachmentReads, attachmentReadFence } from './firestore-attachment-access.ts';
+import { sharedWriteAttributionSchema, sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
+import { sharedAttachmentReads, attachmentReadFence, withSharedAttachmentWrite } from './firestore-attachment-access.ts';
 import type { SharedSelection } from '../src/shared/sharing.ts';
 import type { FirestoreAuthority } from './firestore-authority.ts';
 import { createPrivateAttachmentList } from './firestore-attachment-list.ts';
@@ -9,7 +10,7 @@ import { randomUUID, createHash } from "node:crypto";
 import { z } from "zod";
 import type { DocumentSnapshot } from "@google-cloud/firestore";
 import { chatFileReservationSchema, type ChatFileAttachment, type ChatFileReservation, chatFileMessageReferenceSchema, type ChatFileMessageReference } from "../src/shared/chat-files.ts";
-import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from "./firestore-authority.ts";
+import { createFirestoreAuthority, sharedSourceOperationId, type FirestoreAuthorityTransaction } from "./firestore-authority.ts";
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from "./firestore-domain-data.ts";
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from "./firestore-work-continuation-recovery.ts";
 import { chatFileObjectDescriptorSchema, type ChatFileObjects, type ChatFileObjectDescriptor } from "./firebase-chat-file-objects.ts";
@@ -25,13 +26,17 @@ export const firestoreChatFileRowSchema = z.object({
   state: z.enum(["reserved", "ready", "deleting", "deleted"]), upload: uploadSchema.nullable(),
   descriptor: chatFileObjectDescriptorSchema.nullable(), messageId: uuid.nullable(),
   deletion: z.object({ intent: firebaseErasureIntentSchema, proof: firebaseErasureDescriptorSchema.nullable(), expectedVersion: z.number().int().positive(),
+    actorUserId: z.string().min(1).max(256).optional(), actorOperationId: uuid.optional(), attribution: sharedWriteAttributionSchema.optional(),
     integrity: chatFileReservationSchema.pick({ bytes: true, sha256: true, mimeType: true }),
     cleanup: z.enum(['pending', 'blocked', 'complete']), attempts: z.number().int().min(0).max(6), nextCheckAt: at.nullable(),
   }).strict().nullable(),
 }).strict().refine(v => (['deleting', 'deleted'].includes(v.state)) === (v.metadata === null)
   && (v.metadata === null) === (v.deletion !== null)
   && (v.state !== "ready" || v.descriptor !== null)
-  && (!v.deletion || erasureCoversChatFile(v.deletion.intent, v.objectScope, v.id)));
+  && (!v.deletion || erasureCoversChatFile(v.deletion.intent, v.objectScope, v.id))
+  && (!v.deletion || validSharedAttribution(v.deletion.attribution, v.scope, v.id, v.deletion.expectedVersion + 1, v.deletion.actorUserId ?? v.scope.ownerUserId))
+  && (!v.deletion?.attribution || !!v.deletion.actorOperationId)
+  && (!v.deletion?.actorOperationId || v.deletion.intent.operationId === sharedSourceOperationId(v.deletion.actorUserId ?? v.scope.ownerUserId, v.deletion.actorOperationId)));
 export type FirestoreChatFileRow = z.infer<typeof firestoreChatFileRowSchema>;
 export interface FirestoreChatFileOptions extends FirestoreDomainOptions { attachmentListPolicy?: AttachmentListPolicy; objects: ChatFileObjects; journal: Pick<FirebaseErasureJournal, 'writeOnce' | 'read'>; serverClock?: () => number }
 /** Private file authority. Upload and object reads occur outside retried Firestore callbacks. */
@@ -183,26 +188,34 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
       tx.set(ref(row.id), envelope(updated)); return updated;
     });
   }
-  async function deleteChatFile(userId: string, childId: string, id: string, expectedVersion: number, operationId: string) {
+  async function deleteChatFile(userId: string, childId: string, id: string, expectedVersion: number, operationId: string, selection?: SharedSelection) {
     domainParse(uuid, operationId); domainParse(z.number().int().positive(), expectedVersion);
-    const prepared = await authority.runTransaction(userId, childId, async b => {
-      const op = await operation(b, operationId, '/api/children/' + childId + '/files/' + id + '/delete', { expectedVersion });
+    const prepare = async (b: FirestoreAuthorityTransaction, actor: FirestoreAuthorityTransaction) => {
+      const op = await operation(actor, operationId, '/api/children/' + childId + '/files/' + id + '/delete', { expectedVersion, ...(selection ? { spaceId: selection.spaceId } : {}) });
       const row = await read(b, id);
       if (row.deletion) {
-        if (row.deletion.intent.operationId !== operationId || row.deletion.expectedVersion !== expectedVersion) domainReject('operation_conflict');
+        if ((row.deletion.actorOperationId ?? row.deletion.intent.operationId) !== operationId || row.deletion.expectedVersion !== expectedVersion
+          || (row.deletion.actorUserId ?? row.scope.ownerUserId) !== actor.actorUserId || !op.prior) domainReject('operation_conflict');
         return row;
       }
       if (op.prior) domainReject('operation_erased');
+      if (b.sharedAccess && (row.state !== 'ready' || !row.messageId)) domainReject('not_found', 404);
       if (row.version !== expectedVersion) domainReject('version_conflict');
-      const intent: FirebaseErasureIntent = { type: 'file-delete', scope: row.objectScope, assetId: id, operationId, at: now() };
+      const intent: FirebaseErasureIntent = { type: 'file-delete', scope: row.objectScope, assetId: id,
+        operationId: b.sharedAccess ? sharedSourceOperationId(actor.actorUserId, operationId) : operationId, at: now() };
       const change = await b.prepareChange(operationId, 'chat', true);
       const { bytes, sha256, mimeType } = row.metadata!;
       const updated: FirestoreChatFileRow = { ...row, version: row.version + 1, state: 'deleting', metadata: null, updatedAt: now(),
-        deletion: { intent, proof: null, expectedVersion, integrity: { bytes, sha256, mimeType }, cleanup: 'pending', attempts: 0, nextCheckAt: now() } };
-      const saved = receipts.prepareConfirmed(b, op.submission, { childId, changeSeq: change.changeSeq, statusCode: 200,
+        deletion: { intent, proof: null, expectedVersion, actorUserId: actor.actorUserId,
+          ...(b.sharedAccess ? {actorOperationId: operationId} : {}),
+          ...(sharedWriteAttribution(b, id, row.version + 1) ? { attribution: sharedWriteAttribution(b, id, row.version + 1) } : {}), integrity: { bytes, sha256, mimeType }, cleanup: 'pending', attempts: 0, nextCheckAt: now() } };
+      const saved = receipts.prepareConfirmed(actor, op.submission, { childId: selection ? null : childId, changeSeq: change.changeSeq, statusCode: 200,
         result: { fileId: id, action: 'chat_file_delete', accepted: true } });
       change.commit(); b.transaction.set(ref(id), envelope(updated)); saved.commit(); return updated;
-    });
+    };
+    const prepared = selection
+      ? await withSharedAttachmentWrite(options, userId, childId, selection, prepare)
+      : await authority.runTransaction(userId, childId, b => prepare(b, b));
     const deleted = await finishDeletion(prepared);
     return { operationId, deleted: true as const, cleanupPending: deleted.deletion!.cleanup !== 'complete' };
   }
@@ -318,7 +331,8 @@ export function createFirestoreChatFilesStore(options: FirestoreChatFileOptions)
   }
   const { content, list, get } = readers(authority);
 
-  return { list, get, forSharedSpace: (selection: SharedSelection) => readers(sharedAttachmentReads(options, selection)), reserve, upload, reconcile, content, prepareLink, contentForMessage, readEvidence, delete: deleteChatFile, cleanupDeleted, expireUnlinked, eraseForScope,
+  return { list, get, forSharedSpace: (selection: SharedSelection) => ({ ...readers(sharedAttachmentReads(options, selection)),
+    delete: (userId: string, childId: string, id: string, version: number, opId: string) => deleteChatFile(userId, childId, id, version, opId, selection) }), reserve, upload, reconcile, content, prepareLink, contentForMessage, readEvidence, delete: deleteChatFile, cleanupDeleted, expireUnlinked, eraseForScope,
     readMetadata: async (b: FirestoreAuthorityTransaction, id: string) => view(await read(b,id), b) };
 }
 export type FirestoreChatFilesStore = ReturnType<typeof createFirestoreChatFilesStore>;

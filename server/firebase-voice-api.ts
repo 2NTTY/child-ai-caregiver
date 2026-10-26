@@ -33,7 +33,7 @@ export async function handleFirebaseVoiceRequest(request: Request, userId: strin
   if (expected !== userId) domainReject('session_changed', 409);
   const url = new URL(request.url), match = /^\/api\/children\/([^/]+)\/voices(?:\/([^/]+)(?:\/(content|resolve|delete|transcript))?)?$/u.exec(url.pathname);
   if (!match || !z.uuid().safeParse(match[1]).success || match[2] && !z.uuid().safeParse(match[2]).success) domainReject('not_found', 404);
-  const selection = attachmentReadSelection(request, url);
+  const selection = attachmentReadSelection(request, url, true);
   const reads = selection ? voice.forSharedSpace?.(selection) : voice;
   if (!reads) domainReject('shared_attachment_unavailable', 503);
   const listing = request.method === 'GET' && !match[2];
@@ -61,7 +61,7 @@ export async function handleFirebaseVoiceRequest(request: Request, userId: strin
     response = Response.json({ voice: await voice.reconcile(userId, childId, id) });
   } else if (request.method === 'POST' && id && action === 'delete') {
     const input = domainParse(z.object({ expectedVersion: version, opId: z.uuid() }).strict(), await json(request)); await active();
-    response = Response.json(await voice.delete(userId, childId, id, input.expectedVersion, input.opId));
+    response = Response.json(await reads.delete(userId, childId, id, input.expectedVersion, input.opId));
   } else if (request.method === 'GET' && id && action === 'content') {
     const value = await reads.content(userId, childId, id);
     response = new Response(new Uint8Array(value.buffer), { headers: { 'Content-Type': value.descriptor.mimeType,
