@@ -1,3 +1,6 @@
+import { sharedAttachmentReads, attachmentReadFence } from './firestore-attachment-access.ts';
+import type { SharedSelection } from '../src/shared/sharing.ts';
+import type { FirestoreAuthority } from './firestore-authority.ts';
 import { randomUUID } from "node:crypto";
 import type { Firestore, DocumentSnapshot } from "@google-cloud/firestore";
 import { z } from "zod";
@@ -53,7 +56,7 @@ export const firestorePhotoCleanupSchema = z.object({ scope: workRecoveryScopeSc
   descriptor: firebasePhotoObjectDescriptorSchema.nullable(), journal: firebaseErasureDescriptorSchema }).strict()
   .refine(value => (value.state === "known") === (value.descriptor !== null) && value.uploadStarted === (value.upload !== null));
 export type FirestorePhotoCleanup = z.infer<typeof firestorePhotoCleanupSchema>;
-const cursorSchema = z.object({ scopeTag: hash, sortKey: z.string().min(1).max(80) }).strict();
+const cursorSchema = z.object({ scopeTag: hash, sortKey: z.string().min(1).max(80), sharedFence: hash.optional() }).strict();
 export type FirestorePhotoCursor = z.infer<typeof cursorSchema>;
 export class FirestorePhotoError extends FirestoreDomainError {
   constructor(status: number, code: string) { super(status, code); this.name = "FirestorePhotoError"; }
@@ -109,11 +112,13 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
     if (row.state === "deleting") fail("photo_deleting", 409);
     if (!row.metadata) fail("photo_integrity", 503);
   }
-  function view(row: Row): PhotoAttachment {
+  function view(row: Row, binding?: FirestoreAuthorityTransaction): PhotoAttachment {
+    if (binding?.sharedAccess && row.state !== "ready") fail("not_found", 404);
     active(row);
     return { ...row.metadata, id: row.id, childId: row.scope.childId, ownerUserId: row.scope.ownerUserId, createdAt: row.createdAt,
-      version: row.version, state: row.state as "reserved" | "ready", recoveryPending: row.state === "reserved" && !!row.objectScope, visibility: row.visibility ?? 'private', canManage: true, recordId: row.recordId ?? null,
-      extraction: row.extraction ? { state: row.extraction.state === 'running' && Date.parse(row.extraction.expiresAt!) <= Date.parse(now()) ? 'unknown' : row.extraction.state,
+      version: row.version, state: row.state as "reserved" | "ready", recoveryPending: row.state === "reserved" && !!row.objectScope, visibility: binding?.sharedAccess ? 'shared' : row.visibility ?? 'private', canManage: !binding?.sharedAccess, recordId: binding?.sharedAccess ? null : row.recordId ?? null,
+      ...(binding?.sharedAccess ? {sharedSpaceId: binding.sharedAccess.spaceId} : {}),
+      extraction: row.extraction && !binding?.sharedAccess ? { state: row.extraction.state === 'running' && Date.parse(row.extraction.expiresAt!) <= Date.parse(now()) ? 'unknown' : row.extraction.state,
         runId: row.extraction.runId, draft: row.extraction.draft, stopReason: row.extraction.stopReason,
         processedAt: row.extraction.processedAt, model: row.extraction.model }
         : { state: "not_requested", runId: null, draft: null, stopReason: null, processedAt: null, model: null } };
@@ -324,7 +329,57 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
       prepared.commit(); writeRow(b, row); receipt.commit(); return receipt.receipt;
     });
   }
+  function readers(readAuthority: Pick<FirestoreAuthority, 'runTransaction'>) { return {
+    async get(userId: string, childId: string, id: string): Promise<PhotoAttachment> {
+      ids(userId, childId, id); return guard(() => readAuthority.runTransaction(userId, childId, async binding => view(await readRow(binding, id), binding)));
+    },
+    async list(userId: string, childId: string, input: { limit?: number; cursor?: FirestorePhotoCursor | null } = {}) {
+      ids(userId, childId); const checked = parse(z.object({ limit: integer.min(1).max(100).optional(), cursor: cursorSchema.nullable().optional() }).strict(), input, true);
+      return guard(async () => {
+        const result = await readAuthority.runTransaction(userId, childId, async binding => {
+          const scopeTag = tag(binding.scope), limit = checked.limit ?? 50, cursor = checked.cursor;
+          const fence = attachmentReadFence(binding), sharedFence = binding.sharedAccess ? fence : undefined;
+          if (cursor && (cursor.scopeTag !== scopeTag || cursor.sharedFence !== sharedFence)) fail('cursor_scope', 409);
+          let query = data.collection('photos').where('scopeTag', '==', scopeTag).where('live', '==', true);
+          if (cursor) query = query.where('sortKey', '>=', cursor.sortKey);
+          const snapshot = await binding.transaction.get(query.orderBy('sortKey').limit(limit + 2));
+          const rows = snapshot.docs.filter(doc => !cursor || doc.data()?.sortKey !== cursor.sortKey).map(doc => {
+            const id = parse(uuid, doc.data()?.assetId), row = checkedRow(doc, binding.scope, id);
+            if (doc.data()?.sortKey !== row.createdAt + '/' + row.id || (row.state !== 'ready' && row.state !== 'reserved')) fail('photo_integrity', 503);
+            return row;
+          });
+          const scanned = rows.slice(0, limit), complete = rows.length <= limit;
+          const visible = binding.sharedAccess ? scanned.filter(row => row.state === 'ready') : scanned;
+          return {fence, page: {photos: visible.map(row => view(row, binding)), canCreate: !binding.sharedAccess, complete,
+            nextCursor: complete ? null : {scopeTag,sortKey:scanned.at(-1)!.createdAt+'/'+scanned.at(-1)!.id,...(sharedFence?{sharedFence}:{})}}};
+        });
+        const current = await readAuthority.runTransaction(userId, childId, async binding => attachmentReadFence(binding));
+        if (current !== result.fence) fail('attachment_scope_changed', 409);
+        return result.page;
+      });
+    },
+    async content(userId: string, childId: string, id: string) {
+      ids(userId, childId, id);
+      return guard(async () => {
+        const first = await readAuthority.runTransaction(userId, childId, async binding => {
+          const row = await readRow(binding, id); active(row); if (row.state !== "ready" || !row.descriptor) fail("not_found", 404);
+          view(row, binding); return { row, fence: attachmentReadFence(binding), scope: { ...binding.scope }, authorizationVersion: binding.authorizationVersion, generation: binding.generation };
+        });
+        const content = await objects.read(photoObjectScope(first.row), id, first.row.descriptor!);
+        await readAuthority.runTransaction(userId, childId, async binding => {
+          const row = await readRow(binding, id); active(row);
+          if (attachmentReadFence(binding) !== first.fence || !same(binding.scope, first.scope) || binding.authorizationVersion !== first.authorizationVersion || binding.generation !== first.generation
+            || row.state !== "ready" || row.version !== first.row.version || !same(row.descriptor, first.row.descriptor)
+            || !same(row.metadata, first.row.metadata)) fail("version_conflict");
+        });
+        const bytes = decodePhoto(content.base64, first.row.metadata!.mimeType);
+        if (bytes.length !== first.row.metadata!.bytes || photoHash(bytes) !== first.row.metadata!.sha256 || !bytes.equals(content.buffer)) fail("photo_integrity", 503);
+        return { base64: content.base64, bytes, mimeType: first.row.metadata!.mimeType };
+      });
+    },
+  }; }
   const service = {
+    ...readers(authority), forSharedSpace: (selection: SharedSelection) => readers(sharedAttachmentReads(options, selection)),
     async submitOnline(userId: string, value: OnlineSubmission): Promise<OnlineReceipt> {
       const submission = parse(onlineSubmissionSchema, value, true);
       const match = /^\/api\/children\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/photos(?:\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\/(delete|confirm))?$/iu.exec(submission.path);
@@ -338,9 +393,6 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
     },
     async reserve(userId: string, childId: string, operationId: string, value: PhotoMetadata): Promise<PhotoAttachment> {
       return reserveOperation(userId, childId, operationId, value) as Promise<PhotoAttachment>;
-    },
-    async get(userId: string, childId: string, id: string): Promise<PhotoAttachment> {
-      ids(userId, childId, id); return guard(() => authority.runTransaction(userId, childId, async binding => view(await readRow(binding, id))));
     },
     async prepareLink(binding: FirestoreAuthorityTransaction, id: string, expectedVersion: number): Promise<PhotoMessageReference> {
       parse(uuid, id, true); parse(version, expectedVersion, true);
@@ -369,24 +421,6 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
         if ((error instanceof FirestoreAuthorityError || error instanceof FirestoreDomainError) && error.status < 500) return false;
         throw error;
       }
-    },
-    async list(userId: string, childId: string, input: { limit?: number; cursor?: FirestorePhotoCursor | null } = {}) {
-      ids(userId, childId); const checked = parse(z.object({ limit: integer.min(1).max(100).optional(), cursor: cursorSchema.nullable().optional() }).strict(), input, true);
-      return guard(() => authority.runTransaction(userId, childId, async binding => {
-        const scopeTag = tag(binding.scope), limit = checked.limit ?? 50, cursor = checked.cursor;
-        if (cursor && cursor.scopeTag !== scopeTag) fail("cursor_scope", 409);
-        let query = data.collection("photos").where("scopeTag", "==", scopeTag).where("live", "==", true);
-        if (cursor) query = query.where("sortKey", ">=", cursor.sortKey);
-        const snapshot = await binding.transaction.get(query.orderBy("sortKey").limit(limit + 2));
-        const rows = snapshot.docs.filter(doc => !cursor || doc.data()?.sortKey !== cursor.sortKey).map(doc => {
-          const id = parse(uuid, doc.data()?.assetId), row = checkedRow(doc, binding.scope, id);
-          if (doc.data()?.sortKey !== row.createdAt + "/" + row.id || (row.state !== "ready" && row.state !== "reserved")) fail("photo_integrity", 503);
-          return row;
-        });
-        const page = rows.slice(0, limit), complete = rows.length <= limit;
-        return { photos: page.map(view), canCreate: true, complete,
-          nextCursor: complete ? null : { scopeTag, sortKey: page.at(-1)!.createdAt + "/" + page.at(-1)!.id } };
-      }));
     },
     async upload(userId: string, childId: string, id: string, base64: string): Promise<PhotoAttachment> {
       ids(userId, childId, id); const candidate = randomUUID(), startedAt = now();
@@ -439,25 +473,6 @@ export function createFirestorePhotoStore(options: FirestorePhotosOptions) {
           return { blocked: false as const, photo: view(row) };
         });
         if (final.blocked) fail("photo_deleting", 409); return final.photo!;
-      });
-    },
-    async content(userId: string, childId: string, id: string) {
-      ids(userId, childId, id);
-      return guard(async () => {
-        const first = await authority.runTransaction(userId, childId, async binding => {
-          const row = await readRow(binding, id); active(row); if (row.state !== "ready" || !row.descriptor) fail("not_found", 404);
-          return { row, scope: { ...binding.scope }, authorizationVersion: binding.authorizationVersion, generation: binding.generation };
-        });
-        const content = await objects.read(photoObjectScope(first.row), id, first.row.descriptor!);
-        await authority.runTransaction(userId, childId, async binding => {
-          const row = await readRow(binding, id); active(row);
-          if (!same(binding.scope, first.scope) || binding.authorizationVersion !== first.authorizationVersion || binding.generation !== first.generation
-            || row.state !== "ready" || row.version !== first.row.version || !same(row.descriptor, first.row.descriptor)
-            || !same(row.metadata, first.row.metadata)) fail("version_conflict");
-        });
-        const bytes = decodePhoto(content.base64, first.row.metadata!.mimeType);
-        if (bytes.length !== first.row.metadata!.bytes || photoHash(bytes) !== first.row.metadata!.sha256 || !bytes.equals(content.buffer)) fail("photo_integrity", 503);
-        return { base64: content.base64, bytes, mimeType: first.row.metadata!.mimeType };
       });
     },
     async delete(userId: string, childId: string, id: string, expectedVersion: number, operationId: string): Promise<{ deleted: true; cleanupPending: true }> {
