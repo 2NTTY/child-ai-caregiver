@@ -414,15 +414,263 @@
         }
       ],
       "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch"
+    },
+    {
+      "name": "security-best-practices",
+      "path": ".agents/skills/security-best-practices",
+      "upstream_repository": "openai/skills",
+      "upstream_commit": "49f948faa9258a0c61caceaf225e179651397431",
+      "upstream_path": "skills/.curated/security-best-practices",
+      "license": "Apache-2.0",
+      "upstream_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "7b3dae1ffc5434d890f3c65c8f552af52d0307fab3b35dec13013c9ca3844c4f",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/SKILL.md",
+          "git_blob_sha": "45ccbd8d671c4c4cc3e7e0645a16a3f80ec50de7"
+        },
+        {
+          "path": "references/golang-general-backend-security.md",
+          "sha256": "a73c47c34497b120672d48411fe51dc90d426a571801a0b3f649e2ce4ec658b4",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/golang-general-backend-security.md",
+          "git_blob_sha": "85e9c6a1669e0d04af56c9a0bce113dd35e0248d"
+        },
+        {
+          "path": "references/javascript-express-web-server-security.md",
+          "sha256": "427835cbb5be7ba96172ea6ca9af80ddd4419c833e9ebf870996740c80d8406c",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-express-web-server-security.md",
+          "git_blob_sha": "98d79067ffb784ce426394193e744ddc7f3c93be"
+        },
+        {
+          "path": "references/javascript-general-web-frontend-security.md",
+          "sha256": "3a7bc7b3f6e7ff043db9dbaa8933894d7a19d987d0607e4ddae5d70184a63d63",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-general-web-frontend-security.md",
+          "git_blob_sha": "d8b696f363ea54661791c048ba19a57933d20825"
+        },
+        {
+          "path": "references/javascript-jquery-web-frontend-security.md",
+          "sha256": "bcbad2fa6c2a02709e47e889e70102c76886bf36bc798624d27db570eccf40da",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-jquery-web-frontend-security.md",
+          "git_blob_sha": "3fd00db430ed55fafe50112b8d8b751fe82deec1"
+        },
+        {
+          "path": "references/javascript-typescript-nextjs-web-server-security.md",
+          "sha256": "71c773f7a97ce60c853adfa100b3d88b3b7bc4c6b8acaef1432ffabd923ee182",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-typescript-nextjs-web-server-security.md",
+          "git_blob_sha": "44cc8213b11feda2eac8283dfd6a11fe93a68965"
+        },
+        {
+          "path": "references/javascript-typescript-react-web-frontend-security.md",
+          "sha256": "d3030c0f24bddb56b9bbb91bbec1ee49eb7778bce4d3e0297b2641b2fc6b0d9c",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-typescript-react-web-frontend-security.md",
+          "git_blob_sha": "33fb693282a40754a081a499cda3d471aa23da28"
+        },
+        {
+          "path": "references/javascript-typescript-vue-web-frontend-security.md",
+          "sha256": "77c6a747f9f17e3df03aad0fcb20d99ac7898001b81aef8b80908e45ac14a688",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/javascript-typescript-vue-web-frontend-security.md",
+          "git_blob_sha": "be326548bf953b6d1918727d228449ab4cb5110d"
+        },
+        {
+          "path": "references/python-django-web-server-security.md",
+          "sha256": "4fb69b5d45f10e588d1a8c35cdc5f59e18910f6b46a93e2d342d90f286f8dfd2",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/python-django-web-server-security.md",
+          "git_blob_sha": "0b9a89a73e0ff3a88ccb7837b56ad1a5f15259e0"
+        },
+        {
+          "path": "references/python-fastapi-web-server-security.md",
+          "sha256": "7383c7f4fc271190b05e562ada7e825982a2c76b6c79a9f95a1da7687b65a616",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/python-fastapi-web-server-security.md",
+          "git_blob_sha": "d394a55bb86b3b2e5c2b73e65cb115a2a0ce1c05"
+        },
+        {
+          "path": "references/python-flask-web-server-security.md",
+          "sha256": "9606d69190c04c167fdeac57e61297547a57b0542fd89dede36f355970446929",
+          "url": "https://github.com/openai/skills/blob/49f948faa9258a0c61caceaf225e179651397431/skills/.curated/security-best-practices/references/python-flask-web-server-security.md",
+          "git_blob_sha": "adbc599aad8688a3446f5b595a1f4f0c1eac942f"
+        }
+      ],
+      "omitted_upstream_files": [
+        "agents/openai.yaml"
+      ],
+      "upstream_license": {
+        "path": "skills/.curated/security-best-practices/LICENSE.txt",
+        "sha256": "4dd13869245e356246a5b770723247bbb80a8f07a181d1d3d873a1734297cdb9",
+        "git_blob_sha": "13e25df86ce06eb6488e6a6bc5c5847f5dedc352"
+      },
+      "installed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "4dd13869245e356246a5b770723247bbb80a8f07a181d1d3d873a1734297cdb9"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "46e7679771621673340dbd1044fdf8aeb7d04538539f7d70861d5f677f237f55"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "sha256": "717b6dda404a787c6ec6616243e80685e60ef2724fb0caa750475c54f648e45a"
+        },
+        {
+          "path": "UPSTREAM.patch",
+          "sha256": "990e2a4cd70eb227908417a76f736026649bf6bd21fdcb7e45863865d308fabd"
+        },
+        {
+          "path": "references/golang-general-backend-security.md",
+          "sha256": "0b6d9f51de91f9eec29c21f03f0f762a54b09b272621a9d6cc06df0cb4ed6b4f"
+        },
+        {
+          "path": "references/javascript-express-web-server-security.md",
+          "sha256": "c3ebc0d7a7a4c15d39e554558f5e88eae978e1c8c6a2fd4a7877e40139c489c9"
+        },
+        {
+          "path": "references/javascript-general-web-frontend-security.md",
+          "sha256": "94b2c5729d0cf73f8b1be75c441f8a65db596257e7f7c7ed300287fcda3752df"
+        },
+        {
+          "path": "references/javascript-jquery-web-frontend-security.md",
+          "sha256": "e2be22ee3190502a7313e728538528055183e6908848ec9ca19652610063fb7e"
+        },
+        {
+          "path": "references/javascript-typescript-nextjs-web-server-security.md",
+          "sha256": "7aee035a0bfc8df3a4042078e6e9775e0b67b630e256512d03891362df89265a"
+        },
+        {
+          "path": "references/javascript-typescript-react-web-frontend-security.md",
+          "sha256": "d0135c6fc10b09c1bfb9dfb8f83bce4031d395070f2488dc3816501423219a35"
+        },
+        {
+          "path": "references/javascript-typescript-vue-web-frontend-security.md",
+          "sha256": "fa80f56e53614ea110e49a1aa7060a0fd7446a37eccc7236457589bdc47804fc"
+        },
+        {
+          "path": "references/python-django-web-server-security.md",
+          "sha256": "654a8abf979281be1236def89068859b6e950c86f62e5600accedac3bcd2ea4e"
+        },
+        {
+          "path": "references/python-fastapi-web-server-security.md",
+          "sha256": "c91a6698ed6fd2892b23cfba36952b45c8f01c8a409e10fc9f2d313078f8ed48"
+        },
+        {
+          "path": "references/python-flask-web-server-security.md",
+          "sha256": "771cc8106fec167511f23810c57c4197a377bed57563f419cfd972c8ef60dc45"
+        },
+        {
+          "path": "upstream/SKILL.md.txt",
+          "sha256": "7b3dae1ffc5434d890f3c65c8f552af52d0307fab3b35dec13013c9ca3844c4f"
+        },
+        {
+          "path": "upstream/references/golang-general-backend-security.md.txt",
+          "sha256": "a73c47c34497b120672d48411fe51dc90d426a571801a0b3f649e2ce4ec658b4"
+        },
+        {
+          "path": "upstream/references/javascript-express-web-server-security.md.txt",
+          "sha256": "427835cbb5be7ba96172ea6ca9af80ddd4419c833e9ebf870996740c80d8406c"
+        },
+        {
+          "path": "upstream/references/javascript-general-web-frontend-security.md.txt",
+          "sha256": "3a7bc7b3f6e7ff043db9dbaa8933894d7a19d987d0607e4ddae5d70184a63d63"
+        },
+        {
+          "path": "upstream/references/javascript-jquery-web-frontend-security.md.txt",
+          "sha256": "bcbad2fa6c2a02709e47e889e70102c76886bf36bc798624d27db570eccf40da"
+        },
+        {
+          "path": "upstream/references/javascript-typescript-nextjs-web-server-security.md.txt",
+          "sha256": "71c773f7a97ce60c853adfa100b3d88b3b7bc4c6b8acaef1432ffabd923ee182"
+        },
+        {
+          "path": "upstream/references/javascript-typescript-react-web-frontend-security.md.txt",
+          "sha256": "d3030c0f24bddb56b9bbb91bbec1ee49eb7778bce4d3e0297b2641b2fc6b0d9c"
+        },
+        {
+          "path": "upstream/references/javascript-typescript-vue-web-frontend-security.md.txt",
+          "sha256": "77c6a747f9f17e3df03aad0fcb20d99ac7898001b81aef8b80908e45ac14a688"
+        },
+        {
+          "path": "upstream/references/python-django-web-server-security.md.txt",
+          "sha256": "4fb69b5d45f10e588d1a8c35cdc5f59e18910f6b46a93e2d342d90f286f8dfd2"
+        },
+        {
+          "path": "upstream/references/python-fastapi-web-server-security.md.txt",
+          "sha256": "7383c7f4fc271190b05e562ada7e825982a2c76b6c79a9f95a1da7687b65a616"
+        },
+        {
+          "path": "upstream/references/python-flask-web-server-security.md.txt",
+          "sha256": "9606d69190c04c167fdeac57e61297547a57b0542fd89dede36f355970446929"
+        }
+      ],
+      "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch"
+    },
+    {
+      "name": "security-threat-model",
+      "path": ".agents/skills/security-threat-model",
+      "upstream_repository": "openai/codex-security",
+      "upstream_commit": "8ed8d9dffc766343c8534601286dc5980afcb1c8",
+      "upstream_path": "plugins/codex-security",
+      "license": "Apache-2.0",
+      "upstream_files": [
+        {
+          "path": "SKILL.md",
+          "sha256": "79a1b6282f80804227a28f9a1fae71bbfcd6928c1de5d2c84ab0ebf9c1f49226",
+          "url": "https://github.com/openai/codex-security/blob/8ed8d9dffc766343c8534601286dc5980afcb1c8/plugins/codex-security/skills/threat-model/SKILL.md",
+          "git_blob_sha": "7d40076528c951424a9a0070fb34ab16594fed9b",
+          "upstream_relative_path": "skills/threat-model/SKILL.md"
+        },
+        {
+          "path": "references/threat-model.md",
+          "sha256": "30b70121ab8a41283117f03ae17ee3ba20dc766bb17f557a2f488a80fc63d2cc",
+          "url": "https://github.com/openai/codex-security/blob/8ed8d9dffc766343c8534601286dc5980afcb1c8/plugins/codex-security/references/threat-model.md",
+          "git_blob_sha": "f4b94897960515a126968823e8cc08a6a755f726"
+        }
+      ],
+      "omitted_upstream_files": [
+        "skills/threat-model/agents/openai.yaml",
+        "references/artifact-storage.md",
+        "references/scan-artifacts.md",
+        "references/security-guidance.md"
+      ],
+      "upstream_license": {
+        "path": "LICENSE",
+        "sha256": "d17f227e4df5da1600391338865ce0f3055211760a36688f816941d58232d8dc",
+        "git_blob_sha": "4606e72e042564097e8780d66c1d4dcb611869bd"
+      },
+      "installed_files": [
+        {
+          "path": "LICENSE",
+          "sha256": "d17f227e4df5da1600391338865ce0f3055211760a36688f816941d58232d8dc"
+        },
+        {
+          "path": "SKILL.md",
+          "sha256": "0668f5e06e62705c09a6cfc0b3e8fb194b819cbf9c5b03fdd30266840df23329"
+        },
+        {
+          "path": "UPSTREAM.md",
+          "sha256": "b756ccce42095ffa1f6b9ebf901c9730f930ff38a61abb4cdd564cae493e1cac"
+        },
+        {
+          "path": "UPSTREAM.patch",
+          "sha256": "7a57a0ffa43c9ee7b9576db030ced9cc0a0726c8dd0248211fd8f9e316529bcd"
+        },
+        {
+          "path": "references/threat-model.md",
+          "sha256": "8381857ccf7b7796031d4c23914e6515ef7614742a7f5eb76aaff9bd89a378ae"
+        },
+        {
+          "path": "upstream/SKILL.md.txt",
+          "sha256": "79a1b6282f80804227a28f9a1fae71bbfcd6928c1de5d2c84ab0ebf9c1f49226"
+        },
+        {
+          "path": "upstream/references/threat-model.md.txt",
+          "sha256": "30b70121ab8a41283117f03ae17ee3ba20dc766bb17f557a2f488a80fc63d2cc"
+        }
+      ],
+      "adaptation_status": "repository-adapted; selected original text retained under upstream/ as .txt; changes in UPSTREAM.patch",
+      "excluded_workflows": "All plugin infrastructure, scanner/daemon/worker scripts and binaries, artifact storage/cache workflows, MCP, auth/network/model settings; only two selected Markdown source files adapted."
     }
   ],
   "not_installed": {
-    "security_skills": [
-      "security-threat-model",
-      "security-best-practices"
-    ],
-    "security_reason": "Legacy openai/skills deprecated; maintained-plugin comparison pending user decision. No replacement scanner installed.",
-    "frontend": "No frontend/design skill added; DOT-only choice retained.",
+    "frontend": "No frontend/design skill added; DOT-only choice retained. Existing security coding library includes browser/React security references, not design skills.",
     "optional": [
       "ADK",
       "Firebase",
@@ -430,6 +678,12 @@
       "QA",
       "CI"
     ],
-    "framework": "No using-superpowers, writing-plans, executing-plans, hooks, plugin manifest, MCP, auto-updater or global settings added."
+    "framework": "No using-superpowers, writing-plans, executing-plans, hooks, plugin manifest, MCP, auto-updater or global settings added.",
+    "security_runtime": "No full Codex Security plugin, scanners, services, daemon/model-worker pool, artifact MCP/cache workflow, auth, network or model settings installed."
+  },
+  "security_update_base": {
+    "remote_commit": "be9946bcba21540fe7bd9947491ceb8609b1ad3a",
+    "tree": "a880e6943ecb872bc809929d5e6ee7621f77f6c6",
+    "existing_six_skills": "byte-for-byte unchanged"
   }
 }
