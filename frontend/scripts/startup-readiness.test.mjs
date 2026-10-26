@@ -137,7 +137,7 @@ test('same-identity refresh stays open but a new identity or session epoch waits
 });
 
 test('a report for a previous route/scope cannot release a new startup', () => {
-  const h = harness(); h.render(startup(h, { image: false })); assert.ok(h.node('frontend-startup-loading'));
+  const h = harness(); h.render(startup(h, { image: false, report: 'loading' })); assert.ok(h.node('frontend-startup-loading'));
   h.render(startup(h, { path: '/tasks', includeReport: false })); assert.ok(h.node('frontend-startup-loading'));
   h.render(startup(h, { path: '/tasks' })); assert.ok(h.node('frontend-preview-ready'));
 });
@@ -263,4 +263,14 @@ test('an earlier care-view report cannot reveal a pending photo-view startup', (
   assert.ok(h.node('frontend-startup-loading'), 'changing view invalidates the previous route report');
   h.render(startup(h, { path: '/care', search: { view: 'photos' }, report: 'ready' }));
   assert.ok(h.node('frontend-preview-ready'));
+});
+
+
+test('ready Home care data opens without waiting for decorative artwork, while data and identity gates still hold', () => {
+  const h = harness(); h.render(startup(h, { image: false, report: 'loading' }));
+  assert.ok(h.node('frontend-startup-loading'));
+  h.render(startup(h, { image: false }));
+  assert.ok(h.node('frontend-preview-ready')); assert.equal(h.node('frontend-startup-loading'), undefined);
+  h.render(startup(h, { identity: 'other-parent:1', image: false, report: 'loading' }));
+  assert.ok(h.node('frontend-startup-loading'));
 });

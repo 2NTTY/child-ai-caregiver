@@ -40,13 +40,16 @@ function harness({ pathname = '/', width = 390, enabled = true, platform = 'web'
       if (name === 'react-native-svg') return { __esModule: true, default: 'Svg', Path: 'Path' };
       if (name === 'expo-router') return { usePathname: () => pathname, useRouter: () => ({ push: target => events.push(['push', target]) }) };
       if (name === 'react-native-safe-area-context') return { SafeAreaView: 'SafeAreaView', useSafeAreaInsets: () => ({ bottom: 24 }) };
+      if (name.endsWith('/useHeaderOperationHints')) return { useHeaderOperationHints: () => [] };
+      if (name.endsWith('/ProductionFirstScreenGate')) return { useProductionSwitchReadiness: () => ({ state: 'ready', key: 'parent:child', retry() {} }) };
+      if (name.endsWith('/TasksWorkspace')) return { useTasksWorkspace: () => null };
       if (name.endsWith('/useProductionHome')) return { useProductionHome: () => production };
       // PreviewContext is now a compatibility re-export of the same production owner.
       if (name.endsWith('/PreviewContext')) return { usePreview: () => production };
       if (name.endsWith('/PreviewNavigationGuard')) return { usePreviewNavigation: () => leave, PreviewLink: 'PreviewLink' };
       if (name.endsWith('/fixture')) return { scenarioLabels: {} };
       if (name.endsWith('/branding')) return { brand: {} };
-      if (/\/(theme|app-navigation|RecordsNavButton|MobileNavSelection|CornerCaptureSurface|quick-input-gesture|pointer-click-gate)$/.test(name)) {
+      if (/\/(theme|dataReadiness|app-navigation|MoreNavButton|MobileNavSelection|CornerCaptureSurface|quick-input-gesture|pointer-click-gate)$/.test(name)) {
         const target = path.resolve(path.dirname(filename), name);
         return load(existsSync(`${target}.ts`) ? `${target}.ts` : `${target}.tsx`);
       }
@@ -80,7 +83,7 @@ function harness({ pathname = '/', width = 390, enabled = true, platform = 'web'
     return expand(tree, key);
   }
   const shell = () => render(load('src/components/AppShell.tsx').AppShell, { children: 'content' }, 'shell');
-  const records = active => render(load('src/components/navigation/RecordsNavButton.tsx').RecordsNavButton, { active, scopeKey: 'parent:child' }, 'records');
+  const records = active => render(load('src/components/navigation/MoreNavButton.tsx').MoreNavButton, { active, }, 'records');
   const dock = () => {
     const tree = render(load('src/components/agent/MobileQuickInputDock.tsx').MobileQuickInputDock, {}, 'dock');
     const picker = nodes(tree).find(node => node.type === 'PhotoFilePicker');
@@ -91,21 +94,21 @@ function harness({ pathname = '/', width = 390, enabled = true, platform = 'web'
 }
 
 test('each existing mobile page retains exactly one obvious selected surface after release', () => {
-  for (const width of [320, 390]) for (const pathname of ['/', '/chat', '/tasks', '/growth', '/care', '/photos', '/more', '/history']) {
+  for (const width of [320, 390]) for (const pathname of ['/', '/chat', '/tasks', '/growth', '/care', '/photos', '/more', '/history', '/profile', '/settings']) {
     const h = harness({ pathname, width });
     let nav = nodes(h.shell()).find(node => node.props?.testID === 'mobile-bottom-navigation');
     const all = nodes(nav), indicators = all.filter(node => node.props?.testID === 'mobile-current-page');
     assert.equal(indicators.length, 1, `${width} ${pathname}`);
-    assert.equal(flatten(indicators[0].props.style).backgroundColor, '#BAE8E8');
+    assert.equal(flatten(indicators[0].props.style).backgroundColor, h.load('src/theme.ts').colors.selectedNav);
     const marker = nodes(indicators[0]).find(node => flatten(node.props?.style).width === 24);
     assert.equal(flatten(marker.props.style).height, 3);
     assert.equal(indicators[0].props.pointerEvents, 'none');
-    const selected = all.find(node => node.props?.['aria-current'] === 'page' || node.props?.current === true);
+    const selected = all.find(node => node.props?.['aria-current'] === 'page' || node.props?.accessibilityState?.selected === true);
     assert.ok(selected);
     if (selected.props.onPressIn) {
       selected.props.onPressIn();
       nav = nodes(h.shell()).find(node => node.props?.testID === 'mobile-bottom-navigation');
-      const held = nodes(nav).find(node => node.props?.['aria-current'] === 'page');
+      const held = nodes(nav).find(node => node.props?.['aria-current'] === 'page' || node.props?.accessibilityState?.selected === true);
       assert.equal(nodes(held).filter(node => node.props?.testID === 'mobile-current-page').length, 1);
       held.props.onPressOut();
       nav = nodes(h.shell()).find(node => node.props?.testID === 'mobile-bottom-navigation');
@@ -116,29 +119,22 @@ test('each existing mobile page retains exactly one obvious selected surface aft
 
 test('desktop keeps its existing selection and mobile overlays are absent', () => {
   for (const width of [1024, 1440]) {
-    const tree = harness({ pathname: '/growth', width }).shell(), all = nodes(tree);
+    const h = harness({ pathname: '/growth', width }), tree = h.shell(), all = nodes(tree);
     assert.equal(all.some(node => node.props?.testID === 'mobile-bottom-navigation'), false);
     assert.equal(all.some(node => node.props?.testID === 'mobile-current-page'), false);
     const active = all.find(node => node.props?.['aria-current'] === 'page');
-    assert.equal(flatten(active.props.style).backgroundColor, '#BAE8E8');
+    assert.equal(flatten(active.props.style).backgroundColor, h.load('src/theme.ts').colors.selectedNav);
   }
 });
 
-test('Records retains guarded tap, upward-drag and keyboard-expand routes with selected semantics', () => {
-  const h = harness({ pathname: '/history' });
+test('All features retains a guarded native tap and selected semantics without a hidden secondary gesture', () => {
+  const h = harness({ pathname: '/history', platform: 'android' });
   const record = h.records(true);
-  assert.equal(record.props.selected, true); assert.equal(record.props.current, true);
+  assert.equal(record.props.accessibilityState.selected, true); assert.equal(record.props['aria-current'], true);
   record.props.onPress(); assert.deepEqual(h.events, ['guard']);
-  h.approve(); assert.deepEqual(h.events, ['guard', ['push', '/care']]);
-  record.props.onGestureEnd(0, -80, true); assert.equal(h.events.at(-1), 'guard');
-  h.approve(); assert.deepEqual(h.events.at(-1), ['push', '/more']);
-  record.props.onExpand(); h.approve(); assert.deepEqual(h.events.at(-1), ['push', '/more']);
-  assert.equal(h.records(false).props.current, false);
-  const props = { ...record.props, children: 'record' };
-  const web = h.render(h.load('src/components/navigation/DirectionalPressable.web.tsx').DirectionalPressable, props, 'web-control');
-  assert.equal(web.props['aria-current'], 'page'); assert.equal(web.props.accessibilityState.selected, true);
-  const native = h.render(h.load('src/components/navigation/DirectionalPressable.tsx').DirectionalPressable, props, 'native-control');
-  assert.equal(native.props.accessibilityState.selected, true);
+  h.approve(); assert.deepEqual(h.events, ['guard', ['push', '/more']]);
+  assert.equal(record.props.onGestureEnd, undefined);
+  assert.equal(h.records(false).props['aria-current'], undefined);
 });
 
 test('corner surface has two tangent menisci and remains decorative outside the original hit area', () => {

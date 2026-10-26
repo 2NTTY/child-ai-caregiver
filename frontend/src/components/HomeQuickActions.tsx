@@ -26,7 +26,7 @@ function HomeAgentCapture({ model, actions, docked = false, captureOriginal, act
   const [opening, setOpening] = useState(false);
   const available = !!child && active && (model.scopeKey !== undefined ? !!model.scopeKey : model.profileLoad === "ready");
   return <BackgroundSurface padded frosted testID="home-quick-actions" style={[styles.section, docked && styles.docked]}>
-    <Text accessibilityRole="header" style={styles.heading}>交代一件事</Text>
+    <Text accessibilityRole="header" aria-level={2} style={styles.heading}>交代一件事</Text>
     <View style={styles.captureRow}><PhotoFilePicker disabled={!available || opening} capturePreferred captureOriginal={captureOriginal}
       onPick={original => { setError(null); setOpening(true); actions.openAgentPhoto(original); }} onError={setError}
       renderTrigger={trigger => <Pressable testID="home-agent-camera" accessibilityRole="button" accessibilityLabel="拍照給助手"

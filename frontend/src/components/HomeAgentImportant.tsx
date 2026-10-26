@@ -22,7 +22,7 @@ function ImportantLead({ item, actions, synthetic, loadedAt }: { item: HomeAgent
   const sourceId = `home-agent-reason-${useId()}`;
   const createdAt = timeLabel(item.source.createdAt);
   return <View testID={`home-agent-important-item-${item.id}`} style={styles.item}>
-    <Text accessibilityRole="header" style={styles.title}>{item.title}</Text>
+    <Text accessibilityRole="header" aria-level={2} style={styles.title}>{item.title}</Text>
     <Text style={styles.body}>{item.whyNow ?? item.detail}</Text>
     <Pressable accessibilityRole="button" accessibilityLabel="為甚麼提醒我？" accessibilityState={{ expanded }} aria-expanded={expanded} aria-controls={sourceId}
       onPress={() => setExpanded(value => !value)} onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
@@ -52,17 +52,17 @@ export function HomeAgentImportant({ model, actions }: { model: HomeViewModel; a
   const lead = section.state === "ready" ? section.items[0] : undefined;
   const remaining = section.state === "ready" ? section.items.slice(1, 3) : [];
   return <View style={styles.stack}>
-    <View testID="home-agent-important" style={styles.important}>
-      <View style={styles.heading}><AppIcon name="star-four-points" size={18} /><Text style={styles.eyebrow}>助手提醒你</Text>
-        {lead ? <AppStatusBadge label={lead.source.status === "unknown" ? "結果未知" : lead.statusLabel} tone={lead.source.status === "unknown" || lead.proposal?.status === "pending" ? "warning" : lead.proposal?.status === "accepted" ? "success" : "info"} /> : null}
-        {lead && section.synthetic ? <Text style={styles.meta}>合成示例</Text> : null}
-      </View>
-      <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
+    <View testID="home-agent-important" style={lead ? styles.important : styles.notice}>
+      {lead ? <View style={styles.heading}><AppIcon name="star-four-points" size={18} /><Text style={styles.eyebrow}>助手提醒你</Text>
+        <AppStatusBadge label={lead.source.status === "unknown" ? "結果未知" : lead.statusLabel} tone={lead.source.status === "unknown" || lead.proposal?.status === "pending" ? "warning" : lead.proposal?.status === "accepted" ? "success" : "info"} />
+        {section.synthetic ? <Text style={styles.meta}>合成示例</Text> : null}
+      </View> : null}
+      {section.state === "ready" && !section.items.length ? <Text accessibilityLiveRegion="polite" style={styles.meta}>目前沒有助手提醒</Text> : <ReadStateNotice state={section.state}
         message={section.state === "unavailable" ? "暫時無法顯示助手提醒" : section.state === "loading" ? "正在讀取助手提醒…"
           : section.state === "error" ? "暫時無法讀取助手提醒" : section.items.length ? undefined : "目前沒有助手提醒"}>
         {section.state === "error" ? <AppButton label="重新讀取" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}
         {section.state === "unavailable" ? <TextLink label="前往助手" onPress={() => actions.open("chat")} /> : null}
-      </ReadStateNotice>
+      </ReadStateNotice>}
       {lead ? <ImportantLead key={lead.id} item={lead} actions={actions} synthetic={section.synthetic} loadedAt={loadedAt} /> : null}
       {model.connection !== "online" && lead ? <Text style={styles.meta}>目前離線，顯示較早的提醒</Text> : null}
     </View>
@@ -75,14 +75,14 @@ export function HomeAgentImportant({ model, actions }: { model: HomeViewModel; a
     {section.state === "ready" && section.items.length > 3 ? <TextLink label={`另有 ${section.items.length - 3} 項，開啟助手查看`} onPress={() => actions.open("chat")} /> : null}
     {operation.state !== "none" ? <View testID="home-operation-recovery" style={styles.recovery}>
       <SectionHeader title="你的操作狀態" density="compact" />
-      <OperationNotice state={operation.state} title={operation.title} message={operation.detail}>
+      <OperationNotice headingLevel={3} state={operation.state} title={operation.title} message={operation.detail}>
         {operation.state !== "saving" ? <AppButton label={operation.state === "unknown" ? "查核這次結果" : "查看原操作"} density="compact" variant="secondary" onPress={actions.reviewOperation} /> : null}
       </OperationNotice>
     </View> : null}
   </View>;
 }
 const styles = StyleSheet.create({
-  stack: { gap: spacing.sm }, important: { backgroundColor: colors.paper, borderLeftWidth: 4, borderLeftColor: colors.accent, borderBottomWidth: 1, borderBottomColor: colors.softLine, borderTopRightRadius: radius.small, borderBottomRightRadius: radius.small, padding: spacing.lg, gap: spacing.sm },
+  stack: { gap: spacing.sm }, notice: { gap: spacing.sm }, important: { backgroundColor: colors.paper, borderLeftWidth: 4, borderLeftColor: colors.accent, borderBottomWidth: 1, borderBottomColor: colors.softLine, borderTopRightRadius: radius.small, borderBottomRightRadius: radius.small, padding: spacing.lg, gap: spacing.sm },
   heading: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: spacing.sm },
   eyebrow: { fontFamily: chineseFont, color: colors.ink, ...readingType.meta, fontWeight: "700" },
   item: { gap: spacing.sm }, 

@@ -479,3 +479,23 @@ test("Home task summary and focus use minute precision in the occurrence timezon
     assert.equal(item.occurrence.dueAt, "2026-10-21T16:05:37.000Z");
   }
 });
+
+
+test("confirmed empty Home reminders stay quiet without hiding unavailable, failed or unknown-operation states", () => {
+  const events = [], actions = { refresh: () => events.push('refresh'), open: target => events.push(target), reviewOperation: () => events.push('original') };
+  const model = state => ({ ...home, overview: { ...home.overview, agentImportant: { state, items: [], loadedAt: null } } });
+  const view = harness("src/components/HomeAgentImportant.tsx", "HomeAgentImportant", [{ model: model('ready'), actions }]);
+  const empty = view.render();
+  assert.ok(visibleText(empty).includes('目前沒有助手提醒'));
+  assert.equal(byType(empty, 'ReadStateNotice').length, 0, 'a confirmed absence does not get another empty-state card');
+  const unavailable = view.render([{ model: model('unavailable'), actions }]);
+  assert.equal(byType(unavailable, 'ReadStateNotice')[0].props.state, 'unavailable');
+  assert.equal(visibleText(unavailable).includes('目前沒有助手提醒'), false);
+  const failed = view.render([{ model: model('error'), actions }]);
+  assert.equal(byType(failed, 'ReadStateNotice')[0].props.state, 'error');
+  byType(failed, 'AppButton')[0].props.onPress(); assert.deepEqual(events, ['refresh']);
+  const unknown = view.render([{ model: { ...model('ready'), operation: { state: 'unknown', title: '結果待查', detail: '保留原操作' } }, actions }]);
+  assert.equal(byType(unknown, 'OperationNotice')[0].props.state, 'unknown');
+  byType(unknown, 'AppButton').find(node => node.props.label === '查核這次結果').props.onPress();
+  assert.deepEqual(events, ['refresh', 'original']);
+});

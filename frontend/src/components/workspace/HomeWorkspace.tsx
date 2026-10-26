@@ -37,7 +37,7 @@ function Shortcuts() {
   const { actions } = useHome();
   const [pressedKey, setPressedKey] = useState<string | null>(null);
   return <View style={styles.shortcuts} testID="home-workspace-shortcuts">
-    <Text accessibilityRole="header" style={styles.title}>常用資料</Text>
+    <Text accessibilityRole="header" aria-level={2} style={styles.title}>常用資料</Text>
     {(["summary", "photos", "profile"] as const).map(key => {
       const link = <Pressable accessibilityRole={Platform.OS === "web" ? "link" : "button"}
       accessibilityLabel={navigationItems[key].label} onPress={Platform.OS === "web" ? undefined : () => actions.open(key)} onPressIn={() => setPressedKey(key)} onPressOut={() => setPressedKey(null)} style={StyleSheet.flatten([styles.shortcut, pressedKey === key && styles.pressed])}>

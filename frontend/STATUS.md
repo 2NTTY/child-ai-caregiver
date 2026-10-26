@@ -1,7 +1,7 @@
 # 育伴港前端現況
 
-目前為 **Harbour Desk 全面升級實驗**，固定基線 `0b9f5d60`、分支 `experiment/frontend-design-upgrade-20261025`。全站共享呈現、Composition Patterns 與 18 個入口的頁級資訊層級已完成候選實作。型別與首版 export 通過；擴大離線回歸已收斂並作最後 aggregate，瀏覽器與最終獨立 review 待補，尚未宣稱驗收完成。
+目前沿 **Harbour Desk 升級分支補改實際 skill 缺口**，不是另外重建。以 `f8ce34a0` 已驗候選為基底；本輪縮減首頁裝飾與空態、取消 home 圖片等待、把手機全部功能改成可見直接入口，並整理目錄捲動／鏈結／用途說明；獨立 review 指出的 modifier click、原操作恢復標題及根文件語言已沿真來源補修。
 
-使用者最新要求允許重新選擇資訊層級，不沿用舊顯示配方；正式 domain owners、資料／授權／操作恢復保留。兩個已驗 bug 修補已共同納入；具體版本、18入口矩陣與 skill pins 見 [實驗說明](experiments/harbour-desk/README.md)，任務及未驗項見 [PLAN#active](PLAN.md#active)。
+全部原路由、domain owners、身份／孩子／權限與資料 gates、原操作恢復保持。提取及改進後的需求見 [實驗說明](experiments/harbour-desk/README.md)；精確檢查與未驗界線見 [PLAN](PLAN.md#active) 及 [本輪證據](verification/harbour-desk-20261026/README.md)。舊版本 browser 驗收不能代表本輪新畫面通過。
 
-此候選未發布公開預覽、未開 PR、未合併 master；沒有真模型、真家庭資料或 GCP 操作。過往 Sites／其他版本證據不算本候選通過。
+本輪尚未發布、PR 或合併；作者沒有操作 browser、真模型、真家庭資料、正式服務或 GCP。定稿先交獨立 review 與指定 browser owner。

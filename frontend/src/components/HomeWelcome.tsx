@@ -5,8 +5,8 @@ import { useFirstScreenReady } from "../startup/FirstScreenGate";
 import { chineseFont, colors, radius, spacing } from "../theme";
 import { HomeBackground } from "./appearance/HomeBackground";
 
-// A stable orientation panel replaces the timed, collapsing greeting. The existing
-// startup image gate and introduction acknowledgement are retained without motion.
+// Keep the brand illustration, but give daily care content the first-screen space.
+// Introduction acknowledgement still follows the real data-readiness boundary.
 export function HomeWelcome({ introductionPending, onIntroductionPresented, compact = false }: {
   introductionPending: boolean; onIntroductionPresented?: () => void; scopeKey: string; compact?: boolean;
 }) {
@@ -23,14 +23,12 @@ export function HomeWelcome({ introductionPending, onIntroductionPresented, comp
     </View>
     <View style={styles.copy}>
       <Text accessibilityRole="header" aria-level={1} style={[styles.title, compact && styles.compactTitle]}>今日照顧</Text>
-      <Text style={styles.detail}>先看重點，再安排下一步。</Text>
     </View>
   </View>;
 }
 const styles = StyleSheet.create({
-  card: { minHeight: 156, borderRadius: radius.large, overflow: "hidden", backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.softLine, justifyContent: "center" },
-  compact: { minHeight: 124 }, copy: { width: "70%", gap: spacing.sm, padding: spacing.xl },
-  title: { fontFamily: chineseFont, color: colors.ink, fontSize: 34, lineHeight: 44, fontWeight: "700", letterSpacing: -0.6 },
-  compactTitle: { fontSize: 26, lineHeight: 36 },
-  detail: { fontFamily: chineseFont, color: colors.muted, fontSize: 14, lineHeight: 23 },
+  card: { minHeight: 104, borderRadius: radius.medium, overflow: "hidden", backgroundColor: colors.paper, justifyContent: "center" },
+  compact: { minHeight: 80 }, copy: { width: "70%", padding: spacing.lg },
+  title: { fontFamily: chineseFont, color: colors.ink, fontSize: 30, lineHeight: 40, fontWeight: "700", letterSpacing: -0.5 },
+  compactTitle: { fontSize: 24, lineHeight: 32 },
 });

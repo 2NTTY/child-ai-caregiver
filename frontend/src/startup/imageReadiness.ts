@@ -6,7 +6,8 @@ export type ImageOutcomes = Partial<Record<FirstScreenImage, ImageOutcome>>;
 export const firstScreenImageFallbackMs = 15_000;
 
 export function requiredFirstScreenImages(pathname: string, width: number): readonly FirstScreenImage[] {
-  if (pathname === "/") return ["home-hero"];
+  // Home artwork is decorative: it must not hold ready care data behind a splash.
+  // The independent identity, permission and data-readiness gates still apply.
   if (pathname === "/login" && width >= 900) return ["login-hero"];
   return [];
 }

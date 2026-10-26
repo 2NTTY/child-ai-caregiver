@@ -9,6 +9,3 @@ export function quickInputDirection(dx: number, dy: number): QuickInputKind | nu
   if (angle >= -15 && angle < 22.5) return "text";
   return null;
 }
-export function recordsMoreDirection(dx: number, dy: number): boolean {
-  return dy <= -36 && dy >= -190 && Math.abs(dx) <= 60;
-}

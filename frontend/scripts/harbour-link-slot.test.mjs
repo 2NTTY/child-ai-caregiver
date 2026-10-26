@@ -9,6 +9,8 @@ import ts from 'typescript';
 
 for (const [file, key, href, minHeight, row] of [
   ['src/components/workspace/HomeWorkspace.tsx', 'shortcut', '/summary', 56, true],
+  ['src/screens/moreScreen.tsx', 'link', '/tasks', 80, true],
+  ['src/components/navigation/MoreNavButton.tsx', 'button', '/more', 64, false],
   ['src/screens/familyScreen.tsx', 'routeLink', '/contact', 48, true],
   ['src/screens/AdminScreen.web.tsx', 'returnLink', '/', 44, false],
 ]) test(`actual ${key} style survives the installed Expo Slot/RNW merge boundary`, () => {
@@ -20,7 +22,7 @@ for (const [file, key, href, minHeight, row] of [
     ts.forEachChild(node, visit);
   }
   visit(tree); assert.ok(expression, 'use the actual product style, not a parallel fixture style');
-  const style = new Function('colors', 'spacing', 'radius', `return (${expression});`)({line: '#ccd8d3'}, {sm: 8, md: 12}, {small: 8});
+  const style = new Function('colors', 'spacing', 'radius', 'mobileLayout', `return (${expression});`)({line: '#ccd8d3'}, {sm: 8, md: 12}, {small: 8}, {touchTarget: 48, tabMinHeight: 64});
   assert.ok(source.includes(`style={StyleSheet.flatten([styles.${key},`), 'the product must pass a flat object through asChild');
   assert.match(source, /onPressIn=\{\(\) => set/u); assert.match(source, /onPressOut=\{\(\) => set/u);
   function render(childStyle) {

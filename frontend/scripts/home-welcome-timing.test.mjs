@@ -20,7 +20,7 @@ const text = node => !node ? '' : Array.isArray(node) ? node.map(text).join('') 
 
 test('stable home orientation keeps one useful heading without precision timestamps or a timed collapse', () => {
   const s = setup(); s.render();
-  assert.equal(text(s.h.node('home-welcome')), '今日照顧先看重點，再安排下一步。');
+  assert.equal(text(s.h.node('home-welcome')), '今日照顧');
   assert.equal(s.h.hosts().filter(node => node.props.accessibilityRole === 'header').length, 1);
   assert.equal(s.h.hosts().find(node => node.props.accessibilityRole === 'header').props['aria-level'], 1);
   assert.equal(s.h.timers.size, 0); assert.equal(s.h.animations.length, 0);
@@ -49,5 +49,7 @@ test('both layouts retain the real startup artwork port and decorative accessibi
     assert.equal(boundary.props.pointerEvents, 'none');
     assert.equal(boundary.props.importantForAccessibility, 'no-hide-descendants');
     assert.ok(s.h.node('home-welcome'));
+    const style = Object.assign({}, ...s.h.node('home-welcome').props.style.filter(Boolean));
+    assert.equal(style.minHeight, compact ? 80 : 104);
   }
 });

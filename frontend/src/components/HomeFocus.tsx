@@ -18,7 +18,7 @@ export function HomeFocus({ model, actions, full = false }: { model: HomeViewMod
   const canShowItems = section.state === "ready" || section.state === "stale" || section.state === "loading";
   return <SectionCard testID={full ? "rail-attention" : "home-focus"}>
     <SectionHeader title={full ? "待辦與提醒" : "現在要處理"} density="compact" />
-    {operation.state !== "none" ? <OperationNotice state={operation.state} title={operation.title} message={operation.detail}>
+    {operation.state !== "none" ? <OperationNotice headingLevel={3} state={operation.state} title={operation.title} message={operation.detail}>
       {operation.state !== "saving" ? <AppButton label={operation.state === "unknown" ? "查核這次結果" : "查看原操作"} density="compact" variant="secondary" onPress={actions.reviewOperation} /> : null}
     </OperationNotice> : null}
     <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
@@ -37,7 +37,7 @@ export function HomeActionSummary({ model, actions }: { model: HomeViewModel; ac
   if (!overview) return null;
   const section = overview.attention;
   return <BackgroundSurface padded frosted testID="home-action-summary" style={styles.summary}>
-    <View style={styles.heading}><Text accessibilityRole="header" style={styles.title}>待辦摘要</Text><TextLink label="查看全部" onPress={() => actions.open("tasks")} /></View>
+    <View style={styles.heading}><Text accessibilityRole="header" aria-level={2} style={styles.title}>待辦摘要</Text><TextLink label="查看全部" onPress={() => actions.open("tasks")} /></View>
     <ReadStateNotice state={section.state === "ready" ? section.items.length ? "ready" : "empty" : section.state}
       message={section.detail ?? (section.state === "ready" && !section.items.length ? "目前沒有待辦事項" : undefined)}>
       {["error", "stale", "unavailable"].includes(section.state) ? <AppButton label="重新讀取待辦" density="compact" variant="quiet" disabled={model.connection !== "online"} onPress={actions.refresh} /> : null}

@@ -1,5 +1,32 @@
 # Harbour Desk：現有前端全面升級實驗
 
+## 2026-10-26：按實際 skills 補改，而非重建
+
+本輪以已驗候選 `f8ce34a0` 為基底，重新親讀下方固定版本的四項官方 skills；Web Guidelines 亦重新讀取 `main/command.md`，本輪適用條文與固定版本一致。以前的驗收不等於設計沒有改善空間。本輪沒有重造所有頁面，而是從原碼及既有 1180px 首頁截圖定位六個具體缺口，另按獨立 review 補修共用 Web 鏈結的 modifier 契約；新畫面仍待獨立 browser 驗收。
+
+### 提取與改進需求
+
+| 家長真正要完成的事 | 決定 | 本輪落點／理由 |
+|---|---|---|
+| 開啟首頁便能看有權查看的照顧重點 | **保留**資料、身份及切孩子門檻；**刪除**裝飾圖載入門檻 | `imageReadiness` 不再讓 home hero 阻擋已就緒資料（舊圖片 fallback 預算為 15 秒）。沒有移除 `ProductionFirstScreenGate`／`ProductionGate`／scope boundary。這是消除不必要等待，不是未量測的效能百分比承諾。 |
+| 首屏辨認位置，然後看到提醒及待辦 | **改善**標題層級；**刪除**口號及多餘外框 | 保留品牌插畫及穩定 H1；標題面桌面 min-height 156→104、手機 124→80，刪「先看重點，再安排下一步」。舊截圖中第一項待辦接近底部；新幾何仍待 browser 核對。 |
+| 分清有提醒、沒有提醒、讀取失敗及操作結果未知 | **保留**每個狀態與原恢復回調；**刪除**空態的重複標題／強調框 | 真提醒仍有琥珀導線及狀態；確認沒有提醒只留一行，不再套空卡。unavailable／error 仍明示且保留前往助手／重試，unknown 原操作照常可查核。 |
+| 在手機找到任何功能，不必先學手勢 | **改善**第五個主入口；**刪除**必要上拉步驟 | 五個 tab 改為「今日／助手／待辦／關注／全部」。`/care` 等所有原路由與 owner 保留，從全部功能點按前往；不是刪除核對。這是可發現性與核對直達次數的取捨：核對由一 tap 變兩 tap，其他資料功能不再依賴上拉。相機原有手勢與直接按鈕不變。 |
+| 在功能目錄看懂每項用途，正常捲到所有項目 | **改善**全尺寸內容一致；**刪除**分組內層捲動、重複分組介紹及量寬狀態 | 單一 `PageFrame` scroll owner；每列保留用途，Web 全尺寸真 href、native 原 guard/actions。用 flex wrapping 配合可用寬度，不再用 viewport 判斷與 `useContainerWidth` 另算列寬。搜尋仍由 `q` 衍生。 |
+| 輔助技術可取得正確語言、標題層級及當前導航分類 | **改善**真正輸出的 Web 語意 | 真 `+html` 根入口宣告 `zh-Hant`，不沿 Expo 英文預設。首頁頁標 H1、各照顧區塊及側欄 H2、非compact子項及原操作恢復標題 H3；更多分類的子頁用 aria-current=true，真正目錄用page。沿實際RNWeb SSR修正省略level及selected-prop被丟棄，亦掛載 unknown／failed 子樹，不以stub prop或讀屏未驗當成功。 |
+| Web 鏈結保持正常的新分頁／新視窗操作 | **改善**真 handler，不只是 href 外觀 | Ctrl／Meta／Shift／Alt、非主要按鍵及其他 target 留給 browser；plain click／鍵盤 click 仍經原 dirty／pending guard，pre-prevented 不再路由。核對已安裝 Expo 57.0.22 真 handler 鏈，未聲稱 browser 真開 tab 已驗。 |
+| 不被尚未開放的家庭功能誤導 | **改善**可用性文案 | 目錄不再聲稱可查看成員／分工；明示尚未開放，仍可進原頁查看可用設定。沒有假家庭／邀請功能。 |
+| 照顧記錄、待辦、關注、文件、附件、檔案、來源、記憶、歷史、聯絡及設定 | **保留**已適合工作的流程 | 原 18 入口矩陣仍適用；本輪不增加確認、提示、資料副本或後端請求。安全與權限不是可刪的視覺限制。 |
+
+### 四項 skill 的實際取捨
+
+- **Anthropic frontend-design：**保留與照顧場景有關的單一插畫記憶點，但不把家長日常工作頁當宣傳首頁；用有用內容取代口號、重複空卡及不必要裝飾。沿松綠／紙白主題，不為「跟 skill」另換一套模板。
+- **React Best Practices：**功能搜尋繼續於 render 衍生；移除目錄的量寬狀態／量測回調，按壓及 hover state 下放模組層 `CatalogueRow`，不讓每次按壓重算整個搜尋頁。不引進新框架、fetch waterfall 或 Next.js-only API。
+- **Web Design Guidelines：**所有 Web 目錄列與新的全部入口有 guarded href、名稱及至少 48px 命中區；實際 RNWeb／Radix Slot SSR 驗證 flat styles 不會被丟棄。真 PreviewLink 不再無條件攔 modifier click；沿已安裝 Expo handler 鏈驗 plain click 只路由一次，dirty／pending guard 原樣保留。保留全域 focus-visible、文字描述與 aria-live。子頁以真正 DOM aria-current=true 表示第五分類，不偽稱 `/more` 本身為 current page；首頁H1/H2/H3與側欄亦經真RNWeb SSR核對。繁體中文文件語言沿 [Expo 正式根 HTML 入口](https://docs.expo.dev/router/web/static-rendering/#root-html) 宣告，保留 viewport／ScrollViewStyleReset，沒有只補發布adapter。
+- **Composition Patterns：**沿用現有 Workspace／HomeWorkspace 的 state/actions 邊界，明確組裝目錄列及單用途 `MoreNavButton`；不新增 boolean mode 叢林，不改 domain controller 以迎合新排版。
+
+本輪結果與保留的初次失敗見 [2026-10-26 驗證](../../verification/harbour-desk-20261026/README.md)。原 2026-10-25 證據只代表原候選；不能充作本輪新畫面／真機驗收。
+
 ## 範圍與比較基準
 
 - 分支：`experiment/frontend-design-upgrade-20261025`。
@@ -29,7 +56,7 @@
 
 **字體：**繁體中文系統字體優先（PingFang TC／Microsoft JhengHei），不增加外部字體或網路請求。頁標 30/40、手機 24/32，內文 16/26、工具 14/22。移除非使用者要求的強制 `html zoom:1.4/1.2`，保留瀏覽器及系統縮放。
 
-**佈局：**穩定側導航＋孩子身份頂欄；desktop 把全部日常功能直接分組列出，聊天入口位於品牌下面。手機仍保留五個原生 tabs／手勢及全部功能入口，不把桌面導航壓成橫向小字。
+**佈局：**穩定側導航＋孩子身份頂欄；desktop 把全部日常功能直接分組列出，聊天入口位於品牌下面。手機保留五個原生 tabs，2026-10-26 起第五個直接開全部功能（相機手勢另保留），不把桌面導航壓成橫向小字。
 
 ```text
 桌面

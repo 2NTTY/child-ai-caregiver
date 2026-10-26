@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
 import ts from 'typescript';
+import { isMoreNavigationPath } from '../src/components/navigation/app-navigation.ts';
 import * as filters from '../src/components/history/history-filters.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -50,6 +51,8 @@ function harness() {
     '../components/history/PersonalHistoryViews': {PersonalConversationHistoryView: 'PersonalConversationHistoryView', PersonalNotificationHistoryView: 'PersonalNotificationHistoryView'},
     '../components/DateTimeFields': { AppDateField: 'AppDateField' },
     '../components/PageFrame': { PageFrame: 'PageFrame' },
+    '../components/workspace/Workspace': { Workspace: Object.fromEntries(['Provider', 'Split', 'Aside', 'Main'].map(part => [part, `Workspace.${part}`])) },
+    '../components/history/HistoryCategoryNavigation': { HistoryCategoryNavigation: 'HistoryCategoryNavigation' },
     '../components/appearance/BackgroundSurface': { BackgroundSurface: 'View' },
     '../components/ui': { AppButton: 'AppButton', AppSelect: 'AppSelect', AppTabPanel: 'AppTabPanel', AppTextField: 'AppTextField', UnderlineTabs: 'UnderlineTabs' },
     '../components/tasks/TaskHistoryView': { TaskHistoryView: 'TaskHistoryView' },
@@ -94,7 +97,7 @@ test('production owners compose once and keep Summary/Profile/Preparation and na
   assert.match(knowledge, /<TasksWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{current\?\.tasks \?\? null\}>\s*<PreparationWorkspaceProvider scopeKey=\{env.scopeKey\} value=\{current\?\.documents.preparation \?\? null\}>/);
   assert.equal((photos.match(/<PhotoInputContext\.Provider\b/g) ?? []).length, 1);
   assert.equal((layout.match(/<Tabs\.Screen name=/g) ?? []).length, 5);
-  assert.match(layout, /\["more", "history", "memory", "photos", "sources", "summary"/);
+  assert.match(layout, /\["care", "history", "memory", "photos", "sources", "summary"/);
   const summary = readFileSync(path.join(root, 'src/screens/SummaryScreen.tsx'), 'utf8');
   assert.match(summary, /<ChildOverviewContent\b/);
   assert.match(summary, /if \(tab === "preparation"\) return <Redirect href="\/growth\?tab=preparation" \/>;/);
@@ -109,14 +112,14 @@ test('production owners compose once and keep Summary/Profile/Preparation and na
   // Source-level composition only; this does not exercise React provider lifecycles.
 });
 
-test('native Records navigation recognizes History without adding a sixth primary tab', () => {
+test('native All features navigation recognizes History without adding a sixth primary tab', () => {
   const layout = readFileSync(path.join(root, 'app/(dashboard)/_layout.tsx'), 'utf8');
-  const predicate = layout.match(/<RecordsNavButton\s+active=\{([^}]+)\}/)?.[1];
-  assert.ok(predicate, 'Native Records must declare its route activity');
-  assert.match(layout, /<Tabs\.Screen name="care" options=\{\{ title: "核對"/);
-  const active = new Function('pathname', `return (${predicate});`);
-  for (const pathname of ['/care', '/more', '/photos', '/history']) assert.equal(active(pathname), true, pathname);
-  for (const pathname of ['/', '/chat', '/tasks', '/growth']) assert.equal(active(pathname), false, pathname);
+  const predicate = layout.match(/<MoreNavButton\s+active=\{([^}]+)\}/)?.[1];
+  assert.ok(predicate, 'Native All features must declare its route activity');
+  assert.match(layout, /<Tabs\.Screen name="more" options=\{\{ title: navigationItems.more.short/);
+  const active = new Function('pathname', 'isMoreNavigationPath', `return (${predicate});`);
+  for (const pathname of ['/care', '/more', '/photos', '/history']) assert.equal(active(pathname, isMoreNavigationPath), true, pathname);
+  for (const pathname of ['/', '/chat', '/tasks', '/growth']) assert.equal(active(pathname, isMoreNavigationPath), false, pathname);
   assert.equal((layout.match(/<Tabs\.Screen name=/g) ?? []).length, 5);
   // Source-level composition only; this does not validate a native navigator or device.
 });
@@ -161,7 +164,7 @@ test('preparation History keeps its owner, date dialog and scroll connection wit
 
 test('category navigation waits for the guard and clears prior review-only URL filters', () => {
   const h = harness(); h.query({ category: 'review', status: 'pending', older: '1' }); const tree = h.render();
-  find(tree, 'UnderlineTabs').props.onChange('preparations'); assert.deepEqual(h.events, ['guard']);
+  find(tree, 'HistoryCategoryNavigation').props.onChange('preparations'); assert.deepEqual(h.events, ['guard']);
   assert.ok(find(h.render(), 'CareReviewHistoryView')); h.approve();
   assert.deepEqual(h.events.slice(1), ['close-task', 'close-preparation', 'close-care', ['params', { category: 'preparations', status: undefined, older: undefined }]]);
   assert.ok(find(h.render(), 'PreparationHistoryView'));

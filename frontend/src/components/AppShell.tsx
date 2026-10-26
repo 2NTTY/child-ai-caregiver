@@ -12,9 +12,9 @@ import { Text } from "react-native-paper";
 import { AppIcon } from "./AppIcon";
 import { AgentEntryButton } from "./AgentEntryButton";
 import { MobileQuickInputDock } from "./agent/MobileQuickInputDock";
-import { RecordsNavButton } from "./navigation/RecordsNavButton";
+import { MoreNavButton } from "./navigation/MoreNavButton";
 import { MobileNavSelection } from "./navigation/MobileNavSelection";
-import { desktopNavigationGroups, navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
+import { desktopNavigationGroups, isMoreNavigationPath, navigationItems, type AppPath, type NavigationItem } from "./navigation/app-navigation";
 import { RightRailContent } from "./RightRailContent";
 import { ChildKeyFacts } from "./ChildKeyFacts";
 import { ChildPicker } from "./ChildPicker";
@@ -52,7 +52,7 @@ export function RightRail({ model, actions, contextPath = "/", overlay = false, 
 }) {
   return <View testID="context-rail" style={[styles.rail, overlay && styles.railFill]}>
     <View style={styles.railHeader}>
-      <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" style={styles.railTitle}>照顧資訊</Text></View>
+      <View><Text style={styles.railEyebrow}>你的照顧空間</Text><Text accessibilityRole="header" aria-level={2} style={styles.railTitle}>照顧資訊</Text></View>
       {onClose ? <ToolbarIconButton icon="close" label="關閉資訊側欄" onPress={onClose} /> : null}
     </View>
     <RightRailContent model={model} actions={actions} contextPath={contextPath} />
@@ -148,7 +148,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </MotionScopeBoundary>
       {compact ? <View testID="mobile-bottom-navigation" style={[styles.bottomNav, { paddingBottom: insets.bottom }]}>
         {(["home", "chat", "tasks", "growth"] as const).map(key => navigationItems[key]).map(item => <NavItem key={item.href} item={item} active={active(item.href)} compact />)}
-        <RecordsNavButton active={active("/care") || active("/photos") || active("/more") || active("/history")} scopeKey={motionScope} />
+        <MoreNavButton active={isMoreNavigationPath(pathname)} />
       </View> : null}
       <MotionDrawerOverlay open={overlayOpen} scopeKey={`${motionScope}:${pathname}:${wide ? "dock" : "overlay"}`} label="照顧資訊側欄" onRequestClose={closeRail}
         backgroundRef={shell} returnFocusRef={railAnchor} restoreFocusOnClose={sameRailContext}>

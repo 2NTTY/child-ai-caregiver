@@ -3,15 +3,14 @@
 本文件只管前端當前工作、依賴、驗證及下一步；[STATUS](STATUS.md) 作短摘要，[HANDOFF](HANDOFF.md) 保存接線差異，[DESIGN_SYSTEM](DESIGN_SYSTEM.md) 保存已採納呈現。
 
 <a id="active"></a>
-## Harbour Desk 全面升級實驗（2026-10-25）
+## Harbour Desk 按 skill 補改（2026-10-26）
 
-固定 master `0b9f5d60`，活動分支 `experiment/frontend-design-upgrade-20261025`；設計與完整18入口功能對等矩陣見 [實驗說明](experiments/harbour-desk/README.md)。實作保留正式 domain owners，採四項官方 skills 及 Composition Patterns；不以舊前端顯示配方作限制。
+固定產品基線 `0b9f5d60`，沿已驗候選 `f8ce34a0`；活動分支仍為 `experiment/frontend-design-upgrade-20261025`。本輪不是重建：需求提取、保留／改善／刪除判斷與四項 skills 原文落點見 [實驗說明](experiments/harbour-desk/README.md)。
 
-- 已實作：全功能側導航、可組合頁面／首頁、穩定首頁方向面板、頁首與資訊層級、聊天和待辦工作區、共用 controls／empty/error、功能目錄搜尋、技術 metadata 漸進顯示、移除強制 CSS zoom。
-- 共同基線修補：準備單 `ce4b90c`、聊天 `874eca3` 已按父任務核准精確 cherry-pick；另 `2667e061` 三項最小型別接點修正供另一實驗共用。
-- 下一步：完整 frontend typecheck／export、受影響離線檢查、合成 HTTP 全站預覽與四尺寸自查、獨立 review。實測結果只記 [本候選驗證目錄](verification/harbour-desk-20261025/)。
-- 未完成：browser／鍵盤／modal／全部 route parity 的實際驗收及獨立 review；不以 build 成功或原 owner 存在當驗收。
-- 不含：真模型／家庭資料、GCP、正式部署、公開預覽發布、PR 或 master 自動合併。
+- 已實作：縮短首頁標題面、刪口號與重複空態框、移除 home 裝飾圖片啟動 gate；手機第五入口直接開全部功能、目錄單一自然捲動及全尺寸 guarded Web links 及正常 modifier／非主要按鍵語意、真 Web current-category、首頁／側欄及原操作恢復 heading 層級、根 HTML 繁中語言；保留原 domain owners、身份／孩子／資料 gate、操作恢復及全部路由。
+- 必要檢查：定向測試／完整 frontend TypeScript／隔離 cache 的 Web export；精確定稿及初次 harness 失敗保留於 [本輪驗證](verification/harbour-desk-20261026/README.md)。既有 `f8ce34a0` 的 browser／284項離線結果不當成本輪重跑。
+- 下一步：把凍結候選交 dot 獨立 source／artifact review，再由獲授權的單一 browser owner 驗首頁、手機全部入口及功能目錄的實際排版／鍵盤／返回。未通過不得說新版已驗收。
+- 不含：真模型／家庭資料、GCP、正式部署、站點發布、PR 或合併。本輪作者不操作 browser／desktop。
 
 以下為歷史包，不是本實驗的活動任務。
 

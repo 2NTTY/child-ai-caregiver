@@ -1,8 +1,8 @@
 import { usePathname, Slot, Tabs } from "expo-router";
 import type { ReactNode, Ref } from "react";
 import { Platform, Pressable, type View } from "react-native";
-import { RecordsNavButton } from "../../src/components/navigation/RecordsNavButton";
-import { navigationItems } from "../../src/components/navigation/app-navigation";
+import { MoreNavButton } from "../../src/components/navigation/MoreNavButton";
+import { isMoreNavigationPath, navigationItems } from "../../src/components/navigation/app-navigation";
 import { MobileNavSelection } from "../../src/components/navigation/MobileNavSelection";
 import { MobileQuickInputDock } from "../../src/components/agent/MobileQuickInputDock";
 import { AppIcon } from "../../src/components/AppIcon";
@@ -51,7 +51,7 @@ function NativeDashboardTabs() {
     <Tabs.Screen name="chat" options={{ title: navigationItems.chat.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.chat.icon} color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="tasks" options={{ title: navigationItems.tasks.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.tasks.icon} color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="growth" options={{ title: navigationItems.growth.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.growth.icon} color={color} size={mobileIcons.navigation} /> }} />
-    <Tabs.Screen name="care" options={{ title: navigationItems.care.short, tabBarButton: () => <RecordsNavButton active={pathname === navigationItems.care.href || pathname === navigationItems.more.href || pathname === navigationItems.photos.href || pathname === navigationItems.history.href} scopeKey={scopeKey} /> }} />
-    {["more", "history", "memory", "photos", "sources", "summary", "contact", "profile", "family", "settings", "guide"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
+    <Tabs.Screen name="more" options={{ title: navigationItems.more.short, tabBarButton: () => <MoreNavButton active={isMoreNavigationPath(pathname)} /> }} />
+    {["care", "history", "memory", "photos", "sources", "summary", "contact", "profile", "family", "settings", "guide"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
   </Tabs>;
 }

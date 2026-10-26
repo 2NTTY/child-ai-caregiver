@@ -248,6 +248,7 @@ test('the actual web shell includes only its open rail content and its guarded s
     'react-native': native,
     'react-native-safe-area-context': { SafeAreaView: 'SafeAreaView', useSafeAreaInsets: () => ({ bottom: 0 }) },
     '../preview/PreviewNavigationGuard': { PreviewLink: 'Link' },
+    '../production/useHeaderOperationHints': { useHeaderOperationHints: () => [] },
     './AppScrollView': { AppScrollView: 'ScrollView' },
     '../branding': { brand: {} }, '../theme': { colors: {}, spacing: {}, radius: {}, mobileIcons: {}, mobileLayout: {}, mobileType: {}, typeScale: {} },
     '../motion': { MotionDrawerOverlay: 'DrawerOverlay', MotionDrawerRight: 'DrawerRight', MotionEntrance: 'Entrance', MotionScopeBoundary: 'ScopeBoundary' },
@@ -260,7 +261,7 @@ test('the actual web shell includes only its open rail content and its guarded s
     '../workspaces/TasksWorkspace': { useTasksWorkspace: () => ({ scopeKey: taskScope, model: { access: 'active', readState: tasksState } }) },
   };
   for (const [path, symbol] of [['./BrandLogo', 'BrandLogo'], ['./AppIcon', 'AppIcon'], ['./AgentEntryButton', 'AgentEntryButton'],
-    ['./agent/MobileQuickInputDock', 'MobileQuickInputDock'], ['./navigation/RecordsNavButton', 'RecordsNavButton'], ['./navigation/MobileNavSelection', 'MobileNavSelection'],
+    ['./agent/MobileQuickInputDock', 'MobileQuickInputDock'], ['./navigation/MoreNavButton', 'MoreNavButton'], ['./navigation/MobileNavSelection', 'MobileNavSelection'],
     ['./ChildKeyFacts', 'ChildKeyFacts'], ['./ChildPicker', 'ChildPicker'], ['./CompactHeaderIdentity', 'CompactHeaderIdentity'], ['./NotificationBell', 'NotificationBell'], ['./ToolbarIconButton', 'ToolbarIconButton']]) mocks[path] = { [symbol]: symbol };
   mocks['./ChildPicker'] = { ChildPicker: ({ children: childData, ...props }) => ({ type: 'ChildPicker', props }) };
   const h = harness(mocks), { AppShell } = h.load('src/components/AppShell.tsx'); h.route('/chat');

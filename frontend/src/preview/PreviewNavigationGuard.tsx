@@ -91,6 +91,15 @@ export function PreviewLink({ href, children }: { href: Href; children: ReactNod
   const pathname = usePathname();
   const leave = usePreviewNavigation();
   return <Link href={href} asChild onPress={event => {
+    if (event.defaultPrevented) return;
+    // Preserve browser modifier, non-primary and target semantics. Ordinary
+    // activation still uses the dirty/pending guard before a single router push.
+    if (Platform.OS === "web" && "button" in event) {
+      const target = event.currentTarget?.target;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
+        || event.button != null && event.button !== 0
+        || target && target !== "_self" && target !== "self") return;
+    }
     event.preventDefault();
     if (href === pathname) return;
     leave(() => router.push(href), staysInDashboard(pathname, href) ? "workspace" : "navigation");
