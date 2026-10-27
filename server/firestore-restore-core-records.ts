@@ -1,9 +1,11 @@
 import { contentErasureSchema } from './firestore-content-erasure.ts';
+import { sharingRestoreSchemas, sharingRestoreMetadata, isSharingKind } from './firestore-sharing-records.ts';
 import { materialRestoreSchemas, isMaterialRestoreKind, materialRestoreMetadata } from './firestore-restore-material-records.ts';
 import { firestorePreparationSchema } from './firestore-care-summary.ts';
 import { z } from 'zod';
-import { firestoreCareSchema, firestoreProfileSchema, firestoreCareRecoverySchemas } from './firestore-care.ts';
-import { firestoreFactSchema, firestoreTopicSchema, firestoreMemoryRecoverySchemas } from './firestore-memory.ts';
+import { firestoreCareStorageSchema as firestoreCareSchema, firestoreProfileStorageSchema as firestoreProfileSchema, firestoreCareRecoverySchemas } from './firestore-care.ts';
+import { validSharedAttribution } from './shared-write-attribution.ts';
+import { firestoreFactStorageSchema as firestoreFactSchema, firestoreTopicStorageSchema as firestoreTopicSchema, firestoreMemoryRecoverySchemas, validMemoryFactAttribution } from './firestore-memory.ts';
 import { firestoreChatMessageSchema, firestoreChatRecoverySchemas } from './firestore-chat.ts';
 import { firestoreContextRecoverySchema } from './firestore-context-basis.ts';
 import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
@@ -11,6 +13,7 @@ import type { FirestoreRecoveryContext } from './firestore-recovery-envelope.ts'
 const NIL = '00000000-0000-0000-0000-000000000000';
 const FAR_FUTURE = '9999-12-31T23:59:59.999Z';
 export const coreRestoreSchemas = {
+  ...sharingRestoreSchemas,
   ...materialRestoreSchemas,
   'content-erasure': { suffix: 'content_erasures', schema: contentErasureSchema },
   'visit-preparation': { suffix: 'visit_preparations', schema: firestorePreparationSchema },
@@ -60,6 +63,7 @@ export function coreRestoreAddress(kind: CoreRestoreKind, id: string, collection
 export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: CoreRestoreKind }, raw: CoreRestoreValue,
   original: Readonly<Record<string, unknown>>): Record<string, unknown> {
   const { kind, id, scope, recordVersion } = context;
+  if (isSharingKind(kind)) return sharingRestoreMetadata({ ...context, kind }, raw);
   if (isMaterialRestoreKind(kind)) return materialRestoreMetadata({ ...context, kind }, materialRestoreSchemas[kind].schema.parse(raw), original);
   requireValue(context.family === 'domain' && context.envelopeVersion === 1 && recordVersion !== undefined);
   if (kind === 'chat-reply-leases') {
@@ -88,7 +92,9 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   }
   if (kind === 'care-record' || kind === 'care-revision') {
     const value = firestoreCareSchema.parse(raw), metadata = entity(value, kind === 'care-revision');
-    requireValue(value.authorUserId === scope.ownerUserId && value.confirmedBy === scope.ownerUserId);
+    // Legacy records retain owner-only attribution. Shared actors require authenticated, resource-bound evidence.
+    requireValue(validSharedAttribution(value.createdViaShare, scope, value.id, value.version, value.authorUserId, true)
+      && validSharedAttribution(value.confirmedViaShare, scope, value.id, value.version, value.confirmedBy));
     return kind === 'care-record' ? { ...metadata, createdAt: value.createdAt, live: true } : metadata;
   }
   if (kind === 'care-tombstone' || kind === 'memory-tombstone') {
@@ -98,7 +104,9 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   }
   if (kind === 'child-profile' || kind === 'profile-revision') {
     const value = firestoreProfileSchema.parse(raw);
-    requireValue(value.childId === scope.childId && value.version === recordVersion && (value.confirmedBy === null || value.confirmedBy === scope.ownerUserId));
+    requireValue(value.childId === scope.childId && value.version === recordVersion
+      && (value.confirmedBy === null ? value.confirmedViaShare === undefined
+        : validSharedAttribution(value.confirmedViaShare, scope, value.childId, value.version, value.confirmedBy)));
     if (kind === 'profile-revision') { equalId(id, [value.childId, value.version]); return { entityId: value.childId, entityVersion: value.version }; }
     requireValue(id === value.childId);
     return { historyFloor: z.number().int().min(1).max(value.version).parse(original.historyFloor) };
@@ -115,13 +123,13 @@ export function coreRestoreMetadata(context: FirestoreRecoveryContext & { kind: 
   }
   if (kind === 'memory-fact' || kind === 'memory-fact-revision') {
     const value = firestoreFactSchema.parse(raw), metadata = entity(value, kind.endsWith('-revision'));
-    requireValue(value.createdBy === scope.ownerUserId && (value.confirmedBy === null || value.confirmedBy === scope.ownerUserId));
+    requireValue(validMemoryFactAttribution(value, scope));
     return { ...metadata, live: true, visibility: value.visibility, status: value.status, createdAt: value.createdAt,
       validUntil: value.validUntil === null ? FAR_FUTURE : new Date(value.validUntil).toISOString() };
   }
   if (kind === 'memory-topic' || kind === 'memory-topic-revision') {
     const value = firestoreTopicSchema.parse(raw), metadata = entity(value, kind.endsWith('-revision'));
-    requireValue(value.updatedBy === scope.ownerUserId);
+    requireValue(validSharedAttribution(value.changedViaShare, scope, value.id, value.version, value.updatedBy));
     return { ...metadata, live: true, visibility: value.visibility, status: value.status, validUntil: FAR_FUTURE };
   }
   if (kind === 'memory-key') {

@@ -1,6 +1,7 @@
 import { AGENT_RUN_LIMITS } from '../shared/agent-run-limits.ts';
 import { chatFileMessageReferenceSchema, type ChatFileMessageReference } from '../shared/chat-files.ts';
 import { voiceMessageReferenceSchema, type VoiceMessageReference } from '../shared/voice.ts';
+import { photoMessageReferenceSchema, type PhotoMessageReference } from '../shared/photos.ts';
 import { officialHelpIdSchema, type AgentProgress } from '../shared/agent-feedback.ts';
 import { readAgentFeedback } from './agent-feedback-reader.ts';
 import type { ChatMessage, ChatPage, ChatReplyState } from "../shared/chat.ts";
@@ -45,7 +46,7 @@ export interface ChatApi {
   getSession(signal: AbortSignal): Promise<SessionUser | null>;
   listMessages(childId: string, signal: AbortSignal, before?: string | null): Promise<ChatPage>;
   cancelReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<boolean>;
-  saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string, voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">): Promise<ChatMessage>;
+  saveMessage(childId: string, text: string, signal: AbortSignal, expectedUserId: string, voice?: Pick<VoiceMessageReference,"id"|"version">, file?: Pick<ChatFileMessageReference,"id"|"version">, photo?: Pick<PhotoMessageReference,"id"|"version">): Promise<ChatMessage>;
   requestReply(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string, onProgress?: (event: AgentProgress) => void): Promise<ChatMessage>;
   getOriginalReply?(childId: string, messageId: string, signal: AbortSignal, expectedUserId: string): Promise<ChatReplyState | null>;
   getReplyState?(childId: string, runId: string, signal: AbortSignal, expectedUserId: string): Promise<"running" | "completed" | "stopped" | "unknown">;
@@ -72,6 +73,8 @@ function message(value: unknown): value is ChatMessage {
     && (value.officialHelp === undefined || Array.isArray(value.officialHelp) && value.officialHelp.length <= 2 && value.officialHelp.every(card => officialHelpIdSchema.safeParse(card).success))
     && (value.voice === undefined || value.role === "user" && voiceMessageReferenceSchema.safeParse(value.voice).success)
     && (value.file === undefined || value.role === "user" && !value.voice && chatFileMessageReferenceSchema.safeParse(value.file).success)
+    && (value.photo === undefined || value.role === "user" && photoMessageReferenceSchema.safeParse(value.photo).success)
+    && [value.voice, value.file, value.photo].filter(item => item !== undefined).length <= 1
     && typeof value.text === "string"
     && (value.inReplyTo === null || id(value.inReplyTo))
     && typeof value.createdAt === "string" && Number.isFinite(Date.parse(value.createdAt))
@@ -169,12 +172,14 @@ export function createChatApi(baseUrl: string, getSession: ChatApi["getSession"]
       if (!object(value) || typeof value.accepted !== "boolean") throw new ChatApiError();
       return value.accepted;
     },
-    async saveMessage(childId, text, signal, expectedUserId, voice, file) {
-      const value = await onlineCall(signal, outerSignal => online.submit({ path: `/api/children/${encodeURIComponent(childId)}/messages`, payload: { text, ...(voice ? {voice:{id:voice.id,expectedVersion:voice.version}} : {}), ...(file ? {file:{id:file.id,expectedVersion:file.version}} : {}) } }, outerSignal, expectedUserId));
+    async saveMessage(childId, text, signal, expectedUserId, voice, file, photo) {
+      if ([voice, file, photo].filter(Boolean).length > 1) throw new ChatApiError(400, "invalid_input");
+      const value = await onlineCall(signal, outerSignal => online.submit({ path: `/api/children/${encodeURIComponent(childId)}/messages`, payload: { text, ...(voice ? {voice:{id:voice.id,expectedVersion:voice.version}} : {}), ...(file ? {file:{id:file.id,expectedVersion:file.version}} : {}), ...(photo ? {photo:{id:photo.id,expectedVersion:photo.version}} : {}) } }, outerSignal, expectedUserId));
       if (!object(value) || !message(value.message) || value.message.childId !== childId
         || value.message.role !== "user" || value.message.authorUserId !== expectedUserId || value.message.text !== text
         || (voice ? value.message.voice?.id !== voice.id || value.message.voice.version !== voice.version + 1 : !!value.message.voice)
-        || (file ? value.message.file?.id !== file.id || value.message.file.version !== file.version + 1 : !!value.message.file)) {
+        || (file ? value.message.file?.id !== file.id || value.message.file.version !== file.version + 1 : !!value.message.file)
+        || (photo ? value.message.photo?.id !== photo.id || value.message.photo.version !== photo.version : !!value.message.photo)) {
         throw new ChatApiError();
       }
       return value.message;

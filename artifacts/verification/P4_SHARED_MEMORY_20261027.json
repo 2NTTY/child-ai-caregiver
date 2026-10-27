@@ -1,0 +1,41 @@
+{
+  "package": "P4-FAMILY-A/shared-memory",
+  "date": "2026-10-27",
+  "base": "7393d8de931abc4c04a0a01905e0c9c33cee8fac",
+  "branch": "codex/p4-shared-memory",
+  "runtime": "Node 24.19.0",
+  "checks": [
+    "One shared memory flow through formal HTTP/common client: original facts/topics, private candidates and history excluded, private source IDs hidden even after owner correction, explicit confirmed creation, original-operation retry and receipt, terminal topic, deletion and revocation, restore attribution proof",
+    "Two existing owner checks: firestore-core and firestore-memory-lifecycle",
+    "Scoped TypeScript graph; git diff --check"
+  ],
+  "results": {
+    "sharedFlow": "passed",
+    "ownerCompatibility": "2 passed",
+    "scopedTypes": "passed",
+    "diff": "passed",
+    "readonlyReview": "No actionable blocker; same Sol reviewer; no test rerun"
+  },
+  "failuresPreserved": [
+    "Initial expected red: memory.forSharedSpace is not a function"
+  ],
+  "notVerified": [
+    "Cloud Firestore contention and new shared-history indexes (definitions only)",
+    "Family UI, shared changes synchronization, composite domain context and other shared modules",
+    "Live deployment or D Agent integration; prior P3 and backup pending evidence unchanged"
+  ],
+  "sourceSha256": {
+    "server/firebase-app.ts": "75338e068a6bd7addcc232c2e894928797eec507c506c0e15bbfead7d41e7331",
+    "server/firestore-disclosure.ts": "1128372d471d2c3bae72119270a134648cbf817872902475702cf5b3e00683ad",
+    "server/firestore-memory.ts": "e4c54bd853482374dba458bf1f72a21ac236e4bb440be01bcd9488b0a1878de9",
+    "server/firestore-online-receipts.ts": "d8a77e933ec9180dce128d1a0202d8fb311449339df9b3aedd644bd66a3e01cf",
+    "server/firestore-restore-core-records.ts": "d28d46a6519ed5ba8263ce432a34be4a0e29fc157274d4bf93c15ee42ef7a4bd",
+    "server/memory-validation.ts": "3834098a9011b3292a4b329f57d1889018cc70ce5a9ffb0adc463c50d24252b7",
+    "server/online-routing.ts": "1202f14dbb9237fc6b9982f619d23dfc13052f6a63b1a3f52a45369c66332ec7",
+    "server/shared-domain-routing.ts": "de77053ebfccab5eef5377b928e011c7871bdc40c366a356db86d4713c9a535d",
+    "src/client/memory-api.ts": "e2c96e833179f0d99569997bf3f877dac87196bc0f02b8b4f99b46698b2066a0",
+    "src/shared/memory.ts": "ad667cc42c7ce1af876c885970940dd5ab9324c523b9d1b42e63c67c7bbf6abb",
+    "tests/firestore-sharing.test.ts": "e4435412f586db5edeb96f4db5568b2871091de0159d91bcab319a85d42d522b",
+    "deploy/firebase/firestore.indexes.json": "c5ce82d5d129e9492422d862478b71d61d433b16da7669079881b668ec54ae60"
+  }
+}

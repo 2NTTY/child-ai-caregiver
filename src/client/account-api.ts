@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { socialAuthProviderSchema, type ReauthenticationInput } from "../shared/auth-providers.ts";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
 import { accountAcknowledgementSchema, accountEraseExecuteSchema, SERVICE_POLICY_VERSION, type AccountExportPage, type AccountEraseReceipt, type AccountServiceStatus } from "../shared/account-service.ts";
 const receiptSchema = z.object({ operationId: z.uuid(), state: z.enum(["prepared", "processing", "completed"]), attachmentsPending: z.boolean() }).strict();
@@ -16,7 +17,7 @@ export class AccountApiError extends Error {
   constructor(status = 0, code: string | null = null) { super("Account request could not be confirmed"); this.name = "AccountApiError"; this.status = status; this.code = code; }
 }
 export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch,
-  credentials?: { reauthenticate(userId: string, password: string, signal: AbortSignal): Promise<void> }) {
+  credentials?: { reauthenticate(userId: string, proof: ReauthenticationInput, signal: AbortSignal): Promise<void> }) {
   const base = resolveApiBaseUrl(baseUrl), apiUrl = base.endsWith("/api") ? base : base + "/api";
   let identity: string | null = null, generation = 0, pending: AccountDeletionAttempt | null = null;
   // This ephemeral UI gate is not an authorization credential. The Server still verifies auth_time.
@@ -87,16 +88,17 @@ export function createAccountApi(baseUrl = "", fetcher: typeof fetch = fetch,
   return {
     clearDeletionVerification, deletionVerification,
     canVerifyDeletionIdentity: () => !!credentials,
-    async verifyDeletionIdentity(userId: string, password: string, signal: AbortSignal): Promise<{ expiresAtMs: number }> {
+    async verifyDeletionIdentity(userId: string, proof: ReauthenticationInput, signal: AbortSignal): Promise<{ expiresAtMs: number }> {
       requireIdentity(userId);
       clearDeletionVerification();
       const attempt = pending, sequence = verificationSequence, ticket = generation;
       if (!credentials) throw new AccountApiError(409, "reauthentication_unavailable");
       if (!attempt?.receipt || attempt.userId !== userId || attempt.receipt.state !== "prepared") throw new AccountApiError(409, "erasure_prepare_required");
       if (attempt.executionUnknown) throw new AccountApiError(409, "check_original_erasure");
-      if (!password || password.length > 128 || signal.aborted) throw new AccountApiError(400, "invalid_input");
-      try { await credentials.reauthenticate(userId, password, signal); }
-      catch { throw new AccountApiError(401, "password_verification_failed"); }
+      if ((typeof proof === "string" ? !proof || proof.length > 128 : !z.object({ provider: socialAuthProviderSchema }).strict().safeParse(proof).success)
+        || signal.aborted) throw new AccountApiError(400, "invalid_input");
+      try { await credentials.reauthenticate(userId, proof, signal); }
+      catch { throw new AccountApiError(401, typeof proof === "string" ? "password_verification_failed" : "recent_reauthentication_required"); }
       if (signal.aborted || pending !== attempt || identity !== userId || generation !== ticket || verificationSequence !== sequence)
         throw new AccountApiError(409, "session_changed");
       const expiresAtMs = Math.min(Date.now() + ACCOUNT_DELETION_VERIFICATION_MS, Date.parse(attempt.receipt.expiresAt));

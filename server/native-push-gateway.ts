@@ -2,11 +2,31 @@ import { GoogleAuth } from "google-auth-library";
 import { ANDROID_PUSH_CHANNEL, ANDROID_PUSH_PACKAGE, nativePushContent, nativePushReferenceSchema,
   nativePushTokenSchema, type NativePushReference } from "../src/shared/native-push.ts";
 import type { PushSendResult } from "./web-push-types.ts";
+import { z } from "zod";
 
-export interface NativePushGateway {
+/** Internal receipt metadata, not part of the persisted/public delivery schema. */
+export interface NativePushSendResult extends PushSendResult { apnsInvalidatedAt?: number; }
+export const apnsInvalidationTimestampSchema = z.number().int().nonnegative().max(8_640_000_000_000_000);
+
+export interface NativePushSender {
   readonly available: boolean;
   send(token: string, reference: NativePushReference, signal: AbortSignal,
-    stillAuthorized: () => Promise<boolean>): Promise<PushSendResult>;
+    stillAuthorized: () => Promise<boolean>): Promise<NativePushSendResult>;
+}
+export const apnsBindingSchema = z.object({
+  topic: z.string().min(3).max(255).regex(/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/u),
+  environment: z.enum(["production", "sandbox"]),
+}).strict();
+export type ApnsBinding = z.infer<typeof apnsBindingSchema>;
+export interface NativeApnsGateway extends NativePushSender { readonly binding: ApnsBinding; }
+/** The existing sender remains FCM; APNs is an optional, separately configured transport. */
+export interface NativePushGateway extends NativePushSender { readonly apns?: NativeApnsGateway; }
+const unavailable: NativePushSender = { available: false,
+  send: async () => ({ status: "stopped", reason: "configuration_unavailable", providerStatus: null }) };
+export function nativePushSender(gateway: NativePushGateway, apns?: ApnsBinding): NativePushSender {
+  if (!apns) return gateway;
+  const sender = gateway.apns;
+  return sender?.binding.topic === apns.topic && sender.binding.environment === apns.environment ? sender : unavailable;
 }
 export interface NativePushConfig { projectId: string; }
 const projectPattern = /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/u;

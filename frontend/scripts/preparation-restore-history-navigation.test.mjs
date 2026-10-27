@@ -101,15 +101,15 @@ test('first restore 405 remains a rejection while History tabs remain read-only 
     const s = scenario(width); await s.load(); s.restore(); await s.settle();
     assert.equal(s.documents.operation.state, 'failed'); assert.equal(s.documents.operation.recovery, 'check');
     const original = structuredClone(s.documents.operation), body = structuredClone(s.calls[0].body);
-    assert.equal(s.leases.size, 1); assert.equal(s.documents.preparation.model.dirty, false);
+    assert.equal(s.leases.size, 0); assert.equal(s.documents.preparation.model.dirty, false);
     s.history(); assert.equal(s.pathname, '/history'); assert.equal(s.picker().props.value, 'tasks');
     for (const category of ['preparations', 'review', 'conversations']) {
       s.category(category); assert.equal(s.picker().props.value, category);
-      assert.equal(s.button('留在此頁查核'), undefined);
+      assert.equal(s.button('留在此頁'), undefined);
     }
     assert.deepEqual(s.documents.operation, original); assert.equal(s.calls.length, 1); assert.deepEqual(s.calls[0].body, body);
     s.restore(); assert.equal(s.calls.length, 1, 'Read navigation must not release the write lease or permit duplicate restore');
-    assert.equal(s.request('child'), false); s.button('留在此頁查核').props.onPress(); s.render();
+    assert.equal(s.request('child'), true, 'A known rejection without a draft does not trap a scope change');
     s.documents.recovery.checkOriginalOperation(); await s.settle();
     assert.equal(s.leases.size, 0); assert.equal(s.documents.operation.recovery, undefined);
     assert.equal(s.calls.length, 1, 'Explicit read settles the rejected attempt without replay');
@@ -124,11 +124,11 @@ test('unknown restore followed by 405 retains the exact original and scope guard
   s.status(405); s.documents.recovery.retryOriginalOperation(); await s.settle();
   assert.equal(s.documents.operation.state, 'unknown'); assert.equal(s.documents.operation.reference, body.opId);
   s.history(); s.category('preparations'); assert.equal(s.picker().props.value, 'preparations');
-  assert.equal(s.button('留在此頁查核'), undefined); s.restore();
+  assert.equal(s.button('留在此頁'), undefined); s.restore();
   assert.equal(s.leases.size, 1); assert.deepEqual(s.calls.map(call => call.body), [body, body]);
   for (const intent of ['child', 'navigation']) {
-    assert.equal(s.request(intent), false); assert.ok(s.button('留在此頁查核')); assert.equal(s.button('捨棄草稿並離開'), undefined);
-    s.button('留在此頁查核').props.onPress(); s.render();
+    assert.equal(s.request(intent), false); assert.ok(s.button('留在此頁')); assert.equal(s.button('捨棄並離開'), undefined);
+    s.button('留在此頁').props.onPress(); s.render();
   }
   assert.equal(s.documents.operation.state, 'unknown'); assert.equal(s.documents.operation.reference, body.opId);
 });
@@ -138,7 +138,7 @@ test('retained in-flight restore survives read navigation and still cannot be su
   const original = structuredClone(s.calls[0].body);
   assert.equal(s.documents.operation.state, 'saving'); s.history(); s.category('care');
   assert.equal(s.picker().props.value, 'care'); s.restore(); assert.equal(s.calls.length, 1); assert.equal(s.leases.size, 1);
-  assert.equal(s.request('child'), false); s.button('留在此頁查核').props.onPress(); s.render();
+  assert.equal(s.request('child'), false); s.button('留在此頁').props.onPress(); s.render();
   gate.resolve(); await s.settle();
   assert.equal(s.documents.operation.state, 'failed'); assert.equal(s.documents.operation.reference, original.opId);
   assert.deepEqual(s.calls.map(call => call.body), [original]);
@@ -146,9 +146,9 @@ test('retained in-flight restore survives read navigation and still cannot be su
 
 test('History workspace navigation still protects local dirty drafts and non-retained in-flight writes', async () => {
   const s = scenario(); await s.load(); s.history(); s.local({ dirty: true, pending: false }); s.category('preparations');
-  assert.equal(s.picker().props.value, 'tasks'); assert.ok(s.button('捨棄草稿並離開'));
+  assert.equal(s.picker().props.value, 'tasks'); assert.ok(s.button('捨棄並離開'));
   s.button('繼續編輯').props.onPress(); s.render(); assert.equal(s.picker().props.value, 'tasks');
   s.local({ dirty: true, pending: true }); s.category('preparations');
-  assert.equal(s.picker().props.value, 'tasks'); assert.ok(s.button('留在此頁查核')); assert.equal(s.button('捨棄草稿並離開'), undefined);
+  assert.equal(s.picker().props.value, 'tasks'); assert.ok(s.button('留在此頁')); assert.equal(s.button('捨棄並離開'), undefined);
   assert.equal(s.calls.length, 0);
 });

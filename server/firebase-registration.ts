@@ -4,7 +4,8 @@ import { decodeFirebaseStorageKey } from "./firebase-storage-key.ts";
 import { FirestoreAuthorityError, type FirestoreAuthority } from "./firestore-authority.ts";
 
 export const FIREBASE_REGISTRATION_DEADLINE_MS = 6000;
-const BEFORE_PASSWORD_CREATE = "providers/cloud.auth/eventTypes/user.beforeCreate:password";
+const BEFORE_CREATE = "providers/cloud.auth/eventTypes/user.beforeCreate:";
+const registrationProviders = new Set(['password', 'google.com', 'apple.com']);
 const PROJECT_ID = /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/;
 const DENIED_CODES = new Map([["not_found", 404], ["invitation_unavailable", 403], ["service_disabled", 403], ["invalid_input", 400]]);
 const deny = () => new HttpsError("permission-denied", "Registration is not permitted");
@@ -30,13 +31,16 @@ export function createFirebaseRegistrationHandler({ authority, projectId, tenant
   const expectedResource = "projects/" + projectId + (tenantId === null ? "" : "/tenants/" + tenantId);
   return async event => {
     const user = event?.data;
-    if (event?.eventType !== BEFORE_PASSWORD_CREATE || event.authType !== "USER"
+    const provider = typeof event?.eventType === 'string' && event.eventType.startsWith(BEFORE_CREATE)
+      ? event.eventType.slice(BEFORE_CREATE.length) : '';
+    if (!registrationProviders.has(provider) || event.authType !== "USER"
       || event.resource?.service !== "identitytoolkit.googleapis.com" || event.resource.name !== expectedResource
       || !user || !z.email().max(320).safeParse(user.email).success
       || user.tenantId !== undefined && user.tenantId !== tenantId
-      || event.additionalUserInfo?.providerId !== undefined && event.additionalUserInfo.providerId !== "password"
-      || event.credential != null && (event.credential.providerId !== "password" || event.credential.signInMethod !== "password")
-      || !Array.isArray(user.providerData) || user.providerData.some(provider => provider.providerId !== "password")) throw deny();
+      || event.additionalUserInfo?.providerId !== undefined && event.additionalUserInfo.providerId !== provider
+      || event.credential != null && (event.credential.providerId !== provider || event.credential.signInMethod !== provider)
+      || provider !== 'password' && user.emailVerified !== true
+      || !Array.isArray(user.providerData) || user.providerData.some(item => item.providerId !== provider)) throw deny();
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const deadline = new Promise<never>((_, reject) => {

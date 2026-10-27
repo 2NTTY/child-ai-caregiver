@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-27",
+  "package": "P4-FAMILY-A shared attachment reads",
+  "base": "8f5ec1949308d62e6554c9da30124eca87998179",
+  "branch": "codex/p4-shared-attachments",
+  "environment": {
+    "node": "24.19.0",
+    "database": "serial synthetic Firestore fixture",
+    "models": 0,
+    "notifications": 0,
+    "cloudOperations": 0,
+    "deployed": false
+  },
+  "reuse": "Same authority, encrypted Storage originals, private domain stores and authenticated Web/Android clients; no new package, index or persistence schema.",
+  "checks": [
+    {
+      "name": "shared attachment reads preserve objects, hide private chat links and stop after access changes",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared attachment reads' tests/firestore-sharing.test.ts",
+      "result": "passed",
+      "covers": [
+        "formal HTTP and common file/voice/photo clients",
+        "canonical object reads and source scope",
+        "private message IDs and photo draft/run/record redaction",
+        "unlinked file and unfinished photo exclusion",
+        "shared photo empty intermediate page",
+        "cursor actor and grant binding",
+        "grant revoke/regrant during external I/O",
+        "shared writes rejected without private fallback",
+        "voice transcript source validation",
+        "owner DTO compatibility"
+      ]
+    },
+    {
+      "name": "existing file/voice end-to-end adapter compatibility",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='real clients and handlers traverse' tests/attachment-list.test.ts",
+      "result": "passed"
+    },
+    {
+      "name": "existing photo store pagination",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='pagination is bounded' tests/firestore-photos.test.ts",
+      "result": "passed"
+    },
+    {
+      "name": "existing photo client pagination",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='photo client collects two bounded pages' tests/photo-client.test.ts",
+      "result": "passed"
+    },
+    {
+      "name": "scoped TypeScript dependency graph",
+      "command": "node node_modules/typescript/bin/tsc -p .superpowers/sdd/PLAN/sharing-tsconfig.json --pretty false",
+      "result": "passed",
+      "roots": [
+        "server/firestore-sharing.ts",
+        "server/firestore-restore.ts",
+        "server/firebase-recovery-operator.ts",
+        "server/firestore-erasure-cleanup.ts",
+        "tests/firestore-sharing.test.ts"
+      ],
+      "note": "Includes imported API, service and all three common clients; not full product build."
+    },
+    {
+      "name": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "review": {
+    "method": "Independent Sol read-only branch review plus main inspection",
+    "result": "No actionable blockers reported",
+    "subagentsDidNotRunTests": true
+  },
+  "observedFailures": [
+    {
+      "stage": "red",
+      "result": "File/voice and then photo shared-read factories absent; implemented using existing authority."
+    },
+    {
+      "stage": "test fixture",
+      "result": "Synthetic startAfter handled only ascending first field; corrected tuple ordering to exercise the actual descending timestamp/id cursor without relaxing assertion."
+    },
+    {
+      "stage": "formal HTTP",
+      "result": "Transcript still entered private reader (403 binding); wired selected transcript read port and confirmed same flow passed."
+    },
+    {
+      "stage": "types",
+      "result": "Synthetic object inspect/remove/content and Auth port lacked exact contract members; corrected fixture, no production contract relaxed."
+    }
+  ],
+  "pending": [
+    "shared attachment writes and actor receipts",
+    "Agent reuse under shared scope",
+    "shared changes sync and public family/class owner UI",
+    "real cloud and device evidence",
+    "FAMILY-A and full P4 completion"
+  ],
+  "sha256LF": {
+    "server/firestore-attachment-access.ts": "bb543b07b781edc1e44b0ae41d92be701a6d467a3ab374c776f4abe95482b87d",
+    "server/firestore-attachment-list.ts": "44ffc84d7a4f6c37cf9b82ebb44e68d46f420781c76f221d2a38d4c98de3391c",
+    "server/firestore-chat-files.ts": "11cbd0d4168027ad060ee7e3b803c865574873fecff83703e53fb5ebd8987805",
+    "server/firestore-voice.ts": "b1dc67aa982596a935ca6f2cd3dee69e3ea57068c551d2384f8d5344924a521c",
+    "server/firestore-photos.ts": "92d55df1fb0b68791947011f3dc460ccafb66c76e8ddc27baa90989e10cf4467",
+    "server/firestore-voice-transcripts.ts": "d3891a986e2705bb6147b388c1ce09803ff9cae90b9e49f9204f982504020d18",
+    "server/firebase-chat-files-api.ts": "d10e891152ff7c043b45380d3534205a67b3c2f97490f6a57147a0cf2a4825f4",
+    "server/firebase-voice-api.ts": "6b168a183b2a4ae4e46c09866959c8f44fd07a63ec68a73fd6ea9ba3b4e682b1",
+    "server/firebase-photo-api.ts": "19531005c44e91e9444048fb495918f9df9445adf6cb2cfb41e3c673cc07a932",
+    "src/shared/chat-files.ts": "f1d5e8adb9139c01ff7e7a613f977eb5aa8c66d33d355559fe7cdac430ccd711",
+    "src/shared/voice.ts": "9fdac020308b83726dcaa21805a9f09764f5f4504e36d0dea4e092df3ce65320",
+    "src/shared/photos.ts": "634c66feed446a0e3676532d5beb23d1e2dd7300372830145bfbf3fa7a2c2374",
+    "src/shared/voice-transcript.ts": "269ac59006901d8f3ff3429f345cfa1a95e667d5038378e0c9632f440288c106",
+    "src/client/chat-file-api.ts": "e2cf3089b87bc90430c6963db68c213d835f045e11e34931b161606352cf5d35",
+    "src/client/voice-api.ts": "d95a443066782e45d31667c87ba3bb0d68b50af293f28431951026f15d8d4b32",
+    "src/client/photo-api.ts": "687966d77e31cf3df8ddcb68b33377c04f00cfcd8f06f0f8db34d4d999ec227d",
+    "tests/firestore-sharing.test.ts": "7a99a9eb2036dbb1dd6d4d7312c9890e16be201ea28b14907bb14aa8df4278e2",
+    "tests/helpers/firestore-session-memory.ts": "367987aac27949320243b08b5d06f1615acba84b897816bd0402de7bab37599f"
+  }
+}

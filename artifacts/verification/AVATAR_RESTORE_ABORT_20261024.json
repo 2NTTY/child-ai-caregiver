@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "workPackage": "AVATAR-01",
+  "base": "461850f5657abe8e2bf40cde8c983f37c1e54b35",
+  "observedAt": "2026-10-24",
+  "scope": "Explicit abandonment of authenticated isolated-target avatar copy sets; release gate stays false",
+  "files": {
+    "server/firebase-avatar-restore-abort.ts": "543232731c8d6235559c22ce465ca351d95c1766b3117293fc5afcf60a682728",
+    "server/firebase-avatar-restore-copies.ts": "22d97788bc4d35ee339d78d370d71a7f0caa53af2de4578865ad9c67b818da42",
+    "server/firebase-recovery-operator.ts": "3044fda48e68afbdbfdc4e426364b0e3ef52fd8c31eea7d6df419dc76e744dd0",
+    "scripts/firebase-recovery.mjs": "676e65c1acd53bd7c95a14ff71a1a8584d29a4a460553dad6505cf05c3bb1d6e",
+    "tests/avatar-restore-abort.test.ts": "d4150d1643c9466ce02091fd505d5e030c046afd8700b82550592e359412e126",
+    "tests/helpers/avatar-restore-memory.ts": "d8750972e73b154da1187e0b9ae6beb4f49ebe5eece2beb7e428c1b9e2dee81c"
+  },
+  "verification": {
+    "command": "node --test tests/avatar-restore-abort.test.ts",
+    "result": "PASS",
+    "passed": 1,
+    "failed": 0,
+    "fixture": "Actual copy-checkpoint and encrypted object adapters with a versioned Storage transport and isolated Firestore transaction fixture",
+    "assertions": [
+      "Source generation unchanged",
+      "Known, delayed and never-started copies fenced at their exact target addresses",
+      "Lost marker acknowledgement and unavailable readback retain aborting state",
+      "Reconstructed checkpoint adapter resumes original identity",
+      "Pinned previous generation removed; permanent non-content fence remains",
+      "Confirmed replay does not write another marker",
+      "Late original create-if-absent fails and cannot publish",
+      "Abandoned or activated restore cannot resume/abandon respectively"
+    ],
+    "finalLog": {
+      "path": ".cache/avatar-restore-abort-test-20261024-final.log",
+      "sha256": "609dff299685cfcdbbb61d3f20e447a76a8e28c43de85da1fd81b9cc1d40deba",
+      "output": "✔ abandoned isolated avatar copies remain fenced across lost replies, late writes and restart without touching source (38.7275ms)\r\nℹ tests 1\r\nℹ suites 0\r\nℹ pass 1\r\nℹ fail 0\r\nℹ cancelled 0\r\nℹ skipped 0\r\nℹ todo 0\r\nℹ duration_ms 2631.8985\r\n"
+    },
+    "typecheck": {
+      "roots": [
+        "server/firebase-avatar-restore-abort.ts",
+        "server/firebase-avatar-restore-copies.ts",
+        "server/firebase-recovery-operator.ts",
+        "tests/avatar-restore-abort.test.ts"
+      ],
+      "node": "v24.19.0",
+      "typescript": "6.0.3",
+      "diagnostics": []
+    },
+    "scriptSyntax": "node --check scripts/firebase-recovery.mjs: exit 0",
+    "diffCheck": "git diff --check: exit 0"
+  },
+  "retainedFailures": [
+    {
+      "phase": "Initial connected check",
+      "path": ".cache/avatar-restore-abort-test-20261024.log",
+      "sha256": "565a56ad8cb13c985c6537258b24823ddfadb6c5d0f4db63db97f0997db39a17",
+      "reason": "Fixture structuredClone changed Buffer into Uint8Array; source bytes/metadata were equal, but strict type identity failed. Preserve Buffer in expected snapshot. No product change for this failure."
+    },
+    {
+      "phase": "Initial typecheck",
+      "roots": [
+        "server/firebase-avatar-restore-abort.ts",
+        "server/firebase-avatar-restore-copies.ts",
+        "server/firebase-recovery-operator.ts",
+        "tests/avatar-restore-abort.test.ts"
+      ],
+      "node": "v24.19.0",
+      "typescript": "6.0.3",
+      "diagnostics": [
+        {
+          "code": 2339,
+          "file": "tests\\avatar-restore-abort.test.ts",
+          "line": 30,
+          "message": "Property 'metadata' does not exist on type '{ name: string; bucket: string; generation: string; size: string; contentLength?: number | undefined; contentType?: string | undefined; }'."
+        }
+      ],
+      "reason": "Fixture row inferred without metadata property; added explicit Row annotation."
+    }
+  ],
+  "executionCount": {
+    "connectedTest": 3,
+    "explanation": "Initial fixture failure; repaired check passed; final check followed explicit reconstructed adapter resume and outcome renamed to abandoned, avoiding a claim that target authority was paused. No broad test suite."
+  },
+  "review": "Independent bounded Sol review found no actionable findings. Primary reviewed full changed paths, added explicit target object-binding/derived-epoch checks and reviewed the final result.",
+  "officialConstraints": [
+    "https://docs.cloud.google.com/storage/docs/request-preconditions",
+    "https://docs.cloud.google.com/storage/docs/soft-delete"
+  ],
+  "notPerformed": [
+    "Cloud Storage CAS or real Firestore transaction verification",
+    "Cloud restore/deployment/activation",
+    "Model calls, notifications or device manipulation"
+  ],
+  "limitations": [
+    "Unknown or malformed inventory, legacy partial plans and existing current remain fail-closed",
+    "Target isolation is an operator/deployment precondition; command never changes source or opens traffic",
+    "Permanent markers and authenticated intent metadata must remain; existing soft-delete/backup retention still applies",
+    "Avatar release remains disabled until remaining gates have evidence"
+  ]
+}

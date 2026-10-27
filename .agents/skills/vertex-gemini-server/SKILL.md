@@ -16,6 +16,8 @@ description: 實作或修改 Node/TypeScript Server 的 Vertex AI Gemini 呼叫�
 - 只抽取 `usageMetadata` 的必要數值；完整 response 含候選正文，不可當統計日誌。缺失 token 記未知，不能冒充零或快取命中；拒絕空回答、非預期工具／內容及無效數值。[Response](https://docs.cloud.google.com/gemini-enterprise-agent-platform/reference/rest/v1/GenerateContentResponse)
 - 型別／單元檢查只驗證接線及邊界；ADC 權限、模型可用性與帳單須靠獲准的最小真服務驗證，不能以 mock 宣稱已通過。
 
+2026-10-25 本人向量補充：SDK 2.24.0 可以明確傳入 `enterprise:true`、`apiKey`、`project` 及 `location`，使用標準 Vertex `:predict` 路徑與 `x-goog-api-key`；這與省略專案的 Express 生成路徑分開。用戶路由必須自行提供專案／地區，固定官方 base URL，不能因 SDK 讀環境而借用平台 ADC／目的地。沿用 `gemini-embedding-001`、1024 維、`autoTruncate:false` 及原 reply 驗證；沒有新增 HTTP 客戶端。固定 SDK 的實際 request／無 ADC／單次錯誤檢查已通過，真服務另看工作包證據。官方 [Authorization keys](https://docs.cloud.google.com/docs/authentication/api-keys) 支援綁定 service account 的 AI Platform key；[向量接口](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/embeddings/get-text-embeddings)使用本人專案與地區。文件支持不代表所有 key／模型地區均已實測。
+
 當次模型資料：`gemini-3.1-flash-lite` 模型頁列出 GA 及 `global`／`us`／`eu`。這是有日期的可用性證據；切換地點、模型或遇到 404 時局部重核，不推論所有模型均可用所有地點。[模型頁](https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/gemini/3-1-flash-lite)
 
 產品與安全決策仍以 [ARCHITECTURE](../../../docs/ARCHITECTURE.md#section-3-6)、[API](../../../docs/API.md#p1-ai-boundary) 及 [AGENTS](../../../AGENTS.md#technical-skills) 為準。發現衝突先指出影響，不用本 Skill 改寫已確認架構。

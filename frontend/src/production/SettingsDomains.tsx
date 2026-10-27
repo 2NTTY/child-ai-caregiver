@@ -39,7 +39,7 @@ export function ProductionSettingsDomains({ children }: { children: ReactNode })
   const contactDomains = contact?.key === childScope && env.current() ? contact.domains : emptyContactDomain(env);
   return <PersonalContext.Provider value={personalDomains}><ContactContext.Provider value={contactDomains}>
     <SettingsIdentityBridge key={identityScope} ownerKey={identityScope} env={env} childrenVersion={recordsState.children} publish={publishPersonal} />
-    <SettingsChildBridge key={childScope} ownerKey={childScope} env={env} publish={publishContact} />
+    {!env.sharedMode ? <SettingsChildBridge key={childScope} ownerKey={childScope} env={env} publish={publishContact} /> : null}
     {children}
   </ContactContext.Provider></PersonalContext.Provider>;
 }

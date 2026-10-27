@@ -1,0 +1,243 @@
+{
+  "date": "2026-10-25",
+  "baseline": "1a8b85a090f9e3533b1a68ae0d2f9055b80a1ec4",
+  "scope": "Android v4 attachment continuation; native filename correction only",
+  "observedFailure": {
+    "stage": "selected-unsent-draft",
+    "actualName": "content-provider document ID",
+    "expectedName": "yuyoufang-download-check-20261025.txt",
+    "syntheticBytes": 108,
+    "uploaded": false,
+    "modelCalls": 0
+  },
+  "reuse": {
+    "package": "expo-file-system@57.0.7",
+    "official": "https://docs.expo.dev/versions/latest/sdk/filesystem/",
+    "evidence": [
+      "File.ts name getter uses URI basename",
+      "Android CopyMoveStrategy uses provider fileName for a directory destination",
+      "ContentProviderFile reads OpenableColumns.DISPLAY_NAME"
+    ],
+    "newNativeDependencies": false
+  },
+  "checks": {
+    "targetedTest": "frontend/scripts/native-picked-file.test.cjs: 1 passed",
+    "typecheck": "native-picked-file, native-chat-file and native-voice-file: 0 diagnostics",
+    "deviceAfterFix": "pending compatible OTA"
+  },
+  "limits": [
+    "Synthetic adapter check does not prove device copy behavior",
+    "No avatar retest, notification, model generation or unrelated attachment access",
+    "Personal Gemini key successful generation remains blocked by the observed provider region rejection"
+  ],
+  "delivery": {
+    "source": "35ad2143b417911bbdb951dac93bf8ef0ad389b8",
+    "pr": 308,
+    "androidExport": "passed",
+    "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+    "files": 31,
+    "bytes": 13725060,
+    "attempts": 2,
+    "state": "blocked_before_publication",
+    "reason": "EAS asset processing timed out for the same Hermes bundle on both attempts; no further retry",
+    "readbackLatestGroup": "327ad4ca-66f5-412b-bf8a-ee46d7493198",
+    "productionBackendChanged": false,
+    "newApkBuilds": 0,
+    "assetReadback": {
+      "checkedAt": "2026-10-25T12:50:49.085Z",
+      "status": "DOES_NOT_EXIST",
+      "uploads": 0,
+      "publications": 0,
+      "additionalRetries": 0
+    }
+  },
+  "deviceContinuation": {
+    "phase": "Earlier stopped batch, before the subsequent deviceAcceptance below",
+    "state": "waiting_for_unlock",
+    "systemFileSelected": true,
+    "ownUnsentDraftRemoved": true,
+    "uploaded": false,
+    "downloadAndShare": "not verified",
+    "testFile": "One 108-byte non-private TXT staged in the device Download folder; no existing attachment modified",
+    "screenshots": "ignored local cache only"
+  },
+  "personalKeyProductionCheck": {
+    "environment": "existing Hong Kong production VM; deployed personal provider factory",
+    "generationAttempts": 1,
+    "embeddingAttempts": 0,
+    "result": "model_region_unavailable",
+    "platformFallback": false,
+    "settingsOrQuotaChanged": false,
+    "credentialPersistedOrLogged": false,
+    "scope": "One existing restricted Gemini key; does not declare all user keys or providers unavailable",
+    "transportFailuresBeforeModel": "Three local harness failures before provider invocation: Windows gcloud PuTTY stdin replacement and an unusable dry-run command. Resolved using subprocess-only CLOUDSDK_SSH_PUTTY_FORCE_CONNECT=false and normal host-key checks. No model retry."
+  },
+  "deviceAcceptance": {
+    "checkedAt": "2026-10-25T12:50:00Z",
+    "deviceVersionCode": 4,
+    "installedSource": "1f07fab5a32633dd733110700e850c7c06c781ee",
+    "authorization": "User unlocked the connected device and requested continuation of the same attachment acceptance",
+    "fixture": {
+      "bytes": 108,
+      "content": "Synthetic attachment check without private child data",
+      "submittedFiles": 1,
+      "submittedChatRuns": 1,
+      "resubmissions": 0
+    },
+    "results": {
+      "savedMessageAndAttachment": "passed",
+      "chatDownloadToAndroidChooser": "passed",
+      "processRestartThenLibraryReadback": "passed",
+      "libraryDownloadToAndroidChooser": "passed",
+      "originalReplyReadback": "passed: OK",
+      "draftClearedAfterOriginalCompletion": "observed"
+    },
+    "integrityBoundary": "Both download entry points use the production content client, which checks content type, expected size and SHA-256 before native export; opening the chooser confirms that path completed. No recipient save is claimed.",
+    "filenameFix": "not on device: the embedded v4 still displays a provider document ID; #308 remains pending EAS publication",
+    "cleanup": "Removed only the staged device Download fixture; restored the original child selection and Home. One harmless cloud test attachment/message remains for traceability; existing user content was not changed.",
+    "limits": [
+      "Actual provider call count was not queried; one user submission only",
+      "No notification sent and no four-Agent quality acceptance",
+      "Cancelling the second chooser and immediately tapping navigation opened an existing browser; no recipient delivery was verified",
+      "A guessed agent deep link produced Unmatched Route; returned through the known photos route. This was a harness navigation error, not an application route regression",
+      "Screenshots remain in ignored local cache only"
+    ]
+  },
+  "deliveryRecovery": {
+    "checkedAt": "2026-10-25T13:23:57.777Z",
+    "source": "35ad2143b417911bbdb951dac93bf8ef0ad389b8",
+    "publishedGit": "cffa3376de8906c7c020850b01d2d3c02101c12b",
+    "publishedGitDifference": "Only documentation since the reviewed product source",
+    "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+    "files": 31,
+    "bytes": 13725060,
+    "diagnosis": "The same bundle was absent after the earlier CLI timeouts. A verified direct TLS upload completed; the exact cause inside the previous proxy path is not proven.",
+    "additionalAssetUploads": 1,
+    "assetBytes": 9048132,
+    "assetSha256": "d8a2548f5c6d3c295aee88979b49956ee0c4accd7491295422ca0593a040c7c6",
+    "destinationHost": "update-assets-upload-production.storage.googleapis.com",
+    "transport": "Direct HTTPS, exact official destination, redirects and retries disabled",
+    "uploadHttpStatus": 204,
+    "uploadMs": 3096,
+    "assetReadback": "EXISTS",
+    "preflightStop": "Initial guard expected storage.googleapis.com and stopped before upload. Official metadata established the exact Expo upload host before the single upload.",
+    "publication": "passed",
+    "group": "39974363-7397-418f-adf6-40e853786ca1",
+    "updateId": "01a1733b-70d1-7fcc-a5af-a830658b7b1c",
+    "channel": "preview",
+    "newApkBuilds": 0,
+    "webOrBackendChanged": false,
+    "modelCalls": 0,
+    "notifications": 0,
+    "priorFailures": "Both earlier EAS timeouts and their readback remain unchanged above"
+  },
+  "deviceFilenameAfterUpdate": {
+    "checkedAt": "2026-10-25T13:33:00Z",
+    "versionCode": 4,
+    "result": "passed: original synthetic filename 202610252133.txt displayed in the unsent attachment draft",
+    "fixtureBytes": 68,
+    "fileUploads": 0,
+    "messagesSent": 0,
+    "modelCalls": 0,
+    "notifications": 0,
+    "appRestart": "Restarted existing app to receive the compatible update; branded splash observed",
+    "exactDeviceUpdateId": "not read; behavior verified without claiming exact installed update identity",
+    "cleanup": "Removed only this unsent attachment draft and the staged Download fixture; returned to the original Home and child selection",
+    "harnessCorrection": "Chinese IME transformed the first ASCII search. Used a numeric filename for the same synthetic file; no unrelated attachment opened.",
+    "screenshots": "Ignored local cache only; private screen content not committed",
+    "limits": [
+      "No repeat of avatar or already-passed attachment save/download flow",
+      "No OTA rollback, cross-device media, notification completion or four-Agent acceptance in this batch"
+    ]
+  },
+  "otaRollbackAcceptance": {
+    "date": "2026-10-25",
+    "reviewedMaster": "c9989c5fabb247dddde1206fc3f52b3e4be7a3eb",
+    "channel": "preview",
+    "platform": "android",
+    "versionCode": 4,
+    "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+    "method": "EAS CLI 24.14.0 rollback-to-embedded, then republish the already-verified group; no new bundle upload",
+    "firstAttempt": {
+      "startedAt": "2026-10-25T13:44:17.181Z",
+      "restoredAt": "2026-10-25T13:46:52.853Z",
+      "rollbackGroup": "52c12d5b-07d8-4649-b4e1-21cd022902aa",
+      "restoredGroup": "176824e2-011d-4573-a855-b8601479dcb0",
+      "restoredUpdateId": "01a17350-6a0e-702e-a4ea-e1cd69284460",
+      "restoredLaunchAsset": "CXuOJPbk4zw4G-yhuILnOUBFmCQB3pdUXxtr7IuUHiA",
+      "deviceResult": "not established: phone locked; restored immediately without claiming success"
+    },
+    "unlockedContinuation": {
+      "startedAt": "2026-10-25T13:52:15.495Z",
+      "restoredAt": "2026-10-25T13:54:32.241Z",
+      "rollbackGroup": "a7d319eb-e76b-48c9-a7f0-d0a00f3206d4",
+      "restoredGroup": "44dca896-6861-43c5-a24b-cc4fbdea5102",
+      "restoredUpdateId": "01a17357-6c34-74a8-8170-32a45c00836b",
+      "restoredLaunchAsset": "CXuOJPbk4zw4G-yhuILnOUBFmCQB3pdUXxtr7IuUHiA",
+      "deviceResult": "passed",
+      "embeddedObservation": "Same unsent synthetic TXT displayed provider ID msf:1000049735 after app restart",
+      "restoredObservation": "Same TXT displayed its original filename 202610252150.txt after restoring and restarting",
+      "sessionAndData": "Original signed-in child and existing saved content remained visible",
+      "exactDeviceUpdateId": "Not extracted; behavior verified against the known embedded/fixed difference"
+    },
+    "safety": {
+      "automaticRestoreDeadlineSeconds": 300,
+      "restoredBeforeDeadline": true,
+      "newAssetUploads": 0,
+      "newBuilds": 0,
+      "modelCalls": 0,
+      "notifications": 0,
+      "unsentFixtureUploaded": false,
+      "fixtureBytes": 68,
+      "cleanup": "Discarded the exact synthetic draft, removed its staged Download file, returned Home"
+    },
+    "retainedPreflight": "Initial whoami guard expected the entire output to equal the username. Stopped before mutation; corrected to the exact first-line username and verified owner.",
+    "limits": [
+      "Only v4 preview runtime; no cross-runtime or iOS acceptance",
+      "No reload during an active user operation; no data rollback",
+      "Screenshots and raw CLI metadata remain ignored locally; no private screen content or signed URLs committed"
+    ]
+  },
+  "crossDeviceTaskAcceptance": {
+    "date": "2026-10-25",
+    "windowHongKong": "22:03–22:05",
+    "android": "v4 with restored compatible filename update",
+    "web": "Existing production site, same account; operated by the user",
+    "result": "passed for one task creation/completion synchronization",
+    "fixture": "One clearly labelled TEST—20261025—2200 task, assigned to self, due 2026-10-31 09:00 Asia/Hong_Kong",
+    "steps": [
+      "Android saved exactly one future task using the normal preview and confirmation flow",
+      "User confirmed finding the same item on Web and completing it",
+      "Android stayed on the same detail view without refresh, navigation or another write; after normal background reading it displayed completed and reminders stopped",
+      "Returned Android Home; synthetic task remains completed for traceability, no pending reminder"
+    ],
+    "models": 0,
+    "notificationsSent": 0,
+    "inputCorrections": "No-date draft was rejected before saving. ADB/IME malformed date/time text was replaced with the existing pickers; only the reviewed future date was submitted.",
+    "reusedTerminalEvidence": "F06_FIRESTORE_BACKGROUND_20261013.json native-data-scene: completion plus original contact-job replay made no additional scripted send; not rerun",
+    "limits": [
+      "Web observation is the user’s explicit report; no browser automation or session extraction",
+      "Does not prove cross-device in-flight Agent/confirmation recovery, session revocation or care-notification destination handling",
+      "No exact synchronization latency claimed; one intermediate loading observation preceded the completed view"
+    ]
+  },
+  "deviceRevocationAcceptance": {
+    "date": "2026-10-25",
+    "source": "Android v4, restored compatible filename update",
+    "webAction": "User explicitly confirmed using Sign out other devices in the same-account Web session",
+    "observations": [
+      "After unlocking, Android displayed the login form with no child or business page visible",
+      "One cold restart remained at the login form; the revoked session did not resume"
+    ],
+    "calls": {
+      "models": 0,
+      "notifications": 0,
+      "credentialExtraction": 0
+    },
+    "limits": [
+      "No second-account login or cross-identity device acceptance claimed",
+      "Device left logged out; user informed they can sign in again",
+      "Screenshots remain ignored locally"
+    ]
+  }
+}

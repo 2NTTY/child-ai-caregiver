@@ -2,7 +2,9 @@
 
 只记录为什么、来源与影响；当前行为和实现全文分别在 [SPEC](../SPEC.md)、[ARCHITECTURE](ARCHITECTURE.md)、[DATA_MODEL](DATA_MODEL.md)、[API](API.md)。本文的历史原文不形成另一份现行规范。
 
-現行入口：[ADR-008](#adr-008) 記錄 Server 權威架構、五階段局部修訂及原 REQ／AC 替代索引；[ADR-009](#adr-009) 記錄 2026-09-22 工作上下文、測試及當時子代理政策（部分已替代）。現行全文仍由以上權威文件及 [AGENTS](../AGENTS.md)／[PLAN](../PLAN.md) 維護。
+現行階段與家庭／班級／文檔包替代見 [ADR-028](#adr-028)，不覆寫下列歷史 ADR。
+
+歷史入口：[ADR-008](#adr-008) 記錄 Server 權威架構、五階段局部修訂及原 REQ／AC 替代索引；[ADR-009](#adr-009) 記錄 2026-09-22 工作上下文、測試及當時子代理政策（部分已替代）。現行全文仍由以上權威文件及 [AGENTS](../AGENTS.md)／[PLAN](../PLAN.md) 維護。
 
 ADR-001 至 ADR-007 保留當時歷史；其中「本輪」「不得移動」「通過即停止」及 ADR-005／007 的本地架構、原 AC 不改等表述，不覆蓋 ADR-008／009 已明列的修訂。未被替代的歸檔、來源治理及按需領域解耦原則繼續適用。
 
@@ -383,3 +385,86 @@ S03 无须等待账号、云数据库、AI、向量、配对或通知；这是�
 - 日期／決定：2026-10-13，使用者批准 P2-R01～R04 先修刪除披露、清理恢復、Agent 正式組裝、成果狀態與通知歷史；有效 Firestore／零 SQL 里程碑及原證據保留，不等於所有 P2 功能接線完整。
 - 家庭多人：現行 Firestore 只接本人空間，完整家庭邀請／成員／共享管理安排 P4-FAMILY。正式入口明示未開放，不發必敗請求、不回假成功；本人通知、帳戶與孩子隔離仍為目前要求。這取代將完整家庭功能作 P2／P3 必達的現行階段要求，保留原歷史契約與驗收。
 - 次序／限制：P3 手機等 R04 合併；三個 Agent 角色仍依既定 P3 包。新修正只作必要定向驗證，不以此重跑已延後的真原生備份還原。唯一進度見 [PLAN](../PLAN.md#p2-review-repair)。
+
+
+<a id="avatar-codec-decision"></a>
+## AVATAR-01：獨立頭像與 server-only 正規化（2026-10-23）
+
+本人及孩子各一個可更換／移除的頭像，以獨立resource為權威，不擴充strict Child／SessionUser、不借Auth photoURL。本人固定private，孩子只沿既有roles；不進照片分析、附件、模型、記憶、通知或分享。API／data定義分別見[頭像API](API.md#avatar-api)、[資料生命週期](DATA_MODEL.md#avatars)。
+
+既有photo helper只有magic/bytes/hash，不能安全decode/resize/去metadata；Expo picker亦非安全邊界。採server-only精確`sharp@0.35.5`及官方npm lockfile integrity，不進Web／Expo bundle、不另下載binary或回退magic-only。官方固定版本Node>=20.9.0，native 0.35.5/libvips 1.3.4；現有Node24／Debian bookworm文件相容不當容器實測。[固定package](https://raw.githubusercontent.com/lovell/sharp/v0.35.5/package.json)、[安裝](https://sharp.pixelplumbing.com/install/)、[發布](https://sharp.pixelplumbing.com/changelog/v0.35.5/)。Sharp本身為Apache-2.0；本次實裝Linux libvips binary package標示LGPL-3.0-or-later（精確包與來源見下），按實際bundle保留notices／license／來源資訊，不泛稱全Apache或LGPL2.1。
+
+`server/avatar-config.ts`集中admission、queue/deadline與recipe設定及安全policy projection。初始目標：input8MiB、20M pixels、單邊12000、output256方形JPEG/256KiB、zoom<=8、decode10秒／總20秒、decode在途1／queue4、upload30分鐘、actor/target未完成2。屬有界工作量非終身頭像配額；實測調整在同一配置，不複製PHOTO_LIMITS。policyId固定codec精確版本、輸出recipe及options；既有預留按快照完成，不偷換配方。安全修訂可明示終止舊upload。
+
+處理順序：只收JPEG/PNG Buffer且MIME/magic/decoder一致，禁URL、path、SVG/GIF/HEIF/PDF、多頁／動畫／不完整檔案；專用codec域只允許JPEG/PNG Buffer loaders。`failOn:'warning'`、pixel/channel限制及`unlimited:false`，核安全維度／pixels／decoded bytes；metadata限制不被當完整解壓炸彈防護。EXIF正向旋轉／鏡像後，以W/H及crop計算`S=max(1,floor(min(W,H)/zoom))`，`left=clamp(round(centerX*W-S/2),0,W-S)`、top同理。預設center=.5／zoom=1，Web/Android同義。
+
+透明PNG先固定白底flatten，resize square、轉sRGB、JPEG quality85，可放大小圖但不宣稱增加細節。不使用keep/withMetadata、Exif、Xmp或gain-map保留；去GPS/EXIF/XMP/IPTC/原ICC/comment/thumbnail。輸出再核format、尺寸、bytes、無metadata並算SHA-256，只有此buffer加密保存。raw／pixels只在受保護短命記憶體，finally釋放；清buffer不等於證明native記憶體全部抹除。[constructor](https://sharp.pixelplumbing.com/api-constructor/)、[loaders](https://sharp.pixelplumbing.com/api-utility/#block)、[autoOrient](https://sharp.pixelplumbing.com/api-operation/#autoorient)、[metadata預設剝除](https://sharp.pixelplumbing.com/api-output/#keepmetadata)。
+
+需每身份／跨實例admission、有界queue、整請求deadline及hard cancellation。Sharp timeout不含libuv排隊，Promise.race不停止native工作，未確認停止不得釋放slot；採固定命令的本機專用child process作hard-timeout/kill邊界：codec程式不作網絡操作，清除傳入憑證環境，只經stdin接JPEG/PNG Buffer，禁URL/path及其他loaders。這不是OS級網絡／檔案隔離，亦不宣稱完整sandbox；OS隔離在本機不可驗，部署可另加限制但本包不改系統設定。須等子程序close確認native工作停止才釋放slot；不能證實停止則executor fail closed。不建立新雲服務。[timeout](https://sharp.pixelplumbing.com/api-output/#timeout)。完整lifecycle與合成codec viability為開feature前置，不先發布缺backup/delete版本。
+
+#### AVATAR-01 依賴封裝與來源紀錄
+
+固定 `sharp 0.35.5` 及官方 registry lock/integrity，只由 server codec child process 載入；不由 Web／Android shared/client import，未驗證平台不因 npm lock 含 optional entries 而自稱可用。本機 Linux glibc x64 小合成 probe 已驗可行；不是 Android picker／瀏覽器 EXIF 一致性驗收。Server build 要保留平台匹配的官方 optional packages及原license/notice，不把預先編譯依賴併入前端 bundle；安裝條件參考 [Sharp 官方 installation](https://sharp.pixelplumbing.com/install/)。
+
+實際 Linux 依賴為 `@img/sharp-linux-x64 0.35.5`（Apache-2.0）及 `@img/sharp-libvips-linux-x64 1.3.4`（**LGPL-3.0-or-later**）；不能統稱全Apache或只寫LGPL2.1。後者官方README列出libvips、glib、libexif等LGPLv3，以及MPL/BSD/MIT等第三方條款。部署依賴封裝須保存每個實裝package的LICENSE／README第三方清單、package metadata與版本清單；不要以刪除非JPEG/PNG的loader入口作為刪除binary第三方notice的理由。[官方第三方清單](https://github.com/lovell/sharp-libvips/blob/main/THIRD-PARTY-NOTICES.md)。
+
+來源取得方式：Sharp來源由[官方倉庫](https://github.com/lovell/sharp)對應`v0.35.5`取得；prebuilt包的對應來源／版本及打包腳本由[sharp-libvips v1.3.4 release](https://github.com/lovell/sharp-libvips/releases/tag/v1.3.4)與其tag的`build/posix.sh`、`versions.properties`取得。該release列libvips8.18.7等實際依賴版本；腳本記錄上游source archive位置。交付環境若分發server image／binary，須同時核對相應license/source交付條件，不以本機probe或package.json一個license欄位取代；本包不自行作法律承諾或改部署權限。
+
+
+#### AVATAR-01 未解除的交付 gate
+當前開發候選 `AVATAR_LIFECYCLE_RELEASE_READY=false`，不是功能完成；環境 `AVATAR_WRITES_ENABLED=true` 不能繞過，未提供的 public avatar API／online command 明示503。cleanup、帳戶匯出及operator的相容schema source仍獨立接線，不因關寫入便遺棄已存在的責任。解除須同版 API／worker／recovery、必要定向tests＋TS、獨立review、平台codec與index／private Storage／獨立journal部署讀回及實際隔離restore演練全部有證據；本機codec或client單項綠不足。
+
+Restore copy只在既有 reserved checkpoint collection 記錄metadata：固定大小完整set count/digest header先處於preparing，所有immutable prepared intents核齊後才能claim一次原copy；每批驗精確final cleanup path+document SHA及完整binding/generation，current同TX啟用handoff marker後才分批retire intents。每批掃描／handoff大小集中可調，不加200總copy或終身數量上限；Firestore的500 field transformations限制不是500 document writes的證據。已認證 avatar staging marker 的 partial pages 可在原 target inventory、copy set 及 source/provenance/evidence 不變時，先 fence 原 attempt、逐頁驗證並撤回未套用頁，再重建；完整頁集則以原 header/final 原子建立 progress。此分支已有真 operator→跨頁中斷→重啟的本機合成證據，未做原生 Firestore／部署演練。legacy 無 marker 的 partial pages、未確定copy或source/Auth/journal變更仍安全停住保留責任，明示 `NOT_FULLY_RECOVERABLE`，不能當已可完整還原。既有平台restore資料量／Auth／plan界線另列部署限制，不能悄悄轉為新頭像資料上限。source reader只讀可核pinned generation或備份，缺失／soft-deleted source不發undelete POST。
+
+
+### AVATAR-01 補充：明確放棄隔離副本（2026-10-24）
+
+保留來源改變／unknown 時不得重做原 copy 的規則，補上操作員可明確放棄完整認證集合的出口。以 Firestore aborting phase 阻止 activation，及 GCS 原地址 generation CAS 的永久無圖片 marker 阻止遲到 create-if-absent；只清已核實 target generation，保留來源、原 intents 及現場。這比放寬 unknown 重試或刪掉 checkpoint 重來更能保留原防重界線；不處理無法認證的 legacy 集合，不宣稱完成原生雲端恢復。契約見[資料生命週期](DATA_MODEL.md#avatars)，命令見[部署門檻](PRODUCTION_FRONTEND.md#avatar-deployment-gate)，實際狀態只見[PLAN](../PLAN.md#avatar-01)。
+
+
+<a id="adr-028"></a>
+## ADR-028 — P4 集中服務、個人／班級優先與 P5 必要部署能力
+
+- 日期：2026-10-26；狀態：使用者已確認的文件決策，功能未實作；PD-01～06 仍待決。
+- 理由：整合原 P4 完整範圍與兩份家庭／教師方案，避免建立家庭／教師空間成為個人／班級使用前置，亦避免用部署遷移拖住集中服務。保持既有架構及有效成果，只替代已明確變更的產品要求。
+
+| 處置 | 決策與原範圍對照 |
+|---|---|
+| 保留 | 原站／Expo／VM／Compose、Firestore、Firebase Authentication、Storage、ADK、Prompt Pack、角色隔離、裝置撤銷、版本／原操作／收據、來源、既有有效證據；P3 欠項與 D PR 責任不動 |
+| 擴充 | P4 快捷登入／同 UID／Apple 邀請接續；個人優先、選模組家庭共享；獨立班級與可選教師空間；管理權轉交、多孩助手／混合聊天及逐項批次 |
+| 替代 | 必須先建家庭／教師空間、全孩分享、先匯出再匯入才可組內共享的安排；組內同源，跨人用獨立副本文檔包，不自動同步 |
+| 替代 | 交接／備份使用同格式但可選不同範圍，本人私人資料不被公共包／交接規則排除；通過可信完整性及技術／權限檢查可直接匯入，取消強制待採納區／逐條接受，AI／人工內容檢查可選；不宣稱完整性等於內容正確 |
+| 取消 | S08-W01 的 QR／短碼配對與臨時電腦裝置會話，不作前置、不移 P5、不標完成；正常登入／獨立裝置 session／撤銷保留 |
+| 移 P5 | S06-W04、S17-W05、S13-W03、S15-W01，以及 S07-W02／S15-W02 的跨 Server 部分；自選 Server／Windows 自部署／跨 Server 搬遷是延後的必要能力，不是可選增值 |
+| 留 P4 | S10-W03 完整知識管理／批量／效能／維運／知識資料遷移，S12-W02 系統分享，S14-W02 分享／預覽／分析，S07-W02 集中跨端可靠性，S15-W02 集中服務災備／刪除重放／保留新寫入回退 |
+| 拆分驗收交付 | S16-W04／S17-W04 保留父錨點，新增 P4／P5 子範圍；P4 完成不宣稱父包或 P5 完成，部分平台／延期／未測不計完成 |
+
+本決策替代 ADR-008 及後續計劃中「P4 含自部署／配對／跨 Server、P5 只容非必要增值」的當前階段安排，擴充 ADR-027 的 FAMILY 範圍；原 ADR 正文及舊失敗／驗收保留。S08 的取消針對裝置配對／臨時登入方案，不藉此改寫 REQUIREMENTS_BACKLOG 中 D 所負責的其他 Agent／對話需求。
+
+六項未定案只見 [PLAN PD-01～06](../PLAN.md#p4-pending)：個人加入家庭的資料方式、班級移出、缺可信證明／驗證失敗、匯入提醒、未轉交退出／刪帳、自用還原遇本地修改／刪除。建議不等於批准，不由 schema／API 偷先決定；只阻相應實作。
+
+現行規則及 REQ／AC 映射見 [SPEC](../SPEC.md#p4-p5-product)；原階段條款、配對、遷移／交付 AC 已原位同步。公共知識庫封裝（REQ-006）的來源核對政策不當私人備份的強制內容審查；也不因私人包可直接匯入便取消公共知識發布規則。
+
+本次只改文件，不開發、部署、修改／代合併 D 的 PR；只查文件 diff、錨點／連結、依賴及條款映射，不跑產品測試。實際文件證據另記 WORKLOG，不以本決策宣稱功能可用。
+
+<a id="adr-029"></a>
+## ADR-029 — P4 執行、原資源共享與統一資料匯入
+
+- 日期：2026-10-27；狀態：使用者已確認並授權按包實作，功能／驗收仍按 PLAN 記錄，不能以本決策當成完成。
+- 承接 ADR-028 的全部階段與功能範圍，解決當時保留的 PD-01～06；原決策及歷史驗收不回寫。P3 欠項、D PR、P5 自部署／跨 Server 邊界不變。
+
+| 決定 | 行為及取捨 |
+|---|---|
+| PD-01 原資源共享 | 家庭只增加選定模組的共享關係，修改同步；撤回不刪本人原件，不複製／搬移成另一權威。操作者與穩定儲存身份分開，避免管理員變動破壞既有加密／資源 ID |
+| PD-02 班級移出 | 同一班級／資料轉為指定負責人的獨立班級，原教師空間失去存取，不複製一份或增加逐班 ACL 平台 |
+| PD-03 完整性分級 | 可信證明通過可直接匯入；缺證明明示後用戶可選繼續，仍核格式／相容／權限；簽章／hash 不符拒絕，不能降級。AI／人工內容檢查保持可選 |
+| PD-04 同一待辦規則 | 匯入與本人建立用同一業務服務、終態／時間及目前通知設定，不另設匯入提醒開關。來源端憑證、執行授權及投遞工作不搬移；本次匯入意圖按當前帳戶產生正常 outbox，不重播舊投遞 |
+| PD-05 退出／刪帳 | 同一流程轉交或解散，列清影響；共享解散不刪他人的個人原件，管理權轉交不移走個人原資源。已轉交的空間資料不隨舊管理員刪帳消失；本人個人資料及共享引用仍沿其帳戶刪除規則，管理權轉交不自動轉移／複製個人原件 |
+| PD-06 本人差異還原 | 預設保留目前較新修改／刪除；摘要後可整批覆蓋衝突或明確恢復已刪項，保存新操作／來源關聯。自動災難恢復仍須刪除重放，不刪原 journal 或直接整庫覆蓋 |
+| 統一入口 | 全產品一個「匯入資料」流程，選目標、模組及範圍，完成簡要顯示「待辦 5 項、記錄 3 筆」及略過／衝突／失敗。各頁讀相同權威資料，不各建 importer |
+
+實作從 FAMILY-A 的共同授權開始；AUTH01 可與不重疊部分並行，其後家庭／班級、文檔包、多孩助手。知識、分享、分析、可靠性、災備及 S16／S17 全部保留，只有真正需要的 D 接口／平台前置才等待。每包前後端接通，舊個人 ID／密文及客戶端相容，不全庫搬移／重新加密。
+
+採用順序為既有程式／官方 SDK → 具體缺口的成熟套件 → 必要薄 adapter。新增套件固定仍受維護、與現有版本相容的穩定版，不為追新升級整套框架。選定 Firebase provider linking、原生 Google／Apple 憑證接點、yazl／yauzl 串流容器及標準 iOS Share Extension 方向；實際版本與相容結果於相應包記 TECH_REUSE，現時只是方法決定，未安裝或驗證。加密／簽章使用標準庫，不自製協定；Expo iOS 接收分享的實驗性限制不能當已交付。
+
+需求與 AC 見 [SPEC](../SPEC.md#p4-p5-product)，唯一進度／依賴見 [PLAN](../PLAN.md#p4-execution)。必要驗證直接沿有效授權，真模型以本聊天 12 小時不超 US$5 為邊界，不提高產品配額。待人工／未驗／延期與已完成分開，保留原生備份還原的原待驗狀態。

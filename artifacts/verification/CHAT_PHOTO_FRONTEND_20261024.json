@@ -1,0 +1,55 @@
+{
+  "package": "CHAT-PHOTO01 shared frontend and native label",
+  "baseline": "0ccf60f5157477447a70ef2eeced35050a2c7c99",
+  "environment": "Windows; Node 24.19; Paper 5.15.3; React Native 0.86.3",
+  "checks": [
+    {
+      "command": "node --test tests/chat-photo-client.test.ts",
+      "result": "1/1 passed",
+      "coverage": "Real client APIs with synthetic fetch; lost reserve/upload acknowledgements, original receipt, empty photo message, repeated original reuse, reopening, scope cleanup, recovery quarantine, confirmed deletion can release draft without recreating photo",
+      "note": "Same scenario rerun after reuse assertion and review correction; not three independent acceptance paths."
+    },
+    {
+      "command": "node --test frontend/scripts/native-text-field-label.test.mjs",
+      "result": "3/3 passed",
+      "coverage": "Native empty/focused/filled values, callbacks/accessibility, controlled and uncontrolled values; unchanged Web/flat/multiline/component labels"
+    },
+    {
+      "command": "node --max-old-space-size=4096 .cache/check-chat-photo-frontend.mjs",
+      "result": "13 changed roots, 1442 source/declaration files, zero diagnostics",
+      "scope": "Changed production frontend/client roots and their imported dependency graph; no full test suite"
+    },
+    {
+      "command": "Expo export --platform web; Expo export --platform android",
+      "result": "Both passed; no uploads"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "retainedFailures": [
+    {
+      "code": "TS2345",
+      "detail": "First narrow type check found optional draft.photo passed without narrowing. Corrected Provider guard; second check zero diagnostics."
+    }
+  ],
+  "review": [
+    "Same photo ID reused without image duplication; removing draft does not delete the shared original",
+    "No mandatory extraction or records confirmation before ordinary photo chat",
+    "Independent PhotoApi instance owns upload receipt; recoveryPending schema accepted and unreadable recovery originals rejected",
+    "Collaborator #286 changes reviewed through d9157a7; only separate final workspace callback changed, recovery hunks preserved",
+    "Native input uses placeholder until focus/value instead of waiting for inactive label layout; exact device cause/effect remains unverified"
+  ],
+  "notVerified": [
+    "physical Android input/modal timing",
+    "real model vision or review quality",
+    "Web/Android end-to-end sending",
+    "deployment at this evidence point"
+  ],
+  "sideEffects": {
+    "realModelCalls": 0,
+    "notifications": 0,
+    "cloudBusinessWrites": 0
+  }
+}

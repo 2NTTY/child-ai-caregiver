@@ -1,0 +1,85 @@
+{
+  "checkedOn": "2026-10-26",
+  "source": "019c0c2a02756acf6967ee8d2e19a7104a7e9e55",
+  "scope": "Official shared Web HTTP/client, local Firebase emulators and production ADK/provider routing with a temporary Vertex key; no browser pixels or device acceptance.",
+  "state": "routing_verified_answer_incomplete",
+  "settings": {
+    "version": 1,
+    "provider": "vertex",
+    "embeddingProvider": "vertex",
+    "keyConfigured": true,
+    "embeddingKeyConfigured": true,
+    "operationId": "2293d5c6-ee7c-4dc5-ae7c-bcfeee3c0285",
+    "originalOperationReadback": "passed",
+    "freshSessionReadback": "passed",
+    "platformAvailable": false
+  },
+  "run": {
+    "id": "b5a70937-8008-44e9-815b-8d9bebfb7a55",
+    "sourceMessageId": "39ef1b8a-6733-4d0f-aee5-c18ed932cdee",
+    "status": "stopped",
+    "stopReason": "embedding_limit",
+    "counts": {
+      "modelCalls": 3,
+      "toolCalls": 3,
+      "queryEmbeddings": 2
+    },
+    "tools": [
+      {
+        "name": "search_knowledge",
+        "status": "succeeded"
+      },
+      {
+        "name": "search_knowledge",
+        "status": "succeeded"
+      },
+      {
+        "name": "search_knowledge",
+        "status": "unknown"
+      }
+    ],
+    "originalResultReadback": "stopped",
+    "review": null,
+    "citations": 0
+  },
+  "usage": {
+    "personalAttempts": 5,
+    "platformAttempts": 0,
+    "inputTokens": 34537,
+    "outputTokens": 105,
+    "unknownUsageAttempts": 3
+  },
+  "diagnosis": {
+    "known": "Two search tools returned succeeded, a third hit the configured two-query embedding limit. The local corpus has one published reviewed feeding-booklet chunk. No provider error was returned.",
+    "unknown": "The original ADK session was already cleaned up at the terminal state; tool results were not retained. Repeated search intent and whether evidence was sufficient were not established.",
+    "probeCorrection": "First read-only catalog probe omitted the observation gate and was empty. Repeating with the production observation gate showed the published source; no data was changed."
+  },
+  "cleanup": {
+    "keyResource": "projects/1064034424208/locations/global/keys/yuyoufang-personal-flow-20261026",
+    "keyDeletedOrAbsent": true,
+    "addedBindingRemoved": true,
+    "initialLocalSecretRemoval": "Rejected: removeKey requires disabled mode. No model retry.",
+    "followup": {
+      "localSecretsRemoved": true,
+      "mode": "platform",
+      "platformAvailable": false,
+      "usagePreserved": 5,
+      "reason": "removeKey requires disabled mode; then restore platform mode. No model retry."
+    }
+  },
+  "budget": {
+    "rolling12HourCapUsd": 5,
+    "reservedThisBatchUsd": 0.5,
+    "priorBatchReservedUsd": 1,
+    "knownTokenEstimateUsd": 0.018,
+    "estimateMethod": "Conservatively $0.50/M input and $1.50/M output, not a billing statement. Automatic model work disabled for this personal account.",
+    "modelRetries": 0
+  },
+  "limits": [
+    "A completed answer with citations and review did not pass.",
+    "Do not infer all personal models, credentials, or regional availability from one Vertex credential.",
+    "No production settings, data, models, notification or deployment.",
+    "Collaborator Agent PRs unchanged; joint Agent quality acceptance remains deferred.",
+    "Failed run and five personal attempts retained; no quota reset."
+  ]
+}

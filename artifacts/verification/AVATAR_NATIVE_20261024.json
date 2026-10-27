@@ -1,0 +1,77 @@
+{
+  "scope": "Native Firestore copy-claim and Cloud Storage restore-abandon component verification; not a full restore",
+  "sourceCommit": "ca0bb0db0e58826fe67abc650e4d0eebe5c06093",
+  "executionCount": 1,
+  "environment": {
+    "node": "v24.11.0",
+    "projectId": "ai-caregivers-for-children",
+    "databaseId": "yuban-firebase-restore-20261011",
+    "bucket": "ai-caregivers-for-children-firebase-private",
+    "namespace": "synthetic_avatar_0d1de068",
+    "syntheticOnly": true,
+    "clients": "Two independent Firestore SDK clients in one process; one client closed and reconstructed before abandonment"
+  },
+  "interval": {
+    "startedAt": "2026-10-24T15:32:01.415Z",
+    "finishedAt": "2026-10-24T15:33:35.869Z"
+  },
+  "result": "passed",
+  "calls": {
+    "transactions": 13,
+    "objectWrites": 4,
+    "metadata": 24,
+    "reads": 6,
+    "removes": 3
+  },
+  "assetBytes": 653,
+  "copyWrites": 1,
+  "competition": [
+    {
+      "state": "known",
+      "generation": "1792855942592160"
+    },
+    {
+      "state": "unknown",
+      "code": 10
+    }
+  ],
+  "assertions": [
+    "Only one competing transaction performed the original Storage copy",
+    "Original operation readback returned the same generation",
+    "Reconstructed client completed abandonment and replay wrote no second marker",
+    "Delayed original create-if-absent was rejected",
+    "Pinned copied generation returned 404",
+    "Source bytes remained unchanged until planned synthetic source removal",
+    "Permanent non-content marker and authenticated isolated intents remain"
+  ],
+  "evidenceFiles": {
+    "script": {
+      "path": ".cache/avatar-native-check.mjs",
+      "sha256": "34f7444ccb5931a1743791cef60d97239ea7e01e06a2de18561aca68f0ed744c"
+    },
+    "receipt": {
+      "path": ".cache/avatar-native-20261024/receipt.json",
+      "sha256": "17ccaea3c0f4ec9a0318a52467bdf5506396cd0717e844c2f954df732966dd00"
+    }
+  },
+  "sourceHashes": {
+    "server/firebase-avatar-objects.ts": "9a662cfb0216ba1263e90090fbb1d849a3221d8b4c936f8d4cdaf4c4d25b5552",
+    "server/firebase-avatar-restore-copies.ts": "22d97788bc4d35ee339d78d370d71a7f0caa53af2de4578865ad9c67b818da42",
+    "server/firebase-avatar-restore-abort.ts": "543232731c8d6235559c22ce465ca351d95c1766b3117293fc5afcf60a682728",
+    "server/firebase-photo-objects.ts": "13cc9aa5eaf531672a95eb9c37c1d303e6afc3b7a9964ca89c3202524ead9ab4"
+  },
+  "retained": "Encrypted isolated checkpoint/intents and one permanent non-content marker; synthetic source removed at its pinned generation. No user data, journal, control or deployment changed.",
+  "costs": {
+    "models": 0,
+    "notifications": 0,
+    "newResources": 0,
+    "actualBill": "Not measured; bounded calls use existing synthetic resources"
+  },
+  "limitations": [
+    "Synthetic provenance/auth/journal hashes exercise this component only; no real journal or full backup/restore operator run",
+    "Does not verify product avatar admission, native query indexes, API replicas or cleanup scheduling",
+    "No production control, deployment, release gate or account changes",
+    "Cloud soft-delete retention is unchanged; 404 is not proof of immediate physical erasure",
+    "Device appearance and Web/Android EXIF agreement remain unverified"
+  ]
+}

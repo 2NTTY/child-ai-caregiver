@@ -1,6 +1,6 @@
 {
   "packId": "child-ai-caregiver-agent-prompts",
-  "version": "0.1.54",
+  "version": "0.1.55",
   "packageId": "DOC-P01",
   "artifactType": "prompt_documentation",
   "runtimeStatus": "partially_integrated",
@@ -303,7 +303,7 @@
     {
       "id": "module.chat-delivery-review",
       "path": "modules/chat-delivery-review.md",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "requires": [
         "core.identity-and-trust",
         "core.output",

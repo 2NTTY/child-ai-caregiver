@@ -105,6 +105,29 @@ function fixture() {
 function cookieOf(response: Response) {
   assert.equal(response.status, 200); const header = response.headers.get("set-cookie"); assert.ok(header); return header.split(";")[0];
 }
+
+test("provider methods use current Firebase identity and the same revocable device session", async () => {
+  const f = fixture();
+  Object.assign(f.users.get(f.userId)!, { providerData: [
+    { providerId: 'google.com', uid: 'private-google-id', email: 'private-provider@example.test' },
+    { providerId: 'apple.com', uid: 'private-apple-id', email: 'private@privaterelay.appleid.com' },
+    { providerId: 'google.com', uid: 'duplicate' },
+  ] as UserRecord['providerData'] });
+  f.idTokens.get(f.firstToken)!.firebase.sign_in_provider = 'google.com';
+  const cookie = cookieOf(await f.exchange());
+  const read = (expected = f.userId, credential = cookie) => f.port.handler(new Request(PUBLIC_ORIGIN + '/api/auth/providers', {
+    headers: { Cookie: credential, 'x-expected-user-id': expected },
+  }));
+  const methods = await read();
+  assert.equal(methods.status, 200);
+  assert.equal(methods.headers.get('cache-control'), 'private, no-store');
+  assert.deepEqual(await methods.json(), { userId: f.userId, providers: ['google.com', 'apple.com'], currentProvider: 'google.com' });
+  assert.equal((await read(f.secondUserId)).status, 409);
+  Object.assign(f.users.get(f.userId)!, { providerData: [{ providerId: 'apple.com', uid: 'private-apple-id' }] as UserRecord['providerData'] });
+  assert.deepEqual(await (await read()).json(), { userId: f.userId, providers: ['apple.com'], currentProvider: null });
+  await f.post('/api/auth/sign-out', {}, cookie, f.userId);
+  assert.equal((await read()).status, 401);
+});
 async function responseCode(response: Response, status: number, code: string) {
   assert.equal(response.status, status); assert.deepEqual(await response.json(), { code });
   assert.equal(response.headers.get("Cache-Control"), "private, no-store");
@@ -376,6 +399,9 @@ test("Android session transport reuses admission and revocation without acceptin
   const recreated = createNativeSessionTransport({ apiBaseUrl: PUBLIC_ORIGIN + "/api", store, fetcher, clock: f.now });
   const read = await recreated.fetcher(PUBLIC_ORIGIN + "/api/auth/get-session");
   assert.equal((await read.json()).user.id, f.userId);
+  const methods = await recreated.fetcher(PUBLIC_ORIGIN + "/api/auth/providers", { headers: { "x-expected-user-id": f.userId } });
+  assert.equal(methods.status, 200);
+  assert.deepEqual(await methods.json(), { userId: f.userId, providers: [], currentProvider: null });
   const before = requests;
   await assert.rejects(() => recreated.fetcher("https://outside.example.test/api/auth/get-session"));
   assert.equal(requests, before);

@@ -1,0 +1,17 @@
+{
+  "package": "S13-W02 iOS shared notification client",
+  "date": "2026-10-24",
+  "baseline": "b4dfd5a9473bb1a8e47baf3d4470bfbbf7eccd7e",
+  "branch": "codex/s13-ios-notification-client",
+  "environment": { "os": "Windows", "node": "24.19.0", "notifications": "57.0.21" },
+  "change": "Shared native owner/card, iOS v2 API receipts, APNs token and permission handling, unchanged Android v1 and common authorized tap navigation.",
+  "checks": [
+    { "command": "node --test tests/native-push-client.test.ts", "passed": 2, "failed": 0, "coverage": "V2 original-receipt lookup after lost reply, v1 independence, shared open path, iOS permission/token/rotation, Android-only channel setup, fixed-reference callbacks and cleanup", "limits": "Synthetic transport and Expo ports; does not mount the settings UI or contact Apple" },
+    { "command": "tsc (strict narrow roots): src/client/native-push-api.ts", "exitCode": 0 },
+    { "command": "tsc (strict narrow roots): frontend/src/platform/native-push.native.ts frontend/src/channel-view-model.ts", "exitCode": 0 }
+  ],
+  "earlierCheck": "Sol ran the same two tests once on Node 24.11.0 and they passed; that runtime is below the package engine minimum. Primary reran only that file on configured Node 24.19.0. This is not four distinct test cases.",
+  "review": "Primary read the product diff, full test, SDK permission enum and existing authorized navigation. Preserved design, confirmation/unknown handling, session cleanup and explicit-only registration/testing.",
+  "pending": ["Final iOS application export after release-tool changes", "Compatible Server/client publication", "Apple team, APNs credentials and signed build", "iPhone permission, UI, token, real delivery and tap acceptance"],
+  "notPerformed": ["Whole frontend typecheck", "Full suite or E2E", "Device/GUI", "Model calls", "Actual notification", "Cloud publication"]
+}

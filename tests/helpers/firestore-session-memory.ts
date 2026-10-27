@@ -8,19 +8,19 @@ export function serialFirestoreFixture() {
   let tail = Promise.resolve(), revision = 0;
   let beforeBatchCommit: (() => Promise<void>) | undefined, loseBatchReply = false;
   type Ref = { path: string; collection: (name: string) => Query };
-  type Query = { path: string; query: true; filters: [string, string, unknown][]; orders: [string, string][]; cap: number;
+  type Query = { path: string; query: true; filters: [string, string, unknown][]; orders: [string, string][]; cap: number; after?: unknown[];
     doc: (id: string) => Ref; where: (key: string, op: string, value: unknown) => Query;
     orderBy: (key: any, direction?: string) => Query; limit: (value: number) => Query;
-    startAfter: (value: string) => Query; get: () => Promise<any>; count: () => { get: () => Promise<any> } };
+    startAfter: (...value: unknown[]) => Query; get: () => Promise<any>; count: () => { get: () => Promise<any> } };
   const ref = (path: string): Ref => ({ path, collection: name => query(path + '/' + name) });
-  const query = (path: string, filters: Query['filters'] = [], orders: Query['orders'] = [], count = Infinity): Query => ({
-    path, query: true, filters, orders, cap: count, doc: id => ref(path + '/' + id),
-    where: (key, op, value) => query(path, [...filters, [key, op, value]], orders, count),
-    orderBy: (key, direction = 'asc') => query(path, filters, [...orders, [typeof key === 'string' ? key : key.toString(), direction]], count),
-    limit: value => query(path, filters, orders, value),
-    startAfter: value => query(path, [...filters, [orders[0][0], '>', value]], orders, count),
-    get: async () => read(query(path, filters, orders, count)),
-    count: () => ({ get: async () => ({ data: () => ({ count: read(query(path, filters, orders, count)).size }) }) }),
+  const query = (path: string, filters: Query['filters'] = [], orders: Query['orders'] = [], count = Infinity, after?: unknown[]): Query => ({
+    path, query: true, filters, orders, cap: count, after, doc: id => ref(path + '/' + id),
+    where: (key, op, value) => query(path, [...filters, [key, op, value]], orders, count, after),
+    orderBy: (key, direction = 'asc') => query(path, filters, [...orders, [typeof key === 'string' ? key : key.toString(), direction]], count, after),
+    limit: value => query(path, filters, orders, value, after),
+    startAfter: (...values) => query(path, filters, orders, count, values),
+    get: async () => read(query(path, filters, orders, count, after)),
+    count: () => ({ get: async () => ({ data: () => ({ count: read(query(path, filters, orders, count, after)).size }) }) }),
   });
   const snapshot = (path: string) => ({ exists: records.has(path), id: path.split('/').at(-1), ref: ref(path), updateTime: versions.get(path),
     data: () => structuredClone(records.get(path)), get: (key: string) => key === '__name__' ? path.split('/').at(-1) : structuredClone(records.get(path)?.[key]) });
@@ -31,8 +31,13 @@ export function serialFirestoreFixture() {
         if (op === '==') return row.get(key) === value;
         if (op === '>=') return row.get(key) >= (value as number);
         if (op === '>') return row.get(key) > (value as number);
+        if (op === '<') return row.get(key) < (value as number);
+        if (op === '<=') return row.get(key) <= (value as number);
         throw new Error('Unsupported synthetic query');
-      })).sort((a, b) => { for (const [key, direction] of target.orders) {
+      }) && (!target.after || target.orders.some(([key, direction], index) => {
+        if (target.orders.slice(0,index).some(([earlier], n) => row.get(earlier) !== target.after![n])) return false;
+        return direction === 'desc' ? row.get(key) < (target.after![index] as any) : row.get(key) > (target.after![index] as any);
+      }))).sort((a, b) => { for (const [key, direction] of target.orders) {
         const x = a.get(key), y = b.get(key), delta = x < y ? -1 : x > y ? 1 : 0;
         if (delta) return direction === 'desc' ? -delta : delta;
       } return 0; }).slice(0, target.cap);

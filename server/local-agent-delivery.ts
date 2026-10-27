@@ -1,6 +1,6 @@
 import { createECDH, createHmac } from 'node:crypto';
 import { z } from 'zod';
-import { nativePushReferenceSchema, nativePushTokenSchema } from '../src/shared/native-push.ts';
+import { apnsPushTokenSchema, nativePushReferenceSchema, nativePushTokenSchema } from '../src/shared/native-push.ts';
 import { assertLocalAgentEnvironment } from './local-agent-config.ts';
 import { checkedSubscription } from './web-push-gateway.ts';
 import type { FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -71,6 +71,13 @@ export function createLocalAgentDelivery(options: FirestoreDomainOptions, env: R
     },
     nativePushGateway: {
       available: true,
+      apns: { available: true, binding: { topic: 'org.yuyoufang.app', environment: 'sandbox' },
+        async send(rawToken, rawReference, signal, authorized) {
+          const token = apnsPushTokenSchema.safeParse(rawToken), reference = nativePushReferenceSchema.safeParse(rawReference);
+          if (!token.success || !reference.success) return stopped('request_invalid');
+          return capture('native_push', reference.data.kind, 'apns:' + token.data, reference.data.deliveryId, reference.data, signal, authorized);
+        },
+      },
       async send(rawToken, rawReference, signal, authorized) {
         const token = nativePushTokenSchema.safeParse(rawToken), reference = nativePushReferenceSchema.safeParse(rawReference);
         if (!token.success || !reference.success) return stopped('request_invalid');

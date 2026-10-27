@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { OnlineReceipt } from "../shared/online.ts";
 import { pushDeliverySchema, type PushDelivery } from "../shared/web-push.ts";
-import { nativePushBindingSchema, nativePushStatusSchema, type NativePushBinding, type NativePushRegistration, type NativePushStatus, type NativePushReference } from "../shared/native-push.ts";
+import { nativePushBindingSchema, nativePushBindingV2Schema, nativePushStatusSchema, nativePushStatusV2Schema, type NativePushBinding, type NativePushBindingV2, type NativePushPlatform, type NativePushRegistration, type NativePushStatus, type NativePushStatusV2, type NativePushReference } from "../shared/native-push.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export class NativePushApiError extends Error {
@@ -9,7 +9,7 @@ export class NativePushApiError extends Error {
   readonly onlineCode: string | null;
   readonly confirmed: boolean;
   constructor(status = 0, onlineCode: string | null = null, confirmed = false) {
-    super("Android Push request could not be confirmed");
+    super("Native Push request could not be confirmed");
     this.name = "NativePushApiError";
     this.status = status;
     this.onlineCode = onlineCode;
@@ -18,11 +18,11 @@ export class NativePushApiError extends Error {
 }
 
 export type NativePushTarget = { kind: "test" | "care"; childId: string | null; taskId: string | null };
-export interface NativePushApi {
+export interface NativePushApi<Binding extends NativePushBinding = NativePushBinding, Status extends NativePushStatus = NativePushStatus> {
   open(reference: NativePushReference, signal: AbortSignal, userId: string): Promise<NativePushTarget>;
-  status(signal: AbortSignal, userId: string): Promise<NativePushStatus>;
-  register(input: NativePushRegistration, signal: AbortSignal, userId: string): Promise<NativePushBinding>;
-  revoke(id: string, expectedVersion: number, signal: AbortSignal, userId: string): Promise<NativePushBinding>;
+  status(signal: AbortSignal, userId: string): Promise<Status>;
+  register(input: NativePushRegistration, signal: AbortSignal, userId: string): Promise<Binding>;
+  revoke(id: string, expectedVersion: number, signal: AbortSignal, userId: string): Promise<Binding>;
   test(id: string, expectedVersion: number, signal: AbortSignal, userId: string): Promise<PushDelivery>;
   reconcilePending(signal: AbortSignal, userId: string): Promise<OnlineReceipt | { state: "unconfirmed" } | null>;
   resetOnline(): void;
@@ -30,15 +30,16 @@ export interface NativePushApi {
 }
 
 const bindingResultSchema = z.object({ binding: nativePushBindingSchema }).strict();
+const bindingResultV2Schema = z.object({ binding: nativePushBindingV2Schema }).strict();
 const deliveryResultSchema = z.object({ delivery: pushDeliverySchema }).strict();
 const statusErrorSchema = z.object({ error: z.object({ code: z.enum(["session_changed", "account_precondition_required"]) }) });
 type BindingTarget = { kind: "binding"; bindingId?: string };
 type DeliveryTarget = { kind: "delivery"; bindingId: string };
 type Target = BindingTarget | DeliveryTarget;
 
-function checkedResult(value: unknown, target: Target, confirmed: boolean): NativePushBinding | PushDelivery {
+function checkedResult(value: unknown, target: Target, confirmed: boolean, v2: boolean): NativePushBinding | NativePushBindingV2 | PushDelivery {
   if (target.kind === "binding") {
-    const parsed = bindingResultSchema.safeParse(value);
+    const parsed = (v2 ? bindingResultV2Schema : bindingResultSchema).safeParse(value);
     if (!parsed.success || target.bindingId !== undefined && parsed.data.binding.id !== target.bindingId.toLowerCase()) {
       throw new NativePushApiError(0, null, confirmed);
     }
@@ -49,9 +50,13 @@ function checkedResult(value: unknown, target: Target, confirmed: boolean): Nati
   return parsed.data.delivery;
 }
 
-export function createNativePushApi(baseUrl: string, fetcher: typeof fetch = fetch): NativePushApi {
+type NativePushApiOptions = { version: 2; platform: NativePushPlatform };
+export function createNativePushApi(baseUrl: string, fetcher: typeof fetch | undefined, options: NativePushApiOptions): NativePushApi<NativePushBindingV2, NativePushStatusV2>;
+export function createNativePushApi(baseUrl: string, fetcher?: typeof fetch): NativePushApi;
+export function createNativePushApi(baseUrl: string, fetcher: typeof fetch = fetch, options?: NativePushApiOptions): NativePushApi {
   const base = baseUrl.replace(/\/$/u, "");
   const apiUrl = base.endsWith("/api") ? base : base + "/api";
+  const v2 = options?.version === 2, resourcePath = v2 ? "/native-push/v2" : "/native-push";
   const online = createOnlineTransport(apiUrl, fetcher);
   let generation = 0;
   let currentUser: string | null = null;
@@ -103,7 +108,7 @@ export function createNativePushApi(baseUrl: string, fetcher: typeof fetch = fet
       return await call(signal, userId, async innerSignal => {
         const value = await online.submit({ path: "/api" + path, payload }, innerSignal, userId);
         confirmed = true;
-        return checkedResult(value, target, true);
+        return checkedResult(value, target, true, v2);
       });
     } catch (error) {
       if (confirmed && error instanceof NativePushApiError) throw new NativePushApiError(error.status, error.onlineCode, true);
@@ -113,7 +118,7 @@ export function createNativePushApi(baseUrl: string, fetcher: typeof fetch = fet
       operationBusy = false;
     }
   }
-  const bindingPath = (id: string) => "/native-push/subscriptions/" + encodeURIComponent(id);
+  const bindingPath = (id: string) => resourcePath + "/subscriptions/" + encodeURIComponent(id);
 
   return {
     async open(reference, signal, userId) {
@@ -130,7 +135,7 @@ export function createNativePushApi(baseUrl: string, fetcher: typeof fetch = fet
     hasPendingOnline: () => online.hasPending(),
     async status(signal, userId) {
       return await call(signal, userId, async innerSignal => {
-        const response = await fetcher(apiUrl + "/native-push", {
+        const response = await fetcher(apiUrl + resourcePath, {
           method: "GET", credentials: "include", cache: "no-store", signal: innerSignal,
           headers: { Accept: "application/json", "x-expected-user-id": userId },
         });
@@ -142,13 +147,13 @@ export function createNativePushApi(baseUrl: string, fetcher: typeof fetch = fet
           } catch { /* A server response body is never an error message. */ }
           throw new NativePushApiError(response.status, onlineCode);
         }
-        const parsed = nativePushStatusSchema.safeParse(await response.json());
+        const parsed = (v2 ? nativePushStatusV2Schema : nativePushStatusSchema).safeParse(await response.json());
         if (!parsed.success) throw new NativePushApiError();
         if (parsed.data.userId !== userId) throw new NativePushApiError(409, "session_changed");
         return parsed.data;
       });
     },
-    register: (input, signal, userId) => mutate("/native-push/subscriptions", input, { kind: "binding" }, signal, userId),
+    register: (input, signal, userId) => mutate(resourcePath + "/subscriptions", options ? { ...input, platform: options.platform } : input, { kind: "binding" }, signal, userId),
     revoke: (id, expectedVersion, signal, userId) => mutate(bindingPath(id) + "/revoke", { expectedVersion },
       { kind: "binding", bindingId: id }, signal, userId),
     test: (id, expectedVersion, signal, userId) => mutate(bindingPath(id) + "/test", { expectedVersion, confirmImmediate: true },
@@ -165,7 +170,7 @@ export function createNativePushApi(baseUrl: string, fetcher: typeof fetch = fet
           confirmed = receipt?.state === "confirmed";
           if (receipt?.state === "confirmed" && receipt.result !== null) {
             if (!target) throw new NativePushApiError(0, null, true);
-            checkedResult(receipt.result, target, true);
+            checkedResult(receipt.result, target, true, v2);
           }
           return receipt;
         });

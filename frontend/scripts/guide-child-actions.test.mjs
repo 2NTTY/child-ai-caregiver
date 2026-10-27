@@ -109,8 +109,8 @@ test('new-child input uses the existing modal and actual controller; success cle
 
 test('dirty close and Escape share the original guard; discard returns focus only after modal close', async () => {
   const s = await scenario(); s.focusTarget(); s.click('新增孩子'); s.enter('合成草稿');
-  s.modal().props.onDismiss(); s.render(); assert.ok(s.button('捨棄草稿並離開')); s.click('繼續編輯');
-  assert.equal(s.field().props.value, '合成草稿'); s.click('關閉'); s.click('捨棄草稿並離開');
+  s.modal().props.onDismiss(); s.render(); assert.ok(s.button('捨棄並離開')); s.click('繼續編輯');
+  assert.equal(s.field().props.value, '合成草稿'); s.click('關閉'); s.click('捨棄並離開');
   assert.equal(s.state().childName, ''); assert.equal(s.modal().props.visible, false); assert.equal(s.field(), undefined);
   assert.equal(s.counts().focus, 0); s.web(); s.modal().props.onClosed(); assert.equal(s.counts().focus, 1);
   s.click('新增孩子'); assert.equal(s.field().props.value, ''); assert.equal(s.counts().creates.length, 0);
@@ -119,7 +119,7 @@ test('dirty close and Escape share the original guard; discard returns focus onl
 test('unknown creation cannot close or change its name; check and retry are reachable inside the modal and preserve original input', async () => {
   const s = await scenario(); s.failCreate(true); s.click('新增孩子'); s.enter('合成原稱呼'); s.click('建立孩子'); await s.settle();
   assert.equal(s.state().childOutcome, 'unknown'); assert.equal(s.field().props.disabled, true); assert.equal(s.child('合成小晴').props.disabled, true);
-  s.click('關閉'); assert.ok(s.button('留在此頁查核')); assert.equal(s.button('捨棄草稿並離開'), undefined); s.click('留在此頁查核');
+  s.click('關閉'); assert.ok(s.button('留在此頁')); assert.equal(s.button('捨棄並離開'), undefined); s.click('留在此頁');
   assert.ok(s.button('查核原建立操作', s.modal())); s.click('查核原建立操作', s.modal()); await s.settle();
   assert.equal(s.state().childOutcome, 'checked'); assert.equal(s.state().childName, '合成原稱呼'); assert.equal(s.counts().creates.length, 1);
   assert.ok(s.button('重試原建立操作', s.modal())); s.failCreate(false); s.click('重試原建立操作', s.modal()); await s.settle();
@@ -138,8 +138,8 @@ test('refresh, visible error retry and offline gates retain their real owner cal
 
 test('approved route leave clears the draft without resurrecting the modal on return; identity changes hide old input', async () => {
   const s = await scenario(); s.click('新增孩子'); s.enter('合成草稿'); s.navigate();
-  assert.ok(s.button('捨棄草稿並離開')); assert.deepEqual(s.counts().navigated, []); s.click('繼續編輯'); assert.equal(s.field().props.value, '合成草稿');
-  s.navigate(); s.click('捨棄草稿並離開'); assert.equal(s.state().childName, ''); s.route('/guide'); assert.equal(s.field(), undefined); assert.equal(s.modal(), undefined);
+  assert.ok(s.button('捨棄並離開')); assert.deepEqual(s.counts().navigated, []); s.click('繼續編輯'); assert.equal(s.field().props.value, '合成草稿');
+  s.navigate(); s.click('捨棄並離開'); assert.equal(s.state().childName, ''); s.route('/guide'); assert.equal(s.field(), undefined); assert.equal(s.modal(), undefined);
   s.click('新增孩子'); s.enter('合成舊身份'); await s.identity(); assert.equal(s.field(), undefined); assert.equal(s.state().childName, '');
 });
 

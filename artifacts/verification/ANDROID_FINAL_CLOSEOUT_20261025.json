@@ -1,0 +1,96 @@
+{
+  "date": "2026-10-25",
+  "baseline": "2fb8865abb06b6655a7620b0f476c5d42aabe845",
+  "scope": "Android, avatars, attachment library and personal-model closeout; collaborator Agent PRs unchanged",
+  "environment": "Node 24.19; existing isolated Firebase demo emulators; headless Edge through Playwright 1.63; actual production Web and client APIs",
+  "fixes": [
+    "Avatar writes supersede an in-flight read refresh instead of silently ignoring Save. Late aborted reads cannot replace state or release the active write lock.",
+    "Local launcher forwards an explicit AVATAR_WRITES_ENABLED=true; default remains false and the Server release gate still applies."
+  ],
+  "checks": [
+    { "name": "avatar owner targeted regressions including read/write race", "result": "passed", "tests": 21 },
+    { "name": "Web synthetic image selection, square crop, save and formal-client content read", "result": "passed" },
+    { "name": "reopen same saved avatar and remove with versioned confirmation", "result": "passed", "localCalls": 100 },
+    { "name": "formal file upload/message link, actual library list and browser download", "result": "passed", "localCalls": 134, "downloadHashMatched": true, "testAttachmentDeleted": true },
+    { "name": "existing restricted Gemini key through formal personal-provider factory", "result": "stopped", "generationAttempts": 1, "embeddingAttempts": 0, "reason": "model_region_unavailable", "settingsOrQuotaChanged": false }
+  ],
+  "retainedFailures": [
+    "Initial Web Save did nothing during a background read; diagnosed from the actual owner and corrected.",
+    "After repair, save/content succeeded but the combined reload check reached the 180-call harness ceiling. Continued only the pending reopen/remove portion; did not repeat the save.",
+    "Initial attachment script used a full navigation reload and its download waiter timed out. Remaining read/download used the actual in-app navigation with the same saved attachment; no repeat upload or message."
+  ],
+  "cost": { "localProductModelCalls": 0, "separatePersonalProviderAttempts": 1, "embeddingCalls": 0, "notifications": 0, "cloudResourcesCreated": 0 },
+  "vertexFollowup": {
+    "date": "2026-10-25",
+    "reviewedMaster": "3709757fb8501e9edc0fbdc873c2b9c7a7eff424",
+    "environment": "Existing Hong Kong VM and deployed formal providers; API/worker avatar-enable-0ebfbfa",
+    "adc": {
+      "checkedAt": "2026-10-25T12:59:20.137Z",
+      "authentication": "Existing VM attached service identity, not a personal API key",
+      "model": "gemini-3.1-flash-lite",
+      "location": "global",
+      "generationAttempts": 1,
+      "generation": "passed",
+      "inputTokens": 5,
+      "outputTokens": 1,
+      "embeddingAttempts": 1,
+      "embedding": "passed",
+      "embeddingDimensions": 1024,
+      "embeddingInputTokens": 2
+    },
+    "personalKey": {
+      "checkedAt": "2026-10-25T13:06:28.035Z",
+      "provider": "vertex",
+      "factory": "createPersonalModelProviders",
+      "generationAttempts": 1,
+      "embeddingAttempts": 0,
+      "state": "stopped",
+      "reason": "model_http_403",
+      "noPlatformFallback": true,
+      "specificAuthorizationOrEndpointCause": "not established",
+      "boundedAuditMetadataLookup": "No matching Vertex entries; absence is not proof of the cause",
+      "temporaryKeyDeleted": true,
+      "newRoleBindingRemoved": true,
+      "temporaryPermissions": ["aiplatform.endpoints.predict", "serviceusage.services.use"],
+      "preflightFailure": "Initial sandbox access to gcloud credentials.db was denied before cloud mutation or generation; resumed only preflight with the approved tool permission"
+    },
+    "boundaries": [
+      "No product settings, quotas, deployment, notifications or family data were changed.",
+      "No provider retry or collaborator Agent acceptance was performed.",
+      "ADC generation and embedding passed; successful personal-key settings-to-Agent flow remains unverified.",
+      "Personal Vertex and compatible modes currently require a separate Gemini embedding key. The ADC result does not establish personal Vertex embedding support.",
+      "Earlier Gemini region failures and pending Android/Expo evidence remain unchanged."
+    ]
+  },
+  "personalVertexStabilized": {
+    "startedAt": "2026-10-25T13:26:51.660Z",
+    "reviewedMaster": "cffa3376de8906c7c020850b01d2d3c02101c12b",
+    "authorization": "Explicit approval for a new temporary key, the same two permissions, a 180-second IAM wait and one generation without retry",
+    "environment": "Existing Hong Kong VM; deployed createPersonalModelProviders with provider vertex",
+    "model": "gemini-3.1-flash-lite",
+    "state": "passed",
+    "generationAttempts": 1,
+    "embeddingAttempts": 0,
+    "inputTokens": 5,
+    "outputTokens": 1,
+    "iamWaitSeconds": 180,
+    "noPlatformFallback": true,
+    "settingsOrQuotaChanged": false,
+    "temporaryKeyDeleted": true,
+    "newRoleBindingRemoved": true,
+    "temporaryPermissions": ["aiplatform.endpoints.predict", "serviceusage.services.use"],
+    "retainedFailure": "The earlier 403 remains recorded above. Success after waiting does not prove its exact cause.",
+    "limits": [
+      "This proves the deployed personal Vertex generation provider, not a saved personal-setting-to-Agent knowledge flow.",
+      "No personal embedding or OpenAI-compatible live request was made; personal Vertex currently still requires a separate Gemini embedding key.",
+      "No notification, deployment, collaborator Agent change or family data access was performed."
+    ]
+  },
+  "limitations": [
+    "Real Android device was not attached; native crop/EXIF, cross-device media, notification completion and OTA rollback remain pending.",
+    "Personal-key success and embedding remain unverified after the provider rejected this local request. This does not establish a geographic restriction for other users or Vertex.",
+    "Existing compatible-provider protocol and no-fallback evidence is reused; no OpenAI-compatible live credential was available.",
+    "Avatar crop interaction still needs the requested native-capability reuse review; save correctness does not establish mature interaction quality.",
+    "No collaborator Agent run, PR modification, or true backup restore was performed. Deployment is recorded separately."
+  ]
+}

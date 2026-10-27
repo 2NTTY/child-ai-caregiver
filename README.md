@@ -1,62 +1,78 @@
 # 育有方
 
-An AI companion centered on source-backed parenting answers for adult caregivers of children aged 0–10 in Hong Kong. It uses confirmed child and family context to answer everyday questions and surface relevant growth-stage concerns; records, collaboration, memory, and notifications support that experience.
+An AI parenting companion for adult caregivers of children aged **0–10 in Hong Kong**. Source-backed answers are the core experience: confirmed child context, everyday records, growth-stage concerns, tasks and preparation documents help caregivers follow through. The interface uses Hong Kong Traditional Chinese, with Cantonese voice input among the implemented input paths.
 
-Planned capabilities include:
+**[Web service](https://ex-machina.eu.org)** · **[Current status](STATUS.md)** · **[Local development](docs/AGENT_LOCAL.md)** · **[Product specification](SPEC.md)**
 
-- Android and web clients with caregiver-confirmed text, Cantonese voice, photo, and shared-content records.
-- Family handovers, proactive follow-ups, official Hong Kong parenting guidance, and traceable care summaries.
-- A server-owned data store and agent runtime, with online web/Android clients, device authorization, and encrypted backups. Compatible self-hosted servers and a Windows Docker Compose setup are planned for P4.
+The hosted service is invitation-based. Check the [dated deployment observation](STATUS.md#deployment) for the last observed runtime, availability and VM stop setting; this repository is not automatically deployed when a PR merges. Use synthetic data for development and acceptance.
 
-P1 and the original P2 packages are complete; P3 has not started. The redesigned frontend is now the public Web entry at https://ex-machina.eu.org, backed by the existing authenticated Server, database and Agent. See the [production entry, feature map and deployment guide](docs/PRODUCTION_FRONTEND.md), [STATUS](STATUS.md) and [integration evidence](PLAN.md#active) for actual validation and remaining limitations. Check the [dated deployment observation](STATUS.md#deployment) for the last observed runtime revision, availability and VM stop setting; recheck before operating the VM.
+## Product overview
 
-Product requirements belong in [SPEC](SPEC.md); package scope and completion gates belong in [PLAN](PLAN.md#phases). The shared Prompt Pack and visual assets are reused.
+The shared product code covers:
+
+- **Parenting chat:** official-source retrieval and citations, confirmed memory, persistent conversations, progress and operation receipts.
+- **Everyday care:** child profiles, text/photo/voice inputs, private reference sources, records and corrections.
+- **Follow-through:** tasks, appointments, growth concerns, preparation documents, summaries and growth reports with PDF output.
+- **Caregiver controls:** consent and confirmation, personal model settings, usage limits, private data access and authorized notifications.
+
+Web and native clients share the Expo/React Native frontend, TypeScript controllers and Server APIs. The Server owns business data, authorization, Agent execution and background work; clients do not maintain a separate business database or run an on-device Agent. Production uses **Firestore, Firebase Authentication and private Cloud Storage**, not PostgreSQL.
+
+These are implemented product areas, not a claim that every platform or workflow has passed acceptance. The assistant does not diagnose illness, choose medication or replace professional care; photos and AI outputs are not medical assessments.
+
+## Current delivery status
+
+Snapshot checked against the project plan on **2026-10-24**. [PLAN](PLAN.md#active) owns package status and completion gates; [STATUS](STATUS.md) owns the short summary and dated deployment observations.
+
+| Area | Actual status and remaining boundary |
+|---|---|
+| Web / P1–P2 | P1 and the core P2 Web/Firestore delivery are in place. Grey draft-text streaming and the deferred native backup restore verification remain open; P2 is not unconditionally complete. |
+| Android / P3 | APK v2, compatible OTA delivery, retained sign-in/data after upgrade and one authorized FCM notification have evidence. Cross-device, media, care-notification completion/stop and OTA rollback checks remain; Android and P3 are not fully accepted. |
+| iOS / P3 | Shared-app wiring, media/APNs code and release tooling are merged; local checks and an iOS JS/Hermes export passed. Apple team/app identity, signing, a signed IPA, TestFlight delivery and real iPhone/APNs acceptance are still pending. |
+| Agent roles | Chat, independent review, document compilation and background knowledge-maintenance wiring are present, with bounded local evidence. Full role completion and final joint acceptance remain open; long-source and multimodal gaps are tracked in [DEV02](PLAN.md#dev-agent02). |
+| P4 | Not started. Full multi-caregiver family sharing, compatible Server selection, Windows self-deployment, device pairing and broader migration/management capabilities remain future work. Existing personal workspaces and access isolation are not deferred. |
+
+Merged source is also not a release: [expanded attachment readback](PLAN.md#attachment-read01) still has validation/deployment gates, and [profile/child avatars](PLAN.md#avatar-01) remain disabled (`AVATAR_LIFECYCLE_RELEASE_READY=false`). See the [platform plan](PLAN.md#p3-mobile), [iOS plan](PLAN.md#p3-ios) and [P4 scope](PLAN.md#p4-family) rather than treating previews or bundles as finished products.
 
 <a id="entry"></a>
 ## Getting started
 
-Read [STATUS](STATUS.md), then the relevant domain and current package:
+For a local product instance, use the emulator-based launcher below. For the hosted service, sign in with an eligible invited account; family-member invitations and shared caregiver roles are not yet enabled.
+
+Before contributing, read [STATUS](STATUS.md), then the relevant domain:
 
 - Frontend: [frontend/AGENTS](frontend/AGENTS.md) → [frontend/PLAN#active](frontend/PLAN.md#active).
-- Server, Agent, formal integration, or root documentation: [AGENTS](AGENTS.md#read) → [PLAN#active](PLAN.md#active).
-- Open only the contracts, handoff sections, or Skills linked by that task. History is not a prerequisite.
-
-<a id="authority"></a>
-## Documentation
-
-[Document responsibilities and update destinations](AGENTS.md#document-updates) define where each kind of information belongs. PLAN owns tasks; STATUS is a short projection; handoffs own integration differences, not another task log.
-
-- Behavior and contracts: [SPEC](SPEC.md), [architecture](docs/ARCHITECTURE.md), [data model](docs/DATA_MODEL.md), [API](docs/API.md).
-- Integration: [formal UI/API map](docs/P2_UI_HANDOFF.md), [frontend handoff index](frontend/HANDOFF.md).
-- Reusable methods: the applicable project Skill; product prompts have their own [entry](prompts/README.md).
-- Decisions and history: [DECISIONS](docs/DECISIONS.md), [archive and evidence index](_archive/README.md). Follow a specific LOG/EV link rather than reading all of WORKLOG or scanning evidence directories.
-
-<a id="historical-assets"></a>
-## Historical baseline and research
-
-These original files are retained as historical assets. Start with the [archive index](_archive/README.md), then open only the specific source needed. Superseded recommendations are documented in [ADR-002](docs/DECISIONS.md#adr-002); they do not override the current specifications.
-
-- [DEVELOPMENT_PLAN.md](DEVELOPMENT_PLAN.md): compatibility entry for the archived complete v1.0 baseline.
-- [PROJECT_PROPOSAL.md](PROJECT_PROPOSAL.md): compatibility entry for archived product research, Hong Kong sources, and validation hypotheses.
-- [OPEN_SOURCE_REUSE.md](OPEN_SOURCE_REUSE.md): dated candidate and license research; inclusion does not imply adoption. Adoption decisions belong in DECISIONS.
-- [PITCH_AND_DEMO.md](PITCH_AND_DEMO.md): compatibility entry for an archived presentation draft; simulations remain labeled.
-- [WEEKLY_LOGS.md](WEEKLY_LOGS.md): compatibility entry for archived supervisor log templates.
-
-Frozen documents keep the relative-link context of their source commit. Their compatibility pages and the archive index provide both the local archived copy and a fixed GitHub source snapshot; the frozen evidence itself is not rewritten.
+- Server, Agent, formal integration or root documentation: [AGENTS](AGENTS.md#read) → [PLAN#active](PLAN.md#active).
+- Open only the contracts, handoff sections or Skills needed for that task. Historical evidence is not a setup prerequisite.
 
 <a id="run-test"></a>
 ## Running and testing
 
-Use the Node/npm ranges in root `package.json`. The verified development baseline is Node 24.19.0 and npm 11.8.0. From the repository root:
+Use the ranges in root [package.json](package.json): **Node `>=24.12.0 <25`** and **npm `>=11.8.0 <12`** (`packageManager` pins npm 11.8.0). The recorded development baseline is Node 24.19.0. The local emulator launcher also requires **Java 21+**.
+
+From the repository root, start a data/UI development instance without model calls:
 
 ```sh
 npm ci
-npm run web
+npm run agent:local -- --no-model
 ```
 
-The root npm workspace uses `frontend/` for Web and a single root lockfile. Set `EXPO_PUBLIC_API_BASE_URL` to the existing Server's `/api` URL for local development (for example `http://localhost:3001/api`); the production default is same-origin `/api`. `npm run build:web` writes `frontend/dist`, including the existing Push service worker and license notices. The Docker Web stage serves this output through the existing Caddy configuration. Routes not yet connected are explicitly unavailable during integration, never simulated successes. The replaced root test interface is retained as byte-preserving snapshots in [_archive/legacy-web-2026-10-07](_archive/legacy-web-2026-10-07/README.md). Legacy Web/build/test commands fail explicitly; they do not run production acceptance.
+Open the single `http://127.0.0.1:<port>` URL printed by the launcher, not Expo's direct port. It runs the current branch's Web/API against isolated, persistent Firebase emulators, creates a local synthetic account and prints the location of its credentials. First startup downloads the official emulators. No GCP deployment or cloud database is required; local notification previews are not real deliveries.
 
-For the complete local product, use `npm run agent:local` below and open its single local URL. Running Expo alone does not start the API or initialize data.
+### Local server development
+
+For real AI behavior, follow the [local Agent guide](docs/AGENT_LOCAL.md), configure your own protected `LOCAL_AGENT_CONFIG` outside the repository, then run:
+
+```sh
+npm run agent:local
+```
+
+The guide covers Gemini, Vertex and OpenAI-compatible chat configuration, separate embedding credentials, local quotas and explicit knowledge preparation. Real model/embedding requests consume the configured provider's allowance; ordinary startup does not run paid acceptance automatically. `--no-model` disables models rather than substituting fake answers. If that mode previously saved a disabled local AI policy, explicitly enable it in the local `/admin` before model work; do not reset data or usage to bypass it.
+
+For frontend-only work, `npm run web` starts the `frontend/` Expo workspace. It **does not** start the API or initialize data: configure the matching API and Firebase public authentication values first. `EXPO_PUBLIC_API_BASE_URL` defaults to same-origin `/api`; authenticated Web use requires Web and API behind the same origin, not merely two development ports. Prefer the local launcher, or follow [.env.example](.env.example) and the [production setup](docs/PRODUCTION_FRONTEND.md#firestore-deployment) for a configured proxy. The API-address setting is not runtime Server switching.
+
+Advanced `npm run server` / `npm run worker` entry points require the protected Firestore configuration described in that deployment guide. The retired `setup:local`, `db:migrate` and `storage:encrypt` commands deliberately refuse SQL startup; old SQL acceptance is historical, not a Firestore setup step.
+
+### Available checks and builds
 
 ```sh
 npm run typecheck
@@ -64,46 +80,46 @@ npm test
 npm run build:web
 ```
 
-The tests exercise shared public inputs, API-address and server configuration, and workspace authorization using Node's built-in runner. `build:web` creates a static export under `frontend/dist/`; generated output is not committed. Select only checks needed for a change; the commands above are available entry points, not a requirement to run the full suite. Static checks do not represent integration, browser E2E, Android, persistence, or live-service acceptance.
+Select checks appropriate to the change; this is not a requirement to run the full suite. `npm test` uses Node's built-in test runner. The root npm workspace uses one root lockfile; `build:web` exports `frontend/dist` and adds the Push service worker and license notices. Generated output is not committed, and the Docker Web stage serves it through Caddy.
 
-`EXPO_PUBLIC_API_BASE_URL` defaults to `/api` for a same-origin deployment. See [.env.example](.env.example) for a local separate-server example. This is a public value embedded in the client bundle: never put provider keys, credentials, or private data in `EXPO_PUBLIC_*`. Only HTTPS remote addresses and HTTP loopback addresses are accepted; embedded credentials, query parameters, and fragments are rejected. This configuration does not implement runtime server switching.
+Static checks, tests and platform exports are separate evidence from browser integration, persistence, live services and real devices. Native build/OTA/TestFlight operations use the [fixed mobile release guide](docs/PRODUCTION_FRONTEND.md#mobile-release); an iOS export is not an installable signed IPA. Legacy Web/build/test commands fail explicitly rather than running current acceptance.
 
-Code boundaries:
+## Repository layout
 
-- `frontend/app/`: the production Expo Router Web entry; `frontend/src/production/` owns authenticated shared data. The replaced root `app/` is archived; shared controllers and API clients remain active.
-- `src/shared/`: platform-independent child and text-record input contracts and validation; no storage or network access.
-- `src/config/`: public deployment-address validation, loaded by the app entry.
-- `server/`: Firestore persistence, Firebase Authentication, and the shared HTTP/Agent authorization boundary.
-- `tests/`: focused unit tests for those public boundaries.
+| Path | Responsibility |
+|---|---|
+| `frontend/app/`, `frontend/src/production/` | Shared Expo Router screens and authenticated data owners |
+| `src/client/`, `src/shared/`, `src/config/` | Controllers, API clients, shared contracts/validation and public configuration |
+| `server/` | HTTP API, authorization, Firestore/storage services, Agent runtime and background work |
+| `prompts/`, `knowledge/` | Product Prompt Pack and knowledge-source assets |
+| `deploy/`, `scripts/` | Deployment configuration, local development and operator/release tooling |
+| `tests/` | Focused tests; evidence and remaining acceptance gates are linked from PLAN |
 
-Dependency versions and integrity are fixed in `package-lock.json`; attribution and adopted scope are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). No coo or other parenting-application code was copied. Use [STATUS](STATUS.md) to locate package verification evidence without loading the full work log.
+## Security and data boundaries
 
-## Local server development
+- Only public API/Firebase configuration belongs in `EXPO_PUBLIC_*`. Never include provider credentials, encryption keys, session secrets or private family data in the client bundle, Git or shared logs.
+- API addresses accept HTTPS remotely and HTTP on loopback only; embedded credentials, query parameters and fragments are rejected.
+- Keep existing storage keys and recovery material protected and separate from the repository. **Do not regenerate encryption keys to fix startup errors.**
+- Writes are successful only when the Server confirms them. For an uncertain operation, look up its original run/operation and receipt before retrying; do not create a duplicate action because a connection dropped.
+- Offline clients are not an offline write queue or authoritative record store. Private attachments, sources, child access and notification permissions remain Server-controlled.
+- Dependency versions and integrity are locked in `package-lock.json`; attribution and adopted scope are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-Use [the local Agent guide](docs/AGENT_LOCAL.md) to run this branch's production Web/API/Agent with isolated Firebase emulators and your own Gemini key or local Vertex ADC. Install Java 21+, run `npm ci`, set protected `LOCAL_AGENT_CONFIG`, then run `npm run agent:local`. No GCP deployment or cloud database is required; real model calls still use your model allowance. `--no-model` is available for data/UI work. Startup never runs paid acceptance automatically.
+<a id="authority"></a>
+## Documentation
 
-The cloud application uses Firestore, Firebase Authentication and private Cloud Storage through the same Node API. It does not start PostgreSQL or run SQL migrations. For cloud operation, follow [the production frontend and Firestore setup](docs/PRODUCTION_FRONTEND.md#firestore-deployment), including VM/Compose, protected keys and the scoped application identity.
+[Document responsibilities](AGENTS.md#document-updates) define each source of truth; this README is an entry point, not a second task log.
 
-```sh
-# Configure the protected environment described in the deployment guide first.
-npm run server
-npm run worker
-npm run web
-```
+| Need | Start here |
+|---|---|
+| Current work, limitations and deployment observation | [STATUS](STATUS.md), [PLAN](PLAN.md#active) |
+| Product behavior and technical contracts | [SPEC](SPEC.md), [architecture](docs/ARCHITECTURE.md), [data model](docs/DATA_MODEL.md), [API](docs/API.md) |
+| Local development and hosted operation | [Local Agent guide](docs/AGENT_LOCAL.md), [production frontend / Firestore deployment](docs/PRODUCTION_FRONTEND.md#firestore-deployment) |
+| Feature/API integration | [Formal UI/API map](docs/P2_UI_HANDOFF.md), [frontend handoff index](frontend/HANDOFF.md) |
+| Agent prompts, reuse and decisions | [Prompt Pack](prompts/README.md), [technology reuse](docs/TECH_REUSE.md), [DECISIONS](docs/DECISIONS.md) |
 
-Do not regenerate encryption keys to resolve startup errors. Keep provider credentials and storage keys outside the repository; never put them in public frontend variables. Frontend pages and Agent tools access the same Server authority, not separate client databases.
+<a id="historical-assets"></a>
+## Historical baseline and research
 
-The retired `setup:local`, `db:migrate` and `storage:encrypt` commands deliberately refuse SQL startup. [P1 storage instructions](docs/P1_STORAGE.md) and [S06 acceptance](docs/S06_W03_ACCEPTANCE.md) describe historical SQL evidence, not the current setup. Necessary verification is scoped to the active package; do not run the old SQL integration suite as a prerequisite for Firestore development.
+Start with the [archive and evidence index](_archive/README.md), then follow a specific LOG/EV or source snapshot. The original P1 pilot, [P2 trial guide](docs/P2_TRIAL.md) and [P2 delivery record](docs/P2_DELIVERY.md) describe their dated releases, not current availability or complete acceptance of later changes.
 
-## Web record workflow
-
-With both the server and Expo running, register an account or sign in, create a child, and enter a text record. Review the original text and child before confirming the save. Only a successful server response produces a saved receipt. The list displays the latest 100 confirmed records for the selected child; switching children keeps separate unsaved drafts in page memory.
-
-Reopen the page and sign in to the same account to load saved records from the server. Offline mode blocks submission and warns that displayed data may be stale. A failed or uncertain submission keeps its input and requires a fresh read and manual duplicate check before retrying. There is no automatic write retry or persistent browser record store. Closing or refreshing a page with unsaved input shows the browser's warning; successful sign-out clears the page's private state.
-
-The original SQL/browser record checks remain historical evidence in [S03-W01 acceptance](docs/S03_W01_ACCEPTANCE.md). Current Firestore checks and deferred items are scoped by [PLAN](PLAN.md#active); they are not a requirement to repeat the legacy acceptance suite.
-
-
-## Team pilot
-
-The original seven-day P1 pilot passed its necessary deployed-service and independent trial acceptance, including the Firefox login fix, and closed with [PR #23](https://github.com/2NTTY/child-ai-caregiver/pull/23). The same site hosted the authorized P2 release at the last recorded deployment; [current availability is unverified](STATUS.md#deployment). Use synthetic data and follow the [P2 trial guide](docs/P2_TRIAL.md). Use the [dated deployment observation](STATUS.md#deployment) for the last recorded VM stop setting; retained disk/IP charges continue after a stop. The [P2 delivery record](docs/P2_DELIVERY.md) preserves that release's operations and limits.
+`DEVELOPMENT_PLAN.md`, `PROJECT_PROPOSAL.md`, `PITCH_AND_DEMO.md` and `WEEKLY_LOGS.md` are compatibility entries for archived material. [OPEN_SOURCE_REUSE.md](OPEN_SOURCE_REUSE.md) is dated candidate/license research, not an adoption list. The replaced root Web interface is preserved in the [legacy Web archive](_archive/legacy-web-2026-10-07/README.md). Frozen evidence retains its original link context and is not rewritten to imply current support.

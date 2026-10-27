@@ -1,3 +1,4 @@
+import { attachmentListPolicySchema, DEFAULT_ATTACHMENT_LIST_POLICY, type AttachmentListPolicy } from '../src/shared/attachment-list.ts';
 import { isIP } from "node:net";
 
 export interface ServerHttpConfig {
@@ -90,4 +91,20 @@ export function readServerConfig(env: Record<string, string | undefined>): Serve
   const databaseUrl = readDatabaseUrl(env.DATABASE_URL);
   const authSecret = readAuthSecret(env.BETTER_AUTH_SECRET);
   return { databaseUrl, authSecret, ...readServerHttpConfig(env) };
+}
+
+/** Deployments can tune one request's work without changing stored-media quotas. */
+export function readAttachmentListPolicy(env: Record<string, string | undefined>): AttachmentListPolicy {
+  const names = { defaultLimit: 'ATTACHMENT_LIST_DEFAULT_LIMIT', maxLimit: 'ATTACHMENT_LIST_MAX_LIMIT', scanLimit: 'ATTACHMENT_LIST_SCAN_LIMIT' } as const;
+  const values: AttachmentListPolicy = { ...DEFAULT_ATTACHMENT_LIST_POLICY };
+  for (const key of Object.keys(names) as (keyof typeof names)[]) {
+    const value = env[names[key]];
+    if (value !== undefined) {
+      if (!/^[1-9][0-9]*$/u.test(value)) invalidConfig(names[key]);
+      values[key] = Number(value);
+    }
+  }
+  const parsed = attachmentListPolicySchema.safeParse(values);
+  if (!parsed.success) invalidConfig('ATTACHMENT_LIST_POLICY');
+  return parsed.data;
 }

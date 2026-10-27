@@ -17,7 +17,7 @@ import { StatusAnnouncement } from "../StatusAnnouncement";
 import { personalLimits, type ModelMode, type ModelSettings, type ModelSettingsActions, type ModelSettingsUsage, type ModelSettingsViewModel } from "../../model-settings-view-model";
 import { chineseFont, colors, readingType, spacing, workspaceType } from "../../theme";
 import { MotionFeedback, MotionReveal } from "../../motion";
-import { modelCatalogSelection, modelCommandFromDraft, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, modelLimitFields, type ModelSettingsDraft } from "./model-settings-form";
+import { modelCatalogSelection, modelCommandFromDraft, modelEmbeddingRouteChanged, modelSettingsDraft, modelSettingsSchema, removeModelKeyCommand, modelLimitFields, type ModelSettingsDraft } from "./model-settings-form";
 
 const modelReasonText = (reason: string) => ({ invalid_key: "密鑰無效或沒有存取權限。", region_unavailable: "供應商不支援目前服務地區。",
   model_unavailable: "這份憑證目前不能存取所選模型。", quota_exceeded: "供應商配額或速率已達上限。", timeout: "供應商查核逾時。",
@@ -28,7 +28,8 @@ const modeLabels: Record<ModelMode, string> = { platform: brand.platformServiceL
 const formFields = [
   { name: "mode", label: "模型模式" }, { name: "keyText", label: "個人 API 密鑰" }, { name: "consent", label: "費用及資料外送同意" },
   { name: "provider", label: "模型服務" }, { name: "baseUrl", label: "API 基底地址" }, { name: "model", label: "聊天模型" },
-  { name: "embeddingKeyText", label: "Gemini 向量密鑰" },
+  { name: "embeddingProvider", label: "向量服務" }, { name: "embeddingProject", label: "GCP 專案" },
+  { name: "embeddingLocation", label: "Vertex 地區" }, { name: "embeddingKeyText", label: "向量 API 密鑰" },
   ...modelLimitFields.map(([name, label]) => ({ name, label })),
 ] as const;
 function UsageCard({ label, usage }: { label: string; usage: ModelSettingsUsage }) {
@@ -74,7 +75,7 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
     },
   };
   const { control, reset, setValue, setFocus, watch, handleSubmit, formState: { errors, isDirty } } = useForm<ModelSettingsDraft>({
-    resolver: zodResolver(modelSettingsSchema(settings.keyConfigured, settings.provider, settings.baseUrl)), defaultValues: modelSettingsDraft(settings, snapshot?.effective), mode: "onChange", shouldFocusError: false,
+    resolver: zodResolver(modelSettingsSchema(settings.keyConfigured, settings.provider, settings.baseUrl, settings)), defaultValues: modelSettingsDraft(settings, snapshot?.effective), mode: "onChange", shouldFocusError: false,
   });
   usePreviewLeaveGuard(active && (isDirty || deleteOpen), false, "account");
   const setDraftEditing = sourceActions.setDraftEditing;
@@ -84,11 +85,14 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
   }, [active, isDirty, deleteOpen, setDraftEditing]);
   const provider = watch("provider"), selectedModel = watch("model"), baseUrl = watch("baseUrl");
   const embeddingKeyText = watch("embeddingKeyText"), removeEmbeddingKey = watch("removeEmbeddingKey");
+  const embeddingProvider = watch("embeddingProvider"), embeddingProject = watch("embeddingProject"), embeddingLocation = watch("embeddingLocation");
+  const embeddingRouteChanged = modelEmbeddingRouteChanged({ embeddingProvider, embeddingProject, embeddingLocation }, settings);
   const modelSelection = modelCatalogSelection(model.catalog, provider, selectedModel);
   const selectedCapabilities = modelSelection.capabilities;
   const mode = watch("mode"), keyText = watch("keyText"), consent = watch("consent");
   const fieldId = (name: keyof ModelSettingsDraft) => `${formId}-${name}`;
-  const visibleFields = formFields.filter(item => item.name === "mode" || mode === "personal" && (item.name !== "baseUrl" || provider === "openai-compatible"));
+  const visibleFields = formFields.filter(item => item.name === "mode" || mode === "personal" && (item.name !== "baseUrl" || provider === "openai-compatible")
+    && (!["embeddingProject", "embeddingLocation"].includes(item.name) || embeddingProvider === "vertex"));
   const errorEntries = visibleFields.flatMap(item => {
     const message = errors[item.name]?.message;
     return message ? [{ field: item.name, label: item.label, message }] : [];
@@ -109,7 +113,13 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
     }
   }, [deleteCurrent, deleteReview, !!snapshot, model.online, model.authorized, model.needsRead, model.operation]);
   function clearSecret() { setValue("keyText", ""); setValue("embeddingKeyText", ""); setValue("removeEmbeddingKey", false); setValue("consent", false); }
-  useEffect(() => { if (!active) { clearSecret(); setDeleteReview(null); setDeleteConfirmed(false); } }, [active, setValue]);
+  function clearEmbeddingSecret() { setValue("embeddingKeyText", ""); setValue("removeEmbeddingKey", false); setValue("consent", false); }
+  useEffect(() => {
+    if (!active) {
+      reset(modelSettingsDraft(settings, snapshot?.effective));
+      setDeleteReview(null); setDeleteConfirmed(false);
+    }
+  }, [active, formBasis, reset]);
   useEffect(() => {
     const subscription = AppState.addEventListener("change", state => {
       if (state !== "active") { clearSecret(); setDeleteReview(null); setDeleteConfirmed(false); }
@@ -188,7 +198,7 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
               error={!!errors.model} aria-invalid={!!errors.model} aria-describedby={`${fieldId("model")}-message`} />} />
             <FormFieldMessage id={`${fieldId("model")}-message`} error={errors.model?.message} />
             <Text style={styles.meta}>直接輸入所選供應商的模型 ID 即可保存及試用，不需先通過模型目錄查核。服務或模型不接受某項請求時，助手會顯示相關錯誤，不會自動替換模型。</Text>
-            {provider === "vertex" ? <Text style={styles.meta}>此處使用 Vertex AI Express API key，不接受服務帳戶 JSON。知識搜尋可另填下方 Gemini 向量密鑰。</Text> : null}
+            {provider === "vertex" ? <Text style={styles.meta}>此處使用 Vertex AI Express API key，不接受服務帳戶 JSON。知識搜尋可另選下方的向量服務並填寫本人密鑰。</Text> : null}
             {!model.catalog && !model.busy && provider !== "openai-compatible" ? <Text style={styles.meta}>模型目錄暫未讀取，仍可直接輸入模型 ID。</Text> : null}
             {selectedCapabilities && Object.values(selectedCapabilities).some(Boolean)
               ? <Text style={styles.meta}>模型能力資料：{Object.entries(selectedCapabilities).filter(([, enabled]) => enabled).map(([key]) => ({ tools: "工具", image: "圖片", audio: "音訊", textStreaming: "文字串流" })[key]).join("、")}。即使模型支援文字串流，回覆也不一定會逐字顯示。</Text>
@@ -199,20 +209,45 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
             <FormFieldMessage id={`${fieldId("keyText")}-message`} error={errors.keyText?.message}
               help={`${settings.keyConfigured && provider === settings.provider && (provider !== "openai-compatible" || baseUrl.replace(/\/+$/u, "") === settings.baseUrl) ? "留空會保留已保存聊天密鑰。" : "請輸入所選服務及地址對應的聊天密鑰。"}密鑰只在保存時送出；送出、失敗或離開頁面後清空，不會讀回。`} />
             <View style={styles.group}>
-              <Text accessibilityRole="header" style={styles.groupTitle}>知識搜尋用向量密鑰（可選）</Text>
-              <Text style={styles.meta}>知識搜尋目前使用 Google 的 gemini-embedding-001。Gemini 聊天可沿用同一密鑰；使用其他聊天服務時，可另填本人 Gemini API key。未配置時仍可試用聊天，需向量的搜尋會顯示缺少配置，不會借用平台額度。</Text>
-              <AppStatusBadge label={settings.embeddingKeyConfigured ? "已保存獨立向量密鑰" : "沒有獨立向量密鑰"} tone={settings.embeddingKeyConfigured ? "success" : "neutral"} />
+              <Text accessibilityRole="header" style={styles.groupTitle}>知識搜尋用向量服務（可選）</Text>
+              <Text style={styles.meta}>知識搜尋使用 Google 的 gemini-embedding-001（1024 維）。未配置時仍可試用聊天，需向量的搜尋會顯示缺少配置，不會借用平台額度。</Text>
+              <Controller control={control} name="embeddingProvider" render={({ field, fieldState }) => <AppSelect ref={field.ref} id={fieldId("embeddingProvider")}
+                label="向量服務" value={field.value} disabled={locked || !available} onBlur={field.onBlur}
+                invalid={!!fieldState.error} describedBy={fieldState.error ? `${fieldId("embeddingProvider")}-message` : undefined}
+                options={[{ value: "gemini", label: "Gemini Developer API" }, { value: "vertex", label: "Vertex AI" }]}
+                onChange={value => { if (value !== field.value) clearEmbeddingSecret(); field.onChange(value); }} />} />
+              <FormFieldMessage id={`${fieldId("embeddingProvider")}-message`} error={errors.embeddingProvider?.message} />
+              {embeddingProvider === "vertex" ? <>
+                <Text style={styles.meta}>Vertex 向量服務使用本人的獨立 API key、GCP 專案及地區，不會沿用聊天密鑰。請確認該專案已啟用所需服務及付款。</Text>
+                <Controller control={control} name="embeddingProject" render={({ field }) => <AppTextField ref={field.ref} nativeID={fieldId("embeddingProject")}
+                  label="GCP 專案 ID 或編號" accessibilityLabel="GCP 專案 ID 或編號" value={field.value} disabled={locked || !available}
+                  maxLength={30} autoComplete="off" autoCapitalize="none" autoCorrect={false} onBlur={field.onBlur}
+                  onChangeText={value => { if (value !== field.value) clearEmbeddingSecret(); field.onChange(value); }} error={!!errors.embeddingProject}
+                  aria-invalid={!!errors.embeddingProject} aria-describedby={`${fieldId("embeddingProject")}-message`} />} />
+                <FormFieldMessage id={`${fieldId("embeddingProject")}-message`} error={errors.embeddingProject?.message} help="填寫這份向量密鑰所屬的本人 GCP 專案。" />
+                <Controller control={control} name="embeddingLocation" render={({ field }) => <AppTextField ref={field.ref} nativeID={fieldId("embeddingLocation")}
+                  label="Vertex 地區" accessibilityLabel="Vertex 地區" placeholder="例如 asia-east1 或 global" value={field.value} disabled={locked || !available}
+                  maxLength={63} autoComplete="off" autoCapitalize="none" autoCorrect={false} onBlur={field.onBlur}
+                  onChangeText={value => { if (value !== field.value) clearEmbeddingSecret(); field.onChange(value); }} error={!!errors.embeddingLocation}
+                  aria-invalid={!!errors.embeddingLocation} aria-describedby={`${fieldId("embeddingLocation")}-message`} />} />
+                <FormFieldMessage id={`${fieldId("embeddingLocation")}-message`} error={errors.embeddingLocation?.message} help="填寫提供所選向量模型的 Vertex 地區。" />
+              </> : <Text style={styles.meta}>Gemini 聊天可沿用同一密鑰；使用其他聊天服務時，可另填本人 Gemini API key。</Text>}
+              <AppStatusBadge label={embeddingRouteChanged ? "向量服務已更改，須重新填寫密鑰" : settings.embeddingKeyConfigured ? "已保存獨立向量密鑰" : "沒有獨立向量密鑰"}
+                tone={embeddingRouteChanged ? "warning" : settings.embeddingKeyConfigured ? "success" : "neutral"} />
               <Controller control={control} name="embeddingKeyText" render={({ field }) => <AppTextField ref={field.ref} nativeID={fieldId("embeddingKeyText")}
-                label={settings.embeddingKeyConfigured ? "替換 Gemini 向量密鑰" : "Gemini 向量密鑰"} accessibilityLabel="Gemini 向量密鑰" testID="model-embedding-api-key"
+                label={`${settings.embeddingKeyConfigured && !embeddingRouteChanged ? "替換 " : ""}${embeddingProvider === "vertex" ? "Vertex" : "Gemini"} 向量密鑰`}
+                accessibilityLabel={`${embeddingProvider === "vertex" ? "Vertex" : "Gemini"} 向量密鑰`} testID="model-embedding-api-key"
                 secureTextEntry autoComplete="off" textContentType="none" autoCapitalize="none" autoCorrect={false} importantForAutofill="no"
                 maxLength={512} value={active && model.online && model.authorized ? field.value : ""} onChangeText={field.onChange} onBlur={field.onBlur}
                 disabled={locked || !available || removeEmbeddingKey} error={!!errors.embeddingKeyText}
                 aria-invalid={!!errors.embeddingKeyText} aria-describedby={`${fieldId("embeddingKeyText")}-message`} />} />
-              <FormFieldMessage id={`${fieldId("embeddingKeyText")}-message`} error={errors.embeddingKeyText?.message} help="留空保留已保存向量密鑰；密鑰原文不會讀回。" />
+              <FormFieldMessage id={`${fieldId("embeddingKeyText")}-message`} error={errors.embeddingKeyText?.message}
+                help={embeddingRouteChanged ? "更換向量服務、專案或地區後，請重新輸入相應密鑰，或明確選擇刪除。" : embeddingProvider === "vertex" && !settings.embeddingKeyConfigured
+                  ? "請輸入此專案及地區的本人獨立向量密鑰；不會沿用聊天密鑰。" : "留空保留已保存向量密鑰；密鑰原文不會讀回。"} />
               {settings.embeddingKeyConfigured ? <Controller control={control} name="removeEmbeddingKey" render={({ field }) => <AppCheckbox
                 label="保存時刪除獨立向量密鑰" checked={field.value} disabled={locked || !available}
                 onChange={value => { setValue("embeddingKeyText", ""); field.onChange(value); }}
-                description={provider === "gemini" ? "刪除後，知識搜尋會沿用本人的 Gemini 聊天密鑰。" : "刪除後，需要向量的知識搜尋將無法使用；不會改用平台。"} />} /> : null}
+                description={embeddingProvider === "gemini" && provider === "gemini" ? "刪除後，知識搜尋會沿用本人的 Gemini 聊天密鑰。" : "刪除後，需要向量的知識搜尋將無法使用；不會改用平台。"} />} /> : null}
             </View>
             <Text style={styles.body}>保存時，密鑰會送到目前連接的{brand.name}服務（{model.serverLabel}）並加密儲存，只用於你授權的所選模型及向量服務；密鑰原文不會讀回。</Text>
             <Controller control={control} name="consent" render={({ field }) => <AppCheckbox ref={field.ref} id={fieldId("consent")} invalid={!!errors.consent} describedBy={errors.consent ? `${fieldId("consent")}-message` : undefined} onBlur={field.onBlur} checked={field.value} onChange={value => setValue("consent", value, { shouldValidate: true })} disabled={locked || !available}
@@ -235,10 +270,10 @@ function ModelSettingsForm({ model, actions: sourceActions, active = true }: Mod
           {settings.provider !== "gemini" ? <Text style={styles.meta}>此接入方式不另查模型目錄；可直接到助手試用已保存的模型。是否可用及具體錯誤，以該次實際請求為準。</Text> : <>
           <AppStatusBadge label={model.keyCheck?.version === settings.version ? model.keyCheck.status === "accessible" ? "模型資料可讀取" : "目前未能讀取模型資料" : "此版本模型資料待查核"} tone={model.keyCheck?.version === settings.version && model.keyCheck.status === "accessible" ? "success" : "warning"} />
           <Text style={styles.meta}>密鑰已保存、模型資料可讀及實際生成／查詢向量可用，須分開核對；這項檢查不能確認帳單或剩餘配額。</Text>
-          <AppButton label="檢查已保存密鑰" variant="secondary" loading={model.busy === "check"} disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || settings.mode !== "personal" || provider !== settings.provider || !!keyText.trim() || !!embeddingKeyText || removeEmbeddingKey}
+          <AppButton label="檢查已保存密鑰" variant="secondary" loading={model.busy === "check"} disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || settings.mode !== "personal" || provider !== settings.provider || !!keyText.trim() || !!embeddingKeyText || removeEmbeddingKey || embeddingRouteChanged}
             onPress={() => actions.check(settings.version)} />
           {model.keyCheck?.reason ? <Text style={styles.warning}>{modelReasonText(model.keyCheck.reason)}</Text> : null}
-          {actions.refreshCatalog ? <AppButton label="查核已保存密鑰的模型目錄" variant="quiet" disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || provider !== settings.provider || !!keyText.trim() || !!embeddingKeyText || removeEmbeddingKey}
+          {actions.refreshCatalog ? <AppButton label="查核已保存密鑰的模型目錄" variant="quiet" disabled={locked || !snapshot.enabled || !snapshot.personalAvailable || provider !== settings.provider || !!keyText.trim() || !!embeddingKeyText || removeEmbeddingKey || embeddingRouteChanged}
             loading={model.busy === "catalog"} onPress={() => actions.refreshCatalog?.(settings.version)} /> : null}
           {model.catalog?.reason ? <Text style={styles.warning}>{modelReasonText(model.catalog.reason)}</Text> : null}
           {model.catalog?.truncated ? <Text style={styles.meta}>供應商目錄只讀取了有界部分；未列出不代表模型不存在。</Text> : null}

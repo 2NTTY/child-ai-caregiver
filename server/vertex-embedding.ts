@@ -4,6 +4,7 @@ import { KNOWLEDGE_EMBEDDING } from "../src/shared/knowledge.ts";
 import type { AiConfig } from "./ai-config.ts";
 import { EmbeddingFailure } from "./embedding-gateway.ts";
 import type { EmbeddingProvider, EmbeddingReply } from "./embedding-gateway.ts";
+import { personalProviderHttpError } from './personal-provider-error.ts';
 
 function readCount(value: unknown): number | null {
   if (value === undefined) return null;
@@ -32,14 +33,21 @@ export function readVertexEmbedding(response: EmbedContentResponse): EmbeddingRe
   };
 }
 
-export function createVertexEmbeddingProvider(config: AiConfig): EmbeddingProvider {
+export function createVertexEmbeddingProvider(config: AiConfig, credential?: { apiKey: string; documentEmbeddings?: boolean }): EmbeddingProvider {
   const client = new GoogleGenAI({
     enterprise: true, project: config.project, location: config.location, apiVersion: "v1",
-    httpOptions: { timeout: config.timeoutMs, retryOptions: { attempts: 1 } },
+    ...(credential ? { apiKey: credential.apiKey } : {}),
+    httpOptions: { timeout: config.timeoutMs, retryOptions: { attempts: 1 },
+      ...(credential ? { baseUrl: config.location === 'global' ? 'https://aiplatform.googleapis.com'
+        : config.location === 'us' || config.location === 'eu' ? `https://aiplatform.${config.location}.rep.googleapis.com`
+        : `https://${config.location}-aiplatform.googleapis.com` } : {}) },
   });
   return {
     async embed(input, signal) {
       if (signal.aborted) throw new EmbeddingFailure("cancelled");
+      if (credential && (typeof input.text !== 'string' || !input.text.trim()
+        || input.task === 'RETRIEVAL_DOCUMENT' && (!credential.documentEmbeddings || !input.title?.trim())
+        || input.task === 'RETRIEVAL_QUERY' && input.title !== undefined)) throw new EmbeddingFailure('invalid_input');
       try {
         const response = await client.models.embedContent({
           model: KNOWLEDGE_EMBEDDING.model,
@@ -56,6 +64,7 @@ export function createVertexEmbeddingProvider(config: AiConfig): EmbeddingProvid
       } catch (error) {
         if (signal.aborted) throw new EmbeddingFailure("cancelled");
         if (error instanceof EmbeddingFailure) throw error;
+        if (credential && error instanceof ApiError) throw personalProviderHttpError(error.status, error.message, 'embedding');
         throw new EmbeddingFailure(error instanceof ApiError && error.status === 400 ? "invalid_input" : "unavailable");
       }
     },

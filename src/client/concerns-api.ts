@@ -1,13 +1,16 @@
 import type { ReadFailureDiagnostic } from "./read-failure.ts";
 import { z } from "zod";
+import type { SharedSelection } from '../shared/sharing.ts';
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
 import { CONCERN_STORED_EVENT_LIMIT, concernChangeSchema, concernValuesSchema, type Concern, type ConcernChange, type ConcernPage, type ConcernValues } from "../shared/concerns.ts";
 
 export type ConcernErrorCode = "invalid_input" | "invalid_json" | "unauthorized" | "not_found" | "session_changed"
   | "account_precondition_required" | "concern_changed" | "concern_history_requires_review" | "operation_mismatch"
-  | "sharing_confirmation_required" | "check_original_concern";
+  | "sharing_confirmation_required" | "check_original_concern"
+  | "space_access_denied" | "module_not_shared" | "space_inactive" | "shared_domain_read_only";
 const knownCodes = new Set<ConcernErrorCode>(["invalid_input", "invalid_json", "unauthorized", "not_found", "session_changed",
-  "account_precondition_required", "concern_changed", "concern_history_requires_review", "operation_mismatch", "sharing_confirmation_required", "check_original_concern"]);
+  "account_precondition_required", "concern_changed", "concern_history_requires_review", "operation_mismatch", "sharing_confirmation_required", "check_original_concern",
+  "space_access_denied", "module_not_shared", "space_inactive", "shared_domain_read_only"]);
 const knownStatuses = new Set([400, 401, 403, 404, 405, 409, 415, 422, 428, 429, 500, 502, 503, 504]);
 export class ConcernApiError extends Error {
   readonly status: number;
@@ -47,8 +50,9 @@ function checkedItem(value: unknown, childId: string, id?: string, status = 0): 
 }
 interface PendingWrite { kind: "create" | "change"; childId: string; userId: string; id: string; payload: string; body: string; reviewed: boolean; reconfirm: boolean }
 
-export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch): ConcernsApi {
+export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch, selection?: Pick<SharedSelection, 'spaceId'>): ConcernsApi {
   const base = resolveApiBaseUrl(baseUrl), apiUrl = base.endsWith("/api") ? base : base + "/api";
+  const spaceId = selection ? uuid.parse(selection.spaceId) : null;
   let pending: PendingWrite | null = null, activeScope: string | null = null;
   function scope(childId: string, userId: string) {
     if (!uuid.safeParse(childId).success || !identifier.safeParse(userId).success) throw new ConcernApiError(400, "invalid_input");
@@ -62,7 +66,8 @@ export function createConcernsApi(baseUrl = "", fetcher: typeof fetch = fetch): 
     const timeout = setTimeout(abort, body === undefined ? 15_000 : 20_000);
     try {
       if (controller.signal.aborted) throw new ConcernApiError();
-      const response = await fetcher(apiUrl + url, { method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store",
+      const selectedUrl = spaceId ? url + (url.includes('?') ? '&' : '?') + 'spaceId=' + encodeURIComponent(spaceId) : url;
+      const response = await fetcher(apiUrl + selectedUrl, { method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store",
         headers: { Accept: "application/json", "x-expected-user-id": userId, ...(body === undefined ? {} : { "Content-Type": "application/json" }) },
         ...(body === undefined ? {} : { body }), signal: controller.signal });
       received?.(response.status);

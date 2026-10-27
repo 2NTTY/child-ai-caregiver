@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 import { AppState, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder } from "expo-audio";
@@ -9,14 +9,16 @@ import { chineseFont, colors, spacing } from "../../theme";
 import { AppButton } from "../ui";
 import { LocalAudioPreview } from "./LocalAudioPreview";
 import { copyNativeVoice } from "./native-voice-file";
+import { AssistantAttachmentPicker } from "./AssistantAttachmentPicker";
+import { VoiceRecordingTimer, type VoiceCaptureHandle } from "./VoiceRecordingTimer";
 
 const options = { ...RecordingPresets.HIGH_QUALITY, numberOfChannels: 1, bitRate: 64_000,
   android: { ...RecordingPresets.HIGH_QUALITY.android, maxFileSize: VOICE_LIMITS.bytes } };
-export function VoiceCapture({ onPick }: { onPick(attachment: AssistantAttachment): void }) {
+export function VoiceCapture({ onPick, visible, onDismiss, ref }: { onPick(attachment: AssistantAttachment): void; visible: boolean; onDismiss(): void; ref?: Ref<VoiceCaptureHandle> }) {
   const recorder = useAudioRecorder(options);
   const [state, setState] = useState<"idle" | "permission" | "recording" | "stopping" | "ready">("idle");
   const [error, setError] = useState<string>(), [recording, setRecording] = useState<AssistantAttachment | null>(null);
-  const active = useRef(true), generation = useRef(0), busy = useRef(false), preparing = useRef(false), permissionWaiting = useRef(false);
+  const active = useRef(true), generation = useRef(0), busy = useRef(false), preparing = useRef(false), permissionWaiting = useRef(false), engaged = useRef(false);
   const current = useRef<AssistantAttachment | null>(null), timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearTimer = () => { if (timer.current) clearTimeout(timer.current); timer.current = null; };
   const removeRecordedFile = () => { if (recorder.uri) { const file = new File(recorder.uri); if (file.exists) file.delete(); } };
@@ -40,18 +42,25 @@ export function VoiceCapture({ onPick }: { onPick(attachment: AssistantAttachmen
       if (active.current) setState(current.current ? "ready" : "idle");
     }
   }
-  function discard() {
-    generation.current++; clearTimer(); current.current?.dispose?.(); current.current = null;
-    if (active.current) { setRecording(null); setError(undefined); }
-    if (!preparing.current && !busy.current) void finish(false, generation.current);
+  function discard(close = true, transferred?: AssistantAttachment) {
+    if (!engaged.current && !preparing.current && !busy.current && !current.current) { if (close && active.current) onDismiss(); return; }
+    const completed = !!current.current;
+    generation.current++; clearTimer(); if (current.current !== transferred) current.current?.dispose?.(); current.current = null;
+    engaged.current = false;
+    if (active.current) { setRecording(null); setError(undefined); if (close) onDismiss(); }
+    if (!preparing.current && !busy.current) {
+      if (completed) { if (active.current) setState("idle"); }
+      else void finish(false, generation.current);
+    }
   }
   useEffect(() => {
     active.current = true;
-    const subscription = AppState.addEventListener("change", value => { if (value !== "active" && !permissionWaiting.current) discard(); });
+    const subscription = AppState.addEventListener("change", value => { if (value !== "active" && !permissionWaiting.current && engaged.current) discard(false); });
     return () => { active.current = false; discard(); subscription.remove(); };
   }, [recorder]);
   async function start() {
     if (busy.current || preparing.current || state === "recording") return;
+    engaged.current = true;
     const started = ++generation.current; preparing.current = true; setState("permission"); setError(undefined);
     try {
       permissionWaiting.current = true;
@@ -75,15 +84,25 @@ export function VoiceCapture({ onPick }: { onPick(attachment: AssistantAttachmen
       }
     }
   }
+  useImperativeHandle(ref, () => ({ start() {
+    if (!active.current || engaged.current) return;
+    engaged.current = true; void start();
+  } }));
+  function pick(attachment: AssistantAttachment) {
+    discard(true, attachment); onPick(attachment);
+  }
+  if (!visible) return null;
   return <View testID="voice-capture" style={styles.stack}>
     <Text accessibilityLiveRegion="polite" style={styles.body}>{state === "permission" ? "等待咪高峰權限…可隨時取消" : state === "recording" ? "正在本機錄音，尚未送出" : state === "stopping" ? "正在完成錄音…" : recording ? "先試聽，再決定是否加入草稿" : "按「開始錄音」才會要求咪高峰權限"}</Text>
+    {state === "recording" ? <VoiceRecordingTimer /> : null}
     {recording?.localUri ? <LocalAudioPreview uri={recording.localUri} /> : null}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     <View style={styles.actions}>{state === "recording" ? <AppButton label="停止並試聽" onPress={() => { void finish(true, generation.current); }} /> :
-      recording ? <AppButton label="加入未送出草稿" disabled={state !== "ready"} onPress={() => { const item = current.current; if (!item) return; current.current = null; setRecording(null); onPick(item); }} /> :
+      recording ? <AppButton label="加入未送出草稿" disabled={state !== "ready"} onPress={() => { const item = current.current; if (item) pick(item); }} /> :
       <AppButton label="開始錄音" disabled={state !== "idle"} onPress={() => { void start(); }} />}
-      {state !== "idle" || recording ? <AppButton label={recording ? "捨棄錄音" : "取消錄音"} variant="quiet" onPress={discard} /> : null}
-    </View><Text style={styles.note}>每段最多兩分鐘／5 MiB。錄音及試聽只在本機；按聊天的送出才會上傳。離開 App 會停止未送出的錄音。</Text>
+      <AppButton label={recording ? "捨棄錄音" : "取消錄音"} variant="quiet" onPress={() => discard()} />
+    </View><AssistantAttachmentPicker kind="voice" disabled={state === "permission" || state === "recording" || state === "stopping"} onPick={pick} onError={setError} />
+    <Text style={styles.note}>每段最多兩分鐘／5 MiB。錄音及試聽只在本機；按聊天的送出才會上傳。離開 App 會停止未送出的錄音。</Text>
   </View>;
 }
 const styles = StyleSheet.create({ stack: { gap: spacing.sm }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "package": "MODEL-SELF03 device follow-up and discarded draft reset",
+  "date": "2026-10-23",
+  "base": "216d87eac4716db39a63da302cc616f71696ab96",
+  "branch": "codex/model-self03-discard-draft",
+  "deviceObservation": {
+    "completedAt": "2026-10-23T15:08:31.280Z",
+    "apk": "0.1.0 / versionCode 2",
+    "initial": "Old navigation and only two Google provider choices",
+    "afterOneNormalRestart": "New concern/review navigation, compatible provider, endpoint/model fields, separate Gemini embedding credential and seven limits visible; login retained",
+    "exactOtaUpdateIdVerified": false,
+    "failure": "Discarding the unsaved draft and reopening the retained settings tab preserved non-secret personal mode/provider choices",
+    "cleanup": "Manually restored the original Gemini/platform choices, returned home, released ADB ownership",
+    "keyEntered": false,
+    "settingsSaved": false,
+    "modelCalls": 0,
+    "notifications": 0,
+    "rawEvidence": "Private ignored .cache/model03-device-settings-check-3; screenshots are not committed"
+  },
+  "fix": "On form deactivation reset the local draft from the authoritative settings snapshot; preserve the owner's pending/unknown operation. App background still clears only secrets and deletion consent.",
+  "navigationFix": "User reported a different concern icon on Android. Native growth tab now reads the shared navigationItems.growth icon and short label used by Web, replacing its hardcoded chart-bar; no layout or dependency change.",
+  "review": "Root reviewed product diff and current owner/guard; original read-only reviewer found no blocking issue in the form fix. Icon change checked directly against shared metadata.",
+  "checks": [
+    {
+      "name": "compatible model form credential lifecycle",
+      "result": "passed-first-attempt",
+      "scope": "Single save, background secret cleanup without dropping provider choice, route reset of provider/limits/secrets/consent and dirty state"
+    },
+    {
+      "name": "retained model tab original-operation continuity",
+      "result": "passed-after-assertion-correction",
+      "initialFailure": "Expected an empty callback list despite the preceding user provider selection having called selectProvider",
+      "correction": "Compare callbacks with their pre-leave snapshot; reran only this failed case",
+      "scope": "Platform-mode reset, clean reentry, original unknown operation retained, save disabled, explicit original-result refresh, no save or network"
+    }
+  ],
+  "environment": "Node 24.19.0; existing React/RHF/Zod view harness with synthetic owner/presentation ports; jsdom 26.1.0",
+  "limitations": [
+    "The source fix has not been published or verified on the phone",
+    "No true credential save/generation/embedding acceptance",
+    "No full suite, browser, model, notification or cloud mutation"
+  ]
+}
