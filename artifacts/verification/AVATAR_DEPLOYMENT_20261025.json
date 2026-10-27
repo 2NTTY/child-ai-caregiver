@@ -1,0 +1,20 @@
+{
+  "sourceCommit": "652edadb2e048b46e8f64470569f953da36b6bef",
+  "state": "deployed-closed",
+  "deployedAt": "2026-10-25T08:37:47.925408Z",
+  "host": {"project": "ai-caregivers-for-children", "zone": "asia-east2-a", "vm": "yuban-p1", "id": "2846984358678394356", "stopAt": "2026-11-06T05:33:50.732Z"},
+  "apiAndWorkerImage": "sha256:415960595554f1902660d8b16bb22cd13797ce4a937299332656b2a21b3a2d4c",
+  "unchangedWebImage": "sha256:c09400c5a8c3ca6c78d8cf1cbe4f5eeb6129054bfcd5ff2e82e82a90bec5f9e8",
+  "sourceReleaseReady": false,
+  "writesEnabled": false,
+  "rollbackApi": "sha256:e23de9398331db599f12094491469980d98770dc22abc7f93a6dffdfe8354bb7",
+  "configurationBackup": "/etc/yuban-p1/firestore/compose.env.before-avatar-runtime-652edad",
+  "payload": {"directory": "/home/2NTTY/avatar-runtime-652edad-upload", "archivesBytes": 18453239, "sourceFiles": 491, "nativePackageFiles": 64, "secretsOrFamilyData": false},
+  "candidate": {"formalApiAndWorkerOpenedAndClosed": true, "node": "24.19.0", "sharp": "0.35.5", "libvips": "8.18.7", "nativePackages": ["sharp", "@img/colour", "@img/sharp-linux-x64", "@img/sharp-libvips-linux-x64"], "nativeSource": "Previously verified clean-lock Linux image yuban-avatar-linux:65bc3d9; full licenses retained"},
+  "checks": {"archiveAndPerFileHashes": true, "apiHealthy": true, "workerHealthy": true, "publicHealth": true, "webImageUnchanged": true, "newAvatarIndexesReady": true, "oldBackgroundIndexReady": true, "privateFieldExclusionsReady": true},
+  "scheduler": {"name": "yuban-original-dispatch", "schedule": "* * * * *", "uri": "https://ex-machina.eu.org/internal/task-dispatch", "state": "ENABLED", "postDeploymentAttempt": "2026-10-25T08:38:04.665303Z", "statusCode": 0, "manuallyTriggered": false},
+  "review": "Independent script review found maintenance recovery placement and public health outside rollback protection; both fixed before upload. Main model reviewed the bounded release.",
+  "preservedFailures": ["Local obsolete ADC path rejected before a network request; used existing valid ADC", "Readback helper assumed Web had a Docker healthcheck; API/worker readback succeeded, Web has no healthcheck; activation had already verified exact Web image and public health"],
+  "costAndSideEffects": {"models": 0, "testNotifications": 0, "businessDataMigration": false, "quotaChanged": false, "newDatabasesOrBuckets": 0, "vmRenewed": false},
+  "limitations": ["No avatar public writes enabled", "No additional synthetic Cloud Task submitted; existing OIDC scheduler and formal consumer/native cleanup evidence are combined", "Phone disconnected; device crop/EXIF remains pending", "Native daily backup restore remains deferred"]
+}

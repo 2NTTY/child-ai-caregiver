@@ -9,7 +9,7 @@ import { useTaskKnowledgeMemoryManagement, type MemoryManagementEntity } from ".
 import { mergeById, useTaskKnowledgeRefresh, useTaskKnowledgeRuntime, type TaskKnowledgeEnvironment } from "./task-knowledge-runtime";
 
 export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHistory?: PersonalHistoryOwner | null) {
-  const api = useMemo(() => createMemoryApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
+  const api = useMemo(() => createMemoryApi(env.apiBaseUrl, env.owner.fetcher, env.sharing), [env.apiBaseUrl, env.owner.fetcher, env.sharing]);
   const runtime = useTaskKnowledgeRuntime(env, "memory");
   const [facts, setFacts] = useState<MemoryFactView[]>([]), [summary, setSummary] = useState<MemorySummaryView | null>(null);
   const [topics, setTopics] = useState<MemoryTopicView[]>([]), [topicCursor, setTopicCursor] = useState<string | null>(null);
@@ -157,5 +157,5 @@ export function useTaskKnowledgeMemory(env: TaskKnowledgeEnvironment, personalHi
     loadMoreFacts() { if (cursor) refresh(cursor); }, readFactHistory(id, expectedVersion) { history(id, expectedVersion, false); },
     loadMoreFactHistory(id, expectedVersion) { history(id, expectedVersion, true); },
   } };
-  return { value, refresh: () => refresh(), busy: busy || management.busy, failed, lost: runtime.lost, management, role: env.role, facts: runtime.lost ? [] : facts, topics: runtime.lost ? [] : topics, hasMoreTopics: topicCursor !== null, moreTopics, topicHistory, topicHistories: runtime.lost ? {} : topicHistories };
+  return { value, refresh: () => refresh(), busy: busy || management.busy, failed, lost: runtime.lost, management, role: env.role, sharedMode: env.sharedMode, facts: runtime.lost ? [] : facts, topics: runtime.lost ? [] : topics, hasMoreTopics: topicCursor !== null, moreTopics, topicHistory, topicHistories: runtime.lost ? {} : topicHistories };
 }

@@ -17,6 +17,7 @@ function setup() {
     '../AppDialog': { AppDialog: dialog }, '../components/AppDialog': { AppDialog: dialog },
     '../AppIcon': { AppIcon: 'Icon' }, '../AppScrollView': { AppScrollView: 'ScrollView' },
     './AssistantInputDialog': { AssistantInputDialog: 'InputDialog' },
+    './VoiceCapture': { VoiceCapture: ({ ref, ...props }) => { ref.current = { start() {} }; return { type: 'VoiceCapture', props }; } },
     './ChatComposerInput': { ChatComposerInput: 'Input' },
     './LocalAudioPreview': { LocalAudioPreview: 'AudioPreview' },
     '../photos/PhotoFilePicker': { PhotoFilePicker: ({ renderTrigger, disabled }) => renderTrigger?.({ disabled, reading: false, onPress() {} }) },
@@ -80,8 +81,12 @@ test('suggestions disappear in an established conversation; file/voice cancel pr
   for (const label of ['加入文件', '語音輸入']) {
     s.button(label).props.onPress(); s.h.render();
     const modal = s.h.hosts().find(node => node.type === 'InputDialog');
-    assert.equal(modal.props.kind, label === '加入文件' ? 'file' : 'voice');
-    modal.props.onDismiss(); s.h.render();
+    assert.equal(modal.props.kind, label === '加入文件' ? 'file' : null);
+    if (label === '語音輸入') {
+      const capture = s.h.hosts().find(node => node.type === 'VoiceCapture');
+      assert.equal(capture.props.visible, true); capture.props.onDismiss();
+    } else modal.props.onDismiss();
+    s.h.render();
     assert.equal(s.h.hosts().find(node => node.type === 'InputDialog').props.kind, null);
     assert.equal(s.h.hosts().find(node => node.type === 'Input').props.value, '保留合成草稿');
   }

@@ -4,11 +4,15 @@ import type { FamilyDocumentStore } from "./family-document-store.ts";
 import { renderFamilyDocumentPdf } from "./family-document-pdf.ts";
 import { FamilyError } from "./family-access.ts";
 import { apiError, jsonResponse } from "./workspace-api.ts";
+import { sharedAccessBasisSchema, sharedSelectionSchema, type SharedSelection } from "../src/shared/sharing.ts";
+import { FirestoreDomainError } from "./firestore-domain-data.ts";
+import { FirestoreAuthorityError } from "./firestore-authority.ts";
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const route = new RegExp("^/api/children/(" + uuid + ")/documents(?:/(" + uuid + ")(?:/(actions|pdf|content|versions))?)?$", "i");
-const createSchema = z.object({ opId: z.uuid(), request: documentRequestSchema }).strict();
+const createSchema = z.object({ opId: z.uuid(), request: documentRequestSchema, expectedBasis:sharedAccessBasisSchema.optional() }).strict();
 const changeSchema = z.object({ opId: z.uuid(), change: documentChangeSchema }).strict();
-export async function handleFamilyDocumentRequest(request: Request, userId: string | null, store: FamilyDocumentStore,
+export type SharedFamilyDocumentPort = FamilyDocumentStore & { forSharedSpace?(selection: SharedSelection): FamilyDocumentStore };
+export async function handleFamilyDocumentRequest(request: Request, userId: string | null, store: SharedFamilyDocumentPort,
   isCurrentUser: (userId: string) => Promise<boolean>): Promise<Response> {
   if (!userId) return apiError("unauthorized", "請先登入。", 401);
   const expected = request.headers.get("x-expected-user-id");
@@ -18,6 +22,14 @@ export async function handleFamilyDocumentRequest(request: Request, userId: stri
   if (!match) return apiError("not_found", "找不到文件。", 404);
   try {
     const url = new URL(request.url);
+    const rootStore=store;
+    let selection:SharedSelection|undefined;
+    if (url.searchParams.has('spaceId')) {
+      selection = sharedSelectionSchema.parse({ spaceId: url.searchParams.get('spaceId') });
+      if (url.searchParams.getAll('spaceId').length !== 1) return apiError('invalid_input', '請核對共享空間。', 400);
+      if (!store.forSharedSpace) return apiError('shared_documents_unavailable', '這個服務尚未接通共享文件。', 503);
+      store = store.forSharedSpace(selection);
+    }
     const childId = match[1].toLowerCase(), id = match[2]?.toLowerCase(), action = match[3];
     if (request.method === "GET" && (action === "content" || action === "versions")) {
       const page = action === "content" ? await store.readContent(userId, childId, id!, documentContentQuerySchema.parse({
@@ -52,10 +64,16 @@ export async function handleFamilyDocumentRequest(request: Request, userId: stri
         "content-disposition": 'attachment; filename="family-document.pdf"' } });
     }
     const parsed = id ? changeSchema.parse(raw) : createSchema.parse(raw);
+    if ('expectedBasis' in parsed && parsed.expectedBasis) {
+      if (!selection || !rootStore.forSharedSpace) return apiError('invalid_input','共享版本須指定共享空間。',400);
+      store=rootStore.forSharedSpace({...selection,expectedBasis:parsed.expectedBasis});
+    }
     const item = "change" in parsed ? await store.change(userId, childId, id!, parsed.change, parsed.opId)
       : await store.create(userId, childId, parsed.request, parsed.opId);
     return item && await isCurrentUser(userId) ? jsonResponse({ item }) : apiError("not_found", "文件或權限已改變。", 404);
   } catch (error) {
+    if ((error instanceof FirestoreDomainError || error instanceof FirestoreAuthorityError) && [400, 403, 404, 409].includes(error.status))
+      return apiError(error.code, '文件版本或共享權限已改變，請重新讀取。', error.status);
     if (error instanceof FamilyError) return apiError(error.code, error.status === 409 ? "文件版本、來源或原操作已改變，請重新核對。" : "請核對文件與權限。", error.status);
     if (error instanceof z.ZodError) return apiError("invalid_input", "請核對文件輸入。", 400);
     return apiError("document_unavailable", "未能確認結果，請先重新讀取原文件，再重試原操作。", 503);

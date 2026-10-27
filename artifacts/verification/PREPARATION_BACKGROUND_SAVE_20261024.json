@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-24",
+  "base": "5ec3958c64050b90d29565c531f835ded2f8f483",
+  "branch": "codex/preparation-background-checks",
+  "status": "implemented; deployment and device behavior pending",
+  "behavior": [
+    "Immediate scope-local checkbox intent; 3 seconds after the last click batches last values",
+    "No-op reverts skipped; writes in flight accept subsequent clicks",
+    "Same-child route, reader close and selection changes flush without awaiting save",
+    "One atomic version and original receipt per at-most-128-target batch",
+    "Receipt updates the authoritative owner without a self-triggered list reread; other owners still invalidate",
+    "Conflict and unknown pause automatic writes; original unknown operation is rechecked and replayed unchanged",
+    "Offline pending intent requires recheck and explicit reapplication; scope cleanup retains existing guards"
+  ],
+  "checks": [
+    {
+      "method": "Node 24.19 --test frontend/scripts/preparation-background-save.test.mjs",
+      "result": "1 passed",
+      "scope": "real document API client/owner/refresh signal; synthetic HTTP, hooks and timers; batching, in-flight reversal, flush, original unknown recovery, conflict, reconnect and scope fence"
+    },
+    {
+      "method": "Node 24.19 --test --test-name-pattern=\"batch checklist updates\" tests/firestore-family-documents.test.ts",
+      "executor": "Sol; main reviewed diff and assertions",
+      "result": "1 passed",
+      "scope": "Firestore adapter with transaction fixture; atomic invalid target rejection, batch receipt replay after lost commit reply, stale version and legacy single check"
+    },
+    {
+      "method": "TypeScript --ignoreConfig --noEmit --strict --skipLibCheck --target es2022 --module esnext --moduleResolution bundler --allowImportingTsExtensions frontend/src/production/preparation-check-buffer.ts src/shared/family-documents.ts",
+      "result": "passed; only these roots"
+    },
+    {
+      "method": "Web and Android Expo exports",
+      "result": "passed for Web and Android; local exports only, no upload"
+    },
+    {
+      "method": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "correctedChecks": [
+    "The reconnect fixture initially attempted another click before a queued automatic refresh settled; the same missing-timer assertion persisted after only the general settle helper changed. A bounded state inspection showed busy=true from that read. The fixture now also awaits refresh after explicit discard; the final connected scenario passed.",
+    "Initial narrow tsc invocation required --ignoreConfig with the installed compiler; corrected invocation passed."
+  ],
+  "limitations": [
+    "Synthetic hooks are not device scheduling or browser geometry evidence",
+    "No full repository typecheck, full suite, real database, model, notification or phone test",
+    "No server-side draft store or browser business database",
+    "Abrupt process termination before a request is sent can lose unsaved local intent"
+  ]
+}

@@ -124,7 +124,7 @@ function sourceOwner(role = "owner") {
   };
   const owner = harness("src/production/usePhotoInputSources.ts", "usePhotoInputSources", [], {
     "../../../src/client/shared-input-api": {createSharedInputApi: () => api, SharedInputApiError: ApiError},
-    "./useDomainEnvironment": {useDomainEnvironment: () => env, useDomainWriteGuard: (dirty, pending) => {
+    "./useDomainEnvironment": {forSharedModule:env=>env,useDomainEnvironment: () => env, useDomainWriteGuard: (dirty, pending) => {
       counters.guard.push([dirty, pending]); nav.value.register("source", {dirty: !!dirty, pending, scope: "child"});
     }},
     "./ProductionProvider": {useProduction: () => ({chatDraft: "", setChatDraft() {}, openAgentDraft() {}})},
@@ -174,13 +174,13 @@ test("switching sources uses the real dirty guard: cancel preserves drafts, appr
   let value = dirtySource(f, await openSource(f)); const draft = value.model.draft, management = value.model.managementDraft, formKey = value.model.formKey;
   sourceRow(value, 1).props.onPress(); assert.equal(f.state.reads, 1);
   f.nav.press("繼續編輯"); value = f.owner.render(); assert.equal(value.model.draft, draft); assert.equal(value.model.managementDraft, management);
-  sourceRow(value, 1).props.onPress(); f.nav.press("捨棄草稿並離開"); value = await f.owner.settle();
+  sourceRow(value, 1).props.onPress(); f.nav.press("捨棄並離開"); value = await f.owner.settle();
   assert.equal(value.model.selected.id, "source-b"); assert.equal(value.model.draft.text, ""); assert.equal(value.model.managementDraft.dirty, false); assert.equal(value.model.formKey, formKey + 1); assert.equal(f.state.reads, 2); f.owner.unmount();
 });
 test("late source-switch approval cannot read after current child or identity is invalidated", async () => {
   const f = sourceOwner(); f.state.items.push({...input, id: "source-b"});
   const value = dirtySource(f, await openSource(f)); sourceRow(value, 1).props.onPress(); f.counters.active = false;
-  f.nav.press("捨棄草稿並離開"); await f.owner.settle(); assert.equal(f.state.reads, 1); assert.equal(f.counters.invalidations, 0); f.owner.unmount();
+  f.nav.press("捨棄並離開"); await f.owner.settle(); assert.equal(f.state.reads, 1); assert.equal(f.counters.invalidations, 0); f.owner.unmount();
 });
 test("source unknown processing stays locked and cannot switch to another row", async () => {
   const f = sourceOwner(); f.state.items[0] = {...input, extraction: {...input.extraction, state: "unknown", runId: "same-run"}}; f.state.items.push({...input, id: "source-b"});
@@ -217,7 +217,7 @@ function photoOwner(kind = "reserve") {
   };
   const owner = harness("src/production/PhotoInputDomains.tsx", "useProductionPhotos", [], {
     "../../../src/client/photo-api": {createPhotoApi: () => api, PhotoApiError: ApiError},
-    "./useDomainEnvironment": {useDomainEnvironment: () => env, useDomainWriteGuard: (...value) => counters.guard.push(value)},
+    "./useDomainEnvironment": {forSharedModule:env=>env,useDomainEnvironment: () => env, useDomainWriteGuard: (...value) => counters.guard.push(value)},
     "./usePhotoInputSources": {usePhotoInputSources: () => ({})}, __path: () => "/photos",
   });
   return {owner, state, api, env, counters};

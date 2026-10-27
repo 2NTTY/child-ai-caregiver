@@ -1,0 +1,96 @@
+{
+  "source": "015deb8e2d7663387b091fbd50d4ddbc79e38de6",
+  "date": "2026-10-24",
+  "authorization": "After the payload-specific transfer was rejected, the user answered the precise release request with permission to proceed without repeated questions for equivalent deliveries. The same payload and destinations were approved on retry.",
+  "vm": {
+    "source": "015deb8e2d7663387b091fbd50d4ddbc79e38de6",
+    "state": "deployed",
+    "at": "2026-10-24T13:31:29.946385+00:00",
+    "apiImage": "sha256:f83cb541824103c79ce6630d8cb6d11fc6bd8db202f89ce21568f2b0a74cf862",
+    "webImage": "sha256:4c665eb4aec162c547e3e504b062cea299f6877b75c1c13a2d6c1998d80ad980",
+    "rollbackApi": "sha256:c75454d8660a8ecf643a99d363f94838090f163ee7bd206322ccd1a5cba80c3f",
+    "rollbackWeb": "sha256:6d4bff9a8a1dda021e9538721367bf0f42063d52c2764a5f4fc30a640c079dd0",
+    "configurationBackups": [
+      "/etc/yuban-p1/firestore/compose.env.before-preparation-015deb8",
+      "/etc/yuban-p1/firestore/compose.yaml.before-preparation-015deb8"
+    ],
+    "avatarRelease": false,
+    "modelCalls": 0,
+    "notificationsSentByAcceptance": 0,
+    "dataMigration": false,
+    "payloads": {
+      "code.tar.gz": {
+        "bytes": 16831,
+        "sha256": "9da51abb418dc93ec46cfa450585d4e832fd6f00d92415840fa003192d2cb875",
+        "files": 3
+      },
+      "web.tar.gz": {
+        "bytes": 4728733,
+        "sha256": "ba18e2981224b4bfada067ce987b913ba980cab3c894dc4f19c94e20040a0669",
+        "files": 135
+      }
+    },
+    "publicCheck": {
+      "source": "015deb8e2d7663387b091fbd50d4ddbc79e38de6",
+      "at": "2026-10-24T13:32:19.054Z",
+      "homeStatus": 200,
+      "indexSha256": "977fd9bd702dd803e9a07c6a78110ab4bc26bc77f1e40f5410aaf99dda652294",
+      "apiHealthStatus": 200
+    },
+    "candidateCheck": "All payload hashes; no-network API import and check_items schema parse; Web index hash; existing image identities. Passed.",
+    "activationCheck": "No active Agent leases; compatible API/worker healthy before Web replacement; all expected image IDs and public hash/health passed.",
+    "availableBytesBeforeBuild": 11350372352
+  },
+  "android": {
+    "source": "015deb8e2d7663387b091fbd50d4ddbc79e38de6",
+    "runtime": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+    "channel": "preview",
+    "startedAt": "2026-10-24T13:37:31.366Z",
+    "state": "published",
+    "finishedAt": "2026-10-24T13:37:42.525Z",
+    "exitCode": 0,
+    "updates": [
+      {
+        "id": "01a16e21-ab91-7c27-9da3-371bac70b12e",
+        "createdAt": "2026-10-24T13:37:42.801Z",
+        "group": "a46b49b0-a5ef-4ead-8d24-6a61236a85b9",
+        "branch": "preview",
+        "message": "Preparation background saving 015deb8",
+        "runtimeVersion": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+        "platform": "android",
+        "manifestPermalink": "https://u.expo.dev/update/01a16e21-ab91-7c27-9da3-371bac70b12e",
+        "isRollBackToEmbedded": false,
+        "gitCommitHash": "015deb8e2d7663387b091fbd50d4ddbc79e38de6"
+      }
+    ],
+    "files": 31,
+    "bytes": 13697746,
+    "initialAttempt": {
+      "source": "015deb8e2d7663387b091fbd50d4ddbc79e38de6",
+      "runtime": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+      "channel": "preview",
+      "startedAt": "2026-10-24T13:32:33.275Z",
+      "state": "unknown",
+      "finishedAt": "2026-10-24T13:35:41.886Z",
+      "exitCode": 1,
+      "failure": "EAS asset processing timed out before publishUpdateGroupAsync; read-only preview lookup showed the original 382d217 group still latest. Same immutable export recovered once; no rebuild or duplicate group."
+    },
+    "deviceApplication": "Not verified; no forced restart with potentially unsent drafts"
+  },
+  "implementationEvidence": "artifacts/verification/PREPARATION_BACKGROUND_SAVE_20261024.json",
+  "boundaries": {
+    "newApk": false,
+    "migration": false,
+    "models": 0,
+    "notifications": 0,
+    "quotaChanged": false,
+    "avatarEnabled": false,
+    "vmExpiryChanged": false
+  },
+  "pending": [
+    "Device verification of the published checkbox behavior",
+    "Photos through chat",
+    "Avatar lifecycle gate",
+    "Launcher/splash brand changes with the next necessary APK"
+  ]
+}

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { isIP } from 'node:net';
 // EAS public identifiers are configuration, never credentials.
 export default ({ config }) => {
   const projectId = process.env.EAS_PROJECT_ID?.trim() || config.extra?.eas?.projectId;
@@ -14,8 +15,40 @@ export default ({ config }) => {
       throw new Error("Cloud builds require the approved HTTPS API endpoint");
     }
   }
-  // File-type EAS environment value; keep the native Firebase descriptor outside Git.
-  const googleServicesFile = process.env.ANDROID_GOOGLE_SERVICES_FILE?.trim();
+  // The profile also identifies local EAS config evaluation before the build platform is set.
+  const isIos = process.env.EAS_BUILD_PLATFORM === "ios"
+    || !process.env.EAS_BUILD_PLATFORM && process.env.EAS_BUILD_PROFILE === "ios-preview";
+  const isAndroid = process.env.EAS_BUILD_PLATFORM === 'android'
+    || !process.env.EAS_BUILD_PLATFORM && !!process.env.EAS_BUILD_PROFILE && !isIos;
+  const providers = [...new Set((process.env.EXPO_PUBLIC_AUTH_PROVIDERS ?? '').split(',').map(value => value.trim()).filter(Boolean))];
+  if (providers.some(provider => !['google.com', 'apple.com'].includes(provider))) throw new Error('Unknown authentication provider');
+  const plugins = [...(config.plugins ?? [])], ios = { ...config.ios };
+  if (providers.includes('google.com') && (isIos || isAndroid)) {
+    const oauthId = /^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/;
+    if (!oauthId.test(process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '')) throw new Error('Configure the Google Web client ID');
+    if (isIos) {
+      const clientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '';
+      if (!oauthId.test(clientId)) throw new Error('Configure the Google iOS client ID');
+      // Firebase JS remains the authority; only the native Google callback scheme is needed here.
+      plugins.push(['@react-native-google-signin/google-signin', {
+        iosUrlScheme: 'com.googleusercontent.apps.' + clientId.slice(0, -'.apps.googleusercontent.com'.length),
+      }]);
+    }
+  }
+  if (providers.includes('apple.com')) {
+    if (isIos) ios.entitlements = { ...ios.entitlements, 'com.apple.developer.applesignin': ['Default'] };
+    if (isAndroid) {
+      const service = process.env.EXPO_PUBLIC_APPLE_SERVICE_ID ?? '';
+      if (service.length > 200 || !/^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+$/.test(service)) throw new Error('Configure the Apple Services ID');
+      let redirect;
+      try { redirect = new URL(process.env.EXPO_PUBLIC_APPLE_REDIRECT_URI ?? ''); } catch { /* Checked below. */ }
+      if (!redirect || redirect.protocol !== 'https:' || redirect.username || redirect.password || redirect.search || redirect.hash
+        || !redirect.hostname.includes('.') || redirect.hostname.endsWith('.localhost') || isIP(redirect.hostname.replace(/^\[|\]$/g, '')))
+        throw new Error('Configure an approved HTTPS Apple Android redirect');
+    }
+  }
+  // iOS uses Firebase JS authentication and must not read the Android-only descriptor.
+  const googleServicesFile = isIos ? undefined : process.env.ANDROID_GOOGLE_SERVICES_FILE?.trim();
   if (googleServicesFile) {
     let service;
     try { service = JSON.parse(readFileSync(googleServicesFile, "utf8")); }
@@ -25,9 +58,9 @@ export default ({ config }) => {
       throw new Error("Android Firebase descriptor does not match the approved project and application");
     }
   }
-  if (process.env.EAS_BUILD_PROFILE && process.env.EAS_BUILD_PLATFORM !== "ios" && !googleServicesFile)
+  if (process.env.EAS_BUILD_PROFILE && !isIos && !googleServicesFile)
     throw new Error("Configure the approved Android Firebase descriptor before building native notifications");
-  return { ...config, android: { ...config.android, ...(googleServicesFile ? { googleServicesFile } : {}) }, owner: "2ntty",
+  return { ...config, plugins, ios, android: { ...config.android, ...(googleServicesFile ? { googleServicesFile } : {}) }, owner: "2ntty",
     extra: { ...config.extra, ...(projectId ? { eas: { projectId } } : {}) },
     updates: projectId ? { url: `https://u.expo.dev/${projectId}`, checkAutomatically: "ON_LOAD", fallbackToCacheTimeout: 0 }
       : { enabled: false } };

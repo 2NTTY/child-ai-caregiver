@@ -109,9 +109,9 @@ test('profile details retain metadata but no history entry, reset on child chang
 test('profile editing keeps original confirmation, discard guard, and post-close exact trigger focus', () => {
   const s = scenario(); s.focusTarget(); s.click('編輯檔案');
   const form = s.h.hosts().find(x => x.type === 'ProfileForm'); assert.ok(form); form.props.onEdit(); s.render();
-  s.click('關閉'); assert.ok(s.button('捨棄草稿並離開')); s.click('繼續編輯');
+  s.click('關閉'); assert.ok(s.button('捨棄並離開')); s.click('繼續編輯');
   assert.ok(s.h.hosts().find(x => x.type === 'ProfileForm')); assert.equal(s.counts().discarded, 0);
-  s.click('關閉'); s.click('捨棄草稿並離開'); assert.equal(s.counts().discarded, 1);
+  s.click('關閉'); s.click('捨棄並離開'); assert.equal(s.counts().discarded, 1);
   s.web(); s.h.node('manual-form-dialog').props.onClosed(); assert.equal(s.counts().focus, 1);
   s.click('編輯檔案'); s.click('永久刪除檔案及歷史'); assert.equal(s.counts().reviewed, 1); assert.equal(s.counts().submits, 0);
   assert.ok(s.button('確認永久刪除檔案及歷史')); s.click('取消刪除'); assert.equal(s.button('確認永久刪除檔案及歷史'), undefined);
@@ -119,10 +119,10 @@ test('profile editing keeps original confirmation, discard guard, and post-close
 
 test('unknown blocks close and writes, but preserves existing recovery and non-mutating details', () => {
   const s = scenario(); s.click('編輯檔案'); s.pending(true); s.patch({ operation: { state: 'unknown', message: '原操作未確認', reference: 'original-op' } });
-  s.click('關閉'); assert.ok(s.button('留在此頁查核')); assert.equal(s.button('捨棄草稿並離開'), undefined);
+  s.click('關閉'); assert.ok(s.button('留在此頁')); assert.equal(s.button('捨棄並離開'), undefined);
   assert.equal(s.h.hosts().find(x => x.type === 'ProfileForm').props.editable, false);
   assert.equal(s.button('重新讀取檔案'), undefined); assert.equal(s.counts().discarded, 0);
-  s.click('留在此頁查核'); assert.ok(s.h.hosts().find(x => x.type === 'ProfileForm'));
+  s.click('留在此頁'); assert.ok(s.h.hosts().find(x => x.type === 'ProfileForm'));
 });
 
 test('normal profile reading has no persistent refresh, while freshness recovery keeps its original callback and lock', () => {

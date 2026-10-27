@@ -6,7 +6,7 @@ import { parseModelSettingsCommand } from './model-settings.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { firestoreDomainHash } from './firestore-domain-data.ts';
-import { modelSettingsOperationSchema, personalAdvancedShape, personalModelIdSchema, personalProviderSchema, personalBaseUrlSchema } from '../src/shared/model-settings-schema.ts';
+import { modelSettingsOperationSchema, personalAdvancedShape, personalEmbeddingShape, personalModelIdSchema, personalProviderSchema, personalBaseUrlSchema } from '../src/shared/model-settings-schema.ts';
 
 const savedSchema = z.object({
   limitPolicyVersion: z.literal(2).optional(),
@@ -17,7 +17,7 @@ const savedSchema = z.object({
   maxQueryEmbeddings: z.number().int().min(PERSONAL_RUN_LIMITS.queryEmbeddings.min).max(PERSONAL_RUN_LIMITS.queryEmbeddings.max),
   provider: personalProviderSchema.optional(), model: personalModelIdSchema.optional(), ...personalAdvancedShape,
   apiKey: z.string().min(1).max(512).regex(/^[\x21-\x7e]+$/u).nullable(),
-  baseUrl: personalBaseUrlSchema.optional(),
+  baseUrl: personalBaseUrlSchema.optional(), ...personalEmbeddingShape,
   embeddingApiKey: z.string().min(1).max(512).regex(/^[\x21-\x7e]+$/u).nullable().optional(),
   updatedAt: z.iso.datetime({ offset: true }),
 }).strict();
@@ -31,6 +31,7 @@ function publicSettings(value: Saved | null): ModelSettings {
     version: value?.version ?? 0, mode: value?.mode ?? 'platform', provider: value?.provider ?? 'gemini', model: value?.model ?? PERSONAL_MODEL,
     keyConfigured: value?.apiKey != null, backgroundEnabled: value?.backgroundEnabled ?? false,
     ...(value?.baseUrl ? { baseUrl: value.baseUrl } : {}),
+    ...Object.fromEntries(Object.keys(personalEmbeddingShape).filter(key => value && Object.hasOwn(value, key)).map(key => [key, value![key as keyof Saved]])),
     ...(value?.embeddingApiKey !== undefined ? { embeddingKeyConfigured: value.embeddingApiKey !== null } : {}),
     dailyLimit: value?.dailyLimit ?? PERSONAL_DAILY_LIMIT.default, maxModelCalls: value?.maxModelCalls ?? PERSONAL_RUN_LIMITS.modelCalls.default,
     maxQueryEmbeddings: value?.maxQueryEmbeddings ?? PERSONAL_RUN_LIMITS.queryEmbeddings.default, ...advanced(value), updatedAt: value?.updatedAt ?? null };
@@ -78,6 +79,7 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
         }
         const current = await read(binding);
         // Check in the same write transaction; an extra pre-read would consume a lost-response recovery attempt.
+        if (client && (current?.embeddingProvider === 'vertex' || command.embeddingProvider === 'vertex')) throw new ModelSettingsError('client_update_required', 409);
         if (client?.maxSettingsVersion === 2 && (current?.provider === 'openai-compatible' || current?.baseUrl || current?.embeddingApiKey))
           throw new ModelSettingsError('client_update_required', 409);
         if ((current?.version ?? 0) !== command.expectedVersion) throw new ModelSettingsError('version_conflict', 409);
@@ -89,12 +91,24 @@ export function createFirestoreModelSettings(options: FirestoreDomainOptions): M
         if (baseUrl !== current?.baseUrl && provider === 'openai-compatible' && apiKey && !command.apiKey)
           throw new ModelSettingsError('key_required');
         if (command.mode === 'personal' && !apiKey) throw new ModelSettingsError('key_required');
+        const embeddingProvider = command.embeddingProvider ?? current?.embeddingProvider ?? 'gemini';
+        const embeddingProject = embeddingProvider === 'vertex' ? command.embeddingProject ?? current?.embeddingProject : undefined;
+        const embeddingLocation = embeddingProvider === 'vertex' ? command.embeddingLocation ?? current?.embeddingLocation : undefined;
+        if (embeddingProvider === 'vertex' && (!embeddingProject || !embeddingLocation)
+          || embeddingProvider !== 'vertex' && (command.embeddingProject !== undefined || command.embeddingLocation !== undefined))
+          throw new ModelSettingsError('invalid_input');
+        const embeddingChanged = embeddingProvider !== (current?.embeddingProvider ?? 'gemini')
+          || embeddingProject !== current?.embeddingProject || embeddingLocation !== current?.embeddingLocation;
+        if (embeddingChanged && !(command.removeKey || command.removeEmbeddingKey) && (!command.embeddingApiKey || !command.consent))
+          throw new ModelSettingsError('key_required');
         const saved = savedSchema.parse({ version: command.expectedVersion + 1, mode: command.mode, backgroundEnabled: command.backgroundEnabled,
           dailyLimit: command.dailyLimit, maxModelCalls: command.maxModelCalls, maxQueryEmbeddings: command.maxQueryEmbeddings,
           ...(command.opId || current?.limitPolicyVersion ? { limitPolicyVersion: 2 } : {}),
           provider, model, ...advanced(current), ...Object.fromEntries(Object.keys(personalAdvancedShape)
             .filter(key => Object.hasOwn(command, key)).map(key => [key, command[key as keyof typeof command]])),
           apiKey, ...(baseUrl ? { baseUrl } : {}),
+          ...(command.embeddingProvider !== undefined || current?.embeddingProvider !== undefined ? { embeddingProvider } : {}),
+          ...(embeddingProvider === 'vertex' ? { embeddingProject, embeddingLocation } : {}),
           ...(command.removeKey || command.removeEmbeddingKey || command.embeddingApiKey || current?.embeddingApiKey !== undefined
             ? { embeddingApiKey: command.removeKey || command.removeEmbeddingKey ? null : command.embeddingApiKey ?? current?.embeddingApiKey ?? null } : {}),
           updatedAt: new Date().toISOString() });

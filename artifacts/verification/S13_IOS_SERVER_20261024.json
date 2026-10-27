@@ -1,0 +1,22 @@
+{
+  "package": "S13-W02 iOS notification server",
+  "date": "2026-10-24",
+  "baseline": "405f3eda6956a2d3baebc7bca1a891b8dbcdbf51",
+  "branch": "codex/s13-ios-notification-server",
+  "environment": { "os": "Windows", "node": "24.19.0", "notifications": "57.0.21" },
+  "change": "Optional APNs sender, session-bound v2 subscriptions and original receipts, shared care/test delivery, local non-sending inbox, compatible export and revoked restore. Android v1 keeps its strict contract.",
+  "checks": [
+    { "command": "node --test tests/apns-push-gateway.test.ts", "passed": 1, "failed": 0, "executor": "Bounded Sol task; primary reviewed source and evidence", "coverage": "Synthetic ES256 key, fixed APNs destination/topic/payload, complete acknowledgement, invalid token response, revocation, cancellation, total deadline, post-issue unknown and no resend" },
+    { "command": "node --test tests/firestore-native-push-ios.test.ts", "passed": 1, "failed": 0, "coverage": "Formal API/online receipt/store/worker; lost response lookup, case-normalized token, device identity and account isolation, FCM-independent APNs eligibility, duplicate/unknown delivery, configuration mismatch, token-free export and revoked restore" },
+    { "command": "node --test tests/native-push-gateway.test.ts tests/firestore-native-push.test.ts", "passed": 2, "failed": 0, "coverage": "Existing Android FCM adapter and API/receipt/device/restore path" },
+    { "command": "tsc --ignoreConfig --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2023 --allowImportingTsExtensions --skipLibCheck --types node server/apns-push-gateway.ts", "exitCode": 0, "coverage": "APNs adapter and its type dependencies only; not full server typecheck" }
+  ],
+  "initialFailures": [
+    { "check": "iOS store flow", "result": "invalid_document before first send", "cause": "Test enumerated all background work and decrypted a child-scoped job with the account scope", "correction": "Select the account's actual workspace/epoch/child/user tags before decrypting" },
+    { "check": "First scoped test correction", "result": "Same invalid_document", "cause": "Test incorrectly assumed a single scopeTag field; the fixture compared absent fields", "correction": "Use every real tag returned by FirestoreDomainData.tags; subsequent same-flow check passed" }
+  ],
+  "review": "Primary reviewed shared schemas, registration/receipts, selected care/test sender, runtime/local composition, token-free export, restore compatibility and APNs protocol/cancellation. No frontend or collaborator Agent files modified.",
+  "substituted": ["HTTP/2 connection and response events", "Serial in-memory Firestore fixture", "Firebase identity/session provider", "Notification delivery results"],
+  "pending": ["iOS client/settings v2 wiring", "Apple team and protected APNs credentials", "Compatible API/worker deployment", "Native Firestore and real APNs delivery", "iPhone notification permission, tap and care-task completion stop", "Signed build/TestFlight"],
+  "notPerformed": ["Full suite/typecheck/build", "Cloud resources or deployment", "Model calls", "Actual notification", "Computer Use", "iPhone acceptance"]
+}

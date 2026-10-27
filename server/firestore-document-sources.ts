@@ -26,6 +26,16 @@ export interface FirestoreDocumentReport extends ReportAccumulator { pageAfter?:
 /** All reads use the caller's transaction and scope; there are no nested authority transactions. */
 export function createFirestoreDocumentSources(options: FirestoreDomainOptions & { care: FirestoreCareStore; memory: FirestoreMemoryStore }) {
   const data = new FirestoreDomainData(options), pageSize = 25;
+  const sourceModule = { profile: 'profile', record: 'care', fact: 'memory', task: 'tasks', concern: 'concerns' } as const;
+  function sourceBinding(b: Binding, kind: keyof typeof sourceModule, published = false): Binding | null {
+    if (!b.sharedAccess) return b;
+    const access = b.sharedAccess, module = sourceModule[kind];
+    if (access.module !== 'documents') domainReject('shared_module_scope', 403);
+    if (!published && !(access.modules ?? [access.module]).includes(module)) return null;
+    // Published excerpts are already part of the shared document. This internal read only checks
+    // their currentness; it is never a source-list endpoint or a capability for writes.
+    return { ...b, sharedAccess: { ...access, module, mode: 'read' } };
+  }
   function query(b: Binding, suffix: string): Query {
     let q: Query = data.collection(suffix);
     for (const [key, value] of Object.entries(data.tags(b.scope))) q = q.where(key, '==', value);
@@ -63,17 +73,24 @@ export function createFirestoreDocumentSources(options: FirestoreDomainOptions &
     return value;
   }
   async function profile(b: Binding) {
-    const value = await options.care.readProfile(b);
+    const scoped = sourceBinding(b, 'profile');
+    if (!scoped) return emptyFamilyDocumentSources(b.scope.childId).profile;
+    const value = await options.care.readProfile(scoped);
     return { ...value, data: profileIsApplicable(value.data) ? value.data : null };
   }
   const profileSource = (value: Awaited<ReturnType<typeof profile>>): DocumentSource => ({ id: 'profile:' + value.childId,
     resourceId: value.childId, kind: 'profile', version: value.version, label: '已確認孩子資料', text: profileText(value), at: null });
-  async function reference(b: Binding, source: Pick<DocumentSource, 'kind' | 'id' | 'resourceId'>): Promise<DocumentSource | null> {
+  async function reference(b: Binding, source: Pick<DocumentSource, 'kind' | 'id' | 'resourceId'>, published = false): Promise<DocumentSource | null> {
+    const scoped = sourceBinding(b, source.kind, published); if (!scoped) return null;
     if (source.kind !== 'concern' && source.id !== source.kind + ':' + source.resourceId) return null;
-    if (source.kind === 'profile') return source.resourceId === b.scope.childId ? profileSource(await profile(b)) : null;
-    if (source.kind === 'record') { const value = await options.care.readRecord(b, source.resourceId); return value ? recordDocumentSource(value) : null; }
+    if (source.kind === 'profile') {
+      if (source.resourceId !== b.scope.childId) return null;
+      const value = await options.care.readProfile(scoped);
+      return profileSource({ ...value, data: profileIsApplicable(value.data) ? value.data : null });
+    }
+    if (source.kind === 'record') { const value = await options.care.readRecord(scoped, source.resourceId); return value ? recordDocumentSource(value) : null; }
     if (source.kind === 'fact') {
-      const value = await options.memory.readFact(b, source.resourceId);
+      const value = await options.memory.readFact(scoped, source.resourceId);
       return value?.visibility === 'family' && value.status === 'confirmed' && value.applicable && value.sourceState === 'current'
         ? factDocumentSource(value) : null;
     }
@@ -88,25 +105,33 @@ export function createFirestoreDocumentSources(options: FirestoreDomainOptions &
   async function supplement(b: Binding, loaded: FamilyDocumentSources, snapshots: DocumentSnapshot[]) {
     loaded.referencedSources ??= new Map(); loaded.checkedReferences ??= new Set();
     const known = new Set(loaded.entries.map(source => source.id));
-    for (const source of new Map(snapshots.flatMap(snapshot => snapshot.sources).map(source => [source.id, source])).values()) {
+    const published = snapshots.flatMap(snapshot => snapshot.sources);
+    for (const source of new Map(published.map(source => [source.id, source])).values()) {
       if (known.has(source.id) || loaded.checkedReferences.has(source.id)) continue;
+      const current = await reference(b, source, true);
+      // Validation must not become a way to rebind an edit to unpublished private text.
+      // Keep only an exact excerpt already disclosed in these snapshots, unless the
+      // source module itself is shared. An unmatched check may be retried for another version.
+      if (!sourceBinding(b, source.kind) && (!current || !published.some(value => value.id === current.id
+        && value.version === current.version && value.text === current.text))) continue;
       loaded.checkedReferences.add(source.id);
-      const current = await reference(b, source); if (current) loaded.referencedSources.set(source.id, current);
+      if (current) loaded.referencedSources.set(source.id, current);
     }
   }
   async function load(b: Binding): Promise<FamilyDocumentSources> {
     const loaded = emptyFamilyDocumentSources(b.scope.childId); loaded.profile = await profile(b); loaded.limited = false;
     loaded.sourceRevision = (await readContextBasis(data, b)).basis;
     const add = (source: DocumentSource, domain: ReportInput['domain']) => { loaded.entries.push(source); loaded.domains.set(source.id, domain); };
-    add(profileSource(loaded.profile), 'profile');
+    if (sourceBinding(b, 'profile')) add(profileSource(loaded.profile), 'profile'); else loaded.limited = true;
     for (const [kind, suffix, field, live] of [['record', 'care_records', 'entityId', true], ['fact', 'memory_facts', 'entityId', true],
       ['task', 'tasks', 'taskId', false], ['concern', 'concerns', 'concernId', false]] as const) {
+      const sourceScope = sourceBinding(b, kind); if (!sourceScope) { loaded.limited = true; continue; }
       const result = await page(b, suffix, field, undefined, live); loaded.limited ||= result.next !== null;
       for (const id of result.ids) {
         const source = await reference(b, { kind, id: kind + ':' + id, resourceId: id }); if (!source) continue;
         add(source, kind === 'fact' ? 'profile' : kind === 'concern' ? 'concerns' : 'changes_support');
         if (kind === 'record') {
-          const record = await options.care.readRecord(b, id);
+          const record = await options.care.readRecord(sourceScope, id);
           if (record && ['feeding', 'sleep', 'diaper', 'temperature', 'measurement'].includes(record.details.kind)) loaded.domains.set(source.id, 'body_life');
           if (record && /[?？]\s*$/u.test(record.text)) loaded.questions.add(source.id);
         }
@@ -125,6 +150,12 @@ export function createFirestoreDocumentSources(options: FirestoreDomainOptions &
   }
   /** One bounded source page. Counts accumulate over all pages; wording stays bounded separately. */
   async function advance(b: Binding, state: FirestoreDocumentReport) {
+    const kind = { profile: 'profile', records: 'record', facts: 'fact', tasks: 'task', concerns: 'concern', done: 'profile' } as const;
+    if (state.stage !== 'done' && !sourceBinding(b, kind[state.stage])) {
+      if (state.stage === 'profile') state.profile = emptyFamilyDocumentSources(b.scope.childId).profile;
+      state.stage = { profile: 'records', records: 'facts', facts: 'tasks', tasks: 'concerns', concerns: 'done' }[state.stage] as FirestoreDocumentReport['stage'];
+      delete state.pageAfter; return;
+    }
     if (state.stage === 'profile') {
       state.profile = await profile(b);
       accumulateReportInputs(state, [{ source: profileSource(state.profile), domain: 'profile',
@@ -172,11 +203,11 @@ export function createFirestoreDocumentSources(options: FirestoreDomainOptions &
     const inputs: ReportInput[] = [];
     for (const id of result.ids) {
       if (stage === 'records') {
-        const value = await options.care.readRecord(b, id); if (!value) domainReject('source_binding', 500);
+        const value = await options.care.readRecord(sourceBinding(b, 'record')!, id); if (!value) domainReject('source_binding', 500);
         inputs.push({ source: recordDocumentSource(value), recordKind: value.details.kind,
           domain: ['feeding', 'sleep', 'diaper', 'temperature', 'measurement'].includes(value.details.kind) ? 'body_life' : 'changes_support' });
       } else if (stage === 'facts') {
-        const value = await options.memory.readFact(b, id);
+        const value = await options.memory.readFact(sourceBinding(b, 'fact')!, id);
         if (value?.visibility === 'family' && value.status === 'confirmed' && value.applicable && value.sourceState === 'current')
           inputs.push({ source: factDocumentSource(value), domain: 'profile', validUntil: value.validUntil });
       } else { const value = await task(b, id); if (!value) domainReject('source_binding', 500); inputs.push({ source: taskDocumentSource(value), domain: 'changes_support' }); }

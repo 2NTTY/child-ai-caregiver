@@ -22,6 +22,16 @@ async function load(g = createGrowthApi("/api", fetcher({ page: growth() })), c 
   return { promise, lines };
 }
 test("successful combined growth read emits no diagnostic", async () => { const { promise, lines } = await load(); await promise; assert.deepEqual(lines, []); });
+test("selected growth reads do not request unshared concerns", async () => {
+  const value = growth(), lines: string[] = [];
+  const pair = await readGrowthPages(async () => value, null, new AbortController().signal, line => lines.push(line));
+  assert.deepEqual(pair, [value, null]); assert.deepEqual(lines, []);
+});
+test("selected concerns reads do not request unshared growth", async () => {
+  const value = concerns(), lines: string[] = [];
+  const pair = await readGrowthPages(null, async () => value, new AbortController().signal, line => lines.push(line));
+  assert.deepEqual(pair, [null, value]); assert.deepEqual(lines, []);
+});
 for (const [endpoint, code] of [["growth", "growth_unavailable"], ["concerns", "concern_unavailable"]] as const) test(`${endpoint} HTTP failure reports fixed metadata without changing business error code`, async () => {
   const api = endpoint === "growth" ? createGrowthApi("/api", fetcher({ error: { code, message: "PRIVATE_SENTINEL" } }, 503))
     : createConcernsApi("/api", fetcher({ error: { code, message: "PRIVATE_SENTINEL" } }, 503));

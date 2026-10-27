@@ -29,15 +29,19 @@ export function reportGrowthReadFailure(endpoint: Endpoint, error: unknown, emit
     emit("[growth-read] " + JSON.stringify({ endpoint: fixedEndpoint, status, code, category }));
   } catch { /* Diagnostic availability must not change read failure or recovery. */ }
 }
-export async function readGrowthPages(readGrowth: () => Promise<GrowthPage>, readConcerns: () => Promise<ConcernPage>,
-  signal: AbortSignal, emit?: Emit, active: () => boolean = () => !signal.aborted): Promise<[GrowthPage, ConcernPage]> {
+export function readGrowthPages(readGrowth: () => Promise<GrowthPage>, readConcerns: () => Promise<ConcernPage>,
+  signal: AbortSignal, emit?: Emit, active?: () => boolean): Promise<[GrowthPage, ConcernPage]>;
+export function readGrowthPages(readGrowth: (() => Promise<GrowthPage>) | null, readConcerns: (() => Promise<ConcernPage>) | null,
+  signal: AbortSignal, emit?: Emit, active?: () => boolean): Promise<[GrowthPage | null, ConcernPage | null]>;
+export async function readGrowthPages(readGrowth: (() => Promise<GrowthPage>) | null, readConcerns: (() => Promise<ConcernPage>) | null,
+  signal: AbortSignal, emit?: Emit, active: () => boolean = () => !signal.aborted): Promise<[GrowthPage | null, ConcernPage | null]> {
   async function one<T>(endpoint: Endpoint, action: () => Promise<T>): Promise<T> {
     try { return await action(); }
     catch (error) { if (!signal.aborted && active()) reportGrowthReadFailure(endpoint, error, emit); throw error; }
   }
-  const pair = await Promise.all([one("growth", readGrowth), one("concerns", readConcerns)]);
-  const category = pair[0].authorityVersion !== pair[1].authorityVersion ? "authority_mismatch"
-    : pair[0].canManage !== pair[1].canManage ? "access_mismatch" : null;
+  const pair = await Promise.all([readGrowth ? one("growth", readGrowth) : null, readConcerns ? one("concerns", readConcerns) : null]);
+  const category = pair[0] && pair[1] ? pair[0].authorityVersion !== pair[1].authorityVersion ? "authority_mismatch"
+    : pair[0].canManage !== pair[1].canManage ? "access_mismatch" : null : null;
   if (category) {
     const error = new AgreementError(category);
     if (!signal.aborted && active()) reportGrowthReadFailure("combined", error, emit);

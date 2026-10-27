@@ -1,3 +1,6 @@
+import { AvatarView } from '../components/avatar/AvatarView';
+import { AvatarEditor } from '../components/avatar/AvatarEditor';
+import { useProductionAvatar } from '../production/useProductionAvatar';
 import { BackgroundSurface } from "../components/appearance/BackgroundSurface";
 import { AdminEntry } from '../production/AdminEntry';
 import { EmptyListCard } from "../components/EmptyListCard";
@@ -34,6 +37,7 @@ function LabeledValue({ label, value }: { label: string; value: string }) {
 }
 
 export default function SettingsPage() {
+  const avatar = useProductionAvatar('self', true);
   const pathname = usePathname();
   const leave = usePreviewNavigation();
   const containerLayout = useContainerWidth();
@@ -58,7 +62,8 @@ export default function SettingsPage() {
     <AppTabPanel tabsId={tabsId} tabKey="account" active={tab === "account"} style={styles.sections}>
       <View style={styles.sectionGroup}>
         <SectionCard><SectionHeader density="compact" title="個人資料" />
-          <View style={styles.identity}><View style={styles.avatar}><Text style={styles.avatarText}>{accountName.slice(0, 1) || "育"}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{accountName || "未命名"}</Text><Text style={styles.muted}>{user?.email ?? "尚未讀取電郵"}</Text></View></View>
+          <View style={styles.identity}><AvatarView name={accountName} uri={avatar.state.uri} size={55} /><View style={styles.identityText}><Text style={styles.identityName}>{accountName || "未命名"}</Text><Text style={styles.muted}>{user?.email ?? "尚未讀取電郵"}</Text></View></View>
+          <AvatarEditor lane={avatar.lane} state={avatar.state} name={accountName} kind="self" />
           <Divider style={styles.divider} />
           <LabeledValue label="登入方式" value="電郵與密碼" />
         </SectionCard>
@@ -80,8 +85,8 @@ export default function SettingsPage() {
       {model.children.length === 0 ? recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && online ? <EmptyListCard title="目前沒有孩子檔案" /> : <Text style={styles.body}>{recordsState.childrenLoading ? "正在讀取孩子列表…" : recordsState.childrenError ? "孩子列表未能讀取，請重新核對。" : "孩子列表尚未核對。"}</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => leave(() => { actions.selectChild(child.id); actions.open("profile"); })} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
 
     </SectionCard></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><Text style={styles.muted}>家庭協作尚未開放。本人聯絡與授權仍可管理。</Text>
-      <View style={styles.timeRow}><AppButton label="聯絡" variant="quiet" onPress={() => actions.open("contact")} /></View>
+    <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><Text style={styles.muted}>管理家庭成員及本人孩子模組的分享範圍。開啟家庭管理不會切換目前孩子。</Text>
+      <View style={styles.timeRow}><AppButton label="管理家庭" variant="secondary" onPress={() => actions.open("family")} /><AppButton label="聯絡" variant="quiet" onPress={() => actions.open("contact")} /></View>
     </SectionCard></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={styles.sections}>
       <MotionSettings />

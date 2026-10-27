@@ -4,6 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import { documentRequestSchema, type DocumentRequest } from "../../../../src/shared/family-documents";
 import { usePreviewLeaveGuard } from "../../preview/PreviewNavigationGuard";
+import type { DocumentCreateDraft } from "../../workspaces/PreparationWorkspace";
 import type { WriteOperationView } from "../../view-model";
 import { preparationPurposes } from "../../preparation-view-model";
 import { AppDateField } from "../DateTimeFields";
@@ -14,29 +15,33 @@ import { chineseFont, colors, readingType, spacing } from "../../theme";
 
 type Fields = { title: string; purpose: DocumentRequest["purpose"]; from: string; to: string; eventDate: string; reportMode: "fixed" | "living" };
 export type DocumentFormOwner = {
-  authorityVersion: string; locked: boolean; dirty: boolean; epoch: number; operation?: WriteOperationView; retainedDraftId?: string | null;
+  authorityVersion: string; locked: boolean; dirty: boolean; epoch: number; operation?: WriteOperationView; retainedDraftId?: string | null; createDraft?: DocumentCreateDraft | null; editingLocked?: boolean;
   createDocument(request: DocumentRequest, draftId?: string): void; markDraft(): void; discardDraft(): void;
 };
 export function DocumentCreateForm({ owner, kind, purpose = "appointment", allowFamily = true }: { owner: DocumentFormOwner; kind: DocumentRequest["kind"]; purpose?: DocumentRequest["purpose"]; allowFamily?: boolean }) {
-  const id = useId(), [basis, setBasis] = useState<string | null>(null), [shared, setShared] = useState(false);
+  const draft = owner.createDraft?.request.kind === kind ? owner.createDraft : null;
+  const defaults = (): Fields => ({ title: draft?.request.title ?? "", purpose: draft?.request.purpose ?? purpose,
+    from: draft?.request.period.from ?? "", to: draft?.request.period.to ?? "", eventDate: draft?.request.eventDate ?? "", reportMode: draft?.request.reportMode ?? "fixed" });
+  const id = useId(), [basis, setBasis] = useState<string | null>(() => draft?.authorityVersion ?? null), [shared, setShared] = useState(false);
   const latestOwner = useRef(owner); latestOwner.current = owner;
   const { control, handleSubmit, reset, setError, setFocus, watch, formState: { errors } } = useForm<Fields>({
-    defaultValues: { title: "", purpose, from: "", to: "", eventDate: "", reportMode: "fixed" },
+    defaultValues: defaults(),
   });
   // Form fields live here, not in the retained document owner. Only a submitted
   // operation's frozen payload may survive workspace navigation without discarding.
-  usePreviewLeaveGuard(basis !== null && owner.dirty && owner.retainedDraftId !== id);
-  const stale = basis !== null && basis !== owner.authorityVersion, disabled = owner.locked || stale;
+  const retained = !!owner.retainedDraftId && (owner.retainedDraftId === id || owner.retainedDraftId === draft?.id);
+  usePreviewLeaveGuard(basis !== null && owner.dirty && !retained);
+  const stale = basis !== null && basis !== owner.authorityVersion, disabled = (owner.editingLocked ?? owner.locked) || stale;
   const labels: Record<keyof Fields, string> = { title: "文件名稱", purpose: "用途", from: "來源期間開始日", to: "來源期間結束日", eventDate: "使用日期（可不填）", reportMode: "更新方式" };
   const living = kind === "growth_report" && watch("reportMode") === "living";
-  useEffect(() => { reset({ title: "", purpose, from: "", to: "", eventDate: "", reportMode: "fixed" }); setBasis(null); setShared(false); }, [owner.epoch, reset]);
+  useEffect(() => { reset(defaults()); setBasis(draft?.authorityVersion ?? null); setShared(false); }, [owner.epoch, reset]);
   useEffect(() => () => { const latest = latestOwner.current; if (latest.dirty) latest.discardDraft(); }, []);
   useEffect(() => { if (stale || owner.operation?.state === "conflict" || owner.operation?.state === "failed") setShared(false); }, [stale, owner.operation?.state]);
   const edited = () => { if (!basis) setBasis(owner.authorityVersion); owner.markDraft(); setShared(false); };
   const options = kind === "preparation" ? preparationPurposes.map(item => ({ value: item.key, label: item.label }))
     : [...(allowFamily ? [{ value: "family" as const, label: "家庭成長" }] : []), { value: "appointment" as const, label: "就診溝通" }, { value: "handoff" as const, label: "照顧交接" }, { value: "school" as const, label: "入園認識" }];
   const submit = handleSubmit(fields => {
-    if (disabled || !shared || !basis) return;
+    if (owner.locked || disabled || !shared || !basis) return;
     const parsed = documentRequestSchema.safeParse({ kind, title: fields.title, purpose: fields.purpose, eventDate: fields.eventDate || null,
       period: { from: fields.from, to: living ? new Date(Date.now() + 8 * 3600000).toISOString().slice(0, 10) : fields.to },
       ...(kind === "growth_report" ? { reportMode: fields.reportMode } : {}) });
@@ -68,8 +73,9 @@ export function DocumentCreateForm({ owner, kind, purpose = "appointment", allow
         value={field.value} disabled={disabled} error={errors[name]?.message} onBlur={field.onBlur} onChange={value => { edited(); field.onChange(value); }} />} />)}
     <AppCheckbox label="我已核對用途及期間，同意建立家庭共享文件" checked={shared} disabled={disabled}
       onChange={value => { if (!basis) setBasis(owner.authorityVersion); owner.markDraft(); setShared(value); }} />
-    <View style={s.actions}><AppButton label={kind === "preparation" ? "整理這份準備單" : "整理這份成長報告"} disabled={disabled || !shared} onPress={submit} />
-      {owner.dirty ? <AppButton label="放棄未提交草稿" variant="quiet" disabled={owner.operation?.state === "saving" || !!owner.operation?.recovery} onPress={owner.discardDraft} /> : null}</View>
+    {owner.locked && !disabled && owner.operation?.recovery === "check" ? <Text style={s.meta}>可以繼續編輯。再次儲存前，請先按「重新載入」。</Text> : null}
+    <View style={s.actions}><AppButton label={kind === "preparation" ? "整理這份準備單" : "整理這份成長報告"} disabled={owner.locked || disabled || !shared} onPress={submit} />
+      {owner.dirty ? <AppButton label="放棄未提交草稿" variant="quiet" disabled={owner.operation?.state === "saving" || owner.operation?.state === "unknown" && retained} onPress={owner.discardDraft} /> : null}</View>
   </View>;
 }
 const s = StyleSheet.create({ stack: { gap: spacing.md }, actions: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },

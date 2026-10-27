@@ -73,9 +73,19 @@ export function AppButton({ label, accessibilityLabel = label, onPress, variant 
 }
 
 type AppTextFieldProps = Omit<React.ComponentProps<typeof TextInput>, "ref"> & { ref?: Ref<React.ComponentRef<typeof TextInput>> };
-export function AppTextField({ style, outlineStyle, contentStyle, multiline, label, mode, ref, ...props }: AppTextFieldProps) {
-  return <TextInput {...props} multiline={multiline} label={label} ref={(instance: React.ComponentRef<typeof TextInput> | null) => { if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }}
-    mode={mode ?? "outlined"} style={[styles.input, style]} outlineStyle={mode === "flat" ? undefined : [styles.inputOutline, outlineStyle]}
+export function AppTextField({ style, outlineStyle, contentStyle, multiline, label, mode, ref, onFocus, onBlur, onChangeText, placeholder, accessibilityLabel, ...props }: AppTextFieldProps) {
+  const [focused, setFocused] = useState(false);
+  const [uncontrolledValue, setUncontrolledValue] = useState(props.defaultValue ?? "");
+  const nativeLabel = Platform.OS !== "web" && mode !== "flat" && !multiline && typeof label === "string";
+  // Paper's inactive label waits for its animated text measurement. Use the native placeholder until focus or text.
+  const showNativePlaceholder = nativeLabel && !focused && !(props.value ?? uncontrolledValue);
+  return <TextInput {...props} multiline={multiline} label={showNativePlaceholder ? undefined : label}
+    placeholder={showNativePlaceholder ? label : placeholder} accessibilityLabel={accessibilityLabel ?? (nativeLabel ? label : undefined)}
+    onFocus={nativeLabel ? event => { setFocused(true); onFocus?.(event); } : onFocus}
+    onBlur={nativeLabel ? event => { setFocused(false); onBlur?.(event); } : onBlur}
+    onChangeText={nativeLabel ? (value: string) => { if (props.value === undefined) setUncontrolledValue(value); onChangeText?.(value); } : onChangeText}
+    ref={(instance: React.ComponentRef<typeof TextInput> | null) => { if (typeof ref === "function") ref(instance); else if (ref) ref.current = instance; }}
+    mode={mode ?? "outlined"} style={[styles.input, style]} outlineStyle={mode === "flat" ? undefined : [styles.inputOutline, showNativePlaceholder && styles.nativePlaceholderOutline, outlineStyle]}
     contentStyle={[multiline && label ? styles.multilineContent : undefined, contentStyle]} />;
 }
 
@@ -356,6 +366,7 @@ const styles = StyleSheet.create({
   // Keep the scrolling textarea below its floating label, including enlarged text.
   multilineContent: { marginTop: spacing.md },
   inputOutline: { borderColor: colors.controlOutline, borderRadius: radius.small },
+  nativePlaceholderOutline: { top: 6 },
   selectDialog: { maxWidth: 440, width: "90%", alignSelf: "center", marginHorizontal: 0 },
   selectList: { maxHeight: 360 },
   selectionTrigger: { minHeight: 44, maxWidth: "100%", flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md, borderWidth: 1, borderColor: colors.controlOutline, borderRadius: radius.small, backgroundColor: colors.controlSurface },

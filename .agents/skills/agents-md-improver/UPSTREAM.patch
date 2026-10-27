@@ -1,0 +1,157 @@
+--- upstream/skills/claude-md-improver/references/quality-criteria.md
++++ installed/agents-md-improver/references/quality-criteria.md
+@@ -1 +1 @@
+-# CLAUDE.md Quality Criteria
++# AGENTS.md Quality Criteria
+@@ -91 +91 @@
+-1. Read the CLAUDE.md file completely
++1. Read the AGENTS.md file completely
+@@ -109 +109 @@
+-- Duplicate info across multiple CLAUDE.md files
++- Duplicate info across multiple AGENTS.md files
+--- upstream/skills/claude-md-improver/references/templates.md
++++ installed/agents-md-improver/references/templates.md
+@@ -1 +1 @@
+-# CLAUDE.md Templates
++# AGENTS.md Templates
+@@ -34 +34 @@
+-Describe the project structure so Claude understands where things live.
++Describe the project structure so Codex understands where things live.
+@@ -49 +49 @@
+-List important files that Claude should know about.
++List important files that Codex should know about.
+@@ -248 +248 @@
+-When updating any CLAUDE.md:
++When updating any AGENTS.md:
+@@ -253 +253 @@
+-4. **Be useful**: Would this help a new Claude session understand the project?
++4. **Be useful**: Would this help a new Codex session understand the project?
+--- upstream/skills/claude-md-improver/references/update-guidelines.md
++++ installed/agents-md-improver/references/update-guidelines.md
+@@ -1 +1 @@
+-# CLAUDE.md Update Guidelines
++# AGENTS.md Update Guidelines
+@@ -5 +5 @@
+-Only add information that will genuinely help future Claude sessions. The context window is precious - every line must earn its place.
++Only add information that will genuinely help future Codex sessions. The context window is precious - every line must earn its place.
+@@ -116 +116 @@
+-File: ./CLAUDE.md
++File: ./AGENTS.md
+@@ -149 +149 @@
+-- [ ] Would a new Claude session find this helpful?
++- [ ] Would a new Codex session find this helpful?
+--- upstream/skills/claude-md-improver/SKILL.md
++++ installed/agents-md-improver/SKILL.md
+@@ -2,3 +2,2 @@
+-name: claude-md-improver
+-description: Audit and improve CLAUDE.md files in repositories. Use when user asks to check, audit, update, improve, or fix CLAUDE.md files. Scans for all CLAUDE.md files, evaluates quality against templates, outputs quality report, then makes targeted updates. Also use when the user mentions "CLAUDE.md maintenance" or "project memory optimization".
+-tools: Read, Glob, Grep, Bash, Edit
++name: agents-md-improver
++description: Audit and improve AGENTS.md files in repositories. Use when user asks to check, audit, update, improve, or fix AGENTS.md files. Scans for all AGENTS.md files, evaluates quality against templates, outputs quality report, then makes targeted updates. Also use when the user mentions "AGENTS.md maintenance" or "project memory optimization".
+@@ -7 +6 @@
+-# CLAUDE.md Improver
++# AGENTS.md Improver
+@@ -9 +8 @@
+-Audit, evaluate, and improve CLAUDE.md files across a codebase to ensure Claude Code has optimal project context.
++Audit, evaluate, and improve AGENTS.md files across a codebase to ensure Codex has optimal project context.
+@@ -11 +10 @@
+-**This skill can write to CLAUDE.md files.** After presenting a quality report and getting user approval, it updates CLAUDE.md files with targeted improvements.
++**This skill can write to AGENTS.md files.** After presenting a quality report and getting user approval, it updates AGENTS.md files with targeted improvements.
+@@ -17 +16,3 @@
+-Find all CLAUDE.md files in the repository:
++Find all AGENTS.md files in the repository:
++
++Use `exec_command` to read/search files and run the Bash examples (Git Bash on Windows), and `apply_patch` for edits.
+@@ -20 +21 @@
+-find . -name "CLAUDE.md" -o -name ".claude.md" -o -name ".claude.local.md" 2>/dev/null | head -50
++find . -name "AGENTS.md" -o -name "AGENTS.override.md" 2>/dev/null | head -50
+@@ -27,4 +28,4 @@
+-| Project root | `./CLAUDE.md` | Primary project context (checked into git, shared with team) |
+-| Local overrides | `./.claude.local.md` | Personal/local settings (gitignored, not shared) |
+-| Global defaults | `~/.claude/CLAUDE.md` | User-wide defaults across all projects |
+-| Package-specific | `./packages/*/CLAUDE.md` | Module-level context in monorepos |
++| Project root | `./AGENTS.md` | Primary project context (checked into git, shared with team) |
++| Directory override | `./AGENTS.override.md` | Replaces AGENTS.md in the same directory; not automatically private or gitignored |
++| Global defaults | `$CODEX_HOME/AGENTS.md` (default `~/.codex/AGENTS.md`) | User-wide defaults across all projects |
++| Package-specific | `./packages/*/AGENTS.md` | Module-level context in monorepos |
+@@ -33 +34 @@
+-**Note:** Claude auto-discovers CLAUDE.md files in parent directories, making monorepo setups work automatically.
++**Note:** Codex loads global guidance from CODEX_HOME, then walks from the repository root to the working directory. At each level, a non-empty AGENTS.override.md takes precedence over AGENTS.md; at most one file is loaded per directory. Nested files outside that path are not automatically loaded.
+@@ -37 +38 @@
+-For each CLAUDE.md file, evaluate against quality criteria. See [references/quality-criteria.md](references/quality-criteria.md) for detailed rubrics.
++For each AGENTS.md file, evaluate against quality criteria. See [references/quality-criteria.md](references/quality-criteria.md) for detailed rubrics.
+@@ -44 +45 @@
+-| Architecture clarity | High | Can Claude understand the codebase structure? |
++| Architecture clarity | High | Can Codex understand the codebase structure? |
+@@ -64 +65 @@
+-## CLAUDE.md Quality Report
++## AGENTS.md Quality Report
+@@ -73 +74 @@
+-#### 1. ./CLAUDE.md (Project Root)
++#### 1. ./AGENTS.md (Project Root)
+@@ -91 +92 @@
+-#### 2. ./packages/api/CLAUDE.md (Package-specific)
++#### 2. ./packages/api/AGENTS.md (Package-specific)
+@@ -115 +116 @@
+-   - Which CLAUDE.md file to update
++   - Which AGENTS.md file to update
+@@ -122 +123 @@
+-### Update: ./CLAUDE.md
++### Update: ./AGENTS.md
+@@ -138 +139 @@
+-After user approval, apply changes using the Edit tool. Preserve existing content structure.
++After user approval, apply changes using `apply_patch`. Preserve existing content structure.
+@@ -142 +143 @@
+-See [references/templates.md](references/templates.md) for CLAUDE.md templates by project type.
++See [references/templates.md](references/templates.md) for AGENTS.md templates by project type.
+@@ -157,2 +158,2 @@
+-- **`#` key shortcut**: During a Claude session, press `#` to have Claude auto-incorporate learnings into CLAUDE.md
+-- **Keep it concise**: CLAUDE.md should be human-readable; dense is better than verbose
++- **Session learnings**: Explicitly invoke `$revise-agents-md` to propose incorporating session learnings into AGENTS.md; Codex has no equivalent to the Claude `#` shortcut.
++- **Keep it concise**: AGENTS.md should be human-readable; dense is better than verbose
+@@ -160,2 +161,2 @@
+-- **Use `.claude.local.md`**: For personal preferences not shared with team (add to `.gitignore`)
+-- **Global defaults**: Put user-wide preferences in `~/.claude/CLAUDE.md`
++- **Personal preferences**: Codex has no automatically loaded `.claude.local.md` equivalent. Use user-wide guidance in CODEX_HOME; a project AGENTS.override.md replaces the same-directory AGENTS.md and is not automatically gitignored.
++- **Global defaults**: Put user-wide preferences in `$CODEX_HOME/AGENTS.md` (default `~/.codex/AGENTS.md`)
+@@ -163 +164 @@
+-## What Makes a Great CLAUDE.md
++## What Makes a Great AGENTS.md
+--- upstream/commands/revise-claude-md.md
++++ installed/revise-agents-md/SKILL.md
+@@ -2,2 +2,2 @@
+-description: Update CLAUDE.md with learnings from this session
+-allowed-tools: Read, Edit, Glob
++name: revise-agents-md
++description: Update AGENTS.md with learnings from this session
+@@ -6 +6 @@
+-Review this session for learnings about working with Claude Code in this codebase. Update CLAUDE.md with context that would help future Claude sessions be more effective.
++Review this session for learnings about working with Codex in this codebase. Update AGENTS.md with context that would help future Codex sessions be more effective.
+@@ -10 +10 @@
+-What context was missing that would have helped Claude work more effectively?
++What context was missing that would have helped Codex work more effectively?
+@@ -17 +17,3 @@
+-## Step 2: Find CLAUDE.md Files
++## Step 2: Find AGENTS.md Files
++
++Use `exec_command` to read/search files and run the Bash example (Git Bash on Windows), and `apply_patch` for edits.
+@@ -20 +22 @@
+-find . -name "CLAUDE.md" -o -name ".claude.local.md" 2>/dev/null | head -20
++find . -name "AGENTS.md" -o -name "AGENTS.override.md" 2>/dev/null | head -20
+@@ -24,2 +26,3 @@
+-- `CLAUDE.md` - Team-shared (checked into git)
+-- `.claude.local.md` - Personal/local only (gitignored)
++- `AGENTS.md` - Team-shared (checked into git)
++- `$CODEX_HOME/AGENTS.md` (default `~/.codex/AGENTS.md`) - User-wide personal guidance
++- `AGENTS.override.md` - Replaces AGENTS.md in the same directory; not automatically private or gitignored. Codex has no automatically loaded `.claude.local.md` equivalent.
+@@ -29 +32 @@
+-**Keep it concise** - one line per concept. CLAUDE.md is part of the prompt, so brevity matters.
++**Keep it concise** - one line per concept. AGENTS.md is part of the prompt, so brevity matters.
+@@ -43 +46 @@
+-### Update: ./CLAUDE.md
++### Update: ./AGENTS.md
+--- /dev/null
++++ installed/revise-agents-md/agents/openai.yaml
+@@ -0,0 +1,2 @@
++policy:
++  allow_implicit_invocation: false

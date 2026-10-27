@@ -3,7 +3,7 @@ import type { Query } from '@google-cloud/firestore';
 import { z } from 'zod';
 import { concernValuesSchema, concernChangeSchema, CONCERN_EVENT_LIMIT, CONCERN_STORED_EVENT_LIMIT,
   type Concern, type ConcernEvent, type ConcernValues, type ConcernChange } from '../src/shared/concerns.ts';
-import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
+import { createFirestoreAuthority, resourceAuthorityVersion, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema,
   type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { firestoreDocumentConcernEventSchema } from './firestore-document-sources.ts';
@@ -12,6 +12,7 @@ import { prepareFirestoreBackgroundWork, firestoreBackgroundReference, type Fire
 import { firestoreCareSchema } from './firestore-care.ts';
 import type { FirestoreAgentProposalExtension } from './firestore-agent-proposals.ts';
 import { firestoreAgentClaimSchema, firestoreAgentRunSchema } from './firestore-agent-runs.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
 
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), version = z.number().int().positive().max(2147483647);
 export const firestoreConcernSchema = z.object({ id: uuid, childId: uuid, title: z.string().min(1).max(160),
@@ -26,7 +27,7 @@ const receiptSchema = z.object({ fingerprint: z.string().length(64), id: uuid, v
 const followupClaimSchema = z.object({ id: uuid, concernId: uuid, concernVersion: version, jobId: z.string().length(64),
   reference: uuid, generation: uuid, authorizationVersion: z.string() }).strict();
 type Prepared = { value: Concern; changeSeq: string; commit(): void };
-const authorityVersion = (b: Binding) => b.scope.storageEpoch + ':' + b.authorizationVersion;
+const authorityVersion = resourceAuthorityVersion;
 const openFollowup = (head: Head) => head.followUp && ['pending', 'queued'].includes(head.followUp.state);
 function future(at: string | null) {
   if (at !== null && (Date.parse(at) <= Date.now() || Date.parse(at) >= Date.UTC(2101, 0, 1))) domainReject('invalid_input', 400);
@@ -35,6 +36,18 @@ function future(at: string | null) {
 /** Same concern IDs and HTTP contract; immutable event rows keep long histories out of a single document. */
 export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
+  const sharing = createFirestoreSharingStore(options);
+  function sharedView(b: Binding, value: Concern): Concern {
+    if (!b.sharedAccess) return value;
+    const modules = b.sharedAccess.modules ?? [];
+    return { ...value, attentionIds:modules.includes('growth') ? value.attentionIds : [],
+      followUp:value.followUp ? { ...value.followUp, runId:null } : null,
+      events:value.events.map(({ runId: _runId, recordId, taskId, attentionId, attentionVersion, ...event }) => ({ ...event,
+        ...(recordId && modules.includes('care') ? { recordId } : {}),
+        ...(taskId && modules.includes('tasks') ? { taskId } : {}),
+        ...(attentionId && modules.includes('growth') ? { attentionId, ...(attentionVersion === undefined ? {} : { attentionVersion }) } : {}),
+      })) };
+  }
   function query(b: Binding, suffix: string): Query {
     let q: Query = data.collection(suffix); for (const [key, value] of Object.entries(data.tags(b.scope))) q = q.where(key, '==', value); return q;
   }
@@ -248,16 +261,29 @@ export function createFirestoreConcernStore(options: FirestoreDomainOptions) {
       const prepared = await save(b, value, added, current.events, randomUUID()); prepared.commit(); return { state };
     });
   }
+  async function page(b: Binding) {
+    const rows = await b.transaction.get(query(b, 'concerns').orderBy('createdAt').orderBy('concernId').limit(201));
+    if (rows.size > 200) domainReject('concern_history_requires_review', 400);
+    const items: Concern[] = [];
+    for (const row of rows.docs) { const current = await head(b, row.get('concernId')); if (current) items.push(sharedView(b, await hydrate(b, current))); }
+    return { authorityVersion: authorityVersion(b), items, canManage: !b.sharedAccess };
+  }
   return { read, head, extension, prepareCreate, prepareChange, beginBackground, finishBackground,
+    forSharedSpace(spaceId: string) {
+      domainParse(uuid, spaceId);
+      const unavailable = async (): Promise<never> => domainReject('shared_domain_read_only', 409);
+      return {
+        list:(u: string, c: string) => sharing.withResource(u, { spaceId, childId:c, module:'concerns', mode:'read' }, access => page(access.binding)),
+        get:(u: string, c: string, id: string) => sharing.withResource(u, { spaceId, childId:c, module:'concerns', mode:'read' }, async access => {
+          const value = await read(access.binding, id); return value ? sharedView(access.binding, value) : null;
+        }),
+        create:unavailable, change:unavailable,
+      };
+    },
     authorizeBackground: async (b: Binding, job: FirestoreBackgroundWork) => {
       const value = await currentFollowup(b, job); return !!value && value.followUp?.state === 'queued' && value.eventCount < CONCERN_EVENT_LIMIT;
     },
-    list: (userId: string, childId: string) => authority.runTransaction(userId, childId, async b => {
-      const rows = await b.transaction.get(query(b, 'concerns').orderBy('createdAt').orderBy('concernId').limit(201));
-      if (rows.size > 200) domainReject('concern_history_requires_review', 400);
-      const items: Concern[] = []; for (const row of rows.docs) { const current = await head(b, row.get('concernId')); if (current) items.push(await hydrate(b, current)); }
-      return { authorityVersion: authorityVersion(b), items, canManage: true };
-    }),
+    list: (userId: string, childId: string) => authority.runTransaction(userId, childId, page),
     get: (userId: string, childId: string, id: string) => authority.runTransaction(userId, childId, b => read(b, id)),
     create: (userId: string, childId: string, values: ConcernValues, opId: string) =>
       operation(userId, childId, opId, { action: 'create', values }, b => prepareCreate(b, values, opId)),

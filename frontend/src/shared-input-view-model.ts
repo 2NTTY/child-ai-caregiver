@@ -59,3 +59,19 @@ export type SourcesActions = {
   openDeletion(): void; closeDeletion(): void; setDeleteScope(value: boolean): void; setDeleteFinal(value: boolean): void; remove(): void;
 };
 export const fetchStateLabels: Record<SourceInput["fetchState"], string> = { not_requested: "未要求取得", running: "正在取得正文", ready: "正文已保存", failed: "取得失敗", unknown: "取得結果未知" };
+
+type SourceReadiness = { label: string; tone: "neutral" | "info" | "success" | "warning" | "error"; indexLabel: string };
+
+export function sourceReadiness(input: SourceInput, model: Pick<SourcesViewModel, "online" | "load" | "readFresh" | "fresh" | "access">): SourceReadiness {
+  const excerpt = input.management?.modelExcerpt;
+  const state: readonly [string, SourceReadiness["tone"]] = input.management?.enabled === false ? ["已停用", "neutral"]
+    : !model.online || model.load !== "ready" || !(model.readFresh ?? model.fresh) || model.access === "lost" ? ["來源狀態待核對", "warning"]
+      : !input.text.trim() ? input.fetchState === "running" ? ["正在取得正文", "info"]
+        : input.fetchState === "failed" ? ["取得失敗", "error"]
+          : input.fetchState === "unknown" ? ["取得結果待核對", "warning"] : ["尚未取得正文", "neutral"]
+        : !excerpt?.trim() ? ["尚未授權 Agent", "neutral"]
+          : !input.sha256 ? ["正文完整性待核對", "warning"]
+            : !input.text.includes(excerpt) ? ["授權片段待核對", "warning"]
+              : excerpt.length > 6000 ? ["授權片段超出讀取上限", "warning"] : ["可供 Agent 讀取", "success"];
+  return { label: state[0], tone: state[1], indexLabel: "未建立向量索引" };
+}

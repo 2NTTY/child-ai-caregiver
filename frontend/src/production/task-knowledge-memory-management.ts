@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { MemoryApiError, type MemoryApi } from "../../../src/client/memory-api";
-import type { FactCreate, FactConfirm, FactRevise, FactDeactivate, MemoryDelete, TopicCreate, TopicChange, TopicReopen, MemoryFact, MemoryTopic } from "../../../src/shared/memory";
+import type { FactCreate, SharedFactCreate, FactConfirm, FactRevise, FactDeactivate, MemoryDelete, TopicCreate, TopicChange, TopicReopen, MemoryFact, MemoryTopic } from "../../../src/shared/memory";
 import type { MemoryFactView, MemoryTopicView } from "../memory-view-model";
 import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { domainFailure, type TaskKnowledgeEnvironment, type useTaskKnowledgeRuntime } from "./task-knowledge-runtime";
@@ -8,6 +8,7 @@ import { domainFailure, type TaskKnowledgeEnvironment, type useTaskKnowledgeRunt
 export type MemoryManagementEntity = { kind: "fact"; item: MemoryFactView } | { kind: "topic"; item: MemoryTopicView };
 export type MemoryManagementIntent =
   | { kind: "create_fact"; input: FactCreate }
+  | { kind: "create_confirmed_fact"; input: SharedFactCreate }
   | { kind: "confirm_fact"; basis: MemoryFactView; input: FactConfirm }
   | { kind: "revise_fact"; basis: MemoryFactView; input: FactRevise }
   | { kind: "deactivate_fact"; basis: MemoryFactView; input: FactDeactivate }
@@ -42,6 +43,7 @@ export function useTaskKnowledgeMemoryManagement({ env, api, runtime, loadAll, c
     const childId = env.childId!, userId = env.userId!;
     switch (intent.kind) {
       case "create_fact": return api.createFact(childId, intent.input, signal, userId);
+      case "create_confirmed_fact": return api.createConfirmedFact!(childId, intent.input, signal, userId);
       case "confirm_fact": return api.confirmFact(childId, intent.basis.id, intent.input, signal, userId);
       case "revise_fact": return api.reviseFact(childId, intent.basis.id, intent.input, signal, userId);
       case "deactivate_fact": return api.deactivateFact(childId, intent.basis.id, intent.input, signal, userId);
@@ -53,8 +55,13 @@ export function useTaskKnowledgeMemoryManagement({ env, api, runtime, loadAll, c
     }
   };
   const allowed = (intent: MemoryManagementIntent) => {
-    if (intent.kind === "create_fact") return intent.input.intendedVisibility === "private" || canManage;
-    if (intent.kind === "create_topic") return intent.input.visibility === "private" || canManage && intent.input.confirmShared;
+    if (env.sharedMode && !canManage) return false;
+    if (intent.kind === "create_confirmed_fact") return env.sharedMode && canManage && !!api.createConfirmedFact
+      && intent.input.intendedVisibility === "family" && intent.input.confirm === true && intent.input.confirmShared === true
+      && intent.input.values.source.kind !== "private_chat";
+    if (intent.kind === "create_fact") return !env.sharedMode && (intent.input.intendedVisibility === "private" || canManage);
+    if (intent.kind === "create_topic") return (!env.sharedMode || intent.input.visibility === "family")
+      && (intent.input.visibility === "private" || canManage && intent.input.confirmShared);
     const basis = entity(intent)!, actual = currentEntity(basis);
     if (!actual || actual.item.childId !== env.childId || actual.item.version !== basis.item.version || (actual.item.visibility === "private" ? !actual.item.authorSelf : !canManage)) return false;
     if (intent.input.expectedVersion !== actual.item.version) return false;
@@ -123,7 +130,7 @@ export function useTaskKnowledgeMemoryManagement({ env, api, runtime, loadAll, c
   };
   return {
     operation, pending: runtime.lost ? null : pending, conflict: runtime.lost ? null : conflict, notice, busy, dirty, epoch, consent,
-    locked: busy || !!pending || !!conflict || runtime.lost || !env.online,
+    locked: busy || !!pending || !!conflict || runtime.lost || !env.online || env.sharedMode && !canManage,
     markDirty() { if (!busy && !original.current && !runtime.lost) { setDirty(true); setOperation("none"); } },
     discard() { if (!busy && !original.current && runtime.live()) { setDirty(false); setConflict(null); setOperation("none"); setEpoch(value => value + 1); } },
     submit(intent: MemoryManagementIntent) {

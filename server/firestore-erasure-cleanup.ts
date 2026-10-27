@@ -1,3 +1,6 @@
+import { avatarHeadId, avatarCleanupId, avatarHeadRecordSchema, avatarUploadRecordSchema, avatarCleanupRecordSchema } from './avatar-data.ts';
+import { sharingErasedBy } from './firestore-sharing-records.ts';
+import type { FirestoreAvatarCleanup } from './firestore-avatar-cleanup.ts';
 import { firestoreChatFileRowSchema, type FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { firestoreVoiceRowSchema, type FirestoreVoiceStore } from './firestore-voice.ts';
 import { createHash } from 'node:crypto';
@@ -19,6 +22,7 @@ const collections = FIREBASE_BACKUP_COLLECTION_SUFFIXES.filter(suffix => !['_era
 const BATCH = 25;
 export interface FirestoreErasureCleanupOptions extends FirestoreErasureOptions {
   erasures: FirestoreErasureStore;
+  avatars?: Pick<FirestoreAvatarCleanup, 'eraseForScope'>;
   voices?: Pick<FirestoreVoiceStore, 'eraseForScope'>;
   files?: Pick<FirestoreChatFilesStore, 'eraseForScope'>;
   photos: Pick<ReturnType<typeof createFirestorePhotoStore>, 'eraseForScope'>;
@@ -50,6 +54,7 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
   }
   function matches(job: FirestoreScopeErasure, row: OpenedRecoveryEnvelope) {
     const scope = job.intent.scope, candidate = row.context.scope;
+    if (sharingErasedBy(row.context.kind, row.value, scope, job.intent.type === 'account-delete')) return true;
     if (job.intent.type === 'account-delete' && row.context.kind === 'authority-invitation')
       return (row.value as { consumedBy?: string }).consumedBy === scope.ownerUserId;
     if (scope.ownerUserId !== candidate.ownerUserId) return false;
@@ -60,6 +65,8 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
       if (result?.child?.id === scope.childId && result?.scope?.workspaceId === scope.workspaceId
         && result?.scope?.storageEpoch === scope.storageEpoch) return true;
     }
+    // Avatar cleanup retains prior immutable object epochs after restore; a child erasure covers every one of them.
+    if (row.context.kind === 'avatar-cleanup') return scope.workspaceId === candidate.workspaceId && scope.childId === candidate.childId;
     if (scope.workspaceId !== candidate.workspaceId || scope.storageEpoch !== candidate.storageEpoch) return false;
     if (candidate.childId === scope.childId) return true;
     // Original owner-wide receipts must not retain copies of erased child content.
@@ -127,6 +134,18 @@ export function createFirestoreErasureCleanup(options: FirestoreErasureCleanupOp
         const photo = firestorePhotoSchemas.photo.parse(opened.value);
         if (!await options.photos.eraseForScope(photo.scope, photo.id, job.intent, job.journal!)) return erasures.result(job);
         continue;
+      }
+      if (['avatar-head', 'avatar-upload', 'avatar-cleanup'].includes(opened.context.kind)) {
+        if (!options.avatars) domainReject('avatar_unavailable', 503);
+        const value = opened.context.kind === 'avatar-head' ? avatarHeadRecordSchema.parse(opened.value)
+          : opened.context.kind === 'avatar-upload' ? avatarUploadRecordSchema.parse(opened.value) : avatarCleanupRecordSchema.parse(opened.value);
+        if (firestoreDomainHash(value.binding.scope) !== firestoreDomainHash(opened.context.scope)) domainReject('avatar_integrity_failed', 503);
+        const expectedId = opened.context.kind === 'avatar-head' ? avatarHeadId(value.binding)
+          : opened.context.kind === 'avatar-upload' ? avatarUploadRecordSchema.parse(value).id : avatarCleanupId(value.binding, avatarCleanupRecordSchema.parse(value).assetId);
+        if (opened.context.id !== expectedId) domainReject('avatar_integrity_failed', 503);
+        const assetId = opened.context.kind === 'avatar-head' ? avatarHeadRecordSchema.parse(value).descriptor?.asset.id
+          : opened.context.kind === 'avatar-upload' ? (avatarUploadRecordSchema.parse(value).preparedAsset?.id ?? undefined) : avatarCleanupRecordSchema.parse(value).assetId;
+        if (assetId && !await options.avatars.eraseForScope(value.binding, assetId, job.intent, job.journal!)) return erasures.result(job);
       }
       if (opened.context.kind === 'chat-file-asset') {
         if (!options.files) domainReject('chat_file_cleanup_unavailable',503);

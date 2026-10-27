@@ -1,6 +1,9 @@
+import { handleFirebaseAvatarRequest, type FirebaseAvatarApiPort } from './firebase-avatar-api.ts';
+import { handleSharingControlRequest, type SharingControl } from './sharing-control-api.ts';
 import { handleFirebaseChatFileRequest, type FirebaseChatFileApiPort } from './firebase-chat-files-api.ts';
 import { handleFirebaseVoiceRequest, type FirebaseVoiceApiPort } from './firebase-voice-api.ts';
 import { requestOriginAllowed } from "./request-auth-transport.ts";
+import { z } from 'zod';
 import { handleAdminRequest } from './admin-api.ts';
 import type { FirestoreAdmin } from './firestore-admin.ts';
 import { accountAcknowledgementSchema } from "../src/shared/account-service.ts";
@@ -68,8 +71,10 @@ export interface FirebaseRequestHandlerOptions {
   admin?: FirestoreAdmin;
   adminUid?: string | null;
   online?: FirestoreOnlineStore;
-  documents?: FamilyDocumentStore;
+  sharing?: SharingControl;
+  documents?: FamilyDocumentStore & { forSharedSpace?(selection: import('../src/shared/sharing.ts').SharedSelection): FamilyDocumentStore };
   photos?: FirebasePhotoApiPort;
+  avatars?: FirebaseAvatarApiPort;
   voice?: FirebaseVoiceApiPort;
   files?: FirebaseChatFileApiPort;
   photoAgent?: PhotoAgent;
@@ -78,7 +83,7 @@ export interface FirebaseRequestHandlerOptions {
   chat?: ChatStore;
   care?: FirestoreCareStore;
   summary?: FirestoreCareSummary;
-  memory?: MemoryStore;
+  memory?: MemoryStore & { forSharedSpace?(spaceId: string): MemoryStore };
   sources?: SharedInputStore;
   concerns?: FirestoreConcernStore;
   growth?: FirestoreGrowthStore;
@@ -167,12 +172,12 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if ((await auth.nativeSessionProof?.(request.headers))?.sessionHash !== session.sessionHash) throw new RequestError('session_changed', 409);
         return json(result);
       }
-      if (request.method === 'GET' && (path === '/api/native-push' && options.nativePush || path === '/api/web-push' && options.push || path === '/api/telegram' && options.telegram)) {
+      if (request.method === 'GET' && ((path === '/api/native-push' || path === '/api/native-push/v2') && options.nativePush || path === '/api/web-push' && options.push || path === '/api/telegram' && options.telegram)) {
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const expected = request.headers.get('x-expected-user-id');
         if (!expected || expected !== userId) throw new RequestError(expected ? 'session_changed' : 'account_precondition_required', expected ? 409 : 428);
-        const result = path === '/api/native-push' ? await options.nativePush!.status(userId, await auth.nativeSessionProof?.(request.headers) ?? null) : path === '/api/web-push' ? await options.push!.status(userId) : await options.telegram!.store.status(userId);
+        const result = path.startsWith('/api/native-push') ? await options.nativePush!.status(userId, await auth.nativeSessionProof?.(request.headers) ?? null, path.endsWith('/v2') ? 2 : 1) : path === '/api/web-push' ? await options.push!.status(userId) : await options.telegram!.store.status(userId);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError('identity_changed', 409);
         return json(result);
       }
@@ -202,6 +207,21 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         // Return the existing complete status shape. A failed read is an unknown outcome, never false success.
         return json(await accountStatus(userId));
       }
+      if (path === '/api/shared-spaces' || path.startsWith('/api/shared-spaces/')) {
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers:request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        if (!options.sharing) throw new RequestError('sharing_unavailable', 503);
+        const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers:request.headers }))?.user.id === expectedUserId;
+        return uncached(await handleSharingControlRequest(request, userId, options.sharing, isCurrentUser, readJson));
+      }
+      if (/^\/api\/(?:me|children\/[^/]+)\/avatar(?:\/|$)/u.test(path)) {
+        if (request.method !== 'GET' && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError('origin_rejected', 403);
+        const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
+        if (!userId) throw new RequestError('unauthorized', 401);
+        const isCurrentUser = async (expectedUserId: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expectedUserId;
+        return uncached(await handleFirebaseAvatarRequest(request, userId, options.avatars, isCurrentUser));
+      }
       if (documents && /^\/api\/children\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/documents(?:\/|$)/iu.test(path)) {
         if (request.method !== "GET" && !requestOriginAllowed(request.headers, publicOrigin)) throw new RequestError("origin_rejected", 403);
         const session = await auth.getSession({ headers: request.headers }), userId = session?.user.id;
@@ -216,7 +236,11 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
-        const response = await handleGrowthRequest(request, userId, options.growth, isCurrentUser);
+        const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
+        if ([...url.searchParams.keys()].some(key => key !== 'spaceId') || url.searchParams.getAll('spaceId').length > 1
+          || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
+        const growth = spaceId ? options.growth.forSharedSpace(spaceId) : options.growth;
+        const response = await handleGrowthRequest(request, userId, growth, isCurrentUser);
         if (!await isCurrentUser(userId)) throw new RequestError('identity_changed', 409);
         return uncached(response);
       }
@@ -233,7 +257,11 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError('unauthorized', 401);
         const isCurrentUser = async (expected: string) => (await auth.getSession({ headers: request.headers }))?.user.id === expected;
-        const response = await handleConcernRequest(request, userId, options.concerns, isCurrentUser);
+        const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
+        if ([...url.searchParams.keys()].some(key => key !== 'spaceId') || url.searchParams.getAll('spaceId').length > 1
+          || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
+        const concerns = spaceId ? options.concerns.forSharedSpace(spaceId) : options.concerns;
+        const response = await handleConcernRequest(request, userId, concerns, isCurrentUser);
         if (!await isCurrentUser(userId)) throw new RequestError('identity_changed', 409);
         return uncached(response);
       }
@@ -299,12 +327,16 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
           if ([...url.searchParams.keys()].some(key => key !== "cursor") || url.searchParams.getAll("cursor").length > 1) throw new RequestError("invalid_input", 400);
           response = json(await online.children.list(userId, url.searchParams.get("cursor")));
         } else {
+          const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
+          if (url.searchParams.getAll('spaceId').length > 1 || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
+          const tasks = spaceId ? online.tasks.forSharedSpace?.(spaceId) : online.tasks;
+          if (!tasks) throw new RequestError('shared_domain_unavailable', 409);
           const detail = /^\/api\/children\/([^/]+)\/tasks\/([^/]+)$/u.exec(path);
-          if (request.method === "GET" && detail && online.tasks.detail) {
-            if (new URL(request.url).search) throw new RequestError("invalid_input", 400);
-            const result = await online.tasks.detail(userId, detail[1].toLowerCase(), detail[2].toLowerCase());
+          if (request.method === "GET" && detail && tasks.detail) {
+            if ([...url.searchParams.keys()].some(key => key !== 'spaceId')) throw new RequestError("invalid_input", 400);
+            const result = await tasks.detail(userId, detail[1].toLowerCase(), detail[2].toLowerCase());
             response = result ? json(result) : errorResponse("not_found", 404);
-          } else response = await handleTaskRequest(request, userId, online.tasks);
+          } else response = await handleTaskRequest(request, userId, tasks);
         }
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
@@ -337,7 +369,11 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         if (request.method !== "GET") throw new RequestError("account_precondition_required", 428);
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
-        const response = await handleMemoryRequest(request, userId, options.memory);
+        const url = new URL(request.url), spaceId = url.searchParams.get('spaceId');
+        if (url.searchParams.getAll('spaceId').length > 1 || spaceId !== null && !z.uuid().safeParse(spaceId).success) throw new RequestError('invalid_input', 400);
+        const memory = spaceId ? options.memory.forSharedSpace?.(spaceId) : options.memory;
+        if (!memory) throw new RequestError('shared_domain_unavailable', 409);
+        const response = await handleMemoryRequest(request, userId, memory);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }
@@ -359,8 +395,10 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         const userId = (await auth.getSession({ headers: request.headers }))?.user.id;
         if (!userId) throw new RequestError("unauthorized", 401);
         const records = /^\/api\/children\/([0-9a-f-]{36})\/records$/iu.exec(path);
-        const response = records ? json(await options.care.listRecords(userId, records[1].toLowerCase()))
-          : await handleCareRequest(request, userId, options.care);
+        const sharedSpaceId = new URL(request.url).searchParams.get('spaceId');
+        const care = sharedSpaceId !== null ? options.care.forSharedSpace(sharedSpaceId) : options.care;
+        const response = records ? json(await care.listRecords(userId, records[1].toLowerCase()))
+          : await handleCareRequest(request, userId, care);
         if ((await auth.getSession({ headers: request.headers }))?.user.id !== userId) throw new RequestError("identity_changed", 409);
         return uncached(response);
       }
@@ -376,7 +414,12 @@ export function createFirebaseRequestHandler(options: FirebaseRequestHandlerOpti
         ? errorResponse("firebase_domain_not_ready", 503) : errorResponse("not_found", 404);
     } catch (error) {
       if (error instanceof RequestError) return errorResponse(error.code, error.status);
-      if (error instanceof FirestoreDomainError) return errorResponse(error.code, error.status);
+      if (error instanceof FirestoreDomainError) {
+        const response = errorResponse(error.code, error.status), retry = options.avatars?.retryAfterSeconds;
+        if (error.code === 'avatar_busy' && error.status === 429 && Number.isInteger(retry) && retry! >= 1 && retry! <= 60)
+          response.headers.set('Retry-After', String(retry));
+        return response;
+      }
       if (error instanceof FamilyError) return errorResponse(error.code, error.status);
       if (error instanceof FirestoreAuthorityError && authorityErrors.get(error.code) === error.status) return errorResponse(error.code, error.status);
       if (error instanceof FirebaseAuthError && authenticationErrors.get(error.code) === error.status) return errorResponse(error.code, error.status);

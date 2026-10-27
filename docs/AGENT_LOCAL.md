@@ -29,7 +29,9 @@ OpenAI 相容服務使用同一個工程外 JSON：
 
 仍然執行同一條 `npm run agent:local`，不需部署 GCP。相容服務的地址和模型須明確填寫；地址沿正式服務的公開 HTTPS、禁止內網及重新導向規則。若用環境變數，對應為 `LOCAL_MODEL_PROVIDER=openai-compatible`、`LOCAL_MODEL_API_KEY`、`LOCAL_MODEL_BASE_URL`、`LOCAL_MODEL`，另可設 `LOCAL_MODEL_EMBEDDING_API_KEY`。
 
-`embeddingApiKey` 可省略；缺少時仍能啟動聊天，但知識查詢會明示向量未配置。需要現有混合檢索、知識初始化或背景發布時，Vertex key／相容服務另提供本人 Gemini 向量 key，保留目前 1024 維索引。Gemini 未另填時沿用其本人 key；ADC 維持原 ADC 向量路徑，不混用 key 或借平台額度。兩種 key 只進本機 Server，不進 Web bundle、狀態頁或公開日誌。
+`embeddingApiKey` 可省略；缺少時仍能啟動聊天，但知識查詢會明示向量未配置。需要混合檢索、知識初始化或背景發布時，可另提供本人 Gemini 向量 key，或在受保護 JSON 加上 `embeddingProvider:"vertex"`、`embeddingProject:"本人的專案ID"`、`embeddingLocation:"global"` 及本人 Vertex `embeddingApiKey`；保留目前模型與 1024 維索引。環境變數對應 `LOCAL_MODEL_EMBEDDING_PROVIDER`、`LOCAL_MODEL_EMBEDDING_PROJECT`、`LOCAL_MODEL_EMBEDDING_LOCATION`、`LOCAL_MODEL_EMBEDDING_API_KEY`。使用 Vertex 向量時，key 須獲准存取填寫的專案；不沿用聊天 key 或平台 ADC。
+
+Gemini 未另填時沿用其本人 key；ADC 模式維持原 ADC 向量路徑，不混用 key。兩種 key 只進本機 Server，不進 Web bundle、狀態頁或公開日誌。更換向量付款身份／專案／地區會改變本地工作綁定；重新啟動不自動重跑舊工作或初始化全部語料。
 
 本地聊天、編製、審核及獨立知識維護均使用正式 provider factory。`/__local/status` 顯示實際模型及向量是否配置；模型選擇以本機 JSON 為準，`/admin` 仍控制共同用量、期限與重試。若本地帳號已保存個人模式，該帳號的本人設定優先；切回平台模式才使用開發配置。修改工程外憑證檔後重啟入口，不能在運行途中換 key 接續同一個未知工作。更換 API 地址或向量付款憑證會改變背景工作的綁定，不自動接續舊外呼。
 
@@ -44,6 +46,8 @@ OpenAI 相容服務使用同一個工程外 JSON：
 ADC 留在本機。若全局 `GOOGLE_APPLICATION_CREDENTIALS` 指向舊檔案，在上述 JSON 明確設定正確的 `adcPath`，或修正目前 shell 的變數；入口不會默默忽略失效的明確路徑。模型專案只供 Google 模型請求，資料專案始終是獨立的 `demo-` 專案。
 
 ## 開啟及修改
+
+測試頭像選圖／裁切／保存時，可在目前 shell 設 `AVATAR_WRITES_ENABLED=true`；預設仍關閉寫入，Server 的生命週期 release gate 保持有效。它只傳至本機 Server，不會改正式站設定；可配合 `--no-model` 核對頭像及附件，不呼叫模型。
 
 - 開啟終端列出的 `http://127.0.0.1:<port>`；不要另開 Expo 的直接端口。原 Web 和 API 經同一個本機 origin。
 - 本地帳號為 `developer@local.yuyoufang.test`，隨機密碼保存在終端列出的 `.cache/agent-local/state.json`；這是本機合成帳號，不是正式網站密碼。正常登入、產品條款及資料同意仍經正式流程。
@@ -117,6 +121,8 @@ npm run agent:local -- --inspect-knowledge
 真網站模式明確加 `--live-source`；目前來源可選 `--knowledge-watch=fhs-solid-food` 或 `--knowledge-watch=fhs-feeding-booklet-en`。PDF 沿正式解析及已登記頁面範圍；超出單批的長資料會保留未完成，不宣稱已讀完。第一次改模式／來源須加 `--new-knowledge-work`，不能改寫原工作。網站與用途仍受現有 catalog 範圍限制。
 
 命令結束保存 emulator 快照；重新執行 `npm run agent:local`，聊天按同一份已核准維護來源清單檢索本地已發布資料，包括已發布的 PDF，毋須重新初始化種子或向量。候選仍經原發布／有效性閘隔離。尚未核對的內容不發布；真網站、多模態及長資料分批的未驗項不因樣本成功而自動通過。這個本地入口不部署或啟用正式雲端排程。
+
+若首次以 `--no-model` 啟動後保存了關閉的管理政策，之後提供憑證不會自行取消該政策。先在同一本機 `/admin` 明確啟用平台 AI，再執行維護；`background_knowledge_disabled` 是開關阻止執行，不代表 key 或模型不支援。不要重設資料或清零用量來排除此情況。
 
 ## 保存、停止與重設
 

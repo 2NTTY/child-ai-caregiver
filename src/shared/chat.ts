@@ -1,4 +1,5 @@
 import type { ChatFileMessageReference } from './chat-files.ts';
+import type { PhotoMessageReference } from './photos.ts';
 import type { VoiceMessageReference } from './voice.ts';
 import type { OfficialHelpId } from './agent-feedback.ts';
 export interface ChatMessage {
@@ -13,6 +14,7 @@ export interface ChatMessage {
   officialHelp?: OfficialHelpId[];
   voice?: VoiceMessageReference;
   file?: ChatFileMessageReference;
+  photo?: PhotoMessageReference;
 }
 export interface ChatPage {
   messages: ChatMessage[];

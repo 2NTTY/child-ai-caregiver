@@ -44,7 +44,7 @@ function hooks() {
   const slot = create => { const i = cursor++; if (!(i in slots)) slots[i] = create(); return i; };
   const effect = (callback, dependencies) => {
     const i = cursor++, previous = slots[i];
-    if (!previous || dependencies.some((value, k) => !Object.is(value, previous.dependencies[k]))) {
+    if (!previous || !dependencies || !previous.dependencies || dependencies.some((value, k) => !Object.is(value, previous.dependencies[k]))) {
       const next = { dependencies, cleanup: previous?.cleanup }; slots[i] = next;
       effects.push(() => { next.cleanup?.(); next.cleanup = callback(); });
     }
@@ -105,6 +105,7 @@ function owner(items = [item(a), item(b)]) {
     if (name === './useDomainEnvironment') return { useDomainWriteGuard() {} };
     if (name === './task-knowledge-runtime') return { useTaskKnowledgeRuntime: () => runtime, useTaskKnowledgeRefresh() {} };
     if (name === './family-document-archive') return archiveProjection;
+    if (name === './preparation-check-buffer') return compile('frontend/src/production/preparation-check-buffer.ts');
     throw new Error('Unmocked owner dependency: ' + name);
   });
   return { env, calls, readCalls, render: () => h.render(() => useFamilyDocuments(env)),
@@ -372,13 +373,13 @@ const reportRequest = h => ({ scopeKey: h.env.scopeKey, childId: child, authorit
   snapshotVersion: 1, periodId: snapshot(b).id + ':1', purpose: 'family', includeSources: true, includeRevision: false });
 async function withReportBrowser(action, throwClick = false) {
   const previousDocument = globalThis.document, create = URL.createObjectURL, revoke = URL.revokeObjectURL;
-  const activity = { urls: [], revoked: [], downloads: 0, removed: 0 };
+  const activity = { urls: [], revoked: [], downloads: 0, removed: 0, settle: () => new Promise(resolve => setTimeout(resolve, 0)) };
   URL.createObjectURL = blob => { const url = create.call(URL, blob); activity.urls.push(url); return url; };
   URL.revokeObjectURL = url => { activity.revoked.push(url); revoke.call(URL, url); };
   globalThis.document = { createElement: () => ({ click() { if (throwClick) throw new Error('Synthetic browser handoff failure'); activity.downloads++; },
     remove() { activity.removed++; } }), body: { appendChild() {} } };
   try { await action(activity); }
-  finally { URL.createObjectURL = create; URL.revokeObjectURL = revoke;
+  finally { await activity.settle(); URL.createObjectURL = create; URL.revokeObjectURL = revoke;
     if (previousDocument === undefined) delete globalThis.document; else globalThis.document = previousDocument; }
 }
 
@@ -406,6 +407,7 @@ test('report export returns precise failure and a real browser handoff result on
     assert.equal(activity.downloads, 0); assert.deepEqual(activity.urls, []);
     h.failWrite(200);
     assert.deepEqual(await h.render().exportReport(reportRequest(h)), { state: 'ready', message: exportReady }); await h.settle();
+    await activity.settle();
     assert.equal(activity.downloads, 1); assert.equal(activity.removed, 1); assert.deepEqual(activity.revoked, activity.urls);
     assert.equal(h.render().exportBusy, false); assert.deepEqual(h.calls[1].body, h.calls[0].body);
   });
@@ -463,6 +465,7 @@ test('report export failed browser handoff never returns ready and cleans its ob
   await withReportBrowser(async activity => {
     const h = owner([report()]); await h.load();
     assert.deepEqual(await h.render().exportReport(reportRequest(h)), { state: 'error', message: exportFailure }); await h.settle();
+    await activity.settle();
     assert.equal(activity.downloads, 0); assert.equal(activity.removed, 1); assert.equal(activity.urls.length, 1);
     assert.deepEqual(activity.revoked, activity.urls); assert.equal(h.render().exportBusy, false);
   }, true);

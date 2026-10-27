@@ -1,0 +1,51 @@
+{
+  "package": "P4-FAMILY-A shared care/profile slice",
+  "date": "2026-10-27",
+  "baseCommit": "a2c8cc4561a65eeb1ea621c48ac2b69d2605b62a",
+  "branch": "codex/p4-shared-domain-access",
+  "sourceSha256": {
+    "server/firebase-app.ts": "a19fac8dc372eca48c69929c73e11c531f8c93de309400e869b428a386377c22",
+    "server/firestore-authority.ts": "3e6d571b34403406f1ceca63a6b45f2acce466be63acb6063d95ba7148ac6a33",
+    "server/firestore-care.ts": "f93673a6ca42d284937fdce58cc7ebd462543fadeaa21fff69232e8df39e5c0e",
+    "server/firestore-disclosure.ts": "0e826f34a877513c326868e7b6ed257508c9f9be36eae3694926283130e5c1a8",
+    "server/firestore-online-receipts.ts": "856deff08d43eac544923361f2b54460bb2625be998dcbbc04512cd7b04565fb",
+    "server/firestore-online.ts": "545803fa057852316bd4116c4c5d83a1507d4060198ad25f86caf4a91ebee4d0",
+    "server/firestore-restore-content-erasure.ts": "da0ed20ba04729ffeb2afec5d4c6297f088586debbbb157ac3bf82fb9b16aca4",
+    "server/firestore-restore-core-records.ts": "efbbdaa11af4a01edf915b659901db35ad9c82ec68b0e076f14aece6c0c54797",
+    "server/firestore-sharing-records.ts": "cb0a93552d2868e2f72828689de360a95614c3ed3128eedd8e2bc9329663b837",
+    "server/firestore-sharing.ts": "3d092c96bb0eb868c115d73208e2e41832fc5248d6104bb1f79364a293fa335d",
+    "server/online-routing.ts": "5a51184febe8766355551d3424b439c17e9cd4dcaf300e24018199add409412e",
+    "server/shared-domain-routing.ts": "eea259ea548bff42ee1cdb752128d674d5bd1d8f5bc286689ec017ca811581e0",
+    "server/shared-write-attribution.ts": "bac82830886f368599368ef4490340170133b059f1f84e9944db901aea276277",
+    "src/client/care-api.ts": "908091891a537d6f5d9fe318e9f34107b94d3d4d70adc91f43c1452773704239",
+    "src/client/online-transport.ts": "96527943846239e3f005cc3658a825ac783cd3e4874794333165542a0b228273",
+    "src/shared/online.ts": "a6d8e3db4f0dd5b5a59c5f4cab841d77c517ed4df3f2ea84802c9099c2e7827b",
+    "src/shared/sharing.ts": "2b6c8325428c9253135cc0fe41da468a1dc21de43ba91d9932221381979f140b",
+    "tests/firestore-sharing.test.ts": "ea2aca8cfda95be5a273d83edd761391b84d7efde1d962f40bf9445350533b7e"
+  },
+  "runtime": "Node 24.19.0",
+  "checks": [
+    "five scoped sharing scenarios passed; latest new scenario includes production HTTP and shared client",
+    "two existing original-receipt compatibility checks passed",
+    "scoped TypeScript check passed"
+  ],
+  "review": [
+    "existing Sol read-only review and main review",
+    "profile erasure replay keeps storage attribution",
+    "dissolved-space receipt returns confirmed with null result"
+  ],
+  "retainedFailures": [
+    "initial new flow rejected unsupported sharing selector before implementation",
+    "new attribution initially escaped via raw receipt disclosure; fixed by public projection",
+    "automatic review rejected removing owner restore validation; not applied, scoped authenticated attribution used",
+    "prior foundation baseline photo restore assertion remains outside this slice"
+  ],
+  "notVerified": [
+    "real Firestore contention",
+    "cloud restore",
+    "space management UI and other shared domains",
+    "deployment or device checks"
+  ],
+  "noModelCalls": true,
+  "noDeployment": true
+}

@@ -30,6 +30,8 @@ S06-W03 的 Better Auth user／session／account／verification schema 由固定
 <a id="p2-family-data"></a>
 ### S06-W02 家庭延伸
 
+本小節保存已交付 SQL 版本的歷史 schema，並非現行 Firestore 或 P4 新歸屬模型。P4 選定模組、穩定儲存身份／管理權分離及刪帳契約見 [目標模型](#p4-p5-data)，不沿歷史 owner 外鍵級聯刪除已轉交資料。
+
 新增 `006-family-access`，不改寫 P1 migration 或重建資料。`workspaces.owner_user_id` 保留唯一 owner 及原孩子加密歸屬，新增 `access_version`；`family_members(workspace_id,user_id)` 唯一保存 caregiver／viewer。撤權刪除資格，不刪該成員的私人聊天；失去孩子存取權後不能再讀寫，其他成員亦不能取得其私聊。
 
 `family_invitations` 保存 UUID、workspace、token SHA-256、加密收件電郵、角色、建立者／時間、到期、接受者／時間及撤銷時間。只在建立回應提供 32-byte 隨機碼，原碼不落 DB／URL／日誌；已接受與已撤銷互斥，終態不還原成 pending。電郵密文 AAD 綁 workspace／invitation，接受及角色修改在 workspace 排他鎖內核對。owner 管理邀請與成員時更新權限版本；接受的原終態保留，以防舊碼恢復撤權。
@@ -102,7 +104,7 @@ owner 刪除孩子時，現有外鍵連帶刪除照護記錄、聊天及該孩�
 <a id="online-storage"></a>
 ### S07-W03 持久操作與變更
 
-`010-online-operations` 加入 workspace `change_seq`（bigint，HTTP 用十進位字串避免精度流失）、`online_operations` 及 `online_changes`。識別及版本契約見 [API](API.md#online-http)。Web 的 deviceId 是本頁傳輸實例識別，不是授權憑據或 P4 裝置登記。
+`010-online-operations` 加入 workspace `change_seq`（bigint，HTTP 用十進位字串避免精度流失）、`online_operations` 及 `online_changes`。識別及版本契約見 [API](API.md#online-http)。Web 的 deviceId 是本頁傳輸實例識別，不是授權憑據；P4 不新增配對裝置登記。
 
 - 操作以 `(user_id, op_id)` 唯一，保存 device／workspace／epoch、路徑、孩子關聯、業務狀態及 changeSeq。正規化請求 hash 及結果使用既有 cipher 加密；不另存明文業務 payload，AAD 綁本人／opId／欄位。原記錄原文不因 hash 正規化而修改。
 - 變更以 `(workspace_id, change_seq)` 唯一；僅記種類、孩子識別、刪除旗標及可見範圍。查詢在目前授權下過濾，游標可越過本人無權讀取的序號；空頁不代表整個家庭沒有私人活動，不回傳其內容。
@@ -152,7 +154,7 @@ S09-W02 的 `011-memory-online` 擴充既有台帳的 `memory` 種類，沿用�
 
 - <a id="data-age-01"></a>出生日期可選；約數年齡保存原始值、單位、精度及對應日期，不推造出生日期。衍生年齡保存可追溯的計算依據，不能反過來升格為更精確的已確認資料；缺資料不阻止一般問答。
 - <a id="data-age-02"></a>預產期／早產資料按需要確認，實際年齡與矯正年齡分開；每條關注規則明示採用何種年齡及官方依據，未知時不假定可用矯正年齡。地區預設香港但可核對；語言、過敏、特殊需要及家庭偏好只保存必要且已確認的內容、來源及適用範圍，不以語言推斷地區或醫療條件。
-- <a id="data-age-03"></a>可見範圍與確認狀態分開；家庭背景判斷不能使用未獲准共享的私人資料。新增持久資料及更正／刪除關係納入既有加密、刪除及備份；完整匯出／遷移隨 P4 交付，不能遺漏新增類型。
+- <a id="data-age-03"></a>可見範圍與確認狀態分開；家庭背景判斷不能使用未獲准共享的私人資料。新增持久資料及更正／刪除關係納入既有加密、刪除及備份；P4 文檔包／備份及 P5 跨 Server 遷移均須承接新增類型。
 
 <a id="section-5-3"></a>
 ## 5.3 已确认事实
@@ -342,7 +344,7 @@ P2 任務及外發須保存以下必要語義；實際表名、欄名及枚舉�
 - <a id="data-kv-02"></a>核對、發布、停用及向量準備狀態分開；核對且所需向量完成才發布新版，不把生成失敗當作空向量成功。保留已發布版本與歷史引用關係；已知失效即停止檢索，不能為等待新版而繼續使用。
 - <a id="data-kv-03"></a>正文未變且模型／維度／處理版本相同才可復用向量，變更只更新受影響片段；不混用不相容向量。同次查詢復用保持當前 run 及適用條件，不讓私人查詢流入跨家庭共享資料。
 - <a id="data-kv-04"></a>檢索結果關聯片段／來源版本及實際檢索模式、降級／不可用原因；向量距離或排名不等於建議支持證據。正文仍須可逐項引用，模型不能產生不存在的片段識別。
-- <a id="data-kv-05"></a>P2 記錄相容 PostgreSQL／pgvector 版本及必要恢復前置，空目標先具備相容擴展，不能缺擴展仍宣稱還原完成。P4 的管理／批量維運及完整遷移沿用這些資料，不建立第二套向量／引用事實來源。
+- <a id="data-kv-05"></a>P2 記錄相容 PostgreSQL／pgvector 版本及必要恢復前置，空目標先具備相容擴展，不能缺擴展仍宣稱還原完成。P4 管理／批量維運與知識資料移轉及 P5 跨 Server 遷移沿用相同版本／來源資料；現行 Firestore 不依賴本歷史 SQL 擴展，不建立第二套向量／引用事實來源。
 
 S10-W01 的 [009 migration](../server/migrations/009-public-knowledge.sql) 已通過必要真 DB／embedding／還原驗收：`knowledge_sources` 保存啟用狀態／活躍版本；`knowledge_versions` 保存不可變內容、核對／發布及日期語義；`knowledge_chunks` 保存短原文、核對轉述、適用性及 hash；`knowledge_vectors` 以真正 embedding 輸入 hash＋模型／維度／pipeline 重用。`embedding_attempts` 分 query／maintenance，公共文件可記 document hash，私人查詢不保存正文或 hash。停用標 withdrawn 且保留舊正文／核對依據；重新發布先重核。這些公共資料不替換原私人加密表；備份還原須涵蓋 vector extension 及全部表。
 
@@ -491,6 +493,8 @@ INT-W04 在同一加密 payload 保存可選 management：用途、來源性質�
 Firestore `model_settings` 以本人穩定ID保存；本人授權、預期版本、設定寫入及 preferences 變更在同一交易。密文保存 provider、model、mode、背景 opt-in、本人限制、更新時間與 key；新增欄位可缺省，舊設定按原行為讀取。首次v2保存標記 limitPolicyVersion:2；設定要求與實際管理上限分開，後者由共同解析器計算，不回寫本人選擇。不是孩子／家庭資料，其他成員不可讀取。沿原AES-GCM／scope／版本綁定，回應沒有明文、尾碼或 hash；移除key清空當前密文並停用，歷史備份依保留規則管理，不能冒稱已向供應商撤銷。
 
 `model_settings_operations` 的確定ID綁 `[userId,opId]`，交易內保存無密鑰的結果設定及加密請求指紋；不保存可重播的原key正文。原opId查回仍須當前帳號權限。新collection加入備份／還原schema及帳戶清理列表；與其他credential／protocol資料一樣不進家長資料匯出。欄位索引預設排除；不為收據新增公開查詢或第二套設定權威。
+
+獨立向量路由的 `embeddingProvider`、`embeddingProject`、`embeddingLocation` 與 `embeddingApiKey` 在同一密文及版本保存；舊記錄缺省為 Gemini。公開設定及操作收據只保存非密鑰路由與 `embeddingKeyConfigured`。Vertex 專案／地區必須完整，修改路由不可沿用先前 key；刪除 key 不把其值留入操作收據。沿既有 recovery schema、帳戶清理及索引排除，毋須新增集合或搬遷語料。
 
 Firestore用量／root budget沿Server指定的billingSource及原run／attempt保存，platform與personal分帳，不清零。公共語料維護不使用家長key。key不進工作、Agent session、prompt、候選、公開收據或日誌；每輪只在Server記憶體持有憑證，持久綁定只記設定／政策版本與預算。背景沿受信帳號檢查opt-in，不因停用或憑證失效改借平台。
 
@@ -753,11 +757,13 @@ API／worker 從同一政策建立新 run 快照，舊 run 保留模型／預算
 聊天的 optional `officialHelp` 最多兩個固定版本 ID，由同一 run 已成功選取的工具引用導出，與 model message 交易保存。沿原 message／runId／inReplyTo，不新增可獨立寫入的提示資料庫；舊訊息沒有此欄位仍可讀。卡片的正文、官方 URL、核對日期由版本化共用登記提供，含義變更建立新 ID。進度事件只供當次連線顯示，不持久化、不是保存收據，也不作記憶來源。
 
 
-### Android 原生通知資料
+### Android／iOS 原生通知資料
 
 `native_push_bindings` 保存同一裝置授權的 ID／version、token revision及密文 token／session hash；可查 metadata 僅供授權索引與有界列表，不把 token 放入收據、匯出或產品日誌。`native_push_tokens` 是確定 hash 的唯一佔位，必須驗證原身份／世代和會話狀態後才可轉移。`native_push_deliveries` 保存一般測試的單次嘗試及真實結果；照護提醒仍使用既有 `contact_requests`，不新增另一份任務。
 
 收據、版本、變更與 outbox 沿 Firestore 同一交易。裝置會話讀取參與登記／發送前的交易；外發仍在交易外。備份／刪除 collection 清單只追加，保持原清理 cursor；隔離還原保留投遞歷史，撤銷綁定、清除 token、捨棄唯一佔位，不復活舊裝置資格或通知。
+
+iOS 綁定的密文增加 `apns: {topic, environment}`，平台／provider 由其導出；缺欄位明確屬舊 Android／FCM。APNs token 唯一指紋包含 provider、topic、環境及規範化 token；舊 FCM 指紋不重算。平台或 APNs 配置改變不能沿原綁定輪換，避免舊授權轉移至不同目的地。測試投遞另存平台快照供 v1 過濾，照護提醒仍使用原聯絡台帳。新增欄位仍在加密及恢復 schema 內，還原保留 metadata 但撤銷 token；回退至少須支援這個相容 reader，不能退至不認識 iOS 記錄的版本。
 
 
 <a id="chat-file-data"></a>
@@ -765,4 +771,89 @@ API／worker 從同一政策建立新 run 快照，舊 run 保留模型／預算
 
 `chat_file_assets` 與既有語音採相同私人儲存邊界，使用獨立的 `chat-file-asset` 加密kind、不可變 `chat-file/v1` 物件地址及generation／hash。每筆保存本人、孩子、儲存世代、原預留操作指紋、版本、上載claim、唯一messageId及刪除義務；檔名及內容metadata留在密文內。列表索引只保存必要scope與處理狀態，不把私人正文加入公共索引。
 
+文件／錄音共享刪除保留原資源 scope／objectScope；操作者根 scope 的收據與來源刪除屏障在同一交易提交，無正文收據只證明受理。新刪除保存實際 actorUserId；共享刪除另存原 actorOperationId，日誌 operationId 復用共同來源操作映射，schema 同時核對映射；非來源 owner 另附密文共享署名，綁來源／孩子／資源及 expectedVersion＋1 的接受版本。journal／清理後續增版不改此署名，恢復使用同一 schema 核對；舊無署名記錄按來源本人／既有系統清理解讀。原獨立日誌與 worker 負責完成已受理義務，撤權不撤回刪除，也不讓新請求繼續沿舊權限操作。原 change feed 沿附件既有 chat／care 種類失效，不另加舊客戶端無法解析的種類。
+
+共享照片刪除沿相同來源／操作者分離：來源交易同時標 deleting、保存接受版本署名、移轉原 active 配額至 cleanup、建立原 photo_cleanup 及操作者收據。cleanup 的 journal 可暫為 null，原 consumer 先補獨立日誌並核實，再完成 tombstone 及物件清理；清理確認前不釋放 cleanup 配額。關聯照護記錄僅由已保存 photo.recordId 取得並失效，不授予 attachments 呼叫者其他記錄讀寫權。照片與關聯記錄的日誌用不同穩定來源操作 ID，保留各自清理義務。還原可由獨立日誌補本地遺失的 proof，保留原 scope／操作者署名及實體清理；舊世代照片刪除收據保留身份並遮蔽結果。缺獨立日誌仍不得開放還原資料。
+
+共享同步不新增業務資料副本或常駐服務。復用 changes 的加密 projection，補 workspaceTag／epochTag／userTag／childTag／sortKey 複合索引。cursor 只回傳客戶端，不寫 Firestore；沿原加密 envelope 綁目前操作者根 scope、空間／孩子／模組，內含來源授權 fence 及掃描位置。來源／操作者授權、世代或共享 basis 改變後重新取當前資料，不能沿舊游標繼續披露歷史。
+
 檔案原件保存與可閱讀性分開；正文不進聊天document。聊天只引用原件ID／版本／hash。未知上載只查原地址，禁止換ID重送；刪除立即遮蔽metadata，先記錄獨立 `file-delete` intent，再清理固定generation。孩子／帳戶刪除、配對備份、匯出及隔離還原須同樣承接該義務；恢復時先重放獨立刪除日誌，再綁定新儲存世代；已刪附件只保留無正文的清理義務。未結清上傳保持unknown並保留舊物件查核／清理義務，不冒認可讀。配對manifest可選 `chatFiles` 以相容舊備份；新備份固定generation及hash並保存獨立附件副本。
+
+
+<a id="avatars"></a>
+### AVATAR-01 獨立頭像資源
+
+頭像不寫入 Child／SessionUser／care profile或Auth photoURL。新增 encrypted domain collections：`_avatar_heads`保存顯式target binding、單調version、current descriptor/null tombstone及updatedAt；`_avatar_uploads`保存upload/asset UUID、scope/actor/basis、原bytes/hash/MIME、crop、不可變recipe快照、expiresAt、state/lease/normalized及committedVersion；`_avatar_cleanup`保存scope/asset/pinned generation、原因及可續行清理階段／attempt/nextAttemptAt。此處 `_` 為現有namespace collection後綴表示，不新增裸公開下載路徑。head ID沿具domain prefix的hash；不保存原圖、檔名、GPS。原hash只作內部 immutable傳送檢查。沿`_online_operations`，沒有`_avatar_ops`；披露收據須重核現權限及目前是否仍可披露，已失效result可為null。
+
+物件為`avatars/v1/<boundScopeHash>/<assetUUID>`、format `yuyoufang-avatar-object/v1`；AES envelope/AAD綁project、namespace、顯式target kind/ID、owner、workspace、child/NIL、storageEpoch、asset。本人NIL不代表任意孩子。只保存重編碼normalized JPEG；descriptor固定generation、cipher hash、plain hash、bytes/MIME/尺寸。重用immutable encrypted bucket port而非photos配額／分析／分享狀態機。先持久記錄清理責任才可寫物件。
+
+跨實例准入只保障同actor/target未完成upload數量及同upload唯一lease，不新增全cluster codec吞吐配額：reserve同交易以targetTag＋actorTag＋pending projection有界query，並讀寫該head的內部reservationNonce作串行sentinel，不改public version/asset。commit/過期/拒絕更新pending；未確定lease不能靠TTL刪掉再重decode。restore讓未完成upload不可commit，重建pending projection及barrier，不恢復decodelease。每程序decode/queue上限仍由集中配置掌管。
+
+| 生命週期 | 必需行為 |
+|---|---|
+| 匯出 | account allowlist加`self_avatar`／`self_avatar_content`（無childId）、`child_avatar`／`child_avatar_content`（按目前scope）；只目前normalized內容／版本，不含pending/raw/op／內部descriptor。 |
+| 配對／原生備份 | collections與avatar object generations同snapshot；舊manifest無avatar可讀，新manifest聲稱含avatar卻缺object必須fail closed。Firestore native backup不含Storage，必須納入原media backup/managed retention。 |
+| 還原 | 更新codec、locator/AAD、allowlist、object rebind及epoch rotation；只恢復committed normalized head，未完成upload轉expired/rejected，不再可commit。舊epoch操作不可重送，cleanup及journal安全續行。 |
+| 明確移除 | 新`avatar-delete` intent綁target kind/ID及throughVersion；獨立append-only journal durable後才可確認邏輯移除，涵蓋被移除及更早版本，阻擋舊備份／soft-delete復活。在途工作被barrier阻擋，unknown不假完成。 |
+| 更換 | 新head交易成功才清舊object；superseded非永久erasure，原snapshot可保留舊版，但後來explicit remove的throughVersion或帳戶／孩子erasure仍覆蓋。 |
+| 孩子刪除 | 原child barrier阻擋所有avatar讀寫，清current／staged／cleanup／收據及物件；不刪本人頭像。 |
+| 帳戶刪除 | 沿原ownership清本人及本人擁有scope的孩子，撤銷本人未commit uploads；不因曾上傳別人的shared child而刪他人current。 |
+| orphan cleanup | expiry、拒絕、衝突、撤權、刪除及寫後崩潰皆可續行；清前核scope/lease/generation且head未引用，不TTL刪row留下object，不盲prefix bulk delete。 |
+| erasure recovery | strict新增intent變體及erasureCoversAvatar；photo/voice/file/content語義不變。restore前後重核最新獨立journal，舊reader不認識新kind不能繼續當相容。 |
+
+查詢索引只按實際uploads/cleanup有界query建立最少composite；ciphertext/crop/hash不查正文免索引，缺index不得全庫scan。讀持久head不以日後調低的admission值判舊資料損壞。無Child／SessionUser backfill，missing head為初始資源。
+
+首次新collection/journal寫入後，API／worker／recovery不可回退至不識別新schema版本；可回UI或相容server hotfix，不能清真資料解鎖回退。正式啟用前同版writer/reader、cleanup、erasure、export、backup/restore及索引須齊；關寫入不停止相容read/erase/cleanup/backup。部署及實際原生備份演練由既有GCP負責人完成，本機stub不是雲端驗收。
+
+頭像 cleanup 的內部 responsibility key 為 `hash(["avatar-cleanup", explicit AvatarBinding, assetId])`，包含完整 owner/workspace/child/storageEpoch/target discriminator；不是單一 assetId。每個 immutable object address 保留獨立責任與 pinned generation，restore 不覆蓋或以有限陣列截斷舊 epoch 責任。`expectedVersion` 保留 staging 的 remove throughVersion 覆蓋依據；`objectBinding` 必須等於該責任 binding。current 保護比較完整 binding 與 descriptor（含 generation/hash），不是只比 assetId。已還原 current 的新 epoch 責任與所有原 epoch 責任同包交接，孩子 erasure 對 avatar cleanup 跨 epoch 覆蓋；不擴其他 domain 的既有刪除匹配語義。
+
+
+Restore新normalized copy先在既有 `_restore_operations` 建立加密intent：綁restore identity／provenance、原inventory digest、source evidence、target bucket與新epoch及完整未來cleanup。完整set以固定count/digest header綁定，每row immutable payload／單調CAS；只有確認贏得prepared→writing的原調用可Storage I/O。最終cleanup取持久intent全集聯集，不能只從尚有head的子集推導。逐批exact final document hash handoff後，activation marker與current同交易提交；之後逐批刪intent及推cursor，最後才移marker。任何一步不確定保留原責任；此開發候選的未完整恢復界線見[交付gate](DECISIONS.md#avatar-codec-decision)。
+
+Claim 回應丟失時，只准尚未呼叫 Storage 的同一次 invocation 作一次交易查回；完整 set／payload、copying phase 及本次 fresh token 均相符，才算確認贏得原 claim。查回失敗、另一 token、服務重啟或已開始物件寫入不沿用這項權限；保留原 intent 並依原地址查核，不重做未知外部寫入。
+
+已具完整、經認證 copy set 的隔離還原可由操作員明確放棄：先在與 activation 相同交易邊界核對沒有 `current`，把 index 固定為 `aborting`；不可再 claim、markKnown 或啟用該計劃。逐項只處理經 set／payload 驗證的目標新 epoch，在原目標物件地址以 generation CAS 寫入不含圖片的永久 marker（`yuyoufang-avatar-restore-abort/v1`），再刪除原已核實 generation。marker 加密 proof 綁原 identity、payload hash、地址及舊 generation；既有物件或遲到 create-if-absent 只能有一方通過 CAS，後者不能在 marker 存在時重建副本。回應丟失只查原 marker，讀回失敗保留 `aborting`；再次明確執行沿原身份完成清理，不能重做 copy。全部確認後為 `aborted`，原 intents、staging pages 與 marker 保留，不自動刪庫或重新啟用。
+
+放棄不讀來源正文、不要求已失效的來源／Auth／journal 繼續批准原 copy，也不修改來源、Auth、獨立刪除日誌或備份。只返回 `abandoned`，不宣稱 target 控制資料已改為 paused；隔離及停止 target 服務仍由部署流程保證。未知 inventory、缺 header／legacy partial plan、已存在 `current` 均拒絕，保留現場供核對；不憑任意物件 prefix 刪除。永久 marker 不得納入一般暫存清理；soft-delete／舊備份保留期仍按原契約，不宣稱即時物理抹除。[Cloud Storage generation preconditions](https://docs.cloud.google.com/storage/docs/request-preconditions)、[soft delete](https://docs.cloud.google.com/storage/docs/soft-delete)（2026-10-24 核對）。
+
+
+含已知 avatar copy set 的 final plan 先在同一 reserved collection 寫入加密 `avatar-plan-stage`：固定 attempt token、完整 header／page hashes／final envelope，以及 copy setHash／recordsHash／原 business inventory hash。頁面 create-only，同交易核 token、building phase、無 progress/current；不使用 blind set。重啟只接受 marker 列出的精確頁 ID，並重核原 target inventory、source/Auth/journal 與 native provenance；完整頁集原樣移交 progress，缺頁則先 CAS discarding fence，逐頁驗 hash 後有界刪除，再清 marker。這段 rollback 不改 business rows、不刪 copy intents；舊 attempt 被 token 擋住，重新規劃不能重寫已 known 的 Storage copy。legacy 無 marker 的 partial pages 仍拒絕，沒有 avatar port 也不能藉新 checkpoint ids 放行。
+
+
+<a id="p4-p5-data"></a>
+## P4／P5 目標資料模型與實作邊界
+
+沿現有 Firestore store、固定資源 ID、版本、密文、來源、原操作／收據與索引分頁擴充，不建立 SQL 模擬層或第二權威。[REQ-P4-01～10](../SPEC.md#p4-p5-product) 管產品含義，PD-01～06 已由 [ADR-029](DECISIONS.md#adr-029) 確認；下表仍是完整目標，不能把首段資料服務當全部完成。
+
+FAMILY-A 首段新增 namespace 下 `shared_spaces`、`shared_memberships`、`resource_shares`、`shared_invitations`、`shared_operations`。前四者是加密的共享控制資料，不含孩子正文，以穩定系統 routing scope 保存；空間自己的儲存身份為 `space:<spaceId>`／同一 workspace ID，與現任管理員分開，班級業務寫入仍待後包接通。分享只指向原資料 scope 及選定模組，不移動、複製或重新加密原資料；操作收據仍綁操作者個人 scope。
+
+FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新增成員／孩子副本。選擇只在共用 owner 保存導航及授權投影，不另建可修改孩子資料；共享 basis 改變清舊快取。成長、關注及文件共用同一 authority digest，綁來源 epoch／授權及共享 basis，不改本人版本格式。新成員密文保存由准入身份提供的 `label`（目前為已驗證電郵），舊記錄缺值時顯示原 UID，不猜姓名；不在可查詢 metadata 加電郵。本人空間依 memberTag／active／spaceId，空間成員、分享及邀請依 spaceId／active／entryId 有界分頁；新增四項複合索引定義，部署前另建立。游標以本人 scope 加密，子列表保存空間版本；被撤權的來源成員及已刪原件不再出現在分享列表。原 `shared_operations` 提供公開控制收據投影，不公開內部 storageIdentity／managerGeneration 或完整來源 scope。
+
+記憶沿原 `memory_facts`／`memory_topics` 及其修訂保存，共享查詢與歷史只讀 family 範圍，不公開原私人候選版本。非 owner 的建立、確認及最新變更證據分別保存於密文，公開投影移除；停用不偽造重新確認，建立證據仍指第一版。還原逐項核對資源／來源／版本與署名，舊 owner-only 資料保持原要求。私人聊天來源的 ID 只向原資料帳戶披露，其他有權成員讀已確認描述及目前有效性；summary 仍為本人私有。修訂分頁新增 visibility composite indexes，正式啟用前須建立。
+
+記錄／概況的共享寫入仍保留原 scope／ID，作者及確認者記實際操作者。非擁有人寫入另在同份密文保存 Server 產生的空間、來源擁有人、資源／版本及權限 basis 證據；公開 DTO 移除內部證據。還原保留舊資料的 owner 校驗，只允許有相符證據的共享署名，不要求歷史作者目前仍是成員。概況刪除屏障重放須使用儲存 schema，保留屏障之後合法新寫入的證據。
+
+待辦沿 `tasks`／`task_revisions`，非 owner 的建立／修訂分別保存 `createdViaShare`／`changedViaShare`，公開任務與歷史 DTO 移除內部證據。建立證據保留原作者及第一版，修訂證據綁當版操作者；未附證據的舊資料仍要求 owner 署名。提醒 outbox 保留原 scope、接收者、版本及世代，沒有把共享操作者的身份當付款或渠道授權。共享收據以 `shared-task-result:1` 指向原版本修訂，重新核權後讀取，不能將後來完成狀態當原建立結果。
+
+共享領域收據沿原 `online_operations` 儲存在操作者範圍，結果保存 `shared-domain-receipt:1` 指標，不另存來源正文。查回及原操作重試重新核對目前共享與來源存活；撤權、解散或刪除時返回原成功收據及空結果，不重做效果。來源領域變更與操作者的共享變更同交易提交；其他成員的主動變更同步仍待後段接通，不能以此宣稱整個共享體驗已交付。
+
+成員保留 membership ID／版本，分享綁來源成員世代；撤回、離開、移除、轉交及邀請變更均有版本和原操作。帳戶／孩子刪除清除相關成員或原件分享引用，不刪已轉交的空間控制資料。備份集合清單以 append-only 加入上述五項；恢復使用目前共享權限，更新來源 epoch，刪除日誌同樣處理共享引用，authority hash 包含共享控制資料。備份之後加入的現任管理員／活動成員只補必要身份／准入圖，仍核目前 Auth，不因此帶入私人業務內容或 session。這是合成恢復接點，正式新資料的完整配對恢復仍屬 S15／P4 門檻。
+
+| 資料責任 | 必要關聯／生命週期 |
+|---|---|
+| 身份／准入 | Firebase UID 不因 provider 連結改變；保存已驗邀請接續與 UID 關係，不由姓名／relay email 推算身份。裝置 session、空間資格及付款授權各自獨立 |
+| 穩定儲存歸屬 | 資料空間／資源身份與現任管理員分離，轉交保留資源 ID、版本及來源。現有加密 AAD／owner 綁定須由 adapter 相容承接，不能因改管理員使密文不可讀或刪帳級聯移除已轉交的空間自有資料；共享個人原件不改歸屬，本人刪帳時原件及共享引用按原規則處理，不自動複製 |
+| 選定模組／共享範圍 | 記明來源資源、模組與目標空間、適用版本及權限版本；範圍以外資料不因家庭成員身份公開。共享原資源，不改其儲存身份／ID；可重建授權索引不成另一份可修改權威，撤回只終止共享 |
+| 班級／教師空間 | 班級可獨立存在，名冊可查詢／搜尋／分頁；加入空間後同一權威資料供成員按角色讀寫，不複製給每人。移出保留同一班級／資料，指定負責人獨立管理；空間退出轉交或解散，保留已轉交空間資料及他人個人原件 |
+| 混合對話 | 發起帳戶、對話目標集合及訊息／工具結果的孩子／班級關聯可追溯。私人對話與業務資源分開；分享資源不分享聊天。範圍分離不足須明示，不以全對話塞進單孩匯出 |
+| 多孩批次 | 原 run／批次／opId、固定目標及各項預期版本、必要確認與授權版本；逐項結果、收據、unknown、進度及恢復位置持久化，不逐孩另開預算 |
+| 文檔包 | 穩定包 ID／版本／內容識別、格式與資料 schema 版本、用途、範圍／完整度、來源鏈與原確認者、事實／推測標記、資源版本、附件 manifest／hash、可信完整性證明及可讀摘要 |
+| 匯入映射／紀錄 | 來源身份／資源 ID／版本到目標資源的映射、原操作指紋、包／批次、操作者／時間／目標／所選範圍、完整性結果、逐項建立／更新／略過／衝突與原因、取消／中斷／恢復；不按同名去重，不另存不必要私人全文 |
+
+跨人匯入建立獨立副本，保留來源標識與映射，不覆寫對方修改或自動跟隨更新；組內分享仍共用權威資料。本人備份可含有權備份的私人聊天、記憶、來源及附件，與交接包的範圍可不同。憑證、session、key、付款／執行授權及投遞工作不放入普通資料包；待辦內容沿普通服務保存，按當前帳戶授權／渠道及相同提醒政策產生新 outbox；不另設匯入啟用欄位，不搬來源投遞工作。
+
+完整性須有可信來源簽章或等效驗證，結合 manifest／附件 hash；包自報 hash 只供內容校驗，不能獨立證明未篡改。通過技術／權限檢查可直接成為正常資料，保留其原來源、確認者和不確定性，不強制先變成待採納項。AI／人工檢查的可選結果與完整性結果分開；缺可信證明明示後可選繼續，簽章／hash 不符拒絕且不降級；匯入紀錄保存實際驗證狀態及用戶選擇。
+
+沿現有交易提交必要業務、版本、收據、變更及 outbox；長文、名冊、匯入項及紀錄有界分頁，不把整班／整包塞一份 document。中斷接續保留原操作及成功項，交易回調不呼叫模型或通知。可重建投影不成為新權威。
+
+用戶備份／還原與伺服器災難恢復分開：後者仍隔離還原、重放持久刪除日誌、核對 Auth／撤權與附件 generation、更新 epoch、停止舊工作。手動差異還原預設保留目前較新修改／刪除；明確整批選擇覆蓋衝突或恢復已刪項時，保存新操作、來源映射及可追溯的新版本／身份，不抹去原刪除日誌，不放寬自動恢復的防復活。P5 才搬遷完整 Server 權威及工作，沿單主／不丟新寫入回退；P4 匯入不轉移舊執行權。

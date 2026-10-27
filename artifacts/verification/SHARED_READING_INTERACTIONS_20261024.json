@@ -1,0 +1,84 @@
+{
+  "checkedAt": "2026-10-24T12:47:33.185Z",
+  "base": "ee0b7b1759b6a2c4edb890a34081c34ac5c9caad",
+  "branch": "codex/shared-reading-interactions",
+  "node": "v24.19.0",
+  "productHashes": {
+    "frontend/app/(dashboard)/_layout.tsx": "17127b1758ee078ee0b3a0c2f3a5d97c431760a8a2760d9018d21447c82116e9",
+    "frontend/src/components/NotificationBell.tsx": "90430e2a0ffc04cf2c306e18dc9595451e290b799e7247d1cc539635180d59d1",
+    "frontend/src/components/agent/AgentComposer.tsx": "5f3a346b6f635c296bfe8164d3134f798fe21c21546a50de7eb8155220c63cc7",
+    "frontend/src/components/agent/AssistantInputDialog.tsx": "3ad257f684d3afc3ffa4985b177b420919cb4a29d3c08cbc3ae46eb321f36e9f",
+    "frontend/src/components/agent/MobileQuickInputDock.tsx": "9b35991d317bc2414df1b941981ad88543d78f92cc15c0e6ff8ff6ce5e531828",
+    "frontend/src/components/agent/VoiceCapture.tsx": "fc89499d36b1820f76f9a31af05277a5cd34e64b33e286eea470851f5030cb1a",
+    "frontend/src/components/agent/VoiceCapture.web.tsx": "2e7213b433ec8d1e4edff6270e415745a3deb7250ddf6e870e88a9c46676a9fb",
+    "frontend/src/components/chat/ChatTimeline.tsx": "110b1eea342543e904e1aea29599645c3a2f9d61542ad1835acf15df7ccbed51",
+    "frontend/src/components/history/PersonalHistoryViews.tsx": "7f56b48cd11ca3bb6511ebe229c225530db48d309f7a4da033b3a1167abfb00f",
+    "frontend/src/components/preparations/PreparationWorkspace.tsx": "b68cd93357c03d96efdf66bbf2340e881a397eff3febf6ed6f07ebea879af20c",
+    "frontend/src/screens/chatScreen.tsx": "622c0fe5cdc922ba12dfc5385e837f222517c1f968b8e50c8c30bf7d787808c7",
+    "frontend/src/components/agent/VoiceRecordingTimer.tsx": "c9fb9c1e9057b23a17d33737197f136be23c527039342baa978fd282125f7ff6",
+    "frontend/src/components/chat/useChatReadingAnchor.ts": "b34c8728062fd4d0917e285605a5efe31df1fe311b4b94fddb57cee207825670",
+    "frontend/src/components/chat/useChatReadingAnchor.web.ts": "95ecd495aaa9874ad3b70ee7c3cc6c5b17b2632c12458ce4b43d23e795607d3d"
+  },
+  "checks": [
+    {
+      "name": "notification-bell-layout",
+      "passed": 4,
+      "executor": "Sol"
+    },
+    {
+      "name": "preparation-layout: compact assistant actions and relocated actions",
+      "passed": 2,
+      "executor": "Sol"
+    },
+    {
+      "name": "chat-history-loading",
+      "passed": 2,
+      "executor": "main"
+    },
+    {
+      "name": "direct-voice-wiring",
+      "passed": 2,
+      "executor": "Sol",
+      "followup": "Native background picker case rechecked once"
+    },
+    {
+      "name": "chat-interaction-polish: draft preservation",
+      "passed": 1,
+      "executor": "Sol"
+    },
+    {
+      "name": "native tab marker contract",
+      "result": "Installed Expo Router 57 passes aria-selected, now used by shared MobileNavSelection",
+      "method": "source review"
+    },
+    {
+      "name": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "exports": {
+    "web": {
+      "status": "passed",
+      "files": 65,
+      "bytes": 10752320,
+      "inventoryHash": "ae377f94b9a93d12703152f7f5c601c9cc2b8bbd101b7d3aef599d37436cb99b"
+    },
+    "android": {
+      "status": "passed",
+      "files": 31,
+      "bytes": 13684295,
+      "inventoryHash": "3bf8db9cb40f5f3fc47e2c2c285981e150f3f51ea4b258965ac5f75e1017659b"
+    }
+  },
+  "failures": [
+    "Chat history fixture initially lacked Platform.select; corrected fixture, same two checks then passed.",
+    "Direct voice fixtures initially lacked platform/dialog/DOM ports; worker stopped each failed attempt and corrected only fixtures.",
+    "Initial exports passed before final native aria-selected alignment; both exports repeated once for final product bytes."
+  ],
+  "limits": [
+    "No full typecheck, whole-suite tests, browser acceptance, microphone permission, device geometry, cloud model or notifications.",
+    "Web and Android exports are not published or device-verified by this record.",
+    "Preparation checkbox batching, chat photo transport/model re-read and avatar lifecycle remain separate unfinished work.",
+    "Next APK branding is deferred; no native configuration or runtime changes in this package."
+  ]
+}

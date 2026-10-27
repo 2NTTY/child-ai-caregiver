@@ -1,0 +1,331 @@
+{
+  "schema_version": 2,
+  "checked_on": "2026-10-26",
+  "revert": {
+    "pull_request": 332,
+    "commit": "dac29144db9f2e810013ba6c20e7aa86e25e48a4",
+    "tree_equal_to_pre_331": true
+  },
+  "installation_scope": {
+    "plugins": "user / official native plugin manager",
+    "skills": "repository .agents/skills",
+    "duplicate_user_skills_installed": false
+  },
+  "sources": [
+    {
+      "name": "superpowers",
+      "version": "7.0.1",
+      "plugin_id": "superpowers@openai-curated-remote",
+      "repository": "obra/superpowers",
+      "commit": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b",
+      "path": "$CODEX_HOME/plugins/cache/openai-curated-remote/superpowers/7.0.1",
+      "source_files_matched": 84,
+      "missing_source_files": [],
+      "changed_source_files": [],
+      "official_packaging_additions": "15 agents/openai.yaml files",
+      "installed_tree_sha256": "7bf17a76629f065ff95d2c53b9f87cec793734999078ec956b2432d736eb900d",
+      "local_modifications": []
+    },
+    {
+      "name": "agents-md-improver / revise-agents-md",
+      "upstream_plugin_version": "1.0.0",
+      "repository": "anthropics/claude-plugins-official",
+      "commit": "58267944f92187b7d6a1c822165c96c81c864806",
+      "upstream_path": "plugins/claude-md-management",
+      "installer_baseline_files_matched": 4,
+      "compatibility_patch": ".agents/skills/agents-md-improver/UPSTREAM.patch",
+      "patch_sha256": "7f13d5ed3c34cd2419b7a31e470045f672c7485c3ef16742c97879e8a2205f41",
+      "rubric_weights": [
+        20,
+        20,
+        15,
+        15,
+        15,
+        15
+      ]
+    },
+    {
+      "name": "security-best-practices",
+      "repository": "openai/skills",
+      "commit": "49f948faa9258a0c61caceaf225e179651397431",
+      "upstream_path": "skills/.curated/security-best-practices",
+      "path": ".agents/skills/security-best-practices",
+      "source_files_matched": 13,
+      "installed_tree_sha256": "e72ed3048a6d4a9086297bcf43cdb9acc2ad97762cbc046a84a40d5fe31f2399",
+      "local_modifications": [],
+      "upstream_repository_deprecated": true
+    },
+    {
+      "name": "codex-security",
+      "version": "0.1.32",
+      "plugin_id": "codex-security@openai-curated-remote",
+      "repository": "openai/plugins",
+      "commit": "0722921d5542fc593105c27bd52630babd8b8c2a",
+      "upstream_path": "plugins/codex-security",
+      "path": "$CODEX_HOME/plugins/cache/openai-curated-remote/codex-security/0.1.32",
+      "source_files_present": 142,
+      "source_files_matched": 140,
+      "missing_source_files": [],
+      "official_catalog_metadata_differences": {
+        ".app.json": "Atlassian canonical app ID",
+        ".codex-plugin/plugin.json": "repository URL"
+      },
+      "official_catalog_extra_files": [
+        "integrity.json"
+      ],
+      "installed_tree_sha256": "93e3b1895b9c425d2fb33733ceac2392c8416603b7083b3c67c6234f07cae256",
+      "local_modifications": [],
+      "separately_inspected_source": {
+        "repository": "openai/codex-security",
+        "commit": "8ed8d9dffc766343c8534601286dc5980afcb1c8",
+        "manifest_version": "0.1.95",
+        "installed": false
+      }
+    }
+  ],
+  "runtime_verification": {
+    "codex_cli": "0.163.0-alpha.11.2",
+    "node_bundled": "24.19.0",
+    "node_git_bash_path": "24.11.0",
+    "python_bundled": "3.12.14",
+    "git_bash": "5.2.37",
+    "git": "2.51.2.windows.1",
+    "repo_skill_discovery": {
+      "method": "app-server skills/list forceReload=true",
+      "names": [
+        "agents-md-improver",
+        "revise-agents-md",
+        "security-best-practices"
+      ],
+      "errors": []
+    },
+    "plugins": {
+      "superpowers": {
+        "method": "app-server plugin/read",
+        "enabled_skill_names": [
+          "brainstorming",
+          "diagnosing-superpowers",
+          "dispatching-parallel-agents",
+          "executing-plans",
+          "finishing-a-development-branch",
+          "receiving-code-review",
+          "requesting-code-review",
+          "subagent-driven-development",
+          "systematic-debugging",
+          "test-driven-development",
+          "using-git-worktrees",
+          "using-superpowers",
+          "verification-before-completion",
+          "writing-plans",
+          "writing-skills"
+        ]
+      },
+      "codex-security": {
+        "method": "app-server plugin/read",
+        "enabled_skill_names": [
+          "assess-patch-risk",
+          "attack-path-analysis",
+          "deep-security-scan",
+          "define-security-policy",
+          "finding-discovery",
+          "fix-finding",
+          "propose-security-hardening",
+          "security-diff-scan",
+          "security-scan",
+          "threat-model",
+          "track-findings",
+          "triage-finding",
+          "validation",
+          "verify-fix",
+          "vulnerability-writeup"
+        ]
+      }
+    },
+    "security_mcp": {
+      "status": "passed",
+      "serverInfo": {
+        "name": "codex-security",
+        "version": "0.1.160"
+      },
+      "protocolVersion": "2024-11-05",
+      "tools": [
+        "get_codex_security_daybreak_access",
+        "start_codex_security_standard_scan",
+        "start_codex_security_prompt_only_scan",
+        "request_codex_security_user_input",
+        "open_codex_security_workspace",
+        "inspect_codex_security_target",
+        "inspect_codex_security_setup",
+        "submit_codex_security_setup",
+        "start_codex_security_scan",
+        "start_codex_security_deep_scan",
+        "cancel_codex_security_scan",
+        "cancel_codex_security_scan_from_app",
+        "recover_codex_security_scan_results",
+        "mark_codex_security_scan_handoff_delivered",
+        "claim_codex_security_scan_handoff_delivery",
+        "release_codex_security_scan_handoff_delivery",
+        "attach_codex_security_scan_continuation_thread",
+        "get_codex_security_scan",
+        "list_codex_security_scans",
+        "list_codex_security_global_findings",
+        "list_codex_security_repositories",
+        "get_codex_security_scan_context",
+        "update_codex_security_scan_context",
+        "update_codex_security_scan_context_from_app",
+        "update_codex_security_scan_progress",
+        "complete_codex_security_scan",
+        "fail_codex_security_scan",
+        "set_codex_security_finding_triage",
+        "request_codex_security_finding_remediation",
+        "request_codex_security_finding_remediation_action",
+        "claim_codex_security_finding_remediation_resend",
+        "release_codex_security_finding_remediation_claim",
+        "cancel_codex_security_finding_remediation_request",
+        "mark_codex_security_finding_remediation_delivered",
+        "set_codex_security_finding_remediation",
+        "export_codex_security_findings",
+        "list_codex_security_findings",
+        "prepare_codex_security_review_items",
+        "list_codex_security_review_items",
+        "record_codex_security_discovery_candidates",
+        "list_codex_security_candidates",
+        "record_codex_security_candidate_validations",
+        "record_candidate_attack_paths",
+        "record_codex_security_scan_draft",
+        "get_codex_security_completed_scan",
+        "save_codex_security_artifact",
+        "read_codex_security_artifact"
+      ],
+      "tool_calls": 0,
+      "scan_runs": 0,
+      "model_calls": 0
+    },
+    "desktop_existing_turn_reload": "not claimed; next turn or fresh conversation may be needed",
+    "product_tests": 0,
+    "extra_model_calls": 0,
+    "scan_runs": 0,
+    "account_connections": 0,
+    "permission_changes": 0,
+    "diff_check": {
+      "whole_changeset": "5 upstream trailing-whitespace warnings; retained unchanged",
+      "compatibility_and_records": "passed",
+      "upstream_warning_locations": [
+        "javascript-express-web-server-security.md:379",
+        "javascript-general-web-frontend-security.md:185",
+        "javascript-typescript-react-web-frontend-security.md:980",
+        "javascript-typescript-react-web-frontend-security.md:982",
+        "python-django-web-server-security.md:644"
+      ]
+    }
+  },
+  "known_original_issues": [
+    {
+      "source": "security-best-practices/references/javascript-typescript-react-web-frontend-security.md",
+      "anchor": "REACT-REDIRECT-001",
+      "issue": "The original relative-path regex accepts protocol-relative URLs. Original content retained."
+    },
+    {
+      "source": "superpowers/skills/using-superpowers/references/codex-tools.md",
+      "issue": "Full-history model/effort override statement differs from this host tool contract. Original content retained."
+    }
+  ],
+  "project_file_hashes": [
+    {
+      "path": ".agents/skills/agents-md-improver/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": ".agents/skills/agents-md-improver/references/quality-criteria.md",
+      "sha256": "9df1ee206b4574bc461922772e31c6d4567c667c9389598f5043d7f4aa4c883f"
+    },
+    {
+      "path": ".agents/skills/agents-md-improver/references/templates.md",
+      "sha256": "a47345f28d6077e1cd5a521e153d8179d73bc3e824cc8e6d87bff940739cb063"
+    },
+    {
+      "path": ".agents/skills/agents-md-improver/references/update-guidelines.md",
+      "sha256": "cc5430b6e7a4f5681c02adb1eeea427108f672365c463dc7e48ac92f86e3935d"
+    },
+    {
+      "path": ".agents/skills/agents-md-improver/SKILL.md",
+      "sha256": "a4550c46b31676de566ae814ab1ce60e4bac4d09288a2cf233bc356970b66e0f"
+    },
+    {
+      "path": ".agents/skills/agents-md-improver/UPSTREAM.md",
+      "sha256": "c8ba6b45409ab8f31cc37734f72b7e75c52bd4611eddfe9c081e18adc9245529"
+    },
+    {
+      "path": ".agents/skills/agents-md-improver/UPSTREAM.patch",
+      "sha256": "7f13d5ed3c34cd2419b7a31e470045f672c7485c3ef16742c97879e8a2205f41"
+    },
+    {
+      "path": ".agents/skills/revise-agents-md/agents/openai.yaml",
+      "sha256": "a1499d95abd8447558c535fe5554adcc3c9b988a0a39264a6283d430effe1e94"
+    },
+    {
+      "path": ".agents/skills/revise-agents-md/LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": ".agents/skills/revise-agents-md/SKILL.md",
+      "sha256": "d48e455d0b4cd06cf985fc883c7a128ae22f9234d04b963908ee07163e63c2ad"
+    },
+    {
+      "path": ".agents/skills/revise-agents-md/UPSTREAM.md",
+      "sha256": "07203154aae59b3466281007fbc47a72627f63aa60838c62f0c801393354e26d"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/agents/openai.yaml",
+      "sha256": "6e9c6f2edce448eb2b589f81ad6e3f722665021785513bcbfd0bf7b86b529171"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/LICENSE.txt",
+      "sha256": "4dd13869245e356246a5b770723247bbb80a8f07a181d1d3d873a1734297cdb9"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/references/golang-general-backend-security.md",
+      "sha256": "a73c47c34497b120672d48411fe51dc90d426a571801a0b3f649e2ce4ec658b4"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/references/javascript-express-web-server-security.md",
+      "sha256": "427835cbb5be7ba96172ea6ca9af80ddd4419c833e9ebf870996740c80d8406c"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/references/javascript-general-web-frontend-security.md",
+      "sha256": "3a7bc7b3f6e7ff043db9dbaa8933894d7a19d987d0607e4ddae5d70184a63d63"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/references/javascript-jquery-web-frontend-security.md",
+      "sha256": "bcbad2fa6c2a02709e47e889e70102c76886bf36bc798624d27db570eccf40da"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/references/javascript-typescript-nextjs-web-server-security.md",
+      "sha256": "71c773f7a97ce60c853adfa100b3d88b3b7bc4c6b8acaef1432ffabd923ee182"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/references/javascript-typescript-react-web-frontend-security.md",
+      "sha256": "d3030c0f24bddb56b9bbb91bbec1ee49eb7778bce4d3e0297b2641b2fc6b0d9c"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/references/javascript-typescript-vue-web-frontend-security.md",
+      "sha256": "77c6a747f9f17e3df03aad0fcb20d99ac7898001b81aef8b80908e45ac14a688"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/references/python-django-web-server-security.md",
+      "sha256": "4fb69b5d45f10e588d1a8c35cdc5f59e18910f6b46a93e2d342d90f286f8dfd2"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/references/python-fastapi-web-server-security.md",
+      "sha256": "7383c7f4fc271190b05e562ada7e825982a2c76b6c79a9f95a1da7687b65a616"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/references/python-flask-web-server-security.md",
+      "sha256": "9606d69190c04c167fdeac57e61297547a57b0542fd89dede36f355970446929"
+    },
+    {
+      "path": ".agents/skills/security-best-practices/SKILL.md",
+      "sha256": "7b3dae1ffc5434d890f3c65c8f552af52d0307fab3b35dec13013c9ca3844c4f"
+    }
+  ]
+}

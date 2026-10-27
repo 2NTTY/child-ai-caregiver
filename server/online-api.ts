@@ -4,8 +4,11 @@ import { apiError, jsonResponse } from "./workspace-api.ts";
 import { onlineCommandSchema, onlineSubmissionSchema } from "./online-routing.ts";
 import type { NativeRequestContext } from './native-push-context.ts';
 import type { OnlineStore } from "./online.ts";
+import { sharedChangesQuerySchema, type SharedChangesQuery, type SharedChangesPage } from '../src/shared/sharing.ts';
 
-export async function handleOnlineRequest(request: Request, userId: string | null, store: Pick<OnlineStore, 'spaces' | 'context' | 'submit' | 'lookup' | 'changes'>, nativeContext?: () => Promise<NativeRequestContext>): Promise<Response> {
+export async function handleOnlineRequest(request: Request, userId: string | null, store: Pick<OnlineStore, 'spaces' | 'context' | 'submit' | 'lookup' | 'changes'> & {
+  sharedChanges?(userId:string,query:SharedChangesQuery):Promise<SharedChangesPage>;
+}, nativeContext?: () => Promise<NativeRequestContext>): Promise<Response> {
   if (!userId) return apiError("unauthorized", "請先登入。", 401);
   if (!request.headers.get("x-expected-user-id")) return apiError("account_precondition_required", "請重新確認登入帳號。", 428);
   if (request.headers.get("x-expected-user-id") !== userId) return apiError("session_changed", "登入帳號已改變。", 409);
@@ -13,6 +16,10 @@ export async function handleOnlineRequest(request: Request, userId: string | nul
   try {
     if (request.method === "GET") {
       if (url.pathname === "/api/online/spaces") return jsonResponse({ workspaces: await store.spaces(userId) });
+      if (url.pathname === '/api/online/shared-changes') {
+        if (!store.sharedChanges) return apiError('shared_sync_unavailable','共享同步尚未接通。',503);
+        return jsonResponse(await store.sharedChanges(userId,sharedChangesQuerySchema.parse(Object.fromEntries(url.searchParams))));
+      }
       const lookup = /^\/api\/online\/operations\/([^/]+)$/u.exec(url.pathname);
       if (lookup) return jsonResponse(await store.lookup(userId, z.uuid().parse(lookup[1])));
       if (url.pathname === "/api/online/changes") {

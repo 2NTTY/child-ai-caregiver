@@ -1,0 +1,123 @@
+{
+  "date": "2026-10-25",
+  "baseline": "15c551940bacf34dfb4dc9b5f28dd54e355cbcbc",
+  "scope": "Native ImagePicker crop and Web mature cropper; same avatar authority",
+  "sourceHashes": {
+    "frontend/src/avatar-image.ts": "3aa17d93aac3d731de01882fb8a2ec4ae97e17dc25b479bc6fcb6b94993502d5",
+    "frontend/src/components/avatar/AvatarEditor.tsx": "7b6a7fd88b0d5aa474c321558396aa49206341f085b748c3f3282d895da2d14a",
+    "frontend/src/components/avatar/AvatarCropPreview.tsx": "94d9cd0960a1eb33e6b9563fa76508bfb1c9386c78ceaeb1f79bd10acdc81ffc",
+    "frontend/src/components/avatar/AvatarCropPreview.web.tsx": "05b57f78c99e92115680f5507d53455ea628f98d176f94b106e3e75895468e4b",
+    "frontend/src/platform/avatar-picker.native.ts": "1e72ea80676bd94329d410696a916932ccad5a50c7c5fb5248b9ec4067d734b7"
+  },
+  "dependencies": {
+    "native": "expo-image-picker 57.0.19 (existing)",
+    "web": "react-easy-crop 6.2.4 MIT",
+    "transitive": "normalize-wheel 1.0.1 BSD-3-Clause"
+  },
+  "checks": {
+    "nativeAdapter": {
+      "passed": 1,
+      "kind": "synthetic",
+      "device": false
+    },
+    "mapping": {
+      "passed": 1,
+      "kind": "targeted existing runner"
+    },
+    "types": {
+      "roots": [
+        "src/components/avatar/AvatarCropPreview.tsx",
+        "src/components/avatar/AvatarCropPreview.web.tsx",
+        "src/components/avatar/AvatarEditor.tsx",
+        "src/platform/avatar-picker.native.ts"
+      ],
+      "total": 0,
+      "diagnostics": []
+    },
+    "web": {
+      "phase": "crop-final",
+      "result": "pass",
+      "at": "2026-10-25T10:09:07.795Z",
+      "calls": 114,
+      "pageErrors": [],
+      "models": 0,
+      "notifications": 0,
+      "wide": null,
+      "narrow": {
+        "x": 35.984375,
+        "y": 194.3125,
+        "width": 318,
+        "height": 318
+      },
+      "geometry": {
+        "ratio": 0.7125491736070165
+      },
+      "savedCrop": {
+        "centerX": 0.43375,
+        "centerY": 0.46226415094339623,
+        "zoom": 2.0047169811320753
+      },
+      "steps": [
+        "system adapter synthetic check separate",
+        "Web picker drag zoom keyboard",
+        "narrow responsive crop",
+        "same authoritative save/content/remove"
+      ]
+    },
+    "desktopLargeImage": {
+      "cssZoom": "1.4",
+      "owner": {
+        "centerX": 0.4616350446428571,
+        "centerY": 0.5,
+        "zoom": 2.000000000000001
+      },
+      "visibleRatio": 0.6227852957589286,
+      "savedRatio": 0.6226226226226226,
+      "boxWidth": 448,
+      "imageWidth": 1433.59375,
+      "offsetWidth": 717
+    },
+    "androidExport": "passed after sandbox Hermes output permission failure; same source outside sandbox",
+    "webExport": "passed after final CSS zoom boundary"
+  },
+  "failuresRetained": [
+    {
+      "kind": "local-bootstrap",
+      "result": "Sandbox could not open emulator hub; same local command outside sandbox started."
+    },
+    {
+      "kind": "browser-selector",
+      "result": "Stopped before saving: cropperProps label belongs to crop frame, image is sibling. Corrected selector only."
+    },
+    {
+      "kind": "browser-cleanup",
+      "result": "Save and formal content read passed; responsive change left modal closed before cleanup. Fixed-width remaining flow completed and removed same synthetic avatar."
+    },
+    {
+      "kind": "desktop-geometry",
+      "result": "Existing html zoom enlarged crop frame to 627px inside 448px viewport. Local inverse-zoom boundary makes crop and pointer units equal; final frame 448px and crop mapping agree."
+    },
+    {
+      "kind": "dependency-install",
+      "result": "System npm used Node24.11/npm11.6, warned engine range; no lifecycle scripts. Restored unrelated lock ordering/metadata, retained only 2 new dependencies. Checks/build use Node24.19."
+    }
+  ],
+  "limitations": [
+    "Native crop UI / EXIF / cancellation not device-tested",
+    "No real model, notification, production data or backend changes",
+    "APK / deployment are separate pending steps",
+    "Web render evidence does not prove native gestures"
+  ],
+  "logs": [
+    ".cache/android-final-closeout/failure-crop.json",
+    ".cache/android-final-closeout/failure-crop-fixed.json",
+    ".cache/android-final-closeout/avatar-crop-result.json",
+    ".cache/avatar-crop-android-build-denied.log",
+    ".cache/model-ui-android-build.log"
+  ],
+  "review": {
+    "nativeAndShared": "Independent bounded review found no blocking issue; pre-final Web zoom boundary",
+    "webZoomBoundary": "Main review and final targeted typecheck, export and geometry measurement passed",
+    "collaboratorAgentPRs": "Untouched"
+  }
+}

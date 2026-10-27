@@ -1,0 +1,165 @@
+{
+  "date": "2026-10-25",
+  "baseline": "825e002712bb29faa2b1816db55fe9843b64e6a3",
+  "scope": "Independent personal Vertex query embedding with unchanged gemini-embedding-001 / 1024D index",
+  "implementation": [
+    "v4 shared settings and encrypted Firestore route; original operation and old-client write protection",
+    "Pinned Google SDK with explicit personal key/project/location; no ADC or chat-key fallback",
+    "Shared Web/Android form and local development configuration"
+  ],
+  "checks": {
+    "newSettingsAndSdkFlow": "passed",
+    "localBinding": "passed",
+    "existingV3AndVertexBoundaries": "passed",
+    "formAndClient": {
+      "passed": 14
+    },
+    "focusedServerAndFormTypes": "passed",
+    "webExport": "passed",
+    "androidExport": "passed"
+  },
+  "retainedFailures": [
+    "First new synthetic assertion expected generic embedding_http_403; existing classifier correctly returned embedding_permission_denied. Corrected the assertion, not the product error.",
+    "Local synthetic fixture omitted the required isolated GCP_PROJECT_ID. Added demo-local; reran only the two new checks."
+  ],
+  "previousGeminiAttempt": {
+    "checkedAt": "2026-10-25T14:35:45.908Z",
+    "scope": "one formal personal Gemini query embedding",
+    "environment": "existing Hong Kong VM",
+    "models": 0,
+    "embeddings": 1,
+    "settingsChanged": false,
+    "noPlatformFallback": true,
+    "result": "stopped",
+    "failure": {
+      "type": "Error",
+      "reason": "embedding_region_unavailable"
+    }
+  },
+  "liveVertex": {
+    "checkedAt": "2026-10-25T14:53:40.033Z",
+    "state": "passed",
+    "generationAttempts": 0,
+    "embeddingAttempts": 1,
+    "settingsChanged": false,
+    "keyResource": "projects/1064034424208/locations/global/keys/yuyoufang-vector-check-20261025",
+    "temporaryRole": "projects/ai-caregivers-for-children/roles/ciModelGenerate",
+    "cleanup": {
+      "keyDeletedOrAbsent": true,
+      "addedBindingRemoved": true
+    },
+    "preexistingRole": false,
+    "iamWaitSeconds": 180,
+    "providerResult": {
+      "state": "passed",
+      "dimensions": 1024,
+      "inputTokens": 2,
+      "generationAttempts": 0,
+      "embeddingAttempts": 1,
+      "noPlatformFallback": true,
+      "location": "global",
+      "factory": "createPersonalModelProviders",
+      "model": "gemini-embedding-001"
+    }
+  },
+  "limits": [
+    "Live validation was one 2-token query embedding through the current branch factory; no chat generation, index rebuild, product settings or provider retry.",
+    "The settings-to-provider route was verified synthetically; a saved personal-setting-to-Agent conversation remains unverified and does not replace deferred collaborator Agent acceptance.",
+    "Web and Android exports do not prove device interaction. Publication is recorded separately.",
+    "No production resource/data changes, notifications or paid build. Temporary test key and added permissions were removed."
+  ],
+  "delivery": {
+    "source": "34f80a996ca1ab8a44eaa569f04880ee7f59b70b",
+    "pullRequest": 317,
+    "observedAt": "2026-10-25T15:09:08.237Z",
+    "vm": {
+      "id": "2846984358678394356",
+      "scheduling": {
+        "terminationTime": "2026-11-06T05:33:50.732Z"
+      },
+      "status": "RUNNING"
+    },
+    "freeBytesBefore": 11058130944,
+    "apiWorker": {
+      "source": "34f80a996ca1ab8a44eaa569f04880ee7f59b70b",
+      "state": "deployed",
+      "at": "2026-10-25T15:06:56.560974+00:00",
+      "apiImage": "sha256:9d490d090a096971ef6e07a2fd0cb2ca1188edf441e6453f162e83ee6dd88306",
+      "webImage": "sha256:ccd2eca575f06e7fa11acbdf5ee1ac8e429f76e277cfc49f7b06eef7a17b06f2",
+      "writesEnabled": true,
+      "sourceReleaseReady": true,
+      "rollbackApi": "sha256:c3b149c97e22accb6b2da1fff982e6339e98d06eb11cc115d8eacab0a6cbbb61",
+      "configurationBackup": "/etc/yuban-p1/firestore/compose.env.before-personal-vector-34f80a9",
+      "models": 0,
+      "notifications": 0,
+      "rollbackConstraint": "After saving v4 Vertex settings keep a v4-compatible API and worker; older images cannot read those records."
+    },
+    "web": {
+      "source": "34f80a996ca1ab8a44eaa569f04880ee7f59b70b",
+      "state": "deployed",
+      "webImage": "sha256:e813692c9b396ab6d9fe0fa78fb0f6580ca321cf41013224de3922005161462b",
+      "rollbackImage": "sha256:ccd2eca575f06e7fa11acbdf5ee1ac8e429f76e277cfc49f7b06eef7a17b06f2",
+      "configBackup": "/etc/yuban-p1/firestore/compose.yaml.before-personal-vector-34f80a9",
+      "apiWorkerChanged": false,
+      "archiveBytes": 4680173,
+      "files": 65,
+      "indexHash": "ef54a1e34098763b0eb50c9ea88643d0b8681df426583cfd0d898bba2c6b18a9",
+      "publicHashAndHealth": "passed"
+    },
+    "android": {
+      "group": "33a2e0a3-2472-4d1f-9d2d-1da5e7c9a3b4",
+      "updateId": "01a1739b-bb0d-79b8-9457-38b658668111",
+      "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+      "channel": "preview",
+      "files": 31,
+      "bytes": 13730502,
+      "state": "published",
+      "newApk": false,
+      "exactUpdateOnDevice": "not_observed",
+      "manualFormObservation": {
+        "reportedOn": "2026-10-25",
+        "timezone": "Asia/Hong_Kong",
+        "state": "passed",
+        "method": "User reopened the installed app and checked the personal embedding service options.",
+        "userFeedback": "已有 Vertex AI 選項",
+        "scope": "Vertex AI option visible in the shared Android model-settings form only.",
+        "settingsSaved": false,
+        "keyEntered": false,
+        "modelCalls": 0,
+        "retainedEarlierObservation": "Earlier assistant inspection still displayed the previous Gemini-only form; publication alone did not prove device activation.",
+        "limits": [
+          "Exact device update ID was not extracted.",
+          "Saved personal settings through a complete Agent/RAG result remain unverified."
+        ]
+      }
+    },
+    "modelCalls": 0,
+    "notifications": 0,
+    "dataMigration": false,
+    "quotaChanged": false,
+    "indexRebuilt": false,
+    "pending": [
+      "Saved personal Vertex embedding settings through a full Agent/RAG result; the Android option is now user-confirmed visible.",
+      "Deferred collaborator Agent acceptance is unchanged."
+    ]
+  },
+  "productionRoutingCloseout": {
+    "checkedOn": "2026-10-25",
+    "basis": "a6c9af5a5c9b3d9d211c268fc58fe2cd1930e42b",
+    "state": "passed",
+    "tests": 1,
+    "realProviderCalls": 0,
+    "deviceOperations": 0,
+    "entry": "createFirestoreModelRouting.resolve -> selected.embeddings -> createEmbeddingGateway -> Vertex SDK",
+    "method": "Reuse the existing saved-settings scenario; reconstruct the production router against the same in-memory Firestore fixture, keep the real SDK and replace only its HTTP response.",
+    "assertions": [
+      "Reopened encrypted settings retain the explicit personal key, project and region.",
+      "One query reserves and settles personal durable usage; platform usage stays zero.",
+      "Repeating the same root/attempt is refused without another provider dispatch or quota increment."
+    ],
+    "limits": [
+      "No real Firestore transaction race, user-settings save on device or complete Agent/RAG conversation was exercised.",
+      "Earlier live provider result is separate; collaborator acceptance remains deferred."
+    ]
+  }
+}

@@ -16,6 +16,8 @@ import { AgentInputToolbar, AgentVoiceControl } from "./AgentInputToolbar";
 import { ChatComposerInput, type ChatComposerInputHandle } from "./ChatComposerInput";
 import { MotionDisclosure } from "../../motion";
 import { useInteractionDensity } from "../useInteractionDensity";
+import { VoiceCapture } from "./VoiceCapture";
+import type { VoiceCaptureHandle } from "./VoiceRecordingTimer";
 
 const suggestions = ["整理孩子的睡前流程", "核對最近的睡眠記錄", "先列出想問的問題"];
 type ControlInteraction = PressableStateCallbackType & { hovered?: boolean; focused?: boolean };
@@ -35,9 +37,11 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
   const [completedSend, setCompletedSend] = useState(0);
   const touchControls = useInteractionDensity() || compact;
   const [photoError, setPhotoError] = useState<string | null>(null);
-  const [inputDialog, setInputDialog] = useState<"file" | "voice" | null>(null);
+  const [inputDialog, setInputDialog] = useState<"file" | null>(null);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const voiceCapture = useRef<VoiceCaptureHandle>(null);
   const [replacement, setReplacement] = useState<AssistantAttachment | null>(null);
-  const canPreview = enabled && (submitEnabled ?? canPreviewAssistantDraft({ text: draft, attachments }));
+  const canPreview = enabled && !voiceOpen && (submitEnabled ?? canPreviewAssistantDraft({ text: draft, attachments }));
   const [suggestionsExpanded, setSuggestionsExpanded] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -75,7 +79,7 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
     if (!enabled || !suggestionsAvailable || hasDraft || keyboardVisible) setSuggestionsExpanded(false);
   }, [enabled, suggestionsAvailable, hasDraft, keyboardVisible]);
   useEffect(() => {
-    if (!enabled) { setInputDialog(null); setReplacement(null); setPhotoError(null); }
+    if (!enabled) { setInputDialog(null); setVoiceOpen(false); setReplacement(null); setPhotoError(null); }
   }, [enabled]);
   function addAttachment(attachment: AssistantAttachment) {
     if (!enabled) { attachment.dispose?.(); return; }
@@ -83,7 +87,12 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
   }
   function replaceAttachment(attachment: AssistantAttachment) {
     setReplacement(attachment);
-    if (attachment.kind !== "photo") setInputDialog(attachment.kind);
+    if (attachment.kind === "voice") beginVoice(attachment);
+    else if (attachment.kind === "file") setInputDialog("file");
+  }
+  function beginVoice(replace: AssistantAttachment | null = null) {
+    if (!enabled || voiceUnavailableReason || voiceOpen) return;
+    setReplacement(replace); setInputDialog(null); setVoiceOpen(true); voiceCapture.current?.start();
   }
   function beginSendFocus() {
     cancelSendFocus();
@@ -138,12 +147,13 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
   return <View ref={composer} testID="chat-composer" pointerEvents="box-none" style={[styles.composer, compact && styles.mobileComposer]}>
     <View pointerEvents="box-none" style={[styles.composerContent, compact && styles.mobileComposerContent]}>
     <View testID="chat-composer-panel" style={[styles.panel, inputFocused && styles.panelFocused]}>
-    <AssistantAttachmentPreview attachments={attachments} enabled={enabled} onRemove={onRemoveAttachment} onReplace={replaceAttachment} />
+    <AssistantAttachmentPreview attachments={attachments} enabled={enabled && !voiceOpen} onRemove={onRemoveAttachment} onReplace={replaceAttachment} />
+    {enabled ? <VoiceCapture ref={voiceCapture} visible={voiceOpen} onDismiss={() => { setVoiceOpen(false); setReplacement(null); }} onPick={addAttachment} /> : null}
     {photoError ? <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={styles.photoError}>{photoError}</Text> : null}
     <ChatComposerInput ref={input} onSubmit={() => preview(true)} canSubmit={canPreview}
       value={draft} onChangeText={onChangeDraft} onFocus={() => { setInputFocused(true); setAutomaticCollapse(value => value + 1); setSuggestionsExpanded(false); }} onBlur={() => setInputFocused(false)}
       disabled={!enabled} />
-    <View style={styles.composerActions}><View testID="composer-attachment-actions" style={styles.leftActions}><AgentInputToolbar disabled={!enabled} compact={touchControls} includeVoice={false} onFiles={() => { setReplacement(null); setInputDialog("file"); }} onVoice={() => { setReplacement(null); setInputDialog("voice"); }}
+    <View style={styles.composerActions}><View testID="composer-attachment-actions" style={styles.leftActions}><AgentInputToolbar disabled={!enabled || voiceOpen} compact={touchControls} includeVoice={false} onFiles={() => { setReplacement(null); setInputDialog("file"); }} onVoice={() => beginVoice()}
       onPickPhoto={original => addAttachment(photoAttachment(original))} onPhotoError={setPhotoError} captureOriginal={captureOriginal} filesUnavailableReason={filesUnavailableReason} voiceUnavailableReason={voiceUnavailableReason} />
       {suggestionsAvailable && !hasDraft ? <Pressable testID="composer-suggestions-toggle" accessibilityRole="button"
         accessibilityLabel={showSuggestions ? "收起建議問題" : "展開建議問題"} accessibilityState={{ expanded: showSuggestions, disabled: !enabled || hasDraft }}
@@ -151,8 +161,8 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
         style={({ pressed, hovered, focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, (!enabled || hasDraft) && styles.disabled, enabled && !hasDraft && (hovered || focused) && styles.controlActive, focused && enabled && !hasDraft && styles.controlFocused, pressed && enabled && !hasDraft && styles.pressed]}>
         <AppIcon name="star-four-points" size={20} color={chatColors.secondary} /></Pressable> : null}</View>
       <View testID="composer-send-actions" style={styles.rightActions}>
-      <AgentVoiceControl disabled={!enabled} compact={touchControls} unavailableReason={voiceUnavailableReason}
-        onPress={() => { setReplacement(null); setInputDialog("voice"); }} />
+      <AgentVoiceControl disabled={!enabled || voiceOpen} compact={touchControls} unavailableReason={voiceUnavailableReason}
+        onPress={() => beginVoice()} />
       <Pressable ref={sendControl} accessibilityRole="button" accessibilityLabel={submitLabel} accessibilityState={{ disabled: !canPreview }}
         disabled={!canPreview} onPress={pressSend}
         style={({ focused }: ControlInteraction) => [styles.iconControl, touchControls && styles.compactControl, focused && canPreview && styles.controlFocused]}>
@@ -170,7 +180,6 @@ export function AgentComposer({ enabled, compact, draft, attachments, onChangeDr
     </View>
     <AssistantInputDialog kind={inputDialog} enabled={enabled} onPick={addAttachment}
       onDismiss={() => { setInputDialog(null); setReplacement(null); }}
-      onUseText={() => { setInputDialog(null); setReplacement(null); requestAnimationFrame(() => input.current?.focus()); }}
       onSources={() => { setInputDialog(null); setReplacement(null); onSources(); }} />
     <Portal><AppDialog visible={replacement?.kind === "photo" && enabled} onDismiss={() => setReplacement(null)}>
       <AppDialog.Title>更換未送出照片</AppDialog.Title><AppDialog.Content>
