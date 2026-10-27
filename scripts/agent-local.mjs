@@ -65,6 +65,9 @@ const model = {
   apiKey: inspection ? undefined : configured.apiKey ?? (provider === 'gemini' ? process.env.GEMINI_API_KEY : provider === 'vertex' ? process.env.VERTEX_API_KEY : provider === 'openai-compatible' ? process.env.LOCAL_MODEL_API_KEY : undefined),
   baseUrl: inspection ? undefined : configured.baseUrl ?? process.env.LOCAL_MODEL_BASE_URL,
   embeddingApiKey: inspection ? undefined : configured.embeddingApiKey ?? process.env.LOCAL_MODEL_EMBEDDING_API_KEY,
+  embeddingProvider: inspection ? undefined : configured.embeddingProvider ?? process.env.LOCAL_MODEL_EMBEDDING_PROVIDER,
+  embeddingProject: inspection ? undefined : configured.embeddingProject ?? process.env.LOCAL_MODEL_EMBEDDING_PROJECT,
+  embeddingLocation: inspection ? undefined : configured.embeddingLocation ?? process.env.LOCAL_MODEL_EMBEDDING_LOCATION,
   project: configured.project ?? process.env.LOCAL_MODEL_PROJECT,
   location: configured.location ?? process.env.LOCAL_MODEL_LOCATION ?? 'global',
   model: configured.model ?? process.env.LOCAL_MODEL ?? (provider === 'openai-compatible' ? undefined : 'gemini-3.1-flash-lite'),
@@ -99,12 +102,16 @@ const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', 
   FIREBASE_STORAGE_EMULATOR_HOST: emulatorHost(4), STORAGE_EMULATOR_HOST: 'http://' + emulatorHost(4),
   FIREBASE_PHOTO_BUCKET: saved.projectId + '-private', FIREBASE_ERASURE_BUCKET: saved.projectId + '-journal',
   FIREBASE_AUTH_EMAIL_ENABLED: 'true', FIREBASE_TASK_WORKER_ENABLED: 'true',
+  AVATAR_WRITES_ENABLED: String(process.env.AVATAR_WRITES_ENABLED === 'true'),
   WEB_PUSH_ENABLED: 'false', ANDROID_PUSH_ENABLED: 'false', TELEGRAM_ENABLED: 'false',
   YUBAN_FIREBASE_STORAGE_KEY: saved.storageKey, LOCAL_AGENT_STATE_FILE: statePath, LOCAL_WEB_PORT: String(basePort + 1),
   LOCAL_MODEL_PROVIDER: model.provider, LOCAL_MODEL_PROJECT: model.project ?? '', VERTEX_LOCATION: model.location,
   GEMINI_MODEL: model.model, AI_ENABLED: String(enabled), ...(model.apiKey ? { LOCAL_MODEL_API_KEY: model.apiKey } : {}),
   ...(model.baseUrl !== undefined ? { LOCAL_MODEL_BASE_URL: model.baseUrl } : {}),
   ...(model.embeddingApiKey !== undefined ? { LOCAL_MODEL_EMBEDDING_API_KEY: model.embeddingApiKey } : {}),
+  ...(model.embeddingProvider !== undefined ? { LOCAL_MODEL_EMBEDDING_PROVIDER: model.embeddingProvider } : {}),
+  ...(model.embeddingProject !== undefined ? { LOCAL_MODEL_EMBEDDING_PROJECT: model.embeddingProject } : {}),
+  ...(model.embeddingLocation !== undefined ? { LOCAL_MODEL_EMBEDDING_LOCATION: model.embeddingLocation } : {}),
   ...(inspection ? { LOCAL_KNOWLEDGE_INSPECT_OPERATION: inspectionArgs[0].split('=')[1] ?? '' } : {}),
   ...(args.has('--maintain-knowledge') ? {
     LOCAL_KNOWLEDGE_WATCH: [...args].find(arg => arg.startsWith('--knowledge-watch='))?.split('=')[1] ?? 'fhs-solid-food',
@@ -114,7 +121,7 @@ const env = { ...baseEnv, NODE_ENV: 'development', YUYF_LOCAL_DEVELOPMENT: '1', 
 if (model.provider === 'vertex-adc' && model.adcPath) env.GOOGLE_APPLICATION_CREDENTIALS = resolve(model.adcPath);
 const localModel = readLocalAgentModel(env);
 if ((args.has('--prepare-knowledge') || args.has('--maintain-knowledge')) && !localModel.embeddingConfigured)
-  throw Error('Knowledge work needs a compatible embedding credential; set embeddingApiKey to your Gemini key. No platform fallback.');
+  throw Error('Knowledge work needs a compatible embedding credential; configure a Gemini or explicit Vertex embedding key. No platform fallback.');
 const publicEnv = { ...baseEnv, NODE_ENV: 'development', EXPO_PUBLIC_AUTH_PROVIDER: 'firebase',
   EXPO_PUBLIC_FIREBASE_PROJECT_ID: saved.projectId, EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN: '127.0.0.1',
   EXPO_PUBLIC_FIREBASE_APP_ID: '1:123456789:web:abcdef0123456789', EXPO_PUBLIC_FIREBASE_API_KEY: 'local-emulator-public-key-only',

@@ -1,0 +1,109 @@
+{
+  "date": "2026-10-27",
+  "package": "P4-AUTH01 provider/session and Web groundwork",
+  "base": "89808f1799f7b9797de6e4dc51c3990c79ef2e1b",
+  "branch": "codex/p4-auth-provider-session",
+  "environment": {
+    "node": "24.19.0",
+    "firebase": "13.0.0",
+    "firebaseAdmin": "14.5.0",
+    "firebaseFunctions": "7.4.0",
+    "identity": "synthetic SDK, current Admin identity fixture and real HTTP adapter",
+    "cloudOperations": 0,
+    "models": 0,
+    "notifications": 0,
+    "deployed": false
+  },
+  "reuse": "Existing Firebase session exchange, invitation admission, device revocation, official popup/linking SDK and common production owner. No new dependency or cloud configuration.",
+  "checks": [
+    {
+      "name": "provider contract and password compatibility",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='provider methods use|social before-create|social identity links|cancelled social sign-in|native password before-create|missing email|Firebase identity exchanges|SDK state never|reauthentication checks' tests/firebase-auth.test.ts tests/firebase-registration.test.ts tests/firebase-client-auth.test.ts",
+      "result": "passed",
+      "tests": 8
+    },
+    {
+      "name": "cancelled provider link reconciliation and related client flows",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='provider reconciliation waits|social identity links|cancelled social sign-in' tests/firebase-client-auth.test.ts",
+      "result": "passed",
+      "tests": 3,
+      "covers": [
+        "uncancellable popup remains pending after local cancellation",
+        "method reconciliation waits for actual provider completion and SDK cleanup",
+        "no late business session exchange",
+        "original UID proof and explicit consent"
+      ]
+    },
+    {
+      "name": "native current provider methods through actual Node HTTP handler",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='Android session transport' tests/firebase-auth.test.ts",
+      "result": "passed",
+      "tests": 1
+    },
+    {
+      "name": "common records controller, account owner and deletion proof",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"provider login and account deletion|owner exposes verification\" frontend/src/components/account/account-deletion-identity.test.mts",
+      "result": "passed",
+      "tests": 2,
+      "executor": "bounded implementation agent"
+    },
+    {
+      "name": "safe provider errors preserve unknown business sessions",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"provider login explains safe failures\" frontend/src/components/account/account-deletion-identity.test.mts",
+      "result": "passed",
+      "tests": 1,
+      "executor": "bounded implementation agent"
+    },
+    {
+      "name": "affected server/client/test TypeScript graph",
+      "result": "passed",
+      "roots": [
+        "server/firebase-auth.ts",
+        "server/firebase-registration.ts",
+        "src/client/firebase-auth-api.ts",
+        "tests/firebase-auth.test.ts",
+        "tests/firebase-registration.test.ts",
+        "tests/firebase-client-auth.test.ts"
+      ]
+    },
+    {
+      "name": "affected frontend TypeScript graph",
+      "result": "passed",
+      "roots": [
+        "frontend/src/components/account/AccountDataControls.tsx",
+        "frontend/src/components/account/AuthenticationProofControl.tsx",
+        "frontend/src/screens/AdminScreen.web.tsx",
+        "frontend/src/screens/loginScreen.tsx",
+        "frontend/src/platform/firebase-social-auth.web.ts",
+        "frontend/src/production/ProductionProvider.tsx"
+      ],
+      "executor": "bounded implementation agent"
+    },
+    {
+      "name": "Web export with both provider adapters included",
+      "command": "EXPO_NO_DOTENV=1 EXPO_PUBLIC_AUTH_PROVIDERS=google.com,apple.com expo export --platform web",
+      "result": "passed",
+      "note": "Local ignored output only; no authentication request or upload."
+    }
+  ],
+  "review": {
+    "method": "Independent read-only Sol review plus main-model contract/diff review",
+    "finding": "Cancelled link could be reconciled from old provider state before uncancellable SDK completion.",
+    "resolution": "A targeted test failed first. Public authenticationMethods now joins the existing SDK queue; private reauthentication reads remain internal to avoid self-deadlock. Related checks passed.",
+    "remainingBlockersForThisDisabledSlice": []
+  },
+  "priorFailures": [
+    "Initial provider route and client methods missing; implementation passed the targeted flow.",
+    "Synthetic UserRecord fixture types corrected without relaxing product checks.",
+    "Frontend narrowing and env provider-list types corrected; scoped TypeScript passed.",
+    "Review cancellation race and safe provider error message failure observed before fixes."
+  ],
+  "pending": [
+    "Native Google/Apple SDK and signed build integration",
+    "Apple hidden-email original invitation continuation",
+    "Firebase implicit linking versus duplicate-email profile/admission configuration; provider buttons remain disabled by default",
+    "Actual provider and private-relay configuration, human login/link/re-authentication",
+    "Deployment; backend must precede compatible frontend",
+    "Full AUTH01/P4 completion"
+  ]
+}

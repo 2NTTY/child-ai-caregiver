@@ -1,0 +1,68 @@
+{
+  "format": "android-model-closeout/v1",
+  "date": "2026-10-24",
+  "source": "c58459a6eb3066e8ba1040f70a84ae078943e6d4",
+  "remoteAtCloseout": "d7ef06151ac3058ba2c12681dd6e72e41bd1cf4b",
+  "remoteDifference": "README only; no product change",
+  "phone": {
+    "device": "Android 2312DRAABG, existing APK v2",
+    "result": "Saved unchanged platform model configuration once; restarted app and read the same settings with login retained",
+    "settingsMetadata": {"recordVersion": 2, "updateTime": "2026-10-24T11:28:31.481729Z"},
+    "personalKeyEntered": false,
+    "quotaChanged": false,
+    "privateScreenshots": "Retained outside tracked files; no account or child content in this receipt"
+  },
+  "android": {
+    "localExport": "PASS: pinned Expo Android export",
+    "archive": {"files": 717, "uncompressedBytes": 25924697},
+    "buildId": "c678d433-3410-4d78-b831-011ac4f5a70a",
+    "buildStatus": "FINISHED",
+    "completedAt": "2026-10-24T12:07:54.729Z",
+    "buildSubmissions": 1,
+    "accountPlan": "Free, checked before submission; no purchase",
+    "url": "https://expo.dev/artifacts/eas/lmcic0ovSiooJa4lXfN-DHbslVlaWWpFX10rOD-dpKQ.apk",
+    "package": "org.yuyoufang.app",
+    "versionCode": 3,
+    "bytes": 119526450,
+    "sha256": "f4ac3ec306ffdb3bf71dd4c44375a5a1cab145c01fa7a7e98e4872a7fcc24262",
+    "runtime": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+    "previousRuntime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "signature": "Official apksigner 0.9 verifies v2 signature; certificate matches prior S04 evidence",
+    "certificateSha256": "6153ebdd00cbadc004506cc468e2aab5f5430320a90c8bd00df336e0853aa8a0",
+    "runtimeProof": "aapt manifest file:fingerprint and actual APK assets/fingerprint agree",
+    "installed": "PENDING: phone locked at final readback; install link supplied",
+    "otaPublished": false
+  },
+  "attachmentDeployment": {
+    "source": "a84f34942e959c3ae6711c10ad5725cd361c3de7",
+    "baseApiSource": "1282e0978fab9c6aa6740635af2d83e85ac8a00d",
+    "files": 11,
+    "archiveBytes": 18910,
+    "target": "Existing yuban-p1 VM, original website",
+    "candidate": "One existing real client/handler/store scripted test passed; VM import check passed",
+    "indexes": ["yuban_authority_voice_assets: scopeTag ASC,state ASC,createdAt DESC,assetId DESC", "yuban_authority_chat_file_assets: scopeTag ASC,state ASC,createdAt DESC,assetId DESC"],
+    "indexState": "Both READY, 2026-10-24T12:06:36Z; each created once",
+    "apiImage": "sha256:c75454d8660a8ecf643a99d363f94838090f163ee7bd206322ccd1a5cba80c3f",
+    "rollbackApiImage": "sha256:b9c358cbcd68c3a800758a1e2922f0d63c61be880cb78f52cc412bfc9d0702c5",
+    "unchangedWebImage": "sha256:241ffa8aae4a90c0c9bcb7a2904a75e940efe862d63eae9a98b230f6c4927af0",
+    "result": "API and worker healthy; original Caddy reopened; no stored-format migration",
+    "readbackAt": "2026-10-24T12:10:13.331Z",
+    "readback": "Public health HTTP 200/storage firestore; real Firestore SDK performed both indexed queries, limit 1, nonexistent synthetic scope, zero private rows",
+    "avatarEnabled": false,
+    "webLibraryUi": "PENDING: current Web bundle predates attachment-library UI; next frontend delivery must carry it"
+  },
+  "retainedFailures": [
+    "Initial local archive network permission failure; archive-only preparation then succeeded, not another cloud build",
+    "First candidate Docker FROM bare image ID was treated as a registry tag; candidate build stopped, no service switch; exact base tag and image ID verified before bounded correction",
+    "Index inventory shape matcher omitted collection identity; corrected before second collection create, no duplicate index submission",
+    "APK verifier first network sandbox request and Java PATH shim failed; explicit authorized read and installed JRE succeeded"
+  ],
+  "limits": {
+    "modelCalls": 0,
+    "notifications": 0,
+    "fullSuite": false,
+    "computerUse": false,
+    "sourceToBinaryReproducibility": "Not independently proven; EAS source metadata plus actual binary identity verified",
+    "remaining": ["APK v3 over-install and library user flow", "Web attachment-library UI delivery", "Real personal-key generation with a usable credential", "Avatar lifecycle release gate", "Previously deferred four-Agent review and native backup restore acceptance"]
+  }
+}

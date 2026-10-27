@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { resolveApiBaseUrl } from "../config/api-base-url.ts";
+import { sharedSelectionSchema, type SharedSelection } from "../shared/sharing.ts";
 import { documentChangeSchema, documentExportSchema, documentPeriodSchema, documentRequestSchema, documentContentQuerySchema, documentListQuerySchema, reportCoverageSchema, reportProgressSchema,
   type DocumentSnapshot, type DocumentContentPage, type DocumentContentQuery, type DocumentVersionPage, type DocumentListQuery, type DocumentChange, type DocumentExport, type DocumentPage, type DocumentRequest, type FamilyDocument } from "../shared/family-documents.ts";
 
@@ -61,7 +62,8 @@ export function parseFamilyDocumentSnapshot(value: unknown, snapshotId: string, 
   return snapshot;
 }
 interface PendingWrite { kind: "create" | "change"; childId: string; userId: string; id: string; payload: string; body: string; reviewed: boolean; reconfirm: boolean; everUnknown: boolean; opId: string }
-export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = fetch) {
+export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = fetch, selection?: SharedSelection) {
+  const sharing = selection ? sharedSelectionSchema.parse(selection) : undefined;
   const base = resolveApiBaseUrl(baseUrl), apiUrl = base.endsWith("/api") ? base : base + "/api";
   let pending: PendingWrite | null = null, activeScope = "";
   function scope(childId: string, userId: string) {
@@ -71,6 +73,7 @@ export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = f
   }
   const path = (childId: string) => "/children/" + encodeURIComponent(childId) + "/documents";
   async function request(url: string, signal: AbortSignal, userId: string, body?: string, pdf = false): Promise<unknown> {
+    if (sharing) url += (url.includes('?') ? '&' : '?') + 'spaceId=' + encodeURIComponent(sharing.spaceId);
     const controller = new AbortController(), abort = () => controller.abort();
     signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort();
     const timeout = setTimeout(abort, pdf ? 30_000 : body === undefined ? 15_000 : 20_000);
@@ -101,7 +104,8 @@ export function createFamilyDocumentsApi(baseUrl = "", fetcher: typeof fetch = f
         throw new FamilyDocumentApiError(0, "check_original_document");
       pending.reviewed = false; return pending;
     }
-    const opId = crypto.randomUUID(), body = JSON.stringify({ opId, [kind === "create" ? "request" : "change"]: input });
+    const opId = crypto.randomUUID(), body = JSON.stringify({ opId, [kind === "create" ? "request" : "change"]: input,
+      ...(kind==='create'&&sharing?.expectedBasis?{expectedBasis:sharing.expectedBasis}:{}) });
     return pending = { kind, childId, id, userId, payload, body, opId, reviewed: false, reconfirm: false, everUnknown: false };
   }
   async function write(kind: PendingWrite["kind"], childId: string, id: string, userId: string, input: DocumentRequest | DocumentChange, signal: AbortSignal) {

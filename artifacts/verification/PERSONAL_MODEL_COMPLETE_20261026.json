@@ -1,0 +1,103 @@
+{
+  "checkedOn": "2026-10-26",
+  "source": "226a848",
+  "state": "passed",
+  "scope": "Official shared Web settings/chat/run clients over local HTTP, isolated Firebase emulators, current production ADK and real personal Vertex chat/embedding key. No browser-pixel or Android key-entry acceptance.",
+  "settings": {
+    "version": 4,
+    "provider": "vertex",
+    "embeddingProvider": "vertex",
+    "keyConfigured": true,
+    "embeddingKeyConfigured": true,
+    "originalOpId": "6788257f-bddc-420b-98de-6218396d4ab0",
+    "operationReadback": "passed",
+    "freshLoginReadback": "passed",
+    "platformEnabled": false,
+    "backgroundEnabled": false,
+    "limits": {
+      "modelCalls": 8,
+      "queryEmbeddings": 4,
+      "toolCalls": 16,
+      "runSeconds": 300,
+      "requestSeconds": 90,
+      "retries": 0,
+      "dailyPersonal": 20
+    }
+  },
+  "run": {
+    "id": "f37b5216-3e17-4f04-b7bb-74123e0a5622",
+    "sourceMessageId": "ad07d9c8-dc5a-4555-826d-9a630c41a159",
+    "status": "completed",
+    "reviewDecision": "pass",
+    "reviewModel": "gemini-3.1-flash-lite",
+    "promptVersion": "0.1.55",
+    "counts": {
+      "modelCalls": 3,
+      "toolCalls": 2,
+      "queryEmbeddings": 1
+    },
+    "originalRunReadback": true,
+    "citations": [
+      {
+        "chunkId": "b1109f71-a87d-5062-afba-f021e3411646",
+        "sourceId": "fhs-feeding-booklet-en",
+        "versionId": "6c6e1325-b240-562c-bd17-b10a90e14072",
+        "contentHash": "a0a0702e078e97f14a5ed4dca7320fc60467bc8389c198c966239f35638d1267",
+        "url": "https://www.fhs.gov.hk/english/health_info/child/14727.pdf",
+        "pageStart": 3,
+        "pageEnd": 3
+      }
+    ],
+    "tools": [
+      {
+        "name": "search_knowledge",
+        "status": "succeeded"
+      },
+      {
+        "name": "present_answer",
+        "status": "succeeded"
+      }
+    ]
+  },
+  "usage": {
+    "personal": {
+      "attempts": 4,
+      "inputTokens": 27527,
+      "outputTokens": 286,
+      "unknownUsageAttempts": 3
+    },
+    "platformDelta": 0,
+    "attemptsAfterCleanup": 9,
+    "retainedPriorAttempts": 5
+  },
+  "credentials": {
+    "provider": "vertex",
+    "embeddingProvider": "vertex",
+    "generationModel": "gemini-3.1-flash-lite",
+    "embeddingModel": "gemini-embedding-001",
+    "dimensions": 1024,
+    "project": "ai-caregivers-for-children",
+    "location": "global",
+    "temporaryKeyResource": "projects/1064034424208/locations/global/keys/yuyoufang-personal-final-20261026",
+    "temporaryRole": "projects/ai-caregivers-for-children/roles/ciModelGenerate",
+    "iamWaitSeconds": 180,
+    "preexistingRole": false,
+    "keyDeletedOrAbsent": true,
+    "addedBindingRemoved": true,
+    "localKeysRemoved": true
+  },
+  "costs": {
+    "reservedUSD": 0.5,
+    "rolling12hTotalReservedUSD": 2.51,
+    "capUSD": 5,
+    "knownGenerationEstimateUSD": 0.0142,
+    "estimateNotBill": true,
+    "unknownUsageNotZero": true
+  },
+  "limitations": [
+    "Earlier embedding_limit run remains in PERSONAL_MODEL_FLOW_20261026.json. This new successful run uses normal 8/4 limits and updated guidance; it does not establish the exact cause of the earlier repeated search.",
+    "One representative official answer from the existing limited local corpus, not four-Agent joint acceptance or a full knowledge-quality audit.",
+    "Shared Web/Android API and settings are reused; actual Android personal-key entry and cross-device UI are still manual pending items.",
+    "No production product settings, model quotas, data, collaborator PRs or external notifications were changed."
+  ]
+}

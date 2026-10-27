@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "package": "MODEL-SELF03 draft reset and shared concern icon delivery",
+  "source": "4bfdf98885db57fbf7a157305e22aa5f4f9c7ae5",
+  "mergedPullRequest": 267,
+  "observedAt": "2026-10-23T15:39:42.578Z",
+  "state": "web-deployed-android-ota-published-device-followup-pending",
+  "checksReused": "MODEL_SELF03_DRAFT_RESET_20261023.json",
+  "preparation": {
+    "node": "24.19.0",
+    "exports": [
+      {
+        "platform": "web",
+        "state": "succeeded",
+        "fileCount": 135,
+        "bytes": 10984366,
+        "publicConfigVerified": true
+      },
+      {
+        "platform": "android",
+        "state": "succeeded",
+        "fileCount": 31,
+        "bytes": 13557551,
+        "publicConfigVerified": true
+      }
+    ],
+    "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "initialArtifactCheckFailure": "Android export completed successfully, but the checker compared Windows backslash metadata paths with normalized slash paths and reported a missing asset. Original failed metadata was retained; rechecked existing assets after normalizing both sides, without another export.",
+    "coordination": "Original agent had not started exports. User requested root takeover; agent was formally interrupted and no export process was running. Root performed both exports once."
+  },
+  "web": {
+    "state": "deployed",
+    "source": "4bfdf98885db57fbf7a157305e22aa5f4f9c7ae5",
+    "webImage": "sha256:241ffa8aae4a90c0c9bcb7a2904a75e940efe862d63eae9a98b230f6c4927af0",
+    "htmlHash": "ae4eb75a4027327cff4c610661a45ecc5499a2503136e571c1d6aed6a8b100e4",
+    "apiWorkerUnchanged": true,
+    "quotaChanged": false,
+    "modelCalls": 0,
+    "notifications": 0,
+    "diskFreeBytes": 11398086656,
+    "archiveSHA256": "6b1f016395148e5326e2c7acf684e5ed92d70ec107635bba250c2896eca09349",
+    "payload": "135 static files; Web archive, hash and reviewed script only, 4729047 bytes total",
+    "vm": {
+      "project": "ai-caregivers-for-children",
+      "zone": "asia-east2-a",
+      "name": "yuban-p1",
+      "id": "2846984358678394356"
+    },
+    "rollback": "Protected original Compose configuration and prior Web image retained; API/worker configuration and image unchanged"
+  },
+  "android": {
+    "channel": "preview",
+    "runtime": "33699576537bf6f4081bddfb9c8807cd6bdef3ee",
+    "updates": [
+      {
+        "id": "01a1696a-fe0b-7563-9459-c7242ff2d6b5",
+        "group": "df51a917-ee74-4e03-8fbc-db472314007d",
+        "createdAt": "2026-10-23T15:39:41.963Z",
+        "gitCommitHash": "4bfdf98885db57fbf7a157305e22aa5f4f9c7ae5"
+      }
+    ],
+    "newApk": false,
+    "deviceAppliedVerified": false
+  },
+  "modelCalls": 0,
+  "notifications": 0,
+  "quotaChanges": false,
+  "businessDataWrites": false,
+  "limitations": [
+    "Latest update has not been verified on the phone",
+    "No true credential save, generation or embedding acceptance",
+    "DEV02 delivery_review_incomplete and collaborator role gaps remain",
+    "Native backup restore remains deferred"
+  ]
+}

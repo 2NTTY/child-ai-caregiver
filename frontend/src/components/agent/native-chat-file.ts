@@ -1,6 +1,7 @@
 import { Directory, File, Paths } from "expo-file-system";
 import { CHAT_FILE_LIMITS, normalizeChatFileMime } from "../../../../src/shared/chat-files";
 import { localFileAttachment } from "./file-attachment";
+import { withNativePickedFile } from "./native-picked-file";
 
 /** Own only our copy; never delete a file chosen from the user's library. */
 export async function copyNativeFile(file: File, declaredMime: string, fileName: string) {
@@ -25,5 +26,5 @@ export async function pickNativeFile() {
   const chosen = await File.pickFileAsync({ mimeTypes: "*/*", multipleFiles: false });
   if (chosen.canceled) return null;
   const file = chosen.result;
-  return copyNativeFile(file, file.type, file.name);
+  return withNativePickedFile(file, CHAT_FILE_LIMITS.bytes, copyNativeFile);
 }

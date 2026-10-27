@@ -1,0 +1,166 @@
+{
+  "source": "382d2174daf887837718189ef2004b89c8ccb95d",
+  "date": "2026-10-24",
+  "authorization": "User explicitly approved this Web package and one compatible Android OTA after upload approval review required payload-specific consent.",
+  "web": {
+    "bytes": 4729934,
+    "sha256": "51948967cbebf5e01da35deb6857412931967df009573785d1e00cfe7c2777ad",
+    "files": 135,
+    "source": "382d2174daf887837718189ef2004b89c8ccb95d",
+    "state": "deployed",
+    "webImage": "sha256:6d4bff9a8a1dda021e9538721367bf0f42063d52c2764a5f4fc30a640c079dd0",
+    "rollbackImage": "sha256:241ffa8aae4a90c0c9bcb7a2904a75e940efe862d63eae9a98b230f6c4927af0",
+    "configBackup": "/etc/yuban-p1/firestore/compose.yaml.before-shared-382d217",
+    "apiWorkerChanged": false,
+    "publicCheck": {
+      "source": "382d2174daf887837718189ef2004b89c8ccb95d",
+      "checkedAt": "2026-10-24T12:55:00.050Z",
+      "webStatus": 200,
+      "indexHash": "18c84df4250754542fe0d187d2657da6b3a264de09b64152b9920d422ba72530",
+      "apiStatus": 200
+    }
+  },
+  "android": {
+    "source": "382d2174daf887837718189ef2004b89c8ccb95d",
+    "runtime": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+    "channel": "preview",
+    "startedAt": "2026-10-24T12:55:13.324Z",
+    "state": "published",
+    "finishedAt": "2026-10-24T12:58:10.933Z",
+    "exitCode": 0,
+    "updates": [
+      {
+        "id": "01a16dfd-7b50-749b-a5ee-e4402c0c55d9",
+        "createdAt": "2026-10-24T12:58:11.152Z",
+        "group": "148449b2-41f9-4239-88b0-79578d7bc240",
+        "branch": "preview",
+        "message": "Shared reading and navigation 382d217",
+        "runtimeVersion": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+        "platform": "android",
+        "manifestPermalink": "https://u.expo.dev/update/01a16dfd-7b50-749b-a5ee-e4402c0c55d9",
+        "isRollBackToEmbedded": false,
+        "gitCommitHash": "382d2174daf887837718189ef2004b89c8ccb95d"
+      }
+    ],
+    "files": 31,
+    "bytes": 13684295,
+    "deviceApplication": "not verified; no forced restart with potentially unsent drafts"
+  },
+  "boundaries": {
+    "apiWorkerChanged": false,
+    "migration": false,
+    "models": 0,
+    "notifications": 0,
+    "quotaChanged": false,
+    "newApk": false,
+    "avatarEnabled": false
+  },
+  "pending": [
+    "Preparation checklist background batching",
+    "Photos sent through chat",
+    "Avatar lifecycle release gate",
+    "Device verification of published UI"
+  ],
+  "closeout20261026": {
+    "source": "330a905f1128c2c397d6ca6f6a191d4a27ea863e",
+    "deliveredAt": "2026-10-26T06:11:54.859Z",
+    "responsibleAccount": "CherylNg-2526",
+    "pullRequests": [
+      {
+        "number": 328,
+        "head": "ce4b90cdec16ac754e472c6f9ee11e4fcd1419fd",
+        "merge": "62617697c604c4ebde2c956d64c8685f2f172c49"
+      },
+      {
+        "number": 329,
+        "head": "874eca3127cd319c6bdbf131f1438e2437b41867",
+        "merge": "330a905f1128c2c397d6ca6f6a191d4a27ea863e"
+      }
+    ],
+    "review": {
+      "result": "No blocking finding in the exact product diffs and relevant owner/hook consumers.",
+      "reusedAuthorEvidence": {
+        "328": "Two targeted preparation-save cases and the author RN Web owner fixture; no-op retains the receipt, a real dirty edit clears the obsolete saved feedback.",
+        "329": "Four geometry cases and the author real RN Web/OverlayScrollbars fixture at zoom 1.4: two prepend anchors within 0.078125px, footer 0px."
+      },
+      "newProductTests": 0,
+      "limitations": "Author full type checks retained pre-existing errors; neither PR nor this delivery claims a green full type check or new device acceptance."
+    },
+    "exports": {
+      "web": {
+        "exit": 0,
+        "files": 65,
+        "bytes": 10807216
+      },
+      "android": {
+        "exit": 0,
+        "files": 31,
+        "bytes": 13730604
+      },
+      "initialFailure": "Sandbox Web export compiled, then failed with EPERM creating web/assets/_node_modules; Android had not started. The identical inputs exported successfully with the required filesystem permission.",
+      "failureLogSha256": "adc0c7c0ce91277f40b7eb78d4e41c0dea9449aa1e273632684c0ff9af04cea1"
+    },
+    "web": {
+      "source": "330a905f1128c2c397d6ca6f6a191d4a27ea863e",
+      "state": "deployed",
+      "webImage": "sha256:27a5c902d331b5f2c3aaf10c5cf6e2fdc34dc2e8be51f4205eea968bac2eedb3",
+      "rollbackImage": "sha256:e813692c9b396ab6d9fe0fa78fb0f6580ca321cf41013224de3922005161462b",
+      "configBackup": "/etc/yuban-p1/firestore/compose.yaml.before-shared-closeout-330a905",
+      "apiWorkerChanged": false,
+      "packageBytes": 4744027,
+      "packageSha256": "677ca4c2cba890f6fcf36aa68c78e41da88d9b62e98fc426352ad413ec452da1",
+      "files": 137,
+      "publicIndexSha256": "415050c1415c83d7b2bb3d1b0d2004eec3868532735de6f3babc42a7e496a8e7",
+      "publicIndexHashMatched": true,
+      "publicApiHealth": 200,
+      "unchangedApiWorkerImage": "sha256:663125df9f51c666c878b7b6bcb8ef77fc6f9a55f20a8f4cbc82c88e5b87ca70"
+    },
+    "android": {
+      "source": "330a905f1128c2c397d6ca6f6a191d4a27ea863e",
+      "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+      "files": 31,
+      "bytes": 13730604,
+      "state": "published",
+      "at": "2026-10-26T06:11:40.651Z",
+      "exit": 0,
+      "updates": [
+        {
+          "id": "01a176d6-3f6b-789c-b601-04e882beec80",
+          "createdAt": "2026-10-26T06:11:54.859Z",
+          "group": "4f3f95a3-a779-4363-904c-224302098bf1",
+          "branch": "preview",
+          "message": "Preparation save feedback and Web reading anchor 330a905",
+          "runtimeVersion": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+          "platform": "android",
+          "manifestPermalink": "https://u.expo.dev/update/01a176d6-3f6b-789c-b601-04e882beec80",
+          "isRollBackToEmbedded": false,
+          "gitCommitHash": "330a905f1128c2c397d6ca6f6a191d4a27ea863e"
+        }
+      ],
+      "channel": "preview",
+      "compatibleApkVersionCode": 4,
+      "reinstallRequired": false,
+      "deviceApplication": "Not checked again; publication is not device acceptance.",
+      "bundleUpload": {
+        "attempts": 1,
+        "httpStatus": 204,
+        "state": "ready",
+        "bytes": 9053676
+      }
+    },
+    "boundaries": {
+      "newApk": false,
+      "apiWorkerChanged": false,
+      "models": 0,
+      "notifications": 0,
+      "dataMigration": false,
+      "quotaChanged": false,
+      "collaboratorAgentPrChanged": false,
+      "iosPublished": false
+    },
+    "vm": {
+      "freeBytesBefore": 11035897856,
+      "terminationTimeUnchanged": "2026-11-06T05:33:50.732Z"
+    }
+  }
+}

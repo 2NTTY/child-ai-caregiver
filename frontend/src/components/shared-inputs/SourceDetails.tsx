@@ -6,7 +6,7 @@ import { AppScrollView as ScrollView } from "../AppScrollView";
 import { Text } from "react-native-paper";
 import { DateTime } from "luxon";
 import type { SourcesActions, SourcesViewModel } from "../../shared-input-view-model";
-import { fetchStateLabels } from "../../shared-input-view-model";
+import { fetchStateLabels, sourceReadiness } from "../../shared-input-view-model";
 import { photoExtractionLabels } from "../../photo-view-model";
 import { AppCheckbox } from "../AppCheckbox";
 import { AppButton, AppTextField, SectionCard, SectionHeader } from "../ui";
@@ -22,6 +22,7 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
   const [showHistory, setShowHistory] = useState(false);
   const selected = model.selected;
   if (!selected) return null;
+  const readiness = sourceReadiness(selected, model);
   const hasText = !!selected.text.trim(), candidate = selected.extraction.draft, direct = model.direct;
   const enabled = selected.management?.enabled !== false;
   const canManage = selected.canManage && model.access === "editable";
@@ -38,6 +39,8 @@ export function SourceDetails({ model, actions, onRecord, resultTrigger = null, 
       {selected.sourceUrl ? <Text selectable style={s.body}>網址：{selected.sourceUrl}</Text> : <Text style={s.meta}>沒有來源網址。</Text>}
       {selected.sourceNotes ? <Text selectable style={s.body}>私人備註：{selected.sourceNotes}</Text> : null}
       <View style={s.row}><AppStatusBadge label={fetchStateLabels[selected.fetchState]} tone={selected.fetchState === "ready" ? "success" : selected.fetchState === "failed" ? "error" : selected.fetchState === "unknown" ? "warning" : selected.fetchState === "running" ? "info" : "neutral"} /><AppStatusBadge label={photoExtractionLabels[selected.extraction.state]} tone={selected.extraction.state === "failed" ? "error" : selected.extraction.state === "unknown" || selected.extraction.state === "available" ? "warning" : selected.extraction.state === "running" ? "info" : "neutral"} /></View>
+      <View style={s.row}><AppStatusBadge label={readiness.label} tone={readiness.tone} /><AppStatusBadge label={readiness.indexLabel} /></View>
+      <Text style={s.meta}>私人來源由 Agent 讀取本人授權內容，未加入公共知識索引；保存網址不等於正文可用。</Text>
       <MotionFeedback scopeKey={scopeKey} active={model.operation.state === 'saved' && model.operation.phase === 'confirm' && !!selected.recordId} triggerKey={model.operation.state === 'saved' && model.operation.phase === 'confirm' ? model.operation.reference : null} testID="source-confirmation-feedback">{selected.recordId ? <Text style={s.body}>已連結{selected.confirmationKind === "reference" ? "家庭參考備註" : "孩子實際記錄"}。來源原文、網址、日期及候選仍屬私人。</Text> : null}</MotionFeedback>
       {selected.recordId ? <AppButton label="查看照顧記錄" variant="secondary" onPress={() => onRecord(selected.recordId!)} /> : null}
       {!hasText ? <><Text style={s.warning}>連結已保存，尚未取得正文；目前沒有可提取或確認的正文。</Text>

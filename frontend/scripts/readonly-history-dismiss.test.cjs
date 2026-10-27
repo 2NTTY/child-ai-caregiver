@@ -116,18 +116,18 @@ for (const kind of Object.keys(entries)) test(`${kind}: local close and Escape p
     await renderCurrent(); assert.equal(byId('manual-form-dialog'), null, 'A re-render does not reopen the old selection');
     await click(labelled('Leave synthetic workspace'));
     assert.ok(byId('leave-preview-dialog'), 'The original foreign lease remains registered after local dismissal');
-    assert.ok(labelled('留在此頁查核')); assert.equal(labelled('捨棄草稿並離開'), null); assert.equal(navigationCalls, 0);
-    await click(labelled('留在此頁查核')); assert.equal(foreignOperation, operation);
+    assert.ok(labelled('留在此頁')); assert.equal(labelled('捨棄並離開'), null); assert.equal(navigationCalls, 0);
+    await click(labelled('留在此頁')); assert.equal(foreignOperation, operation);
   }
 });
 test('the unchanged default editor still protects pending operations and genuine unsaved drafts', async () => {
   await setup('editor', 'unknown'); await click(labelled('Edit synthetic record'));
   await click(labelled('關閉Edit synthetic record'));
-  assert.ok(byId('manual-form-dialog')); assert.ok(byId('leave-preview-dialog')); assert.ok(labelled('留在此頁查核'));
-  assert.equal(labelled('捨棄草稿並離開'), null); assert.equal(foreignOperation.opId, 'synthetic-original-operation');
-  await click(labelled('留在此頁查核'));
+  assert.ok(byId('manual-form-dialog')); assert.ok(byId('leave-preview-dialog')); assert.ok(labelled('留在此頁'));
+  assert.equal(labelled('捨棄並離開'), null); assert.equal(foreignOperation.opId, 'synthetic-original-operation');
+  await click(labelled('留在此頁'));
   foreignOperation = null; editorDirty = true; await renderCurrent(); await escape();
-  assert.ok(byId('manual-form-dialog')); assert.ok(byId('leave-preview-dialog')); assert.ok(labelled('捨棄草稿並離開'));
+  assert.ok(byId('manual-form-dialog')); assert.ok(byId('leave-preview-dialog')); assert.ok(labelled('捨棄並離開'));
   await click(labelled('繼續編輯')); assert.ok(byId('manual-form-dialog')); assert.equal(writes, 0); assert.equal(networkCalls, 0);
 });
 test.after(async () => {await React.act(async () => renderer.unmount()); Module._load = originalLoad; dom.window.close();});

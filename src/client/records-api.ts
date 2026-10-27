@@ -1,5 +1,6 @@
 import type { Child, RecordList, TextRecord } from "../shared/records.ts";
 import type { OnlineReceipt } from "../shared/online.ts";
+import type { SocialAuthProvider } from "../shared/auth-providers.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export interface SessionUser {
@@ -19,6 +20,7 @@ export type AuthMode = "signIn" | "signUp";
 export interface RecordsIdentityAdapter {
   assertAvailable?(): void;
   authenticate(mode: AuthMode, input: Credentials, signal: AbortSignal): Promise<void>;
+  authenticateProvider?(provider: SocialAuthProvider, signal: AbortSignal): Promise<void>;
   observeSession(user: SessionUser | null): void;
   clearSession(): Promise<void>;
 }
@@ -40,6 +42,7 @@ export class ClientApiError extends Error {
 export interface RecordsApi {
   getSession(signal: AbortSignal): Promise<SessionUser | null>;
   authenticate(mode: AuthMode, input: Credentials, signal: AbortSignal): Promise<void>;
+  authenticateProvider?(provider: SocialAuthProvider, signal: AbortSignal): Promise<void>;
   signOut(signal: AbortSignal): Promise<void>;
   listChildren(signal: AbortSignal): Promise<Child[]>;
   createChild(displayName: string, signal: AbortSignal, expectedUserId: string): Promise<Child>;
@@ -167,6 +170,7 @@ export function createRecordsApi(baseUrl: string, fetcher: typeof fetch = fetch,
     resetOnline,
     hasPendingOnline: () => online.hasPending(),
     getSession,
+    ...(identity?.authenticateProvider ? { authenticateProvider: (provider: SocialAuthProvider, signal: AbortSignal) => identity.authenticateProvider!(provider, signal) } : {}),
     async authenticate(mode, input, signal) {
       if (identity) { await identity.authenticate(mode, input, signal); return; }
       await request(mode === "signUp" ? "/auth/sign-up/email" : "/auth/sign-in/email", signal,

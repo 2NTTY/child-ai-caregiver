@@ -2,13 +2,20 @@ import { apiError, jsonResponse } from "./workspace-api.ts";
 import { ModelSettingsError } from "./model-settings-contract.ts";
 import { parseModelSettingsCommand } from "./model-settings.ts";
 import type { ModelRouting } from "./model-routing.ts";
-import { MODEL_SETTINGS_MEDIA_TYPE, MODEL_SETTINGS_V3_MEDIA_TYPE, PERSONAL_MODEL, type ModelSettings, type PersonalModelCatalog, type PersonalModelProvider } from '../src/shared/model-settings.ts';
+import { MODEL_SETTINGS_MEDIA_TYPE, MODEL_SETTINGS_V3_MEDIA_TYPE, MODEL_SETTINGS_V4_MEDIA_TYPE, PERSONAL_MODEL, type ModelSettings, type PersonalModelCatalog, type PersonalModelProvider } from '../src/shared/model-settings.ts';
 
 type SettingsRouting = Pick<ModelRouting, 'view' | 'settings' | 'check'> & {
   catalog?(userId: string, version: number, refresh: boolean, signal: AbortSignal, provider?: PersonalModelProvider): Promise<PersonalModelCatalog>;
 };
 const v3Fields = ['baseUrl', 'embeddingApiKey', 'removeEmbeddingKey'];
+const v4Fields = ['embeddingProvider', 'embeddingProject', 'embeddingLocation'];
+function v3Settings(value: ModelSettings): ModelSettings {
+  if (value.embeddingProvider === 'vertex') throw new ModelSettingsError('client_update_required', 409);
+  const { embeddingProvider, embeddingProject, embeddingLocation, ...compatible } = value;
+  return compatible;
+}
 function v2Settings(value: ModelSettings): ModelSettings {
+  value = v3Settings(value);
   if (value.provider === 'openai-compatible' || value.baseUrl || value.embeddingKeyConfigured)
     throw new ModelSettingsError('client_update_required', 409);
   const { baseUrl, embeddingKeyConfigured, ...compatible } = value;
@@ -41,8 +48,9 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
   if (!userId) return apiError("unauthorized", "請先登入。", 401);
   if (request.headers.get("x-expected-user-id") !== userId) return apiError("session_changed", "登入身份已改變，請重新讀取。", 403);
   const url = new URL(request.url), path = url.pathname, accept = request.headers.get('accept');
-  const v3 = accept === MODEL_SETTINGS_V3_MEDIA_TYPE, v2 = accept === MODEL_SETTINGS_MEDIA_TYPE, versioned = v2 || v3;
-  const publicSettings = (value: ModelSettings) => v3 ? value : v2 ? v2Settings(value) : legacySettings(value);
+  const v4 = accept === MODEL_SETTINGS_V4_MEDIA_TYPE;
+  const v3 = v4 || accept === MODEL_SETTINGS_V3_MEDIA_TYPE, v2 = accept === MODEL_SETTINGS_MEDIA_TYPE, versioned = v2 || v3;
+  const publicSettings = (value: ModelSettings) => v4 ? value : v3 ? v3Settings(value) : v2 ? v2Settings(value) : legacySettings(value);
   try {
     const catalogProvider = url.searchParams.get('provider');
     if (url.search && !(versioned && request.method === 'GET' && path === '/api/ai/settings/models'
@@ -72,6 +80,7 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
     try { input = await request.json(); } catch { throw new ModelSettingsError("invalid_input"); }
     if (path === "/api/ai/settings") {
       const command = parseModelSettingsCommand(input);
+      if (!v4 && v4Fields.some(key => Object.hasOwn(command, key))) throw new ModelSettingsError('client_update_required', 409);
       if (!v3) {
         if (v3Fields.some(key => Object.hasOwn(command, key)) || command.provider === 'openai-compatible')
           throw new ModelSettingsError('client_update_required', 409);
@@ -81,7 +90,7 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
         if (['opId', 'provider', 'model', 'maxToolCalls', 'maxRunSeconds', 'modelRequestSeconds', 'maxModelRetries'].some(key => Object.hasOwn(command, key)))
           throw new ModelSettingsError('client_update_required', 409);
       } else if (!command.opId) throw new ModelSettingsError('invalid_input');
-      const result = await routing.settings.save(userId, command, v3 ? undefined : { maxSettingsVersion: 2 });
+      const result = await routing.settings.save(userId, command, v4 ? undefined : { maxSettingsVersion: v3 ? 3 : 2 });
       return jsonResponse(publicSettings(result));
     }
     if (path === "/api/ai/settings/check" || versioned && path === '/api/ai/settings/models') {
@@ -89,11 +98,11 @@ export async function handleModelSettingsRequest(request: Request, userId: strin
         || !("expectedVersion" in input) || !Number.isSafeInteger(input.expectedVersion) || (input.expectedVersion as number) < 0) throw new ModelSettingsError("invalid_input");
       if (path.endsWith('/models')) {
         if (!routing.catalog) throw new ModelSettingsError('unavailable', 503);
-        if (!v3) publicSettings(await routing.settings.get(userId));
+        if (!v4) publicSettings(await routing.settings.get(userId));
         const result = await routing.catalog(userId, input.expectedVersion as number, true, request.signal);
         return jsonResponse(v3 ? result : v2Catalog(result));
       }
-      if (!v3) publicSettings(await routing.settings.get(userId));
+      if (!v4) publicSettings(await routing.settings.get(userId));
       const result = await routing.check(userId, input.expectedVersion as number, request.signal);
       if (versioned) return jsonResponse(result);
       const { reason, ...legacy } = result; return jsonResponse(legacy);

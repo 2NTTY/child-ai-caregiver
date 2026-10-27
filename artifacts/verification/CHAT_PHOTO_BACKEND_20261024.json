@@ -1,0 +1,17 @@
+{
+  "package": "CHAT-PHOTO01 backend",
+  "baseline": "60b42c1c1a12896bbabd4e7f7b945bb54e1a8b8b",
+  "environment": "Windows, Node 24.19.0, ADK 2.1.0, scripted provider and in-memory Firestore transaction fixture",
+  "authorization": "Photo-only Agent wiring approved; collaborator review PRs remain untouched.",
+  "checks": [
+    { "command": "node --test tests/chat-photo-storage.test.ts", "result": "1/1 passed first attempt", "coverage": "reserve/upload, atomic chat reference, original receipt replay, repeated attachment use, scope/version rejection, extraction version advance, deletion prevents binary reads" },
+    { "command": "node --test tests/chat-photo-agent.test.ts", "result": "1/1 passed first attempt", "coverage": "production ProductAgent/ADK flow, current photo, library tool read, independent review receives original pixels, authorization revoked during review, saved run lookup, ADK events exclude binary, image-bound review hash" },
+    { "command": "node --test --test-name-pattern=photo tests/chat-photo-agent.test.ts tests/agent-runtime.test.ts", "result": "2/2 passed after final gateway authorization/summary-expiry adjustment", "coverage": "same new scenario plus existing extraction transport; not two additional product flows" },
+    { "command": "tsc --ignoreConfig --noEmit --target ES2023 --module NodeNext --moduleResolution NodeNext --strict --erasableSyntaxOnly --allowImportingTsExtensions --skipLibCheck --types node [nine changed runtime/store/test roots]", "result": "passed, exit 0", "scope": "agent-images, agent-model-gateway, agent-runtime, product-agent, firestore-photos, firestore-chat, firestore-product-agent, chat-photo-agent.test, chat-photo-storage.test" },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "retainedFailures": [{ "kind": "verification command", "code": "TS5112", "detail": "Initial explicit-root tsc invocation needed --ignoreConfig; corrected command passed. No product test failed." }],
+  "review": "Original photo metadata remains authoritative, chat link is read-only in the original transaction, no binary in receipts/events, per-run maximum four originals, unchanged official-advice citations and independent review, current scope/deletion checks before model/tool/finalization.",
+  "notVerified": ["real model vision or semantic quality", "cloud SDK transaction behavior for this additive link", "Web/Android send and library controls", "deployment", "physical phone"],
+  "sideEffects": { "realModelCalls": 0, "notifications": 0, "cloudBusinessWrites": 0 }
+}

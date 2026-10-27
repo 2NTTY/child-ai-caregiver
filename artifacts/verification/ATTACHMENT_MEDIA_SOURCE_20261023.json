@@ -1,0 +1,218 @@
+{
+  "baseCommit": "339c70712e10efb2547c8752fa6baa20a00ed795",
+  "branch": "dot/attachment-media-followup-20261023",
+  "sourceFiles": [
+    {
+      "path": "frontend/src/components/photos/AttachmentLibrary.tsx",
+      "baseSha256": null,
+      "candidateSha256": "6664504c23a1122f6af6c755983ef7b2597a3484c6cc12030e9599a4009d3cd6"
+    },
+    {
+      "path": "frontend/src/components/photos/PhotosView.tsx",
+      "baseSha256": "75ff1973c24781d6e3360227bf082dd040417b717cd2287e912093389bb73c6a",
+      "candidateSha256": "adfa09764d757932cd7050d0533ba5017e25779e2b7679467c01ce9199da132b"
+    },
+    {
+      "path": "frontend/src/photo-view-model.ts",
+      "baseSha256": "f08e4c592955ecc8cfe55d0d3173fdabd953bb4278ab6aed897de78f389de603",
+      "candidateSha256": "c11133829e3bee7de120749659dc4861d33d013aa1bc02068dada55e7249fbf3"
+    },
+    {
+      "path": "frontend/src/production/PhotoInputDomains.tsx",
+      "baseSha256": "0ab03e4145bf182a917fdb854b2b97e33f43c013c2960cd6116890d782253ef9",
+      "candidateSha256": "82db3ccb451bcba266fe829501bc3bcc9fe697ab93d6078e033f69643d029fb2"
+    },
+    {
+      "path": "frontend/src/production/useAttachmentReview.tsx",
+      "baseSha256": null,
+      "candidateSha256": "70aac849748d67ff50e778565d6743c0dc281a5ddbb29af8bb2f794a12cc73cf"
+    },
+    {
+      "path": "frontend/src/production/ChatFileMessage.tsx",
+      "baseSha256": "12c35d5ac4ed8c294287a7af8a3fcfb75053770c380ed18a3a6dc9f669c529d4",
+      "candidateSha256": "f90c12c0d636e7b20a4bdb6cc6ac49ba2f81243c3b67f3c3529bb6a8017091e1"
+    },
+    {
+      "path": "frontend/src/components/navigation/app-navigation.ts",
+      "baseSha256": "ae1096669f2cc1eee6e6d6474f38f3a687dc573b02de04f40f763997fcfeb06d",
+      "candidateSha256": "dbe302de6ff0c9cad5eaf0ea68fc450ea45f44164262898d534cdf0c3e6ac556"
+    },
+    {
+      "path": "frontend/src/screens/photosScreen.tsx",
+      "baseSha256": "3c7a84e232f72abd3e7c52120ee961c1b1d3cd8be37fe4a0a7371e6bcaaa7658",
+      "candidateSha256": "e8cc052dad616ee615792ae570e2ec9f9b9c6b0a89a2a9e70503c22f0efdde73"
+    },
+    {
+      "path": "frontend/scripts/attachment-review.test.mjs",
+      "baseSha256": null,
+      "candidateSha256": "2cd84a435e90a0cbd416bfd5023aa9cdf28a59097b7a083b7441e36b179a42ab"
+    },
+    {
+      "path": "src/shared/attachment-list.ts",
+      "baseSha256": null,
+      "candidateSha256": "897986dfc28b88ae829decd835cf4dea07d133ba4f18b43257dd1a89e8ed0770"
+    },
+    {
+      "path": "src/shared/voice.ts",
+      "baseSha256": "734bba6e70be74eb21cf5f603fa3eafdbd1e8446736bd1002621a5fc2082e0e3",
+      "candidateSha256": "f15b6ded1ffcce459c068a215d038454befb7382c3a3d3012fc6385ccc854b4f"
+    },
+    {
+      "path": "src/shared/chat-files.ts",
+      "baseSha256": "0877e0df7345edadfa2e642e13a5560be05c899336cba928b2baf077980027a2",
+      "candidateSha256": "bdb293dfff2209c3d145b0539507b16cb60e14d19ef1bdd75bd110e1ef2f7829"
+    },
+    {
+      "path": "src/client/voice-api.ts",
+      "baseSha256": "514bb5d02b4e607aa678618a24d26d97edbe5020c3f9bbc2d4123ee21c3e05de",
+      "candidateSha256": "7b57ca95c5909a9b39b96e6ac36ab0046ce5efea1cb2c236aa2f8671a17e2a3f"
+    },
+    {
+      "path": "src/client/chat-file-api.ts",
+      "baseSha256": "d7222ed4a9a7aa1e6844e6ecde50b068bc5f56c9334a97db94c38c4d50bbce1c",
+      "candidateSha256": "f50e9e5ed6cc30e5ea932125135f138665f8449a5337ce0104ca1bebb4d14e7e"
+    },
+    {
+      "path": "server/firestore-attachment-list.ts",
+      "baseSha256": null,
+      "candidateSha256": "ebd9eedbd074fbdccf5fb58dc8c3c8f1687735ecb9d9b65234107778b5b7f5a1"
+    },
+    {
+      "path": "server/firestore-voice.ts",
+      "baseSha256": "de5dd5cc940b99c9ba742f7e96e373509565ccc99fd0027a818e42b813583640",
+      "candidateSha256": "651bdeba3187adcd8ae5d3a747b6e1a06bac4760a12737f62cc7060c348c1da7"
+    },
+    {
+      "path": "server/firestore-chat-files.ts",
+      "baseSha256": "765304d61ae35f45b71ac14693a69159a1db2209955fd6a181c8f6891cebb5b7",
+      "candidateSha256": "38ae4a2d9fd14c04513fdd19b88f8bffa1d6124d14975f3069fb119be868bd27"
+    },
+    {
+      "path": "server/firebase-voice-api.ts",
+      "baseSha256": "325f940981a98eb843ec688fcd741c08a5d9a6bd34121ee084c1aebeb1f0f3e4",
+      "candidateSha256": "fb8ccb06584c03dbaba8d805672030b69e8dc172b0466d0d6d83f13f9ba71816"
+    },
+    {
+      "path": "server/firebase-chat-files-api.ts",
+      "baseSha256": "5088af54d7b91a9ed7c56ae3301fc0902e313d09d6d65a9fd7f098aa1ce1d3d9",
+      "candidateSha256": "92259b78d7889199bd4842ca224cc90de24d07421f92b5350b653ed1471323c9"
+    },
+    {
+      "path": "server/config.ts",
+      "baseSha256": "6e2071f1d9ec97cafaf318646d2491ea9748d6ad5fa823618d436fb9577bc38e",
+      "candidateSha256": "9755e3cef3e17df7cf3523821df5f1fba1c18b7fe4715c74fabb104262828532"
+    },
+    {
+      "path": "server/firebase-config.ts",
+      "baseSha256": "d3e8bc036015a7da0aa1db60ed5c45d81d3130bbd32082e81aa1f4b4a1914684",
+      "candidateSha256": "49eef5f3487e14eb5960a20fccd42bac72bfc5a7e81aff42146b64aab8798292"
+    },
+    {
+      "path": "server/firebase-runtime.ts",
+      "baseSha256": "c00ec7979fb72db3ed9e66ff82609e6dc9e0a5b09b0261075a86db3b379d7d0b",
+      "candidateSha256": "4abdc3521b6e7f9f57e43ff54f84c412ace0e76d3ae9ea04ed97fc32669bb267"
+    },
+    {
+      "path": "deploy/firebase/firestore.indexes.json",
+      "baseSha256": "2ffb1c367a3631b12a0adc6cfb6c4c15330910f74b03b5fc8963dc8d9d9a1d49",
+      "candidateSha256": "e293890d4e5745e9cf253b7c2afc76bf3c584bbf76dfb414db057f7d841bf6f7"
+    },
+    {
+      "path": "tests/attachment-list.test.ts",
+      "baseSha256": null,
+      "candidateSha256": "8bbb34c87e055bc23461802688cd7afaef537326815de3a1126d84eef5fd1ad5"
+    },
+    {
+      "path": "frontend/scripts/attachment-contract-integration.test.mjs",
+      "baseSha256": null,
+      "candidateSha256": "def2719482be3b67428cf4252e278a521588ae18a487ac6c48c8f2309aba586f"
+    },
+    {
+      "path": "frontend/scripts/attachment-details-dialog-dom.test.cjs",
+      "baseSha256": null,
+      "candidateSha256": "88a6d093f1d0aca27d6686fbcc933037b67841b945328589ffd1ed40907b3f0c"
+    }
+  ],
+  "sourceFileCount": 26,
+  "productFiles": 22,
+  "testFiles": 4,
+  "verification": {
+    "crossLayer": {
+      "passed": 10,
+      "failed": 0,
+      "includesPriorBackendCases": 8,
+      "durationMs": 1336.785774
+    },
+    "focused": {
+      "log": "review-artifacts/attachment-review-modal-final.log",
+      "sha256": "19408cedf349f9898d12a99ec0fcb089e738a48f9b8b70202fb5e607f445372c",
+      "pass": 16,
+      "fail": 0,
+      "durationMs": 781.312011
+    },
+    "dialogFirst": {
+      "log": "review-artifacts/attachment-details-dialog-dom-first.log",
+      "sha256": "3ee8905dfe6c00b393ba76257f40406d66c126ae690cf0768f7b82d9cefa9fd4",
+      "pass": 0,
+      "fail": 2,
+      "reason": "Harness incorrectly expected synthetic keyboard events to perform the native BUTTON default click that jsdom does not implement. Installed RN Web intentionally delegates native button activation to the browser. No product keyboard handler added."
+    },
+    "dialogFinal": {
+      "log": "review-artifacts/attachment-details-dialog-dom-final.log",
+      "sha256": "c185463f3e0295de7d00812776ec07df0636fd77fd8507179ff8d1733909f038",
+      "pass": 2,
+      "fail": 0,
+      "durationMs": 2062.511398,
+      "scope": "Actual library, HistoryEntryCard, FormDialog, AppDialog and installed RN Web Modal. Native button/tab semantics, real click, Escape/Close exact return focus, stable list/media DOM and synthetic scrollTop, version/scope closure. Explicit native-button Enter/Space browser test remains pending."
+    },
+    "typecheck": {
+      "command": "node --max-old-space-size=512 node_modules/typescript/bin/tsc --project review-artifacts/tsconfig.frontend-attachment-roots.json --pretty false",
+      "roots": 8,
+      "localStaticDependencies": 178,
+      "observedWindowUtc": [
+        "2026-10-23T12:44:55Z",
+        "2026-10-23T12:45:04Z"
+      ],
+      "exitCode": 137,
+      "compilerDiagnostics": "none produced",
+      "compilerLogSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "shellOutput": "Killed node --max-old-space-size=512 node_modules/typescript/bin/tsc --project review-artifacts/tsconfig.frontend-attachment-roots.json --pretty false",
+      "cause": "Unknown; exit137 is not proof of an OOM cause",
+      "retry": "None; stopped and released coordinated window"
+    }
+  },
+  "rawLogs": {
+    "cross-layer-checks.log": {
+      "sha256": "0b441522923d5b23a05702a74e677c7af4889e424f49024cc3de45cc4a6c50ce",
+      "text": "✔ attachment projection consumes both formal endpoints and preserves server pagination and unavailable state (166.392357ms)\n✔ list policy is adjustable per request, and strict metadata pages reject leakage and false completion (13.524585ms)\n✔ bounded scan uses last scanned cursor, handles empty not-complete and stable timestamp/id order (9.533004ms)\n✔ first-page transaction retry discards prior items and returns a cursor for the replay authority (3.227212ms)\n✔ continuation transaction retry neither skips nor duplicates and rejects a changed replay authority (3.335923ms)\n✔ cursor binds all authority fences and rejects authorization changing before publication (9.467989ms)\n✔ both real stores list sealed own-child linked metadata only and preserve existing get DTO (131.964067ms)\n✔ handlers preserve session preconditions, expose no-store metadata and reject unavailable or late identity (8.702197ms)\n✔ clients use formal list routes and reject cross-child, raw leakage, repeated cursors and late bodies (5.054776ms)\n✔ real clients and handlers traverse sealed stores without reading originals or writing records (74.710636ms)\nℹ tests 10\nℹ suites 0\nℹ pass 10\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 1336.785774\n"
+    },
+    "attachment-details-dialog-dom-first.log": {
+      "sha256": "3ee8905dfe6c00b393ba76257f40406d66c126ae690cf0768f7b82d9cefa9fd4",
+      "text": "onLayout relies on ResizeObserver which is not supported by your browser. Please include a polyfill, e.g., https://github.com/que-etc/resize-observer-polyfill.\nprops.pointerEvents is deprecated. Use style.pointerEvents\nAn update to Pressable inside a test was not wrapped in act(...).\n\nWhen testing, code that causes React state updates should be wrapped into act(...):\n\nact(() => {\n  /* fire events that update state */\n});\n/* assert on the output */\n\nThis ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act\nAn update to Pressable inside a test was not wrapped in act(...).\n\nWhen testing, code that causes React state updates should be wrapped into act(...):\n\nact(() => {\n  /* fire events that update state */\n});\n/* assert on the output */\n\nThis ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act\nAn update to HistoryEntryCard inside a test was not wrapped in act(...).\n\nWhen testing, code that causes React state updates should be wrapped into act(...):\n\nact(() => {\n  /* fire events that update state */\n});\n/* assert on the output */\n\nThis ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act\n✖ header opens a named modal with Enter; Escape and close restore the exact trigger without moving the list or media controls (75.705877ms)\n✖ Space activates the title independently, while version and scope changes dismiss stale details (6.198134ms)\nℹ tests 2\nℹ suites 0\nℹ pass 0\nℹ fail 2\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2029.082901\n\n✖ failing tests:\n\ntest at frontend/scripts/attachment-details-dialog-dom.test.cjs:80:1\n✖ header opens a named modal with Enter; Escape and close restore the exact trigger without moving the list or media controls (75.705877ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(dialog())\n  \n      at TestContext.<anonymous> (/workspace/scratch/c112a98a8be9/attachment_followup_pr_20261023/frontend/scripts/attachment-details-dialog-dom.test.cjs:88:10)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: null,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n\ntest at frontend/scripts/attachment-details-dialog-dom.test.cjs:100:1\n✖ Space activates the title independently, while version and scope changes dismiss stale details (6.198134ms)\n  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert.ok(dialog())\n  \n      at TestContext.<anonymous> (/workspace/scratch/c112a98a8be9/attachment_followup_pr_20261023/frontend/scripts/attachment-details-dialog-dom.test.cjs:102:69)\n      at async Test.run (node:internal/test_runner/test:1389:7)\n      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {\n    generatedMessage: true,\n    code: 'ERR_ASSERTION',\n    actual: null,\n    expected: true,\n    operator: '==',\n    diff: 'simple'\n  }\n"
+    },
+    "attachment-details-dialog-dom-final.log": {
+      "sha256": "c185463f3e0295de7d00812776ec07df0636fd77fd8507179ff8d1733909f038",
+      "text": "onLayout relies on ResizeObserver which is not supported by your browser. Please include a polyfill, e.g., https://github.com/que-etc/resize-observer-polyfill.\nprops.pointerEvents is deprecated. Use style.pointerEvents\n\"shadow*\" style props are deprecated. Use \"boxShadow\".\nAnimated: `useNativeDriver` is not supported because the native animated module is missing. Falling back to JS-based animation. To resolve this, add `RCTAnimation` module to this app, or remove `useNativeDriver`. Make sure to run `bundle exec pod install` first. Read more about autolinking: https://github.com/react-native-community/cli/blob/master/docs/autolinking.md\n✔ native button header opens a named modal; Escape and close restore the exact trigger without moving the list or media controls (145.935986ms)\n✔ version and scope changes dismiss stale details without invoking media or navigation actions (51.803522ms)\nℹ tests 2\nℹ suites 0\nℹ pass 2\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 2062.511398\n"
+    },
+    "attachment-review-modal-final.log": {
+      "sha256": "19408cedf349f9898d12a99ec0fcb089e738a48f9b8b70202fb5e607f445372c",
+      "text": "✔ an empty scanned page retains its cursor and uses the server policy instead of a hard-coded limit (94.36228ms)\n✔ network failure preserves the same-scope loaded page and cursor for explicit retry (25.792192ms)\n✔ changing scope aborts the old request and rejects late old-scope data synchronously (17.054938ms)\n✔ scope-changed clears prior pages and cursor, with an explicit fresh first-page retry (16.748423ms)\n✔ a missing list API is unavailable rather than a successful empty library (13.975583ms)\n✔ only the explicit list-unavailable 503 is unavailable; other failures retain the prior list as stale (57.112982ms)\n✔ revoked access removes loaded metadata and calls the existing authority owner (9.752964ms)\n✔ quiet invalidation preserves the loaded depth and old snapshot until fresh-cursor pages all succeed (9.356844ms)\n✔ a quiet second-page failure retains the prior depth and original cursor rather than a partial replacement (9.202716ms)\n✔ multiple invalidations while busy coalesce to one queued read of the loaded depth (9.541473ms)\n✔ the photo gallery reads only four mounted originals, opens the entire card and releases URLs on paging (23.243866ms)\n✔ media pages retain continuation for empty scans and distinguish unavailable endpoints from empty lists (18.488973ms)\n✔ ready media has no permanent refresh action and quiet refresh keeps the More label enabled and stable (14.534422ms)\n✔ web thumbnails wait until their bounded cards approach the viewport and cancel late results on leave (14.477474ms)\n✔ the original photo owner checks scope and immutable identity before reading thumbnail bytes (45.112405ms)\n✔ thumbnail authorization failure delegates to the original photo owner and successful URLs remain disposable (24.840392ms)\nℹ tests 16\nℹ suites 0\nℹ pass 16\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 781.312011\n"
+    },
+    "frontend-attachment-root-types.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "text": ""
+    }
+  },
+  "pending": [
+    "Root/API reviewer final source review",
+    "Typecheck: prior 8-root strict failed exit137 without diagnostics; no repeat",
+    "Build/export and four-width actual browser acceptance, native Enter/Space activation and visual focus",
+    "Real API, cloud index, production deployment and device media acceptance"
+  ],
+  "safety": [
+    "Synthetic only; no family media, real model, GCP/OTA, live API, cloud index, permission or production data changes",
+    "Source-only draft PR is not acceptance complete or deployment",
+    "Prior product freezes and original failures remain separately preserved"
+  ],
+  "separatePreviewArtifact": "Read-only synthetic voice/file overlay is prepared outside production source; its bytes and CSP have not been browser-accepted or published."
+}

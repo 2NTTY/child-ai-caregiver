@@ -1,0 +1,86 @@
+{
+  "date": "2026-10-25",
+  "source": "1f07fab5a32633dd733110700e850c7c06c781ee",
+  "pullRequest": 305,
+  "web": {
+    "source": "1f07fab5a32633dd733110700e850c7c06c781ee",
+    "state": "deployed",
+    "webImage": "sha256:0da4e1f28727e6387d251a23642c9c4af41977476b9a233e2b3ea403a0fbdcb7",
+    "rollbackImage": "sha256:d6f2a8b31fcd5599bcf97a544b63881aa3b44e87ff565ac07876aa1d170b7887",
+    "configBackup": "/etc/yuban-p1/firestore/compose.yaml.before-avatar-crop-1f07fab",
+    "apiWorkerChanged": false,
+    "indexHash": "49a19e92b4df17a2665a245f4fe7851b0ac004ae90de4036ffd717de20ff1958",
+    "publicIndexAndHealth": "passed",
+    "bytes": 4679020,
+    "files": 65,
+    "recordedAt": "2026-10-25T10:27:15.435959+00:00",
+    "deploymentObservation": "2026-10-25 10:23 UTC"
+  },
+  "vm": {
+    "id": "2846984358678394356",
+    "terminationTime": "2026-11-06T05:33:50.732Z",
+    "freeBytesBefore": 11124006912
+  },
+  "android": {
+    "state": "build-finished-and-statically-verified",
+    "project": "@2ntty/yuyoufang",
+    "profile": "preview",
+    "files": 727,
+    "sourceBytes": 25976264,
+    "expectedRuntime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+    "installedV3Runtime": "5fd144618e1f3d58297c3d1465a37c7e0bf07ea0",
+    "forcedOta": false,
+    "buildLimit": 1,
+    "paidPlanPurchased": false,
+    "buildId": "9f43f925-acc1-44e4-915b-ae63dcb46b70",
+    "versionCode": 4,
+    "runtime": "0c5c868405fc619dafa900dff2e08d3179baa17f",
+    "submittedAt": "2026-10-25T10:30:09.567Z",
+    "submissions": 1,
+    "completedAt": "2026-10-25T10:44:57.354Z",
+    "downloadUrl": "https://expo.dev/artifacts/eas/tqzvvQXmWmc7RqelWQgCcJoXiTrfBmDEKET4fjyLda8.apk",
+    "apkBytes": 119509204,
+    "apkSha256": "5a0769ec98aba9a1a7126a2012b238f96ca0beb44aefc2184d8536b6cf377be4",
+    "sameSigningAsV3": true,
+    "certificateSha256": "6153ebdd00cbadc004506cc468e2aab5f5430320a90c8bd00df336e0853aa8a0",
+    "package": "org.yuyoufang.app",
+    "versionName": "0.1.0",
+    "deviceInstallation": "pending",
+    "brandResourceMatchCount": 11,
+    "brandExamples": [
+      {
+        "apkPath": "res/S7.png",
+        "sourcePath": "android/app/src/main/res/drawable-xxxhdpi/splashscreen_logo.png",
+        "sha256": "709ce791f4ca007a6cde241b5dc825873613259f80a0aad0153aa5754259e158"
+      },
+      {
+        "apkPath": "res/13.webp",
+        "sourcePath": "android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.webp",
+        "sha256": "7899908b286cc0fd51ed7b75d3864fb1650106d0c7d3b7dc89a3ace4d8896b5d"
+      }
+    ]
+  },
+  "localShutdown": {
+    "checkpoint": "failed",
+    "error": "Local emulator export rejected: 500",
+    "previousSnapshot": "retained",
+    "restorationProven": false
+  },
+  "cost": {
+    "modelCalls": 0,
+    "notifications": 0,
+    "quotaChanges": 0,
+    "newGcpResources": 0
+  },
+  "pending": [
+    "Android native crop/EXIF, device installation and data retention",
+    "Cross-device media, notification completion and OTA rollback",
+    "Successful personal-key generation/embedding with a usable credential/environment",
+    "Collaborator four-Agent work and postponed DEV02 untouched"
+  ],
+  "artifactCheckFailures": [
+    "Python artifact GET returned Cloudflare 403; no APK was created. The installed EAS official downloader retrieved the same artifact.",
+    "The initial system Java verifier used CPU without returning; only that verified child was stopped. Cause was not established; installed Java21 completed signature verification.",
+    "Old aapt rejected the absolute Chinese file path; the remaining resource check used an ASCII relative path and passed without rerunning the successful signature check."
+  ]
+}

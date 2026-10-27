@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-27",
+  "package": "P4-FAMILY-A/B shared growth and concern read prerequisite",
+  "base": "59befbb2e2245d7cf94de41aee9f1208a3923bda",
+  "branch": "codex/p4-shared-growth-concerns",
+  "environment": "Windows, Node 24.19, serial synthetic Firestore transaction fixture; no cloud",
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern=\"shared growth and concerns read\" tests/firestore-sharing.test.ts",
+      "red": "Actual HTTP ignored shared selection and returned 403 instead of the required 200.",
+      "green": "One connected scenario passed, including its later added nonempty fact and private run assertions.",
+      "scope": [
+        "Original encrypted resources through the real Firebase HTTP handler and common clients",
+        "Saved growth content retained; unavailable current source reported without synthetic evidence",
+        "Unshared live memory inputs and task links withheld",
+        "Concern private run and out-of-scope links withheld; owner values unchanged",
+        "Module withdrawal and member revocation deny reads",
+        "Malformed or duplicate shared selectors reject instead of falling back",
+        "Unconnected shared writes reject without changing records"
+      ]
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc --project .superpowers/sdd/PLAN/sharing-control-tsconfig.json --pretty false",
+      "result": "Exit 0; roots include Firebase runtime, sharing control and sharing scenario, including changed domain/client imports. Not a full repository typecheck."
+    },
+    {
+      "method": "Independent bounded Sol readonly review of the working diff",
+      "result": "No actionable major or ordinary finding; no tests or external calls by reviewer."
+    },
+    { "command": "git diff --check", "result": "Passed" }
+  ],
+  "reuse": "Existing Firestore sharing authority, original domain reads and common client transport; no new dependency or storage schema.",
+  "notVerifiedOrDelivered": [
+    "No deployment, model call, notification, new index or cloud resource",
+    "No Web export or device test: no screen changed",
+    "Global shared-child page selection remains pending",
+    "Shared growth/concern mutation receipts and background authority remain pending; shared views explicitly read-only",
+    "Synthetic transactions do not prove real Firestore concurrency",
+    "Full P4 goal remains active; P3/P5 and collaborator Agent PRs unchanged"
+  ]
+}

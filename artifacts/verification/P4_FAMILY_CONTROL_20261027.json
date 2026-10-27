@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-27",
+  "package": "P4-FAMILY-B family management entry",
+  "base": "aeab7d6e70fad4830fd99b848bac26548ca10d3b",
+  "branch": "codex/p4-family-shared-entry",
+  "environment": {
+    "node": "24.19.0",
+    "cloudOperations": 0,
+    "models": 0,
+    "notifications": 0,
+    "deployed": false
+  },
+  "reuse": [
+    "existing Firestore sharing authority, transactions and operation receipts",
+    "same Firebase HTTP/session and native/Web transport",
+    "existing Paper, form, navigation and owner components"
+  ],
+  "checks": [
+    {
+      "name": "control authority and actual HTTP/common client",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared space control lists' tests/firestore-sharing.test.ts",
+      "result": "passed",
+      "tests": 1,
+      "covers": [
+        "identity/origin and strict command input",
+        "bounded pagination and cursor identity",
+        "same operation and version conflict",
+        "same source modules",
+        "transfer/revocation",
+        "redacted committed receipt"
+      ]
+    },
+    {
+      "name": "existing sharing restore with optional member label",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='isolated restore keeps current transfer' tests/firestore-sharing.test.ts",
+      "result": "passed",
+      "tests": 1
+    },
+    {
+      "name": "affected backend type graph",
+      "roots": [
+        "server/firestore-sharing.ts",
+        "server/firebase-runtime.ts",
+        "server/sharing-control-api.ts",
+        "tests/firestore-sharing.test.ts"
+      ],
+      "result": "passed"
+    },
+    {
+      "name": "identity controller and common client",
+      "command": "node --experimental-test-module-mocks --test frontend/src/production/sharing-controller.test.mts",
+      "result": "passed",
+      "tests": 1,
+      "executedBy": "bounded implementer",
+      "covers": [
+        "no child required",
+        "pagination and duplicate rows",
+        "unknown lookup and same operation retry",
+        "identity and delayed responses",
+        "redacted receipt",
+        "version conflict releases pending only when no effect is established"
+      ]
+    },
+    {
+      "name": "affected frontend type graph",
+      "roots": [
+        "frontend/src/screens/familyScreen.tsx",
+        "frontend/src/screens/settingsScreen.tsx",
+        "frontend/src/production/sharing-controller.test.mts"
+      ],
+      "result": "passed",
+      "executedBy": "bounded implementer"
+    },
+    {
+      "name": "Web export",
+      "command": "Expo export --platform web",
+      "result": "passed",
+      "output": ".superpowers/sdd/PLAN/family-control-web"
+    },
+    {
+      "name": "independent code review",
+      "result": "no remaining important findings",
+      "method": "read-only current branch diff; no extra tests or cloud calls"
+    },
+    {
+      "name": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "observedFailures": [
+    "New control flow failed before implementation: spacesPage was absent.",
+    "Synthetic auth fixture lacked the existing recent-auth and returnHeaders overloads; corrected the fixture, then scoped type graph passed.",
+    "Revoked committed control lookup originally returned access denial; targeted red check established metadata-only success, then passed without exposing the old space or token.",
+    "Client fixture initially used TypeScript parameter properties unsupported by Node strip-only execution; removed that syntax. Scoped test typing needed existing Node types.",
+    "Review found original unknown/null/retry/version_conflict kept management permanently locked. A targeted red assertion failed, then the narrow version_conflict exception passed; identity/403/other unknown outcomes remain retained."
+  ],
+  "pending": [
+    "create four composite indexes and compatible deployment",
+    "shared child selection across business pages",
+    "shared upload/private-chat binding and remaining background paths",
+    "device/user acceptance"
+  ],
+  "limitations": [
+    "Synthetic transaction fixture is not real Firestore concurrency/IAM evidence.",
+    "Web export is not GUI or Android device acceptance.",
+    "Family management only; selection does not switch the current business child or disclose private chat."
+  ]
+}

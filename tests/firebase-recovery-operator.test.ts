@@ -22,6 +22,14 @@ import { canonical } from '../server/firestore-session-codec.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import type { OnlineSubmission } from '../src/shared/online.ts';
 import { firestoreDomainFixture } from './helpers/firestore-domain-memory.ts';
+import { recoveryOperatorAvatar } from './helpers/recovery-operator-avatar.ts';
+import { avatarHeadRecordSchema, avatarCleanupRecordSchema } from '../server/avatar-data.ts';
+import { createFirebaseErasureJournal } from '../server/firebase-erasure-journal.ts';
+import { createFirestoreAvatarStore } from '../server/firestore-avatars.ts';
+import { createFirestoreAvatarCleanup } from '../server/firestore-avatar-cleanup.ts';
+import { createFirestoreAccountExport } from '../server/firestore-account-export.ts';
+import { readAvatarConfig } from '../server/avatar-config.ts';
+import { avatarMemoryBucket } from './helpers/avatar-memory.ts';
 
 const OWNER = 'synthetic-operator-owner', EMAIL = 'synthetic-operator@example.test';
 const PROJECT = 'synthetic-operator-project', NAMESPACE = 'unit_recovery_operator';
@@ -34,6 +42,7 @@ interface Attempt { writes: Write[]; acknowledged: boolean }
 interface DocumentOrderQuery {
   documentOrder: true; path: string; count: number; cursor: string | null;
   limit(count: number): DocumentOrderQuery; startAfter(id: string): DocumentOrderQuery;
+  get(): Promise<{ docs: { id: string; ref: { path: string }; data(): DocumentData | undefined }[]; size: number }>;
 }
 function isDocumentOrder(value: unknown): value is DocumentOrderQuery {
   return typeof value === 'object' && value !== null && 'documentOrder' in value && value.documentOrder === true;
@@ -54,7 +63,12 @@ function memoryDatabase(databaseId: string) {
   }
   function documentOrder(path: string, count = Infinity, cursor: string | null = null): DocumentOrderQuery {
     return { documentOrder: true, path, count, cursor, limit: value => documentOrder(path, value, cursor),
-      startAfter: id => documentOrder(path, count, id) };
+      startAfter: id => documentOrder(path, count, id), async get() {
+        const paths = [...fake.records.keys()].filter(key => key.startsWith(path + '/') && !key.slice(path.length + 1).includes('/'))
+          .sort().filter(key => cursor === null || key.slice(path.length + 1) > cursor).slice(0, count);
+        const docs = await Promise.all(paths.map(async key => ({ ...await reference(key).get(), id: key.slice(path.length + 1) })));
+        return { docs, size: docs.length };
+      } };
   }
   function collection(path: string) {
     const base = fake.database.collection(path);
@@ -106,7 +120,7 @@ function memoryDatabase(databaseId: string) {
     loseNextWriteReply: () => { loseWriteReply = true; },
     get lostWriteReplies() { return lostWriteReplies; } };
 }
-async function fixture() {
+async function fixture(withAvatar = false) {
   const source = memoryDatabase(SOURCE), target = memoryDatabase(TARGET), now = Date.now();
   const cipher = createStorageCipher(Buffer.alloc(32, 81));
   const options = { database: source.database, cipher, projectId: PROJECT, namespace: NAMESPACE, serverClock: () => now };
@@ -127,6 +141,14 @@ async function fixture() {
     dueAt: new Date(now + 86_400_000).toISOString(), timeZone: 'Asia/Hong_Kong' } }));
   await new FirestoreDeviceSessions({ ...options, namespace: NAMESPACE + '_sessions' }).issue({ userId: OWNER,
     sessionHash: '1'.repeat(64), expiresAtMs: now + 86_400_000, authTimeSeconds: Math.floor(now / 1000) });
+  const avatar = withAvatar ? await recoveryOperatorAvatar(options, binding.scope, now) : null;
+  if (avatar) {
+    for (const row of avatar.records) source.records.set(row.path, row.data);
+    // Existing valid synthetic session records make the real final apply plan span multiple bounded pages.
+    const sessions = new FirestoreDeviceSessions({ ...options, namespace: NAMESPACE + '_sessions' });
+    for (let i = 0; i < 80; i++) await sessions.issue({ userId: OWNER, sessionHash: (i + 2).toString(16).padStart(64, '0'),
+      expiresAtMs: now + 86_400_000, authTimeSeconds: Math.floor(now / 1000) });
+  }
   async function switchControl(enabled: boolean) {
     const next = randomUUID();
     await setFirebaseBackupControl(options, { expectedGeneration: generation, generation: next, enabled }); generation = next;
@@ -144,6 +166,7 @@ async function fixture() {
   const manifest: FirebaseBackupManifestPayload = firebaseBackupManifestPayloadSchema.parse({
     format: 'yuban-firebase-backup-manifest/v1', backupId, databaseId: SOURCE, snapshotTime, controlGeneration: generation,
     sourceCommit: 'a'.repeat(40), keyVersionRef: KEY, retainedUntil: new Date(now + 14 * 86_400_000).toISOString(),
+    ...(avatar ? { avatars: [await avatar.entry(backupId, new Date(now + 14 * 86_400_000).toISOString())] } : {}),
     nativeExport: { outputUriPrefix, objects: [{ name: 'firebase-backups/v1/' + backupId + '/firestore/export.overall_export_metadata',
       generation: '1', size: 48, crc32c: 'AAAAAA==' }] }, inventory, photos: [],
   });
@@ -171,7 +194,7 @@ async function fixture() {
     async assertNativeExportObjects(input) { calls.assertExport++; assert.deepEqual(input, { backupId, objects: manifest.nativeExport.objects }); },
   };
   const ports: FirebaseRecoveryOperatorOptions = { ...options, targetDatabase: target.database, backupBucketName: BUCKET,
-    keyVersionRef: KEY, native, artifacts,
+    keyVersionRef: KEY, native, artifacts, ...(avatar ? { avatars: avatar.ports } : {}),
     photos: {
       async backupPhoto() { calls.backupPhoto++; return unexpected(); },
       async restorePhoto() { calls.restorePhoto++; return unexpected(); },
@@ -188,7 +211,7 @@ async function fixture() {
   const importInput = { backupId, descriptor };
   function applyInput() { return { ...importInput, restoreId, operationName: operation.name, sourceGeneration: generation }; }
   return { source, target, options, ports, authority, codec, binding, snapshot, manifest, descriptor, calls, operator, operation, importInput, applyInput,
-    switchControl, clearImport: () => { existingImport = null; }, disableAuth: (value: boolean) => { disabled = value; } };
+    avatar, switchControl, clearImport: () => { existingImport = null; }, disableAuth: (value: boolean) => { disabled = value; } };
 }
 let stopped = false;
 void test('managed hot snapshot uses native provenance and the existing paused restore pipeline', async()=>{
@@ -315,4 +338,132 @@ check('restore commits staged data, recovers a lost acknowledgement and rejects 
   assert.deepEqual([...f.target.records], committed); assert.deepEqual([...f.source.records], revoked);
   assert.equal(f.target.attempts.filter(attempt => attempt.writes.length > 0).length, writing.length);
   assert.equal(f.calls.restorePhoto, 0);
+});
+
+void test('interrupted progress revalidates native provenance after entry and before applying a page', async () => {
+  const f = await fixture(); await f.operator.startRestoreImport(f.importInput);
+  const checkpoint = NAMESPACE + '_restore_operations/', progress = checkpoint + 'progress';
+  const verify = f.ports.artifacts.assertNativeExportObjects;
+  f.ports.artifacts.assertNativeExportObjects = async input => {
+    await verify(input);
+    if (f.target.records.has(progress)) throw Object.assign(new Error('synthetic changed provenance'), { code: 'recovery_native_provenance_changed' });
+  };
+  await assert.rejects(f.operator.applyRestore(f.applyInput()), code('recovery_native_provenance_changed'));
+  assert.equal(f.target.records.has(progress), true); assert.equal(f.target.records.has(checkpoint + 'current'), false);
+  const before = structuredClone([...f.target.records]); let checks = 0;
+  f.ports.artifacts.assertNativeExportObjects = async input => {
+    await verify(input);
+    if (++checks === 2) throw Object.assign(new Error('synthetic changed after entry'), { code: 'recovery_native_provenance_changed' });
+  };
+  await assert.rejects(createFirebaseRecoveryOperator(f.ports).applyRestore(f.applyInput()), code('recovery_native_provenance_changed'));
+  assert.equal(checks, 2); assert.deepEqual([...f.target.records], before);
+  assert.equal(f.calls.restorePhoto, 0); assert.equal(f.target.records.has(checkpoint + 'current'), false);
+});
+
+
+void test('avatar applyRestore recovers a partial final plan without recopying or retiring early', async () => {
+  const f = await fixture(true); assert.ok(f.avatar); await f.operator.startRestoreImport(f.importInput);
+  const checkpoint = NAMESPACE + '_restore_operations/', markerPath = checkpoint + 'avatar-plan-stage';
+  const verify = f.ports.artifacts.assertNativeExportObjects; let interrupted = false;
+  f.ports.artifacts.assertNativeExportObjects = async input => {
+    await verify(input);
+    const pages = [...f.target.records.keys()].filter(path => path.startsWith(checkpoint + 'page-'));
+    if (!interrupted && f.target.records.has(markerPath) && pages.length === 1) {
+      interrupted = true; throw new Error('synthetic partial avatar plan crash');
+    }
+  };
+  await assert.rejects(f.operator.applyRestore(f.applyInput()), /partial avatar plan crash/);
+  assert.equal(interrupted, true); assert.equal(f.avatar.bucket.writes(), 2); // One source and one exact new-epoch copy.
+  const savedMarker = f.target.records.get(markerPath); assert.ok(savedMarker);
+  const marker = z.object({ attempt: z.uuid(), phase: z.literal('building'), binding: z.object({ setHash: z.string(),
+    recordsHash: z.string(), originalInventoryHash: z.string() }), header: z.object({ pageHashes: z.array(z.string()) }).passthrough() })
+    .parse(JSON.parse(f.options.cipher.decrypt(savedMarker.ciphertext,
+      canonical(['yuban-restore-apply', 1, PROJECT, TARGET, NAMESPACE, 'avatar-plan-stage']))));
+  assert.equal(marker.binding.originalInventoryHash, f.manifest.inventory.sha256); assert.ok(marker.header.pageHashes.length > 1);
+  const intents = [...f.target.records].filter(([path]) => path.startsWith(checkpoint + 'avatar-copy-'));
+  assert.equal(intents.length, 2); assert.equal(f.target.records.has(checkpoint + 'progress'), false);
+  assertFirebaseBackupInventory(f.manifest.inventory, f.target.documents().filter(row => !row.path.startsWith(checkpoint)));
+  const before = structuredClone([...f.target.records]), noAvatar = { ...f.ports }; delete noAvatar.avatars;
+  await assert.rejects(createFirebaseRecoveryOperator(noAvatar).applyRestore(f.applyInput()), code('recovery_avatar_port_missing'));
+  assert.deepEqual([...f.target.records], before);
+  f.ports.artifacts.assertNativeExportObjects = async () => { throw Object.assign(new Error('synthetic provenance changed'), { code: 'recovery_native_provenance_changed' }); };
+  await assert.rejects(f.operator.applyRestore(f.applyInput()), code('recovery_native_provenance_changed'));
+  assert.deepEqual([...f.target.records], before); assert.equal(f.avatar.bucket.writes(), 2);
+  let sawRetainedAfterDiscard = false;
+  f.ports.artifacts.assertNativeExportObjects = async input => {
+    await verify(input);
+    if (!f.target.records.has(markerPath) && !f.target.records.has(checkpoint + 'progress')) {
+      for (const [path, row] of intents) assert.deepEqual(f.target.records.get(path), row);
+      sawRetainedAfterDiscard = true;
+    }
+    assert.equal(f.avatar!.bucket.writes(), 2);
+  };
+  const result = await createFirebaseRecoveryOperator(f.ports).applyRestore(f.applyInput());
+  assert.equal(result.state, 'applied-paused'); assert.equal(sawRetainedAfterDiscard, true);
+  assert.equal(f.avatar.bucket.writes(), 2); assert.equal(f.avatar.bucket.removes(), 0);
+  assert.deepEqual([...f.target.records.keys()].filter(path => path.startsWith(checkpoint)), [checkpoint + 'current']);
+  const records = f.target.documents().filter(row => !row.path.startsWith(checkpoint)).map(row => f.codec.decode(row));
+  const head = avatarHeadRecordSchema.parse(records.find(row => row.context.kind === 'avatar-head')!.value);
+  const cleanups = records.filter(row => row.context.kind === 'avatar-cleanup').map(row => avatarCleanupRecordSchema.parse(row.value));
+  assert.notEqual(head.binding.scope.storageEpoch, f.avatar.binding.scope.storageEpoch);
+  assert.equal(head.version, 1); assert.equal(cleanups.length, 2);
+  assert.ok(cleanups.some(row => row.descriptor?.generation === f.avatar!.descriptor.generation));
+  assert.ok(cleanups.some(row => row.descriptor?.generation === head.descriptor!.generation && row.reason === 'staging'));
+  const activation = f.target.attempts.findIndex(attempt => attempt.acknowledged && attempt.writes.some(row => row.action === 'create' && row.path === checkpoint + 'current'));
+  const retirement = f.target.attempts.findIndex(attempt => attempt.writes.some(row => row.action === 'delete' && row.path.startsWith(checkpoint + 'avatar-copy-')));
+  assert.ok(activation >= 0 && retirement > activation);
+});
+
+void test('avatar restore replays a later deletion journal before copy, export and durable cleanup', async () => {
+  const f = await fixture(true); assert.ok(f.avatar);
+  const journalBucket = avatarMemoryBucket('synthetic-operator-journal');
+  const journal = createFirebaseErasureJournal({ config: { projectId: PROJECT, namespace: NAMESPACE,
+    bucketName: 'synthetic-operator-journal' }, cipher: f.options.cipher, bucket: journalBucket.port });
+  f.ports.journal = journal;
+  f.ports.journalBucket = { async request() {
+    f.calls.journal++;
+    return [{ items: [...journalBucket.records].map(([name, row]) => ({ name, generation: row.metadata.generation })) }, { statusCode: 200 }];
+  } } as unknown as Bucket;
+  const config = readAvatarConfig({ AVATAR_WRITES_ENABLED: 'true' });
+  const codec = { async normalize(): Promise<never> { throw new Error('Restore must not decode a new upload'); } };
+  const avatars = createFirestoreAvatarStore({ ...f.options, config, codec, objects: f.avatar.ports.objects, journal });
+  const online = createFirestoreOnlineStore({ ...f.options, avatars });
+  await f.switchControl(true);
+  const path = '/api/children/' + f.binding.scope.childId + '/avatar/remove';
+  const payload = { expectedVersion: 1, confirmRemove: true };
+  const command: OnlineSubmission = { path, payload, operation: { ...await online.context(OWNER, { path, payload }),
+    opId: randomUUID(), deviceId: randomUUID() } };
+  const removed = await online.submit(OWNER, command);
+  assert.equal(z.object({ avatar: z.object({ version: z.literal(2), asset: z.null() }) }).safeParse(removed.result).success, true);
+  assert.equal(journalBucket.records.size, 1);
+  assert.deepEqual((await online.submit(OWNER, command)).operation, removed.operation);
+  assert.equal(journalBucket.writes(), 1);
+  await f.switchControl(false);
+  const sourceBefore = structuredClone([...f.source.records]);
+  await f.operator.startRestoreImport(f.importInput);
+  const restored = await f.operator.applyRestore(f.applyInput());
+  assert.equal(restored.state, 'applied-paused');
+  assert.equal(f.avatar.bucket.writes(), 1, 'A deleted image must not be copied from its retained backup');
+  assert.equal(f.avatar.bucket.removes(), 0, 'Restoring must preserve pending object cleanup until its consumer runs');
+  assert.deepEqual([...f.source.records], sourceBefore);
+  const records = f.target.documents().filter(row => !row.path.startsWith(NAMESPACE + '_restore_operations/')).map(row => f.codec.decode(row));
+  const head = avatarHeadRecordSchema.parse(records.find(row => row.context.kind === 'avatar-head')!.value);
+  assert.equal(head.descriptor, null); assert.ok(head.erasedThroughVersion! >= 1);
+  const obligations = records.filter(row => row.context.kind === 'avatar-cleanup').map(row => avatarCleanupRecordSchema.parse(row.value));
+  assert.equal(obligations.length, 1);
+  assert.equal(obligations[0].objectBinding.scope.storageEpoch, f.avatar.binding.scope.storageEpoch);
+  assert.equal(obligations[0].descriptor!.generation, f.avatar.descriptor.generation);
+  assert.equal((await createFirebaseRecoveryOperator(f.ports).applyRestore(f.applyInput())).replayed, true);
+  const targetOptions = { ...f.options, database: f.target.database };
+  await setFirebaseBackupControl(targetOptions, { expectedGeneration: restored.generation, generation: randomUUID(), enabled: true });
+  const targetAvatars = createFirestoreAvatarStore({ ...targetOptions, config, codec, objects: f.avatar.ports.objects, journal });
+  const exporter = createFirestoreAccountExport({ ...targetOptions, avatars: targetAvatars,
+    photos: { async content(): Promise<never> { throw new Error('Not a photo export'); } } });
+  assert.deepEqual((await exporter.page(OWNER, { section: 'child_avatar_content', childId: f.binding.scope.childId })).items, []);
+  const cleanup = createFirestoreAvatarCleanup({ ...targetOptions, objects: f.avatar.ports.objects, journal });
+  assert.equal((await cleanup.process(obligations[0].binding, obligations[0].assetId)).state, 'complete');
+  assert.equal((await cleanup.process(obligations[0].binding, obligations[0].assetId)).state, 'complete');
+  assert.equal(f.avatar.bucket.removes(), 1);
+  assert.equal(await f.avatar.ports.objects.inspect(f.avatar.binding, f.avatar.descriptor.asset.id, f.avatar.descriptor.asset), null);
+  assert.equal(journalBucket.records.size, 1, 'The independent deletion journal must survive cleanup');
 });

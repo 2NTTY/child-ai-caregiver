@@ -1,3 +1,5 @@
+import { sharedAttachmentReads } from './firestore-attachment-access.ts';
+import type { SharedSelection } from '../src/shared/sharing.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { voiceTranscriptSchema, voiceTranscriptDraftSchema, type VoiceTranscriptDraft } from '../src/shared/voice-transcript.ts';
@@ -94,11 +96,17 @@ export function createFirestoreVoiceTranscripts(options: FirestoreDomainOptions 
       return quota?{state:'deferred' as const,nextAt:nextAt!}:{state:content?'completed' as const:state==='unknown'?'unknown' as const:'stopped' as const};
     });
   }
-  return {claim,authorize,finish,readIn:async(b:Binding,id:string)=>(await read(b,id)).value,get:(userId:string,childId:string,id:string)=>authority.runTransaction(userId,childId,async b=>{
-    const row=await read(b,id);
+  function currentView(row: z.infer<typeof firestoreVoiceTranscriptSchema>) {
     // A lost worker result is not permission to transcribe the same audio again.
     return row.value.state==='running'&&row.attempt&&Date.parse(row.attempt.expiresAt)<=Date.now()
       ? {...row.value,state:'unknown' as const,reason:'interrupted',content:null}:row.value;
+  }
+  return {forSharedSpace: (selection: SharedSelection) => ({ get: (userId: string, childId: string, id: string) => sharedAttachmentReads(options,selection).runTransaction(userId,childId,async b => {
+    const row=await read(b,id), value=currentView(row);
+    return {...value,messageId:null,sharedSpaceId:b.sharedAccess!.spaceId};
+  }) }),claim,authorize,finish,readIn:async(b:Binding,id:string)=>(await read(b,id)).value,get:(userId:string,childId:string,id:string)=>authority.runTransaction(userId,childId,async b=>{
+    const row=await read(b,id);
+    return currentView(row);
   })};
 }
 export type FirestoreVoiceTranscripts=ReturnType<typeof createFirestoreVoiceTranscripts>;

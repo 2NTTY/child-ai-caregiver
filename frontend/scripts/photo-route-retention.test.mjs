@@ -39,7 +39,7 @@ function fixture(initialPath='/photos',initialView){
     if(name.includes('/photo-api'))return {createPhotoApi:()=>api,PhotoApiError:ApiError};
     if(name.includes('/use-online-updates'))return {ONLINE_REFRESH_EVENT:'synthetic-photo-refresh'};
     if(name.includes('/photo-view-model'))return {emptyPhotoDraft:empty,samePhotoOriginal:(a,b)=>a.bytes===b.bytes&&a.sha256===b.sha256&&a.mimeType===b.mimeType};
-    if(name==='./useDomainEnvironment')return {useDomainEnvironment:()=>currentEnv,useDomainWriteGuard:(dirty,isPending)=>{guard={dirty:!!dirty,pending:!!isPending};return 'photo';}};
+    if(name==='./useDomainEnvironment')return {forSharedModule:env=>env,useDomainEnvironment:()=>currentEnv,useDomainWriteGuard:(dirty,isPending)=>{guard={dirty:!!dirty,pending:!!isPending};return 'photo';}};
     if(name.endsWith('/shared/photos'))return {photoMetadataSchema:{safeParse:value=>({success:true,data:value})}};
     if(name.includes('/photo-form'))return {photoDraftSchema:{safeParse:value=>({success:true,data:value})}};
     if(name==='./usePhotoInputSources'||name==='./ProductionProvider'||name.includes('/PreviewNavigationGuard')||name==='react-native-paper'||name.startsWith('../components/'))return {};

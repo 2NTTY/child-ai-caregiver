@@ -10,11 +10,12 @@ import { isProductionRouteConnected } from "../production/routes";
 import { guardBrowserHistory, type HistoryGuardWindow, type HistoryRecoveryError } from "./browser-history-guard";
 
 export type LeaveScope = "child" | "account";
+export type LeavePendingKind = "saving" | "unknown";
 type LeaveIntent = "navigation" | "workspace" | "child";
 export type LeavePromptCopy = { message: string; actionLabel: string };
-type LeaveState = { dirty: boolean; pending: boolean; scope: LeaveScope; copy?: LeavePromptCopy; retainedInWorkspace?: boolean };
+type LeaveState = { dirty: boolean; pending: boolean; scope: LeaveScope; copy?: LeavePromptCopy; retainedInWorkspace?: boolean; pendingKind?: LeavePendingKind };
 type RetainedDrafts = readonly string[];
-type LeaveRequest = { blocked: boolean; action: () => void; intent: LeaveIntent; copy?: LeavePromptCopy };
+type LeaveRequest = { blocked: boolean; action: () => void; intent: LeaveIntent; copy?: LeavePromptCopy; pendingKind?: LeavePendingKind };
 type Guard = { register(id: string, value: LeaveState): void; remove(id: string): void; request(action: () => void, intent?: LeaveIntent, retained?: RetainedDrafts): void };
 const Context = createContext<Guard | null>(null);
 
@@ -39,7 +40,10 @@ export function PreviewNavigationGuard({ children }: { children: ReactNode }) {
   const leave = useCallback((action: () => void, intent: LeaveIntent = "navigation", retained: RetainedDrafts = []) => {
     if (approved.current) { action(); return; }
     const states = statesFor(intent, retained);
-    if (states.some(value => value.pending)) setRequest({ blocked: true, action, intent });
+    if (states.some(value => value.pending)) {
+      const pending = states.filter(value => value.pending), kind = pending[0]?.pendingKind;
+      setRequest({ blocked: true, action, intent, pendingKind: pending.every(value => value.pendingKind === kind) ? kind : undefined });
+    }
     else if (states.some(value => value.dirty)) {
       const dirty = states.filter(value => value.dirty), firstCopy = dirty[0]?.copy;
       // A specific attachment prompt must not conceal another ordinary draft guard.
@@ -62,12 +66,12 @@ export function PreviewNavigationGuard({ children }: { children: ReactNode }) {
     </View> : null}
     {/* Mount the prompt last so RN Web visual portal order matches its active focus stack. */}
     {request ? <Dialog visible onDismiss={() => setRequest(null)} testID="leave-preview-dialog">
-      <Dialog.Title>{request?.blocked ? "先處理原操作" : "離開未保存草稿？"}</Dialog.Title>
+      <Dialog.Title>{request.blocked ? request.pendingKind === "saving" ? "正在儲存" : request.pendingKind === "unknown" ? "儲存結果未確認" : "尚有變更待確認" : "尚有未儲存的修改"}</Dialog.Title>
       <Dialog.Content><Text style={styles.body}>{request?.blocked
-        ? "原操作仍在處理、結果未知或待重讀。請留在此頁查核同一操作；原內容及參考會保留。"
-        : request?.copy?.message ?? "此頁有未保存內容。留在此頁可繼續編輯；確認離開會捨棄這份草稿。"}</Text></Dialog.Content>
-      <Dialog.Actions><AppButton label={request?.blocked ? "留在此頁查核" : "繼續編輯"} variant="quiet" onPress={() => setRequest(null)} />
-        {request && !request.blocked ? <AppButton label={request.copy?.actionLabel ?? "捨棄草稿並離開"} variant="danger" onPress={() => {
+        ? request.pendingKind === "saving" ? "這次修改仍在儲存，請稍候再離開。" : request.pendingKind === "unknown" ? "暫時未能確認是否儲存成功。內容已保留，請返回查看結果後再離開。" : "請返回頁面查看未完成的變更，再離開。內容會保留。"
+        : request?.copy?.message ?? "離開會捨棄這些修改；已儲存的內容不受影響。"}</Text></Dialog.Content>
+      <Dialog.Actions><AppButton label={request?.blocked ? "留在此頁" : "繼續編輯"} variant="quiet" onPress={() => setRequest(null)} />
+        {request && !request.blocked ? <AppButton label={request.copy?.actionLabel ?? "捨棄並離開"} variant="danger" onPress={() => {
           // Recheck at confirmation: a pending request may have started while the dialog was open.
           if (statesFor(request.intent).some(value => value.pending)) { setRequest({ ...request, blocked: true }); return; }
           const action = request.action; setRequest(null); approved.current = true;
@@ -93,11 +97,11 @@ export function PreviewLink({ href, children }: { href: Href; children: ReactNod
   }}>{children}</Link>;
 }
 
-export function usePreviewLeaveGuard(dirty: boolean, pending = false, scope: LeaveScope = "child", copy?: LeavePromptCopy, retainedInWorkspace = false) {
+export function usePreviewLeaveGuard(dirty: boolean, pending = false, scope: LeaveScope = "child", copy?: LeavePromptCopy, retainedInWorkspace = false, pendingKind?: LeavePendingKind) {
   const guard = useContext(Context);
   const id = useId();
   const navigation = useNavigation();
-  useLayoutEffect(() => { guard?.register(id, { dirty, pending, scope, copy, retainedInWorkspace }); return () => guard?.remove(id); }, [guard, id, dirty, pending, scope, copy?.message, copy?.actionLabel, retainedInWorkspace]);
+  useLayoutEffect(() => { guard?.register(id, { dirty, pending, scope, copy, retainedInWorkspace, pendingKind }); return () => guard?.remove(id); }, [guard, id, dirty, pending, scope, copy?.message, copy?.actionLabel, retainedInWorkspace, pendingKind]);
   usePreventRemove(!!guard && (dirty || pending), ({ data }) => guard?.request(() => navigation.dispatch(data.action)));
   useEffect(() => {
     if (Platform.OS !== "web" || !guard || !(dirty || pending)) return;

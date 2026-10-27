@@ -3,10 +3,12 @@ import { useProductionActivity } from "./useProductionActivity";
 import { createProductionTransport } from "./production-transport";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { usePathname, useRouter, type Href } from "expo-router";
+import { usePathname, useGlobalSearchParams, useRouter, type Href } from "expo-router";
 import { Linking, Platform } from "react-native";
 import { Text } from "react-native-paper";
 import type { AuthMode, Credentials } from "../../../src/client/records-api";
+import type { ReauthenticationInput, SocialAuthProvider } from "../../../src/shared/auth-providers";
+import type { PhotoMessageReference } from "../../../src/shared/photos";
 import { emptyAssistantDraft, photoAttachment, type AssistantAttachment } from "../assistant-draft";
 import { AppDialog } from "../components/AppDialog";
 import { DeleteChildDialog } from "../components/DeleteChildDialog";
@@ -19,6 +21,7 @@ import { AccountCallbackGate } from "../components/account/AccountCallbackGate";
 import { projectProductionHome } from "./home-projection";
 import { productionDestinations } from "./routes";
 import { useOnlineUpdates } from "../../../src/client/use-online-updates";
+import { sharedRefreshSelections } from './shared-route-access';
 
 function initialOnline() { return Platform.OS !== "web" || typeof navigator === "undefined" || navigator.onLine; }
 
@@ -29,12 +32,14 @@ function useProductionValue(owner: ProductionOwner) {
   const authorization = useSyncExternalStore(owner.authorizationOwner.subscribe, owner.authorizationOwner.getSnapshot, owner.authorizationOwner.getSnapshot);
   const voiceUpload = useSyncExternalStore(owner.voiceOwner.subscribe,owner.voiceOwner.getSnapshot,owner.voiceOwner.getSnapshot);
   const fileUpload = useSyncExternalStore(owner.fileOwner.subscribe,owner.fileOwner.getSnapshot,owner.fileOwner.getSnapshot);
+  const photoUpload = useSyncExternalStore(owner.photoOwner.subscribe,owner.photoOwner.getSnapshot,owner.photoOwner.getSnapshot);
   const pathname = usePathname();
   const router = useRouter();
   const leave = usePreviewNavigation();
   const [localNotice, setLocalNotice] = useState<string | null>(null);
   const [dismissedNotice, setDismissedNotice] = useState<string | null>(null);
   const [composerFocusRequest, setComposerFocusRequest] = useState(0);
+  const [contextRailVisible, setContextRailVisible] = useState(false);
   const [logoutConfirmation, setLogoutConfirmation] = useState(false);
   const current = useRef({ scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname });
   current.current = { scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname };
@@ -49,12 +54,18 @@ function useProductionValue(owner: ProductionOwner) {
     const message=pending.file?snapshot.chat.messages.find(item=>item.file?.id===pending.file!.id):null;
     if(message&&snapshot.scopeKey&&pending.localId){owner.draftOwner.remove(snapshot.scopeKey,pending.localId);owner.fileOwner.linked(message.id,message.file!.id);}
   },[owner,snapshot.chat.messages,snapshot.scopeKey,fileUpload.file?.id]);
+  useEffect(() => {
+    const pending = owner.photoOwner.getSnapshot();
+    const draft = snapshot.chat.selectedChildId ? snapshot.chat.drafts[snapshot.chat.selectedChildId] : undefined;
+    const message = draft?.savedUserMessageId ? snapshot.chat.messages.find(item => item.id === draft.savedUserMessageId && item.photo?.id === pending.photo?.id) : null;
+    if (message && snapshot.scopeKey && pending.localId) { owner.draftOwner.remove(snapshot.scopeKey,pending.localId); owner.photoOwner.linked(message.id,message.photo!.id); }
+  }, [owner,snapshot.chat.messages,snapshot.chat.drafts,snapshot.scopeKey,photoUpload.photo?.id]);
   useNativePushNavigation(owner, snapshot.account.gate === "ready" ? snapshot.identityKey : null, snapshot.records.user?.id ?? null, target => {
     const identity = snapshot.identityKey;
     leave(() => { void (async () => {
       if (!identity || owner.getSnapshot().identityKey !== identity) return;
-      if (target.childId) await owner.controller.selectChild(target.childId);
-      if (owner.getSnapshot().identityKey === identity) router.push(target.kind === "test" ? "/settings" : "/tasks");
+      if (target.childId) await owner.selectPersonalChild(target.childId);
+      if (owner.getSnapshot().identityKey === identity) router.push(target.kind === "test" ? "/settings" : { pathname: "/tasks", params: { taskId: target.taskId! } });
     })().catch(() => { if (owner.getSnapshot().identityKey === identity) setLocalNotice("通知事項未能開啟，請在待辦重新讀取。"); }); }, target.childId ? "child" : undefined);
   }, setLocalNotice);
   const visibleDraft = draft.scope === snapshot.scopeKey ? draft : emptyAssistantDraft;
@@ -63,13 +74,14 @@ function useProductionValue(owner: ProductionOwner) {
 
   useLayoutEffect(() => {
     if ((!["/", "/chat"].includes(pathname) || previousPath.current === "/chat" && pathname !== "/chat")
-      && !owner.voiceOwner.getSnapshot().localId && !owner.fileOwner.getSnapshot().localId && !owner.draftOwner.getSnapshot().attachments.some(item => item.kind === "file")) owner.draftOwner.clearAttachments(snapshot.scopeKey);
+      && !owner.voiceOwner.getSnapshot().localId && !owner.fileOwner.getSnapshot().localId && !owner.photoOwner.getSnapshot().localId && !owner.draftOwner.getSnapshot().attachments.some(item => item.kind === "file")) owner.draftOwner.clearAttachments(snapshot.scopeKey);
     previousPath.current = pathname;
   }, [owner, pathname, snapshot.scopeKey]);
   useEffect(() => { setLocalNotice(null); setDismissedNotice(null); setLogoutConfirmation(false); }, [snapshot.identityKey]);
 
   const refresh = useCallback(() => owner.refresh(), [owner]);
   const authenticate = useCallback((mode: AuthMode, input: Credentials) => owner.authenticate(mode, input), [owner]);
+  const authenticateProvider = useCallback((provider: SocialAuthProvider) => owner.authenticateProvider(provider), [owner]);
   const signOut = useCallback(async (discardConfirmed = false) => {
     if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey) return;
     if (owner.hasDomainPending()) { setLocalNotice("請先等候或查核原操作結果，再登出。"); return; }
@@ -89,24 +101,24 @@ function useProductionValue(owner: ProductionOwner) {
   }, [owner, snapshot.identityKey]);
   const currentScope = () => !!snapshot.scopeKey && current.current.scopeKey === snapshot.scopeKey && owner.getSnapshot().scopeKey === snapshot.scopeKey;
   const openAgentDraft = (focusText = false) => {
-    if (!currentScope()) return;
+    if (!currentScope() || snapshot.sharedChild.target) return;
     if (focusText) setComposerFocusRequest(value => value + 1);
     if (pathname !== "/chat") leave(() => router.push("/chat"), "workspace");
   };
   const addAgentAttachment = (attachment: AssistantAttachment, replaceId?: string) => {
-    if (!currentScope() || current.current.pathname !== pathname || !["/", "/chat"].includes(pathname) || !["photo","voice","file"].includes(attachment.kind)) {
+    if (!currentScope() || snapshot.sharedChild.target || current.current.pathname !== pathname || !["/", "/chat"].includes(pathname) || !["photo","voice","file"].includes(attachment.kind)) {
       attachment.dispose?.(); setLocalNotice("目前無法加入附件；內容尚未送出。"); return false;
     }
     const currentAttachments=owner.draftOwner.getSnapshot().attachments;
-    if(owner.voiceOwner.getSnapshot().localId || owner.fileOwner.getSnapshot().localId || (attachment.kind!=='photo' ? currentAttachments.some(v=>v.id!==replaceId) : currentAttachments.some(v=>v.kind!=='photo'))) {
-      attachment.dispose?.();setLocalNotice('每則可傳送一段錄音或一份檔案；照片另行保存及提取。請先送出或移除目前附件。');return false;
+    if(owner.voiceOwner.getSnapshot().localId || owner.fileOwner.getSnapshot().localId || owner.photoOwner.getSnapshot().localId || currentAttachments.some(v=>v.id!==replaceId)) {
+      attachment.dispose?.();setLocalNotice('每則可傳送一張照片、一段錄音或一份檔案。請先送出或移除目前附件。');return false;
     }
     return owner.draftOwner.add(snapshot.scopeKey, attachment, replaceId);
   };
   const actions: HomeActions = {
     selectChild(id) {
       if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey || id === model.selectedChildId) return;
-      leave(() => { if (current.current.identityKey === snapshot.identityKey) void owner.controller.selectChild(id); }, "child");
+      leave(() => { if (current.current.identityKey === snapshot.identityKey) void owner.selectPersonalChild(id); }, "child");
     },
     refresh: () => { void refresh(); },
     reviewOperation: () => { leave(() => router.push("/guide"), "workspace"); },
@@ -117,7 +129,7 @@ function useProductionValue(owner: ProductionOwner) {
     },
     composeCare() { leave(() => router.push("/care"), "workspace"); },
     prepareQuestion(question) {
-      if (!currentScope()) return;
+      if (!currentScope() || snapshot.sharedChild.target) return;
       if (chatDraft?.text.trim()) setLocalNotice("保留你原本未送出的問題；可在草稿入口核對後修改。");
       else owner.chatController.setText(question);
       openAgentDraft(true);
@@ -127,7 +139,7 @@ function useProductionValue(owner: ProductionOwner) {
       owner.controller.setChildName(displayName); void owner.controller.createChild();
     },
     deleteChildPreview() {
-      if (!currentScope() || owner.hasDomainPending()) return;
+      if (!currentScope() || snapshot.sharedChild.target || owner.hasDomainPending()) return;
       owner.controller.reviewDeleteChild();
     },
     completeGuidePreview() { setLocalNotice("引導完成狀態尚未接線；你可以繼續使用已接通的入口。"); },
@@ -136,9 +148,10 @@ function useProductionValue(owner: ProductionOwner) {
   return {
     apiBaseUrl: owner.apiBaseUrl, owner, controller: owner.controller, recordsState: snapshot.records,
     queryClient: owner.queryClient, user: snapshot.records.user, userId: snapshot.records.user?.id ?? null,
-    selectedChildId: model.selectedChildId, scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey,
+    selectedChildId: snapshot.activeChild?.id ?? null, activeChild:snapshot.activeChild, sharedChild:snapshot.sharedChild,
+    scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, contextRailVisible, setContextRailVisible,
     sessionGeneration: snapshot.sessionGeneration, auth: snapshot.records.auth, online: snapshot.records.online,
-    authenticate, signOut, refresh, model, actions, notice,
+    authenticate, authenticateProvider, socialProviders: owner.socialProviders, signOut, refresh, model, actions, notice,
     account: snapshot.account,
     canPrepareAccountDeletion: owner.canStartDomainWrite() && !snapshot.records.busy && snapshot.records.childOutcome === "draft" && !snapshot.records.deletion
       && Object.values(snapshot.records.drafts).every(item => item.outcome === "draft") && !owner.chatController.hasUnsavedInput() && !visibleDraft.attachments.length,
@@ -148,7 +161,7 @@ function useProductionValue(owner: ProductionOwner) {
       prepareDeletion: () => { const raw = owner.controller.getSnapshot();
         if (current.current.identityKey === snapshot.identityKey && owner.canStartDomainWrite() && !raw.busy && raw.childOutcome === "draft" && !raw.deletion
           && Object.values(raw.drafts).every(item => item.outcome === "draft") && !owner.chatController.hasUnsavedInput() && !owner.draftOwner.getSnapshot().attachments.length) return owner.accountOwner.prepareDeletion(); },
-      verifyDeletionIdentity: (password: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.verifyDeletionIdentity(password); },
+      verifyDeletionIdentity: (proof: ReauthenticationInput) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.verifyDeletionIdentity(proof); },
       executeDeletion: (confirmation: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.executeDeletion(confirmation); },
       cancelPreparedDeletion: () => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.cancelPreparedDeletion(); },
       checkDeletion: () => owner.accountOwner.checkDeletion(),
@@ -162,20 +175,35 @@ function useProductionValue(owner: ProductionOwner) {
     sendChat: async () => {
       if(!currentScope()||!owner.chatWritesAllowed())return;
       const attachments=owner.draftOwner.getSnapshot().attachments;
-      if(attachments.length&&(attachments.length!==1||!['voice','file'].includes(attachments[0].kind)))return;
+      if(attachments.length&&(attachments.length!==1||!['voice','file','photo'].includes(attachments[0].kind)))return;
       const known=new Set(owner.chatController.getSnapshot().messages.map(item=>item.id));
       const attachment=attachments[0];
       const voice=attachment?.kind==='voice'?await owner.voiceOwner.prepare(attachment):null;
       const file=attachment?.kind==='file'?await owner.fileOwner.prepare(attachment):null;
-      if(!currentScope()||attachments.length&&!voice&&!file||!owner.chatWritesAllowed())return;
-      await owner.chatController.send(voice?{id:voice.id,version:voice.version}:undefined,file?{id:file.id,version:file.version}:undefined);
+      const photo=attachment?.kind==='photo'?(attachment.photoReference
+        ?await owner.photoOwner.prepareReference(attachment.photoReference,attachment.id):attachment.photo?await owner.photoOwner.prepare({id:attachment.id,photo:attachment.photo}):null):null;
+      if(!currentScope()||attachments.length&&!voice&&!file&&!photo||!owner.chatWritesAllowed())return;
+      await owner.chatController.send(voice?{id:voice.id,version:voice.version}:undefined,file?{id:file.id,version:file.version}:undefined,photo?{id:photo.id,version:photo.version}:undefined);
+      if(currentScope()&&photo){const saved=owner.chatController.getSnapshot().messages.find(item=>!known.has(item.id)&&item.photo?.id===photo.id);
+        if(saved){owner.draftOwner.remove(snapshot.scopeKey,attachment.id);owner.photoOwner.linked(saved.id,photo.id);}}
       if(currentScope()&&owner.chatController.getSnapshot().messages.some(item=>!known.has(item.id)))owner.invalidatePrivateReads();
     },
     fileUpload, checkFileUpload: () => {if(currentScope())void owner.fileOwner.check();},
+    photoUpload, checkPhotoUpload: () => {if(currentScope())void owner.photoOwner.check();},
+    attachSavedPhoto: (photo: PhotoMessageReference) => {
+      if(!currentScope())return;
+      leave(() => {
+        if(!currentScope()||!owner.chatWritesAllowed()||owner.draftOwner.getSnapshot().attachments.length){setLocalNotice('請先送出或移除目前聊天附件。');return;}
+        const chat=owner.chatController.getSnapshot(), draft=chat.selectedChildId?chat.drafts[chat.selectedChildId]:undefined;
+        if(chat.busy||draft&&draft.phase!=='draft'){setLocalNotice('請先處理目前訊息的保存結果。');return;}
+        owner.draftOwner.add(snapshot.scopeKey,{id:`saved-photo-${photo.id}`,kind:'photo',fileName:photo.fileName,mimeType:photo.mimeType,bytes:photo.bytes,photoReference:photo});
+        router.push('/chat');
+      },'workspace');
+    },
     voiceUpload, checkVoiceUpload: () => {if(currentScope())void owner.voiceOwner.check();},
     requestChatReply: async (id: string) => { if (!currentScope() || !owner.chatWritesAllowed()) return; const known = new Set(owner.chatController.getSnapshot().messages.map(item => item.id)); await owner.chatController.requestReply(id); if (currentScope() && owner.chatController.getSnapshot().messages.some(item => !known.has(item.id))) owner.invalidatePrivateReads(); },
     agentModel: agent.model, agentInbox: agent.inbox, agentRuns: agent.runs, agentPending: agent.pending,
-    chatWritesAllowed: !owner.hasDomainPending() && !agent.model.busy && !agent.model.pendingDecision && !authorization.busy && !authorization.pending,
+    chatWritesAllowed: owner.chatWritesAllowed(),
     readAgentActivity: (includePending = true) => { if (currentScope()) owner.agentOwner.readActivity(includePending); },
     readAgentPending: (more = false) => { if (currentScope()) void owner.agentOwner.readPending(more); },
     authorization, authorizationActions: {
@@ -208,6 +236,9 @@ function useProductionValue(owner: ProductionOwner) {
       }else if(owner.fileOwner.getSnapshot().localId===id){
         if(!owner.chatController.clearUnsentFile())return;
         void owner.fileOwner.discard().then(removed=>{if(removed&&currentScope())owner.draftOwner.remove(snapshot.scopeKey,id);});
+      }else if(owner.photoOwner.getSnapshot().localId===id){
+        if(!owner.chatController.clearUnsentPhoto())return;
+        void owner.photoOwner.discard().then(removed=>{if(removed&&currentScope())owner.draftOwner.remove(snapshot.scopeKey,id);});
       }else owner.draftOwner.remove(snapshot.scopeKey,id);
     },
     clearAgentDraft: () => { if (currentScope() && !owner.hasDomainPending()) {
@@ -217,6 +248,9 @@ function useProductionValue(owner: ProductionOwner) {
       } else if (owner.fileOwner.getSnapshot().localId) {
         if (!owner.chatController.clearUnsentFile()) return;
         void owner.fileOwner.discard().then(removed=>{if(removed&&currentScope()){owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}});
+      } else if (owner.photoOwner.getSnapshot().localId) {
+        if (!owner.chatController.clearUnsentPhoto()) return;
+        void owner.photoOwner.discard().then(removed=>{if(removed&&currentScope()){owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}});
       } else {owner.chatController.setText("");owner.draftOwner.clearAttachments(snapshot.scopeKey);}
     } },
     agentDraftScope: snapshot.scopeKey, composerFocusRequest, openAgentDraft,
@@ -238,10 +272,13 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
   const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline(), undefined, undefined, undefined, { legacyTrial: process.env.EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL === "true" }, createProductionTransport(apiBaseUrl)));
   const value = useProductionValue(owner);
   const activity = useProductionActivity();
+  const pathname=usePathname(),params=useGlobalSearchParams<{tab?:string|string[];category?:string|string[];view?:string|string[]}>();
+  const first=(value:string|string[]|undefined)=>Array.isArray(value)?value[0]:value;
+  const sharedSelection=sharedRefreshSelections(value.sharedChild,pathname,{tab:first(params.tab),category:first(params.category),view:first(params.view)},value.contextRailVisible);
   useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" && value.account.gate === "ready" ? value.userId : null, activity.online ?? value.online, async reason => {
     await owner.refresh();
     owner.invalidatePrivateReads(false, reason !== "unavailable");
-  }, owner.fetcher, activity.active, () => owner.chatController.refreshOriginalReply());
+  }, owner.fetcher, activity.active, () => value.sharedChild.target ? Promise.resolve() : owner.chatController.refreshOriginalReply(),sharedSelection);
   useEffect(() => {
     owner.connect();
     void owner.controller.restoreSession();
@@ -257,7 +294,7 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
       recheck();
     };
     const focus = recheck;
-    const beforeUnload = (event: BeforeUnloadEvent) => { if (owner.chatController.hasUnsavedInput() || owner.draftOwner.getSnapshot().attachments.length || owner.agentOwner.getSnapshot().model.pendingDecision || owner.authorizationOwner.getSnapshot().pending || owner.adminOwner.getSnapshot().pending) { event.preventDefault(); event.returnValue = ""; } };
+    const beforeUnload = (event: BeforeUnloadEvent) => { if (owner.hasDomainPending() || owner.chatController.hasUnsavedInput() || owner.draftOwner.getSnapshot().attachments.length || owner.agentOwner.getSnapshot().model.pendingDecision || owner.authorizationOwner.getSnapshot().pending || owner.adminOwner.getSnapshot().pending) { event.preventDefault(); event.returnValue = ""; } };
     window.addEventListener("beforeunload", beforeUnload); window.addEventListener("online", connection); window.addEventListener("offline", connection); window.addEventListener("focus", focus);
     return () => { window.removeEventListener("beforeunload", beforeUnload); window.removeEventListener("online", connection); window.removeEventListener("offline", connection); window.removeEventListener("focus", focus); owner.dispose(); };
   }, [owner]);

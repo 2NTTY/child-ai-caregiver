@@ -5,7 +5,7 @@ import { growthActionSchema, growthTopicActionSchema, growthTopicSchema, GROWTH_
   type GrowthAction, type GrowthAttention, type GrowthPage, type GrowthTopicAction, type GrowthTopicId } from '../src/shared/growth.ts';
 import type { MemoryContext } from '../src/shared/memory.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreTaskSchema, type FirestoreDomainOptions } from './firestore-domain-data.ts';
-import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
+import { createFirestoreAuthority, resourceAuthorityVersion, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import type { FirestoreMemoryStore } from './firestore-memory.ts';
 import type { FirestoreCareStore } from './firestore-care.ts';
 import type { FirestoreOnlineStore } from './firestore-online.ts';
@@ -16,6 +16,7 @@ import { parseKnowledgeFilter } from './knowledge-inputs.ts';
 import { profileIsApplicable } from './memory-policy.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
 import { prepareFirestoreBackgroundWork, type FirestoreBackgroundWork } from './firestore-background-work.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
 
 const uuid = z.uuid(), time = z.iso.datetime({ offset: true }), version = z.number().int().positive().max(2147483647);
 const hash = z.string().regex(/^[a-f0-9]{64}$/u), text = (max: number) => z.string().max(max);
@@ -37,7 +38,7 @@ const checkSchema = z.object({ childId: uuid, catalog: text(100), at: time, next
 type Saved = z.infer<typeof firestoreGrowthSchema>;
 type Topic = z.infer<typeof firestoreGrowthTopicSchema>;
 const same = (a: unknown, b: unknown) => firestoreDomainHash(a) === firestoreDomainHash(b);
-const currentAuthority = (b: Binding) => b.scope.storageEpoch + ':' + b.authorizationVersion;
+const currentAuthority = resourceAuthorityVersion;
 const active = (item: GrowthAttention) => ['proposed', 'snoozed'].includes(item.state);
 
 /** Reuses the reviewed four-rule catalogue. No model determines medical eligibility or topic suppression. */
@@ -45,6 +46,14 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
   care: FirestoreCareStore; memory: FirestoreMemoryStore; online: FirestoreOnlineStore; knowledge?: FirestoreKnowledgeStore;
 }) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
+  const sharing = createFirestoreSharingStore(options);
+  function sourceBinding(b: Binding, module: 'profile' | 'memory'): Binding {
+    if (!b.sharedAccess) return b;
+    if (b.sharedAccess.module !== 'growth') domainReject('shared_module_scope', 403);
+    // Saved growth content is explicitly shared. These reads validate its basis only;
+    // unshared current inputs are never returned as new source content or write capabilities.
+    return { ...b, sharedAccess:{ ...b.sharedAccess, module, mode:'read' } };
+  }
   function query(b: Binding, suffix: string): Query {
     let q: Query = data.collection(suffix); for (const [key, value] of Object.entries(data.tags(b.scope))) q = q.where(key, '==', value); return q;
   }
@@ -78,8 +87,8 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     return value;
   }
   async function load(b: Binding) {
-    const profile = await options.care.readProfile(b);
-    const facts = await options.memory.readFamilyFacts(b, GROWTH_RULES.flatMap(rule => rule.inputs.map(input => input.key)));
+    const profile = await options.care.readProfile(sourceBinding(b, 'profile'));
+    const facts = await options.memory.readFamilyFacts(sourceBinding(b, 'memory'), GROWTH_RULES.flatMap(rule => rule.inputs.map(input => input.key)));
     const context: MemoryContext = { profile, profileApplicable: profileIsApplicable(profile.data), facts, topics: [], summary: null,
       recentMessages: [], conflictingKeys: [], unavailableFactKeys: facts.filter(f => !f.applicable).map(f => f.key.trim().toLowerCase()),
       truncated: { facts: false, topics: false, messages: false } };
@@ -93,8 +102,11 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     return { context, sources, proposals: assessed.proposals, notices: notice ? [notice] : assessed.notices };
   }
   async function visible(b: Binding, item: GrowthAttention, loaded: Awaited<ReturnType<typeof load>>) {
-    const next = loaded.proposals.find(value => value.topicId === item.topicId), linked = await task(b, item.taskId);
-    return { ...item, sourceAvailable: !!next && same(next.basis, item.basis), taskState: linked?.occurrence.state ?? null };
+    const next = loaded.proposals.find(value => value.topicId === item.topicId);
+    const mayReadTask = !b.sharedAccess || !!b.sharedAccess.modules?.includes('tasks');
+    const linked = mayReadTask ? await task(b, item.taskId) : null;
+    return { ...item, sourceAvailable: !!next && same(next.basis, item.basis),
+      taskId:mayReadTask ? item.taskId : null, taskState: linked?.occurrence.state ?? null };
   }
   function write(b: Binding, saved: Saved) {
     domainParse(firestoreGrowthSchema, saved); const item = saved.item, id = JSON.stringify([item.id, item.version]);
@@ -108,10 +120,16 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     const records = await all(b), loaded = await load(b), states = await topics(b);
     const history = records.filter(value => !active(value.item)).reverse(), selected = [...records.filter(value => active(value.item)), ...history.slice(0, 30)];
     const items: GrowthAttention[] = []; for (const saved of selected) items.push(await visible(b, saved.item, loaded));
-    return { authorityVersion: currentAuthority(b), items, historyHasMore: history.length > 30, canManage: true,
-      eligibleAssignees: [{ userId: b.scope.ownerUserId, name: '本人' }], notices: loaded.notices,
+    const mayReadInputs = !b.sharedAccess || !!b.sharedAccess.modules?.includes('memory');
+    return { authorityVersion: currentAuthority(b), items, historyHasMore: history.length > 30, canManage: !b.sharedAccess,
+      eligibleAssignees: b.sharedAccess ? [] : [{ userId: b.scope.ownerUserId, name: '本人' }],
+      notices: b.sharedAccess ? ['這是已共享的成長內容；共享修改仍未開放。',
+        ...(!mayReadInputs ? ['即時近況未加入共享範圍。'] : []),
+        ...(items.some(item => !item.sourceAvailable) ? ['部分成長內容的來源適用性已改變或尚未能確認。'] : [])] : loaded.notices,
       topics: GROWTH_RULES.map(rule => { const state = states.find(topic => topic.topicId === rule.id);
-        return { id: rule.id, title: rule.title, version: state?.version ?? 1, disabled: state?.disabled ?? false, inputs: growthInputs(rule, loaded.context) }; }) };
+        const inputs = growthInputs(rule, loaded.context);
+        return { id: rule.id, title: rule.title, version: state?.version ?? 1, disabled: state?.disabled ?? false,
+          inputs: mayReadInputs ? inputs : inputs.map(input => ({ ...input, value:null, conflict:false, factRefs:[] })) }; }) };
   }
   const childWake = (b: Binding, basis: string, dueAt = new Date().toISOString()) => prepareFirestoreBackgroundWork(data, b.transaction,
     { kind: 'child-change', scope: b.scope, resourceId: b.scope.childId, basis, generation: b.generation, authorizationVersion: b.authorizationVersion }, dueAt);
@@ -123,6 +141,14 @@ export function createFirestoreGrowthStore(options: FirestoreDomainOptions & {
     const item = await visible(b, saved.item, await load(b)); return item.sourceAvailable ? item : null;
   }
   const store = {
+    forSharedSpace(spaceId: string) {
+      domainParse(uuid, spaceId);
+      const unavailable = async (): Promise<never> => domainReject('shared_domain_read_only', 409);
+      return {
+        list: (u: string, c: string) => sharing.withResource(u, { spaceId, childId:c, module:'growth', mode:'read' }, access => page(access.binding)),
+        decide: unavailable, topic: unavailable,
+      };
+    },
     list: (u: string, c: string) => authority.runTransaction(u, c, page),
     decide: (u: string, c: string, id: string, raw: GrowthAction) => authority.runTransaction(u, c, async b => {
       domainParse(uuid, id); const input = domainParse(growthActionSchema, raw);

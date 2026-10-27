@@ -3,6 +3,11 @@ import { PERSONAL_DAILY_LIMIT, PERSONAL_RUN_LIMITS } from './model-settings.ts';
 
 const bounded = (range: { min: number; max: number }) => z.number().int().min(range.min).max(range.max);
 export const personalProviderSchema = z.enum(['gemini', 'vertex', 'openai-compatible']);
+export const personalEmbeddingShape = {
+  embeddingProvider: z.enum(['gemini', 'vertex']).optional(),
+  embeddingProject: z.string().regex(/^(?:[a-z][a-z0-9-]{4,28}[a-z0-9]|[1-9][0-9]{5,19})$/u).optional(),
+  embeddingLocation: z.string().min(2).max(63).regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/u).optional(),
+};
 export const personalModelIdSchema = z.string().min(1).max(128).regex(/^[a-zA-Z0-9][a-zA-Z0-9._:/-]*$/);
 export const personalBaseUrlSchema = z.string().max(512).superRefine((value, ctx) => {
   try {
@@ -22,7 +27,7 @@ export const publicModelSettingsSchema = z.object({
   limitPolicyVersion: z.literal(2).optional(),
   version: z.number().int().nonnegative().max(2147483647), mode: z.enum(['platform', 'personal', 'disabled']),
   provider: personalProviderSchema, model: personalModelIdSchema, keyConfigured: z.boolean(), backgroundEnabled: z.boolean(),
-  baseUrl: personalBaseUrlSchema.optional(), embeddingKeyConfigured: z.boolean().optional(),
+  baseUrl: personalBaseUrlSchema.optional(), embeddingKeyConfigured: z.boolean().optional(), ...personalEmbeddingShape,
   dailyLimit: bounded(PERSONAL_DAILY_LIMIT), maxModelCalls: bounded(PERSONAL_RUN_LIMITS.modelCalls),
   maxQueryEmbeddings: bounded(PERSONAL_RUN_LIMITS.queryEmbeddings), ...personalAdvancedShape,
   updatedAt: z.iso.datetime({ offset: true }).nullable(),

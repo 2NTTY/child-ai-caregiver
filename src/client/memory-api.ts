@@ -1,5 +1,6 @@
 import type { HistoryPage } from "../shared/care.ts";
-import type { ConversationSummary, FactConfirm, FactCreate, FactDeactivate, FactRevise, MemoryDelete, MemoryFact, MemoryPage, MemoryTopic, TopicChange, TopicCreate, TopicReopen } from "../shared/memory.ts";
+import type { ConversationSummary, FactConfirm, FactCreate, SharedFactCreate, FactDeactivate, FactRevise, MemoryDelete, MemoryFact, MemoryPage, MemoryTopic, TopicChange, TopicCreate, TopicReopen } from "../shared/memory.ts";
+import type { SharedSelection } from '../shared/sharing.ts';
 import type { OnlineReceipt } from "../shared/online.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
@@ -24,6 +25,7 @@ export interface MemoryApi {
   factHistory(childId: string, factId: string, beforeVersion: number | null, signal: AbortSignal): Promise<HistoryPage<MemoryFact>>;
   topicHistory(childId: string, topicId: string, beforeVersion: number | null, signal: AbortSignal): Promise<HistoryPage<MemoryTopic>>;
   createFact(childId: string, input: FactCreate, signal: AbortSignal, userId: string): Promise<MemoryFact>;
+  createConfirmedFact?(childId: string, input: SharedFactCreate, signal: AbortSignal, userId: string): Promise<MemoryFact>;
   confirmFact(childId: string, factId: string, input: FactConfirm, signal: AbortSignal, userId: string): Promise<MemoryFact>;
   reviseFact(childId: string, factId: string, input: FactRevise, signal: AbortSignal, userId: string): Promise<MemoryFact>;
   deactivateFact(childId: string, factId: string, input: FactDeactivate, signal: AbortSignal, userId: string): Promise<MemoryFact>;
@@ -64,7 +66,7 @@ function history<T>(value: unknown, guard: (value: unknown) => value is T, child
   return value as unknown as HistoryPage<T>;
 }
 
-export function createMemoryApi(baseUrl = "", fetcher: typeof fetch = fetch): MemoryApi {
+export function createMemoryApi(baseUrl = "", fetcher: typeof fetch = fetch, selection?: Pick<SharedSelection, 'spaceId'>): MemoryApi {
   const base = baseUrl.replace(/\/$/, "");
   const apiUrl = base.endsWith("/api") ? base : `${base}/api`;
   const online = createOnlineTransport(apiUrl, fetcher);
@@ -84,7 +86,7 @@ export function createMemoryApi(baseUrl = "", fetcher: typeof fetch = fetch): Me
     }
   }
   const mutate = (path: string, payload: unknown, signal: AbortSignal, userId: string) =>
-    onlineCall(signal, outerSignal => online.submit({ path: `/api${path}`, payload }, outerSignal, userId));
+    onlineCall(signal, outerSignal => online.submit({ path: `/api${path}`, payload, ...(selection ? { sharing: selection } : {}) }, outerSignal, userId));
   async function request(path: string, signal: AbortSignal, body?: unknown, userId?: string): Promise<unknown> {
     const controller = new AbortController();
     const abort = () => controller.abort();
@@ -92,7 +94,8 @@ export function createMemoryApi(baseUrl = "", fetcher: typeof fetch = fetch): Me
     if (signal.aborted) controller.abort();
     const timeout = setTimeout(abort, 20_000);
     try {
-      const response = await fetcher(`${apiUrl}${path}`, {
+      const selectedPath = selection && path.startsWith('/children/') ? `${path}${path.includes('?') ? '&' : '?'}spaceId=${encodeURIComponent(selection.spaceId)}` : path;
+      const response = await fetcher(`${apiUrl}${selectedPath}`, {
         method: body === undefined ? "GET" : "POST", credentials: "include", cache: "no-store",
         headers: { Accept: "application/json", ...(body === undefined ? {} : { "Content-Type": "application/json", "x-expected-user-id": userId ?? "" }) },
         ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: controller.signal,
@@ -139,6 +142,7 @@ export function createMemoryApi(baseUrl = "", fetcher: typeof fetch = fetch): Me
     async factHistory(childId, factId, beforeVersion, signal) { return history(await request(`${entity(childId, "facts", factId)}/history${cursor("beforeVersion", beforeVersion)}`, signal), fact, childId, factId); },
     async topicHistory(childId, topicId, beforeVersion, signal) { return history(await request(`${entity(childId, "topics", topicId)}/history${cursor("beforeVersion", beforeVersion)}`, signal), topic, childId, topicId); },
     async createFact(childId, input, signal, userId) { return checkedFact(await mutate(`${child(childId)}/facts`, input, signal, userId), childId); },
+    async createConfirmedFact(childId, input, signal, userId) { return checkedFact(await mutate(`${child(childId)}/facts/confirmed`, input, signal, userId), childId); },
     async confirmFact(childId, factId, input, signal, userId) { return checkedFact(await mutate(`${entity(childId, "facts", factId)}/confirm`, input, signal, userId), childId, factId, input.expectedVersion); },
     async reviseFact(childId, factId, input, signal, userId) { return checkedFact(await mutate(`${entity(childId, "facts", factId)}/revise`, input, signal, userId), childId, factId, input.expectedVersion); },
     async deactivateFact(childId, factId, input, signal, userId) { return checkedFact(await mutate(`${entity(childId, "facts", factId)}/deactivate`, input, signal, userId), childId, factId, input.expectedVersion); },

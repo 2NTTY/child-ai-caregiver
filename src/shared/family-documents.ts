@@ -31,10 +31,14 @@ export type DocumentEdit = z.infer<typeof documentEditSchema>;
 export const documentPatchSchema = z.object({ action: z.literal("patch"), expectedVersion: z.number().int().min(1),
   authorityVersion: z.string().min(1).max(128), edits: z.array(documentEditSchema).min(1).max(12) }).strict();
 export type DocumentPatch = z.infer<typeof documentPatchSchema>;
+export const documentCheckSchema = z.object({ sectionId, itemId, checked: z.boolean() }).strict();
+export type DocumentCheck = z.infer<typeof documentCheckSchema>;
 export const documentChangeSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("refresh"), expectedVersion: z.number().int().min(1), authorityVersion: z.string().max(128) }).strict(),
   z.object({ action: z.enum(["archive", "restore"]), expectedVersion: z.number().int().min(1), authorityVersion: z.string().max(128) }).strict(),
   z.object({ action: z.literal("check_item"), expectedVersion: z.number().int().min(1), authorityVersion: z.string().max(128), sectionId, itemId, checked: z.boolean() }).strict(),
+  z.object({ action: z.literal("check_items"), expectedVersion: z.number().int().min(1), authorityVersion: z.string().max(128),
+    checks: z.array(documentCheckSchema).min(1).max(128).refine(checks => new Set(checks.map(item => JSON.stringify([item.sectionId, item.itemId]))).size === checks.length) }).strict(),
   documentPatchSchema.extend({ confirmShared: z.literal(true) }),
 ]);
 export type DocumentChange = z.infer<typeof documentChangeSchema>;

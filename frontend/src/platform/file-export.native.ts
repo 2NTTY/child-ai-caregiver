@@ -1,6 +1,20 @@
 import { Directory, File, Paths } from "expo-file-system";
 import { isAvailableAsync, shareAsync } from "expo-sharing";
+import { useEffect, useState } from "react";
 import { readBlobBytes } from "../../../src/client/blob-bytes";
+
+export function useFileExportAvailable(): boolean {
+  const [available, setAvailable] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      try { const supported = await isAvailableAsync(); if (mounted) setAvailable(supported); }
+      catch { if (mounted) setAvailable(false); }
+    })();
+    return () => { mounted = false; };
+  }, []);
+  return available;
+}
 
 const directory = () => new Directory(Paths.cache, "yuyoufang-exports");
 let sharing = false;

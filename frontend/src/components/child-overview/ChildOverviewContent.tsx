@@ -13,6 +13,7 @@ import { chineseFont, colors, radius, readingType, spacing, typeScale } from "..
 
 export type ChildOverviewContentProps = {
   companion?: ReactNode;
+  avatar?: ReactNode;
   measurements?: ChildMeasurementsProjection;
   profileSource?: ChildProfileSourceProjection;
   onOpenProfile: () => void;
@@ -20,7 +21,7 @@ export type ChildOverviewContentProps = {
   onOpenMeasurement?: (recordId: string) => void;
 };
 
-export function ChildOverviewContent({ companion, measurements, profileSource, onOpenProfile, onOpenProfileHistory, onOpenMeasurement }: ChildOverviewContentProps) {
+export function ChildOverviewContent({ avatar, companion, measurements, profileSource, onOpenProfile, onOpenProfileHistory, onOpenMeasurement }: ChildOverviewContentProps) {
   const workspace = useProfileWorkspace();
   const model = workspace?.model ?? null, scopeKey = workspace?.scopeKey ?? "";
   const layout = useContainerWidth(), wide = layout.width >= 760;
@@ -36,7 +37,7 @@ export function ChildOverviewContent({ companion, measurements, profileSource, o
   const profileValue = (value: string | null | undefined) => value ?? (reading.state === "source_invalidated" ? "來源已失效" : reading.state === "source_unavailable" ? "來源暫不可讀" : "未知");
   return <View ref={layout.ref} onLayout={layout.onLayout} style={styles.content} testID="child-overview-content">
     <View style={styles.identity}>
-      <View style={styles.avatar} accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><Text style={styles.avatarText}>{Array.from(model?.child?.name?.trim() ?? "")[0] ?? "子"}</Text></View>
+      {!inaccessible && avatar ? avatar : <View style={styles.avatar} accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants"><Text style={styles.avatarText}>{Array.from(model?.child?.name?.trim() ?? "")[0] ?? "子"}</Text></View>}
       <View style={styles.identityText}>
         <View style={styles.row}><AppStatusBadge label={reading.statusLabel} tone={tone} />{model?.access === "read_only" ? <AppStatusBadge label="唯讀" /> : null}</View>
         <Text accessibilityRole="header" style={styles.childName}>{model?.child?.name ?? "孩子概況"}</Text>

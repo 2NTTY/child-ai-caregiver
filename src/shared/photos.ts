@@ -14,10 +14,14 @@ export const photoDraftSchema = z.object({
   timeRaw: safeText(300), uncertainties: z.array(safeText(300)).max(8),
 }).strict();
 export type PhotoMetadata = z.infer<typeof photoMetadataSchema>;
+/** Immutable original identity; extraction/record versions may advance without changing its bytes. */
+export const photoMessageReferenceSchema = photoMetadataSchema.extend({ id: z.uuid(), version: z.number().int().min(1) }).strict();
+export type PhotoMessageReference = z.infer<typeof photoMessageReferenceSchema>;
+export const photoLinkInputSchema = z.object({ id: z.uuid(), expectedVersion: z.number().int().min(1) }).strict();
 export type PhotoDraft = z.infer<typeof photoDraftSchema>;
 export interface PhotoAttachment extends PhotoMetadata {
   id: string; childId: string; ownerUserId: string; createdAt: string; version: number;
-  state: "reserved" | "ready"; recoveryPending?: boolean; visibility: "private" | "shared"; canManage: boolean; recordId: string | null;
+  sharedSpaceId?: string; state: "reserved" | "ready"; recoveryPending?: boolean; visibility: "private" | "shared"; canManage: boolean; recordId: string | null;
   extraction: { state: "not_requested" | "running" | "available" | "failed" | "unknown"; runId: string | null;
     draft: PhotoDraft | null; stopReason: string | null; processedAt: string | null; model: string | null };
 }

@@ -68,7 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const compact = width < 900;
   const tiny = width < 390;
   const wide = !compact;
-  const { model, actions, notice, dismissNotice, scopeKey, identityKey } = useProduction();
+  const { model, actions, notice, dismissNotice, scopeKey, identityKey,sharedChild,setContextRailVisible } = useProduction();
   const railTasks = useTasksWorkspace();
   const railProps = { model, actions, contextPath: pathname };
   // The docked context rail is shell state, not a separate choice for every route.
@@ -97,8 +97,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const sameRailContext = railContext.current.path === pathname && railContext.current.scope === motionScope;
   const overlayOpen = railModal && !wide && sameRailContext;
   const railExpanded = wide ? railOpen : overlayOpen;
-  const railRequirements = visibleRailStartupRequirements(railExpanded);
-  const railReadiness = visibleRailStartupReadiness(railExpanded, {
+  useEffect(() => { setContextRailVisible(railExpanded); return () => setContextRailVisible(false); }, [railExpanded, setContextRailVisible]);
+  const railHasData = !sharedChild.target || !!sharedChild.view?.modules.includes('tasks');
+  const railRequirements = visibleRailStartupRequirements(railExpanded&&railHasData);
+  const railReadiness = visibleRailStartupReadiness(railExpanded&&railHasData, {
     tasks: startupReadState(railTasks?.scopeKey === scopeKey ? railTasks.model.access === "lost" ? "error" : railTasks.model.readState : undefined),
   });
   const screenReadiness = combineStartupReadiness([switchReadiness.state, railReadiness]);

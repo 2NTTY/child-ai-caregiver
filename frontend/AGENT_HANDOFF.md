@@ -5,22 +5,22 @@
 <a id="交付與預覽"></a>
 ## 聊天與共用輸入接點
 
-家長交代後由 Agent 整理，家長查看及必要時確認；輸入、原檔保存、模型使用同意、家庭共享及真正送出是不同操作。現有預覽不會正式送出附件或呼叫模型。
+家長交代後由 Agent 整理，家長查看及必要時確認；正式畫面沿 ProductionProvider／chat controller 共用權威資料，合成預覽才不會正式送出或呼叫模型。未送出附件仍是本機草稿；附件上傳不等於已確認照護事實。照片沿 `ChatPhotoUploadController` 私人保存原圖，然後由同一 chat controller 保存照片引用及要求回覆；不必先提取或進核對頁。附件庫「加入聊天」重用原圖 ID，不重新上傳；原圖刪除後不能再讀。舊人工照片提取只作備援，交付及未驗項見根 [CHAT-PHOTO01](../PLAN.md#chat-photo01)。
 
 | 接點 | 目前介面與正式整合邊界 |
 |---|---|
-| [AgentComposer](src/components/agent/AgentComposer.tsx) | 接 `enabled`、`compact`、`draft`、`attachments`、`onChangeDraft(value)`、`onPreview()`、`onSources()`、`onAddAttachment(attachment, replaceId?) => boolean`、`onRemoveAttachment(id)`；選配 `captureOriginal`、`focusRequest`。`onPreview` 是本地預覽，不是正式送出 API；目前 chatScreen 只把文字及附件檔名摘要加到本地時間線後清草稿 |
-| [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx) | 內部工具列接 `onFiles()`、`onVoice()`、`onPickPhoto(original)`、`onPhotoError(message)` 及選配 `captureOriginal`。不要把工具列回調誤當 composer 公開介面；`onUseText` 屬 AssistantInputDialog |
+| [AgentComposer](src/components/agent/AgentComposer.tsx) | 接 `enabled`、`compact`、`draft`、`attachments`、`onChangeDraft(value)`、`onPreview()`、`onSources()`、`onAddAttachment(attachment, replaceId?) => boolean`、`onRemoveAttachment(id)`；選配 `captureOriginal`、`focusRequest`。`onPreview` 是 consumer 回調，正式 chatScreen 接原 sendChat，不由 composer 自行寫入。身份／孩子 scope 換代重掛私有子樹 |
+| [AgentInputToolbar](src/components/agent/AgentInputToolbar.tsx) | 內部工具列接 `onFiles()`、`onVoice()`、`onPickPhoto(original)`、`onPhotoError(message)` 及選配 `captureOriginal`。語音明確點擊呼叫原 VoiceCapture 的 start handle；平時掛載不要求權限或錄音，沒有語音中介彈窗 |
 | [AssistantDraft owner](src/assistant-draft.ts) | `createAssistantDraftOwner` 管同 scope 的文字及未送出附件；`add` 回傳是否接受並處理替換／釋放。`AssistantAttachment` 是本地暫存資料，不是 Server 上傳契約 |
-| [AssistantInputDialog](src/components/agent/AssistantInputDialog.tsx)／[附件預覽](src/components/agent/AssistantAttachmentPreview.tsx) | 文件／音訊／照片共用預覽、移除及選填文字。文字或有效附件其一存在才可本地預覽；真正附件-only 發送仍須正式契約支持。Dialog 可注入 `selectAttachment`，但 Composer 尚未向外暴露／注入該原生 port |
-| [ChatTimeline](src/components/chat/ChatTimeline.tsx)／[ChatMessage](src/components/chat/ChatMessage.tsx)／[AnswerSources](src/components/chat/AnswerSources.tsx) | 使用穩定訊息 id、公開活動及每則訊息獨立來源狀態；保留閱讀位置、IME／多行輸入及草稿。真 stream、取消、更早歷史游標及逐句引用仍要核對正式能力，不能把合成 timer 或猜配上標當接口 |
+| [AssistantInputDialog](src/components/agent/AssistantInputDialog.tsx)／[附件預覽](src/components/agent/AssistantAttachmentPreview.tsx) | Dialog 只選文件，可注入 `selectAttachment`；不再提供「改用文字」。錄音／已有音訊由原位 VoiceCapture 處理，停止後試聽及明確加入草稿；同一附件預覽保留移除與替換。正式送出資格由現有 owner 決定 |
+| [ChatTimeline](src/components/chat/ChatTimeline.tsx)／[ChatMessage](src/components/chat/ChatMessage.tsx)／[AnswerSources](src/components/chat/AnswerSources.tsx) | `history` 接目前 cursor／loading／enabled 及原 controller load 回調。使用者捲到頂部先展開本機視窗，再讀一頁 Server 歷史；原生保留可見訊息，Web 使用原訊息相對位置，失敗只提供明確重試。來源／正式回覆仍依現行契約，不猜配上標或合成串流 |
 
 `PreviewContext` 建立共享草稿 owner；MobileQuickInputDock、HomeQuickActions 及 AgentComposer 只交輸入意圖，不各自保存／上傳／送出。Today → Assistant 保留附件；離開 Assistant 經既有離頁確認後清附件，文字按同 scope 暫留。換 scope 不顯示上一範圍內容；正式整合須以 session／本人／Server／孩子及授權界線取代合成稱呼／角色，登出或撤權按正式生命週期清理。
 
 ### 本地媒體能力與未接通項目
 
 - Web 照片沿 [PhotoFilePicker](src/components/photos/PhotoFilePicker.web.tsx)／[WebCameraCapture](src/components/photos/WebCameraCapture.web.tsx)：明確操作才開相機；系統拍照／選圖為後備。完整 frame 編碼後沿原 JPEG／PNG、4 MiB 校驗、hash 及 blob 管理；取消／失敗保留原草稿，換圖／移除釋放舊資源。原生 `captureOriginal` 未注入時不可假拍攝
-- Web 語音沿 [VoiceCapture](src/components/agent/VoiceCapture.web.tsx) 的 MediaRecorder：明確開始才要求咪高峰，停止後試聽、再加入草稿；可後備選取錄音檔。20 MiB／5 分鐘是前端資源限制，不是正式音訊契約。沒有語音轉文字、模型、正式上傳或背景錄音；原生錄音 adapter 未提供。存在實作不等於真裝置已驗
+- Web 語音沿 [VoiceCapture](src/components/agent/VoiceCapture.web.tsx) 的 MediaRecorder，原生沿同名 Expo Audio adapter：按語音便要求必要權限並開始，原位計時／停止／取消；停止後試聽及加入草稿，後備選檔保留。兩端共用正式兩分鐘／5 MiB 限制與既有上傳／轉錄服務，不背景錄音。真權限及裝置呈現仍需相應證據
 - Web 文件 picker 可選 PDF／TXT／DOC／DOCX／CSV，音訊可選 audio MIME；1 byte–20 MiB、檔名最多 200 字元，僅為本地附件校驗。可選取不代表已完成 PDF／Word 解析、私人來源入庫或模型傳送，不新增未經正式契約支持的格式承諾
 - 拍完、錄完、選檔或手勢放手均不自動送出，也不補假問題文字。正式發送、原檔／模型／共享權限、unknown 與原操作查核只在共同 owner 接入一次
 - 取消、隱藏、卸載及 scope 變化須釋放採集介面的 media tracks／尚未交接的暫存 object URLs；已加入草稿的附件改由共同 owner 按替換、移除、離頁及 scope 生命週期釋放。取消一次新選取不清除既有附件。遲到的權限、編碼及讀檔回呼不得填回新 scope。不把私人附件放入 URL、localStorage 或工程日誌；檔名時間不是照顧事件時間

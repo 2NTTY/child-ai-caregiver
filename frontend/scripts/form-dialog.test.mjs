@@ -50,27 +50,27 @@ test('manual form is absent from the reading page, then scrolls with its origina
 });
 test('Escape/backdrop and close button share the draft guard; staying preserves the mounted form', () => {
   const s = scenario(); s.open(); s.edit(); s.modal().props.onDismiss(); s.render();
-  assert.ok(s.button('捨棄草稿並離開')); s.button('繼續編輯').props.onPress(); s.render();
+  assert.ok(s.button('捨棄並離開')); s.button('繼續編輯').props.onPress(); s.render();
   assert.equal(s.counts().mounts, 1); assert.equal(s.counts().discards, 0); assert.equal(s.modal().props.visible, true);
-  s.button('關閉').props.onPress(); s.render(); s.button('捨棄草稿並離開').props.onPress(); s.render();
+  s.button('關閉').props.onPress(); s.render(); s.button('捨棄並離開').props.onPress(); s.render();
   assert.equal(s.counts().discards, 1); assert.equal(s.counts().closes, 1); assert.equal(s.modal().props.visible, false);
   assert.equal(s.h.hosts().some(x => x.type === 'Field'), false);
 });
 test('unknown cannot be discarded and recovery remains available inside the still-mounted form', () => {
   const s = scenario(); s.open(); s.edit(); s.pending(true); s.modal().props.onDismiss(); s.render();
-  assert.ok(s.button('留在此頁查核')); assert.equal(s.button('捨棄草稿並離開'), undefined);
-  s.button('留在此頁查核').props.onPress(); s.render(); s.button('查核原操作').props.onPress();
+  assert.ok(s.button('留在此頁')); assert.equal(s.button('捨棄並離開'), undefined);
+  s.button('留在此頁').props.onPress(); s.render(); s.button('查核原操作').props.onPress();
   assert.equal(s.counts().checks, 1); assert.equal(s.counts().closes, 0); assert.equal(s.counts().discards, 0);
 });
 test('approval rechecks pending and never closes a newly started original write', () => {
   const s = scenario(); s.open(); s.edit(); s.button('關閉').props.onPress(); s.render();
-  s.pending(true); s.button('捨棄草稿並離開').props.onPress(); s.render();
-  assert.ok(s.button('留在此頁查核')); assert.equal(s.counts().closes, 0);
+  s.pending(true); s.button('捨棄並離開').props.onPress(); s.render();
+  assert.ok(s.button('留在此頁')); assert.equal(s.counts().closes, 0);
 });
 test('scope changes hide the previous form and reject a stale approved close callback', () => {
   const s = scenario(); s.open(); s.edit(); s.button('關閉').props.onPress(); s.render();
   s.scope('child-b'); assert.equal(s.modal().props.visible, false);
-  s.button('捨棄草稿並離開').props.onPress(); s.render(); assert.equal(s.counts().closes, 0);
+  s.button('捨棄並離開').props.onPress(); s.render(); assert.equal(s.counts().closes, 0);
 });
 test('focus returns only after the modal releases its trap and only within the same scope', () => {
   const s = scenario(); s.open(); s.web(); s.button('關閉').props.onPress(); s.render();
@@ -81,7 +81,7 @@ test('focus returns only after the modal releases its trap and only within the s
 
 test('an approved close callback cannot mutate an unmounted form owner', () => {
   const s = scenario(); s.open(); s.edit(); s.button('關閉').props.onPress(); s.render();
-  const approve = s.button('捨棄草稿並離開').props.onPress; s.h.unmount(); approve();
+  const approve = s.button('捨棄並離開').props.onPress; s.h.unmount(); approve();
   assert.equal(s.counts().closes, 0);
 });
 
@@ -98,7 +98,7 @@ test('a controlled form replacement in the same child rejects approval for the p
   const tree = h.jsx(guard.PreviewNavigationGuard, {children: h.jsx(Page, {})}); const render = () => h.render(tree);
   const button = label => h.hosts().find(n => n.type === 'Button' && n.props.label === label);
   render(); button('關閉').props.onPress(); render(); key = 'draft-b'; render();
-  button('捨棄草稿並離開').props.onPress(); render(); assert.equal(closes, 0);
+  button('捨棄並離開').props.onPress(); render(); assert.equal(closes, 0);
 });
 
 
@@ -107,7 +107,7 @@ test('a one-shot header reveal opens only the current original form and retains 
   s.request(); assert.equal(s.modal().props.visible, true); assert.equal(s.counts().mounts, 1);
   assert.equal(s.counts().checks, 0, 'reveal never checks, retries or submits an operation');
   s.edit(); s.pending(true); s.button('關閉').props.onPress(); s.render();
-  assert.ok(s.button('留在此頁查核')); assert.equal(s.button('捨棄草稿並離開'), undefined);
+  assert.ok(s.button('留在此頁')); assert.equal(s.button('捨棄並離開'), undefined);
   s.scope('child-b'); assert.equal(s.modal()?.props.visible ?? false, false);
   s.request('child-a'); assert.equal(s.modal()?.props.visible ?? false, false);
 });

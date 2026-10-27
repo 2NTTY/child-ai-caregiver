@@ -3459,3 +3459,664 @@
 - 四個messageSentAt索引READY後，候選在network none下通過正式runtime import／v3 schema核對。短暫維護先檢查活動Agent數為0，備份配置，再更新原VM API／worker／Web；公開HTML hash及health通過。新runtime開始後維持相容reader，不自動退回舊API。沒有資料回填、模型／通知呼叫、配額修改或主機續期。
 - 13:59 UTC發布同版Android preview OTA `b18efe75-f8ed-4ced-9f66-a5e3b4d961ff`，runtime與APK v2一致，沒有新APK、重新bundle或強制重載手機。14:00 UTC API／worker健康、Web運行、磁碟約10.66 GiB可用；最新原生備份metadata為READY，未執行還原。
 - 此次只證明部署與OTA發布；用戶真key、獨立向量key及新表單真機操作仍未驗，既有角色品質／長來源／多模態及Android待驗仍按PLAN承接。兩位原Astra子代理復用於封包及腳本唯讀核對，主模型親自作部署、相容性裁決與文件；不以部署完成代替整體目標完成。
+
+<a id="log-20261023-local-continuity-followup"></a>
+## LOG-20261023-LOCAL-CONTINUITY-FOLLOWUP
+
+- 從遠端 `4fb210c` 開獨立分支 `codex/dev-agent02-continuity-closeout`，A單作者；保留協作者 #254／#259 及新 #262～#265，不修改或合併其程式。復用原子代理作手機核對、工具準備及唯讀文件review；主模型負責實際本地驗收、裁決及文件，沒有重做四角色或前端。
+- 原 worktree 的本地快照缺失，原因未確定；新建隔離合成資料，不宣稱恢復原文件／原失敗run。補齊工程外／ignored工具依賴，使用Node24.19、Java21及既有Firebase emulator；僅從目前分支正式API建立一個孩子、一份準備單。準備時沙盒連線失敗、關閉的本地管理政策及metadata輔助腳本欄位錯誤，與產品模型結果分開保留。
+- 官方PDF登記第3頁沿原工作完成2次真生成、1次向量及獨立審核／本地發布。後續一條自然聊天讀文件、搜尋成功，但能力載入和引用參數修正用完8次生成／1次查詢，終態 `delivery_review_incomplete`；沒有完整已審核答案，沒有自動重送或加額。原run／訊息、片段版本及腳本保留在受保護本地目錄；去識別化結果見[本次證據](artifacts/verification/DEV_AGENT02_CONTINUITY_20261023.json)。
+- 本地日配額20／100未提高；驗收暫時啟用模型、限制零重試，結束後恢復原關閉政策及設定，保留12次用量並正常保存快照。帳目仍有10次用量未完整回報，不能從已知tokens宣稱完整費用。零正式業務資料寫入、通知或部署，不重跑編製／雲端／全量測試。
+- PLAN修正過時的P3角色、Android開工盤點及備份狀態，未把已發布或單頁成功當整包完成；STATUS只投影本次實質結果。本地使用說明補管理政策關閉的排除方法。下一步先核對協作者的審核／預算與引用修正，再補同一資料的一條聊天；原備份還原及角色長來源／多模態缺口不改寫為通過。
+
+<a id="log-20261023-model-draft-reset"></a>
+## LOG-20261023-MODEL-DRAFT-RESET
+
+- 從最新master `216d87e`開獨立分支`codex/model-self03-discard-draft`，沿使用者明確授權由A單作者交付；本機協作文件缺失，不另猜人員分工。協作者#254／#259及#262～#265未改。
+- 原真機代理取得設備後只作未保存設定核對：最初仍是舊導航／兩個Google選項，正常重開一次後出現關注／核對、新相容服務、獨立向量key及七項上限，登入保留。未取得精確OTA ID，不把預期版本當實測。沒有輸入密鑰、保存、模型或通知；草稿捨棄失敗後停止，手動回復原平台模式並返首頁，已解除ADB佔用。
+- 主模型修正共用表單inactive時只清密鑰的缺口：按權威快照重設全部本機草稿，保留owner的原操作及unknown狀態；背景只清密鑰的行為不變。不改UI設計、Server或Agent。原代理另作局部唯讀review。
+- Node24.19／既有React、RHF及jsdom，只跑兩項受影響檢查。密鑰／背景／離頁還原首輪通過；新增原操作檢查的斷言漏計使用者已觸發的selectProvider回調，修正為核對離頁沒有額外回調後，只補該項通過。未跑全量、瀏覽器、真key或模型；手機修正回歸及發布仍待完成。[證據](artifacts/verification/MODEL_SELF03_DRAFT_RESET_20261023.json)。
+- 使用者另指出Android關注圖標與Web不同；局部核對為native tab仍寫死`chart-bar`。已改讀Web同一`navigationItems.growth`的圖標／標籤，不改版面或新增測試；發布產物使用此最終來源。獨立表單review未發現阻塞問題。
+
+<a id="log-20261023-model-draft-delivery"></a>
+## LOG-20261023-MODEL-DRAFT-DELIVERY
+
+- A合併#267為`53d8f38`，產品來源`4bfdf98`；本分支只記錄已完成的Web／OTA交付。原匯出代理尚未開始build，使用者要求主模型接手後正式中止，核對沒有匯出程序，再由主模型完成，沒有另開代理或重複建置。
+- Node24.19沿原公開配置各匯出Web／Android一次，runtime與APK v2相同。Android build成功，末端資產核對因Windows反斜線與已正規化路徑比較而誤報缺檔；保留原失敗記錄，只正規化比較及核對既有31檔，沒有重跑export或改產品。共用表單兩項檢查沿用#267，不增全量測試。
+- 固定VM身份／IP及11月6日期限已核對；Web封包及hash經IAP傳送至指定0700目錄，無密鑰、ADC或家庭資料。候選網絡隔離建置／首頁hash通過，保存0600 Compose副本後只更新Web。15:39 UTC Web healthy、公開HTML一致、API health200，API／worker映像及配置不動；約10.62GiB可用，未清理舊SQL或備份。
+- 同來源Android preview OTA `df51a917-ee74-4e03-8fbc-db472314007d`已發布，不新建APK、不購買方案、不強制重載手機。草稿捨棄／關注圖標的最新真機補核仍待驗；此前舊UI→一次重開→新版欄位可見的證據不能代替此版本驗收。真key及DEV02末段審核缺口亦保留。[交付證據](artifacts/verification/MODEL_SELF03_DRAFT_DELIVERY_20261023.json)。零模型／通知、業務資料寫入、配額修改及新索引。
+
+<a id="log-20261024-shared-native-navigation"></a>
+## LOG-20261024-SHARED-NATIVE-NAVIGATION
+
+- 使用者要求原生導航不再寫死、修改Web共用來源即可更新App。以master `65c094c`開`codex/shared-native-navigation`；Sol 6.1 high只改兩個指定產品檔案，主模型親自核對diff及既有檢查。五個Tabs圖標／標籤及核對／更多路由沿同一navigationItems，不搬Web版式或改手勢／權限；A單作者交付，沒有修改協作者#254／#259／#262～#265／#269。
+- 兩項既有定向導航檢查通過，diff check通過；沒有新增測試、全量型別／build、模型或通知。現有顯示值相同，本次不重新匯出或發OTA，來源接線留下一次相容Android發布帶入；不宣稱已安裝App會因Web發布自動更新。
+- 主模型沿原授權補手機草稿一次：首先仍見舊柱狀圖及捨棄後殘留，停止該批；原步驟亦未等待離頁便深連結返回。另一次重開後XML idle失敗，舊檔不作證據；新截圖顯示共用關注圖標。只補同範圍流程並確認已實際離頁，平台模式／非dirty狀態成功還原。原觀察與失敗保留，未讀精確裝置OTA ID、不輸入key、不保存設定、不驗真模型；已返回今日。[本次證據](artifacts/verification/SHARED_NATIVE_NAVIGATION_20261024.json)。
+
+<a id="log-20261024-defer-dev02-joint-acceptance"></a>
+## LOG-20261024-DEFER-DEV02-JOINT-ACCEPTANCE
+
+- 使用者明確把本地最後引用／審核補驗延後，先等四個Agent真正完成及協作者自行檢查。PLAN／STATUS已改為此恢復條件，不以個別PR合併或環境啟動取代角色自查；本聊天不提前整合／重跑或接管協作者修改。
+- 先前只唯讀核對#263／#265固定head及相關程式差異，沒有建立角色整合分支、修改角色、啟動本地服務或呼叫模型。原失敗、快照與有效證據保留；這次只改文件、核對diff及既有連結，不跑產品測試。
+
+<a id="log-20261023-attachment-media-source"></a>
+## LOG-20261023-ATTACHMENT-MEDIA-SOURCE
+
+- 接續原附件前後端候選，將26個source/test檔整合到`339c707`的獨立分支；不改已合併#253或頭像候選。只新增唯讀本人聊天附件清單及薄前端呈現，原照片／播放／下載授權與unknown邊界保留；詳情移至既有local dialog，權限短標為「本人」。
+- 跨層10/10、focused16/16及RN Web Modal DOM2/2分開記錄；首DOM0/2由jsdom不執行native-button default click造成，修正測試方法而非新增產品鍵盤handler。8-root strict 512 MiB檢查exit137、沒有diagnostics，原因未知；未重試或當作型別通過。[證據](artifacts/verification/ATTACHMENT_MEDIA_SOURCE_20261023.json)保留完整來源hash、原紅及驗證界線。
+- 兩個Firestore composite index僅源碼，未部署。build／四尺寸GUI、真瀏覽器Enter／Space、原音／下載、實際API與雲端索引仍待驗；只有合成資料，沒有真模型／家庭媒體、GCP、OTA或正式資料操作。獨立草稿來源交付與驗收／發布／合併分開。
+
+<a id="log-20261024-s04-w02-ios-bootstrap"></a>
+## LOG-20261024-S04-W02-IOS-BOOTSTRAP
+
+- 使用者批准 iOS TestFlight 計劃；先更新根 PLAN，再從 master `560f051` 開 `codex/s04-w02-ios-bootstrap`。沿現有 Expo 57、原生身份／transport／owner／同步及畫面，啟用 iPhone 配置與獨立 store profile／channel；Android 配置及入口不重建，Apple 團隊未定。
+- iOS 不再誤讀 Android descriptor，仍保留 Firebase 公開設定／HTTPS gate。原品牌 SVG 轉成 1024 不透明 iOS 圖標，沒有改美術或加入產品依賴；EAS 封包另排除 Apple 私鑰／描述檔。主模型核對共用入口及 diff，Astra 子代理完成限定配置實作與獨立靜態 review，沒有 blocking finding。
+- 3 項必要配置檢查通過。首次 iOS JS／Hermes export 因 Windows sandbox TEMP 拒絕寫入失敗，保留現場；只調整本命令 TEMP／TMP 至 worktree cache，補同一 export 後通過。這不是 IPA、簽署或真機驗收；沒有重跑 Web／Android、全量測試、模型、通知或 Computer Use。[本包證據](artifacts/verification/S04_W02_IOS_BOOTSTRAP_20261024.json)。
+- 未上傳 EAS、建立 Apple App 或購買會員。首次封包、團隊／簽署、TestFlight、iPhone 與後續媒體／APNs／更新仍待辦；不把 Android 未驗或協作者四 Agent 最後補驗改為完成。交付前發現 master 新合併 #269／#259，按原成果整合，不接管其待驗工作。
+
+
+<a id="log-20261023-avatar-draft"></a>
+## LOG-20261023-AVATAR-DRAFT
+
+- 依使用者本人／孩子可調整頭像及按接口契約做後端的要求，在 master `339c707` 上整合獨立候選；原 freeze04／較早前端及失敗證據保留。只套頭像差異，restore-codec交集合併保留master既有修復，不覆舊docs或PR253整包。dot原生代理依特別指派分別寫後端／前端，獨立只讀review核source與receipt；沒有真人驗收或部署。
+- 沿既有online收據、身份／epoch、private加密Storage及獨立erasure journal；不新增公開URL、模型用途或operation ledger。sharp固定server-only，原圖不持久。補avatar-only未prepared lease fence及scheduler閉環；本輪另補authenticated final-plan staging marker／attempt fence、partial rollback／完整頁promote，以及每頁／handoff前後native provenance再核。
+- 本輪restore helper7例、強化後真building-token ABA單例、真operator provenance單例及真avatar跨頁中斷／恢復單例均有合成PASS；首個E2E因40sessions共用control未跨2頁而紅，僅改80sessions試件後PASS，原紅保留。新前端真client4、remove owner3、bounded DOM3及8-root strict有證據；後端codec6-root strictPASS。不把窄root／合成bucket當完整typecheck或原生Firestore。
+- domain strict384MiB明確V8OOM；歷史完整server兩次signal9及256MiBOOM未通，既有56PASS／10exact-baselineFAIL不豁免。unknown／不可讀copy或source/Auth/journal/provenance變更、legacy無marker partialplan仍停住保責任，`NOT_FULLY_RECOVERABLE`／`AVATAR_LIFECYCLE_RELEASE_READY=false`不變。沒有真家庭照、真模型、GCP／OTA、帳戶或正式資料變更。
+- 本包只準備草稿程式，不開功能或宣稱上線；下一步與部署門檻見[AVATAR-01](PLAN.md#avatar-01)。精簡版本、測試、原紅及未驗見[合成核對收據](artifacts/verification/AVATAR_DRAFT_20261023.json)，原長logs留本地不重複提交。
+
+<a id="log-20261024-s12-ios-media"></a>
+## LOG-20261024-S12-IOS-MEDIA
+
+- 接續已合併 #272／`9f500a5`，以 `codex/s12-ios-media` 補 iPhone 照片相容。ImagePicker iOS 原 bytes 仍可能是 HEIC，故只在實際 bytes 非 JPEG／PNG 時使用官方 JPEG base64 副本；原件與副本各限4 MiB，decode 前後核對，清除 picker 額外編碼參照。hash、metadata、加密上傳及 Server 格式沿原契約，Android 原行為不變。
+- Astra 子代理只實作 adapter 及一份定向檢查；主模型核原碼／SDK型別／完整測試，親寫照片契約與技術採用說明。3項離線檢查通過，沿真 metadata／hash／preview，只替換系統 ports。主模型另核固定 SDK 的 iOS AAC/M4A、選檔副本及 Sharing 接線，無須另寫服務；不重複跑已通過檢查。[證據](artifacts/verification/S12_IOS_MEDIA_20261024.json)。
+- 沒有新增依賴、全量型別／build、模型、通知、部署或真機。原生 HEIC、iPhone權限／鍵盤／錄音聽感／檔案分享仍待簽署後驗收，不把合成bytes當成真圖片或設備通過。下一包為相容原生通知契約與 APNs；簽署團隊未定時先做獨立程式。
+
+<a id="log-20261024-s13-ios-server"></a>
+## LOG-20261024-S13-IOS-SERVER
+
+- 接續 master `405f3ed`，C 後端包補 APNs 與 v2 原生通知接口；舊 Android v1 嚴格回應及原收據保持。iOS 綁定含 Server 固定 topic／環境，照護與測試共用原授權、終態及投遞台帳；配置不符停止、unknown 不重送。還原撤銷 token 並保留平台 metadata，匯出不披露 token／session。
+- 主模型親寫契約、adapter 與組裝並 review；Sol 只補有界的合成 transport 檢查。APNs 一項、正式 API／store／worker 一項、既有 Android 兩項及 adapter 窄型別通過。新測試先誤讀不同孩子範圍，再誤假設 scopeTag，均停批後查清並改用實際四個 tag；沒有放寬產品隔離。保留兩次失敗與成功證據，不宣稱原生 Firestore 競爭或 Apple 已通過。[證據](artifacts/verification/S13_IOS_SERVER_20261024.json)。
+- 沒有真模型、通知、部署、Apple 憑證、全量測試或 Computer Use。B 的 iOS 設定接線在本後端合併後進行；簽署、真機及 TestFlight 繼續待辦。APNs 預設關閉，新資料發布後僅允許理解該 schema 的相容 Server 回退。
+
+<a id="log-20261024-s13-ios-client"></a>
+## LOG-20261024-S13-IOS-CLIENT
+
+- B 接續 C 已合併 #275／`b4dfd5a`，沿同一通知 client、owner 及卡片接 iOS；Android 保留 v1。iOS 使用 v2 原收據與平台可用狀態，混合本人訂閱保留真實 provider；APNs hex token、provisional 權限及輪換按 Expo 57.0.21 接入，點擊仍走 Server 核權，不自動完成照護事項或發測試。
+- Sol 完成範圍內六個產品檔及一份檢查；主模型核完整 diff、測試、SDK enum及原導航，親寫契約與交付。Sol 首次使用 Node24.11、兩項通過，但低於工程 engine；主模型只以指定24.19補跑同檔2/2通過，另核 client及native adapter／view model窄型別。[證據](artifacts/verification/S13_IOS_CLIENT_20261024.json)。不把重跑合計成四項，沒有全量型別／suite。
+- 沒有部署、Apple憑證、真模型、通知或iPhone畫面；完成來源合併後接共用發布工具，最終export集中核一次，TestFlight及真人授權保持待辦。原前端設計、協作者Agent及Android未驗項不改寫。
+
+<a id="log-20261024-s04-ios-release"></a>
+## LOG-20261024-S04-IOS-RELEASE
+
+- 接續 #276／`6871bab`，擴充原 `mobile:release`，不另造發布服務。預設Android保持；iOS獨立profile、官方fingerprint、STORE／非simulator基線及相容OTA／回退。指定build提交TestFlight，不使用latest、不自動建測試群組／邀請，不把EAS排隊當Apple已完成。原操作未知不自動重發，舊Android記錄仍受保護。
+- 主模型親寫CLI、交付指引及review；Sol只做可界定的policy與既有定向檢查。Node24.19的一條policy／CLI檢查、合成公開設定iOS runtime及整合JS／Hermes匯出通過。第一次匯出命令錯指未hoist路徑，尚未進入bundling便失敗；核實安裝位置後只補同一匯出，沒有改產品或反覆重建。[證據](artifacts/verification/S04_IOS_RELEASE_20261024.json)。
+- 沒有全量、Web／Android重建、模型、通知、部署或雲端上傳。Apple團隊及App身份未定，submit profile留空，不填假身份或購買會員；IPA、APNs配置、真機、OTA與TestFlight繼續待辦。Android與協作者未驗項保留，不因本機工具合併而結案。
+
+<a id="log-20261024-s13-ios-compose"></a>
+## LOG-20261024-S13-IOS-COMPOSE
+
+- 從已合併 #277／`83a4241`核對正式部署，發現APNs程式所需私鑰尚未有Compose掛載。補獨立按需override，僅API／worker取得同一key；原渠道與storage掛載保留，Web不取得，配置本身不開啟外發。沿既有GCP／Compose Skill，不改雲端架構或目前服務。
+- 主模型完成小範圍實作及review，C單作者交付；一份合成`docker compose config`合併核對與diff檢查通過。[證據](artifacts/verification/S13_IOS_COMPOSE_20261024.json)。沒有啟動容器、使用真key、通知、模型或部署；實際Linux所有者／mode與投遞留待Apple前置完成，不以YAML通過當可用通知。
+
+<a id="log-20261024-android-model-closeout"></a>
+## LOG-20261024-ANDROID-MODEL-CLOSEOUT
+
+- 接續 `c58459a`，B 收 Android／個人設定交付；遠端新增 `d7ef061` 只有 README。實際手機沿原登入保存同一平台設定一次，Firestore metadata 為版本2，重開讀回成功；沒有輸入私人key、修改配額、呼叫模型或通知。原真key生成及四角色補驗仍待原條件。
+- 本機 Android 匯出通過；用戶批准的唯一免費 EAS build `c678d433` 已完成APK v3，主模型與Sol核對實際package／runtime／SHA256及原簽署相同。新runtime不能向APK v2強推OTA；手機最後鎖定，提供覆蓋安裝連結，未代填人工通過。
+- 附件清單採已合併 `a84f349` 的11檔相容patch。單一既有client→handler→store合成流程及VM import通過；兩索引READY後，只更新原API／worker，健康及真SDK有界查詢通過，Web不變、頭像停用。保留原API與配置回退；不遷資料、不跑全量。原Docker FROM錯誤停在候選階段，核tag／image後局部修正；索引核對器補collection身份，沒有重建同一索引。
+- [精簡證據](artifacts/verification/ANDROID_MODEL_CLOSEOUT_20261024.json)區分已部署API、尚欠Web畫面／APK安裝、實際與未驗項。使用者新增兩功能正式可用及來源索引標示；本批收束後補共用畫面與頭像生命週期。私人來源目前是授權摘錄讀取，沒有自動向量索引；不以已保存冒稱已索引。協作者開放PR不改動。
+
+<a id="log-20261024-source-readiness"></a>
+## LOG-20261024-SOURCE-READINESS
+
+- 接續 `eef3768`，共用 Sources 列表／詳情分清正文取得、本人授權可讀及向量索引。現行私人來源沒有向量索引作業；包括公共網址的私人副本，不以保存成功假稱已索引。Sol 實作三個呈現檔與一項檢查；主模型核 Server 摘錄資格、完整 diff 及現行契約，沒有新增另一套索引狀態或模型工作。
+- Node24.19 一項投影檢查、12 個資料情況通過；沒有全量／模型／部署。[證據](artifacts/verification/SOURCE_READINESS_20261024.json)。Web／Android 畫面留共用交付，不宣稱已發布。
+- 用戶已回覆 APK v3 安裝，ADB 核實 versionCode 3／App 前景；未據此補填完整清單或資料保留驗收。已接下準備單連點／手機列表頭、鈴鐺首幀及聊天頂部分頁要求；下次 APK 沿品牌素材處理 icon／splash，不為此再建一版。
+
+<a id="log-20261024-shared-reading-interactions"></a>
+## LOG-20261024-SHARED-READING-INTERACTIONS
+
+- 接續 #281／ee0b7b1，B 單作者收束共用介面。主模型修聊天原訊息錨點、滾頂分頁與原生導航；Sol 沿原派單處理鈴鐺首幀、準備單列表頭及直接錄音，主模型核關鍵 diff 與結果。照片現時只走舊提取入口，另記 CHAT-PHOTO01，不以刪除提示文案冒稱接通。
+- 聊天分開本機已載入視窗及 Server 游標，正常不需按鈕；Web 以可見訊息相對位置補償，原生沿 RN 可見位置保留。失敗只提供明確重試，不自動重發。四個原生分頁採 Expo Router 實際 aria-selected 狀態與 Web 共用短線；核對手勢不變。
+- 語音按一次啟動原錄音 adapter，停止後試聽及加入草稿；普通掛載不錄音，背景／取消／離頁沿原清理。移除文件「改用文字」。[必要檢查與匯出證據](artifacts/verification/SHARED_READING_INTERACTIONS_20261024.json)分列已通項目、fixture 失敗／局部修正及裝置未驗，不重跑全量。
+- 未發布 Web／OTA，沒有模型、通知或雲端資料修改。準備單合併保存、照片直接聊天及頭像仍待獨立業務接線；下一 APK 品牌圖標與 splash 保留待辦。
+
+<a id="log-20261024-shared-reading-delivery"></a>
+## LOG-20261024-SHARED-READING-DELIVERY
+
+- 使用者明確批准 `382d217` 的私有 Web 包與一次相容 OTA 後，原 VM 只更新 Web；候選核對、公開首頁 hash 與 API health 通過，API／worker、資料、配額及頭像 gate 不變。舊映像與 0600 配置備份可回退。
+- Android preview 發布 group `148449b2-41f9-4239-88b0-79578d7bc240`，runtime 與已安裝 APK v3 相同，毋須重裝。沒有強制重啟 App，不把發布視為手機畫面驗收；零模型／通知。精確產物、結果及待驗見[交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)。
+- 接續準備單連點合併與離頁背景保存；照片直接聊天、頭像及下次 APK 品牌圖仍保留各自門檻。
+
+<a id="log-20261024-preparation-background-save"></a>
+## LOG-20261024-PREPARATION-BACKGROUND-SAVE
+
+- 接續 `5ec3958`，主模型接共用 owner 的可續點草稿、停手三秒及離頁 flush；一個原操作可在背景完成，收據更新同源文件，不重讀全列表。Sol 在限定兩個 store 與一項測試中加入相容 `check_items`，主模型 review；沒有 Server 草稿副本。
+- 128 項有界批次共用版本與交易，無效目標不部分保存。unknown 只查／重送原操作；衝突先讀回再明確套用，斷線不自動排隊重送，身份清理保留。按鈕不因正常保存換成文字或鎖住其他勾選。
+- [定向證據](artifacts/verification/PREPARATION_BACKGROUND_SAVE_20261024.json)保留兩次 fixture 等待缺口及 tsc 參數更正；owner 連貫情景與 Firestore 合成批次各一條通過，窄型別通過。沒有全量、真模型、雲端寫入、通知或真機；尚未部署。
+
+
+<a id="log-20261024-four-fixes"></a>
+## LOG-20261024-FOUR-FIXES
+
+- 2026-10-24 UTC，依使用者指定第 1–4 項修補，dot 原生整合代理在獨立 cloud checkout 接續 `382d2174`，只整合已獨立 review 的照片兩提交、PDF 及 APNs 候選。15 碼測檔無 #282 路徑重疊；照片 49/49、APNs 10/10 通過。PDF 相關兩份舊 scripts 全檔執行較原定定向範圍闊，整批 44/54，10 FAIL 均為 preparation fixture 缺 `HistoryCards` mock；master 同一 import／harness 已靜態核實，不修旁支或掩蓋原紅。
+- 原候選 `57277f5`／tree `88dea03e` 經主對話覆核後準備草稿 PR。shell push 因無 Username／TTY 失敗；connector 已建 18 個與原本地 SHA 相符的 blob，WORKLOG blob 返回 catalog changed 拒絕。未建立 tree／commit／branch／PR；批准卡狀態未定，不重試或改道，原候選及已準備內容不變。
+- 等待期間 master 合併 #283／#284 至 `015deb8e`。唯讀 merge preview 只有 PLAN／STATUS／WORKLOG 衝突，但共享文件 owner 新增 preparation buffer；因此依主對話限定授權另開 `codex/four-verified-fixes-20261024-latest`，保留最新部署及背景保存文件，不覆舊狀態。8 個產品檔逐 byte 沿已批准來源；只補原 PDF fixture 載入真 buffer，以及 React 無 deps effect 的每次 render 語意，未弱化斷言或改產品。
+- Node 24.19.0、沿用依賴及合成 ports，最新候選只串行補 PDF owner 3/3、archive 組裝 1/1、新 native 檢查 5/5。未重跑照片／APNs、全檔 lifecycle、完整型別／build／GUI／真機或外部服務；原 PDF timer 1/3、照片 red、APNs care fixture red 及較闊批次 10 FAIL 均在[同一精簡收據](artifacts/verification/FOUR_FIXES_20261024.json)保留，按各自版本引用。
+- 新候選 fixture／文件交主對話覆核；外部交付仍等明確批准狀態，不新增上傳、合併、GCP／OTA／Sites、模型或真家庭資料操作。協作者 PR、頭像 gate、照片聊天及附件交付原責任不變，沒有真人驗收或猜測人員署名。
+
+<a id="log-20261024-preparation-background-delivery"></a>
+## LOG-20261024-PREPARATION-BACKGROUND-DELIVERY
+
+- 已合併 #284／`015deb8` 沿原 VM 完成相容 API／worker／Web 更新；候選僅做離線 import／schema 與 hash 核對，發布前確認沒有活動 Agent lease。公開首頁 hash、API health 與映像身份通過，保留原映像及兩份 0600 配置回退；無資料遷移、模型、通知或配額改動。
+- Android 首次發布遇 EAS 資產處理 180 秒逾時。查回 preview 仍為上一組，固定 CLI 原碼確認尚未到 publish mutation；同一份已核 hash 產物只補送一次，成功發布 group `a46b49b0-a5ef-4ead-8d24-6a61236a85b9`。與已安裝 v3 相容，不另建 APK，不把發布當真機驗收。
+- [交付證據](artifacts/verification/PREPARATION_BACKGROUND_DELIVERY_20261024.json)保存版本、原失敗、回退及未驗項。照片聊天正式 Agent 接點與協作者未合併修改重疊，保留其工作；先處理不重疊的附件接點，頭像與下一 APK 品牌圖仍待後續包。
+
+
+<a id="log-20261024-four-fixes-draft-delivery"></a>
+## LOG-20261024-FOUR-FIXES-DRAFT-DELIVERY
+
+- 使用者明確批准四項修補、測試及記錄公開上傳後，於 2026-10-24 13:45 UTC 建立草稿 PR #286；遠端 `125657d177eb52347194556b543ffe7497b51d80` 的 tree `951b9e482ed2616bbfe497d8ec61a39b7b0825ae` fetch 回核與批准本地候選完全相同，19 檔集合相符。當時沒有觀察到 commit statuses／PR workflow runs，不當 CI 通過；未合併或部署。
+- #285 部署文件已在上傳期間合併至 `60b42c1`，只有 PLAN／STATUS／WORKLOG 衝突，產品無交集。使用者其後要求處理；本次由 dot 原生代理在隔離 worktree 正常 merge，保留 master 最新正文、兩邊 WORKLOG 追加記錄及原部署收據，並將四項修補的現況改為已交草稿 PR，未改原驗證收據或掩蓋失敗。
+- 本輪只核文件連結／錨點／衝突標記、append-only 保留及 15 個碼測檔 bytes；產品與測試完全不變，沒有重跑產品測試、模型、服務、GCP／OTA／Sites。交主對話覆核後只更新同一草稿 PR，不另開 PR、不強推、不合併 PR 或部署；原生／正式未驗門檻保持。
+
+<a id="log-20261024-chat-photo-backend"></a>
+## LOG-20261024-CHAT-PHOTO-BACKEND
+
+- 按使用者新增範圍授權，從 `60b42c1` 接照片專用訊息／runtime／審核入口；沒有修改或合併協作者分支。原照片與 Storage 不另複製，訊息原交易核版本及收據，同圖可重用；照片上傳不再需要先提取成記錄。
+- 原圖由 Server 核權後暫時送模型，附件庫可有界列出／重讀，審核取得相同原圖且 hash 綁定 metadata。原圖不進 ADK 事件或工具回覆；刪除、撤權與官方引用規則保留。Sol 只承接兩個 store 及其定向測試，主模型負責契約、runtime、工具、審核接點及 review。
+- [必要證據](artifacts/verification/CHAT_PHOTO_BACKEND_20261024.json)：兩條新連貫合成情景通過，最終只補原照片 transport 與新 runtime 情景，窄 strict 型別通過。初次型別命令 TS5112 已按實際修正；零真模型／通知／雲端寫入。前端傳送、手機欄位修正及部署接續，不當作完整照片體驗已完成。
+
+<a id="log-20261024-chat-photo-frontend"></a>
+## LOG-20261024-CHAT-PHOTO-FRONTEND
+
+- 沿已合併 #287 接共用 Web／Android 原圖上傳、聊天保存、原操作查回與附件庫同 ID 重用；聊天不再要求先送到核對。照片 API 補接既有 recoveryPending 欄位，未結清還原仍不可讀；移除草稿不刪已有原圖。
+- 手機空單行欄位先用原生提示，focus／有內容才轉回 Paper 浮動標籤；Web／flat／多行保持原呈現。使用者已回報彈窗初開延遲，未有本修正的真機結論。
+- [定向證據](artifacts/verification/CHAT_PHOTO_FRONTEND_20261024.json)：一條真 client／合成 transport 流程、三項輸入元件檢查、13 roots strict 型別及兩端匯出通過。首輪 TS2345 的 optional photo 窄化問題已修；review 補刪除後可解除引用，不再卡 unknown。零模型／通知／雲端寫入，部署及真機待接續；#286 照片恢復區塊未改動。
+
+
+<a id="log-20261024-chat-photo-delivery"></a>
+## LOG-20261024-CHAT-PHOTO-DELIVERY
+
+- #287／#288已分別由C／B提交及合併；本次正式交付由C承接。原站先健康核對API／worker再更新Web，Android發布相容OTA group `327ad4ca-66f5-412b-bf8a-ee46d7493198`，不用新APK。
+- 首次候選把完整firebase-runtime覆蓋到部分部署基線，缺avatar-release而停止；修正為現網runtime只加兩項已review照片注入，未帶入頭像／APNs。首次修補Docker FROM使用image ID格式失敗，改成核hash的本機標籤後通過正式assembly import、13檔hash及Web hash；原失敗不抹除。
+- 公開首頁／API health均200，保留原映像和配置回退。零模型／通知／資料遷移；[精確交付證據](artifacts/verification/CHAT_PHOTO_DELIVERY_20261024.json)分列產物及限制。手機連線但鎖屏，未強停或改草稿，提示延遲修正及照片體驗仍待真機；接續頭像，不接管#286或協作者Agent。
+
+
+<a id="log-20261024-four-fixes-merge-compatibility"></a>
+## LOG-20261024-FOUR-FIXES-MERGE-COMPATIBILITY
+
+- 使用者明確要求合併 #286 後，末核 master 已前進至 #288／#289、`98f56a3`；同一 PhotoInputDomains 新增 workspace 的保存照片→聊天接線，不能只憑先前無衝突狀態直接合併。本輪先暫停外部寫入，再按主對話限定範圍正常整合；原照片修補核心與新 wrapper 各自保留，沒有另改產品或 fixture。
+- Node 24.19.0、既有依賴及合成 ports，照片恢復 49/49、聊天照片 client 原操作／同 ID 重用／身份隔離 1/1 通過。未將舊 APNs／PDF 數字算成本輪重跑，也未重做全量、build、真機或模型；原紅及未驗保持，最新兩份 log hash 追加於[既有收據](artifacts/verification/FOUR_FIXES_20261024.json)。
+- 本輪由獨立 reviewer 唯讀核對新照片 owner/API 與 draft／deferred discard／read-error 的相容性，不重複跑測試。保留 master PLAN／STATUS、兩邊 WORKLOG 與協作者最新部署證據；通過後只依精確 head 及 GitHub 保護規則正常合併同一 PR，不新增部署或合併其他協作者 PR。
+
+<a id="log-20261024-avatar-lifecycle-fix"></a>
+## LOG-20261024-AVATAR-LIFECYCLE-FIX
+
+- 同一 invocation 的 avatar restore claim 回應丟失可沿持久 token 查回；只恢復尚未執行的首次寫入，不接管另一 invocation 或重送 unknown Storage。修正 object metadata 的 never 控制流型別，以及 account export 不應把 content-only port 傳作 chat mutation port 的組裝。
+- [必要證據](artifacts/verification/AVATAR_LIFECYCLE_FIX_20261024.json)：兩項 lost-claim／lost-object 恢復與一項目前頭像匯出／版本 fence 檢查通過。窄域及全部正式 Server／共用契約 strict 通過；完整含測試編譯的失敗另保留，不改寫為通過。clean lock 只在隔離 Windows 目錄安裝，沒有改 lockfile，也不代表 Linux 容器已驗。
+- 主模型實作與契約核對，Sol 僅局部唯讀 review；未發現 actionable finding。無模型、通知、雲端寫入、部署或 gate 變更。未知／變更來源恢復、原生雲端生命週期與裝置效果仍待接續，頭像不冒稱已可用。
+
+
+<a id="log-20261024-avatar-platform"></a>
+## LOG-20261024-AVATAR-PLATFORM
+
+- Linux x64／Node 24.19 隔離容器按原 lock clean install，使用正式 avatar codec 完成一條 JPEG EXIF／metadata、透明 PNG 及取消 child-close 的連貫檢查；一次通過，沒有重跑產品全量。實裝 sharp 0.35.5／libvips 8.18.7，LICENSE／README／package metadata 的 hash 與容器、來源 hash 保存在[證據](artifacts/verification/AVATAR_PLATFORM_20261024.json)。
+- 主模型覆核測試、實際 TAP、來源及隔離 Docker 定義；此包無產品行為修改。沒有雲端資料、模型、通知或部署，不改寫原失敗；unknown 恢復、原生資料層及設備門檻仍待完成，寫入 gate 保持關閉。
+
+
+<a id="log-20261024-avatar-restore-abort"></a>
+## LOG-20261024-AVATAR-RESTORE-ABORT
+
+- 主模型補隔離頭像還原的 inspect／abandon 命令、activation fence 及 generation-CAS 永久無圖片 marker；來源／Auth／journal 改變不再只能留下無明確出口的已認證副本。清理不讀來源正文、不接管 live target、不重新 copy；legacy 不明盤點仍拒絕。
+- 一條版本化 Storage／Firestore 合成流程覆蓋失去回應、遲到寫入、重建 adapter 後重入、原 source 不變及 activated 拒絕；受影響 strict 型別／命令語法通過。最初 Buffer／Uint8Array fixture 比對與 fixture metadata 型別錯誤保留，修正沒有放寬產品斷言；最後補核明確的 adapter 重建及 abandoned 結果。獨立 Sol 唯讀 review 無 actionable finding，主模型覆核原文及結果。
+- [完整證據](artifacts/verification/AVATAR_RESTORE_ABORT_20261024.json)。零雲端資料、模型、通知、真機及部署；此為 source 實作，沒有實際執行放棄任何 GCP 還原。原生資料層／恢復及設備 gate 仍未通，不啟用頭像。
+
+
+<a id="log-20261024-avatar-native"></a>
+## LOG-20261024-AVATAR-NATIVE
+
+- 沿既有合成恢復庫及私人 bucket，以全新 namespace、653 bytes 合成 JPEG 執行一次原生資料接點核對。兩個獨立 SDK client 競爭只產生一次原 copy；其中一個交易得到預期 ABORTED，查回同一結果，沒有換操作重做。
+- 重建 client 後沿原 identity 放棄及重入，永久 marker 保留、舊 pinned generation 不可讀、遲到 create-if-absent 被拒；原圖不變並於最後按計劃清理。[證據](artifacts/verification/AVATAR_NATIVE_20261024.json)保存範圍、呼叫數與 hash，受保護本機 key 不入倉庫。
+- 這是同一程序的兩個 SDK、合成 provenance，並非完整 backup／Auth／journal 還原或 API 跨副本驗收。沒有操作原站控制、用戶資料、模型、通知、新資源或部署；頭像 gate 保持關閉，剩餘門檻按 PLAN 接續。
+
+
+<a id="log-20261024-android-brand-startup"></a>
+## LOG-20261024-ANDROID-BRAND-STARTUP
+
+- Android 原配置未指定 launcher／splash；本次復用既有品牌 raster 與 Expo 57 官方 splash plugin，沒有重畫品牌或修改正式共用頁面。下一次必要新 APK 才交付，現有 v3 runtime 不強制覆寫。
+- [必要證據](artifacts/verification/ANDROID_BRAND_STARTUP_20261024.json)：config 正確解析、官方生成器輸出 native resources，主模型核對 launcher／splash 像素。保留安裝 engine 警告、config 參數、fixture cwd 及 sandbox EPERM；修正核對入口後成功，未新增產品測試或跑全量。
+- 沒有 EAS 上傳／建置／OTA、真機、模型或通知。本機資源不是新 APK／手機啟動已驗；品牌 runtime 改變由既有發佈工具攔截，不手填舊版本。
+
+<a id="log-20261025-avatar-admission-native"></a>
+## LOG-20261025-AVATAR-ADMISSION-NATIVE
+
+- 既有合成恢復庫以全新 namespace 執行一次真 SDK 連貫流程；兩個 client 使用正式 authority、avatar store、online service、codec、加密物件及 maintenance／queue consumer。共用准入、持久 lease、原收據、權限拒絕、更換、舊圖清理及重建 client 讀回通過。
+- [證據](artifacts/verification/AVATAR_ADMISSION_NATIVE_20261025.json)保存索引、範圍、44 次交易／兩次寫圖及四個預期拒絕。腳本先經主模型及獨立唯讀 review，補齊 barrier 失敗處理、現場識別及 namespace 檢查後只執行一次；沒有重跑模型或通知。
+- 測試圖片按 generation 清除，測試產品存取已撤銷；密文台帳保留，受保護 key 不入倉庫。外部 Tasks 喚醒使用本地 inbox，沒有真 OIDC／HTTP／兩個 API 部署副本、刪除 journal 或完整恢復證據。source gate 保持 false，原站未改動，不能把本次資料層通過當正式頭像已開放。
+
+<a id="log-20261025-avatar-journal-restore"></a>
+## LOG-20261025-AVATAR-JOURNAL-RESTORE
+
+- 主模型沿既有 recovery operator fixture 補一條備份後明確刪除的接續檢查，使用正式移除服務、獨立加密 journal、還原規劃／套用、帳戶匯出及清理 consumer。刪除前備份仍有圖，但還原不 copy、不披露，原物件清理責任及永久日誌保留；重入不重刪。
+- 一次定向流程通過，單一入口 strict 型別零診斷；獨立唯讀 review 無 finding，主模型核對斷言與實際結果。[證據](artifacts/verification/AVATAR_JOURNAL_RESTORE_20261025.json)。不重跑此前通過情景，零雲端寫入、模型、通知或部署。
+- 只讀資源盤點確認現有恢復庫已有合成證據，journal bucket 與原站共用；沒有清空舊資料或建立新資源。合成基礎設施不等於真 GCP 配對還原，該門檻及設備／正式組裝仍保留；本包不解除頭像 gate。
+
+<a id="log-20261025-avatar-paired-native-restore"></a>
+## LOG-20261025-AVATAR-PAIRED-NATIVE-RESTORE
+
+- 依使用者明確批准，建立兩個臨時香港 Firestore 庫及專用私人 bucket，只授權既有 Firestore service agent 該 bucket 的物件管理。正式服務以一個合成 Auth 帳號、一個孩子及兩張小圖完成配對備份、備份後刪除、原生匯入、最新刪除日誌重放及隔離讀回；保留頭像可讀，已刪頭像不復活／不匯出，原 generation 清理及 storage epoch 更新通過。[精確證據](artifacts/verification/AVATAR_PAIRED_NATIVE_RESTORE_20261025.json)。
+- 一次實際 export／import、82 次交易；前兩次 export 請求因 PITR 前置被拒，停批查回相同操作及限定錯誤 metadata，確認未啟動後才接續。只為臨時來源啟用 PITR；設定可讀與匯出端接受有時間差，等待後成功，不把該時間當服務保證。獨立腳本 review 的交易重試覆蓋、journal 範圍及 generation 精度問題在執行前已修；沒有改產品規則來通過測試。
+- 清理三個精確圖片版本、合成 Auth 帳號、專用 bucket 及兩個臨時庫，讀回確認不存在；既有 bucket 的 soft-delete 政策及共用恢復庫不變。受保護本機 key／恢復資料不入 Git。零模型／通知／正式資料／部署；增量批准上限 US$1，實際帳單尚未知。
+- 這是正式資料／operator／物件服務的真雲端核對，不是 HTTP／登入畫面、兩個 API 部署副本或原生每日備份驗收。後者依使用者原指示繼續延後；同版組裝／派送及設備門檻保留，頭像 gate 不解除。
+
+<a id="log-20261025-avatar-runtime"></a>
+## LOG-20261025-AVATAR-RUNTIME
+
+- 由正式 openFirebaseRuntime／HTTP／online／worker 組裝入口核對頭像服務，沿受控資料及外部 port，證明同一服務、身份拒絕、原操作查回、unknown 不內部重試及關 gate 後匯出／清理保留。新 fixture 的 FirestoreDomainError 參數順序先失敗，修正後一次補驗通過；產品程式未因此修改。[證據](artifacts/verification/AVATAR_RUNTIME_20261025.json)。
+- Node 24.19 定向 1 PASS；沿 Server 設定單一 test root strict 型別零診斷。沒有重跑整套、雲端、模型或通知，不把 controlled ports 當正式派送或真機證據。
+- 新增同 VM 頭像 Compose 配置，寫入預設 false。現網缺少頭像及 sharp 依賴，後續候選須完整補齊，維持同版 API／worker 及可回退；source gate 尚未解除，未部署。
+
+<a id="log-20261025-avatar-runtime-deployment"></a>
+## LOG-20261025-AVATAR-RUNTIME-DEPLOYMENT
+
+- `652edad` 正式 API／worker 同版候選已在原 VM 開啟及關閉核對，補四個已驗 Linux 原生套件及完整已合併程式，保留 license；沒有另做 npm 安裝、真模型或還原重跑。補一個 composite、cleanup 欄位索引及三個私密欄位排除，全部 READY 後才部署。
+- 原站兩服務健康、Web 映像未改，公開 health 及部署後 Scheduler 自動喚醒通過；source gate／寫入均 false。獨立 review 指出的 maintenance 恢復範圍及公開 probe 回退缺口在上傳前已修。[部署證據](artifacts/verification/AVATAR_DEPLOYMENT_20261025.json)保留核對器的舊 ADC／Web 無 Docker healthcheck 錯誤，沒有因此重跑部署。
+- 自動批准審查兩次拒絕解除 source gate；第二次已有部署讀回，仍要求明確授權解除持久啟用閘。未繞過或開寫入，已提出限定啟用確認；必要測試依使用者新授權不逐次詢問。手機未連線，設備裁切／EXIF 留待驗，原生每日備份還原仍延後。
+
+<a id="log-20261025-avatar-enable-approved"></a>
+## LOG-20261025-AVATAR-ENABLE-APPROVED
+
+- 使用者明確批准解除頭像 source gate，review／合併後開啟原站同版 API／worker 寫入。既有 lifecycle、原生配對還原、runtime、索引與正式停寫部署證據已具備；本次只改 release 常數，不改權限、確認、防重、刪除或模型設定。
+- 復用已驗 candidate-gate 路徑及正式組裝檢查，靜態核對差異，不重跑整套測試。部署仍需精確候選、健康及寫入配置讀回；設備選圖／裁切／EXIF 未驗保留，不以啟用或真人批准替代。
+
+<a id="log-20261025-avatar-enabled"></a>
+## LOG-20261025-AVATAR-ENABLED
+
+- #300／`0ebfbfa` 的單檔 release flag 修正經主模型及獨立覆核後合併；使用者已明確批准原站開放。候選沿已核對的 `652edad` 映像，只替換該檔；正式 API／worker 同版開啟／關閉、sharp／libvips 及兩項 true 配置核對通過，未重跑業務／還原測試。
+- 2026-10-25 09:08:54 UTC 原站 API／worker 啟用 `c3b149c`，兩服務健康、公開 health、寫入配置及部署收據讀回通過；Web 映像保持 `c09400c`，沒有 Android OTA 或新 APK。[啟用證據](artifacts/verification/AVATAR_ENABLE_20261025.json)。
+- 保留相容停寫映像 `4159605` 及受保護配置，回退仍能讀取／清理頭像；不能退至不認識新 schema／journal 的舊映像。零模型／測試通知／新增資源／資料遷移／配額修改；既有索引與排程證據復用。手機選圖／裁切／EXIF、原生每日備份與 Secret Manager 災備仍待驗，沒有代填人工通過。
+
+<a id="log-20261025-closeout-web"></a>
+## LOG-20261025-CLOSEOUT-WEB
+
+- 收尾 Android、頭像、附件庫及個人模型，保持五個協作者 Agent PR head 未改。實際 Web 流程發現頭像 Save 在背景 read 尚未結束時被略過；owner 只允許寫入取代唯讀刷新，舊回應／finally 不再更新新 request。既有版本、防重、unknown 與身份清理保持，21 項定向檢查通過。
+- 本地入口原本不轉送頭像寫入旗標，補明確 opt-in，預設 false。沿原 Firebase demo emulators、正式 Web／API／client，選圖、方形裁切、保存、內容 hash／MIME、重新開啟與明確移除通過；附件沿正式訊息連結，在實際清單下載原檔並核 bytes，之後刪除該合成附件。
+- 第一批頭像保存失敗及修正後驗收器呼叫上限、附件下載等待超時均保留；後續只補原已保存資料的待驗步驟，不重新上傳／提交。Web 匯出通過。必要測試沒有呼叫產品 Agent／通知，不代填 Android 真機。
+- 個人模型沿既有受限 Gemini key及正式 provider factory 僅一次短生成，供應商回 model_region_unavailable，立即停止，零 embedding／重試／配額修改。成功個人 key 仍待驗，不把此結果當其他用戶或 Vertex 的限制。[證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)。
+- 使用者另指出自製頭像裁切體驗偏離成熟產品；資料層驗證不等於體驗完成，保留現成能力優先的後續接點。手機／原生裁切／跨端媒體與 OTA 回退、四角色聯合及原生備份真還原未驗仍保留。
+
+<a id="log-20261025-avatar-save-delivery"></a>
+## LOG-20261025-AVATAR-SAVE-DELIVERY
+
+- #302 已按對應身份合併；`15fdb50` 的 Web-only 封包約 4.46 MiB，以現網 Caddy/Web 映像為底建立候選。2026-10-25 09:50 UTC 啟用 `d6f2a8b`，公開 index hash 與 API health 通過；API／worker、資料及配額均不改，保留 `c09400c` 和配置回退。[交付證據](artifacts/verification/AVATAR_SAVE_DELIVERY_20261025.json)。
+- 原 VM 身份與執行狀態已核，期限仍為 2026-11-06 13:33 香港時間，部署前約 10.4 GiB 可用空間；未續期、未新增資源、未發通知或模型。發佈工具的唯讀 plan 判定當前 runtime `0c5c868…` 不同於 APK v3 `5fd1446…`，沒有強推 OTA 或重建 APK；與後續裁切接點一併交付，設備項保持待驗。
+- 本地核對後關閉環境時，launcher 曾報 checkpoint HTTP 500 並保留前份 snapshot；emulator 尾部另有其後成功 export。沒有把此批核對宣稱為冷重啟／備份恢復驗收，未擴測。#303 已另合併成熟能力優先的工作規則，裁切體驗不能因保存已通過就視為完成。
+
+<a id="log-20261025-avatar-crop-reuse"></a>
+## LOG-20261025-AVATAR-CROP-REUSE
+
+- 按使用者反覆指出的頭像操作落差，復用既有 Expo ImagePicker 原生裁切及固定 react-easy-crop 6.2.4 Web 元件，移除自製 PanResponder／方向按鈕；保留共用 owner、原 Server 及權限／收據。薄平台接線不另建資料服務，兩份 license 原文已保存。
+- 原生 adapter 合成檢查及選區契約各一項通過；受影響型別無 diagnostics。真 Web 拖曳／縮放／鍵盤、保存／讀回／移除與選區一致通過；Desktop CSS zoom 曾令大圖裁切框超界，已以局部座標邊界修正及量度。兩次 harness selector／responsive modal 停批與後續只補剩餘項均保留；沒有重跑模型、通知、附件庫或後端恢復。
+- Android 匯出初次 Hermes sandbox 寫入被拒，同來源在可寫環境匯出通過；Web 裁切修改後的最後匯出另記。依賴安裝的舊 system npm engine 警告保留，檢查／建置使用 Node24.19，lock 只保留所需兩依賴、不改無關版本。[證據](artifacts/verification/AVATAR_CROP_REUSE_20261025.json)。尚未把真機、APK、部署或個人模型成功寫成通過；協作者四 Agent PR 不動。
+
+<a id="log-20261025-avatar-crop-delivery"></a>
+## LOG-20261025-AVATAR-CROP-DELIVERY
+
+- #305／`1f07fab` 的 Web 靜態產物已經原 IAP／Compose 流程更新；候選 index、公開 hash／health 與 API／worker 不變核對通過。保留前版 Web 映像及 0600 Compose 回退，主機期限仍為 2026-11-06 13:33:50 香港時間，未續期。
+- 一次免費 EAS preview build `9f43f925-acc1-44e4-915b-ae63dcb46b70` 完成 APK v4；與 v3 同簽署，package／runtime 及原生新圖標／splash 資源核對通過。下載入口在 PLAN／STATUS；沒有向不同 runtime 的 v3 發 OTA，真機安裝／裁切未代填。
+- Python 下載 403 改用已安裝 EAS 官方下載函式；舊 Java 核對無輸出後只停該程序，Java21 通過；aapt 中文絕對路徑失敗只改相對路徑續核資源。原失敗保留，沒有重建或重跑產品。局部測試環境退出時 emulator export 500，保留上一快照，未宣稱恢復通過。
+- [交付證據](artifacts/verification/AVATAR_CROP_DELIVERY_20261025.json)分列實作／Web／APK與待驗。零模型／通知／遷移／配額修改；手機設備出口、成功個人 key 及已延後的四 Agent／備份項仍保留，不動協作者 PR。
+
+<a id="log-20261025-android-v4-device"></a>
+## LOG-20261025-ANDROID-V4-DEVICE
+
+- 使用者回覆「已開啓并覆蓋安裝」；ADB 核對 package versionCode 4，原登入及孩子資料仍可讀。以一張本次合成 EXIF-6 JPEG 核對系統選圖、拖動正方裁切、App 圓形預覽及取消；未保存至本人孩子，原頭像保持不變。
+- 附件庫列表及孩子切換清理可見；使用者要求減少額度消耗後停止追加，未完成下載／分享，不以空清單當通過。已關閉選取器並清理本次合成圖片及 UI dump；零模型、通知、雲端寫入或新建置。
+- [設備證據](artifacts/verification/ANDROID_V4_DEVICE_20261025.json)；私人畫面不入 Git。成功個人 key、其餘媒體／通知終態／OTA 回退維持待驗，協作者四 Agent PR 不動。
+
+<a id="log-20261025-android-picker-filename"></a>
+## LOG-20261025-ANDROID-PICKER-FILENAME
+
+- 使用者要求直接續驗剩餘流程；v4 用一份 108 bytes、無私人資料的 TXT 選檔時，草稿顯示 Android `msf:` ID 而非原名稱，於送出前停批，沒有模型／通知或雲端寫入。原因是 SDK 的 JS `File.name` 使用 URI basename；已有原生 copy 能取得 provider display name。
+- 文件與已錄音訊改用同一薄接點，沿 expo-file-system 57.0.7 複製至本機私有暫存後保留真正檔名，再交原草稿處理；保留大小、數量、過期清理及取消，不新增套件或原生配置。單一針對性檢查及三入口型別通過；真機修正後續驗尚待相容 OTA，不以替身當通過。
+- [證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。不動協作者四 Agent PR，不重跑頭像或已通過 Web 附件下載；個人 Gemini key 原有供應商地區拒絕不反覆重試。
+
+<a id="log-20261025-android-picker-acceptance"></a>
+## LOG-20261025-ANDROID-PICKER-ACCEPTANCE
+
+- #308 已合併 `35ad214`；Android 匯出及 v4 runtime 相容核對通過。31 個 JS／資產共 13,725,060 bytes 的 EAS 更新在 asset processing 逾時，查回沒有新群組後只補同封包一次，仍同樣失敗；未再重試、未建 APK、未改原站服務。最後 preview 仍為 `327ad4ca`，手機維持 embedded v4，不能宣稱檔名修正已到設備。
+- 已移除本次尚未送出的測試草稿；保存／下載續驗前手機自行鎖屏，已請本人解鎖。沒有送出測試聊天或改已有附件；108-byte 測試 TXT 仍暫存在手機 Download 供續驗，私人畫面不入 Git。
+- 為區分本機與正式環境，僅補既有受限 Gemini key 在原香港 VM 的正式 personal-provider factory 一次短生成，仍返回 `model_region_unavailable`；因此沒有呼叫 embedding，無平台回退／設定／配額修改。Windows gcloud 在前置傳輸注入 y、及 dry-run 命令啟動失敗均未到模型；沿 SDK 原始碼以 subprocess-only 設定保留正常主機核對後完成原定單次核查，key 不落盤或進日誌。
+- [本次證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。成功個人 key、附件設備出口、通知終態及 OTA 回退保留未驗；四 Agent PR 及延期 DEV02 不動。
+
+<a id="log-20261025-android-attachment-device"></a>
+## LOG-20261025-ANDROID-ATTACHMENT-DEVICE
+
+- 使用者解鎖後續驗同一份 108-byte 無私人資料 TXT，只提交一次。正式聊天保存、聊天及附件庫下載至 Android 系統分享選單均通過；關閉程序後可讀回同一附件及原回覆「OK」。沒有重送、通知或四 Agent 品質驗收；原始模型呼叫數未另查，不把單次提交當成只呼叫一次模型。
+- 真機仍為 embedded v4／`1f07fab`，因此原文件 ID 檔名問題保留；#308 的修正未因其他流程通過而冒稱已發布。12:50 UTC 只查一次 EAS，資產仍未完成，沒有第三次上傳／發布或新 APK。取消分享後的快速導航曾開啟既有瀏覽器，未驗收任何收件端保存；誤用 agent deep link 已恢復，不當成產品缺陷。
+- 已清手機本次下載目錄 fixture、恢復原孩子／首頁；保留一份無私人資料的雲端測試附件及訊息作追溯，沒有改既有內容。更新 [設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)、PLAN／STATUS，只解除已通過的附件待驗；個人 key 成功、檔名發布及其他未驗項仍保留。
+
+<a id="log-20261025-vertex-closeout"></a>
+## LOG-20261025-VERTEX-CLOSEOUT
+
+- 使用者要求驗可用的 Vertex 路線；原香港 VM 使用既有附加身份、正式 Vertex provider，完成一次 `gemini-3.1-flash-lite` 短生成（5 input＋1 output tokens）及一次正式 1024 維向量（2 input tokens）。這是 ADC 證據，不是個人 key 成功。
+- 依使用者明確批准，為既有合成測試身份建立只限 Vertex API 的臨時 key，臨時沿既有兩權限角色；經正式 personal-provider factory 的單次短生成返回 `model_http_403` 後停止。相同流程已撤銷 key、移除本次新增綁定；未改原權限、產品設定／配額／部署，沒有通知或私人資料。最多三筆的唯讀錯誤 metadata 查詢未找到 Vertex 紀錄，具體原因尚未確定，不據此推論所有 Vertex key 不可用。
+- [分層證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)保存結果與限制；PLAN／STATUS 區分平台 ADC 已通、個人 key 未通，保留先前 Gemini 拒絕及其他未驗項。個人 Vertex／相容模式仍使用另填的本人 Gemini 向量 key，不因本輪成功而宣稱已擴充個人向量路由。只核文件 diff／JSON，不重跑產品測試或協作者四 Agent。
+
+<a id="log-20261025-personal-vertex-stabilized"></a>
+## LOG-20261025-PERSONAL-VERTEX-STABILIZED
+
+- 使用者另行明確批准修訂批次：同一測試身份／兩項最小權限，建立第二個臨時 Vertex key，等待 180 秒後僅生成一次。原香港 VM 的正式 `createPersonalModelProviders` 返回成功，5 input＋1 output tokens，沒有平台憑證回退、embedding、重試或產品設定／配額修改。
+- 同批 finally 已刪臨時 key、移除本次新增角色綁定，未動原權限。首批 403 與原 Gemini 地區拒絕保留；成功與 IAM 生效延遲相符，但不宣稱已證實首批錯誤根因。Google IAM 官方文件指出政策傳播通常兩分鐘、也可能七分鐘或更久；本次三分鐘不是普遍保證。
+- [實測證據](artifacts/verification/ANDROID_FINAL_CLOSEOUT_20261025.json)新增獨立結果，PLAN／STATUS 只解除個人 Vertex provider 成功待驗；設定→Agent／個人向量檢索的完整流程仍未通過。僅核文件 diff／JSON，不重跑其他產品測試、協作者四 Agent 或通知。
+
+<a id="log-20261025-android-picker-delivered"></a>
+## LOG-20261025-ANDROID-PICKER-DELIVERED
+
+- 沿 #308 已核 hash 的同一 31 檔匯出繼續查明發布阻塞。公開無憑證連線與 EAS SDK 核對後，僅向 Expo 回傳並已確認的 GCS host 直接 TLS 上傳原 9,048,132-byte HBC 一次，HTTP 204／資產 EXISTS；不帶 proxy、不跟 redirect、不重試。初次 host guard 不符已在上傳前停止；原兩次 EAS 逾時保留，不把直接路徑成功等同完整證明舊 proxy 的內部故障。
+- 相容 preview OTA 已於 13:23 UTC 發布，group `39974363-7397-418f-adf6-40e853786ca1`、update `01a1733b-70d1-7fcc-a5af-a830658b7b1c`、v4 runtime `0c5c868…`。產品來源 `35ad214`，發布 Git `cffa337` 只多文件；沒有 Web／API 更新、新 APK 或向舊 runtime 強推。
+- 已解鎖手機重開後選取 68-byte 合成 TXT，未送出草稿正確顯示原檔名；品牌 splash 同時可見。中文輸入法改寫首次搜尋後只改用數字檔名定位同一合成檔，沒有開其他私人附件。隨即丟棄草稿、刪測試檔並返回原首頁；零上傳／聊天／模型／通知，不重跑頭像及已通過的保存／下載。
+- [交付及設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)保留各批失敗／限制；裝置未另讀 update ID，僅按可見行為驗證修正。PLAN／STATUS 原位解除檔名發布與設備阻塞，個人向量完整流程及 Android 其餘門檻仍保留。只核 diff／JSON／既有證據完整性，協作者 PR 不動。
+
+
+<a id="log-20261025-android-rollback-sync"></a>
+## LOG-20261025-ANDROID-ROLLBACK-SYNC
+
+- 接續 master `c9989c5`，由 B 收 Android 更新／跨端驗收。EAS CLI 24.14.0 僅在 v4 preview 的相同 runtime 回退至內置版本，再 republish 已核修正版；零新資產上傳／APK／模型／通知／部署。第一次手機鎖屏，立即恢復，不當通過；解鎖續驗時，同一未送出 TXT 分別顯示內置 provider ID 與恢復後原檔名，原登入／資料保留。最後 group `44dca896-6861-43c5-a24b-cc4fbdea5102`，13:54 UTC 已恢復；沒有抽取裝置 update ID，只按實際行為確認。初次 whoami 輸出 guard 在變更前停止亦保留。
+- 手機只保存一項明示 TEST 的本人待辦，日期為 10 月 31 日 09:00；使用者登入同帳號 Web 並回覆「已完成」。手機保持同一詳情頁、不刷新／重送，沿正常背景讀取顯示「已完成，提醒已停止」。原輸入／日期修正均發生於保存前；只留一筆已完成測試待辦作追溯，未發到期通知。清除未送出附件及其手機 fixture，返回首頁。
+- [同一設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)新增回退及跨端區段，舊結果／失敗不改；提醒終態不重發沿 [F06](artifacts/verification/F06_FIRESTORE_BACKGROUND_20261013.json) 原 Firestore＋合成 transport 證據復用，不重跑。未證明跨端 Agent／確認接續、真機撤權或照護通知點擊目標；個人向量完整流程及四 Agent 等待條件繼續保留。
+- PLAN／STATUS 原位解除已通過項，部署交接補首次 OTA 的官方內置回退方法。本次只有文件及 evidence JSON，核 diff、JSON、連結及原 evidence／WORKLOG 保留；不跑產品測試或修改協作者 PR。
+
+
+<a id="log-20261025-native-target-revocation"></a>
+## LOG-20261025-NATIVE-TARGET-REVOCATION
+
+- 使用者在 Web 回覆已撤銷其他裝置；Android 解鎖後回到登入畫面，一次冷啟動仍未恢復舊會話／孩子頁，零憑證抽取、模型或通知。保留另一身份登入隔離待驗；結果追加至[同一設備證據](artifacts/verification/ANDROID_PICKER_FILENAME_20261025.json)。
+- B 單作者局部修正正式通知 callback：Server 已核對的 taskId 原先被丟棄，現在在原孩子選擇及身份／離頁守衛後交給既有待辦詳情路由。另依使用者截圖要求把共用設定的「要求重設密碼指引」改成「重設密碼」，沒有改動寄信行為或代按。協作者 PR 檔案核對無重疊。
+- 產品 source `f987b0b`：一項受控 production callback 檢查通過（指定待辦、選孩子等待、身份切換拒遲到、測試通知仍開設定），Web／Android 各一次匯出通過；Android runtime 與 v4 相同，毋須新 APK。[S13 證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)區分程式／匯出與尚未發布、未驗照護通知點擊，不重跑原 FCM／終態或全量產品測試。
+
+
+<a id="log-20261025-native-target-delivery"></a>
+## LOG-20261025-NATIVE-TARGET-DELIVERY
+
+- B 已合併 #315／`2fc4aa3`；產品 source `f987b0b` 的 Web 靜態包 4,681,109 bytes 經 IAP 傳至原 VM 的限定 0700 目錄。候選 hash、映像及公開 index／health 核對通過，僅 Web 切至 `ccd2eca`，API／worker、資料與配額不變；保留 `0da4e1f` 及 0600 的 Compose 回退。VM 身份／期限未變，部署前約 10.32 GiB 可用。
+- 同 runtime Android 31 檔／13,725,127 bytes 發布一次 preview OTA，group `aea3c202-d8ac-4577-8367-be0ea066b614`、update `01a17377-be21-78ef-9f4d-15913fbfb87f`。復用已驗官方限定 host 的直接 TLS 單次 bundle 上傳，HTTP 204／EXISTS，沒有先重跑已知會卡住的 proxy 上傳。沒有新 APK、模型、郵件或通知；兩端共用「重設密碼」及通知指定待辦接線。
+- [S13 交付證據](artifacts/verification/S13_ANDROID_PUSH_PREPARATION_20261018.json)分開發布與尚未觀察的實際 care 通知點擊；舊設備、失敗與撤權結果保留。PLAN／STATUS 只更新本次實質狀態；不改協作者 PR，不以 OTA 代表全 P3 完成。
+
+
+<a id="log-20261025-personal-vertex-embedding"></a>
+## LOG-20261025-PERSONAL-VERTEX-EMBEDDING
+
+- 原香港 VM 的 Gemini 單次查詢向量返回 embedding_region_unavailable，沒有重試。使用者明確批准補最小 Vertex 本人 key／專案／地區；復用固定 Google SDK、原 embedding 模型／1024 維及索引，沒有改協作者 Agent 或全量重算。
+- 新增 v4 共用設定及交易內舊版保護，沿加密、版本、原 opId、權限及共同預算。Web／Android 同一表單與本地入口接入獨立向量設定；切路由須重填 key，沒有平台 ADC 或聊天 key 後備。
+- 新設定／SDK 和本地綁定兩項、原 v3／Vertex 邊界、14 項 form/client、限定型別及兩端匯出通過。初次兩項合成失敗為錯誤分類斷言與漏填 demo 專案，查根因後只補該兩項；不重跑已通過批次。
+- 沿必要驗收授權，以既有測試身份的臨時 Vertex key 等待 IAM 生效後，只呼叫一次查詢向量，得到 1024 維、2 input tokens；零生成／重試／通知／正式資料，finally 刪 key 並移除本次兩項權限綁定。正式部署及真機新欄位尚未驗；保存設定至完整 Agent 流程不由 provider 核對代替。[分層證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)。
+
+
+<a id="log-20261025-personal-vector-delivery"></a>
+## LOG-20261025-PERSONAL-VECTOR-DELIVERY
+
+- PR #317／`34f80a9` 已合併，後端與共用畫面分別維持 C／B 單作者；本批按已授權原站交付更新 API／worker、Web 及 Android OTA，不修改協作者 PR。原 VM 身份／期限核對不變，部署前約 10.30 GiB 可用。
+- 10 個 Server／shared 檔共 15,124 bytes 的壓縮包經 IAP 傳至限定 0700 目錄；候選以原正式組裝核對 API／worker 及 v4 契約。無活動 run 才短暫維護並切至 `9d490d0`，健康通過；Web 65 檔壓縮 4,680,173 bytes 切至 `e813692`，公開 hash／health 通過。保留 0600 配置及前版映像，但新設定保存後只能回退有 v4 reader 的後端，不能盲退舊資料格式。
+- Android 31 檔／13,730,502 bytes 沿既有官方限定 host 單次上傳，HTTP 204／EXISTS；preview OTA group `33a2e0a3-2472-4d1f-9d2d-1da5e7c9a3b4`／update `01a1739b-bb0d-79b8-9457-38b658668111` 已發布，同 v4 runtime，毋須新 APK。沒有模型／通知／資料遷移／索引重建或配額改動。
+- [證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)追加本次實際交付；新表單真機保存與完整個人設定→Agent／引用仍未驗，四 Agent 流程按使用者安排等協作者。只更新受影響 PLAN／STATUS 與回退契約，原失敗不回寫。
+
+
+<a id="log-20261025-vertex-option-device"></a>
+## LOG-20261025-VERTEX-OPTION-DEVICE
+
+- 使用者重開已安裝的 Android App 後回覆「已有 Vertex AI 選項」。只核個人向量服務選項出現，沒有填 key、保存設定或呼叫模型；先前仍顯示舊表單的觀察保留，不把發布時間當成裝置載入證據。
+- B 記錄本次手機人工結果至[原證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)，同步 PLAN／STATUS。精確裝置 update ID、保存設定至完整 Agent／引用流程仍未驗；四 Agent 聯合補驗繼續等協作者，不重跑已通過項目。本次只核文件 diff／JSON，沒有產品測試、部署或手機操作。
+
+
+<a id="log-20261025-personal-vector-routing"></a>
+## LOG-20261025-PERSONAL-VECTOR-ROUTING
+
+- C 收尾核對保存設定到正式檢索路由：原欄位傳遞沒有發現缺漏；將既有 personal Vertex 情景的成功呼叫改經新建的正式 routing、embedding gateway 及持久用量服務，沿原 in-memory Firestore fixture／固定 SDK／合成 HTTP，不另造 Agent。
+- 只執行該一項，通過設定重讀、本人 key／專案／地區、1024 維、本人用量一次／平台零次及原 root／attempt 重送拒絕；零真模型／雲端／手機／通知／部署。產品程式不變，[原證據](artifacts/verification/PERSONAL_VERTEX_EMBEDDING_20261025.json)追加本次範圍，不宣稱真 Firestore 競爭或完整 Agent／引用通過；協作者驗收仍按原安排延後。
+
+
+<a id="log-20261026-web-voice-review"></a>
+## LOG-20261026-WEB-VOICE-REVIEW
+
+- 使用者要求集中 Web 真模型核對，並授權其後模型測試合計滾動 12 小時不超 US$5、毋須逐次詢問。正式失敗 run 僅讀 metadata；用本機自製錄音重現，沒有讀取或重送私人原錄音。
+- 原音訊補接獨立審核，保留原訊息／版本／hash、重讀核權及共同預算；實測亦發現普通補問被誤判及拒絕結果缺 draftHash，遂補真正輸出 schema 與精確提示。沒有略過審核或放寬官方照護引用。
+- 定向正式組裝、撤權與原結果、並發變更後可讀收據、限定型別及實際 prompt assembler 通過；完整 Web HTTP／共用 client 的真 Vertex 流程以 2 次生成完成錄音理解、審核、保存與原 run 讀回。曾失敗的各批及較闊檢查保留於[證據](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)，不重跑全量或手機。
+- 本機臨時限額及開關已恢復原值，帳目／失敗現場保留。已知 tokens 保守估約 US$0.16，整批預留 US$1 包含遲到背景工作，並非實際帳單。舊孩子的招呼受歷史干擾、背景資料變動可中止回覆仍列缺口；不以本次通過代結四 Agent／P3。尚待 review／合併及原站 Server 交付，前端／APK 不變。
+
+
+<a id="log-20261026-web-voice-delivery"></a>
+## LOG-20261026-WEB-VOICE-DELIVERY
+
+- #321／`85356d6` 已由原包單作者合併，協作者 PR head 未變。9 個 Server／prompt 檔、56,880 bytes 壓縮包經 IAP 傳至既有原 VM 的限定 0700 目錄，hash 逐項通過；未傳密鑰、家庭資料或本地測試庫。
+- 候選原正式 API／worker 組裝及 Prompt Pack 0.1.55／voice authorizeAudio 通過；無活動 run 後短暫維護切換 API／worker 至 `sha256:d5be3558f45771fdcab001fcebda4df5a1aead88d66c2363097f1b3f477a210d`，健康／公開入口通過，Web 映像保持原版。保留前版映像及 0600 配置，沒有遷移、配額／期限改動、模型或通知；Android 毋須更新。
+- [同包證據](artifacts/verification/WEB_VOICE_REVIEW_20261026.json)保存真模型與交付層次。舊失敗訊息不自動重跑；未核瀏覽器播放／跨端語音、歷史情境干擾與背景變動中止仍保留，不代結四 Agent／P3。
+
+
+<a id="log-20261026-personal-model-flow"></a>
+## LOG-20261026-PERSONAL-MODEL-FLOW
+
+- 使用者的必要模型測試 US$5／滾動 12 小時授權內，為既有測試身份臨時建立只限 Vertex 的 key 及原有兩項最小權限；等權限生效後只跑一次正式本地 Web／API 流程，另預留 US$0.50，連前批預留合計 US$1.50。沒有改正式產品設定、開新角色或接管協作者 PR。
+- 共用設定 client 保存本人聊天／向量憑證、原操作查回及新登入會話讀回通過。正式 Agent 的 3 次生成／2 次向量均記本人，平台用量增加 0；約 34,537 input／105 output tokens，保守已知費用估約 US$0.018，並非帳單。
+- 原 run `b5a70937-8008-44e9-815b-8d9bebfb7a55` 因第三次搜尋觸及 embedding_limit 停止，沒有完成引用／審核／回答；首次失敗停批，保留帳目／收據，不加額度重跑。唯讀核對確認本地只有一段已發布語料；缺原工具輸出，不猜反覆搜尋根因。
+- key 與本次新增 IAM 綁定已刪除。本地清理首次因 removeKey 要求 disabled 模式被拒，依正式契約先停用移除，再恢復停用中的平台模式，密鑰清理及原 5 次帳目讀回通過。詳見[限定證據](artifacts/verification/PERSONAL_MODEL_FLOW_20261026.json)。沒有產品程式變動，不跑型別／build 或其他模型測試；完整個人 Agent／四角色品質仍按原責任待驗。
+
+
+<a id="log-20261026-knowledge-retrieval-check"></a>
+## LOG-20261026-KNOWLEDGE-RETRIEVAL-CHECK
+
+- 在 `2332950` 上補有限診斷：英文關鍵詞、既有向量及約數年齡篩選均接通；中文關鍵詞不能匹配唯一英文片段，但一次真中文向量成功命中（距離 0.2796，既有門檻 0.4）。沒有改索引／語料或放寬門檻。
+- 正式本地 Web HTTP／共用 client／ADK 以現有 ADC 及正常 8 次生成／4 次向量設定，只用 3 次生成、1 次搜尋便完成引用／獨立審核／保存及原 run 讀回。與先前個人 key 的 6／2 設定不同，不能以本次成功聲稱原失敗已修復。診斷只記公共查詢與來源 ID，未記思考、密鑰或私人正文。
+- 搜尋工具描述仍寫死「最多兩個查詢」，與管理員可調設定矛盾；局部改為讀當輪實際剩餘額度，零餘額沿已有上下文續讀或明示限制。沒有改 runtime、硬上限、審核或協作者分支。文字匯入與 diff 核對通過，不跑全量、建置或額外模型。
+- 本批另預留 US$0.51，滾動 12 小時預留合計 US$2.01，低於使用者 US$5 上限；新增已知生成約 27,509 input／289 output tokens，估約 US$0.0142，非帳單。為單輪診斷明確暫增本地每日餘額，原帳目保留，finally 恢復停用及原限額；正式設定不動。[限定證據](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)。
+
+
+<a id="log-20261026-knowledge-guidance-delivery"></a>
+## LOG-20261026-KNOWLEDGE-GUIDANCE-DELIVERY
+
+- PR #324／`14e0f60` 已合併。只把一個工具說明檔（壓縮 1,233 bytes）及 hash／腳本傳至既有原 VM；初次腳本因 Windows 編碼在執行前停止，改存 UTF-8 後同一候選正式組裝通過，未擴測。
+- 無活動 run 後 API／worker 已更新至 `sha256:663125df9f51c666c878b7b6bcb8ef77fc6f9a55f20a8f4cbc82c88e5b87ca70`，服務及公開健康通過；Web／Android／配額／資料不變，零模型或通知。保留 `d5be355` 前版與 0600 配置；[原包證據](artifacts/verification/KNOWLEDGE_RETRIEVAL_CHECK_20261026.json)保存精確版本、原失敗與回退。
+
+
+<a id="log-20261026-personal-key-complete"></a>
+## LOG-20261026-PERSONAL-KEY-COMPLETE
+
+- 在 `226a848` 的正式共用 Web HTTP/client、ADK 及隔離 Firebase 資料上，用既有測試身份的一個臨時 Vertex key 完成設定保存／原收據／新登入會話讀回；同時配置本人聊天及獨立向量路由。平台全程停用。
+- 正常 8／4 每輪設定、不重試；實際 3 次生成、2 次工具、1 次向量完成官方引用、獨立審核、保存及原 run `f37b5216-3e17-4f04-b7bb-74123e0a5622` 讀回。本人帳目 5→9，平台 40→40；27,527 input／286 output tokens，已知生成估約 US$0.0142，非帳單。本批預留 US$0.50，12 小時預留合計 US$2.51，未超 US$5。
+- finally 已刪臨時 key／移除本次新增兩項最小權限，本地沿 disabled 正式操作清 key，再恢復原停用平台模式及個人限額；原帳目保留。[完整證據](artifacts/verification/PERSONAL_MODEL_COMPLETE_20261026.json)。沒有改產品程式、部署或通知，也沒有重跑全量。舊 embedding_limit 失敗保留，不因新批成功推定原因；手機本人 key 輸入／跨端畫面、四 Agent 聯合品質仍按原範圍待驗。
+
+
+<a id="log-20261026-voice-acceptance-deferred"></a>
+## LOG-20261026-VOICE-ACCEPTANCE-DEFERRED
+
+- 使用者在原站語音修正後回報「仍有問題」，其後明確表示「算了不驗收了，畢竟 agent 還沒做好」。依此暫緩語音排查及驗收，等待四角色完成與協作者自查，不再要求人工重試或啟動模型補驗。
+- 新症狀及根因未核實；原後端成功與失敗證據保留，未標完整通過。PLAN／STATUS 已同步；本次只有文件修訂與 diff 核對，沒有模型、設備、服務或部署操作。
+
+
+<a id="log-20261026-shared-web-closeout"></a>
+## LOG-20261026-SHARED-WEB-CLOSEOUT
+
+- 按使用者指定，B（CherylNg-2526）覆核並合併 #328／#329，master 程式版 `330a905`。局部修正準備單新勾選後的舊保存提示，以及 Web 縮放下聊天 prepend 錨點；沿用兩 PR 的定向／RN Web 證據，不重跑功能測試或將既有型別錯誤寫成通過。協作者 Agent PR 未修改。
+- 只產生必要發布包。首 Web 匯出在 sandbox 編譯後 mkdir EPERM，保留失敗；同一輸入取得所需檔案權限後 Web／Android 匯出成功。Web 包 4,744,027 bytes 經 IAP 傳至原 VM，候選 hash 及原版守衛通過後只更新 Web `27a5c90`；公開 index hash／health 通過，API／worker 維持 `663125d`，保留 `e813692` 及 0600 配置供回退。
+- Android 31 檔、13,730,604 bytes，沿既有直接 TLS 上傳一次成功；preview OTA group `4f3f95a3-a779-4363-904c-224302098bf1`／update `01a176d6-3f6b-789c-b601-04e882beec80` 已發布，與 APK v4 runtime 相容，毋須重裝。零模型／通知／資料遷移／配額改動；沒有重驗設備或續期主機。原失敗、精確版本、界線及回退附於[既有交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)的 `closeout20261026`。
+
+<a id="log-20261026-original-nonfrontend-skills"></a>
+## LOG-20261026-ORIGINAL-NONFRONTEND-SKILLS
+
+- 按使用者要求，先以 A 帳號精準撤回 #331，#332 合併為 `dac2914`；回退的索引樹與 #331 第一父提交完全一致。之後才在新分支重新安裝，不沿用 dot 的適配方法或驗證結果，沒有修改產品、AGENTS 規則、前端實驗分支或協作者 Agent PR。
+- 官方 Codex 插件管理已安裝並啟用 Superpowers 7.0.1 及 Codex Security 0.1.32；官方 skill-installer 安裝 Anthropic improver 及原版安全編碼庫至專案。主模型只為 Anthropic 作 Codex 名稱／工具／路徑相容，保留完整評分、模板、流程，並包裝原 session 修訂命令。精確來源、差異與 hash 見 [安裝紀錄](docs/SKILLS_INSTALLED.md)／[manifest](docs/SKILLS_INSTALLED.json)。
+- 新核原作者 Superpowers 84 檔及安全編碼庫 13 檔完全一致；Security 分發 142 檔均存在，140 檔逐檔一致，兩項官方目錄 metadata 差異如實記錄，未改插件。Codex app-server 已發現兩插件各 15 項技能及 3 個 repo 技能，無解析錯誤；原版 Windows Security MCP 握手／工具清單通過，取得 47 個工具。沒有業務工具呼叫、掃描、額外模型、帳戶連接、權限變更或產品測試。
+- 依賴核對中 Git Bash 在受限 shell 被 Windows sandbox 拒絕，相同命令於獲授權 shell 成功，沒有更改政策。首次安裝紀錄生成因 Python 預設 GBK 讀 UTF-8 JSON 失敗；改為明確 UTF-8 後生成成功，未影響原版來源或重跑已通過的 runtime 核對。
+- 上游 regex 範例與本 host 子代理參數差異另列，未暗改原文。已驗安裝、完整資源、發現及 MCP 啟動；完整掃描、視覺輔助器及子代理工作流未執行，當前桌面舊上下文刷新亦不冒稱已驗。
+- 主模型完成相容 diff、完整資源、相對連結、24 個專案檔案 hash 及修改範圍核對；相容修改與紀錄的 `git diff --check` 通過。全包另有五處上游原版行尾空白，與來源一致並原樣保留，不將全包 whitespace 檢查宣稱為通過。
+
+<a id="log-20261026-agents-entry-clarity"></a>
+## LOG-20261026-AGENTS-ENTRY-CLARITY
+
+- 使用者在 agents-md-improver 品質報告後明確要求沿 revise-agents-md 更新規範。根 AGENTS 補既有本地／建置／單檔檢查入口；前端補正式 Provider／owner 位置，四尺寸依改動影響選取。主模型精簡重複研究／派單／狀態說明，保留模型分工、困難任務親做、dot 例外、權限、首次失敗停批及必要驗收；未改 Skill、配置或產品。
+- 兩份 AGENTS 原共 34,385 bytes，現已低於預設 32 KiB 合併容量；只核靜態 bytes、原錨點、相對連結、package scripts 及 diff，不以此宣稱新會話載入已實測。沒有跑產品、模型或設備驗收。先前報告指出的 frontend/PLAN #253 歷史現況另留原域處理，本包不改寫歷史證據或新增進度清單。
+- 一次獨立唯讀 review 未發現重大規則遺漏，指出 `src/preview/` 仍含正式使用的 guard／provider；主模型對照兩個正式 layout 後修正文案，只排除合成 fixture／預覽 owner 作正式資料來源，不誤導刪除共用元件。
+
+<a id="log-20261026-agents-concise-guidance"></a>
+## LOG-20261026-AGENTS-CONCISE-GUIDANCE
+
+- 使用者要求縮短根 AGENTS、刪減過度保守及重複敘述。主模型合併研究、派單／等待、文件與交付規則，移除過時日期；明示已有授權內的必要工作直接推進、本人步驟只阻塞相關項，不概括授權新增費用、外發、權限變更或不可逆操作。
+- 以 Git 的 UTF-8／LF 正文計，根文件由 28,967 減至 17,030 bytes（約 41.2%）；前端 AGENTS、產品、Skills 及 runtime 配置不變。保留既定模型／effort、角色上限、dot 例外、指導親寫、隔離／確認／防重、首次驗收失敗停批及歷史證據規則。
+- 12 個原有錨點與兩份 AGENTS 本地連結核對通過，diff whitespace 核對通過；獨立唯讀 review 比較 `d9b4282..a9ae03f` 未發現重大遺漏或擴大授權，主模型覆核關鍵條款後採納。沒有產品、模型、設備測試或部署，不宣稱新會話載入已實測。
+
+
+<a id="log-20261026-p4-p5-integrated-plan"></a>
+## LOG-20261026-P4-P5-INTEGRATED-PLAN
+
+- 日期：2026-10-26（香港時間）；基線 master 22f0106，獨立分支 codex/p4-p5-integrated-plan。依使用者確認整合原 P4 與家庭／教師／文檔包兩份方案，主模型親寫根 PLAN、SPEC／REQ／AC、目標 API／資料／架構、ADR-028、REQ-006 範圍對照及 STATUS；只有文件，沒有產品程式／AGENTS 改動、部署或 D PR 操作。
+- P4 保留集中服務完整知識、分享、分析、可靠性與災備，新增個人／班級優先、選定模組共享、多孩批次、可信完整性通過後直接匯入、本人私人備份及完整匯入紀錄；自選 Server／Windows 自部署／跨 Server 能力移 P5，S16／S17 分階段。配對／臨時裝置會話取消，正常登入／撤銷保留。PD-01～06 與 P3 原有未驗、D 角色責任、真備份還原待驗均未改寫為完成。
+- 一次 Sol 唯讀獨立 review 發現配對的舊 AC／閱讀入口及 API 的 P4 Server 切換分期漏同步；主模型修正，同步原 P2 前移對照的現行剩餘範圍。未改歷史 ADR 或既有驗收證據；公共知識來源庫的核對要求不誤套為私人資料強制內容檢查。
+- 必要文件核對：原有 1,492 個明示錨點均保留，新增 47 個目標／需求／AC 錨點、31 個新增本地連結有效，沒有新增重複錨點；10 項 REQ-P4、11 項 AC-P4、P5／交付 AC、6 項待決及 4 組跨階段子包均存在。舊 ADR 正文保持，WORKLOG 僅追加；按 Git LF 正規化核對，避免 Windows 行尾差異誤報。git diff --check 通過，沒有產品／模型／設備測試。
+- 下一步：只在獲授權開發相應包後按真接口依賴推進。六項待決只阻相應實作，P3／D 接口及本人／設備條件繼續分別追蹤；本次文件定案不是 P4／P5 功能完成。
+
+<a id="log-20261027-p4-execution-contract"></a>
+## LOG-20261027-P4-EXECUTION-CONTRACT
+
+- 基線 master 76be40d／PR #336，分支 codex/p4-execution-contract。使用者已確認整份 P4 執行計劃並要求建立目標；目標已啟用，主模型先更新根 PLAN，再同步 SPEC／AC、API、資料／架構、ADR-029、來源庫範圍對照及 STATUS。功能未實作，沒有產品測試、部署或 D PR 改動。
+- 落實 PD-01～06：共享原資源、班級獨立移出、缺證明可選／完整性失敗拒絕、匯入待辦沿普通建立規則、退出轉交／解散、本人差異還原；增加統一匯入入口及各模組數量結果。原 P4 知識／分享／分析／可靠性／災備及 S16／S17 保留，P3／P5 與既有未驗證據不變。
+- 一次既有 Sol reviewer 的唯讀覆核指出管理權轉交與個人原件刪帳結果需明確區分；主模型同步 SPEC／API／資料／ADR：已轉交空間自有資料保留，個人原件仍按本人刪帳規則並撤共享引用，不自動轉移或複製。沒有擴大共享授權或回寫舊 ADR。
+- 文件核對：原有明示錨點保留、新本地連結可解析、六項決定與 REQ／AC 相符；ADR 歷史不變、WORKLOG 只追加，git diff --check 通過。一次命令層停用 autocrlf 令 CRLF 被誤當全檔差異，恢復既有 Git 行尾正規化後核對通過，沒有因此改動歷史正文。只做文件檢查，未安裝新套件或宣稱其相容已實測。
+- 下一步：文件 review／合併後開始 P4-FAMILY-A，以現有 Firestore 權威層拆清操作者與穩定儲存身份；不全庫搬移／重加密。僅相應 D 接口、本人或平台前置阻擋相關項，繼續其他已授權工作。
+
+<a id="log-20261027-p4-family-authority-foundation"></a>
+## LOG-20261027-P4-FAMILY-AUTHORITY-FOUNDATION
+
+- 基線 `5c564f9`／#337，分支 `codex/p4-family-authority`。主模型實作 FAMILY-A 首段：現有加密／Firestore 交易上的空間、角色、邀請、選定模組分享、撤權、管理權轉交及原操作收據；分清操作者與原資料儲存身份，舊個人路徑仍不讀其他人資料。沒有新套件、SQL、模型、雲端資源、部署或 D PR 修改；這不是公開家庭功能交付。
+- 補既有備份／清理／恢復識別：目前共享權限及原操作收據優先於舊備份；新管理員／活動成員的必要身份圖可接回，不帶私人業務副本；來源 epoch 重綁、刪除重放、authority hash 納入共享控制資料。新增集合維持備份清單 append-only，索引與私密欄位排除先保存為部署定義，尚未上雲。
+- 兩次同一 Sol 的唯讀 review 找出撤權後原收據披露、管理員轉回後舊邀請復活、還原遺失較新 create 收據；主模型分別以目前權限／最小終態收據、管理任期世代及現行收據恢復修正，補入同一批合成流程。
+- 必要證據：4 條新增共享／轉交／恢復／邀請流程通過；既有 authority 的 20 項檢查及一條舊孩子刪除恢復通過；受影響 Server 與新增檢查的限定型別核對、diff 空白核對通過。完整 Server 型別入口包含多個既有測試檔錯誤，本包沒有擴大修改；不聲稱全倉型別或全量測試通過。
+- 失敗保留：最初加密讀取接線將 schema／snapshot 次序寫反，已按原函式修正；合成恢復 fixture 缺 `DocumentReference.get` 及 Timestamp，補原有測試方式後，再補恢復 metadata allowlist，定向核對通過。另一條既有恢復測試 `restore applies current revocation and journal erasure without restoring sessions or post-backup child authority` 在第 250 行仍報照片數量 `3 !== 1`；用基線 `5c564f9` 原程式載入同一測試也重現，未改斷言或抹除失敗。[本包證據](artifacts/verification/P4_FAMILY_AUTHORITY_FOUNDATION_20261027.json)。
+- 下一步：FAMILY-A 尚欠各領域共享讀寫、附件／背景及變更同步，Family-B／Class01 再接公開 API／薄 UI。真 Firestore 競爭、新共享資料正式恢復及跨端結果尚未驗，不把內部服務、合成通過或合併當整包完成。
+
+<a id="log-20261027-p4-shared-care"></a>
+## LOG-20261027-P4-SHARED-CARE
+
+- 基線 `a2c8cc4`／#338，分支 `codex/p4-shared-domain-access`。沿現有共享授權、CareStore、online 收據與正式 Firebase HTTP 接記錄／概況，沒有新資料權威、套件、模型、雲端資源或部署，也未修改 D 的 Agent 程式／PR。
+- 同一交易使用操作者身份及原資源 scope；作者／確認者記實際操作者，原件修改、來源變更、操作者變更及收據一併提交。共享只准相應模組，不授予私人工作／聊天／帳戶操作。共用 client 選空間、保存版本 basis，未知結果仍沿原 opId 查回；撤權或空間解散只遮蔽收據結果，不丟失已成功身份。
+- 保留原 owner-only 恢復核對；共享署名須有同份密文內的 Server 空間／來源／資源／版本證據。自動批准審查拒絕過直接移除舊署名檢查的方案，未套用該方案；改為有界相容判斷後核對無證據的非 owner 記錄仍被拒絕。第一次新收據讀回曾漏移除內部署名證據，已統一公開投影，原失敗未改成通過。
+- 同一 Sol 唯讀 review 發現刪除後共享重建概況的恢復 schema 丟失證據，以及空間解散後收據仍回錯誤；已改用儲存 schema 與原成功空結果，於同一流程補核。後續覆核未見新增具體 blocker。
+- 證據：5 條共享檢查通過，其中新增一條包含正式 HTTP／共用 client、版本前置、原收據、角色／模組、私人工作拒絕、概況刪除再建及刪除重放；兩個舊收據相容檢查與限定型別核對通過。只補受影響檢查，不跑全量、雲端、模型或設備測試。[證據](artifacts/verification/P4_SHARED_CARE_20261027.json)。
+- 下一步：待辦／記憶、文件／附件、背景授權及其他成員的變更同步仍未接完；Family-B／Class01 才開放空間選擇與共用畫面。父包 FAMILY-A／P4 不因此完成，先前備份待驗與基線恢復斷言失敗保留。
+
+<a id="log-20261027-p4-shared-tasks"></a>
+## LOG-20261027-P4-SHARED-TASKS
+
+- 基線 `1249ee9`／#339，分支 `codex/p4-shared-memory-tasks`。復用 `prepareTask`、狀態規則、正式 HTTP、共用 Web／Android task client 與 worker；共享成員操作同一原件，作者／修訂操作者如實保存。沒有新套件、雲端、模型、部署或 D PR 修改。
+- 接收者及通知授權仍沿原資料帳戶；完成／取消同交易停止待執行 outbox，已領取工作在真正完成前再核終態。共享收據只存原修訂指標，查回重核目前 grant，撤權只遮蔽結果，不重做操作。密文保留 Server 共享署名證據，公共 DTO 移除證據；舊 owner-only 記錄仍兼容，缺證據的非 owner 恢復被拒絕。
+- 一條共享流程涵蓋正式 client／HTTP、角色、原件、版本、收據、終態及撤權；三條受影響的既有本人／提醒檢查通過，限定型別與 diff 核對通過。同一 Sol 完成唯讀 review，未見剩餘具體 blocker。只補必要檢查，不跑全量。[證據](artifacts/verification/P4_SHARED_TASKS_20261027.json)。
+- 失敗保留：新測試先因共享 task 路由尚未接通而失敗；接線後測試替身缺 `<`／`<=` 比較，已補最小查詢語義；HTTP 漏匯入 z 已修正。舊本人檢查另找出 optional proof 以 undefined 傳入既有 canonical JSON 而無法讀回，改為沒有證據便不加入欄位，同三項檢查通過。
+- 下一步接記憶、文件／附件、背景與共享同步。多接收者指派、家庭／班級公開畫面、真雲端競爭及正式恢復仍未交付，FAMILY-A／P4 不作完成；P3、D 工作及原恢復失敗不改寫。
+
+<a id="log-20261027-p4-shared-memory"></a>
+## LOG-20261027-P4-SHARED-MEMORY
+
+- 基線 `7393d8d`／#340，分支 `codex/p4-shared-memory`。復用原記憶服務、權限、confirmed-fact、online 收據、正式 HTTP 及共用 client；共享原事實／主題，沒有新權威、套件、模型、雲端操作或 D PR 改動。
+- family 讀取與修訂分頁排除原私人候選；私人摘要不共享，私聊 ID 只向來源帳戶披露。共享成員可以保留原私聊來源描述修改已確認事實，不能用新私聊 ID 調閱別人的內容。手動新增須明確確認，不把私人 candidate 自動公開；署名證據保留於密文，公共投影移除，還原仍拒絕無證據的非 owner 作者。
+- 一條連貫檢查涵蓋正式 client／HTTP、新增／修改、原操作重試、終態、歷史、來源隱私、刪除／撤權及還原證據；兩條舊記憶／摘要相容檢查通過，限定型別與 diff 通過。初次預期 red 為共享 store 未接通；原失敗保留。同一 Sol 唯讀 review 未見具體 blocker。[證據](artifacts/verification/P4_SHARED_MEMORY_20261027.json)。
+- 只定義兩個 shared-history 索引，未部署；家庭／班級選擇 UI、跨成員同步、文件／附件與背景仍待接線，FAMILY-A／P4 未完成。先前原生備份還原待驗及基線恢復斷言失敗不改寫。
+
+<a id="log-20261027-p4-shared-documents"></a>
+## LOG-20261027-P4-SHARED-DOCUMENTS
+
+- 基線 `70b2899`／#341，分支 `codex/p4-shared-documents`。沿用既有文件、固定版快照、分段讀取、PDF、操作收據及報告 worker；共用 Web／Android client 與正式 HTTP 接空間選擇。文件仍保存在來源原件，實際操作者另存密文署名證據，不新增套件、雲端或 D PR 修改。
+- 已存摘錄可以閱讀；新整理只取獲共享模組。背景報告持久保留發起者／空間／授權 basis，撤權或版本過期停止，不改用 owner 權限。來源失效遮蔽正文但保留操作狀態；viewer 不可改，舊本人資料與恢復 owner-only 檢查保留。
+- 兩條新連貫流程及兩條舊本人文件檢查通過，限定型別與差異核對通過。沿 requesting-code-review 使用同一 Sol 唯讀覆核，發現未分享新版來源可藉 patch 重綁洩露；先以新增斷言重現，再限制內部核對只回存已披露且仍匹配的摘錄，覆核未見剩餘 blocker。沒有全量或模型驗收。[證據](artifacts/verification/P4_SHARED_DOCUMENTS_20261027.json)。
+- 其他原失敗保留：測試方法 get／describe／revise 不符、替身缺 reference.id，以及未共享 profile 使報告無法完成；前兩項修測試接點，後者保存未知概況不補讀私人資料。正向新來源檢查另修正既有時間未知字尾斷言及 literal 型別，沒有放寬產品授權。
+- 未部署；家庭／班級畫面、附件、其他背景與共享同步繼續接線。FAMILY-A／P4 尚未完成，真 Firestore 競爭／還原、P3 未驗與 D 的責任保持原狀。
+
+
+<a id="log-20261027-p4-shared-attachments"></a>
+### LOG-20261027-P4-SHARED-ATTACHMENTS
+
+- 基線 `8f5ec19`，分支 `codex/p4-shared-attachments`。共享附件沿原件、原加密及同一權威服務，接通照片／錄音／一般檔案清單、下載及已保存轉錄的正式 HTTP／共用 client；未新增套件、索引或資料庫。
+- 讀取前後與續頁保存操作者、來源、世代及分享 basis；撤權後重新授權亦不能沿舊讀取發出內容。私人訊息／抽取草稿及未完成附件不披露；共享寫入尚待下一段，明確拒絕而不回退私人操作。
+- 一條新連貫流程、三條舊本人分頁／client 相容檢查、受影響 TypeScript 依賴圖及 diff 核對通過。獨立 Sol review 未報 blocker，主模型覆核關鍵變更；零模型、通知、雲端、手機及部署。[證據](artifacts/verification/P4_SHARED_ATTACHMENTS_20261027.json)。
+- 原失敗保留：缺共享方法先 red；合成查詢替身缺倒序多欄位 cursor，按真契約修正；正式 transcript HTTP 曾仍走私人 reader，403 重現後接回共享 reader。替身物件／Auth 型別缺項另補，不改產品限制或放寬斷言。
+- FAMILY-A／P4 未完成：繼續共享寫入、Agent／背景、同步與家庭／班級畫面；不改 D PR，P3／P5 及真機未驗保持。
+
+
+<a id="log-20261027-p4-shared-attachment-deletion"></a>
+### LOG-20261027-P4-SHARED-ATTACHMENT-DELETION
+
+- 基線 `dbf491f`，分支 `codex/p4-shared-attachment-writes`。文件／錄音共享刪除接原 HTTP／共用 Web／Android client、權威服務、獨立 journal 與 cleanup worker；無新增套件、索引、雲端、模型或部署。
+- 來源原件刪除屏障及實際操作者收據同交易提交；受理不等於日誌完成，日誌未知時不回永久刪除。撤權停止新操作，但原清理義務可繼續；未連結私人草稿／viewer 不可刪除。原 opId、版本及署名綁定保留，恢復沿同一 schema 核對。
+- 新連貫流程涵蓋正式 HTTP／共用 client、版本／撤權／原操作／清理；另核受影響共享讀取、一條共用 client 檢查及舊本人文件／錄音各一條，限定 TypeScript 與 diff 通過。未跑全量、模型或設備驗收。[證據](artifacts/verification/P4_SHARED_ATTACHMENT_DELETION_20261027.json)。
+- 獨立 Sol review 找到 journal 以來源 owner＋opId 唯一鍵造成跨操作者衝突；先改合成 transport 對應正式鍵並重現，再復用 authority 原有穩定來源操作映射，另存 actorOperationId，補驗通過。原缺方法／client 阻擋 red、CRLF 替換語法、error.code 測試路徑及 voice import 遺漏均保留在證據，不放寬產品限制。
+- 照片刪除配額／照護記錄、共享上載／私聊關聯、Agent／其餘背景、同步與家庭畫面仍待接；未部署，FAMILY-A／P4 未完成，P3／P5 及 D PR 保持。
+
+
+<a id="log-20261027-p4-shared-photo-deletion"></a>
+### LOG-20261027-P4-SHARED-PHOTO-DELETION
+
+- 基線 `713b74e`，分支 `codex/p4-shared-photo-deletion`。共享照片刪除接原 online／共用 client、來源配額、照護記錄失效、獨立日誌及 cleanup；不新增套件或索引。
+- 當前角色／basis／版本與來源刪除、配額轉移及操作者收據一併受理；日誌未知不回刪除成功。原清理可在撤權後接續，關聯記錄只經原 photo.recordId 處理，不開一般 care 權限；兩項刪除義務使用各自穩定日誌 ID。
+- 一條正式 HTTP／client 合成流程兼核版本、journal 失敗、撤權、原操作、配額及還原後的 cleanup consumer；共用 client 一條恢復檢查、舊本人照片／清理／還原三項及局部型別通過。獨立 Sol review 未報 blocker，主模型覆核關鍵 diff。[證據](artifacts/verification/P4_SHARED_PHOTO_DELETION_20261027.json)。
+- 保留原失敗：缺共享 route、測試 record wrapper、依賴記錄 module guard、nullable journal 型別與缺內容獨立日誌的 restore 拒絕；修正接點／測試設定，不移除權限或日誌要求。
+- 零雲端、模型、通知或部署；共享新增／聊天關聯、其餘背景、同步及家庭畫面仍待接，FAMILY-A／P4 未完成，P3／P5 及 D PR 保持。
+
+
+<a id="log-20261027-p4-shared-sync"></a>
+### LOG-20261027-P4-SHARED-SYNC
+
+- 基線 `d594f1b`，分支 `codex/p4-shared-sync`。新增選定空間／孩子／模組的共用刷新接點；復用來源 changes、現有授權與前景輪詢，回覆只有 opaque cursor／失效訊號，不回來源私人活動歷史。
+- 首讀及新共享 basis 刷新當前資料，續讀每頁至多 100 筆，其他孩子在查詢時排除；撤權拒絕，另一身份不能借用游標。共同 observer／hook 同步接線，無 selector 保留本人舊流程；家庭畫面真實 selector 待 FAMILY-B。
+- 正式 HTTP 一條流程、client 新舊 observer 兩項及受影響型別通過。獨立 review 找到 documents／memory 跨來源失效漏刷，定向重現後補依賴訊號，補驗與增量覆核通過；原 404／client 讀錯入口 red 保留。[證據](artifacts/verification/P4_SHARED_SYNC_20261027.json)。
+- 新增一項 changes 子女複合索引定義，尚未建雲端索引或部署；零模型、通知、設備及付費操作。FAMILY-A／B、P3／P5 及 D PR 的未完成界線保持。
+
+
+<a id="log-20261027-p4-auth-provider"></a>
+### LOG-20261027-P4-AUTH-PROVIDER
+
+- 基線 `89808f1`，分支 `codex/p4-auth-provider-session`。沿既有 Firebase 13.0.0／Admin 14.5.0／Functions 7.4.0、session、准入及裝置台帳，接本人 provider 讀取、同 UID 重新驗證、Web 原生 popup／明確 linking 與共用 owner／表單；零新增依賴。
+- 連結先以原方式驗證，再以另一手勢明確同意，暫存 SDK 身份最多兩分鐘。provider-only 不要求密碼；取消拒絕遲到 session 交換，供應商已完成的連結以目前方法讀回核對。已知 SDK 拒絕顯示固定原因，真正 unknown 仍先讀回。
+- 定向 provider／舊密碼相容、原生真 HTTP transport、共用 owner、局部型別及 Web 匯出通過；未跑全量／真人／模型。獨立 review 發現取消後過早讀回舊 providers，定向 red→green 修正為等待原 SDK 清理；原生讀回及相關 client 檢查通過。保留初始缺接點、fixture 型別、前端型別及錯誤提示的失敗記錄。[證據](artifacts/verification/P4_AUTH_PROVIDER_20261027.json)。
+- Web provider 配置預設空，沒有改雲端設定或部署。Firebase 自動連結／duplicate-email 的 profile 取捨須先核定，不能只打開按鈕；原生 provider、Apple 邀請接續及真人配置仍待處理，AUTH01／P4 未完成。P3／P5 及 D PR 不變。
+
+
+<a id="log-20261027-p4-auth-native"></a>
+### LOG-20261027-P4-AUTH-NATIVE
+
+- 基線 `181865b`，分支 `codex/p4-auth-native-providers`。固定採 Google Sign-In 16.1.5／Apple Authentication 2.5.1，沿現有 expo-crypto 及 Firebase JS／共用 owner，沒有新增身份權威、升級其他套件或改雲端設定。
+- 原生 credential 回原 session／明確 linking；Google 清本機選擇、Apple 每次 nonce／state，取消／錯 state 不進 Firebase。新增公開配置、官方 iOS callback plugin／Apple entitlement，保持 Android 通知 descriptor 及舊平台入口。
+- 一條原生 adapter red→green、三項配置／原平台相容、局部型別、官方 iOS plugin introspection 及 Android Hermes 匯出通過；獨立 review 未報重要 blocker。保留測試 skipPlugins 設定、credential fixture 型別及首輪 Hermes 暫存權限失敗；僅改驗證暫存位置後成功。[證據](artifacts/verification/P4_AUTH_NATIVE_20261027.json)。
+- 原生套件需要新 binary，未雲端建置、部署、發 OTA 或真人登入。provider 預設空；Google 免費 Original 底層棄用限制、Firebase 自動連結／電郵准入、Apple 邀請／團隊及真機接續仍明列，AUTH01／P4 未完成。
+
+<a id="log-20261027-p4-family-control"></a>
+### LOG-20261027-P4-FAMILY-CONTROL
+
+- 基線 `aeab7d6`，分支 `codex/p4-family-shared-entry`。沿原 Firestore 共享交易接家庭管理 HTTP／共用 client、建立／邀請／接受、角色及模組、轉交與退出；同一原件與身份，不新增套件、SQL 或另一份孩子資料。
+- 列表有界並核目前權限；控制收據只公開必要結果，撤權後回無正文 metadata，避免重做已提交操作。Web／Android 共用身份級 controller／畫面，沒有孩子亦可建／加入家庭；舊設定入口接回管理頁，未知操作跨頁保留，身份切換清理。
+- 正式 HTTP／client 控制流程、原共享還原、控制器一組情景、局部前後端型別及一次 Web 匯出通過。獨立 review 的 unknown→原版本衝突鎖死已 red→green 修正；其餘未知拒絕不放寬。初次 fixture overload、Node strip-only 語法及 Node types 問題保留於[證據](artifacts/verification/P4_FAMILY_CONTROL_20261027.json)。沒有全量測試、模型、通知、雲端資源或部署。
+- 四項索引尚未建立；未做 GUI／手機驗收。全局共享孩子選擇、各頁 owner、共享上載／聊天、其餘背景及完整 P4 未完成；D PR、P3／P5 未改。
+
+<a id="log-20261027-p4-shared-growth-concerns"></a>
+### 2026-10-27：P4 成長／持續關注共享讀取前置
+
+- **目標／基線：**由 `59befbb` 補 FAMILY-B 全局共享選擇之前缺少的兩個讀取接點；完整 P4 仍未完成。
+- **實作：**復用原 Firestore authority／domain 及 client，加選定空間的 HTTP 讀取；同交易核權。保存的派生內容與未共享即時資料分開，私人 run／未共享關聯遮蔽，原件不修改；未接共享寫入明確拒絕。
+- **證據：**定向流程先重現 403（忽略共享選擇），修正後同一流程通過；補非空近況與私人 run 斷言後仍通過。局部型別、diff check 及獨立唯讀 review 通過；見 [P4_SHARED_GROWTH_CONCERNS](artifacts/verification/P4_SHARED_GROWTH_CONCERNS_20261027.json)。沒有全量、畫面、模型、通知或雲端驗收。
+- **協作／限制：**主模型實作／契約與整合，Sol 唯讀 review；不代填人工結果，不改 D 的 PR。後端／契約與共用 client 按責任以單作者提交。沒有新資料格式、索引、依賴或部署。
+- **下一步：**全局共享孩子／owner 接線；成長／關注寫入的原操作者收據與背景授權仍須補齊，不能把此讀取前置當作家庭功能完成。
+
+<a id="log-20261027-p4-shared-child-context"></a>
+### 2026-10-27：P4 全局共享孩子與頁面接線
+
+- 由 `d63b2a7` 接既有家庭管理、共用 owner 及領域 client；孩子標籤／角色／模組／basis 交易讀取，不搬資料、不新增套件。選單組合 ID 與業務 childId 分開，未共享／未接範圍不借本人資料，切換／撤權清舊快取。
+- 共享成長／關注與文件 authority 格式不同，重現後統一短 digest；首次沿文件長格式超出 client 上限亦保留。帳號暫時失敗保留共享目標、隱藏內容，恢復不誤選私人同 ID 孩子。
+- 獨立 review 的五項問題已定向修正：care/profile basis、共享記憶新增、首頁 selector、可見 header／側欄同步、新增文件交易核對原 basis。沿現有確認／收據／重試，私人候選及舊文件呼叫保持相容。
+- 局部 Server 型別、定向流程及最終 Web 匯出通過；前端仍有四項原型別診斷，不稱全數通過。初次 npx 因 sandbox proxy 失敗，改用既有同版本離線快取完成建置。失敗與未驗細節見[證據](artifacts/verification/P4_SHARED_CHILD_CONTEXT_20261027.json)，零模型／通知／雲端／部署／手機驗收。
+- 主模型負責契約與高耦合 owner；Sol 限定 hook／記憶接點，另一位獨立 review。不改 D PR。共享附件頁面、新增與聊天關聯、成長／關注寫入及其餘 P4 仍須接續，不標整體完成。
+
+<a id="log-20261027-p4-shared-attachment-pages"></a>
+### 2026-10-27：P4 共用附件頁面
+
+- 由 #351／`8fd6649` 接既有共享附件 API、照片 owner、檔案下載與語音播放／轉錄；保留同一原件，沒有新增套件、資料庫或私人聊天副本。未共享模組及私人來源不自動讀取，viewer 不可刪除。
+- 主模型處理原收據恢復、清單投影及契約；兩個限定 Sol 分別接照片與媒體元件，另一位 Sol 獨立唯讀 review。review 發現 pending 鎖擋原刪除重試，定向 RED→GREEN；另核實受理收據不是日誌完成，查回後沿原 opId 接續端點，不假報刪除完成。
+- 新增及既有 client／HTTP 投影檢查通過；型別只剩四項既存診斷。額外三個舊檢查受 jsdom 缺失及舊 fixture 缺 owner 阻擋，不安裝新依賴或重跑整批；失敗照存。精確範圍見[證據](artifacts/verification/P4_SHARED_ATTACHMENT_PAGES_20261027.json)。
+- 沒有 Web 建置、部署、雲端、模型、通知或設備驗收；共享上載／Agent、AUTH01 與完整 P4 尚未完成。D PR、P3 未驗項及 P5 保留。

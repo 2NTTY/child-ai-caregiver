@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { modelCatalogSelection, modelSettingsDraft, modelSettingsSchema, modelCommandFromDraft, removeModelKeyCommand } from "../src/components/model-settings/model-settings-form.ts";
+import { modelCatalogSelection, modelSettingsDraft, modelSettingsSchema, modelCommandFromDraft, modelEmbeddingRouteChanged, removeModelKeyCommand } from "../src/components/model-settings/model-settings-form.ts";
 const settings = { version: 7, mode: "personal", provider: "gemini", model: "gemini-3.1-flash-lite", keyConfigured: true, backgroundEnabled: true,
   dailyLimit: 100, maxModelCalls: 4, maxQueryEmbeddings: 2, updatedAt: null };
 test("provider changes use only its server catalog without silently selecting another model", () => {
@@ -88,6 +88,42 @@ test("nonpersonal mode omits entered keys and retains saved limits instead of in
   assert.equal("apiKey" in command, false); assert.equal("opId" in command, false);
   assert.equal(command.expectedVersion, 7); assert.equal(command.backgroundEnabled, false); assert.equal(command.consent, false);
   assert.deepEqual([command.dailyLimit, command.maxModelCalls, command.maxQueryEmbeddings], [100, 4, 2]);
+});
+test("Vertex embeddings require an independent key and the shared project and location boundaries", () => {
+  const schema = modelSettingsSchema(true, settings.provider, settings.baseUrl, settings);
+  const draft = { ...modelSettingsDraft(settings), embeddingProvider: "vertex", embeddingProject: "synthetic-project", embeddingLocation: "asia-east1", consent: true };
+  assert.equal(modelSettingsDraft(settings).embeddingProvider, "gemini");
+  assert.equal(modelEmbeddingRouteChanged(draft, settings), true);
+  const missingKey = schema.safeParse(draft);
+  assert.equal(missingKey.success, false); assert.ok(missingKey.error.issues.some(issue => issue.path[0] === "embeddingKeyText"));
+  assert.equal(schema.safeParse({ ...draft, keyText: "chat-key" }).success, false);
+  const configured = { ...draft, embeddingKeyText: "independent-vertex-key" };
+  assert.equal(schema.safeParse(configured).success, true);
+  assert.equal(schema.safeParse({ ...configured, embeddingProject: "project/invalid" }).success, false);
+  assert.equal(schema.safeParse({ ...configured, embeddingLocation: "https://vertex.example" }).success, false);
+  assert.equal(schema.safeParse({ ...configured, embeddingProject: "123456789012", embeddingLocation: "global" }).success, true);
+  const command = modelCommandFromDraft(configured, settings);
+  assert.deepEqual([command.embeddingProvider, command.embeddingProject, command.embeddingLocation, command.embeddingApiKey],
+    ["vertex", "synthetic-project", "asia-east1", "independent-vertex-key"]);
+  assert.equal("apiKey" in command, false);
+});
+test("saved embedding routes preserve only their own key and route changes require replacement or explicit removal", () => {
+  const saved = { ...settings, embeddingProvider: "vertex", embeddingProject: "synthetic-project", embeddingLocation: "asia-east1", embeddingKeyConfigured: true };
+  const draft = { ...modelSettingsDraft(saved), consent: true };
+  const schema = modelSettingsSchema(true, saved.provider, saved.baseUrl, saved);
+  assert.equal(draft.embeddingKeyText, ""); assert.equal(modelEmbeddingRouteChanged(draft, saved), false);
+  assert.equal(schema.safeParse(draft).success, true);
+  assert.equal(schema.safeParse({ ...draft, embeddingLocation: "global" }).success, false);
+  assert.equal(schema.safeParse({ ...draft, embeddingProject: "another-project" }).success, false);
+  assert.equal(schema.safeParse({ ...draft, embeddingProvider: "gemini" }).success, false);
+  assert.equal(schema.safeParse({ ...draft, embeddingProvider: "gemini", removeEmbeddingKey: true }).success, true);
+  const gemini = { ...draft, embeddingProvider: "gemini", embeddingKeyText: "replacement-gemini-key" };
+  assert.equal(schema.safeParse(gemini).success, true);
+  const command = modelCommandFromDraft(gemini, saved);
+  assert.equal(command.embeddingProvider, "gemini");
+  assert.equal("embeddingProject" in command, false); assert.equal("embeddingLocation" in command, false);
+  const platform = modelCommandFromDraft({ ...draft, mode: "platform" }, saved);
+  for (const key of ["embeddingProvider", "embeddingProject", "embeddingLocation"]) assert.equal(key in platform, false);
 });
 test("removal always disables AI without a key body or implicit platform fallback", () => {
   const command = removeModelKeyCommand(settings);
