@@ -16,3 +16,9 @@ export const voiceTranscriptSchema = z.object({ voice: voiceMessageReferenceSche
   content: voiceTranscriptDraftSchema.nullable(),
 }).strict();
 export type VoiceTranscript = z.infer<typeof voiceTranscriptSchema>;
+
+/** Shared wire view only; stored evidence still requires its original private message identity. */
+export const voiceTranscriptViewSchema = z.union([voiceTranscriptSchema, voiceTranscriptSchema.extend({
+  messageId: z.null(), sharedSpaceId: z.uuid(),
+})]);
+export type VoiceTranscriptView = z.infer<typeof voiceTranscriptViewSchema>;

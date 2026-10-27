@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-27",
+  "package": "P4-FAMILY-A selected shared change cursor",
+  "base": "d594f1b0d26bb3ad1e70b4359252d22e5c6c89f4",
+  "branch": "codex/p4-shared-sync",
+  "environment": {
+    "node": "24.19.0",
+    "database": "serial synthetic Firestore fixture",
+    "models": 0,
+    "cloudOperations": 0,
+    "notifications": 0,
+    "deployed": false
+  },
+  "reuse": "Existing source change projections, sharing authority, common observer/hook, foreground lifecycle and metadata invalidation. One composite index definition; no new service or data replica.",
+  "checks": [
+    {
+      "name": "shared source changes through formal HTTP",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared change cursors observe' tests/firestore-sharing.test.ts",
+      "result": "passed",
+      "covers": [
+        "source owner and another member changes",
+        "derived document/memory invalidation on source changes",
+        "other child query exclusion",
+        "private chat not exposed as care history",
+        "100-row bounded continuation",
+        "actor-bound opaque cursor",
+        "current revocation and regrant reset",
+        "response omits source workspace and event metadata"
+      ]
+    },
+    {
+      "name": "new shared observer and existing private observer",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='selected shared observer|shared online observer' tests/online-transport.test.ts",
+      "result": "passed",
+      "tests": 2,
+      "covers": [
+        "scoped selector validation",
+        "opaque cursor continuation",
+        "no unbounded hasMore drain",
+        "failed read resets cursor",
+        "dispose rejects late response",
+        "existing no-selector behavior"
+      ]
+    },
+    {
+      "name": "affected TypeScript graph",
+      "result": "passed",
+      "roots": [
+        "server/firestore-sharing.ts",
+        "server/firestore-restore.ts",
+        "server/firebase-recovery-operator.ts",
+        "server/firestore-erasure-cleanup.ts",
+        "tests/firestore-sharing.test.ts",
+        "src/client/use-online-updates.ts",
+        "tests/online-transport.test.ts"
+      ]
+    }
+  ],
+  "failuresPreserved": [
+    "Formal shared changes endpoint initially returned 404 (red).",
+    "Client initially read the private spaces endpoint instead of the selected shared endpoint (red).",
+    "Independent review found missing cross-module source invalidation; documents care-source assertion reproduced false changed state, fixed and passed."
+  ],
+  "review": {
+    "independent": "Sol read-only review found one source-invalidation blocker; incremental rereview confirms resolved",
+    "main": "Authority, cursor, bounded source query, common client and compatibility reviewed"
+  },
+  "limitations": [
+    "Family-B selection UI must pass its real shared scope into the common hook; not yet enabled in ProductionProvider.",
+    "Composite index defined but not created in GCP; no real Firestore query, device or deployment validation.",
+    "Source events conservatively invalidate derived views; no claim of exact per-resource subscriptions.",
+    "P3, P5 and D Agent PRs remain unchanged."
+  ]
+}

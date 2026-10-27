@@ -24,7 +24,7 @@ type Mode = "signIn" | "signUp";
 export default function LoginPage() {
   const router = useRouter();
   const focused = useIsFocused();
-  const { authenticate, refresh, identityKey, auth, online, recordsState, account, accountActions, owner } = useProduction();
+  const { authenticate, authenticateProvider, socialProviders, refresh, identityKey, auth, online, recordsState, account, accountActions, owner } = useProduction();
   useEffect(() => { if (focused && identityKey) router.replace("/"); }, [focused, identityKey, router]);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -121,6 +121,8 @@ export default function LoginPage() {
           style={({ pressed }) => [styles.recoveryLink, pressed && styles.pressed]}><Text style={styles.recoveryText}>忘記密碼？</Text></Pressable> : null}
         </View>
         <AppButton label={mode === "signIn" ? "登入" : "建立帳戶"} loading={busy} disabled={!canSubmit} onPress={() => { void submit(); }} />
+        {socialProviders.map(provider => <AppButton key={provider} label={`以 ${provider === "google.com" ? "Google" : "Apple"} 繼續`} variant="secondary"
+          disabled={!canSubmit} onPress={() => { setPassword(""); setPasswordVisible(false); setResult(null); void authenticateProvider(provider); }} />)}
         {result || account.notice || recordsState.notice ? <Text accessibilityLiveRegion="polite" style={styles.result}>{result ?? account.notice ?? recordsState.notice}</Text> : null}
         {!online ? <Text style={styles.formNote}>目前未能連線，請連線後再試。</Text> : null}
         {auth === "unavailable" ? <AppButton label="重新檢查登入狀態" disabled={!online} variant="secondary" onPress={() => { void refresh(); }} /> : null}

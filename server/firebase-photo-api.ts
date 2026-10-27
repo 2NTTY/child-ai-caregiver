@@ -1,11 +1,12 @@
+import { attachmentReadSelection } from './firestore-attachment-access.ts';
 import { z } from 'zod';
 import { PHOTO_LIMITS } from '../src/shared/photos.ts';
 import type { FirestorePhotoCursor, FirestorePhotoStore } from './firestore-photos.ts';
 import { FirestoreDomainError, domainParse, domainReject } from './firestore-domain-data.ts';
 import type { PhotoAgent } from './photo-agent.ts';
 
-export type FirebasePhotoApiPort = Pick<FirestorePhotoStore, 'list' | 'get' | 'content' | 'upload'>;
-const cursorSchema = z.object({ scopeTag: z.string().regex(/^[a-f0-9]{64}$/u), sortKey: z.string().min(1).max(80) }).strict();
+export type FirebasePhotoApiPort = Pick<FirestorePhotoStore, 'list' | 'get' | 'content' | 'upload'> & Partial<Pick<FirestorePhotoStore, 'forSharedSpace'>>;
+const cursorSchema = z.object({ scopeTag: z.string().regex(/^[a-f0-9]{64}$/u), sortKey: z.string().min(1).max(80), sharedFence: z.string().regex(/^[a-f0-9]{64}$/u).optional() }).strict();
 const MAX_BASE64 = Math.ceil(PHOTO_LIMITS.bytes / 3) * 4, MAX_BODY = MAX_BASE64 + 1024;
 const uploadSchema = z.object({ base64: z.string().min(1).max(MAX_BASE64).regex(/^[A-Za-z0-9+/]*={0,2}$/u) }).strict();
 function decodeCursor(value: string | null): FirestorePhotoCursor | null {
@@ -41,6 +42,9 @@ export async function handleFirebasePhotoRequest(request: Request, userId: strin
   if (expected !== userId) domainReject('session_changed', 409);
   const url = new URL(request.url), match = /^\/api\/children\/([^/]+)\/photos(?:\/([^/]+)(?:\/(content|extract|confirm|delete))?)?$/u.exec(url.pathname);
   if (!match || !z.uuid().safeParse(match[1]).success || match[2] && !z.uuid().safeParse(match[2]).success) domainReject('not_found', 404);
+  const selection = attachmentReadSelection(request, url);
+  const reads = selection ? photos.forSharedSpace?.(selection) : photos;
+  if (!reads) domainReject('shared_attachment_unavailable', 503);
   const childId = match[1].toLowerCase(), id = match[2]?.toLowerCase(), action = match[3];
   const queryKeys = request.method === 'GET' && !id ? ['cursor', 'limit'] : [];
   if ([...url.searchParams.keys()].some(key => !queryKeys.includes(key)) || queryKeys.some(key => url.searchParams.getAll(key).length > 1)) domainReject('invalid_input', 400);
@@ -49,14 +53,14 @@ export async function handleFirebasePhotoRequest(request: Request, userId: strin
   if (request.method === 'GET' && !id) {
     const rawLimit = url.searchParams.get('limit');
     if (rawLimit !== null && !/^(?:[1-9]|[1-9][0-9]|100)$/u.test(rawLimit)) domainReject('invalid_input', 400);
-    const page = await photos.list(userId, childId, { limit: rawLimit === null ? 50 : Number(rawLimit), cursor: decodeCursor(url.searchParams.get('cursor')) });
+    const page = await reads.list(userId, childId, { limit: rawLimit === null ? 50 : Number(rawLimit), cursor: decodeCursor(url.searchParams.get('cursor')) });
     const nextCursor = page.nextCursor === null ? null : Buffer.from(JSON.stringify(domainParse(cursorSchema, page.nextCursor, 'photo_integrity', 503))).toString('base64url');
     if (typeof page.complete !== 'boolean' || page.complete !== (nextCursor === null)) domainReject('photo_integrity', 503);
     response = Response.json({ ...page, nextCursor });
   } else if (request.method === 'GET' && id && !action) {
-    response = Response.json({ photo: await photos.get(userId, childId, id) });
+    response = Response.json({ photo: await reads.get(userId, childId, id) });
   } else if (request.method === 'GET' && id && action === 'content') {
-    const content = await photos.content(userId, childId, id);
+    const content = await reads.content(userId, childId, id);
     response = new Response(new Uint8Array(content.bytes), { headers: { 'Content-Type': content.mimeType, 'Cache-Control': 'private, no-store',
       'X-Content-Type-Options': 'nosniff', 'Content-Disposition': 'inline; filename=photo', 'Content-Security-Policy': "default-src 'none'; sandbox" } });
   } else if (request.method === 'POST' && id && action === 'extract') {

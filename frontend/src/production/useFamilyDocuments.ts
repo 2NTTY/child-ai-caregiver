@@ -33,7 +33,7 @@ const preparationView = (item: FamilyDocument): PreparationDocumentView => {
 
 /** One shared Server document projection for preparation, history and report consumers. */
 export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
-  const api = useMemo(() => createFamilyDocumentsApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]);
+  const api = useMemo(() => createFamilyDocumentsApi(env.apiBaseUrl, env.owner.fetcher, env.sharing), [env.apiBaseUrl, env.owner.fetcher, env.sharing]);
   const checks = useMemo(createPreparationCheckBuffer, [api]);
   const publishingChecks = useRef(false);
   const [, updateChecks] = useState(0);
@@ -444,7 +444,12 @@ export function useFamilyDocuments(env: TaskKnowledgeEnvironment) {
     checkItem(id, expectedVersion, sectionId, itemId, checked) {
       const current = latest.current.page, doc = current?.items.find(item => item.id === id && item.childId === env.childId);
       if (checkLocked || !runtime.live() || !doc || doc.version !== expectedVersion || !current) return;
-      checks.edit(doc, current.authorityVersion, { sectionId, itemId, checked }, Date.now()); notifyChecks();
+      const edited = checks.edit(doc, current.authorityVersion, { sectionId, itemId, checked }, Date.now());
+      if (edited && checks.dirty && operation.state === "saved") {
+        // The prior receipt does not confirm this new, unsynchronized checklist intent.
+        setOperation({ state: "none", message: "", reference: null }); setNotice("");
+      }
+      notifyChecks();
     },
     reapplyChecks() {
       if (pending || busy || !runtime.live() || !env.online || load !== "ready" || !latest.current.page) return;

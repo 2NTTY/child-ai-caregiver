@@ -20,6 +20,7 @@ export interface MemoryTopic {
 }
 export interface MemoryPage<T> { items: T[]; nextAfterId: string | null }
 export interface FactCreate { values: FactValues; intendedVisibility: MemoryVisibility }
+export interface SharedFactCreate extends FactCreate { intendedVisibility: 'family'; confirm: true; confirmShared: true }
 export interface FactConfirm { expectedVersion: number; confirm: true; confirmShared: boolean }
 export interface FactRevise extends FactConfirm { values: FactValues; reason: string }
 export interface MemoryDelete { expectedVersion: number; confirmDelete: true }

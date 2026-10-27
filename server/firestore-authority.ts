@@ -14,6 +14,8 @@ import { sealRecoveryLocator } from './firestore-recovery-envelope.ts';
 import { workRecoveryAad, workRecoveryDocumentId, workRecoverySchemas as schemas,
   workRecoveryScopeSchema, type WorkRecoveryKind, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { prepareFirestoreBackgroundWork } from './firestore-background-work.ts';
+import { assertNoManagedSharedSpaces } from './firestore-sharing-records.ts';
+import type { SharedAccessBasis } from '../src/shared/sharing.ts';
 
 const FORMAT = 'yuban-work-recovery', MAX_BYTES = 192 * 1024;
 const NIL = '00000000-0000-0000-0000-000000000000';
@@ -52,6 +54,8 @@ export interface FirestoreAuthorityPreparedChange { readonly changeSeq: string; 
 export interface FirestoreAuthorityPreparedChild extends FirestoreAuthorityPreparedChange { readonly result: FirestoreChildCreation }
 export interface FirestoreAuthorityTransaction {
   readonly transaction: Transaction;
+  readonly actorUserId: string;
+  readonly sharedAccess?: Readonly<{ spaceId: string; basis: Readonly<SharedAccessBasis>; module: string; modules?: readonly string[]; role: 'owner' | 'caregiver' | 'viewer'; mode: 'read' | 'write' }>;
   readonly scope: Readonly<WorkRecoveryScope>;
   readonly authorizationVersion: string;
   readonly childAccessVersion: string;
@@ -82,6 +86,17 @@ function parse<T>(schema: z.ZodType<T>, value: unknown, code = 'invalid_input', 
   const result = schema.safeParse(value); if (!result.success) fail(code, status); return result.data;
 }
 const digest = (value: unknown) => createHash('sha256').update(canonical(value)).digest('hex');
+
+/** Preserve caller-local operation IDs while namespacing effects in another owner's storage. */
+export function sharedSourceOperationId(actorUserId: string, operationId: string, effect?: 'photo-record'): string {
+  const hex = digest(['shared-change', actorUserId, operationId, ...(effect ? [effect] : [])]);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-5${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+/** Common read fence for projections composed across domains; private versions stay compatible. */
+export function resourceAuthorityVersion(binding:FirestoreAuthorityTransaction):string {
+  return binding.sharedAccess ? digest(['shared-read',binding.scope.storageEpoch,binding.authorizationVersion,
+    binding.sharedAccess.spaceId,binding.sharedAccess.basis]) : `${binding.scope.storageEpoch}:${binding.authorizationVersion}`;
+}
 const same = (left: unknown, right: unknown) => canonical(left) === canonical(right);
 const ownerScope = (ownerUserId: string, workspaceId = NIL, storageEpoch = NIL, childId = NIL): WorkRecoveryScope =>
   ({ ownerUserId, workspaceId, childId, storageEpoch });
@@ -280,7 +295,7 @@ export class FirestoreAuthority {
         const { workspace, control, owner, identity } = await this.account(tx, userId);
         const scope = Object.freeze(ownerScope(userId, workspace.id, workspace.storageEpoch, childId ?? NIL));
         if (childId !== null) await this.canonicalChild(tx, scope);
-        const binding: FirestoreAuthorityTransaction = Object.freeze({ transaction: tx, scope,
+        const binding: FirestoreAuthorityTransaction = Object.freeze({ transaction: tx, scope, actorUserId: userId,
           authorizationVersion: workspace.accessVersion, childAccessVersion: workspace.childAccessVersion ?? '0', changeSeq: workspace.changeSeq, generation: control.generation, identityEmail: identity.email, workspaceCreatedAt: owner.workspaceCreatedAt ?? null,
           readChild: async (requestedChildId: string) => {
             assertActive(); parse(uuid, requestedChildId);
@@ -312,6 +327,7 @@ export class FirestoreAuthority {
           prepareErasure: async (operationId: string, type: 'child' | 'account', requestedChildId?: string) => {
             parse(uuid, operationId); parse(z.enum(['child', 'account']), type); reserve();
             if (childId !== null) fail('transaction_child_scope');
+            if (type === 'account') await assertNoManagedSharedSpaces(this.domain, tx, userId);
             const targetScope = type === 'child' ? ownerScope(userId, workspace.id, workspace.storageEpoch, parse(uuid, requestedChildId)) : scope;
             if (type === 'child') await this.canonicalChild(tx, targetScope);
             const account = type === 'account' ? await this.read(tx, 'account', userId, ownerScope(userId), schemas.account) : null;
@@ -358,6 +374,47 @@ export class FirestoreAuthority {
         return await operation(binding);
       } finally { active = false; }
     });
+  }
+  /** Internal domain port. The sharing store verifies the grant in this same actor transaction first. */
+  async withSharedSource<T>(actor: FirestoreAuthorityTransaction, source: WorkRecoveryScope,
+    access: NonNullable<FirestoreAuthorityTransaction['sharedAccess']>, operation: (binding: FirestoreAuthorityTransaction) => Promise<T>): Promise<T> {
+    const tx = actor.transaction, current = await this.account(tx, source.ownerUserId);
+    if (actor.sharedAccess || actor.scope.childId !== NIL || current.workspace.id !== source.workspaceId
+      || current.workspace.storageEpoch !== source.storageEpoch) fail('scope_changed');
+    await this.canonicalChild(tx, source);
+    let active = true, prepared = false, committed = false;
+    const check = () => { if (!active) fail('transaction_closed'); };
+    const denied = async (): Promise<never> => { check(); fail('shared_private_scope', 403); };
+    const binding: FirestoreAuthorityTransaction = Object.freeze({ ...actor, scope: Object.freeze({ ...source }),
+      sharedAccess: Object.freeze({ ...access }), authorizationVersion: current.workspace.accessVersion,
+      childAccessVersion: current.workspace.childAccessVersion ?? '0', changeSeq: current.workspace.changeSeq,
+      workspaceCreatedAt: current.owner.workspaceCreatedAt ?? null,
+      readChild: async (id: string) => {
+        check(); if (id !== source.childId) fail('transaction_child_scope');
+        const detail = await this.read(tx, 'authority-child-detail', id, source, childDetailSchema); check();
+        if (detail.id !== id || detail.workspaceId !== source.workspaceId) fail('binding', 403);
+        return { ...detail, accessRole: access.role };
+      },
+      prepareChange: async (operationId: string, kind: OnlineChange['kind'], deleted: boolean, childId?: string) => {
+        check(); parse(uuid, operationId); parse(z.boolean(), deleted);
+        if (access.mode !== 'write' || access.role === 'viewer') fail('read_only', 403);
+        // Attachment consumers already invalidate chat/care; retain the old change-feed wire kinds.
+        const allowedKind = access.module === 'attachments' ? kind === 'chat' || kind === 'care' : kind === access.module;
+        if (!allowedKind || childId !== undefined && childId !== source.childId) fail('shared_module_scope', 403);
+        if (prepared) fail('transaction_change_conflict'); prepared = true;
+        if (actor.actorUserId === source.ownerUserId) return actor.prepareChange(operationId, kind, deleted, source.childId);
+        // Source changes must not collide when two different actors use the same caller-local opId.
+        const sourceOperationId = sharedSourceOperationId(actor.actorUserId, operationId);
+        const original = await this.change(tx, source, current.workspace, sourceOperationId, kind, deleted);
+        const caller = await actor.prepareChange(operationId, 'family', false); check();
+        return { changeSeq: caller.changeSeq, commit() {
+          check(); if (committed) fail('transaction_change_conflict'); committed = true;
+          original.commit(); caller.commit();
+        } };
+      },
+      prepareChildCreation: denied, prepareErasure: denied, readWork: denied, prepareWork: denied,
+    });
+    try { return await operation(binding); } finally { active = false; }
   }
   async initializeControl(raw: { generation: string; enabled: boolean }): Promise<{ generation: string; enabled: boolean }> {
     const input = parse(schemas.control, raw), scope = ownerScope('control');
@@ -595,6 +652,15 @@ export class FirestoreAuthority {
       await this.canonicalChild(tx, scope);
       return { scope, authorizationVersion: workspace.accessVersion };
     }, { readOnly: true });
+  }
+  /** Server-only source revalidation inside an already authenticated sharing transaction; this does not grant actor access. */
+  async assertPersonalSource(tx: Transaction, raw: WorkRecoveryScope): Promise<FirestoreAuthorityBinding> {
+    const scope = parse(workRecoveryScopeSchema, raw);
+    if (scope.childId === NIL) fail('binding', 403);
+    const { workspace } = await this.account(tx, scope.ownerUserId);
+    if (workspace.id !== scope.workspaceId || workspace.storageEpoch !== scope.storageEpoch) fail('scope_changed');
+    await this.canonicalChild(tx, scope);
+    return { scope, authorizationVersion: workspace.accessVersion };
   }
   /** Internal erasure finalizer, after journal-backed cleanup. It cannot reactivate or delete active resources. */
   async finishErasure(scope: WorkRecoveryScope, type: 'child' | 'account'): Promise<void> {

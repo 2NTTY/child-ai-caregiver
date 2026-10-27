@@ -1,0 +1,45 @@
+{
+  "package": "P4-FAMILY-A/shared-tasks",
+  "date": "2026-10-27",
+  "base": "1249ee95a6c78194beee467cdf570a4b07f0b99d",
+  "branch": "codex/p4-shared-memory-tasks",
+  "runtime": "Node 24.19.0",
+  "checks": [
+    "One shared task flow: original resource, actor attribution, viewer read, current grants, private isolation, formal HTTP/common client, completion cancels claimed reminder, original-version receipt, revocation redaction, restore proof",
+    "Three existing owner checks: creation and receipts; state transitions and revisions; atomic reminder retry",
+    "Scoped TypeScript graph; git diff --check"
+  ],
+  "results": {
+    "readonlyReview": "No remaining actionable blocker; same Sol reviewer; no tests by reviewer",
+    "scopedTypes": "passed",
+    "ownerCompatibility": "3 passed",
+    "diff": "passed",
+    "sharedFlow": "passed"
+  },
+  "failuresPreserved": [
+    "Initial expected red: shared_domain_unavailable",
+    "Synthetic fixture lacked < and <= operators; added only those existing Firestore query semantics",
+    "First type check: missing z import in Firebase HTTP adapter",
+    "Owner compatibility revealed explicitly undefined proof fields breaking canonical JSON; omit absent optional fields; same three checks passed after fix"
+  ],
+  "notVerified": [
+    "Cloud Firestore transaction contention or live deployment",
+    "Family UI and other-member changes synchronization",
+    "Other recipient assignment and related consent",
+    "Memory/documents/attachments shared access",
+    "D Agent integration; prior P3 and native backup restore evidence unchanged"
+  ],
+  "sourceSha256": {
+    "server/firebase-app.ts": "eb6a0468ba3d06ab6c8e26ef794fc5ea0dee460223785de6afc34f0c830854aa",
+    "server/firestore-domain-data.ts": "f1e73ebe55c63e1a5af6d06028268b87e8c80c8944fe3d0b18be5eae307dd7d5",
+    "server/firestore-online.ts": "25744f3d7dc497bc2f8c238eaa11ea0becf60c1e834f6bff1a619bf773e5461b",
+    "server/firestore-online-receipts.ts": "78c3312e3a09cf64fdd41a74695bb49daf4134971610a9eb6b12aa7466f6a556",
+    "server/firestore-restore-codec.ts": "6496bd32d8e68d38697be7ead29893fc95fa15096da2bfdd699c1ba8b3459526",
+    "server/firestore-task-worker.ts": "7782d5d5a030d5fe002f2c01a0a5e1e253d852191242f992ee4def4498dfeee7",
+    "server/shared-domain-routing.ts": "70afb229b7b379f2b6520dd221b635b8ee163d7c5ec715d5e40f09f7dbd5001c",
+    "server/firestore-task-records.ts": "e338a0bbf22a6c23698b45296108a96153f7cb7b62b45bf56a2e520b9bd8df24",
+    "src/client/task-api.ts": "8a6ddfc9e612cf13fc378de63b0ff85dc7bb9c1d31110ccc191c00e27b16dbd7",
+    "tests/firestore-sharing.test.ts": "e3143e9f311ad7ea0e9e93f36f889bcefcfef87cc6bb97e0b8c7eef86922b133",
+    "tests/helpers/firestore-session-memory.ts": "8e79e7f4afa30c142fea8e1742611e87f8570decfbb73fd0a7e89ee8caa80f32"
+  }
+}

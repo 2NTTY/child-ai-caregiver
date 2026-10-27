@@ -14,12 +14,12 @@ import { AppButton, SectionHeader } from '../ui';
 // Presentation projections only. The source owns authorization, paging and original-media reads.
 export type AttachmentReviewItem = {
   id: string; kind: 'voice' | 'video' | 'file'; title: string; createdAtLabel: string;
-  sizeLabel: string; sourceLabel: string; version: number; content: ReactNode;
+  sizeLabel: string; sourceLabel: string; version: number; content: ReactNode; remove?:()=>void;
 };
 export type AttachmentReviewPage = {
   items: readonly AttachmentReviewItem[]; state: 'loading' | 'ready' | 'error' | 'unavailable';
   message?: string; hasMore: boolean; busy: boolean; refreshing?: boolean; online: boolean;
-  refresh(): void; loadMore(): void;
+  refresh(): void; loadMore(): void; shared?:boolean;controls?:ReactNode;
 };
 export type AttachmentReviewCollections = { voices: AttachmentReviewPage; files: AttachmentReviewPage };
 export const PHOTO_READ_WINDOW = 4;
@@ -89,10 +89,11 @@ function OriginalMediaCard({ item }: { item: AttachmentReviewItem }) {
       <AppIcon name={item.kind === 'voice' ? 'microphone-outline' : item.kind === 'video' ? 'paperclip' : 'file-document-outline'} size={24} color={colors.teal} />
     </View><View style={styles.mediaCopy}><Text style={styles.title}>{item.title}</Text>
       <Text style={styles.meta}>{item.kind === 'voice' ? '語音' : item.kind === 'video' ? '影片原檔' : '文件'} · {item.sizeLabel}</Text>
-      <AppStatusBadge label="本人" tone="neutral" /></View>
+      <AppStatusBadge label={item.sourceLabel} tone="neutral" /></View>
     </HistoryEntryCard>
     {item.kind === 'video' ? <Text style={styles.meta}>可下載原檔；這裏不播放或分析影片。</Text> : null}
     {item.content}
+    {item.remove?<AppButton label="刪除原附件" variant="danger-secondary" onPress={item.remove}/>:null}
     <FormDialog visible={details === detailKey} scopeKey={detailKey} title="附件詳情" dismissMode="local"
       returnFocusRef={trigger} onClose={() => setDetails(null)}>
       <Text style={styles.title}>{item.title}</Text>
@@ -107,7 +108,8 @@ export function OriginalMediaLibrary({ page, kind, onChat }: { page?: Attachment
   const state = !page ? 'unavailable' : page.state === 'ready' && !page.online ? 'stale' : page.state === 'ready' && !page.items.length && !page.hasMore ? 'empty' : page.state;
   return <View style={styles.stack} testID={`attachment-library-${kind}`}>
     <SectionHeader density="compact" title={title} icon={kind === 'voice' ? 'microphone-outline' : 'file-document-outline'} />
-    <Text style={styles.meta}>回看你已在私人聊天傳送的原附件。新增{title}請返回聊天。</Text>
+    <Text style={styles.meta}>{page?.shared?'查看這個家庭已共享的原附件；未選入共享的私人聊天不會顯示。':`回看你已在私人聊天傳送的原附件。新增${title}請返回聊天。`}</Text>
+    {page?.controls}
     {onChat ? <AppButton label="前往聊天" variant="quiet" onPress={onChat} /> : null}
     <ReadStateNotice state={state} message={page?.message || (!page ? '附件清單尚未接通；可返回原聊天查看。' : state === 'empty' ? `目前沒有可讀取的${title}附件。` : state === 'loading' ? `正在讀取${title}…` : state === 'error' ? '暫時未能讀取附件，請重新讀取。' : '')}>
       {page && ['error', 'unavailable', 'stale'].includes(state) ? <AppButton label={`重新讀取${title}`} variant="quiet" disabled={!page.online || page.busy && !page.refreshing} onPress={page.refresh} /> : null}

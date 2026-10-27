@@ -7,6 +7,7 @@ import { sealRecoveryLocator, FirestoreRecoveryEnvelopeError, type FirestoreReco
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { canonicalJson } from './online-routing.ts';
 import { taskValuesSchema, taskDueAtSchema, taskTimeZoneSchema, type CareTask, type TaskRevision } from '../src/shared/tasks.ts';
+import { sharedWriteAttributionSchema } from './shared-write-attribution.ts';
 
 const FORMAT = 'yuban-firestore-domain', MAX_BYTES = 192 * 1024;
 const decimal = z.string().regex(/^(0|[1-9][0-9]{0,18})$/u).refine(value => BigInt(value) <= 9223372036854775807n);
@@ -16,15 +17,20 @@ export const firestoreChildSchema = z.object({ id: z.uuid(), workspaceId: z.uuid
 export const firestoreChangeSchema = z.object({ changeSeq: decimal,
   kind: z.enum(['children', 'care', 'profile', 'chat', 'family', 'preferences', 'memory', 'tasks', 'growth', 'documents']),
   childId: z.uuid().nullable(), deleted: z.boolean() }).strict();
-export const firestoreTaskSchema: z.ZodType<CareTask> = z.object({
+export const firestoreTaskStorageSchema = z.object({
   ...taskValuesSchema.omit({ dueAt: true, timeZone: true }).shape,
   id: z.uuid(), childId: z.uuid(), version, createdBy: bounded(256), createdAt: datetime, updatedAt: datetime,
   occurrence: z.object({ id: z.uuid(), dueAt: taskDueAtSchema, timeZone: taskTimeZoneSchema,
     state: z.enum(['scheduled', 'completed', 'cancelled', 'needs_review']), terminalBasisVersion: version.nullable() }).strict(),
+  createdViaShare: sharedWriteAttributionSchema.optional(),
 }).strict();
-export const firestoreTaskRevisionSchema: z.ZodType<TaskRevision> = z.object({ task: firestoreTaskSchema,
+export const firestoreTaskSchema: z.ZodType<CareTask> = firestoreTaskStorageSchema.transform(({ createdViaShare: _proof, ...task }) => task);
+export const firestoreTaskRevisionStorageSchema = z.object({ task: firestoreTaskStorageSchema,
   action: z.enum(['create', 'reschedule', 'complete', 'cancel', 'resolve']), actorUserId: bounded(256),
-  basisVersion: z.number().int().nonnegative().max(2147483647), note: z.string().max(1000), at: datetime }).strict();
+  basisVersion: z.number().int().nonnegative().max(2147483647), note: z.string().max(1000), at: datetime,
+  changedViaShare: sharedWriteAttributionSchema.optional() }).strict();
+export const firestoreTaskRevisionSchema: z.ZodType<TaskRevision> = firestoreTaskRevisionStorageSchema.transform(({ changedViaShare: _proof, ...revision }) =>
+  ({ ...revision, task: firestoreTaskSchema.parse(revision.task) }));
 export const firestoreReminderOutboxSchema = z.object({ taskId: z.uuid(), occurrenceId: z.uuid(), taskVersion: version,
   dueAt: taskDueAtSchema, ownerUserId: bounded(256), workspaceId: z.uuid(), childId: z.uuid(), storageEpoch: z.uuid(),
   authorizationVersion: decimal, generation: z.uuid(), state: z.enum(['pending', 'leased', 'processed', 'cancelled', 'failed', 'unknown']),

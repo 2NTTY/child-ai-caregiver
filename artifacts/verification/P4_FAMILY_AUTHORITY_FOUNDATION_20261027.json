@@ -1,0 +1,78 @@
+{
+  "schema": "project-verification/v1",
+  "date": "2026-10-27",
+  "base": "5c564f9af216927dce07831133c97dc9d2b47b34",
+  "branch": "codex/p4-family-authority",
+  "scope": "FAMILY-A internal authority foundation; not public feature delivery",
+  "node": "24.19.0",
+  "checks": [
+    {
+      "name": "firestore-sharing.test.ts",
+      "passed": 4
+    },
+    {
+      "name": "firestore-authority.test.ts",
+      "passed": 20
+    },
+    {
+      "name": "F07 excludes an erased child and original receipt payloads from an older backup",
+      "passed": 1
+    },
+    {
+      "name": "affected Server/import graph and new sharing test typecheck",
+      "result": "passed"
+    },
+    {
+      "name": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "knownFailures": [
+    {
+      "test": "restore applies current revocation and journal erasure without restoring sessions or post-backup child authority",
+      "location": "tests/firestore-restore.test.ts:250",
+      "error": "photo row count: 3 !== 1",
+      "baseline": "same result with 5c564f9 tracked source overrides; no working-tree checkout or assertion change"
+    },
+    {
+      "check": "tsconfig.server.json including all existing tests",
+      "result": "failed; errors in existing tests; scoped new code/import graph passed"
+    }
+  ],
+  "correctedFailures": [
+    "new encryption reader argument order",
+    "synthetic fixture snapshot get/Timestamp",
+    "restore metadata allowlist"
+  ],
+  "reviewFixes": [
+    "current membership checked before replaying shared payload receipts",
+    "minimal leave/dissolve receipts",
+    "manager generation fences old invitations",
+    "current sharing operation receipts preserved during restore"
+  ],
+  "unverified": [
+    "public HTTP/UI/domain sharing adapters",
+    "real Firestore contention and deployed indexes",
+    "production sharing restore",
+    "cross-device sharing"
+  ],
+  "externalCalls": {
+    "cloud": 0,
+    "model": 0,
+    "notifications": 0
+  },
+  "files": {
+    "server/firestore-sharing.ts": "d8582ca82b536ec5fd73e2fac3b55db824af7382f0ab5836868555d5948bc50a",
+    "server/firestore-sharing-records.ts": "7bb5fdc1b0f4a2b5db9ae74b4a7039a32c4538c6da537c4ed3a1cc615835ed1b",
+    "server/firestore-restore-sharing.ts": "3cbeff5a8c3b32bd56e44a553e1c5c628f08dbe5a5fa655273052ff406c4ce86",
+    "server/firestore-authority.ts": "a242d91044f41a9f24f655a3ac9ab757c8d951223105b2ca7f468391827d082a",
+    "server/firestore-restore.ts": "d02cdaf701d688c87e6e16dd4031b077e7ffe08be566494ebfed20c6729507d6",
+    "server/firestore-restore-codec.ts": "e4cbbb96f454f75a12b80f5e5249681d2cada94d9d3b3ac065f6f947f1a38d57",
+    "server/firestore-restore-core-records.ts": "586ced70d1640c69a1f932fbd073a21669bb20715285a1c5057da6ab17c257b8",
+    "server/firestore-erasure-cleanup.ts": "bc5bf37892c80c4bca16dcd4b760eb5d3fbb6fa1f7e7a54d7af9625d4d849b4f",
+    "server/firestore-backup.ts": "89955221367d7d6d4462c35433718a6b81ac8c21e0443b58130cc552c8d91302",
+    "server/firebase-recovery-operator.ts": "f1ad0d265fdc2d791a1139b1914608b9484a055becccca7101f31702bb82a640",
+    "deploy/firebase/firestore.indexes.json": "2eb8addfe76340b0aeafb6021f5ab9db4ccd25499e983751eaf9c14728205a66",
+    "tests/firestore-sharing.test.ts": "2ddceaf81844a49099f762d6d06b7e8e330d311fdfda19c8f86d253ab025f8cc"
+  }
+}

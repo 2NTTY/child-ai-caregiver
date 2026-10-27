@@ -1,10 +1,11 @@
+import { attachmentReadSelection } from './firestore-attachment-access.ts';
 import { attachmentListQuery } from './firestore-attachment-list.ts';
 import { z } from 'zod';
 import { CHAT_FILE_LIMITS, chatFileReservationSchema } from '../src/shared/chat-files.ts';
 import type { FirestoreChatFilesStore } from './firestore-chat-files.ts';
 import { FirestoreDomainError, domainParse, domainReject } from './firestore-domain-data.ts';
 
-export type FirebaseChatFileApiPort = Pick<FirestoreChatFilesStore, 'reserve' | 'get' | 'upload' | 'reconcile' | 'content' | 'delete'> & Partial<Pick<FirestoreChatFilesStore, 'list'>>;
+export type FirebaseChatFileApiPort = Pick<FirestoreChatFilesStore, 'reserve' | 'get' | 'upload' | 'reconcile' | 'content' | 'delete'> & Partial<Pick<FirestoreChatFilesStore, 'list' | 'forSharedSpace'>>;
 export const CHAT_FILE_UPLOAD_BODY_BYTES = Math.ceil(CHAT_FILE_LIMITS.bytes / 3) * 4 + 1024;
 const version = z.number().int().positive();
 const uploadSchema = z.object({ expectedVersion: version, base64: z.string().min(1).max(CHAT_FILE_UPLOAD_BODY_BYTES - 1024) }).strict();
@@ -31,6 +32,9 @@ export async function handleFirebaseChatFileRequest(request: Request, userId: st
   if (expected !== userId) domainReject('session_changed', 409);
   const url = new URL(request.url), match = /^\/api\/children\/([^/]+)\/files(?:\/([^/]+)(?:\/(content|resolve|delete))?)?$/u.exec(url.pathname);
   if (!match || !z.uuid().safeParse(match[1]).success || match[2] && !z.uuid().safeParse(match[2]).success) domainReject('not_found', 404);
+  const selection = attachmentReadSelection(request, url, true);
+  const reads = selection ? chatFile.forSharedSpace?.(selection) : chatFile;
+  if (!reads) domainReject('shared_attachment_unavailable', 503);
   const listing = request.method === 'GET' && !match[2];
   const listQuery = listing ? attachmentListQuery(url) : undefined;
   if (!listing && url.search) domainReject('invalid_input', 400);
@@ -38,12 +42,12 @@ export async function handleFirebaseChatFileRequest(request: Request, userId: st
   const active = async () => { if (!await isCurrentUser(userId)) domainReject('identity_changed', 409); };
   await active(); let response: Response;
   if (listing) {
-    if (!chatFile.list) domainReject('attachment_list_unavailable', 503);
-    response = Response.json(await chatFile.list(userId, childId, listQuery));
+    if (!reads.list) domainReject('attachment_list_unavailable', 503);
+    response = Response.json(await reads.list(userId, childId, listQuery));
   } else if (request.method === 'POST' && !id) {
     const input = domainParse(chatFileReservationSchema, await json(request)); await active();
     response = Response.json({ file: await chatFile.reserve(userId, childId, input) }, { status: 201 });
-  } else if (request.method === 'GET' && id && !action) response = Response.json({ file: await chatFile.get(userId, childId, id) });
+  } else if (request.method === 'GET' && id && !action) response = Response.json({ file: await reads.get(userId, childId, id) });
   else if (request.method === 'POST' && id && action === 'content') {
     const input = domainParse(uploadSchema, await json(request, CHAT_FILE_UPLOAD_BODY_BYTES)); await active();
     response = Response.json({ file: await chatFile.upload(userId, childId, id, input.expectedVersion, input.base64, request.signal) });
@@ -52,9 +56,9 @@ export async function handleFirebaseChatFileRequest(request: Request, userId: st
     response = Response.json({ file: await chatFile.reconcile(userId, childId, id) });
   } else if (request.method === 'POST' && id && action === 'delete') {
     const input = domainParse(z.object({ expectedVersion: version, opId: z.uuid() }).strict(), await json(request)); await active();
-    response = Response.json(await chatFile.delete(userId, childId, id, input.expectedVersion, input.opId));
+    response = Response.json(await reads.delete(userId, childId, id, input.expectedVersion, input.opId));
   } else if (request.method === 'GET' && id && action === 'content') {
-    const value = await chatFile.content(userId, childId, id);
+    const value = await reads.content(userId, childId, id);
     response = new Response(new Uint8Array(value.buffer), { headers: { 'Content-Type': 'application/octet-stream',
       'Content-Length': String(value.buffer.length), 'X-Content-SHA256': value.descriptor.sha256,
       'Content-Disposition': downloadDisposition(value.attachment.fileName ?? 'attachment'), 'X-Content-Type-Options': 'nosniff',

@@ -1,0 +1,43 @@
+{
+  "package": "P4-FAMILY-A/shared-documents",
+  "date": "2026-10-27",
+  "base": "70b289939b4d00de3343787377ba2564b309c984",
+  "branch": "codex/p4-shared-documents",
+  "runtime": "Node 24.19.0",
+  "checks": [
+    "Shared document flow via formal HTTP/common client: original snapshot, bounded creation, viewer, version/grant changes, original receipts, immutable content, source invalidation, withheld new source text, authorized rebind, revocation and sealed restore attribution",
+    "Background report continuation: original actor/space/basis, excluded source modules, original work replay, bounded completion and revoke stop",
+    "Two existing owner flows: canonical task-backed preparation and batch checklist lost-reply recovery",
+    "Scoped TypeScript graph and git diff --check"
+  ],
+  "results": {
+    "sharedFlow": "passed",
+    "backgroundFlow": "passed",
+    "ownerCompatibility": "2 passed",
+    "scopedTypes": "passed",
+    "readonlyReview": "Same Sol reviewer: privacy rebind blocker fixed and reviewed; no remaining actionable blocker; no test rerun"
+  },
+  "failuresPreserved": [
+    "Initial expected red: documents.forSharedSpace is not a function",
+    "Test integration corrections: get() returns FamilyDocument (describe() contains authorityVersion); care.revise signature; fixture needed DocumentReference.id for existing background route validation",
+    "Background report initially failed report_incomplete without a shared profile; now retains an unknown empty profile without reading private profile",
+    "Reviewer found unshared source v2 could be rebound via published-excerpt validation; explicit regression failed Missing expected rejection before fix, passed source_changed after exact published excerpt filter",
+    "Positive authorized-rebind assertion omitted the existing unknown-event-time suffix; corrected expected text, only affected flow rerun; literal true test type fixed"
+  ],
+  "notVerified": [
+    "Cloud Firestore contention, real restore and live deployment",
+    "Family/class UI and cross-member synchronization; remaining shared attachment/background consumers",
+    "No model, notification, device or D Agent verification; P3/P5 and prior backup limitations unchanged"
+  ],
+  "sourceSha256": {
+    "server/family-document-api.ts": "eac3c1678f7c98ec844734dcd9c1b41fe31034cd8bd2821bfc1b381ca4423738",
+    "server/firebase-app.ts": "db32e5b57c1442d129dbeb592b67c550c7f8fcd0122798b0376c273cd4597429",
+    "server/firestore-authority.ts": "8b0b5f7965e69fe2a4cb17ee66d89510c39400fab68f23f8817543883f946da2",
+    "server/firestore-document-sources.ts": "d9d19f15a0667e6b1f7ca135991c1ef765512d1375334ba3c34ad37cb8bbd380",
+    "server/firestore-family-documents.ts": "48aa9c5a073b15b77b1c79c069549e2209a0e17b91d47d0ceb8d0e0dc9bfa878",
+    "server/firestore-restore-codec.ts": "571729aecaa64aa9a588c80455e2fb2eb1019458d6ed6195a458fe0caf977243",
+    "server/firestore-sharing.ts": "3ab2cc23ef986db4106e1c11e070fcd22a7fa2b2cf5578097c1f0791ea204ca8",
+    "src/client/family-documents-api.ts": "15bc1178b1e8ff3260aed9de989a09626a91d174ef25e8d44611c8d607fded85",
+    "tests/firestore-sharing.test.ts": "ce161bff8b2dc9c549dc07729a3f14c00ff2164e53d63cd0c6e730156b580c2d"
+  }
+}

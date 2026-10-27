@@ -8,6 +8,27 @@ import { createStorageCipher } from "../server/storage-crypto.ts";
 import { serialFirestoreFixture } from "./helpers/firestore-session-memory.ts";
 
 const PROJECT = "synthetic-server-project", EMAIL = "synthetic-registration@example.test", NOW = 1_800_000_000_000;
+
+test("social before-create preserves invitation admission and rejects mismatched or unverified providers", async () => {
+  const f = fixture();
+  for (const provider of ['google.com', 'apple.com']) {
+    const base = event();
+    const input = event({ eventType: 'providers/cloud.auth/eventTypes/user.beforeCreate:' + provider,
+      additionalUserInfo: { providerId: provider } as AuthBlockingEvent['additionalUserInfo'],
+      credential: { providerId: provider, signInMethod: provider },
+      data: { ...base.data!, emailVerified: true, providerData: [{ providerId: provider, uid: 'private-provider-id', email: EMAIL }] as NonNullable<AuthBlockingEvent['data']>['providerData'] } });
+    await f.handler(input);
+    await assert.rejects(f.handler({ ...input, data: { ...input.data!, emailVerified: false } }), httpsCode('permission-denied'));
+    await assert.rejects(f.handler({ ...input, credential: { providerId: 'password', signInMethod: 'password' } }), httpsCode('permission-denied'));
+  }
+  assert.deepEqual(f.calls, [EMAIL, EMAIL]);
+  f.fail(new FirestoreAuthorityError('invitation_unavailable', 403));
+  const base = event();
+  await assert.rejects(f.handler(event({ eventType: 'providers/cloud.auth/eventTypes/user.beforeCreate:apple.com',
+    additionalUserInfo: { providerId: 'apple.com' } as AuthBlockingEvent['additionalUserInfo'],
+    data: { ...base.data!, email: 'hidden@privaterelay.appleid.com', emailVerified: true,
+      providerData: [{ providerId: 'apple.com', uid: 'private-provider-id' }] as NonNullable<AuthBlockingEvent['data']>['providerData'] } })), httpsCode('permission-denied'));
+});
 function event(patch: Partial<AuthBlockingEvent> = {}): AuthBlockingEvent {
   return { eventId: "synthetic-registration-event", eventType: "providers/cloud.auth/eventTypes/user.beforeCreate:password",
     authType: "USER", timestamp: new Date(NOW).toUTCString(), resource: { service: "identitytoolkit.googleapis.com", name: "projects/" + PROJECT },

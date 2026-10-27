@@ -185,6 +185,20 @@ Firebase authorizedDomains 須包含原網站主機名，否则重設及驗證�
 
 `mobile:release` 的本機工具見下節；語音／FCM、完整跨端前景同步及更新交付按根 PLAN 的實作／部署／真機門檻分開，不以工具存在宣稱已發布。
 
+<a id="native-provider-config"></a>
+### P4 原生快捷登入配置（未開放）
+
+沿上述 Firebase JS／原生 session；`.env.example` 的 `EXPO_PUBLIC_AUTH_PROVIDERS` 預設空，只有完成 [AUTH01](../PLAN.md#p4-auth01) 啟用核對後才列 `google.com`／`apple.com`。這批沒有更改 EAS profile、供應商或雲端設定。配置中的 OAuth client ID／Services ID 是公開識別；client secret、Apple 私鑰不可放進 `EXPO_PUBLIC_*`。
+
+| 平台／方式 | 必需公開配置與原生接點 |
+|---|---|
+| Android Google | `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`；供應商端另核 Android package／實際簽署 SHA；保留現有 Android Firebase descriptor |
+| iOS Google | 同一 Web client ID＋`EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`；官方 plugin 由 iOS ID 派生 callback URL scheme，不另裝 RNFirebase |
+| Android Apple | `EXPO_PUBLIC_APPLE_SERVICE_ID`＋`EXPO_PUBLIC_APPLE_REDIRECT_URI`；服務端已登記的 HTTPS 網域 callback，不能是 localhost／IP／含憑據 URL |
+| iOS Apple | 已啟用 Apple provider 時加入 Sign in with Apple entitlement；Apple 團隊與 Bundle ID 的 capability／簽署另核 |
+
+原生 SDK 更新必須新 binary，沿既有 fingerprint／`mobile:release --plan` 判斷，不向舊 runtime 發 OTA。純 Web 仍使用原生 Firebase popup adapter；共同 owner、同 UID 檢查、明確 linking／取消讀回及裝置撤銷不變。套件已裝、config introspection 或 JS 匯出均不代表真機登入／簽署已通過。
+
 Android launcher 使用既有 `assets/brand/app-icon-ios.png` 品牌圖；共用原生啟動畫面由 Expo SDK 57 對應的 `expo-splash-screen@57.0.9`（MIT）plugin 設定，使用 `favicon.png` 透明標記與白底。沿[官方配置](https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/)及已安裝版本核對；這些設定進入下一個新 binary，不能用 OTA 更新舊版的 launcher／原生 splash，也不能手填舊 fingerprint。JS 首屏仍沿現有 FirstScreenGate，不新增啟動等待或重做畫面。
 
 Windows 執行 EAS 前，在實體 dependency installation 的完整建置副本執行 `npm run mobile:prepare`；不要用指向另一 worktree 的 `node_modules` junction。此命令只針對固定 `@expo/fingerprint` 0.20.13 loader 補 glob 比對前的 POSIX 路徑正規化，版本或原文改變即停止；Linux 不修改。保留原生內容 fingerprint 與雲端相等檢查，不使用忽略全部 native 檔案或硬填 runtime 的替代。後續 `mobile:release` 應調用同一入口。

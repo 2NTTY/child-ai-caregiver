@@ -3,6 +3,8 @@ import test from "node:test";
 import { createHash, randomUUID } from "node:crypto";
 import { createPhotoApi, PhotoApiError } from "../src/client/photo-api.ts";
 import type { PhotoAttachment } from "../src/shared/photos.ts";
+import type { OnlineSubmission } from "../src/shared/online.ts";
+import { emptyCareDetails } from "../src/shared/care.ts";
 
 const CHILD = randomUUID(), OWNER = "synthetic-photo-owner", OTHER_CHILD = randomUUID();
 const photo = (): PhotoAttachment => ({
@@ -13,6 +15,59 @@ const photo = (): PhotoAttachment => ({
 });
 const ALL = Array.from({length:100},photo), signal = () => new AbortController().signal;
 const rejected = (error: unknown) => error instanceof PhotoApiError && !error.confirmed;
+
+test("shared photo deletion retains the selected online command across an unknown reply and unconfirmed lookup", async () => {
+  const selection = { spaceId: randomUUID() }, actor = "synthetic-shared-carer";
+  const basis = { spaceVersion: 2, membershipVersion: 3, shareVersion: 4, actorAuthorizationVersion: "5", sourceAuthorizationVersion: "6" };
+  const original: PhotoAttachment = { ...photo(), state: "ready", visibility: "shared", canManage: true, sharedSpaceId: selection.spaceId };
+  const context = { workspaceId: randomUUID(), storageEpoch: randomUUID(), sharingBasis: basis };
+  const deleted = { deleted: true as const, cleanupPending: true as const };
+  let submission: OnlineSubmission | undefined, lookups = 0, posts = 0, requests = 0;
+  const api = createPhotoApi("https://example.test", async (input, init) => {
+    requests++;
+    const url = new URL(String(input));
+    assert.equal(init?.credentials, "include"); assert.equal(init?.cache, "no-store");
+    assert.equal(new Headers(init?.headers).get("x-expected-user-id"), actor);
+    if (url.pathname.endsWith("/photos/" + original.id)) {
+      assert.equal(init?.method, "GET"); assert.equal(url.searchParams.get("spaceId"), selection.spaceId);
+      return Response.json({ photo: original });
+    }
+    if (url.pathname === "/api/online/context") {
+      assert.equal(init?.method, "POST");
+      assert.deepEqual(JSON.parse(String(init?.body)), { path: "/api/children/" + CHILD + "/photos/" + original.id + "/delete",
+        payload: { expectedVersion: original.version, confirmDelete: true }, sharing: selection });
+      return Response.json(context);
+    }
+    if (url.pathname === "/api/online/submit") {
+      posts++; submission = JSON.parse(String(init?.body));
+      assert.deepEqual(submission!.sharing, { ...selection, expectedBasis: basis });
+      assert.equal(submission!.operation.workspaceId, context.workspaceId); assert.equal(submission!.operation.storageEpoch, context.storageEpoch);
+      throw new Error("Lost deletion reply");
+    }
+    assert.ok(submission); assert.equal(init?.method, "GET");
+    assert.equal(url.pathname, "/api/online/operations/" + submission.operation.opId);
+    return Response.json(++lookups === 1 ? { state: "unconfirmed" } : {
+      state: "confirmed", operation: submission.operation, changeSeq: "9", statusCode: 200, result: deleted,
+    });
+  }, undefined, selection);
+  assert.deepEqual(await api.photo(CHILD, original.id, signal(), actor), original);
+  await assert.rejects(api.delete(original, signal(), actor), rejected);
+  assert.equal(api.hasPendingOnline(), true);
+  assert.deepEqual(await api.reconcilePending(signal(), actor), { state: "unconfirmed" });
+  const before = requests;
+  await assert.rejects(api.delete({ ...original, childId: OTHER_CHILD }, signal(), actor),
+    (error: unknown) => error instanceof PhotoApiError && error.onlineCode === "operation_pending");
+  await assert.rejects(api.delete({ ...original, sharedSpaceId: randomUUID() }, signal(), actor), rejected);
+  const unavailable = (error: unknown) => error instanceof PhotoApiError && error.onlineCode === "shared_attachment_write_unavailable";
+  await assert.rejects(api.reserve(CHILD, original, signal(), actor), unavailable);
+  await assert.rejects(api.upload(original, "AAAA", signal(), actor), unavailable);
+  await assert.rejects(api.extract(original, signal(), actor), unavailable);
+  await assert.rejects(api.confirm(original, { expectedVersion: original.version, confirmShared: true,
+    values: { text: "Synthetic note", source: "Synthetic carer", details: emptyCareDetails() } }, signal(), actor), unavailable);
+  assert.equal(requests, before);
+  assert.deepEqual(await api.reconcilePending(signal(), actor), { state: "confirmed", result: deleted });
+  assert.equal(api.hasPendingOnline(), false); assert.equal(posts, 1); assert.equal(lookups, 2);
+});
 
 test("photo client collects two bounded pages into the existing complete list result", async () => {
   const calls: string[] = [];

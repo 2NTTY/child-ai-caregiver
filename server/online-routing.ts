@@ -1,11 +1,12 @@
 import { z } from "zod";
+import { sharedSelectionSchema } from '../src/shared/sharing.ts';
 import type { OnlineChange, OnlineCommand } from "../src/shared/online.ts";
 import type { FamilyRole } from "../src/shared/family.ts";
 import { FamilyError, READ_ROLES, WRITE_ROLES } from "./family-access.ts";
 
 const uuid = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 export const onlineIdentitySchema = z.object({ opId: z.uuid(), deviceId: z.uuid(), workspaceId: z.uuid(), storageEpoch: z.uuid() }).strict();
-export const onlineCommandSchema = z.object({ path: z.string().max(256), payload: z.record(z.string(), z.unknown()) }).strict();
+export const onlineCommandSchema = z.object({ path: z.string().max(256), payload: z.record(z.string(), z.unknown()), sharing: sharedSelectionSchema.optional() }).strict();
 export const onlineSubmissionSchema = onlineCommandSchema.extend({ operation: onlineIdentitySchema }).strict();
 export interface OnlineRoute {
   kind: OnlineChange["kind"];
@@ -48,7 +49,7 @@ export function onlineRoute(command: OnlineCommand): OnlineRoute {
       scope: "child", targetId: child[1].toLowerCase(), roles: section === "delete" ? ["owner"] : section === "messages" ? READ_ROLES : WRITE_ROLES,
       privateResult: section === "messages", deleted: section === "delete" || section.endsWith("/delete") };
   }
-  const memory = new RegExp(`^/api/children/(${uuid})/memory/(?:facts(?:/${uuid}/(?:confirm|revise|deactivate|delete))?|topics(?:/${uuid}/(?:change|reopen|delete))?)$`, "i").exec(path);
+  const memory = new RegExp(`^/api/children/(${uuid})/memory/(?:facts(?:/confirmed|/${uuid}/(?:confirm|revise|deactivate|delete))?|topics(?:/${uuid}/(?:change|reopen|delete))?)$`, "i").exec(path);
   if (memory) return { kind: "memory", scope: "child", targetId: memory[1].toLowerCase(), roles: READ_ROLES,
     privateResult: true, deleted: path.endsWith("/delete") };
   const sharedInput = new RegExp("^/api/children/("+uuid+")/inputs(?:/"+uuid+"/(?:confirm|delete|manage))?$","i").exec(path);

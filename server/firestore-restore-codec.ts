@@ -1,4 +1,5 @@
 import { avatarRestoreSchemas, isAvatarRestoreKind, assertAvatarRestoreBinding, transformAvatarRestore } from './firestore-restore-avatar-codec.ts';
+import { isSharingKind, transformSharingRecord, sharingMetadata } from './firestore-sharing-records.ts';
 import type { AvatarObjectDescriptor } from './avatar-data.ts';
 import { firestoreChatFileRowSchema } from './firestore-chat-files.ts';
 import { chatFileObjectAddress, chatFileObjectDescriptorSchema, type ChatFileObjectDescriptor } from './firebase-chat-file-objects.ts';
@@ -24,14 +25,15 @@ import { canonical } from './firestore-session-codec.ts';
 import { openRecoveryEnvelope, sealRecoveryLocator, type FirestoreRecoveryContext } from './firestore-recovery-envelope.ts';
 import { workRecoveryAad, workRecoverySchemas, workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts';
-import { firestoreFamilyDocumentSchemas as documents } from './firestore-family-documents.ts';
+import { firestoreFamilyDocumentSchemas as documents, validDocumentOperationAttribution } from './firestore-family-documents.ts';
 import { firestoreFamilyDocumentSnapshotSchemas as snapshots } from './firestore-family-document-snapshots.ts';
 import { firestorePhotoSchemas as photos, photoObjectScope } from './firestore-photos.ts';
 import { firestoreKnowledgeSchemas as knowledge } from './firestore-knowledge.ts';
 import { firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema } from './firestore-online-receipts.ts';
-import { FirestoreDomainData, firestoreDomainHash, firestoreChildSchema, firestoreChangeSchema, firestoreTaskSchema,
-  firestoreTaskRevisionSchema, firestoreReminderOutboxSchema, sealFirestoreReminderOutbox, FIRESTORE_TASK_DISPATCH_SCOPE,
+import { FirestoreDomainData, firestoreDomainHash, firestoreChildSchema, firestoreChangeSchema, firestoreTaskStorageSchema as firestoreTaskSchema,
+  firestoreTaskRevisionStorageSchema as firestoreTaskRevisionSchema, firestoreReminderOutboxSchema, sealFirestoreReminderOutbox, FIRESTORE_TASK_DISPATCH_SCOPE,
   type FirestoreDomainOptions } from './firestore-domain-data.ts';
+import { validTaskAttribution, validTaskRevisionAttribution } from './firestore-task-records.ts';
 import { firestoreTaskReminderSchema, firestoreTaskReminderBatchSchema, firestoreNotificationPreferencesSchema,
   firestoreTaskNotificationOutboxSchema, firestoreTaskReminderId, firestoreTaskReminderBatchId } from './firestore-task-worker.ts';
 import { firestoreTaskDispatchScanSchema, firestoreTaskDispatchObservationSchema } from './firestore-task-dispatcher.ts';
@@ -152,7 +154,7 @@ const authorityEnvelopeSchema = z.object({ format: z.literal('yuban-work-recover
 const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domain'), version: z.literal(1), recordVersion: positive,
   ciphertext: z.string().min(1), recovery: z.unknown() }).strict();
 // messageSentAt is untrusted query metadata; operation restores rebuild it from authenticated content.
-const privateMetadata = new Set(['messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
+const privateMetadata = new Set(['entryId', 'managerTag', 'memberTag', 'sourceUserTag', 'active', 'spaceId', 'messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
   'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
   'live', 'state', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
@@ -245,10 +247,10 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     parse(workRecoveryScopeSchema, scope);
     if (!['photo-global-quota', 'task-dispatch-scan', 'platform-policy', 'admin-invitation', 'admin-receipt'].includes(kind)) requireBinding(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
     const versionMatches = (value: number) => requireBinding(recordVersion === value);
-    const taskBinding = (row: z.infer<typeof firestoreTaskSchema>) => requireBinding(row.childId === scope.childId
-      && row.createdBy === scope.ownerUserId && row.assigneeUserId === scope.ownerUserId && scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
+    const taskBinding = (row: z.infer<typeof firestoreTaskSchema>) => requireBinding(validTaskAttribution(row, scope)
+      && scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
     if (kind === 'task') { const row = parse(firestoreTaskSchema, raw); requireBinding(row.id === id); taskBinding(row); versionMatches(row.version); }
-    else if (kind === 'task-revision') { const row = parse(firestoreTaskRevisionSchema, raw); taskBinding(row.task); requireBinding(row.actorUserId === scope.ownerUserId); idEquals(id, [row.task.id, row.task.version]); versionMatches(row.task.version); }
+    else if (kind === 'task-revision') { const row = parse(firestoreTaskRevisionSchema, raw); taskBinding(row.task); requireBinding(validTaskRevisionAttribution(row, scope)); idEquals(id, [row.task.id, row.task.version]); versionMatches(row.task.version); }
     else if (kind === 'child-projection') { const row = parse(firestoreChildSchema, raw); requireBinding(row.id === id && id === scope.childId && row.workspaceId === scope.workspaceId); versionMatches(1); }
     else if (kind === 'change-projection') { const row = parse(firestoreChangeSchema, raw); requireBinding(row.childId === (scope.childId === NIL ? null : scope.childId)); idEquals(id, [scope.workspaceId, scope.storageEpoch, row.changeSeq]); versionMatches(1); }
     else if (kind === 'task-reminder-outbox') {
@@ -274,8 +276,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     } else if (kind === 'family-document') {
       const row = parse(documents.metadata, raw); requireBinding(row.id === id && row.ownerUserId === scope.ownerUserId && row.childId === scope.childId); versionMatches(row.version);
     } else if (kind === 'document-operation') {
-      const row = parse(documents.operation, raw); requireBinding(row.ownerUserId === scope.ownerUserId && scope.childId === NIL && row.storageEpoch === scope.storageEpoch
-        && row.document.ownerUserId === row.ownerUserId && row.document.childId === row.childId); idEquals(id, [row.ownerUserId, row.operationId]); versionMatches(1);
+      const row = parse(documents.operation, raw); requireBinding(validDocumentOperationAttribution(row, scope));
+      idEquals(id, [row.ownerUserId, row.operationId]); versionMatches(1);
     } else if (kind === 'document-snapshot') {
       const row = parse(snapshots.manifest, raw); requireBinding(row.snapshotId === id && row.childId === scope.childId); versionMatches(row.snapshotVersion);
     } else if (kind === 'document-snapshot-chunk') { const row = parse(snapshots.chunk, raw), parts = arrayId(id); requireBinding(parts.length === 2 && uuid.safeParse(parts[0]).success && parts[1] === row.index && Buffer.byteLength(row.text) <= 48 * 1024); }
@@ -513,8 +515,10 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     if (isCoreRestoreKind(context.kind)) {
       const schema = coreRestoreSchemas[context.kind].schema;
       const saved = coreMetadata.get(decoded); if (!saved) reject('restore_core_origin_missing');
-      const value = context.kind === 'chat-reply-leases' ? { leases: [] } : schema.parse(decoded.value);
-      const metadata = context.kind === 'chat-reply-leases' ? {} : { ...data.tags(scope), ...saved };
+      const value = isSharingKind(context.kind) ? transformSharingRecord(context.kind, decoded.value, input.newEpochByWorkspace)
+        : context.kind === 'chat-reply-leases' ? { leases: [] } : schema.parse(decoded.value);
+      const metadata = isSharingKind(context.kind) ? { ...data.tags(scope), ...sharingMetadata(context.kind, value) }
+        : context.kind === 'chat-reply-leases' ? {} : { ...data.tags(scope), ...saved };
       const envelope = data.seal<FirestoreRestoreValue>(context.kind, context.id, scope, schema, value, context.recordVersion);
       return { oldPath: decoded.path, path: pathFor({ ...context, scope }, decoded.path), data: { ...metadata, ...envelope } };
     }

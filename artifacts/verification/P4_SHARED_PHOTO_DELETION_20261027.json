@@ -1,0 +1,80 @@
+{
+  "date": "2026-10-27",
+  "package": "P4-FAMILY-A shared photo deletion",
+  "base": "713b74e0cb5067663efc96c4fae447ce9db97c4e",
+  "branch": "codex/p4-shared-photo-deletion",
+  "environment": {
+    "node": "24.19.0",
+    "database": "serial synthetic Firestore fixture",
+    "models": 0,
+    "cloudOperations": 0,
+    "notifications": 0,
+    "deployed": false
+  },
+  "reuse": "Existing online transport, source photo quotas, linked-record erasure, immutable journal, maintenance consumer and restore; no new library or index.",
+  "checks": [
+    {
+      "name": "shared photo original-operation lifecycle",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared photo deletion keeps' tests/firestore-sharing.test.ts",
+      "result": "passed",
+      "covers": [
+        "formal HTTP and common client",
+        "role and version rejection",
+        "source quota moved to cleanup until physical removal",
+        "linked care invalidation without general care access",
+        "unconfirmed result until independent journal proof",
+        "cleanup after revocation",
+        "original operation retry and client reconciliation",
+        "independent journal lost-reply restore",
+        "restored cleanup consumer and actor receipt redaction"
+      ]
+    },
+    {
+      "name": "shared client recovery",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared photo deletion retains' tests/photo-client.test.ts",
+      "result": "passed",
+      "covers": [
+        "current sharing basis",
+        "lost reply and original operation lookup",
+        "unconfirmed preserved",
+        "cross-child rejection",
+        "other shared writes remain unavailable"
+      ]
+    },
+    {
+      "name": "private photo and restore compatibility",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='F04 photo candidate|durable physical cleanup|restore charges known cleanup' tests/firestore-photos.test.ts tests/firestore-restore.test.ts",
+      "result": "passed",
+      "tests": 3
+    },
+    {
+      "name": "affected TypeScript dependency graph",
+      "result": "passed",
+      "roots": [
+        "server/firestore-sharing.ts",
+        "server/firestore-restore.ts",
+        "server/firebase-recovery-operator.ts",
+        "server/firestore-erasure-cleanup.ts",
+        "tests/firestore-sharing.test.ts"
+      ]
+    }
+  ],
+  "failuresPreserved": [
+    "Initial shared route rejected shared_domain_unavailable (red).",
+    "Fixture used a create envelope as a record; corrected to result.record.",
+    "Dependent record read rejected shared_module_scope; added only the authenticated photo.recordId deletion method, keeping ordinary care guards.",
+    "Nullable pending journal required explicit cleanup/restore guards.",
+    "Restore rejected missing independent content journal; fixture now advances the existing content erasure consumer before restore.",
+    "Client initially rejected canManage=true; updated role projection and original-operation recovery."
+  ],
+  "review": {
+    "independent": "Sol read-only diff review; no blocker reported",
+    "main": "Authority, source transaction, journal namespace, linked-record boundary, restore and client diff reviewed"
+  },
+  "limitations": [
+    "No real Firestore contention or Storage operation, device, model or deployment performed.",
+    "Family UI, shared creation/chat linking, Agent/background scope and synchronization are not complete.",
+    "Pending erasures without independent journal proof still block restoration; no false recovery success.",
+    "P3, P5 and collaborator Agent PRs unchanged."
+  ]
+}

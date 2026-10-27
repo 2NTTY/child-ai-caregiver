@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { OnlineReceipt } from "../shared/online.ts";
+import type { SharedSelection } from '../shared/sharing.ts';
 import { taskDueAtSchema, taskTimeZoneSchema, taskValuesSchema, type CareTask, type TaskChange, type TaskCreate, type TaskHistory, type TaskPage } from "../shared/tasks.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
@@ -56,7 +57,7 @@ function checkedTask(value: unknown, target: Target, confirmed = false): CareTas
   return parsed.data.task;
 }
 
-export function createTaskApi(baseUrl = "", fetcher: typeof fetch = fetch): TaskApi {
+export function createTaskApi(baseUrl = "", fetcher: typeof fetch = fetch, selection?: Pick<SharedSelection, 'spaceId'>): TaskApi {
   const base = baseUrl.replace(/\/$/u, "");
   const apiUrl = base.endsWith("/api") ? base : `${base}/api`;
   const online = createOnlineTransport(apiUrl, fetcher);
@@ -86,7 +87,8 @@ export function createTaskApi(baseUrl = "", fetcher: typeof fetch = fetch): Task
     }
   }
   const request = (path: string, signal: AbortSignal): Promise<unknown> => call(signal, async innerSignal => {
-    const response = await fetcher(`${apiUrl}${path}`, { method: "GET", credentials: "include", cache: "no-store",
+    const selected = selection && path.startsWith('/children/') ? `${path}${path.includes('?') ? '&' : '?'}spaceId=${encodeURIComponent(selection.spaceId)}` : path;
+    const response = await fetcher(`${apiUrl}${selected}`, { method: "GET", credentials: "include", cache: "no-store",
       headers: { Accept: "application/json" }, signal: innerSignal });
     if (!response.ok) throw new TaskApiError(response.status);
     return await response.json();
@@ -100,7 +102,7 @@ export function createTaskApi(baseUrl = "", fetcher: typeof fetch = fetch): Task
     let confirmed = false;
     try {
       const result = await call(signal, async innerSignal => {
-        const value = await online.submit({ path: `/api${path}`, payload }, innerSignal, userId);
+        const value = await online.submit({ path: `/api${path}`, payload, ...(selection ? { sharing: selection } : {}) }, innerSignal, userId);
         confirmed = true;
         return value;
       });

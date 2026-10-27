@@ -1,4 +1,9 @@
 import { discloseAvatarReceipt } from './avatar-receipt-disclosure.ts';
+import { firestorePhotoSchemas } from './firestore-photos.ts';
+import { firebaseErasureIntentHash } from './firebase-erasure-journal.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
+import { sharedDomainRoute } from './shared-domain-routing.ts';
+import { sharedTaskPointerSchema, readSharedTaskResult } from './firestore-task-records.ts';
 import { createFirestoreCareStore } from './firestore-care.ts';
 import { createFirestoreChatStore } from './firestore-chat.ts';
 import { createFirestoreMemoryStore } from './firestore-memory.ts';
@@ -25,12 +30,17 @@ export const firestoreOnlineErasureBarrierSchema = z.object({ state: z.literal("
 const storedRecordSchema = z.union([firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema]);
 const privateInputPointerSchema = z.object({ format: z.literal('private-input-receipt:1'), id: z.uuid(), version: z.number().int().positive(),
   recordId: z.uuid().optional() }).strict();
+export const firestoreSharedResultSchema = z.object({ format: z.literal('shared-domain-receipt:1'), spaceId: z.uuid(), childId: z.uuid(),
+  module: z.enum(['care', 'profile', 'tasks', 'memory', 'attachments']), result: z.union([contentPointerSchema, sharedTaskPointerSchema,
+    z.object({format:z.literal('shared-photo-deletion:1'),id:z.uuid(),version:z.number().int().positive()}).strict(),
+    z.object({ deleted: z.literal(true) }).strict()]) }).strict();
 export type FirestoreOnlineConfirmed = z.infer<typeof firestoreOnlineConfirmedSchema>;
 export type FirestoreOnlinePending = z.infer<typeof firestoreOnlinePendingSchema>;
 export type FirestoreOnlineRecord = z.infer<typeof firestoreOnlineRecordSchema>;
 export const isFirestoreOnlinePending = (record: FirestoreOnlineRecord): record is FirestoreOnlinePending => "state" in record;
 export const firestoreOnlineFingerprint = (submission: OnlineSubmission) =>
-  firestoreDomainHash({ path: submission.path, payload: submission.payload, operation: submission.operation });
+  firestoreDomainHash({ path: submission.path, payload: submission.payload, operation: submission.operation,
+    ...(submission.sharing ? { sharing: submission.sharing } : {}) });
 
 /** Shared owner-wide original-operation ledger; callers supply only canonical transaction bindings. */
 export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
@@ -73,6 +83,45 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
     return record;
   }
   async function disclose(binding: FirestoreAuthorityTransaction, record: FirestoreOnlineRecord): Promise<OnlineReceipt | { state: "unconfirmed" }> {
+    const shared = !isFirestoreOnlinePending(record) ? firestoreSharedResultSchema.safeParse(record.result) : null;
+    if (shared?.success) {
+      const pointer = shared.data, route = sharedDomainRoute(record.path);
+      if (record.childId !== null || route.childId !== pointer.childId || route.module !== pointer.module) domainReject('receipt_binding', 500);
+      let result: unknown = null;
+      try {
+        result = await createFirestoreSharingStore(options).inResourceTransaction(binding,
+          { spaceId: pointer.spaceId, childId: pointer.childId, module: pointer.module, mode: 'read' },
+          async access => {
+            if ('deleted' in pointer.result) return pointer.result;
+            if (pointer.result.format === 'shared-photo-deletion:1') {
+              if (pointer.module !== 'attachments' || !record.path.toLowerCase().endsWith('/photos/'+pointer.result.id+'/delete')) domainReject('receipt_binding',500);
+              const row = data.open('photo',pointer.result.id,access.scope,firestorePhotoSchemas.photo,
+                await access.binding.transaction.get(data.ref('photos','photo',pointer.result.id)));
+              if (row.id !== pointer.result.id || firestoreDomainHash(row.scope)!==firestoreDomainHash(access.scope)
+                || row.version < pointer.result.version || row.deletion?.actorUserId !== binding.actorUserId
+                || row.deletion.actorOperationId !== record.operation.opId) domainReject('receipt_binding',500);
+              if (row.state !== 'deleted' || !row.deletion.journal) return {state:'unconfirmed' as const};
+              if (row.deletion.journal.intentSha256!==firebaseErasureIntentHash(row.deletion.intent)) domainReject('receipt_binding',500);
+              return {deleted:true as const,cleanupPending:true as const};
+            }
+            if (pointer.result.format === 'shared-task-result:1') return readSharedTaskResult(data, access.binding, pointer.result);
+            const body = await readContentPointer(data, access.binding, pointer.result);
+            if (pointer.module !== 'memory' || body === null) return body;
+            const memory = createFirestoreMemoryStore({ ...options, care: createFirestoreCareStore(options), chat: createFirestoreChatStore(options) });
+            const value = pointer.result.kind === 'fact' ? await memory.readFact(access.binding, pointer.result.id)
+              : pointer.result.kind === 'topic' ? await memory.readTopic(access.binding, pointer.result.id) : null;
+            return value ? { [pointer.result.key]: value } : null;
+          });
+      } catch (error) {
+        if (!(error && typeof error === 'object' && 'code' in error &&
+          (['space_access_denied', 'space_inactive', 'module_not_shared', 'account_inactive', 'account_not_ready', 'not_found', 'scope_changed'].includes(String(error.code))
+            || error.code === 'binding' && 'status' in error && error.status === 403))) throw error;
+      }
+      const confirmed = record as FirestoreOnlineConfirmed;
+      if (result && typeof result === 'object' && 'state' in result && result.state === 'unconfirmed') return {state:'unconfirmed'};
+      return { state: 'confirmed', path: record.path, operation: record.operation, changeSeq: confirmed.changeSeq,
+        statusCode: confirmed.statusCode, result };
+    }
     let visible = record.childId === null || await binding.readChild(record.childId) !== null;
     if (isFirestoreOnlinePending(record)) return { state: "unconfirmed" };
     let result = record.result;
@@ -144,6 +193,13 @@ export function createFirestoreOnlineReceipts(options: FirestoreDomainOptions) {
       changeSeq: record.changeSeq, statusCode: record.statusCode, result: record.result };
     const pointer = contentResult(record.path, value.result);
     let saved = pointer ? { ...record, result: pointer } : record;
+    if (submission.sharing) {
+      const route = sharedDomainRoute(record.path);
+      if (value.childId !== null) domainReject('receipt_binding', 500);
+      const task = route.module === 'tasks' ? domainParse(z.object({ task: z.object({ id: z.uuid(), version: z.number().int().positive() }) }), value.result).task : null;
+      saved = { ...record, result: firestoreSharedResultSchema.parse({ format: 'shared-domain-receipt:1', ...route,
+        spaceId: submission.sharing.spaceId, result: task ? { format: 'shared-task-result:1', id: task.id, version: task.version } : pointer ?? value.result }) };
+    }
     if (/^\/api\/children\/[^/]+\/inputs(?:\/|$)/u.test(record.path) && value.result && typeof value.result === 'object' && 'input' in value.result) {
       const result = value.result as { input: { id: string; version: number }; recordId?: string };
       saved = { ...record, result: privateInputPointerSchema.parse({ format: 'private-input-receipt:1', id: result.input.id,

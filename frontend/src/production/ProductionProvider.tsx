@@ -3,10 +3,11 @@ import { useProductionActivity } from "./useProductionActivity";
 import { createProductionTransport } from "./production-transport";
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { usePathname, useRouter, type Href } from "expo-router";
+import { usePathname, useGlobalSearchParams, useRouter, type Href } from "expo-router";
 import { Linking, Platform } from "react-native";
 import { Text } from "react-native-paper";
 import type { AuthMode, Credentials } from "../../../src/client/records-api";
+import type { ReauthenticationInput, SocialAuthProvider } from "../../../src/shared/auth-providers";
 import type { PhotoMessageReference } from "../../../src/shared/photos";
 import { emptyAssistantDraft, photoAttachment, type AssistantAttachment } from "../assistant-draft";
 import { AppDialog } from "../components/AppDialog";
@@ -20,6 +21,7 @@ import { AccountCallbackGate } from "../components/account/AccountCallbackGate";
 import { projectProductionHome } from "./home-projection";
 import { productionDestinations } from "./routes";
 import { useOnlineUpdates } from "../../../src/client/use-online-updates";
+import { sharedRefreshSelections } from './shared-route-access';
 
 function initialOnline() { return Platform.OS !== "web" || typeof navigator === "undefined" || navigator.onLine; }
 
@@ -37,6 +39,7 @@ function useProductionValue(owner: ProductionOwner) {
   const [localNotice, setLocalNotice] = useState<string | null>(null);
   const [dismissedNotice, setDismissedNotice] = useState<string | null>(null);
   const [composerFocusRequest, setComposerFocusRequest] = useState(0);
+  const [contextRailVisible, setContextRailVisible] = useState(false);
   const [logoutConfirmation, setLogoutConfirmation] = useState(false);
   const current = useRef({ scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname });
   current.current = { scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, pathname };
@@ -61,7 +64,7 @@ function useProductionValue(owner: ProductionOwner) {
     const identity = snapshot.identityKey;
     leave(() => { void (async () => {
       if (!identity || owner.getSnapshot().identityKey !== identity) return;
-      if (target.childId) await owner.controller.selectChild(target.childId);
+      if (target.childId) await owner.selectPersonalChild(target.childId);
       if (owner.getSnapshot().identityKey === identity) router.push(target.kind === "test" ? "/settings" : { pathname: "/tasks", params: { taskId: target.taskId! } });
     })().catch(() => { if (owner.getSnapshot().identityKey === identity) setLocalNotice("通知事項未能開啟，請在待辦重新讀取。"); }); }, target.childId ? "child" : undefined);
   }, setLocalNotice);
@@ -78,6 +81,7 @@ function useProductionValue(owner: ProductionOwner) {
 
   const refresh = useCallback(() => owner.refresh(), [owner]);
   const authenticate = useCallback((mode: AuthMode, input: Credentials) => owner.authenticate(mode, input), [owner]);
+  const authenticateProvider = useCallback((provider: SocialAuthProvider) => owner.authenticateProvider(provider), [owner]);
   const signOut = useCallback(async (discardConfirmed = false) => {
     if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey) return;
     if (owner.hasDomainPending()) { setLocalNotice("請先等候或查核原操作結果，再登出。"); return; }
@@ -97,12 +101,12 @@ function useProductionValue(owner: ProductionOwner) {
   }, [owner, snapshot.identityKey]);
   const currentScope = () => !!snapshot.scopeKey && current.current.scopeKey === snapshot.scopeKey && owner.getSnapshot().scopeKey === snapshot.scopeKey;
   const openAgentDraft = (focusText = false) => {
-    if (!currentScope()) return;
+    if (!currentScope() || snapshot.sharedChild.target) return;
     if (focusText) setComposerFocusRequest(value => value + 1);
     if (pathname !== "/chat") leave(() => router.push("/chat"), "workspace");
   };
   const addAgentAttachment = (attachment: AssistantAttachment, replaceId?: string) => {
-    if (!currentScope() || current.current.pathname !== pathname || !["/", "/chat"].includes(pathname) || !["photo","voice","file"].includes(attachment.kind)) {
+    if (!currentScope() || snapshot.sharedChild.target || current.current.pathname !== pathname || !["/", "/chat"].includes(pathname) || !["photo","voice","file"].includes(attachment.kind)) {
       attachment.dispose?.(); setLocalNotice("目前無法加入附件；內容尚未送出。"); return false;
     }
     const currentAttachments=owner.draftOwner.getSnapshot().attachments;
@@ -114,7 +118,7 @@ function useProductionValue(owner: ProductionOwner) {
   const actions: HomeActions = {
     selectChild(id) {
       if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey || id === model.selectedChildId) return;
-      leave(() => { if (current.current.identityKey === snapshot.identityKey) void owner.controller.selectChild(id); }, "child");
+      leave(() => { if (current.current.identityKey === snapshot.identityKey) void owner.selectPersonalChild(id); }, "child");
     },
     refresh: () => { void refresh(); },
     reviewOperation: () => { leave(() => router.push("/guide"), "workspace"); },
@@ -125,7 +129,7 @@ function useProductionValue(owner: ProductionOwner) {
     },
     composeCare() { leave(() => router.push("/care"), "workspace"); },
     prepareQuestion(question) {
-      if (!currentScope()) return;
+      if (!currentScope() || snapshot.sharedChild.target) return;
       if (chatDraft?.text.trim()) setLocalNotice("保留你原本未送出的問題；可在草稿入口核對後修改。");
       else owner.chatController.setText(question);
       openAgentDraft(true);
@@ -135,7 +139,7 @@ function useProductionValue(owner: ProductionOwner) {
       owner.controller.setChildName(displayName); void owner.controller.createChild();
     },
     deleteChildPreview() {
-      if (!currentScope() || owner.hasDomainPending()) return;
+      if (!currentScope() || snapshot.sharedChild.target || owner.hasDomainPending()) return;
       owner.controller.reviewDeleteChild();
     },
     completeGuidePreview() { setLocalNotice("引導完成狀態尚未接線；你可以繼續使用已接通的入口。"); },
@@ -144,9 +148,10 @@ function useProductionValue(owner: ProductionOwner) {
   return {
     apiBaseUrl: owner.apiBaseUrl, owner, controller: owner.controller, recordsState: snapshot.records,
     queryClient: owner.queryClient, user: snapshot.records.user, userId: snapshot.records.user?.id ?? null,
-    selectedChildId: model.selectedChildId, scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey,
+    selectedChildId: snapshot.activeChild?.id ?? null, activeChild:snapshot.activeChild, sharedChild:snapshot.sharedChild,
+    scopeKey: snapshot.scopeKey, identityKey: snapshot.identityKey, contextRailVisible, setContextRailVisible,
     sessionGeneration: snapshot.sessionGeneration, auth: snapshot.records.auth, online: snapshot.records.online,
-    authenticate, signOut, refresh, model, actions, notice,
+    authenticate, authenticateProvider, socialProviders: owner.socialProviders, signOut, refresh, model, actions, notice,
     account: snapshot.account,
     canPrepareAccountDeletion: owner.canStartDomainWrite() && !snapshot.records.busy && snapshot.records.childOutcome === "draft" && !snapshot.records.deletion
       && Object.values(snapshot.records.drafts).every(item => item.outcome === "draft") && !owner.chatController.hasUnsavedInput() && !visibleDraft.attachments.length,
@@ -156,7 +161,7 @@ function useProductionValue(owner: ProductionOwner) {
       prepareDeletion: () => { const raw = owner.controller.getSnapshot();
         if (current.current.identityKey === snapshot.identityKey && owner.canStartDomainWrite() && !raw.busy && raw.childOutcome === "draft" && !raw.deletion
           && Object.values(raw.drafts).every(item => item.outcome === "draft") && !owner.chatController.hasUnsavedInput() && !owner.draftOwner.getSnapshot().attachments.length) return owner.accountOwner.prepareDeletion(); },
-      verifyDeletionIdentity: (password: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.verifyDeletionIdentity(password); },
+      verifyDeletionIdentity: (proof: ReauthenticationInput) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.verifyDeletionIdentity(proof); },
       executeDeletion: (confirmation: string) => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.executeDeletion(confirmation); },
       cancelPreparedDeletion: () => { if (current.current.identityKey === snapshot.identityKey) return owner.accountOwner.cancelPreparedDeletion(); },
       checkDeletion: () => owner.accountOwner.checkDeletion(),
@@ -198,7 +203,7 @@ function useProductionValue(owner: ProductionOwner) {
     voiceUpload, checkVoiceUpload: () => {if(currentScope())void owner.voiceOwner.check();},
     requestChatReply: async (id: string) => { if (!currentScope() || !owner.chatWritesAllowed()) return; const known = new Set(owner.chatController.getSnapshot().messages.map(item => item.id)); await owner.chatController.requestReply(id); if (currentScope() && owner.chatController.getSnapshot().messages.some(item => !known.has(item.id))) owner.invalidatePrivateReads(); },
     agentModel: agent.model, agentInbox: agent.inbox, agentRuns: agent.runs, agentPending: agent.pending,
-    chatWritesAllowed: !owner.hasDomainPending() && !agent.model.busy && !agent.model.pendingDecision && !authorization.busy && !authorization.pending,
+    chatWritesAllowed: owner.chatWritesAllowed(),
     readAgentActivity: (includePending = true) => { if (currentScope()) owner.agentOwner.readActivity(includePending); },
     readAgentPending: (more = false) => { if (currentScope()) void owner.agentOwner.readPending(more); },
     authorization, authorizationActions: {
@@ -267,10 +272,13 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
   const [owner] = useState(() => new ProductionOwner(apiBaseUrl.replace(/\/$/, ""), initialOnline(), undefined, undefined, undefined, { legacyTrial: process.env.EXPO_PUBLIC_ACCOUNT_LEGACY_TRIAL === "true" }, createProductionTransport(apiBaseUrl)));
   const value = useProductionValue(owner);
   const activity = useProductionActivity();
+  const pathname=usePathname(),params=useGlobalSearchParams<{tab?:string|string[];category?:string|string[];view?:string|string[]}>();
+  const first=(value:string|string[]|undefined)=>Array.isArray(value)?value[0]:value;
+  const sharedSelection=sharedRefreshSelections(value.sharedChild,pathname,{tab:first(params.tab),category:first(params.category),view:first(params.view)},value.contextRailVisible);
   useOnlineUpdates(owner.apiBaseUrl, value.auth === "signedIn" && value.account.gate === "ready" ? value.userId : null, activity.online ?? value.online, async reason => {
     await owner.refresh();
     owner.invalidatePrivateReads(false, reason !== "unavailable");
-  }, owner.fetcher, activity.active, () => owner.chatController.refreshOriginalReply());
+  }, owner.fetcher, activity.active, () => value.sharedChild.target ? Promise.resolve() : owner.chatController.refreshOriginalReply(),sharedSelection);
   useEffect(() => {
     owner.connect();
     void owner.controller.restoreSession();

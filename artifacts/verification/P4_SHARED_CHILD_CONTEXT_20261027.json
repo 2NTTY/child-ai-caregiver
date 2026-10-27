@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-27",
+  "package": "P4-FAMILY-B shared child selection and existing domain pages",
+  "base": "d63b2a7643b028a373c826f91caa877c6183d32e",
+  "branch": "codex/p4-shared-child-context",
+  "environment": "Windows; Node 24.19; npm 11.8 offline cache; synthetic data and transports",
+  "reuse": "Existing ProductionOwner, domain clients, query cache, changes observer, Firestore authority and React Native screens. No new dependency, business copy or model call.",
+  "checks": [
+    { "command": "node --experimental-test-module-mocks --test tests/shared-child-selection.test.ts", "result": "1 passed; same child across spaces, grant version change, denied scope and late identity result." },
+    { "command": "node --test frontend/scripts/shared-child-owner.test.cjs", "result": "1 passed; real owner plus child-view client, private/shared same ID, scope/cache, disabled private input, denied scope, account failure/recovery and personal return. Home selector and visible-module selections included." },
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared.*observer|observer.*shared' tests/online-transport.test.ts", "result": "3 passed; existing observer compatibility plus bounded multi-module cursors and failure reset." },
+    { "command": "node --test frontend/src/production/growth-read.test.mts", "result": "17 passed by bounded implementer; two new single-module cases observed RED then GREEN; no browser or remote requests." },
+    { "command": "node --test frontend/scripts/shared-memory-management.test.cjs", "result": "1 passed by bounded implementer; production management hook with state/runtime ports, confirmed shared intent only, private candidate preserved and viewer/private-topic denial. Does not prove DOM layout." },
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared care uses|shared document create retains|shared documents retain the original snapshot' tests/firestore-sharing.test.ts", "result": "Relevant scenarios run in bounded invocations, all latest outcomes passed. Care old-basis write and document create old-basis write reproduced before fixes. Document compatibility preserved; no complete file rerun." },
+    { "method": "Existing sharing control HTTP/client scenario plus shared growth/concerns scenario", "result": "Latest bounded runs passed. Child-view endpoint first returned404; common growth/document authority first mismatched; compact common hash subsequently passes existing client schema and archive equality." },
+    { "command": "node node_modules/typescript/bin/tsc --project .superpowers/sdd/PLAN/sharing-control-tsconfig.json --noEmit --pretty false", "result": "Exit0 after nullable child/document fixture assertions. Includes actual Firebase runtime, sharing control, modified document API and affected domain imports." },
+    { "command": "node node_modules/typescript/bin/tsc --project frontend/tsconfig.json --noEmit --pretty false", "result": "Exit2; four existing diagnostics at unchanged code: dashboard tab Pressable ref, PreparationWorkspace optional callbacks twice, task-knowledge-read-window previous inference. No additional diagnostics; not a passing complete frontend typecheck." },
+    { "command": "npm11.8 run build:web", "result": "Final Web export and preparation exit0, including shared-memory UI and visible-rail fixes. First sandbox npx could not reach proxy; reused existing offline cache with approved local execution. No new package or upload." },
+    { "method": "Independent Sol read-only working-diff review", "result": "Five actionable findings: care basis, shared memory creation, home composite identity, visible shell changes, document create basis. All addressed; main reviewed fixes, bounded regression evidence above. No second full review or full suite." }
+  ],
+  "failedAttemptsRetained": [
+    "Missing shared selection controller and child-view endpoint before implementation",
+    "Owner account-failure regression initially cleared shared target",
+    "Growth/document authority mismatch; first long format exceeded client max100, replaced with common compact digest",
+    "Care and document stale form tests initially permitted writes",
+    "Shared memory initially sent private creation intents; home overview initially used actual ID instead of presentation ID",
+    "Document create test final assertion incorrectly used item.title instead of item.current.title; corrected fixture assertion only",
+    "Initial owner fixture incorrectly looked for an internal upload scope; replaced with public prepare/no-request assertion"
+  ],
+  "notVerifiedOrDelivered": [
+    "No deployment, cloud index creation, real Firestore concurrency, browser or device acceptance",
+    "No model, notification or new package",
+    "Shared attachments page, shared upload/chat linkage and Agent integration still pending",
+    "Shared growth/concern writes and remaining background authority still pending",
+    "Shared navigation selection is session state, not a persisted business resource",
+    "Four pre-existing frontend type diagnostics remain",
+    "P3/P5 and D Agent PRs unchanged; complete P4 goal remains active"
+  ]
+}

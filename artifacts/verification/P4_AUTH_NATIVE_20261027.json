@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-27",
+  "package": "P4-AUTH01 native provider adapter",
+  "base": "181865b1fac6580dbc2b785f9d6062e8c09b631f",
+  "branch": "codex/p4-auth-native-providers",
+  "environment": {
+    "node": "24.19.0",
+    "npm": "11.8.0",
+    "expo": "57.0.24",
+    "cloudOperations": 0,
+    "models": 0,
+    "notifications": 0,
+    "deployed": false,
+    "newBinary": false
+  },
+  "reuse": [
+    {
+      "package": "@react-native-google-signin/google-signin",
+      "version": "16.1.5",
+      "license": "MIT",
+      "integrity": "sha512-9rmMwACzHK9Cbd0Yp7efg5uWgiYoLwmNAJh4gRCuMcSQH+qplpK7E4d1Q4tbsD8M9jvvVtRX2Z0AP9wwBKmPrQ=="
+    },
+    {
+      "package": "@invertase/react-native-apple-authentication",
+      "version": "2.5.1",
+      "license": "Apache-2.0",
+      "integrity": "sha512-KPKKc0wtRYpH4J0RkDfHzoKSZ+dYPEHmCXhpPdgHsT2MbK5AIkW1cYurjhAgev/kL7nOHFmWITjY1At5WhFEMQ=="
+    },
+    {
+      "package": "expo-crypto",
+      "version": "57.0.3",
+      "existing": true
+    }
+  ],
+  "checks": [
+    {
+      "name": "native credential adapter",
+      "command": "node --experimental-test-module-mocks --test frontend/src/platform/native-provider-adapter.test.mts",
+      "result": "passed",
+      "tests": 1,
+      "covers": [
+        "Google interactive account selection and local cleanup without grant revocation",
+        "same Firebase sign-in/link result",
+        "fresh Apple raw nonce and matching state",
+        "SDK cancellation and wrong state do not call Firebase",
+        "missing configuration not exposed"
+      ]
+    },
+    {
+      "name": "new config and existing iOS/Android boundaries",
+      "command": "node --test --test-name-pattern='native providers require|iPhone store profile|Android still requires' scripts/ios-config.test.mjs",
+      "result": "passed",
+      "tests": 3
+    },
+    {
+      "name": "official Expo iOS plugin introspection",
+      "command": "expo config --type introspect --json",
+      "result": "passed",
+      "syntheticConfig": true,
+      "covers": [
+        "Google com.googleusercontent.apps callback scheme",
+        "Apple Default entitlement",
+        "existing app callback and push entitlement retained"
+      ]
+    },
+    {
+      "name": "affected native TypeScript graph",
+      "result": "passed",
+      "roots": [
+        "frontend/src/platform/firebase-social-auth.native.ts",
+        "frontend/src/platform/native-provider-adapter.ts",
+        "frontend/src/platform/native-provider-adapter.test.mts",
+        "frontend/src/production/ProductionOwner.ts"
+      ]
+    },
+    {
+      "name": "Android native JS/Hermes export",
+      "command": "EXPO_NO_DOTENV=1 EAS_BUILD_PLATFORM=android expo export --platform android",
+      "result": "passed",
+      "syntheticPublicProviderIds": true,
+      "note": "First export failed writing hbc to sandbox OS temp. Same check succeeded using an ignored workspace temp directory; no product workaround or cloud build."
+    }
+  ],
+  "review": {
+    "method": "Independent read-only Sol review plus main-model SDK/config/contract review",
+    "importantFindings": []
+  },
+  "priorFailures": [
+    "Missing native provider adapter returned no configured providers before implementation.",
+    "Initial config test tried Expo skipPlugins output; corrected it to inspect actual dynamic config for plugin declarations, then observed missing plugin assertion before implementation.",
+    "Synthetic AuthCredential fixture lacked toJSON; corrected fixture and affected TypeScript graph passed.",
+    "Sandbox OS temporary directory denied Hermes output; preserved failure and changed only verification temp location."
+  ],
+  "pending": [
+    "New signed Android/iOS binary and actual SDK/native compatibility",
+    "Firebase implicit linking/duplicate-email profile-admission activation configuration",
+    "Apple relay original invitation continuation",
+    "Provider console/Apple team and actual Google/Apple login/link/re-authentication",
+    "Deployment; providers remain disabled by default",
+    "Full AUTH01/P4 completion"
+  ]
+}

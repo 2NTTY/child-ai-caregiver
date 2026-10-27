@@ -221,3 +221,71 @@ test("shared online observer keeps scoped cursors and discards late reads after 
     assert.deepEqual(reasons, ["changed", "changed", "unavailable"]);
   } finally { observer.dispose(); unsubscribe(); }
 });
+
+test("selected shared observer advances opaque cursors, resets invalid reads and disposes late responses", async () => {
+  const selection = { spaceId: workspaceId, childId: storageEpoch, module: "attachments" as const };
+  const reasons: string[] = [], requested: URL[] = [];
+  let phase: "initial" | "changed" | "quiet" | "invalid" | "restarted" | "held" = "initial";
+  let release!: (response: Response) => void, heldSignal: AbortSignal | undefined;
+  const observer = createOnlineChangeObserver("https://service.invalid/api", "carer", async reason => { reasons.push(reason); },
+    async (input, init) => {
+      const url = new URL(String(input)); requested.push(url);
+      assert.equal(init?.method ?? "GET", "GET"); assert.equal(init?.body, undefined);
+      assert.equal(init?.credentials, "include"); assert.equal(init?.cache, "no-store");
+      assert.equal(new Headers(init?.headers).get("x-expected-user-id"), "carer");
+      if (phase === "held") { heldSignal = init?.signal ?? undefined; return new Promise<Response>(resolve => { release = resolve; }); }
+      return Response.json({ ...selection, ...(phase === "invalid" ? { module: "care" } : {}),
+        cursor: phase === "initial" ? "opaque first+/=" : "opaque next+/=", changed: phase === "changed", hasMore: phase === "changed" });
+    }, selection);
+  try {
+    await observer.check(true);
+    assert.equal(requested[0].pathname, "/api/online/shared-changes");
+    assert.equal(requested[0].searchParams.get("spaceId"), selection.spaceId);
+    assert.equal(requested[0].searchParams.get("childId"), selection.childId);
+    assert.equal(requested[0].searchParams.get("module"), selection.module);
+    assert.equal(requested[0].searchParams.has("cursor"), false);
+    assert.deepEqual(reasons, ["forced"]);
+    phase = "changed"; await observer.check();
+    assert.equal(requested.length, 2); // hasMore waits for the next foreground check.
+    assert.equal(requested[1].searchParams.get("cursor"), "opaque first+/=");
+    phase = "quiet"; await observer.check();
+    assert.equal(requested[2].searchParams.get("cursor"), "opaque next+/=");
+    assert.deepEqual(reasons, ["forced", "changed"]);
+    phase = "invalid"; await observer.check();
+    assert.deepEqual(reasons, ["forced", "changed", "unavailable"]);
+    phase = "restarted"; await observer.check();
+    assert.equal(requested[4].searchParams.has("cursor"), false);
+    phase = "held"; const pending = observer.check();
+    await observer.check(); assert.equal(requested.length, 6);
+    observer.dispose(); assert.equal(heldSignal?.aborted, true);
+    release(Response.json({ ...selection, cursor: "late", changed: true, hasMore: false }));
+    await pending; await observer.check(true);
+    assert.equal(requested.length, 6); assert.deepEqual(reasons, ["forced", "changed", "unavailable"]);
+  } finally { observer.dispose(); }
+});
+
+test("shared observer tracks visible modules separately without falling back to private changes", async () => {
+  const target = { spaceId: "00000000-0000-4000-8000-000000000001", childId: "00000000-0000-4000-8000-000000000002" };
+  const requests: URL[] = [], reasons: string[] = [];
+  let round = 0;
+  const selections = (["tasks", "documents"] as const).map(module => ({ ...target, module }));
+  const observer = createOnlineChangeObserver("https://service.invalid/api", "carer", async reason => { reasons.push(reason); }, async input => {
+    const url = new URL(String(input)); requests.push(url);
+    assert.equal(url.pathname, "/api/online/shared-changes");
+    const module = url.searchParams.get("module")!;
+    if (round === 2 && module === "documents") return Response.json({ error: "revoked" }, { status: 403 });
+    return Response.json({ ...target, module, cursor: `${module}-${round}`, changed: round === 1 && module === "documents", hasMore: false });
+  }, selections);
+  try {
+    await observer.check(true);
+    round = 1; await observer.check();
+    assert.equal(requests[2].searchParams.get("cursor"), "tasks-0");
+    assert.equal(requests[3].searchParams.get("cursor"), "documents-0");
+    round = 2; await observer.check();
+    round = 3; await observer.check();
+    assert.equal(requests[6].searchParams.has("cursor"), false);
+    assert.equal(requests[7].searchParams.has("cursor"), false);
+    assert.deepEqual(reasons, ["forced", "changed", "unavailable"]);
+    assert.throws(() => createOnlineChangeObserver("/api", "carer", async () => {}, fetch, [selections[0], selections[0]]), /selection/);
+  } finally { observer.dispose(); }
+});

@@ -9,6 +9,74 @@ const config = { apiKey: "synthetic-public-api-key-2026", authDomain: "test-proj
 const credentials = { name: "Synthetic parent", email: "alice@example.invalid", password: "synthetic-private-password" };
 const signal = () => new AbortController().signal;
 const turn = () => new Promise<void>(resolve => setImmediate(resolve));
+
+test("social identity links only after original UID proof and exchanges through the existing session", async () => {
+  const f = fixture(); let links = 0;
+  let providerUser: FirebaseIdentityUser = f.alice;
+  const methods = { userId: 'alice', providers: ['password', 'google.com'], currentProvider: 'password' };
+  Object.assign(f.sdk, { social: { providers: ['google.com', 'apple.com'],
+    async signIn() { f.state.current = providerUser; return providerUser; },
+    async link(user: FirebaseIdentityUser) { assert.equal(user.uid, 'alice'); links++; return user; },
+  } });
+  const fetcher: typeof fetch = async (url, init) => String(url).endsWith('/auth/providers') ? Response.json(methods) : f.fetcher(url, init);
+  const api = createFirebaseAuthApi({ baseUrl: '/api', publicOrigin, config, sdk: f.sdk, fetcher });
+  await api.authenticateProvider('google.com', signal());
+  assert.equal(f.state.session?.id, 'alice'); assert.equal(f.state.current, null);
+  assert.deepEqual(await api.authenticationMethods('alice', signal()), methods);
+  await api.reauthenticate('alice', { provider: 'google.com' }, signal());
+  assert.equal(f.state.signinCalls, 0);
+  await assert.rejects(api.linkProvider('alice', 'apple.com', false, signal()),
+    error => error instanceof ClientApiError && error.onlineCode === 'provider_link_consent_required');
+  assert.equal(links, 0);
+  await api.prepareProviderLink('alice', credentials.password, signal());
+  await api.linkProvider('alice', 'apple.com', true, signal());
+  assert.equal(links, 1); assert.equal(f.state.current, null);
+  providerUser = { uid: 'bob', email: f.alice.email, emailVerified: true };
+  const exchanges = f.state.exchanges.length;
+  await assert.rejects(api.reauthenticate('alice', { provider: 'google.com' }, signal()), ClientApiError);
+  await assert.rejects(api.prepareProviderLink('alice', { provider: 'google.com' }, signal()), ClientApiError);
+  assert.equal(links, 1); assert.equal(f.state.exchanges.length, exchanges); assert.equal(f.state.session?.id, 'alice');
+  methods.userId = 'bob';
+  await assert.rejects(api.authenticationMethods('alice', signal()), ClientApiError);
+});
+
+test("cancelled social sign-in clears late identity without exchanging a business session", async () => {
+  const f = fixture(), pending = deferred<FirebaseIdentityUser>();
+  Object.assign(f.sdk, { social: { providers: ['google.com'], async signIn() {
+    const user = await pending.promise; f.state.current = user; return user;
+  }, async link() { throw new Error('Unexpected link'); } } });
+  const api = createFirebaseAuthApi({ baseUrl: '/api', publicOrigin, config, sdk: f.sdk, fetcher: f.fetcher });
+  const controller = new AbortController();
+  const call = api.authenticateProvider('google.com', controller.signal);
+  await turn(); controller.abort(); await assert.rejects(call, ClientApiError);
+  pending.resolve(f.alice); await turn(); await turn();
+  assert.equal(f.state.current, null); assert.equal(f.state.exchanges.length, 0);
+});
+test("provider reconciliation waits for a cancelled link to settle before reading enrolled methods", async () => {
+  const f = fixture(), pending = deferred<FirebaseIdentityUser>();
+  let linked = false, reads = 0;
+  Object.assign(f.sdk, { social: { providers: ['apple.com'], async signIn() { throw new Error('Unexpected sign-in'); },
+    async link(user: FirebaseIdentityUser) { await pending.promise; linked = true; return user; },
+  } });
+  const fetcher: typeof fetch = async (url, init) => {
+    if (!String(url).endsWith('/auth/providers')) return f.fetcher(url, init);
+    reads++;
+    return Response.json({ userId: 'alice', providers: linked ? ['password', 'apple.com'] : ['password'], currentProvider: 'password' });
+  };
+  const api = createFirebaseAuthApi({ baseUrl: '/api', publicOrigin, config, sdk: f.sdk, fetcher });
+  await api.authenticate('signIn', credentials, signal());
+  await api.prepareProviderLink('alice', credentials.password, signal());
+  const before = f.state.exchanges.length, controller = new AbortController();
+  const linking = api.linkProvider('alice', 'apple.com', true, controller.signal);
+  await turn(); controller.abort(); await assert.rejects(linking, ClientApiError);
+  const cleanup = api.cancelProviderLink();
+  const reconciliation = api.authenticationMethods('alice', signal());
+  try {
+    await turn(); assert.equal(reads, 0, 'An unsettled link cannot be reconciled from an older provider list');
+  } finally { pending.resolve(f.alice); await cleanup; }
+  assert.deepEqual((await reconciliation).providers, ['password', 'apple.com']);
+  assert.equal(reads, 1); assert.equal(f.state.current, null); assert.equal(f.state.exchanges.length, before);
+});
 function deferred<T>() { let resolve!: (value: T) => void; const promise = new Promise<T>(done => { resolve = done; }); return { promise, resolve }; }
 function fixture(verified = true) {
   const alice = { uid: "alice", email: credentials.email, emailVerified: verified };

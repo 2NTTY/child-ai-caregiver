@@ -1,7 +1,8 @@
+import type { SharedAccessBasis, SharedSelection } from './sharing.ts';
 /** Online receipts are not an offline queue or a local business database. */
-export interface OnlineContext { workspaceId: string; storageEpoch: string }
-export interface OnlineIdentity extends OnlineContext { opId: string; deviceId: string }
-export interface OnlineCommand { path: string; payload: unknown }
+export interface OnlineContext { workspaceId: string; storageEpoch: string; sharingBasis?: SharedAccessBasis }
+export interface OnlineIdentity extends Pick<OnlineContext, 'workspaceId' | 'storageEpoch'> { opId: string; deviceId: string }
+export interface OnlineCommand { path: string; payload: unknown; sharing?: SharedSelection }
 export interface OnlineSubmission extends OnlineCommand { operation: OnlineIdentity }
 export interface OnlineReceipt {
   state: "confirmed";

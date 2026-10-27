@@ -3932,3 +3932,191 @@
 
 - 使用者在原站語音修正後回報「仍有問題」，其後明確表示「算了不驗收了，畢竟 agent 還沒做好」。依此暫緩語音排查及驗收，等待四角色完成與協作者自查，不再要求人工重試或啟動模型補驗。
 - 新症狀及根因未核實；原後端成功與失敗證據保留，未標完整通過。PLAN／STATUS 已同步；本次只有文件修訂與 diff 核對，沒有模型、設備、服務或部署操作。
+
+
+<a id="log-20261026-shared-web-closeout"></a>
+## LOG-20261026-SHARED-WEB-CLOSEOUT
+
+- 按使用者指定，B（CherylNg-2526）覆核並合併 #328／#329，master 程式版 `330a905`。局部修正準備單新勾選後的舊保存提示，以及 Web 縮放下聊天 prepend 錨點；沿用兩 PR 的定向／RN Web 證據，不重跑功能測試或將既有型別錯誤寫成通過。協作者 Agent PR 未修改。
+- 只產生必要發布包。首 Web 匯出在 sandbox 編譯後 mkdir EPERM，保留失敗；同一輸入取得所需檔案權限後 Web／Android 匯出成功。Web 包 4,744,027 bytes 經 IAP 傳至原 VM，候選 hash 及原版守衛通過後只更新 Web `27a5c90`；公開 index hash／health 通過，API／worker 維持 `663125d`，保留 `e813692` 及 0600 配置供回退。
+- Android 31 檔、13,730,604 bytes，沿既有直接 TLS 上傳一次成功；preview OTA group `4f3f95a3-a779-4363-904c-224302098bf1`／update `01a176d6-3f6b-789c-b601-04e882beec80` 已發布，與 APK v4 runtime 相容，毋須重裝。零模型／通知／資料遷移／配額改動；沒有重驗設備或續期主機。原失敗、精確版本、界線及回退附於[既有交付證據](artifacts/verification/SHARED_READING_DELIVERY_20261024.json)的 `closeout20261026`。
+
+<a id="log-20261026-original-nonfrontend-skills"></a>
+## LOG-20261026-ORIGINAL-NONFRONTEND-SKILLS
+
+- 按使用者要求，先以 A 帳號精準撤回 #331，#332 合併為 `dac2914`；回退的索引樹與 #331 第一父提交完全一致。之後才在新分支重新安裝，不沿用 dot 的適配方法或驗證結果，沒有修改產品、AGENTS 規則、前端實驗分支或協作者 Agent PR。
+- 官方 Codex 插件管理已安裝並啟用 Superpowers 7.0.1 及 Codex Security 0.1.32；官方 skill-installer 安裝 Anthropic improver 及原版安全編碼庫至專案。主模型只為 Anthropic 作 Codex 名稱／工具／路徑相容，保留完整評分、模板、流程，並包裝原 session 修訂命令。精確來源、差異與 hash 見 [安裝紀錄](docs/SKILLS_INSTALLED.md)／[manifest](docs/SKILLS_INSTALLED.json)。
+- 新核原作者 Superpowers 84 檔及安全編碼庫 13 檔完全一致；Security 分發 142 檔均存在，140 檔逐檔一致，兩項官方目錄 metadata 差異如實記錄，未改插件。Codex app-server 已發現兩插件各 15 項技能及 3 個 repo 技能，無解析錯誤；原版 Windows Security MCP 握手／工具清單通過，取得 47 個工具。沒有業務工具呼叫、掃描、額外模型、帳戶連接、權限變更或產品測試。
+- 依賴核對中 Git Bash 在受限 shell 被 Windows sandbox 拒絕，相同命令於獲授權 shell 成功，沒有更改政策。首次安裝紀錄生成因 Python 預設 GBK 讀 UTF-8 JSON 失敗；改為明確 UTF-8 後生成成功，未影響原版來源或重跑已通過的 runtime 核對。
+- 上游 regex 範例與本 host 子代理參數差異另列，未暗改原文。已驗安裝、完整資源、發現及 MCP 啟動；完整掃描、視覺輔助器及子代理工作流未執行，當前桌面舊上下文刷新亦不冒稱已驗。
+- 主模型完成相容 diff、完整資源、相對連結、24 個專案檔案 hash 及修改範圍核對；相容修改與紀錄的 `git diff --check` 通過。全包另有五處上游原版行尾空白，與來源一致並原樣保留，不將全包 whitespace 檢查宣稱為通過。
+
+<a id="log-20261026-agents-entry-clarity"></a>
+## LOG-20261026-AGENTS-ENTRY-CLARITY
+
+- 使用者在 agents-md-improver 品質報告後明確要求沿 revise-agents-md 更新規範。根 AGENTS 補既有本地／建置／單檔檢查入口；前端補正式 Provider／owner 位置，四尺寸依改動影響選取。主模型精簡重複研究／派單／狀態說明，保留模型分工、困難任務親做、dot 例外、權限、首次失敗停批及必要驗收；未改 Skill、配置或產品。
+- 兩份 AGENTS 原共 34,385 bytes，現已低於預設 32 KiB 合併容量；只核靜態 bytes、原錨點、相對連結、package scripts 及 diff，不以此宣稱新會話載入已實測。沒有跑產品、模型或設備驗收。先前報告指出的 frontend/PLAN #253 歷史現況另留原域處理，本包不改寫歷史證據或新增進度清單。
+- 一次獨立唯讀 review 未發現重大規則遺漏，指出 `src/preview/` 仍含正式使用的 guard／provider；主模型對照兩個正式 layout 後修正文案，只排除合成 fixture／預覽 owner 作正式資料來源，不誤導刪除共用元件。
+
+<a id="log-20261026-agents-concise-guidance"></a>
+## LOG-20261026-AGENTS-CONCISE-GUIDANCE
+
+- 使用者要求縮短根 AGENTS、刪減過度保守及重複敘述。主模型合併研究、派單／等待、文件與交付規則，移除過時日期；明示已有授權內的必要工作直接推進、本人步驟只阻塞相關項，不概括授權新增費用、外發、權限變更或不可逆操作。
+- 以 Git 的 UTF-8／LF 正文計，根文件由 28,967 減至 17,030 bytes（約 41.2%）；前端 AGENTS、產品、Skills 及 runtime 配置不變。保留既定模型／effort、角色上限、dot 例外、指導親寫、隔離／確認／防重、首次驗收失敗停批及歷史證據規則。
+- 12 個原有錨點與兩份 AGENTS 本地連結核對通過，diff whitespace 核對通過；獨立唯讀 review 比較 `d9b4282..a9ae03f` 未發現重大遺漏或擴大授權，主模型覆核關鍵條款後採納。沒有產品、模型、設備測試或部署，不宣稱新會話載入已實測。
+
+
+<a id="log-20261026-p4-p5-integrated-plan"></a>
+## LOG-20261026-P4-P5-INTEGRATED-PLAN
+
+- 日期：2026-10-26（香港時間）；基線 master 22f0106，獨立分支 codex/p4-p5-integrated-plan。依使用者確認整合原 P4 與家庭／教師／文檔包兩份方案，主模型親寫根 PLAN、SPEC／REQ／AC、目標 API／資料／架構、ADR-028、REQ-006 範圍對照及 STATUS；只有文件，沒有產品程式／AGENTS 改動、部署或 D PR 操作。
+- P4 保留集中服務完整知識、分享、分析、可靠性與災備，新增個人／班級優先、選定模組共享、多孩批次、可信完整性通過後直接匯入、本人私人備份及完整匯入紀錄；自選 Server／Windows 自部署／跨 Server 能力移 P5，S16／S17 分階段。配對／臨時裝置會話取消，正常登入／撤銷保留。PD-01～06 與 P3 原有未驗、D 角色責任、真備份還原待驗均未改寫為完成。
+- 一次 Sol 唯讀獨立 review 發現配對的舊 AC／閱讀入口及 API 的 P4 Server 切換分期漏同步；主模型修正，同步原 P2 前移對照的現行剩餘範圍。未改歷史 ADR 或既有驗收證據；公共知識來源庫的核對要求不誤套為私人資料強制內容檢查。
+- 必要文件核對：原有 1,492 個明示錨點均保留，新增 47 個目標／需求／AC 錨點、31 個新增本地連結有效，沒有新增重複錨點；10 項 REQ-P4、11 項 AC-P4、P5／交付 AC、6 項待決及 4 組跨階段子包均存在。舊 ADR 正文保持，WORKLOG 僅追加；按 Git LF 正規化核對，避免 Windows 行尾差異誤報。git diff --check 通過，沒有產品／模型／設備測試。
+- 下一步：只在獲授權開發相應包後按真接口依賴推進。六項待決只阻相應實作，P3／D 接口及本人／設備條件繼續分別追蹤；本次文件定案不是 P4／P5 功能完成。
+
+<a id="log-20261027-p4-execution-contract"></a>
+## LOG-20261027-P4-EXECUTION-CONTRACT
+
+- 基線 master 76be40d／PR #336，分支 codex/p4-execution-contract。使用者已確認整份 P4 執行計劃並要求建立目標；目標已啟用，主模型先更新根 PLAN，再同步 SPEC／AC、API、資料／架構、ADR-029、來源庫範圍對照及 STATUS。功能未實作，沒有產品測試、部署或 D PR 改動。
+- 落實 PD-01～06：共享原資源、班級獨立移出、缺證明可選／完整性失敗拒絕、匯入待辦沿普通建立規則、退出轉交／解散、本人差異還原；增加統一匯入入口及各模組數量結果。原 P4 知識／分享／分析／可靠性／災備及 S16／S17 保留，P3／P5 與既有未驗證據不變。
+- 一次既有 Sol reviewer 的唯讀覆核指出管理權轉交與個人原件刪帳結果需明確區分；主模型同步 SPEC／API／資料／ADR：已轉交空間自有資料保留，個人原件仍按本人刪帳規則並撤共享引用，不自動轉移或複製。沒有擴大共享授權或回寫舊 ADR。
+- 文件核對：原有明示錨點保留、新本地連結可解析、六項決定與 REQ／AC 相符；ADR 歷史不變、WORKLOG 只追加，git diff --check 通過。一次命令層停用 autocrlf 令 CRLF 被誤當全檔差異，恢復既有 Git 行尾正規化後核對通過，沒有因此改動歷史正文。只做文件檢查，未安裝新套件或宣稱其相容已實測。
+- 下一步：文件 review／合併後開始 P4-FAMILY-A，以現有 Firestore 權威層拆清操作者與穩定儲存身份；不全庫搬移／重加密。僅相應 D 接口、本人或平台前置阻擋相關項，繼續其他已授權工作。
+
+<a id="log-20261027-p4-family-authority-foundation"></a>
+## LOG-20261027-P4-FAMILY-AUTHORITY-FOUNDATION
+
+- 基線 `5c564f9`／#337，分支 `codex/p4-family-authority`。主模型實作 FAMILY-A 首段：現有加密／Firestore 交易上的空間、角色、邀請、選定模組分享、撤權、管理權轉交及原操作收據；分清操作者與原資料儲存身份，舊個人路徑仍不讀其他人資料。沒有新套件、SQL、模型、雲端資源、部署或 D PR 修改；這不是公開家庭功能交付。
+- 補既有備份／清理／恢復識別：目前共享權限及原操作收據優先於舊備份；新管理員／活動成員的必要身份圖可接回，不帶私人業務副本；來源 epoch 重綁、刪除重放、authority hash 納入共享控制資料。新增集合維持備份清單 append-only，索引與私密欄位排除先保存為部署定義，尚未上雲。
+- 兩次同一 Sol 的唯讀 review 找出撤權後原收據披露、管理員轉回後舊邀請復活、還原遺失較新 create 收據；主模型分別以目前權限／最小終態收據、管理任期世代及現行收據恢復修正，補入同一批合成流程。
+- 必要證據：4 條新增共享／轉交／恢復／邀請流程通過；既有 authority 的 20 項檢查及一條舊孩子刪除恢復通過；受影響 Server 與新增檢查的限定型別核對、diff 空白核對通過。完整 Server 型別入口包含多個既有測試檔錯誤，本包沒有擴大修改；不聲稱全倉型別或全量測試通過。
+- 失敗保留：最初加密讀取接線將 schema／snapshot 次序寫反，已按原函式修正；合成恢復 fixture 缺 `DocumentReference.get` 及 Timestamp，補原有測試方式後，再補恢復 metadata allowlist，定向核對通過。另一條既有恢復測試 `restore applies current revocation and journal erasure without restoring sessions or post-backup child authority` 在第 250 行仍報照片數量 `3 !== 1`；用基線 `5c564f9` 原程式載入同一測試也重現，未改斷言或抹除失敗。[本包證據](artifacts/verification/P4_FAMILY_AUTHORITY_FOUNDATION_20261027.json)。
+- 下一步：FAMILY-A 尚欠各領域共享讀寫、附件／背景及變更同步，Family-B／Class01 再接公開 API／薄 UI。真 Firestore 競爭、新共享資料正式恢復及跨端結果尚未驗，不把內部服務、合成通過或合併當整包完成。
+
+<a id="log-20261027-p4-shared-care"></a>
+## LOG-20261027-P4-SHARED-CARE
+
+- 基線 `a2c8cc4`／#338，分支 `codex/p4-shared-domain-access`。沿現有共享授權、CareStore、online 收據與正式 Firebase HTTP 接記錄／概況，沒有新資料權威、套件、模型、雲端資源或部署，也未修改 D 的 Agent 程式／PR。
+- 同一交易使用操作者身份及原資源 scope；作者／確認者記實際操作者，原件修改、來源變更、操作者變更及收據一併提交。共享只准相應模組，不授予私人工作／聊天／帳戶操作。共用 client 選空間、保存版本 basis，未知結果仍沿原 opId 查回；撤權或空間解散只遮蔽收據結果，不丟失已成功身份。
+- 保留原 owner-only 恢復核對；共享署名須有同份密文內的 Server 空間／來源／資源／版本證據。自動批准審查拒絕過直接移除舊署名檢查的方案，未套用該方案；改為有界相容判斷後核對無證據的非 owner 記錄仍被拒絕。第一次新收據讀回曾漏移除內部署名證據，已統一公開投影，原失敗未改成通過。
+- 同一 Sol 唯讀 review 發現刪除後共享重建概況的恢復 schema 丟失證據，以及空間解散後收據仍回錯誤；已改用儲存 schema 與原成功空結果，於同一流程補核。後續覆核未見新增具體 blocker。
+- 證據：5 條共享檢查通過，其中新增一條包含正式 HTTP／共用 client、版本前置、原收據、角色／模組、私人工作拒絕、概況刪除再建及刪除重放；兩個舊收據相容檢查與限定型別核對通過。只補受影響檢查，不跑全量、雲端、模型或設備測試。[證據](artifacts/verification/P4_SHARED_CARE_20261027.json)。
+- 下一步：待辦／記憶、文件／附件、背景授權及其他成員的變更同步仍未接完；Family-B／Class01 才開放空間選擇與共用畫面。父包 FAMILY-A／P4 不因此完成，先前備份待驗與基線恢復斷言失敗保留。
+
+<a id="log-20261027-p4-shared-tasks"></a>
+## LOG-20261027-P4-SHARED-TASKS
+
+- 基線 `1249ee9`／#339，分支 `codex/p4-shared-memory-tasks`。復用 `prepareTask`、狀態規則、正式 HTTP、共用 Web／Android task client 與 worker；共享成員操作同一原件，作者／修訂操作者如實保存。沒有新套件、雲端、模型、部署或 D PR 修改。
+- 接收者及通知授權仍沿原資料帳戶；完成／取消同交易停止待執行 outbox，已領取工作在真正完成前再核終態。共享收據只存原修訂指標，查回重核目前 grant，撤權只遮蔽結果，不重做操作。密文保留 Server 共享署名證據，公共 DTO 移除證據；舊 owner-only 記錄仍兼容，缺證據的非 owner 恢復被拒絕。
+- 一條共享流程涵蓋正式 client／HTTP、角色、原件、版本、收據、終態及撤權；三條受影響的既有本人／提醒檢查通過，限定型別與 diff 核對通過。同一 Sol 完成唯讀 review，未見剩餘具體 blocker。只補必要檢查，不跑全量。[證據](artifacts/verification/P4_SHARED_TASKS_20261027.json)。
+- 失敗保留：新測試先因共享 task 路由尚未接通而失敗；接線後測試替身缺 `<`／`<=` 比較，已補最小查詢語義；HTTP 漏匯入 z 已修正。舊本人檢查另找出 optional proof 以 undefined 傳入既有 canonical JSON 而無法讀回，改為沒有證據便不加入欄位，同三項檢查通過。
+- 下一步接記憶、文件／附件、背景與共享同步。多接收者指派、家庭／班級公開畫面、真雲端競爭及正式恢復仍未交付，FAMILY-A／P4 不作完成；P3、D 工作及原恢復失敗不改寫。
+
+<a id="log-20261027-p4-shared-memory"></a>
+## LOG-20261027-P4-SHARED-MEMORY
+
+- 基線 `7393d8d`／#340，分支 `codex/p4-shared-memory`。復用原記憶服務、權限、confirmed-fact、online 收據、正式 HTTP 及共用 client；共享原事實／主題，沒有新權威、套件、模型、雲端操作或 D PR 改動。
+- family 讀取與修訂分頁排除原私人候選；私人摘要不共享，私聊 ID 只向來源帳戶披露。共享成員可以保留原私聊來源描述修改已確認事實，不能用新私聊 ID 調閱別人的內容。手動新增須明確確認，不把私人 candidate 自動公開；署名證據保留於密文，公共投影移除，還原仍拒絕無證據的非 owner 作者。
+- 一條連貫檢查涵蓋正式 client／HTTP、新增／修改、原操作重試、終態、歷史、來源隱私、刪除／撤權及還原證據；兩條舊記憶／摘要相容檢查通過，限定型別與 diff 通過。初次預期 red 為共享 store 未接通；原失敗保留。同一 Sol 唯讀 review 未見具體 blocker。[證據](artifacts/verification/P4_SHARED_MEMORY_20261027.json)。
+- 只定義兩個 shared-history 索引，未部署；家庭／班級選擇 UI、跨成員同步、文件／附件與背景仍待接線，FAMILY-A／P4 未完成。先前原生備份還原待驗及基線恢復斷言失敗不改寫。
+
+<a id="log-20261027-p4-shared-documents"></a>
+## LOG-20261027-P4-SHARED-DOCUMENTS
+
+- 基線 `70b2899`／#341，分支 `codex/p4-shared-documents`。沿用既有文件、固定版快照、分段讀取、PDF、操作收據及報告 worker；共用 Web／Android client 與正式 HTTP 接空間選擇。文件仍保存在來源原件，實際操作者另存密文署名證據，不新增套件、雲端或 D PR 修改。
+- 已存摘錄可以閱讀；新整理只取獲共享模組。背景報告持久保留發起者／空間／授權 basis，撤權或版本過期停止，不改用 owner 權限。來源失效遮蔽正文但保留操作狀態；viewer 不可改，舊本人資料與恢復 owner-only 檢查保留。
+- 兩條新連貫流程及兩條舊本人文件檢查通過，限定型別與差異核對通過。沿 requesting-code-review 使用同一 Sol 唯讀覆核，發現未分享新版來源可藉 patch 重綁洩露；先以新增斷言重現，再限制內部核對只回存已披露且仍匹配的摘錄，覆核未見剩餘 blocker。沒有全量或模型驗收。[證據](artifacts/verification/P4_SHARED_DOCUMENTS_20261027.json)。
+- 其他原失敗保留：測試方法 get／describe／revise 不符、替身缺 reference.id，以及未共享 profile 使報告無法完成；前兩項修測試接點，後者保存未知概況不補讀私人資料。正向新來源檢查另修正既有時間未知字尾斷言及 literal 型別，沒有放寬產品授權。
+- 未部署；家庭／班級畫面、附件、其他背景與共享同步繼續接線。FAMILY-A／P4 尚未完成，真 Firestore 競爭／還原、P3 未驗與 D 的責任保持原狀。
+
+
+<a id="log-20261027-p4-shared-attachments"></a>
+### LOG-20261027-P4-SHARED-ATTACHMENTS
+
+- 基線 `8f5ec19`，分支 `codex/p4-shared-attachments`。共享附件沿原件、原加密及同一權威服務，接通照片／錄音／一般檔案清單、下載及已保存轉錄的正式 HTTP／共用 client；未新增套件、索引或資料庫。
+- 讀取前後與續頁保存操作者、來源、世代及分享 basis；撤權後重新授權亦不能沿舊讀取發出內容。私人訊息／抽取草稿及未完成附件不披露；共享寫入尚待下一段，明確拒絕而不回退私人操作。
+- 一條新連貫流程、三條舊本人分頁／client 相容檢查、受影響 TypeScript 依賴圖及 diff 核對通過。獨立 Sol review 未報 blocker，主模型覆核關鍵變更；零模型、通知、雲端、手機及部署。[證據](artifacts/verification/P4_SHARED_ATTACHMENTS_20261027.json)。
+- 原失敗保留：缺共享方法先 red；合成查詢替身缺倒序多欄位 cursor，按真契約修正；正式 transcript HTTP 曾仍走私人 reader，403 重現後接回共享 reader。替身物件／Auth 型別缺項另補，不改產品限制或放寬斷言。
+- FAMILY-A／P4 未完成：繼續共享寫入、Agent／背景、同步與家庭／班級畫面；不改 D PR，P3／P5 及真機未驗保持。
+
+
+<a id="log-20261027-p4-shared-attachment-deletion"></a>
+### LOG-20261027-P4-SHARED-ATTACHMENT-DELETION
+
+- 基線 `dbf491f`，分支 `codex/p4-shared-attachment-writes`。文件／錄音共享刪除接原 HTTP／共用 Web／Android client、權威服務、獨立 journal 與 cleanup worker；無新增套件、索引、雲端、模型或部署。
+- 來源原件刪除屏障及實際操作者收據同交易提交；受理不等於日誌完成，日誌未知時不回永久刪除。撤權停止新操作，但原清理義務可繼續；未連結私人草稿／viewer 不可刪除。原 opId、版本及署名綁定保留，恢復沿同一 schema 核對。
+- 新連貫流程涵蓋正式 HTTP／共用 client、版本／撤權／原操作／清理；另核受影響共享讀取、一條共用 client 檢查及舊本人文件／錄音各一條，限定 TypeScript 與 diff 通過。未跑全量、模型或設備驗收。[證據](artifacts/verification/P4_SHARED_ATTACHMENT_DELETION_20261027.json)。
+- 獨立 Sol review 找到 journal 以來源 owner＋opId 唯一鍵造成跨操作者衝突；先改合成 transport 對應正式鍵並重現，再復用 authority 原有穩定來源操作映射，另存 actorOperationId，補驗通過。原缺方法／client 阻擋 red、CRLF 替換語法、error.code 測試路徑及 voice import 遺漏均保留在證據，不放寬產品限制。
+- 照片刪除配額／照護記錄、共享上載／私聊關聯、Agent／其餘背景、同步與家庭畫面仍待接；未部署，FAMILY-A／P4 未完成，P3／P5 及 D PR 保持。
+
+
+<a id="log-20261027-p4-shared-photo-deletion"></a>
+### LOG-20261027-P4-SHARED-PHOTO-DELETION
+
+- 基線 `713b74e`，分支 `codex/p4-shared-photo-deletion`。共享照片刪除接原 online／共用 client、來源配額、照護記錄失效、獨立日誌及 cleanup；不新增套件或索引。
+- 當前角色／basis／版本與來源刪除、配額轉移及操作者收據一併受理；日誌未知不回刪除成功。原清理可在撤權後接續，關聯記錄只經原 photo.recordId 處理，不開一般 care 權限；兩項刪除義務使用各自穩定日誌 ID。
+- 一條正式 HTTP／client 合成流程兼核版本、journal 失敗、撤權、原操作、配額及還原後的 cleanup consumer；共用 client 一條恢復檢查、舊本人照片／清理／還原三項及局部型別通過。獨立 Sol review 未報 blocker，主模型覆核關鍵 diff。[證據](artifacts/verification/P4_SHARED_PHOTO_DELETION_20261027.json)。
+- 保留原失敗：缺共享 route、測試 record wrapper、依賴記錄 module guard、nullable journal 型別與缺內容獨立日誌的 restore 拒絕；修正接點／測試設定，不移除權限或日誌要求。
+- 零雲端、模型、通知或部署；共享新增／聊天關聯、其餘背景、同步及家庭畫面仍待接，FAMILY-A／P4 未完成，P3／P5 及 D PR 保持。
+
+
+<a id="log-20261027-p4-shared-sync"></a>
+### LOG-20261027-P4-SHARED-SYNC
+
+- 基線 `d594f1b`，分支 `codex/p4-shared-sync`。新增選定空間／孩子／模組的共用刷新接點；復用來源 changes、現有授權與前景輪詢，回覆只有 opaque cursor／失效訊號，不回來源私人活動歷史。
+- 首讀及新共享 basis 刷新當前資料，續讀每頁至多 100 筆，其他孩子在查詢時排除；撤權拒絕，另一身份不能借用游標。共同 observer／hook 同步接線，無 selector 保留本人舊流程；家庭畫面真實 selector 待 FAMILY-B。
+- 正式 HTTP 一條流程、client 新舊 observer 兩項及受影響型別通過。獨立 review 找到 documents／memory 跨來源失效漏刷，定向重現後補依賴訊號，補驗與增量覆核通過；原 404／client 讀錯入口 red 保留。[證據](artifacts/verification/P4_SHARED_SYNC_20261027.json)。
+- 新增一項 changes 子女複合索引定義，尚未建雲端索引或部署；零模型、通知、設備及付費操作。FAMILY-A／B、P3／P5 及 D PR 的未完成界線保持。
+
+
+<a id="log-20261027-p4-auth-provider"></a>
+### LOG-20261027-P4-AUTH-PROVIDER
+
+- 基線 `89808f1`，分支 `codex/p4-auth-provider-session`。沿既有 Firebase 13.0.0／Admin 14.5.0／Functions 7.4.0、session、准入及裝置台帳，接本人 provider 讀取、同 UID 重新驗證、Web 原生 popup／明確 linking 與共用 owner／表單；零新增依賴。
+- 連結先以原方式驗證，再以另一手勢明確同意，暫存 SDK 身份最多兩分鐘。provider-only 不要求密碼；取消拒絕遲到 session 交換，供應商已完成的連結以目前方法讀回核對。已知 SDK 拒絕顯示固定原因，真正 unknown 仍先讀回。
+- 定向 provider／舊密碼相容、原生真 HTTP transport、共用 owner、局部型別及 Web 匯出通過；未跑全量／真人／模型。獨立 review 發現取消後過早讀回舊 providers，定向 red→green 修正為等待原 SDK 清理；原生讀回及相關 client 檢查通過。保留初始缺接點、fixture 型別、前端型別及錯誤提示的失敗記錄。[證據](artifacts/verification/P4_AUTH_PROVIDER_20261027.json)。
+- Web provider 配置預設空，沒有改雲端設定或部署。Firebase 自動連結／duplicate-email 的 profile 取捨須先核定，不能只打開按鈕；原生 provider、Apple 邀請接續及真人配置仍待處理，AUTH01／P4 未完成。P3／P5 及 D PR 不變。
+
+
+<a id="log-20261027-p4-auth-native"></a>
+### LOG-20261027-P4-AUTH-NATIVE
+
+- 基線 `181865b`，分支 `codex/p4-auth-native-providers`。固定採 Google Sign-In 16.1.5／Apple Authentication 2.5.1，沿現有 expo-crypto 及 Firebase JS／共用 owner，沒有新增身份權威、升級其他套件或改雲端設定。
+- 原生 credential 回原 session／明確 linking；Google 清本機選擇、Apple 每次 nonce／state，取消／錯 state 不進 Firebase。新增公開配置、官方 iOS callback plugin／Apple entitlement，保持 Android 通知 descriptor 及舊平台入口。
+- 一條原生 adapter red→green、三項配置／原平台相容、局部型別、官方 iOS plugin introspection 及 Android Hermes 匯出通過；獨立 review 未報重要 blocker。保留測試 skipPlugins 設定、credential fixture 型別及首輪 Hermes 暫存權限失敗；僅改驗證暫存位置後成功。[證據](artifacts/verification/P4_AUTH_NATIVE_20261027.json)。
+- 原生套件需要新 binary，未雲端建置、部署、發 OTA 或真人登入。provider 預設空；Google 免費 Original 底層棄用限制、Firebase 自動連結／電郵准入、Apple 邀請／團隊及真機接續仍明列，AUTH01／P4 未完成。
+
+<a id="log-20261027-p4-family-control"></a>
+### LOG-20261027-P4-FAMILY-CONTROL
+
+- 基線 `aeab7d6`，分支 `codex/p4-family-shared-entry`。沿原 Firestore 共享交易接家庭管理 HTTP／共用 client、建立／邀請／接受、角色及模組、轉交與退出；同一原件與身份，不新增套件、SQL 或另一份孩子資料。
+- 列表有界並核目前權限；控制收據只公開必要結果，撤權後回無正文 metadata，避免重做已提交操作。Web／Android 共用身份級 controller／畫面，沒有孩子亦可建／加入家庭；舊設定入口接回管理頁，未知操作跨頁保留，身份切換清理。
+- 正式 HTTP／client 控制流程、原共享還原、控制器一組情景、局部前後端型別及一次 Web 匯出通過。獨立 review 的 unknown→原版本衝突鎖死已 red→green 修正；其餘未知拒絕不放寬。初次 fixture overload、Node strip-only 語法及 Node types 問題保留於[證據](artifacts/verification/P4_FAMILY_CONTROL_20261027.json)。沒有全量測試、模型、通知、雲端資源或部署。
+- 四項索引尚未建立；未做 GUI／手機驗收。全局共享孩子選擇、各頁 owner、共享上載／聊天、其餘背景及完整 P4 未完成；D PR、P3／P5 未改。
+
+<a id="log-20261027-p4-shared-growth-concerns"></a>
+### 2026-10-27：P4 成長／持續關注共享讀取前置
+
+- **目標／基線：**由 `59befbb` 補 FAMILY-B 全局共享選擇之前缺少的兩個讀取接點；完整 P4 仍未完成。
+- **實作：**復用原 Firestore authority／domain 及 client，加選定空間的 HTTP 讀取；同交易核權。保存的派生內容與未共享即時資料分開，私人 run／未共享關聯遮蔽，原件不修改；未接共享寫入明確拒絕。
+- **證據：**定向流程先重現 403（忽略共享選擇），修正後同一流程通過；補非空近況與私人 run 斷言後仍通過。局部型別、diff check 及獨立唯讀 review 通過；見 [P4_SHARED_GROWTH_CONCERNS](artifacts/verification/P4_SHARED_GROWTH_CONCERNS_20261027.json)。沒有全量、畫面、模型、通知或雲端驗收。
+- **協作／限制：**主模型實作／契約與整合，Sol 唯讀 review；不代填人工結果，不改 D 的 PR。後端／契約與共用 client 按責任以單作者提交。沒有新資料格式、索引、依賴或部署。
+- **下一步：**全局共享孩子／owner 接線；成長／關注寫入的原操作者收據與背景授權仍須補齊，不能把此讀取前置當作家庭功能完成。
+
+<a id="log-20261027-p4-shared-child-context"></a>
+### 2026-10-27：P4 全局共享孩子與頁面接線
+
+- 由 `d63b2a7` 接既有家庭管理、共用 owner 及領域 client；孩子標籤／角色／模組／basis 交易讀取，不搬資料、不新增套件。選單組合 ID 與業務 childId 分開，未共享／未接範圍不借本人資料，切換／撤權清舊快取。
+- 共享成長／關注與文件 authority 格式不同，重現後統一短 digest；首次沿文件長格式超出 client 上限亦保留。帳號暫時失敗保留共享目標、隱藏內容，恢復不誤選私人同 ID 孩子。
+- 獨立 review 的五項問題已定向修正：care/profile basis、共享記憶新增、首頁 selector、可見 header／側欄同步、新增文件交易核對原 basis。沿現有確認／收據／重試，私人候選及舊文件呼叫保持相容。
+- 局部 Server 型別、定向流程及最終 Web 匯出通過；前端仍有四項原型別診斷，不稱全數通過。初次 npx 因 sandbox proxy 失敗，改用既有同版本離線快取完成建置。失敗與未驗細節見[證據](artifacts/verification/P4_SHARED_CHILD_CONTEXT_20261027.json)，零模型／通知／雲端／部署／手機驗收。
+- 主模型負責契約與高耦合 owner；Sol 限定 hook／記憶接點，另一位獨立 review。不改 D PR。共享附件頁面、新增與聊天關聯、成長／關注寫入及其餘 P4 仍須接續，不標整體完成。
+
+<a id="log-20261027-p4-shared-attachment-pages"></a>
+### 2026-10-27：P4 共用附件頁面
+
+- 由 #351／`8fd6649` 接既有共享附件 API、照片 owner、檔案下載與語音播放／轉錄；保留同一原件，沒有新增套件、資料庫或私人聊天副本。未共享模組及私人來源不自動讀取，viewer 不可刪除。
+- 主模型處理原收據恢復、清單投影及契約；兩個限定 Sol 分別接照片與媒體元件，另一位 Sol 獨立唯讀 review。review 發現 pending 鎖擋原刪除重試，定向 RED→GREEN；另核實受理收據不是日誌完成，查回後沿原 opId 接續端點，不假報刪除完成。
+- 新增及既有 client／HTTP 投影檢查通過；型別只剩四項既存診斷。額外三個舊檢查受 jsdom 缺失及舊 fixture 缺 owner 阻擋，不安裝新依賴或重跑整批；失敗照存。精確範圍見[證據](artifacts/verification/P4_SHARED_ATTACHMENT_PAGES_20261027.json)。
+- 沒有 Web 建置、部署、雲端、模型、通知或設備驗收；共享上載／Agent、AUTH01 與完整 P4 尚未完成。D PR、P3 未驗項及 P5 保留。

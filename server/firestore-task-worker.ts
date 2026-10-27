@@ -6,7 +6,8 @@ import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationPreferences } from '
 import { nextReminderCheck, reminderDecision, reminderLocalTime } from './task-policy.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreReminderOutboxId, firestoreReminderOutboxSchema,
-  firestoreTaskSchema, sealFirestoreReminderOutbox, type FirestoreDomainOptions, type FirestoreReminderOutbox } from './firestore-domain-data.ts';
+  firestoreTaskSchema, firestoreTaskStorageSchema, sealFirestoreReminderOutbox, type FirestoreDomainOptions, type FirestoreReminderOutbox } from './firestore-domain-data.ts';
+import { validTaskAttribution } from './firestore-task-records.ts';
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { prepareFirestoreBackgroundWork } from './firestore-background-work.ts';
 
@@ -90,10 +91,9 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
     const snapshot = await binding.transaction.get(data.ref('tasks', 'task', taskId));
     if (!snapshot.exists) return null;
     matchTags(snapshot.data(), binding.scope);
-    const value = data.open('task', taskId, binding.scope, firestoreTaskSchema, snapshot);
-    if (value.id !== taskId || value.childId !== binding.scope.childId || value.assigneeUserId !== binding.scope.ownerUserId
-      || value.createdBy !== binding.scope.ownerUserId || value.version !== snapshot.get('recordVersion')) domainReject('task_binding', 500);
-    return value;
+    const value = data.open('task', taskId, binding.scope, firestoreTaskStorageSchema, snapshot);
+    if (value.id !== taskId || !validTaskAttribution(value, binding.scope) || value.version !== snapshot.get('recordVersion')) domainReject('task_binding', 500);
+    return firestoreTaskSchema.parse(value);
   }
   async function outbox(binding: FirestoreAuthorityTransaction, taskId: string, taskVersion: number) {
     const id = firestoreReminderOutboxId(taskId, taskVersion), ref = data.ref('task_outbox', 'task-reminder-outbox', id);

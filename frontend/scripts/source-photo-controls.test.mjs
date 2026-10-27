@@ -124,7 +124,7 @@ function sourceOwner(role = "owner") {
   };
   const owner = harness("src/production/usePhotoInputSources.ts", "usePhotoInputSources", [], {
     "../../../src/client/shared-input-api": {createSharedInputApi: () => api, SharedInputApiError: ApiError},
-    "./useDomainEnvironment": {useDomainEnvironment: () => env, useDomainWriteGuard: (dirty, pending) => {
+    "./useDomainEnvironment": {forSharedModule:env=>env,useDomainEnvironment: () => env, useDomainWriteGuard: (dirty, pending) => {
       counters.guard.push([dirty, pending]); nav.value.register("source", {dirty: !!dirty, pending, scope: "child"});
     }},
     "./ProductionProvider": {useProduction: () => ({chatDraft: "", setChatDraft() {}, openAgentDraft() {}})},
@@ -217,7 +217,7 @@ function photoOwner(kind = "reserve") {
   };
   const owner = harness("src/production/PhotoInputDomains.tsx", "useProductionPhotos", [], {
     "../../../src/client/photo-api": {createPhotoApi: () => api, PhotoApiError: ApiError},
-    "./useDomainEnvironment": {useDomainEnvironment: () => env, useDomainWriteGuard: (...value) => counters.guard.push(value)},
+    "./useDomainEnvironment": {forSharedModule:env=>env,useDomainEnvironment: () => env, useDomainWriteGuard: (...value) => counters.guard.push(value)},
     "./usePhotoInputSources": {usePhotoInputSources: () => ({})}, __path: () => "/photos",
   });
   return {owner, state, api, env, counters};

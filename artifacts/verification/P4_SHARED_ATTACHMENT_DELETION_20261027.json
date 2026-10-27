@@ -1,0 +1,109 @@
+{
+  "date": "2026-10-27",
+  "package": "P4-FAMILY-A shared file and voice deletion",
+  "base": "dbf491fb60fc59594197d1b9b932396ab30cd1ab",
+  "branch": "codex/p4-shared-attachment-writes",
+  "environment": {
+    "node": "24.19.0",
+    "database": "serial synthetic Firestore fixture",
+    "models": 0,
+    "notifications": 0,
+    "cloudOperations": 0,
+    "deployed": false
+  },
+  "reuse": "Existing authority, source encrypted row, actor online receipts, immutable erasure journal, cleanup workers and authenticated Web/Android clients; no new dependency or index.",
+  "checks": [
+    {
+      "name": "shared deletion and source cleanup",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared file and voice deletion' tests/firestore-sharing.test.ts",
+      "result": "passed",
+      "covers": [
+        "current shared write role",
+        "unlinked private draft exclusion",
+        "expected resource version",
+        "actor root receipt vs source scope",
+        "metadata-only accepted result before journal proof",
+        "revocation does not cancel accepted cleanup",
+        "original operation replay after cleanup",
+        "different actor cannot claim original operation",
+        "stable attribution across cleanup versions",
+        "formal HTTP and common clients",
+        "source-owner journal key collision with caller-local operation IDs"
+      ]
+    },
+    {
+      "name": "affected shared read compatibility",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared attachment reads' tests/firestore-sharing.test.ts",
+      "result": "passed"
+    },
+    {
+      "name": "existing private file and voice lifecycle",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='private chat files retain|voice upload and original chat operation' tests/firestore-chat-files.test.ts tests/firestore-voice.test.ts",
+      "result": "passed",
+      "tests": 2
+    },
+    {
+      "name": "common client deletion",
+      "executor": "existing Sol implementer",
+      "command": "node --experimental-test-module-mocks --test --test-name-pattern='shared attachment clients delete' tests/attachment-list.test.ts",
+      "result": "passed"
+    },
+    {
+      "name": "scoped TypeScript dependency graph",
+      "command": "node node_modules/typescript/bin/tsc -p .superpowers/sdd/PLAN/sharing-tsconfig.json --pretty false",
+      "result": "passed"
+    },
+    {
+      "name": "diff whitespace",
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "observedFailures": [
+    {
+      "kind": "red",
+      "detail": "Shared ports had no delete method; expected assertion failed before implementation."
+    },
+    {
+      "kind": "red",
+      "detail": "Selected client delete was locally rejected; Sol reproduced then connected the existing request."
+    },
+    {
+      "kind": "implementation edit",
+      "detail": "CRLF prevented a scripted closing-line replacement; syntax failure fixed before the lifecycle test passed."
+    },
+    {
+      "kind": "test fixture assertion",
+      "detail": "Viewer HTTP rejection already returned 403; assertion initially read code instead of the existing error.code envelope. Corrected assertion passed, without changing the rejection."
+    },
+    {
+      "kind": "independent review finding reproduced",
+      "detail": "Real journal key is source owner + operation ID. Original stub keyed by intent hash missed collisions. Corrected the stub and reproduced journal_binding, then reused the stable shared source operation mapping and retained actorOperationId; both file/voice and private compatibility passed."
+    },
+    {
+      "kind": "implementation import",
+      "detail": "Voice authority import had an additional symbol so scripted edit missed the new helper; added the import, then the targeted lifecycle group and scoped types passed."
+    }
+  ],
+  "review": {
+    "state": "completed",
+    "reviewer": "existing independent Sol reviewer",
+    "finding": "One journal source-namespace blocker; reproduced then fixed by main model.",
+    "resolution": "Shared source operation mapping extracted unchanged from existing authority, schema validates original actor operation mapping. New shared and existing private file/voice flows passed after correction. No second full review/test batch."
+  },
+  "pending": [
+    "Shared photo deletion and quota/source-record cleanup integration",
+    "Shared reserve/upload and private message linkage",
+    "Agent reuse, other background access, shared synchronization and family UI",
+    "True Firestore contention and cloud restore of new shared state",
+    "Deployment and P4 completion"
+  ],
+  "sourceHashes": {
+    "server/firestore-authority.ts": "95b8ec48017902e568cc9d8580ecff3977a6d758202d42fa04e1974d9bb200b9",
+    "server/firestore-attachment-access.ts": "592748a1e29e3d0c6a477288766f9e3ca485fea09675b8dbb5eb49a53520b605",
+    "server/firestore-chat-files.ts": "f2a7d7dcf60e4cf88bd8f8f7bfeba71b96da9f0a90a0c42d7c7899cfdd576af6",
+    "server/firestore-voice.ts": "82f9a1db663df2ad1ab43064718677ebbf45ebf4a2b734075f4c615b4a3875d6",
+    "src/client/chat-file-api.ts": "eb967d4a9876029948e236a6437da842447143816a824bae7e1cd416d5d6c73f",
+    "src/client/voice-api.ts": "8729f02239348566cc708de2043ad04d3f5a0bef6ea0663e250c5920324ee367"
+  }
+}
