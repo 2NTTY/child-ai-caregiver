@@ -148,9 +148,17 @@ export class AgentBudget {
       throw this.durableFailure(error, attempt.kind);
     }
   }
-  /** Request-local guidance; includes the upcoming generation, before its reservation. */
-  planningSnapshot(hasTerminalTool: boolean) {
+  /**
+   * Request-local guidance; includes the upcoming generation, before its reservation.
+   * When reserveDeliveryReview is set, the finish phase hard-locks one call earlier so
+   * present/finish cannot spend the reserved delivery-review model call. Soft metadata
+   * alone is not enough (see Slice B4 vs B2).
+   */
+  planningSnapshot(hasTerminalTool: boolean, options?: { reserveDeliveryReview?: boolean }) {
     this.check();
+    const reviewReserve = options?.reserveDeliveryReview ? 1 : 0;
+    // Hard finish reserve includes the review call when active (not soft guidance only).
+    const hardFinishReserve = 1 + reviewReserve;
     const remaining = {
       modelCallsIncludingThisCall: this.remainingModelCalls,
       toolCalls: this.selectedLimits.toolCalls - this.used.toolCalls,
@@ -158,11 +166,21 @@ export class AgentBudget {
       timeMs: Math.max(0, this.expiresAt - Date.now()),
     };
     return { usedBeforeThisCall: this.counts, remaining,
-      phase: remaining.modelCallsIncludingThisCall <= 1 || remaining.timeMs <= 15000
+      phase: remaining.modelCallsIncludingThisCall <= hardFinishReserve || remaining.timeMs <= 15000
         || hasTerminalTool && remaining.toolCalls <= 1 ? "finish" as const : "work" as const,
-      reserveForFinish: { modelCalls: 1, toolCalls: hasTerminalTool ? 1 : 0 },
+      reserveForFinish: { modelCalls: hardFinishReserve, toolCalls: hasTerminalTool ? 1 : 0 },
+      reserveForDeliveryReview: { modelCalls: reviewReserve },
       nonTerminalToolCallsAvailable: Math.max(0, remaining.toolCalls - (hasTerminalTool ? 1 : 0)),
     };
+  }
+  /**
+   * Early bounded wind-down: when a delivery-review reserve is active, refuse to start
+   * another agent generation that would spend the reserved review call. Review itself
+   * uses completeText after the agent loop and does not call this gate.
+   */
+  assertDeliveryReviewReserveAvailable(reserveDeliveryReview: boolean) {
+    this.check();
+    if (reserveDeliveryReview && this.remainingModelCalls <= 1) throw new AgentStopped("delivery_review_incomplete");
   }
   get counts() { return { ...this.used }; }
   get limits() { return { ...this.selectedLimits }; }
