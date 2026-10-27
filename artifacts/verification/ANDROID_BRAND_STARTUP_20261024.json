@@ -1,0 +1,130 @@
+{
+  "scope": "Android launcher icon and branded native startup resources for the next binary",
+  "baseline": "345e438f1beb132f15f31164a27a4c68ab59e2a2",
+  "date": "2026-10-24",
+  "sources": {
+    "frontend/app.json": "36f1891973b56c233853d46db0aeaf014df6ae18801281dba4efeb3b6bb19b04",
+    "frontend/package.json": "cd95fee7f44134a3acfb8dffe537c6927109239301136eb8fb218590e5726ceb",
+    "package-lock.json": "fb3bb9f0f11356f2fbd98ee87eb3cca81d76e5b4386b363da07633466c0ffb75",
+    "frontend/assets/brand/app-icon-ios.png": "7a7eaa143588490dd9d62c4b602073c9ab9b4e741f5ede688cfe470f4922792a",
+    "frontend/assets/brand/favicon.png": "f99ab81275f01114dfc481ed88250165e490eda0b1ba7f4362d0872c0ab16f06"
+  },
+  "versions": {
+    "expo": "57.0.24",
+    "splashScreen": "57.0.9",
+    "license": "MIT",
+    "node": "24.19.0"
+  },
+  "verification": {
+    "config": "Expo prebuild config resolved official plugin 57.0.9 and existing brand asset paths",
+    "nativeResources": {
+      "node": "v24.19.0",
+      "state": "passed",
+      "files": [
+        {
+          "path": "android/app/src/main/res/drawable-hdpi/splashscreen_logo.png",
+          "bytes": 7627,
+          "sha256": "dcb199043f05ce47609067dc0915274146660bd15b801d08b862a2ebf29f5a4f"
+        },
+        {
+          "path": "android/app/src/main/res/drawable-mdpi/splashscreen_logo.png",
+          "bytes": 4790,
+          "sha256": "9cb5e49f82d4e9bddbb3445ddc712779005c11e246faa5146c7621262d0d9c15"
+        },
+        {
+          "path": "android/app/src/main/res/drawable-xhdpi/splashscreen_logo.png",
+          "bytes": 10367,
+          "sha256": "505f34fc673c08b580ec188e53e0b05e99298b5751bce5ead798a231abdd30d0"
+        },
+        {
+          "path": "android/app/src/main/res/drawable-xxhdpi/splashscreen_logo.png",
+          "bytes": 17864,
+          "sha256": "4998b8188481ccad429bf8bf6d39efd3a3839173648fbeb515a6b1a82a300d3c"
+        },
+        {
+          "path": "android/app/src/main/res/drawable-xxxhdpi/splashscreen_logo.png",
+          "bytes": 23264,
+          "sha256": "709ce791f4ca007a6cde241b5dc825873613259f80a0aad0153aa5754259e158"
+        },
+        {
+          "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher.webp",
+          "bytes": 1683,
+          "sha256": "999591cb357cca646786499f9e0627cd8c9bdd7c68c1c1a6eed59222360fed4f"
+        },
+        {
+          "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.webp",
+          "bytes": 4020,
+          "sha256": "7899908b286cc0fd51ed7b75d3864fb1650106d0c7d3b7dc89a3ace4d8896b5d"
+        },
+        {
+          "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher.webp",
+          "bytes": 1135,
+          "sha256": "a492437c8c9cf30a4ebcb729a7fd55339a289331845be2b435a175d3d4d3202a"
+        },
+        {
+          "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.webp",
+          "bytes": 2660,
+          "sha256": "ad7f0cec791e77827ab78c8f1fca0c7a5c1c7c4392e5e4fc8a0fb5ccf9b1cbed"
+        },
+        {
+          "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher.webp",
+          "bytes": 2308,
+          "sha256": "55c627edc1af17eb3b2fd64e2f8d37789a9a3f56bb1d668aa5830cb9979ab64c"
+        },
+        {
+          "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.webp",
+          "bytes": 5567,
+          "sha256": "df33b1430b490b8cb5d1b7c1a95dfb75bee01afc9fad1150798d4c40089946c2"
+        },
+        {
+          "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.webp",
+          "bytes": 3536,
+          "sha256": "aa46f23bdfadae86af6395ae0524c6f5b5ca49d577f0868a020b16ec49e9ea61"
+        },
+        {
+          "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.webp",
+          "bytes": 8823,
+          "sha256": "0d649f5a7ee1ae954dc6d63aa600158a2a86a0cc209d5042611cc0825fc44a41"
+        },
+        {
+          "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.webp",
+          "bytes": 4779,
+          "sha256": "0c2e024c0804a52c5de5e7f0a19ebdb6dac038269c23e7587e0f4a840ab79a50"
+        },
+        {
+          "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.webp",
+          "bytes": 12593,
+          "sha256": "df9df2706aeb953ed117cceb397b3bdb5efe85b40077f6915b934de4c6b5d380"
+        }
+      ]
+    },
+    "visual": "Primary inspected generated launcher and splash pixels; existing brand mark present",
+    "lock": "Only frontend splash dependency and matching npm-resolved package entry added; unrelated npm peer/ordering churn discarded"
+  },
+  "retainedIssues": [
+    {
+      "phase": "npm dependency acquisition",
+      "result": "Succeeded with engine warnings under system Node 24.11.0/npm 11.6.1; all subsequent config/resource checks use Node 24.19.0"
+    },
+    {
+      "phase": "initial config command",
+      "result": "Unsupported --config option; corrected to run Expo from frontend directory"
+    },
+    {
+      "phase": "initial resource generation",
+      "result": "Fixture cwd was repository root; relative asset ENOENT before output"
+    },
+    {
+      "phase": "corrected resource generation",
+      "result": "Sandbox EPERM creating android/app; same official generator succeeded with workspace-scoped permission"
+    }
+  ],
+  "officialSource": "https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/",
+  "notPerformed": [
+    "APK or IPA compilation",
+    "EAS upload/build/update",
+    "Device launch acceptance",
+    "Model calls or notifications"
+  ],
+  "delivery": "Configuration changes require a new fingerprint-compatible binary. Existing APK v3 remains on its original runtime; never force this source onto it with an override."
+}

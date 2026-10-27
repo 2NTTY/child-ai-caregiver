@@ -112,3 +112,31 @@ test('one Firestore conversation preserves action receipts, bound confirmation, 
   assert.equal((await product.store.get('parent', childId, answered!.runId))?.tools.some(tool => tool.name === 'save_private_instruction'), true);
   for (const row of fake.records.values()) assert.equal(JSON.stringify(row).includes('手冊'), false);
 });
+
+test('stale delivery preserves a readable original receipt after a concurrent change', async () => {
+  const fake = firestoreDomainFixture(), options = { database: fake.database, cipher: createStorageCipher(Buffer.alloc(32, 42)),
+    projectId: 'synthetic-stale-project', namespace: 'synthetic_stale' };
+  const authority = createFirestoreAuthority(options);
+  await authority.initializeControl({ generation: randomUUID(), enabled: true });
+  await authority.issueInvitation({ email: 'parent@example.test', expiresAt: new Date(Date.now() + 60_000).toISOString(), operationId: randomUUID() });
+  await authority.admitIdentity({ userId: 'parent', email: 'parent@example.test', emailVerified: true });
+  await authority.acknowledge({ userId: 'parent', operationId: randomUUID(), policyVersion: SERVICE_POLICY_VERSION });
+  const chat = createFirestoreChatStore(options), care = createFirestoreCareStore(options);
+  const memory = createFirestoreMemoryStore({ ...options, chat, care });
+  const online = createFirestoreOnlineStore(options), runs = createFirestoreAgentRuns({ ...options, chat, memory });
+  const scope = await online.context('parent', { path: '/api/children', payload: { displayName: '合成孩子' } });
+  const created = await online.submit('parent', { path: '/api/children', payload: { displayName: '合成孩子' },
+    operation: { ...scope, opId: randomUUID(), deviceId: randomUUID() } });
+  const childId = (created.result as any).child.id as string;
+  const source = await chat.createUserMessageForUser('parent', childId, '核對目前資料。');
+  const stale = await runs.claim('parent', childId, { kind: 'interactive', reference: source!.id }, 'product-interactive');
+  await chat.createUserMessageForUser('parent', childId, '稍後補充。');
+  const result: ProductAgentResult = { runId: stale.runId, provenance: null, status: 'completed', stopReason: null,
+    text: '已核對。', citations: [], retrievalMode: 'not_used', tools: [], counts: { modelCalls: 0, toolCalls: 0, queryEmbeddings: 0 }, proposals: [] };
+  assert.equal(await runs.finish(stale.scope, result), true);
+  const loaded = await runs.result('parent', childId, stale.runId, { read: async (_b, _run, value) => value });
+  assert.equal(loaded?.status, 'stopped');
+  assert.equal(loaded?.stopReason, 'unauthorized');
+  assert.equal(Object.hasOwn(loaded!, 'outcome'), false);
+  assert.equal(Object.hasOwn(loaded!, 'deliveryReview'), false);
+});

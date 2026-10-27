@@ -1,0 +1,116 @@
+{
+  "scope": "One isolated native Firestore export/import with paired encrypted avatars and later deletion journal replay",
+  "sourceBase": "3b6f515dc9c05c770b22b4a6e8ecfae6bf052470",
+  "startedAt": "2026-10-25T07:27:19.077Z",
+  "completedAt": "2026-10-25T08:01:36.150Z",
+  "environment": {
+    "node": "v24.19.0",
+    "project": "ai-caregivers-for-children",
+    "location": "asia-east2",
+    "namespace": "synthetic_avatar_recovery_20261025",
+    "sourceDatabase": "yuyoufang-avatar-source-20261025",
+    "targetDatabase": "yuyoufang-avatar-target-20261025",
+    "temporaryBackupBucket": "ai-caregivers-for-children-avatar-recovery-20261025"
+  },
+  "flow": {
+    "authAccounts": 1,
+    "children": 1,
+    "inputImages": 2,
+    "nativeExportRequests": 3,
+    "nativeExportsStarted": 1,
+    "nativeImportsStarted": 1,
+    "exportDocumentCount": 27,
+    "backupAvatarCount": 2,
+    "restored": {
+      "state": "applied-paused",
+      "replayed": false,
+      "documentCount": 29,
+      "generation": "e99e0a1e-383d-5526-8ae8-97ed0a80bade",
+      "inventorySha256": "699afa678f02287c9d2fa43d5ab0a0501a5e1866f7b30c883374edfcd3492bf0"
+    },
+    "transactions": 82,
+    "transactionAttempts": 82,
+    "assertions": {
+      "keptImageReadable": true,
+      "storageEpochRotated": true,
+      "removedImageHidden": true,
+      "exportKept": 1,
+      "exportRemoved": 0,
+      "oldGenerationCleaned": true,
+      "deletionJournalRetained": true
+    }
+  },
+  "preservedFailures": [
+    {
+      "stage": "start-export",
+      "code": "native_export_unknown",
+      "providerStatus": {
+        "code": 3,
+        "message": "Point-in-Time Recovery must be enabled in order to execute exports at a snapshot timestamp."
+      },
+      "decision": "Enable PITR on isolated source only; continue same identities after definitive INVALID_ARGUMENT/no operation. No new account or image."
+    },
+    {
+      "stage": "start-export",
+      "code": "native_export_unknown",
+      "providerStatus": {
+        "code": 3,
+        "message": "Point-in-Time Recovery must be enabled in order to execute exports at a snapshot timestamp."
+      },
+      "decision": "Confirmed native rejection with no operation despite enabled setting; wait five minutes before one final attempt. Do not repeat thereafter."
+    }
+  ],
+  "review": {
+    "harness": "Independent review found a transaction-wrapper override; fixed before the data flow. Parent reviewed formal service assembly and retention bounds.",
+    "cleanup": "Independent review found journal scope and numeric generation hazards; exact journal identity and raw string-generation REST calls used before cleanup."
+  },
+  "cleanup": {
+    "state": "confirmed",
+    "authDeleted": true,
+    "databasesAbsent": [
+      "yuyoufang-avatar-source-20261025",
+      "yuyoufang-avatar-target-20261025"
+    ],
+    "bucketAbsent": true,
+    "syntheticImageGenerationsRemoved": 3,
+    "softDelete": "Existing bucket and temporary bucket retain deleted bytes under their original soft-delete policy; no live bucket retention was changed."
+  },
+  "limits": {
+    "models": 0,
+    "notifications": 0,
+    "productionWrites": 0,
+    "deployment": false,
+    "maxAuthorizedUsd": 1,
+    "actualBilledUsd": null,
+    "keyCustody": "Fresh local synthetic key, protected ACL. Manifest key reference is a synthetic identity only; no Secret Manager restore is claimed."
+  },
+  "limitations": [
+    "Formal data/operator/object services used directly; not HTTP/login/UI or two API deployments.",
+    "No native daily-backup restore; this is the separate paired snapshot export/import path.",
+    "Existing unknown-copy, cross-client admission and codec evidence reused; not re-executed.",
+    "Device crop/EXIF agreement and final production assembly/release remain pending; source gate remains false.",
+    "PITR activation readback preceded export-service acceptance. Five-minute delay then success observed, not a guaranteed propagation interval."
+  ],
+  "localEvidence": [
+    {
+      "path": ".cache/avatar-native-recovery.mjs",
+      "sha256": "d8f04ec7bd85767c7b54358f90fde80cedcbd91751c96b3d9db9eafb57ba1701"
+    },
+    {
+      "path": ".cache/avatar-native-recovery-cleanup.mjs",
+      "sha256": "974570ecfd8d8931a72bb785986e8263c5e967fad903cad55c3b8ec0453f91e5"
+    },
+    {
+      "path": ".cache/avatar-native-recovery-20261025/flow.json",
+      "sha256": "01d5d37ea4feed4a79e8a06e0ac3eca018572bf08f81b249026a72478a09f08c"
+    },
+    {
+      "path": ".cache/avatar-native-recovery-20261025/cleanup.json",
+      "sha256": "be095ada2e1c4c2dc383419d5cb5ec2b2146d3ff332ed026ec78391ebff7fa89"
+    },
+    {
+      "path": ".cache/avatar-native-recovery-20261025/cleanup-readback.json",
+      "sha256": "7c712e9c43c77d7e964f424518f62f0ef56bc5882b4988a082d06abc11fe79a7"
+    }
+  ]
+}

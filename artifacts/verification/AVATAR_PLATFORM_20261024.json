@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "workPackage": "AVATAR-01",
+  "observedAt": "2026-10-24",
+  "sourceCommit": "65bc3d99f81289564726fce0c11072cc1b643da4",
+  "scope": "Local Linux clean-lock native codec verification; source gate unchanged",
+  "result": {
+    "base": "65bc3d9",
+    "sourceFilesUnchanged": true,
+    "result": "PASS",
+    "node": "v24.19.0",
+    "platform": "linux",
+    "arch": "x64",
+    "sharp": "0.35.5",
+    "libvipsPackage": "1.3.4",
+    "vipsRuntime": "8.18.7",
+    "metadataSha256": "2a86e158726bc1a37a9a55e9a4997c22870f00ff97b0a94621dd2f67096934ea",
+    "images": [
+      "sha256:2d59885ceaa0145fb355253cde4769e0419bde937c8b19df81c86ed195069888",
+      "sha256:62e95abe3e1398f0f187cf8f7ee78ed8ecb781937a166d4b55106eaf162aeaee"
+    ],
+    "run": {
+      "image": "yuban-avatar-linux:65bc3d9",
+      "exitCode": 0,
+      "elapsedMs": 1433,
+      "command": "docker run --rm --network none --read-only --memory 512m --cpus 1 --pids-limit 64 yuban-avatar-linux:65bc3d9 node --test --test-reporter=tap tests/avatar-codec-platform.test.ts"
+    },
+    "testLog": ".cache/avatar-linux-test.log",
+    "contextManifest": ".cache/avatar-linux-context-manifest.json",
+    "installedMetadata": ".cache/avatar-linux-installed-metadata",
+    "failures": 0,
+    "testRuns": 1
+  },
+  "buildCommand": "docker build --pull=false --tag yuban-avatar-linux:65bc3d9 --file .cache/avatar-linux-context-65bc3d9/Dockerfile .cache/avatar-linux-context-65bc3d9",
+  "context": [
+    {
+      "path": "avatar-linux-packages.cjs",
+      "sha256": "a51aa81d31863d149a27e4d76b0f1a8b36338fd4f62c231ab48f2bc41b73aa69"
+    },
+    {
+      "path": "Dockerfile",
+      "sha256": "3119fa7e811b62f751435ef5e5188555973b0146b09ed5b75e97f17c42a0604a"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "6bf1e2d68bf044c4616f85945215907edad54647e485ffe9639d1ebd77de7556"
+    },
+    {
+      "path": "package.json",
+      "sha256": "2ca1158cf7df8cf1917dc795f056e49d27fcb813b39f6b1eff3013d8d504f08f"
+    },
+    {
+      "path": "frontend/package.json",
+      "sha256": "69046289fc4251c3d48e242e053dd334c33674b5fc62ef6591205d96074135ab"
+    },
+    {
+      "path": "server/avatar-codec-core.ts",
+      "sha256": "6d5a9d84853a7dcc417931ff373fae3bbde1d4f76b63436eba496a1fad640a84"
+    },
+    {
+      "path": "server/avatar-codec-error.ts",
+      "sha256": "7801f39da1a2c3786bb2fdf74db580f7e46759120255a556476144744e241a57"
+    },
+    {
+      "path": "server/avatar-codec-worker.ts",
+      "sha256": "b0b52a5e92af737f7fcc83cf78f58317fe4652e1417d263776a994420a5f3db8"
+    },
+    {
+      "path": "server/avatar-codec.ts",
+      "sha256": "b4a1c67dcbfcaa8dcd364903f45a346aadd5ac0db9560bc8a2e2bfc4ca03adf5"
+    },
+    {
+      "path": "server/avatar-config.ts",
+      "sha256": "2f724e0857f01a733cff515f92fc611fba08048d7530e39f9b883ccbfbd30ded"
+    },
+    {
+      "path": "src/shared/avatars.ts",
+      "sha256": "c7bbef73b5a7ece09f13bb1795eb1101669f682db522aaaef375454d062ca7c5"
+    },
+    {
+      "path": "tests/avatar-codec-platform.test.ts",
+      "sha256": "d11caf667921934f1be0a173827fe0a10194d8c805f518929df2f25a8f098875"
+    }
+  ],
+  "test": {
+    "path": "tests/avatar-codec-platform.test.ts",
+    "sha256": "d11caf667921934f1be0a173827fe0a10194d8c805f518929df2f25a8f098875",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "logSha256": "d6189213e8cd64d09f5ca8bdbe3be8791979e9c774d4ddabf26f03b9878ba906",
+    "output": "TAP version 13\r\n# Subtest: Linux codec normalizes oriented private JPEG and transparent PNG, then releases a cancelled child\r\nok 1 - Linux codec normalizes oriented private JPEG and transparent PNG, then releases a cancelled child\r\n  ---\r\n  duration_ms: 614.408098\r\n  type: 'test'\r\n  ...\r\n# {\"node\":\"v24.19.0\",\"platform\":\"linux\",\"arch\":\"x64\",\"sharp\":\"0.35.5\",\"vips\":\"8.18.7\",\"jpegSha256\":\"7f61576bb25e96f4520262482ffd272f657072ec66bdb4fc0d0695248c02f3ec\",\"pngSha256\":\"e82cd80cc297a2bb39f72974cee2362f508c0fb49d9978438ec51890ad517d69\",\"top\":[240,10,10],\"bottom\":[9,10,240],\"white\":[255,255,255],\"cancelledChildClosed\":true,\"codecClosed\":true}\r\n1..1\r\n# tests 1\r\n# suites 0\r\n# pass 1\r\n# fail 0\r\n# cancelled 0\r\n# skipped 0\r\n# todo 0\r\n# duration_ms 777.266534\r\n"
+  },
+  "installedMetadata": [
+    {
+      "path": ".cache/avatar-linux-installed-metadata/@img/sharp-libvips-linux-x64/package.json",
+      "sha256": "2c5f6f9abf74c1492622d5dc4e4da056ab0712fd71de61e03a687c88b8cdab4e"
+    },
+    {
+      "path": ".cache/avatar-linux-installed-metadata/@img/sharp-libvips-linux-x64/README.md",
+      "sha256": "b4fb1a9f5909cfd58edb4177c2028ce3033cf8651aef740a554c1dc58b3c5ee3"
+    },
+    {
+      "path": ".cache/avatar-linux-installed-metadata/@img/sharp-libvips-linux-x64/versions.json",
+      "sha256": "e2611d5d854815a8b33c8a3d2ec649511a9596ccf16844e8eae7cf81e79881c4"
+    },
+    {
+      "path": ".cache/avatar-linux-installed-metadata/@img/sharp-linux-x64/LICENSE",
+      "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68"
+    },
+    {
+      "path": ".cache/avatar-linux-installed-metadata/@img/sharp-linux-x64/package.json",
+      "sha256": "181c58413d16ac3ce035f39c94c614031e03c023d88315712a81ed210c9fa04c"
+    },
+    {
+      "path": ".cache/avatar-linux-installed-metadata/@img/sharp-linux-x64/README.md",
+      "sha256": "8f8f907a15368c3ab82e675dde406263c321e1d14533285f6827da72b2bb7f55"
+    },
+    {
+      "path": ".cache/avatar-linux-installed-metadata/sharp/LICENSE",
+      "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68"
+    },
+    {
+      "path": ".cache/avatar-linux-installed-metadata/sharp/package.json",
+      "sha256": "ad4a2535d72eb638053a38867b1abf43c328cd1c1dbae5cf4172d498365a8b97"
+    },
+    {
+      "path": ".cache/avatar-linux-installed-metadata/sharp/README.md",
+      "sha256": "89772961fcf195b976573874555f2902bfe04a3e57be61af261ac65ce9348735"
+    }
+  ],
+  "review": "Primary reviewed the connected test, exact source hashes, container definition and actual TAP output. Product implementation and release gate are unchanged.",
+  "limitations": [
+    "No production VM deployment or cloud database write",
+    "No Web/Android EXIF preview comparison",
+    "No real Firestore concurrency/index or isolated cloud restore evidence",
+    "Cancellation verifies child-close admission release; this is not a stress or resource-exhaustion test",
+    "Prior full-test compilation failures and unknown restore-copy obligations remain tracked in PLAN"
+  ],
+  "calls": {
+    "testRuns": 1,
+    "models": 0,
+    "notifications": 0,
+    "cloudWrites": 0
+  }
+}

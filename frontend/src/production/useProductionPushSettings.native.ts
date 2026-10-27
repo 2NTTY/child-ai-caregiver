@@ -1,21 +1,31 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createNativePushApi } from "../../../src/client/native-push-api.ts";
-import type { NativePushRegistration, NativePushStatus } from "../../../src/shared/native-push.ts";
-import { nativePushSupported, nativePushPermission, requestNativePushToken, listenNativePush } from "../platform/native-push";
-import type { ChannelReview, PushSettingsActions, PushSettingsModel } from "../channel-view-model";
+import type { NativePushBinding, NativePushBindingV2, NativePushRegistration, NativePushStatus, NativePushStatusV2 } from "../../../src/shared/native-push.ts";
+import { nativePushSupported, nativePushPlatform, nativePushPermission, requestNativePushToken, listenNativePush } from "../platform/native-push";
+import type { ChannelReview, PushBindingView, PushSettingsActions, PushSettingsModel } from "../channel-view-model";
 import { pushTestAllowed } from "../channel-view-model";
 import { useDomainWriteGuard } from "./useDomainEnvironment";
 import { settingsAccessError, settingsFailure, settingsRead, useSettingsRefresh, useSettingsRequests, type SettingsEnvironment } from "./SettingsDomainSupport";
 type PushReview = Omit<ChannelReview, "kind"> & { kind: "enable" | "revoke" | "test" } & { id: string | null };
 type OriginalPush = { review: PushReview; input: NativePushRegistration | null; confirmed: boolean; reviewed: boolean; consent: boolean };
 export function useProductionPushSettings(env: SettingsEnvironment) {
-  const api = useMemo(() => createNativePushApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher]), requests = useSettingsRequests(env, true);
-  const [status, setStatus] = useState<NativePushStatus | null>(null), [bindingId, setBindingId] = useState<string | null>(null);
+  const platform = nativePushPlatform(), deviceName = platform === "ios" ? "iOS裝置" : "Android裝置";
+  const api = useMemo(() => platform === "ios" ? createNativePushApi(env.apiBaseUrl, env.owner.fetcher, { version: 2, platform })
+    : createNativePushApi(env.apiBaseUrl, env.owner.fetcher), [env.apiBaseUrl, env.owner.fetcher, platform]), requests = useSettingsRequests(env, true);
+  const [status, setStatus] = useState<NativePushStatus | NativePushStatusV2 | null>(null), [bindingId, setBindingId] = useState<string | null>(null);
   const [permission, setPermission] = useState<PushSettingsModel["permission"]>("default"), [readState, setReadState] = useState<PushSettingsModel["readState"]>("loading");
   const [review, setReview] = useState<PushReview | null>(null), [original, setOriginal] = useState<OriginalPush | null>(null), [notice, setNotice] = useState("");
   const [conflict, setConflict] = useState(false), [savedReference, setSavedReference] = useState<string | null>(null);
   const pending = useRef<OriginalPush | null>(null), currentStatus = useRef(status), currentReview = useRef(review), currentBinding = useRef(bindingId);
   currentStatus.current = status; currentReview.current = review; currentBinding.current = bindingId;
+  const platformAvailable = (value: NativePushStatus | NativePushStatusV2, target = platform) =>
+    "availablePlatforms" in value && target ? value.availablePlatforms[target] : value.available;
+  const bindingView = (value: NativePushStatus | NativePushStatusV2, item: NativePushBinding | NativePushBindingV2): PushBindingView => ({
+    ...item, providerLabel: "platform" in item && item.platform === "ios" ? "iOS APNs" : "Android FCM", expiresAt: null,
+    available: platformAvailable(value, "platform" in item ? item.platform : "android"),
+  });
+  const currentActive = (value: NativePushStatus | NativePushStatusV2) => value.bindings.find(item => item.id === value.currentBindingId
+    && item.status === "active" && (!("platform" in item) || item.platform === platform));
   const retain = (entry: OriginalPush | null) => { pending.current = entry; setOriginal(entry ? { ...entry } : null); };
   const read = async (signal: AbortSignal, current: () => boolean) => {
     const next = await settingsRead(env, "native-push", true, () => api.status(signal, env.userId!));
@@ -47,13 +57,13 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
       setConflict(false);
       if (entry && !entry.confirmed && api.hasPendingOnline()) {
         entry.reviewed = receipt?.state === "unconfirmed"; retain(entry); setNotice("已查原收據及目前訂閱；原操作尚未確認，請核對後明確重試原內容。");
-      } else { retain(null); setNotice(entry?.confirmed ? "原通知操作已確認，狀態已重新讀取。渠道接受不代表已讀。" : "目前本人Android裝置狀態已讀取。"); }
+      } else { retain(null); setNotice(entry?.confirmed ? "原通知操作已確認，狀態已重新讀取。渠道接受不代表已讀。" : `目前本人${deviceName}狀態已讀取。`); }
     } catch (error) { if (request.current()) failed(error, entry ?? undefined); }
     finally { request.finish(!!pending.current); }
   };
   const submit = async (retry = false, rotatedToken?: string) => {
     const actual = currentStatus.current;
-    const rotating = actual?.bindings.find(item => item.id === actual.currentBindingId && item.status === "active");
+    const rotating = actual ? currentActive(actual) : undefined;
     const staged: PushReview | null | undefined = rotatedToken && rotating
       ? { kind: "enable", id: null, targetLabel: rotating.label, expectedVersion: null, confirmed: true }
       : retry ? pending.current?.review : currentReview.current;
@@ -61,9 +71,9 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
     const entry: OriginalPush = retry ? pending.current! : { review: { ...staged }, input: null, confirmed: false, reviewed: false, consent: false };
     if (retry ? !entry.reviewed || !entry.consent || entry.confirmed || !api.hasPendingOnline() : !staged.confirmed || pending.current || api.hasPendingOnline()) return;
     const binding = actual.bindings.find(item => item.id === staged.id);
-    if (!retry && staged.kind === "enable" && (!actual.available || !nativePushSupported() || permission === "denied")) return;
+    if (!retry && staged.kind === "enable" && (!platformAvailable(actual) || !nativePushSupported() || permission === "denied")) return;
     if (!retry && staged.kind !== "enable" && (!binding || binding.version !== staged.expectedVersion)) return;
-    if (!retry && staged.kind === "test" && (!binding || !actual.workerEnabled || actual.testsRemaining < 1 || actual.nextTestAt && Date.parse(actual.nextTestAt) > Date.now())) return;
+    if (!retry && staged.kind === "test" && (!binding || !pushTestAllowed(actual, bindingView(actual, binding)))) return;
     const request = requests.start(true, retry); if (!request) return;
     const tokenRequest = staged.kind === "enable" && !retry ? rotatedToken ? Promise.resolve(rotatedToken) : requestNativePushToken() : null;
     entry.reviewed = false; entry.consent = false; retain(entry); setReview(null); setSavedReference(null);
@@ -74,7 +84,7 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
         if (!retry) {
           const token = await tokenRequest;
           if (!token || !request.current()) return;
-          const prior = actual.bindings.find(item => item.id === actual.currentBindingId && item.status === "active");
+          const prior = currentActive(actual);
           entry.input = { token, label: staged.targetLabel, ...(prior ? { bindingId: prior.id, expectedVersion: prior.version, expectedTokenRevision: prior.tokenRevision } : {}) }; retain(entry);
         }
         if (!entry.input) return;
@@ -94,7 +104,7 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
   const actions: PushSettingsActions = { refresh: () => { void refresh(); },
     stageEnable(label) { if (label.trim() && label.trim().length <= 80) stage({ kind: "enable", id: null, targetLabel: label.trim(), expectedVersion: null, confirmed: false }); },
     stageRevoke(id) { const item = status?.bindings.find(binding => binding.id === id); if (item && item.status !== "revoked") stage({ kind: "revoke", id, targetLabel: item.label, expectedVersion: item.version, confirmed: false }); },
-    stageTest(id) { const item = status?.bindings.find(binding => binding.id === id); if (item && pushTestAllowed({ available: status!.available, workerEnabled: status!.workerEnabled, testsRemaining: status!.testsRemaining, nextTestAt: status!.nextTestAt }, { ...item, providerLabel: "Android FCM", expiresAt: null })) stage({ kind: "test", id, targetLabel: item.label, expectedVersion: item.version, confirmed: false }); },
+    stageTest(id) { const item = status?.bindings.find(binding => binding.id === id); if (status && item && pushTestAllowed(status, bindingView(status, item))) stage({ kind: "test", id, targetLabel: item.label, expectedVersion: item.version, confirmed: false }); },
     confirmReview(value) { setReview(current => current ? { ...current, confirmed: value } : null); }, submit: () => { void submit(); },
     cancel() { if (!requests.busy && !pending.current) setReview(null); }, useLatest() { if (!pending.current) void refresh(); } };
   useEffect(() => () => { api.resetOnline(); pending.current = null; }, [api]);
@@ -109,9 +119,9 @@ export function useProductionPushSettings(env: SettingsEnvironment) {
   useSettingsRefresh(env, actions.refresh, !requests.busy && !original && !review, true);
   useDomainWriteGuard(!!review, !!original || requests.writing, "account");
   const visible = env.currentIdentity() ? status : null;
-  const model: PushSettingsModel = { platform: "android", online: env.online, readState: env.currentIdentity() ? readState : "session_changed", locked: requests.busy || !!original,
-    conflict, notice, workerEnabled: visible?.workerEnabled ?? false, review, available: visible?.available ?? false, browserSupported: nativePushSupported(), permission,
-    currentBindingId: visible ? bindingId : null, bindings: visible?.bindings.map(item => ({ ...item, providerLabel: "Android FCM", expiresAt: null })) ?? [],
+  const model: PushSettingsModel = { platform: platform ?? "android", online: env.online, readState: env.currentIdentity() ? readState : "session_changed", locked: requests.busy || !!original,
+    conflict, notice, workerEnabled: visible?.workerEnabled ?? false, review, available: visible ? platformAvailable(visible) : false, browserSupported: nativePushSupported(), permission,
+    currentBindingId: visible ? bindingId : null, bindings: visible?.bindings.map(item => bindingView(visible, item)) ?? [],
     deliveries: visible?.deliveries.map(item => ({ ...item, label: visible.bindings.find(binding => binding.id === item.bindingId)?.label ?? "本人訂閱", reasonLabel: item.reason })) ?? [],
     testsRemaining: visible?.testsRemaining ?? 0, nextTestAt: visible?.nextTestAt ?? null };
   return { model, actions, original, busy: requests.busy, savedReference,

@@ -4,6 +4,7 @@ import type { IncomingHttpHeaders } from "node:http";
 import type { Auth, DecodedIdToken, UserRecord } from "firebase-admin/auth";
 import type { ServerAuthPort, ServerAuthSession, ServerAuthSessionWithHeaders } from "./auth-port.ts";
 import { DeviceSessionError, type DeviceSessionsPort } from "./firestore-device-sessions.ts";
+import { accountAuthProviderSchema, type AccountAuthMethods } from '../src/shared/auth-providers.ts';
 
 export const FIREBASE_SESSION_LIFETIME_MS = 5 * 24 * 60 * 60 * 1000;
 export const FIREBASE_RECENT_AUTH_SECONDS = 5 * 60;
@@ -43,6 +44,7 @@ interface AuthenticatedSession {
   session: ServerAuthSession & { user: { id: string; name: string; email: string } };
   sessionHash: string;
   authTimeSeconds: number;
+  methods: AccountAuthMethods;
 }
 
 /** Admin SDK and ledger are injected; importing or constructing never starts network work. */
@@ -130,8 +132,11 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
       const user = await currentIdentity(decoded), sessionHash = hashCookie(cookie, native);
       await sessions.assertActive({ userId: user.uid, sessionHash });
       await admission(() => lifecycle.assertSessionAdmission(user.uid, { email: user.email!, emailVerified: user.emailVerified }));
+      const providers = accountAuthProviderSchema.options.filter(provider => user.providerData?.some(item => item.providerId === provider));
+      const current = accountAuthProviderSchema.safeParse(decoded.firebase?.sign_in_provider);
       return { session: { user: { id: user.uid, name: typeof user.displayName === "string" ? user.displayName : "", email: user.email! } },
-        sessionHash, authTimeSeconds: decoded.auth_time };
+        sessionHash, authTimeSeconds: decoded.auth_time, methods: { userId: user.uid, providers,
+          currentProvider: current.success && providers.includes(current.data) ? current.data : null } };
     } catch (error) {
       if (error instanceof FirebaseAuthError && error.status === 401 || error instanceof DeviceSessionError && error.status === 401) return null;
       throw error;
@@ -171,6 +176,12 @@ export function createFirebaseAuthPort(options: FirebaseAuthPortOptions): Fireba
     try {
       const path = new URL(request.url).pathname;
       if (request.method === "GET" && path === "/api/auth/get-session") return json((await readSession(request.headers))?.session ?? null);
+      if (request.method === 'GET' && path === '/api/auth/providers') {
+        const current = await readSession(request.headers);
+        if (!current) throw new FirebaseAuthError(401, 'unauthorized');
+        expectedIdentity(request.headers, current.session.user.id);
+        return json(current.methods);
+      }
       const nativeExchange = path === "/api/auth/native-session";
       if (request.method !== "GET") {
         if (nativeExchange) {

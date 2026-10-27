@@ -1,6 +1,7 @@
 import type { ChildSelection, ChildSelectionPreferences } from "./child-selection.ts";
 import { validateCreateChild, validateCreateTextRecord } from "../shared/inputs.ts";
 import type { Child, TextRecord } from "../shared/records.ts";
+import type { SocialAuthProvider } from "../shared/auth-providers.ts";
 import { ClientApiError, type AuthMode, type Credentials, type RecordsApi, type SessionUser } from "./records-api.ts";
 
 type Outcome = "draft" | "sending" | "unknown" | "checked";
@@ -61,6 +62,15 @@ interface RequestScope {
 const UNKNOWN_WRITE = "尚未確認保存，結果未知。請先重新讀取；系統會查核原操作，再讓你重試同一項提交。";
 const SESSION_EXPIRED = "登入已失效或帳號已改變。未提交內容已隱藏，只留在本頁；登入同一帳號後才能恢復。";
 const OFFLINE = "目前未能連線，畫面資料可能過期；輸入尚未保存，請連線後重新讀取。";
+const PROVIDER_AUTH_NOTICE: Readonly<Record<string, string>> = Object.freeze({
+  auth_popup_blocked: "登入視窗被瀏覽器阻擋。請允許此網站開啟彈出視窗，再親自按登入。",
+  authentication_cancelled: "已取消第三方登入。你可以重新選擇登入方式。",
+  auth_account_link_required: "這個電郵已使用另一種登入方式。請先以原有方式登入，再到帳戶設定連結 Google 或 Apple。",
+  auth_credential_in_use: "這個第三方身份已連結至另一個帳戶。請以該身份登入原帳戶，或選擇其他身份。",
+  auth_provider_already_linked: "這個登入方式已連結至本人帳戶。請重新讀取登入狀態及帳戶的登入方式。",
+  auth_provider_disabled: "網站尚未啟用所選登入方式。請改用已可用方式，或聯絡管理員啟用。",
+  auth_domain_not_allowed: "目前網址未獲身份服務允許。請使用正式網站，或聯絡管理員核對登入網域設定。",
+});
 
 function emptyDraft(): RecordDraft {
   return { text: "", outcome: "draft", message: null, receipt: null };
@@ -285,6 +295,16 @@ export class RecordsController {
       this.update({ notice: mode === "signUp" ? "請填寫稱呼、電郵及至少 12 個字元的密碼。" : "請填寫電郵及密碼。" });
       return;
     }
+    await this.authenticateWith(signal => this.api.authenticate(mode, { ...input, name: input.name.trim(), email: input.email.trim() }, signal), mode);
+  }
+
+  async authenticateProvider(provider: SocialAuthProvider): Promise<void> {
+    if (!this.api.authenticateProvider) return;
+    await this.authenticateWith(signal => this.api.authenticateProvider!(provider, signal), "signIn", true);
+  }
+
+  private async authenticateWith(action: (signal: AbortSignal) => Promise<void>, mode: AuthMode, social = false): Promise<void> {
+    if (this.state.busy || this.state.auth === "signedIn" || this.state.auth === "checking" || !this.state.online) return;
     this.gate("signedOut", null);
     this.update({ busy: "auth" });
     const epoch = this.epoch;
@@ -292,7 +312,7 @@ export class RecordsController {
     this.requests.add(controller);
     let authenticated = false;
     try {
-      await this.api.authenticate(mode, { ...input, name: input.name.trim(), email: input.email.trim() }, controller.signal);
+      await action(controller.signal);
       authenticated = true;
       const user = await this.api.getSession(controller.signal);
       if (epoch !== this.epoch) return;
@@ -302,13 +322,17 @@ export class RecordsController {
       }
       await this.activate(user);
     } catch (error) {
-      const unconfirmed = isUnknown(error) || (authenticated && !isSessionInvalid(error));
+      const providerNotice = !authenticated && error instanceof ClientApiError && Object.hasOwn(PROVIDER_AUTH_NOTICE, error.onlineCode ?? "")
+        ? PROVIDER_AUTH_NOTICE[error.onlineCode ?? ""] : undefined;
+      const unconfirmed = !providerNotice && isUnknown(error) || (authenticated && !isSessionInvalid(error));
       if (epoch === this.epoch) this.update({
         busy: null, auth: unconfirmed ? "unavailable" : "signedOut",
         notice: unconfirmed ? "登入或註冊結果未能確認，請先重新檢查登入狀態。"
+          : providerNotice ? providerNotice
           : error instanceof ClientApiError && error.status === 429 ? "嘗試次數過多，請稍後再試。"
           : error instanceof ClientApiError && error.onlineCode === "invitation_required" ? "目前只接受獲邀請的電郵。請核對邀請及所填地址。"
           : error instanceof ClientApiError && error.onlineCode === "EMAIL_NOT_VERIFIED" ? "請先完成電郵驗證，再登入。可在本頁重新要求驗證指引。"
+          : social ? "未能確認第三方登入，請核對所選帳戶及連線後再試。"
           : mode === "signUp" ? "未能完成註冊，請核對資料；如已有帳號，請登入。" : "未能登入，請核對電郵及密碼後再試。",
       });
     } finally {

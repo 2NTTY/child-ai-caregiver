@@ -1,0 +1,47 @@
+{
+  "scope": "Later avatar deletion replay through the real recovery operator, export and cleanup consumer; synthetic infrastructure",
+  "sourceBase": "cf127a15ca5ebdcbac187801936d2709587953c1",
+  "test": {
+    "name": "avatar restore replays a later deletion journal before copy, export and durable cleanup",
+    "file": "tests/firebase-recovery-operator.test.ts",
+    "sha256": "431c8989f014e26b71ddcec4244713938c8b152eb17fe47bf16aa73a074ef953",
+    "executions": 1,
+    "passed": 1,
+    "failed": 0,
+    "tap": {
+      "path": ".cache/avatar-journal-restore-20261025.tap",
+      "sha256": "55071904781b1a5f8f86a46688fbd5ed6ff8ba3578b1ec25cef7d19882b528a6"
+    }
+  },
+  "typecheck": {
+    "node": "v24.19.0",
+    "typescript": "6.0.3",
+    "roots": [
+      "tests/firebase-recovery-operator.test.ts"
+    ],
+    "diagnostics": 0
+  },
+  "assertions": [
+    "Paired snapshot predates formal avatar removal; independent encrypted journal is written once",
+    "Latest journal is applied before copying retained backup content",
+    "Restore remains paused and leaves source database unchanged",
+    "Restored head has no image; account export returns no deleted image",
+    "Original object binding and generation survive as a durable cleanup obligation",
+    "Reconstructed recovery operator returns the original completed checkpoint",
+    "Real cleanup consumer removes only the original pinned object; repeat does not remove again",
+    "Independent deletion journal remains after cleanup"
+  ],
+  "review": "Independent read-only review found no actionable issue; main model checked code and execution output",
+  "limitations": [
+    "Firestore/Auth/native export and bucket IO use existing memory fixtures",
+    "Real journal encryption/schema and recovery/business services are used; this is not a GCP restore",
+    "Cleanup is invoked directly; queue evidence is separate in AVATAR_ADMISSION_NATIVE_20261025.json",
+    "Production release remains disabled; device and native paired restore gates remain pending"
+  ],
+  "costs": {
+    "cloudCalls": 0,
+    "models": 0,
+    "notifications": 0
+  },
+  "nativeEnvironmentFinding": "Existing project has only the live database and a non-empty shared synthetic restore database, plus the live journal bucket. Neither is a clean isolated operator target; no old data was cleared and no new resources were created."
+}

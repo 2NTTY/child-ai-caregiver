@@ -1,0 +1,13 @@
+# Optional APNs private-key mount for the existing VM. No channel is enabled here.
+# Layer after compose.firestore.yaml and any existing channel override.
+services:
+  api:
+    environment: &apns-file
+      APNS_PRIVATE_KEY_FILE: /run/secrets/apns_key
+    secrets: [apns_key]
+  worker:
+    environment: *apns-file
+    secrets: [apns_key]
+secrets:
+  apns_key:
+    file: ${P1_APNS_KEY_FILE:?Set absolute protected APNs private-key path}

@@ -1,0 +1,9 @@
+# Same-VM avatar configuration; source release eligibility is checked independently.
+# Keep false until same-version API/worker, indexes and cleanup have been verified.
+# A rollback must retain avatar-aware readers, journal recovery and cleanup consumers.
+services:
+  api:
+    environment: &avatar-admission
+      AVATAR_WRITES_ENABLED: ${AVATAR_WRITES_ENABLED:-false}
+  worker:
+    environment: *avatar-admission

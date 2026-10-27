@@ -1,4 +1,3 @@
-import { BackgroundSurface } from "../appearance/BackgroundSurface";
 import { useId, useImperativeHandle, useLayoutEffect, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import { Pressable, StyleSheet, View, type NativeScrollEvent, type NativeSyntheticEvent, type ScrollView } from "react-native";
 import { Text } from "react-native-paper";
@@ -12,15 +11,18 @@ import { useChatInitialPosition } from "./useChatInitialPosition";
 import { useInteractionDensity } from "../useInteractionDensity";
 import { MotionEntrance } from "../../motion";
 import { isNewReplyArrival } from "./chat-arrival";
+import { useChatReadingAnchor } from "./useChatReadingAnchor";
+import { ChatProgressIndicator } from "./ChatMessage";
 
 export interface ChatTimelineControls { followLatest(): void; holdReadingPosition(): void }
 
 // Items are already-authorized display rows in chronological order; this component does not fetch or persist messages.
-export function ChatTimeline<T extends { id: string }>({ items, renderItem, header, footer, emptyState, presentation = "standard", compact = false, recentLimit = 20, scrollRef, controlsRef, followRequest, newReplyId }: {
+export function ChatTimeline<T extends { id: string }>({ items, renderItem, header, footer, emptyState, presentation = "standard", compact = false, recentLimit = 20, scrollRef, controlsRef, followRequest, newReplyId, history }: {
   items: readonly T[]; renderItem: (item: T) => ReactNode; header?: ReactNode; footer?: ReactNode; emptyState?: ReactNode; presentation?: "standard" | "conversation"; compact?: boolean; recentLimit?: number;
   scrollRef?: MutableRefObject<ScrollView | null>; controlsRef?: MutableRefObject<ChatTimelineControls | null>; followRequest?: string;
   // Set with an appended assistant reply, never for initial/history reads or token updates.
   newReplyId?: string;
+  history?: { cursor: string | null; loading: boolean; enabled: boolean; load(): Promise<void> };
 }) {
   const motionScope = useId();
   const knownIds = useRef(new Set(items.map(item => item.id)));
@@ -41,14 +43,21 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
   const ownScroll = useRef<ScrollView | null>(null), ownControls = useRef<ChatTimelineControls | null>(null);
   const following = useRef(true), metrics = useRef({ y: 0, height: 0, viewport: 0 });
   const frame = useRef<number | null>(null), programmatic = useRef(false);
-  const prepend = useRef<{ y: number; height: number } | null>(null);
+  const historyRequest = useRef<{ firstId: string | null; cursor: string } | null>(null);
+  const [failedCursor, setFailedCursor] = useState<string | null>(null);
+  const requestedCursor = useRef<string | null>(null);
+  const readingAnchor = useChatReadingAnchor(ownScroll, items[start]?.id ?? null);
   const readerGesture = useRef(false);
   const cancelInitialPosition = useChatInitialPosition(ownScroll,
-    () => following.current && !readerGesture.current && !prepend.current,
+    () => following.current && !readerGesture.current && !historyRequest.current,
     next => { metrics.current = next; });
 
   function holdReadingPosition() { cancelInitialPosition(); readerGesture.current = false; following.current = false; }
-  function readerIntent() { holdReadingPosition(); readerGesture.current = true; }
+  function readerIntent() {
+    holdReadingPosition(); readerGesture.current = true;
+    if (historyRequest.current) readingAnchor.capture();
+    if (metrics.current.y <= 40) revealEarlier();
+  }
   function updateLatestVisibility() {
     const gap = Math.max(0, metrics.current.height - metrics.current.viewport - metrics.current.y);
     // Reader intent pauses following immediately; visibility waits for actual distance and has a small dead zone.
@@ -66,13 +75,20 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
     });
   }
   function followLatest() {
-    prepend.current = null; readerGesture.current = false; following.current = true; setAtLatest(true); setFirstId(recentFirst); queueBottom();
+    readingAnchor.cancel(); historyRequest.current = null; readerGesture.current = false; following.current = true; setAtLatest(true); setFirstId(recentFirst); queueBottom();
   }
   useImperativeHandle(controlsRef ?? ownControls, () => ({ followLatest, holdReadingPosition }), [recentFirst]);
   useLayoutEffect(() => {
+    const request = historyRequest.current;
+    if (request && items[0]?.id !== request.firstId) {
+      historyRequest.current = null;
+      setFirstId(items[0]?.id ?? null);
+    } else if (request && !history?.loading && history?.cursor !== request.cursor) {
+      historyRequest.current = null; readingAnchor.cancel();
+    }
     if (following.current) { setFirstId(recentFirst); queueBottom(); }
     else updateLatestVisibility();
-  }, [items, recentFirst]);
+  }, [items, recentFirst, history?.cursor, history?.loading]);
   useLayoutEffect(() => { if (followRequest !== undefined) followLatest(); }, [followRequest]);
   useLayoutEffect(() => () => { if (frame.current !== null) cancelAnimationFrame(frame.current); }, []);
 
@@ -80,7 +96,8 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const moved = Math.abs(contentOffset.y - metrics.current.y) > 1;
     metrics.current = { y: contentOffset.y, height: contentSize.height, viewport: layoutMeasurement.height };
-    if (programmatic.current || prepend.current) return;
+    if (programmatic.current) return;
+    if (historyRequest.current && readerGesture.current && moved) readingAnchor.capture();
     if (!following.current || (readerGesture.current && moved)) updateLatestVisibility();
     if (!readerGesture.current) return;
     // A growing streaming reply at the same offset is not a reader gesture.
@@ -88,28 +105,41 @@ export function ChatTimeline<T extends { id: string }>({ items, renderItem, head
       const nearBottom = contentSize.height - layoutMeasurement.height - contentOffset.y <= 40;
       following.current = nearBottom;
     }
+    if (contentOffset.y <= 40) revealEarlier();
   }
-  function revealEarlier() {
-    holdReadingPosition(); setAtLatest(false); prepend.current = { y: metrics.current.y, height: metrics.current.height };
-    setFirstId(items[Math.max(0, start - limit)]?.id ?? null);
+  function revealEarlier(retry = false) {
+    if (start > 0) {
+      holdReadingPosition(); readerGesture.current = false; setAtLatest(false); readingAnchor.capture();
+      setFirstId(items[Math.max(0, start - limit)]?.id ?? null); return;
+    }
+    const cursor = history?.cursor;
+    if (!history?.enabled || history.loading || !cursor || historyRequest.current || !retry && requestedCursor.current === cursor) return;
+    holdReadingPosition(); readerGesture.current = false; setAtLatest(false); readingAnchor.capture();
+    requestedCursor.current = cursor; setFailedCursor(null);
+    const request = { firstId: items[0]?.id ?? null, cursor }; historyRequest.current = request;
+    void history.load().catch(() => undefined).finally(() => {
+      // The controller owns failures and identity cleanup. An unchanged cursor
+      // is never automatically retried by layout or scroll events.
+      if (historyRequest.current === request) setFailedCursor(cursor);
+    });
   }
   function contentChanged(_width: number, height: number) {
     metrics.current.height = height;
-    if (prepend.current) {
-      const previous = prepend.current; prepend.current = null;
-      programmatic.current = true;
-      ownScroll.current?.scrollTo({ y: Math.max(0, previous.y + height - previous.height), animated: false });
-      requestAnimationFrame(() => { programmatic.current = false; });
-    } else if (following.current) queueBottom();
+    if (following.current) queueBottom();
     else updateLatestVisibility();
   }
   return <View testID="chat-timeline" style={styles.root}>
     <AppScrollView testID="chat-timeline-scroll" ref={node => { ownScroll.current = node; if (scrollRef) scrollRef.current = node; }} style={styles.scroll}
+      maintainVisibleContentPosition={readingAnchor.maintainVisibleContentPosition}
       contentContainerStyle={[styles.content, compact && styles.compact, presentation === "conversation" && styles.conversation, !items.length && !!emptyState && styles.empty]} keyboardShouldPersistTaps="handled" scrollEventThrottle={16}
       onScroll={onScroll} onScrollBeginDrag={readerIntent} onContentSizeChange={contentChanged} onLayout={event => { metrics.current.viewport = event.nativeEvent.layout.height; if (following.current) queueBottom(); else updateLatestVisibility(); }}>
-      {header}
-      {start > 0 ? <BackgroundSurface testID="chat-history-entry" style={styles.history}><AppButton label={`查看較早記錄（${start} 則）`} variant="quiet" style={styles.historyButton} onPress={revealEarlier} />
-        {presentation === "standard" ? <Text style={styles.hint}>分批展開已載入的記錄</Text> : null}</BackgroundSurface> : items.length && presentation === "standard" ? <Text testID="chat-history-start" style={styles.hint}>已到本次載入記錄的最早位置</Text> : null}
+      <View testID="chat-history-entry" collapsable={false} style={styles.history}>
+        {header}
+        {history?.loading ? <ChatProgressIndicator /> : start === 0 && history?.cursor && failedCursor === history.cursor ?
+          <AppButton label="重新讀取較早對話" variant="quiet" disabled={!history.enabled} onPress={() => { historyRequest.current = null; revealEarlier(true); }} /> :
+          start > 0 || history?.cursor ? <Text style={styles.hint}>向上捲動載入較早對話</Text> :
+            items.length && presentation === "standard" ? <Text testID="chat-history-start" style={styles.hint}>已到對話最早位置</Text> : null}
+      </View>
       {!items.length ? emptyState : null}
       {items.slice(start).map(item => <TimelineEntry key={item.id} id={item.id} scopeKey={motionScope} arriving={arrivingId === item.id}>{renderItem(item)}</TimelineEntry>)}
       {footer}
@@ -137,7 +167,7 @@ const styles = StyleSheet.create({
   content: { width: "100%", maxWidth: chatLayout.maxWidth, alignSelf: "center", flexGrow: 1, justifyContent: "flex-end", paddingHorizontal: chatLayout.wideInset, paddingVertical: chatLayout.turnGap, paddingBottom: chatLayout.turnGap + chatLayout.composerOverlap, gap: chatLayout.turnGap },
   conversation: { justifyContent: "flex-start" }, empty: { justifyContent: "center" },
   compact: { paddingHorizontal: chatLayout.compactInset, paddingVertical: chatLayout.compactTurnGap, paddingBottom: chatLayout.compactTurnGap + chatLayout.composerOverlap, gap: chatLayout.compactTurnGap }, item: { minWidth: 0 },
-  history: { alignItems: "center", gap: spacing.xs, minWidth: 0 }, historyButton: { alignSelf: "center" }, hint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
+  history: { alignItems: "center", justifyContent: "center", minWidth: 0, height: 56 }, hint: { fontFamily: chatFont, color: chatColors.secondary, ...chatType.meta, textAlign: "center" },
   returnOverlay: { position: "absolute", bottom: spacing.md + chatLayout.composerOverlap, left: 0, right: 0, alignItems: "center", zIndex: 1 },
   returnButton: { width: chatLayout.controlSize, height: chatLayout.controlSize, borderRadius: chatLayout.controlSize / 2, borderWidth: 1, borderColor: chatColors.outline, backgroundColor: chatColors.surface, alignItems: "center", justifyContent: "center" },
   compactReturnButton: { width: chatLayout.compactControlSize, height: chatLayout.compactControlSize, borderRadius: chatLayout.compactControlSize / 2 },

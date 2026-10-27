@@ -8,29 +8,38 @@ import { emptyCareDetails } from '../src/shared/care.ts';
 import { careValuesSchema, profileDataSchema, careCreateSchema, careReviseSchema, careSearchSchema,
   deleteCareSchema, profileSaveSchema } from './care-validation.ts';
 import { validateCreateTextRecord } from '../src/shared/inputs.ts';
-import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
+import { createFirestoreAuthority, sharedSourceOperationId, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { FirestoreOnlineMutation } from './firestore-online.ts';
 import { prepareContextChange } from './firestore-context-basis.ts';
+import { createFirestoreSharingStore } from './firestore-sharing.ts';
+import { sharedWriteAttributionSchema, sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
+import { firestorePhotoSchemas } from './firestore-photos.ts';
 
 const uuid = z.uuid(), version = z.number().int().min(0).max(2147483646), time = z.iso.datetime({ offset: true });
 const user = z.string().min(1).max(256);
-export const firestoreCareSchema = careValuesSchema.extend({ id: uuid, childId: uuid, authorUserId: user, createdAt: time,
+export const firestoreCareStorageSchema = careValuesSchema.extend({ id: uuid, childId: uuid, authorUserId: user, createdAt: time,
   version: version.min(1), confirmedBy: user, confirmedAt: time, reason: z.string().max(500),
-  confirmationBasis: z.enum(['explicit', 'preauthorized_user_statement']).optional() }).strict();
-export const firestoreProfileSchema = z.object({ childId: uuid, version, data: profileDataSchema.nullable(),
-  confirmedBy: user.nullable(), confirmedAt: time.nullable(), reason: z.string().max(500).nullable() }).strict();
+  confirmationBasis: z.enum(['explicit', 'preauthorized_user_statement']).optional(),
+  createdViaShare: sharedWriteAttributionSchema.optional(), confirmedViaShare: sharedWriteAttributionSchema.optional() }).strict();
+export const firestoreProfileStorageSchema = z.object({ childId: uuid, version, data: profileDataSchema.nullable(),
+  confirmedBy: user.nullable(), confirmedAt: time.nullable(), reason: z.string().max(500).nullable(),
+  confirmedViaShare: sharedWriteAttributionSchema.optional() }).strict();
+export const firestoreCareSchema = firestoreCareStorageSchema.transform(({ createdViaShare, confirmedViaShare, ...value }) => value);
+export const firestoreProfileSchema = firestoreProfileStorageSchema.transform(({ confirmedViaShare, ...value }) => value);
 const tombstoneSchema = z.object({ id: uuid, childId: uuid, version: version.min(1), operationId: uuid, deletedAt: time }).strict();
 const pathPattern = /^\/api\/children\/([0-9a-f-]{36})\/(records|care(?:\/([0-9a-f-]{36})\/(revise|delete))?|profile(?:\/(delete))?)$/iu;
 type Binding = FirestoreAuthorityTransaction;
 type Prepared<T> = { value: T; changeSeq: string; commit(): void };
 export interface FirestoreCareStore extends CareStore {
+  forSharedSpace(spaceId: string): FirestoreCareStore;
   mutation: FirestoreOnlineMutation;
   listRecords(userId: string, childId: string): Promise<{ records: CareRecord[]; limit: number }>;
   readRecord(binding: Binding, id: string): Promise<CareRecord | null>;
   readProfile(binding: Binding): Promise<ChildProfile>;
   readReportSource(binding: Binding): Promise<{ profile: ChildProfile; records: CareRecord[] }>;
   prepareDeletion(binding: Binding, id: string, expectedVersion: number, operationId: string): Promise<Prepared<boolean>>;
+  preparePhotoDeletion(binding: Binding, photoId: string, operationId: string): Promise<Prepared<boolean> | null>;
   prepareRecord(binding: Binding, operationId: string, values: CareValues, options?: {
     id?: string; expectedVersion?: number; reason?: string; basis?: 'explicit' | 'preauthorized_user_statement';
   }): Promise<Prepared<CareRecord>>;
@@ -39,6 +48,10 @@ export interface FirestoreCareStore extends CareStore {
 /** Shared care/profile authority for pages and Agent tools; no unencrypted private search index. */
 export function createFirestoreCareStore(options: FirestoreDomainOptions): FirestoreCareStore {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
+  const sharing = createFirestoreSharingStore(options);
+  function requireModule(binding: Binding, module: 'care' | 'profile' | 'attachments') {
+    if (binding.sharedAccess && binding.sharedAccess.module !== module) domainReject('shared_module_scope', 403);
+  }
   function scoped(binding: Binding, suffix: string): Query {
     const tags = data.tags(binding.scope);
     return data.collection(suffix).where('workspaceTag', '==', tags.workspaceTag).where('epochTag', '==', tags.epochTag)
@@ -46,10 +59,23 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
   }
   function open<T>(binding: Binding, kind: string, id: string, schema: z.ZodType<T>, row: DocumentSnapshot): T {
     if (Object.entries(data.tags(binding.scope)).some(([key, value]) => row.get(key) !== value)) domainReject('not_found', 404);
+    if (kind === 'care-record' || kind === 'care-revision') {
+      const value = data.open(kind, id, binding.scope, firestoreCareStorageSchema, row);
+      if (!validSharedAttribution(value.createdViaShare, binding.scope, value.id, value.version, value.authorUserId, true)
+        || !validSharedAttribution(value.confirmedViaShare, binding.scope, value.id, value.version, value.confirmedBy)) domainReject('care_binding', 500);
+      return domainParse(schema, value, 'care_binding', 500);
+    }
+    if (kind === 'child-profile' || kind === 'profile-revision') {
+      const value = data.open(kind, id, binding.scope, firestoreProfileStorageSchema, row);
+      if (value.confirmedBy === null ? value.confirmedViaShare !== undefined
+        : !validSharedAttribution(value.confirmedViaShare, binding.scope, value.childId, value.version, value.confirmedBy)) domainReject('profile_binding', 500);
+      return domainParse(schema, value, 'profile_binding', 500);
+    }
     return data.open(kind, id, binding.scope, schema, row);
   }
   const recordRef = (id: string) => data.ref('care_records', 'care-record', id);
-  async function readRecord(binding: Binding, id: string): Promise<CareRecord | null> {
+  async function readStoredRecord(binding: Binding, id: string, module: 'care' | 'attachments' = 'care'): Promise<z.infer<typeof firestoreCareStorageSchema> | null> {
+    requireModule(binding, module);
     domainParse(uuid, id);
     const row = await binding.transaction.get(recordRef(id)); if (!row.exists) return null;
     if (row.get('live') === false) {
@@ -57,13 +83,17 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
       if (deleted.id !== id || deleted.childId !== binding.scope.childId || deleted.version !== row.get('recordVersion')) domainReject('care_binding', 500);
       return null;
     }
-    const value = open(binding, 'care-record', id, firestoreCareSchema, row);
+    const value = open(binding, 'care-record', id, firestoreCareStorageSchema, row);
     if (value.id !== id || value.childId !== binding.scope.childId || value.version !== row.get('recordVersion')
-      || value.createdAt !== row.get('createdAt') || value.authorUserId !== binding.scope.ownerUserId || row.get('live') !== true)
+      || value.createdAt !== row.get('createdAt') || row.get('live') !== true)
       domainReject('care_binding', 500);
     return value;
   }
+  async function readRecord(binding: Binding, id: string): Promise<CareRecord | null> {
+    const value = await readStoredRecord(binding, id); return value ? firestoreCareSchema.parse(value) : null;
+  }
   async function readProfile(binding: Binding): Promise<ChildProfile> {
+    requireModule(binding, 'profile');
     const id = binding.scope.childId, row = await binding.transaction.get(data.ref('child_profiles', 'child-profile', id));
     if (!row.exists) return { childId: id, version: 0, data: null, confirmedBy: null, confirmedAt: null, reason: null };
     const value = open(binding, 'child-profile', id, firestoreProfileSchema, row);
@@ -73,23 +103,28 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
   async function prepareRecord(binding: Binding, operationId: string, raw: CareValues, input: {
     id?: string; expectedVersion?: number; reason?: string; basis?: 'explicit' | 'preauthorized_user_statement';
   } = {}): Promise<Prepared<CareRecord>> {
-    const values = domainParse(careValuesSchema, raw), id = input.id ?? randomUUID(), current = input.id ? await readRecord(binding, id) : null;
+    requireModule(binding, 'care');
+    const values = domainParse(careValuesSchema, raw), id = input.id ?? randomUUID(), current = input.id ? await readStoredRecord(binding, id) : null;
     if (input.id && !current) domainReject('not_found', 404);
     if (current && current.version !== input.expectedVersion) domainReject('version_conflict');
     if (!current && (await binding.transaction.get(recordRef(id))).exists) domainReject('record_conflict');
     const basis = input.basis ?? 'explicit', now = new Date().toISOString();
-    const value = domainParse(firestoreCareSchema, { ...values, id, childId: binding.scope.childId,
-      authorUserId: current?.authorUserId ?? binding.scope.ownerUserId, createdAt: current?.createdAt ?? now,
-      version: (current?.version ?? 0) + 1, confirmedBy: binding.scope.ownerUserId, confirmedAt: now, confirmationBasis: basis,
+    const attribution = sharedWriteAttribution(binding, id, (current?.version ?? 0) + 1);
+    const saved = domainParse(firestoreCareStorageSchema, { ...values, id, childId: binding.scope.childId,
+      ...(current?.createdViaShare || !current && attribution ? { createdViaShare: current?.createdViaShare ?? attribution } : {}),
+      ...(attribution ? { confirmedViaShare: attribution } : {}),
+      authorUserId: current?.authorUserId ?? binding.actorUserId, createdAt: current?.createdAt ?? now,
+      version: (current?.version ?? 0) + 1, confirmedBy: binding.actorUserId, confirmedAt: now, confirmationBasis: basis,
       reason: input.reason ?? (basis === 'explicit' ? '首次確認' : '依本人預先授權，由 Agent 整理保存的使用者陳述；未逐項確認為事實') });
+    const value = firestoreCareSchema.parse(saved);
     const revisionId = JSON.stringify([id, value.version]), ref = data.ref('care_revisions', 'care-revision', revisionId);
     if ((await binding.transaction.get(ref)).exists) domainReject('revision_conflict');
     const contextChange = await prepareContextChange(data, binding);
     const change = await binding.prepareChange(operationId, 'care', false);
     const envelope = { ...data.tags(binding.scope), entityId: id, entityVersion: value.version, createdAt: value.createdAt, live: true,
-      ...data.seal('care-record', id, binding.scope, firestoreCareSchema, value, value.version) };
+      ...data.seal('care-record', id, binding.scope, firestoreCareStorageSchema, saved, value.version) };
     const revision = { ...data.tags(binding.scope), entityId: id, entityVersion: value.version,
-      ...data.seal('care-revision', revisionId, binding.scope, firestoreCareSchema, value, value.version) };
+      ...data.seal('care-revision', revisionId, binding.scope, firestoreCareStorageSchema, saved, value.version) };
     return { value, changeSeq: change.changeSeq, commit() {
       change.commit(); contextChange(); binding.transaction.set(recordRef(id), envelope); binding.transaction.create(ref, revision);
     } };
@@ -97,12 +132,16 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
   async function prepareDelete(binding: Binding, id: string, expectedVersion: number, operationId: string): Promise<Prepared<boolean>> {
     const current = await readRecord(binding, id); if (!current) domainReject('not_found', 404);
     if (current.version !== expectedVersion) domainReject('version_conflict');
-    const value = { id, childId: binding.scope.childId, version: expectedVersion + 1, operationId, deletedAt: new Date().toISOString() };
+    return prepareRecordDeletion(binding, current, operationId);
+  }
+  async function prepareRecordDeletion(binding: Binding, current: CareRecord, operationId: string, erasureOperationId = operationId): Promise<Prepared<boolean>> {
+    const id = current.id, expectedVersion = current.version;
+    const value = { id, childId: binding.scope.childId, version: expectedVersion + 1, operationId: erasureOperationId, deletedAt: new Date().toISOString() };
     const contextChange = await prepareContextChange(data, binding);
     const change = await binding.prepareChange(operationId, 'care', true);
     const envelope = { ...data.tags(binding.scope), entityId: id, entityVersion: value.version, createdAt: current.createdAt, live: false,
       ...data.seal('care-tombstone', id, binding.scope, tombstoneSchema, value, value.version) };
-    const erase = prepareContentErasure(data, binding, 'care', id, expectedVersion, operationId);
+    const erase = prepareContentErasure(data, binding, 'care', id, expectedVersion, erasureOperationId);
     return { value: true, changeSeq: change.changeSeq, commit() { erase(); change.commit(); contextChange(); binding.transaction.set(recordRef(id), envelope); } };
   }
   async function prepareProfile(binding: Binding, raw: ChildProfile['data'], expectedVersion: number, reason: string | null,
@@ -113,8 +152,11 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Hong_Kong', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
     if (parsed?.age.kind === 'birth_date' && parsed.age.date > today || parsed?.age.kind === 'approximate' && parsed.age.asOf > today)
       domainReject('invalid_age_date', 400);
-    const value = domainParse(firestoreProfileSchema, { childId: binding.scope.childId, version: expectedVersion + 1,
-      data: parsed, confirmedBy: parsed ? binding.scope.ownerUserId : null, confirmedAt: parsed ? new Date().toISOString() : null, reason });
+    const attribution = parsed ? sharedWriteAttribution(binding, binding.scope.childId, expectedVersion + 1) : undefined;
+    const saved = domainParse(firestoreProfileStorageSchema, { childId: binding.scope.childId, version: expectedVersion + 1,
+      ...(attribution ? { confirmedViaShare: attribution } : {}),
+      data: parsed, confirmedBy: parsed ? binding.actorUserId : null, confirmedAt: parsed ? new Date().toISOString() : null, reason });
+    const value = firestoreProfileSchema.parse(saved);
     const id = binding.scope.childId, ref = data.ref('child_profiles', 'child-profile', id), row = await binding.transaction.get(ref);
     const floor = parsed === null ? value.version : row.get('historyFloor') ?? 1;
     const erase = parsed === null && expectedVersion > 0 ? prepareContentErasure(data, binding, 'profile', id, expectedVersion, operationId) : null;
@@ -123,9 +165,9 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
     const contextChange = await prepareContextChange(data, binding);
     const change = await binding.prepareChange(operationId, 'profile', parsed === null);
     const envelope = { ...data.tags(binding.scope), historyFloor: floor,
-      ...data.seal('child-profile', id, binding.scope, firestoreProfileSchema, value, value.version) };
+      ...data.seal('child-profile', id, binding.scope, firestoreProfileStorageSchema, saved, value.version) };
     const revision = { ...data.tags(binding.scope), entityId: id, entityVersion: value.version,
-      ...data.seal('profile-revision', revisionId, binding.scope, firestoreProfileSchema, value, value.version) };
+      ...data.seal('profile-revision', revisionId, binding.scope, firestoreProfileStorageSchema, saved, value.version) };
     return { value, changeSeq: change.changeSeq, commit() {
       erase?.(); change.commit(); contextChange(); binding.transaction.set(ref, envelope); binding.transaction.create(revisionRef, revision);
     } };
@@ -186,19 +228,42 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
     if (rows.size > 2000) domainReject('summary_scope_too_large');
     return { profile, records: rows.docs.map(row => open(binding, 'care-record', row.get('entityId'), firestoreCareSchema, row)) };
   }
+  function view(spaceId?: string): FirestoreCareStore {
+    if (spaceId !== undefined) domainParse(uuid, spaceId);
+    const read = <T>(userId: string, childId: string, module: 'care' | 'profile', use: (b: Binding) => Promise<T>) =>
+      spaceId ? sharing.withResource(userId, { spaceId, childId, module, mode: 'read' }, access => use(access.binding))
+        : authority.runTransaction(userId, childId, use);
+    const write = <T>(userId: string, childId: string, fn: (binding: Binding, opId: string) => Promise<Prepared<T>>) => {
+      if (spaceId) domainReject('sharing_receipt_required', 428);
+      return direct(userId, childId, fn);
+    };
   const store: FirestoreCareStore = {
+    forSharedSpace: view,
     prepareDeletion: prepareDelete,
     async listRecords(userId, childId) {
-      return authority.runTransaction(userId, childId, async binding => {
+      return read(userId, childId, 'care', async binding => {
         const rows = await binding.transaction.get(scoped(binding, 'care_records').where('live', '==', true)
           .orderBy('createdAt', 'desc').orderBy('entityId', 'desc').limit(100));
         return { records: rows.docs.map(row => open(binding, 'care-record', row.get('entityId'), firestoreCareSchema, row)), limit: 100 };
       });
     },
     mutation, readRecord, readProfile, prepareRecord,
+    async preparePhotoDeletion(binding, photoId, operationId) {
+      requireModule(binding, 'attachments');
+      domainParse(uuid, photoId); domainParse(uuid, operationId);
+      // Only the persisted photo-to-record link authorizes this dependent erasure. It does not grant care reads or arbitrary record writes.
+      const snapshot = await binding.transaction.get(data.ref('photos', 'photo', photoId));
+      const photo = data.open('photo', photoId, binding.scope, firestorePhotoSchemas.photo, snapshot);
+      if (photo.id !== photoId || photo.state !== 'ready'
+        || Object.entries(binding.scope).some(([key, value]) => photo.scope[key as keyof typeof photo.scope] !== value))
+        domainReject('photo_binding', 409);
+      if (!photo.recordId) return null;
+      const current = await readStoredRecord(binding, photo.recordId, 'attachments');
+      return current ? prepareRecordDeletion(binding, current, operationId, sharedSourceOperationId(binding.actorUserId, operationId, 'photo-record')) : null;
+    },
     async search(userId, childId, raw) {
       const input = domainParse(careSearchSchema, raw);
-      return authority.runTransaction(userId, childId, async binding => {
+      return read(userId, childId, 'care', async binding => {
         if (input.cursor?.changeSeq !== undefined && input.cursor.changeSeq !== binding.changeSeq) domainReject('cursor_stale');
         let query = scoped(binding, 'care_records').where('live', '==', true)
           .orderBy('createdAt', 'desc').orderBy('entityId', 'desc').limit(201);
@@ -218,26 +283,31 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
           ? { createdAt: last.get('createdAt'), id: last.get('entityId'), changeSeq: binding.changeSeq } : null };
       });
     },
-    get: (userId, childId, id) => authority.runTransaction(userId, childId, binding => readRecord(binding, id)),
-    profile: (userId, childId) => authority.runTransaction(userId, childId, readProfile),
-    create: (u, c, values, basis) => direct(u, c, (binding, op) => prepareRecord(binding, op, values, { basis })),
-    revise: (u, c, id, values, expectedVersion, reason, basis) => direct(u, c, (binding, op) => prepareRecord(binding, op, values, { id, expectedVersion, reason, basis })),
-    delete: (u, c, id, expectedVersion) => direct(u, c, (binding, op) => prepareDelete(binding, id, expectedVersion, op)),
-    saveProfile: (u, c, values, expectedVersion, reason) => direct(u, c, (binding, op) => prepareProfile(binding, values, expectedVersion, reason, op)),
-    deleteProfile: (u, c, expectedVersion) => direct(u, c, (binding, op) => prepareProfile(binding, null, expectedVersion, null, op)),
-    history: (u, c, id, before = 2147483647) => authority.runTransaction(u, c, async binding => {
+    get: (userId, childId, id) => read(userId, childId, 'care', binding => readRecord(binding, id)),
+    profile: (userId, childId) => read(userId, childId, 'profile', readProfile),
+    create: (u, c, values, basis) => write(u, c, (binding, op) => prepareRecord(binding, op, values, { basis })),
+    revise: (u, c, id, values, expectedVersion, reason, basis) => write(u, c, (binding, op) => prepareRecord(binding, op, values, { id, expectedVersion, reason, basis })),
+    delete: (u, c, id, expectedVersion) => write(u, c, (binding, op) => prepareDelete(binding, id, expectedVersion, op)),
+    saveProfile: (u, c, values, expectedVersion, reason) => write(u, c, (binding, op) => prepareProfile(binding, values, expectedVersion, reason, op)),
+    deleteProfile: (u, c, expectedVersion) => write(u, c, (binding, op) => prepareProfile(binding, null, expectedVersion, null, op)),
+    history: (u, c, id, before = 2147483647) => read(u, c, 'care', async binding => {
       if (!await readRecord(binding, id)) return null;
       return revisions(binding, 'care_revisions', 'care-revision', id, firestoreCareSchema, before);
     }),
-    profileHistory: (u, c, before = 2147483647) => authority.runTransaction(u, c, async binding => {
+    profileHistory: (u, c, before = 2147483647) => read(u, c, 'profile', async binding => {
       await readProfile(binding);
       const row = await binding.transaction.get(data.ref('child_profiles', 'child-profile', c));
       return revisions(binding, 'profile_revisions', 'profile-revision', c, firestoreProfileSchema, before, row.get('historyFloor') ?? 1);
     }),
     readReportSource,
-    reportSource: (u, c) => authority.runTransaction(u, c, readReportSource),
+    reportSource: (u, c) => {
+      if (spaceId) domainReject('shared_domain_unavailable', 409);
+      return authority.runTransaction(u, c, readReportSource);
+    },
   };
   return store;
+  }
+  return view();
 }
 
 /** Persisted schemas reused by isolated recovery; not a second domain model. */

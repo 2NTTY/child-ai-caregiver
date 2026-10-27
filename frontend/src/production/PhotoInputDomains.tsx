@@ -13,15 +13,17 @@ import { photoConfirmationProjection, photoDraftSchema } from "../components/pho
 import { SourcesView } from "../components/shared-inputs/SourcesView";
 import { AppButton, SectionCard, SectionHeader } from "../components/ui";
 import { photoTime, emptyPhotoDraft, samePhotoOriginal, type PhotoDraftFields, type PhotoItem, type PhotoOperation, type PhotoOriginal, type PhotoReplacement, type PhotosActions, type PhotosViewModel } from "../photo-view-model";
-import { useDomainEnvironment, useDomainWriteGuard } from "./useDomainEnvironment";
+import { useDomainEnvironment, useDomainWriteGuard, forSharedModule } from "./useDomainEnvironment";
 import { useProduction } from "./ProductionProvider";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { usePhotoInputSources } from "./usePhotoInputSources";
+import { useAttachmentReview } from "./useAttachmentReview";
 
 type PendingPhoto = ({ kind: "reserve"; metadata: PhotoMetadata } | { kind: "confirm"; photo: PhotoAttachment; input: PhotoConfirmation } | { kind: "delete"; photo: PhotoAttachment })
   & { checked: boolean; confirmed: boolean };
 type DirectPhoto = { kind: "upload" | "extract"; photo: PhotoAttachment; checked: boolean };
 const noOperation = (): PhotoOperation => ({ state: "none", phase: null, reference: null, message: "", checked: false });
+const readFailureNotice = "讀取未能確認，原檔及草稿保留。請手動重新讀取。";
 const privatePhoto = (photo: PhotoAttachment | null, userId: string | null): photo is PhotoAttachment =>
   !!photo && photo.canManage && photo.ownerUserId === userId && photo.visibility === "private" && !photo.recordId;
 const photoDraft = (photo: PhotoAttachment): PhotoDraftFields => photo.extraction.draft ? {
@@ -29,9 +31,9 @@ const photoDraft = (photo: PhotoAttachment): PhotoDraftFields => photo.extractio
 } : emptyPhotoDraft();
 
 function useProductionPhotos() {
-  const env = useDomainEnvironment();
+  const env = forSharedModule(useDomainEnvironment(), 'attachments');
   const envRef = useRef(env); envRef.current = env;
-  const api = useMemo(() => createPhotoApi(env.apiBaseUrl, env.owner.fetcher, photoSha256), [env.apiBaseUrl, env.owner.fetcher]);
+  const api = useMemo(() => createPhotoApi(env.apiBaseUrl, env.owner.fetcher, photoSha256, env.sharing), [env.apiBaseUrl, env.owner.fetcher, env.sharing]);
   const [state, setState] = useState(() => ({
     photos: [] as PhotoAttachment[], canCreate: false, load: "loading" as PhotosViewModel["load"], lost: false, resourceUnavailable: false,
     selected: null as PhotoAttachment | null, latest: null as PhotoAttachment | null,
@@ -60,6 +62,7 @@ function useProductionPhotos() {
     update({ notice: "", operation: { phase, state: value, message, reference: null, checked } });
   const available = () => current() && envRef.current.online && !!envRef.current.userId && !!envRef.current.childId && !ref.current.lost;
   const editable = () => envRef.current.role !== "viewer" && envRef.current.role !== null;
+  const privateFlow = () => !envRef.current.sharedMode && editable();
   const fresh = () => available() && ref.current.load === "ready" && !ref.current.busy && !ref.current.pending && !ref.current.latest && ref.current.operation.state !== "conflict";
   const resetAccess = (error: PhotoApiError) => {
     releaseEditor(); api.resetOnline();
@@ -117,7 +120,7 @@ function useProductionPhotos() {
       } else {
         update({ pending: null, direct: null, ...(phase ? {} : { load: "error" as const }), ...(failure.onlineCode === "photo_capacity" ? { canCreate: false } : {}) });
         if (phase) op(phase, "failed", failure.onlineCode === "photo_capacity" || failure.status === 413 ? "容量不足或原檔超出限制；原檔及草稿保留。" : "提交未被確認，原檔及草稿保留。請重新讀取並核對。");
-        else update({ notice: "讀取未能確認，原檔及草稿保留。請手動重新讀取。" });
+        else update({ notice: readFailureNotice });
       }
     } finally {
       if (request.current === controller) request.current = null;
@@ -202,6 +205,8 @@ function useProductionPhotos() {
       update({ pending: { ...ref.current.pending, checked: true } });
       op(ref.current.pending!.kind, "confirmed_unavailable", "原操作已確認，清單已重讀，結果仍不可讀。不會重送；可明確結束本次查核。", true);
     }
+    // Only a complete refresh retires this read error, not newer draft or operation notices.
+    if (ref.current.notice === readFailureNotice) update({ notice: "" });
   }
   const refresh = () => {
     if (ref.current.busy) { refreshRequested.current = true; return; }
@@ -234,12 +239,26 @@ function useProductionPhotos() {
   };
   const photoRoute = pathname === "/photos" || pathname === "/care" && requestedView === "photos";
   const routeKey = `${pathname}:${photoRoute}`, previousRoute = useRef(routeKey);
+  const deferredRouteRelease = useRef<{ routeKey: string; editor: typeof state } | null>(null);
   useEffect(() => {
     const previous = previousRoute.current; previousRoute.current = routeKey;
+    const s = ref.current;
     // Entering either photo route deliberately preserves a chat-to-Photos transfer.
-    if (previous === routeKey || photoRoute || ref.current.busy || ref.current.pending || ref.current.direct) return;
+    if (previous !== routeKey) deferredRouteRelease.current = photoRoute ? null : { routeKey, editor: s };
+    const departure = deferredRouteRelease.current;
+    if (!departure) return;
+    const basis = departure.editor;
+    // A read may finish after the approved departure. Retire only that editor,
+    // never newer input, a returning photo route, or an unresolved write owner.
+    if (photoRoute || departure.routeKey !== routeKey || s.pending || s.direct || s.operation.state === "saving"
+      || basis.formKey !== s.formKey || basis.original !== s.original || basis.draft !== s.draft
+      || basis.source !== s.source || basis.replacement !== s.replacement) {
+      deferredRouteRelease.current = null; return;
+    }
+    if (s.busy) return;
+    deferredRouteRelease.current = null;
     releaseEditor(); update({ operation: noOperation(), notice: "", resourceUnavailable: false });
-  }, [routeKey, photoRoute]);
+  }, [routeKey, photoRoute, state.busy, state.pending, state.direct, state.operation.state, state.formKey, state.original, state.draft, state.source, state.replacement]);
   useEffect(() => {
     if (pathname !== "/chat") return;
     let active = true;
@@ -258,7 +277,8 @@ function useProductionPhotos() {
   const pending = state.busy || !!state.pending || !!state.direct;
   // Keep busy guards for local resource changes; only writes block scope departure.
   const writePending = state.operation.state === "saving" || !!state.pending || !!state.direct;
-  const leaveGuardId = useDomainWriteGuard(!!state.original && state.selected?.state !== "ready" || !!state.draft.text && !state.selected?.recordId || !!state.replacement, writePending);
+  // Pending operations outlive workspace routes; ordinary drafts are released on departure.
+  const leaveGuardId = useDomainWriteGuard(!!state.original && state.selected?.state !== "ready" || !!state.draft.text && !state.selected?.recordId || !!state.replacement, writePending, "child", writePending);
 
   async function sendContent(photo: PhotoAttachment, original: PhotoOriginal, signal: AbortSignal) {
     if (!original.readBase64 || !samePhotoOriginal(photo, original)) throw new PhotoApiError(400, "invalid_input");
@@ -270,7 +290,7 @@ function useProductionPhotos() {
   }
   function upload() {
     const s = ref.current, original = s.original;
-    if (!fresh() || !editable() || !original || !original.readBase64 || s.reservationUnidentified || s.direct && (s.direct.kind !== "upload" || !s.direct.checked)) return;
+    if (!fresh() || !privateFlow() || !original || !original.readBase64 || s.reservationUnidentified || s.direct && (s.direct.kind !== "upload" || !s.direct.checked)) return;
     const basis = s.selected;
     if (basis && (!privatePhoto(basis, envRef.current.userId) || basis.state !== "reserved" || !samePhotoOriginal(basis, original))) return;
     if (!basis && !s.canCreate) return;
@@ -293,7 +313,7 @@ function useProductionPhotos() {
     releaseEditor(); update({ original, operation: noOperation(), notice: "原檔只在本次記憶中，尚未上傳。" });
   }
   function chooseOriginal(original: PhotoOriginal) {
-    if (!editable() || ref.current.busy || ref.current.pending || ref.current.direct || ref.current.reservationUnidentified) { original.dispose?.(); return; }
+    if (!privateFlow() || ref.current.busy || ref.current.pending || ref.current.direct || ref.current.reservationUnidentified) { original.dispose?.(); return; }
     const basis = ref.current.selected;
     if (basis?.state === "reserved" && samePhotoOriginal(basis, original)) {
       ref.current.original?.dispose?.(); update({ original, ...consentReset }); return;
@@ -323,22 +343,41 @@ function useProductionPhotos() {
   const item = (photo: PhotoAttachment): PhotoItem => ({ ...photo, isUploader: photo.ownerUserId === env.userId, ownerLabel: photo.ownerUserId === env.userId ? "本人" : "家庭成員",
     createdAtLabel: photoTime(photo.createdAt), imageSource: photo.id === state.selected?.id && state.preview?.uri ? { uri: state.preview?.uri } : null,
     extraction: { state: photo.extraction.state, candidate: photo.extraction.draft ? { ...photoDraft(photo), uncertainties: photo.extraction.draft.uncertainties } : null } });
-  const isFresh = fresh(), managed = privatePhoto(state.selected, env.userId) && editable();
+  const isFresh = fresh(), managed = privatePhoto(state.selected, env.userId) && privateFlow();
   const manual = !state.direct || state.direct.kind === "extract" && state.direct.checked && state.selected?.extraction.state !== "running";
-  const formLocked = state.busy || !!state.pending || !!state.latest || state.operation.state === "conflict" || !editable() || !!state.direct && !manual;
+  const formLocked = state.busy || !!state.pending || !!state.latest || state.operation.state === "conflict" || !privateFlow() || !!state.direct && !manual;
   const model: PhotosViewModel = {
     childName: env.childName, online: env.online, access: state.lost ? "lost" : editable() ? "editable" : "read_only", load: state.load, canCreate: state.canCreate,
-    capacityReached: state.load === "ready" && editable() && !state.canCreate, items: state.photos.map(item), selected: state.selected ? item(state.selected) : null, latest: state.latest ? item(state.latest) : null,
+    capacityReached: state.load === "ready" && privateFlow() && !state.canCreate, items: state.photos.map(item), selected: state.selected ? item(state.selected) : null, latest: state.latest ? item(state.latest) : null,
     original: state.resourceUnavailable ? null : state.original, source: state.resourceUnavailable ? "" : state.source, sourceError: state.resourceUnavailable ? "" : state.sourceError, draft: state.resourceUnavailable ? emptyPhotoDraft() : state.draft, formKey: state.formKey, reviewed: state.resourceUnavailable ? null : state.reviewed,
     modelConsent: state.modelConsent, sharedConsent: state.sharedConsent, operation: state.operation, notice: state.selected?.recoveryPending ? "這張照片的上載在還原時尚未結清，暫不可讀。可選回同一原圖核對原上載；不會重新建立附件。" : state.notice, reservationUnidentified: state.reservationUnidentified,
     replacement: state.resourceUnavailable ? null : state.replacement, deletion: state.resourceUnavailable ? false : state.deletion, deleteScope: state.deleteScope, deleteFinal: state.deleteFinal, busy: state.busy, fresh: isFresh, formLocked,
-    canPick: isFresh && editable() && !state.direct && !state.reservationUnidentified && (state.canCreate || managed && state.selected?.state === "reserved"),
-    canUpload: isFresh && editable() && !!state.original?.readBase64 && !state.reservationUnidentified && (!state.selected && state.canCreate || managed && state.selected?.state === "reserved" && samePhotoOriginal(state.selected, state.original!)) && (!state.direct || state.direct.kind === "upload" && state.direct.checked),
+    canPick: isFresh && privateFlow() && !state.direct && !state.reservationUnidentified && (state.canCreate || managed && state.selected?.state === "reserved"),
+    canUpload: isFresh && privateFlow() && !!state.original?.readBase64 && !state.reservationUnidentified && (!state.selected && state.canCreate || managed && state.selected?.state === "reserved" && samePhotoOriginal(state.selected, state.original!)) && (!state.direct || state.direct.kind === "upload" && state.direct.checked),
     canExtract: isFresh && managed && state.selected?.state === "ready" && !state.direct && ["not_requested", "failed"].includes(state.selected.extraction.state),
     canConfirm: isFresh && managed && state.selected?.state === "ready" && manual && !!state.reviewed && state.sharedConsent && photoDraftSchema.safeParse(state.reviewed).success,
     canDelete: isFresh && editable() && !!state.selected?.canManage && manual,
   };
   const actions: PhotosActions = {
+    readThumbnail: async (photo, signal) => {
+      const e = envRef.current;
+      const readable = () => current() && envRef.current.scopeKey === e.scopeKey && envRef.current.userId === e.userId && !signal.aborted && available();
+      if (!readable() || photo.state !== "ready" || photo.childId !== e.childId) return null;
+      try {
+        const next = await api.photo(e.childId!, photo.id, signal, e.userId!);
+        if (!readable() || next.state !== "ready" || next.id !== photo.id || next.childId !== photo.childId || next.version !== photo.version || next.sha256 !== photo.sha256) return null;
+        const blob = await api.content(next, signal, e.userId!);
+        if (!readable()) return null;
+        const bytes = await readBlobBytes(blob);
+        if (!readable()) return null;
+        const preview = photoPreview(bytes, next.mimeType);
+        if (!readable()) { preview.dispose(); return null; }
+        return preview;
+      } catch (error) {
+        if (readable() && error instanceof PhotoApiError && ([401, 403].includes(error.status) || error.onlineCode === "session_changed")) resetAccess(error);
+        return null;
+      }
+    },
     pickOriginal: chooseOriginal, reportFileError: message => update({ notice: message }), openPhoto,
     discardRecordDraft: () => { const value = ref.current; if (current() && !value.pending && !value.direct && value.operation.state !== "saving") update({ draft: emptyPhotoDraft(), reviewed: null, sharedConsent: false, formKey: value.formKey + 1 }); },
     clearEditor: () => { if (!ref.current.busy && !ref.current.pending && !ref.current.direct) { releaseEditor(); update({ operation: noOperation() }); } },
@@ -380,7 +419,7 @@ function useProductionPhotos() {
   };
   const canContinueComposerOriginal = (original: PhotoOriginal) => {
     const transfer = composerTransfer.current, s = ref.current;
-    return available() && editable() && !!transfer && transfer.source === original && transfer.owned === s.original
+    return available() && privateFlow() && !!transfer && transfer.source === original && transfer.owned === s.original
       && !s.busy && !s.pending && !s.direct && !s.lost && !s.selected && !s.replacement && !s.latest;
   };
   async function receiveComposerOriginal(original: PhotoOriginal) {
@@ -420,12 +459,18 @@ export function ProductionPhotoInputDomains({ children }: { children: ReactNode 
   useLayoutEffect(() => { if (!env.scopeKey) setPublished(null); }, [env.scopeKey]);
   const value = published?.scopeKey === env.scopeKey ? published : null;
   return <PhotoInputContext.Provider value={value}>{children}
-    {env.scopeKey ? <ScopedPhotoInputBridge key={env.scopeKey} scopeKey={env.scopeKey} publish={setPublished} /> : null}
+    {env.scopeKey && env.allows('attachments') ? <ScopedPhotoInputBridge key={env.scopeKey} scopeKey={env.scopeKey} publish={setPublished} /> : null}
   </PhotoInputContext.Provider>;
 }
 export function ProductionPhotosWorkspace({ onCare, capturePreferred = false }: { onCare: () => void; capturePreferred?: boolean }) {
   const domain = useContext(PhotoInputContext)?.photos;
-  return domain ? <PhotosView production model={domain.model} actions={domain.actions} onCare={onCare} capturePreferred={capturePreferred} scopeKey={domain.scopeKey} /> : null;
+  const attachments = useAttachmentReview(), { actions, attachSavedPhoto, sharedChild } = useProduction();
+  const sharedScope = !!sharedChild.target;
+  return domain ? <PhotosView production sharedScope={sharedScope} model={domain.model} actions={domain.actions}
+    onCare={!sharedScope || sharedChild.view?.modules.includes('care') ? onCare : undefined}
+    onChat={sharedScope ? undefined : () => actions.open("chat")}
+    onChatPhoto={sharedScope ? undefined : photo => attachSavedPhoto({id:photo.id,version:photo.version,fileName:photo.fileName,mimeType:photo.mimeType,bytes:photo.bytes,sha256:photo.sha256,source:photo.source})}
+    attachments={attachments} capturePreferred={!sharedScope && capturePreferred} scopeKey={domain.scopeKey} /> : null;
 }
 export function ProductionSourcesWorkspace({ onPhotos, onRecord }: { onPhotos: () => void; onRecord: (id: string) => void }) {
   const domain = useContext(PhotoInputContext)?.sources;

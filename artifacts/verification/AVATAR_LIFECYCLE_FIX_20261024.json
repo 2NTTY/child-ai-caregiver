@@ -1,0 +1,404 @@
+{
+  "format": "avatar-lifecycle-fix-verification/v1",
+  "recordedAt": "2026-10-24T14:56:10.5288864Z",
+  "baseCommit": "98f56a34bf6326c2f892ee3ebd8cb2a2f8176d86",
+  "scope": "Original claim readback, object metadata typing, export assembly and avatar test helper. No cloud writes, models, notifications, deployment or release gate change.",
+  "sourceSha256": {
+    "server/firebase-avatar-objects.ts": "9a662cfb0216ba1263e90090fbb1d849a3221d8b4c936f8d4cdaf4c4d25b5552",
+    "server/firebase-avatar-restore-copies.ts": "23630844f1dcf4eb4c451035a18f35db032d8836630d2b5832c72f5287051a61",
+    "server/firestore-account-export.ts": "c50634326449971ebe9170a5c3a2857a121de75802a501372a7027694f78a94e",
+    "tests/avatar-restore-copies.test.ts": "2eca0222d56e68a18a279930dc75626fcab68b4e7154fe24df4db31870144efa",
+    "tests/helpers/avatar-memory.ts": "19756dc2295aab4a1f9d5fa0472eb352fc7efb8280708495a233430dd9380de7"
+  },
+  "checks": [
+    {
+      "name": "lost claim and lost object reply",
+      "command": "node --test --test-name-pattern=\"lost claim reply|lost object reply\" tests/avatar-restore-copies.test.ts",
+      "claims": [
+        "Only the same invocation can recover its freshly persisted claim token before any Storage IO",
+        "Unreadable readback and later invocations preserve the original intent",
+        "Unknown object write is inspected at its original address, never repeated"
+      ],
+      "pass": 2,
+      "fail": 0
+    },
+    {
+      "name": "current avatar export and version fence",
+      "command": "node --test --test-name-pattern=\"export includes only current normalized avatar\" tests/avatar-domain.test.ts",
+      "pass": 1,
+      "fail": 0
+    }
+  ],
+  "typecheck": {
+    "typescript": "6.0.3",
+    "narrow": {
+      "roots": 8,
+      "diagnostics": 0,
+      "elapsedMs": 10374
+    },
+    "node": "v24.19.0",
+    "fullOriginalTsconfig": {
+      "exit": 2,
+      "includes": "All server/shared plus all tests and their frontend imports",
+      "diagnostics": [
+        {
+          "path": "frontend/src/history-view-model.ts",
+          "line": 3,
+          "code": "TS2835"
+        },
+        {
+          "path": "frontend/src/history-view-model.ts",
+          "line": 69,
+          "code": "TS7006"
+        },
+        {
+          "path": "frontend/src/production/ProductionOwner.ts",
+          "line": 2,
+          "code": "TS2835"
+        },
+        {
+          "path": "frontend/src/production/ProductionOwner.ts",
+          "line": 4,
+          "code": "TS2835"
+        },
+        {
+          "path": "frontend/src/production/ProductionOwner.ts",
+          "line": 6,
+          "code": "TS2835"
+        },
+        {
+          "path": "frontend/src/production/ProductionOwner.ts",
+          "line": 8,
+          "code": "TS2835"
+        },
+        {
+          "path": "frontend/src/production/ProductionOwner.ts",
+          "line": 9,
+          "code": "TS2835"
+        },
+        {
+          "path": "frontend/src/production/ProductionOwner.ts",
+          "line": 11,
+          "code": "TS2835"
+        },
+        {
+          "path": "frontend/src/production/ProductionOwner.ts",
+          "line": 12,
+          "code": "TS2835"
+        },
+        {
+          "path": "frontend/src/production/ProductionOwner.ts",
+          "line": 13,
+          "code": "TS2835"
+        },
+        {
+          "path": "frontend/src/production/ProductionOwner.ts",
+          "line": 143,
+          "code": "TS7006"
+        },
+        {
+          "path": "server/firestore-account-export.ts",
+          "line": 191,
+          "code": "TS2345"
+        },
+        {
+          "path": "server/firestore-account-export.ts",
+          "line": 231,
+          "code": "TS18047"
+        },
+        {
+          "path": "server/firestore-account-export.ts",
+          "line": 232,
+          "code": "TS18047"
+        },
+        {
+          "path": "tests/avatar-domain.test.ts",
+          "line": 108,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/avatar-fenced-cancel.test.ts",
+          "line": 133,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 115,
+          "code": "TS2322"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 116,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 119,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 155,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 200,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 222,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 245,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 253,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 271,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 498,
+          "code": "TS7034"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 504,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 504,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 508,
+          "code": "TS7005"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 515,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 516,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 516,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 517,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 518,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 518,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 519,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 519,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 519,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 530,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 530,
+          "code": "TS7006"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 539,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 547,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 556,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 558,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 566,
+          "code": "TS2722"
+        },
+        {
+          "path": "tests/background-knowledge-maintenance.test.ts",
+          "line": 670,
+          "code": "TS2722"
+        },
+        {
+          "path": "tests/chat-photo-client.test.ts",
+          "line": 97,
+          "code": "TS2698"
+        },
+        {
+          "path": "tests/firebase-app.test.ts",
+          "line": 212,
+          "code": "TS2741"
+        },
+        {
+          "path": "tests/firebase-app.test.ts",
+          "line": 390,
+          "code": "TS2741"
+        },
+        {
+          "path": "tests/firebase-managed-photo-recovery.test.ts",
+          "line": 23,
+          "code": "TS2322"
+        },
+        {
+          "path": "tests/firebase-managed-photo-recovery.test.ts",
+          "line": 23,
+          "code": "TS2322"
+        },
+        {
+          "path": "tests/firestore-agent-ledger.test.ts",
+          "line": 39,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/firestore-disclosure.test.ts",
+          "line": 107,
+          "code": "TS2322"
+        },
+        {
+          "path": "tests/firestore-documents-core.test.ts",
+          "line": 32,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/firestore-native-push-ios.test.ts",
+          "line": 108,
+          "code": "TS2740"
+        },
+        {
+          "path": "tests/firestore-photos.test.ts",
+          "line": 248,
+          "code": "TS2339"
+        },
+        {
+          "path": "tests/firestore-photos.test.ts",
+          "line": 248,
+          "code": "TS2339"
+        },
+        {
+          "path": "tests/firestore-voice.test.ts",
+          "line": 186,
+          "code": "TS18047"
+        },
+        {
+          "path": "tests/firestore-voice.test.ts",
+          "line": 224,
+          "code": "TS2531"
+        },
+        {
+          "path": "tests/native-push-client.test.ts",
+          "line": 115,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/native-push-client.test.ts",
+          "line": 116,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/native-push-client.test.ts",
+          "line": 116,
+          "code": "TS2345"
+        },
+        {
+          "path": "tests/product-agent-durable-cancellation.test.ts",
+          "line": 119,
+          "code": "TS2345"
+        }
+      ],
+      "resolution": "Fixed five related export/helper diagnostics. Other original diagnostics retained; full original tsconfig was not rerun or claimed passing.",
+      "rawSha256": "e801421b454e12ce0b5aafbb7db6f680c6173c32e2a52080b8ba920c2c3697fe"
+    },
+    "production": {
+      "elapsedMs": 11306,
+      "rawSha256": "eebdd849fdfbace9a0b40b704bb91a665afba240e029560d3563bcb379481698",
+      "additionalFile": "tests/helpers/avatar-memory.ts",
+      "sourceFileCount": 2492,
+      "projectSourceFileCount": 381,
+      "diagnostics": 0,
+      "include": [
+        "server/**/*.ts",
+        "src/shared/**/*.ts"
+      ]
+    }
+  },
+  "dependency": {
+    "sharp": "0.35.5",
+    "linuxVerified": false,
+    "libvips": "8.18.7",
+    "productionManifestChanged": false,
+    "platform": "Windows x64",
+    "method": "Clean npm ci --ignore-scripts --no-audit --no-fund in an isolated cache directory using unchanged root lockfile and frontend manifest",
+    "exit": 0
+  },
+  "review": {
+    "actionableFindings": 0,
+    "repeatedTests": false,
+    "method": "Primary diff review plus Sol read-only review of the five affected source/test files"
+  },
+  "releaseReady": false,
+  "deployed": false,
+  "remaining": [
+    "Unknown or unreadable copy after restart, changed source/Auth/journal/provenance and legacy unindexed plans still retain responsibility and stop",
+    "Linux clean install, codec process and metadata/EXIF checks",
+    "Native Firestore contention/indexes, private Storage and journal lifecycle",
+    "Isolated restore/export/erasure deployment exercise",
+    "Web/Android media behavior; no device result inferred from code checks"
+  ],
+  "integration": {
+    "master": "e4a25b4e51e94ba2a60810b9ff9e888c14fcefe1",
+    "pullRequest": 286,
+    "sourceChanges": "No avatar source overlap; shared fixture only adds QuerySnapshot.empty. Existing verification is retained without a duplicate run."
+  }
+}
