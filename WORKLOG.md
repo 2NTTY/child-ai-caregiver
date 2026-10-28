@@ -4216,3 +4216,9 @@
 - 接續 #364／`bb3d812`，care／profile／task 保存原作者、確認者、版本與平坦來源鏈，實際匯入者另核目前授權。沿原 prepared transaction、加密、版本及 outbox，沒有新儲存引擎或模型。普通更正保留來源但改回本地確認；匯入終態待辦不先排一次提醒。
 - 同一條合成流程核對實際領域服務、班級 binding、版本衝突、共用 client 及正式還原 decoder，1/1；五入口型別圖零診斷，diff check 通過。只補受影響範圍，未重跑前批；原 client／restore proof 及 test-only 型別失敗保留。獨立 review 發現 contact client 的 strict task DTO 漏接來源欄位，已補紅綠及覆核關閉，[證據](artifacts/verification/P4_HANDOVER_PROVENANCE_20261029.json)。
 - 這是匯入服務的領域準備，沒有公開匯入入口、來源映射／防重台帳或完整恢復驗收；共用來源顯示、其餘資料域及完整包流程仍待接。未部署、未呼叫模型／雲端／通知或操作手機，D PR 保留原狀。
+
+<a id="log-20261029-p4-handover-source-labels"></a>
+### 2026-10-29：P4 Web／Android 共用來源標示
+
+- 接續 #365／`b2f72e1`，原 care／profile 投影區分來源確認與本地確認；外部 UID 相同不映射「你」。多次匯入沿平坦鏈保留原使用者陳述，遇未知依據即停；本人更正仍顯示本地確認。沒有新增採納步驟或改畫面設計。
+- 一條投影檢查 1/1，兩入口型別圖零診斷，diff check 通過；首次 UID 混淆及二次匯入丟失原依據的紅測試保留，[證據](artifacts/verification/P4_HANDOVER_SOURCE_LABELS_20261029.json)。獨立 review 無確定 Important／Critical 問題，未跑 build、設備、雲端或模型，也未部署；正式匯入台帳／保存及完整範圍繼續下一段。

@@ -1137,7 +1137,7 @@ Account export可直接驗讀空head／null內容，不因未裝avatar內容port
 
 本節只定語義，路由／DTO 在相應包實作時沿既有接口擴充並保持舊 App 相容，不聲稱目前已有新端點。[SPEC REQ-P4](../SPEC.md#p4-p5-product) 是產品權威，[PLAN](../PLAN.md#p4-packages) 管依賴／狀態，六項已確認行為依 [ADR-029](DECISIONS.md#adr-029)，不以目標接口當已實作。
 
-匯入 care／profile／task 的 DTO 增加可選 `importedFrom`，care／profile 的 `confirmationBasis` 可為 `imported_source`。此時 `confirmedBy`／`confirmedAt` 是來源標記，不能因 UID 字串相同就顯示為目前用戶已核對；實際匯入者另見來源鏈。普通更正改回本地確認但保留來源。care、summary、task、contact client 共用相容 schema；正式匯入啟用前仍須補共用畫面投影。現有提交接口不接受客戶端自行提供這些權威欄位，內部 prepared 接點也不代表 HTTP 匯入已開放。
+匯入 care／profile／task 的 DTO 增加可選 `importedFrom`，care／profile 的 `confirmationBasis` 可為 `imported_source`。此時 `confirmedBy`／`confirmedAt` 是來源標記，不能因 UID 字串相同就顯示為目前用戶已核對；實際匯入者另見來源鏈。普通更正改回本地確認但保留來源。care、summary、task、contact client 接受相容 schema；共用 care／profile 投影以來源確認或來源資料顯示，不新增採納流程。多次匯入只沿 `imported_source` 追溯原依據，遇未知即停，不把更舊的確認補成目前確認。現有提交接口不接受客戶端自行提供這些權威欄位，內部 prepared 接點也不代表 HTTP 匯入已開放。
 
 FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共享孩子選擇；Agent 仍按後續接線。`withResource` 在同一 Firestore 交易核對目前操作者准入、空間／成員、選定模組、來源成員世代及原孩子狀態，提供分開的 `actorUserId`／原儲存 `scope`，以及空間、成員、分享和雙方授權版本 basis。領域 adapter 必須明確消費此 binding 並排除私人項目；不能把 binding 當成整個孩子的通行證。舊未指定共享的業務方法維持本人範圍。
 
