@@ -2,7 +2,8 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { z } from 'zod';
 import type { Transaction } from '@google-cloud/firestore';
 import type { OnlineReceipt, OnlineSubmission } from '../src/shared/online.ts';
-import { createFirestoreAuthority, type FirestoreAuthorityOptions, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
+import { createFirestoreAuthority, sharedSourceOperationId, type FirestoreAuthorityOptions, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
+import { SHARING_SCOPE, sharedSpaceSchema } from './firestore-sharing-records.ts';
 import { FirestoreDomainData, domainParse, domainReject } from './firestore-domain-data.ts';
 import { createFirestoreOnlineReceipts, isFirestoreOnlinePending } from './firestore-online-receipts.ts';
 import { onlineSubmissionSchema } from './online-routing.ts';
@@ -21,8 +22,10 @@ export const firestoreScopeErasureSchema = z.object({ intent: firebaseErasureInt
   blockedAt: z.iso.datetime({ offset: true }).nullable(),
   scopeVersion: z.string(), childCount: z.number().int().nonnegative(),
   cleanup: z.object({ stage: z.string().max(100), cursor: z.string().max(2000).nullable() }).strict(),
-}).strict().refine(value => ['child-delete', 'account-delete'].includes(value.intent.type)
+}).strict().refine(value => ['child-delete', 'account-delete', 'class-delete'].includes(value.intent.type)
   && (value.intent.type === 'account-delete' ? value.intent.scope.childId === NIL && value.intent.assetId === NIL
+    : value.intent.type === 'class-delete' ? value.intent.scope.childId===NIL && value.intent.assetId===value.intent.scope.workspaceId
+      && value.intent.assetId!==NIL && value.intent.scope.ownerUserId==='space:'+value.intent.assetId
     : value.intent.assetId === value.intent.scope.childId && value.intent.assetId !== NIL));
 export type FirestoreScopeErasure = z.infer<typeof firestoreScopeErasureSchema>;
 export interface FirestoreErasureOptions extends FirestoreAuthorityOptions {
@@ -184,6 +187,7 @@ export function createFirestoreErasureStore(options: FirestoreErasureOptions) {
   async function resumeRequested(row: FirestoreScopeErasure) {
     if (row.state !== 'requested') return result(row);
     const owner = row.intent.scope.ownerUserId, opId = row.intent.operationId;
+    if(row.intent.type==='class-delete')return resumeClass(row);
     if (row.intent.type === 'account-delete') {
       if (!row.receiptToken) domainReject('erasure_binding', 500);
       return executeAccount(owner, { operationId: opId, receiptToken: row.receiptToken, confirmation: '永久刪除我的帳戶' });
@@ -193,7 +197,31 @@ export function createFirestoreErasureStore(options: FirestoreErasureOptions) {
     await submitOnline(owner, { path: pending.path, operation: pending.operation, payload: { confirmChildId: row.intent.scope.childId } });
     return result((await options.database.runTransaction(tx => read(tx, owner, opId)))!);
   }
-  return { submitOnline, prepareAccount, executeAccount, status, receiptStatus, resumeRequested,
+  /** Sharing checks the manager and versions; closure and the durable request commit together. */
+  async function prepareClass(binding:FirestoreAuthorityTransaction,classId:string,actorOperationId:string) {
+    const barrier=await authority.prepareClassErasure(binding,classId);
+    const operationId=sharedSourceOperationId(binding.actorUserId,domainParse(z.uuid(),actorOperationId));
+    if(await read(binding.transaction,barrier.scope.ownerUserId,operationId))domainReject('operation_conflict');
+    const value:FirebaseErasureIntent={type:'class-delete',scope:barrier.scope,assetId:classId,operationId,at:new Date(clock()).toISOString()};
+    const row:FirestoreScopeErasure={...initial(binding,value,null,0),authorizationVersion:barrier.authorizationVersion,blockedAt:value.at};
+    const envelope=seal(row);
+    return {operationId,commit(){barrier.commit();binding.transaction.create(ref(value.scope.ownerUserId,operationId),envelope);}};
+  }
+  async function resumeClass(requested:FirestoreScopeErasure) {
+    const descriptor=await journal(requested),owner=requested.intent.scope.ownerUserId,opId=requested.intent.operationId;
+    return options.database.runTransaction(async tx=>{
+      const row=await read(tx,owner,opId);
+      if(!row || firebaseErasureIntentHash(row.intent)!==firebaseErasureIntentHash(requested.intent))domainReject('erasure_binding',500);
+      if(row.state!=='requested')return result(row);
+      const id=row.intent.scope.workspaceId,snapshot=await tx.get(data.ref('shared_spaces','shared-space',id));
+      const space=data.open('shared-space',id,SHARING_SCOPE,sharedSpaceSchema,snapshot);
+      if(space.kind!=='class'||space.state!=='dissolved'||space.erasureOperationId!==opId
+        ||space.storageIdentity.ownerUserId!==owner)domainReject('erasure_not_blocked');
+      const blocked:FirestoreScopeErasure={...row,state:'blocked',journal:descriptor};
+      tx.set(ref(owner,opId),seal(blocked));return result(blocked);
+    });
+  }
+  return { submitOnline, prepareAccount, executeAccount, status, receiptStatus, resumeRequested, prepareClass,
     /** Trusted cleanup port: never exposed as a generic HTTP collection API. */
     read, seal, ref, result, journal, data };
 }

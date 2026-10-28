@@ -21,7 +21,7 @@ export function replayChatFileErasures(data:FirestoreDomainData,codec:FirestoreR
   for(const {value,record} of old.values()) if(value.deletion&&!removed.has(record.path))
     requireValue(journal.some(i=>canonical(i)===canonical(value.deletion!.intent)),'restore_erasure_missing');
   for(const [id,intent] of intents) {
-    if(journal.some(i=>['child-delete','account-delete'].includes(i.type)&&erasureCoversChatFile(i,intent.scope,id)))continue;
+    if(journal.some(i=>['child-delete','account-delete','class-delete'].includes(i.type)&&erasureCoversChatFile(i,intent.scope,id)))continue;
     const source=current.get(id)??old.get(id);requireValue(source,'restore_cleanup_evidence_missing');
     const row=source.value;requireValue(erasureCoversChatFile(intent,row.objectScope,id));
     if(row.deletion)requireValue(canonical(row.deletion.intent)===canonical(intent));

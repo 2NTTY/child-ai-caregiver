@@ -14,7 +14,7 @@ import { sealRecoveryLocator } from './firestore-recovery-envelope.ts';
 import { workRecoveryAad, workRecoveryDocumentId, workRecoverySchemas as schemas,
   workRecoveryScopeSchema, type WorkRecoveryKind, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { prepareFirestoreBackgroundWork } from './firestore-background-work.ts';
-import { assertNoManagedSharedSpaces, SHARING_SCOPE, sharedSpaceSchema } from './firestore-sharing-records.ts';
+import { assertNoManagedSharedSpaces, SHARING_SCOPE, sharedSpaceSchema, sharingMetadata } from './firestore-sharing-records.ts';
 import type { SharedAccessBasis } from '../src/shared/sharing.ts';
 
 const FORMAT = 'yuban-work-recovery', MAX_BYTES = 192 * 1024;
@@ -231,6 +231,16 @@ export class FirestoreAuthority {
     const envelope = this.seal('workspace', classId, scope, schemas.workspace.parse({id:classId, ownerUserId:scope.ownerUserId,
       storageEpoch, accessVersion:'1', childAccessVersion:'0', changeSeq:'0', status:'active'}));
     return () => actor.transaction.create(this.ref('workspace', classId), envelope);
+  }
+  /** Called only after the class service checks current membership and expected class version. */
+  async prepareClassErasure(actor: FirestoreAuthorityTransaction, classId: string) {
+    parse(uuid,classId);
+    if(actor.sharedAccess || actor.scope.childId!==NIL)fail('transaction_child_scope');
+    const {workspace}=await this.sourceWorkspace(actor.transaction,ownerScope('space:'+classId,classId));
+    const scope=ownerScope(workspace.ownerUserId,classId,workspace.storageEpoch);
+    const closed={...workspace,status:'deleting' as const,accessVersion:(BigInt(workspace.accessVersion)+1n).toString()};
+    const envelope=this.seal('workspace',classId,scope,closed);
+    return {scope,authorizationVersion:closed.accessVersion,commit:()=>actor.transaction.set(this.ref('workspace',classId),envelope)};
   }
   /** Called only after the class service checks current membership and expected class version. */
   async prepareClassChild(actor: FirestoreAuthorityTransaction, classId: string, childId: string,
@@ -702,11 +712,34 @@ export class FirestoreAuthority {
     return {scope,authorizationVersion:workspace.accessVersion};
   }
   /** Internal erasure finalizer, after journal-backed cleanup. It cannot reactivate or delete active resources. */
-  async finishErasure(scope: WorkRecoveryScope, type: 'child' | 'account'): Promise<void> {
-    parse(workRecoveryScopeSchema, scope); parse(z.enum(['child', 'account']), type);
+  async finishClassChildErasure(scope:WorkRecoveryScope):Promise<void> {
+    parse(workRecoveryScopeSchema,scope);
+    if(scope.ownerUserId!=='space:'+scope.workspaceId || scope.childId===NIL)fail('binding',403);
+    await this.options.database.runTransaction(async tx=>{
+      await this.control(tx,false);
+      const workspace=await this.read(tx,'workspace',scope.workspaceId,scope,schemas.workspace);
+      const child=await this.read(tx,'child',scope.childId,scope,schemas.child);
+      if(workspace.status==='active'||workspace.ownerUserId!==scope.ownerUserId||workspace.storageEpoch!==scope.storageEpoch
+        ||child.workspaceId!==scope.workspaceId||child.id!==scope.childId)fail('erasure_not_blocked');
+      this.write(tx,'child',scope.childId,scope,{...child,status:'deleted'});
+    });
+  }
+  /** Internal erasure finalizer, after journal-backed cleanup. It cannot reactivate or delete active resources. */
+  async finishErasure(scope: WorkRecoveryScope, type: 'child' | 'account' | 'class'): Promise<void> {
+    parse(workRecoveryScopeSchema, scope); parse(z.enum(['child', 'account', 'class']), type);
     await this.options.database.runTransaction(async tx => {
       await this.control(tx, false);
-      if (type === 'child') {
+      if(type==='class') {
+        const workspace=await this.read(tx,'workspace',scope.workspaceId,scope,schemas.workspace);
+        const ref=this.domain.ref('shared_spaces','shared-space',scope.workspaceId),snapshot=await tx.get(ref);
+        const space=this.domain.open('shared-space',scope.workspaceId,SHARING_SCOPE,sharedSpaceSchema,snapshot);
+        if(scope.ownerUserId!=='space:'+scope.workspaceId || scope.childId!==NIL || workspace.ownerUserId!==scope.ownerUserId
+          || workspace.storageEpoch!==scope.storageEpoch || workspace.status==='active' || space.kind!=='class'
+          || space.state!=='dissolved' || !space.erasureOperationId)fail('erasure_not_blocked');
+        const tombstone={...space,name:'已刪除班級',teacherSpaceId:null,detachTargetUserId:null,detachManagerGeneration:null,detachTargetMembershipId:null};
+        this.write(tx,'workspace',scope.workspaceId,scope,{...workspace,status:'deleted'});
+        tx.set(ref,{...sharingMetadata('shared-space',tombstone),...this.domain.seal('shared-space',space.id,SHARING_SCOPE,sharedSpaceSchema,tombstone,space.version)});
+      } else if (type === 'child') {
         const child = await this.read(tx, 'child', scope.childId, scope, schemas.child);
         if (child.id !== scope.childId || child.workspaceId !== scope.workspaceId || child.status === 'active') fail('erasure_not_blocked');
         this.write(tx, 'child', scope.childId, scope, { ...child, status: 'deleted' });

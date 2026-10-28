@@ -11,12 +11,13 @@ import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.t
 import { sharingCommandSchema, sharingOperationSchema, sharedSpaceViewSchema, sharedChildViewSchema, classRosterQuerySchema, type SharingCommand, type SharingOperation,
   type SharedSpaceView, type SharedMemberView, type SharedGrantView, type SharedInviteView, type SharedPage } from '../src/shared/sharing-control.ts';
 import { sharingUserTag } from './firestore-sharing-records.ts';
+import type { FirestoreErasureStore } from './firestore-erasure.ts';
 
 type Space = z.infer<typeof sharedSpaceSchema>;
 type Member = z.infer<typeof sharedMembershipSchema> & { teacherSpace?:Space };
 type Basis = z.infer<typeof sharedAccessBasisSchema>;
 type MutationResult<T> = { value: T; writes: (() => void)[] };
-type ExitResult = { spaceId: string; version: number; state: 'left' | 'dissolved' };
+type ExitResult = { spaceId: string; version: number; state: 'left' | 'dissolved'; cleanupState?:'pending'|'completed' };
 const operation = z.object({ operationId: z.uuid() });
 const change = operation.extend({ spaceId: z.uuid(), expectedVersion: z.number().int().positive().max(2147483647) });
 const resourceRequest = z.object({ spaceId: z.uuid(), childId: z.uuid(), module: sharedModuleSchema,
@@ -36,7 +37,7 @@ export interface SharedResourceAccess {
 }
 
 /** Persistent space authority. No copy of the shared child's facts or credentials is created. */
-export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) {
+export function createFirestoreSharingStore(options: FirestoreAuthorityOptions & {classErasure?:Pick<FirestoreErasureStore,'prepareClass'|'read'>}) {
   const data = new FirestoreDomainData(options), authority = createFirestoreAuthority(options);
   const now = () => new Date((options.serverClock ?? Date.now)()).toISOString();
   const key = (spaceId: string, resourceId: string) => JSON.stringify([spaceId, resourceId]);
@@ -91,6 +92,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
         const receipt = data.open('shared-operation', id, b.scope, sharedOperationSchema, old);
         if (receipt.actorUserId !== userId || receipt.operationId !== input.operationId || receipt.action !== action || receipt.fingerprint !== fingerprint)
           domainReject('operation_conflict');
+        if(receipt.erased)domainReject('operation_result_unavailable');
         if (action !== 'leave-space' && action !== 'dissolve-space') {
           const saved = receipt.result as Space | { space: Space };
           const id = 'space' in saved ? saved.space.id : saved.id;
@@ -323,7 +325,19 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
           'leave-space':'leave', 'update-member':'updateMember', 'revoke-invitation':'revokeInvitation', 'dissolve-space':'dissolve' } as const;
         const action = actions[receipt.action as keyof typeof actions];
         if (!action) domainReject('sharing_binding', 500);
-        if (action === 'leave' || action === 'dissolve') return sharingOperationSchema.parse({ operationId, action, space:null, exit:receipt.result });
+        if(receipt.erased)return sharingOperationSchema.parse({operationId,action,space:null,redacted:true});
+        if (action === 'leave' || action === 'dissolve') {
+          let exit=receipt.result as ExitResult;
+          if(exit.cleanupState) {
+            if(!options.classErasure)domainReject('class_cleanup_unavailable',503);
+            const saved=await read(b.transaction,'shared-space',exit.spaceId,sharedSpaceSchema);
+            if(!saved?.erasureOperationId)domainReject('sharing_binding',500);
+            const job=await options.classErasure.read(b.transaction,saved.storageIdentity.ownerUserId,saved.erasureOperationId);
+            if(!job||job.intent.type!=='class-delete'||job.intent.scope.workspaceId!==saved.id)domainReject('sharing_binding',500);
+            exit={...exit,cleanupState:job.state==='completed'?'completed':'pending'};
+          }
+          return sharingOperationSchema.parse({ operationId, action, space:null, exit });
+        }
         const raw = receipt.result as Space | { space:Space; token?:string; child?:{id:string} };
         const saved = domainParse(sharedSpaceSchema, 'space' in raw ? raw.space : raw, 'sharing_binding', 500);
         let s: Space, m: Member;
@@ -589,11 +603,20 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
           write(b.transaction, 'shared-invitation', invitation.id, { ...invitation, state: 'revoked' })] };
       });
     },
-    dissolve(userId: string, raw: { operationId: string; spaceId: string; expectedVersion: number }): Promise<ExitResult> {
-      const input = domainParse(change.strict(), raw);
-      return mutate(userId, 'dissolve-space', input, async b => {
+    dissolve(userId: string, raw: { operationId: string; spaceId: string; expectedVersion: number; expectedTeacherVersion?:number }): Promise<ExitResult> {
+      const input = domainParse(change.extend({expectedTeacherVersion:z.number().int().positive().optional()}).strict(), raw);
+      return mutate<ExitResult>(userId, 'dissolve-space', input, async b => {
         const { s, m } = await current(b, input); manager(s, m);
-        if(s.kind==='class')domainReject('class_dissolution_unavailable',409);
+        if(s.kind==='class') {
+          if(!options.classErasure)domainReject('class_dissolution_unavailable',409);
+          if(m.teacherSpace)basisVersion(m.teacherSpace,input.expectedTeacherVersion??0);
+          const cleanup=await options.classErasure.prepareClass(b,s.id,input.operationId);
+          const closed=updated(s,{state:'dissolved',transferTargetUserId:null,detachTargetUserId:null,detachManagerGeneration:null,
+            detachTargetMembershipId:null,erasureOperationId:cleanup.operationId});
+          return {value:{spaceId:s.id,version:closed.version,state:'dissolved' as const,cleanupState:'pending' as const},writes:[
+            write(b.transaction,'shared-space',s.id,closed),cleanup.commit,
+            ...(m.teacherSpace?[write(b.transaction,'shared-space',m.teacherSpace.id,updated(m.teacherSpace))]:[])]};
+        }
         if(s.kind==='teachers') {
           const attached=await b.transaction.get(data.collection('shared_spaces').where('teacherSpaceId','==',s.id).where('active','==',true).limit(1));
           if(attached.docs.length)domainReject('teacher_space_has_classes',409);

@@ -23,7 +23,7 @@ function keyed<T>(values: readonly T[], key: (value: T) => string): Map<string, 
 export function replayAvatarLifecycle(data: FirestoreDomainData, codec: FirestoreRestoreCodec, records: FirestoreRestoreDecoded[],
   live: readonly FirestoreRestoreDecoded[], journal: readonly FirebaseErasureIntent[], proofs: ReadonlyMap<string, FirebaseErasureDescriptor>, removed: ReadonlySet<string>) {
   const scopeErased = (value: AvatarCleanupRecord | AvatarHeadRecord) => journal.some(intent =>
-    ['account-delete', 'child-delete'].includes(intent.type) && erasureCoversAvatar(intent, { scope: value.binding.scope,
+    ['account-delete', 'child-delete', 'class-delete'].includes(intent.type) && erasureCoversAvatar(intent, { scope: value.binding.scope,
       targetKind: value.binding.target.kind, targetId: value.binding.targetId, committedVersion: null }));
   const heads = keyed(records.filter(record => record.context.kind === 'avatar-head' && !removed.has(record.path))
     .map(record => ({ record, value: avatarHeadRecordSchema.parse(record.value) })), row => avatarHeadId(row.value.binding));

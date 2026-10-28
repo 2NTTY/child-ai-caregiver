@@ -57,7 +57,7 @@ export function SharedSpacesScreen({ mode = "family" }: { mode?: SharingMode }) 
   useLayoutEffect(() => {
     setConfirmation(null);
     if (!inviteForm.formState.isDirty && !childForm.formState.isDirty && modules.length === 0) setReviewedVersion(selected?.version ?? null);
-  }, [selected?.version, selected?.teacherSpaceVersion]);
+  }, [selected?.version, selected?.teacherSpaceId, selected?.teacherSpaceVersion]);
   const needsReview = !!selected && reviewedVersion !== selected.version;
   useDomainWriteGuard(createForm.formState.isDirty || childForm.formState.isDirty || acceptForm.formState.isDirty || inviteForm.formState.isDirty || modules.length > 0 || !!teacherId || !!detachUserId, false, "account", false);
   const submit = (command: SharingCommand) => { setConfirmation(null); void controller.submit(command); };
@@ -77,6 +77,13 @@ export function SharedSpacesScreen({ mode = "family" }: { mode?: SharingMode }) 
         <Text style={styles.body}>剛才的操作結果仍待確認。請先查核結果，再進行其他管理操作。</Text>
         <AppButton label="查回原操作結果" loading={state.busy === "check"} disabled={!state.online || !!state.busy} onPress={() => { void controller.checkOriginal(); }} />
         {state.pending.checked ? <AppButton label="繼續剛才的操作" variant="secondary" disabled={!state.online || !!state.busy} onPress={() => { void controller.retryOriginal(); }} /> : null}
+      </View> : null}
+      {state.receipt?.exit?.cleanupState ? <View style={styles.group}>
+        <Text accessibilityLiveRegion="polite" style={styles.body}>{state.receipt.exit.cleanupState === "pending"
+          ? "班級解散已受理，所有成員已失去存取；班級所屬的孩子、記錄及附件仍在永久清理中，尚未確認清理完成。"
+          : "班級所屬的孩子、記錄及附件已完成永久清理。"}成員的私人原件及帳戶不受影響。</Text>
+        {state.receipt.exit.cleanupState === "pending" ? <AppButton label="查核班級清理進度" variant="secondary" loading={state.busy === "check"}
+          disabled={!state.online || !!state.busy || !!state.pending} onPress={() => { void controller.checkOriginal(); }} /> : null}
       </View> : null}
       {state.invitationToken ? <View style={styles.group}>
         <Text style={styles.body}>邀請已確認。請手動選取或按住下方代碼複製，再自行交給指定電郵的成員；系統沒有代寄電郵。</Text>
@@ -208,6 +215,9 @@ export function SharedSpacesScreen({ mode = "family" }: { mode?: SharingMode }) 
           {owner && !classMode && (!teachersMode || state.teacherClassesLoaded && !state.teacherClasses.items.length && !state.teacherClasses.nextCursor) ? <AppButton label={`解散這個${spaceLabel}`} variant="danger-secondary" disabled={locked} onPress={() => confirm(`解散${spaceLabel}？`, "所有成員將失去這個共享空間的存取。這不會刪除成員的私人原件，但不能恢復這個空間。", { action: "dissolve", operationId: crypto.randomUUID(), ...basis })} /> : null}
           {teachersMode && (state.teacherClasses.items.length > 0 || state.teacherClasses.nextCursor) ? <Text style={styles.body}>須先移出所有班級，才能解散教師空間。</Text> : null}
           </> : null}
+          {owner && classMode ? <AppButton label="解散這個班級" variant="danger-secondary" disabled={locked || needsReview || attached && !selected.teacherSpaceVersion}
+            onPress={() => confirm("永久解散班級？", "所有成員將失去這個班級的存取。班級所屬的孩子、記錄及附件會永久刪除，不能恢復；清理可能需要時間。這不會刪除成員的私人原件或帳戶。",
+              { action: "dissolve", operationId: crypto.randomUUID(), ...basis, ...(attached ? { expectedTeacherVersion: selected.teacherSpaceVersion! } : {}) })} /> : null}
         </SettingsSection>
         {owner && directMembers ? <SettingsSection>
           <SectionHeader title="邀請指定成員" />

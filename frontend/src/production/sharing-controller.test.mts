@@ -7,6 +7,50 @@ import { SharingController } from "./SharingController.ts";
 import { isProductionRouteConnected } from "./routes.ts";
 import { sharedRouteMessage, sharedRouteModules } from "./shared-route-access.ts";
 
+test("class dissolution retains its cleanup receipt after selection disappears and rechecks only the original operation", async () => {
+  const space: SharedSpaceView = { id: randomUUID(), kind: "class", name: "Class A", role: "owner", managerUserId: "teacher",
+    transferTargetUserId: null, version: 2, teacherSpaceId: randomUUID(), teacherSpaceVersion: 3,
+    createdAt: "2026-10-28T00:00:00Z", updatedAt: "2026-10-28T00:00:00Z" };
+  const command: SharingCommand = { action: "dissolve", operationId: randomUUID(), spaceId: space.id, expectedVersion: space.version, expectedTeacherVersion: 3 };
+  let receipt: SharingOperation = { action: "dissolve", operationId: command.operationId, space: null,
+    exit: { spaceId: space.id, version: 3, state: "dissolved", cleanupState: "pending" } };
+  const commands: SharingCommand[] = [], lookups: string[] = [];
+  let dissolved = false, failLookup = false;
+  const api = createSharingApi("https://example.test", async (input, init) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/commands")) {
+      commands.push(JSON.parse(String(init?.body)) as SharingCommand); dissolved = true; return Response.json(receipt);
+    }
+    if (url.pathname.includes("/operations/")) {
+      lookups.push(url.pathname);
+      if (failLookup) throw new Error("Cleanup lookup unavailable");
+      return Response.json({ operation: receipt });
+    }
+    if (url.pathname.endsWith("/classes")) return Response.json({ items: dissolved ? [] : [space], nextCursor: null });
+    if (url.pathname.endsWith("/members") || url.pathname.endsWith("/roster")) return Response.json({ items: [], nextCursor: null });
+    assert.equal(url.pathname, "/api/shared-spaces/" + space.id); return Response.json(space);
+  });
+  const controller = new SharingController(api, "class"); controller.syncContext("teacher", "teacher:1", true);
+  try {
+    await controller.selectSpace(space.id); await controller.submit(command);
+    assert.deepEqual(commands, [command]); assert.equal(controller.getSnapshot().pending, null);
+    assert.equal(controller.getSnapshot().selected, null); assert.deepEqual(controller.getSnapshot().spaces.items, []);
+    assert.equal(controller.getSnapshot().receipt?.exit?.cleanupState, "pending");
+    failLookup = true; await controller.checkOriginal();
+    assert.equal(lookups.length, 1, "An accepted cleanup must still allow its original receipt to be checked");
+    assert.equal(controller.getSnapshot().receipt?.exit?.cleanupState, "pending"); assert.equal(controller.getSnapshot().pending, null);
+    failLookup = false; await controller.checkOriginal();
+    assert.equal(controller.getSnapshot().receipt?.exit?.cleanupState, "pending");
+    receipt = { ...receipt, exit: { ...receipt.exit!, cleanupState: "completed" } };
+    await controller.checkOriginal();
+    assert.equal(controller.getSnapshot().receipt?.exit?.cleanupState, "completed");
+    assert.deepEqual(lookups, Array(3).fill("/api/shared-spaces/operations/" + command.operationId));
+    await controller.retryOriginal(); await controller.checkOriginal(); assert.equal(lookups.length, 3); assert.deepEqual(commands, [command]);
+    controller.syncContext("other", "other:2", true);
+    assert.equal(controller.getSnapshot().receipt, null); assert.equal(controller.getSnapshot().selected, null);
+  } finally { controller.dispose(); }
+});
+
 test("teacher spaces open attached classes and retain original detach receipts through identity cleanup", async () => {
   const team: SharedSpaceView = { id: randomUUID(), kind: "teachers", name: "Teachers", role: "owner", managerUserId: "teacher",
     transferTargetUserId: null, version: 3, createdAt: "2026-10-28T00:00:00Z", updatedAt: "2026-10-28T00:00:00Z" };

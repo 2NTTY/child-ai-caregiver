@@ -17,7 +17,7 @@ import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts
 import { FirestoreDomainData, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import { firestorePhotoSchemas as photos } from './firestore-photos.ts';
 import { firestoreOnlineRecordSchema, firestoreOnlineErasureBarrierSchema, firestoreSharedResultSchema } from './firestore-online-receipts.ts';
-import { firebaseErasureIntentHash, firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, type FirebaseErasureIntent, type FirebaseErasureDescriptor } from './firebase-erasure-journal.ts';
+import { erasureCoversScope, firebaseErasureIntentHash, firebaseErasureIntentSchema, firebaseErasureDescriptorSchema, type FirebaseErasureIntent, type FirebaseErasureDescriptor } from './firebase-erasure-journal.ts';
 import type { FirebasePhotoObjectDescriptor } from './firebase-photo-objects.ts';
 import { firebaseBackupDocumentDigest, type FirebaseBackupDocument } from './firestore-backup.ts';
 import { assertFirestoreRestoreContent } from './firestore-restore-content.ts';
@@ -178,15 +178,17 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   requireValue(input.erasures.length<=2000,'restore_limit');
   const journal=input.erasures.map(value=>firebaseErasureIntentSchema.parse(value));
   unique(journal,value=>canonical([value.scope.ownerUserId,value.operationId]));
-  const scopeJournal=journal.filter(intent=>['child-delete','account-delete'].includes(intent.type));
+  const scopeJournal=journal.filter(intent=>['child-delete','account-delete','class-delete'].includes(intent.type));
+  // A closed class may still be waiting for independent journal IO; do not restore around that obligation.
+  for(const {value}of rows(live,'scope-erasure',firestoreScopeErasureSchema))if(value.intent.type==='class-delete')
+    requireValue(value.state==='completed' && scopeJournal.some(intent=>canonical(intent)===canonical(value.intent)),'restore_pending_scope_cleanup');
   // Complete original-object erasure first; recovery must not discard an unresolved cleanup obligation.
   for(const intent of scopeJournal) {
     const job=rows(live,'scope-erasure',firestoreScopeErasureSchema).find(row=>row.value.intent.operationId===intent.operationId
       &&canonical(row.value.intent)===canonical(intent));
     requireValue(job?.value.state==='completed','restore_pending_scope_cleanup');
   }
-  const erasedByScope=(owner:string,workspace:string,child:string)=>scopeJournal.some(intent=>intent.scope.ownerUserId===owner
-    && (intent.type==='account-delete'||intent.scope.workspaceId===workspace&&intent.scope.childId===child));
+  const erasedByScope=(ownerUserId:string,workspaceId:string,childId:string)=>scopeJournal.some(intent=>erasureCoversScope(intent,{ownerUserId,workspaceId,childId}));
   const scopeRemoved=new Set<string>();
   for(const record of decoded) {
     if(record.context.family==='knowledge')continue;
@@ -194,7 +196,7 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
     const accountErased=scopeJournal.some(v=>v.type==='account-delete'&&v.scope.ownerUserId===scope.ownerUserId);
     const body=record.value as Record<string,any>;
     const matches=accountErased||erasedByScope(scope.ownerUserId,scope.workspaceId,scope.childId)
-      || scopeJournal.some(intent => sharingErasedBy(kind, body, intent.scope, intent.type === 'account-delete'))
+      || scopeJournal.some(intent => sharingErasedBy(kind, body, intent.scope, intent.type === 'account-delete',intent.type==='class-delete'))
       || ['online-receipt','authority-operation','document-operation','change-projection','change'].includes(kind)
         && erasedByScope(scope.ownerUserId,body.result?.scope?.workspaceId??body.result?.child?.workspaceId??scope.workspaceId,
           body.childId??body.result?.child?.id??body.result?.childId??body.result?.scope?.childId??NIL)

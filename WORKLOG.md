@@ -4153,3 +4153,12 @@
 - 獨立 review 的教師空間可誤納私人家庭分享已修；舊收據混合歷史父關係與目前角色亦按實際錯誤控制風險升級修正。兩條回歸先紅後綠，原始效果仍保存在不可變收據，公開管理 view 改讀同一目前狀態。
 - 最終後端流程 3/3、必要家庭相容 1/1；前端 controller 3/3，新增 teachers 路由例外後定向 1/1。受影響 Server／client 型別零診斷；前端保留兩項已知診斷，Web 匯出成功。詳見[本包證據](artifacts/verification/P4_CLASS_TEACHERS_20261028.json)。
 - 未部署／建立索引，零真模型／通知／設備驗收；不把合成還原當真 Firestore 競爭或災備實測。班級背景、解散實體清理及完整 CLASS01／P4 門檻仍待接續，D PR 未改。
+
+<a id="log-20261028-p4-class-erasure"></a>
+### 2026-10-28：P4 班級解散與可接續清理
+
+- 基於 #357／`8702125`，復用 scope-erasure 日誌／maintenance／分頁 consumer；班級管理員確認後原子關閉班級及 workspace，永久清理前核實獨立日誌。附屬班級同時核父版本／目前管理員，原操作保存 pending／completed；成員私人原件及登入身份不刪。
+- 原共享收據清除正文但保留身份與指紋；孩子／workspace 留 deleted 屏障，附件沿原物件身份清理。共用 Web／Android 畫面保留清理進度與原操作查回，沒有另建輪詢或資料副本。
+- 單條合成流程經真控制 API／client、清理服務及恢復程式，涵蓋角色／版本、原操作、日誌回應遺失、實際文件附件 consumer、隔離與兩種舊備份；最終 1/1。原個人孩子／帳戶刪除相容 1/1；舊測試 100 次 stage 上限已落後未改動的 113 個集合，改由 registry 推導有界上限，完成／隔離斷言不變。
+- 獨立 review 找到中途備份會把 completed 倒退 requested，已補紅綠回歸並重放目前同 ID 工作；另補還原後原收據所需工作及媒體 class-delete 接點。型別發現的 erasures 同名 port 衝突改成獨立 classErasure 注入。完整失敗保留於[證據](artifacts/verification/P4_CLASS_ERASURE_20261028.json)。
+- 前端定向 controller 1/1；受影響後端及共用畫面型別圖均 0 診斷，diff check 通過。未改原生套件／路由，沒有重跑 Web 匯出、手機、全量或已驗模型；零雲端修改／通知／部署。班級背景授權與其餘 P4 門檻接續，D PR 保留。
