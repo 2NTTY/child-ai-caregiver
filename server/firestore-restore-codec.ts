@@ -247,6 +247,8 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
     parse(workRecoveryScopeSchema, scope);
     if (!['photo-global-quota', 'task-dispatch-scan', 'platform-policy', 'admin-invitation', 'admin-receipt'].includes(kind)) requireBinding(scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
     const versionMatches = (value: number) => requireBinding(recordVersion === value);
+    const taskRecipient = (userId: string) => userId === scope.ownerUserId
+      || scope.ownerUserId === 'space:' + scope.workspaceId && !userId.startsWith('space:');
     const taskBinding = (row: z.infer<typeof firestoreTaskSchema>) => requireBinding(validTaskAttribution(row, scope)
       && scope.workspaceId !== NIL && scope.storageEpoch !== NIL);
     if (kind === 'task') { const row = parse(firestoreTaskSchema, raw); requireBinding(row.id === id); taskBinding(row); versionMatches(row.version); }
@@ -313,9 +315,9 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
       const row = parse(photos.cleanup, raw); photoObjectScope(row); requireBinding(id === row.photoId && sameScope(scope, row.scope)); versionMatches(1);
       if (row.descriptor) requireBinding(row.descriptor.sha256 === row.sha256 && row.descriptor.bytes === row.bytes && row.descriptor.mimeType === row.mimeType);
     } else if (kind === 'task-reminder') { const row = parse(firestoreTaskReminderSchema, raw); requireBinding(row.id === id && scope.childId !== NIL && row.id === firestoreTaskReminderId(scope, row.occurrenceId, row.phase)); versionMatches(row.taskVersion); }
-    else if (kind === 'task-reminder-batch') { const row = parse(firestoreTaskReminderBatchSchema, raw); requireBinding(row.id === id && row.recipientUserId === scope.ownerUserId && scope.childId === NIL && row.id === firestoreTaskReminderBatchId(scope, row.category, row.key)); versionMatches(1); }
+    else if (kind === 'task-reminder-batch') { const row = parse(firestoreTaskReminderBatchSchema, raw); requireBinding(row.id === id && taskRecipient(row.recipientUserId) && scope.childId === NIL && row.id === firestoreTaskReminderBatchId(scope, row.category, row.key)); versionMatches(1); }
     else if (kind === 'notification-preferences') { const row = parse(firestoreNotificationPreferencesSchema, raw); requireBinding(id === scope.ownerUserId && scope.childId === NIL); versionMatches(row.version); }
-    else if (kind === 'task-notification-outbox') { const row = parse(firestoreTaskNotificationOutboxSchema, raw); requireBinding(row.id === id && row.reminderId === id && row.recipientUserId === scope.ownerUserId && scope.childId !== NIL); versionMatches(row.taskVersion); }
+    else if (kind === 'task-notification-outbox') { const row = parse(firestoreTaskNotificationOutboxSchema, raw); requireBinding(row.id === id && row.reminderId === id && taskRecipient(row.recipientUserId) && scope.childId !== NIL); versionMatches(row.taskVersion); }
     else if (kind === 'task-dispatch-scan') { const row = parse(firestoreTaskDispatchScanSchema, raw); requireBinding(id === 'current' && sameScope(scope, FIRESTORE_TASK_DISPATCH_SCOPE)); versionMatches(row.revision); }
     else if (kind === 'task-dispatch-observation') { const row = parse(firestoreTaskDispatchObservationSchema, raw); requireBinding(row.taskName === id && scope.childId !== NIL); }
   }

@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-28）：[P4-CLASS01](#p4-class01) 班級解散收束，接續背景授權。**基線 #357／`8702125`，分支 `codex/p4-class-erasure`。班級解散已接既有持久工作、獨立日誌及分頁清理；原操作可查 pending／completed，私人原件及登入身份保留。共用前端提供確認及原收據進度。合成流程涵蓋日誌中斷、附件、版本／角色、防重、其他資料隔離及兩種舊備份；review 找到中途備份可能倒退清理狀態，已先紅後綠修正。必要個人刪除相容與前端 controller／型別已核，[證據](artifacts/verification/P4_CLASS_ERASURE_20261028.json)；未部署、未作真雲端還原。下一步是班級背景授權／通知接點，再接統一匯入；整個 CLASS01／P4 尚未完成。教師空間[原證據](artifacts/verification/P4_CLASS_TEACHERS_20261028.json)、P3／P5 及 D PR 範圍保留。
+**當前入口（2026-10-28）：[P4-CLASS01](#p4-class01) 班級待辦背景身份收束，下一包接[統一匯入](#p4-handover01)。**班級解散 #358／`df4bfa7` 已合併，[清理證據](artifacts/verification/P4_CLASS_ERASURE_20261028.json)保留。`codex/p4-class-background` 已分開班級儲存身份與真負責人；現有單人指派表單顯示本人，背景重核當前成員，使用本人安靜時段，提醒與還原保留原收件人。班級連貫流程 1/1、既有個人提醒 9/9、受影響型別零診斷，獨立 review 無阻擋項，[證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)。兩包均未部署。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR；統一匯入依已穩定範圍接口先做。整個 CLASS01／P4、P3／P5 的未完成項不變。
 
 **已接回的系統分享：**#354 已合併 Android 本機收件箱／原草稿接線及三項 review 修正，定向核對與 JS 匯出完成，未建置／發布新 APK；真機接收、iOS extension 與 HANDOVER01 資料包入口見 [S12-W02](#s12-w02)。#352 共享附件頁面亦已合併未部署。AUTH01 的 Apple 邀請接續／自動連結、共享寫入／背景及 P3／P5 欠項繼續保留；D 的 #254／#262／#263／#265／#273／#353 仍不改、不代合併。
 

@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-28",
+  "package": "P4-CLASS01 deterministic task assignee and reminder binding",
+  "base": "df4bfa7c1d38b8d2ac28d9ff4635485fdd925e37",
+  "branch": "codex/p4-class-background",
+  "implementation": "Existing task forms receive real current-member assignees; encrypted assignment binds membership incarnation and scope. Existing task worker rechecks current account/shared authority, uses personal preferences, and persists class-owned reminder/batch/notification-intent receipts.",
+  "checks": [
+    {"command":"node --experimental-test-module-mocks --test tests/class-task-worker.test.ts", "result":"1/1 passed", "covers":"shared online writes and original receipts, real worker dispatch/claim/complete, quiet hours, repeat delivery, public DTO, restore relation/tamper rejection, leave/rejoin, another member completing the task"},
+    {"command":"node --experimental-test-module-mocks --test tests/firestore-task-worker.test.ts", "result":"9/9 passed in the targeted compatibility batch; class restore check in that batch failed and was repaired separately"},
+    {"command":"targeted TypeScript graph rooted at 11 affected files", "result":"0 diagnostics"},
+    {"command":"independent Sol xhigh whole-branch review", "result":"no Important/Critical findings; main final diff review"},
+    {"command":"git diff --check", "result":"passed"}
+  ],
+  "failuresPreserved":[
+    "Initial fixture used the wrong query-port method; corrected before behavioral red",
+    "Behavioral red: class picker offered space:<id> instead of the actual member",
+    "Restore codec and whole-content validation assumed recipient equals storage owner; explicit class recipient and recipient-specific batch key now retain historical task binding"
+  ],
+  "reuse":"Existing shared-resource authority, task policy, Firestore task/outbox/lease, restore codec and common UI DTO; no dependency, new queue, synthetic account or client copy",
+  "notClaimed":["deployed", "real cloud transaction concurrency", "external notification sent", "class task Agent or model-payment binding", "choosing other class members", "whole CLASS01/P4 complete", "device acceptance"],
+  "cost":{"modelCalls":0,"cloudMutations":0,"notifications":0,"deployments":0}
+}
