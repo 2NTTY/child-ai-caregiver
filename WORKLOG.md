@@ -4179,3 +4179,10 @@
 - 獨立 review 找到來源 buffer 清零早於 zlib 完成、avatar 不增加 changeSeq 的跨頁缺口，以及來源停滯時取消卡住；新增重現後修正 byte 所有權、頭像跨頁／收尾 fence 及取消競速／暫存清理。Zod refined schema 的 omit 錯誤另保留，局部修正後頭像補驗通過。
 - 四項必要情景分批通過，五個根檔的型別圖零診斷；review 三項已覆核關閉。只重跑受修正影響的串流／頭像兩項；原產品檢查、雲端、模型、通知、手機與部署均未執行。詳細版本、失敗及未交付範圍見[證據](artifacts/verification/P4_HANDOVER_ARCHIVE_20261028.json)。
 - 下一段接同一格式的持久匯出／匯入台帳、各領域保存、來源映射及共用入口；班級、私人資料、期間、差異還原、部分成功及接續要求仍保留。D PR、P3 與 P5 原欠項不變。
+
+<a id="log-20261028-p4-handover-storage"></a>
+### 2026-10-28：P4 文檔包有界加密與私人物件接點
+
+- 接續 #360／`527d3f4`，以 Node 原生 stream／crypto 沿既有 YBG1 格式處理私人暫存檔，沒有新增密碼學格式或套件。Storage 沿已裝 SDK、同一私人 bucket 接點及完整 generation；原物件查回、create-only 上載、固定版本讀取／刪除與 unknown 分類可供後續持久工作使用。
+- 檔案相容／鑑別失敗清理 1/1；物件保存／原結果恢復／版本及故障清理同一流程 1/1；四入口型別圖零診斷。串流關閉次序、Node strip-only 語法及兩項獨立 review 缺口均按根因修正，原失敗保留於[證據](artifacts/verification/P4_HANDOVER_STORAGE_20261028.json)。未重跑已通過的 ZIP／授權 exporter 流程。
+- 零雲端修改／模型／通知／部署；沒有開放新 API 或畫面。持久工作、刪除／到期義務、正式匯出／匯入及全模組成果仍待接線，不把內部 adapter 當成 HANDOVER01 完成。
