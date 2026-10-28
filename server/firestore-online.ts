@@ -46,6 +46,7 @@ export interface FirestoreTasksQuery {
   history(userId: string, childId: string, taskId: string, beforeVersion?: number | null): Promise<TaskHistory | null>;
 }
 export interface FirestoreOnlineStore {
+  readImportTask(binding: FirestoreAuthorityTransaction, childId: string, taskId: string): Promise<CareTask | null>;
   prepareImportedTask(binding: FirestoreAuthorityTransaction, childId: string, operationId: string,
     row: HandoverImportRow, integrity: HandoverIntegrity): Promise<{ task: CareTask; changeSeq: string; commit(): void }>;
   spaces(userId: string): Promise<Workspace[]>;
@@ -290,6 +291,11 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
   const tasks = taskView();
   return {
     children, tasks, prepareTask,
+    async readImportTask(binding, childId, taskId) {
+      domainParse(uuid, taskId); await requireChild(binding, childId);
+      const value = await readTask(binding, scopeFor(binding, childId), taskId);
+      return value ? firestoreTaskSchema.parse(value) : null;
+    },
     async prepareImportedTask(binding, childId, operationId, row, integrity) {
       if (row.section !== 'tasks') domainReject('invalid_package_data', 400);
       const source = domainParse(firestoreTaskSchema, row.value, 'invalid_package_data');
