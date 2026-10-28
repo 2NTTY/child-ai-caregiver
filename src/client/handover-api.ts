@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { resolveApiBaseUrl } from '../config/api-base-url.ts';
 import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverExportPageSchema, handoverExportViewSchema,
   type HandoverExportCommand, type HandoverExportView } from '../shared/handover-jobs.ts';
-import { handoverUploadCommandSchema, handoverUploadViewSchema, type HandoverUploadCommand, type HandoverUploadView } from '../shared/handover-uploads.ts';
+import { handoverUploadCommandSchema, handoverUploadViewSchema, handoverUploadPageSchema,
+  type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadPage } from '../shared/handover-uploads.ts';
 import { handoverImportCommandSchema, handoverImportControlSchema, handoverImportViewSchema, handoverImportPageSchema,
   type HandoverImportCommand, type HandoverImportView } from '../shared/handover-imports.ts';
 
@@ -22,6 +23,7 @@ export interface HandoverApi {
     consume: (response: Response, isCurrent: () => boolean) => Promise<T>): Promise<T>;
   reserveUpload(userId: string, command: HandoverUploadCommand, signal: AbortSignal): Promise<HandoverUploadView>;
   getUpload(userId: string, id: string, signal: AbortSignal): Promise<HandoverUploadView>;
+  listUploads(userId: string, signal: AbortSignal, cursor?: string): Promise<HandoverUploadPage>;
   cancelUpload(userId: string, id: string, command: CancelCommand, signal: AbortSignal): Promise<HandoverUploadView>;
   uploadContent(userId: string, id: string, body: BodyInit, signal: AbortSignal): Promise<HandoverUploadView>;
   createImport(userId: string, command: HandoverImportCommand, signal: AbortSignal): Promise<HandoverImportView>;
@@ -137,6 +139,11 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
       return json(userId, '', signal, handoverUploadViewSchema, parsed.data, result => result.id === parsed.data.opId, { collection: 'package-uploads' });
     },
     getUpload: (userId, id, signal) => resourceView('package-uploads', handoverUploadViewSchema, userId, id, signal),
+    async listUploads(userId, signal, cursor) {
+      if (cursor !== undefined && (typeof cursor !== 'string' || !cursor || cursor.length > 2048)) throw new HandoverApiError(400, 'invalid_input');
+      return json(userId, cursor === undefined ? '' : '?' + new URLSearchParams({ cursor }), signal, handoverUploadPageSchema,
+        undefined, result => result.nextCursor !== '' && (cursor === undefined || result.nextCursor !== cursor), { collection: 'package-uploads' });
+    },
     async cancelUpload(userId, id, input, signal) {
       const parsed = handoverCancelCommandSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
       return resourceView('package-uploads', handoverUploadViewSchema, userId, id, signal, '/cancel', parsed.data);

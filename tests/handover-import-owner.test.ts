@@ -51,3 +51,38 @@ test('import owner preserves unknown operations, resumes server batches and clea
   api.cancelUpload = async (_u, _id, command) => { assert.equal(command.expectedVersion, 2); return { ...upload, state: 'cancelled', version: 3 }; };
   await owner.discard(); assert.equal(owner.getSnapshot().upload, null);
 });
+
+test('reopened import owner discovers staged packages without resending contents and rejects late identity results', async () => {
+  const row: HandoverUploadView = { id: '00000000-0000-4000-8000-000000000003', version: 3,
+    filename: 'backup.zip', bytes: 3, state: 'ready', error: null,
+    createdAt: '2026-10-29T00:00:00Z', expiresAt: '2026-10-30T00:00:00Z',
+    preview: { manifestSha256: 'a'.repeat(64), integrity: 'missing_proof', children: [], coverage: [] } as any };
+  const { preview, ...summary } = row;
+  let writes = 0;
+  const api = { setIdentity() {}, async listUploads() { return { items: [summary], nextCursor: null }; },
+    async getUpload() { return row; }, async uploadContent() { writes++; return row; },
+    async cancelUpload(_user: string, id: string, command: {expectedVersion: number}) {
+      assert.equal(id, row.id); assert.equal(command.expectedVersion, 3);
+      return { ...row, version: 4, state: 'cancelled' as const, preview: null };
+    } } as unknown as HandoverApi;
+  const owner = new HandoverImportOwner(api); owner.syncContext('alice', 'session-a', true);
+  await owner.loadUploads(); assert.equal(owner.getSnapshot().uploads[0].id, row.id);
+  assert.equal('preview' in owner.getSnapshot().uploads[0], false);
+  assert.equal(owner.getSnapshot().upload, null, 'discovery alone must not choose or upload');
+  await owner.openUpload(row.id); assert.deepEqual(owner.getSnapshot().upload?.preview, preview);
+  assert.equal(owner.getSnapshot().pending, null); assert.equal(writes, 0);
+  api.getUpload = async () => { throw new HandoverApiError(404, 'package_upload_not_found'); };
+  await owner.openUpload('00000000-0000-4000-8000-000000000004');
+  assert.equal(owner.getSnapshot().upload, null, 'failed selection of B cannot leave A available for import');
+  api.getUpload = async () => row; await owner.openUpload(row.id);
+  await owner.discard(); assert.equal(owner.getSnapshot().upload, null);
+  assert.equal(owner.getSnapshot().uploads[0].state, 'cancelled');
+  api.getUpload = async () => ({ ...row, state: 'reserved', preview: null });
+  await owner.openUpload(row.id); assert.equal(owner.getSnapshot().pending, null, 'lost local body cannot be silently re-uploaded');
+  owner.leaveUpload(); assert.equal(owner.getSnapshot().upload, null); assert.equal(writes, 0);
+  let late!: (value: Awaited<ReturnType<HandoverApi['listUploads']>>) => void;
+  api.listUploads = () => new Promise(resolve => { late = resolve; });
+  const reading = owner.loadUploads(); owner.syncContext('bob', 'session-b', true);
+  late({ items: [summary], nextCursor: null }); await reading;
+  assert.deepEqual(owner.getSnapshot().uploads, []); assert.equal(owner.getSnapshot().upload, null);
+});

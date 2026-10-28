@@ -1,0 +1,22 @@
+{
+  "workPackage": "P4-HANDOVER01 staged upload recovery",
+  "date": "2026-10-29",
+  "base": "8c07b10f39e46348c01724430349750e5355f770",
+  "branch": "codex/p4-handover-upload-recovery",
+  "scope": "Bounded account/epoch upload discovery and shared owner/UI continuation; no automatic content retransmission",
+  "reuse": ["Existing encrypted upload store, lifecycle and cleanup worker", "Existing scope/cleaned/document-ID index", "Existing shared HandoverApi transport and Paper controls"],
+  "checks": [
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern='package upload HTTP' tests/handover-upload-service.test.ts", "result": "1 passed", "log": "tmp/handover-upload-recovery-green.log", "coverage": ["real local HTTP and shared client", "account/epoch isolation and revocation", "20+1 cursor pagination", "preview omitted from list, available on selection", "metadata tampering rejected", "cancelled obligation remains until cleanup"] },
+    { "command": "node --experimental-test-module-mocks --test tests/handover-import-owner.test.ts", "result": "2 passed", "log": "tmp/handover-upload-recovery-owner-green.log", "coverage": ["existing unknown-operation lifecycle", "reopening discovers staged uploads without writes", "lost local file does not cause automatic retransmission", "identity change rejects late list"] },
+    { "command": "node --experimental-test-module-mocks --test --test-name-pattern='reopened import owner' tests/handover-import-owner.test.ts", "result": "1 passed after review correction", "log": "tmp/handover-upload-recovery-selection-green.log", "coverage": ["select A, select B with 404, A cannot remain a writable selection"] },
+    { "check": "Affected TypeScript graphs", "serverRoots": 3, "frontendRoots": 1, "diagnostics": 0, "log": "tmp/handover-upload-recovery-types.log" }
+  ],
+  "review": "Main reviewed backend diff and contracts. Independent Sol reviewed owner/UI and backend/client; the package-selection issue was reproduced, corrected and re-reviewed. No remaining definite P1/P2 in the reviewed delta.",
+  "preservedFailures": [
+    { "log": "tmp/handover-upload-recovery-network-blocked.log", "cause": "Sandbox denied loopback HTTP listen; local targeted check completed outside sandbox" },
+    { "log": "tmp/handover-upload-recovery-red.log", "cause": "Collection GET returned 404 before implementation" },
+    { "log": "tmp/handover-upload-recovery-owner-red.log", "cause": "Staged upload discovery method absent before implementation" },
+    { "log": "tmp/handover-upload-recovery-selection-red.log", "cause": "Failed selection of another package retained the previous writable selection; corrected" }
+  ],
+  "limits": ["Synthetic Firestore/Storage; local HTTP is real", "No cloud, model, notification, new index or deployment", "No repeated Web/Android bundle or device acceptance; prior bundle evidence remains scoped to #374", "Other import domains, conflict-resolution UI, full backup and large native packages remain pending"]
+}

@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-29）：[P4-HANDOVER01](#p4-handover01) 共用匯入入口。**#360～#373 已合併未部署；記錄／概況／待辦的來源歷史與生命週期見[證據](artifacts/verification/P4_HANDOVER_SOURCE_HISTORY_20261029.json)。`codex/p4-handover-import-ui` 接原 Web／App 共用設定區：選 ZIP、真驗證狀態、選來源孩子／既有接收對象／模組、匯入計數、取消及原批次接續；Server 本人分頁列表支援重開讀回，不用本機業務副本。無可信簽章只需一次知悉，完整性失敗不降級。首批只有記錄／概況／待辦及其歷史；預設保留本地修改，逐項衝突選擇、其他領域、班級／期間匯出、完整私人備份及正式簽章配置仍待接。原生因現有 fetch 緩衝沿 20 MiB，Web 256 MiB，原生大型包未完成；首次選檔及真機／雲端／部署另驗。合成接線與畫面存在均不當作 HANDOVER01 完成。
+**當前入口（2026-10-29）：[P4-HANDOVER01](#p4-handover01) 未提交上載恢復。**#360～#374 已合併未部署；#374 的共用匯入畫面／批次列表、最低驗證及限制見[證據](artifacts/verification/P4_HANDOVER_IMPORT_UI_20261029.json)。`codex/p4-handover-upload-recovery` 補本人暫存包的有界列表，重開後按需查原檔案並繼續或取消；不自動重傳，也不把完整名冊塞入列表。本機原檔已失去則清楚提示取消／重選。首批仍只有記錄／概況／待辦及其歷史；預設保留本地修改，衝突選擇、其他領域、班級／期間匯出、完整私人備份及正式簽章配置待接。原生因現有 fetch 緩衝沿 20 MiB，Web 256 MiB，原生大型包未完成；首次選檔及真機／雲端／部署另驗。合成接線與畫面存在均不當作 HANDOVER01 完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 
