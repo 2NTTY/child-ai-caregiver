@@ -1,0 +1,36 @@
+{
+  "package": "P4-HANDOVER01 / domain import preparation and provenance",
+  "date": "2026-10-29",
+  "baseCommit": "bb3d8127a4d426edc06904074a831e3bda5e3489",
+  "branch": "codex/p4-handover-provenance",
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-provenance.test.ts",
+      "result": "1 passed", "log": "tmp/handover-provenance-complete.log",
+      "covers": [
+        "Existing Firestore care/profile/task preparation retains source confirmation and flat provenance",
+        "Local correction, profile version conflict and actual class authorization binding",
+        "Imported completed task has no temporary reminder; scheduled task uses ordinary outbox",
+        "Actual care and contact clients accept source metadata",
+        "Actual restore codec decodes affected heads and revisions"
+      ]
+    },
+    { "command": "node tmp/check-handover-provenance-types.cjs", "roots": 5, "diagnostics": 0,
+      "log": "tmp/handover-provenance-types-final.log" },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "failuresRetained": [
+    { "log": "tmp/handover-provenance-red.log", "cause": "Expected missing helper before implementation" },
+    { "log": "tmp/handover-provenance-client-red.log", "cause": "Old client confirmation enum rejected imported source" },
+    { "log": "tmp/handover-provenance-types-first.log", "cause": "Six test-only nullable assertions; fixed explicit fixture checks" },
+    { "log": "tmp/handover-provenance-restore-red.log", "cause": "Restore proof bound source confirmer instead of authenticated importer" },
+    { "log": "tmp/handover-provenance-contact-red.log", "cause": "Independent review found contact client strict task schema missing optional provenance" }
+  ],
+  "review": { "mode": "Independent read-only Sol branch review and targeted follow-up, no repeated tests",
+    "result": "Contact client finding fixed and independently closed" },
+  "notValidatedOrDelivered": [
+    "Formal import upload/API/worker, batch and per-item receipts, source mappings, deduplication and conflicts",
+    "Source attribution UI, other domains, complete private backup and class/period selection",
+    "Real Firestore concurrency, full restore, model, cloud, device, deployment or OTA"
+  ]
+}

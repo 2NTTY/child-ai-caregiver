@@ -1137,6 +1137,10 @@ Account export可直接驗讀空head／null內容，不因未裝avatar內容port
 
 本節只定語義，路由／DTO 在相應包實作時沿既有接口擴充並保持舊 App 相容，不聲稱目前已有新端點。[SPEC REQ-P4](../SPEC.md#p4-p5-product) 是產品權威，[PLAN](../PLAN.md#p4-packages) 管依賴／狀態，六項已確認行為依 [ADR-029](DECISIONS.md#adr-029)，不以目標接口當已實作。
 
+匯入 care／profile／task 的 DTO 增加可選 `importedFrom`，care／profile 的 `confirmationBasis` 可為 `imported_source`。此時 `confirmedBy`／`confirmedAt` 是來源標記，不能因 UID 字串相同就顯示為目前用戶已核對；實際匯入者另見來源鏈。普通更正改回本地確認但保留來源。care、summary、task、contact client 接受相容 schema；共用 care／profile 投影以來源確認或來源資料顯示，不新增採納流程。多次匯入只沿 `imported_source` 追溯原依據，遇未知即停，不把更舊的確認補成目前確認。現有提交接口不接受客戶端自行提供這些權威欄位，內部 prepared 接點也不代表 HTTP 匯入已開放。
+
+內部逐項匯入結果保存 `opId`、`batchId`、來源／包版本、操作者、時間、`created／updated／skipped／conflict`、原因及目標 ID／版本，不返回原正文。相同 opId／指紋查回原結果；變更參數拒絕。明確覆蓋或手動恢復須另用原業務規則綁目前目標 ID／expectedVersion；預設保留本地修改和刪除。帳戶分頁匯出可讀 `import_history`／`import_mappings`，目前仍沒有正式 HTTP 匯入或批次啟動入口，不能把任意客戶端 row 當成已驗包資料。
+
 FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共享孩子選擇；Agent 仍按後續接線。`withResource` 在同一 Firestore 交易核對目前操作者准入、空間／成員、選定模組、來源成員世代及原孩子狀態，提供分開的 `actorUserId`／原儲存 `scope`，以及空間、成員、分享和雙方授權版本 basis。領域 adapter 必須明確消費此 binding 並排除私人項目；不能把 binding 當成整個孩子的通行證。舊未指定共享的業務方法維持本人範圍。
 
 **成長／持續關注讀取接點：**既有 `GET /api/children/:childId/growth`、`concerns` 可帶一個 `spaceId`；兩端沿同一共用 client，未提供參數維持本人服務。空值、重複、非法參數拒絕，不靜默回退本人資料。Server 在原交易核對當前成員／模組，保留身份前後核對及 no-store。已保存的卡片／關注正文屬明確選入模組的內容；成長來源檢查只在內部取既有 profile／family facts，不因此提供原始資料讀權，未共享 memory 不回即時近況與 factRefs，未共享 tasks 不回 taskId／taskState。持續關注不回私人 runId，未共享 care／tasks／growth 的關聯 ID 亦遮蔽；原資料不被改寫。共享 `authorityVersion` 綁儲存世代及目前共享 basis。這段先接讀取；`canManage=false` 且共享 POST 明確回 `shared_domain_read_only`，不開另一條本人寫入。完整寫入／背景及全局選擇按 FAMILY-A／B 接續，不當已交付。
@@ -1160,6 +1164,10 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 兩項移出 command 沿原 `spaceId／expectedVersion／operationId`，並帶 `expectedTeacherVersion`；提出移出另帶 `targetUserId`。班級 view 增加 `teacherSpaceId`、附屬時的 `teacherSpaceName／teacherSpaceVersion` 及目前有效的 `detachTargetUserId`；這些欄位不加入舊家庭 view。原操作查回仍重核目前存取，沒有權限只回遮蔽收據；不以保存的舊管理員當目前權限。`teacher_space_has_classes` 表示尚有附屬班級，不執行解散。Web／Android 共用 `/teachers` 管理入口，不要求先選孩子。
 
 **CLASS01 解散接線（已實作及合成核對，未部署）：**班級沿既有 `dissolve` 指令及確認，附屬班級另帶 `expectedTeacherVersion`，核目前有效管理員及兩邊版本。交易關閉班級及其 workspace，保存原操作與持久清理請求；回 `exit.cleanupState=pending`，不能解讀為實體資料已全部刪除。既有背景工作先寫入並核實獨立 `class-delete` 日誌，再分頁清理班級資料、修訂及附件；原 `GET operations/:operationId` 回目前 `pending／completed`。清理不刪個人登入／裝置會話或別人的私人原件；已刪班級的舊收據只留身份與效果，不能重做或讀回正文。家庭／教師空間原回應不增加清理欄位。未設清理服務的組裝仍拒絕班級解散，不能假成功。
+
+**班級待辦背景身份（接線中，未部署）：**沿既有 `assigneeUserId` 及共用待辦表單；目前單人指派入口在班級回傳操作者「本人」，不把 `space:<classId>` 當負責人。建立／改期核目前可寫成員；他人仍可按班級權限完成／取消同一事項，這不改變負責人。worker 由已保存任務取得真帳號，領取／完成／派送前沿同一共享服務重核目前成員與指派關係；退出後重新加入不復活舊指派授權。偏好使用負責人的目前安靜時段。原生成員證據不進公開 DTO；既有個人／家庭契約不變。
+
+本段只交付確定性到期核對、提醒及待投遞意圖，沒有以提醒收據宣稱渠道接受；班級 Agent、外部投遞與其他成員選擇仍須接續，相關 D 接口未接前不建立注定以虛構帳號失敗的 Agent 工作，也不借管理員 key。舊班級待辦若仍以儲存身份作負責人，保留可讀，須經正常改期明確指定目前本人才能執行，不自動搬移授權。
 
 以上讀寫均核已登入身份及 `x-expected-user-id`，寫入沿既有 Web 同源／原生 transport；回應前再核身份並 `no-store`。家庭管理不依賴已選孩子，退出頁面不丟失同一身份的未知操作；切身份後清理本機草稿、token 與遲到結果。共享原件選擇不自動切換私人聊天或擴大目前頁面的資料範圍。
 
@@ -1192,10 +1200,13 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 | 班級與教師空間 | 獨立班級可建／查／匯入；加入空間核目前角色，名冊有界搜尋／分頁 | 保留同一權威資料與穩定班級身份；移出後轉為指定負責人的獨立班級，原空間失去存取，不建立逐班複雜 ACL 管理平台 |
 | 管理權轉交 | 原管理員提出、已加入成員接受；綁空間／接收者／版本／原操作 | 接受時交易提交轉交及收據；原管理員退出不刪已轉交的空間自有資料；其個人原件仍依本人刪帳規則並撤共享引用，不自動改歸屬或複製。未轉交退出／刪帳同流程轉交或解散，解散共享不刪他人的個人原資料 |
 | 文檔包匯出 | 用途（交接／本人備份）、有權孩子／班級、模組、期間、附件；混合聊天範圍明確 | 返回版本化包、manifest／可信完整性證明、可讀摘要及完整度；權限仍在讀取／下載時核對，不把自行附 hash 當可信證明 |
+| 持久個人匯出工作（後端已接、未部署） | `POST /api/account/packages`，同一 opId、固定用途／選擇及指紋；建立工作與原 outbox 同交易 | 202 返回同一工作 ID／版本及 queued／building／ready／cancelled／failed／expired；GET 同路徑有界列表、`/:id` 查狀態、`/:id/download` 串流下載；POST `/:id/cancel` 帶原取消 opId／expectedVersion，`/:id/reconcile` 空物件只核原物件。切頁／斷線查回原工作，不重新建立；來源／頭像版本、身份與下載前後均重核。取消或失效禁止下載，保留清理義務；24 小時暫存到期不刪業務資料。期間與班級匯出未接，不靜默放大範圍 |
 | 文檔包匯入 | 原 opId／指紋、包／版本／來源、目標、選定模組、可信完整性與格式／相容檢查；可選內容檢查 | 通過可直接正常使用，無強制待採納／逐條確認。持久批次／逐項結果及 log；來源／版本映射去重，衝突明示不按同名覆蓋；缺證明明示後可選繼續，簽章／hash 不符拒絕且不降級；返回各模組數量／逐項結果供同一匯入入口呈現 |
 | 多孩工具批次 | Server 核定目標集合、各項版本、共同授權／必要一次確認、原 run／批次／操作 | 完成／失敗／略過／尚未執行／取消逐項呈現及收據；續未完成項，unknown 查原結果，不重做成功項，不換 run 繞限 |
 
 - 匯入待辦沿普通建立／修改服務與當前通知設定，不設匯入專屬啟用開關、不重播舊工作；本人差異還原預設保留較新修改／刪除，提供整批衝突選擇及明確恢復已刪項目的操作。
+- 同來源待辦新版更新原本地 ID／發生實例，保留建立者／建立時間及投遞歷史；以 `import` 修訂記錄本次匯入者、目前 basisVersion 與原來源。預設不覆蓋本地版本變動（包括已完成／取消），明確覆蓋仍須核目前版本。新內容／時間／狀態沿原任務交易保存；不把外部 terminalBasisVersion 或投遞工作搬進來。scheduled 版本沿原通知設定入列，舊 pending／leased 作廢，原發生實例有 unknown 投遞則仍停發。`import` 只屬修訂讀取，不能透過普通待辦 change API 發出。正式匯入啟用前須先交付相容修訂 reader／共用畫面；目前尚無公開匯入入口。
+- 匯入內部讀取器已接同一容器／來源頁：固定 manifest 與選擇後每次最多一百行，保留原行及來源位置；附件只可讀所選孩子／附件模組內已核對的路徑。此內部接點不等於 HTTP 匯入、持久紀錄或領域保存已實作；公開匯入接口須另連目前目標授權及原操作台帳，不能直接信任客戶端傳回的資料行／續讀位置作寫入依據。
 - 身份由 Server session 取用，客戶端或 Agent 的目標／角色欄位只供核對；目前角色、選定模組、來源及附件可見性在 UI、工具、背景、搜尋、報告、匯出／下載一致套用。
 - 混合聊天屬發起帳戶，讀取／搜尋按目前子範圍授權；單孩匯出無法可靠分離時明示，完整混合對話須有權並明確選入全部範圍，不藉匯出擴權。
 - 匯入各狀態均提供有界紀錄查回：操作者／時間、包與版本／內容識別、完整性結果、目標／選擇、來源鏈、操作／批次及逐項資源／版本／原因、接續結果。格式錯誤無包 ID 時記未知與原因，亦非無紀錄失敗。

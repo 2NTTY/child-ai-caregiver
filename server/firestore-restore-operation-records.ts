@@ -14,8 +14,10 @@ import { firestoreNativeBindingSchema, firestoreNativeDeliverySchema, firestoreN
 import { firestorePushBindingSchema, firestorePushDeliverySchema, firestorePushEndpointRecoverySchema } from './firestore-web-push.ts';
 import { firestoreTelegramBindingSchema, firestoreTelegramDeliverySchema, firestoreTelegramChallengeSchema, firestoreTelegramRecoverySchemas as telegram } from './firestore-telegram.ts';
 import { firestoreContactConsentSchema, firestoreContactGrantSchema, firestoreContactRequestSchema, firestoreContactRecoverySchemas as contact } from './firestore-contact.ts';
+import { firestoreHandoverJobSchema, assertHandoverJobIdentity, handoverJobMetadata } from './firestore-handover-jobs.ts';
 
 export const operationRestoreSchemas = {
+  'handover-export': { suffix: 'handover_exports', schema: firestoreHandoverJobSchema },
   'background-work': { suffix: 'background_work', schema: firestoreBackgroundWorkSchema },
   'background-reference': { suffix: 'background_references', schema: background.reference },
   'maintenance-state': { suffix: 'maintenance_state', schema: firestoreMaintenanceRecoverySchema },
@@ -54,7 +56,7 @@ export type OperationRestoreKind = keyof typeof operationRestoreSchemas;
 export type OperationRestoreValue = z.infer<(typeof operationRestoreSchemas)[OperationRestoreKind]['schema']>;
 export function isOperationRestoreKind(kind: string): kind is OperationRestoreKind { return Object.hasOwn(operationRestoreSchemas, kind); }
 // Historical deliveries and their references retain original identity. They never become new work.
-export const originalRestoreScopeKinds = new Set(['photo-cleanup', 'background-work', 'background-reference']);
+export const originalRestoreScopeKinds = new Set(['photo-cleanup', 'background-work', 'background-reference', 'handover-export']);
 export const discardedRestoreKinds = new Set(['native-push-token', 'push-endpoint', 'telegram-pointer', 'contact-callback', 'erasure-receipt-pointer']);
 function check(ok: boolean) { if (!ok) throw Object.assign(new Error('Restore operation binding rejected'), { code: 'restore_binding', status: 409 }); }
 function same(a: unknown, b: unknown) { return firestoreDomainHash(a) === firestoreDomainHash(b); }
@@ -68,6 +70,13 @@ export function restoreOperationRecord(data: FirestoreDomainData, context: Fires
   const metadata: Record<string, unknown> = {};
   check(context.family === 'domain' && context.envelopeVersion === 1 && version >= 1);
   switch (kind) {
+    case 'handover-export': {
+      const job = firestoreHandoverJobSchema.parse(raw);
+      assertHandoverJobIdentity(job, scope, id, version);
+      // Derived exports are never downloadable after restore. Keep original object identity for cleanup.
+      const next = target ? { ...job, state: 'expired' as const, error: 'package_restored' } : job;
+      value = next; Object.assign(metadata, handoverJobMetadata(data, next)); break;
+    }
     case 'background-work': {
       const v = firestoreBackgroundWorkSchema.parse(raw), identity = background.identity.parse({ kind: v.kind, scope: v.scope,
         resourceId: v.resourceId, basis: v.basis, generation: v.generation, authorizationVersion: v.authorizationVersion });

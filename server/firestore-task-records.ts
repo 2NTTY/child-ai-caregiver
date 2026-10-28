@@ -6,7 +6,12 @@ import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.t
 import type { FirestoreAuthorityTransaction } from './firestore-authority.ts';
 
 export function validTaskAttribution(task: z.infer<typeof firestoreTaskStorageSchema>, scope: WorkRecoveryScope): boolean {
-  return task.childId === scope.childId && task.assigneeUserId === scope.ownerUserId
+  const assignment = task.classAssignment;
+  const validAssignee = scope.ownerUserId === 'space:' + scope.workspaceId
+    ? assignment ? assignment.spaceId === scope.workspaceId && assignment.userId === task.assigneeUserId
+      && !assignment.userId.startsWith('space:') : task.assigneeUserId === scope.ownerUserId
+    : !assignment && task.assigneeUserId === scope.ownerUserId;
+  return task.childId === scope.childId && validAssignee
     && validSharedAttribution(task.createdViaShare, scope, task.id, task.version, task.createdBy, true);
 }
 export function validTaskRevisionAttribution(revision: z.infer<typeof firestoreTaskRevisionStorageSchema>, scope: WorkRecoveryScope): boolean {

@@ -42,6 +42,7 @@ const sections = {
   visit_preparation: ['visit_preparations', ['visit-preparation']], visit_preparation_history: ['visit_preparation_revisions', ['visit-preparation-revision']],
   summary_history: ['conversation_summaries', ['conversation-summary']],
   tasks: ['tasks', ['task']], task_history: ['task_revisions', ['task-revision']],
+  import_history: ['handover_import_items', ['handover-import-item']], import_mappings: ['handover_import_mappings', ['handover-import-mapping']],
   documents: ['documents', ['family-document']], document_versions: ['document_snapshots', ['document-snapshot']],
   document_content: ['document_snapshots', ['document-snapshot']],
   files: ['chat_file_assets', ['chat-file-asset']], file_content: ['chat_file_assets', ['chat-file-asset']],

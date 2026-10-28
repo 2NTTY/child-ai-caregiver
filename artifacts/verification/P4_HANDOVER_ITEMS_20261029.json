@@ -1,0 +1,24 @@
+{
+  "package": "P4-HANDOVER01 / durable domain import items",
+  "date": "2026-10-29", "baseCommit": "f05b2c881efe34855d72144e177bf22716a6442a",
+  "branch": "codex/p4-handover-item-ledger",
+  "checks": [
+    { "command": "node --experimental-test-module-mocks --test tests/handover-import-items.test.ts",
+      "result": "1 passed", "log": "tmp/handover-items-complete.log",
+      "covers": ["Same-operation receipt and cross-package source identity deduplication",
+        "Care update, local edit conflict, explicit expected-version replacement, deletion and new-ID manual restore",
+        "Foreign child denial, same-version source mismatch, empty profile and terminal task creation",
+        "Reopened store receipt, actual account export and restore codec epoch transformation"] },
+    { "command": "node tmp/check-handover-items-types.cjs", "roots": 4, "diagnostics": 0, "log": "tmp/handover-items-types-final.log" },
+    { "command": "git diff --check and parse firestore.indexes.json", "result": "passed; two composite indexes and two collection-wide exclusions defined, not deployed" }
+  ],
+  "failuresRetained": [
+    { "log": "tmp/handover-items-red.log", "cause": "Expected missing service before implementation" },
+    { "log": "tmp/handover-items-first.log", "cause": "Strict identity schema received full source provenance; fixed explicit field projection" },
+    { "log": "tmp/handover-items-second.log", "cause": "Actual restore decoder rejected new query metadata; registered exact fields" }
+  ],
+  "review": "Independent read-only review; final audit/export delta separately reviewed",
+  "notValidatedOrDelivered": ["Formal upload, immutable batch selection, batch cancellation/lease, worker and HTTP/UI import",
+    "Task source-version update and other domain/history import", "Full private backup, class/period selection and complete restore",
+    "Real Firestore contention, models, cloud, device, deployment or OTA"]
+}
