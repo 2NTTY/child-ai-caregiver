@@ -4128,3 +4128,11 @@
 - 獨立 review 三項重要問題已修：原附件離頁守衛、孩子切換後不可復原的接收世代、固定 SDK 的 TXT／文字串流解析。最後一項使用 `patch-package` 8.0.1 標準補丁及原 license，沿安裝與 Docker／EAS 輸入，不另造 native module。
 - 三項回歸先紅後綠；原定向證據復用，本機 Android JS 匯出通過。前端四項原型別診斷保持，Kotlin／新 APK／外部 App chooser 與 URI grant 尚未實機核對；精確命令與工具失敗見[證據](artifacts/verification/P4_ANDROID_SHARE_INPUT_20261028.json)。
 - 零模型／通知／部署／付費資源，沒有改 D PR。新 intent filter 必須新 binary，不能以 OTA 冒充啟用；iOS extension、HANDOVER01 統一匯入及其他 P4 仍待完成。
+
+<a id="log-20261028-p4-class-storage"></a>
+### 2026-10-28：P4 班級穩定儲存前置
+
+- 基於 #354／`cb3778f`，復用 shared-space、canonical workspace、孩子及原領域服務；班級儲存身份與目前老師分開，不建立 Firebase 假帳號，不複製私人資料。班級建立／孩子／收據在原交易提交，維持真實操作者及其防重身份。
+- 定向核對記錄保存、重試、管理權轉交、原管理員刪帳屏障後讀回及合成還原。最初未支援 class 的 RED、嚴格 input adapter 與新測試 fixture 的修正均保留，不當作首次全過。
+- 獨立 review 發現班級資產刪除 journal 錯查個人帳號、還原後原收據可回不存在孩子兩項 Important；主模型修正，兩條回歸先紅後綠，review 覆核關閉。受影響型別及一條原家庭還原相容檢查通過，詳見[證據](artifacts/verification/P4_CLASS_STORAGE_20261028.json)。
+- 尚未向 HTTP／畫面開放建立班級，未部署；班級背景／通知、解散實際清理、教師空間加入／移出及名冊產品接線仍待後段。零模型／通知／新雲端資源；不是整個 CLASS01 或 P4 已完成，未改 D PR。

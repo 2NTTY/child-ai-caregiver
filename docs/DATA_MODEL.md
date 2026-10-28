@@ -825,7 +825,11 @@ Claim 回應丟失時，只准尚未呼叫 Storage 的同一次 invocation 作�
 
 沿現有 Firestore store、固定資源 ID、版本、密文、來源、原操作／收據與索引分頁擴充，不建立 SQL 模擬層或第二權威。[REQ-P4-01～10](../SPEC.md#p4-p5-product) 管產品含義，PD-01～06 已由 [ADR-029](DECISIONS.md#adr-029) 確認；下表仍是完整目標，不能把首段資料服務當全部完成。
 
-FAMILY-A 首段新增 namespace 下 `shared_spaces`、`shared_memberships`、`resource_shares`、`shared_invitations`、`shared_operations`。前四者是加密的共享控制資料，不含孩子正文，以穩定系統 routing scope 保存；空間自己的儲存身份為 `space:<spaceId>`／同一 workspace ID，與現任管理員分開，班級業務寫入仍待後包接通。分享只指向原資料 scope 及選定模組，不移動、複製或重新加密原資料；操作收據仍綁操作者個人 scope。
+FAMILY-A 首段新增 namespace 下 `shared_spaces`、`shared_memberships`、`resource_shares`、`shared_invitations`、`shared_operations`。前四者是加密的共享控制資料，不含孩子正文，以穩定系統 routing scope 保存；空間自己的儲存身份為 `space:<spaceId>`／同一 workspace ID，與現任管理員分開。分享個人資料仍只指向原資料 scope 及選定模組，不移動、複製或重新加密原資料；操作收據仍綁操作者個人 scope。
+
+**CLASS01 儲存契約（接線中）：**獨立班級復用上述控制資料，`shared-space.kind=class`；它有自己的 canonical workspace、孩子及領域資料，以 `space:<classId>` 作儲存身份，不建立虛構 Firebase 帳號、邀請或個人設定。讀寫先核真正操作者的帳號及目前班級角色，再取得班級 workspace；管理員轉交、退出或刪帳不改原資源 ID／密文 scope。名冊項指向班級自己的孩子，不能把個人孩子的共享關係當作班級名冊或偷偷搬移個人資料。班級建立／名冊新增及原操作收據須原子保存；同一操作者的 `opId` 仍由個人收據追蹤，班級內部 effect ID 按操作者命名空間防碰撞。
+
+還原時分別驗證個人 workspace 的帳號鏈與班級 workspace 的控制資料鏈，禁止用「有 workspace」代替資料歸屬檢查；重放目前管理權、撤權及解散狀態，並重新綁定儲存世代。刪除原管理員只清其私人資料及成員身份，不清已轉交班級。此儲存接點尚不表示教師空間加入／移出、班級背景工作或完整班級前端已交付。
 
 FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新增成員／孩子副本。選擇只在共用 owner 保存導航及授權投影，不另建可修改孩子資料；共享 basis 改變清舊快取。成長、關注及文件共用同一 authority digest，綁來源 epoch／授權及共享 basis，不改本人版本格式。新成員密文保存由准入身份提供的 `label`（目前為已驗證電郵），舊記錄缺值時顯示原 UID，不猜姓名；不在可查詢 metadata 加電郵。本人空間依 memberTag／active／spaceId，空間成員、分享及邀請依 spaceId／active／entryId 有界分頁；新增四項複合索引定義，部署前另建立。游標以本人 scope 加密，子列表保存空間版本；被撤權的來源成員及已刪原件不再出現在分享列表。原 `shared_operations` 提供公開控制收據投影，不公開內部 storageIdentity／managerGeneration 或完整來源 scope。
 

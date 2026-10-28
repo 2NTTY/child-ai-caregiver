@@ -26,6 +26,11 @@ export function replaySharingAuthority(codec: FirestoreRestoreCodec, restored: F
     return record;
   };
   const spaces = live.filter(row => row.context.kind === 'shared-space').map(row => sharedSpaceSchema.parse(row.value)).filter(row => row.state === 'active');
+  // Post-snapshot class control must retain its storage identity even when the snapshot has no class data yet.
+  for(const row of live) if(row.context.kind==='shared-space') {
+    const space=sharedSpaceSchema.parse(row.value);
+    if(space.kind==='class')add('workspace',space.id);
+  }
   const activeSpaces = new Set(spaces.map(row => row.id)), users = new Set(spaces.map(row => row.managerUserId));
   for (const row of live) if (row.context.kind === 'shared-membership') {
     const member = sharedMembershipSchema.parse(row.value), account = liveById.get('account:' + member.userId);

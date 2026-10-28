@@ -84,6 +84,17 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
           const id = 'space' in saved ? saved.space.id : saved.id;
           const s = await space(b.transaction, id), m = await member(b.transaction, id, userId);
           if (action === 'invite-member') manager(s, m);
+          if (action === 'add-class-child') {
+            const childId = domainParse(z.object({child:z.object({id:z.uuid()})}),receipt.result,'sharing_binding',500).child.id;
+            try {
+              await inResourceTransaction(b,{spaceId:id,childId,module:'profile',mode:'read'},async access=>{
+                if(!await access.binding.readChild(childId))domainReject('not_found',404);
+              });
+            } catch(error) {
+              if([403,404].includes((error as {status?:number}).status??0))domainReject('operation_result_unavailable');
+              throw error;
+            }
+          }
         }
         return receipt.result as T;
       }
@@ -108,9 +119,15 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
     if (!grant || grant.state !== 'active' || !grant.modules.includes(input.module)) domainReject('module_not_shared', 403);
     if (grant.spaceId !== s.id || grant.childId !== input.childId || grant.source.childId !== input.childId || grant.sharedBy !== grant.source.ownerUserId)
       domainReject('sharing_binding', 500);
-    const sourceMember = await member(b.transaction, s.id, grant.sharedBy);
-    if (sourceMember.membershipId !== grant.sourceMembershipId) domainReject('module_not_shared', 403);
-    const source = await authority.assertPersonalSource(b.transaction, grant.source);
+    if (s.kind === 'class') {
+      if (grant.source.ownerUserId !== s.storageIdentity.ownerUserId || grant.source.workspaceId !== s.id
+        || grant.sourceMembershipId !== s.id) domainReject('sharing_binding',500);
+    } else {
+      const sourceMember = await member(b.transaction, s.id, grant.sharedBy);
+      if (sourceMember.membershipId !== grant.sourceMembershipId) domainReject('module_not_shared', 403);
+      if (grant.source.ownerUserId.startsWith('space:')) domainReject('sharing_binding',500);
+    }
+    const source = await authority.assertSharedSource(b.transaction, grant.source);
     const basis: Basis = { spaceVersion: s.version, membershipVersion: m.version, shareVersion: grant.version,
       actorAuthorizationVersion: b.authorizationVersion, sourceAuthorizationVersion: source.authorizationVersion };
     if (input.expectedBasis && firestoreDomainHash(input.expectedBasis) !== firestoreDomainHash(basis)) domainReject('sharing_scope_changed');
@@ -169,7 +186,8 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
       return controlPage(userId, 'shared-membership', null, cursor, async (b, row: Member) => {
         if (row.state !== 'active') domainReject('sharing_binding', 500);
         const s = (await read(b.transaction, 'shared-space', row.spaceId, sharedSpaceSchema))!;
-        return s.state === 'active' ? view(s, row) : null;
+        // Class UI/contracts are delivered separately; old clients cannot parse the new internal kind.
+        return s.state === 'active' && s.kind !== 'class' ? view(s, row) : null;
       });
     },
     spaceView(userId: string, spaceId: string): Promise<SharedSpaceView> {
@@ -287,13 +305,28 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
         return page(hasMore?after:source.changeSeq,changed,hasMore);
       }));
     },
-    create(userId: string, raw: { operationId: string; name: string; kind: 'family' | 'teachers' }): Promise<Space> {
-      const input = domainParse(operation.extend({ name: sharedSpaceSchema.shape.name, kind: sharedSpaceSchema.shape.kind }).strict(), raw), id = randomUUID();
+    create(userId: string, raw: { operationId: string; name: string; kind: 'family' | 'teachers' | 'class' }): Promise<Space> {
+      const input = domainParse(operation.extend({ name: sharedSpaceSchema.shape.name, kind: sharedSpaceSchema.shape.kind }).strict(), raw), id = randomUUID(), storageEpoch = randomUUID();
       return mutate(userId, 'create-space', input, async b => {
         const value: Space = { id, kind: input.kind, name: input.name, version: 1, state: 'active', managerUserId: userId, managerGeneration: randomUUID(),
           storageIdentity: { ownerUserId: 'space:' + id, workspaceId: id }, transferTargetUserId: null, createdAt: now(), updatedAt: now() };
-        return { value, writes: [write(b.transaction, 'shared-space', id, value, true),
+        const storage = input.kind === 'class' ? await authority.prepareClassWorkspace(b,id,storageEpoch) : null;
+        return { value, writes: [...(storage ? [storage] : []),write(b.transaction, 'shared-space', id, value, true),
           write(b.transaction, 'shared-membership', key(id, userId), { spaceId: id, userId, label:b.identityEmail, membershipId: randomUUID(), role: 'owner', state: 'active', version: 1, stateVersion: 1, joinedAt: now() }, true)] };
+      });
+    },
+    /** Internal class roster creation; public contracts remain gated until the whole class slice is connected. */
+    addClassChild(userId: string, raw: {operationId:string;spaceId:string;expectedVersion:number;displayName:string}) {
+      const input=domainParse(change.extend({displayName:z.string().trim().min(1).max(160)}).strict(),raw), childId=randomUUID();
+      return mutate(userId,'add-class-child',input,async b=>{
+        const {s,m}=await current(b,input);
+        if(s.kind!=='class')domainReject('class_required',400);
+        if(m.role==='viewer')domainReject('read_only',403);
+        const prepared=await authority.prepareClassChild(b,s.id,childId,input), value=updated(s);
+        const child=prepared.result.child;
+        return {value:{space:value,child},writes:[prepared.commit,write(b.transaction,'shared-space',s.id,value),
+          write(b.transaction,'resource-share',key(s.id,child.id),{spaceId:s.id,childId:child.id,source:prepared.result.scope,
+            modules:sharedModuleSchema.options,version:1,state:'active',sharedBy:s.storageIdentity.ownerUserId,sourceMembershipId:s.id},true)]};
       });
     },
     get(userId: string, spaceId: string): Promise<Space> {
@@ -338,6 +371,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
         .transform(values => [...new Set(values)].sort()) }).strict(), raw);
       return mutate(userId, 'share-resource', input, async b => {
         const { s, m } = await current(b, input); if (m.role === 'viewer') domainReject('read_only', 403);
+        if(s.kind==='class')domainReject('class_roster_required',400);
         const child = await b.readChild(input.childId); if (!child) domainReject('not_found', 404);
         const source = { ...b.scope, childId: child.id };
         const id = key(s.id, child.id), old = await read(b.transaction, 'resource-share', id, resourceShareSchema, true);
@@ -352,6 +386,7 @@ export function createFirestoreSharingStore(options: FirestoreAuthorityOptions) 
       const input = domainParse(change.extend({ childId: z.uuid() }).strict(), raw);
       return mutate(userId, 'unshare-resource', input, async b => {
         const { s, m } = await current(b, input), id = key(s.id, input.childId);
+        if(s.kind==='class')domainReject('class_roster_required',400);
         const grant = (await read(b.transaction, 'resource-share', id, resourceShareSchema))!;
         if (grant.sharedBy !== userId) manager(s, m);
         const value = updated(s);
