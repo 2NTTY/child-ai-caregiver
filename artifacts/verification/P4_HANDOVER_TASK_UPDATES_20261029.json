@@ -1,0 +1,26 @@
+{
+  "package": "P4-HANDOVER01 / source-version task updates",
+  "date": "2026-10-29", "baseCommit": "3ed6c29a5dc81ffa27bcaee6e32852c3830fd5e0",
+  "branch": "codex/p4-handover-task-updates",
+  "checks": [
+    { "command": "node --experimental-test-module-mocks --test tests/handover-task-updates.test.ts", "result": "1 passed",
+      "log": "tmp/handover-task-updates-green.log", "covers": [
+        "Same local task and occurrence, original creation metadata, source update and original-operation replay",
+        "Local completion conflict, stale replacement rejection and explicitly versioned replacement",
+        "Unknown-delivery barrier and terminal updates without another outbox",
+        "Actual task history client, shared label and restore decoder; import rejected by ordinary change schema"
+      ] },
+    { "command": "node tmp/check-handover-task-types.cjs", "roots": 3, "diagnostics": 0,
+      "log": "tmp/handover-task-types-final.log", "configuration": "Server roots use tsconfig.server; cross-layer test uses frontend bundler resolution" },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "retainedFailures": [
+    { "log": "tmp/handover-task-updates-red.log", "reason": "Source update returned the previous task_update_not_connected conflict" },
+    { "log": "tmp/handover-task-types.log", "reason": "Server NodeNext-only check rejected frontend extensionless type import; use the respective existing frontend compiler configuration" }
+  ],
+  "review": { "reviewer": "Independent Sol xhigh", "result": "No confirmed blocker or Important issue; no duplicate tests" },
+  "responsibility": { "C": "Backend, shared task contract, connected check and documentation", "B": "Shared client revision reader and frontend label" },
+  "limits": ["Serial synthetic Firestore, not cloud transaction contention evidence", "No model, notifications, device, build or deployment",
+    "Public import remains unavailable; compatible clients must be delivered before enabling it",
+    "Upload, durable batch fencing/cancellation, other domains and full personal backup still pending"]
+}

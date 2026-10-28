@@ -6,8 +6,9 @@ import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationPreferences } from '
 import { nextReminderCheck, reminderDecision, reminderLocalTime } from './task-policy.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, firestoreReminderOutboxId, firestoreReminderOutboxSchema,
-  firestoreTaskSchema, firestoreTaskStorageSchema, sealFirestoreReminderOutbox, type FirestoreDomainOptions, type FirestoreReminderOutbox } from './firestore-domain-data.ts';
-import { validTaskAttribution } from './firestore-task-records.ts';
+  firestoreTaskSchema, firestoreTaskStorageSchema, firestoreTaskRevisionStorageSchema, sealFirestoreReminderOutbox, type FirestoreDomainOptions, type FirestoreReminderOutbox } from './firestore-domain-data.ts';
+import { validTaskAttribution, validTaskRevisionAttribution } from './firestore-task-records.ts';
+import { createFirestoreTaskExecution } from './firestore-task-execution.ts';
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { prepareFirestoreBackgroundWork } from './firestore-background-work.ts';
 
@@ -58,6 +59,9 @@ export function firestoreTaskReminderId(scope: WorkRecoveryScope, occurrenceId: 
 export function firestoreTaskReminderBatchId(scope: WorkRecoveryScope, category: CareTask['kind'], key: string): string {
   return stableUuid(['task-batch', firestoreTaskStableScope(scope), category, key]);
 }
+export function firestoreTaskRecipientBatchKey(scope: WorkRecoveryScope, recipientUserId: string, key: string): string {
+  return scope.ownerUserId === 'space:' + scope.workspaceId ? firestoreDomainHash(recipientUserId) + ':' + key : key;
+}
 const result = (state: FirestoreTaskResult['state'], receipt: TaskReminder | null = null, nextAt: string | null = null): FirestoreTaskResult => ({ state, receipt, nextAt });
 
 /** F02 persists authorized reminders and delivery intents; this consumer never sends a notification or runs a model. */
@@ -83,6 +87,7 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
     if (current.disabled || !current.emailVerified || !email.success) domainReject('task_auth_denied', 403);
     return email.data.trim().toLowerCase();
   }
+  const execute = createFirestoreTaskExecution(options, currentAuth);
   function bindingMatches(binding: FirestoreAuthorityTransaction, job: FirestoreTaskDelivery) {
     if (firestoreDomainHash(binding.scope) !== firestoreDomainHash(job.scope) || binding.authorizationVersion !== job.authorizationVersion
       || binding.generation !== job.generation) domainReject('task_scope_changed');
@@ -122,8 +127,18 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
       if (!notificationSnapshot.exists) domainReject('notification_outbox_missing', 500);
       matchTags(notificationSnapshot.data(), binding.scope);
       const notification = data.open('task-notification-outbox', id, binding.scope, firestoreTaskNotificationOutboxSchema, notificationSnapshot);
+      let recipient = binding.scope.ownerUserId;
+      if (recipient.startsWith('space:')) {
+        const revisionId=JSON.stringify([taskId,value.taskVersion]);
+        const revision=await binding.transaction.get(data.ref('task_revisions','task-revision',revisionId));
+        matchTags(revision.data(),binding.scope);
+        const saved=data.open('task-revision',revisionId,binding.scope,firestoreTaskRevisionStorageSchema,revision);
+        if(saved.task.id!==taskId||saved.task.version!==value.taskVersion||revision.get('recordVersion')!==value.taskVersion
+          ||!validTaskRevisionAttribution(saved,binding.scope))domainReject('reminder_binding',500);
+        recipient=saved.task.assigneeUserId;
+      }
       if (notification.id !== id || notification.reminderId !== id || notification.taskId !== taskId || notification.occurrenceId !== occurrenceId
-        || notification.taskVersion !== value.taskVersion || notification.recipientUserId !== binding.scope.ownerUserId
+        || notification.taskVersion !== value.taskVersion || notification.recipientUserId !== recipient
         || notification.createdAt !== value.createdAt || notification.taskVersion !== notificationSnapshot.get('recordVersion')) domainReject('notification_binding', 500);
       values.push(value); notifications.push(notification);
     }
@@ -151,12 +166,10 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
     async claim(raw) {
       const job = domainParse(firestoreTaskDeliverySchema, raw);
       if (!options.enabled) return result('disabled');
-      const identityEmail = await currentAuth(job.scope.ownerUserId);
       const token = randomUUID(), transitionId = stableUuid(['task-work', job.scope, job.taskId, job.taskVersion, token]);
-      return authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async binding => {
+      return execute(job, async binding => {
         const at = now(), until = new Date(at + 30_000).toISOString();
         bindingMatches(binding, job);
-        if (binding.identityEmail !== identityEmail) domainReject('task_auth_denied', 403);
         const row = await outbox(binding, job.taskId, job.taskVersion);
         if (!row) return result('stopped'); jobMatches(job, row.value);
         const work = row.value;
@@ -182,12 +195,10 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
     async complete(raw, rawLease) {
       const job = domainParse(firestoreTaskDeliverySchema, raw), lease = domainParse(firestoreReminderOutboxSchema.shape.lease.unwrap(), rawLease);
       if (!options.enabled) return result('disabled');
-      const identityEmail = await currentAuth(job.scope.ownerUserId);
       const changeId = stableUuid(['task-check', job.scope, job.taskId, job.taskVersion, lease.token]);
-      return authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async binding => {
+      return execute(job, async (binding, recipient) => {
         const at = now(), instant = new Date(at).toISOString();
         bindingMatches(binding, job);
-        if (binding.identityEmail !== identityEmail) domainReject('task_auth_denied', 403);
         const row = await outbox(binding, job.taskId, job.taskVersion);
         if (!row) return result('stopped'); jobMatches(job, row.value);
         const work = row.value;
@@ -200,17 +211,18 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
         const current = await task(binding, work.taskId);
         if (!currentTask(current, work)) { await transition(binding, work, 'cancelled', changeId); return result('stopped'); }
         if (Date.parse(work.dueAt) > at || Date.parse(current!.occurrence.dueAt) > at) return result('not_due', null, work.dueAt);
-        const prefs = await preferences(binding), recipientScope = ownerScope(binding.scope), category = current!.kind;
-        const key = category === 'ordinary' ? reminderLocalTime(instant, prefs.timeZone).day : work.occurrenceId;
+        const prefs = await preferences(recipient), recipientScope = ownerScope(binding.scope), category = current!.kind;
+        const baseKey = category === 'ordinary' ? reminderLocalTime(instant, prefs.timeZone).day : work.occurrenceId;
+        const key = firestoreTaskRecipientBatchKey(binding.scope, recipient.actorUserId, baseKey);
         const batchId = firestoreTaskReminderBatchId(recipientScope, category, key), batchRef = data.ref('task_reminder_batches', 'task-reminder-batch', batchId);
         const batchSnapshot = await binding.transaction.get(batchRef);
         let batch: z.infer<typeof firestoreTaskReminderBatchSchema> | null = null;
         if (batchSnapshot.exists) {
           matchTags(batchSnapshot.data(), recipientScope);
           batch = data.open('task-reminder-batch', batchId, recipientScope, firestoreTaskReminderBatchSchema, batchSnapshot);
-          if (batch.id !== batchId || batch.recipientUserId !== binding.scope.ownerUserId || batch.category !== category || batch.key !== key) domainReject('batch_binding', 500);
+          if (batch.id !== batchId || batch.recipientUserId !== recipient.actorUserId || batch.category !== category || batch.key !== key) domainReject('batch_binding', 500);
         }
-        const evidence = { authorized: true, assigneeEligible: current!.assigneeUserId === binding.scope.ownerUserId,
+        const evidence = { authorized: true, assigneeEligible: current!.assigneeUserId === recipient.actorUserId,
           deliveryUnknown: prior.notifications.some(value => value.state === 'unknown'),
           initialAt: prior.values.find(value => value.phase === 'initial')?.createdAt ?? null,
           followUpAt: prior.values.find(value => value.phase === 'follow_up')?.createdAt ?? null,
@@ -225,13 +237,13 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
         const state = decision === 'unknown' ? 'unknown' : nextAt ? 'pending' : 'processed';
         const changed = { ...work, state: state as FirestoreReminderOutbox['state'], lease: null, ...(nextAt ? { dueAt: nextAt } : {}) };
         const prepared = await binding.prepareChange(changeId, 'tasks', false);
-        const background = phase ? await prepareFirestoreBackgroundWork(data, binding.transaction, { kind: 'task-agent', scope: binding.scope,
+        const background = phase && !binding.sharedAccess?.classMember ? await prepareFirestoreBackgroundWork(data, binding.transaction, { kind: 'task-agent', scope: binding.scope,
           resourceId: work.taskId, basis: receipt!.id, generation: binding.generation, authorizationVersion: binding.authorizationVersion }, instant) : null;
         const workEnvelope = sealOutbox(binding.scope, changed);
-        const batchValue = phase && !batch ? { id: batchId, recipientUserId: binding.scope.ownerUserId, category, key, state: 'open' as const, createdAt: instant } : null;
+        const batchValue = phase && !batch ? { id: batchId, recipientUserId: recipient.actorUserId, category, key, state: 'open' as const, createdAt: instant } : null;
         const batchEnvelope = batchValue ? { ...data.tags(recipientScope), ...data.seal('task-reminder-batch', batchId, recipientScope, firestoreTaskReminderBatchSchema, batchValue) } : null;
         const notification = phase ? { id: receipt!.id, reminderId: receipt!.id, taskId: work.taskId, occurrenceId: work.occurrenceId,
-          taskVersion: work.taskVersion, recipientUserId: binding.scope.ownerUserId, createdAt: instant, state: 'pending' as const } : null;
+          taskVersion: work.taskVersion, recipientUserId: recipient.actorUserId, createdAt: instant, state: 'pending' as const } : null;
         const reminderEnvelope = phase ? { ...data.tags(binding.scope), taskId: work.taskId, occurrenceId: work.occurrenceId,
           ...data.seal('task-reminder', receipt!.id, binding.scope, firestoreTaskReminderSchema, receipt!, work.taskVersion) } : null;
         const notificationEnvelope = notification ? { ...data.tags(binding.scope), state: notification.state,
@@ -276,10 +288,8 @@ export function createFirestoreTaskWorker(options: FirestoreTaskWorkerOptions): 
       const job = domainParse(firestoreTaskDeliverySchema, raw);
       if (!['enqueue', 'settle'].includes(mode) || typeof visit !== 'function') domainReject('invalid_input', 400);
       if (!options.enabled) return result('disabled');
-      const identityEmail = await currentAuth(job.scope.ownerUserId);
-      return authority.runTransaction(job.scope.ownerUserId, job.scope.childId, async binding => {
+      return execute(job, async binding => {
         bindingMatches(binding, job);
-        if (binding.identityEmail !== identityEmail) domainReject('task_auth_denied', 403);
         const row = await outbox(binding, job.taskId, job.taskVersion);
         if (!row) return result('stopped'); jobMatches(job, row.value);
         const work = row.value;
