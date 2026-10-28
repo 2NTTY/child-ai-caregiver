@@ -2,6 +2,15 @@ import { z } from 'zod';
 
 /** This format carries product data, never live execution or credential state. */
 export const HANDOVER_MODULES = ['profile', 'care', 'chat', 'memory', 'tasks', 'documents', 'attachments', 'sources', 'concerns', 'growth'] as const;
+/** Version-one product sections, shared by export and import; execution tables are deliberately absent. */
+export const HANDOVER_SECTIONS = {
+  profile: ['profile', 'profile_history'], care: ['care', 'care_history'], chat: ['chat'],
+  memory: ['instructions', 'memory_facts', 'memory_fact_history', 'memory_topics', 'memory_topic_history', 'summary_history'],
+  tasks: ['tasks', 'task_history'], documents: ['documents', 'document_versions', 'document_content', 'visit_preparation', 'visit_preparation_history'],
+  attachments: ['photos', 'photo_content', 'voices', 'voice_content', 'voice_transcripts', 'files', 'file_content', 'child_avatar', 'child_avatar_content'],
+  sources: ['private_sources', 'private_source_history'], concerns: ['concerns', 'concern_events', 'concern_history'],
+  growth: ['growth_attention', 'growth_topics'],
+} as const;
 const text = (max: number) => z.string().min(1).max(max);
 const hash = z.string().regex(/^[a-f0-9]{64}$/u);
 export const handoverPathSchema = z.string().max(200).regex(/^(?:summary\.md|(?:data|attachments)\/[a-zA-Z0-9_-]+\.(?:json|bin))$/u);
