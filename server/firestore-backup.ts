@@ -27,7 +27,7 @@ export const FIREBASE_BACKUP_COLLECTION_SUFFIXES = Object.freeze(['', '_sessions
   '_push_bindings', '_push_deliveries', '_push_endpoints', '_telegram_state', '_telegram_bindings', '_telegram_challenges', '_telegram_deliveries', '_telegram_pointers', '_telegram_meta', '_telegram_updates',
   '_contact_consents', '_contact_consent_revisions', '_contact_grants', '_contact_grant_revisions', '_contact_requests', '_contact_callbacks', '_contact_updates', '_contact_daily_slots', '_visit_preparations', '_visit_preparation_revisions', '_content_erasures', '_admin_policy', '_admin_invitations', '_admin_operations', '_voice_assets', '_chat_file_assets', '_voice_transcripts', '_native_push_bindings', '_native_push_deliveries', '_native_push_tokens', '_model_settings_operations', '_avatar_heads', '_avatar_uploads', '_avatar_cleanup',
   '_shared_spaces', '_shared_memberships', '_resource_shares', '_shared_invitations', '_shared_operations', '_handover_exports',
-  '_handover_import_items', '_handover_import_mappings']);
+  '_handover_import_items', '_handover_import_mappings', '_handover_import_batches', '_handover_import_controls']);
 export interface FirebaseBackupOptions { database: Firestore; cipher: StorageCipher; projectId: string; namespace: string }
 export interface FirebaseBackupDocument { path: string; data: DocumentData }
 export interface FirebaseBackupInventory {

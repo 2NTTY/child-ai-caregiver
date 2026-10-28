@@ -20,6 +20,8 @@ type Section = 'care' | 'profile' | 'tasks';
 export interface HandoverImportItemCommand {
   opId: string; batchId: string; target: Target; row: HandoverImportRow; integrity: HandoverIntegrity; resolution: HandoverImportResolution;
 }
+/** Internal batch guard: read its claim before domain writes, then seal progress before committing either. */
+export type HandoverImportFence = (actor: Binding, target: Binding) => Promise<(item: HandoverImportItem, repeated: boolean) => () => void>;
 
 /** Internal coordinator: the package worker supplies verified rows and a fixed, authorized batch selection. */
 export function createFirestoreHandoverImportItems(options: FirestoreDomainOptions) {
@@ -27,9 +29,10 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
   const care = createFirestoreCareStore(options), online = createFirestoreOnlineStore(options);
   const sectionSchema = z.enum(['care', 'profile', 'tasks']);
   const schemas = { care: firestoreCareSchema, profile: firestoreProfileSchema, tasks: firestoreTaskSchema };
-  const access = <T>(userId: string, target: Target, section: Section, mode: 'read' | 'write', use: (b: Binding) => Promise<T>) => target.spaceId
-    ? sharing.withResource(userId, { spaceId: target.spaceId, childId: target.childId, module: section, mode }, value => use(value.binding))
-    : authority.runTransaction(userId, target.childId, use);
+  const access = <T>(userId: string, target: Target, section: Section, mode: 'read' | 'write', use: (b: Binding, actor: Binding) => Promise<T>) => target.spaceId
+    ? authority.runTransaction(userId, null, actor => sharing.inResourceTransaction(actor,
+      { spaceId: target.spaceId!, childId: target.childId, module: section, mode }, value => use(value.binding, actor)))
+    : authority.runTransaction(userId, target.childId, b => use(b, b));
   async function receipt(b: Binding, opId: string, section: Section) {
     const id = handoverImportItemId(b.scope, opId), row = await b.transaction.get(data.ref('handover_import_items', 'handover-import-item', id));
     if (!row.exists) return null;
@@ -38,16 +41,18 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
       domainReject('import_item_binding', 403);
     return value;
   }
-  async function apply(userId: string, raw: HandoverImportItemCommand) {
+  async function apply(userId: string, raw: HandoverImportItemCommand, fence?: HandoverImportFence) {
     const target = domainParse(targetSchema, raw.target), section = domainParse(sectionSchema, raw.row.section);
     const opId = domainParse(z.uuid(), raw.opId), batchId = domainParse(z.uuid(), raw.batchId);
     const resolution = domainParse(handoverImportResolutionSchema, raw.resolution);
     const sourceValue = domainParse(schemas[section] as z.ZodType<CareRecord | ChildProfile | CareTask>, raw.row.value, 'invalid_package_data');
     const fingerprint = firestoreDomainHash({ ...raw, userId });
-    return access(userId, target, section, 'write', async b => {
+    return access(userId, target, section, 'write', async (b, actor) => {
+      const sealProgress = fence ? await fence(actor, b) : null;
       const prior = await receipt(b, opId, section);
       if (prior) {
         if (prior.fingerprint !== fingerprint) domainReject('operation_conflict');
+        sealProgress?.(prior, true)();
         return prior;
       }
       const provenance = makeImportProvenance(raw.row, raw.integrity, b.actorUserId, new Date().toISOString());
@@ -78,9 +83,11 @@ export function createFirestoreHandoverImportItems(options: FirestoreDomainOptio
           operationId: opId, importedAt: provenance.current.importedAt });
         // Seal all records before the first write. Model/storage/network calls never occur in the callback.
         const mappingEnvelope = next ? data.seal('handover-import-mapping', mappingId, b.scope, handoverImportMappingSchema, next, next.revision) : null;
+        const commitProgress = sealProgress?.(item, false);
         prepared?.commit(); auditChange?.commit();
         if (next) b.transaction.set(mappingRef, { ...data.tags(b.scope), ...handoverImportMappingMetadata(next), ...mappingEnvelope });
         b.transaction.create(data.ref('handover_import_items', 'handover-import-item', id), { ...data.tags(b.scope), ...handoverImportItemMetadata(item), ...envelope });
+        commitProgress?.();
         return item;
       }
       if (section === 'profile' && (sourceValue as ChildProfile).data === null) return finish('skipped', 'empty_profile');
