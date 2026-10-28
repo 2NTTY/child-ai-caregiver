@@ -76,14 +76,19 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
   const workspaces=unique(rows(records,'workspace',authority.workspace),row=>row.value.id);
   const children=unique(rows(records,'child',authority.child),row=>row.value.id);
   const invitations=unique(rows(records,'authority-invitation',authority.invitation),row=>row.value.email);
-  const classes=unique(rows(records,'shared-space',sharedSpaceSchema).filter(row=>row.value.kind==='class'),row=>row.value.id);
+  const spaces=unique(rows(records,'shared-space',sharedSpaceSchema),row=>row.value.id);
+  const classes=new Map([...spaces].filter(([,row])=>row.value.kind==='class'));
   requireValue(rows(records,'control',authority.control).length===1);
   requireValue(accounts.size===owners.size && accounts.size+classes.size===workspaces.size);
   for(const [id,classroom]of classes){
     const workspace=workspaces.get(id)?.value;
     requireValue(Boolean(workspace && workspace.ownerUserId==='space:'+id
       && classroom.value.storageIdentity.ownerUserId===workspace.ownerUserId && classroom.value.storageIdentity.workspaceId===id));
-    if(classroom.value.state==='active')requireValue(accounts.has(classroom.value.managerUserId));
+    if(classroom.value.teacherSpaceId){
+      const parent=spaces.get(classroom.value.teacherSpaceId)?.value;
+      requireValue(Boolean(parent&&parent.kind==='teachers'&&!parent.teacherSpaceId));
+      if(classroom.value.state==='active')requireValue(parent!.state==='active'&&accounts.has(parent!.managerUserId));
+    } else if(classroom.value.state==='active')requireValue(accounts.has(classroom.value.managerUserId));
   }
   for (const [id,account] of accounts) {
     const identity=identities.get(id)?.value,owner=owners.get(id)?.value,workspace=owner&&workspaces.get(owner.workspaceId)?.value;

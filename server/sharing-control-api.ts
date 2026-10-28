@@ -4,7 +4,7 @@ import type { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { apiError, jsonResponse } from './workspace-api.ts';
 
 export type SharingControl = Pick<ReturnType<typeof createFirestoreSharingStore>, 'spacesPage' | 'spaceView' | 'membersPage'
-  | 'sharesPage' | 'invitationsPage' | 'executeCommand' | 'controlOperation' | 'childView' | 'classesPage' | 'classRosterPage'>;
+  | 'sharesPage' | 'invitationsPage' | 'executeCommand' | 'controlOperation' | 'childView' | 'classesPage' | 'classRosterPage' | 'teacherSpacesPage' | 'teacherClassesPage'>;
 
 export async function handleSharingControlRequest(request: Request, userId: string, store: SharingControl,
   isCurrentUser: (userId: string) => Promise<boolean>, readJson: (request: Request) => Promise<unknown>): Promise<Response> {
@@ -21,6 +21,9 @@ export async function handleSharingControlRequest(request: Request, userId: stri
     let value: unknown;
     if (request.method === 'GET' && path === '') value = await store.spacesPage(userId, cursor);
     else if (request.method === 'GET' && path === '/classes') value = await store.classesPage(userId, cursor);
+    else if (request.method === 'GET' && path === '/teachers') value = await store.teacherSpacesPage(userId, cursor);
+    else if (request.method === 'GET' && /^\/teachers\/[^/]+\/classes$/u.test(path))
+      value = await store.teacherClassesPage(userId,z.uuid().parse(path.split('/')[2]),cursor);
     else if (request.method === 'GET' && rosterPath) value = await store.classRosterPage(userId,z.uuid().parse(rosterPath[1]),cursor,
       classRosterQuerySchema.parse(url.searchParams.get('query') ?? ''));
     else if (request.method === 'POST' && path === '/commands' && !cursor) {

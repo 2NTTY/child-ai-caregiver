@@ -3,7 +3,7 @@ import type { SharedModule,SharedRefreshSelection } from '../../../src/shared/sh
 type Params={tab?:string;category?:string;view?:string};
 /** UI projection of the current grant, never a replacement for Server authorization. */
 export function sharedRouteModules(path:string,params:Params={}):readonly SharedModule[]|null {
-  if(['/', '/family','/classes','/settings','/more'].includes(path))return null;
+  if(['/', '/family','/classes','/teachers','/settings','/more'].includes(path))return null;
   if(path==='/profile')return ['profile'];
   if(path==='/care')return params.view==='photos'?['attachments']:['care'];
   if(path==='/tasks')return ['tasks'];
@@ -18,7 +18,7 @@ export function sharedRouteModules(path:string,params:Params={}):readonly Shared
   return [];
 }
 export function sharedRouteMessage(state:SharedChildState,path:string,params:Params={}):string|null {
-  if(!state.target||['/family','/classes','/settings','/more','/share'].includes(path))return null;
+  if(!state.target||['/family','/classes','/teachers','/settings','/more','/share'].includes(path))return null;
   if(!state.view)return state.error??'正在核對共享孩子及模組…';
   const modules=sharedRouteModules(path,params);
   if(modules?.length&&!modules.some(module=>state.view!.modules.includes(module)))return '這個家庭沒有共享此頁面的資料。可選擇其他已共享模組，或切回本人的孩子。';

@@ -1,0 +1,28 @@
+{
+  "package": "P4-CLASS01 teacher-space relationships",
+  "base": "48c1a6e5e3f6c2cab4603101acb77d4741827203",
+  "branch": "codex/p4-class-teacher-space",
+  "date": "2026-10-28",
+  "environment": "Windows; Node 24.19; npm 11.8; serial synthetic Firestore; real HTTP handler/client and restore codec",
+  "checks": [
+    {"command": "node --experimental-test-module-mocks --test tests/class-teacher-space.test.ts", "result": "3/3 including two review regression subtests", "covers": ["parent roles and current manager", "stable class storage", "former direct membership and invitations remain invalid", "public API and original receipts", "current parent and recipient generations", "original creator erasure at restore boundary", "restore preserves current detached ownership", "teachers cannot accept personal family shares", "receipt projects coherent current control state"]},
+    {"command": "node --experimental-test-module-mocks --test --test-name-pattern='shared space control lists are bounded' tests/firestore-sharing.test.ts", "result": "1/1; affected family compatibility after review fix"},
+    {"command": "node --experimental-test-module-mocks --test frontend/src/production/sharing-controller.test.mts", "result": "3/3 by bounded frontend implementer; teachers scenario RED to GREEN"},
+    {"command": "node --experimental-test-module-mocks --test --test-name-pattern='teacher spaces' frontend/src/production/sharing-controller.test.mts", "result": "1/1 after adding route whitelist and no-child entry assertions"},
+    {"check": "affected server/shared/client TypeScript dependency graph", "result": "0 affected / 0 dependency diagnostics"},
+    {"check": "affected frontend TypeScript dependency graph", "result": "No new diagnostic; existing TS2322 at dashboard/_layout.tsx:50 and TS7022 at task-knowledge-read-window.ts:14 retained from P4_CLASS_CONTROL evidence; not a clean repository typecheck"},
+    {"command": "npm 11.8 run build:web", "result": "Passed; export includes /teachers"}
+  ],
+  "failuresPreserved": [
+    "Initial lifecycle test RED: attachClass was absent.",
+    "Restore integration rejected new teacherSpaceId routing metadata; added the field to the existing authenticated codec metadata format and reran the same flow successfully.",
+    "Additional creator-erasure fixture initially lacked the required completed cleanup obligation and used a non-NIL account asset ID; corrected the fixture to the existing erasure contract, without relaxing production checks.",
+    "Test generation variable inferred crypto.randomUUID template type; annotated string for restored generation. Final graph clean.",
+    "Independent review: teachers could accept private family shares; targeted rejection regression failed before the server boundary fix and passed afterwards.",
+    "Independent review: old receipt mixed historical class relation with current parent state; regraded as functional recovery defect, regression failed before coherent current view projection and passed afterwards. Immutable stored effect remains unchanged."
+  ],
+  "review": "Independent Sol xhigh read-only review; one Important and one Minor, latter regraded due to incorrect controls after failed refresh. Both fixed by main with RED/GREEN checks; no second review run.",
+  "reused": ["P4_CLASS_CONTROL_20261028: 50-child bounded roster and original frontend diagnostics", "P4_CLASS_STORAGE_20261028: canonical class storage and erasure consumer behavior"],
+  "notVerified": ["Deployed Firestore composite index", "Actual concurrent Firestore transactions", "Web or Android device interaction", "Class background notifications", "Class dissolution physical cleanup", "Complete P4-CLASS01"],
+  "operations": {"cloud": false, "model": false, "notification": false, "deployment": false, "productTestsFullSuite": false, "collaboratorPRsChanged": false}
+}

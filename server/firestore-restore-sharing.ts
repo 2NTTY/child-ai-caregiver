@@ -31,10 +31,12 @@ export function replaySharingAuthority(codec: FirestoreRestoreCodec, restored: F
     const space=sharedSpaceSchema.parse(row.value);
     if(space.kind==='class')add('workspace',space.id);
   }
-  const activeSpaces = new Set(spaces.map(row => row.id)), users = new Set(spaces.map(row => row.managerUserId));
+  const activeSpaces = new Map(spaces.map(row => [row.id,row])), users = new Set(spaces.filter(row=>!row.teacherSpaceId).map(row => row.managerUserId));
   for (const row of live) if (row.context.kind === 'shared-membership') {
     const member = sharedMembershipSchema.parse(row.value), account = liveById.get('account:' + member.userId);
-    if (member.state === 'active' && activeSpaces.has(member.spaceId) && account && authority.account.parse(account.value).status === 'active') users.add(member.userId);
+    const space=activeSpaces.get(member.spaceId);
+    if(space?.kind==='class'&&(space.teacherSpaceId||(space.directMembershipGeneration??null)!==(member.spaceGeneration??null)))continue;
+    if (member.state === 'active' && space && account && authority.account.parse(account.value).status === 'active') users.add(member.userId);
   }
   for (const row of live) if (row.context.kind === 'shared-operation') {
     const actor = sharedOperationSchema.parse(row.value).actorUserId, account = liveById.get('account:' + actor);

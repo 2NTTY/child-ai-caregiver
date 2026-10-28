@@ -831,7 +831,9 @@ FAMILY-A 首段新增 namespace 下 `shared_spaces`、`shared_memberships`、`re
 
 名冊讀取復用 `resource-share` 的班級範圍及現有索引；姓名從原孩子密文解讀，不另存可修改的副本或明文搜尋欄位。每頁有界，搜尋條件加入加密游標的綁定，依目前角色及原孩子狀態續讀。新增名冊的控制收據以 `addClassChild` 投影原孩子 ID；只有目前仍可讀到該孩子才披露，不能從舊收據重建已缺失的資料。
 
-還原時分別驗證個人 workspace 的帳號鏈與班級 workspace 的控制資料鏈，禁止用「有 workspace」代替資料歸屬檢查；重放目前管理權、撤權及解散狀態，並重新綁定儲存世代。刪除原管理員只清其私人資料及成員身份，不清已轉交班級。此儲存接點尚不表示教師空間加入／移出、班級背景工作、解散清理或完整班級產品已交付。
+班級的 `teacherSpaceId` 只可指向一層 `teachers` 控制資料；附屬期間以父空間當前成員、角色及管理員為準，不複製 ACL。加入與移出更新班級的 `directMembershipGeneration`；直接成員的 `spaceGeneration` 不符便不再有效，舊邀請亦不隨移出復活。待移出指定成員、父空間管理世代及目標 membership ID 一起保存；接收時再核身份、兩邊版本及成員資格。班級父空間版本加入授權 basis／列表游標，父空間轉交或撤權立即生效。
+
+班級的管理查詢 metadata 在附屬期間指向穩定的父空間身份；原建立者不再因這個班級被阻擋刪帳。新增 `teacherSpaceId／active／entryId` 有界列表索引，正式啟用前須建立。還原時分別驗證個人 workspace 的帳號鏈與班級／父空間控制鏈，禁止用「有 workspace」代替資料歸屬檢查；重放目前管理權、成員世代、撤權及解散狀態，重新綁定儲存世代。刪除原管理員只清其私人資料及成員身份，不清已轉交班級。班級背景工作、解散實體清理及完整班級交付仍未完成。
 
 FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新增成員／孩子副本。選擇只在共用 owner 保存導航及授權投影，不另建可修改孩子資料；共享 basis 改變清舊快取。成長、關注及文件共用同一 authority digest，綁來源 epoch／授權及共享 basis，不改本人版本格式。新成員密文保存由准入身份提供的 `label`（目前為已驗證電郵），舊記錄缺值時顯示原 UID，不猜姓名；不在可查詢 metadata 加電郵。本人空間依 memberTag／active／spaceId，空間成員、分享及邀請依 spaceId／active／entryId 有界分頁；新增四項複合索引定義，部署前另建立。游標以本人 scope 加密，子列表保存空間版本；被撤權的來源成員及已刪原件不再出現在分享列表。原 `shared_operations` 提供公開控制收據投影，不公開內部 storageIdentity／managerGeneration 或完整來源 scope。
 

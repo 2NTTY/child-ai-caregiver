@@ -45,6 +45,9 @@ export function createSharingApi(baseUrl = "", fetcher: typeof fetch = fetch) {
   return {
     spaces: (userId: string, signal: AbortSignal, cursor?: string) => page(sharedSpacePageSchema, "", userId, signal, cursor),
     classes: (userId: string, signal: AbortSignal, cursor?: string) => page(sharedSpacePageSchema, '/classes', userId, signal, cursor),
+    teachers: (userId: string, signal: AbortSignal, cursor?: string) => page(sharedSpacePageSchema, '/teachers', userId, signal, cursor),
+    teacherClasses: (spaceId:string,userId:string,signal:AbortSignal,cursor?:string) =>
+      page(sharedSpacePageSchema,'/teachers/'+identifier(spaceId)+'/classes',userId,signal,cursor),
     roster(spaceId: string, userId: string, signal: AbortSignal, cursor?: string, query = '') {
       const parsed = classRosterQuerySchema.safeParse(query); if (!parsed.success) throw new SharingApiError(400, 'invalid_input');
       return page(sharedGrantPageSchema, '/' + identifier(spaceId) + '/roster?' + new URLSearchParams({query:parsed.data}), userId, signal, cursor);
