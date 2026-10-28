@@ -888,12 +888,16 @@ v1 匯入讀取器復用同一 ZIP verifier 及匯出 section 表，先核全部
 
 逐項匯入以目標儲存身份／孩子及來源 Server、帳戶、孩子、section、資源 ID 建立映射，不含名稱或包路徑。來源版本／hash 與最後寫入的目標版本分開保存；同來源同版本異內容列衝突，舊版略過，新版只在目標未被本地改動時直接更新。預設不復活已刪資料；明確覆蓋／恢復須綁定當前目標 ID／版本，care 的手動恢復建立新本地資源並更新映射，保留舊刪除屏障及來源鏈。每個原 opId 的 metadata 收據與映射、領域寫入同交易，查回不含原正文。所有匯入項記錄都保留原 batch／包／manifest、來源、目標及實際結果，不因略過或衝突而失去記錄；工作級失敗／取消及上載紀錄由批次台帳承接。
 
-首段內部實作使用加密 `handover_import_items`／`handover_import_mappings`，均屬目標孩子 scope；新收據也更新 changes cursor，令帳戶匯出不能跨新增紀錄靜默續讀。同 opId 只返回原 metadata，不能在相同操作上改參數或重新嘗試衝突。映射只在業務成功時推進，不因略過或衝突改成已同步。原 backup／scope 清理 registry 納入兩個 collection；還原重綁 epoch，保存原來源映射及收據，並仍由完整恢復流程重放刪除紀錄。帳戶 JSON 匯出的 `import_history`／`import_mappings` 是唯讀追溯資料，不是可再次執行的工作。正式批次取消／lease、上載及整包恢復尚未交付。
+內部實作使用加密 `handover_import_items`／`handover_import_mappings`，均屬目標孩子 scope；新收據也更新 changes cursor，令帳戶匯出不能跨新增紀錄靜默續讀。同 opId 只返回原 metadata，不能在相同操作上改參數或重新嘗試衝突。映射只在業務成功時推進，不因略過或衝突改成已同步。原 backup／scope 清理 registry 納入兩個 collection；還原重綁 epoch，保存原來源映射及收據，並仍由完整恢復流程重放刪除紀錄。帳戶 JSON 匯出的 `import_history`／`import_mappings` 是唯讀追溯資料，不是可再次執行的工作。正式批次取消／lease 及上載已接未部署，完整匯入／備份仍待交付。
+
+來源歷史另存加密 `handover_source_history`，每筆連結本地資源 ID／匯入時版本與不可變來源 evidence（領域、原修訂、來源鏈）；原作者／確認者不改成匯入者，本地實際匯入者／時間／操作分開保存。以目標及來源身份／版本確定 ID，同版異內容列衝突；不追加本地修訂或觸發舊提醒。逐項收據可帶 `sourceSection` 區分來源歷史與目前值，與批次進度同交易提交。再次交接沿同一 wrapper 保留原 evidence，依目前包的父資源映射連到新目標，不改寫原來源。
+
+`care_history/profile_history/task_history` 匯出先分頁讀本地修訂，再以同一加密 scope cursor 的來源階段讀來源歷史；空頁而仍有游標不是完成。來源歷史讀回沿目前模組授權及父資源版本／刪除狀態，profile 的 historyFloor 亦適用。新增歷史不改當前事實，但推進 change cursor；實體刪除在原持久清理工作加入來源歷史階段，仍有界及可接續。備份／帳戶／孩子／班級清理 registry 納入新 collection，恢復重建可信 metadata 並按獨立刪除紀錄移除舊 evidence，不能從原快照恢復已刪正文。
 
 匯入 care／profile 以 `confirmationBasis=imported_source` 保留原確認標記；交易及還原核對真正匯入者的當前授權，不要求外部確認者是本地成員。本人之後更正改回 `explicit`，來源鏈仍保留。空 profile 不作清除目前概況的指令。首次匯入待辦以新資源／發生實例保存原狀態，負責人改為目前目標的有效身份；completed／cancelled／needs_review 不先建立一次 scheduled outbox。同來源後續版本原位更新本地 task／occurrence，保留建立者、建立時間及原投遞證據；記錄 `import` 修訂、真正匯入者及本地 basisVersion，不挪用來源 terminalBasisVersion。來源變更不能繞過本地版本衝突或 unknown 停發；新 scheduled 版本只沿原任務 outbox／目前通知設定處理，舊 pending／leased 作廢。來源映射、收據、業務及 outbox 同交易；公開批次與共用匯入頁仍未完成。
 
 匯入批次與取消／接續／失敗紀錄以操作者的私人帳戶根範圍保存，只有包、來源／目標 ID、選擇、位置、結果數量及錯誤碼，沒有被匯入的正文。目標可屬本人或班級；每筆領域交易同時重讀操作者批次、正式工作 lease 及目標現在權限，保存領域、映射、收據及批次進度。取消或過期後不再提交下一筆；舊 execution／claim 不可沿用。成功項與衝突均有逐項紀錄，接續只處理剩餘位置；同來源行不得在另一位置重複計數。兩個 collection 加入備份及帳戶清理 registry，子範圍刪除／撤權立即阻止後續領域寫入，無正文的本人批次追查紀錄可保留。還原後批次一律 `interrupted` 並清除 claim，不自動重新派送；原目標 epoch 僅供追溯，需重新驗包與授權建立新操作。
 
-正式匯入 request 另綁 `uploadVersion` 及公開輸入的 `inputFingerprint`，舊內部紀錄保持可讀但不能冒稱已綁正式來源。Server 由不可變包推導來源／數量，不信任客戶端自行聲稱完整性。逐項交易內同時讀根範圍上載與孩子／班級目標；驗證來源版本、目前授權、儲存世代及到期時間後才提交。游標只由 Server 產生，含固定目標序號與已驗包續讀位置。原批次／控制 opId 先查回既有收據，不因來源後來清理而重做或錯拒已提交結果。未接歷史的技術 preflight 可保存 failed 批次及實際選入項數，不能以零筆成功掩蓋未讀內容；格式尚無有效包身分的嘗試紀錄仍待後續接線。
+正式匯入 request 另綁 `uploadVersion` 及公開輸入的 `inputFingerprint`，舊內部紀錄保持可讀但不能冒稱已綁正式來源。Server 由不可變包推導來源／數量，不信任客戶端自行聲稱完整性。逐項交易內同時讀根範圍上載與孩子／班級目標；驗證來源版本、目前授權、儲存世代及到期時間後才提交。游標只由 Server 產生，含固定目標序號、目前值／歷史階段與已驗包續讀位置；reader 的 sections 篩選亦綁游標，省略時保留原格式。原批次／控制 opId 先查回既有收據，不因來源後來清理而重做或錯拒已提交結果。未接領域的技術 preflight 可保存 failed 批次及實際選入項數，不能以零筆成功掩蓋未讀內容；格式尚無有效包身分的嘗試紀錄仍待後續接線。
 
 用戶備份／還原與伺服器災難恢復分開：後者仍隔離還原、重放持久刪除日誌、核對 Auth／撤權與附件 generation、更新 epoch、停止舊工作。手動差異還原預設保留目前較新修改／刪除；明確整批選擇覆蓋衝突或恢復已刪項時，保存新操作、來源映射及可追溯的新版本／身份，不抹去原刪除日誌，不放寬自動恢復的防復活。P5 才搬遷完整 Server 權威及工作，沿單主／不丟新寫入回退；P4 匯入不轉移舊執行權。

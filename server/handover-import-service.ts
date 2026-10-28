@@ -7,11 +7,13 @@ import type { createHandoverUploadService } from './handover-upload-service.ts';
 import type { HandoverImportBatch, HandoverImportBatchRequest } from './handover-import-batch-records.ts';
 import type { FirestoreBackgroundWork } from './firestore-background-work.ts';
 import type { HandoverImportCursor } from './handover-import.ts';
+import { historyModules } from './handover-history-records.ts';
+import { createFirestoreHandoverImportItems } from './firestore-handover-import-items.ts';
 
 type Uploads = ReturnType<typeof createHandoverUploadService>;
 type Opened = Awaited<ReturnType<Uploads['open']>>;
-const supported = new Set(['care', 'profile', 'tasks']);
-const cursorSchema = z.object({ target: z.number().int().nonnegative(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
+const supported = new Set(['care', 'profile', 'tasks', ...Object.keys(historyModules)]);
+const cursorSchema = z.object({ target: z.number().int().nonnegative(), phase: z.enum(['current', 'history']).optional(), page: z.object({ manifestSha256: z.string(), selectionHash: z.string(),
   pageIndex: z.number().int().nonnegative(), rowIndex: z.number().int().nonnegative() }).strict().nullable() }).strict();
 type Cursor = z.infer<typeof cursorSchema>;
 const codeOf = (error: unknown) => error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
@@ -67,13 +69,17 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     finally { await opened.dispose(); }
   }
   async function locate(opened: Opened, job: HandoverImportBatch, raw: string | null) {
-    let cursor: Cursor = { target: 0, page: null };
+    let cursor: Cursor = { target: 0, phase: 'current', page: null };
     if (raw) { try { cursor = cursorSchema.parse(JSON.parse(raw)); } catch { domainReject('invalid_package_cursor', 400); } }
     while (cursor.target < job.request.targets.length) {
       const target = job.request.targets[cursor.target], start = JSON.stringify(cursor);
-      const page = await opened.reader.readPage({ selection: { childIds: [target.sourceChildId], modules: target.sections },
+      // Existing in-flight cursors keep their old reader selection. New batches always establish parents first.
+      const sections = cursor.phase === undefined ? undefined : cursor.phase === 'current' ? [...target.sections]
+        : Object.entries(historyModules).filter(([, module]) => target.sections.includes(module)).map(([section]) => section);
+      const page = await opened.reader.readPage({ selection: { childIds: [target.sourceChildId], modules: target.sections }, sections,
         acknowledgedManifestSha256: job.request.acceptedManifestSha256 ?? undefined, cursor: cursor.page as HandoverImportCursor | null, limit: 1 });
-      const next: Cursor = page.nextCursor ? { ...cursor, page: page.nextCursor } : { target: cursor.target + 1, page: null };
+      const next: Cursor = page.nextCursor ? { ...cursor, page: page.nextCursor } : cursor.phase === 'current'
+        ? { target: cursor.target, phase: 'history', page: null } : { target: cursor.target + 1, ...(cursor.phase ? { phase: 'current' as const } : {}), page: null };
       const row = page.rows[0]; cursor = next;
       if (!row || row.section === 'children') continue;
       if (!supported.has(row.section)) domainReject('package_section_not_connected', 400);
@@ -111,7 +117,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       await batches.fail(work, codeOf(error)); return { state: 'stopped' as const };
     } finally { await opened?.dispose(); }
   }
-  return { create: start, process,
+  return { create: start, process, history: createFirestoreHandoverImportItems(options).history,
     async get(owner: string, id: string) { return view(await batches.get(owner, id)); },
     async cancel(owner: string, id: string, command: unknown) { return view(await batches.cancel(owner, id, command)); },
     async resume(owner: string, id: string, command: unknown, signal: AbortSignal) {

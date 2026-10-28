@@ -13,6 +13,7 @@ export type HandoverSourceIdentity = z.infer<typeof handoverSourceIdentitySchema
 export const handoverImportResourceSchema = z.object({ id: uuid, version }).strict();
 export type HandoverImportResolution = z.infer<typeof handoverImportResolutionSchema>;
 export const handoverImportItemSchema = z.object({ opId: uuid, batchId: uuid, fingerprint: hash,
+  sourceSection: z.enum(['care_history', 'profile_history', 'task_history']).optional(),
   actorUserId: z.string().min(1).max(256), at: time, source: importProvenanceLinkSchema,
   outcome: z.enum(['created', 'updated', 'skipped', 'conflict']), reason: z.string().max(100).nullable(),
   resource: handoverImportResourceSchema.nullable(), changeSeq: z.string().regex(/^(0|[1-9][0-9]*)$/u).nullable(),
