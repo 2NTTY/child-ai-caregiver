@@ -18,7 +18,7 @@ export function sharedRouteModules(path:string,params:Params={}):readonly Shared
   return [];
 }
 export function sharedRouteMessage(state:SharedChildState,path:string,params:Params={}):string|null {
-  if(!state.target||['/family','/settings','/more'].includes(path))return null;
+  if(!state.target||['/family','/settings','/more','/share'].includes(path))return null;
   if(!state.view)return state.error??'正在核對共享孩子及模組…';
   const modules=sharedRouteModules(path,params);
   if(modules?.length&&!modules.some(module=>state.view!.modules.includes(module)))return '這個家庭沒有共享此頁面的資料。可選擇其他已共享模組，或切回本人的孩子。';

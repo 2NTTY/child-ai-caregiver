@@ -1,6 +1,6 @@
 # Third-party notices
 
-This project uses the packages below as unmodified npm dependencies. The application routes, configuration, shared contracts, and validation are project-specific code. No application source, prompts, images, fonts, or deployment files were copied from coo or the Expo default template. The Expo template was used only as a dependency-version reference.
+This project uses the packages below as npm dependencies. The limited Expo Sharing 57.0.21 Android text-stream patch is preserved in `frontend/patches`; its original license is unchanged. The application routes, configuration, shared contracts, and validation are project-specific code. No application source, prompts, images, fonts, or deployment files were copied from coo or the Expo default template. The Expo template was used only as a dependency-version reference.
 
 The exact dependency tree and registry integrity values are recorded in [package-lock.json](package-lock.json). [The license inventory](licenses/manifest.json) records selected package versions, tarballs, original notice paths, and SHA-256 hashes. License texts are preserved without modification.
 
@@ -18,6 +18,7 @@ The exact dependency tree and registry integrity values are recorded in [package
 | expo-file-system | 57.0.7 | MIT | [LICENSE](licenses/expo-file-system/LICENSE) |
 | expo-image-picker | 57.0.19 | MIT | [LICENSE](licenses/expo-image-picker/LICENSE) |
 | expo-sharing | 57.0.21 | MIT | [LICENSE](licenses/expo-sharing/LICENSE) |
+| patch-package | 8.0.1 | MIT | [LICENSE](licenses/patch-package/LICENSE) |
 | expo-network | 57.0.2 | MIT | [LICENSE](licenses/expo-network/LICENSE) |
 | expo-secure-store | 57.0.4 | MIT | [LICENSE](licenses/expo-secure-store/LICENSE) |
 | expo-updates | 57.0.23 | MIT | [LICENSE](licenses/expo-updates/LICENSE) |

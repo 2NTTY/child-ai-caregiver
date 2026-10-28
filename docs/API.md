@@ -1204,3 +1204,14 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 正式啟用須另核 Firebase 目前的同電郵帳號設定：官方 Google provider 在部分情況會自動連結，而 allowDuplicateEmails 會改變 profile／email 回傳。不能以空按鈕配置以外的假設當成已符合明確連結，也不直接變更現有 UID／電郵准入規則；限制及來源見 [TECH_REUSE](TECH_REUSE.md#p4-auth-providers)。
 
 **AUTH01 原生 provider adapter（已實作、未開放）：**Google／Apple 原生 SDK 只取得供應商 credential，再交 Firebase JS 的 `signInWithCredential`／`linkWithCredential`；業務登入仍經同一 session exchange。平台 adapter 不自建 session、不自行寫 Firebase 用戶 email 或合併 UID。Google 要求實際 Web OAuth client ID，iOS 另需 iOS client ID／URL scheme；Apple 每次產生新 nonce／state，供應商回覆及 Firebase credential 驗證後才回中央流程。缺平台配置不暴露可用方式；新原生依賴須新 binary，不能強推舊 runtime OTA。仍不啟用雲端 provider；自動連結與邀請 gate 沿上文。
+
+<a id="p4-system-share-input"></a>
+## S12-W02：系統分享進入共用草稿（Android 已接線，待新 binary）
+
+外部系統分享是未提交輸入，不是 Agent 指令、上載授權或匯入結果。Android 復用 Expo Sharing 的原始 payload 與 Router intent；網址只作原文，不在接收時抓取或解析。`/share` 在登入後顯示待處理項目，選定個人孩子後才加入既有草稿。已有文字追加而不覆寫；每則一份附件沿既有規則，已有附件時保留兩邊輸入並說明，不能靜默取代。
+
+- 接收清單只在設備程序記憶體中保留；未送出資料不跨端同步。重啟後來源可能須重新分享，不能宣稱已保存至 Server。
+- 帳號變更清除原清單與原生 intent；未登入接收可待首次登入後選擇目標。讀取期間切換孩子／撤權，遲到的本機副本必須釋放，不加入新範圍。
+- 照片／錄音／一般檔案沿現有 bytes、格式、大小、hash、暫存與原送出服務；不新增 HTTP 上載接口、模型呼叫或預覽解析服務。原始 URI 不加入聊天文字、URL 參數或日誌。
+- 收件箱最多持有 20 項；超量明示，不能截斷後回報全部接受。用戶逐項加入／捨棄輸入，不因此要求逐條批准 Agent 業務操作。
+- 新 Android intent filter 需要新 binary，OTA 不代替；Web 平台 adapter 為空實作，不宣稱網站已有 OS 分享接收。iOS 標準 extension 及 HANDOVER01 資料包匯入仍待接線，不把一般檔案傳送算成資料包導入。
