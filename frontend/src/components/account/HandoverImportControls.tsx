@@ -9,6 +9,7 @@ import type { HandoverImportCommand, HandoverImportView } from '../../../../src/
 import { AppCheckbox } from '../AppCheckbox';
 import { FormDialog } from '../FormDialog';
 import { AppButton, AppSelect } from '../ui';
+import { HandoverImportResults } from './HandoverImportResults';
 import { chineseFont, colors, readingType, spacing } from '../../theme';
 
 type Section = HandoverImportCommand['targets'][number]['sections'][number];
@@ -137,14 +138,19 @@ export function HandoverImportControls() {
       <Text style={styles.title}>匯入批次 · {states[row.state]}</Text>
       <Text style={styles.body}>{dateText(row.createdAt)} · {row.targets.length} 位來源孩子 · 已處理 {row.processedItems}／{row.totalItems} 項</Text>
       <Text style={styles.body}>新增 {row.counts.created} · 更新 {row.counts.updated} · 略過 {row.counts.skipped} · 衝突 {row.counts.conflict}</Text>
-      {row.counts.conflict ? <Text style={styles.body}>有衝突的項目保留原資料；目前介面尚未提供逐項覆蓋或恢復選擇。</Text> : null}
+      {row.counts.conflict ? <Text style={styles.body}>有衝突的項目保留原資料，可查看逐項結果及可用的處理方式。</Text> : null}
       {row.error ? <Text style={styles.body}>{importErrorText(new HandoverApiError(409, row.error))}</Text> : null}
       {row.state === 'interrupted' ? <Text style={styles.body}>此批次經還原後已中斷，不會自行繼續寫入。</Text> : null}
       <View style={styles.actions}>
         <AppButton label="讀取此批次狀態" variant="quiet" disabled={locked} onPress={() => { void controller.refresh(row.id); }} />
+        <AppButton label="查看逐項結果" variant="quiet" disabled={writeLocked || !row.targets[0]?.sections[0]} onPress={() => {
+          const first = row.targets[0]; if (first?.sections[0]) { controller.selectResults(row.id, first.sourceChildId, first.sections[0]); void controller.readResults(); }
+        }} />
         {row.state === 'queued' || row.state === 'running' ? <AppButton label="取消匯入" variant="quiet" disabled={writeLocked} onPress={() => { void controller.control(row.id, 'cancel'); }} /> : null}
         {row.state === 'cancelled' || row.state === 'failed' ? <AppButton label="接續此批次" variant="secondary" disabled={writeLocked} onPress={() => { void controller.control(row.id, 'resume'); }} /> : null}
       </View>
+      {state.results?.batchId === row.id ? <HandoverImportResults controller={controller} batch={row} results={state.results}
+        identityKey={identityKey!} locked={writeLocked} /> : null}
     </View>)}
     {state.nextCursor ? <AppButton label="載入更多匯入批次" variant="quiet" disabled={locked} onPress={() => { void controller.load(true); }} /> : null}
     {!open && state.notice ? <Text accessibilityLiveRegion="polite" style={styles.body}>{state.notice}</Text> : null}
