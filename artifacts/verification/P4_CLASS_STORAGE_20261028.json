@@ -1,0 +1,21 @@
+{
+  "workPackage": "P4-CLASS01 storage prerequisite",
+  "date": "2026-10-28",
+  "base": "cb3778fa06d7222a813642c78240f93d9b9ce5a7",
+  "branch": "codex/p4-class-storage-identity",
+  "environment": "Windows; Node 24; serial synthetic Firestore transactions; real authority/domain/recovery implementation",
+  "scope": ["Stable class workspace without Auth account", "Atomic child creation and original operation replay", "Current membership and original care domain", "Manager transfer and former manager erasure barrier", "Isolated restore with current ACL and new storage epoch"],
+  "checks": [
+    {"command": "node --experimental-test-module-mocks --test tests/firestore-class-storage.test.ts", "phase": "red", "result": "2 failed at unsupported class kind, before implementation"},
+    {"command": "node --experimental-test-module-mocks --test --test-name-pattern='class child storage' tests/firestore-class-storage.test.ts", "result": "1 passed; includes care write/replay/read after former manager enters deletion"},
+    {"command": "node --experimental-test-module-mocks --test --test-name-pattern='class restore' tests/firestore-class-storage.test.ts", "result": "1 passed; ownership, revoked membership and epoch after isolated synthetic restore"},
+    {"command": "node --experimental-test-module-mocks --test --test-name-pattern='class asset erasure|post-snapshot roster' tests/firestore-class-storage.test.ts", "phase": "review regression red to green", "result": "2 initially failed with restore_erasure_binding and missing expected rejection; 2 passed after targeted fixes"},
+    {"command": "node --experimental-test-module-mocks --test --test-name-pattern='isolated restore keeps current transfer' tests/firestore-sharing.test.ts", "result": "1 existing family restore compatibility check passed; selected because this change modifies the same restore authority graph"},
+    {"command": "TypeScript compiler API with tsconfig.server.json options and six affected source/test roots", "result": "0 affected diagnostics; 0 dependency diagnostics"},
+    {"command": "git diff --check", "result": "passed"}
+  ],
+  "intermediateFailures": ["Class child adapter forwarded control fields to strict existing child schema; corrected to pass only operationId/displayName", "New recovery test fixture omitted DocumentReference.get required by existing backup control; reused the established synthetic wrapper"],
+  "review": {"reviewer": "Independent read-only Sol high", "important": ["Asset erasure expected a personal account for class-owned storage", "Post-snapshot roster receipt disclosed a child no longer present after restore"], "resolution": "Both fixed, regression red/green recorded, reviewer verified both fixes; no remaining reported findings"},
+  "notVerified": ["True Firestore transaction competition and cloud restore", "Public class HTTP/UI and 50-child roster/search", "Teacher-space join/detach", "Class background authorization/notifications", "Class dissolution physical cleanup"],
+  "delivery": {"publicClassCreation": false, "deployment": false, "models": 0, "notifications": 0, "newCloudResources": 0, "completeClass01": false, "completeP4": false}
+}

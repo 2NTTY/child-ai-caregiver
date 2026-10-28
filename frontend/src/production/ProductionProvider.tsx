@@ -22,6 +22,7 @@ import { projectProductionHome } from "./home-projection";
 import { productionDestinations } from "./routes";
 import { useOnlineUpdates } from "../../../src/client/use-online-updates";
 import { sharedRefreshSelections } from './shared-route-access';
+import { IncomingShareProvider } from './IncomingShareProvider';
 
 function initialOnline() { return Platform.OS !== "web" || typeof navigator === "undefined" || navigator.onLine; }
 
@@ -73,7 +74,7 @@ function useProductionValue(owner: ProductionOwner) {
   const chatDraft = snapshot.chat.selectedChildId ? snapshot.chat.drafts[snapshot.chat.selectedChildId] : undefined;
 
   useLayoutEffect(() => {
-    if ((!["/", "/chat"].includes(pathname) || previousPath.current === "/chat" && pathname !== "/chat")
+    if ((!["/", "/chat", "/share"].includes(pathname) || previousPath.current === "/chat" && !["/chat", "/share"].includes(pathname))
       && !owner.voiceOwner.getSnapshot().localId && !owner.fileOwner.getSnapshot().localId && !owner.photoOwner.getSnapshot().localId && !owner.draftOwner.getSnapshot().attachments.some(item => item.kind === "file")) owner.draftOwner.clearAttachments(snapshot.scopeKey);
     previousPath.current = pathname;
   }, [owner, pathname, snapshot.scopeKey]);
@@ -117,7 +118,7 @@ function useProductionValue(owner: ProductionOwner) {
   };
   const actions: HomeActions = {
     selectChild(id) {
-      if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey || id === model.selectedChildId) return;
+      if (!snapshot.identityKey || current.current.identityKey !== snapshot.identityKey || id === model.selectedChildId && !snapshot.sharedChild.target) return;
       leave(() => { if (current.current.identityKey === snapshot.identityKey) void owner.selectPersonalChild(id); }, "child");
     },
     refresh: () => { void refresh(); },
@@ -306,7 +307,7 @@ export function ProductionProvider({ children, apiBaseUrl = process.env.EXPO_PUB
     // Signed-in ready scopes refresh through the same changes-cursor observer, avoiding duplicate reads.
     if (state.auth !== "signedIn" || !owner.accountOwner.isReady()) void owner.refresh();
   }, [owner, activity.active, activity.online]);
-  return <QueryClientProvider client={owner.queryClient}><ProductionOwnerContext.Provider value={owner}><ProductionContext.Provider value={value}><AccountCallbackGate>{children}</AccountCallbackGate>
+  return <QueryClientProvider client={owner.queryClient}><ProductionOwnerContext.Provider value={owner}><ProductionContext.Provider value={value}><IncomingShareProvider owner={owner}><AccountCallbackGate>{children}</AccountCallbackGate></IncomingShareProvider>
     <DeleteChildDialog state={value.recordsState} confirmationKey={owner.childDeletionConfirmationKey()} getConfirmationKey={owner.childDeletionConfirmationKey} controller={owner.controller} />
     <AppDialog visible={value.logoutConfirmation} onDismiss={value.cancelLogout}>
       <AppDialog.Title>登出並清除未提交內容？</AppDialog.Title>

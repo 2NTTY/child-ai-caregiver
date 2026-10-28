@@ -4,6 +4,107 @@ import { randomUUID } from "node:crypto";
 import { createSharingApi } from "../../../src/client/sharing-api.ts";
 import type { SharedSpaceView, SharingCommand, SharingOperation } from "../../../src/shared/sharing-control.ts";
 import { SharingController } from "./SharingController.ts";
+import { isProductionRouteConnected } from "./routes.ts";
+import { sharedRouteMessage, sharedRouteModules } from "./shared-route-access.ts";
+
+test("class dissolution retains its cleanup receipt after selection disappears and rechecks only the original operation", async () => {
+  const space: SharedSpaceView = { id: randomUUID(), kind: "class", name: "Class A", role: "owner", managerUserId: "teacher",
+    transferTargetUserId: null, version: 2, teacherSpaceId: randomUUID(), teacherSpaceVersion: 3,
+    createdAt: "2026-10-28T00:00:00Z", updatedAt: "2026-10-28T00:00:00Z" };
+  const command: SharingCommand = { action: "dissolve", operationId: randomUUID(), spaceId: space.id, expectedVersion: space.version, expectedTeacherVersion: 3 };
+  let receipt: SharingOperation = { action: "dissolve", operationId: command.operationId, space: null,
+    exit: { spaceId: space.id, version: 3, state: "dissolved", cleanupState: "pending" } };
+  const commands: SharingCommand[] = [], lookups: string[] = [];
+  let dissolved = false, failLookup = false;
+  const api = createSharingApi("https://example.test", async (input, init) => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith("/commands")) {
+      commands.push(JSON.parse(String(init?.body)) as SharingCommand); dissolved = true; return Response.json(receipt);
+    }
+    if (url.pathname.includes("/operations/")) {
+      lookups.push(url.pathname);
+      if (failLookup) throw new Error("Cleanup lookup unavailable");
+      return Response.json({ operation: receipt });
+    }
+    if (url.pathname.endsWith("/classes")) return Response.json({ items: dissolved ? [] : [space], nextCursor: null });
+    if (url.pathname.endsWith("/members") || url.pathname.endsWith("/roster")) return Response.json({ items: [], nextCursor: null });
+    assert.equal(url.pathname, "/api/shared-spaces/" + space.id); return Response.json(space);
+  });
+  const controller = new SharingController(api, "class"); controller.syncContext("teacher", "teacher:1", true);
+  try {
+    await controller.selectSpace(space.id); await controller.submit(command);
+    assert.deepEqual(commands, [command]); assert.equal(controller.getSnapshot().pending, null);
+    assert.equal(controller.getSnapshot().selected, null); assert.deepEqual(controller.getSnapshot().spaces.items, []);
+    assert.equal(controller.getSnapshot().receipt?.exit?.cleanupState, "pending");
+    failLookup = true; await controller.checkOriginal();
+    assert.equal(lookups.length, 1, "An accepted cleanup must still allow its original receipt to be checked");
+    assert.equal(controller.getSnapshot().receipt?.exit?.cleanupState, "pending"); assert.equal(controller.getSnapshot().pending, null);
+    failLookup = false; await controller.checkOriginal();
+    assert.equal(controller.getSnapshot().receipt?.exit?.cleanupState, "pending");
+    receipt = { ...receipt, exit: { ...receipt.exit!, cleanupState: "completed" } };
+    await controller.checkOriginal();
+    assert.equal(controller.getSnapshot().receipt?.exit?.cleanupState, "completed");
+    assert.deepEqual(lookups, Array(3).fill("/api/shared-spaces/operations/" + command.operationId));
+    await controller.retryOriginal(); await controller.checkOriginal(); assert.equal(lookups.length, 3); assert.deepEqual(commands, [command]);
+    controller.syncContext("other", "other:2", true);
+    assert.equal(controller.getSnapshot().receipt, null); assert.equal(controller.getSnapshot().selected, null);
+  } finally { controller.dispose(); }
+});
+
+test("teacher spaces open attached classes and retain original detach receipts through identity cleanup", async () => {
+  const team: SharedSpaceView = { id: randomUUID(), kind: "teachers", name: "Teachers", role: "owner", managerUserId: "teacher",
+    transferTargetUserId: null, version: 3, createdAt: "2026-10-28T00:00:00Z", updatedAt: "2026-10-28T00:00:00Z" };
+  const otherTeam = { ...team, id: randomUUID(), name: "Second team" };
+  let classroom: SharedSpaceView = { ...team, id: randomUUID(), kind: "class", name: "Class A", teacherSpaceId: team.id,
+    teacherSpaceName: team.name, teacherSpaceVersion: team.version, detachTargetUserId: null };
+  const childId = randomUUID(), requests: string[] = [], commands: SharingCommand[] = [];
+  assert.equal(isProductionRouteConnected("/teachers"), true);
+  assert.equal(sharedRouteModules("/teachers"), null, "Teacher management has no child module prerequisite");
+  const unselected = { identityKey: "teacher:1", userId: "teacher", online: true, target: null, view: null, phase: "none" as const, error: null };
+  assert.equal(sharedRouteMessage(unselected, "/teachers"), null);
+  assert.equal(sharedRouteMessage({ ...unselected, target: { spaceId: classroom.id, childId }, phase: "error", error: "Grant unavailable" }, "/teachers"), null);
+  let receipt: SharingOperation | null = null;
+  const api = createSharingApi("https://example.test", async (input, init) => {
+    const url = new URL(String(input)); requests.push(url.pathname + url.search);
+    if (url.pathname.endsWith("/commands")) {
+      const command = JSON.parse(String(init?.body)) as SharingCommand; commands.push(command);
+      assert.equal(command.action, "detachClass");
+      classroom = { ...classroom, version: 4, teacherSpaceId: null, detachTargetUserId: null };
+      receipt = { operationId: command.operationId, action: command.action, space: classroom };
+      throw new Error("Lost committed detach response");
+    }
+    if (url.pathname.includes("/operations/")) return Response.json({ operation: receipt });
+    if (url.pathname.endsWith("/teachers")) return Response.json({ items: url.searchParams.has("cursor") ? [otherTeam] : [team], nextCursor: url.searchParams.has("cursor") ? null : "teams_2" });
+    if (url.pathname.endsWith("/classes")) return Response.json({ items: classroom.teacherSpaceId ? [classroom] : [], nextCursor: null });
+    if (url.pathname.endsWith("/roster")) return Response.json({ items: [{ childId, childName: "Amy", modules: ["profile"], sharedBy: "teacher", version: 1, canWithdraw: false }], nextCursor: null });
+    if (url.pathname.endsWith("/members") || url.pathname.endsWith("/invitations")) return Response.json({ items: [], nextCursor: null });
+    assert.ok(!url.pathname.endsWith("/shares"), "Teacher spaces must not read personal module shares");
+    return Response.json(url.pathname.endsWith(team.id) ? team : classroom);
+  });
+  const controller = new SharingController(api, "teachers"); controller.syncContext("teacher", "teacher:1", true);
+  try {
+    await controller.loadSpaces(); await controller.loadSpaces(true);
+    assert.deepEqual(controller.getSnapshot().spaces.items, [team, otherTeam]);
+    await controller.selectSpace(team.id);
+    assert.deepEqual(controller.getSnapshot().teacherClasses.items, [classroom]);
+    await controller.selectSpace(classroom.id);
+    assert.equal(controller.getSnapshot().selected?.id, classroom.id);
+    assert.equal(controller.getSnapshot().shares.items[0]?.childId, childId);
+    assert.ok(!requests.includes(`/api/shared-spaces/${classroom.id}/invitations`));
+    await controller.loadTeacherSpaces(); await controller.loadTeacherSpaces(true);
+    assert.deepEqual(controller.getSnapshot().teacherSpaces.items, [team, otherTeam]);
+    const detach: SharingCommand = { action: "detachClass", operationId: randomUUID(), spaceId: classroom.id,
+      expectedVersion: classroom.version, expectedTeacherVersion: team.version, targetUserId: "teacher" };
+    await controller.submit(detach); await controller.retryOriginal();
+    assert.deepEqual(commands, [detach]); assert.equal(controller.getSnapshot().pending?.command.operationId, detach.operationId);
+    await controller.checkOriginal();
+    assert.equal(controller.getSnapshot().pending, null); assert.equal(controller.getSnapshot().selected?.teacherSpaceId, null);
+    assert.equal(controller.getSnapshot().receipt?.operationId, detach.operationId);
+    controller.syncContext("other", "other:2", true);
+    assert.deepEqual(controller.getSnapshot().teacherClasses.items, []); assert.deepEqual(controller.getSnapshot().teacherSpaces.items, []);
+    assert.equal(controller.getSnapshot().receipt, null); assert.equal(controller.getSnapshot().selected, null);
+  } finally { controller.dispose(); }
+});
 
 test("sharing management keeps original unknown commands, bounded pages and identity cleanup through the authenticated client", async () => {
   const space = (name: string): SharedSpaceView => ({ id: randomUUID(), kind: "family", name, role: "owner", managerUserId: "parent",
@@ -101,5 +202,68 @@ test("sharing management keeps original unknown commands, bounded pages and iden
     assert.equal(controller.getSnapshot().pending, null); assert.equal(controller.getSnapshot().receipt?.operationId, next.operationId);
     assert.equal(controller.getSnapshot().selected?.id, fresh.id); assert.equal(writes, 7);
     assert.equal(requests.some(path => path.includes("/children")), false, "Identity-level create and invitation flows must not require a child");
+  } finally { controller.dispose(); }
+});
+
+test("class management preserves original add commands and query-bound roster continuation across identity cleanup", async () => {
+  const space: SharedSpaceView = { id: randomUUID(), kind: "class", name: "Class A", role: "owner", managerUserId: "teacher",
+    transferTargetUserId: null, version: 1, createdAt: "2026-10-28T00:00:00Z", updatedAt: "2026-10-28T00:00:00Z" };
+  const childId = randomUUID(), commands: SharingCommand[] = [], rosterRequests: URL[] = [];
+  let receipt: SharingOperation | null = null, hold = false, release!: (response: Response) => void, heldSignal: AbortSignal | undefined;
+  const api = createSharingApi("https://example.test", async (input, init) => {
+    const url = new URL(String(input));
+    assert.equal(new Headers(init?.headers).get("x-expected-user-id"), "teacher");
+    if (url.pathname.endsWith("/commands")) {
+      const command = JSON.parse(String(init?.body)) as SharingCommand; commands.push(command);
+      receipt = { operationId: command.operationId, action: command.action, space: command.action === "acceptInvitation" ? { ...space, id: randomUUID(), kind: "family" } : space,
+        ...(command.action === "addClassChild" ? { childId } : {}) };
+      if (command.action === "addClassChild") throw new Error("Lost accepted add response");
+      return Response.json(receipt);
+    }
+    if (url.pathname.includes("/operations/")) return Response.json({ operation: receipt });
+    if (url.pathname.endsWith("/classes")) return Response.json({ items: [space], nextCursor: null });
+    if (url.pathname.endsWith("/roster")) {
+      rosterRequests.push(url);
+      if (hold) { heldSignal = init?.signal ?? undefined; return new Promise<Response>(resolve => { release = resolve; }); }
+      if (url.searchParams.get("query") === "amy" && !url.searchParams.has("cursor")) return Response.json({ items: [], nextCursor: "amy_page_2" });
+      if (url.searchParams.has("cursor")) {
+        assert.equal(url.searchParams.get("cursor"), "amy_page_2"); assert.equal(url.searchParams.get("query"), "amy");
+        return Response.json({ items: [{ childId, childName: "Amy", modules: ["profile"], sharedBy: "teacher", version: 1, canWithdraw: false }], nextCursor: null });
+      }
+      return Response.json({ items: [], nextCursor: null });
+    }
+    if (url.pathname.endsWith("/members") || url.pathname.endsWith("/invitations")) return Response.json({ items: [], nextCursor: null });
+    assert.equal(url.pathname, "/api/shared-spaces/" + space.id);
+    return Response.json(space);
+  });
+  const controller = new SharingController(api, "class"); controller.syncContext("teacher", "teacher:1", true);
+  try {
+    await controller.loadSpaces(); assert.deepEqual(controller.getSnapshot().spaces.items, [space]);
+    await controller.submit({ action: "create", operationId: randomUUID(), kind: "class", name: space.name });
+    assert.equal(controller.getSnapshot().selected?.kind, "class");
+    const add: SharingCommand = { action: "addClassChild", operationId: randomUUID(), spaceId: space.id, expectedVersion: 1, displayName: "Amy" };
+    await controller.submit(add); await controller.retryOriginal();
+    assert.equal(commands.length, 2); assert.equal(controller.getSnapshot().pending?.command.operationId, add.operationId);
+    await controller.searchRoster("Must not replace pending query"); assert.equal(controller.getSnapshot().rosterQuery, "");
+    await controller.checkOriginal(); assert.equal(commands.length, 2); assert.equal(controller.getSnapshot().receipt?.childId, childId);
+    await controller.searchRoster("Amy");
+    assert.equal(controller.getSnapshot().rosterQuery, "Amy"); assert.deepEqual(controller.getSnapshot().shares.items, []);
+    assert.equal(controller.getSnapshot().rosterLoaded, true);
+    assert.equal(controller.getSnapshot().shares.nextCursor, "amy_page_2");
+    await controller.more("shares"); assert.equal(controller.getSnapshot().shares.items[0]?.childId, childId);
+    await controller.searchRoster("Bob"); assert.deepEqual(controller.getSnapshot().shares.items, []);
+    assert.equal(rosterRequests.at(-1)?.searchParams.has("cursor"), false); assert.equal(rosterRequests.at(-1)?.searchParams.get("query"), "bob");
+    const rosterCount = rosterRequests.length;
+    await controller.submit({ action: "acceptInvitation", operationId: randomUUID(), token: "t".repeat(43) });
+    assert.equal(controller.getSnapshot().receipt?.space?.kind, "family"); assert.equal(controller.getSnapshot().selected, null);
+    assert.equal(controller.getSnapshot().pending, null); assert.equal(rosterRequests.length, rosterCount);
+    assert.match(controller.getSnapshot().notice!, /家庭管理/u);
+    await controller.selectSpace(space.id);
+    hold = true; const reading = controller.searchRoster("Amy");
+    controller.syncContext("other", "other:2", true); assert.equal(heldSignal?.aborted, true);
+    release(Response.json({ items: [], nextCursor: "old_identity" })); await reading;
+    assert.equal(controller.getSnapshot().rosterQuery, ""); assert.equal(controller.getSnapshot().rosterLoaded, false);
+    assert.deepEqual(controller.getSnapshot().shares, { items: [], nextCursor: null });
+    assert.equal(controller.getSnapshot().pending, null); assert.equal(controller.getSnapshot().receipt, null); assert.equal(controller.getSnapshot().selected, null);
   } finally { controller.dispose(); }
 });

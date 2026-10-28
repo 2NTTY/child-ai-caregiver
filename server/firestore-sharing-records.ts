@@ -11,11 +11,19 @@ const nil = '00000000-0000-0000-0000-000000000000';
 const user = z.string().min(1).max(256), version = z.number().int().positive().max(2147483647);
 const at = z.iso.datetime({ offset: true });
 export const SHARING_SCOPE: WorkRecoveryScope = Object.freeze({ ownerUserId: 'system:sharing', workspaceId: nil, childId: nil, storageEpoch: nil });
-export const sharedSpaceSchema = z.object({ id: z.uuid(), kind: z.enum(['family', 'teachers']), name: z.string().trim().min(1).max(160),
+export const sharedSpaceSchema = z.object({ id: z.uuid(), kind: z.enum(['family', 'teachers', 'class']), name: z.string().trim().min(1).max(160),
   version, state: z.enum(['active', 'dissolved']), managerUserId: user, managerGeneration: z.uuid(),
   storageIdentity: z.object({ ownerUserId: user, workspaceId: z.uuid() }).strict(),
-  transferTargetUserId: user.nullable(), createdAt: at, updatedAt: at }).strict();
+  teacherSpaceId:z.uuid().nullable().optional(), directMembershipGeneration:z.uuid().optional(),
+  erasureOperationId:z.uuid().optional(),
+  detachTargetUserId:user.nullable().optional(), detachManagerGeneration:z.uuid().nullable().optional(), detachTargetMembershipId:z.uuid().nullable().optional(),
+  transferTargetUserId: user.nullable(), createdAt: at, updatedAt: at }).strict()
+  .refine(value=>!value.erasureOperationId || value.kind==='class' && value.state==='dissolved')
+  .refine(value=>!value.teacherSpaceId || value.kind==='class' && value.teacherSpaceId!==value.id && !!value.directMembershipGeneration)
+  .refine(value=>[value.detachTargetUserId,value.detachManagerGeneration,value.detachTargetMembershipId].every(item=>item==null)
+    || !!value.teacherSpaceId && [value.detachTargetUserId,value.detachManagerGeneration,value.detachTargetMembershipId].every(Boolean));
 export const sharedMembershipSchema = z.object({ spaceId: z.uuid(), userId: user, label:z.string().min(1).max(320).optional(), membershipId: z.uuid(), version, stateVersion: version,
+  spaceGeneration:z.uuid().optional(),
   role: z.enum(['owner', 'caregiver', 'viewer']), state: z.enum(['active', 'revoked']), joinedAt: at }).strict();
 export const resourceShareSchema = z.object({ spaceId: z.uuid(), childId: z.uuid(), source: workRecoveryScopeSchema,
   modules: z.array(sharedModuleSchema).min(1).max(8), version, state: z.enum(['active', 'revoked']), sharedBy: user,
@@ -24,7 +32,7 @@ export const sharedInvitationSchema = z.object({ id: z.string().regex(/^[a-f0-9]
   role: z.enum(['caregiver', 'viewer']), issuedVersion: version, managerGeneration: z.uuid(), expiresAt: at,
   state: z.enum(['issued', 'consumed', 'revoked']), consumedBy: user.nullable(), issuedBy: user }).strict();
 export const sharedOperationSchema = z.object({ actorUserId: user, operationId: z.uuid(), action: z.string().min(1).max(64),
-  fingerprint: z.string().regex(/^[a-f0-9]{64}$/u), result: z.unknown(), at }).strict();
+  fingerprint: z.string().regex(/^[a-f0-9]{64}$/u), result: z.unknown(), erased:z.literal(true).optional(), at }).strict();
 export const sharingRestoreSchemas = {
   'shared-space': { suffix: 'shared_spaces', schema: sharedSpaceSchema },
   'shared-membership': { suffix: 'shared_memberships', schema: sharedMembershipSchema },
@@ -41,7 +49,9 @@ export function sharingUserTag(userId: string) { return firestoreDomainHash(['sh
 
 /** Only routing metadata; resource bodies remain under their original owner-bound encryption. */
 export function sharingMetadata(kind: SharingKind, value: any): Record<string, unknown> {
-  if (kind === 'shared-space') return { entryId: value.id, managerTag: sharingUserTag(value.managerUserId), active: value.state === 'active' };
+  if (kind === 'shared-space') return { entryId: value.id,
+    managerTag: sharingUserTag(value.kind==='class'&&value.teacherSpaceId ? 'space:'+value.teacherSpaceId : value.managerUserId), active: value.state === 'active',
+    ...(value.teacherSpaceId !== undefined ? {teacherSpaceId:value.teacherSpaceId} : {}) };
   if (kind === 'shared-membership') return { entryId: value.userId, spaceId: value.spaceId, memberTag: sharingUserTag(value.userId), active: value.state === 'active' };
   if (kind === 'resource-share') return { entryId: value.childId, spaceId: value.spaceId, sourceUserTag: sharingUserTag(value.source.ownerUserId), active: value.state === 'active' };
   if (kind === 'shared-invitation') return { entryId: value.id, spaceId: value.spaceId, active: value.state === 'issued' };
@@ -77,7 +87,15 @@ export function sharingRestoreMetadata(context: FirestoreRecoveryContext & { kin
 }
 
 /** Shared routing is not owned by an administrator; erasure targets the referenced personal identity/resource. */
-export function sharingErasedBy(kind: string, raw: unknown, removed: WorkRecoveryScope, account: boolean): boolean {
+export function sharingErasedBy(kind: string, raw: unknown, removed: WorkRecoveryScope, account: boolean, classroom = false): boolean {
+  if(classroom) {
+    if(kind==='shared-membership')return sharedMembershipSchema.parse(raw).spaceId===removed.workspaceId;
+    if(kind==='shared-invitation')return sharedInvitationSchema.parse(raw).spaceId===removed.workspaceId;
+    if(kind==='shared-operation') {
+      const row=sharedOperationSchema.parse(raw), result=row.result as any;
+      return row.action!=='dissolve-space' && (result?.space?.id??result?.id??result?.spaceId)===removed.workspaceId;
+    }
+  }
   if (kind === 'shared-membership') return account && sharedMembershipSchema.parse(raw).userId === removed.ownerUserId;
   if (kind === 'shared-invitation') {
     const row = sharedInvitationSchema.parse(raw);
@@ -85,7 +103,7 @@ export function sharingErasedBy(kind: string, raw: unknown, removed: WorkRecover
   }
   if (kind === 'resource-share') {
     const row = resourceShareSchema.parse(raw), source = row.source;
-    return source.ownerUserId === removed.ownerUserId && (account || source.workspaceId === removed.workspaceId && source.childId === removed.childId);
+    return source.ownerUserId === removed.ownerUserId && (account || source.workspaceId === removed.workspaceId && (classroom || source.childId === removed.childId));
   }
   return false;
 }
@@ -104,6 +122,7 @@ export async function assertNoManagedSharedSpaces(data: FirestoreDomainData, tx:
     const id = z.uuid().parse(snapshot.get('entryId'));
     const space = data.open('shared-space', id, SHARING_SCOPE, sharedSpaceSchema, snapshot);
     if (space.id !== id || space.managerUserId !== userId || space.state !== 'active') domainReject('sharing_binding', 500);
+    if(space.kind==='class'&&space.teacherSpaceId)domainReject('sharing_binding',500);
     domainReject('space_transfer_or_dissolve_required');
   }
 }
