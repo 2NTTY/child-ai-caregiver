@@ -3857,6 +3857,19 @@
       ]
     },
     {
+      "collectionGroup": "yuban_authority_handover_import_items",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
+        { "fieldPath": "epochTag", "order": "ASCENDING" },
+        { "fieldPath": "childTag", "order": "ASCENDING" },
+        { "fieldPath": "userTag", "order": "ASCENDING" },
+        { "fieldPath": "batchId", "order": "ASCENDING" },
+        { "fieldPath": "section", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "yuban_authority_handover_import_mappings",
       "queryScope": "COLLECTION",
       "fields": [

@@ -20,6 +20,7 @@ import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
 import { emptyCareDetails } from '../src/shared/care.ts';
 import { FirestoreDomainData, FirestoreDomainError, firestoreDomainHash } from '../server/firestore-domain-data.ts';
 import { importBatchId, importBatchMetadata, importBatchSchema } from '../server/handover-import-batch-records.ts';
+import { handoverImportItemId, handoverImportItemMetadata, handoverImportItemSchema } from '../server/handover-import-records.ts';
 import { createHandoverApi } from '../src/client/handover-api.ts';
 
 test('verified packages reach formal import worker, retain partial progress and import history before rejecting cancelled sources', async t => {
@@ -114,6 +115,14 @@ test('verified packages reach formal import worker, retain partial progress and 
     const finalDelivery = await nextDelivery(); assert.equal((await worker.background.process(finalDelivery)).state, 'completed');
     assert.equal((await worker.background.process(finalDelivery)).state, 'completed');
     const done = await service.get('recipient', command.opId); assert.deepEqual(done.counts, { created: 2, updated: 0, conflict: 0, skipped: 0 });
+    const resultQuery = new URLSearchParams({ sourceChildId: sourceChild, module: 'care' }).toString();
+    const resultPage = await (await call('/' + command.opId + '/items?' + resultQuery)).json();
+    assert.equal(resultPage.items.length, 2); assert.equal(resultPage.complete, true);
+    assert.ok(resultPage.items.every((item: any) => item.outcome === 'created' && item.availableResolution === null));
+    assert.equal(JSON.stringify(resultPage).includes('Original account'), false, 'Results do not expose original record bodies');
+    await assert.rejects(call('/' + command.opId + '/items?' + resultQuery, undefined, 'other'), { code: 'import_batch_not_found' });
+    await assert.rejects(call('/' + command.opId + '/items?' + resultQuery + '&module=tasks'), { code: 'invalid_input' });
+    await assert.rejects(call('/' + command.opId + '/items?' + new URLSearchParams({ sourceChildId: sourceChild, module: 'tasks' })), { code: 'import_result_scope_unavailable' });
     const repeated = await (await call('', command)).json(); assert.equal(repeated.state, 'completed');
     const blocked = await upload(true), blockedCommand = { ...command, opId: randomUUID(), uploadId: blocked.id,
       expectedUploadVersion: blocked.version, acceptedManifestSha256: blocked.preview!.manifestSha256 };
@@ -128,6 +137,40 @@ test('verified packages reach formal import worker, retain partial progress and 
     const historyPage = await (await call('/source-history?' + new URLSearchParams({ childId: recipientChild, module: 'care', resourceId: storedHistory[0].resource.id }))).json();
     assert.equal(historyPage.items[0].evidence.value.text, originals[0]!.text);
     await assert.rejects(call('/source-history?' + new URLSearchParams({ childId: recipientChild, module: 'care', resourceId: storedHistory[0].resource.id }), undefined, 'other'));
+    const imported = resultPage.items.find((item: any) => item.sourceResourceId === originals[0]!.id).recordedResource;
+    const revised = await care.revise('recipient', recipientChild, imported.id,
+      { text: 'Local edit', details: emptyCareDetails(), source: 'Recipient' }, imported.version, 'Local correction');
+    assert.ok(revised);
+    const conflictCommand = { ...command, opId: randomUUID() };
+    await call('', conflictCommand);
+    for (let i = 0; i < 2; i++) { await worker.background.process(await nextDelivery()); elapsed += 2000; }
+    const conflictPage = await (await call('/' + conflictCommand.opId + '/items?' + resultQuery)).json();
+    const conflict = conflictPage.items.find((item: any) => item.outcome === 'conflict');
+    assert.equal(conflict.availableResolution, 'replace_current');
+    assert.deepEqual(conflict.currentResource, { id: imported.id, version: revised.version, deleted: false });
+    const newer = await care.revise('recipient', recipientChild, imported.id,
+      { text: 'Newer local edit', details: emptyCareDetails(), source: 'Recipient' }, revised.version, 'Second correction');
+    assert.ok(newer);
+    const staleCommand = { ...command, opId: randomUUID(), resolutions: [{ sourceChildId: sourceChild, section: 'care', resourceId: originals[0]!.id,
+      resolution: { mode: 'replace_current', targetId: imported.id, expectedVersion: revised.version } }] };
+    await call('', staleCommand);
+    for (let i = 0; i < 2; i++) { await worker.background.process(await nextDelivery()); elapsed += 2000; }
+    assert.equal((await service.get('recipient', staleCommand.opId)).counts.conflict, 1);
+    assert.equal((await care.get('recipient', recipientChild, imported.id))!.text, 'Newer local edit');
+    const refreshed = await (await call('/' + conflictCommand.opId + '/items?' + resultQuery)).json();
+    assert.equal(refreshed.items.find((item: any) => item.id === conflict.id).currentResource.version, newer.version);
+    const resolvedCommand = { ...staleCommand, opId: randomUUID(), resolutionOnly: true, resolutions: [{ ...staleCommand.resolutions[0],
+      resolution: { ...staleCommand.resolutions[0].resolution, expectedVersion: newer.version } }] };
+    await call('', resolvedCommand);
+    await worker.background.process(await nextDelivery()); elapsed += 2000;
+    const resolved = await service.get('recipient', resolvedCommand.opId);
+    assert.equal(resolved.totalItems, 1);
+    assert.deepEqual(resolved.counts, { created: 0, updated: 1, skipped: 0, conflict: 0 });
+    assert.equal((await care.get('recipient', recipientChild, imported.id))!.text, originals[0]!.text);
+    assert.deepEqual((await service.get('recipient', conflictCommand.opId)).counts, { created: 0, updated: 0, skipped: 1, conflict: 1 });
+    assert.deepEqual((await (await call('', resolvedCommand)).json()).counts, resolved.counts);
+    const noLongerActionable = await (await call('/' + conflictCommand.opId + '/items?' + resultQuery)).json();
+    assert.equal(noLongerActionable.items.find((item: any) => item.id === conflict.id).availableResolution, null);
     const revoked = await upload(), revokedCommand = { ...command, opId: randomUUID(), uploadId: revoked.id,
       expectedUploadVersion: revoked.version, acceptedManifestSha256: revoked.preview!.manifestSha256 };
     const before = [...fixture.records.keys()].filter(path => path.includes('_handover_import_items/')).length;
@@ -176,5 +219,32 @@ test('verified packages reach formal import worker, retain partial progress and 
     finally { fixture.records.set(firstRef.path, originalRow); }
     const loopingClient = createHandoverApi('https://local.test', async () => Response.json({ items: [], nextCursor: 'loop' })); loopingClient.setIdentity('recipient');
     await assert.rejects(loopingClient.listImports('recipient', controller.signal, 'loop'), { code: 'handover_response_invalid' });
+    const receiptTemplate = [...fixture.records].filter(([path]) => path.includes('_handover_import_items/'))
+      .map(([path, row]) => codec.decode({ path, data: row }))
+      .find(decoded => (decoded.value as any).batchId === command.opId)!;
+    assert.equal(receiptTemplate.context.family, 'domain');
+    for (let i = 2; i < 21; i++) {
+      const receipt = { ...(receiptTemplate.value as any), opId: randomUUID() }, scope = (receiptTemplate.context as { scope: typeof template.scope }).scope;
+      const logicalId = handoverImportItemId(scope, receipt.opId), ref = data.ref('handover_import_items', 'handover-import-item', logicalId);
+      fixture.records.set(ref.path, { ...data.tags(scope), ...handoverImportItemMetadata(receipt),
+        ...data.seal('handover-import-item', logicalId, scope, handoverImportItemSchema, receipt) });
+    }
+    const resultClient = createHandoverApi('https://local.test', async (input, init) => {
+      const url = new URL(String(input)); assert.equal(init?.method, 'GET');
+      assert.equal(init?.cache, 'no-store'); assert.equal(init?.credentials, 'include');
+      return (await call(url.pathname.slice('/api/account/package-imports'.length) + url.search))!;
+    }); resultClient.setIdentity('recipient');
+    const resultFirst = await resultClient.importResults('recipient', command.opId, { sourceChildId: sourceChild, module: 'care' }, controller.signal);
+    assert.equal(resultFirst.items.length, 20); assert.equal(resultFirst.complete, false); assert.ok(resultFirst.nextCursor);
+    const resultLast = await resultClient.importResults('recipient', command.opId,
+      { sourceChildId: sourceChild, module: 'care', cursor: resultFirst.nextCursor! }, controller.signal);
+    assert.equal(resultLast.items.length, 1); assert.equal(resultLast.complete, true);
+    assert.equal(new Set([...resultFirst.items, ...resultLast.items].map(item => item.id)).size, 21);
+    await assert.rejects(call('/' + command.opId + '/items?' + resultQuery + '&cursor=invalid'), { code: 'invalid_cursor' });
+    await assert.rejects(call('/' + conflictCommand.opId + '/items?' + resultQuery + '&cursor=' + encodeURIComponent(resultFirst.nextCursor!)), { code: 'import_results_changed' });
+    const current = await care.get('recipient', recipientChild, imported.id);
+    await care.revise('recipient', recipientChild, imported.id,
+      { text: 'Changed after page', details: emptyCareDetails(), source: 'Recipient' }, current!.version, 'Correction after reading');
+    await assert.rejects(call('/' + command.opId + '/items?' + resultQuery + '&cursor=' + encodeURIComponent(resultFirst.nextCursor!)), { code: 'import_results_changed' });
   } finally { controller.abort(); await rm(directory, { recursive: true, force: true }); }
 });

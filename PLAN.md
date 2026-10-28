@@ -56,11 +56,11 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-29）：[P4-HANDOVER01](#p4-handover01) 未提交上載恢復。**#360～#374 已合併未部署；#374 的共用匯入畫面／批次列表、最低驗證及限制見[證據](artifacts/verification/P4_HANDOVER_IMPORT_UI_20261029.json)。`codex/p4-handover-upload-recovery` 補本人暫存包的有界列表，重開後按需查原檔案並繼續或取消；不自動重傳，也不把完整名冊塞入列表。本機原檔已失去則清楚提示取消／重選。首批仍只有記錄／概況／待辦及其歷史；預設保留本地修改，衝突選擇、其他領域、班級／期間匯出、完整私人備份及正式簽章配置待接。原生因現有 fetch 緩衝沿 20 MiB，Web 256 MiB，原生大型包未完成；首次選檔及真機／雲端／部署另驗。合成接線與畫面存在均不當作 HANDOVER01 完成。
+**當前入口（2026-10-29）：[P4-HANDOVER01](#p4-handover01) 逐項結果與明確衝突處理。**基線 `42017ec`（#376），#360～#374、#376 已合併未部署；未提交上載重開查回／取消已接，見[恢復證據](artifacts/verification/P4_HANDOVER_UPLOAD_RECOVERY_20261029.json)。本包 `codex/p4-handover-conflict-results` 以固定批次、來源孩子及模組查逐項 metadata，分開原收據與目前可處理版本；明確覆蓋／恢復沿同一服務建立只含所選項的新批次，不處理未選項或來源歷史。必要結果及限制見[證據](artifacts/verification/P4_HANDOVER_CONFLICT_RESULTS_20261029.json)。首批仍只有記錄／概況／待辦及來源歷史；其他領域、正文差異預覽、班級／期間匯出、完整私人備份及正式簽章配置待接。原生大型包仍受目前 20 MiB 限制（Web 256 MiB）；真選檔／設備、雲端索引及部署另驗，不當作 HANDOVER01 完成。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 
-**文檔包基礎：**#360 的標準 ZIP／簽章與本人授權分頁取材、#361 的有界 YBG1／私人 Storage 已接持久匯出 API／worker 及共用 UI；[容器證據](artifacts/verification/P4_HANDOVER_ARCHIVE_20261028.json)與[儲存證據](artifacts/verification/P4_HANDOVER_STORAGE_20261028.json)不重跑。後續已接匯入台帳、三領域保存、來源歷史及刪除／到期義務；共用入口的合成流程、局部型別、Web／Android bundle 及 review 見[本批證據](artifacts/verification/P4_HANDOVER_IMPORT_UI_20261029.json)，尚未部署。接續未提交上載重開查回、衝突處理及其餘模組／班級／期間，不把選定 care 的證據擴稱全部私人資料往返通過。
+**文檔包基礎：**#360 的標準 ZIP／簽章與本人授權分頁取材、#361 的有界 YBG1／私人 Storage 已接持久匯出 API／worker 及共用 UI；[容器證據](artifacts/verification/P4_HANDOVER_ARCHIVE_20261028.json)與[儲存證據](artifacts/verification/P4_HANDOVER_STORAGE_20261028.json)不重跑。後續已接匯入台帳、三領域保存、來源歷史及刪除／到期義務；共用入口的合成流程、局部型別、Web／Android bundle 及 review 見[本批證據](artifacts/verification/P4_HANDOVER_IMPORT_UI_20261029.json)，尚未部署。未提交上載恢復已合併，本包接逐項結果與只處理所選衝突；下一步為其餘模組／班級／期間與完整備份，不把選定 care 的證據擴稱全部私人資料往返通過。
 
 **已接回的系統分享：**#354 已合併 Android 本機收件箱／原草稿接線及三項 review 修正，定向核對與 JS 匯出完成，未建置／發布新 APK；真機接收、iOS extension 與 HANDOVER01 資料包入口見 [S12-W02](#s12-w02)。#352 共享附件頁面亦已合併未部署。AUTH01 的 Apple 邀請接續／自動連結、共享寫入／背景及 P3／P5 欠項繼續保留；D 的 #254／#262／#263／#265／#273／#353 仍不改、不代合併。
 
