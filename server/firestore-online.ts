@@ -23,6 +23,9 @@ import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { sharedDomainRoute } from './shared-domain-routing.ts';
 import { sharedWriteAttribution } from './shared-write-attribution.ts';
 import { validTaskAttribution, validTaskRevisionAttribution } from './firestore-task-records.ts';
+import type { HandoverImportRow } from './handover-import.ts';
+import type { HandoverIntegrity } from '../src/shared/handover.ts';
+import { makeImportProvenance } from './handover-provenance.ts';
 
 const NIL = '00000000-0000-0000-0000-000000000000';
 const decimal = firestoreChangeSchema.shape.changeSeq, uuid = z.uuid();
@@ -43,6 +46,8 @@ export interface FirestoreTasksQuery {
   history(userId: string, childId: string, taskId: string, beforeVersion?: number | null): Promise<TaskHistory | null>;
 }
 export interface FirestoreOnlineStore {
+  prepareImportedTask(binding: FirestoreAuthorityTransaction, childId: string, operationId: string,
+    row: HandoverImportRow, integrity: HandoverIntegrity): Promise<{ task: CareTask; changeSeq: string; commit(): void }>;
   spaces(userId: string): Promise<Workspace[]>;
   context(userId: string, command: OnlineCommand): Promise<OnlineContext>;
   submit(userId: string, submission: OnlineSubmission, context?: NativeRequestContext): Promise<OnlineReceipt>;
@@ -152,7 +157,8 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     });
   } };
 
-  async function prepareTask(binding: FirestoreAuthorityTransaction, childId: string, oldId: string | undefined, raw: unknown, operationId: string) {
+  async function prepareTask(binding: FirestoreAuthorityTransaction, childId: string, oldId: string | undefined, raw: unknown, operationId: string,
+    imported?: { state: CareTask['occurrence']['state']; provenance: NonNullable<CareTask['importedFrom']> }) {
     domainParse(uuid, operationId); if (oldId) domainParse(uuid, oldId);
     const userId = binding.sharedAccess?.classMember?.userId ?? binding.scope.ownerUserId, actorUserId = binding.actorUserId,
       candidateId = randomUUID(), occurrenceId = randomUUID(), at = new Date().toISOString();
@@ -172,7 +178,8 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
       if (create.values.assigneeUserId !== userId) domainReject('assignee_not_eligible', 400);
       const { dueAt, timeZone, ...values } = create.values;
       task = { ...values, id: candidateId, childId, version: 1, createdBy: actorUserId, createdAt: at, updatedAt: at,
-        occurrence: { id: occurrenceId, dueAt, timeZone, state: 'scheduled', terminalBasisVersion: null } };
+        ...(imported ? { importedFrom: imported.provenance } : {}),
+        occurrence: { id: occurrenceId, dueAt, timeZone, state: imported?.state ?? 'scheduled', terminalBasisVersion: null } };
       if ((await binding.transaction.get(data.ref('tasks', 'task', candidateId))).exists) domainReject('task_conflict');
       revision = { task, action: 'create', actorUserId, basisVersion: 0, note: '', at };
     }
@@ -283,6 +290,15 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
   const tasks = taskView();
   return {
     children, tasks, prepareTask,
+    async prepareImportedTask(binding, childId, operationId, row, integrity) {
+      if (row.section !== 'tasks') domainReject('invalid_package_data', 400);
+      const source = domainParse(firestoreTaskSchema, row.value, 'invalid_package_data');
+      const provenance = makeImportProvenance(row, integrity, binding.actorUserId, new Date().toISOString());
+      const assigneeUserId = binding.sharedAccess?.classMember?.userId ?? binding.scope.ownerUserId;
+      return prepareTask(binding, childId, undefined, { confirm: true, values: { title: source.title, details: source.details,
+        kind: source.kind, assigneeUserId, dueAt: source.occurrence.dueAt, timeZone: source.occurrence.timeZone } }, operationId,
+      { state: source.occurrence.state, provenance });
+    },
     notificationPreferences(userId) { return authority.runTransaction(userId, null, readPreferences); },
     async spaces(userId) {
       return authority.runTransaction(userId, null, async binding => {

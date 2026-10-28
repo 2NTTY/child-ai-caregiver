@@ -4209,3 +4209,10 @@
 - 接續 #363／`24f59d5`，先更新 PLAN，再沿原 ZIP verifier 及共用 section 表核對全部頁面、孩子、coverage 與附件；續讀綁定 manifest／選擇，缺可信證明的繼續選擇只對同一 manifest 生效。來源確認與原文不被改成目前使用者已核對；沒有新套件、AI 審查或另一套壓縮邏輯。
 - 以實際 Firestore services／匯出器接一條合成讀取流程，含重開續讀、無證明、範圍／缺頁／數量／執行 section 拒絕及附件定位，1/1 通過；三入口型別圖零診斷，diff check 通過。初始缺模組紅測試、Zod 4 `.unwrap` 適配失敗及修正後證據均保留於[核對記錄](artifacts/verification/P4_HANDOVER_IMPORT_READ_20261028.json)。獨立 review 無確定 Important／Critical 問題，未重跑前批檢查。
 - 本段不提供正式匯入或業務寫入；上載、持久批次／逐項紀錄、目標授權、領域 schema／保存、來源映射及差異恢復繼續下一段。班級／期間及完整私人備份未完成，沒有部署、模型、雲端或設備操作；D PR 及 P3／P5 邊界不變。
+
+<a id="log-20261029-p4-handover-provenance"></a>
+### 2026-10-29：P4 匯入來源與原領域交易準備
+
+- 接續 #364／`bb3d812`，care／profile／task 保存原作者、確認者、版本與平坦來源鏈，實際匯入者另核目前授權。沿原 prepared transaction、加密、版本及 outbox，沒有新儲存引擎或模型。普通更正保留來源但改回本地確認；匯入終態待辦不先排一次提醒。
+- 同一條合成流程核對實際領域服務、班級 binding、版本衝突、共用 client 及正式還原 decoder，1/1；五入口型別圖零診斷，diff check 通過。只補受影響範圍，未重跑前批；原 client／restore proof 及 test-only 型別失敗保留。獨立 review 發現 contact client 的 strict task DTO 漏接來源欄位，已補紅綠及覆核關閉，[證據](artifacts/verification/P4_HANDOVER_PROVENANCE_20261029.json)。
+- 這是匯入服務的領域準備，沒有公開匯入入口、來源映射／防重台帳或完整恢復驗收；共用來源顯示、其餘資料域及完整包流程仍待接。未部署、未呼叫模型／雲端／通知或操作手機，D PR 保留原狀。

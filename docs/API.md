@@ -1137,6 +1137,8 @@ Account export可直接驗讀空head／null內容，不因未裝avatar內容port
 
 本節只定語義，路由／DTO 在相應包實作時沿既有接口擴充並保持舊 App 相容，不聲稱目前已有新端點。[SPEC REQ-P4](../SPEC.md#p4-p5-product) 是產品權威，[PLAN](../PLAN.md#p4-packages) 管依賴／狀態，六項已確認行為依 [ADR-029](DECISIONS.md#adr-029)，不以目標接口當已實作。
 
+匯入 care／profile／task 的 DTO 增加可選 `importedFrom`，care／profile 的 `confirmationBasis` 可為 `imported_source`。此時 `confirmedBy`／`confirmedAt` 是來源標記，不能因 UID 字串相同就顯示為目前用戶已核對；實際匯入者另見來源鏈。普通更正改回本地確認但保留來源。care、summary、task、contact client 共用相容 schema；正式匯入啟用前仍須補共用畫面投影。現有提交接口不接受客戶端自行提供這些權威欄位，內部 prepared 接點也不代表 HTTP 匯入已開放。
+
 FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共享孩子選擇；Agent 仍按後續接線。`withResource` 在同一 Firestore 交易核對目前操作者准入、空間／成員、選定模組、來源成員世代及原孩子狀態，提供分開的 `actorUserId`／原儲存 `scope`，以及空間、成員、分享和雙方授權版本 basis。領域 adapter 必須明確消費此 binding 並排除私人項目；不能把 binding 當成整個孩子的通行證。舊未指定共享的業務方法維持本人範圍。
 
 **成長／持續關注讀取接點：**既有 `GET /api/children/:childId/growth`、`concerns` 可帶一個 `spaceId`；兩端沿同一共用 client，未提供參數維持本人服務。空值、重複、非法參數拒絕，不靜默回退本人資料。Server 在原交易核對當前成員／模組，保留身份前後核對及 no-store。已保存的卡片／關注正文屬明確選入模組的內容；成長來源檢查只在內部取既有 profile／family facts，不因此提供原始資料讀權，未共享 memory 不回即時近況與 factRefs，未共享 tasks 不回 taskId／taskState。持續關注不回私人 runId，未共享 care／tasks／growth 的關聯 ID 亦遮蔽；原資料不被改寫。共享 `authorityVersion` 綁儲存世代及目前共享 basis。這段先接讀取；`canManage=false` 且共享 POST 明確回 `shared_domain_read_only`，不開另一條本人寫入。完整寫入／背景及全局選擇按 FAMILY-A／B 接續，不當已交付。

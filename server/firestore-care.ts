@@ -15,15 +15,21 @@ import { prepareContextChange } from './firestore-context-basis.ts';
 import { createFirestoreSharingStore } from './firestore-sharing.ts';
 import { sharedWriteAttributionSchema, sharedWriteAttribution, validSharedAttribution } from './shared-write-attribution.ts';
 import { firestorePhotoSchemas } from './firestore-photos.ts';
+import { importProvenanceSchema, type ImportProvenance } from '../src/shared/import-provenance.ts';
+import type { HandoverIntegrity } from '../src/shared/handover.ts';
+import type { HandoverImportRow } from './handover-import.ts';
+import { importConfirmationActor, makeImportProvenance } from './handover-provenance.ts';
 
 const uuid = z.uuid(), version = z.number().int().min(0).max(2147483646), time = z.iso.datetime({ offset: true });
 const user = z.string().min(1).max(256);
 export const firestoreCareStorageSchema = careValuesSchema.extend({ id: uuid, childId: uuid, authorUserId: user, createdAt: time,
   version: version.min(1), confirmedBy: user, confirmedAt: time, reason: z.string().max(500),
-  confirmationBasis: z.enum(['explicit', 'preauthorized_user_statement']).optional(),
+  confirmationBasis: z.enum(['explicit', 'preauthorized_user_statement', 'imported_source']).optional(),
+  importedFrom: importProvenanceSchema.optional(),
   createdViaShare: sharedWriteAttributionSchema.optional(), confirmedViaShare: sharedWriteAttributionSchema.optional() }).strict();
 export const firestoreProfileStorageSchema = z.object({ childId: uuid, version, data: profileDataSchema.nullable(),
   confirmedBy: user.nullable(), confirmedAt: time.nullable(), reason: z.string().max(500).nullable(),
+  confirmationBasis: z.enum(['explicit', 'imported_source']).optional(), importedFrom: importProvenanceSchema.optional(),
   confirmedViaShare: sharedWriteAttributionSchema.optional() }).strict();
 export const firestoreCareSchema = firestoreCareStorageSchema.transform(({ createdViaShare, confirmedViaShare, ...value }) => value);
 export const firestoreProfileSchema = firestoreProfileStorageSchema.transform(({ confirmedViaShare, ...value }) => value);
@@ -32,6 +38,10 @@ const pathPattern = /^\/api\/children\/([0-9a-f-]{36})\/(records|care(?:\/([0-9a
 type Binding = FirestoreAuthorityTransaction;
 type Prepared<T> = { value: T; changeSeq: string; commit(): void };
 export interface FirestoreCareStore extends CareStore {
+  prepareImportedRecord(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    target?: { id: string; expectedVersion: number }): Promise<Prepared<CareRecord>>;
+  prepareImportedProfile(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
+    expectedVersion: number): Promise<Prepared<ChildProfile>>;
   forSharedSpace(spaceId: string): FirestoreCareStore;
   mutation: FirestoreOnlineMutation;
   listRecords(userId: string, childId: string): Promise<{ records: CareRecord[]; limit: number }>;
@@ -61,14 +71,17 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
     if (Object.entries(data.tags(binding.scope)).some(([key, value]) => row.get(key) !== value)) domainReject('not_found', 404);
     if (kind === 'care-record' || kind === 'care-revision') {
       const value = data.open(kind, id, binding.scope, firestoreCareStorageSchema, row);
+      const confirmer = importConfirmationActor(value, 'care');
       if (!validSharedAttribution(value.createdViaShare, binding.scope, value.id, value.version, value.authorUserId, true)
-        || !validSharedAttribution(value.confirmedViaShare, binding.scope, value.id, value.version, value.confirmedBy)) domainReject('care_binding', 500);
+        || !confirmer || !validSharedAttribution(value.confirmedViaShare, binding.scope, value.id, value.version, confirmer)) domainReject('care_binding', 500);
       return domainParse(schema, value, 'care_binding', 500);
     }
     if (kind === 'child-profile' || kind === 'profile-revision') {
       const value = data.open(kind, id, binding.scope, firestoreProfileStorageSchema, row);
+      const confirmer = importConfirmationActor(value, 'profile');
+      if (value.confirmationBasis === 'imported_source' && !confirmer) domainReject('profile_binding', 500);
       if (value.confirmedBy === null ? value.confirmedViaShare !== undefined
-        : !validSharedAttribution(value.confirmedViaShare, binding.scope, value.childId, value.version, value.confirmedBy)) domainReject('profile_binding', 500);
+        : !validSharedAttribution(value.confirmedViaShare, binding.scope, value.childId, value.version, confirmer!)) domainReject('profile_binding', 500);
       return domainParse(schema, value, 'profile_binding', 500);
     }
     return data.open(kind, id, binding.scope, schema, row);
@@ -102,20 +115,23 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
   }
   async function prepareRecord(binding: Binding, operationId: string, raw: CareValues, input: {
     id?: string; expectedVersion?: number; reason?: string; basis?: 'explicit' | 'preauthorized_user_statement';
+    imported?: { record: CareRecord; provenance: ImportProvenance };
   } = {}): Promise<Prepared<CareRecord>> {
     requireModule(binding, 'care');
     const values = domainParse(careValuesSchema, raw), id = input.id ?? randomUUID(), current = input.id ? await readStoredRecord(binding, id) : null;
     if (input.id && !current) domainReject('not_found', 404);
     if (current && current.version !== input.expectedVersion) domainReject('version_conflict');
     if (!current && (await binding.transaction.get(recordRef(id))).exists) domainReject('record_conflict');
-    const basis = input.basis ?? 'explicit', now = new Date().toISOString();
+    const basis = input.imported ? 'imported_source' : input.basis ?? 'explicit', now = new Date().toISOString();
     const attribution = sharedWriteAttribution(binding, id, (current?.version ?? 0) + 1);
     const saved = domainParse(firestoreCareStorageSchema, { ...values, id, childId: binding.scope.childId,
       ...(current?.createdViaShare || !current && attribution ? { createdViaShare: current?.createdViaShare ?? attribution } : {}),
       ...(attribution ? { confirmedViaShare: attribution } : {}),
       authorUserId: current?.authorUserId ?? binding.actorUserId, createdAt: current?.createdAt ?? now,
-      version: (current?.version ?? 0) + 1, confirmedBy: binding.actorUserId, confirmedAt: now, confirmationBasis: basis,
-      reason: input.reason ?? (basis === 'explicit' ? '首次確認' : '依本人預先授權，由 Agent 整理保存的使用者陳述；未逐項確認為事實') });
+      version: (current?.version ?? 0) + 1, confirmedBy: input.imported?.record.confirmedBy ?? binding.actorUserId,
+      confirmedAt: input.imported?.record.confirmedAt ?? now, confirmationBasis: basis,
+      ...(input.imported || current?.importedFrom ? { importedFrom: input.imported?.provenance ?? current!.importedFrom } : {}),
+      reason: input.imported?.record.reason ?? input.reason ?? (basis === 'explicit' ? '首次確認' : '依本人預先授權，由 Agent 整理保存的使用者陳述；未逐項確認為事實') });
     const value = firestoreCareSchema.parse(saved);
     const revisionId = JSON.stringify([id, value.version]), ref = data.ref('care_revisions', 'care-revision', revisionId);
     if ((await binding.transaction.get(ref)).exists) domainReject('revision_conflict');
@@ -145,17 +161,21 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
     return { value: true, changeSeq: change.changeSeq, commit() { erase(); change.commit(); contextChange(); binding.transaction.set(recordRef(id), envelope); } };
   }
   async function prepareProfile(binding: Binding, raw: ChildProfile['data'], expectedVersion: number, reason: string | null,
-    operationId: string): Promise<Prepared<ChildProfile>> {
+    operationId: string, imported?: { profile: ChildProfile; provenance: ImportProvenance }): Promise<Prepared<ChildProfile>> {
     const current = await readProfile(binding);
     if (current.version !== expectedVersion) domainReject('version_conflict');
     const parsed = raw === null ? null : domainParse(profileDataSchema, raw);
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Hong_Kong', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
     if (parsed?.age.kind === 'birth_date' && parsed.age.date > today || parsed?.age.kind === 'approximate' && parsed.age.asOf > today)
       domainReject('invalid_age_date', 400);
-    const attribution = parsed ? sharedWriteAttribution(binding, binding.scope.childId, expectedVersion + 1) : undefined;
+    const attribution = parsed && (!imported || imported.profile.confirmedBy !== null)
+      ? sharedWriteAttribution(binding, binding.scope.childId, expectedVersion + 1) : undefined;
     const saved = domainParse(firestoreProfileStorageSchema, { childId: binding.scope.childId, version: expectedVersion + 1,
       ...(attribution ? { confirmedViaShare: attribution } : {}),
-      data: parsed, confirmedBy: parsed ? binding.actorUserId : null, confirmedAt: parsed ? new Date().toISOString() : null, reason });
+      data: parsed, confirmedBy: parsed ? imported ? imported.profile.confirmedBy : binding.actorUserId : null,
+      confirmedAt: parsed ? imported ? imported.profile.confirmedAt : new Date().toISOString() : null,
+      ...(imported || current.importedFrom ? { importedFrom: imported?.provenance ?? current.importedFrom,
+        confirmationBasis: imported ? 'imported_source' : 'explicit' } : {}), reason });
     const value = firestoreProfileSchema.parse(saved);
     const id = binding.scope.childId, ref = data.ref('child_profiles', 'child-profile', id), row = await binding.transaction.get(ref);
     const floor = parsed === null ? value.version : row.get('historyFloor') ?? 1;
@@ -238,6 +258,21 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
       return direct(userId, childId, fn);
     };
   const store: FirestoreCareStore = {
+    async prepareImportedRecord(binding, operationId, row, integrity, target) {
+      if (row.section !== 'care' || !await binding.readChild(binding.scope.childId)) domainReject('invalid_import_target', 400);
+      const record = domainParse(firestoreCareSchema, row.value, 'invalid_package_data');
+      const provenance = makeImportProvenance(row, integrity, binding.actorUserId, new Date().toISOString());
+      return prepareRecord(binding, operationId, { text: record.text, details: record.details, source: record.source },
+        { ...target, imported: { record, provenance } });
+    },
+    async prepareImportedProfile(binding, operationId, row, integrity, expectedVersion) {
+      if (row.section !== 'profile' || !await binding.readChild(binding.scope.childId)) domainReject('invalid_import_target', 400);
+      const profile = domainParse(firestoreProfileSchema, row.value, 'invalid_package_data');
+      // An absent profile in an export is coverage, not an instruction to erase a destination profile.
+      if (profile.data === null) domainReject('empty_import_profile', 400);
+      const provenance = makeImportProvenance(row, integrity, binding.actorUserId, new Date().toISOString());
+      return prepareProfile(binding, profile.data, expectedVersion, profile.reason, operationId, { profile, provenance });
+    },
     forSharedSpace: view,
     prepareDeletion: prepareDelete,
     async listRecords(userId, childId) {

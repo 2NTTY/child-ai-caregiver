@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { importProvenanceSchema } from '../shared/import-provenance.ts';
 import type { OnlineReceipt } from "../shared/online.ts";
 import type { SharedSelection } from '../shared/sharing.ts';
 import { taskDueAtSchema, taskTimeZoneSchema, taskValuesSchema, type CareTask, type TaskChange, type TaskCreate, type TaskHistory, type TaskPage } from "../shared/tasks.ts";
@@ -32,6 +33,7 @@ export interface TaskApi {
 const version = z.number().int().positive().max(2147483647);
 const dateTime = z.iso.datetime({ offset: true });
 const taskSchema = taskValuesSchema.omit({ dueAt: true, timeZone: true }).extend({
+  importedFrom: importProvenanceSchema.optional(),
   id: z.uuid(), childId: z.uuid(), version, createdBy: z.string().min(1).max(128), createdAt: dateTime, updatedAt: dateTime,
   occurrence: z.object({ id: z.uuid(), dueAt: taskDueAtSchema, timeZone: taskTimeZoneSchema,
     state: z.enum(["scheduled", "completed", "cancelled", "needs_review"]), terminalBasisVersion: version.nullable() }),

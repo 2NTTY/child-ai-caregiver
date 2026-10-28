@@ -8,6 +8,7 @@ import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-wor
 import { canonicalJson } from './online-routing.ts';
 import { taskValuesSchema, taskDueAtSchema, taskTimeZoneSchema, type CareTask, type TaskRevision } from '../src/shared/tasks.ts';
 import { sharedWriteAttributionSchema, classTaskAssignmentSchema } from './shared-write-attribution.ts';
+import { importProvenanceSchema } from '../src/shared/import-provenance.ts';
 
 const FORMAT = 'yuban-firestore-domain', MAX_BYTES = 192 * 1024;
 const decimal = z.string().regex(/^(0|[1-9][0-9]{0,18})$/u).refine(value => BigInt(value) <= 9223372036854775807n);
@@ -18,6 +19,7 @@ export const firestoreChangeSchema = z.object({ changeSeq: decimal,
   kind: z.enum(['children', 'care', 'profile', 'chat', 'family', 'preferences', 'memory', 'tasks', 'growth', 'documents']),
   childId: z.uuid().nullable(), deleted: z.boolean() }).strict();
 export const firestoreTaskStorageSchema = z.object({
+  importedFrom: importProvenanceSchema.optional(),
   ...taskValuesSchema.omit({ dueAt: true, timeZone: true }).shape,
   id: z.uuid(), childId: z.uuid(), version, createdBy: bounded(256), createdAt: datetime, updatedAt: datetime,
   occurrence: z.object({ id: z.uuid(), dueAt: taskDueAtSchema, timeZone: taskTimeZoneSchema,
