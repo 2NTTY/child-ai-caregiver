@@ -7,7 +7,7 @@ import { sealRecoveryLocator, FirestoreRecoveryEnvelopeError, type FirestoreReco
 import { workRecoveryScopeSchema, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { canonicalJson } from './online-routing.ts';
 import { taskValuesSchema, taskDueAtSchema, taskTimeZoneSchema, type CareTask, type TaskRevision } from '../src/shared/tasks.ts';
-import { sharedWriteAttributionSchema } from './shared-write-attribution.ts';
+import { sharedWriteAttributionSchema, classTaskAssignmentSchema } from './shared-write-attribution.ts';
 
 const FORMAT = 'yuban-firestore-domain', MAX_BYTES = 192 * 1024;
 const decimal = z.string().regex(/^(0|[1-9][0-9]{0,18})$/u).refine(value => BigInt(value) <= 9223372036854775807n);
@@ -23,8 +23,9 @@ export const firestoreTaskStorageSchema = z.object({
   occurrence: z.object({ id: z.uuid(), dueAt: taskDueAtSchema, timeZone: taskTimeZoneSchema,
     state: z.enum(['scheduled', 'completed', 'cancelled', 'needs_review']), terminalBasisVersion: version.nullable() }).strict(),
   createdViaShare: sharedWriteAttributionSchema.optional(),
+  classAssignment: classTaskAssignmentSchema.optional(),
 }).strict();
-export const firestoreTaskSchema: z.ZodType<CareTask> = firestoreTaskStorageSchema.transform(({ createdViaShare: _proof, ...task }) => task);
+export const firestoreTaskSchema: z.ZodType<CareTask> = firestoreTaskStorageSchema.transform(({ createdViaShare: _proof, classAssignment: _assignment, ...task }) => task);
 export const firestoreTaskRevisionStorageSchema = z.object({ task: firestoreTaskStorageSchema,
   action: z.enum(['create', 'reschedule', 'complete', 'cancel', 'resolve']), actorUserId: bounded(256),
   basisVersion: z.number().int().nonnegative().max(2147483647), note: z.string().max(1000), at: datetime,

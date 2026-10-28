@@ -847,6 +847,8 @@ FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新�
 
 **班級刪除生命週期：**沿既有 `_erasures` 保存 `class-delete`，scope 綁定 `space:<classId>`、同一 workspace 與當前儲存世代，`childId=NIL`、`assetId=classId`；工作 ID 由操作者及原操作 ID 確定。授權交易同時關閉空間／workspace、保存 `erasureOperationId`、原收據與 requested 工作，沒有在交易內呼叫 Storage。既有 maintenance 先完成獨立日誌 write-once／readback，再按原分頁清理領域資料及附件；失敗保留原進度。孩子／workspace 保留不含正文的 deleted 屏障；共享收據清除結果但保留原身份、指紋及效果，登入／個人會話不是班級資料。完成後只留班級 tombstone，原收據提供 pending／completed。還原必須重放目前關閉狀態、同 ID 的已完成清理工作及獨立日誌；即使備份含舊 requested／cleaning 工作亦不倒退。未完成清理（包括尚等日誌）不能繞過義務開放還原資料。本段只有合成服務／還原證據，未宣稱真雲端災備通過。
 
+**班級待辦指派：**任務／修訂仍以班級 scope 加密，新增內部 `classAssignment` 保存真 `userId`、班級、有效 `membershipId` 及其獨立班級／教師空間 `membershipScopeId`。建立／改期從 Server 的當前共享 binding 產生，客戶端不能提交或覆寫。終態操作保留原指派；公開 task view 不含該證據。worker 先從任務定位本人，交易內再核同一版本、scope、租約與目前成員證據；只讀定位不構成授權。班級 batch 以負責人識別 hash 加原日／事項 key 去重，保存在班級 scope，與本人通知偏好分開；還原逐項及關聯檢查核原修訂的負責人，不把儲存身份當收件人。沒有增加另一套提醒佇列或帳號。
+
 成員保留 membership ID／版本，分享綁來源成員世代；撤回、離開、移除、轉交及邀請變更均有版本和原操作。帳戶／孩子刪除清除相關成員或原件分享引用，不刪已轉交的空間控制資料。備份集合清單以 append-only 加入上述五項；恢復使用目前共享權限，更新來源 epoch，刪除日誌同樣處理共享引用，authority hash 包含共享控制資料。備份之後加入的現任管理員／活動成員只補必要身份／准入圖，仍核目前 Auth，不因此帶入私人業務內容或 session。這是合成恢復接點，正式新資料的完整配對恢復仍屬 S15／P4 門檻。
 
 | 資料責任 | 必要關聯／生命週期 |

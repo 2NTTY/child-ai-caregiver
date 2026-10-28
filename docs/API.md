@@ -1161,6 +1161,10 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 **CLASS01 解散接線（已實作及合成核對，未部署）：**班級沿既有 `dissolve` 指令及確認，附屬班級另帶 `expectedTeacherVersion`，核目前有效管理員及兩邊版本。交易關閉班級及其 workspace，保存原操作與持久清理請求；回 `exit.cleanupState=pending`，不能解讀為實體資料已全部刪除。既有背景工作先寫入並核實獨立 `class-delete` 日誌，再分頁清理班級資料、修訂及附件；原 `GET operations/:operationId` 回目前 `pending／completed`。清理不刪個人登入／裝置會話或別人的私人原件；已刪班級的舊收據只留身份與效果，不能重做或讀回正文。家庭／教師空間原回應不增加清理欄位。未設清理服務的組裝仍拒絕班級解散，不能假成功。
 
+**班級待辦背景身份（接線中，未部署）：**沿既有 `assigneeUserId` 及共用待辦表單；目前單人指派入口在班級回傳操作者「本人」，不把 `space:<classId>` 當負責人。建立／改期核目前可寫成員；他人仍可按班級權限完成／取消同一事項，這不改變負責人。worker 由已保存任務取得真帳號，領取／完成／派送前沿同一共享服務重核目前成員與指派關係；退出後重新加入不復活舊指派授權。偏好使用負責人的目前安靜時段。原生成員證據不進公開 DTO；既有個人／家庭契約不變。
+
+本段只交付確定性到期核對、提醒及待投遞意圖，沒有以提醒收據宣稱渠道接受；班級 Agent、外部投遞與其他成員選擇仍須接續，相關 D 接口未接前不建立注定以虛構帳號失敗的 Agent 工作，也不借管理員 key。舊班級待辦若仍以儲存身份作負責人，保留可讀，須經正常改期明確指定目前本人才能執行，不自動搬移授權。
+
 以上讀寫均核已登入身份及 `x-expected-user-id`，寫入沿既有 Web 同源／原生 transport；回應前再核身份並 `no-store`。家庭管理不依賴已選孩子，退出頁面不丟失同一身份的未知操作；切身份後清理本機草稿、token 與遲到結果。共享原件選擇不自動切換私人聊天或擴大目前頁面的資料範圍。
 
 記錄／概況已接原 API 的 `spaceId` 讀取及 online command 的可選 `sharing: {spaceId, expectedBasis?}` 寫入。context 回傳操作者自己的 workspace／epoch 及目前 `sharingBasis`；共用 transport 保存該 basis，再與原 `opId`／指紋提交，重試不重新取 basis。Server 從路由決定所需模組，不接受客戶端指定擁有人或任意權限。其他尚未接共享的路由明確拒絕，不默默改成本人操作。`createCareApi` 的可選空間參數供後續同一 owner 選取，未新增另一組畫面／副本。

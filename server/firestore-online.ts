@@ -154,7 +154,7 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
 
   async function prepareTask(binding: FirestoreAuthorityTransaction, childId: string, oldId: string | undefined, raw: unknown, operationId: string) {
     domainParse(uuid, operationId); if (oldId) domainParse(uuid, oldId);
-    const userId = binding.scope.ownerUserId, actorUserId = binding.actorUserId,
+    const userId = binding.sharedAccess?.classMember?.userId ?? binding.scope.ownerUserId, actorUserId = binding.actorUserId,
       candidateId = randomUUID(), occurrenceId = randomUUID(), at = new Date().toISOString();
     domainParse(uuid, childId); await requireChild(binding, childId);
     const scope = scopeFor(binding, childId);
@@ -203,7 +203,10 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
     const invalidateDocuments = await prepareContextChange(data, binding);
     const createdViaShare = old ? old.createdViaShare : sharedWriteAttribution(binding, task.id, 1);
     const changedViaShare = sharedWriteAttribution(binding, task.id, task.version);
-    const storedTask = firestoreTaskStorageSchema.parse({ ...task, ...(createdViaShare ? { createdViaShare } : {}) });
+    const classAssignment = !old || 'action' in input && input.action === 'reschedule'
+      ? binding.sharedAccess?.classMember : old.classAssignment;
+    const storedTask = firestoreTaskStorageSchema.parse({ ...task, ...(createdViaShare ? { createdViaShare } : {}),
+      ...(classAssignment ? { classAssignment } : {}) });
     const storedRevision = { ...revision, task: storedTask, ...(changedViaShare ? { changedViaShare } : {}) };
     const taskEnvelope = { ...data.tags(scope), taskId: task.id, ...data.seal('task', task.id, scope, firestoreTaskStorageSchema, storedTask, task.version) };
     const revisionEnvelope = { ...data.tags(scope), taskId: task.id, taskVersion: task.version,
@@ -237,7 +240,8 @@ export function createFirestoreOnlineStore(options: FirestoreOnlineOptions): Fir
           const task = await readTask(binding, binding.scope, id);
           if (!task) domainReject('projection_binding', 500); items.push(firestoreTaskSchema.parse(task));
         }
-        return { items, eligibleAssignees: [{ userId: binding.scope.ownerUserId, name: binding.actorUserId === binding.scope.ownerUserId ? '本人' : '資料擁有人' }], nextAfterId: rows.docs.length > 50 ? items.at(-1)!.id : null,
+        const assignee = binding.sharedAccess?.classMember?.userId ?? binding.scope.ownerUserId;
+        return { items, eligibleAssignees: [{ userId: assignee, name: binding.actorUserId === assignee ? '本人' : '資料擁有人' }], nextAfterId: rows.docs.length > 50 ? items.at(-1)!.id : null,
           ...await reminderView(binding, items.map(item => item.id)) };
       });
     },
