@@ -53,6 +53,6 @@ function NativeDashboardTabs() {
     <Tabs.Screen name="tasks" options={{ title: navigationItems.tasks.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.tasks.icon} color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="growth" options={{ title: navigationItems.growth.short, tabBarIcon: ({ color }) => <AppIcon name={navigationItems.growth.icon} color={color} size={mobileIcons.navigation} /> }} />
     <Tabs.Screen name="care" options={{ title: navigationItems.care.short, tabBarButton: () => <RecordsNavButton active={pathname === navigationItems.care.href || pathname === navigationItems.more.href || pathname === navigationItems.photos.href || pathname === navigationItems.history.href} scopeKey={scopeKey} /> }} />
-    {["more", "history", "memory", "photos", "sources", "summary", "contact", "profile", "family", "settings", "guide", "share"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
+    {["more", "history", "memory", "photos", "sources", "summary", "contact", "profile", "family", "classes", "settings", "guide", "share"].map(name => <Tabs.Screen key={name} name={name} options={{ href: null }} />)}
   </Tabs>;
 }
