@@ -1,0 +1,35 @@
+{
+  "package": "P4-HANDOVER01 archive and authorized export foundation",
+  "date": "2026-10-28",
+  "baseCommit": "0d5f5b073e1a536e73eaf316a6495d07e23c2f18",
+  "branch": "codex/p4-handover-package",
+  "status": "implemented foundation; not exposed as a product import/export feature",
+  "runtime": "Node 24.19.0; TypeScript 6.0.3; local serial Firestore fixture",
+  "dependencies": { "yazl": "3.3.1", "yauzl": "3.4.0", "@types/yazl": "3.3.1", "@types/yauzl": "3.4.0" },
+  "checks": [
+    { "scope": "Archive round trip, trusted/untrusted/absent proof, changed data and signature, unlisted entry, bounded failure cleanup", "result": "1/1 passed", "log": "tmp/handover-final.log" },
+    { "scope": "Real authorized account exporter, 11 care records across pages, selected child, other-account refusal and changed source", "result": "1/1 passed", "log": "tmp/handover-final.log" },
+    { "scope": "Producer buffer release, suspended source cancellation, real avatar cross-page/final head mutation", "result": "2/2 passed after review fixes and bounded deadline wiring", "log": "tmp/handover-bounds-final.log" },
+    { "scope": "Five changed source/test roots and dependency graph", "result": "0 TypeScript diagnostics", "log": "tmp/handover-types-final.log" },
+    { "scope": "Independent read-only review", "result": "Three Important findings fixed and re-reviewed closed; no tests repeated by reviewer" }
+  ],
+  "preservedFailures": [
+    "Initial new-entry tests failed before implementation because the feature modules were absent.",
+    "Standard ZIP directory entries first caused the malformed-container classification; exact empty data/attachments directories are now accepted without allowing arbitrary paths.",
+    "Review regression reproduced zlib observing a producer-zeroed buffer and avatar changes escaping account changeSeq.",
+    "The first review-fix batch passed three scenarios but avatar validation used omit on a refined Zod schema; retained full original schema validation, then the targeted avatar scenario passed."
+  ],
+  "notVerifiedOrDelivered": [
+    "Public API, durable package jobs and shared Web/Android import/export screen",
+    "Class/shared export targets, period semantics and complete module presentation",
+    "Import ledger/mappings, domain writes, conflict handling, resumption and personal restore",
+    "Production signing key/trust configuration, cloud storage integration and deployment",
+    "Real Firestore concurrency, device interaction or full-size backups"
+  ],
+  "externalEffects": { "modelCalls": 0, "notifications": 0, "cloudDataChanges": 0, "deployments": 0 },
+  "notes": [
+    "Existing product exporter remains unchanged and authoritative; the new adapter does not read recovery envelopes directly.",
+    "No D Agent PR or frontend experiment branch was modified.",
+    "Failed and passed local logs are ignored artifacts, not public user data."
+  ]
+}

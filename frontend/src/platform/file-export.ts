@@ -1,3 +1,5 @@
+import { boundedPackageStream } from '../../../src/client/package-download';
+
 export function useFileExportAvailable(): boolean {
   return typeof document !== "undefined";
 }
@@ -11,6 +13,11 @@ export async function exportBlob(blob: Blob, filename: string, isCurrent: () => 
 }
 export async function exportText(text: string, filename: string, isCurrent: () => boolean = () => true): Promise<void> {
   await exportBlob(new Blob([text], { type: "application/json;charset=utf-8" }), filename, isCurrent);
+}
+
+export async function exportPackage(response: Response, filename: string, bytes: number, isCurrent: () => boolean): Promise<string> {
+  const blob = await new Response(boundedPackageStream(response, bytes, isCurrent), { headers: { 'Content-Type': 'application/zip' } }).blob();
+  return exportBlob(blob, filename, isCurrent);
 }
 
 export async function exportAttachment(bytes: Uint8Array<ArrayBuffer>, mimeType: string, filename: string, isCurrent: () => boolean) {

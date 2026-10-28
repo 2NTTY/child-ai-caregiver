@@ -2,6 +2,7 @@ import type { CarePage, CareRecord, CareRevision, CareSearch, CareValues, ChildP
 import type { OnlineReceipt } from "../shared/online.ts";
 import type { SharedSelection } from "../shared/sharing.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
+import { importProvenanceSchema } from '../shared/import-provenance.ts';
 
 export class CareApiError extends Error {
   readonly status: number;
@@ -38,10 +39,13 @@ const string = (value: unknown): value is string => typeof value === "string";
 const nullableString = (value: unknown): value is string | null => value === null || string(value);
 const age = (value: unknown): boolean => object(value) && (value.kind === "unknown" || (value.kind === "birth_date" && string(value.date)) || (value.kind === "approximate" && string(value.rawValue) && ["days", "weeks", "months", "years"].includes(String(value.unit)) && string(value.asOf)));
 const profileData = (value: unknown): value is ChildProfileData => object(value) && age(value.age) && nullableString(value.dueDate) && nullableString(value.gestationalWeeksRaw) && nullableString(value.region) && nullableString(value.language) && nullableString(value.allergies) && nullableString(value.specialNeeds) && nullableString(value.preferences) && string(value.source) && nullableString(value.validUntil);
-const profile = (value: unknown): value is ChildProfile => object(value) && string(value.childId) && version(value.version) && (value.data === null || profileData(value.data)) && nullableString(value.confirmedBy) && nullableString(value.confirmedAt) && nullableString(value.reason);
+const provenance = (value: Record<string, unknown>) => (value.importedFrom === undefined || importProvenanceSchema.safeParse(value.importedFrom).success)
+  && (value.confirmationBasis !== 'imported_source' || value.importedFrom !== undefined);
+const profile = (value: unknown): value is ChildProfile => object(value) && string(value.childId) && version(value.version) && (value.data === null || profileData(value.data)) && nullableString(value.confirmedBy) && nullableString(value.confirmedAt) && nullableString(value.reason)
+  && (value.confirmationBasis === undefined || value.confirmationBasis === 'explicit' || value.confirmationBasis === 'imported_source') && provenance(value);
 const details = (value: unknown): boolean => object(value) && ["note", "feeding", "sleep", "diaper", "temperature", "measurement", "appointment"].includes(String(value.kind)) && (value.quantity === null || (object(value.quantity) && string(value.quantity.rawValue) && string(value.quantity.unit) && ["exact", "approximate"].includes(String(value.quantity.precision)))) && object(value.eventTime) && string(value.eventTime.rawText) && nullableString(value.eventTime.at) && string(value.eventTime.timeZone) && ["exact", "approximate", "unknown"].includes(String(value.eventTime.precision));
 const revision = (value: unknown): value is CareRevision => object(value) && version(value.version) && string(value.text) && string(value.source) && details(value.details) && string(value.confirmedBy) && string(value.confirmedAt) && string(value.reason)
-  && (value.confirmationBasis === undefined || value.confirmationBasis === "explicit" || value.confirmationBasis === "preauthorized_user_statement");
+  && (value.confirmationBasis === undefined || value.confirmationBasis === "explicit" || value.confirmationBasis === "preauthorized_user_statement" || value.confirmationBasis === 'imported_source') && provenance(value);
 const record = (value: unknown): value is CareRecord => revision(value) && "id" in value && string(value.id) && "childId" in value && string(value.childId) && "authorUserId" in value && string(value.authorUserId) && "createdAt" in value && string(value.createdAt);
 function checked<T>(value: unknown, guard: (value: unknown) => value is T): T {
   if (!guard(value)) throw new CareApiError();

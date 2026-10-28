@@ -373,6 +373,15 @@ Web 的 ImagePicker 不提供原生裁切，採固定 react-easy-crop 6.2.4（MI
 
 Google 採已定方案的免費 [Original API](https://react-native-google-signin.github.io/docs/original)，不是付費 Universal：其 Android 底層 Legacy Google Sign-In 已棄用但文件仍列可用，這是原版限制，不假稱最新版底層 Credential Manager；後續棄用通知／真機相容須核。沿官方 [Expo plugin](https://react-native-google-signin.github.io/docs/setting-up/expo) 的明確 iOS URL scheme 模式，以 Web client ID 取得 token 後交 Firebase JS；不引入 RNFirebase 或改 Android 既有通知 descriptor。Apple 沿[原版](https://github.com/invertase/react-native-apple-authentication) 的 iOS entitlement、Android Services ID／HTTPS callback，SDK 自動 hash nonce；原 nonce 交 Firebase credential，不能重複 hash。套件接線／bundle 與原生簽署／真登入仍分開驗證。
 
+<a id="p4-handover-zip"></a>
+## P4-HANDOVER01：標準串流資料包（2026-10-28）
+
+固定 [yazl 3.3.1](https://github.com/thejoshwolfe/yazl)／[yauzl 3.4.0](https://github.com/thejoshwolfe/yauzl)，兩者 MIT，型別亦固定同版。沿 npm 11.8／Node 24.19 安裝，鎖檔新增五個 entries，未更換既有版本；保留原 JSZip 3.10.2 的 DOCX 等用途。`yazl.addReadStreamLazy` 逐項取材及輸出，`yauzl.openPromise`／`eachEntry`／`openReadStreamPromise` 以隨機存取檔案逐項驗證，不自行實作 ZIP 或一次把整包載入記憶體。
+
+SHA-256／Ed25519 沿 Node 標準 crypto；簽章金鑰及可信來源配置由正式服務提供，原檔沒有則明示缺可信證明，不臨時生產假可信簽章。來源取材復用既有 `createFirestoreAccountExport().page` 的權限、來源有效性及版本檢查；容器不接受 recovery envelope。套件的 entry-size 驗證仍保留，另核 manifest hash、明確路徑／重複及實際總量，不能只信 ZIP 標頭。
+
+目前只核容器 round-trip 與正式授權分頁 exporter 的本機連貫流程；公開 API、持久匯入、全模組／期間與共用畫面尚待接線，不能宣稱用戶備份／還原已交付。版本／integrity 以根 package-lock 為準，未執行安裝 scripts、模型或雲端操作。
+
 <a id="s12-sharing-reuse"></a>
 ## S12-W02：Android 分享接收（2026-10-27）
 

@@ -7,6 +7,8 @@
 <a id="chat-handoff"></a>
 ## 前端聊天接手入口
 
+**P4 資料包接點：**設定的 `AccountDataControls` → 共用 `HandoverControls` → 正式 `ProductionOwner.handoverOwner` → `src/client/handover-api.ts` → `/api/account/packages`。帳戶身份切換即清除資料及取消舊請求，離開頁面不取消已提交工作；未知提交先查原 ID。Web 下載有界 Blob，原生沿已裝 Expo FileSystem 串流寫私有暫存再系統分享，不在 JS 拼接整份包。現段只提供本人孩子／所選模組全期間匯出，完整範圍及未驗項沿根 PLAN，不以此入口取代尚未完成的匯入。
+
 先沿根 [STATUS](../STATUS.md) 分域：前端聊天讀 [frontend/PLAN#active](../frontend/PLAN.md#active)，正式整合讀 [根 PLAN#active](../PLAN.md#active)。本表只回答「正式功能接哪個 API／controller」，不是目前任務、開包授權或第二份驗收門檻。
 
 修改歸屬、Android UI 例外及正式 P3 邊界唯一見 [AGENTS#frontend-backend](../AGENTS.md#frontend-backend)。跨域整合按本次功能讀下表 → [前端專項交接](../frontend/HANDOFF.md#p2-coverage) → 必要 API／型別；固定核對 commit，不讀整份前端歷史。
