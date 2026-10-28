@@ -825,7 +825,15 @@ Claim 回應丟失時，只准尚未呼叫 Storage 的同一次 invocation 作�
 
 沿現有 Firestore store、固定資源 ID、版本、密文、來源、原操作／收據與索引分頁擴充，不建立 SQL 模擬層或第二權威。[REQ-P4-01～10](../SPEC.md#p4-p5-product) 管產品含義，PD-01～06 已由 [ADR-029](DECISIONS.md#adr-029) 確認；下表仍是完整目標，不能把首段資料服務當全部完成。
 
-FAMILY-A 首段新增 namespace 下 `shared_spaces`、`shared_memberships`、`resource_shares`、`shared_invitations`、`shared_operations`。前四者是加密的共享控制資料，不含孩子正文，以穩定系統 routing scope 保存；空間自己的儲存身份為 `space:<spaceId>`／同一 workspace ID，與現任管理員分開，班級業務寫入仍待後包接通。分享只指向原資料 scope 及選定模組，不移動、複製或重新加密原資料；操作收據仍綁操作者個人 scope。
+FAMILY-A 首段新增 namespace 下 `shared_spaces`、`shared_memberships`、`resource_shares`、`shared_invitations`、`shared_operations`。前四者是加密的共享控制資料，不含孩子正文，以穩定系統 routing scope 保存；空間自己的儲存身份為 `space:<spaceId>`／同一 workspace ID，與現任管理員分開。分享個人資料仍只指向原資料 scope 及選定模組，不移動、複製或重新加密原資料；操作收據仍綁操作者個人 scope。
+
+**CLASS01 儲存契約（接線中）：**獨立班級復用上述控制資料，`shared-space.kind=class`；它有自己的 canonical workspace、孩子及領域資料，以 `space:<classId>` 作儲存身份，不建立虛構 Firebase 帳號、邀請或個人設定。讀寫先核真正操作者的帳號及目前班級角色，再取得班級 workspace；管理員轉交、退出或刪帳不改原資源 ID／密文 scope。名冊項指向班級自己的孩子，不能把個人孩子的共享關係當作班級名冊或偷偷搬移個人資料。班級建立／名冊新增及原操作收據須原子保存；同一操作者的 `opId` 仍由個人收據追蹤，班級內部 effect ID 按操作者命名空間防碰撞。
+
+名冊讀取復用 `resource-share` 的班級範圍及現有索引；姓名從原孩子密文解讀，不另存可修改的副本或明文搜尋欄位。每頁有界，搜尋條件加入加密游標的綁定，依目前角色及原孩子狀態續讀。新增名冊的控制收據以 `addClassChild` 投影原孩子 ID；只有目前仍可讀到該孩子才披露，不能從舊收據重建已缺失的資料。
+
+班級的 `teacherSpaceId` 只可指向一層 `teachers` 控制資料；附屬期間以父空間當前成員、角色及管理員為準，不複製 ACL。加入與移出更新班級的 `directMembershipGeneration`；直接成員的 `spaceGeneration` 不符便不再有效，舊邀請亦不隨移出復活。待移出指定成員、父空間管理世代及目標 membership ID 一起保存；接收時再核身份、兩邊版本及成員資格。班級父空間版本加入授權 basis／列表游標，父空間轉交或撤權立即生效。
+
+班級的管理查詢 metadata 在附屬期間指向穩定的父空間身份；原建立者不再因這個班級被阻擋刪帳。新增 `teacherSpaceId／active／entryId` 有界列表索引，正式啟用前須建立。還原時分別驗證個人 workspace 的帳號鏈與班級／父空間控制鏈，禁止用「有 workspace」代替資料歸屬檢查；重放目前管理權、成員世代、撤權及解散狀態，重新綁定儲存世代。刪除原管理員只清其私人資料及成員身份，不清已轉交班級。班級背景工作及完整班級交付仍未完成；解散清理見下段，未部署。
 
 FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新增成員／孩子副本。選擇只在共用 owner 保存導航及授權投影，不另建可修改孩子資料；共享 basis 改變清舊快取。成長、關注及文件共用同一 authority digest，綁來源 epoch／授權及共享 basis，不改本人版本格式。新成員密文保存由准入身份提供的 `label`（目前為已驗證電郵），舊記錄缺值時顯示原 UID，不猜姓名；不在可查詢 metadata 加電郵。本人空間依 memberTag／active／spaceId，空間成員、分享及邀請依 spaceId／active／entryId 有界分頁；新增四項複合索引定義，部署前另建立。游標以本人 scope 加密，子列表保存空間版本；被撤權的來源成員及已刪原件不再出現在分享列表。原 `shared_operations` 提供公開控制收據投影，不公開內部 storageIdentity／managerGeneration 或完整來源 scope。
 
@@ -836,6 +844,8 @@ FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新�
 待辦沿 `tasks`／`task_revisions`，非 owner 的建立／修訂分別保存 `createdViaShare`／`changedViaShare`，公開任務與歷史 DTO 移除內部證據。建立證據保留原作者及第一版，修訂證據綁當版操作者；未附證據的舊資料仍要求 owner 署名。提醒 outbox 保留原 scope、接收者、版本及世代，沒有把共享操作者的身份當付款或渠道授權。共享收據以 `shared-task-result:1` 指向原版本修訂，重新核權後讀取，不能將後來完成狀態當原建立結果。
 
 共享領域收據沿原 `online_operations` 儲存在操作者範圍，結果保存 `shared-domain-receipt:1` 指標，不另存來源正文。查回及原操作重試重新核對目前共享與來源存活；撤權、解散或刪除時返回原成功收據及空結果，不重做效果。來源領域變更與操作者的共享變更同交易提交；其他成員的主動變更同步仍待後段接通，不能以此宣稱整個共享體驗已交付。
+
+**班級刪除生命週期：**沿既有 `_erasures` 保存 `class-delete`，scope 綁定 `space:<classId>`、同一 workspace 與當前儲存世代，`childId=NIL`、`assetId=classId`；工作 ID 由操作者及原操作 ID 確定。授權交易同時關閉空間／workspace、保存 `erasureOperationId`、原收據與 requested 工作，沒有在交易內呼叫 Storage。既有 maintenance 先完成獨立日誌 write-once／readback，再按原分頁清理領域資料及附件；失敗保留原進度。孩子／workspace 保留不含正文的 deleted 屏障；共享收據清除結果但保留原身份、指紋及效果，登入／個人會話不是班級資料。完成後只留班級 tombstone，原收據提供 pending／completed。還原必須重放目前關閉狀態、同 ID 的已完成清理工作及獨立日誌；即使備份含舊 requested／cleaning 工作亦不倒退。未完成清理（包括尚等日誌）不能繞過義務開放還原資料。本段只有合成服務／還原證據，未宣稱真雲端災備通過。
 
 成員保留 membership ID／版本，分享綁來源成員世代；撤回、離開、移除、轉交及邀請變更均有版本和原操作。帳戶／孩子刪除清除相關成員或原件分享引用，不刪已轉交的空間控制資料。備份集合清單以 append-only 加入上述五項；恢復使用目前共享權限，更新來源 epoch，刪除日誌同樣處理共享引用，authority hash 包含共享控制資料。備份之後加入的現任管理員／活動成員只補必要身份／准入圖，仍核目前 Auth，不因此帶入私人業務內容或 session。這是合成恢復接點，正式新資料的完整配對恢復仍屬 S15／P4 門檻。
 

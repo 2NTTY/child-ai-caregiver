@@ -6,7 +6,7 @@ import { AdminEntry } from '../production/AdminEntry';
 import { EmptyListCard } from "../components/EmptyListCard";
 import { useContainerWidth } from "../components/useContainerWidth";
 import { useEffect, useId, useState } from "react";
-import { useLocalSearchParams, usePathname } from "expo-router";
+import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { useProductionVisibleSettingsSection } from "../production/ProductionFirstScreenGate";
 import { usePreviewNavigation } from "../preview/PreviewNavigationGuard";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -28,7 +28,7 @@ import { chineseFont, colors, readingType, spacing, typeScale } from "../theme";
 type SettingsTab = "account" | "children" | "family" | "preferences" | "notifications" | "model" | "assistant" | "privacy";
 const tabs: { key: SettingsTab; label: string }[] = [
   { key: "account", label: "帳戶" }, { key: "children", label: "孩子" },
-  { key: "family", label: "家庭" }, { key: "preferences", label: "外觀" }, { key: "notifications", label: "通知" },
+  { key: "family", label: "家庭與班級" }, { key: "preferences", label: "外觀" }, { key: "notifications", label: "通知" },
   { key: "assistant", label: "助手" }, { key: "model", label: "模型" }, { key: "privacy", label: "私隱" },
 ];
 
@@ -39,6 +39,7 @@ function LabeledValue({ label, value }: { label: string; value: string }) {
 export default function SettingsPage() {
   const avatar = useProductionAvatar('self', true);
   const pathname = usePathname();
+  const router = useRouter();
   const leave = usePreviewNavigation();
   const containerLayout = useContainerWidth();
   const width = containerLayout.width;
@@ -85,8 +86,8 @@ export default function SettingsPage() {
       {model.children.length === 0 ? recordsState.childrenLoadedAt && !recordsState.childrenLoading && !recordsState.childrenError && online ? <EmptyListCard title="目前沒有孩子檔案" /> : <Text style={styles.body}>{recordsState.childrenLoading ? "正在讀取孩子列表…" : recordsState.childrenError ? "孩子列表未能讀取，請重新核對。" : "孩子列表尚未核對。"}</Text> : model.children.map(child => <Pressable key={child.id} accessibilityRole="button" accessibilityLabel={`查看${child.displayName}的檔案`} onPress={() => leave(() => { actions.selectChild(child.id); actions.open("profile"); })} style={({ pressed }) => [styles.listRow, pressed && styles.pressed]}><View style={styles.miniAvatar}><Text style={styles.avatarText}>{child.displayName.slice(0, 1)}</Text></View><View style={styles.identityText}><Text style={styles.identityName}>{child.displayName}</Text><Text style={styles.muted}>{child.ageLabel} · {child.profileConfirmed ? "已確認" : "待核對"}</Text></View><AppIcon name="arrow-right" size={18} /></Pressable>)}
 
     </SectionCard></AppTabPanel>
-    <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><Text style={styles.muted}>管理家庭成員及本人孩子模組的分享範圍。開啟家庭管理不會切換目前孩子。</Text>
-      <View style={styles.timeRow}><AppButton label="管理家庭" variant="secondary" onPress={() => actions.open("family")} /><AppButton label="聯絡" variant="quiet" onPress={() => actions.open("contact")} /></View>
+    <AppTabPanel tabsId={tabsId} tabKey="family" active={tab === "family"}><SectionCard><Text style={styles.muted}>管理家庭分享範圍、獨立班級的孩子名冊，或教師空間的成員及所屬班級。開啟管理不會切換目前孩子。</Text>
+      <View style={styles.timeRow}><AppButton label="管理家庭" variant="secondary" onPress={() => actions.open("family")} /><AppButton label="管理班級" variant="secondary" onPress={() => leave(() => router.push("/classes"), "workspace")} /><AppButton label="管理教師空間" variant="secondary" onPress={() => leave(() => router.push("/teachers"), "workspace")} /><AppButton label="聯絡" variant="quiet" onPress={() => actions.open("contact")} /></View>
     </SectionCard></AppTabPanel>
     <AppTabPanel tabsId={tabsId} tabKey="preferences" active={tab === "preferences"} style={styles.sections}>
       <MotionSettings />

@@ -4120,3 +4120,45 @@
 - 主模型處理原收據恢復、清單投影及契約；兩個限定 Sol 分別接照片與媒體元件，另一位 Sol 獨立唯讀 review。review 發現 pending 鎖擋原刪除重試，定向 RED→GREEN；另核實受理收據不是日誌完成，查回後沿原 opId 接續端點，不假報刪除完成。
 - 新增及既有 client／HTTP 投影檢查通過；型別只剩四項既存診斷。額外三個舊檢查受 jsdom 缺失及舊 fixture 缺 owner 阻擋，不安裝新依賴或重跑整批；失敗照存。精確範圍見[證據](artifacts/verification/P4_SHARED_ATTACHMENT_PAGES_20261027.json)。
 - 沒有 Web 建置、部署、雲端、模型、通知或設備驗收；共享上載／Agent、AUTH01 與完整 P4 尚未完成。D PR、P3 未驗項及 P5 保留。
+
+<a id="log-20261028-p4-android-share-input"></a>
+### 2026-10-28：P4 Android 系統分享首包
+
+- 從 `fd5f432` 復用 Expo Sharing 原生接收、Router 與原草稿／媒體服務，補本機有界收件箱及個人孩子選擇；不自動上載、抓網址、送聊天或呼叫模型。暫停修改由恢復快照 `cf53081` 接回，沒有重做已核接點。
+- 獨立 review 三項重要問題已修：原附件離頁守衛、孩子切換後不可復原的接收世代、固定 SDK 的 TXT／文字串流解析。最後一項使用 `patch-package` 8.0.1 標準補丁及原 license，沿安裝與 Docker／EAS 輸入，不另造 native module。
+- 三項回歸先紅後綠；原定向證據復用，本機 Android JS 匯出通過。前端四項原型別診斷保持，Kotlin／新 APK／外部 App chooser 與 URI grant 尚未實機核對；精確命令與工具失敗見[證據](artifacts/verification/P4_ANDROID_SHARE_INPUT_20261028.json)。
+- 零模型／通知／部署／付費資源，沒有改 D PR。新 intent filter 必須新 binary，不能以 OTA 冒充啟用；iOS extension、HANDOVER01 統一匯入及其他 P4 仍待完成。
+
+<a id="log-20261028-p4-class-storage"></a>
+### 2026-10-28：P4 班級穩定儲存前置
+
+- 基於 #354／`cb3778f`，復用 shared-space、canonical workspace、孩子及原領域服務；班級儲存身份與目前老師分開，不建立 Firebase 假帳號，不複製私人資料。班級建立／孩子／收據在原交易提交，維持真實操作者及其防重身份。
+- 定向核對記錄保存、重試、管理權轉交、原管理員刪帳屏障後讀回及合成還原。最初未支援 class 的 RED、嚴格 input adapter 與新測試 fixture 的修正均保留，不當作首次全過。
+- 獨立 review 發現班級資產刪除 journal 錯查個人帳號、還原後原收據可回不存在孩子兩項 Important；主模型修正，兩條回歸先紅後綠，review 覆核關閉。受影響型別及一條原家庭還原相容檢查通過，詳見[證據](artifacts/verification/P4_CLASS_STORAGE_20261028.json)。
+- 尚未向 HTTP／畫面開放建立班級，未部署；班級背景／通知、解散實際清理、教師空間加入／移出及名冊產品接線仍待後段。零模型／通知／新雲端資源；不是整個 CLASS01 或 P4 已完成，未改 D PR。
+
+<a id="log-20261028-p4-class-control"></a>
+### 2026-10-28：P4 班級名冊與共用管理入口
+
+- 基於 #355／`5536d99`，復用共享控制 API／交易、原孩子服務及 Web／Android 共用 controller／畫面；新增獨立班級建立、孩子名冊、搜尋與續頁，不建立私人姓名索引或新的權威副本。原家庭列表保持相容。
+- 同一批 50 名合成孩子經正式 HTTP／client 核對保存、防重、相同姓名不合併、版本、角色、搜尋游標及撤權；新 controller 核 unknown／原操作、跨種類邀請及身份清理。受影響家庭服務與 controller 相容各核一次，沒有重跑儲存／還原舊證據。
+- 獨立 review 發現空列表仍有續頁時誤報未加入，已改為提示繼續載入。Server／client 受影響型別零診斷；前端圖保留兩項 HEAD 已有診斷，不宣稱整倉型別通過。最終 Web 匯出成功，初次 npm cache 入口失敗及 controller strip-only 修正保留於[證據](artifacts/verification/P4_CLASS_CONTROL_20261028.json)。
+- 無部署、雲端、模型、通知或設備驗收。教師空間加入／移出、班級背景及實體解散清理留後續；班級解散暫明確拒絕，畫面不提供假成功入口。未改 D PR，不把本段當完整 CLASS01／P4 交付。
+
+<a id="log-20261028-p4-class-teachers"></a>
+### 2026-10-28：P4 教師空間與班級關係
+
+- 基於 #356／`48c1a6e`，班級加入／移出只修改控制關係；目前父角色與管理員在交易內解析，沒有搬移或複製孩子。新成員世代與原操作收據保留，舊直接成員／邀請不因移出而復活。共用 `/teachers`、班級名冊、指定負責人接收及原操作查回已接線。
+- 一條合成 API／store 流程核加入、角色更改、轉交、移出與還原；原建立者刪除不抹掉已交出班級。新增 metadata 首次被 restore codec 拒絕，已補格式；新增 erasure fixture 的清理證據／NIL 身份錯誤已按原契約修正，不放寬正式檢查。
+- 獨立 review 的教師空間可誤納私人家庭分享已修；舊收據混合歷史父關係與目前角色亦按實際錯誤控制風險升級修正。兩條回歸先紅後綠，原始效果仍保存在不可變收據，公開管理 view 改讀同一目前狀態。
+- 最終後端流程 3/3、必要家庭相容 1/1；前端 controller 3/3，新增 teachers 路由例外後定向 1/1。受影響 Server／client 型別零診斷；前端保留兩項已知診斷，Web 匯出成功。詳見[本包證據](artifacts/verification/P4_CLASS_TEACHERS_20261028.json)。
+- 未部署／建立索引，零真模型／通知／設備驗收；不把合成還原當真 Firestore 競爭或災備實測。班級背景、解散實體清理及完整 CLASS01／P4 門檻仍待接續，D PR 未改。
+
+<a id="log-20261028-p4-class-erasure"></a>
+### 2026-10-28：P4 班級解散與可接續清理
+
+- 基於 #357／`8702125`，復用 scope-erasure 日誌／maintenance／分頁 consumer；班級管理員確認後原子關閉班級及 workspace，永久清理前核實獨立日誌。附屬班級同時核父版本／目前管理員，原操作保存 pending／completed；成員私人原件及登入身份不刪。
+- 原共享收據清除正文但保留身份與指紋；孩子／workspace 留 deleted 屏障，附件沿原物件身份清理。共用 Web／Android 畫面保留清理進度與原操作查回，沒有另建輪詢或資料副本。
+- 單條合成流程經真控制 API／client、清理服務及恢復程式，涵蓋角色／版本、原操作、日誌回應遺失、實際文件附件 consumer、隔離與兩種舊備份；最終 1/1。原個人孩子／帳戶刪除相容 1/1；舊測試 100 次 stage 上限已落後未改動的 113 個集合，改由 registry 推導有界上限，完成／隔離斷言不變。
+- 獨立 review 找到中途備份會把 completed 倒退 requested，已補紅綠回歸並重放目前同 ID 工作；另補還原後原收據所需工作及媒體 class-delete 接點。型別發現的 erasures 同名 port 衝突改成獨立 classErasure 注入。完整失敗保留於[證據](artifacts/verification/P4_CLASS_ERASURE_20261028.json)。
+- 前端定向 controller 1/1；受影響後端及共用畫面型別圖均 0 診斷，diff check 通過。未改原生套件／路由，沒有重跑 Web 匯出、手機、全量或已驗模型；零雲端修改／通知／部署。班級背景授權與其餘 P4 門檻接續，D PR 保留。

@@ -95,7 +95,7 @@ export function createFirestoreAvatarCleanup(options: FirestoreDomainOptions & {
   return {
     process,
     async eraseForScope(binding: AvatarBinding, assetId: string, intent: FirebaseErasureIntent, proof: FirebaseErasureDescriptor): Promise<boolean> {
-      if (!['account-delete', 'child-delete', 'avatar-delete'].includes(intent.type)
+      if (!['account-delete', 'child-delete', 'class-delete', 'avatar-delete'].includes(intent.type)
         || proof.intentSha256 !== firebaseErasureIntentHash(intent) || !same(await options.journal.read(intent, proof), intent)) domainReject('avatar_integrity_failed', 503);
       const evidence = await options.database.runTransaction(tx => store.cleanup({ transaction: tx }, binding, assetId));
       if (!evidence) domainReject('avatar_integrity_failed', 503);
