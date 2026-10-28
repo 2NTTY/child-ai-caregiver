@@ -4302,3 +4302,10 @@
 接回暫停前成果，保留外來來源、原確認者及本地匯入身份；一般新增不能偽造 imported 來源。事實／話題沿原交易、版本、修訂、唯一鍵與刪除服務，候選與終態不升格／復活。本人更正後改用本地確認，來源鏈保留。匯出改沿目前記憶讀取，避免來源失效後仍輸出 current。共用表單可保留或明確改選來源，外來 ID 不建本地連結。
 
 一條領域流程、原 client／UI 18 項及受影響型別圖通過；獨立 review 的終態／候選缺口已修正。初次保存的 undefined 序列化、review red 與型別失敗均保留於[證據](artifacts/verification/P4_HANDOVER_MEMORY_SOURCE_20261029.json)。這是完整記憶匯入的預備接點，私人交代／摘要／歷史、worker 與公開模組選擇仍待接；未部署，不聲稱 HANDOVER01 或 P4 完成，不重跑模型／雲端／設備及已驗功能。
+
+<a id="log-20261029-p4-handover-instructions"></a>
+### 2026-10-29 — P4-HANDOVER01 私人交代資料接點
+
+#378 已由 B 合併（6df6c4dc），接續私人交代。把原 notes／主題鍵讀寫抽成共用資料層，由原 Agent 與匯入預備方法復用；匯入不偽造訊息、run 或授權。原訊息身份留來源鏈，本地後續更正使用實際訊息並保留來源鏈。client／Server 復用同一 schema，共用列表區分本人及匯入交代。
+
+新領域流程與原 Agent 記憶生命週期通過，client／真列表兩項定向檢查通過，受影響型別圖通過。保留原 loader 與 nullable 測試失敗，沒有擴修聊天；獨立 review 無確定 P1／P2。[證據](artifacts/verification/P4_HANDOVER_INSTRUCTIONS_20261029.json)區分內部預備接點與尚未完成的公開 memory 匯入／共享目標／摘要／歷史。未部署，未重跑模型、雲端、設備或整套產品測試。

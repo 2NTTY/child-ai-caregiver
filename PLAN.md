@@ -56,7 +56,7 @@ Firestore 正式零 SQL、前端接線與既有修正已交付；STR01 及指定
 <a id="active"></a>
 ## 當前工作
 
-**當前入口（2026-10-29）：[P4-HANDOVER01](#p4-handover01) 記憶模組匯入。**基線 `a719915`（#377）；逐項結果及只處理所選衝突已合併未部署，見[證據](artifacts/verification/P4_HANDOVER_CONFLICT_RESULTS_20261029.json)。`codex/p4-handover-memory` 接原記憶服務：保留來源／原確認者、候選與終態，外來來源識別不能當成本地聊天／記錄 ID；沿原映射、版本、防重、刪除及歷史接點。私人交代與摘要須保存來源和覆蓋，不能偽造本地 Agent run／授權，也不把未接部分略過後宣稱整個 memory 模組成功。先完成來源契約及領域保存，再接統一匯入與共用結果畫面，只補受影響檢查。其他領域、正文差異、班級／期間、完整私人備份、簽章配置及原生大型包仍未完成；真機／雲端／部署另驗，不改 D PR。
+**當前入口（2026-10-29）：[P4-HANDOVER01](#p4-handover01) 私人交代／摘要與完整記憶匯入。**基線 `6df6c4dc`（#378）；事實／話題來源、原確認者及共用顯示已合併未部署，見[證據](artifacts/verification/P4_HANDOVER_MEMORY_SOURCE_20261029.json)。`codex/p4-handover-instructions` 先將私人交代的讀寫抽成原資料層共用接點：匯入保留外來來源，沒有本地 sourceMessageId，不偽造 Agent run 或保存授權；正常 Agent 更正仍沿現有授權。摘要保留原覆蓋及版本，不冒充本地活動摘要。接續原映射、歷史、版本、防重與刪除，再接統一匯入 worker／共用畫面；非空未接 section 維持明確拒絕，不略過後報全成功。其餘模組、正文差異、班級／期間、完整私人備份、簽章配置及原生大型包仍待完成；不改 D PR。
 
 **已合併未部署：**#358 班級解散與 #359 待辦身份接線，[清理](artifacts/verification/P4_CLASS_ERASURE_20261028.json)及[提醒證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)不重跑。選其他成員、班級 Agent 與外部通知仍待接續，不借管理員 key、不改 D PR。整個 CLASS01／P4、P3／P5 的未完成項不變。
 
