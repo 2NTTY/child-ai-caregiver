@@ -14,7 +14,7 @@ import { sealRecoveryLocator } from './firestore-recovery-envelope.ts';
 import { workRecoveryAad, workRecoveryDocumentId, workRecoverySchemas as schemas,
   workRecoveryScopeSchema, type WorkRecoveryKind, type WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
 import { prepareFirestoreBackgroundWork } from './firestore-background-work.ts';
-import { assertNoManagedSharedSpaces } from './firestore-sharing-records.ts';
+import { assertNoManagedSharedSpaces, SHARING_SCOPE, sharedSpaceSchema } from './firestore-sharing-records.ts';
 import type { SharedAccessBasis } from '../src/shared/sharing.ts';
 
 const FORMAT = 'yuban-work-recovery', MAX_BYTES = 192 * 1024;
@@ -210,6 +210,37 @@ export class FirestoreAuthority {
     const child = await this.canonicalChild(tx, scope);
     return { ...current, scope, child };
   }
+  /** Storage ownership is distinct from login identity. Caller access is checked by the sharing service. */
+  private async sourceWorkspace(tx: Transaction, source: WorkRecoveryScope) {
+    if (!source.ownerUserId.startsWith('space:')) return this.account(tx, source.ownerUserId);
+    if (source.ownerUserId !== 'space:' + source.workspaceId) fail('binding', 403);
+    const snapshot = await tx.get(this.domain.ref('shared_spaces', 'shared-space', source.workspaceId));
+    const space = this.domain.open('shared-space', source.workspaceId, SHARING_SCOPE, sharedSpaceSchema, snapshot);
+    if (space.id !== source.workspaceId || space.kind !== 'class' || space.state !== 'active'
+      || space.storageIdentity.ownerUserId !== source.ownerUserId || space.storageIdentity.workspaceId !== source.workspaceId) fail('scope_changed');
+    const workspace = await this.read(tx, 'workspace', source.workspaceId, source, schemas.workspace);
+    if (workspace.ownerUserId !== source.ownerUserId || workspace.id !== source.workspaceId || workspace.status !== 'active') fail('scope_changed');
+    return { workspace, owner: {workspaceCreatedAt:space.createdAt} };
+  }
+  /** Prepared with the class control record; never creates an account, session or personal preferences. */
+  async prepareClassWorkspace(actor: FirestoreAuthorityTransaction, classId: string, storageEpoch: string) {
+    parse(uuid, classId); parse(uuid, storageEpoch);
+    if (actor.sharedAccess || actor.scope.childId !== NIL) fail('transaction_child_scope');
+    if ((await actor.transaction.get(this.ref('workspace', classId))).exists) fail('workspace_conflict');
+    const scope = ownerScope('space:' + classId, classId, storageEpoch);
+    const envelope = this.seal('workspace', classId, scope, schemas.workspace.parse({id:classId, ownerUserId:scope.ownerUserId,
+      storageEpoch, accessVersion:'1', childAccessVersion:'0', changeSeq:'0', status:'active'}));
+    return () => actor.transaction.create(this.ref('workspace', classId), envelope);
+  }
+  /** Called only after the class service checks current membership and expected class version. */
+  async prepareClassChild(actor: FirestoreAuthorityTransaction, classId: string, childId: string,
+    input: {operationId:string; displayName:string}): Promise<FirestoreAuthorityPreparedChild> {
+    parse(uuid,classId); parse(uuid,childId);
+    if (actor.sharedAccess || actor.scope.childId !== NIL) fail('transaction_child_scope');
+    const {workspace} = await this.sourceWorkspace(actor.transaction, ownerScope('space:'+classId,classId));
+    return this.prepareChild(actor.transaction, workspace, workspace.ownerUserId, childId,
+      {displayName:input.displayName, operationId:sharedSourceOperationId(actor.actorUserId,input.operationId)});
+  }
   private operationKey(scope: WorkRecoveryScope, operationId: string, child = true) {
     return JSON.stringify([scope.ownerUserId, child ? scope.childId : null, operationId]);
   }
@@ -236,7 +267,7 @@ export class FirestoreAuthority {
     const id = this.changeId(scope, operationId), ref = this.ref('change', id);
     if ((await tx.get(ref)).exists) fail('change_conflict');
     // Domain writes enqueue their event atomically; projections/background explanation changes do not wake themselves.
-    const control = scope.childId !== NIL && ['care', 'profile', 'memory', 'tasks', 'children', 'growth', 'documents'].includes(kind) && !(kind === 'children' && deleted)
+    const control = !scope.ownerUserId.startsWith('space:') && scope.childId !== NIL && ['care', 'profile', 'memory', 'tasks', 'children', 'growth', 'documents'].includes(kind) && !(kind === 'children' && deleted)
       ? await this.readControl(tx) : null;
     const wake = control ? await prepareFirestoreBackgroundWork(this.domain, tx, { kind: 'child-change', scope, resourceId: scope.childId,
       basis: kind + ':' + operationId, generation: control.generation, authorizationVersion: workspace.accessVersion }, new Date(this.now()).toISOString()) : null;
@@ -378,7 +409,7 @@ export class FirestoreAuthority {
   /** Internal domain port. The sharing store verifies the grant in this same actor transaction first. */
   async withSharedSource<T>(actor: FirestoreAuthorityTransaction, source: WorkRecoveryScope,
     access: NonNullable<FirestoreAuthorityTransaction['sharedAccess']>, operation: (binding: FirestoreAuthorityTransaction) => Promise<T>): Promise<T> {
-    const tx = actor.transaction, current = await this.account(tx, source.ownerUserId);
+    const tx = actor.transaction, current = await this.sourceWorkspace(tx, source);
     if (actor.sharedAccess || actor.scope.childId !== NIL || current.workspace.id !== source.workspaceId
       || current.workspace.storageEpoch !== source.storageEpoch) fail('scope_changed');
     await this.canonicalChild(tx, source);
@@ -661,6 +692,14 @@ export class FirestoreAuthority {
     if (workspace.id !== scope.workspaceId || workspace.storageEpoch !== scope.storageEpoch) fail('scope_changed');
     await this.canonicalChild(tx, scope);
     return { scope, authorizationVersion: workspace.accessVersion };
+  }
+  async assertSharedSource(tx: Transaction, raw: WorkRecoveryScope): Promise<FirestoreAuthorityBinding> {
+    const scope = parse(workRecoveryScopeSchema, raw);
+    if (scope.childId === NIL) fail('binding',403);
+    const {workspace} = await this.sourceWorkspace(tx,scope);
+    if (workspace.id !== scope.workspaceId || workspace.storageEpoch !== scope.storageEpoch) fail('scope_changed');
+    await this.canonicalChild(tx,scope);
+    return {scope,authorizationVersion:workspace.accessVersion};
   }
   /** Internal erasure finalizer, after journal-backed cleanup. It cannot reactivate or delete active resources. */
   async finishErasure(scope: WorkRecoveryScope, type: 'child' | 'account'): Promise<void> {

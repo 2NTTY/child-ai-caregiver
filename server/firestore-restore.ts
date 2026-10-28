@@ -1,5 +1,5 @@
 import { replayAvatarLifecycle, assertRestoredAvatarRelations, restoredAvatarCleanupRecords, mergeAvatarCopyResponsibilities } from './firestore-restore-avatars.ts';
-import { isSharingAuthorityPath, sharingErasedBy } from './firestore-sharing-records.ts';
+import { isSharingAuthorityPath, sharingErasedBy, sharedSpaceSchema } from './firestore-sharing-records.ts';
 import { replaySharingAuthority } from './firestore-restore-sharing.ts';
 import type { AvatarObjectDescriptor, AvatarCleanupRecord } from './avatar-data.ts';
 import { replayChatFileErasures, assertRestoredChatFileRelations } from './firestore-restore-chat-files.ts';
@@ -76,8 +76,15 @@ export function assertFirebaseRestoreAuthority(records: readonly FirestoreRestor
   const workspaces=unique(rows(records,'workspace',authority.workspace),row=>row.value.id);
   const children=unique(rows(records,'child',authority.child),row=>row.value.id);
   const invitations=unique(rows(records,'authority-invitation',authority.invitation),row=>row.value.email);
+  const classes=unique(rows(records,'shared-space',sharedSpaceSchema).filter(row=>row.value.kind==='class'),row=>row.value.id);
   requireValue(rows(records,'control',authority.control).length===1);
-  requireValue(accounts.size===owners.size && accounts.size===workspaces.size);
+  requireValue(accounts.size===owners.size && accounts.size+classes.size===workspaces.size);
+  for(const [id,classroom]of classes){
+    const workspace=workspaces.get(id)?.value;
+    requireValue(Boolean(workspace && workspace.ownerUserId==='space:'+id
+      && classroom.value.storageIdentity.ownerUserId===workspace.ownerUserId && classroom.value.storageIdentity.workspaceId===id));
+    if(classroom.value.state==='active')requireValue(accounts.has(classroom.value.managerUserId));
+  }
   for (const [id,account] of accounts) {
     const identity=identities.get(id)?.value,owner=owners.get(id)?.value,workspace=owner&&workspaces.get(owner.workspaceId)?.value;
     requireValue(Boolean(owner && workspace && workspace.ownerUserId===id));
@@ -293,7 +300,11 @@ export function prepareFirebaseRestore(options: FirestoreDomainOptions, input: F
   for(const intent of journal.filter(v=>v.type==='photo-delete'||v.type==='voice-delete'||v.type==='file-delete'||v.type==='avatar-delete')) {
     if(erasedByScope(intent.scope.ownerUserId,intent.scope.workspaceId,intent.scope.childId))continue;
     const epoch=newEpochByWorkspace.get(intent.scope.workspaceId);if(!epoch)continue;
-    const owner=accounts.find(row=>row.value.userId===intent.scope.ownerUserId);requireValue(Boolean(owner),'restore_erasure_binding');
+    const owner=accounts.find(row=>row.value.userId===intent.scope.ownerUserId);
+    const classroom=rows(decoded,'shared-space',sharedSpaceSchema).find(row=>row.value.kind==='class'
+      && row.value.id===intent.scope.workspaceId && row.value.storageIdentity.workspaceId===intent.scope.workspaceId
+      && row.value.storageIdentity.ownerUserId===intent.scope.ownerUserId);
+    requireValue(Boolean(owner||classroom),'restore_erasure_binding');
     const id=JSON.stringify([intent.scope.ownerUserId,intent.operationId]);
     const existing=decoded.find(row=>row.context.kind==='online-receipt'&&row.context.id===id);
     if(existing)continue;

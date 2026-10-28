@@ -11,7 +11,7 @@ const nil = '00000000-0000-0000-0000-000000000000';
 const user = z.string().min(1).max(256), version = z.number().int().positive().max(2147483647);
 const at = z.iso.datetime({ offset: true });
 export const SHARING_SCOPE: WorkRecoveryScope = Object.freeze({ ownerUserId: 'system:sharing', workspaceId: nil, childId: nil, storageEpoch: nil });
-export const sharedSpaceSchema = z.object({ id: z.uuid(), kind: z.enum(['family', 'teachers']), name: z.string().trim().min(1).max(160),
+export const sharedSpaceSchema = z.object({ id: z.uuid(), kind: z.enum(['family', 'teachers', 'class']), name: z.string().trim().min(1).max(160),
   version, state: z.enum(['active', 'dissolved']), managerUserId: user, managerGeneration: z.uuid(),
   storageIdentity: z.object({ ownerUserId: user, workspaceId: z.uuid() }).strict(),
   transferTargetUserId: user.nullable(), createdAt: at, updatedAt: at }).strict();
