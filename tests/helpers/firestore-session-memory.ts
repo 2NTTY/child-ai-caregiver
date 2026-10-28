@@ -7,12 +7,12 @@ export function serialFirestoreFixture() {
   const versions = new Map<string, number>();
   let tail = Promise.resolve(), revision = 0;
   let beforeBatchCommit: (() => Promise<void>) | undefined, loseBatchReply = false;
-  type Ref = { path: string; collection: (name: string) => Query };
+  type Ref = { path: string; id: string; get: () => Promise<any>; collection: (name: string) => Query };
   type Query = { path: string; query: true; filters: [string, string, unknown][]; orders: [string, string][]; cap: number; after?: unknown[];
     doc: (id: string) => Ref; where: (key: string, op: string, value: unknown) => Query;
     orderBy: (key: any, direction?: string) => Query; limit: (value: number) => Query;
     startAfter: (...value: unknown[]) => Query; get: () => Promise<any>; count: () => { get: () => Promise<any> } };
-  const ref = (path: string): Ref => ({ path, collection: name => query(path + '/' + name) });
+  const ref = (path: string): Ref => ({ path, id: path.split('/').at(-1)!, get: async () => snapshot(path), collection: name => query(path + '/' + name) });
   const query = (path: string, filters: Query['filters'] = [], orders: Query['orders'] = [], count = Infinity, after?: unknown[]): Query => ({
     path, query: true, filters, orders, cap: count, after, doc: id => ref(path + '/' + id),
     where: (key, op, value) => query(path, [...filters, [key, op, value]], orders, count, after),

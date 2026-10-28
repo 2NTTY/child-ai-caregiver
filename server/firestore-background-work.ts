@@ -9,7 +9,7 @@ import type { FirestoreAuthorityTransaction as Binding } from './firestore-autho
 const time = z.iso.datetime({ offset: true }), uuid = z.uuid(), text = z.string().min(1).max(256);
 const version = z.number().int().positive().max(2147483647);
 export const backgroundKindSchema = z.enum(['child-change', 'growth', 'concern', 'work-check', 'work-continuation', 'task-agent',
-  'memory-refresh', 'voice-transcription', 'document-refresh', 'knowledge-check', 'photo-cleanup', 'voice-cleanup', 'file-cleanup', 'avatar-cleanup', 'scope-erasure', 'push', 'native-push', 'telegram', 'contact']);
+  'memory-refresh', 'voice-transcription', 'document-refresh', 'knowledge-check', 'photo-cleanup', 'voice-cleanup', 'file-cleanup', 'avatar-cleanup', 'scope-erasure', 'push', 'native-push', 'telegram', 'contact', 'handover-export', 'handover-cleanup']);
 const identitySchema = z.object({ kind: backgroundKindSchema, scope: workRecoveryScopeSchema, resourceId: text,
   basis: text, generation: uuid, authorizationVersion: text }).strict();
 export const firestoreBackgroundWorkSchema = identitySchema.extend({ id: z.string().regex(/^[a-f0-9]{64}$/u),
@@ -88,7 +88,7 @@ export async function prepareFirestoreBackgroundWork(data: FirestoreDomainData, 
 /** Only a proven cleanup descriptor may wake an exhausted read/delete reconciliation. */
 export async function prepareObjectCleanupWake(data: FirestoreDomainData, tx: Transaction, identity: BackgroundIdentity, evidence: string,
   options?: { avatarLifecycle: true }) {
-  if (!['photo-cleanup','voice-cleanup','file-cleanup','avatar-cleanup'].includes(identity.kind)) domainReject('background_binding', 500);
+  if (!['photo-cleanup','voice-cleanup','file-cleanup','avatar-cleanup','handover-cleanup'].includes(identity.kind)) domainReject('background_binding', 500);
   // Avatar current protection can finish a job while its object remains current. A later authenticated
   // due supersede/remove obligation may reopen that job exactly once per descriptor+reason/version.
   // Other domains retain their existing exhausted-only wake semantics.

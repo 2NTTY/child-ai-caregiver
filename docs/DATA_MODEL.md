@@ -868,7 +868,11 @@ FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新�
 
 產生／讀取逐項串流，使用受保護的 Server 暫存，大小／項數／期限均有界；超限回報未完成，不能截斷後產生成功包。驗證完才交匯入服務；附件上載先暫存及校驗，不從尚未驗完的 stream 提交領域資料。此容器不是災難恢復 envelope，也不自行寫入資料庫；正式匯出／匯入工作、共用畫面與全部模組的交付門檻仍依 PLAN。
 
-文檔包的私人 Storage adapter 沿用 `YBG1`／AES-256-GCM 格式，以串流處理檔案；AAD 綁定專案、namespace、完整儲存 scope 及包 ID。物件 metadata 保存明文／密文 hash、大小及綁定摘要，descriptor 保留完整十進位 generation；以 `ifGenerationMatch=0` 建立，讀取／刪除固定 generation。重做前查同一物件；上載已開始後的逾時或查回失敗屬 unknown，不能換包 ID 重送。解密完成、驗證碼及兩份 hash 全部核對後才返回私人暫存路徑，失敗清理本次暫存。此 adapter 本身不授權用戶，正式開放仍須接工作台帳、目前授權、刪除義務及到期清理。
+文檔包的私人 Storage adapter 沿用 `YBG1`／AES-256-GCM 格式，以串流處理檔案；AAD 綁定專案、namespace、完整儲存 scope 及包 ID。物件 metadata 保存明文／密文 hash、大小及綁定摘要，descriptor 保留完整十進位 generation；以 `ifGenerationMatch=0` 建立，讀取／刪除固定 generation。重做前查同一物件；上載已開始後的逾時或查回失敗屬 unknown，不能換包 ID 重送。解密完成、驗證碼及兩份 hash 全部核對後才返回私人暫存路徑，失敗清理本次暫存。adapter 本身不授權用戶，API 與持久工作另核目前身份及來源。
+
+`handover_exports` 保存原操作指紋、用途／選擇、資料 scope、來源版本、獨立頭像 basis、worker claim、上載前內容 hash、固定物件 descriptor、取消及清理狀態。正文仍在加密 ZIP，台帳不另存家庭全文；建立／取消與 outbox 同交易，ZIP／Storage 在交易外。未明上載先只 probe 同一物件；取消後等待舊 writer 截止再刪固定 generation，無法確認的清理保留 unknown。背景 maintenance 每頁最多五筆補償清理，列表每頁二十筆；私密 envelope 不建索引。暫存保留 24 小時，來源失效即禁止下載，不等待物件清完。
+
+災難還原合併 live 的資料包清理義務，包括快照後新建、上載／取消／清理完成的工作；全部改為不可下載，保留原 object scope。現行恢復 CLI 仍用同一私人 bucket，這不構成任意跨 bucket 搬遷證據。還原不得藉舊 `uploadStarted=false` 丟失新物件；已完成 scope erasure 才可移除相關義務。本地 Emulator 只替換有界外部串流 port，沿正式加密／工作服務；其合成檢查不證明 GCP IAM 或真 Storage 競爭。
 
 跨人匯入建立獨立副本，保留來源標識與映射，不覆寫對方修改或自動跟隨更新；組內分享仍共用權威資料。本人備份可含有權備份的私人聊天、記憶、來源及附件，與交接包的範圍可不同。憑證、session、key、付款／執行授權及投遞工作不放入普通資料包；待辦內容沿普通服務保存，按當前帳戶授權／渠道及相同提醒政策產生新 outbox；不另設匯入啟用欄位，不搬來源投遞工作。
 

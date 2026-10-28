@@ -4186,3 +4186,11 @@
 - 接續 #360／`527d3f4`，以 Node 原生 stream／crypto 沿既有 YBG1 格式處理私人暫存檔，沒有新增密碼學格式或套件。Storage 沿已裝 SDK、同一私人 bucket 接點及完整 generation；原物件查回、create-only 上載、固定版本讀取／刪除與 unknown 分類可供後續持久工作使用。
 - 檔案相容／鑑別失敗清理 1/1；物件保存／原結果恢復／版本及故障清理同一流程 1/1；四入口型別圖零診斷。串流關閉次序、Node strip-only 語法及兩項獨立 review 缺口均按根因修正，原失敗保留於[證據](artifacts/verification/P4_HANDOVER_STORAGE_20261028.json)。未重跑已通過的 ZIP／授權 exporter 流程。
 - 零雲端修改／模型／通知／部署；沒有開放新 API 或畫面。持久工作、刪除／到期義務、正式匯出／匯入及全模組成果仍待接線，不把內部 adapter 當成 HANDOVER01 完成。
+
+<a id="log-20261028-p4-handover-jobs"></a>
+### 2026-10-28：P4 持久個人匯出工作與正式後端接點
+
+- 基於 #361／`d8124fa`，接同一 opId 的匯出台帳、交易 outbox、正式 API／worker、私人物件下載及本地 Emulator 串流。現有權限、來源版本、取消及未知結果查回沿同一服務；沒有另造 Agent、資料庫或雲端架構。
+- 同一合成流程從正式 HTTP／worker 經 ZIP／加密／Storage 替身返回下載，涵蓋原操作、失聯上載只核原物件、隔離、取消、maintenance 清理及還原義務；1/1 通過。獨立本地串流 port 1/1，六入口型別圖零診斷，diff check 通過。未重跑已通過的 #360／#361；只有受影響流程因接線與 review 修正補驗。
+- review 找到舊快照遺失較新上載／清理工作、ready 包未持續核頭像兩項缺口；已合併 live 清理義務、保持原物件地址且禁下載，並保存及交易內重核 avatar basis。獨立覆核關閉。其餘失敗屬嚴格 content DTO、多一個 metadata 接點及合成 SDK fixture 缺項，根因／原證據見[核對記錄](artifacts/verification/P4_HANDOVER_JOBS_20261028.json)。
+- 一項複合索引與私密欄位排除只有定義，未套用雲端；零模型、通知、手機或部署。共用畫面、正式匯入、班級／期間、完整私人備份與簽章配置仍未完成；下一包接共用入口，不把本段當作 HANDOVER01 完成。
