@@ -18,6 +18,9 @@ import { createFirestoreRestoreCodec } from '../server/firestore-restore-codec.t
 import { prepareFirebaseRestore } from '../server/firestore-restore.ts';
 import { createFirestoreHandoverUploads } from '../server/firestore-handover-uploads.ts';
 import { SERVICE_POLICY_VERSION } from '../src/shared/account-service.ts';
+import { FirestoreDomainData, firestoreDomainHash } from '../server/firestore-domain-data.ts';
+import { handoverUploadId, handoverUploadMetadata, handoverUploadRecordSchema } from '../server/handover-upload-records.ts';
+import { createHandoverApi } from '../src/client/handover-api.ts';
 
 test('package upload HTTP, immutable storage and cleanup preserve operation identity, isolation and restore obligations', async () => {
   const root = await mkdtemp(join(tmpdir(), 'handover-upload-service-')), spoolRoot = join(root, 'spool'); await mkdir(spoolRoot);
@@ -80,6 +83,8 @@ test('package upload HTTP, immutable storage and cleanup preserve operation iden
   const command = { opId: randomUUID(), filename: 'backup.zip', ...content };
   try {
     const reservation = await call('', command); assert.equal(reservation.status, 201); assert.equal((await reservation.json()).state, 'reserved');
+    const initial = await call(''); assert.equal(initial.status, 200);
+    assert.deepEqual((await initial.json()).items.map((item: any) => item.id), [command.opId]);
     assert.equal((await (await call('', command)).json()).id, command.opId);
     assert.equal((await call('', { ...command, filename: 'changed.zip' })).status, 409);
     assert.equal((await call('/' + command.opId, undefined, 'other')).status, 404);
@@ -89,6 +94,11 @@ test('package upload HTTP, immutable storage and cleanup preserve operation iden
       duplex: 'half', signal: AbortSignal.timeout(5000) } as RequestInit);
     assert.equal(response.status, 200); const ready = await response.json();
     assert.equal(ready.state, 'ready'); assert.equal(ready.preview.integrity, 'missing_proof'); assert.equal(observedStreaming, true);
+    const readyList = await (await call('')).json(); assert.equal(readyList.items[0].state, 'ready');
+    assert.equal(Object.hasOwn(readyList.items[0], 'preview'), false); assert.equal(JSON.stringify(readyList).includes('Source child'), false);
+    assert.deepEqual((await (await call('/' + command.opId)).json()).preview, ready.preview, 'Selecting an upload reads its full preview separately');
+    assert.deepEqual((await (await call('', undefined, 'other')).json()).items, []);
+    assert.equal((await call('?cursor=one&cursor=two')).status, 400); assert.equal((await call('?unknown=value')).status, 400);
     assert.equal(writes, 1); assert.equal(JSON.stringify(ready).includes('objectName'), false);
     assert.deepEqual(await readdir(spoolRoot), []);
     await uploads.receive('recipient', command.opId, Readable.from([bytes]), new AbortController().signal); assert.equal(writes, 1);
@@ -99,16 +109,21 @@ test('package upload HTTP, immutable storage and cleanup preserve operation iden
     assert.equal(opened.reader.manifestSha256, ready.preview.manifestSha256); const scope = opened.job.scope; await opened.dispose();
     const codec = createFirestoreRestoreCodec(options), [path, data] = [...fixture.records].find(([path]) => path.includes('_handover_uploads/'))!;
     const decoded = codec.decode({ path, data });
+    fixture.records.set(path, { ...data, state: 'tampered' });
+    try { const tampered = await call(''); assert.equal(tampered.status, 500); assert.equal((await tampered.json()).code, 'package_upload_binding'); }
+    finally { fixture.records.set(path, data); }
     const recovered = codec.decode(codec.transform(decoded, { newEpochByWorkspace: new Map([[scope.workspaceId, randomUUID()]]),
       generation: randomUUID(), photoDescriptors: new Map() }));
     assert.equal((recovered.value as any).state, 'expired'); assert.equal((recovered.value as any).preview, null);
     assert.deepEqual((recovered.value as any).artifact, opened.job.artifact);
     const cancel = { opId: randomUUID(), expectedVersion: ready.version };
     assert.equal((await (await call('/' + command.opId + '/cancel', cancel)).json()).state, 'cancelled');
+    assert.equal((await (await call('')).json()).items[0].state, 'cancelled', 'Cleanup obligations remain listed until cleaned');
     await assert.rejects(uploads.open('recipient', command.opId, new AbortController().signal), { code: 'package_upload_not_ready' });
     assert.equal((await uploads.cleanup(scope, command.opId, new AbortController().signal)).state, 'deferred');
     now += 600_001;
     assert.equal((await uploads.cleanup(scope, command.opId, new AbortController().signal)).state, 'completed'); assert.equal(stored.size, 0);
+    assert.deepEqual((await (await call('')).json()).items, [], 'A cleaned upload leaves the list');
     // A late successful object write must survive as a cleanup obligation after cancellation.
     const second = await uploads.create('recipient', { ...command, opId: randomUUID() });
     afterPut = async () => { const current = await uploads.get('recipient', second.id); await uploads.cancel('recipient', second.id, { opId: randomUUID(), expectedVersion: current.version }); };
@@ -117,6 +132,34 @@ test('package upload HTTP, immutable storage and cleanup preserve operation iden
     now += 600_001;
     assert.equal((await uploads.cleanup(scope, second.id, new AbortController().signal)).state, 'completed'); assert.equal(stored.size, 0);
     assert.deepEqual(await readdir(spoolRoot), []);
+    const domain = new FirestoreDomainData(options), template = decoded.value as any, expected = new Set<string>();
+    const seed = (storageEpoch = scope.storageEpoch) => {
+      const id = randomUUID(), request = { ...template.request, opId: id }, row = { ...template, id, request,
+        scope: { ...scope, storageEpoch }, fingerprint: firestoreDomainHash(request), version: 1, state: 'failed',
+        preview: null, artifact: null, uploadStarted: false, cleaned: false, lease: null, cancellation: null, error: 'package_upload_failed' };
+      const identity = handoverUploadId('recipient', id), target = domain.ref('handover_uploads', 'handover-upload', identity);
+      assert.notEqual(target.id, id);
+      fixture.records.set(target.path, { ...domain.tags(row.scope), ...handoverUploadMetadata(row),
+        ...domain.seal('handover-upload', identity, row.scope, handoverUploadRecordSchema, row, row.version) }); return id;
+    };
+    for (let index = 0; index < 21; index++) expected.add(seed());
+    seed(randomUUID());
+    const makeClient = () => createHandoverApi(base, (input, init) => {
+      const supplied = new Headers(init?.headers), user = supplied.get('x-expected-user-id')!;
+      for (const [key, value] of Object.entries(headers(user))) supplied.set(key, value);
+      return fetch(input, { ...init, headers: supplied });
+    });
+    const client = makeClient(); client.setIdentity('recipient');
+    const firstPage = await client.listUploads('recipient', new AbortController().signal); assert.equal(firstPage.items.length, 20); assert.ok(firstPage.nextCursor);
+    assert.ok(firstPage.items.every(item => !Object.hasOwn(item, 'preview')));
+    const reopened = makeClient(); reopened.setIdentity('recipient');
+    const lastPage = await reopened.listUploads('recipient', new AbortController().signal, firstPage.nextCursor);
+    assert.equal(lastPage.items.length, 1); assert.equal(lastPage.nextCursor, null);
+    assert.deepEqual(new Set([...firstPage.items, ...lastPage.items].map(item => item.id)), expected);
+    reopened.setIdentity('other'); assert.deepEqual((await reopened.listUploads('other', new AbortController().signal)).items, []);
+    await assert.rejects(reopened.listUploads('other', new AbortController().signal, firstPage.nextCursor), { status: 400, code: 'invalid_cursor' });
+    await authority.setAccountState({ userId: 'recipient', operationId: randomUUID(), state: 'revoked' });
+    const revoked = await call(''); assert.equal(revoked.status, 403); assert.equal((await revoked.json()).items, undefined);
   } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); await rm(root, { recursive: true, force: true }); }
 });
 

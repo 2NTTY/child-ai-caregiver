@@ -15,6 +15,11 @@ export const handoverUploadStateSchema = z.enum(['reserved', 'receiving', 'ready
 export const handoverUploadViewSchema = z.object({ id: z.uuid(), version: z.number().int().positive(),
   filename: z.string(), bytes: z.number().int().positive(), createdAt: time, expiresAt: time,
   state: handoverUploadStateSchema, error: z.string().nullable(), preview: handoverUploadPreviewSchema.nullable() }).strict();
+export const handoverUploadListItemSchema = handoverUploadViewSchema.omit({ preview: true });
+export const handoverUploadPageSchema = z.object({ items: z.array(handoverUploadListItemSchema).max(20),
+  nextCursor: z.string().max(2048).nullable() }).strict();
 export type HandoverUploadCommand = z.infer<typeof handoverUploadCommandSchema>;
 export type HandoverUploadPreview = z.infer<typeof handoverUploadPreviewSchema>;
 export type HandoverUploadView = z.infer<typeof handoverUploadViewSchema>;
+export type HandoverUploadListItem = z.infer<typeof handoverUploadListItemSchema>;
+export type HandoverUploadPage = z.infer<typeof handoverUploadPageSchema>;

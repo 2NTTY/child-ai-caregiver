@@ -19,6 +19,8 @@ const states: Record<HandoverImportView['state'], string> = {
   queued: '已排隊', running: '正在匯入', completed: '已完成', cancelled: '已取消', failed: '未能完成', interrupted: '還原後已中斷',
 };
 const integrityLabels = { trusted: '可信簽章已驗證', untrusted_signer: '簽章有效，但來源簽署者未受信任', missing_proof: '未有可信簽章證明' };
+const uploadStates = { reserved: '尚未上載完成', receiving: '接收或驗證中', ready: '可繼續匯入',
+  failed: '上載失敗，待清理', cancelled: '已取消，待清理', expired: '已到期，待清理' };
 const dateText = (value: string) => new Date(value).toLocaleString('zh-HK', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 const foreground = () => Platform.OS === 'web'
   ? typeof document !== 'undefined' && document.visibilityState === 'visible' : AppState.currentState === 'active';
@@ -38,7 +40,13 @@ export function HandoverImportControls() {
   const upload = current ? state.upload : null, preview = upload?.state === 'ready' ? upload.preview : null;
   useLayoutEffect(() => { setOpen(false); setChoices({}); setPage(0); setAccepted(false); }, [identityKey]);
   useLayoutEffect(() => { setChoices({}); setPage(0); setAccepted(false); }, [upload?.id, preview?.manifestSha256]);
-  useEffect(() => { if (current && online) void controller.load(); }, [controller, current, identityKey, online]);
+  useEffect(() => {
+    if (!current || !online) return;
+    void (async () => { await controller.load();
+      const latest = controller.getSnapshot();
+      if (latest.identityKey === identityKey && latest.userId === userId && latest.online) await controller.loadUploads();
+    })();
+  }, [controller, current, identityKey, userId, online]);
   const waiting = current ? state.items.filter(row => row.state === 'queued' || row.state === 'running').map(row => row.id).join(',') : '';
   useEffect(() => {
     if (!waiting || !current || !online || account.deletion.phase !== 'idle') return;
@@ -113,6 +121,16 @@ export function HandoverImportControls() {
     <AppButton ref={trigger} label={upload || pending ? '查看上載與匯入選擇' : '選擇資料包並上載'} variant="secondary" disabled={locked}
       loading={state.busy === 'pick'} onPress={() => { setOpen(true); if (!upload && !pending) void controller.choose(pickImportPackage); }} />
     {!open ? recovery : null}
+    <Text style={styles.title}>已上載的資料包</Text>
+    <AppButton label="讀取暫存資料包" variant="quiet" disabled={locked} onPress={() => { void controller.loadUploads(); }} />
+    {state.uploadsLoaded && !state.uploads.length ? <Text style={styles.body}>沒有待使用或待清理的上載。</Text> : null}
+    {state.uploads.map(row => <View key={row.id} style={styles.item}>
+      <Text style={styles.title}>{row.filename}</Text>
+      <Text style={styles.body}>{uploadStates[row.state]} · 暫存至 {dateText(row.expiresAt)}</Text>
+      <AppButton label={row.state === 'ready' ? '選擇此包的匯入範圍' : '查看上載狀態'} variant="quiet" disabled={writeLocked}
+        onPress={() => { setOpen(true); void controller.openUpload(row.id); }} />
+    </View>)}
+    {state.uploadsCursor ? <AppButton label="載入更多暫存資料包" variant="quiet" disabled={locked} onPress={() => { void controller.loadUploads(true); }} /> : null}
     <AppButton label="重新讀取匯入批次" variant="quiet" loading={state.busy === 'read'} disabled={locked} onPress={() => { void controller.load(); }} />
     {state.loaded && !state.items.length ? <Text style={styles.body}>尚未有匯入批次。</Text> : null}
     {state.items.map(row => <View key={row.id} style={styles.item}>
@@ -139,7 +157,9 @@ export function HandoverImportControls() {
           <Text style={styles.title}>{upload.filename}</Text>
           <Text style={styles.body}>{(upload.bytes / 1024 / 1024).toFixed(1)} MiB · 暫存至 {dateText(upload.expiresAt)}</Text>
           {upload.error ? <Text style={styles.body}>{importErrorText(new HandoverApiError(409, upload.error))}</Text> : null}
-          {!preview ? <Text style={styles.body}>{upload.state === 'receiving' ? '正在接收或驗證上載，請查回原請求。' : upload.state === 'reserved' ? '已預留上載，尚未完成驗證。' : '此上載目前不可匯入，請取消後重新選取。'}</Text> : <>
+          {!preview ? <Text style={styles.body}>{upload.state === 'receiving' ? '正在接收或驗證上載，可讀取最新狀態。' : upload.state === 'reserved'
+            ? pending ? '已預留上載，尚未完成驗證。' : '原上載尚未完成，本機原檔不在。請取消後重新選取資料包。'
+            : upload.state === 'cancelled' || upload.state === 'expired' ? '上載已停止，Server 會按原工作清理；毋須再次取消。' : '此上載目前不可匯入，請取消後重新選取。'}</Text> : <>
             <Text style={styles.body}>{integrityLabels[preview.integrity]}。來源：{preview.header.source.serverId}</Text>
             {preview.integrity !== 'trusted' ? <AppCheckbox label="我知悉此資料包沒有可信來源證明，仍選擇繼續" checked={accepted} disabled={writeLocked} onChange={setAccepted} /> : null}
             <Text style={styles.body}>可匯入孩子資料、照護記錄及待辦，包含各模組歷史；私人聊天、記憶、文件、附件、私人來源、持續關注與成長整理尚未接通。</Text>
@@ -171,7 +191,12 @@ export function HandoverImportControls() {
             <AppButton label="開始匯入" disabled={writeLocked || !canCreate} loading={state.busy === 'write' && pending?.kind === 'create'}
               onPress={() => { void create(); }} />
           </>}
-          <AppButton label="取消此上載" variant="quiet" disabled={writeLocked} onPress={() => { void discard(); }} />
+          <AppButton label="讀取最新上載狀態" variant="quiet" disabled={writeLocked} onPress={() => { void controller.openUpload(upload.id); }} />
+          {upload.state !== 'cancelled' && upload.state !== 'expired' ? <>
+            <Text style={styles.body}>取消上載會使依賴此包的未完成匯入停止；已保存的資料不受影響。</Text>
+            <AppButton label="取消此上載" variant="quiet" disabled={writeLocked} onPress={() => { void discard(); }} />
+          </> : null}
+          <AppButton label="返回上載列表" variant="quiet" disabled={writeLocked} onPress={() => { controller.leaveUpload(); setOpen(false); }} />
         </> : null}
         {pending ? <Text style={styles.body}>這次請求由帳戶保留；關閉視窗後仍可在原頁查回，不會另建請求。</Text> : null}
         {state.notice ? <Text accessibilityLiveRegion="polite" style={styles.body}>{state.notice}</Text> : null}

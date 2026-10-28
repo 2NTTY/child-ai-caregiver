@@ -5,16 +5,19 @@ import { handoverErrorText } from './HandoverOwner.ts';
 
 export interface SelectedPackage { filename: string; bytes: number; sha256: string; body: BodyInit; release(): void }
 type Control = { opId: string; expectedVersion: number };
+type UploadSummary = Omit<HandoverUploadView, 'preview'>;
 type Pending = ({ kind: 'reserve'; command: HandoverUploadCommand } | { kind: 'upload'; id: string }
   | { kind: 'create'; command: HandoverImportCommand }
   | { kind: 'cancel' | 'resume' | 'discard'; id: string; command: Control }) & { checked: boolean; rejected?: boolean };
 export interface HandoverImportState {
   userId: string | null; identityKey: string | null; online: boolean; loaded: boolean;
   upload: HandoverUploadView | null; items: HandoverImportView[]; nextCursor: string | null;
+  uploads: UploadSummary[]; uploadsLoaded: boolean; uploadsCursor: string | null;
   busy: 'pick' | 'read' | 'write' | 'check' | null; pending: Pending | null; notice: string | null;
 }
 const empty = (userId: string | null, identityKey: string | null, online: boolean): HandoverImportState => ({
-  userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null, busy: null, pending: null, notice: null });
+  userId, identityKey, online, loaded: false, upload: null, items: [], nextCursor: null,
+  uploads: [], uploadsLoaded: false, uploadsCursor: null, busy: null, pending: null, notice: null });
 type Ticket = { epoch: number; userId: string; controller: AbortController };
 /** Device drafts only; uploaded packages, import authority and progress remain on the Server. */
 export class HandoverImportOwner {
@@ -45,10 +48,34 @@ export class HandoverImportOwner {
       this.syncContext(null, null, this.state.online); this.accessError(error); return;
     }
     this.update({ notice: importErrorText(error) });
-    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.update({ upload: null, items: [], loaded: false, pending: null }); this.accessError(error); }
+    if (error instanceof HandoverApiError && error.status === 403) { this.release(); this.update({ upload: null, items: [], loaded: false, uploads: [], uploadsLoaded: false, uploadsCursor: null, pending: null }); this.accessError(error); }
   }
   private put(row: HandoverImportView) { this.update({ items: this.state.items.some(x => x.id === row.id)
     ? this.state.items.map(x => x.id === row.id ? row : x) : [row, ...this.state.items] }); }
+  private putUpload(row: HandoverUploadView) {
+    const { preview: _preview, ...summary } = row;
+    this.update({ uploads: this.state.uploads.some(x => x.id === row.id)
+      ? this.state.uploads.map(x => x.id === row.id ? summary : x) : [summary, ...this.state.uploads] });
+  }
+  loadUploads = async (more = false) => {
+    const cursor = more ? this.state.uploadsCursor : null; if (more && !cursor) return;
+    const t = this.begin('read'); if (!t) return;
+    try { const page = await this.api.listUploads(t.userId, t.controller.signal, cursor ?? undefined);
+      if (this.current(t)) this.update({ uploadsLoaded: true, uploadsCursor: page.nextCursor,
+        uploads: more ? [...this.state.uploads, ...page.items.filter(x => !this.state.uploads.some(y => x.id === y.id))] : page.items });
+    } catch (e) { this.error(t, e); } finally { this.finish(t); }
+  };
+  openUpload = async (id: string) => {
+    if (this.state.pending || this.file) return;
+    const t = this.begin('read'); if (!t) return;
+    if (this.state.upload?.id !== id) this.update({ upload: null });
+    try { const row = await this.api.getUpload(t.userId, id, t.controller.signal);
+      if (this.current(t)) { this.putUpload(row); this.update({ upload: row }); }
+    } catch (e) { this.error(t, e); } finally { this.finish(t); }
+  };
+  leaveUpload = () => {
+    if (!this.state.pending && !this.state.busy && !this.file) this.update({ upload: null });
+  };
   load = async (more = false) => {
     const cursor = more ? this.state.nextCursor : null; if (more && !cursor) return;
     const t = this.begin('read'); if (!t) return;
@@ -98,14 +125,14 @@ export class HandoverImportOwner {
     try {
       if (p.kind === 'reserve') {
         const row = await this.api.reserveUpload(t.userId, p.command, t.controller.signal);
-        if (this.current(t)) { this.update({ upload: row, pending: row.state === 'reserved' ? { kind: 'upload', id: row.id, checked: true } : null }); continueUpload = row.state === 'reserved'; }
+        if (this.current(t)) { this.putUpload(row); this.update({ upload: row, pending: row.state === 'reserved' ? { kind: 'upload', id: row.id, checked: true } : null }); continueUpload = row.state === 'reserved'; }
       } else if (p.kind === 'upload') {
         if (!this.file) throw new HandoverApiError(400, 'package_local_file_missing');
         const row = await this.api.uploadContent(t.userId, p.id, this.file.body, t.controller.signal);
-        if (this.current(t)) { this.release(); this.update({ upload: row, pending: null }); }
+        if (this.current(t)) { this.release(); this.putUpload(row); this.update({ upload: row, pending: null }); }
       } else if (p.kind === 'discard') {
-        await this.api.cancelUpload(t.userId, p.id, p.command, t.controller.signal);
-        if (this.current(t)) { this.release(); this.update({ upload: null, pending: null }); }
+        const row = await this.api.cancelUpload(t.userId, p.id, p.command, t.controller.signal);
+        if (this.current(t)) { this.release(); this.putUpload(row); this.update({ upload: null, pending: null }); }
       } else {
         const row = p.kind === 'create' ? await this.api.createImport(t.userId, p.command, t.controller.signal)
           : await this.api[p.kind === 'cancel' ? 'cancelImport' : 'resumeImport'](t.userId, p.id, p.command, t.controller.signal);
@@ -129,6 +156,7 @@ export class HandoverImportOwner {
       if (p.kind === 'reserve' || p.kind === 'upload' || p.kind === 'discard') {
         const row = await this.api.getUpload(t.userId, p.kind === 'reserve' ? p.command.opId : p.id, t.controller.signal);
         if (!this.current(t)) return;
+        this.putUpload(row);
         if (p.rejected) { this.update({ upload: row, pending: null }); if (row.state !== 'reserved') this.release(); }
         else if (['ready', 'failed', 'cancelled', 'expired'].includes(row.state)) {
           this.release(); this.update({ upload: p.kind === 'discard' && ['cancelled', 'expired'].includes(row.state) ? null : row,

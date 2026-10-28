@@ -9,10 +9,15 @@ export async function handleHandoverUpload(request: Request, owner: string, serv
   readJson: (request: Request) => Promise<unknown>, sameIdentity: () => Promise<void>) {
   const url = new URL(request.url), root = '/api/account/package-uploads';
   const route = /^\/api\/account\/package-uploads\/([0-9a-f-]{36})(?:\/(content|cancel))?$/iu.exec(url.pathname);
-  if (url.search) domainReject('invalid_input', 400);
+  if (url.search && !(request.method === 'GET' && url.pathname === root)) domainReject('invalid_input', 400);
   const json = (value: unknown, status = 200) => Response.json(value, { status,
     headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie, Authorization' } });
   try {
+    if (request.method === 'GET' && url.pathname === root) {
+      const entries = [...url.searchParams];
+      if (entries.some(([key]) => key !== 'cursor') || entries.length > 1) domainReject('invalid_input', 400);
+      const result = await service.list(owner, url.searchParams.get('cursor') ?? undefined); await sameIdentity(); return json(result);
+    }
     if (request.method === 'POST' && url.pathname === root) {
       const result = await service.create(owner, await readJson(request)); await sameIdentity(); return json(result, 201);
     }

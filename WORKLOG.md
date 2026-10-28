@@ -4280,3 +4280,10 @@
 - 復用 Paper、瀏覽器及 Expo 選檔，固定既有 noble-hashes 2.4.0 作增量 SHA-256。Web 256 MiB；目前 Expo fetch 緩衝 body，原生先沿 20 MiB，較大包明示用 Web，完整原生大型包仍待接，不以擴大記憶體上限掩蓋。
 - 正式 API／client 一條、owner／檔案生命週期一條連貫流程與局部型別圖通過。獨立 review 找到驗包失敗清掉原操作入口，實際 red→green 修正並複核。Web／Android 本機匯出通過；Android 首次 Hermes 沙箱暫存寫入失敗保留，僅原命令移出沙箱完成。詳見[證據](artifacts/verification/P4_HANDOVER_IMPORT_UI_20261029.json)。
 - 未部署、未驗真選檔／設備，無模型／通知。未提交上載的重開發現、其餘領域、衝突覆蓋／恢復介面、班級／期間及完整私人備份仍待續；不把共用畫面交付當整包完成，D PR 未改動。
+
+<a id="log-20261029-p4-handover-upload-recovery"></a>
+### 2026-10-29：P4 未提交資料包重開恢復
+
+- 接續 #374／`8c07b10`，本人／目前儲存世代的未清理上載沿既有索引每頁二十項讀回，列表省略完整預覽；選取後才查原包狀態。共用 owner／畫面提供續選、查狀態與取消；原檔遺失不自動重傳，取消／失敗的清理義務仍由原 worker 處理。
+- 現有本機 HTTP 流程原 404→通過，兼核隔離／撤權、metadata、二十加一續頁及清理退出；owner 原流程及恢復流程通過。獨立 review 發現選 B 失敗仍保留 A，可造成錯包提交；同流程重現後於切換 ID 先清舊選取，補驗及覆核通過。[證據](artifacts/verification/P4_HANDOVER_UPLOAD_RECOVERY_20261029.json)保留沙箱 loopback 拒絕及實際 red→green。
+- 未新增索引、未部署或做真機／模型／通知；上一包 bundle 不重跑。其餘領域、衝突介面、完整備份及原生大型包仍待續，不改 D PR。

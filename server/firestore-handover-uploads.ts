@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import type { DocumentSnapshot, Transaction } from '@google-cloud/firestore';
-import { handoverUploadCommandSchema, handoverUploadPreviewSchema, handoverUploadViewSchema } from '../src/shared/handover-uploads.ts';
+import { FieldPath, type DocumentSnapshot, type Transaction, type Query } from '@google-cloud/firestore';
+import { handoverUploadCommandSchema, handoverUploadPreviewSchema, handoverUploadViewSchema, handoverUploadPageSchema } from '../src/shared/handover-uploads.ts';
 import { handoverCancelCommandSchema } from '../src/shared/handover-jobs.ts';
 import { createFirestoreAuthority, type FirestoreAuthorityTransaction as Binding } from './firestore-authority.ts';
 import { FirestoreDomainData, domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
@@ -11,6 +11,8 @@ import { handoverObjectDescriptorSchema } from './firebase-handover-objects.ts';
 import { handoverUploadRecordSchema, handoverUploadId, handoverUploadMetadata, validHandoverUpload,
   HANDOVER_UPLOAD_RETENTION_MS, type HandoverUploadRecord as Upload } from './handover-upload-records.ts';
 import type { WorkRecoveryScope } from './firestore-work-continuation-recovery.ts';
+
+const listCursorSchema = z.object({ scope: z.string().regex(/^[a-f0-9]{64}$/u), after: z.string().regex(/^[a-f0-9]{64}$/u) }).strict();
 
 /** Upload ownership and cleanup obligation are durable before any body or Storage write. */
 export function createFirestoreHandoverUploads(options: FirestoreDomainOptions & { serverClock?: () => number }) {
@@ -31,9 +33,9 @@ export function createFirestoreHandoverUploads(options: FirestoreDomainOptions &
     tx.set(ref(job.scope.ownerUserId, job.id), { ...data.tags(job.scope), ...handoverUploadMetadata(job),
       ...data.seal('handover-upload', handoverUploadId(job.scope.ownerUserId, job.id), job.scope, handoverUploadRecordSchema, job, job.version) });
   }
-  async function owned(b: Binding, id: string) {
+  async function owned(b: Binding, id: string, existing?: DocumentSnapshot) {
     domainParse(z.uuid(), id);
-    const row = await b.transaction.get(ref(b.actorUserId, id)); if (!row.exists) domainReject('package_upload_not_found', 404);
+    const row = existing ?? await b.transaction.get(ref(b.actorUserId, id)); if (!row.exists) domainReject('package_upload_not_found', 404);
     const raw = row.data()!, opened = openRecoveryEnvelope({ ...options, locator: raw.recovery,
       envelope: { family: 'domain', version: raw.version, recordVersion: raw.recordVersion, ciphertext: raw.ciphertext } });
     const context = opened.context;
@@ -66,6 +68,37 @@ export function createFirestoreHandoverUploads(options: FirestoreDomainOptions &
     });
   }
   return {
+    async list(owner: string, cursor?: string) {
+      let previous: z.infer<typeof listCursorSchema> | undefined;
+      if (cursor !== undefined) {
+        if (cursor.length > 2048) domainReject('invalid_cursor', 400);
+        try { previous = listCursorSchema.parse(JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8'))); }
+        catch { domainReject('invalid_cursor', 400); }
+      }
+      return authority.runTransaction(owner, null, async b => {
+        const scope = { ...b.scope, childId: '00000000-0000-0000-0000-000000000000' }, scopeHash = firestoreDomainHash(scope);
+        if (previous && previous.scope !== scopeHash) domainReject('invalid_cursor', 400);
+        let query: Query = data.collection('handover_uploads').where('cleaned', '==', false);
+        for (const [key, value] of Object.entries(data.tags(scope))) query = query.where(key, '==', value);
+        query = query.orderBy(FieldPath.documentId()).limit(21);
+        if (previous) query = query.startAfter(previous.after);
+        const rows = (await b.transaction.get(query)).docs, page = rows.slice(0, 20);
+        const listed = await Promise.all(page.map(async row => {
+          const raw = row.data(), context = openRecoveryEnvelope({ ...options, locator: raw.recovery,
+            envelope: { family: 'domain', version: raw.version, recordVersion: raw.recordVersion, ciphertext: raw.ciphertext } }).context;
+          if (context.family !== 'domain' || context.kind !== 'handover-upload' || firestoreDomainHash(context.scope) !== scopeHash)
+            domainReject('package_upload_binding', 500);
+          let identity: [string, string];
+          try { identity = domainParse(z.tuple([z.literal(owner), z.uuid()]), JSON.parse(context.id), 'package_upload_binding', 500); }
+          catch { domainReject('package_upload_binding', 500); }
+          const expected = ref(owner, identity[1]);
+          if (row.id !== expected.id || row.ref.path !== expected.path) domainReject('package_upload_binding', 500);
+          const { preview: _preview, ...item } = view(await owned(b, identity[1], row)); return item;
+        }));
+        return handoverUploadPageSchema.parse({ items: listed, nextCursor: rows.length > 20
+          ? Buffer.from(JSON.stringify({ scope: scopeHash, after: page.at(-1)!.id })).toString('base64url') : null });
+      });
+    },
     async assertImportableIn(b: Binding, id: string, version: number) {
       // The operation may be committing a child's data; the staged package still belongs to the actor's account scope.
       const job = await owned({ ...b, scope: { ...b.scope, childId: '00000000-0000-0000-0000-000000000000' } }, id);
