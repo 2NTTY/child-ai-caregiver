@@ -833,7 +833,7 @@ FAMILY-A 首段新增 namespace 下 `shared_spaces`、`shared_memberships`、`re
 
 班級的 `teacherSpaceId` 只可指向一層 `teachers` 控制資料；附屬期間以父空間當前成員、角色及管理員為準，不複製 ACL。加入與移出更新班級的 `directMembershipGeneration`；直接成員的 `spaceGeneration` 不符便不再有效，舊邀請亦不隨移出復活。待移出指定成員、父空間管理世代及目標 membership ID 一起保存；接收時再核身份、兩邊版本及成員資格。班級父空間版本加入授權 basis／列表游標，父空間轉交或撤權立即生效。
 
-班級的管理查詢 metadata 在附屬期間指向穩定的父空間身份；原建立者不再因這個班級被阻擋刪帳。新增 `teacherSpaceId／active／entryId` 有界列表索引，正式啟用前須建立。還原時分別驗證個人 workspace 的帳號鏈與班級／父空間控制鏈，禁止用「有 workspace」代替資料歸屬檢查；重放目前管理權、成員世代、撤權及解散狀態，重新綁定儲存世代。刪除原管理員只清其私人資料及成員身份，不清已轉交班級。班級背景工作、解散實體清理及完整班級交付仍未完成。
+班級的管理查詢 metadata 在附屬期間指向穩定的父空間身份；原建立者不再因這個班級被阻擋刪帳。新增 `teacherSpaceId／active／entryId` 有界列表索引，正式啟用前須建立。還原時分別驗證個人 workspace 的帳號鏈與班級／父空間控制鏈，禁止用「有 workspace」代替資料歸屬檢查；重放目前管理權、成員世代、撤權及解散狀態，重新綁定儲存世代。刪除原管理員只清其私人資料及成員身份，不清已轉交班級。班級背景工作及完整班級交付仍未完成；解散清理見下段，未部署。
 
 FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新增成員／孩子副本。選擇只在共用 owner 保存導航及授權投影，不另建可修改孩子資料；共享 basis 改變清舊快取。成長、關注及文件共用同一 authority digest，綁來源 epoch／授權及共享 basis，不改本人版本格式。新成員密文保存由准入身份提供的 `label`（目前為已驗證電郵），舊記錄缺值時顯示原 UID，不猜姓名；不在可查詢 metadata 加電郵。本人空間依 memberTag／active／spaceId，空間成員、分享及邀請依 spaceId／active／entryId 有界分頁；新增四項複合索引定義，部署前另建立。游標以本人 scope 加密，子列表保存空間版本；被撤權的來源成員及已刪原件不再出現在分享列表。原 `shared_operations` 提供公開控制收據投影，不公開內部 storageIdentity／managerGeneration 或完整來源 scope。
 
@@ -844,6 +844,8 @@ FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新�
 待辦沿 `tasks`／`task_revisions`，非 owner 的建立／修訂分別保存 `createdViaShare`／`changedViaShare`，公開任務與歷史 DTO 移除內部證據。建立證據保留原作者及第一版，修訂證據綁當版操作者；未附證據的舊資料仍要求 owner 署名。提醒 outbox 保留原 scope、接收者、版本及世代，沒有把共享操作者的身份當付款或渠道授權。共享收據以 `shared-task-result:1` 指向原版本修訂，重新核權後讀取，不能將後來完成狀態當原建立結果。
 
 共享領域收據沿原 `online_operations` 儲存在操作者範圍，結果保存 `shared-domain-receipt:1` 指標，不另存來源正文。查回及原操作重試重新核對目前共享與來源存活；撤權、解散或刪除時返回原成功收據及空結果，不重做效果。來源領域變更與操作者的共享變更同交易提交；其他成員的主動變更同步仍待後段接通，不能以此宣稱整個共享體驗已交付。
+
+**班級刪除生命週期：**沿既有 `_erasures` 保存 `class-delete`，scope 綁定 `space:<classId>`、同一 workspace 與當前儲存世代，`childId=NIL`、`assetId=classId`；工作 ID 由操作者及原操作 ID 確定。授權交易同時關閉空間／workspace、保存 `erasureOperationId`、原收據與 requested 工作，沒有在交易內呼叫 Storage。既有 maintenance 先完成獨立日誌 write-once／readback，再按原分頁清理領域資料及附件；失敗保留原進度。孩子／workspace 保留不含正文的 deleted 屏障；共享收據清除結果但保留原身份、指紋及效果，登入／個人會話不是班級資料。完成後只留班級 tombstone，原收據提供 pending／completed。還原必須重放目前關閉狀態、同 ID 的已完成清理工作及獨立日誌；即使備份含舊 requested／cleaning 工作亦不倒退。未完成清理（包括尚等日誌）不能繞過義務開放還原資料。本段只有合成服務／還原證據，未宣稱真雲端災備通過。
 
 成員保留 membership ID／版本，分享綁來源成員世代；撤回、離開、移除、轉交及邀請變更均有版本和原操作。帳戶／孩子刪除清除相關成員或原件分享引用，不刪已轉交的空間控制資料。備份集合清單以 append-only 加入上述五項；恢復使用目前共享權限，更新來源 epoch，刪除日誌同樣處理共享引用，authority hash 包含共享控制資料。備份之後加入的現任管理員／活動成員只補必要身份／准入圖，仍核目前 Auth，不因此帶入私人業務內容或 session。這是合成恢復接點，正式新資料的完整配對恢復仍屬 S15／P4 門檻。
 

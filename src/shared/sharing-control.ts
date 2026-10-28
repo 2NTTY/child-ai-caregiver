@@ -42,14 +42,14 @@ export const sharingCommandSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('leave'), ...change }).strict(),
   z.object({ action: z.literal('updateMember'), ...change, targetUserId: userId, role: z.enum(['caregiver', 'viewer']).nullable() }).strict(),
   z.object({ action: z.literal('revokeInvitation'), ...change, invitationId: z.string().regex(/^[a-f0-9]{64}$/u) }).strict(),
-  z.object({ action: z.literal('dissolve'), ...change }).strict(),
+  z.object({ action: z.literal('dissolve'), ...change, expectedTeacherVersion:version.optional() }).strict(),
 ]);
 export const sharingOperationSchema = z.object({ operationId: z.uuid(), action: z.enum([
   'create', 'addClassChild', 'attachClass', 'detachClass', 'acceptClassDetach', 'invite', 'acceptInvitation', 'share', 'unshare', 'proposeTransfer', 'acceptTransfer', 'leave', 'updateMember', 'revokeInvitation', 'dissolve',
 ]), space: sharedSpaceViewSchema.nullable(), invitationToken: z.string().regex(/^[A-Za-z0-9_-]{43}$/u).optional(),
   childId: z.uuid().optional(),
   redacted:z.literal(true).optional(),
-  exit: z.object({ spaceId: z.uuid(), version, state: z.enum(['left', 'dissolved']) }).strict().optional() }).strict()
+  exit: z.object({ spaceId: z.uuid(), version, state: z.enum(['left', 'dissolved']), cleanupState:z.enum(['pending','completed']).optional() }).strict().optional() }).strict()
   .refine(value => value.redacted ? value.space === null && !value.invitationToken && !value.exit && !value.childId
     : ['leave','dissolve'].includes(value.action) ? value.space === null && !!value.exit && !value.invitationToken
     : value.space !== null && !value.exit && (!value.invitationToken || value.action === 'invite'))

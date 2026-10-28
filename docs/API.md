@@ -1147,7 +1147,7 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 
 **家庭管理接口：**`GET /api/shared-spaces` 讀本人活動空間；`GET /:spaceId` 讀目前角色及空間版本，`GET /:spaceId/{members|shares|invitations}` 分頁讀控制資料，邀請列表僅限管理員。每次最多檢查 20 筆，`nextCursor` 不透明並綁本人／儲存世代及列表種類；空間子列表亦綁空間版本，變更後重新讀取。不返回內部儲存 scope、密文、私人聊天或邀請 token；分享列表只含仍有效的孩子稱呼、模組及撤回資格。稱呼是辨識已分享孩子的必要標籤，不授予其餘 profile 內容。
 
-`POST /api/shared-spaces/commands` 使用共用 `SharingCommand`：建立家庭／獨立班級／教師空間、發出／接受／撤回邀請、設定／撤回個人模組分享、角色／撤權、提出／接受轉交、退出及解散家庭／沒有班級的教師空間。沿原服務交易核對角色、版本及原 `operationId`，不複製權限或另建身份系統；班級解散實體清理仍留 CLASS01 後續，班級解散目前明確回 `class_dissolution_unavailable`。邀請 token 只在原發出操作的回應／有權查回中提供，由管理員自行傳送，不自動寄信。`GET /api/shared-spaces/operations/:operationId` 回 `{operation}`，不存在為 null；逾時先查原操作，仍不存在才可重送同一指令／ID，不能換 ID。查回再核目前成員資格，邀請 token 另核目前管理員；撤權／解散後只返回原操作身份、動作及 `redacted=true`，不回舊空間內容、孩子 ID 或 token，效果已提交而不重做。退出／解散只保留無正文終態收據。提交成功後的結果查回失敗仍屬 unknown，不能按 HTTP 4xx 一概斷言從未提交。
+`POST /api/shared-spaces/commands` 使用共用 `SharingCommand`：建立家庭／獨立班級／教師空間、發出／接受／撤回邀請、設定／撤回個人模組分享、角色／撤權、提出／接受轉交、退出及解散班級／家庭／沒有班級的教師空間。沿原服務交易核對角色、版本及原 `operationId`，不複製權限或另建身份系統；班級解散沿下述持久清理契約，未提供清理服務的組裝回 `class_dissolution_unavailable`。邀請 token 只在原發出操作的回應／有權查回中提供，由管理員自行傳送，不自動寄信。`GET /api/shared-spaces/operations/:operationId` 回 `{operation}`，不存在為 null；逾時先查原操作，仍不存在才可重送同一指令／ID，不能換 ID。查回再核目前成員資格，邀請 token 另核目前管理員；撤權／解散後只返回原操作身份、動作及 `redacted=true`，不回舊空間內容、孩子 ID 或 token，效果已提交而不重做。退出／解散只保留無正文終態收據。提交成功後的結果查回失敗仍屬 unknown，不能按 HTTP 4xx 一概斷言從未提交。
 
 **獨立班級名冊（接線中，尚未部署）：**`GET /api/shared-spaces/classes` 分頁讀本人的活動班級；原 `/api/shared-spaces` 家庭列表不混入新類型。建立沿 `create` 的 `kind=class`，`addClassChild` 帶班級 ID、`expectedVersion`、原 `operationId` 及孩子稱呼，直接建立該班權威孩子，毋須先建教師空間。成功收據另回 `childId`，查回重核孩子及目前權限；已不在目前資料中的結果只回遮蔽收據，不從舊收據復活。這與匯入包不同，不按同名稱呼自動合併。
 
@@ -1158,6 +1158,8 @@ FAMILY-A 內部 `createFirestoreSharingStore` 接回 FAMILY-B 管理入口及共
 `detachClass` 由空間管理員指定目前空間成員為獨立班級負責人；指定本人可直接完成，指定他人只保存待接收，對方以 `acceptClassDetach` 接受後完成。父空間管理權換人後，前管理員尚未接受的移出安排失效。完成時原班級、孩子及資料 ID 保持，新的直接管理成員與新世代原子保存，原空間成員即失去存取。父空間與成員版本加入班級授權 basis 及續讀游標；移出／加入核兩邊版本，不能只檢查班級版本。班級還在空間內時，其成員退出及管理權轉交從教師空間進行；解散含班級的教師空間不得使資料成為孤兒，須先處理班級歸屬，實體清理另按班級生命週期接續。
 
 兩項移出 command 沿原 `spaceId／expectedVersion／operationId`，並帶 `expectedTeacherVersion`；提出移出另帶 `targetUserId`。班級 view 增加 `teacherSpaceId`、附屬時的 `teacherSpaceName／teacherSpaceVersion` 及目前有效的 `detachTargetUserId`；這些欄位不加入舊家庭 view。原操作查回仍重核目前存取，沒有權限只回遮蔽收據；不以保存的舊管理員當目前權限。`teacher_space_has_classes` 表示尚有附屬班級，不執行解散。Web／Android 共用 `/teachers` 管理入口，不要求先選孩子。
+
+**CLASS01 解散接線（已實作及合成核對，未部署）：**班級沿既有 `dissolve` 指令及確認，附屬班級另帶 `expectedTeacherVersion`，核目前有效管理員及兩邊版本。交易關閉班級及其 workspace，保存原操作與持久清理請求；回 `exit.cleanupState=pending`，不能解讀為實體資料已全部刪除。既有背景工作先寫入並核實獨立 `class-delete` 日誌，再分頁清理班級資料、修訂及附件；原 `GET operations/:operationId` 回目前 `pending／completed`。清理不刪個人登入／裝置會話或別人的私人原件；已刪班級的舊收據只留身份與效果，不能重做或讀回正文。家庭／教師空間原回應不增加清理欄位。未設清理服務的組裝仍拒絕班級解散，不能假成功。
 
 以上讀寫均核已登入身份及 `x-expected-user-id`，寫入沿既有 Web 同源／原生 transport；回應前再核身份並 `no-store`。家庭管理不依賴已選孩子，退出頁面不丟失同一身份的未知操作；切身份後清理本機草稿、token 與遲到結果。共享原件選擇不自動切換私人聊天或擴大目前頁面的資料範圍。
 
