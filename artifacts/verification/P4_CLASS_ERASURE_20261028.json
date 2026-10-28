@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-28",
+  "package": "P4-CLASS01 class dissolution",
+  "base": "870212502d2dcff6a3c2e44c6096d1b06cd3c5fa",
+  "branch": "codex/p4-class-erasure",
+  "environment": "Windows, Node 24, serial Firestore fixture; no cloud or models",
+  "implementation": [
+    "Current effective manager and class/parent versions authorize a durable class-delete request; close class/workspace atomically with original receipt",
+    "Existing maintenance journals before bounded erasure; original operation reads pending/completed",
+    "Existing attachment cleanup and restore, minimal tombstones and redacted receipts; no Auth account or personal-session erasure",
+    "Shared Web/Android confirmation and explicit original-operation status lookup"
+  ],
+  "checks": [
+    {"command": "node --experimental-test-module-mocks --test tests/class-erasure.test.ts", "result": "1/1 passed", "covers": "real control HTTP/client, standalone/attached class, roles/versions, duplicate operation, journal response loss, actual file cleanup consumer, private-data isolation, before-delete and mid-cleanup backup replay"},
+    {"command": "node --experimental-test-module-mocks --test tests/firestore-erasure-export.test.ts", "result": "1/1 passed with class flow in same batch", "covers": "existing personal child/account deletion compatibility"},
+    {"command": "node --experimental-test-module-mocks --test --test-name-pattern='class dissolution retains' frontend/src/production/sharing-controller.test.mts", "result": "1/1 passed", "executor": "Sol high frontend implementer", "covers": "pending cleanup remains after selection disappears; original receipt GET only, completion and identity cleanup"},
+    {"command": "targeted server/shared/client TypeScript dependency graph", "result": "0 affected and 0 dependency diagnostics"},
+    {"command": "targeted SharingController/familyScreen TypeScript dependency graph", "result": "0 affected and 0 dependency diagnostics"},
+    {"command": "git diff --check", "result": "passed; existing CRLF normalization notice only"}
+  ],
+  "failuresPreserved": [
+    "Initial new fixture passed action to a direct store method; corrected fixture then observed class_dissolution_unavailable red",
+    "File cleanup originally rejected class-delete; added class scope to existing media erasure ports",
+    "Post-restore original operation lacked its live cleanup record; replay now carries the class job",
+    "Old personal-erasure test capped cleanup at 100 calls although unchanged registry now requires 117 stages; bound now derives from registry plus fixed stages, original completion assertions retained",
+    "Targeted TypeScript found optional erasures name collision with online-store erasure port; dedicated classErasure injection resolves it",
+    "Independent review found mid-cleanup backup could restore requested after live completed; regression failed requested vs completed, then passed with current lifecycle replay"
+  ],
+  "review": {"reviewer": "Sol xhigh readonly whole-branch review", "findings": "one Important restore-continuity issue", "resolution": "main-model red-green fix and final diff review"},
+  "reuse": "Existing Firestore authority, shared-space commands, erasure journal, cleanup consumer, media stores, recovery codec and shared UI; no new package or framework",
+  "notClaimed": ["deployed", "real Firestore transaction contention", "real cloud backup restore", "device UI acceptance", "complete CLASS01 or P4", "class notifications/background authorization", "D Agent changes"],
+  "cost": {"modelCalls": 0, "cloudMutations": 0, "notifications": 0, "deployments": 0}
+}

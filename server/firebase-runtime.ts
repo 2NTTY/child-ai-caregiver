@@ -180,7 +180,7 @@ export async function openFirebaseRuntime(env: Record<string, string | undefined
     // Enable only after provider/origin configuration readback; this is not proof of mail delivery.
     const photoAgent = createPhotoAgent(photos, product.runtime);
     const admin = createFirestoreAdmin(domain, aiConfig);
-    const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore(domain), admin, adminUid: localAdminUid ?? (composition.worker ? null : readAdminUid(env)), authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
+    const handler = createFirebaseRequestHandler({ sharing:createFirestoreSharingStore({...domain,classErasure:erasures}), admin, adminUid: localAdminUid ?? (composition.worker ? null : readAdminUid(env)), authority, auth, online, documents, photos, avatars, files, voice: { ...voices, transcripts: product.voiceTranscripts }, photoAgent, library, chat, care, summary, memory, product, sources, sourceService, concerns, growth, push, nativePush, contact, telegram: { store: telegram, config: telegramConfig, gateway: telegramGateway }, accountData: { erasures, exporter },
       publicOrigin: config.publicOrigin, mailConfigured: config.authEmailEnabled });
     const ownedApp = app;
     let closing: Promise<void> | undefined;

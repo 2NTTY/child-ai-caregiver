@@ -13,9 +13,12 @@ const generation = z.string().regex(/^[1-9][0-9]{0,19}$/u).refine(value => BigIn
 const intentBase = { scope: workRecoveryScopeSchema, assetId: z.uuid(), operationId: z.uuid(), at: z.iso.datetime({ offset: true }) };
 const contentIntent = z.object({ kind: z.enum(['care', 'profile', 'fact', 'topic']), throughVersion: z.number().int().positive() }).strict();
 const legacyErasureIntentSchema = z.object({ ...intentBase,
-  type: z.enum(['photo-delete', 'voice-delete', 'file-delete', 'child-delete', 'account-delete', 'content-delete']),
+  type: z.enum(['photo-delete', 'voice-delete', 'file-delete', 'child-delete', 'class-delete', 'account-delete', 'content-delete']),
   content: contentIntent.optional(), avatar: z.never().optional(),
-}).strict().refine(value => (value.type === 'content-delete') === (value.content !== undefined));
+}).strict().refine(value => (value.type === 'content-delete') === (value.content !== undefined))
+  .refine(value=>value.type!=='class-delete' || value.scope.ownerUserId==='space:'+value.scope.workspaceId
+    && value.assetId===value.scope.workspaceId && value.scope.childId==='00000000-0000-0000-0000-000000000000'
+    && value.assetId!=='00000000-0000-0000-0000-000000000000');
 export const firebaseAvatarErasureIntentSchema = z.object({ ...intentBase, type: z.literal('avatar-delete'), content: z.never().optional(),
   avatar: z.object({ targetKind: z.enum(['self', 'child']), targetId: z.string().min(1).max(256),
     throughVersion: z.number().int().min(0).max(2147483646) }).strict(),
@@ -24,21 +27,27 @@ export const firebaseAvatarErasureIntentSchema = z.object({ ...intentBase, type:
   : value.scope.childId !== '00000000-0000-0000-0000-000000000000' && value.avatar.targetId === value.scope.childId);
 export const firebaseErasureIntentSchema = z.discriminatedUnion('type', [legacyErasureIntentSchema, firebaseAvatarErasureIntentSchema]);
 export type FirebaseErasureIntent = z.infer<typeof firebaseErasureIntentSchema>;
+/** Whole-class erasure is a storage scope, never an instruction to delete a member's account. */
+export function erasureCoversScope(intent: FirebaseErasureIntent, scope: Pick<FirebaseErasureIntent['scope'], 'ownerUserId' | 'workspaceId' | 'childId'>): boolean {
+  return intent.scope.ownerUserId === scope.ownerUserId && (intent.type === 'account-delete'
+    || intent.scope.workspaceId === scope.workspaceId && (intent.type === 'class-delete'
+      || intent.type === 'child-delete' && intent.scope.childId === scope.childId));
+}
 /** Content-only erasure never authorizes attachment removal or suppresses its recovery. */
 export function erasureCoversPhoto(intent: FirebaseErasureIntent, scope: FirebaseErasureIntent['scope'], id: string): boolean {
-  return intent.scope.ownerUserId === scope.ownerUserId && (intent.type === 'account-delete'
+  return erasureCoversScope(intent, scope) || intent.scope.ownerUserId === scope.ownerUserId && (intent.type === 'account-delete'
     || intent.scope.workspaceId === scope.workspaceId && (intent.type === 'child-delete' && intent.scope.childId === scope.childId
       || intent.type === 'photo-delete' && intent.scope.childId === scope.childId && intent.assetId === id));
 }
 /** Voice deletion is independent of photo and content-only erasure. */
 export function erasureCoversVoice(intent: FirebaseErasureIntent, scope: FirebaseErasureIntent['scope'], id: string): boolean {
-  return intent.scope.ownerUserId === scope.ownerUserId && (intent.type === 'account-delete'
+  return erasureCoversScope(intent, scope) || intent.scope.ownerUserId === scope.ownerUserId && (intent.type === 'account-delete'
     || intent.scope.workspaceId === scope.workspaceId && (intent.type === 'child-delete' && intent.scope.childId === scope.childId
       || intent.type === 'voice-delete' && intent.scope.childId === scope.childId && intent.assetId === id));
 }
 /** File deletion is independent of photo and content-only erasure. */
 export function erasureCoversChatFile(intent: FirebaseErasureIntent, scope: FirebaseErasureIntent['scope'], id: string): boolean {
-  return intent.scope.ownerUserId === scope.ownerUserId && (intent.type === 'account-delete'
+  return erasureCoversScope(intent, scope) || intent.scope.ownerUserId === scope.ownerUserId && (intent.type === 'account-delete'
     || intent.scope.workspaceId === scope.workspaceId && (intent.type === 'child-delete' && intent.scope.childId === scope.childId
       || intent.type === 'file-delete' && intent.scope.childId === scope.childId && intent.assetId === id));
 }
@@ -49,7 +58,7 @@ export function erasureCoversAvatar(intent: FirebaseErasureIntent, candidate: {
 }): boolean {
   const { scope } = candidate;
   if (intent.scope.ownerUserId !== scope.ownerUserId) return false;
-  if (intent.type === 'account-delete') return true;
+  if (intent.type === 'account-delete' || intent.type === 'class-delete' && intent.scope.workspaceId === scope.workspaceId) return true;
   if (intent.scope.workspaceId !== scope.workspaceId) return false;
   if (intent.type === 'child-delete') return candidate.targetKind === 'child' && intent.scope.childId === scope.childId;
   if (intent.type !== 'avatar-delete' || intent.avatar.targetKind !== candidate.targetKind || intent.avatar.targetId !== candidate.targetId

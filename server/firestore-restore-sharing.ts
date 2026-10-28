@@ -3,6 +3,8 @@ import { isSharingKind, sharedSpaceSchema, sharedMembershipSchema, sharedOperati
 import { firestoreAuthoritySchemas as authority } from './firestore-authority.ts';
 import type { FirestoreRestoreCodec, FirestoreRestoreDecoded } from './firestore-restore-codec.ts';
 import type { FirebaseBackupDocument } from './firestore-backup.ts';
+import { firestoreScopeErasureSchema } from './firestore-erasure.ts';
+import { firebaseErasureIntentHash } from './firebase-erasure-journal.ts';
 
 /** Preserve current ACLs, including a manager who joined after the data snapshot. No private business data is copied. */
 export function replaySharingAuthority(codec: FirestoreRestoreCodec, restored: FirestoreRestoreDecoded[],
@@ -15,6 +17,15 @@ export function replaySharingAuthority(codec: FirestoreRestoreCodec, restored: F
   };
   for (let index = restored.length - 1; index >= 0; index--) {
     const { kind, id } = restored[index]!.context;
+    if(kind==='scope-erasure') {
+      const current=liveById.get(kind+':'+id);
+      if(current && firestoreScopeErasureSchema.parse(current.value).intent.type==='class-delete') {
+        const before=firestoreScopeErasureSchema.parse(restored[index]!.value),after=firestoreScopeErasureSchema.parse(current.value);
+        if(firebaseErasureIntentHash(before.intent)!==firebaseErasureIntentHash(after.intent))domainReject('restore_erasure_binding');
+        // Replayed class control and its cleanup receipt must describe the same current lifecycle.
+        restored.splice(index,1);continue;
+      }
+    }
     if (isSharingKind(kind) && (kind !== 'shared-operation' || liveById.has(kind + ':' + id))) restored.splice(index, 1);
   }
   for (const row of live) if (isSharingKind(row.context.kind)) append(row);
@@ -26,10 +37,20 @@ export function replaySharingAuthority(codec: FirestoreRestoreCodec, restored: F
     return record;
   };
   const spaces = live.filter(row => row.context.kind === 'shared-space').map(row => sharedSpaceSchema.parse(row.value)).filter(row => row.state === 'active');
-  const activeSpaces = new Set(spaces.map(row => row.id)), users = new Set(spaces.map(row => row.managerUserId));
+  // Post-snapshot class control must retain its storage identity even when the snapshot has no class data yet.
+  for(const row of live) if(row.context.kind==='shared-space') {
+    const space=sharedSpaceSchema.parse(row.value);
+    if(space.kind==='class') {
+      add('workspace',space.id);
+      if(space.erasureOperationId)add('scope-erasure',JSON.stringify([space.storageIdentity.ownerUserId,space.erasureOperationId]));
+    }
+  }
+  const activeSpaces = new Map(spaces.map(row => [row.id,row])), users = new Set(spaces.filter(row=>!row.teacherSpaceId).map(row => row.managerUserId));
   for (const row of live) if (row.context.kind === 'shared-membership') {
     const member = sharedMembershipSchema.parse(row.value), account = liveById.get('account:' + member.userId);
-    if (member.state === 'active' && activeSpaces.has(member.spaceId) && account && authority.account.parse(account.value).status === 'active') users.add(member.userId);
+    const space=activeSpaces.get(member.spaceId);
+    if(space?.kind==='class'&&(space.teacherSpaceId||(space.directMembershipGeneration??null)!==(member.spaceGeneration??null)))continue;
+    if (member.state === 'active' && space && account && authority.account.parse(account.value).status === 'active') users.add(member.userId);
   }
   for (const row of live) if (row.context.kind === 'shared-operation') {
     const actor = sharedOperationSchema.parse(row.value).actorUserId, account = liveById.get('account:' + actor);
