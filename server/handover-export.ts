@@ -1,19 +1,11 @@
 import type { KeyObject } from 'node:crypto';
 import { createHash } from 'node:crypto';
 import type { AccountExportPage } from '../src/shared/account-service.ts';
-import { handoverHeaderSchema, type HandoverHeader, type HandoverCoverage } from '../src/shared/handover.ts';
+import { HANDOVER_SECTIONS, handoverHeaderSchema, type HandoverHeader, type HandoverCoverage } from '../src/shared/handover.ts';
 import { HandoverArchiveError, writeHandoverArchive, waitForHandoverStep, handoverLimits, type HandoverEntryInput, type HandoverLimits } from './handover-archive.ts';
 import { avatarStateSchema } from '../src/shared/avatars.ts';
 import { canonicalJson } from './online-routing.ts';
 
-const sectionsByModule = {
-  profile: ['profile', 'profile_history'], care: ['care', 'care_history'], chat: ['chat'],
-  memory: ['instructions', 'memory_facts', 'memory_fact_history', 'memory_topics', 'memory_topic_history', 'summary_history'],
-  tasks: ['tasks', 'task_history'], documents: ['documents', 'document_versions', 'document_content', 'visit_preparation', 'visit_preparation_history'],
-  attachments: ['photos', 'photo_content', 'voices', 'voice_content', 'voice_transcripts', 'files', 'file_content', 'child_avatar', 'child_avatar_content'],
-  sources: ['private_sources', 'private_source_history'], concerns: ['concerns', 'concern_events', 'concern_history'],
-  growth: ['growth_attention', 'growth_topics'],
-} as const;
 const contentSections = new Set(['photo_content', 'voice_content', 'file_content', 'child_avatar_content']);
 type PageQuery = { section: string; childId?: string; scopeVersion?: string; cursor?: string };
 export interface HandoverExportSource { page(userId: string, query: PageQuery): Promise<AccountExportPage> }
@@ -61,7 +53,7 @@ export async function writePersonalHandoverPackage(input: {
     coverage.push({ section: 'children', childId: null, scopeVersion, items: children.length, complete: true });
     yield { path: path('data'), mediaType: 'application/json', content: Buffer.from(JSON.stringify({ section: 'children', childId: null, scopeVersion, items: children })) };
     for (const childId of header.selection.childIds) {
-      for (const module of header.selection.modules) for (const section of sectionsByModule[module]) {
+      for (const module of header.selection.modules) for (const section of HANDOVER_SECTIONS[module]) {
         let items = 0;
         for await (const page of pages(section, childId)) {
           if (section === 'child_avatar') {

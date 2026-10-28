@@ -1,0 +1,41 @@
+{
+  "package": "P4-HANDOVER01 / verified import reads",
+  "date": "2026-10-28",
+  "baseCommit": "24f59d5ac51604a35f38dd4ebfc60cd717967e65",
+  "branch": "codex/p4-handover-import",
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-import.test.ts",
+      "result": "1 passed",
+      "log": "tmp/handover-import-complete.log",
+      "covers": [
+        "Actual Firestore services and personal exporter feed the same ZIP reader",
+        "Original text and source confirmation retained without new confirmation claims",
+        "Trusted proof, explicit same-manifest acknowledgement and reopen/resume",
+        "Scope, coverage, forbidden execution section and cursor rejection",
+        "Existing attachment export produces verified scoped content read"
+      ]
+    },
+    {
+      "command": "node tmp/check-handover-import-types.cjs",
+      "roots": ["server/handover-import.ts", "server/handover-export.ts", "tests/handover-import.test.ts"],
+      "diagnostics": 0,
+      "log": "tmp/handover-import-types.log"
+    },
+    { "command": "git diff --check", "result": "passed" }
+  ],
+  "failuresRetained": [
+    { "log": "tmp/handover-import-red.log", "cause": "Expected missing module before implementation" },
+    { "log": "tmp/handover-import-first.log", "cause": "Zod 4 refined object has no unwrap; reused its shape directly" }
+  ],
+  "review": {
+    "mode": "Independent read-only Sol review of branch changes; no repeated tests",
+    "result": "No confirmed Important or Critical findings"
+  },
+  "notValidatedOrDelivered": [
+    "Import upload, durable batch/item log, destination authorization and domain writes",
+    "All-domain schema validation, provenance mappings, deduplication and conflicts",
+    "Class/period selection and full private-account backup",
+    "Cloud, model, notification, browser/device, deployment or OTA"
+  ]
+}
