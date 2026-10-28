@@ -4258,3 +4258,10 @@
 - 一條正式組裝入口的合成流程通過：原操作與隔離、部分完成／取消／接續、重投遞及下載後來源取消。非空未接歷史留下失敗批次，不截斷冒稱成功。五入口型別圖零診斷；實際 fixture／身份 helper／上載 root scope 修正與限制見[證據](artifacts/verification/P4_HANDOVER_RUNNER_20261029.json)。
 - 只有記錄／概況／待辦目前值的領域 adapter；完整歷史、其他模組、畫面與完整備份待續，未部署或做真服務驗收，D PR 不動。
 - Review 另找到讀包耗時可造成零進度循環，以模擬 75 秒讀取重現後修正項目預算起點，仍保留原 lease，零進度則明確失敗。已成功的接續 op 在來源清理後重送也有實際 red→green，先查原控制收據；client 長操作期限由 B 同步修正、分開提交。
+
+<a id="log-20261029-p4-handover-client-import"></a>
+### 2026-10-29：P4 共用上載／匯入 client
+
+- B 接續 #371／`894c281`，沿原 HandoverApi 增八個上載／匯入方法，Web／Android 共用身份 generation、abort、原操作及錯誤查回。ZIP body 不經 JSON，沒有第二套 transport 或自動重送。
+- 只補一條連貫 client 檢查，缺方法原紅→綠；獨立 review 的建立／接續 20 秒期限缺口亦經斷言原紅→綠，兩項讀包操作及上載改為 300 秒，查回／取消維持 20 秒。合併前沿用已核五入口型別圖，不重跑其他功能。[證據](artifacts/verification/P4_HANDOVER_CLIENT_IMPORT_20261029.json)。
+- 只交共用 transport，檔案選取、owner／畫面、完整領域／歷史及正式部署仍待續；未跑真服務、模型或手機，不動 D PR。
