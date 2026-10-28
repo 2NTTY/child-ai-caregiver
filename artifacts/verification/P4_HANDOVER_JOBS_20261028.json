@@ -1,0 +1,124 @@
+{
+  "package": "P4-HANDOVER01 / durable personal export backend",
+  "date": "2026-10-28",
+  "baseCommit": "d8124fa427389487ea80b39d9cb4e5807031946e",
+  "branch": "codex/p4-handover-export",
+  "scope": [
+    "Persistent original-operation export job and atomic outbox",
+    "Actual Firebase HTTP/worker composition and bounded original-object reconciliation",
+    "Private streaming download, current authority/source/avatar fence",
+    "Cancellation, expiry maintenance, scope erasure and live cleanup obligations across restore",
+    "Local Storage Emulator streaming port with no cloud fallback"
+  ],
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/firestore-handover-jobs.test.ts",
+      "result": "1 passed",
+      "log": "tmp/handover-final-flow.log",
+      "covers": [
+        "same-op replay and conflict",
+        "actual HTTP create/list/status/download and worker entry",
+        "lost upload response reconciles same object without another build",
+        "another identity/unauthenticated denial",
+        "avatar version change blocks ready download",
+        "cancel/reconnect and system maintenance cleanup",
+        "queued snapshot plus newer live object; snapshot predating request plus live completed cleanup"
+      ]
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test tests/local-agent-storage.test.ts",
+      "result": "1 passed",
+      "covers": [
+        "bounded stream and cancellation",
+        "immutable precondition and exact string generation",
+        "private-only local bucket",
+        "original photo adapter preserved"
+      ],
+      "limitation": "Synthetic SDK/loopback transport, not real Emulator or cloud concurrency",
+      "evidence": "Delegated Sol tool output: red then 1 passed; original temporary log no longer present after sandbox restart. Not rerun solely to recreate a log."
+    },
+    {
+      "command": "Node/TypeScript reachable graph: firebase-runtime, firebase-worker-services, firestore-restore, local-agent-main, and the two affected tests",
+      "roots": 6,
+      "diagnostics": 0,
+      "log": "tmp/handover-final-types.log"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "failuresPreserved": [
+    {
+      "log": "tmp/handover-jobs-red.log",
+      "cause": "new job module missing (red)"
+    },
+    {
+      "log": "tmp/handover-jobs-first.log",
+      "cause": "fixture counted a pre-existing child-change outbox"
+    },
+    {
+      "log": "tmp/handover-jobs-service.log",
+      "cause": "synthetic DocumentReference lacked SDK id"
+    },
+    {
+      "log": "tmp/handover-jobs-service2.log",
+      "cause": "strict Storage content schema was passed manifestSha256; now receives only bytes/hash"
+    },
+    {
+      "log": "tmp/handover-jobs-service3.log",
+      "cause": "new cleaned query metadata omitted from restore codec allowlist"
+    },
+    {
+      "log": "tmp/handover-api-red.log",
+      "cause": "fixture auth adapter lacked required handler"
+    },
+    {
+      "log": "tmp/handover-api-red2.log",
+      "cause": "public route not yet connected (red)"
+    },
+    {
+      "log": "tmp/handover-api-first.log",
+      "cause": "fixture reminder transport lacked required functions"
+    },
+    {
+      "log": "tmp/handover-maintenance-diagnostic.log",
+      "cause": "synthetic DocumentReference lacked SDK get"
+    },
+    {
+      "log": "tmp/handover-review-flow.log",
+      "cause": "real backup-control helper requires Timestamp metadata; used actual authority writer to prepare paused synthetic control instead"
+    }
+  ],
+  "review": {
+    "reviewer": "Independent Sol reviewer",
+    "importantFindings": 2,
+    "result": "both re-read and closed",
+    "fixes": [
+      "Union live package lifecycle into restore before scope erasure, keep expired original-object obligations",
+      "Persist and transactionally recheck selected avatar head basis"
+    ]
+  },
+  "deployment": {
+    "performed": false,
+    "cloudIndexesApplied": false,
+    "modelCalls": 0,
+    "notifications": 0,
+    "deviceChecks": 0,
+    "cloudMutations": 0
+  },
+  "notCompleted": [
+    "Shared Web/Android package UI",
+    "Import/domain materialization/provenance/conflicts",
+    "Period and class target support",
+    "Complete personal backup scope",
+    "Production signing/trust setup",
+    "Long-running export beyond existing worker time bound",
+    "Actual cloud indexing/storage/runtime delivery"
+  ],
+  "reuse": [
+    "#360 archive and exporter checks",
+    "#361 encrypted storage checks",
+    "Existing Firestore authority, outbox, maintenance and erasure services"
+  ]
+}

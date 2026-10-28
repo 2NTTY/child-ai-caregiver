@@ -1,0 +1,93 @@
+{
+  "package": "P4-HANDOVER01 / shared personal export UI",
+  "date": "2026-10-28",
+  "baseCommit": "bb0d21ec851b94a161a66734d606f21ad2106af8",
+  "branch": "codex/p4-handover-ui",
+  "scope": [
+    "Shared account settings entry using the actual ProductionOwner",
+    "Select personal children/modules, durable status, cancellation and original-operation recovery",
+    "Authenticated Web download; Expo file stream and existing native sharing"
+  ],
+  "checks": [
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-client.test.ts",
+      "result": "1 passed",
+      "log": "tmp/handover-client-refined.log"
+    },
+    {
+      "command": "node --experimental-test-module-mocks --test tests/handover-owner.test.ts",
+      "result": "1 passed",
+      "log": "tmp/handover-owner-reviewed.log",
+      "covers": [
+        "unknown create reads original ID without another write",
+        "cancel and late response isolation",
+        "409 identity invalidation clears state and restores session",
+        "403 rejected child does not trap future requests",
+        "truncated/oversized/stale download never completes"
+      ]
+    },
+    {
+      "command": "Targeted TypeScript graph: account controls, ProductionOwner, native file export and both affected tests",
+      "roots": 5,
+      "log": "tmp/handover-ui-types-final.log",
+      "diagnostics": 0
+    },
+    {
+      "command": "expo export --platform web --output-dir ../tmp/handover-web-export --max-workers 2",
+      "result": "passed before the two owner review fixes; final changes checked by targeted test/types, not rebuilt for deployment",
+      "log": "tmp/handover-web-export.log"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "failuresPreserved": [
+    {
+      "log": "tmp/handover-owner-red.log",
+      "cause": "owner module missing (red)"
+    },
+    {
+      "log": "tmp/handover-client-refactor-failure.log",
+      "cause": "refactor changed invalid-ID rejection from async to sync; original assertion preserved and fixed"
+    },
+    {
+      "log": "tmp/handover-client-refined-red.log",
+      "cause": "download consumer error code was replaced by a generic message"
+    },
+    {
+      "log": "tmp/handover-ui-types-first.log",
+      "cause": "theme uses colors.line, not colors.border"
+    },
+    {
+      "log": "tmp/handover-owner-session-red.log",
+      "cause": "409 identity errors did not clear owner state"
+    },
+    {
+      "log": "tmp/handover-owner-rejection-red.log",
+      "cause": "rejected child selection left pending request locked"
+    }
+  ],
+  "review": {
+    "importantFindings": 2,
+    "result": "independent Sol re-read closed both; main integrated"
+  },
+  "reuse": [
+    "Existing AppCheckbox/FormDialog/styles",
+    "Official installed Expo File.writableStream and existing sharing cache; no new dependency",
+    "Current controlled transport and Server export APIs"
+  ],
+  "sources": [
+    "https://docs.expo.dev/versions/latest/sdk/filesystem/",
+    "https://developer.mozilla.org/en-US/docs/Web/API/Response/blob"
+  ],
+  "limits": [
+    "Web uses a bounded browser Blob (not a disk-only memory guarantee)",
+    "Native streaming/chooser is type-checked, not device-verified",
+    "No visual browser/device acceptance, cloud mutation, model call, notification, deployment or OTA",
+    "Import, period/class targets and complete personal backup remain unfinished"
+  ],
+  "deployment": {
+    "performed": false
+  }
+}

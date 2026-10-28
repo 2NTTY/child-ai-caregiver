@@ -4162,3 +4162,77 @@
 - 單條合成流程經真控制 API／client、清理服務及恢復程式，涵蓋角色／版本、原操作、日誌回應遺失、實際文件附件 consumer、隔離與兩種舊備份；最終 1/1。原個人孩子／帳戶刪除相容 1/1；舊測試 100 次 stage 上限已落後未改動的 113 個集合，改由 registry 推導有界上限，完成／隔離斷言不變。
 - 獨立 review 找到中途備份會把 completed 倒退 requested，已補紅綠回歸並重放目前同 ID 工作；另補還原後原收據所需工作及媒體 class-delete 接點。型別發現的 erasures 同名 port 衝突改成獨立 classErasure 注入。完整失敗保留於[證據](artifacts/verification/P4_CLASS_ERASURE_20261028.json)。
 - 前端定向 controller 1/1；受影響後端及共用畫面型別圖均 0 診斷，diff check 通過。未改原生套件／路由，沒有重跑 Web 匯出、手機、全量或已驗模型；零雲端修改／通知／部署。班級背景授權與其餘 P4 門檻接續，D PR 保留。
+
+<a id="log-20261028-p4-class-tasks"></a>
+### 2026-10-28：P4 班級待辦負責人與確定性提醒
+
+- 基於 #358／`df4bfa7`，班級的 `space:` 儲存身份不再當本人指派選項或 Firebase 帳號。沿既有單人指派入口、共用表單及 task 服務，建立／改期保存當前成員與成員世代；其他有權成員可完成同一事項。沒有重畫 UI、增加帳號或另一套提醒框架。
+- 原 worker 在領取／完成／派送時重新讀取同一任務、核對真帳號與共享權限，偏好來自本人；提醒、批次及待投遞意圖仍屬班級，按負責人去重。退出再加入不令舊工作授權復活。原個人／家庭行為保留。
+- 一條班級合成流程 1/1；復用個人 worker 9/9。初始 fixture 方法接錯先修正，再取得儲存身份冒充負責人的 red；還原 codec／關聯驗證亦重現舊擁有人假設，修後包含篡改收件人拒絕。受影響 11 個根檔的型別圖零診斷；獨立 review 無 Important／Critical，主模型核差異。見[證據](artifacts/verification/P4_CLASS_TASKS_20261028.json)。
+- 未部署、零雲端／模型／通知／手機；提醒收據並非已外發。班級 Agent、外部通知及選其他成員仍待接續，D PR 不動；下一包先接穩定範圍上的統一匯入，不把本小包當完整 CLASS01／P4。
+
+<a id="log-20261028-p4-handover-archive"></a>
+### 2026-10-28：P4 文檔包容器與授權匯出首段
+
+- 基於 #359／`0d5f5b0`，先更新 PLAN，再固定 yazl／yauzl 及型別。標準 ZIP 保存結構化分頁、原 bytes 附件、來源／版本／coverage 與閱讀摘要；Ed25519 區分可信、未知 signer／無證明及篡改。沒有自製壓縮或另讀 recovery envelope。
+- 取材復用目前帳戶匯出服務；選定孩子、目前權限與同版來源逐頁核對，附件不整包堆入記憶體。期間及班級目標尚未接，不靜默忽略不支援的期間。此首段沒有公開 API／UI，不宣稱完整備份、匯入或 HANDOVER01 完成。
+- 獨立 review 找到來源 buffer 清零早於 zlib 完成、avatar 不增加 changeSeq 的跨頁缺口，以及來源停滯時取消卡住；新增重現後修正 byte 所有權、頭像跨頁／收尾 fence 及取消競速／暫存清理。Zod refined schema 的 omit 錯誤另保留，局部修正後頭像補驗通過。
+- 四項必要情景分批通過，五個根檔的型別圖零診斷；review 三項已覆核關閉。只重跑受修正影響的串流／頭像兩項；原產品檢查、雲端、模型、通知、手機與部署均未執行。詳細版本、失敗及未交付範圍見[證據](artifacts/verification/P4_HANDOVER_ARCHIVE_20261028.json)。
+- 下一段接同一格式的持久匯出／匯入台帳、各領域保存、來源映射及共用入口；班級、私人資料、期間、差異還原、部分成功及接續要求仍保留。D PR、P3 與 P5 原欠項不變。
+
+<a id="log-20261028-p4-handover-storage"></a>
+### 2026-10-28：P4 文檔包有界加密與私人物件接點
+
+- 接續 #360／`527d3f4`，以 Node 原生 stream／crypto 沿既有 YBG1 格式處理私人暫存檔，沒有新增密碼學格式或套件。Storage 沿已裝 SDK、同一私人 bucket 接點及完整 generation；原物件查回、create-only 上載、固定版本讀取／刪除與 unknown 分類可供後續持久工作使用。
+- 檔案相容／鑑別失敗清理 1/1；物件保存／原結果恢復／版本及故障清理同一流程 1/1；四入口型別圖零診斷。串流關閉次序、Node strip-only 語法及兩項獨立 review 缺口均按根因修正，原失敗保留於[證據](artifacts/verification/P4_HANDOVER_STORAGE_20261028.json)。未重跑已通過的 ZIP／授權 exporter 流程。
+- 零雲端修改／模型／通知／部署；沒有開放新 API 或畫面。持久工作、刪除／到期義務、正式匯出／匯入及全模組成果仍待接線，不把內部 adapter 當成 HANDOVER01 完成。
+
+<a id="log-20261028-p4-handover-jobs"></a>
+### 2026-10-28：P4 持久個人匯出工作與正式後端接點
+
+- 基於 #361／`d8124fa`，接同一 opId 的匯出台帳、交易 outbox、正式 API／worker、私人物件下載及本地 Emulator 串流。現有權限、來源版本、取消及未知結果查回沿同一服務；沒有另造 Agent、資料庫或雲端架構。
+- 同一合成流程從正式 HTTP／worker 經 ZIP／加密／Storage 替身返回下載，涵蓋原操作、失聯上載只核原物件、隔離、取消、maintenance 清理及還原義務；1/1 通過。獨立本地串流 port 1/1，六入口型別圖零診斷，diff check 通過。未重跑已通過的 #360／#361；只有受影響流程因接線與 review 修正補驗。
+- review 找到舊快照遺失較新上載／清理工作、ready 包未持續核頭像兩項缺口；已合併 live 清理義務、保持原物件地址且禁下載，並保存及交易內重核 avatar basis。獨立覆核關閉。其餘失敗屬嚴格 content DTO、多一個 metadata 接點及合成 SDK fixture 缺項，根因／原證據見[核對記錄](artifacts/verification/P4_HANDOVER_JOBS_20261028.json)。
+- 一項複合索引與私密欄位排除只有定義，未套用雲端；零模型、通知、手機或部署。共用畫面、正式匯入、班級／期間、完整私人備份與簽章配置仍未完成；下一包接共用入口，不把本段當作 HANDOVER01 完成。
+
+<a id="log-20261028-p4-handover-ui"></a>
+### 2026-10-28：P4 Web／Android 共用資料包匯出入口
+
+- 接續 #362／`bb0d21e`，設定頁使用正式 ProductionOwner、身份及 client，選本人孩子／模組、背景狀態、下載及取消；原請求 unknown 先查同 ID，不另建操作。現有分批 JSON 下載保留，未冒稱完整備份／匯入已接。
+- 原 client 與 owner 兩條連貫合成流程各 1/1；五入口型別圖零診斷。Web 匯出成功後，review 找到 409 身份失效未清理、403 已刪孩子令請求鎖住兩項缺口，已以同一 owner 流程補紅綠並由獨立 reviewer 關閉；最終型別另核，不重跑前批後端、設備或完整套件。[分層證據](artifacts/verification/P4_HANDOVER_UI_20261028.json)。
+- Android 復用已裝 Expo FileSystem 的 writableStream 與系統分享，完整長度核對後才交付；Web 使用有界 Blob，未宣稱全部瀏覽器都落磁碟。原生實機／視覺及雲端交付待驗；沒有新增依賴、模型、通知、GCP 修改或 OTA。
+- 下一段接統一匯入及領域服務、來源／衝突與完整資料範圍；目前只支持本人孩子全期間匯出，HANDOVER01、P4 及既有 P3 待驗均未完成。
+
+<a id="log-20261028-p4-handover-import-read"></a>
+### 2026-10-28：P4 匯入驗包與固定內容續讀
+
+- 接續 #363／`24f59d5`，先更新 PLAN，再沿原 ZIP verifier 及共用 section 表核對全部頁面、孩子、coverage 與附件；續讀綁定 manifest／選擇，缺可信證明的繼續選擇只對同一 manifest 生效。來源確認與原文不被改成目前使用者已核對；沒有新套件、AI 審查或另一套壓縮邏輯。
+- 以實際 Firestore services／匯出器接一條合成讀取流程，含重開續讀、無證明、範圍／缺頁／數量／執行 section 拒絕及附件定位，1/1 通過；三入口型別圖零診斷，diff check 通過。初始缺模組紅測試、Zod 4 `.unwrap` 適配失敗及修正後證據均保留於[核對記錄](artifacts/verification/P4_HANDOVER_IMPORT_READ_20261028.json)。獨立 review 無確定 Important／Critical 問題，未重跑前批檢查。
+- 本段不提供正式匯入或業務寫入；上載、持久批次／逐項紀錄、目標授權、領域 schema／保存、來源映射及差異恢復繼續下一段。班級／期間及完整私人備份未完成，沒有部署、模型、雲端或設備操作；D PR 及 P3／P5 邊界不變。
+
+<a id="log-20261029-p4-handover-provenance"></a>
+### 2026-10-29：P4 匯入來源與原領域交易準備
+
+- 接續 #364／`bb3d812`，care／profile／task 保存原作者、確認者、版本與平坦來源鏈，實際匯入者另核目前授權。沿原 prepared transaction、加密、版本及 outbox，沒有新儲存引擎或模型。普通更正保留來源但改回本地確認；匯入終態待辦不先排一次提醒。
+- 同一條合成流程核對實際領域服務、班級 binding、版本衝突、共用 client 及正式還原 decoder，1/1；五入口型別圖零診斷，diff check 通過。只補受影響範圍，未重跑前批；原 client／restore proof 及 test-only 型別失敗保留。獨立 review 發現 contact client 的 strict task DTO 漏接來源欄位，已補紅綠及覆核關閉，[證據](artifacts/verification/P4_HANDOVER_PROVENANCE_20261029.json)。
+- 這是匯入服務的領域準備，沒有公開匯入入口、來源映射／防重台帳或完整恢復驗收；共用來源顯示、其餘資料域及完整包流程仍待接。未部署、未呼叫模型／雲端／通知或操作手機，D PR 保留原狀。
+
+<a id="log-20261029-p4-handover-source-labels"></a>
+### 2026-10-29：P4 Web／Android 共用來源標示
+
+- 接續 #365／`b2f72e1`，原 care／profile 投影區分來源確認與本地確認；外部 UID 相同不映射「你」。多次匯入沿平坦鏈保留原使用者陳述，遇未知依據即停；本人更正仍顯示本地確認。沒有新增採納步驟或改畫面設計。
+- 一條投影檢查 1/1，兩入口型別圖零診斷，diff check 通過；首次 UID 混淆及二次匯入丟失原依據的紅測試保留，[證據](artifacts/verification/P4_HANDOVER_SOURCE_LABELS_20261029.json)。獨立 review 無確定 Important／Critical 問題，未跑 build、設備、雲端或模型，也未部署；正式匯入台帳／保存及完整範圍繼續下一段。
+
+<a id="log-20261029-p4-handover-items"></a>
+### 2026-10-29：P4 匯入來源映射與逐項收據
+
+- 接續 #366／`f05b2c8`，原領域 commit 與來源映射、原 opId 收據同 Firestore 交易；按來源身份／版本／hash 去重，不按姓名。care／profile 預設保留本地修改和刪除，明確覆蓋核當前版本，care 手動恢復用新 ID 並保留舊屏障。終態待辦建立沿既有準備服務；新版任務更新仍明確未接，不以重建冒充更新。
+- 一條有界合成流程核原操作、差異／衝突、刪除／恢復、隔離、帳戶紀錄匯出及實際 codec epoch 重綁，1/1；四入口型別圖零診斷，JSON／diff 核對通過。[證據](artifacts/verification/P4_HANDOVER_ITEMS_20261029.json)保留 strict 欄位投影及 restore metadata 的原失敗。兩個新 collection 已登記 backup／scope 清理，兩個複合索引與私密欄位排除只有定義。
+- 沒有公開匯入 API、真批次 lease／取消或上載；其餘領域／歷史、完整私人備份、班級／期間及真還原仍待接。本批零模型、通知、雲端修改、設備或部署；沿用原有效證據，D 的 PR 未改動。
+
+<a id="log-20261029-p4-handover-task-updates"></a>
+### 2026-10-29：P4 同一待辦的匯入新版
+
+- 接續 #367／`3ed6c29`，沿原任務交易更新原 ID／發生實例、來源、修訂、outbox 及逐項收據；預設保留本地完成／取消等版本變動，明確覆蓋仍核目前版本，未知投遞繼續停發。`import` 修訂接回共用 client／標示，不增加一般 change 命令。
+- 一條 connected flow red→green／1 pass，三入口型別圖零診斷；最初混用 Server／前端解析模式的診斷已分開配置核對。原失敗及限制見[證據](artifacts/verification/P4_HANDOVER_TASK_UPDATES_20261029.json)。獨立 Sol review 無確定 blocker／Important 問題；不重測前包，無模型、雲端、通知、設備或部署。
+- C 負責後端／契約，B 負責 client／共用修訂顯示，各自單作者提交。正式匯入仍待上載、持久批次及入口，不把內部更新能力或合併當成 HANDOVER01 完成。

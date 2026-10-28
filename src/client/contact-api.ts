@@ -5,6 +5,7 @@ import {
   type ContactConsent, type ContactConsentInput, type ContactGrant, type ContactGrantInput, type ContactPage,
 } from "../shared/contact.ts";
 import { taskDueAtSchema, taskTimeZoneSchema, taskValuesSchema } from "../shared/tasks.ts";
+import { importProvenanceSchema } from "../shared/import-provenance.ts";
 import { createOnlineTransport, OnlineTransportError } from "./online-transport.ts";
 
 export class ContactApiError extends Error {
@@ -44,6 +45,7 @@ const grantSchema = z.object({
 }).strict();
 const taskSchema = taskValuesSchema.omit({ dueAt: true, timeZone: true }).extend({
   id: z.uuid(), childId: z.uuid(), version, createdBy: user, createdAt: dateTime, updatedAt: dateTime,
+  importedFrom: importProvenanceSchema.optional(),
   occurrence: z.object({
     id: z.uuid(), dueAt: taskDueAtSchema, timeZone: taskTimeZoneSchema,
     state: z.enum(["scheduled", "completed", "cancelled", "needs_review"]), terminalBasisVersion: version.nullable(),

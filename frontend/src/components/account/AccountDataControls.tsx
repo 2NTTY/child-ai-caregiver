@@ -11,6 +11,7 @@ import { AppDialog } from "../AppDialog";
 import { AuthenticationProofControl, authProviderLabel } from "./AuthenticationProofControl";
 import type { SocialAuthProvider } from "../../../../src/shared/auth-providers";
 import { chineseFont, colors, readingType, spacing } from "../../theme";
+import { HandoverControls } from './HandoverControls';
 const deletionSchema = z.object({ confirmation: z.string().refine(value => value === "永久刪除我的帳戶", "請完整輸入「永久刪除我的帳戶」。") });
 export function AccountSecurityControls() {
   const { account, accountActions, user, online } = useProduction();
@@ -73,6 +74,7 @@ export function AccountDataControls() {
   };
   return <View style={styles.group}>
     <Text style={styles.body}>{account.status?.notice ?? "資料使用說明尚未確認。"}</Text>
+    <HandoverControls />
     <View style={styles.group}>
       <Text style={styles.title}>下載本人資料</Text>
       <Text style={styles.body}>資料按目前可存取範圍分批下載。保留同一次的所有檔案；完成前的部分檔案不代表全部資料。續讀位置只保留在此頁，重新載入後需要重新開始。</Text>
