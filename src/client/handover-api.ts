@@ -3,12 +3,13 @@ import { resolveApiBaseUrl } from '../config/api-base-url.ts';
 import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverExportPageSchema, handoverExportViewSchema,
   type HandoverExportCommand, type HandoverExportView } from '../shared/handover-jobs.ts';
 import { handoverUploadCommandSchema, handoverUploadViewSchema, type HandoverUploadCommand, type HandoverUploadView } from '../shared/handover-uploads.ts';
-import { handoverImportCommandSchema, handoverImportControlSchema, handoverImportViewSchema,
+import { handoverImportCommandSchema, handoverImportControlSchema, handoverImportViewSchema, handoverImportPageSchema,
   type HandoverImportCommand, type HandoverImportView } from '../shared/handover-imports.ts';
 
 type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
 type ExportPage = z.infer<typeof handoverExportPageSchema>;
 type ImportControl = z.infer<typeof handoverImportControlSchema>;
+type ImportPage = z.infer<typeof handoverImportPageSchema>;
 type RequestOptions = { collection?: 'packages' | 'package-uploads' | 'package-imports'; rawBody?: boolean; timeoutMs?: number };
 export interface HandoverApi {
   setIdentity(userId: string | null): void;
@@ -25,6 +26,7 @@ export interface HandoverApi {
   uploadContent(userId: string, id: string, body: BodyInit, signal: AbortSignal): Promise<HandoverUploadView>;
   createImport(userId: string, command: HandoverImportCommand, signal: AbortSignal): Promise<HandoverImportView>;
   getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
+  listImports(userId: string, signal: AbortSignal, cursor?: string): Promise<ImportPage>;
   cancelImport(userId: string, id: string, command: ImportControl, signal: AbortSignal): Promise<HandoverImportView>;
   resumeImport(userId: string, id: string, command: ImportControl, signal: AbortSignal): Promise<HandoverImportView>;
 }
@@ -149,6 +151,11 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
         result => result.id === parsed.data.opId && result.uploadId === parsed.data.uploadId, { collection: 'package-imports', timeoutMs: 300_000 });
     },
     getImport: (userId, id, signal) => resourceView('package-imports', handoverImportViewSchema, userId, id, signal),
+    async listImports(userId, signal, cursor) {
+      if (cursor !== undefined && (typeof cursor !== 'string' || !cursor || cursor.length > 2048)) throw new HandoverApiError(400, 'invalid_input');
+      return json(userId, cursor === undefined ? '' : '?' + new URLSearchParams({ cursor }), signal, handoverImportPageSchema,
+        undefined, result => result.nextCursor !== '' && (cursor === undefined || result.nextCursor !== cursor), { collection: 'package-imports' });
+    },
     async cancelImport(userId, id, input, signal) {
       const parsed = handoverImportControlSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
       return resourceView('package-imports', handoverImportViewSchema, userId, id, signal, '/cancel', parsed.data);

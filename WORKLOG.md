@@ -4272,3 +4272,11 @@
 - 接續 #372／`ef1e0d2`，verified reader 以綁定游標分目前值與來源歷史兩階段；記錄、概況及待辦舊版本保存在獨立來源紀錄，同交易提交逐項收據及批次進度。不偽造本地操作、不更改目前值或重啟舊提醒；再次交接保留原始證據及本地對應關係。
 - 共用當前權限、刪除及 history floor，來源紀錄可有界讀取／匯出；永久刪除遮蔽後分批清理，還原重放刪除紀錄。reader 一條、正式 account API／worker 與來源生命週期兩條局部流程通過，六入口型別圖零診斷；主模型及獨立 review 未發現剩餘確定 P1／P2。原紅測試、logical ID／restore metadata 修正及 fixture 失敗見[證據](artifacts/verification/P4_HANDOVER_SOURCE_HISTORY_20261029.json)。
 - 新索引只有定義，未部署、未做真雲端還原，無模型／通知／設備或全量測試。下一步接共用匯入 owner／畫面；其餘領域、班級／期間匯出、完整私人備份及簽章配置未完成，D 工作未改動。
+
+<a id="log-20261029-p4-handover-import-ui"></a>
+### 2026-10-29：P4 共用匯入入口與重開批次查回
+
+- 接續 #373／`cac3e40`，原共用設定區使用正式 HandoverApi 選檔、上載驗包、選來源孩子／既有目標／模組、提交及查回原批次，支援取消／接續。Server 本人列表每頁 20 項，綁定帳戶及儲存世代；重開由權威列表查回，沒有本機業務副本。
+- 復用 Paper、瀏覽器及 Expo 選檔，固定既有 noble-hashes 2.4.0 作增量 SHA-256。Web 256 MiB；目前 Expo fetch 緩衝 body，原生先沿 20 MiB，較大包明示用 Web，完整原生大型包仍待接，不以擴大記憶體上限掩蓋。
+- 正式 API／client 一條、owner／檔案生命週期一條連貫流程與局部型別圖通過。獨立 review 找到驗包失敗清掉原操作入口，實際 red→green 修正並複核。Web／Android 本機匯出通過；Android 首次 Hermes 沙箱暫存寫入失敗保留，僅原命令移出沙箱完成。詳見[證據](artifacts/verification/P4_HANDOVER_IMPORT_UI_20261029.json)。
+- 未部署、未驗真選檔／設備，無模型／通知。未提交上載的重開發現、其餘領域、衝突覆蓋／恢復介面、班級／期間及完整私人備份仍待續；不把共用畫面交付當整包完成，D PR 未改動。
