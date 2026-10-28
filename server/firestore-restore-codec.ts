@@ -156,7 +156,7 @@ const domainEnvelopeSchema = z.object({ format: z.literal('yuban-firestore-domai
 // messageSentAt is untrusted query metadata; operation restores rebuild it from authenticated content.
 const privateMetadata = new Set(['entryId', 'managerTag', 'memberTag', 'sourceUserTag', 'active', 'spaceId', 'messageSentAt', 'targetTag', 'actorTag', 'uploadId', 'pending', 'complete', 'nextAttemptAt', 'summaryPending', 'cleanupState', 'cleanupAt', 'retryAt', 'updatedAt', 'workspaceTag', 'epochTag', 'userTag', 'childTag', 'childId', 'createdAt', 'sortKey', 'stage',
   'teacherSpaceId', 'taskId', 'taskVersion', 'occurrenceId', 'documentId', 'status', 'autoRefresh', 'snapshotId', 'snapshotVersion', 'assetId', 'scopeTag',
-  'live', 'state', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
+  'live', 'state', 'cleaned', 'dueAt', 'leaseUntil', 'dispatchId', 'dispatchRouting', 'entityId', 'entityVersion', 'historyFloor', 'messageId', 'visibility', 'validUntil', 'runId', 'triggerKind', 'workId', 'confirmationId', 'askingRunId', 'askMessageId', 'expiresAt', 'proposalId', 'authorizationVersion', 'receiptId', 'noteId', 'concernId', 'eventId', 'sequence', 'attentionId', 'id', 'dispatch', 'route', 'enabled', 'nextCheckAt', 'operationId', 'bindingId', 'deliveryId', 'challengeId', 'unresolved', 'requestId', 'attemptIds']);
 
 /** Pure authenticated record conversion. No reads, writes, permissions, journal replay or object transfer occur here. */
 export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): FirestoreRestoreCodec {
@@ -473,6 +473,13 @@ export function createFirestoreRestoreCodec(options: FirestoreDomainOptions): Fi
         createdAt: row.createdAt, updatedAt: row.updatedAt, messageId: row.messageId,
         cleanupState: row.deletion!.cleanup, cleanupAt: row.deletion!.nextCheckAt,
         ...data.seal('chat-file-asset',row.id,row.scope,firestoreChatFileRowSchema,row,row.version) } };
+    }
+    if (context.family === 'domain' && context.kind === 'handover-export') {
+      // Derived packages retain their original Storage address, even when their account was created after the snapshot.
+      const result = restoreOperationRecord(data, { ...context, kind: 'handover-export' },
+        operationRestoreSchemas['handover-export'].schema.parse(decoded.value), context.scope);
+      return { oldPath: decoded.path, path: decoded.path, data: { ...result.metadata,
+        ...data.seal('handover-export', result.id, result.scope, operationRestoreSchemas['handover-export'].schema, result.value, result.version) } };
     }
     const scope = scopeAfter(context.scope, input);
     if (context.family === 'authority') {

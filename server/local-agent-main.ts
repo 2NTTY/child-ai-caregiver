@@ -17,8 +17,9 @@ if (state.projectId !== config.projectId || state.storageKey !== process.env.YUB
 const { provider, modelConfig, providers, embeddingConfigured } = readLocalAgentModel(process.env);
 const events: AgentDiagnostic[] = [];
 let delivery: ReturnType<typeof createLocalAgentDelivery>;
+const buckets = createLocalAgentBuckets(process.env);
 const runtime = await openFirebaseRuntime(process.env, { worker: true, local: {
-  bucket: createLocalAgentBuckets(process.env), modelConfig,
+  bucket: buckets, handoverBucket: buckets.handover, modelConfig,
   deliveries(domain) { delivery = createLocalAgentDelivery(domain, process.env); return delivery.adapters; },
   async bootstrapAccount(auth) {
     // Explicit synthetic account, not a first-user grant. Product admission and

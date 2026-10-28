@@ -88,12 +88,12 @@ export async function writeHandoverArchive(input: {
     const manifest = handoverManifestSchema.parse({ ...header, coverage: await waitForHandoverStep(Promise.resolve().then(input.coverage), signal), entries });
     const raw = Buffer.from(JSON.stringify(manifest));
     if (raw.length > limits.maxManifestBytes) reject('package_size_exceeded');
-    zip.addBuffer(raw, 'manifest.json');
+    zip.addBuffer(raw, 'manifest.json', { mtime: new Date(header.createdAt), mode: 0o100600 });
     if (input.signingKey) {
       const publicKey = createPublicKey(input.signingKey).export({ type: 'spki', format: 'der' });
       const proof = { algorithm: 'Ed25519', keyId: digest(publicKey), publicKey: publicKey.toString('base64'),
         signature: sign(null, raw, input.signingKey).toString('base64') };
-      zip.addBuffer(Buffer.from(JSON.stringify(proof)), 'proof.json');
+      zip.addBuffer(Buffer.from(JSON.stringify(proof)), 'proof.json', { mtime: new Date(header.createdAt), mode: 0o100600 });
     }
     zip.end(); await written;
     return { path, bytes: compressedBytes, manifest, manifestSha256: digest(raw) };

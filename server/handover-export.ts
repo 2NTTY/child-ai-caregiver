@@ -24,7 +24,7 @@ const hash = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('h
 export async function writePersonalHandoverPackage(input: {
   exporter: HandoverExportSource; directory: string; ownerUserId: string; serverId: string; packageId: string;
   createdAt: string; purpose: HandoverHeader['purpose']; selection: HandoverHeader['selection'];
-  signingKey?: KeyObject; signal?: AbortSignal; limits?: Partial<HandoverLimits>;
+  signingKey?: KeyObject; signal?: AbortSignal; limits?: Partial<HandoverLimits>; expectedScopeVersion?: string;
 }) {
   const limits = handoverLimits(input.limits);
   const signal = AbortSignal.any([AbortSignal.timeout(limits.maxDurationMs), ...(input.signal ? [input.signal] : [])]);
@@ -35,6 +35,7 @@ export async function writePersonalHandoverPackage(input: {
   signal.throwIfAborted();
   const initial = await waitForHandoverStep(input.exporter.page(input.ownerUserId, { section: 'manifest' }), signal);
   const scopeVersion = initial.scopeVersion, coverage: HandoverCoverage[] = [];
+  if (input.expectedScopeVersion && input.expectedScopeVersion !== scopeVersion) fail('export_scope_changed');
   const avatars = new Map<string, { version: number; asset: unknown; fingerprint: string }>();
   let ordinal = 0, pageCount = 0;
   const path = (kind: 'data' | 'attachments') => `${kind}/${String(++ordinal).padStart(8, '0')}.${kind === 'data' ? 'json' : 'bin'}`;
