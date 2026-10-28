@@ -868,6 +868,8 @@ FAMILY-B 管理列表及共享孩子選擇復用上述五類資料，沒有新�
 
 簽章使用 Node 標準 Ed25519，對確切 manifest UTF-8 bytes 簽署；公開金鑰以 SPKI DER 保存，key ID 為其 SHA-256。驗證先核簽章與全部 entry hash，再以 Server 配置的可信公鑰核來源；包自帶公鑰不能自行成為可信來源。無簽章或有效但未受信任的簽章只屬「缺可信證明」，需明示後選擇繼續；錯誤簽章／hash、重複或未列出的檔案、路徑逃逸及不相容格式拒絕。完整性不代表內容正確。簽章金鑰獨立於應用層加密 key，不自動建立或傳送生產金鑰。
 
+私人交代的匯入來源預備接點沿原 `private_instructions`／`memory_keys`，沒有第二份備註資料。原一般 Agent 保存與內部匯入共用資料層的 scope、版本、主題鍵及 context change 寫入；匯入記錄採本地 ID／版本，`importedFrom.current.source` 留原訊息 ID、陳述類型、時間及來源身份。外來訊息不填本地 `sourceMessageId`；後續本地更正才填實際 run 的訊息。原刪除／key 清理與還原 schema 繼續適用。此接點不包含公開匯入台帳或共享班級私人交代的披露策略，未接部分仍列缺口，不建立空成功。
+
 產生／讀取逐項串流，使用受保護的 Server 暫存，大小／項數／期限均有界；超限回報未完成，不能截斷後產生成功包。驗證完才交匯入服務；附件上載先暫存及校驗，不從尚未驗完的 stream 提交領域資料。此容器不是災難恢復 envelope，也不自行寫入資料庫；正式匯出／匯入工作、共用畫面與全部模組的交付門檻仍依 PLAN。
 
 文檔包的私人 Storage adapter 沿用 `YBG1`／AES-256-GCM 格式，以串流處理檔案；AAD 綁定專案、namespace、完整儲存 scope 及包 ID。物件 metadata 保存明文／密文 hash、大小及綁定摘要，descriptor 保留完整十進位 generation；以 `ifGenerationMatch=0` 建立，讀取／刪除固定 generation。重做前查同一物件；上載已開始後的逾時或查回失敗屬 unknown，不能換包 ID 重送。解密完成、驗證碼及兩份 hash 全部核對後才返回私人暫存路徑，失敗清理本次暫存。adapter 本身不授權用戶，API 與持久工作另核目前身份及來源。
