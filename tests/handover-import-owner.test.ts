@@ -11,7 +11,8 @@ test('import owner preserves unknown operations, resumes server batches and clea
   assert.equal(await packageHash(bytes, 3, new AbortController().signal), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
   await assert.rejects(packageHash(new Blob(['abc']).stream(), 2, new AbortController().signal), /invalid_package_file/);
   const id = '00000000-0000-4000-8000-000000000001', target = '00000000-0000-4000-8000-000000000002';
-  let upload: HandoverUploadView, batch: HandoverImportView, writes = 0, contentWrites = 0, released = 0;
+  let upload!: HandoverUploadView;
+  let batch: HandoverImportView, writes = 0, contentWrites = 0, released = 0;
   const api = { setIdentity() {}, async reserveUpload(_u: string, c: any) {
     upload = { id: c.opId, version: 1, filename: c.filename, bytes: c.bytes, state: 'reserved', error: null, preview: null,
       createdAt: '2026-10-29T00:00:00Z', expiresAt: '2026-10-30T00:00:00Z' }; return upload;
@@ -50,6 +51,47 @@ test('import owner preserves unknown operations, resumes server batches and clea
   await owner.checkOriginal(); assert.equal(owner.getSnapshot().upload?.version, 2); assert.equal(released, 3);
   api.cancelUpload = async (_u, _id, command) => { assert.equal(command.expectedVersion, 2); return { ...upload, state: 'cancelled', version: 3 }; };
   await owner.discard(); assert.equal(owner.getSnapshot().upload, null);
+
+  const originalBatch = { ...batch!, targets: [{ ...targets[0], sections: ['care' as const, 'profile' as const] }], state: 'completed' as const, version: 4, processedItems: 1,
+    counts: { created: 0, updated: 0, skipped: 0, conflict: 1 } };
+  const resultId = '00000000-0000-4000-8000-000000000005';
+  const result = { id: resultId, batchId: originalBatch.id, sourceChildId: id, module: 'care' as const,
+    sourceResourceId: id, sourceVersion: 3, sourceSection: null, at: originalBatch.updatedAt, outcome: 'conflict' as const,
+    reason: 'target_changed', recordedResource: { id: target, version: 1 }, currentResource: { id: target, version: 7, deleted: false },
+    availableResolution: 'replace_current' as const };
+  let resultRead!: (value: any) => void;
+  api.getImport = async () => originalBatch; await owner.refresh(originalBatch.id);
+  owner.selectResults(originalBatch.id, id, 'care');
+  api.importResults = () => new Promise(resolve => { resultRead = resolve; });
+  const oldScope = owner.readResults(); owner.selectResults(originalBatch.id, id, 'profile');
+  resultRead({ batchId: originalBatch.id, sourceChildId: id, module: 'care', items: [result], nextCursor: null, complete: true }); await oldScope;
+  assert.equal(owner.getSnapshot().results?.module, 'profile'); assert.deepEqual(owner.getSnapshot().results?.items, []);
+  owner.selectResults(originalBatch.id, id, 'care');
+  api.importResults = async (_u, batchId, query) => ({ batchId, sourceChildId: query.sourceChildId, module: query.module,
+    items: [result], nextCursor: query.cursor ? null : 'page-2', complete: !!query.cursor });
+  await owner.readResults(); await owner.readResults(true);
+  assert.equal(owner.getSnapshot().results?.items.length, 1, 'appending pages does not duplicate a receipt');
+  upload = { ...upload, state: 'ready', version: 5, preview: { ...upload.preview!, manifestSha256: originalBatch.manifestSha256,
+    header: { packageId: originalBatch.packageId, packageVersion: originalBatch.packageVersion } } as any };
+  let decided: any, originalLookups: string[] = [];
+  api.createImport = async (_u, command) => {
+    writes++; decided = command; batch = { ...originalBatch, id: command.opId, state: 'queued', targets: command.targets };
+    throw new HandoverApiError();
+  };
+  api.getImport = async (_u, batchId) => { originalLookups.push(batchId); return batchId === originalBatch.id ? originalBatch : batch; };
+  await owner.resolveResults('replace_current', [resultId]);
+  assert.notEqual(decided.opId, originalBatch.id); assert.deepEqual(decided.targets, originalBatch.targets);
+  assert.equal(decided.resolutionOnly, true, 'a resolution batch must not import unselected rows from the original targets');
+  assert.equal(decided.expectedUploadVersion, 5); assert.equal(decided.acceptedManifestSha256, originalBatch.manifestSha256);
+  assert.deepEqual(decided.resolutions, [{ sourceChildId: id, section: 'care', resourceId: id,
+    resolution: { mode: 'replace_current', targetId: target, expectedVersion: 7 } }]);
+  const decidedWrites = writes; await owner.retryOriginal(); assert.equal(writes, decidedWrites, 'unknown resolution is not resubmitted');
+  await owner.checkOriginal(); assert.equal(originalLookups.at(-1), decided.opId); assert.equal(writes, decidedWrites);
+  owner.selectResults(originalBatch.id, id, 'care');
+  api.importResults = () => new Promise(resolve => { resultRead = resolve; });
+  const lateResults = owner.readResults(); owner.syncContext('bob', 'results-other-session', true);
+  resultRead({ batchId: originalBatch.id, sourceChildId: id, module: 'care', items: [result], nextCursor: null, complete: true }); await lateResults;
+  assert.equal(owner.getSnapshot().results, null, 'late results do not enter another identity');
 });
 
 test('reopened import owner discovers staged packages without resending contents and rejects late identity results', async () => {

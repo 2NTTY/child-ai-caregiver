@@ -4287,3 +4287,11 @@
 - 接續 #374／`8c07b10`，本人／目前儲存世代的未清理上載沿既有索引每頁二十項讀回，列表省略完整預覽；選取後才查原包狀態。共用 owner／畫面提供續選、查狀態與取消；原檔遺失不自動重傳，取消／失敗的清理義務仍由原 worker 處理。
 - 現有本機 HTTP 流程原 404→通過，兼核隔離／撤權、metadata、二十加一續頁及清理退出；owner 原流程及恢復流程通過。獨立 review 發現選 B 失敗仍保留 A，可造成錯包提交；同流程重現後於切換 ID 先清舊選取，補驗及覆核通過。[證據](artifacts/verification/P4_HANDOVER_UPLOAD_RECOVERY_20261029.json)保留沙箱 loopback 拒絕及實際 red→green。
 - 未新增索引、未部署或做真機／模型／通知；上一包 bundle 不重跑。其餘領域、衝突介面、完整備份及原生大型包仍待續，不改 D PR。
+
+<a id="log-20261029-p4-handover-conflict-results"></a>
+### 2026-10-29：P4 逐項匯入結果與所選衝突處理
+
+- 接續 #376／`42017ec`，本人批次按固定來源孩子及模組查逐項結果；當前權限、原儲存 scope、來源及 metadata 仍核對。二十加一分頁游標綁授權及變更版本，原收據結果與目前可處理版本分開，不披露正文。
+- 共用 owner／畫面可選擇已讀衝突作覆蓋或明確恢復，沿同一匯入服務及 expectedVersion 保存。主 review 發現重跑原 targets 會一併匯入取消批次未選的項目，故新增向後相容 `resolutionOnly`，只提交選定目前值、不處理其他項目或歷史；原批次／收據保持不變，unknown 只查同操作。
+- 正式 API／client／worker 一條流程、既有領域一條及 owner 兩條通過；局部型別圖零診斷。獨立後端 review 與增量覆核未見剩餘確定 P1／P2，主模型覆核共用畫面。保留初始缺路由、測試 fixture、selected-only red 與型別修正記錄，詳見[證據](artifacts/verification/P4_HANDOVER_CONFLICT_RESULTS_20261029.json)。
+- 一個索引只加入定義，尚未部署；不重跑 bundle／設備、無模型／通知。正文差異、其他領域、完整備份、班級／期間及原生大型包仍待接，不把本切片或合併當整個 HANDOVER01／P4 完成；D PR 未改動。

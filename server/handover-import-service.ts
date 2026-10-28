@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { HANDOVER_SECTIONS } from '../src/shared/handover.ts';
-import { handoverImportCommandSchema, handoverImportViewSchema, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
+import { handoverImportCommandSchema, handoverImportResultQuerySchema, handoverImportViewSchema, type HandoverImportCommand } from '../src/shared/handover-imports.ts';
 import { createFirestoreHandoverImportBatches } from './firestore-handover-import-batches.ts';
 import { domainParse, domainReject, firestoreDomainHash, type FirestoreDomainOptions } from './firestore-domain-data.ts';
 import type { createHandoverUploadService } from './handover-upload-service.ts';
@@ -39,15 +39,18 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     for (const target of command.targets) {
       if (!reader.manifest.selection.childIds.includes(target.sourceChildId)
         || target.sections.some(module => !reader.manifest.selection.modules.includes(module))) domainReject('package_scope_unavailable', 400);
-      const sections = new Set<string>(target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]));
+      const sections = new Set<string>(command.resolutionOnly ? command.resolutions.filter(row => row.sourceChildId === target.sourceChildId).map(row => row.section)
+        : target.sections.flatMap(module => [...HANDOVER_SECTIONS[module]]));
       for (const coverage of reader.manifest.coverage) if (coverage.childId === target.sourceChildId && sections.has(coverage.section)) {
         totalItems += coverage.items;
         // Selecting a module includes its history. A partial importer must never quietly discard it.
         if (coverage.items && !supported.has(coverage.section)) preflightError = 'package_section_not_connected';
       }
     }
+    if (command.resolutionOnly) totalItems = command.resolutions.length;
     const request: HandoverImportBatchRequest = { opId: command.opId, uploadId: command.uploadId,
       uploadVersion: job.version, inputFingerprint: firestoreDomainHash(command),
+      ...(command.resolutionOnly === undefined ? {} : { resolutionOnly: command.resolutionOnly }),
       source: { ...reader.manifest.source, packageId: reader.manifest.packageId, packageVersion: reader.manifest.packageVersion,
         manifestSha256: reader.manifestSha256 }, integrity: reader.integrity, acceptedManifestSha256: command.acceptedManifestSha256,
       targets: command.targets, resolutions: command.resolutions, totalItems };
@@ -55,6 +58,7 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
   }
   const commandFor = (job: HandoverImportBatch): HandoverImportCommand => ({ opId: job.id, uploadId: job.request.uploadId,
     expectedUploadVersion: job.request.uploadVersion!, acceptedManifestSha256: job.request.acceptedManifestSha256,
+    ...(job.request.resolutionOnly === undefined ? {} : { resolutionOnly: job.request.resolutionOnly }),
     targets: job.request.targets, resolutions: job.request.resolutions });
   async function start(owner: string, raw: unknown, signal: AbortSignal) {
     signal = AbortSignal.any([signal, AbortSignal.timeout(300_000)]);
@@ -73,15 +77,22 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
     if (raw) { try { cursor = cursorSchema.parse(JSON.parse(raw)); } catch { domainReject('invalid_package_cursor', 400); } }
     while (cursor.target < job.request.targets.length) {
       const target = job.request.targets[cursor.target], start = JSON.stringify(cursor);
+      const selected = job.request.resolutionOnly ? job.request.resolutions.filter(row => row.sourceChildId === target.sourceChildId) : null;
+      if (selected?.length === 0) { cursor = { target: cursor.target + 1, phase: 'current', page: null }; continue; }
       // Existing in-flight cursors keep their old reader selection. New batches always establish parents first.
-      const sections = cursor.phase === undefined ? undefined : cursor.phase === 'current' ? [...target.sections]
+      const sections = selected ? [...new Set(selected.map(row => row.section))] : cursor.phase === undefined ? undefined : cursor.phase === 'current' ? [...target.sections]
         : Object.entries(historyModules).filter(([, module]) => target.sections.includes(module)).map(([section]) => section);
       const page = await opened.reader.readPage({ selection: { childIds: [target.sourceChildId], modules: target.sections }, sections,
         acknowledgedManifestSha256: job.request.acceptedManifestSha256 ?? undefined, cursor: cursor.page as HandoverImportCursor | null, limit: 1 });
-      const next: Cursor = page.nextCursor ? { ...cursor, page: page.nextCursor } : cursor.phase === 'current'
+      const next: Cursor = page.nextCursor ? { ...cursor, page: page.nextCursor } : cursor.phase === 'current' && !selected
         ? { target: cursor.target, phase: 'history', page: null } : { target: cursor.target + 1, ...(cursor.phase ? { phase: 'current' as const } : {}), page: null };
       const row = page.rows[0]; cursor = next;
       if (!row || row.section === 'children') continue;
+      if (selected) {
+        const value = row.value as { id?: unknown } | null;
+        const id = row.section === 'profile' ? row.childId : value && typeof value === 'object' ? value.id : undefined;
+        if (!selected.some(item => item.section === row.section && item.resourceId === id)) continue;
+      }
       if (!supported.has(row.section)) domainReject('package_section_not_connected', 400);
       return { row, start, after: JSON.stringify(next) };
     }
@@ -117,7 +128,15 @@ export function createHandoverImportService(options: FirestoreDomainOptions & { 
       await batches.fail(work, codeOf(error)); return { state: 'stopped' as const };
     } finally { await opened?.dispose(); }
   }
-  return { create: start, process, history: createFirestoreHandoverImportItems(options).history,
+  const items = createFirestoreHandoverImportItems(options);
+  return { create: start, process, history: items.history,
+    async results(owner: string, id: string, raw: unknown) {
+      const input = domainParse(handoverImportResultQuerySchema, raw), job = await batches.get(owner, id);
+      const index = job.request.targets.findIndex(target => target.sourceChildId === input.sourceChildId && target.sections.includes(input.module));
+      if (index < 0) domainReject('import_result_scope_unavailable', 403);
+      return items.results(owner, { ...input, batchId: job.id, target: job.request.targets[index].target,
+        source: job.request.source, expectedScope: job.targetScopes[index] });
+    },
     async list(owner: string, cursor?: string) {
       const page = await batches.list(owner, cursor); return { items: page.items.map(view), nextCursor: page.nextCursor };
     },

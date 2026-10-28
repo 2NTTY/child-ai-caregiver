@@ -10,6 +10,7 @@ export const importBatchSectionSchema = handoverImportSectionSchema;
 export const importBatchTargetSchema = handoverImportTargetSchema;
 export const importBatchRequestSchema = z.object({ opId: uuid, uploadId: uuid,
   uploadVersion: count.min(1).optional(), inputFingerprint: hash.optional(),
+  resolutionOnly: z.boolean().optional(),
   source: z.object({ serverId: text, accountId: text, packageId: uuid, packageVersion: count.min(1), manifestSha256: hash }).strict(),
   integrity: z.enum(['trusted', 'untrusted_signer', 'missing_proof']), acceptedManifestSha256: hash.nullable(),
   targets: z.array(importBatchTargetSchema).min(1).max(10000), totalItems: count,
@@ -18,6 +19,7 @@ export const importBatchRequestSchema = z.object({ opId: uuid, uploadId: uuid,
 }).strict().refine(value => new Set(value.targets.map(row => row.sourceChildId)).size === value.targets.length
   && new Set(value.resolutions.map(row => JSON.stringify([row.sourceChildId, row.section, row.resourceId]))).size === value.resolutions.length
   && value.resolutions.every(row => value.targets.some(target => target.sourceChildId === row.sourceChildId && target.sections.includes(row.section)))
+  && (!value.resolutionOnly || value.resolutions.length > 0 && value.resolutions.every(row => row.resolution.mode !== 'preserve') && value.totalItems === value.resolutions.length)
   && (value.integrity === 'trusted' || value.acceptedManifestSha256 === value.source.manifestSha256));
 export const importBatchCountsSchema = z.object({ created: count, updated: count, skipped: count, conflict: count }).strict();
 export const importBatchStateSchema = z.enum(['queued', 'running', 'completed', 'cancelled', 'failed', 'interrupted']);

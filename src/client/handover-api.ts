@@ -5,7 +5,8 @@ import { handoverCancelCommandSchema, handoverExportCommandSchema, handoverExpor
 import { handoverUploadCommandSchema, handoverUploadViewSchema, handoverUploadPageSchema,
   type HandoverUploadCommand, type HandoverUploadView, type HandoverUploadPage } from '../shared/handover-uploads.ts';
 import { handoverImportCommandSchema, handoverImportControlSchema, handoverImportViewSchema, handoverImportPageSchema,
-  type HandoverImportCommand, type HandoverImportView } from '../shared/handover-imports.ts';
+  handoverImportResultQuerySchema, handoverImportResultPageSchema,
+  type HandoverImportResultQuery, type HandoverImportResultPage, type HandoverImportCommand, type HandoverImportView } from '../shared/handover-imports.ts';
 
 type CancelCommand = z.infer<typeof handoverCancelCommandSchema>;
 type ExportPage = z.infer<typeof handoverExportPageSchema>;
@@ -29,6 +30,7 @@ export interface HandoverApi {
   createImport(userId: string, command: HandoverImportCommand, signal: AbortSignal): Promise<HandoverImportView>;
   getImport(userId: string, id: string, signal: AbortSignal): Promise<HandoverImportView>;
   listImports(userId: string, signal: AbortSignal, cursor?: string): Promise<ImportPage>;
+  importResults(userId: string, id: string, query: HandoverImportResultQuery, signal: AbortSignal): Promise<HandoverImportResultPage>;
   cancelImport(userId: string, id: string, command: ImportControl, signal: AbortSignal): Promise<HandoverImportView>;
   resumeImport(userId: string, id: string, command: ImportControl, signal: AbortSignal): Promise<HandoverImportView>;
 }
@@ -162,6 +164,17 @@ export function createHandoverApi(baseUrl = '', fetcher: typeof fetch = fetch): 
       if (cursor !== undefined && (typeof cursor !== 'string' || !cursor || cursor.length > 2048)) throw new HandoverApiError(400, 'invalid_input');
       return json(userId, cursor === undefined ? '' : '?' + new URLSearchParams({ cursor }), signal, handoverImportPageSchema,
         undefined, result => result.nextCursor !== '' && (cursor === undefined || result.nextCursor !== cursor), { collection: 'package-imports' });
+    },
+    async importResults(userId, id, query, signal) {
+      const parsed = handoverImportResultQuerySchema.safeParse(query);
+      if (!z.uuid().safeParse(id).success || !parsed.success) throw new HandoverApiError(400, 'invalid_input');
+      const search = new URLSearchParams({ sourceChildId: parsed.data.sourceChildId, module: parsed.data.module });
+      if (parsed.data.cursor !== undefined) search.set('cursor', parsed.data.cursor);
+      return json(userId, `/${id}/items?${search}`, signal, handoverImportResultPageSchema, undefined,
+        result => result.batchId === id && result.sourceChildId === parsed.data.sourceChildId && result.module === parsed.data.module
+          && result.complete === (result.nextCursor === null) && (!parsed.data.cursor || result.nextCursor !== parsed.data.cursor)
+          && result.items.every(item => item.batchId === id && item.sourceChildId === result.sourceChildId && item.module === result.module),
+        { collection: 'package-imports' });
     },
     async cancelImport(userId, id, input, signal) {
       const parsed = handoverImportControlSchema.safeParse(input); if (!parsed.success) throw new HandoverApiError(400, 'invalid_input');
