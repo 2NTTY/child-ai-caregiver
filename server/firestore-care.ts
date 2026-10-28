@@ -38,6 +38,7 @@ const pathPattern = /^\/api\/children\/([0-9a-f-]{36})\/(records|care(?:\/([0-9a
 type Binding = FirestoreAuthorityTransaction;
 type Prepared<T> = { value: T; changeSeq: string; commit(): void };
 export interface FirestoreCareStore extends CareStore {
+  readImportRecordState(binding: Binding, id: string): Promise<{ value: CareRecord | null; version: number }>;
   prepareImportedRecord(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
     target?: { id: string; expectedVersion: number }): Promise<Prepared<CareRecord>>;
   prepareImportedProfile(binding: Binding, operationId: string, row: HandoverImportRow, integrity: HandoverIntegrity,
@@ -258,6 +259,13 @@ export function createFirestoreCareStore(options: FirestoreDomainOptions): Fires
       return direct(userId, childId, fn);
     };
   const store: FirestoreCareStore = {
+    async readImportRecordState(binding, id) {
+      const value = await readRecord(binding, id);
+      if (value) return { value, version: value.version };
+      // readRecord already validates a present tombstone and its scope in this same transaction.
+      const row = await binding.transaction.get(recordRef(id));
+      return { value: null, version: row.exists ? domainParse(version, row.get('recordVersion'), 'care_binding', 500) : 0 };
+    },
     async prepareImportedRecord(binding, operationId, row, integrity, target) {
       if (row.section !== 'care' || !await binding.readChild(binding.scope.childId)) domainReject('invalid_import_target', 400);
       const record = domainParse(firestoreCareSchema, row.value, 'invalid_package_data');

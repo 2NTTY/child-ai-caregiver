@@ -4222,3 +4222,10 @@
 
 - 接續 #365／`b2f72e1`，原 care／profile 投影區分來源確認與本地確認；外部 UID 相同不映射「你」。多次匯入沿平坦鏈保留原使用者陳述，遇未知依據即停；本人更正仍顯示本地確認。沒有新增採納步驟或改畫面設計。
 - 一條投影檢查 1/1，兩入口型別圖零診斷，diff check 通過；首次 UID 混淆及二次匯入丟失原依據的紅測試保留，[證據](artifacts/verification/P4_HANDOVER_SOURCE_LABELS_20261029.json)。獨立 review 無確定 Important／Critical 問題，未跑 build、設備、雲端或模型，也未部署；正式匯入台帳／保存及完整範圍繼續下一段。
+
+<a id="log-20261029-p4-handover-items"></a>
+### 2026-10-29：P4 匯入來源映射與逐項收據
+
+- 接續 #366／`f05b2c8`，原領域 commit 與來源映射、原 opId 收據同 Firestore 交易；按來源身份／版本／hash 去重，不按姓名。care／profile 預設保留本地修改和刪除，明確覆蓋核當前版本，care 手動恢復用新 ID 並保留舊屏障。終態待辦建立沿既有準備服務；新版任務更新仍明確未接，不以重建冒充更新。
+- 一條有界合成流程核原操作、差異／衝突、刪除／恢復、隔離、帳戶紀錄匯出及實際 codec epoch 重綁，1/1；四入口型別圖零診斷，JSON／diff 核對通過。[證據](artifacts/verification/P4_HANDOVER_ITEMS_20261029.json)保留 strict 欄位投影及 restore metadata 的原失敗。兩個新 collection 已登記 backup／scope 清理，兩個複合索引與私密欄位排除只有定義。
+- 沒有公開匯入 API、真批次 lease／取消或上載；其餘領域／歷史、完整私人備份、班級／期間及真還原仍待接。本批零模型、通知、雲端修改、設備或部署；沿用原有效證據，D 的 PR 未改動。
