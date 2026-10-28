@@ -1,6 +1,37 @@
 {
   "indexes": [
     {
+      "collectionGroup": "yuban_authority_handover_uploads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
+        { "fieldPath": "epochTag", "order": "ASCENDING" },
+        { "fieldPath": "childTag", "order": "ASCENDING" },
+        { "fieldPath": "userTag", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_handover_uploads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "workspaceTag", "order": "ASCENDING" },
+        { "fieldPath": "epochTag", "order": "ASCENDING" },
+        { "fieldPath": "childTag", "order": "ASCENDING" },
+        { "fieldPath": "userTag", "order": "ASCENDING" },
+        { "fieldPath": "cleaned", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "yuban_authority_handover_uploads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "cleaned", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "yuban_authority_voice_assets",
       "queryScope": "COLLECTION",
       "fields": [
@@ -3860,6 +3891,11 @@
     }
   ],
   "fieldOverrides": [
+    {
+      "collectionGroup": "yuban_authority_handover_uploads",
+      "fieldPath": "*",
+      "indexes": []
+    },
     {
       "collectionGroup": "yuban_authority",
       "fieldPath": "*",

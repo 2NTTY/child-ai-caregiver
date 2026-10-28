@@ -5,6 +5,8 @@ import type { FirebaseAuthPort } from './firebase-auth.ts';
 import type { FirestoreErasureStore } from './firestore-erasure.ts';
 import type { createFirestoreAccountExport } from './firestore-account-export.ts';
 import type { createHandoverService } from './handover-service.ts';
+import type { createHandoverUploadService } from './handover-upload-service.ts';
+import { handleHandoverUpload } from './firebase-handover-upload-api.ts';
 import { createReadStream } from 'node:fs';
 import { Readable } from 'node:stream';
 
@@ -12,6 +14,7 @@ export interface FirebaseAccountDataPort {
   erasures: FirestoreErasureStore;
   exporter: ReturnType<typeof createFirestoreAccountExport>;
   packages?: ReturnType<typeof createHandoverService>;
+  packageUploads?: ReturnType<typeof createHandoverUploadService>;
 }
 /** Native Firebase proof replaces server-side password handling; public recovery uses only the secret receipt. */
 export async function handleFirebaseAccountData(request: Request, auth: FirebaseAuthPort, services: FirebaseAccountDataPort,
@@ -23,6 +26,12 @@ export async function handleFirebaseAccountData(request: Request, auth: Firebase
   const user = (await auth.getSession({ headers: request.headers }))?.user;
   if (!user) domainReject('unauthorized', 401);
   if (request.headers.get('x-expected-user-id') !== user.id) domainReject('identity_changed');
+  if (path === '/api/account/package-uploads' || path.startsWith('/api/account/package-uploads/')) {
+    if (!services.packageUploads) domainReject('package_service_unavailable', 503);
+    return handleHandoverUpload(request, user.id, services.packageUploads, readJson, async () => {
+      if ((await auth.getSession({ headers: request.headers }))?.user.id !== user.id) domainReject('identity_changed');
+    });
+  }
   if (path === '/api/account/packages' || path.startsWith('/api/account/packages/')) {
     const packages = services.packages; if (!packages) domainReject('package_service_unavailable', 503);
     const sameIdentity = async () => { if ((await auth.getSession({ headers: request.headers }))?.user.id !== user.id) domainReject('identity_changed'); };
